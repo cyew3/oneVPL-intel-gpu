@@ -1,0 +1,150 @@
+
+This utility performs runtime performance profiling and parameter 
+recording/modification, without the need to build a debug SDK library. 
+
+The technique is to insert this utility into the middle of the 
+application and the real SDK DLL. The utility intercepts the input 
+parameters for recording, editing or performance measurement.
+
+Registry settings are examineed in two locations:
+HKEY_CURRENT_USER\SOFTWARE\Intel\MediaSDK\Debug\Analyzer
+	"SDK DLL"	REG_SZ		Specify the SDK DLL to be replaced
+	"Log File"	REG_SZ		Specify the log file to write performance 
+					data and configuration parameters. The
+					results are always appended to the file.
+	"CFG File"	REG_SZ		Specify the parameter file to overwrite 
+					certain Init/Query/QueryIOSurf 
+					configurations
+	"Raw File"	REG_SZ		Specify where raw bits (frames/bitstreams) should be dumpped.
+						
+	"Record Configuration"
+			REG_DWORD	Boolean to specify whether configuration 
+					parameters should be recorded. This is for
+					functions Init, Query, QueryIOSurf, 
+					GetVideoParam etc.
+	"Record Configuration Per Frame"
+			REG_DWORD	Boolean to specify whether input 
+					parameters should be recorded per frame.
+					This is for EncodeFrameAsync etc.
+	"Record Pointers"
+			REG_DWORD	Boolean to specify whether pointers parameters will be recorded. 
+					i.e. plane pointers, handles, mids, etc.
+	"Edit Configuration"
+			REG_DWORD	Boolean to specify whether configuration 
+					parameters should be modified
+	"Edit Configuration Per Frame"
+			REG_DWORD	Boolean to specify whether configuration 
+					parameters should be modified per frame.
+					This is for EncodeFrameAsync etc.
+	"Skip DECODE Sync Operation"
+			REG_DWORD	Boolean to specify whether the DECODE 
+					synchronization operation should be skipped
+
+	"Skip VPP Sync Operation"
+			REG_DWORD	Boolean to specify whether the VPP 
+					synchronization operation should be skipped
+
+	"Sync Encode"	REG_DWORD	Integer forced synchronization time right after EncodeFrameAsync
+	"Sync Decode"	REG_DWORD	Integer forced synchronization time right after DecodeFrameAsync
+	"Sync VPP"	REG_DWORD	Integer forced  synchronization time right after RunFrameVPPAsync
+
+	"Record Raw Bits Start"
+			REG_DWORD	Frame count to start recording raw frmaes/bitstreams
+	"Record Raw Bits End"
+			REG_DWORD	Frame count to end recording raw frames/bitstreams
+	"Record Raw Bits Module"
+			REG_SZ		What should be recorded: [decode|encode|vpp] [input|output] [|force]
+					Note that recording decoding output, vpp input/output in a
+					transcoding pipeline requires forced synchronization on 
+					decode/vpp. The recorded frames/bitstreams are in the native
+					format and in the aligned resolution. force flag indicates that no sync operation
+					required to record raw data. For example decoder and vpp are externals, in that case
+					encoder input surface is always valid.
+					
+	"Record Timestamp"
+			REG_SZ		Recorded timestamp format : [LOCAL|UTC|relative] 
+					local, and utc - it's system time converted to coresponding date time format
+					relative - time from library loading
+	"Debug View"	REG_DWORD	Send function name to DebugView so that the timing of the calling
+			                sequence can be analyzed.
+	"Async Dump"    
+			REG_DWORD   0 - Synhronous dump(very slow). 
+						1 - Writes msdk_analyzer log file only when msdk_analyzer.dll gets unloaded
+						2 - Uses ETW for dump. User need to execute run_consumer.bat script to collect log
+						
+	"Work Without Gui"  
+			REG_DWORD	0 - Tracing wont work withou GUI application started
+						1 - Allowed to capture logs whithout GUI, by forcing global mutex check off
+						
+	"Handle DeviceBusy Decode"
+			REG_DWORD	Integer to specify waiting timeout in handling DecodeFrameAsync::DeviceBusy status inside msdk_analyzer 
+			
+	"Handle DeviceBusy VPP"
+			REG_DWORD	Integer to specify waiting timeout in handling RunFrameVPPAsync::DeviceBusy status inside msdk_analyzer 
+
+	"Handle DeviceBusy Encode"
+			REG_DWORD	Integer to specify waiting timeout in handling EncodeFrameAsync::DeviceBusy status inside msdk_analyzer 
+
+	"Stub Encode"
+			REG_DWORD	0 - default value
+						1 - Mediasdk encoder wount be used after it returns first frame, application will continue to receive 
+						    this first frame, timestamps are pass-ed through
+	
+	"SDK Version"
+			REG_SZ		String(major.minor) specifies Mediasdk API version to use in case of NULL==pVersion passed to MFXInit
+    "Force Metro App"   
+	        REG_DWORD   0 - No Metro emulation
+			            1 - Metro App tracing emulation
+	"Level"
+	        REG_DWORD   1 - Only initialization level api logging
+			            2 - Initialization and runtime level api logging       
+
+
+For performance profiling, it is recommended to turn off per-frame 
+parameter recording as it impacts performance. The performance 
+results are shown as follows (using ENCODE as example):
+
+encode.perf.frames=260		
+	Number of frames encoded 
+encode.perf.frames_sync=260	
+	Number of frames encoded and later synced with SyncOperation. 
+	If asynchronous DECODE-->ENCODE is used, this number may be 
+	different from frames above.
+encode.perf.exec_time=0.0607606 (s/f)
+	Complete encoding time from EncodeFrameAsync to SyncOperation
+encode.perf.async_exec_time=0.000167148 (s/f)
+	Time spent in EncodeFrameAsync
+encode.perf.async_exec_rate=0.0240673 (s/f)
+	Incoming data rate
+
+Exmaple of recorded configuration parameters are as follows:
+encode.QueryIOSurf.par.mfx.FrameInfo.FourCC=NV12
+encode.QueryIOSurf.par.mfx.FrameInfo.Resolution=(720,480)
+encode.QueryIOSurf.par.mfx.FrameInfo.Crop=(0,0,720,480)
+encode.QueryIOSurf.par.mfx.FrameInfo.FrameRate=30/1
+encode.QueryIOSurf.par.mfx.FrameInfo.AspectRatio=0:0
+
+To modify certain configuration, enable the registry entry "Edit
+Confgiuration" and specify the configuration file "CFG File". In
+the configuration file, use the same format to specify the modification.
+The modification does not have to be complete.
+
+Example:
+
+decode.QueryIOSurf.par.mfx.NumThread=0
+decode.Init.par.mfx.NumThread=0
+
+vpp.QueryIOSurf.par.mfx.NumThread=0
+vpp.QueryIOSurf.par.ExtParam=mfxExtVPPDoNotUse
+vpp.QueryIOSurf.par.ExtParam.mfxExtVPPDoNotUse.AlgList=DENOISE,SCENE_ANALYSIS
+vpp.Init.par.mfx.NumThread=0
+vpp.Init.par.ExtParam=mfxExtVPPDoNotUse
+vpp.Init.par.ExtParam.mfxExtVPPDoNotUse.AlgList=DENOISE,SCENE_ANALYSIS
+
+encode.QueryIOSurf.par.mfx.TargetUsage=7
+encode.QueryIOSurf.par.mfx.NumThread=0
+encode.Init.par.mfx.TargetUsage=7
+encode.Init.par.mfx.NumThread=0
+
+encode.Init.status=MFX_ERR_NONE if MFX_WRN_INCOMPATIBLE_VIDEO_PARAM
+encode.Init.status=MFX_ERR_NONE
