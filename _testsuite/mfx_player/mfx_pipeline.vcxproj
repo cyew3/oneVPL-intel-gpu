@@ -1,0 +1,464 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug (Lucas DLL)|Win32">
+      <Configuration>Debug (Lucas DLL)</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug (Lucas DLL)|x64">
+      <Configuration>Debug (Lucas DLL)</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release (Lucas DLL)|Win32">
+      <Configuration>Release (Lucas DLL)</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release (Lucas DLL)|x64">
+      <Configuration>Release (Lucas DLL)</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{BF72A446-8425-40A2-856B-33B5742C60CE}</ProjectGuid>
+    <RootNamespace>mfx_pipeline</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug (Lucas DLL)|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release (Lucas DLL)|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug (Lucas DLL)|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release (Lucas DLL)|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug (Lucas DLL)|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="props\common.props" />
+    <Import Project="props\win32.props" />
+    <Import Project="props\debug.props" />
+    <Import Project="props\lucas.props" />
+    <Import Project="props\static_lib.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release (Lucas DLL)|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="props\common.props" />
+    <Import Project="props\release.props" />
+    <Import Project="props\win32.props" />
+    <Import Project="props\lucas.props" />
+    <Import Project="props\static_lib.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="props\common.props" />
+    <Import Project="props\win32.props" />
+    <Import Project="props\debug.props" />
+    <Import Project="props\static_lib.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="props\common.props" />
+    <Import Project="props\win32.props" />
+    <Import Project="props\release.props" />
+    <Import Project="props\static_lib.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug (Lucas DLL)|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="props\common.props" />
+    <Import Project="props\win64.props" />
+    <Import Project="props\debug.props" />
+    <Import Project="props\lucas.props" />
+    <Import Project="props\static_lib.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release (Lucas DLL)|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="props\common.props" />
+    <Import Project="props\win64.props" />
+    <Import Project="props\release.props" />
+    <Import Project="props\lucas.props" />
+    <Import Project="props\static_lib.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="props\common.props" />
+    <Import Project="props\win64.props" />
+    <Import Project="props\debug.props" />
+    <Import Project="props\static_lib.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="props\common.props" />
+    <Import Project="props\win64.props" />
+    <Import Project="props\release.props" />
+    <Import Project="props\static_lib.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug (Lucas DLL)|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug (Lucas DLL)|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug (Lucas DLL)|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug (Lucas DLL)|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug (Lucas DLL)|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug (Lucas DLL)|x64'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release (Lucas DLL)|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release (Lucas DLL)|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release (Lucas DLL)|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release (Lucas DLL)|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release (Lucas DLL)|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release (Lucas DLL)|x64'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <EnablePREfast>false</EnablePREfast>
+    </ClCompile>
+    <Lib>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <Lib>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Lib>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Lib>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release (Lucas DLL)|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+    </ClCompile>
+    <Lib>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release (Lucas DLL)|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;LUCAS_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+    </ClCompile>
+    <Lib>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug (Lucas DLL)|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Lib>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug (Lucas DLL)|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Lib>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\mfx_base_allocator.cpp" />
+    <ClCompile Include="src\mfx_bitstream_buffer.cpp" />
+    <ClCompile Include="src\mfx_component_params.cpp" />
+    <ClCompile Include="src\mfx_d3d11_allocator.cpp" />
+    <ClCompile Include="src\mfx_d3d_allocator.cpp" />
+    <ClCompile Include="src\mfx_decode_pipeline_config.cpp" />
+    <ClCompile Include="src\mfx_default_pipeline_mgr.cpp" />
+    <ClCompile Include="src\mfx_extended_buffer.cpp" />
+    <ClCompile Include="src\mfx_factory_default.cpp" />
+    <ClCompile Include="src\mfx_frame_constructor.cpp" />
+    <ClCompile Include="src\mfx_loop_decoder.cpp" />
+    <ClCompile Include="src\mfx_pipeline_dec.cpp" />
+    <ClCompile Include="src\mfx_pipeline_utils.cpp" />
+    <ClCompile Include="src\mfx_sysmem_allocator.cpp" />
+    <ClCompile Include="src\mfx_timeout.cpp" />
+    <ClCompile Include="src\trace_utils.cpp" />
+    <ClCompile Include="src\mfx_burst_render.cpp" />
+    <ClCompile Include="src\mfx_d3d11_device.cpp" />
+    <ClCompile Include="src\mfx_d3d9_device.cpp" />
+    <ClCompile Include="src\mfx_fps_limit_render.cpp" />
+    <ClCompile Include="src\mfx_multi_render.cpp" />
+    <ClCompile Include="src\mfx_outline_render.cpp" />
+    <ClCompile Include="src\mfx_renders.cpp" />
+    <ClCompile Include="src\mfx_reorder_render.cpp" />
+    <ClCompile Include="src\mfx_screen_render.cpp" />
+    <ClCompile Include="src\mfx_vaapi_device.cpp" />
+    <ClCompile Include="src\mfx_vaapi_device_android.cpp" />
+    <ClCompile Include="src\mfx_view_ordered_render.cpp" />
+    <ClCompile Include="src\vaapi_allocator.cpp" />
+    <ClCompile Include="src\vaapi_utils.cpp" />
+    <ClCompile Include="src\vaapi_utils_android.cpp" />
+    <ClCompile Include="src\vaapi_utils_x11.cpp" />
+    <ClCompile Include="src\video_window.cpp" />
+    <ClCompile Include="src\mfx_advance_decoder.cpp" />
+    <ClCompile Include="src\mfx_bitstream_decoder.cpp" />
+    <ClCompile Include="src\mfx_latency_decoder.cpp" />
+    <ClCompile Include="src\mfx_mvc_decoder.cpp" />
+    <ClCompile Include="src\mfx_mvc_target_views_decoder.cpp" />
+    <ClCompile Include="src\mfx_yuv_decoder.cpp" />
+    <ClCompile Include="src\mfx_bitrate_limited_reader.cpp" />
+    <ClCompile Include="src\mfx_buffered_bs_reader.cpp" />
+    <ClCompile Include="src\mfx_directory_reader.cpp" />
+    <ClCompile Include="src\mfx_spl_wrapper.cpp" />
+    <ClCompile Include="src\umc_corruption_reader.cpp" />
+    <ClCompile Include="src\mfx_commands.cpp" />
+    <ClCompile Include="src\mfx_commands_initializer.cpp" />
+    <ClCompile Include="src\mfx_pts_based_activator.cpp" />
+    <ClCompile Include="src\mfx_cmd_option_processor.cpp" />
+    <ClCompile Include="src\mfx_serializer.cpp" />
+    <ClCompile Include="..\..\thirdparty\metrics_calc_lite\metrics_calc_lite.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug (Lucas DLL)|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug (Lucas DLL)|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release (Lucas DLL)|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release (Lucas DLL)|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\mfx_metric_calc.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\hash_array.h" />
+    <ClInclude Include="include\mfx_adapters.h" />
+    <ClInclude Include="include\mfx_allocators_generic.h" />
+    <ClInclude Include="include\mfx_base_allocator.h" />
+    <ClInclude Include="include\mfx_binder_call.h" />
+    <ClInclude Include="include\mfx_bitsream_buffer.h" />
+    <ClInclude Include="include\mfx_bitstream2.h" />
+    <ClInclude Include="include\mfx_bitstream_converters.h" />
+    <ClInclude Include="include\mfx_component_params.h" />
+    <ClInclude Include="include\mfx_conditional_linking.h" />
+    <ClInclude Include="include\mfx_d3d11_allocator.h" />
+    <ClInclude Include="include\mfx_d3d_allocator.h" />
+    <ClInclude Include="include\mfx_decode_pipeline_config.h" />
+    <ClInclude Include="include\mfx_default_pipeline_mgr.h" />
+    <ClInclude Include="include\mfx_directory_reader.h" />
+    <ClInclude Include="include\mfx_encode.h" />
+    <ClInclude Include="include\mfx_extended_buffer.h" />
+    <ClInclude Include="include\mfx_extended_buffer_id.h" />
+    <ClInclude Include="include\mfx_factory_chain.h" />
+    <ClInclude Include="include\mfx_factory_default.h" />
+    <ClInclude Include="include\mfx_file_generic.h" />
+    <ClInclude Include="include\mfx_frame_allocator_rw.h" />
+    <ClInclude Include="include\mfx_frame_constructor.h" />
+    <ClInclude Include="include\mfx_frames_drop.h" />
+    <ClInclude Include="include\mfx_lexical_cast.h" />
+    <ClInclude Include="include\mfx_message_notifier.h" />
+    <ClInclude Include="include\mfx_mvc_handler.h" />
+    <ClInclude Include="include\mfx_perfcounter_time.h" />
+    <ClInclude Include="include\mfx_pipeline_config.h" />
+    <ClInclude Include="include\mfx_pipeline_dec.h" />
+    <ClInclude Include="include\mfx_pipeline_defs.h" />
+    <ClInclude Include="include\mfx_pipeline_features.h" />
+    <ClInclude Include="include\mfx_pipeline_manager.h" />
+    <ClInclude Include="include\mfx_pipeline_sync.h" />
+    <ClInclude Include="include\mfx_pipeline_types.h" />
+    <ClInclude Include="include\mfx_pipeline_utils.h" />
+    <ClInclude Include="include\mfx_shared_ptr.h" />
+    <ClInclude Include="include\mfx_singleton.h" />
+    <ClInclude Include="include\mfx_state_generic.h" />
+    <ClInclude Include="include\mfx_surfaces_pool.h" />
+    <ClInclude Include="include\mfx_svc_vpp.h" />
+    <ClInclude Include="include\mfx_sysmem_allocator.h" />
+    <ClInclude Include="include\mfx_timeout.h" />
+    <ClInclude Include="include\mfx_unified_execute_proxy.h" />
+    <ClInclude Include="include\mfx_utility_allocators.h" />
+    <ClInclude Include="include\mfx_video_session.h" />
+    <ClInclude Include="include\mfx_virtualvpp_adapter.h" />
+    <ClInclude Include="include\mfx_vpp.h" />
+    <ClInclude Include="include\mfx_vpp_hw.h" />
+    <ClInclude Include="include\trace_utils.h" />
+    <ClInclude Include="..\..\include\mfxdefs.h" />
+    <ClInclude Include="..\..\include\mfxjpeg.h" />
+    <ClInclude Include="..\..\include\mfxmvc.h" />
+    <ClInclude Include="..\..\include\mfxpcp.h" />
+    <ClInclude Include="..\..\include\mfxplugin++.h" />
+    <ClInclude Include="..\..\include\mfxplugin.h" />
+    <ClInclude Include="..\..\include\mfxstructures.h" />
+    <ClInclude Include="..\..\include\mfxsvc.h" />
+    <ClInclude Include="..\..\include\mfxvideo++.h" />
+    <ClInclude Include="..\..\include\mfxvideo.h" />
+    <ClInclude Include="include\mfx_iadapter.h" />
+    <ClInclude Include="include\mfx_iallocator_factory.h" />
+    <ClInclude Include="include\mfx_ibitstream_converter.h" />
+    <ClInclude Include="include\mfx_ibitstream_reader.h" />
+    <ClInclude Include="include\mfx_ibitstream_writer.h" />
+    <ClInclude Include="include\mfx_iclonebale.h" />
+    <ClInclude Include="include\mfx_icommand.h" />
+    <ClInclude Include="include\mfx_icommand_visitor.h" />
+    <ClInclude Include="include\mfx_ifactory.h" />
+    <ClInclude Include="include\mfx_ifile.h" />
+    <ClInclude Include="include\mfx_ihw_device.h" />
+    <ClInclude Include="include\mfx_imultiple.h" />
+    <ClInclude Include="include\mfx_ipipeline.h" />
+    <ClInclude Include="include\mfx_ipipeline_config.h" />
+    <ClInclude Include="include\mfx_ipipeline_control.h" />
+    <ClInclude Include="include\mfx_ipipeline_sync.h" />
+    <ClInclude Include="include\mfx_iprocess_command.h" />
+    <ClInclude Include="include\mfx_iproxy.h" />
+    <ClInclude Include="include\mfx_irandom.h" />
+    <ClInclude Include="include\mfx_ireflist_ctrl.h" />
+    <ClInclude Include="include\mfx_istate.h" />
+    <ClInclude Include="include\mfx_istring_printer.h" />
+    <ClInclude Include="include\mfx_isurface_cmp.h" />
+    <ClInclude Include="include\mfx_itime.h" />
+    <ClInclude Include="include\mfx_ivideo_encode.h" />
+    <ClInclude Include="include\mfx_ivideo_render.h" />
+    <ClInclude Include="include\mfx_ivideo_session.h" />
+    <ClInclude Include="include\mfx_ivpp.h" />
+    <ClInclude Include="include\mfx_iyuv_source.h" />
+    <ClInclude Include="include\mfx_burst_render.h" />
+    <ClInclude Include="include\mfx_d3d11_device.h" />
+    <ClInclude Include="include\mfx_d3d9_device.h" />
+    <ClInclude Include="include\mfx_dxgidebug_device.h" />
+    <ClInclude Include="include\mfx_fps_limit_render.h" />
+    <ClInclude Include="include\mfx_multi_render.h" />
+    <ClInclude Include="include\mfx_null_render.h" />
+    <ClInclude Include="include\mfx_outline_render.h" />
+    <ClInclude Include="include\mfx_renders.h" />
+    <ClInclude Include="include\mfx_reorder_render.h" />
+    <ClInclude Include="include\mfx_rnd_wrapper.h" />
+    <ClInclude Include="include\mfx_screen_render.h" />
+    <ClInclude Include="include\mfx_separate_files_render.h" />
+    <ClInclude Include="include\mfx_vaapi_device.h" />
+    <ClInclude Include="include\mfx_vaapi_device_android.h" />
+    <ClInclude Include="include\mfx_view_ordered_render.h" />
+    <ClInclude Include="include\vaapi_allocator.h" />
+    <ClInclude Include="include\vaapi_utils.h" />
+    <ClInclude Include="include\video_window.h" />
+    <ClInclude Include="include\xvideo_window.h" />
+    <ClInclude Include="include\mfx_advance_decoder.h" />
+    <ClInclude Include="include\mfx_bitstream_decoder.h" />
+    <ClInclude Include="include\mfx_decoder.h" />
+    <ClInclude Include="include\mfx_jpeg_bs_parser_decoder.h" />
+    <ClInclude Include="include\mfx_latency_decoder.h" />
+    <ClInclude Include="include\mfx_loop_decoder.h" />
+    <ClInclude Include="include\mfx_multi_decoder.h" />
+    <ClInclude Include="include\mfx_mvc_decoder.h" />
+    <ClInclude Include="include\mfx_mvc_target_views_decoder.h" />
+    <ClInclude Include="include\mfx_printinfo_decoder.h" />
+    <ClInclude Include="include\mfx_rotated_decoder.h" />
+    <ClInclude Include="include\mfx_skip_mode_decoder.h" />
+    <ClInclude Include="include\mfx_svc_target_layer_decoder.h" />
+    <ClInclude Include="include\mfx_yuv_decoder.h" />
+    <ClInclude Include="include\mfx_bitrate_limited_reader.h" />
+    <ClInclude Include="include\mfx_bitstream_reader.h" />
+    <ClInclude Include="include\mfx_buffered_bs_reader.h" />
+    <ClInclude Include="include\mfx_exact_frame_bs_reader.h" />
+    <ClInclude Include="include\mfx_lucas_reader.h" />
+    <ClInclude Include="src\mfx_lucas_yuv_reader.h" />
+    <ClInclude Include="include\mfx_multi_reader.h" />
+    <ClInclude Include="include\mfx_spl_wrapper.h" />
+    <ClInclude Include="include\mfx_verbose_spl.h" />
+    <ClInclude Include="include\umc_corruption_reader.h" />
+    <ClInclude Include="include\umc_ivf_splitter.h" />
+    <ClInclude Include="include\mfx_activator_base.h" />
+    <ClInclude Include="include\mfx_commands.h" />
+    <ClInclude Include="include\mfx_commands_initializer.h" />
+    <ClInclude Include="include\mfx_frame_based_activator.h" />
+    <ClInclude Include="include\mfx_pts_based_activator.h" />
+    <ClInclude Include="include\mfx_cmd_option_processor.h" />
+    <ClInclude Include="include\mfx_opt_param_type.h" />
+    <ClInclude Include="include\mfx_serial_collection.h" />
+    <ClInclude Include="include\mfx_serial_core.h" />
+    <ClInclude Include="include\mfx_serial_formater.h" />
+    <ClInclude Include="include\mfx_serializer.h" />
+    <ClInclude Include="include\mfx_svc_serial.h" />
+    <ClInclude Include="include\mfx_crc_writer.h" />
+    <ClInclude Include="include\mfx_null_file_writer.h" />
+    <ClInclude Include="include\mfx_separate_file.h" />
+    <ClInclude Include="include\mfx_metric_calc.h" />
+    <ClInclude Include="include\mfx_msu_adapter.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -1,0 +1,34 @@
+####################################################################################
+#
+# INTEL CORPORATION PROPRIETARY INFORMATION
+# This software is supplied under the terms of a license agreement or nondisclosure
+# agreement with Intel Corporation and may not be copied or disclosed except in
+# accordance with the terms of that agreement
+# Copyright(c) 2010 Intel Corporation. All Rights Reserved.
+#
+####################################################################################
+
+# Importing MFX utilities module
+import mfx_utils
+
+# Importing variables
+Import('mfx_tst_lib_env')
+
+# Creating build environment
+bld_env = mfx_tst_lib_env.Clone()
+bld_env['MFX_CURDIR'] = '#_testsuite/dxva2_dump'
+
+# Setting lists of sources
+local = ['dxva_spy.cpp']
+shared = ['mfx_ddi_enc_dump.cpp']
+
+# Setting directories to place object files
+VariantDir('objs_shared', '#_studio/mfx_lib/shared/src', duplicate = 0)
+
+# Preparing sources for compilation
+sources = mfx_utils.prepare_sources(bld_env, local) + \
+          mfx_utils.attach_prefix('objs_shared', shared)
+
+# Building library
+if bld_env['MFX_PLATFORM'] == 'win':
+  bld_env.StaticLibrary(target = mfx_utils.get_build_name(bld_env, 'dxva2_dump'), source = sources)

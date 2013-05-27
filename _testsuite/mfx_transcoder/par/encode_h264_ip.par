@@ -1,0 +1,10 @@
+CodecType = H264
+GopPicSize = 30
+GopRefDist = 1
+IdrInterval = 1
+RateControlMethod = 1
+NumSlice = 1
+NumRefFrame = 2
+TargetUsage = 1
+CodecProfile = 100
+CodecLevel = 50

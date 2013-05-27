@@ -1,0 +1,98 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="external src">
+      <UniqueIdentifier>{4843cb2b-eaaf-46e8-870f-0b63fcb8c3a2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external src\sample_common">
+      <UniqueIdentifier>{3bd8c4d9-bc26-4d1d-97b3-8033f89279c5}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\dll_main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\msdk_ts.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\msdk_ts_wrap.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\test_blocks.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\test_tools.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\test_trace.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\test_verif.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\test_sample_allocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\samples\sample_common\src\base_allocator.cpp">
+      <Filter>external src\sample_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\samples\sample_common\src\d3d_allocator.cpp">
+      <Filter>external src\sample_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\samples\sample_common\src\d3d_device.cpp">
+      <Filter>external src\sample_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\samples\sample_common\src\d3d11_allocator.cpp">
+      <Filter>external src\sample_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\samples\sample_common\src\d3d11_device.cpp">
+      <Filter>external src\sample_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\samples\sample_common\src\sample_utils.cpp">
+      <Filter>external src\sample_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\samples\sample_common\src\sysmem_allocator.cpp">
+      <Filter>external src\sample_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\samples\sample_common\src\vm\atomic.cpp">
+      <Filter>external src\sample_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\samples\sample_common\src\vm\shared_object.cpp">
+      <Filter>external src\sample_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\samples\sample_common\src\vm\thread.cpp">
+      <Filter>external src\sample_common</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\msdk_ts.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\msdk_ts_blocks.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\test_common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\test_trace.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\test_sample_allocator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

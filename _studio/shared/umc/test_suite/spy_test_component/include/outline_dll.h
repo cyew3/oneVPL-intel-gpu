@@ -1,0 +1,57 @@
+/*//////////////////////////////////////////////////////////////////////////////
+//
+//                  INTEL CORPORATION PROPRIETARY INFORMATION
+//     This software is supplied under the terms of a license agreement or
+//     nondisclosure agreement with Intel Corporation and may not be copied
+//     or disclosed except in accordance with the terms of that agreement.
+//          Copyright(c) 2003-2012 Intel Corporation. All Rights Reserved.
+//
+*/
+
+#ifndef __OUTLINE_DLL_H__
+#define __OUTLINE_DLL_H__
+
+#include "outline.h"
+#include "outline_factory.h"
+
+#if defined(_WIN32) || defined(_WIN64)
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#endif
+
+OutlineFactoryAbstract * GetOutlineFactory()
+{
+#if defined(_WIN32) || defined(_WIN64)
+    HMODULE hModule;
+
+#ifdef _DEBUG
+    hModule = ::LoadLibrary(_T("outline_d.dll"));
+#else
+    hModule = ::LoadLibrary(_T("outline.dll"));
+#endif // _DEBUG
+    
+    if (!hModule)
+        return 0;
+
+    FARPROC func = GetProcAddress(hModule, "GetOutlineFactory");
+
+#else // defined(_WIN32) || defined(_WIN64)
+    typedef double (*func_ptr)(double);
+    func_ptr func;
+
+    void* lib_handle = dlopen("liboutline.so", RTLD_LAZY);
+    if(lib_handle == NULL) {
+       return 0;
+    }
+    dlerror();
+
+    func = (func_ptr)dlsym(lib_handle, "GetOutlineFactory");
+#endif // defined(_WIN32) || defined(_WIN64)
+
+    typedef OutlineFactoryAbstract * (*GetOutlineFactory)();
+    OutlineFactoryAbstract * factory = ((GetOutlineFactory)func)();
+    return factory;
+}
+
+#endif // __OUTLINE_DLL_H__

@@ -1,0 +1,144 @@
+####################################################################################
+#
+# INTEL CORPORATION PROPRIETARY INFORMATION
+# This software is supplied under the terms of a license agreement or nondisclosure
+# agreement with Intel Corporation and may not be copied or disclosed except in
+# accordance with the terms of that agreement
+# Copyright(c) 2010-2012 Intel Corporation. All Rights Reserved.
+#
+####################################################################################
+
+# Importing MFX utilities module
+import mfx_utils
+
+# Importing variables
+Import('mfx_lib_env')
+
+# Creating build environment
+bld_env = mfx_lib_env.Clone()
+bld_env['MFX_CURDIR'] = '#_studio/mfx_lib'
+
+# Setting name of the project
+bld_name = mfx_utils.get_build_name_with_impl_and_arch(bld_env, 'mfx')
+
+# Correcting build environment
+if bld_env['MFX_IMPL'] == 'hw':
+  bld_env.Append(CPPDEFINES='MFX_VA')
+
+if bld_env['MFX_PLATFORM'] == 'win':
+  bld_name = 'lib' + bld_name
+  bld_env.Append(SHLINKFLAGS = ['/def:' + File(bld_env['MFX_CURDIR'] + '/libmfx.def').abspath,
+                                '/implib:' + bld_name + '.lib'])
+elif bld_env['MFX_PLATFORM'] != 'darwin':
+  bld_env.Append(SHLINKFLAGS = ['-Wl,--version-script=' + File(bld_env['MFX_CURDIR'] + '/libmfx.map').abspath])
+
+
+# Setting list of additional include directories
+includes = ['#_studio/mfx_lib/brc/mpeg2/include',
+            '#_studio/mfx_lib/brc/h264/include',
+            '#_studio/mfx_lib/pak/mpeg2/include',
+            '#_studio/mfx_lib/pak/h264/include',
+            '#_studio/mfx_lib/decode/mpeg2/include',
+            '#_studio/mfx_lib/decode/mjpeg/include',
+            '#_studio/mfx_lib/decode/h264/include',
+            '#_studio/mfx_lib/decode/vc1/include',
+            '#_studio/mfx_lib/enc/mpeg2/include',
+            '#_studio/mfx_lib/enc/h264/include',
+            '#_studio/mfx_lib/enc_hw/mpeg2/include',
+            '#_studio/mfx_lib/enc_hw/h264/include',
+            '#_studio/mfx_lib/encode/mpeg2/include',
+            '#_studio/mfx_lib/encode/h264/include',
+            '#_studio/mfx_lib/encode/mjpeg/include',
+            '#_studio/mfx_lib/encode_hw/mpeg2/include',
+            '#_studio/mfx_lib/encode_hw/h264/include',
+            '#_studio/mfx_lib/encode_hw/mjpeg/include',
+            '#_studio/mfx_lib/vpp/include',
+            '#_studio/mfx_lib/scheduler/include',
+            '#_studio/shared/umc/codec/brc/include',
+            '#_studio/shared/umc/codec/mpeg2_dec/include',
+            '#_studio/shared/umc/codec/mpeg2_enc/include',
+            '#_studio/shared/umc/codec/vc1_dec/include',
+            '#_studio/shared/umc/codec/vc1_common/include',
+            '#_studio/shared/umc/codec/vc1_spl/include',
+            '#_studio/shared/umc/codec/h264_enc/include',
+            '#_studio/shared/umc/codec/jpeg_dec/include',
+            '#_studio/shared/umc/codec/jpeg_enc/include',
+            '#_studio/shared/umc/codec/color_space_converter/include']
+bld_env.Append(CPPPATH = includes)
+
+# Optional packages to compile and link with
+if bld_env['MFX_IMPL'] == 'hw' and bld_env['MFX_PLATFORM'] == 'lin':
+  packages = ['libva']
+  mfx_utils.check_and_set_packages(bld_env, packages)
+
+# Setting additional IPP libraries to link with
+#if bld_env['MFX_IMPL'] == 'hw':
+#  if bld_env['MFX_ARCH'] == 'x64':
+#    libs_ipp = Split('ippjmx_l ippvcmx_l ippccmx_l ippcvmx_l ippimx_l ippsmx_l ippcore_l')
+#  else:
+#    libs_ipp = Split('ippjw7_l ippvcw7_l ippccw7_l ippcvw7_l ippiw7_l ippsw7_l ippcore_l')
+#else:
+#  libs_ipp = Split('ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l')
+
+libs_ipp = Split('ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l')
+bld_env.Prepend(LIBS = libs_ipp)
+
+# Setting additional MFX and UMC libraries to link with
+libs = ['mfx_lib_merged',
+        'mfx_lib_merged_${MFX_IMPL}',
+        'umc_codecs_merged_${MFX_IMPL}',
+        'umc_codecs_merged',
+        'umc_io_merged_${MFX_IMPL}',
+        'umc_core_merged',
+        'mfx_trace_${MFX_IMPL}']
+
+impl_lib_env = mfx_lib_env.Clone()
+impl_lib_env['MFX_ACCEL'] = 'MFX_VA'
+bld_env.Prepend(LIBS = mfx_utils.prepare_libs(bld_env, libs))
+
+# Setting lists of sources
+shared1 = ['libmfxsw.cpp',
+           'libmfxsw_async.cpp',
+           'libmfxsw_brc.cpp',
+           'libmfxsw_decode.cpp',
+           'libmfxsw_enc.cpp',
+           'libmfxsw_encode.cpp',
+           'libmfxsw_pak.cpp',
+           'libmfxsw_plugin.cpp',
+           'libmfxsw_query.cpp',
+           'libmfxsw_session.cpp',
+           'libmfxsw_vpp.cpp',
+           'mfx_check_hardware_support.cpp',
+           'mfx_session.cpp',
+           'mfx_user_plugin.cpp']
+shared2 = ['auxiliary_device.cpp',
+           'fast_copy.cpp',
+           'fast_compositing_ddi.cpp',
+           'mfx_vpp_vaapi.cpp',
+           'libmfx_allocator.cpp',
+           'libmfx_allocator_vaapi.cpp',
+           'libmfx_core.cpp',
+           'libmfx_core_factory.cpp',
+           'libmfx_core_vaapi.cpp',
+           'libmfx_core_vdaapi.cpp',
+           'mfx_umc_alloc_wrapper.cpp',
+           'mfx_dxva2_device.cpp']
+
+# Setting directories to place object files
+VariantDir('objs_shared1', '#_studio/mfx_lib/shared/src', duplicate = 0)
+VariantDir('objs_shared2', '#_studio/shared/src', duplicate = 0)
+
+# Preparing sources for compilation
+sources = mfx_utils.attach_prefix('objs_shared1', shared1) + \
+          mfx_utils.attach_prefix('objs_shared2', shared2)
+
+# Compiling library
+if bld_env['MFX_DISPATCHER_CONFIG'] == 'default':
+  library = bld_env.SharedLibrary(target = bld_name, source = sources)
+else:
+  bld_env.SharedLibrary(target = bld_name + bld_env.subst('_'), source = sources) #to prevent linking with shared library
+  library = bld_env.StaticLibrary(target = bld_name, source = sources)
+
+# Installing library
+mfx_utils.install_if_exists(bld_env, library)
+#bld_env.Alias('install', bld_env.Install('$MFX_INSTALL_BIN_DIR', library))

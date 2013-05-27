@@ -1,0 +1,21 @@
+DDI.IntraPredBlockSize = 7  # from DDI
+IntraPredCostType      = 1   # from DDI
+DDI.InterPredBlockSize = 127 # from DDI
+MVPrecision        = 7       # from DDI: 1=interger, 2=halfpel, 4=quarterpel
+MECostType         = 1       # from DDI: 1=SAD
+MESearchType       = 2       # from DDI: 1=full, 2=UMH, 4=LOG, 8=TTS, 16=SQUARE
+MVSearchWindow.X   = 16      # from DDI
+MVSearchWindow.Y   = 16      # from DDI
+MEInterpolationMethod  = 8   # from DDI
+MEFractionalSearchType = 4   # from DDI
+MaxMVs             = 32      # from DDI
+SkipCheck          = 1       # from DDI
+DirectCheck        = 1       # from DDI
+BiDirSearch        = 1       # from DDI
+MBAFF              = 0       # from DDI
+RefOppositeField   = 1       # from DDI
+ChromaInME         = 0       # from DDI
+WeightedPrediction = 0       # from DDI
+MVPrediction       = 1       # from DDI
+RateDistortionOpt  = off     # MediSDK: on/off
+CAVLC              = off     # MediSDK: on=CAVLC, off=CABAC

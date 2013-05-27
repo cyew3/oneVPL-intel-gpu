@@ -1,0 +1,6132 @@
+/* /////////////////////////////////////////////////////////////////////////////
+//
+//                  INTEL CORPORATION PROPRIETARY INFORMATION
+//     This software is supplied under the terms of a license agreement or
+//     nondisclosure agreement with Intel Corporation and may not be copied
+//     or disclosed except in accordance with the terms of that agreement.
+//          Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+//
+//
+//          H264 encoder common
+//
+*/
+
+#include "mfx_common.h"
+
+#if defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW)
+
+#include <limits>
+#include <limits.h>
+
+#include "ippi.h"
+#include "libmfx_core_interface.h"
+#include "libmfx_core_factory.h"
+
+#include "mfx_h264_encode_hw_utils.h"
+
+#include "mfx_brc_common.h"
+#include "mfx_h264_enc_common.h"
+#include "umc_h264_brc.h"
+#include "umc_h264_core_enc.h"
+
+
+using namespace MfxHwH264Encode;
+
+const mfxU32 DEFAULT_CPB_IN_SECONDS = 2000;          //  BufferSizeInBits = DEFAULT_CPB_IN_SECONDS * MaxKbps
+const mfxU32 MAX_BITRATE_RATIO = mfxU32(1.5 * 1000); //  MaxBps = MAX_BITRATE_RATIO * TargetKbps;
+
+namespace
+{
+    static const mfxU8 EXTENDED_SAR = 0xff;
+
+    static const mfxU32 MAX_H_MV = 2048;
+
+    static const struct { mfxU16 w, h; } TABLE_E1[] =
+    {
+        {   0,   0 }, {   1,   1 }, {  12,  11 }, {  10,  11 }, {  16,  11 },
+        {  40,  33 }, {  24,  11 }, {  20,  11 }, {  32,  11 }, {  80,  33 },
+        {  18,  11 }, {  15,  11 }, {  64,  33 }, { 160,  99 }, {   4,   3 },
+        {   3,   2 }, {   2,   1 }
+    };
+
+    const mfxU16 AVBR_ACCURACY_MIN = 1;
+    const mfxU16 AVBR_ACCURACY_MAX = 65535;
+
+    const mfxU16 AVBR_CONVERGENCE_MIN = 1;
+    const mfxU16 AVBR_CONVERGENCE_MAX = 65535;
+
+    bool CheckTriStateOption(mfxU16 & opt)
+    {
+        if (opt != MFX_CODINGOPTION_UNKNOWN &&
+            opt != MFX_CODINGOPTION_ON &&
+            opt != MFX_CODINGOPTION_OFF)
+        {
+            opt = MFX_CODINGOPTION_UNKNOWN;
+            return false;
+        }
+
+        return true;
+    }
+
+    template <class T, class U>
+    bool CheckFlag(T & opt, U deflt)
+    {
+        if (opt > 1)
+        {
+            opt = static_cast<T>(deflt);
+            return false;
+        }
+
+        return true;
+    }
+
+    template <class T, class U>
+    bool CheckRange(T & opt, U min, U max)
+    {
+        if (opt < min)
+        {
+            opt = static_cast<T>(min);
+            return false;
+        }
+
+        if (opt > max)
+        {
+            opt = static_cast<T>(max);
+            return false;
+        }
+
+        return true;
+    }
+
+    template <class T, class U>
+    bool CheckRangeDflt(T & opt, U min, U max, U deflt)
+    {
+        if (opt < static_cast<T>(min) || opt > static_cast<T>(max))
+        {
+            opt = static_cast<T>(deflt);
+            return false;
+        }
+
+        return true;
+    }
+
+    struct FunctionQuery {};
+    struct FunctionInit {};
+
+    template <class T, class U>
+    mfxU32 CheckAgreement(FunctionQuery, T & lowerPriorityValue, U higherPriorityValue)
+    {
+        if (lowerPriorityValue != 0 &&
+            lowerPriorityValue != higherPriorityValue)
+            return lowerPriorityValue = higherPriorityValue, 1;
+        else
+            return 0;
+    }
+
+    template <class T, class U>
+    mfxU32 CheckAgreement(FunctionInit, T & lowerPriorityValue, U higherPriorityValue)
+    {
+        if (lowerPriorityValue == 0)
+            return lowerPriorityValue = higherPriorityValue, 0; // assignment, not a correction
+        else if (lowerPriorityValue != higherPriorityValue)
+            return lowerPriorityValue = higherPriorityValue, 1; // correction
+        else
+            return 0; // already equal
+    }
+
+    bool IsValidCodingLevel(mfxU16 level)
+    {
+        return
+            level == MFX_LEVEL_AVC_1  ||
+            level == MFX_LEVEL_AVC_11 ||
+            level == MFX_LEVEL_AVC_12 ||
+            level == MFX_LEVEL_AVC_13 ||
+            level == MFX_LEVEL_AVC_1b ||
+            level == MFX_LEVEL_AVC_2  ||
+            level == MFX_LEVEL_AVC_21 ||
+            level == MFX_LEVEL_AVC_22 ||
+            level == MFX_LEVEL_AVC_3  ||
+            level == MFX_LEVEL_AVC_31 ||
+            level == MFX_LEVEL_AVC_32 ||
+            level == MFX_LEVEL_AVC_4  ||
+            level == MFX_LEVEL_AVC_41 ||
+            level == MFX_LEVEL_AVC_42 ||
+            level == MFX_LEVEL_AVC_5  ||
+            level == MFX_LEVEL_AVC_51 ||
+            level == MFX_LEVEL_AVC_52;
+    }
+
+    bool IsValidCodingProfile(mfxU16 profile)
+    {
+        return
+            IsAvcBaseProfile(profile)       ||
+            IsAvcHighProfile(profile)       ||
+            IsMvcProfile(profile) && (profile != MFX_PROFILE_AVC_MULTIVIEW_HIGH) || // Multiview high isn't supported by MSDK
+            profile == MFX_PROFILE_AVC_MAIN ||
+            IsSvcProfile(profile);
+    }
+
+    inline mfxU16 GetMaxSupportedLevel()
+    {
+        return MFX_LEVEL_AVC_52;
+    }
+
+    mfxU16 GetNextProfile(mfxU16 profile)
+    {
+        switch (profile)
+        {
+        case MFX_PROFILE_AVC_BASELINE:    return MFX_PROFILE_AVC_MAIN;
+        case MFX_PROFILE_AVC_MAIN:        return MFX_PROFILE_AVC_HIGH;
+        case MFX_PROFILE_AVC_HIGH:        return MFX_PROFILE_UNKNOWN;
+        case MFX_PROFILE_AVC_STEREO_HIGH: return MFX_PROFILE_UNKNOWN;
+        default: assert(!"bad profile");
+            return MFX_PROFILE_UNKNOWN;
+        }
+    }
+
+    mfxU16 GetLevelLimitByDpbSize(mfxVideoParam const & par)
+    {
+        mfxU32 dpbSize = par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height * 3 / 2;
+        dpbSize *= par.mfx.NumRefFrame;
+        assert(dpbSize > 0);
+
+        if (dpbSize <=   152064) return MFX_LEVEL_AVC_1;
+        if (dpbSize <=   345600) return MFX_LEVEL_AVC_11;
+        if (dpbSize <=   912384) return MFX_LEVEL_AVC_12;
+        if (dpbSize <=  1824768) return MFX_LEVEL_AVC_21;
+        if (dpbSize <=  3110400) return MFX_LEVEL_AVC_22;
+        if (dpbSize <=  6912000) return MFX_LEVEL_AVC_31;
+        if (dpbSize <=  7864320) return MFX_LEVEL_AVC_32;
+        if (dpbSize <= 12582912) return MFX_LEVEL_AVC_4;
+        if (dpbSize <= 13369344) return MFX_LEVEL_AVC_42;
+        if (dpbSize <= 42393600) return MFX_LEVEL_AVC_5;
+        if (dpbSize <= 70778880) return MFX_LEVEL_AVC_51;
+
+        return MFX_LEVEL_UNKNOWN;
+    }
+
+    mfxU16 GetLevelLimitByFrameSize(mfxVideoParam const & par)
+    {
+        mfxU32 numMb = par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height / 256;
+
+        if (numMb <=    99) return MFX_LEVEL_AVC_1;
+        if (numMb <=   396) return MFX_LEVEL_AVC_11;
+        if (numMb <=   792) return MFX_LEVEL_AVC_21;
+        if (numMb <=  1620) return MFX_LEVEL_AVC_22;
+        if (numMb <=  3600) return MFX_LEVEL_AVC_31;
+        if (numMb <=  5120) return MFX_LEVEL_AVC_32;
+        if (numMb <=  8192) return MFX_LEVEL_AVC_4;
+        if (numMb <=  8704) return MFX_LEVEL_AVC_42;
+        if (numMb <= 22080) return MFX_LEVEL_AVC_5;
+        if (numMb <= 36864) return MFX_LEVEL_AVC_51;
+
+        return MFX_LEVEL_UNKNOWN;
+    }
+
+    mfxU16 GetLevelLimitByMbps(mfxVideoParam const & par)
+    {
+        mfxU32 numMb = par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height / 256;
+        mfxF64 fR = mfxF64(par.mfx.FrameInfo.FrameRateExtN) / par.mfx.FrameInfo.FrameRateExtD;
+        mfxF64 mbps = numMb * fR;
+
+        if (mbps <=   1485)  return MFX_LEVEL_AVC_1;
+        if (mbps <=   3000)  return MFX_LEVEL_AVC_11;
+        if (mbps <=   6000)  return MFX_LEVEL_AVC_12;
+        if (mbps <=  11880)  return MFX_LEVEL_AVC_13;
+        if (mbps <=  19800)  return MFX_LEVEL_AVC_21;
+        if (mbps <=  20250)  return MFX_LEVEL_AVC_22;
+        if (mbps <=  40500)  return MFX_LEVEL_AVC_3;
+        if (mbps <= 108000)  return MFX_LEVEL_AVC_31;
+        if (mbps <= 216000)  return MFX_LEVEL_AVC_32;
+        if (mbps <= 245760)  return MFX_LEVEL_AVC_4;
+        if (mbps <= 522240)  return MFX_LEVEL_AVC_42;
+        if (mbps <= 589824)  return MFX_LEVEL_AVC_5;
+        if (mbps <= 983040)  return MFX_LEVEL_AVC_51;
+        if (mbps <= 2073600) return MFX_LEVEL_AVC_52;
+
+        return MFX_LEVEL_UNKNOWN;
+    }
+
+    mfxU16 GetLevelLimitByMaxBitrate(mfxU16 profile, mfxU32 kbps)
+    {
+        mfxU32 brFactor = IsAvcHighProfile(profile) ? 1500 : 1200;
+        mfxU32 br = 1000 * kbps;
+
+        if (br <=     64 * brFactor) return MFX_LEVEL_AVC_1;
+        if (br <=    128 * brFactor) return MFX_LEVEL_AVC_1b;
+        if (br <=    192 * brFactor) return MFX_LEVEL_AVC_11;
+        if (br <=    384 * brFactor) return MFX_LEVEL_AVC_12;
+        if (br <=    768 * brFactor) return MFX_LEVEL_AVC_13;
+        if (br <=   2000 * brFactor) return MFX_LEVEL_AVC_2;
+        if (br <=   4000 * brFactor) return MFX_LEVEL_AVC_21;
+        if (br <=  10000 * brFactor) return MFX_LEVEL_AVC_3;
+        if (br <=  14000 * brFactor) return MFX_LEVEL_AVC_31;
+        if (br <=  20000 * brFactor) return MFX_LEVEL_AVC_32;
+        if (br <=  50000 * brFactor) return MFX_LEVEL_AVC_41;
+        if (br <= 135000 * brFactor) return MFX_LEVEL_AVC_5;
+        if (br <= 240000 * brFactor) return MFX_LEVEL_AVC_51;
+
+        return MFX_LEVEL_UNKNOWN;
+    }
+
+    mfxU16 GetLevelLimitByBufferSize(mfxU16 profile, mfxU32 bufferSizeInKb)
+    {
+        mfxU32 brFactor = IsAvcHighProfile(profile) ? 1500 : 1200;
+        mfxU32 bufSize = 8000 * bufferSizeInKb;
+
+        if (bufSize <=    175 * brFactor) return MFX_LEVEL_AVC_1;
+        if (bufSize <=    350 * brFactor) return MFX_LEVEL_AVC_1b;
+        if (bufSize <=    500 * brFactor) return MFX_LEVEL_AVC_11;
+        if (bufSize <=   1000 * brFactor) return MFX_LEVEL_AVC_12;
+        if (bufSize <=   2000 * brFactor) return MFX_LEVEL_AVC_13;
+        if (bufSize <=   4000 * brFactor) return MFX_LEVEL_AVC_21;
+        if (bufSize <=  10000 * brFactor) return MFX_LEVEL_AVC_3;
+        if (bufSize <=  14000 * brFactor) return MFX_LEVEL_AVC_31;
+        if (bufSize <=  20000 * brFactor) return MFX_LEVEL_AVC_32;
+        if (bufSize <=  25000 * brFactor) return MFX_LEVEL_AVC_4;
+        if (bufSize <=  62500 * brFactor) return MFX_LEVEL_AVC_41;
+        if (bufSize <= 135000 * brFactor) return MFX_LEVEL_AVC_5;
+        if (bufSize <= 240000 * brFactor) return MFX_LEVEL_AVC_51;
+
+        return MFX_LEVEL_UNKNOWN;
+    }
+
+    // calculate minimum level required for encoding of input stream (with given resolution and frame rate)
+    // input stream can't be encoded with lower level regardless of any encoding parameters
+    mfxU16 GetMinLevelForResolutionAndFramerate(MfxVideoParam const & par)
+    {
+        mfxExtSpsHeader * extSps = GetExtBuffer(par);
+
+        if (extSps->vui.flags.timingInfoPresent == 0 ||
+            par.mfx.FrameInfo.Width         == 0 ||
+            par.mfx.FrameInfo.Height        == 0 ||
+            par.mfx.FrameInfo.FrameRateExtN == 0 ||
+            par.mfx.FrameInfo.FrameRateExtD == 0)
+        {
+            // input information isn't enough to determine required level
+            return 0;
+        }
+
+        mfxU16 maxSupportedLevel = GetMaxSupportedLevel();
+        mfxU16 level = GetLevelLimitByFrameSize(par);
+
+        if (level == 0 || level == maxSupportedLevel)
+        {
+            // level is already maximum possible, return it
+            return maxSupportedLevel;
+        }
+
+        mfxU16 levelMbps = GetLevelLimitByMbps(par);
+
+        if (levelMbps == 0 || levelMbps == maxSupportedLevel)
+        {
+            // level is already maximum possible, return it
+            return maxSupportedLevel;
+        }
+
+        if (levelMbps > level)
+            level = levelMbps;
+
+        return level;
+    }
+
+    mfxU16 GetMaxNumRefFrame(mfxU16 level, mfxU16 width, mfxU16 height)
+    {
+        mfxU32 maxDpbSize = 0;
+        if (level == MFX_LEVEL_UNKNOWN)
+            level = MFX_LEVEL_AVC_52;
+
+        switch (level)
+        {
+        case MFX_LEVEL_AVC_1 : maxDpbSize =   152064; break;
+        case MFX_LEVEL_AVC_1b: maxDpbSize =   152064; break;
+        case MFX_LEVEL_AVC_11: maxDpbSize =   345600; break;
+        case MFX_LEVEL_AVC_12: maxDpbSize =   912384; break;
+        case MFX_LEVEL_AVC_13: maxDpbSize =   912384; break;
+        case MFX_LEVEL_AVC_2 : maxDpbSize =   912384; break;
+        case MFX_LEVEL_AVC_21: maxDpbSize =  1824768; break;
+        case MFX_LEVEL_AVC_22: maxDpbSize =  3110400; break;
+        case MFX_LEVEL_AVC_3 : maxDpbSize =  3110400; break;
+        case MFX_LEVEL_AVC_31: maxDpbSize =  6912000; break;
+        case MFX_LEVEL_AVC_32: maxDpbSize =  7864320; break;
+        case MFX_LEVEL_AVC_4 : maxDpbSize = 12582912; break;
+        case MFX_LEVEL_AVC_41: maxDpbSize = 12582912; break;
+        case MFX_LEVEL_AVC_42: maxDpbSize = 13369344; break;
+        case MFX_LEVEL_AVC_5 : maxDpbSize = 42393600; break;
+        case MFX_LEVEL_AVC_51: maxDpbSize = 70778880; break;
+        case MFX_LEVEL_AVC_52: maxDpbSize = 70778880; break;
+        default: assert(!"bad CodecLevel");
+        }
+
+        mfxU32 frameSize = width * height * 3 / 2;
+        return mfxU16(IPP_MAX(1, IPP_MIN(maxDpbSize / frameSize, 16)));
+    }
+
+    mfxU16 GetMaxNumRefFrame(mfxVideoParam const & par)
+    {
+        return GetMaxNumRefFrame(par.mfx.CodecLevel, par.mfx.FrameInfo.Width, par.mfx.FrameInfo.Height);
+    }
+
+    mfxU32 GetMaxBitrate(mfxVideoParam const & par)
+    {
+        mfxU32 brFactor = IsAvcHighProfile(par.mfx.CodecProfile) ? 1500 : 1200;
+
+        mfxU16 level = par.mfx.CodecLevel;
+        if (level == MFX_LEVEL_UNKNOWN)
+            level = MFX_LEVEL_AVC_52;
+
+        switch (level)
+        {
+        case MFX_LEVEL_AVC_1 : return     64 * brFactor;
+        case MFX_LEVEL_AVC_1b: return    128 * brFactor;
+        case MFX_LEVEL_AVC_11: return    192 * brFactor;
+        case MFX_LEVEL_AVC_12: return    384 * brFactor;
+        case MFX_LEVEL_AVC_13: return    768 * brFactor;
+        case MFX_LEVEL_AVC_2 : return   2000 * brFactor;
+        case MFX_LEVEL_AVC_21: return   4000 * brFactor;
+        case MFX_LEVEL_AVC_22: return   4000 * brFactor;
+        case MFX_LEVEL_AVC_3 : return  10000 * brFactor;
+        case MFX_LEVEL_AVC_31: return  14000 * brFactor;
+        case MFX_LEVEL_AVC_32: return  20000 * brFactor;
+        case MFX_LEVEL_AVC_4 : return  20000 * brFactor;
+        case MFX_LEVEL_AVC_41: return  50000 * brFactor;
+        case MFX_LEVEL_AVC_42: return  50000 * brFactor;
+        case MFX_LEVEL_AVC_5 : return 135000 * brFactor;
+        case MFX_LEVEL_AVC_51: return 240000 * brFactor;
+        case MFX_LEVEL_AVC_52: return 240000 * brFactor;
+        default: assert(!"bad CodecLevel"); return 0;
+        }
+    }
+
+    mfxU32 GetMaxPerViewBitrate(MfxVideoParam const & par)
+    {
+        mfxU32 brFactor = IsMvcProfile(par.mfx.CodecProfile) ? 1500 :
+            IsAvcHighProfile(par.mfx.CodecProfile) ? 1500 : 1200;
+
+        mfxU16 level = IsMvcProfile(par.mfx.CodecProfile) ? par.calcParam.mvcPerViewPar.codecLevel : par.mfx.CodecLevel;
+        if (level == MFX_LEVEL_UNKNOWN)
+            level = MFX_LEVEL_AVC_52;
+
+        switch (level)
+        {
+        case MFX_LEVEL_AVC_1 : return     64 * brFactor;
+        case MFX_LEVEL_AVC_1b: return    128 * brFactor;
+        case MFX_LEVEL_AVC_11: return    192 * brFactor;
+        case MFX_LEVEL_AVC_12: return    384 * brFactor;
+        case MFX_LEVEL_AVC_13: return    768 * brFactor;
+        case MFX_LEVEL_AVC_2 : return   2000 * brFactor;
+        case MFX_LEVEL_AVC_21: return   4000 * brFactor;
+        case MFX_LEVEL_AVC_22: return   4000 * brFactor;
+        case MFX_LEVEL_AVC_3 : return  10000 * brFactor;
+        case MFX_LEVEL_AVC_31: return  14000 * brFactor;
+        case MFX_LEVEL_AVC_32: return  20000 * brFactor;
+        case MFX_LEVEL_AVC_4 : return  20000 * brFactor;
+        case MFX_LEVEL_AVC_41: return  50000 * brFactor;
+        case MFX_LEVEL_AVC_42: return  50000 * brFactor;
+        case MFX_LEVEL_AVC_5 : return 135000 * brFactor;
+        case MFX_LEVEL_AVC_51: return 240000 * brFactor;
+        case MFX_LEVEL_AVC_52: return 240000 * brFactor;
+        default: assert(!"bad CodecLevel"); return 0;
+        }
+    }
+
+    mfxU32 GetMaxBufferSize(mfxVideoParam const & par)
+    {
+        mfxU32 brFactor = IsAvcHighProfile(par.mfx.CodecProfile) ? 1500 : 1200;
+
+        mfxU16 level = par.mfx.CodecLevel;
+        if (level == MFX_LEVEL_UNKNOWN)
+            level = MFX_LEVEL_AVC_52;
+
+        switch (level)
+        {
+        case MFX_LEVEL_AVC_1 : return    175 * brFactor;
+        case MFX_LEVEL_AVC_1b: return    350 * brFactor;
+        case MFX_LEVEL_AVC_11: return    500 * brFactor;
+        case MFX_LEVEL_AVC_12: return   1000 * brFactor;
+        case MFX_LEVEL_AVC_13: return   2000 * brFactor;
+        case MFX_LEVEL_AVC_2 : return   2000 * brFactor;
+        case MFX_LEVEL_AVC_21: return   4000 * brFactor;
+        case MFX_LEVEL_AVC_22: return   4000 * brFactor;
+        case MFX_LEVEL_AVC_3 : return  10000 * brFactor;
+        case MFX_LEVEL_AVC_31: return  14000 * brFactor;
+        case MFX_LEVEL_AVC_32: return  20000 * brFactor;
+        case MFX_LEVEL_AVC_4 : return  25000 * brFactor;
+        case MFX_LEVEL_AVC_41: return  62500 * brFactor;
+        case MFX_LEVEL_AVC_42: return  62500 * brFactor;
+        case MFX_LEVEL_AVC_5 : return 135000 * brFactor;
+        case MFX_LEVEL_AVC_51: return 240000 * brFactor;
+        case MFX_LEVEL_AVC_52: return 240000 * brFactor;
+        default: assert(!"bad CodecLevel"); return 0;
+        }
+    }
+
+    mfxU32 GetMaxPerViewBufferSize(MfxVideoParam const & par)
+    {
+        mfxU32 brFactor = IsMvcProfile(par.mfx.CodecProfile) ? 1500 :
+            IsAvcHighProfile(par.mfx.CodecProfile) ? 1500 : 1200;
+
+        mfxU16 level = IsMvcProfile(par.mfx.CodecProfile) ? par.calcParam.mvcPerViewPar.codecLevel : par.mfx.CodecLevel;
+        if (level == MFX_LEVEL_UNKNOWN)
+            level = MFX_LEVEL_AVC_52;
+
+        switch (level)
+        {
+        case MFX_LEVEL_AVC_1 : return    175 * brFactor;
+        case MFX_LEVEL_AVC_1b: return    350 * brFactor;
+        case MFX_LEVEL_AVC_11: return    500 * brFactor;
+        case MFX_LEVEL_AVC_12: return   1000 * brFactor;
+        case MFX_LEVEL_AVC_13: return   2000 * brFactor;
+        case MFX_LEVEL_AVC_2 : return   2000 * brFactor;
+        case MFX_LEVEL_AVC_21: return   4000 * brFactor;
+        case MFX_LEVEL_AVC_22: return   4000 * brFactor;
+        case MFX_LEVEL_AVC_3 : return  10000 * brFactor;
+        case MFX_LEVEL_AVC_31: return  14000 * brFactor;
+        case MFX_LEVEL_AVC_32: return  20000 * brFactor;
+        case MFX_LEVEL_AVC_4 : return  25000 * brFactor;
+        case MFX_LEVEL_AVC_41: return  62500 * brFactor;
+        case MFX_LEVEL_AVC_42: return  62500 * brFactor;
+        case MFX_LEVEL_AVC_5 : return 135000 * brFactor;
+        case MFX_LEVEL_AVC_51: return 240000 * brFactor;
+        case MFX_LEVEL_AVC_52: return 240000 * brFactor;
+        default: assert(!"bad CodecLevel"); return 0;
+        }
+    }
+
+
+    mfxU32 GetMaxMbps(mfxVideoParam const & par)
+    {
+        switch (par.mfx.CodecLevel)
+        {
+        case MFX_LEVEL_AVC_1 :
+        case MFX_LEVEL_AVC_1b: return   1485;
+        case MFX_LEVEL_AVC_11: return   3000;
+        case MFX_LEVEL_AVC_12: return   6000;
+        case MFX_LEVEL_AVC_13:
+        case MFX_LEVEL_AVC_2 : return  11800;
+        case MFX_LEVEL_AVC_21: return  19800;
+        case MFX_LEVEL_AVC_22: return  20250;
+        case MFX_LEVEL_AVC_3 : return  40500;
+        case MFX_LEVEL_AVC_31: return 108000;
+        case MFX_LEVEL_AVC_32: return 216000;
+        case MFX_LEVEL_AVC_4 :
+        case MFX_LEVEL_AVC_41: return 245760;
+        case MFX_LEVEL_AVC_42: return 522240;
+        case MFX_LEVEL_AVC_5 : return 589824;
+        case MFX_LEVEL_AVC_51: return 983040;
+        case MFX_LEVEL_AVC_52: return 2073600;
+        default: assert(!"bad CodecLevel"); return 0;
+        }
+    }
+
+    mfxU32 GetMinCr(mfxU32 level)
+    {
+        return level >= MFX_LEVEL_AVC_31 && level <= MFX_LEVEL_AVC_4 ? 4 : 2;
+    }
+
+    mfxU32 GetFirstMaxFrameSize(mfxVideoParam const & par)
+    {
+        mfxU32 picSizeInMbs = par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height / 256;
+        return 384 * IPP_MAX(picSizeInMbs, GetMaxMbps(par) / 172) / GetMinCr(par.mfx.CodecLevel);
+    }
+
+    mfxU32 GetMaxFrameSize(mfxVideoParam const & par)
+    {
+        mfxF64 frameRate = mfxF64(par.mfx.FrameInfo.FrameRateExtN) / par.mfx.FrameInfo.FrameRateExtD;
+        return mfxU32(384 * GetMaxMbps(par) / frameRate / GetMinCr(par.mfx.CodecLevel));
+    }
+
+    mfxU32 GetMaxVmv(mfxU32 level)
+    {
+        switch (level)
+        {
+        case MFX_LEVEL_AVC_1 :
+        case MFX_LEVEL_AVC_1b: return  64;
+        case MFX_LEVEL_AVC_11:
+        case MFX_LEVEL_AVC_12:
+        case MFX_LEVEL_AVC_13:
+        case MFX_LEVEL_AVC_2 : return 128;
+        case MFX_LEVEL_AVC_21:
+        case MFX_LEVEL_AVC_22:
+        case MFX_LEVEL_AVC_3 : return 256;
+        case MFX_LEVEL_AVC_31:
+        case MFX_LEVEL_AVC_32:
+        case MFX_LEVEL_AVC_4 :
+        case MFX_LEVEL_AVC_41:
+        case MFX_LEVEL_AVC_42:
+        case MFX_LEVEL_AVC_5 :
+        case MFX_LEVEL_AVC_51:
+        case MFX_LEVEL_AVC_52: return 512;
+        default: assert(!"bad CodecLevel"); return 0;
+        }
+    }
+
+    mfxU16 GetDefaultAsyncDepth(MfxVideoParam const & par)
+    {
+        mfxExtCodingOptionDDI const * extDdi  = GetExtBuffer(par);
+        mfxExtCodingOption2 const *   extOpt2 = GetExtBuffer(par);
+
+        if (par.mfx.EncodedOrder)
+            return 1;
+
+        if (IsOn(extDdi->SwBrc) || IsOn(extOpt2->ExtBRC))
+            if (extDdi->LookAhead <= 1)
+                return 1;
+
+        mfxU32 picSize = par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height;
+        if (picSize < 200000)
+            return 6; // CIF
+        else if (picSize < 500000)
+            return 5; // SD
+        else if (picSize < 900000)
+            return 4; // between SD and HD
+        else
+            return 3; // HD
+    }
+
+    mfxU8 GetDefaultPicOrderCount(MfxVideoParam const & par)
+    {
+        if (par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
+            return 0;
+        if (par.mfx.GopRefDist > 1)
+            return 0;
+
+        if (par.calcParam.numTemporalLayer > 1)
+        {
+            if (par.mfx.NumRefFrame < par.calcParam.scale[par.calcParam.numTemporalLayer - 2])
+                return 0; // more than 1 consecutive non-reference frames
+
+            if (par.calcParam.scale[par.calcParam.numTemporalLayer - 1] /
+                par.calcParam.scale[par.calcParam.numTemporalLayer - 2] > 2)
+                return 0; // more than 1 consecutive non-reference frames
+        }
+
+        return 2;
+    }
+
+    mfxU8 GetDefaultLog2MaxPicOrdCntMinus4(MfxVideoParam const & par)
+    {
+        mfxU32 numReorderFrames = GetNumReorderFrames(par);
+        mfxU32 maxPocDiff = (numReorderFrames * par.mfx.GopRefDist + 1) * 2;
+
+        if (par.calcParam.numTemporalLayer > 0 || par.calcParam.lyncMode)
+        {
+            mfxU32 maxScale = par.calcParam.scale[par.calcParam.numTemporalLayer - 1];
+            // for Lync number of temporal layers should be changed dynamically w/o IDR insertion
+            // to assure this first SPS in bitstream should contain maximum possible log2_max_frame_num_minus4
+            if (par.calcParam.lyncMode)
+                maxScale = 8; // 8 is maximum scale for 4 temporal layers
+
+            maxPocDiff = IPP_MAX(maxPocDiff, 2 * maxScale);
+        }
+
+        mfxU32 log2MaxPoc = CeilLog2(2 * maxPocDiff - 1);
+        return mfxU8(IPP_MAX(log2MaxPoc, 4) - 4);
+    }
+
+    mfxU16 GetDefaultGopRefDist(mfxU32 targetUsage, eMFXHWType platform)
+    {
+        if(platform == MFX_HW_VLV){
+            const mfxU16 DEFAUILT_GOP_REF_DIST[8] = { 3, 3, 2, 2, 1, 1, 1 };
+            assert(targetUsage > 0 && targetUsage < 8);
+            return DEFAUILT_GOP_REF_DIST[targetUsage - 1];
+        }else{
+            return 3;
+        }
+        /*
+        
+        */
+    }
+
+    mfxU16 GetDefaultNumRefFrames(mfxU32 targetUsage)
+    {
+        mfxU16 const DEFAULT_BY_TU[] = { 0, 3, 3, 3, 2, 1, 1, 1 };
+        return DEFAULT_BY_TU[targetUsage];
+    }
+
+    mfxU16 GetDefaultMaxNumRefActivePL0(mfxU32 targetUsage, eMFXHWType platform)
+    {
+        if (platform == MFX_HW_IVB || platform == MFX_HW_VLV)
+            return 1;
+        else
+        {
+            mfxU16 const DEFAULT_BY_TU[] = { 0, 8, 6, 4, 3, 2, 1, 1 };
+            return DEFAULT_BY_TU[targetUsage];
+        }
+    }
+
+    mfxU16 GetDefaultMaxNumRefActiveBL0(mfxU32 targetUsage, eMFXHWType platform)
+    {
+        if (platform == MFX_HW_IVB || platform == MFX_HW_VLV)
+            return 1;
+        else
+        {
+            mfxU16 const DEFAULT_BY_TU[] = { 0, 4, 4, 3, 2, 2, 1, 1 };
+            return DEFAULT_BY_TU[targetUsage];
+        }
+    }
+
+    mfxU16 GetDefaultMaxNumRefActiveBL1(mfxU32 targetUsage, eMFXHWType platform)
+    {
+        platform; targetUsage;
+        return 1; // currently driver 15.31 support only 1 L1 reference for both IVB and HSW
+        //mfxU16 const DEFAULT_BY_TU[] = { 2, 2, 2, 2, 2, 2, 1, 1 };
+        //return DEFAULT_BY_TU[targetUsage];
+    }
+
+    mfxU16 GetDefaultIntraPredBlockSize(
+        MfxVideoParam const & par,
+        eMFXHWType            platform)
+    {
+        mfxU8 minTUForTransform8x8 = (platform <= MFX_HW_IVB || platform == MFX_HW_VLV) ? 4 : 7;
+        return (IsAvcBaseProfile(par.mfx.CodecProfile)       ||
+            par.mfx.CodecProfile == MFX_PROFILE_AVC_MAIN ||
+            par.mfx.TargetUsage > minTUForTransform8x8)
+                ? mfxU16(MFX_BLOCKSIZE_MIN_16X16)
+                : mfxU16(MFX_BLOCKSIZE_MIN_4X4);
+    }
+
+    mfxU32 GetCpbSizeValue(mfxU32 kbyte, mfxU32 scale)
+    {
+        return (8000 * kbyte) >> (4 + scale);
+    }
+
+    mfxU32 GetUncompressedSizeInKb(mfxVideoParam const & par)
+    {
+        mfxU64 mvcMultiplier = 1;
+        if (IsMvcProfile(par.mfx.CodecProfile))
+        {
+            mfxExtMVCSeqDesc * extMvc = GetExtBuffer(par);
+            mfxExtCodingOption * extOpt = GetExtBuffer(par);
+            if (extOpt->ViewOutput != MFX_CODINGOPTION_ON) // in case of ViewOutput bitstream should contain one view (not all views)
+                mvcMultiplier = extMvc->NumView ? extMvc->NumView : 1;
+        }
+
+        return mfxU32(IPP_MIN(UINT_MAX, par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height * mvcMultiplier * 3u / 2000u));
+    }
+
+    // aya:
+
+    // AYA:FillSpsBuffer()
+
+    // aya:
+
+    // aya:
+
+    // aya:
+
+   // aya: Convert
+
+ // aya:FillSliceBuffer
+
+    mfxU32 CheckAgreementOfFrameRate(
+        FunctionQuery,
+        mfxU32 & frameRateExtN,
+        mfxU32 & frameRateExtD,
+        mfxU32   timeScale,
+        mfxU32   numUnitsInTick)
+    {
+        if (frameRateExtN != 0 &&
+            frameRateExtD != 0 &&
+            mfxU64(frameRateExtN) * numUnitsInTick * 2 != mfxU64(frameRateExtD) * timeScale)
+        {
+            frameRateExtN = timeScale;
+            frameRateExtD = numUnitsInTick * 2;
+            return 1;
+        }
+
+        return 0;
+    }
+
+    mfxU32 CheckAgreementOfFrameRate(
+        FunctionInit,
+        mfxU32 & frameRateExtN,
+        mfxU32 & frameRateExtD,
+        mfxU32   timeScale,
+        mfxU32   numUnitsInTick)
+    {
+        if (frameRateExtN == 0 || frameRateExtD == 0)
+        {
+            frameRateExtN = timeScale;
+            frameRateExtD = numUnitsInTick * 2;
+            return 0; // initialized, no error
+        }
+        else if (mfxU64(frameRateExtN) * numUnitsInTick * 2 != mfxU64(frameRateExtD) * timeScale)
+        {
+            frameRateExtN = timeScale;
+            frameRateExtD = numUnitsInTick * 2;
+            return 1; // modified
+        }
+        else
+        {
+            return 0; // equal, no error
+        }
+    }
+
+    template <class TFunc>
+    bool CheckAgreementOfSequenceLevelParameters(MfxVideoParam & par, mfxExtSpsHeader const & sps)
+    {
+        mfxU32 changed = 0;
+
+        mfxFrameInfo & fi = par.mfx.FrameInfo;
+
+        TFunc f;
+
+        changed |= CheckAgreement(f, par.mfx.CodecProfile, sps.profileIdc);
+        changed |= CheckAgreement(f, par.mfx.CodecLevel,   sps.levelIdc);
+        changed |= CheckAgreement(f, par.mfx.NumRefFrame,  sps.maxNumRefFrames);
+        changed |= CheckAgreement(f, fi.ChromaFormat,      sps.chromaFormatIdc);
+
+        mfxU16 const cropUnitX = CROP_UNIT_X[fi.ChromaFormat];
+        mfxU16 const cropUnitY = CROP_UNIT_Y[fi.ChromaFormat] * (2 - sps.frameMbsOnlyFlag);
+
+        changed |= CheckAgreement(f, fi.Width,     mfxU16(16 * (sps.picWidthInMbsMinus1 + 1)));
+        changed |= CheckAgreement(f, fi.Height,    mfxU16(16 * (sps.picHeightInMapUnitsMinus1 + 1) * (2 - sps.frameMbsOnlyFlag)));
+        changed |= CheckAgreement(f, fi.PicStruct, mfxU16(sps.frameMbsOnlyFlag ? mfxU16(MFX_PICSTRUCT_PROGRESSIVE) : fi.PicStruct));
+        changed |= CheckAgreement(f, fi.CropX,     mfxU16(sps.frameCropLeftOffset * cropUnitX));
+        changed |= CheckAgreement(f, fi.CropY,     mfxU16(sps.frameCropTopOffset * cropUnitY));
+        changed |= CheckAgreement(f, fi.CropW,     mfxU16(fi.Width  - (sps.frameCropLeftOffset + sps.frameCropRightOffset) * cropUnitX));
+        changed |= CheckAgreement(f, fi.CropH,     mfxU16(fi.Height - (sps.frameCropTopOffset  + sps.frameCropBottomOffset) * cropUnitY));
+
+        if (sps.vuiParametersPresentFlag)
+        {
+            if (sps.vui.flags.timingInfoPresent)
+                changed |= CheckAgreementOfFrameRate(f, fi.FrameRateExtN, fi.FrameRateExtD, sps.vui.timeScale, sps.vui.numUnitsInTick);
+
+            if (sps.vui.flags.aspectRatioInfoPresent)
+            {
+                AspectRatioConverter arConv(sps.vui.aspectRatioIdc, sps.vui.sarWidth, sps.vui.sarHeight);
+                changed |= CheckAgreement(f, fi.AspectRatioW, arConv.GetSarWidth());
+                changed |= CheckAgreement(f, fi.AspectRatioH, arConv.GetSarHeight());
+            }
+
+            if (sps.vui.flags.nalHrdParametersPresent)
+            {
+                mfxU16 rcmethod   = sps.vui.nalHrdParameters.cbrFlag[0] ? mfxU16(MFX_RATECONTROL_CBR) : mfxU16(MFX_RATECONTROL_VBR);
+                mfxU16 maxkbps    = mfxU16(((
+                    (sps.vui.nalHrdParameters.bitRateValueMinus1[0] + 1) <<
+                    (6 + sps.vui.nalHrdParameters.bitRateScale)) + 999) / 1000);
+                mfxU16 buffersize = mfxU16((((sps.vui.nalHrdParameters.cpbSizeValueMinus1[0] + 1) <<
+                    (4 + sps.vui.nalHrdParameters.cpbSizeScale)) + 7999) / 8000);
+
+                changed |= CheckAgreement(f, par.mfx.RateControlMethod,    rcmethod);
+                changed |= CheckAgreement(f, par.calcParam.maxKbps,        maxkbps);
+                changed |= CheckAgreement(f, par.calcParam.bufferSizeInKB, buffersize);
+
+            }
+        }
+
+        mfxExtCodingOption * extOpt = GetExtBuffer(par);
+        mfxU16 picTimingSei = sps.vui.flags.picStructPresent
+            ? mfxU16(MFX_CODINGOPTION_ON)
+            : mfxU16(MFX_CODINGOPTION_OFF);
+        mfxU16 vuiNalHrdParameters = sps.vui.flags.nalHrdParametersPresent
+            ? mfxU16(MFX_CODINGOPTION_ON)
+            : mfxU16(MFX_CODINGOPTION_OFF);
+        mfxU16 vuiVclHrdParameters = sps.vui.flags.vclHrdParametersPresent
+            ? mfxU16(MFX_CODINGOPTION_ON)
+            : mfxU16(MFX_CODINGOPTION_OFF);
+
+        if (sps.vui.flags.bitstreamRestriction)
+            changed |= CheckAgreement(f, extOpt->MaxDecFrameBuffering, sps.vui.maxDecFrameBuffering);
+
+        changed |= CheckAgreement(f, extOpt->PicTimingSEI,         picTimingSei);
+        changed |= CheckAgreement(f, extOpt->VuiNalHrdParameters,  vuiNalHrdParameters);
+        changed |= CheckAgreement(f, extOpt->VuiVclHrdParameters,  vuiVclHrdParameters);
+
+        return changed == 0;
+    }
+
+    template <class TFunc>
+    bool CheckAgreementOfPictureLevelParameters(mfxVideoParam & par, mfxExtPpsHeader const & pps)
+    {
+        mfxU32 changed = 0;
+
+        mfxExtCodingOption * extOpt = GetExtBuffer(par);
+
+        mfxU16 intraPredBlockSize = pps.transform8x8ModeFlag
+            ? mfxU16(MFX_BLOCKSIZE_MIN_8X8)
+            : mfxU16(MFX_BLOCKSIZE_MIN_16X16);
+        mfxU16 cavlc = pps.entropyCodingModeFlag
+            ? mfxU16(MFX_CODINGOPTION_OFF)
+            : mfxU16(MFX_CODINGOPTION_ON);
+
+        TFunc f;
+
+        changed |= CheckAgreement(f, extOpt->IntraPredBlockSize, intraPredBlockSize);
+        changed |= CheckAgreement(f, extOpt->CAVLC,              cavlc);
+
+        return changed == 0;
+    }
+
+    template <class T>
+    void InheritOption(T optInit, T & optReset)
+    {
+        if (optReset == 0)
+            optReset = optInit;
+    }
+}
+
+mfxU32 MfxHwH264Encode::CalcNumSurfRaw(MfxVideoParam const & video)
+{
+    mfxExtCodingOptionDDI * extDdi = GetExtBuffer(video);
+
+    if (video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+        return video.AsyncDepth + video.mfx.GopRefDist - 1 + extDdi->LookAhead +
+            (IsOn(extDdi->RefRaw) ? video.mfx.NumRefFrame : 0);
+    else
+        return 0;
+}
+
+mfxU32 MfxHwH264Encode::CalcNumSurfRecon(MfxVideoParam const & video)
+{
+    mfxExtCodingOptionDDI * extDdi = GetExtBuffer(video);
+
+    if (IsOn(extDdi->RefRaw))
+        return video.mfx.NumRefFrame + (video.AsyncDepth - 1) +
+            (video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY ? video.mfx.GopRefDist : 1);
+    else
+        return video.mfx.NumRefFrame + video.AsyncDepth;
+}
+
+mfxU32 MfxHwH264Encode::CalcNumSurfBitstream(MfxVideoParam const & video)
+{
+    return (IsFieldCodingPossible(video) ? video.AsyncDepth * 2 : video.AsyncDepth);
+}
+
+mfxU16 MfxHwH264Encode::GetBufferingDepth(MfxVideoParam const & video)
+{
+    mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(video);
+
+    mfxU32 depth = video.mfx.GopRefDist;
+
+    if (extDdi->LookAhead > 0)
+        depth += extDdi->LookAhead - 1;
+
+    depth += (video.mfx.GopOptFlag & 4) ? (video.mfx.GopRefDist + 10) : 0;
+
+    // more surfaces for async mode
+    depth += video.AsyncDepth - 1;
+
+    // one additional surface for async mode if lookahead is enabled
+    if (video.AsyncDepth > 1)
+        depth += !!(extDdi->LookAhead > 1);
+
+    assert(depth <= 128);
+
+    return mfxU16(depth);
+}
+
+mfxU8 MfxHwH264Encode::GetNumReorderFrames(MfxVideoParam const & video)
+{
+    mfxExtCodingOptionDDI * extDdi = GetExtBuffer(video);
+    mfxU8 numReorderFrames = video.mfx.GopRefDist > 1 ? 1 : 0;
+
+    if (video.mfx.GopRefDist > 2 && extDdi->BiPyramid == 1)
+    {
+        numReorderFrames = (mfxU8)IPP_MAX(CeilLog2(video.mfx.GopRefDist - 1), 1);
+    }
+
+    return numReorderFrames;
+}
+
+mfxU32 MfxHwH264Encode::CalcNumTasks(MfxVideoParam const & video)
+{
+    assert(video.mfx.GopRefDist > 0);
+    assert(video.AsyncDepth > 0);
+    mfxExtCodingOptionDDI * extDdi = GetExtBuffer(video);
+
+    return video.mfx.GopRefDist + (video.AsyncDepth - 1) + extDdi->LookAhead +
+        (IsOn(extDdi->RefRaw) ? video.mfx.NumRefFrame : 0);
+}
+
+mfxI64 MfxHwH264Encode::CalcDTSFromPTS(
+    mfxFrameInfo const & info,
+    mfxU16               dpbOutputDelay,
+    mfxU64               timeStamp)
+{
+    if (timeStamp != MFX_TIMESTAMP_UNKNOWN)
+    {
+        mfxF64 tcDuration90KHz = (mfxF64)info.FrameRateExtD / (info.FrameRateExtN * 2) * 90000; // calculate tick duration
+        return mfxI64(timeStamp - tcDuration90KHz * dpbOutputDelay); // calculate DTS from PTS
+    }
+    
+    return MFX_TIMESTAMP_UNKNOWN;
+}
+
+mfxU32 MfxHwH264Encode::GetMaxBitrateValue(mfxU32 kbps, mfxU32 scale)
+{
+    return (1000 * kbps) >> (6 + scale);
+}
+
+mfxU8 MfxHwH264Encode::GetCabacInitIdc(mfxU32 targetUsage)
+{
+    targetUsage;
+    assert(targetUsage >= 1);
+    assert(targetUsage <= 7);
+    //const mfxU8 CABAC_INIT_IDC_TABLE[] = { 0, 2, 2, 1, 0, 0, 0, 0 };
+    return 0;
+    //return CABAC_INIT_IDC_TABLE[targetUsage];
+}
+
+// determine and return mode of Query operation (valid modes are 1, 2, 3, 4 - see MSDK spec for details)
+mfxStatus MfxHwH264Encode::DetermineQueryMode(mfxVideoParam * in,  mfxVideoParam * out, mfxU32 & mode)
+{
+    MFX_CHECK_NULL_PTR1(out);
+
+    if (in == 0)
+        mode = 1;
+    else
+    {
+        mfxExtEncoderCapability * caps = (mfxExtEncoderCapability*)MfxHwH264Encode::GetExtBuffer(
+            out->ExtParam,
+            out->NumExtParam,
+            MFX_EXTBUFF_ENCODER_CAPABILITY);
+        mfxExtEncoderResetOption * resetOpt = (mfxExtEncoderResetOption*)MfxHwH264Encode::GetExtBuffer(
+            in->ExtParam,
+            in->NumExtParam,
+            MFX_EXTBUFF_ENCODER_RESET_OPTION);
+        if (caps)
+        {
+            if (/*out->NumExtParam > 1 ||*/ resetOpt)
+            {
+                // attached mfxExtEncoderCapability indicates mode 4. In this mode no other ext buffers should be attached to out.
+                // attached mfxExtEncoderResetOption indicates mode 3. It can't be combined with mode 3.
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            }
+
+            mode = 4;
+        }else if (resetOpt)
+            mode = 3;
+        else
+            mode = 2;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MfxHwH264Encode::QueryHwCaps(VideoCORE* core, ENCODE_CAPS & hwCaps, GUID guid)
+{
+    std::auto_ptr<DriverEncoder> ddi;
+
+    ddi.reset(CreatePlatformH264Encoder(core));
+    if (ddi.get() == 0)
+        return Error(MFX_ERR_DEVICE_FAILED);
+
+    mfxStatus sts = ddi->CreateAuxilliaryDevice(core, guid, 640, 480, true);
+    MFX_CHECK_STS(sts);
+
+    sts = ddi->QueryEncodeCaps(hwCaps);
+    MFX_CHECK_STS(sts);
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MfxHwH264Encode::QueryMbProcRate(VideoCORE* core, mfxVideoParam const & par, mfxU32 (&mbPerSec)[16], GUID guid)
+{
+    std::auto_ptr<DriverEncoder> ddi;
+
+    ddi.reset(CreatePlatformH264Encoder(core));
+    if (ddi.get() == 0)
+        return Error(MFX_ERR_DEVICE_FAILED);
+
+    mfxStatus sts = ddi->CreateAuxilliaryDevice(core, guid, 640, 480, true);
+    MFX_CHECK_STS(sts);
+
+    sts = ddi->QueryMbPerSec(par, mbPerSec);
+    MFX_CHECK_STS(sts);
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MfxHwH264Encode::ReadSpsPpsHeaders(MfxVideoParam & par)
+{
+    mfxExtCodingOptionSPSPPS * extBits = GetExtBuffer(par);
+
+    try
+    {
+        if (extBits->SPSBuffer)
+        {
+            InputBitstream reader(extBits->SPSBuffer, extBits->SPSBufSize);
+            mfxExtSpsHeader * extSps = GetExtBuffer(par);
+            ReadSpsHeader(reader, *extSps);
+
+            if (extBits->PPSBuffer)
+            {
+                InputBitstream reader(extBits->PPSBuffer, extBits->PPSBufSize);
+                mfxExtPpsHeader * extPps = GetExtBuffer(par);
+                ReadPpsHeader(reader, *extSps, *extPps);
+            }
+        }
+    }
+    catch (std::exception &)
+    {
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxU16 MfxHwH264Encode::GetFrameWidth(MfxVideoParam & par)
+{
+    mfxExtCodingOptionSPSPPS * extBits = GetExtBuffer(par);
+    if (extBits->SPSBuffer)
+    {
+        mfxExtSpsHeader * extSps = GetExtBuffer(par);
+        return mfxU16(16 * (extSps->picWidthInMbsMinus1 + 1));
+    }
+    else
+    {
+        return par.mfx.FrameInfo.Width;
+    }
+}
+
+mfxU16 MfxHwH264Encode::GetFrameHeight(MfxVideoParam & par)
+{
+    mfxExtCodingOptionSPSPPS * extBits = GetExtBuffer(par);
+    if (extBits->SPSBuffer)
+    {
+        mfxExtSpsHeader * extSps = GetExtBuffer(par);
+        return mfxU16(16 * (extSps->picHeightInMapUnitsMinus1 + 1) * (2 - extSps->frameMbsOnlyFlag));
+    }
+    else
+    {
+        return par.mfx.FrameInfo.Height;
+    }
+}
+
+
+mfxStatus MfxHwH264Encode::CorrectCropping(MfxVideoParam& par)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    mfxU16 horzCropUnit = CROP_UNIT_X[par.mfx.FrameInfo.ChromaFormat];
+    mfxU16 vertCropUnit = CROP_UNIT_Y[par.mfx.FrameInfo.ChromaFormat];
+    vertCropUnit *= IsFieldCodingPossible(par) ? 2 : 1;
+
+    mfxU16 misalignment = par.mfx.FrameInfo.CropX & (horzCropUnit - 1);
+    if (misalignment > 0)
+    {
+        par.mfx.FrameInfo.CropX += horzCropUnit - misalignment;
+        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+
+        if (par.mfx.FrameInfo.CropW >= horzCropUnit - misalignment)
+            par.mfx.FrameInfo.CropW -= horzCropUnit - misalignment;
+        else
+            par.mfx.FrameInfo.CropW = 0;
+    }
+
+    misalignment = par.mfx.FrameInfo.CropW & (horzCropUnit - 1);
+    if (misalignment > 0)
+    {
+        par.mfx.FrameInfo.CropW = par.mfx.FrameInfo.CropW - misalignment;
+        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    }
+
+    misalignment = par.mfx.FrameInfo.CropY & (vertCropUnit - 1);
+    if (misalignment > 0)
+    {
+        par.mfx.FrameInfo.CropY += vertCropUnit - misalignment;
+        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+
+        if (par.mfx.FrameInfo.CropH >= vertCropUnit - misalignment)
+            par.mfx.FrameInfo.CropH -= vertCropUnit - misalignment;
+        else
+            par.mfx.FrameInfo.CropH = 0;
+    }
+
+    misalignment = par.mfx.FrameInfo.CropH & (vertCropUnit - 1);
+    if (misalignment > 0)
+    {
+        par.mfx.FrameInfo.CropH = par.mfx.FrameInfo.CropH - misalignment;
+        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    }
+
+    return sts;
+}
+
+bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
+{
+    return
+        id == MFX_EXTBUFF_CODING_OPTION             ||
+        id == MFX_EXTBUFF_CODING_OPTION_SPSPPS      ||
+        id == MFX_EXTBUFF_DDI                       ||
+        id == MFX_EXTBUFF_DUMP                      ||
+        id == MFX_EXTBUFF_PAVP_OPTION               ||
+        id == MFX_EXTBUFF_MVC_SEQ_DESC              ||
+        id == MFX_EXTBUFF_VIDEO_SIGNAL_INFO         ||
+        id == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION ||
+        id == MFX_EXTBUFF_PICTURE_TIMING_SEI        ||
+        id == MFX_EXTBUFF_AVC_TEMPORAL_LAYERS       ||
+//  Intra refresh {
+        id == MFX_EXTBUFF_CODING_OPTION2            ||
+//  Intra refresh }
+        id == MFX_EXTBUFF_SVC_SEQ_DESC              ||
+        id == MFX_EXTBUFF_SVC_RATE_CONTROL;
+}
+
+mfxStatus MfxHwH264Encode::CheckExtBufferId(mfxVideoParam const & par)
+{
+    for (mfxU32 i = 0; i < par.NumExtParam; i++)
+    {
+        if (par.ExtParam[i] == 0)
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+
+        if (!IsVideoParamExtBufferIdSupported(par.ExtParam[i]->BufferId))
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+
+        // check if buffer presents twice in video param
+        if (MfxHwH264Encode::GetExtBuffer(
+            par.ExtParam + i + 1,
+            par.NumExtParam - i - 1,
+            par.ExtParam[i]->BufferId) != 0)
+        {
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+    }
+
+    return MFX_ERR_NONE;
+}
+
+namespace
+{
+    mfxStatus CheckWidthAndHeight(mfxU32 width, mfxU32 height, mfxU32 picStruct)
+    {
+        MFX_CHECK(width  > 0, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(height > 0, MFX_ERR_INVALID_VIDEO_PARAM);
+
+        MFX_CHECK((width  & 15) == 0, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK((height & 15) == 0, MFX_ERR_INVALID_VIDEO_PARAM);
+
+        // repeat flags are for EncodeFrameAsync
+        if (picStruct & MFX_PICSTRUCT_PART2)
+            picStruct = MFX_PICSTRUCT_UNKNOWN;
+
+        // more then one flag was set
+        if (mfxU32 picStructPart1 = picStruct & MFX_PICSTRUCT_PART1)
+            if (picStructPart1 & (picStructPart1 - 1))
+                picStruct = MFX_PICSTRUCT_UNKNOWN;
+
+        if ((picStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0)
+            MFX_CHECK((height & 31) == 0, MFX_ERR_INVALID_VIDEO_PARAM);
+
+        return MFX_ERR_NONE;
+    }
+};
+
+mfxU32 MfxHwH264Encode::GetLastDid(mfxExtSVCSeqDesc const & extSvc)
+{
+    mfxI32 i = 7;
+    for (; i >= 0; i--)
+        if (extSvc.DependencyLayer[i].Active)
+            break;
+    return mfxU32(i);
+}
+
+mfxStatus MfxHwH264Encode::CheckWidthAndHeight(MfxVideoParam const & par)
+{
+    mfxExtCodingOptionSPSPPS const * extBits = GetExtBuffer(par);
+
+    if (extBits->SPSBuffer)
+        // width/height/picStruct are always valid
+        // when they come from SPSPPS buffer
+        // no need to check them
+        return MFX_ERR_NONE;
+
+    mfxU16 width     = par.mfx.FrameInfo.Width;
+    mfxU16 height    = par.mfx.FrameInfo.Height;
+    mfxU16 picStruct = par.mfx.FrameInfo.PicStruct;
+
+    if (IsSvcProfile(par.mfx.CodecProfile))
+    {
+        mfxExtSVCSeqDesc const * extSvc = GetExtBuffer(par);
+        mfxU32 lastDid = GetLastDid(*extSvc);
+        if (lastDid > 7)
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        width  = extSvc->DependencyLayer[lastDid].Width;
+        height = extSvc->DependencyLayer[lastDid].Height;
+        if (width == 0 || height == 0)
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+
+    return ::CheckWidthAndHeight(width, height, picStruct);
+}
+
+mfxStatus MfxHwH264Encode::CopySpsPpsToVideoParam(
+    MfxVideoParam & par)
+{
+    mfxExtCodingOptionSPSPPS * extBits = GetExtBuffer(par);
+
+    bool changed = false;
+
+    if (extBits->SPSBuffer)
+    {
+        mfxExtSpsHeader const * extSps = GetExtBuffer(par);
+        if (!CheckAgreementOfSequenceLevelParameters<FunctionInit>(par, *extSps))
+            changed = true;
+    }
+
+
+    if (extBits->PPSBuffer)
+    {
+        mfxExtPpsHeader const * extPps = GetExtBuffer(par);
+        if (!CheckAgreementOfPictureLevelParameters<FunctionInit>(par, *extPps))
+            changed = true;
+    }
+
+    return changed ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE;
+}
+
+mfxStatus MfxHwH264Encode::CheckVideoParam(
+    MfxVideoParam &     par,
+    ENCODE_CAPS const & hwCaps,
+    bool                setExtAlloc,
+    eMFXHWType          platform,
+    eMFXVAType          vaType)
+{
+    mfxStatus checkSts = MFX_ERR_NONE;
+
+    mfxExtCodingOptionSPSPPS * extBits = GetExtBuffer(par);
+    mfxExtSpsHeader *          extSps  = GetExtBuffer(par);
+
+    // first check mandatory parameters
+    MFX_CHECK(
+        extBits->SPSBuffer != 0 ||
+        par.mfx.FrameInfo.Width > 0 && par.mfx.FrameInfo.Height > 0, MFX_ERR_INVALID_VIDEO_PARAM);
+
+    MFX_CHECK(
+        extSps->vui.timeScale           > 0 && extSps->vui.numUnitsInTick      > 0 ||
+        par.mfx.FrameInfo.FrameRateExtN > 0 && par.mfx.FrameInfo.FrameRateExtD > 0,
+        MFX_ERR_INVALID_VIDEO_PARAM);
+
+    MFX_CHECK(par.mfx.TargetUsage            <= 7, MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK(par.mfx.FrameInfo.ChromaFormat != 0, MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK(par.IOPattern                  != 0, MFX_ERR_INVALID_VIDEO_PARAM);
+
+    mfxStatus sts = MFX_ERR_NONE;
+
+    if (IsMvcProfile(par.mfx.CodecProfile))
+    {
+        mfxExtCodingOption * extOpt = GetExtBuffer(par);
+        mfxExtMVCSeqDesc * extMvc   = GetExtBuffer(par);
+        sts = CheckAndFixMVCSeqDesc(extMvc, extOpt->ViewOutput == MFX_CODINGOPTION_ON);
+        if (MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts)
+        {
+            checkSts = sts;
+        }
+        else if (sts == MFX_ERR_UNSUPPORTED)
+        {
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+        sts = CheckVideoParamMvcQueryLike(par); // check and correct mvc per-view bitstream, buffer, level
+        switch (sts)
+        {
+        case MFX_ERR_UNSUPPORTED:
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        case MFX_ERR_INVALID_VIDEO_PARAM:
+        case MFX_WRN_PARTIAL_ACCELERATION:
+        case MFX_ERR_INCOMPATIBLE_VIDEO_PARAM:
+            return sts;
+        case MFX_WRN_INCOMPATIBLE_VIDEO_PARAM:
+            checkSts = sts;
+            break;
+        }
+    }
+
+    sts = CheckVideoParamQueryLike(par, hwCaps, platform, vaType);
+    switch (sts)
+    {
+    case MFX_ERR_UNSUPPORTED:
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    case MFX_ERR_INVALID_VIDEO_PARAM:
+    case MFX_WRN_PARTIAL_ACCELERATION:
+    case MFX_ERR_INCOMPATIBLE_VIDEO_PARAM:
+        return sts;
+    case MFX_WRN_INCOMPATIBLE_VIDEO_PARAM:
+        checkSts = sts;
+        break;
+    }
+
+    if (par.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY)
+    {
+        MFX_CHECK(setExtAlloc, MFX_ERR_INVALID_VIDEO_PARAM);
+    }
+
+    MFX_CHECK(
+        ((par.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY) || (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY) ||(par.Protected == 0)),
+        MFX_ERR_INVALID_VIDEO_PARAM);
+
+    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP && !IsSvcProfile(par.mfx.CodecProfile))
+        MFX_CHECK(par.calcParam.targetKbps > 0, MFX_ERR_INVALID_VIDEO_PARAM);
+
+    SetDefaults(par, hwCaps, setExtAlloc, platform, vaType);
+
+    if (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+    {
+        mfxExtCodingOptionDDI *    extDdi  = GetExtBuffer(par);
+        mfxExtOpaqueSurfaceAlloc * extOpaq = GetExtBuffer(par);
+
+        mfxU32 numFrameMin = par.mfx.GopRefDist + (IsOn(extDdi->RefRaw) ? par.mfx.NumRefFrame : 0) + par.AsyncDepth - 1;
+
+        if (IsMvcProfile(par.mfx.CodecProfile))
+        {
+            mfxExtMVCSeqDesc * extMvc  = GetExtBuffer(par);
+            numFrameMin *= extMvc->NumView;
+        }
+
+        MFX_CHECK(extOpaq->In.NumSurface >= numFrameMin, MFX_ERR_INVALID_VIDEO_PARAM);
+    }
+
+    return checkSts;
+}
+
+/*
+ * utils for debug purposes
+ */
+struct Bool
+{
+    explicit Bool(bool val) : m_val(val) {}
+    Bool(Bool const & rhs) : m_val(rhs.m_val) {}
+    Bool & operator =(Bool const & rhs) { m_val = rhs.m_val; return *this; }
+    operator bool() { return m_val; }
+
+    Bool & operator =(bool val)
+    {
+        //__asm { int 3 }
+        m_val = val;
+        return *this;
+    }
+
+private:
+    bool m_val;
+};
+
+//typedef bool Bool;
+
+mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
+    MfxVideoParam &     par,
+    ENCODE_CAPS const & hwCaps,
+    eMFXHWType          platform,
+    eMFXVAType          vaType)
+{
+    Bool unsupported(false);
+    Bool changed(false);
+
+    mfxExtCodingOption *       extOpt  = GetExtBuffer(par);
+    mfxExtCodingOptionDDI *    extDdi  = GetExtBuffer(par);
+    mfxExtPAVPOption *         extPavp = GetExtBuffer(par);
+    mfxExtVideoSignalInfo *    extVsi  = GetExtBuffer(par);
+    mfxExtCodingOptionSPSPPS * extBits = GetExtBuffer(par);
+    mfxExtPictureTimingSEI *   extPt   = GetExtBuffer(par);
+    mfxExtSpsHeader *          extSps  = GetExtBuffer(par);
+    mfxExtPpsHeader *          extPps  = GetExtBuffer(par);
+    mfxExtMVCSeqDesc *         extMvc  = GetExtBuffer(par);
+    mfxExtAvcTemporalLayers *  extTemp = GetExtBuffer(par);
+    mfxExtSVCSeqDesc *         extSvc  = GetExtBuffer(par);
+//  Intra refresh {
+    mfxExtCodingOption2 *      extOpt2 = GetExtBuffer(par);
+//  Intra refresh }
+
+    // check hw capabilities
+    if (par.mfx.FrameInfo.Width  > hwCaps.MaxPicWidth ||
+        par.mfx.FrameInfo.Height > hwCaps.MaxPicHeight)
+        return Error(MFX_WRN_PARTIAL_ACCELERATION);
+
+    if ((par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PART1 )!= MFX_PICSTRUCT_PROGRESSIVE && hwCaps.NoInterlacedField)
+        return Error(MFX_WRN_PARTIAL_ACCELERATION);
+
+    if (hwCaps.MaxNum_TemporalLayer != 0 &&
+        hwCaps.MaxNum_TemporalLayer < par.calcParam.numTemporalLayer)
+        return Error(MFX_WRN_PARTIAL_ACCELERATION);
+
+    if (par.mfx.GopRefDist > 1 && hwCaps.SliceIPOnly)
+    {
+        changed = true;
+        par.mfx.GopRefDist = 1;
+    }
+
+    // sps/pps parameters if present overrides corresponding fields of VideoParam
+    if (extBits->SPSBuffer)
+    {
+        if (!CheckAgreementOfSequenceLevelParameters<FunctionQuery>(par, *extSps))
+            changed = true;
+
+        if (extBits->PPSBuffer)
+            if (!CheckAgreementOfPictureLevelParameters<FunctionQuery>(par, *extPps))
+                changed = true;
+    }
+
+    if (par.Protected != 0)
+    {
+        if (!IsProtectionPavp(par.Protected))
+        {
+            unsupported = true;
+            par.Protected = 0;
+        }
+
+        if (extPavp->EncryptionType != 0 &&
+            extPavp->EncryptionType != MFX_PAVP_AES128_CTR &&
+            extPavp->EncryptionType != MFX_PAVP_AES128_CBC)
+        {
+            unsupported = true;
+            extPavp->EncryptionType = 0;
+        }
+
+        if (extPavp->CounterType != 0 &&
+            extPavp->CounterType != MFX_PAVP_CTR_TYPE_A &&
+            extPavp->CounterType != MFX_PAVP_CTR_TYPE_B &&
+            extPavp->CounterType != MFX_PAVP_CTR_TYPE_C)
+        {
+            unsupported = true;
+            extPavp->CounterType = 0;
+        }
+
+        if ((extPavp->CounterType == MFX_PAVP_CTR_TYPE_A) &&
+            (extPavp->CipherCounter.Count & 0xffffffff) != 0)
+        {
+            changed = true;
+            extPavp->CipherCounter.Count = 0xffffffff00000000;
+        }
+
+        if (extPavp->CounterIncrement != 0)
+        {
+            if (!CheckRange(extPavp->CounterIncrement, 0xC000u, 0xC0000u))
+            {
+                changed = true;
+                extPavp->CounterIncrement = 0xC000;
+            }
+        }
+    }
+
+    if (par.IOPattern != 0)
+    {
+        if ((par.IOPattern & MFX_IOPATTERN_IN_MASK) != par.IOPattern)
+        {
+            changed = true;
+            par.IOPattern &= MFX_IOPATTERN_IN_MASK;
+        }
+
+        if (par.IOPattern != MFX_IOPATTERN_IN_VIDEO_MEMORY  &&
+            par.IOPattern != MFX_IOPATTERN_IN_SYSTEM_MEMORY &&
+            par.IOPattern != MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+        {
+            changed = true;
+            par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
+        }
+    }
+
+    if (par.AsyncDepth > 6)
+    {
+        changed = true;
+        par.AsyncDepth = 6;
+    }
+
+    if (par.AsyncDepth > 1 && (IsOn(extDdi->SwBrc) || IsOn(extOpt2->ExtBRC)) && extDdi->LookAhead == 1)
+    {
+        changed = true;
+        par.AsyncDepth = 1;
+    }
+
+    if (IsOn(extDdi->SwBrc) || IsOn(extOpt2->ExtBRC))
+        if (extDdi->SwBrc == 0 || extOpt2->ExtBRC == 0)
+            extDdi->SwBrc = extOpt2->ExtBRC = MFX_CODINGOPTION_ON;
+
+    if (par.mfx.TargetUsage > 7)
+    {
+        changed = true;
+        par.mfx.TargetUsage = 7;
+    }
+
+    if (par.mfx.GopPicSize > 0 &&
+        par.mfx.GopRefDist > 0 &&
+        par.mfx.GopRefDist > par.mfx.GopPicSize)
+    {
+        changed = true;
+        par.mfx.GopRefDist = par.mfx.GopPicSize - 1;
+    }
+
+    if (par.mfx.GopRefDist > 1)
+    {
+        if (IsAvcBaseProfile(par.mfx.CodecProfile) ||
+            par.mfx.CodecProfile == MFX_PROFILE_AVC_CONSTRAINED_HIGH)
+        {
+            changed = true;
+            par.mfx.GopRefDist = 1;
+        }
+    }
+
+    if (par.mfx.RateControlMethod != 0 &&
+        par.mfx.RateControlMethod != MFX_RATECONTROL_CBR &&
+        par.mfx.RateControlMethod != MFX_RATECONTROL_VBR &&
+        par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
+        par.mfx.RateControlMethod != MFX_RATECONTROL_AVBR &&
+        par.mfx.RateControlMethod != MFX_RATECONTROL_WIDI_VBR/* &&
+        par.mfx.RateControlMethod != MFX_RATECONTROL_VCM*/)
+    {
+        changed = true;
+        par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
+    }
+
+    //if (par.mfx.RateControlMethod == MFX_RATECONTROL_VCM &&
+    //    hwCaps.VCMBitrateControl == 0)
+    //{
+    //    changed = true;
+    //    par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
+    //}
+
+    if (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PART2)
+    { // repeat/double/triple flags are for EncodeFrameAsync
+        changed = true;
+        par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_UNKNOWN;
+    }
+
+    if (mfxU16 picStructPart1 = par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PART1)
+    {
+        if (picStructPart1 & (picStructPart1 - 1))
+        { // more then one flag set
+            changed = true;
+            par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_UNKNOWN;
+        }
+    }
+
+    if (par.mfx.FrameInfo.Width & 15)
+    {
+        unsupported = true;
+        par.mfx.FrameInfo.Width = 0;
+    }
+
+    if (par.mfx.FrameInfo.Height & 15)
+    {
+        unsupported = true;
+        par.mfx.FrameInfo.Height = 0;
+    }
+
+    if ((par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0 &&
+        (par.mfx.FrameInfo.Height & 31) != 0)
+    {
+        unsupported = true;
+        par.mfx.FrameInfo.PicStruct = 0;
+        par.mfx.FrameInfo.Height = 0;
+    }
+
+    if (par.mfx.FrameInfo.Width > 0)
+    {
+        if (par.mfx.FrameInfo.CropX > par.mfx.FrameInfo.Width)
+        {
+            if (extBits->SPSBuffer)
+                return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+            unsupported = true;
+            par.mfx.FrameInfo.CropX = 0;
+        }
+
+        if (par.mfx.FrameInfo.CropX + par.mfx.FrameInfo.CropW > par.mfx.FrameInfo.Width)
+        {
+            if (extBits->SPSBuffer)
+                return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+            unsupported = true;
+            par.mfx.FrameInfo.CropW = par.mfx.FrameInfo.Width - par.mfx.FrameInfo.CropX;
+        }
+    }
+
+    if (par.mfx.FrameInfo.Height > 0)
+    {
+        if (par.mfx.FrameInfo.CropY > par.mfx.FrameInfo.Height)
+        {
+            if (extBits->SPSBuffer)
+                return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+            unsupported = true;
+            par.mfx.FrameInfo.CropY = 0;
+        }
+
+        if (par.mfx.FrameInfo.CropY + par.mfx.FrameInfo.CropH > par.mfx.FrameInfo.Height)
+        {
+            if (extBits->SPSBuffer)
+                return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+            unsupported = true;
+            par.mfx.FrameInfo.CropH = par.mfx.FrameInfo.Height - par.mfx.FrameInfo.CropY;
+        }
+    }
+
+    if (CorrectCropping(par) != MFX_ERR_NONE)
+    { // cropping read from sps header always has correct alignment
+        changed = true;
+    }
+
+    if (par.mfx.NumSlice         != 0 &&
+        par.mfx.FrameInfo.Width  != 0 &&
+        par.mfx.FrameInfo.Height != 0)
+    {
+        if (par.mfx.NumSlice > par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height / 256)
+        {
+            unsupported = true;
+            par.mfx.NumSlice = 0;
+        }
+
+        bool fieldCoding = (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0;
+
+        SliceDivider divider = MakeSliceDivider(
+            hwCaps.SliceStructure,
+            par.mfx.NumSlice,
+            par.mfx.FrameInfo.Width / 16,
+            par.mfx.FrameInfo.Height / 16 / (fieldCoding ? 2 : 1));
+
+        if (par.mfx.NumSlice != divider.GetNumSlice())
+        {
+            changed = true;
+            par.mfx.NumSlice = (mfxU16)divider.GetNumSlice();
+        }
+    }
+
+    if (par.mfx.FrameInfo.ChromaFormat != 0 &&
+        par.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)
+    {
+        if (extBits->SPSBuffer)
+            return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+        changed = true;
+        par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+    }
+
+    if (par.mfx.FrameInfo.FourCC != 0 &&
+        par.mfx.FrameInfo.FourCC != MFX_FOURCC_NV12)
+    {
+        unsupported = true;
+        par.mfx.FrameInfo.FourCC = 0;
+    }
+
+    if ((par.mfx.FrameInfo.FrameRateExtN == 0) !=
+        (par.mfx.FrameInfo.FrameRateExtD == 0))
+    {
+        if (extSps->vui.flags.timingInfoPresent)
+            return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+        unsupported = true;
+        par.mfx.FrameInfo.FrameRateExtN = 0;
+        par.mfx.FrameInfo.FrameRateExtD = 0;
+    }
+
+    if (extSps->vui.flags.timingInfoPresent &&
+        par.mfx.FrameInfo.FrameRateExtN != 0 &&
+        par.mfx.FrameInfo.FrameRateExtD != 0 &&
+        par.mfx.FrameInfo.FrameRateExtN > mfxU64(172) * par.mfx.FrameInfo.FrameRateExtD)
+    {
+        if (extBits->SPSBuffer) // frame_rate read from sps
+            return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+        unsupported = true;
+        par.mfx.FrameInfo.FrameRateExtN = 0;
+        par.mfx.FrameInfo.FrameRateExtD = 0;
+    }
+
+
+    if (par.mfx.CodecProfile != MFX_PROFILE_UNKNOWN && !IsValidCodingProfile(par.mfx.CodecProfile))
+    {
+        if (extBits->SPSBuffer)
+            return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+        if (par.mfx.CodecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH)
+            return Error(MFX_ERR_UNSUPPORTED);
+
+        changed = true;
+        par.mfx.CodecProfile = MFX_PROFILE_UNKNOWN;
+    }
+
+    if (par.mfx.CodecLevel != MFX_LEVEL_UNKNOWN && !IsValidCodingLevel(par.mfx.CodecLevel))
+    {
+        if (extBits->SPSBuffer)
+            return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+        changed = true;
+        par.mfx.CodecLevel = MFX_LEVEL_UNKNOWN;
+    }
+
+    if (par.mfx.NumRefFrame != 0)
+    {
+        if ((par.mfx.NumRefFrame & 1) &&
+            (hwCaps.HeaderInsertion) &&
+            (par.Protected || !IsOff(extOpt->NalHrdConformance)))
+        {
+            // when driver writes headers it can write only even values of num_ref_frames
+            if (extBits->SPSBuffer)
+                return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+            changed = true;
+            par.mfx.NumRefFrame++;
+        }
+    }
+
+    if (par.mfx.FrameInfo.Width  != 0 &&
+        par.mfx.FrameInfo.Height != 0)
+    {
+        mfxU16 minLevel = GetLevelLimitByFrameSize(par);
+        if (minLevel == 0)
+        {
+            if (extBits->SPSBuffer)
+                return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+            else if (par.mfx.CodecLevel != 0)
+            {
+                changed = true; // warning should be returned if frame size exceeds maximum value supported by AVC standard
+                if (par.mfx.CodecLevel < GetMaxSupportedLevel())
+                    par.mfx.CodecLevel = GetMaxSupportedLevel();
+            }
+        }
+        else if (par.mfx.CodecLevel != 0 && par.mfx.CodecLevel < minLevel)
+        {
+            if (extBits->SPSBuffer)
+                return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+            changed = true;
+            par.mfx.CodecLevel = minLevel;
+        }
+    }
+
+    if (extSps->vui.flags.timingInfoPresent  &&
+        par.mfx.FrameInfo.Width         != 0 &&
+        par.mfx.FrameInfo.Height        != 0 &&
+        par.mfx.FrameInfo.FrameRateExtN != 0 &&
+        par.mfx.FrameInfo.FrameRateExtD != 0)
+    {
+        mfxU16 minLevel = GetLevelLimitByMbps(par);
+        if (minLevel == 0)
+        {
+            if (extBits->SPSBuffer)
+            {
+                return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+            }
+            else if (par.mfx.CodecLevel != 0)
+            {
+                changed = true; // warning should be returned if MB processing rate exceeds maximum value supported by AVC standard
+                if (par.mfx.CodecLevel < GetMaxSupportedLevel())
+                    par.mfx.CodecLevel = GetMaxSupportedLevel();
+            }
+        }
+        else if (par.mfx.CodecLevel != 0 && par.mfx.CodecLevel < minLevel)
+        {
+            if (extBits->SPSBuffer)
+                return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+            changed = true;
+            par.mfx.CodecLevel = minLevel;
+        }
+    }
+
+    if (par.mfx.NumRefFrame      != 0 &&
+        par.mfx.FrameInfo.Width  != 0 &&
+        par.mfx.FrameInfo.Height != 0)
+    {
+        mfxU16 minLevel = GetLevelLimitByDpbSize(par);
+        if (minLevel == 0)
+        {
+            if (extBits->SPSBuffer)
+                return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+            changed = false;
+            par.mfx.CodecLevel = MFX_LEVEL_AVC_52;
+            par.mfx.NumRefFrame = GetMaxNumRefFrame(par);
+        }
+        else if (par.mfx.CodecLevel != 0 && par.mfx.CodecLevel < minLevel)
+        {
+            if (extBits->SPSBuffer)
+                return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+            changed = false;
+            par.mfx.CodecLevel = minLevel;
+        }
+    }
+
+    if (IsAvcHighProfile(par.mfx.CodecProfile) && (par.mfx.CodecProfile & MASK_CONSTRAINT_SET0123_FLAG))
+    {
+        changed = true;
+        par.mfx.CodecProfile = par.mfx.CodecProfile & ~MASK_CONSTRAINT_SET0123_FLAG;        
+    }
+
+    if (!CheckTriStateOption(extOpt->RateDistortionOpt))        changed = true;
+    if (!CheckTriStateOption(extOpt->EndOfSequence))            changed = true;
+    if (!CheckTriStateOption(extOpt->FramePicture))             changed = true;
+    if (!CheckTriStateOption(extOpt->CAVLC))                    changed = true;
+    if (!CheckTriStateOption(extOpt->RefPicListReordering))     changed = true;
+    if (!CheckTriStateOption(extOpt->ResetRefList))             changed = true;
+    if (!CheckTriStateOption(extOpt->RefPicMarkRep))            changed = true;
+    if (!CheckTriStateOption(extOpt->FieldOutput))              changed = true;
+    if (!CheckTriStateOption(extOpt->AUDelimiter))              changed = true;
+    if (!CheckTriStateOption(extOpt->EndOfStream))              changed = true;
+    if (!CheckTriStateOption(extOpt->PicTimingSEI))             changed = true;
+    if (!CheckTriStateOption(extOpt->VuiNalHrdParameters))      changed = true;
+    if (!CheckTriStateOption(extOpt->VuiVclHrdParameters))      changed = true;
+    if (!CheckTriStateOption(extOpt->SingleSeiNalUnit))         changed = true;
+    if (!CheckTriStateOption(extOpt->NalHrdConformance))        changed = true;
+    if (!CheckTriStateOption(extDdi->RefRaw))                   changed = true;
+    if (!CheckTriStateOption(extDdi->SwBrc))                    changed = true;
+    if (!CheckTriStateOption(extDdi->DirectSpatialMvPredFlag))  changed = true;
+    if (!CheckTriStateOption(extDdi->Hme))                      changed = true;
+    if (!CheckTriStateOption(extOpt2->BitrateLimit))            changed = true;
+    if (!CheckTriStateOption(extOpt2->MBBRC))                   changed = true;
+    if (!CheckTriStateOption(extOpt2->ExtBRC))                  changed = true;
+
+    if (IsMvcProfile(par.mfx.CodecProfile) && IsOn(extOpt->FieldOutput))
+    {
+        unsupported = true;
+        extOpt->FieldOutput = MFX_CODINGOPTION_UNKNOWN;
+    }
+
+    if (hwCaps.MBBRCSupport == 0 && IsOn(extOpt2->MBBRC))
+    {
+        changed = true;
+        extOpt2->MBBRC = MFX_CODINGOPTION_OFF;
+    }
+
+    if (extDdi->BiPyramid > 3)
+    {
+        changed = true;
+        extDdi->BiPyramid = 0;
+    }
+
+    if (extDdi->BiPyramid != 3 && extDdi->BiPyramid != 0 &&
+        par.mfx.GopRefDist != 0 && par.mfx.GopRefDist < 3)
+    {
+        changed = true;
+        extDdi->BiPyramid = 3;
+    }
+
+    if (extOpt->IntraPredBlockSize != MFX_BLOCKSIZE_UNKNOWN &&
+        extOpt->IntraPredBlockSize != MFX_BLOCKSIZE_MIN_16X16 &&
+        extOpt->IntraPredBlockSize != MFX_BLOCKSIZE_MIN_8X8 &&
+        extOpt->IntraPredBlockSize != MFX_BLOCKSIZE_MIN_4X4)
+    {
+        changed = true;
+        extOpt->IntraPredBlockSize = MFX_BLOCKSIZE_UNKNOWN;
+    }
+
+    if (extOpt->InterPredBlockSize != MFX_BLOCKSIZE_UNKNOWN &&
+        extOpt->InterPredBlockSize != MFX_BLOCKSIZE_MIN_16X16 &&
+        extOpt->InterPredBlockSize != MFX_BLOCKSIZE_MIN_8X8 &&
+        extOpt->InterPredBlockSize != MFX_BLOCKSIZE_MIN_4X4)
+    {
+        changed = true;
+        extOpt->InterPredBlockSize = MFX_BLOCKSIZE_UNKNOWN;
+    }
+
+    if (extOpt->MVPrecision != MFX_MVPRECISION_UNKNOWN &&
+        extOpt->MVPrecision != MFX_MVPRECISION_QUARTERPEL &&
+        extOpt->MVPrecision != MFX_MVPRECISION_HALFPEL &&
+        extOpt->MVPrecision != MFX_MVPRECISION_INTEGER)
+    {
+        changed = true;
+        extOpt->MVPrecision = MFX_MVPRECISION_UNKNOWN;
+    }
+
+    if (extOpt->MaxDecFrameBuffering != 0)
+    {
+        if (par.mfx.CodecLevel       != 0 &&
+            par.mfx.FrameInfo.Width  != 0 &&
+            par.mfx.FrameInfo.Height != 0)
+        {
+            mfxU16 maxDpbSize = GetMaxNumRefFrame(par);
+            if (extOpt->MaxDecFrameBuffering > maxDpbSize)
+            {
+                if (extBits->SPSBuffer)
+                    return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+                changed = true;
+                extOpt->MaxDecFrameBuffering = maxDpbSize;
+            }
+        }
+
+        if (par.mfx.NumRefFrame != 0)
+        {
+            if (extOpt->MaxDecFrameBuffering < par.mfx.NumRefFrame)
+            {
+                if (extBits->SPSBuffer)
+                    return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+                changed = true;
+                extOpt->MaxDecFrameBuffering = par.mfx.NumRefFrame;
+            }
+        }
+    }
+
+    if ((IsOff(extOpt->CAVLC)) &&
+        (IsAvcBaseProfile(par.mfx.CodecProfile) || hwCaps.NoCabacSupport))
+    {
+        if (extBits->SPSBuffer)
+            return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+        changed = true;
+        extOpt->CAVLC = MFX_CODINGOPTION_ON;
+    }
+
+    if (extOpt->IntraPredBlockSize >= MFX_BLOCKSIZE_MIN_8X8)
+    {
+        if (IsAvcBaseProfile(par.mfx.CodecProfile) || par.mfx.CodecProfile == MFX_PROFILE_AVC_MAIN)
+        {
+            if (extBits->PPSBuffer && extPps->transform8x8ModeFlag)
+                return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+            changed = true;
+            extOpt->IntraPredBlockSize = MFX_BLOCKSIZE_MIN_16X16;
+        }
+    }
+
+    if (IsOn(extOpt->VuiNalHrdParameters) &&
+        par.mfx.RateControlMethod != 0 &&
+        par.mfx.RateControlMethod != MFX_RATECONTROL_CBR &&
+        par.mfx.RateControlMethod != MFX_RATECONTROL_VBR)
+    {
+        changed = true;
+        extOpt->VuiNalHrdParameters = MFX_CODINGOPTION_OFF;
+    }
+
+    if (IsOn(extOpt->VuiNalHrdParameters) &&
+        IsOff(extOpt->NalHrdConformance))
+    {
+        changed = true;
+        extOpt->VuiNalHrdParameters = MFX_CODINGOPTION_OFF;
+    }
+
+    if (IsOn(extOpt->VuiVclHrdParameters) &&
+        IsOff(extOpt->NalHrdConformance))
+    {
+        changed = true;
+        extOpt->VuiVclHrdParameters = MFX_CODINGOPTION_OFF;
+    }
+
+    if (IsOn(extOpt->VuiVclHrdParameters) &&
+        par.mfx.RateControlMethod != 0 &&
+        par.mfx.RateControlMethod != MFX_RATECONTROL_VBR)
+    {
+        changed = true;
+        extOpt->VuiVclHrdParameters = MFX_CODINGOPTION_OFF;
+    }
+
+    if (extDdi->SeqParameterSetId > 31)
+    {
+        changed = true;
+        extDdi->SeqParameterSetId = 0;
+    }
+
+    if (extDdi->PicParameterSetId > 255)
+    {
+        changed = true;
+        extDdi->PicParameterSetId = 0;
+    }
+
+    if (extDdi->WeightedBiPredIdc == 1 || extDdi->WeightedBiPredIdc > 2)
+    {
+        changed = true;
+        extDdi->WeightedBiPredIdc = 0;
+    }
+
+    if (extDdi->CabacInitIdcPlus1 > 3)
+    {
+        changed = true;
+        extDdi->CabacInitIdcPlus1 = 0;
+    }
+
+    if (extDdi->LookAhead > 1 && (platform < MFX_HW_HSW || platform == MFX_HW_VLV || vaType == MFX_HW_D3D11))
+    {
+        changed = true;
+        extDdi->LookAhead = 1;
+    }
+
+
+    if (!CheckRangeDflt(extVsi->VideoFormat,             0,   8, 5)) changed = true;
+    if (!CheckRangeDflt(extVsi->ColourPrimaries,         0, 255, 2)) changed = true;
+    if (!CheckRangeDflt(extVsi->TransferCharacteristics, 0, 255, 2)) changed = true;
+    if (!CheckRangeDflt(extVsi->MatrixCoefficients,      0, 255, 2)) changed = true;
+    if (!CheckFlag(extVsi->VideoFullRange, 0))                       changed = true;
+    if (!CheckFlag(extVsi->ColourDescriptionPresent, 0))             changed = true;
+
+    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP && par.calcParam.targetKbps != 0)
+    {
+        if (!IsOff(extOpt2->BitrateLimit)        &&
+            par.mfx.FrameInfo.Width         != 0 &&
+            par.mfx.FrameInfo.Height        != 0 &&
+            par.mfx.FrameInfo.FrameRateExtN != 0 &&
+            par.mfx.FrameInfo.FrameRateExtD != 0)
+        {
+            mfxF64 rawDataBitrate = 12.0 * par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height *
+                par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD;
+            mfxU32 minTargetKbps = mfxU32(IPP_MIN(0xffffffff, rawDataBitrate / 1000 / 700));
+
+            if (par.calcParam.targetKbps < minTargetKbps)
+            {
+                changed = true;
+                par.calcParam.targetKbps = minTargetKbps;
+            }
+        }
+
+        if (extSps->vui.flags.nalHrdParametersPresent || extSps->vui.flags.vclHrdParametersPresent)
+        {
+            mfxU16 profile = mfxU16(IPP_MAX(MFX_PROFILE_AVC_BASELINE, par.mfx.CodecProfile & MASK_PROFILE_IDC));
+            for (; profile != MFX_PROFILE_UNKNOWN; profile = GetNextProfile(profile))
+            {
+                if (mfxU16 minLevel = GetLevelLimitByMaxBitrate(profile, par.calcParam.targetKbps))
+                {
+                    if (par.mfx.CodecLevel != 0 && par.mfx.CodecProfile != 0 && par.mfx.CodecLevel < minLevel)
+                    {
+                        if (extBits->SPSBuffer)
+                            return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+                        changed = true;
+                        par.mfx.CodecLevel   = minLevel;
+                        par.mfx.CodecProfile = profile;
+                    }
+                    break;
+                }
+            }
+
+            if (profile == MFX_PROFILE_UNKNOWN)
+            {
+                if (extBits->SPSBuffer)
+                    return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+                if (par.mfx.CodecLevel != 0 && par.mfx.CodecProfile != 0)
+                {
+                    par.mfx.CodecProfile = MFX_PROFILE_AVC_HIGH;
+                    par.mfx.CodecLevel = MFX_LEVEL_AVC_52;
+                }
+
+                changed = true;
+                par.calcParam.targetKbps = mfxU32(IPP_MIN(GetMaxBitrate(par) / 1000, UINT_MAX));
+            }
+        }
+    }
+
+    if (par.calcParam.targetKbps != 0 && par.calcParam.maxKbps != 0)
+    {
+        if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
+        {
+            if (par.calcParam.maxKbps != par.calcParam.targetKbps)
+            {
+                changed = true;
+                if (extBits->SPSBuffer && (
+                    extSps->vui.flags.nalHrdParametersPresent ||
+                    extSps->vui.flags.vclHrdParametersPresent))
+                    par.calcParam.targetKbps = par.calcParam.maxKbps;
+                else
+                    par.calcParam.maxKbps = par.calcParam.targetKbps;
+            }
+        }
+        else if (
+            par.mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
+            par.mfx.RateControlMethod == MFX_RATECONTROL_WIDI_VBR)
+        {
+            if (par.calcParam.maxKbps < par.calcParam.targetKbps)
+            {
+                if (extBits->SPSBuffer && (
+                    extSps->vui.flags.nalHrdParametersPresent ||
+                    extSps->vui.flags.vclHrdParametersPresent))
+                    return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+                changed = true;
+                par.calcParam.maxKbps = par.calcParam.targetKbps;
+            }
+        }
+    }
+
+    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP && par.calcParam.maxKbps != 0)
+    {
+        mfxU16 profile = mfxU16(IPP_MAX(MFX_PROFILE_AVC_BASELINE, par.mfx.CodecProfile & MASK_PROFILE_IDC));
+        for (; profile != MFX_PROFILE_UNKNOWN; profile = GetNextProfile(profile))
+        {
+            if (mfxU16 minLevel = GetLevelLimitByMaxBitrate(profile, par.calcParam.maxKbps))
+            {
+                if (par.mfx.CodecLevel != 0 && par.mfx.CodecProfile != 0 && par.mfx.CodecLevel < minLevel)
+                {
+                    if (extBits->SPSBuffer)
+                        return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+                    changed = true;
+                    par.mfx.CodecLevel = minLevel;
+                    par.mfx.CodecProfile = profile;
+                }
+                break;
+            }
+        }
+
+        if (profile == MFX_PROFILE_UNKNOWN)
+        {
+            if (extBits->SPSBuffer)
+                return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+            if (par.mfx.CodecLevel != 0 && par.mfx.CodecProfile != 0)
+            {
+                par.mfx.CodecProfile = MFX_PROFILE_AVC_HIGH;
+                par.mfx.CodecLevel = MFX_LEVEL_AVC_52;
+            }
+
+            changed = true;
+            par.calcParam.maxKbps = mfxU32(IPP_MIN(GetMaxBitrate(par) / 1000, UINT_MAX));
+        }
+    }
+
+    if (par.calcParam.bufferSizeInKB != 0 && extDdi->LookAhead > 1 && (IsOn(extDdi->SwBrc) || IsOn(extOpt2->ExtBRC)))
+    {
+        changed = true;
+        par.calcParam.bufferSizeInKB = (par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height * 3 / 2 / 1000);
+    }
+
+    if (par.calcParam.bufferSizeInKB != 0)
+    {
+        if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+        {
+            mfxU32 uncompressedSizeInKb = GetUncompressedSizeInKb(par);
+            if (par.calcParam.bufferSizeInKB < uncompressedSizeInKb)
+            {
+                changed = true;
+                par.calcParam.bufferSizeInKB = uncompressedSizeInKb;
+            }
+        }
+        else
+        {
+            mfxF64 avgFrameSizeInKB = 0;
+            if (par.mfx.RateControlMethod       != MFX_RATECONTROL_AVBR &&
+                par.mfx.FrameInfo.FrameRateExtN != 0 &&
+                par.mfx.FrameInfo.FrameRateExtD != 0 &&
+                par.calcParam.targetKbps        != 0)
+            {
+                mfxF64 frameRate = mfxF64(par.mfx.FrameInfo.FrameRateExtN) / par.mfx.FrameInfo.FrameRateExtD;
+                avgFrameSizeInKB = par.calcParam.targetKbps / frameRate / 8;
+
+                if (par.calcParam.bufferSizeInKB < 2 * avgFrameSizeInKB)
+                {
+                    if (extSps->vui.flags.nalHrdParametersPresent ||
+                        extSps->vui.flags.vclHrdParametersPresent)
+                        return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+                    changed = true;
+                    par.calcParam.bufferSizeInKB = mfxU32(2 * avgFrameSizeInKB + 1);
+                }
+            }
+
+            mfxU16 profile = mfxU16(IPP_MAX(MFX_PROFILE_AVC_BASELINE, par.mfx.CodecProfile & MASK_PROFILE_IDC));
+            for (; profile != MFX_PROFILE_UNKNOWN; profile = GetNextProfile(profile))
+            {
+                if (mfxU16 minLevel = GetLevelLimitByBufferSize(profile, par.calcParam.bufferSizeInKB))
+                {
+                    if (par.mfx.CodecLevel != 0 && par.mfx.CodecProfile != 0 && par.mfx.CodecLevel < minLevel)
+                    {
+                        if (extBits->SPSBuffer)
+                            return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+                        changed = true;
+                        par.mfx.CodecLevel = minLevel;
+                    }
+                    break;
+                }
+            }
+
+            if (profile == MFX_PROFILE_UNKNOWN)
+            {
+                if (extBits->SPSBuffer)
+                    return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+                if (par.mfx.CodecLevel != 0 && par.mfx.CodecProfile != 0)
+                {
+                    par.mfx.CodecProfile = MFX_PROFILE_AVC_HIGH;
+                    par.mfx.CodecLevel = MFX_LEVEL_AVC_52;
+                }
+
+                changed = true;
+                par.calcParam.bufferSizeInKB = mfxU16(IPP_MIN(GetMaxBufferSize(par) / 8000, USHRT_MAX));
+            }
+
+            if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
+                par.mfx.RateControlMethod != MFX_RATECONTROL_AVBR &&
+                par.calcParam.initialDelayInKB != 0)
+            {
+                if (par.calcParam.initialDelayInKB > par.calcParam.bufferSizeInKB)
+                {
+                    changed = true;
+                    par.calcParam.initialDelayInKB = par.calcParam.bufferSizeInKB / 2;
+                }
+
+                if (avgFrameSizeInKB != 0 && par.calcParam.initialDelayInKB < avgFrameSizeInKB)
+                {
+                    changed = true;
+                    par.calcParam.initialDelayInKB = mfxU16(IPP_MIN(par.calcParam.bufferSizeInKB, avgFrameSizeInKB));
+                }
+            }
+        }
+    }
+
+    if (par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
+    {
+        if (par.mfx.CodecLevel != 0)
+        {
+            if (par.mfx.CodecLevel < MFX_LEVEL_AVC_21)
+            {
+                if (extBits->SPSBuffer) // level came from sps header, override picstruct
+                    par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+                else // level came from videoparam, override level
+                    par.mfx.CodecLevel = MFX_LEVEL_AVC_21;
+                changed = true;
+            }
+            else if (par.mfx.CodecLevel > MFX_LEVEL_AVC_41
+                && GetMinLevelForResolutionAndFramerate(par) <= MFX_LEVEL_AVC_41)
+            {
+                // if it's possible to encode input stream with level <= 4.1 then 
+                par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+                changed = true;
+            }
+        }
+    }
+
+    if (par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
+    {
+        if (IsAvcBaseProfile(par.mfx.CodecProfile) ||
+            par.mfx.CodecProfile == MFX_PROFILE_AVC_PROGRESSIVE_HIGH ||
+            par.mfx.CodecProfile == MFX_PROFILE_AVC_CONSTRAINED_HIGH)
+        {
+            changed = true;
+            par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+        }
+    }
+
+    if ((par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0 && par.mfx.NumRefFrame == 1)
+    {
+        par.mfx.NumRefFrame ++; // HSW and IVB don't support 1 reference frame for interlaced encoding
+        changed = true;
+    }
+
+    if (IsOn(extOpt->FieldOutput))
+    {
+        if (par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE || IsOn(extOpt->FramePicture))
+        {
+            changed = true;
+            extOpt->FieldOutput = MFX_CODINGOPTION_OFF;
+        }
+    }
+
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+    {
+        if (!CheckRange(par.mfx.QPI, 0, 51)) changed = true;
+        if (!CheckRange(par.mfx.QPP, 0, 51)) changed = true;
+        if (!CheckRange(par.mfx.QPB, 0, 51)) changed = true;
+    }
+
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
+    {
+        if (!CheckRange(par.mfx.Accuracy,    AVBR_ACCURACY_MIN,    AVBR_ACCURACY_MAX))    changed = true;
+        if (!CheckRange(par.mfx.Convergence, AVBR_CONVERGENCE_MIN, AVBR_CONVERGENCE_MAX)) changed = true;
+    }
+
+    for (mfxU32 i = 0; i < 3; i++)
+    {
+        mfxU32 maxTimeOffset = (1 << 24) - 1;
+
+        mfxU32 maxNFrames = (par.mfx.FrameInfo.FrameRateExtN > 0 && par.mfx.FrameInfo.FrameRateExtD > 0)
+            ? (par.mfx.FrameInfo.FrameRateExtN - 1) / par.mfx.FrameInfo.FrameRateExtD
+            : 255;
+
+        if (extPt->TimeStamp[i].CtType != 0xffff)
+        {
+            if (!CheckRangeDflt(extPt->TimeStamp[i].CtType, 0, 3, 2))
+                changed = true;
+        }
+
+        if (!CheckRangeDflt(extPt->TimeStamp[i].CountingType, 0, 31, 0))    changed = true;
+        if (!CheckRange(extPt->TimeStamp[i].NFrames, 0u, maxNFrames))       changed = true;
+        if (!CheckRange(extPt->TimeStamp[i].SecondsValue, 0, 59))           changed = true;
+        if (!CheckRange(extPt->TimeStamp[i].MinutesValue, 0, 59))           changed = true;
+        if (!CheckRange(extPt->TimeStamp[i].HoursValue, 0, 23))             changed = true;
+        if (!CheckRange(extPt->TimeStamp[i].TimeOffset, 0u, maxTimeOffset)) changed = true;
+        if (!CheckFlag (extPt->TimeStamp[i].ClockTimestampFlag, 0))         changed = true;
+        if (!CheckFlag (extPt->TimeStamp[i].NuitFieldBasedFlag, 1))         changed = true;
+        if (!CheckFlag (extPt->TimeStamp[i].FullTimestampFlag, 1))          changed = true;
+        if (!CheckFlag (extPt->TimeStamp[i].DiscontinuityFlag, 0))          changed = true;
+        if (!CheckFlag (extPt->TimeStamp[i].CntDroppedFlag, 0))             changed = true;
+        if (!CheckFlag (extPt->TimeStamp[i].SecondsFlag, 0))                changed = true;
+        if (!CheckFlag (extPt->TimeStamp[i].MinutesFlag, 0))                changed = true;
+        if (!CheckFlag (extPt->TimeStamp[i].HoursFlag, 0))                  changed = true;
+    }
+
+    if (!CheckRangeDflt(extBits->SPSId, 0,  31, 0)) changed = true;
+    if (!CheckRangeDflt(extBits->PPSId, 0, 255, 0)) changed = true;
+
+    if (extBits->SPSBuffer)
+    {
+        if (extSps->seqParameterSetId > 31                                  ||
+            !IsValidCodingProfile(extSps->profileIdc)                       ||
+            !IsValidCodingLevel(extSps->levelIdc)                           ||
+            extSps->chromaFormatIdc != 1                                    ||
+            extSps->bitDepthLumaMinus8 != 0                                 ||
+            extSps->bitDepthChromaMinus8 != 0                               ||
+            extSps->qpprimeYZeroTransformBypassFlag != 0                    ||
+            extSps->seqScalingMatrixPresentFlag != 0                        ||
+            extSps->picOrderCntType == 1                                    ||
+            /*extSps->gapsInFrameNumValueAllowedFlag != 0                     ||*/
+            extSps->mbAdaptiveFrameFieldFlag != 0                           ||
+            extSps->vui.flags.fixedFrameRate == 0                           ||
+            extSps->vui.flags.vclHrdParametersPresent != 0                  ||
+            extSps->vui.nalHrdParameters.cpbCntMinus1 > 0                   ||
+            extSps->vui.numReorderFrames > extSps->vui.maxDecFrameBuffering)
+            return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+        // the following fields aren't supported by snb/ivb_win7 drivers directly and requires sps patching
+        // patching is not possible whe protection is on
+        if (par.Protected != 0)
+            if (extSps->nalRefIdc        != 1 ||
+                extSps->constraints.set0 != 0 ||
+                extSps->constraints.set1 != 0 ||
+                extSps->constraints.set2 != 0 ||
+                extSps->constraints.set3 != 0 ||
+                extSps->constraints.set4 != 0 ||
+                extSps->constraints.set5 != 0 ||
+                extSps->constraints.set6 != 0 ||
+                extSps->constraints.set7 != 0)
+                return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+        if (extBits->PPSBuffer)
+        {
+            if (extPps->seqParameterSetId != extSps->seqParameterSetId ||
+                extPps->numSliceGroupsMinus1 > 0                       ||
+                extPps->numRefIdxL0DefaultActiveMinus1 > 31            ||
+                extPps->numRefIdxL1DefaultActiveMinus1 > 31            ||
+                extPps->weightedPredFlag != 0                          ||
+                extPps->weightedBipredIdc == 1                         ||
+                extPps->picInitQpMinus26 < -26                         ||
+                extPps->picInitQpMinus26 > 25                          ||
+                extPps->picInitQsMinus26 != 0                          ||
+                extPps->chromaQpIndexOffset < -12                      ||
+                extPps->chromaQpIndexOffset > 12                       ||
+                extPps->deblockingFilterControlPresentFlag == 0        ||
+                extPps->redundantPicCntPresentFlag != 0                ||
+                extPps->picScalingMatrixPresentFlag != 0               ||
+                extPps->secondChromaQpIndexOffset < -12                ||
+                extPps->secondChromaQpIndexOffset > 12)
+                return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+            // the following fields aren't supported by snb/ivb_win7 drivers directlyand requires pps patching
+            // patching is not possible whe protection is on
+            if (par.Protected != 0)
+                if (extSps->nalRefIdc != 1)
+                    return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+        }
+    }
+
+    if (hwCaps.UserMaxFrameSizeSupport == 0 && extOpt2->MaxFrameSize)
+    {
+        extOpt2->MaxFrameSize = 0;
+        changed = true;
+    }
+
+    if (IsMvcProfile(par.mfx.CodecProfile) && MFX_ERR_UNSUPPORTED == CheckMVCSeqDescQueryLike(extMvc))
+    {
+        unsupported = true;
+    }
+
+    par.SyncCalculableToVideoParam();
+
+    if (par.calcParam.numTemporalLayer > 0 && par.mfx.EncodedOrder != 0)
+    {
+        changed = true;
+        memset(extTemp->Layer, 0, sizeof(extTemp->Layer)); // unnamed structures can't be used in templates
+        Zero(par.calcParam.scale);
+        Zero(par.calcParam.tid);
+        par.calcParam.numTemporalLayer = 0;
+    }
+
+    if (par.calcParam.lyncMode && par.mfx.GopRefDist > 1)
+    {
+        changed = true;
+        par.mfx.GopRefDist = 1;
+    }
+
+
+    if (extTemp->BaseLayerPID + par.calcParam.numTemporalLayer > 64)
+    {
+        unsupported = true;
+        extTemp->BaseLayerPID = 0;
+    }
+
+    if (par.calcParam.numTemporalLayer > 0 &&
+        IsAvcProfile(par.mfx.CodecProfile) &&
+        extTemp->Layer[0].Scale != 1)
+    {
+        unsupported = true;
+        extTemp->Layer[0].Scale = 0;
+    }
+
+    for (mfxU32 i = 1; i < par.calcParam.numTemporalLayer; i++)
+    {
+        if (par.calcParam.scale[i] <= par.calcParam.scale[i - 1] || // increasing
+            par.calcParam.scale[i] %  par.calcParam.scale[i - 1])   // divisible
+        {
+            unsupported = true;
+            extTemp->Layer[par.calcParam.tid[i]].Scale = 0;
+        }
+
+        if (par.calcParam.lyncMode &&
+            par.calcParam.scale[i] != par.calcParam.scale[i - 1] * 2)
+        {
+            unsupported = true;
+            extTemp->Layer[par.calcParam.tid[i]].Scale = 0;
+        }
+    }
+
+    if (hwCaps.MaxNum_QualityLayer == 0 && hwCaps.MaxNum_DependencyLayer == 0)
+    {
+        for (mfxU32 i = 0; i < par.calcParam.numDependencyLayer; i++)
+        {
+            mfxU32 did = par.calcParam.did[i];
+
+            if (extSvc->DependencyLayer[did].BasemodePred != 0 &&
+                extSvc->DependencyLayer[did].BasemodePred != MFX_CODINGOPTION_OFF)
+            {
+                extSvc->DependencyLayer[did].BasemodePred = MFX_CODINGOPTION_OFF;
+                changed = true;
+            }
+            if (extSvc->DependencyLayer[did].MotionPred != 0 &&
+                extSvc->DependencyLayer[did].MotionPred != MFX_CODINGOPTION_OFF)
+            {
+                extSvc->DependencyLayer[did].MotionPred = MFX_CODINGOPTION_OFF;
+                changed = true;
+            }
+            if (extSvc->DependencyLayer[did].ResidualPred != 0 &&
+                extSvc->DependencyLayer[did].ResidualPred != MFX_CODINGOPTION_OFF)
+            {
+                extSvc->DependencyLayer[did].ResidualPred = MFX_CODINGOPTION_OFF;
+                changed = true;
+            }
+        }
+    }
+
+    if (extOpt2->IntRefType > 2 || (extOpt2->IntRefType == 1 && hwCaps.RollingIntraRefresh == 0))
+    {
+        extOpt2->IntRefType = 0;
+        unsupported = true;
+    }
+    else if (extOpt2->IntRefType == 2) // 2 - reserved (horizontal refresh)
+    {
+        extOpt2->IntRefType = 0;
+        changed = true;
+    }
+
+    if (extOpt2->IntRefType && par.mfx.GopRefDist > 1)
+    {
+        extOpt2->IntRefType = 0;
+        changed = true;
+    }
+
+    if (extOpt2->IntRefType && par.mfx.NumRefFrame > 1)
+    {
+        extOpt2->IntRefType = 0;
+        changed = true;
+    }
+
+    if (extOpt2->IntRefType && par.calcParam.numTemporalLayer)
+    {
+        extOpt2->IntRefType = 0;
+        changed = true;
+    }
+
+    if (extOpt2->IntRefQPDelta < -51 || extOpt2->IntRefQPDelta > 51)
+    {
+        extOpt2->IntRefQPDelta = 0;
+        changed = true;
+    }
+
+    if (extDdi->BiPyramid        != 0 &&
+        extDdi->BiPyramid        != 3 &&
+        par.mfx.CodecLevel       != 0 &&
+        par.mfx.FrameInfo.Width  != 0 &&
+        par.mfx.FrameInfo.Height != 0)
+    {
+        const mfxU16 nfxMaxByLevel    = GetMaxNumRefFrame(par);
+        const mfxU16 nfxMinForPyramid = (par.mfx.GopRefDist - 1) / 2 + 1;
+
+        if (nfxMinForPyramid > nfxMaxByLevel)
+        {
+            // max dpb size is not enougn for pyramid
+            changed = true;
+            extDdi->BiPyramid = 3;
+        }
+        else
+        {
+            if (par.mfx.NumRefFrame != 0 &&
+                par.mfx.NumRefFrame < nfxMinForPyramid)
+            {
+                changed = true;
+                par.mfx.NumRefFrame = nfxMinForPyramid;
+            }
+        }
+    }
+
+    if (par.calcParam.numTemporalLayer >  1 &&
+        par.mfx.CodecLevel             != 0 &&
+        par.mfx.FrameInfo.Width        != 0 &&
+        par.mfx.FrameInfo.Height       != 0)
+    {
+        mfxU16 const nrfMaxByLevel     = GetMaxNumRefFrame(par);
+        mfxU16 const nrfMinForTemporal = mfxU16(1 << (par.calcParam.numTemporalLayer - 2));
+
+        if (nrfMinForTemporal > nrfMaxByLevel)
+        {
+            // max dpb size is not enougn for requested number of temporal layers
+            changed = true;
+            par.calcParam.numTemporalLayer = 1;
+        }
+        else
+        {
+            if (par.mfx.NumRefFrame != 0 &&
+                par.mfx.NumRefFrame < nrfMinForTemporal)
+            {
+                changed = true;
+                par.mfx.NumRefFrame = nrfMinForTemporal;
+            }
+        }
+    }
+
+    return unsupported
+        ? MFX_ERR_UNSUPPORTED
+        : changed
+            ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM
+            : MFX_ERR_NONE;
+}
+
+// checks MVC per-view parameters (bitrates, buffer size, initial delay, level)
+mfxStatus MfxHwH264Encode::CheckVideoParamMvcQueryLike(MfxVideoParam & par)
+{
+    bool changed     = false;
+
+    mfxExtCodingOptionSPSPPS * extBits = GetExtBuffer(par);
+    mfxExtSpsHeader *          extSps  = GetExtBuffer(par);
+
+    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP && par.calcParam.targetKbps != 0)
+    {
+        if (par.mfx.FrameInfo.Width         != 0 &&
+            par.mfx.FrameInfo.Height        != 0 &&
+            par.mfx.FrameInfo.FrameRateExtN != 0 &&
+            par.mfx.FrameInfo.FrameRateExtD != 0)
+        {
+            mfxF64 rawDataBitrate = 12.0 * par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height *
+                par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD;
+            mfxU32 minTargetKbps = mfxU32(IPP_MIN(0xffffffff, rawDataBitrate / 1000 / 500));
+
+            if (par.calcParam.mvcPerViewPar.targetKbps < minTargetKbps)
+            {
+                changed = true;
+                par.calcParam.mvcPerViewPar.targetKbps = minTargetKbps;
+            }
+        }
+
+        if (extSps->vui.flags.nalHrdParametersPresent || extSps->vui.flags.vclHrdParametersPresent)
+        {
+            mfxU16 profile = MFX_PROFILE_AVC_HIGH;
+            for (; profile != MFX_PROFILE_UNKNOWN; profile = GetNextProfile(profile))
+            {
+                if (mfxU16 minLevel = GetLevelLimitByMaxBitrate(profile, par.calcParam.mvcPerViewPar.targetKbps))
+                {
+                    if (par.calcParam.mvcPerViewPar.codecLevel != 0 && par.calcParam.mvcPerViewPar.codecLevel < minLevel)
+                    {
+                        if (extBits->SPSBuffer)
+                            return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+                        changed = true;
+                        par.calcParam.mvcPerViewPar.codecLevel   = minLevel;
+                    }
+                    break;
+                }
+            }
+
+            if (profile == MFX_PROFILE_UNKNOWN)
+                return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+        }
+    }
+
+    if (par.calcParam.mvcPerViewPar.targetKbps != 0 && par.calcParam.mvcPerViewPar.maxKbps != 0)
+    {
+        if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
+        {
+            if (par.calcParam.maxKbps != par.calcParam.targetKbps)
+            {
+                changed = true;
+                if (extSps->vui.flags.nalHrdParametersPresent || extSps->vui.flags.vclHrdParametersPresent)
+                    par.calcParam.mvcPerViewPar.targetKbps = par.calcParam.mvcPerViewPar.maxKbps;
+                else
+                    par.calcParam.mvcPerViewPar.maxKbps = par.calcParam.mvcPerViewPar.targetKbps;
+            }
+        }
+        else if (
+            par.mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
+            par.mfx.RateControlMethod == MFX_RATECONTROL_WIDI_VBR)
+        {
+            if (par.calcParam.mvcPerViewPar.maxKbps < par.calcParam.mvcPerViewPar.targetKbps)
+            {
+                if (extBits->SPSBuffer && (
+                    extSps->vui.flags.nalHrdParametersPresent ||
+                    extSps->vui.flags.vclHrdParametersPresent))
+                    return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+                changed = true;
+                par.calcParam.mvcPerViewPar.maxKbps = par.calcParam.mvcPerViewPar.targetKbps;
+            }
+        }
+    }
+
+    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP && par.calcParam.mvcPerViewPar.maxKbps != 0)
+    {
+        mfxU16 profile = MFX_PROFILE_AVC_HIGH;
+        for (; profile != MFX_PROFILE_UNKNOWN; profile = GetNextProfile(profile))
+        {
+            if (mfxU16 minLevel = GetLevelLimitByMaxBitrate(profile, par.calcParam.mvcPerViewPar.maxKbps))
+            {
+                if (par.calcParam.mvcPerViewPar.codecLevel != 0 && par.calcParam.mvcPerViewPar.codecLevel < minLevel)
+                {
+                    if (extBits->SPSBuffer)
+                        return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+                    changed = true;
+                    par.calcParam.mvcPerViewPar.codecLevel = minLevel;
+                }
+                break;
+            }
+        }
+
+        if (profile == MFX_PROFILE_UNKNOWN)
+            return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+    }
+
+    if (par.calcParam.bufferSizeInKB != 0)
+    {
+        if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+        {
+            mfxU32 uncompressedSizeInKb = GetUncompressedSizeInKb(par);
+            if (par.calcParam.bufferSizeInKB < uncompressedSizeInKb)
+            {
+                changed = true;
+                par.calcParam.bufferSizeInKB = uncompressedSizeInKb;
+            }
+        }
+        else
+        {
+            mfxF64 avgFrameSizeInKB = 0;
+            if (par.mfx.RateControlMethod       != MFX_RATECONTROL_AVBR &&
+                par.mfx.FrameInfo.FrameRateExtN != 0 &&
+                par.mfx.FrameInfo.FrameRateExtD != 0 &&
+                par.calcParam.targetKbps        != 0)
+            {
+                mfxF64 frameRate = mfxF64(par.mfx.FrameInfo.FrameRateExtN) / par.mfx.FrameInfo.FrameRateExtD;
+                avgFrameSizeInKB = par.calcParam.mvcPerViewPar.targetKbps / frameRate / 8;
+
+                if (par.calcParam.mvcPerViewPar.bufferSizeInKB < 2 * avgFrameSizeInKB)
+                {
+                    if (extSps->vui.flags.nalHrdParametersPresent ||
+                        extSps->vui.flags.vclHrdParametersPresent)
+                        return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+                    changed = true;
+                    par.calcParam.mvcPerViewPar.bufferSizeInKB = mfxU16(2 * avgFrameSizeInKB + 1);
+                }
+            }
+
+            mfxU16 profile = MFX_PROFILE_AVC_HIGH;
+            for (; profile != MFX_PROFILE_UNKNOWN; profile = GetNextProfile(profile))
+            {
+                if (mfxU16 minLevel = GetLevelLimitByBufferSize(profile, par.calcParam.mvcPerViewPar.bufferSizeInKB))
+                {
+                    if (par.calcParam.mvcPerViewPar.codecLevel != 0 && par.calcParam.mvcPerViewPar.codecLevel < minLevel)
+                    {
+                        if (extBits->SPSBuffer)
+                            return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+                        changed = true;
+                        par.calcParam.mvcPerViewPar.codecLevel = minLevel;
+                    }
+                    break;
+                }
+            }
+
+            if (profile == MFX_PROFILE_UNKNOWN)
+                return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+            if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
+                par.mfx.RateControlMethod != MFX_RATECONTROL_AVBR &&
+                par.calcParam.initialDelayInKB != 0)
+            {
+                if (par.calcParam.mvcPerViewPar.initialDelayInKB > par.calcParam.mvcPerViewPar.bufferSizeInKB)
+                {
+                    changed = true;
+                    par.calcParam.mvcPerViewPar.initialDelayInKB = par.calcParam.mvcPerViewPar.bufferSizeInKB / 2;
+                }
+
+                if (avgFrameSizeInKB != 0 && par.calcParam.mvcPerViewPar.initialDelayInKB < avgFrameSizeInKB)
+                {
+                    changed = true;
+                    par.calcParam.mvcPerViewPar.initialDelayInKB = mfxU16(IPP_MIN(par.calcParam.mvcPerViewPar.bufferSizeInKB, avgFrameSizeInKB));
+                }
+            }
+        }
+    }
+
+    return changed ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE;
+}
+
+// check mfxExtMVCSeqDesc as in Query
+mfxStatus MfxHwH264Encode::CheckMVCSeqDescQueryLike(mfxExtMVCSeqDesc * mvcSeqDesc)
+{
+    bool unsupported = false;
+    if (mvcSeqDesc->NumView > 0 && (mvcSeqDesc->NumView > 2 || mvcSeqDesc->NumView < 2))
+    {
+        unsupported = true;
+        mvcSeqDesc->NumView = 0;
+    }
+
+    if (mvcSeqDesc->NumOP > 0 && mvcSeqDesc->NumOP > 1024)
+    {
+        unsupported = true;
+        mvcSeqDesc->NumOP = 0;
+    }
+
+    if (mvcSeqDesc->NumOP > 0 && mvcSeqDesc->NumViewId > 1024 * mvcSeqDesc->NumOP)
+    {
+        unsupported = true;
+        mvcSeqDesc->NumViewId = 0;
+    }
+
+    if (mvcSeqDesc->NumViewAlloc > 0 && (mvcSeqDesc->NumViewAlloc < mvcSeqDesc->NumView))
+    {
+        unsupported = true;
+        mvcSeqDesc->NumViewAlloc = 0;
+    }
+
+    return unsupported ? MFX_ERR_UNSUPPORTED : MFX_ERR_NONE;
+}
+
+// check mfxExtMVCSeqDesc before encoding
+mfxStatus MfxHwH264Encode::CheckAndFixMVCSeqDesc(mfxExtMVCSeqDesc * mvcSeqDesc, bool isViewOutput)
+{
+    bool unsupported = false;
+    bool changed = false;
+    if (mvcSeqDesc->NumView > 2 || mvcSeqDesc->NumView < 2)
+    {
+        unsupported = true;
+        mvcSeqDesc->NumView = 0;
+    }
+
+    if (mvcSeqDesc->NumOP > 1024)
+    {
+        unsupported = true;
+        mvcSeqDesc->NumOP = 0;
+    }
+
+    if (mvcSeqDesc->NumOP > 0 && mvcSeqDesc->NumViewId > 1024 * mvcSeqDesc->NumOP)
+    {
+        unsupported = true;
+        mvcSeqDesc->NumViewId = 0;
+    }
+
+    if (mvcSeqDesc->NumViewAlloc > 0 && mvcSeqDesc->NumViewAlloc < mvcSeqDesc->NumView)
+    {
+        changed = true;
+        mvcSeqDesc->NumViewAlloc = 0;
+        mvcSeqDesc->View = 0;
+    }
+
+    if (mvcSeqDesc->NumViewAlloc > 0)
+    {
+        if (mvcSeqDesc->View == 0)
+        {
+            unsupported = true;
+        }
+        else
+        {
+            if (mvcSeqDesc->View[0].ViewId != 0 && isViewOutput)
+            {
+                 changed = true;
+                mvcSeqDesc->View[0].ViewId = 0;
+            }
+        }
+    }
+
+    if (mvcSeqDesc->NumViewIdAlloc > 0 && mvcSeqDesc->NumViewIdAlloc < mvcSeqDesc->NumViewId)
+    {
+        changed = true;
+        mvcSeqDesc->NumViewId = 0;
+        mvcSeqDesc->NumViewIdAlloc = 0;
+        mvcSeqDesc->ViewId = 0;
+    }
+
+    if (mvcSeqDesc->NumViewIdAlloc > 0)
+    {
+        if (mvcSeqDesc->ViewId == 0)
+        {
+            unsupported = true;
+        }
+        else
+        {
+            if (mvcSeqDesc->ViewId[0] != 0 && isViewOutput)
+            {
+                changed = true;
+                mvcSeqDesc->ViewId[0] = 0;
+            }
+        }
+    }
+
+    if (mvcSeqDesc->NumOPAlloc > 0 &&  mvcSeqDesc->NumOPAlloc < mvcSeqDesc->NumOP)
+    {
+        changed = true;
+        mvcSeqDesc->NumOP = 0;
+        mvcSeqDesc->NumOPAlloc = 0;
+        mvcSeqDesc->OP = 0;
+    }
+
+    if (mvcSeqDesc->NumOPAlloc > 0 && mvcSeqDesc->OP == 0)
+    {
+        unsupported = true;
+    }
+
+    return unsupported ? MFX_ERR_UNSUPPORTED :
+        changed ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE;
+}
+
+void MfxHwH264Encode::InheritDefaultValues(
+    MfxVideoParam const & parInit,
+    MfxVideoParam &       parReset)
+{
+    InheritOption(parInit.AsyncDepth,             parReset.AsyncDepth);
+    InheritOption(parInit.mfx.BRCParamMultiplier, parReset.mfx.BRCParamMultiplier);
+    InheritOption(parInit.mfx.CodecId,            parReset.mfx.CodecId);
+    InheritOption(parInit.mfx.CodecProfile,       parReset.mfx.CodecProfile);
+    InheritOption(parInit.mfx.CodecLevel,         parReset.mfx.CodecLevel);
+    InheritOption(parInit.mfx.NumThread,          parReset.mfx.NumThread);
+    InheritOption(parInit.mfx.TargetUsage,        parReset.mfx.TargetUsage);
+    InheritOption(parInit.mfx.GopPicSize,         parReset.mfx.GopPicSize);
+    InheritOption(parInit.mfx.GopRefDist,         parReset.mfx.GopRefDist);
+    InheritOption(parInit.mfx.GopOptFlag,         parReset.mfx.GopOptFlag);
+    InheritOption(parInit.mfx.IdrInterval,        parReset.mfx.IdrInterval);
+    InheritOption(parInit.mfx.RateControlMethod,  parReset.mfx.RateControlMethod);
+    InheritOption(parInit.mfx.BufferSizeInKB,     parReset.mfx.BufferSizeInKB);
+    InheritOption(parInit.mfx.NumSlice,           parReset.mfx.NumSlice);
+    InheritOption(parInit.mfx.NumRefFrame,        parReset.mfx.NumRefFrame);
+
+    if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_CBR && parReset.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
+    {
+        InheritOption(parInit.mfx.InitialDelayInKB, parReset.mfx.InitialDelayInKB);
+        InheritOption(parInit.mfx.TargetKbps,       parReset.mfx.TargetKbps);
+    }
+
+    if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_VBR && parReset.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
+    {
+        InheritOption(parInit.mfx.InitialDelayInKB, parReset.mfx.InitialDelayInKB);
+        InheritOption(parInit.mfx.TargetKbps,       parReset.mfx.TargetKbps);
+        InheritOption(parInit.mfx.MaxKbps,          parReset.mfx.MaxKbps);
+    }
+
+    if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_CQP && parReset.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+    {
+        InheritOption(parInit.mfx.QPI, parReset.mfx.QPI);
+        InheritOption(parInit.mfx.QPP, parReset.mfx.QPP);
+        InheritOption(parInit.mfx.QPB, parReset.mfx.QPB);
+    }
+
+    if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_AVBR && parReset.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
+    {
+        InheritOption(parInit.mfx.Accuracy,    parReset.mfx.Accuracy);
+        InheritOption(parInit.mfx.Convergence, parReset.mfx.Convergence);
+    }
+
+    InheritOption(parInit.mfx.FrameInfo.FourCC,         parReset.mfx.FrameInfo.FourCC);
+    InheritOption(parInit.mfx.FrameInfo.FourCC,         parReset.mfx.FrameInfo.FourCC);
+    InheritOption(parInit.mfx.FrameInfo.Width,          parReset.mfx.FrameInfo.Width);
+    InheritOption(parInit.mfx.FrameInfo.Height,         parReset.mfx.FrameInfo.Height);
+    InheritOption(parInit.mfx.FrameInfo.CropX,          parReset.mfx.FrameInfo.CropX);
+    InheritOption(parInit.mfx.FrameInfo.CropY,          parReset.mfx.FrameInfo.CropY);
+    InheritOption(parInit.mfx.FrameInfo.CropW,          parReset.mfx.FrameInfo.CropW);
+    InheritOption(parInit.mfx.FrameInfo.CropH,          parReset.mfx.FrameInfo.CropH);
+    InheritOption(parInit.mfx.FrameInfo.FrameRateExtN,  parReset.mfx.FrameInfo.FrameRateExtN);
+    InheritOption(parInit.mfx.FrameInfo.FrameRateExtD,  parReset.mfx.FrameInfo.FrameRateExtD);
+    InheritOption(parInit.mfx.FrameInfo.AspectRatioW,   parReset.mfx.FrameInfo.AspectRatioW);
+    InheritOption(parInit.mfx.FrameInfo.AspectRatioH,   parReset.mfx.FrameInfo.AspectRatioH);
+
+    mfxExtCodingOption const * extOptInit   = GetExtBuffer(parInit);
+    mfxExtCodingOption *       extOptReset  = GetExtBuffer(parReset);
+
+    InheritOption(extOptInit->RateDistortionOpt,     extOptReset->RateDistortionOpt);
+    InheritOption(extOptInit->MECostType,            extOptReset->MECostType);
+    InheritOption(extOptInit->MESearchType,          extOptReset->MESearchType);
+    InheritOption(extOptInit->MVSearchWindow.x,      extOptReset->MVSearchWindow.x);
+    InheritOption(extOptInit->MVSearchWindow.y,      extOptReset->MVSearchWindow.y);
+    InheritOption(extOptInit->EndOfSequence,         extOptReset->EndOfSequence);
+    InheritOption(extOptInit->FramePicture,          extOptReset->FramePicture);
+    InheritOption(extOptInit->CAVLC,                 extOptReset->CAVLC);
+    InheritOption(extOptInit->NalHrdConformance,     extOptReset->NalHrdConformance);
+    InheritOption(extOptInit->SingleSeiNalUnit,      extOptReset->SingleSeiNalUnit);
+    InheritOption(extOptInit->VuiVclHrdParameters,   extOptReset->VuiVclHrdParameters);
+    InheritOption(extOptInit->RefPicListReordering,  extOptReset->RefPicListReordering);
+    InheritOption(extOptInit->ResetRefList,          extOptReset->ResetRefList);
+    InheritOption(extOptInit->RefPicMarkRep,         extOptReset->RefPicMarkRep);
+    InheritOption(extOptInit->FieldOutput,           extOptReset->FieldOutput);
+    InheritOption(extOptInit->IntraPredBlockSize,    extOptReset->IntraPredBlockSize);
+    InheritOption(extOptInit->InterPredBlockSize,    extOptReset->InterPredBlockSize);
+    InheritOption(extOptInit->MVPrecision,           extOptReset->MVPrecision);
+    InheritOption(extOptInit->MaxDecFrameBuffering,  extOptReset->MaxDecFrameBuffering);
+    InheritOption(extOptInit->AUDelimiter,           extOptReset->AUDelimiter);
+    InheritOption(extOptInit->EndOfStream,           extOptReset->EndOfStream);
+    InheritOption(extOptInit->PicTimingSEI,          extOptReset->PicTimingSEI);
+    InheritOption(extOptInit->VuiNalHrdParameters,   extOptReset->VuiNalHrdParameters);
+
+    parReset.SyncVideoToCalculableParam();
+
+    // not inherited:
+    // InheritOption(parInit.mfx.FrameInfo.PicStruct,      parReset.mfx.FrameInfo.PicStruct);
+    // InheritOption(parInit.IOPattern,                    parReset.IOPattern);
+    // InheritOption(parInit.mfx.FrameInfo.ChromaFormat,   parReset.mfx.FrameInfo.ChromaFormat);
+}
+
+
+namespace
+{
+    bool IsDyadic(mfxU32 tempScales[8], mfxU32 numTempLayers)
+    {
+        if (numTempLayers > 0)
+            for (mfxU32 i = 1; i < numTempLayers; ++i)
+                if (tempScales[i] != 2 * tempScales[i - 1])
+                    return false;
+        return true;
+    }
+
+    bool IsPowerOf2(mfxU32 n)
+    {
+        return (n & (n - 1)) == 0;
+    }
+};
+
+
+void MfxHwH264Encode::SetDefaults(
+    MfxVideoParam &     par,
+    ENCODE_CAPS const & hwCaps,
+    bool                setExtAlloc,
+    eMFXHWType          platform,
+    eMFXVAType          vaType)
+{
+    mfxExtCodingOption *       extOpt  = GetExtBuffer(par);
+    mfxExtCodingOption2 *      extOpt2 = GetExtBuffer(par);
+    mfxExtCodingOptionDDI *    extDdi  = GetExtBuffer(par);
+    mfxExtPAVPOption *         extPavp = GetExtBuffer(par);
+    mfxExtVideoSignalInfo *    extVsi  = GetExtBuffer(par);
+    mfxExtCodingOptionSPSPPS * extBits = GetExtBuffer(par);
+    mfxExtSpsHeader *          extSps  = GetExtBuffer(par);
+    mfxExtPpsHeader *          extPps  = GetExtBuffer(par);
+    mfxExtSVCSeqDesc *         extSvc  = GetExtBuffer(par);
+    mfxExtSVCRateControl *     extRc   = GetExtBuffer(par);
+
+    if (IsProtectionPavp(par.Protected))
+    {
+        if (extPavp->EncryptionType == 0)
+            extPavp->EncryptionType = MFX_PAVP_AES128_CTR;
+
+        if (extPavp->CounterType == 0)
+            extPavp->CounterType = MFX_PAVP_CTR_TYPE_A;
+
+        if (extPavp->CounterIncrement == 0)
+            extPavp->CounterIncrement = 0xC000;
+    }
+
+    mfxU8 fieldCodingPossible = IsFieldCodingPossible(par);
+
+    if (par.IOPattern == 0)
+        par.IOPattern = setExtAlloc
+            ? mfxU16(MFX_IOPATTERN_IN_VIDEO_MEMORY)
+            : mfxU16(MFX_IOPATTERN_IN_SYSTEM_MEMORY);
+
+    if (par.AsyncDepth == 0)
+        par.AsyncDepth = GetDefaultAsyncDepth(par);
+
+    if (par.mfx.TargetUsage == 0)
+        par.mfx.TargetUsage = 4;
+
+    if (par.mfx.NumSlice == 0)
+        par.mfx.NumSlice = 1;
+
+    if (par.mfx.RateControlMethod == 0)
+        par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
+
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
+    {
+        if (par.mfx.Accuracy == 0)
+            par.mfx.Accuracy = AVBR_ACCURACY_MAX;
+
+        if (par.mfx.Convergence == 0)
+            par.mfx.Convergence = AVBR_CONVERGENCE_MAX;
+    }
+
+    if (par.mfx.GopRefDist == 0)
+    {
+        if (IsAvcBaseProfile(par.mfx.CodecProfile) ||
+            par.mfx.CodecProfile == MFX_PROFILE_AVC_CONSTRAINED_HIGH ||
+            par.calcParam.numTemporalLayer > 0 && par.calcParam.lyncMode ||
+            hwCaps.SliceIPOnly)
+        {
+            par.mfx.GopRefDist = 1;
+        }
+        else if (par.calcParam.numTemporalLayer > 1)
+        { // svc temporal layers
+            par.mfx.GopRefDist = 1;
+            extDdi->BiPyramid = 3;
+
+            if (IsDyadic(par.calcParam.scale, par.calcParam.numTemporalLayer) &&
+                par.mfx.GopPicSize % par.calcParam.scale[par.calcParam.numTemporalLayer - 1] == 0)
+            {
+                if (par.calcParam.numTemporalLayer == 2)
+                {
+                    par.mfx.GopRefDist = 2;
+                    extDdi->BiPyramid = 3;
+                }
+                else
+                {
+                    par.mfx.GopRefDist = 4;
+                    extDdi->BiPyramid = 1;
+                }
+            }
+        }
+        else
+        {
+            par.mfx.GopRefDist = GetDefaultGopRefDist(par.mfx.TargetUsage, platform);
+            if (par.mfx.GopPicSize > 0 && par.mfx.GopPicSize <= par.mfx.GopRefDist)
+                par.mfx.GopRefDist = par.mfx.GopPicSize;
+        }
+    }
+
+    //FIXME: WA for MVC quality problem on progressive content.
+    if(IsMvcProfile(par.mfx.CodecProfile)){
+        extDdi->NumActiveRefP = extDdi->NumActiveRefBL0 = extDdi->NumActiveRefBL1 = 1;
+    }
+    if (extDdi->NumActiveRefP == 0)
+        extDdi->NumActiveRefP = GetDefaultMaxNumRefActivePL0(par.mfx.TargetUsage, platform);
+
+    if (par.mfx.GopRefDist > 1)
+    {
+        if (extDdi->NumActiveRefBL0 == 0)
+            extDdi->NumActiveRefBL0 = GetDefaultMaxNumRefActiveBL0(par.mfx.TargetUsage, platform);
+        if (extDdi->NumActiveRefBL1 == 0)
+            extDdi->NumActiveRefBL1 = GetDefaultMaxNumRefActiveBL1(par.mfx.TargetUsage, platform);
+    }
+
+    if (par.mfx.GopPicSize == 0)
+    {
+        mfxU32 maxScale = (par.calcParam.numTemporalLayer) > 0
+            ? par.calcParam.scale[par.calcParam.numTemporalLayer - 1]
+            : 1;
+        par.mfx.GopPicSize = mfxU16((256 + maxScale - 1) / maxScale * maxScale);
+    }
+
+    if (extDdi->BiPyramid == 0)
+    {
+        assert(par.mfx.GopRefDist > 0);
+        assert(par.mfx.GopPicSize > 0);
+
+        if (hwCaps.HeaderInsertion == 0 &&
+            IsDyadic(par.calcParam.scale, par.calcParam.numTemporalLayer) &&
+            par.mfx.GopRefDist >= 4 &&
+            IsPowerOf2(par.mfx.GopRefDist) &&
+            par.mfx.GopPicSize % par.mfx.GopRefDist == 0)
+        {
+            extDdi->BiPyramid = par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE?1:3;
+        }
+        else
+        {
+            extDdi->BiPyramid = 3;
+        }
+    }
+
+    if (par.mfx.FrameInfo.FourCC == 0)
+        par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+
+    if (par.mfx.FrameInfo.ChromaFormat == 0)
+        par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+
+    if (par.mfx.FrameInfo.CropW == 0)
+        par.mfx.FrameInfo.CropW = par.mfx.FrameInfo.Width - par.mfx.FrameInfo.CropX;
+
+    if (par.mfx.FrameInfo.CropH == 0)
+        par.mfx.FrameInfo.CropH = par.mfx.FrameInfo.Height - par.mfx.FrameInfo.CropY;
+
+    if (par.mfx.FrameInfo.AspectRatioW == 0)
+        par.mfx.FrameInfo.AspectRatioW = 1;
+
+    if (par.mfx.FrameInfo.AspectRatioH == 0)
+        par.mfx.FrameInfo.AspectRatioH = 1;
+
+    if (extOpt->InterPredBlockSize == MFX_BLOCKSIZE_UNKNOWN)
+        extOpt->InterPredBlockSize = MFX_BLOCKSIZE_MIN_4X4;
+
+    if (extOpt->MVPrecision == MFX_MVPRECISION_UNKNOWN)
+        extOpt->MVPrecision = MFX_MVPRECISION_QUARTERPEL;
+
+    if (extOpt->RateDistortionOpt == MFX_CODINGOPTION_UNKNOWN)
+        extOpt->RateDistortionOpt = MFX_CODINGOPTION_OFF;
+
+    if (extOpt->RateDistortionOpt == MFX_CODINGOPTION_UNKNOWN)
+        extOpt->RateDistortionOpt = MFX_CODINGOPTION_OFF;
+
+    if (extOpt->EndOfSequence == MFX_CODINGOPTION_UNKNOWN)
+        extOpt->EndOfSequence = MFX_CODINGOPTION_OFF;
+
+    if (extOpt->RefPicListReordering == MFX_CODINGOPTION_UNKNOWN)
+        extOpt->RefPicListReordering = MFX_CODINGOPTION_OFF;
+
+    if (extOpt->ResetRefList == MFX_CODINGOPTION_UNKNOWN)
+        extOpt->ResetRefList = MFX_CODINGOPTION_OFF;
+
+    if (extOpt->RefPicMarkRep == MFX_CODINGOPTION_UNKNOWN)
+        extOpt->RefPicMarkRep = MFX_CODINGOPTION_OFF;
+
+    if (extOpt->FieldOutput == MFX_CODINGOPTION_UNKNOWN)
+        extOpt->FieldOutput = MFX_CODINGOPTION_OFF;
+
+    if (extOpt->AUDelimiter == MFX_CODINGOPTION_UNKNOWN)
+        extOpt->AUDelimiter = (par.calcParam.lyncMode)
+            ? mfxU16(MFX_CODINGOPTION_OFF)
+            : mfxU16(MFX_CODINGOPTION_ON);
+
+    if (extOpt->EndOfStream == MFX_CODINGOPTION_UNKNOWN)
+        extOpt->EndOfStream = MFX_CODINGOPTION_OFF;
+
+    if (extOpt->PicTimingSEI == MFX_CODINGOPTION_UNKNOWN)
+        extOpt->PicTimingSEI = MFX_CODINGOPTION_ON;
+
+    if (extOpt->ViewOutput == MFX_CODINGOPTION_UNKNOWN)
+        extOpt->ViewOutput = MFX_CODINGOPTION_OFF;
+
+    if (extOpt->VuiNalHrdParameters == MFX_CODINGOPTION_UNKNOWN)
+        extOpt->VuiNalHrdParameters =
+            par.mfx.RateControlMethod == MFX_RATECONTROL_CQP ||
+            par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR
+                ? mfxU16(MFX_CODINGOPTION_OFF)
+                : mfxU16(MFX_CODINGOPTION_ON);
+
+    if (extOpt->VuiVclHrdParameters == MFX_CODINGOPTION_UNKNOWN)
+        extOpt->VuiVclHrdParameters = MFX_CODINGOPTION_OFF;
+
+    if (extOpt->NalHrdConformance == MFX_CODINGOPTION_UNKNOWN)
+        extOpt->NalHrdConformance = IsOn(extOpt->VuiNalHrdParameters) || IsOn(extOpt->VuiNalHrdParameters)
+            ? mfxU16(MFX_CODINGOPTION_ON)
+            : mfxU16(MFX_CODINGOPTION_OFF);
+
+    if (extOpt->CAVLC == MFX_CODINGOPTION_UNKNOWN)
+        extOpt->CAVLC = (IsAvcBaseProfile(par.mfx.CodecProfile) || hwCaps.NoCabacSupport)
+            ? mfxU16(MFX_CODINGOPTION_ON)
+            : mfxU16(MFX_CODINGOPTION_OFF);
+
+    if (extOpt->SingleSeiNalUnit == MFX_CODINGOPTION_UNKNOWN)
+        extOpt->SingleSeiNalUnit = MFX_CODINGOPTION_ON;
+
+    if (extOpt->NalHrdConformance == MFX_CODINGOPTION_UNKNOWN)
+        extOpt->NalHrdConformance = MFX_CODINGOPTION_ON;
+
+    if (extDdi->MEInterpolationMethod == ENC_INTERPOLATION_TYPE_NONE)
+        extDdi->MEInterpolationMethod = ENC_INTERPOLATION_TYPE_AVC6TAP;
+
+    if (extDdi->RefRaw == MFX_CODINGOPTION_UNKNOWN)
+        extDdi->RefRaw = MFX_CODINGOPTION_OFF;
+
+    if (extDdi->DirectSpatialMvPredFlag == MFX_CODINGOPTION_UNKNOWN)
+        extDdi->DirectSpatialMvPredFlag = MFX_CODINGOPTION_ON;
+
+    if (extDdi->Hme == MFX_CODINGOPTION_UNKNOWN)
+        extDdi->Hme = MFX_CODINGOPTION_ON;
+
+    if (extDdi->SwBrc == MFX_CODINGOPTION_UNKNOWN)
+    {
+        extDdi->SwBrc = mfxU16((extOpt2->ExtBRC == MFX_CODINGOPTION_UNKNOWN) ? MFX_CODINGOPTION_OFF : extOpt2->ExtBRC);
+        if (extDdi->LookAhead > 0)
+            extDdi->SwBrc = MFX_CODINGOPTION_ON;
+    }
+
+    if (extOpt2->ExtBRC == MFX_CODINGOPTION_UNKNOWN)
+        extOpt2->ExtBRC = mfxU16((extDdi->SwBrc == MFX_CODINGOPTION_UNKNOWN) ? MFX_CODINGOPTION_OFF : extDdi->SwBrc);
+
+    if (extDdi->LookAhead == 0)
+    {
+        if ((IsOn(extDdi->SwBrc) || IsOn(extOpt2->ExtBRC)) &&
+            platform >= MFX_HW_HSW && platform != MFX_HW_VLV && vaType == MFX_HW_D3D9 && par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE)
+            extDdi->LookAhead = 40;
+        else
+            extDdi->LookAhead = 1;
+    }
+
+    if (extDdi->LookAheadDep == 0 && extDdi->LookAhead >= 20)
+        extDdi->LookAheadDep = 10;
+
+    if (extDdi->QpUpdateRange == 0)
+        extDdi->QpUpdateRange = 10;
+
+    if (extDdi->RegressionWindow == 0)
+        extDdi->RegressionWindow = 20;
+
+    if (extOpt2->BitrateLimit == MFX_CODINGOPTION_UNKNOWN)
+        extOpt2->BitrateLimit = MFX_CODINGOPTION_ON;
+
+    extDdi->MaxMVs = 32;
+    extDdi->SkipCheck = 1;
+    extDdi->DirectCheck = 1;
+    extDdi->BiDirSearch = 1;
+    extDdi->FieldPrediction = fieldCodingPossible;
+    extDdi->MVPrediction = 1;
+
+    if (extDdi->StrengthN == 0)
+        extDdi->StrengthN = 220;
+
+    if (par.mfx.NumRefFrame == 0)
+    {
+        mfxU16 const nrfMin             = (par.mfx.GopRefDist > 1 ? 2 : 1);
+        mfxU16 const nrfDefault         = IPP_MAX(nrfMin, GetDefaultNumRefFrames(par.mfx.TargetUsage));
+        mfxU16 const nrfMaxByCaps       = IPP_MIN(IPP_MAX(1, hwCaps.MaxNum_Reference), 8) * 2;
+        mfxU16 const nrfMaxByLevel      = GetMaxNumRefFrame(par);
+        mfxU16 const nrfMinForPyramid   = nrfMin + (par.mfx.GopRefDist - 1) / 2;
+        mfxU16 const nrfMinForTemporal  = mfxU16(nrfMin + par.calcParam.numTemporalLayer - 1);
+        mfxU16 const nrfMinForInterlace = 2; // HSW and IVB don't support 1 reference frame for interlace
+
+        if (par.calcParam.numTemporalLayer > 1)
+            par.mfx.NumRefFrame = nrfMinForTemporal;
+        else if (extDdi->BiPyramid != 3)
+            par.mfx.NumRefFrame = nrfMinForPyramid;
+        else if (extOpt2->IntRefType)
+            par.mfx.NumRefFrame = 1;
+        else if ((par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0)
+            par.mfx.NumRefFrame = IPP_MIN(IPP_MIN(IPP_MAX(nrfDefault, nrfMinForInterlace), nrfMaxByLevel), nrfMaxByCaps);
+        else
+            par.mfx.NumRefFrame = IPP_MIN(IPP_MIN(nrfDefault, nrfMaxByLevel), nrfMaxByCaps);
+    }
+
+    if (extOpt->IntraPredBlockSize == MFX_BLOCKSIZE_UNKNOWN)
+        extOpt->IntraPredBlockSize = GetDefaultIntraPredBlockSize(par, platform);
+
+    if (par.mfx.CodecProfile == MFX_PROFILE_UNKNOWN)
+    {
+        par.mfx.CodecProfile = MFX_PROFILE_AVC_BASELINE;
+
+        if ((par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_TFF) ||
+            (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF))
+            par.mfx.CodecProfile = MFX_PROFILE_AVC_MAIN;
+
+        if (par.mfx.GopRefDist > 1)
+            par.mfx.CodecProfile = MFX_PROFILE_AVC_MAIN;
+
+        if (IsOff(extOpt->CAVLC))
+            par.mfx.CodecProfile = MFX_PROFILE_AVC_MAIN;
+
+        if (extOpt->IntraPredBlockSize >= MFX_BLOCKSIZE_MIN_8X8)
+            par.mfx.CodecProfile = MFX_PROFILE_AVC_HIGH;
+    }
+
+    if (par.mfx.CodecLevel == MFX_LEVEL_UNKNOWN)
+        par.mfx.CodecLevel = MFX_LEVEL_AVC_1;
+
+    CheckVideoParamQueryLike(par, hwCaps, platform, vaType);
+
+    if (extOpt2->MBBRC == MFX_CODINGOPTION_UNKNOWN)
+    {
+        // turn off MBBRC by default
+        extOpt2->MBBRC = MFX_CODINGOPTION_OFF;
+    }
+
+    if (par.calcParam.mvcPerViewPar.codecLevel == MFX_LEVEL_UNKNOWN)
+        par.calcParam.mvcPerViewPar.codecLevel = MFX_LEVEL_AVC_1;
+
+    CheckVideoParamMvcQueryLike(par);
+
+    if (par.calcParam.maxKbps == 0)
+    {
+        if (par.mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
+            par.mfx.RateControlMethod == MFX_RATECONTROL_WIDI_VBR)
+        {
+            mfxU32 maxBps = par.calcParam.targetKbps * MAX_BITRATE_RATIO;
+            if (extSps->vui.flags.nalHrdParametersPresent ||
+                extSps->vui.flags.vclHrdParametersPresent)
+                maxBps = IPP_MIN(maxBps, GetMaxBitrate(par));
+
+            par.calcParam.maxKbps = mfxU32(IPP_MIN(maxBps / 1000, UINT_MAX));
+            assert(par.calcParam.maxKbps >= par.calcParam.targetKbps);
+        }
+        else if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
+        {
+            par.calcParam.maxKbps = par.calcParam.targetKbps;
+        }
+    }
+
+    if (par.calcParam.mvcPerViewPar.maxKbps == 0)
+    {
+        if (par.mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
+            par.mfx.RateControlMethod == MFX_RATECONTROL_WIDI_VBR)
+        {
+            mfxU32 maxBps = par.calcParam.mvcPerViewPar.targetKbps * MAX_BITRATE_RATIO;
+            if (extSps->vui.flags.nalHrdParametersPresent ||
+                extSps->vui.flags.vclHrdParametersPresent)
+                maxBps = IPP_MIN(maxBps, GetMaxPerViewBitrate(par));
+
+            par.calcParam.mvcPerViewPar.maxKbps = mfxU32(IPP_MIN(maxBps / 1000, UINT_MAX));
+            assert(par.calcParam.mvcPerViewPar.maxKbps >= par.calcParam.mvcPerViewPar.targetKbps);
+        }
+        else if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
+        {
+            par.calcParam.mvcPerViewPar.maxKbps = par.calcParam.mvcPerViewPar.targetKbps;
+        }
+    }
+
+    if (par.calcParam.bufferSizeInKB == 0)
+    {
+        if (extDdi->LookAhead > 1 && IsOn(extDdi->SwBrc))
+        {
+            par.calcParam.bufferSizeInKB = (par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height * 3 / 2 / 1000);
+        }
+        else
+        {
+            mfxU32 bufferSizeInBits = IPP_MIN(
+                GetMaxBufferSize(par),                           // limit by spec
+                par.calcParam.maxKbps * DEFAULT_CPB_IN_SECONDS); // limit by common sense
+
+            par.calcParam.bufferSizeInKB =
+                (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP) ||
+                (par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
+                    ? GetUncompressedSizeInKb(par)
+                    : bufferSizeInBits / 8000;
+        }
+    }
+
+    if (par.calcParam.mvcPerViewPar.bufferSizeInKB == 0)
+    {
+        mfxU32 bufferSizeInBits = IPP_MIN(
+            GetMaxPerViewBufferSize(par),                           // limit by spec
+            par.calcParam.mvcPerViewPar.maxKbps * DEFAULT_CPB_IN_SECONDS); // limit by common sense
+
+        par.calcParam.mvcPerViewPar.bufferSizeInKB =
+            (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP) ||
+            (par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
+                ? GetUncompressedSizeInKb(par)
+                : bufferSizeInBits / 8000;
+    }
+
+    if (par.calcParam.initialDelayInKB == 0 &&
+        par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
+        par.mfx.RateControlMethod != MFX_RATECONTROL_AVBR)
+    {
+        par.calcParam.initialDelayInKB = par.calcParam.bufferSizeInKB / 2;
+        par.calcParam.mvcPerViewPar.initialDelayInKB = par.calcParam.mvcPerViewPar.bufferSizeInKB / 2;
+    }
+
+    if (extOpt->MaxDecFrameBuffering == 0)
+    {
+        extOpt->MaxDecFrameBuffering = par.mfx.NumRefFrame;
+    }
+
+    if (extDdi->DisablePSubMBPartition == MFX_CODINGOPTION_UNKNOWN)
+    {
+        extDdi->DisablePSubMBPartition = MFX_CODINGOPTION_OFF;
+
+        // check restriction A.3.3 (f)
+        if (IsAvcBaseProfile(par.mfx.CodecProfile) && par.mfx.CodecLevel <= MFX_LEVEL_AVC_3)
+            extDdi->DisablePSubMBPartition = MFX_CODINGOPTION_ON;
+    }
+
+    if (extDdi->DisableBSubMBPartition == MFX_CODINGOPTION_UNKNOWN)
+    {
+        extDdi->DisableBSubMBPartition = MFX_CODINGOPTION_OFF;
+
+        // check restriction A.3.3 (f)
+        if (IsAvcBaseProfile(par.mfx.CodecProfile) && par.mfx.CodecLevel <= MFX_LEVEL_AVC_3)
+            extDdi->DisableBSubMBPartition = MFX_CODINGOPTION_ON;
+    }
+
+    if (extDdi->WeightedBiPredIdc == 0)
+    {
+        extDdi->WeightedBiPredIdc = (par.mfx.GopRefDist == 3 && !IsMvcProfile(par.mfx.CodecProfile) && extDdi->BiPyramid == 3)
+            ? 2  // explicit weighted biprediction (when 2 B frames in a row)
+            : 0; // no weighted biprediction
+    }
+
+    if (extDdi->CabacInitIdcPlus1 == 0)
+    {
+        extDdi->CabacInitIdcPlus1 = GetCabacInitIdc(par.mfx.TargetUsage) + 1;
+    }
+
+    if (hwCaps.UserMaxFrameSizeSupport && extOpt2->MaxFrameSize == 0)
+        extOpt2->MaxFrameSize = IPP_MIN(GetMaxFrameSize(par), GetFirstMaxFrameSize(par));
+
+    par.ApplyDefaultsToMvcSeqDesc();
+
+    bool svcSupportedByHw = (hwCaps.MaxNum_QualityLayer || hwCaps.MaxNum_DependencyLayer);
+    for (mfxU32 i = 0; i < par.calcParam.numDependencyLayer; i++)
+    {
+        mfxU32 did = par.calcParam.did[i];
+
+        if (extSvc->DependencyLayer[did].CropH == 0)
+            extSvc->DependencyLayer[did].CropH = extSvc->DependencyLayer[did].Height - extSvc->DependencyLayer[did].CropY;
+        if (extSvc->DependencyLayer[did].CropW == 0)
+            extSvc->DependencyLayer[did].CropW = extSvc->DependencyLayer[did].Width  - extSvc->DependencyLayer[did].CropX;
+
+        if (extSvc->DependencyLayer[did].ScanIdxPresent == 0)
+            extSvc->DependencyLayer[did].ScanIdxPresent = MFX_CODINGOPTION_OFF;
+
+        if (IsOff(extSvc->DependencyLayer[did].ScanIdxPresent))
+        {
+            for (mfxU32 qid = 0; qid < extSvc->DependencyLayer[did].QualityNum; qid++)
+            {
+                extSvc->DependencyLayer[did].QualityLayer[qid].ScanIdxStart = 0;
+                extSvc->DependencyLayer[did].QualityLayer[qid].ScanIdxEnd   = 15;
+            }
+        }
+
+        if (extSvc->DependencyLayer[did].BasemodePred == 0)
+            extSvc->DependencyLayer[did].BasemodePred = svcSupportedByHw
+                ? mfxU16(MFX_CODINGOPTION_ADAPTIVE)
+                : mfxU16(MFX_CODINGOPTION_OFF);
+        if (extSvc->DependencyLayer[did].MotionPred == 0)
+            extSvc->DependencyLayer[did].MotionPred = svcSupportedByHw
+                ? mfxU16(MFX_CODINGOPTION_ADAPTIVE)
+                : mfxU16(MFX_CODINGOPTION_OFF);
+        if (extSvc->DependencyLayer[did].ResidualPred == 0)
+            extSvc->DependencyLayer[did].ResidualPred = svcSupportedByHw
+                ? mfxU16(MFX_CODINGOPTION_ADAPTIVE)
+                : mfxU16(MFX_CODINGOPTION_OFF);
+    }
+
+    if (!IsSvcProfile(par.mfx.CodecProfile))
+    {
+        extSvc->TemporalScale[0]                                = 1;
+        extSvc->DependencyLayer[0].Active                       = 1;
+        extSvc->DependencyLayer[0].Width                        = par.mfx.FrameInfo.Width;
+        extSvc->DependencyLayer[0].Height                       = par.mfx.FrameInfo.Height;
+        extSvc->DependencyLayer[0].CropX                        = par.mfx.FrameInfo.CropX;
+        extSvc->DependencyLayer[0].CropY                        = par.mfx.FrameInfo.CropY;
+        extSvc->DependencyLayer[0].CropW                        = par.mfx.FrameInfo.CropW;
+        extSvc->DependencyLayer[0].CropH                        = par.mfx.FrameInfo.CropH;
+        extSvc->DependencyLayer[0].GopPicSize                   = par.mfx.GopPicSize;
+        extSvc->DependencyLayer[0].GopRefDist                   = par.mfx.GopRefDist;
+        extSvc->DependencyLayer[0].GopOptFlag                   = par.mfx.GopOptFlag;
+        extSvc->DependencyLayer[0].IdrInterval                  = par.mfx.IdrInterval;
+        extSvc->DependencyLayer[0].BasemodePred                 = MFX_CODINGOPTION_OFF;
+        extSvc->DependencyLayer[0].MotionPred                   = MFX_CODINGOPTION_OFF;
+        extSvc->DependencyLayer[0].ResidualPred                 = MFX_CODINGOPTION_OFF;
+        extSvc->DependencyLayer[0].ScanIdxPresent               = MFX_CODINGOPTION_OFF;
+        extSvc->DependencyLayer[0].TemporalNum                  = 1;
+        extSvc->DependencyLayer[0].TemporalId[0]                = 0;
+        extSvc->DependencyLayer[0].QualityNum                   = 1;
+
+        extRc->RateControlMethod = par.mfx.RateControlMethod;
+        extRc->NumLayers         = 1;
+        switch (extRc->RateControlMethod)
+        {
+        case MFX_RATECONTROL_CBR:
+        case MFX_RATECONTROL_VBR:
+            extRc->Layer[0].CbrVbr.TargetKbps       = par.mfx.TargetKbps;
+            extRc->Layer[0].CbrVbr.InitialDelayInKB = par.mfx.InitialDelayInKB;
+            extRc->Layer[0].CbrVbr.BufferSizeInKB   = par.mfx.BufferSizeInKB;
+            extRc->Layer[0].CbrVbr.MaxKbps          = par.mfx.MaxKbps;
+            break;
+        case MFX_RATECONTROL_CQP:
+            extRc->Layer[0].Cqp.QPI = par.mfx.QPI;
+            extRc->Layer[0].Cqp.QPP = par.mfx.QPP;
+            extRc->Layer[0].Cqp.QPB = par.mfx.QPB;
+            break;
+        case MFX_RATECONTROL_AVBR:
+            extRc->Layer[0].Avbr.TargetKbps  = par.mfx.TargetKbps;
+            extRc->Layer[0].Avbr.Convergence = par.mfx.Convergence;
+            extRc->Layer[0].Avbr.Accuracy    = par.mfx.Accuracy;
+            break;
+        default:
+            assert(0);
+            break;
+        }
+    }
+
+    if (extBits->SPSBuffer == 0)
+    {
+        mfxFrameInfo const & fi = par.mfx.FrameInfo;
+
+        extSps->nalRefIdc                       = par.calcParam.lyncMode ? 3 : 1;
+        extSps->nalUnitType                     = 7;
+        extSps->profileIdc                      = mfxU8(par.mfx.CodecProfile & MASK_PROFILE_IDC);
+        if (IsSvcProfile(extSps->profileIdc))
+            extSps->profileIdc                  = MFX_PROFILE_AVC_HIGH;
+        extSps->constraints.set0                = mfxU8(!!(par.mfx.CodecProfile & MASK_CONSTRAINT_SET0_FLAG));
+        extSps->constraints.set1                = mfxU8(!!(par.mfx.CodecProfile & MASK_CONSTRAINT_SET1_FLAG));
+        if (par.calcParam.numTemporalLayer > 0 && IsAvcBaseProfile(par.mfx.CodecProfile))
+            extSps->constraints.set1            = 1; // Lync requires constraint base profile
+        extSps->constraints.set2                = mfxU8(!!(par.mfx.CodecProfile & MASK_CONSTRAINT_SET2_FLAG));
+        extSps->constraints.set3                = mfxU8(!!(par.mfx.CodecProfile & MASK_CONSTRAINT_SET3_FLAG));
+        extSps->constraints.set4                = mfxU8(!!(par.mfx.CodecProfile & MASK_CONSTRAINT_SET4_FLAG));
+        extSps->constraints.set5                = mfxU8(!!(par.mfx.CodecProfile & MASK_CONSTRAINT_SET5_FLAG));
+        extSps->constraints.set6                = 0;
+        extSps->constraints.set7                = 0;
+        extSps->levelIdc                        = IsMvcProfile(par.mfx.CodecProfile) ? mfxU8(par.calcParam.mvcPerViewPar.codecLevel) : mfxU8(par.mfx.CodecLevel);
+        extSps->seqParameterSetId               = mfxU8(extBits->SPSId);
+        extSps->chromaFormatIdc                 = mfxU8(fi.ChromaFormat);
+        extSps->separateColourPlaneFlag         = 0;
+        extSps->bitDepthLumaMinus8              = 0;
+        extSps->bitDepthChromaMinus8            = 0;
+        extSps->qpprimeYZeroTransformBypassFlag = 0;
+        extSps->seqScalingMatrixPresentFlag     = 0;
+        extSps->log2MaxFrameNumMinus4           = 4;
+        extSps->picOrderCntType                 = GetDefaultPicOrderCount(par);
+        extSps->log2MaxPicOrderCntLsbMinus4     = GetDefaultLog2MaxPicOrdCntMinus4(par);
+        extSps->deltaPicOrderAlwaysZeroFlag     = 1;
+        extSps->maxNumRefFrames                 = mfxU8(par.mfx.NumRefFrame);
+        extSps->gapsInFrameNumValueAllowedFlag  = par.calcParam.numTemporalLayer > 1
+            || par.calcParam.lyncMode; // for Lync change of temporal structure shouldn't change SPS.
+        extSps->frameMbsOnlyFlag                = (fi.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 0;
+        extSps->picWidthInMbsMinus1             = (fi.Width / 16) - 1;
+        extSps->picHeightInMapUnitsMinus1       = (fi.Height / 16 / (2 - extSps->frameMbsOnlyFlag)) - 1;
+        extSps->direct8x8InferenceFlag          = 1;
+
+        mfxU16 cropUnitX = CROP_UNIT_X[fi.ChromaFormat];
+        mfxU16 cropUnitY = CROP_UNIT_Y[fi.ChromaFormat] * (2 - extSps->frameMbsOnlyFlag);
+
+        extSps->frameCropLeftOffset   = (fi.CropX / cropUnitX);
+        extSps->frameCropRightOffset  = (fi.Width - fi.CropW - fi.CropX) / cropUnitX;
+        extSps->frameCropTopOffset    = (fi.CropY / cropUnitY);
+        extSps->frameCropBottomOffset = (fi.Height - fi.CropH - fi.CropY) / cropUnitY;
+        extSps->frameCroppingFlag     =
+            extSps->frameCropLeftOffset || extSps->frameCropRightOffset ||
+            extSps->frameCropTopOffset  || extSps->frameCropBottomOffset;
+
+        AspectRatioConverter arConv(fi.AspectRatioW, fi.AspectRatioH);
+        extSps->vui.flags.aspectRatioInfoPresent = (fi.AspectRatioH && fi.AspectRatioW);
+        extSps->vui.aspectRatioIdc               = arConv.GetSarIdc();
+        extSps->vui.sarWidth                     = arConv.GetSarWidth();
+        extSps->vui.sarHeight                    = arConv.GetSarHeight();
+
+        extSps->vui.flags.overscanInfoPresent = 0;
+        extSps->vui.flags.overscanAppropriate = 0;
+
+        extSps->vui.videoFormat                    = mfxU8(extVsi->VideoFormat);
+        extSps->vui.flags.videoFullRange           = extVsi->VideoFullRange;
+        extSps->vui.flags.colourDescriptionPresent = extVsi->ColourDescriptionPresent;
+        extSps->vui.colourPrimaries                = mfxU8(extVsi->ColourPrimaries);
+        extSps->vui.transferCharacteristics        = mfxU8(extVsi->TransferCharacteristics);
+        extSps->vui.matrixCoefficients             = mfxU8(extVsi->MatrixCoefficients);
+        extSps->vui.flags.videoSignalTypePresent   =
+            extSps->vui.videoFormat                    != 5 ||
+            extSps->vui.flags.videoFullRange           != 0 ||
+            extSps->vui.flags.colourDescriptionPresent != 0;
+
+        extSps->vui.flags.chromaLocInfoPresent     = 0;
+        extSps->vui.chromaSampleLocTypeTopField    = 0;
+        extSps->vui.chromaSampleLocTypeBottomField = 0;
+
+        extSps->vui.flags.timingInfoPresent = 1;
+        extSps->vui.numUnitsInTick          = fi.FrameRateExtD;
+        extSps->vui.timeScale               = fi.FrameRateExtN * 2;
+        extSps->vui.flags.fixedFrameRate    = 1;
+
+        extSps->vui.flags.nalHrdParametersPresent = IsOn(extOpt->VuiNalHrdParameters);
+        extSps->vui.flags.vclHrdParametersPresent = IsOn(extOpt->VuiVclHrdParameters);
+
+        extSps->vui.nalHrdParameters.cpbCntMinus1 = 0;
+        extSps->vui.nalHrdParameters.bitRateScale = 0;
+        extSps->vui.nalHrdParameters.cpbSizeScale = 2;
+
+        //FIXME: extSps isn't syncronized with m_video after next assignment for ViewOutput mode. Need to Init ExtSps HRD for MVC keeping them syncronized
+        if (IsMvcProfile(par.mfx.CodecProfile))
+        {
+            extSps->vui.nalHrdParameters.bitRateValueMinus1[0] = GetMaxBitrateValue(par.calcParam.mvcPerViewPar.maxKbps) - 1;
+            extSps->vui.nalHrdParameters.cpbSizeValueMinus1[0] = GetCpbSizeValue(par.calcParam.mvcPerViewPar.bufferSizeInKB, 2) - 1;
+        }
+        else
+        {
+            extSps->vui.nalHrdParameters.bitRateValueMinus1[0] = GetMaxBitrateValue(par.calcParam.maxKbps) - 1;
+            extSps->vui.nalHrdParameters.cpbSizeValueMinus1[0] = GetCpbSizeValue(par.calcParam.bufferSizeInKB, 2) - 1;
+        }
+
+        extSps->vui.nalHrdParameters.cbrFlag[0]                         = (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR);
+        extSps->vui.nalHrdParameters.initialCpbRemovalDelayLengthMinus1 = 23;
+        extSps->vui.nalHrdParameters.cpbRemovalDelayLengthMinus1        = 23;
+        extSps->vui.nalHrdParameters.dpbOutputDelayLengthMinus1         = 23;
+        extSps->vui.nalHrdParameters.timeOffsetLength                   = 24;
+
+        extSps->vui.vclHrdParameters.cpbCntMinus1                       = 0; 
+        extSps->vui.vclHrdParameters.bitRateScale                       = 0;
+        extSps->vui.vclHrdParameters.cpbSizeScale                       = 2;
+        if (IsMvcProfile(par.mfx.CodecProfile))
+        {
+            extSps->vui.vclHrdParameters.bitRateValueMinus1[0] = GetMaxBitrateValue(par.calcParam.mvcPerViewPar.maxKbps) - 1;
+            extSps->vui.vclHrdParameters.cpbSizeValueMinus1[0] = GetCpbSizeValue(par.calcParam.mvcPerViewPar.bufferSizeInKB, 2) - 1;
+        }
+        else
+        {
+            extSps->vui.vclHrdParameters.bitRateValueMinus1[0] = GetMaxBitrateValue(par.calcParam.maxKbps) - 1;
+            extSps->vui.vclHrdParameters.cpbSizeValueMinus1[0] = GetCpbSizeValue(par.calcParam.bufferSizeInKB, 2) - 1;
+        }
+        extSps->vui.vclHrdParameters.cbrFlag[0]                         = (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR);
+        extSps->vui.vclHrdParameters.initialCpbRemovalDelayLengthMinus1 = 23;
+        extSps->vui.vclHrdParameters.cpbRemovalDelayLengthMinus1        = 23;
+        extSps->vui.vclHrdParameters.dpbOutputDelayLengthMinus1         = 23;
+        extSps->vui.vclHrdParameters.timeOffsetLength                   = 24;
+
+        extSps->vui.flags.lowDelayHrd                                   = 0;
+        extSps->vui.flags.picStructPresent                              = IsOn(extOpt->PicTimingSEI);
+
+        extSps->vui.flags.bitstreamRestriction           = 1;
+        extSps->vui.flags.motionVectorsOverPicBoundaries = 1;
+        extSps->vui.maxBytesPerPicDenom                  = 2;
+        extSps->vui.maxBitsPerMbDenom                    = 1;
+        extSps->vui.log2MaxMvLengthHorizontal            = mfxU8(CeilLog2(4 * MAX_H_MV - 1));
+        extSps->vui.log2MaxMvLengthVertical              = mfxU8(CeilLog2(4 * GetMaxVmv(par.mfx.CodecLevel) - 1));
+        extSps->vui.numReorderFrames                     = GetNumReorderFrames(par);
+        extSps->vui.maxDecFrameBuffering                 = mfxU8(extOpt->MaxDecFrameBuffering);
+
+        extSps->vuiParametersPresentFlag =
+            extSps->vui.flags.aspectRatioInfoPresent  ||
+            extSps->vui.flags.overscanInfoPresent     ||
+            extSps->vui.flags.videoSignalTypePresent  ||
+            extSps->vui.flags.chromaLocInfoPresent    ||
+            extSps->vui.flags.timingInfoPresent       ||
+            extSps->vui.flags.nalHrdParametersPresent ||
+            extSps->vui.flags.vclHrdParametersPresent ||
+            extSps->vui.flags.picStructPresent        ||
+            extSps->vui.flags.bitstreamRestriction;
+    }
+
+    if (extBits->PPSBufSize == 0)
+    {
+        extPps->nalRefIdc                             = par.calcParam.lyncMode ? 3 : 1;
+        extPps->picParameterSetId                     = mfxU8(extBits->PPSId);
+        extPps->seqParameterSetId                     = mfxU8(extBits->SPSId);
+        extPps->entropyCodingModeFlag                 = IsOff(extOpt->CAVLC);
+        extPps->bottomFieldPicOrderInframePresentFlag = 0;
+        extPps->numSliceGroupsMinus1                  = 0;
+        extPps->sliceGroupMapType                     = 0;
+        extPps->numRefIdxL0DefaultActiveMinus1        = 0;
+        extPps->numRefIdxL1DefaultActiveMinus1        = 0;
+        extPps->weightedPredFlag                      = 0;
+        extPps->weightedBipredIdc                     = mfxU8(extDdi->WeightedBiPredIdc);
+        extPps->picInitQpMinus26                      = 0;
+        extPps->picInitQsMinus26                      = 0;
+        extPps->chromaQpIndexOffset                   = 0;
+        extPps->deblockingFilterControlPresentFlag    = 1;
+        extPps->constrainedIntraPredFlag              = 0;
+        extPps->redundantPicCntPresentFlag            = 0;
+        extPps->moreRbspData                          =
+            !IsAvcBaseProfile(par.mfx.CodecProfile) &&
+            par.mfx.CodecProfile != MFX_PROFILE_AVC_MAIN;
+        extPps->transform8x8ModeFlag                  = extOpt->IntraPredBlockSize > MFX_BLOCKSIZE_MIN_16X16;
+        extPps->picScalingMatrixPresentFlag           = 0;
+        extPps->secondChromaQpIndexOffset             = 0;
+    }
+
+    par.SyncCalculableToVideoParam();
+}
+
+mfxStatus MfxHwH264Encode::CheckPayloads(
+    const mfxPayload* const* payload,
+    mfxU16 numPayload)
+{
+    const mfxU8 SUPPORTED_SEI[] = {
+        0, // 00 buffering_period
+        0, // 01 pic_timing
+        1, // 02 pan_scan_rect
+        1, // 03 filler_payload
+        1, // 04 user_data_registered_itu_t_t35
+        1, // 05 user_data_unregistered
+        1, // 06 recovery_point
+        0, // 07 dec_ref_pic_marking_repetition
+        0, // 08 spare_pic
+        1, // 09 scene_info
+        0, // 10 sub_seq_info
+        0, // 11 sub_seq_layer_characteristics
+        0, // 12 sub_seq_characteristics
+        1, // 13 full_frame_freeze
+        1, // 14 full_frame_freeze_release
+        1, // 15 full_frame_snapshot
+        1, // 16 progressive_refinement_segment_start
+        1, // 17 progressive_refinement_segment_end
+        0, // 18 motion_constrained_slice_group_set
+        1, // 19 film_grain_characteristics
+        1, // 20 deblocking_filter_display_preference
+        1, // 21 stereo_video_info
+        0, // 22 post_filter_hint
+        0, // 23 tone_mapping_info
+        0, // 24 scalability_info
+        0, // 25 sub_pic_scalable_layer
+        0, // 26 non_required_layer_rep
+        0, // 27 priority_layer_info
+        0, // 28 layers_not_present
+        0, // 29 layer_dependency_change
+        0, // 30 scalable_nesting
+        0, // 31 base_layer_temporal_hrd
+        0, // 32 quality_layer_integrity_check
+        0, // 33 redundant_pic_property
+        0, // 34 tl0_dep_rep_index
+        0, // 35 tl_switching_point
+        0, // 36 parallel_decoding_info
+        0, // 37 mvc_scalable_nesting
+        0, // 38 view_scalability_info
+        0, // 39 multiview_scene_info
+        0, // 40 multiview_acquisition_info
+        0, // 41 non_required_view_component
+        0, // 42 view_dependency_change
+        0, // 43 operation_points_not_present
+        0, // 44 base_view_temporal_hrd
+        1, // 45 frame_packing_arrangement
+    };
+
+    for (mfxU16 i = 0; i < numPayload; ++i)
+    {
+        // Particular payload can absent
+        // Check only present payloads
+        if (payload[i] && payload[i]->NumBit > 0)
+        {
+            MFX_CHECK_NULL_PTR1(payload[i]->Data);
+
+            // Check buffer size
+            MFX_CHECK(
+                payload[i]->NumBit <= 8u * payload[i]->BufSize,
+                MFX_ERR_UNDEFINED_BEHAVIOR);
+
+            // Sei messages type constraints
+            MFX_CHECK(
+                payload[i]->Type < (sizeof SUPPORTED_SEI / sizeof SUPPORTED_SEI[0]) &&
+                SUPPORTED_SEI[payload[i]->Type] == 1,
+                MFX_ERR_UNDEFINED_BEHAVIOR);
+        }
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MfxHwH264Encode::CheckRunTimePicStruct(
+    mfxU16 runtPs,
+    mfxU16 initPs)
+{
+    static mfxU16 const PRG  = MFX_PICSTRUCT_PROGRESSIVE;
+    static mfxU16 const TFF  = MFX_PICSTRUCT_FIELD_TFF;
+    static mfxU16 const BFF  = MFX_PICSTRUCT_FIELD_BFF;
+    static mfxU16 const UNK  = MFX_PICSTRUCT_UNKNOWN;
+    static mfxU16 const DBL  = MFX_PICSTRUCT_FRAME_DOUBLING;
+    static mfxU16 const TRPL = MFX_PICSTRUCT_FRAME_TRIPLING;
+    static mfxU16 const REP  = MFX_PICSTRUCT_FIELD_REPEATED;
+
+    if (initPs == PRG && runtPs == UNK         ||
+        initPs == PRG && runtPs == PRG         ||
+        initPs == PRG && runtPs == (PRG | DBL) ||
+        initPs == PRG && runtPs == (PRG | TRPL))
+        return MFX_ERR_NONE;
+
+    if (initPs == BFF && runtPs == UNK ||
+        initPs == BFF && runtPs == BFF ||
+        initPs == UNK && runtPs == BFF ||
+        initPs == TFF && runtPs == UNK ||
+        initPs == TFF && runtPs == TFF ||
+        initPs == UNK && runtPs == TFF)
+        return MFX_ERR_NONE;
+
+    if (initPs == UNK && runtPs == (PRG | BFF)       ||
+        initPs == UNK && runtPs == (PRG | TFF)       ||
+        initPs == UNK && runtPs == (PRG | BFF | REP) ||
+        initPs == UNK && runtPs == (PRG | TFF | REP) ||
+        initPs == UNK && runtPs == PRG               ||
+        initPs == BFF && runtPs == PRG               ||
+        initPs == TFF && runtPs == PRG)
+        return MFX_ERR_NONE;
+
+    if (initPs == UNK && runtPs == UNK)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+}
+
+bool MfxHwH264Encode::IsRecoveryPointSeiMessagePresent(
+    const mfxPayload* const* payload,
+    mfxU16 numPayload,
+    mfxU32 payloadLayout)
+{
+    mfxU32 step = payloadLayout == 0 /*MFX_PAYLOAD_LAYOUT_ALL*/ ? 1 : 2;
+    mfxU32 i    = payloadLayout == 2 /*MFX_PAYLOAD_LAYOUT_ODD*/ ? 1 : 0;
+
+    for (; i < numPayload; i += step)
+        if (payload[i] && payload[i]->NumBit > 0 && payload[i]->Type == 6)
+            break;
+
+    return i < numPayload;
+}
+
+mfxStatus MfxHwH264Encode::CopyFrameDataBothFields(
+    VideoCORE *          core,
+    mfxFrameData const & dst,
+    mfxFrameData const & src,
+    mfxFrameInfo const & info)
+{
+    mfxFrameSurface1 surfSrc = { {0,}, info, src };
+    mfxFrameSurface1 surfDst = { {0,}, info, dst };
+    return core->DoFastCopy(&surfDst, &surfSrc);
+}
+
+void MfxHwH264Encode::CopyFrameData(
+    const mfxFrameData& dst,
+    const mfxFrameData& src,
+    const mfxFrameInfo& info,
+    mfxU32 fieldId)
+{
+    mfxU32 height = info.Height;
+    mfxU32 srcOffset = 0;
+    mfxU32 dstOffset = 0;
+    mfxU32 srcPitch = src.Pitch;
+    mfxU32 dstPitch = dst.Pitch;
+
+    if ((info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0)
+    {
+        height /= 2;
+        srcOffset += fieldId * srcPitch;
+        dstOffset += fieldId * dstPitch;
+        srcPitch *= 2;
+        dstPitch *= 2;
+    }
+
+    IppiSize roiLuma = { info.Width, height };
+    ippiCopy_8u_C1R(src.Y + srcOffset, srcPitch, dst.Y + dstOffset, dstPitch, roiLuma);
+
+    IppiSize roiChroma = { info.Width, height / 2 };
+    ippiCopy_8u_C1R(src.UV + srcOffset, srcPitch, dst.UV + dstOffset, dstPitch, roiChroma);
+}
+
+void MfxHwH264Encode::WriteFrameData(
+    vm_file *            file,
+    VideoCORE *          core,
+    mfxFrameData const & fdata,
+    mfxFrameInfo const & info)
+{
+    mfxFrameData data = fdata;
+    FrameLocker lock(core, data, false);
+
+    if (file != 0 && data.Y != 0 && data.UV != 0)
+    {
+        for (mfxU32 i = 0; i < info.Height; i++)
+            vm_file_fwrite(data.Y + i * data.Pitch, 1, info.Width, file);
+
+        for (mfxI32 y = 0; y < info.Height / 2; y++)
+            for (mfxI32 x = 0; x < info.Width; x += 2)
+                vm_file_fwrite(data.UV + y * data.Pitch + x, 1, 1, file);
+
+        for (mfxI32 y = 0; y < info.Height / 2; y++)
+            for (mfxI32 x = 1; x < info.Width; x += 2)
+                vm_file_fwrite(data.UV + y * data.Pitch + x, 1, 1, file);
+
+        vm_file_fflush(file);
+    }
+}
+
+mfxStatus MfxHwH264Encode::ReadFrameData(
+    vm_file *            file,
+    mfxU32               frameNum,
+    VideoCORE *          core,
+    mfxFrameData const & fdata,
+    mfxFrameInfo const & info)
+{
+    mfxFrameData data = fdata;
+    FrameLocker lock(core, data, false);
+
+    if (file != 0 && data.Y != 0 && data.UV != 0)
+    {
+        mfxU32 frameSize = (info.Height * info.Width * 5) / 4;
+        if (vm_file_fseek(file, frameSize * frameNum, VM_FILE_SEEK_SET) != 0)
+        {
+            MFX_RETURN(MFX_ERR_NOT_FOUND);
+        }
+
+        for (mfxU32 i = 0; i < info.Height; i++)
+            (void)vm_file_fread(data.Y + i * data.Pitch, 1, info.Width, file);
+
+        for (mfxI32 y = 0; y < info.Height / 2; y++)
+            for (mfxI32 x = 0; x < info.Width; x += 2)
+                (void)vm_file_fread(data.UV + y * data.Pitch + x, 1, 1, file);
+
+        for (mfxI32 y = 0; y < info.Height / 2; y++)
+            for (mfxI32 x = 1; x < info.Width; x += 2)
+                (void)vm_file_fread(data.UV + y * data.Pitch + x, 1, 1, file);
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxExtBuffer* MfxHwH264Encode::GetExtBuffer(mfxExtBuffer** extBuf, mfxU32 numExtBuf, mfxU32 id)
+{
+    if (extBuf != 0)
+    {
+        for (mfxU16 i = 0; i < numExtBuf; i++)
+            if (extBuf[i] != 0 && extBuf[i]->BufferId == id) // assuming aligned buffers
+                return (extBuf[i]);
+    }
+
+    return 0;
+}
+
+mfxEncryptedData* MfxHwH264Encode::GetEncryptedData(mfxBitstream& bs, mfxU32 fieldId)
+{
+    return (fieldId == 0)
+        ? bs.EncryptedData
+        : (bs.EncryptedData)
+            ? bs.EncryptedData->Next
+            : 0;
+}
+
+mfxU8 MfxHwH264Encode::ConvertFrameTypeMfx2Ddi(mfxU32 type)
+{
+    switch (type & MFX_FRAMETYPE_IPB)
+    {
+    case MFX_FRAMETYPE_I: return CODING_TYPE_I;
+    case MFX_FRAMETYPE_P: return CODING_TYPE_P;
+    case MFX_FRAMETYPE_B: return CODING_TYPE_B;
+    default: assert(!"Unsupported frame type"); return 0;
+    }
+}
+
+
+mfxU8 MfxHwH264Encode::ConvertMfxFrameType2SliceType(mfxU8 type)
+{
+    switch (type & MFX_FRAMETYPE_IPB)
+    {
+    case MFX_FRAMETYPE_I: return SLICE_TYPE_I + 5;
+    case MFX_FRAMETYPE_P: return SLICE_TYPE_P + 5;
+    case MFX_FRAMETYPE_B: return SLICE_TYPE_B + 5;
+    default: assert("bad codingType"); return 0xff;
+    }
+}
+
+
+mfxU32 SliceDivider::GetFirstMbInSlice() const
+{
+    assert(m_currSliceFirstMbRow * m_numMbInRow < 0x100000000);
+    return m_currSliceFirstMbRow * m_numMbInRow;
+}
+
+mfxU32 SliceDivider::GetNumMbInSlice() const
+{
+    assert(m_currSliceNumMbRow * m_numMbInRow < 0x100000000);
+    return m_currSliceNumMbRow * m_numMbInRow;
+}
+
+mfxU32 SliceDivider::GetNumSlice() const
+{
+    assert(0 < m_numSlice && m_numSlice < 0x100000000);
+    return m_numSlice;
+}
+
+
+SliceDividerBluRay::SliceDividerBluRay(
+    mfxU32 numSlice,
+    mfxU32 widthInMbs,
+    mfxU32 heightInMbs)
+{
+    m_pfNext              = &SliceDividerBluRay::Next;
+    m_numSlice            = IPP_MAX(numSlice, 1);
+    m_numMbInRow          = widthInMbs;
+    m_numMbRow            = heightInMbs;
+    m_leftSlice           = m_numSlice;
+    m_leftMbRow           = m_numMbRow;
+    m_currSliceFirstMbRow = 0;
+    m_currSliceNumMbRow   = m_leftMbRow / m_leftSlice;
+}
+
+bool SliceDividerBluRay::Next(SliceDividerState & state)
+{
+    state.m_leftMbRow -= state.m_currSliceNumMbRow;
+    state.m_leftSlice -= 1;
+
+    if (state.m_leftSlice == 0)
+    {
+        assert(state.m_leftMbRow == 0);
+        return false;
+    }
+    else
+    {
+        state.m_currSliceFirstMbRow += state.m_currSliceNumMbRow;
+        state.m_currSliceNumMbRow = state.m_leftMbRow / state.m_leftSlice;
+        assert(state.m_currSliceNumMbRow != 0);
+        return true;
+    }
+}
+
+
+SliceDividerOneSlice::SliceDividerOneSlice(
+    mfxU32 numSlice,
+    mfxU32 widthInMbs,
+    mfxU32 heightInMbs)
+{
+    numSlice;
+    m_pfNext              = &SliceDividerOneSlice::Next;
+    m_numSlice            = 1;
+    m_numMbInRow          = widthInMbs;
+    m_numMbRow            = heightInMbs;
+    m_leftSlice           = 1;
+    m_leftMbRow           = heightInMbs;
+    m_currSliceFirstMbRow = 0;
+    m_currSliceNumMbRow   = heightInMbs;
+}
+
+bool SliceDividerOneSlice::Next(SliceDividerState & state)
+{
+    state.m_leftMbRow = 0;
+    state.m_leftSlice = 0;
+    return false;
+}
+
+
+namespace
+{
+    // nearest but less than n
+    mfxU32 GetNearestPowerOf2(mfxU32 n)
+    {
+        mfxU32 mask = 0x80000000;
+        for (; mask > 0; mask >>= 1)
+            if (n & mask)
+                break;
+        return mask;
+    }
+};
+
+SliceDividerSnb::SliceDividerSnb(
+    mfxU32 numSlice,
+    mfxU32 widthInMbs,
+    mfxU32 heightInMbs)
+{
+    m_pfNext              = &SliceDividerSnb::Next;
+    m_numSlice            = IPP_MAX(numSlice, 1);
+    m_numMbInRow          = widthInMbs;
+    m_numMbRow            = heightInMbs;
+    m_leftSlice           = m_numSlice;
+    m_leftMbRow           = m_numMbRow;
+    m_currSliceFirstMbRow = 0;
+    m_currSliceNumMbRow   = m_leftMbRow / m_leftSlice;
+
+    // check if frame is divisible to requested number of slices
+    mfxU32 numMbRowInSlice = IPP_MAX(1, m_numMbRow / m_numSlice);
+    numMbRowInSlice = GetNearestPowerOf2(numMbRowInSlice) << 1;
+    if ((m_numMbRow + numMbRowInSlice - 1) / numMbRowInSlice < m_numSlice)
+        numMbRowInSlice >>= 1; // As number of slices can only be increased, try smaller slices
+
+    m_numSlice = (m_numMbRow + numMbRowInSlice - 1) / numMbRowInSlice;
+    m_leftSlice = m_numSlice;
+    m_currSliceNumMbRow = IPP_MIN(numMbRowInSlice, m_leftMbRow);
+}
+
+bool SliceDividerSnb::Next(SliceDividerState & state)
+{
+    state.m_leftMbRow -= state.m_currSliceNumMbRow;
+    state.m_leftSlice -= 1;
+
+    if (state.m_leftSlice == 0)
+    {
+        assert(state.m_leftMbRow == 0);
+        return false;
+    }
+    else
+    {
+        state.m_currSliceFirstMbRow += state.m_currSliceNumMbRow;
+        if (state.m_currSliceNumMbRow > state.m_leftMbRow)
+            state.m_currSliceNumMbRow = state.m_leftMbRow;
+        assert(state.m_currSliceNumMbRow != 0);
+        return true;
+    }
+}
+
+
+SliceDividerHsw::SliceDividerHsw(
+    mfxU32 numSlice,
+    mfxU32 widthInMbs,
+    mfxU32 heightInMbs)
+{
+    m_pfNext              = &SliceDividerHsw::Next;
+    m_numSlice            = IPP_MAX(1, IPP_MIN(heightInMbs, numSlice));
+    m_numMbInRow          = widthInMbs;
+    m_numMbRow            = heightInMbs;
+    m_currSliceFirstMbRow = 0;
+    m_leftMbRow           = heightInMbs;
+
+    mfxU32 H  = heightInMbs;      // frame height
+    mfxU32 n  = m_numSlice;       // num slices
+    mfxU32 sh = (H + n - 1) / n;  // slice height
+
+    // check if frame is divisible to requested number of slices
+    // so that size of last slice is no bigger than other slices
+    while (sh * (n - 1) >= H)
+    {
+        n++;
+        sh = (H + n - 1) / n;
+    }
+
+    m_currSliceNumMbRow   = sh;
+    m_numSlice            = n;
+    m_leftSlice           = n;
+}
+
+bool SliceDividerHsw::Next(SliceDividerState & state)
+{
+    state.m_leftMbRow -= state.m_currSliceNumMbRow;
+    state.m_leftSlice -= 1;
+
+    if (state.m_leftSlice == 0)
+    {
+        assert(state.m_leftMbRow == 0);
+        return false;
+    }
+    else
+    {
+        state.m_currSliceFirstMbRow += state.m_currSliceNumMbRow;
+        if (state.m_currSliceNumMbRow > state.m_leftMbRow)
+            state.m_currSliceNumMbRow = state.m_leftMbRow;
+        assert(state.m_currSliceNumMbRow != 0);
+        return true;
+    }
+}
+
+
+SliceDivider MfxHwH264Encode::MakeSliceDivider(
+    mfxU32  sliceHwCaps,
+    mfxU32  numSlice,
+    mfxU32  widthInMbs,
+    mfxU32  heightInMbs)
+{
+    switch (sliceHwCaps)
+    {
+    case 1:  return SliceDividerSnb(numSlice, widthInMbs, heightInMbs);
+    case 2:  return SliceDividerHsw(numSlice, widthInMbs, heightInMbs);
+    case 3:  return SliceDividerBluRay(numSlice, widthInMbs, heightInMbs);
+    default: return SliceDividerOneSlice(numSlice, widthInMbs, heightInMbs);
+    }
+}
+
+
+namespace
+{
+    bool TestSliceDivider(
+        mfxU32 requestedNumSlice,
+        mfxU32 width,
+        mfxU32 height,
+        mfxU32 refNumSlice,
+        mfxU32 refNumMbRowsInSlice,
+        mfxU32 refNumMbRowsInLastSlice)
+    {
+        mfxU32 numMbsInRow = (width + 15) / 16;
+        SliceDivider sd = SliceDividerSnb(requestedNumSlice, numMbsInRow, (height + 15) / 16);
+
+        mfxU32 numSlice = sd.GetNumSlice();
+        if (numSlice != refNumSlice)
+            return false;
+
+        mfxU32 predictedPirstMbInSlice = 0;
+        for (mfxU32 i = 0; i < numSlice; i++)
+        {
+            mfxU32 firstMbInSlice = sd.GetFirstMbInSlice();
+            mfxU32 numMbInSlice = sd.GetNumMbInSlice();
+
+            if (firstMbInSlice != predictedPirstMbInSlice)
+                return false;
+
+            bool hasNext = sd.Next();
+            if (hasNext != (i + 1 < numSlice))
+                return false;
+
+            if (hasNext)
+            {
+                if (numMbInSlice != refNumMbRowsInSlice * numMbsInRow)
+                    return false;
+            }
+            else
+            {
+                if (numMbInSlice != refNumMbRowsInLastSlice * numMbsInRow)
+                    return false;
+            }
+
+            predictedPirstMbInSlice += numMbInSlice;
+        }
+
+        return true;
+    }
+
+    bool TestSliceDividerWithReport(
+        mfxU32 requestedNumSlice,
+        mfxU32 width,
+        mfxU32 height,
+        mfxU32 refNumSlice,
+        mfxU32 refNumMbRowsInSlice,
+        mfxU32 refNumMbRowsInLastSlice)
+    {
+        if (!TestSliceDivider(requestedNumSlice, width, height, refNumSlice, refNumMbRowsInSlice, refNumMbRowsInLastSlice))
+        {
+            //std::cout << "Failed with requestedNumSlice=" << requestedNumSlice << " width=" << width << " height=" << height << std::endl;
+            return false;
+        }
+
+        //std::cout << "Passed with requestedNumSlice=" << requestedNumSlice << " width=" << width << " height=" << height << std::endl;
+        return true;
+    }
+}
+
+void SliceDividerSnb::Test()
+{
+    TestSliceDividerWithReport( 2,  720,  480,  2, 16, 14);
+    TestSliceDividerWithReport( 4,  720,  480,  4,  8,  6);
+    TestSliceDividerWithReport( 8,  720,  480,  8,  4,  2);
+    TestSliceDividerWithReport(16,  720,  480, 30,  1,  1);
+    TestSliceDividerWithReport( 2, 1920, 1080,  2, 64,  4);
+    TestSliceDividerWithReport( 4, 1920, 1080,  5, 16,  4);
+    TestSliceDividerWithReport( 8, 1920, 1080,  9,  8,  4);
+    TestSliceDividerWithReport(16, 1920, 1080, 17,  4,  4);
+    TestSliceDividerWithReport( 8, 1280,  720, 12,  4,  1);
+    TestSliceDividerWithReport( 8,  480,  320, 10,  2,  2);
+
+    TestSliceDividerWithReport( 2,  720,  480 / 2,  2,  8,  7);
+    TestSliceDividerWithReport( 4,  720,  480 / 2,  4,  4,  3);
+    TestSliceDividerWithReport( 8,  720,  480 / 2,  8,  2,  1);
+    TestSliceDividerWithReport(16,  720,  480 / 2, 15,  1,  1);
+    TestSliceDividerWithReport( 2, 1920, 1080 / 2,  2, 32,  2);
+    TestSliceDividerWithReport( 4, 1920, 1080 / 2,  5,  8,  2);
+    TestSliceDividerWithReport( 8, 1920, 1080 / 2,  9,  4,  2);
+    TestSliceDividerWithReport(16, 1920, 1080 / 2, 17,  2,  2);
+    TestSliceDividerWithReport( 8, 1280,  720 / 2, 12,  2,  1);
+    TestSliceDividerWithReport( 8,  480,  320 / 2, 10,  1,  1);
+}
+
+// D3D9Encoder
+
+MfxVideoParam::MfxVideoParam()
+{
+    memset(m_extParam, 0, sizeof(m_extParam));
+    // external, documented
+    memset(&m_extOpt, 0, sizeof(m_extOpt));
+    memset(&m_extOptSpsPps, 0, sizeof(m_extOptSpsPps));
+    memset(&m_extOptPavp, 0, sizeof(m_extOptPavp));
+    memset(&m_extVideoSignal, 0, sizeof(m_extVideoSignal));
+    memset(&m_extOpaque, 0, sizeof(m_extOpaque));
+    memset(&m_extMvcSeqDescr, 0, sizeof(m_extMvcSeqDescr));
+    memset(&m_extPicTiming, 0, sizeof(m_extPicTiming));
+    memset(&m_extTempLayers, 0, sizeof(m_extTempLayers));
+    memset(&m_extSvcSeqDescr, 0, sizeof(m_extSvcSeqDescr));
+    memset(&m_extSvcRateCtrl, 0, sizeof(m_extSvcRateCtrl));
+
+    // internal, not documented
+    memset(&m_extOptDdi, 0, sizeof(m_extOptDdi));
+    memset(&m_extDumpFiles, 0, sizeof(m_extDumpFiles));
+    memset(&m_extSps, 0, sizeof(m_extSps));
+    memset(&m_extPps, 0, sizeof(m_extPps));
+
+    //  Intra refresh {
+    memset(&m_extOpt2, 0, sizeof(m_extOpt2));
+    memset(&calcParam, 0, sizeof(calcParam));
+}
+
+MfxVideoParam::MfxVideoParam(MfxVideoParam const & par)
+{
+    Construct(par);
+    calcParam = par.calcParam;
+}
+
+MfxVideoParam::MfxVideoParam(mfxVideoParam const & par)
+{
+    Construct(par);
+    SyncVideoToCalculableParam();
+}
+
+MfxVideoParam& MfxVideoParam::operator=(MfxVideoParam const & par)
+{
+    Construct(par);
+    calcParam = par.calcParam;
+    return *this;
+}
+
+MfxVideoParam& MfxVideoParam::operator=(mfxVideoParam const & par)
+{
+    Construct(par);
+    SyncVideoToCalculableParam();
+    return *this;
+}
+
+void MfxVideoParam::SyncVideoToCalculableParam()
+{
+    mfxU32 multiplier = IPP_MAX(mfx.BRCParamMultiplier, 1);
+
+    calcParam.bufferSizeInKB   = mfx.BufferSizeInKB   * multiplier;
+    calcParam.initialDelayInKB = mfx.InitialDelayInKB * multiplier;
+    calcParam.targetKbps       = mfx.TargetKbps       * multiplier;
+    calcParam.maxKbps          = mfx.MaxKbps          * multiplier;
+
+    if (IsSvcProfile(mfx.CodecProfile))
+    {
+        calcParam.numTemporalLayer = 0;
+        calcParam.tid[0]   = 0;
+        calcParam.scale[0] = 1;
+
+        for (mfxU32 did = 8; did > 0; did--)
+        {
+            if (m_extSvcSeqDescr.DependencyLayer[did - 1].Active)
+            {
+                // 'numTemporalLayers' is used as temporal fix for array bound violation (calcParam.tid[], calcParam.scale[])
+                // FIXME: need to implement correct checking for 'TemporalNum' (this param is used before calling CheckVideoParamQueryLike())
+                mfxU16 numTemporalLayers = IPP_MIN(m_extSvcSeqDescr.DependencyLayer[did - 1].TemporalNum, 8);
+                for (mfxU32 tidx = 0; tidx < numTemporalLayers; tidx++)
+                {
+                    mfxU32 tid = m_extSvcSeqDescr.DependencyLayer[did - 1].TemporalId[tidx];
+                    calcParam.tid[calcParam.numTemporalLayer]   = tid;
+                    calcParam.scale[calcParam.numTemporalLayer] = m_extSvcSeqDescr.TemporalScale[tid];
+                    calcParam.numTemporalLayer++;
+                }
+                break;
+            }
+        }
+    }
+    else
+    {
+        calcParam.numTemporalLayer = 0;
+        calcParam.tid[0]   = 0;
+        calcParam.scale[0] = 1;
+        for (mfxU32 i = 0; i < 8; i++)
+        {
+            if (m_extTempLayers.Layer[i].Scale != 0)
+            {
+                calcParam.tid[calcParam.numTemporalLayer]   = i;
+                calcParam.scale[calcParam.numTemporalLayer] = m_extTempLayers.Layer[i].Scale;
+                calcParam.numTemporalLayer++;
+            }
+        }
+
+        if (calcParam.numTemporalLayer)
+            calcParam.lyncMode = 1;
+
+        calcParam.numDependencyLayer = 1;
+        calcParam.numLayersTotal     = 1;
+    }
+
+    if (IsMvcProfile(mfx.CodecProfile))
+    {
+        mfxExtMVCSeqDesc * extMvc = GetExtBuffer(*this);
+
+        if (extMvc->NumView)
+        {
+            calcParam.mvcPerViewPar.bufferSizeInKB   = calcParam.bufferSizeInKB / extMvc->NumView;
+            calcParam.mvcPerViewPar.initialDelayInKB = calcParam.initialDelayInKB / extMvc->NumView;
+            calcParam.mvcPerViewPar.targetKbps       = calcParam.targetKbps / extMvc->NumView;
+            calcParam.mvcPerViewPar.maxKbps          = calcParam.maxKbps / extMvc->NumView;
+        }
+        calcParam.mvcPerViewPar.codecLevel       = mfx.CodecLevel;
+    }
+
+    if (IsSvcProfile(mfx.CodecProfile))
+    {
+        calcParam.numLayersTotal     = 0;
+        calcParam.numDependencyLayer = 0;
+        for (mfxU32 i = 0; i < 8; i++)
+        {
+            if (m_extSvcSeqDescr.DependencyLayer[i].Active)
+            {
+                calcParam.did[calcParam.numDependencyLayer] = i;
+                calcParam.numLayerOffset[calcParam.numDependencyLayer] = calcParam.numLayersTotal;
+                calcParam.numLayersTotal +=
+                    m_extSvcSeqDescr.DependencyLayer[i].QualityNum *
+                    m_extSvcSeqDescr.DependencyLayer[i].TemporalNum;
+                calcParam.numDependencyLayer++;
+            }
+        }
+    
+        calcParam.dqId1Exists = m_extSvcSeqDescr.DependencyLayer[calcParam.did[0]].QualityNum > 1 ? 1 : 0;
+    }
+}
+
+void MfxVideoParam::SyncCalculableToVideoParam()
+{
+    mfxU32 maxVal32 = calcParam.bufferSizeInKB;
+
+    if (mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+    {
+        maxVal32 = IPP_MAX(maxVal32, calcParam.targetKbps);
+
+        if (mfx.RateControlMethod != MFX_RATECONTROL_AVBR)
+            maxVal32 = IPP_MAX(maxVal32, IPP_MAX(calcParam.maxKbps, calcParam.initialDelayInKB));
+    }
+
+    mfx.BRCParamMultiplier = mfxU16((maxVal32 + 0x10000) / 0x10000);
+    mfx.BufferSizeInKB     = mfxU16((calcParam.bufferSizeInKB + mfx.BRCParamMultiplier - 1) / mfx.BRCParamMultiplier);
+
+    if (mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
+        mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
+        mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
+    {
+        mfx.TargetKbps = mfxU16((calcParam.targetKbps + mfx.BRCParamMultiplier - 1) / mfx.BRCParamMultiplier);
+
+        if (mfx.RateControlMethod != MFX_RATECONTROL_AVBR)
+        {
+            mfx.InitialDelayInKB = mfxU16((calcParam.initialDelayInKB + mfx.BRCParamMultiplier - 1) / mfx.BRCParamMultiplier);
+            mfx.MaxKbps          = mfxU16((calcParam.maxKbps + mfx.BRCParamMultiplier - 1)         / mfx.BRCParamMultiplier);
+        }
+    }
+
+}
+
+void MfxVideoParam::Construct(mfxVideoParam const & par)
+{
+    mfxVideoParam & base = *this;
+    base = par;
+
+    Zero(m_extParam);
+    Zero(calcParam);
+
+    InitExtBufHeader(m_extOpt);
+    InitExtBufHeader(m_extOptSpsPps);
+    InitExtBufHeader(m_extOptPavp);
+    InitExtBufHeader(m_extVideoSignal);
+    InitExtBufHeader(m_extOpaque);
+    InitExtBufHeader(m_extMvcSeqDescr);
+    InitExtBufHeader(m_extPicTiming);
+    InitExtBufHeader(m_extTempLayers);
+    InitExtBufHeader(m_extSvcSeqDescr);
+    InitExtBufHeader(m_extSvcRateCtrl);
+    InitExtBufHeader(m_extOptDdi);
+    InitExtBufHeader(m_extDumpFiles);
+    InitExtBufHeader(m_extSps);
+    InitExtBufHeader(m_extPps);
+//  Intra refresh {
+    InitExtBufHeader(m_extOpt2);
+//  Intra refresh }
+
+    if (mfxExtCodingOption * opts = GetExtBuffer(par))
+        m_extOpt = *opts;
+
+    if (mfxExtCodingOptionSPSPPS * opts = GetExtBuffer(par))
+        m_extOptSpsPps = *opts;
+
+    if (mfxExtPAVPOption * opts = GetExtBuffer(par))
+        m_extOptPavp = *opts;
+
+    if (mfxExtVideoSignalInfo * opts = GetExtBuffer(par))
+        m_extVideoSignal = *opts;
+
+    if (mfxExtOpaqueSurfaceAlloc * opts = GetExtBuffer(par))
+        m_extOpaque = *opts;
+
+    if (mfxExtMVCSeqDesc * opts = GetExtBuffer(par))
+        ConstructMvcSeqDesc(*opts);
+
+    if (mfxExtAvcTemporalLayers * opts = GetExtBuffer(par))
+        m_extTempLayers = *opts;
+
+    if (mfxExtSVCSeqDesc * opts = GetExtBuffer(par))
+        m_extSvcSeqDescr = *opts;
+
+    if (mfxExtSVCRateControl * opts = GetExtBuffer(par))
+        m_extSvcRateCtrl = *opts;
+
+    if (mfxExtPictureTimingSEI * opts = GetExtBuffer(par))
+        m_extPicTiming = *opts;
+
+    if (mfxExtCodingOptionDDI * opts = GetExtBuffer(par))
+        m_extOptDdi = *opts;
+
+    if (mfxExtDumpFiles * opts = GetExtBuffer(par))
+        m_extDumpFiles = *opts;
+
+    if (mfxExtSpsHeader * opts = GetExtBuffer(par))
+        m_extSps = *opts;
+
+    if (mfxExtPpsHeader * opts = GetExtBuffer(par))
+        m_extPps = *opts;
+
+//  Intra refresh {
+    if (mfxExtCodingOption2 * opts = GetExtBuffer(par))
+        m_extOpt2 = *opts;
+//  Intra refresh }
+
+    m_extParam[0]  = &m_extOpt.Header;
+    m_extParam[1]  = &m_extOptSpsPps.Header;
+    m_extParam[2]  = &m_extOptPavp.Header;
+    m_extParam[3]  = &m_extVideoSignal.Header;
+    m_extParam[4]  = &m_extOpaque.Header;
+    m_extParam[5]  = &m_extMvcSeqDescr.Header;
+    m_extParam[6]  = &m_extPicTiming.Header;
+    m_extParam[7]  = &m_extTempLayers.Header;
+    m_extParam[8]  = &m_extSvcSeqDescr.Header;
+    m_extParam[9]  = &m_extSvcRateCtrl.Header;
+    m_extParam[10]  = &m_extOptDdi.Header;
+    m_extParam[11]  = &m_extDumpFiles.Header;
+    m_extParam[12] = &m_extSps.Header;
+    m_extParam[13] = &m_extPps.Header;
+//  Intra refresh {
+    m_extParam[14] = &m_extOpt2.Header;
+//  Intra refresh }
+
+    ExtParam = m_extParam;
+    NumExtParam = mfxU16(sizeof m_extParam / sizeof m_extParam[0]);
+    assert(NumExtParam == 15);
+}
+
+void MfxVideoParam::ConstructMvcSeqDesc(
+    mfxExtMVCSeqDesc const & desc)
+{
+    m_extMvcSeqDescr.NumView        = desc.NumView;
+    m_extMvcSeqDescr.NumViewAlloc   = desc.NumViewAlloc;
+    m_extMvcSeqDescr.View           = 0;
+    m_extMvcSeqDescr.NumViewId      = desc.NumViewId;
+    m_extMvcSeqDescr.NumViewIdAlloc = desc.NumViewIdAlloc;
+    m_extMvcSeqDescr.ViewId         = 0;
+    m_extMvcSeqDescr.NumOP          = desc.NumOP;
+    m_extMvcSeqDescr.NumOPAlloc     = desc.NumOPAlloc;
+    m_extMvcSeqDescr.OP             = 0;
+    m_extMvcSeqDescr.NumRefsTotal   = desc.NumRefsTotal;
+    
+    if (desc.View)
+    {    
+        m_storageView.resize(desc.NumView);
+        std::copy(desc.View,   desc.View   + desc.NumView,   m_storageView.begin());
+        m_extMvcSeqDescr.View           = &m_storageView[0];
+
+        if (desc.ViewId && desc.OP)
+        {
+            m_storageOp.resize(desc.NumOP);
+            m_storageViewId.resize(desc.NumViewId);
+
+            std::copy(desc.OP,     desc.OP     + desc.NumOP,     m_storageOp.begin());
+            std::copy(desc.ViewId, desc.ViewId + desc.NumViewId, m_storageViewId.begin());
+
+            for (size_t i = 0; i < m_storageOp.size(); ++i)
+            {
+                ptrdiff_t offset = desc.OP[i].TargetViewId - desc.ViewId;
+                m_storageOp[i].TargetViewId = &m_storageViewId[0] + offset;
+            }
+
+            m_extMvcSeqDescr.ViewId         = &m_storageViewId[0];
+            m_extMvcSeqDescr.OP             = &m_storageOp[0];
+        }
+    }
+}
+
+void MfxVideoParam::ApplyDefaultsToMvcSeqDesc()
+{
+    if (false == IsMvcProfile(mfx.CodecProfile))
+    {
+        m_extMvcSeqDescr.NumView = 1;
+        return;
+    }
+
+    if (m_extMvcSeqDescr.NumView == 0)
+        m_extMvcSeqDescr.NumView = 2;
+
+    if (m_extMvcSeqDescr.View == 0)
+    {
+        m_extMvcSeqDescr.NumViewAlloc = m_extMvcSeqDescr.NumView;
+        m_storageView.resize(m_extMvcSeqDescr.NumView);
+        Zero(m_storageView);
+        for (size_t i = 0; i < m_storageView.size(); i++)
+            m_storageView[i].ViewId = mfxU16(i);
+        m_extMvcSeqDescr.View           = &m_storageView[0];
+    }
+
+    if (m_extMvcSeqDescr.ViewId == 0)
+    {
+        m_extMvcSeqDescr.NumViewId = m_extMvcSeqDescr.NumViewIdAlloc = m_extMvcSeqDescr.NumView;
+        m_storageViewId.resize(m_extMvcSeqDescr.NumViewId);
+        Zero(m_storageViewId);
+        for (size_t i = 0; i < m_extMvcSeqDescr.NumViewIdAlloc; i++)
+            m_storageViewId[i] = mfxU16(i);
+        m_extMvcSeqDescr.ViewId         = &m_storageViewId[0];
+    }
+
+    if (m_extMvcSeqDescr.OP == 0)
+    {
+        m_extMvcSeqDescr.NumOP = 1;
+        m_extMvcSeqDescr.NumOPAlloc = 1;
+        m_storageOp.resize(m_extMvcSeqDescr.NumOP);
+        Zero(m_storageOp);
+
+        m_storageOp[0].TemporalId     = 0;
+        m_storageOp[0].LevelIdc       = mfx.CodecLevel;
+        m_storageOp[0].NumViews       = mfxU16(m_storageViewId.size());
+        m_storageOp[0].NumTargetViews = mfxU16(m_storageViewId.size());
+        m_storageOp[0].TargetViewId   = &m_storageViewId[0];
+
+        m_extMvcSeqDescr.OP             = m_storageOp.size() ? &m_storageOp[0] : 0;
+    }
+    else
+    {
+        for (mfxU32 i = 0; i < m_extMvcSeqDescr.NumOP; i++)
+        {
+            if (m_extMvcSeqDescr.OP[i].LevelIdc == 0)
+                m_extMvcSeqDescr.OP[i].LevelIdc = mfx.CodecLevel;
+        }
+    }
+}
+
+AspectRatioConverter::AspectRatioConverter(mfxU16 sarw, mfxU16 sarh) :
+    m_sarIdc(0),
+    m_sarWidth(0),
+    m_sarHeight(0)
+{
+    if (sarw != 0 && sarh != 0)
+    {
+        for (mfxU8 i = 1; i < sizeof(TABLE_E1) / sizeof(TABLE_E1[0]); i++)
+        {
+            if ((sarw % TABLE_E1[i].w) == 0 &&
+                (sarh % TABLE_E1[i].h) == 0 &&
+                (sarw / TABLE_E1[i].w) == (sarh / TABLE_E1[i].h))
+            {
+                m_sarIdc    = i;
+                m_sarWidth  = TABLE_E1[i].w;
+                m_sarHeight = TABLE_E1[i].h;
+                return;
+            }
+        }
+
+        m_sarIdc    = EXTENDED_SAR;
+        m_sarWidth  = sarw;
+        m_sarHeight = sarh;
+    }
+}
+
+AspectRatioConverter::AspectRatioConverter(mfxU8 sarIdc, mfxU16 sarw, mfxU16 sarh)
+{
+    if (sarIdc < sizeof(TABLE_E1) / sizeof(TABLE_E1[0]))
+    {
+        m_sarIdc    = sarIdc;
+        m_sarWidth  = TABLE_E1[sarIdc].w;
+        m_sarHeight = TABLE_E1[sarIdc].h;
+    }
+    else
+    {
+        m_sarIdc    = EXTENDED_SAR;
+        m_sarWidth  = sarw;
+        m_sarHeight = sarh;
+    }
+}
+
+namespace
+{
+#   ifdef min
+#       undef min
+#   endif
+#   ifdef max
+#       undef max
+#   endif
+
+    template <class Tfrom>
+    class RangeChecker
+    {
+    public:
+        RangeChecker(Tfrom from) : m_from(from) {}
+
+        template <class Tto> operator Tto() const
+        {
+            if (std::numeric_limits<Tto>::min() <= m_from && m_from <= std::numeric_limits<Tto>::max())
+                return static_cast<Tto>(m_from);
+            throw InvalidBitstream();
+        }
+
+    private:
+        Tfrom m_from;
+    };
+
+    class InputBitstreamCheckedRange
+    {
+    public:
+        InputBitstreamCheckedRange(InputBitstream & impl) : m_impl(impl) {}
+
+        mfxU32 NumBitsRead() const { return m_impl.NumBitsRead(); }
+        mfxU32 NumBitsLeft() const { return m_impl.NumBitsLeft(); }
+
+        mfxU8 GetBit() { return static_cast<mfxU8>(m_impl.GetBit()); }
+
+        RangeChecker<mfxU32> GetBits(mfxU32 nbits) { return m_impl.GetBits(nbits); }
+        RangeChecker<mfxU32> GetUe()               { return m_impl.GetUe(); }
+        RangeChecker<mfxI32> GetSe()               { return m_impl.GetSe(); }
+
+    private:
+        void operator =(InputBitstreamCheckedRange const &);
+        InputBitstream & m_impl;
+    };
+
+    void ReadScalingList(
+        InputBitstreamCheckedRange & reader,
+        mfxU8 *                      scalingList,
+        mfxU32                       size)
+    {
+        mfxU8 lastScale = 8;
+        mfxU8 nextScale = 8;
+
+        for (mfxU32 i = 0; i < size; i++)
+        {
+            if (nextScale != 0)
+            {
+                mfxI32 deltaScale = reader.GetSe();
+                if (deltaScale < -128 || deltaScale > 127)
+                    throw InvalidBitstream();
+
+                nextScale = mfxU8((lastScale + deltaScale + 256) & 0xff);
+            }
+
+            scalingList[i] = (nextScale == 0) ? lastScale : nextScale;
+            lastScale = scalingList[i];
+        }
+    }
+
+    void ReadHrdParameters(
+        InputBitstreamCheckedRange & reader,
+        HrdParameters &              hrd)
+    {
+        hrd.cpbCntMinus1                        = reader.GetUe();
+
+        if (hrd.cpbCntMinus1 > 31)
+            throw InvalidBitstream();
+
+        hrd.bitRateScale                        = reader.GetBits(4);
+        hrd.cpbSizeScale                        = reader.GetBits(4);
+
+        for (mfxU32 i = 0; i <= hrd.cpbCntMinus1; i++)
+        {
+            hrd.bitRateValueMinus1[i]           = reader.GetUe();
+            hrd.cpbSizeValueMinus1[i]           = reader.GetUe();
+            hrd.cbrFlag[i]                      = reader.GetBit();
+        }
+
+        hrd.initialCpbRemovalDelayLengthMinus1  = reader.GetBits(5);
+        hrd.cpbRemovalDelayLengthMinus1         = reader.GetBits(5);
+        hrd.dpbOutputDelayLengthMinus1          = reader.GetBits(5);
+        hrd.timeOffsetLength                    = reader.GetBits(5);
+    }
+
+    void WriteHrdParameters(
+        OutputBitstream &     writer,
+        HrdParameters const & hrd)
+    {
+        writer.PutUe(hrd.cpbCntMinus1);
+        writer.PutBits(hrd.bitRateScale, 4);
+        writer.PutBits(hrd.cpbSizeScale, 4);
+
+        for (mfxU32 i = 0; i <= hrd.cpbCntMinus1; i++)
+        {
+            writer.PutUe(hrd.bitRateValueMinus1[i]);
+            writer.PutUe(hrd.cpbSizeValueMinus1[i]);
+            writer.PutBit(hrd.cbrFlag[i]);
+        }
+
+        writer.PutBits(hrd.initialCpbRemovalDelayLengthMinus1, 5);
+        writer.PutBits(hrd.cpbRemovalDelayLengthMinus1, 5);
+        writer.PutBits(hrd.dpbOutputDelayLengthMinus1, 5);
+        writer.PutBits(hrd.timeOffsetLength, 5);
+    }
+
+    bool MoreRbspData(InputBitstream reader)
+    {
+        mfxU32 bitsLeft = reader.NumBitsLeft();
+
+        if (bitsLeft == 0)
+            return false;
+
+        if (reader.GetBit() == 0)
+            return true;
+
+        --bitsLeft;
+        for (; bitsLeft > 0; --bitsLeft)
+            if (reader.GetBit() == 1)
+                return true;
+
+        return false;
+    }
+};
+
+void MfxHwH264Encode::ReadSpsHeader(
+    InputBitstream &  is,
+    mfxExtSpsHeader & sps)
+{
+    // set defaults for optional fields
+    Zero(sps.vui);
+    sps.chromaFormatIdc               = 1;
+    sps.vui.videoFormat               = 5;
+    sps.vui.colourPrimaries           = 2;
+    sps.vui.transferCharacteristics   = 2;
+    sps.vui.matrixCoefficients        = 2;
+    sps.vui.flags.fixedFrameRate      = 1;
+
+    InputBitstreamCheckedRange reader(is);
+
+    mfxU32 unused                                           = reader.GetBit(); // forbiddenZeroBit
+
+    sps.nalRefIdc                                           = reader.GetBits(2);
+    if (sps.nalRefIdc == 0)
+        throw InvalidBitstream();
+
+    sps.nalUnitType                                         = reader.GetBits(5);
+    if (sps.nalUnitType != 7)
+        throw InvalidBitstream();
+
+    sps.profileIdc                                          = reader.GetBits(8);
+    sps.constraints.set0                                    = reader.GetBit();
+    sps.constraints.set1                                    = reader.GetBit();
+    sps.constraints.set2                                    = reader.GetBit();
+    sps.constraints.set3                                    = reader.GetBit();
+    sps.constraints.set4                                    = reader.GetBit();
+    sps.constraints.set5                                    = reader.GetBit();
+    sps.constraints.set6                                    = reader.GetBit();
+    sps.constraints.set7                                    = reader.GetBit();
+    sps.levelIdc                                            = reader.GetBits(8);
+    sps.seqParameterSetId                                   = reader.GetUe();
+
+    if (sps.profileIdc == 100 || sps.profileIdc == 110 || sps.profileIdc == 122 ||
+        sps.profileIdc == 244 || sps.profileIdc ==  44 || sps.profileIdc ==  83 ||
+        sps.profileIdc ==  86 || sps.profileIdc == 118 || sps.profileIdc == 128)
+    {
+        sps.chromaFormatIdc                                 = reader.GetUe();
+        if (sps.chromaFormatIdc == 3)
+            unused                                          = reader.GetBit(); // separateColourPlaneFlag
+
+        sps.bitDepthLumaMinus8                              = reader.GetUe();
+        sps.bitDepthChromaMinus8                            = reader.GetUe();
+
+        sps.qpprimeYZeroTransformBypassFlag                 = reader.GetBit();
+        sps.seqScalingMatrixPresentFlag                     = reader.GetBit();
+
+        if (sps.seqScalingMatrixPresentFlag)
+        {
+            for (mfxU32 i = 0; i < ((sps.chromaFormatIdc != 3) ? 8u : 12u); i++)
+            {
+                sps.seqScalingListPresentFlag[i]            = reader.GetBit();
+                if (sps.seqScalingListPresentFlag[i])
+                {
+                    (i < 6)
+                        ? ReadScalingList(reader, sps.scalingList4x4[i],     16)
+                        : ReadScalingList(reader, sps.scalingList8x8[i - 6], 64);
+                }
+            }
+        }
+    }
+
+    sps.log2MaxFrameNumMinus4                               = reader.GetUe();
+    sps.picOrderCntType                                     = reader.GetUe();
+
+    if (sps.picOrderCntType == 0)
+    {
+        sps.log2MaxPicOrderCntLsbMinus4                     = reader.GetUe();
+    }
+    else if (sps.picOrderCntType == 1)
+    {
+        sps.deltaPicOrderAlwaysZeroFlag                     = reader.GetBit();
+        sps.offsetForNonRefPic                              = reader.GetSe();
+        sps.offsetForTopToBottomField                       = reader.GetSe();
+        sps.numRefFramesInPicOrderCntCycle                  = reader.GetUe();
+
+        for (mfxU32 i = 0; i < sps.numRefFramesInPicOrderCntCycle; i++)
+            sps.offsetForRefFrame[i]                        = reader.GetSe();
+    }
+
+    sps.maxNumRefFrames                                     = reader.GetUe();
+    sps.gapsInFrameNumValueAllowedFlag                      = reader.GetBit();
+    sps.picWidthInMbsMinus1                                 = reader.GetUe();
+    sps.picHeightInMapUnitsMinus1                           = reader.GetUe();
+    sps.frameMbsOnlyFlag                                    = reader.GetBit();
+
+    if (!sps.frameMbsOnlyFlag)
+        sps.mbAdaptiveFrameFieldFlag                        = reader.GetBit();
+
+    sps.direct8x8InferenceFlag                              = reader.GetBit();
+    sps.frameCroppingFlag                                   = reader.GetBit();
+
+    if (sps.frameCroppingFlag)
+    {
+        sps.frameCropLeftOffset                             = reader.GetUe();
+        sps.frameCropRightOffset                            = reader.GetUe();
+        sps.frameCropTopOffset                              = reader.GetUe();
+        sps.frameCropBottomOffset                           = reader.GetUe();
+    }
+
+    sps.vuiParametersPresentFlag                            = reader.GetBit();
+    if (sps.vuiParametersPresentFlag)
+    {
+        sps.vui.flags.aspectRatioInfoPresent                = reader.GetBit();
+        if (sps.vui.flags.aspectRatioInfoPresent)
+        {
+            sps.vui.aspectRatioIdc                          = reader.GetBits(8);
+            if (sps.vui.aspectRatioIdc == 255)
+            {
+                sps.vui.sarWidth                            = reader.GetBits(16);
+                sps.vui.sarHeight                           = reader.GetBits(16);
+            }
+        }
+
+        sps.vui.flags.overscanInfoPresent                   = reader.GetBit();
+        if (sps.vui.flags.overscanInfoPresent)
+            sps.vui.flags.overscanAppropriate               = reader.GetBit();
+
+        sps.vui.flags.videoSignalTypePresent                = reader.GetBit();
+        if (sps.vui.flags.videoSignalTypePresent)
+        {
+            sps.vui.videoFormat                             = reader.GetBits(3);
+            sps.vui.flags.videoFullRange                    = reader.GetBit();
+            sps.vui.flags.colourDescriptionPresent          = reader.GetBit();
+
+            if (sps.vui.flags.colourDescriptionPresent)
+            {
+                sps.vui.colourPrimaries                     = reader.GetBits(8);
+                sps.vui.transferCharacteristics             = reader.GetBits(8);
+                sps.vui.matrixCoefficients                  = reader.GetBits(8);
+            }
+        }
+
+        sps.vui.flags.chromaLocInfoPresent                  = reader.GetBit();
+        if (sps.vui.flags.chromaLocInfoPresent)
+        {
+            sps.vui.chromaSampleLocTypeTopField             = reader.GetUe();
+            sps.vui.chromaSampleLocTypeBottomField          = reader.GetUe();
+        }
+
+        sps.vui.flags.timingInfoPresent                     = reader.GetBit();
+        if (sps.vui.flags.timingInfoPresent)
+        {
+            sps.vui.numUnitsInTick                          = reader.GetBits(32);
+            sps.vui.timeScale                               = reader.GetBits(32);
+            sps.vui.flags.fixedFrameRate                    = reader.GetBit();
+        }
+
+        sps.vui.flags.nalHrdParametersPresent               = reader.GetBit();
+        if (sps.vui.flags.nalHrdParametersPresent)
+            ReadHrdParameters(reader, sps.vui.nalHrdParameters);
+
+        sps.vui.flags.vclHrdParametersPresent               = reader.GetBit();
+        if (sps.vui.flags.vclHrdParametersPresent)
+            ReadHrdParameters(reader, sps.vui.vclHrdParameters);
+
+        if (sps.vui.flags.nalHrdParametersPresent || sps.vui.flags.vclHrdParametersPresent)
+            sps.vui.flags.lowDelayHrd                       = reader.GetBit();
+
+        sps.vui.flags.picStructPresent                      = reader.GetBit();
+        sps.vui.flags.bitstreamRestriction                  = reader.GetBit();
+
+        if (sps.vui.flags.bitstreamRestriction)
+        {
+            sps.vui.flags.motionVectorsOverPicBoundaries    = reader.GetBit();
+            sps.vui.maxBytesPerPicDenom                     = reader.GetUe();
+            sps.vui.maxBitsPerMbDenom                       = reader.GetUe();
+            sps.vui.log2MaxMvLengthHorizontal               = reader.GetUe();
+            sps.vui.log2MaxMvLengthVertical                 = reader.GetUe();
+            sps.vui.numReorderFrames                        = reader.GetUe();
+            sps.vui.maxDecFrameBuffering                    = reader.GetUe();
+        }
+    }
+}
+
+mfxU8 MfxHwH264Encode::ReadSpsIdOfPpsHeader(
+    InputBitstream is)
+{
+    InputBitstreamCheckedRange reader(is);
+    mfxU8 ppsId = reader.GetUe();
+    ppsId;
+
+    mfxU8 spsId = reader.GetUe();
+    if (spsId > 31)
+        throw InvalidBitstream();
+
+    return spsId;
+}
+
+void MfxHwH264Encode::ReadPpsHeader(
+    InputBitstream &        is,
+    mfxExtSpsHeader const & sps,
+    mfxExtPpsHeader &       pps)
+{
+    InputBitstreamCheckedRange reader(is);
+
+    mfxU32 unused                                               = reader.GetBit(); // forbiddenZeroBit
+
+    pps.nalRefIdc                                               = reader.GetBits(2);
+    if (pps.nalRefIdc == 0)
+        throw InvalidBitstream();
+
+    mfxU8 nalUnitType                                           = reader.GetBits(5);
+    if (nalUnitType != 8)
+        throw InvalidBitstream();
+
+    pps.picParameterSetId                                       = reader.GetUe();
+    pps.seqParameterSetId                                       = reader.GetUe();
+
+    if (pps.seqParameterSetId != sps.seqParameterSetId)
+        throw InvalidBitstream();
+
+    pps.entropyCodingModeFlag                                   = reader.GetBit();
+
+    pps.bottomFieldPicOrderInframePresentFlag                   = reader.GetBit();;
+
+    pps.numSliceGroupsMinus1                                    = reader.GetUe();
+    if (pps.numSliceGroupsMinus1 > 0)
+    {
+        if (pps.numSliceGroupsMinus1 > 7)
+            throw InvalidBitstream();
+
+        pps.sliceGroupMapType                                   = reader.GetUe();
+        if (pps.sliceGroupMapType == 0)
+        {
+            for (mfxU32 i = 0; i <= pps.numSliceGroupsMinus1; i++)
+                pps.sliceGroupInfo.t0.runLengthMinus1[i]        = reader.GetUe();
+        }
+        else if (pps.sliceGroupMapType == 2)
+        {
+            for (mfxU32 i = 0; i < pps.numSliceGroupsMinus1; i++)
+            {
+                pps.sliceGroupInfo.t2.topLeft[i]                = reader.GetUe();
+                pps.sliceGroupInfo.t2.bottomRight[i]            = reader.GetUe();
+            }
+        }
+        else if (
+            pps.sliceGroupMapType == 3 ||
+            pps.sliceGroupMapType == 4 ||
+            pps.sliceGroupMapType == 5)
+        {
+            pps.sliceGroupInfo.t3.sliceGroupChangeDirectionFlag = reader.GetBit();
+            pps.sliceGroupInfo.t3.sliceGroupChangeRate          = reader.GetUe();
+        }
+        else if (pps.sliceGroupMapType == 6)
+        {
+            pps.sliceGroupInfo.t6.picSizeInMapUnitsMinus1       = reader.GetUe();
+            for (mfxU32 i = 0; i <= pps.sliceGroupInfo.t6.picSizeInMapUnitsMinus1; i++)
+                unused                                          = reader.GetBits(CeilLog2(pps.numSliceGroupsMinus1 + 1)); // sliceGroupId
+        }
+    }
+
+    pps.numRefIdxL0DefaultActiveMinus1                          = reader.GetUe();
+    pps.numRefIdxL1DefaultActiveMinus1                          = reader.GetUe();
+
+    pps.weightedPredFlag                                        = reader.GetBit();
+    pps.weightedBipredIdc                                       = reader.GetBits(2);
+    pps.picInitQpMinus26                                        = reader.GetSe();
+    pps.picInitQsMinus26                                        = reader.GetSe();
+    pps.chromaQpIndexOffset                                     = reader.GetSe();;
+
+    pps.deblockingFilterControlPresentFlag                      = reader.GetBit();
+    pps.constrainedIntraPredFlag                                = reader.GetBit();
+    pps.redundantPicCntPresentFlag                              = reader.GetBit();
+
+    pps.moreRbspData = MoreRbspData(is);
+    if (pps.moreRbspData)
+    {
+        pps.transform8x8ModeFlag                                = reader.GetBit();
+        pps.picScalingMatrixPresentFlag                         = reader.GetBit();
+        if (pps.picScalingMatrixPresentFlag)
+        {
+            for (mfxU32 i = 0; i < 6 + ((sps.chromaFormatIdc != 3) ? 2u : 6u) * pps.transform8x8ModeFlag; i++)
+            {
+                mfxU32 picScalingListPresentFlag                = reader.GetBit();
+                if (picScalingListPresentFlag)
+                {
+                    (i < 6)
+                        ? ReadScalingList(reader, pps.scalingList4x4[i],     16)
+                        : ReadScalingList(reader, pps.scalingList8x8[i - 6], 64);
+                }
+            }
+        }
+
+        pps.secondChromaQpIndexOffset                           = reader.GetSe();
+    }
+}
+
+namespace
+{
+    void WriteSpsData(
+        OutputBitstream &       writer,
+        mfxExtSpsHeader const & sps)
+    {
+        writer.PutBits(sps.profileIdc, 8);
+        writer.PutBit(sps.constraints.set0);
+        writer.PutBit(sps.constraints.set1);
+        writer.PutBit(sps.constraints.set2);
+        writer.PutBit(sps.constraints.set3);
+        writer.PutBit(sps.constraints.set4);
+        writer.PutBit(sps.constraints.set5);
+        writer.PutBit(sps.constraints.set6);
+        writer.PutBit(sps.constraints.set7);
+        writer.PutBits(sps.levelIdc, 8);
+        writer.PutUe(sps.seqParameterSetId);
+        if (sps.profileIdc == 100 || sps.profileIdc == 110 || sps.profileIdc == 122 ||
+            sps.profileIdc == 244 || sps.profileIdc ==  44 || sps.profileIdc ==  83 ||
+            sps.profileIdc ==  86 || sps.profileIdc == 118 || sps.profileIdc == 128)
+        {
+            writer.PutUe(sps.chromaFormatIdc);
+            if (sps.chromaFormatIdc == 3)
+                writer.PutBit(sps.separateColourPlaneFlag);
+            writer.PutUe(sps.bitDepthLumaMinus8);
+            writer.PutUe(sps.bitDepthChromaMinus8);
+            writer.PutBit(sps.qpprimeYZeroTransformBypassFlag);
+            writer.PutBit(sps.seqScalingMatrixPresentFlag);
+            if (sps.seqScalingMatrixPresentFlag)
+            {
+                assert("seq_scaling_matrix is unsupported");
+            }
+        }
+        writer.PutUe(sps.log2MaxFrameNumMinus4);
+        writer.PutUe(sps.picOrderCntType);
+        if (sps.picOrderCntType == 0)
+        {
+            writer.PutUe(sps.log2MaxPicOrderCntLsbMinus4);
+        }
+        else if (sps.picOrderCntType == 1)
+        {
+            writer.PutBit(sps.deltaPicOrderAlwaysZeroFlag);
+            writer.PutSe(sps.offsetForNonRefPic);
+            writer.PutSe(sps.offsetForTopToBottomField);
+            writer.PutUe(sps.numRefFramesInPicOrderCntCycle);
+            for (mfxU32 i = 0; i < sps.numRefFramesInPicOrderCntCycle; i++)
+                writer.PutSe(sps.offsetForRefFrame[i]);
+        }
+        writer.PutUe(sps.maxNumRefFrames);
+        writer.PutBit(sps.gapsInFrameNumValueAllowedFlag);
+        writer.PutUe(sps.picWidthInMbsMinus1);
+        writer.PutUe(sps.picHeightInMapUnitsMinus1);
+        writer.PutBit(sps.frameMbsOnlyFlag);
+        if (!sps.frameMbsOnlyFlag)
+            writer.PutBit(sps.mbAdaptiveFrameFieldFlag);
+        writer.PutBit(sps.direct8x8InferenceFlag);
+        writer.PutBit(sps.frameCroppingFlag);
+        if (sps.frameCroppingFlag)
+        {
+            writer.PutUe(sps.frameCropLeftOffset);
+            writer.PutUe(sps.frameCropRightOffset);
+            writer.PutUe(sps.frameCropTopOffset);
+            writer.PutUe(sps.frameCropBottomOffset);
+        }
+        writer.PutBit(sps.vuiParametersPresentFlag);
+        if (sps.vuiParametersPresentFlag)
+        {
+            writer.PutBit(sps.vui.flags.aspectRatioInfoPresent);
+            if (sps.vui.flags.aspectRatioInfoPresent)
+            {
+                writer.PutBits(sps.vui.aspectRatioIdc, 8);
+                if (sps.vui.aspectRatioIdc == 255)
+                {
+                    writer.PutBits(sps.vui.sarWidth, 16);
+                    writer.PutBits(sps.vui.sarHeight, 16);
+                }
+            }
+            writer.PutBit(sps.vui.flags.overscanInfoPresent);
+            if (sps.vui.flags.overscanInfoPresent)
+                writer.PutBit(sps.vui.flags.overscanAppropriate);
+            writer.PutBit(sps.vui.flags.videoSignalTypePresent);
+            if (sps.vui.flags.videoSignalTypePresent)
+            {
+                writer.PutBits(sps.vui.videoFormat, 3);
+                writer.PutBit(sps.vui.flags.videoFullRange);
+                writer.PutBit(sps.vui.flags.colourDescriptionPresent);
+                if (sps.vui.flags.colourDescriptionPresent)
+                {
+                    writer.PutBits(sps.vui.colourPrimaries, 8);
+                    writer.PutBits(sps.vui.transferCharacteristics, 8);
+                    writer.PutBits(sps.vui.matrixCoefficients, 8);
+                }
+            }
+            writer.PutBit(sps.vui.flags.chromaLocInfoPresent);
+            if (sps.vui.flags.chromaLocInfoPresent)
+            {
+                writer.PutUe(sps.vui.chromaSampleLocTypeTopField);
+                writer.PutUe(sps.vui.chromaSampleLocTypeBottomField);
+            }
+            writer.PutBit(sps.vui.flags.timingInfoPresent);
+            if (sps.vui.flags.timingInfoPresent)
+            {
+                writer.PutBits(sps.vui.numUnitsInTick, 32);
+                writer.PutBits(sps.vui.timeScale, 32);
+                writer.PutBit(sps.vui.flags.fixedFrameRate);
+            }
+            writer.PutBit(sps.vui.flags.nalHrdParametersPresent);
+            if (sps.vui.flags.nalHrdParametersPresent)
+                WriteHrdParameters(writer, sps.vui.nalHrdParameters);
+            writer.PutBit(sps.vui.flags.vclHrdParametersPresent);
+            if (sps.vui.flags.vclHrdParametersPresent)
+                WriteHrdParameters(writer, sps.vui.vclHrdParameters);
+            if (sps.vui.flags.nalHrdParametersPresent || sps.vui.flags.vclHrdParametersPresent)
+                writer.PutBit(sps.vui.flags.lowDelayHrd);
+            writer.PutBit(sps.vui.flags.picStructPresent);
+            writer.PutBit(sps.vui.flags.bitstreamRestriction);
+            if (sps.vui.flags.bitstreamRestriction)
+            {
+                writer.PutBit(sps.vui.flags.motionVectorsOverPicBoundaries);
+                writer.PutUe(sps.vui.maxBytesPerPicDenom);
+                writer.PutUe(sps.vui.maxBitsPerMbDenom);
+                writer.PutUe(sps.vui.log2MaxMvLengthHorizontal);
+                writer.PutUe(sps.vui.log2MaxMvLengthVertical);
+                writer.PutUe(sps.vui.numReorderFrames);
+                writer.PutUe(sps.vui.maxDecFrameBuffering);
+            }
+        }
+    }
+
+    void WriteSpsMvcExtension(
+        OutputBitstream &        writer,
+        mfxExtMVCSeqDesc const & extMvc)
+    {
+        writer.PutUe(extMvc.NumView - 1);                       // num_views_minus1
+        for (mfxU32 i = 0; i < extMvc.NumView; i++)
+            writer.PutUe(extMvc.View[i].ViewId);                // view_id[i]
+        for (mfxU32 i = 1; i < extMvc.NumView; i++)
+        {
+            writer.PutUe(extMvc.View[i].NumAnchorRefsL0);       // num_anchor_refs_l0[i]
+            for (mfxU32 j = 0; j < extMvc.View[i].NumAnchorRefsL0; j++)
+                writer.PutUe(extMvc.View[i].AnchorRefL0[j]);    // anchor_ref_l0[i][j]
+            writer.PutUe(extMvc.View[i].NumAnchorRefsL1);       // num_anchor_refs_l1[i]
+            for (mfxU32 j = 0; j < extMvc.View[i].NumAnchorRefsL1; j++)
+                writer.PutUe(extMvc.View[i].AnchorRefL1[j]);    // anchor_ref_l1[i][j]
+        }
+        for (mfxU32 i = 1; i < extMvc.NumView; i++)
+        {
+            writer.PutUe(extMvc.View[i].NumNonAnchorRefsL0);    // num_non_anchor_refs_l0[i]
+            for (mfxU32 j = 0; j < extMvc.View[i].NumNonAnchorRefsL0; j++)
+                writer.PutUe(extMvc.View[i].NonAnchorRefL0[j]); // non_anchor_ref_l0[i][j]
+            writer.PutUe(extMvc.View[i].NumNonAnchorRefsL1);    // num_non_anchor_refs_l1[i]
+            for (mfxU32 j = 0; j < extMvc.View[i].NumNonAnchorRefsL1; j++)
+                writer.PutUe(extMvc.View[i].NonAnchorRefL1[j]); // non_anchor_ref_l1[i][j]
+        }
+        writer.PutUe(extMvc.NumOP - 1);                         // num_level_values_signalled_minus1
+        for (mfxU32 i = 0; i < extMvc.NumOP; i++)
+        {
+            writer.PutBits(extMvc.OP[i].LevelIdc, 8);           // level_idc[i]
+            writer.PutUe(0);                                    // num_applicable_ops_minus1[i]
+            for (mfxU32 j = 0; j < 1; j++)
+            {
+                writer.PutBits(extMvc.OP[i].TemporalId, 3);     // applicable_op_temporal_id[i][j]
+                writer.PutUe(extMvc.OP[i].NumTargetViews - 1);  // applicable_op_num_target_views_minus1[i][j]
+                for (mfxU32 k = 0; k < extMvc.OP[i].NumTargetViews; k++)
+                    writer.PutUe(extMvc.OP[i].TargetViewId[k]); // applicable_op_target_view_id[i][j][k]
+                writer.PutUe(extMvc.OP[i].NumViews - 1);        // applicable_op_num_views_minus1[i][j]
+            }
+        }
+    }
+
+    void WriteSpsSvcExtension(
+        OutputBitstream &          writer,
+        mfxExtSpsHeader const &    sps,
+        mfxExtSpsSvcHeader const & extSvc)
+    {
+        mfxU32 chromaArrayType = sps.separateColourPlaneFlag ? 0 : sps.chromaFormatIdc;
+
+        writer.PutBit(extSvc.interLayerDeblockingFilterControlPresentFlag); // inter_layer_deblocking_filter_control_present_flag
+        writer.PutBits(extSvc.extendedSpatialScalabilityIdc, 2);            // extended_spatial_scalability_idc
+        if (chromaArrayType == 1 || chromaArrayType == 2)
+            writer.PutBit(extSvc.chromaPhaseXPlus1Flag);                    // chroma_phase_x_plus1_flag
+        if (chromaArrayType == 1)
+            writer.PutBits(extSvc.chromaPhaseYPlus1, 2);                    // chroma_phase_y_plus1
+        if (extSvc.extendedSpatialScalabilityIdc == 1)
+        {
+            if (chromaArrayType > 0)
+            {
+                writer.PutBit(extSvc.seqRefLayerChromaPhaseXPlus1Flag);     // seq_ref_layer_chroma_phase_x_plus1_flag
+                writer.PutBits(extSvc.seqRefLayerChromaPhaseYPlus1, 2);     // seq_ref_layer_chroma_phase_y_plus1
+            }
+            writer.PutSe(extSvc.seqScaledRefLayerLeftOffset);               // seq_scaled_ref_layer_left_offset
+            writer.PutSe(extSvc.seqScaledRefLayerTopOffset);                // seq_scaled_ref_layer_top_offset
+            writer.PutSe(extSvc.seqScaledRefLayerRightOffset);              // seq_scaled_ref_layer_right_offset
+            writer.PutSe(extSvc.seqScaledRefLayerBottomOffset);             // seq_scaled_ref_layer_bottom_offset
+        }
+        writer.PutBit(extSvc.seqTcoeffLevelPredictionFlag);                 // seq_tcoeff_level_prediction_flag
+        if (extSvc.seqTcoeffLevelPredictionFlag)
+            writer.PutBit(extSvc.adaptiveTcoeffLevelPredictionFlag);        // adaptive_tcoeff_level_prediction_flag
+        writer.PutBit(extSvc.sliceHeaderRestrictionFlag);                   // slice_header_restriction_flag
+    }
+}
+
+mfxU32 MfxHwH264Encode::WriteSpsHeader(
+    OutputBitstream &       writer,
+    mfxExtSpsHeader const & sps)
+{
+    mfxU32 initNumBits = writer.GetNumBits();
+
+    const mfxU8 header[4] = { 0, 0, 0, 1 };
+    writer.PutRawBytes(header, header + sizeof header / sizeof header[0]);
+
+    writer.PutBit(0); // forbiddenZeroBit
+    writer.PutBits(sps.nalRefIdc, 2);
+    writer.PutBits(7, 5); // nalUnitType
+    WriteSpsData(writer, sps);
+    writer.PutTrailingBits();
+
+    return writer.GetNumBits() - initNumBits;
+}
+
+mfxU32 MfxHwH264Encode::WriteSpsHeader(
+    OutputBitstream &        writer,
+    mfxExtSpsHeader const &  sps,
+    mfxExtBuffer const &     spsExt)
+{
+    mfxU32 initNumBits = writer.GetNumBits();
+
+    const mfxU8 header[4] = { 0, 0, 0, 1 };
+    writer.PutRawBytes(header, header + sizeof header / sizeof header[0]);
+
+    writer.PutBit(0);                   // forbidden_zero_bit
+    writer.PutBits(sps.nalRefIdc, 2);   // nal_ref_idc
+    writer.PutBits(sps.nalUnitType, 5); // nal_unit_type
+
+    WriteSpsData(writer, sps);
+
+    if (IsSvcProfile(sps.profileIdc))
+    {
+        assert(spsExt.BufferId == MFX_EXTBUFF_SPS_SVC_HEADER);
+        mfxExtSpsSvcHeader const & extSvc = (mfxExtSpsSvcHeader const &)spsExt;
+
+        WriteSpsSvcExtension(writer, sps, extSvc);
+        writer.PutBit(0);               // svc_vui_parameters_present_flag
+    }
+    else if (IsMvcProfile(sps.profileIdc))
+    {
+        assert(spsExt.BufferId == MFX_EXTBUFF_MVC_SEQ_DESC);
+        mfxExtMVCSeqDesc const & extMvc = (mfxExtMVCSeqDesc const &)spsExt;
+
+        writer.PutBit(1);               // bit_equal_to_one
+        WriteSpsMvcExtension(writer, extMvc);
+        writer.PutBit(0);               // mvc_vui_parameters_present_flag
+    }
+    writer.PutBit(0);                   // additional_extension2_flag
+    writer.PutTrailingBits();
+
+    return writer.GetNumBits() - initNumBits;
+}
+
+mfxU32 MfxHwH264Encode::WritePpsHeader(
+    OutputBitstream &       writer,
+    mfxExtPpsHeader const & pps)
+{
+    mfxU32 initNumBits = writer.GetNumBits();
+
+    const mfxU8 header[4] = { 0, 0, 0, 1 };
+    writer.PutRawBytes(header, header + sizeof header / sizeof header[0]);
+
+    writer.PutBit(0); // forbiddenZeroBit
+    writer.PutBits(pps.nalRefIdc, 2);
+    writer.PutBits(8, 5); // nalUnitType
+    writer.PutUe(pps.picParameterSetId);
+    writer.PutUe(pps.seqParameterSetId);
+    writer.PutBit(pps.entropyCodingModeFlag);
+    writer.PutBit(pps.bottomFieldPicOrderInframePresentFlag);
+    writer.PutUe(pps.numSliceGroupsMinus1);
+    if (pps.numSliceGroupsMinus1 > 0)
+    {
+        writer.PutUe(pps.sliceGroupMapType);
+        if (pps.sliceGroupMapType == 0)
+        {
+            for (mfxU32 i = 0; i <= pps.numSliceGroupsMinus1; i++)
+                writer.PutUe(pps.sliceGroupInfo.t0.runLengthMinus1[i]);
+        }
+        else if (pps.sliceGroupMapType == 2)
+        {
+            for (mfxU32 i = 0; i < pps.numSliceGroupsMinus1; i++)
+            {
+                writer.PutUe(pps.sliceGroupInfo.t2.topLeft[i]);
+                writer.PutUe(pps.sliceGroupInfo.t2.bottomRight[i]);
+            }
+        }
+        else if (
+            pps.sliceGroupMapType == 3 ||
+            pps.sliceGroupMapType == 4 ||
+            pps.sliceGroupMapType == 5)
+        {
+            writer.PutBit(pps.sliceGroupInfo.t3.sliceGroupChangeDirectionFlag);
+            writer.PutUe(pps.sliceGroupInfo.t3.sliceGroupChangeRate);
+        }
+        else if (pps.sliceGroupMapType == 6)
+        {
+            writer.PutUe(pps.sliceGroupInfo.t6.picSizeInMapUnitsMinus1);
+            assert("unsupprted slice_group_map_type = 6");
+            for (mfxU32 i = 0; i <= pps.sliceGroupInfo.t6.picSizeInMapUnitsMinus1; i++)
+                writer.PutBits(1, CeilLog2(pps.numSliceGroupsMinus1 + 1));
+        }
+    }
+    writer.PutUe(pps.numRefIdxL0DefaultActiveMinus1);
+    writer.PutUe(pps.numRefIdxL1DefaultActiveMinus1);
+    writer.PutBit(pps.weightedPredFlag);
+    writer.PutBits(pps.weightedBipredIdc, 2);
+    writer.PutSe(pps.picInitQpMinus26);
+    writer.PutSe(pps.picInitQsMinus26);
+    writer.PutSe(pps.chromaQpIndexOffset);
+    writer.PutBit(pps.deblockingFilterControlPresentFlag);
+    writer.PutBit(pps.constrainedIntraPredFlag);
+    writer.PutBit(pps.redundantPicCntPresentFlag);
+    if (pps.moreRbspData)
+    {
+        writer.PutBit(pps.transform8x8ModeFlag);
+        writer.PutBit(pps.picScalingMatrixPresentFlag);
+        if (pps.picScalingMatrixPresentFlag)
+        {
+            assert("pic_scaling_matrix is unsupported");
+        }
+        writer.PutSe(pps.secondChromaQpIndexOffset);
+    }
+    writer.PutTrailingBits();
+
+    return writer.GetNumBits() - initNumBits;
+}
+
+void MfxHwH264Encode::WriteRefPicListModification(
+    OutputBitstream &       writer,
+    ArrayRefListMod const & refListMod)
+{
+    writer.PutBit(refListMod.Size() > 0);       // ref_pic_list_modification_flag_l0
+    if (refListMod.Size() > 0)
+    {
+        for (mfxU32 i = 0; i < refListMod.Size(); i++)
+        {
+            writer.PutUe(refListMod[i].m_idc);  // modification_of_pic_nums_idc
+            writer.PutUe(refListMod[i].m_diff); // abs_diff_pic_num_minus1 or
+                                                // long_term_pic_num or
+                                                // abs_diff_view_idx_minus1
+        }
+
+        writer.PutUe(RPLM_END);
+    }
+}
+
+void MfxHwH264Encode::WriteDecRefPicMarking(
+    OutputBitstream &            writer,
+    DecRefPicMarkingInfo const & marking,
+    mfxU32                       idrPicFlag)
+{
+    if (idrPicFlag)
+    {
+        writer.PutBit(marking.no_output_of_prior_pics_flag);    // no_output_of_prior_pics_flag
+        writer.PutBit(marking.long_term_reference_flag);        // long_term_reference_flag
+    }
+    else
+    {
+        writer.PutBit(marking.mmco.Size() > 0);                 // adaptive_ref_pic_marking_mode_flag
+        if (marking.mmco.Size())
+        {
+            for (mfxU32 i = 0; i < marking.mmco.Size(); i++)
+            {
+                writer.PutUe(marking.mmco[i]);                  // memory_management_control_operation
+                writer.PutUe(marking.value[2 * i]);             // difference_of_pic_nums_minus1 or
+                                                                // long_term_pic_num or
+                                                                // long_term_frame_idx or
+                                                                // max_long_term_frame_idx_plus1
+                if (marking.mmco[i] == MMCO_ST_TO_LT)
+                    writer.PutUe(marking.value[2 * i + 1]);     // long_term_frame_idx
+            }
+
+            writer.PutUe(MMCO_END);
+        }
+    }
+}
+
+mfxU32 MfxHwH264Encode::WriteAud(
+    OutputBitstream & writer,
+    mfxU32            frameType)
+{
+    mfxU32 initNumBits = writer.GetNumBits();
+
+    mfxU8 const header[4] = { 0, 0, 0, 1 };
+    writer.PutRawBytes(header, header + sizeof header / sizeof header[0]);
+    writer.PutBit(0);
+    writer.PutBits(0, 2);
+    writer.PutBits(9, 5);
+    writer.PutBits(ConvertFrameTypeMfx2Ddi(frameType) - 1, 3);
+    writer.PutTrailingBits();
+
+    return writer.GetNumBits() - initNumBits;
+}
+
+bool MfxHwH264Encode::IsAvcProfile(mfxU32 profile)
+{
+    return
+        IsAvcBaseProfile(profile)           ||
+        profile == MFX_PROFILE_AVC_MAIN     ||
+        profile == MFX_PROFILE_AVC_EXTENDED ||
+        IsAvcHighProfile(profile);
+}
+
+bool MfxHwH264Encode::IsAvcBaseProfile(mfxU32 profile)
+{
+    return
+        profile == MFX_PROFILE_AVC_BASELINE ||
+        profile == MFX_PROFILE_AVC_CONSTRAINED_BASELINE;
+}
+
+bool MfxHwH264Encode::IsAvcHighProfile(mfxU32 profile)
+{
+    return 
+        profile == MFX_PROFILE_AVC_HIGH ||
+        profile == MFX_PROFILE_AVC_CONSTRAINED_HIGH ||
+        profile == MFX_PROFILE_AVC_PROGRESSIVE_HIGH;
+}
+
+bool MfxHwH264Encode::IsMvcProfile(mfxU32 profile)
+{
+    return
+        profile == MFX_PROFILE_AVC_STEREO_HIGH ||
+        profile == MFX_PROFILE_AVC_MULTIVIEW_HIGH;
+}
+
+bool MfxHwH264Encode::IsSvcProfile(mfxU32 profile)
+{
+    return
+        profile == MFX_PROFILE_AVC_SCALABLE_BASELINE ||
+        profile == MFX_PROFILE_AVC_SCALABLE_HIGH;
+}
+
+bool MfxHwH264Encode::operator ==(
+    mfxExtSpsHeader const & lhs,
+    mfxExtSpsHeader const & rhs)
+{
+    // part from the beginning of sps to nalHrdParameters
+    mfxU8 const * lhsBegin1 = (mfxU8 const *)&lhs;
+    mfxU8 const * rhsBegin1 = (mfxU8 const *)&rhs;
+    mfxU8 const * lhsEnd1   = (mfxU8 const *)&lhs.vui.nalHrdParameters;
+
+    // part from the end of vclHrdParameters to the end of sps
+    mfxU8 const * lhsBegin2 = (mfxU8 const *)&lhs.vui.maxBytesPerPicDenom;
+    mfxU8 const * rhsBegin2 = (mfxU8 const *)&rhs.vui.maxBytesPerPicDenom;
+    mfxU8 const * lhsEnd2   = (mfxU8 const *)&lhs + sizeof(lhs);
+
+    if (memcmp(lhsBegin1, rhsBegin1, lhsEnd1 - lhsBegin1) != 0 ||
+        memcmp(lhsBegin2, rhsBegin2, lhsEnd2 - lhsBegin2) != 0)
+        return false;
+
+    if (lhs.vui.flags.nalHrdParametersPresent)
+        if (!Equal(lhs.vui.nalHrdParameters, rhs.vui.nalHrdParameters))
+            return false;
+
+    if (lhs.vui.flags.vclHrdParametersPresent)
+        if (!Equal(lhs.vui.vclHrdParameters, rhs.vui.vclHrdParameters))
+            return false;
+
+    return true;
+}
+
+mfxU8 * MfxHwH264Encode::PackPrefixNalUnitSvc(
+    mfxU8 *         begin,
+    mfxU8 *         end,
+    bool            emulationControl,
+    DdiTask const & task,
+    mfxU32          fieldId,
+    mfxU32          nalUnitType)
+{
+    OutputBitstream obs(begin, end, false);
+
+    mfxU32 idrFlag   = (task.m_type[fieldId] & MFX_FRAMETYPE_IDR) ? 1 : 0;
+    mfxU32 nalRefIdc = task.m_nalRefIdc[fieldId];
+
+    mfxU32 useRefBasePicFlag = (task.m_type[fieldId] & MFX_FRAMETYPE_KEYPIC) ? 1 : 0;
+
+    obs.PutBits(1, 24);                     // 001
+    obs.PutBits(0, 1);                      // forbidden_zero_flag
+    obs.PutBits(nalRefIdc, 2);              // nal_ref_idc
+    obs.PutBits(nalUnitType, 5);            // nal_unit_type
+    obs.PutBits(1, 1);                      // svc_extension_flag
+    obs.PutBits(idrFlag, 1);                // idr_flag
+    obs.PutBits(task.m_pid, 6);             // priority_id
+    obs.PutBits(1, 1);                      // no_inter_layer_pred_flag
+    obs.PutBits(task.m_did, 3);             // dependency_id
+    obs.PutBits(task.m_qid, 4);             // quality_id
+    obs.PutBits(task.m_tid, 3);             // temporal_id
+    obs.PutBits(useRefBasePicFlag, 1);      // use_ref_base_pic_flag
+    obs.PutBits(1, 1);                      // discardable_flag
+    obs.PutBits(1, 1);                      // output_flag
+    obs.PutBits(0x3, 2);                    // reserved_three_2bits
+
+    OutputBitstream obs1(begin + obs.GetNumBits() / 8, end, emulationControl);
+    if (nalRefIdc && nalUnitType == 14)
+    {
+        mfxU32 additional_prefix_nal_unit_extension_flag = 0;
+
+        obs1.PutBit(task.m_storeRefBasePicFlag);
+        if ((useRefBasePicFlag || task.m_storeRefBasePicFlag) && !idrFlag)
+            WriteDecRefPicMarking(obs1, task.m_decRefPicMrk[fieldId], idrFlag);
+
+        obs1.PutBit(additional_prefix_nal_unit_extension_flag);
+        assert(additional_prefix_nal_unit_extension_flag == 0);
+    }
+
+    obs1.PutTrailingBits();
+    
+    return begin + obs.GetNumBits() / 8 + obs1.GetNumBits() / 8;
+}
+
+namespace
+{
+    ENCODE_PACKEDHEADER_DATA MakePackedByteBuffer(mfxU8 * data, mfxU32 size, mfxU32 skipEmulCount)
+    {
+        ENCODE_PACKEDHEADER_DATA desc = { 0 };
+        desc.pData                  = data;
+        desc.BufferSize             = size;
+        desc.DataLength             = size;
+        desc.SkipEmulationByteCount = skipEmulCount;
+        return desc;
+    }
+
+    void PrepareSpsPpsHeaders(
+        MfxVideoParam const &               par,
+        std::vector<mfxExtSpsHeader> &      sps,
+        std::vector<mfxExtSpsSvcHeader> &   subset,
+        std::vector<mfxExtPpsHeader> &      pps)
+    {
+        mfxExtSpsHeader const *  extSps = GetExtBuffer(par);
+        mfxExtPpsHeader const *  extPps = GetExtBuffer(par);
+        mfxExtSVCSeqDesc const * extSvc = GetExtBuffer(par);
+
+        mfxU16 numViews             = extSps->profileIdc == MFX_PROFILE_AVC_STEREO_HIGH ? 2 : 1;
+        mfxU32 numDep               = par.calcParam.numDependencyLayer;
+        mfxU32 firstDid             = par.calcParam.did[0];
+        mfxU32 lastDid              = par.calcParam.did[numDep - 1];
+        mfxU32 numQualityAtLastDep  = extSvc->DependencyLayer[lastDid].QualityNum;
+
+        mfxU16 heightMul = 2 - extSps->frameMbsOnlyFlag;
+
+        // prepare sps for base layer
+        sps[0] = *extSps;
+        if (IsSvcProfile(par.mfx.CodecProfile)) // force SPS id to 0 for SVC profile only. For other profiles should be able to encode custom SPS id
+            sps[0].seqParameterSetId         = 0;
+        sps[0].picWidthInMbsMinus1       = extSvc->DependencyLayer[firstDid].Width / 16 - 1;
+        sps[0].picHeightInMapUnitsMinus1 = extSvc->DependencyLayer[firstDid].Height / 16 / heightMul - 1;
+
+        if (numViews > 1)
+        {
+            // MVC requires SPS and number of Subset SPS.
+            // HeaderPacker prepares 2 SPS NAL units:
+            // one for base view (sps_id = 0, profile_idc = 100)
+            // and another for all other views (sps_id = 1, profile_idc = 128).
+            // Second SPS will be re-packed to SubsetSPS after return from driver.
+            for (mfxU16 view = 0; view < numViews; view++)
+            {
+                sps[view] = *extSps;
+                pps[view] = *extPps;
+
+                if (numViews > 1 && view == 0) // MVC base view
+                    sps[view].profileIdc = MFX_PROFILE_AVC_HIGH;
+
+                sps[view].seqParameterSetId = mfxU8(!!view) & 0x1f;
+                pps[view].picParameterSetId = mfxU8(!!view);
+                pps[view].seqParameterSetId = sps[view].seqParameterSetId;
+            }
+            return;
+        }
+
+        // prepare sps for enhanced spatial layers
+        for (mfxU32 i = 0, spsidx = 1; i < numDep; i++)
+        {
+            mfxU32 did = par.calcParam.did[i];
+            if (i == 0 && extSvc->DependencyLayer[did].QualityNum == 1)
+                continue; // don't need a subset sps for did = 0
+
+            sps[spsidx] = *extSps;
+            sps[spsidx].nalUnitType               = 15;
+            sps[spsidx].profileIdc                = mfxU8(par.mfx.CodecProfile & MASK_PROFILE_IDC);
+            sps[spsidx].seqParameterSetId         = mfxU8(i);
+            sps[spsidx].picWidthInMbsMinus1       = extSvc->DependencyLayer[did].Width / 16 - 1;
+            sps[spsidx].picHeightInMapUnitsMinus1 = extSvc->DependencyLayer[did].Height / 16 / heightMul - 1;
+
+            InitExtBufHeader(subset[spsidx - 1]);
+            subset[spsidx - 1].interLayerDeblockingFilterControlPresentFlag = 1;
+            subset[spsidx - 1].extendedSpatialScalabilityIdc                = 1;
+            subset[spsidx - 1].chromaPhaseXPlus1Flag                        = 0;
+            subset[spsidx - 1].chromaPhaseYPlus1                            = 0;
+            subset[spsidx - 1].seqRefLayerChromaPhaseXPlus1Flag             = 0;
+            subset[spsidx - 1].seqRefLayerChromaPhaseYPlus1                 = 0;
+            subset[spsidx - 1].seqScaledRefLayerLeftOffset                  = extSvc->DependencyLayer[did].ScaledRefLayerOffsets[0];
+            subset[spsidx - 1].seqScaledRefLayerTopOffset                   = extSvc->DependencyLayer[did].ScaledRefLayerOffsets[1];
+            subset[spsidx - 1].seqScaledRefLayerRightOffset                 = extSvc->DependencyLayer[did].ScaledRefLayerOffsets[2];
+            subset[spsidx - 1].seqScaledRefLayerBottomOffset                = extSvc->DependencyLayer[did].ScaledRefLayerOffsets[3];
+            subset[spsidx - 1].sliceHeaderRestrictionFlag                   = 0;
+            subset[spsidx - 1].seqTcoeffLevelPredictionFlag                 = mfxU8(extSvc->DependencyLayer[did].QualityLayer[0].TcoeffPredictionFlag);
+            subset[spsidx - 1].adaptiveTcoeffLevelPredictionFlag            = 0;
+            spsidx++;
+        }
+
+        // prepare pps for base and enhanced spatial layers
+        for (mfxU32 i = 0; i < numDep; i++)
+        {
+            mfxU32 did = par.calcParam.did[i];
+            mfxU32 simulcast =
+                IsOff(extSvc->DependencyLayer[did].BasemodePred) &&
+                IsOff(extSvc->DependencyLayer[did].MotionPred) &&
+                IsOff(extSvc->DependencyLayer[did].ResidualPred) ? 1 : 0;
+
+            pps[i] = *extPps;
+            if (IsSvcProfile(par.mfx.CodecProfile)) // force SPS/PPS id to 0 for SVC profile only. For other profiles should be able to encode custom SPS/PPS
+            {
+                pps[i].seqParameterSetId = mfxU8(i);
+                pps[i].picParameterSetId = mfxU8(i);
+            }
+            pps[i].constrainedIntraPredFlag = (i == numDep - 1 && numQualityAtLastDep == 1 || simulcast) ? 0 : 1;
+        }
+
+        // pack pps for enhanced quality layer of highest spatial layer if exists
+        if (numQualityAtLastDep > 1)
+        {
+            pps.back() = *extPps;
+            pps.back().seqParameterSetId        = mfxU8(numDep - 1);
+            pps.back().picParameterSetId        = mfxU8(numDep);
+            pps.back().constrainedIntraPredFlag = 0;
+        }
+    }
+};
+
+void HeaderPacker::Init(
+    MfxVideoParam const & par,
+    ENCODE_CAPS const &   hwCaps,
+    bool                  emulPrev)
+{
+    mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(par);
+    mfxExtSVCSeqDesc const *      extSvc = GetExtBuffer(par);
+    mfxExtSpsHeader const *       extSps = GetExtBuffer(par);
+
+    mfxU16 numViews = extSps->profileIdc == MFX_PROFILE_AVC_STEREO_HIGH ? 2 : 1;
+    mfxU32 numDep   = par.calcParam.numDependencyLayer;
+    mfxU32 firstDid = par.calcParam.did[0];
+    mfxU32 lastDid  = par.calcParam.did[numDep - 1];
+
+    mfxU32 numQualityAtFirstDep = extSvc->DependencyLayer[firstDid].QualityNum;
+    mfxU32 numQualityAtLastDep  = extSvc->DependencyLayer[lastDid].QualityNum;
+
+    mfxU32 additionalSpsForFirstSpatialLayer = (numQualityAtFirstDep > 1);
+    mfxU32 additionalPpsForLastSpatialLayer  = (numQualityAtLastDep > 1);
+
+    mfxU32 numSpsHeaders = IPP_MAX(numDep + additionalSpsForFirstSpatialLayer, numViews);
+    mfxU32 numPpsHeaders = IPP_MAX(numDep + additionalPpsForLastSpatialLayer,  numViews);
+
+    m_sps.resize(numSpsHeaders);
+    m_pps.resize(numPpsHeaders);
+    m_subset.resize(numSpsHeaders / numViews - 1);
+    m_packedSps.resize(numSpsHeaders);
+    m_packedPps.resize(numPpsHeaders);
+    m_packedSlices.resize(par.mfx.NumSlice);
+    m_headerBuffer.resize(SPSPPS_BUFFER_SIZE);
+    m_sliceBuffer.resize(SLICE_BUFFER_SIZE);
+
+    Zero(m_sps);
+    Zero(m_pps);
+    Zero(m_subset);
+    Zero(m_packedAud);
+    Zero(m_packedSps);
+    Zero(m_packedPps);
+    Zero(m_packedSlices);
+    Zero(m_spsIdx);
+    Zero(m_ppsIdx);
+    Zero(m_refDqId);
+    Zero(m_simulcast);
+
+    m_emulPrev = emulPrev;
+    m_isMVC = numViews > 1;
+
+    PrepareSpsPpsHeaders(par, m_sps, m_subset, m_pps);
+
+    // prepare data for slice level
+    m_needPrefixNalUnit       = IsSvcProfile(par.mfx.CodecProfile) || (par.calcParam.numTemporalLayer > 0);
+    m_cabacInitIdc            = extDdi->CabacInitIdcPlus1 - 1;
+    m_directSpatialMvPredFlag = extDdi->DirectSpatialMvPredFlag;
+    for (mfxU32 i = 0; i < numDep; i++)
+    {
+        mfxU32 did     = par.calcParam.did[i];
+        mfxU32 prevDid = i > 0 ? par.calcParam.did[i - 1] : 0;
+
+        m_simulcast[did] =
+            IsOff(extSvc->DependencyLayer[did].BasemodePred) &&
+            IsOff(extSvc->DependencyLayer[did].MotionPred) &&
+            IsOff(extSvc->DependencyLayer[did].ResidualPred) ? 1 : 0;
+        m_refDqId[did] = did > 0
+            ? mfxU8(16 * prevDid + extSvc->DependencyLayer[prevDid].QualityNum - 1)
+            : 0;
+
+        for (mfxU32 qid = 0; qid < extSvc->DependencyLayer[did].QualityNum; qid++)
+        {
+            m_spsIdx[did][qid] = mfxU8(did == 0 ? (!!qid) : (did + additionalSpsForFirstSpatialLayer));
+            m_ppsIdx[did][qid] = mfxU8(did);
+        }
+    }
+    if (additionalPpsForLastSpatialLayer)
+        m_ppsIdx[lastDid][numQualityAtLastDep - 1]++;
+
+
+    // pack headers
+    OutputBitstream obs(Begin(m_headerBuffer), End(m_headerBuffer), m_emulPrev);
+
+    ENCODE_PACKEDHEADER_DATA * bufDesc  = Begin(m_packedSps);
+    mfxU8 *                    bufBegin = Begin(m_headerBuffer);
+    mfxU32                     numBits  = 0;
+
+    // pack scalability sei
+    Zero(m_packedScalabilitySei);
+    if (IsSvcProfile(par.mfx.CodecProfile))
+    {
+        mfxU32 numBits = PutScalableInfoSeiMessage(obs, par);
+        assert(numBits % 8 == 0);
+        m_packedScalabilitySei = MakePackedByteBuffer(bufBegin, numBits / 8, m_emulPrev ? 0 : 4);
+        bufBegin += numBits / 8;
+    }
+
+    // pack sps for base and enhanced spatial layers with did > 0
+    for (size_t i = 0; i < m_sps.size(); i++)
+    {
+        numBits = (i == 0 || (numViews > 1))
+            ? WriteSpsHeader(obs, m_sps[i])
+            : WriteSpsHeader(obs, m_sps[i], m_subset[i - 1].Header);
+        *bufDesc++ = MakePackedByteBuffer(bufBegin, numBits / 8, m_emulPrev ? 0 : 4);
+        bufBegin += numBits / 8;
+    }
+
+    // pack pps for base and enhanced spatial layers
+    bufDesc = Begin(m_packedPps);
+    for (size_t i = 0; i < m_pps.size(); i++)
+    {
+        numBits = WritePpsHeader(obs, m_pps[i]);
+        *bufDesc++ = MakePackedByteBuffer(bufBegin, numBits / 8, m_emulPrev ? 0 : 4);
+        bufBegin += numBits / 8;
+    }
+
+    m_hwCaps = hwCaps;
+}
+
+ENCODE_PACKEDHEADER_DATA const & HeaderPacker::PackAud(
+    DdiTask const & task,
+    mfxU32          fieldId)
+{
+    mfxU8 * audBegin = m_packedPps.back().pData + m_packedPps.back().DataLength;
+
+    OutputBitstream obs(audBegin, End(m_headerBuffer), m_emulPrev);
+    mfxU32 numBits = WriteAud(obs, task.m_type[fieldId]);
+    m_packedAud = MakePackedByteBuffer(audBegin, numBits / 8, m_emulPrev ? 0 : 4);
+
+    return m_packedAud;
+}
+
+std::vector<ENCODE_PACKEDHEADER_DATA> const & HeaderPacker::PackSlices(
+    DdiTask const & task,
+    mfxU32          fieldId)
+{
+    Zero(m_packedSlices);
+
+    mfxU8 * sliceBufferBegin = Begin(m_sliceBuffer);
+    mfxU8 * sliceBufferEnd   = End(m_sliceBuffer);
+
+    for (mfxU32 i = 0; i < m_packedSlices.size(); i++)
+    {
+        mfxU8 * endOfPrefix = m_needPrefixNalUnit && task.m_did == 0 && task.m_qid == 0
+            ? PackPrefixNalUnitSvc(sliceBufferBegin, sliceBufferEnd, true, task, fieldId)
+            : sliceBufferBegin;
+
+        OutputBitstream obs(endOfPrefix, sliceBufferEnd, false); // pack without emulation control
+        WriteSlice(obs, task, fieldId, i);
+
+        m_packedSlices[i].pData                  = sliceBufferBegin;
+        m_packedSlices[i].DataLength             = mfxU32((endOfPrefix - sliceBufferBegin) * 8 + obs.GetNumBits()); // for slices length is in bits
+        m_packedSlices[i].BufferSize             = (m_packedSlices[i].DataLength + 7) / 8;
+        m_packedSlices[i].SkipEmulationByteCount = mfxU32(endOfPrefix - sliceBufferBegin + 3);
+
+        sliceBufferBegin += m_packedSlices[i].BufferSize;
+    }
+
+    return m_packedSlices;
+}
+
+
+// FIXME: add svc extension here
+mfxU32 HeaderPacker::WriteSlice(
+    OutputBitstream & obs,
+    DdiTask const &   task,
+    mfxU32            fieldId,
+    mfxU32            sliceId)
+{
+    mfxU32 sliceType    = ConvertMfxFrameType2SliceType(task.m_type[fieldId]) % 5;
+    mfxU32 refPicFlag   = !!(task.m_type[fieldId] & MFX_FRAMETYPE_REF);
+    mfxU32 idrPicFlag   = !!(task.m_type[fieldId] & MFX_FRAMETYPE_IDR);
+    mfxU32 nalRefIdc    = task.m_nalRefIdc[fieldId];
+    mfxU32 nalUnitType  = (task.m_did == 0 && task.m_qid == 0) ? (idrPicFlag ? 5 : 1) : 20;
+    mfxU32 fieldPicFlag = task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE;
+
+    mfxExtSpsHeader const & sps = task.m_viewIdx ? m_sps[task.m_viewIdx] : m_sps[m_spsIdx[task.m_did][task.m_qid]];
+    mfxExtPpsHeader const & pps = task.m_viewIdx ? m_pps[task.m_viewIdx] : m_pps[m_ppsIdx[task.m_did][task.m_qid]];
+
+    // if frame_mbs_only_flag = 0 and current task implies encoding of progressive frame
+    // then picture height in MBs isn't equal to PicHeightInMapUnits. Multiplier required
+    mfxU32 picHeightMultiplier = (sps.frameMbsOnlyFlag == 0) && (fieldPicFlag == 0) ? 2 : 1;
+    mfxU32 picHeightInMBs      = (sps.picHeightInMapUnitsMinus1 + 1) * picHeightMultiplier;
+
+    SliceDivider divider = MakeSliceDivider(
+        m_hwCaps.SliceStructure,
+        (mfxU32)m_packedSlices.size(),
+        sps.picWidthInMbsMinus1 + 1,
+        picHeightInMBs);
+
+    mfxU32 firstMbInSlice = 0;
+    for (mfxU32 i = 0; i <= sliceId; i++, divider.Next())
+        firstMbInSlice = divider.GetFirstMbInSlice();
+
+    mfxU32 sliceHeaderRestrictionFlag = 0;
+    mfxU32 sliceSkipFlag = 0;
+
+    mfxU8 startcode[3] = { 0, 0, 1 };
+    obs.PutRawBytes(startcode, startcode + sizeof startcode);
+    obs.PutBit(0);
+    obs.PutBits(nalRefIdc, 2);
+    obs.PutBits(nalUnitType, 5);
+
+    mfxU32 noInterLayerPredFlag = (task.m_qid == 0) ? m_simulcast[task.m_did] : 0;
+    if (nalUnitType == 20)
+    {
+        mfxU32 useRefBasePicFlag = (task.m_type[fieldId] & MFX_FRAMETYPE_KEYPIC) ? 1 : 0;
+        obs.PutBits(1, 1);          // svc_extension_flag
+        obs.PutBits(idrPicFlag, 1);
+        obs.PutBits(task.m_pid, 6);
+        obs.PutBits(noInterLayerPredFlag, 1);
+        obs.PutBits(task.m_did, 3);
+        obs.PutBits(task.m_qid, 4);
+        obs.PutBits(task.m_tid, 3);
+        obs.PutBits(useRefBasePicFlag, 1);      // use_ref_base_pic_flag
+        obs.PutBits(1, 1);          // discardable_flag
+        obs.PutBits(1, 1);          // output_flag
+        obs.PutBits(0x3, 2);        // reserved_three_2bits
+    }
+
+    obs.PutUe(firstMbInSlice);
+    obs.PutUe(sliceType + 5);
+    obs.PutUe(pps.picParameterSetId);
+    obs.PutBits(task.m_frameNum, sps.log2MaxFrameNumMinus4 + 4);
+    if (!sps.frameMbsOnlyFlag)
+    {
+        obs.PutBit(fieldPicFlag);
+        if (fieldPicFlag)
+            obs.PutBit(fieldId);
+    }
+    if (idrPicFlag)
+        obs.PutUe(task.m_idrPicId);
+    if (sps.picOrderCntType == 0)
+    {
+        obs.PutBits(task.GetPoc(fieldId), sps.log2MaxPicOrderCntLsbMinus4 + 4);
+        if (pps.bottomFieldPicOrderInframePresentFlag && !fieldPicFlag)
+            obs.PutSe(0); // delta_pic_order_cnt_bottom
+    }
+    if (sps.picOrderCntType == 1 && !sps.deltaPicOrderAlwaysZeroFlag)
+    {
+        obs.PutSe(0); // delta_pic_order_cnt[0]
+        if (pps.bottomFieldPicOrderInframePresentFlag && !fieldPicFlag)
+            obs.PutSe(0); // delta_pic_order_cnt[1]
+    }
+    if (task.m_qid == 0)
+    {
+        if (sliceType == SLICE_TYPE_B)
+            obs.PutBit(IsOn(m_directSpatialMvPredFlag));
+        if (sliceType != SLICE_TYPE_I)
+        {
+            mfxU32 numRefIdxL0ActiveMinus1 = IPP_MAX(1, task.m_list0[fieldId].Size()) - 1;
+            mfxU32 numRefIdxL1ActiveMinus1 = IPP_MAX(1, task.m_list1[fieldId].Size()) - 1;
+            mfxU32 numRefIdxActiveOverrideFlag =
+                (numRefIdxL0ActiveMinus1 != pps.numRefIdxL0DefaultActiveMinus1) ||
+                (numRefIdxL1ActiveMinus1 != pps.numRefIdxL1DefaultActiveMinus1 && sliceType == SLICE_TYPE_B);
+
+            obs.PutBit(numRefIdxActiveOverrideFlag);
+            if (numRefIdxActiveOverrideFlag)
+            {
+                obs.PutUe(numRefIdxL0ActiveMinus1);
+                if (sliceType == SLICE_TYPE_B)
+                    obs.PutUe(numRefIdxL1ActiveMinus1);
+            }
+        }
+        if (sliceType != SLICE_TYPE_I)
+            WriteRefPicListModification(obs, task.m_refPicList0Mod[fieldId]);
+        if (sliceType == SLICE_TYPE_B)
+            WriteRefPicListModification(obs, task.m_refPicList1Mod[fieldId]);
+        if (pps.weightedPredFlag  == 1 && sliceType == SLICE_TYPE_P ||
+            pps.weightedBipredIdc == 1 && sliceType == SLICE_TYPE_B)
+        {
+            assert(!"explicit weighted prediction is unsupported");
+        }
+        if (refPicFlag)
+        {
+            WriteDecRefPicMarking(obs, task.m_decRefPicMrk[fieldId], idrPicFlag);
+            mfxU32 storeRefBasePicFlag = 0;
+            if (nalUnitType == 20 && !sliceHeaderRestrictionFlag)
+                obs.PutBit(storeRefBasePicFlag);
+        }
+    }
+    if (pps.entropyCodingModeFlag && sliceType != SLICE_TYPE_I)
+        obs.PutUe(m_cabacInitIdc);
+    obs.PutSe(task.m_cqpValue[fieldId] - (pps.picInitQpMinus26 + 26));
+    if (pps.deblockingFilterControlPresentFlag)
+    {
+        mfxU32 disableDeblockingFilterIdc = 0;
+        mfxI32 sliceAlphaC0OffsetDiv2     = 0;
+        mfxI32 sliceBetaOffsetDiv2        = 0;
+
+        obs.PutUe(disableDeblockingFilterIdc);
+        if (disableDeblockingFilterIdc != 1)
+        {
+            obs.PutSe(sliceAlphaC0OffsetDiv2);
+            obs.PutSe(sliceBetaOffsetDiv2);
+        }
+    }
+    if (nalUnitType == 20)
+    {
+        mfxExtSpsSvcHeader const & subset = m_subset[m_spsIdx[task.m_did][task.m_qid] - 1];
+
+        if (!noInterLayerPredFlag && task.m_qid == 0)
+        {
+            mfxU32 interLayerDeblockingFilterIdc    = (task.m_did || task.m_qid) ? 0 : 1;
+            mfxU32 interLayerSliceAlphaC0OffsetDiv2 = 0;
+            mfxU32 interLayerSliceBetaOffsetDiv2    = 0;
+            mfxU32 constrainedIntraResamplingFlag   = 0;
+
+            obs.PutUe(m_refDqId[task.m_did]);
+
+            if (subset.interLayerDeblockingFilterControlPresentFlag)
+            {
+                obs.PutUe(interLayerDeblockingFilterIdc);
+                if (interLayerDeblockingFilterIdc != 1)
+                {
+                    obs.PutSe(interLayerSliceAlphaC0OffsetDiv2);
+                    obs.PutSe(interLayerSliceBetaOffsetDiv2);
+                }
+            }
+            obs.PutBit(constrainedIntraResamplingFlag);
+            if (subset.extendedSpatialScalabilityIdc == 2)
+            {
+                if (sps.chromaFormatIdc > 0)
+                {
+                    obs.PutBit(subset.seqRefLayerChromaPhaseXPlus1Flag);
+                    obs.PutBits(subset.seqRefLayerChromaPhaseYPlus1, 2);
+                }
+                obs.PutSe(subset.seqScaledRefLayerLeftOffset);
+                obs.PutSe(subset.seqScaledRefLayerTopOffset);
+                obs.PutSe(subset.seqScaledRefLayerRightOffset);
+                obs.PutSe(subset.seqScaledRefLayerBottomOffset);
+            }
+        }
+
+        if (!noInterLayerPredFlag)
+        {
+            mfxU32 sliceSkipFlag                     = 0;
+            mfxU32 adaptiveBaseModeFlag              = !m_simulcast[task.m_did];
+            mfxU32 defaultBaseModeFlag               = 0;
+            mfxU32 adaptiveMotionPredictionFlag      = !m_simulcast[task.m_did];
+            mfxU32 defaultMotionPredictionFlag       = 0;
+            mfxU32 adaptiveResidualPredictionFlag    = !m_simulcast[task.m_did];
+            mfxU32 defaultResidualPredictionFlag     = 0;
+            mfxU32 adaptiveTcoeffLevelPredictionFlag = 0;
+
+            obs.PutBit(sliceSkipFlag);
+            if (sliceSkipFlag)
+                obs.PutUe(divider.GetNumMbInSlice() - 1);
+            else
+            {
+                obs.PutBit(adaptiveBaseModeFlag);
+                if (!adaptiveBaseModeFlag)
+                    obs.PutBit(defaultBaseModeFlag);
+                if (!defaultBaseModeFlag)
+                {
+                    obs.PutBit(adaptiveMotionPredictionFlag);
+                    if (!adaptiveMotionPredictionFlag)
+                        obs.PutBit(defaultMotionPredictionFlag);
+                }
+                obs.PutBit(adaptiveResidualPredictionFlag);
+                if (!adaptiveResidualPredictionFlag)
+                    obs.PutBit(defaultResidualPredictionFlag);
+            }
+            if (adaptiveTcoeffLevelPredictionFlag)
+                obs.PutBit(subset.seqTcoeffLevelPredictionFlag);
+        }
+
+        if (!sliceHeaderRestrictionFlag && !sliceSkipFlag)
+        {
+            mfxU32 scanIdxStart = 0;
+            mfxU32 scanIdxEnd = 15;
+            obs.PutBits(scanIdxStart, 4);
+            obs.PutBits(scanIdxEnd, 4);
+        }
+    }
+
+    return obs.GetNumBits();
+}
+
+
+#endif //MFX_ENABLE_H264_VIDEO_..._HW
+

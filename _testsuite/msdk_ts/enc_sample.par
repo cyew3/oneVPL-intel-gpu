@@ -1,0 +1,35 @@
+b_MFXInit
+    trace 1= 1 #trace = on
+t_SetAVCEncDefaultParam
+b_MFXVideoENCODE_Query
+    mfxvp_in+110 2= 2 #mfx.FrameInfo.PicStruct (offset should be generated in script)
+    mfxvp_in+14  2= 3 #mfx.AsyncDepth
+    p_mfxvp_in  r= mfxvp_in
+    p_mfxvp_out r= mfxvp_in
+b_MFXVideoENCODE_Init
+b_MFXVideoENCODE_QueryIOSurf
+t_AllocSurfPool
+b_MFXVideoENCODE_GetVideoParam
+t_Alloc_mfxBitstream
+loop
+    #encoding loop
+    u_num_frames 4= 0
+    u_max_frames 4= 9
+    loop_break v= cf_less
+    less_x v= u_max_frames
+    less_y v= u_num_frames
+        t_GetFreeSurf
+        t_ReadRawFrame
+            file_name s= \\samba\nfs\site\proj\ipp\mirror\data\mediaLab\mediaSDK\forBehaviorTest\foreman_cif.nv12
+        b_MFXVideoENCODE_EncodeFrameAsync
+            p_enc_bs r= bitstream
+        t_ProcessEncodeFrameAsyncStatus
+            async 2= 2
+        b_MFXVideoCORE_SyncOperation
+        t_inc
+            inc_x v= u_num_frames
+        t_Dump_mfxBitstream
+            dump_file_name s= test_out.264
+        t_Wipe_mfxBitstream
+b_MFXVideoENCODE_Close
+b_MFXClose

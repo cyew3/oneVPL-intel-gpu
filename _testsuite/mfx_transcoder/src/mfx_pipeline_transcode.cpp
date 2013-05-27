@@ -1,0 +1,1598 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+
+File Name: .h
+
+\* ****************************************************************************** */
+#include "mfx_pipeline_defs.h"
+#include "mfx_pipeline_transcode.h"
+#include "mfx_encode_decode_quality.h"
+#include "mfx_metric_calc.h"
+//#include "mfx_yuv_decoder.h"
+#include "mfx_reorder_render.h"
+#include "ipps.h"
+#include "mfx_pts_based_activator.h"
+#include "mfx_encode.h"
+#include "mfx_latency_encode.h"
+#include "mfx_latency_decoder.h"
+#include "mfx_perfcounter_time.h"
+#include "mfx_ref_list_control_encode.h"
+#include "mfx_serializer.h"
+#include "mfx_file_generic.h"
+#include "mfx_adapters.h"
+#include "mfx_bitstream_decoder.h"
+
+#include "mfx_utility_allocators.h"
+#include "mfx_d3d_allocator.h"
+#include "mfx_d3d11_allocator.h"
+#include "vaapi_allocator.h"
+#include "mfx_sysmem_allocator.h"
+
+#include "mfx_encodeorder_encode.h"
+#include "mfx_mvc_handler.h"
+#include "mfxjpeg.h"
+#include "mfx_ip_field_pair_disable_encoder.h"
+#include "mfx_field_output_encode.h"
+
+#ifdef MFX_PIPELINE_SUPPORT_VP8
+    #include "mfxvp8.h"
+#endif
+
+#include "mfx_multi_decoder.h"
+#include "mfx_multi_reader.h"
+#include "mfx_jpeg_encode_wrap.h"
+#include "mfx_factory_default.h"
+
+
+//////////////////////////////////////////////////////////////////////////
+
+#define HANDLE_GLOBAL_OPTION(short_option, pref, member, OPT_TYPE, description, handler)\
+{VM_STRING(short_option)VM_STRING("-")VM_STRING(#member), OPT_TYPE, &pref##member, VM_STRING(description), handler}
+
+#define HANDLE_MFX_INFO(short_option, member, description)\
+{VM_STRING(short_option)VM_STRING("-")VM_STRING(#member), OPT_UINT_16, &pMFXParams->mfx.member, VM_STRING(description), NULL}
+
+#define HANDLE_MFX_FRAME_INFO(member, OPT_TYPE, description)\
+{VM_STRING("-")VM_STRING(#member), OPT_TYPE, &pMFXParams->mfx.FrameInfo.member, VM_STRING(description), NULL}
+
+#define HANDLE_EXT_OPTION(member, OPT_TYPE, description)\
+{VM_STRING("-")VM_STRING(#member), OPT_TYPE, &m_extCodingOptions->member, VM_STRING(description), NULL}
+
+#define HANDLE_EXT_OPTION2(member, OPT_TYPE, description)\
+{VM_STRING("-")VM_STRING(#member), OPT_TYPE, &m_extCodingOptions2->member, VM_STRING(description), NULL}
+
+#define HANDLE_DDI_OPTION(member, OPT_TYPE, description) \
+{VM_STRING("-")VM_STRING(#member), OPT_TYPE, &m_extCodingOptionsDDI->member, VM_STRING(description), NULL}
+
+#define HANDLE_VSIG_OPTION(member, OPT_TYPE, description) \
+{VM_STRING("-")VM_STRING(#member), OPT_TYPE, &m_extVideoSignalInfo->member, VM_STRING(description), NULL}
+
+#define HANDLE_CAP_OPTION(member, OPT_TYPE, description) \
+{VM_STRING("-")VM_STRING(#member), OPT_TYPE, &m_extEncoderCapability->member, VM_STRING(description), NULL}
+
+
+#define FILL_MASK(type, ptr)\
+    if (m_bResetParamsStart)\
+{\
+    int offset = (int)((mfxU8*)ptr - (mfxU8*)&m_EncParams);\
+    int size   = convert_type_nbits((mfxU8)type) >> 3;\
+    if (offset + size <= sizeof(m_EncParams)){\
+    ippsSet_8u(0xFF, (mfxU8*)&m_EncParamsMask + offset, size);}\
+}
+
+//fill mask only of field is not in default value
+#define FILL_MASK_FROM_FIELD(field, default_value)\
+    if (m_bResetParamsStart && default_value != field)\
+{\
+    int offset = (int)((mfxU8*)&(field) - (mfxU8*)&m_EncParams);\
+    if (offset + sizeof(field) <= sizeof(m_EncParams)){\
+    ippsSet_8u(0xFF, (mfxU8*)&m_EncParamsMask + offset, sizeof(field));}\
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+
+MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
+: MFXDecPipeline(pFactory)
+, m_applyBitrateParams(&MFXTranscodingPipeline::ApplyBitrateParams, this)
+, m_applyJpegParams(&MFXTranscodingPipeline::ApplyJpegParams, this)
+, m_extCodingOptions(new mfxExtCodingOption())
+, m_extCodingOptions2(new mfxExtCodingOption2())
+, m_extCodingOptionsDDI(new mfxExtCodingOptionDDI())
+, m_extCodingOptionsQuantMatrix(new mfxExtCodingOptionQuantMatrix())
+, m_extDumpFiles(new mfxExtDumpFiles())
+, m_extVideoSignalInfo(new mfxExtVideoSignalInfo())
+, m_extAvcTemporalLayers(new mfxExtAvcTemporalLayers())
+, m_extCodingOptionsSPSPPS(new mfxExtCodingOptionSPSPPS())
+, m_extEncoderCapability(new mfxExtEncoderCapability())
+, m_pRefListControl()
+, m_bCreateDecode()
+, m_svcSeq(new mfxExtSVCSeqDesc())
+, m_svcSeqDeserial(VM_STRING(""), *m_svcSeq.get(), m_filesForDependency)
+, m_svcRateCtrl(new mfxExtSVCRateControl())
+, m_svcRateCtrlDeserial(VM_STRING(""), *m_svcRateCtrl.get())
+, m_EncParams()
+, m_QuantMatrix(VM_STRING(""),*m_extCodingOptionsQuantMatrix.get())
+, m_ExtBuffers(new MFXExtBufferVector())
+{
+    mfxVideoParam *pMFXParams = &m_EncParams;
+
+    OptContainer options [] =
+    {
+        //series of parameters that uses callback function to retain it's inter dependencies
+        HANDLE_GLOBAL_OPTION("-b|",  m_,BitRate,    OPT_INT_32, "Target bitrate in bits per second", &m_applyBitrateParams),
+        HANDLE_GLOBAL_OPTION("-bm|", m_,MaxBitrate, OPT_INT_32, "Max bitrate in case of VBR", &m_applyBitrateParams),
+        HANDLE_GLOBAL_OPTION("-s|",  m_inParams.n,PicStruct,  OPT_INT_32, "0=progressive, 1=tff, 2=bff, 3=field tff, 4=field bff", &m_applyBitrateParams),
+
+        //constant qp support
+        HANDLE_GLOBAL_OPTION("", m_,QPI,           OPT_UINT_16,    "Constant quantizer for I frames (if RateControlMethod=3)", &m_applyBitrateParams),
+        HANDLE_GLOBAL_OPTION("", m_,QPP,           OPT_UINT_16,    "Constant quantizer for P frames (if RateControlMethod=3)", &m_applyBitrateParams),
+        HANDLE_GLOBAL_OPTION("", m_,QPB,           OPT_UINT_16,    "Constant quantizer for B frames (if RateControlMethod=3)", &m_applyBitrateParams),
+
+        //AVBR support
+        HANDLE_GLOBAL_OPTION("", m_,Accuracy,     OPT_UINT_16,    "In AVBR mode specifies targetbitrate accuracy range", &m_applyBitrateParams),
+        HANDLE_GLOBAL_OPTION("", m_,Convergence,  OPT_UINT_16,    "Convergence period for AVBR algorithm ", &m_applyBitrateParams),
+
+        //jpeg specific option
+        HANDLE_GLOBAL_OPTION("", m_,Interleaved , OPT_UINT_16,    "Jpeg specific parameter", &m_applyJpegParams),
+        HANDLE_GLOBAL_OPTION("", m_,Quality,      OPT_UINT_16,    "Jpeg specific parameter", &m_applyJpegParams),
+        HANDLE_GLOBAL_OPTION("", m_,RestartInterval, OPT_UINT_16, "Jpeg specific parameter", &m_applyJpegParams),
+
+        //direct access to mfx_videoparams
+        HANDLE_MFX_INFO("",     BRCParamMultiplier,               "target bitrate = TargetKbps * BRCParamMultiplier"),
+        HANDLE_MFX_INFO("",     CodecProfile,                     "Codec profile"),
+        HANDLE_MFX_INFO("",     CodecLevel,                       "Codec level"),
+        HANDLE_MFX_INFO("-u|",  TargetUsage,                      "1=BEST_QUALITY .. 7=BEST_SPEED"),
+        HANDLE_MFX_INFO("-g|",  GopPicSize,                       "GOP size (1 means I-frames only)"),
+        HANDLE_MFX_INFO("-r|",  GopRefDist,                       "Distance between I- or P- key frames (1 means no B-frames)"),
+        HANDLE_MFX_INFO("",     GopOptFlag,                       "1=GOP_CLOSED, 2=GOP_STRICT"),
+        HANDLE_MFX_INFO("",     IdrInterval,                      "IDR frame interval (0 means every I-frame is an IDR frame"),
+        HANDLE_MFX_INFO("",     RateControlMethod,                "1=CBR, 2=VBR, 3=ConstantQP"),
+        HANDLE_MFX_INFO("",     TargetKbps,                       "Target bitrate in kbits per seconds"),
+        HANDLE_MFX_INFO("",     MaxKbps,                          "Maximum bitrate in the case of VBR"),
+        HANDLE_MFX_INFO("-id|", InitialDelayInKB,                 "For bitrate control"),
+        HANDLE_MFX_INFO("-bs|", BufferSizeInKB,                   "For bitrate control"),
+        HANDLE_MFX_INFO("-l|",  NumSlice,                         "Number of slices in each video frame"),
+        HANDLE_MFX_INFO("-x|",  NumRefFrame,                      "Number of reference frames"),
+
+        //structure mfxFrameInfo
+        HANDLE_MFX_FRAME_INFO(FrameRateExtN,      OPT_INT_32,     "Framerate nominator. NOTE: this value only used inside -reset_start/-reset_end section"),
+        HANDLE_MFX_FRAME_INFO(FrameRateExtD,      OPT_INT_32,     "Framerate denominator. NOTE: this value only used inside -reset_start/-reset_end section"),
+        HANDLE_MFX_FRAME_INFO(AspectRatioW,       OPT_UINT_16,    "Aspect ratio width"),
+        HANDLE_MFX_FRAME_INFO(AspectRatioH,       OPT_UINT_16,    "Aspect ratio height"),
+
+        // structure mfxExtCodingOption
+        HANDLE_EXT_OPTION(RateDistortionOpt,      OPT_TRI_STATE,  "Enable rate distortion optimization"),
+        HANDLE_EXT_OPTION(MECostType,             OPT_UINT_16,    "1=SAD, 2=SSD, 4=SATD_HADAMARD, 8=SATD_HARR"),
+        HANDLE_EXT_OPTION(MESearchType,           OPT_UINT_16,    "1=FULL, 2=UMH, 4=LOG, 8=RESERVED, 16=SQUARE, 32=DIAMOND"),
+        HANDLE_EXT_OPTION(MVSearchWindow.x,       OPT_UINT_16,    "Search window for motion estimation"),
+        HANDLE_EXT_OPTION(MVSearchWindow.y,       OPT_UINT_16,    "Search window for motion estimation"),
+        HANDLE_EXT_OPTION(EndOfSequence,          OPT_TRI_STATE,  ""),
+        HANDLE_EXT_OPTION(FramePicture,           OPT_TRI_STATE,  "Encode interlaced fields as: ON=interlaced frame, OFF=two separate fields"),
+        HANDLE_EXT_OPTION(CAVLC,                  OPT_TRI_STATE,  "ON=CAVLC, OFF=CABAC"),
+        HANDLE_EXT_OPTION(RecoveryPointSEI,       OPT_TRI_STATE,  ""),
+        HANDLE_EXT_OPTION(ViewOutput,             OPT_TRI_STATE,  "MVC view output mode. Each view is placed in separate bitstream buffer"),
+        HANDLE_EXT_OPTION(RefPicListReordering,   OPT_TRI_STATE,  ""),
+        HANDLE_EXT_OPTION(ResetRefList,           OPT_TRI_STATE,  ""),
+        HANDLE_EXT_OPTION(RefPicMarkRep,          OPT_TRI_STATE,  ""),
+        HANDLE_EXT_OPTION(FieldOutput,            OPT_TRI_STATE,  ""),
+        HANDLE_EXT_OPTION(IntraPredBlockSize,     OPT_UINT_16,    "1=16x16, 2=down to 8x8, 3=down to 4x4"),
+        HANDLE_EXT_OPTION(InterPredBlockSize,     OPT_UINT_16,    "1=16x16, 2=down to 8x8, 3=down to 4x4"),
+        HANDLE_EXT_OPTION(MVPrecision,            OPT_UINT_16,    "1=INTEGER, 2=HALFPEL, 4=QUARTERPEL"),
+        HANDLE_EXT_OPTION(MaxDecFrameBuffering,   OPT_UINT_16,    ""),
+        HANDLE_EXT_OPTION(AUDelimiter,            OPT_TRI_STATE,  ""),
+        HANDLE_EXT_OPTION(EndOfStream,            OPT_TRI_STATE,  ""),
+        HANDLE_EXT_OPTION(PicTimingSEI,           OPT_TRI_STATE,  ""),
+        HANDLE_EXT_OPTION(VuiNalHrdParameters,    OPT_TRI_STATE,  ""),
+        HANDLE_EXT_OPTION(NalHrdConformance,      OPT_TRI_STATE,  ""),
+
+        // mfxExtCodingOption2
+        HANDLE_EXT_OPTION2(IntRefType,             OPT_UINT_16,   ""),
+        HANDLE_EXT_OPTION2(IntRefCycleSize,        OPT_UINT_16,   ""),
+        HANDLE_EXT_OPTION2(IntRefQPDelta,          OPT_INT_16,   ""),
+        HANDLE_EXT_OPTION2(MaxFrameSize,           OPT_UINT_32,   ""),
+        HANDLE_EXT_OPTION2(BitrateLimit,           OPT_TRI_STATE,   ""),
+        HANDLE_EXT_OPTION2(MBBRC,                  OPT_TRI_STATE,   ""),
+        HANDLE_EXT_OPTION2(ExtBRC,                 OPT_TRI_STATE,   ""),
+
+        // mfxExtCodingOptionDDI
+        HANDLE_DDI_OPTION(IntraPredCostType,       OPT_UINT_16,    "from DDI: 1=SAD, 2=SSD, 4=SATD_HADAMARD, 8=SATD_HARR"),
+        HANDLE_DDI_OPTION(MEInterpolationMethod,   OPT_UINT_16,    "from DDI: 1=VME4TAP, 2=BILINEAR, 4=WMV4TAP, 8=AVC6TAP"),
+        HANDLE_DDI_OPTION(MEFractionalSearchType,  OPT_UINT_16,    "from DDI: 1=FULL, 2=HALF, 4=SQUARE, 8=HQ, 16=DIAMOND"),
+        HANDLE_DDI_OPTION(MaxMVs,                  OPT_UINT_16,    ""),
+        HANDLE_DDI_OPTION(SkipCheck,               OPT_TRI_STATE,  ""),
+        HANDLE_DDI_OPTION(DirectCheck,             OPT_TRI_STATE,  ""),
+        HANDLE_DDI_OPTION(BiDirSearch,             OPT_TRI_STATE,  ""),
+        HANDLE_DDI_OPTION(MBAFF,                   OPT_TRI_STATE,  ""),
+        HANDLE_DDI_OPTION(FieldPrediction,         OPT_TRI_STATE,  ""),
+        HANDLE_DDI_OPTION(RefOppositeField,        OPT_TRI_STATE,  ""),
+        HANDLE_DDI_OPTION(ChromaInME,              OPT_TRI_STATE,  ""),
+        HANDLE_DDI_OPTION(WeightedPrediction,      OPT_TRI_STATE,  ""),
+        HANDLE_DDI_OPTION(MVPrediction,            OPT_TRI_STATE,  ""),
+        HANDLE_DDI_OPTION(DDI.IntraPredBlockSize,  OPT_UINT_16,    "from DDI, mask of 1=4x4, 2=8x8, 4=16x16, 8=PCM"),
+        HANDLE_DDI_OPTION(DDI.InterPredBlockSize,  OPT_UINT_16,    "from DDI, mask of 1=16x16, 2=16x8, 4=8x16, 8=8x8, 16=8x4, 32=4x8, 64=4x4"),
+        HANDLE_DDI_OPTION(SwBrc,                   OPT_TRI_STATE,  "0=default, on=sw brc, off=hw brc"),
+        HANDLE_DDI_OPTION(BRCPrecision,            OPT_UINT_16,    "0=default=normal, 1=lowest, 2=normal, 3=highest"),
+        HANDLE_DDI_OPTION(GlobalSearch,            OPT_UINT_16,    "0=default, 1=long, 2=medium, 3=short"),
+        HANDLE_DDI_OPTION(LocalSearch,             OPT_UINT_16,    "0=default, 1=type, 2=small, 3=square, 4=diamond, 5=large diamond, 6=exhaustive, 7=heavy horizontal, 8=heavy vertical"),
+        HANDLE_DDI_OPTION(EarlySkip,               OPT_UINT_16,    "0=default (let driver choose), 1=enabled, 2=disabled"),
+        HANDLE_DDI_OPTION(Trellis,                 OPT_UINT_16,    "0=default (let driver choose), 1=enabled, 2=disabled"),
+        // superseded by corresponding option in mfxExtCodingOption2
+        //HANDLE_DDI_OPTION(MbBrc,                   OPT_UINT_16,    "0=default (let driver choose), 1=enabled, 2=disabled"),
+        HANDLE_DDI_OPTION(LookAhead,               OPT_UINT_16,    "0=no look-ahead"),
+        HANDLE_DDI_OPTION(FractionalQP,            OPT_BOOL,       "enable fractional QP"),
+        HANDLE_DDI_OPTION(StrengthN,               OPT_UINT_16,    "strength=StrengthN/100.0"),
+        HANDLE_DDI_OPTION(NumActiveRefP,           OPT_UINT_16,    "0=default, max 16/32 for frames/fields"),
+        HANDLE_DDI_OPTION(NumActiveRefBL0,         OPT_UINT_16,    "0=default, max 16/32 for frames/fields"),
+        HANDLE_DDI_OPTION(NumActiveRefBL1,         OPT_UINT_16,    "0=default, max 16/32 for frames/fields"),
+        HANDLE_DDI_OPTION(QpUpdateRange,           OPT_UINT_16,    ""),
+        HANDLE_DDI_OPTION(RegressionWindow,        OPT_UINT_16,    ""),
+        HANDLE_DDI_OPTION(LookAheadDep,            OPT_UINT_16,    "LookAheadDep < LookAhead"),
+        HANDLE_DDI_OPTION(Hme,                     OPT_TRI_STATE,  "Hme on/off"),
+        HANDLE_DDI_OPTION(DisablePSubMBPartition,  OPT_TRI_STATE,  "on=disabled 4x4 4x8 8x4 for P frames, off=enabled 4x4 4x8 8x4 for P frames"),
+        HANDLE_DDI_OPTION(DisableBSubMBPartition,  OPT_TRI_STATE,  "on=disabled 4x4 4x8 8x4 for B frames, off=enabled 4x4 4x8 8x4 for B frames"),
+        HANDLE_DDI_OPTION(WeightedBiPredIdc,       OPT_UINT_16,    "0 - off, 1 - implicit (unsupported), 2 - explicit"),
+        HANDLE_DDI_OPTION(DirectSpatialMvPredFlag, OPT_TRI_STATE,  "on=spatial, off=temporal"),
+        HANDLE_DDI_OPTION(SeqParameterSetId,       OPT_UINT_16,    "0..31"),
+        HANDLE_DDI_OPTION(PicParameterSetId,       OPT_UINT_16,    "0..255"),
+        HANDLE_DDI_OPTION(BiPyramid,               OPT_UINT_16,    "0=no B-pyramid"),
+        HANDLE_DDI_OPTION(CabacInitIdcPlus1,       OPT_UINT_16,    "0-to use default value (depends on Target Usaeg), 1-cabacinitidc=0, 2-cabacinitidc=1,  etc"),
+
+        //mfxExtEncoderCapability
+        HANDLE_CAP_OPTION(MBPerSec,                OPT_UINT_32,    "Max MB Per Second"),
+
+        // Quant Matrix parameters
+        {VM_STRING("-qm"), OPT_AUTO_DESERIAL, &m_QuantMatrix, VM_STRING("Quant Matrix structure")},
+
+
+
+        // video signal
+        HANDLE_VSIG_OPTION(VideoFormat,             OPT_UINT_16,  ""),
+        HANDLE_VSIG_OPTION(VideoFullRange,          OPT_UINT_16,  ""),
+        HANDLE_VSIG_OPTION(ColourDescriptionPresent,OPT_UINT_16,  ""),
+        HANDLE_VSIG_OPTION(ColourPrimaries,         OPT_UINT_16,  ""),
+        HANDLE_VSIG_OPTION(TransferCharacteristics, OPT_UINT_16,  ""),
+        HANDLE_VSIG_OPTION(MatrixCoefficients,      OPT_UINT_16,  ""),
+
+        //svc
+        {VM_STRING("-svc_seq"), OPT_AUTO_DESERIAL, &m_svcSeqDeserial, VM_STRING("mfxExtSVCSeqDesc extended buffer - any member possible")},
+        {VM_STRING("-svc_rate_ctrl"), OPT_AUTO_DESERIAL, &m_svcRateCtrlDeserial, VM_STRING("mfxExtSVCRateControl extended buffer - any member possible")},
+
+        //special modes
+        {VM_STRING("-yuvdump"), OPT_BOOL, &m_bYuvDumpMode, VM_STRING("used by mfx_transcoder team only")}
+    };
+
+    int i;
+    for (i = 0; i < sizeof(options)/sizeof(options[0]); i++)
+    {
+        m_pOptions.push_back(options[i]);
+    }
+
+    m_bPsnrMode     = false;
+    m_bSSIMMode     = false;
+    m_bYuvDumpMode  = false;
+    m_bResetParamsStart = false;
+
+    m_BitRate = 0;
+    m_MaxBitrate = 0;
+    m_QPI = m_QPP = m_QPB = 0;
+    m_Accuracy = 0;
+    m_Convergence =0;
+
+    m_Interleaved = 0;
+    m_Quality = 0;
+    m_RestartInterval = 0;
+
+    m_RenderType = MFX_ENC_RENDER;
+}
+
+MFXTranscodingPipeline::~MFXTranscodingPipeline()
+{
+    std::for_each(m_ExtBufferVectorsContainer.begin(), m_ExtBufferVectorsContainer.end(),
+        deleter<MFXExtBufferVector *>());
+    m_ExtBufferVectorsContainer.clear();
+}
+
+mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, bool bReportError)
+{
+    MFX_CHECK_SET_ERR(NULL != argv, PE_OPTION, MFX_ERR_NULL_PTR);
+    MFX_CHECK_SET_ERR(0 != argc, PE_OPTION, MFX_ERR_UNKNOWN);
+
+    vm_char **     argvEnd = argv + argc;
+    mfxStatus      mfxres;
+    mfxVideoParam *pMFXParams = &m_EncParams;
+
+    //print mode;
+    if (m_OptProc.GetPrint())
+    {
+        vm_string_printf(VM_STRING("  Encode specific parameters:\n"));
+    }
+
+    for (; argv < argvEnd; argv++)
+    {
+        int nPattern = 0;
+        if ((0 != (nPattern = m_OptProc.Check(argv[0], VM_STRING("(-| )(m2|mpeg2|avc|h264|jpeg|vp8)"), VM_STRING("target format")))) ||
+            m_OptProc.Check(argv[0], VM_STRING("-CodecType"), VM_STRING("target format"),OPT_SPECIAL, VM_STRING("m2|mpeg2|avc|h264|jpeg|vp8")))
+
+        {
+            if (!nPattern)
+            {
+                MFX_CHECK(argv + 1 != argvEnd);
+                MFX_CHECK(0 != (nPattern = m_OptProc.Check(argv[1], VM_STRING("(-| )(m2|mpeg2|avc|h264|jpeg|vp8)"), VM_STRING(""))));
+                argv++;
+            }
+
+            switch ((nPattern - 1) % 6)
+            {
+                case 0:
+                case 1:
+                {
+                    pMFXParams->mfx.CodecId = MFX_CODEC_MPEG2;
+                    break;
+                }
+                case 2:
+                case 3:
+                {
+                    pMFXParams->mfx.CodecId = MFX_CODEC_AVC;
+                    break;
+                }
+                case 4:
+                {
+                    pMFXParams->mfx.CodecId = MFX_CODEC_JPEG;
+                    break;
+                }
+
+                case 5:
+                {
+                    #ifndef MFX_PIPELINE_SUPPORT_VP8
+                        MFX_TRACE_AND_EXIT(MFX_ERR_UNSUPPORTED, (VM_STRING("vp8 encoder not supported")));
+                    #else
+                        pMFXParams->mfx.CodecId = MFX_CODEC_VP8;
+                    #endif
+
+                    break;
+                }
+            }
+            continue;
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-RefRaw"), VM_STRING("motion estimation on raw (input) frames")))
+        {
+            m_extCodingOptionsDDI->RefRaw = MFX_CODINGOPTION_ON;
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-RefRec"), VM_STRING("motion estimation on reconstructed frames")))
+        {
+            m_extCodingOptionsDDI->RefRaw = MFX_CODINGOPTION_OFF;
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-dump_rec"), VM_STRING("dump reconstructed frames into YUV file"), OPT_FILENAME))
+        {
+            MFX_CHECK(argv + 1 != argvEnd);
+            argv++;
+
+            vm_string_strcpy(m_extDumpFiles->ReconFilename, argv[0]);
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-dump_enc_input"), VM_STRING("dump encode input frames into YUV file"), OPT_FILENAME))
+        {
+            MFX_CHECK(argv + 1 != argvEnd);
+            argv++;
+            vm_string_strcpy(m_extDumpFiles->InputFramesFilename, argv[0]);
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-dump_mb"), VM_STRING("dump MB encode decisions into text file"), OPT_FILENAME))
+        {
+            MFX_CHECK(argv + 1 != argvEnd);
+            argv++;
+            vm_string_strcpy(m_extDumpFiles->MBFilename, argv[0]);
+            m_extDumpFiles->MBFileOperation = MFX_MB_WRITE_TEXT;
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-write_mb"), VM_STRING("dump MB encode decisions into binary file"), OPT_FILENAME))
+        {
+            MFX_CHECK(argv + 1 != argvEnd);
+            argv++;
+            vm_string_strcpy(m_extDumpFiles->MBFilename, argv[0]);
+            m_extDumpFiles->MBFileOperation = MFX_MB_WRITE_BIN;
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-read_mb"), VM_STRING("get MB encode decisions from binary file"), OPT_FILENAME))
+        {
+            MFX_CHECK(argv + 1 != argvEnd);
+            argv++;
+            vm_string_strcpy(m_extDumpFiles->MBFilename, argv[0]);
+            m_extDumpFiles->MBFileOperation = MFX_MB_READ_BIN;
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-c"), VM_STRING("set CAVLC/CBAC mode: 1=CAVLC, 0=CABAC"), OPT_INT_32))
+        {
+            MFX_CHECK(argv + 1 != argvEnd);
+            int nCavlc;
+            MFX_PARSE_INT(nCavlc, argv[1])
+            argv++;
+            m_extCodingOptions->CAVLC = (mfxU16)(nCavlc ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF);
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-cabac"), VM_STRING("Turn on CABAC mode")))
+        {
+            m_extCodingOptions->CAVLC = MFX_CODINGOPTION_OFF;
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-cbr"), VM_STRING("constant bitrate mode")))
+        {
+            m_EncParams.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-vbr"), VM_STRING("variable bitrate mode")))
+        {
+            m_EncParams.mfx.RateControlMethod = MFX_RATECONTROL_VBR;
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-cqp|-ConstantQP"), VM_STRING("Constant QP mode (RateControlMethod=3), should be used along with -qpi, -qpp, -qpb")))
+        {
+            m_EncParams.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-avbr"), VM_STRING("Use the average variable bitrate control algorithm (RateControlMethod=4), should be used in cooperation with -b, -accuracy, -convergence")))
+        {
+            m_EncParams.mfx.RateControlMethod = MFX_RATECONTROL_AVBR;
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-frame"), VM_STRING("[deprecated] use -s 0 for progressive mode encoding")))
+        {
+            m_inParams.nPicStruct = 0;
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-field"), VM_STRING("[deprecated] use -s 3 for TFF + exctcoding options on encoding ")))
+        {
+            m_inParams.nPicStruct = 3; // TFF
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-no_output"), VM_STRING("no info")))
+        {
+            vm_string_strcpy(m_inParams.strDstFile, VM_STRING("out.tmp"));
+            m_RenderType = MFX_FW_RENDER;
+        }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-o|-output"), VM_STRING("")))
+        {
+            //file name that will be used for output after reseting encoder
+            MFX_CHECK(1 + argv != argvEnd);
+            m_FileAfterReset = argv[1];
+
+            argv++;
+        }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-i|-input"), VM_STRING("")))
+        {
+            //file name that will be used for input after reseting encoder
+            MFX_CHECK(1 + argv != argvEnd);
+            m_inFileAfterReset = argv[1];
+
+            argv++;
+        }
+        else if (m_bResetParamsStart && (0 != (nPattern = m_OptProc.Check(argv[0], VM_STRING("-w|-width|-resize_w"), VM_STRING("")))))
+        {
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(m_EncParams.mfx.FrameInfo.CropW, argv[1]);
+            m_EncParams.mfx.FrameInfo.Width = mfx_align(m_EncParams.mfx.FrameInfo.CropW, 0x10);
+            FILL_MASK_FROM_FIELD(m_EncParams.mfx.FrameInfo.CropW, 0);
+            FILL_MASK_FROM_FIELD(m_EncParams.mfx.FrameInfo.Width, 0);
+
+            m_bUseResizing = (nPattern == 3);
+
+            argv++;
+        }
+        else if (m_bResetParamsStart && (0 != (nPattern = m_OptProc.Check(argv[0], VM_STRING("-h|-height|-resize_h"), VM_STRING("")))))
+        {
+            //file name that will be used for input after reseting encoder
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(m_EncParams.mfx.FrameInfo.CropH, argv[1]);
+            //alignemt will be done during executing since now we dont know picture structure for sure
+            m_EncParams.mfx.FrameInfo.Height = m_EncParams.mfx.FrameInfo.CropH;
+            FILL_MASK_FROM_FIELD(m_EncParams.mfx.FrameInfo.CropH, 0);
+            FILL_MASK_FROM_FIELD(m_EncParams.mfx.FrameInfo.Height, 0);
+
+            m_bUseResizing = (nPattern == 3);
+
+            argv++;
+        }else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-resize_h"), VM_STRING("")))
+        {
+            //quite same as new w new h options
+
+        }else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-resize_w"), VM_STRING("")))
+        {
+
+        }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-NalHrdConformance"), VM_STRING("")))
+        {
+            mfxU32 on;
+            //file name that will be used for input after reseting encoder
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(on, argv[1]);
+
+            mfxExtCodingOption *pExt = NULL;
+            if (1 == on || 0 == on)
+            {
+                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION);
+
+                if (!ppExt)
+                {
+                    pExt = new mfxExtCodingOption();
+
+                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
+                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption);
+                }
+                else
+                {
+                    pExt = reinterpret_cast<mfxExtCodingOption *>(ppExt->get());
+                }
+            }
+            else
+                return MFX_ERR_UNKNOWN;
+
+            pExt->NalHrdConformance = (mfxU16)(on ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF);
+            m_ExtBuffers.get()->push_back(pExt);
+
+            argv++;
+        }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-VuiVclHrdParameters"), VM_STRING("")))
+        {
+            mfxU32 on;
+            //file name that will be used for input after reseting encoder
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(on, argv[1]);
+
+            mfxExtCodingOption *pExt = NULL;
+
+            if (1 == on || 0 == on)
+            {
+                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION);
+                if (!ppExt)
+                {
+                    pExt = new mfxExtCodingOption();
+
+                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
+                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption);
+                }
+                else
+                {
+                    pExt = reinterpret_cast<mfxExtCodingOption *>(ppExt->get());
+                }
+            }
+            else
+                return MFX_ERR_UNKNOWN;
+
+            pExt->VuiVclHrdParameters = (mfxU16)(on ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF);
+            m_ExtBuffers.get()->push_back(pExt);
+
+            argv++;
+        }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-VuiNalHrdParameters"), VM_STRING("")))
+        {
+            mfxU32 on;
+            //file name that will be used for input after reseting encoder
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(on, argv[1]);
+
+            mfxExtCodingOption *pExt = NULL;
+
+            if (1 == on || 0 == on)
+            {
+                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION);
+                if (!ppExt)
+                {
+                    pExt = new mfxExtCodingOption();
+
+                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
+                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption);
+                }
+                else
+                {
+                    pExt = reinterpret_cast<mfxExtCodingOption *>(ppExt->get());
+                }
+            }
+            else
+                return MFX_ERR_UNKNOWN;
+
+            pExt->VuiNalHrdParameters = (mfxU16)(on ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF);
+            m_ExtBuffers.get()->push_back(pExt);
+
+            argv++;
+        }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-MaxFrameSize"), VM_STRING("")))
+        {
+            mfxU32 val;
+            //file name that will be used for input after reseting encoder
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(val, argv[1]);
+
+            mfxExtCodingOption2 *pExt = NULL;
+
+            if (0 != val)
+            {
+                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION2);
+                if (!ppExt)
+                {
+                    pExt = new mfxExtCodingOption2();
+
+                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
+                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption2);
+                }
+                else
+                {
+                    pExt = reinterpret_cast<mfxExtCodingOption2 *>(ppExt->get());
+                }
+            }
+            else
+                return MFX_ERR_UNKNOWN;
+
+            pExt->MaxFrameSize = val;
+            m_ExtBuffers.get()->push_back(pExt);
+
+            argv++;
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-reset_start"), VM_STRING("after reaching this frame, encoder will be reset with new parameters, followed after this command and before -reset_end"),OPT_SPECIAL, VM_STRING("frame number")))
+        {
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_CHECK(!m_bResetParamsStart);
+            MFX_PARSE_INT(m_nResetFrame, argv[1]);
+
+            m_bResetParamsStart = true;
+            m_FileAfterReset.clear();
+            m_inFileAfterReset.clear();
+
+            //coping current parameters to buffer
+            memcpy(&m_EncParamsOld, &m_EncParams, sizeof(m_EncParamsOld));
+            m_OldBitRate     = m_BitRate;
+            m_OldMaxBitrate  = m_MaxBitrate;
+            m_OldPicStruct   = m_inParams.nPicStruct;
+            m_OldQPI         = m_QPI;
+            m_OldQPP         = m_QPP;
+            m_OldQPB         = m_QPB;
+            m_OldAccuracy    = m_Accuracy;
+            m_OldConvergence = m_Convergence;
+
+            // move ext buffers to temp variable
+            m_ExtBuffersOld = m_ExtBuffers;
+            m_ExtBuffers.reset(new MFXExtBufferVector());
+
+            //mask is zeroed for each reset command
+            MFX_ZERO_MEM(m_EncParamsMask);
+
+            //clear resize flag
+            m_bUseResizing = false;
+
+            argv++;
+
+            //copying reset params to str
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-reset_end"), VM_STRING("specifies end of reset related options")))
+        {
+            //has 1 arg time
+            MFX_CHECK_SET_ERR(m_bResetParamsStart, PE_OPTION, MFX_ERR_UNSUPPORTED);
+
+            resetEncCommand *pCmd = new resetEncCommand(this);
+            pCmd->SetResetFileName(m_FileAfterReset);
+            pCmd->SetResetInputFileName(m_inFileAfterReset);
+            pCmd->SetVppResizing(m_bUseResizing);
+
+            // attach ext buffers
+            if (!m_ExtBuffers.get()->empty())
+            {
+                m_EncParams.ExtParam = &(m_ExtBuffers.get()->operator [](0));
+                m_EncParams.NumExtParam = m_ExtBuffers.get()->size();
+                // move ext buffers to the container
+                m_ExtBufferVectorsContainer.push_back(m_ExtBuffers.release());
+                m_ExtBuffers = m_ExtBuffersOld;
+
+                FILL_MASK_FROM_FIELD(m_EncParams.NumExtParam, 0);
+                FILL_MASK_FROM_FIELD(m_EncParams.ExtParam, 0);
+            }
+
+            m_pFactories.push_back(new constnumFactory(1
+                , new FrameBasedCommandActivator(pCmd, this)
+                , new baseCmdsInitializer(m_nResetFrame,0, 0, 0, m_pRandom, &m_EncParams, &m_EncParamsMask)));
+
+            //restoring params that were prior to -reset_start
+            memcpy(&m_EncParams, &m_EncParamsOld, sizeof(m_EncParamsOld));
+
+            m_BitRate             = m_OldBitRate;
+            m_MaxBitrate          = m_OldMaxBitrate;
+            m_inParams.nPicStruct = m_OldPicStruct;
+            m_QPI                 = m_OldQPI;
+            m_QPP                 = m_OldQPP;
+            m_QPB                 = m_OldQPB;
+            m_Accuracy            = m_OldAccuracy;
+            m_Convergence         = m_OldConvergence;
+
+            m_bResetParamsStart   = false;
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-ref_list"), VM_STRING("reference list selection for givven frames interval"), OPT_SPECIAL
+            , VM_STRING("start_frame end_frame NumRefFrameL0 NumRefFrameL1 <preferredArray Lenght> <rejectedArray Lenght> <longTermdArray Lenght> [array:PreferredRefList] [array:RejectedRefList] [array:LongTermRefList]")))
+        {
+            MFX_CHECK(3 + argv < argvEnd);
+            mfxU32 nStartFrame, nFinishFrame;
+            MFX_PARSE_INT(nStartFrame, argv[1]);
+            MFX_PARSE_INT(nFinishFrame, argv[2]);
+
+            DeSerializeHelper<mfxExtAVCRefListCtrl>  reflist;
+            vm_char ** rollback_offset = argv;
+            
+            MFX_CHECK(reflist.DeSerialize(argv += 3, argvEnd, rollback_offset));
+
+            m_pFactories.push_back(new constnumFactory(1
+                , new FrameBasedCommandActivator(new selectRefListCommand(this), this)
+                , new baseCmdsInitializer(nStartFrame, 0.0, 0.0, 0, m_pRandom, NULL, NULL, &reflist)));
+
+            m_pFactories.push_back(new constnumFactory(1
+                , new FrameBasedCommandActivator(new selectRefListCommand(this), this)
+                , new baseCmdsInitializer(nFinishFrame, 0.0, 0.0, 0, m_pRandom, NULL, NULL, NULL)));
+
+            //pipeline will create a encode wrapper according to this flag
+            m_inParams.bCreateRefListSelector = true;
+        }
+        else HANDLE_BOOL_OPTION(m_bCreateDecode, VM_STRING("-enc:dec"), VM_STRING("decoding of encoded frames "));
+        else HANDLE_INT_OPTION(m_extCodingOptionsSPSPPS->SPSId, VM_STRING("-spsid"), VM_STRING("set SPSId in mfxExcodingOptionSPSPPS structure"))
+        else HANDLE_INT_OPTION(m_extCodingOptionsSPSPPS->PPSId, VM_STRING("-ppsid"), VM_STRING("set PPSId in mfxExcodingOptionSPSPPS structure"))
+        else HANDLE_SPECIAL_OPTION(*m_extAvcTemporalLayers.get(), VM_STRING("-AvcTemporalLayers"), VM_STRING("add mfxExtAvcTemporalLayers buffer to mfxVideoParam"), OPT_SPECIAL, VM_STRING("BaseLayerID [array:Layer.Scale]"))
+        else if (MFX_ERR_UNSUPPORTED == (mfxres = ProcessOption(argv, argvEnd)))
+        {
+            //check with base pipeline parser
+            vm_char **myArgv = argv;
+            if (MFX_ERR_UNSUPPORTED != (mfxres = MFXDecPipeline::ProcessCommandInternal( argv
+                                                                                       , (mfxI32)(argvEnd - argv)
+                                                                                       , false)))
+            {
+                MFX_CHECK_STS(mfxres);
+            }else
+            {
+                //check whether base pipeline process at least one option
+                if (myArgv == argv)
+                {
+                    MFX_TRACE_AT_EXIT_IF( MFX_ERR_UNSUPPORTED
+                        , !bReportError
+                        , PE_OPTION
+                        , (VM_STRING("ERROR: Unknown option: %s\n"), argv[0]));
+                }
+                //decreasing pointer because baseclass parser points to first unknown option
+                argv--;
+            }
+        }else
+        {
+            MFX_CHECK_STS(mfxres);
+        }
+    }
+    return MFX_ERR_NONE;
+}
+
+int convert_type_nbits(mfxU8 nType)
+{
+    switch (nType)
+    {
+        case OPT_INT_32:
+        {
+            return 32;
+        }
+        case OPT_UINT_16:
+        {
+            return  16;
+        }
+        case OPT_64F:
+        {
+            return 64;
+        }
+        default:
+            return 0/*MFX_ERR_UNSUPPORTED*/;
+    }
+}
+
+mfxStatus MFXTranscodingPipeline::ProcessOption(vm_char **&argv, vm_char **argvend)
+{
+    OptContainer opt, *pOption = &opt;
+    mfxStatus sts = MFX_ERR_UNSUPPORTED;
+    SerialNode *pNode = NULL;
+    OptIter i;
+
+    for (i = m_pOptions.begin(); i != m_pOptions.end(); ++i)
+    {
+        opt = *i;
+        if (opt.nType == OPT_AUTO_DESERIAL)
+        {
+            pNode = reinterpret_cast<SerialNode*>(opt.pTarget);
+        }
+        if (m_OptProc.Check(argv[0], opt.opt_pattern, opt.description, opt.nType, NULL, &pNode))
+        {
+            sts = MFX_ERR_NONE;
+            break;
+        }
+    }
+
+    if (sts != MFX_ERR_NONE)
+    {
+        return sts;
+    }
+
+    if (pOption->nType != OPT_COD)
+    {
+        switch (pOption->nType)
+        {
+            case OPT_BOOL:
+            {
+                *pOption->pTargetBool = true;
+                break;
+            }
+            default:
+            {
+                switch (pOption->nType)
+                {
+                    case OPT_AUTO_DESERIAL:
+                    {
+                        break;
+                    }
+                    default:
+                    {
+                        MFX_CHECK_SET_ERR(argvend != 1 + argv, PE_CHECK_PARAMS, MFX_ERR_UNKNOWN);
+                    }
+                }
+
+                try
+                {
+                    switch (pOption->nType)
+                    {
+                        case OPT_UINT_32:
+                        {
+                            lexical_cast(argv[1], *pOption->pTargetUInt32);
+                            break;
+                        }
+                        case OPT_INT_32:
+                        {
+                            lexical_cast(argv[1], *pOption->pTargetInt32);
+                            break;
+                        }
+                        case OPT_UINT_16:
+                        {
+                            lexical_cast(argv[1], *pOption->pTargetUInt16);
+                            break;
+                        }
+                        case OPT_INT_16:
+                        {
+                            lexical_cast(argv[1], *pOption->pTargetInt16);
+                            break;
+                        }
+                        case OPT_64F:
+                        {
+                            lexical_cast(argv[1], *pOption->pTargetF64);
+                            break;
+                        }
+                        case OPT_STR:
+                        {
+                            memcpy(pOption->pTarget, argv, sizeof(void*));
+                            break;
+                        }
+                        case OPT_TRI_STATE:
+                        {
+                            mfxU16& rTarget = *(mfxU16 *)pOption->pTarget;
+                            if (!vm_string_stricmp(argv[1], VM_STRING("on")) || !vm_string_stricmp(argv[1], VM_STRING("1")) || !vm_string_stricmp(argv[1], VM_STRING("16")))
+                            {
+                                rTarget = MFX_CODINGOPTION_ON;
+                            }
+                            else if (!vm_string_stricmp(argv[1], VM_STRING("off")) || !vm_string_stricmp(argv[1], VM_STRING("0")) || !vm_string_stricmp(argv[1], VM_STRING("32")))
+                            {
+                                rTarget = MFX_CODINGOPTION_OFF;
+                            }
+                            else
+                            {
+                                MFX_CHECK_SET_ERR(!VM_STRING("Wrong OPT_TRI_STATE"), PE_CHECK_PARAMS, MFX_ERR_UNKNOWN);
+                            }
+                            break;
+                        }
+                        case OPT_AUTO_DESERIAL :
+                        {
+                            //TODO: support for multiple parameters
+                            tstring error;
+                            try
+                            {
+                                pNode->Parse(argv[1]);
+                            }
+                            catch (tstring & e)
+                            {
+                                error = e;
+                            }
+                            MFX_CHECK_TRACE(error.empty(), error.c_str());
+
+                            break;
+
+                        }
+                        default:
+                            return MFX_ERR_UNSUPPORTED;
+                    }
+                }
+                catch(tstring & lcast_err)
+                {
+                    MFX_TRACE_AND_EXIT( MFX_ERR_UNKNOWN, (lcast_err.c_str()));
+                }
+                argv++;
+                break;
+            }
+        }
+    }
+
+    if (NULL != pOption->pHandler)
+        pOption->pHandler->Call();
+    else
+    {
+        FILL_MASK(pOption->nType, pOption->pTarget);
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MFXTranscodingPipeline::ApplyJpegParams()
+{
+    mfxVideoParam *pMFXParams = &m_EncParams;
+
+    //rest of fields that matches other encoder options should be skipped by mfx_encode_init
+    pMFXParams->mfx.Quality = m_Quality;
+    pMFXParams->mfx.Interleaved = m_Interleaved;
+    pMFXParams->mfx.RestartInterval = m_RestartInterval;
+
+    FILL_MASK_FROM_FIELD(pMFXParams->mfx.Quality, 0);
+    FILL_MASK_FROM_FIELD(pMFXParams->mfx.Interleaved, 0);
+    FILL_MASK_FROM_FIELD(pMFXParams->mfx.RestartInterval, 0);
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MFXTranscodingPipeline::ApplyBitrateParams()
+{
+    mfxVideoParam *pMFXParams = &m_EncParams;
+
+    //set FrameInfo.PicStruct
+    pMFXParams->mfx.FrameInfo.PicStruct = Convert_CmdPS_to_MFXPS(m_inParams.nPicStruct);
+    if (m_inParams.nPicStruct != PIPELINE_PICSTRUCT_NOT_SPECIFIED)
+    {
+        FILL_MASK_FROM_FIELD(pMFXParams->mfx.FrameInfo.PicStruct, 0);
+    }
+
+    //set m_ExtParamsBuffer.FramePicture
+    m_extCodingOptions->FramePicture = Convert_CmdPS_to_ExtCO(m_inParams.nPicStruct);
+    //todo for test cases with deinterlacing this may need to be changed
+    m_components[eVPP].m_extCO = m_components[eDEC].m_extCO = m_extCodingOptions->FramePicture;
+
+
+    // set bitrate
+    pMFXParams->mfx.TargetKbps = (mfxU16)IPP_MIN(65535, m_BitRate/1000);
+
+    //maxbitrate could be equal to target in VBR and CBR mode
+    pMFXParams->mfx.MaxKbps = (mfxU16)IPP_MIN(65535, m_MaxBitrate/1000);
+
+    //however VBR mode set only if maxbitrate is higher or rate control specified directly
+    if (m_MaxBitrate > pMFXParams->mfx.TargetKbps)
+    {
+        pMFXParams->mfx.RateControlMethod = MFX_RATECONTROL_VBR;
+    }
+
+    if (m_QPI || m_QPP || m_QPB || pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+    {
+        pMFXParams->mfx.RateControlMethod = MFX_RATECONTROL_CQP;
+        pMFXParams->mfx.QPI = m_QPI;
+        pMFXParams->mfx.QPP = m_QPP;
+        pMFXParams->mfx.QPB = m_QPB;
+    }
+
+    if (m_Accuracy || m_Convergence || pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
+    {
+        pMFXParams->mfx.RateControlMethod = MFX_RATECONTROL_AVBR;
+        pMFXParams->mfx.Accuracy = m_Accuracy;
+        pMFXParams->mfx.Convergence = m_Convergence;
+    }
+
+    if (!pMFXParams->mfx.RateControlMethod)
+    {
+        pMFXParams->mfx.RateControlMethod = MFX_RATECONTROL_CBR;
+    }
+
+    FILL_MASK_FROM_FIELD(pMFXParams->mfx.TargetKbps, 0);
+    FILL_MASK_FROM_FIELD(pMFXParams->mfx.MaxKbps, 0);
+    FILL_MASK_FROM_FIELD(pMFXParams->mfx.RateControlMethod, 0);
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MFXTranscodingPipeline::CheckParams()
+{
+    mfxVideoParam *pMFXParams = &m_EncParams;
+
+    MFX_CHECK_SET_ERR(pMFXParams->mfx.CodecId, PE_NO_TARGET_CODEC, MFX_ERR_UNKNOWN);
+
+    // check for non-zero parameters in extension buffers
+    if (!m_extCodingOptions.IsZero())
+        m_components[eREN].m_extParams.push_back(m_extCodingOptions);
+
+    if (!m_extCodingOptions2.IsZero())
+        m_components[eREN].m_extParams.push_back(m_extCodingOptions2);
+
+    if (!m_extCodingOptionsDDI.IsZero())
+        m_components[eREN].m_extParams.push_back(m_extCodingOptionsDDI);
+
+    if (!m_extDumpFiles.IsZero())
+        m_components[eREN].m_extParams.push_back(m_extDumpFiles);
+
+    if (!m_extVideoSignalInfo.IsZero())
+        m_components[eREN].m_extParams.push_back(m_extVideoSignalInfo);
+
+    if (!m_extCodingOptionsSPSPPS.IsZero())
+        m_components[eREN].m_extParams.push_back(m_extCodingOptionsSPSPPS);
+
+    if (!m_extAvcTemporalLayers.IsZero())
+        m_components[eREN].m_extParams.push_back(m_extAvcTemporalLayers);
+
+    if (!m_svcSeq.IsZero())
+        m_components[eREN].m_extParams.push_back(m_svcSeq);
+
+    if (!m_svcRateCtrl.IsZero())
+        m_components[eREN].m_extParams.push_back(m_svcRateCtrl);
+
+    if (!m_extCodingOptionsQuantMatrix.IsZero())
+        m_components[eREN].m_extParams.push_back(m_extCodingOptionsQuantMatrix);
+
+    if (!m_extEncoderCapability.IsZero())
+        m_components[eREN].m_extParams.push_back(m_extEncoderCapability);
+
+    switch (pMFXParams->mfx.CodecId)
+    {
+    case MFX_CODEC_JPEG :
+        MFX_CHECK_STS(ApplyJpegParams());
+        break;
+    default:
+        MFX_CHECK_STS(ApplyBitrateParams());
+        break;
+    }
+
+    //TODO: avoid such hacks - saving async_depth params
+    mfxFrameInfo info = m_components[eREN].m_params.mfx.FrameInfo;
+    mfxU16 ad = m_components[eREN].m_params.AsyncDepth;
+    memcpy(&m_components[eREN].m_params, &m_EncParams, sizeof(m_EncParams));
+
+    m_components[eREN].m_params.AsyncDepth = ad;
+    m_components[eREN].m_params.mfx.FrameInfo.ChromaFormat = info.ChromaFormat;
+    m_components[eREN].m_params.mfx.FrameInfo.FourCC = info.FourCC;
+
+    m_components[eREN].AssignExtBuffers();
+
+    //buffersize provided by user and it shouldn't be overwritten by Query or GetVideoParam
+    //if (m_EncParams.mfx.BufferSizeInKB != 0)
+    //{
+    //    m_inParams.encodeExtraParams.nBufferSizeInKB = m_EncParams.mfx.BufferSizeInKB;
+    //}
+
+    if (!vm_string_strlen(m_inParams.strSrcFile))
+    {
+        //filename for layer should be specified if no input file provided
+        for (size_t i = 0; i < m_filesForDependency.size(); i++)
+        {
+            tstringstream strm;
+            strm<<VM_STRING("File Name (.InputFile) for dependency layer[") << i << VM_STRING("] should be specified");
+            MFX_CHECK_TRACE(!m_filesForDependency[i].empty(), strm.str().c_str());
+        }
+    }
+
+    return MFXDecPipeline::CheckParams();
+}
+
+bool MFXTranscodingPipeline::IsMultiReaderEnabled()
+{
+    //check vpp enabling if input files specified in par file - we dont support vpp
+    bool bMultiReaderEnabled = false;
+    for (size_t i = 0; i < m_filesForDependency.size(); i++)
+    {
+        if (!m_filesForDependency[i].empty())
+        {
+            bMultiReaderEnabled = true;
+            break;
+        }
+    }
+    return bMultiReaderEnabled;
+}
+
+mfxStatus MFXTranscodingPipeline::CreateVPP()
+{
+    bool bSvcVpp = !IsMultiReaderEnabled();
+
+    if (bSvcVpp) 
+    {
+        bSvcVpp = false;
+        
+        mfxFrameInfo &info = m_inParams.FrameInfo;
+        for (size_t i = 0; i < MFX_ARRAY_SIZE(m_svcSeq->DependencyLayer) && (MFX_CODINGOPTION_ON == m_svcSeq->DependencyLayer[i].Active); i++)
+        {
+            mfxExtSVCSeqDesc::mfxDependencyLayer &dep_info = m_svcSeq->DependencyLayer[i];
+            if (info.Width != dep_info.Width || info.Height != dep_info.Height)
+            {
+                PrintInfo(VM_STRING("Vpp.ENABLED"), VM_STRING("source=(%dx%d) but SVC.DependencyLayer[%d]=(%dx%d)"),
+                    info.Width, info.Height, i, dep_info.Width, dep_info.Height);
+                m_inParams.bUseVPP = true;
+                bSvcVpp = true;
+            }
+        }
+    }
+
+    MFX_CHECK_STS(MFXDecPipeline::CreateVPP());
+    
+    if (bSvcVpp)
+    {
+        MFX_CHECK_POINTER(m_pVPP = m_pFactory->CreateVPP(make_wrapper(VPP_SVC, m_pVPP)));
+
+        //only extsequencedescription required
+        MFXExtBufferVector :: iterator it = std::find_if(m_components[eREN].m_extParams.begin()
+            , m_components[eREN].m_extParams.end()
+            , std::bind2nd(MFXExtBufferCompareByID<mfxExtBuffer>(), BufferIdOf<mfxExtSVCSeqDesc>::id));
+
+        //looks incorrect calling sequence dueto not properly assigned ext buffers
+        MFX_CHECK(it != m_components[eREN].m_extParams.end());
+
+        m_components[eVPP].m_extParams.merge( it, it + 1);
+        m_components[eVPP].AssignExtBuffers();
+    }
+
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MFXTranscodingPipeline::CreateYUVSource()
+{
+    if (IsMultiReaderEnabled())
+    {
+        MultiDecode *pDecode = new MultiDecode();
+        for (size_t i = 0; i < m_filesForDependency.size() && !m_filesForDependency[i].empty(); i++)
+        {
+            //TODO: for now it is impossible to have several mfx_decoders, since they require separate sessions
+            //for SVC enc we use only YUV decoder that is not a part of session
+
+            //input resolution for particular yuv reader
+            m_inParams.FrameInfo.Width   = m_svcSeq.get()->DependencyLayer[i].CropW ?
+                                           m_svcSeq.get()->DependencyLayer[i].CropW :
+                                           m_svcSeq.get()->DependencyLayer[i].Width;
+
+            m_inParams.FrameInfo.Height  = m_svcSeq.get()->DependencyLayer[i].CropH ?
+                                           m_svcSeq.get()->DependencyLayer[i].CropH :
+                                           m_svcSeq.get()->DependencyLayer[i].Height;
+
+            //also copy of frameid
+            m_inParams.FrameInfo.FrameId.DependencyId = (mfxU16)i;
+            //TODO: hardcoded for now
+            m_inParams.FrameInfo.FourCC = MFX_FOURCC_YV12;
+
+            MFX_CHECK_STS(MFXDecPipeline::CreateYUVSource());
+
+            pDecode->Register(m_pYUVSource, 1);
+        }
+        m_pYUVSource = pDecode;
+    }
+    else
+    {
+        return MFXDecPipeline::CreateYUVSource();
+    }
+    return MFX_ERR_NONE;
+}
+
+mfxStatus    MFXTranscodingPipeline::CreateAllocator()
+{
+    //svc mode
+    if (m_svcSeq.get() && MFX_CODINGOPTION_ON == m_svcSeq->DependencyLayer[0].Active) 
+    {
+        size_t i;
+        for (i = 1; i < MFX_ARRAY_SIZE(m_svcSeq->DependencyLayer) 
+            && (MFX_CODINGOPTION_ON == m_svcSeq->DependencyLayer[i].Active); i++);
+        i--;
+
+        mfxExtSVCSeqDesc::mfxDependencyLayer &top_layer = m_svcSeq->DependencyLayer[i];
+
+        mfxU32 Width   = top_layer.CropW ? top_layer.CropW : top_layer.Width;
+        mfxU32 Height  = top_layer.CropH ? top_layer.CropH : top_layer.Height;
+
+        //single input multiple output - need to adjust vpp params in specific way
+        mfxVideoParam vParamOriginalEnc = m_components[eREN].m_params;
+        mfxVideoParam vParamOriginalDec = m_components[eDEC].m_params;
+
+        m_components[eREN].m_params.mfx.FrameInfo.Width  = Width;
+        m_components[eREN].m_params.mfx.FrameInfo.Height = Height;
+
+        if (IsMultiReaderEnabled()) {
+            //TODO: resolution for queryiosurface still taken from each components parameters, is it OK?
+            m_components[eDEC].m_params.mfx.FrameInfo.Width  = Width; 
+            m_components[eDEC].m_params.mfx.FrameInfo.Height = Height;
+            m_components[eDEC].m_params.mfx.FrameInfo.FrameId.DependencyId = (mfxU16)i - 1;
+        }
+
+        MFX_CHECK_STS(MFXDecPipeline::CreateAllocator());
+
+        m_components[eDEC].m_params = vParamOriginalDec;
+        m_components[eREN].m_params = vParamOriginalEnc;
+    }
+    else
+    {
+        return MFXDecPipeline::CreateAllocator();
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MFXTranscodingPipeline::CreateSplitter()
+{
+    if (IsMultiReaderEnabled())
+    {
+        //fallback to yuv mode
+        m_inParams.bYuvReaderMode = true;
+        mfxFrameInfo originalInfo = m_inParams.FrameInfo;
+        MultiReader *pSpl = new MultiReader();
+        //always use ratio mode
+        pSpl->SetRatioOrder(true);
+
+        for (size_t i = 0; i < m_filesForDependency.size() && !m_filesForDependency[i].empty(); i++)
+        {
+            //TODO: for now it is impossible to have several mfx_decoders, since they require separate sessions
+            vm_string_strcpy(m_inParams.strSrcFile, m_filesForDependency[i].c_str());
+
+            m_inParams.bExactSizeBsReader = true;
+            m_inParams.FrameInfo.Width = m_svcSeq.get()->DependencyLayer[i].Width;
+            m_inParams.FrameInfo.Height = m_svcSeq.get()->DependencyLayer[i].Height;
+
+            m_inParams.FrameInfo.CropW = m_svcSeq.get()->DependencyLayer[i].Width;
+            m_inParams.FrameInfo.CropH = m_svcSeq.get()->DependencyLayer[i].Height;
+
+            PrintInfo(VM_STRING("DependencyLayer"), VM_STRING("%d"), i);
+            MFX_CHECK_STS(MFXDecPipeline::CreateSplitter());
+
+            mfxU16 maxRatio = 1;
+            for (size_t j =0; j < m_svcSeq->DependencyLayer[i].TemporalNum; j++)
+            {
+                maxRatio = (std::max)(maxRatio, m_svcSeq->TemporalScale[m_svcSeq->DependencyLayer[i].TemporalId[j]]);
+            }
+
+            pSpl->Register(m_pSpl, maxRatio);
+        }
+        m_inParams.FrameInfo.Width = originalInfo.Width;//m_svcSeq.get()->DependencyLayer[0].Width;
+        m_inParams.FrameInfo.Height = originalInfo.Height;//m_svcSeq.get()->DependencyLayer[0].Height;
+
+        m_pSpl = pSpl;
+    }
+    else
+    {
+        return MFXDecPipeline::CreateSplitter();
+    }
+    return MFX_ERR_NONE;
+}
+
+
+mfxStatus MFXTranscodingPipeline::SetRefFile(const vm_char * pRefFile, mfxU32 nDelta)
+{
+    MFX_CHECK_STS(MFXDecPipeline::SetRefFile(pRefFile, nDelta));
+
+    m_RenderType = MFX_ENC_RENDER;
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus  MFXTranscodingPipeline::CreateFileSink(std::auto_ptr<IFile> &pSink)
+{
+    if (NULL == m_pRender)
+    {
+        return MFX_ERR_NONE;
+    }
+
+    if (m_bCreateDecode)
+    {
+        //holds allocator session, to pass them to target decoder
+        DecodeContext decCtx;
+
+        MFX_CHECK_STS(m_components[eREN].m_pSession->CloneSession(&decCtx.session));
+        MFX_CHECK_STS(m_components[eREN].m_pSession->JoinSession(decCtx.session));
+
+        //TODO: need to close session somehow
+        std::auto_ptr<IYUVSource> pDec(new MFXDecoder(decCtx.session));
+
+        //decorating decode
+        if (m_components[eREN].m_bCalcLatency)
+        {
+            pDec.reset(new LatencyDecoder(false, NULL, &PerfCounterTime::Instance(), VM_STRING("Decoder2"), pDec.release()));
+        }
+
+        // pointer to allocator parameters structure needed for allocator init
+        std::auto_ptr<mfxAllocatorParams> pAllocatorParams;
+        std::auto_ptr<MFXFrameAllocatorRW> pAlloc;
+
+        //decoder type is the same as encoder
+        MFX_ZERO_MEM(decCtx.sInitialParams);
+        decCtx.sInitialParams.mfx.CodecId = m_components[eREN].m_params.mfx.CodecId ;
+
+        //applying asyncdepth
+        decCtx.sInitialParams.AsyncDepth = m_components[eREN].m_params.AsyncDepth;
+
+        //applying complete frame
+        decCtx.bCompleteFrame = m_inParams.bCompleteFrame;
+
+        // Create allocator
+        if (m_components[eREN].m_bufType == MFX_BUF_HW)
+        {
+#ifdef D3D_SURFACES_SUPPORT
+            MFX_CHECK_STS(CreateDeviceManager());
+            mfxHDL hdl;
+            MFX_CHECK_STS(m_pHWDevice->GetHandle(MFX_HANDLE_D3D9_DEVICE_MANAGER, &hdl));
+            MFX_CHECK_STS(MFXVideoCORE_SetHandle(decCtx.session, MFX_HANDLE_D3D9_DEVICE_MANAGER, hdl));
+
+            if (decCtx.request.Info.FourCC == MFX_FOURCC_RGB4)
+                decCtx.request.Type = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET;
+            else
+                decCtx.request.Type = MFX_MEMTYPE_DXVA2_DECODER_TARGET;
+
+            decCtx.sInitialParams.IOPattern = MFX_IOPATTERN_OUT_VIDEO_MEMORY;
+            pAlloc.reset(m_pAllocFactory->CreateD3DAllocator());
+
+            D3DAllocatorParams *pd3dAllocParams;
+            MFX_CHECK_WITH_ERR(pd3dAllocParams = new D3DAllocatorParams, MFX_ERR_MEMORY_ALLOC);
+
+            pd3dAllocParams->pManager = (IDirect3DDeviceManager9*)hdl;
+            pAllocatorParams.reset(pd3dAllocParams);
+#endif
+#ifdef VAAPI_SURFACES_SUPPORT
+            MFX_CHECK_STS(CreateDeviceManager());
+            VADisplay va_dpy = NULL;
+            MFX_CHECK_STS(m_pHWDevice->GetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL*) &va_dpy));
+            MFX_CHECK_STS(MFXVideoCORE_SetHandle(decCtx.session, MFX_HANDLE_VA_DISPLAY, (mfxHDL)va_dpy));
+
+            if (decCtx.request.Info.FourCC == MFX_FOURCC_RGB4)
+                decCtx.request.Type = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET;
+            else
+                decCtx.request.Type = MFX_MEMTYPE_DXVA2_DECODER_TARGET;
+
+            decCtx.sInitialParams.IOPattern = MFX_IOPATTERN_OUT_VIDEO_MEMORY;
+            pAlloc.reset(m_pAllocFactory->CreateVAAPIAllocator());
+
+            vaapiAllocatorParams *p_vaapiAllocParams;
+            MFX_CHECK_WITH_ERR(p_vaapiAllocParams = new vaapiAllocatorParams, MFX_ERR_MEMORY_ALLOC);
+
+            p_vaapiAllocParams->m_dpy = va_dpy;
+            pAllocatorParams.reset(p_vaapiAllocParams);
+#endif
+        }
+        else if(m_components[eREN].m_bufType == MFX_BUF_HW_DX11)
+        {
+#if MFX_D3D11_SUPPORT
+            MFX_CHECK_STS(CreateDeviceManager());
+            mfxHDL hdl;
+            MFX_CHECK_STS(m_pHWDevice->GetHandle(MFX_HANDLE_D3D11_DEVICE, &hdl));
+            MFX_CHECK_STS(MFXVideoCORE_SetHandle(decCtx.session, MFX_HANDLE_D3D11_DEVICE, hdl));
+
+            if (decCtx.request.Info.FourCC == MFX_FOURCC_RGB4)
+                decCtx.request.Type = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET;
+            else
+                decCtx.request.Type = MFX_MEMTYPE_DXVA2_DECODER_TARGET;
+
+            decCtx.sInitialParams.IOPattern = MFX_IOPATTERN_OUT_VIDEO_MEMORY;
+            pAlloc.reset(m_pAllocFactory->CreateD3D11Allocator());
+
+            D3D11AllocatorParams *pd3d11AllocParams;
+            MFX_CHECK_WITH_ERR(pd3d11AllocParams = new D3D11AllocatorParams, MFX_ERR_MEMORY_ALLOC);
+
+            pd3d11AllocParams->pDevice = (ID3D11Device*)hdl;
+            pd3d11AllocParams->bUseSingleTexture = m_components[eREN].m_bD3D11SingeTexture;
+            pAllocatorParams.reset(pd3d11AllocParams);
+#endif
+        }
+        else if (m_components[eREN].m_bufType == MFX_BUF_SW)
+        {
+            decCtx.request.Type = MFX_MEMTYPE_SYSTEM_MEMORY;
+            decCtx.sInitialParams.IOPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
+            pAlloc.reset(m_pAllocFactory->CreateSysMemAllocator());
+        }
+
+        MFX_CHECK_STS(pAlloc->Init(pAllocatorParams.get()));
+
+        //setting the same allocator
+        MFX_CHECK_STS(MFXVideoCORE_SetFrameAllocator(decCtx.session, pAlloc.get()));
+
+        decCtx.pAlloc  = pAlloc.release();
+        decCtx.pSource = pDec.release();
+
+        //TODO:pasthru -o option to downstream
+        pSink.reset(new Adapter<IFile, IBitstreamWriter>(new BitstreamDecoder(&decCtx)));
+    }
+
+    if (0 == vm_string_strlen(m_inParams.strDstFile))
+    {
+        //create null filesink then for now only for transcoder case
+        m_inParams.bNullFileWriter = true;
+    }
+
+    MFX_CHECK_STS(MFXDecPipeline::CreateFileSink(pSink));
+
+    return MFX_ERR_NONE;
+}
+
+std::auto_ptr<IVideoEncode> MFXTranscodingPipeline::CreateEncoder()
+{
+    //create ivideencode implementation
+    PipelineObjectDesc<IVideoEncode> createParams(m_components[eREN].m_pSession->GetMFXSession(), ENCODER_MFX_NATIVE, NULL);
+    std::auto_ptr<IVideoEncode> pEncoder ( m_pFactory->CreateVideoEncode(&createParams));
+
+    //wrapper for jpeg encoder handles awkward behavior patterns
+    switch (m_EncParams.mfx.CodecId)
+    {
+        case MFX_CODEC_JPEG :
+            pEncoder.reset(new MFXJpegEncWrap(pEncoder.release()));
+        break;
+        default:
+        break;
+    }
+
+    if (m_components[eREN].m_bCalcLatency)
+    {
+        pEncoder.reset( new LatencyEncode(
+              m_components[eDEC].m_bCalcLatency && m_inParams.bNoPipelineSync
+            , NULL //console printer will be created
+            , &PerfCounterTime::Instance()
+            , pEncoder.release()));
+    }
+
+    if (m_inParams.bCreateRefListSelector)
+    {
+        std::auto_ptr<RefListControlEncode> pControl (new RefListControlEncode(pEncoder.release()));
+
+        m_pRefListControl = pControl.get();
+        pEncoder.reset(pControl.release());
+    }
+
+    if (m_inParams.EncodedOrder)
+    {
+        pEncoder.reset(new EncodeOrderEncode(pEncoder.release()));
+    }
+
+    if (m_inParams.bDisableIpFieldPair)
+    {
+        pEncoder.reset(new IPFieldPairDisableEncode(pEncoder.release()));
+    }
+
+    if (MFX_CODINGOPTION_ON == m_extCodingOptions->FieldOutput)
+    {
+        pEncoder.reset(new FieldOutputEncoder(pEncoder.release()));
+    }
+
+    //TODO: always attaching MVC handler, is it possible not to do this
+    pEncoder.reset(new MVCHandler<IVideoEncode>(m_components[eREN].m_extParams, false, pEncoder.release()));
+
+    return pEncoder;
+}
+
+mfxStatus MFXTranscodingPipeline::CreateRender()
+{
+    if(NULL != m_pRender)
+    {
+        return MFX_ERR_NONE;
+    }
+
+    mfxStatus sts;
+    std::auto_ptr<IVideoEncode> pEncoder = CreateEncoder();
+    MFXEncodeWRAPPER * pEncoderWrp;
+
+    //////////////////////////////////////////////////////////////////////////
+    //create render
+    if (m_RenderType == MFX_METRIC_CHECK_RENDER)
+    {
+        EncodeDecodeQuality * pEncoderQlty;
+        MFX_CHECK_WITH_ERR(m_pRender = pEncoderWrp = pEncoderQlty = new EncodeDecodeQuality(m_components[eREN], &sts, pEncoder.release())
+            , MFX_ERR_MEMORY_ALLOC);
+
+        if (m_bYuvDumpMode)
+        {
+            MFX_CHECK_STS(pEncoderQlty->AddMetric(METRIC_DUMP));
+        }
+
+        for (size_t i = 0; i < m_metrics.size(); i++)
+        {
+            MFX_CHECK_STS(pEncoderQlty->AddMetric(m_metrics[i].first, m_metrics[i].second));
+        }
+
+        MFX_CHECK_STS(pEncoderQlty->SetOutputPerfFile(m_inParams.perfFile));
+    }else
+    {
+        MFX_CHECK_WITH_ERR(m_pRender = pEncoderWrp = new MFXEncodeWRAPPER(m_components[eREN], &sts, pEncoder.release()), MFX_ERR_MEMORY_ALLOC);
+    }
+
+    m_inParams.encodeExtraParams.pRefFile = m_inParams.refFile;
+    m_inParams.encodeExtraParams.bVerbose = m_inParams.bVerbose;
+
+    MFX_CHECK_STS(pEncoderWrp->SetExtraParams(&m_inParams.encodeExtraParams));
+
+    //adds decorators filters
+    return DecorateRender();
+}
+
+mfxStatus MFXTranscodingPipeline::ReleasePipeline()
+{
+    MFX_CHECK_STS(MFXDecPipeline::ReleasePipeline());
+
+    return MFX_ERR_NONE;
+}
+
+void      MFXTranscodingPipeline::PrintCommonHelp()
+{
+    vm_char *argv[1], **_argv = argv;
+    mfxI32 argc = 1;
+    argv[0] = VM_STRING("unsupported option");
+
+    m_OptProc.SetPrint(true);
+    ProcessCommand(_argv, argc, false);
+    m_OptProc.SetPrint(false);
+
+}
+
+int MFXTranscodingPipeline::PrintHelp()
+{
+    //special HACK to avoid printing of parameters that parsed if this flag enabled
+    m_bResetParamsStart = false;
+
+    vm_char * last_err = GetLastErrString();
+    if (NULL != last_err)
+    {
+        vm_string_printf(VM_STRING("ERROR: %s\n"), last_err);
+    }
+
+    int year, month, day;
+    int h,m,s;
+    const vm_char *platform;
+    PipelineBuildTime(platform, year, month, day, h, m, s);
+    vm_string_printf(VM_STRING("\n"));
+    vm_string_printf(VM_STRING("---------------------------------------------------------------------------------------------\n"));
+    vm_string_printf(VM_STRING("%s version 1.%d.%d.%d / %s\n"), GetAppName().c_str(), year % 100, month, day, platform);
+    vm_string_printf(VM_STRING("%s is DXVA2/LibVA testing application developed by Intel/SSG/DPD/VCP/MDP\n"), GetAppName().c_str());
+    vm_string_printf(VM_STRING("This application is for Intel INTERNAL use only!\n"));
+    vm_string_printf(VM_STRING("For support, usage examples, and recent builds please visit http://goto/%s  \n"), GetAppName().c_str());
+    vm_string_printf(VM_STRING("---------------------------------------------------------------------------------------------\n"));
+    vm_string_printf(VM_STRING("\n"));
+    vm_string_printf(VM_STRING("Usage: %s.exe [Parameters]\n\n"), GetAppName().c_str());
+    vm_string_printf(VM_STRING("Parameters are:\n"));
+    PrintCommonHelp();
+
+
+    return 1;
+}
+
+vm_char * MFXTranscodingPipeline::GetLastErrString()
+{
+    static struct
+    {
+        mfxU32 err;
+        vm_char  desc[100];
+    } errDetails[] =
+    {
+        {PE_NO_TARGET_CODEC, VM_STRING("No encoding format specified")},
+    };
+
+    for (int i=0; i < sizeof(errDetails)/sizeof(errDetails[0]); i++)
+    {
+        if (errDetails[i].err == PipelineGetLastErr())
+        {
+            return errDetails[i].desc;
+        }
+    }
+
+    return MFXDecPipeline::GetLastErrString();
+}
+
+mfxStatus MFXTranscodingPipeline::WriteParFile()
+{
+    if (0 == vm_string_strlen(m_inParams.strParFile) || !m_bWritePar)
+        return MFX_ERR_NONE;
+
+    vm_file * fd;
+    MFX_CHECK_VM_FOPEN(fd, m_inParams.strParFile,VM_STRING("w"));
+
+    //will store resolution  for scaling back
+    if (m_inParams.bUseVPP)
+    {
+        vm_file_fprintf(fd, VM_STRING("resize_w = %d \n"), m_components[eVPP].m_params.vpp.In.CropW);
+        vm_file_fprintf(fd, VM_STRING("resize_h = %d \n"), m_components[eVPP].m_params.vpp.In.CropH);
+    }
+
+    vm_file_close(fd);
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MFXTranscodingPipeline::GetRefListControl(IRefListControl **ppCtrl)
+{
+    MFX_CHECK_POINTER(ppCtrl);
+    * ppCtrl = m_pRefListControl;
+
+    return MFX_ERR_NONE;
+}

@@ -1,0 +1,38 @@
+####################################################################################
+#
+# INTEL CORPORATION PROPRIETARY INFORMATION
+# This software is supplied under the terms of a license agreement or nondisclosure
+# agreement with Intel Corporation and may not be copied or disclosed except in
+# accordance with the terms of that agreement
+# Copyright(c) 2010 Intel Corporation. All Rights Reserved.
+#
+####################################################################################
+
+# Importing python-wide modules
+import os
+
+# Importing MFX utilities module
+import mfx_utils
+
+# Importing variables
+Import('mfx_src_root')
+Import('mfx_bld_root')
+
+# Setting build dir
+cur_dir = mfx_utils.get_related_path(mfx_src_root, '.')
+bld_dir = mfx_bld_root + os.sep + cur_dir
+
+# Setting subdirectories to march thru
+dirs = ['umc', 'vm', 'vm_plus']
+
+# Marching thru subdirectories
+nodes = mfx_utils.run_subdirs(dirs, 'SConscript')
+
+# Creating list of objects to build merged library
+umc_core_merged_objs = list()
+count = mfx_utils.exclude_empty_nodes(nodes, umc_core_merged_objs)
+if count != 0:
+  print 'MFX BUILD NOTE: empty nodes count is %d. Check your build!' % count
+
+# Building merged library
+SConscript('SConscriptTarget', variant_dir = bld_dir, duplicate = 0, exports = 'umc_core_merged_objs')

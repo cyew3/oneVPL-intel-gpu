@@ -1,0 +1,1003 @@
+/* /////////////////////////////////////////////////////////////////////////////
+//
+//                  INTEL CORPORATION PROPRIETARY INFORMATION
+//     This software is supplied under the terms of a license agreement or
+//     nondisclosure agreement with Intel Corporation and may not be copied
+//     or disclosed except in accordance with the terms of that agreement.
+//          Copyright(c) 2008 - 2012 Intel Corporation. All Rights Reserved.
+//
+//
+//          ColorSpaceConversion Video Pre\Post Processing
+//
+*/
+
+#include "mfx_common.h"
+
+#if defined (MFX_ENABLE_VPP)
+
+#include "mfx_color_space_conversion_vpp.h"
+#include "ipps.h"
+#include "ippi.h"
+#include "ippcc.h"
+
+/* some macros */
+#ifndef CHOP
+#define CHOP(x)     ((x < 0) ? 0 : ((x > 255) ? 255 : x))
+#endif
+
+/* ******************************************************************** */
+/*                 prototype of CSC algorithms                          */
+/* ******************************************************************** */
+IppStatus cc_YV12_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+                           mfxFrameData* outData, mfxFrameInfo* outInfo);
+
+IppStatus cc_YUY2_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+                           mfxFrameData* outData, mfxFrameInfo* outInfo);
+
+IppStatus cc_RGB3_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+                           mfxFrameData* outData, mfxFrameInfo* outInfo, mfxU16 picStruct );
+
+IppStatus cc_RGB4_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+                           mfxFrameData* outData, mfxFrameInfo* outInfo, mfxU16 picStruct );
+
+IppStatus cc_NV12_to_YUY2( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+                           mfxFrameData* outData, mfxFrameInfo* outInfo);
+
+IppStatus cc_NV12_to_RGB4( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+                           mfxFrameData* outData, mfxFrameInfo* outInfo,
+                           mfxFrameData* yv12Data);
+
+// internal feature for development
+IppStatus cc_NV12_to_YV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+                           mfxFrameData* outData, mfxFrameInfo* outInfo);
+
+/* ******************************************************************** */
+/*                 implementation of VPP filter [ColorSpaceConversion]  */
+/* ******************************************************************** */
+
+MFXVideoVPPColorSpaceConversion::MFXVideoVPPColorSpaceConversion(VideoCORE *core, mfxStatus* sts) : FilterVPP()
+{
+
+  if( core ){
+    // something
+  }
+
+  VPP_CLEAN;
+
+  *sts = MFX_ERR_NONE;
+
+  return;
+
+} // MFXVideoVPPColorSpaceConversion::MFXVideoVPPColorSpaceConversion(...)
+
+MFXVideoVPPColorSpaceConversion::~MFXVideoVPPColorSpaceConversion(void)
+{
+  Close();
+
+  return;
+
+} // MFXVideoVPPColorSpaceConversion::~MFXVideoVPPColorSpaceConversion(void)
+
+mfxStatus MFXVideoVPPColorSpaceConversion::SetParam( mfxExtBuffer* pHint )
+{
+  mfxStatus mfxSts = MFX_ERR_NONE;
+
+  if( pHint ){
+    // mfxSts = something
+  }
+
+  return mfxSts;
+
+} // mfxStatus MFXVideoVPPColorSpaceConversion::SetParam( mfxExtBuffer* pHint )
+
+mfxStatus MFXVideoVPPColorSpaceConversion::Reset(mfxVideoParam *par)
+{
+  mfxU32    srcFourCC = MFX_FOURCC_YV12;
+  mfxU32    dstFourCC = MFX_FOURCC_YV12;
+
+  MFX_CHECK_NULL_PTR1( par );
+
+  VPP_CHECK_NOT_INITIALIZED;
+
+  srcFourCC = par->vpp.In.FourCC;
+  dstFourCC = par->vpp.Out.FourCC;
+
+  if( srcFourCC == dstFourCC && MFX_FOURCC_NV12 != dstFourCC )
+  {
+    return MFX_ERR_INVALID_VIDEO_PARAM;
+  }
+
+  /* conversion */
+  switch ( srcFourCC )
+  {
+  case MFX_FOURCC_YV12:
+  case MFX_FOURCC_YUY2:
+  case MFX_FOURCC_RGB3:
+  case MFX_FOURCC_RGB4:
+  case MFX_FOURCC_NV12:
+  case MFX_FOURCC_IMC3:
+  case MFX_FOURCC_YUV400:
+  case MFX_FOURCC_YUV411:
+  case MFX_FOURCC_YUV422H:
+  case MFX_FOURCC_YUV422V:
+  case MFX_FOURCC_YUV444:
+      switch (dstFourCC) 
+      {
+          case MFX_FOURCC_NV12:
+          case MFX_FOURCC_YUY2:
+          case MFX_FOURCC_RGB4:
+              break;
+
+          default:
+              return MFX_ERR_INVALID_VIDEO_PARAM;
+      }
+      break;
+
+  default:
+      return MFX_ERR_INVALID_VIDEO_PARAM;
+  }
+
+  /* if OK, we update filter state [m_errPrtctState] */
+  m_errPrtctState.In  = par->vpp.In;
+  m_errPrtctState.Out = par->vpp.Out;
+
+  VPP_RESET;
+
+  return MFX_ERR_NONE;
+
+} // mfxStatus MFXVideoVPPColorSpaceConversion::Reset(mfxVideoParam *par)
+
+mfxStatus MFXVideoVPPColorSpaceConversion::RunFrameVPP(mfxFrameSurface1 *in,
+                                                       mfxFrameSurface1 *out,
+                                                       InternalParam* pParam)
+{
+  // code error
+  IppStatus ippSts = ippStsNoErr;
+  mfxStatus mfxSts = MFX_ERR_NONE;
+
+  mfxFrameData* inData  = NULL;
+  mfxFrameData* outData = NULL;
+  mfxFrameInfo* inInfo  = NULL;
+  mfxFrameInfo* outInfo = NULL;
+
+  VPP_CHECK_NOT_INITIALIZED;
+
+  if( NULL == in )
+  {
+    return MFX_ERR_MORE_DATA;
+  }
+  if( NULL == out )
+  {
+    return MFX_ERR_NULL_PTR;
+  }
+  if( NULL == pParam )
+  {
+      return MFX_ERR_NULL_PTR;
+  }
+
+  inData  = &(in->Data);
+  outData = &(out->Data);
+
+  inInfo  = &(in->Info);
+  outInfo = &(out->Info);
+
+  /* conversion */
+  switch ( m_errPrtctState.In.FourCC )
+  {
+  case MFX_FOURCC_YV12:
+    switch (m_errPrtctState.Out.FourCC) {
+    case MFX_FOURCC_NV12:
+      ippSts = cc_YV12_to_NV12(inData, inInfo, outData, outInfo);
+      break;
+    default:
+      return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+    break;
+
+  case MFX_FOURCC_YUY2:
+    switch ( m_errPrtctState.Out.FourCC ) {
+    case MFX_FOURCC_NV12:
+      ippSts = cc_YUY2_to_NV12(inData, inInfo, outData, outInfo);
+      break;
+    default:
+      return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+    break;
+
+  case MFX_FOURCC_RGB3:
+    switch ( m_errPrtctState.Out.FourCC ) {
+    case MFX_FOURCC_NV12:
+        ippSts = cc_RGB3_to_NV12(inData, inInfo, outData, outInfo, pParam->inPicStruct);
+      break;
+    default:
+      return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+    break;
+
+  case MFX_FOURCC_RGB4:
+    switch ( m_errPrtctState.Out.FourCC ) {
+    case MFX_FOURCC_NV12:
+      ippSts = cc_RGB4_to_NV12(inData, inInfo, outData, outInfo, pParam->inPicStruct);
+      break;
+    default:
+      return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+    break;
+    //-----------
+
+  // internal feature
+  case MFX_FOURCC_NV12:
+      switch ( m_errPrtctState.Out.FourCC )
+      {
+      case MFX_FOURCC_YV12:
+          ippSts = cc_NV12_to_YV12(inData, inInfo, outData, outInfo);
+          break;
+
+      case MFX_FOURCC_YUY2:
+          ippSts = cc_NV12_to_YUY2(inData, inInfo, outData, outInfo);
+          break;
+
+      case MFX_FOURCC_RGB4:
+          ippSts = cc_NV12_to_RGB4(inData, inInfo, outData, outInfo, &m_yv12Data);
+          break;
+
+      default:
+          return MFX_ERR_INVALID_VIDEO_PARAM;
+      }
+      break;
+
+  default:
+      return MFX_ERR_INVALID_VIDEO_PARAM;
+  }
+
+  mfxSts = (ippSts == ippStsNoErr) ? MFX_ERR_NONE : MFX_ERR_UNDEFINED_BEHAVIOR;
+  MFX_CHECK_STS( mfxSts );
+
+  if( !m_errPrtctState.isFirstFrameProcessed )
+  {
+      m_errPrtctState.isFirstFrameProcessed = true;
+  }
+
+  pParam->outPicStruct = pParam->inPicStruct;
+  pParam->outTimeStamp = pParam->inTimeStamp;
+
+  return mfxSts;
+
+} // mfxStatus MFXVideoVPPColorSpaceConversion::RunFrameVPP(...)
+
+mfxStatus MFXVideoVPPColorSpaceConversion::Init(mfxFrameInfo* In, mfxFrameInfo* Out)
+{
+  mfxStatus mfxSts = MFX_ERR_NONE;
+
+  mfxI32    srcW   = 0, srcH = 0;//, srcPitch = 0;
+  mfxI32    dstW   = 0, dstH = 0;//, dstPitch = 0;
+
+  mfxU32  srcFourCC = MFX_FOURCC_YV12; //default
+  mfxU32  dstFourCC = MFX_FOURCC_YV12; //default
+
+  MFX_CHECK_NULL_PTR2( In, Out );
+
+  VPP_CHECK_MULTIPLE_INIT;
+
+  /* IN */
+  VPP_GET_REAL_WIDTH(In, srcW);
+  VPP_GET_REAL_HEIGHT(In, srcH);
+
+  /* OUT */
+  VPP_GET_REAL_WIDTH(Out, dstW);
+  VPP_GET_REAL_HEIGHT(Out, dstH);
+
+  /* robustness check */
+  if( srcW != dstW || srcH != dstH ){
+    return MFX_ERR_INVALID_VIDEO_PARAM;
+  }
+
+  srcFourCC = In->FourCC;
+  dstFourCC = Out->FourCC;
+
+  if( srcFourCC == dstFourCC ){
+    // copy src2dst
+    mfxSts = MFX_ERR_NONE;
+    return mfxSts;
+  }
+
+  /* conversion */
+  switch ( srcFourCC )
+  {
+  case MFX_FOURCC_YV12:
+  case MFX_FOURCC_YUY2:
+  case MFX_FOURCC_RGB3:
+  case MFX_FOURCC_RGB4:
+  case MFX_FOURCC_NV12:
+  case MFX_FOURCC_IMC3:
+  case MFX_FOURCC_YUV400:
+  case MFX_FOURCC_YUV411:
+  case MFX_FOURCC_YUV422H:
+  case MFX_FOURCC_YUV422V:
+  case MFX_FOURCC_YUV444:
+      switch (dstFourCC) 
+      {
+      case MFX_FOURCC_NV12:
+      case MFX_FOURCC_YUY2:
+      case MFX_FOURCC_RGB4:
+          break;
+
+      default:
+          return MFX_ERR_INVALID_VIDEO_PARAM;
+      }
+      break;
+
+  default:
+      return MFX_ERR_INVALID_VIDEO_PARAM;
+  }
+
+  /* save init params to prevent core crash */
+  m_errPrtctState.In  = *In;
+  m_errPrtctState.Out = *Out;
+
+  VPP_INIT_SUCCESSFUL;
+
+  return MFX_ERR_NONE;
+
+} // mfxStatus MFXVideoVPPColorSpaceConversion::Init(mfxFrameInfo* In, mfxFrameInfo* Out)
+
+mfxStatus MFXVideoVPPColorSpaceConversion::Close(void)
+{
+  mfxStatus mfxSts = MFX_ERR_NONE;
+
+  VPP_CHECK_NOT_INITIALIZED;
+
+  VPP_CLEAN;
+
+  return mfxSts;
+
+} // mfxStatus MFXVideoVPPColorSpaceConversion::Close(void)
+
+
+// work buffer management - nothing for CSC filter
+mfxStatus MFXVideoVPPColorSpaceConversion::GetBufferSize( mfxU32* pBufferSize )
+{
+  VPP_CHECK_NOT_INITIALIZED;
+
+  MFX_CHECK_NULL_PTR1(pBufferSize);
+
+  *pBufferSize = 0;
+
+  if(MFX_FOURCC_RGB4 == m_errPrtctState.Out.FourCC)
+  {
+      *pBufferSize = 3*(m_errPrtctState.Out.Width * m_errPrtctState.Out.Height) >> 1;
+  }
+
+  return MFX_ERR_NONE;
+
+} // mfxStatus MFXVideoVPPColorSpaceConversion::GetBufferSize( mfxU32* pBufferSize )
+
+mfxStatus MFXVideoVPPColorSpaceConversion::SetBuffer( mfxU8* pBuffer )
+{
+  mfxU32 bufSize = 0;
+  mfxStatus sts;
+
+  VPP_CHECK_NOT_INITIALIZED;
+
+  sts = GetBufferSize( &bufSize );
+  MFX_CHECK_STS( sts );
+
+  //// CSC dosn't require work buffer, so pBuffer == NULL is OK
+  //if( bufSize )
+  //{
+  //   MFX_CHECK_NULL_PTR1(pBuffer);
+  //}
+
+  if(MFX_FOURCC_RGB4 == m_errPrtctState.Out.FourCC)
+  {
+      MFX_CHECK_NULL_PTR1(pBuffer);
+
+      m_yv12Data.Y = pBuffer;
+      m_yv12Data.V = m_yv12Data.Y + (m_errPrtctState.Out.Width * m_errPrtctState.Out.Height);
+      m_yv12Data.U = m_yv12Data.V + ((m_errPrtctState.Out.Width * m_errPrtctState.Out.Height) >> 2);
+      m_yv12Data.Pitch = m_errPrtctState.Out.Width;
+  }
+
+  return MFX_ERR_NONE;
+
+} // mfxStatus MFXVideoVPPColorSpaceConversion::SetBuffer( mfxU8* pBuffer )
+
+// function is called from sync part of VPP only
+mfxStatus MFXVideoVPPColorSpaceConversion::CheckProduceOutput(mfxFrameSurface1 *in, mfxFrameSurface1 *out )
+{
+  if( NULL == in )
+  {
+    return MFX_ERR_MORE_DATA;
+  }
+  else if( NULL == out )
+  {
+    return MFX_ERR_NULL_PTR;
+  }
+
+  PassThrough(in, out);
+
+  return MFX_ERR_NONE;
+
+} // mfxStatus MFXVideoVPPColorSpaceConversion::CheckProduceOutput(...)
+
+bool MFXVideoVPPColorSpaceConversion::IsReadyOutput( mfxRequestType requestType )
+{
+    if( MFX_REQUEST_FROM_VPP_CHECK == requestType )
+    {
+        // CSC is simple algorithm and need IN to produce OUT
+    }
+
+    return false;
+
+} // bool MFXVideoVPPColorSpaceConversion::IsReadyOutput( mfxRequestType requestType )
+
+/* ******************************************************************** */
+/*                 implementation of algorithms [CSC]                   */
+/* ******************************************************************** */
+
+IppStatus cc_YV12_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+                           mfxFrameData* outData, mfxFrameInfo* outInfo)
+{
+  IppStatus sts     = ippStsNoErr;
+  IppiSize  roiSize = {0, 0};
+  mfxU16  cropX = 0, cropY = 0;
+
+  mfxU32  inOffset0 = 0, inOffset1  = 0;
+  mfxU32  outOffset0= 0, outOffset1 = 0;
+
+  VPP_GET_WIDTH(inInfo, roiSize.width);
+  VPP_GET_HEIGHT(inInfo, roiSize.height);
+
+  VPP_GET_CROPX(inInfo,  cropX);
+  VPP_GET_CROPY(inInfo,  cropY);
+  inOffset0  = cropX        + cropY*inData->Pitch;
+  inOffset1  = (cropX >> 1) + (cropY >> 1)*(inData->Pitch >> 1);
+
+  VPP_GET_CROPX(outInfo, cropX);
+  VPP_GET_CROPY(outInfo, cropY);
+  outOffset0   = cropX        + cropY*outData->Pitch;
+  outOffset1   = (cropX) + (cropY>>1)*(outData->Pitch);
+
+  const mfxU8* pSrc[3] = {(mfxU8*)inData->Y + inOffset0,
+                          (mfxU8*)inData->V + inOffset1,
+                          (mfxU8*)inData->U + inOffset1};
+  /* [U<->V] because some reversing will be done ipp function */
+
+  mfxI32 pSrcStep[3] = {inData->Pitch,
+                        inData->Pitch >> 1,
+                        inData->Pitch >> 1};
+
+  mfxU8* pDst[2]   = {(mfxU8*)outData->Y + outOffset0,
+                      (mfxU8*)outData->UV+ outOffset1};
+
+  mfxI32 pDstStep[2] = {outData->Pitch,
+                        outData->Pitch >> 0};
+
+  sts = ippiYCrCb420ToYCbCr420_8u_P3P2R(pSrc, pSrcStep,
+                                        pDst[0], pDstStep[0],
+                                        pDst[1], pDstStep[1],
+                                        roiSize);
+
+  return sts;
+
+} // IppStatus cc_YV12_to_NV12( ... )
+
+IppStatus cc_YUY2_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+                           mfxFrameData* outData, mfxFrameInfo* outInfo)
+{
+  IppStatus sts = ippStsNoErr;
+  IppiSize  roiSize = {0, 0};
+
+  // cropping was removed
+  outInfo;
+
+  VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
+  VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
+
+  const mfxU8* pSrc[1] = {(mfxU8*)inData->Y};
+
+  mfxI32 pSrcStep[1] = {inData->Pitch};
+
+  mfxU8* pDst[2]   = {(mfxU8*)outData->Y,
+                      (mfxU8*)outData->UV};
+
+  mfxI32 pDstStep[2] = {outData->Pitch,
+                        outData->Pitch >> 0};
+
+  sts = ippiYCbCr422ToYCbCr420_8u_C2P2R(pSrc[0], pSrcStep[0], pDst[0], pDstStep[0], pDst[1], pDstStep[1], roiSize);
+
+  return sts;
+
+} // IppStatus cc_YUY2_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
+
+////-------------------------------------------------------------------
+#define kry0  0x000041cb
+#define kry1  0x00008106
+#define kry2  0x00001917
+#define kry3  0x000025e3
+#define kry4  0x00004a7f
+#define kry5  0x00007062
+#define kry6  0x00005e35
+#define kry7  0x0000122d
+
+static
+IppStatus  ownBGRToYCbCr420_8u_C3P2R( const mfxU8* pSrc, mfxI32 srcStep, mfxU8* pDst[2],mfxI32 dstStep[2], IppiSize roiSize )
+{
+  mfxI32 h,w;
+  mfxI32 dstStepY = dstStep[0];
+  mfxI32 width2  = roiSize.width  & ~1;
+  mfxI32 height2 = roiSize.height >> 1;
+  mfxU8* pDstU = pDst[1];
+  mfxU8* pDstV = pDstU + 1;
+
+  IppStatus sts = ippStsNoErr;
+
+  for( h = 0; h < height2; h++ ){
+    const mfxU8* src;
+
+    mfxU8* dsty, *dstu, *dstv;
+
+    src  = pSrc   + h * 2 * srcStep;
+    dsty = pDst[0]+ h * 2 * dstStepY;
+
+    dstu = pDstU  + h * dstStep[1];
+    dstv = pDstV  + h * dstStep[1];
+
+    for( w = 0; w < width2; w += 2 ) {
+      mfxI32 g,g1,g2,g3;
+      mfxI32 r,r1,r2,r3;
+      mfxI32 b,b1,b2,b3;
+      b = src[0];g = src[1];r = src[2];
+      b1= src[3];g1= src[4];r1= src[5];
+      b2= src[0+srcStep];g2= src[1+srcStep];r2= src[2+srcStep];
+      b3= src[3+srcStep];g3= src[4+srcStep];r3= src[5+srcStep];
+      src += 6;
+      dsty[0] = ( mfxU8 )(( kry0 * r  + kry1 *  g + kry2 *  b + 0x108000) >> 16 );
+      dsty[1] = ( mfxU8 )(( kry0 * r1 + kry1 * g1 + kry2 * b1 + 0x108000) >> 16 );
+      dsty[0+dstStepY] = ( mfxU8 )(( kry0 * r2 + kry1 * g2 + kry2 * b2 + 0x108000) >> 16 );
+      dsty[1+dstStepY] = ( mfxU8 )(( kry0 * r3 + kry1 * g3 + kry2 * b3 + 0x108000) >> 16 );
+      dsty += 2;
+
+      r += r1;r += r2;r += r3;
+      b += b1;b += b2;b += b3;
+      g += g1;g += g2;g += g3;
+
+      *dstu = ( Ipp8u )((-kry3 * r - kry4 * g + kry5 * b + 0x2008000)>> 18 ); /* Cb */
+      *dstv = ( Ipp8u )(( kry5 * r - kry6 * g - kry7 * b + 0x2008000)>> 18 ); /* Cr */
+
+      dstu += 2;
+      dstv += 2;
+    }
+  }
+
+  return sts;
+
+} // IppStatus  ownBGRToYCbCr420_8u_C3P2R( const mfxU8* pSrc, mfxI32 srcStep, ...)
+
+IppStatus cc_RGB3_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+                           mfxFrameData* outData, mfxFrameInfo* outInfo, mfxU16 picStruct )
+{
+  IppStatus sts = ippStsNoErr;
+  IppiSize  roiSize = {0, 0};
+  mfxU16  cropX = 0, cropY = 0;
+
+  mfxU32  inOffset0 = 0;
+  mfxU32  outOffset0= 0, outOffset1 = 0;
+
+  VPP_GET_WIDTH(inInfo, roiSize.width);
+  VPP_GET_HEIGHT(inInfo, roiSize.height);
+
+  VPP_GET_CROPX(inInfo,  cropX);
+  VPP_GET_CROPY(inInfo,  cropY);
+  inOffset0  = cropX*3  + cropY*inData->Pitch;
+
+  VPP_GET_CROPX(outInfo, cropX);
+  VPP_GET_CROPY(outInfo, cropY);
+  outOffset0  = cropX        + cropY*outData->Pitch;
+  outOffset1  = (cropX) + (cropY>>1)*(outData->Pitch);
+
+  IPP_CHECK_NULL_PTR1(inData->R);
+  IPP_CHECK_NULL_PTR1(inData->G);
+  IPP_CHECK_NULL_PTR1(inData->B);
+
+  mfxU8* ptrStart = IPP_MIN( IPP_MIN(inData->R, inData->G), inData->B );
+
+  const mfxU8* pSrc[1] = {ptrStart + inOffset0};
+
+  mfxI32 pSrcStep[1] = {inData->Pitch};
+
+  mfxU8* pDst[2]   = {(mfxU8*)outData->Y  + outOffset0,
+                      (mfxU8*)outData->UV + outOffset1};
+
+  mfxI32 pDstStep[2] = {outData->Pitch, outData->Pitch >> 0};
+
+  if( MFX_PICSTRUCT_PROGRESSIVE & picStruct )
+  {
+    sts = ownBGRToYCbCr420_8u_C3P2R( pSrc[0], pSrcStep[0], pDst, pDstStep, roiSize );
+  }
+  else
+  {
+    mfxI32 pDstFieldStep[2] = {pDstStep[0]<<1, pDstStep[1]<<1};
+    IppiSize  roiFieldSize = {roiSize.width, roiSize.height >> 1};
+    mfxU8* pDstSecondField[2] = {pDst[0]+pDstStep[0], pDst[1]+pDstStep[1]};
+
+    /* first field */
+    sts = ownBGRToYCbCr420_8u_C3P2R( pSrc[0], pSrcStep[0]<<1, pDst, pDstFieldStep, roiFieldSize );
+    if( ippStsNoErr != sts ) return sts;
+    /* second field */
+    sts = ownBGRToYCbCr420_8u_C3P2R( pSrc[0]+pSrcStep[0], pSrcStep[0]<<1,
+                                     pDstSecondField, pDstFieldStep, roiFieldSize );
+  }
+
+  return sts;
+
+} // IppStatus cc_RGB3_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
+
+// internal feature
+IppStatus cc_NV12_to_YV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+                           mfxFrameData* outData, mfxFrameInfo* outInfo )
+{
+  IppStatus sts = ippStsNoErr;
+  IppiSize  roiSize = {0, 0};
+  mfxU16  cropX = 0, cropY = 0;
+
+  mfxU32  inOffset0 = 0, inOffset1  = 0;
+  mfxU32  outOffset0= 0, outOffset1 = 0;
+
+  VPP_GET_WIDTH(inInfo, roiSize.width);
+  VPP_GET_HEIGHT(inInfo, roiSize.height);
+
+  VPP_GET_CROPX(inInfo,  cropX);
+  VPP_GET_CROPY(inInfo,  cropY);
+  inOffset0  = cropX  + cropY*inData->Pitch;
+  inOffset1  = (cropX) + (cropY>>1)*(inData->Pitch);
+
+  VPP_GET_CROPX(outInfo, cropX);
+  VPP_GET_CROPY(outInfo, cropY);
+  outOffset0  = cropX        + cropY*outData->Pitch;
+  outOffset1  = (cropX >> 1) + (cropY >> 1)*(outData->Pitch >> 1);
+
+  const mfxU8* pSrc[2] = {(mfxU8*)inData->Y + inOffset0,
+                          (mfxU8*)inData->UV+ inOffset1};
+
+  mfxI32 pSrcStep[2] = {inData->Pitch,
+                        inData->Pitch >> 0};
+
+  mfxU8* pDst[3]   = {(mfxU8*)outData->Y + outOffset0,
+                      (mfxU8*)outData->U + outOffset1,
+                      (mfxU8*)outData->V + outOffset1};
+
+  mfxI32 pDstStep[3] = {outData->Pitch,
+                        outData->Pitch >> 1,
+                        outData->Pitch >> 1};
+
+  sts = ippiYCbCr420_8u_P2P3R(pSrc[0], pSrcStep[0],
+                              pSrc[1], pSrcStep[1],
+                              pDst,    pDstStep,
+                              roiSize);
+
+  return sts;
+
+} // IppStatus cc_NV12_to_YV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
+
+
+//-------------------------------------------------------------------------
+
+static
+IppStatus  ownBGRToYCbCr420_8u_AC4P3R( const Ipp8u* pSrc, int srcStep, Ipp8u* pDst[2],int dstStep[2], IppiSize roiSize )
+{
+  IppStatus sts = ippStsNoErr;
+  int h,w;
+  int dstStepY = dstStep[0];
+  int width2  = roiSize.width  & ~1;
+  int height2 = roiSize.height >> 1;
+  Ipp8u* pDstUV = pDst[1];
+
+  for( h = 0; h < height2; h++ ){
+    const Ipp8u* src;
+    Ipp8u* dsty,*dstu,*dstv;
+    src  = pSrc   + h * 2 * srcStep;
+    dsty = pDst[0]+ h * 2 * dstStepY;
+
+    dstu = pDstUV  + h * dstStep[1];
+    dstv = dstu + 1;
+
+    for( w = 0; w < width2; w += 2 ){
+      int g,g1,g2,g3;
+      int r,r1,r2,r3;
+      int b,b1,b2,b3;
+      b = src[0];g = src[1];r = src[2];
+      b1= src[4];g1= src[5];r1= src[6];
+      b2= src[0+srcStep];g2= src[1+srcStep];r2= src[2+srcStep];
+      b3= src[4+srcStep];g3= src[5+srcStep];r3= src[6+srcStep];
+      src += 8;
+      dsty[0] = ( Ipp8u )(( kry0 * r  + kry1 *  g + kry2 *  b + 0x108000) >> 16 );
+      dsty[1] = ( Ipp8u )(( kry0 * r1 + kry1 * g1 + kry2 * b1 + 0x108000) >> 16 );
+      dsty[0+dstStepY] = ( Ipp8u )(( kry0 * r2 + kry1 * g2 + kry2 * b2 + 0x108000) >> 16 );
+      dsty[1+dstStepY] = ( Ipp8u )(( kry0 * r3 + kry1 * g3 + kry2 * b3 + 0x108000) >> 16 );
+      dsty += 2;
+      r += r1;r += r2;r += r3;
+      b += b1;b += b2;b += b3;
+      g += g1;g += g2;g += g3;
+
+      *dstu = ( Ipp8u )((-kry3 * r - kry4 * g + kry5 * b + 0x2008000)>> 18 ); /* Cb */
+      *dstv = ( Ipp8u )(( kry5 * r - kry6 * g - kry7 * b + 0x2008000)>> 18 ); /* Cr */
+
+      dstu += 2;
+      dstv += 2;
+    }
+  }
+
+  return sts;
+
+} // IppStatus  ownBGRToYCbCr420_8u_AC4P3R( ... )
+
+IppStatus cc_RGB4_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+                          mfxFrameData* outData, mfxFrameInfo* outInfo, mfxU16 picStruct)
+{
+  IppStatus sts = ippStsNoErr;
+  IppiSize  roiSize = {0, 0};
+  mfxU16  cropX = 0, cropY = 0;
+
+  mfxU32  inOffset0 = 0;
+  mfxU32  outOffset0= 0, outOffset1 = 0;
+
+  VPP_GET_WIDTH(inInfo, roiSize.width);
+  VPP_GET_HEIGHT(inInfo, roiSize.height);
+
+  VPP_GET_CROPX(inInfo,  cropX);
+  VPP_GET_CROPY(inInfo,  cropY);
+  inOffset0  = cropX*4  + cropY*inData->Pitch;
+
+  VPP_GET_CROPX(outInfo, cropX);
+  VPP_GET_CROPY(outInfo, cropY);
+  outOffset0  = cropX        + cropY*outData->Pitch;
+  outOffset1  = (cropX) + (cropY>>1)*(outData->Pitch);
+
+  IPP_CHECK_NULL_PTR1(inData->R);
+  IPP_CHECK_NULL_PTR1(inData->G);
+  IPP_CHECK_NULL_PTR1(inData->B);
+  // alpha channel is ignore due to d3d issue
+
+  mfxU8* ptrStart = IPP_MIN( IPP_MIN(inData->R, inData->G), inData->B );
+
+  const mfxU8* pSrc[1] = {ptrStart + inOffset0};
+
+  mfxI32 pSrcStep[1] = {inData->Pitch >> 0};
+
+  mfxU8* pDst[2]   = {(mfxU8*)outData->Y + outOffset0, (mfxU8*)outData->UV + outOffset1};
+
+  mfxI32 pDstStep[2] = {outData->Pitch, outData->Pitch >> 0};
+
+  if( MFX_PICSTRUCT_PROGRESSIVE & picStruct )
+  {
+    sts = ownBGRToYCbCr420_8u_AC4P3R( pSrc[0], pSrcStep[0], pDst, pDstStep, roiSize );
+  }
+  else
+  {
+    mfxI32 pDstFieldStep[2] = {pDstStep[0]<<1, pDstStep[1]<<1};
+    IppiSize  roiFieldSize = {roiSize.width, roiSize.height >> 1};
+    mfxU8* pDstSecondField[2] = {pDst[0]+pDstStep[0], pDst[1]+pDstStep[1]};
+
+    /* first field */
+    sts = ownBGRToYCbCr420_8u_AC4P3R( pSrc[0], pSrcStep[0]<<1,
+                                      pDst, pDstFieldStep, roiFieldSize );
+
+    if( ippStsNoErr != sts ) return sts;
+    /* second field */
+    sts = ownBGRToYCbCr420_8u_AC4P3R( pSrc[0] + pSrcStep[0], pSrcStep[0]<<1,
+                                      pDstSecondField, pDstFieldStep, roiFieldSize );
+
+  }
+
+  return sts;
+
+} // IppStatus cc_RGB4_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo, ... )
+
+IppStatus cc_NV12_to_YUY2( mfxFrameData* inData,  mfxFrameInfo* inInfo,
+                          mfxFrameData* outData, mfxFrameInfo* outInfo )
+{
+    IppStatus sts = ippStsNoErr;
+    IppiSize  roiSize = {0, 0};
+    /*mfxU16    cropX = 0, cropY = 0;
+    mfxU32    inOffset0, inOffset1;
+    mfxU32    outOffset0;
+
+    VPP_GET_WIDTH(inInfo, roiSize.width);
+    VPP_GET_HEIGHT(inInfo, roiSize.height);
+
+    VPP_GET_CROPX(inInfo,  cropX);
+    VPP_GET_CROPY(inInfo,  cropY);
+
+    inOffset0  = cropX    + cropY*inData->Pitch;
+    inOffset1  = (cropX) + (cropY>>1)*(inData->Pitch);
+
+    VPP_GET_CROPX(outInfo,  cropX);
+    VPP_GET_CROPY(outInfo,  cropY);
+
+    outOffset0 =  cropX*2 + cropY*inData->Pitch;
+
+    mfxU8* pSrc[2]   = {(mfxU8*)inData->Y + inOffset0, (mfxU8*)inData->UV + inOffset1};
+
+    mfxI32 srcStep[2] = {inData->Pitch, inData->Pitch >> 0};
+
+    mfxU8* pDst = (mfxU8*)outData->Y + outOffset0;
+
+    mfxI32 dstStep = outData->Pitch;
+
+    sts = ippiYCbCr420ToYCbCr422_8u_P2C2R(pSrc[0], srcStep[0],
+                                          pSrc[1], srcStep[1],
+                                          pDst, dstStep,
+                                          roiSize);
+    return sts;*/
+
+    outInfo;
+
+    VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
+    VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
+
+    mfxU8* pSrc[2]   = {(mfxU8*)inData->Y, (mfxU8*)inData->UV};
+
+    mfxI32 srcStep[2] = {inData->Pitch, inData->Pitch >> 0};
+
+    mfxU8* pDst = (mfxU8*)outData->Y;
+
+    mfxI32 dstStep = outData->Pitch;
+
+    sts = ippiYCbCr420ToYCbCr422_8u_P2C2R(pSrc[0], srcStep[0],
+                                          pSrc[1], srcStep[1],
+                                          pDst, dstStep,
+                                          roiSize);
+    return sts;
+
+} // IppStatus cc_NV12_to_YUY2( mfxFrameData* inData,  mfxFrameInfo* inInfo, ... )
+
+
+//static void tst_ycbcr420_rgb_p2c4(
+//    Ipp8u* src, 
+//    int sStep, 
+//    Ipp8u* ref, 
+//    int rStep, 
+//    IppiSize size,
+//    Ipp8u aValue, 
+//    int typeRGB, 
+//    int typeCBCR)
+//{
+//    Ipp8u *redL1, *greenL1, *blueL1, *alphaL1, *redH1, *greenH1, *blueH1, *alphaH1;
+//    Ipp8u *redL2, *greenL2, *blueL2, *alphaL2, *redH2, *greenH2, *blueH2, *alphaH2;
+//    Ipp8u *srcYL1, *srcYH1, *srcYL2, *srcYH2, *srcCb, *srcCr, *srcCbCr;
+//    double rL1, gL1, bL1, rH1, gH1, bH1, rL2, gL2, bL2, rH2, gH2, bH2;
+//    double yL1, yH1, yL2, yH2, cb, cr;
+//    int i, j, s_y, s_cbcr, d, width, height;
+//
+//    width  = size.width >> 1;
+//    height = size.height >> 1;
+//
+//    srcCbCr = src;
+//    for(j = 0; j < height; j++) {
+//        srcYL1 = src;
+//        srcYH1 = src + 1;
+//        srcYL2 = src + sStep;
+//        srcYH2 = src + sStep + 1;
+//        if (typeCBCR == CBCR) {
+//            srcCb = srcCbCr + sStep * size.height;
+//            srcCr = srcCbCr + sStep * size.height + 1;
+//        }
+//        else {
+//            srcCb = srcCbCr + sStep * size.height + 1;
+//            srcCr = srcCbCr + sStep * size.height;
+//        }
+//        if(typeRGB == RGB) {
+//            redL1 = ref;
+//            blueL1 = ref + 2;
+//            redH1 = ref + 4;
+//            blueH1 = ref + 6;
+//            redL2 = ref + rStep;
+//            blueL2 = ref + rStep + 2;
+//            redH2 = ref + rStep + 4;
+//            blueH2 = ref + rStep + 6;
+//        } /* if */
+//        else {
+//            redL1 = ref + 2;
+//            blueL1 = ref;
+//            redH1 = ref + 6;
+//            blueH1 = ref + 4;
+//            redL2 = ref + rStep + 2;
+//            blueL2 = ref + rStep;
+//            redH2 = ref + rStep + 6;
+//            blueH2 = ref + rStep + 4;
+//        } /* else */
+//        greenL1 = ref + 1;
+//        alphaL1 = ref + 3;
+//        greenH1 = ref + 5;
+//        alphaH1 = ref + 7;
+//        greenL2 = ref + rStep + 1;
+//        alphaL2 = ref + rStep + 3;
+//        greenH2 = ref + rStep + 5;
+//        alphaH2 = ref + rStep + 7;
+//        for(i = s_y = s_cbcr = d = 0; i < width; i++, s_y += 2, s_cbcr += 2, d += 8) {
+//            yL1 = (double)srcYL1[s_y] - 16;
+//            yH1 = (double)srcYH1[s_y] - 16;
+//            yL2 = (double)srcYL2[s_y] - 16;
+//            yH2 = (double)srcYH2[s_y] - 16;
+//            cb = (double)srcCb[s_cbcr] - 128;
+//            cr = (double)srcCr[s_cbcr] - 128;
+//
+//            rL1 =  1.164 * yL1 + 1.596 * cr;
+//            gL1 =  1.164 * yL1 - 0.392 * cb - 0.813 * cr;
+//            bL1 =  1.164 * yL1 + 2.017 * cb;
+//            rH1 =  1.164 * yH1 + 1.596 * cr;
+//            gH1 =  1.164 * yH1 - 0.392 * cb - 0.813 * cr;
+//            bH1 =  1.164 * yH1 + 2.017 * cb;
+//
+//            redL1[d] = SAT8UNEAR(rL1, double);
+//            greenL1[d] = SAT8UNEAR(gL1, double);
+//            blueL1[d] = SAT8UNEAR(bL1, double);
+//            alphaL1[d] = aValue;
+//            redH1[d] = SAT8UNEAR(rH1, double);
+//            greenH1[d] = SAT8UNEAR(gH1, double);
+//            blueH1[d] = SAT8UNEAR(bH1, double);
+//            alphaH1[d] = aValue;
+//
+//            rL2 =  1.164 * yL2 + 1.596 * cr;
+//            gL2 =  1.164 * yL2 - 0.392 * cb - 0.813 * cr;
+//            bL2 =  1.164 * yL2 + 2.017 * cb;
+//            rH2 =  1.164 * yH2 + 1.596 * cr;
+//            gH2 =  1.164 * yH2 - 0.392 * cb - 0.813 * cr;
+//            bH2 =  1.164 * yH2 + 2.017 * cb;
+//
+//            redL2[d] = SAT8UNEAR(rL2, double);
+//            greenL2[d] = SAT8UNEAR(gL2, double);
+//            blueL2[d] = SAT8UNEAR(bL2, double);
+//            alphaL2[d] = aValue;
+//            redH2[d] = SAT8UNEAR(rH2, double);
+//            greenH2[d] = SAT8UNEAR(gH2, double);
+//            blueH2[d] = SAT8UNEAR(bH2, double);
+//            alphaH2[d] = aValue;
+//
+//        } /* for */
+//        src += (2 * sStep);
+//        srcCbCr += sStep;
+//        ref += (2 * rStep);
+//    } /* for */
+//
+//    return;
+//
+//} // void tst_ycbcr420_rgb_p2c4(...)
+
+
+IppStatus cc_NV12_to_RGB4( 
+    mfxFrameData* inData,  
+    mfxFrameInfo* inInfo,
+    mfxFrameData* outData, 
+    mfxFrameInfo* outInfo,
+    
+    mfxFrameData* yv12Data)
+{
+    IppStatus ippSts;
+
+    ippSts = cc_NV12_to_YV12(inData,  inInfo, yv12Data, inInfo );
+    if(ippStsNoErr != ippSts) return ippSts;
+
+    //const mfxU8* pSrc[3]    = {(mfxU8*)yv12Data->Y,     (mfxU8*)yv12Data->V, (mfxU8*)yv12Data->U};
+    const mfxU8* pSrc[3]    = {(mfxU8*)yv12Data->Y,     (mfxU8*)yv12Data->U, (mfxU8*)yv12Data->V};
+    mfxI32 srcStep[3] = {yv12Data->Pitch, yv12Data->Pitch >> 1, yv12Data->Pitch >> 1};
+
+    IPP_CHECK_NULL_PTR1(outData->R);
+    IPP_CHECK_NULL_PTR1(outData->G);
+    IPP_CHECK_NULL_PTR1(outData->B);
+    // alpha channel is ignore due to d3d issue
+
+    mfxU8*   ptrStart = IPP_MIN( IPP_MIN(outData->R, outData->G), outData->B );
+    IppiSize roiSize = {outInfo->Width, outInfo->Height};
+    const mfxU8  AVAL = 0;
+
+    //ippSts = ippiYCrCb420ToRGB_8u_P3C4R(pSrc, srcStep, ptrStart, outData->Pitch, roiSize, AVAL);
+    ippSts = ippiYCbCr420ToBGR_8u_P3C4R(pSrc, srcStep, ptrStart, outData->Pitch, roiSize, AVAL);
+
+    return ippSts;
+
+} // IppStatus cc_NV12_to_RGB4(...)
+
+#endif // MFX_ENABLE_VPP
+/* EOF */

@@ -1,0 +1,48 @@
+####################################################################################
+#
+# INTEL CORPORATION PROPRIETARY INFORMATION
+# This software is supplied under the terms of a license agreement or nondisclosure
+# agreement with Intel Corporation and may not be copied or disclosed except in
+# accordance with the terms of that agreement
+# Copyright(c) 2010-2012 Intel Corporation. All Rights Reserved.
+#
+####################################################################################
+
+# Importing MFX utilities module
+import mfx_utils
+
+# Importing variables
+Import('mfx_lib_env')
+
+# Creating build environment
+bld_env = mfx_lib_env.Clone()
+bld_env['MFX_CURDIR'] = '#_studio/mfx_lib/shared'
+bld_env['MFX_ACCEL'] = 'MFX_VA' # this will take effect only if 'hw' mode is being built
+
+# Setting list of additional include directories
+includes = ['#_studio/mfx_lib/encode_hw/h264/include',
+            '#_studio/shared/umc/codec/h264_enc/include',
+            '#_studio/shared/umc/codec/brc/include']
+bld_env.Append(CPPPATH = includes)
+
+# Setting lists of sources
+local = ['mfx_ddi_enc_dump.cpp',
+         'mfx_h264_enc_common_hw.cpp',
+         'mfx_h264_encode_vaapi.cpp',
+         'mfx_h264_encode_factory.cpp',
+         'mfx_mpeg2_enc_common_hw.cpp',
+         'mfx_mpeg2_encode_factory.cpp',
+        ]
+
+# Preparing sources for compilation
+sources = mfx_utils.prepare_sources(bld_env, local)
+  
+if bld_env['MFX_IMPL'] == 'hw':
+  # Compiling sources
+  objs = mfx_utils.build_sources(bld_env, sources)
+
+  # Building library
+  bld_env.StaticLibrary(target = mfx_utils.get_build_name(bld_env, 'mfx_common_hw'), source = objs)
+
+  # Returning list of object files to build merged library
+  Return('objs')

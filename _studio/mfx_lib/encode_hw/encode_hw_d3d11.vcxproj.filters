@@ -1,0 +1,137 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="h264\src\mfx_h264_encode_hw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="h264\src\mfx_h264_encode_hw_utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mjpeg\src\mfx_mjpeg_encode_d3d11.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mjpeg\src\mfx_mjpeg_encode_d3d9.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mjpeg\src\mfx_mjpeg_encode_factory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mjpeg\src\mfx_mjpeg_encode_hw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mjpeg\src\mfx_mjpeg_encode_hw_utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mpeg2\src\mfx_mpeg2_encode_debug_hw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mpeg2\src\mfx_mpeg2_encode_full_hw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mpeg2\src\mfx_mpeg2_encode_hw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mpeg2\src\mfx_mpeg2_encode_hybrid_hw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mpeg2\src\mfx_mpeg2_encode_utils_hw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mvc\src\mfx_mvc_encode_hw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="svc\src\mfx_svc_encode_hw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="svc\src\mfx_svc_encode_simulcast_over_avc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vp8\src\mfx_vp8_encode_ddi_hw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vp8\src\mfx_vp8_encode_hw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vp8\src\mfx_vp8_encode_hybrid_hw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vp8\src\mfx_vp8_encode_utils_hw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="h264\src\mfx_h264_encode_hw_utils_new.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="h264\src\mfx_h264_encode_cm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="h264\include\mfx_h264_encode_hw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="h264\include\mfx_h264_encode_hw_utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mjpeg\include\mfx_mjpeg_encode_d3d11.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mjpeg\include\mfx_mjpeg_encode_d3d9.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mjpeg\include\mfx_mjpeg_encode_hw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mjpeg\include\mfx_mjpeg_encode_hw_utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mjpeg\include\mfx_mjpeg_encode_interface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mpeg2\include\mfx_mpeg2_encode_debug_hw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mpeg2\include\mfx_mpeg2_encode_full_hw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mpeg2\include\mfx_mpeg2_encode_hw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mpeg2\include\mfx_mpeg2_encode_hybrid_hw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mpeg2\include\mfx_mpeg2_encode_utils_hw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="svc\include\mfx_svc_encode_simulcast_over_avc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vp8\include\mfx_vp8_encode_ddi_hw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vp8\include\mfx_vp8_encode_hw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vp8\include\mfx_vp8_encode_hybrid_hw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vp8\include\mfx_vp8_encode_utils_hw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="h264\include\mfx_h264_encode_cm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="h264\include\mfx_h264_encode_cm_defs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

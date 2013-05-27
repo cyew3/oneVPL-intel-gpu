@@ -1,0 +1,1 @@
+"%MEDIASDK_ROOT%\tools\win32\detours\bin\withdll.exe" /o:c:\dumpdir /d:..\..\build\win_Win32\dxva2_dump.dll /p:"%MEDIASDK_ROOT%\tools\win32\detours\bin\detoured.dll" "..\..\samples\_build\win32\release\sample_decode.exe" "%1" "%2" "%3" "%4" "%5" "%6" "%7" "%8" "%9"

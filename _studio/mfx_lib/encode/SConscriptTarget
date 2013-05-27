@@ -1,0 +1,46 @@
+####################################################################################
+#
+# INTEL CORPORATION PROPRIETARY INFORMATION
+# This software is supplied under the terms of a license agreement or nondisclosure
+# agreement with Intel Corporation and may not be copied or disclosed except in
+# accordance with the terms of that agreement
+# Copyright(c) 2010 Intel Corporation. All Rights Reserved.
+#
+####################################################################################
+
+# Importing MFX utilities module
+import mfx_utils
+
+# Importing variables
+Import('mfx_lib_env')
+
+# Creating build environment
+bld_env = mfx_lib_env.Clone()
+bld_env['MFX_CURDIR'] = '#_studio/mfx_lib/encode'
+
+# Setting list of additional include directories
+includes = ['#_studio/shared/umc/codec/mpeg2_enc/include',
+            '#_studio/shared/umc/codec/h264_enc/include',
+            '#_studio/shared/umc/codec/jpeg_enc/include',
+            '#_studio/shared/umc/codec/jpeg_common/include',
+            '#_studio/shared/umc/codec/brc/include',
+            '#_studio/shared/umc/codec/color_space_converter/include']
+bld_env.Append(CPPPATH = includes)
+
+# Setting sources tree
+dirs = ['mpeg2', 'h264', 'vc1', 'mjpeg']
+
+# Setting lists of sources
+local = mfx_utils.get_sources(dirs)
+
+# Preparing sources for compilation
+sources = mfx_utils.prepare_multiple_sources(bld_env, dirs, local)
+
+# Compiling sources
+objs = mfx_utils.build_sources(bld_env, sources)
+
+# Building library
+bld_env.StaticLibrary(target = mfx_utils.get_build_name(bld_env, 'encode'), source = objs)
+
+# Returning list of object files to build merged library
+Return('objs')

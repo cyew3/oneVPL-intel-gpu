@@ -1,0 +1,6 @@
+InputFile = \YUV\salesman_176x144_449.yuv
+Width = 176
+Height = 144
+FrameRate = 25
+NumberFrames = 449
+BitRate = 200000

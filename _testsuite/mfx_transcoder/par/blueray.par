@@ -1,0 +1,6 @@
+IdrInterval = 0
+EndOfSequence = on
+AUDelimiter = on
+EndOfStream = on
+PicTimingSEI = on
+VuiNalHrdParameters = on

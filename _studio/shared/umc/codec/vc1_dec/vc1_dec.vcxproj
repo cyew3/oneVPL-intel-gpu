@@ -1,0 +1,215 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="debug|Win32">
+      <Configuration>debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="debug|x64">
+      <Configuration>debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="release|Win32">
+      <Configuration>release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="release|x64">
+      <Configuration>release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{5537816B-58D7-4523-8D2C-B0FAC011A1C3}</ProjectGuid>
+    <RootNamespace>vc1_dec</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="..\..\..\..\mfx_lib\Intel.Mfx.Common.props" />
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\..\mfx_lib\Intel.Mfx.StaticLib.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\..\mfx_lib\Intel.Mfx.StaticLib.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\..\mfx_lib\Intel.Mfx.StaticLib.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\..\mfx_lib\Intel.Mfx.StaticLib.props" />
+  </ImportGroup>
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\include;..\..\..\..\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Lib />
+    <Bscmake>
+      <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
+    </Bscmake>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\include;..\..\..\..\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Lib />
+    <Bscmake>
+      <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
+    </Bscmake>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\include;..\..\..\..\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;VM_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Lib />
+    <Bscmake>
+      <OutputFile>$(TargetDir)/$(ProjectName)_d.bsc</OutputFile>
+    </Bscmake>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='debug|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\include;..\..\..\..\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;VM_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Lib />
+    <Bscmake>
+      <OutputFile>$(TargetDir)/$(ProjectName)_d.bsc</OutputFile>
+    </Bscmake>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\umc_vc1_choose_table.cpp" />
+    <ClCompile Include="src\umc_vc1_deblock.cpp" />
+    <ClCompile Include="src\umc_vc1_deblock_adv.cpp" />
+    <ClCompile Include="src\umc_vc1_deblock_com.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_bitplane.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_blk.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_blk_adv.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_blk_com.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_bpic.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_bpic_adv.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_cbp.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_debug.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_frame_descr.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_frame_va.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_intens_comp_tbl.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_ipic.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_ipic_adv.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_job.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_mb_bpic.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_mb_bpic_adv.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_mb_com.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_mb_interpolate.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_mb_interpolate_adv.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_mb_interpolate_com.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_mb_ipic.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_mb_ipic_adv.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_mb_ppic.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_mb_ppic_adv.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_mc.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_mv.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_mv_adv.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_mv_com.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_pic_com.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_pic_com_adv.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_ppic.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_ppic_adv.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_run_level_tbl.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_seq.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_skipping.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_task_store.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_thread.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_time_statistics.cpp" />
+    <ClCompile Include="src\umc_vc1_dec_vopdq.cpp" />
+    <ClCompile Include="src\umc_vc1_smoothing.cpp" />
+    <ClCompile Include="src\umc_vc1_smoothing_adv.cpp" />
+    <ClCompile Include="src\umc_vc1_video_decoder.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\umc_vc1_dec_debug.h" />
+    <ClInclude Include="include\umc_vc1_dec_exception.h" />
+    <ClInclude Include="include\umc_vc1_dec_frame_descr.h" />
+    <ClInclude Include="include\umc_vc1_dec_frame_descr_va.h" />
+    <ClInclude Include="include\umc_vc1_dec_intens_comp_tbl.h" />
+    <ClInclude Include="include\umc_vc1_dec_job.h" />
+    <ClInclude Include="include\umc_vc1_dec_run_level_tbl.h" />
+    <ClInclude Include="include\umc_vc1_dec_seq.h" />
+    <ClInclude Include="include\umc_vc1_dec_skipping.h" />
+    <ClInclude Include="include\umc_vc1_dec_task.h" />
+    <ClInclude Include="include\umc_vc1_dec_task_store.h" />
+    <ClInclude Include="include\umc_vc1_dec_thread.h" />
+    <ClInclude Include="include\umc_vc1_dec_time_statistics.h" />
+    <ClInclude Include="include\umc_vc1_dec_va.h" />
+    <ClInclude Include="include\umc_vc1_dec_va_defs.h" />
+    <ClInclude Include="include\umc_vc1_video_decoder.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\core\umc\base_classes.vcxproj">
+      <Project>{31991d83-f6a2-49d9-bdc5-64e85d055a1c}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\..\core\vm\vm.vcxproj">
+      <Project>{d41d3178-5c65-4868-bdb1-42c44643274e}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\..\core\vm_plus\vm_plus.vcxproj">
+      <Project>{04854e7f-2a17-4b40-a14f-4e1d9b1d4785}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\vc1_common\vc1_common.vcxproj">
+      <Project>{326e90fb-f844-4af1-8cdf-fdccecedeb22}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

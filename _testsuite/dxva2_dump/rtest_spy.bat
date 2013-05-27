@@ -1,0 +1,1 @@
+"%MEDIASDK_ROOT%\tools\win32\detours\bin\withdll.exe" /o:c:\dumpdir /d:..\..\build\win_Win32\dxva2_dump.dll /p:"%MEDIASDK_ROOT%\tools\win32\detours\bin\detoured.dll" "%MEDIASDK_ROOT%\tools\win32\rtest_vista_2005.exe" -file_reader "%1" -script %MEDIASDK_ROOT%\tools\win32\Cyberlink_h264_ts.ini 

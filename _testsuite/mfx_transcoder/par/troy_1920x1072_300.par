@@ -1,0 +1,6 @@
+InputFile = \YUV\troy_1920x1072_300.yuv
+Width = 1920
+Height = 1072
+FrameRate = 25
+NumberFrames = 15
+BitRate = 12000000

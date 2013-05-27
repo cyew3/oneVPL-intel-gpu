@@ -1,0 +1,58 @@
+####################################################################################
+#
+# INTEL CORPORATION PROPRIETARY INFORMATION
+# This software is supplied under the terms of a license agreement or nondisclosure
+# agreement with Intel Corporation and may not be copied or disclosed except in
+# accordance with the terms of that agreement
+# Copyright(c) 2010 Intel Corporation. All Rights Reserved.
+#
+####################################################################################
+
+# Importing python-wide modules
+import os
+
+# Importing MFX utilities module
+import mfx_utils
+
+# Importing variables
+Import('mfx_src_root')
+Import('mfx_bld_root')
+Import('mfx_root_env')
+
+# Setting build dir
+cur_dir = mfx_utils.get_related_path(mfx_src_root, '.')
+bld_dir = mfx_bld_root + os.sep + cur_dir
+
+# Setting subdirectories to march thru
+dirs = ['brc',
+        'bsd',
+        'dec',
+        'enc',
+        'encode',
+        'pak',
+        'scheduler']
+dirs_impl = ['decode',
+        'vpp',
+        'shared']
+hw_only_dirs = ['enc_hw',
+        'encode_hw']
+if mfx_root_env['MFX_IMPL'] == 'hw':
+    dirs_impl += hw_only_dirs
+
+# Marching thru subdirectories
+nodes = mfx_utils.run_subdirs(dirs, 'SConscript')
+#nodes_impl = mfx_utils.expand_double_lists(mfx_utils.run_subdirs(dirs_impl, 'SConscript'))
+nodes_impl = mfx_utils.run_subdirs(dirs_impl, 'SConscript')
+
+# Creating list of objects to build merged library
+mfx_lib_merged_objs = list()
+mfx_lib_merged_impl_objs = list()
+count = mfx_utils.exclude_empty_nodes(nodes, mfx_lib_merged_objs)
+count_impl = mfx_utils.exclude_empty_nodes(nodes_impl, mfx_lib_merged_impl_objs)
+if count != 0 or count_impl != 0:
+  print 'MFX BUILD NOTE: empty nodes count is %d. Check your build!' % (count + count_impl)
+
+# Building target(s)
+SConscript('SConscriptTarget_mfx_lib', variant_dir = bld_dir, duplicate = 0, exports = 'mfx_lib_merged_objs')
+SConscript('SConscriptTarget_mfx_lib_impl', variant_dir = bld_dir, duplicate = 0, exports = 'mfx_lib_merged_impl_objs')
+SConscript('SConscriptTarget', variant_dir = bld_dir, duplicate = 0)

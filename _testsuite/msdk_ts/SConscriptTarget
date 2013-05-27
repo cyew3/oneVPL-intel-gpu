@@ -1,0 +1,72 @@
+####################################################################################
+#
+# INTEL CORPORATION PROPRIETARY INFORMATION
+# This software is supplied under the terms of a license agreement or nondisclosure
+# agreement with Intel Corporation and may not be copied or disclosed except in
+# accordance with the terms of that agreement
+# Copyright(c) 2012 Intel Corporation. All Rights Reserved.
+#
+####################################################################################
+
+# Importing MFX utilities module
+import mfx_utils
+
+# Importing variables
+Import('mfx_tst_lib_env')
+Import('mfx_bld_root')
+
+# Creating build environment
+bld_env = mfx_tst_lib_env.Clone()
+bld_env['MFX_CURDIR'] = '#_testsuite/msdk_ts'
+
+MEDIASDK_ROOT = bld_env['MEDIASDK_ROOT']
+print MEDIASDK_ROOT
+# Setting list of additional include directories
+includes = [ '#_studio/shared/umc/codec/demuxer/include'
+            ,'#_testsuite/bs_parser/include'
+            ,'/usr/include/c++/4.6/bits' # symlink to 4.6.##
+            ,'#_testsuite/shared/include'
+            ]
+bld_env.Append(CPPPATH = includes)
+
+g_flags = Split('-fpermissive')
+bld_env.Append(CCFLAGS = g_flags)
+
+# Setting lists of sources
+local = [
+         'main.cpp',
+         'msdk_ts.cpp',
+         'stdafx.cpp',
+#         'test_allocator.cpp',
+         'test_blocks.cpp',
+         'test_tools.cpp',
+         'test_trace.cpp',
+         'test_verif.cpp'
+         ]
+
+# Preparing sources for compilation
+sources = mfx_utils.prepare_sources(bld_env, local)
+
+# Setting additional IPP libraries to link with
+libs_ipp = Split('ippvc_l ippi_l ipps_l ippcore_l ts_gcc345')
+bld_env.Append(LIBS = libs_ipp)
+#bld_env.Append(LIBPATH = '${MEDIASDK_ROOT}/tools/ts/lib/${ipp_platform}')
+
+libs = [ 'mfx'
+        ,'umc_core_merged'
+        ,'bs_parser'
+        ]
+bld_env.Prepend(LIBS = mfx_utils.prepare_libs(bld_env, libs))
+
+# Setting list of additional libraries to link with
+libs_path = ['_studio/shared/umc/core',
+             '_studio/mfx_dispatch',
+             '_testsuite/bs_parser'
+             ]
+bld_env.Append(LIBPATH = mfx_utils.attach_prefix(mfx_bld_root, libs_path))
+
+# Building application
+program = bld_env.Program(target = mfx_utils.get_build_name(bld_env, 'msdk_ts'), source = sources)
+
+# Installing application
+mfx_utils.install_if_exists(bld_env, program)

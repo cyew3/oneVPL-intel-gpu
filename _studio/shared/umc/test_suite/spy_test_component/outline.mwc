@@ -1,0 +1,17 @@
+
+workspace {
+  outline.mpc
+
+  some_scope_name {
+    cmdline += -static
+
+    ../../core/vm
+    ../../core/vm_plus
+    ../../core/umc
+
+    ../../codec/color_space_converter
+    ../outline_diff
+    $(MEDIASDK_ROOT)/_studio/mfx_lib/shared
+  }
+
+}

@@ -1,0 +1,42 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+
+File Name: .h
+
+\* ****************************************************************************** */
+
+#pragma once
+
+#include "mfx_ireflist_ctrl.h"
+#include "mfx_ivideo_encode.h"
+#include "mfx_extended_buffer.h"
+
+class RefListControlEncode 
+    : public InterfaceProxy<IVideoEncode>
+    , public IRefListControl
+{
+public:
+    RefListControlEncode (IVideoEncode * pTarget);
+
+    //IRefListControl
+    virtual mfxStatus SetCurrentRefList(mfxExtAVCRefListCtrl *pRefList);
+
+    //buffers attached to encode control structure
+    mfxStatus EncodeFrameAsync(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxSyncPoint *syncp) ;
+
+protected:
+    //updates frame orders based on current order
+    virtual void UpdateRefList(mfxExtAVCRefListCtrl * pCurrent);
+
+    bool m_bAttach;
+    mfxExtAVCRefListCtrl m_currentPattern;
+    mfxExtAVCRefListCtrl *m_pRefList;//pointer in actual buffer to reduce search overhead
+    mfxEncodeCtrl m_ctrl; // if no control attached
+    MFXExtBufferVector m_extParams;
+    mfxU32 m_nFramesEncoded;
+};

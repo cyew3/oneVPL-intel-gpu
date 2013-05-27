@@ -1,0 +1,52 @@
+####################################################################################
+#
+# INTEL CORPORATION PROPRIETARY INFORMATION
+# This software is supplied under the terms of a license agreement or nondisclosure
+# agreement with Intel Corporation and may not be copied or disclosed except in
+# accordance with the terms of that agreement
+# Copyright(c) 2010-2012 Intel Corporation. All Rights Reserved.
+#
+####################################################################################
+
+# Importing python-wide modules
+import os
+import sys
+
+# Setting additional search paths for MFX custom python scripts (modules)
+sys.path.append(os.path.abspath('..' + os.sep + 'scons' + os.sep + '_mfx'))
+
+# Importing MFX custom modules
+import mfx_init as mfx
+import mfx_utils
+import mfx_common
+import mfx_ipp
+
+# Importing variables
+Import('mfx_src_root')
+Import('mfx_root_env')
+
+# Setting some variables
+cur_dir = mfx_utils.get_related_path(mfx_src_root, '.')
+
+# Setting subdirectories to march thru
+dirs = ['shared',
+        'mfx_dispatch',
+        'mfx_lib'
+       ]
+
+# Creating environment to build projects in this directory
+mfx_env = mfx_root_env.Clone()
+
+if mfx_common.set_mfx_env_common(mfx_env) or mfx_ipp.set_mfx_env_ipp(mfx_env, ARGUMENTS):
+  print "MFX BUILD ERROR: can't build targets in directory %s!" % cur_dir
+else:
+  mfx_lib_env = mfx_env.Clone()
+  mfx.set_static_env(mfx_lib_env)
+  # Exporing variables
+  Export('mfx_env')
+  Export('mfx_lib_env')
+  # Marching thru subdirectories
+  Default('mfx_dispatch')
+  Default('mfx_lib')
+  mfx_utils.run_subdirs(dirs, 'SConscript')
+ 

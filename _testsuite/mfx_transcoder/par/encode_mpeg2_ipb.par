@@ -1,0 +1,5 @@
+CodecType = MPEG2
+GopPicSize = 15
+GopRefDist = 3
+RateControlMethod = 1
+TargetUsage = 1

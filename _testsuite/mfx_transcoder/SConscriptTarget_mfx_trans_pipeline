@@ -1,0 +1,53 @@
+####################################################################################
+#
+# INTEL CORPORATION PROPRIETARY INFORMATION
+# This software is supplied under the terms of a license agreement or nondisclosure
+# agreement with Intel Corporation and may not be copied or disclosed except in
+# accordance with the terms of that agreement
+# Copyright(c) 2010-2011 Intel Corporation. All Rights Reserved.
+#
+####################################################################################
+
+# Importing MFX utilities module
+import mfx_utils
+
+# Importing variables
+Import('mfx_tst_lib_env')
+
+# Creating build environment
+bld_env = mfx_tst_lib_env.Clone()
+bld_env['MFX_CURDIR'] = '#_testsuite/mfx_transcoder'
+
+# Setting list of additional include directories
+includes = ['#_testsuite/mfx_player/include',
+            '#_testsuite/shared/include',
+            '#samples/sample_common/include']
+bld_env.Append(CPPPATH = includes)
+
+# Setting lists of sources
+local = ['mfx_encode_decode_quality.cpp',
+		 'mfx_encode_pipeline_config.cpp',
+		 'mfx_encode_wrap.cpp',
+		 'mfx_factory_transcode.cpp',
+		 'mfx_frame_reorderer.cpp',
+		 'mfx_latency_encode.cpp',
+		 'mfx_pipeline_transcode.cpp',
+		 'mfx_ref_list_control_encode.cpp']
+
+# Preparing sources for compilation
+sources = mfx_utils.prepare_sources(bld_env, local)
+
+# Optional packages to compile and link with
+if bld_env['MFX_PLATFORM'] == 'lin':
+  packages = ['x11', 'libva-x11']
+  mfx_utils.check_and_set_packages(bld_env, packages)
+
+# Building library
+bld_env.StaticLibrary(target = mfx_utils.get_build_name(bld_env, 'mfx_trans_pipeline'), source = sources)
+
+bld_env_lucas = bld_env.Clone()
+bld_env_lucas.Append(CPPDEFINES='LUCAS_DLL')
+bld_env_lucas['MFX_OBJS_DIR'] = 'objs_lucas'
+sources_lucas = mfx_utils.prepare_sources(bld_env_lucas, local)
+bld_env.StaticLibrary(target = mfx_utils.get_build_name(bld_env, 'mfx_trans_pipeline_lucas'), source = sources_lucas)
+

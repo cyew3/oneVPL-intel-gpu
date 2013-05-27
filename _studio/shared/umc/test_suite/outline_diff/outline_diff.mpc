@@ -1,0 +1,11 @@
+
+project : umc_codec {
+  lit_libs     += ippcorel ippccemerged ippccmerged ippdcemerged ippdcmerged ippiemerged ippimerged ippsemerged ippsmerged ippvcemerged ippvcmerged
+  includes     += $(MEDIASDK_ROOT)/include $(MEDIASDK_ROOT)/ipp/windows/ia32/include ../../codec/color_space_converter/include xerces/include $(MEDIASDK_ROOT)/_studio/mfx_lib/shared/include $(MEDIASDK_ROOT)/_studio/shared/include ../spy_test_component/include
+  after        += base_classes h264_dec vm vm_plus color_space_converter mfx_common
+  libs         += 
+  libpaths     += $(MEDIASDK_ROOT)/ipp/windows/ia32/lib xerces/lib
+
+  staticname =
+  exename = *
+}

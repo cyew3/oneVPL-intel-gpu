@@ -1,0 +1,80 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{e0975b1a-c969-4882-bcc1-b5f3da60d90f}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{8de773a3-a25d-4c72-b688-fac4e7cd58d5}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="encode">
+      <UniqueIdentifier>{e1587d22-fe19-413f-9238-3d03e0e25a12}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\mfx_encode_decode_quality.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_encode_pipeline_config.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_factory_transcode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_frame_reorderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_pipeline_transcode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_encode_wrap.cpp">
+      <Filter>encode</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_latency_encode.cpp">
+      <Filter>encode</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_ref_list_control_encode.cpp">
+      <Filter>encode</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\mfx_encode_decode_quality.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_encode_pipeline_config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_factory_transcode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_frame_reorderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_pipeline_transcode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_encodeorder_encode.h">
+      <Filter>encode</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_encoder_wrap.h">
+      <Filter>encode</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_field_output_encode.h">
+      <Filter>encode</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_ip_field_pair_disable_encoder.h">
+      <Filter>encode</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_jpeg_encode_wrap.h">
+      <Filter>encode</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_latency_encode.h">
+      <Filter>encode</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_ref_list_control_encode.h">
+      <Filter>encode</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

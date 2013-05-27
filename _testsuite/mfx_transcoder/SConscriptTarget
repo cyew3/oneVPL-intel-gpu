@@ -1,0 +1,93 @@
+####################################################################################
+#
+# INTEL CORPORATION PROPRIETARY INFORMATION
+# This software is supplied under the terms of a license agreement or nondisclosure
+# agreement with Intel Corporation and may not be copied or disclosed except in
+# accordance with the terms of that agreement
+# Copyright(c) 2010-2011 Intel Corporation. All Rights Reserved.
+#
+####################################################################################
+
+# Importing python-wide modules
+import os
+
+# Importing MFX utilities module
+import mfx_init as mfx
+import mfx_utils
+
+# Importing variables
+Import('mfx_src_root')
+Import('mfx_tst_lib_env')
+Import('mfx_bld_root')
+Import('mfx_samples_bld_root')
+Import('lucas_impl')
+
+# Creating build environment
+bld_env = mfx_tst_lib_env.Clone()
+bld_env['MFX_CURDIR'] = '#_testsuite/mfx_transcoder'
+
+if lucas_impl == 'true':
+  bld_env.Append(CPPDEFINES='LUCAS_DLL')
+  bld_env['MFX_OBJS_DIR'] = 'objs_lucas'
+  ending = '_lucas'
+else:
+  ending = ''
+
+# Setting list of additional include directories
+includes = ['#_testsuite/mfx_player/include',
+            '#_testsuite/shared/include',
+            '#samples/sample_common/include']
+bld_env.Append(CPPPATH = includes)
+
+# Setting additional IPP libraries to link with
+libs_ipp = Split('ippvc_l ippcc_l ippdc_l ippi_l ipps_l ippcore_l')
+bld_env.Prepend(LIBS = libs_ipp)
+
+vtune_path = os.getenv("MFX_VTUNE_PATH")
+if None != vtune_path:
+  mfx_utils.set_itt_env(bld_env, vtune_path)
+
+# Setting list of additional libraries to link with
+libs = ['mfx', 'mfx_trans_pipeline' + ending, 'mfx_pipeline' + ending, 
+        'shared_utils' + ending, 'sample_common', 'dispatch_trace',
+        'umc_codecs_merged', 
+        'umc_io_merged_${MFX_IMPL}',
+        'umc_core_merged']
+
+libs_path = ['_testsuite/dxva2_dump',
+             '_testsuite/shared',
+             '_testsuite/mfx_player',
+             '_testsuite/mfx_transcoder']
+libs_samples_path = ['sample_common']
+
+# Platform specific libs
+if bld_env['MFX_PLATFORM'] == 'win':
+  libs.append('dxva2_dump')
+
+bld_env.Prepend(LIBS = mfx_utils.prepare_libs(bld_env, libs))
+bld_env.Append(LIBPATH = mfx_utils.attach_prefix(mfx_bld_root, libs_path))
+bld_env.Append(LIBPATH = mfx_utils.attach_prefix(mfx_samples_bld_root, libs_samples_path))
+
+
+# Optional packages to compile and link with
+if bld_env['MFX_PLATFORM'] == 'lin':
+  packages = ['x11', 'libva-x11']
+  mfx_utils.check_and_set_packages(bld_env, packages)
+
+# Setting lists of sources
+local = ['mfx_transcoder.cpp']
+
+# Preparing sources for compilation
+sources = mfx_utils.prepare_sources(bld_env, local)
+  
+# Building application
+if lucas_impl == 'false':
+  program = bld_env.Program(target = mfx_utils.get_build_name(bld_env, 'mfx_transcoder'), source = sources)
+# Installing application
+  mfx_utils.install_if_exists(bld_env, program)
+
+# Building shared library for Lucas
+if lucas_impl == 'true':
+  library = bld_env.SharedLibrary(target = mfx_utils.get_build_name(bld_env, 'mfx_transcoder'), source = sources)
+# Installing shared library
+  mfx_utils.install_if_exists(bld_env, library)

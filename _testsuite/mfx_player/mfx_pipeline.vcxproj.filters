@@ -1,0 +1,653 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{16d196f7-3456-4f2c-813e-7cf57148394b}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{975c2ea0-d7c2-40b2-897a-d27ec7e9d910}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="mfx_headers">
+      <UniqueIdentifier>{2539ca5b-4e0a-4c68-a8f2-31e073c79899}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="interface">
+      <UniqueIdentifier>{bb82dde5-7f94-4b4c-a559-1d11ded99e62}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="renders">
+      <UniqueIdentifier>{673069e5-2ed0-4c16-b0f5-4e068c9c6c79}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="decoders">
+      <UniqueIdentifier>{d6ce2ce5-ad73-4ca4-abe3-a2f4b93f58fd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="readers">
+      <UniqueIdentifier>{d9a9933e-6ac8-4183-ad2a-444d9e153d97}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="commands">
+      <UniqueIdentifier>{976a2aaf-b263-4bd6-a906-637a18e99504}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="serial">
+      <UniqueIdentifier>{447205ec-b572-478e-b9f3-71ee33b173cd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="writers">
+      <UniqueIdentifier>{e69e5c16-6f35-421a-8bff-9c59d788f292}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="metrics_calc">
+      <UniqueIdentifier>{e91afa2d-2560-4554-b0b1-f87944f8b6fe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="allocators">
+      <UniqueIdentifier>{dcb691f6-20b2-4258-af9b-f9e87197595e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\mfx_bitstream_buffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_component_params.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_decode_pipeline_config.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_default_pipeline_mgr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_extended_buffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_factory_default.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_frame_constructor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_loop_decoder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_pipeline_dec.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_pipeline_utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_timeout.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\trace_utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_burst_render.cpp">
+      <Filter>renders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_d3d11_device.cpp">
+      <Filter>renders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_d3d9_device.cpp">
+      <Filter>renders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_fps_limit_render.cpp">
+      <Filter>renders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_multi_render.cpp">
+      <Filter>renders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_outline_render.cpp">
+      <Filter>renders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_renders.cpp">
+      <Filter>renders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_reorder_render.cpp">
+      <Filter>renders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_screen_render.cpp">
+      <Filter>renders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_vaapi_device.cpp">
+      <Filter>renders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_vaapi_device_android.cpp">
+      <Filter>renders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_view_ordered_render.cpp">
+      <Filter>renders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\video_window.cpp">
+      <Filter>renders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_advance_decoder.cpp">
+      <Filter>decoders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_bitstream_decoder.cpp">
+      <Filter>decoders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_latency_decoder.cpp">
+      <Filter>decoders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_mvc_decoder.cpp">
+      <Filter>decoders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_mvc_target_views_decoder.cpp">
+      <Filter>decoders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_yuv_decoder.cpp">
+      <Filter>decoders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_bitrate_limited_reader.cpp">
+      <Filter>readers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_buffered_bs_reader.cpp">
+      <Filter>readers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_directory_reader.cpp">
+      <Filter>readers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_spl_wrapper.cpp">
+      <Filter>readers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\umc_corruption_reader.cpp">
+      <Filter>readers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_commands.cpp">
+      <Filter>commands</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_commands_initializer.cpp">
+      <Filter>commands</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_pts_based_activator.cpp">
+      <Filter>commands</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_cmd_option_processor.cpp">
+      <Filter>serial</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_serializer.cpp">
+      <Filter>serial</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\metrics_calc_lite\metrics_calc_lite.cpp">
+      <Filter>metrics_calc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_metric_calc.cpp">
+      <Filter>metrics_calc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_base_allocator.cpp">
+      <Filter>allocators</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_d3d_allocator.cpp">
+      <Filter>allocators</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_d3d11_allocator.cpp">
+      <Filter>allocators</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vaapi_allocator.cpp">
+      <Filter>allocators</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vaapi_utils.cpp">
+      <Filter>allocators</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vaapi_utils_android.cpp">
+      <Filter>allocators</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vaapi_utils_x11.cpp">
+      <Filter>allocators</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_sysmem_allocator.cpp">
+      <Filter>allocators</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\hash_array.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_adapters.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_allocators_generic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_binder_call.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_bitsream_buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_bitstream2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_bitstream_converters.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_component_params.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_conditional_linking.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_decode_pipeline_config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_default_pipeline_mgr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_directory_reader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_encode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_extended_buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_extended_buffer_id.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_factory_chain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_factory_default.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_file_generic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_frame_allocator_rw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_frame_constructor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_frames_drop.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_lexical_cast.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_message_notifier.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_mvc_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_perfcounter_time.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_pipeline_config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_pipeline_dec.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_pipeline_defs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_pipeline_features.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_pipeline_manager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_pipeline_sync.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_pipeline_types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_pipeline_utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_shared_ptr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_singleton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_state_generic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_surfaces_pool.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_svc_vpp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_timeout.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_unified_execute_proxy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_utility_allocators.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_video_session.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_virtualvpp_adapter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_vpp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_vpp_hw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\trace_utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\mfxdefs.h">
+      <Filter>mfx_headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\mfxjpeg.h">
+      <Filter>mfx_headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\mfxmvc.h">
+      <Filter>mfx_headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\mfxpcp.h">
+      <Filter>mfx_headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\mfxplugin++.h">
+      <Filter>mfx_headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\mfxplugin.h">
+      <Filter>mfx_headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\mfxstructures.h">
+      <Filter>mfx_headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\mfxsvc.h">
+      <Filter>mfx_headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\mfxvideo++.h">
+      <Filter>mfx_headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\mfxvideo.h">
+      <Filter>mfx_headers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_iadapter.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_iallocator_factory.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_ibitstream_converter.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_ibitstream_reader.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_ibitstream_writer.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_iclonebale.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_icommand.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_icommand_visitor.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_ifactory.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_ifile.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_ihw_device.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_imultiple.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_ipipeline.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_ipipeline_config.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_ipipeline_control.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_ipipeline_sync.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_iprocess_command.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_iproxy.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_irandom.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_ireflist_ctrl.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_istate.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_istring_printer.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_isurface_cmp.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_itime.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_ivideo_encode.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_ivideo_render.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_ivideo_session.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_ivpp.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_iyuv_source.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_burst_render.h">
+      <Filter>renders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_d3d11_device.h">
+      <Filter>renders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_d3d9_device.h">
+      <Filter>renders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_dxgidebug_device.h">
+      <Filter>renders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_fps_limit_render.h">
+      <Filter>renders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_multi_render.h">
+      <Filter>renders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_null_render.h">
+      <Filter>renders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_outline_render.h">
+      <Filter>renders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_renders.h">
+      <Filter>renders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_reorder_render.h">
+      <Filter>renders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_rnd_wrapper.h">
+      <Filter>renders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_screen_render.h">
+      <Filter>renders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_separate_files_render.h">
+      <Filter>renders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_vaapi_device.h">
+      <Filter>renders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_vaapi_device_android.h">
+      <Filter>renders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_view_ordered_render.h">
+      <Filter>renders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\video_window.h">
+      <Filter>renders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\xvideo_window.h">
+      <Filter>renders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_advance_decoder.h">
+      <Filter>decoders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_bitstream_decoder.h">
+      <Filter>decoders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_decoder.h">
+      <Filter>decoders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_jpeg_bs_parser_decoder.h">
+      <Filter>decoders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_latency_decoder.h">
+      <Filter>decoders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_loop_decoder.h">
+      <Filter>decoders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_multi_decoder.h">
+      <Filter>decoders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_mvc_decoder.h">
+      <Filter>decoders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_mvc_target_views_decoder.h">
+      <Filter>decoders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_printinfo_decoder.h">
+      <Filter>decoders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_rotated_decoder.h">
+      <Filter>decoders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_skip_mode_decoder.h">
+      <Filter>decoders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_svc_target_layer_decoder.h">
+      <Filter>decoders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_yuv_decoder.h">
+      <Filter>decoders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_bitrate_limited_reader.h">
+      <Filter>readers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_bitstream_reader.h">
+      <Filter>readers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_buffered_bs_reader.h">
+      <Filter>readers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_exact_frame_bs_reader.h">
+      <Filter>readers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_lucas_reader.h">
+      <Filter>readers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mfx_lucas_yuv_reader.h">
+      <Filter>readers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_multi_reader.h">
+      <Filter>readers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_spl_wrapper.h">
+      <Filter>readers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_verbose_spl.h">
+      <Filter>readers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\umc_corruption_reader.h">
+      <Filter>readers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\umc_ivf_splitter.h">
+      <Filter>readers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_activator_base.h">
+      <Filter>commands</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_commands.h">
+      <Filter>commands</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_commands_initializer.h">
+      <Filter>commands</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_frame_based_activator.h">
+      <Filter>commands</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_pts_based_activator.h">
+      <Filter>commands</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_cmd_option_processor.h">
+      <Filter>serial</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_opt_param_type.h">
+      <Filter>serial</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_serial_collection.h">
+      <Filter>serial</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_serial_core.h">
+      <Filter>serial</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_serial_formater.h">
+      <Filter>serial</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_serializer.h">
+      <Filter>serial</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_svc_serial.h">
+      <Filter>serial</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_crc_writer.h">
+      <Filter>writers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_null_file_writer.h">
+      <Filter>writers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_separate_file.h">
+      <Filter>writers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_metric_calc.h">
+      <Filter>metrics_calc</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_msu_adapter.h">
+      <Filter>metrics_calc</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_base_allocator.h">
+      <Filter>allocators</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_d3d_allocator.h">
+      <Filter>allocators</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_d3d11_allocator.h">
+      <Filter>allocators</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_sysmem_allocator.h">
+      <Filter>allocators</Filter>
+    </ClInclude>
+    <ClInclude Include="include\vaapi_allocator.h">
+      <Filter>allocators</Filter>
+    </ClInclude>
+    <ClInclude Include="include\vaapi_utils.h">
+      <Filter>allocators</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

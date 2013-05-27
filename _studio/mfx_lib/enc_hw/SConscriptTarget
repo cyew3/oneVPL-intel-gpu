@@ -1,0 +1,40 @@
+####################################################################################
+#
+# INTEL CORPORATION PROPRIETARY INFORMATION
+# This software is supplied under the terms of a license agreement or nondisclosure
+# agreement with Intel Corporation and may not be copied or disclosed except in
+# accordance with the terms of that agreement
+# Copyright(c) 2010 Intel Corporation. All Rights Reserved.
+#
+####################################################################################
+
+# Importing MFX utilities module
+import mfx_utils
+
+# Importing variables
+Import('mfx_lib_env')
+
+# Creating build environment
+bld_env = mfx_lib_env.Clone()
+bld_env['MFX_CURDIR'] = '#_studio/mfx_lib/enc_hw'
+bld_env['MFX_ACCEL'] = 'MFX_VA' # this will take effect only if 'hw' mode is being built
+
+# Setting sources tree
+dirs = ['mpeg2', 'h264']
+
+# Setting lists of sources
+local = mfx_utils.get_sources(dirs)
+
+# Preparing sources for compilation
+sources = mfx_utils.prepare_multiple_sources(bld_env, dirs, local)
+  
+# Compiling library
+if bld_env['MFX_IMPL'] == 'hw':
+  # Compiling sources
+  objs = mfx_utils.build_sources(bld_env, sources)
+
+  # Building library
+  bld_env.StaticLibrary(target = mfx_utils.get_build_name(bld_env, 'enc_hw'), source = objs)
+
+  # Returning list of object files to build merged library
+  Return('objs')

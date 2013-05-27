@@ -1,0 +1,102 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_usage_models", "test_usage_models.vcxproj", "{0E1EA203-6C3D-40F0-943E-4E2CC13FD96F}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_common", "..\..\samples\sample_common\sample_common.vcxproj", "{DB71B91D-16D8-4339-9621-D81798E46E8F}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfx", "..\..\opensource\mfx_dispatch\libmfx.vcxproj", "{9E7B3527-11AA-46BA-A82F-C58761F9B56F}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vm", "..\..\_studio\shared\umc\core\vm\vm.vcxproj", "{D41D3178-5C65-4868-BDB1-42C44643274E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shared_utils", "..\shared\shared_utils.vcxproj", "{0D02568B-3117-47C3-AC2E-D83781259C1D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug (Lucasz DLL)|Win32 = Debug (Lucasz DLL)|Win32
+		Debug (Lucasz DLL)|x64 = Debug (Lucasz DLL)|x64
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		Release (Lucas DLL)|Win32 = Release (Lucas DLL)|Win32
+		Release (Lucas DLL)|x64 = Release (Lucas DLL)|x64
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0E1EA203-6C3D-40F0-943E-4E2CC13FD96F}.Debug (Lucasz DLL)|Win32.ActiveCfg = Debug|x64
+		{0E1EA203-6C3D-40F0-943E-4E2CC13FD96F}.Debug (Lucasz DLL)|x64.ActiveCfg = Debug|x64
+		{0E1EA203-6C3D-40F0-943E-4E2CC13FD96F}.Debug (Lucasz DLL)|x64.Build.0 = Debug|x64
+		{0E1EA203-6C3D-40F0-943E-4E2CC13FD96F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0E1EA203-6C3D-40F0-943E-4E2CC13FD96F}.Debug|Win32.Build.0 = Debug|Win32
+		{0E1EA203-6C3D-40F0-943E-4E2CC13FD96F}.Debug|x64.ActiveCfg = Debug|x64
+		{0E1EA203-6C3D-40F0-943E-4E2CC13FD96F}.Debug|x64.Build.0 = Debug|x64
+		{0E1EA203-6C3D-40F0-943E-4E2CC13FD96F}.Release (Lucas DLL)|Win32.ActiveCfg = Release|x64
+		{0E1EA203-6C3D-40F0-943E-4E2CC13FD96F}.Release (Lucas DLL)|x64.ActiveCfg = Release|x64
+		{0E1EA203-6C3D-40F0-943E-4E2CC13FD96F}.Release (Lucas DLL)|x64.Build.0 = Release|x64
+		{0E1EA203-6C3D-40F0-943E-4E2CC13FD96F}.Release|Win32.ActiveCfg = Release|Win32
+		{0E1EA203-6C3D-40F0-943E-4E2CC13FD96F}.Release|Win32.Build.0 = Release|Win32
+		{0E1EA203-6C3D-40F0-943E-4E2CC13FD96F}.Release|x64.ActiveCfg = Release|x64
+		{0E1EA203-6C3D-40F0-943E-4E2CC13FD96F}.Release|x64.Build.0 = Release|x64
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug (Lucasz DLL)|Win32.ActiveCfg = Debug|x64
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug (Lucasz DLL)|x64.ActiveCfg = Debug|x64
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug (Lucasz DLL)|x64.Build.0 = Debug|x64
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug|Win32.Build.0 = Debug|Win32
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug|x64.ActiveCfg = Debug|x64
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug|x64.Build.0 = Debug|x64
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release (Lucas DLL)|Win32.ActiveCfg = Release|x64
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release (Lucas DLL)|x64.ActiveCfg = Release|x64
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release (Lucas DLL)|x64.Build.0 = Release|x64
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release|Win32.ActiveCfg = Release|Win32
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release|Win32.Build.0 = Release|Win32
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release|x64.ActiveCfg = Release|x64
+		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release|x64.Build.0 = Release|x64
+		{9E7B3527-11AA-46BA-A82F-C58761F9B56F}.Debug (Lucasz DLL)|Win32.ActiveCfg = Debug|x64
+		{9E7B3527-11AA-46BA-A82F-C58761F9B56F}.Debug (Lucasz DLL)|x64.ActiveCfg = Debug|x64
+		{9E7B3527-11AA-46BA-A82F-C58761F9B56F}.Debug (Lucasz DLL)|x64.Build.0 = Debug|x64
+		{9E7B3527-11AA-46BA-A82F-C58761F9B56F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{9E7B3527-11AA-46BA-A82F-C58761F9B56F}.Debug|Win32.Build.0 = Debug|Win32
+		{9E7B3527-11AA-46BA-A82F-C58761F9B56F}.Debug|x64.ActiveCfg = Debug|x64
+		{9E7B3527-11AA-46BA-A82F-C58761F9B56F}.Debug|x64.Build.0 = Debug|x64
+		{9E7B3527-11AA-46BA-A82F-C58761F9B56F}.Release (Lucas DLL)|Win32.ActiveCfg = Release|x64
+		{9E7B3527-11AA-46BA-A82F-C58761F9B56F}.Release (Lucas DLL)|x64.ActiveCfg = Release|x64
+		{9E7B3527-11AA-46BA-A82F-C58761F9B56F}.Release (Lucas DLL)|x64.Build.0 = Release|x64
+		{9E7B3527-11AA-46BA-A82F-C58761F9B56F}.Release|Win32.ActiveCfg = Release|Win32
+		{9E7B3527-11AA-46BA-A82F-C58761F9B56F}.Release|Win32.Build.0 = Release|Win32
+		{9E7B3527-11AA-46BA-A82F-C58761F9B56F}.Release|x64.ActiveCfg = Release|x64
+		{9E7B3527-11AA-46BA-A82F-C58761F9B56F}.Release|x64.Build.0 = Release|x64
+		{D41D3178-5C65-4868-BDB1-42C44643274E}.Debug (Lucasz DLL)|Win32.ActiveCfg = debug|x64
+		{D41D3178-5C65-4868-BDB1-42C44643274E}.Debug (Lucasz DLL)|x64.ActiveCfg = debug|x64
+		{D41D3178-5C65-4868-BDB1-42C44643274E}.Debug (Lucasz DLL)|x64.Build.0 = debug|x64
+		{D41D3178-5C65-4868-BDB1-42C44643274E}.Debug|Win32.ActiveCfg = debug|Win32
+		{D41D3178-5C65-4868-BDB1-42C44643274E}.Debug|Win32.Build.0 = debug|Win32
+		{D41D3178-5C65-4868-BDB1-42C44643274E}.Debug|x64.ActiveCfg = debug|x64
+		{D41D3178-5C65-4868-BDB1-42C44643274E}.Debug|x64.Build.0 = debug|x64
+		{D41D3178-5C65-4868-BDB1-42C44643274E}.Release (Lucas DLL)|Win32.ActiveCfg = release|x64
+		{D41D3178-5C65-4868-BDB1-42C44643274E}.Release (Lucas DLL)|x64.ActiveCfg = release|x64
+		{D41D3178-5C65-4868-BDB1-42C44643274E}.Release (Lucas DLL)|x64.Build.0 = release|x64
+		{D41D3178-5C65-4868-BDB1-42C44643274E}.Release|Win32.ActiveCfg = release|Win32
+		{D41D3178-5C65-4868-BDB1-42C44643274E}.Release|Win32.Build.0 = release|Win32
+		{D41D3178-5C65-4868-BDB1-42C44643274E}.Release|x64.ActiveCfg = release|x64
+		{D41D3178-5C65-4868-BDB1-42C44643274E}.Release|x64.Build.0 = release|x64
+		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Debug (Lucasz DLL)|Win32.ActiveCfg = Debug (Lucasz DLL)|Win32
+		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Debug (Lucasz DLL)|Win32.Build.0 = Debug (Lucasz DLL)|Win32
+		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Debug (Lucasz DLL)|x64.ActiveCfg = Debug (Lucasz DLL)|x64
+		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Debug (Lucasz DLL)|x64.Build.0 = Debug (Lucasz DLL)|x64
+		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Debug|Win32.Build.0 = Debug|Win32
+		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Debug|x64.ActiveCfg = Debug|x64
+		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Debug|x64.Build.0 = Debug|x64
+		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Release (Lucas DLL)|Win32.ActiveCfg = Release (Lucas DLL)|Win32
+		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Release (Lucas DLL)|Win32.Build.0 = Release (Lucas DLL)|Win32
+		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Release (Lucas DLL)|x64.ActiveCfg = Release (Lucas DLL)|x64
+		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Release (Lucas DLL)|x64.Build.0 = Release (Lucas DLL)|x64
+		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Release|Win32.ActiveCfg = Release|Win32
+		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Release|Win32.Build.0 = Release|Win32
+		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Release|x64.ActiveCfg = Release|x64
+		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

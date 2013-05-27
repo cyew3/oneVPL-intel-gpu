@@ -1,0 +1,1021 @@
+/* /////////////////////////////////////////////////////////////////////////////
+//
+//                  INTEL CORPORATION PROPRIETARY INFORMATION
+//     This software is supplied under the terms of a license agreement or
+//     nondisclosure agreement with Intel Corporation and may not be copied
+//     or disclosed except in accordance with the terms of that agreement.
+//          Copyright(c) 2010 - 2013 Intel Corporation. All Rights Reserved.
+//
+//
+//          SW Video Pre\Post Processing: internal implementation
+//
+*/
+
+#include "math.h"
+#include "mfx_common.h"
+
+#if defined (MFX_ENABLE_VPP)
+#include "mfx_enc_common.h"
+#include "mfx_session.h"
+
+#include "mfx_vpp_hw.h"
+
+#if defined (MFX_VA)
+#include "mfxpcp.h"
+#endif
+
+//#include "mfx_vpp_main.h"
+#include "mfx_vpp_sw.h"
+#include "mfx_vpp_utils.h"
+#include "mfx_vpp_service.h"
+
+// internal filters
+#include "mfx_denoise_vpp.h"
+#include "mfx_color_space_conversion_vpp.h"
+#include "mfx_resize_vpp.h"
+#include "mfx_range_map_vc1_vpp.h"
+#include "mfx_deinterlace_vpp.h"
+#include "mfx_video_analysis_vpp.h"
+#include "mfx_frame_rate_conversion_vpp.h"
+#include "mfx_procamp_vpp.h"
+#include "mfx_detail_enhancement_vpp.h"
+#include "mfx_gamut_compression_vpp.h"
+#include "mfx_image_stabilization_vpp.h"
+
+/* IPP */
+#include "ipps.h"
+#include "ippi.h"
+#include "ippcc.h"
+
+
+#define VPP_INIT_FILTER( filterIndex, ConstructorVPP )  \
+{                                                       \
+  if ( !m_ppFilters[filterIndex] )                        \
+  {                                                     \
+    m_ppFilters[filterIndex] = new ConstructorVPP(m_core,&sts);   \
+                                                                \
+    sts = m_ppFilters[filterIndex]->Init( &(inFrameInfo), &(outFrameInfo) );\
+    MFX_CHECK_STS( sts );                                                 \
+  }                                                                       \
+}
+
+/* ******************************************************************** */
+/*      implementation of SW VPP internal architecture                  */
+/* ******************************************************************** */
+
+mfxStatus VideoVPPSW::CheckProduceOutput(mfxFrameSurface1 *in, mfxFrameSurface1 *out )
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    mfxU32 filterIndex, filterIndexStart;
+    mfxU32 filterBreakIndex = 0;
+    bool   isPipelineBreak  = false;
+
+    /* ***************************************************************** */
+    /*              simulation of processing pipeline                    */
+    /* ***************************************************************** */
+
+    filterIndexStart = GetFilterIndexStart( MFX_REQUEST_FROM_VPP_CHECK );
+
+    mfxFrameSurface1* inputSurf = in;
+    mfxFrameSurface1* outputSurf= (filterIndexStart > 0 ) ? NULL : in;
+    bool isMultipleOutput = false;
+
+    for( filterIndex = filterIndexStart; filterIndex < GetNumUsedFilters(); filterIndex++ )
+    {
+        inputSurf = outputSurf;
+
+        if( filterIndex >= GetNumConnections() )
+        {
+            outputSurf = out;
+        }
+        else
+        {
+            sts = m_connectionFramesPool[filterIndex].GetFreeSurface( &outputSurf );
+            MFX_CHECK_STS( sts );
+        }
+
+        sts = m_ppFilters[filterIndex]->CheckProduceOutput(inputSurf, outputSurf);
+
+        if( MFX_ERR_MORE_SURFACE == sts )// start from ISV2_Beta it mean OK but there are > 1 outputs
+        {
+            isMultipleOutput = true;
+            sts = MFX_ERR_NONE;
+        }
+
+        if( MFX_ERR_MORE_DATA == sts )
+        {
+            if( !isPipelineBreak )
+            {
+                isPipelineBreak = true;
+                filterBreakIndex = filterIndex;
+            }
+
+            /* downsampleFRC breaks pipeline in case of MFX_ERR_MORE_DATA
+              it is reason to stop processing given moment */
+            if( MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION == m_pipelineList[filterIndex] )
+            {
+                break;
+            }
+        }
+
+        /* mechanism to produce buffered frames */
+        if( MFX_ERR_MORE_DATA == sts || MFX_ERR_MORE_DATA_RUN_TASK == sts)
+        {
+            outputSurf = NULL;
+        }
+        else
+        {
+            MFX_CHECK_STS( sts );
+        }
+    }
+
+    /* ***************************************************************** */
+    /*              make decision of processing pipeline                 */
+    /* ***************************************************************** */
+
+    /* if there are filters before pipeline is broken we should run VPP */
+    if( !(MFX_ERR_NONE == sts || MFX_ERR_MORE_DATA_RUN_TASK == sts) )
+    {
+        if( isPipelineBreak && filterBreakIndex > 0 )
+        {
+            sts = (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
+        }
+        else if( isPipelineBreak && (NULL != in) ) // DI or FRC broke pipeline
+        {
+            sts = (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
+        }
+    }
+
+    if(MFX_ERR_NONE == sts && isMultipleOutput)
+    {
+        sts = MFX_ERR_MORE_SURFACE;
+    }
+
+    return sts;
+
+} // mfxStatus VideoVPPSW::CheckProduceOutput(...)
+
+ bool VideoVPPSW::IsReadyOutput( mfxRequestType requestType )
+{
+    mfxU32 filterIndex;
+
+    for( filterIndex = 0; filterIndex < GetNumUsedFilters(); filterIndex++ )
+    {
+        if( m_ppFilters[filterIndex]->IsReadyOutput( requestType ) )
+        {
+            return true;
+        }
+    }
+
+    return false;
+
+} //  bool VideoVPPSW::IsReadyOutput( mfxRequestType requestType )
+
+ mfxU32  VideoVPPSW::GetFilterIndexStart( mfxRequestType requestType )
+ {
+     mfxU32 filterIndex;
+
+     for( filterIndex = 0; filterIndex < GetNumUsedFilters(); filterIndex++ )
+     {
+         if( m_ppFilters[filterIndex]->IsReadyOutput( requestType ) )
+         {
+             return filterIndex;
+         }
+     }
+
+     return 0;
+
+ } //  mfxU32  VideoVPPSW::GetFilterIndexStart( mfxRequestType requestType )
+
+ mfxStatus VideoVPPSW::PassThrough(mfxFrameInfo* In, mfxFrameInfo* Out, mfxU16 realOutPicStruct, bool bHWLib)
+ {
+     mfxStatus sts;
+
+     // HW
+    if( bHWLib )
+    {
+        if( In ) // no delay
+        {
+            Out->AspectRatioH = In->AspectRatioH;
+            Out->AspectRatioW = In->AspectRatioW;
+            Out->PicStruct    = UpdatePicStruct( In->PicStruct, Out->PicStruct, m_bDynamicDeinterlace, sts );
+
+            m_errPrtctState.Deffered.AspectRatioH = Out->AspectRatioH;
+            m_errPrtctState.Deffered.AspectRatioW = Out->AspectRatioW;
+            m_errPrtctState.Deffered.PicStruct    = Out->PicStruct;
+
+            // not "pass through" process. Frame Rates from Init.
+            Out->FrameRateExtN = m_errPrtctState.Out.FrameRateExtN;
+            Out->FrameRateExtD = m_errPrtctState.Out.FrameRateExtD;
+
+            //return MFX_ERR_NONE;
+            return sts;
+        }
+        else
+        {
+            // in case of HW_VPP in==NULL means ERROR due to absence of delayed frames and should be processed before.
+            // here we return OK only
+             return MFX_ERR_NONE;
+        }
+    }
+
+    // SW
+     // SW wo DI
+     if( In && !m_bDynamicDeinterlace )
+     {
+        Out->AspectRatioH = In->AspectRatioH;
+        Out->AspectRatioW = In->AspectRatioW;
+        Out->PicStruct    = UpdatePicStruct( In->PicStruct, realOutPicStruct, m_bDynamicDeinterlace, sts );
+
+        m_errPrtctState.Deffered.AspectRatioH = Out->AspectRatioH;
+        m_errPrtctState.Deffered.AspectRatioW = Out->AspectRatioW;
+        m_errPrtctState.Deffered.PicStruct    = Out->PicStruct;
+
+        // not "pass through" process. Frame Rates from Init.
+        Out->FrameRateExtN = m_errPrtctState.Out.FrameRateExtN;
+        Out->FrameRateExtD = m_errPrtctState.Out.FrameRateExtD;
+
+        //return MFX_ERR_NONE;
+        return sts;
+     }
+
+     //SW + DI (ITC/FRC)
+     {
+         if( MFX_PICSTRUCT_UNKNOWN == realOutPicStruct )
+         {
+             sts = MFX_ERR_NONE;// nothing. SW_VPP updated outputPicStruct & AspectRatio
+         }
+         else if( (realOutPicStruct & MFX_PICSTRUCT_PROGRESSIVE) && (Out->PicStruct & MFX_PICSTRUCT_PROGRESSIVE) )
+         {
+             sts = MFX_ERR_NONE;//// nothing. SW_VPP updated outputPicStruct & AspectRatio
+         }
+         else // P->I, I->I
+         {
+            Out->PicStruct = realOutPicStruct;
+            sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+         }
+
+         // not "pass through" process. Frame Rates from Init.
+         Out->FrameRateExtN = m_errPrtctState.Out.FrameRateExtN;
+         Out->FrameRateExtD = m_errPrtctState.Out.FrameRateExtD;
+
+         return sts;
+     }
+
+     //return MFX_ERR_NONE;
+
+ } //  mfxStatus VideoVPPSW::PassThrough(mfxFrameInfo* In, mfxFrameInfo* Out)
+
+mfxStatus VideoVPPSW::SetCrop(mfxFrameSurface1 *in, mfxFrameSurface1 *out)
+{
+  mfxStatus mfxSts = MFX_ERR_NONE;
+  mfxU32    connectIndex = 0;
+
+  if( in )
+  {
+      mfxSts = CheckCropParam( &(in->Info) );
+      MFX_CHECK_STS( mfxSts );
+  }
+
+  mfxSts = CheckCropParam( &(out->Info) );
+  MFX_CHECK_STS( mfxSts );
+
+  // save cropX/Y/W/H
+  if( in )
+  {
+      m_errPrtctState.In.CropH = in->Info.CropH;
+      m_errPrtctState.In.CropW = in->Info.CropW;
+      m_errPrtctState.In.CropX = in->Info.CropX;
+      m_errPrtctState.In.CropY = in->Info.CropY;
+  }
+
+  m_errPrtctState.Out.CropH = out->Info.CropH;
+  m_errPrtctState.Out.CropW = out->Info.CropW;
+  m_errPrtctState.Out.CropX = out->Info.CropX;
+  m_errPrtctState.Out.CropY = out->Info.CropY;
+
+  mfxFrameInfo cropInfo = m_errPrtctState.In;
+
+  for( connectIndex = 0; connectIndex < GetNumConnections(); connectIndex++ )
+  {
+    mfxU32       filterIndex = connectIndex;
+
+    switch( m_pipelineList[filterIndex] )
+    {
+      case MFX_EXTBUFF_VPP_RESIZE:
+        {
+            cropInfo = m_errPrtctState.Out;
+            break;
+        }
+
+      default:
+        {
+            /* DI/DN/SA/FRC/CSC specific: Pass Through for crop: in_crop -> out_crop */
+            break;
+        }
+
+    }// CASE
+
+    mfxSts = m_connectionFramesPool[connectIndex].SetCrop( &(cropInfo) );
+    MFX_CHECK_STS( mfxSts );
+
+  }//end for( connectIndex = 0;
+
+  return mfxSts;
+
+} // mfxStatus VideoVPPSW::SetCrop(mfxFrameSurface1 *in, mfxFrameSurface1 *out)
+
+mfxStatus VideoVPPSW::CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out)
+{
+    mfxFrameInfo inFrameInfo;
+    mfxFrameInfo outFrameInfo;
+    mfxU32       filterIndex;
+    mfxStatus    sts;
+
+    outFrameInfo = *In;
+    for( filterIndex = 0; filterIndex < GetNumUsedFilters(); filterIndex++ )
+    {
+        inFrameInfo = outFrameInfo;
+
+        switch( m_pipelineList[filterIndex] )
+        {
+            case (mfxU32)MFX_EXTBUFF_VPP_DENOISE:
+            {
+                sts = MFX_ERR_NONE;
+                // DENOISE specific - nothing
+                VPP_INIT_FILTER( filterIndex, MFXVideoVPPDenoise );
+
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_RESIZE:
+            {
+                sts = MFX_ERR_NONE;
+                /* RESIZE specific */
+                outFrameInfo.Height = Out->Height;
+                outFrameInfo.Width  = Out->Width;
+
+                VPP_INIT_FILTER( filterIndex, MFXVideoVPPResize );
+
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION:
+            {
+                sts = MFX_ERR_NONE;
+                /* FRC specific */
+                outFrameInfo.FrameRateExtD = Out->FrameRateExtD;
+                outFrameInfo.FrameRateExtN = Out->FrameRateExtN;
+
+                VPP_INIT_FILTER( filterIndex, MFXVideoVPPFrameRateConversion );
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_DI_30i60p:
+            case (mfxU32)MFX_EXTBUFF_VPP_ITC:
+            {
+                outFrameInfo.FrameRateExtD = Out->FrameRateExtD;
+                outFrameInfo.FrameRateExtN = Out->FrameRateExtN;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_DI:
+            {
+                sts = MFX_ERR_NONE;
+                /* DEINTERLACE specific */
+                outFrameInfo.PicStruct = Out->PicStruct;
+
+                VPP_INIT_FILTER( filterIndex, MFXVideoVPPDeinterlace );
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_CSC:
+            {
+                sts = MFX_ERR_NONE;
+                /* COLOR SPACE_ CONVERSION specific */
+                outFrameInfo.FourCC = MFX_FOURCC_NV12;
+
+                VPP_INIT_FILTER( filterIndex, MFXVideoVPPColorSpaceConversion );
+
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_CSC_OUT_RGB4:
+            {
+                sts = MFX_ERR_NONE;
+                /* COLOR SPACE_ CONVERSION specific */
+                outFrameInfo.FourCC = MFX_FOURCC_RGB4;
+
+                VPP_INIT_FILTER( filterIndex, MFXVideoVPPColorSpaceConversion );
+
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_SCENE_ANALYSIS:
+            {
+                sts = MFX_ERR_NONE;
+                // SCENE ANALYSIS specific - nothing
+                VPP_INIT_FILTER( filterIndex, MFXVideoVPPVideoAnalysis );
+
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_PROCAMP:
+            {
+                sts = MFX_ERR_NONE;
+                // PROCAMP specific - nothing
+                VPP_INIT_FILTER( filterIndex, MFXVideoVPPProcAmp );
+
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_DETAIL:
+            {
+                sts = MFX_ERR_NONE;
+                // Detail specific - nothing
+                VPP_INIT_FILTER( filterIndex, MFXVideoVPPDetailEnhancement );
+
+                break;
+            }
+
+            //case (mfxU32)MFX_EXTBUFF_VPP_GAMUT_MAPPING:
+            //{
+            //    sts = MFX_ERR_NONE;
+            //    // Detail specific - nothing
+            //    VPP_INIT_FILTER( filterIndex, MFXVideoVPPGamutCompression );
+
+            //    break;
+            //}
+
+            case (mfxU32)MFX_EXTBUFF_VPP_IMAGE_STABILIZATION:
+            {
+                sts = MFX_ERR_NONE;
+                // ImgStab specific - nothing
+                VPP_INIT_FILTER( filterIndex, MFXVideoVPPImgStab );
+
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_VARIANCE_REPORT://fake only!!!
+            {
+                sts = MFX_ERR_NONE;
+                // specific - nothing
+                VPP_INIT_FILTER( filterIndex, MFXVideoVPPProcAmp );
+
+                break;
+            }
+            default:
+            {
+                sts = MFX_ERR_INVALID_VIDEO_PARAM;
+                MFX_CHECK_STS( sts );
+            }
+
+        }// CASE
+    }//end of creation files
+
+    return MFX_ERR_NONE;
+
+} // mfxStatus VideoVPPSW::CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out)
+
+mfxStatus VideoVPPSW::DestroyPipeline( void )
+{
+    mfxU32 filterIndex;
+
+    for( filterIndex = 0; filterIndex < GetNumUsedFilters(); filterIndex++ )
+    {
+        if( m_ppFilters[filterIndex] )
+        {
+            delete m_ppFilters[filterIndex];
+            m_ppFilters[filterIndex] = NULL;
+        }
+        //m_pipelineList[filterIndex] = NULL;
+    }
+
+    return MFX_ERR_NONE;
+
+} // mfxStatus VideoVPPSW::DestroyPipeline( void )
+
+mfxStatus VideoVPPSW::CreateWorkBuffer( void )
+{
+    mfxU32 filterIndex;
+    mfxU32 totalBufSize = 0, bufSize;
+    IppStatus ippSts;
+    mfxStatus sts = MFX_ERR_NONE;
+    mfxU8*    pWorkBuffer = NULL;
+
+
+    for( filterIndex = 0; filterIndex < GetNumUsedFilters(); filterIndex++ )
+    {
+        sts = m_ppFilters[filterIndex]->GetBufferSize( &bufSize );
+        MFX_CHECK_STS( sts );
+
+        totalBufSize += bufSize;
+    }
+
+    /* we don't distinction btw re-usable work buffer & buffer for tables */
+    if( totalBufSize )
+    {
+        sts = m_core->AllocBuffer( totalBufSize, MFX_MEMTYPE_PERSISTENT_MEMORY, &m_memIdWorkBuf );
+        MFX_CHECK_STS( sts );
+
+        sts = m_core->LockBuffer(m_memIdWorkBuf, &pWorkBuffer );
+        MFX_CHECK_STS( sts );
+
+        ippSts = ippsZero_8u( pWorkBuffer, totalBufSize);
+        VPP_CHECK_IPP_STS(ippSts);
+
+        for( filterIndex = 0; filterIndex < GetNumUsedFilters(); filterIndex++ )
+        {
+            sts = m_ppFilters[filterIndex]->GetBufferSize( &bufSize );
+            MFX_CHECK_STS( sts );
+
+            sts = m_ppFilters[filterIndex]->SetBuffer( pWorkBuffer );
+            MFX_CHECK_STS( sts );
+
+            pWorkBuffer += bufSize;
+        }
+    }
+
+    return sts;
+
+} // mfxStatus VideoVPPSW::CreateWorkBuffer( void )
+
+mfxStatus VideoVPPSW::DestroyWorkBuffer( void )
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    if( m_memIdWorkBuf )
+    {
+        sts = m_core->UnlockBuffer( m_memIdWorkBuf );
+        sts = m_core->FreeBuffer( m_memIdWorkBuf );
+        m_memIdWorkBuf = NULL;
+    }
+
+    return sts;
+
+} // mfxStatus VideoVPPSW::DestroyWorkBuffer( void )
+
+mfxStatus VideoVPPSW::CheckIOPattern( mfxVideoParam* par )
+{
+  if (0 == par->IOPattern) // IOPattern is mandatory parameter
+  {
+      return MFX_ERR_INVALID_VIDEO_PARAM;
+  }
+
+  if (!m_core->IsExternalFrameAllocator() && (par->IOPattern & (MFX_IOPATTERN_OUT_VIDEO_MEMORY | MFX_IOPATTERN_IN_VIDEO_MEMORY)))
+  {
+    return MFX_ERR_INVALID_VIDEO_PARAM;
+  }
+
+  if ((par->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY) &&
+      (par->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY))
+  {
+    return MFX_ERR_INVALID_VIDEO_PARAM;
+  }
+
+
+  if ((par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) &&
+      (par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
+  {
+    return MFX_ERR_INVALID_VIDEO_PARAM;
+  }
+
+  return MFX_ERR_NONE;
+
+} // mfxStatus VideoVPPSW::CheckIOPattern( mfxVideoParam* par )
+
+mfxU32 VideoVPPSW::GetNumUsedFilters()
+{
+  return ( (mfxU32)m_pipelineList.size() );
+
+} // mfxU32 VideoVPPSW::GetNumUsedFilters()
+
+mfxU32 VideoVPPSW::GetNumConnections()
+{
+  return (mfxU32)(m_pipelineList.size() - 1);
+
+} // mfxU32 VideoVPPSW::GetNumConnections()
+
+
+mfxStatus VideoVPPSW::CreateInternalSystemFramesPool( mfxVideoParam *par )
+{
+  mfxFrameAllocRequest  request[2];
+  mfxStatus sts;
+
+  MFX_CHECK_NULL_PTR1( par );
+
+  sts = QueryIOSurf(m_core, par, request);
+  VPP_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
+  MFX_CHECK_STS( sts );
+
+  if( m_bOpaqMode[VPP_IN] )
+  {
+      request[VPP_IN] = m_requestOpaq[VPP_IN];
+  }
+  if( m_bOpaqMode[VPP_OUT] )
+  {
+      request[VPP_OUT] = m_requestOpaq[VPP_OUT];
+  }
+
+  if( request[VPP_IN].Type & (MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET|MFX_MEMTYPE_DXVA2_DECODER_TARGET) )
+  {
+      /* internal sw surfaces */
+      request[VPP_IN].Type = MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY|MFX_MEMTYPE_FROM_VPPIN;
+
+      sts = m_internalSystemFramesPool[VPP_IN].Init(m_core, &request[VPP_IN], true);
+      MFX_CHECK_STS( sts );
+
+      m_bDoFastCopyFlag[VPP_IN] = true;
+  }
+  else
+  {
+      sts = m_externalFramesPool[VPP_IN].Init(m_core, &request[VPP_IN], false);
+      MFX_CHECK_STS( sts );
+  }
+
+  if( request[VPP_OUT].Type & (MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET|MFX_MEMTYPE_DXVA2_DECODER_TARGET) )
+  {
+      /* internal sw surfaces */
+      request[VPP_OUT].Type = MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY|MFX_MEMTYPE_FROM_VPPOUT;
+
+      sts = m_internalSystemFramesPool[VPP_OUT].Init(m_core, &request[VPP_OUT], true);
+      MFX_CHECK_STS( sts );
+
+      m_bDoFastCopyFlag[VPP_OUT] = true;
+  }
+  else
+  {
+      sts = m_externalFramesPool[VPP_OUT].Init(m_core, &request[VPP_OUT], false);
+      MFX_CHECK_STS( sts );
+  }
+
+  return MFX_ERR_NONE;
+
+} // mfxStatus VideoVPPSW::CreateInternalSystemFramesPool( mfxVideoParam *par )
+
+mfxStatus VideoVPPSW::DestroyInternalSystemFramesPool( void )
+{
+  if( m_bDoFastCopyFlag[VPP_IN] )
+  {
+    m_internalSystemFramesPool[VPP_IN].Close();
+    m_bDoFastCopyFlag[VPP_IN] = false;
+  }
+  else
+  {
+    m_externalFramesPool[VPP_IN].Close();
+  }
+
+  if( m_bDoFastCopyFlag[VPP_OUT] )
+  {
+    m_internalSystemFramesPool[VPP_OUT].Close();
+    m_bDoFastCopyFlag[VPP_OUT] = false;
+  }
+  else
+  {
+    m_externalFramesPool[VPP_OUT].Close();
+  }
+
+  return MFX_ERR_NONE;
+
+} // mfxStatus VideoVPPSW::DestroyInternalSystemFramesPool( void )
+
+
+mfxStatus VideoVPPSW::PreProcessOfInputSurface(mfxFrameSurface1 *in, mfxFrameSurface1** ppOut)
+{
+  mfxStatus sts;
+
+  if( NULL == in )
+  {
+    *ppOut         = NULL;
+    return MFX_ERR_NONE;
+  }
+
+  // normal process start here
+
+  if( !m_bDoFastCopyFlag[VPP_IN] )
+  {
+    sts = m_externalFramesPool[VPP_IN].GetFilledSurface(in, ppOut);
+    MFX_CHECK_STS( sts );
+  }
+  else
+  {
+    sts = m_internalSystemFramesPool[VPP_IN].GetFreeSurface(ppOut);
+    MFX_CHECK_STS( sts );
+
+    sts = m_core->IncreaseReference(&(*ppOut)->Data);
+    MFX_CHECK_STS( sts );
+
+    sts = m_core->DoFastCopyWrapper(*ppOut,
+                                    MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY,
+                                    in,
+                                    MFX_MEMTYPE_EXTERNAL_FRAME | (MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_DXVA2_DECODER_TARGET));
+
+    MFX_CHECK_STS( sts );
+
+    (*ppOut)->Info = in->Info;
+
+    sts = m_core->DecreaseReference(&in->Data);
+    MFX_CHECK_STS(sts);
+  }
+
+  return MFX_ERR_NONE;
+
+} // mfxStatus VideoVPPSW::PreProcessOfInputSurface(...)
+
+
+mfxStatus VideoVPPSW::PreProcessOfOutputSurface(mfxFrameSurface1 *out, mfxFrameSurface1** ppOut)
+{
+  mfxStatus sts;
+
+  if( NULL == out )
+  {
+      *ppOut = NULL;
+      return MFX_ERR_NONE;
+  }
+
+  // normal process start here
+
+  if( !m_bDoFastCopyFlag[VPP_OUT] )
+  {
+      sts = m_externalFramesPool[VPP_OUT].GetFilledSurface(out, ppOut);
+      MFX_CHECK_STS( sts );
+  }
+  else
+  {
+    sts = m_internalSystemFramesPool[VPP_OUT].Lock();
+    MFX_CHECK_STS( sts );
+
+    sts = m_internalSystemFramesPool[VPP_OUT].GetFreeSurface( ppOut );
+    MFX_CHECK_STS( sts );
+
+    (*ppOut)->Info = out->Info;
+    sts = m_core->IncreaseReference(&((*ppOut)->Data));
+  }
+
+  return MFX_ERR_NONE;
+
+} // mfxStatus VideoVPPSW::PreProcessOfOutputSurface(...)
+
+
+mfxStatus VideoVPPSW::PostProcessOfOutputSurface(mfxFrameSurface1 *out, mfxFrameSurface1 *pOutSurf, mfxStatus processingSts)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    if( m_bDoFastCopyFlag[VPP_OUT] )
+    {
+        if( MFX_ERR_NONE == processingSts )
+        {
+            sts = m_core->DoFastCopyWrapper(out,
+                                            MFX_MEMTYPE_EXTERNAL_FRAME | (MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_DXVA2_DECODER_TARGET),
+                                            pOutSurf,
+                                            MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY);
+            MFX_CHECK_STS( sts );
+
+        }
+
+        sts = m_internalSystemFramesPool[VPP_OUT].Unlock();
+        MFX_CHECK_STS( sts );
+    }
+
+    return MFX_ERR_NONE;
+
+} // mfxStatus VideoVPPSW::PostProcessOfOutputSurface(
+
+
+mfxStatus VideoVPPSW::CreateConnectionFramesPool( void )
+{
+  mfxStatus  sts;
+  mfxU32     connectIndex, filterIndex;
+  mfxFrameInfo frameInfo;
+  mfxFrameAllocRequest  request;
+  mfxU16     framesCount;
+
+  for( connectIndex = 0; connectIndex < GetNumConnections(); connectIndex++)
+  {
+    framesCount = m_ppFilters[connectIndex]->GetOutFramesCount() + m_ppFilters[connectIndex+1]->GetInFramesCount() - 1;
+
+    filterIndex = connectIndex;
+    sts         = m_ppFilters[filterIndex]->GetFrameInfo(NULL, &frameInfo);// out info interested only
+    MFX_CHECK_STS(sts);
+
+    request.Info        = frameInfo;
+    request.NumFrameMin = request.NumFrameSuggested = framesCount;
+    request.Type        = MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_VPPIN;
+
+    sts = m_connectionFramesPool[connectIndex].Init(m_core, &request, true);
+    MFX_CHECK_STS( sts );
+  }
+
+  return MFX_ERR_NONE;
+
+} // mfxStatus VideoVPPSW::CreateConnectionFramesPool( void )
+
+
+mfxStatus VideoVPPSW::DestroyConnectionFramesPool( void )
+{
+  mfxU32 connectIndex;
+
+  for( connectIndex = 0; connectIndex < GetNumConnections(); connectIndex++ )
+  {
+     m_connectionFramesPool[connectIndex].Close();
+  }
+
+  return MFX_ERR_NONE;
+
+} // mfxStatus VideoVPPSW::DestroyConnectionFramesPool( void )
+
+//-----------------------------------------------------------------------------
+//            independent functions
+//-----------------------------------------------------------------------------
+
+// all check must be done before call
+mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
+                                 mfxU32* pListID,
+                                 mfxU32 len,
+                                 mfxU16 framesCountMin[2],
+                                 mfxU16 framesCountSuggested[2])
+{
+    mfxU32 filterIndex;
+    mfxU16 inputFramesCount[MAX_NUM_VPP_FILTERS]  = {0};
+    mfxU16 outputFramesCount[MAX_NUM_VPP_FILTERS] = {0};
+
+    for( filterIndex = 0; filterIndex < len; filterIndex++ )
+    {
+        switch( pListID[filterIndex] )
+        {
+            case (mfxU32)MFX_EXTBUFF_VPP_DENOISE:
+            {
+                inputFramesCount[filterIndex]  = MFXVideoVPPDenoise::GetInFramesCountExt();
+                outputFramesCount[filterIndex] = MFXVideoVPPDenoise::GetOutFramesCountExt();
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_RESIZE:
+            {
+                inputFramesCount[filterIndex]  = MFXVideoVPPResize::GetInFramesCountExt();
+                outputFramesCount[filterIndex] = MFXVideoVPPResize::GetOutFramesCountExt();
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_ITC:
+            case (mfxU32)MFX_EXTBUFF_VPP_DI:
+            {
+                inputFramesCount[filterIndex]  = MFXVideoVPPDeinterlace::GetInFramesCountExt();
+                outputFramesCount[filterIndex] = MFXVideoVPPDeinterlace::GetOutFramesCountExt();
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_DI_30i60p:
+            {
+                inputFramesCount[filterIndex]  = MFXVideoVPPDeinterlace::GetInFramesCountExt();
+                outputFramesCount[filterIndex] = MFXVideoVPPDeinterlace::GetOutFramesCountExt() << 1;
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_CSC:
+            case (mfxU32)MFX_EXTBUFF_VPP_CSC_OUT_RGB4:
+            {
+                inputFramesCount[filterIndex]  = MFXVideoVPPColorSpaceConversion::GetInFramesCountExt();
+                outputFramesCount[filterIndex] = MFXVideoVPPColorSpaceConversion::GetOutFramesCountExt();
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_SCENE_ANALYSIS:
+            {
+                inputFramesCount[filterIndex]  = MFXVideoVPPVideoAnalysis::GetInFramesCountExt();
+
+                outputFramesCount[filterIndex] = MFXVideoVPPVideoAnalysis::GetOutFramesCountExt();
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION:
+            {
+                // call Get[In/Out]FramesCountExt not correct for external application
+                // result must be based on in/out frame rates
+                mfxFrameInfo info;
+
+                info = pParam->vpp.In;
+                mfxF64 inFrameRate  = CalculateUMCFramerate(info.FrameRateExtN, info.FrameRateExtD);
+
+                info = pParam->vpp.Out;
+                mfxF64 outFrameRate = CalculateUMCFramerate(info.FrameRateExtN, info.FrameRateExtD);
+
+                outputFramesCount[ filterIndex ] = (mfxU16)(ceil(outFrameRate / inFrameRate));
+                outputFramesCount[ filterIndex ] = IPP_MAX(outputFramesCount[ filterIndex ], 1);//robustness
+
+                // numInFrames = inFrameRate / inFrameRate = 1;
+                inputFramesCount[ filterIndex ] = 1;
+
+                // after analysis for correct FRC processing we require following equations
+                inputFramesCount[ filterIndex ]  = IPP_MAX( inputFramesCount[ filterIndex ],  MFXVideoVPPFrameRateConversion::GetInFramesCountExt() );
+                outputFramesCount[ filterIndex ] = IPP_MAX( outputFramesCount[ filterIndex ], MFXVideoVPPFrameRateConversion::GetOutFramesCountExt() );
+
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_PROCAMP:
+            {
+                inputFramesCount[filterIndex]  = MFXVideoVPPProcAmp::GetInFramesCountExt();
+                outputFramesCount[filterIndex] = MFXVideoVPPProcAmp::GetOutFramesCountExt();
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_DETAIL:
+            {
+                inputFramesCount[filterIndex]  = MFXVideoVPPDetailEnhancement::GetInFramesCountExt();
+                outputFramesCount[filterIndex] = MFXVideoVPPDetailEnhancement::GetOutFramesCountExt();
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_IMAGE_STABILIZATION:
+            {
+                // aya: fake for SW compatibility
+                inputFramesCount[filterIndex]  = MFXVideoVPPImgStab::GetInFramesCountExt();
+                outputFramesCount[filterIndex] = MFXVideoVPPImgStab::GetOutFramesCountExt();
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_VARIANCE_REPORT:
+            {
+                // aya: fake for SW compatibility
+                inputFramesCount[filterIndex]  = 2;
+                outputFramesCount[filterIndex] = 1;
+                break;
+            }
+            default:
+            {
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+            }
+
+        }// CASE
+    }//end of
+
+    framesCountSuggested[VPP_IN]  = vppMax_16u(inputFramesCount, len);
+    framesCountSuggested[VPP_OUT] = vppMax_16u(outputFramesCount, len);
+
+    // arch of SW VPP is complicated.
+    // there is some scenario, when minFrames not enough due to internal MFX_ERR_MORE_DATA_RUN_TASK
+    //framesCountMin[VPP_IN]  = inputFramesCount[0];// input from first filter
+    //framesCountMin[VPP_OUT] = outputFramesCount[len-1];// output from last filter
+
+    // so, SW min frames must be equal MAX(filter0, filter1, ..., filterN-1)
+    framesCountMin[VPP_IN]  = framesCountSuggested[VPP_IN];
+    framesCountMin[VPP_OUT] = framesCountSuggested[VPP_OUT];
+
+    //robustness
+    if( VPP_MAX_REQUIRED_FRAMES_COUNT < framesCountMin[VPP_IN] )
+    {
+        framesCountMin[VPP_IN] = VPP_MAX_REQUIRED_FRAMES_COUNT;
+    }
+
+    if( VPP_MAX_REQUIRED_FRAMES_COUNT < framesCountMin[VPP_OUT] )
+    {
+        framesCountMin[VPP_OUT] = VPP_MAX_REQUIRED_FRAMES_COUNT;
+    }
+
+    return MFX_ERR_NONE;
+
+} // mfxStatus GetExternalFramesCount(...)
+
+
+mfxStatus ExtendedQuery(mfxU32 filterName, mfxExtBuffer* pHint)
+{
+    mfxStatus sts;
+
+    if( MFX_EXTBUFF_VPP_DENOISE == filterName )
+    {
+        sts = MFXVideoVPPDenoise::Query( pHint );
+    }
+    else if( MFX_EXTBUFF_VPP_DETAIL == filterName )
+    {
+        sts = MFXVideoVPPDetailEnhancement::Query( pHint );
+    }
+    else if( MFX_EXTBUFF_VPP_PROCAMP == filterName )
+    {
+        sts = MFXVideoVPPProcAmp::Query( pHint );
+    }
+    else if( MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION == filterName )
+    {
+        sts = MFXVideoVPPFrameRateConversion::Query( pHint );
+    }
+    else if( MFX_EXTBUFF_VPP_IMAGE_STABILIZATION == filterName )
+    {
+        sts = MFXVideoVPPImgStab::Query( pHint );
+    }
+    //else if( MFX_EXTBUFF_VPP_GAMUT_MAPPING == filterName )
+    //{
+    //    sts = MFXVideoVPPGamutCompression::Query( pHint );
+    //}
+    else // ignore
+    {
+        sts = MFX_ERR_NONE;
+    }
+
+    return sts;
+
+} // mmfxStatus ExtendedQuery(mfxU32 filterName, mfxExtBuffer* pHint)
+
+
+
+
+#endif // MFX_ENABLE_VPP
+/* EOF */

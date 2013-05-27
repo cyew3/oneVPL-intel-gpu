@@ -1,0 +1,6 @@
+InputFile = \YUV\foreman_352x288_300.yuv
+Width = 352
+Height = 288
+FrameRate = 25
+NumberFrames = 300
+BitRate = 500000

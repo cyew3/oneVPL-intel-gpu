@@ -1,0 +1,5 @@
+InputFile = \YUV\iceage_720x576_491.yuv
+Width = 720
+Height = 576
+FrameRate = 25
+BitRate = 2000000

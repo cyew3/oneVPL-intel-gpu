@@ -1,0 +1,1143 @@
+/*//////////////////////////////////////////////////////////////////////////////
+//
+//                  INTEL CORPORATION PROPRIETARY INFORMATION
+//     This software is supplied under the terms of a license agreement or
+//     nondisclosure agreement with Intel Corporation and may not be copied
+//     or disclosed except in accordance with the terms of that agreement.
+//          Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+//
+*/
+
+#include "mfx_common.h"
+
+#if defined (MFX_ENABLE_VPP)
+#if defined (MFX_VA_WIN)
+
+// dxva.h warning
+#pragma warning(disable: 4201)
+
+#include <assert.h>
+#include "mfx_platform_headers.h"
+#include "libmfx_core_d3d9.h"
+#include "mfx_utils.h"
+#include "fast_compositing_ddi.h"
+#include <set>
+
+
+static const FASTCOMP_CAPS2 Caps2_Default = 
+{
+    0,              // 0 used to indicate defaults
+    0x01,           // TargetInterlacingModes  = progressive output only
+    FALSE,          // bTargetInSysMemory
+    FALSE,          // bProcampControl
+    FALSE,          // bDeinterlacingControl
+    FALSE,          // bDenoiseControl
+    FALSE,          // bDetailControl
+    FALSE,          // bFmdControl
+    FALSE,          // bVariances
+    FALSE,          // bSceneDetection
+    0
+};
+
+static const DXVA2_AYUVSample16 Background_Default =
+{   // Black BG
+    0x8000,         // Cr
+    0x8000,         // Cb
+    0x0000,         // Y
+    0xffff          // Alpha
+};
+
+static const DXVA2_ProcAmpValues ProcAmpValues_Default =
+{ 
+    //Fraction, Value
+    { 0x0000, 0x00 },       // Brightness
+    { 0x0000, 0x01 },       // Contrast
+    { 0x0000, 0x00 },       // Hue
+    { 0x0000, 0x01 }        // Saturation
+};
+
+static const DXVA2_ExtendedFormat DXVA2_ExtendedFormat_Default = 
+{
+    DXVA2_SampleProgressiveFrame,           // SampleFormat
+    DXVA2_VideoChromaSubsampling_MPEG2,     // VideoChromaSubsampling
+    DXVA2_NominalRange_Normal,              // NominalRange
+    DXVA2_VideoTransferMatrix_BT709,        // VideoTransferMatrix
+    DXVA2_VideoLighting_dim,                // VideoLighting
+    DXVA2_VideoPrimaries_BT709,             // VideoPrimaries
+    DXVA2_VideoTransFunc_709                // VideoTransferFunction
+};
+
+static const FASTCOMP_BLT_PARAMS FastCompBlt_Default =
+{
+    NULL,                               // pRenderTarget
+    0,                                  // SampleCount
+    NULL,                               // pSamples
+    0,                                  // TargetFrame
+    { 0, 0, 0, 0 },                     // TargetRect
+    FALSE,                              // ReservedCR
+    DXVA2_VideoTransferMatrix_BT709,    // TargetMatrix
+    FALSE,                              // TargetExtGamut
+    FASTCOMP_TARGET_PROGRESSIVE,        // TargetIntMode
+    FALSE,                              // TargetInSysMem
+    0,                                  // Reserved1
+    sizeof(FASTCOMP_BLT_PARAMS),        // iSizeOfStructure
+    0,                                  // Reserved2
+    NULL,                               // pReserved1
+    Background_Default,                 // BackgroundColor
+    NULL,                               // pReserved2
+    // Rev 1.4 parameters
+    ProcAmpValues_Default,              // ProcAmpValues
+    FALSE,                              // bDenoiseAutoAdjust
+    FALSE,                              // bFMDEnable
+    FALSE,                              // bSceneDetectionEnable
+    0,                                  // iDeinterlacingAlgorithm
+    0,                                  // Reserved3
+    0,                                  // wDenoiseFactor
+    0,                                  // wDetailFactor
+    0,                                  // wSpatialComplexity
+    0,                                  // wTemporalComplexity
+    0,                                  // iVarianceType
+    NULL,                               // pVariances
+    0,                                  // iCadence
+    FALSE,                              // bRepeatFrame
+    0,                                  // Reserved4
+    0                                   // iFrameNum
+};
+
+const DXVA2_AYUVSample16 BLACK16 = {0x8000, 0x8000, 0x1000, 0x00FF};
+
+using namespace MfxHwVideoProcessing;
+
+RECT KeepAspectRatio(const RECT& dst, const RECT& src)
+{
+    RECT rect;
+
+    mfxU32 src_w = src.right - src.left;
+    mfxU32 src_h = src.bottom - src.top;
+    mfxU32 dst_w = dst.right - dst.left;
+    mfxU32 dst_h = dst.bottom - dst.top;
+
+    mfxF32 rx = (mfxF32)dst_w / src_w;
+    mfxF32 ry = (mfxF32)dst_h / src_h;
+    mfxF32 r = (rx < ry) ? rx : ry;
+
+    mfxU32 dx = mfxU32(dst_w - src_w * r)/2;
+    mfxU32 dy = mfxU32(dst_h - src_h * r)/2;
+
+    rect.left   = dst.left + dx;
+    rect.right  = dst.right - dx;
+    rect.top    = dst.top + dy;
+    rect.bottom = dst.bottom - dy;
+
+    return rect;
+
+} // RECT KeepAspectRatio(const RECT& dst, const RECT& src)
+
+
+DXVA2_SampleFormat MapPictureStructureToDXVAType(const mfxU32 PicStruct)
+{
+    if (PicStruct & MFX_PICSTRUCT_PROGRESSIVE)
+    {
+        return DXVA2_SampleProgressiveFrame;
+    }
+    else if (PicStruct & MFX_PICSTRUCT_FIELD_TFF)
+    {
+        return DXVA2_SampleFieldInterleavedEvenFirst;
+    }
+    else if (PicStruct & MFX_PICSTRUCT_FIELD_BFF)
+    {
+        return DXVA2_SampleFieldInterleavedOddFirst;
+    }
+    else
+    {
+        return DXVA2_SampleUnknown;
+    }
+
+} // DXVA2_SampleFormat MapPictureStructureToDXVAType(const mfxU32 PicStruct)
+
+
+
+FastCompositingDDI::FastCompositingDDI(FASTCOMP_MODE iMode)
+:m_bIsPresent(FALSE)
+//,m_bIsRunning(FALSE)
+,m_bIsSystemSurface(FALSE)
+,m_pDummySurface(NULL)
+,m_pSystemMemorySurface(NULL)
+,m_pAuxDevice(NULL)
+,m_iMode(iMode)
+{
+} // FastCompositingDDI::FastCompositingDDI(FASTCOMP_MODE iMode)
+
+FastCompositingDDI::~FastCompositingDDI()
+{
+    Release();
+
+} // FastCompositingDDI::~FastCompositingDDI()
+
+mfxStatus FastCompositingDDI::CreateDevice(VideoCORE * core, mfxVideoParam* par, bool isTemporal)
+{
+    MFX_CHECK_NULL_PTR1( core );
+    par;
+
+    D3D9VideoCORE* hwCore = dynamic_cast<D3D9VideoCORE*>(core);
+
+    MFX_CHECK_NULL_PTR1( hwCore );
+
+    IDirectXVideoDecoderService *pVideoService = NULL;
+    
+    hwCore->m_pAdapter.get()->GetD3DService(1920, 1080, &pVideoService, isTemporal);
+
+    mfxStatus sts = Initialize(hwCore->m_pAdapter.get()->GetD3D9DeviceManager(), pVideoService);
+
+    return sts;
+
+} // mfxStatus FastCompositingDDI::CreateDevice(VideoCORE * core)
+
+
+mfxStatus FastCompositingDDI::DestroyDevice(void)
+{
+    mfxStatus sts = Release();
+
+    return sts;
+
+} // mfxStatus FastCompositingDDI::DestroyDevice(void)
+
+
+mfxStatus FastCompositingDDI::Initialize(
+    IDirect3DDeviceManager9  *pD3DDeviceManager, 
+    IDirectXVideoDecoderService *pVideoDecoderService)
+{
+    mfxStatus sts;
+    HRESULT hRes;
+
+    // release object before allocation
+    Release();
+
+    // create auxiliary device
+    m_pAuxDevice = new AuxiliaryDevice();
+
+    sts = m_pAuxDevice->Initialize(pD3DDeviceManager, pVideoDecoderService);
+    MFX_CHECK(!sts, MFX_ERR_DEVICE_FAILED);
+
+    // check video decoder service availability
+    if (!pVideoDecoderService)
+    {
+        MFX_CHECK(pD3DDeviceManager, MFX_ERR_NOT_INITIALIZED);
+        
+        HANDLE hDXVideoDecoderService;
+
+        hRes = pD3DDeviceManager->OpenDeviceHandle(&hDXVideoDecoderService);
+
+        MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
+
+        hRes = pD3DDeviceManager->GetVideoService(hDXVideoDecoderService, 
+                                                IID_IDirectXVideoDecoderService, 
+                                                (void**)&pVideoDecoderService);
+
+        MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
+    }
+
+    MFX_CHECK(pVideoDecoderService, MFX_ERR_NOT_INITIALIZED);
+
+    this->m_pD3DDecoderService = pVideoDecoderService;    
+
+
+    sts = QueryCaps(m_caps);
+    MFX_CHECK(!sts, MFX_ERR_DEVICE_FAILED);
+
+    sts = QueryCaps2(m_caps2);
+    MFX_CHECK(!sts, MFX_ERR_DEVICE_FAILED);
+
+    sts = QueryFrcCaps(m_frcCaps);
+    MFX_CHECK_STS(sts);
+
+    // get variances
+    memset((void*)&m_varianceCaps, 0, sizeof(FASTCOMP_VARIANCE_CAPS));
+    if(m_caps2.bVariances)
+    {
+        sts = QueryVarianceCaps(&m_varianceCaps);
+        MFX_CHECK_STS(sts);
+    }
+    // create acceleration device
+    DXVA2_VideoDesc VideoDesc;
+    VideoDesc.SampleWidth = m_caps.sPrimaryVideoCaps.iMaxWidth;
+    VideoDesc.SampleHeight = m_caps.sPrimaryVideoCaps.iMaxHeight;
+    VideoDesc.SampleFormat.VideoChromaSubsampling = DXVA2_VideoChromaSubsampling_MPEG2;
+    VideoDesc.SampleFormat.NominalRange = DXVA2_NominalRange_Normal;
+    VideoDesc.SampleFormat.VideoTransferMatrix = DXVA2_VideoTransferMatrix_BT709;
+    VideoDesc.SampleFormat.VideoLighting = DXVA2_VideoLighting_dim;
+    VideoDesc.SampleFormat.VideoPrimaries = DXVA2_VideoPrimaries_BT709;
+    VideoDesc.SampleFormat.VideoTransferFunction = DXVA2_VideoTransFunc_709;
+    
+    // TBD need params
+   // VideoDesc.SampleFormat.SampleFormat = DXVA2_SampleFieldInterleavedEvenFirst;
+
+    VideoDesc.Format = (D3DFORMAT)MAKEFOURCC('N','V','1','2');
+    VideoDesc.InputSampleFreq.Numerator = 30000; 
+    VideoDesc.InputSampleFreq.Denominator  = 1001;
+    VideoDesc.OutputFrameFreq.Numerator = 60000;
+    VideoDesc.OutputFrameFreq.Denominator = 1001;
+    VideoDesc.UABProtectionLevel = 0;
+    VideoDesc.Reserved = 0;
+
+    FASTCOMP_CREATEDEVICE sCreateStruct = {&VideoDesc, (D3DFORMAT)MAKEFOURCC('N','V','1','2'), 0, m_iMode};
+    UINT  uCreateSize = sizeof(sCreateStruct);
+
+    hRes = m_pAuxDevice->CreateAccelerationService(DXVA2_FastCompositing, &sCreateStruct, uCreateSize);
+    MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
+
+    //m_bIsRunning = TRUE;
+
+    // FRC
+    memset( &m_frcState, 0, sizeof(D3D9Frc));
+    
+    return MFX_ERR_NONE;
+
+} // mfxStatus FastCompositingDDI::Initialize(IDirect3DDeviceManager9  *pD3DDeviceManager, IDirectXVideoDecoderService *pVideoDecoderService)
+
+
+mfxStatus FastCompositingDDI::Release()
+{
+    if (m_pAuxDevice)
+    {
+        m_pAuxDevice->Release();
+    }
+
+    delete m_pAuxDevice;
+    m_pAuxDevice = NULL;
+
+    if (m_pDummySurface)
+    {
+        m_pDummySurface->Release();
+    }
+
+    if (m_pSystemMemorySurface)
+    {
+        // unregister surface
+        Register( 
+            reinterpret_cast<mfxHDLPair*>(&m_pSystemMemorySurface), 
+            1, 
+            FALSE);
+
+        m_pSystemMemorySurface->Release();
+    }
+    m_pDummySurface = NULL;
+
+    memset( &m_frcState, 0, sizeof(D3D9Frc));
+
+    return MFX_ERR_NONE;
+
+} // mfxStatus FastCompositingDDI::Release()
+
+
+mfxStatus FastCompositingDDI::Register(mfxHDLPair* pSurfaces, mfxU32 num, BOOL bRegister)
+{
+    mfxStatus sts;
+
+    
+    sts = m_pAuxDevice->Register(
+        reinterpret_cast<IDirect3DSurface9**>(&pSurfaces->first), 
+        num, 
+        bRegister);
+    MFX_CHECK_STS(sts);
+
+    return MFX_ERR_NONE;
+
+} // mfxStatus FastCompositingDDI::Register(IDirect3DSurface9 **pSurfaces, mfxU32 num, BOOL bRegister)
+
+
+mfxStatus FastCompositingDDI::QueryCaps(FASTCOMP_CAPS& caps)
+{
+    mfxStatus sts;
+    UINT uQuerySize;
+    FASTCOMP_QUERYCAPS sQuery;
+
+    if (FASTCOMP_MODE_PRE_PROCESS == m_iMode)
+    {
+        sQuery.Type = FASTCOMP_QUERY_VPP_CAPS;
+    }
+    else
+    {
+        sQuery.Type = FASTCOMP_QUERY_CAPS;
+    }
+
+    uQuerySize  = sizeof(sQuery);
+    
+    sts = m_pAuxDevice->QueryAccelCaps(&DXVA2_FastCompositing, &sQuery, &uQuerySize);
+    MFX_CHECK(!sts, MFX_ERR_DEVICE_FAILED);
+
+    memcpy(&caps, &sQuery.sCaps, sizeof(FASTCOMP_CAPS));
+
+    return MFX_ERR_NONE;
+
+} // mfxStatus FastCompositingDDI::QueryCaps(FASTCOMP_CAPS& caps)
+
+
+mfxStatus FastCompositingDDI::QueryCaps2(FASTCOMP_CAPS2& caps2)
+{
+    mfxStatus sts;
+
+    UINT uQuerySize;
+    FASTCOMP_QUERYCAPS sQuery;
+
+    if (FASTCOMP_MODE_PRE_PROCESS == m_iMode)
+    {
+        sQuery.Type = FASTCOMP_QUERY_VPP_CAPS2;
+    }
+    else
+    {
+        sQuery.Type = FASTCOMP_QUERY_CAPS2;
+    }
+
+    // set query size, for compatibility
+    sQuery.sCaps2.dwSize = uQuerySize = sizeof(sQuery);
+
+    // query caps2
+    sts = m_pAuxDevice->QueryAccelCaps(&DXVA2_FastCompositing, &sQuery, &uQuerySize);
+    // MFX_CHECK(!sts, MFX_ERR_DEVICE_FAILED);
+
+    if (MFX_ERR_NONE == sts)
+    {
+        // get query data
+        memcpy(&caps2, &sQuery.sCaps2, sizeof(FASTCOMP_CAPS2));
+    }
+    else
+    {
+        caps2.dwSize = 0;
+    }
+
+    // set defaults values
+    if ( caps2.dwSize < sizeof(FASTCOMP_CAPS2) )
+    {
+        caps2 = Caps2_Default;
+    }
+
+    return MFX_ERR_NONE;
+
+} // mfxStatus FastCompositingDDI::QueryCaps2(FASTCOMP_CAPS2& caps2)
+
+
+//mfxStatus FastCompositingDDI::QueryFormatsCaps(FASTCOMP_SAMPLE_FORMATS **ppFormats)
+//{
+//    mfxStatus sts;
+//
+//    UINT uTotal;
+//    D3DFORMAT *pFormatArray;
+//    FASTCOMP_QUERYCAPS sQuery;
+//    UINT uQuerySize;
+//    FASTCOMP_SAMPLE_FORMATS *pFormats = NULL;
+//
+//    MFX_CHECK(ppFormats, MFX_ERR_NULL_PTR);
+//
+//    // query format counts
+//    if (FASTCOMP_MODE_PRE_PROCESS == m_iMode)
+//    {
+//        sQuery.Type = FASTCOMP_QUERY_VPP_FORMAT_COUNT;
+//    }
+//    else
+//    {
+//        sQuery.Type = FASTCOMP_QUERY_FORMAT_COUNT;
+//    }
+//
+//    uQuerySize  = sizeof(sQuery);
+//
+//    sts = m_pAuxDevice->QueryAccelCaps(&DXVA2_FastCompositing, &sQuery, &uQuerySize);
+//    MFX_CHECK(!sts, MFX_ERR_DEVICE_FAILED);
+//
+//    // allocate a structure and extra area to hold all format arrays
+//    uTotal = sQuery.sFmtCount.iPrimaryFormats;
+//    uTotal += sQuery.sFmtCount.iSecondaryFormats;
+//    uTotal += sQuery.sFmtCount.iSubstreamFormats;
+//    uTotal += sQuery.sFmtCount.iGraphicsFormats;
+//    uTotal += sQuery.sFmtCount.iRenderTargetFormats;
+//    uTotal += sQuery.sFmtCount.iBackgroundFormats;
+//    pFormats = (FASTCOMP_SAMPLE_FORMATS *) malloc(sizeof(FASTCOMP_SAMPLE_FORMATS) + uTotal * sizeof(D3DFORMAT) + 8);
+//   
+//    MFX_CHECK(pFormats, MFX_ERR_NULL_PTR);
+//
+//    // initialize the output structure
+//    pFormatArray = (D3DFORMAT *) (pFormats + 1);
+//
+//    pFormats->iPrimaryVideoFormatCount = sQuery.sFmtCount.iPrimaryFormats;
+//    pFormats->pPrimaryVideoFormats = (sQuery.sFmtCount.iPrimaryFormats) ? pFormatArray : NULL;
+//    pFormatArray += sQuery.sFmtCount.iSecondaryFormats;
+//
+//    pFormats->iSecondaryVideoFormatCount = sQuery.sFmtCount.iSecondaryFormats;
+//    pFormats->pSecondaryVideoFormats = (sQuery.sFmtCount.iSecondaryFormats) ? pFormatArray : NULL;
+//    pFormatArray += sQuery.sFmtCount.iSecondaryFormats;
+//
+//    pFormats->iSubstreamFormatCount = sQuery.sFmtCount.iSubstreamFormats;
+//    pFormats->pSubstreamFormats = (sQuery.sFmtCount.iSubstreamFormats) ? pFormatArray : NULL;
+//    pFormatArray += sQuery.sFmtCount.iSubstreamFormats;
+//
+//    pFormats->iGraphicsFormatCount = sQuery.sFmtCount.iGraphicsFormats;
+//    pFormats->pGraphicsFormats = (sQuery.sFmtCount.iGraphicsFormats) ? pFormatArray : NULL;
+//    pFormatArray += sQuery.sFmtCount.iGraphicsFormats;
+//
+//    pFormats->iRenderTargetFormatCount = sQuery.sFmtCount.iRenderTargetFormats;
+//    pFormats->pRenderTargetFormats = (sQuery.sFmtCount.iRenderTargetFormats) ? pFormatArray : NULL;
+//    pFormatArray += sQuery.sFmtCount.iRenderTargetFormats;
+//
+//    pFormats->iBackgroundFormatCount = sQuery.sFmtCount.iBackgroundFormats;
+//    pFormats->pBackgroundFormats = (sQuery.sFmtCount.iBackgroundFormats) ? pFormatArray : NULL;
+//
+//    if (FASTCOMP_MODE_PRE_PROCESS == m_iMode)
+//    {
+//        sQuery.Type = FASTCOMP_QUERY_VPP_FORMATS;
+//    }
+//    else
+//    {
+//        sQuery.Type = FASTCOMP_QUERY_FORMATS;
+//    }
+//
+//    sQuery.sFormats.iPrimaryFormatSize = pFormats->iPrimaryVideoFormatCount * sizeof(D3DFORMAT);
+//    sQuery.sFormats.iSecondaryFormatSize = pFormats->iSecondaryVideoFormatCount * sizeof(D3DFORMAT);
+//    sQuery.sFormats.iSubstreamFormatSize = pFormats->iSubstreamFormatCount * sizeof(D3DFORMAT);
+//    sQuery.sFormats.iGraphicsFormatSize = pFormats->iGraphicsFormatCount * sizeof(D3DFORMAT);
+//    sQuery.sFormats.iRenderTargetFormatSize = pFormats->iRenderTargetFormatCount * sizeof(D3DFORMAT);
+//    sQuery.sFormats.iBackgroundFormatSize = pFormats->iBackgroundFormatCount * sizeof(D3DFORMAT);
+//
+//    sQuery.sFormats.pPrimaryFormats = pFormats->pPrimaryVideoFormats;
+//    sQuery.sFormats.pSecondaryFormats = pFormats->pSecondaryVideoFormats;
+//    sQuery.sFormats.pSubstreamFormats = pFormats->pSubstreamFormats;
+//    sQuery.sFormats.pGraphicsFormats = pFormats->pGraphicsFormats;
+//    sQuery.sFormats.pRenderTargetFormats = pFormats->pRenderTargetFormats;
+//    sQuery.sFormats.pBackgroundFormats = pFormats->pBackgroundFormats;
+//    uQuerySize = sizeof(sQuery);
+//
+//    // query supported formats
+//    sts = m_pAuxDevice->QueryAccelCaps(&DXVA2_FastCompositing, &sQuery, &uQuerySize);
+//    
+//    // check errors
+//    if (MFX_ERR_NONE != sts)
+//    {
+//        if (pFormats) 
+//        {
+//            free(pFormats);
+//        }
+//
+//        pFormats = NULL;
+//
+//        return MFX_ERR_DEVICE_FAILED;
+//    }
+//
+//    *ppFormats = pFormats;
+//
+//    return MFX_ERR_NONE;
+//
+//} // mfxStatus FastCompositingDDI::QueryFormatsCaps(FASTCOMP_SAMPLE_FORMATS **ppFormats)
+
+mfxStatus FastCompositingDDI::QueryFrcCaps(FASTCOMP_FRC_CAPS& frcCaps)
+{
+    mfxStatus sts;
+
+    FASTCOMP_QUERYCAPS  sQuery;
+    UINT                uQuerySize;
+
+    uQuerySize = sizeof(sQuery);
+
+    // [VPreP] FRC
+    sQuery.Type = FASTCOMP_QUERY_FRC_CAPS;
+
+    sts = m_pAuxDevice->QueryAccelCaps(&DXVA2_FastCompositing, &sQuery, &uQuerySize);
+    if(MFX_ERR_NONE == sts)
+    {
+        frcCaps = sQuery.sFrcCaps;
+    }
+    else
+    {
+#ifndef MSDK_BANNED
+        char cStr[256];
+        sprintf_s(cStr, "\nFRC unsupported\n");
+        OutputDebugStringA(cStr);
+#endif
+
+        FASTCOMP_FRC_CAPS caps = {0};
+        frcCaps = caps;
+    }
+
+    return MFX_ERR_NONE;
+
+} // mfxU32 FastCompositingDDI::QueryFrcCaps(FASTCOMP_FRC_CAPS& frcCaps)
+
+mfxStatus FastCompositingDDI::QueryVarianceCaps(
+    FASTCOMP_VARIANCE_CAPS * pVarianceCaps)
+{
+    FASTCOMP_QUERYCAPS  sQuery;
+    UINT                uQuerySize;
+
+    sQuery.Type = FASTCOMP_QUERY_VPP_VARIANCE_CAPS;
+    uQuerySize  = sizeof(sQuery);
+
+    mfxStatus sts = m_pAuxDevice->QueryAccelCaps(&DXVA2_FastCompositing, &sQuery, &uQuerySize);
+    if( MFX_ERR_NONE == sts )
+    {
+        *pVarianceCaps = sQuery.sVarianceCaps;
+    }
+    else
+    {
+        char cStr[256];
+        sprintf_s(cStr, "\nVariance unsupported\n");
+        OutputDebugStringA(cStr);
+
+        //FASTCOMP_VARIANCE_CAPS caps;// = {0};
+        //*pVarianceCaps = caps;
+    }
+
+    return MFX_ERR_NONE;
+
+} // mfxStatus FastCompositingDDI::QueryVarianceCaps(...)
+
+mfxStatus FastCompositingDDI::QueryCapabilities(mfxVppCaps& caps)
+{
+    memset( (void*)&caps, 0, sizeof(mfxVppCaps));  
+
+    caps.uMaxWidth = (mfxU32)m_caps.sPrimaryVideoCaps.iMaxWidth;
+    caps.uMaxHeight = (mfxU32)m_caps.sPrimaryVideoCaps.iMaxHeight;
+
+    if(TRUE == m_caps.sPrimaryVideoCaps.bAdvancedDI)
+    {
+        caps.uAdvancedDI = 1;
+    }
+
+    if(TRUE == m_caps.sPrimaryVideoCaps.bSimpleDI)
+    {
+        caps.uSimpleDI = 1;
+    }
+
+    if(TRUE == m_caps.sPrimaryVideoCaps.bDenoiseFilter)
+    {
+        caps.uDenoiseFilter = 1;
+    }
+
+    if(TRUE == m_caps2.bDetailControl)
+    {
+        caps.uDetailFilter = 1;
+    }
+
+    if(TRUE == m_caps2.bVariances)
+    {
+        caps.uVariance = 1;
+    }
+
+    if(TRUE == m_caps.sPrimaryVideoCaps.bProcAmp)
+    {
+        caps.uProcampFilter = 1;
+    }
+
+    if( TRUE == m_caps2.bISControl )
+    {
+        caps.uIStabFilter = 1;
+    }
+
+    if( TRUE == m_caps2.bFieldWeavingControl )
+    {
+        caps.uFieldWeavingControl = 1;
+    }
+
+    caps.iNumBackwardSamples = m_caps.sPrimaryVideoCaps.iNumBackwardSamples;
+    caps.iNumForwardSamples  = m_caps.sPrimaryVideoCaps.iNumForwardSamples;
+
+    // FRC support
+    if(m_frcCaps.iRateConversionCount > 0)
+    {
+        caps.uFrameRateConversion = 1;
+        caps.frcCaps.customRateData.resize(m_frcCaps.iRateConversionCount);
+        for(mfxU32 indx = 0; indx < m_frcCaps.iRateConversionCount; indx++ )
+        {
+            caps.frcCaps.customRateData[indx].bkwdRefCount     = m_frcCaps.sCustomRateData[indx].usNumBackwardSamples;
+            caps.frcCaps.customRateData[indx].fwdRefCount      = m_frcCaps.sCustomRateData[indx].usNumForwardSamples;
+            caps.frcCaps.customRateData[indx].inputFramesOrFieldPerCycle = m_frcCaps.sCustomRateData[indx].InputFramesOrFields;
+            caps.frcCaps.customRateData[indx].outputIndexCountPerCycle= m_frcCaps.sCustomRateData[indx].OutputFrames;
+            caps.frcCaps.customRateData[indx].customRate.FrameRateExtN = m_frcCaps.sCustomRateData[indx].CustomRate.Numerator;
+            caps.frcCaps.customRateData[indx].customRate.FrameRateExtD = m_frcCaps.sCustomRateData[indx].CustomRate.Denominator;
+        }
+    }
+    
+    return MFX_ERR_NONE;
+
+} // mfxStatus FastCompositingDDI::QueryCapabilities(mfxVppCaps& caps)
+
+
+enum QueryStatus
+{
+    VPREP_GPU_READY         =   0,
+    VPREP_GPU_BUSY          =   1,
+    VPREP_GPU_NOT_REACHED   =   2,
+    VPREP_GPU_FAILED        =   3
+};
+
+mfxStatus FastCompositingDDI::QueryTaskStatus(mfxU32 taskIndex)
+{
+    HRESULT hRes;
+
+    const mfxU32 numStructures = 6 * 2;
+    FASTCOMP_QUERY_STATUS queryStatus[numStructures];
+
+    std::set<mfxU32>::iterator iterator;
+
+    // execute call
+    hRes = m_pAuxDevice->Execute(
+        FASTCOMP_QUERY_STATUS_FUNC_ID, 
+        NULL, 
+        0, 
+        &queryStatus, 
+        numStructures*sizeof(FASTCOMP_QUERY_STATUS));
+
+    // houston, we have a problem :)
+    MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
+
+    for (mfxU32 i = 0; i < numStructures; i += 1)
+    {
+        if (VPREP_GPU_READY == queryStatus[i].Status)
+        {
+            m_cachedReadyTaskIndex.insert(queryStatus[i].QueryStatusID);
+        }
+        else if (VPREP_GPU_FAILED == queryStatus[i].Status)
+        {
+            return MFX_ERR_DEVICE_FAILED;
+        }
+    }
+
+    iterator = find(m_cachedReadyTaskIndex.begin(), m_cachedReadyTaskIndex.end(), taskIndex);
+    
+    if (m_cachedReadyTaskIndex.end() == iterator)
+    {
+        return MFX_TASK_BUSY;
+    }
+
+    m_cachedReadyTaskIndex.erase(iterator);
+
+    return MFX_TASK_DONE;
+
+} // mfxStatus FastCompositingDDI::QueryTaskStatus(mfxU32 taskIndex)
+
+
+void FastCompositingDDI::ResetBltParams(FASTCOMP_BLT_PARAMS *pBlt)
+{
+    if (NULL != pBlt)
+    {
+        *pBlt = FastCompBlt_Default;
+    }
+
+} // void FastCompositingDDI::ResetBltParams(FASTCOMP_BLT_PARAMS *pBlt)
+
+mfxStatus FastCompositingDDI::FastCopy(IDirect3DSurface9 *pTarget, IDirect3DSurface9 *pSource,
+                                       RECT *pTargetRect, RECT *pSourceRect, BOOL bInterlaced)
+{
+    D3DSURFACE_DESC surfDesc;
+
+    FASTCOMP_BLT_PARAMS videoCompositingBlt = FastCompBlt_Default;
+
+    IDirect3DSurface9 *pSourceArray[]  = { pTarget, pSource };
+    FASTCOMP_VideoSample samples[1];
+
+    // check appropriate capabilities
+    if (!m_caps2.bTargetInSysMemory)
+    {
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    // obtain surface description
+    pTarget->GetDesc(&surfDesc);
+
+    if (surfDesc.Pool != D3DPOOL_SYSTEMMEM)
+    {
+        return MFX_ERR_UNKNOWN;
+    }
+
+    // set output mode
+    if (m_caps2.TargetInterlacingModes & FASTCOMP_TARGET_NO_DEINTERLACING_MASK)
+    {
+        videoCompositingBlt.iTargetInterlacingMode = FASTCOMP_TARGET_NO_DEINTERLACING;
+    }
+    else
+    {
+        videoCompositingBlt.iTargetInterlacingMode = FASTCOMP_TARGET_PROGRESSIVE;
+    }
+
+    // check support for interlaced to interlaced copy
+    if (bInterlaced)
+    {
+        if (FASTCOMP_TARGET_PROGRESSIVE == videoCompositingBlt.iTargetInterlacingMode)
+        {
+            // fast copy doesn't support of interlaced output
+            return MFX_ERR_UNSUPPORTED;
+        }
+
+        // check for interlaced scaling
+        if (memcmp(pTargetRect, pSourceRect, sizeof(RECT)) &&
+            0 == m_caps.sPrimaryVideoCaps.bInterlacedScaling)
+        {
+            // fast copy doesn't support of interlaced scaling
+            return MFX_ERR_UNSUPPORTED;
+        }
+    }
+
+    // register source and target surfaces
+    m_pAuxDevice->Register(pSourceArray, 2, TRUE);
+
+    // set fast compositing parameters for fast copy
+    videoCompositingBlt.pRenderTarget = pTarget;
+    videoCompositingBlt.SampleCount = 1;
+    videoCompositingBlt.pSamples = samples;
+    videoCompositingBlt.TargetFrame = 0;
+    videoCompositingBlt.TargetRect = *pTargetRect;
+    videoCompositingBlt.bTargetInSysMemory = TRUE;
+
+    // set main video
+    ZeroMemory(samples, sizeof(samples));
+    samples[0].Depth = FASTCOMP_DEPTH_MAIN_VIDEO;
+    samples[0].SrcSurface = pSource;
+    samples[0].SrcRect = *pSourceRect;
+    samples[0].DstRect = *pTargetRect;
+    samples[0].Start = 0;
+    samples[0].End = 1000;
+
+    // wet interlaced/progressive sample flag
+    samples[0].SampleFormat = DXVA2_ExtendedFormat_Default;
+    samples[0].SampleFormat.SampleFormat = (bInterlaced) ? 
+        DXVA_SampleFieldInterleavedEvenFirst : DXVA_SampleProgressiveFrame;
+
+    // fast compositing blt
+    // TODO !!!
+    m_pAuxDevice->Execute(FASTCOMP_BLT, (void *) &videoCompositingBlt, 
+                          sizeof(FASTCOMP_BLT_PARAMS), NULL, 0);
+
+    return MFX_ERR_NONE;
+
+} // mfxStatus FastCompositingDDI::FastCopy(IDirect3DSurface9 *pTarget, IDirect3DSurface9 *pSource, RECT *pTargetRect, RECT *pSourceRect, BOOL bInterlaced)
+
+
+mfxStatus FastCompositingDDI::QueryVariance(
+    mfxU32 frameIndex, 
+    std::vector<UINT> &variance)
+{
+    HRESULT hRes;
+    
+    variance.resize(m_varianceCaps.VarianceCount);
+    if(!m_caps2.bVariances || variance.empty() ) return MFX_ERR_NONE;
+
+    FASTCOMP_QUERY_VARIANCE_PARAMS queryVarianceParam = {0};
+
+    queryVarianceParam.FrameNumber = frameIndex;
+    queryVarianceParam.pVariances  = &variance[0];
+    queryVarianceParam.VarianceBufferSize = m_varianceCaps.VarianceCount * m_varianceCaps.VarianceSize; //variance.size();
+ 
+    // execute call
+    hRes = m_pAuxDevice->Execute(
+        FASTCOMP_QUERY_VARIANCE, 
+        (void *) &queryVarianceParam, 
+        sizeof(FASTCOMP_QUERY_VARIANCE_PARAMS), 
+        NULL, 
+        0);
+  
+    // houston, we have a problem :)
+    MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
+
+    /*if (querySceneDetection.QueryMode)
+    {
+        sceneChangeRate = (querySceneDetection.CurFieldSceneChangeRate + querySceneDetection.PreFieldSceneChangeRate) / 2;
+    }
+    else
+    {
+        sceneChangeRate = querySceneDetection.FrameSceneChangeRate;
+    }*/
+  
+    return MFX_ERR_NONE;
+
+} // mfxStatus FastCompositingDDI::QueryVariance(...)
+
+
+mfxStatus FastCompositingDDI::ExecuteBlt(FASTCOMP_BLT_PARAMS *pBltParams)
+{
+    HRESULT hRes;
+
+    // fast compositing blt
+    hRes = m_pAuxDevice->Execute(FASTCOMP_BLT, (void *)pBltParams, 
+                                 sizeof(FASTCOMP_BLT_PARAMS), NULL, 0);
+
+    MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
+
+    return MFX_ERR_NONE;
+
+} // mfxStatus FastCompositingDDI::ExecuteBlt(FASTCOMP_BLT_PARAMS *pBltParams)
+
+
+mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecuteParams, FASTCOMP_BLT_PARAMS *pBltParams )
+{
+    // procamp
+    pBltParams->ProcAmpValues.Brightness = DXVA2FloatToFixed((mfxF32)pExecuteParams->Brightness);
+    pBltParams->ProcAmpValues.Saturation = DXVA2FloatToFixed((mfxF32)pExecuteParams->Saturation);
+    pBltParams->ProcAmpValues.Hue        = DXVA2FloatToFixed((mfxF32)pExecuteParams->Hue);
+    pBltParams->ProcAmpValues.Contrast   = DXVA2FloatToFixed((mfxF32)pExecuteParams->Contrast);
+
+    // pipeline
+    pBltParams->iDeinterlacingAlgorithm  = pExecuteParams->iDeinterlacingAlgorithm;
+
+    pBltParams->bDenoiseAutoAdjust       = pExecuteParams->bDenoiseAutoAdjust;
+    pBltParams->wDenoiseFactor           = pExecuteParams->denoiseFactor;
+
+    pBltParams->wDetailFactor            = pExecuteParams->detailFactor;
+    pBltParams->bFMDEnable               = pExecuteParams->bFMDEnable;
+//    pBltParams->bSceneDetectionEnable    = pExecuteParams->bSceneDetectionEnable;
+
+    pBltParams->iTargetInterlacingMode   = pExecuteParams->iTargetInterlacingMode;
+
+    pBltParams->TargetFrame              = pExecuteParams->targetTimeStamp;   
+
+    pBltParams->bFieldWeaving            = pExecuteParams->bFieldWeaving;
+
+    //Variance
+    pBltParams->bVarianceQuery           = pExecuteParams->bVarianceEnable;
+
+    m_inputSamples.resize( pExecuteParams->refCount );
+
+    // reference samples 
+    for( int refIdx = 0; refIdx < pExecuteParams->refCount; refIdx++ )
+    {
+        mfxDrvSurface* pRefSurf = &(pExecuteParams->pRefSurfaces[refIdx]);        
+        FASTCOMP_VideoSample* pInputSample = &m_inputSamples[refIdx];
+
+        memset(pInputSample, 0, sizeof(FASTCOMP_VideoSample));
+
+        pInputSample->SrcSurface = (IDirect3DSurface9*)(size_t)(pRefSurf->hdl.first);
+        pInputSample->Start      = pRefSurf->startTimeStamp;
+        pInputSample->End        = pRefSurf->endTimeStamp;
+
+        pInputSample->SampleFormat.VideoChromaSubsampling = DXVA2_VideoChromaSubsampling_Unknown;
+        if((pRefSurf->frameInfo.FourCC == MFX_FOURCC_IMC3 ||
+            pRefSurf->frameInfo.FourCC == MFX_FOURCC_YUV400 ||
+            pRefSurf->frameInfo.FourCC == MFX_FOURCC_YUV411 ||
+            pRefSurf->frameInfo.FourCC == MFX_FOURCC_YUV422H ||
+            pRefSurf->frameInfo.FourCC == MFX_FOURCC_YUV422V ||
+            pRefSurf->frameInfo.FourCC == MFX_FOURCC_YUV444) &&
+            pExecuteParams->targetSurface.frameInfo.FourCC == MFX_FOURCC_RGB4 ||
+            pRefSurf->frameInfo.FourCC == MFX_FOURCC_RGBP &&
+           (pExecuteParams->targetSurface.frameInfo.FourCC == MFX_FOURCC_NV12 || 
+            pExecuteParams->targetSurface.frameInfo.FourCC == MFX_FOURCC_YUY2))
+        {
+            pInputSample->SampleFormat.NominalRange = DXVA2_NominalRange_0_255;
+            pInputSample->SampleFormat.VideoTransferMatrix = DXVA2_VideoTransferMatrix_BT601;
+            pBltParams->bTargetYuvFullRange = 1;
+            pBltParams->TargetTransferMatrix = DXVA2_VideoTransferMatrix_BT601;
+        }
+        else
+        {
+            if(pRefSurf->frameInfo.FourCC == MFX_FOURCC_RGB4)
+            {
+                pInputSample->SampleFormat.NominalRange = DXVA2_NominalRange_0_255;
+            }
+            pInputSample->SampleFormat.VideoTransferMatrix = DXVA2_VideoTransferMatrix_BT601;
+            //pBltParams->bTargetYuvFullRange = 1;
+            pBltParams->TargetTransferMatrix = DXVA2_VideoTransferMatrix_BT601;
+        }
+        pInputSample->SampleFormat.VideoLighting = DXVA2_VideoLighting_Unknown;
+        pInputSample->SampleFormat.VideoPrimaries = DXVA2_VideoPrimaries_Unknown;
+        pInputSample->SampleFormat.VideoTransferFunction = DXVA2_VideoTransFunc_Unknown;
+
+        if(!pExecuteParams->bFieldWeaving)
+        {
+            pInputSample->SampleFormat.SampleFormat = MapPictureStructureToDXVAType(pRefSurf->frameInfo.PicStruct);
+        }
+        else
+        {
+            // for top field
+            if(refIdx == 1)
+                pInputSample->SampleFormat.SampleFormat = DXVA2_SampleFieldSingleEven;
+            // for bottom field
+            else
+                pInputSample->SampleFormat.SampleFormat = DXVA_SampleFieldSingleOdd;
+        }
+
+        if (pRefSurf->frameInfo.FourCC == MFX_FOURCC_RGB4)
+        {   
+            // workaround for rgb4 interlace video
+            pInputSample->SampleFormat.SampleFormat = DXVA2_SampleProgressiveFrame;
+        }
+
+        // no transparence
+        pInputSample->Alpha = 1.0F; 
+
+        // primary video layer, depth is 0
+        pInputSample->Depth = 0;
+
+        pInputSample->bLumaKey = FALSE;
+        pInputSample->iLumaHigh = 0;
+        pInputSample->iLumaLow = 0;
+
+        // cropping
+        // source cropping
+        mfxFrameInfo *inInfo = &(pRefSurf->frameInfo);        
+        pInputSample->SrcRect.top    = inInfo->CropY;
+        pInputSample->SrcRect.left   = inInfo->CropX;
+        pInputSample->SrcRect.bottom = inInfo->CropH;
+        pInputSample->SrcRect.right  = inInfo->CropW;         
+        pInputSample->SrcRect.bottom += inInfo->CropY;
+        pInputSample->SrcRect.right  += inInfo->CropX;
+
+        // destination cropping
+        mfxFrameInfo *outInfo = &(pExecuteParams->targetSurface.frameInfo);
+        pInputSample->DstRect.top = outInfo->CropY;
+        pInputSample->DstRect.left = outInfo->CropX;
+        pInputSample->DstRect.bottom = outInfo->CropH;
+        pInputSample->DstRect.right  = outInfo->CropW;         
+        pInputSample->DstRect.bottom += outInfo->CropY;
+        pInputSample->DstRect.right += outInfo->CropX;
+    }
+
+    pBltParams->SampleCount = pExecuteParams->refCount;
+    pBltParams->pSamples    = &m_inputSamples[0];
+
+    pBltParams->TargetFrame   = pExecuteParams->targetTimeStamp;
+    pBltParams->pRenderTarget = (IDirect3DSurface9*)(size_t)(pExecuteParams->targetSurface.hdl.first);    
+    
+    // aya: FIXME rewritting
+    // initialize region of interest
+    RECT srcRect, outRect;
+    srcRect.left = srcRect.top = outRect.left = outRect.top = 0;
+    
+    srcRect.right  = pExecuteParams->pRefSurfaces[0].frameInfo.Width;
+    srcRect.bottom = pExecuteParams->pRefSurfaces[0].frameInfo.Height;
+
+    outRect.right  = pExecuteParams->targetSurface.frameInfo.Width;
+    outRect.bottom = pExecuteParams->targetSurface.frameInfo.Height;
+
+    pBltParams->TargetRect = outRect;
+
+    KeepAspectRatio(pBltParams->TargetRect, srcRect);
+
+    pBltParams->BackgroundColor = BLACK16;
+
+    return MFX_ERR_NONE;
+
+} // mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecuteParams, FASTCOMP_BLT_PARAMS *pBltParams )
+
+
+mfxStatus FastCompositingDDI::Execute(mfxExecuteParams *pParams)
+{
+    FASTCOMP_BLT_PARAMS bltParams = {0};
+
+    mfxStatus sts = ConvertExecute2BltParams( pParams, &bltParams );
+    MFX_CHECK_STS(sts);
+
+    // set size of blt params structure
+    bltParams.iSizeOfStructure = sizeof(FASTCOMP_BLT_PARAMS);
+
+    // All process with Node structure should be done here
+    //{
+        FASTCOMP_QUERY_STATUS_PARAMS_V1_0 statusParams;
+        statusParams.iQueryStatusID = pParams->statusReportID;
+
+        FASTCOMP_BLT_PARAMS_OBJECT queryStatusObject;
+        queryStatusObject.type = FASTCOMP_QUERY_STATUS_V1_0;
+        queryStatusObject.pParams = (void *)&statusParams;
+        queryStatusObject.iSizeofParams = sizeof(statusParams);
+
+        bltParams.QueryStatusObject = queryStatusObject;
+    //}
+
+    //{
+        FASTCOMP_IS_PARAMS_V1_0 istabParams;
+        istabParams.IStabMode = pParams->bImgStabilizationEnable ? (FASTCOMP_ISTAB_MODE)pParams->istabMode : ISTAB_MODE_NONE;
+
+        FASTCOMP_BLT_PARAMS_OBJECT istabObject;
+        istabObject.type = FASTCOMP_FEATURES_IS_V1_0;
+        istabObject.pParams = (void *)&istabParams;
+        istabObject.iSizeofParams = sizeof(istabParams);
+
+        if( pParams->bImgStabilizationEnable ) 
+        {
+            bltParams.ISObject = istabObject;
+        }
+        else
+        {
+            bltParams.ISObject.iSizeofParams = 0;
+            bltParams.ISObject.pParams       = NULL;
+            bltParams.ISObject.type          = FASTCOMP_FEATURES_IS_V1_0;
+        }
+    //}
+
+    //{
+        FASTCOMP_FRC_PARAMS_V1_0 frcParams = {0};
+        FASTCOMP_BLT_PARAMS_OBJECT frcObject;
+        if(pParams->bFRCEnable)
+        {
+            if(false == m_frcState.m_isInited)
+            {
+                m_frcState.m_inputFramesOrFieldsPerCycle = pParams->customRateData.inputFramesOrFieldPerCycle;
+                m_frcState.m_outputIndexCountPerCycle    = pParams->customRateData.outputIndexCountPerCycle;
+                m_frcState.m_isInited = true;
+            }
+
+            frcParams.InputFrameOrField = m_frcState.m_inputIndx;
+            frcParams.OutputIndex       = m_frcState.m_outputIndx;
+            frcParams.CustomRate.Numerator = pParams->customRateData.customRate.FrameRateExtN;
+            frcParams.CustomRate.Denominator = pParams->customRateData.customRate.FrameRateExtD;
+            frcParams.RepeatFrame = 0;//1 - repeat, 0 - interpolation 
+            // update
+            m_frcState.m_outputIndx++;
+            if(m_frcState.m_outputIndexCountPerCycle == m_frcState.m_outputIndx)
+            {
+                m_frcState.m_outputIndx = 0;
+                m_frcState.m_inputIndx += m_frcState.m_inputFramesOrFieldsPerCycle;
+            }
+
+            frcObject.type = FASTCOMP_FEATURES_FRC_V1_0;
+            frcObject.pParams = (void *)&frcParams;
+            frcObject.iSizeofParams = sizeof(frcParams);            
+        }
+        else
+        {
+            frcObject.type          = FASTCOMP_FEATURES_FRC_V1_0;
+            frcObject.pParams       = NULL;
+            frcObject.iSizeofParams = 0;
+        }
+
+        bltParams.FRCObject = frcObject;
+    //}
+
+    sts = ExecuteBlt( &bltParams );
+    MFX_CHECK_STS(sts);
+
+    /*if( pParams->bVarianceEnable )
+    {
+        pParams->frameNumber = bltParams.iFrameNum;
+    }*/
+
+    return sts;
+
+} // mfxStatus FastCompositingDDI::Execute(mfxExecuteParams *pParams)
+
+
+mfxStatus FastCompositingDDI::CreateSurface(IDirect3DSurface9 **surface, 
+                                            mfxU32 width, mfxU32 height, 
+                                            D3DFORMAT format, 
+                                            D3DPOOL pool)
+{
+    HRESULT hRes;
+
+    if (m_pD3DDecoderService)
+    {
+         hRes = m_pD3DDecoderService->CreateSurface(width,
+                                                    height,
+                                                    0,
+                                                    format,
+                                                    pool,
+                                                    0,
+                                                    DXVA2_VideoSoftwareRenderTarget,
+                                                    surface,
+                                                    NULL);
+
+        if (FAILED(hRes))
+        {
+            return MFX_ERR_DEVICE_FAILED;
+        }
+    }
+
+    return MFX_ERR_NONE;
+
+} // mfxStatus FastCompositingDDI::CreateSurface(IDirect3DSurface9 **surface, mfxU32 width, mfxU32 height, D3DFORMAT format, D3DPOOL pool)
+
+#endif // #if defined (MFX_VA)
+#endif // #if defined (MFX_ENABLE_VPP)

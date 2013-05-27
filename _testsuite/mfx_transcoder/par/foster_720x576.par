@@ -1,0 +1,6 @@
+InputFile = \YUV\foster_720x576.yuv
+Width = 720
+Height = 576
+FrameRate = 25
+NumberFrames = 50
+BitRate = 2000000
