@@ -28,6 +28,8 @@ File Name: mfx_library_iterator.cpp
 
 \* ****************************************************************************** */
 
+#if defined(_WIN32) || defined(_WIN64)
+
 #include "mfx_library_iterator.h"
 
 #include "mfx_dispatcher.h"
@@ -413,4 +415,5 @@ mfxIMPL MFXLibraryIterator::GetImplementationType()
 } // mfxIMPL MFXLibraryIterator::GetImplementationType()
 
 } // namespace MFX
+#endif // #if defined(_WIN32) || defined(_WIN64)
 

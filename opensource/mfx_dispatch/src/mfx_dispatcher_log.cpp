@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2013 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -32,11 +32,13 @@ File Name: mfx_dispatcher_log.h
 
 #include "mfx_dispatcher_log.h"
 #include "mfxstructures.h"
+#if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 #if defined(DISPATCHER_LOG_REGISTER_EVENT_PROVIDER)
 #include <evntprov.h>
 #include <winmeta.h>
 #endif
+#endif // #if defined(_WIN32) || defined(_WIN64)
 #include <stdarg.h>
 #include <algorithm>
 #include <string>
@@ -45,7 +47,7 @@ File Name: mfx_dispatcher_log.h
 struct CodeStringTable
 {
     int code;
-    char *string;
+    const char *string;
 } LevelStrings []= 
 {
     {DL_INFO,  "INFO:   "},
@@ -54,7 +56,7 @@ struct CodeStringTable
 };
 
 #define DEFINE_CODE(code)\
-    code, #code
+    {code, #code}
 
 static CodeStringTable StringsOfImpl[] = {
     DEFINE_CODE(MFX_IMPL_AUTO),       
@@ -108,7 +110,7 @@ static CodeStringTable StringsOfStatus[] =
 #define CODE_TO_STRING(code,  array)\
     CodeToString(code, array, sizeof(array)/sizeof(array[0]))
 
-char* CodeToString(int code, CodeStringTable array[], int len )
+const char* CodeToString(int code, CodeStringTable array[], int len )
 {
     for (int i = 0 ; i < len; i++)
     {
@@ -142,7 +144,7 @@ void DispatcherLogBracketsHelper::Write(char * str, ...)
     va_end(argsptr);
 }
 
-void DispatchLogBlockHelper::Write(char * str, ...)
+void DispatchLogBlockHelper::Write(const char * str, ...)
 {
     va_list argsptr;
     va_start(argsptr, str);
@@ -207,7 +209,7 @@ void   DispatchLog::DetachAllSinks()
     m_DispatcherLogSink = DL_SINK_NULL;
 }
 
-void   DispatchLog::Write(int level, int opcode, char * msg, va_list argptr)
+void   DispatchLog::Write(int level, int opcode, const char * msg, va_list argptr)
 {
     int sinkTable[] =
     {
@@ -215,7 +217,7 @@ void   DispatchLog::Write(int level, int opcode, char * msg, va_list argptr)
         DL_SINK_IMsgHandler,
     };
 
-    for (int i = 0; i < sizeof(sinkTable) / sizeof(sinkTable[0]); i++)
+    for (size_t i = 0; i < sizeof(sinkTable) / sizeof(sinkTable[0]); i++)
     {
         switch(m_DispatcherLogSink & sinkTable[i])
         {
@@ -259,8 +261,8 @@ class ETWHandler : public IMsgHandler
 public:
     ETWHandler(const wchar_t * guid_str)
       : m_bUseFormatter(DISPATCHER_LOG_USE_FORMATING)
-      , m_bProviderEnable()
       , m_EventHandle()
+      , m_bProviderEnable()
     {
         GUID rguid = GUID_NULL;
         if (FAILED(CLSIDFromString(guid_str, &rguid)))

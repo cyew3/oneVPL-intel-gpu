@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2013 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -84,7 +84,7 @@ class IMsgHandler
 {
 public:
     virtual ~IMsgHandler(){}
-    virtual void Write(int level, int opcode, char * msg, va_list argptr) = 0;
+    virtual void Write(int level, int opcode, const char * msg, va_list argptr) = 0;
 };
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -177,7 +177,7 @@ public:
     void   DetachSink(int nsink, IMsgHandler *pHandler);
     void   ExchangeSink(int nsink, IMsgHandler *pOld, IMsgHandler *pNew);
     void   DetachAllSinks();
-    void   Write(int level, int opcode, char * msg, va_list argptr);
+    void   Write(int level, int opcode, const char * msg, va_list argptr);
     
 protected:
     DispatchLog();
@@ -200,7 +200,7 @@ struct  DispatcherLogBracketsHelper
 struct DispatchLogBlockHelper
 {
     int  m_level;
-    void Write(char * str, ...);
+    void Write(const char * str, ...);
     DispatchLogBlockHelper (int level)
         : m_level(level)
     {

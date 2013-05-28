@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2013 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -35,8 +35,11 @@ File Name: mfx_dispatcher.h
 #include <mfxplugin.h>
 #include <stddef.h>
 
-
+#if defined(_WIN32) || defined(_WIN64)
 typedef wchar_t  msdk_disp_char;
+#else
+#define msdk_disp_char char
+#endif
 
 #if !defined (MFX_DISPATCHER_EXPOSED_PREFIX)
     #define DISPATCHER_EXPOSED_PREFIX(fnc) fnc 

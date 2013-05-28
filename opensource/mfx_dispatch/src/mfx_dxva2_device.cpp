@@ -31,6 +31,8 @@ File Name: mfx_dxva2_device.cpp
 #include <iostream>
 #include <sstream>
 
+#if defined(_WIN32) || defined(_WIN64)
+
 #define INITGUID
 #include <d3d9.h>
 #include <dxgi.h>
@@ -554,3 +556,4 @@ mfxU32 DXVA2Device::GetAdapterCount(void) const
     return m_numAdapters;
 
 } // mfxU32 DXVA2Device::GetAdapterCount(void) const
+#endif
