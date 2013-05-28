@@ -29,6 +29,7 @@ class IOptionParserVisitor
 {
 
 public:
+    virtual ~IOptionParserVisitor() {};
     virtual bool visit_string(vm_char *ptr, vm_char * ptr_end) = 0;
     virtual bool visit_special(SpecialItemType type)   = 0;
 };
@@ -59,6 +60,7 @@ public:
     CmdOptionProcessor(bool bPrintMode, bool bAdaptivePrint = true)
         : m_bPrint(bPrintMode)
         , m_bAdaptivePrinter(bAdaptivePrint){}
+    virtual ~CmdOptionProcessor() {};
 
     virtual void    SetPrint(bool bPrintOption, bool bAdaptivePtinter = true);
     virtual bool    GetPrint();
@@ -120,6 +122,7 @@ class OptionsContainer : public IOptionParserVisitor
 public :
 
     OptionsContainer();
+    virtual ~OptionsContainer() {};
     virtual bool visit_string(vm_char *ptr, vm_char * ptr_end);
     virtual bool visit_special(SpecialItemType type);
     virtual std::list<tstring> & get_all_options(){return m_all_options;}

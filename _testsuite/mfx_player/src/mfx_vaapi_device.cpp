@@ -9,19 +9,30 @@ Copyright(c) 2011-2012 Intel Corporation. All Rights Reserved.
 \* ****************************************************************************** */
 
 #if (defined(LINUX32) || defined(LINUX64)) && !defined(ANDROID)
-#ifdef VAAPI_SURFACES_SUPPORT
 
-#include "mfx_pipeline_defs.h"
 #include "mfx_vaapi_device.h"
-#include "vaapi_utils.h"
 
-MFXVAAPIDevice::MFXVAAPIDevice()
+#if defined(LIBVA_DRM_SUPPORT)
+    static DRMLibVA g_LibVA;
+#elif defined(LIBVA_X11_SUPPORT)
+    static X11LibVA g_LibVA;
+#endif
+
+IHWDevice* CreateVAAPIDevice(void)
 {
-    m_x11_display = NULL;
-    va_dpy = NULL;
+#if defined(LIBVA_DRM_SUPPORT)
+    return new MFXVAAPIDeviceDRM(&g_LibVA);
+#elif defined(LIBVA_X11_SUPPORT)
+    return new MFXVAAPIDeviceX11(&g_LibVA);
+#endif
 }
 
-mfxStatus MFXVAAPIDevice::Init(mfxU32 nAdapter,
+#if defined(LIBVA_X11_SUPPORT)
+
+#include "mfx_pipeline_defs.h"
+
+
+mfxStatus MFXVAAPIDeviceX11::Init(mfxU32 nAdapter,
                                WindowHandle handle,
                                bool bIsWindowed,
                                mfxU32 VIDEO_RENDER_TARGET_FORMAT,
@@ -35,67 +46,25 @@ mfxStatus MFXVAAPIDevice::Init(mfxU32 nAdapter,
         return MFX_ERR_NONE;
     }
 
-    VAStatus va_res = VA_STATUS_SUCCESS;
-    mfxStatus mfx_res = MFX_ERR_NONE;
-    int major_version = 0, minor_version = 0;
-
-    if (NULL == handle)
-    {
-        char* currentDisplay = getenv("DISPLAY");
-        if (currentDisplay)
-            m_x11_display = XOpenDisplay(currentDisplay);
-        else
-            m_x11_display = XOpenDisplay(VAAPI_X_DEFAULT_DISPLAY);
-    }
-    else m_x11_display = (Display*)handle;
-
-    if (NULL == m_x11_display) mfx_res = MFX_ERR_NOT_INITIALIZED;
-    if (MFX_ERR_NONE == mfx_res)
-    {
-        va_dpy = vaGetDisplay(m_x11_display);
-        va_res = vaInitialize(va_dpy, &major_version, &minor_version);
-        mfx_res = va_to_mfx_status(va_res);
-    }
-    return mfx_res;
+    return MFX_ERR_NONE;
 }
 
-mfxStatus MFXVAAPIDevice::Reset(bool bWindowed)
+mfxStatus MFXVAAPIDeviceX11::Reset(WindowHandle /*hDeviceWindow*/, bool /*bWindowed*/)
 {
     return MFX_ERR_NONE;
 }
 
-void MFXVAAPIDevice::Close()
+mfxStatus MFXVAAPIDeviceX11::GetHandle(mfxHandleType type, mfxHDL *pHdl)
 {
-    if (va_dpy)
+    if ((MFX_HANDLE_VA_DISPLAY == type) && (NULL != pHdl))
     {
-        vaTerminate(va_dpy);
-        va_dpy = NULL;
-    }
-    if (m_x11_display)
-    {
-        XCloseDisplay(m_x11_display);
-        m_x11_display = NULL;
-    }
-}
-
-MFXVAAPIDevice::~MFXVAAPIDevice()
-{
-    Close();
-}
-
-
-mfxStatus MFXVAAPIDevice::GetHandle(mfxHandleType type, mfxHDL *pHdl)
-{
-    if (MFX_HANDLE_VA_DISPLAY == type && pHdl != NULL)
-    {
-        *pHdl = va_dpy;
-
+        if (m_pX11LibVA) *pHdl = m_pX11LibVA->GetVADisplay();
         return MFX_ERR_NONE;
     }
     return MFX_ERR_UNSUPPORTED;
 }
 
-mfxStatus MFXVAAPIDevice::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocator * /*Palloc*/)
+mfxStatus MFXVAAPIDeviceX11::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocator * /*Palloc*/)
 {
     VAStatus va_res = VA_STATUS_SUCCESS;
     mfxStatus sts = MFX_ERR_NONE;
@@ -105,10 +74,10 @@ mfxStatus MFXVAAPIDevice::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloc
     vaapiMemId * memId = (vaapiMemId*)(pSurface->Data.MemId);
     if (!memId || !memId->m_surface) return sts;
     VASurfaceID surface = *memId->m_surface;
-    
-    XResizeWindow(m_x11_display, m_draw, pSurface->Info.CropW, pSurface->Info.CropH);
-    
-    va_res = vaPutSurface(va_dpy,
+
+    XResizeWindow((Display*)(m_pX11LibVA ? m_pX11LibVA->GetXDisplay() : NULL), m_draw, pSurface->Info.CropW, pSurface->Info.CropH);
+
+    va_res = vaPutSurface(m_pX11LibVA ? m_pX11LibVA->GetVADisplay() : NULL,
                       surface,
                       m_draw,
                       pSurface->Info.CropX,
@@ -124,9 +93,9 @@ mfxStatus MFXVAAPIDevice::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloc
                       VA_FRAME_PICTURE);
 
     sts = va_to_mfx_status(va_res);
-    XSync(m_x11_display, False);
+    XSync((Display*)(m_pX11LibVA ? m_pX11LibVA->GetXDisplay() : NULL), False);
   return MFX_ERR_NONE;
 }
 
-#endif // #ifdef VAAPI_SURFACES_SUPPORT
+#endif // #if defined(LIBVA_X11_SUPPORT)
 #endif // #if (defined(LINUX32) || defined(LINUX64)) && !defined(ANDROID)

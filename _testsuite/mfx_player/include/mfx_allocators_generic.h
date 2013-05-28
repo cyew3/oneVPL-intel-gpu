@@ -41,7 +41,7 @@ public:
     }
     virtual MFXFrameAllocator* CreateVAAPIAllocator()
     {
-#ifdef VAAPI_SURFACES_SUPPORT
+#ifdef LIBVA_SUPPORT
         return new vaapiFrameAllocator();
 #else
         return NULL;

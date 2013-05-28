@@ -119,14 +119,20 @@ class BSConvert<MFX_FOURCC_NV12, MFX_FOURCC_NV12>
 public:
     virtual mfxStatus Transform(mfxBitstream * bs, mfxFrameSurface1 *surface)
     {
+        mfxFrameData &data = surface->Data;
+        mfxFrameInfo &info = surface->Info;
+
+#if defined(LINUX32) || defined (LINUX64)  
+        // on Windows surfaces comes zero-initialized, on Linux have to clear non-aligned stream boundaries
+        memset(data.Y, 0, info.Width * info.Height);
+        memset(data.UV, 0, info.Width * info.Height / 2);
+#endif
+
         MFX_CHECK_STS(BSConverterUtil::TransFormY(bs, surface));
 
         mfxU32 planeSize;
         mfxU32 w, h, pitch;
         mfxU8  *ptr;
-
-        mfxFrameData &data = surface->Data;
-        mfxFrameInfo &info = surface->Info;
 
         w = info.CropW;
         h = info.CropH >> 1;
@@ -163,14 +169,20 @@ class BSConvert<MFX_FOURCC_YV12, MFX_FOURCC_YV12>
 public:
     virtual mfxStatus Transform(mfxBitstream * bs, mfxFrameSurface1 *surface)
     {
+        mfxFrameData &data = surface->Data;
+        mfxFrameInfo &info = surface->Info;
+
+#if defined(LINUX32) || defined (LINUX64)  
+        // on Windows surfaces comes zero-initialized, on Linux have to clear non-aligned stream boundaries
+        memset(data.Y, 0, info.Width * info.Height);
+        memset(data.UV, 0, info.Width * info.Height / 2);
+#endif
+
         MFX_CHECK_STS(BSConverterUtil::TransFormY(bs, surface));
 
         mfxU32 planeSize;
         mfxU32 w, h, i, pitch;
         mfxU8  *ptr, *ptr2;
-
-        mfxFrameData &data = surface->Data;
-        mfxFrameInfo &info = surface->Info;
 
         w = info.CropW >> 1;
         h = info.CropH >> 1;
@@ -209,13 +221,19 @@ class BSConvert<MFX_FOURCC_YV12, MFX_FOURCC_NV12>
 public:
     virtual mfxStatus Transform(mfxBitstream * bs, mfxFrameSurface1 *surface)
     {
+        mfxFrameData &data = surface->Data;
+        mfxFrameInfo &info = surface->Info;
+
+#if defined(LINUX32) || defined (LINUX64)  
+        // on Windows surfaces comes zero-initialized, on Linux have to clear non-aligned stream boundaries
+        memset(data.Y, 0, info.Width * info.Height);
+        memset(data.UV, 0, info.Width * info.Height / 2);
+#endif
+
         MFX_CHECK_STS(BSConverterUtil::TransFormY(bs, surface));
 
         mfxU32 w, h, i, j, pitch;
         mfxU8  *ptr;
-
-        mfxFrameData &data = surface->Data;
-        mfxFrameInfo &info = surface->Info;
 
         w = info.CropW >> 1;
         h = info.CropH >> 1;

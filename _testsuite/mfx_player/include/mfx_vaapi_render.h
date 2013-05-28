@@ -4,14 +4,14 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2012 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
 \* ****************************************************************************** */
 
 #if (defined(LINUX32) || defined(LINUX64)) && !defined(ANDROID)
-#ifdef VAAPI_SURFACES_SUPPORT
+#ifdef LIBVA_X11_SUPPORT
 
 #include "mfx_renders.h"
 #include "mfx_ihw_device.h"
@@ -48,7 +48,7 @@ public:
         }
     } m_initParams;
     
-    ScreenVAAPIRender(MFXVideoSessionWrapper *core, mfxStatus *status, const InitParams &refParams);
+    ScreenVAAPIRender(IVideoSession *core, mfxStatus *status, const InitParams &refParams);
     ~ScreenVAAPIRender();
 
 
@@ -64,10 +64,10 @@ protected:
     bool InitializeDevice();
     bool ResetDevice();
 
-    MFXVideoSessionWrapper  *m_pCore;
-    mfxFrameInfo        mfx_frame_info;
+    IVideoSession*      m_pCore;
+    mfxFrameInfo        m_mfxFrameInfo;
 
-    XVideoWindow         m_pWindow[1];
+    XVideoWindow        m_pWindow[1];
     mfxHDL              m_Hwnd;
     Display *           m_Dpy;
     bool                m_bSetup;
@@ -80,5 +80,5 @@ protected:
     //mfxFrameAllocator   m_VPPFrameAllocator;
 };
 
-#endif // #ifdef VAAPI_SURFACES_SUPPORT
+#endif // #ifdef LIBVA_X11_SUPPORT
 #endif // #if (defined(LINUX32) || defined(LINUX64)) && !defined(ANDROID)

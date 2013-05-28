@@ -4,21 +4,21 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2012 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
 \* ****************************************************************************** */
 
 #if (defined(LINUX32) || defined(LINUX64)) && !defined(ANDROID)
-#ifdef VAAPI_SURFACES_SUPPORT
+#ifdef LIBVA_X11_SUPPORT
 
 #include "mfx_pipeline_defs.h"
 #include "xvideo_window.h"
 
 XVideoWindow::XVideoWindow()
 {
-    m_Hwnd          = NULL;
+    m_Hwnd          = 0;
 }
 
 bool XVideoWindow::Initialize(const InitParams &refInit)
@@ -69,5 +69,5 @@ bool XVideoWindow::Initialize(const InitParams &refInit)
     return true;
 }
 
-#endif // #ifdef VAAPI_SURFACES_SUPPORT
+#endif // #ifdef LIBVA_X11_SUPPORT
 #endif // #if (defined(LINUX32) || defined(LINUX64)) && !defined(ANDROID)

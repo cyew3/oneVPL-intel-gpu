@@ -945,7 +945,7 @@ mfxStatus MFXMetricComparatorRender::RenderFrame(mfxFrameSurface1 *surface, mfxE
         return MFX_ERR_NONE;
     }
 
-    MFX_CHECK_POINTER(!m_pComparators.empty());
+    MFX_CHECK(!m_pComparators.empty());
     MFX_CHECK_STS(LockFrame(surface));
     MFX_CHECK_STS(LockFrame(m_pRefsurface));
 

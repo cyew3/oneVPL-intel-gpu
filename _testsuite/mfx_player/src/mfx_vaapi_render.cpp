@@ -4,14 +4,14 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2012 Intel Corporation. All Rights Reserved.
 
 /////////////////////////////////////////////////
 
 */
 
 #if (defined(LINUX32) || defined(LINUX64)) && !defined(ANDROID)
-#ifdef VAAPI_SURFACES_SUPPORT
+#ifdef LIBVA_X11_SUPPORT
 
 #include "vm_strings.h"
 
@@ -29,17 +29,16 @@ mfxStatus GetHDL(mfxHDL /*pthis*/, mfxMemId mid, mfxHDL *handle)
     return MFX_ERR_NONE;
 }
 
-ScreenVAAPIRender::ScreenVAAPIRender(MFXVideoSessionWrapper *core
+ScreenVAAPIRender::ScreenVAAPIRender(IVideoSession *core
                           , mfxStatus *status
                           , const InitParams &refParams)
     : MFXVideoRender(core, status)
     , m_initParams(refParams)
     , m_pCore(core)
     , m_bSetup()
+    , m_mfxFrameInfo()
 {
-    MFX_ZERO_MEM(mfx_frame_info);
 }
-
 
 mfxStatus ScreenVAAPIRender::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
@@ -88,7 +87,7 @@ mfxStatus ScreenVAAPIRender::Init(mfxVideoParam *par, const vm_char * /*pFilenam
 {
     MFX_CHECK_STS(SetupDevice());
 
-    mfx_frame_info = par->mfx.FrameInfo;
+    m_mfxFrameInfo = par->mfx.FrameInfo;
 
     return MFX_ERR_NONE;
 }
@@ -114,7 +113,7 @@ bool ScreenVAAPIRender::InitializeDevice()
 bool ScreenVAAPIRender::ResetDevice()
 {
 
-        if (MFX_ERR_NONE == m_initParams.pDevice->Reset(true == m_pWindow->isWindowed()))
+        if (MFX_ERR_NONE == m_initParams.pDevice->Reset(NULL, true == m_pWindow->isWindowed()))
         {
             return true;
         }
@@ -155,23 +154,7 @@ bool ScreenVAAPIRender::ResetDevice()
 
 mfxStatus ScreenVAAPIRender::RenderFrame(mfxFrameSurface1 *pSurface, mfxEncodeCtrl * pCtrl)
 {
-  //  mfxStatus sts;
-
-//    mfxFrameSurface1 in;
-//    mfxFrameSurface1 out;
-
     if (!pSurface) return MFX_ERR_NONE; // on EOS
-
-#ifdef BUFFERING_SIZE
-    // input buffering
-    pSurface->Data.Locked++;
-    frameBuffer.push_back(pSurface);
-    if (frameBuffer.size() < BUFFERING_SIZE) return MFX_ERR_MORE_DATA;
-    frameBuffer.front()->Data.Locked--;
-    pSurface = frameBuffer.front();
-    frameBuffer.pop_front();
-    //Sleep(10);
-#endif
 
     // Render frame
     if (!m_bSetup) MFX_ERR_NOT_INITIALIZED;
@@ -180,8 +163,6 @@ mfxStatus ScreenVAAPIRender::RenderFrame(mfxFrameSurface1 *pSurface, mfxEncodeCt
 
     return MFXVideoRender::RenderFrame(pSurface, pCtrl);
 }
-
-
 
 mfxStatus ScreenVAAPIRender::GetDevice(IHWDevice **ppDevice)
 {
@@ -197,5 +178,5 @@ ScreenVAAPIRender::~ScreenVAAPIRender()
 {
 }
 
-#endif // #ifdef VAAPI_SURFACES_SUPPORT
+#endif // #ifdef LIBVA_X11_SUPPORT
 #endif // #if (defined(LINUX32) || defined(LINUX64)) && !defined(ANDROID)
