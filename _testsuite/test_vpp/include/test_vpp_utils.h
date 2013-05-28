@@ -32,11 +32,10 @@
 #include <d3d11.h>
 #endif
 
-#ifdef VAAPI_SURFACES_SUPPORT
-#define VAAPI_X_DEFAULT_DISPLAY ":0.0"
+#ifdef LIBVA_SUPPORT
+#include "vaapi_utils.h"
 #include "vaapi_allocator.h"
-#include <va/va_x11.h>
-#include <X11/Xlib.h>
+#include "mfxlinux.h"
 #endif
 
 #include <map>
@@ -190,9 +189,8 @@ struct sMemoryAllocator
     ID3D11DeviceContext *pD3D11DeviceContext;
 #endif
 
-#ifdef VAAPI_SURFACES_SUPPORT
-    Display *display;
-    VADisplay va_dpy;
+#ifdef LIBVA_SUPPORT
+    std::auto_ptr<CLibVA> libvaKeeper;
 #endif
 };
 
@@ -392,7 +390,7 @@ protected:
 #ifdef D3D_SURFACES_SUPPORT
     std::auto_ptr<D3DFrameAllocator>    m_D3DAllocator;
 #endif
-#ifdef VAAPI_SURFACES_SUPPORT
+#ifdef LIBVA_SUPPORT
     std::auto_ptr<vaapiFrameAllocator>    m_vaapiAllocator;
 #endif
     std::auto_ptr<SysMemFrameAllocator> m_SYSAllocator;
@@ -420,11 +418,6 @@ mfxStatus InitResources(
     sInputParams* pInParams);
 
 void WipeResources(sAppResources* pResources);
-
-#ifdef VAAPI_SURFACES_SUPPORT
-mfxStatus InitVA(Display **display, VADisplay &va_dpy);
-void CloseVA(Display *display, VADisplay va_dpy);
-#endif
 
 mfxStatus GetFreeSurface(
     mfxFrameSurface1* pSurfacesPool, 

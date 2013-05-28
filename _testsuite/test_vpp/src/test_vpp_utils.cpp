@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008 - 2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008 - 2013 Intel Corporation. All Rights Reserved.
 //
 
 #include <string>
@@ -265,7 +265,7 @@ void PrintInfo(sInputParams* pParams, mfxVideoParam* pMfxParams, MFXVideoSession
     const vm_char* sImpl = (isHWlib) ? VM_STRING("hw") : VM_STRING("sw");
     vm_string_printf(VM_STRING("MediaSDK impl\t%s"), sImpl);
 
-#ifndef VAAPI_SURFACES_SUPPORT
+#ifndef LIBVA_SUPPORT
     if (isHWlib || (pParams->vaType & (ALLOC_IMPL_VIA_D3D9 | ALLOC_IMPL_VIA_D3D11)))
     {
         bool  isD3D11 = (( ALLOC_IMPL_VIA_D3D11 == pParams->vaType) || (pParams->ImpLib == (MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D11))) ?  true : false;
@@ -499,77 +499,6 @@ mfxStatus CreateDeviceManager(IDirect3DDeviceManager9** ppManager)
     return MFX_ERR_NONE;
 }
 #endif
-#ifdef VAAPI_SURFACES_SUPPORT
-static mfxStatus va_to_mfx_status(VAStatus va_res)
-{
-    mfxStatus mfxRes = MFX_ERR_NONE;
-
-    switch (va_res)
-    {
-    case VA_STATUS_SUCCESS:
-        mfxRes = MFX_ERR_NONE;
-        break;
-    case VA_STATUS_ERROR_ALLOCATION_FAILED:
-        mfxRes = MFX_ERR_MEMORY_ALLOC;
-        break;
-    case VA_STATUS_ERROR_ATTR_NOT_SUPPORTED:
-    case VA_STATUS_ERROR_UNSUPPORTED_PROFILE:
-    case VA_STATUS_ERROR_UNSUPPORTED_ENTRYPOINT:
-    case VA_STATUS_ERROR_UNSUPPORTED_RT_FORMAT:
-    case VA_STATUS_ERROR_UNSUPPORTED_BUFFERTYPE:
-    case VA_STATUS_ERROR_FLAG_NOT_SUPPORTED:
-    case VA_STATUS_ERROR_RESOLUTION_NOT_SUPPORTED:
-        mfxRes = MFX_ERR_UNSUPPORTED;
-        break;
-    case VA_STATUS_ERROR_INVALID_DISPLAY:
-    case VA_STATUS_ERROR_INVALID_CONFIG:
-    case VA_STATUS_ERROR_INVALID_CONTEXT:
-    case VA_STATUS_ERROR_INVALID_SURFACE:
-    case VA_STATUS_ERROR_INVALID_BUFFER:
-    case VA_STATUS_ERROR_INVALID_IMAGE:
-    case VA_STATUS_ERROR_INVALID_SUBPICTURE:
-        mfxRes = MFX_ERR_NOT_INITIALIZED;
-        break;
-    case VA_STATUS_ERROR_INVALID_PARAMETER:
-        mfxRes = MFX_ERR_INVALID_VIDEO_PARAM;
-    default:
-        mfxRes = MFX_ERR_UNKNOWN;
-        break;
-    }
-    return mfxRes;
-} //static mfxStatus va_to_mfx_status(VAStatus va_res)
-
-mfxStatus InitVA(Display **display, VADisplay &va_dpy)
-{
-    VAStatus va_res = VA_STATUS_SUCCESS;
-    mfxStatus sts = MFX_ERR_NONE;
-    int major_version = 0, minor_version = 0;
-    char* currentDisplay = getenv("DISPLAY");
-
-    if (currentDisplay) *display = XOpenDisplay(currentDisplay);
-    else *display = XOpenDisplay(VAAPI_X_DEFAULT_DISPLAY);
-
-    if (NULL == *display) sts = MFX_ERR_NOT_INITIALIZED;
-    if (MFX_ERR_NONE == sts)
-    {
-        va_dpy = vaGetDisplay(*display);
-        va_res = vaInitialize(va_dpy, &major_version, &minor_version);
-        sts = va_to_mfx_status(va_res);
-    }
-    return sts;
-}// mfxStatus InitVA()
-
-void CloseVA(Display *display,VADisplay va_dpy)
-{
-    vaTerminate(va_dpy);
-
-    if (NULL != display)
-    {
-        XCloseDisplay(display);
-        display = NULL;
-    }
-} //void CloseVA()
-#endif
 
 mfxStatus InitFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pParams)
 {
@@ -789,13 +718,13 @@ mfxStatus InitMemoryAllocator(
 #endif
         }
 #endif
-#ifdef VAAPI_SURFACES_SUPPORT
+#ifdef LIBVA_SUPPORT
         vaapiAllocatorParams *p_vaapiAllocParams = new vaapiAllocatorParams;
 
-        p_vaapiAllocParams->m_dpy = pAllocator->va_dpy;
+        p_vaapiAllocParams->m_dpy = pAllocator->libvaKeeper->GetVADisplay();
         pAllocator->pAllocatorParams = p_vaapiAllocParams;
 
-        sts = pProcessor->mfxSession.SetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL)pAllocator->va_dpy);
+        sts = pProcessor->mfxSession.SetHandle(static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), (mfxHDL)pAllocator->libvaKeeper->GetVADisplay());
         CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         /* In case of video memory we must provide mediasdk with external allocator 
@@ -1790,10 +1719,10 @@ mfxStatus GeneralWriter::Init(
                 return MFX_ERR_UNKNOWN;
             }
 
-            vm_char drive[_MAX_DRIVE];
-            vm_char dir[_MAX_DIR];
-            vm_char fname[_MAX_FNAME];
-            vm_char ext[_MAX_EXT];
+            vm_char drive[MAX_PATH];
+            vm_char dir[MAX_PATH];
+            vm_char fname[MAX_PATH];
+            vm_char ext[MAX_PATH];
 
             vm_string_splitpath(
                 strFileName,
@@ -1870,7 +1799,7 @@ GeneralAllocator::GeneralAllocator()
 #ifdef D3D_SURFACES_SUPPORT
     m_D3DAllocator.reset(new D3DFrameAllocator);
 #endif
-#ifdef VAAPI_SURFACES_SUPPORT
+#ifdef LIBVA_SUPPORT
     m_vaapiAllocator.reset(new vaapiFrameAllocator);
 #endif
     m_SYSAllocator.reset(new SysMemFrameAllocator);
@@ -1917,7 +1846,7 @@ mfxStatus GeneralAllocator::Close()
 #ifdef D3D_SURFACES_SUPPORT
         sts = m_D3DAllocator.get()->Close();
 #endif
-#ifdef VAAPI_SURFACES_SUPPORT 
+#ifdef LIBVA_SUPPORT
     sts = m_vaapiAllocator.get()->Close();
 #endif
     CHECK_RESULT(MFX_ERR_NONE, sts, sts);
@@ -1941,7 +1870,7 @@ mfxStatus GeneralAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
 #ifdef D3D_SURFACES_SUPPORT
         return isD3DMid(mid) ? m_D3DAllocator.get()->Lock(m_D3DAllocator.get(), mid, ptr):
         m_SYSAllocator.get()->Lock(m_SYSAllocator.get(),mid, ptr);
-#elif VAAPI_SURFACES_SUPPORT 
+#elif LIBVA_SUPPORT
         return isD3DMid(mid)?m_vaapiAllocator.get()->Lock(m_vaapiAllocator.get(), mid, ptr):
         m_SYSAllocator.get()->Lock(m_SYSAllocator.get(),mid, ptr);
 #else
@@ -1959,7 +1888,7 @@ mfxStatus GeneralAllocator::UnlockFrame(mfxMemId mid, mfxFrameData *ptr)
 #ifdef D3D_SURFACES_SUPPORT
         return isD3DMid(mid)?m_D3DAllocator.get()->Unlock(m_D3DAllocator.get(), mid, ptr):
         m_SYSAllocator.get()->Unlock(m_SYSAllocator.get(),mid, ptr);
-#elif VAAPI_SURFACES_SUPPORT 
+#elif LIBVA_SUPPORT
         return isD3DMid(mid)?m_vaapiAllocator.get()->Unlock(m_vaapiAllocator.get(), mid, ptr):
         m_SYSAllocator.get()->Unlock(m_SYSAllocator.get(),mid, ptr);
 #else 
@@ -1979,7 +1908,7 @@ mfxStatus GeneralAllocator::GetFrameHDL(mfxMemId mid, mfxHDL *handle)
         return isD3DMid(mid)?m_D3DAllocator.get()->GetHDL(m_D3DAllocator.get(), mid, handle):
         m_SYSAllocator.get()->GetHDL(m_SYSAllocator.get(), mid, handle);
 
-#elif VAAPI_SURFACES_SUPPORT
+#elif LIBVA_SUPPORT
         return isD3DMid(mid)?m_vaapiAllocator.get()->GetHDL(m_vaapiAllocator.get(), mid, handle):
         m_SYSAllocator.get()->GetHDL(m_SYSAllocator.get(), mid, handle);
 #else
@@ -1999,7 +1928,7 @@ mfxStatus GeneralAllocator::ReleaseResponse(mfxFrameAllocResponse *response)
 #ifdef D3D_SURFACES_SUPPORT
         return isD3DMid(response->mids[0])?m_D3DAllocator.get()->Free(m_D3DAllocator.get(),response):
         m_SYSAllocator.get()->Free(m_SYSAllocator.get(), response);
-#elif VAAPI_SURFACES_SUPPORT
+#elif LIBVA_SUPPORT
         return isD3DMid(response->mids[0])?m_vaapiAllocator.get()->Free(m_vaapiAllocator.get(),response):
         m_SYSAllocator.get()->Free(m_SYSAllocator.get(), response);
 #else
@@ -2019,7 +1948,7 @@ mfxStatus GeneralAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAll
 #ifdef D3D_SURFACES_SUPPORT
             sts = m_D3DAllocator.get()->Alloc(m_D3DAllocator.get(), request, response);
 #endif
-#ifdef VAAPI_SURFACES_SUPPORT
+#ifdef LIBVA_SUPPORT
         sts = m_vaapiAllocator.get()->Alloc(m_vaapiAllocator.get(), request, response);
 #endif
         StoreFrameMids(true, response);

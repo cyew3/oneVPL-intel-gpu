@@ -394,8 +394,8 @@ int main(int argc, vm_char *argv[])
         Params.isOutYV12);
     CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, WipeResources(&Resources));
 
-#ifdef VAAPI_SURFACES_SUPPORT
-    InitVA(&(Allocator.display), Allocator.va_dpy);
+#ifdef LIBVA_SUPPORT
+    allocator.libvaKeeper.reset(CreateLibVA());
 #endif
 
     //prepare mfxParams
@@ -534,7 +534,7 @@ int main(int argc, vm_char *argv[])
 
     if( bMultiView )
     {
-        memset(viewSurfaceStore, NULL, Params.multiViewParam.viewCount * sizeof( mfxFrameSurface1* )); 
+        memset(viewSurfaceStore, 0, Params.multiViewParam.viewCount * sizeof( mfxFrameSurface1* )); 
 
         if( bFrameNumLimit )
         {
@@ -544,9 +544,9 @@ int main(int argc, vm_char *argv[])
 //---------------------------------------------------------
     while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts || bMultipleOut )
     {
-        mfxU16 viewID;
-        mfxU16 viewIndx;
-        mfxU16 did;
+        mfxU16 viewID = 0;
+        mfxU16 viewIndx = 0;
+        mfxU16 did = 0;
 
         if( bSvcMode )
         {
@@ -830,9 +830,7 @@ int main(int argc, vm_char *argv[])
 
     WipeResources(&Resources);
 
-#ifdef VAAPI_SURFACES_SUPPORT
-    CloseVA(Allocator.display, Allocator.va_dpy);
-#endif
+    SAFE_DELETE_ARRAY(extVPPAuxData);
 
     return 0; /* OK */
 

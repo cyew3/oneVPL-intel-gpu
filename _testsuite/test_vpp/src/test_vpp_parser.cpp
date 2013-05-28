@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2010 - 2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010 - 2013 Intel Corporation. All Rights Reserved.
 //
 
 #include "test_vpp_utils.h"
@@ -674,10 +674,6 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
                 {
                     //pParams->ImpLib = (isD3D11Required) ? (MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D11): (MFX_IMPL_HARDWARE|MFX_IMPL_VIA_D3D9);
                     pParams->ImpLib = MFX_IMPL_HARDWARE;
-#if defined (VAAPI_SURFACES_SUPPORT)
-                    pParams->ImpLib = (MFX_IMPL_HARDWARE | MFX_IMPL_VIA_VAAPI);
-#endif
-
                 }
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-d3d11")) )
@@ -804,7 +800,11 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
 
     if (pParams->ImpLib & MFX_IMPL_HARDWARE) 
     {
+#if defined(_WIN32) || defined(_WIN64)
         pParams->ImpLib |= (isD3D11Required)? MFX_IMPL_VIA_D3D11 : MFX_IMPL_VIA_D3D9;
+#elif defined (LIBVA_SUPPORT)
+        pParams->ImpLib |= MFX_IMPL_VIA_VAAPI;
+#endif
     }
 
 

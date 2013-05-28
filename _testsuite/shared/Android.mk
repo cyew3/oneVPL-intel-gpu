@@ -2,8 +2,6 @@ LOCAL_PATH:= $(call my-dir)
 
 include $(MFX_HOME)/android/mfx_env.mk
 
-ifeq ($(MFX_ANDROID_NDK_BUILD), true)
-
 include $(CLEAR_VARS)
  
 include $(MFX_HOME)/android/mfx_stl.mk
@@ -44,4 +42,3 @@ LOCAL_MODULE := libshared_utils_lucas
  
 include $(BUILD_STATIC_LIBRARY)
 
-endif # ifeq ($(MFX_ANDROID_NDK_BUILD), true)
