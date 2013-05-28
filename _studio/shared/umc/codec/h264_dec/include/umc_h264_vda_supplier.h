@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2013 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -20,11 +20,13 @@
 #include "umc_h264_mfx_supplier.h"
 #include "umc_h264_segment_decoder_dxva.h"
 
-#include <VDADecoder.h>
+#include <VTDecompressionSession.h>
 #include <CVImageBuffer.h>
 
 namespace UMC
 {
+
+const char * getVTErrorString(OSStatus errorNumber);
 
 class MFXVideoDECODEH264;
 
@@ -42,18 +44,48 @@ public:
 
     VDATaskSupplier();
     ~VDATaskSupplier();
+    
+    struct nalStreamInfo    {
+        
+        Ipp32u nalNumber;
+        Ipp32u nalType;
+        std::vector<Ipp8u> headerBytes;
+    };
 
     virtual Status Init(BaseCodecParams *pInit);
     virtual void Close();
     virtual bool GetFrameToDisplay(MediaData *dst, bool force);
     void SetBufferedFramesNumber(Ipp32u buffered);
+    virtual Status AddSource(MediaData * pSource, MediaData *dst);
 
 protected:
-    VDADecoder m_VDADecoder;
+    VTDecompressionSessionRef m_decompressionSession;
+    CMVideoFormatDescriptionRef m_sourceFormatDescription;
+    void * m_libHandle;
+    
+    //Function declarations for pointers to VideoToolbox functions, the VTB framework is loaded dynamically.
+    OSStatus (* call_VTDecompressionSessionCreate) (CFAllocatorRef,
+                                                    CMVideoFormatDescriptionRef,
+                                                    CFDictionaryRef,
+                                                    CFDictionaryRef,
+                                                    const VTDecompressionOutputCallbackRecord *,
+                                                    VTDecompressionSessionRef *);
+    void (* call_VTDecompressionSessionInvalidate) (VTDecompressionSessionRef);
+    CFTypeID (* call_VTDecompressionSessionGetTypeID) (void);
+    OSStatus (* call_VTDecompressionSessionDecodeFrame) (VTDecompressionSessionRef,
+                                                         CMSampleBufferRef,
+                                                         VTDecodeFrameFlags,
+                                                         void *,
+                                                         VTDecodeInfoFlags *);
+    OSStatus (* call_VTDecompressionSessionFinishDelayedFrames) (VTDecompressionSessionRef);
+    Boolean (* call_VTDecompressionSessionCanAcceptFormatDescription) (VTDecompressionSessionRef, CMFormatDescriptionRef);
+    OSStatus (* call_VTDecompressionSessionWaitForAsynchronousFrames) (VTDecompressionSessionRef);
+    OSStatus (* call_VTDecompressionSessionCopyBlackPixelBuffer) (VTDecompressionSessionRef, CVPixelBufferRef);
+    //End of VideoToolbox function pointer declarations.
+    
     bool m_isVDAInstantiated; 
     bool m_isHaveSPS;           //flag indicating whether or not the raw SPS bytes are available
     bool m_isHavePPS;           //flag indicating whether or not the raw PPS bytes are available
-    OSStatus CreateDecoder(SInt32 inHeight, SInt32 inWidth, OSType inSourceFormat, CFDataRef inAVCCData, VDADecoder *decoderOut, void * userContextInfo);
     
     virtual Status RunDecoding(bool force, H264DecoderFrame ** decoded = 0);
 
@@ -66,12 +98,17 @@ protected:
     virtual H264Slice * DecodeSliceHeader(MediaDataEx *nalUnit);
 
     virtual Status DecodeHeaders(MediaDataEx *nalUnit);
-//    virtual H264DecoderFrame *GetFrameToDisplayInternal(bool force);   
-//    virtual H264DecoderFrame *GetAnyFrameToDisplay(bool force);
+
 private:
     Ipp32u m_bufferedFrameNumber;
 
     H264DecoderFrame * m_pLastDecodedFrame;   //needed for cut and paste from VATaskSupplier::CompleteFrame
+    std::vector<Ipp8u> m_nals;
+    std::vector<Ipp8u> m_avcData;
+    unsigned int m_ppsCountIndex;
+    std::queue<struct nalStreamInfo> m_prependDataQueue;
+    unsigned int m_sizeField;
+    H264DecoderFrame * m_pFieldFrame;
 };
 
 class TaskBrokerSingleThreadVDA : public TaskBrokerSingleThread
@@ -89,7 +126,13 @@ public:
 
     virtual void Reset();
     void decoderOutputCallback(CFDictionaryRef frameInfo, OSStatus status, uint32_t infoFlags, CVImageBufferRef imageBuffer);
-    static void decoderOutputCallback2(void *decompressionOutputRefCon, CFDictionaryRef frameInfo, OSStatus status, uint32_t infoFlags, CVImageBufferRef imageBuffer);
+    static void decoderOutputCallback2(void *decompressionOutputRefCon,
+                                       void * sourceFrameRefCon,
+                                       OSStatus status,
+                                       VTDecodeInfoFlags infoFlags,
+                                       CVImageBufferRef imageBuffer,
+                                       CMTime presentationTimeStamp,
+                                       CMTime presentationDuration);
 
 protected:
     virtual void AwakeThreads();

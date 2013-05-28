@@ -22,12 +22,12 @@ namespace UMC
 #define SBTYPE_UNDEF -1
 #define MBTYPE_UNDEF -1
 
-extern Ipp32s resTable0[16] = {0, 1, 4, 5, 2, 3, 6, 7, 8, 9, 12, 13, 10, 11, 14, 15};
-extern Ipp32s resTable1[16] = {0, 1, 2, 3, 4, 5, 6, 7};
+Ipp32s resTable0[16] = {0, 1, 4, 5, 2, 3, 6, 7, 8, 9, 12, 13, 10, 11, 14, 15};
+Ipp32s resTable1[16] = {0, 1, 2, 3, 4, 5, 6, 7};
 
-extern Ipp32s shiftTable[] = { 0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4};
+Ipp32s shiftTable[] = { 0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4};
 
-extern Ipp32s bicubicFilter[16][4] = {
+Ipp32s bicubicFilter[16][4] = {
     { 0, 32,  0,  0},
     {-1, 32,  2, -1},
     {-2, 31,  4, -1},
@@ -46,7 +46,7 @@ extern Ipp32s bicubicFilter[16][4] = {
     {-1,  2, 32, -1}
 };
 
-extern Ipp32s bilinearFilter[16][2] = {
+Ipp32s bilinearFilter[16][2] = {
     {32,  0},
     {30,  2},
     {28,  4},

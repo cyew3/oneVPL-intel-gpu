@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that aFgreement.
-//        Copyright (c) 2004 - 2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2013 Intel Corporation. All Rights Reserved.
 //
 
 #if defined (__ICL)
@@ -6059,7 +6059,7 @@ bool H264ENC_MAKE_NAME(H264CoreEncoder_CheckSkip)(
             &iLastCoeff,
             NULL,
             0,
-            NULL,
+            0,
             NULL);
 
         coeffs_cost += iNumCoeffs
@@ -6170,7 +6170,7 @@ bool H264ENC_MAKE_NAME(H264CoreEncoder_CheckSkip)(
                     &iLastCoeff,
                     NULL,
                     0,
-                    NULL,
+                    0,
                     NULL);
 
                 coeffs_cost += iNumCoeffs
@@ -6247,7 +6247,7 @@ bool H264ENC_MAKE_NAME(H264CoreEncoder_CheckSkip)(
                     &iLastCoeff,
                     NULL,
                     0,
-                    NULL,
+                    0,
                     NULL);
 
                 coeffs_cost += H264ENC_MAKE_NAME(CalculateCoeffsCost)(pTransformResult, 15, &dec_single_scan[curr_slice->m_is_cur_mb_field][1]);
@@ -6319,7 +6319,7 @@ bool H264ENC_MAKE_NAME(H264CoreEncoder_CheckSkipB)(
             &iLastCoeff,
             NULL,
             0,
-            NULL,
+            0,
             NULL);
 
         coeffs_cost += iNumCoeffs
@@ -6430,7 +6430,7 @@ bool H264ENC_MAKE_NAME(H264CoreEncoder_CheckSkipB)(
                     &iLastCoeff,
                     NULL,
                     0,
-                    NULL,
+                    0,
                     NULL);
 
                 coeffs_cost += iNumCoeffs
@@ -13338,12 +13338,12 @@ type_detect:
     r0 = a + c; r1 = a - c; \
     r2 = b - d; r3 = b + d; \
 }
-//#define HAAR_4(i0, i1, i2, i3, r0, r1, r2, r3) { \
-//    Ipp32s a = i0 + i1, b = i0 - i1; \
-//    Ipp32s c = i2 + i3, d = i2 - i3; \
-//    r0 = a + c; r1 = a - c; \
-//    r2 = b    ; r3 =     d; \
-//}
+/*#define HAAR_4(i0, i1, i2, i3, r0, r1, r2, r3) { \
+    Ipp32s a = i0 + i1, b = i0 - i1; \
+    Ipp32s c = i2 + i3, d = i2 - i3; \
+    r0 = a + c; r1 = a - c; \
+    r2 = b    ; r3 =     d; \
+}*/
 void HADT_4x4 (const Ipp8u* src, Ipp32s step, Ipp32s* dst)
 {
     HADT_4(src[0], src[1], src[2], src[3], dst[ 0], dst[ 1], dst[ 2], dst[ 3]);

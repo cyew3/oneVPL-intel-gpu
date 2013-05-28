@@ -1203,11 +1203,23 @@ namespace UMC
 
 #if defined (UMC_VA_LINUX)
 
+    enum
+    {
+        VC1_I_I_FRAME   = 0,
+        VC1_I_P_FRAME   = 1,
+        VC1_P_I_FRAME   = 2,
+        VC1_P_P_FRAME   = 3,
+        VC1_B_B_FRAME   = 4,
+        VC1_B_BI_FRAME  = 5,
+        VC1_BI_B_FRAME  = 6,
+        VC1_BI_BI_FRAME = 7
+    };
+
     void VC1PackerLVA::VC1SetSliceDataBuffer(Ipp32s size)
     {
-        UMCVACompBuffer* CompBuf;
-        Ipp8u* ptr = (Ipp8u*)m_va->GetCompBuffer(VASliceDataBufferType, &CompBuf, size);
-        if (CompBuf->GetBufferSize() < size)
+        UMCVACompBuffer* pCompBuf;
+        Ipp8u* ptr = (Ipp8u*)m_va->GetCompBuffer(VASliceDataBufferType, &pCompBuf, size);
+        if (!pCompBuf || (pCompBuf->GetBufferSize() < size))
             throw vc1_exception(mem_allocation_er);
         memset(ptr, 0, size);
     }
@@ -1219,19 +1231,37 @@ namespace UMC
             throw vc1_exception(mem_allocation_er);
         memset(ptr, 0, size);
     }
-    void VC1PackerLVA::VC1SetSliceBuffer()
+
+    void VC1PackerLVA::VC1SetSliceParamBuffer(Ipp32u* pOffsets, Ipp32u* pValues)
     {
-        UMCVACompBuffer* CompBuf;
-        m_pSliceInfo = (VASliceParameterBufferVC1*)m_va->GetCompBuffer(VASliceParameterBufferType, &CompBuf, VC1SLICEINPARAL*sizeof(VASliceParameterBufferVC1));
-        if (CompBuf->GetBufferSize() < VC1SLICEINPARAL*sizeof(VASliceParameterBufferVC1))
+        const Ipp32u Slice = 0x0B010000;
+        const Ipp32u Field = 0x0C010000;
+        Ipp32s slice_counter = 1;
+
+        pOffsets++;
+        pValues++;
+        while (*pOffsets)
+        {
+            if (pValues && (*pValues == Slice || *pValues == Field))
+            {
+                ++slice_counter;
+            }
+            ++pOffsets;
+            ++pValues;
+        }
+
+        UMCVACompBuffer* pCompBuf;
+        m_pSliceInfo = (VASliceParameterBufferVC1*)m_va->GetCompBuffer(VASliceParameterBufferType, &pCompBuf, slice_counter * sizeof(VASliceParameterBufferVC1));
+        if (!pCompBuf || (pCompBuf->GetBufferSize() < slice_counter * sizeof(VASliceParameterBufferVC1)))
             throw vc1_exception(mem_allocation_er);
-        memset(m_pSliceInfo, 0, sizeof(VASliceParameterBufferVC1));
+        memset(m_pSliceInfo, 0, slice_counter * sizeof(VASliceParameterBufferVC1));
     }
+
     void VC1PackerLVA::VC1SetPictureBuffer()
     {
-        UMCVACompBuffer* CompBuf;
-        m_pPicPtr = (VAPictureParameterBufferVC1*)m_va->GetCompBuffer(VAPictureParameterBufferType, &CompBuf,sizeof(VAPictureParameterBufferVC1));
-        if (CompBuf->GetBufferSize() < sizeof(VAPictureParameterBufferVC1))
+        UMCVACompBuffer* pCompBuf;
+        m_pPicPtr = (VAPictureParameterBufferVC1*)m_va->GetCompBuffer(VAPictureParameterBufferType, &pCompBuf,sizeof(VAPictureParameterBufferVC1));
+        if (!pCompBuf || (pCompBuf->GetBufferSize() < sizeof(VAPictureParameterBufferVC1)))
             throw vc1_exception(mem_allocation_er);
         memset(m_pPicPtr, 0, sizeof(VAPictureParameterBufferType));
     }
@@ -1254,21 +1284,10 @@ namespace UMC
     {
         UMCVACompBuffer* CompBuf;
         Ipp32s i;
-        Ipp32s bitplane_size = pContext->m_seqLayerHeader.heightMB*pContext->m_seqLayerHeader.widthMB; //need to update for fields
-        Ipp8u* ptr = (Ipp8u*)m_va->GetCompBuffer(VABitPlaneBufferType, &CompBuf);
-        Ipp8u* ptr_start = ptr;
+        Ipp32s bitplane_size = 0;
 
         VC1Bitplane* lut_bitplane[3];
-        // need to change, 4096*256 - size in MB
-        VC1Bitplane check_bitplane;
-        check_bitplane.m_databits = (Ipp8u*)malloc(bitplane_size);
-        memset(check_bitplane.m_databits,0,bitplane_size);
-      //memset(ptr,0,bitplane_size);
-
-        //CompBuf->SetDataSize(bitplane_size);
-
-        if (pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
-            bitplane_size /= 2;
+        VC1Bitplane* check_bitplane = NULL;
 
         switch (pContext->m_picLayerHeader->PTYPE)
         {
@@ -1289,16 +1308,34 @@ namespace UMC
             lut_bitplane[2] = &pContext->m_picLayerHeader->FORWARDMB;
             break;
         case VC1_SKIPPED_FRAME:
+        default:
             return;
         }
+
+        for (i = 0; i < 3; i++)
         {
-            for (i=0;i<3;i++)
+            if ((!VC1_IS_BITPLANE_RAW_MODE(lut_bitplane[i])) && lut_bitplane[i]->m_databits)
+                check_bitplane = lut_bitplane[i];
+
+        }
+        if(check_bitplane)
+        {
+
+            bitplane_size = pContext->m_seqLayerHeader.heightMB*(pContext->m_seqLayerHeader.widthMB + 1)/2;
+            if (pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
+                bitplane_size /= 2;
+
+            Ipp8u* ptr = (Ipp8u*)m_va->GetCompBuffer(VABitPlaneBufferType, &CompBuf, bitplane_size);
+            if (!ptr)
+                throw vc1_exception(mem_allocation_er);
+
+            for (i = 0; i < 3; i++)
             {
                 if (!lut_bitplane[i]->m_databits)
-                    lut_bitplane[i] = &check_bitplane;
+                    lut_bitplane[i] = check_bitplane;
             }
 
-            for (i=0; i < (bitplane_size & 0xFFFFFFFE);)
+            for (i = 0; i < bitplane_size*2;)
             {
                 *ptr = (lut_bitplane[0]->m_databits[i] << 4) + (lut_bitplane[1]->m_databits[i] << 5) +
                     (lut_bitplane[2]->m_databits[i] << 6) + lut_bitplane[0]->m_databits[i+1] +
@@ -1311,47 +1348,103 @@ namespace UMC
             if (bitplane_size&1)
                 *ptr = (lut_bitplane[0]->m_databits[i] << 4) + (lut_bitplane[1]->m_databits[i] << 5) +
                        (lut_bitplane[2]->m_databits[i] << 6);
+
+            CompBuf->SetDataSize(bitplane_size);
         }
-        free(check_bitplane.m_databits);
-        CompBuf->SetDataSize((bitplane_size + 1)/2);
     }
 
-    Ipp32u VC1PackerLVA::VC1PackBitStreamSM (VC1Context* pContext,
-                                              Ipp32u Size,
-                                              Ipp8u* pOriginalData,
-                                              Ipp32u ByteOffset,
-                                              bool   isNeedToAddSC)
+    Ipp32u VC1PackerLVA::VC1PackBitStreamAdv (VC1Context* pContext,
+                                                Ipp32u& Size,
+                                                Ipp8u* pOriginalData,
+                                                Ipp32u OriginalSize,
+                                                Ipp32u ByteOffset,
+                                                Ipp8u& Flag_03)
     {
         UMCVACompBuffer* CompBuf;
-        Ipp8u* pBitstream = (Ipp8u*)m_va->GetCompBuffer(VASliceDataBufferType, &CompBuf, Size - 8);
+        Ipp8u* pBitstream = (Ipp8u*)m_va->GetCompBuffer(VASliceDataBufferType, &CompBuf, OriginalSize);
+
         Ipp32u DrvBufferSize = CompBuf->GetBufferSize();
-        if (DrvBufferSize < (Size + ByteOffset)) // we don't have enough buffer
+        Ipp8u* pEnd = pBitstream + ByteOffset + OriginalSize;
+        Size = OriginalSize;
+
+        if (DrvBufferSize < (OriginalSize + ByteOffset)) // we don't have enough buffer
         {
             throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
         }
-        ippsCopy_8u(pOriginalData, pBitstream + ByteOffset, Size - 8);
 
-        CompBuf->SetDataSize(ByteOffset + Size - 8);
-        return 0;
-     }
-
-    Ipp32u VC1PackerLVA::VC1PackBitStreamAdv (VC1Context* pContext, Ipp32u Size, Ipp8u* pOriginalData, Ipp32u ByteOffset)
-    {
-        UMCVACompBuffer* CompBuf;
-        Ipp8u* pBitstream = (Ipp8u*)m_va->GetCompBuffer(VASliceDataBufferType, &CompBuf,Size);
-        Ipp32u DrvBufferSize = CompBuf->GetBufferSize();
-
-        if (DrvBufferSize < (Size + ByteOffset)) // we don't have enough buffer
+        if(Flag_03 == 1)
         {
-            throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
+            *(pBitstream + ByteOffset) = 0;
+            ippsCopy_8u(pOriginalData + 1, pBitstream + ByteOffset + 1, OriginalSize - 1);
+            Flag_03 = 0;
         }
-        ippsCopy_8u(pOriginalData + 4, pBitstream + ByteOffset, Size - 4);
+        else if(Flag_03 == 2)
+        {
+            ippsCopy_8u(pOriginalData + 1, pBitstream + ByteOffset, OriginalSize + 1);
+            pEnd++;
 
-        CompBuf->SetDataSize(ByteOffset + Size );
+            *(pBitstream + ByteOffset + 1) = 0;
+             Size--;
+            Flag_03 = 0;
+        }
+        else if(Flag_03 == 3)
+        {
+            if(pContext->m_bitstream.bitOffset < 16)
+            {
+                *(pBitstream + ByteOffset) = *pOriginalData;
+                *(pBitstream + ByteOffset + 1) = *(pOriginalData + 1);
+                *(pBitstream + ByteOffset + 2) = *(pOriginalData + 2);
+                *(pBitstream + ByteOffset + 3) = *(pOriginalData + 4);
+                ippsCopy_8u(pOriginalData + 5, pBitstream + ByteOffset + 4, OriginalSize - 4);
+                Size--;
+            }
+            else
+            {
+                ippsCopy_8u(pOriginalData, pBitstream + ByteOffset, OriginalSize );
+            }
+            
+            Flag_03 = 0;
+        }
+        else if(Flag_03 == 4)
+        {
+           // *(pBitstream + ByteOffset) = *pOriginalData;
+           // *(pBitstream + ByteOffset + 1) = *(pOriginalData + 1);
+           // *(pBitstream + ByteOffset + 2) = *(pOriginalData + 2);
+           // *(pBitstream + ByteOffset + 3) = *(pOriginalData + 3);
+           //ippsCopy_8u(pOriginalData + 5, pBitstream + ByteOffset + 4, OriginalSize - 5);
+
+           // Size--;
+           // Flag_03 = 0;
+            ippsCopy_8u(pOriginalData, pBitstream + ByteOffset, OriginalSize);
+            
+            Flag_03 = 0;
+
+        }
+        else if(Flag_03 == 5)
+        {
+            *(pBitstream + ByteOffset) = 0;
+            *(pBitstream + ByteOffset + 1) = *(pOriginalData + 1);
+            *(pBitstream + ByteOffset + 2) = *(pOriginalData + 2);
+           ippsCopy_8u(pOriginalData + 4, pBitstream + ByteOffset + 3, OriginalSize - 4);
+           pEnd--;
+
+            Size--;
+            Flag_03 = 0;
+        }
+        else
+        {
+            ippsCopy_8u(pOriginalData, pBitstream + ByteOffset, OriginalSize);
+        }
+
+        CompBuf->SetDataSize(ByteOffset + Size);
+
+        if(*(pEnd-1) == 0x03 && *(pEnd -2) == 0x0 && *(pEnd-3) == 0x0)
+        {
+            *(pEnd-1) = 0;
+        }
+ 
         return 0;
     }
-
-//#define WO_OTC
 
     static int ConvertMvModeVC1Mfx2VA(int mv_mode)
     {
@@ -1373,11 +1466,19 @@ namespace UMC
         ptr->backward_reference_picture                                = VA_INVALID_ID;
         ptr->inloop_decoded_picture                                    = VA_INVALID_ID;
 
+        if (pContext->m_seqLayerHeader.RANGE_MAPY_FLAG ||
+            pContext->m_seqLayerHeader.RANGE_MAPUV_FLAG ||
+            pContext->m_seqLayerHeader.RANGERED)
+        {
+            va->BeginFrame(pContext->m_frmBuff.m_iRangeMapIndex);
+            ptr->inloop_decoded_picture = va->GetSurfaceID(pContext->m_frmBuff.m_iCurrIndex);
+        }
+        else
+            va->BeginFrame(pContext->m_frmBuff.m_iCurrIndex);
+
+
         ptr->sequence_fields.bits.pulldown = pContext->m_seqLayerHeader.PULLDOWN;
         ptr->sequence_fields.bits.interlace = pContext->m_seqLayerHeader.INTERLACE;
-#ifdef WO_OTC
-        ptr->sequence_fields.bits.interlace = 0;
-#endif
         ptr->sequence_fields.bits.tfcntrflag = pContext->m_seqLayerHeader.TFCNTRFLAG;
         ptr->sequence_fields.bits.finterpflag = pContext->m_seqLayerHeader.FINTERPFLAG;
         ptr->sequence_fields.bits.psf = 0;
@@ -1385,7 +1486,7 @@ namespace UMC
         ptr->sequence_fields.bits.overlap = pContext->m_seqLayerHeader.OVERLAP;
         ptr->sequence_fields.bits.syncmarker = pContext->m_seqLayerHeader.SYNCMARKER;
         ptr->sequence_fields.bits.rangered = pContext->m_seqLayerHeader.RANGERED;
-        ptr->sequence_fields.bits.max_b_frames = pContext->m_seqLayerHeader.PROFILE == VC1_PROFILE_ADVANCED ? 7 : 2;//pContext->m_seqLayerHeader.MAXBFRAMES;
+        ptr->sequence_fields.bits.max_b_frames = pContext->m_seqLayerHeader.MAXBFRAMES;
         ptr->sequence_fields.bits.profile = pContext->m_seqLayerHeader.PROFILE;
 
         ptr->coded_width = 2 * (pContext->m_seqLayerHeader.CODED_WIDTH +1);
@@ -1410,7 +1511,7 @@ namespace UMC
         ptr->range_mapping_fields.bits.luma_flag = pContext->m_seqLayerHeader.RANGE_MAPY_FLAG;
         ptr->range_mapping_fields.bits.luma = pContext->m_seqLayerHeader.RANGE_MAPY_FLAG ? pContext->m_seqLayerHeader.RANGE_MAPY : 0;
         ptr->range_mapping_fields.bits.chroma_flag = pContext->m_seqLayerHeader.RANGE_MAPUV_FLAG;
-        ptr->range_mapping_fields.bits.chroma = pContext->m_seqLayerHeader.RANGE_MAPY_FLAG ? pContext->m_seqLayerHeader.RANGE_MAPUV : 0;
+        ptr->range_mapping_fields.bits.chroma = pContext->m_seqLayerHeader.RANGE_MAPUV_FLAG ? pContext->m_seqLayerHeader.RANGE_MAPUV : 0;
 
         ptr->b_picture_fraction       = pContext->m_picLayerHeader->BFRACTION_orig;
         ptr->cbp_table                = pContext->m_picLayerHeader->CBPTAB;
@@ -1419,38 +1520,168 @@ namespace UMC
         ptr->rounding_control =  pContext->m_seqLayerHeader.PROFILE == VC1_PROFILE_ADVANCED ? pContext->m_picLayerHeader->RNDCTRL : pContext->m_seqLayerHeader.RNDCTRL;
         ptr->post_processing          = pContext->m_picLayerHeader->POSTPROC;
         ptr->picture_resolution_index = 0;
-        ptr->luma_scale = pContext->m_picLayerHeader->LUMSCALE;
-        ptr->luma_shift = pContext->m_picLayerHeader->LUMSHIFT;
 
-        ptr->picture_fields.bits.picture_type = pContext->m_picLayerHeader->PTYPE;
+        if (pContext->m_bIntensityCompensation)
+        {
+            if (VC1_FieldInterlace != pContext->m_picLayerHeader->FCM)
+            {
+                ptr->luma_scale = pContext->m_picLayerHeader->LUMSCALE;
+                ptr->luma_shift = pContext->m_picLayerHeader->LUMSHIFT;
+            }
+            else
+            {
+                if (VC1_INTCOMP_BOTH_FIELD == pContext->m_picLayerHeader->INTCOMFIELD)
+                {
+                    // top field
+                    ptr->luma_scale = pContext->m_picLayerHeader->LUMSCALE;
+                    ptr->luma_shift = pContext->m_picLayerHeader->LUMSHIFT;
+
+                    //bottom field
+                    ptr->luma_scale2 = pContext->m_picLayerHeader->LUMSCALE1;
+                    ptr->luma_shift2 = pContext->m_picLayerHeader->LUMSHIFT1;
+
+                }
+                else if (VC1_INTCOMP_BOTTOM_FIELD == pContext->m_picLayerHeader->INTCOMFIELD)
+                {
+                     // bottom field
+                    ptr->luma_scale2 = pContext->m_picLayerHeader->LUMSCALE1;
+                    ptr->luma_shift2 = pContext->m_picLayerHeader->LUMSHIFT1;
+                    // top field not compensated
+                    ptr->luma_scale = 32;
+                }
+                else if (VC1_INTCOMP_TOP_FIELD == pContext->m_picLayerHeader->INTCOMFIELD)
+                {
+                     // top field
+                    ptr->luma_scale = pContext->m_picLayerHeader->LUMSCALE;
+                    ptr->luma_shift = pContext->m_picLayerHeader->LUMSHIFT;
+                    // bottom field not compensated
+                    ptr->luma_scale2 = 32;
+                }
+            }
+        }
+        else
+        {
+            ptr->luma_scale = 32;
+            ptr->luma_scale2 = 32;
+        }
+
+        /*picture_fields.bits.picture_type*/
+        if(pContext->m_picLayerHeader->FCM == VC1_Progressive || pContext->m_picLayerHeader->FCM == VC1_FrameInterlace)
+            ptr->picture_fields.bits.picture_type = pContext->m_picLayerHeader->PTYPE;
+        else
+        {
+            //field picture
+            switch(pContext->m_picLayerHeader->PTypeField1)
+            {
+                case VC1_I_FRAME:
+                    if(pContext->m_picLayerHeader->PTypeField2 == VC1_I_FRAME)
+                        ptr->picture_fields.bits.picture_type = VC1_I_I_FRAME;
+                    else if(pContext->m_picLayerHeader->PTypeField2 == VC1_P_FRAME)
+                        ptr->picture_fields.bits.picture_type = VC1_I_P_FRAME;
+                    else
+                        VM_ASSERT(0);
+                    break;
+                case VC1_P_FRAME:
+                    if(pContext->m_picLayerHeader->PTypeField2 == VC1_P_FRAME)
+                        ptr->picture_fields.bits.picture_type = VC1_P_P_FRAME;
+                    else if(pContext->m_picLayerHeader->PTypeField2 == VC1_I_FRAME)
+                        ptr->picture_fields.bits.picture_type = VC1_P_I_FRAME;
+                    else
+                        VM_ASSERT(0);
+                    break;
+                case VC1_B_FRAME:
+                    if(pContext->m_picLayerHeader->PTypeField2 == VC1_B_FRAME)
+                        ptr->picture_fields.bits.picture_type = VC1_B_B_FRAME;
+                    else if(pContext->m_picLayerHeader->PTypeField2 == VC1_BI_FRAME)
+                        ptr->picture_fields.bits.picture_type = VC1_B_BI_FRAME;
+                    else
+                        VM_ASSERT(0);
+                    break;
+                case VC1_BI_FRAME:
+                    if(pContext->m_picLayerHeader->PTypeField2 == VC1_B_FRAME)
+                        ptr->picture_fields.bits.picture_type = VC1_BI_B_FRAME;
+                    else if(pContext->m_picLayerHeader->PTypeField2 == VC1_BI_FRAME)
+                        ptr->picture_fields.bits.picture_type = VC1_BI_BI_FRAME;
+                    else
+                        VM_ASSERT(0);
+                    break;
+                default:
+                    VM_ASSERT(0);
+                    break;
+            }
+        }
         ptr->picture_fields.bits.frame_coding_mode =  pContext->m_picLayerHeader->FCM;
         ptr->picture_fields.bits.top_field_first = pContext->m_picLayerHeader->TFF;
-        ptr->picture_fields.bits.is_first_field =  pContext->m_picLayerHeader->FCM == 0;
+        ptr->picture_fields.bits.is_first_field = ! pContext->m_picLayerHeader->CurrField;
         ptr->picture_fields.bits.intensity_compensation = pContext->m_bIntensityCompensation;
 
-        ptr->raw_coding.flags.mv_type_mb = VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->MVTYPEMB) && pContext->m_picLayerHeader->MVTYPEMB.m_databits ? 1 : 0;
-        ptr->raw_coding.flags.direct_mb =  VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->m_DirectMB) && pContext->m_picLayerHeader->m_DirectMB.m_databits ? 1 : 0;
-        ptr->raw_coding.flags.skip_mb =  VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->SKIPMB) && pContext->m_picLayerHeader->SKIPMB.m_databits ? 1 : 0;
-        ptr->raw_coding.flags.field_tx =  VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->FIELDTX) && pContext->m_picLayerHeader->FIELDTX.m_databits  ? 1 : 0;
-        ptr->raw_coding.flags.forward_mb =  VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->FORWARDMB) && pContext->m_picLayerHeader->FORWARDMB.m_databits  ? 1 : 0;
-        ptr->raw_coding.flags.ac_pred =  VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->ACPRED) && pContext->m_picLayerHeader->ACPRED.m_databits  ? 1 : 0;
-        ptr->raw_coding.flags.overflags =  VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->OVERFLAGS) && pContext->m_picLayerHeader->OVERFLAGS.m_databits  ? 1 : 0;
+#ifdef NO_INTERLACED_STREAMS
+        if(pContext->m_seqLayerHeader.INTERLACE == 1 && pContext->m_picLayerHeader->FCM != 0)
+        {
+            throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
+        }
+#endif
 
-        ptr->bitplane_present.flags.bp_mv_type_mb = VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->MVTYPEMB) ? 0 : 1;
-        ptr->bitplane_present.flags.bp_direct_mb =  VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->m_DirectMB) ? 0 : 1;
-        ptr->bitplane_present.flags.bp_skip_mb =  VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->SKIPMB) ? 0 : 1;
-        ptr->bitplane_present.flags.bp_field_tx =  VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->FIELDTX) ? 0 : 1;
-        ptr->bitplane_present.flags.bp_forward_mb =  VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->FORWARDMB) ? 0 : 1;
-        ptr->bitplane_present.flags.bp_ac_pred =  VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->ACPRED) ? 0 : 1;
-        ptr->bitplane_present.flags.bp_overflags =  VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->OVERFLAGS) ? 0 : 1;
+        ptr->bitplane_present.value = 0;
+        VC1Bitplane* check_bitplane = 0;
+        VC1Bitplane* lut_bitplane[3];
+
+        switch (pContext->m_picLayerHeader->PTYPE)
+        {
+        case VC1_I_FRAME:
+        case VC1_BI_FRAME:
+            lut_bitplane[0] = &pContext->m_picLayerHeader->FIELDTX;
+            lut_bitplane[1] = &pContext->m_picLayerHeader->ACPRED;
+            lut_bitplane[2] = &pContext->m_picLayerHeader->OVERFLAGS;
+            break;
+        case VC1_P_FRAME:
+            lut_bitplane[0] = &pContext->m_picLayerHeader->m_DirectMB;
+            lut_bitplane[1] = &pContext->m_picLayerHeader->SKIPMB;
+            lut_bitplane[2] = &pContext->m_picLayerHeader->MVTYPEMB;
+            break;
+        case VC1_B_FRAME:
+            lut_bitplane[0] = &pContext->m_picLayerHeader->m_DirectMB;
+            lut_bitplane[1] = &pContext->m_picLayerHeader->SKIPMB;
+            lut_bitplane[2] = &pContext->m_picLayerHeader->FORWARDMB;
+            break;
+        case VC1_SKIPPED_FRAME:
+            return;
+        default:
+            return;
+        }
+
+        for (Ipp32u i = 0; i < 3; i++)
+        {
+            if ((!VC1_IS_BITPLANE_RAW_MODE(lut_bitplane[i])) && lut_bitplane[i]->m_databits)
+                check_bitplane = lut_bitplane[i];
+        }
+        if (check_bitplane)
+        {
+            ptr->raw_coding.flags.mv_type_mb = VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->MVTYPEMB) && pContext->m_picLayerHeader->MVTYPEMB.m_databits ? 1 : 0;
+            ptr->raw_coding.flags.direct_mb =  VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->m_DirectMB) && pContext->m_picLayerHeader->m_DirectMB.m_databits ? 1 : 0;
+            ptr->raw_coding.flags.skip_mb =  VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->SKIPMB) && pContext->m_picLayerHeader->SKIPMB.m_databits ? 1 : 0;
+            ptr->raw_coding.flags.field_tx =  VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->FIELDTX) && pContext->m_picLayerHeader->FIELDTX.m_databits  ? 1 : 0;
+            ptr->raw_coding.flags.forward_mb =  VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->FORWARDMB) && pContext->m_picLayerHeader->FORWARDMB.m_databits  ? 1 : 0;
+            ptr->raw_coding.flags.ac_pred =  VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->ACPRED) && pContext->m_picLayerHeader->ACPRED.m_databits  ? 1 : 0;
+            ptr->raw_coding.flags.overflags =  VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->OVERFLAGS) && pContext->m_picLayerHeader->OVERFLAGS.m_databits  ? 1 : 0;
+
+            ptr->bitplane_present.value = 1;
+            ptr->bitplane_present.flags.bp_mv_type_mb = VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->MVTYPEMB) ? 0 : 1;
+            ptr->bitplane_present.flags.bp_direct_mb =  VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->m_DirectMB) ? 0 : 1;
+            ptr->bitplane_present.flags.bp_skip_mb =  VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->SKIPMB) ? 0 : 1;
+            ptr->bitplane_present.flags.bp_field_tx =  VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->FIELDTX) ? 0 : 1;
+            ptr->bitplane_present.flags.bp_forward_mb =  VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->FORWARDMB) ? 0 : 1;
+            ptr->bitplane_present.flags.bp_ac_pred =  VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->ACPRED) ? 0 : 1;
+            ptr->bitplane_present.flags.bp_overflags =  VC1_IS_BITPLANE_RAW_MODE(&pContext->m_picLayerHeader->OVERFLAGS) ? 0 : 1;
+        }
 
         ptr->reference_fields.bits.reference_distance_flag = pContext->m_seqLayerHeader.REFDIST_FLAG;
         ptr->reference_fields.bits.reference_distance = pContext->m_picLayerHeader->REFDIST;
         ptr->reference_fields.bits.num_reference_pictures  = pContext->m_picLayerHeader->NUMREF;
         ptr->reference_fields.bits.reference_field_pic_indicator = pContext->m_picLayerHeader->REFFIELD;
 
-        ptr->mv_fields.bits.mv_mode = pContext->m_picLayerHeader->PTYPE == VC1_I_FRAME || pContext->m_picLayerHeader->PTYPE == VC1_BI_FRAME ? 0 : (VAMvModeVC1)ConvertMvModeVC1Mfx2VA(pContext->m_picLayerHeader->MVMODE);
-        ptr->mv_fields.bits.mv_mode2 =  (VAMvModeVC1) pContext->m_picLayerHeader->MVMODE2;
+        ptr->mv_fields.bits.mv_mode = (VAMvModeVC1)ConvertMvModeVC1Mfx2VA(pContext->m_picLayerHeader->MVMODE);
+        ptr->mv_fields.bits.mv_mode2 = (VAMvModeVC1)ConvertMvModeVC1Mfx2VA(pContext->m_picLayerHeader->MVMODE2);
         ptr->mv_fields.bits.mv_table = pContext->m_picLayerHeader->MVTAB;
         ptr->mv_fields.bits.two_mv_block_pattern_table = pContext->m_picLayerHeader->MV2BPTAB;
         ptr->mv_fields.bits.four_mv_switch = pContext->m_picLayerHeader->MV4SWITCH;
@@ -1473,11 +1704,7 @@ namespace UMC
         ptr->pic_quantizer_fields.bits.alt_pic_quantizer = pContext->m_picLayerHeader->m_AltPQuant;
 
         ptr->transform_fields.bits.variable_sized_transform_flag = pContext->m_seqLayerHeader.VSTRANSFORM;
-        if (VC1_P_FRAME == pContext->m_picLayerHeader->PTYPE || VC1_B_FRAME == pContext->m_picLayerHeader->PTYPE)
-        {
-            if (!pContext->m_seqLayerHeader.VSTRANSFORM) ptr->transform_fields.bits.mb_level_transform_type_flag = 1;
-        }
-        else ptr->transform_fields.bits.mb_level_transform_type_flag = pContext->m_picLayerHeader->TTMBF;
+        ptr->transform_fields.bits.mb_level_transform_type_flag = pContext->m_picLayerHeader->TTMBF;
         ptr->transform_fields.bits.frame_level_transform_type = pContext->m_picLayerHeader->TTFRM_ORIG;
         ptr->transform_fields.bits.transform_ac_codingset_idx1 = pContext->m_picLayerHeader->TRANSACFRM;
         ptr->transform_fields.bits.transform_ac_codingset_idx2 = pContext->m_picLayerHeader->TRANSACFRM2;

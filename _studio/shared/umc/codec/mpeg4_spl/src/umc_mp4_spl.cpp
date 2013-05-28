@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2008 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -1148,7 +1148,7 @@ Status MP4Splitter::Close()
 
   IndexSplitter::Close();
 
-  for (iES = 0; iES < m_pInfo->m_nOfTracks; iES++) {
+  for (iES = 0; m_pInfo && (iES < m_pInfo->m_nOfTracks); iES++) {
     Clear_track(m_headerMPEG4.moov.trak[iES]);
 
 //    UMC_CALL(m_ppMediaBuffer[iES]->Close());
@@ -1179,7 +1179,9 @@ Status MP4Splitter::Close()
   UMC_FREE(m_pIsLocked)
   UMC_FREE(m_ppLockedFrame)
   UMC_FREE(m_ppMediaBuffer)
-  UMC_FREE(m_pInfo->m_ppTrackInfo)
+  if (m_pInfo) {
+      UMC_FREE(m_pInfo->m_ppTrackInfo)
+  }
 
   if (m_pTrackIndex) {
     delete[] m_pTrackIndex;

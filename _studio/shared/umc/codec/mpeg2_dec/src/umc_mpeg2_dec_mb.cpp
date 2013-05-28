@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -96,7 +96,7 @@ Status MPEG2VideoDecoderBase::DecodeSlice_FrameI_420(IppVideoContext *video, int
 
     for ( ; ; ) 
     {
-        Ipp32u remained = GET_REMAINED_BYTES(video->bs);
+        Ipp32s remained = GET_REMAINED_BYTES(video->bs);
         
         if (remained == 0) 
         {
@@ -208,7 +208,7 @@ Status MPEG2VideoDecoderBase::DecodeSlice_FramePB_420(IppVideoContext *video, in
 
     for (;;) 
     {
-        Ipp32u remained = GET_REMAINED_BYTES(video->bs);
+        Ipp32s remained = GET_REMAINED_BYTES(video->bs);
 
         if (remained == 0) 
         {

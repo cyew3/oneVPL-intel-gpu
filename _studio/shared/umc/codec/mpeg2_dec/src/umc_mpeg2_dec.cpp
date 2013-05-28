@@ -767,7 +767,11 @@ Status MPEG2VideoDecoderBase::GetCCData(Ipp8u* ptr, Ipp32u *size, Ipp64u *time, 
         ippsCopy_8u(p_user_data, ptr, *size);
         *size *= 8;
 
+#if defined(_WIN32) || defined(_WIN64)
         _aligned_free(p_user_data);
+#else
+        free(p_user_data);
+#endif
 
         m_user_data.erase(m_user_data.begin());
     }
@@ -1074,7 +1078,9 @@ Status MPEG2VideoDecoderBase::ProcessRestFrame(int task_num)
     #if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
     if (pack_w.m_va && pack_w.bNeedNewFrame)
     {
-        BeginVAFrame(task_num);
+        umcRes = BeginVAFrame(task_num);
+        if (UMC_OK != umcRes)
+            return umcRes;
         pack_w.bNeedNewFrame = false;
     }
     #endif
@@ -1616,11 +1622,11 @@ mm:
 
               umcRes = pack_w.m_va->Execute();
               if (UMC_OK != umcRes)
-                  return umcRes;
+                  return UMC_ERR_DEVICE_FAILED;
           }
           umcRes = pack_w.m_va->EndFrame();
           if (UMC_OK != umcRes)
-              return umcRes;
+              return UMC_ERR_DEVICE_FAILED;
 
           if(display_index < 0)
           {
@@ -1921,7 +1927,11 @@ void MPEG2VideoDecoderBase::ReadCCData(int task_num)
       }
       // -------------------
       {
+#if defined(_WIN32) || defined(_WIN64)
         Ipp8u *p = (Ipp8u *) _aligned_malloc(input_size + 4, 16);
+#else
+        Ipp8u *p = (Ipp8u *) malloc(input_size + 4);
+#endif
         if (!p)
         {
             frame_buffer.frame_p_c_n[t_num].IsUserDataDecoded = false;

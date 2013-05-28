@@ -656,14 +656,6 @@ bool MFX_Utility::IsNeedPartialAcceleration(mfxVideoParam * par, eMFXHWType )
     if (points && points->NumRefsTotal > 16)
         return true;
 
-#ifdef __APPLE__
-    //Currently, VDA requires 480x320.
-    //However, that may change in the future. Hard coding could be a problem later. 
-    if (par->mfx.FrameInfo.Width < 480 || par->mfx.FrameInfo.Height < 320)
-    {
-       return true;
-    }
-#endif
     return false;
 }
 

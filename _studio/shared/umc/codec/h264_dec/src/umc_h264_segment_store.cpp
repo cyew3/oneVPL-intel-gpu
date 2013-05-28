@@ -30,7 +30,7 @@ H264DecoderLocalMacroblockDescriptor::H264DecoderLocalMacroblockDescriptor(void)
     SavedMacroblockCoeffs = NULL;
     SavedMacroblockTCoeffs = NULL;
 
-    m_MBLayerSizePadded = NULL;
+    m_MBLayerSizePadded = 0;
     m_numberOfLayers = 1;
     m_isScalable = 0;
 

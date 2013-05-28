@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -241,7 +241,8 @@ Status MPEG2VideoDecoderBase::DecodeSliceHeader(IppVideoContext *video, int task
             pack_w.pSliceInfo[-1].dwSliceBitsInBuffer = 8 * (count + 10);
 #elif defined(UMC_VA_LINUX)
             // update slice info structures (+ extra 10 bytes, this is @to do@)
-            pack_w.pSliceInfo[-1].slice_data_size = count + 10; // it's "5" instead of "10" in menlow
+            if(pack_w.pSliceInfoBuffer < pack_w.pSliceInfo)
+                pack_w.pSliceInfo[-1].slice_data_size = count + 10;
             //fprintf(otl, "slice_data_size %x in DecodeSliceHeader(%d)\n", pack_w.pSliceInfo[-1].slice_data_size, __LINE__);
 #endif
         }

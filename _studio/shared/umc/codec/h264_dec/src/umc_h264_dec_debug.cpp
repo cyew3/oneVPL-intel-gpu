@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -47,7 +47,7 @@ void Trace(vm_char * format, ...)
     va_start(arglist, format);
 
     vm_char cStr[256];
-    vm_string_vsprintf(cStr, format, arglist);
+    vm_string_vsnprintf(cStr, sizeof(cStr)-1, format, arglist);
 
     //OutputDebugString(cStr);
     vm_string_printf(VM_STRING("%s"), cStr);

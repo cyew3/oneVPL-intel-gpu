@@ -500,7 +500,7 @@ public:
     CoeffsPtrCommon GetCoefficientsBuffer(Ipp32u nNum = 0);
 
 private:
-
+    H264SegmentDecoder( const H264SegmentDecoder &s );  // No copy CTR
     // we lock the assignment operator to avoid any
     // accasional assignments
     H264SegmentDecoder & operator = (H264SegmentDecoder &)

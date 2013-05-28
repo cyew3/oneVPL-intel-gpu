@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, Task processing base on H264
@@ -1961,7 +1961,10 @@ STATISTICS_END_TIME(m_timeStatistics->AddPerfomed_StartTime,
             {
                 if (!isSkip)
                 {
-                    if (UMC_OK == pMainVC1Decoder->m_va->BeginFrame(*mid))
+                    if (pMainVC1Decoder->m_va->m_Platform != VA_LINUX) // on Linux we call BeginFrame() inside VC1PackPicParams()
+                        sts = pMainVC1Decoder->m_va->BeginFrame(*mid);
+
+                    if (UMC_OK == sts)
                         pMainVC1Decoder->m_pContext->m_frmBuff.m_pFrames[Idx].pRANGE_MAPY = &pMainVC1Decoder->m_pContext->m_frmBuff.m_pFrames[Idx].RANGE_MAPY;
                     else
                         return -1;

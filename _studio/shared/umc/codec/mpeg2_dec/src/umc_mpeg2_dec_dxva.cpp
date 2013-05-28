@@ -65,6 +65,8 @@ bool PackVA::SetVideoAccelerator(VideoAccelerator * va)
 
 #ifdef UMC_VA_DXVA
 
+PackVA::~PackVA(void){}
+
 Status PackVA::InitBuffers(int /*size_bs*/, int /*size_sl*/)
 {
       totalNumCoef = 0;
@@ -527,6 +529,15 @@ Status PackVA::GetStatusReport(DXVA_Status_VC1 *pStatusReport)
 
 #elif defined UMC_VA_LINUX
 
+PackVA::~PackVA(void)
+{
+    if(pSliceInfoBuffer)
+    {
+        ippsFree(pSliceInfoBuffer);
+        pSliceInfoBuffer = NULL;
+    }
+}
+
 Status PackVA::InitBuffers(int size_bs, int size_sl)
 {
     UMCVACompBuffer* CompBuf;
@@ -537,33 +548,30 @@ Status PackVA::InitBuffers(int size_bs, int size_sl)
     try
 #endif // #if !defined(MFX_NO_EXCEPTIONS)
     {
-        vpPictureParam = (VAPictureParameterBufferMPEG2*)m_va->GetCompBuffer(
-            VAPictureParameterBufferType,
-            &CompBuf,
-            (Ipp32s) (sizeof (VAPictureParameterBufferMPEG2)));
+        if (NULL == (vpPictureParam = (VAPictureParameterBufferMPEG2*)m_va->GetCompBuffer(VAPictureParameterBufferType, &CompBuf, sizeof (VAPictureParameterBufferMPEG2))))
+            return UMC_ERR_ALLOC;
 
         if (va_mode == VA_VLD_L) // ao: needed?
         {
-            pQmatrixData = (VAIQMatrixBufferMPEG2*)m_va->GetCompBuffer(
-                VAIQMatrixBufferType,
-                &CompBuf,
-                (Ipp32s) (sizeof (VAIQMatrixBufferMPEG2)));
+            if (NULL == (pQmatrixData = (VAIQMatrixBufferMPEG2*)m_va->GetCompBuffer(VAIQMatrixBufferType, &CompBuf, sizeof (VAIQMatrixBufferMPEG2))))
+                return UMC_ERR_ALLOC;
 
-            pSliceInfoBuffer = (VASliceParameterBufferMPEG2*)m_va->GetCompBuffer(
-                VASliceParameterBufferType,
-                &CompBuf,
-                (Ipp32s) (sizeof (VASliceParameterBufferMPEG2))*size_sl);
-            memset(
-                pSliceInfoBuffer,
-                0,
-                sizeof(VASliceParameterBufferMPEG2)*size_sl);
+            slice_size_getting = sizeof (VASliceParameterBufferMPEG2) * size_sl;
+#if 0
+            if (NULL == (pSliceInfoBuffer = (VASliceParameterBufferMPEG2*)m_va->GetCompBuffer(VASliceParameterBufferType, &CompBuf, sizeof (VASliceParameterBufferMPEG2)*size_sl)))
+                return UMC_ERR_ALLOC;
 
-            slice_size_getting = CompBuf->GetBufferSize();
+#else
+            if(NULL == pSliceInfoBuffer)
+                pSliceInfoBuffer = (VASliceParameterBufferMPEG2*)ippsMalloc_8u(slice_size_getting);
+            if( NULL == pSliceInfoBuffer)
+                return UMC_ERR_ALLOC;
+#endif
 
-            pBitsreamData = (Ipp8u*)m_va->GetCompBuffer(
-                VASliceDataBufferType,
-                &CompBuf,
-                size_bs);
+            memset(pSliceInfoBuffer, 0, slice_size_getting);
+
+            if (NULL == (pBitsreamData = (Ipp8u*)m_va->GetCompBuffer(VASliceDataBufferType, &CompBuf, size_bs)))
+                return UMC_ERR_ALLOC;
 
             if (NULL != m_va->GetProtectedVA())
             {
@@ -606,7 +614,9 @@ PackVA::SaveVLDParameters(
 
     if(va_mode == VA_VLD_L)
     {
-        Ipp32s size = pSliceInfo[-1].slice_data_offset + pSliceInfo[-1].slice_data_size;
+        Ipp32s size = 0;
+        if(pSliceInfoBuffer < pSliceInfo)
+            size = pSliceInfo[-1].slice_data_offset + pSliceInfo[-1].slice_data_size;
         ippsCopy_8u(bs_start_ptr, (Ipp8u*)pBitsreamData, size);
 
         UMCVACompBuffer* CompBuf;
@@ -629,17 +639,17 @@ PackVA::SaveVLDParameters(
         ippsCopy_8u((Ipp8u*)QmatrixData.chroma_non_intra_quantiser_matrix, (Ipp8u*)pQmatrixData->chroma_non_intra_quantiser_matrix,
             sizeof(pQmatrixData->chroma_non_intra_quantiser_matrix));
 
-        m_va->GetCompBuffer(VASliceParameterBufferType,&CompBuf);
         NumOfItem = (int)(pSliceInfo - pSliceInfoBuffer);
-        VASliceParameterBufferMPEG2 *p = pSliceInfoBuffer;
-        /*
-        for(i = 0; i < NumOfItem; i++)
-        {
-            if(p->slice_vertical_position > source_mb_height - 1)
-            NumOfItem--;
-            p++;
-        }
-        */
+
+        VASliceParameterBufferMPEG2 *l_pSliceInfoBuffer = (VASliceParameterBufferMPEG2*)m_va->GetCompBuffer(
+            VASliceParameterBufferType,
+            &CompBuf,
+            (Ipp32s) (sizeof (VASliceParameterBufferMPEG2))*NumOfItem);
+
+        ippsCopy_8u((Ipp8u*)pSliceInfoBuffer, (Ipp8u*)l_pSliceInfoBuffer,
+            sizeof(VASliceParameterBufferMPEG2) * NumOfItem);
+
+        m_va->GetCompBuffer(VASliceParameterBufferType,&CompBuf);
         CompBuf->SetNumOfItem(NumOfItem);
     }
 
@@ -653,7 +663,7 @@ PackVA::SaveVLDParameters(
 
         //pPictureParam->forward_reference_picture = m_va->GetSurfaceID(prev_index);//prev_index;
         //pPictureParam->backward_reference_picture = m_va->GetSurfaceID(next_index);//next_index;
-        Ipp32s f_ref_pic;
+        Ipp32s f_ref_pic = VA_INVALID_SURFACE;
 
         if(pict_type == MPEG2_P_PICTURE)
         {

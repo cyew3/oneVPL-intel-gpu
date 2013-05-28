@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 //  MPEG-2 is a international standard promoted by ISO/IEC and
@@ -91,8 +91,13 @@ public:
         add_to_slice_start = 0;
         memset(add_bytes,0,16);
         overlap = 0;
+        vpPictureParam = NULL;
+        pMBControl0 = NULL;
+        pSliceInfo = NULL;
+        pSliceInfoBuffer = NULL;
+        pQmatrixData = NULL;
     };
-    virtual ~PackVA(){};
+    virtual ~PackVA();
     bool SetVideoAccelerator(VideoAccelerator * va);
     Status InitBuffers(int size_bf = 0, int size_sl = 0);
     Status SetBufferSize(

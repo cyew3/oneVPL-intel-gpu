@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -463,31 +463,38 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(IppVideoContext* video, int t
 
 #elif defined(UMC_VA_LINUX)
 
-    if(pack_l.va_mode == VA_VLD_L) {
-      pack_l.QmatrixData.load_intra_quantiser_matrix = 1;// Linux VA singularity load_intra_quantizer_matrix;
-      pack_l.QmatrixData.load_chroma_intra_quantiser_matrix = load_intra_quantizer_matrix;
-      if(load_intra_quantizer_matrix) {
+    if(pack_l.va_mode == VA_VLD_L)
+    {
+      pack_l.QmatrixData.load_intra_quantiser_matrix              = 1;
+      pack_l.QmatrixData.load_non_intra_quantiser_matrix          = 1;
+      pack_l.QmatrixData.load_chroma_intra_quantiser_matrix       = 1;
+      pack_l.QmatrixData.load_chroma_non_intra_quantiser_matrix   = 1;
+      if(load_intra_quantizer_matrix)
+      {
         for(i=0; i<64; i++)
         {
           pack_l.QmatrixData.intra_quantiser_matrix[i] = iqm[i];
           pack_l.QmatrixData.chroma_intra_quantiser_matrix[i] = iqm[i];
         }
-      } else {
+      }
+      else
+      {
         for(i=0; i<64; i++)
         {
           pack_l.QmatrixData.intra_quantiser_matrix[i] = default_intra_quantizer_matrix[i];
           pack_l.QmatrixData.chroma_intra_quantiser_matrix[i] = default_intra_quantizer_matrix[i];
         }
       }
-      pack_l.QmatrixData.load_non_intra_quantiser_matrix =  1;// Linux VA singularity load_non_intra_quantizer_matrix;
-      pack_l.QmatrixData.load_chroma_non_intra_quantiser_matrix = load_non_intra_quantizer_matrix;
-      if(load_non_intra_quantizer_matrix) {
+      if(load_non_intra_quantizer_matrix)
+      {
         for(i=0; i<64; i++)
         {
             pack_l.QmatrixData.non_intra_quantiser_matrix[i] = niqm[i];
             pack_l.QmatrixData.chroma_non_intra_quantiser_matrix[i] = niqm[i];
         }
-      } else {
+      }
+      else
+      {
         for(i=0; i<64; i++)
         {
           pack_l.QmatrixData.non_intra_quantiser_matrix[i] = 16;
@@ -1348,23 +1355,30 @@ void MPEG2VideoDecoderBase::quant_matrix_extension(int task_num)
     }
 #elif defined UMC_VA_LINUX
     if(pack_l.va_mode == VA_VLD_L) {
-      pack_l.QmatrixData.load_intra_quantiser_matrix = load_intra_quantizer_matrix;
       if(load_intra_quantizer_matrix)
+      {
+          pack_l.QmatrixData.load_intra_quantiser_matrix              = load_intra_quantizer_matrix;
           for(i=0; i<64; i++)
               pack_l.QmatrixData.intra_quantiser_matrix[i] = q_matrix[0][i];
-      pack_l.QmatrixData.load_chroma_intra_quantiser_matrix = load_intra_quantizer_matrix;
-      if(load_intra_quantizer_matrix)
-          for(i=0; i<64; i++)
-              pack_l.QmatrixData.chroma_intra_quantiser_matrix[i] = q_matrix[2][i];
-
-      pack_l.QmatrixData.load_non_intra_quantiser_matrix = load_non_intra_quantizer_matrix;
+      }
       if(load_non_intra_quantizer_matrix)
+      {
+          pack_l.QmatrixData.load_non_intra_quantiser_matrix          = load_non_intra_quantizer_matrix;
           for(i=0; i<64; i++)
               pack_l.QmatrixData.non_intra_quantiser_matrix[i] = q_matrix[1][i];
-      pack_l.QmatrixData.load_chroma_non_intra_quantiser_matrix = load_non_intra_quantizer_matrix;
-      if(load_non_intra_quantizer_matrix)
+      }
+      if(load_chroma_intra_quantizer_matrix)
+      {
+          pack_l.QmatrixData.load_chroma_intra_quantiser_matrix       = load_chroma_intra_quantizer_matrix;
+          for(i=0; i<64; i++)
+              pack_l.QmatrixData.chroma_intra_quantiser_matrix[i] = q_matrix[2][i];
+      }
+      if(load_chroma_non_intra_quantizer_matrix)
+      {
+          pack_l.QmatrixData.load_chroma_non_intra_quantiser_matrix   = load_chroma_non_intra_quantizer_matrix;
           for(i=0; i<64; i++)
               pack_l.QmatrixData.chroma_non_intra_quantiser_matrix[i] = q_matrix[3][i];
+      }
     }//if(va_mode == VA_VLD_L)
 #endif
 
