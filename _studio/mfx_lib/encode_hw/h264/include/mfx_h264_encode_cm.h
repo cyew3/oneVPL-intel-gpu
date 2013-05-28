@@ -16,6 +16,10 @@
 #include <vector>
 #include <assert.h>
 
+#include <cm_rt.h>
+
+#include <mfx_platform_headers.h>
+
 class CmDevice;
 class CmBuffer;
 class CmBufferUP;
@@ -27,8 +31,13 @@ class CmKernel;
 class SurfaceIndex;
 class CmThreadSpace;
 class CmTask;
+#if defined(_WIN32) || defined(_WIN64)
 interface IDirect3DSurface9;
 interface IDirect3DDeviceManager9;
+#else
+typedef void IDirect3DSurface9;
+typedef void IDirect3DDeviceManager9;
+#endif
 
 namespace MfxHwH264Encode
 {
@@ -118,7 +127,7 @@ public:
 
     SurfaceIndex const & GetIndex();
 
-    IDirect3DSurface9 const & GetDXSurface();
+//    IDirect3DSurface9 const & GetDXSurface();
 
     void Read(void * buf, CmEvent * e = 0);
 

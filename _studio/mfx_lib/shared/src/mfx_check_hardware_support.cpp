@@ -4,13 +4,13 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_check_hardware_support.cpp
 
 \* ****************************************************************************** */
 
-#if defined (MFX_VA)
+#if defined (MFX_VA_WIN)
 //#define SET_ALWAYS_DEFAULT
 // MFX_HW_IVB = 0x400000, MFX_HW_HSW = 0x500000, etc
 //#define DEFAULT_HW_TYPE (eMFXHWType)0x400000
@@ -167,4 +167,4 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver)
 
 } // namespace MFX
 
-#endif // #if defined (MFX_VA)
+#endif // #if defined (MFX_VA_WIN)

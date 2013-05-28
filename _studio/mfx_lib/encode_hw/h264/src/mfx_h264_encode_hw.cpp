@@ -133,10 +133,14 @@ namespace
 
     IDirect3DDeviceManager9 * GetDeviceManager(VideoCORE * core)
     {
-        D3D9Interface * d3dIface = QueryCoreInterface<D3D9Interface>(core, MFXICORED3D_GUID);
+#if defined(_WIN32) || defined(_WIN64)
+      D3D9Interface * d3dIface = QueryCoreInterface<D3D9Interface>(core, MFXICORED3D_GUID);
         if (d3dIface == 0)
             return 0;
         return d3dIface->GetD3D9DeviceManager();
+#else
+    throw std::logic_error("GetDeviceManager not implemented on Linux for Look Ahead");
+#endif
     }
 
     VmeData * FindUnusedVmeData(std::vector<VmeData> & vmeData)

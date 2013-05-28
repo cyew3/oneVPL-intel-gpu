@@ -97,7 +97,7 @@ function( configure_build_variant_linux target variant )
     endforeach()
     #append_property( ${ARGV0} LINK_FLAGS "${PKG_LIBVA_LDFLAGS_OTHER}" )
  
-    target_link_libraries( ${ARGV0} va )
+    target_link_libraries( ${ARGV0} va ${MDF_LIBS} )
 
   elseif( ARGV1 MATCHES drm )
     append_property( ${ARGV0} COMPILE_FLAGS "-DLIBVA_SUPPORT -DLIBVA_DRM_SUPPORT" )

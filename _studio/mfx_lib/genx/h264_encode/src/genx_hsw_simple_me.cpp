@@ -8,6 +8,8 @@
 //
 */
 
+#if defined(_WIN32) || defined(_WIN64)
+
 #include <cm.h>
 #include <genx_vme.h>
 
@@ -3268,3 +3270,5 @@ HmeMB_B(SurfaceIndex CurbeDataSurfIndex,
 }
 
 /****************************************************************************************/
+
+#endif // #if defined(_WIN32) || defined(_WIN64)

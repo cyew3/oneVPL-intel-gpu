@@ -14,6 +14,8 @@
 #include <vector>
 #include <list>
 #include <memory>
+#include <algorithm> /* for std::find_if on Linux/Android */
+
 #if defined(MFX_VA_WIN)
 #include "encoding_ddi.h"
 #endif
@@ -636,7 +638,7 @@ namespace MfxHwH264Encode
             , m_longTermFrameIdx(NO_INDEX_U8)
             , m_longTermPicNum(NO_INDEX_U8, NO_INDEX_U8)
             , m_reference(false, false)
-            , m_picStruct(MFX_PICSTRUCT_PROGRESSIVE)
+            , m_picStruct((mfxU16)MFX_PICSTRUCT_PROGRESSIVE)
             , m_tid(0)
         {
         }
@@ -1112,7 +1114,7 @@ namespace MfxHwH264Encode
     class BrcIface
     {
     public:
-        virtual ~BrcIface() = 0 {};
+        virtual ~BrcIface() {};
         virtual void Init(MfxVideoParam const & video) = 0;
         virtual void Close() = 0;
         virtual void PreEnc(mfxU32 frameType, std::vector<VmeData *> const & vmeData, mfxU32 encOrder) = 0;
@@ -1351,7 +1353,9 @@ namespace MfxHwH264Encode
 
     struct SVCPAKObject;
 
+#if defined(_WIN32) || defined(_WIN64)
     #define CM_SURFACE_FORMAT_NV12                  (D3DFORMAT)MAKEFOURCC('N','V','1','2')
+#endif
 
     class ImplementationAvc : public VideoENCODE
     {

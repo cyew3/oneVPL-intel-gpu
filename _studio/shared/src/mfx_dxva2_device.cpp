@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_dxva2_device.cpp
 
@@ -311,21 +311,30 @@ mfxU32 DXVA2Device::GetAdapterCount(void) const
 #elif defined(MFX_VA_LINUX) || defined(MFX_VA_OSX)
 #include "mfx_dxva2_device.h"
 namespace MFX
-{ 
+{
+    DXDevice::DXDevice(void) {}
+    DXDevice::~DXDevice(void) {}
+
+    // Obtain graphic card's parameter
+    mfxU32 DXDevice::GetVendorID(void) const {}
+    mfxU32 DXDevice::GetDeviceID(void) const {}
+    mfxU64 DXDevice::GetDriverVersion(void) const { return 0; }
+    mfxU64 DXDevice::GetLUID(void) const { return 0; }
+    mfxU32 DXDevice::GetAdapterCount(void) const { return 0; }
+    void DXDevice::LoadDLLModule(const wchar_t *pModuleName) { pModuleName; return; }
+    
     DXVA2Device::DXVA2Device(void) {}   
     DXVA2Device::~DXVA2Device(void) {}
-    
-    bool DXVA2Device::Init(const mfxU32 adapterNum) { adapterNum; return true; }
-    
-    bool DXVA2Device::InitDXGI(const mfxU32 adapterNum) { adapterNum; return true; }    
     bool DXVA2Device::InitDXGI1(const mfxU32 adapterNum) { adapterNum; return true; }
-    
     mfxU32 DXVA2Device::GetVendorID(void) const {return 0;}  
     mfxU32 DXVA2Device::GetDeviceID(void) const {return 0;} 
     mfxU64 DXVA2Device::GetDriverVersion(void) const {return 0;} 
     mfxU32 DXVA2Device::GetAdapterCount(void) const {return 1;} 
-
     void DXVA2Device::Close(void) { }
-
+   
+    DXGI1Device::DXGI1Device(void) {}
+    DXGI1Device::~DXGI1Device(void) {}
+    bool DXGI1Device::Init(const mfxU32 adapterNum) { adapterNum; return true; }
+    void DXGI1Device::Close(void) {}
 };
 #endif // #if defined(MFX_VA_WIN)

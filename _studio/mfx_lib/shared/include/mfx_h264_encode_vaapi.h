@@ -99,6 +99,11 @@ namespace MfxHwH264Encode
             ENCODE_CAPS& caps);
 
         virtual
+        mfxStatus QueryMbPerSec(
+            mfxVideoParam const & par,
+            mfxU32              (&mbPerSec)[16]);
+
+        virtual
         mfxStatus QueryStatus(
             DdiTask & task,
             mfxU32    fieldId);

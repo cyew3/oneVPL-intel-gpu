@@ -20,6 +20,10 @@
 #include "mfx_utils.h"
 #include <stdio.h>
 #include <string.h>
+
+#include <string>
+#include <stdexcept> /* for std exceptions on Linux/Android */
+
 #if defined(_WIN32) || defined(_WIN64)
     #include <windows.h>
 #else

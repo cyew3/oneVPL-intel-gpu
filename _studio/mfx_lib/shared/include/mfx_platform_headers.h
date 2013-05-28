@@ -50,11 +50,12 @@ typedef IDirect3DSurface9*              _mfxPlatformVideoSurface;
 #define D3DDDIFORMAT        D3DFORMAT
 #endif
 
-typedef int     BOOL;
-typedef char    CHAR;
-typedef short   SHORT;
-typedef int     INT;
-typedef long    LONG;
+typedef int           BOOL;
+typedef char          CHAR;
+typedef unsigned char BYTE;
+typedef short         SHORT;
+typedef int           INT;
+typedef long          LONG;
 
 typedef unsigned char  UCHAR;
 typedef unsigned short USHORT;
@@ -63,7 +64,7 @@ typedef unsigned long  ULONG;
 
 typedef unsigned long long UINT64;
 
-typedef unsigned long       DWORD;
+typedef unsigned int       DWORD;
 
 #define FALSE               0
 #define TRUE                1

@@ -8,6 +8,8 @@
 //
 */
 
+#if defined(_WIN32) || defined(_WIN64)
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -126,3 +128,5 @@ int main(int argc, char** argv)
 
     return 0;
 }
+
+#endif /* #if defined(_WIN32) || defined(_WIN64) */

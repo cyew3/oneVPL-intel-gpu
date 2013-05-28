@@ -16,6 +16,7 @@
 #include <stdexcept>
 #include <numeric>
 #include <math.h>
+#include <limits.h> /* for INT_MIN, INT_MAX, etc. on Linux/Android */
 
 #if defined(MFX_VA_WIN)
 #include <atlbase.h>
@@ -5370,10 +5371,10 @@ namespace
         mfxU32 pocL0,
         mfxU32 pocL1)
     {
-        mfxI32 tb = min(max(-128, mfxI32(pocCur - pocL0)), 127);
-        mfxI32 td = min(max(-128, mfxI32(pocL1  - pocL0)), 127);
+        mfxI32 tb = IPP_MIN(IPP_MAX(-128, mfxI32(pocCur - pocL0)), 127);
+        mfxI32 td = IPP_MIN(IPP_MAX(-128, mfxI32(pocL1  - pocL0)), 127);
         mfxI32 tx = (16384 + abs(td/2)) / td;
-        mfxI32 distScaleFactor = min(max(-1024, (tb * tx + 32) >> 6), 1023);
+        mfxI32 distScaleFactor = IPP_MIN(IPP_MAX(-1024, (tb * tx + 32) >> 6), 1023);
         return distScaleFactor;
     }
 

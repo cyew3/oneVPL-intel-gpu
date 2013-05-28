@@ -138,6 +138,8 @@ VideoAccelerationHW ConvertMFXToUMCType(eMFXHWType type)
     case MFX_HW_HSW:
         umcType = VA_HW_HSW;
         break;
+    default:
+        break;
     }
 
     return umcType;
@@ -1177,10 +1179,10 @@ mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID /*guid*/,
                                          mfxVideoParam *par, bool isEncoder) 
 {
     if (!par)
-        return GetSWFallbackPolicy();
+        return MFX_WRN_PARTIAL_ACCELERATION;
 
     if (IsMVCProfile(par->mfx.CodecProfile) || IsSVCProfile(par->mfx.CodecProfile))
-        return GetSWFallbackPolicy();
+        return MFX_WRN_PARTIAL_ACCELERATION;
 
     switch (par->mfx.CodecId)
     {
@@ -1190,12 +1192,12 @@ mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID /*guid*/,
         break;
     case MFX_CODEC_MPEG2:
         if (par->mfx.FrameInfo.Width  > 2048 || par->mfx.FrameInfo.Height > 2048) //MPEG2 decoder doesn't support resolution bigger than 2K
-            return GetSWFallbackPolicy();
+            return MFX_WRN_PARTIAL_ACCELERATION;
         break;
     case MFX_CODEC_JPEG:
-        return GetSWFallbackPolicy();
+        return MFX_WRN_PARTIAL_ACCELERATION;
     case MFX_CODEC_VP8:
-        return GetSWFallbackPolicy();
+        return MFX_WRN_PARTIAL_ACCELERATION;
     default:
         return MFX_ERR_UNSUPPORTED;
     }
@@ -1205,7 +1207,7 @@ mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID /*guid*/,
 
         if (par->mfx.FrameInfo.Width > 4096 || par->mfx.FrameInfo.Height > 4096)
         {
-            return GetSWFallbackPolicy();
+            return MFX_WRN_PARTIAL_ACCELERATION;
         }
         else
         {
@@ -1216,7 +1218,7 @@ mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID /*guid*/,
     {
         if (par->mfx.FrameInfo.Width > 1920 || par->mfx.FrameInfo.Height > 1200)
         {
-            return GetSWFallbackPolicy();
+            return MFX_WRN_PARTIAL_ACCELERATION;
         }
     }
     return MFX_ERR_NONE;

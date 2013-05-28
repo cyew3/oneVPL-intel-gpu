@@ -13,6 +13,8 @@
 
 #include <fstream>
 #include <algorithm>
+#include <string>
+#include <stdexcept> /* for std exceptions on Linux/Android */
 
 #pragma warning(push)
 #pragma warning(disable: 4100)
@@ -22,7 +24,7 @@
 #include "mfx_h264_encode_cm_defs.h"
 #include "mfx_h264_encode_cm.h"
 #include "mfx_h264_encode_hw_utils.h"
-#include "..\..\..\genx\h264_encode\include\genx_hsw_simple_me_isa.h"
+#include "../../../genx/h264_encode/include/genx_hsw_simple_me_isa.h"
 
 namespace MfxHwH264Encode
 {
@@ -217,7 +219,7 @@ SurfaceIndex const & GetIndex(CmBufferUP * buffer)
     SurfaceIndex * index = 0;
     int result = buffer->GetIndex(index);
     if (result != CM_SUCCESS)
-        throw std::exception("GetIndex failed");
+        throw CmRuntimeError();
     return *index;
 }
 
@@ -391,13 +393,14 @@ SurfaceIndex const & CmSurface::GetIndex()
     return ::GetIndex(m_surface);
 }
 
+/*
 IDirect3DSurface9 const & CmSurface::GetDXSurface()
 {
     IDirect3DSurface9* dxSurface = 0;
     if (m_surface->GetD3DSurface(dxSurface) != CM_SUCCESS)
         throw CmRuntimeError();
     return *dxSurface;
-}
+}*/
 
 void CmSurface::Read(void * buf, CmEvent * e)
 {
@@ -526,7 +529,7 @@ CmBufferUP * CreateBuffer(CmDevice * device, mfxU32 size, void * mem)
     CmBufferUP * buffer;
     int result = device->CreateBufferUP(size, mem, buffer);
     if (result != CM_SUCCESS)
-        throw std::exception("CreateBufferUP failed");
+        throw CmRuntimeError();
     return buffer;
 }
 
@@ -534,8 +537,12 @@ CmSurface2D * CreateSurface(CmDevice * device, IDirect3DSurface9 * d3dSurface)
 {
     int result = CM_SUCCESS;
     CmSurface2D * cmSurface = 0;
+#if defined(_WIN32) || defined(_WIN64)
     if (device && d3dSurface && (result = device->CreateSurface2D(d3dSurface, cmSurface)) != CM_SUCCESS)
         throw CmRuntimeError();
+#else
+    throw std::logic_error("CreateSurface2D is not available on Linux at the moment");
+#endif
     return cmSurface;
 }
 
@@ -544,7 +551,7 @@ CmSurface2D * CreateSurface(CmDevice * device, mfxU32 width, mfxU32 height, mfxU
 {
     int result = CM_SUCCESS;
     CmSurface2D * cmSurface = 0;
-    if (device && (result = device->CreateSurface2D(width, height, D3DFORMAT(fourcc), cmSurface)) != CM_SUCCESS)
+    if (device && (result = device->CreateSurface2D(width, height, CM_SURFACE_FORMAT(fourcc), cmSurface)) != CM_SUCCESS)
         throw CmRuntimeError();
     return cmSurface;
 }
