@@ -616,7 +616,7 @@ mfxStatus ResMngr::ReleaseSubResource(bool bAll)
     std::vector<ReleaseResource*>::iterator it;
     for(i = 0; i < removeCount; i++)
     {
-        it = find(m_subTaskQueue.begin(), m_subTaskQueue.end(), taskToRemove[i] );
+        it = std::find(m_subTaskQueue.begin(), m_subTaskQueue.end(), taskToRemove[i] );
         if( it != m_subTaskQueue.end())
         {
             m_subTaskQueue.erase(it);
@@ -2329,6 +2329,7 @@ mfxStatus ConfigureExecuteParams(
                 break;
             }
 
+#if defined(MFX_ENABLE_IMAGE_STABILIZATION_VPP)
             case MFX_EXTBUFF_VPP_IMAGE_STABILIZATION:
             {
                 if(caps.uIStabFilter)
@@ -2361,6 +2362,7 @@ mfxStatus ConfigureExecuteParams(
 
                 break;
             }
+#endif
 
             case MFX_EXTBUFF_VPP_VARIANCE_REPORT:
             {

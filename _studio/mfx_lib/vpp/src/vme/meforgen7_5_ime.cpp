@@ -1663,21 +1663,21 @@ int MEforGen75::SetupSearchPath( )
         if((Vsta.RefW > 32) ||(Vsta.RefH > 32))
         {
             //printf("MEforGen75::SetupSearchPath >> Test Error: Reference width/height needs to be less than or equal to 32 in case of dual reference.\n");
-            exit(-1);
+            return (-1);
         }
     }
     if((x0>=rw || y0>=rh))// && (Vsta.DoIntraInter&DO_INTER)) 
     {
         LenSP[0] = 0;
         //printf("MEforGen75::SetupSearchPath >> Test Error: Search Path Start Center not valid\n");    
-        exit(-1);
+        return (-1);
     }
 
     if(((Vsta.VmeModes&7)>0)&&(x1>=rw || y1>=rh))// && (Vsta.DoIntraInter&DO_INTER))
     {
         LenSP[1] = 0;
         //printf("MEforGen75::SetupSearchPath >> Test Error: Search Path Start Center not valid\n");    
-        exit(-1);
+        return (-1);
     }
 
     if((Vsta.VmeModes&7)==1){ //simple dual center
@@ -3025,7 +3025,7 @@ int MEforGen75::GetCostXY(int x, int y, int isb)
         else {
             int p = x>>shift ; 
             //printf("MEforGen75_IME::GetCostXY >> Error :: Incorrect(negative) index to LutXY[].\n", p);
-            exit(-1);
+            return (-1);
         }
     }
 
@@ -3044,7 +3044,7 @@ int MEforGen75::GetCostXY(int x, int y, int isb)
         else {
             int p = y>>shift ; 
             //printf("MEforGen75_IME::GetCostXY >> Error :: Incorrect(negative) index to LutXY[].\n", p);
-            exit(-1);
+            return (-1);
         }
     }
     //x = (x>>shift>=64) ? (LutXY[64] ? LutXY[64]+(((x>>shift)-64)>>2) : 0) : LutXY[x>>shift]; 
@@ -3108,7 +3108,7 @@ void MEforGen75::Select2SUs(int bDualRecord, bool in_bCheckInFlightSU)
     //U8 RefHeight = Vsta.RefH;
     //int max_x = (RefWidth>>2) - 5; // Horizontal SU maximum boundary
     //int max_y = (RefHeight>>2) - 5; // Vertical SU maximum boundary
-    U8 offset = 0;
+    //U8 offset = 0;
     U8 numValidDynMVs = 0;
     bool NbSPWalkState[4];
     I16PAIR ValidMV[2][4];
@@ -3188,7 +3188,7 @@ void MEforGen75::Select2SUs(int bDualRecord, bool in_bCheckInFlightSU)
             {
                 continue;
             }
-            offset = 4*refNum;
+            //offset = 4*refNum;
             k = 0;
             while(k < numValidDynMVs)
             {
@@ -3248,7 +3248,7 @@ void MEforGen75::Select2SUs(int bDualRecord, bool in_bCheckInFlightSU)
             {
                 continue;
             }
-            offset = 4*refNum;
+            //offset = 4*refNum;
             k = 0;
             while(k < numValidDynMVs)
             {
@@ -3308,7 +3308,7 @@ void MEforGen75::Select2SUs(int bDualRecord, bool in_bCheckInFlightSU)
             {
                 continue;
             }
-            offset = 4*refNum;
+            //offset = 4*refNum;
             k = 0;
             while(k < numValidDynMVs)
             {

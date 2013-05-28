@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2012-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //         Video Pre Processing (SVC implementation)
@@ -141,7 +141,7 @@ mfxStatus ImplementationSvc::Reset(mfxVideoParam *par)
     }
 
     bool bWarningIncompatible = false;
-    mfxStatus sts = CheckExtParam(par->ExtParam,  par->NumExtParam);
+    mfxStatus sts = CheckExtParam(m_core, par->ExtParam,  par->NumExtParam);
     if( MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts )
     {
         sts = MFX_ERR_NONE;

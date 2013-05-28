@@ -735,7 +735,7 @@ int MEforGen75::GetReferenceBlock(U8 *blk, U8 *ref, short qx, short qy, int bw, 
 // Vertical Interpolation
 inline void MEforGen75::VertInterp4Tap (U8 *input0, U8 *output, int pitch, int bh, int bw, int pitch_out)
 {
-    __declspec(align(16)) U16 Coeff[8] = {5,5,5,5,5,5,5,5};
+    VME_ALIGN_DECL(16) U16 Coeff[8] = {5,5,5,5,5,5,5,5};
     __m128i coeff_reg = _mm_load_si128 ((__m128i const*)Coeff);
     
     U8 *input;
@@ -825,7 +825,7 @@ inline void MEforGen75::HorInterp4Tap (U8 *input0, U8 *output, int pitch_in, int
     // Create an all-zero 128-bit 
     __m128i zero_reg = _mm_setzero_si128();
 
-    __declspec(align(16)) U16 Coeff[8] = {5,5,5,5,5,5,5,5};
+    VME_ALIGN_DECL(16) U16 Coeff[8] = {5,5,5,5,5,5,5,5};
     __m128i coeff_reg = _mm_load_si128 ((__m128i const*)Coeff);
     
     U8 *input;
