@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -401,7 +401,7 @@
 # endif
 #else
    #define UMC_ENABLE_FB_VIDEO_RENDER
-   #define UMC_ENABLE_SDL_VIDEO_RENDER
+//   #define UMC_ENABLE_SDL_VIDEO_RENDER
 #endif /* __APPLE__ */
     #define UMC_ENABLE_FW_VIDEO_RENDER
 
@@ -411,7 +411,7 @@
 #else
     #define UMC_ENABLE_ALSA_AUDIO_RENDER
     #define UMC_ENABLE_OSS_AUDIO_RENDER
-    #define UMC_ENABLE_SDL_AUDIO_RENDER
+//    #define UMC_ENABLE_SDL_AUDIO_RENDER
 #endif /* __APPLE__ */
     #define UMC_ENABLE_FW_AUDIO_RENDER
 

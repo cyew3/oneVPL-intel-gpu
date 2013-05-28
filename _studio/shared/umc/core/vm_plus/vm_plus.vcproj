@@ -295,6 +295,18 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			>
 			<File
+				RelativePath=".\src\mfx_vm++_pthread.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mfx_vm++_pthread_unix.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mfx_vm++_pthread_windows.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\umc_event.cpp"
 				>
 			</File>
@@ -304,10 +316,6 @@
 			</File>
 			<File
 				RelativePath=".\src\umc_mmap.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\umc_mutex.cpp"
 				>
 			</File>
 			<File

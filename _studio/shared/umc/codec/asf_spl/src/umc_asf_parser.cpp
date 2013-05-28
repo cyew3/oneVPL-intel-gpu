@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2010 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -984,9 +984,8 @@ Status ASFSplitter::CleanHeaderObject()
 
         UMC_DELETE(m_pHeaderObject->pHeaderExtObject);
         UMC_DELETE(m_pHeaderObject->pFPropObject);
+        UMC_FREE(m_pHeaderObject->ppStreamPropObject);
     }
-
-    UMC_FREE(m_pHeaderObject->ppStreamPropObject);
     return UMC_OK;
 }
 

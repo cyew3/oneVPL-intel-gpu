@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -69,7 +69,6 @@ UMC::Status UMC::FIOReader::Close()
 {
     if (NULL != m_pFile)
     {   vm_file_fclose(m_pFile);  m_pFile = NULL; }
-    m_stFileSize = NULL;
     m_stFileSize = 0;
     m_stPos = 0;
 

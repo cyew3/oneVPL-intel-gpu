@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2011-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -23,7 +23,7 @@
 // AYA: temporal solution. PREPROC_QUERY_STATUS is used only!!!!
 #if   defined(MFX_VA_WIN)
     #include "encoding_ddi.h"
-#elif defined(MFX_VA_LINUX)
+#elif defined(MFX_VA_LINUX) || defined(MFX_VA_OSX)
     typedef unsigned int   UINT;
 
     typedef struct tagVPreP_StatusParams_V1_0

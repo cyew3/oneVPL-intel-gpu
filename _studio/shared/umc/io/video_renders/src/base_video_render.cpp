@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2011 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -477,7 +477,7 @@ void BaseVideoRender::HideSurface()
 // Terminate the render
 Status BaseVideoRender::Close()
 {
-    m_SuncMut.LockIfInitialized();
+    m_SuncMut.Lock();
     m_iReadIndex = -1;
     m_iWriteIndex = -1;
     m_iLastFrameIndex = -1;
@@ -485,7 +485,7 @@ Status BaseVideoRender::Close()
     m_bShow = true;
     m_bReorder = false;
     m_OutDataTemplate.Close();
-    m_SuncMut.UnlockIfInitialized();
+    m_SuncMut.Unlock();
 
     return UMC_OK;
 

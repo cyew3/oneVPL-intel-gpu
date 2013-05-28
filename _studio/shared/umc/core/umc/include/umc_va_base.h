@@ -263,10 +263,10 @@ public:
     VideoAccelerator() :
         m_Profile(UNKNOWN),
         m_Platform(VA_UNKNOWN_PLATFORM),
-        m_protectedVA(0),
         m_HWPlatform(VA_HW_UNKNOWN),
-        m_bH264MVCSupport(false),
+        m_protectedVA(0),
         m_bH264ShortSlice(false),
+        m_bH264MVCSupport(false),
         m_isUseStatuReport(true)
     {
     }
@@ -297,6 +297,7 @@ public:
 
     bool IsSimulate() const { return ((m_Platform & VA_SIMULATOR) != 0); }
     virtual bool IsIntelCustomGUID() const = 0;
+    /* TODO: is used on Linux only? On Linux there are isues with signed/unsigned return value. */
     virtual Ipp32s GetSurfaceID(Ipp32s idx) { return idx; }
 
     virtual ProtectedVA * GetProtectedVA() {return m_protectedVA;}
@@ -375,66 +376,6 @@ protected:
     Ipp32s      DataSize;
 };
 
-///////////////////////////////////////////////////////////////////////////////////
-#ifdef UMC_VA_LINUX
-
-class UMCVAFncEntryInfo
-{
-    vm_tick m_nTime;
-    vm_tick m_nTimeEnter;
-    bool    m_bEnter;
-    bool    m_bShouldCompute;
-    Ipp32u  m_nEntryCounts;
-
-public:
-
-    UMCVAFncEntryInfo(void)
-    {
-        m_bShouldCompute = false;
-        Reset();
-    }
-    void Enter(void)
-    {
-        if (m_bShouldCompute)
-        {
-            m_nTimeEnter = vm_time_get_tick();
-            m_bEnter     = true;
-        }
-    }
-    void Leave(void)
-    {
-        if (m_bShouldCompute)
-        {
-            if (m_bEnter)
-            {
-                m_nTime += vm_time_get_tick() - m_nTimeEnter;
-                m_bEnter = false;
-                m_nEntryCounts++;
-            }
-        }
-    }
-    void Reset(void)
-    {
-        m_nTime        = 0;
-        m_nEntryCounts = 0;
-        m_bEnter       = false;
-    }
-    void SetComputeState(bool bShouldCompute)
-    {
-        m_bShouldCompute = bShouldCompute;
-    }
-    vm_tick GetTime(void)const
-    {return m_nTime;}
-    vm_tick GetEntryCount(void)const
-    {return m_nEntryCounts;}
-    void    PrintInfo(const vm_char * fncName)const
-    {
-        Ipp64f frequency = (Ipp64f)vm_time_get_frequency();
-        Ipp64f fTime = (Ipp64f)(m_nTime)/frequency;
-        vm_string_printf(VM_STRING("%s: num of entries - %d, time - %f(sec)\n"), fncName, m_nEntryCounts, fTime);
-    }
-};
-#endif // UMC_VA_LINUX
 } // namespace UMC
 
 #endif // __cplusplus

@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -118,6 +118,10 @@ protected:
             delete[] m_pSourceBuffer;
         Reset();
     }
+
+private:
+    H264MemoryPiece( const H264MemoryPiece &s );                // no copy CTR
+    H264MemoryPiece & operator=(const H264MemoryPiece &s );
 };
 
 //*********************************************************************************************/
@@ -747,6 +751,9 @@ protected:
 
     void Lock();
     void Unlock();
+private:
+    H264CoeffsBuffer( const H264CoeffsBuffer &s );              // no copy CTR
+    H264CoeffsBuffer & operator=(const H264CoeffsBuffer &s );
 };
 
 } // namespace UMC

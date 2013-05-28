@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2012 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 /*
@@ -51,12 +51,11 @@ extern "C"
 Ipp64u vm_file_fseek(vm_file *fd, Ipp64s position, VM_FILE_SEEK_MODE mode);
 Ipp64u vm_file_ftell(vm_file *fd);
 Ipp32s vm_file_getinfo(const vm_char *filename, Ipp64u *file_size, Ipp32u *file_attr);
+Ipp32s vm_file_vfprintf(vm_file *fd, vm_char *format,  va_list argptr);
 
 #if defined(LINUX32) || defined(OSX)
-#  define vm_file_fflush fflush
-#if defined(LINUX64)
-Ipp32s vm_file_vfprintf(vm_file *fd, vm_char *format,  va_list argptr);
-#endif /* #if defined(LINUX64) */
+
+    #define vm_file_fflush fflush
 
 #else /* #if defined(LINUX32) || defined(OSX) */
 

@@ -211,6 +211,9 @@ class H264DecoderFrame : public H264DecYUVBufferPadded, public RefCounter
     void Reset();
     void FreeResources();
 
+    H264DecoderFrame( const H264DecoderFrame &s );                 // no copy CTR
+    H264DecoderFrame & operator=(const H264DecoderFrame &s );
+
 public:
 
     void AddReference(RefCounter * reference);

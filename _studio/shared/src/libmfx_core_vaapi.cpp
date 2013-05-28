@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
 
 File Name: libmf_core_vaapi.cpp
 
@@ -20,13 +20,93 @@ File Name: libmf_core_vaapi.cpp
 #include "mfx_session.h"
 #include "mfx_check_hardware_support.h"
 #include "ippi.h"
+#include "mfx_common_decode_int.h"
+
+#include <sys/ioctl.h>
 
 #include "va/va.h"
+#include <va/va_backend.h>
 
 //#include "mfx_session.h"
 
 #define MFX_CHECK_HDL(hdl) {if (!hdl) MFX_RETURN(MFX_ERR_INVALID_HANDLE);}
 //#define MFX_GUID_CHECKING
+
+/* Definitions below extracted from kernel DRM headers files */
+/* START: IOCTLs structure definitions */
+typedef struct drm_i915_getparam {
+    int param;
+    int *value;
+} drm_i915_getparam_t;
+
+#define I915_PARAM_CHIPSET_ID            4
+#define DRM_I915_GETPARAM   0x06
+#define DRM_IOCTL_BASE          'd'
+#define DRM_COMMAND_BASE                0x40
+#define DRM_IOWR(nr,type)       _IOWR(DRM_IOCTL_BASE,nr,type)
+#define DRM_IOCTL_I915_GETPARAM         DRM_IOWR(DRM_COMMAND_BASE + DRM_I915_GETPARAM, drm_i915_getparam_t)
+
+typedef struct {
+    int device_id;
+    eMFXHWType platform;
+} mfx_device_item;
+
+/* list of legal dev ID for Intel's graphics
+ * Copied form i915_drv.c from linux kernel 3.9-rc7
+ * */
+const mfx_device_item listLegalDevIDs[] = {
+    /*IVB*/
+    { 0x0156, MFX_HW_IVB },   /* GT1 mobile */
+    { 0x0166, MFX_HW_IVB },   /* GT2 mobile */
+    { 0x0152, MFX_HW_IVB },   /* GT1 desktop */
+    { 0x0162, MFX_HW_IVB },   /* GT2 desktop */
+    { 0x015a, MFX_HW_IVB },   /* GT1 server */
+    { 0x016a, MFX_HW_IVB },   /* GT2 server */
+    /*HSW*/
+    { 0x0402, MFX_HW_HSW },   /* GT1 desktop */
+    { 0x0412, MFX_HW_HSW },   /* GT2 desktop */
+    { 0x0422, MFX_HW_HSW },   /* GT2 desktop */
+    { 0x040a, MFX_HW_HSW },   /* GT1 server */
+    { 0x041a, MFX_HW_HSW },   /* GT2 server */
+    { 0x042a, MFX_HW_HSW },   /* GT2 server */
+    { 0x0406, MFX_HW_HSW },   /* GT1 mobile */
+    { 0x0416, MFX_HW_HSW },   /* GT2 mobile */
+    { 0x0426, MFX_HW_HSW },   /* GT2 mobile */
+    { 0x0C02, MFX_HW_HSW },   /* SDV GT1 desktop */
+    { 0x0C12, MFX_HW_HSW },   /* SDV GT2 desktop */
+    { 0x0C22, MFX_HW_HSW },   /* SDV GT2 desktop */
+    { 0x0C0A, MFX_HW_HSW },   /* SDV GT1 server */
+    { 0x0C1A, MFX_HW_HSW },   /* SDV GT2 server */
+    { 0x0C2A, MFX_HW_HSW },   /* SDV GT2 server */
+    { 0x0C06, MFX_HW_HSW },   /* SDV GT1 mobile */
+    { 0x0C16, MFX_HW_HSW },   /* SDV GT2 mobile */
+    { 0x0C26, MFX_HW_HSW },   /* SDV GT2 mobile */
+    { 0x0A02, MFX_HW_HSW },   /* ULT GT1 desktop */
+    { 0x0A12, MFX_HW_HSW },   /* ULT GT2 desktop */
+    { 0x0A22, MFX_HW_HSW },   /* ULT GT2 desktop */
+    { 0x0A0A, MFX_HW_HSW },   /* ULT GT1 server */
+    { 0x0A1A, MFX_HW_HSW },   /* ULT GT2 server */
+    { 0x0A2A, MFX_HW_HSW },   /* ULT GT2 server */
+    { 0x0A06, MFX_HW_HSW },   /* ULT GT1 mobile */
+    { 0x0A16, MFX_HW_HSW },   /* ULT GT2 mobile */
+    { 0x0A26, MFX_HW_HSW },   /* ULT GT2 mobile */
+    { 0x0D02, MFX_HW_HSW },   /* CRW GT1 desktop */
+    { 0x0D12, MFX_HW_HSW },   /* CRW GT2 desktop */
+    { 0x0D22, MFX_HW_HSW },   /* CRW GT2 desktop */
+    { 0x0D0A, MFX_HW_HSW },   /* CRW GT1 server */
+    { 0x0D1A, MFX_HW_HSW },   /* CRW GT2 server */
+    { 0x0D2A, MFX_HW_HSW },   /* CRW GT2 server */
+    { 0x0D06, MFX_HW_HSW },   /* CRW GT1 mobile */
+    { 0x0D16, MFX_HW_HSW },   /* CRW GT2 mobile */
+    { 0x0D26, MFX_HW_HSW },   /* CRW GT2 mobile */
+    /* VLV */
+    { 0x0f30, MFX_HW_VLV },   /* VLV mobile */
+    { 0x0f31, MFX_HW_VLV },   /* VLV mobile */
+    { 0x0157, MFX_HW_VLV },
+    { 0x0155, MFX_HW_VLV }
+};
+
+/* END: IOCTLs definitions */
 
 #define TMP_DEBUG
 
@@ -64,24 +144,64 @@ VideoAccelerationHW ConvertMFXToUMCType(eMFXHWType type)
     
 } // VideoAccelerationHW ConvertMFXToUMCType(eMFXHWType type)
 
+static
+eMFXHWType getPlatformType (VADisplay pVaDisplay)
+{
+    /* This is value by default */
+    eMFXHWType retPlatformType = MFX_HW_UNKNOWN;
+    int fd = 0, i = 0, listSize = 0;
+    int devID = 0;
+    int ret = 0;
+    drm_i915_getparam_t gp;
+    VADisplayContextP pDisplayContext_test = NULL;
+    VADriverContextP  pDriverContext_test = NULL;
+
+    pDisplayContext_test = (VADisplayContextP) pVaDisplay;
+    pDriverContext_test  = pDisplayContext_test->pDriverContext;
+    fd = *(int*) pDriverContext_test->drm_state;
+
+    /* Now as we know real authenticated fd of VAAPI library,
+     * we can call ioctl() to kernel mode driver,
+     * get device ID and find out platform type
+     * */
+    gp.param = I915_PARAM_CHIPSET_ID;
+    gp.value = &devID;
+
+    ret = ioctl(fd, DRM_IOCTL_I915_GETPARAM, &gp);
+    if (!ret)
+    {
+        listSize = (sizeof(listLegalDevIDs)/sizeof(mfx_device_item));
+        for (i = 0; i < listSize; ++i)
+        {
+            if (listLegalDevIDs[i].device_id == devID)
+            {
+                retPlatformType = listLegalDevIDs[i].platform;
+                break;
+            }
+        }
+    }
+
+#if defined(ANDROID)
+    /* Platforms corrections for Android:
+     *  - treat VLV as IVB for now
+     */
+    /*if (MFX_HW_VLV == retPlatformType)*/ retPlatformType = MFX_HW_IVB;
+#endif
+
+    return retPlatformType;
+} // eMFXHWType getPlatformType (VADisplay pVaDisplay)
+
 
 VAAPIVideoCORE::VAAPIVideoCORE(
     const mfxU32 adapterNum,
     const mfxU32 numThreadsAvailable,
-    const mfxSession session)
-: CommonCORE(numThreadsAvailable, session)
-, m_Display(0)
-, m_bUseExtAllocForHWFrames(false)
-//, m_pD3D(NULL)
-, m_adapterNum(adapterNum)
+    const mfxSession session) :
+            CommonCORE(numThreadsAvailable, session)
+          , m_Display(0)
+          , m_adapterNum(adapterNum)
+          , m_bUseExtAllocForHWFrames(false)
+          , m_HWType(MFX_HW_IVB) //MFX_HW_UNKNOWN
 {
-    m_HWType = MFX_HW_IVB; //MFX::GetHardwareType(m_adapterNum);
-
-    if (m_HWType == MFX_HW_UNKNOWN)
-    {
-        m_HWType = MFX_HW_IVB;
-    }
-    
 } // VAAPIVideoCORE::VAAPIVideoCORE(...)
 
 
@@ -110,6 +230,14 @@ VAAPIVideoCORE::SetHandle(
 
         MFX_CHECK_STS(sts);
         m_Display = (VADisplay)m_hdl;
+
+        /* As we know right VA handle (pointer),
+         * we can get real authenticated fd of VAAPI library(display),
+         * and can call ioctl() to kernel mode driver,
+         * to get device ID and find out platform type
+         */
+        m_HWType = getPlatformType(m_Display);
+
         return MFX_ERR_NONE;
     }
     catch (MFX_CORE_CATCH_TYPE)
@@ -236,11 +364,8 @@ VAAPIVideoCORE::DefaultAllocFrames(
         (request->Type & MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET)) // SW - TBD !!!!!!!!!!!!!!
     {
         if (!m_Display)
-        {
-            // Create Service - first call
-            sts = GetD3DService(request->Info.Width, request->Info.Height, &m_Display);
-            MFX_CHECK_STS(sts);
-        }
+            return MFX_ERR_NOT_INITIALIZED;
+
         mfxBaseWideFrameAllocator* pAlloc = GetAllocatorByReq(request->Type);
         // VPP, ENC, PAK can request frames for several times
         if (pAlloc && (request->Type & MFX_MEMTYPE_FROM_DECODE))
@@ -250,7 +375,6 @@ VAAPIVideoCORE::DefaultAllocFrames(
         {
             m_pcHWAlloc.reset(new mfxDefaultAllocatorVAAPI::mfxWideHWFrameAllocator(request->Type, m_Display));
             pAlloc = m_pcHWAlloc.get();
-            m_pcHWAlloc.get()->m_DecId = m_DecId;
         }
         // else ???
 
@@ -315,8 +439,6 @@ VAAPIVideoCORE::CreateVA(
             return MFX_ERR_UNDEFINED_BEHAVIOR;
 
         RenderTargets[i] = *pSurface;
-
-        pSurface;
     }
 
     m_pVA.reset(new LinuxVideoAccelerator); //aya must be fixed late???
@@ -379,9 +501,7 @@ myDXVA2CreateDirect3DDeviceManager9(
 #endif // CUSTOM_DXVA2_DLL
 
 mfxStatus
-VAAPIVideoCORE::GetD3DService(
-    mfxU16      width,
-    mfxU16      height,
+VAAPIVideoCORE::GetVAService(
     VADisplay*  pVADisplay)
 {
     // check if created already
@@ -396,8 +516,7 @@ VAAPIVideoCORE::GetD3DService(
 
     return MFX_ERR_NOT_INITIALIZED;
     
-} // mfxStatus VAAPIVideoCORE::GetD3DService(...)
-
+} // mfxStatus VAAPIVideoCORE::GetVAService(...)
 
 mfxStatus
 VAAPIVideoCORE::CreateVideoAccelerator(
@@ -409,13 +528,12 @@ VAAPIVideoCORE::CreateVideoAccelerator(
     mfxStatus sts = MFX_ERR_NONE;
     Status st;
     UMC::LinuxVideoAcceleratorParams params;
+    mfxFrameInfo *pInfo = &(param->mfx.FrameInfo);
 
     //m_pVA.reset(new LinuxVideoAccelerator); aya must be fixed late
 
-    mfxFrameInfo *pInfo = &(param->mfx.FrameInfo);
-    sts = GetD3DService(pInfo->Width, pInfo->Height);
-    MFX_CHECK_STS(sts);
-
+    if (!m_Display)
+        return MFX_ERR_NOT_INITIALIZED;
 
 #if 0
     if (IS_PROTECTION_ANY(param->Protected))
@@ -702,6 +820,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
 
         m_pDirect3DDevice->Release();
 #endif
+        return MFX_ERR_UNSUPPORTED;
     }
     else if (NULL != pSrc->Data.MemId && NULL != pDst->Data.Y)
     {
@@ -1054,29 +1173,29 @@ void VAAPIVideoCORE::ReleaseHandle()
     
 } // void VAAPIVideoCORE::ReleaseHandle()
 
-mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID guid,
+mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID /*guid*/,
                                          mfxVideoParam *par, bool isEncoder) 
 {
     if (!par)
-        return MFX_WRN_PARTIAL_ACCELERATION;
+        return GetSWFallbackPolicy();
+
+    if (IsMVCProfile(par->mfx.CodecProfile) || IsSVCProfile(par->mfx.CodecProfile))
+        return GetSWFallbackPolicy();
 
     switch (par->mfx.CodecId)
     {
     case MFX_CODEC_VC1:
-/************************************************************
- * This is wo for OTC driver. See CQ 8321 OTC BZ 504
- ************************************************************/
-        if(par->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
-            return MFX_WRN_PARTIAL_ACCELERATION;
         break;
     case MFX_CODEC_AVC:
         break;
     case MFX_CODEC_MPEG2:
+        if (par->mfx.FrameInfo.Width  > 2048 || par->mfx.FrameInfo.Height > 2048) //MPEG2 decoder doesn't support resolution bigger than 2K
+            return GetSWFallbackPolicy();
         break;
     case MFX_CODEC_JPEG:
-        return MFX_WRN_PARTIAL_ACCELERATION;
+        return GetSWFallbackPolicy();
     case MFX_CODEC_VP8:
-        return MFX_WRN_PARTIAL_ACCELERATION;
+        return GetSWFallbackPolicy();
     default:
         return MFX_ERR_UNSUPPORTED;
     }
@@ -1084,10 +1203,9 @@ mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID guid,
     if (MFX_HW_IVB == m_HWType || MFX_HW_HSW == m_HWType)
     {
 
-        if (par->mfx.FrameInfo.Width  > 4096 ||
-            par->mfx.FrameInfo.Height > 4096)
+        if (par->mfx.FrameInfo.Width > 4096 || par->mfx.FrameInfo.Height > 4096)
         {
-            return MFX_WRN_PARTIAL_ACCELERATION;
+            return GetSWFallbackPolicy();
         }
         else
         {
@@ -1096,10 +1214,9 @@ mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID guid,
     }
     else // for other platforms decision is based on SNB/ELK assumption
     {
-        if (par->mfx.FrameInfo.Width  > 1920 ||
-            par->mfx.FrameInfo.Height > 1200)
+        if (par->mfx.FrameInfo.Width > 1920 || par->mfx.FrameInfo.Height > 1200)
         {
-            return MFX_WRN_PARTIAL_ACCELERATION;
+            return GetSWFallbackPolicy();
         }
     }
     return MFX_ERR_NONE;
@@ -1125,6 +1242,15 @@ void* VAAPIVideoCORE::QueryCoreInterface(const MFX_GUID &guid)
 bool IsHwMvcEncSupported()
 {
     return false;
+}
+
+bool IsSupported__VAEncMiscParameterPrivate(void)
+{
+#if defined(VAAPI_DRIVER_VPG)
+    return true;
+#else
+    return false;
+#endif
 }
 
 #endif 

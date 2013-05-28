@@ -3,7 +3,7 @@
  *     This software is supplied under the terms of a license agreement or
  *     nondisclosure agreement with Intel Corporation and may not be copied
  *     or disclosed except in accordance with the terms of that agreement.
- *          Copyright(c) 2006-2012 Intel Corporation. All Rights Reserved.
+ *          Copyright(c) 2006-2013 Intel Corporation. All Rights Reserved.
  *
  */
 
@@ -43,8 +43,6 @@ public:
     virtual Ipp32s GetID(void)       { return m_id; }
     virtual Ipp32s GetNumOfItem(void){ return m_NumOfItem; }
     virtual bool   NeedDestroy(void) { return m_bDestroy; }
-    virtual Status CreateFakeBuffer(void);
-    virtual Status SwapBuffers(void);
 
 protected:
     Ipp32s m_NumOfItem; //number of items in buffer
@@ -53,13 +51,6 @@ protected:
     bool   m_bDestroy;
     // debug bufferization
     Ipp8u  m_CompareByte;
-    Ipp32u m_uiFakeBufferLeftSize;
-    Ipp32u m_uiFakeBufferRightSize;
-    Ipp32u m_uiFakeBufferSize;
-    Ipp32u m_uiRealBufferSize;
-    Ipp8u* m_pFakeBuffer; // fake buffer
-    Ipp8u* m_pFakeData;   // requested buffer within fake one
-    Ipp8u* m_pRealBuffer;
 };
 
 /* LinuxVideoAcceleratorParams -----------------------------------------------*/
@@ -71,11 +62,9 @@ public:
     LinuxVideoAcceleratorParams(void)
     {
         m_Display             = NULL;
-        m_bCheckBuffers       = false;
         m_bComputeVAFncsInfo  = false;
     }
     VADisplay m_Display;
-    bool      m_bCheckBuffers;
     bool      m_bComputeVAFncsInfo;
 };
 
@@ -115,18 +104,13 @@ public:
     // LinuxVideoAccelerator methods
     virtual Ipp32s GetIndex (void);
 
-    const UMCVAFncEntryInfo& GetVACreateBufferInfo()
-    { return m_VACreateBufferInfo;}
-    const UMCVAFncEntryInfo& GetVARenderPictureInfo()
-    { return m_VARenderPictureInfo;}
-
     // Following functions are absent in menlow!!!!!!!!!!!!!!!!!!!!!!
     virtual Status FindConfiguration(UMC::VideoStreamInfo* /*x*/) { return UMC_ERR_UNSUPPORTED;}
     virtual Status ExecuteExtensionBuffer(void* /*x*/) { return UMC_ERR_UNSUPPORTED;}
     virtual Status ExecuteStatusReportBuffer(void* /*x*/, Ipp32s /*y*/)  { return UMC_ERR_UNSUPPORTED;}
     virtual bool IsIntelCustomGUID() const { return false;}
     virtual GUID GetDecoderGuid(){return m_guidDecoder;};
-
+    virtual void GetVideoDecoder(void** /*handle*/) {};
 
 protected:
     // VideoAcceleratorExt methods
@@ -146,12 +130,9 @@ protected:
     Ipp32u   m_uiCompBuffersUsed;
     vm_mutex m_SyncMutex;
     VACompBuffer** m_pCompBuffers;
-    bool     m_bCheckBuffers;
 
     // NOT used variables:
     bool m_bLongSliceControl;
-    UMCVAFncEntryInfo m_VACreateBufferInfo;
-    UMCVAFncEntryInfo m_VARenderPictureInfo;
 
     // introduced for MediaSDK
     bool    m_bIsExtSurfaces;
@@ -170,58 +151,6 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif // __cplusplus
-
-#define UMC_VA_DBG_NONE 0
-#define UMC_VA_DBG_VM   1
-#define UMC_VA_DBG_IO   2
-#define UMC_VA_DBG_FILE 3
-
-#define UMC_VA_USE_DEBUG UMC_VA_DBG_NONE
-#define UMC_VA_LOG_FILE  "umc_va_logfile.txt"
-
-#if UMC_VA_USE_DEBUG == UMC_VA_DBG_NONE
-    #define UMC_VA_DBG(STRING)
-    #define UMC_VA_DBG_1(STRING, P1)
-    #define UMC_VA_DBG_2(STRING, P1, P2)
-    #define UMC_VA_DBG_3(STRING, P1, P2, P3)
-#elif UMC_VA_USE_DEBUG == UMC_VA_DBG_VM
-    #include <vm_debug.h>
-    #define UMC_VA_DBG(STRING)               vm_debug_trace (VM_DEBUG_ALL, STRING)
-    #define UMC_VA_DBG_1(STRING, P1)         vm_debug_trace1(VM_DEBUG_ALL, STRING, P1)
-    #define UMC_VA_DBG_2(STRING, P1, P2)     vm_debug_trace2(VM_DEBUG_ALL, STRING, P1, P2)
-    #define UMC_VA_DBG_3(STRING, P1, P2, P3) vm_debug_trace3(VM_DEBUG_ALL, STRING, P1, P2, P3)
-#elif UMC_VA_USE_DEBUG == UMC_VA_DBG_IO
-    #include <stdio.h>
-    #define UMC_VA_DBG(STRING)               { printf(STRING);             fflush(NULL); }
-    #define UMC_VA_DBG_1(STRING,P1)          { printf(STRING, P1);         fflush(NULL); }
-    #define UMC_VA_DBG_2(STRING,P1,P2)       { printf(STRING, P1, P2);     fflush(NULL); }
-    #define UMC_VA_DBG_3(STRING, P1, P2, P3) { printf(STRING, P1, P2, P3); fflush(NULL); }
-#elif UMC_VA_USE_DEBUG == UMC_VA_DBG_FILE
-    #define UMC_VA_DBG(STRING) \
-    { \
-        FILE *f = fopen(UMC_VA_LOG_FILE, "a"); \
-        fprintf(f, STRING); fflush(f); \
-        fclose(f); \
-    }
-    #define UMC_VA_DBG_1(STRING,P1) \
-    { \
-        FILE *f = fopen(UMC_VA_LOG_FILE, "a"); \
-        fprintf(f, STRING, P1); fflush(f); \
-        fclose(f); \
-    }
-    #define UMC_VA_DBG_2(STRING,P1,P2) \
-    { \
-        FILE *f = fopen(UMC_VA_LOG_FILE, "a"); \
-        fprintf(f, STRING, P1, P2); fflush(f); \
-        fclose(f); \
-    }
-    #define UMC_VA_DBG_3(STRING, P1, P2, P3) \
-    { \
-        FILE *f = fopen(UMC_VA_LOG_FILE, "a"); \
-        fprintf(f, STRING, P1, P2, P3); fflush(f); \
-        fclose(f); \
-    }
-#endif // #ifdef UMC_VA_USE_DEBUG
 
 #endif // #ifdef UMC_VA_LINUX
 

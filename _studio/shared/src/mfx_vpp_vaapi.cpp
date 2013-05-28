@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2011-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -17,9 +17,6 @@
 #include "mfx_vpp_vaapi.h"
 #include "mfx_utils.h"
 #include "libmfx_core_vaapi.h"
-
-#include "ipps.h"
-#include "ippi.h"
 
 enum QueryStatus
 {
@@ -54,7 +51,6 @@ VAAPIVideoProcessing::VAAPIVideoProcessing():
 , m_denoiseFilterID(VA_INVALID_ID)
 , m_deintFilterID(VA_INVALID_ID)
 , m_numFilterBufs(0)
-, m_pipelineParamID(VA_INVALID_ID)
 {
 
     for(int i = 0; i < VAProcFilterCount; i++)
@@ -62,7 +58,6 @@ VAAPIVideoProcessing::VAAPIVideoProcessing():
 
     memset( (void*)&m_denoiseCaps, 0, sizeof(m_denoiseCaps));
     memset( (void*)&m_deinterlacingCaps, 0, sizeof(m_deinterlacingCaps));
-    memset( (void*)&m_pipelineParam, 0, sizeof(m_pipelineParam));
 
     m_cachedReadyTaskIndex.clear();
     m_feedbackCache.clear();
@@ -76,7 +71,7 @@ VAAPIVideoProcessing::~VAAPIVideoProcessing()
 
 } // VAAPIVideoProcessing::~VAAPIVideoProcessing()
 
-mfxStatus VAAPIVideoProcessing::CreateDevice(VideoCORE * core, mfxInitParams* pParams)
+mfxStatus VAAPIVideoProcessing::CreateDevice(VideoCORE * core, mfxVideoParam* pParams, bool /*isTemporal*/)
 {
     MFX_CHECK_NULL_PTR1( core );
 
@@ -84,10 +79,7 @@ mfxStatus VAAPIVideoProcessing::CreateDevice(VideoCORE * core, mfxInitParams* pP
 
     MFX_CHECK_NULL_PTR1( hwCore );
 
-    mfxU16 width  = pParams->dstSize.width;
-    mfxU16 height = pParams->dstSize.height;
-
-    mfxStatus sts = hwCore->GetD3DService(width, height, &m_vaDisplay);
+    mfxStatus sts = hwCore->GetVAService( &m_vaDisplay);
     MFX_CHECK_STS( sts );
 
     sts = Init( &m_vaDisplay, pParams);
@@ -128,17 +120,12 @@ mfxStatus VAAPIVideoProcessing::Close(void)
 
     if( VA_INVALID_ID != m_denoiseFilterID )
     {
-        vaDestroyBuffer(m_vaDisplay, m_denoiseFilterID); 
+        vaDestroyBuffer(m_vaDisplay, m_denoiseFilterID);
     }
 
     if( VA_INVALID_ID != m_deintFilterID )
     {
-        vaDestroyBuffer(m_vaDisplay, m_deintFilterID); 
-    }
-
-    if( VA_INVALID_ID != m_pipelineParamID )
-    {
-        vaDestroyBuffer(m_vaDisplay, m_pipelineParamID); 
+        vaDestroyBuffer(m_vaDisplay, m_deintFilterID);
     }
 
     for(int i = 0; i < VAProcFilterCount; i++)
@@ -146,7 +133,6 @@ mfxStatus VAAPIVideoProcessing::Close(void)
 
     m_denoiseFilterID   = VA_INVALID_ID;
     m_deintFilterID     = VA_INVALID_ID;
-    m_pipelineParamID   = VA_INVALID_ID;
 
     memset( (void*)&m_denoiseCaps, 0, sizeof(m_denoiseCaps));
     memset( (void*)&m_deinterlacingCaps, 0, sizeof(m_deinterlacingCaps));
@@ -155,7 +141,7 @@ mfxStatus VAAPIVideoProcessing::Close(void)
 
 } // mfxStatus VAAPIVideoProcessing::Close(void)
 
-mfxStatus VAAPIVideoProcessing::Init(_mfxPlatformAccelerationService* pVADisplay, mfxInitParams* pParams)
+mfxStatus VAAPIVideoProcessing::Init(_mfxPlatformAccelerationService* pVADisplay, mfxVideoParam* pParams)
 {
     if(false == m_bRunning)
     {
@@ -178,10 +164,11 @@ mfxStatus VAAPIVideoProcessing::Init(_mfxPlatformAccelerationService* pVADisplay
                                             VAProfileNone,
                                             va_entrypoints,
                                             &entrypointsCount);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
         for( entrypointsIndx = 0; entrypointsIndx < entrypointsCount; entrypointsIndx++ )
         {
-         if( VAEntrypointVideoProc == va_entrypoints[entrypointsIndx] )
+            if( VAEntrypointVideoProc == va_entrypoints[entrypointsIndx] )
             {
                 m_bRunning = true;
                 break;
@@ -208,8 +195,8 @@ mfxStatus VAAPIVideoProcessing::Init(_mfxPlatformAccelerationService* pVADisplay
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
         // Context
-        int width = pParams->dstSize.width;
-        int height = pParams->dstSize.height;
+        int width = pParams->vpp.Out.Width;
+        int height = pParams->vpp.Out.Height;
 
         vaSts = vaCreateContext(m_vaDisplay,
                                 m_vaConfig,
@@ -223,56 +210,28 @@ mfxStatus VAAPIVideoProcessing::Init(_mfxPlatformAccelerationService* pVADisplay
 
     return MFX_ERR_NONE;
 
-} // mfxStatus VAAPIVideoProcessing::Init(_mfxPlatformAccelerationService* pVADisplay, mfxInitParams* pParams)
+} // mfxStatus VAAPIVideoProcessing::Init(_mfxPlatformAccelerationService* pVADisplay, mfxVideoParam* pParams)
 
 
 mfxStatus VAAPIVideoProcessing::Register(
-    mfxHDLPair* pSurfaces, 
-    mfxU32 num, 
-    BOOL bRegister)
+    mfxHDLPair* /*pSurfaces*/,
+    mfxU32 /*num*/,
+    BOOL /*bRegister*/)
 {
-    pSurfaces; num; bRegister;
-
     return MFX_ERR_NONE;
-
 } // mfxStatus VAAPIVideoProcessing::Register(_mfxPlatformVideoSurface *pSurfaces, ...)
 
 
 mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
 {
-    //by default: MFX_EXTBUFF_VPP_RESIZE MFX_EXTBUFF_VPP_CSC MFX_EXTBUFF_VPP_PROCAMP
-
-    VAStatus vaSts; 
-    int filtersIndx = 0;
+    VAStatus vaSts;
     memset(&caps,  0, sizeof(mfxVppCaps));
 
     VAProcFilterType filters[VAProcFilterCount];
-    unsigned int num_filters = VAProcFilterCount;
+    mfxU32 num_filters = VAProcFilterCount;
 
     vaSts = vaQueryVideoProcFilters(m_vaDisplay, m_vaContextVPP, filters, &num_filters);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-    for( filtersIndx = 0; filtersIndx < num_filters; filtersIndx++ )
-    {
-        if(filters[filtersIndx])
-        {
-            switch (filters[filtersIndx])
-                {
-                case VAProcFilterNoiseReduction:
-                    caps.uDenoiseFilter = 1;
-                    break;
-                case VAProcFilterDeinterlacing:
-                    caps.uSimpleDI = 1; //or caps.uAdvancedDI = 1 ?????
-                    break;
-                case VAProcFilterColorBalance:
-                    caps.uProcampFilter = 1; 
-                    break;
-               default:
-                    break;
-                }
-        }
-     }
-//FilterCap
 
     mfxU32 num_denoise_caps = 1;
     vaQueryVideoProcFilterCaps(m_vaDisplay,
@@ -281,13 +240,44 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
                                &m_denoiseCaps, &num_denoise_caps);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-
     mfxU32 num_deinterlacing_caps = VAProcDeinterlacingCount;
     vaQueryVideoProcFilterCaps(m_vaDisplay,
                                m_vaContextVPP,
                                VAProcFilterDeinterlacing,
                                &m_deinterlacingCaps, &num_deinterlacing_caps);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    for( mfxU32 filtersIndx = 0; filtersIndx < num_filters; filtersIndx++ )
+    {
+        if (filters[filtersIndx])
+        {
+            switch (filters[filtersIndx])
+            {
+                case VAProcFilterNoiseReduction:
+                    caps.uDenoiseFilter = 1;
+                    break;
+                case VAProcFilterDeinterlacing:
+                    for (mfxU32 i = 0; i < num_deinterlacing_caps; i++)
+                    {
+                        if (VAProcDeinterlacingBob == m_deinterlacingCaps[i].type)
+                            caps.uSimpleDI = 1;
+                        if (VAProcDeinterlacingWeave == m_deinterlacingCaps[i].type           ||
+                            VAProcDeinterlacingMotionAdaptive == m_deinterlacingCaps[i].type  ||
+                            VAProcDeinterlacingMotionCompensated == m_deinterlacingCaps[i].type)
+                            caps.uAdvancedDI = 1;
+                    }
+                    break;
+                case VAProcFilterColorBalance:
+                    caps.uProcampFilter = 1;
+                    break;
+               default:
+                    break;
+            }
+        }
+    }
+
+    caps.uMaxWidth  = 4096;
+    caps.uMaxHeight = 4096;
 
     return MFX_ERR_NONE;
 
@@ -298,12 +288,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "VPP Execute");
 
-    VAStatus vaSts = VA_STATUS_SUCCESS; 
-    int filter_counter = 0;
-    int filtersIndx = 0;
-    bool procamp = false;
-    bool denoise = false;
-    bool deinterlacing = false;
+    VAStatus vaSts = VA_STATUS_SUCCESS;
 
     MFX_CHECK_NULL_PTR1( pParams );
 
@@ -315,36 +300,53 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
 
     if (VA_INVALID_ID == m_deintFilterID)
     {
-        if(pParams->iDeinterlacingAlgorithm) 
+        if (pParams->iDeinterlacingAlgorithm)
         {
-            deinterlacing = true;
-            for (int i = 0; i < VAProcDeinterlacingCount; i++)
+            VAProcFilterParameterBufferDeinterlacing deint;
+            deint.type                   = VAProcFilterDeinterlacing;
+            //WA for VPG driver. Need to rewrite it with caps usage when driver begins to return a correct list of supported DI algorithms
+#ifndef MFX_VA_ANDROID
+            //deint.algorithm              = pParams->iDeinterlacingAlgorithm == 1 ? VAProcDeinterlacingBob : VAProcDeinterlacingMotionAdaptive;
+            /*
+             * Per agreement used "VAProcDeinterlacingBob" DI type as default value
+             * */
+            deint.algorithm              = VAProcDeinterlacingBob;
+            mfxDrvSurface* pRefSurf_frameInfo = &(pParams->pRefSurfaces[0]);
+            switch (pRefSurf_frameInfo->frameInfo.PicStruct)
             {
-                VAProcFilterCapDeinterlacing * const cap = &m_deinterlacingCaps[i];
-                if (cap->type != VAProcDeinterlacingBob) // desired Deinterlacing Type
-                    continue;
+                case MFX_PICSTRUCT_PROGRESSIVE:
+                    deint.flags = VA_DEINTERLACING_ONE_FIELD;
+                    break;
+                    /* See comment form va_vpp.h
+                     * */
+                    /**
+                     * \brief Bottom field used in deinterlacing.
+                     * if this is not set then assumes top field is used.
+                     */
 
-                VAProcFilterParameterBufferDeinterlacing deint;
-                deint.type                   = VAProcFilterDeinterlacing;
-                deint.algorithm              = VAProcDeinterlacingBob;
-                vaSts = vaCreateBuffer(m_vaDisplay,
-                              m_vaContextVPP,
-                              VAProcFilterParameterBufferType, 
-                              sizeof(deint), 1,
-                              &deint, &m_deintFilterID);
-                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-                m_filterBufs[m_numFilterBufs++] = m_deintFilterID;
+                //case MFX_PICSTRUCT_FIELD_TFF:
+                //    deint.flags = VA_DEINTERLACING_ONE_FIELD;
+                //    break;
+                case MFX_PICSTRUCT_FIELD_BFF:
+                    deint.flags = VA_DEINTERLACING_BOTTOM_FIELD;
+                    break;
             }
+#endif
+            vaSts = vaCreateBuffer(m_vaDisplay,
+                                   m_vaContextVPP,
+                                   VAProcFilterParameterBufferType,
+                                   sizeof(deint), 1,
+                                   &deint, &m_deintFilterID);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+            m_filterBufs[m_numFilterBufs++] = m_deintFilterID;
         }
     }
 
     if (VA_INVALID_ID == m_denoiseFilterID)
     {
-        if(pParams->denoiseFactor || true == pParams->bDenoiseAutoAdjust)
+        if (pParams->denoiseFactor || true == pParams->bDenoiseAutoAdjust)
         {
-            denoise = true;
-                  // Noise reduction filter
             VAProcFilterParameterBuffer denoise;
             denoise.type  = VAProcFilterNoiseReduction;
             if(pParams->bDenoiseAutoAdjust)
@@ -357,7 +359,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
                                               pParams->denoiseFactor);
             vaSts = vaCreateBuffer(m_vaDisplay,
                           m_vaContextVPP,
-                          VAProcFilterParameterBufferType, 
+                          VAProcFilterParameterBufferType,
                           sizeof(denoise), 1,
                           &denoise, &m_denoiseFilterID);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -366,87 +368,94 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         }
     }
 
-    if (pParams->Hue || pParams->Brightness || pParams->Contrast || pParams->Saturation)
+    // mfxU32 SampleCount = pParams->refCount;
+    // WA:
+    mfxU32 SampleCount = 1;
+
+    m_pipelineParam.resize(SampleCount);
+    m_pipelineParamID.resize(SampleCount);
+
+    std::vector<VARectangle> input_region;
+    input_region.resize(SampleCount);
+    std::vector<VARectangle> output_region;
+    output_region.resize(SampleCount);
+
+    for( mfxU32 refIdx = 0; refIdx < SampleCount; refIdx++ )
     {
-        procamp = true;
+        mfxDrvSurface* pRefSurf = &(pParams->pRefSurfaces[refIdx]);
 
-    }
+        VASurfaceID* srf = (VASurfaceID*)(pRefSurf->hdl.first);
+        m_pipelineParam[refIdx].surface = *srf;
 
-    VASurfaceID* srf = (VASurfaceID*)pParams->pRefSurfaces[0].hdl.first;
-    m_pipelineParam.surface = *srf;
+        // source cropping
+        mfxFrameInfo *inInfo = &(pRefSurf->frameInfo);
+        input_region[refIdx].y   = inInfo->CropY;
+        input_region[refIdx].x   = inInfo->CropX;
+        input_region[refIdx].height = inInfo->CropH;
+        input_region[refIdx].width  = inInfo->CropW;
+        m_pipelineParam[refIdx].surface_region = &input_region[refIdx];
 
-    VARectangle srcRect;
-    srcRect.x = pParams->pRefSurfaces[0].frameInfo.CropX;
-    srcRect.y = pParams->pRefSurfaces[0].frameInfo.CropY;
-    srcRect.width = pParams->pRefSurfaces[0].frameInfo.CropW;
-    srcRect.height= pParams->pRefSurfaces[0].frameInfo.CropH;
-    m_pipelineParam.surface_region = &srcRect;
+        // destination cropping
+        mfxFrameInfo *outInfo = &(pParams->targetSurface.frameInfo);
+        output_region[refIdx].y  = outInfo->CropY;
+        output_region[refIdx].x   = outInfo->CropX;
+        output_region[refIdx].height= outInfo->CropH;
+        output_region[refIdx].width  = outInfo->CropW;
+        m_pipelineParam[refIdx].output_region = &output_region[refIdx];
 
-    VARectangle dstRect;
-    dstRect.x = pParams->targetSurface.frameInfo.CropX;
-    dstRect.y = pParams->targetSurface.frameInfo.CropY;
-    dstRect.width = pParams->targetSurface.frameInfo.CropW;
-    dstRect.height= pParams->targetSurface.frameInfo.CropH;
-    m_pipelineParam.output_region = &dstRect;
+        m_pipelineParam[refIdx].output_background_color = 0xff108080; // black for yuv
 
-    m_pipelineParam.output_background_color = 0xff000000; // black
-
-    mfxU32  refFourcc = pParams->pRefSurfaces[0].frameInfo.FourCC;
-    switch (refFourcc)
-    {
-    case MFX_FOURCC_RGB4:
-        m_pipelineParam.surface_color_standard = VAProcColorStandardNone;
-        break;
-    case MFX_FOURCC_NV12:  //VA_FOURCC_NV12:
-    default:
-        m_pipelineParam.surface_color_standard = VAProcColorStandardBT601;
-        break;
-    }
-
-    mfxU32  targetFourcc = pParams->targetSurface.frameInfo.FourCC;
-    switch (targetFourcc)
-    {
-    case MFX_FOURCC_RGB4:
-        m_pipelineParam.output_color_standard = VAProcColorStandardNone;
-        break;
-    case MFX_FOURCC_NV12:
-    default:
-        m_pipelineParam.output_color_standard = VAProcColorStandardBT601;
-        break;
-    }
-
-    //m_pipelineParam.pipeline_flags = ?? //VA_PROC_PIPELINE_FAST or VA_PROC_PIPELINE_SUBPICTURES
-
-    switch (pParams->pRefSurfaces[0].frameInfo.PicStruct)
-    {
-        case MFX_PICSTRUCT_PROGRESSIVE:
-            m_pipelineParam.filter_flags = VA_FRAME_PICTURE;
+        mfxU32  refFourcc = pRefSurf->frameInfo.FourCC;
+        switch (refFourcc)
+        {
+        case MFX_FOURCC_RGB4:
+            m_pipelineParam[refIdx].surface_color_standard = VAProcColorStandardNone;
             break;
-        case MFX_PICSTRUCT_FIELD_TFF:
-            m_pipelineParam.filter_flags = VA_TOP_FIELD;
+        case MFX_FOURCC_NV12:  //VA_FOURCC_NV12:
+        default:
+            m_pipelineParam[refIdx].surface_color_standard = VAProcColorStandardBT601;
             break;
-        case MFX_PICSTRUCT_FIELD_BFF:
-            m_pipelineParam.filter_flags = VA_BOTTOM_FIELD;
+        }
+
+        mfxU32  targetFourcc = pParams->targetSurface.frameInfo.FourCC;
+        switch (targetFourcc)
+        {
+        case MFX_FOURCC_RGB4:
+            m_pipelineParam[refIdx].output_color_standard = VAProcColorStandardNone;
             break;
+        case MFX_FOURCC_NV12:
+        default:
+            m_pipelineParam[refIdx].output_color_standard = VAProcColorStandardBT601;
+            break;
+        }
+
+        //m_pipelineParam[refIdx].pipeline_flags = ?? //VA_PROC_PIPELINE_FAST or VA_PROC_PIPELINE_SUBPICTURES
+
+        switch (pRefSurf->frameInfo.PicStruct)
+        {
+            case MFX_PICSTRUCT_PROGRESSIVE:
+                m_pipelineParam[refIdx].filter_flags = VA_FRAME_PICTURE;
+                break;
+            case MFX_PICSTRUCT_FIELD_TFF:
+                m_pipelineParam[refIdx].filter_flags = VA_TOP_FIELD;
+                break;
+            case MFX_PICSTRUCT_FIELD_BFF:
+                m_pipelineParam[refIdx].filter_flags = VA_BOTTOM_FIELD;
+                break;
+        }
+
+        m_pipelineParam[refIdx].filters  = m_filterBufs;
+        m_pipelineParam[refIdx].num_filters  = m_numFilterBufs;
+
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                            m_vaContextVPP,
+                            VAProcPipelineParameterBufferType,
+                            sizeof(VAProcPipelineParameterBuffer),
+                            1,
+                            &m_pipelineParam[refIdx],
+                            &m_pipelineParamID[refIdx]);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
-
-    m_pipelineParam.filters  = m_filterBufs;
-    m_pipelineParam.num_filters  = m_numFilterBufs;
-
-
-    if ( m_pipelineParamID != VA_INVALID_ID)
-    {
-        vaDestroyBuffer(m_vaDisplay, m_pipelineParamID); 
-    }
-
-    vaSts = vaCreateBuffer(m_vaDisplay, 
-                        m_vaContextVPP,
-                        VAProcPipelineParameterBufferType,
-                        sizeof(m_pipelineParam),
-                        1,
-                        &m_pipelineParam,
-                        &m_pipelineParamID);
-    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     VASurfaceID *outputSurface = (VASurfaceID*)(pParams->targetSurface.hdl.first);
     {
@@ -458,8 +467,11 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     }
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaRenderPicture");
-        vaSts = vaRenderPicture(m_vaDisplay, m_vaContextVPP, &m_pipelineParamID, 1);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        for( mfxU32 refIdx = 0; refIdx < SampleCount; refIdx++ )
+        {
+            vaSts = vaRenderPicture(m_vaDisplay, m_vaContextVPP, &m_pipelineParamID[refIdx], 1);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        }
     }
 
     {
@@ -468,10 +480,19 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
 
+    for( mfxU32 refIdx = 0; refIdx < SampleCount; refIdx++ )
+    {
+        if ( m_pipelineParamID[refIdx] != VA_INVALID_ID)
+        {
+            vaDestroyBuffer(m_vaDisplay, m_pipelineParamID[refIdx]);
+            m_pipelineParamID[refIdx] = VA_INVALID_ID;
+        }
+    }
+
     // (3) info needed for sync operation
     //-------------------------------------------------------
     {
-        UMC::AutomaticUMCMutex guard(m_guard);        
+        UMC::AutomaticUMCMutex guard(m_guard);
 
         ExtVASurface currentFeedback; // {surface & number_of_task}
         currentFeedback.surface = *outputSurface;
@@ -484,47 +505,20 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
 
 mfxStatus VAAPIVideoProcessing::QueryTaskStatus(mfxU32 taskIndex)
 {
-    VASurfaceID waitSurface;
     VAStatus vaSts;
     FASTCOMP_QUERY_STATUS queryStatus;
-    std::set<mfxU32>::iterator iterator;
 
-    // (1) find params (sutface & number) are required by feedbackNumber 
-    //----------------------------------------------- 
+    // (1) find params (sutface & number) are required by feedbackNumber
+    //-----------------------------------------------
     {
         UMC::AutomaticUMCMutex guard(m_guard);
-
-#if 0
-        int num_element = m_feedbackCache.size();
-        for( mfxU32 indxSurf = 0; indxSurf < num_element; indxSurf++ )
-        {
-
-            ExtVASurface currentFeedback = m_feedbackCache[indxSurf];
-
-            // (2) Syncronization by output (target surface)
-            //-----------------------------------------------
-            vaSts = vaSyncSurface(m_vaDisplay, currentFeedback.surface);
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-            VASurfaceStatus surfSts = VASurfaceReady;   
-
-            vaSts = vaQuerySurfaceStatus(m_vaDisplay,  currentFeedback.surface, &surfSts);
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-            queryStatus.StatusReportID = currentFeedback.number;
-            queryStatus.Status = VPREP_GPU_READY;
-
-            m_cachedReadyTaskIndex.insert(queryStatus.StatusReportID);
-            m_feedbackCache.erase(m_feedbackCache.begin());
-        }
-#else
 
         std::vector<ExtVASurface>::iterator iter = m_feedbackCache.begin();
         while(iter != m_feedbackCache.end())
         {
             ExtVASurface currentFeedback = *iter;
-            
-            VASurfaceStatus surfSts = VASurfaceSkipped;   
+
+            VASurfaceStatus surfSts = VASurfaceSkipped;
 
             vaSts = vaQuerySurfaceStatus(m_vaDisplay,  currentFeedback.surface, &surfSts);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -547,9 +541,8 @@ mfxStatus VAAPIVideoProcessing::QueryTaskStatus(mfxU32 taskIndex)
                     return MFX_ERR_DEVICE_FAILED;
             }
         }
-#endif
 
-        iterator = find(m_cachedReadyTaskIndex.begin(), m_cachedReadyTaskIndex.end(), taskIndex);
+        std::set<mfxU32>::iterator iterator = m_cachedReadyTaskIndex.find(taskIndex);
 
         if (m_cachedReadyTaskIndex.end() == iterator)
         {
@@ -557,7 +550,6 @@ mfxStatus VAAPIVideoProcessing::QueryTaskStatus(mfxU32 taskIndex)
         }
 
         m_cachedReadyTaskIndex.erase(iterator);
-
     }
 
     return MFX_TASK_DONE;
@@ -567,42 +559,42 @@ mfxStatus VAAPIVideoProcessing::QueryTaskStatus(mfxU32 taskIndex)
 mfxStatus VAAPIVideoProcessing::QueryTaskStatus(FASTCOMP_QUERY_STATUS *pQueryStatus, mfxU32 numStructures)
 {
 //     VASurfaceID waitSurface;
-// 
-//     // (1) find params (sutface & number) are required by feedbackNumber 
-//     //----------------------------------------------- 
+//
+//     // (1) find params (sutface & number) are required by feedbackNumber
+//     //-----------------------------------------------
 //     {
 //         UMC::AutomaticUMCMutex guard(m_guard);
-// 
+//
 //         bool isFound  = false;
 //         int num_element = m_feedbackCache.size();
 //         for( mfxU32 indxSurf = 0; indxSurf < num_element; indxSurf++ )
 //         {
 //             //ExtVASurface currentFeedback = m_feedbackCache.pop();
 //             ExtVASurface currentFeedback = m_feedbackCache[indxSurf];
-// 
+//
 //             // (2) Syncronization by output (target surface)
 //             //-----------------------------------------------
 //             VAStatus vaSts = vaSyncSurface(m_vaDisplay, currentFeedback.surface);
 //             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-// 
-//             VASurfaceStatus surfSts = VASurfaceReady;   
-// 
+//
+//             VASurfaceStatus surfSts = VASurfaceReady;
+//
 //             vaSts = vaQuerySurfaceStatus(m_vaDisplay,  currentFeedback.surface, &surfSts);
 //             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-// 
+//
 //             // update for comp vpp_hw
-// 
+//
 //             pQueryStatus[indxSurf].StatusReportID = currentFeedback.number;
 //             pQueryStatus[indxSurf].Status = VPREP_GPU_READY;
-// 
+//
 //             m_feedbackCache.erase( m_feedbackCache.begin() );
 //         }
-// 
+//
 //     }
-    return MFX_ERR_NONE;  
+    return MFX_ERR_NONE;
 
 } // mfxStatus VAAPIVideoProcessing::QueryTaskStatus(PREPROC_QUERY_STATUS *pQueryStatus, mfxU32 numStructures)
 
-#endif // #if defined (MFX_VA_LINUX) 
-#endif // #if defined (MFX_VPP_ENABLE) 
+#endif // #if defined (MFX_VA_LINUX)
+#endif // #if defined (MFX_VPP_ENABLE)
 /* EOF */

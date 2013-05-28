@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2012 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -57,7 +57,8 @@ void vm_sys_info_get_date(vm_char *m_date, DateFormat df)
     len = vm_string_strlen(m_date);
 
     time(&ltime);
-    today = localtime(&ltime);
+    if (NULL == (today = localtime(&ltime)))
+        return;
 
     switch (df)
     {
@@ -89,7 +90,8 @@ void vm_sys_info_get_time(vm_char *m_time, TimeFormat tf)
         return;
 
     time(&ltime);
-    today = localtime(&ltime);
+    if (NULL == (today = localtime(&ltime)))
+        return;
 
     switch (tf)
     {
@@ -134,7 +136,7 @@ void vm_sys_info_get_cpu_name(vm_char *cpu_name)
 #else
     FILE *pFile = NULL;
     vm_char buf[PATH_MAX];
-    vm_char tmp_buf[PATH_MAX];
+    vm_char tmp_buf[PATH_MAX] = { 0 };
     size_t len;
 
     /* check error(s) */

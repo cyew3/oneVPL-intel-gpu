@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2012 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -37,17 +37,15 @@ typedef char vm_char;
 #define vm_string_sprintf_s sprintf
 #define vm_string_snprintf  snprintf
 
-#if !defined(LINUX64)
-#define vm_string_vprintf   vprintf
-#endif
 #define vm_string_vfprintf  vm_file_vfprintf
 #define vm_string_vsprintf  vsprintf
+#define vm_string_vsnprintf vsnprintf
 
 #define vm_string_strcat    strcat
-#define vm_string_strcat_s(dest, size, src)  (strncat((dest), (src), (size)), 1)
+#define vm_string_strcat_s(dest, size, src)  (strncat((dest), (src), (size)),0)
 #define vm_string_strncat   strncat
 #define vm_string_strcpy    strcpy
-#define vm_string_strcpy_s(dest, size, src)  (strncpy((dest), (src), (size)), 1)
+#define vm_string_strcpy_s(dest, size, src)  (strncpy((dest), (src), (size)),0)
 #define vm_string_strncpy   strncpy
 #define vm_string_strcspn   strcspn
 #define vm_string_strspn    strspn
@@ -68,7 +66,6 @@ typedef char vm_char;
 
 #define vm_string_strstr    strstr
 #define vm_string_sscanf    sscanf
-#define vm_string_sscanf_s  sscanf_s
 #define vm_string_vsscanf   vsscanf
 #define vm_string_strchr    strchr
 
@@ -92,9 +89,7 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-#if defined (LINUX64)
 Ipp32s vm_string_vprintf(const vm_char *format, va_list argptr);
-#endif
 vm_findptr vm_string_findfirst(vm_char* filespec, vm_finddata_t* fileinfo);
 Ipp32s vm_string_findnext(vm_findptr handle, vm_finddata_t* fileinfo);
 Ipp32s vm_string_findclose(vm_findptr handle);
@@ -148,8 +143,7 @@ typedef TCHAR vm_char;
 #define vm_string_strtol    _tcstol
 #define vm_string_strstr    _tcsstr
 #define vm_string_sscanf    _stscanf
-#define vm_string_sscanf_s    _stscanf_s
-#define vm_string_vsscanf(str, format, args) _stscanf(str, format, *(void**)args)
+#define vm_string_vsscanf(str, format, args) sscanf(str, format, *(void**)args)
 #define vm_string_strchr    _tcschr
 #define vm_string_strtok    _tcstok
 

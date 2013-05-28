@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
 
 File Name: mfxvideo++int.h
 
@@ -63,6 +63,12 @@ static const GUID sDXVA2_Intel_ModeVC1_D_Super =
 
 static const GUID sDXVA2_Intel_EagleLake_ModeH264_VLD_NoFGT =
 { 0x604f8e68, 0x4951, 0x4c54, { 0x88, 0xfe, 0xab, 0xd2, 0x5c, 0x15, 0xb3, 0xd6 } };
+
+static const GUID sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_Baseline =
+{ 0x9b8175d4, 0xd670, 0x4cf2, { 0xa9, 0xf0, 0xfa, 0x56, 0xdf, 0x71, 0xa1, 0xae } };
+
+static const GUID sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_High =
+{ 0x8efa5926, 0xbd9e, 0x4b04, { 0x8b, 0x72, 0x8f, 0x97, 0x7d, 0xc4, 0x4c, 0x36 } };
 
 static const GUID sDXVA_ModeH264_VLD_Multiview_NoFGT =
 { 0x705b9d82, 0x76cf, 0x49d6, { 0xb7, 0xe6, 0xac, 0x88, 0x72, 0xdb, 0x01, 0x3c } };

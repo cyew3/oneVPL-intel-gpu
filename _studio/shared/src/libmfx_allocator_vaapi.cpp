@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
 
 File Name: libmfx_allocator_vaapi.cpp
 
@@ -32,6 +32,27 @@ File Name: libmfx_allocator_vaapi.cpp
 #define VA_TO_MFX_STATUS(_va_res) \
     (VA_STATUS_SUCCESS == (_va_res))? MFX_ERR_NONE: MFX_ERR_DEVICE_FAILED;
 
+unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
+{
+    switch (fourcc)
+    {
+    case MFX_FOURCC_NV12:
+        return VA_FOURCC_NV12;
+    case MFX_FOURCC_YV12:
+        return VA_FOURCC_YV12;
+    case MFX_FOURCC_YUY2:
+        return VA_FOURCC_YUY2;
+    case MFX_FOURCC_RGB4:
+        return VA_FOURCC_ARGB;
+    case MFX_FOURCC_P8:
+        return VA_FOURCC_P208;
+
+    default:
+        VM_ASSERT(!"unsupported fourcc");
+        return 0;
+    }
+}
+
 mfxStatus
 mfxDefaultAllocatorVAAPI::AllocFramesHW(
     mfxHDL                  pthis,
@@ -42,29 +63,33 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
     VAStatus va_sts = VA_STATUS_SUCCESS;
     unsigned int width = request->Info.Width;
     unsigned int height = request->Info.Height;
-    mfxU32  fourcc = request->Info.FourCC;
-    mfxU32 i = 0;
+    mfxU32 fourcc = request->Info.FourCC;
+    mfxU16 maxNumFrames = request->NumFrameSuggested; //(mfxU16)IPP_MIN(MFX_NUM_FRAME_HANDLES, request->NumFrameSuggested);
+    unsigned int va_fourcc = 0;
+    VASurfaceAttrib attrib;
     VASurfaceID* surfaces = NULL;
     vaapiMemIdInt *vaapi_mids = NULL, *vaapi_mid = NULL;
-    bool bCreateSrfSucceeded = false;    
+    bool bCreateSrfSucceeded = false;
+    mfxU16 numAllocated = 0, i = 0;
 
     if (!pthis)
     {
         return MFX_ERR_INVALID_HANDLE;
     }
-    // only NV12 and D3DFMT_P8 buffers are supported by HW
-    switch(request->Info.FourCC)
+    va_fourcc = ConvertMfxFourccToVAFormat(fourcc);
+    if (!va_fourcc || ((VA_FOURCC_NV12 != va_fourcc) &&
+                       (VA_FOURCC_YV12 != va_fourcc) &&
+                       (VA_FOURCC_YUY2 != va_fourcc) &&
+                       (VA_FOURCC_ARGB != va_fourcc) &&
+                       (VA_FOURCC_P208 != va_fourcc)))
     {
-    case MFX_FOURCC_NV12:
-    case MFX_FOURCC_P8:
-    case MFX_FOURCC_YUY2:
-    case MFX_FOURCC_YV12:
-        break;
-    default:
-        return MFX_ERR_UNSUPPORTED;
+        return MFX_ERR_MEMORY_ALLOC;
+    }
+    if (!maxNumFrames)
+    {
+        return MFX_ERR_MEMORY_ALLOC;
     }
 
-    mfxU16 numAllocated, maxNumFrames;
     mfxWideHWFrameAllocator *pSelf = (mfxWideHWFrameAllocator*)pthis;
 
     // frames were allocated
@@ -81,8 +106,6 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
     }
 
     // allocate frames in cycle
-    maxNumFrames = request->NumFrameSuggested; //(mfxU16)IPP_MIN(MFX_NUM_FRAME_HANDLES, request->NumFrameSuggested);
-
     if (MFX_ERR_NONE == mfx_res)
     {
         surfaces = (VASurfaceID*)calloc(maxNumFrames, sizeof(VASurfaceID));
@@ -92,22 +115,21 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
             mfx_res = MFX_ERR_MEMORY_ALLOC;
         }
     }
-    if( MFX_FOURCC_P8 != fourcc )
+    if (MFX_ERR_NONE == mfx_res)
     {
-        if (MFX_ERR_NONE == mfx_res)
+        if( MFX_FOURCC_P8 != fourcc )
         {
-#if VA_CHECK_VERSION(0,33,0)
-            va_sts = vaCreateSurfaces(pSelf->pVADisplay, VA_RT_FORMAT_YUV420, width, height, surfaces, maxNumFrames, NULL, 0);
-#else
-            va_sts = vaCreateSurfaces(pSelf->pVADisplay, width, height, VA_RT_FORMAT_YUV420, maxNumFrames, surfaces);
-#endif
+            attrib.type = VASurfaceAttribPixelFormat;
+            attrib.value.type = VAGenericValueTypeInteger;
+            attrib.value.value.i = va_fourcc;
+            attrib.flags = VA_SURFACE_ATTRIB_SETTABLE;
+
+            va_sts = vaCreateSurfaces(pSelf->pVADisplay, VA_RT_FORMAT_YUV420, width, height, surfaces, maxNumFrames, &attrib, 1);
             mfx_res = VA_TO_MFX_STATUS(va_sts);
+
             bCreateSrfSucceeded = (MFX_ERR_NONE == mfx_res);
         }
-    }
-    else
-    {
-        if (MFX_ERR_NONE == mfx_res)
+        else
         {
             VAContextID context_id = request->reserved[0];
             int codedbuf_size = (width * height) * 400 / (16 * 16); //from libva spec
@@ -134,7 +156,7 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
         for (i = 0; i < maxNumFrames; ++i)
         {
             vaapi_mid = &(vaapi_mids[i]);
-            vaapi_mid->m_fourcc = request->Info.FourCC;
+            vaapi_mid->m_fourcc = fourcc;
             vaapi_mid->m_surface = &(surfaces[i]);
 
             pSelf->m_frameHandles.push_back(vaapi_mid);
@@ -147,10 +169,13 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
     {
         response->mids = NULL;
         response->NumFrameActual = 0;
-        if (bCreateSrfSucceeded) vaDestroySurfaces(pSelf->pVADisplay, surfaces, maxNumFrames);
-        if (MFX_FOURCC_P8 == request->Info.FourCC)
+        if (MFX_FOURCC_P8 != fourcc)
         {
-            for (i = 0; numAllocated < numAllocated; i++)
+            if (bCreateSrfSucceeded) vaDestroySurfaces(pSelf->pVADisplay, surfaces, maxNumFrames);
+        }
+        else
+        {
+            for (i = 0; i < numAllocated; i++)
                 vaDestroyBuffer(pSelf->pVADisplay, surfaces[i]);
         }
         if (vaapi_mids) { free(vaapi_mids); vaapi_mids = NULL; }
@@ -170,9 +195,8 @@ mfxDefaultAllocatorVAAPI::LockFrameHW(
 
     mfxStatus mfx_res = MFX_ERR_NONE;
     VAStatus  va_sts  = VA_STATUS_SUCCESS;
-    VASurfaceStatus srf_sts = VASurfaceReady;
     vaapiMemIdInt* vaapi_mids = (vaapiMemIdInt*)mid;
-    mfxU8* pBuffer = 0, iteration = 0;
+    mfxU8* pBuffer = 0;
 
     if (!vaapi_mids || !(vaapi_mids->m_surface)) return MFX_ERR_INVALID_HANDLE;
 
@@ -191,6 +215,8 @@ mfxDefaultAllocatorVAAPI::LockFrameHW(
 #if 0
         if (MFX_ERR_NONE == mfx_res)
         {
+            VASurfaceStatus srf_sts = VASurfaceReady;
+
             va_sts = vaQuerySurfaceStatus(pSelf->pVADisplay, *(vaapi_mids->m_surface), &srf_sts);
             mfx_res = VA_TO_MFX_STATUS(va_sts);
         }
@@ -229,7 +255,17 @@ mfxDefaultAllocatorVAAPI::LockFrameHW(
                 }
                 else mfx_res = MFX_ERR_LOCK_MEMORY;
                 break;
-            case VA_FOURCC_BGRA:
+            case VA_FOURCC_YUY2:
+                if (vaapi_mids->m_fourcc == MFX_FOURCC_YUY2)
+                {
+                    ptr->Pitch = (mfxU16)vaapi_mids->m_image.pitches[0];
+                    ptr->Y = pBuffer + vaapi_mids->m_image.offsets[0];
+                    ptr->U = ptr->Y + 1;
+                    ptr->V = ptr->Y + 3;
+                }
+                else mfx_res = MFX_ERR_LOCK_MEMORY;
+                break;
+            case VA_FOURCC_ARGB:
                 if (vaapi_mids->m_fourcc == MFX_FOURCC_RGB4)
                 {
                     ptr->Pitch = (mfxU16)vaapi_mids->m_image.pitches[0];
@@ -258,7 +294,7 @@ mfxDefaultAllocatorVAAPI::GetHDLHW(
     if (!pthis)
         return MFX_ERR_INVALID_HANDLE;
 
-    mfxWideHWFrameAllocator *pSelf = (mfxWideHWFrameAllocator*)pthis;
+    //mfxWideHWFrameAllocator *pSelf = (mfxWideHWFrameAllocator*)pthis;
     if (0 == mid)
         return MFX_ERR_INVALID_HANDLE;
 
@@ -300,6 +336,7 @@ mfxStatus mfxDefaultAllocatorVAAPI::UnlockFrameHW(
             ptr->Y     = NULL;
             ptr->U     = NULL;
             ptr->V     = NULL;
+            ptr->A     = NULL;
         }
     }
     return MFX_ERR_NONE;

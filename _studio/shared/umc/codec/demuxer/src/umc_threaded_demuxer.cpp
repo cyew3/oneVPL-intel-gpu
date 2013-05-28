@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2005-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2005-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -140,7 +140,10 @@ Status ThreadedDemuxer::GetInfo(SplitterInfo** ppInfo)
     m_OnAutoEnable.Lock();
     Status umcRes = m_pDemuxer->GetInfo(ppInfo);
     if (UMC_OK != umcRes)
+    {
+        m_OnAutoEnable.Unlock();
         return umcRes;
+    }
 
     ppInfo[0]->m_splitter_flags = m_uiFlags;
     if (m_bAutoEnable)

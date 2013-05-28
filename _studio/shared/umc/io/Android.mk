@@ -2,8 +2,6 @@ LOCAL_PATH:= $(call my-dir)
 
 include $(MFX_HOME)/android/mfx_env.mk
 
-ifeq ($(MFX_ANDROID_NDK_BUILD), true)
-
 # Setting subdirectories to march thru
 MFX_DIRS_IMPL = \
     media_buffers \
@@ -29,5 +27,3 @@ LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libumc_io_merged_$(MFX_IMPL)
 
 include $(BUILD_STATIC_LIBRARY)
-
-endif # ifeq ($(MFX_ANDROID_NDK_BUILD), true)

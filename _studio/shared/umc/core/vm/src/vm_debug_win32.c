@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2012 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -475,5 +475,12 @@ void vm_trace_GUID_func(const UMC_GUID *pGUID, vm_char *descr)
     vm_debug_trace1(VM_DEBUG_VERBOSE, VM_STRING("%s"), guid);
 
 } //
+
+#if defined(LINUX32)
+void vm_debug_trace_ex(Ipp32s level, const vm_char *func_name, const vm_char *file_name,
+                       Ipp32s num_line, const vm_char *format, ...)
+{}
+#endif
+
 //#endif
 /* EOF */

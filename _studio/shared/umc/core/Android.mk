@@ -21,10 +21,6 @@ LOCAL_C_INCLUDES += $(foreach dir, $(MFX_DIRS) $(MFX_DIRS_IMPL), $(wildcard $(LO
 
 LOCAL_MODULE_TAGS := optional
 
-ifeq ($(MFX_ANDROID_NDK_BUILD), false)
-    LOCAL_MODULE := libumc_core_merged_native
-else
-    LOCAL_MODULE := libumc_core_merged
-endif
+LOCAL_MODULE := libumc_core_merged
 
 include $(BUILD_STATIC_LIBRARY)

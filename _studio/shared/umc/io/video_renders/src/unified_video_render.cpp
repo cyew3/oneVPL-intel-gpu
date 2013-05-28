@@ -4,7 +4,7 @@
  *     This software is supplied under the terms of a license agreement or
  *     nondisclosure agreement with Intel Corporation and may not be copied
  *     or disclosed except in accordance with the terms of that agreement.
- *          Copyright(c) 2006-2011 Intel Corporation. All Rights Reserved.
+ *          Copyright(c) 2006-2013 Intel Corporation. All Rights Reserved.
  *
  */
 
@@ -146,7 +146,7 @@ Status UnifiedVideoRender::Close(void)
     void*   buffers[MAX_FRAME_BUFFERS] = {NULL};
     Ipp32s  i;
 
-    m_SuncMut.LockIfInitialized();
+    m_SuncMut.Lock();
     GetDriverBuffers(buffers);
     if (NULL != m_Driver.m_DrvSpec.drvFreeBuffers)
     {
@@ -157,7 +157,7 @@ Status UnifiedVideoRender::Close(void)
     {
         m_Driver.m_DrvSpec.drvClose(&m_Driver);
     }
-    m_SuncMut.UnlockIfInitialized();
+    m_SuncMut.Unlock();
     DBG_SET ("-");
     return BaseVideoRender::Close();
 }

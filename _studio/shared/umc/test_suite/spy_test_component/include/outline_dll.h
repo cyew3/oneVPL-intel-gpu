@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -40,7 +40,23 @@ OutlineFactoryAbstract * GetOutlineFactory()
     typedef double (*func_ptr)(double);
     func_ptr func;
 
+#ifdef _DEBUG
+
+#if defined(__APPLE__)
+    void* lib_handle = dlopen("liboutline_d.dylib", RTLD_LAZY);
+#else
+    void* lib_handle = dlopen("liboutline_d.so", RTLD_LAZY);
+#endif // #if defined(__APPLE__)
+
+#else
+
+#if defined(__APPLE__)
+    void* lib_handle = dlopen("liboutline.dylib", RTLD_LAZY);
+#else
     void* lib_handle = dlopen("liboutline.so", RTLD_LAZY);
+#endif // #if defined(__APPLE__)
+
+#endif // #ifdef _DEBUG
     if(lib_handle == NULL) {
        return 0;
     }

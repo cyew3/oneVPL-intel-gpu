@@ -1939,6 +1939,8 @@ bool CommonCORE::IsOpaqSurfacesAlreadyMapped(mfxFrameSurface1 **pOpaqueSurface,
                 if (IsEqual(*ref_it->first, *response))
                 {
                     ref_it->second++;
+                    delete[] response->mids;
+                    response->mids = ref_it->first->mids;
                     return true;
                 }
             }

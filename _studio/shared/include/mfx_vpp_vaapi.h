@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2011-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -25,7 +25,6 @@
 
 #include <assert.h>
 #include <set>
-#include <algorithm>
 
 #define MFX_CHECK_WITH_ASSERT(EXPR, ERR) {assert(EXPR); MFX_CHECK(EXPR,ERR); }
 
@@ -39,7 +38,9 @@ namespace MfxHwVideoProcessing
         
         virtual ~VAAPIVideoProcessing();
 
-        virtual mfxStatus CreateDevice(VideoCORE * core, mfxInitParams *pParams);
+        virtual mfxStatus CreateDevice(VideoCORE * core, mfxVideoParam *pParams, bool isTemporal = false);
+
+        virtual mfxStatus ReconfigDevice(mfxU32 /*indx*/) { return MFX_ERR_NONE; }
 
         virtual mfxStatus DestroyDevice( void );
 
@@ -52,6 +53,10 @@ namespace MfxHwVideoProcessing
         virtual mfxStatus QueryTaskStatus(FASTCOMP_QUERY_STATUS *pQueryStatus, mfxU32 numStructures);
 
         virtual mfxStatus QueryCapabilities( mfxVppCaps& caps );
+
+        virtual mfxStatus QueryVariance(
+            mfxU32 frameIndex,
+            std::vector<mfxU32> &variance) { return MFX_ERR_UNSUPPORTED; }
 
         virtual BOOL IsRunning() { return m_bRunning; }
 
@@ -76,8 +81,8 @@ namespace MfxHwVideoProcessing
         VABufferID m_filterBufs[VAProcFilterCount];
         mfxU32 m_numFilterBufs;
 
-        VAProcPipelineParameterBuffer m_pipelineParam;
-        VABufferID m_pipelineParamID;
+        std::vector<VAProcPipelineParameterBuffer> m_pipelineParam;
+        std::vector<VABufferID> m_pipelineParamID;
 
         std::set<mfxU32> m_cachedReadyTaskIndex;
 
@@ -91,7 +96,7 @@ namespace MfxHwVideoProcessing
 
         UMC::Mutex m_guard;
 
-        mfxStatus Init( _mfxPlatformAccelerationService* pVADisplay, mfxInitParams *pParams);
+        mfxStatus Init( _mfxPlatformAccelerationService* pVADisplay, mfxVideoParam *pParams);
 
         mfxStatus Close( void );
 

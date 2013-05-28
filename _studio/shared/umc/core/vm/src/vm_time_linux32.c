@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2011 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -12,8 +12,12 @@
 
 #if defined(LINUX32) || defined(__APPLE__)
 
-#include <unistd.h>
 #include <sys/time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <sched.h>
 
 /* yield the execution of current thread for msec miliseconds */
@@ -63,12 +67,11 @@ vm_tick vm_time_get_frequency(void)
 /* Create the object of time measure */
 vm_status vm_time_open(vm_time_handle *handle)
 {
-   vm_time_handle t_handle;
+   vm_time_handle t_handle = -1;
    vm_status status = VM_OK;
 
    if (NULL == handle)
        return VM_NULL_PTR;
-   t_handle = -1;
 
    t_handle = open("/dev/tsc", 0);
    if (t_handle > 0)

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2006-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2006-2013 Intel Corporation. All Rights Reserved.
 */
 
 #include "umc_va_base.h"
@@ -32,7 +32,7 @@ void* VideoAcceleratorExt::GetCompBuffer(Ipp32s buffer_type, UMCVACompBuffer **b
     if(i == m_CachedCompBuffers.end())
     {
         /*get buffer from HW*/
-        AutomaticMutex guard(m_mGuard.ExtractHandle());
+        AutomaticMutex guard(m_mGuard);
         i= find( m_CachedCompBuffers.begin(), m_CachedCompBuffers.end(), VACompBuffer(buffer_type, -1, index));
         if(i == m_CachedCompBuffers.end())
         {

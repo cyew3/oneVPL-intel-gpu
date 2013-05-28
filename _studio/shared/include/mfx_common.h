@@ -15,6 +15,7 @@
 
 #include "mfxvideo.h"
 #include "mfxvideo++int.h"
+#include "mfxlinux.h"
 #include "ippdefs.h"
 #include "mfx_utils.h"
 #include <stdio.h>
@@ -119,6 +120,7 @@
 
 // vpp
 #define MFX_ENABLE_DENOISE_VIDEO_VPP
+#define MFX_ENABLE_IMAGE_STABILIZATION_VPP
 #define MFX_ENABLE_VPP
 
 
@@ -128,34 +130,44 @@
 
 
 // linux support
-#if defined(LINUX32) || defined(LINUX64)
+#if defined(LINUX32) || defined(LINUX64) || defined(__APPLE__)
     // HW limitation
     #if defined (MFX_VA)
-
+        /** @note
+         *  According to PRD for the Media SDK 2013 for Linux Server project
+         * we support only the following components (in HW variants only):
+         *   - H.264 decoder/encoder
+         *   - Mpeg2 decoder
+         *   - VPP
+         */
         // h264
         //#undef MFX_ENABLE_H264_VIDEO_ENCODE
-        //#undef MFX_ENABLE_MVC_VIDEO_ENCODE
+        #undef MFX_ENABLE_MVC_VIDEO_ENCODE
         //#undef MFX_ENABLE_H264_VIDEO_PAK
         //#undef MFX_ENABLE_H264_VIDEO_BRC
 
+        //#undef MFX_ENABLE_H264_VIDEO_ENCODE_HW
+        //#undef MFX_ENABLE_MVC_VIDEO_ENCODE_HW
+
         // mpeg2
         //#undef MFX_ENABLE_MPEG2_VIDEO_DECODE
-        //#undef MFX_ENABLE_MPEG2_VIDEO_ENCODE
-        //#undef MFX_ENABLE_MPEG2_VIDEO_PAK
-        //#undef MFX_ENABLE_MPEG2_VIDEO_ENC
-        //#undef MFX_ENABLE_MPEG2_VIDEO_BRC
+        #undef MFX_ENABLE_MPEG2_VIDEO_ENCODE
+        #undef MFX_ENABLE_MPEG2_VIDEO_PAK
+        #undef MFX_ENABLE_MPEG2_VIDEO_ENC
+        #undef MFX_ENABLE_MPEG2_VIDEO_BRC
 
         // mjpeg
-        //#undef MFX_ENABLE_MJPEG_VIDEO_DECODE
-        //#undef MFX_ENABLE_MJPEG_VIDEO_ENCODE
+        #undef MFX_ENABLE_MJPEG_VIDEO_DECODE
+        #undef MFX_ENABLE_MJPEG_VIDEO_ENCODE
 
         // vpp
         //#undef MFX_ENABLE_DENOISE_VIDEO_VPP
         //#undef MFX_ENABLE_VPP
 
-        //#undef MFX_ENABLE_H264_VIDEO_ENCODE_HW
-        //#undef MFX_ENABLE_MVC_VIDEO_ENCODE_HW
+        // vc1
+        //#undef MFX_ENABLE_VC1_VIDEO_DECODE
 
+        // vp8
         #undef MFX_ENABLE_VP8_VIDEO_DECODE
         #undef MFX_ENABLE_VP8_VIDEO_ENCODE
     // SW limitation
@@ -165,18 +177,10 @@
     #endif // #if defined (MFX_VA)
 #endif // #if defined(LINUX32) || defined(LINUX64)
 
-#ifdef __APPLE__
-    #if defined (MFX_VA)
-        // mjpeg
-        #undef MFX_ENABLE_MJPEG_VIDEO_DECODE
-        #undef MFX_ENABLE_MJPEG_VIDEO_ENCODE
-        #undef MFX_ENABLE_VP8_VIDEO_DECODE
-        #undef MFX_ENABLE_VP8_VIDEO_ENCODE
-    #else
-        #undef MFX_ENABLE_VP8_VIDEO_DECODE
-        #undef MFX_ENABLE_VP8_VIDEO_ENCODE
-    #endif
-#endif
+// additional corrections for Android
+#if defined(ANDROID)
+    #undef MFX_ENABLE_IMAGE_STABILIZATION_VPP
+#endif // #if defined(ANDROID)
 
 #define MFX_BIT_IN_KB 8*1000
 #endif

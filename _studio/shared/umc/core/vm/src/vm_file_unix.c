@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2012 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 /*
@@ -24,6 +24,7 @@
 #endif
 
 #include <stdio.h>
+#include <unistd.h>
 #include <sys/types.h>
 #if defined(__ANDROID__)
 #include <sys/statfs.h>
@@ -174,7 +175,6 @@ void vm_string_splitpath(const vm_char *path, char *drive, char *dir, char *fnam
     }
 }
 
-#if defined(LINUX64)
 Ipp32s vm_file_vfprintf(vm_file *fd, vm_char* format, va_list argptr)
 {
     Ipp32s sts = 0;
@@ -184,7 +184,7 @@ Ipp32s vm_file_vfprintf(vm_file *fd, vm_char* format, va_list argptr)
     va_end(argptr);
     return sts;
 }
-#endif /* #if defined(LINUX64) */
+
 #else
 # pragma warning( disable: 4206 )
 #endif
