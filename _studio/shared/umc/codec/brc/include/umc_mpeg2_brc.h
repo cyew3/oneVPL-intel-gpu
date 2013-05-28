@@ -18,6 +18,7 @@
 #define _UMC_MPEG2_BRC_H_
 
 #include "ippdefs.h"
+#include "ipps.h"
 //#include "umc_video_data.h"
 #include "umc_video_encoder.h"
 #include "umc_brc.h"

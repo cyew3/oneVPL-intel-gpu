@@ -119,6 +119,7 @@ typedef TCHAR vm_char;
 #define vm_string_vprintf   _vtprintf
 #define vm_string_vfprintf  vm_file_vfprintf
 #define vm_string_vsprintf  _vstprintf
+#define vm_string_vsnprintf _vsntprintf
 
 #define vm_string_strcat    _tcscat
 #define vm_string_strcat_s  _tcscat_s
