@@ -612,6 +612,10 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     request.NumFrameMin = mfxU16(CalcNumSurfRecon(m_video));
     sts = m_rec.Alloc(m_core, request);
     MFX_CHECK_STS(sts);
+
+    sts = m_ddi->Register(m_rec.NumFrameActual ? m_rec : m_raw, D3DDDIFMT_NV12);
+    MFX_CHECK_STS(sts);
+
     m_recFrameOrder.resize(request.NumFrameMin, 0xffffffff);
 
     // Allocate surfaces for bitstreams.
@@ -677,9 +681,6 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         sts = m_hme.AllocCmSurfaces(m_cmDevice, request);
         MFX_CHECK_STS(sts);
     }
-
-    sts = m_ddi->Register(m_rec.NumFrameActual ? m_rec : m_raw, D3DDDIFMT_NV12);
-    MFX_CHECK_STS(sts);
 
     sts = m_ddi->Register(m_bit, D3DDDIFMT_INTELENCODE_BITSTREAMDATA);
     MFX_CHECK_STS(sts);
