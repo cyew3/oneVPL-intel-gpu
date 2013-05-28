@@ -431,10 +431,10 @@ exit_me:
     *currMAD = BestMAD;
   }
   if (pDstVar != NULL) {
-    memcpy_s(pDstVar, NUM_BLOCKS*sizeof(*pDstVar), Var[min_index],  NUM_BLOCKS*sizeof(*pDstVar));
+    ippsCopy_8u((Ipp8u*)Var[min_index], (Ipp8u*)pDstVar, NUM_BLOCKS*sizeof(*pDstVar));
   }
   if (pDstMean != NULL) {
-    memcpy_s(pDstMean, NUM_BLOCKS*sizeof(*pDstMean), Mean[min_index], NUM_BLOCKS*sizeof(*pDstMean));
+    ippsCopy_8u((Ipp8u*)Mean[min_index], (Ipp8u*)pDstMean, NUM_BLOCKS*sizeof(*pDstMean));
   }
 #if FIELD_FLAG == 0
   SET_MOTION_VECTOR(vector, XMIN, YMIN,YFramePitchRef,UVFramePitchRef );

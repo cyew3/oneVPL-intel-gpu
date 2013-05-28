@@ -8,6 +8,8 @@
 //
 */
 
+#include <algorithm> /* for std::find on Linux/Android */
+
 #include "mfx_h264_dec_decode.h"
 
 #if defined (MFX_ENABLE_H264_VIDEO_DECODE)

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2002-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2002-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -479,35 +479,35 @@ Status MPEG2EncoderParams::ReadOldParamFile(const vm_char *ParFileName)
 #define MFX_ARRAY_SIZE(array) (sizeof(array)/sizeof(array[0]))
 
   umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); //vm_string_sscanf(line, VM_STRING("%255s"), SrcFileName );
-  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf_s(line, VM_STRING("%255s"), IntraQMatrixFName, MFX_ARRAY_SIZE(IntraQMatrixFName));
-  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf_s(line, VM_STRING("%255s"), NonIntraQMatrixFName, MFX_ARRAY_SIZE(NonIntraQMatrixFName));
+  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf(line, VM_STRING("%255s"), IntraQMatrixFName, MFX_ARRAY_SIZE(IntraQMatrixFName));
+  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf(line, VM_STRING("%255s"), NonIntraQMatrixFName, MFX_ARRAY_SIZE(NonIntraQMatrixFName));
   umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); //vm_string_sscanf(line, VM_STRING("%d"), &numFramesToEncode );
-  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf_s(line, VM_STRING("%d"), &gopSize );
-  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf_s(line, VM_STRING("%d"), &IPDistance);
-  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf_s(line, VM_STRING("%d"), &info.clip_info.width );
-  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf_s(line, VM_STRING("%d"), &info.clip_info.height );
-  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf_s(line, VM_STRING("%d"), &aspect_code );
-  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf_s(line, VM_STRING("%d"), &frame_rate_code );
+  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf(line, VM_STRING("%d"), &gopSize );
+  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf(line, VM_STRING("%d"), &IPDistance);
+  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf(line, VM_STRING("%d"), &info.clip_info.width );
+  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf(line, VM_STRING("%d"), &info.clip_info.height );
+  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf(line, VM_STRING("%d"), &aspect_code );
+  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf(line, VM_STRING("%d"), &frame_rate_code );
 
-  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf_s(line, VM_STRING("%d"), &info.bitrate );
-  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf_s(line, VM_STRING("%d %d %d"), &quant_vbr[0],
+  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf(line, VM_STRING("%d"), &info.bitrate );
+  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf(line, VM_STRING("%d %d %d"), &quant_vbr[0],
     &quant_vbr[1],
     &quant_vbr[2] );
   umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); //vm_string_sscanf(line, VM_STRING("%d"), &dst_width );
   umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); //vm_string_sscanf(line, VM_STRING("%d"), &dst_height );
 
-  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf_s(line, VM_STRING("%d %d %d"), &frame_pred_frame_dct[0],
+  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf(line, VM_STRING("%d %d %d"), &frame_pred_frame_dct[0],
     &frame_pred_frame_dct[1],
     &frame_pred_frame_dct[2] );
 
-  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf_s(line, VM_STRING("%d"), &prog_seq );
+  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf(line, VM_STRING("%d"), &prog_seq );
   info.interlace_type = prog_seq ? PROGRESSIVE : INTERLEAVED_TOP_FIELD_FIRST;
 
-  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf_s(line, VM_STRING("%d %d %d"), &intraVLCFormat[0],
+  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf(line, VM_STRING("%d %d %d"), &intraVLCFormat[0],
     &intraVLCFormat[1],
     &intraVLCFormat[2] );
   line[0]=0;
-  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf_s(line, VM_STRING("%d %255s"), &LogMask, TemplateLogFile, MFX_ARRAY_SIZE(TemplateLogFile));
+  umc_file_fgets_ascii( line, PAR_STRLEN, InputFile ); vm_string_sscanf(line, VM_STRING("%d %255s"), &LogMask, TemplateLogFile, MFX_ARRAY_SIZE(TemplateLogFile));
 
   if( gopSize < 1 )
   {
@@ -536,12 +536,12 @@ Status MPEG2EncoderParams::ReadOldParamFile(const vm_char *ParFileName)
       if (i==0) {
         if (j!=0) continue;
         umc_file_fgets_ascii( line, PAR_STRLEN, InputFile );
-        vm_string_sscanf_s(line, VM_STRING("%d %d %d %d"), &f0, &f1,
+        vm_string_sscanf(line, VM_STRING("%d %d %d %d"), &f0, &f1,
           &rangeP[0], &rangeP[1] );
       } else {
         umc_file_fgets_ascii( line, PAR_STRLEN, InputFile );
         if (i < 3)
-          vm_string_sscanf_s(line, VM_STRING("%d %d %d %d"), &f0, &f1,
+          vm_string_sscanf(line, VM_STRING("%d %d %d %d"), &f0, &f1,
             &rangeB[j][0], &rangeB[j][1] );
       }
     }
@@ -623,50 +623,50 @@ Status MPEG2EncoderParams::ReadParamFile(const vm_char *ParFileName)
 
   umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); //vm_string_sscanf(line, VM_STRING("%255s"),SrcFileName);
   umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); //vm_string_sscanf(line, VM_STRING("%255s"),tplref);
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%255s"), IntraQMatrixFName, MFX_ARRAY_SIZE(IntraQMatrixFName));
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%255s"), NonIntraQMatrixFName, MFX_ARRAY_SIZE(NonIntraQMatrixFName));
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%255s"), TemplateLogFile, MFX_ARRAY_SIZE(TemplateLogFile));
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%d"),&inputtype);
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%255s"), IntraQMatrixFName, MFX_ARRAY_SIZE(IntraQMatrixFName));
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%255s"), NonIntraQMatrixFName, MFX_ARRAY_SIZE(NonIntraQMatrixFName));
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%255s"), TemplateLogFile, MFX_ARRAY_SIZE(TemplateLogFile));
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%d"),&inputtype);
   umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); //vm_string_sscanf(line, VM_STRING("%d"),&numFramesToEncode);
   umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); //vm_string_sscanf(line, VM_STRING("%d"),&numStartFrame);
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%d:%d:%d:%d"),&h,&m,&s,&f);
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%d"),&gopSize);
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%d"),&IPDistance);
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%d"),&mpeg1);
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%d"),&FieldPicture);
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%d"),&info.clip_info.width);
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%d"),&info.clip_info.height);
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%d"),&aspect_code);
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%d"),&frame_rate_code);
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%lf"),&tmp); info.bitrate = (Ipp32s)tmp;
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%d:%d:%d:%d"),&h,&m,&s,&f);
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%d"),&gopSize);
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%d"),&IPDistance);
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%d"),&mpeg1);
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%d"),&FieldPicture);
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%d"),&info.clip_info.width);
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%d"),&info.clip_info.height);
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%d"),&aspect_code);
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%d"),&frame_rate_code);
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%lf"),&tmp); info.bitrate = (Ipp32s)tmp;
 
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%d"),&VBV_BufferSize);
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%d"),&low_delay);
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%d"),&constrparms);
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%d"),&profile);
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%d"),&level);
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%d"),&prog_seq);
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%d"),&chroma_format_code);
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%d"),&video_format);
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%d"),&color_primaries);
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%d"),&transfer_characteristics);
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%d"),&matrix_coefficients);
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%d"),&VBV_BufferSize);
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%d"),&low_delay);
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%d"),&constrparms);
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%d"),&profile);
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%d"),&level);
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%d"),&prog_seq);
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%d"),&chroma_format_code);
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%d"),&video_format);
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%d"),&color_primaries);
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%d"),&transfer_characteristics);
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%d"),&matrix_coefficients);
   umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); //vm_string_sscanf(line, VM_STRING("%d"),&dst_width);
   umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); //vm_string_sscanf(line, VM_STRING("%d"),&dst_height);
   umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); //vm_string_sscanf(line, VM_STRING("%d"),&intra_dc_precision);
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%d"),&top_field_first);
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%d %d %d"),
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%d"),&top_field_first);
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%d %d %d"),
     frame_pred_frame_dct,frame_pred_frame_dct+1,frame_pred_frame_dct+2);
 
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%d %d %d"),
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%d %d %d"),
     conceal_tab,conceal_tab+1,conceal_tab+2);
 
   umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); //vm_string_sscanf(line, VM_STRING("%d %d %d"),
     //nonLinearQScale,nonLinearQScale+1,nonLinearQScale+2);
 
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%d %d %d"),
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%d %d %d"),
     intraVLCFormat,intraVLCFormat+1,intraVLCFormat+2);
-  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf_s(line, VM_STRING("%d %d %d"),
+  umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); vm_string_sscanf(line, VM_STRING("%d %d %d"),
     altscan_tab,altscan_tab+1,altscan_tab+2);
   umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); //vm_string_sscanf(line, VM_STRING("%d"),&repeat_first_field);
   umc_file_fgets_ascii(line,PAR_STRLEN,InputFile); //vm_string_sscanf(line, VM_STRING("%d"),&progressive_frame);
@@ -719,12 +719,12 @@ Status MPEG2EncoderParams::ReadParamFile(const vm_char *ParFileName)
       if (i==0) {
         if (j!=0) continue;
         umc_file_fgets_ascii( line, PAR_STRLEN, InputFile );
-        vm_string_sscanf_s(line, VM_STRING("%d %d %d %d"), &f0, &f1,
+        vm_string_sscanf(line, VM_STRING("%d %d %d %d"), &f0, &f1,
           &rangeP[0], &rangeP[1] );
       } else {
         umc_file_fgets_ascii( line, PAR_STRLEN, InputFile );
         if (i < 3)
-          vm_string_sscanf_s(line, VM_STRING("%d %d %d %d"), &f0, &f1,
+          vm_string_sscanf(line, VM_STRING("%d %d %d %d"), &f0, &f1,
           &rangeB[j][0], &rangeB[j][1] );
       }
     }

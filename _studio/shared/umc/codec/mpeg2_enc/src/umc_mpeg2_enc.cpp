@@ -1141,7 +1141,7 @@ Status MPEG2VideoEncoderBase::PutPicture()
             t = BITPOS(threadSpec[i+1])>>3;
             size += t;
             if (size < output_buffer_size)            {
-                memcpy_s(p, t, threadSpec[i+1].bBuf.start_pointer, t);
+                ippsCopy_8u((Ipp8u*)threadSpec[i+1].bBuf.start_pointer, (Ipp8u*)p, t);
                 p += t;
             }
         }

@@ -44,7 +44,6 @@ Status MP4Splitter::CheckInit()
 {
   // already initialized
   if ((m_pReader == NULL) ||
-      (!m_ReaderMutex.IsInited()) ||
       (m_pTrackIndex == NULL) ||
       (m_ppMediaBuffer == NULL) ||
       (m_ppLockedFrame == NULL) ||

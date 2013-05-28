@@ -128,9 +128,16 @@ mfxU32 memcpy_s(T1* pDst, T2* pSrc)
     if (sizeof(T1) != sizeof(T2))
         return 0;
 
-    memcpy(pDst, pSrc, sizeof(T1));
+    ippsCopy_8u((Ipp8u*)pSrc, (Ipp8u*)pDst, sizeof(T1));
     return sizeof(T1);
 }
 
+#if !defined(_WIN32) && !defined(_WIN64)
+inline void memcpy_s(void* pDst, size_t /*nDstSize*/, const void* pSrc, size_t nCount)
+{
+    ippsCopy_8u((Ipp8u*)pSrc, (Ipp8u*)pDst, nCount);
+}
+
+#endif
 
 #endif
