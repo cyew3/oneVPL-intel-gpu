@@ -436,7 +436,7 @@ void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
         MFX_THREAD_ASSIGNMENT &occupancyInfo = *(pTask->param.pThreadAssignment);
 
         // update working time
-        curTime = GetCurrentTime();
+        curTime = GetLowResCurrentTime();
         if (m_workingTime[m_timeIdx].startTime + MFX_TIME_STAT_PERIOD / MFX_TIME_STAT_PARTS <
             curTime)
         {

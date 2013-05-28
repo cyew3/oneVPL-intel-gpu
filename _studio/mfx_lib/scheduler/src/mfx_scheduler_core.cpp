@@ -297,7 +297,7 @@ mfxU64 mfxSchedulerCore::GetHighPerformanceCounter(void)
 
 } // mfxU64 mfxSchedulerCore::GetHighPerformanceCounter(void)
 
-mfxU32 mfxSchedulerCore::GetCurrentTime(void)
+mfxU32 mfxSchedulerCore::GetLowResCurrentTime(void)
 {
     return vm_time_get_current_time();
 

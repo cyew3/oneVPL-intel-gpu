@@ -235,7 +235,7 @@ protected:
     mfxU64 GetHighPerformanceCounter(void);
     // Get low-resolution counter. The timer is used for priority management
     // only.
-    mfxU32 GetCurrentTime(void);
+    mfxU32 GetLowResCurrentTime(void);
 
     // Version of synchronize function, which uses handle
     mfxStatus Synchronize(mfxTaskHandle handle, mfxU32 timeToWait);
