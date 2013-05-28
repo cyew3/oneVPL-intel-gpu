@@ -9,7 +9,7 @@
 ** 
 \*********************************************************************************/
 
-#include "MEforGen7_5.h"
+#include "meforgen7_5.h"
 #include "ipp.h"
 
 #pragma warning( disable : 4244 )

@@ -58,6 +58,12 @@ mfxStatus MFXVideoVPP_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     MFX_CHECK(out, MFX_ERR_NULL_PTR);
 
+    if ((0 != in) && (MFX_HW_VAAPI == session->m_pCORE->GetVAType()))
+    {
+        // protected content not supported on Linux
+        MFX_CHECK(0 == in->Protected, MFX_ERR_UNSUPPORTED);
+    }
+
     mfxStatus mfxRes = MFX_ERR_UNSUPPORTED;
     try
     {
@@ -119,7 +125,8 @@ mfxStatus MFXVideoVPP_Init(mfxSession session, mfxVideoParam *par)
         }
 
         // create a new instance
-        session->m_pVPP.reset(CreateVPPSpecificClass(NULL ,session->m_pCORE.get()));
+        session->m_pVPP.reset(CreateVPPSpecificClass(0 ,session->m_pCORE.get()));
+        MFX_CHECK(session->m_pVPP.get(), MFX_ERR_INVALID_VIDEO_PARAM);
         mfxRes = session->m_pVPP->Init(par);
     }
     // handle error(s)

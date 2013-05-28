@@ -13,7 +13,7 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_VPP)
+#if defined(MFX_ENABLE_VPP) && defined(MFX_ENABLE_IMAGE_STABILIZATION_VPP)
 
 #ifndef __MFX_IMAGE_STABILIZATION_VPP_H
 #define __MFX_IMAGE_STABILIZATION_VPP_H

@@ -10,7 +10,7 @@
 */
 
 #include "mfx_common.h"
-#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined(MFX_VA_WIN)
 
 #include "mfx_mjpeg_encode_hw_utils.h"
 #include "libmfx_core_factory.h"

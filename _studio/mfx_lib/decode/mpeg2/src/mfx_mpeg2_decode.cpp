@@ -1920,7 +1920,7 @@ mfxStatus VideoDECODEMPEG2::TaskRoutine(void *pState, void *pParam, mfxU32 /*thr
         return MFX_TASK_DONE;
     }
 
-    UMC::AutomaticMutex guard(*parameters->m_Locker);
+    UMC::AutomaticUMCMutex guard(*parameters->m_pGuard);
 
 #ifdef _threading_deb
     {
@@ -2121,7 +2121,7 @@ mfxStatus VideoDECODEMPEG2::CompleteTasks(void *pState, void *pParam, mfxStatus 
 {
     MParam *parameters = (MParam *)pParam;
     VideoDECODEMPEG2 *lpOwner = (VideoDECODEMPEG2 *)pState;
-    UMC::AutomaticMutex guard(*parameters->m_Locker);
+    UMC::AutomaticUMCMutex guard(*parameters->m_pGuard);
 
 #ifdef _threading_deb
     FILE *pFile = NULL;
@@ -2489,7 +2489,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
 
     if (!(dec_field_count & 1))
     {
-        UMC::AutomaticUMCMutex guard(m_Locker);
+        UMC::AutomaticUMCMutex guard(m_guard);
         m_task_num = m_implUmc.FindFreeTask();
     }
 
@@ -2617,7 +2617,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
                                 m_task_param[m_task_num].in = &m_in[m_task_num];
                                 m_task_param[m_task_num].m_frame = m_frame;
                                 m_task_param[m_task_num].m_frame_in_use = m_frame_in_use;
-                                m_task_param[m_task_num].m_Locker = &m_Locker.ExtractHandle();
+                                m_task_param[m_task_num].m_pGuard = &m_guard;
                                 m_task_param[m_task_num].task_num = m_task_num;
                                 m_task_param[m_task_num].m_isSoftwareBuffer = m_isSWBuf;
                                 m_task_param[m_task_num].pCore = m_pCore;
@@ -2718,6 +2718,10 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
             }
 
             umcRes = m_implUmc.ProcessRestFrame(m_task_num);
+            if (UMC::UMC_OK != umcRes)
+            {
+                return MFX_ERR_UNKNOWN;
+            }
 
             if (true == IsField)
             {
@@ -2732,7 +2736,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
             dec_frame_count++;
 
             {
-                UMC::AutomaticUMCMutex guard(m_Locker);
+                UMC::AutomaticUMCMutex guard(m_guard);
 
                 memset(&m_task_param[m_task_num],0,sizeof(MParam));
                 m_implUmc.LockTask(m_task_num);
@@ -2826,7 +2830,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
                 m_task_param[m_task_num].in = &m_in[m_task_num];
                 m_task_param[m_task_num].m_frame = m_frame;
                 m_task_param[m_task_num].m_frame_in_use = m_frame_in_use;
-                m_task_param[m_task_num].m_Locker = &m_Locker.ExtractHandle();
+                m_task_param[m_task_num].m_pGuard = &m_guard;
                 m_task_param[m_task_num].task_num = m_task_num;
                 m_task_param[m_task_num].m_isSoftwareBuffer = m_isSWBuf;
                 m_task_param[m_task_num].IsSWImpl = false;
@@ -2951,7 +2955,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
                     m_task_param[m_task_num].in = &m_in[m_task_num];
                     m_task_param[m_task_num].m_frame = m_frame;
                     m_task_param[m_task_num].m_frame_in_use = m_frame_in_use;
-                    m_task_param[m_task_num].m_Locker = &m_Locker.ExtractHandle();
+                    m_task_param[m_task_num].m_pGuard = &m_guard;
                     m_task_param[m_task_num].task_num = m_task_num;
                     m_task_param[m_task_num].m_isSoftwareBuffer = m_isSWBuf;
                     m_task_param[m_task_num].pCore = m_pCore;
@@ -3072,7 +3076,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
                             mid[display_index] = -1;
 
                             {
-                                UMC::AutomaticUMCMutex guard(m_Locker);
+                                UMC::AutomaticUMCMutex guard(m_guard);
                                 m_implUmc.UnLockTask(display_index);
                             }
 
@@ -3272,14 +3276,14 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
             m_task_param[m_task_num].in = &m_in[m_task_num];
             m_task_param[m_task_num].m_frame = m_frame;
             m_task_param[m_task_num].m_frame_in_use = m_frame_in_use;
-            m_task_param[m_task_num].m_Locker = &m_Locker.ExtractHandle();
+            m_task_param[m_task_num].m_pGuard = &m_guard;
             m_task_param[m_task_num].task_num = m_task_num;
 
             memcpy(&(m_task_param[m_task_num].m_vPar.mfx.FrameInfo),&m_vPar.mfx.FrameInfo,sizeof(mfxFrameInfo));
 
 #ifdef _threading_deb
             {
-                UMC::AutomaticUMCMutex guard(m_Locker);
+                UMC::AutomaticUMCMutex guard(m_guard);
                 FILE *pFile = NULL;
                 fopen_s(&pFile, "c:\\mediasdk\\dbg.txt", "ab+");
 
@@ -3373,7 +3377,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
                     m_task_param[m_task_num].in = NULL;
                     m_task_param[m_task_num].m_frame = m_frame;
                     m_task_param[m_task_num].m_frame_in_use = m_frame_in_use;
-                    m_task_param[m_task_num].m_Locker = &m_Locker.ExtractHandle();
+                    m_task_param[m_task_num].m_pGuard = &m_guard;
                     m_task_param[m_task_num].task_num = m_task_num;
 
                     memcpy(&(m_task_param[m_task_num].m_vPar.mfx.FrameInfo), &m_vPar.mfx.FrameInfo, sizeof(mfxFrameInfo));

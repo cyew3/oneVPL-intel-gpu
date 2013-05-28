@@ -105,7 +105,7 @@ mfxStatus CpuFrc::StdFrc::DoCpuFRC_AndUpdatePTS(
     mfxFrameSurface1 *output, 
     mfxStatus *intSts)
 {
-    long double localDeltaTime = m_externalDeltaTime + m_timeFrameInterval;
+    mfxF64 localDeltaTime = m_externalDeltaTime + m_timeFrameInterval;
     bool isIncreasedSurface = false;
     std::vector<mfxFrameSurface1 *>::iterator iterator;
 
@@ -119,7 +119,7 @@ mfxStatus CpuFrc::StdFrc::DoCpuFRC_AndUpdatePTS(
     }
     else if (localDeltaTime >= m_outFrameTime)
     {
-        iterator = find(m_LockedSurfacesList.begin(), m_LockedSurfacesList.end(), input);
+        iterator = std::find(m_LockedSurfacesList.begin(), m_LockedSurfacesList.end(), input);
 
         if (m_LockedSurfacesList.end() == iterator)
         {
@@ -161,7 +161,7 @@ mfxStatus CpuFrc::StdFrc::DoCpuFRC_AndUpdatePTS(
     }
     else
     {
-        iterator = find(m_LockedSurfacesList.begin(), m_LockedSurfacesList.end(), input);
+        iterator = std::find(m_LockedSurfacesList.begin(), m_LockedSurfacesList.end(), input);
 
         if (m_LockedSurfacesList.end() != iterator)
         {
@@ -257,7 +257,7 @@ mfxStatus CpuFrc::PtsFrc::DoCpuFRC_AndUpdatePTS(
             m_timeStampDifference = 0;
 
             // manage locked surfaces
-            iterator = find(m_LockedSurfacesList.begin(), m_LockedSurfacesList.end(), input);
+            iterator = std::find(m_LockedSurfacesList.begin(), m_LockedSurfacesList.end(), input);
 
             if (m_LockedSurfacesList.end() != iterator)
             {
@@ -273,7 +273,7 @@ mfxStatus CpuFrc::PtsFrc::DoCpuFRC_AndUpdatePTS(
         else
         {
             // manage locked surfaces
-            iterator = find(m_LockedSurfacesList.begin(), m_LockedSurfacesList.end(), input);
+            iterator = std::find(m_LockedSurfacesList.begin(), m_LockedSurfacesList.end(), input);
 
             if (m_LockedSurfacesList.end() == iterator)
             {
@@ -303,7 +303,7 @@ mfxStatus CpuFrc::PtsFrc::DoCpuFRC_AndUpdatePTS(
     else
     {
         // manage locked surfaces
-        iterator = find(m_LockedSurfacesList.begin(), m_LockedSurfacesList.end(), input);
+        iterator = std::find(m_LockedSurfacesList.begin(), m_LockedSurfacesList.end(), input);
 
         if (m_LockedSurfacesList.end() != iterator)
         {

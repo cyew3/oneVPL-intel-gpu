@@ -4,13 +4,13 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2012-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
 #include "mfx_common.h"
 
-#if defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW) && defined(MFX_VA)
+#if defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW) && defined(MFX_VA_WIN)
 
 #include "mfx_session.h"
 #include "mfx_common_decode_int.h"

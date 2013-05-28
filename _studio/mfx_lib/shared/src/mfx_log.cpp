@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2010-2011 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2010-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -171,7 +171,7 @@ public:
 
     void AddString(const char *pStr, size_t strLen)
     {
-        AutomaticMutex guard(m_guard.ExtractHandle());
+        AutomaticUMCMutex guard(m_guard);
         char cStr[32];
         size_t callNumLen;
 

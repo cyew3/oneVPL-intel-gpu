@@ -446,6 +446,7 @@ mfxStatus VideoVPPSW::CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out)
             //    break;
             //}
 
+#if defined(MFX_ENABLE_IMAGE_STABILIZATION_VPP)
             case (mfxU32)MFX_EXTBUFF_VPP_IMAGE_STABILIZATION:
             {
                 sts = MFX_ERR_NONE;
@@ -454,6 +455,7 @@ mfxStatus VideoVPPSW::CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out)
 
                 break;
             }
+#endif
 
             case (mfxU32)MFX_EXTBUFF_VPP_VARIANCE_REPORT://fake only!!!
             {
@@ -487,7 +489,7 @@ mfxStatus VideoVPPSW::DestroyPipeline( void )
             delete m_ppFilters[filterIndex];
             m_ppFilters[filterIndex] = NULL;
         }
-        //m_pipelineList[filterIndex] = NULL;
+        //m_pipelineList[filterIndex] = 0;
     }
 
     return MFX_ERR_NONE;
@@ -926,6 +928,7 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
                 break;
             }
 
+#if defined(MFX_ENABLE_IMAGE_STABILIZATION_VPP)
             case (mfxU32)MFX_EXTBUFF_VPP_IMAGE_STABILIZATION:
             {
                 // aya: fake for SW compatibility
@@ -933,6 +936,7 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
                 outputFramesCount[filterIndex] = MFXVideoVPPImgStab::GetOutFramesCountExt();
                 break;
             }
+#endif
 
             case (mfxU32)MFX_EXTBUFF_VPP_VARIANCE_REPORT:
             {
@@ -977,9 +981,18 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
 } // mfxStatus GetExternalFramesCount(...)
 
 
-mfxStatus ExtendedQuery(mfxU32 filterName, mfxExtBuffer* pHint)
+mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint)
 {
     mfxStatus sts;
+    /* Lets find out VA type (Linux, Win or Android) and platform type */
+    /* It can be different behaviour for Linux and IVB, Linux and HSW*/
+    bool bLinuxAndIVB = false;
+    if ( (NULL != core) &&
+        (core->GetVAType() == MFX_HW_VAAPI) &&
+        (core->GetHWType() == MFX_HW_IVB) )
+    {
+        bLinuxAndIVB = true;
+    }
 
     if( MFX_EXTBUFF_VPP_DENOISE == filterName )
     {
@@ -987,24 +1000,48 @@ mfxStatus ExtendedQuery(mfxU32 filterName, mfxExtBuffer* pHint)
     }
     else if( MFX_EXTBUFF_VPP_DETAIL == filterName )
     {
-        sts = MFXVideoVPPDetailEnhancement::Query( pHint );
+        if (false == bLinuxAndIVB)
+            sts = MFXVideoVPPDetailEnhancement::Query( pHint );
+        else
+        {
+            // This filter is not supported in Linux
+            sts = MFX_WRN_FILTER_SKIPPED;
+        }
     }
     else if( MFX_EXTBUFF_VPP_PROCAMP == filterName )
     {
-        sts = MFXVideoVPPProcAmp::Query( pHint );
+        if (false == bLinuxAndIVB)
+            sts = MFXVideoVPPProcAmp::Query( pHint );
+        else
+        {
+            // This filter is not supported in Linux
+            sts = MFX_WRN_FILTER_SKIPPED;
+        }
     }
     else if( MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION == filterName )
     {
         sts = MFXVideoVPPFrameRateConversion::Query( pHint );
     }
+#if defined(MFX_ENABLE_IMAGE_STABILIZATION_VPP)
     else if( MFX_EXTBUFF_VPP_IMAGE_STABILIZATION == filterName )
     {
         sts = MFXVideoVPPImgStab::Query( pHint );
     }
+#endif
     //else if( MFX_EXTBUFF_VPP_GAMUT_MAPPING == filterName )
     //{
     //    sts = MFXVideoVPPGamutCompression::Query( pHint );
     //}
+    else if( MFX_EXTBUFF_VPP_SCENE_ANALYSIS == filterName )
+    {
+        if (false == bLinuxAndIVB)
+            sts = MFXVideoVPPProcAmp::Query( pHint );
+        else
+        {
+            // This filter is not supported in Linux
+            sts = MFX_WRN_FILTER_SKIPPED;
+        }
+    }
     else // ignore
     {
         sts = MFX_ERR_NONE;
@@ -1012,7 +1049,7 @@ mfxStatus ExtendedQuery(mfxU32 filterName, mfxExtBuffer* pHint)
 
     return sts;
 
-} // mmfxStatus ExtendedQuery(mfxU32 filterName, mfxExtBuffer* pHint)
+} // mmfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint)
 
 
 

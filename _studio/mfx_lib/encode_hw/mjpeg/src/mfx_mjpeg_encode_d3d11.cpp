@@ -13,7 +13,7 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined (MFX_D3D11_ENABLED)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE) && defined(MFX_VA_WIN) && defined (MFX_D3D11_ENABLED)
 
 #define CHECK_HRES(hRes) \
         if (FAILED(hRes))\

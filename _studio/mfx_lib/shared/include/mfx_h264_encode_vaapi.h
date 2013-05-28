@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2011-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -23,8 +23,27 @@
 
 #include "mfx_h264_encode_interface.h"
 
+#define MFX_DESTROY_VABUFFER(vaBufferId, vaDisplay)    \
+do {                                               \
+    if ( vaBufferId != VA_INVALID_ID)              \
+    {                                              \
+        vaDestroyBuffer(vaDisplay, vaBufferId);    \
+        vaBufferId = VA_INVALID_ID;                \
+    }                                              \
+} while (0)
+
+
 namespace MfxHwH264Encode
 {
+    // map feedbackNumber <-> VASurface
+    typedef struct
+    {
+        VASurfaceID surface;
+        mfxU32 number;
+        mfxU32 idxBs;
+
+    } ExtVASurface;
+
     class VAAPIEncoder : public DriverEncoder
     {
     public:
@@ -38,7 +57,8 @@ namespace MfxHwH264Encode
             VideoCORE* core,
             GUID       guid,
             mfxU32     width,
-            mfxU32     height);
+            mfxU32     height,
+            bool       isTemporal = false);
 
         virtual
         mfxStatus CreateAccelerationService(
@@ -99,57 +119,45 @@ namespace MfxHwH264Encode
         VAConfigID   m_vaConfig;
 
         // encode params (extended structures)
-#if defined(MFX_VA_ANDROID) && (MFX_ANDROID_VERSION == MFX_HONEYCOMB_VPG)
-        VAEncSequenceParameterBufferH264Ext m_sps;
-        VAEncPictureParameterBufferH264Ext  m_pps;
-        std::vector<VAEncSliceParameterBufferH264Ext> m_slice;
-#else
         VAEncSequenceParameterBufferH264 m_sps;
         VAEncPictureParameterBufferH264  m_pps;
         std::vector<VAEncSliceParameterBufferH264> m_slice;
-#endif
 
         // encode buffer to send vaRender()
         VABufferID m_spsBufferId;
         VABufferID m_hrdBufferId;
         VABufferID m_rateParamBufferId; // VAEncMiscParameterRateControl
         VABufferID m_frameRateId; // VAEncMiscParameterFrameRate
+        VABufferID m_privateParamsId; // VAEncMiscParameterPrivate
         VABufferID m_ppsBufferId;
         std::vector<VABufferID> m_sliceBufferId;
 
-
+        VABufferID m_packedAudHeaderBufferId;
+        VABufferID m_packedAudBufferId;
         VABufferID m_packedSpsHeaderBufferId;
         VABufferID m_packedSpsBufferId;
         VABufferID m_packedPpsHeaderBufferId;
         VABufferID m_packedPpsBufferId;
         VABufferID m_packedSeiHeaderBufferId;
         VABufferID m_packedSeiBufferId;
+        std::vector<VABufferID> m_packeSliceHeaderBufferId;
+        std::vector<VABufferID> m_packedSliceBufferId;
 
-        // map feedbackNumber <-> VASurface
-        typedef struct
-        {
-            VASurfaceID surface;
-            mfxU32 number;
-            mfxU32 idxBs;
 
-        } ExtVASurface;
 
 
         std::vector<ExtVASurface> m_feedbackCache;
         std::vector<ExtVASurface> m_bsQueue;
         std::vector<ExtVASurface> m_reconQueue;
 
-        // workarround
         mfxU32 m_width;
         mfxU32 m_height;
+        ENCODE_CAPS m_caps;
 
-        static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 10;
+        static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 14;
 
-        static const mfxU32 MAX_PACKED_SPSPPS_SIZE = 1024;
-        mfxU8 m_packedSps[MAX_PACKED_SPSPPS_SIZE];
-        mfxU8 m_packedPps[MAX_PACKED_SPSPPS_SIZE];
-        
         UMC::Mutex m_guard;
+        HeaderPacker m_headerPacker;
 
     };
 

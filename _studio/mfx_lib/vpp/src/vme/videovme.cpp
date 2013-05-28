@@ -1,6 +1,6 @@
 /*********************************************************************************\
 **
-** Copyright(c) 2007-2012 Intel Corporation. All Rights Reserved.
+** Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
 **
 ** Project:                Hardware Motion Estimation C Model
 ** File:                IntelVideoVME.cpp
@@ -9,7 +9,7 @@
 ** 
 \*********************************************************************************/
 
-#include "MEforGen7_5.h"
+#include "meforgen7_5.h"
 
 /*****************************************************************************************************/
 VideoVME::VideoVME( )

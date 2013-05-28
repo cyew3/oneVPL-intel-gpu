@@ -11,6 +11,7 @@
 #include "mfx_common_int.h"
 #include "mfxpcp.h"
 #include <stdexcept>
+#include <string>
 
 mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type);
 
@@ -143,6 +144,9 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId)
 
 mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type)
 {
+    if (!in)
+        return MFX_ERR_NULL_PTR;
+
     mfxStatus sts = CheckFrameInfoCodecs(&in->mfx.FrameInfo, in->mfx.CodecId);
     if (sts != MFX_ERR_NONE)
         return sts;

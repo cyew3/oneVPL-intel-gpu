@@ -846,12 +846,14 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
                 break;
             }
 
+#if defined(MFX_ENABLE_IMAGE_STABILIZATION_VPP)
             case (mfxU32)MFX_EXTBUFF_VPP_IMAGE_STABILIZATION:
             {
                 sprintf(cStr, "%s \n", "IMAGE_STAB");
                 OutputDebugStringA(cStr);
                 break;
             }
+#endif
 
             case (mfxU32)MFX_EXTBUFF_VPP_VARIANCE_REPORT:
             {
@@ -925,11 +927,13 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
     }
 
     /* [IStab] FILTER */
+#if defined(MFX_ENABLE_IMAGE_STABILIZATION_VPP)
     if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_IMAGE_STABILIZATION ) )
     {
         newList[index] = MFX_EXTBUFF_VPP_IMAGE_STABILIZATION;
         index++;
     }
+#endif
 
     // Resize for Best Quality
     if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_RESIZE ) )
@@ -1621,10 +1625,12 @@ size_t GetConfigSize( mfxU32 filterId )
         {
             return sizeof(mfxExtVPPFrameRateConversion);
         }
+#if defined(MFX_ENABLE_IMAGE_STABILIZATION_VPP)
     case MFX_EXTBUFF_VPP_IMAGE_STABILIZATION:
         {
             return sizeof(mfxExtVPPImageStab);
         }
+#endif
     default:
         return 0;
     }
@@ -1913,7 +1919,7 @@ mfxU16 MapDNFactor( mfxU16 denoiseFactor )
 } // mfxU16 MapDNFactor( mfxU16 denoiseFactor )
 
 
-mfxStatus CheckExtParam(mfxExtBuffer** ppExtParam, mfxU16 count)
+mfxStatus CheckExtParam(VideoCORE * core, mfxExtBuffer** ppExtParam, mfxU16 count)
 {
     if( (NULL == ppExtParam && count > 0) )
     {
@@ -1953,7 +1959,9 @@ mfxStatus CheckExtParam(mfxExtBuffer** ppExtParam, mfxU16 count)
         mfxExtBuffer* pHint = NULL;
         GetFilterParam( &tmpParam, curId, &pHint);
 
-        sts = ExtendedQuery(curId, pHint);//aya: 3 status's could be returned only: MFX_ERR_NONE, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_UNSUPPORTED
+        //aya: 3 status's could be returned only: MFX_ERR_NONE, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_UNSUPPORTED
+        // AL update: now 4 status, added MFX_WRN_FILTER_SKIPPED
+        sts = ExtendedQuery(core, curId, pHint);
 
         if( MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts )
         {

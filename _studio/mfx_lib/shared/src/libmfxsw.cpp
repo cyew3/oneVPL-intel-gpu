@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
 
 File Name: libmfxsw.cpp
 
@@ -40,8 +40,8 @@ void* g_hModule = NULL; // DLL handle received in DllMain
     #define MFX_PRODUCT_VERSION "0.0.000.0000"
 #endif
 
-const char* g_MfxProductName = "mediasdk_product_name: Intel(r) Media SDK";
-const char* g_MfxCopyright = "mediasdk_copyright: Copyright(c) 2007-2012 Intel Corporation";
+const char* g_MfxProductName = "mediasdk_product_name: Intel(r) Media SDK 2013 for Linux* Servers";
+const char* g_MfxCopyright = "mediasdk_copyright: Copyright(c) 2007-2013 Intel Corporation";
 const char* g_MfxFileVersion = "mediasdk_file_version: " MFX_FILE_VERSION;
 const char* g_MfxProductVersion = "mediasdk_product_version: " MFX_PRODUCT_VERSION;
 #endif
@@ -55,14 +55,25 @@ mfxStatus MFXInit(mfxIMPL implParam, mfxVersion *ver, mfxSession *session)
     mfxIMPL impl = implParam & (MFX_IMPL_VIA_ANY - 1);
     mfxIMPL implInterface = implParam & -MFX_IMPL_VIA_ANY;
 
-#if defined(MFX_TRACE_ENABLE) && defined(MFX_VA)
+#if defined(MFX_TRACE_ENABLE)
+#if defined(_WIN32) || defined(_WIN64)
+
+    #if defined(MFX_VA)
     MFX_TRACE_INIT(NULL, (mfxU8)MFX_TRACE_OUTPUT_REG);
+    #endif // #if defined(MFX_VA)
+
+#else
+
+    MFX_TRACE_INIT(NULL, MFX_TRACE_OUTPUT_TRASH);
+
+#endif // #if defined(_WIN32) || defined(_WIN64)
+#endif // defined(MFX_TRACE_ENABLE) && defined(MFX_VA)
+
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "ThreadName=MSDK app");
     }
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXInit");
     MFX_LTRACE_1(MFX_TRACE_LEVEL_API, "^ModuleHandle^libmfx=", "%p", g_hModule);
-#endif // defined(MFX_TRACE_ENABLE) && defined(MFX_VA)
 
     // check error(s)
     if ((MFX_IMPL_AUTO != impl) &&
@@ -80,15 +91,17 @@ mfxStatus MFXInit(mfxIMPL implParam, mfxVersion *ver, mfxSession *session)
         return MFX_ERR_UNSUPPORTED;
     }
 
-#ifdef MFX_VA
     if ((0 != implInterface) &&
+#if defined(MFX_VA_WIN)
         (MFX_IMPL_VIA_D3D11 != implInterface) &&
         (MFX_IMPL_VIA_D3D9 != implInterface) &&
+#elif defined(MFX_VA_LINUX)
+        (MFX_IMPL_VIA_VAAPI != implInterface) &&
+#endif // MFX_VA_*
         (MFX_IMPL_VIA_ANY != implInterface))
     {
         return MFX_ERR_UNSUPPORTED;
     }
-#endif // MFX_VA
 
 
     // set the adapter number
@@ -244,6 +257,6 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 #else // #if defined(_WIN32) || defined(_WIN64)
 void __attribute__ ((constructor)) dll_init(void)
 {
-    ippStaticInit();
+    ippInit();
 }
 #endif // #if defined(_WIN32) || defined(_WIN64)

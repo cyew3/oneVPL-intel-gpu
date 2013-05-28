@@ -207,7 +207,7 @@ mfxStatus VideoVPPSW::Init(mfxVideoParam *par)
     PicStructMode picStructMode = GetPicStructMode(par->vpp.In.PicStruct, par->vpp.Out.PicStruct);
     m_bDynamicDeinterlace = (DYNAMIC_DI_PICSTRUCT_MODE == picStructMode) ? true : false;
 
-    sts = CheckExtParam(par->ExtParam,  par->NumExtParam);
+    sts = CheckExtParam(m_core, par->ExtParam,  par->NumExtParam);
     if( MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts )
     {
         sts = MFX_ERR_NONE;
@@ -271,6 +271,13 @@ mfxStatus VideoVPPSW::Init(mfxVideoParam *par)
             {
                 m_pHWVPP.reset(0);
             }
+            if (MFX_WRN_PARTIAL_ACCELERATION == sts)
+            {
+                // do not break execution because if filter is optional
+                // we can skip it later
+                sts = MFX_ERR_NONE;
+            }
+            MFX_CHECK_STS( sts );
         }
     }
 
@@ -962,6 +969,22 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
             mfxSts = MFX_ERR_UNDEFINED_BEHAVIOR;
         }
 
+        if (0 != in->ExtParam)
+        {
+            for (int i = 0; i < in->NumExtParam; i++)
+            {
+                MFX_CHECK_NULL_PTR1( in->ExtParam[i] );
+            }
+        }
+
+        if (0 != out->ExtParam)
+        {
+            for (int i = 0; i < out->NumExtParam; i++)
+            {
+                MFX_CHECK_NULL_PTR1(out->ExtParam[i]);
+            }
+        }
+
         if( out->NumExtParam > MAX_NUM_OF_VPP_EXT_PARAM)
         {
             out->NumExtParam = 0;
@@ -1019,7 +1042,7 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
                         {
                             ippsCopy_8u( (Ipp8u*)in->ExtParam[i], (Ipp8u*)out->ExtParam[i], (int)GetConfigSize(in->ExtParam[i]->BufferId) ); 
 
-                            mfxStatus extSts = ExtendedQuery(in->ExtParam[i]->BufferId, out->ExtParam[i]);
+                            mfxStatus extSts = ExtendedQuery(core, in->ExtParam[i]->BufferId, out->ExtParam[i]);
                             if( MFX_ERR_NONE != extSts )
                             {
                                 mfxSts = extSts;

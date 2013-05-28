@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_session.h
 
@@ -20,6 +20,7 @@ File Name: mfx_session.h
 #include <mfxstructures.h>
 #include <mfxvideo++int.h>
 #include <mfxplugin.h>
+#include "mfx_common.h"
 
 // private headers
 #include <mfx_interface_scheduler.h>
@@ -126,9 +127,13 @@ mfxStatus MFXVideo##component##_##func_name formal_param_list \
     mfxStatus mfxRes; \
     try \
     { \
+        if (0 == session) \
+        { \
+            mfxRes = MFX_ERR_INVALID_HANDLE; \
+        } \
         /* the absent components caused many issues in application. \
         check the pointer to avoid extra exceptions */ \
-        if (0 == session->m_p##component.get()) \
+        else if (0 == session->m_p##component.get()) \
         { \
             mfxRes = MFX_ERR_NOT_INITIALIZED; \
         } \
@@ -162,9 +167,13 @@ mfxStatus MFXVideo##component##_##func_name formal_param_list \
     mfxStatus mfxRes; \
     try \
     { \
+        if (0 == session) \
+        { \
+            mfxRes = MFX_ERR_INVALID_HANDLE; \
+        } \
         /* the absent components caused many issues in application. \
         check the pointer to avoid extra exceptions */ \
-        if (0 == session->m_p##component.get()) \
+        else if (0 == session->m_p##component.get()) \
         { \
             mfxRes = MFX_ERR_NOT_INITIALIZED; \
         } \

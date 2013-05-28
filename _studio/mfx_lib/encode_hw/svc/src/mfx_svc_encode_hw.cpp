@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -258,6 +258,14 @@ mfxStatus ImplementationSvc::Query(
     mfxVideoParam * out)
 {
     core, in, out;
+
+    if (core 
+     && core->GetVAType() == MFX_HW_VAAPI
+     && core->GetHWType() <= MFX_HW_IVB)
+    {
+        return MFX_ERR_UNSUPPORTED; // no SVC support on Linux IVB
+    }
+
     return MFX_ERR_NONE;
     //return ImplementationAvc::Query(core, in, out);
 }

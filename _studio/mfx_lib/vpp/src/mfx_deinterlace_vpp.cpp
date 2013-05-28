@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008 - 2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008 - 2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          Deinterlace for Video Pre\Post Processing
@@ -2018,7 +2018,7 @@ mfxStatus MFXVideoVPPDeinterlace::itc_NV12( mfxFrameSurface1* in, mfxFrameSurfac
     mfxFrameData* inData = NULL;
     mfxFrameInfo* inInfo = NULL;
     const mfxU8* pSrc[2] = {NULL, NULL};
-    mfxI32 pSrcStep[2]   = {NULL, NULL};
+    mfxI32 pSrcStep[2]   = {0, 0};
 
     mfxU32  inOffset0 = 0, inOffset1  = 0;
 

@@ -16,6 +16,7 @@
 #include <functional>
 #include "mfx_h264_encode_hw_utils.h"
 #include "mfx_task.h"
+#include "vm_time.h"
 
 #pragma warning(disable: 4127)
 
@@ -1686,7 +1687,7 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
                 {
                     sts = impl.m_ddi[encIdx]->QueryStatus(dummyTask, interlace ? !firstFieldId : firstFieldId);
                     if (sts == MFX_WRN_DEVICE_BUSY)
-                        Sleep(5);
+                        vm_time_sleep(5);
                 } while (sts == MFX_WRN_DEVICE_BUSY);
 
                 if (sts != MFX_ERR_NONE)

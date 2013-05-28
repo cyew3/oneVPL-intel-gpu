@@ -419,11 +419,11 @@ namespace MfxHwVideoProcessing
 
             std::vector<mfxFrameSurface1 *> m_LockedSurfacesList;
 
-            long double m_inFrameTime;
-            long double m_outFrameTime;
-            long double m_externalDeltaTime;
-            long double m_timeFrameInterval;
-            bool        m_bDuplication;
+            mfxF64 m_inFrameTime;
+            mfxF64 m_outFrameTime;
+            mfxF64 m_externalDeltaTime;
+            mfxF64 m_timeFrameInterval;
+            bool   m_bDuplication;
 
             RateRational m_frcRational[2];
 

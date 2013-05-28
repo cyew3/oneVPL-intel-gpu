@@ -142,6 +142,11 @@ struct MFX_SCHEDULER_TASK : public mfxDependencyItem<MFX_TASK_NUM_DEPENDENCIES>
     // bad practice to get cross links, but this is how our scheduler designed 
     mfxSchedulerCore *m_pSchedulerCore;
 
+protected:
+    // Destructor is protected to avoid deletion the object by occasion.
+    virtual
+    ~MFX_SCHEDULER_TASK(void) {}
+
 private:
     // Constructor. Because scheduler's tasks is a limited resource,
     // prevent task creation on the stack.

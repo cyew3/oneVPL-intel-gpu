@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2010-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2010-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          FrameRateConversion Video Pre\Post Processing
@@ -69,7 +69,7 @@ private:
 
     typedef struct 
     {
-        long double  deltaTime;
+        mfxF64  deltaTime;
 
         bool         bReadyOutput;
 
@@ -127,9 +127,9 @@ private:
     mfxU64         m_timeStamp;      // only for sync part
     mfxU64         m_deltaTimeStamp; // only for sync part
 
-    long double    m_inFrameTime;
-    long double    m_outFrameTime;
-    long double    m_timeFrameInterval;    
+    mfxF64    m_inFrameTime;
+    mfxF64    m_outFrameTime;
+    mfxF64    m_timeFrameInterval;    
 
     NativeFRCState m_nativeSyncState;
     NativeFRCState m_nativeProcessState;

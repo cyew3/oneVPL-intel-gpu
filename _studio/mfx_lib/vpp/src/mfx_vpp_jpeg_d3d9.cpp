@@ -176,7 +176,7 @@ mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfac
         MFX_SAFE_CALL(m_pCore->GetFrameHDL(m_surfaces[index].Data.MemId, (mfxHDL *)&hdl));
 
         {
-            UMC::AutomaticMutex guard(m_guard.ExtractHandle());
+            UMC::AutomaticUMCMutex guard(m_guard);
             AssocIdx.insert(std::pair<mfxMemId, mfxI32>(pInputSurface->Data.MemId, index));
         }
     }
@@ -261,7 +261,7 @@ mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfac
         MFX_SAFE_CALL(m_pCore->GetFrameHDL(m_surfaces[index].Data.MemId, (mfxHDL *)&hdl));
 
         {
-            UMC::AutomaticMutex guard(m_guard.ExtractHandle());
+            UMC::AutomaticUMCMutex guard(m_guard);
             AssocIdx.insert(std::pair<mfxMemId, mfxI32>(pInputSurfaceTop->Data.MemId, index));
         }
     }
@@ -335,7 +335,7 @@ mfxStatus VideoVppJpegD3D9::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurface,
     if(m_isD3DToSys)
     {
         {
-            UMC::AutomaticMutex guard(m_guard.ExtractHandle());
+            UMC::AutomaticUMCMutex guard(m_guard);
 
             std::map<mfxMemId, mfxI32>::iterator it;
             it = AssocIdx.find(pInputSurface->Data.MemId);
@@ -395,7 +395,7 @@ mfxStatus VideoVppJpegD3D9::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurfaceT
     if(m_isD3DToSys)
     {
         {
-            UMC::AutomaticMutex guard(m_guard.ExtractHandle());
+            UMC::AutomaticUMCMutex guard(m_guard);
 
             std::map<mfxMemId, mfxI32>::iterator it;
             it = AssocIdx.find(pInputSurfaceTop->Data.MemId);

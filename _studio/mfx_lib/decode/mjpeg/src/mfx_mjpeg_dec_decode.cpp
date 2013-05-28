@@ -15,7 +15,9 @@
 
 #include "mfx_mjpeg_task.h"
 
+#if defined(_WIN32) || defined(_WIN64)
 #include <atlbase.h>
+#endif
 
 #include "mfx_common.h"
 #include "mfx_common_decode_int.h"
@@ -398,7 +400,7 @@ mfxStatus VideoDECODEMJPEG::Reset(mfxVideoParam *par)
         }
         
         {
-            UMC::AutomaticMutex guard(m_guard.ExtractHandle());
+            UMC::AutomaticUMCMutex guard(m_guard);
 
             mfxU32 picToCollect = (MFX_PICSTRUCT_PROGRESSIVE == m_vPar.mfx.FrameInfo.PicStruct) ?
                 (1) : (2);
@@ -436,7 +438,7 @@ mfxStatus VideoDECODEMJPEG::Reset(mfxVideoParam *par)
     pLastTask = NULL;
     while(!m_freeTasks.empty())
     {
-        UMC::AutomaticMutex guard(m_guard.ExtractHandle());
+        UMC::AutomaticUMCMutex guard(m_guard);
         delete m_freeTasks.front();
         m_freeTasks.pop();
     }
@@ -478,7 +480,7 @@ mfxStatus VideoDECODEMJPEG::Close(void)
         }
 
         {
-            UMC::AutomaticMutex guard(m_guard.ExtractHandle());
+            UMC::AutomaticUMCMutex guard(m_guard);
 
             mfxU32 picToCollect = (MFX_PICSTRUCT_PROGRESSIVE == m_vPar.mfx.FrameInfo.PicStruct) ?
                 (1) : (2);
@@ -517,7 +519,7 @@ mfxStatus VideoDECODEMJPEG::Close(void)
     // delete free tasks queue
     while (false == m_freeTasks.empty())
     {
-        UMC::AutomaticMutex guard(m_guard.ExtractHandle());
+        UMC::AutomaticUMCMutex guard(m_guard);
         delete m_freeTasks.front();
         m_freeTasks.pop();
     }
@@ -890,7 +892,7 @@ mfxStatus VideoDECODEMJPEG::MJPEGAbortProc(void *pState, void *pParam)
         pTask->Reset();
 
         {
-            UMC::AutomaticMutex guard(obj.m_guard.ExtractHandle());
+            UMC::AutomaticUMCMutex guard(obj.m_guard);
             obj.m_freeTasks.push(pTask);
         }
     }
@@ -943,7 +945,7 @@ mfxStatus VideoDECODEMJPEG::MJPEGCompleteProc(void *pState, void *pParam,
 
         task.Reset();
         {
-            UMC::AutomaticMutex guard(obj.m_guard.ExtractHandle());
+            UMC::AutomaticUMCMutex guard(obj.m_guard);
             obj.m_freeTasks.push(&task);
         }
     }
@@ -952,7 +954,7 @@ mfxStatus VideoDECODEMJPEG::MJPEGCompleteProc(void *pState, void *pParam,
 #if defined (MFX_VA_WIN)        
         ThreadTaskInfo * info = (ThreadTaskInfo *)pParam;
 
-        UMC::AutomaticMutex guard(obj.m_guard.ExtractHandle());
+        UMC::AutomaticUMCMutex guard(obj.m_guard);
 
         mfxI32 index = -1;        
         for (size_t i = 0; i < obj.m_dsts.size(); i++)
@@ -1176,7 +1178,7 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
 
             // remove the ready task from the queue
             {
-                UMC::AutomaticMutex guard(m_guard.ExtractHandle());
+                UMC::AutomaticUMCMutex guard(m_guard);
                 m_freeTasks.pop();
             }
         }
@@ -1264,7 +1266,7 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
 
             // save the task object into the queue
             {
-                UMC::AutomaticMutex guard(m_guard.ExtractHandle());
+                UMC::AutomaticUMCMutex guard(m_guard);
                 m_freeTasks.push(pTask.release());
             }
         }
@@ -1272,7 +1274,7 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
     else
     {
 #if defined (MFX_VA_WIN)
-        UMC::AutomaticMutex guard(m_guard.ExtractHandle());
+        UMC::AutomaticUMCMutex guard(m_guard);
         
         if(m_dsts.size() >= (m_vPar.AsyncDepth ? m_vPar.AsyncDepth : m_core->GetAutoAsyncDepth()))
         {
@@ -1517,7 +1519,7 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
     if (MFX_PLATFORM_SOFTWARE != m_platform)
     {
         {
-            UMC::AutomaticMutex guard(m_guard.ExtractHandle());
+            UMC::AutomaticUMCMutex guard(m_guard);
             m_dsts.push_back(m_dst);
         }
         m_numPic = 0;

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2010-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2010-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -31,10 +31,20 @@
 typedef IDirectXVideoDecoderService*    _mfxPlatformAccelerationService;
 typedef IDirect3DSurface9*              _mfxPlatformVideoSurface;
 
-#else
-#if defined(LINUX32) || defined(LINUX64)
-#include <va/va.h>
-#endif
+#else // #if (defined(_WIN32) || defined(_WIN64)) 
+
+#if (defined(LINUX32) || defined(LINUX64) )
+    #if defined(MFX_VA)
+        /* That's tricky: if LibVA will not be installed on the machine, you should be able
+         * to build SW Media SDK and some apps in SW mode. Thus, va.h should not be visible.
+         * Since we develop on machines where LibVA is installed, we forget about LibVA-free
+         * build sometimes. So, that's the reminder why MFX_VA protection was added here.
+         */
+        #include <va/va.h>
+        typedef VADisplay                       _mfxPlatformAccelerationService;
+        typedef VASurfaceID                     _mfxPlatformVideoSurface;
+    #endif // #if defined(MFX_VA)
+#endif // #if (defined(LINUX32) || defined(LINUX64) )
 
 #ifndef D3DDDIFORMAT
 #define D3DDDIFORMAT        D3DFORMAT
@@ -57,12 +67,6 @@ typedef unsigned long       DWORD;
 
 #define FALSE               0
 #define TRUE                1
-
-//
-#if defined(LINUX32) || defined(LINUX64)
-typedef VADisplay                       _mfxPlatformAccelerationService;
-typedef VASurfaceID                     _mfxPlatformVideoSurface;
-#endif
 
 // DXVA2 types
 typedef void IDirect3DSurface9;
@@ -122,6 +126,6 @@ typedef struct _D3DAES_CTR_IV
 //static const GUID DXVA2_Intel_Encode_AVC = 0;
 //static const GUID DXVA2_Intel_Encode_MPEG2 = 1;
 
-#endif // MFX_VA_LINUX
+#endif // #if (defined(_WIN32) || defined(_WIN64)) 
 
 #endif // __MFX_PLATFORM_HEADERS_H__

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //
@@ -34,6 +34,8 @@ struct MFX_DEPENDENCY_LIST_ITEM
 class mfxDependencyItemInterface
 {
 public:
+
+    virtual ~mfxDependencyItemInterface() {};
 
     //
     // Methods for the base object. Some others objects may be dependent on it.

@@ -2,8 +2,6 @@ LOCAL_PATH:= $(call my-dir)
 
 include $(MFX_HOME)/android/mfx_env.mk
 
-ifeq ($(MFX_ANDROID_NDK_BUILD), true)
-
 MFX_DECODERS = h264 mpeg2 vc1 mjpeg vp8
 MFX_ENCODERS = h264 mpeg2 vc1 mjpeg mvc svc
 
@@ -113,11 +111,13 @@ include $(MFX_HOME)/android/mfx_defs_internal.mk
 
 LOCAL_SRC_FILES := \
     $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_DIRS_IMPL), $(wildcard $(LOCAL_PATH)/$(dir)/src/*.cpp))) \
-    $(MFX_SHARED_FILES_IMPL)
+    $(MFX_SHARED_FILES_IMPL) \
+    $(patsubst $(LOCAL_PATH)/%, %, $(wildcard $(LOCAL_PATH)/vpp/src/vme/*.cpp))
 
 LOCAL_C_INCLUDES += \
     $(foreach dir, $(MFX_DIRS) $(MFX_DIRS_IMPL), $(wildcard $(LOCAL_PATH)/$(dir)/include)) \
-    $(foreach dir, $(UMC_DIRS) $(UMC_DIRS_IMPL), $(wildcard $(MFX_HOME)/_studio/shared/umc/codec/$(dir)/include))
+    $(foreach dir, $(UMC_DIRS) $(UMC_DIRS_IMPL), $(wildcard $(MFX_HOME)/_studio/shared/umc/codec/$(dir)/include)) \
+    vpp/include/vme
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libmfx_lib_merged_$(MFX_IMPL)
@@ -148,10 +148,22 @@ LOCAL_STATIC_LIBRARIES += \
 
 LOCAL_LDFLAGS += \
     -Wl,--version-script=$(LOCAL_PATH)/libmfx.map \
-    -lippj_l -lippvc_l -lippcc_l -lippcv_l -lippi_l -lipps_l -lippcore_l -ldl
+    -lippj_l -lippvc_l -lippcc_l -lippcv_l -lippi_l -lipps_l -lippcore_l -lippmsdk_l
 
 ifeq ($(MFX_IMPL), hw)
-    LOCAL_LDFLAGS += -lva
+
+    ifeq ($(MFX_ANDROID_NDK_BUILD), false)
+        LOCAL_SHARED_LIBRARIES := libstlport-mfx libgabi++-mfx libva libdl
+    else
+        LOCAL_LDFLAGS += -lva -ldl
+    endif
+
+else
+    ifeq ($(MFX_ANDROID_NDK_BUILD), false)
+        LOCAL_SHARED_LIBRARIES := libstlport-mfx libgabi++-mfx libdl
+    else
+        LOCAL_LDFLAGS += -ldl
+    endif
 endif
 
 LOCAL_MODULE_TAGS := optional
@@ -159,4 +171,4 @@ LOCAL_MODULE := libmfx$(MFX_IMPL)32
 
 include $(BUILD_SHARED_LIBRARY)
 
-endif # ifeq ($(MFX_ANDROID_NDK_BUILD), true)
+

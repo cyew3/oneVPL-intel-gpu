@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008 - 2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008 - 2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          FrameRateConversion Video Pre\Post Processing
@@ -208,7 +208,7 @@ mfxStatus MFXVideoVPPFrameRateConversion::RunFrameVPP_NativeFRC(mfxFrameSurface1
 {
     mfxStatus sts;
 
-    long double deltaTime = m_nativeProcessState.deltaTime + m_timeFrameInterval;
+    mfxF64 deltaTime = m_nativeProcessState.deltaTime + m_timeFrameInterval;
 
     if (deltaTime <= -m_outFrameTime)
     {
@@ -499,8 +499,8 @@ mfxStatus MFXVideoVPPFrameRateConversion::Init(mfxFrameInfo* In, mfxFrameInfo* O
     m_deltaTimeStamp = (Out->FrameRateExtD * MFX_TIME_STAMP_FREQUENCY)/ Out->FrameRateExtN;
 
     // calculate time of one frame in ms
-    m_inFrameTime = 1000.0 / ((double)In->FrameRateExtN / (double)In->FrameRateExtD);
-    m_outFrameTime = 1000.0 / ((double)Out->FrameRateExtN / (double)Out->FrameRateExtD);
+    m_inFrameTime = 1000.0 / ((mfxF64)In->FrameRateExtN / (mfxF64)In->FrameRateExtD);
+    m_outFrameTime = 1000.0 / ((mfxF64)Out->FrameRateExtN / (mfxF64)Out->FrameRateExtD);
 
     // calculate time interval between input and output frames
     m_timeFrameInterval = m_inFrameTime - m_outFrameTime; 
@@ -626,7 +626,7 @@ mfxU32  MFXVideoVPPFrameRateConversion::UpdateFrameOrder( mfxFrameSurface1 *in )
 
 mfxStatus MFXVideoVPPFrameRateConversion::CheckProduceOutput_NativeFRC(mfxFrameSurface1 *in, mfxFrameSurface1 *out )
 {
-    long double deltaTime = m_nativeSyncState.deltaTime + m_timeFrameInterval;
+    mfxF64 deltaTime = m_nativeSyncState.deltaTime + m_timeFrameInterval;
 
     if (deltaTime <= -m_outFrameTime)
     {

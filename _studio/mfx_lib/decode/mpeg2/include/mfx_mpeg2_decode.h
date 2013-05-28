@@ -21,7 +21,6 @@ typedef struct _DXVA_Status_VC1 *DXVA_Status_VC1;
 #include "mfx_common.h"
 #ifdef MFX_ENABLE_MPEG2_VIDEO_DECODE
 #include "mfxvideo++int.h"
-#include "umc_automatic_mutex.h"
 #include "mfx_mpeg2_dec_common.h"
 #include "umc_mpeg2_dec_base.h"
 #include "umc_data_pointers_copy.h"
@@ -90,7 +89,7 @@ typedef struct _MParam
     mfx_UMC_FrameAllocator *m_FrameAllocator;
     mfxVideoParam m_vPar;
     Ipp32s *mid;
-    vm_mutex  *m_Locker;
+    UMC::Mutex *m_pGuard;
     mfxBitstream *m_frame;
     bool *m_frame_in_use;
 
@@ -235,7 +234,7 @@ protected:
     Ipp32u maxNumFrameBuffered;
 
     mfxU16 m_extendedPicStruct;
-    UMC::Mutex m_Locker;
+    UMC::Mutex m_guard;
     //get index to read input data:
     bool SetCurr_m_frame()
     {

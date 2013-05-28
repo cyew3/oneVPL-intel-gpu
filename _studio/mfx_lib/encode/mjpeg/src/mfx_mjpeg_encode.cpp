@@ -561,7 +561,7 @@ mfxStatus MJPEGEncodeTask::EncodePiece(const mfxU32 threadNumber)
     mfxU32 pieceNum = 0;
 
     {
-        UMC::AutomaticMutex guard(m_guard.ExtractHandle());
+        UMC::AutomaticUMCMutex guard(m_guard);
         pieceNum = encodedPieces;
 
         if (pieceNum >= NumPiecesCollected())
@@ -601,7 +601,7 @@ mfxStatus MFXVideoENCODEMJPEG::MJPEGENCODEAbortProc(void *pState, void *pParam)
     pTask->Reset();
 
     {
-        UMC::AutomaticMutex guard(obj.m_guard.ExtractHandle());
+        UMC::AutomaticUMCMutex guard(obj.m_guard);
         obj.m_freeTasks.push(pTask);
     }
 
@@ -651,7 +651,7 @@ mfxStatus MFXVideoENCODEMJPEG::MJPEGENCODECompleteProc(void *pState, void *pPara
     pTask->Reset();
 
     {
-        UMC::AutomaticMutex guard(obj.m_guard.ExtractHandle());
+        UMC::AutomaticUMCMutex guard(obj.m_guard);
         obj.m_freeTasks.push(pTask);
     }
 
@@ -1429,7 +1429,7 @@ mfxStatus MFXVideoENCODEMJPEG::Reset(mfxVideoParam *par)
     pLastTask = NULL;
     while(!m_freeTasks.empty())
     {
-        UMC::AutomaticMutex guard(m_guard.ExtractHandle());
+        UMC::AutomaticUMCMutex guard(m_guard);
         delete m_freeTasks.front();
         m_freeTasks.pop();
     }
@@ -1506,7 +1506,7 @@ mfxStatus MFXVideoENCODEMJPEG::Close(void)
     // delete free tasks queue
     while (false == m_freeTasks.empty())
     {
-        UMC::AutomaticMutex guard(m_guard.ExtractHandle());
+        UMC::AutomaticUMCMutex guard(m_guard);
         delete m_freeTasks.front();
         m_freeTasks.pop();
     }
@@ -1853,7 +1853,7 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
 
             // save the task object into the queue
             {
-                UMC::AutomaticMutex guard(m_guard.ExtractHandle());
+                UMC::AutomaticUMCMutex guard(m_guard);
                 m_freeTasks.push(pTask.release());
             }
         }
@@ -2010,7 +2010,7 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
 
         MJPEGEncodeTask *pTask = NULL;
         {
-            UMC::AutomaticMutex guard(m_guard.ExtractHandle());
+            UMC::AutomaticUMCMutex guard(m_guard);
             pTask = m_freeTasks.front();
         }
 
@@ -2027,7 +2027,7 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
 
         // remove the ready task from the queue
         {
-            UMC::AutomaticMutex guard(m_guard.ExtractHandle());
+            UMC::AutomaticUMCMutex guard(m_guard);
             m_freeTasks.pop();
         }
     }

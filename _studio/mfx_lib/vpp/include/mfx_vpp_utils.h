@@ -126,9 +126,9 @@ mfxStatus CheckProtectedMode( mfxU16 mode );
 
 mfxU16 vppMax_16u(const mfxU16* pSrc, int len);
 
-mfxStatus ExtendedQuery(mfxU32 filterName, mfxExtBuffer* pHint);
+mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint);
 
-mfxStatus CheckExtParam(mfxExtBuffer** ppExtParam, mfxU16 count);
+mfxStatus CheckExtParam(VideoCORE * core, mfxExtBuffer** ppExtParam, mfxU16 count);
 
 // gamut processing
 mfxStatus CheckTransferMatrix( mfxU16 transferMatrix );

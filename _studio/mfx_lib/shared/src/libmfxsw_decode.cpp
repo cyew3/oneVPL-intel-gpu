@@ -118,6 +118,12 @@ mfxStatus MFXVideoDECODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     MFX_CHECK(out, MFX_ERR_NULL_PTR);
 
+    if ((0 != in) && (MFX_HW_VAAPI == session->m_pCORE->GetVAType()))
+    {
+        // protected content not supported on Linux
+        MFX_CHECK(0 == in->Protected, MFX_ERR_UNSUPPORTED);
+    }
+
     MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, in);
 
@@ -342,6 +348,7 @@ mfxStatus MFXVideoDECODE_Init(mfxSession session, mfxVideoParam *par)
             // create a new instance
             session->m_bIsHWDECSupport = true;
             session->m_pDECODE.reset(CreateDECODESpecificClass(par->mfx.CodecId, session->m_pCORE.get(), session));
+            MFX_CHECK(session->m_pDECODE.get(), MFX_ERR_INVALID_VIDEO_PARAM);
         }
         
         mfxRes = session->m_pDECODE->Init(par);
@@ -352,6 +359,7 @@ mfxStatus MFXVideoDECODE_Init(mfxSession session, mfxVideoParam *par)
             {
                 session->m_bIsHWDECSupport = false;
                 session->m_pDECODE.reset(CreateDECODESpecificClass(par->mfx.CodecId, session->m_pCORE.get(), session));
+                MFX_CHECK(session->m_pDECODE.get(), MFX_ERR_INVALID_VIDEO_PARAM);
                 mfxRes = session->m_pDECODE->Init(par);
             }
 

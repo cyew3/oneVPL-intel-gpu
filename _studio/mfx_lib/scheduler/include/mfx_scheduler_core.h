@@ -404,6 +404,7 @@ private:
         return *this;
     }
 
+    mfxSchedulerCore(const mfxSchedulerCore &s);        // No copy CTR
 #if defined(MFX_SCHEDULER_LOG)
     // Handle to the logging object
     log_t m_hLog;

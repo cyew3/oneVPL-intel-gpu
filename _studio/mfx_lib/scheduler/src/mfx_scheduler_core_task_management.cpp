@@ -113,7 +113,7 @@ mfxStatus mfxSchedulerCore::GetTask(MFX_CALL_INFO &callInfo,
                                     mfxTaskHandle previousTask,
                                     const mfxU32 threadNum)
 {
-    UMC::AutomaticMutex guard(m_guard.ExtractHandle());
+    UMC::AutomaticUMCMutex guard(m_guard);
     int prevTaskPriority = -1;
     mfxU32 run;
     mfxU64 totalTimeSpent[MFX_PRIORITY_NUMBER], timeSpent[MFX_PRIORITY_NUMBER];
@@ -423,7 +423,7 @@ void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
 
     // enter the protected code section
     {
-        UMC::AutomaticMutex guard(m_guard.ExtractHandle());
+        UMC::AutomaticUMCMutex guard(m_guard);
         MFX_SCHEDULER_TASK *pTask = m_ppTaskLookUpTable[pCallInfo->taskHandle.taskID];
         mfxU32 curTime;
 

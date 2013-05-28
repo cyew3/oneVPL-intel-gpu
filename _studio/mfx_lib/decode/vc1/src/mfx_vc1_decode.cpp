@@ -1085,6 +1085,8 @@ mfxStatus MFXVideoDECODEVC1::GetVideoParam(mfxVideoParam *par)
 {
     if (!m_bIsDecInit)
         return MFX_ERR_NOT_INITIALIZED;
+    if (!par)
+        return MFX_ERR_NULL_PTR;
 
     mfxStatus       MFXSts = MFX_ERR_NONE;
  

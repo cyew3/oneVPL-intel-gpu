@@ -184,6 +184,12 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     MFX_CHECK(out, MFX_ERR_NULL_PTR);
 
+    if ((0 != in) && (MFX_HW_VAAPI == session->m_pCORE->GetVAType()))
+    {
+        // protected content not supported on Linux
+        MFX_CHECK(0 == in->Protected, MFX_ERR_UNSUPPORTED);
+    }
+
     mfxStatus mfxRes;
     MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, in);

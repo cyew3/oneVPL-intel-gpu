@@ -1,6 +1,6 @@
 /*********************************************************************************\
 **
-** Copyright(c) 2007-2012 Intel Corporation. All Rights Reserved.
+** Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
 **
 ** Project:                Hardware Motion Estimation C Model
 ** File:                MEforGen75.H
@@ -18,8 +18,14 @@
 //#include <memory.h>
 #include <string.h>
 
-#include "VideoVME.h"
+#include "videovme.h"
 //#include "VideoDefs.h"
+
+#if defined(_WIN32) || defined(_WIN64)
+  #define VME_ALIGN_DECL(X) __declspec(align(X))
+#else
+  #define VME_ALIGN_DECL(X) __attribute__ ((aligned(X)))
+#endif
 
 // Gen7 specific defines
 #define        ADAPTIVE_CTRL        0x20

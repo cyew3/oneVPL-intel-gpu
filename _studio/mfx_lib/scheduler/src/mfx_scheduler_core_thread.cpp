@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2009-2012 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -15,7 +15,9 @@
 #include <stdio.h>
 #include <vm_time.h>
 
+#if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
+#endif
 
 mfxStatus mfxSchedulerCore::StartWakeUpThread(void)
 {
@@ -51,6 +53,8 @@ mfxStatus mfxSchedulerCore::StartWakeUpThread(void)
     }
     else
         m_zero_thread_wait = 1; // w/o events main thread should poll driver to get status 
+#else
+    m_zero_thread_wait = 1;
 #endif // defined(_WIN32) || defined(_WIN64)
 
     return MFX_ERR_NONE;

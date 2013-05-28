@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2010-2012 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2010-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -314,7 +314,7 @@ mfxStatus mfxSchedulerCore::WaitForDependencyResolved(const void *pDependency)
 
     // find a handle to wait
     {
-        UMC::AutomaticMutex guard(m_guard.ExtractHandle());
+        UMC::AutomaticUMCMutex guard(m_guard);
         mfxU32 curIdx;
 
         for (curIdx = 0; curIdx < m_numDependencies; curIdx += 1)
@@ -360,7 +360,7 @@ mfxStatus mfxSchedulerCore::WaitForTaskCompletion(const void *pOwner)
 
     // make sure that threads are running
     {
-        UMC::AutomaticMutex guard(m_guard.ExtractHandle());
+        UMC::AutomaticUMCMutex guard(m_guard);
 
         ResetWaitingTasks(pOwner);
     }
@@ -375,7 +375,7 @@ mfxStatus mfxSchedulerCore::WaitForTaskCompletion(const void *pOwner)
         // make searching in a separate code block,
         // to avoid dead-locks with other threads.
         {
-            UMC::AutomaticMutex guard(m_guard.ExtractHandle());
+            UMC::AutomaticUMCMutex guard(m_guard);
             int priority;
 
             priority = MFX_PRIORITY_HIGH;
@@ -481,7 +481,7 @@ mfxStatus mfxSchedulerCore::Reset(void)
 
     // enter guarded section
     {
-        UMC::AutomaticMutex guard(m_guard.ExtractHandle());
+        UMC::AutomaticUMCMutex guard(m_guard);
 
         // clean up the working queue
         ScrubCompletedTasks(true);
@@ -635,7 +635,7 @@ mfxStatus mfxSchedulerCore::AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoi
 
     // enter protected section
     {
-        UMC::AutomaticMutex guard(m_guard.ExtractHandle());
+        UMC::AutomaticUMCMutex guard(m_guard);
         mfxStatus mfxRes;
         MFX_SCHEDULER_TASK *pTask, **ppTemp;
         mfxTaskHandle handle;

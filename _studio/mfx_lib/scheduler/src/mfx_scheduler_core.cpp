@@ -643,7 +643,7 @@ void mfxSchedulerCore::RegisterTaskDependencies(MFX_SCHEDULER_TASK  *pTask)
 void mfxSchedulerCore::PrintTaskInfo(void)
 {
 #if defined(ENABLE_TASK_DEBUG)
-    UMC::AutomaticMutex guard(m_guard.ExtractHandle());
+    UMC::AutomaticUMCMutex guard(m_guard);
 
     PrintTaskInfoUnsafe();
 #endif // defined(ENABLE_TASK_DEBUG)

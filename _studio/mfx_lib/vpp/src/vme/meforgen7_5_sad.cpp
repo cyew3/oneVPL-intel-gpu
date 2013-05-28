@@ -1,6 +1,6 @@
 /*********************************************************************************\
 **
-** Copyright(c) 2007-2012 Intel Corporation. All Rights Reserved.
+** Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
 **
 ** Project:                Hardware Motion Estimation C Model
 ** File:                MEforGen75_SAD.cpp
@@ -11,13 +11,13 @@
 #pragma warning( disable : 4702 )
 #pragma warning( disable : 4100 )
 
-#include "MEforGen7_5.h"
+#include "meforgen7_5.h"
 #if (__HAAR_SAD_OPT == 1)
 #include "emmintrin.h"
 #ifdef __SSSE3_ENABLE
 #include "tmmintrin.h"
 #endif
-#define __ALIGN8  __declspec (align(8))
+#define __ALIGN8  VME_ALIGN_DECL(8)
 #endif
 
 #include "ipp.h"
@@ -183,14 +183,14 @@ void MEforGen75::GetSad4x4_par(U8 *src, U8 *blk, int blkw, int *sad)
 #endif
 
 #ifdef __SSSE3_ENABLE
-    __declspec(align(16)) short h_0_13[8];
+    VME_ALIGN_DECL(16) short h_0_13[8];
 #else
-    __declspec(align(16)) short h_0_7a[8];
-    __declspec(align(16)) short h_0_7b[8];
-    __declspec(align(16)) short h_8_11[8];
-    __declspec(align(16)) short h_12_13[8];
+    VME_ALIGN_DECL(16) short h_0_7a[8];
+    VME_ALIGN_DECL(16) short h_0_7b[8];
+    VME_ALIGN_DECL(16) short h_8_11[8];
+    VME_ALIGN_DECL(16) short h_12_13[8];
 #endif
-    __declspec(align(16)) short s[8];
+    VME_ALIGN_DECL(16) short s[8];
 
     // Extract 16-bit values from 128-bit MMX registers
 #ifdef __SSSE3_ENABLE
@@ -480,8 +480,8 @@ int MEforGen75::GetSad4x4(U8 *src, U8 *blk, int blkw)
         
         //H_12_13 = _mm_sad_epu8(H_12_13, zero_reg);
 
-        __declspec(align(16)) short h[16];
-        __declspec(align(16)) short s[8];
+        VME_ALIGN_DECL(16) short h[16];
+        VME_ALIGN_DECL(16) short s[8];
         
         // Extract 16-bit values from 128-bit MMX registers
         _mm_store_si128((__m128i*)&h[0], H_0_7);
