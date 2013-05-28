@@ -1986,7 +1986,7 @@ void PackerVA::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSli
     const H264DecoderFrame *pCurrentFrame = pSliceInfo->m_pFrame;
 
     UMCVACompBuffer *picParamBuf;
-    VAPictureParameterBufferH264* pPicParams_H264 = (VAPictureParameterBufferH264*)m_va->GetCompBuffer(
+    VAPictureParameterBufferH264* pPicParams_H264 = (VAPictureParameterBufferH264*)m_va->GetCompBuffer(VAPictureParameterBufferType, &picParamBuf, sizeof(VAPictureParameterBufferH264));
     if (!pPicParams_H264)
         throw h264_exception(UMC_ERR_FAILED);
 
