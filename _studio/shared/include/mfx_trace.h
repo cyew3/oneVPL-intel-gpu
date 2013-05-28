@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2013 Intel Corporation. All Rights Reserved.
 
 *********************************************************************************
 
@@ -22,11 +22,13 @@ Purpose: contains definition data for MFX tracing.
 #if defined(_WIN32) || defined(_WIN64)
 #define MFX_TRACE_ENABLE_ETW
 #endif // #if defined(_WIN32) || defined(_WIN64)
+
+//#define MFX_TRACE_ENABLE_ITT
 //#define MFX_TRACE_ENABLE_TEXTLOG
 //#define MFX_TRACE_ENABLE_STAT
 //#define MFX_TRACE_ENABLE_TAL
 
-#if defined(MFX_TRACE_ENABLE_TEXTLOG) || defined(MFX_TRACE_ENABLE_STAT) || defined(MFX_TRACE_ENABLE_ETW)
+#if defined(MFX_TRACE_ENABLE_TEXTLOG) || defined(MFX_TRACE_ENABLE_STAT) || defined(MFX_TRACE_ENABLE_ETW) || defined(MFX_TRACE_ENABLE_ITT)
 #define MFX_TRACE_ENABLE
 #endif
 #endif // #ifndef MFX_TRACE_DISABLE
@@ -72,6 +74,7 @@ enum
     MFX_TRACE_OUTPUT_STAT   = 0x02,
     MFX_TRACE_OUTPUT_ETW    = 0x04,
     MFX_TRACE_OUTPUT_TAL    = 0x08,
+    MFX_TRACE_OUTPUT_ITT    = 0x10,
     // special keys
     MFX_TRACE_OUTPUT_ALL     = 0xFFFFFFFF,
     MFX_TRACE_OUTPUT_REG     = MFX_TRACE_OUTPUT_ALL // output mode should be read from registry
