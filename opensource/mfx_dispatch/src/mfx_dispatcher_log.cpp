@@ -411,6 +411,7 @@ public:
 };
 #endif
 
+#if defined(DISPATCHER_LOG_REGISTER_FILE_WRITER)
 template <>
 class SinkRegistrator<FileSink>
 {
@@ -429,7 +430,7 @@ void FileSink::Write(int level, int /*opcode*/, char * msg, va_list argptr)
         vfprintf(m_hdl, msg, argptr);
     }
 }
-
+#endif
 
 //////////////////////////////////////////////////////////////////////////
 //singletons initialization section

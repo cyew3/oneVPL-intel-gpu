@@ -226,7 +226,9 @@ protected:
     ETWHandlerFactory(){}
 };
 #endif
+#endif // #if defined(_WIN32) || defined(_WIN64)
 
+#if defined(DISPATCHER_LOG_REGISTER_FILE_WRITER)
 class FileSink 
     : public DSSingleTone<FileSink>
     , public IMsgHandler
@@ -243,11 +245,15 @@ private:
     FILE * m_hdl;
     FileSink(const std::string & log_file)
     {
+#if defined(_WIN32) || defined(_WIN64)
         fopen_s(&m_hdl, log_file.c_str(), "a");
+#else
+        m_hdl = fopen(log_file.c_str(), "a");
+#endif
     }
     
 };
-#endif // #if defined(_WIN32) || defined(_WIN64)
+#endif
 
 //-----utility functions
 //since they are not called outside of macro we can define them here
