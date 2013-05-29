@@ -1824,7 +1824,7 @@ mfxStatus GeneralAllocator::Init(mfxAllocatorParams *pParams)
 
     CHECK_RESULT(MFX_ERR_NONE, sts, sts);
 
-#ifdef VAAPI_SURFACES_SUPPORT
+#ifdef LIBVA_SUPPORT
     sts = m_vaapiAllocator.get()->Init(pParams);
     CHECK_RESULT(MFX_ERR_NONE, sts, sts);
 #endif

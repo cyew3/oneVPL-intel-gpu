@@ -19,7 +19,8 @@ RefListControlEncode::RefListControlEncode (IVideoEncode * pTarget)
     , m_nFramesEncoded()
     , m_ctrl()
 {
-    m_extParams.push_back(&mfxExtAVCRefListCtrl());
+    mfxExtAVCRefListCtrl tmp_elem = mfxExtAVCRefListCtrl();
+    m_extParams.push_back(&tmp_elem);
     m_pRefList = (mfxExtAVCRefListCtrl*)m_extParams.back();
     m_ctrl.NumExtParam = (mfxU16)m_extParams.size();
     m_ctrl.ExtParam = &m_extParams;

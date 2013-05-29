@@ -1324,11 +1324,11 @@ mfxStatus  MFXTranscodingPipeline::CreateFileSink(std::auto_ptr<IFile> &pSink)
             pd3dAllocParams->pManager = (IDirect3DDeviceManager9*)hdl;
             pAllocatorParams.reset(pd3dAllocParams);
 #endif
-#ifdef VAAPI_SURFACES_SUPPORT
+#ifdef LIBVA_SUPPORT
             MFX_CHECK_STS(CreateDeviceManager());
             VADisplay va_dpy = NULL;
-            MFX_CHECK_STS(m_pHWDevice->GetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL*) &va_dpy));
-            MFX_CHECK_STS(MFXVideoCORE_SetHandle(decCtx.session, MFX_HANDLE_VA_DISPLAY, (mfxHDL)va_dpy));
+            MFX_CHECK_STS(m_pHWDevice->GetHandle(static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), (mfxHDL*) &va_dpy));
+            MFX_CHECK_STS(MFXVideoCORE_SetHandle(decCtx.session, static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), (mfxHDL)va_dpy));
 
             if (decCtx.request.Info.FourCC == MFX_FOURCC_RGB4)
                 decCtx.request.Type = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET;
@@ -1347,7 +1347,7 @@ mfxStatus  MFXTranscodingPipeline::CreateFileSink(std::auto_ptr<IFile> &pSink)
         }
         else if(m_components[eREN].m_bufType == MFX_BUF_HW_DX11)
         {
-#if MFX_D3D11_SUPPORT
+#ifdef MFX_D3D11_SUPPORT
             MFX_CHECK_STS(CreateDeviceManager());
             mfxHDL hdl;
             MFX_CHECK_STS(m_pHWDevice->GetHandle(MFX_HANDLE_D3D11_DEVICE, &hdl));
