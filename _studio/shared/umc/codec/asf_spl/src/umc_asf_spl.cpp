@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -69,7 +69,7 @@ Status ASFSplitter::FillAudioInfo(Ipp32u nTrack)
     AudioStreamInfo *pAudioInfo = (AudioStreamInfo *)(m_pInfo->m_ppTrackInfo[nTrack]->m_pStreamInfo);
     Status umcRes = UMC_OK;
     asf_StreamPropObject *pStrPropObj = m_pHeaderObject->ppStreamPropObject[nTrack];
-    asf_AudioMediaInfo *pAudioSpecData = (asf_AudioMediaInfo *)pStrPropObj->pTypeSpecData;
+    asf_AudioMediaInfo *pAudioSpecData = pStrPropObj->typeSpecData.pAudioSpecData;
 
     switch (pAudioSpecData->formatTag)
     {
@@ -110,7 +110,7 @@ Status ASFSplitter::FillVideoInfo(Ipp32u nTrack)
     VideoStreamInfo *pVideoInfo = (VideoStreamInfo *)(m_pInfo->m_ppTrackInfo[nTrack]->m_pStreamInfo);
     Status umcRes = UMC_OK;
     asf_StreamPropObject *pStrPropObj = m_pHeaderObject->ppStreamPropObject[nTrack];
-    asf_VideoMediaInfo *pVideoSpecData = (asf_VideoMediaInfo *)pStrPropObj->pTypeSpecData;
+    asf_VideoMediaInfo *pVideoSpecData = (asf_VideoMediaInfo *)pStrPropObj->typeSpecData.pAudioSpecData;
 
     pVideoInfo->clip_info.width = pVideoSpecData->width;
     pVideoInfo->clip_info.height = pVideoSpecData->height;

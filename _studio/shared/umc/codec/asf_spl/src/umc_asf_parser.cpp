@@ -825,31 +825,29 @@ Status ASFSplitter::ReadStreamPropObject(Ipp32u strNum)
   endPos = m_pDataReader->GetPosition() + pStrPropObj->typeSpecDataLen;
   if (pStrPropObj->streamType == ASF_Audio_Media)
   {
-    UMC_NEW(pStrPropObj->pTypeSpecData, asf_AudioMediaInfo);
-    asf_AudioMediaInfo *pAudioSpecData = (asf_AudioMediaInfo *)pStrPropObj->pTypeSpecData;
-    umcRes = FillAudioMediaInfo(pAudioSpecData);
+    UMC_NEW(pStrPropObj->typeSpecData.pAudioSpecData, asf_AudioMediaInfo);
+    umcRes = FillAudioMediaInfo(pStrPropObj->typeSpecData.pAudioSpecData);
     UMC_CHECK_STATUS(umcRes)
   } else
   if (pStrPropObj->streamType == ASF_Video_Media) {
-    UMC_NEW(pStrPropObj->pTypeSpecData, asf_VideoMediaInfo);
-    asf_VideoMediaInfo *pVideoSpecData = (asf_VideoMediaInfo *)pStrPropObj->pTypeSpecData;
-    umcRes = FillVideoMediaInfo(pVideoSpecData);
+    UMC_NEW(pStrPropObj->typeSpecData.pVideoSpecData, asf_VideoMediaInfo);
+    umcRes = FillVideoMediaInfo(pStrPropObj->typeSpecData.pVideoSpecData);
     UMC_CHECK_STATUS(umcRes)
   } else
   if (pStrPropObj->streamType == ASF_Command_Media) {
-    pStrPropObj->pTypeSpecData = NULL;
+    pStrPropObj->typeSpecData.pAnyData = NULL;
   } else
   if (pStrPropObj->streamType == ASF_JFIF_Media) {
-    pStrPropObj->pTypeSpecData = NULL;
+    pStrPropObj->typeSpecData.pAnyData = NULL;
   } else
   if (pStrPropObj->streamType == ASF_Degradable_JPEG_Media) {
-    pStrPropObj->pTypeSpecData = NULL;
+    pStrPropObj->typeSpecData.pAnyData = NULL;
   } else
   if (pStrPropObj->streamType == ASF_File_Transfer_Media) {
-    pStrPropObj->pTypeSpecData = NULL;
+    pStrPropObj->typeSpecData.pAnyData = NULL;
   } else
   if (pStrPropObj->streamType == ASF_Binary_Media) {
-    pStrPropObj->pTypeSpecData = NULL;
+    pStrPropObj->typeSpecData.pAnyData = NULL;
   } else {
     return UMC_ERR_INVALID_STREAM;
   }
@@ -950,24 +948,21 @@ Status ASFSplitter::CleanHeaderObject()
 
                 if (m_pHeaderObject->ppStreamPropObject[i]->streamType == ASF_Audio_Media)
                 {
-                    asf_AudioMediaInfo *pAudioSpecData = (asf_AudioMediaInfo *)m_pHeaderObject->ppStreamPropObject[i]->pTypeSpecData;
-                    UMC_FREE(pAudioSpecData->pCodecSpecData)
+                    UMC_FREE(m_pHeaderObject->ppStreamPropObject[i]->typeSpecData.pAudioSpecData->pCodecSpecData)
+                    UMC_DELETE(m_pHeaderObject->ppStreamPropObject[i]->typeSpecData.pAudioSpecData);
                 } else
                 if (m_pHeaderObject->ppStreamPropObject[i]->streamType == ASF_Video_Media)
                 {
-                    asf_VideoMediaInfo *pVideoSpecData = (asf_VideoMediaInfo *)m_pHeaderObject->ppStreamPropObject[i]->pTypeSpecData;
-                    asf_FormatData *pImgFormatData = &pVideoSpecData->FormatData;
-                    UMC_FREE(pImgFormatData->pCodecSpecData)
+                    UMC_FREE(m_pHeaderObject->ppStreamPropObject[i]->typeSpecData.pVideoSpecData->FormatData.pCodecSpecData)
+                    UMC_DELETE(m_pHeaderObject->ppStreamPropObject[i]->typeSpecData.pVideoSpecData);
                 }
 
                 if (m_pHeaderObject->ppStreamPropObject[i]->errCorrectType == ASF_Audio_Spread)
                 {
-                    asf_SpreadAudioData *pSpreadAudioData = (asf_SpreadAudioData *)m_pHeaderObject->ppStreamPropObject[i]->pErrCorrectData;
-                    UMC_FREE(pSpreadAudioData->pSilenceData)
+                    UMC_FREE(m_pHeaderObject->ppStreamPropObject[i]->pErrCorrectData->pSilenceData)
                 }
 
                 UMC_DELETE(m_pHeaderObject->ppStreamPropObject[i]->pErrCorrectData);
-                UMC_DELETE(m_pHeaderObject->ppStreamPropObject[i]->pTypeSpecData);
                 UMC_DELETE(m_pHeaderObject->ppStreamPropObject[i]);
             }
         }
@@ -984,8 +979,9 @@ Status ASFSplitter::CleanHeaderObject()
 
         UMC_DELETE(m_pHeaderObject->pHeaderExtObject);
         UMC_DELETE(m_pHeaderObject->pFPropObject);
-        UMC_FREE(m_pHeaderObject->ppStreamPropObject);
     }
+
+    UMC_FREE(m_pHeaderObject->ppStreamPropObject);
     return UMC_OK;
 }
 

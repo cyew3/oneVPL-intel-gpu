@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -319,56 +319,6 @@ struct asf_PayldExtSys
     Ipp8u     *pExtSysinfo;
 };
 
-struct asf_StreamPropObject
-{
-    asf_StreamPropObject()
-    {
-        pTypeSpecData = NULL;
-        pErrCorrectData = NULL;
-    }
-    asf_GUID  objectID;
-    Ipp64u    objectSize;
-    asf_GUID  streamType;
-    asf_GUID  errCorrectType;
-    Ipp64u    timeOffset;
-    Ipp32u    typeSpecDataLen;
-    Ipp32u    errCorrectDataLen;
-    Ipp16u    flags;
-    Ipp32u    reserved;
-    void      *pTypeSpecData;
-    void      *pErrCorrectData;
-};
-
-struct asf_ExtStreamPropObject
-{
-    asf_ExtStreamPropObject()
-    {
-        pStreamNames = NULL;
-        pPayldExtSystems = NULL;
-        pStreamPropObj = NULL;
-    }
-    asf_GUID                objectID;
-    Ipp64u                  objectSize;
-    Ipp64u                  startTime;
-    Ipp64u                  endTime;
-    Ipp32u                  dataBitrate;
-    Ipp32u                  bufSize;
-    Ipp32u                  initialBufFullness;
-    Ipp32u                  altDataBitrate;
-    Ipp32u                  altBufSize;
-    Ipp32u                  altInitialBufFullness;
-    Ipp32u                  maxObjSize;
-    Ipp32u                  flags;
-    Ipp16u                  streamNum;
-    Ipp16u                  streamLangIDIndex;
-    Ipp64u                  avgTimePerFrame;
-    Ipp16u                  streamNameCount;
-    Ipp16u                  payldExtSysCount;
-    asf_StreamName          *pStreamNames;
-    asf_PayldExtSys         *pPayldExtSystems;
-    asf_StreamPropObject    *pStreamPropObj;
-};
-
 struct asf_AdvMutualExclObject
 {
     asf_AdvMutualExclObject()
@@ -617,6 +567,124 @@ struct asf_DataObject
     Ipp16u    reserved;
 };
 
+ /*** WAVEFORMATEX structure ***/
+struct asf_AudioMediaInfo
+{
+    asf_AudioMediaInfo()
+    {
+        pCodecSpecData = NULL;
+    }
+    Ipp16u    formatTag;
+    Ipp16u    numChannels;
+    Ipp32u    sampleRate;   /*** in Hertz ***/
+    Ipp32u    avgBytesPerSec;
+    Ipp16u    blockAlign;
+    Ipp16u    bitsPerSample;
+    Ipp16u    codecSpecDataSize;
+    Ipp8u     *pCodecSpecData;
+};
+
+ /*** BITMAPINFOHEADER structure ***/
+
+#define VIDEO_SPEC_DATA_LEN   40
+
+struct asf_FormatData
+{
+    asf_FormatData()
+    {
+        pCodecSpecData = NULL;
+    }
+    Ipp32u    formatDataSize;
+    Ipp32u    width;
+    Ipp32u    height;
+    Ipp16u    reserved;
+    Ipp16u    bitsPerPixelCount;
+    Ipp32u    compresID;
+    Ipp32u    imgSize;
+    Ipp32u    hrzPixelsPerMeter;
+    Ipp32u    vertPixelsPerMeter;
+    Ipp32u    colorsUsedCount;
+    Ipp32u    importColorsCount;
+    Ipp8u     *pCodecSpecData;    /*** formatDataSize - VIDEO_SPEC_DATA_LEN ***/
+};
+
+struct asf_VideoMediaInfo
+{
+    Ipp32u          width;
+    Ipp32u          height;
+    Ipp8u           flags;
+    Ipp16u          formatDataSize;
+    asf_FormatData  FormatData;
+};
+
+struct asf_SpreadAudioData
+{
+    asf_SpreadAudioData()
+    {
+        pSilenceData = NULL;
+    }
+    Ipp8u     span;
+    Ipp16u    virtPackLen;
+    Ipp16u    virtChunkLen;
+    Ipp16u    silenceDataLen;
+    Ipp8u     *pSilenceData;  /*** 0 for silenceDataLen bytes ***/
+};
+
+struct asf_StreamPropObject
+{
+    asf_StreamPropObject()
+    {
+        typeSpecData.pAnyData = NULL;
+        pErrCorrectData = NULL;
+    }
+    asf_GUID  objectID;
+    Ipp64u    objectSize;
+    asf_GUID  streamType;
+    asf_GUID  errCorrectType;
+    Ipp64u    timeOffset;
+    Ipp32u    typeSpecDataLen;
+    Ipp32u    errCorrectDataLen;
+    Ipp16u    flags;
+    Ipp32u    reserved;
+
+    union {
+        void               *pAnyData;
+        asf_AudioMediaInfo *pAudioSpecData;
+        asf_VideoMediaInfo *pVideoSpecData;
+    }         typeSpecData;    /* tagged type by streamType */
+    asf_SpreadAudioData *pErrCorrectData;
+};
+
+struct asf_ExtStreamPropObject
+{
+    asf_ExtStreamPropObject()
+    {
+        pStreamNames = NULL;
+        pPayldExtSystems = NULL;
+        pStreamPropObj = NULL;
+    }
+    asf_GUID                objectID;
+    Ipp64u                  objectSize;
+    Ipp64u                  startTime;
+    Ipp64u                  endTime;
+    Ipp32u                  dataBitrate;
+    Ipp32u                  bufSize;
+    Ipp32u                  initialBufFullness;
+    Ipp32u                  altDataBitrate;
+    Ipp32u                  altBufSize;
+    Ipp32u                  altInitialBufFullness;
+    Ipp32u                  maxObjSize;
+    Ipp32u                  flags;
+    Ipp16u                  streamNum;
+    Ipp16u                  streamLangIDIndex;
+    Ipp64u                  avgTimePerFrame;
+    Ipp16u                  streamNameCount;
+    Ipp16u                  payldExtSysCount;
+    asf_StreamName          *pStreamNames;
+    asf_PayldExtSys         *pPayldExtSystems;
+    asf_StreamPropObject    *pStreamPropObj;
+};
+
 /***** HEADER OBJECT (mandatory, the only) *****/
 
 struct asf_FPropObject
@@ -730,69 +798,6 @@ struct asf_HeaderObject
     asf_DigSignatureObject *pDigSignatureObject;
     asf_PaddingObject *pPaddingObject;
 
-};
-
- /*** WAVEFORMATEX structure ***/
-struct asf_AudioMediaInfo
-{
-    asf_AudioMediaInfo()
-    {
-        pCodecSpecData = NULL;
-    }
-    Ipp16u    formatTag;
-    Ipp16u    numChannels;
-    Ipp32u    sampleRate;   /*** in Hertz ***/
-    Ipp32u    avgBytesPerSec;
-    Ipp16u    blockAlign;
-    Ipp16u    bitsPerSample;
-    Ipp16u    codecSpecDataSize;
-    Ipp8u     *pCodecSpecData;
-};
-
- /*** BITMAPINFOHEADER structure ***/
-
-#define VIDEO_SPEC_DATA_LEN   40
-
-struct asf_FormatData
-{
-    asf_FormatData()
-    {
-        pCodecSpecData = NULL;
-    }
-    Ipp32u    formatDataSize;
-    Ipp32u    width;
-    Ipp32u    height;
-    Ipp16u    reserved;
-    Ipp16u    bitsPerPixelCount;
-    Ipp32u    compresID;
-    Ipp32u    imgSize;
-    Ipp32u    hrzPixelsPerMeter;
-    Ipp32u    vertPixelsPerMeter;
-    Ipp32u    colorsUsedCount;
-    Ipp32u    importColorsCount;
-    Ipp8u     *pCodecSpecData;    /*** formatDataSize - VIDEO_SPEC_DATA_LEN ***/
-};
-
-struct asf_VideoMediaInfo
-{
-    Ipp32u          width;
-    Ipp32u          height;
-    Ipp8u           flags;
-    Ipp16u          formatDataSize;
-    asf_FormatData  FormatData;
-};
-
-struct asf_SpreadAudioData
-{
-    asf_SpreadAudioData()
-    {
-        pSilenceData = NULL;
-    }
-    Ipp8u     span;
-    Ipp16u    virtPackLen;
-    Ipp16u    virtChunkLen;
-    Ipp16u    silenceDataLen;
-    Ipp8u     *pSilenceData;  /*** 0 for silenceDataLen bytes ***/
 };
 
 struct asf_ErrCorrectionData
