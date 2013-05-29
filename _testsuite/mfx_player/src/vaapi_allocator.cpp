@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -27,7 +27,7 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
     case MFX_FOURCC_YV12:
         return VA_FOURCC_YV12;
     case MFX_FOURCC_RGB4:
-        return VA_FOURCC_BGRA;
+        return VA_FOURCC_ARGB;
     case MFX_FOURCC_P8:
         return VA_FOURCC_P208;
 
@@ -85,17 +85,22 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
     VASurfaceAttrib attrib;
     vaapiMemId *vaapi_mids = NULL, *vaapi_mid = NULL;
     mfxMemId* mids = NULL;
-    mfxU32 i = 0, surfaces_num = request->NumFrameSuggested, numAllocated = 0;
+    mfxU32 fourcc = request->Info.FourCC;
+    mfxU16 surfaces_num = request->NumFrameSuggested, numAllocated = 0, i = 0;
     bool bCreateSrfSucceeded = false;
-    
+
     memset(response, 0, sizeof(mfxFrameAllocResponse));
 
-    va_fourcc = ConvertMfxFourccToVAFormat(request->Info.FourCC);
+    va_fourcc = ConvertMfxFourccToVAFormat(fourcc);
     if (!va_fourcc || ((VA_FOURCC_NV12 != va_fourcc) &&
                        (VA_FOURCC_YV12 != va_fourcc) &&
                        (VA_FOURCC_YUY2 != va_fourcc) &&
-                       (VA_FOURCC_BGRA != va_fourcc) &&
+                       (VA_FOURCC_ARGB != va_fourcc) &&
                        (VA_FOURCC_P208 != va_fourcc)))
+    {
+        return MFX_ERR_MEMORY_ALLOC;
+    }
+    if (!surfaces_num)
     {
         return MFX_ERR_MEMORY_ALLOC;
     }
@@ -107,10 +112,9 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
         mids = (mfxMemId*)calloc(surfaces_num, sizeof(mfxMemId));
         if ((NULL == surfaces) || (NULL == vaapi_mids) || (NULL == mids)) mfx_res = MFX_ERR_MEMORY_ALLOC;
     }
-
-    if( VA_FOURCC_P208 != va_fourcc )
+    if (MFX_ERR_NONE == mfx_res)
     {
-        if (MFX_ERR_NONE == mfx_res)
+        if( VA_FOURCC_P208 != va_fourcc )
         {
             attrib.type = VASurfaceAttribPixelFormat;
             attrib.value.type = VAGenericValueTypeInteger;
@@ -126,10 +130,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             mfx_res = va_to_mfx_status(va_res);
             bCreateSrfSucceeded = (MFX_ERR_NONE == mfx_res);
         }
-    }
-    else
-    {
-        if (MFX_ERR_NONE == mfx_res)
+        else
         {
             VAContextID context_id = request->reserved[0];
             int codedbuf_size = (request->Info.Width * request->Info.Height) * 400 / (16 * 16); //from libva spec
@@ -156,7 +157,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
         for (i = 0; i < surfaces_num; ++i)
         {
             vaapi_mid = &(vaapi_mids[i]);
-            vaapi_mid->m_fourcc = request->Info.FourCC;
+            vaapi_mid->m_fourcc = fourcc;
             vaapi_mid->m_surface = &(surfaces[i]);
             mids[i] = vaapi_mid;
         }
@@ -170,11 +171,15 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
     {
         response->mids = NULL;
         response->NumFrameActual = 0;
-        if (bCreateSrfSucceeded) vaDestroySurfaces(m_dpy, surfaces, surfaces_num);
-        if (MFX_FOURCC_P8 == vaapi_mid->m_fourcc)
-            for (i = 0; numAllocated < numAllocated; i++)
+        if (VA_FOURCC_P208 != va_fourcc)
+        {
+            if (bCreateSrfSucceeded) vaDestroySurfaces(m_dpy, surfaces, surfaces_num);
+        }
+        else
+        {
+            for (i = 0; i < numAllocated; i++)
                 vaDestroyBuffer(m_dpy, surfaces[i]);
-
+        }
         if (mids)
         {
             free(mids);
@@ -220,9 +225,8 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
 {
     mfxStatus mfx_res = MFX_ERR_NONE;
     VAStatus  va_res  = VA_STATUS_SUCCESS;
-    VASurfaceStatus srf_sts = VASurfaceReady;
     vaapiMemId* vaapi_mid = (vaapiMemId*)mid;
-    mfxU8* pBuffer = 0, iteration = 0;
+    mfxU8* pBuffer = 0;
 
     if (!vaapi_mid || !(vaapi_mid->m_surface)) return MFX_ERR_INVALID_HANDLE;
 
@@ -231,22 +235,13 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         VACodedBufferSegment *coded_buffer_segment;
         va_res =  vaMapBuffer(m_dpy, *(vaapi_mid->m_surface), (void **)(&coded_buffer_segment));
         mfx_res = va_to_mfx_status(va_res);
-        ptr->Y = (mfxU8*)coded_buffer_segment->buf;
+        ptr->Y = (mfxU8*)coded_buffer_segment->buf; // !!! bug
     }
     else   // Image processing
     {
-#if 1
         va_res = vaSyncSurface(m_dpy, *(vaapi_mid->m_surface));
         mfx_res = va_to_mfx_status(va_res);
-#else
-         // TODO: negotiate with driver blocker call (like vaSyncSurface) to avoid loop
-        do
-        {
-            va_res = vaQuerySurfaceStatus(m_dpy, *(vaapi_mid->m_surface), &srf_sts);
-            mfx_res = va_to_mfx_status(va_res);
-            ++iteration;
-        } while ((VASurfaceReady != srf_sts) && (iteration < MAX_QUERY_SURFACE_STATUS_ITERATIONS_NUM) && (MFX_ERR_NONE == mfx_res));
-#endif
+
         if (MFX_ERR_NONE == mfx_res)
         {
             va_res = vaDeriveImage(m_dpy, *(vaapi_mid->m_surface), &(vaapi_mid->m_image));
@@ -291,7 +286,7 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                 }
                 else mfx_res = MFX_ERR_LOCK_MEMORY;
                 break;
-            case VA_FOURCC_BGRA:
+            case VA_FOURCC_ARGB:
                 if (vaapi_mid->m_fourcc == MFX_FOURCC_RGB4)
                 {
                     ptr->Pitch = (mfxU16)vaapi_mid->m_image.pitches[0];
@@ -332,6 +327,7 @@ mfxStatus vaapiFrameAllocator::UnlockFrame(mfxMemId mid, mfxFrameData *ptr)
             ptr->Y     = NULL;
             ptr->U     = NULL;
             ptr->V     = NULL;
+            ptr->A     = NULL;
         }
     }
     return MFX_ERR_NONE;

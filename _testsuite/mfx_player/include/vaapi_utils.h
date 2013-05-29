@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -20,24 +20,22 @@ Copyright(c) 2011 Intel Corporation. All Rights Reserved.
 class CLibVA
 {
 public:
-    CLibVA(void);
-    virtual ~CLibVA(void);
-
-    virtual mfxStatus Init(void);
-    virtual void Close(void);
+    virtual ~CLibVA(void) {};
 
     VADisplay GetVADisplay(void) { return m_va_dpy; }
-    bool isVAInitialized(void) { return m_bVAInitialized; }
 
 protected:
-    void *m_display;
+    CLibVA(void) :
+        m_va_dpy(NULL)
+    {}
     VADisplay m_va_dpy;
-    bool m_bVAInitialized;
 
 private:
     CLibVA(const CLibVA&);
     void operator=(const CLibVA&);
 };
+
+CLibVA* CreateLibVA(void);
 
 mfxStatus va_to_mfx_status(VAStatus va_res);
 

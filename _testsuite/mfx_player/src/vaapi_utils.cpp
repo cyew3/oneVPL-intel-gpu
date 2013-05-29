@@ -4,13 +4,19 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
 #ifdef LIBVA_SUPPORT
 
 #include "vaapi_utils.h"
+#if defined(LIBVA_DRM_SUPPORT)
+#include "vaapi_utils_drm.h"
+#elif defined(LIBVA_X11_SUPPORT)
+#include "vaapi_utils_x11.h"
+#endif
+
 
 mfxStatus va_to_mfx_status(VAStatus va_res)
 {
@@ -50,5 +56,17 @@ mfxStatus va_to_mfx_status(VAStatus va_res)
     }
     return mfxRes;
 }
+
+#if defined(LIBVA_DRM_SUPPORT) || defined(LIBVA_X11_SUPPORT)
+CLibVA* CreateLibVA(void)
+{
+#if defined(LIBVA_DRM_SUPPORT)
+    return new DRMLibVA;
+#elif defined(LIBVA_X11_SUPPORT)
+    return new X11LibVA;
+#endif
+    return NULL;
+}
+#endif // #if defined(LIBVA_DRM_SUPPORT) || defined(LIBVA_X11_SUPPORT)
 
 #endif // #ifdef LIBVA_SUPPORT

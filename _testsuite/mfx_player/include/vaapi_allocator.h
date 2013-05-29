@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -17,8 +17,6 @@ Copyright(c) 2011-2012 Intel Corporation. All Rights Reserved.
 #include <va/va.h>
 
 #include "mfx_base_allocator.h"
-
-#define MAX_QUERY_SURFACE_STATUS_ITERATIONS_NUM 100
 
 // VAAPI Allocator internal Mem ID
 struct vaapiMemId
