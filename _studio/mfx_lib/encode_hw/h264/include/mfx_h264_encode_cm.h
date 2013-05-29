@@ -16,7 +16,9 @@
 #include <vector>
 #include <assert.h>
 
+#if !defined(_WIN32) && !defined(_WIN64)
 #include <cm_rt.h>
+#endif
 
 #include <mfx_platform_headers.h>
 
