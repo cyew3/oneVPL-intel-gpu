@@ -2017,9 +2017,10 @@ mfxStatus MFXDecPipeline::CreateDeviceManager()
         // Set VA display to MediaSDK session(s)
         if (va_dpy)
         {
-            MFX_CHECK_STS(m_components[eDEC].m_pSession->SetHandle(static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), va_dpy));
-            MFX_CHECK_STS(m_components[eVPP].m_pSession->SetHandle(static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), va_dpy));
-            MFX_CHECK_STS(m_components[eREN].m_pSession->SetHandle(static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), va_dpy));
+            mfxStatus sts = m_components[eDEC].m_pSession->SetHandle(static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), va_dpy);
+            MFX_CHECK_STS(sts);
+            m_components[eVPP].m_pSession->SetHandle(static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), va_dpy);
+            m_components[eREN].m_pSession->SetHandle(static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), va_dpy);
 
             //MFXLVARender * m_pLVARender = (MFXLVARender *)m_pRender;
             //m_pLVARender->SetHandle(MFX_HANDLE_VA_DISPLAY, va_dpy);
