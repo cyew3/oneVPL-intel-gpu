@@ -35,7 +35,7 @@ OutputRegistrator::OutputRegistrator(mfxU32 numWriter, vm_file* fdRef, vm_file**
 
 mfxHDL OutputRegistrator::Register()
 {
-    UMC::AutomaticMutex guard(m_counterMutex.ExtractHandle());
+    UMC::AutomaticUMCMutex guard(m_counterMutex);
     if (m_numRegistered == m_numWriter)
         return 0;
 
@@ -60,7 +60,7 @@ mfxU32 OutputRegistrator::CommitData(mfxHDL handle, void* ptr, mfxU32 len)
         bool last = false;
 
         {
-            UMC::AutomaticMutex guard(m_counterMutex.ExtractHandle());
+            UMC::AutomaticUMCMutex guard(m_counterMutex);
             m_data[m_numCommit].ptr = ptr;
             m_data[m_numCommit].len = len;
             m_numCommit++;
@@ -81,7 +81,7 @@ mfxU32 OutputRegistrator::CommitData(mfxHDL handle, void* ptr, mfxU32 len)
         }
 
         {
-            UMC::AutomaticMutex guard(m_counterMutex.ExtractHandle());
+            UMC::AutomaticUMCMutex guard(m_counterMutex);
             m_numCommit--;
             last = (m_numCommit == 0);
             if (ptr == 0 && m_numRegistered > 0)
