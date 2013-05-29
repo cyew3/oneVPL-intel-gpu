@@ -10,6 +10,8 @@ Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 
 #if defined(LIBVA_X11_SUPPORT)
 
+#include <stdlib.h>
+
 #include "vaapi_utils_x11.h"
 
 #define VAAPI_X_DEFAULT_DISPLAY ":0.0"

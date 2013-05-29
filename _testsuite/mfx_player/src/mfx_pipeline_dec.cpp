@@ -31,10 +31,6 @@ File Name: .h
 #include "mfx_reorder_render.h"
 #include "mfx_multi_render.h"
 
-#if defined(_WIN32) || defined(_WIN64)
-#include "dxva2_spy.h"
-#endif
-
 #ifdef MFX_PIPELINE_SUPPORT_VP8
     #include "mfxvp8.h"
 #endif
@@ -87,6 +83,7 @@ File Name: .h
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
+#include "dxva2_spy.h"
 #include <psapi.h>
 #endif
 #if defined(LINUX32) || defined(LINUX64)
@@ -1623,55 +1620,10 @@ mfxStatus MFXDecPipeline::CreateRender()
             break;
         }
 #endif // #if defined(_WIN32) || defined(_WIN64)
-#if defined(VAAPI_SURFACES_SUPPORT) && !defined(ANDROID)
+#if defined(LIBVA_X11_SUPPORT) && !defined(ANDROID)
         case MFX_SCREEN_RENDER:
         {
             ScreenVAAPIRender::InitParams iParams(m_components[eREN].GetAdapter(), XVideoWindow::InitParams(NULL, m_inParams.bFullscreen));
-            /*
-            if(NULL == m_px11Display)
-            {
-                char* currentDisplay = getenv("DISPLAY");
-                m_px11Display = NULL;
-                if (currentDisplay)
-                    m_px11Display = XOpenDisplay(currentDisplay);
-                else
-                    m_px11Display = XOpenDisplay(LVA_X_DEFAULT_DISPLAY);
-            }
-
-            XWindowParams windowParams;
-            memset(&windowParams,0,sizeof(XWindowParams));
-
-            if (m_inParams.m_WallW && m_inParams.m_WallH)
-            {
-                mfxU32 ScreenNumber = DefaultScreen(m_px11Display);
-                mfxU32 displayWidth = DisplayWidth(m_px11Display, ScreenNumber);
-                mfxU32 displayHeight = DisplayHeight(m_px11Display, ScreenNumber);
-
-                windowParams.nWidth  = displayWidth / m_inParams.m_WallW;
-                windowParams.nHeight = displayHeight / m_inParams.m_WallH;
-                windowParams.x       = windowParams.nWidth  * (m_inParams.m_WallN % m_inParams.m_WallW);
-                windowParams.y       = windowParams.nHeight * (m_inParams.m_WallN / m_inParams.m_WallW);
-
-                if (m_inParams.m_bNowWidowHeader)
-                {
-                    windowParams.Wall = m_inParams.m_bNowWidowHeader;
-                }
-            }
-            else
-            {
-                windowParams.x            = 0;
-                windowParams.y            = 0;
-                windowParams.nWidth       = m_inParams.FrameInfo.Width;
-                windowParams.nHeight      = m_inParams.FrameInfo.Height;
-                windowParams.PClass       = VM_STRING("Render Window Class");
-                windowParams.ptrTitle     = VM_STRING("mfx_player");
-                windowParams.ptrITitle    = VM_STRING("mfx_player");
-                windowParams.win_wdt_min  = m_inParams.FrameInfo.Width;
-                windowParams.win_hgt_min  = m_inParams.FrameInfo.Height;
-                windowParams.pixmap       = 0;
-                windowParams.FullScreen   = m_inParams.bFullscreen;
-            }
-            */
 
             if (m_inParams.m_WallW && m_inParams.m_WallH)
             {
@@ -2044,30 +1996,30 @@ mfxStatus MFXDecPipeline::InitYUVSource()
 
 mfxStatus MFXDecPipeline::CreateDeviceManager()
 {
-#ifdef VAAPI_SURFACES_SUPPORT
+#ifdef LIBVA_SUPPORT
     //if(MFX_IMPL_HARDWARE == m_components[eDEC].m_RealImpl || m_components[eDEC].m_bufType == MFX_BUF_HW || m_components[eREN].m_bufType == MFX_BUF_HW)
     {
         VADisplay va_dpy = NULL;
 
         if (NULL == va_dpy && NULL != m_pHWDevice.get())
         {
-            MFX_CHECK_STS(m_pHWDevice->GetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL *)&va_dpy));
+            MFX_CHECK_STS(m_pHWDevice->GetHandle(static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), (mfxHDL *)&va_dpy));
         }
 
         if (NULL == va_dpy)
         {
             ComponentParams &cparams = m_components[eDEC].m_bufType == MFX_BUF_HW ? m_components[eDEC] : m_components[eREN];
-            m_pHWDevice.reset(new MFXVAAPIDevice());
+            m_pHWDevice.reset(CreateVAAPIDevice());
 
             MFX_CHECK_STS(m_pHWDevice->Init(0, NULL, !m_inParams.bFullscreen, 0, 1, NULL));
-            MFX_CHECK_STS(m_pHWDevice->GetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL *)&va_dpy));
+            MFX_CHECK_STS(m_pHWDevice->GetHandle(static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), (mfxHDL *)&va_dpy));
         }
         // Set VA display to MediaSDK session(s)
         if (va_dpy)
         {
-            MFX_CHECK_STS(m_components[eDEC].m_pSession->SetHandle(MFX_HANDLE_VA_DISPLAY, va_dpy));
-            MFX_CHECK_STS(m_components[eVPP].m_pSession->SetHandle(MFX_HANDLE_VA_DISPLAY, va_dpy));
-            MFX_CHECK_STS(m_components[eREN].m_pSession->SetHandle(MFX_HANDLE_VA_DISPLAY, va_dpy));
+            MFX_CHECK_STS(m_components[eDEC].m_pSession->SetHandle(static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), va_dpy));
+            MFX_CHECK_STS(m_components[eVPP].m_pSession->SetHandle(static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), va_dpy));
+            MFX_CHECK_STS(m_components[eREN].m_pSession->SetHandle(static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), va_dpy));
 
             //MFXLVARender * m_pLVARender = (MFXLVARender *)m_pRender;
             //m_pLVARender->SetHandle(MFX_HANDLE_VA_DISPLAY, va_dpy);
@@ -3143,7 +3095,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bufType, MFX_BUF_HW));
         }
 #endif
-#ifdef VAAPI_SURFACES_SUPPORT
+#ifdef LIBVA_SUPPORT
         else if (m_OptProc.Check(argv[0], VM_STRING("-d3d|-hwfrbuf"), VM_STRING("video frames in D3D surfaces")))
         {
             std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bufType, MFX_BUF_HW));

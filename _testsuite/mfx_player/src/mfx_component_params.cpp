@@ -234,7 +234,7 @@ mfxStatus ComponentParams::AllocFrames( RWAllocatorFactory::root* pFactory
             pd3dAllocParams->pManager = pMgr;
             pAllocatorParams.reset(pd3dAllocParams);  
 #endif
-#ifdef VAAPI_SURFACES_SUPPORT
+#ifdef LIBVA_SUPPORT
             if (pRequest->Info.FourCC == MFX_FOURCC_RGB4)
                 pRequest->Type |= MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET;
             else
@@ -249,7 +249,7 @@ mfxStatus ComponentParams::AllocFrames( RWAllocatorFactory::root* pFactory
             MFX_CHECK_WITH_ERR(p_vaapiAllocParams = new vaapiAllocatorParams, MFX_ERR_MEMORY_ALLOC);
             VADisplay va_dpy;
 
-            MFX_CHECK_STS(hwDevice->GetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL*) &va_dpy));
+            MFX_CHECK_STS(hwDevice->GetHandle(static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), (mfxHDL*) &va_dpy));
             p_vaapiAllocParams->m_dpy = va_dpy;
             pAllocatorParams.reset(p_vaapiAllocParams);
 #endif

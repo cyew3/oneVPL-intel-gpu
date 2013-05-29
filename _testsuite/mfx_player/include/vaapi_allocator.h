@@ -16,6 +16,7 @@ Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 #include <stdlib.h>
 #include <va/va.h>
 
+#include "mfxlinux.h"
 #include "mfx_base_allocator.h"
 
 // VAAPI Allocator internal Mem ID

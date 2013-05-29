@@ -13,6 +13,8 @@ Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 
 #ifdef LIBVA_SUPPORT
 
+#include <stdexcept>
+
 #include <va/va.h>
 #include <mfxdefs.h>
 #include <mfxlinux.h>
