@@ -8,6 +8,8 @@ Copyright(c) 2011 - 2012 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
+#if defined(_WIN32) || defined(_WIN64)
+
 #include "mfx_pipeline_features.h"
 #include "mfx_d3d11_allocator.h"
 
@@ -448,3 +450,5 @@ DXGI_FORMAT D3D11FrameAllocator::ConverColortFormat(mfxU32 fourcc)
 }
 
 #endif // #if MFX_D3D11_SUPPORT
+
+#endif // #if defined(_WIN32) || defined(_WIN64)

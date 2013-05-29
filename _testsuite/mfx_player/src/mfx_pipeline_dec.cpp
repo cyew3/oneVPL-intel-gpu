@@ -31,7 +31,9 @@ File Name: .h
 #include "mfx_reorder_render.h"
 #include "mfx_multi_render.h"
 
+#if defined(_WIN32) || defined(_WIN64)
 #include "dxva2_spy.h"
+#endif
 
 #ifdef MFX_PIPELINE_SUPPORT_VP8
     #include "mfxvp8.h"
@@ -824,7 +826,7 @@ public:
         DispatchLog::get().DetachSink(/*DL_SINK_PRINTF |*/ DL_SINK_IMsgHandler, this);
     }
 
-    virtual void Write(int level, int /*opcode*/, char * msg, va_list argptr)
+    virtual void Write(int level, int /*opcode*/, const char * msg, va_list argptr)
     {
 #if defined(_WIN32) || defined(_WIN64)
         HMODULE libModule;
@@ -1301,7 +1303,7 @@ mfxStatus MFXDecPipeline::DecodeHeader()
         lucasCtx->parameter(lucasCtx->fmWrapperPtr, lucas::FM_WRAPPER_PARAM_RESOLUTION_X, m_components[eDEC].m_params.mfx.FrameInfo.CropW);
         lucasCtx->parameter(lucasCtx->fmWrapperPtr, lucas::FM_WRAPPER_PARAM_RESOLUTION_Y, m_components[eDEC].m_params.mfx.FrameInfo.CropH);
         mfxF64 dFrameRate = (mfxF64)info.FrameRateExtN / (mfxF64)info.FrameRateExtD;
-        lucasCtx->parameter(lucasCtx->fmWrapperPtr, lucas::FM_WRAPPER_PARAM_FRAME_RATE, reinterpret_cast<int>(&dFrameRate));
+        lucasCtx->parameter(lucasCtx->fmWrapperPtr, lucas::FM_WRAPPER_PARAM_FRAME_RATE, static_cast<int>(dFrameRate));
     }
 #endif // LUCAS_DLL
 
@@ -1404,9 +1406,11 @@ mfxStatus MFXDecPipeline::CreateSplitter()
     }
     else if (vm_string_strchr(m_inParams.strSrcFile, '*'))
     {
+#if defined(_WIN32) || defined(_WIN64)
         m_pSpl = new DirectoryBitstreamReader(pSpl.get());
         MFX_CHECK_POINTER(m_pSpl);
         pSpl.release();
+#endif
     }
     else
     {

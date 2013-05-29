@@ -11,6 +11,8 @@ File Name: .h
 \* ****************************************************************************** */
 
 #include <stddef.h>
+#include <stdexcept> /* for std exceptions on Linux/Android */
+
 #include "mfx_pipeline_defs.h"
 #include "mfx_extended_buffer.h"
 

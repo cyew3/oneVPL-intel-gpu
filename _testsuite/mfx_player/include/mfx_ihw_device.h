@@ -13,6 +13,7 @@ File Name: .h
 #pragma once
 
 #include "mfxstructures.h"
+#include "mfxvideo.h"
 #include "vm_strings.h"
 
 typedef void* WindowHandle;

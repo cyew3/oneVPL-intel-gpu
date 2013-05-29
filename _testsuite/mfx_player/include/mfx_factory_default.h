@@ -118,7 +118,7 @@ class PipelineObjectDesc
 {
 public:
     PipelineObjectDesc(int objType, T *pObj)
-        : PipelineObjectBaseTmpl(objType, pObj)
+        : PipelineObjectBaseTmpl<T>(objType, pObj)
     {
     }
     mfxSession session;

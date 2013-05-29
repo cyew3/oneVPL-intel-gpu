@@ -12,6 +12,8 @@ File Name: .h
 
 #pragma once
 
+#include <stdexcept> /* for std exceptions on Linux/Android */
+
 #include "mfx_singleton.h"
 #include "ippcp.h"
 #include "ipps.h"

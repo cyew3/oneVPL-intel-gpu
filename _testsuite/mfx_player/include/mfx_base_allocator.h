@@ -11,6 +11,8 @@ Copyright(c) 2008-2012 Intel Corporation. All Rights Reserved.
 #pragma once
 
 #include <list>
+#include <string.h> /* for memset on Linux/Android */
+#include <functional> /* for std::binary_function on Linux/Android */
 #include "mfxvideo.h"
 
 struct mfxAllocatorParams

@@ -10,6 +10,8 @@ Copyright(c) 2008-2012 Intel Corporation. All Rights Reserved.
 
 #pragma once
 
+#if defined(_WIN32) || defined(_WIN64)
+
 #include <atlbase.h>
 #include <d3d9.h>
 #include <dxva2api.h>
@@ -65,3 +67,4 @@ protected:
     DWORD m_surfaceUsage;
 };
 
+#endif // #if defined(_WIN32) || defined(_WIN64)

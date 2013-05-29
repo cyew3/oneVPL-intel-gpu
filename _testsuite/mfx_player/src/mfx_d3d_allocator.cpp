@@ -8,6 +8,8 @@ Copyright(c) 2008-2012 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
+#if defined(_WIN32) || defined(_WIN64)
+
 #include <objbase.h>
 #include <initguid.h>
 #include <assert.h>
@@ -382,3 +384,5 @@ mfxStatus D3DFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAl
     response->NumFrameActual = request->NumFrameSuggested;
     return MFX_ERR_NONE;
 }
+
+#endif // #if defined(_WIN32) || defined(_WIN64)

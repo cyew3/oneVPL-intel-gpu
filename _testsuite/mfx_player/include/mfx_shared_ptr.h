@@ -153,5 +153,5 @@ class EnableSharedFromThis
 {
 public:
     virtual ~EnableSharedFromThis(){}
-    typedef typename T SharedPtrType;
+    typedef T SharedPtrType;
 };

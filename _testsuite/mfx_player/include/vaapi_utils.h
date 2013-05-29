@@ -14,7 +14,8 @@ Copyright(c) 2011 Intel Corporation. All Rights Reserved.
 #ifdef LIBVA_SUPPORT
 
 #include <va/va.h>
-#include "sample_utils.h"
+#include <mfxdefs.h>
+#include <mfxlinux.h>
 
 class CLibVA
 {
@@ -34,7 +35,8 @@ protected:
     bool m_bVAInitialized;
 
 private:
-    DISALLOW_COPY_AND_ASSIGN(CLibVA);
+    CLibVA(const CLibVA&);
+    void operator=(const CLibVA&);
 };
 
 mfxStatus va_to_mfx_status(VAStatus va_res);

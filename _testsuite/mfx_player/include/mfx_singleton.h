@@ -52,7 +52,7 @@ T& MFXSingleton<T>::Instance(void)
 {
     if (!m_pInstance.get())
     {
-        UMC::AutomaticMutex lock(m_createMutex.ExtractHandle());
+        UMC::AutomaticUMCMutex lock(m_createMutex);
         if (!m_pInstance.get())
         {
             m_pInstance.reset(new T);

@@ -934,11 +934,15 @@ mfxStatus myMFXInit(const vm_char *pMFXLibraryPath, mfxIMPL impl, mfxVersion *pV
     MFX_DISP_HANDLE *pHandle = new MFX_DISP_HANDLE(NULL == pVer ? ver: *pVer);
     if (!pHandle) return MFX_ERR_MEMORY_ALLOC;
 
-    wchar_t path[MAX_PATH];
-#ifdef UNICODE
-    swprintf(path, L"%s", pMFXLibraryPath);
+    msdk_disp_char path[MAX_PATH];
+#if defined(_WIN32) || defined(_WIN64)
+    #ifdef UNICODE
+        swprintf(path, L"%s", pMFXLibraryPath);
+    #else
+        swprintf(path, L"%S", pMFXLibraryPath);
+    #endif
 #else
-    swprintf(path, L"%S", pMFXLibraryPath);
+    vm_string_sprintf(path, "%s", pMFXLibraryPath);
 #endif
 
     // implementation method masked from the input parameter

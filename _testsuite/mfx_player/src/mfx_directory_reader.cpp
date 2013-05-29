@@ -14,6 +14,8 @@
 #include "mfx_directory_reader.h"
 #include "ippdefs.h"
 
+#if defined(_WIN32) || defined(_WIN64)
+
 // returns vector of filenames in specified directory
 mfxStatus ListFiles(const vm_char *directory, std::vector<tstring> &out)
 {
@@ -122,3 +124,5 @@ mfxStatus DirectoryBitstreamReader::ReadNextFrame(mfxBitstream2 &bs)
 
     return sts;
 }
+
+#endif //#if defined(_WIN32) || defined(_WIN64)

@@ -8,6 +8,8 @@ Copyright(c) 2008-2012 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
+#include <stdlib.h>
+
 #include "mfx_sysmem_allocator.h"
 
 #define MSDK_ALIGN32(X) (((mfxU32)((X)+31)) & (~ (mfxU32)31))

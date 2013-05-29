@@ -16,7 +16,7 @@ Copyright(c) 2011-2012 Intel Corporation. All Rights Reserved.
 #include <stdlib.h>
 #include <va/va.h>
 
-#include "base_allocator.h"
+#include "mfx_base_allocator.h"
 
 #define MAX_QUERY_SURFACE_STATUS_ITERATIONS_NUM 100
 

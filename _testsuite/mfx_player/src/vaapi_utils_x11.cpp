@@ -11,6 +11,8 @@ Copyright(c) 2011 Intel Corporation. All Rights Reserved.
 #ifdef LIBVA_SUPPORT
 #if defined(LINUX32) || defined(LINUX64)
 
+
+#include <stdlib.h>
 #include <va/va_x11.h>
 #include "vaapi_utils.h"
 
