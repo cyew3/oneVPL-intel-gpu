@@ -28,7 +28,7 @@ template <class T>
 class BufferIdOf
 {
 public :
-    static const int id = 0;
+    enum {id = 0};
 private:
     BufferIdOf(){}
 };
