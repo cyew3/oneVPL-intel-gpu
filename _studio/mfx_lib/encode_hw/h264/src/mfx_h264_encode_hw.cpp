@@ -277,7 +277,7 @@ mfxStatus ImplementationAvc::Query(
         return MFX_ERR_NONE;
     }
 
-    ENCODE_CAPS hwCaps = { 0, };
+    ENCODE_CAPS hwCaps = { { 0,}  };
     sts = QueryHwCaps(core, hwCaps, DXVA2_Intel_Encode_AVC);
     if (sts != MFX_ERR_NONE)
         return MFX_WRN_PARTIAL_ACCELERATION;
@@ -437,7 +437,7 @@ mfxStatus ImplementationAvc::QueryIOSurf(
         inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY,
         MFX_ERR_INVALID_VIDEO_PARAM);
 
-    ENCODE_CAPS hwCaps = { 0 };
+    ENCODE_CAPS hwCaps = { { 0 } };
     sts = QueryHwCaps(core, hwCaps, DXVA2_Intel_Encode_AVC);
     if (sts != MFX_ERR_NONE)
         return MFX_WRN_PARTIAL_ACCELERATION;
@@ -569,7 +569,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         MFX_CHECK_STS(sts);
     }
 
-    mfxFrameAllocRequest request = { 0 };
+    mfxFrameAllocRequest request = { { 0 } };
     request.Info = m_video.mfx.FrameInfo;
 
     mfxExtOpaqueSurfaceAlloc * extOpaq = GetExtBuffer(m_video);
@@ -715,12 +715,13 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     Zero(m_stat);
 
     // FIXME: w/a for SNB issue with HRD at high bitrates
-    m_useWAForHighBitrates = !m_enabledSwBrc &&
+    // FIXME: check what to do with WA on Linux (MFX_HW_VAAPI) - currently it is switched off
+    m_useWAForHighBitrates = (MFX_HW_VAAPI != m_core->GetVAType()) && !m_enabledSwBrc &&
         m_video.mfx.RateControlMethod == MFX_RATECONTROL_CBR &&
         (m_currentPlatform < MFX_HW_HSW || m_currentPlatform == MFX_HW_VLV); // HRD WA for high bitrates isn't required for HSW and beyond
 
     // required for slice header patching
-    if (m_caps.HeaderInsertion == 1 && m_video.Protected == 0)
+    if ((m_caps.HeaderInsertion == 1 || m_currentPlatform == MFX_HW_IVB && m_core->GetVAType() == MFX_HW_VAAPI) && m_video.Protected == 0)
         m_tmpBsBuf.resize(m_maxBsSize);
 
     const size_t MAX_SEI_SIZE    = 10 * 1024;
@@ -1829,7 +1830,7 @@ mfxStatus ImplementationAvc::UpdateBitstream(
         needIntermediateBitstreamBuffer ||
         IsInplacePatchNeeded(m_video, task, fid);
 
-    if (m_caps.HeaderInsertion == 0 || m_video.Protected != 0)
+    if (m_caps.HeaderInsertion == 0 && (m_currentPlatform != MFX_HW_IVB || m_core->GetVAType() != MFX_HW_VAAPI) || m_video.Protected != 0)
         doPatch = needIntermediateBitstreamBuffer = false;
 
     // Lock d3d surface with compressed picture.
