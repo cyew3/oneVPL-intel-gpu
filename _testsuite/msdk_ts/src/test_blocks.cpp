@@ -36,7 +36,7 @@ msdk_ts_BLOCK(b_MFXInit){
     default_ver.Major = MFX_VERSION_MAJOR;
     default_ver.Minor = MFX_VERSION_MINOR;
     mfxIMPL default_impl =  MFX_IMPL_AUTO;
-    std::string platform = var_def<char*>("platform", "");
+    std::string platform = var_def<const char*>("platform", "");
     if(platform.size()){
         TRACE_PAR(platform);
 

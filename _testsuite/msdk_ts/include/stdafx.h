@@ -1,4 +1,4 @@
-/* ****************************************************************************** *\
+/* ******************************************************************************
 
 INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
@@ -8,7 +8,7 @@ Copyright(c) 2008-2012 Intel Corporation. All Rights Reserved.
 
 File Name: btest_allocator.cpp
 
-/* ****************************************************************************** */
+****************************************************************************** */
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <d3d9.h>
