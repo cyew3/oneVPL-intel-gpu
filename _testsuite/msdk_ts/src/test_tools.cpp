@@ -275,7 +275,7 @@ msdk_ts_BLOCK(t_Read_mfxBitstream){
 
         mfxU64 pos = f.ftell();
         mfxU32 tail = LengthOfReadData - bs.DataOffset;
-        memcpy(bs.Data, bs.Data + bs.DataOffset, tail);
+        memmove(bs.Data, bs.Data + bs.DataOffset, tail);
         mfxU32 toRead = MIN(static_cast<mfxU32>(f.file_size - pos), bs.MaxLength - tail);
         if (f.read(bs.Data + tail, toRead) != toRead)
         {
@@ -564,7 +564,7 @@ msdk_ts_BLOCK(t_DefineAllocator){
     frame_allocator & alloc = var_new<frame_allocator>(
         "global_allocator_instance", 
         new frame_allocator(
-            getAllocatorType(var_def<char*> ("alloc_type", is_d3d11 ? "d3d11" : "hw")),
+            getAllocatorType(var_def<char*> ("alloc_type", (char*)(is_d3d11 ? "d3d11" : "hw"))),
             getAllocMode    (var_def<char*> ("alloc_mode", "max")),
             getLockMode     (var_def<char*> ("lock_mode" , "valid")),
             getOpaqueMode   (var_def<char*> ("opaque_alloc_mode", "error"))
@@ -736,3 +736,17 @@ msdk_ts_BLOCK(t_GetAllocatedBuffers){
 
     return msdk_ts::resOK;
 }
+
+#if (defined(LINUX32) || defined(LINUX64))
+#if defined(LIBVA_SUPPORT)
+msdk_ts_BLOCK(t_GetVA){
+    LinDisplayHolder& va_holder  = var_old_or_new<LinDisplayHolder>("va_holder");
+    mfxHDL& va_display = var_old_or_new<mfxHDL>("va_display");
+
+    va_display = va_holder.GetVADisplayHandle();
+    CHECK(va_display, "Failed to Initialize libVA");
+
+    return msdk_ts::resOK;
+}
+#endif //defined(LIBVA_SUPPORT)
+#endif //(defined(LINUX32) || defined(LINUX64))

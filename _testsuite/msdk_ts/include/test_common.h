@@ -77,3 +77,45 @@ private:
     unsigned long value;
     static const unsigned long table[256];
 };
+
+#if defined(LINUX32) || defined (LINUX64)
+#include "mfxlinux.h"
+#if defined(LIBVA_SUPPORT)
+#include <va/va.h>
+#if defined(LIBVA_X11_SUPPORT)
+  #include <X11/Xlib.h>
+  #undef Status /*Xlib.h: #define Status int*/
+  #include <va/va_x11.h>
+  #define VAAPI_X_DEFAULT_DISPLAY ":0.0"
+  #define VAAPI_GET_X_DISPLAY(_display) (Display*) (_display)
+#endif //#if defined(LIBVA_X11_SUPPORT)
+#if defined(LIBVA_DRM_SUPPORT)
+  #include <va/va_drm.h>
+  #include <fcntl.h>
+  #include <unistd.h>
+#endif //#if defined(LIBVA_DRM_SUPPORT)
+
+class LinDisplayHolder
+{
+public:
+    LinDisplayHolder();
+    ~LinDisplayHolder();
+
+    static LinDisplayHolder & get_instance();
+
+    mfxHDL* GetVADisplayHandle();
+    mfxStatus CloseVADisplay();
+
+private:
+    static LinDisplayHolder* single_instance;
+#if defined(LIBVA_X11_SUPPORT)
+    void* x_display;
+#endif
+#if defined(LIBVA_DRM_SUPPORT)
+    int m_fd;
+#endif
+    mfxHDL va_display;
+};
+#endif //defined(LIBVA_SUPPORT)
+#endif //(defined(LINUX32) || defined(LINUX64))
+

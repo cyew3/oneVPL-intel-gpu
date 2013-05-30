@@ -109,6 +109,10 @@ msdk_ts_DECLARE_BLOCK(t_AllocOpaqueSurfPool);
 //IN : vpp_request
 //OUT: vpp_surf_pool_in, surf_pool = vpp_surf_pool_out
 msdk_ts_DECLARE_BLOCK(t_AllocVPPSurfPools);
+#if (defined(LINUX32) || defined(LINUX64))
+//OUT: va_display
+msdk_ts_DECLARE_BLOCK(t_GetVA);
+#endif
 
 msdk_ts_DECLARE_BLOCK(t_DefineAllocator);
 msdk_ts_DECLARE_BLOCK(t_AllocGetDevHdl);

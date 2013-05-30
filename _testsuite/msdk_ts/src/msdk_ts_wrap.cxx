@@ -11,6 +11,9 @@
 #define SWIGPERL
 #define SWIG_CASTRANK_MODE
 
+#if defined(LINUX32) || defined(LINUX64)
+  #define __int64 long long
+#endif
 
 #ifdef __cplusplus
 /* SwigValueWrapper is described in swig.swg */
