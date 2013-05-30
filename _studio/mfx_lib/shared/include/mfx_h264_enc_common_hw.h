@@ -637,11 +637,13 @@ namespace MfxHwH264Encode
         mfxFrameData const & src,
         mfxFrameInfo const & info);
 
+#if 0 // removed dependency from fwrite(). Custom writing to file shouldn't be present in MSDK releases w/o documentation and testing
     void WriteFrameData(
         vm_file *            file,
         VideoCORE *          core,
         mfxFrameData const & data,
         mfxFrameInfo const & info);
+#endif // removed dependency from fwrite(). Custom writing to file shouldn't be present in MSDK releases w/o documentation and testing
 
     mfxStatus ReadFrameData(
         vm_file *            file,

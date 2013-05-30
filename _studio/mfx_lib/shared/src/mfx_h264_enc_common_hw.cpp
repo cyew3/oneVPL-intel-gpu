@@ -3885,6 +3885,7 @@ void MfxHwH264Encode::CopyFrameData(
     ippiCopy_8u_C1R(src.UV + srcOffset, srcPitch, dst.UV + dstOffset, dstPitch, roiChroma);
 }
 
+#if 0 // removed dependency from fwrite(). Custom writing to file shouldn't be present in MSDK releases w/o documentation and testing
 void MfxHwH264Encode::WriteFrameData(
     vm_file *            file,
     VideoCORE *          core,
@@ -3910,6 +3911,7 @@ void MfxHwH264Encode::WriteFrameData(
         vm_file_fflush(file);
     }
 }
+#endif // removed dependency from fwrite(). Custom writing to file shouldn't be present in MSDK releases w/o documentation and testing
 
 mfxStatus MfxHwH264Encode::ReadFrameData(
     vm_file *            file,
