@@ -719,6 +719,19 @@ mfxStatus CommonCORE::GetHandle(mfxHandleType type, mfxHDL *handle)
     }
 
 #endif // #if defined(_WIN32) || defined(_WIN64)
+#if defined(LINUX32) || defined(LINUX64) || defined(MFX_VA_LINUX)
+    if (MFX_HANDLE_VA_DISPLAY == type )
+    {
+        if (m_hdl)
+        {
+            *handle = m_hdl;
+            return MFX_ERR_NONE;
+        }
+        // not exist handle yet
+        else
+            return MFX_ERR_NOT_FOUND;
+    }
+#endif
     // if wrong type
     return MFX_ERR_UNDEFINED_BEHAVIOR;
 
