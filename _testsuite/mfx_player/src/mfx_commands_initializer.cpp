@@ -63,22 +63,22 @@ baseCmdsInitializer::baseCmdsInitializer( mfxU32 nActivatedFrame
                                         , mfxVideoParam * pResetEncParam
                                         , mfxVideoParam * pMaskedEncParam
                                         , mfxExtAVCRefListCtrl  * refList)
-    : m_fWarminUpTime(fWarminUpTime)
+    : m_nActivatedFrame(nActivatedFrame)
+    , m_fWarminUpTime(fWarminUpTime)
     , m_fSeekToTime(fSeekToTime)
     , m_nMaxSkipLevel(nMaxSkipLevel)
-    , m_nActivatedFrame(nActivatedFrame)
     , m_pRefList()
     , m_ResetParams()
     , m_refList()
     , m_maskedParams()
     , m_Randomizer(pRand)
 {
-    if (NULL == !pResetEncParam)
+    if (NULL != pResetEncParam)
     {
         memcpy(&m_ResetParams, pResetEncParam, sizeof(*pResetEncParam));
     }
 
-    if (NULL == !pMaskedEncParam)
+    if (NULL != pMaskedEncParam)
     {
         memcpy(&m_maskedParams, pMaskedEncParam, sizeof(*pMaskedEncParam));
     }

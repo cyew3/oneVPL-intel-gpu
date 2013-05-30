@@ -197,9 +197,9 @@ private:
     public:
         SerialNodeImpl(const tstring & key = tstring(), const tstring & prefix = tstring(), ArrayNode *pOwner = NULL)
             : SerialNode(VM_STRING(""))
+            , m_pOwner(pOwner)
             , m_key(key)
             , m_prefix(prefix)
-            , m_pOwner(pOwner)
         {
         }
         bool isEqual(const tstring & key, const tstring & prefix)
