@@ -381,7 +381,7 @@ mfxStatus MFXSSIMCalc::Compare(mfxFrameSurface1 * pIn1, mfxFrameSurface1 * pIn2)
         }
     }
 
-    m_fLastResults[0] = ssim(data1[0], step1[0], data2[0], step2[0], roi, 0);
+    m_fLastResults[0] = ssim(data1[0], pIn1->Data.Pitch, data2[0], pIn2->Data.Pitch, roi, 0);
  
     switch (pIn1->Info.FourCC)
     {
