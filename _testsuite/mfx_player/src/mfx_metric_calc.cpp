@@ -309,7 +309,7 @@ vm_char* MFXSSIMCalc::GetMetricName()
 mfxStatus MFXSSIMCalc::GetLastCmpResult(double pResult[3])
 {
     MFX_FOR(3, pResult[i] = m_fLastResults[i]);
-    return MFX_ERR_UNSUPPORTED;
+    return MFX_ERR_NONE;
 }
 
 mfxStatus MFXSSIMCalc::GetOveralResult(double pResult[3])
@@ -320,7 +320,7 @@ mfxStatus MFXSSIMCalc::GetOveralResult(double pResult[3])
     }
     else
         return MFX_ERR_UNKNOWN;
-    return MFX_ERR_UNSUPPORTED;
+    return MFX_ERR_NONE;
 }
 
 mfxStatus MFXSSIMCalc::Compare(mfxFrameSurface1 * pIn1, mfxFrameSurface1 * pIn2)
@@ -428,13 +428,13 @@ mfxStatus MFXSSIMCalc::Compare(mfxFrameSurface1 * pIn1, mfxFrameSurface1 * pIn2)
 mfxStatus MFXSSIMCalc::GetMaxResult(mfxF64 pResult[3])
 {
     MFX_FOR(3, pResult[i] = m_ssimBST[i]);
-    return MFX_ERR_UNSUPPORTED;
+    return MFX_ERR_NONE;
 }
 
 mfxStatus MFXSSIMCalc::GetMinResult(mfxF64 pResult[3])
 {
     MFX_FOR(3, pResult[i] = m_ssimWST[i]);
-    return MFX_ERR_UNSUPPORTED;
+    return MFX_ERR_NONE;
 }
 
 //////////////////////////////////////////////////////////////////////////
