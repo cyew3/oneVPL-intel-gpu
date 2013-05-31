@@ -986,12 +986,15 @@ mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint
     mfxStatus sts;
     /* Lets find out VA type (Linux, Win or Android) and platform type */
     /* It can be different behaviour for Linux and IVB, Linux and HSW*/
-    bool bLinuxAndIVB = false;
+    bool bLinuxAndIVB_HSW = false;
     if ( (NULL != core) &&
         (core->GetVAType() == MFX_HW_VAAPI) &&
-        (core->GetHWType() == MFX_HW_IVB) )
+        ( (core->GetHWType() == MFX_HW_IVB) || (core->GetHWType() == MFX_HW_HSW)) )
     {
-        bLinuxAndIVB = true;
+        /* !!! Some features for HSW does not supported in HSW 16.2 release
+         * It was decided HWS functionality for 16.2 will be same as for IVB 16.1 release
+         * */
+        bLinuxAndIVB_HSW = true;
     }
 
     if( MFX_EXTBUFF_VPP_DENOISE == filterName )
@@ -1000,7 +1003,7 @@ mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint
     }
     else if( MFX_EXTBUFF_VPP_DETAIL == filterName )
     {
-        if (false == bLinuxAndIVB)
+        if (false == bLinuxAndIVB_HSW)
             sts = MFXVideoVPPDetailEnhancement::Query( pHint );
         else
         {
@@ -1010,7 +1013,7 @@ mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint
     }
     else if( MFX_EXTBUFF_VPP_PROCAMP == filterName )
     {
-        if (false == bLinuxAndIVB)
+        if (false == bLinuxAndIVB_HSW)
             sts = MFXVideoVPPProcAmp::Query( pHint );
         else
         {
@@ -1034,7 +1037,7 @@ mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint
     //}
     else if( MFX_EXTBUFF_VPP_SCENE_ANALYSIS == filterName )
     {
-        if (false == bLinuxAndIVB)
+        if (false == bLinuxAndIVB_HSW)
             sts = MFXVideoVPPProcAmp::Query( pHint );
         else
         {
