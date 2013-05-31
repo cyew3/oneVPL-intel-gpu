@@ -62,8 +62,8 @@ public:
     }
 
 private:
-    H264DecoderFrame *m_refPicList1[MAX_NUM_REF_FRAMES * 2 + 3];
-    ReferenceFlags    m_flags1[MAX_NUM_REF_FRAMES * 2 + 3];
+    H264DecoderFrame *m_refPicList1[MAX_NUM_REF_FRAMES + 3];
+    ReferenceFlags    m_flags1[MAX_NUM_REF_FRAMES + 3];
 };
 
 enum BusyStates
@@ -123,10 +123,6 @@ class H264DecoderFrame : public H264DecYUVBufferPadded, public RefCounter
     Ipp32s           m_PictureStructureForDec;
     DisplayPictureStruct  m_displayPictureStruct;
 
-#ifdef USE_SEI
-    Ipp8u            m_PictureStructureFromSEI;
-    Ipp8s            m_RepeatCount;
-#endif
     Ipp32s           totalMBs;
 
     // For type 1 calculation of m_PicOrderCnt. m_FrameNum is needed to

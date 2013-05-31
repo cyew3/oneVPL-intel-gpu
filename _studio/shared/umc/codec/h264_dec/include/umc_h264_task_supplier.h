@@ -499,7 +499,6 @@ public:
     }
 
     virtual Status RunDecoding(bool force, H264DecoderFrame ** decoded = 0);
-    virtual Status IsNeedRunDecoding(H264DecoderFrame ** decoded);
     virtual Status RunDecoding_1();
     virtual H264DecoderFrame * FindSurface(FrameMemID id);
 

@@ -1,0 +1,1503 @@
+/*//////////////////////////////////////////////////////////////////////////////
+//
+//                  INTEL CORPORATION PROPRIETARY INFORMATION
+//     This software is supplied under the terms of a license agreement or
+//     nondisclosure agreement with Intel Corporation and may not be copied
+//     or disclosed except in accordance with the terms of that agreement.
+//          Copyright(c) 2012-2013 Intel Corporation. All Rights Reserved.
+//
+*/
+
+#include <limits>
+#include <algorithm>
+#include "mfx_h265_dec_decode.h"
+
+#if defined (MFX_ENABLE_H265_VIDEO_DECODE)
+
+#include "mfx_common.h"
+#include "mfx_common_decode_int.h"
+
+#include "umc_h265_mfx_supplier.h"
+
+// debug
+#include "umc_h265_frame_list.h"
+
+#include "mfx_enc_common.h"
+
+#ifdef MFX_VA
+#include "umc_h265_va_supplier.h"
+#include "umc_va_dxva2_protected.h"
+#endif
+
+
+inline bool IsNeedToUseHWBuffering(eMFXHWType type)
+{
+    type;return false;
+    //return (type != MFX_HW_LAKE); // eagle lake has own workaround!
+}
+
+struct ThreadTaskInfo
+{
+    mfxFrameSurface1 *surface_work;
+    mfxFrameSurface1 *surface_out;
+    mfxU32            taskID; // for task ordering
+};
+
+enum
+{
+    ENABLE_DELAYED_DISPLAY_MODE = 1
+};
+
+VideoDECODEH265::VideoDECODEH265(VideoCORE *core, mfxStatus * sts)
+    : VideoDECODE()
+    , m_core(core)
+    , m_isInit(false)
+    , m_isOpaq(false)
+    , m_frameOrder((mfxU16)MFX_FRAMEORDER_UNKNOWN)
+    , m_platform(MFX_PLATFORM_SOFTWARE)
+    , m_useDelayedDisplay(false)
+    , m_va(0)
+    , m_globalTask(false)
+    , m_isFirstRun(true)
+{
+    memset(&m_stat, 0, sizeof(m_stat));
+
+    if (sts)
+    {
+        *sts = MFX_ERR_NONE;
+    }
+}
+
+VideoDECODEH265::~VideoDECODEH265(void)
+{
+    Close();
+}
+
+mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
+{
+    UMC::AutomaticUMCMutex guard(m_mGuard);
+
+    if (m_isInit)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    MFX_CHECK_NULL_PTR1(par);
+
+    m_platform = MFX_Utility::GetPlatform_H265(m_core, par);
+
+    eMFXHWType type = MFX_HW_UNKNOWN;
+    if (m_platform == MFX_PLATFORM_HARDWARE)
+    {
+        type = m_core->GetHWType();
+    }
+
+    if (CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type) < MFX_ERR_NONE)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    if (!MFX_Utility::CheckVideoParam_H265(par, type))
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    m_vFirstPar = *par;
+    m_vFirstPar.mfx.NumThread = 0;
+
+    bool isNeedChangeVideoParamWarning = IsNeedChangeVideoParam(&m_vFirstPar);
+
+    m_vPar = m_vFirstPar;
+    m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
+    m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_CODING_OPTION_SPSPPS);
+
+    mfxU32 asyncDepth = par->AsyncDepth ? par->AsyncDepth : m_core->GetAutoAsyncDepth();
+    m_vPar.mfx.NumThread = (mfxU16)asyncDepth;
+    m_vPar.mfx.NumThread = 1; //1 thread
+    if (MFX_PLATFORM_SOFTWARE != m_platform)
+        m_vPar.mfx.NumThread = 1;
+
+    if (MFX_PLATFORM_SOFTWARE == m_platform)
+    {
+        m_pH265VideoDecoder.reset(new MFXTaskSupplier_H265());
+        m_FrameAllocator.reset(new mfx_UMC_FrameAllocator());
+    }
+    else
+    {
+        m_useDelayedDisplay = ENABLE_DELAYED_DISPLAY_MODE != 0 && IsNeedToUseHWBuffering(m_core->GetHWType()) && (asyncDepth != 1);
+
+#if defined (MFX_VA)
+        m_pH265VideoDecoder.reset(new VATaskSupplier()); // HW
+        m_FrameAllocator.reset(new mfx_UMC_FrameAllocator_D3D(false));
+#else
+        return MFX_ERR_UNSUPPORTED;
+#endif
+    }
+
+    Ipp32s useInternal = (MFX_PLATFORM_SOFTWARE == m_platform) ?
+        (m_vPar.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (m_vPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
+
+    // allocate memory
+    mfxFrameAllocRequest request;
+    mfxFrameAllocRequest request_internal;
+    memset(&request, 0, sizeof(request));
+    memset(&m_response, 0, sizeof(m_response));
+    memset(&m_response_alien, 0, sizeof(m_response_alien));
+    m_isOpaq = false;
+
+    mfxStatus mfxSts = QueryIOSurfInternal(m_platform, type, &m_vPar, &request, m_core);
+    if (mfxSts != MFX_ERR_NONE)
+        return mfxSts;
+
+    if (m_vPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+    {
+        mfxExtOpaqueSurfaceAlloc *pOpaqAlloc = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+        if (!pOpaqAlloc)
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+
+        useInternal = (m_platform == MFX_PLATFORM_SOFTWARE) ? (pOpaqAlloc->Out.Type & MFX_MEMTYPE_DXVA2_DECODER_TARGET) : (pOpaqAlloc->Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY);
+    }
+
+    if (useInternal)
+        request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
+    else
+        request.Type |= MFX_MEMTYPE_EXTERNAL_FRAME;
+
+    request_internal = request;
+
+    // allocates external surfaces:
+    bool mapOpaq = true;
+    mfxExtOpaqueSurfaceAlloc *pOpqAlloc = 0;
+    mfxSts = UpdateAllocRequest(par, &request, pOpqAlloc, mapOpaq);
+    if (mfxSts < MFX_ERR_NONE)
+        return mfxSts;
+
+    if (m_isOpaq && !m_core->IsCompatibleForOpaq())
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+
+    if (mapOpaq)
+    {
+        mfxSts = m_core->AllocFrames(&request,
+                                      &m_response,
+                                      pOpqAlloc->Out.Surfaces,
+                                      pOpqAlloc->Out.NumSurface);
+    }
+    else
+    {
+        if (m_platform != MFX_PLATFORM_SOFTWARE && !useInternal)
+        {
+            mfxSts = m_core->AllocFrames(&request, &m_response);
+        }
+    }
+
+    if (mfxSts < MFX_ERR_NONE)
+        return mfxSts;
+
+    // allocates internal surfaces:
+    if (useInternal)
+    {
+        m_response_alien = m_response;
+        m_FrameAllocator->SetExternalFramesResponse(&m_response_alien);
+        request = request_internal;
+        mfxSts = m_core->AllocFrames(&request_internal, &m_response);
+        if (mfxSts < MFX_ERR_NONE)
+            return mfxSts;
+    }
+    else
+    {
+        m_FrameAllocator->SetExternalFramesResponse(&m_response);
+    }
+
+#if defined (MFX_VA)
+    if (m_platform != MFX_PLATFORM_SOFTWARE)
+    {
+        mfxSts = m_core->CreateVA(&m_vFirstPar, &request, &m_response);
+        if (mfxSts < MFX_ERR_NONE)
+            return mfxSts;
+    }
+#endif
+
+    UMC::Status umcSts = m_FrameAllocator->InitMfx(0, m_core, &m_vFirstPar, &request, &m_response, !useInternal, m_platform == MFX_PLATFORM_SOFTWARE);
+    if (umcSts != UMC::UMC_OK)
+        return MFX_ERR_MEMORY_ALLOC;
+
+    umcSts = m_MemoryAllocator.InitMem(0, m_core);
+    if (umcSts != UMC::UMC_OK)
+        return MFX_ERR_MEMORY_ALLOC;
+
+    m_pH265VideoDecoder->SetFrameAllocator(m_FrameAllocator.get());
+
+    UMC::VideoDecoderParams umcVideoParams;
+    ConvertMFXParamsToUMC(&m_vFirstPar, &umcVideoParams);
+    umcVideoParams.numThreads = m_vPar.mfx.NumThread;
+
+#if defined (MFX_VA)
+    if (MFX_PLATFORM_SOFTWARE != m_platform)
+    {
+        m_core->GetVA((mfxHDL*)&m_va, MFX_MEMTYPE_FROM_DECODE);
+        umcVideoParams.pVideoAccelerator = m_va;
+        ((VATaskSupplier*)m_pH265VideoDecoder.get())->SetVideoHardwareAccelerator(m_va);
+        if (m_va->GetProtectedVA())
+        {
+            if (m_va->GetProtectedVA()->SetModes(par) != UMC::UMC_OK)
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+    }
+#endif
+
+    umcVideoParams.lpMemoryAllocator = &m_MemoryAllocator;
+
+    umcSts = m_pH265VideoDecoder->Init(&umcVideoParams);
+    if (umcSts != UMC::UMC_OK)
+    {
+        return ConvertUMCStatusToMfx(umcSts);
+    }
+
+    m_isInit = true;
+
+    m_frameOrder = (mfxU16)MFX_FRAMEORDER_UNKNOWN;
+    m_globalTask = false;
+    m_isFirstRun = true;
+
+#if defined (MFX_VA)
+    if (MFX_PLATFORM_SOFTWARE != m_platform && m_useDelayedDisplay)
+    {
+        ((VATaskSupplier*)m_pH265VideoDecoder.get())->SetBufferedFramesNumber(NUMBER_OF_ADDITIONAL_FRAMES);
+    }
+#endif
+
+    m_pH265VideoDecoder->SetVideoParams(&m_vFirstPar);
+
+    if (m_platform != m_core->GetPlatformType())
+    {
+        VM_ASSERT(m_platform == MFX_PLATFORM_SOFTWARE);
+        return MFX_WRN_PARTIAL_ACCELERATION;
+    }
+
+    if (isNeedChangeVideoParamWarning)
+    {
+        return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEH265::Reset(mfxVideoParam *par)
+{
+    UMC::AutomaticUMCMutex guard(m_mGuard);
+
+    if (!m_isInit)
+        return MFX_ERR_NOT_INITIALIZED;
+
+    MFX_CHECK_NULL_PTR1(par);
+
+    eMFXHWType type = MFX_HW_UNKNOWN;
+    if (m_platform == MFX_PLATFORM_HARDWARE)
+    {
+        type = m_core->GetHWType();
+    }
+
+    eMFXPlatform platform = MFX_Utility::GetPlatform_H265(m_core, par);
+
+    if (CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type) < MFX_ERR_NONE)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    if (!MFX_Utility::CheckVideoParam_H265(par, type))
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    if (!IsSameVideoParam(par, &m_vInitPar, type))
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+
+    // need to sw acceleration
+    if (m_platform != platform)
+    {
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+    }
+
+    m_pH265VideoDecoder->Reset();
+
+    if (m_FrameAllocator->Reset() != UMC::UMC_OK)
+    {
+        return MFX_ERR_MEMORY_ALLOC;
+    }
+
+    m_frameOrder = (mfxU16)MFX_FRAMEORDER_UNKNOWN;
+    m_globalTask = false;
+    m_isFirstRun = true;
+
+    memset(&m_stat, 0, sizeof(m_stat));
+    m_vFirstPar = *par;
+
+    bool isNeedChangeVideoParamWarning = IsNeedChangeVideoParam(&m_vFirstPar);
+    m_vPar = m_vFirstPar;
+    m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
+    m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_CODING_OPTION_SPSPPS);
+
+    m_vPar.mfx.NumThread = (mfxU16)(m_vPar.AsyncDepth ? m_vPar.AsyncDepth : m_core->GetAutoAsyncDepth());
+    if (MFX_PLATFORM_SOFTWARE != m_platform)
+        m_vPar.mfx.NumThread = 1;
+
+    if (IS_PROTECTION_ANY(m_vFirstPar.Protected))
+    {
+#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
+        if (m_va->GetProtectedVA())
+        {
+#if defined MFX_VA_WIN
+            if (m_va->GetProtectedVA()->SetModes(par) != UMC::UMC_OK)
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+#endif
+        }
+        else
+        {
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
+#endif
+    }
+
+    m_pH265VideoDecoder->SetVideoParams(&m_vFirstPar);
+
+    if (m_platform != m_core->GetPlatformType())
+    {
+        VM_ASSERT(m_platform == MFX_PLATFORM_SOFTWARE);
+        return MFX_WRN_PARTIAL_ACCELERATION;
+    }
+
+    if (isNeedChangeVideoParamWarning)
+    {
+        return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEH265::Close(void)
+{
+    UMC::AutomaticUMCMutex guard(m_mGuard);
+
+    if (!m_isInit || !m_pH265VideoDecoder.get())
+        return MFX_ERR_NOT_INITIALIZED;
+
+    m_pH265VideoDecoder->Close();
+    m_FrameAllocator->Close();
+
+    if (m_response.NumFrameActual)
+        m_core->FreeFrames(&m_response);
+
+    if (m_response_alien.NumFrameActual)
+        m_core->FreeFrames(&m_response_alien);
+
+    m_isOpaq = false;
+    m_isInit = false;
+    m_isFirstRun = true;
+    m_frameOrder = (mfxU16)MFX_FRAMEORDER_UNKNOWN;
+    m_va = 0;
+    memset(&m_stat, 0, sizeof(m_stat));
+    return MFX_ERR_NONE;
+}
+
+mfxTaskThreadingPolicy VideoDECODEH265::GetThreadingPolicy(void)
+{
+    return MFX_TASK_THREADING_SHARED;
+}
+
+mfxStatus VideoDECODEH265::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out)
+{
+    MFX_CHECK_NULL_PTR1(out);
+
+    eMFXPlatform platform = MFX_Utility::GetPlatform_H265(core, in);
+
+    eMFXHWType type = MFX_HW_UNKNOWN;
+    if (platform == MFX_PLATFORM_HARDWARE)
+    {
+        type = core->GetHWType();
+    }
+
+    return MFX_Utility::Query_H265(core, in, out, type);
+}
+
+mfxStatus VideoDECODEH265::GetVideoParam(mfxVideoParam *par)
+{
+    UMC::AutomaticUMCMutex guard(m_mGuard);
+
+    if (!m_isInit)
+        return MFX_ERR_NOT_INITIALIZED;
+
+    MFX_CHECK_NULL_PTR1(par);
+
+    memcpy(&par->mfx, &m_vFirstPar.mfx, sizeof(mfxInfoMFX));
+
+    FillVideoParam(&m_vPar, true);
+
+    par->Protected = m_vPar.Protected;
+    par->IOPattern = m_vPar.IOPattern;
+    par->AsyncDepth = m_vPar.AsyncDepth;
+
+    mfxExtPAVPOption * buffer = (mfxExtPAVPOption*)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
+    if (buffer)
+    {
+        if (!IS_PROTECTION_PAVP_ANY(m_vPar.Protected))
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+
+        mfxExtPAVPOption * bufferInternal = m_vPar.GetExtendedBuffer<mfxExtPAVPOption>(MFX_EXTBUFF_PAVP_OPTION);
+        memcpy(buffer, bufferInternal, sizeof(mfxExtPAVPOption));
+    }
+
+    mfxExtVideoSignalInfo * videoSignal = (mfxExtVideoSignalInfo *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
+    if (videoSignal)
+    {
+        mfxExtVideoSignalInfo * videoSignalInternal = m_vPar.GetExtendedBuffer<mfxExtVideoSignalInfo>(MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
+        memcpy(videoSignal, videoSignalInternal, sizeof(mfxExtVideoSignalInfo));
+    }
+
+    // mvc headers
+    mfxExtMVCSeqDesc * mvcSeqDesc = (mfxExtMVCSeqDesc *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
+    mfxExtMVCSeqDesc * mvcSeqDescInternal = (mfxExtMVCSeqDesc *)GetExtendedBuffer(m_vPar.ExtParam, m_vPar.NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
+    if (mvcSeqDesc && mvcSeqDescInternal && mvcSeqDescInternal->NumView)
+    {
+        mvcSeqDesc->NumView = mvcSeqDescInternal->NumView;
+        mvcSeqDesc->NumViewId = mvcSeqDescInternal->NumViewId;
+        mvcSeqDesc->NumOP = mvcSeqDescInternal->NumOP;
+
+        if (mvcSeqDesc->NumViewAlloc < mvcSeqDescInternal->NumView ||
+            mvcSeqDesc->NumViewIdAlloc < mvcSeqDescInternal->NumViewId ||
+            mvcSeqDesc->NumOPAlloc < mvcSeqDescInternal->NumOP)
+        {
+            return MFX_ERR_NOT_ENOUGH_BUFFER;
+        }
+
+        memcpy(mvcSeqDesc->View, mvcSeqDescInternal->View, mvcSeqDescInternal->NumView * sizeof(mfxMVCViewDependency));
+        memcpy(mvcSeqDesc->ViewId, mvcSeqDescInternal->ViewId, mvcSeqDescInternal->NumViewId * sizeof(mfxU16));
+        memcpy(mvcSeqDesc->OP, mvcSeqDescInternal->OP, mvcSeqDescInternal->NumOP * sizeof(mfxMVCOperationPoint));
+
+        mfxU16 * targetView = mvcSeqDesc->ViewId;
+        for (mfxU32 i = 0; i < mvcSeqDesc->NumOP; i++)
+        {
+            mvcSeqDesc->OP[i].TargetViewId = targetView;
+            targetView += mvcSeqDesc->OP[i].NumTargetViews;
+        }
+    }
+
+    mfxExtMVCTargetViews * mvcTarget = (mfxExtMVCTargetViews *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_MVC_TARGET_VIEWS);
+    mfxExtMVCTargetViews * mvcTargetInternal = (mfxExtMVCTargetViews *)GetExtendedBuffer(m_vPar.ExtParam, m_vPar.NumExtParam, MFX_EXTBUFF_MVC_TARGET_VIEWS);
+    if (mvcTarget && mvcTargetInternal && mvcTargetInternal->NumView)
+    {
+        memcpy(mvcTarget, mvcTargetInternal, sizeof(mfxExtMVCTargetViews));
+    }
+
+    // sps/pps headers
+    mfxExtCodingOptionSPSPPS * spsPps = (mfxExtCodingOptionSPSPPS *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_CODING_OPTION_SPSPPS);
+    if (spsPps)
+    {
+        mfxExtCodingOptionSPSPPS * spsPpsInternal = (mfxExtCodingOptionSPSPPS *)GetExtendedBuffer(m_vPar.ExtParam, m_vPar.NumExtParam, MFX_EXTBUFF_CODING_OPTION_SPSPPS);
+
+        VM_ASSERT(spsPpsInternal);
+
+        spsPps->SPSId = spsPpsInternal->SPSId;
+        spsPps->PPSId = spsPpsInternal->PPSId;
+
+        if (spsPps->SPSBufSize < spsPpsInternal->SPSBufSize ||
+            spsPps->PPSBufSize < spsPpsInternal->PPSBufSize)
+            return MFX_ERR_NOT_ENOUGH_BUFFER;
+
+        spsPps->SPSBufSize = spsPpsInternal->SPSBufSize;
+        spsPps->PPSBufSize = spsPpsInternal->PPSBufSize;
+
+        memcpy(spsPps->SPSBuffer, spsPpsInternal->SPSBuffer, spsPps->SPSBufSize);
+        memcpy(spsPps->PPSBuffer, spsPpsInternal->PPSBuffer, spsPps->PPSBufSize);
+    }
+
+    if (!par->mfx.FrameInfo.FrameRateExtD && !par->mfx.FrameInfo.FrameRateExtN)
+    {
+        par->mfx.FrameInfo.FrameRateExtD = m_vPar.mfx.FrameInfo.FrameRateExtD;
+        par->mfx.FrameInfo.FrameRateExtN = m_vPar.mfx.FrameInfo.FrameRateExtN;
+
+        if (!par->mfx.FrameInfo.FrameRateExtD && !par->mfx.FrameInfo.FrameRateExtN)
+        {
+            par->mfx.FrameInfo.FrameRateExtN = 30;
+            par->mfx.FrameInfo.FrameRateExtD = 1;
+        }
+    }
+
+    if (!par->mfx.FrameInfo.AspectRatioH && !par->mfx.FrameInfo.AspectRatioW)
+    {
+        par->mfx.FrameInfo.AspectRatioH = m_vPar.mfx.FrameInfo.AspectRatioH;
+        par->mfx.FrameInfo.AspectRatioW = m_vPar.mfx.FrameInfo.AspectRatioW;
+
+        if (!par->mfx.FrameInfo.AspectRatioH && !par->mfx.FrameInfo.AspectRatioW)
+        {
+            par->mfx.FrameInfo.AspectRatioH = 1;
+            par->mfx.FrameInfo.AspectRatioW = 1;
+        }
+    }
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEH265::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVideoParam *par)
+{
+    MFX_CHECK_NULL_PTR2(bs, par);
+
+    mfxStatus sts = CheckBitstream(bs);
+    if (sts != MFX_ERR_NONE)
+        return sts;
+
+    MFXMediaDataAdapter in(bs);
+
+    mfx_UMC_MemAllocator  tempAllocator;
+//    DefaultMemoryAllocator tempAllocator;
+    tempAllocator.InitMem(0, core);
+
+    H265VideoDecoderParams avcInfo;
+    avcInfo.m_pData = &in;
+
+    MFX_AVC_Decoder_H265 decoder;
+
+    decoder.SetMemoryAllocator(&tempAllocator);
+    UMC::Status umcRes = MFX_Utility::DecodeHeader(&decoder, &avcInfo, bs, par);
+
+    if (umcRes == UMC::UMC_ERR_NOT_ENOUGH_DATA)
+        return MFX_ERR_MORE_DATA;
+
+    if (umcRes != UMC::UMC_OK)
+        return ConvertUMCStatusToMfx(umcRes);
+
+    // sps/pps headers
+    mfxExtCodingOptionSPSPPS * spsPps = (mfxExtCodingOptionSPSPPS *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_CODING_OPTION_SPSPPS);
+    if (spsPps)
+    {
+        RawHeader_H265 *sps = decoder.GetSPS();
+        RawHeader_H265 *pps = decoder.GetPPS();
+
+        if (sps->GetSize())
+        {
+            // reserved spsPps->SPSId = (mfxU16)sps->GetID();
+            if (spsPps->SPSBufSize < sps->GetSize())
+                return MFX_ERR_NOT_ENOUGH_BUFFER;
+
+            spsPps->SPSBufSize = (mfxU16)sps->GetSize();
+            memcpy(spsPps->SPSBuffer, sps->GetPointer(), spsPps->SPSBufSize);
+        }
+        else
+        {
+            // reserved spsPps->SPSId = 0;
+            spsPps->SPSBufSize = 0;
+        }
+
+        if (pps->GetSize())
+        {
+            // reserved spsPps->PPSId = (mfxU16)pps->GetID();
+            if (spsPps->PPSBufSize < pps->GetSize())
+                return MFX_ERR_NOT_ENOUGH_BUFFER;
+
+            spsPps->PPSBufSize = (mfxU16)pps->GetSize();
+            memcpy(spsPps->PPSBuffer, pps->GetPointer(), spsPps->PPSBufSize);
+        }
+        else
+        {
+            // reserved spsPps->PPSId = 0;
+            spsPps->PPSBufSize = 0;
+        }
+    }
+
+    //eMFXPlatform platform = MFX_Utility::GetPlatform(core, par);
+    //if (platform != core->GetPlatformType())
+    //{
+    //    VM_ASSERT(platform == MFX_PLATFORM_SOFTWARE);
+    //    return MFX_WRN_PARTIAL_ACCELERATION;
+    //}
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request)
+{
+    MFX_CHECK_NULL_PTR2(par, request);
+
+    eMFXPlatform platform = MFX_Utility::GetPlatform_H265(core, par);
+
+    eMFXHWType type = MFX_HW_UNKNOWN;
+    if (platform == MFX_PLATFORM_HARDWARE)
+    {
+        type = core->GetHWType();
+    }
+
+    mfxVideoParam params;
+    memcpy(&params, par, sizeof(mfxVideoParam));
+    bool isNeedChangeVideoParamWarning = IsNeedChangeVideoParam(&params);
+
+    if (!(par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && !(par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) && !(par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    if ((par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && (par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    if ((par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && (par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    if ((par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    if (par->mfx.DecodedOrder)
+        return MFX_ERR_UNSUPPORTED;
+
+    //if (!MFX_Utility::CheckVideoParam_H265(par, type))
+      //  return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    mfxStatus sts = QueryIOSurfInternal(platform, type, &params, request, core);
+    if (sts != MFX_ERR_NONE)
+        return sts;
+
+    Ipp32s isInternalManaging = (MFX_PLATFORM_SOFTWARE == platform) ?
+        (params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
+
+    if (isInternalManaging)
+    {
+        request->NumFrameSuggested = request->NumFrameMin = par->AsyncDepth ? par->AsyncDepth : core->GetAutoAsyncDepth();
+
+        if (MFX_PLATFORM_SOFTWARE == platform)
+            request->Type = MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_DECODE;
+        else
+            request->Type = MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_DECODE;
+    }
+
+    if (par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+    {
+        request->Type |= MFX_MEMTYPE_OPAQUE_FRAME;
+    }
+    else
+    {
+        request->Type |= MFX_MEMTYPE_EXTERNAL_FRAME;
+    }
+
+    if (platform != core->GetPlatformType())
+    {
+        VM_ASSERT(platform == MFX_PLATFORM_SOFTWARE);
+        return MFX_WRN_PARTIAL_ACCELERATION;
+    }
+
+    if (isNeedChangeVideoParamWarning)
+    {
+        return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEH265::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType type, mfxVideoParam *par, mfxFrameAllocRequest *request, VideoCORE *core)
+{
+    memcpy(&request->Info, &par->mfx.FrameInfo, sizeof(mfxFrameInfo));
+
+    mfxU32 asyncDepth = (par->AsyncDepth ? par->AsyncDepth : core->GetAutoAsyncDepth());
+    bool useDelayedDisplay = (ENABLE_DELAYED_DISPLAY_MODE != 0) && IsNeedToUseHWBuffering(type) && (asyncDepth != 1);
+
+    mfxI32 dpbSize = CalculateDPBSize(par->mfx.CodecLevel, par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height);
+    mfxU32 numMin = dpbSize + 1 + asyncDepth;
+    if (platform != MFX_PLATFORM_SOFTWARE && useDelayedDisplay) // equals if (m_useDelayedDisplay) - workaround
+        numMin += NUMBER_OF_ADDITIONAL_FRAMES;
+    request->NumFrameMin = (mfxU16)numMin;
+
+    request->NumFrameSuggested = request->NumFrameMin;
+
+    if (MFX_PLATFORM_SOFTWARE == platform)
+    {
+        request->Type = MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_DECODE;
+    }
+    else
+    {
+        request->Type = MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_DECODE;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEH265::GetDecodeStat(mfxDecodeStat *stat)
+{
+    UMC::AutomaticUMCMutex guard(m_mGuard);
+
+    if (!m_isInit)
+        return MFX_ERR_NOT_INITIALIZED;
+
+    MFX_CHECK_NULL_PTR1(stat);
+
+    m_stat.NumSkippedFrame = m_pH265VideoDecoder->GetSkipInfo().numberOfSkippedFrames;
+    m_stat.NumCachedFrame = 0;
+
+    H265DecoderFrame *pFrame = m_pH265VideoDecoder->GetDPBList()->head();
+    for (; pFrame; pFrame = pFrame->future())
+    {
+            if (!pFrame->wasOutputted() && !isAlmostDisposable(pFrame))
+                m_stat.NumCachedFrame++;
+        }
+
+    memcpy(stat, &m_stat, sizeof(m_stat));
+    return MFX_ERR_NONE;
+}
+
+static mfxStatus __CDECL HEVCDECODERoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 )
+{
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "DecodeFrame_HEVC");
+    VideoDECODEH265 *decoder = (VideoDECODEH265 *)pState;
+
+    mfxStatus sts = decoder->RunThread(pParam, threadNumber);
+    return sts;
+}
+
+static mfxStatus HEVCAbortProc(void *, void *pParam)
+{
+    delete pParam;
+    return MFX_ERR_NONE;
+}
+
+static mfxStatus HEVCCompleteProc(void *, void *pParam, mfxStatus )
+{
+    delete pParam;
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEH265::RunThread(void * params, mfxU32 threadNumber)
+{
+    ThreadTaskInfo * info = (ThreadTaskInfo *)params;
+
+    mfxStatus sts = MFX_TASK_WORKING;
+
+    if (!info->surface_out)
+    {
+        for (Ipp32s i = 0; i < 2 && sts == MFX_TASK_WORKING; i++)
+        {
+            sts = m_pH265VideoDecoder->RunThread(threadNumber);
+        }
+
+        if (sts == MFX_TASK_BUSY && !m_pH265VideoDecoder->GetTaskBroker()->IsEnoughForStartDecoding(true))
+            m_globalTask = false;
+
+        return m_globalTask ? sts : MFX_TASK_DONE;
+    }
+
+    H265DecoderFrame * pFrame = 0;
+    bool isDecoded;
+    {
+        UMC::AutomaticUMCMutex guard(m_mGuard);
+
+        if (!info->surface_work)
+            return MFX_TASK_DONE;
+
+        mfxI32 index = m_FrameAllocator->FindSurface(info->surface_out, m_isOpaq);
+        pFrame = m_pH265VideoDecoder->FindSurface((UMC::FrameMemID)index);
+
+        if (!pFrame || pFrame->m_UID == -1)
+        {
+            VM_ASSERT(false);
+            return MFX_ERR_NOT_FOUND;
+        }
+
+        isDecoded = m_pH265VideoDecoder->CheckDecoding(true, pFrame);
+    }
+
+    if (!isDecoded)
+    {
+        for (Ipp32s i = 0; i < 2 && sts == MFX_TASK_WORKING; i++)
+        {
+            sts = m_pH265VideoDecoder->RunThread(threadNumber);
+        }
+    }
+
+    {
+        UMC::AutomaticUMCMutex guard(m_mGuard);
+        if (!info->surface_work)
+            return MFX_TASK_DONE;
+
+        isDecoded = m_pH265VideoDecoder->CheckDecoding(true, pFrame);
+        if (isDecoded)
+        {
+            info->surface_work = 0;
+            pFrame->m_UID = -1;
+        }
+    }
+
+    if (isDecoded)
+    {
+        if (!pFrame->wasDisplayed())
+        {
+            mfxStatus sts = DecodeFrame(0, info->surface_work, info->surface_out);
+
+            if (sts != MFX_ERR_NONE && sts != MFX_ERR_NOT_FOUND)
+                return sts;
+        }
+
+        return MFX_TASK_DONE;
+    }
+
+    return sts;
+}
+
+mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs,
+                                              mfxFrameSurface1 *surface_work,
+                                              mfxFrameSurface1 **surface_out,
+                                              MFX_ENTRY_POINT *pEntryPoint)
+{
+    mfxStatus mfxSts = DecodeFrameCheck(bs, surface_work, surface_out);
+
+    if (MFX_ERR_NONE == mfxSts) // It can be useful to run threads right after first frame receive
+    {
+        ThreadTaskInfo * info = new ThreadTaskInfo();
+        info->surface_work = GetOriginalSurface(surface_work);
+        info->surface_out = GetOriginalSurface(*surface_out);
+
+        pEntryPoint->pRoutine = &HEVCDECODERoutine;
+        pEntryPoint->pCompleteProc = &HEVCCompleteProc;
+        pEntryPoint->pAbortProc = &HEVCAbortProc;
+        pEntryPoint->pState = this;
+        pEntryPoint->requiredNumThreads = m_vPar.mfx.NumThread;
+        pEntryPoint->pParam = info;
+    }
+    else
+    {
+        if (m_pH265VideoDecoder->GetTaskBroker()->IsEnoughForStartDecoding(true) && !m_globalTask)
+        {
+            ThreadTaskInfo * info = new ThreadTaskInfo();
+            info->surface_work = 0;
+            info->surface_out = 0;
+
+            pEntryPoint->pRoutine = &HEVCDECODERoutine;
+            pEntryPoint->pCompleteProc = &HEVCCompleteProc;
+            pEntryPoint->pAbortProc = &HEVCAbortProc;
+            pEntryPoint->pState = this;
+            pEntryPoint->requiredNumThreads = m_vPar.mfx.NumThread;
+            pEntryPoint->pParam = info;
+
+            m_globalTask = true;
+        }
+    }
+
+    return mfxSts;
+}
+
+mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out)
+{
+    UMC::AutomaticUMCMutex guard(m_mGuard);
+
+    if (!m_isInit)
+        return MFX_ERR_NOT_INITIALIZED;
+
+    MFX_CHECK_NULL_PTR2(surface_work, surface_out);
+
+    mfxStatus sts = bs ? CheckBitstream(bs) : MFX_ERR_NONE;
+    if (sts != MFX_ERR_NONE)
+        return sts;
+
+    UMC::Status umcRes = UMC::UMC_OK;
+
+    *surface_out = 0;
+
+    if (m_isOpaq)
+    {
+        sts = CheckFrameInfoCodecs(&surface_work->Info, MFX_CODEC_AVC);
+        if (sts != MFX_ERR_NONE)
+            return MFX_ERR_UNSUPPORTED;
+
+        if (surface_work->Data.MemId || surface_work->Data.Y || surface_work->Data.R || surface_work->Data.A || surface_work->Data.UV) // opaq surface
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+        surface_work = GetOriginalSurface(surface_work);
+    }
+
+    sts = CheckFrameInfoCodecs(&surface_work->Info, MFX_CODEC_HEVC);
+    if (sts != MFX_ERR_NONE)
+        return MFX_ERR_UNSUPPORTED;
+
+    sts = CheckFrameData(surface_work);
+    if (sts != MFX_ERR_NONE)
+        return sts;
+
+    sts = m_FrameAllocator->SetCurrentMFXSurface(surface_work, m_isOpaq);
+    if (sts != MFX_ERR_NONE)
+        return sts;
+
+    sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+
+#ifdef MFX_VA_WIN
+    if (m_vPar.Protected && bs)
+    {
+        if (!m_va->GetProtectedVA() || !(bs->DataFlag & MFX_BITSTREAM_COMPLETE_FRAME))
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+        m_va->GetProtectedVA()->SetBitstream(bs);
+    }
+#endif
+
+    try
+    {
+        UMC::VideoData dst;
+        bool force = false;
+
+        UMC::Status umcFrameRes = UMC::UMC_OK;
+        UMC::Status umcAddSourceRes = UMC::UMC_OK;
+
+        MFXMediaDataAdapter src(bs);
+
+        for (;;)
+        {
+            umcRes = m_pH265VideoDecoder->AddSource(bs ? &src : 0, &dst);
+            umcAddSourceRes = umcFrameRes = umcRes;
+
+            //if (umcRes == MFX_ERR_DEVICE_LOST)
+              //  return MFX_ERR_DEVICE_LOST;
+
+            if (umcRes == UMC::UMC_NTF_NEW_RESOLUTION || umcRes == UMC::UMC_WRN_REPOSITION_INPROGRESS || umcRes == UMC::UMC_ERR_UNSUPPORTED)
+            {
+                FillVideoParam(&m_vPar, true);
+            }
+
+            if (umcRes == UMC::UMC_WRN_REPOSITION_INPROGRESS)
+            {
+                if (!m_isFirstRun)
+                {
+                    sts = MFX_WRN_VIDEO_PARAM_CHANGED;
+                }
+                else
+                {
+                    umcAddSourceRes = umcFrameRes = umcRes = UMC::UMC_OK;
+                    m_isFirstRun = false;
+                }
+            }
+
+            if (umcRes == UMC::UMC_ERR_INVALID_STREAM)
+            {
+                umcAddSourceRes = umcFrameRes = umcRes = UMC::UMC_OK;
+            }
+
+            if (umcRes == UMC::UMC_NTF_NEW_RESOLUTION)
+            {
+                sts = MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+            }
+
+            if (umcRes == UMC::UMC_OK && m_FrameAllocator->FindFreeSurface() == -1)
+            {
+                sts = MFX_ERR_MORE_SURFACE;
+                umcFrameRes = UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
+            }
+
+            if (umcRes == UMC::UMC_ERR_NOT_ENOUGH_BUFFER || umcRes == UMC::UMC_WRN_INFO_NOT_READY)
+            {
+                force = umcRes == UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
+                sts = MFX_WRN_DEVICE_BUSY;
+            }
+
+            if (umcRes == UMC::UMC_ERR_NOT_ENOUGH_DATA || umcRes == UMC::UMC_ERR_SYNC)
+            {
+                if (!bs)
+                    force = true;
+                sts = MFX_ERR_MORE_DATA;
+            }
+
+            src.Save(bs);
+
+            if (sts == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
+                return sts;
+
+            umcRes = m_pH265VideoDecoder->RunDecoding();
+
+            H265DecoderFrame *pFrame = GetFrameToDisplay_H265(&dst, force);
+
+            UMC::AutomaticUMCMutex guard(m_mGuard);
+
+            // return frame to display
+            if (pFrame)
+            {
+                FillOutputSurface(surface_out, surface_work, pFrame);
+
+                m_frameOrder = (mfxU16)pFrame->m_frameOrder;
+                (*surface_out)->Data.FrameOrder = m_frameOrder;
+                return MFX_ERR_NONE;
+            }
+
+            *surface_out = 0;
+
+            if (umcFrameRes != UMC::UMC_OK)
+                break;
+        } // for (;;)
+    }
+    catch(const h265_exception & ex)
+    {
+        FillVideoParam(&m_vPar, false);
+
+        if (ex.GetStatus() == UMC::UMC_ERR_ALLOC)
+        {
+            // check incompatibility of video params
+            if (m_vInitPar.mfx.FrameInfo.Width != m_vPar.mfx.FrameInfo.Width ||
+                m_vInitPar.mfx.FrameInfo.Height != m_vPar.mfx.FrameInfo.Height)
+            {
+                return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+            }
+        }
+
+        return ConvertUMCStatusToMfx(ex.GetStatus());
+    }
+    catch(...)
+    {
+        return MFX_ERR_UNKNOWN;
+    }
+
+    return sts;
+}
+
+void VideoDECODEH265::FillVideoParam(mfxVideoParamWrapper *par, bool full)
+{
+    if (!m_pH265VideoDecoder.get())
+        return;
+
+    MFX_Utility::FillVideoParam(m_pH265VideoDecoder.get(), par, full);
+
+    RawHeader_H265 *sps = m_pH265VideoDecoder->GetSPS();
+    RawHeader_H265 *pps = m_pH265VideoDecoder->GetPPS();
+
+    mfxExtCodingOptionSPSPPS * spsPps = (mfxExtCodingOptionSPSPPS *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_CODING_OPTION_SPSPPS);
+    if (spsPps)
+    {
+        if (sps->GetSize())
+        {
+            // reserved spsPps->SPSId = (mfxU16)sps->GetID();
+            spsPps->SPSBufSize = (mfxU16)sps->GetSize();
+            spsPps->SPSBuffer = sps->GetPointer();
+        }
+        else
+        {
+            // reserved spsPps->SPSId = 0;
+            spsPps->SPSBufSize = 0;
+        }
+
+        if (pps->GetSize())
+        {
+            // reserved spsPps->PPSId = (mfxU16)pps->GetID();
+            spsPps->PPSBufSize = (mfxU16)pps->GetSize();
+            spsPps->PPSBuffer = pps->GetPointer();
+        }
+        else
+        {
+            // reserved spsPps->PPSId = 0;
+            spsPps->PPSBufSize = 0;
+        }
+    }
+}
+
+void VideoDECODEH265::CopySurfaceInfo(mfxFrameSurface1 *in, mfxFrameSurface1 *out)
+{
+    out->Info.FrameId.ViewId = in->Info.FrameId.ViewId;
+    out->Info.FrameId.TemporalId = in->Info.FrameId.TemporalId;
+    out->Info.FrameId.PriorityId = in->Info.FrameId.PriorityId;
+
+    out->Info.CropH = in->Info.CropH;
+    out->Info.CropW = in->Info.CropW;
+    out->Info.CropX = in->Info.CropX;
+    out->Info.CropY = in->Info.CropY;
+
+    out->Info.AspectRatioH = in->Info.AspectRatioH;
+    out->Info.AspectRatioW = in->Info.AspectRatioW;
+
+    out->Info.FrameRateExtD = in->Info.FrameRateExtD;
+    out->Info.FrameRateExtN = in->Info.FrameRateExtN;
+    out->Info.PicStruct = in->Info.PicStruct;
+
+    out->Data.TimeStamp = in->Data.TimeStamp;
+    out->Data.FrameOrder = in->Data.FrameOrder;
+    out->Data.Corrupted = in->Data.Corrupted;
+    out->Data.DataFlag = in->Data.DataFlag;
+}
+
+void VideoDECODEH265::FillOutputSurface(mfxFrameSurface1 **surf_out, mfxFrameSurface1 *surface_work, H265DecoderFrame * pFrame)
+{
+    m_stat.NumFrame++;
+    m_stat.NumError += pFrame->GetError() ? 1 : 0;
+    const UMC::FrameData * fd = pFrame->GetFrameData();
+
+    *surf_out = m_FrameAllocator->GetSurface(fd->GetFrameMID(), surface_work, &m_vPar);
+    *surf_out = m_core->GetOpaqSurface((*surf_out)->Data.MemId) ? m_core->GetOpaqSurface((*surf_out)->Data.MemId) : (*surf_out);
+
+    VM_ASSERT(*surf_out);
+
+    mfxFrameSurface1 *surface_out = *surf_out;
+
+    surface_out->Info.FrameId.TemporalId = 0;
+
+    surface_out->Info.CropH = (mfxU16)(pFrame->lumaSize().height - pFrame->m_crop_bottom - pFrame->m_crop_top);
+    surface_out->Info.CropW = (mfxU16)(pFrame->lumaSize().width - pFrame->m_crop_right - pFrame->m_crop_left);
+    surface_out->Info.CropX = (mfxU16)(pFrame->m_crop_left);
+    surface_out->Info.CropY = (mfxU16)(pFrame->m_crop_top);
+
+    bool isShouldUpdate = !(m_vFirstPar.mfx.FrameInfo.AspectRatioH || m_vFirstPar.mfx.FrameInfo.AspectRatioW);
+
+    surface_out->Info.AspectRatioH = isShouldUpdate ? (mfxU16)pFrame->m_aspect_height : m_vFirstPar.mfx.FrameInfo.AspectRatioH;
+    surface_out->Info.AspectRatioW = isShouldUpdate ? (mfxU16)pFrame->m_aspect_width : m_vFirstPar.mfx.FrameInfo.AspectRatioW;
+
+    isShouldUpdate = !(m_vFirstPar.mfx.FrameInfo.FrameRateExtD || m_vFirstPar.mfx.FrameInfo.FrameRateExtN);
+
+    surface_out->Info.FrameRateExtD = isShouldUpdate ? m_vPar.mfx.FrameInfo.FrameRateExtD : m_vFirstPar.mfx.FrameInfo.FrameRateExtD;
+    surface_out->Info.FrameRateExtN = isShouldUpdate ? m_vPar.mfx.FrameInfo.FrameRateExtN : m_vFirstPar.mfx.FrameInfo.FrameRateExtN;
+
+    surface_out->Info.PicStruct = 0;
+    surface_out->Info.ChromaFormat = (mfxU16)(pFrame->m_chroma_format ? MFX_CHROMAFORMAT_YUV420 : MFX_CHROMAFORMAT_YUV400);
+
+    surface_out->Info.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+
+    surface_out->Data.TimeStamp = GetMfxTimeStamp(pFrame->m_dFrameTime);
+    surface_out->Data.FrameOrder = (mfxU32)MFX_FRAMEORDER_UNKNOWN;
+
+    surface_out->Data.DataFlag = (mfxU16)(pFrame->m_isOriginalPTS ? MFX_FRAMEDATA_ORIGINAL_TIMESTAMP : 0);
+
+    SEI_Storer_H265 * storer = m_pH265VideoDecoder->GetSEIStorer();
+    if (storer)
+        storer->SetTimestamp(pFrame);
+}
+
+mfxStatus VideoDECODEH265::DecodeFrame(mfxFrameSurface1 *surface_out, H265DecoderFrame * pFrame)
+{
+    MFX_CHECK_NULL_PTR1(surface_out);
+
+    mfxI32 index;
+    if (pFrame)
+    {
+        index = pFrame->GetFrameData()->GetFrameMID();
+    }
+    else
+    {
+        index = m_FrameAllocator->FindSurface(surface_out, m_isOpaq);
+        pFrame = m_pH265VideoDecoder->FindSurface((UMC::FrameMemID)index);
+    }
+
+    if (!pFrame)
+    {
+        VM_ASSERT(false);
+        return MFX_ERR_NOT_FOUND;
+    }
+
+    UMC::Status umcRes = m_pH265VideoDecoder->RunDecodingAndWait(true, &pFrame); // decode frame
+
+    if (umcRes != UMC::UMC_OK && umcRes != UMC::UMC_ERR_NOT_ENOUGH_DATA)
+    {
+        return ConvertUMCStatusToMfx(umcRes);
+    }
+
+    if (pFrame)
+    {
+        Ipp32s error = pFrame->GetError();
+
+        surface_out->Data.Corrupted = 0;
+        if (error & UMC::ERROR_FRAME_MINOR)
+            surface_out->Data.Corrupted |= MFX_CORRUPTION_MINOR;
+
+        if (error & UMC::ERROR_FRAME_MAJOR)
+            surface_out->Data.Corrupted |= MFX_CORRUPTION_MAJOR;
+
+        if (error & UMC::ERROR_FRAME_REFERENCE_FRAME)
+            surface_out->Data.Corrupted |= MFX_CORRUPTION_REFERENCE_FRAME;
+
+        if (error & UMC::ERROR_FRAME_DPB)
+            surface_out->Data.Corrupted |= MFX_CORRUPTION_REFERENCE_LIST;
+
+        if (error & UMC::ERROR_FRAME_RECOVERY)
+            surface_out->Data.Corrupted |= MFX_CORRUPTION_MAJOR;
+
+        if (error & UMC::ERROR_FRAME_TOP_FIELD_ABSENT)
+            surface_out->Data.Corrupted |= MFX_CORRUPTION_ABSENT_TOP_FIELD;
+
+        if (error & UMC::ERROR_FRAME_BOTTOM_FIELD_ABSENT)
+            surface_out->Data.Corrupted |= MFX_CORRUPTION_ABSENT_BOTTOM_FIELD;
+    }
+
+    mfxStatus sts = m_FrameAllocator->PrepareToOutput(surface_out, index, &m_vPar, m_isOpaq);
+
+    if (pFrame)
+    {
+        pFrame->setWasDisplayed();
+    }
+
+    return sts;
+}
+
+mfxStatus VideoDECODEH265::DecodeFrame(mfxBitstream *, mfxFrameSurface1 *, mfxFrameSurface1 *surface_out)
+{
+    if (!m_isInit)
+        return MFX_ERR_NOT_INITIALIZED;
+
+    MFX_CHECK_NULL_PTR1(surface_out);
+    mfxStatus sts = DecodeFrame(surface_out);
+
+    return sts;
+}
+
+mfxStatus VideoDECODEH265::GetUserData(mfxU8 *ud, mfxU32 *sz, mfxU64 *ts)
+{
+    if (!m_isInit)
+        return MFX_ERR_NOT_INITIALIZED;
+
+    MFX_CHECK_NULL_PTR3(ud, sz, ts);
+
+    mfxStatus       MFXSts = MFX_ERR_NONE;
+
+    UMC::MediaData data;
+    UMC::Status umcRes = m_pH265VideoDecoder->GetUserData(&data);
+
+    if (umcRes == UMC::UMC_ERR_NOT_ENOUGH_DATA)
+        return MFX_ERR_MORE_DATA;
+
+    if (*sz < data.GetDataSize())
+        return MFX_ERR_NOT_ENOUGH_BUFFER;
+
+    *sz = (mfxU32)data.GetDataSize();
+    *ts = GetMfxTimeStamp(data.GetTime());
+    memcpy(ud, data.GetDataPointer(), data.GetDataSize());
+
+    return MFXSts;
+}
+
+mfxStatus VideoDECODEH265::GetPayload(mfxSession , mfxU64 *ts, mfxPayload * payload)
+{
+    UMC::AutomaticUMCMutex guard(m_mGuard);
+
+    if (!m_isInit)
+        return MFX_ERR_NOT_INITIALIZED;
+
+    MFX_CHECK_NULL_PTR3(ts, payload, payload->Data);
+
+    SEI_Storer_H265 * storer = m_pH265VideoDecoder->GetSEIStorer();
+
+    if (!storer)
+        return MFX_ERR_UNKNOWN;
+
+    const SEI_Storer_H265::SEI_Message * msg = storer->GetPayloadMessage();
+
+    if (msg)
+    {
+        if (payload->BufSize < msg->msg_size)
+            return MFX_ERR_NOT_ENOUGH_BUFFER;
+
+        *ts = GetMfxTimeStamp(msg->timestamp);
+        memcpy(payload->Data, msg->data, msg->msg_size);
+
+        payload->NumBit = (mfxU32)(msg->msg_size * 8);
+        payload->Type = (mfxU16)msg->type;
+    }
+    else
+    {
+        payload->NumBit = 0;
+        *ts = MFX_TIME_STAMP_INVALID;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+H265DecoderFrame * VideoDECODEH265::GetFrameToDisplay_H265(UMC::VideoData * dst, bool force)
+{
+    if (!m_pH265VideoDecoder->IsShouldSuspendDisplay() && !force && m_platform == MFX_PLATFORM_SOFTWARE)
+        return 0;
+
+    H265DecoderFrame * pFrame = 0;
+    do
+    {
+        pFrame = m_pH265VideoDecoder->GetFrameToDisplayInternal(force);
+        if (!pFrame)
+        {
+            break;
+        }
+
+        m_pH265VideoDecoder->PostProcessDisplayFrame(dst, pFrame);
+
+        if (pFrame->IsSkipped())
+        {
+            pFrame->setWasOutputted();
+            pFrame->setWasDisplayed();
+        }
+    } while (pFrame->IsSkipped());
+
+    if (pFrame)
+    {
+        pFrame->setWasOutputted();
+    }
+
+    return pFrame;
+}
+
+mfxStatus VideoDECODEH265::SetSkipMode(mfxSkipMode mode)
+{
+    UMC::AutomaticUMCMutex guard(m_mGuard);
+
+    if (!m_isInit)
+        return MFX_ERR_NOT_INITIALIZED;
+
+    if (mode == 0x22)
+    {
+        m_pH265VideoDecoder->PermanentDisableDeblocking(true);
+        return MFX_ERR_NONE;
+    }
+
+    Ipp32s test_num = 0;
+    m_pH265VideoDecoder->ChangeVideoDecodingSpeed(test_num);
+
+    Ipp32s num = 0;
+
+    switch(mode)
+    {
+    case MFX_SKIPMODE_NOSKIP:
+        num = -10;
+        break;
+    case MFX_SKIPMODE_MORE:
+        num = 1;
+        break;
+    case MFX_SKIPMODE_LESS:
+        num = -1;
+        break;
+
+    default:
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    m_pH265VideoDecoder->ChangeVideoDecodingSpeed(num);
+
+    return test_num == num ? MFX_WRN_VALUE_NOT_CHANGED : MFX_ERR_NONE;
+}
+
+bool VideoDECODEH265::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * oldPar, eMFXHWType type)
+{
+    if ((newPar->IOPattern & (MFX_IOPATTERN_OUT_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY)) !=
+        (oldPar->IOPattern & (MFX_IOPATTERN_OUT_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY)) )
+    {
+        return false;
+    }
+
+    if (newPar->Protected != oldPar->Protected)
+    {
+        return false;
+    }
+
+    if (newPar->AsyncDepth != oldPar->AsyncDepth)
+    {
+        return false;
+    }
+
+    mfxFrameAllocRequest requestOld;
+    memset(&requestOld, 0, sizeof(requestOld));
+    mfxFrameAllocRequest requestNew;
+    memset(&requestNew, 0, sizeof(requestNew));
+
+    mfxStatus mfxSts = QueryIOSurfInternal(m_platform, type, oldPar, &requestOld, m_core);
+    if (mfxSts != MFX_ERR_NONE)
+        return false;
+
+    mfxSts = QueryIOSurfInternal(m_platform, type, newPar, &requestNew, m_core);
+    if (mfxSts != MFX_ERR_NONE)
+        return false;
+
+    if (newPar->mfx.FrameInfo.Height > oldPar->mfx.FrameInfo.Height)
+    {
+        return false;
+    }
+
+    if (newPar->mfx.FrameInfo.Width > oldPar->mfx.FrameInfo.Width)
+    {
+        return false;
+    }
+
+    if (m_response.NumFrameActual)
+    {
+        if (requestNew.NumFrameMin > m_response.NumFrameActual)
+            return false;
+    }
+    else
+    {
+        if (requestNew.NumFrameMin > requestOld.NumFrameMin || requestNew.Type != requestOld.Type)
+            return false;
+    }
+
+    if (newPar->mfx.FrameInfo.ChromaFormat != oldPar->mfx.FrameInfo.ChromaFormat)
+    {
+        return false;
+    }
+
+    if (oldPar->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+    {
+        mfxExtOpaqueSurfaceAlloc * opaqueNew = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(newPar->ExtParam, newPar->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+        mfxExtOpaqueSurfaceAlloc * opaqueOld = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(oldPar->ExtParam, oldPar->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+
+        if (opaqueNew && opaqueOld)
+        {
+            if (opaqueNew->In.Type != opaqueOld->In.Type)
+                return false;
+
+            if (opaqueNew->In.NumSurface != opaqueOld->In.NumSurface)
+                return false;
+
+            for (Ipp32u i = 0; i < opaqueNew->In.NumSurface; i++)
+            {
+                if (opaqueNew->In.Surfaces[i] != opaqueOld->In.Surfaces[i])
+                    return false;
+            }
+
+            if (opaqueNew->Out.Type != opaqueOld->Out.Type)
+                return false;
+
+            if (opaqueNew->Out.NumSurface != opaqueOld->Out.NumSurface)
+                return false;
+
+            for (Ipp32u i = 0; i < opaqueNew->Out.NumSurface; i++)
+            {
+                if (opaqueNew->Out.Surfaces[i] != opaqueOld->Out.Surfaces[i])
+                    return false;
+            }
+        }
+        else
+            return false;
+    }
+
+#if 0
+    // check target views or dependency views
+    mfxExtMVCSeqDesc * newMVCPoints = (mfxExtMVCSeqDesc *)GetExtendedBuffer(newPar->ExtParam, newPar->NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
+    mfxExtMVCSeqDesc * oldMVCPoints = (mfxExtMVCSeqDesc *)GetExtendedBuffer(oldPar->ExtParam, oldPar->NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
+
+    if ((!newMVCPoints && oldMVCPoints) || (newMVCPoints && !oldMVCPoints))
+        return false;
+
+    mfxExtMVCTargetViews * newMVCTargets = (mfxExtMVCTargetViews *)GetExtendedBuffer(newPar->ExtParam, newPar->NumExtParam, MFX_EXTBUFF_MVC_TARGET_VIEWS);
+    mfxExtMVCTargetViews * oldMVCTargets = (mfxExtMVCTargetViews *)GetExtendedBuffer(oldPar->ExtParam, oldPar->NumExtParam, MFX_EXTBUFF_MVC_TARGET_VIEWS);
+
+    if (newMVCTargets && oldMVCTargets)
+    {
+        if (newMVCTargets->NumView != oldMVCTargets->NumView)
+            return false;
+    }
+    else
+    {
+        if ((!newMVCTargets && oldMVCTargets) || (newMVCTargets && !oldMVCTargets))
+            return false;
+    }
+#endif
+
+    return true;
+}
+
+mfxStatus VideoDECODEH265::UpdateAllocRequest(mfxVideoParam *par,
+                                                mfxFrameAllocRequest *request,
+                                                mfxExtOpaqueSurfaceAlloc * &pOpaqAlloc,
+                                                bool &mapping)
+{
+    mapping = false;
+    if (!(par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
+        return MFX_ERR_NONE;
+
+    m_isOpaq = true;
+
+    pOpaqAlloc = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+    if (!pOpaqAlloc)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    if (request->NumFrameMin > pOpaqAlloc->Out.NumSurface)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    request->Type = MFX_MEMTYPE_OPAQUE_FRAME | MFX_MEMTYPE_FROM_DECODE;
+    request->Type |= (pOpaqAlloc->Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY) ? MFX_MEMTYPE_SYSTEM_MEMORY : MFX_MEMTYPE_DXVA2_DECODER_TARGET;
+    request->NumFrameMin = request->NumFrameSuggested = pOpaqAlloc->Out.NumSurface;
+    mapping = true;
+    return MFX_ERR_NONE;
+}
+
+mfxFrameSurface1 *VideoDECODEH265::GetOriginalSurface(mfxFrameSurface1 *surface)
+{
+    if (m_isOpaq)
+        return m_core->GetNativeSurface(surface);
+    return surface;
+}
+
+#endif // MFX_ENABLE_H264_VIDEO_DECODE

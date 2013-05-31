@@ -1,0 +1,216 @@
+/*
+//
+//              INTEL CORPORATION PROPRIETARY INFORMATION
+//  This software is supplied under the terms of a license  agreement or
+//  nondisclosure agreement with Intel Corporation and may not be copied
+//  or disclosed except in  accordance  with the terms of that agreement.
+//        Copyright (c) 2013 Intel Corporation. All Rights Reserved.
+//
+//
+*/
+#include "umc_defs.h"
+#ifdef UMC_ENABLE_H265_VIDEO_DECODER
+
+#include "umc_h265_dec_defs_dec.h"
+
+#ifndef __H265_MOTION_INFO_H
+#define __H265_MOTION_INFO_H
+#define NOT_VALID -1
+
+#include <memory.h>
+
+namespace UMC_HEVC_DECODER
+{
+
+#if (HEVC_OPT_CHANGES & 16)
+// ML: OPT: significant overhead if not inlined (ICC does not honor implied 'inline' with -Qipo)
+// ML: OPT: TODO: Make sure compiler recognizes saturation idiom for vectorization when used
+#if 1
+#define Clip3( m_Min, m_Max, m_Value) ( (m_Value) < (m_Min) ? \
+                                                  (m_Min) : \
+                                                ( (m_Value) > (m_Max) ? \
+                                                              (m_Max) : \
+                                                              (m_Value) ) )
+#else
+// ML: OPT: TODO: Not sure why the below template is not as good (fast) as the macro above
+template <class T> 
+__forceinline 
+T Clip3(const T& Min, const T& Max, T Value)
+{
+    Value = (Value < Min) ? Min : Value;
+    Value = (Value > Max) ? Max : Value;
+    return ( Value );
+    // return ( Value < Min ? Min : (Value > Max) ? Max : Value ); 
+#endif
+#else // HEVC_OPT_CHANGES
+template <class T> inline
+T Clip3(T Min, T Max, T Value)
+{
+    if (Value < Min)
+        return Min;
+    else if (Value > Max)
+        return Max;
+    else
+        return Value;
+
+} //T Clip3(T Min, T Max, T Value)
+#endif // HEVC_OPT_CHANGES
+
+//structure vector class
+struct H265MotionVector
+{
+public:
+
+    Ipp16s Horizontal;
+    Ipp16s Vertical;
+
+    H265MotionVector()
+    {
+        Horizontal = 0;
+        Vertical = 0;
+    }
+
+    H265MotionVector(Ipp16s horizontal, Ipp16s vertical)
+    {
+        Horizontal = horizontal;
+        Vertical = vertical;
+    }
+
+    //set
+    void  setZero()
+    {
+        Horizontal = 0;
+        Vertical = 0;
+    }
+
+    //get
+#if (HEVC_OPT_CHANGES & 2)
+    // ML: OPT: moving into the header to allow inlining
+    Ipp32s __forceinline H265MotionVector::getAbsHor() const { return abs(Horizontal); }
+    Ipp32s __forceinline H265MotionVector::getAbsVer() const { return abs(Vertical);   }
+#else
+    Ipp32s getAbsHor() const;
+    Ipp32s getAbsVer() const;
+#endif
+
+    //const H265MotionVector& operator += (const H265MotionVector& MV)
+    //{
+    //    Horizontal += MV.Horizontal;
+    //    Vertical += MV.Vertical;
+    //    return  *this;
+    //}
+
+    /*const H265MotionVector& operator -= (const H265MotionVector& MV)
+    {
+        Horizontal -= MV.Horizontal;
+        Vertical -= MV.Vertical;
+        return  *this;
+    }*/
+
+    const H265MotionVector operator + (const H265MotionVector& MV) const
+    {
+        return H265MotionVector(Horizontal + MV.Horizontal, Vertical + MV.Vertical);
+    }
+
+    const H265MotionVector operator - (const H265MotionVector& MV) const
+    {
+        return H265MotionVector(Horizontal - MV.Horizontal, Vertical - MV.Vertical);
+    }
+
+    bool operator == (const H265MotionVector& MV) const
+    {
+        return (Horizontal == MV.Horizontal && Vertical == MV.Vertical);
+    }
+
+    bool operator != (const H265MotionVector& MV) const
+    {
+        return (Horizontal != MV.Horizontal || Vertical != MV.Vertical);
+    }
+
+    const H265MotionVector scaleMV(Ipp32s scale) const
+    {
+        Ipp32s mvx = Clip3(-32768, 32767, (scale * Horizontal + 127 + (scale * Horizontal < 0)) >> 8);
+        Ipp32s mvy = Clip3(-32768, 32767, (scale * Vertical + 127 + (scale * Vertical < 0)) >> 8);
+        return H265MotionVector((Ipp16s)mvx, (Ipp16s)mvy);
+    }
+};
+
+//parameters for AMVP
+typedef struct _AVMPInfo
+{
+    H265MotionVector MVCandidate[AMVP_MAX_NUM_CANDS_MEM]; //array of motion vector predictor candidates
+    Ipp32s NumbOfCands;
+} AMVPInfo;
+
+//structure for motion vector with reference index
+struct MVBuffer
+{
+public:
+    H265MotionVector    MV;
+    Ipp8s            RefIdx;
+
+    MVBuffer()
+    {
+        RefIdx = -1; //not valid
+    };
+
+    void setMVBuffer(H265MotionVector const &cMV, Ipp8s iRefIdx)
+    {
+        MV = cMV;
+        RefIdx = iRefIdx;
+    }
+};
+
+//structure for motion information in one CU
+struct CUMVBuffer
+{
+public:
+    H265MotionVector*    MV;
+    H265MotionVector*    MVd;
+    Ipp8s*            RefIdx;
+    Ipp32u            m_NumPartition;
+    AMVPInfo        AMVPinfo;
+
+    CUMVBuffer()
+    {
+        MV = NULL;
+        MVd = NULL;
+        RefIdx = NULL;
+        m_NumPartition = 0;
+    }
+
+    ~CUMVBuffer()
+    {
+    }
+
+    // create-destroy
+    void create(Ipp32u numpartition);
+    void destroy();
+
+    // clear-copy
+    void clearMVBuffer();
+
+    void copyFrom(CUMVBuffer const * CUMVBufferSrc, Ipp32s NumPartSrc, Ipp32s PartAddrDst);
+    void copyTo(CUMVBuffer* CUMVBufferDst, Ipp32s PartAddrDst) const;
+    void copyTo(CUMVBuffer* CUMVBufferDst, Ipp32s PartAddrDst, Ipp32u offset, Ipp32u NumPart) const;
+
+    void linkToWithOffset(CUMVBuffer const * src, Ipp32s offset )
+    {
+        MV = src->MV + offset;
+        MVd = src->MVd + offset;
+        RefIdx = src->RefIdx + offset;
+    }
+    void compress(Ipp8s* PredMode, Ipp32s scale);
+
+    template <typename T>
+    void setAll(T *p, T const & val, EnumPartSize CUMode, Ipp32s PartAddr, Ipp32u Depth, Ipp32s PartIdx);
+    void setAllMV(H265MotionVector const & mv, EnumPartSize CUMode, Ipp32s PartAddr, Ipp32u Depth, Ipp32s PartIdx);
+    void setAllMVd(H265MotionVector const & mvd, EnumPartSize CUMode, Ipp32s PartAddr, Ipp32u Depth, Ipp32s PartIdx);
+    void setAllRefIdx (Ipp32s refIdx, EnumPartSize CUMode, Ipp32s PartAddr, Ipp32u Depth, Ipp32s PartIdx);
+    void setAllMVBuffer(MVBuffer const & mvBuffer, EnumPartSize CUMode, Ipp32s PartAddr, Ipp32u Depth, Ipp32s PartIdx);
+};
+
+} // end namespace UMC_HEVC_DECODER
+
+#endif //__H265_MOTION_INFO_H
+#endif // UMC_ENABLE_H264_VIDEO_DECODER

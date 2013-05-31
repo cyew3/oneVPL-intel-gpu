@@ -5858,13 +5858,6 @@ void TaskSupplier::DBPUpdate(H264DecoderFrame * pFrame, Ipp32s field)
     }
 }
 
-Status TaskSupplier::IsNeedRunDecoding(H264DecoderFrame ** decoded)
-{
-    CompleteDecodedFrames(decoded);
-
-    return RunDecoding_1();
-}
-
 H264DecoderFrame * TaskSupplier::FindSurface(FrameMemID id)
 {
     AutomaticUMCMutex guard(m_mGuard);
@@ -5887,6 +5880,8 @@ H264DecoderFrame * TaskSupplier::FindSurface(FrameMemID id)
 
 Status TaskSupplier::RunDecoding_1()
 {
+    CompleteDecodedFrames(0);
+
     ViewList::iterator iter = m_views.begin();
     ViewList::iterator iter_end = m_views.end();
 

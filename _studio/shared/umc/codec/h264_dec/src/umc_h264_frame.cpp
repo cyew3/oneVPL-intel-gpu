@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -19,18 +19,6 @@
 #include "umc_h264_log.h"
 
 #define NON_LAYER_FRAME
-
-//#define DEBUG_KEEP_REFERENCE
-
-#if defined (DEBUG_KEEP_REFERENCE)
-
-#include <list>
-#include <map>
-
-typedef std::map<UMC::RefCounter *, std::list<UMC::RefCounter *> > DebugReferenceList;
-DebugReferenceList g_maps;
-
-#endif
 
 namespace UMC
 {
@@ -150,17 +138,6 @@ void H264DecoderFrame::AddReference(RefCounter * reference)
 
     reference->IncrementReference();
     m_references.push_back(reference);
-
-#if defined (DEBUG_KEEP_REFERENCE)
-    DebugReferenceList::iterator iter = g_maps.find(reference);
-    if (iter == g_maps.end())
-    {
-        DebugReferenceList::value_type::second_type list;
-        g_maps.insert(DebugReferenceList::value_type(reference, list));
-    }
-
-    g_maps[reference].push_back(this);
-#endif
 }
 
 void H264DecoderFrame::FreeReferenceFrames()
@@ -173,9 +150,6 @@ void H264DecoderFrame::FreeReferenceFrames()
         RefCounter * reference = *iter;
         reference->DecrementReference();
 
-#if defined (DEBUG_KEEP_REFERENCE)
-        g_maps[reference].remove(this);
-#endif
     }
 
     m_references.clear();

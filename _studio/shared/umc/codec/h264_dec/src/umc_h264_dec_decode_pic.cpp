@@ -310,10 +310,6 @@ Status  H264VideoDecoder::Reset()
     if (!m_IsInitialized)
         return UMC_ERR_NOT_INITIALIZED;
 
-#ifdef USE_SEI
-    m_FrameProcessingStage = NORMAL_FRAME_PROCESSING;
-#endif
-
     m_pTaskSupplier->Reset();
 
     return umcRes;
