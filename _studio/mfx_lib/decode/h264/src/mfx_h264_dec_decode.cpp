@@ -1241,10 +1241,9 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
             if (sts == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
                 return sts;
 
-            UMC::H264DecoderFrame * pFrame = 0;
-            umcRes = m_pH264VideoDecoder->IsNeedRunDecoding(&pFrame);
+            umcRes = m_pH264VideoDecoder->RunDecoding_1();
 
-            pFrame = GetFrameToDisplay(&dst, force);
+            UMC::H264DecoderFrame *pFrame = GetFrameToDisplay(&dst, force);
 
             UMC::AutomaticUMCMutex guard(m_mGuard);
 
