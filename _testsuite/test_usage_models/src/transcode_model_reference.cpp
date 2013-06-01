@@ -5,8 +5,12 @@
 //  or disclosed except in accordance with the terms of that agreement.
 //        Copyright (c) 2010 Intel Corporation. All Rights Reserved.
 //
-#include <windows.h>
+
 #include "transcode_model_reference.h"
+#include "vm/time_defs.h"
+#if (defined(LINUX32) || defined(LINUX64))
+#include "mfxlinux.h"
+#endif
 
 /* ******************************************************************** */
 /*             prototypes of service functions                          */
@@ -345,7 +349,7 @@ mfxStatus TranscodeModelReference::InitMFXComponents( void )
 } // mfxStatus TranscodeModelReference::InitMFXComponents( void )
     
 
-mfxStatus TranscodeModelReference::InitMFXSessions( SessionMode mode, std::map<TCHAR*, mfxIMPL> impl)
+mfxStatus TranscodeModelReference::InitMFXSessions( SessionMode mode, std::map<msdk_char*, mfxIMPL> impl)
 {
     mfxStatus sts = MFX_ERR_UNDEFINED_BEHAVIOR;            
  
@@ -353,11 +357,11 @@ mfxStatus TranscodeModelReference::InitMFXSessions( SessionMode mode, std::map<T
     {
         case DECVPPENC_SESSION:
         {
-            mfxIMPL implDec = (impl.find(_T("dec")) != impl.end()) ? impl[_T("dec")] : impl[_T("general")];
-            mfxIMPL implVpp = (impl.find(_T("vpp")) != impl.end()) ? impl[_T("vpp")] : impl[_T("general")];
-            mfxIMPL implEnc = (impl.find(_T("enc")) != impl.end()) ? impl[_T("enc")] : impl[_T("general")];
+            mfxIMPL implDec = (impl.find(MSDK_STRING("dec")) != impl.end()) ? impl[MSDK_STRING("dec")] : impl[MSDK_STRING("general")];
+            mfxIMPL implVpp = (impl.find(MSDK_STRING("vpp")) != impl.end()) ? impl[MSDK_STRING("vpp")] : impl[MSDK_STRING("general")];
+            mfxIMPL implEnc = (impl.find(MSDK_STRING("enc")) != impl.end()) ? impl[MSDK_STRING("enc")] : impl[MSDK_STRING("general")];
 
-            mfxIMPL implGeneral = impl[_T("general")];
+            mfxIMPL implGeneral = impl[MSDK_STRING("general")];
             if( (implDec == implVpp) && (implVpp == implEnc) )
             {
                 implGeneral = implVpp;
@@ -378,15 +382,15 @@ mfxStatus TranscodeModelReference::InitMFXSessions( SessionMode mode, std::map<T
 
         case DEC_VPP_ENC_SESSION:
         {            
-            mfxIMPL implDec = (impl.find(_T("dec")) != impl.end()) ? impl[_T("dec")] : impl[_T("general")]; 
+            mfxIMPL implDec = (impl.find(MSDK_STRING("dec")) != impl.end()) ? impl[MSDK_STRING("dec")] : impl[MSDK_STRING("general")]; 
             sts = InitMFXSession( &m_pSessionDecode, implDec);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-            mfxIMPL implVpp = (impl.find(_T("vpp")) != impl.end()) ? impl[_T("vpp")] : impl[_T("general")]; 
+            mfxIMPL implVpp = (impl.find(MSDK_STRING("vpp")) != impl.end()) ? impl[MSDK_STRING("vpp")] : impl[MSDK_STRING("general")]; 
             sts = InitMFXSession( &m_pSessionVPP, implVpp);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-            mfxIMPL implEnc = (impl.find(_T("enc")) != impl.end()) ? impl[_T("enc")] : impl[_T("general")]; 
+            mfxIMPL implEnc = (impl.find(MSDK_STRING("enc")) != impl.end()) ? impl[MSDK_STRING("enc")] : impl[MSDK_STRING("general")]; 
             sts = InitMFXSession( &m_pSessionEncode, implEnc);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);            
 
@@ -395,12 +399,12 @@ mfxStatus TranscodeModelReference::InitMFXSessions( SessionMode mode, std::map<T
 
         case DECVPP_ENC_SESSION:
         {
-            sts = InitMFXSession( &m_pSessionDecode, impl[_T("general")]);
+            sts = InitMFXSession( &m_pSessionDecode, impl[MSDK_STRING("general")]);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
             m_pSessionVPP    = m_pSessionDecode;
 
-            sts = InitMFXSession( &m_pSessionEncode, impl[_T("general")]);
+            sts = InitMFXSession( &m_pSessionEncode, impl[MSDK_STRING("general")]);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);           
 
             break;
@@ -408,12 +412,12 @@ mfxStatus TranscodeModelReference::InitMFXSessions( SessionMode mode, std::map<T
 
         case DECENC_VPP_SESSION:
         {
-            sts = InitMFXSession( &m_pSessionDecode, impl[_T("general")]);
+            sts = InitMFXSession( &m_pSessionDecode, impl[MSDK_STRING("general")]);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
             m_pSessionEncode    = m_pSessionDecode;
 
-            sts = InitMFXSession( &m_pSessionVPP, impl[_T("general")]);
+            sts = InitMFXSession( &m_pSessionVPP, impl[MSDK_STRING("general")]);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);           
 
             break;
@@ -421,10 +425,10 @@ mfxStatus TranscodeModelReference::InitMFXSessions( SessionMode mode, std::map<T
 
         case DEC_VPPENC_SESSION:
         {
-            sts = InitMFXSession( &m_pSessionDecode, impl[_T("general")]);
+            sts = InitMFXSession( &m_pSessionDecode, impl[MSDK_STRING("general")]);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);            
 
-            sts = InitMFXSession( &m_pSessionVPP, impl[_T("general")]);
+            sts = InitMFXSession( &m_pSessionVPP, impl[MSDK_STRING("general")]);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
             m_pSessionEncode    = m_pSessionVPP;
@@ -435,14 +439,14 @@ mfxStatus TranscodeModelReference::InitMFXSessions( SessionMode mode, std::map<T
         // join sessions
         case DECVPP_ENC_JOIN_SESSION:
         {
-            mfxIMPL implDec = (impl.find(_T("dec")) != impl.end()) ? impl[_T("dec")] : impl[_T("general")]; 
+            mfxIMPL implDec = (impl.find(MSDK_STRING("dec")) != impl.end()) ? impl[MSDK_STRING("dec")] : impl[MSDK_STRING("general")]; 
 
             sts = InitMFXSession( &m_pSessionDecode, implDec);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
             m_pSessionVPP = m_pSessionDecode;
 
-            mfxIMPL implEnc = (impl.find(_T("enc")) != impl.end()) ? impl[_T("enc")] : impl[_T("general")]; 
+            mfxIMPL implEnc = (impl.find(MSDK_STRING("enc")) != impl.end()) ? impl[MSDK_STRING("enc")] : impl[MSDK_STRING("general")]; 
             sts = InitMFXSession( &m_pSessionEncode, implEnc);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -451,12 +455,12 @@ mfxStatus TranscodeModelReference::InitMFXSessions( SessionMode mode, std::map<T
 
         case DEC_VPPENC_JOIN_SESSION:
         {
-            mfxIMPL implDec = (impl.find(_T("dec")) != impl.end()) ? impl[_T("dec")] : impl[_T("general")]; 
+            mfxIMPL implDec = (impl.find(MSDK_STRING("dec")) != impl.end()) ? impl[MSDK_STRING("dec")] : impl[MSDK_STRING("general")]; 
 
             sts = InitMFXSession( &m_pSessionDecode, implDec);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);            
 
-            mfxIMPL implEnc = (impl.find(_T("enc")) != impl.end()) ? impl[_T("enc")] : impl[_T("general")]; 
+            mfxIMPL implEnc = (impl.find(MSDK_STRING("enc")) != impl.end()) ? impl[MSDK_STRING("enc")] : impl[MSDK_STRING("general")]; 
             sts = InitMFXSession( &m_pSessionEncode, implEnc);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -467,15 +471,15 @@ mfxStatus TranscodeModelReference::InitMFXSessions( SessionMode mode, std::map<T
 
         case DEC_VPP_ENC_JOIN_SESSION:
         {
-            mfxIMPL implDec = (impl.find(_T("dec")) != impl.end()) ? impl[_T("dec")] : impl[_T("general")]; 
+            mfxIMPL implDec = (impl.find(MSDK_STRING("dec")) != impl.end()) ? impl[MSDK_STRING("dec")] : impl[MSDK_STRING("general")]; 
             sts = InitMFXSession( &m_pSessionDecode, implDec);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-            mfxIMPL implVpp = (impl.find(_T("vpp")) != impl.end()) ? impl[_T("vpp")] : impl[_T("general")]; 
+            mfxIMPL implVpp = (impl.find(MSDK_STRING("vpp")) != impl.end()) ? impl[MSDK_STRING("vpp")] : impl[MSDK_STRING("general")]; 
             sts = InitMFXSession( &m_pSessionVPP, implVpp);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-            mfxIMPL implEnc = (impl.find(_T("enc")) != impl.end()) ? impl[_T("enc")] : impl[_T("general")]; 
+            mfxIMPL implEnc = (impl.find(MSDK_STRING("enc")) != impl.end()) ? impl[MSDK_STRING("enc")] : impl[MSDK_STRING("general")]; 
             sts = InitMFXSession( &m_pSessionEncode, implEnc);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -717,7 +721,7 @@ mfxStatus TranscodeModelReference::CreateAllocator( mfxU16 IOPattern )
 
     if( IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY) )
     {
-        sts = CreateEnvironmentD3D( &m_allocator );
+        sts = CreateEnvironmentHw( &m_allocator );
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
@@ -734,6 +738,7 @@ mfxStatus TranscodeModelReference::SetAllocatorMFXSessions( mfxU16 IOPattern )
 
     if( IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY) ) // allocator need for Decode & VPP
     {
+#if defined(_WIN32) || defined(_WIN64)
         // allocator need for Decode
         sts = m_pSessionDecode->SetHandle( MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9, m_allocator.pd3dDeviceManager);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -748,11 +753,29 @@ mfxStatus TranscodeModelReference::SetAllocatorMFXSessions( mfxU16 IOPattern )
 
         sts = m_pSessionVPP->SetFrameAllocator( m_allocator.pMfxAllocator ); 
         MSDK_IGNORE_MFX_STS(sts, MFX_ERR_UNDEFINED_BEHAVIOR); //(workaround if session called twice) 
+#elif defined (LIBVA_SUPPORT)
+        // allocator need for Decode
+        sts = m_pSessionDecode->SetHandle(static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), static_cast<mfxHDL>(m_allocator.va_display));
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+        sts = m_pSessionDecode->SetFrameAllocator( m_allocator.pMfxAllocator ); 
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+        // as well as for VPP        
+        sts = m_pSessionVPP->SetHandle(static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), static_cast<mfxHDL>(m_allocator.va_display));
+        MSDK_IGNORE_MFX_STS(sts, MFX_ERR_UNDEFINED_BEHAVIOR); //(workaround if session called twice) 
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+        sts = m_pSessionVPP->SetFrameAllocator(m_allocator.pMfxAllocator ); 
+        MSDK_IGNORE_MFX_STS(sts, MFX_ERR_UNDEFINED_BEHAVIOR); //(workaround if session called twice) 
+
+#endif
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
     if( IOPattern & (MFX_IOPATTERN_OUT_VIDEO_MEMORY) ) // allocator need for VPP & Encode
     {
+#if defined(_WIN32) || defined(_WIN64)
         // allocator need for VPP
         sts = m_pSessionVPP->SetHandle( MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9, m_allocator.pd3dDeviceManager);
         MSDK_IGNORE_MFX_STS(sts, MFX_ERR_UNDEFINED_BEHAVIOR); //(workaround if session called twice) 
@@ -770,6 +793,25 @@ mfxStatus TranscodeModelReference::SetAllocatorMFXSessions( mfxU16 IOPattern )
         sts = m_pSessionEncode->SetFrameAllocator( m_allocator.pMfxAllocator );
         MSDK_IGNORE_MFX_STS(sts, MFX_ERR_UNDEFINED_BEHAVIOR); //(workaround if session called twice) 
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+#elif defined (LIBVA_SUPPORT)
+        // allocator need for VPP
+        sts = m_pSessionVPP->SetHandle(static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), static_cast<mfxHDL>(m_allocator.va_display));
+        MSDK_IGNORE_MFX_STS(sts, MFX_ERR_UNDEFINED_BEHAVIOR); //(workaround if session called twice) 
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+        sts = m_pSessionVPP->SetFrameAllocator( m_allocator.pMfxAllocator ); 
+        MSDK_IGNORE_MFX_STS(sts, MFX_ERR_UNDEFINED_BEHAVIOR); //(workaround if session called twice) 
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+        // as well as for Encode
+        sts = m_pSessionEncode->SetHandle(static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), static_cast<mfxHDL>(m_allocator.va_display));
+        MSDK_IGNORE_MFX_STS(sts, MFX_ERR_UNDEFINED_BEHAVIOR); //(workaround if session called twice) 
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+        sts = m_pSessionEncode->SetFrameAllocator( m_allocator.pMfxAllocator );
+        MSDK_IGNORE_MFX_STS(sts, MFX_ERR_UNDEFINED_BEHAVIOR); //(workaround if session called twice) 
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+#endif
     }
 
     return MFX_ERR_NONE;
@@ -1036,7 +1078,7 @@ mfxStatus TranscodeModelReference::DecodeOneFrame(mfxBitstream *pBS,
     {        
         if (MFX_WRN_DEVICE_BUSY == sts)
         {
-            Sleep(5); // just wait and then repeat the same call to DecodeFrameAsync
+            MSDK_SLEEP(5); // just wait and then repeat the same call to DecodeFrameAsync
         }        
         else if (MFX_ERR_MORE_SURFACE == sts)
         {
@@ -1050,7 +1092,7 @@ mfxStatus TranscodeModelReference::DecodeOneFrame(mfxBitstream *pBS,
                 }
                 else
                 {
-                    Sleep(5);                 
+                    MSDK_SLEEP(5);                 
                 }
             }        
 
@@ -1099,7 +1141,7 @@ mfxStatus TranscodeModelReference::VPPOneFrame(mfxFrameSurface1 *pSurfaceIn,
 
         if (MFX_WRN_DEVICE_BUSY == sts)
         {
-            Sleep(5); // just wait and then repeat the same call to RunFrameVPPAsync
+            MSDK_SLEEP(5); // just wait and then repeat the same call to RunFrameVPPAsync
         }
         else
         {
@@ -1122,7 +1164,7 @@ mfxStatus TranscodeModelReference::EncodeOneFrame(mfxFrameSurface1 *pSurface, mf
         
         if (MFX_WRN_DEVICE_BUSY == sts)
         {
-            Sleep(5);
+            MSDK_SLEEP(5);
         }
         else if (MFX_ERR_NOT_ENOUGH_BUFFER == sts)
         {

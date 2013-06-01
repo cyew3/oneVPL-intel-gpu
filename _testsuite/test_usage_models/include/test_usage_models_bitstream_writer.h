@@ -13,7 +13,7 @@
 class TUMBitstreamWriter
 {
 public:
-    TUMBitstreamWriter(const TCHAR *pFileName);
+    TUMBitstreamWriter(const msdk_char *pFileName);
     ~TUMBitstreamWriter();
 
     mfxStatus WriteNextFrame( void );

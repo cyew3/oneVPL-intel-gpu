@@ -8,12 +8,13 @@
 
 #pragma once
 
+#include "vm/strings_defs.h"
 #include "test_usage_models_utils.h"
 
 class TUMBitstreamReader
 {
 public:
-    TUMBitstreamReader(const TCHAR *pFileName);
+    TUMBitstreamReader(const msdk_char *pFileName);
     ~TUMBitstreamReader();
 
     mfxStatus ReadNextFrame( void );

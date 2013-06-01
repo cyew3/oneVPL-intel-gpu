@@ -14,9 +14,9 @@
 class CommandLine
 {
 public:
-    static void PrintUsage(const TCHAR* app);    
+    static void PrintUsage(const msdk_char* app);    
 
-    CommandLine(int argc, TCHAR *argv[]);
+    CommandLine(int argc, msdk_char *argv[]);
     bool IsValid() const { return m_valid; }
 
     void GetParam( AppParam& param );
@@ -40,10 +40,10 @@ private:
 
     mfxU32 m_framesCount;
 
-    TCHAR* m_pSrcFileName;
-    TCHAR* m_pDstFileName;
+    msdk_char* m_pSrcFileName;
+    msdk_char* m_pDstFileName;
 
-    std::map<TCHAR*, mfxIMPL> m_impLib;    
+    std::map<msdk_char*, mfxIMPL> m_impLib;    
 
     mfxU16 m_IOPattern; // DEC->(SYS/D3D frames)->VPP->(SYS/D3D frames)->ENC
 

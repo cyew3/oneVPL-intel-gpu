@@ -8,7 +8,7 @@
 
 #include <stdexcept>
 #include <iostream>
-#include <windows.h>
+
 #include "test_statistics.h"
 #include "test_usage_models_utils.h"
 #include "test_usage_models_cmdline.h"
@@ -30,6 +30,7 @@ TranscodeModel* CreateTranscode( AppParam &param )
             break;
         }
 
+#if defined(_WIN32) || defined(_WIN64)
         case USAGE_MODEL_1:
         {
             // AYA debug
@@ -88,7 +89,7 @@ TranscodeModel* CreateTranscode( AppParam &param )
             pModel = (TranscodeModel*)new TranscodeModelAdvanced( param );
             break;
         }
-
+#endif
         case USAGE_MODEL_JOIN_REFERENCE:
         {
             param.sessionMode = DEC_VPP_ENC_SESSION; 
@@ -107,8 +108,11 @@ TranscodeModel* CreateTranscode( AppParam &param )
 
 } // TranscodeModel* CreateTranscode( AppParam &param )
 
-
+#if defined(_WIN32) || defined(_WIN64)
 int _tmain(int argc, TCHAR *argv[])
+#else
+int main(int argc, char *argv[])
+#endif
 {
     CommandLine cmd = CommandLine(argc, argv);
     Timer       statTimer;
@@ -117,7 +121,7 @@ int _tmain(int argc, TCHAR *argv[])
     
     if (!cmd.IsValid())
     {
-        _ftprintf(stderr, _T("FAILED\n"));
+        msdk_fprintf(stderr, MSDK_STRING("FAILED\n"));
         CommandLine::PrintUsage(argv[0]);
 
         return TUM_ERR_STS;
@@ -145,9 +149,9 @@ int _tmain(int argc, TCHAR *argv[])
         
         statTimer.Start();
 
-        _tprintf(_T("\nTranscoding started\n"));
+        msdk_printf(MSDK_STRING("\nTranscoding started\n"));
         sts = transcode->Run();
-        _tprintf(_T("\n\nTranscoding finished\n"));
+        msdk_printf(MSDK_STRING("\n\nTranscoding finished\n"));
 
          statTimer.Stop();
 
@@ -164,8 +168,8 @@ int _tmain(int argc, TCHAR *argv[])
 
     delete transcode;
 
-    _tprintf(_T("Total time %.2f sec \n"), statTimer.OverallTiming());
-   _tprintf(_T("Frames per second %.3f fps \n"), framesCount / statTimer.OverallTiming());
+    msdk_printf(MSDK_STRING("Total time %.2f sec \n"), statTimer.OverallTiming());
+    msdk_printf(MSDK_STRING("Frames per second %.3f fps \n"), framesCount / statTimer.OverallTiming());
 
     return appSts;
 

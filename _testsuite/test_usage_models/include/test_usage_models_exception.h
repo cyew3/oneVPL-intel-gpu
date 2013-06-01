@@ -12,8 +12,14 @@
 
 #pragma once
 
-#include <windows.h>
+#include "mfxdefs.h"
 #include <sstream>
+
+#if defined(_WIN32) || defined(_WIN64)
+  #define MY_FUNCSIG __FUNCSIG__
+#else
+  #define MY_FUNCSIG __FUNCTION__
+#endif
 
 class TUMException: public std::exception
 {
@@ -23,7 +29,7 @@ public:
     TUMException(
         const std::string&  message,
         const char* const   fileName,
-        const DWORD         line,
+        const mfxU32        line,
         const char* const   funcName)
     {
         std::stringstream tmpStream;

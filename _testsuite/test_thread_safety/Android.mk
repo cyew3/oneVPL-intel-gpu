@@ -25,7 +25,7 @@ LOCAL_C_INCLUDES += \
     $(MFX_HOME)/_testsuite/shared/include \
     $(MFX_HOME)/samples/sample_common/include
 
-LOCAL_LDFLAGS += -lippvc_l -lippcc_l -lippdc_l -lippi_l -lipps_l -lippcore_l -ldl
+LOCAL_LDFLAGS += -lippvc_l -lippcc_l -lippcp_l -lippdc_l -lippi_l -lipps_l -lippcore_l -ldl
 
 ifeq ($(MFX_IMPL), hw)
     LOCAL_LDFLAGS += -lva -lva-android

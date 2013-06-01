@@ -6,58 +6,59 @@
 //        Copyright (c) 2010 Intel Corporation. All Rights Reserved.
 //
 
-#include <windows.h>
-#include <psapi.h>
 #include "test_usage_models_cmdline.h"
 
-mfxU32 String2VideoFormat( TCHAR* arg );
-TCHAR* VideoFormat2String( mfxU32 FourCC );
-mfxU16 String2IOPattern( TCHAR* strInput );
-TCHAR* IOPattern2String(mfxU16 IOPattern);
-TCHAR* ImpLibrary2String(mfxIMPL impl);
+mfxU32 String2VideoFormat( msdk_char* arg );
+msdk_char* VideoFormat2String( mfxU32 FourCC );
+mfxU16 String2IOPattern( msdk_char* strInput );
+msdk_char* IOPattern2String(mfxU16 IOPattern);
+msdk_char* ImpLibrary2String(mfxIMPL impl);
 void PrintDllInfo( void );
 
-void CommandLine::PrintUsage(const TCHAR* app)
+void CommandLine::PrintUsage(const msdk_char* app)
 {
-    _tprintf( _T("%s [options] -i InputStream -o OutputStream\n\n") , app);
-    _tprintf(
-        _T("version: 1.1\n")
-        _T("options:\n")
-        _T("[-lib   type]      - type (general) of used MediaSDK implementation (sw|hw) \n")
-        _T("   [-dec::type]    - type of dec implementation (sw|hw) \n")
-        _T("   [-vpp::type]    - type of vpp implementation (sw|hw) \n")
-        _T("   [-enc::type]    - type of enc implementation (sw|hw) \n\n")
+    msdk_printf( MSDK_STRING("%s [options] -i InputStream -o OutputStream\n\n") , app);
+    msdk_printf(
+        MSDK_STRING(
+          "version: 1.1\n"
+          "options:\n"
+          "[-lib   type]      - type (general) of used MediaSDK implementation (sw|hw) \n"
+          "   [-dec::type]    - type of dec implementation (sw|hw) \n"
+          "   [-vpp::type]    - type of vpp implementation (sw|hw) \n"
+          "   [-enc::type]    - type of enc implementation (sw|hw) \n\n"
 
-        _T("[-sfmt  format]    - format of src video (h264|mpeg2|vc1)\n")
-        _T("[-dfmt  format]    - format of dst video (h264|mpeg2)\n")
-        _T("[-w     width]     - required width  of dst video\n")
-        _T("[-h     height]    - required height of dst video\n")
-        _T("[-b     bitRate]   - encoded bit rate (Kbits per second)\n")
-        _T("[-f     frameRate] - video frame rate (frames per second)\n")
-        _T("[-u     target]    - target usage (quality=1|balanced=4|speed=7). default is 1\n\n")
+          "[-sfmt  format]    - format of src video (h264|mpeg2|vc1)\n"
+          "[-dfmt  format]    - format of dst video (h264|mpeg2)\n"
+          "[-w     width]     - required width  of dst video\n"
+          "[-h     height]    - required height of dst video\n"
+          "[-b     bitRate]   - encoded bit rate (Kbits per second)\n"
+          "[-f     frameRate] - video frame rate (frames per second)\n"
+          "[-u     target]    - target usage (quality=1|balanced=4|speed=7). default is 1\n\n"
 
-        _T("[-async depth]     - depth of asynchronous pipeline. default is 1\n")
-        _T("[-model number]    - number of MediaSDK usage model. default is 0\n\n")
-        _T("[-n     frames]    - number of frames to trancode process\n\n")
+          "[-async depth]     - depth of asynchronous pipeline. default is 1\n"
+          "[-model number]    - number of MediaSDK usage model. default is 0\n\n"
+          "[-n     frames]    - number of frames to trancode process\n\n"
 
-        _T("[-iopattern mem]   - memory type of used surfaces: (sys|d3d) or\n")
-        _T("                   - (sys_to_sys|sys_to_d3d|d3d_to_sys|d3d_to_d3d) if VPP required\n\n\n")
-        /*_T("     [-dec::mem]   - memory type of dec surfaces: (sys|d3d) \n")
-        _T("     [-vpp::mem]   - memory type of vpp surfaces: (sys_to_sys|sys_to_d3d|d3d_to_sys|d3d_to_d3d)\n")
-        _T("     [-enc::mem]   - memory type of enc surfaces: (sys|d3d) \n\n\n")*/
-
+          "[-iopattern mem]   - memory type of used surfaces: (sys|d3d) or\n"
+          "                   - (sys_to_sys|sys_to_d3d|d3d_to_sys|d3d_to_d3d) if VPP required\n\n\n"
+          /*"     [-dec::mem]   - memory type of dec surfaces: (sys|d3d) \n"
+          "     [-vpp::mem]   - memory type of vpp surfaces: (sys_to_sys|sys_to_d3d|d3d_to_sys|d3d_to_d3d)\n"
+          "     [-enc::mem]   - memory type of enc surfaces: (sys|d3d) \n\n\n"*/
+          )
         );
 
-     _tprintf(
-        _T("List of supported MediaSDK usage models: [0-8]\n")        
-        _T("See detail in file \n")
-        _T("{MSDK_ROOT}\\_testsuite\\test_usage_models\\UsageModelList.pdf \n")
+     msdk_printf(
+        MSDK_STRING(
+          "List of supported MediaSDK usage models: [0-8]\n"
+          "See detail in file \n"
+          "{MSDK_ROOT}\\_testsuite\\test_usage_models\\UsageModelList.pdf \n"
+          )
         );
     
-} // void CommandLine::PrintUsage(const TCHAR* app)
+} // void CommandLine::PrintUsage(const msdk_char* app)
 
 
-CommandLine::CommandLine(int argc, TCHAR *argv[])
+CommandLine::CommandLine(int argc, msdk_char *argv[])
 :  m_srcVideoFormat(0)
 ,  m_dstVideoFormat(0)
 ,  m_width(0)
@@ -76,7 +77,7 @@ CommandLine::CommandLine(int argc, TCHAR *argv[])
 ,  m_IOPattern( MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY )
 ,  m_valid(false)
 {
-    m_impLib[ _T("general") ] = MFX_IMPL_SOFTWARE; // general session should be inited always
+    m_impLib[ MSDK_STRING("general") ] = MFX_IMPL_SOFTWARE; // general session should be inited always
 
     if (argc < 6)
     {
@@ -88,63 +89,63 @@ CommandLine::CommandLine(int argc, TCHAR *argv[])
     {
         int readVal;
 
-        if ( 0 == _tcscmp(argv[i], _T("-sfmt")) )    
+        if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-sfmt")) )    
         {
             if (++i < argc)
             {                
                 m_srcVideoFormat = String2VideoFormat(argv[i]);
             }
         } 
-        else if ( 0 == _tcscmp(argv[i], _T("-dfmt")) )
+        else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-dfmt")) )
         {
             if (++i < argc)
             {                
                 m_dstVideoFormat = String2VideoFormat(argv[i]);
             }
         }
-        else if ( 0 == _tcscmp(argv[i], _T("-w")) )
+        else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-w")) )
         {
             if (++i < argc)
             {
-                _stscanf_s(argv[i], _T("%i"), &readVal);
+                msdk_sscanf(argv[i], MSDK_STRING("%i"), &readVal);
                 m_width = (mfxU16)readVal;
             }
         }
-        else if ( 0 == _tcscmp(argv[i], _T("-h")) )
+        else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-h")) )
         {
             if (++i < argc)
             {
-                _stscanf_s(argv[i], _T("%i"), &readVal);
+                msdk_sscanf(argv[i], MSDK_STRING("%i"), &readVal);
                 m_height = (mfxU16)readVal;
             }
         }
-        else if ( 0 == _tcscmp(argv[i], _T("-b")) )
+        else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-b")) )
         {
             if (++i < argc)
             {
-                _stscanf_s(argv[i], _T("%i"), &m_bitRate);
+                msdk_sscanf(argv[i], MSDK_STRING("%i"), &m_bitRate);
             }
         }
-        else if ( 0 == _tcscmp(argv[i], _T("-f")) )
+        else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-f")) )
         {
             if (++i < argc)
             {
-                _stscanf_s(argv[i], _T("%lf"), &m_frameRate);
+                msdk_sscanf(argv[i], MSDK_STRING("%lf"), &m_frameRate);
             }
         }
-        else if ( 0 == _tcscmp(argv[i], _T("-u")) )
+        else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-u")) )
         {
             if (++i < argc)
             {
-                _stscanf_s(argv[i], _T("%i"), &readVal);
+                msdk_sscanf(argv[i], MSDK_STRING("%i"), &readVal);
                 m_targetUsage = (mfxU16)readVal;
             }
         }
-        else if ( 0 == _tcscmp(argv[i], _T("-async")) )
+        else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-async")) )
         {
             if (++i < argc)
             {           
-                _stscanf_s(argv[i], _T("%i"), &readVal);
+                msdk_sscanf(argv[i], MSDK_STRING("%i"), &readVal);
                 m_asyncDepth = (mfxU16)readVal;
                 // async depth correction
                 if (0 == m_asyncDepth) 
@@ -153,24 +154,24 @@ CommandLine::CommandLine(int argc, TCHAR *argv[])
                 }
             }
         }
-        else if ( 0 == _tcscmp(argv[i], _T("-model")) )
+        else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-model")) )
         {
             if (++i < argc)
             {
-                _stscanf_s(argv[i], _T("%i"), &readVal);
+                msdk_sscanf(argv[i], MSDK_STRING("%i"), &readVal);
                 m_usageModel = (mfxU16)readVal;
             }
         }
-        else if ( 0 == _tcscmp(argv[i], _T("-n")) )
+        else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-n")) )
         {
             if (++i < argc)
             {
-                _stscanf_s(argv[i], _T("%i"), &m_framesCount);
+                msdk_sscanf(argv[i], MSDK_STRING("%i"), &m_framesCount);
             }
         }
 
         // src/dst streams
-        else if ( 0 == _tcscmp(argv[i], _T("-o")) )
+        else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-o")) )
         {
             if (++i < argc)
             {
@@ -178,7 +179,7 @@ CommandLine::CommandLine(int argc, TCHAR *argv[])
                 m_pDstFileName = argv[i];
             }
         }
-        else if ( 0 == _tcscmp(argv[i], _T("-i")) )
+        else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-i")) )
         {
             if (++i < argc)
             {
@@ -188,48 +189,48 @@ CommandLine::CommandLine(int argc, TCHAR *argv[])
         }
 
         // implementation of MFX library in general
-        else if (0 == _tcscmp(argv[i], _T("-lib")) )
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-lib")) )
         {
             if( ++i < argc )
             {
-                if (0 == _tcscmp(argv[i], _T("sw")) )
+                if (0 == msdk_strcmp(argv[i], MSDK_STRING("sw")) )
                 {
-                    m_impLib[_T("general")] = MFX_IMPL_SOFTWARE;
+                    m_impLib[MSDK_STRING("general")] = MFX_IMPL_SOFTWARE;
                 }
-                else if (0 == _tcscmp(argv[i], _T("hw")) )
+                else if (0 == msdk_strcmp(argv[i], MSDK_STRING("hw")) )
                 {
-                    m_impLib[_T("general")] = MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D9;
+                    m_impLib[MSDK_STRING("general")] = MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D9;
                 }
             }
         }
         // implementation of MFX library for individual component
-        else if ( 0 == _tcscmp(argv[i], _T("-dec::sw")) )
+        else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-dec::sw")) )
         {
-            m_impLib[_T("dec")] = MFX_IMPL_SOFTWARE;
+            m_impLib[MSDK_STRING("dec")] = MFX_IMPL_SOFTWARE;
         }
-        else if ( 0 == _tcscmp(argv[i], _T("-dec::hw")) )
+        else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-dec::hw")) )
         {
-            m_impLib[_T("dec")] = MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D9;
+            m_impLib[MSDK_STRING("dec")] = MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D9;
         }
-        else if ( 0 == _tcscmp(argv[i], _T("-vpp::sw")) )
+        else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-vpp::sw")) )
         {
-            m_impLib[_T("vpp")] = MFX_IMPL_SOFTWARE;
+            m_impLib[MSDK_STRING("vpp")] = MFX_IMPL_SOFTWARE;
         }
-        else if ( 0 == _tcscmp(argv[i], _T("-vpp::hw")) )
+        else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-vpp::hw")) )
         {
-            m_impLib[_T("vpp")] = MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D9;
+            m_impLib[MSDK_STRING("vpp")] = MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D9;
         }
-        else if ( 0 == _tcscmp(argv[i], _T("-enc::sw")) )
+        else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-enc::sw")) )
         {
-            m_impLib[_T("enc")] = MFX_IMPL_SOFTWARE;
+            m_impLib[MSDK_STRING("enc")] = MFX_IMPL_SOFTWARE;
         }
-        else if ( 0 == _tcscmp(argv[i], _T("-enc::hw")) )
+        else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-enc::hw")) )
         {
-            m_impLib[_T("enc")] = MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D9;
+            m_impLib[MSDK_STRING("enc")] = MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D9;
         }
 
         // iopattern
-        else if( 0 == _tcscmp(argv[i], _T("-iopattern")) )
+        else if( 0 == msdk_strcmp(argv[i], MSDK_STRING("-iopattern")) )
         {
             if( ++i < argc )
             {
@@ -257,21 +258,21 @@ CommandLine::CommandLine(int argc, TCHAR *argv[])
     ////AYA debug
     ////m_usageModel = USAGE_MODEL_8;
     ////m_asyncDepth = 5;
-    ////m_impLib[_T("dec")] = MFX_IMPL_SOFTWARE;
-    ////m_impLib[_T("vpp")] = MFX_IMPL_HARDWARE;
-    ////m_impLib[_T("enc")] = MFX_IMPL_HARDWARE;
+    ////m_impLib[MSDK_STRING("dec")] = MFX_IMPL_SOFTWARE;
+    ////m_impLib[MSDK_STRING("vpp")] = MFX_IMPL_HARDWARE;
+    ////m_impLib[MSDK_STRING("enc")] = MFX_IMPL_HARDWARE;
     //m_width = m_width = 0;
     //if( m_usageModel > 0 )
     //{
-    //    m_impLib[ _T("general") ] = MFX_IMPL_HARDWARE;
-    //    m_impLib[ _T("vpp") ]    = MFX_IMPL_SOFTWARE;
+    //    m_impLib[ MSDK_STRING("general") ] = MFX_IMPL_HARDWARE;
+    //    m_impLib[ MSDK_STRING("vpp") ]    = MFX_IMPL_SOFTWARE;
     //    m_IOPattern = (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY);
     //    //m_width = m_width = 0;
     //    m_usageModel = USAGE_MODEL_8;
     //}
 
 
-} // CommandLine::CommandLine(int argc, TCHAR *argv[])
+} // CommandLine::CommandLine(int argc, msdk_char *argv[])
 
 
 void CommandLine::GetParam( AppParam& param )
@@ -304,125 +305,126 @@ void CommandLine::PrintInfo( void )
         return;
     }
 
-    _tprintf(_T("<Configuration of the test:>\n"));
-    _tprintf(_T("Input  format\t%s\n"),   VideoFormat2String( m_srcVideoFormat ));
-    _tprintf(_T("Output format\t%s\n"),   VideoFormat2String( m_dstVideoFormat ));
+    msdk_printf(MSDK_STRING("<Configuration of the test:>\n"));
+    msdk_printf(MSDK_STRING("Input  format\t%s\n"),   VideoFormat2String( m_srcVideoFormat ));
+    msdk_printf(MSDK_STRING("Output format\t%s\n"),   VideoFormat2String( m_dstVideoFormat ));
 
     if( m_bitRate > 0 )
     {
-        _tprintf(_T("BitRate\t\t%d\n"),     m_bitRate);
+        msdk_printf(MSDK_STRING("BitRate\t\t%d\n"),     m_bitRate);
     }
     else
     {
-        _tprintf(_T("BitRate\t\t%s\n"),     _T("default"));
+        msdk_printf(MSDK_STRING("BitRate\t\t%s\n"),     MSDK_STRING("default"));
     }
-    _tprintf(_T("Target Usage\t%s\n"),    TargetUsageToStr(m_targetUsage) );
-    _tprintf(_T("Async Depth\t%d\n"),     m_asyncDepth);
-    _tprintf(_T("MFX Usage Model\t%d\n"), m_usageModel);
+    msdk_printf(MSDK_STRING("Target Usage\t%s\n"),    TargetUsageToStr(m_targetUsage) );
+    msdk_printf(MSDK_STRING("Async Depth\t%d\n"),     m_asyncDepth);
+    msdk_printf(MSDK_STRING("MFX Usage Model\t%d\n"), m_usageModel);
     
     //if( m_usageModel < USAGE_MODEL_6  )
     //{        
-    //    _tprintf(_T("MFX implement:\t%s\n"), ImpLibrary2String( m_impLib[_T("general")] ));
+    //    msdk_printf(MSDK_STRING("MFX implement:\t%s\n"), ImpLibrary2String( m_impLib[MSDK_STRING("general")] ));
     //}
     //else
     {
-        _tprintf(_T("MFX DEC impl:\t%s\n"), ImpLibrary2String( (m_impLib.find(_T("dec")) != m_impLib.end()) ? m_impLib[_T("dec")] : m_impLib[_T("general")] ));
+        msdk_printf(MSDK_STRING("MFX DEC impl:\t%s\n"), ImpLibrary2String( (m_impLib.find(MSDK_STRING("dec")) != m_impLib.end()) ? m_impLib[MSDK_STRING("dec")] : m_impLib[MSDK_STRING("general")] ));
         if( IsVPPEnable() )
         {
-            _tprintf(_T("MFX VPP impl:\t%s\n"), ImpLibrary2String( (m_impLib.find(_T("vpp")) != m_impLib.end()) ? m_impLib[_T("vpp")] : m_impLib[_T("general")] ));
+            msdk_printf(MSDK_STRING("MFX VPP impl:\t%s\n"), ImpLibrary2String( (m_impLib.find(MSDK_STRING("vpp")) != m_impLib.end()) ? m_impLib[MSDK_STRING("vpp")] : m_impLib[MSDK_STRING("general")] ));
         }
-        _tprintf(_T("MFX ENC impl:\t%s\n"), ImpLibrary2String( (m_impLib.find(_T("enc")) != m_impLib.end()) ? m_impLib[_T("enc")] : m_impLib[_T("general")] ));
+        msdk_printf(MSDK_STRING("MFX ENC impl:\t%s\n"), ImpLibrary2String( (m_impLib.find(MSDK_STRING("enc")) != m_impLib.end()) ? m_impLib[MSDK_STRING("enc")] : m_impLib[MSDK_STRING("general")] ));
     }
 
 
-    _tprintf(_T("IOPattern\t%s\n"), IOPattern2String(m_IOPattern) );
+    msdk_printf(MSDK_STRING("IOPattern\t%s\n"), IOPattern2String(m_IOPattern) );
 
     PrintDllInfo();
   
 } // void CommandLine::PrintInfo( void )
 
 
-mfxU32 String2VideoFormat( TCHAR* arg )
+mfxU32 String2VideoFormat( msdk_char* arg )
 {
     mfxU32 format = MFX_FOURCC_NV12;//default
 
-    if ( 0 == _tcscmp(arg, _T("h264")) ) 
+    if ( 0 == msdk_strcmp(arg, MSDK_STRING("h264")) ) 
     {
         format = MFX_CODEC_AVC;
     } 
-    else if ( 0 == _tcscmp(arg, _T("mpeg2")) ) 
+    else if ( 0 == msdk_strcmp(arg, MSDK_STRING("mpeg2")) ) 
     {
         format = MFX_CODEC_MPEG2;
     } 
-    else if ( 0 == _tcscmp(arg, _T("vc1")) ) 
+    else if ( 0 == msdk_strcmp(arg, MSDK_STRING("vc1")) ) 
     {
         format = MFX_CODEC_VC1;
     }    
 
     return format;
 
-} // mfxU32 Str2FourCC( TCHAR* strInput )
+} // mfxU32 Str2FourCC( msdk_char* strInput )
 
 
-TCHAR* VideoFormat2String( mfxU32 FourCC )
+msdk_char* VideoFormat2String( mfxU32 FourCC )
 {
-  TCHAR* strFourCC = _T("h264");//default
+  msdk_char* strFourCC = MSDK_STRING("h264");//default
 
   switch ( FourCC )
   {
   case MFX_CODEC_AVC:
-    strFourCC = _T("h264");
+    strFourCC = MSDK_STRING("h264");
     break;
 
   case MFX_CODEC_MPEG2:
-    strFourCC = _T("mpeg2");
+    strFourCC = MSDK_STRING("mpeg2");
     break;
 
   case MFX_CODEC_VC1:
-    strFourCC = _T("vc1");
+    strFourCC = MSDK_STRING("vc1");
     break;
    
   default:
-      strFourCC = _T("NV12");
+      strFourCC = MSDK_STRING("NV12");
       break;
   }
 
   return strFourCC;
 
-} // TCHAR* VideoFormat2String( mfxU32 FourCC )
+} // msdk_char* VideoFormat2String( mfxU32 FourCC )
 
 
-TCHAR* ImpLibrary2String(mfxIMPL impl)
+msdk_char* ImpLibrary2String(mfxIMPL impl)
 {
     switch(impl)
     {
         case MFX_IMPL_AUTO:
         {
-            return _T("auto");
+            return MSDK_STRING("auto");
         }
         case MFX_IMPL_SOFTWARE:
         {
-            return _T("SW");
+            return MSDK_STRING("SW");
         }
         case (MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D9):
         {
-            return _T("HW | via D3D9");
+            return MSDK_STRING("HW | via D3D9");
         }
         case (MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D11):
         {
-            return _T("HW | via D3D11");
+            return MSDK_STRING("HW | via D3D11");
         }
         default:
         {
-            return _T("unknown");
+            return MSDK_STRING("unknown");
         }
     }
 
-} // TCHAR* ImpLibraryToStr(mfxIMPL impl)
+} // msdk_char* ImpLibraryToStr(mfxIMPL impl)
 
 
 void PrintDllInfo( void )
 {
+#if defined(_WIN32) || defined(_WIN64)
     HANDLE   hCurrent = GetCurrentProcess();
     HMODULE *pModules;
     DWORD    cbNeeded;
@@ -453,67 +455,67 @@ void PrintDllInfo( void )
         }
     }
     delete []pModules;
-
+#endif // #if defined(_WIN32) || defined(_WIN64)
 } // void PrintDllInfo( void )
 
 
-mfxU16 String2IOPattern( TCHAR* strInput )
+mfxU16 String2IOPattern( msdk_char* strInput )
 {
     mfxU16 IOPattern = 0;
 
-    if ( 0 == _tcscmp(strInput, _T("d3d_to_d3d")) ) 
+    if ( 0 == msdk_strcmp(strInput, MSDK_STRING("d3d_to_d3d")) ) 
     {
         IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY;
     } 
-    else if ( 0 == _tcscmp(strInput, _T("d3d_to_sys")) ) 
+    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("d3d_to_sys")) ) 
     {
         IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
     } 
-    else if ( 0 == _tcscmp(strInput, _T("sys_to_d3d")) ) 
+    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("sys_to_d3d")) ) 
     {
         IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY;
     } 
-    else if ( 0 == _tcscmp(strInput, _T("sys_to_sys")) )
+    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("sys_to_sys")) )
     {
         IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
     } 
-    else if( 0 == _tcscmp(strInput, _T("d3d")) )
+    else if( 0 == msdk_strcmp(strInput, MSDK_STRING("d3d")) )
     {
         IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY;
     }
-    else if( 0 == _tcscmp(strInput, _T("sys")) )
+    else if( 0 == msdk_strcmp(strInput, MSDK_STRING("sys")) )
     {
         IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
     }
     return IOPattern;
 
-} // mfxU16 String2IOPattern( TCHAR* strInput )
+} // mfxU16 String2IOPattern( msdk_char* strInput )
 
 
-TCHAR* IOPattern2String(mfxU16 IOPattern)
+msdk_char* IOPattern2String(mfxU16 IOPattern)
 {
     switch(IOPattern)
     {
         // multi pattern
         case (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY):
         {
-            return _T("video");
+            return MSDK_STRING("video");
         }
         case (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY):
         {
-            return _T("video_to_system");
+            return MSDK_STRING("video_to_system");
         }
         case (MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY):
         {
-            return _T("system_to_video");
+            return MSDK_STRING("system_to_video");
         }
         case (MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY):
         {
-            return _T("system");
+            return MSDK_STRING("system");
         }           
         default:
         {
-            return _T("unknown");
+            return MSDK_STRING("unknown");
         }
     }
 }

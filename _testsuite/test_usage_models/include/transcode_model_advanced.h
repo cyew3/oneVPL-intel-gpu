@@ -8,6 +8,8 @@
 
 #pragma once
 
+#if defined(_WIN32) || defined(_WIN64)
+
 #include <windows.h>
 #include "transcode_model_reference.h"
 
@@ -105,4 +107,7 @@ private:
     mfxU16 m_asyncDepth;
 
 };
+
+#endif // #if defined(_WIN32) || defined(_WIN64)
+
 /* EOF */

@@ -9,7 +9,7 @@
 #include "test_usage_models_bitstream_reader.h"
 #include "test_usage_models_exception.h"
 
-TUMBitstreamReader::TUMBitstreamReader(const TCHAR * pFileName)
+TUMBitstreamReader::TUMBitstreamReader(const msdk_char * pFileName)
 {
     mfxStatus sts1, sts2;
 
@@ -30,7 +30,7 @@ TUMBitstreamReader::TUMBitstreamReader(const TCHAR * pFileName)
                     "BitstreamReader FAILED\n",
                     __FILE__,
                     __LINE__,
-                    __FUNCSIG__);
+                    MY_FUNCSIG);
     }
 
 } // TUMBitstreamReader::TUMBitstreamReader(const TCHAR *fileName)

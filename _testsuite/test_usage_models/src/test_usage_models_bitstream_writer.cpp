@@ -9,7 +9,7 @@
 #include "test_usage_models_bitstream_writer.h"
 #include "test_usage_models_exception.h"
 
-TUMBitstreamWriter::TUMBitstreamWriter(const TCHAR *pFileName)
+TUMBitstreamWriter::TUMBitstreamWriter(const msdk_char *pFileName)
 {
     mfxStatus sts1, sts2;
 
@@ -28,7 +28,7 @@ TUMBitstreamWriter::TUMBitstreamWriter(const TCHAR *pFileName)
                     "BitstreamWriter FAILED\n",
                     __FILE__,
                     __LINE__,
-                    __FUNCSIG__);
+                    MY_FUNCSIG);
     }
     
 } // TUMBitstreamWriter::TUMBitstreamWriter(const TCHAR *fileName)

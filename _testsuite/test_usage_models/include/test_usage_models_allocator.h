@@ -10,11 +10,11 @@
 #pragma warning(disable : 4201)
 
 #include <map>
-#include <d3d9.h>
-#include <dxva2api.h>
+#include <memory>
 
 #include "base_allocator.h"
 #include "d3d_allocator.h"
+#include "vaapi_allocator.h"
 #include "sysmem_allocator.h"
 
 #include "mfxvideo.h"
@@ -29,13 +29,24 @@ struct sMemoryAllocator
   mfxFrameSurface1*     pSurfaces[2];
   mfxFrameAllocResponse response[2];
 
+#if defined(_WIN32) || defined(_WIN64)
   IDirect3DDeviceManager9* pd3dDeviceManager;
+#endif
+#if defined(LIBVA_SUPPORT)
+  mfxHDL va_display;
+#endif
 
   sMemoryAllocator()
       :pMfxAllocator(NULL)
       ,pAllocatorParams(NULL)
       ,bUsedAsExternalAllocator(false)
+#if defined(_WIN32) || defined(_WIN64)
       ,pd3dDeviceManager(NULL)
+#endif
+#if defined(LIBVA_SUPPORT)
+      ,va_display(0)
+#endif
+
   {};
 
 };
@@ -57,15 +68,17 @@ protected:
     virtual mfxStatus ReleaseResponse(mfxFrameAllocResponse *response);
     virtual mfxStatus AllocImpl(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
 
-    void    StoreFrameMids(bool isD3DFrames, mfxFrameAllocResponse *response);
-    bool    isD3DMid(mfxHDL mid);
+    void    StoreFrameMids(bool isHwFrames, mfxFrameAllocResponse *response);
+    bool    isHwMid(mfxHDL mid);
 
     std::map<mfxHDL, bool>              m_Mids;
-    std::auto_ptr<D3DFrameAllocator>    m_D3DAllocator;
+
+    std::auto_ptr<BaseFrameAllocator>   m_HwAllocator;
+
     std::auto_ptr<SysMemFrameAllocator> m_SYSAllocator;
 
 };
 
 //mfxStatus CreateDeviceManager(IDirect3DDeviceManager9** ppManager);
-mfxStatus CreateEnvironmentD3D( sMemoryAllocator* pAllocator );
+mfxStatus CreateEnvironmentHw( sMemoryAllocator* pAllocator );
 /* EOF */

@@ -5,6 +5,7 @@
 //  or disclosed except in accordance with the terms of that agreement.
 //        Copyright (c) 2010 Intel Corporation. All Rights Reserved.
 //
+#if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 #include <process.h>
 //AYA debug
@@ -1108,4 +1109,7 @@ mfxU32 TranscodeModelAdvanced::WrapperSyncOperationVPPRoutine(void *pParam)
     return result;
 
 } // mfxU32 TranscodeModelAdvanced::WrapperSyncOperationVPPRoutine(void *pParam)
+
+#endif // #if defined(_WIN32) || defined(_WIN64)
+
 /* EOF */

@@ -8,7 +8,11 @@
 
 #pragma once
 
-#include <tchar.h>
+#if defined(_WIN32) || defined(_WIN64)
+  #include <windows.h>
+  #include <psapi.h>
+  #include <tchar.h>
+#endif
 #include <map>
 
 #include "sample_defs.h"
@@ -19,10 +23,10 @@
 #define TUM_ERR_STS        (897)
 #define TUM_OK_STS         (0)
 
-#define PRINT_USER_MSG( MSG )     { _tprintf(_T("\n\nReturn on error: %s\n"), MSG); }
+#define PRINT_USER_MSG( MSG )     { msdk_printf(MSDK_STRING("\n\nReturn on error: %s\n"), MSG); }
 #define RETURN_ON_ERROR(MSG, ERR) { PRINT_USER_MSG(MSG); return ERR; }
 
-typedef mfxU32 (__stdcall *tum_thread_callback)(void *);
+//typedef mfxU32 (__stdcall *tum_thread_callback)(void *);
 
 // "_" means unique session for components.
 // example: 
@@ -63,10 +67,10 @@ struct AppParam
 
     mfxU32 framesCount;// frames to be encoded
 
-    TCHAR* pSrcFileName;
-    TCHAR* pDstFileName;
+    msdk_char* pSrcFileName;
+    msdk_char* pDstFileName;
 
-    std::map<TCHAR*, mfxIMPL>  impLib; // type of MediaSDK library (HW/SW)
+    std::map<msdk_char*, mfxIMPL>  impLib; // type of MediaSDK library (HW/SW)
 
     mfxU16   IOPattern;
 
