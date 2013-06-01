@@ -5,25 +5,16 @@ include $(MFX_HOME)/android/mfx_env.mk
 
 LOCAL_CFLAGS += -DANDROID
 
-# Android OS itself does not support RTTI and exceptions
-ifeq ($(MFX_ANDROID_NDK_BUILD), false)
-    LOCAL_CFLAGS += -DMFX_NO_EXCEPTIONS
+ifneq ($(LOCAL_PATH), $(MFX_HOME)/_testsuite/plugins/openmax/sgf_addons)
+    LOCAL_CFLAGS += -frtti
 endif
 
 # Passing Android-dependency information to the code
-ifeq ($(MFX_ANDROID_VERSION), honeycomb)
-    LOCAL_CFLAGS += -DHONEYCOMB
-else
-    ifeq ($(MFX_ANDROID_VERSION), honeycomb_vpg)
-        LOCAL_CFLAGS += -DHONEYCOMB_VPG
-    else
-        LOCAL_CFLAGS += -DGINGERBREAD
-    endif
-endif
+LOCAL_CFLAGS += -DMFX_ANDROID_VERSION=$(MFX_ANDROID_VERSION) -include $(MFX_HOME)/android/include/mfx_config.h
 
 # LibVA support.
 ifeq ($(MFX_IMPL), hw)
-    LOCAL_CFLAGS += -DLIBVA_SUPPORT -DVAAPI_SURFACES_SUPPORT
+    LOCAL_CFLAGS += -DLIBVA_SUPPORT -DLIBVA_ANDROID_SUPPORT
 
     include $(MFX_HOME)/android/mfx_android_os.mk
 endif

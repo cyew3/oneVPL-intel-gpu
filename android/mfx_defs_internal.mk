@@ -4,7 +4,7 @@
 include $(MFX_HOME)/android/mfx_defs.mk
 
 ifeq ($(MFX_IMPL), hw)
-    MFX_ACCEL = -DMFX_VA -DUMC_VA_LINUX
+    MFX_ACCEL = -DMFX_VA
 endif
 
 LOCAL_CFLAGS += \
