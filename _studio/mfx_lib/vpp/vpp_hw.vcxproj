@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
+    <ProjectName>vpp_hw</ProjectName>
     <ProjectGuid>{8D456A00-501A-47A9-B3C7-42723A7A82F2}</ProjectGuid>
     <RootNamespace>vpp</RootNamespace>
     <Keyword>Win32Proj</Keyword>
@@ -81,8 +82,18 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\core\ipp\ia32\include;..\..\shared\umc\core\ipp\include;$(MfxIppIncludeDir);..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;MFX_VA;MFX_D3D11_ENABLED;%(PreprocessorDefinitions);MFX_VA_WIN</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\core\ipp\ia32\include;..\..\shared\umc\core\ipp\include;$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\ia32\include;..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Lib />
+    <Bscmake>
+      <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
+    </Bscmake>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\core\ipp\ia32\include;..\..\shared\umc\core\ipp\include;$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\ia32\include;..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -94,18 +105,8 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\core\ipp\em64t\include;..\..\shared\umc\core\ipp\include;$(MfxIppIncludeDir);..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ClCompile>
-    <Lib />
-    <Bscmake>
-      <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
-    </Bscmake>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <ClCompile>
-      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\core\ipp\ia32\include;..\..\shared\umc\core\ipp\include;$(MfxIppIncludeDir);..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;MFX_VA;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\core\ipp\em64t\include;..\..\shared\umc\core\ipp\include;$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\em64t\include;..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -117,8 +118,8 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\core\ipp\em64t\include;..\..\shared\umc\core\ipp\include;$(MfxIppIncludeDir);..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>include;..\shared\include;..\..\..\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\core\ipp\em64t\include;..\..\shared\umc\core\ipp\include;$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\em64t\include;..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -126,11 +127,14 @@
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\mfx_image_stabilization_vpp.cpp" />
     <ClCompile Include="src\mfx_vpp_factory.cpp" />
     <ClCompile Include="src\mfx_vpp_hw.cpp" />
     <ClCompile Include="src\mfx_vpp_jpeg_d3d9.cpp" />
     <ClCompile Include="src\mfx_vpp_main.cpp" />
+    <ClCompile Include="src\mfx_vpp_mvc.cpp" />
     <ClCompile Include="src\mfx_vpp_service.cpp" />
+    <ClCompile Include="src\mfx_vpp_svc.cpp" />
     <ClCompile Include="src\mfx_vpp_sw_core.cpp" />
     <ClCompile Include="src\mfx_vpp_sw_internal.cpp" />
     <ClCompile Include="src\mfx_vpp_sw_threading.cpp" />
@@ -146,14 +150,25 @@
     <ClCompile Include="src\mfx_range_map_vc1_vpp.cpp" />
     <ClCompile Include="src\mfx_resize_vpp.cpp" />
     <ClCompile Include="src\mfx_video_analysis_vpp.cpp" />
+    <ClCompile Include="src\vme\meforgen7_5.cpp" />
+    <ClCompile Include="src\vme\meforgen7_5_avs.cpp" />
+    <ClCompile Include="src\vme\meforgen7_5_bme.cpp" />
+    <ClCompile Include="src\vme\meforgen7_5_fme.cpp" />
+    <ClCompile Include="src\vme\meforgen7_5_ime.cpp" />
+    <ClCompile Include="src\vme\meforgen7_5_intra.cpp" />
+    <ClCompile Include="src\vme\meforgen7_5_sad.cpp" />
+    <ClCompile Include="src\vme\videovme.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\meforgen7_5.h" />
+    <ClInclude Include="include\mfx_image_stabilization_vpp.h" />
     <ClInclude Include="include\mfx_vpp_base.h" />
     <ClInclude Include="include\mfx_vpp_defs.h" />
     <ClInclude Include="include\mfx_vpp_hw.h" />
-    <ClInclude Include="include\mfx_vpp_jpeg_d3d9.h" />
     <ClInclude Include="include\mfx_vpp_main.h" />
+    <ClInclude Include="include\mfx_vpp_mvc.h" />
     <ClInclude Include="include\mfx_vpp_service.h" />
+    <ClInclude Include="include\mfx_vpp_svc.h" />
     <ClInclude Include="include\mfx_vpp_sw.h" />
     <ClInclude Include="include\mfx_vpp_utils.h" />
     <ClInclude Include="include\mfx_color_space_conversion_vpp.h" />
@@ -166,6 +181,8 @@
     <ClInclude Include="include\mfx_range_map_vc1_vpp.h" />
     <ClInclude Include="include\mfx_resize_vpp.h" />
     <ClInclude Include="include\mfx_video_analysis_vpp.h" />
+    <ClInclude Include="include\videovme.h" />
+    <ClInclude Include="include\videovme7_5io.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
