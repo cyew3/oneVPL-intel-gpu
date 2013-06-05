@@ -275,6 +275,7 @@ enum {
 /* CodecId */
 enum {
     MFX_CODEC_AVC         =MFX_MAKEFOURCC('A','V','C',' '),
+    MFX_CODEC_HEVC        =MFX_MAKEFOURCC('H','E','V','C'),
     MFX_CODEC_MPEG2       =MFX_MAKEFOURCC('M','P','G','2'),
     MFX_CODEC_VC1         =MFX_MAKEFOURCC('V','C','1',' ')
 };
