@@ -12,7 +12,6 @@
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
 #ifndef UMC_RESTRICTED_CODE_VA
-#define UMC_VA_DXVA
 
 #include <algorithm>
 #include "umc_structures.h"
@@ -79,8 +78,10 @@ void H265_DXVA_SegmentDecoder::PackAllHeaders(H265DecoderFrame * pFrame)
     printf("\n=== Frame%d/%d ======================\n", pFrame->m_index, frameCounter);
     if(sliceCount)
     {
+#ifdef UMC_VA_DXVA
         if (!m_Packer.get())
             m_Packer.reset(new PackerDXVA2(m_va));
+#endif
 
         H265Slice *pSlice = sliceInfo->GetSlice(0);
         const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();

@@ -301,7 +301,8 @@ namespace UMC
         YV12_VIDEO              = 0x00040000,
         VC1_VIDEO               = 0x00050000,
         AVS_VIDEO               = 0x00060000,
-        VP8_VIDEO               = 0x00070000
+        VP8_VIDEO               = 0x00070000,
+        HEVC_VIDEO              = 0x00100000
     };
 
     enum VideoRenderType

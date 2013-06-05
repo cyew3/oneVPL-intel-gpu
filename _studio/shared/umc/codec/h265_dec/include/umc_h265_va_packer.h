@@ -34,8 +34,7 @@ class H265DecoderFrameInfo;
 struct ReferenceFlags_H265;
 class TaskSupplier_H265;
 
-#ifndef UMC_VA_LINUX
-#include <windows.h>
+#ifdef UMC_VA_DXVA
 
 #define MK_HEVCVER(j, n)    (((j & 0x0000ffff) << 16) | (n & 0x0000ffff))
 #define HEVC_SPEC_VER       MK_HEVCVER(0, 82)
@@ -426,21 +425,6 @@ public:
     virtual void PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSlice) = 0;
 
     virtual void PackQmatrix(const H265Slice *pSlice) = 0;
-
-    virtual void GetPicParamVABuffer(
-        DXVA_PicParams_HEVC **ppPicParam, 
-        size_t headerSize) = 0;
-
-    virtual void GetSliceVABuffers(
-        DXVA_Slice_HEVC_Long **ppSliceHeader,   // slice control buffer
-        size_t headerSize,                      // size of control buffer
-        void **ppSliceData,                     // slice data buffer
-        size_t dataSize,                        // size of slice data
-        size_t dataAlignment) = 0;              // alignment of slice data
-
-    virtual void GetIQMVABuffer(
-        DXVA_Qmatrix_HEVC **, 
-        size_t bffrSize) = 0;
 
     virtual void ExecuteBuffers() = 0;
 

@@ -29,6 +29,10 @@ File Name: libmfxsw_decode.cpp
 #include "mfx_h264_dec_decode.h"
 #endif
 
+#if defined (MFX_ENABLE_H265_VIDEO_DECODE)
+#include "mfx_h265_dec_decode.h"
+#endif
+
 #if defined (MFX_ENABLE_MPEG2_VIDEO_DECODE)
 #include "mfx_mpeg2_decode.h"
 #endif
@@ -70,6 +74,12 @@ VideoDECODE *CreateDECODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
 #if defined (MFX_ENABLE_H264_VIDEO_DECODE)
     case MFX_CODEC_AVC:
         pDECODE = new VideoDECODEH264(core, &mfxRes);
+        break;
+#endif
+
+#if defined (MFX_ENABLE_H265_VIDEO_DECODE)
+    case MFX_CODEC_HEVC:
+        pDECODE = new VideoDECODEH265(core, &mfxRes);
         break;
 #endif
 
@@ -148,6 +158,12 @@ mfxStatus MFXVideoDECODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
             break;
 #endif
 
+#ifdef MFX_ENABLE_H265_VIDEO_DECODE
+        case MFX_CODEC_HEVC:
+            mfxRes = VideoDECODEH265::Query(session->m_pCORE.get(), in, out);
+            break;
+#endif
+
 #ifdef MFX_ENABLE_MPEG2_VIDEO_DECODE
         case MFX_CODEC_MPEG2:
             mfxRes = VideoDECODEMPEG2::Query(session->m_pCORE.get(), in, out);
@@ -223,6 +239,12 @@ mfxStatus MFXVideoDECODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
             break;
 #endif
 
+#ifdef MFX_ENABLE_H265_VIDEO_DECODE
+        case MFX_CODEC_HEVC:
+            mfxRes = VideoDECODEH265::QueryIOSurf(session->m_pCORE.get(), par, request);
+            break;
+#endif
+
 #ifdef MFX_ENABLE_MPEG2_VIDEO_DECODE
         case MFX_CODEC_MPEG2:
             mfxRes = VideoDECODEMPEG2::QueryIOSurf(session->m_pCORE.get(), par, request);
@@ -293,6 +315,12 @@ mfxStatus MFXVideoDECODE_DecodeHeader(mfxSession session, mfxBitstream *bs, mfxV
 #ifdef MFX_ENABLE_H264_VIDEO_DECODE
         case MFX_CODEC_AVC:
             mfxRes = VideoDECODEH264::DecodeHeader(session->m_pCORE.get(), bs, par);
+            break;
+#endif
+
+#ifdef MFX_ENABLE_H265_VIDEO_DECODE
+        case MFX_CODEC_HEVC:
+            mfxRes = VideoDECODEH265::DecodeHeader(session->m_pCORE.get(), bs, par);
             break;
 #endif
 

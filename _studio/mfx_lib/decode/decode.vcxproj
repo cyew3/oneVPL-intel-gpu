@@ -81,7 +81,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\thirdparty\vp8_libvpx;..\..\..\include;..\shared\include;..\..\shared\include;vc1\include;mpeg2\include;mjpeg\include;vp8\include;h264\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_spl\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_dec\include;..\..\shared\umc\codec\jpeg\include;..\..\shared\umc\codec\h264_dec\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\thirdparty\vp8_libvpx;..\..\..\include;..\shared\include;..\..\shared\include;vc1\include;mpeg2\include;mjpeg\include;vp8\include;h265\include;h264\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_spl\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_dec\include;..\..\shared\umc\codec\jpeg\include;..\..\shared\umc\codec\h265_dec\include;..\..\shared\umc\codec\h264_dec\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
@@ -94,7 +94,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\thirdparty\vp8_libvpx;..\..\..\include;..\shared\include;..\..\shared\include;vc1\include;mpeg2\include;mjpeg\include;vp8\include;h264\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_spl\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_dec\include;..\..\shared\umc\codec\jpeg\include;..\..\shared\umc\codec\h264_dec\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\thirdparty\vp8_libvpx;..\..\..\include;..\shared\include;..\..\shared\include;vc1\include;mpeg2\include;mjpeg\include;vp8\include;h265\include;h264\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_spl\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_dec\include;..\..\shared\umc\codec\jpeg\include;..\..\shared\umc\codec\h265_dec\include;..\..\shared\umc\codec\h264_dec\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
@@ -104,7 +104,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\thirdparty\vp8_libvpx;..\..\..\include;..\shared\include;..\..\shared\include;vc1\include;mpeg2\include;mjpeg\include;vp8\include;h264\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_spl\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_dec\include;..\..\shared\umc\codec\jpeg\include;..\..\shared\umc\codec\h264_dec\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\thirdparty\vp8_libvpx;..\..\..\include;..\shared\include;..\..\shared\include;vc1\include;mpeg2\include;mjpeg\include;vp8\include;h265\include;h264\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_spl\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_dec\include;..\..\shared\umc\codec\jpeg\include;..\..\shared\umc\codec\h265_dec\include;..\..\shared\umc\codec\h264_dec\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
@@ -117,7 +117,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\thirdparty\vp8_libvpx;..\..\..\include;..\shared\include;..\..\shared\include;vc1\include;mpeg2\include;mjpeg\include;vp8\include;h264\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_spl\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_dec\include;..\..\shared\umc\codec\jpeg\include;..\..\shared\umc\codec\h264_dec\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\thirdparty\vp8_libvpx;..\..\..\include;..\shared\include;..\..\shared\include;vc1\include;mpeg2\include;mjpeg\include;vp8\include;h265\include;h264\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_spl\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_dec\include;..\..\shared\umc\codec\jpeg\include;..\..\shared\umc\codec\h265_dec\include;..\..\shared\umc\codec\h264_dec\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\io\media_buffers\include;$(MfxIppIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
@@ -127,6 +127,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="h264\src\mfx_h264_dec_decode.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_dec_decode.cpp" />
     <ClCompile Include="mjpeg\src\mfx_mjpeg_dec_decode.cpp" />
     <ClCompile Include="mpeg2\src\mfx_mpeg2_decode.cpp" />
     <ClCompile Include="vc1\src\mfx_vc1_decode.cpp" />
@@ -134,6 +135,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="h264\include\mfx_h264_dec_decode.h" />
+    <ClInclude Include="h265\include\mfx_h265_dec_decode.h" />
     <ClInclude Include="mjpeg\include\mfx_mjpeg_dec_decode.h" />
     <ClInclude Include="mpeg2\include\mfx_mpeg2_decode.h" />
     <ClInclude Include="vc1\include\mfx_vc1_decode.h" />
@@ -143,6 +145,9 @@
     <ProjectReference Include="..\..\shared\umc\codec\h264_dec\h264_dec.vcxproj">
       <Project>{c7621c21-a2d0-4604-896d-29f1470d9281}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\..\shared\umc\codec\h265_dec\h265_dec.vcxproj">
+      <Project>{f0afe44d-3a26-45f6-bc3f-6131f91dec80}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

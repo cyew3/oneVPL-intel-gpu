@@ -3421,7 +3421,7 @@ void H265SegmentDecoder::getInterMergeCandidates(H265CodingUnit *pCU, Ipp32u Abs
     if (Count == m_pSliceHeader->m_MaxNumMergeCand)
         return;
 
-    Ipp32s numRefIdx = (m_pSliceHeader->slice_type == B_SLICE) ? std::min(m_pSliceHeader->m_numRefIdx[REF_PIC_LIST_0], m_pSliceHeader->m_numRefIdx[REF_PIC_LIST_1]) : m_pSliceHeader->m_numRefIdx[REF_PIC_LIST_0];
+    Ipp32s numRefIdx = (m_pSliceHeader->slice_type == B_SLICE) ? IPP_MIN(m_pSliceHeader->m_numRefIdx[REF_PIC_LIST_0], m_pSliceHeader->m_numRefIdx[REF_PIC_LIST_1]) : m_pSliceHeader->m_numRefIdx[REF_PIC_LIST_0];
     Ipp8s r = 0;
     Ipp32s refcnt = 0;
 

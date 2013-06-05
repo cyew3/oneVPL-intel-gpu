@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UMC", "UMC", "{03F908B1-B331-4B8C-9CCC-D88FAAC81551}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfxsw", "libmfxsw.vcxproj", "{D719372D-BA13-4730-AFF6-1994B26EFF6C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F0AFE44D-3A26-45F6-BC3F-6131F91DEC80} = {F0AFE44D-3A26-45F6-BC3F-6131F91DEC80}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "brc", "brc\brc.vcxproj", "{349FB219-E367-4AFD-B43B-36C580D4ED3D}"
 EndProject
@@ -63,13 +66,15 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jpeg_dec", "..\shared\umc\c
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jpeg_enc", "..\shared\umc\codec\jpeg_enc\jpeg_enc.vcxproj", "{FE112B8F-036E-4679-B07E-4F6F73C6C3B9}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bsd", "bsd\bsd.vcxproj", "{34CAB135-86FD-4E5D-83B8-F8834DBA56EB}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "h265_dec", "..\shared\umc\codec\h265_dec\h265_dec.vcxproj", "{F0AFE44D-3A26-45F6-BC3F-6131F91DEC80}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{73648CAF-96E3-476E-B87A-9846762C427F}"
 	ProjectSection(SolutionItems) = preProject
 		Intel.Mfx.Common.props = Intel.Mfx.Common.props
 		Intel.Mfx.StaticLib.props = Intel.Mfx.StaticLib.props
 	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bsd", "bsd\bsd.vcxproj", "{34CAB135-86FD-4E5D-83B8-F8834DBA56EB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -327,6 +332,14 @@ Global
 		{34CAB135-86FD-4E5D-83B8-F8834DBA56EB}.Release|Win32.Build.0 = Release|Win32
 		{34CAB135-86FD-4E5D-83B8-F8834DBA56EB}.Release|x64.ActiveCfg = Release|x64
 		{34CAB135-86FD-4E5D-83B8-F8834DBA56EB}.Release|x64.Build.0 = Release|x64
+		{F0AFE44D-3A26-45F6-BC3F-6131F91DEC80}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F0AFE44D-3A26-45F6-BC3F-6131F91DEC80}.Debug|Win32.Build.0 = Debug|Win32
+		{F0AFE44D-3A26-45F6-BC3F-6131F91DEC80}.Debug|x64.ActiveCfg = debug|x64
+		{F0AFE44D-3A26-45F6-BC3F-6131F91DEC80}.Debug|x64.Build.0 = debug|x64
+		{F0AFE44D-3A26-45F6-BC3F-6131F91DEC80}.Release|Win32.ActiveCfg = release|Win32
+		{F0AFE44D-3A26-45F6-BC3F-6131F91DEC80}.Release|Win32.Build.0 = release|Win32
+		{F0AFE44D-3A26-45F6-BC3F-6131F91DEC80}.Release|x64.ActiveCfg = release|x64
+		{F0AFE44D-3A26-45F6-BC3F-6131F91DEC80}.Release|x64.Build.0 = release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -351,5 +364,6 @@ Global
 		{80B89175-8E4E-457A-9AA6-F5B2BADFBE85} = {03F908B1-B331-4B8C-9CCC-D88FAAC81551}
 		{28FE5058-8F0D-4C9C-9065-EA43F2285858} = {03F908B1-B331-4B8C-9CCC-D88FAAC81551}
 		{FE112B8F-036E-4679-B07E-4F6F73C6C3B9} = {03F908B1-B331-4B8C-9CCC-D88FAAC81551}
+		{F0AFE44D-3A26-45F6-BC3F-6131F91DEC80} = {03F908B1-B331-4B8C-9CCC-D88FAAC81551}
 	EndGlobalSection
 EndGlobal

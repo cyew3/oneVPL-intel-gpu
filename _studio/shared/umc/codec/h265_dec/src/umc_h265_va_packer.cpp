@@ -12,7 +12,6 @@
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
 #ifndef UMC_RESTRICTED_CODE_VA
-#define UMC_VA_DXVA
 
 #include "umc_h265_va_packer.h"
 
