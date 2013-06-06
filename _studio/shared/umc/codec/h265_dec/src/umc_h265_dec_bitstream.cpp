@@ -21,12 +21,6 @@
 #include "umc_h265_headers.h"
 #include "h265_global_rom.h"
 
-#if !defined(_WIN32) || !defined(WIN64)
-// TODO: to temporary avoid compile error
-#define H265_MAX_NUM_VIEW_REF 0
-#define H265_MAX_NUM_VIEW 0
-#endif
-
 // globals (TODO: hide it in some related class)
 unsigned g_bitDepthY = 0;
 unsigned g_bitDepthC = 0;
@@ -774,32 +768,6 @@ void H265HeadersBitstream::parseVUI(H265SeqParamSet *pcSPS)
         READ_UVLC(   uiCode, "log2_max_mv_length_vertical");                pcSPS->log2_max_mv_length_vertical = uiCode;
     }
 }
-
-template <class num_t, class items_t> static
-UMC::Status DecodeViewReferenceInfo(num_t &numItems, items_t *pItems, H265HeadersBitstream &bitStream)
-{
-    Ipp32u j;
-
-    // decode number of items
-    numItems = (num_t) bitStream.GetVLCElement(false);
-    if (H265_MAX_NUM_VIEW_REF <= numItems)
-    {
-        return UMC::UMC_ERR_INVALID_STREAM;
-    }
-
-    // decode items
-    for (j = 0; j < numItems; j += 1)
-    {
-        pItems[j] = (items_t) bitStream.GetVLCElement(false);
-        if (H265_MAX_NUM_VIEW <= pItems[j])
-        {
-            return UMC::UMC_ERR_INVALID_STREAM;
-        }
-    }
-
-    return UMC::UMC_OK;
-
-} // Status DecodeViewReferenceInfo(num_t &numItems, items_t *pItems, H265HeadersBitstream &bitStream)
 
 bool H265HeadersBitstream::xMoreRbspData()
 {

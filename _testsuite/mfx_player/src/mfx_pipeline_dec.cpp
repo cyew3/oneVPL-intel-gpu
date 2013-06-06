@@ -2999,7 +2999,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
 
             vm_string_strcpy_s(m_inParams.strSrcFile, MFX_ARRAY_SIZE(m_inParams.strSrcFile), argv[0]);
         }
-        else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:(h264|mpeg2|vc1|mvc|jpeg)"), VM_STRING("input stream is raw(non container), pipeline works without demuxing"), OPT_UNDEFINED)))
+        else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:(h264|mpeg2|vc1|mvc|jpeg|hevc)"), VM_STRING("input stream is raw(non container), pipeline works without demuxing"), OPT_UNDEFINED)))
         {
             MFX_CHECK(1 + argv != argvEnd);
             argv++;
@@ -3017,13 +3017,14 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                     m_inParams.InputCodecType = MFX_CODEC_VC1;
                     break;
                 case 4:
-                {
                     m_inParams.InputCodecType = MFX_CODEC_AVC;
                     m_components[eDEC].m_bForceMVCDetection = true;
                     break;
-                }
                 case 5 :
                     m_inParams.InputCodecType = MFX_CODEC_JPEG;
+                    break;
+                case 6 :
+                    m_inParams.InputCodecType = MFX_CODEC_HEVC;
                     break;
             }
         }

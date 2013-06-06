@@ -41,6 +41,7 @@ static CodeStringTable StringsOfFourcc[] =
     { MFX_FOURCC_RGB3,               VM_STRING("RGB3") },
     { MFX_FOURCC_RGB4,               VM_STRING("RGB4") },
     { MFX_FOURCC_P8,                 VM_STRING("P8") },
+    { MFX_CODEC_HEVC,                VM_STRING("HEVC") },
 };
 
 #define DEFINE_ERR_CODE(code)\
