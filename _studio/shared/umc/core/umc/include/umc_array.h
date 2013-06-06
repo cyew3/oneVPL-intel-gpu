@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2010 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -59,7 +59,7 @@ public:
             umcRes = Reallocate(advance + 1);
             if (UMC_OK != umcRes)
             {
-                return ((item_t *) 0);
+                throw std::bad_alloc();
             }
         }
 
@@ -77,7 +77,7 @@ public:
             umcRes = Reallocate(index + 1);
             if (UMC_OK != umcRes)
             {
-                return *((item_t *) 0);
+                throw std::bad_alloc();
             }
         }
 
@@ -89,7 +89,7 @@ public:
     {
         if (index >= m_numItems)
         {
-            return *((item_t *) 0);
+            throw std::out_of_range("out of range: index >= m_numItems");
         }
 
         return m_pArray[index];
