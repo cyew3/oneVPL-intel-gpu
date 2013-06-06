@@ -24,6 +24,7 @@ MFX_DIRS = \
 MFX_DIRS_IMPL = \
     color_space_converter \
     mpeg2_dec \
+    h265_dec \
     h264_dec \
     vc1_dec \
     jpeg_dec

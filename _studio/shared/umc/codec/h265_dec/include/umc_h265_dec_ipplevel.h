@@ -17,6 +17,8 @@
 
 #include "ippvc.h"
 #include "memory.h"
+#include <sys/types.h> /* for size_t declaration on Android */
+#include <string.h> /* for memset and memcpy on Android */
 
 namespace UMC_HEVC_DECODER
 {

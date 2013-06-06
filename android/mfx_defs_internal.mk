@@ -8,7 +8,7 @@ ifeq ($(MFX_IMPL), hw)
 endif
 
 LOCAL_CFLAGS += \
-    -DLINUX32 $(MFX_ACCEL)
+    -msse4.1 -DLINUX32 $(MFX_ACCEL)
 
 IPP_ROOT := $(MEDIASDK_ROOT)/ipp/linux/ia32
 

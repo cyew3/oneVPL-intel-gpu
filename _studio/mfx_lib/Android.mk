@@ -2,7 +2,7 @@ LOCAL_PATH:= $(call my-dir)
 
 include $(MFX_HOME)/android/mfx_env.mk
 
-MFX_DECODERS = h264 mpeg2 vc1 mjpeg vp8
+MFX_DECODERS = h265 h264 mpeg2 vc1 mjpeg vp8
 MFX_ENCODERS = h264 mpeg2 vc1 mjpeg mvc svc
 
 # Setting subdirectories to march thru
@@ -32,7 +32,7 @@ ifeq ($(MFX_IMPL), hw)
 endif
 
 UMC_DIRS_IMPL = \
-    h264_dec mpeg2_dec vc1_dec jpeg_dec \
+    h265_dec h264_dec mpeg2_dec vc1_dec jpeg_dec \
     vc1_common vc1_spl jpeg_common \
     scene_analyzer color_space_converter
 
