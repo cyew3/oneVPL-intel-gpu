@@ -295,6 +295,9 @@
       <Project>{35ebe815-8982-4d93-a7d2-fb9f3cfe2e86}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+    <ProjectReference Include="..\shared\umc\codec\h265_dec\h265_dec.vcxproj">
+      <Project>{f0afe44d-3a26-45f6-bc3f-6131f91dec80}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\jpeg_common\jpeg_common.vcxproj">
       <Project>{80b89175-8e4e-457a-9aa6-f5b2badfbe85}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>

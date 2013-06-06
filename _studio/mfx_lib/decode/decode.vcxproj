@@ -141,15 +141,6 @@
     <ClInclude Include="vc1\include\mfx_vc1_decode.h" />
     <ClInclude Include="vp8\include\mfx_vp8_dec_decode.h" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\shared\umc\codec\h264_dec\h264_dec.vcxproj">
-      <Project>{c7621c21-a2d0-4604-896d-29f1470d9281}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\..\shared\umc\codec\h265_dec\h265_dec.vcxproj">
-      <Project>{f0afe44d-3a26-45f6-bc3f-6131f91dec80}</Project>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
