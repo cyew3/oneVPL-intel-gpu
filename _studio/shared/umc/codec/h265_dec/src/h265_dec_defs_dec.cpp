@@ -1260,8 +1260,8 @@ void H265SampleAdaptiveOffset::SAOProcess(H265DecoderFrame* pFrame, SAOParams* p
 {
     if (pSAOParam->m_bSaoFlag[0] || pSAOParam->m_bSaoFlag[1])
     {
-        m_SaoBitIncreaseY = max(g_bitDepthY - 10, 0);
-        m_SaoBitIncreaseC = max(g_bitDepthC - 10, 0);
+        m_SaoBitIncreaseY = IPP_MAX(g_bitDepthY - 10, 0);
+        m_SaoBitIncreaseC = IPP_MAX(g_bitDepthC - 10, 0);
 
         if (m_saoLcuBasedOptimization)
         {

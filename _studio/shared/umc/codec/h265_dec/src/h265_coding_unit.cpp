@@ -469,7 +469,7 @@ void H265CodingUnit::initCU(H265SegmentDecoderMultiThreaded* sd, Ipp32u iCUAddr)
         m_IPCMFlag[ind] = From->m_IPCMFlag[ind];
     }
 
-    Ipp32s firstElement = max(partStartIdx, 0);
+    Ipp32s firstElement = IPP_MAX(partStartIdx, 0);
     numElements = m_NumPartition - firstElement;
     if (numElements > 0)
     {
