@@ -639,6 +639,7 @@ SUITE(MFXSerializer)
         CHECK(0 == refVersionIn.DeSerialize(VM_STRING(".2"), NULL));
         CHECK(0 == refVersionIn.DeSerialize(VM_STRING(".2.3"), NULL));
         CHECK(0 == refVersionIn.DeSerialize(VM_STRING("2.3."), NULL));
+        CHECK(0 == refVersionIn.DeSerialize(VM_STRING("2. "), NULL));
     }
 
     TEST(mfxExtAVCRefListCtrl_serial)

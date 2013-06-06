@@ -90,14 +90,7 @@ protected:
         if (!refInput.good())
             return false;
 
-        refInput>>refnum1;
-
-        if (!refInput.good() && !(refInput.eof() /*&& refnum1 == 0*/))
-        {
-            return false;
-        }
-
-        return true;
+        return refInput>>refnum1;
     }
     ///returns number of deserialised elements in array
     template <class _ElementType>

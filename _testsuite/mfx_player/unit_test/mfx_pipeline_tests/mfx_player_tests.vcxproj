@@ -223,10 +223,6 @@
       <Project>{430e22ba-bdf6-497c-bfc5-ec6907f90018}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\samples\sample_utilities\vpp_plugin\vpp_plugin.vcxproj">
-      <Project>{d6d9a3b9-5dc0-4025-b27a-751f91aa462d}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\..\thirdparty\unittest++\unittest++.vsnet2005.vcxproj">
       <Project>{64a4fefe-0461-4e95-8cc1-91ef5f57dbc6}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>

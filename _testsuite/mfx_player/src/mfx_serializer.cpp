@@ -435,7 +435,7 @@ void MFXStructureRef<mfxVersion>::ConstructValues () const
 
 bool MFXStructureRef<mfxVersion>::DeSerialize(const tstring & refStr, int *nPosition)
 {
-    tstringstream input_strm(refStr);
+    tstringstream input_strm(refStr + VM_STRING(' '));
 
     //clearing attached structure firstly
     MFX_ZERO_MEM(*m_pStruct);
@@ -447,18 +447,13 @@ bool MFXStructureRef<mfxVersion>::DeSerialize(const tstring & refStr, int *nPosi
     if (!input_strm.good() || delimiter != VM_STRING('.'))
         return false;
 
-    int n = (int)input_strm.tellg();
-    
     //read minor
-    input_strm>>m_pStruct->Minor;
-    n = ((int)input_strm.tellg()) - n;
-    
-    if ((!input_strm.good() && !input_strm.eof()) || 0 >= n)
+    if (!(input_strm>>m_pStruct->Minor)) {
         return false;
-
-    if (NULL != nPosition)
-    {
-        *nPosition = (int)input_strm.tellg();
+    }
+    
+    if (NULL != nPosition) {
+        *nPosition =  (int)input_strm.tellg();
     }
     
     delimiter = input_strm.peek();
@@ -524,7 +519,7 @@ void MFXStructureRef<mfxExtAVCRefListCtrl>::ConstructValues () const
 bool MFXStructureRef<mfxExtAVCRefListCtrl>::DeSerialize(const tstring & refStr, int *nPosition)
 {
     tstringstream input_strm;
-    input_strm.str(refStr);
+    input_strm.str(refStr + VM_STRING(' '));
 
     //clearing attached structure firstly
     MFXExtBufferPtr<mfxExtAVCRefListCtrl> initHeader(m_pStruct);
