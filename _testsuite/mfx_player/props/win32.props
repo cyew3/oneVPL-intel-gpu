@@ -6,11 +6,11 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\ia32\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
 </Project>
