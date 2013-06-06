@@ -15,6 +15,7 @@
 #include <vm_types.h>
 #include <memory.h>
 #include <new>
+#include <stdexcept>
 
 namespace UMC
 {
