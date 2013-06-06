@@ -25,7 +25,8 @@ UMC::Status FillVideoParam(const H265SeqParamSet * seq, mfxVideoParam *par, bool
     par->mfx.FrameInfo.Width = (mfxU16) (seq->pic_width_in_luma_samples);
     par->mfx.FrameInfo.Height = (mfxU16) (seq->pic_height_in_luma_samples);
 
-    par->mfx.FrameInfo.reserved[0] = seq->MaxCUWidth >> (seq->MaxCUDepth - seq->AddCUDepth); //MinCUSize //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    par->mfx.FrameInfo.Width = UMC::align_value<mfxU16>(par->mfx.FrameInfo.Width, 16);
+    par->mfx.FrameInfo.Height = UMC::align_value<mfxU16>(par->mfx.FrameInfo.Height, 16);
 
     if (seq->frame_cropping_flag)
     {

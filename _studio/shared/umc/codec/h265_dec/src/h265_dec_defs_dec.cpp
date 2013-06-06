@@ -20,9 +20,6 @@
 #include "assert.h"
 #include "math.h"
 
-#define min(a, b) (((a) > (b)) ? (b) : (a))
-#define max(a, b) (((a) > (b)) ? (a) : (b))
-
 namespace UMC_HEVC_DECODER
 {
 

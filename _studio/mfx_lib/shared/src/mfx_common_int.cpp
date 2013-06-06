@@ -169,12 +169,10 @@ mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type)
     switch (in->mfx.CodecId)
     {
         case MFX_CODEC_AVC:
+        case MFX_CODEC_HEVC:
         case MFX_CODEC_MPEG2:
         case MFX_CODEC_VC1:
         case MFX_CODEC_JPEG:
-
-        case MFX_CODEC_VP8:
-
             break;
         default:
             return MFX_ERR_INVALID_VIDEO_PARAM;

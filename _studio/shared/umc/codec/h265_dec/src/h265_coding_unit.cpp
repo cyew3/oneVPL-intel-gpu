@@ -67,9 +67,6 @@ Ipp8u * CumulativeArraysAllocation(int n, ...)
     return cumulativePtrSaved;
 }
 
-#define min(a, b) (((a) > (b)) ? (b) : (a))
-#define max(a, b) (((a) > (b)) ? (a) : (b))
-
 // Constructor, destructor, create, destroy -------------------------------------------------------------
 H265CodingUnit::H265CodingUnit()
 {
@@ -440,7 +437,7 @@ void H265CodingUnit::initCU(H265SegmentDecoderMultiThreaded* sd, Ipp32u iCUAddr)
 
     Ipp32s partStartIdx = m_SliceHeader->m_sliceSegmentCurStartCUAddr - Pic->m_CodingData->GetInverseCUOrderMap(iCUAddr) * Pic->getCD()->getNumPartInCU();
 
-    Ipp32s numElements = min( partStartIdx, (Ipp32s) m_NumPartition );
+    Ipp32s numElements = IPP_MIN( partStartIdx, (Ipp32s) m_NumPartition );
     for (Ipp32s ind = 0; ind < numElements; ind++)
     {
         H265CodingUnit * From = Pic->getCU(iCUAddr);
