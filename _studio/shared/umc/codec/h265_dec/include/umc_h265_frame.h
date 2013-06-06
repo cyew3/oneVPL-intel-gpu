@@ -171,6 +171,8 @@ public:
     // FIXME: make coding data a member, not pointer
     H265FrameCodingData *m_CodingData;
 
+    H265FrameCodingData* getCD() {return m_CodingData;}
+
     H265CodingUnit* getCU(Ipp32u CUaddr);
 
     Ipp32u getNumCUsInFrame();
@@ -185,8 +187,6 @@ public:
 
     Ipp32s getMaxCUDepth();
     Ipp32u getMaxCUSize();
-
-    Ipp32u getNumPartInCU();
 
     Ipp32s*  m_cuOffsetY;
     Ipp32s*  m_cuOffsetC;
@@ -230,9 +230,6 @@ public:
     // be non-NULL even for an I frame.
     H265DecoderFrame *previous() { return m_pPreviousFrame; }
     H265DecoderFrame *future()   { return m_pFutureFrame; }
-
-    const H265DecoderFrame *previous() const { return m_pPreviousFrame; }
-    const H265DecoderFrame *future() const { return m_pFutureFrame; }
 
     void setPrevious(H265DecoderFrame *pPrev)
     {
@@ -316,7 +313,7 @@ public:
     // GetRefPicList
     // Returns pointer to start of specified ref pic list.
     //////////////////////////////////////////////////////////////////////////////
-    H265DecoderRefPicList* GetRefPicList(Ipp32s sliceNumber, Ipp32s list);
+    H265DecoderRefPicList* GetRefPicList(Ipp32s sliceNumber, Ipp32s list) const;
 
     void CopyPlanes(H265DecoderFrame *pRefFrame);
     void DefaultFill(Ipp32s field, bool isChromaOnly, Ipp8u defaultValue = 128);
@@ -352,7 +349,7 @@ public:
     H265PlanePtrUVCommon GetCbCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx);
 protected:
     // Declare memory management tools
-    UMC::MemoryAllocator *m_pMemoryAllocator;
+    UMC::MemoryAllocator *m_pMemoryAllocator;   // FIXME: should be removed because it duplicated in base class
 
     Heap_Objects * m_pObjHeap;
     Heap * m_pHeap;

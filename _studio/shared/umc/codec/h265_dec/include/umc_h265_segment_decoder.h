@@ -105,10 +105,10 @@ public:
 
     void ReadUnaryMaxSymbolCABAC(Ipp32u& uVal, Ipp32u CtxIdx, Ipp32s Offset, Ipp32u MaxSymbol);
     void DecodeSplitFlagCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
-    void DecodeMergeIndexCABAC(H265CodingUnit* pCU, Ipp32u PartIdx, Ipp32u AbsPartIdx, EnumPartSize CUMode, Ipp8u* InterDirNeighbours, MVBuffer* MVBufferdNeighbours, Ipp32u Depth);
+    void DecodeMergeIndexCABAC(H265CodingUnit* pCU, Ipp32u PartIdx, Ipp32u AbsPartIdx, Ipp32u Depth);
     void DecodeSkipFlagCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void DecodeCUTransquantBypassFlag(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
-    void ParseMergeIndexCABAC(H265CodingUnit* pCU, Ipp32u& MergeIndex, Ipp32u AbsPartIdx, Ipp32u Depth);
+    void ParseMergeIndexCABAC(H265CodingUnit* pCU, Ipp32u& MergeIndex);
     Ipp32s DecodeMVPIdxPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartAddr, Ipp32u Depth, Ipp32u PartIdx, EnumRefPicList RefList, H265MotionVector &MV);
     void ParseMVPIdxCABAC(Ipp32s& MVPIdx);
     void getMVPredAMVP(H265CodingUnit* pCU, Ipp32u PartIdx, Ipp32u PartAddr, EnumRefPicList RefPicList, H265MotionVector& m_MVPred);
@@ -129,11 +129,11 @@ public:
     void ParseTransformSubdivFlagCABAC(Ipp32u& SubdivFlag, Ipp32u Log2TransformBlockSize);
     void ReadEpExGolombCABAC(Ipp32u& Value, Ipp32u Count);
     void DecodeCoeff(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u Width, Ipp32u Height, bool& CodeDQP);
-    void DecodeTransform(H265CodingUnit* pCU, Ipp32u offsetLuma, Ipp32u offsetChroma,
-                                             Ipp32u AbsPartIdx, Ipp32u nsAbsPartIdx, Ipp32u Depth, Ipp32u  width, Ipp32u height,
-                                             Ipp32u TrIdx, Ipp32u InnerQuadIdx, bool& CodeDQP);
+    void DecodeTransform(H265CodingUnit* pCU, Ipp32u offsetLuma,
+                                             Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u  width, Ipp32u height,
+                                             Ipp32u TrIdx, bool& CodeDQP);
     void ParseQtCbfCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, EnumTextType Type, Ipp32u TrDepth, Ipp32u Depth);
-    void ParseQtRootCbfCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& QtRootCbf);
+    void ParseQtRootCbfCABAC(Ipp32u& QtRootCbf);
     void DecodeQP(H265CodingUnit* pCU, Ipp32u AbsPartIdx);
     void ParseDeltaQPCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void ReadUnarySymbolCABAC(Ipp32u& Value, Ipp32s ctxIdx, Ipp32s Offset);
@@ -149,32 +149,23 @@ public:
 
     void ReadCoefRemainExGolombCABAC(Ipp32u &Symbol, Ipp32u &GoRiceParam);
 
-    void ReconstructCU(H265CodingUnit* pCU, H265CodingUnit* pCUCur, Ipp32u AbsPartIdx, Ipp32u Depth);
-    void ReconIntraQT(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
-    void ReconInter(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
-    void ReconPCM(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
-    void DecodeInterTexture(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
+    void ReconstructCU(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
+    void ReconIntraQT(H265CodingUnit* pCU, Ipp32u Depth);
+    void ReconInter(H265CodingUnit* pCU, Ipp32u AbsPartIdx);
+    void ReconPCM(H265CodingUnit* pCU, Ipp32u Depth);
+    void DecodeInterTexture(H265CodingUnit* pCU, Ipp32u AbsPartIdx);
     void DecodePCMTextureLuma(H265CodingUnit* pCU, Ipp16s PartIdx, H265PlanePtrYCommon pPCM, H265PlanePtrYCommon pReco, Ipp32u Stride, Ipp32u Width, Ipp32u Height);
     void DecodePCMTextureChroma(H265CodingUnit* pCU, Ipp16s PartIdx, H265PlanePtrUVCommon pPCMCb, H265PlanePtrUVCommon pPCMCr, H265PlanePtrUVCommon pReco, Ipp32u Stride, Ipp32u Width, Ipp32u Height);
-    void FillPCMBuffer(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
+    void FillPCMBuffer(H265CodingUnit* pCU, Ipp32u Depth);
     void IntraLumaRecQT(H265CodingUnit* pCU,
                          Ipp32u TrDepth,
-                         Ipp32u AbsPartIdx,
-                         H265DecYUVBufferPadded* pRecoYUV,
-                         H265DecYUVBufferPadded* pPredYUV,
-                         H265DecYUVBufferPadded* pResiYUV);
+                         Ipp32u AbsPartIdx);
     void IntraChromaRecQT(H265CodingUnit* pCU,
                          Ipp32u TrDepth,
-                         Ipp32u AbsPartIdx,
-                         H265DecYUVBufferPadded* pRecoYUV,
-                         H265DecYUVBufferPadded* pPredYUV,
-                         H265DecYUVBufferPadded* pResiYUV);
+                         Ipp32u AbsPartIdx);
     void IntraRecLumaBlk(H265CodingUnit* pCU,
                          Ipp32u TrDepth,
-                         Ipp32u AbsPartIdx,
-                         H265DecYUVBufferPadded* pRecoYUV,
-                         H265DecYUVBufferPadded* pPredYUV,
-                         H265DecYUVBufferPadded* pResiYUV);
+                         Ipp32u AbsPartIdx);
     void IntraRecChromaBlkNV12(H265CodingUnit* pCU,
                            Ipp32u TrDepth,
                            Ipp32u AbsPartIdx,
@@ -183,16 +174,10 @@ public:
                            H265DecYUVBufferPadded* pResiYUV);
     void IntraRecChromaBlk(H265CodingUnit* pCU,
                            Ipp32u TrDepth,
-                           Ipp32u AbsPartIdx,
-                           H265DecYUVBufferPadded* pRecoYUV,
-                           H265DecYUVBufferPadded* pPredYUV,
-                           H265DecYUVBufferPadded* pResiYUV);
+                           Ipp32u AbsPartIdx);
     void IntraRecQT(H265CodingUnit* pCU,
                     Ipp32u TrDepth,
-                    Ipp32u AbsPartIdx,
-                    H265DecYUVBufferPadded* pRecoYUV,
-                    H265DecYUVBufferPadded* pPredYUV,
-                    H265DecYUVBufferPadded* pResiYUV);
+                    Ipp32u AbsPartIdx);
 
     void DeblockOneLCU(Ipp32s curLCUAddr, Ipp32s cross);
     void DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curPixelColumn, Ipp32s curPixelRow,
@@ -253,7 +238,7 @@ public:
 
     void UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPartIdx);
     void ResetRowBuffer(void);
-    void UpdatePUInfo(H265CodingUnit *pCU, Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight, Ipp8s RefIdx[2], H265MotionVector MV[2]);
+    void UpdatePUInfo(H265CodingUnit *pCU, Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight, RefIndexType RefIdx[2], H265MotionVector MV[2]);
     void UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr);
 
     //end of h265 members

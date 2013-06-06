@@ -1672,7 +1672,7 @@ void H265SampleAdaptiveOffset::PCMRestoration()
  */
 void H265SampleAdaptiveOffset::PCMCURestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth)
 {
-    Ipp32u CurNumParts = m_Frame->getNumPartInCU() >> (Depth << 1);
+    Ipp32u CurNumParts = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
     Ipp32u QNumParts   = CurNumParts >> 2;
 
     // go to sub-CU

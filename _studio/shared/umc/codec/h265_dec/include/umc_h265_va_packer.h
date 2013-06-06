@@ -54,15 +54,27 @@ typedef struct _DXVA_PicEntry_HEVC
 
 } DXVA_PicEntry_HEVC, *LPDXVA_PicEntry_HEVC;
 
-typedef struct _DXVA_Status_HEVC 
-{
-    USHORT StatusReportFeedbackNumber; 
-    DXVA_PicEntry_HEVC current_picture; 
-    UCHAR  bBufType; 
-    UCHAR  bStatus; 
-    UCHAR  bReserved8Bits; 
-    USHORT wNumMbsAffected; 
+//typedef struct _DXVA_Status_HEVC 
+//{
+//    USHORT StatusReportFeedbackNumber; 
+//    DXVA_PicEntry_HEVC current_picture; 
+//    UCHAR  bBufType; 
+//    UCHAR  bStatus; 
+//    UCHAR  bReserved8Bits; 
+//    USHORT wNumMbsAffected; 
+//} DXVA_Status_HEVC, *LPDXVA_Status_HEVC;
+
+typedef struct _DXVA_Status_HEVC {
+  UINT                      StatusReportFeedbackNumber;
+  DXVA_PicEntry_HEVC        current_picture; /* flag is bot field flag */
+  UCHAR                     field_pic_flag;
+  UCHAR                     bDXVA_Func;
+  UCHAR                     bBufType;
+  UCHAR                     bStatus;
+  UCHAR                     bReserved8Bits;
+  USHORT                    wNumMbsAffected;
 } DXVA_Status_HEVC, *LPDXVA_Status_HEVC;
+
 
 
 #if HEVC_SPEC_VER == MK_HEVCVER(0, 81)

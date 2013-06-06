@@ -53,8 +53,8 @@ public:
     };
 
     H265VideoDecoderParams()
-        : m_DPBSize(16)
-        , m_entropy_coding_type(ENTROPY_CODING_CABAC)
+        : m_entropy_coding_type(ENTROPY_CODING_CABAC)
+        , m_DPBSize(16)
     {
         m_fullSize.width = 0;
         m_fullSize.height = 0;

@@ -40,6 +40,7 @@ H265TrQuant::H265TrQuant()
 
     m_residualsBuffer = new H265CoeffsCommon[MAX_CU_SIZE * MAX_CU_SIZE];
     m_residualsBuffer1 = new H265CoeffsCommon[MAX_CU_SIZE * MAX_CU_SIZE];
+    m_tempTransformBuffer = new H265CoeffsCommon[MAX_CU_SIZE * MAX_CU_SIZE];
 }
 
 H265TrQuant::~H265TrQuant()
@@ -54,6 +55,7 @@ H265TrQuant::~H265TrQuant()
 
     delete[] m_residualsBuffer;
     delete[] m_residualsBuffer1;
+    delete[] m_tempTransformBuffer;
 }
 
 void H265TrQuant::SetQPforQuant(Ipp32s QP, EnumTextType TxtType, Ipp32s qpBdOffset, Ipp32s chromaQPOffset)
@@ -83,10 +85,11 @@ void H265TrQuant::SetQPforQuant(Ipp32s QP, EnumTextType TxtType, Ipp32s qpBdOffs
 // give identical results
 #if (HEVC_OPT_CHANGES & 128)
 // ML: OPT: Parameterized to allow const 'shift' propogation
-template < Ipp32s shift >
-void FastInverseDst(H265CoeffsPtrCommon tmp, H265CoeffsPtrCommon block, Ipp32s dstStride)  // input tmp, output block
+template <Ipp32s shift, typename DstCoeffsType>
+void FastInverseDst(H265CoeffsPtrCommon tmp, DstCoeffsType* block, Ipp32s dstStride)  // input tmp, output block
 #else
-void FastInverseDst(H265CoeffsPtrCommon tmp, H265CoeffsPtrCommon block, Ipp32s dstStride, Ipp32s shift)  // input tmp, output block
+template <typename DstCoeffsType>
+void FastInverseDst(H265CoeffsPtrCommon tmp, DstCoeffsType* block, Ipp32s dstStride, Ipp32s shift)  // input tmp, output block
 #endif
 {
   Ipp32s i, c[4];
@@ -107,10 +110,20 @@ void FastInverseDst(H265CoeffsPtrCommon tmp, H265CoeffsPtrCommon block, Ipp32s d
     c[3] = 74* tmp[4+i];
 
 // ML: OPT: TODO: make sure compiler vectorizes and optimizes Clip3 as PACKS
-    block[dstStride*i+0] = (H265CoeffsCommon)Clip3( -32768, 32767, ( 29 * c[0] + 55 * c[1]     + c[3]      + rnd_factor ) >> shift );
-    block[dstStride*i+1] = (H265CoeffsCommon)Clip3( -32768, 32767, ( 55 * c[2] - 29 * c[1]     + c[3]      + rnd_factor ) >> shift );
-    block[dstStride*i+2] = (H265CoeffsCommon)Clip3( -32768, 32767, ( 74 * (tmp[i] - tmp[8+i]  + tmp[12+i]) + rnd_factor ) >> shift );
-    block[dstStride*i+3] = (H265CoeffsCommon)Clip3( -32768, 32767, ( 55 * c[0] + 29 * c[2]     - c[3]      + rnd_factor ) >> shift );
+    if (sizeof(DstCoeffsType) == 1)
+    {
+        block[dstStride*i+0] = (DstCoeffsType)Clip3(0, 255, (( 29 * c[0] + 55 * c[1]     + c[3]      + rnd_factor ) >> shift ) + block[dstStride*i+0]);
+        block[dstStride*i+1] = (DstCoeffsType)Clip3(0, 255, (( 55 * c[2] - 29 * c[1]     + c[3]      + rnd_factor ) >> shift ) + block[dstStride*i+1]);
+        block[dstStride*i+2] = (DstCoeffsType)Clip3(0, 255, (( 74 * (tmp[i] - tmp[8+i]  + tmp[12+i]) + rnd_factor ) >> shift ) + block[dstStride*i+2]);
+        block[dstStride*i+3] = (DstCoeffsType)Clip3(0, 255, (( 55 * c[0] + 29 * c[2]     - c[3]      + rnd_factor ) >> shift ) + block[dstStride*i+3]);
+    }
+    else
+    {
+        block[dstStride*i+0] = (DstCoeffsType)Clip3( -32768, 32767, ( 29 * c[0] + 55 * c[1]     + c[3]      + rnd_factor ) >> shift );
+        block[dstStride*i+1] = (DstCoeffsType)Clip3( -32768, 32767, ( 55 * c[2] - 29 * c[1]     + c[3]      + rnd_factor ) >> shift );
+        block[dstStride*i+2] = (DstCoeffsType)Clip3( -32768, 32767, ( 74 * (tmp[i] - tmp[8+i]  + tmp[12+i]) + rnd_factor ) >> shift );
+        block[dstStride*i+3] = (DstCoeffsType)Clip3( -32768, 32767, ( 55 * c[0] + 29 * c[2]     - c[3]      + rnd_factor ) >> shift );
+    }
   }
 }
 
@@ -121,10 +134,11 @@ void FastInverseDst(H265CoeffsPtrCommon tmp, H265CoeffsPtrCommon block, Ipp32s d
  */
 #if (HEVC_OPT_CHANGES & 128)
 // ML: OPT: Parameterized to allow const 'shift' propogation
-template < Ipp32s shift >
-void PartialButterflyInverse4x4(H265CoeffsPtrCommon src, H265CoeffsPtrCommon dst, Ipp32s dstStride)
+template <Ipp32s shift, typename DstCoeffsType>
+void PartialButterflyInverse4x4(H265CoeffsPtrCommon src, DstCoeffsType*dst, Ipp32s dstStride)
 #else
-void PartialButterflyInverse4x4(H265CoeffsPtrCommon src, H265CoeffsPtrCommon dst, Ipp32s dstStride, Ipp32s shift)
+template <typename DstCoeffsType>
+void PartialButterflyInverse4x4(H265CoeffsPtrCommon src, DstCoeffsType*dst, Ipp32s dstStride, Ipp32s shift)
 #endif
 {
   Ipp32s j;
@@ -146,10 +160,20 @@ void PartialButterflyInverse4x4(H265CoeffsPtrCommon src, H265CoeffsPtrCommon dst
     E[1] = g_T4[0][1]*src[0] + g_T4[2][1]*src[2*line];
 
     /* Combining even and odd terms at each hierarchy levels to calculate the final spatial domain vector */
-    dst[0] = (H265CoeffsCommon)Clip3( -32768, 32767, (E[0] + O[0] + add)>>shift );
-    dst[1] = (H265CoeffsCommon)Clip3( -32768, 32767, (E[1] + O[1] + add)>>shift );
-    dst[2] = (H265CoeffsCommon)Clip3( -32768, 32767, (E[1] - O[1] + add)>>shift );
-    dst[3] = (H265CoeffsCommon)Clip3( -32768, 32767, (E[0] - O[0] + add)>>shift );
+    if (sizeof(DstCoeffsType) == 1)
+    {
+        dst[0] = (DstCoeffsType)Clip3(0, 255, ((E[0] + O[0] + add)>>shift ) + dst[0]);
+        dst[1] = (DstCoeffsType)Clip3(0, 255, ((E[1] + O[1] + add)>>shift ) + dst[1]);
+        dst[2] = (DstCoeffsType)Clip3(0, 255, ((E[1] - O[1] + add)>>shift ) + dst[2]);
+        dst[3] = (DstCoeffsType)Clip3(0, 255, ((E[0] - O[0] + add)>>shift ) + dst[3]);
+    }
+    else
+    {
+        dst[0] = (DstCoeffsType)Clip3( -32768, 32767, (E[0] + O[0] + add)>>shift );
+        dst[1] = (DstCoeffsType)Clip3( -32768, 32767, (E[1] + O[1] + add)>>shift );
+        dst[2] = (DstCoeffsType)Clip3( -32768, 32767, (E[1] - O[1] + add)>>shift );
+        dst[3] = (DstCoeffsType)Clip3( -32768, 32767, (E[0] - O[0] + add)>>shift );
+    }
 
     src++;
     dst += dstStride;
@@ -163,10 +187,11 @@ void PartialButterflyInverse4x4(H265CoeffsPtrCommon src, H265CoeffsPtrCommon dst
  */
 #if (HEVC_OPT_CHANGES & 128)
 // ML: OPT: Parameterized to allow const 'shift' propogation
-template < Ipp32s shift >
-void PartialButterflyInverse8x8(H265CoeffsPtrCommon src, H265CoeffsPtrCommon dst, Ipp32s dstStride)
+template <Ipp32s shift, typename DstCoeffsType>
+void PartialButterflyInverse8x8(H265CoeffsPtrCommon src, DstCoeffsType* dst, Ipp32s dstStride)
 #else
-void PartialButterflyInverse8x8(H265CoeffsPtrCommon src, H265CoeffsPtrCommon dst, Ipp32s dstStride, Ipp32s shift)
+template <typename DstCoeffsType>
+void PartialButterflyInverse8x8(H265CoeffsPtrCommon src, DstCoeffsType* dst, Ipp32s dstStride, Ipp32s shift)
 #endif
 {
     Ipp32s j;
@@ -206,8 +231,16 @@ void PartialButterflyInverse8x8(H265CoeffsPtrCommon src, H265CoeffsPtrCommon dst
 //        #pragma unroll(4)
         for (k = 0; k < 4; k++)
         {
-            dst[k]     = (H265CoeffsCommon) Clip3( -32768, 32767, (E[k]     + O[k]     + add) >> shift);
-            dst[k + 4] = (H265CoeffsCommon) Clip3( -32768, 32767, (E[3 - k] - O[3 - k] + add) >> shift);
+            if (sizeof(DstCoeffsType) == 1)
+            {
+                dst[k]     = (DstCoeffsType) Clip3(0, 255, ((E[k]     + O[k]     + add) >> shift) + dst[k]);
+                dst[k + 4] = (DstCoeffsType) Clip3(0, 255, ((E[3 - k] - O[3 - k] + add) >> shift) + dst[k + 4]);
+            }
+            else
+            {
+                dst[k]     = (DstCoeffsType) Clip3( -32768, 32767, (E[k]     + O[k]     + add) >> shift);
+                dst[k + 4] = (DstCoeffsType) Clip3( -32768, 32767, (E[3 - k] - O[3 - k] + add) >> shift);
+            }
         }
         src ++;
         dst += dstStride;
@@ -221,10 +254,11 @@ void PartialButterflyInverse8x8(H265CoeffsPtrCommon src, H265CoeffsPtrCommon dst
  */
 #if (HEVC_OPT_CHANGES & 128)
 // ML: OPT: Parameterized to allow const 'shift' propogation
-template < Ipp32s shift >
-void PartialButterflyInverse16x16(H265CoeffsPtrCommon src, H265CoeffsPtrCommon dst, Ipp32s dstStride)
+template <Ipp32s shift, typename DstCoeffsType>
+void PartialButterflyInverse16x16(H265CoeffsPtrCommon src, DstCoeffsType* dst, Ipp32s dstStride)
 #else
-void PartialButterflyInverse16x16(H265CoeffsPtrCommon src, H265CoeffsPtrCommon dst, Ipp32s dstStride, Ipp32s shift)
+template <typename DstCoeffsType>
+void PartialButterflyInverse16x16(H265CoeffsPtrCommon src, DstCoeffsType* dst, Ipp32s dstStride, Ipp32s shift)
 #endif
 {
     Ipp32s j;
@@ -275,8 +309,16 @@ void PartialButterflyInverse16x16(H265CoeffsPtrCommon src, H265CoeffsPtrCommon d
         #pragma unroll(8)
         for (k = 0; k < 8; k++)
         {
-            dst[k]   = (H265CoeffsCommon) Clip3( -32768, 32767, (E[k]     + O[k]     + add) >> shift);
-            dst[k+8] = (H265CoeffsCommon) Clip3( -32768, 32767, (E[7 - k] - O[7 - k] + add) >> shift);
+            if (sizeof(DstCoeffsType) == 1)
+            {
+                dst[k]   = (DstCoeffsType) Clip3(0, 255, ((E[k]     + O[k]     + add) >> shift) + dst[k]);
+                dst[k+8] = (DstCoeffsType) Clip3(0, 255, ((E[7 - k] - O[7 - k] + add) >> shift) + dst[k+8]);
+            }
+            else
+            {
+                dst[k]   = (DstCoeffsType) Clip3( -32768, 32767, (E[k]     + O[k]     + add) >> shift);
+                dst[k+8] = (DstCoeffsType) Clip3( -32768, 32767, (E[7 - k] - O[7 - k] + add) >> shift);
+            }
         }
         src ++;
         dst += dstStride;
@@ -290,10 +332,11 @@ void PartialButterflyInverse16x16(H265CoeffsPtrCommon src, H265CoeffsPtrCommon d
  */
 #if (HEVC_OPT_CHANGES & 128)
 // ML: OPT: Parameterized to allow const 'shift' propogation
-template < Ipp32s shift >
-void PartialButterflyInverse32x32(H265CoeffsPtrCommon src, H265CoeffsPtrCommon dst, Ipp32s dstStride)
+template <Ipp32s shift, typename DstCoeffsType>
+void PartialButterflyInverse32x32(H265CoeffsPtrCommon src, DstCoeffsType* dst, Ipp32s dstStride)
 #else
-void PartialButterflyInverse32x32(H265CoeffsPtrCommon src, H265CoeffsPtrCommon dst, Ipp32s dstStride, Ipp32s shift)
+template <typename DstCoeffsType>
+void PartialButterflyInverse32x32(H265CoeffsPtrCommon src, DstCoeffsType* dst, Ipp32s dstStride, Ipp32s shift)
 #endif
 {
     Ipp32s j;
@@ -360,8 +403,16 @@ void PartialButterflyInverse32x32(H265CoeffsPtrCommon src, H265CoeffsPtrCommon d
         #pragma unroll(16)
         for (k = 0; k < 16; k++)
         {
-            dst[k]      = (H265CoeffsCommon) Clip3( -32768, 32767, (E[k]      + O[k]      + add) >> shift);
-            dst[k + 16] = (H265CoeffsCommon) Clip3( -32768, 32767, (E[15 - k] - O[15 - k] + add) >> shift);
+            if (sizeof(DstCoeffsType) == 1)
+            {
+                dst[k]      = (DstCoeffsType)Clip3(0, 255, ((E[k]      + O[k]      + add) >> shift) + dst[k]);
+                dst[k + 16] = (DstCoeffsType)Clip3(0, 255, ((E[15 - k] - O[15 - k] + add) >> shift) + dst[k + 16]);
+            }
+            else
+            {
+                dst[k]      = (DstCoeffsType) Clip3( -32768, 32767, (E[k]      + O[k]      + add) >> shift);
+                dst[k + 16] = (DstCoeffsType) Clip3( -32768, 32767, (E[15 - k] - O[15 - k] + add) >> shift);
+            }
         }
         src ++;
         dst += dstStride;
@@ -376,94 +427,88 @@ void PartialButterflyInverse32x32(H265CoeffsPtrCommon src, H265CoeffsPtrCommon d
 */
 #if (HEVC_OPT_CHANGES & 128)
 // ML: OPT: Parameterized to allow const 'shift' propogation
-template < Ipp32s bitDepth >
-void InverseTransformMxN(H265CoeffsPtrCommon coeff, H265CoeffsPtrCommon block, Ipp32s dstStride, Ipp32s Size, Ipp32u Mode)
+template <Ipp32s bitDepth, typename DstCoeffsType>
+void InverseTransform(H265CoeffsPtrCommon coeff, DstCoeffsType* dst, Ipp32s dstPitch, Ipp32s Size, Ipp32u Mode, H265CoeffsCommon * tempBuffer)
 {
     const Ipp32s shift_1st = SHIFT_INV_1ST;
     const Ipp32s shift_2nd = SHIFT_INV_2ND - (bitDepth - 8);
-    H265CoeffsCommon tmp[64 * 64];
 
     if (Size == 4)
     {
         if (Mode != REG_DCT)
         {
-            FastInverseDst< shift_1st >(coeff, tmp, 4 ); // Inverse DST by FAST Algorithm, coeff input, tmp output
-            FastInverseDst< shift_2nd >(tmp, block, dstStride ); // Inverse DST by FAST Algorithm, tmp input, coeff output
+            FastInverseDst<shift_1st, H265CoeffsCommon>(coeff, tempBuffer, 4 ); // Inverse DST by FAST Algorithm, coeff input, tmp output
+            FastInverseDst<shift_2nd, DstCoeffsType>(tempBuffer, dst, dstPitch ); // Inverse DST by FAST Algorithm, tmp input, coeff output
         }
         else
         {
-            PartialButterflyInverse4x4< shift_1st >(coeff, tmp, 4);
-            PartialButterflyInverse4x4< shift_2nd >(tmp, block, dstStride);
+            PartialButterflyInverse4x4<shift_1st, H265CoeffsCommon>(coeff, tempBuffer, 4);
+            PartialButterflyInverse4x4<shift_2nd, DstCoeffsType>(tempBuffer, dst, dstPitch);
         }
     }
     else if (Size == 8)
     {
-        PartialButterflyInverse8x8< shift_1st >(coeff, tmp, 8);
-        PartialButterflyInverse8x8< shift_2nd >(tmp, block, dstStride);
+        PartialButterflyInverse8x8<shift_1st, H265CoeffsCommon>(coeff, tempBuffer, 8);
+        PartialButterflyInverse8x8<shift_2nd, DstCoeffsType>(tempBuffer, dst, dstPitch);
     }
     else if (Size == 16)
     {
-        PartialButterflyInverse16x16< shift_1st >(coeff, tmp, 16);
-        PartialButterflyInverse16x16< shift_2nd >(tmp, block, dstStride);
+        PartialButterflyInverse16x16<shift_1st, H265CoeffsCommon>(coeff, tempBuffer, 16);
+        PartialButterflyInverse16x16<shift_2nd, DstCoeffsType>(tempBuffer, dst, dstPitch);
     }
     else if (Size == 32)
     {
-        PartialButterflyInverse32x32< shift_1st >(coeff, tmp, 32);
-        PartialButterflyInverse32x32< shift_2nd >(tmp, block, dstStride);
+        PartialButterflyInverse32x32<shift_1st, H265CoeffsCommon>(coeff, tempBuffer, 32);
+        PartialButterflyInverse32x32<shift_2nd, DstCoeffsType>(tempBuffer, dst, dstPitch);
     }
 }
 
 #else // HEVC_OPT_CHANGES
 
-void InverseTransformMxN(Ipp32s bitDepth, H265CoeffsPtrCommon coeff, H265CoeffsPtrCommon block, Ipp32s dstStride, Ipp32s Size, Ipp32u Mode)
+template <typename DstCoeffsType>
+void InverseTransform(Ipp32s bitDepth, H265CoeffsPtrCommon coeff, DstCoeffsType* dst, Ipp32s dstPitch, Ipp32s Size, Ipp32u Mode, H265CoeffsCommon * tempBuffer)
 {
     Ipp32s shift_1st = SHIFT_INV_1ST;
     Ipp32s shift_2nd = SHIFT_INV_2ND - (bitDepth - 8);
-    H265CoeffsCommon tmp[64 * 64];
 
     if (Size == 4)
     {
         if (Mode != REG_DCT)
         {
-            FastInverseDst(coeff, tmp, 4, shift_1st);    // Inverse DST by FAST Algorithm, coeff input, tmp output
-            FastInverseDst(tmp, block, dstStride, shift_2nd); // Inverse DST by FAST Algorithm, tmp input, coeff output
+            FastInverseDst(coeff, tempBuffer, 4, shift_1st);    // Inverse DST by FAST Algorithm, coeff input, tmp output
+            FastInverseDst(tempBuffer, dst, dstPitch, shift_2nd); // Inverse DST by FAST Algorithm, tmp input, coeff output
         }
         else
         {
-            PartialButterflyInverse4x4(coeff, tmp, 4, shift_1st);
-            PartialButterflyInverse4x4(tmp, block, dstStride, shift_2nd);
+            PartialButterflyInverse4x4(coeff, tempBuffer, 4, shift_1st);
+            PartialButterflyInverse4x4(tempBuffer, dst, dstPitch, shift_2nd);
         }
     }
     else if (Size == 8)
     {
-        PartialButterflyInverse8x8(coeff, tmp, 8, shift_1st);
-        PartialButterflyInverse8x8(tmp, block, dstStride, shift_2nd);
+        PartialButterflyInverse8x8(coeff, tempBuffer, 8, shift_1st);
+        PartialButterflyInverse8x8(tempBuffer, dst, dstPitch, shift_2nd);
     }
     else if (Size == 16)
     {
-        PartialButterflyInverse16x16(coeff, tmp, 16, shift_1st);
-        PartialButterflyInverse16x16(tmp, block, dstStride, shift_2nd);
+        PartialButterflyInverse16x16(coeff, tempBuffer, 16, shift_1st);
+        PartialButterflyInverse16x16(tempBuffer, dst, dstPitch, shift_2nd);
     }
     else if (Size == 32)
     {
-        PartialButterflyInverse32x32(coeff, tmp, 32, shift_1st);
-        PartialButterflyInverse32x32(tmp, block, dstStride, shift_2nd);
+        PartialButterflyInverse32x32(coeff, tempBuffer, 32, shift_1st);
+        PartialButterflyInverse32x32(tempBuffer, dst, dstPitch, shift_2nd);
     }
 }
 #endif // HEVC_OPT_CHANGES
 
 #if (HEVC_OPT_CHANGES & 512)
 // ML: OPT: Parameterized to allow const 'bitDepth' propogation
-template< Ipp32s c_Log2TrSize, Ipp32s bitDepth >
+template< Ipp32u c_Log2TrSize, Ipp32s bitDepth >
 void H265TrQuant::DeQuant_inner(const H265CoeffsPtrCommon pQCoef, Ipp32u Length, Ipp32s scalingListType)
 {
-    Ipp32s Shift;
-    Ipp32s Add;
-    Ipp32s CoeffQ;
-
     Ipp32u TransformShift = MAX_TR_DYNAMIC_RANGE - bitDepth - c_Log2TrSize;
-    Shift = QUANT_IQUANT_SHIFT - QUANT_SHIFT - TransformShift;
-    Ipp32s clipQCoef;
+    Ipp32s Shift = QUANT_IQUANT_SHIFT - QUANT_SHIFT - TransformShift;
 
     if (m_UseScalingList)
     {
@@ -472,14 +517,14 @@ void H265TrQuant::DeQuant_inner(const H265CoeffsPtrCommon pQCoef, Ipp32u Length,
 
         if (Shift > m_QPParam.m_Per)
         {
-            Add = 1 << (Shift - m_QPParam.m_Per - 1);
+            Ipp32s Add = 1 << (Shift - m_QPParam.m_Per - 1);
 
             #pragma ivdep
             #pragma vector always
             for (Ipp32u n = 0; n < Length; n++)
             {
                 // clipped when decoded
-                CoeffQ = ((pQCoef[n] * pDequantCoef[n]) + Add) >> (Shift -  m_QPParam.m_Per);
+                Ipp32s CoeffQ = ((pQCoef[n] * pDequantCoef[n]) + Add) >> (Shift -  m_QPParam.m_Per);
                 pQCoef[n] = (H265CoeffsCommon)Clip3(-32768, 32767, CoeffQ);
             }
         }
@@ -490,14 +535,14 @@ void H265TrQuant::DeQuant_inner(const H265CoeffsPtrCommon pQCoef, Ipp32u Length,
             for (Ipp32u n = 0; n < Length; n++)
             {
                 // clipped when decoded
-                CoeffQ   = Clip3(-32768, 32767, pQCoef[n] * pDequantCoef[n]); 
+                Ipp32s CoeffQ   = Clip3(-32768, 32767, pQCoef[n] * pDequantCoef[n]); 
                 pQCoef[n] = (H265CoeffsCommon)Clip3(-32768, 32767, CoeffQ << ( m_QPParam.m_Per - Shift ) );
             }
         }
     }
     else
     {
-        Add = 1 << (Shift - 1);
+        Ipp32s Add = 1 << (Shift - 1);
         Ipp32s scale = g_invQuantScales[m_QPParam.m_Rem] << m_QPParam.m_Per;
 
         #pragma ivdep
@@ -505,7 +550,7 @@ void H265TrQuant::DeQuant_inner(const H265CoeffsPtrCommon pQCoef, Ipp32u Length,
         for (Ipp32u n = 0; n < Length; n++)
         {
             // clipped when decoded
-            CoeffQ = (pQCoef[n] * scale + Add) >> Shift;
+            Ipp32s CoeffQ = (pQCoef[n] * scale + Add) >> Shift;
             pQCoef[n] = (H265CoeffsCommon)Clip3(-32768, 32767, CoeffQ);
         }
     }
@@ -529,9 +574,6 @@ void H265TrQuant::DeQuant(Ipp32s bitDepth, H265CoeffsPtrCommon pSrc, Ipp32u Widt
         Height = m_MaxTrSize;
     }
 
-    Ipp32s Shift;
-    Ipp32s Add;
-    Ipp32s CoeffQ;
     Ipp32u Log2TrSize = g_ConvertToBit[Width] + 2;
 
 #if (HEVC_OPT_CHANGES & 512)
@@ -556,9 +598,7 @@ void H265TrQuant::DeQuant(Ipp32s bitDepth, H265CoeffsPtrCommon pSrc, Ipp32u Widt
         VM_ASSERT(0); // should never happen
 #else
     Ipp32u TransformShift = MAX_TR_DYNAMIC_RANGE - bitDepth - Log2TrSize;
-    Shift = QUANT_IQUANT_SHIFT - QUANT_SHIFT - TransformShift;
-
-    Ipp32s clipQCoef;
+    Ipp32s Shift = QUANT_IQUANT_SHIFT - QUANT_SHIFT - TransformShift;
 
     if (m_UseScalingList)
     {
@@ -567,11 +607,11 @@ void H265TrQuant::DeQuant(Ipp32s bitDepth, H265CoeffsPtrCommon pSrc, Ipp32u Widt
 
         if (Shift > m_QPParam.m_Per)
         {
-            Add = 1 << (Shift - m_QPParam.m_Per - 1);
+            Ipp32s Add = 1 << (Shift - m_QPParam.m_Per - 1);
 
             for (Ipp32u n = 0; n < Width * Height; n++)
             {
-                CoeffQ = ((pQCoef[n] * pDequantCoef[n]) + Add) >> (Shift -  m_QPParam.m_Per);
+                Ipp32s CoeffQ = ((pQCoef[n] * pDequantCoef[n]) + Add) >> (Shift -  m_QPParam.m_Per);
                 pQCoef[n] = (H265CoeffsCommon)Clip3(-32768, 32767, CoeffQ);
             }
         }
@@ -579,36 +619,36 @@ void H265TrQuant::DeQuant(Ipp32s bitDepth, H265CoeffsPtrCommon pSrc, Ipp32u Widt
         {
             for (Ipp32u n = 0; n < Width * Height; n++)
             {
-                CoeffQ   = Clip3(-32768, 32767, pQCoef[n] * pDequantCoef[n]); // Clip to avoid possible overflow in following shift left operation
+                Ipp32s CoeffQ   = Clip3(-32768, 32767, pQCoef[n] * pDequantCoef[n]); // Clip to avoid possible overflow in following shift left operation
                 pQCoef[n] = (H265CoeffsCommon)Clip3(-32768, 32767, CoeffQ << ( m_QPParam.m_Per - Shift ) );
             }
         }
     }
     else
     {
-        Add = 1 << (Shift - 1);
+        Ipp32s Add = 1 << (Shift - 1);
         Ipp32s scale = g_invQuantScales[m_QPParam.m_Rem] << m_QPParam.m_Per;
 
         for (Ipp32u n = 0; n < Width * Height; n++)
         {
-            CoeffQ = (pQCoef[n] * scale + Add) >> Shift;
+            Ipp32s CoeffQ = (pQCoef[n] * scale + Add) >> Shift;
             pQCoef[n] = (H265CoeffsCommon)Clip3(-32768, 32767, CoeffQ);
         }
     }
 #endif // HEVC_OPT_CHANGES
 }
 
-void H265TrQuant::Init(Ipp32u MaxWidth, Ipp32u MaxHeight, Ipp32u MaxTrSize, Ipp32s SymbolMode, Ipp32u *Table4, Ipp32u *Table8, Ipp32u *TableLastPosVlcIndex,
-                       bool UseRDOQ, bool EncFlag)
+void H265TrQuant::Init(Ipp32u MaxWidth, Ipp32u MaxHeight, Ipp32u MaxTrSize)
 {
-    assert(sizeof(MaxWidth) != 0 || sizeof(MaxHeight) != 0 || sizeof(TableLastPosVlcIndex) || sizeof(Table4) || sizeof(Table8) || sizeof(SymbolMode)); //wtf unreferenced parameter
+    MaxWidth;
+    MaxHeight;
     m_MaxTrSize = MaxTrSize;
-    m_EncFlag = EncFlag;
-    m_UseRDOQ = UseRDOQ;
+    m_EncFlag = false;
+    m_UseRDOQ = false;
 }
 
-
-void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, Ipp32u Mode, H265CoeffsPtrCommon pResidual,
+template <typename DstCoeffsType>
+void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, Ipp32u Mode, DstCoeffsType* pResidual,
                                   Ipp32u Stride, H265CoeffsPtrCommon pCoeff, Ipp32u Width, Ipp32u Height, Ipp32s scalingListType,
                                   bool transformSkip)
 {
@@ -617,7 +657,16 @@ void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, I
     {
         for (Ipp32u k = 0; k < Height; k++)
             for (Ipp32u j = 0; j < Width; j++)
-                pResidual[k * Stride + j] = (H265CoeffsCommon)pCoeff[k * Width + j];
+            {
+                if (sizeof(DstCoeffsType) == 1)
+                {
+                    pResidual[k * Stride + j] = (DstCoeffsType)Clip3(0, 255, pResidual[k * Stride + j] + pCoeff[k * Width + j]);
+                }
+                else
+                {
+                    pResidual[k * Stride + j] = (DstCoeffsType)pCoeff[k * Width + j];
+                }
+            }
 
         return;
     }
@@ -642,7 +691,7 @@ void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, I
         else
         {
             VM_ASSERT(Width == Height);
-            InverseTransformMxN< 8 >(pCoeff, pResidual, Stride, Width, Mode);
+            InverseTransform< 8 >(pCoeff, pResidual, Stride, Width, Mode, m_tempTransformBuffer);
         }
     } 
     else
@@ -653,17 +702,16 @@ void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, I
     else
     {
         VM_ASSERT(Width == Height);
-        InverseTransformMxN(bitDepth, pCoeff, pResidual, Stride, Width, Mode);
+        InverseTransform(bitDepth, pCoeff, pResidual, Stride, Width, Mode, m_tempTransformBuffer);
     }
 #endif
 }
 
-void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u curX, Ipp32u curY,
-                                       Ipp32u Width, Ipp32u Height, Ipp32u TrMode, size_t coeffsOffset)
+void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Width, Ipp32u Height, Ipp32u TrMode)
 {
-    bool lumaPresent = pCU->getCbf(AbsPartIdx, TEXT_LUMA, TrMode);
-    bool chromaUPresent = pCU->getCbf(AbsPartIdx, TEXT_CHROMA_U, TrMode);
-    bool chromaVPresent = pCU->getCbf(AbsPartIdx, TEXT_CHROMA_V, TrMode);
+    bool lumaPresent = pCU->getCbf(AbsPartIdx, TEXT_LUMA, TrMode) != 0;
+    bool chromaUPresent = pCU->getCbf(AbsPartIdx, TEXT_CHROMA_U, TrMode) != 0;
+    bool chromaVPresent = pCU->getCbf(AbsPartIdx, TEXT_CHROMA_V, TrMode) != 0;
 
     if (!lumaPresent && !chromaUPresent && !chromaVPresent)
     {
@@ -674,33 +722,22 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
 
     if(TrMode == StopTrMode)
     {
-        H265CoeffsPtrCommon residualsTempBuffer = m_residualsBuffer;
-        H265CoeffsPtrCommon residualsTempBuffer1 = m_residualsBuffer1;
-        size_t res_pitch = 64;
-
         Ipp32s scalingListType;
         H265CoeffsPtrCommon pCoeff;
 
+        Ipp32u NumCoeffInc = (pCU->m_SliceHeader->m_SeqParamSet->MaxCUWidth * pCU->m_SliceHeader->m_SeqParamSet->MaxCUHeight) >> (pCU->m_SliceHeader->m_SeqParamSet->MaxCUDepth << 1);
+        size_t coeffsOffset = NumCoeffInc * AbsPartIdx;
+
         if (lumaPresent)
         {
+            Ipp32u DstStride = pCU->m_Frame->pitch_luma();
+            H265PlanePtrYCommon ptrLuma = pCU->m_Frame->GetLumaAddr(pCU->CUAddr, pCU->m_AbsIdxInLCU + AbsPartIdx);
+
             scalingListType = (pCU->m_PredModeArray[AbsPartIdx] ? 0 : 3) + g_Table[(Ipp32s)TEXT_LUMA];
             pCoeff = pCU->m_TrCoeffY + coeffsOffset;
             SetQPforQuant(pCU->m_QPArray[0], TEXT_LUMA, pCU->m_SliceHeader->m_SeqParamSet->getQpBDOffsetY(), 0);
-            InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_LUMA, REG_DCT, residualsTempBuffer, res_pitch, pCoeff, Width, Height,
-                scalingListType, pCU->m_TransformSkip[g_ConvertTxtTypeToIdx[TEXT_LUMA]][AbsPartIdx]);
-
-            Ipp32u DstStride = pCU->m_Frame->pitch_luma();
-            H265PlanePtrYCommon ptrLuma = pCU->m_Frame->GetLumaAddr(pCU->CUAddr, pCU->m_AbsIdxInLCU) + curX*Width + curY*Height * DstStride;
-            
-            for (Ipp32u y = 0; y < Height; y++)
-            {
-                for (Ipp32u x = 0; x < Width; x++)
-                {
-                    ptrLuma[x] = (H265PlaneYCommon)ClipY(residualsTempBuffer[x] + ptrLuma[x]);
-                }
-                residualsTempBuffer += res_pitch;
-                ptrLuma += DstStride;
-            }
+            InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_LUMA, REG_DCT, ptrLuma, DstStride, pCoeff, Width, Height,
+                scalingListType, pCU->m_TransformSkip[g_ConvertTxtTypeToIdx[TEXT_LUMA]][AbsPartIdx] != 0);
         }
 
         if (chromaUPresent || chromaVPresent)
@@ -710,13 +747,13 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
             Height >>= 1;
 
             Ipp32u DstStride = pCU->m_Frame->pitch_chroma();
-            H265PlanePtrUVCommon ptrChroma = pCU->m_Frame->GetCbCrAddr(pCU->CUAddr, pCU->m_AbsIdxInLCU) + curX*Width*2 + curY*Height * DstStride;
+            H265PlanePtrUVCommon ptrChroma = pCU->m_Frame->GetCbCrAddr(pCU->CUAddr, pCU->m_AbsIdxInLCU + AbsPartIdx);
 
             Ipp32u Depth = pCU->m_DepthArray[AbsPartIdx] + TrMode;
             Ipp32u Log2TrSize = g_ConvertToBit[pCU->m_SliceHeader->m_SeqParamSet->getMaxCUWidth() >> Depth ] + 2;
             if (Log2TrSize == 2)
             {
-                Ipp32u QPDiv = pCU->m_Frame->getNumPartInCU() >> ((Depth - 1) << 1);
+                Ipp32u QPDiv = pCU->m_Frame->getCD()->getNumPartInCU() >> ((Depth - 1) << 1);
                 if((AbsPartIdx % QPDiv) != 0)
                 {
                     return;
@@ -725,7 +762,9 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
                 Height <<= 1;
             }
 
-            residualsTempBuffer = m_residualsBuffer;
+            H265CoeffsPtrCommon residualsTempBuffer = m_residualsBuffer;
+            H265CoeffsPtrCommon residualsTempBuffer1 = m_residualsBuffer1;
+            size_t res_pitch = MAX_CU_SIZE;
 
             if (chromaUPresent)
             {
@@ -734,7 +773,7 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
                 Ipp32s curChromaQpOffset = pCU->m_SliceHeader->m_PicParamSet->getChromaCbQpOffset() + pCU->m_SliceHeader->m_SliceQpDeltaCb;
                 SetQPforQuant(pCU->m_QPArray[0], TEXT_CHROMA, pCU->m_SliceHeader->m_SeqParamSet->getQpBDOffsetC(), curChromaQpOffset);
                 InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_CHROMA_U, REG_DCT, residualsTempBuffer, res_pitch, pCoeff, Width, Height,
-                    scalingListType, pCU->m_TransformSkip[g_ConvertTxtTypeToIdx[TEXT_CHROMA_U]][AbsPartIdx]);
+                    scalingListType, pCU->m_TransformSkip[g_ConvertTxtTypeToIdx[TEXT_CHROMA_U]][AbsPartIdx] != 0);
             }
 
             if (chromaVPresent)
@@ -744,7 +783,7 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
                 Ipp32s curChromaQpOffset = pCU->m_SliceHeader->m_PicParamSet->getChromaCrQpOffset() + pCU->m_SliceHeader->m_SliceQpDeltaCr;
                 SetQPforQuant(pCU->m_QPArray[0], TEXT_CHROMA, pCU->m_SliceHeader->m_SeqParamSet->getQpBDOffsetC(), curChromaQpOffset);
                 InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_CHROMA_V, REG_DCT, residualsTempBuffer1, res_pitch, pCoeff, Width, Height,
-                    scalingListType, pCU->m_TransformSkip[g_ConvertTxtTypeToIdx[TEXT_CHROMA_V]][AbsPartIdx]);
+                    scalingListType, pCU->m_TransformSkip[g_ConvertTxtTypeToIdx[TEXT_CHROMA_V]][AbsPartIdx] != 0);
             }
   
             for (Ipp32u y = 0; y < Height; y++)
@@ -752,9 +791,9 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
                 for (Ipp32u x = 0; x < Width; x++)
                 {
                     if (chromaUPresent)
-                        ptrChroma[2*x] = (H265PlaneUVCommon)ClipY(residualsTempBuffer[x] + ptrChroma[2*x]);
+                        ptrChroma[2*x] = (H265PlaneUVCommon)ClipC(residualsTempBuffer[x] + ptrChroma[2*x]);
                     if (chromaVPresent)
-                        ptrChroma[2*x+1] = (H265PlaneUVCommon)ClipY(residualsTempBuffer1[x] + ptrChroma[2*x+1]);
+                        ptrChroma[2*x+1] = (H265PlaneUVCommon)ClipC(residualsTempBuffer1[x] + ptrChroma[2*x+1]);
                 }
                 residualsTempBuffer += res_pitch;
                 residualsTempBuffer1 += res_pitch;
@@ -768,30 +807,25 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
         Width >>= 1;
         Height >>= 1;
 
-        curX <<= 1;
-        curY <<= 1;
-
         Ipp32u PartOffset = pCU->m_NumPartition >> (TrMode << 1);
 
-        InvRecurTransformNxN(pCU, AbsPartIdx, curX, curY,    Width, Height, TrMode, coeffsOffset);
-        coeffsOffset += Width*Height;
+        InvRecurTransformNxN(pCU, AbsPartIdx, Width, Height, TrMode);
         AbsPartIdx += PartOffset;
-        InvRecurTransformNxN(pCU, AbsPartIdx, curX + 1, curY, Width, Height, TrMode, coeffsOffset);
-        coeffsOffset += Width*Height;
+        InvRecurTransformNxN(pCU, AbsPartIdx, Width, Height, TrMode);
         AbsPartIdx += PartOffset;
-        InvRecurTransformNxN(pCU, AbsPartIdx, curX, curY + 1, Width, Height, TrMode, coeffsOffset);
-        coeffsOffset += Width*Height;
+        InvRecurTransformNxN(pCU, AbsPartIdx, Width, Height, TrMode);
         AbsPartIdx += PartOffset;
-        InvRecurTransformNxN(pCU, AbsPartIdx, curX + 1, curY + 1, Width, Height, TrMode, coeffsOffset);
+        InvRecurTransformNxN(pCU, AbsPartIdx, Width, Height, TrMode);
     }
 }
 
 #if (HEVC_OPT_CHANGES & 128)
 // ML: OPT: Parameterized to allow const 'bitDepth' propogation
-template <int bitDepth>
-void H265TrQuant::InvTransformSkip(H265CoeffsPtrCommon pCoeff, H265CoeffsPtrCommon pResidual, Ipp32u Stride, Ipp32u Width, Ipp32u Height)
+template <int bitDepth, typename DstCoeffsType>
+void H265TrQuant::InvTransformSkip(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, Ipp32u Stride, Ipp32u Width, Ipp32u Height)
 #else
-void H265TrQuant::InvTransformSkip(Ipp32s bitDepth, H265CoeffsPtrCommon pCoeff, H265CoeffsPtrCommon pResidual, Ipp32u Stride, Ipp32u Width, Ipp32u Height)
+template <typename DstCoeffsType>
+void H265TrQuant::InvTransformSkip(Ipp32s bitDepth, H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, Ipp32u Stride, Ipp32u Width, Ipp32u Height)
 #endif
 {
     VM_ASSERT(Width == Height);
@@ -809,7 +843,14 @@ void H265TrQuant::InvTransformSkip(Ipp32s bitDepth, H265CoeffsPtrCommon pCoeff, 
         {
             for (k = 0; k < Width; k ++)
             {
-                pResidual[j * Stride + k] =  (H265CoeffsCommon)((pCoeff[j * Width + k] + offset) >> transformSkipShift);
+                if (sizeof(DstCoeffsType) == 1)
+                {
+                    pResidual[j * Stride + k] =  (DstCoeffsType) ClipY(((pCoeff[j * Width + k] + offset) >> transformSkipShift) + pResidual[j * Stride + k]);
+                }
+                else
+                {
+                    pResidual[j * Stride + k] =  (DstCoeffsType)((pCoeff[j * Width + k] + offset) >> transformSkipShift);
+                }
             }
         }
     }
@@ -821,7 +862,14 @@ void H265TrQuant::InvTransformSkip(Ipp32s bitDepth, H265CoeffsPtrCommon pCoeff, 
         {
             for (k = 0; k < Width; k ++)
             {
-                pResidual[j * Stride + k] =  (H265CoeffsCommon)(pCoeff[j * Width + k] << transformSkipShift);
+                if (sizeof(DstCoeffsType) == 1)
+                {
+                    pResidual[j * Stride + k] =  (DstCoeffsType)ClipY((pCoeff[j * Width + k] << transformSkipShift) + pResidual[j * Stride + k]);
+                }
+                else
+                {
+                    pResidual[j * Stride + k] =  (DstCoeffsType)(pCoeff[j * Width + k] << transformSkipShift);
+                }
             }
         }
     }
@@ -917,6 +965,14 @@ Ipp32s H265TrQuant::calcPatternSigCtx(const Ipp32u* sigCoeffGroupFlag, Ipp32u po
     return sigRight + (sigLower<<1);
 }
 
+//LUMA map
+static const Ipp32u ctxIndMap[16] =
+{
+    0, 1, 4, 5,
+    2, 3, 4, 5,
+    6, 6, 8, 8,
+    7, 7, 8, 8
+};
 /** Context derivation process of coeff_abs_significant_flag
  * \param pcCoeff pointer to prior coded transform coefficients
  * \param uiPosX column of current scan position
@@ -932,15 +988,6 @@ Ipp32u H265TrQuant::getSigCtxInc(Ipp32s patternSigCtx,
                                  const Ipp32u log2BlockSize,
                                  EnumTextType Type)
 {
-    //LUMA map
-    const Ipp32u ctxIndMap[16] =
-    {
-        0, 1, 4, 5,
-        2, 3, 4, 5,
-        6, 6, 8, 8,
-        7, 7, 8, 8
-    };
-
     if (PosX + PosY == 0)
         return 0;
 

@@ -64,6 +64,11 @@ public:
         return m_CUData[CUAddr];
     }
 
+    Ipp32u getNumPartInCU()
+    {
+        return m_NumPartitions;
+    }
+
     // Values for m_ColTUFlags
 #define COL_TU_INTRA         0
 #define COL_TU_INVALID_INTER 1

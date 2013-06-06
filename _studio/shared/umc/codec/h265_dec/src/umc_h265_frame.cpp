@@ -421,11 +421,6 @@ H265CodingUnit* H265DecoderFrame::getCU(Ipp32u CUaddr)
     return m_CodingData->getCU(CUaddr);
 }
 
-Ipp32u H265DecoderFrame::getNumPartInCU()
-{
-    return m_CodingData->m_NumPartitions;
-}
-
 Ipp32u H265DecoderFrame::getNumCUsInFrame()
 {
     return m_CodingData->m_NumCUsInFrame;
@@ -446,7 +441,11 @@ Ipp32u H265DecoderFrame::getNumPartInHeight()
     return m_CodingData->m_NumPartInHeight;
 }
 
-    //Ipp32u getNumPartInCU()        { return m_CodingData->m_NumPartition;       }
+/*Ipp32u H265DecoderFrame::getNumPartInCU()
+{
+    return m_CodingData->m_NumPartitions;
+}*/
+
 Ipp32u H265DecoderFrame::getFrameWidthInCU()
 {
     return m_CodingData->m_WidthInCU;

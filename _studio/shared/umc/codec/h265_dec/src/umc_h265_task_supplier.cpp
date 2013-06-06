@@ -1770,6 +1770,8 @@ UMC::Status TaskSupplier_H265::AddSource(UMC::MediaData * pSource, UMC::MediaDat
 {
     UMC::Status umcRes = UMC::UMC_OK;
 
+    CompleteDecodedFrames(0);
+
     umcRes = AddOneFrame(pSource, dst); // construct frame
 
     if (UMC::UMC_ERR_NOT_ENOUGH_BUFFER == umcRes)
@@ -1797,7 +1799,6 @@ UMC::Status TaskSupplier_H265::AddSource(UMC::MediaData * pSource, UMC::MediaDat
         {
             if (CompleteDecodedFrames(0) == UMC::UMC_OK)
                 return UMC::UMC_WRN_INFO_NOT_READY;
-
 
             if (GetFrameToDisplayInternal(true))
                 return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;

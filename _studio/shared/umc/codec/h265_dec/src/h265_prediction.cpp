@@ -287,6 +287,9 @@ void H265Prediction::PredIntraPlanarChroma(H265PlanePtrUVCommon pSrc, Ipp32s src
  * the predicted value for the pixel is linearly interpolated from the reference samples. All reference samples are taken
  * from the extended main reference.
  */
+static Ipp32s angTableLuma[9] = {0,    2,    5,   9,  13,  17,  21,  26,  32};
+static Ipp32s invAngTableLuma[9] = {0, 4096, 1638, 910, 630, 482, 390, 315, 256}; // (256 * 32) / Angle
+
 void H265Prediction::PredIntraAngLuma(Ipp32s bitDepth, H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrYCommon Dst, Ipp32s dstStride, Ipp32u width, Ipp32u height, Ipp32u dirMode, bool Filter)
 {
     Ipp32s k;
@@ -304,10 +307,8 @@ void H265Prediction::PredIntraAngLuma(Ipp32s bitDepth, H265PlanePtrYCommon pSrc,
     Ipp32s signAng = intraPredAngle < 0 ? -1 : 1;
 
     // Set bitshifts and scale the angle parameter to block size
-    Ipp32s angTable[9] = {0,    2,    5,   9,  13,  17,  21,  26,  32};
-    Ipp32s invAngTable[9] = {0, 4096, 1638, 910, 630, 482, 390, 315, 256}; // (256 * 32) / Angle
-    Ipp32s invAngle = invAngTable[absAng];
-    absAng = angTable[absAng];
+    Ipp32s invAngle = invAngTableLuma[absAng];
+    absAng = angTableLuma[absAng];
     intraPredAngle = signAng * absAng;
     Ipp32s maxVal = (1 << bitDepth) - 1;
 
@@ -462,6 +463,9 @@ void H265Prediction::PredIntraAngLuma(Ipp32s bitDepth, H265PlanePtrYCommon pSrc,
  * the predicted value for the pixel is linearly interpolated from the reference samples. All reference samples are taken
  * from the extended main reference.
  */
+static Ipp32s angTableChroma[9] = {0,    2,    5,   9,  13,  17,  21,  26,  32};
+static Ipp32s invAngTableChroma[9] = {0, 4096, 1638, 910, 630, 482, 390, 315, 256}; // (256 * 32) / Angle
+
 void H265Prediction::PredIntraAngChroma(Ipp32s bitDepth, H265PlanePtrUVCommon pSrc, Ipp32s srcStride, H265PlanePtrUVCommon Dst, Ipp32s dstStride, Ipp32u width, Ipp32u height, Ipp32u dirMode)
 {
     Ipp32s k;
@@ -479,10 +483,8 @@ void H265Prediction::PredIntraAngChroma(Ipp32s bitDepth, H265PlanePtrUVCommon pS
     Ipp32s signAng = intraPredAngle < 0 ? -1 : 1;
 
     // Set bitshifts and scale the angle parameter to block size
-    Ipp32s angTable[9] = {0,    2,    5,   9,  13,  17,  21,  26,  32};
-    Ipp32s invAngTable[9] = {0, 4096, 1638, 910, 630, 482, 390, 315, 256}; // (256 * 32) / Angle
-    Ipp32s invAngle = invAngTable[absAng];
-    absAng = angTable[absAng];
+    Ipp32s invAngle = invAngTableChroma[absAng];
+    absAng = angTableChroma[absAng];
     intraPredAngle = signAng * absAng;
     Ipp32s dstStrideHalf = dstStride >> 1;
 

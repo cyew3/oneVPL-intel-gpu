@@ -14,15 +14,18 @@
 #ifndef __UMC_H265_DEC_DEBUG_H
 #define __UMC_H265_DEC_DEBUG_H
 
-#include "vm_time.h"
 #include "umc_h265_dec_defs_dec.h"
+
+#if defined(_MSC_VER)
+#include <windows.h>
+#endif
 
 namespace UMC_HEVC_DECODER
 {
 
 void Trace(vm_char * format, ...);
 
-#if 1
+#if 0
 #if defined _DEBUG
 #define DEBUG_PRINT(x) Trace x
 static int pppp = 0;

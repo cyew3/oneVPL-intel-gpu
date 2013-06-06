@@ -75,7 +75,9 @@ Status PackerDXVA2::GetStatusReport(void * pStatusReport, size_t size)
 void PackerDXVA2::ExecuteBuffers()
 {
     Status s = m_va->Execute();
-    //printf(">>> VA.Execute: status %d\n", s);
+#ifdef PRINT_TRACE
+    printf(">>> VA.Execute: status %d\n", s);
+#endif
     if(s != UMC_OK)
         throw h265_exception(s);
 }
@@ -101,7 +103,9 @@ void PackerDXVA2::GetPicParamVABuffer(DXVA_PicParams_HEVC **ppPicParam, size_t h
             if(phase == 0)
             {
                 Status s = m_va->Execute();
-                //printf("   PicParam buffer overflow: VA.Execute: status %d\n", s);
+#ifdef PRINT_TRACE
+                printf("   PicParam buffer overflow: VA.Execute: status %d\n", s);
+#endif
                 if(s != UMC_OK)
                     throw h265_exception(s);
                 continue;
@@ -140,13 +144,14 @@ void PackerDXVA2::GetSliceVABuffers(
                dataBffrOffs = dataVABffr->GetDataSize();
 
         dataBffrOffs = dataAlignment ? dataAlignment*((dataBffrOffs + dataAlignment - 1)/dataAlignment) : dataBffrOffs;
-
-        //printf("   DXVA_SLICE_CONTROL_BUFFER: buffer size: %u\n", headVABffr->GetBufferSize());
-        //printf("   DXVA_SLICE_CONTROL_BUFFER: sizeof slice hdr: %u\n", headerSize);
-        //printf("   DXVA_SLICE_CONTROL_BUFFER: offset of slice hdr in buffer: %u\n", headBffrOffs);
-        //printf("   DXVA_BITSTREAM_DATA_BUFFER: buffer size: %u\n", dataBffrSize);
-        //printf("   DXVA_BITSTREAM_DATA_BUFFER: sizeof slice data: %u\n", dataSize);
-        //printf("   DXVA_BITSTREAM_DATA_BUFFER: offset of slice data in buffer: %u\n", dataBffrOffs);
+#ifdef PRINT_TRACE
+        printf("   DXVA_SLICE_CONTROL_BUFFER: buffer size: %u\n", headVABffr->GetBufferSize());
+        printf("   DXVA_SLICE_CONTROL_BUFFER: sizeof slice hdr: %u\n", headerSize);
+        printf("   DXVA_SLICE_CONTROL_BUFFER: offset of slice hdr in buffer: %u\n", headBffrOffs);
+        printf("   DXVA_BITSTREAM_DATA_BUFFER: buffer size: %u\n", dataBffrSize);
+        printf("   DXVA_BITSTREAM_DATA_BUFFER: sizeof slice data: %u\n", dataSize);
+        printf("   DXVA_BITSTREAM_DATA_BUFFER: offset of slice data in buffer: %u\n", dataBffrOffs);
+#endif
 
         if( headBffrSize - headBffrOffs < headerSize ||
             dataBffrSize - dataBffrOffs < dataSize )
@@ -154,7 +159,9 @@ void PackerDXVA2::GetSliceVABuffers(
             if(phase == 0)
             {
                 Status s = m_va->Execute();
-                //printf("   Buffer overflow: VA.Execute: status %d\n", s);
+#ifdef PRINT_TRACE
+                printf("   Buffer overflow: VA.Execute: status %d\n", s);
+#endif
                 if(s != UMC_OK)
                     throw h265_exception(s);
                 continue;
@@ -173,9 +180,10 @@ void PackerDXVA2::GetSliceVABuffers(
         memset(*ppSliceHeader, 0, headerSize);
         (*ppSliceHeader)->BSNALunitDataLocation = dataBffrOffs;
         (*ppSliceHeader)->SliceBytesInBuffer = dataSize;
-
-        //printf("   DXVA_SLICE_CONTROL_BUFFER: SetDataSize(%u)\n", headBffrOffs + headerSize);
-        //printf("   DXVA_BITSTREAM_DATA_BUFFER: SetDataSize(%u)\n", dataBffrOffs + dataSize);
+#ifdef PRINT_TRACE
+        printf("   DXVA_SLICE_CONTROL_BUFFER: SetDataSize(%u)\n", headBffrOffs + headerSize);
+        printf("   DXVA_BITSTREAM_DATA_BUFFER: SetDataSize(%u)\n", dataBffrOffs + dataSize);
+#endif
 
         return;
     }
@@ -197,7 +205,9 @@ void PackerDXVA2::GetIQMVABuffer(DXVA_Qmatrix_HEVC **ppQmatrix, size_t size)
             if(phase == 0)
             {
                 Status s = m_va->Execute();
-                //printf("   IQM buffer overflow: VA.Execute: status %d\n", s);
+#ifdef PRINT_TRACE
+                printf("   IQM buffer overflow: VA.Execute: status %d\n", s);
+#endif
                 if(s != UMC_OK)
                     throw h265_exception(s);
                 continue;
@@ -272,7 +282,7 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->CurrPic.Index7bits   = pCurrentFrame->m_index;    // ?
     pPicParam->CurrPicOrderCntVal   = pSlice->getPOC();
 
-    ReferencePictureSet *rps = pSlice->getRPS();
+    
     int num_ref_frames = pSeqParamSet->getMaxDecPicBuffering(pSlice->getTLayer());
 
     pPicParam->sps_max_dec_pic_buffering_minus1 = (UCHAR)(num_ref_frames - 1);
@@ -284,13 +294,16 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     H265DBPList *dpb = supplier->GetDPBList();
     for(H265DecoderFrame* frame = dpb->head() ; frame ; frame = frame->future())
     {
-        int refType = frame->isShortTermRef() ? SHORT_TERM_REFERENCE : (frame->isLongTermRef() ? LONG_TERM_REFERENCE : NO_REFERENCE);
-
-        if(refType != NO_REFERENCE)
+        if(frame != pCurrentFrame)
         {
-            pPicParam->RefFrameList[count].Index7bits = frame->m_index;
-            pPicParam->RefFrameList[count].long_term_ref_flag = (refType == LONG_TERM_REFERENCE);
-            count++;
+            int refType = frame->isShortTermRef() ? SHORT_TERM_REFERENCE : (frame->isLongTermRef() ? LONG_TERM_REFERENCE : NO_REFERENCE);
+
+            if(refType != NO_REFERENCE)
+            {
+                pPicParam->RefFrameList[count].Index7bits = frame->m_index;
+                pPicParam->RefFrameList[count].long_term_ref_flag = (refType == LONG_TERM_REFERENCE);
+                count++;
+            }
         }
     }
     for(int n=count;n < 16;n++)
@@ -299,8 +312,8 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
 
     // PicOrderCntValList
     //
+    const ReferencePictureSet *rps = pSlice->getRPS();
     for(int index=0;index < num_ref_frames;index++)
-        //pPicParam->PicOrderCntValList[index] = pPicParam->CurrPicOrderCntVal + rps->getDeltaPOC(num_ref_frames - index - 1);
         pPicParam->PicOrderCntValList[index] = pPicParam->CurrPicOrderCntVal + rps->getDeltaPOC(index);
     for(int index=num_ref_frames;index < 16;index++)
         pPicParam->PicOrderCntValList[index] = -1;
@@ -387,17 +400,32 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
     {
 //      const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
         const H265PicParamSet *pPicParamSet = pSlice->GetPicParam();
+        const H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
+        int sliceNum = pSlice->GetSliceNum();
 
         pDXVASlice->ByteOffsetToSliceData = 0;  // ???
         pDXVASlice->slice_segment_address = pSlice->getSliceAddr();
-        // CtbSizeY = 1 << pSeqParamSet->getLog2CtbSize()
         pDXVASlice->num_LCUs_for_slice = 0; 
 
         for(int iDir = 0; iDir < 2; iDir++)
         {
-            int index, count = pSlice->m_SliceHeader.m_numRefIdx[iDir];
-            for(index = 0;index < count;index++)
-                pDXVASlice->RefPicList[iDir][index].Index7bits = (unsigned)pSlice->getRefPOC(EnumRefPicList(iDir), index);
+            int index = 0;
+            const H265DecoderRefPicList::ReferenceInformation* pRefPicList = pCurrentFrame->GetRefPicList(sliceNum, iDir)->m_refPicList;
+
+            for(int i=0;i < 16;i++)
+            {
+                const H265DecoderRefPicList::ReferenceInformation &frameInfo = pRefPicList[i];
+                if(frameInfo.refFrame)
+                {
+                    pDXVASlice->RefPicList[iDir][index].Index7bits = frameInfo.refFrame->m_index;
+                    pDXVASlice->RefPicList[iDir][index].long_term_ref_flag = frameInfo.isLongReference;
+                    index++;
+                }
+            }
+
+            //int index, count = pSlice->m_SliceHeader.m_numRefIdx[iDir];
+            //for(index = 0;index < count;index++)
+            //    pDXVASlice->RefPicList[iDir][index].Index7bits = (unsigned)pSlice->getRefPOC(EnumRefPicList(iDir), index);
             for(;index < 16;index++)
                 pDXVASlice->RefPicList[iDir][index].bPicEntry = (UCHAR)-1;
         }

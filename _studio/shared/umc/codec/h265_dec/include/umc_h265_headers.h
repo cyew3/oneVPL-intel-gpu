@@ -164,11 +164,11 @@ class Headers
 public:
 
     Headers(Heap_Objects  *pObjHeap)
-        : m_pObjHeap(pObjHeap)
-        , m_VideoParams(pObjHeap)
+        : m_VideoParams(pObjHeap)
         , m_SeqParams(pObjHeap)
-        , m_SEIParams(pObjHeap)
         , m_PicParams(pObjHeap)
+        , m_SEIParams(pObjHeap)
+        , m_pObjHeap(pObjHeap)
     {
     }
 

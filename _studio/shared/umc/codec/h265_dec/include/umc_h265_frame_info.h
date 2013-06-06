@@ -36,10 +36,10 @@ public:
 
     H265DecoderFrameInfo(H265DecoderFrame * pFrame, Heap * heap, Heap_Objects * pObjHeap)
         : m_pFrame(pFrame)
+        , m_prepared(0)
+        , m_SliceCount(0)
         , m_pHeap(heap)
         , m_pObjHeap(pObjHeap)
-        , m_SliceCount(0)
-        , m_prepared(0)
     {
         Reset();
     }
@@ -320,7 +320,7 @@ private:
 #if (HEVC_OPT_CHANGES & 2) && (defined(_WIN32) || defined(_WIN64))
 // ML: OPT: called in hopspot loops
 // ML: OPT: moved here from umc_h265_frame.cpp to allow inlining, cannot be decalred in umc_h265_frame.h due to forward H265DecoderRefPicList dependency
-H265_FORCEINLINE H265DecoderRefPicList* H265DecoderFrame::GetRefPicList(Ipp32s sliceNumber, Ipp32s list)
+H265_FORCEINLINE H265DecoderRefPicList* H265DecoderFrame::GetRefPicList(Ipp32s sliceNumber, Ipp32s list) const
 {
     H265DecoderRefPicList *pList;
     pList = GetAU()->GetRefPicList(sliceNumber, list);

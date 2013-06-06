@@ -41,7 +41,7 @@ void CUMVBuffer::create(Ipp32u numPartition )
 
     MV = new H265MotionVector[numPartition];
     MVd = new H265MotionVector[numPartition];
-    RefIdx = new Ipp8s[numPartition];
+    RefIdx = new RefIndexType[numPartition];
 
     m_NumPartition = numPartition;
 }
@@ -290,7 +290,7 @@ void CUMVBuffer::setAllMVd(H265MotionVector const & mvd, EnumPartSize CUMode, Ip
 
 void CUMVBuffer::setAllRefIdx (Ipp32s refIdx, EnumPartSize CUMode, Ipp32s PartAddr, Ipp32u Depth, Ipp32s PartIdx)
 {
-    setAll(RefIdx, static_cast<Ipp8s>(refIdx), CUMode, PartAddr, Depth, PartIdx);
+    setAll(RefIdx, static_cast<RefIndexType>(refIdx), CUMode, PartAddr, Depth, PartIdx);
 }
 
 void CUMVBuffer::setAllMVBuffer(MVBuffer const & mvBuffer, EnumPartSize CUMode, Ipp32s PartAddr, Ipp32u Depth, Ipp32s PartIdx)
@@ -322,7 +322,7 @@ void CUMVBuffer::compress(Ipp8s* PredMode, Ipp32s scale)
         {
             MV[PartIdx + i] = cMV;
             PredMode[PartIdx + i] = (Ipp8s)predMode;
-            RefIdx[PartIdx + i] = (Ipp8s)iRefIdx;
+            RefIdx[PartIdx + i] = (RefIndexType)iRefIdx;
         }
     }
 }

@@ -142,19 +142,20 @@ struct AMVPInfo
     Ipp32s NumbOfCands;
 };
 
+typedef Ipp8s RefIndexType;
 //structure for motion vector with reference index
 struct MVBuffer
 {
 public:
     H265MotionVector    MV;
-    Ipp8s            RefIdx;
+    RefIndexType        RefIdx;
 
     MVBuffer()
     {
         RefIdx = -1; //not valid
     };
 
-    void setMVBuffer(H265MotionVector const &cMV, Ipp8s iRefIdx)
+    void setMVBuffer(H265MotionVector const &cMV, RefIndexType iRefIdx)
     {
         MV = cMV;
         RefIdx = iRefIdx;
@@ -167,7 +168,7 @@ struct CUMVBuffer
 public:
     H265MotionVector*    MV;
     H265MotionVector*    MVd;
-    Ipp8s*            RefIdx;
+    RefIndexType*        RefIdx;
     Ipp32u            m_NumPartition;
     AMVPInfo        AMVPinfo;
 

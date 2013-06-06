@@ -417,7 +417,7 @@ void H265CodingUnit::initCU(H265SegmentDecoderMultiThreaded* sd, Ipp32u iCUAddr)
 
     for (Ipp32u i = 0; i < m_NumPartition; i++)
     {
-        if (Pic->m_CodingData->GetInverseCUOrderMap(iCUAddr) * Pic->getNumPartInCU() + i >= m_SliceHeader->SliceCurStartCUAddr)
+        if (Pic->m_CodingData->GetInverseCUOrderMap(iCUAddr) * Pic->getCD()->getNumPartInCU() + i >= m_SliceHeader->SliceCurStartCUAddr)
         {
             m_SliceStartCU[i] = m_SliceHeader->SliceCurStartCUAddr;
         }
@@ -428,7 +428,7 @@ void H265CodingUnit::initCU(H265SegmentDecoderMultiThreaded* sd, Ipp32u iCUAddr)
     }
     for (Ipp32u i = 0; i < m_NumPartition; i++)
     {
-        if (Pic->m_CodingData->GetInverseCUOrderMap(iCUAddr) * Pic->getNumPartInCU() + i >= m_SliceHeader->SliceCurStartCUAddr)
+        if (Pic->m_CodingData->GetInverseCUOrderMap(iCUAddr) * Pic->getCD()->getNumPartInCU() + i >= m_SliceHeader->SliceCurStartCUAddr)
         {
             m_DependentSliceStartCU[i] = m_SliceHeader->m_sliceSegmentCurStartCUAddr;
         }
@@ -438,7 +438,7 @@ void H265CodingUnit::initCU(H265SegmentDecoderMultiThreaded* sd, Ipp32u iCUAddr)
         }
     }
 
-    Ipp32s partStartIdx = m_SliceHeader->m_sliceSegmentCurStartCUAddr - Pic->m_CodingData->GetInverseCUOrderMap(iCUAddr) * Pic->getNumPartInCU();
+    Ipp32s partStartIdx = m_SliceHeader->m_sliceSegmentCurStartCUAddr - Pic->m_CodingData->GetInverseCUOrderMap(iCUAddr) * Pic->getCD()->getNumPartInCU();
 
     Ipp32s numElements = min( partStartIdx, (Ipp32s) m_NumPartition );
     for (Ipp32s ind = 0; ind < numElements; ind++)
@@ -653,7 +653,7 @@ void H265CodingUnit::copySubCU(H265CodingUnit* CU, Ipp32u AbsPartIdx, Ipp32u Dep
     Ipp32u MaxCuWidth = CU->m_Frame->m_pSlicesInfo->GetSlice(0)->GetSeqParam()->MaxCUWidth;
     Ipp32u MaxCuHeight = CU->m_Frame->m_pSlicesInfo->GetSlice(0)->GetSeqParam()->MaxCUHeight;
 
-    Ipp32u CoffOffset = MaxCuWidth * MaxCuHeight * AbsPartIdx / CU->m_Frame->getNumPartInCU();
+    Ipp32u CoffOffset = MaxCuWidth * MaxCuHeight * AbsPartIdx / CU->m_Frame->getCD()->getNumPartInCU();
 
     m_TrCoeffY = CU->m_TrCoeffY + CoffOffset;
     m_IPCMSampleY = CU->m_IPCMSampleY + CoffOffset;
@@ -732,7 +732,7 @@ H265CodingUnit* H265CodingUnit::getPUAbove(Ipp32u& APartUnitIdx, Ipp32u CurrPart
         return NULL;
     }
 
-    APartUnitIdx = g_RasterToZscan[AbsPartIdx + m_Frame->getNumPartInCU() - NumPartInCUWidth];
+    APartUnitIdx = g_RasterToZscan[AbsPartIdx + m_Frame->getCD()->getNumPartInCU() - NumPartInCUWidth];
 
     if (
         (EnforceSliceRestriction && (m_CUAbove == NULL || m_CUAbove->m_SliceHeader == NULL || m_CUAbove->getSCUAddr() + APartUnitIdx < m_Frame->getCU(CUAddr)->getSliceStartCU(CurrPartUnitIdx)))
@@ -766,7 +766,7 @@ H265CodingUnit* H265CodingUnit::getPUAboveLeft(Ipp32u& ALPartUnitIdx, Ipp32u Cur
             }
         }
 
-        ALPartUnitIdx = g_RasterToZscan[AbsPartIdx + m_Frame->getNumPartInCU() - NumPartInCUWidth - 1];
+        ALPartUnitIdx = g_RasterToZscan[AbsPartIdx + m_Frame->getCD()->getNumPartInCU() - NumPartInCUWidth - 1];
 
         if ((EnforceSliceRestriction && (
                 m_CUAbove == NULL ||
@@ -793,7 +793,7 @@ H265CodingUnit* H265CodingUnit::getPUAboveLeft(Ipp32u& ALPartUnitIdx, Ipp32u Cur
         return m_CULeft;
     }
 
-    ALPartUnitIdx = g_RasterToZscan[m_Frame->getNumPartInCU() - 1];
+    ALPartUnitIdx = g_RasterToZscan[m_Frame->getCD()->getNumPartInCU() - 1];
 
     if ((EnforceSliceRestriction && (
             m_CUAboveLeft == NULL ||
@@ -839,7 +839,7 @@ H265CodingUnit* H265CodingUnit::getPUAboveRight(Ipp32u& ARPartUnitIdx, Ipp32u Cu
             return NULL;
         }
 
-        ARPartUnitIdx = g_RasterToZscan[AbsPartIdxRT + m_Frame->getNumPartInCU() - NumPartInCUWidth + 1];
+        ARPartUnitIdx = g_RasterToZscan[AbsPartIdxRT + m_Frame->getCD()->getNumPartInCU() - NumPartInCUWidth + 1];
 
         if ((EnforceSliceRestriction && (
                 m_CUAbove == NULL ||
@@ -858,7 +858,7 @@ H265CodingUnit* H265CodingUnit::getPUAboveRight(Ipp32u& ARPartUnitIdx, Ipp32u Cu
         return NULL;
     }
 
-    ARPartUnitIdx = g_RasterToZscan[m_Frame->getNumPartInCU() - NumPartInCUWidth];
+    ARPartUnitIdx = g_RasterToZscan[m_Frame->getCD()->getNumPartInCU() - NumPartInCUWidth];
 
     if ((EnforceSliceRestriction && (
             m_CUAboveRight == NULL ||
@@ -1003,7 +1003,7 @@ H265CodingUnit* H265CodingUnit::getPUAboveRightAdi(Ipp32u& ARPartUnitIdx, Ipp32u
             ARPartUnitIdx = MAX_UINT;
             return NULL;
         }
-        ARPartUnitIdx = g_RasterToZscan[AbsPartIdxRT + m_Frame->getNumPartInCU() - NumPartInCUWidth + PartUnitOffset];
+        ARPartUnitIdx = g_RasterToZscan[AbsPartIdxRT + m_Frame->getCD()->getNumPartInCU() - NumPartInCUWidth + PartUnitOffset];
         if ((EnforceSliceRestriction && (
                 m_CUAbove == NULL ||
                 m_CUAbove->m_SliceHeader == NULL ||
@@ -1021,7 +1021,7 @@ H265CodingUnit* H265CodingUnit::getPUAboveRightAdi(Ipp32u& ARPartUnitIdx, Ipp32u
         return NULL;
     }
 
-    ARPartUnitIdx = g_RasterToZscan[m_Frame->getNumPartInCU() - NumPartInCUWidth + PartUnitOffset - 1];
+    ARPartUnitIdx = g_RasterToZscan[m_Frame->getCD()->getNumPartInCU() - NumPartInCUWidth + PartUnitOffset - 1];
     if ((EnforceSliceRestriction && (
             m_CUAboveRight == NULL ||
             m_CUAboveRight->m_SliceHeader == NULL ||
@@ -1137,7 +1137,7 @@ Ipp8u H265CodingUnit::getLastCodedQP(Ipp32u AbsPartIdx)
                 m_Frame->m_CodingData->getTileIdxMap(m_Frame->m_CodingData->getCUOrderMap(m_Frame->m_CodingData->GetInverseCUOrderMap(CUAddr) - 1))
             && !(m_SliceHeader->m_PicParamSet->getEntropyCodingSyncEnabledFlag() && CUAddr % m_Frame->m_CodingData->m_WidthInCU == 0))
         {
-            return m_Frame->getCU(m_Frame->m_CodingData->getCUOrderMap(m_Frame->m_CodingData->GetInverseCUOrderMap(CUAddr) - 1))->getLastCodedQP(m_Frame->getNumPartInCU());
+            return m_Frame->getCU(m_Frame->m_CodingData->getCUOrderMap(m_Frame->m_CodingData->GetInverseCUOrderMap(CUAddr) - 1))->getLastCodedQP(m_Frame->getCD()->getNumPartInCU());
         }
         else
         {
@@ -1229,7 +1229,7 @@ Ipp32u H265CodingUnit::getCtxInterDir(Ipp32u AbsPartIdx)
 
 void H265CodingUnit::setCbfSubParts(Ipp32u CbfY, Ipp32u CbfU, Ipp32u CbfV, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    Ipp32u CurrPartNumb = m_Frame->getNumPartInCU() >> (Depth << 1);
+    Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
     memset(m_Cbf[0] + AbsPartIdx, CbfY, sizeof(Ipp8u) * CurrPartNumb);
     memset(m_Cbf[1] + AbsPartIdx, CbfU, sizeof(Ipp8u) * CurrPartNumb);
     memset(m_Cbf[2] + AbsPartIdx, CbfV, sizeof(Ipp8u) * CurrPartNumb);
@@ -1237,7 +1237,7 @@ void H265CodingUnit::setCbfSubParts(Ipp32u CbfY, Ipp32u CbfU, Ipp32u CbfV, Ipp32
 
 void H265CodingUnit::setCbfSubParts(Ipp32u uCbf, EnumTextType TType, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    Ipp32u CurrPartNumb = m_Frame->getNumPartInCU() >> (Depth << 1);
+    Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
     memset(m_Cbf[g_ConvertTxtTypeToIdx[TType]] + AbsPartIdx, uCbf, sizeof(Ipp8u) * CurrPartNumb);
 }
 
@@ -1256,42 +1256,42 @@ void H265CodingUnit::setCbfSubParts (Ipp32u uCbf, EnumTextType TType, Ipp32u Abs
 
 void H265CodingUnit::setDepthSubParts(Ipp32u Depth, Ipp32u AbsPartIdx)
 {
-    Ipp32u CurrPartNumb = m_Frame->getNumPartInCU() >> (Depth << 1);
+    Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
     memset(m_DepthArray + AbsPartIdx, Depth, sizeof(Ipp8u) * CurrPartNumb);
 }
 
 void H265CodingUnit::setPartSizeSubParts(EnumPartSize Mode, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     VM_ASSERT(sizeof(*m_PartSizeArray) == 1);
-    memset(m_PartSizeArray + AbsPartIdx, Mode, m_Frame->getNumPartInCU() >> (2 * Depth));
+    memset(m_PartSizeArray + AbsPartIdx, Mode, m_Frame->getCD()->getNumPartInCU() >> (2 * Depth));
 }
 
 void H265CodingUnit::setCUTransquantBypassSubParts(bool flag, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    memset(m_CUTransquantBypass + AbsPartIdx, flag, m_Frame->getNumPartInCU() >> (2 * Depth));
+    memset(m_CUTransquantBypass + AbsPartIdx, flag, m_Frame->getCD()->getNumPartInCU() >> (2 * Depth));
 }
 
 void H265CodingUnit::setSkipFlagSubParts(bool skip, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    memset(m_skipFlag + AbsPartIdx, skip, m_Frame->getNumPartInCU() >> (2 * Depth));
+    memset(m_skipFlag + AbsPartIdx, skip, m_Frame->getCD()->getNumPartInCU() >> (2 * Depth));
 }
 
 void H265CodingUnit::setPredModeSubParts(EnumPredMode Mode, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     VM_ASSERT(sizeof(*m_PartSizeArray) == 1);
-    memset(m_PredModeArray + AbsPartIdx, Mode, m_Frame->getNumPartInCU() >> (2 * Depth));
+    memset(m_PredModeArray + AbsPartIdx, Mode, m_Frame->getCD()->getNumPartInCU() >> (2 * Depth));
 }
 
 void H265CodingUnit::setTransformSkipSubParts(Ipp32u useTransformSkip, EnumTextType Type, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-  Ipp32u CurrPartNumb = m_Frame->getNumPartInCU() >> (Depth << 1);
+  Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
 
   memset(m_TransformSkip[g_ConvertTxtTypeToIdx[Type]] + AbsPartIdx, useTransformSkip, sizeof(Ipp8u) * CurrPartNumb);
 }
 
 void H265CodingUnit::setQPSubParts(Ipp32u QP, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    Ipp32u CurrPartNumb = m_Frame->getNumPartInCU() >> (Depth << 1);
+    Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
 
     for (Ipp32u SCUIdx = AbsPartIdx; SCUIdx < AbsPartIdx + CurrPartNumb; SCUIdx++)
     {
@@ -1304,7 +1304,7 @@ void H265CodingUnit::setQPSubParts(Ipp32u QP, Ipp32u AbsPartIdx, Ipp32u Depth)
 
 void H265CodingUnit::setLumaIntraDirSubParts(Ipp32u Dir, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    Ipp32u CurrPartNumb = m_Frame->getNumPartInCU() >> (Depth << 1);
+    Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
 
     memset(m_LumaIntraDir + AbsPartIdx, Dir, sizeof(Ipp8u) * CurrPartNumb);
 }
@@ -1314,7 +1314,7 @@ void H265CodingUnit::setSubPart(T Parameter, T* pBaseLCU, Ipp32u uCUAddr, Ipp32u
 {
     VM_ASSERT(sizeof(T) == 1); // Using memset() works only for types of size 1
     VM_ASSERT(sizeof(uPUIdx) != 0); //WTF uPUIdx NOT USED IN THIS FUNCTION WTF
-    Ipp32u CurrPartNumQ = (m_Frame->getNumPartInCU() >> (2 * uCUDepth)) >> 2;
+    Ipp32u CurrPartNumQ = (m_Frame->getCD()->getNumPartInCU() >> (2 * uCUDepth)) >> 2;
     switch (m_PartSizeArray[uCUAddr])
     {
         case SIZE_2Nx2N:
@@ -1419,7 +1419,7 @@ void H265CodingUnit::setMergeIndexSubParts (Ipp32u uMergeIndex, Ipp32u AbsPartId
 
 void H265CodingUnit::setChromIntraDirSubParts(Ipp32u uDir, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    Ipp32u uCurrPartNumb = m_Frame->getNumPartInCU() >> (Depth << 1);
+    Ipp32u uCurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
 
     memset(m_ChromaIntraDir + AbsPartIdx, uDir, sizeof(Ipp8u) * uCurrPartNumb);
 }
@@ -1442,21 +1442,21 @@ void H265CodingUnit::setMVPNumSubParts(Ipp32s iMVPNum, EnumRefPicList RefPicList
 
 void H265CodingUnit::setTrIdxSubParts(Ipp32u uTrIdx, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    Ipp32u CurrPartNumb = m_Frame->getNumPartInCU() >> (Depth << 1);
+    Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
 
     memset(m_TrIdxArray + AbsPartIdx, uTrIdx, sizeof(Ipp8u) * CurrPartNumb);
 }
 
 void H265CodingUnit::setTrStartSubParts(Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    Ipp32u CurrPartNumb = m_Frame->getNumPartInCU() >> (Depth << 1);
+    Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
 
     memset(m_TrStartArray + AbsPartIdx, AbsPartIdx, sizeof(Ipp8u) * CurrPartNumb);
 }
 
 void H265CodingUnit::setSizeSubParts(Ipp32u Width, Ipp32u Height, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    Ipp32u CurrPartNumb = m_Frame->getNumPartInCU() >> (Depth << 1);
+    Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
 
     memset(m_WidthArray + AbsPartIdx, Width,  sizeof(Ipp8u) * CurrPartNumb);
     memset(m_HeightArray + AbsPartIdx, Height, sizeof(Ipp8u) * CurrPartNumb);
@@ -1666,7 +1666,7 @@ Ipp32s H265CodingUnit::searchMVPIdx(H265MotionVector cMv, AMVPInfo* pInfo)
  */
 void H265CodingUnit::setIPCMFlagSubParts (bool IpcmFlag, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    Ipp32u CurrPartNumb = m_Frame->getNumPartInCU() >> (Depth << 1);
+    Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
 
     memset(m_IPCMFlag + AbsPartIdx, IpcmFlag, sizeof(bool) * CurrPartNumb);
 }
@@ -1746,7 +1746,7 @@ Ipp32u H265CodingUnit::getCoefScanIdx(Ipp32u AbsPartIdx, Ipp32u Width, bool IsLu
         {
             // get number of partitions in current CU
             Ipp32u depth = m_DepthArray[AbsPartIdx];
-            Ipp32u numParts = m_Frame->getNumPartInCU() >> (2 * depth);
+            Ipp32u numParts = m_Frame->getCD()->getNumPartInCU() >> (2 * depth);
 
             // get luma mode from upper-left corner of current CU
             DirMode = m_LumaIntraDir[(AbsPartIdx / numParts) * numParts];

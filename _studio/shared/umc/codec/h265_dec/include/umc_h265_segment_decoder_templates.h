@@ -95,7 +95,7 @@ public:
 
     void ReconstructCodingUnit(H265SegmentDecoderMultiThreaded * sd)
     {
-        sd->ReconstructCU(sd->m_curCU, sd->m_curCU, 0, 0);
+        sd->ReconstructCU(sd->m_curCU, 0, 0);
     } // void ReconstructCodingUnit(H265SegmentDecoderMultiThreaded * sd)
 };
 

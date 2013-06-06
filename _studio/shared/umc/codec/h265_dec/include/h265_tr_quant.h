@@ -53,14 +53,12 @@ public:
     Ipp32s m_Rem;
 
 public:
-    Ipp32s m_Bits;
 
     void SetQPParam(Ipp32s qpScaled)
     {
         m_QP   = qpScaled;
         m_Per  = qpScaled / 6;
         m_Rem  = qpScaled % 6;
-        m_Bits = QP_BITS + m_Per;
     }
 
     void Clear()
@@ -68,7 +66,6 @@ public:
         m_QP = 0;
         m_Per = 0;
         m_Rem = 0;
-        m_Bits = 0;
     }
 
 
@@ -79,10 +76,6 @@ public:
     Ipp32s GetRem() const
     {
         return m_Rem;
-    }
-    Ipp32s GetBits() const
-    {
-        return m_Bits;
     }
 
     Ipp32s GetQP()
@@ -99,21 +92,22 @@ public:
     ~H265TrQuant();
 
     // initialize class
-    void Init(Ipp32u MaxWidth, Ipp32u MaxHeight, Ipp32u MaxTrSize, Ipp32s SymbolMode = 0, Ipp32u *Table4 = NULL, Ipp32u *Table8 = NULL, Ipp32u *TableLastPosVlcIndex = NULL, bool UseRDOQ = false,  bool EncFlag = false);
+    void Init(Ipp32u MaxWidth, Ipp32u MaxHeight, Ipp32u MaxTrSize);
 
     // transform & inverse transform functions
-    void InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, Ipp32u Mode, H265CoeffsPtrCommon pResidual, Ipp32u Stride,
+    template <typename DstCoeffsType>
+    void InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, Ipp32u Mode, DstCoeffsType* pResidual, Ipp32u Stride,
         H265CoeffsPtrCommon pCoeff,Ipp32u Width, Ipp32u Height, Ipp32s scalingListType, bool transformSkip);
 
-    void InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u curX, Ipp32u curY,
-        Ipp32u Width, Ipp32u Height, Ipp32u TrMode, size_t coeffsOffset);
+    void InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Width, Ipp32u Height, Ipp32u TrMode);
 
 #if (HEVC_OPT_CHANGES & 128)
     // ML: OPT: allows to propogate convert const shift
-    template <int bitDepth>
-    void InvTransformSkip(H265CoeffsPtrCommon pCoeff, H265CoeffsPtrCommon pResidual, Ipp32u Stride, Ipp32u Width, Ipp32u Height);
+    template <int bitDepth, typename DstCoeffsType>
+    void InvTransformSkip(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, Ipp32u Stride, Ipp32u Width, Ipp32u Height);
 #else
-    void InvTransformSkip(Ipp32s bitDepth, H265CoeffsPtrCommon pCoeff, H265CoeffsPtrCommon pResidual, Ipp32u Stride, Ipp32u Width, Ipp32u Height);
+    template <typename DstCoeffsType>
+    void InvTransformSkip(Ipp32s bitDepth, H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, Ipp32u Stride, Ipp32u Width, Ipp32u Height);
 #endif
 
     // Misc functions
@@ -173,6 +167,7 @@ private:
 
     H265CoeffsPtrCommon m_residualsBuffer;
     H265CoeffsPtrCommon m_residualsBuffer1;
+    H265CoeffsPtrCommon m_tempTransformBuffer;
 
 #if (HEVC_OPT_CHANGES & 2)
     H265_FORCEINLINE
@@ -186,7 +181,7 @@ private:
     void Transform(Ipp32u Mode, Ipp8u* pResidual, Ipp32u Stride, Ipp32s* pCoeff, Ipp32s Width, Ipp32s Height);
 
 #if (HEVC_OPT_CHANGES & 512)
-    template< int c_Log2TrSize, Ipp32s bitDepth >
+    template< Ipp32u c_Log2TrSize, Ipp32s bitDepth >
     void DeQuant_inner(const H265CoeffsPtrCommon pQCoef, Ipp32u Length, Ipp32s scalingListType);
 
     // dequantization
