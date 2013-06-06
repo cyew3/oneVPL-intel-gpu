@@ -979,9 +979,9 @@ Status ASFSplitter::CleanHeaderObject()
 
         UMC_DELETE(m_pHeaderObject->pHeaderExtObject);
         UMC_DELETE(m_pHeaderObject->pFPropObject);
+        UMC_FREE(m_pHeaderObject->ppStreamPropObject);
     }
 
-    UMC_FREE(m_pHeaderObject->ppStreamPropObject);
     return UMC_OK;
 }
 
