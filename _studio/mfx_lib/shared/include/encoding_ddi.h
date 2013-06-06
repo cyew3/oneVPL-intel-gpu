@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008-2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008-2013 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __ENCODING_DDI_H__
@@ -304,7 +304,7 @@ typedef struct _DXVA2_SURFACE_REGISTRATION
 } DXVA2_SURFACE_REGISTRATION, *PDXVA2_SURFACE_REGISTRATION;
 
 // Structures use 64-bit alignment
-#pragma pack(8)
+#pragma pack(push, 8)
 
 // Fast Compositing modes
 typedef enum _FASTCOMP_MODE
@@ -552,7 +552,6 @@ typedef struct _FASTCOMP_BLT_PARAMS
 } FASTCOMP_BLT_PARAMS;
 
 
-#pragma pack(8)
 typedef struct tagFASTCOMP_QUERY_STATUS
 {
     UINT QueryStatusID;
@@ -702,7 +701,6 @@ typedef struct tagFASTCOMP_QUERYCAPS
     };
 } FASTCOMP_QUERYCAPS;
 
-#pragma pack(8)
 typedef struct tagFASTCOMP_QUERY_VARIANCE_PARAMS
 {
     UINT    FrameNumber;
@@ -710,8 +708,7 @@ typedef struct tagFASTCOMP_QUERY_VARIANCE_PARAMS
     UINT    VarianceBufferSize;
 } FASTCOMP_QUERY_VARIANCE_PARAMS;
 
-
-//#pragma pack(pop)
+#pragma pack(pop)
 
 #endif /* defined(_WIN32) || defined(_WIN64) */
 #endif //__ENCODING_DDI_H__

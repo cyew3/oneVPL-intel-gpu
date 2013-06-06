@@ -1,4 +1,4 @@
-    /*//////////////////////////////////////////////////////////////////////////////
+    /*///// /////////////////////////////////////////////////////////////////////////
     //
     //                  INTEL CORPORATION PROPRIETARY INFORMATION
     //     This software is supplied under the terms of a license agreement or
@@ -28,6 +28,7 @@
     #include "encoder_ddi.hpp"
 #elif defined(MFX_VA_LINUX)
     #include "mfx_h264_encode_struct_vaapi.h"
+    #include <va/va_enc_mpeg2.h>
 #endif
 
 namespace MfxHwMpeg2Encode
@@ -61,13 +62,17 @@ namespace MfxHwMpeg2Encode
         PAVP_ENCRYPTION_MODE    m_PavpEncryptionMode;
         AesCounter              m_aesCounter;
 #endif 
-        Encryption(): m_bEncryptionMode (false), m_aesCounter()
+        Encryption()
+            : m_bEncryptionMode (false)
+#ifdef PAVP_SUPPORT
+            , m_aesCounter()
+#endif
         {
-#ifdef PAVP_SUPPORT            
+#ifdef PAVP_SUPPORT
             memset (&m_InitialCounter,0,sizeof(m_InitialCounter)) ;
             memset (&m_PavpEncryptionMode,0,sizeof(m_PavpEncryptionMode));
             m_CounterAutoIncrement = 0;
-#endif       
+#endif
         }
         void Init(const mfxVideoParamEx_MPEG2* par, mfxU32 funcId)
         {
@@ -132,11 +137,16 @@ namespace MfxHwMpeg2Encode
         mfxStatus SetMBParameters(mfxFrameCUC* pCUC);
  
         ENCODE_ENC_CTRL_CAPS                    m_caps;  
+
         ENCODE_SET_SEQUENCE_PARAMETERS_MPEG2    m_sps;
         ENCODE_SET_PICTURE_PARAMETERS_MPEG2     m_pps;
-        ENCODE_SET_SLICE_HEADER_MPEG2*          m_pSlice;        
+        ENCODE_SET_SLICE_HEADER_MPEG2*          m_pSlice;
         ENCODE_ENC_MB_DATA_MPEG2*               m_pMBs;
+#if defined (MFX_VA_WIN)
         ENCODE_SET_PICTURE_QUANT                m_quantMatrix;
+#else
+        VAIQMatrixBufferMPEG2                   m_quantMatrix;
+#endif
 
         mfxHDL                                    m_pSurface;
         mfxHDLPair                                m_pSurfacePair;

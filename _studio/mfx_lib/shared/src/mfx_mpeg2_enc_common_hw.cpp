@@ -167,6 +167,8 @@ bool AesCounter::Increment()
 //-------------------------------------------------------------
 //  Execute Buffers
 //-------------------------------------------------------------
+
+#if defined(MFX_VA_WIN)
 static
 void SetQMParameters(const mfxExtCodingOptionQuantMatrix*  pMatrix, 
                      ENCODE_SET_PICTURE_QUANT &quantMatrix)
@@ -193,6 +195,51 @@ void SetQMParameters(const mfxExtCodingOptionQuantMatrix*  pMatrix,
 
 }
 
+#else
+
+static
+void SetQMParameters(const mfxExtCodingOptionQuantMatrix*  pMatrix, 
+                    VAIQMatrixBufferMPEG2 &quantMatrix)
+{
+    memset(&quantMatrix,0, sizeof(quantMatrix));
+    
+    bool bNewQmatrix[4] = 
+    {
+        pMatrix->bIntraQM && pMatrix->IntraQM[0],
+        pMatrix->bInterQM && pMatrix->InterQM[0],
+        pMatrix->bChromaIntraQM && pMatrix->ChromaIntraQM[0],
+        pMatrix->bChromaInterQM && pMatrix->ChromaInterQM[0]
+    };
+
+    quantMatrix.load_intra_quantiser_matrix = bNewQmatrix[0];
+    quantMatrix.load_non_intra_quantiser_matrix = bNewQmatrix[1];
+    quantMatrix.load_chroma_intra_quantiser_matrix = bNewQmatrix[2];
+    quantMatrix.load_chroma_non_intra_quantiser_matrix = bNewQmatrix[3];
+
+    const mfxU8* pQmatrix[4] = {pMatrix->IntraQM,  pMatrix->InterQM,   pMatrix->ChromaIntraQM, pMatrix->ChromaInterQM};
+    mfxU8 * pDestMatrix[4] = 
+    {
+        quantMatrix.intra_quantiser_matrix, 
+        quantMatrix.non_intra_quantiser_matrix,
+        quantMatrix.chroma_intra_quantiser_matrix,
+        quantMatrix.chroma_non_intra_quantiser_matrix
+    };
+
+    for (int blk_type = 0; blk_type < 4; blk_type++)
+    {
+        if (bNewQmatrix[blk_type])
+        {
+            for (int i = 0; i < 64; i++)
+            {
+                // note: i-1 would not overflow due to bNewMatrix definition
+                pDestMatrix[blk_type][i] = pQmatrix[blk_type][i] ? pQmatrix[blk_type][i] : pDestMatrix[blk_type][i-1]; 
+            }
+        }      
+    }
+
+}
+
+#endif
 
 mfxStatus ExecuteBuffers::Init(const mfxVideoParamEx_MPEG2* par, mfxU32 funcId, bool bAllowBRC)
 {
@@ -215,7 +262,7 @@ mfxStatus ExecuteBuffers::Init(const mfxVideoParamEx_MPEG2* par, mfxU32 funcId, 
     { 
         m_nSlices = nSlices;
         m_pSlice  = new ENCODE_SET_SLICE_HEADER_MPEG2 [m_nSlices];
-        memset (m_pSlice,0,sizeof(ENCODE_SET_SLICE_HEADER_MPEG2)*m_nSlices);    
+        memset (m_pSlice,0,sizeof(ENCODE_SET_SLICE_HEADER_MPEG2)*m_nSlices);
     }
     else
     {
@@ -268,7 +315,6 @@ mfxStatus ExecuteBuffers::Init(const mfxVideoParamEx_MPEG2* par, mfxU32 funcId, 
     m_GOPPictureSize = par->mfxVideoParams.mfx.GopPicSize;
     m_GOPRefDist     = (UCHAR)par->mfxVideoParams.mfx.GopRefDist;
     m_GOPOptFlag     = (UCHAR)par->mfxVideoParams.mfx.GopOptFlag;
-
 
     {
         mfxU32 aw = (par->mfxVideoParams.mfx.FrameInfo.AspectRatioW != 0) ? par->mfxVideoParams.mfx.FrameInfo.AspectRatioW * m_sps.FrameWidth :m_sps.FrameWidth;

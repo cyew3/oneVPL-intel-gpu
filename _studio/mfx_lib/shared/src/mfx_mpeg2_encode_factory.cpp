@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2011 - 2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2011 - 2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          Platform switcher of Device Driver Interface for MPEG2 Encoder
@@ -25,9 +25,11 @@
 #include "mfx_mpeg2_encode_d3d9.h"   
 
 #if defined(MFX_D3D11_ENABLED)
-    #include "mfx_mpeg2_encode_d3d11.h"   
+    #include "mfx_mpeg2_encode_d3d11.h"
 #endif
 
+#elif defined (MFX_VA_LINUX)
+    #include "mfx_mpeg2_encode_vaapi.h"
 #endif
 
 
@@ -61,7 +63,7 @@ DriverEncoder* MfxHwMpeg2Encode::CreatePlatformMpeg2Encoder( VideoCORE* core )
 
 #elif defined (MFX_VA_LINUX)
 
-    return NULL;// new VAAPIEncoder;//( core );
+    return new VAAPIEncoder(core);
 
 #elif defined (MFX_VA_OSX)
 

@@ -94,6 +94,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
     ${prefix}/mfx_h264_encode_factory.cpp
     ${prefix}/mfx_mpeg2_enc_common_hw.cpp
     ${prefix}/mfx_mpeg2_encode_factory.cpp
+    ${prefix}/mfx_mpeg2_encode_vaapi.cpp
     )
 endforeach()
 

@@ -1635,6 +1635,23 @@ typedef struct tagENCODE_MB_CODE_VP8
 } ENCODE_MB_DATA_VP8;
 
 
+// from "Intel DXVA Encoding DDI for Vista rev 0.77"
+enum
+{
+    ENCODE_ENC_ID                           = 0x100,
+    ENCODE_PAK_ID                           = 0x101,
+    ENCODE_ENC_PAK_ID                       = 0x102,
+    ENCODE_VPP_ID                           = 0x103, // reserved for now
+
+    ENCODE_FORMAT_COUNT_ID                  = 0x104,
+    ENCODE_FORMATS_ID                       = 0x105,
+    ENCODE_ENC_CTRL_CAPS_ID                 = 0x106,
+    ENCODE_ENC_CTRL_GET_ID                  = 0x107,
+    ENCODE_ENC_CTRL_SET_ID                  = 0x108,
+    MBDATA_LAYOUT_ID                        = 0x109,
+    ENCODE_INSERT_DATA_ID                   = 0x120,
+    ENCODE_QUERY_STATUS_ID                  = 0x121
+};
 
 #endif /* __MFX_H264_ENCODE_STRUCT_VAAPI__H */
 #endif /* MFX_VA_LINUX */

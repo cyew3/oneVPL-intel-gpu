@@ -84,6 +84,7 @@ namespace MfxHwMpeg2Encode
 {
    #define NUM_FRAMES 800
 
+#if defined(MFX_VA_WIN)
    struct mfxRecFrames
    {
         mfxMemId    mids[NUM_FRAMES];         
@@ -96,8 +97,35 @@ namespace MfxHwMpeg2Encode
         mfxMemId    mids[NUM_FRAMES];         
         mfxU16      NumFrameActual;
    };    
+#else
 
+    struct ExtVASurface
+    {
+        VASurfaceID surface;
+        mfxU32 number;
+        mfxU32 idxBs;
+    };
+    
+    typedef std::vector<ExtVASurface> mfxRecFrames;
+    typedef std::vector<ExtVASurface> mfxRawFrames;
 
+/*    struct mfxRecFrames
+    {
+        mfxMemId    mids[NUM_FRAMES];         
+        mfxU16      indexes[NUM_FRAMES];    
+        mfxU16      NumFrameActual;
+    };
+
+    struct mfxRawFrames
+    {
+        mfxMemId    mids[NUM_FRAMES];         
+        mfxU16      NumFrameActual;
+    };    
+*/
+
+#endif
+
+#if defined(MFX_VA_WIN)
 #define _NUM_STORED_FEEDBACKS 256
    class mfxFeedback
    {
@@ -160,7 +188,11 @@ namespace MfxHwMpeg2Encode
    };
 
 #undef _NUM_STORED_FEEDBACKS
+#else
 
+    typedef std::vector<ExtVASurface> mfxFeedback;
+
+#endif
 
     mfxStatus QueryHwCaps(VideoCORE* core,
         ENCODE_CAPS & hwCaps);

@@ -26,7 +26,7 @@
 #if   defined(MFX_VA_WIN)
     #include "encoding_ddi.h"
 #elif defined(MFX_VA_LINUX)
-    #include "mfx_h264_encode_struct_vaapi.h"    
+    #include "mfx_h264_encode_struct_vaapi.h"
 #endif
 
 namespace MfxHwH264Encode
