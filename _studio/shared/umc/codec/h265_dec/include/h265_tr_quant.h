@@ -175,7 +175,7 @@ private:
     H265CoeffsPtrCommon m_residualsBuffer1;
 
 #if (HEVC_OPT_CHANGES & 2)
-    __forceinline
+    H265_FORCEINLINE
 #endif
     Ipp32s* getDequantCoeff(Ipp32u list, Ipp32u qp, Ipp32u size)
     {

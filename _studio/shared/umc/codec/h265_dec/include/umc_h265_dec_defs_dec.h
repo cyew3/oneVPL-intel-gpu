@@ -31,6 +31,13 @@
 
 namespace UMC_HEVC_DECODER
 {
+  
+#if defined(_WIN32) || defined(_WIN64)
+  #define H265_FORCEINLINE __forceinline
+#else
+  #define H265_FORCEINLINE __attribute__((always_inline))
+#endif
+  
 #define BITS_PER_PLANE 8
 // Hack to allow somewhat unconformant streams. Should be used only when decoding random ENC streams
 #define RANDOM_ENC_TESTING 1

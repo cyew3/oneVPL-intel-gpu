@@ -91,6 +91,11 @@ else( )
   set(CMAKE_CXX_FLAGS_DEBUG   "-O0 -Wall ${no_warnings} -g -D_DEBUG" CACHE STRING "" FORCE)
   set(CMAKE_CXX_FLAGS_RELEASE "-O2 -D_FORTIFY_SOURCE=2 -fstack-protector -Wall ${no_warnings} -DNDEBUG"    CACHE STRING "" FORCE)
 
+  # HEVC requires SSE4.1
+  append("-msse4.1" CMAKE_C_FLAGS) # -std=c1x 
+  append("-msse4.1" CMAKE_CXX_FLAGS) # -std=c++0x
+  append("-msse4.1" LINK_FLAGS)
+
   if(__ARCH MATCHES ia32)
     append("-m32" CMAKE_C_FLAGS)
     append("-m32" CMAKE_CXX_FLAGS)

@@ -22,6 +22,7 @@
 #include "umc_event.h"
 
 #include "umc_h265_heap.h"
+#include "umc_h265_segment_decoder_mt.h"
 
 namespace UMC_HEVC_DECODER
 {

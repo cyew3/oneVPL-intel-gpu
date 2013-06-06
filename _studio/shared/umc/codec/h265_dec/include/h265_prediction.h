@@ -17,6 +17,8 @@
 
 #include "umc_h265_dec_defs_dec.h"
 #include "umc_h265_frame.h"
+#include "h265_motion_info.h"
+#include "h265_pattern.h"
 
 namespace UMC_HEVC_DECODER
 {

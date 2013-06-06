@@ -21,6 +21,12 @@
 #include "umc_h265_headers.h"
 #include "h265_global_rom.h"
 
+#if !defined(_WIN32) || !defined(WIN64)
+// TODO: to temporary avoid compile error
+#define H265_MAX_NUM_VIEW_REF 0
+#define H265_MAX_NUM_VIEW 0
+#endif
+
 // globals (TODO: hide it in some related class)
 unsigned g_bitDepthY = 0;
 unsigned g_bitDepthC = 0;

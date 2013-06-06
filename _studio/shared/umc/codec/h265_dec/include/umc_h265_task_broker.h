@@ -17,13 +17,18 @@
 #include <vector>
 #include <list>
 
+#include "umc_event.h"
+
 #include "umc_h265_dec_defs_dec.h"
-#include "umc_h265_slice_decoding.h"
 #include "umc_h265_heap.h"
 
 namespace UMC_HEVC_DECODER
 {
+class H265DecoderFrameInfo;
 class H265DecoderFrameList;
+class H265Slice;
+class H265Task;
+class TaskSupplier_H265;
 
 class TaskBroker_H265
 {

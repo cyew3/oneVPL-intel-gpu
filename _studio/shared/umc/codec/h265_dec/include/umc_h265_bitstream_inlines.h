@@ -87,9 +87,9 @@ const Ipp64u g_scaled256 = (Ipp64u)0x100 << (7+ CABAC_MAGIC_BITS);
     } \
 }
 
-//#define ippiGetBits1( current_data, offset, data) \
-//    _h264GetBits(current_data, offset, 1, data);
-
+/*#define ippiGetBits1( current_data, offset, data) \
+    _h264GetBits(current_data, offset, 1, data);
+*/
 #define ippiGetBits8( current_data, offset, data) \
     _h265GetBits(current_data, offset, 8, data);
 

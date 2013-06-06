@@ -12,6 +12,7 @@
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
 #include "umc_h265_segment_decoder.h"
+#include "umc_h265_frame_info.h"
 
 #define VERT_FILT 0
 #define HOR_FILT  1
@@ -513,7 +514,7 @@ void H265SegmentDecoder::FilterEdgeChroma(H265EdgeData *edge,
     }
 }
 #if (HEVC_OPT_CHANGES & 0x2)
-__forceinline
+H265_FORCEINLINE
 #endif
 static bool MVIsnotEq(H265MotionVector mv0,
                       H265MotionVector mv1)

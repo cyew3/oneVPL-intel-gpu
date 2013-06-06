@@ -14,6 +14,7 @@
 #ifndef __UMC_H265_DEC_DEBUG_H
 #define __UMC_H265_DEC_DEBUG_H
 
+#include "vm_time.h"
 #include "umc_h265_dec_defs_dec.h"
 
 namespace UMC_HEVC_DECODER

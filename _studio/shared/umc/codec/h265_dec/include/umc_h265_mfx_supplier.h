@@ -73,7 +73,7 @@ protected:
 /****************************************************************************************************/
 class MFXTaskSupplier_H265 : public TaskSupplier_H265, public RawHeaders_H265
 {
-    friend class VideoDECODEH265;
+    friend class ::VideoDECODEH265;
 
 public:
 

@@ -1,5 +1,5 @@
 list( APPEND decoders
-  h264 mpeg2 vc1 mjpeg vp8
+  h265 h264 mpeg2 vc1 mjpeg vp8
   )
 
 list( APPEND encoders
@@ -31,7 +31,7 @@ list( APPEND dirs_impl vpp genx/h264_encode )
 
 list( APPEND umc_dirs
   mpeg2_enc h264_enc jpeg_enc
-  h264_dec mpeg2_dec vc1_dec jpeg_dec
+  h265_dec h264_dec mpeg2_dec vc1_dec jpeg_dec
   vc1_common vc1_spl jpeg_common
   brc scene_analyzer color_space_converter jpeg_common
   )

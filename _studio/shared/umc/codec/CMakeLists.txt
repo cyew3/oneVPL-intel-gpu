@@ -19,6 +19,7 @@ list( APPEND dirs
 
 list( APPEND dirs_impl
   color_space_converter
+  h265_dec
   mpeg2_dec
   h264_dec
   vc1_dec

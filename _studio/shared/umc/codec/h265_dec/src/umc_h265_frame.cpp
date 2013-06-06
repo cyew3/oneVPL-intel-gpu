@@ -405,7 +405,7 @@ void H265DecoderFrame::deallocateCodingData()
     }
 }
 
-#if (HEVC_OPT_CHANGES & 2)
+#if (HEVC_OPT_CHANGES & 2) && (defined(_WIN32) || defined(_WIN64))
 // ML: OPT: function moved into umc_h265_frame_info.h to allow inlining
 #else
 H265DecoderRefPicList* H265DecoderFrame::GetRefPicList(Ipp32s sliceNumber, Ipp32s list)

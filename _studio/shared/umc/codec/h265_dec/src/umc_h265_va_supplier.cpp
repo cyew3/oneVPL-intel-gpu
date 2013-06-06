@@ -8,6 +8,8 @@
 //
 //
 */
+#if defined(_WIN32) || defined(_WIN64)
+
 #include "umc_defs.h"
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
@@ -326,3 +328,5 @@ H265Slice * VATaskSupplier::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
 
 #endif // UMC_RESTRICTED_CODE_VA
 #endif // UMC_ENABLE_H265_VIDEO_DECODER
+
+#endif // #if defined(_WIN32) || defined(_WIN64)

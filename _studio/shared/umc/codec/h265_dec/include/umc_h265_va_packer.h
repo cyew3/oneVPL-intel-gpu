@@ -508,7 +508,7 @@ private:
 class PackerVA : public Packer
 {
 public:
-    PackerVA(VideoAccelerator * va);
+    PackerVA(UMC::VideoAccelerator * va);
 
     virtual void PackPicParams(const H265DecoderFrame *pCurrentFrame,
                         H265DecoderFrameInfo * pSliceInfo,

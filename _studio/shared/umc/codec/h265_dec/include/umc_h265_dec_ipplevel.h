@@ -16,6 +16,7 @@
 #define __UMC_H265_DEC_IPP_LEVEL_H
 
 #include "ippvc.h"
+#include "memory.h"
 
 namespace UMC_HEVC_DECODER
 {

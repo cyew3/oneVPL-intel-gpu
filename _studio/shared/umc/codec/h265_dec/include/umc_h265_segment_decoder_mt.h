@@ -20,6 +20,7 @@ namespace UMC_HEVC_DECODER
 {
 
 class SegmentDecoderHPBase_H265;
+class H265Task;
 
 STRUCT_DECLSPEC_ALIGN class H265SegmentDecoderMultiThreaded : public H265SegmentDecoder
 {

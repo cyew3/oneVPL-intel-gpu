@@ -19,12 +19,9 @@
 
 #include "umc_h265_dec_defs_dec.h"
 #include "umc_h265_heap.h"
-#include "umc_h265_slice_decoding.h"
-#include "umc_h265_frame_info.h"
 #include "umc_h265_headers.h"
 #include "umc_h265_dec.h"
 #include "umc_h265_frame.h"
-#include "umc_h265_frame_info.h"
 #include "h265_motion_info.h"
 #include "h265_global_rom.h"
 #include "h265_pattern.h"
@@ -35,6 +32,7 @@ namespace UMC_HEVC_DECODER
 {
 
 class H265Pattern;
+class H265SegmentDecoderMultiThreaded;
 
 class H265CodingUnit
 {
@@ -169,21 +167,21 @@ public:
     Ipp32u getQuadtreeTULog2MinSizeInCU (Ipp32u Idx);
 
 #if (HEVC_OPT_CHANGES & 2)
-    __forceinline
+    H265_FORCEINLINE
 #endif
     Ipp8u* getCbf (EnumTextType Type)
     {
         return m_Cbf[g_ConvertTxtTypeToIdx[Type]];
     }
 #if (HEVC_OPT_CHANGES & 2)
-    __forceinline
+    H265_FORCEINLINE
 #endif
     Ipp8u getCbf(Ipp32u Idx, EnumTextType Type)
     {
         return m_Cbf[g_ConvertTxtTypeToIdx[Type]][Idx];
     }
 #if (HEVC_OPT_CHANGES & 2)
-    __forceinline
+    H265_FORCEINLINE
 #endif
     Ipp8u getCbf(Ipp32u Idx, EnumTextType Type, Ipp32u TrDepth)
     {

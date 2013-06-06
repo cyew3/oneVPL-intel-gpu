@@ -16,6 +16,7 @@
 
 #include <vector>
 #include "umc_h265_frame.h"
+#include "umc_h265_slice_decoding.h"
 
 namespace UMC_HEVC_DECODER
 {
@@ -227,7 +228,7 @@ public:
 
 #if (HEVC_OPT_CHANGES & 2)
 // ML: OPT: compilers do not seem to honor implicit 'inline' for this one
-    __forceinline 
+    H265_FORCEINLINE
 #endif
     H265DecoderRefPicList* GetRefPicList(Ipp32u sliceNumber, Ipp32s list)
     {
@@ -316,10 +317,10 @@ private:
     static FakeFrameInitializer g_FakeFrameInitializer;
 };
 
-#if (HEVC_OPT_CHANGES & 2)
+#if (HEVC_OPT_CHANGES & 2) && (defined(_WIN32) || defined(_WIN64))
 // ML: OPT: called in hopspot loops
 // ML: OPT: moved here from umc_h265_frame.cpp to allow inlining, cannot be decalred in umc_h265_frame.h due to forward H265DecoderRefPicList dependency
-__forceinline H265DecoderRefPicList* H265DecoderFrame::GetRefPicList(Ipp32s sliceNumber, Ipp32s list)
+H265_FORCEINLINE H265DecoderRefPicList* H265DecoderFrame::GetRefPicList(Ipp32s sliceNumber, Ipp32s list)
 {
     H265DecoderRefPicList *pList;
     pList = GetAU()->GetRefPicList(sliceNumber, list);

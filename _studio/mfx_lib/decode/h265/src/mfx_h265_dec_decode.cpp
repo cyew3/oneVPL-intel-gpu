@@ -122,7 +122,7 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
 
 #if defined (MFX_VA)
         m_pH265VideoDecoder.reset(new VATaskSupplier()); // HW
-        m_FrameAllocator.reset(new mfx_UMC_FrameAllocator_D3D(false));
+        m_FrameAllocator.reset(new mfx_UMC_FrameAllocator_D3D());
 #else
         return MFX_ERR_UNSUPPORTED;
 #endif
@@ -232,11 +232,14 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
         m_core->GetVA((mfxHDL*)&m_va, MFX_MEMTYPE_FROM_DECODE);
         umcVideoParams.pVideoAccelerator = m_va;
         ((VATaskSupplier*)m_pH265VideoDecoder.get())->SetVideoHardwareAccelerator(m_va);
+
+#if defined MFX_VA_WIN
         if (m_va->GetProtectedVA())
         {
             if (m_va->GetProtectedVA()->SetModes(par) != UMC::UMC_OK)
                 return MFX_ERR_INVALID_VIDEO_PARAM;
         }
+#endif
     }
 #endif
 

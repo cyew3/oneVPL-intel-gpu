@@ -17,8 +17,6 @@
 #include "umc_h265_dec_defs_dec.h"
 #include "umc_media_data_ex.h"
 #include "umc_h265_heap.h"
-#include "umc_h265_slice_decoding.h"
-#include "umc_h265_frame_info.h"
 
 namespace UMC_HEVC_DECODER
 {

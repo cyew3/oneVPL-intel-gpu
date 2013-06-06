@@ -11,12 +11,15 @@
 #include "umc_defs.h"
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
-#include "umc_h265_segment_decoder_mt.h"
 #include "vm_event.h"
 #include "vm_semaphore.h"
 #include "vm_thread.h"
+
+#include "h265_tr_quant.h"
+
 #include "umc_h265_bitstream_inlines.h"
 #include "umc_h265_segment_decoder_templates.h"
+#include "umc_h265_segment_decoder_mt.h"
 
 #include "umc_h265_task_broker.h"
 #include "umc_h265_frame_info.h"
@@ -397,7 +400,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::DeblockSegmentTask(Ipp32s iCurMBNum
 
 UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(Ipp32s iCurMBNumber, Ipp32s &iMBToProcess)
 {
-    assert(sizeof(iMBToProcess) != 0); //wtf unreferenced parameter
+    VM_ASSERT(sizeof(iMBToProcess) != 0); //wtf unreferenced parameter
     UMC::Status umcRes = UMC::UMC_OK;
 
     // Convert slice beginning and end to encode order

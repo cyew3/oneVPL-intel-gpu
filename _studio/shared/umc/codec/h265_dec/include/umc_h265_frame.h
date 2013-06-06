@@ -20,7 +20,6 @@
 #include "umc_h265_dec_defs_yuv.h"
 
 #include "umc_h265_notify.h"
-#include "umc_h265_slice_decoding.h"
 
 namespace UMC_HEVC_DECODER
 {

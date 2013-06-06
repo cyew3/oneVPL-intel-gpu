@@ -34,7 +34,7 @@ namespace UMC_HEVC_DECODER
 #else
 // ML: OPT: TODO: Not sure why the below template is not as good (fast) as the macro above
 template <class T> 
-__forceinline 
+H265_FORCEINLINE 
 T Clip3(const T& Min, const T& Max, T Value)
 {
     Value = (Value < Min) ? Min : Value;
@@ -86,8 +86,8 @@ public:
     //get
 #if (HEVC_OPT_CHANGES & 2)
     // ML: OPT: moving into the header to allow inlining
-    Ipp32s __forceinline H265MotionVector::getAbsHor() const { return abs(Horizontal); }
-    Ipp32s __forceinline H265MotionVector::getAbsVer() const { return abs(Vertical);   }
+    H265_FORCEINLINE Ipp32s getAbsHor() const { return abs(Horizontal); }
+    H265_FORCEINLINE Ipp32s getAbsVer() const { return abs(Vertical);   }
 #else
     Ipp32s getAbsHor() const;
     Ipp32s getAbsVer() const;
@@ -136,11 +136,11 @@ public:
 };
 
 //parameters for AMVP
-typedef struct _AVMPInfo
+struct AMVPInfo
 {
     H265MotionVector MVCandidate[AMVP_MAX_NUM_CANDS_MEM]; //array of motion vector predictor candidates
     Ipp32s NumbOfCands;
-} AMVPInfo;
+};
 
 //structure for motion vector with reference index
 struct MVBuffer

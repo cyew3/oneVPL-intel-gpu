@@ -15,6 +15,8 @@
 #include "umc_h265_dec_defs_dec.h"
 #include "umc_h265_dec_defs_yuv.h"
 #include "umc_h265_frame.h"
+#include "umc_h265_frame_info.h"
+#include "umc_h265_slice_decoding.h"
 #include "assert.h"
 #include "math.h"
 

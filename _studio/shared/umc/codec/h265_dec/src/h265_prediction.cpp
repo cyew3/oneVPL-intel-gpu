@@ -14,6 +14,9 @@
 #include "umc_defs.h"
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
+#include "smmintrin.h"
+#include "emmintrin.h"
+
 #include "h265_prediction.h"
 #include "umc_h265_dec_ipplevel.h"
 
@@ -1326,7 +1329,7 @@ public:
         int    offset
     )
     {
-        typedef upconvert_int< t_src >::result t_acc;
+        typedef typename upconvert_int< t_src >::result t_acc;
         const int c_tap = (c_plane_type == TEXT_LUMA) ? 8 : 4;
 
         const Ipp16s* coeffs8x = (c_plane_type == TEXT_LUMA) 

@@ -15,22 +15,25 @@
 #define __UMC_H265_SEGMENT_DECODER_H
 
 #include "umc_h265_dec.h"
-#include "umc_h265_slice_decoding.h"
 #include "umc_h265_dec_tables.h"
 
 #include "umc_h265_thread.h"
 #include "umc_h265_frame.h"
 
-#include "umc_h265_segment_decoder_templates.h"
-
 #include "h265_prediction.h"
-#include "h265_tr_quant.h"
 
 namespace UMC_HEVC_DECODER
 {
 
 struct H265SliceHeader;
+struct H265FrameHLDNeighborsInfo;
+struct H265TUData;
+struct H265MotionVector;
+struct MVBuffer;
 struct SAOParams;
+struct AMVPInfo;
+class H265Prediction;
+class H265TrQuant;
 class TaskBroker_H265;
 
 struct H265EdgeData
@@ -134,7 +137,7 @@ public:
     void DecodeQP(H265CodingUnit* pCU, Ipp32u AbsPartIdx);
     void ParseDeltaQPCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void ReadUnarySymbolCABAC(Ipp32u& Value, Ipp32s ctxIdx, Ipp32s Offset);
-    void H265SegmentDecoder::FinishDecodeCU(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& IsLast);
+    void FinishDecodeCU(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& IsLast);
     void DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& IsLast);
     bool DecodeSliceEnd(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
 

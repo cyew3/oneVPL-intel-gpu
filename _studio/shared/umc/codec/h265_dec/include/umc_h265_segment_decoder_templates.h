@@ -16,6 +16,8 @@
 
 #include "umc_h265_dec_internal_cabac.h"
 #include "umc_h265_timing.h"
+#include "umc_h265_segment_decoder_mt.h"
+#include "umc_h265_slice_decoding.h"
 
 namespace UMC_HEVC_DECODER
 {
@@ -191,11 +193,11 @@ public:
 
             START_TICK;
             sd->DecodeSAOOneLCU(sd->m_curCU);
-            bool is_last = DecodeCodingUnit_CABAC(sd); //decode CU
+            bool is_last = Decoder::DecodeCodingUnit_CABAC(sd); //decode CU
             END_TICK(decode_time);
 
             START_TICK1;
-            ReconstructCodingUnit(sd); //Reconstruct CU h265 must be here
+            Reconstructor::ReconstructCodingUnit(sd); //Reconstruct CU h265 must be here
             END_TICK1(reconstruction_time);
 
             if (is_last)

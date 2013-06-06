@@ -111,7 +111,7 @@ extern Ipp16s g_bitDepthC_Mask; // pre-computed ((1 << g_bitDepthC) - 1))
 
 // ML: OPT: TODO: Parameterize usages and makes sure compiler recognizes saturation idiom for vectorization
 template <typename T> 
-static T __forceinline ClipY(T Value) 
+static T H265_FORCEINLINE ClipY(T Value) 
 { 
     Value = (Value < 0) ? 0 : Value;
     Value = (Value > g_bitDepthY_Mask) ? g_bitDepthY_Mask : Value;
@@ -119,7 +119,7 @@ static T __forceinline ClipY(T Value)
 }
 
 template <typename T> 
-static T __forceinline ClipC(T Value) 
+static T H265_FORCEINLINE ClipC(T Value) 
 { 
     Value = (Value < 0) ? 0 : Value;
     Value = (Value > g_bitDepthC_Mask) ? g_bitDepthC_Mask : Value;

@@ -11,11 +11,11 @@
 #include "umc_defs.h"
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
-#include "umc_h265_segment_decoder.h"
 #include "umc_h265_segment_decoder_mt.h"
 #include "umc_h265_bitstream_inlines.h"
 #include "umc_h265_segment_decoder_templates.h"
 #include "umc_h265_bitstream.h"
+#include "h265_tr_quant.h"
 #include "vm_event.h"
 #include "vm_thread.h"
 

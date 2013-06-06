@@ -8,7 +8,7 @@
 //
 //
 */
-#include "windows.h"
+
 #include "umc_defs.h"
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
@@ -479,7 +479,7 @@ eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par
         break;
     }
 
-    if (MFX_ERR_NONE != core->IsGuidSupported(name, true) &&
+    if (MFX_ERR_NONE != core->IsGuidSupported(name, par) &&
         platform != MFX_PLATFORM_SOFTWARE)
     {
         return MFX_PLATFORM_SOFTWARE;
