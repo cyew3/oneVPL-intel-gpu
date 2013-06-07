@@ -569,7 +569,7 @@ mfxStatus ExecuteBuffers::InitPictureParameters(mfxFrameCUC* pCUC)
 
     MFX_CHECK(pParams->CurrFrameLabel < pCUC->FrameSurface->NumFrameData, MFX_ERR_NOT_FOUND);
     m_CurrFrameMemID = pCUC->FrameSurface->Data[pParams->CurrFrameLabel]->MemId;
-    m_bExternalCurrFrame = (pCUC->FrameSurface->Data[pParams->CurrFrameLabel]->reserved[0] == 0)? 1:0;
+    m_bExternalCurrFrame = (pCUC->FrameSurface->Data[pParams->CurrFrameLabel]->reserved[0] == 0) ? true : false;
 
     MFX_CHECK(pParams->RecFrameLabel < pCUC->FrameSurface->NumFrameData, MFX_ERR_NOT_FOUND);
     m_RecFrameMemID = pCUC->FrameSurface->Data[pParams->RecFrameLabel]->MemId;
