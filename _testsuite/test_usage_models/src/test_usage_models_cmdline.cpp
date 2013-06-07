@@ -19,40 +19,35 @@ void CommandLine::PrintUsage(const msdk_char* app)
 {
     msdk_printf( MSDK_STRING("%s [options] -i InputStream -o OutputStream\n\n") , app);
     msdk_printf(
-        MSDK_STRING(
-          "version: 1.1\n"
-          "options:\n"
-          "[-lib   type]      - type (general) of used MediaSDK implementation (sw|hw) \n"
-          "   [-dec::type]    - type of dec implementation (sw|hw) \n"
-          "   [-vpp::type]    - type of vpp implementation (sw|hw) \n"
-          "   [-enc::type]    - type of enc implementation (sw|hw) \n\n"
+        MSDK_STRING("version: 1.1\n")
+        MSDK_STRING("options:\n")
+        MSDK_STRING("[-lib   type]      - type (general) of used MediaSDK implementation (sw|hw) \n")
+        MSDK_STRING("   [-dec::type]    - type of dec implementation (sw|hw) \n")
+        MSDK_STRING("   [-vpp::type]    - type of vpp implementation (sw|hw) \n")
+        MSDK_STRING("   [-enc::type]    - type of enc implementation (sw|hw) \n\n")
 
-          "[-sfmt  format]    - format of src video (h264|mpeg2|vc1)\n"
-          "[-dfmt  format]    - format of dst video (h264|mpeg2)\n"
-          "[-w     width]     - required width  of dst video\n"
-          "[-h     height]    - required height of dst video\n"
-          "[-b     bitRate]   - encoded bit rate (Kbits per second)\n"
-          "[-f     frameRate] - video frame rate (frames per second)\n"
-          "[-u     target]    - target usage (quality=1|balanced=4|speed=7). default is 1\n\n"
+        MSDK_STRING("[-sfmt  format]    - format of src video (h264|mpeg2|vc1)\n")
+        MSDK_STRING("[-dfmt  format]    - format of dst video (h264|mpeg2)\n")
+        MSDK_STRING("[-w     width]     - required width  of dst video\n")
+        MSDK_STRING("[-h     height]    - required height of dst video\n")
+        MSDK_STRING("[-b     bitRate]   - encoded bit rate (Kbits per second)\n")
+        MSDK_STRING("[-f     frameRate] - video frame rate (frames per second)\n")
+        MSDK_STRING("[-u     target]    - target usage (quality=1|balanced=4|speed=7). default is 1\n\n")
 
-          "[-async depth]     - depth of asynchronous pipeline. default is 1\n"
-          "[-model number]    - number of MediaSDK usage model. default is 0\n\n"
-          "[-n     frames]    - number of frames to trancode process\n\n"
+        MSDK_STRING("[-async depth]     - depth of asynchronous pipeline. default is 1\n")
+        MSDK_STRING("[-model number]    - number of MediaSDK usage model. default is 0\n\n")
+        MSDK_STRING("[-n     frames]    - number of frames to trancode process\n\n")
 
-          "[-iopattern mem]   - memory type of used surfaces: (sys|d3d) or\n"
-          "                   - (sys_to_sys|sys_to_d3d|d3d_to_sys|d3d_to_d3d) if VPP required\n\n\n"
-          /*"     [-dec::mem]   - memory type of dec surfaces: (sys|d3d) \n"
+        MSDK_STRING("[-iopattern mem]   - memory type of used surfaces: (sys|d3d) or\n")
+        MSDK_STRING("                   - (sys_to_sys|sys_to_d3d|d3d_to_sys|d3d_to_d3d) if VPP required\n\n\n")          
+        );
+        /*"     [-dec::mem]   - memory type of dec surfaces: (sys|d3d) \n"
           "     [-vpp::mem]   - memory type of vpp surfaces: (sys_to_sys|sys_to_d3d|d3d_to_sys|d3d_to_d3d)\n"
           "     [-enc::mem]   - memory type of enc surfaces: (sys|d3d) \n\n\n"*/
-          )
-        );
-
      msdk_printf(
-        MSDK_STRING(
-          "List of supported MediaSDK usage models: [0-8]\n"
-          "See detail in file \n"
-          "{MSDK_ROOT}\\_testsuite\\test_usage_models\\UsageModelList.pdf \n"
-          )
+        MSDK_STRING("List of supported MediaSDK usage models: [0-8]\n")
+        MSDK_STRING("See detail in file \n")
+        MSDK_STRING("{MSDK_ROOT}\\_testsuite\\test_usage_models\\UsageModelList.pdf \n")
         );
     
 } // void CommandLine::PrintUsage(const msdk_char* app)

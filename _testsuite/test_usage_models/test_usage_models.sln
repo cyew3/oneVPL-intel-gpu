@@ -1,21 +1,15 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual Studio 2005
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_usage_models", "test_usage_models.vcproj", "{0E1EA203-6C3D-40F0-943E-4E2CC13FD96F}"
-	ProjectSection(ProjectDependencies) = postProject
-		{DB71B91D-16D8-4339-9621-D81798E46E8F} = {DB71B91D-16D8-4339-9621-D81798E46E8F}
-		{0D02568B-3117-47C3-AC2E-D83781259C1D} = {0D02568B-3117-47C3-AC2E-D83781259C1D}
-		{9E7B3527-11AA-46BA-A82F-C58761F9B56F} = {9E7B3527-11AA-46BA-A82F-C58761F9B56F}
-		{D41D3178-5C65-4868-BDB1-42C44643274E} = {D41D3178-5C65-4868-BDB1-42C44643274E}
-	EndProjectSection
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_usage_models", "test_usage_models.vcxproj", "{0E1EA203-6C3D-40F0-943E-4E2CC13FD96F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_common", "..\..\samples\sample_common\sample_common.vcproj", "{DB71B91D-16D8-4339-9621-D81798E46E8F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_common", "..\..\samples\sample_common\sample_common.vcxproj", "{DB71B91D-16D8-4339-9621-D81798E46E8F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfx", "..\..\opensource\mfx_dispatch\libmfx.vcproj", "{9E7B3527-11AA-46BA-A82F-C58761F9B56F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfx", "..\..\opensource\mfx_dispatch\libmfx.vcxproj", "{9E7B3527-11AA-46BA-A82F-C58761F9B56F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vm", "..\..\_studio\shared\umc\core\vm\vm.vcproj", "{D41D3178-5C65-4868-BDB1-42C44643274E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vm", "..\..\_studio\shared\umc\core\vm\vm.vcxproj", "{D41D3178-5C65-4868-BDB1-42C44643274E}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shared_utils", "..\shared\shared_utils.vcproj", "{0D02568B-3117-47C3-AC2E-D83781259C1D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shared_utils", "..\shared\shared_utils.vcxproj", "{0D02568B-3117-47C3-AC2E-D83781259C1D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -85,18 +79,18 @@ Global
 		{D41D3178-5C65-4868-BDB1-42C44643274E}.Release|Win32.Build.0 = release|Win32
 		{D41D3178-5C65-4868-BDB1-42C44643274E}.Release|x64.ActiveCfg = release|x64
 		{D41D3178-5C65-4868-BDB1-42C44643274E}.Release|x64.Build.0 = release|x64
-		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Debug (Lucasz DLL)|Win32.ActiveCfg = Debug (Lucasz DLL)|Win32
-		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Debug (Lucasz DLL)|Win32.Build.0 = Debug (Lucasz DLL)|Win32
-		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Debug (Lucasz DLL)|x64.ActiveCfg = Debug (Lucasz DLL)|x64
-		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Debug (Lucasz DLL)|x64.Build.0 = Debug (Lucasz DLL)|x64
+		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Debug (Lucasz DLL)|Win32.ActiveCfg = Debug|Win32
+		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Debug (Lucasz DLL)|Win32.Build.0 = Debug|Win32
+		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Debug (Lucasz DLL)|x64.ActiveCfg = Debug|x64
+		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Debug (Lucasz DLL)|x64.Build.0 = Debug|x64
 		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Debug|Win32.ActiveCfg = Debug|Win32
 		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Debug|Win32.Build.0 = Debug|Win32
 		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Debug|x64.ActiveCfg = Debug|x64
 		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Debug|x64.Build.0 = Debug|x64
-		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Release (Lucas DLL)|Win32.ActiveCfg = Release (Lucas DLL)|Win32
-		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Release (Lucas DLL)|Win32.Build.0 = Release (Lucas DLL)|Win32
-		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Release (Lucas DLL)|x64.ActiveCfg = Release (Lucas DLL)|x64
-		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Release (Lucas DLL)|x64.Build.0 = Release (Lucas DLL)|x64
+		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Release (Lucas DLL)|Win32.ActiveCfg = Release|Win32
+		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Release (Lucas DLL)|Win32.Build.0 = Release|Win32
+		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Release (Lucas DLL)|x64.ActiveCfg = Release|x64
+		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Release (Lucas DLL)|x64.Build.0 = Release|x64
 		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Release|Win32.ActiveCfg = Release|Win32
 		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Release|Win32.Build.0 = Release|Win32
 		{0D02568B-3117-47C3-AC2E-D83781259C1D}.Release|x64.ActiveCfg = Release|x64
