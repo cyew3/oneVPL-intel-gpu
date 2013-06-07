@@ -2067,10 +2067,10 @@ mfxStatus CheckLimitationsSW(
 
     mfxStatus sts = MFX_ERR_NONE;
 
-    // [1] RGB4->RGB4 - resize only to provide the best quality. make decision from MSDK 1.3
     if( param.vpp.In.FourCC == param.vpp.Out.FourCC &&
         MFX_FOURCC_RGB4 == param.vpp.In.FourCC)
     {
+        // [1] RGB4->RGB4 - resize only to provide the best quality. make decision from MSDK 1.3
         if(len > 0) 
         {
             sts = MFX_WRN_FILTER_SKIPPED;
@@ -2081,10 +2081,10 @@ mfxStatus CheckLimitationsSW(
             }
         }
     }
-    // [2] FRC Interpolation isn't supported by SW yet
     else if( IsFilterFound(pList, len, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION) && (MFX_FRCALGM_FRAME_INTERPOLATION == GetMFXFrcMode(param)) )
     {
-        sts = MFX_ERR_UNSUPPORTED;
+        // [2] Frame Interpolation isn't supported by SW yet, set to supported mode
+        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         if(bCorrectionEnable)
         {
             SetMFXFrcMode(param, MFX_FRCALGM_PRESERVE_TIMESTAMP);
@@ -2127,7 +2127,7 @@ mfxStatus CheckLimitationsHW(
             {
                 if( MFX_FRCALGM_FRAME_INTERPOLATION == GetMFXFrcMode(param) )
                 {
-                    sts = MFX_WRN_FILTER_SKIPPED;
+                    sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
                     if(bCorrectionEnable)
                     {
                         SetMFXFrcMode(param, MFX_FRCALGM_PRESERVE_TIMESTAMP);
@@ -2204,7 +2204,8 @@ bool CheckDoUseCompatibility( mfxU32 filterName )
 mfxStatus GetCrossList(
     const std::vector<mfxU32> & pipelineList, 
     const std::vector<mfxU32> & capsList, 
-    std::vector<mfxU32> & douseList)
+    std::vector<mfxU32> & doUseList,
+    std::vector<mfxU32> & dontUseList )
 {
     mfxStatus sts = MFX_ERR_NONE;
     mfxU32 fIdx;
@@ -2215,12 +2216,13 @@ mfxStatus GetCrossList(
         {
             if( CheckDoUseCompatibility( pipelineList[fIdx] ) )
             {
+                dontUseList.push_back( pipelineList[fIdx] );
                 sts = MFX_WRN_FILTER_SKIPPED;
             }
         }
         else
         {
-            douseList.push_back( pipelineList[fIdx] );
+            doUseList.push_back( pipelineList[fIdx] );
         }
     }
 

@@ -867,7 +867,7 @@ mfxStatus VideoVPPSW::QueryCaps(VideoCORE * core, MfxHwVideoProcessing::mfxVppCa
         caps.uFieldWeavingControl= 0;
         caps.uFrameRateConversion= 1; // "1" means general FRC is supported. "Interpolation" modes descibed by caps.frcCaps
         caps.uInverseTC          = 1;
-        caps.uIStabFilter        = 1;
+        caps.uIStabFilter        = 0;
         caps.uMaxHeight          = 8096;
         caps.uMaxWidth           = 8096;
         caps.uProcampFilter      = 1;
@@ -883,7 +883,7 @@ mfxStatus VideoVPPSW::QueryCaps(VideoCORE * core, MfxHwVideoProcessing::mfxVppCa
 
 mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *out)
 {
-    mfxStatus mfxSts = MFX_ERR_NONE; 
+    mfxStatus mfxSts = MFX_ERR_NONE;
     core;
 
     MFX_CHECK_NULL_PTR1( out );
@@ -893,24 +893,26 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
         memset(&out->mfx, 0, sizeof(mfxInfoMFX));
         memset(&out->vpp, 0, sizeof(mfxInfoVPP));
 
+        // We have to set FourCC and FrameRate below to 
+        // pass requirements of CheckPlatformLimitation for frame interpolation 
+
         /* vppIn */
-        out->vpp.In.FourCC       = 1;
+        out->vpp.In.FourCC       = MFX_FOURCC_NV12;
         out->vpp.In.Height       = 1;
         out->vpp.In.Width        = 1;
         out->vpp.In.PicStruct    = 1;
-        out->vpp.In.FrameRateExtN = 1;
+        out->vpp.In.FrameRateExtN = 30;
         out->vpp.In.FrameRateExtD = 1;
 
         /* vppOut */
-        out->vpp.Out.FourCC       = 1;
+        out->vpp.Out.FourCC       = MFX_FOURCC_NV12;
         out->vpp.Out.Height       = 1;
         out->vpp.Out.Width        = 1;
         out->vpp.Out.PicStruct    = 1;
-        out->vpp.Out.FrameRateExtN = 1;
+        out->vpp.Out.FrameRateExtN = 60;
         out->vpp.Out.FrameRateExtD = 1;
 
         /* vppCommon */
-        out->NumExtParam         = 1;
         out->IOPattern           = 1;
         /* protected content is not supported. check it */
         out->Protected           = 1;
@@ -919,6 +921,10 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
         Reason: support by VPP is simple but applications can fails because
         last day test has been added */
         out->AsyncDepth          = 1;
+
+        // check for IS and AFRC
+        mfxSts = CheckPlatformLimitations(core, *out, true);
+        return mfxSts;
     }
     else
     {
@@ -1352,11 +1358,7 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
         {
             return  localSts;
         }
-
     }//else
-
-    return mfxSts;
-
 } // mfxStatus VideoVPPSW::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out)
 
 
@@ -1611,18 +1613,32 @@ mfxStatus VideoVPPSW::CheckPlatformLimitations(
     mfxStatus sts = GetPipelineList( &param, pipelineList);
     MFX_CHECK_STS(sts);
 
-    std::vector<mfxU32> supportedDoUseList;
+    std::vector<mfxU32> supportedList;
+    std::vector<mfxU32> unsupportedList;
 
-    // compare pipelineList and capsList 
-    mfxStatus capsSts = GetCrossList(pipelineList, capsList, supportedDoUseList);// this function could return WRN_FILTER_SKIPPED
+    // compare pipelineList and capsList
+    mfxStatus capsSts = GetCrossList(pipelineList, capsList, supportedList, unsupportedList);// this function could return WRN_FILTER_SKIPPED
 
-    if(MFX_PLATFORM_SOFTWARE == core->GetPlatformType() )
+    if (MFX_PLATFORM_SOFTWARE == core->GetPlatformType() )
     {
-        sts = CheckLimitationsSW(param, supportedDoUseList, bCorrectionEnable);// this function could return WRN_PARAM_INCOMPATIBLE and WRN_FILTER_SKIPPED
+        sts = CheckLimitationsSW(param, supportedList, bCorrectionEnable);// this function could return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM and WRN_FILTER_SKIPPED
     }
     else
     {
-        sts = CheckLimitationsHW(param, supportedDoUseList, caps, bCorrectionEnable);// this function could return WRN_PARAM_INCOMPATIBLE and WRN_FILTER_SKIPPED
+        sts = CheckLimitationsHW(param, supportedList, caps, bCorrectionEnable);// this function could return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM and WRN_FILTER_SKIPPED
+    }
+
+    // check unsupported list if we need to reset ext buffer fields
+    if(!unsupportedList.empty())
+    {
+        if (IsFilterFound(&unsupportedList[0], (mfxU32)unsupportedList.size(), MFX_EXTBUFF_VPP_IMAGE_STABILIZATION))
+        {
+            SetMFXISMode(param, 0);
+            if (MFX_PLATFORM_SOFTWARE == core->GetPlatformType())
+            {
+                capsSts = MFX_ERR_UNSUPPORTED;
+            }
+        }
     }
 
     return (MFX_ERR_NONE != capsSts) ? capsSts : sts;

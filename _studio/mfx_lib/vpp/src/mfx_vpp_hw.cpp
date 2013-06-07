@@ -2626,6 +2626,23 @@ mfxStatus SetMFXFrcMode(const mfxVideoParam & videoParam, mfxU32 mode)
 } // mfxStatus SetMFXFrcMode(const mfxVideoParam & videoParam, mfxU32 mode)
 
 
+mfxStatus SetMFXISMode(const mfxVideoParam & videoParam, mfxU32 mode)
+{
+    for (mfxU32 i = 0; i < videoParam.NumExtParam; i++)
+    {
+        if (videoParam.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_IMAGE_STABILIZATION)
+        {
+            mfxExtVPPImageStab *extFrc = (mfxExtVPPImageStab *) videoParam.ExtParam[i];
+            extFrc->Mode = (mfxU16)mode;
+
+            return MFX_ERR_NONE;
+        }
+    }
+
+    return MFX_WRN_VALUE_NOT_CHANGED;
+}
+
+
 MfxFrameAllocResponse::MfxFrameAllocResponse()
     : m_core (0)
     , m_numFrameActualReturnedByAllocFrames(0)

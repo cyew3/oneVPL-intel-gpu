@@ -151,6 +151,7 @@ mfxU16 MapDNFactor( mfxU16 denoiseFactor );
 
 mfxU32 GetMFXFrcMode(const mfxVideoParam & videoParam);
 mfxStatus SetMFXFrcMode(const mfxVideoParam & videoParam, mfxU32 mode);
+mfxStatus SetMFXISMode(const mfxVideoParam & videoParam, mfxU32 mode);
 
 void ExtractDoUseList(
     mfxU32* pSrcList, 
@@ -162,7 +163,8 @@ bool CheckDoUseCompatibility( mfxU32 filterName );
 mfxStatus GetCrossList(
     const std::vector<mfxU32> & pipelineList, 
     const std::vector<mfxU32> & capsList, 
-    std::vector<mfxU32> & douseList);
+    std::vector<mfxU32> & douseList,
+    std::vector<mfxU32> & dontUseList);
 
 mfxStatus CheckLimitationsSW(
     const mfxVideoParam & param, 
