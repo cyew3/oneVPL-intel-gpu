@@ -867,7 +867,7 @@ mfxStatus VideoVPPSW::QueryCaps(VideoCORE * core, MfxHwVideoProcessing::mfxVppCa
         caps.uFieldWeavingControl= 0;
         caps.uFrameRateConversion= 1; // "1" means general FRC is supported. "Interpolation" modes descibed by caps.frcCaps
         caps.uInverseTC          = 1;
-        caps.uIStabFilter        = 0;
+        caps.uIStabFilter        = 1;
         caps.uMaxHeight          = 8096;
         caps.uMaxWidth           = 8096;
         caps.uProcampFilter      = 1;
@@ -1634,10 +1634,6 @@ mfxStatus VideoVPPSW::CheckPlatformLimitations(
         if (IsFilterFound(&unsupportedList[0], (mfxU32)unsupportedList.size(), MFX_EXTBUFF_VPP_IMAGE_STABILIZATION))
         {
             SetMFXISMode(param, 0);
-            if (MFX_PLATFORM_SOFTWARE == core->GetPlatformType())
-            {
-                capsSts = MFX_ERR_UNSUPPORTED;
-            }
         }
     }
 
