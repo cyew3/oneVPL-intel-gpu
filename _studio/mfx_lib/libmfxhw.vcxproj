@@ -514,16 +514,11 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
-    <ProjectReference Include="encode_hw\encode_hw_d3d11.vcxproj">
+    <ProjectReference Include="encode_hw\encode_hw.vcxproj">
       <Project>{2db853a8-e4bf-455a-9ed4-abacac60ca04}</Project>
     </ProjectReference>
-    <ProjectReference Include="enc_hw\enc_hw_d3d11.vcxproj">
+    <ProjectReference Include="enc_hw\enc_hw.vcxproj">
       <Project>{7a7d88d9-660e-4fdd-a43b-50ae2a27b1b1}</Project>
-      <Private>false</Private>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <LinkLibraryDependencies>true</LinkLibraryDependencies>
-      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="genx\h264_encode\genx_h264_encode_embeded.vcxproj">
       <Project>{8554e7c5-92ff-45f6-b9b4-a447efaed15c}</Project>
@@ -549,13 +544,8 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
-    <ProjectReference Include="shared\mfx_common_hw_d3d11.vcxproj">
+    <ProjectReference Include="shared\mfx_common_hw.vcxproj">
       <Project>{e275231a-d535-49f3-b140-f3bb6b1ae56f}</Project>
-      <Private>false</Private>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <LinkLibraryDependencies>true</LinkLibraryDependencies>
-      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="shared\vc1_shared.vcxproj">
       <Project>{883ef6c5-2631-472d-ac82-d2ac4f948d9d}</Project>
@@ -565,7 +555,7 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
-    <ProjectReference Include="vpp\vpp_hw_d3d11.vcxproj">
+    <ProjectReference Include="vpp\vpp_hw.vcxproj">
       <Project>{8d456a00-501a-47a9-b3c7-42723a7a82f2}</Project>
     </ProjectReference>
   </ItemGroup>
