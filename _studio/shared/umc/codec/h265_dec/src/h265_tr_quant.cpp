@@ -14,7 +14,6 @@
 
 #include "h265_tr_quant.h"
 
-
 namespace UMC_HEVC_DECODER
 {
 
@@ -706,6 +705,24 @@ void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, I
     }
 #endif
 }
+
+/* ----------------------------------------------------------------------------*/
+
+/* NOTE: InvTransformNxN can be used from other files. The following declarations
+ * make sure that functions are defined and linker will find them. Without
+ * them Media SDK for Android failed to build.
+ */
+#if BITS_PER_PLANE == 8
+template void H265TrQuant::InvTransformNxN<Ipp8u>(
+    bool transQuantBypass, EnumTextType TxtType, Ipp32u Mode, Ipp8u* pResidual, Ipp32u Stride,
+    H265CoeffsPtrCommon pCoeff,Ipp32u Width, Ipp32u Height, Ipp32s scalingListType, bool transformSkip);
+#endif
+
+template void H265TrQuant::InvTransformNxN<Ipp16s>(
+    bool transQuantBypass, EnumTextType TxtType, Ipp32u Mode, Ipp16s* pResidual, Ipp32u Stride,
+    H265CoeffsPtrCommon pCoeff,Ipp32u Width, Ipp32u Height, Ipp32s scalingListType, bool transformSkip);
+
+/* ----------------------------------------------------------------------------*/
 
 void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Width, Ipp32u Height, Ipp32u TrMode)
 {
