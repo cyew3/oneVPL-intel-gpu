@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "msdk_ts_dll", "msdk_ts_dll.vcxproj", "{44BAA917-9DA7-4BA8-A3BC-2A76285E3F2F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bs_parser", "..\bs_parser\bs_parser.vcxproj", "{D08D664E-7245-40F7-9B55-3440EF95F2F7}"
