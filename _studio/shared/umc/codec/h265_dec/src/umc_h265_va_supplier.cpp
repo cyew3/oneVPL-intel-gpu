@@ -98,7 +98,7 @@ void VATaskSupplier::SetBufferedFramesNumber(Ipp32u buffered)
 
 H265DecoderFrame * VATaskSupplier::GetFrameToDisplayInternal(bool force)
 {
-    ViewItem_H265 &view = *GetView();
+    //ViewItem_H265 &view = *GetView();
     //view.maxDecFrameBuffering += m_bufferedFrameNumber;
 
     H265DecoderFrame * frame = MFXTaskSupplier_H265::GetFrameToDisplayInternal(force);

@@ -456,28 +456,7 @@ eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par
     }
 
 #if defined (MFX_VA)
-    GUID name;
-
-    switch (typeHW)
-    {
-    case MFX_HW_LAKE:
-        name = sDXVA2_Intel_EagleLake_ModeH264_VLD_NoFGT;
-        break;
-    case MFX_HW_HSW:
-        if (isMVCProfile(par->mfx.CodecProfile))
-        {
-            if (par->mfx.CodecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH)
-                name = sDXVA_ModeH264_VLD_Multiview_NoFGT;
-            else
-                name = par->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? sDXVA_ModeH264_VLD_Stereo_Progressive_NoFGT : sDXVA_ModeH264_VLD_Stereo_NoFGT;
-        }
-        else
-            name = sDXVA2_ModeH264_VLD_NoFGT;
-        break;
-    default:
-        name = sDXVA2_ModeH264_VLD_NoFGT;
-        break;
-    }
+    GUID name = DXVA_ModeHEVC_VLD_MainProfile;
 
     if (MFX_ERR_NONE != core->IsGuidSupported(name, par) &&
         platform != MFX_PLATFORM_SOFTWARE)

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2006-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2006-2013 Intel Corporation. All Rights Reserved.
 */
 
 #pragma once
@@ -49,6 +49,8 @@ DEFINE_GUID_(sDXVA_ModeH264_VLD_SVC_Scalable_High,                          0x72
 DEFINE_GUID_(sDXVA_ModeH264_VLD_Multiview_NoFGT,                  0x705b9d82, 0x76cf, 0x49d6, 0xb7, 0xe6, 0xac, 0x88, 0x72, 0xdb, 0x01, 0x3c);
 DEFINE_GUID_(sDXVA_ModeH264_VLD_Stereo_NoFGT,                     0xf9aaccbb, 0xc2b6, 0x4cfc, 0x87, 0x79, 0x57, 0x07, 0xb1, 0x76, 0x05, 0x52);
 DEFINE_GUID_(sDXVA_ModeH264_VLD_Stereo_Progressive_NoFGT,         0xd79be8da, 0x0cf1, 0x4c81, 0xb8, 0x2a, 0x69, 0xa4, 0xe2, 0x36, 0xf4, 0x3d);
+
+DEFINE_GUID(DXVA_ModeHEVC_VLD_MainProfile,  0x8c56eb1e, 0x2b47, 0x466f, 0x8d, 0x33, 0x7d, 0xbc, 0xd6, 0x3f, 0x3d, 0xf2);
 
 struct GuidProfile
 {

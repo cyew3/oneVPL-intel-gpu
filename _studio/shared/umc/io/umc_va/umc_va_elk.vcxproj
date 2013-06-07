@@ -110,6 +110,7 @@
     <ClCompile Include="src\umc_va_dxva2_protected.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\umc_hevc_ddi.h" />
     <ClInclude Include="include\umc_jpeg_ddi.h" />
     <ClInclude Include="include\umc_mvc_ddi.h" />
     <ClInclude Include="include\umc_va_dxva2.h" />
