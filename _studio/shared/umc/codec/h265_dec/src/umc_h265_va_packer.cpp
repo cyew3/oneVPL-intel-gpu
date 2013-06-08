@@ -9,8 +9,6 @@
 //
 */
 
-#if defined(_WIN32) || defined(_WIN64)
-
 #include "umc_defs.h"
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
@@ -663,7 +661,7 @@ void PackerDXVA2::PackQmatrix(const H265Slice *pSlice/*const H265PicParamSet *pP
 #endif // UMC_VA_DXVA
 
 
-#ifdef UMC_VA_LINUX
+#if 0 //def UMC_VA_LINUX
 /****************************************************************************************************/
 // VA linux packer implementation
 /****************************************************************************************************/
@@ -1162,5 +1160,3 @@ void PackerVA::PackDeblockingParameters(
 
 #endif // UMC_RESTRICTED_CODE_VA
 #endif // UMC_ENABLE_H265_VIDEO_DECODER
-
-#endif // #if defined(_WIN32) || defined(_WIN64)

@@ -147,7 +147,7 @@
          *   - VPP
          */
         // h265
-        #undef MFX_ENABLE_H265_VIDEO_DECODE
+        //#undef MFX_ENABLE_H265_VIDEO_DECODE
         // h264
         //#undef MFX_ENABLE_H264_VIDEO_ENCODE
         #undef MFX_ENABLE_MVC_VIDEO_ENCODE

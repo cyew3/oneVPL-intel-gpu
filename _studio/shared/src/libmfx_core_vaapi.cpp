@@ -1190,6 +1190,9 @@ mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID /*guid*/,
         break;
     case MFX_CODEC_AVC:
         break;
+    case MFX_CODEC_HEVC:
+        return MFX_WRN_PARTIAL_ACCELERATION;
+        break;
     case MFX_CODEC_MPEG2:
         if (par->mfx.FrameInfo.Width  > 2048 || par->mfx.FrameInfo.Height > 2048) //MPEG2 decoder doesn't support resolution bigger than 2K
             return MFX_WRN_PARTIAL_ACCELERATION;

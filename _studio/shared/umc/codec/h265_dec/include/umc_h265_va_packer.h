@@ -104,7 +104,7 @@ private:
 #endif // UMC_VA_DXVA
 
 
-#ifdef UMC_VA_LINUX
+#if 0 //def UMC_VA_LINUX
 
 class PackerVA : public Packer
 {
@@ -123,8 +123,6 @@ public:
 private:
     void FillFrame(VAPictureH264 * pic, const H265DecoderFrame *pFrame,
         Ipp32s field, Ipp32s reference, Ipp32s defaultIndex);
-    Ipp32s FillRefFrame(VAPictureH264 * pic, const H265DecoderFrame *pFrame,
-        ReferenceFlags_H265 flags, bool isField, Ipp32s defaultIndex);
 
     void FillFrameAsInvalid(VAPictureH264 * pic);
 
