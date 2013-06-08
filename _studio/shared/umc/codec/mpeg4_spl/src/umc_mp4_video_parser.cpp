@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2007-2009 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2007-2013 Intel Corporation. All Rights Reserved.
 //
 //  Description:    MPEG-4 video headers parsing.
 //
@@ -1130,4 +1130,9 @@ Status MP4Splitter::ParseAVCCHeader(T_trak_data *pTrak,Ipp32u nTrack)
 
   return UMC_OK;
 }//Status ParseAVCCHeader(T_avcC_data &sAVCc, VideoStreamInfo* pVideoInfo)
+
+Status MP4Splitter::ParseHVCCHeader(T_trak_data* /*pTrak*/, Ipp32u /*nTrack*/)
+{
+  return UMC_OK;
+}
 

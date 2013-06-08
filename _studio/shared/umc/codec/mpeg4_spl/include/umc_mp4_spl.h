@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2007-2008 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -61,6 +61,7 @@ protected:
     Status          CheckMoofInit();
 
     Status          ParseAVCCHeader(T_trak_data *pTrak, Ipp32u nTrack);
+    Status          ParseHVCCHeader(T_trak_data *pTrak, Ipp32u nTrack);
     Status          ParseESDSHeader(T_trak_data *pTrak, Ipp32u nTrack);
 
     Status          MapTrafIDToTrackID (Ipp32u trafID, Ipp32u &nTrack);

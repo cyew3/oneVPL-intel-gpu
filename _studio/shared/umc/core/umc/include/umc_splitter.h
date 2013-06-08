@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//        Copyright(c) 2003-2012 Intel Corporation. All Rights Reserved.
+//        Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -56,6 +56,7 @@ enum TrackType
     TRACK_YUV                   = 0x00002000,
     TRACK_AVS                   = 0x00004000,
     TRACK_VP8                   = 0x00004000,
+    TRACK_H265                  = 0x00008000,
     TRACK_ANY_VIDEO             = 0x0000FFFF,
 
     /* audio typTRACK 0x0XXX0000 */

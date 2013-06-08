@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2009-2010 Intel Corporation. All Rights Reserved.
+Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -518,6 +518,124 @@ mfxStatus MFXAVCFrameConstructor::ReadHeader(mfxBitstream* pBSIn, mfxBitstream *
         bs.DataOffset = 0;
         bs.MaxLength = 
             bs.DataLength = (mfxU32)tempBuffer.size();
+
+        MFX_CHECK_STS(MFXFrameConstructor::ConstructFrame(&bs, pBSOut));
+
+        pBSOut->FrameType  = pBSIn->FrameType;
+        pBSOut->PicStruct  = pBSIn->PicStruct;
+        pBSOut->TimeStamp  = pBSIn->TimeStamp;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+MFXHEVCFrameConstructor::MFXHEVCFrameConstructor():
+    m_bHeaderReaded(false)
+{
+    memset(&m_StartCodeBS, 0, sizeof(mfxBitstream));
+
+    m_StartCodeBS.Data = m_startCodesBuf;
+    m_StartCodeBS.DataLength = m_StartCodeBS.MaxLength = 4;
+
+    SetValue32(0x01000000, m_StartCodeBS.Data);   
+}
+
+MFXHEVCFrameConstructor::~MFXHEVCFrameConstructor()
+{
+}
+
+mfxStatus MFXHEVCFrameConstructor::ConstructFrame(mfxBitstream* pBSIn, mfxBitstream *pBSOut)
+{
+    std::vector<mfxU8>      tempBuffer;
+
+    MFX_CHECK_POINTER(pBSIn);
+    MFX_CHECK_POINTER(pBSOut);
+
+    if (!m_bHeaderReaded)
+    {
+        return ReadHeader(pBSIn, pBSOut);
+    }
+
+    if (0 == pBSIn->DataLength)
+    {
+        return MFX_ERR_MORE_DATA;
+    }
+
+    while (pBSIn->DataLength > 4)
+    {
+        mfxU32 nDataLength = GetLength(4, pBSIn->Data + pBSIn->DataOffset);
+        
+        if (nDataLength > (pBSIn->DataLength - 4)) break; // not enough data in the buffer
+
+        pBSIn->DataOffset += 4;
+        pBSIn->DataLength -= 4;
+        tempBuffer.insert(tempBuffer.end(), m_StartCodeBS.Data, m_StartCodeBS.Data + 4);
+        tempBuffer.insert(tempBuffer.end(), pBSIn->Data + pBSIn->DataOffset, pBSIn->Data + pBSIn->DataOffset + nDataLength);
+
+        pBSIn->DataOffset += nDataLength;
+        pBSIn->DataLength -= nDataLength;
+    }
+
+    if (!tempBuffer.empty())
+    {
+        mfxBitstream bs;
+        bs.Data = &tempBuffer.front();
+        bs.DataOffset = 0;
+        bs.MaxLength = bs.DataLength = (mfxU32)tempBuffer.size();
+        
+        MFX_CHECK_STS(MFXFrameConstructor::ConstructFrame(&bs, pBSOut));
+
+        pBSOut->FrameType  = pBSIn->FrameType;
+        pBSOut->PicStruct  = pBSIn->PicStruct;
+        pBSOut->TimeStamp  = pBSIn->TimeStamp;
+    }
+
+    //copy frame parameters
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MFXHEVCFrameConstructor::ReadHeader(mfxBitstream* pBSIn, mfxBitstream *pBSOut)
+{
+    if (0 == pBSIn->DataLength)
+    {
+        return MFX_ERR_MORE_DATA;
+    }
+
+    mfxU8 *p;
+    MOVE_BS(*pBSIn, 1);
+    m_hevcRecord.configurationVersion = *p;
+    MOVE_BS(*pBSIn, 21);
+    MOVE_BS(*pBSIn, 1);
+    m_hevcRecord.numOfParameterSets = *p;
+
+    std::vector<mfxU8> tempBuffer;
+
+    for (int i = 0; i < m_hevcRecord.numOfParameterSets; ++i)
+    {
+
+        MOVE_BS(*pBSIn, 1); // skipping array completeness and type
+        MOVE_BS(*pBSIn, 2);
+        mfxU16 numOfNALs = GetValue16(p);
+        for (int j = 0; j < numOfNALs; ++j)
+        {
+            tempBuffer.insert(tempBuffer.end(), m_StartCodeBS.Data, m_StartCodeBS.Data + 4);
+
+            MOVE_BS(*pBSIn, 2);
+            mfxU32 length = GetValue16(p);
+
+            MOVE_BS(*pBSIn, length);
+            tempBuffer.insert(tempBuffer.end(), p, p + length);
+        }
+    }
+
+    m_bHeaderReaded = true;
+
+    if (!tempBuffer.empty())
+    {
+        mfxBitstream bs;
+        bs.Data = &tempBuffer.front();
+        bs.DataOffset = 0;
+        bs.MaxLength = bs.DataLength = (mfxU32)tempBuffer.size();
 
         MFX_CHECK_STS(MFXFrameConstructor::ConstructFrame(&bs, pBSOut));
 

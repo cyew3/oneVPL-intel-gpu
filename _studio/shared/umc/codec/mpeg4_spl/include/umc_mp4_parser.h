@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -161,10 +161,11 @@ typedef struct
 
 typedef struct
 {
+  VideoStreamType type; // HEVC_VIDEO or H264_VIDEO
   Ipp32s          decoderConfigLen;
   Ipp8u           *decoderConfig;
 //    Ipp8u   m_nH264FrameIntraSize;
-} T_avcC_data;
+} T_avcC_data; // this structure is used for hvcC as well at the moment
 
 typedef struct
 {

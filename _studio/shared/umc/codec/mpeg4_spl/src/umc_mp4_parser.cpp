@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 */
 #include "umc_mp4_spl.h"
@@ -1267,6 +1267,12 @@ Status MP4Splitter::Read_stsd_table(DataReader *dr, T_minf_data * /*minf*/, T_st
         table->esds.objectTypeID = 0xf4;
     }
 
+    if ( table->format[0]=='h'&& table->format[1]=='v'&& table->format[2]=='c'&& table->format[3]=='1' )
+    {
+        ret = Read_h264_video(dr, table, &leaf_atom); // this suites hvcC at the moment
+        table->esds.objectTypeID = 0xf5;
+    }
+
     return ret;
 }
 
@@ -1421,13 +1427,16 @@ Ipp32s MP4Splitter::Read_h264_video(DataReader *dr, T_stsd_table_data *table, T_
     while ((dr->GetPosition() < parent_atom->end) && (dr->GetPosition() != 0) && (ret == UMC_OK))
     {
         T_atom_mp4 leaf_atom;
+        bool is_hevc = false;
+
         ret = Read_Atom(dr, &leaf_atom);
         UMC_CHECK_STATUS(ret)
 
-        if (Compare_Atom(&leaf_atom, "avcC"))
+        if (Compare_Atom(&leaf_atom, "avcC") || (is_hevc = Compare_Atom(&leaf_atom, "hvcC")))
         {
             Ipp32u    temp;
 
+            table->avcC.type = (is_hevc)? HEVC_VIDEO: H264_VIDEO;
             table->avcC.decoderConfigLen = (Ipp32s)(leaf_atom.size - 8);
             table->avcC.decoderConfig = (Ipp8u*)(ippsMalloc_8u(table->avcC.decoderConfigLen));
 

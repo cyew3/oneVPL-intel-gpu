@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -116,7 +116,8 @@ mfxStatus UMCSplWrapper::Init(const vm_char *strFileName)
         MFX_CHECK_WITH_ERR(iMpegSplitterParams = new MpegSplitterParams(), MFX_ERR_MEMORY_ALLOC);
         MFX_CHECK_WITH_ERR(iMpegSplitterParams->m_mediaData = new MediaDataEx(), MFX_ERR_MEMORY_ALLOC);
         MFX_CHECK_WITH_ERR(m_pSplitter         = CreateMPEG4Splitter(), MFX_ERR_MEMORY_ALLOC);
-        MFX_CHECK_WITH_ERR(m_pConstructor      = new MFXAVCFrameConstructor(), MFX_ERR_MEMORY_ALLOC);
+        // we need to know stream type (AVC/HEVC) to initialize correct frame constructor
+//        MFX_CHECK_WITH_ERR(m_pConstructor      = new MFXAVCFrameConstructor(), MFX_ERR_MEMORY_ALLOC);
 
         m_pInputData        = iMpegSplitterParams->m_mediaData;
         m_pInitParams       = iMpegSplitterParams;
@@ -216,6 +217,18 @@ mfxStatus UMCSplWrapper::Init(const vm_char *strFileName)
         vParam.mfx.CodecProfile = MFX_PROFILE_VC1_ADVANCED;
     else if (WMV3_VIDEO == m_pVideoInfo->stream_subtype)
         vParam.mfx.CodecProfile = MFX_PROFILE_VC1_MAIN;
+
+    if (MP4_ATOM_STREAM == streamType)
+    {
+        if (HEVC_VIDEO == m_pVideoInfo->stream_type)
+        {
+            MFX_CHECK_WITH_ERR(m_pConstructor = new MFXHEVCFrameConstructor(), MFX_ERR_MEMORY_ALLOC);
+        }
+        else
+        {
+            MFX_CHECK_WITH_ERR(m_pConstructor = new MFXAVCFrameConstructor(), MFX_ERR_MEMORY_ALLOC);
+        }
+    }
 
     MFX_CHECK_STS(m_pConstructor->Init(&vParam));
 
@@ -344,6 +357,7 @@ mfxStatus UMCSplWrapper::GetStreamInfo(sStreamInfo * pParams)
 //        case H261_VIDEO : pParams->videoType = MFX_FOURCC_H261;  break;
 //        case H263_VIDEO : pParams->videoType = MFX_FOURCC_H263;  break;
         case H264_VIDEO : pParams->videoType = MFX_CODEC_AVC;   break;
+        case HEVC_VIDEO : pParams->videoType = MFX_CODEC_HEVC;  break;
         case WMV_VIDEO  :
         case VC1_VIDEO  : pParams->videoType = MFX_CODEC_VC1;   break;
         case VP8_VIDEO  : pParams->videoType = MFX_CODEC_VP8;   break;

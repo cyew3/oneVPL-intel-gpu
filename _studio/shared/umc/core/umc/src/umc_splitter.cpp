@@ -143,6 +143,7 @@ SystemStreamType Splitter::GetStreamType(DataReader* dr)
         if (long_code == MAKEFOURCC_INVERT('m','p','4','2') ||
             long_code == MAKEFOURCC_INVERT('m','p','4','1') ||
             long_code == MAKEFOURCC_INVERT('i','s','o','m') ||
+            long_code == MAKEFOURCC_INVERT('i','s','o','4') ||
             long_code == MAKEFOURCC_INVERT('M','S','N','V') ||
             long_code == MAKEFOURCC_INVERT('M','4','V',' ') ||
             long_code == MAKEFOURCC_INVERT('M','4','A',' ') ||

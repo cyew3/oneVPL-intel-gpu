@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2009-2010 Intel Corporation. All Rights Reserved.
+Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -122,5 +122,34 @@ protected:
     mfxU8        m_startCodesBuf[4];
 };
 
+class MFXHEVCFrameConstructor : public MFXFrameConstructor
+{
+public:
+    MFXHEVCFrameConstructor();
+    virtual ~MFXHEVCFrameConstructor();
+    virtual mfxStatus ConstructFrame( mfxBitstream* pBSIn
+                                    , mfxBitstream* pBSOut);
+    virtual mfxStatus Reset() { m_bHeaderReaded = false; return MFX_ERR_NONE;};
+
+protected:
+    typedef struct HEVCRecord
+    {
+        HEVCRecord()
+        {
+            configurationVersion = 1;
+            numOfParameterSets = 0;
+        }
+
+        mfxU8 configurationVersion;
+        mfxU8 numOfParameterSets;
+    } HEVCRecord;
+
+    mfxStatus ReadHeader(mfxBitstream* pBSIn, mfxBitstream *pBS);
+
+    bool         m_bHeaderReaded;
+    HEVCRecord   m_hevcRecord;
+    mfxBitstream m_StartCodeBS;
+    mfxU8        m_startCodesBuf[4];
+};
 
 #endif//__MFX_FRAME_CONSTRUCTOR_H

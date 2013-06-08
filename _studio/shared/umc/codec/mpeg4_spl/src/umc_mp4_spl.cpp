@@ -582,6 +582,8 @@ VideoStreamType GetVideoStreamType(Ipp8u value)
       return H261_VIDEO;
     case 0xf4:
       return AVS_VIDEO;
+    case 0xf5:
+      return HEVC_VIDEO;
     default:
       return UNDEF_VIDEO;
   }
@@ -882,7 +884,10 @@ Status MP4Splitter::FillVideoInfo(T_trak_data *pTrak, Ipp32u nTrack)
     len = table->avcC.decoderConfigLen;
     ptr = table->avcC.decoderConfig;
     //get info about stream from avcC info
-    umcRes = ParseAVCCHeader(pTrak, nTrack);
+    if (HEVC_VIDEO == table->avcC.type)
+      umcRes = ParseHVCCHeader(pTrak, nTrack);
+    else
+      umcRes = ParseAVCCHeader(pTrak, nTrack);
   }
   UMC_CHECK_STATUS(umcRes)
 
@@ -967,6 +972,9 @@ Status MP4Splitter::FillVideoInfo(T_trak_data *pTrak, Ipp32u nTrack)
     break;
   case AVS_VIDEO:
     m_pInfo->m_ppTrackInfo[nTrack]->m_Type = TRACK_AVS;
+    break;
+  case HEVC_VIDEO:
+    m_pInfo->m_ppTrackInfo[nTrack]->m_Type = TRACK_H265;
     break;
   default:
     m_pInfo->m_ppTrackInfo[nTrack]->m_Type = TRACK_UNKNOWN;
