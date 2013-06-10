@@ -39,7 +39,7 @@ IppStatus cppiConvert_8u16s_C1R(const Ipp8u *pSrc, Ipp32s iSrcStride, Ipp32u iDs
 {
     Ipp32u iWidth  = size.width;
     Ipp32u iHeight = size.height;
-    Ipp32u iRound  = (1 << (iDstBitsPerSample - 8 - 1));
+//    Ipp32u iRound  = (1 << (iDstBitsPerSample - 8 - 1));
     Ipp32u x, y;
 
     for (y = 0; y < iHeight; y++)
