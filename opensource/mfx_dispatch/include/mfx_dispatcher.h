@@ -32,6 +32,7 @@ File Name: mfx_dispatcher.h
 #define __MFX_DISPATCHER_H
 
 #include <mfxvideo.h>
+#include <mfxaudio.h>
 #include <mfxplugin.h>
 #include <stddef.h>
 
@@ -72,6 +73,13 @@ enum eFunc
     eMFXCloneSession,
 
 #include "mfx_exposed_functions_list.h"
+
+    eVideoFuncTotal,
+
+    eMFXAudioInit,
+    eMFXAudioClose,
+
+#include "mfxaudio_exposed_functions_list.h"
 
     eFuncTotal
 };
@@ -122,6 +130,11 @@ struct MFX_DISP_HANDLE
     mfxStatus LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImplType implType, mfxIMPL impl, mfxIMPL implInterface);
     // Unload the library's module
     mfxStatus UnLoadSelectedDLL(void);
+
+    // AUDIO: Load the library's module
+    mfxStatus LoadSelectedAudioDLL(const msdk_disp_char *pPath, eMfxImplType implType, mfxIMPL impl, mfxIMPL implInterface);
+    // AUDIO: Unload the library's module
+    mfxStatus UnLoadSelectedAudioDLL(void);
 
     // Close the handle
     mfxStatus Close(void);

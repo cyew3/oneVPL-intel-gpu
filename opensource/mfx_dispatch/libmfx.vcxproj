@@ -281,6 +281,7 @@
     <ClCompile Include="src\mfx_win_reg_key.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\mfxaudio_exposed_functions_list.h" />
     <ClInclude Include="include\mfx_critical_section.h" />
     <ClInclude Include="include\mfx_dispatcher.h" />
     <ClInclude Include="include\mfx_dispatcher_log.h" />

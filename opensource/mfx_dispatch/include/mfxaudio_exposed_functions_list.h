@@ -1,0 +1,95 @@
+/* ****************************************************************************** *\
+
+Copyright (C) 2013 Intel Corporation.  All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+- Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+- Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+- Neither the name of Intel Corporation nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY INTEL CORPORATION "AS IS" AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL INTEL CORPORATION BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+File Name: mfxaudio_exposed_function_list.h
+
+\* ****************************************************************************** */
+
+//
+// WARNING:
+// this file doesn't contain an include guard by intension.
+// The file may be included into a source file many times.
+// That is why this header doesn't contain any include directive.
+// Please, do no try to fix it.
+//
+
+//
+// API version 1.0 functions
+//
+
+// Minor value should precedes the major value
+#define API_VERSION {0, 1}
+#define API_VERSION_PREV {0, 0}
+
+// Library Common
+FUNCTION(mfxStatus, MFXAudioQueryIMPL, (mfxSession session, mfxIMPL *impl), (session, impl))
+FUNCTION(mfxStatus, MFXAudioQueryVersion, (mfxSession session, mfxVersion *version), (session, version))
+
+// CORE interface functions
+FUNCTION(mfxStatus, MFXAudioCORE_SetBufferAllocator, (mfxSession session, mfxBufferAllocator *allocator), (session, allocator))
+FUNCTION(mfxStatus, MFXAudioCORE_SetFrameAllocator, (mfxSession session, mfxFrameAllocator *allocator), (session, allocator))
+FUNCTION(mfxStatus, MFXAudioCORE_SetHandle, (mfxSession session, mfxHandleType type, mfxHDL hdl), (session, type, hdl))
+FUNCTION(mfxStatus, MFXAudioCORE_GetHandle, (mfxSession session, mfxHandleType type, mfxHDL *hdl), (session, type, hdl))
+
+FUNCTION(mfxStatus, MFXAudioCORE_SyncOperation, (mfxSession session, mfxSyncPoint syncp, mfxU32 wait), (session, syncp, wait))
+
+// ENCODE interface functions
+FUNCTION(mfxStatus, MFXAudioENCODE_Query, (mfxSession session, mfxAudioParam *in, mfxAudioParam *out), (session, in, out))
+FUNCTION(mfxStatus, MFXAudioENCODE_QueryIOSize, (mfxSession session, mfxAudioParam *par, mfxAudioAllocRequest *request), (session, par, request))
+FUNCTION(mfxStatus, MFXAudioENCODE_Init, (mfxSession session, mfxAudioParam *par), (session, par))
+FUNCTION(mfxStatus, MFXAudioENCODE_Reset, (mfxSession session, mfxAudioParam *par), (session, par))
+FUNCTION(mfxStatus, MFXAudioENCODE_Close, (mfxSession session), (session))
+
+FUNCTION(mfxStatus, MFXAudioENCODE_GetAudioParam, (mfxSession session, mfxAudioParam *par), (session, par))
+FUNCTION(mfxStatus, MFXAudioENCODE_GetEncodeStat, (mfxSession session, mfxEncodeStat *stat), (session, stat))
+//FUNCTION(mfxStatus, MFXAudioENCODE_EncodeFrameAsync, (mfxSession session, mfxBitstream *bs, mfxBitstream *buffer_out, mfxSyncPoint *syncp), (session, bs, buffer_out, syncp))
+
+// DECODE interface functions
+FUNCTION(mfxStatus, MFXAudioDECODE_Query, (mfxSession session, mfxAudioParam *in, mfxAudioParam *out), (session, in, out))
+FUNCTION(mfxStatus, MFXAudioDECODE_DecodeHeader, (mfxSession session, mfxBitstream *bs, mfxAudioParam *par), (session, bs, par))
+FUNCTION(mfxStatus, MFXAudioDECODE_QueryIOSize, (mfxSession session, mfxAudioParam *par, mfxAudioAllocRequest *request), (session, par, request))
+FUNCTION(mfxStatus, MFXAudioDECODE_Init, (mfxSession session, mfxAudioParam *par), (session, par))
+FUNCTION(mfxStatus, MFXAudioDECODE_Reset, (mfxSession session, mfxAudioParam *par), (session, par))
+FUNCTION(mfxStatus, MFXAudioDECODE_Close, (mfxSession session), (session))
+
+FUNCTION(mfxStatus, MFXAudioDECODE_GetAudioParam, (mfxSession session, mfxAudioParam *par), (session, par))
+//FUNCTION(mfxStatus, MFXAudioDECODE_GetDecodeStat, (mfxSession session, mfxDecodeStat *stat), (session, stat))
+//FUNCTION(mfxStatus, MFXAudioDECODE_SetSkipMode, (mfxSession session, mfxSkipMode mode), (session, mode))
+//FUNCTION(mfxStatus, MFXAudioDECODE_GetPayload, (mfxSession session, mfxU64 *ts, mfxPayload *payload), (session, ts, payload))
+FUNCTION(mfxStatus, MFXAudioDECODE_DecodeFrameAsync, (mfxSession session, mfxBitstream *bs, mfxBitstream *buffer_out, mfxSyncPoint *syncp), (session, bs, buffer_out, syncp))
+
+// VPP interface functions
+FUNCTION(mfxStatus, MFXAudioPP_Query, (mfxSession session, mfxAudioParam *in, mfxAudioParam *out), (session, in, out))
+FUNCTION(mfxStatus, MFXAudioPP_QueryIOSSize, (mfxSession session, mfxAudioParam *par, mfxAudioAllocRequest *request), (session, par, request))
+FUNCTION(mfxStatus, MFXAudioPP_Init, (mfxSession session, mfxAudioParam *par), (session, par))
+FUNCTION(mfxStatus, MFXAudioPP_Reset, (mfxSession session, mfxAudioParam *par), (session, par))
+FUNCTION(mfxStatus, MFXAudioPP_Close, (mfxSession session), (session))
+
+FUNCTION(mfxStatus, MFXAudioPP_GetAudioParam, (mfxSession session, mfxAudioParam *par), (session, par))
+FUNCTION(mfxStatus, MFXAudioPP_RunFrameAudioPPAsync, (mfxSession session, mfxBitstream **in, mfxU16 NumIn, mfxBitstream **out, mfxU16 NumOut, mfxSyncPoint *syncp), (session, in, NumIn, out, NumOut, syncp))
+
+#undef API_VERSION
+#undef API_VERSION_PREV

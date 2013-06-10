@@ -49,6 +49,11 @@ FUNCTION_DESCRIPTION APIFunc[eFuncTotal] =
 
 #include "mfx_exposed_functions_list.h"
 
+    {""},   // eVideoFuncTotal
+    {"MFXInitAudio", {{0, 1}}, {{0, 0}}},
+    {"MFXCloseAudio", {{0, 1}}, {{0, 0}}},
+
+#include "mfxaudio_exposed_functions_list.h"
 };
 
 // static section of the file
