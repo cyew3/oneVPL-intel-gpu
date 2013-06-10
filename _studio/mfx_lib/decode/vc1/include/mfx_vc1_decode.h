@@ -58,7 +58,7 @@ public:
 
 protected:
     friend class MFXVideoDECODEVC1;
-    virtual UMC::Status ProcessPerformedDS(UMC::MediaData* in, UMC::VideoData* out_data, UMC::VC1FrameDescriptor **pPerfDescriptor);
+    virtual UMC::Status GetAndProcessPerformedDS(UMC::MediaData* in, UMC::VideoData* out_data, UMC::VC1FrameDescriptor **pPerfDescriptor);
     virtual UMC::Status ProcessPrevFrame(UMC::VC1FrameDescriptor *pCurrDescriptor, UMC::MediaData* in, UMC::VideoData* out_dat);
     UMC::VC1FrameDescriptor* m_pDescrToDisplay;
     mfxU32                   m_frameOrder;

@@ -102,7 +102,7 @@ FrameMemID  MFXVC1VideoDecoder::ProcessQueuesForNextFrame(bool& isSkip, mfxU16& 
         }
         else
         {
-            umcRes = ProcessPerformedDS(0, 0, &pPerformedDescriptor);
+            umcRes = GetAndProcessPerformedDS(0, 0, &pPerformedDescriptor);
             currIndx = m_pStore->GetIdx(pCurrDescriptor->m_pContext->m_frmBuff.m_iCurrIndex);
 
             if ((UMC_OK == umcRes)||
@@ -268,7 +268,7 @@ Status       MFXVC1VideoDecoder::SetRMSurface()
     }
     return UMC_OK;
 }
-Status MFXVC1VideoDecoder::ProcessPerformedDS(MediaData* in, VideoData* out_data, UMC::VC1FrameDescriptor **pPerfDescriptor)
+Status MFXVC1VideoDecoder::GetAndProcessPerformedDS(MediaData* in, VideoData* out_data, UMC::VC1FrameDescriptor **pPerfDescriptor)
 {
     VC1FrameDescriptor *pCurrDescriptor = NULL;
 
