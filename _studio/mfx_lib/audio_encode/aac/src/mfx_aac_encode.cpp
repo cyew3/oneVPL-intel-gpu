@@ -199,7 +199,7 @@ mfxStatus AudioENCODEAAC::Close(void)
 
 mfxStatus AudioENCODEAAC::Query(AudioCORE *core, mfxAudioParam *in, mfxAudioParam *out)
 {
-    mfxStatus  MFXSts = MFX_ERR_NONE;
+//    mfxStatus  MFXSts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(out);
 
     return MFX_AAC_Encoder_Utility::Query(core, in, out);
@@ -242,6 +242,7 @@ mfxStatus AudioENCODEAAC::GetAudioParam(mfxAudioParam *par)
 mfxStatus AudioENCODEAAC::QueryIOSize(AudioCORE *core, mfxAudioParam *par, mfxAudioAllocRequest *request)
 {
     MFX_CHECK_NULL_PTR2(par, request);
+    core;
 
     int upsample = 1;
     if(par->mfx.CodecProfile == MFX_PROFILE_AAC_HE) upsample = 2;
@@ -255,6 +256,7 @@ mfxStatus AudioENCODEAAC::QueryIOSize(AudioCORE *core, mfxAudioParam *par, mfxAu
 mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffer_out)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
+    buffer_out;
     mfxStatus sts;
 
     if (!m_isInit)
@@ -264,7 +266,7 @@ mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffe
     if (sts != MFX_ERR_NONE)
         return sts;
 
-    UMC::Status umcRes = UMC::UMC_OK;
+//    UMC::Status umcRes = UMC::UMC_OK;
 
 
 
@@ -310,6 +312,8 @@ mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxBitstream *bs,
 mfxStatus AudioENCODEAAC::AACECODERoutine(void *pState, void *pParam,
                                           mfxU32 threadNumber, mfxU32 callNumber)
 {
+    callNumber;
+    threadNumber;
     AudioENCODEAAC &obj = *((AudioENCODEAAC *) pState);
     mfxStatus mfxRes = MFX_ERR_NONE;
 
@@ -355,6 +359,7 @@ mfxStatus AudioENCODEAAC::AACECODERoutine(void *pState, void *pParam,
 
 mfxStatus AudioENCODEAAC::AACAbortProc(void *pState, void *pParam)
 {
+    pParam;
     AudioENCODEAAC &obj = *((AudioENCODEAAC *) pState);
 
     if (MFX_PLATFORM_SOFTWARE == obj.m_platform)
@@ -366,12 +371,14 @@ mfxStatus AudioENCODEAAC::AACAbortProc(void *pState, void *pParam)
         return MFX_ERR_UNSUPPORTED;
     }
 
-    return MFX_ERR_NONE;
+//    return MFX_ERR_NONE;
 }
 
 mfxStatus AudioENCODEAAC::AACCompleteProc(void *pState, void *pParam,
                                           mfxStatus taskRes)
 {
+    taskRes;
+    pParam;
     AudioENCODEAAC &obj = *((AudioENCODEAAC *) pState);
 
     if (MFX_PLATFORM_SOFTWARE == obj.m_platform)
@@ -383,13 +390,14 @@ mfxStatus AudioENCODEAAC::AACCompleteProc(void *pState, void *pParam,
         return MFX_ERR_UNSUPPORTED;
     }
 
-    return MFX_ERR_NONE;
+//    return MFX_ERR_NONE;
 }
 
 
 mfxStatus AudioENCODEAAC::EncodeFrame(mfxBitstream *bs, mfxBitstream *buffer_out)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
+    buffer_out;
     mfxStatus sts;
 
     if (!m_isInit)
@@ -404,7 +412,7 @@ mfxStatus AudioENCODEAAC::EncodeFrame(mfxBitstream *bs, mfxBitstream *buffer_out
     {
         return MFX_ERR_MORE_DATA;
     }
-    UMC::Status umcRes = UMC::UMC_OK;
+//    UMC::Status umcRes = UMC::UMC_OK;
 
 
     if (NULL != bs)
@@ -454,7 +462,7 @@ mfxStatus AudioENCODEAAC::ConstructFrame(mfxBitstream *in, mfxBitstream *out)
     if(m_vPar.mfx.CodecProfile == MFX_PROFILE_AAC_HE) upSample = 2;
     Ipp32s FrameSize  = m_vPar.mfx.m_info.Channels * sizeof(Ipp16s)*1024* upSample;
 
-    if(FrameSize > in->DataLength) 
+    if(FrameSize > (Ipp32s)in->DataLength) 
     {
         return MFX_ERR_MORE_DATA;
     }
@@ -492,10 +500,10 @@ mfxStatus MFX_AAC_Encoder_Utility::FillAudioParam( mfxAudioParam *in, mfxAudioPa
 
 mfxStatus MFX_AAC_Encoder_Utility::FillAudioParamByUMC(UMC::AACEncoderParams *in, mfxAudioParam *out)
 {
-    out->mfx.m_info.BitPerSample = in->m_info.bitPerSample;
-    out->mfx.m_info.Bitrate = in->m_info.bitrate;
-    out->mfx.m_info.Channels = in->m_info.channels;
-    out->mfx.m_info.SampleFrequency = in->m_info.sample_frequency;
+    out->mfx.m_info.BitPerSample = (mfxU16)in->m_info.bitPerSample;
+    out->mfx.m_info.Bitrate = (mfxU16)in->m_info.bitrate;
+    out->mfx.m_info.Channels = (mfxU16)in->m_info.channels;
+    out->mfx.m_info.SampleFrequency = (mfxU16)in->m_info.sample_frequency;
     return MFX_ERR_NONE;
 }
 
