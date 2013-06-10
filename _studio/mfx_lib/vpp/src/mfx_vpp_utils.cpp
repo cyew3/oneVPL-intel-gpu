@@ -762,7 +762,7 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
     mfxU32 filterIndx;
     char cStr[256];
 
-    sprintf(cStr, "\nVPP PIPELINE: \n");
+    sprintf_s(cStr, sizeof(cStr), "\nVPP PIPELINE: \n");
     OutputDebugStringA(cStr);
 
     for( filterIndx = 0; filterIndx < pipelineList.size(); filterIndx++ )
@@ -771,77 +771,77 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
         {
             case (mfxU32)MFX_EXTBUFF_VPP_DENOISE:
             {
-                sprintf(cStr, "%s \n", "DENOISE");
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "DENOISE");
                 OutputDebugStringA(cStr);
                 break;
             }
 
             case (mfxU32)MFX_EXTBUFF_VPP_RESIZE:
             {
-                 sprintf(cStr, "%s \n", "RESIZE");
+                 sprintf_s(cStr, sizeof(cStr), "%s \n", "RESIZE");
                  OutputDebugStringA(cStr);
                  break;
             }
 
             case (mfxU32)MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION:
             {
-                sprintf(cStr, "%s \n", "FRC");
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "FRC");
                 OutputDebugStringA(cStr);
                 break;
             }
 
             case (mfxU32)MFX_EXTBUFF_VPP_DI_30i60p:
             {
-                sprintf(cStr, "%s \n", "ADV DI");
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "ADV DI");
                 OutputDebugStringA(cStr);
                 break;
             }
 
             case (mfxU32)MFX_EXTBUFF_VPP_ITC:
             {
-                sprintf(cStr, "%s \n", "ITC");
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "ITC");
                 OutputDebugStringA(cStr);
                 break;
             }
 
             case (mfxU32)MFX_EXTBUFF_VPP_DI:
             {
-                sprintf(cStr, "%s \n", "DI");
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "DI");
                 OutputDebugStringA(cStr);
                 break;
             }
 
             case (mfxU32)MFX_EXTBUFF_VPP_CSC:
             {
-                sprintf(cStr, "%s \n", "CSC_NV12");
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "CSC_NV12");
                 OutputDebugStringA(cStr);
                 break;
             }
 
             case (mfxU32)MFX_EXTBUFF_VPP_CSC_OUT_RGB4:
             {
-                sprintf(cStr, "%s \n", "CSC_YUY2");
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "CSC_YUY2");
                 OutputDebugStringA(cStr);
                 break;
             }
 
             case (mfxU32)MFX_EXTBUFF_VPP_SCENE_ANALYSIS:
             {
-                sprintf(cStr, "%s \n", "SA");
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "SA");
                 OutputDebugStringA(cStr);
                 break;
             }
 
             case (mfxU32)MFX_EXTBUFF_VPP_PROCAMP:
             {
-                sprintf(cStr, "%s \n", "PROCAMP");
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "PROCAMP");
                 OutputDebugStringA(cStr);
                 break;
             }
 
             case (mfxU32)MFX_EXTBUFF_VPP_DETAIL:
             {
-                sprintf(cStr, "%s \n", "DETAIL");
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "DETAIL");
                 OutputDebugStringA(cStr);
                 break;
             }
@@ -849,7 +849,7 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
 #if defined(MFX_ENABLE_IMAGE_STABILIZATION_VPP)
             case (mfxU32)MFX_EXTBUFF_VPP_IMAGE_STABILIZATION:
             {
-                sprintf(cStr, "%s \n", "IMAGE_STAB");
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "IMAGE_STAB");
                 OutputDebugStringA(cStr);
                 break;
             }
@@ -857,7 +857,7 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
 
             case (mfxU32)MFX_EXTBUFF_VPP_VARIANCE_REPORT:
             {
-                sprintf(cStr, "%s \n", "VARIANCE_REP");
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "VARIANCE_REP");
                 OutputDebugStringA(cStr);
                 break;
             }
@@ -869,7 +869,7 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
         }// CASE
     } //end of filter search
 
-    sprintf(cStr, "\n");
+    sprintf_s(cStr, sizeof(cStr), "\n");
     OutputDebugStringA(cStr);
 
 #endif // #if defined(_WIN32) || defined(_WIN64)

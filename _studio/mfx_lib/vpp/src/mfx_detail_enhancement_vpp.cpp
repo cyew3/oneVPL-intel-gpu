@@ -92,7 +92,7 @@ mfxStatus MFXVideoVPPDetailEnhancement::Query( mfxExtBuffer* pHint )
 
     mfxExtVPPDetail* pParam = (mfxExtVPPDetail*)pHint;
 
-    if( pParam->DetailFactor < VPP_DETAIL_GAIN_MIN || pParam->DetailFactor > VPP_DETAIL_GAIN_MAX_USER_LEVEL )
+    if( pParam->DetailFactor > VPP_DETAIL_GAIN_MAX_USER_LEVEL )
     {
         VPP_RANGE_CLIP(pParam->DetailFactor, VPP_DETAIL_GAIN_MIN, VPP_DETAIL_GAIN_MAX_USER_LEVEL);
 

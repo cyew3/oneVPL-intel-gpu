@@ -81,7 +81,7 @@ mfxStatus VideoVppJpegD3D9::Init(const mfxVideoParam *par)
         for (mfxU32 i = 0; i < m_response.NumFrameActual; i++)
         {
             m_surfaces[i].Data.MemId = m_response.mids[i];
-            memcpy(&m_surfaces[i].Info, &request.Info, sizeof(mfxFrameInfo));
+            memcpy_s(&m_surfaces[i].Info, sizeof(mfxFrameInfo), &request.Info, sizeof(mfxFrameInfo));
         }
     }
 
