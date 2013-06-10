@@ -366,7 +366,7 @@ mfxStatus FastCompositingDDI::QueryCaps(FASTCOMP_CAPS& caps)
     sts = m_pAuxDevice->QueryAccelCaps(&DXVA2_FastCompositing, &sQuery, &uQuerySize);
     MFX_CHECK(!sts, MFX_ERR_DEVICE_FAILED);
 
-    memcpy(&caps, &sQuery.sCaps, sizeof(FASTCOMP_CAPS));
+    memcpy_s(&caps, sizeof(caps), &sQuery.sCaps, sizeof(FASTCOMP_CAPS));
 
     return MFX_ERR_NONE;
 
@@ -399,7 +399,7 @@ mfxStatus FastCompositingDDI::QueryCaps2(FASTCOMP_CAPS2& caps2)
     if (MFX_ERR_NONE == sts)
     {
         // get query data
-        memcpy(&caps2, &sQuery.sCaps2, sizeof(FASTCOMP_CAPS2));
+        memcpy_s(&caps2, sizeof(caps2), &sQuery.sCaps2, sizeof(FASTCOMP_CAPS2));
     }
     else
     {

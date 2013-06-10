@@ -53,7 +53,7 @@ MEforGen75::MEforGen75( )
     RefPix[1] = (RefPix[0] = RefCache) + REFWINDOWWIDTH*REFWINDOWHEIGHT;
     RefPixCb[1] = (RefPixCb[0] = RefCacheCb) + REFWINDOWWIDTH*REFWINDOWHEIGHT;
     RefPixCr[1] = (RefPixCr[0] = RefCacheCr) + REFWINDOWWIDTH*REFWINDOWHEIGHT;
-    memcpy(LutXY,version,16);//to figure out the version put a break point here, but value overwritten below
+    memcpy_s(LutXY,sizeof(LutXY),version,16);//to figure out the version put a break point here, but value overwritten below
     memset(LutMode,0,12*sizeof(I16));
     memset(LutXY,0,66*sizeof(I16));
     memset(&Vsta,0,sizeof(mfxVME7_5UNIIn));
@@ -259,8 +259,8 @@ Status MEforGen75::RunIME(mfxVME7_5UNIIn *uni, mfxVME7_5IMEIn *ime, mfxVME7_5UNI
 /*****************************************************************************************************/
 {
     Status status;
-    memcpy(&Vsta,uni,sizeof(mfxVME7_5UNIIn));
-    memcpy(&VIMEsta,ime,sizeof(mfxVME7_5IMEIn));
+    memcpy_s(&Vsta,sizeof(Vsta),uni,sizeof(mfxVME7_5UNIIn));
+    memcpy_s(&VIMEsta,sizeof(VIMEsta),ime,sizeof(mfxVME7_5IMEIn));
     if (status = CheckVMEInput(IME_MSG))
     {
         return status;
@@ -552,8 +552,8 @@ Status MEforGen75::RunSIC(mfxVME7_5UNIIn *uni, mfxVME7_5SICIn *sic, mfxVME7_5UNI
 /*****************************************************************************************************/
 {
     Status status;
-    memcpy(&Vsta,uni,sizeof(mfxVME7_5UNIIn));
-    memcpy(&VSICsta,sic,sizeof(mfxVME7_5SICIn));
+    memcpy_s(&Vsta,sizeof(Vsta),uni,sizeof(mfxVME7_5UNIIn));
+    memcpy_s(&VSICsta,sizeof(VSICsta),sic,sizeof(mfxVME7_5SICIn));
     if (status = CheckVMEInput(SIC_MSG))
     {
         return status;
@@ -805,8 +805,8 @@ Status MEforGen75::RunFBR(mfxVME7_5UNIIn *uni, mfxVME7_5FBRIn *fbr, mfxVME7_5UNI
 /*****************************************************************************************************/
 {
     Status status;
-    memcpy(&Vsta,uni,sizeof(mfxVME7_5UNIIn));
-    memcpy(&VFBRsta,fbr,sizeof(mfxVME7_5FBRIn));
+    memcpy_s(&Vsta,sizeof(Vsta),uni,sizeof(mfxVME7_5UNIIn));
+    memcpy_s(&VFBRsta,sizeof(VFBRsta),fbr,sizeof(mfxVME7_5FBRIn));
     if (status = CheckVMEInput(FBR_MSG))
     {
         return status;

@@ -115,7 +115,7 @@ mfxStatus D3D11VideoCORE::GetIntelDataPrivateReport(const GUID guid, mfxVideoPar
 
         if (video_config.guidConfigBitstreamEncryption == guid)
         {
-            memcpy(&config, &video_config, sizeof(D3D11_VIDEO_DECODER_CONFIG));
+            memcpy_s(&config, sizeof(config), &video_config, sizeof(D3D11_VIDEO_DECODER_CONFIG));
             return MFX_ERR_NONE;
         }
     }
