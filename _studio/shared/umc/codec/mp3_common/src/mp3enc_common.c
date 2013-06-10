@@ -76,4 +76,6 @@ Ipp32s mp3encGEBitrate(MP3Enc_com *state, Ipp32s slot_size)
   return 1;
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX

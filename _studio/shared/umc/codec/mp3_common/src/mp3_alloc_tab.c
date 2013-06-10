@@ -375,4 +375,6 @@ VM_ALIGN32_DECL(const Ipp16s*) mp3_degroup[] = {
     NULL, mp3_degroup_5, NULL, NULL, mp3_degroup_9
 };
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX

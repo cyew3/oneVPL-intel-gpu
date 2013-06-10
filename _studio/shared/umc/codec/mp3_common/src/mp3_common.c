@@ -221,4 +221,6 @@ Ipp32s mp3_SetAllocTable(Ipp32s header_id, Ipp32s mpg25, Ipp32s header_layer,
 
 /******************************************************************************/
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX

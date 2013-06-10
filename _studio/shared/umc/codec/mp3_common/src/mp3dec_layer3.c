@@ -510,4 +510,6 @@ Ipp32s mp3dec_GetScaleFactorsL3_LSF(MP3Dec_com *state, Ipp32s ch) {
     return 1;
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX

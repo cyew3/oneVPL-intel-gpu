@@ -511,4 +511,6 @@ void mp3dec_mc_decode_sample_l2(MP3Dec_com *state)
   }
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX

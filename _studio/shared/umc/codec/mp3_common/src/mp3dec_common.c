@@ -722,4 +722,6 @@ void mp3dec_CRC_update(MP3Dec_com *state, Ipp32u *crc)
     state->crc_nbits, crc);
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX

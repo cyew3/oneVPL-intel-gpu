@@ -309,4 +309,6 @@ MP3Status mp3decClose_com(/*MP3Dec_com *state*/)
     return MP3_OK;
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX

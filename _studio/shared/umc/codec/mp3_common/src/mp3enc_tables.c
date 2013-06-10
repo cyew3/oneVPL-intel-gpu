@@ -76,4 +76,6 @@ VM_ALIGN32_DECL(const Ipp32s) mp3enc_region01_table[23][2] =
   {6, 7},
 };
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX

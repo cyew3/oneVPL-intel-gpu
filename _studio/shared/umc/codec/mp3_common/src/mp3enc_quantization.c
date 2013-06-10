@@ -815,4 +815,6 @@ Ipp32s mp3enc_quantScaleBitCount(MP3Enc_com *state,
     return 1;
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX

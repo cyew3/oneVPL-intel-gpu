@@ -1274,5 +1274,6 @@ Ipp32s mp3enc_writeLastFrames(MP3Enc_com *state,
 }
 
 /*******************************************************************/
-
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX

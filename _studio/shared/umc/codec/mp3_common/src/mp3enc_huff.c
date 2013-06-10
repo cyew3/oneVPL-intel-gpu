@@ -91,4 +91,6 @@ Ipp32s mp3enc_huffInit(MP3Enc_HuffmanTable *htables, Ipp8u *mem, Ipp32s *size_al
     return 1;
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX
