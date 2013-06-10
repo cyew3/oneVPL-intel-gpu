@@ -2746,4 +2746,6 @@ IppsVLCTable_32s* mp3dec_VLCBooks[] = {
   huf_tab24, huf_tab24, huf_tab32, huf_tab33
 };
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_MP3_AUDIO_DECODER

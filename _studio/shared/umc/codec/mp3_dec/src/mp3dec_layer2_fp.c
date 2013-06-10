@@ -1192,4 +1192,6 @@ void mp3dec_mc_lfe_l2(MP3Dec *state, Ipp32f *out)
   ippsMulC_32f_I(scale, out, 12);
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_MP3_AUDIO_DECODER

@@ -535,4 +535,6 @@ MP3Status mp3decGetSampleFrequency(Ipp32s *freq, MP3Dec *state)
     return MP3_OK;
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_MP3_AUDIO_DECODER

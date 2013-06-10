@@ -1283,4 +1283,6 @@ MP3Status mp3dec_decode_data_LayerIII(MP3Dec *state)
     return MP3_OK;
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_MP3_AUDIO_DECODER

@@ -82,4 +82,6 @@ Ipp32s mp3dec_decode_data_LayerI(MP3Dec *state)
     return 1;
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_MP3_AUDIO_DECODER
