@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright (c) 2003-2008 Intel Corporation. All Rights Reserved.
+//          Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -24,6 +24,14 @@
 
 #define NUM_WINDOW_SHAPE      2
 #define NUM_WINDOW_SEQUENCES  4
+
+enum UMC_AACStereoMode
+{
+    UMC_AAC_MONO,
+    UMC_AAC_LR_STEREO,
+    UMC_AAC_MS_STEREO,
+    UMC_AAC_JOINT_STEREO
+};
 
 enum eSAACDEC_FILTERBANK_H {
   N_SHORT    = 256,
@@ -47,8 +55,9 @@ enum DecodeMode
 };
 
 enum UMC_AACOuputFormat {
-  UMC_AAC_ADTS,
+  UMC_AAC_ADTS = 0,
   UMC_AAC_ADIF,
+  UMC_AAC_RAW
 };
 
 enum AudioObjectType
