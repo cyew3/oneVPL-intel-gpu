@@ -21,7 +21,7 @@
 #include "umc_audio_decoder.h"
 #include "umc_mp3_decoder.h"
 #include "umc_mutex.h"
-#include "mp3dec_own.h"
+
 #include "ippcore.h"
 #include "ipps.h"
 #include "mfx_task.h"

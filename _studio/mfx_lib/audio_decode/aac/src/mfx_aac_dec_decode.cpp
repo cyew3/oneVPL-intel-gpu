@@ -274,6 +274,7 @@ mfxStatus AudioDECODEAAC::GetAudioParam(mfxAudioParam *par)
 
 mfxStatus AudioDECODEAAC::DecodeHeader(AudioCORE *core, mfxBitstream *bs, mfxAudioParam *par)
 {
+    core;
     MFX_CHECK_NULL_PTR2(bs, par);
 
     mfxStatus sts = CheckBitstream(bs);
@@ -295,7 +296,7 @@ mfxStatus AudioDECODEAAC::DecodeHeader(AudioCORE *core, mfxBitstream *bs, mfxAud
             {
                 int copyHeaderSize = bs->DataLength < MAXIMUM_HEADER_LENGTH ? bs->DataLength : MAXIMUM_HEADER_LENGTH;
                 ippsCopy_8u(bs->Data + bs->DataOffset, par->mfx.AACHeaderData, copyHeaderSize);
-                par->mfx.AACHeaderDataSize = copyHeaderSize;
+                par->mfx.AACHeaderDataSize = (mfxU16)copyHeaderSize;
                 return FillAudioParamADIF(&audio_adif_data, par);
             }
             else  
@@ -306,7 +307,7 @@ mfxStatus AudioDECODEAAC::DecodeHeader(AudioCORE *core, mfxBitstream *bs, mfxAud
                 {
                     int copyHeaderSize = bs->DataLength < MAXIMUM_HEADER_LENGTH ? bs->DataLength : MAXIMUM_HEADER_LENGTH;
                     ippsCopy_8u(bs->Data + bs->DataOffset, par->mfx.AACHeaderData, copyHeaderSize);
-                    par->mfx.AACHeaderDataSize = bs->DataLength;
+                    par->mfx.AACHeaderDataSize = (mfxU16)bs->DataLength;
                     return FillAudioParamADTSFixed(&audio_adts_fixed_data, par);
                 }
                 else
@@ -317,7 +318,7 @@ mfxStatus AudioDECODEAAC::DecodeHeader(AudioCORE *core, mfxBitstream *bs, mfxAud
                         int copyHeaderSize = bs->DataLength < MAXIMUM_HEADER_LENGTH ?  bs->DataLength : MAXIMUM_HEADER_LENGTH;
 
                         ippsCopy_8u(bs->Data + bs->DataOffset, par->mfx.AACHeaderData, copyHeaderSize);
-                        par->mfx.AACHeaderDataSize = copyHeaderSize;
+                        par->mfx.AACHeaderDataSize = (mfxU16)copyHeaderSize;
 
                         if (MFX_ERR_NONE != sts)
                         {
@@ -345,11 +346,11 @@ mfxStatus AudioDECODEAAC::DecodeHeader(AudioCORE *core, mfxBitstream *bs, mfxAud
 mfxStatus AudioDECODEAAC::FillAudioParamESDS(sAudio_specific_config* config, mfxAudioParam *out)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    out->mfx.m_info.SampleFrequency = config->samplingFrequency;
+    out->mfx.m_info.SampleFrequency = (mfxU16)config->samplingFrequency;
 
 
     out->mfx.CodecId = MFX_CODEC_AAC;
-    out->mfx.CodecProfile = config->audioObjectType;
+    out->mfx.CodecProfile = (mfxU16)config->audioObjectType;
     switch(config->sbrPresentFlag)
     {
     case 0: 
@@ -386,7 +387,7 @@ mfxStatus AudioDECODEAAC::FillAudioParamADIF(sAdif_header* config, mfxAudioParam
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     if ((m_p_pce->sampling_frequency_index < 0) || (m_p_pce->sampling_frequency_index > 12))
         return MFX_ERR_UNDEFINED_BEHAVIOR;
-    out->mfx.m_info.SampleFrequency = aac_sampling_frequency_table[m_p_pce->sampling_frequency_index];;
+    out->mfx.m_info.SampleFrequency = (mfxU16)aac_sampling_frequency_table[m_p_pce->sampling_frequency_index];;
 
     out->mfx.CodecId = MFX_CODEC_AAC;
 
@@ -416,11 +417,11 @@ mfxStatus AudioDECODEAAC::FillAudioParamADTSFixed(sAdts_fixed_header* config, mf
     mfxStatus sts = MFX_ERR_NONE;
     if ((config->sampling_frequency_index < 0) || (config->sampling_frequency_index > 12))
         return MFX_ERR_UNDEFINED_BEHAVIOR;
-    out->mfx.m_info.SampleFrequency = aac_sampling_frequency_table[config->sampling_frequency_index];;
-    out->mfx.m_info.Channels = config->channel_configuration;
+    out->mfx.m_info.SampleFrequency = (mfxU16)aac_sampling_frequency_table[config->sampling_frequency_index];;
+    out->mfx.m_info.Channels = (mfxU16)config->channel_configuration;
 
     out->mfx.CodecId = MFX_CODEC_AAC;
-    out->mfx.CodecProfile = get_audio_object_type_by_adts_header(config);;
+    out->mfx.CodecProfile = (mfxU16)get_audio_object_type_by_adts_header(config);;
 
     out->mfx.FlagSBRSupportLev = MFX_AUDIO_AAC_SBR_UNDEF;
     out->mfx.FlagPSSupportLev = MFX_AUDIO_AAC_PS_PARSER;
@@ -431,6 +432,7 @@ mfxStatus AudioDECODEAAC::FillAudioParamADTSFixed(sAdts_fixed_header* config, mf
 
 mfxStatus AudioDECODEAAC::QueryIOSize(AudioCORE *core, mfxAudioParam *par, mfxAudioAllocRequest *request)
 {
+    core;
     MFX_CHECK_NULL_PTR2(par, request);
 
     request->SuggestedInputSize = CH_MAX * 768;;
@@ -466,6 +468,8 @@ mfxStatus AudioDECODEAAC::DecodeFrameCheck(mfxBitstream *bs,
 mfxStatus AudioDECODEAAC::AACECODERoutine(void *pState, void *pParam,
                                           mfxU32 threadNumber, mfxU32 callNumber)
 {
+    callNumber;
+    threadNumber;
     AudioDECODEAAC &obj = *((AudioDECODEAAC *) pState);
     mfxStatus mfxRes = MFX_ERR_NONE;
 
@@ -502,6 +506,7 @@ mfxStatus AudioDECODEAAC::AACECODERoutine(void *pState, void *pParam,
 
 mfxStatus AudioDECODEAAC::AACAbortProc(void *pState, void *pParam)
 {
+    pParam;
     AudioDECODEAAC &obj = *((AudioDECODEAAC *) pState);
 
     if (MFX_PLATFORM_SOFTWARE == obj.m_platform)
@@ -517,6 +522,8 @@ mfxStatus AudioDECODEAAC::AACAbortProc(void *pState, void *pParam)
 mfxStatus AudioDECODEAAC::AACCompleteProc(void *pState, void *pParam,
                                           mfxStatus taskRes)
 {
+    taskRes;
+    pParam;
     AudioDECODEAAC &obj = *((AudioDECODEAAC *) pState);
 
     if (MFX_PLATFORM_SOFTWARE == obj.m_platform)
@@ -532,6 +539,7 @@ mfxStatus AudioDECODEAAC::AACCompleteProc(void *pState, void *pParam,
 mfxStatus AudioDECODEAAC::DecodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffer_out)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
+    buffer_out;
     mfxStatus sts;
 
     if (!m_isInit)
@@ -562,6 +570,7 @@ mfxStatus AudioDECODEAAC::DecodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffe
 mfxStatus AudioDECODEAAC::DecodeFrame(mfxBitstream *bs, mfxBitstream *buffer_out)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
+    buffer_out;
     mfxStatus sts;
 
     if (!m_isInit)
@@ -698,10 +707,10 @@ mfxStatus MFX_AAC_Utility::FillAudioParam( mfxAudioParam *in, mfxAudioParam *out
 
 mfxStatus MFX_AAC_Utility::FillAudioParamByUMC(UMC::AACDecoderParams *in, mfxAudioParam *out)
 {
-    out->mfx.m_info.BitPerSample = in->m_info.bitPerSample;
-    out->mfx.m_info.Bitrate = in->m_info.bitrate;
-    out->mfx.m_info.Channels = in->m_info.channels;
-    out->mfx.m_info.SampleFrequency = in->m_info.sample_frequency;
+    out->mfx.m_info.BitPerSample = (mfxU16)in->m_info.bitPerSample;
+    out->mfx.m_info.Bitrate = (mfxU16)in->m_info.bitrate;
+    out->mfx.m_info.Channels = (mfxU16)in->m_info.channels;
+    out->mfx.m_info.SampleFrequency = (mfxU16)in->m_info.sample_frequency;
     return MFX_ERR_NONE;
 }
 
