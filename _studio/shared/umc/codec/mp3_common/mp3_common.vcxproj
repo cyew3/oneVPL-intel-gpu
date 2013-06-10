@@ -1,0 +1,154 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="debug|Win32">
+      <Configuration>debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="release|Win32">
+      <Configuration>release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{5ABF370C-A812-416D-94F0-986D2EF11D58}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>11.0.50727.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|Win32'">
+    <OutDir>release\</OutDir>
+    <IntDir>mp3_common.dir\release\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>debug\</OutDir>
+    <IntDir>mp3_common.dir\debug\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='release|Win32'">
+    <Midl>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\ia32\include;.\include;c:\Projects\ipp_samples\ipp-samples.7.1.0.011\sources\audio-video-codecs\codec\common\include;c:\Projects\ipp_samples\ipp-samples.7.1.0.011\sources\audio-video-codecs\io\umc\include;c:\Projects\ipp_samples\ipp-samples.7.1.0.011\sources\audio-video-codecs\core\umc\include;c:\Projects\ipp_samples\ipp-samples.7.1.0.011\sources\audio-video-codecs\core\vm\include;c:\Projects\ipp_samples\ipp-samples.7.1.0.011\sources\audio-video-codecs\core\vm_plus\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+      <TargetEnvironment>Win32</TargetEnvironment>
+      <GenerateStublessProxies>true</GenerateStublessProxies>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <OutputDirectory>$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <DllDataFileName />
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <ClCompile>
+      <AdditionalOptions> /Zm1000 /Zl %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>MaxSpeed</Optimization>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\ia32\include;.\include;..\common\include;..\..\io\umc\include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_SBCS;WIN32;_WIN32;_WIN32_WINNT=0x501;CMAKE_INTDIR="release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling />
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <AssemblerListingLocation>release</AssemblerListingLocation>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>C:\Projects\ipp_samples\ipp-samples.7.1.0.011\__cmake\audio-video-codecs.ia32.vc2005.s.st\__lib\release/mp3_common.pdb</ProgramDataBaseFileName>
+      <WarningLevel>Level3</WarningLevel>
+      <SuppressStartupBanner>false</SuppressStartupBanner>
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_SBCS;WIN32;_WIN32;_WIN32_WINNT=0x501;CMAKE_INTDIR="release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\ia32\include;.\include;c:\Projects\ipp_samples\ipp-samples.7.1.0.011\sources\audio-video-codecs\codec\common\include;c:\Projects\ipp_samples\ipp-samples.7.1.0.011\sources\audio-video-codecs\io\umc\include;c:\Projects\ipp_samples\ipp-samples.7.1.0.011\sources\audio-video-codecs\core\umc\include;c:\Projects\ipp_samples\ipp-samples.7.1.0.011\sources\audio-video-codecs\core\vm\include;c:\Projects\ipp_samples\ipp-samples.7.1.0.011\sources\audio-video-codecs\core\vm_plus\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Lib>
+      <OutputFile>$(OutDir)lib\$(ProjectName).lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Midl>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\ia32\include;.\include;c:\Projects\ipp_samples\ipp-samples.7.1.0.011\sources\audio-video-codecs\codec\common\include;c:\Projects\ipp_samples\ipp-samples.7.1.0.011\sources\audio-video-codecs\io\umc\include;c:\Projects\ipp_samples\ipp-samples.7.1.0.011\sources\audio-video-codecs\core\umc\include;c:\Projects\ipp_samples\ipp-samples.7.1.0.011\sources\audio-video-codecs\core\vm\include;c:\Projects\ipp_samples\ipp-samples.7.1.0.011\sources\audio-video-codecs\core\vm_plus\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+      <TargetEnvironment>Win32</TargetEnvironment>
+      <GenerateStublessProxies>true</GenerateStublessProxies>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <OutputDirectory>$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <DllDataFileName />
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <ClCompile>
+      <AdditionalOptions> /Zm1000 /Zl %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\ia32\include;.\include;..\common\include;..\..\io\umc\include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_SBCS;WIN32;_WIN32;_WIN32_WINNT=0x501;CMAKE_INTDIR="debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling />
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <AssemblerListingLocation>debug</AssemblerListingLocation>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <WarningLevel>Level3</WarningLevel>
+      <SuppressStartupBanner>false</SuppressStartupBanner>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_SBCS;WIN32;_WIN32;_WIN32_WINNT=0x501;CMAKE_INTDIR="debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\ia32\include;.\include;c:\Projects\ipp_samples\ipp-samples.7.1.0.011\sources\audio-video-codecs\codec\common\include;c:\Projects\ipp_samples\ipp-samples.7.1.0.011\sources\audio-video-codecs\io\umc\include;c:\Projects\ipp_samples\ipp-samples.7.1.0.011\sources\audio-video-codecs\core\umc\include;c:\Projects\ipp_samples\ipp-samples.7.1.0.011\sources\audio-video-codecs\core\vm\include;c:\Projects\ipp_samples\ipp-samples.7.1.0.011\sources\audio-video-codecs\core\vm_plus\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Lib>
+      <OutputFile>$(OutDir)lib\$(ProjectName)_d.lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\mp3_alloc_tab.c" />
+    <ClCompile Include="src\mp3_common.c" />
+    <ClCompile Include="src\mp3dec_api.c" />
+    <ClCompile Include="src\mp3dec_common.c" />
+    <ClCompile Include="src\mp3dec_layer1.c" />
+    <ClCompile Include="src\mp3dec_layer2.c" />
+    <ClCompile Include="src\mp3dec_layer3.c" />
+    <ClCompile Include="src\mp3enc_bitstream.c" />
+    <ClCompile Include="src\mp3enc_common.c" />
+    <ClCompile Include="src\mp3enc_huff.c" />
+    <ClCompile Include="src\mp3enc_hufftables.c" />
+    <ClCompile Include="src\mp3enc_quantization.c" />
+    <ClCompile Include="src\mp3enc_tables.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\mp3_alloc_tab.h" />
+    <ClInclude Include="include\mp3_own.h" />
+    <ClInclude Include="include\mp3_status.h" />
+    <ClInclude Include="include\mp3dec.h" />
+    <ClInclude Include="include\mp3dec_huftabs.h" />
+    <ClInclude Include="include\mp3dec_own.h" />
+    <ClInclude Include="include\mp3enc.h" />
+    <ClInclude Include="include\mp3enc_hufftables.h" />
+    <ClInclude Include="include\mp3enc_own.h" />
+    <ClInclude Include="include\mp3enc_psychoacoustic.h" />
+    <ClInclude Include="include\mp3enc_tables.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
