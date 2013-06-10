@@ -44,8 +44,8 @@ const
 wchar_t * const defaultDLLName[2] = {L"libmfxhw64.dll",
                                      L"libmfxsw64.dll"};
 const
-wchar_t * const defaultAudioDLLName[2] = {L"libmfxaudiosw32.dll",
-                                     L"libmfxaudiosw32.dll"};
+wchar_t * const defaultAudioDLLName[2] = {L"libmfxaudiosw64.dll",
+                                     L"libmfxaudiosw64.dll"};
 #elif defined(_WIN32)
 const
 wchar_t * const defaultDLLName[2] = {L"libmfxhw32.dll",
@@ -63,8 +63,8 @@ const
 msdk_disp_char * const defaultDLLName[2] = {L"libmfxhw64_d.dll",
                                             L"libmfxsw64_d.dll"};
 const
-msdk_disp_char * const defaultAudioDLLName[2] = {L"libmfxaudiosw32_d.dll",
-                                            L"libmfxaudiosw32_d.dll"};
+msdk_disp_char * const defaultAudioDLLName[2] = {L"libmfxaudiosw64_d.dll",
+                                            L"libmfxaudiosw64_d.dll"};
 #elif defined(WIN32)
 const
 msdk_disp_char * const defaultDLLName[2] = {L"libmfxhw32_d.dll",
