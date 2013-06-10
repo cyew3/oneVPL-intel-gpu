@@ -762,7 +762,6 @@ void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
     Ipp32s tcOffset, betaOffset;
     H265EdgeData edge;
     Ipp32u uiPartP;
-    Ipp32s dir;
     Ipp32s i, j, e;
 
     if (cross)

@@ -723,7 +723,7 @@ H265PlanePtrYCommon H265Pattern::GetPredictorPtr(Ipp32u DirMode, Ipp32u log2BlkS
 {
     H265PlanePtrYCommon pSrc;
     VM_ASSERT(log2BlkSize >= 2 && log2BlkSize < 7);
-    Ipp32s diff = min((abs((Ipp32s) DirMode - HOR_IDX)), (abs((Ipp32s)DirMode - VER_IDX)));
+    Ipp32s diff = IPP_MIN((abs((Ipp32s) DirMode - HOR_IDX)), (abs((Ipp32s)DirMode - VER_IDX)));
     Ipp8u FiltIdx = diff > (Ipp32s) m_IntraFilter[log2BlkSize - 2] ? 1 : 0;
     if (DirMode == DC_IDX)
     {

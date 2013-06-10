@@ -440,7 +440,6 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(Ipp32s iCurMBNumber, I
         }
         if (!m_pSliceHeader->m_PicParamSet->getScalingListPresentFlag() && !m_pSliceHeader->m_SeqParamSet->getScalingListPresentFlag())
         {
-            bool use_ts = m_pSliceHeader->m_PicParamSet->getUseTransformSkip();
             m_TrQuant->setDefaultScalingList();
         }
         m_TrQuant->m_UseScalingList = true;
@@ -450,7 +449,6 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(Ipp32s iCurMBNumber, I
         m_TrQuant->m_UseScalingList = false;
     }
 
-    bool bDoDeblocking;
     Ipp32s iFirstMBToDeblock;
 //    Ipp32s iAvailableMBToDeblock = 0;
 
