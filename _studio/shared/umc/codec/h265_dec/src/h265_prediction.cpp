@@ -145,8 +145,6 @@ void H265Prediction::PredIntraLumaAng(H265Pattern* pPattern, Ipp32u DirMode, H26
  */
 void H265Prediction::PredIntraPlanarLuma(H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrYCommon pDst, Ipp32s dstStride, Ipp32u blkSize)
 {
-    VM_ASSERT(width == height);
-
     Ipp32s bottomLeft;
     Ipp32s topRight;
     Ipp32s horPred;
@@ -203,8 +201,6 @@ void H265Prediction::PredIntraPlanarLuma(H265PlanePtrYCommon pSrc, Ipp32s srcStr
  */
 void H265Prediction::PredIntraPlanarChroma(H265PlanePtrUVCommon pSrc, Ipp32s srcStride, H265PlanePtrUVCommon pDst, Ipp32s dstStride, Ipp32u blkSize)
 {
-    VM_ASSERT(width == height);
-
     Ipp32s bottomLeft1, bottomLeft2;
     Ipp32s topRight1, topRight2;
     Ipp32s horPred1, horPred2;
