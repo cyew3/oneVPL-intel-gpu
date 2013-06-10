@@ -41,6 +41,12 @@ File Name: d3d11_video_processor.h
 // GUID {4FCE08E4-B5FD-435e-B52C-19B8D5EC3387}
 static const GUID VPE_GUID = {0x4fce08e4, 0xb5fd, 0x435e, { 0xb5, 0x2c, 0x19, 0xb8, 0xd5, 0xec, 0x33, 0x87 } };
 
+// GUID for Interface V1
+static const GUID VPE_GUID_INTERFACE_V1 = {0x4E61148B, 0x46D7, 0x4179, {0x81, 0xAA, 0x11, 0x63, 0xEE, 0x8E, 0xA1, 0xE9} };
+
+// GUID for Interface V2
+static const GUID VPE_GUID_INTERFACE_V2 = {0xEDD1D4B9, 0x8659, 0x4CBC, {0xA4, 0xD6, 0x98, 0x31, 0xA2, 0x16, 0x3A, 0xC3} };
+
 typedef struct _VPE_GUID_INFO
 {
     GUID Guid;       
@@ -405,18 +411,18 @@ typedef struct _VPE_VPREP_VARIANCE_CAPS
 } VPE_VPREP_VARIANCE_CAPS;
 
 
-typedef struct _VPE_SET_VARIANCE_PARAM
+typedef struct _VPE_VPREP_SET_VARIANCE_PARAM
 {
     VPE_VPREP_VARIANCE_TYPE Type;
-} VPE_SET_VARIANCE_PARAM;
+} VPE_VPREP_SET_VARIANCE_PARAM;
 
 
-typedef struct _VPE_VPREP_VARIANCE_PARAMS
+typedef struct _VPE_VPREP_GET_VARIANCE_PARAMS
 {
     UINT                FrameCount;                                     // [in]
     UINT                BufferSize;                                     // [in]
     VOID                *pBuffer;                                       // [in]
-} VPE_VPREP_VARIANCE_PARAMS;
+} VPE_VPREP_GET_VARIANCE_PARAMS;
 
 
 typedef struct _VPE_VPREP_YUV_RANGE_PARAM
@@ -552,8 +558,8 @@ typedef struct _VPE_FUNCTION
         VPE_VPREP_ISTAB_PARAM                   *pIStabParam;
         VPE_VPREP_INTERLACE_PARAM               *pInterlacePram;
         VPE_VPREP_VARIANCE_CAPS                 *pVarianceCaps;
-        //VPE_VPREP_SET_VARIANCE_PARAM            *pSetVarianceParam;//AYA!!! FIXME: WAIT RESPONSE FROM VPG
-        //VPE_VPREP_GET_VARIANCE_PARAM            *pGetVarianceParam;
+        VPE_VPREP_SET_VARIANCE_PARAM            *pSetVarianceParam;
+        VPE_VPREP_GET_VARIANCE_PARAMS           *pGetVarianceParam;
         VPE_VPREP_YUV_RANGE_PARAM               *pYUVRangeParam;
 
         VPE_CP_CAPS                             *pCPCaps;

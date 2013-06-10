@@ -430,39 +430,161 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
 #endif
 #endif
 
-    //AYA: critical: MSDK should pick one of VPE_GUID & Version which supported by driver. 
-    // selection is simple: pick iface with maximum capabilities. will be implemented later.
-    // right now I know GUID & VERSION
-    m_iface.guid    = guidEnum.pGuidArray[0].Guid;       // GUID {4E61148B-46D7-4179-81AA-1163EE8EA1E9}
-    m_iface.version = guidEnum.pGuidArray[0].pVersion[0];// 0x0000
+    bool isVer2Enable = false;
+    mfxU16 idxVer2 = 0;
+    bool isVer1Enable = false;
+    mfxU16 idxVer1 = 0;
+
+    for (mfxU16 guidIdx = 0; guidIdx < guidEnum.GuidCount; guidIdx++)
+    {
+        VPE_GUID_INFO *pGuidInfo = &guidEnum.pGuidArray[guidIdx];
+
+        printf("GUID[%d] = ", guidIdx);
+        printGuid(pGuidInfo->Guid);
+
+        if(VPE_GUID_INTERFACE_V1 == pGuidInfo->Guid)
+        {
+            isVer1Enable = true;
+            idxVer1      = guidIdx;
+        }
+
+        if(VPE_GUID_INTERFACE_V2 == pGuidInfo->Guid)
+        {
+            isVer2Enable = true;
+            idxVer2      = guidIdx;
+        }
+
+        for(mfxU16 verIdx = 0; verIdx < pGuidInfo->VersionCount; verIdx++)
+        {
+            printf("\n\tVersion = %04x\n", pGuidInfo->pVersion[verIdx]);
+        }
+        if( 0 == pGuidInfo->VersionCount )
+        {
+             printf("\n\tVersion = N/A\n");
+        }
+        printf("\n");
+    }
+
+    if(isVer2Enable)
+    {
+        m_iface.guid    = guidEnum.pGuidArray[idxVer2].Guid;       
+        m_iface.version = guidEnum.pGuidArray[idxVer2].pVersion[0];
+    }
+    else if(isVer1Enable)
+    {
+        m_iface.guid    = guidEnum.pGuidArray[idxVer1].Guid;       
+        m_iface.version = guidEnum.pGuidArray[idxVer1].pVersion[0];
+    }
+    else
+    {
+        //AYA: critical: MSDK should pick one of VPE_GUID & Version which supported by driver. 
+        // selection is simple: pick iface with maximum capabilities. will be implemented later.
+        // right now I know GUID & VERSION
+        m_iface.guid    = guidEnum.pGuidArray[0].Guid;       // GUID {4E61148B-46D7-4179-81AA-1163EE8EA1E9}
+        m_iface.version = guidEnum.pGuidArray[0].pVersion[0];// 0x0000
+    }
+    
+
     //-----------------------------------------------------
 
-    PREPROC_MODE preprocMode;
-    memset(&preprocMode, 0, sizeof(PREPROC_MODE));
-    memset(&m_vpreCaps, 0, sizeof(PREPROC_QUERYCAPS));
+    if( VPE_GUID_INTERFACE_V2  != m_iface.guid )
+    {
+        PREPROC_MODE preprocMode;
+        memset(&preprocMode, 0, sizeof(PREPROC_MODE));
+        memset(&m_vpreCaps, 0, sizeof(PREPROC_QUERYCAPS));
 
-    preprocMode.Version           = m_iface.version;
-    preprocMode.Function          = VPE_FN_QUERY_PREPROC_CAPS;
-    preprocMode.pPreprocQueryCaps = &m_vpreCaps;
+        preprocMode.Version           = m_iface.version;
+        preprocMode.Function          = VPE_FN_QUERY_PREPROC_CAPS;
+        preprocMode.pPreprocQueryCaps = &m_vpreCaps;
 
-    hRes = GetOutputExtension(
-        &(m_iface.guid), 
-        sizeof(PREPROC_MODE), 
-        &preprocMode);
-    CHECK_HRES(hRes);
+        hRes = GetOutputExtension(
+            &(m_iface.guid), 
+            sizeof(PREPROC_MODE), 
+            &preprocMode);
+        CHECK_HRES(hRes);
 
-#ifdef DEBUG_DETAIL_INFO
-#ifndef MSDK_BANNED
-    printf("Success: get preproc caps\n");
+    #ifdef DEBUG_DETAIL_INFO
+    #ifndef MSDK_BANNED
+        printf("Success: get preproc caps\n");
 
-    printf("bInterlacedScaling  = [%d]\n", m_vpreCaps.bInterlacedScaling);
-    printf("bSceneDetection     = [%d]\n", m_vpreCaps.bSceneDetection);
-    printf("bTargetSysMemory    = [%d]\n", m_vpreCaps.bTargetSysMemory);
-    printf("bIS                 = [%d]\n", m_vpreCaps.bIS);
-    printf("bVariance           = [%d]\n", m_vpreCaps.bVariance);
-    printf("bFieldWeavingControl= [%d]\n", m_vpreCaps.bFieldWeavingControl);
-#endif
-#endif
+        printf("bInterlacedScaling  = [%d]\n", m_vpreCaps.bInterlacedScaling);
+        printf("bSceneDetection     = [%d]\n", m_vpreCaps.bSceneDetection);
+        printf("bTargetSysMemory    = [%d]\n", m_vpreCaps.bTargetSysMemory);
+        printf("bIS                 = [%d]\n", m_vpreCaps.bIS);
+        printf("bVariance           = [%d]\n", m_vpreCaps.bVariance);
+        printf("bFieldWeavingControl= [%d]\n", m_vpreCaps.bFieldWeavingControl);
+    #endif
+    #endif
+    }
+    else //if( VPE_GUID_INTERFACE_V2  == m_iface.guid )
+    {
+        VPE_FUNCTION iFunc;
+
+        VPE_VERSION  version = {m_iface.version};
+        iFunc.Function = VPE_FN_SET_VERSION_PARAM;
+        iFunc.pVersion = &version;
+
+        hRes = SetOutputExtension(
+            &(m_iface.guid), 
+            sizeof(VPE_FUNCTION), 
+            &iFunc);
+        CHECK_HRES(hRes);
+
+
+        VPE_SET_STATUS_PARAM statusParam = {1, 0};
+        iFunc.Function        = VPE_FN_SET_STATUS_PARAM;
+        iFunc.pSetStatusParam = &statusParam;
+
+        hRes = SetOutputExtension(
+            &(m_iface.guid), 
+            sizeof(VPE_FUNCTION), 
+            &iFunc);
+        CHECK_HRES(hRes);
+
+
+        VPE_MODE_PARAM modeParam = {VPE_MODE_PREPROC};
+        iFunc.Function   = VPE_FN_MODE_PARAM;
+        iFunc.pModeParam = &modeParam;
+
+        hRes = SetOutputExtension(
+            &(m_iface.guid), 
+            sizeof(VPE_FUNCTION), 
+            &iFunc);
+        CHECK_HRES(hRes);
+
+
+        VPE_VPREP_CAPS vpeCaps = {0};
+        iFunc.Function   = VPE_FN_VPREP_QUERY_CAPS;
+        iFunc.pVprepCaps = &vpeCaps;
+
+        hRes = GetOutputExtension(
+            &(m_iface.guid), 
+            sizeof(VPE_FUNCTION), 
+            &iFunc);
+        CHECK_HRES(hRes);
+
+    //#ifdef DEBUG_DETAIL_INFO
+    //#ifndef MSDK_BANNED
+        printf("Success: VPE VPREP CAPS\n");
+
+        printf("bImageStabilization  = [%d]\n", vpeCaps.bImageStabilization);
+        printf("bInterlacedScaling   = [%d]\n", vpeCaps.bInterlacedScaling);
+        printf("bFieldWeavingControl = [%d]\n", vpeCaps.bFieldWeavingControl);
+        printf("bVariances           = [%d]\n", vpeCaps.bVariances);
+
+        // copy to old structure
+        memset(&m_vpreCaps, 0, sizeof(PREPROC_QUERYCAPS));
+        m_vpreCaps.bInterlacedScaling   = vpeCaps.bInterlacedScaling;
+        m_vpreCaps.bIS                  = vpeCaps.bImageStabilization;
+        m_vpreCaps.bFieldWeavingControl = vpeCaps.bFieldWeavingControl;
+        m_vpreCaps.bVariance            = vpeCaps.bVariances;
+
+        // to prevent any issues (HLD not completed yet on VPG side)
+        //m_vpreCaps.bVariance = 0;
+
+    //#endif
+    //#endif
+    }
 
     return MFX_ERR_NONE;
 
@@ -501,18 +623,44 @@ mfxStatus D3D11VideoProcessor::Close()
 
 mfxStatus D3D11VideoProcessor::QueryVarianceCaps(PREPROC_QUERY_VARIANCE_CAPS& varianceCaps)
 {
-    PREPROC_MODE preprocMode;
-    memset(&preprocMode,    0, sizeof(PREPROC_MODE));
-    memset(&varianceCaps, 0, sizeof(PREPROC_QUERY_VARIANCE_CAPS));
+    HRESULT hRes = S_OK;
 
-    preprocMode.Version           = m_iface.version;
-    preprocMode.Function          = VPE_FN_QUERY_VARIANCE_CAPS;
-    preprocMode.pVarianceCaps      = &varianceCaps;
+    if( VPE_GUID_INTERFACE_V2  != m_iface.guid )
+    {
+        PREPROC_MODE preprocMode;
+        memset(&preprocMode,    0, sizeof(PREPROC_MODE));
+        memset(&varianceCaps, 0, sizeof(PREPROC_QUERY_VARIANCE_CAPS));
 
-    HRESULT hRes = GetOutputExtension(
-        &(m_iface.guid), 
-        sizeof(PREPROC_MODE), 
-        &preprocMode);
+        preprocMode.Version           = m_iface.version;
+        preprocMode.Function          = VPE_FN_QUERY_VARIANCE_CAPS;
+        preprocMode.pVarianceCaps      = &varianceCaps;
+
+        hRes = GetOutputExtension(
+            &(m_iface.guid), 
+            sizeof(PREPROC_MODE), 
+            &preprocMode);
+    }
+    else //if( VPE_GUID_INTERFACE_V2  == m_iface.guid )
+    {
+        VPE_FUNCTION iFunc = {0};
+        //VPE_VERSION  version = {m_iface.version};
+
+        VPE_VPREP_VARIANCE_CAPS vpeVarianceCaps;
+        memset(&vpeVarianceCaps, 0, sizeof(VPE_VPREP_VARIANCE_CAPS));
+        iFunc.Function   = VPE_FN_VPREP_QUERY_VARIANCE_CAPS;
+        //iFunc.pVersion = &version; // no need to set used version?
+        iFunc.pVarianceCaps = &vpeVarianceCaps;
+
+        hRes = GetOutputExtension(
+            &(m_iface.guid), 
+            sizeof(VPE_FUNCTION), 
+            &iFunc);
+
+        // copy to old structure
+        //varianceCaps.Type = vpeVarianceCaps.Type;
+        varianceCaps.VarianceCount = vpeVarianceCaps.VarianceCount;
+        varianceCaps.VarianceSize = vpeVarianceCaps.VarianceSize;
+    }
 
     CHECK_HRES(hRes);
 
@@ -791,50 +939,50 @@ HRESULT D3D11VideoProcessor::SetOutputExtension(const GUID* pExtensionGuid, UINT
 
     HRESULT hRes;
 
-#ifdef DEBUG_DETAIL_INFO
-    printf("\n----------\n");fflush(stderr);
-    printf("State BEFORE  SetOutputExtension()  call\n");fflush(stderr);
-    printf("pVideoProcessor = %p\n", m_pVideoProcessor);fflush(stderr);
-    printf("Guid  = ");printGuid(*pExtensionGuid);printf("\n");fflush(stderr);
-    printf("DataSize        = %i\n", DataSize);fflush(stderr);
-    printf("pData           = %p\n", pData);fflush(stderr);
-
-    PREPROC_MODE *pMode = (PREPROC_MODE*)pData;
-    printf("Function = %i\n", pMode->Function);fflush(stderr);
-    printf("Version  = %i\n", pMode->Version);fflush(stderr);
-
-//    enum
-//{
-//    VPE_FN_QUERY_PREPROC_CAPS     = 0x0000,
-//    VPE_FN_SET_PREPROC_MODE       = 0x0001,
-//    VPE_FN_QUERY_SCENE_DETECTION  = 0x0002,
-//    VPE_FN_QUERY_PREPROC_STATUS   = 0x0003,
-//    VPE_FN_SET_IS_PARAMS          = 0x0004,
-//    VPE_FN_QUERY_VARIANCE_CAPS    = 0x0005,
-//    VPE_FN_QUERY_VARIANCE         = 0x0005,
-//};
-    if(pMode->Function == VPE_FN_SET_PREPROC_MODE)
-    {
-        SET_PREPROC_PARAMS *pParams = pMode->pPreprocParams;
-        printf("bEnablePreProcMode     = %i\n", pParams->bEnablePreProcMode) ;fflush(stderr);
-        printf("iTargetInterlacingMode = %i\n", pParams->iTargetInterlacingMode) ;fflush(stderr);
-        printf("bTargetInSysMemory     = %i\n", pParams->bTargetInSysMemory);fflush(stderr);
-        printf("bSceneDetectionEnable  = %i\n", pParams->bSceneDetectionEnable);fflush(stderr);
-        printf("bVarianceQuery         = %i\n", pParams->bVarianceQuery);fflush(stderr);
-        printf("bFieldWeaving          = %i\n", pParams->bFieldWeaving);fflush(stderr);
-        //printf("Reserved               : 26;
-        printf("StatusReportID         = %i\n", pParams->StatusReportID);fflush(stderr);
-    }
-    else if(pMode->Function == VPE_FN_QUERY_VARIANCE)
-    {
-        PREPROC_QUERY_VARIANCE_PARAMS *pParams = pMode->pVarianceParams;
-        printf("FrameNumber         = %i\n", pParams->FrameNumber) ;fflush(stderr);
-        printf("pVariances          = %p\n", pParams->pVariances) ;fflush(stderr);
-        printf("VarianceBufferSize  = %p\n", pParams->VarianceBufferSize) ;fflush(stderr);
-    }
-
-   
-#endif
+//#ifdef DEBUG_DETAIL_INFO
+//    printf("\n----------\n");fflush(stderr);
+//    printf("State BEFORE  SetOutputExtension()  call\n");fflush(stderr);
+//    printf("pVideoProcessor = %p\n", m_pVideoProcessor);fflush(stderr);
+//    printf("Guid  = ");printGuid(*pExtensionGuid);printf("\n");fflush(stderr);
+//    printf("DataSize        = %i\n", DataSize);fflush(stderr);
+//    printf("pData           = %p\n", pData);fflush(stderr);
+//
+//    PREPROC_MODE *pMode = (PREPROC_MODE*)pData;
+//    printf("Function = %i\n", pMode->Function);fflush(stderr);
+//    printf("Version  = %i\n", pMode->Version);fflush(stderr);
+//
+////    enum
+////{
+////    VPE_FN_QUERY_PREPROC_CAPS     = 0x0000,
+////    VPE_FN_SET_PREPROC_MODE       = 0x0001,
+////    VPE_FN_QUERY_SCENE_DETECTION  = 0x0002,
+////    VPE_FN_QUERY_PREPROC_STATUS   = 0x0003,
+////    VPE_FN_SET_IS_PARAMS          = 0x0004,
+////    VPE_FN_QUERY_VARIANCE_CAPS    = 0x0005,
+////    VPE_FN_QUERY_VARIANCE         = 0x0005,
+////};
+//    if(pMode->Function == VPE_FN_SET_PREPROC_MODE)
+//    {
+//        SET_PREPROC_PARAMS *pParams = pMode->pPreprocParams;
+//        printf("bEnablePreProcMode     = %i\n", pParams->bEnablePreProcMode) ;fflush(stderr);
+//        printf("iTargetInterlacingMode = %i\n", pParams->iTargetInterlacingMode) ;fflush(stderr);
+//        printf("bTargetInSysMemory     = %i\n", pParams->bTargetInSysMemory);fflush(stderr);
+//        printf("bSceneDetectionEnable  = %i\n", pParams->bSceneDetectionEnable);fflush(stderr);
+//        printf("bVarianceQuery         = %i\n", pParams->bVarianceQuery);fflush(stderr);
+//        printf("bFieldWeaving          = %i\n", pParams->bFieldWeaving);fflush(stderr);
+//        //printf("Reserved               : 26;
+//        printf("StatusReportID         = %i\n", pParams->StatusReportID);fflush(stderr);
+//    }
+//    else if(pMode->Function == VPE_FN_QUERY_VARIANCE)
+//    {
+//        PREPROC_QUERY_VARIANCE_PARAMS *pParams = pMode->pVarianceParams;
+//        printf("FrameNumber         = %i\n", pParams->FrameNumber) ;fflush(stderr);
+//        printf("pVariances          = %p\n", pParams->pVariances) ;fflush(stderr);
+//        printf("VarianceBufferSize  = %p\n", pParams->VarianceBufferSize) ;fflush(stderr);
+//    }
+//
+//   
+//#endif
 
     hRes = m_pVideoContext->VideoProcessorSetOutputExtension(
         m_pVideoProcessor, 
@@ -1020,28 +1168,28 @@ HRESULT D3D11VideoProcessor::GetOutputExtension(
 
     HRESULT hRes;
 
-#ifdef DEBUG_DETAIL_INFO
-    printf("\n----------\n");fflush(stderr);
-    printf("State BEFORE  GetOutputExtension()  call\n");fflush(stderr);
-    printf("pVideoProcessor = %p\n", m_pVideoProcessor);fflush(stderr);
-    printf("Guid            = ");printGuid(*pExtensionGuid);printf("\n");fflush(stderr);
-    printf("DataSize        = %i\n", DataSize);fflush(stderr);
-    printf("pData           = %p\n", pData);fflush(stderr);
-
-    PREPROC_MODE *pMode = (PREPROC_MODE*)pData;
-    printf("Function = %i\n", pMode->Function);fflush(stderr);
-    printf("Version  = %i\n", pMode->Version);fflush(stderr);
-
-    if(pMode->Function == VPE_FN_QUERY_VARIANCE)
-    {
-        PREPROC_QUERY_VARIANCE_PARAMS *pParams = pMode->pVarianceParams;
-        printf("FrameNumber         = %i\n", pParams->FrameNumber) ;fflush(stderr);
-        printf("pVariances          = %p\n", pParams->pVariances) ;fflush(stderr);
-        printf("VarianceBufferSize  = %i\n", pParams->VarianceBufferSize) ;fflush(stderr);
-    }
-
-   
-#endif
+//#ifdef DEBUG_DETAIL_INFO
+//    printf("\n----------\n");fflush(stderr);
+//    printf("State BEFORE  GetOutputExtension()  call\n");fflush(stderr);
+//    printf("pVideoProcessor = %p\n", m_pVideoProcessor);fflush(stderr);
+//    printf("Guid            = ");printGuid(*pExtensionGuid);printf("\n");fflush(stderr);
+//    printf("DataSize        = %i\n", DataSize);fflush(stderr);
+//    printf("pData           = %p\n", pData);fflush(stderr);
+//
+//    PREPROC_MODE *pMode = (PREPROC_MODE*)pData;
+//    printf("Function = %i\n", pMode->Function);fflush(stderr);
+//    printf("Version  = %i\n", pMode->Version);fflush(stderr);
+//
+//    if(pMode->Function == VPE_FN_QUERY_VARIANCE)
+//    {
+//        PREPROC_QUERY_VARIANCE_PARAMS *pParams = pMode->pVarianceParams;
+//        printf("FrameNumber         = %i\n", pParams->FrameNumber) ;fflush(stderr);
+//        printf("pVariances          = %p\n", pParams->pVariances) ;fflush(stderr);
+//        printf("VarianceBufferSize  = %i\n", pParams->VarianceBufferSize) ;fflush(stderr);
+//    }
+//
+//   
+//#endif
 
     hRes = m_pVideoContext->VideoProcessorGetOutputExtension(
         m_pVideoProcessor, 
@@ -1074,41 +1222,76 @@ mfxStatus D3D11VideoProcessor::QueryTaskStatus(mfxU32 idx)
 
     // aya: the same as for d3d9 (FC)
     const mfxU32 numStructures = 6 * 2;
-
-    PREPROC_STATUS_QUERY_BUFFER queryBuffer[numStructures];
-    PREPROC_STATUS_QUERY_PARAMS queryStatusParams;
-    queryStatusParams.StatusReportCount = numStructures;
-
-    memset(&queryBuffer[0], 0, sizeof(PREPROC_STATUS_QUERY_BUFFER) * numStructures);
-
-    queryStatusParams.pStatusBuffer = &queryBuffer[0];
-
     std::set<mfxU32>::iterator iterator;
 
-    PREPROC_MODE preprocMode;
-    memset(&preprocMode, 0, sizeof(PREPROC_MODE));
-
-    preprocMode.Version  = m_iface.version;
-    preprocMode.Function = VPE_FN_QUERY_PREPROC_STATUS;
-    preprocMode.pPreprocQueryStatus = &queryStatusParams;
-
-    hRes = GetOutputExtension(
-        &(m_iface.guid), 
-        sizeof(PREPROC_MODE), 
-        &preprocMode);
-    CHECK_HRES(hRes);
-
-    for (mfxU32 i = 0; i < numStructures; i += 1)
+    //-----------------------------------------------------
+    if( VPE_GUID_INTERFACE_V2 != m_iface.guid)
     {
-        if (VPREP_GPU_READY == queryStatusParams.pStatusBuffer[i].Status)
+        PREPROC_STATUS_QUERY_BUFFER queryBuffer[numStructures];
+        PREPROC_STATUS_QUERY_PARAMS queryStatusParams;
+        queryStatusParams.StatusReportCount = numStructures;
+
+        memset(&queryBuffer[0], 0, sizeof(PREPROC_STATUS_QUERY_BUFFER) * numStructures);
+
+        queryStatusParams.pStatusBuffer = &queryBuffer[0];
+
+        PREPROC_MODE preprocMode;
+        memset(&preprocMode, 0, sizeof(PREPROC_MODE));
+
+        preprocMode.Version  = m_iface.version;
+        preprocMode.Function = VPE_FN_QUERY_PREPROC_STATUS;
+        preprocMode.pPreprocQueryStatus = &queryStatusParams;
+
+        hRes = GetOutputExtension(
+            &(m_iface.guid), 
+            sizeof(PREPROC_MODE), 
+            &preprocMode);
+        CHECK_HRES(hRes);
+
+        for (mfxU32 i = 0; i < numStructures; i += 1)
         {
-            m_cachedReadyTaskIndex.insert(queryStatusParams.pStatusBuffer[i].StatusReportID);
-        }
-        else if (VPREP_GPU_FAILED == queryStatusParams.pStatusBuffer[i].Status)
-        {
-            return MFX_ERR_DEVICE_FAILED;
+            if (VPREP_GPU_READY == queryStatusParams.pStatusBuffer[i].Status)
+            {
+                m_cachedReadyTaskIndex.insert(queryStatusParams.pStatusBuffer[i].StatusReportID);
+            }
+            else if (VPREP_GPU_FAILED == queryStatusParams.pStatusBuffer[i].Status)
+            {
+                return MFX_ERR_DEVICE_FAILED;
+            }
         }
     }
+    else
+    {
+        VPE_STATUS_PARAM queryBuffer[numStructures];
+        memset(&queryBuffer[0], 0, sizeof(VPE_STATUS_PARAM) * numStructures);
+
+        VPE_GET_STATUS_PARAMS queryParam;
+        queryParam.StatusCount   = numStructures;
+        queryParam.pStatusBuffer = &queryBuffer[0];
+
+        VPE_FUNCTION iFunc = {0};
+        iFunc.Function = VPE_FN_GET_STATUS_PARAM;
+        iFunc.pGetStatusParams = &queryParam;
+
+        hRes = GetOutputExtension(
+            &(m_iface.guid), 
+            sizeof(VPE_FUNCTION), 
+            &iFunc);
+        CHECK_HRES(hRes);
+
+        for (mfxU32 i = 0; i < numStructures; i += 1)
+        {
+            if (VPREP_GPU_READY == queryParam.pStatusBuffer[i].Status)
+            {
+                m_cachedReadyTaskIndex.insert(queryParam.pStatusBuffer[i].FrameId);
+            }
+            else if (VPREP_GPU_FAILED == queryParam.pStatusBuffer[i].Status)
+            {
+                return MFX_ERR_DEVICE_FAILED;
+            }
+        }
+    }
+    //-----------------------------------------------------
 
     iterator = find(m_cachedReadyTaskIndex.begin(), m_cachedReadyTaskIndex.end(), idx);
 
@@ -1138,24 +1321,73 @@ mfxStatus D3D11VideoProcessor::QueryVariance(
     variance.resize(m_varianceCaps.VarianceCount);
     if(!m_vpreCaps.bVariance || variance.empty() ) return MFX_ERR_NONE;
 
-    PREPROC_QUERY_VARIANCE_PARAMS queryVarianceParam = {0};
+    memset((mfxU8*)&variance[0], 0, sizeof(m_varianceCaps.VarianceCount * m_varianceCaps.VarianceSize));
 
-    queryVarianceParam.FrameNumber = frameIndex;// see D3D11VideoProcessor::Execute()
-    queryVarianceParam.pVariances  = &variance[0];
-    queryVarianceParam.VarianceBufferSize = m_varianceCaps.VarianceCount * m_varianceCaps.VarianceSize; //variance.size();
+    //-----------------------------------------------------
+    if( VPE_GUID_INTERFACE_V2 != m_iface.guid)
+    {
+        PREPROC_QUERY_VARIANCE_PARAMS queryVarianceParam = {0};
+
+        queryVarianceParam.FrameNumber = frameIndex;// see D3D11VideoProcessor::Execute()
+        queryVarianceParam.pVariances  = &variance[0];
+        queryVarianceParam.VarianceBufferSize = m_varianceCaps.VarianceCount * m_varianceCaps.VarianceSize; //variance.size();
  
-    PREPROC_MODE preprocMode;
-    memset(&preprocMode, 0, sizeof(PREPROC_MODE));
+        PREPROC_MODE preprocMode;
+        memset(&preprocMode, 0, sizeof(PREPROC_MODE));
 
-    preprocMode.Version  = m_iface.version;
-    preprocMode.Function = VPE_FN_QUERY_VARIANCE;
-    preprocMode.pVarianceParams = &queryVarianceParam;
+        preprocMode.Version  = m_iface.version;
+        preprocMode.Function = VPE_FN_QUERY_VARIANCE;
+        preprocMode.pVarianceParams = &queryVarianceParam;
 
-    HRESULT hRes = GetOutputExtension(
-        &(m_iface.guid), 
-        sizeof(PREPROC_MODE), 
-        &preprocMode);
-    CHECK_HRES(hRes);    
+        HRESULT hRes = GetOutputExtension(
+            &(m_iface.guid), 
+            sizeof(PREPROC_MODE), 
+            &preprocMode);
+        CHECK_HRES(hRes);    
+    }
+    else
+    {
+        VPE_VPREP_GET_VARIANCE_PARAMS queryVarianceParam = {0};
+
+        queryVarianceParam.FrameCount = 1;//aya???
+        queryVarianceParam.BufferSize = queryVarianceParam.FrameCount * ( sizeof(VPE_STATUS_PARAM) + ( m_varianceCaps.VarianceCount * m_varianceCaps.VarianceSize) );
+
+        // aya: should be precalculated\pre-allocated on ::Init() stage
+        std::vector<mfxU8> varianceBuffer(queryVarianceParam.BufferSize);
+        memset(&varianceBuffer, 0, sizeof(queryVarianceParam.BufferSize));
+
+        queryVarianceParam.pBuffer    = &varianceBuffer[0];
+
+        VPE_FUNCTION iFunc = {0};
+        iFunc.Function = VPE_FN_VPREP_GET_VARIANCE_PARAM;
+        iFunc.pGetVarianceParam = &queryVarianceParam;
+
+        UINT streamIndx = 0;
+        HRESULT hRes = GetStreamExtension(
+            streamIndx,
+            &(m_iface.guid), 
+            sizeof(VPE_FUNCTION), 
+            &iFunc);
+        CHECK_HRES(hRes);
+
+        // aya: OK, try to find required variance
+        mfxU8* pVarRepBuffer = (mfxU8*)&varianceBuffer[0];
+        for(UINT frame = 0; frame < queryVarianceParam.FrameCount; frame++)
+        {
+            VPE_STATUS_PARAM stsParam = *((VPE_STATUS_PARAM*)pVarRepBuffer);
+            if(VPE_STATUS_COMPLETED == stsParam.Status && frameIndex == stsParam.FrameId)
+            {
+                pVarRepBuffer += sizeof(VPE_STATUS_PARAM);
+                for(size_t varIdx = 0; varIdx < variance.size(); varIdx++)
+                {
+                    variance[varIdx] = ((UINT*)pVarRepBuffer)[varIdx];
+                }
+
+                pVarRepBuffer += (m_varianceCaps.VarianceCount * m_varianceCaps.VarianceSize);
+            }
+        }
+    }
+    //-----------------------------------------------------
   
     return MFX_ERR_NONE;
 
@@ -1229,48 +1461,110 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         SetStreamFilter(0, D3D11_VIDEO_PROCESSOR_FILTER_NOISE_REDUCTION, TRUE, noiseLevel);
     }
 
-    // [7] Set VPE Preproc Params
-    SET_PREPROC_PARAMS setParams;
-    setParams.bEnablePreProcMode     = true;
-    setParams.bSceneDetectionEnable  = 0;
-    setParams.iTargetInterlacingMode = pParams->iTargetInterlacingMode;
-    setParams.bTargetInSysMemory     = 0;
-    setParams.bVarianceQuery         = pParams->bVarianceEnable;
-    setParams.bFieldWeaving          = pParams->bFieldWeaving;
-
-    //take into consederation. if you change it, QueryVariance should be changed too
-    setParams.StatusReportID         = pParams->statusReportID;// + 1;
-
-    PREPROC_MODE preprocMode;
-    memset(&preprocMode, 0, sizeof(PREPROC_MODE));
-
-    preprocMode.Version        = m_iface.version;
-    preprocMode.Function       = VPE_FN_SET_PREPROC_MODE;
-    preprocMode.pPreprocParams = &setParams;
-
-    HRESULT hRes = SetOutputExtension(
-        &(m_iface.guid),
-        sizeof(PREPROC_MODE),
-        &preprocMode);
-    CHECK_HRES(hRes);
-
-    // [8] Set IS Param
-    SET_IS_PARAMS istabParams;
-    istabParams.IStabMode = VPREP_ISTAB_MODE_NONE;
-    if(pParams->bImgStabilizationEnable)
+    HRESULT hRes;
+    if(VPE_GUID_INTERFACE_V2 != m_iface.guid)
     {
-        istabParams.IStabMode = (VPREP_ISTAB_MODE)pParams->istabMode;
+        // [7] Set VPE Preproc Params
+        SET_PREPROC_PARAMS setParams;
+        setParams.bEnablePreProcMode     = true;
+        setParams.bSceneDetectionEnable  = 0;
+        setParams.iTargetInterlacingMode = pParams->iTargetInterlacingMode;
+        setParams.bTargetInSysMemory     = 0;
+        setParams.bVarianceQuery         = pParams->bVarianceEnable;
+        setParams.bFieldWeaving          = pParams->bFieldWeaving;
+
+        //take into consederation. if you change it, QueryVariance should be changed too
+        setParams.StatusReportID         = pParams->statusReportID;// + 1;
+
+        // [7.1] mode
+        PREPROC_MODE preprocMode;
+        memset(&preprocMode, 0, sizeof(PREPROC_MODE));
+
+        preprocMode.Version        = m_iface.version;
+        preprocMode.Function       = VPE_FN_SET_PREPROC_MODE;
+        preprocMode.pPreprocParams = &setParams;
+
+        hRes = SetOutputExtension(
+            &(m_iface.guid),
+            sizeof(PREPROC_MODE),
+            &preprocMode);
+        CHECK_HRES(hRes);
+
+        // [7.2] Set IS Param
+        SET_IS_PARAMS istabParams;
+        istabParams.IStabMode = VPREP_ISTAB_MODE_NONE;
+        if(pParams->bImgStabilizationEnable)
+        {
+            istabParams.IStabMode = (VPREP_ISTAB_MODE)pParams->istabMode;
+        }
+
+        //preprocMode.Version = m_iface.version;
+        preprocMode.Function  = VPE_FN_SET_IS_PARAMS;
+        preprocMode.pISParams = &istabParams;
+
+        hRes = SetOutputExtension(
+            &(m_iface.guid),
+            sizeof(PREPROC_MODE),
+            &preprocMode);
+        CHECK_HRES(hRes);
     }
+    else
+    {
+        // [7.2] Set IS Param
+        VPE_VPREP_ISTAB_PARAM istabParam = {VPE_VPREP_ISTAB_MODE_NONE};
+        if(pParams->bImgStabilizationEnable)
+        {
+            istabParam.Mode = (VPE_VPREP_ISTAB_MODE)pParams->istabMode;
+        }
 
-    //preprocMode.Version = m_iface.version;
-    preprocMode.Function  = VPE_FN_SET_IS_PARAMS;
-    preprocMode.pISParams = &istabParams;
+        VPE_FUNCTION iFunc;
+        iFunc.Function    = VPE_FN_VPREP_ISTAB_PARAM;
+        iFunc.pIStabParam = &istabParam;
 
-    hRes = SetOutputExtension(
-        &(m_iface.guid),
-        sizeof(PREPROC_MODE),
-        &preprocMode);
-    CHECK_HRES(hRes);
+        UINT streamIndex = 0;
+        hRes = SetStreamExtension(
+            streamIndex, 
+            &(m_iface.guid),
+            sizeof(VPE_FUNCTION),
+            &iFunc);
+        CHECK_HRES(hRes);
+
+        // [7.3] Set INTERLACE PARAM
+        VPE_VPREP_INTERLACE_PARAM interlaceParam = {VPE_VPREP_INTERLACE_MODE_NONE};
+        if(pParams->bFieldWeaving)
+        {
+            interlaceParam.Mode = VPE_VPREP_INTERLACE_MODE_FIELD_WEAVE;
+        }
+        else if(pParams->iTargetInterlacingMode)
+        {
+            interlaceParam.Mode = VPE_VPREP_INTERLACE_MODE_ISCALE;
+        }
+
+        iFunc.Function       = VPE_FN_VPREP_INTERLACE_PARAM;
+        iFunc.pInterlacePram = &interlaceParam;
+
+        hRes = SetStreamExtension(
+            streamIndex, 
+            &(m_iface.guid),
+            sizeof(VPE_FUNCTION),
+            &iFunc);
+        CHECK_HRES(hRes);
+
+
+        // [6.1.5] Set Variance Param
+        VPE_VPREP_SET_VARIANCE_PARAM  varianceSetParam = {VPREP_VARIANCE_TYPE_1};
+
+        iFunc.Function          = VPE_FN_VPREP_SET_VARIANCE_PARAM;
+        iFunc.pSetVarianceParam = &varianceSetParam;
+
+        hRes = SetStreamExtension(
+            streamIndex, 
+            &(m_iface.guid),
+            sizeof(VPE_FUNCTION),
+            &iFunc);
+        CHECK_HRES(hRes);
+
+    }
 
     // [9] surface registration 
     D3D11_VIDEO_PROCESSOR_STREAM videoProcessorStream;
@@ -1356,7 +1650,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         {
             D3D11_VIDEO_PROCESSOR_COLOR_SPACE inColorSpace;
             inColorSpace.Usage = 0;
-            inColorSpace.RGB_Range = 1;
+            inColorSpace.RGB_Range = 0;
             inColorSpace.YCbCr_Matrix = 0;
             inColorSpace.YCbCr_xvYCC = 0;
 
@@ -1364,13 +1658,36 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 
             D3D11_VIDEO_PROCESSOR_COLOR_SPACE outColorSpace;
             outColorSpace.Usage = 0;
-            outColorSpace.RGB_Range = 1;
+            outColorSpace.RGB_Range = 0;
             outColorSpace.YCbCr_Matrix = 0;
             outColorSpace.YCbCr_xvYCC = 0;
 
             SetOutputColorSpace(&outColorSpace);
 
             fourCC = inInfo->FourCC;
+
+            // [6.1.7] Set YUV Range Param
+            VPE_VPREP_YUV_RANGE_PARAM yuvRangeParam;
+            yuvRangeParam.bFullRangeEnabled = 1;
+
+            VPE_FUNCTION iFunc;
+            iFunc.Function = VPE_FN_VPREP_YUV_RANGE_PARAM;
+            iFunc.pYUVRangeParam = &yuvRangeParam;
+
+            UINT streamIndex = 0;
+
+            hRes = SetStreamExtension(
+                streamIndex, 
+                &(m_iface.guid),
+                sizeof(VPE_FUNCTION),
+                &iFunc);
+            CHECK_HRES(hRes);
+
+            hRes = SetOutputExtension(
+                &(m_iface.guid), 
+                sizeof(VPE_FUNCTION), 
+                &iFunc);
+            CHECK_HRES(hRes);
         }
 
         D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputDesc;
@@ -1472,7 +1789,7 @@ mfxStatus D3D11VideoProcessor::ExecuteBlt(
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "m_pVideoContext->VideoProcessorBlt()");
         hRes = VideoProcessorBlt(
             m_pOutputView,
-            pStreams->OutputIndex,
+            statusReportID,
             1, 
             pStreams);
     }
