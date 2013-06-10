@@ -179,4 +179,6 @@ sSfbTableElement sfb_tables[] = {
 
 };
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX

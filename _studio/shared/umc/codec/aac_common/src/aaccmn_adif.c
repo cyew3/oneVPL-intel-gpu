@@ -107,5 +107,7 @@ unpack_adif_header(sAdif_header* p_adif_header,Ipp8u **pp_bitstream, Ipp32s *p_o
   return 0;
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX
 

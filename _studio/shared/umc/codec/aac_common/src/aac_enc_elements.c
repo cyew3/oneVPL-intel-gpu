@@ -816,4 +816,6 @@ Ipp32u sf_huff_codebook[] = {
  19, 0x7FFF3
 };
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX

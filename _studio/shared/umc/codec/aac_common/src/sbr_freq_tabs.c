@@ -759,5 +759,7 @@ Ipp32s sbrCalcPatchConstruct_indxTab(Ipp32s* fMasterTab, Ipp32s nMasterBand, Ipp
   return 0;     // OK
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX
 

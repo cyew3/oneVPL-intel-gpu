@@ -129,4 +129,6 @@ AACStatus aacdecSetSamplingFrequencyCom(Ipp32s sampling_frequency_index,
   return AAC_OK;
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX

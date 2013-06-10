@@ -119,4 +119,6 @@ get_audio_object_type_by_adts_header(sAdts_fixed_header* p_header)
     return res;
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX

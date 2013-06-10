@@ -189,5 +189,7 @@ IppsVLCTable_32s* vlcPsBooks[] = {
 
 /* EOF */
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX
 

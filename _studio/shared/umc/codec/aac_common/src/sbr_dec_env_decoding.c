@@ -226,5 +226,7 @@ Ipp32s sbrEnvNoiseDec(sSBRDecComState * pSbr, Ipp32s ch)    // optimization is n
   return 0;     // OK
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX
 

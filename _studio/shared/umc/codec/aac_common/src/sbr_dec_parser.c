@@ -1509,5 +1509,7 @@ Ipp32s sbr_sinusoidal_coding(sBitsreamBuffer * BS, Ipp32s* pDst, Ipp32s len)
 
 /* EOF */
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX
 

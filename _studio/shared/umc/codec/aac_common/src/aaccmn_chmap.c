@@ -295,4 +295,6 @@ Ipp32s chmap_order(sCh_map_item* chmap,
   return ch;
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX

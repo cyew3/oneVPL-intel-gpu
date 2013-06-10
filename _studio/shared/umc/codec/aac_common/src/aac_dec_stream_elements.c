@@ -1193,4 +1193,6 @@ Ipp32s ics_apply_pulse_I(s_SE_Individual_channel_stream *p_data)
   return 0;
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX

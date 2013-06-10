@@ -693,5 +693,7 @@ Ipp32s ps_dec_parser( sBitsreamBuffer * pBS, sPSDecComState* pPSDec)
 
 /* EOF */
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX
 

@@ -86,5 +86,7 @@ Ipp32s sbrdecResetCommon(sSBRDecComState* pSbr)
   return 0;//OK
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX
 

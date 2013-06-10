@@ -416,5 +416,7 @@ void bit_count(sEnc_individual_channel_stream* pStream,
 }
 #endif
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX
 

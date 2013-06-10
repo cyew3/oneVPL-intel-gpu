@@ -507,5 +507,7 @@ void FilterbankEnc(sFilterbank* p_data,
   }
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX
 

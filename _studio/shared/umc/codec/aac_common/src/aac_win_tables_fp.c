@@ -399,5 +399,7 @@ Ipp32f KBD_short_ssr[] = {
   0.9999671864476f, 0.9999948432454f, 0.9999995655238f, 0.9999999961639f
 };
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX
 

@@ -144,4 +144,6 @@ aac_huff_decode_sf(Ipp8u** pp_bs, Ipp32s* p_offset)
   return data;
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif

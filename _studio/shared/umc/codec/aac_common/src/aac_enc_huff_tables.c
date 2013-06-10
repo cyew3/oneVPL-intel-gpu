@@ -2363,5 +2363,7 @@ AACStatus BuildHuffmanTables(IppsVLCEncodeSpec_32s** pTables,
 
 /****************************************************************************/
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_XXX
 
