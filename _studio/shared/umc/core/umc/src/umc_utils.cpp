@@ -153,6 +153,7 @@ namespace UMC
     { UMC::VC1_VIDEO,           VM_STRING("VC1") }, // for umc_video_enc_con
     { UMC::AVS_VIDEO,           VM_STRING("AVS") },
     { UMC::VP8_VIDEO,           VM_STRING("VP8") },
+    { UMC::HEVC_VIDEO,          VM_STRING("HEVC") },
   };
 
   static CodeStringTable StringsOfVideoSubType[] = {
