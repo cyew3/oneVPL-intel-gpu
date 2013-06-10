@@ -40,8 +40,8 @@ namespace UMC_HEVC_DECODER
 // DecReferencePictureMarking_H265
 /****************************************************************************************************/
 DecReferencePictureMarking_H265::DecReferencePictureMarking_H265()
-    : m_frameCount(0)
-    , m_isDPBErrorFound(0)
+    : m_isDPBErrorFound(0)
+    , m_frameCount(0)
 {
 }
 
@@ -187,8 +187,8 @@ UMC::Status DecReferencePictureMarking_H265::UpdateRefPicMarking(ViewItem_H265 &
 MVC_Extension::MVC_Extension()
     : m_temporal_id(7)
     , m_priority_id(63)
-    , m_level_idc(0)
     , HighestTid(0)
+    , m_level_idc(0)
 {
     Reset();
 }
@@ -234,8 +234,8 @@ Skipping_H265::Skipping_H265()
     : m_VideoDecodingSpeed(0)
     , m_SkipCycle(1)
     , m_ModSkipCycle(1)
-    , m_SkipFlag(0)
     , m_PermanentTurnOffDeblocking(0)
+    , m_SkipFlag(0)
     , m_NumberOfSkippedFrames(0)
 {
 }
@@ -366,15 +366,14 @@ Skipping_H265::SkipInfo Skipping_H265::GetSkipInfo() const
 /****************************************************************************************************/
 
 LocalResources_H265::LocalResources_H265()
-    : m_ppMBIntraTypes(0)
+    : next_mb_tables(0)
+    , m_ppMBIntraTypes(0)
     , m_piMBIntraProp(0)
     , m_numberOfBuffers(0)
     , m_pMemoryAllocator(0)
-    , next_mb_tables(0)
-
-    , m_midParsedData(0)
-    , m_pParsedData(0)
     , m_parsedDataLength(0)
+    , m_pParsedData(0)
+    , m_midParsedData(0)
     , m_currentResourceIndex(0)
 {
     m_paddedParsedDataSize.width = 0;
@@ -791,21 +790,21 @@ void ViewItem_H265::SetDPBSize(H265SeqParamSet *pSps, Ipp8u & level_idc)
 /****************************************************************************************************/
 TaskSupplier_H265::TaskSupplier_H265()
     : AU_Splitter_H265(&m_Heap, &m_ObjHeap)
-    , m_pTaskBroker(0)
-    , m_iThreadNum(0)
-    , m_DPBSizeEx(0)
-    , m_UIDFrameCounter(0)
-    , m_pSegmentDecoder(0)
-    , m_pLastDisplayed(0)
-    , m_pLastSlice(0)
-    , m_pFrameAllocator(0)
-    , m_pMemoryAllocator(0)
-    , m_isInitialized(false)
-    , m_use_external_framerate(false)
-    , m_sei_messages(0)
-    , m_isUseDelayDPBValues(true)
-    , m_frameOrder(0)
     , m_SliceIdxInTaskSupplier(0)
+    , m_pSegmentDecoder(0)
+    , m_iThreadNum(0)
+    , m_use_external_framerate(false)
+    , m_pLastSlice(0)
+    , m_pLastDisplayed(0)
+    , m_pMemoryAllocator(0)
+    , m_pFrameAllocator(0)
+    , m_DPBSizeEx(0)
+    , m_frameOrder(0)
+    , m_pTaskBroker(0)
+    , m_UIDFrameCounter(0)
+    , m_sei_messages(0)
+    , m_isInitialized(false)
+    , m_isUseDelayDPBValues(true)
 {
 }
 
@@ -1175,10 +1174,6 @@ H265DecoderFrame *TaskSupplier_H265::GetFreeFrame()
     if (pDPB->countAllFrames() >= pView->dpbSize + m_DPBSizeEx)
         pFrame = pDPB->GetOldestDisposable();
 
-    if (pFrame)
-        DEBUG_PRINT1((VM_STRING("For frame %d found free frame %d\n"), pSlice->getPOC(), pFrame->m_PicOrderCnt));
-    else
-        DEBUG_PRINT1((VM_STRING("For frame %d found no free frame\n"), pSlice->getPOC()));
     pDPB->printDPB();
 
     VM_ASSERT(!pFrame || pFrame->GetRefCounter() == 0);

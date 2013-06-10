@@ -51,8 +51,43 @@ enum // Syntax element type for HEVC
 
 #define NUM_CTX 186
 
+#if (HEVC_OPT_CHANGES & 1024)
+// ML: OPT: Moved into header to allow accesses be resolved at compile time
+const
+Ipp32u ctxIdxOffsetHEVC[MAIN_SYNTAX_ELEMENT_NUMBER_HEVC] =
+{
+    0,   // SPLIT_CODING_UNIT_FLAG_HEVC
+    3,   // SKIP_FLAG_HEVC
+    6,   // MERGE_FLAG_HEVC
+    7,   // MERGE_IDX_HEVC
+    8,   // PART_SIZE_HEVC
+    12,  // AMP_SPLIT_POSITION_HEVC
+    13,  // PRED_MODE_HEVC
+    14,  // INTRA_LUMA_PRED_MODE_HEVC
+    15,  // INTRA_CHROMA_PRED_MODE_HEVC
+    17,  // INTER_DIR_HEVC
+    22,  // MVD_HEVC
+    24,  // REF_FRAME_IDX_HEVC
+    26,  // DQP_HEVC
+    29,  // QT_CBF_HEVC
+    39,  // QT_ROOT_CBF_HEVC
+    40,  // SIG_COEFF_GROUP_FLAG_HEVC
+    44,  // SIG_FLAG_HEVC
+    86,  // LAST_X_HEVC
+    116, // LAST_Y_HEVC
+    146, // ONE_FLAG_HEVC
+    170, // ABS_FLAG_HEVC
+    176, // MVP_IDX_HEVC
+    178, // SAO_MERGE_FLAG_HEVC
+    179, // SAO_TYPE_IDX_HEVC
+    180, // TRANS_SUBDIV_FLAG_HEVC
+    183, // TRANSFORM_SKIP_HEVC
+    185  // TRANSQUANT_BYPASS_HEVC
+};
+#else
 extern const
 Ipp32u ctxIdxOffsetHEVC[MAIN_SYNTAX_ELEMENT_NUMBER_HEVC];
+#endif
 
 } // namespace UMC_HEVC_DECODER
 

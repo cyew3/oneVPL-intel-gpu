@@ -146,7 +146,7 @@ public:
     bool m_UseScalingList;
 
     void setScalingListDec(H265ScalingList *scalingList);
-    void setDefaultScalingList(bool use_ts);
+    void setDefaultScalingList();
 
 protected:
     __inline void processScalingListDec(Ipp32s *coeff, Ipp32s *dequantcoeff, Ipp32s invQuantScales, Ipp32u height, Ipp32u width, Ipp32u ratio, Ipp32u sizuNum, Ipp32u dc);

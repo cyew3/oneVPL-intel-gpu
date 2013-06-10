@@ -1,4 +1,4 @@
-/* ****************************************************************************** *\ 
+/* ****************************************************************************** *
  
  INTEL CORPORATION PROPRIETARY INFORMATION
  This software is supplied under the terms of a license agreement or nondisclosure
@@ -6,7 +6,7 @@
  accordance with the terms of that agreement
  Copyright(c) 2012-2013 Intel Corporation. All Rights Reserved.
   
-\* ****************************************************************************** */
+* ****************************************************************************** */
 
 #ifndef __MFX_VMPLUSPLUS_PTHREAD_WINDOWS_H__
 #define __MFX_VMPLUSPLUS_PTHREAD_WINDOWS_H__

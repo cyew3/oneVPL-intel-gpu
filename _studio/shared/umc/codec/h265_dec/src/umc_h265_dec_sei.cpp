@@ -153,7 +153,7 @@ Ipp32s H265Bitstream::sei_payload(const HeaderSet<H265SeqParamSet> & sps,Ipp32s 
     //}
 }
 
-Ipp32s H265Bitstream::buffering_period(const HeaderSet<H265SeqParamSet> & sps, Ipp32s , H265SEIPayLoad *spl)
+Ipp32s H265Bitstream::buffering_period(const HeaderSet<H265SeqParamSet> & , Ipp32s , H265SEIPayLoad *)
 {
     Ipp32s seq_parameter_set_id = (Ipp8u) GetVLCElement(false);
 /*
@@ -190,7 +190,7 @@ Ipp32s H265Bitstream::buffering_period(const HeaderSet<H265SeqParamSet> & sps, I
     return seq_parameter_set_id;
 }
 
-Ipp32s H265Bitstream::pic_timing(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps, H265SEIPayLoad *spl)
+Ipp32s H265Bitstream::pic_timing(const HeaderSet<H265SeqParamSet> & , Ipp32s current_sps, H265SEIPayLoad *)
 {
 /*
     const Ipp8u NumClockTS[]={1,1,1,2,2,3,3,2,3};

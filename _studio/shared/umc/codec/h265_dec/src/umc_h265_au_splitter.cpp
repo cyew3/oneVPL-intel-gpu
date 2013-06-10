@@ -65,9 +65,9 @@ static bool IsNeedSPSInvalidate(const H265SeqParamSet *old_sps, const H265SeqPar
 #endif
 
 AU_Splitter_H265::AU_Splitter_H265(Heap *heap, Heap_Objects *objectHeap)
-    : m_objHeap(objectHeap)
+    : m_Headers(objectHeap)
+    , m_objHeap(objectHeap)
     , m_heap(heap)
-    , m_Headers(objectHeap)
 {
 }
 
@@ -76,7 +76,7 @@ AU_Splitter_H265::~AU_Splitter_H265()
     Close();
 }
 
-void AU_Splitter_H265::Init(UMC::VideoDecoderParams *init)
+void AU_Splitter_H265::Init(UMC::VideoDecoderParams *)
 {
     Close();
 

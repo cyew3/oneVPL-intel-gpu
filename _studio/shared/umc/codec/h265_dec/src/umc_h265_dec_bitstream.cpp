@@ -193,8 +193,7 @@ void H265HeadersBitstream::parseHrdParameters(H265HRD *hrd, bool commonInfPresen
             READ_CODE( 5, uiCode, "dpb_output_delay_length_minus1" );       hrd->setDpbOutputDelayLength(uiCode + 1);
         }
     }
-    int i, j, nalOrVcl;
-    for( i = 0; i <= maxNumSubLayersMinus1; i ++ )
+    for(unsigned i = 0; i <= maxNumSubLayersMinus1; i ++ )
     {
         READ_FLAG( uiCode, "fixed_pic_rate_general_flag" );  hrd->setFixedPicRateFlag( i, uiCode != 0 );
         if(!hrd->getFixedPicRateFlag(i))
@@ -221,12 +220,12 @@ void H265HeadersBitstream::parseHrdParameters(H265HRD *hrd, bool commonInfPresen
             READ_UVLC( uiCode, "cpb_cnt_minus1" ); hrd->setCpbCnt( i, uiCode + 1);
         }
 
-        for(nalOrVcl=0 ; nalOrVcl < 2 ; nalOrVcl++)
+        for(unsigned nalOrVcl=0 ; nalOrVcl < 2 ; nalOrVcl++)
         {
             if(((nalOrVcl == 0 ) && ( hrd->getNalHrdParametersPresentFlag())) ||
                ((nalOrVcl == 1 ) && ( hrd->getVclHrdParametersPresentFlag())))
             {
-                for(j=0 ; j <= ( hrd->getCpbCnt(i)) ; j++)
+                for(unsigned j=0 ; j <= ( hrd->getCpbCnt(i)) ; j++)
                 {
                     READ_UVLC(uiCode, "bit_rate_value_minus1" ); hrd->setBitRateValue(i, j, nalOrVcl, uiCode + 1);
                     READ_UVLC(uiCode, "cpb_size_value_minus1" ); hrd->setCpbSizeValue(i, j, nalOrVcl, uiCode + 1);
@@ -364,7 +363,7 @@ void H265HeadersBitstream::xDecodeScalingList(H265ScalingList *scalingList, unsi
  * \returns pointer of quantization matrix
  */
 
-int* H265ScalingList::getScalingListDefaultAddress(unsigned sizeId, unsigned listId, bool use_ts)
+int* H265ScalingList::getScalingListDefaultAddress(unsigned sizeId, unsigned listId)
 {
     int *src = 0;
     switch(sizeId)
@@ -398,7 +397,7 @@ void H265ScalingList::processRefMatrix(unsigned sizeId, unsigned listId , unsign
 {
   ::memcpy(
       getScalingListAddress(sizeId, listId),
-      ((listId == refListId) ? getScalingListDefaultAddress(sizeId, refListId, false) : getScalingListAddress(sizeId, refListId)),
+      ((listId == refListId) ? getScalingListDefaultAddress(sizeId, refListId) : getScalingListAddress(sizeId, refListId)),
       sizeof(int)*IPP_MIN(MAX_MATRIX_COEF_NUM, (int)g_scalingListSize[sizeId]));
 }
 
@@ -541,21 +540,20 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
     }
 
     READ_UVLC(uiCode, "bit_depth_luma_minus8");
+#if !(HEVC_OPT_CHANGES & 16)
+// ML: OPT: Making bitDepth constant
     g_bitDepthY = 8 + uiCode;
+#endif
     pcSPS->setBitDepthY(g_bitDepthY);
     pcSPS->setQpBDOffsetY((int) (6*uiCode));
 
     READ_UVLC(uiCode, "bit_depth_chroma_minus8");
+#if !(HEVC_OPT_CHANGES & 16)
+// ML: OPT: Making bitDepth constant
     g_bitDepthC = 8 + uiCode;
+#endif
     pcSPS->setBitDepthC(g_bitDepthC);
     pcSPS->setQpBDOffsetC( (int) (6*uiCode) );
-
-#if (HEVC_OPT_CHANGES & 16)
-// ML: OPT: precomputing often used mask
-// ML: OPT: TODO: Get rid of g_bitDepthY_Mask/g_bitDepthC_Mask and switch to template functions for 8 and 10 bits
-    g_bitDepthY_Mask = (1 << g_bitDepthY) - 1;
-    g_bitDepthC_Mask = (1 << g_bitDepthC) - 1;
-#endif
 
     READ_UVLC(uiCode, "log2_max_pic_order_cnt_lsb_minus4");   pcSPS->log2_max_pic_order_cnt_lsb = 4 + uiCode;
 
@@ -599,7 +597,7 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
     READ_UVLC(uiCode, "max_transform_hierarchy_depth_inter");   pcSPS->max_transform_hierarchy_depth_inter = uiCode + 1;
     READ_UVLC(uiCode, "max_transform_hierarchy_depth_intra");   pcSPS->max_transform_hierarchy_depth_intra = uiCode + 1;
     g_AddCUDepth = 0;
-    while((pcSPS->getMaxCUWidth() >> uiMaxCUDepthCorrect ) > ( 1 << ( pcSPS->getQuadtreeTULog2MinSize() + g_AddCUDepth)))
+    while((pcSPS->getMaxCUWidth() >> uiMaxCUDepthCorrect ) > (unsigned)( 1 << ( pcSPS->getQuadtreeTULog2MinSize() + g_AddCUDepth)))
     {
         g_AddCUDepth++;
     }
@@ -1189,7 +1187,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
             else // use reference to short-term reference picture set in PPS
             {
                 int numBits = 0;
-                while ((1 << numBits) < rpcSlice->getSPS()->getRPSList()->getNumberOfReferencePictureSets())
+                while ((unsigned)(1 << numBits) < rpcSlice->getSPS()->getRPSList()->getNumberOfReferencePictureSets())
                 {
                     numBits++;
                 }
@@ -1218,7 +1216,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
                     VM_ASSERT(numOfLtrp <= sps->m_MaxDecFrameBuffering[sps->sps_max_sub_layers - 1] - 1);
                 }
                 int bitsForLtrpInSPS = 0;
-                while (rpcSlice->getSPS()->getNumLongTermRefPicSPS() > (1 << bitsForLtrpInSPS))
+                while (rpcSlice->getSPS()->getNumLongTermRefPicSPS() > (unsigned)(1 << bitsForLtrpInSPS))
                 {
                     bitsForLtrpInSPS++;
                 }
@@ -1227,7 +1225,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
                 rps->setNumberOfLongtermPictures(numOfLtrp);
                 int maxPicOrderCntLSB = 1 << rpcSlice->getSPS()->log2_max_pic_order_cnt_lsb;
                 int prevLSB = 0, prevDeltaMSB = 0, deltaPocMSBCycleLT = 0;;
-                for(int j=offset+rps->getNumberOfLongtermPictures()-1, k = 0; k < numOfLtrp; j--, k++)
+                for(unsigned j=offset+rps->getNumberOfLongtermPictures()-1, k = 0; k < numOfLtrp; j--, k++)
                 {
                     int pocLsbLt;
                     if (k < numLtrpInSPS)
@@ -1548,7 +1546,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
     if( pps->getTilesEnabledFlag() || pps->getEntropyCodingSyncEnabledFlag() )
     {
         unsigned *entryPointOffset          = NULL;
-        unsigned numEntryPointOffsets, offsetLenMinus1 = 0;
+        int numEntryPointOffsets, offsetLenMinus1 = 0;
 
         READ_UVLC(numEntryPointOffsets, "num_entry_point_offsets"); rpcSlice->setNumEntryPointOffsets ( numEntryPointOffsets );
         if (numEntryPointOffsets>0)
@@ -1556,7 +1554,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
             READ_UVLC(offsetLenMinus1, "offset_len_minus1");
         }
         entryPointOffset = new unsigned[numEntryPointOffsets];
-        for (unsigned idx=0; idx<numEntryPointOffsets; idx++)
+        for (int idx=0; idx<numEntryPointOffsets; idx++)
         {
             READ_CODE(offsetLenMinus1+1, uiCode, "entry_point_offset_minus1");
             entryPointOffset[ idx ] = uiCode + 1;
@@ -1569,7 +1567,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
 
             unsigned prevPos = 0;
             rpcSlice->setTileLocation( 0, 0 );
-            for (int idx=1; idx<rpcSlice->getTileLocationCount(); idx++)
+            for (unsigned idx=1; idx<rpcSlice->getTileLocationCount(); idx++)
             {
                 rpcSlice->setTileLocation( idx, prevPos + entryPointOffset [ idx - 1 ] );
                 prevPos += entryPointOffset[ idx - 1 ];
@@ -1606,7 +1604,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
     if(pps->getSliceHeaderExtensionPresentFlag())
     {
         READ_UVLC(uiCode,"slice_header_extension_length");
-        for(int i=0; i<uiCode; i++)
+        for(unsigned i=0; i<uiCode; i++)
         {
             unsigned ignore;
             READ_CODE(8,ignore,"slice_header_extension_data_byte");

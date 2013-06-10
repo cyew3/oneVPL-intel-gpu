@@ -426,8 +426,7 @@ void H265DBPList::printDPB()
     {
         DEBUG_PRINT((VM_STRING("POC = %d %p (%d)"), pCurr->PicOrderCnt(), (RefCounter *)pCurr, pCurr->GetRefCounter()));
         pCurr = pCurr->future();
-        if (pCurr)
-            DEBUG_PRINT((VM_STRING(", ")));
+        DEBUG_PRINT((VM_STRING(", ")));
     }
     DEBUG_PRINT((VM_STRING(")\n")));
 }

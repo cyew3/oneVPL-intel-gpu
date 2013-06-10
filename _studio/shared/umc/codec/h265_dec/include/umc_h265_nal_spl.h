@@ -38,10 +38,10 @@ class StartCodeIteratorBase
 public:
 
     StartCodeIteratorBase()
-        : m_pSourceBase(0)
-        , m_pSource(0)
-        , m_nSourceBaseSize(0)
+        : m_pSource(0)
         , m_nSourceSize(0)
+        , m_pSourceBase(0)
+        , m_nSourceBaseSize(0)
         , m_suggestedSize(10 * 1024)
     {
     }

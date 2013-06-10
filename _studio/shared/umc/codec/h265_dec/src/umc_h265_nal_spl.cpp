@@ -384,8 +384,8 @@ public:
 };
 
 NALUnitSplitter_H265::NALUnitSplitter_H265(Heap * heap)
-    : m_pHeap(heap)
-    , m_bWaitForIDR(true)
+    : m_bWaitForIDR(true)
+    , m_pHeap(heap)
     , m_pSwapper(0)
     , m_pStartCodeIter(0)
 {

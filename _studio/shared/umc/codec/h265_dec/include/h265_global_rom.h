@@ -98,34 +98,35 @@ extern const Ipp8u g_AngModeMapping[4][34];
 extern const Ipp8u g_AngIntraModeOrder[NUM_INTRA_MODE];
 
 // Bit-depth ----------------------------------------------------------------------------------------------------------
-extern Ipp32s g_bitDepthY;
-extern Ipp32s g_bitDepthC;
+#if (HEVC_OPT_CHANGES & 16)
+// ML: OPT: Replacing with compile time const
+const Ipp32s g_bitDepthY = 8;
+const Ipp32s g_bitDepthC = 8;
 
 /** clip x, such that 0 <= x <= #g_maxLumaVal */
-#if (HEVC_OPT_CHANGES & 16)
 // ML: OPT: called in hot loops, compiler does not seem to always honor 'inline'
-// ML: OPT: Frequently used '((1 << g_bitDepthY) - 1))' can be precomputed, compilers do not seem to realize it's a loop invariant
-// ML: OPT: TODO: Get rid of the below with parameterized template functions for bitDepth
-extern Ipp16s g_bitDepthY_Mask; // pre-computed ((1 << g_bitDepthY) - 1))
-extern Ipp16s g_bitDepthC_Mask; // pre-computed ((1 << g_bitDepthC) - 1))
-
-// ML: OPT: TODO: Parameterize usages and makes sure compiler recognizes saturation idiom for vectorization
+// ML: OPT: TODO: Make sure compiler recognizes saturation idiom for vectorization
 template <typename T> 
-static T H265_FORCEINLINE ClipY(T Value) 
+static T H265_FORCEINLINE ClipY(T Value, int c_bitDepth = 8) 
 { 
     Value = (Value < 0) ? 0 : Value;
-    Value = (Value > g_bitDepthY_Mask) ? g_bitDepthY_Mask : Value;
+    const int c_Mask = ((1 << c_bitDepth) - 1);
+    Value = (Value >= c_Mask) ? c_Mask : Value;
     return ( Value );
 }
 
 template <typename T> 
-static T H265_FORCEINLINE ClipC(T Value) 
+static T H265_FORCEINLINE ClipC(T Value, int c_bitDepth = 8) 
 { 
     Value = (Value < 0) ? 0 : Value;
-    Value = (Value > g_bitDepthC_Mask) ? g_bitDepthC_Mask : Value;
+    const int c_Mask = ((1 << c_bitDepth) - 1);
+    Value = (Value >= c_Mask) ? c_Mask : Value;
     return ( Value );
 }
 #else
+extern Ipp32s g_bitDepthY;
+extern Ipp32s g_bitDepthC;
+
 template <typename T> inline T ClipY(T x) { return std::min<T>(T((1 << g_bitDepthY) - 1), std::max<T>( T(0), x)); }
 template <typename T> inline T ClipC(T x) { return std::min<T>(T((1 << g_bitDepthC) - 1), std::max<T>( T(0), x)); }
 #endif // HEVC_OPT_CHANGES

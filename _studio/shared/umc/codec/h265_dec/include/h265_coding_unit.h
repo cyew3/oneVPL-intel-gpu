@@ -360,7 +360,7 @@ namespace RasterAddress
     // addr / numUnitsPerRow < val
     return addr < val * numUnitsPerRow;
   }
-};
+}
 
 } // end namespace UMC_HEVC_DECODER
 

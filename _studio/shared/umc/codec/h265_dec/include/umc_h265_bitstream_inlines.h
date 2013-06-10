@@ -233,6 +233,7 @@ Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
     Ipp32u pState = context_hevc[ctxIdx];
     Ipp32u binVal;
 
+// ML: OPT: TODO: slow table lookup
     codIRangeLPS = rangeTabLPSH265[pState][(m_lcodIRange >> (6 + CABAC_MAGIC_BITS)) - 4];
     m_lcodIRange -= codIRangeLPS << CABAC_MAGIC_BITS;
 #if (CABAC_MAGIC_BITS > 0)

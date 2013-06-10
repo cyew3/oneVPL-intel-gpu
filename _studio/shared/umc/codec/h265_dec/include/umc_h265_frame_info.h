@@ -306,6 +306,7 @@ private:
         H265DecoderRefPicList m_refPicList[2];
     };
 
+    // ML: OPT: TODO: std::vector<> results with relatively slow access code
     std::vector<H264DecoderRefPicListPair> m_refPicList;
 
     class FakeFrameInitializer
@@ -317,17 +318,11 @@ private:
     static FakeFrameInitializer g_FakeFrameInitializer;
 };
 
-#if (HEVC_OPT_CHANGES & 2) && (defined(_WIN32) || defined(_WIN64))
-// ML: OPT: called in hopspot loops
-// ML: OPT: moved here from umc_h265_frame.cpp to allow inlining, cannot be decalred in umc_h265_frame.h due to forward H265DecoderRefPicList dependency
 H265_FORCEINLINE H265DecoderRefPicList* H265DecoderFrame::GetRefPicList(Ipp32s sliceNumber, Ipp32s list) const
 {
-    H265DecoderRefPicList *pList;
-    pList = GetAU()->GetRefPicList(sliceNumber, list);
-    return pList;
+    return GetAU()->GetRefPicList(sliceNumber, list);
 }   // RefPicList. Returns pointer to start of specified ref pic list.
 
-#endif
 } // namespace UMC_HEVC_DECODER
 
 #endif // __UMC_H264_FRAME_INFO_H

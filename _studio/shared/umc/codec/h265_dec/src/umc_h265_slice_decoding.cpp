@@ -15,7 +15,7 @@
 #include "umc_h265_slice_decoding.h"
 #include "umc_h265_segment_decoder_mt.h"
 #include "umc_h265_heap.h"
-
+#include "umc_h265_frame_info.h"
 
 namespace UMC_HEVC_DECODER
 {
@@ -281,9 +281,9 @@ bool H264ThreadedDeblockingTools::IsDeblockingDone(void)
 int H265Slice::m_prevPOC;
 
 H265Slice::H265Slice(UMC::MemoryAllocator *pMemoryAllocator)
-    : m_pMemoryAllocator(pMemoryAllocator)
+    : m_pSeqParamSet(0)
+    , m_pMemoryAllocator(pMemoryAllocator)
     , m_pHeap(0)
-    , m_pSeqParamSet(0)
 {
     m_SliceHeader.m_SubstreamSizes = NULL;
     m_SliceHeader.m_TileByteLocation = NULL;

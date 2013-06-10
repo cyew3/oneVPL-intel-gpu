@@ -39,7 +39,7 @@ const Ipp16u g_sigLastScanCG32x32[64] =
     46,   39,   61,   54,   47,   62,   55,   63
 };
 
-const static Ipp16u ScanTableHor4x4[] =
+static const Ipp16u ScanTableHor4x4[] =
 {
   0,  1,  2,  3,
   4,  5,  6,  7,
@@ -47,7 +47,7 @@ const static Ipp16u ScanTableHor4x4[] =
  12, 13, 14, 15
 };
 
-const static Ipp16u ScanTableVert4x4[] =
+static const Ipp16u ScanTableVert4x4[] =
 {
   0,  4,  8, 12,
   1,  5,  9, 13,
@@ -55,7 +55,7 @@ const static Ipp16u ScanTableVert4x4[] =
   3,  7, 11, 15
 };
 
-const static Ipp16u ScanTableDiag4x4[] =
+static const Ipp16u ScanTableDiag4x4[] =
 {
   0,  4,  1,  8,
   5,  2, 12,  9,
@@ -63,7 +63,7 @@ const static Ipp16u ScanTableDiag4x4[] =
   7, 14, 11, 15
 };
 
-const static Ipp16u ScanTableHor8x8[] =
+static const Ipp16u ScanTableHor8x8[] =
 {
   0,  1,  2,  3,  8,  9, 10, 11,
  16, 17, 18, 19, 24, 25, 26, 27,
@@ -75,7 +75,7 @@ const static Ipp16u ScanTableHor8x8[] =
  52, 53, 54, 55, 60, 61, 62, 63
 };
 
-const static Ipp16u ScanTableVert8x8[] =
+static const Ipp16u ScanTableVert8x8[] =
 {
   0,  8, 16, 24,  1,  9, 17, 25,
   2, 10, 18, 26,  3, 11, 19, 27,
@@ -87,7 +87,7 @@ const static Ipp16u ScanTableVert8x8[] =
  38, 46, 54, 62, 39, 47, 55, 63
 };
 
-const static Ipp16u ScanTableDiag8x8[] =
+static const Ipp16u ScanTableDiag8x8[] =
 {
   0,  8,  1, 16,  9,  2, 24, 17,
  10,  3, 25, 18, 11, 26, 19, 27,
@@ -99,7 +99,7 @@ const static Ipp16u ScanTableDiag8x8[] =
  46, 39, 61, 54, 47, 62, 55, 63
 };
 
-const static Ipp16u ScanTableHor16x16[] =
+static const Ipp16u ScanTableHor16x16[] =
 {
    0,   1,   2,   3,  16,  17,  18,  19,  32,  33,  34,  35,  48,  49,  50,  51,
    4,   5,   6,   7,  20,  21,  22,  23,  36,  37,  38,  39,  52,  53,  54,  55,
@@ -119,7 +119,7 @@ const static Ipp16u ScanTableHor16x16[] =
  204, 205, 206, 207, 220, 221, 222, 223, 236, 237, 238, 239, 252, 253, 254, 255
 };
 
-const static Ipp16u ScanTableVert16x16[] =
+static const Ipp16u ScanTableVert16x16[] =
 {
    0,  16,  32,  48,   1,  17,  33,  49,   2,  18,  34,  50,   3,  19,  35,  51,
   64,  80,  96, 112,  65,  81,  97, 113,  66,  82,  98, 114,  67,  83,  99, 115,
@@ -139,7 +139,7 @@ const static Ipp16u ScanTableVert16x16[] =
  204, 220, 236, 252, 205, 221, 237, 253, 206, 222, 238, 254, 207, 223, 239, 255
 };
 
-const static Ipp16u ScanTableDiag16x16[] =
+static const Ipp16u ScanTableDiag16x16[] =
 {
    0,  16,   1,  32,  17,   2,  48,  33,  18,   3,  49,  34,  19,  50,  35,  51,
   64,  80,  65,  96,  81,  66, 112,  97,  82,  67, 113,  98,  83, 114,  99, 115,
@@ -159,7 +159,7 @@ const static Ipp16u ScanTableDiag16x16[] =
  204, 220, 205, 236, 221, 206, 252, 237, 222, 207, 253, 238, 223, 254, 239, 255
 };
 
-const static Ipp16u ScanTableHor32x32[] =
+static const Ipp16u ScanTableHor32x32[] =
 {
     0,    1,    2,    3,   32,   33,   34,   35,   64,   65,   66,   67,   96,   97,   98,   99,    4,    5,    6,    7,   36,   37,   38,   39,   68,   69,   70,   71,  100,  101,  102,  103,
     8,    9,   10,   11,   40,   41,   42,   43,   72,   73,   74,   75,  104,  105,  106,  107,   12,   13,   14,   15,   44,   45,   46,   47,   76,   77,   78,   79,  108,  109,  110,  111,
@@ -195,7 +195,7 @@ const static Ipp16u ScanTableHor32x32[] =
   920,  921,  922,  923,  952,  953,  954,  955,  984,  985,  986,  987, 1016, 1017, 1018, 1019,  924,  925,  926,  927,  956,  957,  958,  959,  988,  989,  990,  991, 1020, 1021, 1022, 1023
 };
 
-const static Ipp16u ScanTableVert32x32[] =
+static const Ipp16u ScanTableVert32x32[] =
 {
     0,   32,   64,   96,    1,   33,   65,   97,    2,   34,   66,   98,    3,   35,   67,   99,  128,  160,  192,  224,  129,  161,  193,  225,  130,  162,  194,  226,  131,  163,  195,  227,
   256,  288,  320,  352,  257,  289,  321,  353,  258,  290,  322,  354,  259,  291,  323,  355,  384,  416,  448,  480,  385,  417,  449,  481,  386,  418,  450,  482,  387,  419,  451,  483,
@@ -231,7 +231,7 @@ const static Ipp16u ScanTableVert32x32[] =
   796,  828,  860,  892,  797,  829,  861,  893,  798,  830,  862,  894,  799,  831,  863,  895,  924,  956,  988, 1020,  925,  957,  989, 1021,  926,  958,  990, 1022,  927,  959,  991, 1023
 };
 
-const static Ipp16u ScanTableDiag32x32[] =
+static const Ipp16u ScanTableDiag32x32[] =
 {
     0,   32,    1,   64,   33,    2,   96,   65,   34,    3,   97,   66,   35,   98,   67,   99,  128,  160,  129,  192,  161,  130,  224,  193,  162,  131,  225,  194,  163,  226,  195,  227,
     4,   36,    5,   68,   37,    6,  100,   69,   38,    7,  101,   70,   39,  102,   71,  103,  256,  288,  257,  320,  289,  258,  352,  321,  290,  259,  353,  322,  291,  354,  323,  355,
@@ -466,15 +466,11 @@ const Ipp8u g_AngModeMapping[4][34] = // intra mode conversion for most probable
     {2,2,2,2,2, 2,2,0,0,0, 0,0,0,0,2, 2,2,2,2,2, 2,1,1,1,1, 1,1,1,1,1, 2,2,2,2}                // conversion to 3 modes
 };
 
+#if !(HEVC_OPT_CHANGES & 16)
+// ML: OPT: Moved into header
 // Bit-depth ---------------------------------------------------------------------------------------------------------------
 Ipp32s g_bitDepthY = 8;
 Ipp32s g_bitDepthC = 8;
-
-#if (HEVC_OPT_CHANGES & 16)
-// ML: OPT: often used precomputed masks
-// ML: OPT: TODO: need to get rid of them though and use parameterized templates
-Ipp16s g_bitDepthY_Mask = 0xff;
-Ipp16s g_bitDepthC_Mask = 0xff;
 #endif
 
 Ipp32u g_PCMBitDepthLuma     = 8;    // PCM bit-depth

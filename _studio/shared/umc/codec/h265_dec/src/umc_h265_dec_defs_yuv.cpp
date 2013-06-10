@@ -19,40 +19,40 @@
 namespace UMC_HEVC_DECODER
 {
 H265DecYUVBufferPadded::H265DecYUVBufferPadded()
-    : m_pitch_luma(0)
-    , m_pitch_chroma(0)
-    , m_color_format(UMC::NV12)
-    , m_pYPlane(NULL)
-    , m_pUPlane(NULL)
-    , m_pVPlane(NULL)
-    , m_pUVPlane(NULL)
-    , m_LumaMarginX(0)
+    : m_LumaMarginX(0)
     , m_LumaMarginY(0)
     , m_ChromaMarginX(0)
     , m_ChromaMarginY(0)
     , m_ElementSizeY(0)
     , m_ElementSizeUV(0)
+    , m_pYPlane(NULL)
+    , m_pUVPlane(NULL)
+    , m_pUPlane(NULL)
+    , m_pVPlane(NULL)
     , m_pAllocatedBuffer(0)
+    , m_pitch_luma(0)
+    , m_pitch_chroma(0)
+    , m_color_format(UMC::NV12)
 {
     m_lumaSize.width = 0;
     m_lumaSize.height = 0;
 }
 
 H265DecYUVBufferPadded::H265DecYUVBufferPadded(UMC::MemoryAllocator *pMemoryAllocator)
-    : m_pitch_luma(0)
-    , m_pitch_chroma(0)
-    , m_color_format(UMC::NV12)
-    , m_pYPlane(NULL)
-    , m_pUPlane(NULL)
-    , m_pVPlane(NULL)
-    , m_pUVPlane(NULL)
-    , m_LumaMarginX(0)
+    : m_LumaMarginX(0)
     , m_LumaMarginY(0)
     , m_ChromaMarginX(0)
     , m_ChromaMarginY(0)
     , m_ElementSizeY(0)
     , m_ElementSizeUV(0)
+    , m_pYPlane(NULL)
+    , m_pUVPlane(NULL)
+    , m_pUPlane(NULL)
+    , m_pVPlane(NULL)
     , m_pAllocatedBuffer(0)
+    , m_pitch_luma(0)
+    , m_pitch_chroma(0)
+    , m_color_format(UMC::NV12)
 {
     m_lumaSize.width = 0;
     m_lumaSize.height = 0;
@@ -310,6 +310,7 @@ void H265DecYUVBufferPadded::CopyWeighted_S16U8(H265DecYUVBufferPadded* pPicYuvS
 
     for (Ipp32u y = 0; y < Height; y++)
     {
+        // ML: OPT: TODO: make sure it is vectorized with PACK
         for (Ipp32u x = 0; x < Width; x++)
         {
             pDst[x] = (H265PlaneYCommon)ClipY(((w[0] * pSrc[x] + round[0]) >> logWD[0]) + o[0]);
@@ -325,6 +326,7 @@ void H265DecYUVBufferPadded::CopyWeighted_S16U8(H265DecYUVBufferPadded* pPicYuvS
 
     for (Ipp32u y = 0; y < Height; y++)
     {
+        // ML: OPT: TODO: make sure it is vectorized with PACK
         for (Ipp32u x = 0; x < Width * 2; x += 2)
         {
             pDstUV[x] = (H265PlaneUVCommon)ClipC(((w[1] * pSrcUV[x] + round[1]) >> logWD[1]) + o[1]);
@@ -352,6 +354,7 @@ void H265DecYUVBufferPadded::CopyWeightedBidi_S16U8(H265DecYUVBufferPadded* pPic
 
     for (Ipp32u y = 0; y < Height; y++)
     {
+        // ML: OPT: TODO: make sure it is vectorized with PACK
         for (Ipp32u x = 0; x < Width; x++)
         {
             pDst[x] = (H265PlaneYCommon)ClipY((w0[0] * pSrc0[x] + w1[0] * pSrc1[x] + round[0]) >> logWD[0]);
@@ -369,6 +372,7 @@ void H265DecYUVBufferPadded::CopyWeightedBidi_S16U8(H265DecYUVBufferPadded* pPic
 
     for (Ipp32u y = 0; y < Height; y++)
     {
+        // ML: OPT: TODO: make sure it is vectorized with PACK
         for (Ipp32u x = 0; x < Width * 2; x += 2)
         {
             pDstUV[x] = (H265PlaneUVCommon)ClipC((w0[1] * pSrcUV0[x] + w1[1] * pSrcUV1[x] + round[1]) >> logWD[1]);
@@ -429,7 +433,7 @@ void H265DecYUVBufferPadded::AddAverageToPic(H265DecoderFrame* pPicYuvDst, H265D
     Ipp32s shift = 15 - g_bitDepthY;
     Ipp32s offset = 1 << (shift - 1);
 
-#if (HEVC_OPT_CHANGES & 0x4)
+#if (HEVC_OPT_CHANGES & 4)
     // ML: OPT: TODO: Move below into a separate template function with shift as templ param
     if ( shift == 7 )
         #pragma ivdep
@@ -437,6 +441,7 @@ void H265DecYUVBufferPadded::AddAverageToPic(H265DecoderFrame* pPicYuvDst, H265D
         {
             #pragma ivdep
             #pragma vector always
+            // ML: OPT: TODO: make sure it is vectorized with PACK
             for (Ipp32u x = 0; x < Width; x++)
                 pDst[x] = (H265PlaneYCommon)ClipY((pSrc0[x] + pSrc1[x] + (1<<6)) >> 7);
 
@@ -468,13 +473,15 @@ void H265DecYUVBufferPadded::AddAverageToPic(H265DecoderFrame* pPicYuvDst, H265D
     DstStride = pPicYuvDst->pitch_luma();
     H265PlanePtrUVCommon pDstUV = pPicYuvDst->GetCbCrAddr(CUAddr, AbsZorderIdx) + GetAddrOffset(PartIdx, DstStride >> 1);
 
-#if (HEVC_OPT_CHANGES & 0x4)
+#if (HEVC_OPT_CHANGES & 4)
     // ML: OPT: TODO: Move below into a separate template function with shift as templ param
     if ( shift == 7 )
         #pragma ivdep
         for (Ipp32u y = 0; y < Height; y++)
         {
+            // ML: OPT: TODO: make sure it is vectorized with PACK
             #pragma ivdep
+            #pragma vector always
             for (Ipp32u x = 0; x < Width * 2; x++)
                 pDstUV[x] = (H265PlaneUVCommon)ClipC((pSrcUV0[x] + pSrcUV1[x] + (1<<6)) >> 7);
 

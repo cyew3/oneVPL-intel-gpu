@@ -229,7 +229,7 @@ public:
     // Updated after every PU is processed and MV info is available
     H265FrameHLDNeighborsInfo *m_CurrCTBFlags;
     H265TUData *m_CurrCTB;
-    Ipp32s m_CurrCTBStride;
+    Ipp32u m_CurrCTBStride;
 
     std::vector<H265FrameHLDNeighborsInfo> m_TopNgbrsHolder;
     std::vector<H265TUData> m_TopMVInfoHolder;

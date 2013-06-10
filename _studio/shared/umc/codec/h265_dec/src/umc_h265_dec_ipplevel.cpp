@@ -536,7 +536,7 @@ IppStatus ippiReadDataBlockThroughBoundary_NV12_8u(Ipp32s iOverlappingType,
 void read_data_through_boundary_none_8u(H264InterpolationParams_8u *pParams)
 {
     /* touch unreferenced parameter(s) */
-    UNREFERENCED_PARAMETER(pParams);
+    IPP_UNREFERENCED_PARAMETER(pParams);
 
     /* there is something wrong */
 
@@ -920,7 +920,7 @@ void memset_nv12_8u(Ipp8u *pDst, Ipp8u* nVal, Ipp32s nNum)
 void read_data_through_boundary_none_nv12_8u(H264InterpolationParams_8u *pParams)
 {
     /* touch unreferenced parameter(s) */
-    UNREFERENCED_PARAMETER(pParams);
+    IPP_UNREFERENCED_PARAMETER(pParams);
 
     /* there is something wrong */
 

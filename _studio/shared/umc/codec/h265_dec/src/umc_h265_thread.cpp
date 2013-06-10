@@ -22,9 +22,9 @@ namespace UMC_HEVC_DECODER
 {
 
 H265Thread::H265Thread()
-    : m_bQuit(false)
-    , m_isSleepNow(0)
+    : m_isSleepNow(0)
     , m_isDoneWait(0)
+    , m_bQuit(false)
 {
 } // H265Thread() :
 

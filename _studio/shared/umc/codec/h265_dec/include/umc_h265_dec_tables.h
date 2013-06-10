@@ -29,7 +29,7 @@ extern const Ipp32u SubWidthC[4];
 extern const Ipp32u SubHeightC[4];
 
 extern const Ipp32u bits_data[];
-}; // namespace UMC_HEVC_DECODER
+} // namespace UMC_HEVC_DECODER
 
 #endif //__UMC_H264_DEC_TABLES_H__
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

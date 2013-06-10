@@ -22,18 +22,18 @@ namespace UMC_HEVC_DECODER
 
 H265DecoderFrame::H265DecoderFrame(UMC::MemoryAllocator *pMemoryAllocator, Heap * heap, Heap_Objects * pObjHeap)
     : H265DecYUVBufferPadded(pMemoryAllocator)
+    , m_ErrorType(0)
+    , m_pSlicesInfo(0)
     , m_pPreviousFrame(0)
     , m_pFutureFrame(0)
     , m_dFrameTime(-1.0)
     , m_isOriginalPTS(false)
+    , m_dpb_output_delay(INVALID_DPB_DELAY_H265)
     , post_procces_complete(false)
     , m_index(-1)
     , m_UID(-1)
-    , m_pSlicesInfo(0)
     , m_pObjHeap(pObjHeap)
     , m_pHeap(heap)
-    , m_ErrorType(0)
-    , m_dpb_output_delay(INVALID_DPB_DELAY_H265)
 {
     m_isShortTermRef = false;
     m_isLongTermRef = false;
@@ -404,17 +404,6 @@ void H265DecoderFrame::deallocateCodingData()
         m_buOffsetC = NULL;
     }
 }
-
-#if (HEVC_OPT_CHANGES & 2) && (defined(_WIN32) || defined(_WIN64))
-// ML: OPT: function moved into umc_h265_frame_info.h to allow inlining
-#else
-H265DecoderRefPicList* H265DecoderFrame::GetRefPicList(Ipp32s sliceNumber, Ipp32s list) const
-{
-    H265DecoderRefPicList *pList;
-    pList = GetAU()->GetRefPicList(sliceNumber, list);
-    return pList;
-}   // RefPicList. Returns pointer to start of specified ref pic list.
-#endif // (HEVC_OPT_CHANGES & 2)
 
 H265CodingUnit* H265DecoderFrame::getCU(Ipp32u CUaddr)
 {

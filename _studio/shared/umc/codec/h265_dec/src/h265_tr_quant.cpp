@@ -98,7 +98,6 @@ void FastInverseDst(H265CoeffsPtrCommon tmp, DstCoeffsType* block, Ipp32s dstStr
 // ML: OPT: vectorize with constant shift
 #pragma unroll
 #pragma vector always
-//#pragma ivdep
 #endif
   for (i = 0; i < 4; i++)
   {
@@ -147,7 +146,6 @@ void PartialButterflyInverse4x4(H265CoeffsPtrCommon src, DstCoeffsType*dst, Ipp3
 
 #if (HEVC_OPT_CHANGES & 128)
 // ML: OPT: vectorize with constant shift
-//#pragma ivdep
 #pragma vector always
 #endif
   for (j=0; j<line; j++)
@@ -204,7 +202,6 @@ void PartialButterflyInverse8x8(H265CoeffsPtrCommon src, DstCoeffsType* dst, Ipp
 
 #if (HEVC_OPT_CHANGES & 128)
 // ML: OPT: TODO: vectorize manually, ICC does poor auto-vec
-//#pragma ivdep
 #endif
     for (j = 0; j < line; j++)
     {
@@ -273,7 +270,6 @@ void PartialButterflyInverse16x16(H265CoeffsPtrCommon src, DstCoeffsType* dst, I
 
 #if (HEVC_OPT_CHANGES & 128)
 // ML: OPT: TODO: vectorize manually, ICC does not auto-vec
-//#pragma ivdep
 #endif
     for (j = 0; j < line; j++)
     {
@@ -353,7 +349,6 @@ void PartialButterflyInverse32x32(H265CoeffsPtrCommon src, DstCoeffsType* dst, I
 
 #if (HEVC_OPT_CHANGES & 128)
 // ML: OPT: TODO: vectorize manually, ICC does not auto-vec
-//#pragma ivdep
 #endif
     for (j = 0; j < line; j++)
     {
@@ -1060,7 +1055,7 @@ void H265TrQuant::setScalingListDec(H265ScalingList *scalingList)
   }
 }
 
-void H265TrQuant::setDefaultScalingList(bool use_ts)
+void H265TrQuant::setDefaultScalingList()
 {
     H265ScalingList sl;
 
@@ -1069,7 +1064,7 @@ void H265TrQuant::setDefaultScalingList(bool use_ts)
         for(Ipp32u listId = 0; listId < g_scalingListNum[sizeId]; listId++)
         {
             ::memcpy(sl.getScalingListAddress(sizeId, listId),
-                sl.getScalingListDefaultAddress(sizeId, listId, use_ts),
+                sl.getScalingListDefaultAddress(sizeId, listId),
                 sizeof(Ipp32s) * IPP_MIN(MAX_MATRIX_COEF_NUM, (Ipp32s)g_scalingListSize[sizeId]));
             sl.setScalingListDC(sizeId, listId, SCALING_LIST_DC);
         }

@@ -48,7 +48,7 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
     Ipp32u NumPocStCurr0 = 0;
     Ipp32u NumPocStCurr1 = 0;
     Ipp32u NumPocLtCurr = 0;
-    Ipp32u i;
+    Ipp32s i;
 
     for(i = 0; i < getRPS()->getNumberOfNegativePictures(); i++)
     {
@@ -143,7 +143,7 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
     {
         bool isLong = getRefPicListModification()->getRefPicListModificationFlagL0() ?
             (getRefPicListModification()->getRefPicSetIdxL0(cIdx) >= (NumPocStCurr0 + NumPocStCurr1))
-            : ((cIdx % numPocTotalCurr) >= (NumPocStCurr0 + NumPocStCurr1));
+            : ((Ipp32u)(cIdx % numPocTotalCurr) >= (NumPocStCurr0 + NumPocStCurr1));
 
         pRefPicList0[cIdx].refFrame = getRefPicListModification()->getRefPicListModificationFlagL0() ? refPicListTemp0[getRefPicListModification()->getRefPicSetIdxL0(cIdx)] : refPicListTemp0[cIdx % numPocTotalCurr];
 
@@ -161,7 +161,7 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
         {
             bool isLong = getRefPicListModification()->getRefPicListModificationFlagL1() ?
                 (getRefPicListModification()->getRefPicSetIdxL1(cIdx) >= (NumPocStCurr0 + NumPocStCurr1))
-                : ((cIdx % numPocTotalCurr) >= (NumPocStCurr0 + NumPocStCurr1));
+                : ((Ipp32u)(cIdx % numPocTotalCurr) >= (NumPocStCurr0 + NumPocStCurr1));
 
             pRefPicList1[cIdx].refFrame = getRefPicListModification()->getRefPicListModificationFlagL1() ? refPicListTemp1[getRefPicListModification()->getRefPicSetIdxL1(cIdx)] : refPicListTemp1[cIdx % numPocTotalCurr];
             pRefPicList1[cIdx].isLongReference = isLong;

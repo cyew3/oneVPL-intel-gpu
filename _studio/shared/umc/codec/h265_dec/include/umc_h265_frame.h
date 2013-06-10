@@ -228,7 +228,6 @@ public:
     // The following methods provide access to the H264Decoder's doubly
     // linked list of H264DecoderFrames.  Note that m_pPreviousFrame can
     // be non-NULL even for an I frame.
-    H265DecoderFrame *previous() { return m_pPreviousFrame; }
     H265DecoderFrame *future()   { return m_pFutureFrame; }
 
     void setPrevious(H265DecoderFrame *pPrev)

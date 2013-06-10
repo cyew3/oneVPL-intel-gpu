@@ -211,6 +211,8 @@ Ipp8u transIdxLPSH265[] =
 //    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 //};
 
+#if !(HEVC_OPT_CHANGES & 1024)
+// ML: OPT: Moved into header to allow accesses be resolved at compile time
 const
 Ipp32u ctxIdxOffsetHEVC[MAIN_SYNTAX_ELEMENT_NUMBER_HEVC] =
 {
@@ -242,6 +244,7 @@ Ipp32u ctxIdxOffsetHEVC[MAIN_SYNTAX_ELEMENT_NUMBER_HEVC] =
     183, // TRANSFORM_SKIP_HEVC
     185  // TRANSQUANT_BYPASS_HEVC
 };
+#endif
 } // namespace UMC_HEVC_DECODER
 
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

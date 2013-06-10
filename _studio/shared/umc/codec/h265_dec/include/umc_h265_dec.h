@@ -49,7 +49,7 @@ public:
         H265_LEVEL_6    = 60,
         H265_LEVEL_61   = 61,
         H265_LEVEL_62   = 62,
-        H265_LEVEL_MAX  = 62,
+        H265_LEVEL_MAX  = 62
     };
 
     H265VideoDecoderParams()

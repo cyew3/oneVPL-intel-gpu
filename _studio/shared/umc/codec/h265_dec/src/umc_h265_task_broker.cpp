@@ -89,7 +89,7 @@ void PrintInfoStatus(H265DecoderFrameInfo * info)
     printf("needtoCheck - %d. status - %d\n", info->GetRefAU() != 0, info->GetStatus());
     for (Ipp32u i = 0; i < info->GetSliceCount(); i++)
     {
-        printf("slice - %d\n", i);
+        printf("slice - %u\n", i);
         H265Slice * pSlice = info->GetSlice(i);
         printf("POC - %d, \n", info->m_pFrame->m_PicOrderCnt);
         printf("cur to dec - %d\n", pSlice->m_iCurMBToDec);
@@ -281,10 +281,10 @@ protected:
 
 
 TaskBroker_H265::TaskBroker_H265(TaskSupplier_H265 * pTaskSupplier)
-    : m_iConsumerNumber(0)
-    , m_pTaskSupplier(pTaskSupplier)
-    , m_nWaitingThreads(0)
+    : m_pTaskSupplier(pTaskSupplier)
+    , m_iConsumerNumber(0)
     , m_FirstAU(0)
+    , m_nWaitingThreads(0)
     , m_IsShouldQuit(false)
     , m_isExistMainThread(true)
 {

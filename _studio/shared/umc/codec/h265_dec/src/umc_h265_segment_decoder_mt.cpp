@@ -322,7 +322,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::DecRecSegment(Ipp32s iCurMBNumber, 
 
 } // Status H265SegmentDecoderMultiThreaded::DecRecSegment(Ipp32s iCurMBNumber, Ipp32s &iMBToReconstruct)
 
-UMC::Status H265SegmentDecoderMultiThreaded::SAOFrameTask(Ipp32s iCurMBNumber, Ipp32s &iMBToProcess)
+UMC::Status H265SegmentDecoderMultiThreaded::SAOFrameTask(Ipp32s , Ipp32s &)
 {
     START_TICK
 
@@ -398,9 +398,8 @@ UMC::Status H265SegmentDecoderMultiThreaded::DeblockSegmentTask(Ipp32s iCurMBNum
 
 } // Status H265SegmentDecoderMultiThreaded::DeblockSegmentTask(Ipp32s iCurMBNumber, Ipp32s &iMBToDeblock)
 
-UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(Ipp32s iCurMBNumber, Ipp32s &iMBToProcess)
+UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(Ipp32s iCurMBNumber, Ipp32s &)
 {
-    VM_ASSERT(sizeof(iMBToProcess) != 0); //wtf unreferenced parameter
     UMC::Status umcRes = UMC::UMC_OK;
 
     // Convert slice beginning and end to encode order
@@ -442,7 +441,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(Ipp32s iCurMBNumber, I
         if (!m_pSliceHeader->m_PicParamSet->getScalingListPresentFlag() && !m_pSliceHeader->m_SeqParamSet->getScalingListPresentFlag())
         {
             bool use_ts = m_pSliceHeader->m_PicParamSet->getUseTransformSkip();
-            m_TrQuant->setDefaultScalingList(use_ts);
+            m_TrQuant->setDefaultScalingList();
         }
         m_TrQuant->m_UseScalingList = true;
     }

@@ -14,9 +14,6 @@
 #include "h265_pattern.h"
 #include "umc_h265_frame.h"
 
-#define min(a, b) (((a) > (b)) ? (b) : (a))
-#define max(a, b) (((a) > (b)) ? (a) : (b))
-
 namespace UMC_HEVC_DECODER
 {
 
@@ -203,7 +200,7 @@ void H265Pattern::InitAdiPatternLuma(H265CodingUnit* pCU, Ipp32u ZorderIdxInPart
 
     if (pCU->m_SliceHeader->m_SeqParamSet->getUseStrongIntraSmoothing())
     {
-        int blkSize = 32;
+        unsigned blkSize = 32;
         int bottomLeft = pFilterBuf[0];
         int topLeft = pFilterBuf[CUHeight2];
         int topRight = pFilterBuf[BufSize - 1];

@@ -149,13 +149,13 @@ public:
         Ipp32s  isUsed;
 
         SEI_Message()
-            : msg_size(0)
-            , timestamp(0)
+            : frame(0)
+            , msg_size(0)
             , offset(0)
-            , frame(0)
-            , isUsed(0)
             , data(0)
+            , timestamp(0)
             , type(SEI_RESERVED)
+            , isUsed(0)
         {
         }
     };

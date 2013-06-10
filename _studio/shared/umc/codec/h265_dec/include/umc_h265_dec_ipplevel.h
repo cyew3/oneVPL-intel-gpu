@@ -22,7 +22,7 @@
 
 namespace UMC_HEVC_DECODER
 {
-#define UNREFERENCED_PARAMETER(p) (p)=(p)
+#define IPP_UNREFERENCED_PARAMETER(p) (p)=(p)
 #define   IPPFUN(type,name,arg)   extern type __CDECL name arg
 
  /* declare struct-parameter */

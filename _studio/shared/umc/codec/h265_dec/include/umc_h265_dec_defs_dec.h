@@ -134,7 +134,7 @@ enum
     NAL_UNITTYPE_SHIFT_H265     = 1,
     NAL_UNITTYPE_BITS_H265      = 0x7e,
     NAL_TEMPORAL_ID_BITS_H265   = 0x7,
-    NAL_TEMPORAL_ID_SHIFT_H265  = 0,
+    NAL_TEMPORAL_ID_SHIFT_H265  = 0
 };
 
 enum
@@ -277,7 +277,7 @@ enum NalUnitType
   NAL_UNIT_UNSPECIFIED_61,
   NAL_UNIT_UNSPECIFIED_62,
   NAL_UNIT_UNSPECIFIED_63,
-  NAL_UNIT_INVALID,
+  NAL_UNIT_INVALID
 };
 
 #endif/* SHARED_ENCDECBS_STRUCTURES_DEFS */
@@ -720,7 +720,7 @@ struct H265ScalingList
   bool     checkPredMode                (unsigned sizeId, unsigned listId);
   void     setRefMatrixId               (unsigned sizeId, unsigned listId, unsigned u)   { m_refMatrixId[sizeId][listId] = u;    }     //!< set reference matrix ID
   unsigned getRefMatrixId               (unsigned sizeId, unsigned listId)           { return m_refMatrixId[sizeId][listId]; }     //!< get reference matrix ID
-  int*     getScalingListDefaultAddress (unsigned sizeId, unsigned listId, bool use_ts);                                                        //!< get default matrix coefficient
+  int*     getScalingListDefaultAddress (unsigned sizeId, unsigned listId);                                                        //!< get default matrix coefficient
   void     processDefaultMarix          (unsigned sizeId, unsigned listId);
   void     setScalingListDC             (unsigned sizeId, unsigned listId, unsigned u)   { m_scalingListDC[sizeId][listId] = u; }      //!< set DC value
 
@@ -966,9 +966,9 @@ public:
 
 public:
     H265VideoParamSet() : HeapObject(),
-        m_hrdParameters(0),
         hrd_op_set_idx(0),
-        cprms_present_flag(0)
+        cprms_present_flag(0),
+        m_hrdParameters(0)
     {
         Reset();
     }

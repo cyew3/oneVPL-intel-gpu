@@ -427,7 +427,7 @@ namespace UMC
 
         // adjust time stamp to 29.97fps on 24fps progressively encoded sequences
         // if telecining attributes are available in the bitstream
-        FLAG_VDEC_TELECINE_PTS = 0x01000000,
+        FLAG_VDEC_TELECINE_PTS = 0x01000000
     };
 
     enum // encoding flags
