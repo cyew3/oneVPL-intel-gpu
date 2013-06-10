@@ -213,5 +213,7 @@ AACStatus sbrencGetTuningTab( Ipp32s sampleRate, enum eId id, Ipp32s bitRate, Ip
 /********************************************************************/
 /* EOF */
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_ENCODER
 

@@ -557,5 +557,7 @@ AACStatus ownAnalysisFilter_SBREnc_RToC_32f32fc(Ipp32f* pSrc, Ipp32fc* pDst, own
   return AAC_OK;
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_ENCODER
 

@@ -392,5 +392,7 @@ Ipp32s sbrencFrameSplitter(Ipp32f bufNrg[][64], Ipp32s* pTabF, Ipp32s nBand, Ipp
   return splitFlag;
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_ENCODER
 

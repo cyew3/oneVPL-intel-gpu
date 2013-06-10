@@ -1955,5 +1955,7 @@ AACp2sb *aacenc_p2sb_s[] = {
   aacenc_p2sb_s_9, aacenc_p2sb_s_10, aacenc_p2sb_s_11
 };
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_ENCODER
 

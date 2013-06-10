@@ -2098,5 +2098,7 @@ AACStatus aacencGetDuration(Ipp32f *p_duration,
   return AAC_OK;
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_ENCODER
 

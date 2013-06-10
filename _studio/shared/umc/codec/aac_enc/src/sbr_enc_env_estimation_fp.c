@@ -182,5 +182,7 @@ sbrencEnvEstimation (Ipp32f  bufNrg[][64],
   return 0;//OK
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_ENCODER
 

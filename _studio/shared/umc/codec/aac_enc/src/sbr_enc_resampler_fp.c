@@ -76,4 +76,6 @@ AACStatus sbrencResampler_v2_32f(Ipp32f* pSrc, Ipp32f* pDst)
   return AAC_OK;
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_ENCODER

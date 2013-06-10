@@ -274,5 +274,7 @@ Ipp32s sbrencNoisefEstimation(sSBREnc_SCE_State* pState, Ipp32s* pFreqTab, Ipp32
   return 0;//OK
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_ENCODER
 

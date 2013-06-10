@@ -986,5 +986,7 @@ Ipp32s sbrencFrameGenerator(sSBREnc_SCE_State* pState, Ipp32s splitFlag)
 
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_ENCODER
 

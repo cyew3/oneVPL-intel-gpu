@@ -728,5 +728,7 @@ Ipp32s enc_fill_element_write( sBitsreamBuffer *pBS, Ipp8u* bufAuxBS, Ipp32s pay
   return 0; //OK
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_ENCODER
 

@@ -739,5 +739,7 @@ AACStatus sbrencGetFrame(sSBREncState* pState, ownFilterSpec_SBR_C_32fc* pSpec)
   return status;
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_ENCODER
 

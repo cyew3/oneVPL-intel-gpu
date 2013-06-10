@@ -166,5 +166,7 @@ IppStatus ownEstimateTNR_SBR_32f(const Ipp32fc* pSrc, Ipp32f* pTNR0, Ipp32f* pTN
 /********************************************************************/
 /* EOF */
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_ENCODER
 

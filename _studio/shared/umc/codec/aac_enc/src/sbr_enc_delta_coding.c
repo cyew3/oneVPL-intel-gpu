@@ -245,5 +245,7 @@ sbrencDeltaCoding (Ipp16s*  bufEnvQuant,
 
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_ENCODER
 
