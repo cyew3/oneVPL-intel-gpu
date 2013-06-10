@@ -12,11 +12,6 @@ inline bool pflag(mfxU32 f) { return !!(print_param.flags & f);};
 inline void set_pflag(mfxU32 f){print_param.flags |= f;};
 inline void reset_pflag(){print_param.flags = 0;};
 
-#if 0//get offsets
-#define PUT_PARP(prefix, par) print_param.padding << "  '" << #par << "' => [" << (char*)&prefix.par - (char*)&p << ", " << sizeof(prefix.par) << "],\n"
-#define PUT_4CC(par) PUT_PARP(p, par)
-#define PUT_ARRP(prefix, name, size) ""; for(mfxU16 _i = 0; _i < (size); _i++) os << PUT_PARP(prefix, name[_i]); os << ""
-#else
 #define PUT_PARP(prefix, par) print_param.padding << "  " << #par << " = " << prefix.par  << '\n'
 #define PUT_4CC(par) print_param.padding << "  " << #par << " = " << ((char*)&p.par)[0] << ((char*)&p.par)[1] << ((char*)&p.par)[2] << ((char*)&p.par)[3] << '\n'
 #define PUT_ARRP(prefix, name, size) \
@@ -24,7 +19,6 @@ inline void reset_pflag(){print_param.flags = 0;};
     if(prefix.name && (size)){for(mfxU16 _i = 0; _i < (size)-1; _i++) os << prefix.name[_i] << ", ";\
     os << prefix.name[(size)-1];} os << " }\n"
 #define PUT_DATAP(prefix, par, size) print_param.padding << "  " << #par << " = " << hexstr(prefix.par, (size))  << '\n'
-#endif
 #define PUT_PAR(par) PUT_PARP(p, par)
 #define PUT_ARR(name, size) PUT_ARRP(p, name, size)
 #define PUT_DATA(par, size) PUT_DATAP(p, par, size)
@@ -34,6 +28,10 @@ inline void reset_pflag(){print_param.flags = 0;};
         if(p) return os << (void*)p << " &(" << *p << ')';\
         return os << (void*)p;\
     };
+#define DEF_STRUCT_TRACE(name) \
+    PRINT_PTR(name); \
+    std::ostream &operator << (std::ostream &os, name &p)
+
 std::ostream &operator << (std::ostream &os, mfxStatus &st){
 #define PRINT_STS_LOCAL(sts) case sts: return os << #sts << '(' << sts << ')';
     switch(st){
@@ -70,42 +68,9 @@ std::ostream &operator << (std::ostream &os, mfxStatus &st){
     };
 #undef PRINT_STS_LOCAL
 };
-PRINT_PTR(mfxVersion);
 PRINT_PTR(mfxSession);
-PRINT_PTR(mfxVideoParam);
-PRINT_PTR(mfxFrameAllocRequest);
 PRINT_PTR(mfxSyncPoint);
-PRINT_PTR(mfxBitstream);
-PRINT_PTR(mfxFrameSurface1);
 PRINT_PTR(mfxFrameSurface1*);
-PRINT_PTR(mfxExtBuffer);
-PRINT_PTR(mfxExtSVCSeqDesc);
-PRINT_PTR(mfxExtSVCRateControl);
-PRINT_PTR(mfxExtCodingOption2);
-PRINT_PTR(mfxExtVPPDoNotUse);
-PRINT_PTR(mfxExtVPPDenoise);
-PRINT_PTR(mfxExtVPPDetail);
-PRINT_PTR(mfxExtVPPProcAmp);
-PRINT_PTR(mfxExtVppAuxData);
-PRINT_PTR(mfxExtVPPDoUse);
-PRINT_PTR(mfxExtVPPFrameRateConversion);
-PRINT_PTR(mfxExtVPPImageStab);
-PRINT_PTR(mfxExtMVCSeqDesc);
-PRINT_PTR(mfxExtCodingOption);
-PRINT_PTR(mfxExtOpaqueSurfaceAlloc);
-PRINT_PTR(mfxPayload);
-PRINT_PTR(mfxEncodeCtrl);
-PRINT_PTR(mfxAES128CipherCounter);
-PRINT_PTR(mfxExtPAVPOption);
-PRINT_PTR(mfxEncryptedData);
-
-#ifdef __MFXAUDIO_H__
-PRINT_PTR(mfxAudioStreamInfo);
-PRINT_PTR(mfxInfoAudioMFX);
-PRINT_PTR(mfxInfoAudioPP);
-PRINT_PTR(mfxAudioParam);
-PRINT_PTR(mfxAudioAllocRequest);
-#endif //#ifdef __MFXAUDIO_H__
 
 std::ostream &operator << (std::ostream &os, mfxU8* &p){
     return os << (void*)p;
@@ -113,7 +78,7 @@ std::ostream &operator << (std::ostream &os, mfxU8* &p){
 std::ostream &operator << (std::ostream &os, std::string &p){
     return os << p.c_str();
 }
-std::ostream &operator << (std::ostream &os, mfxVideoParam &p){
+DEF_STRUCT_TRACE(mfxVideoParam){
     /*if(!pflag(0xF))*/{
         reset_pflag();
         int io_in  = !!(p.IOPattern&0x0F);
@@ -253,7 +218,7 @@ std::ostream &operator << (std::ostream &os, mfxFrameId &p){
         << print_param.padding << "}";
     return os;
 };
-std::ostream &operator << (std::ostream &os, mfxVersion &p){
+DEF_STRUCT_TRACE(mfxVersion){
     os  << "{\n"
         << PUT_PAR(Minor)
         << PUT_PAR(Major)
@@ -261,7 +226,7 @@ std::ostream &operator << (std::ostream &os, mfxVersion &p){
     os  << print_param.padding << '}';
     return os;
 };
-std::ostream &operator << (std::ostream &os, mfxFrameAllocRequest &p){
+DEF_STRUCT_TRACE(mfxFrameAllocRequest){
     os  << "{\n"
         << PUT_ARR(reserved, 4)
         << PUT_STRUCT(Info)
@@ -272,7 +237,7 @@ std::ostream &operator << (std::ostream &os, mfxFrameAllocRequest &p){
         << print_param.padding << '}';
     return os;
 };
-std::ostream &operator << (std::ostream &os, mfxBitstream &p){
+DEF_STRUCT_TRACE(mfxBitstream){
     os  << "{\n"
         << PUT_ARR(reserved, 6)
         << PUT_PAR(DecodeTimeStamp)
@@ -288,7 +253,7 @@ std::ostream &operator << (std::ostream &os, mfxBitstream &p){
         << print_param.padding << '}';
     return os;
 };
-std::ostream &operator << (std::ostream &os, mfxFrameSurface1 &p){
+DEF_STRUCT_TRACE(mfxFrameSurface1){
     os  << "{\n"
         << PUT_ARR(reserved, 4)
         << PUT_STRUCT(Info)
@@ -315,7 +280,7 @@ std::ostream &operator << (std::ostream &os, mfxFrameData &p){
 };
 
 #define PRINT_BUF(id, type) case id: if(p.BufferSz < sizeof(type)) break; os << *((type*)&p); return os;
-std::ostream &operator << (std::ostream &os, mfxExtBuffer &p){
+DEF_STRUCT_TRACE(mfxExtBuffer){
     switch(p.BufferId){
         PRINT_BUF(MFX_EXTBUFF_SVC_SEQ_DESC              , mfxExtSVCSeqDesc              );
         PRINT_BUF(MFX_EXTBUFF_SVC_RATE_CONTROL          , mfxExtSVCRateControl          );
@@ -332,6 +297,11 @@ std::ostream &operator << (std::ostream &os, mfxExtBuffer &p){
         PRINT_BUF(MFX_EXTBUFF_CODING_OPTION             , mfxExtCodingOption            );
         PRINT_BUF(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION , mfxExtOpaqueSurfaceAlloc      );
         PRINT_BUF(MFX_EXTBUFF_PAVP_OPTION               , mfxExtPAVPOption              );
+#if ((MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 7))
+        PRINT_BUF(MFX_EXTBUFF_ENCODER_CAPABILITY        , mfxExtEncoderCapability       );
+        PRINT_BUF(MFX_EXTBUFF_ENCODER_RESET_OPTION      , mfxExtEncoderResetOption      );
+        PRINT_BUF(MFX_EXTBUFF_ENCODED_FRAME_INFO        , mfxExtAVCEncodedFrameInfo     );
+#endif //#if ((MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 7))
         default: break;
     }
     return os  << "{\n"
@@ -340,7 +310,7 @@ std::ostream &operator << (std::ostream &os, mfxExtBuffer &p){
                 << print_param.padding << '}';
 };
 
-std::ostream &operator << (std::ostream &os, mfxExtSVCSeqDesc &p){
+DEF_STRUCT_TRACE(mfxExtSVCSeqDesc){
     mfxExtSVCSeqDesc zero = {0};
     os  << "{\n"
         << PUT_4CC(Header.BufferId)
@@ -407,7 +377,7 @@ std::ostream &operator << (std::ostream &os, mfxExtSVCSeqDesc &p){
     os  << print_param.padding << '}';
     return os;
 };
-std::ostream &operator << (std::ostream &os, mfxExtSVCRateControl &p){
+DEF_STRUCT_TRACE(mfxExtSVCRateControl){
     mfxExtSVCRateControl zero = {0};
     os  << "{\n"
         << PUT_4CC(Header.BufferId)
@@ -456,7 +426,7 @@ std::ostream &operator << (std::ostream &os, mfxExtSVCRateControl &p){
     return os;
 };
 
-std::ostream &operator << (std::ostream &os, mfxExtCodingOption2 &p){
+DEF_STRUCT_TRACE(mfxExtCodingOption2){
     os  << "{\n"
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
@@ -468,12 +438,18 @@ std::ostream &operator << (std::ostream &os, mfxExtCodingOption2 &p){
         << PUT_PAR(BitrateLimit)
         << PUT_PAR(MBBRC)
         << PUT_PAR(ExtBRC)
-        << PUT_ARR(reserved2, 18);
-    os  << print_param.padding << '}';
+#if ((MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 7))
+        << PUT_PAR(LookAheadDepth)
+        << PUT_PAR(Trellis)
+        << PUT_ARR(reserved2, 16)
+#else 
+        << PUT_ARR(reserved2, 18)
+#endif //#if ((MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 7))
+        << print_param.padding << '}';
     return os;
 };
 
-std::ostream &operator << (std::ostream &os, mfxExtVPPDoNotUse &p){
+DEF_STRUCT_TRACE(mfxExtVPPDoNotUse){
     os  << "{\n"
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
@@ -485,7 +461,7 @@ std::ostream &operator << (std::ostream &os, mfxExtVPPDoNotUse &p){
     return os;
 };
 
-std::ostream &operator << (std::ostream &os, mfxExtVPPDenoise &p){
+DEF_STRUCT_TRACE(mfxExtVPPDenoise){
     os  << "{\n"
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
@@ -494,7 +470,7 @@ std::ostream &operator << (std::ostream &os, mfxExtVPPDenoise &p){
     return os;
 };
 
-std::ostream &operator << (std::ostream &os, mfxExtVPPDetail &p){
+DEF_STRUCT_TRACE(mfxExtVPPDetail){
     os  << "{\n"
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
@@ -504,7 +480,7 @@ std::ostream &operator << (std::ostream &os, mfxExtVPPDetail &p){
 };
 
 
-std::ostream &operator << (std::ostream &os, mfxExtVPPProcAmp &p){
+DEF_STRUCT_TRACE(mfxExtVPPProcAmp){
     os  << "{\n"
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
@@ -516,7 +492,7 @@ std::ostream &operator << (std::ostream &os, mfxExtVPPProcAmp &p){
     return os;
 };
 
-std::ostream &operator << (std::ostream &os, mfxExtVppAuxData &p){
+DEF_STRUCT_TRACE(mfxExtVppAuxData){
     os  << "{\n"
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
@@ -528,7 +504,7 @@ std::ostream &operator << (std::ostream &os, mfxExtVppAuxData &p){
     return os;
 };
 
-std::ostream &operator << (std::ostream &os, mfxExtVPPDoUse &p){
+DEF_STRUCT_TRACE(mfxExtVPPDoUse){
     os  << "{\n"
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
@@ -540,7 +516,7 @@ std::ostream &operator << (std::ostream &os, mfxExtVPPDoUse &p){
     return os;
 };
 
-std::ostream &operator << (std::ostream &os, mfxExtVPPFrameRateConversion &p){
+DEF_STRUCT_TRACE(mfxExtVPPFrameRateConversion){
     os  << "{\n"
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
@@ -551,7 +527,7 @@ std::ostream &operator << (std::ostream &os, mfxExtVPPFrameRateConversion &p){
     return os;
 };
 
-std::ostream &operator << (std::ostream &os, mfxExtVPPImageStab &p){
+DEF_STRUCT_TRACE(mfxExtVPPImageStab){
     os  << "{\n"
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
@@ -589,7 +565,7 @@ std::ostream &operator << (std::ostream &os, mfxMVCOperationPoint &p){
     return os;
 };
 
-std::ostream &operator << (std::ostream &os, mfxExtMVCSeqDesc &p){
+DEF_STRUCT_TRACE(mfxExtMVCSeqDesc){
     os  << "{\n"
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
@@ -622,7 +598,7 @@ std::ostream &operator << (std::ostream &os, mfxExtMVCSeqDesc &p){
 std::ostream &operator << (std::ostream &os, mfxI16Pair &p){
     return os  << "{ " << p.x << ", " << p.y << " }";
 }
-std::ostream &operator << (std::ostream &os, mfxExtCodingOption &p){
+DEF_STRUCT_TRACE(mfxExtCodingOption){
     os  << "{\n"
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
@@ -656,7 +632,7 @@ std::ostream &operator << (std::ostream &os, mfxExtCodingOption &p){
     return os;
 };
 
-std::ostream &operator << (std::ostream &os, mfxExtOpaqueSurfaceAlloc &p){
+DEF_STRUCT_TRACE(mfxExtOpaqueSurfaceAlloc){
     os  << "{\n"
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
@@ -689,7 +665,7 @@ std::ostream &operator << (std::ostream &os, rawdata p){
     return os;
 }
 
-std::ostream &operator << (std::ostream &os, mfxPayload &p){
+DEF_STRUCT_TRACE(mfxPayload){
     os  << "{\n"
         << PUT_ARR(reserved, 4)
         << PUT_DATA(Data, p.BufSize)
@@ -700,7 +676,7 @@ std::ostream &operator << (std::ostream &os, mfxPayload &p){
     return os;
 };
 
-std::ostream &operator << (std::ostream &os, mfxEncodeCtrl &p){
+DEF_STRUCT_TRACE(mfxEncodeCtrl){
     os  << "{\n"
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
@@ -739,7 +715,7 @@ std::ostream &operator << (std::ostream &os, mfxEncodeCtrl &p){
     return os;
 };
 
-std::ostream &operator << (std::ostream &os, mfxAES128CipherCounter &p){
+DEF_STRUCT_TRACE(mfxAES128CipherCounter){
     os  << "{\n"
         << PUT_PAR(IV)
         << PUT_PAR(Count)
@@ -747,7 +723,7 @@ std::ostream &operator << (std::ostream &os, mfxAES128CipherCounter &p){
     return os;
 };
 
-std::ostream &operator << (std::ostream &os, mfxExtPAVPOption &p){
+DEF_STRUCT_TRACE(mfxExtPAVPOption){
     os  << "{\n"
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
@@ -760,7 +736,7 @@ std::ostream &operator << (std::ostream &os, mfxExtPAVPOption &p){
     return os;
 };
 
-std::ostream &operator << (std::ostream &os, mfxEncryptedData &p){
+DEF_STRUCT_TRACE(mfxEncryptedData){
     os  << "{\n"
         << PUT_PAR(Next)
         << PUT_PAR(reserved1)
@@ -775,7 +751,7 @@ std::ostream &operator << (std::ostream &os, mfxEncryptedData &p){
 };
 
 #ifdef __MFXAUDIO_H__
-std::ostream &operator << (std::ostream &os, mfxAudioStreamInfo &p){
+DEF_STRUCT_TRACE(mfxAudioStreamInfo){
     os  << "{\n"
         << PUT_PAR(Bitrate)
         << PUT_PAR(Channels)
@@ -786,7 +762,7 @@ std::ostream &operator << (std::ostream &os, mfxAudioStreamInfo &p){
     return os;
 };
 
-std::ostream &operator << (std::ostream &os, mfxInfoAudioMFX &p){
+DEF_STRUCT_TRACE(mfxInfoAudioMFX){
     os  << "{\n"
         << PUT_STRUCT(m_info)
         << PUT_PAR(CodecId)
@@ -816,7 +792,7 @@ std::ostream &operator << (std::ostream &os, mfxInfoAudioMFX &p){
     return os;
 };
 
-std::ostream &operator << (std::ostream &os, mfxInfoAudioPP &p){
+DEF_STRUCT_TRACE(mfxInfoAudioPP){
     os  << "{\n"
         << PUT_PAR(NumIn)
         << PUT_ARR(In, p.NumIn)
@@ -827,7 +803,7 @@ std::ostream &operator << (std::ostream &os, mfxInfoAudioPP &p){
     return os;
 };
 
-std::ostream &operator << (std::ostream &os, mfxAudioParam &p){
+DEF_STRUCT_TRACE(mfxAudioParam){
     os  << "{\n"
         << PUT_ARR(reserved, 5)
         << PUT_PAR(AsyncDepth);
@@ -858,7 +834,7 @@ std::ostream &operator << (std::ostream &os, mfxAudioParam &p){
 };
 
 
-std::ostream &operator << (std::ostream &os, mfxAudioAllocRequest &p){
+DEF_STRUCT_TRACE(mfxAudioAllocRequest){
     os  << "{\n"
         << PUT_PAR(SuggestedInputSize)
         << PUT_PAR(SuggestedOutputSize)
@@ -867,6 +843,41 @@ std::ostream &operator << (std::ostream &os, mfxAudioAllocRequest &p){
     return os;
 };
 #endif //#ifdef __MFXAUDIO_H__
+
+#if ((MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 7))
+DEF_STRUCT_TRACE(mfxExtEncoderCapability){
+    os  << "{\n"
+        << PUT_4CC(Header.BufferId)
+        << PUT_PAR(Header.BufferSz)
+        << PUT_PAR(MBPerSec)
+        << PUT_ARR(reserved, 58)
+        << print_param.padding << '}';
+    return os;
+}
+
+DEF_STRUCT_TRACE(mfxExtEncoderResetOption){
+    os  << "{\n"
+        << PUT_4CC(Header.BufferId)
+        << PUT_PAR(Header.BufferSz)
+        << PUT_PAR(StartNewSequence)
+        << PUT_ARR(reserved, 11)
+        << print_param.padding << '}';
+    return os;
+}
+
+DEF_STRUCT_TRACE(mfxExtAVCEncodedFrameInfo){
+    os  << "{\n"
+        << PUT_4CC(Header.BufferId)
+        << PUT_PAR(Header.BufferSz)
+        << PUT_PAR(FrameOrder)
+        << PUT_PAR(PicStruct)
+        << PUT_PAR(LongTermIdx)
+        << PUT_ARR(reserved, 8)
+        //TODO: print ref lists here when struct will be updated with list sizes
+        << print_param.padding << '}';
+    return os;
+}
+#endif //#if ((MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 7))
 
 #if (defined(_WIN32) || defined(_WIN64))
 
@@ -921,10 +932,10 @@ protected:
             if (pptr() != 0 && 0 < (nMax = epptr() - pptr())) {
                 if (n < nMax)
                     nMax = n;
-                traits_type::copy(pptr(), pch, nMax);
+                traits_type::copy(pptr(), pch, (size_t)nMax);
 
                 // Sync if string contains LF
-                bool bSync = traits_type::find( pch, nMax, traits_type::to_char_type( '\n' ) ) != NULL;
+                bool bSync = traits_type::find( pch, (size_t)nMax, traits_type::to_char_type( '\n' ) ) != NULL;
                 pch += nMax, nPut += nMax, n -= nMax, pbump((int)nMax);
                 if( bSync )
                     sync();

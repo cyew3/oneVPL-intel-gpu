@@ -34,80 +34,61 @@ typedef struct{
 
 rawdata hexstr(void* d, unsigned int s);
 
+#define DECL_STRUCT_TRACE(name) \
+    std::ostream &operator << (std::ostream &os, name &p); \
+    std::ostream &operator << (std::ostream &os, name* &p);
+
 std::ostream &operator << (std::ostream &os, rawdata p);
 std::ostream &operator << (std::ostream &os, std::string &p);
 std::ostream &operator << (std::ostream &os, mfxU8* &p);
 std::ostream &operator << (std::ostream &os, mfxStatus &st);
-std::ostream &operator << (std::ostream &os, mfxVideoParam* &p);
-std::ostream &operator << (std::ostream &os, mfxVideoParam &p);
 std::ostream &operator << (std::ostream &os, mfxInfoMFX &p);
 std::ostream &operator << (std::ostream &os, mfxInfoVPP &p);
 std::ostream &operator << (std::ostream &os, mfxFrameInfo &p);
 std::ostream &operator << (std::ostream &os, mfxFrameId &p);
-std::ostream &operator << (std::ostream &os, mfxVersion* &p);
-std::ostream &operator << (std::ostream &os, mfxVersion &p);
 std::ostream &operator << (std::ostream &os, mfxSession* &p);
-std::ostream &operator << (std::ostream &os, mfxFrameAllocRequest &p);
-std::ostream &operator << (std::ostream &os, mfxFrameAllocRequest* &p);
 std::ostream &operator << (std::ostream &os, mfxSyncPoint* &p);
-std::ostream &operator << (std::ostream &os, mfxBitstream &p);
-std::ostream &operator << (std::ostream &os, mfxBitstream* &p);
-std::ostream &operator << (std::ostream &os, mfxFrameSurface1 &p);
-std::ostream &operator << (std::ostream &os, mfxFrameSurface1* &p);
 std::ostream &operator << (std::ostream &os, mfxFrameSurface1** &p);
 std::ostream &operator << (std::ostream &os, mfxFrameData &p);
-std::ostream &operator << (std::ostream &os, mfxExtBuffer &p);
-std::ostream &operator << (std::ostream &os, mfxExtBuffer* &p);
-std::ostream &operator << (std::ostream &os, mfxExtSVCSeqDesc &p);
-std::ostream &operator << (std::ostream &os, mfxExtSVCSeqDesc* &p);
-std::ostream &operator << (std::ostream &os, mfxExtSVCRateControl &p);
-std::ostream &operator << (std::ostream &os, mfxExtSVCRateControl* &p);
-std::ostream &operator << (std::ostream &os, mfxExtVPPDoNotUse &p);
-std::ostream &operator << (std::ostream &os, mfxExtVPPDoNotUse* &p);
-std::ostream &operator << (std::ostream &os, mfxExtVPPDenoise &p);
-std::ostream &operator << (std::ostream &os, mfxExtVPPDenoise* &p);
-std::ostream &operator << (std::ostream &os, mfxExtVPPDetail &p);
-std::ostream &operator << (std::ostream &os, mfxExtVPPDetail* &p);
-std::ostream &operator << (std::ostream &os, mfxExtCodingOption2 &p);
-std::ostream &operator << (std::ostream &os, mfxExtCodingOption2* &p);
-std::ostream &operator << (std::ostream &os, mfxExtVPPProcAmp &p);
-std::ostream &operator << (std::ostream &os, mfxExtVPPProcAmp* &p);
-std::ostream &operator << (std::ostream &os, mfxExtVppAuxData &p);
-std::ostream &operator << (std::ostream &os, mfxExtVppAuxData* &p);
-std::ostream &operator << (std::ostream &os, mfxExtVPPDoUse &p);
-std::ostream &operator << (std::ostream &os, mfxExtVPPDoUse* &p);
-std::ostream &operator << (std::ostream &os, mfxExtVPPFrameRateConversion &p);
-std::ostream &operator << (std::ostream &os, mfxExtVPPFrameRateConversion* &p);
-std::ostream &operator << (std::ostream &os, mfxExtVPPImageStab &p);
-std::ostream &operator << (std::ostream &os, mfxExtVPPImageStab* &p);
-std::ostream &operator << (std::ostream &os, mfxExtMVCSeqDesc &p);
-std::ostream &operator << (std::ostream &os, mfxExtMVCSeqDesc* &p);
-std::ostream &operator << (std::ostream &os, mfxExtCodingOption &p);
-std::ostream &operator << (std::ostream &os, mfxExtCodingOption* &p);
-std::ostream &operator << (std::ostream &os, mfxExtOpaqueSurfaceAlloc &p);
-std::ostream &operator << (std::ostream &os, mfxExtOpaqueSurfaceAlloc* &p);
-std::ostream &operator << (std::ostream &os, mfxPayload &p);
-std::ostream &operator << (std::ostream &os, mfxPayload* &p);
-std::ostream &operator << (std::ostream &os, mfxEncodeCtrl &p);
-std::ostream &operator << (std::ostream &os, mfxEncodeCtrl* &p);
-std::ostream &operator << (std::ostream &os, mfxAES128CipherCounter &p);
-std::ostream &operator << (std::ostream &os, mfxAES128CipherCounter* &p);
-std::ostream &operator << (std::ostream &os, mfxExtPAVPOption &p);
-std::ostream &operator << (std::ostream &os, mfxExtPAVPOption* &p);
-std::ostream &operator << (std::ostream &os, mfxEncryptedData &p);
-std::ostream &operator << (std::ostream &os, mfxEncryptedData* &p);
+
+DECL_STRUCT_TRACE(mfxVideoParam);
+DECL_STRUCT_TRACE(mfxVersion);
+DECL_STRUCT_TRACE(mfxFrameAllocRequest);
+DECL_STRUCT_TRACE(mfxBitstream);
+DECL_STRUCT_TRACE(mfxFrameSurface1);
+DECL_STRUCT_TRACE(mfxExtBuffer);
+DECL_STRUCT_TRACE(mfxExtSVCSeqDesc);
+DECL_STRUCT_TRACE(mfxExtSVCRateControl);
+DECL_STRUCT_TRACE(mfxExtVPPDoNotUse);
+DECL_STRUCT_TRACE(mfxExtVPPDenoise);
+DECL_STRUCT_TRACE(mfxExtVPPDetail);
+DECL_STRUCT_TRACE(mfxExtCodingOption2);
+DECL_STRUCT_TRACE(mfxExtVPPProcAmp);
+DECL_STRUCT_TRACE(mfxExtVppAuxData);
+DECL_STRUCT_TRACE(mfxExtVPPDoUse);
+DECL_STRUCT_TRACE(mfxExtVPPFrameRateConversion);
+DECL_STRUCT_TRACE(mfxExtVPPImageStab);
+DECL_STRUCT_TRACE(mfxExtMVCSeqDesc);
+DECL_STRUCT_TRACE(mfxExtCodingOption);
+DECL_STRUCT_TRACE(mfxExtOpaqueSurfaceAlloc);
+DECL_STRUCT_TRACE(mfxPayload);
+DECL_STRUCT_TRACE(mfxEncodeCtrl);
+DECL_STRUCT_TRACE(mfxAES128CipherCounter);
+DECL_STRUCT_TRACE(mfxExtPAVPOption);
+DECL_STRUCT_TRACE(mfxEncryptedData);
 
 #ifdef __MFXAUDIO_H__
-std::ostream &operator << (std::ostream &os, mfxAudioStreamInfo &p);
-std::ostream &operator << (std::ostream &os, mfxAudioStreamInfo* &p);
-std::ostream &operator << (std::ostream &os, mfxInfoAudioMFX &p);
-std::ostream &operator << (std::ostream &os, mfxInfoAudioMFX* &p);
-std::ostream &operator << (std::ostream &os, mfxInfoAudioPP &p);
-std::ostream &operator << (std::ostream &os, mfxInfoAudioPP* &p);
-std::ostream &operator << (std::ostream &os, mfxAudioParam &p);
-std::ostream &operator << (std::ostream &os, mfxAudioParam* &p);
-std::ostream &operator << (std::ostream &os, mfxAudioAllocRequest &p);
-std::ostream &operator << (std::ostream &os, mfxAudioAllocRequest* &p);
+DECL_STRUCT_TRACE(mfxAudioStreamInfo);
+DECL_STRUCT_TRACE(mfxInfoAudioMFX);
+DECL_STRUCT_TRACE(mfxInfoAudioPP);
+DECL_STRUCT_TRACE(mfxAudioParam);
+DECL_STRUCT_TRACE(mfxAudioAllocRequest);
 #endif //#ifdef __MFXAUDIO_H__
+
+#if ((MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 7))
+DECL_MFX_VERSION_MINORSTRUCT_TRACMFX_VERSION_MINORE(mfxExtEncoderCapability);
+DECL_STRUCT_TRACE(mfxExtEncoderResetOption);
+DECL_STRUCT_TRACE(mfxExtAVCEncodedFrameInfo);
+#endif //#if ((MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 7))
 
 void allow_debug_output();
