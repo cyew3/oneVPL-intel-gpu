@@ -546,5 +546,7 @@ void sbrAdjustmentHF(Ipp32f **YBuf,
 
 /********************************************************************/
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_DECODER
 

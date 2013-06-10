@@ -643,6 +643,8 @@ void coupling_samples(AACDec *state,
 
 /********************************************************************/
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_DECODER
 
 

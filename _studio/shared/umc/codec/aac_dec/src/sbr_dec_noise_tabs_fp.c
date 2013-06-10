@@ -287,5 +287,7 @@ Ipp32f* SBR_TABLE_V[2] = {SBR_TABLE_FI_NOISE_RE, SBR_TABLE_FI_NOISE_IM};
 
 /********************************************************************/
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_DECODER
 

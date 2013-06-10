@@ -205,5 +205,7 @@ void ics_apply_ltp_I(sLtp *p_data,
 
 /********************************************************************/
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_DECODER
 

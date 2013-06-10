@@ -564,5 +564,7 @@ void ssr_gain_control(Ipp32f               *spectrum_data,
 
 /*****************************************************************************/
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_DECODER
 

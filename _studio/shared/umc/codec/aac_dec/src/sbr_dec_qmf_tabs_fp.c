@@ -265,5 +265,7 @@ Ipp32f SBR_TABLE_QMF_WINDOW_320[] = {
 
 /********************************************************************/
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_DECODER
 

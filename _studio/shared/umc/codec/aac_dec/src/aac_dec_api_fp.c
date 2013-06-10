@@ -1778,5 +1778,7 @@ AACStatus aacdec_SkipID3(Ipp32s inDataSize,
 
 /********************************************************************/
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_DECODER
 

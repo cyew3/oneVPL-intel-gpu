@@ -359,4 +359,6 @@ IppStatus ownPredictCoef_SBR_R_32f_D2L(Ipp32f **pSrc, Ipp32f *pAlpha0,
 
 /********************************************************************/
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_DECODER

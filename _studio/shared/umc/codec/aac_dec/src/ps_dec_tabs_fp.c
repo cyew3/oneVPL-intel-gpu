@@ -118,5 +118,7 @@ const sTDSpec setConfBand34 = {50, 34, 5, 32, 32, 23,
 /********************************************************************/
 /* EOF */
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_DECODER
 

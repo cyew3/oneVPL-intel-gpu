@@ -372,4 +372,6 @@ Ipp32s ownAnalysisFilter_PSDec_Kernel_v2_32fc(const Ipp32fc* pSrc, Ipp32fc ppDst
 //--------------------------------------------------------
 //--------------------------------------------------------
 /* EOF */
+#else
+# pragma warning( disable: 4206 )
 #endif

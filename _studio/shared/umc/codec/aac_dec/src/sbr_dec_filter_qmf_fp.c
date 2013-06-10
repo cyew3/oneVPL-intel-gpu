@@ -235,5 +235,7 @@ Ipp32s sbrdecInitFilter(AACDec *pState)
 
 /********************************************************************/
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_DECODER
 

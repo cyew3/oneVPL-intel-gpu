@@ -2347,5 +2347,7 @@ IppsVLCTable_32s *vlcBooks[] = {
   spec_book9, spec_book10, spec_book11
 };
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_DECODER
 

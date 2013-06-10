@@ -581,6 +581,8 @@ Ipp32s alsAbsMaxXTable[] = {
   64, 64, 64, 96, 96, 96, 96, 96, 96, 96, 96, 128, 128, 128, 128, 128
 };
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_DECODER
 
 

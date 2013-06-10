@@ -458,5 +458,7 @@ Ipp32s ownPassiveUpdate_PS_32fc( Ipp32fc** ppSrc, Ipp32fc** ppDst )
 /********************************************************************/
 /* EOF */
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_DECODER
 

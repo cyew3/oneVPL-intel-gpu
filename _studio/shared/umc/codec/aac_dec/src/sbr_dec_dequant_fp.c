@@ -190,5 +190,7 @@ Ipp32s sbrDequantization(sSBRDecComState * pSbrCom, sSBRDecWorkState * pSbrWS,
   return error;
 }
 
+#else
+# pragma warning( disable: 4206 )
 #endif //UMC_ENABLE_AAC_AUDIO_DECODER
 
