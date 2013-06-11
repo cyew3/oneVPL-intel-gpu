@@ -420,40 +420,70 @@ void PartialButterflyInverse32x32(H265CoeffsPtrCommon src, DstCoeffsType* dst, I
 *  \param iHeight input data (height of transform)
 */
 #if (HEVC_OPT_CHANGES & 128)
+
+#define OPT_IDCT
+
+void inv_4x4_dct_sse2(void *destPtr, const short *__restrict coeff, int destStride, int destSize);
+void inv_4x4_dst_sse2(void *destPtr, const short *__restrict coeff, int destStride, int destSize);
+void inv_8x8_dct_sse2(void *destPtr, const short *__restrict coeff, int destStride, int destSize);
+void inv_16x16_dct_sse2(void *destPtr, const short *__restrict coeff, int destStride, int destSize);
+void DCTInverse32x32_sse(const short* __restrict src, void *destPtr, int destStride, int destSize);
+
 // ML: OPT: Parameterized to allow const 'shift' propogation
 template <Ipp32s bitDepth, typename DstCoeffsType>
 void InverseTransform(H265CoeffsPtrCommon coeff, DstCoeffsType* dst, Ipp32s dstPitch, Ipp32s Size, Ipp32u Mode, H265CoeffsCommon * tempBuffer)
 {
     const Ipp32s shift_1st = SHIFT_INV_1ST;
     const Ipp32s shift_2nd = SHIFT_INV_2ND - (bitDepth - 8);
+    tempBuffer[0] = 0; /* TMP - avoid compiler warning (tempBuffer unusued with optimized IDCT kernels) */
 
     if (Size == 4)
     {
         if (Mode != REG_DCT)
         {
+#ifdef OPT_IDCT
+            inv_4x4_dst_sse2(dst, coeff, dstPitch, sizeof(DstCoeffsType));
+#else
             FastInverseDst<shift_1st, H265CoeffsCommon>(coeff, tempBuffer, 4 ); // Inverse DST by FAST Algorithm, coeff input, tmp output
             FastInverseDst<shift_2nd, DstCoeffsType>(tempBuffer, dst, dstPitch ); // Inverse DST by FAST Algorithm, tmp input, coeff output
+#endif
         }
         else
         {
+#ifdef OPT_IDCT
+            inv_4x4_dct_sse2(dst, coeff, dstPitch, sizeof(DstCoeffsType));
+#else
             PartialButterflyInverse4x4<shift_1st, H265CoeffsCommon>(coeff, tempBuffer, 4);
             PartialButterflyInverse4x4<shift_2nd, DstCoeffsType>(tempBuffer, dst, dstPitch);
+#endif
         }
     }
     else if (Size == 8)
     {
+#ifdef OPT_IDCT
+        inv_8x8_dct_sse2(dst, coeff, dstPitch, sizeof(DstCoeffsType));
+#else
         PartialButterflyInverse8x8<shift_1st, H265CoeffsCommon>(coeff, tempBuffer, 8);
         PartialButterflyInverse8x8<shift_2nd, DstCoeffsType>(tempBuffer, dst, dstPitch);
+#endif
     }
     else if (Size == 16)
     {
+#ifdef OPT_IDCT
+        inv_16x16_dct_sse2(dst, coeff, dstPitch, sizeof(DstCoeffsType));
+#else
         PartialButterflyInverse16x16<shift_1st, H265CoeffsCommon>(coeff, tempBuffer, 16);
         PartialButterflyInverse16x16<shift_2nd, DstCoeffsType>(tempBuffer, dst, dstPitch);
+#endif
     }
     else if (Size == 32)
     {
+#ifdef OPT_IDCT
+        DCTInverse32x32_sse(coeff, dst, dstPitch, sizeof(DstCoeffsType));
+#else
         PartialButterflyInverse32x32<shift_1st, H265CoeffsCommon>(coeff, tempBuffer, 32);
         PartialButterflyInverse32x32<shift_2nd, DstCoeffsType>(tempBuffer, dst, dstPitch);
+#endif
     }
 }
 
