@@ -155,30 +155,5 @@ typedef struct {
     mfxU32          Variances[11];
 } mfxExtVppReport;
 
-// this ext buffer should be moved to MSDK API for API ver. 1.7 (aimed to BDW)
-enum {
-    MFX_EXTBUFF_ENCODER_CAPABILITY   = MFX_MAKEFOURCC('E','N','C','P')
-};
-
-typedef struct {
-    mfxExtBuffer Header;
-
-    mfxU32      MBPerSec;
-    mfxU16      reserved[58];
-} mfxExtEncoderCapability;
-
-// this ext buffer should be moved to MSDK API after discussion
-enum {
-    MFX_EXTBUFF_ENCODER_RESET_OPTION   = MFX_MAKEFOURCC('E','N','R','O')
-};
-
-typedef struct {
-    mfxExtBuffer Header;
-
-    mfxU16      StartNewSequence;
-    mfxU16      reserved[1];
-} mfxExtEncoderResetOption;
-
-
 
 #endif // __MFX_EXT_BUFFERS_H__

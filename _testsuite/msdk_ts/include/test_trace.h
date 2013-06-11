@@ -86,7 +86,7 @@ DECL_STRUCT_TRACE(mfxAudioAllocRequest);
 #endif //#ifdef __MFXAUDIO_H__
 
 #if ((MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 7))
-DECL_MFX_VERSION_MINORSTRUCT_TRACMFX_VERSION_MINORE(mfxExtEncoderCapability);
+DECL_STRUCT_TRACE(mfxExtEncoderCapability);
 DECL_STRUCT_TRACE(mfxExtEncoderResetOption);
 DECL_STRUCT_TRACE(mfxExtAVCEncodedFrameInfo);
 #endif //#if ((MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 7))
