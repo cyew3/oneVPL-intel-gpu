@@ -371,7 +371,17 @@ enum {
     MFX_RATECONTROL_RESERVED1 =5,
     MFX_RATECONTROL_RESERVED2 =6,
     MFX_RATECONTROL_RESERVED3 =100,
-    MFX_RATECONTROL_RESERVED4 =7
+    MFX_RATECONTROL_RESERVED4 =7,
+    MFX_RATECONTROL_LA        =8
+};
+
+/* Trellis control*/
+enum {
+    MFX_TRELLIS_UNKNOWN =0,
+    MFX_TRELLIS_OFF     =0x01,
+    MFX_TRELLIS_I       =0x02,
+    MFX_TRELLIS_P       =0x04,
+    MFX_TRELLIS_B       =0x08
 };
 
 typedef struct {
@@ -422,7 +432,9 @@ typedef struct {
     mfxU16      BitrateLimit;           /* tri-state option */
     mfxU16      MBBRC;                  /* tri-state option */
     mfxU16      ExtBRC;                 /* tri-state option */
-    mfxU16      reserved2[18];
+    mfxU16      LookAheadDepth;
+    mfxU16      Trellis; 
+    mfxU16      reserved2[16];
 } mfxExtCodingOption2;
 
 /* IntraPredBlockSize/InterPredBlockSize */
@@ -452,7 +464,11 @@ typedef struct _mfxEncryptedData mfxEncryptedData;
 
 typedef struct {
      union {
-         mfxEncryptedData* EncryptedData;
+        struct {
+            mfxEncryptedData* EncryptedData;
+            mfxExtBuffer **ExtParam;
+            mfxU16  NumExtParam;
+        };
          mfxU32  reserved[6];
      };
     mfxI64  DecodeTimeStamp; 
@@ -494,7 +510,10 @@ enum {
     MFX_EXTBUFF_AVC_TEMPORAL_LAYERS        = MFX_MAKEFOURCC('A','T','M','L'),
     MFX_EXTBUFF_CODING_OPTION2             = MFX_MAKEFOURCC('C','D','O','2'),
     MFX_EXTBUFF_VPP_IMAGE_STABILIZATION    = MFX_MAKEFOURCC('I','S','T','B'),
-    MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION    = MFX_MAKEFOURCC('I','D','E','T')
+    MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION    = MFX_MAKEFOURCC('I','D','E','T'),
+    MFX_EXTBUFF_ENCODER_CAPABILITY         = MFX_MAKEFOURCC('E','N','C','P'),
+    MFX_EXTBUFF_ENCODER_RESET_OPTION       = MFX_MAKEFOURCC('E','N','R','O'),
+    MFX_EXTBUFF_ENCODED_FRAME_INFO         = MFX_MAKEFOURCC('E','N','F','I')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -814,6 +833,36 @@ typedef struct {
         mfxU16 reserved[3];
     }Layer[8];
 } mfxExtAvcTemporalLayers;
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU32      MBPerSec;
+    mfxU16      reserved[58];
+} mfxExtEncoderCapability;
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16      StartNewSequence;
+    mfxU16      reserved[11];
+} mfxExtEncoderResetOption;
+
+typedef struct {
+    mfxExtBuffer    Header; 
+
+    mfxU32          FrameOrder;
+    mfxU16          PicStruct;
+    mfxU16          LongTermIdx;
+    mfxU16          reserved[8];
+
+    struct {
+            mfxU32      FrameOrder;
+            mfxU16      PicStruct;
+            mfxU16      LongTermIdx;
+            mfxU16      reserved[4];
+    } UsedRefListL0[32], UsedRefListL1[32];
+} mfxExtAVCEncodedFrameInfo;
 
 #ifdef __cplusplus
 } // extern "C"
