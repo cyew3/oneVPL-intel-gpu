@@ -27,6 +27,7 @@
     <ClCompile Include="src\h265_pattern.cpp" />
     <ClCompile Include="src\h265_prediction.cpp" />
     <ClCompile Include="src\h265_tr_quant.cpp" />
+    <ClCompile Include="src\h265_tr_quant_opt.cpp" />
     <ClCompile Include="src\umc_h265_au_splitter.cpp" />
     <ClCompile Include="src\umc_h265_dec_bitstream.cpp" />
     <ClCompile Include="src\umc_h265_dec_bitstream_cabac.cpp" />
