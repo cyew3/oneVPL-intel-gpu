@@ -200,6 +200,7 @@ mfxStatus AudioDECODEMP3::GetAudioParam(mfxAudioParam *par)
 
 mfxStatus AudioDECODEMP3::DecodeHeader(AudioCORE *core, mfxBitstream *bs, mfxAudioParam *par)
 {
+    core;
     MFX_CHECK_NULL_PTR2(bs, par);
 
     mfxStatus sts = CheckBitstream(bs);
@@ -227,8 +228,8 @@ mfxStatus AudioDECODEMP3::FillAudioParamMP3(MP3Dec_com* res, mfxAudioParam *out)
     mfxStatus sts = MFX_ERR_NONE;
 
 
-    out->mfx.m_info.Bitrate = mp3_bitrate[res->header.id][res->header.layer - 1][res->header.bitRate];
-    out->mfx.m_info.SampleFrequency = mp3_frequency[res->header.id + res->mpg25][res->header.samplingFreq] + res->header.paddingBit;
+    out->mfx.m_info.Bitrate = (mfxU16)mp3_bitrate[res->header.id][res->header.layer - 1][res->header.bitRate];
+    out->mfx.m_info.SampleFrequency = (mfxU16)(mp3_frequency[res->header.id + res->mpg25][res->header.samplingFreq] + res->header.paddingBit);
 
     out->mfx.CodecId = MFX_CODEC_MP3;
     if(res->header.id == 1)
@@ -267,6 +268,7 @@ mfxStatus AudioDECODEMP3::FillAudioParamMP3(MP3Dec_com* res, mfxAudioParam *out)
 
 mfxStatus AudioDECODEMP3::QueryIOSize(AudioCORE *core, mfxAudioParam *par, mfxAudioAllocRequest *request)
 {
+    core;
     MFX_CHECK_NULL_PTR2(par, request);
 
     request->SuggestedInputSize = MAX_MP3_INPUT_DATA_SIZE;
@@ -302,6 +304,8 @@ mfxStatus AudioDECODEMP3::DecodeFrameCheck(mfxBitstream *bs,
 mfxStatus AudioDECODEMP3::MP3ECODERoutine(void *pState, void *pParam,
                                           mfxU32 threadNumber, mfxU32 callNumber)
 {
+    callNumber;
+    threadNumber;
     AudioDECODEMP3 &obj = *((AudioDECODEMP3 *) pState);
     mfxStatus mfxRes = MFX_ERR_NONE;
 
@@ -335,6 +339,7 @@ mfxStatus AudioDECODEMP3::MP3ECODERoutine(void *pState, void *pParam,
 
 mfxStatus AudioDECODEMP3::MP3AbortProc(void *pState, void *pParam)
 {
+    pParam;
     AudioDECODEMP3 &obj = *((AudioDECODEMP3 *) pState);
 
     if (MFX_PLATFORM_SOFTWARE == obj.m_platform)
@@ -350,6 +355,8 @@ mfxStatus AudioDECODEMP3::MP3AbortProc(void *pState, void *pParam)
 mfxStatus AudioDECODEMP3::MP3CompleteProc(void *pState, void *pParam,
                                           mfxStatus taskRes)
 {
+    taskRes;
+    pParam;
     AudioDECODEMP3 &obj = *((AudioDECODEMP3 *) pState);
 
     if (MFX_PLATFORM_SOFTWARE == obj.m_platform)
@@ -364,6 +371,7 @@ mfxStatus AudioDECODEMP3::MP3CompleteProc(void *pState, void *pParam,
 
 mfxStatus AudioDECODEMP3::DecodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffer_out)
 {
+    buffer_out;
     UMC::AutomaticUMCMutex guard(m_mGuard);
     mfxStatus sts;
 
@@ -394,6 +402,7 @@ mfxStatus AudioDECODEMP3::DecodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffe
 
 mfxStatus AudioDECODEMP3::DecodeFrame(mfxBitstream *bs, mfxBitstream *buffer_out)
 {
+    buffer_out;
     UMC::AutomaticUMCMutex guard(m_mGuard);
     mfxStatus sts;
 
@@ -409,7 +418,7 @@ mfxStatus AudioDECODEMP3::DecodeFrame(mfxBitstream *bs, mfxBitstream *buffer_out
     {
         return MFX_ERR_MORE_DATA;
     }
-    UMC::Status umcRes = UMC::UMC_OK;
+//    UMC::Status umcRes = UMC::UMC_OK;
 
 
     if (NULL != bs)
@@ -464,7 +473,7 @@ mfxStatus AudioDECODEMP3::ConstructFrame(mfxBitstream *in, mfxBitstream *out)
     switch (stsUMC)
     {
     case UMC::UMC_OK: 
-        if (inBufferSize <= in->DataLength)
+        if (inBufferSize <= (Ipp32s)in->DataLength)
         {
             sts = CopyBitstream(*out, in->Data + in->DataOffset + inBufferID3HeaderSize, inBufferSize - inBufferID3HeaderSize);
             if(sts != MFX_ERR_NONE) 
@@ -513,10 +522,10 @@ mfxStatus MFX_MP3_Utility::FillAudioParam( mfxAudioParam *in, mfxAudioParam *out
 
 mfxStatus MFX_MP3_Utility::FillAudioParamByUMC(UMC::MP3DecoderParams *in, mfxAudioParam *out)
 {
-    out->mfx.m_info.BitPerSample = in->m_info.bitPerSample;
-    out->mfx.m_info.Bitrate = in->m_info.bitrate;
-    out->mfx.m_info.Channels = in->m_info.channels;
-    out->mfx.m_info.SampleFrequency = in->m_info.sample_frequency;
+    out->mfx.m_info.BitPerSample = (mfxU16)in->m_info.bitPerSample;
+    out->mfx.m_info.Bitrate = (mfxU16)in->m_info.bitrate;
+    out->mfx.m_info.Channels = (mfxU16)in->m_info.channels;
+    out->mfx.m_info.SampleFrequency = (mfxU16)in->m_info.sample_frequency;
     return MFX_ERR_NONE;
 }
 

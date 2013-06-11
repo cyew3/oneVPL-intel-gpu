@@ -18,6 +18,7 @@
 
 #include "mfxaudio.h"
 #include "mfxaudio++int.h"
+#include "mp3dec_own.h"
 #include "umc_audio_decoder.h"
 #include "umc_mp3_decoder.h"
 #include "umc_mutex.h"
