@@ -5167,8 +5167,6 @@ mfxStatus MFXVideoENCODEH264::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
         } // if (!svcinfo_in)
 
         if (opts2_in) {
-            CHECK_OPTION(opts2_in->BitrateLimit, opts2_out->BitrateLimit, isCorrected);
-            opts2_out->MaxFrameSize = 0; // frame size limit isn't supported at the moment
 #ifdef H264_INTRA_REFRESH
             if (opts2_in->IntRefType) {
                 if (out->mfx.GopRefDist > 1 || opts2_in->IntRefType == 2) {
@@ -5191,6 +5189,36 @@ mfxStatus MFXVideoENCODEH264::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
                 } else opts2_out->IntRefQPDelta = opts2_in->IntRefQPDelta;
             }
 #endif // H264_INTRA_REFRESH
+
+            CHECK_OPTION(opts2_in->BitrateLimit, opts2_out->BitrateLimit, isCorrected);
+            CHECK_OPTION(opts2_in->MBBRC,        opts2_out->MBBRC,        isCorrected);
+            CHECK_OPTION(opts2_in->ExtBRC,       opts2_out->ExtBRC,       isCorrected);
+
+            // frame size limit isn't supported at the moment
+            if (opts2_in->MaxFrameSize) {
+                opts2_out->MaxFrameSize = 0;
+                isCorrected ++;
+            }
+
+            if (opts2_in->MBBRC == MFX_CODINGOPTION_ON) {
+                opts2_out->MBBRC = MFX_CODINGOPTION_OFF;
+                isCorrected ++;
+            }
+
+            if (opts2_in->ExtBRC == MFX_CODINGOPTION_ON) {
+                opts2_out->ExtBRC = MFX_CODINGOPTION_OFF;
+                isCorrected ++;
+            }
+
+            if (opts2_in->LookAheadDepth) {
+                opts2_out->LookAheadDepth = 0;
+                isCorrected ++;
+            }
+
+            if (opts2_in->Trellis) {
+                opts2_out->Trellis = 0;
+                isCorrected ++;
+            }
         }
 
         mfxU16 RCMethod = (in->mfx.RateControlMethod == MFX_RATECONTROL_CBR || in->mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
