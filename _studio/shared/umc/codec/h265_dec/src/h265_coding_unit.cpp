@@ -1462,6 +1462,7 @@ Ipp8u H265CodingUnit::getNumPartInter(Ipp32u AbsPartIdx)
 {
     Ipp8u iNumPart = 0;
 
+    // ML: OPT: TODO: Change switch to table lookup instead
     switch (m_PartSizeArray[AbsPartIdx])
     {
         case SIZE_2Nx2N:

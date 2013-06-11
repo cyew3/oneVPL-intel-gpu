@@ -34,8 +34,23 @@ namespace UMC_HEVC_DECODER
   
 #if defined(_WIN32) || defined(_WIN64)
   #define H265_FORCEINLINE __forceinline
+  #define H265_NONLINE __declspec(noinline)
 #else
   #define H265_FORCEINLINE __attribute__((always_inline))
+  #define H265_NONLINE __attribute__((noinline))
+#endif
+
+// This better be placed in some general/common header
+#ifdef __INTEL_COMPILER
+# define H265_RESTRICT __restrict
+#elif defined _MSC_VER
+# if _MSC_VER >= 1400
+#  define H265_RESTRICT __restrict
+# else
+#  define H265_RESTRICT
+# endif
+#else
+# define H265_RESTRICT
 #endif
   
 #define BITS_PER_PLANE 8
@@ -2356,6 +2371,18 @@ inline size_t CalculateSuggestedSize(const H265SeqParamSet * sps)
     return size * 10;
 #else
     return size;
+#endif
+}
+
+static void H265_FORCEINLINE small_memcpy( void* dst, const void* src, int len )
+{
+// ML: OPT: TODO: Tweak <= 64-byte memory copy performance
+#if defined( __INTEL_COMPILER ) || defined( __GNUC__ )
+    int len_rem = len & 3; 
+    len >>= 2;
+    __asm__ ( "cld; rep movsd; mov %[len_rem_], %[len_]; rep movsb" : [len_] "+c" (len), "+S" (src), "+D" (dst) : [len_rem_] "r" (len_rem) : "memory" );
+#else
+    memcpy(dst, src, len);
 #endif
 }
 

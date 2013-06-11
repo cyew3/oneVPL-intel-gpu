@@ -513,8 +513,11 @@ void H265SegmentDecoder::FilterEdgeChroma(H265EdgeData *edge,
         srcDst += strDstStep;
     }
 }
-
-static H265_FORCEINLINE bool MVIsnotEq(H265MotionVector mv0,
+static bool
+#if (HEVC_OPT_CHANGES & 0x2)
+H265_FORCEINLINE
+#endif
+  MVIsnotEq(H265MotionVector mv0,
                       H265MotionVector mv1)
 {
     H265MotionVector mv = mv0 - mv1;

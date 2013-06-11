@@ -140,7 +140,7 @@ void H265SegmentDecoder::create(H265SeqParamSet* pSPS)
     }
 
     m_CurrCTBStride = (pSPS->NumPartitionsInCUSize + 2);
-    if (m_CurrCTBHolder.size() < m_CurrCTBStride * m_CurrCTBStride)
+    if (m_CurrCTBHolder.size() < (Ipp32u)(m_CurrCTBStride * m_CurrCTBStride))
     {
         m_CurrCTBHolder.resize(m_CurrCTBStride * m_CurrCTBStride);
         m_CurrCTB = &m_CurrCTBHolder[m_CurrCTBStride + 1];

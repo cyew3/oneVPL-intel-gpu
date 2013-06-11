@@ -466,7 +466,7 @@ private:
 
 };
 
-extern Ipp32s CalculateDPBSize(Ipp32u level_idc, Ipp32s width, Ipp32s height);
+extern Ipp32s _cdecl CalculateDPBSize(Ipp32u level_idc, Ipp32s width, Ipp32s height);
 
 } // namespace UMC_HEVC_DECODER
 

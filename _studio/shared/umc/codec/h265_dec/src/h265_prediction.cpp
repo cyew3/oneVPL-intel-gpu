@@ -13,8 +13,7 @@
 #include "umc_defs.h"
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
-#include "smmintrin.h"
-#include "emmintrin.h"
+#include <immintrin.h>
 
 #include "h265_prediction.h"
 #include "umc_h265_dec_ipplevel.h"
@@ -59,6 +58,7 @@ void H265Prediction::InitTempBuff()
         m_YUVPred[1].destroy();
     }
 
+    // ML: OPT: TODO: Allocate only when we need it
     m_YUVExtHeight = ((g_MaxCUHeight + 2) << 4);
     m_YUVExtStride = ((g_MaxCUWidth  + 8) << 4);
     m_YUVExt = new H265PlaneYCommon[m_YUVExtStride * m_YUVExtHeight];
@@ -68,7 +68,7 @@ void H265Prediction::InitTempBuff()
     m_YUVPred[1].create(g_MaxCUWidth, g_MaxCUHeight, sizeof(Ipp16s), sizeof(Ipp16s), g_MaxCUWidth, g_MaxCUHeight, g_MaxCUDepth);
 
     if (!m_temp_interpolarion_buffer)
-        m_temp_interpolarion_buffer = ippsMalloc_8u(128*128);    
+        m_temp_interpolarion_buffer = ippsMalloc_8u(2*128*128);    
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -699,72 +699,107 @@ void H265Prediction::MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPad
 
         VM_ASSERT(RefIdx[REF_PIC_LIST_0] >= 0 || RefIdx[REF_PIC_LIST_1] >= 0);
 
-        if (!weighted_prediction && (CheckIdenticalMotion(pCU, PartAddr) || !(RefIdx[REF_PIC_LIST_0] >= 0 && RefIdx[REF_PIC_LIST_1] >= 0)))
+        if ((CheckIdenticalMotion(pCU, PartAddr) || !(RefIdx[REF_PIC_LIST_0] >= 0 && RefIdx[REF_PIC_LIST_1] >= 0)))
         {
             EnumRefPicList direction = RefIdx[REF_PIC_LIST_0] >= 0 ? REF_PIC_LIST_0 : REF_PIC_LIST_1;
-            PredInterUni(pCU, PartAddr, Width, Height, direction, &m_YUVPred[0], false);
-        }
-        else
-        {
-            for (Ipp32s RefList = 0; RefList < 2; RefList++)
+            if ( ! weighted_prediction )
             {
-                EnumRefPicList RefPicList = (RefList ? REF_PIC_LIST_1 : REF_PIC_LIST_0);
-                if (RefIdx[RefList] < 0)
-                    continue;
-
-                VM_ASSERT(RefIdx[RefList] < pCU->m_SliceHeader->m_numRefIdx[RefPicList]);
-
-                H265DecYUVBufferPadded *pcMbYuv = &m_YUVPred[RefList];
-                PredInterUni(pCU, PartAddr, Width, Height, RefPicList, pcMbYuv, true);
-            }
-
-            if (!weighted_prediction)
-            {
-                m_YUVPred[0].AddAverageToPic(pCU->m_Frame, &m_YUVPred[1], pCU->CUAddr, AbsPartIdx, PartAddr, Width, Height);
+                PredInterUni<TEXT_LUMA, false>(pCU, PartAddr, Width, Height, direction, &m_YUVPred[0]);
+                PredInterUni<TEXT_CHROMA, false>(pCU, PartAddr, Width, Height, direction, &m_YUVPred[0]);
             }
             else
             {
-                Ipp32s w0[3], w1[3], o0[3], o1[3], logWD[3], round[3];
+                PredInterUni<TEXT_LUMA, true>(pCU, PartAddr, Width, Height, direction, &m_YUVPred[0]);
+                PredInterUni<TEXT_CHROMA, true>(pCU, PartAddr, Width, Height, direction, &m_YUVPred[0]);
+            }
+        }
+        else
+        {
+            bool bOnlyOneIterpY = false, bOnlyOneIterpC = false;
+            EnumRefPicList picListY = REF_PIC_LIST_0, picListC = REF_PIC_LIST_0;
 
+            if ( ! weighted_prediction )
+            {
+                // Check if at least one ref doesn't require subsample interpolation to add average directly from pic
+                H265MotionVector MV = pCU->m_CUMVbuffer[REF_PIC_LIST_0].MV[PartAddr];
+                int mv_interp0 = (MV.Horizontal | MV.Vertical) & 7;
+
+                MV = pCU->m_CUMVbuffer[REF_PIC_LIST_1].MV[PartAddr];
+                int mv_interp1 = (MV.Horizontal | MV.Vertical) & 7;
+
+                bOnlyOneIterpC = !( mv_interp0 && mv_interp1 );
+                if (mv_interp0 == 0)
+                    picListC = REF_PIC_LIST_1;
+
+                mv_interp0 &= 3;
+                mv_interp1 &= 3;
+                bOnlyOneIterpY = !( mv_interp0 && mv_interp1 );
+                if (mv_interp0 == 0)
+                    picListY = REF_PIC_LIST_1;
+            }
+
+            EnumAddAverageType addAverage = weighted_prediction ? AVERAGE_NO : AVERAGE_FROM_BUF;
+            H265DecYUVBufferPadded* pYuvPred = &m_YUVPred[ weighted_prediction ? REF_PIC_LIST_1 : REF_PIC_LIST_0];
+
+            if ( bOnlyOneIterpY )
+                PredInterUni<TEXT_LUMA, true>( pCU, PartAddr, Width, Height, picListY, m_YUVPred, AVERAGE_FROM_PIC );
+            else
+            {
+                PredInterUni<TEXT_LUMA, true>( pCU, PartAddr, Width, Height, REF_PIC_LIST_0, &m_YUVPred[REF_PIC_LIST_0] );
+                PredInterUni<TEXT_LUMA, true>( pCU, PartAddr, Width, Height, REF_PIC_LIST_1, pYuvPred, addAverage );
+            }
+
+            if ( bOnlyOneIterpC )
+                PredInterUni<TEXT_CHROMA, true>( pCU, PartAddr, Width, Height, picListC, m_YUVPred, AVERAGE_FROM_PIC );
+            else
+            {
+                PredInterUni<TEXT_CHROMA, true>( pCU, PartAddr, Width, Height, REF_PIC_LIST_0, &m_YUVPred[REF_PIC_LIST_0] );
+                PredInterUni<TEXT_CHROMA, true>( pCU, PartAddr, Width, Height, REF_PIC_LIST_1, pYuvPred, addAverage );
+            }
+        }
+
+        if (weighted_prediction)
+        {
+            Ipp32s w0[3], w1[3], o0[3], o1[3], logWD[3], round[3];
+
+            for (Ipp32s plane = 0; plane < 3; plane++)
+            {
+                Ipp32s bitDepth = plane ? g_bitDepthC : g_bitDepthY;
+
+                w0[plane] = pCU->m_SliceHeader->m_weightPredTable[REF_PIC_LIST_0][RefIdx[0] >=0 ? RefIdx[0] : RefIdx[1]][plane].iWeight;
+                w1[plane] = pCU->m_SliceHeader->m_weightPredTable[REF_PIC_LIST_1][RefIdx[1] >=0 ? RefIdx[1] : RefIdx[0]][plane].iWeight;
+                o0[plane] = pCU->m_SliceHeader->m_weightPredTable[REF_PIC_LIST_0][RefIdx[0] >=0 ? RefIdx[0] : RefIdx[1]][plane].iOffset * (1 << (bitDepth - 8));
+                o1[plane] = pCU->m_SliceHeader->m_weightPredTable[REF_PIC_LIST_1][RefIdx[1] >=0 ? RefIdx[1] : RefIdx[0]][plane].iOffset * (1 << (bitDepth - 8));
+
+                if (RefIdx[0] >= 0)
+                    logWD[plane] = pCU->m_SliceHeader->m_weightPredTable[REF_PIC_LIST_0][RefIdx[0]][plane].uiLog2WeightDenom;
+                else
+                    logWD[plane] = pCU->m_SliceHeader->m_weightPredTable[REF_PIC_LIST_1][RefIdx[1]][plane].uiLog2WeightDenom;
+
+                logWD[plane] += 14 - bitDepth;
+                round[plane] = 0;
+
+                if (logWD[plane] >= 1)
+                    round[plane] = 1 << (logWD[plane] - 1);
+                else
+                    logWD[plane] = 0;
+            }
+
+            if (RefIdx[0] >= 0 && RefIdx[1] < 0)
+                pPredYUV->CopyWeighted_S16U8(&m_YUVPred[0], PartAddr, Width, Height, w0, o0, logWD, round);
+            else if (RefIdx[0] < 0 && RefIdx[1] >= 0)
+                pPredYUV->CopyWeighted_S16U8(&m_YUVPred[1], PartAddr, Width, Height, w1, o1, logWD, round);
+            else
+            {
                 for (Ipp32s plane = 0; plane < 3; plane++)
                 {
-                    Ipp32s bitDepth = plane ? g_bitDepthC : g_bitDepthY;
-
-                    w0[plane] = pCU->m_SliceHeader->m_weightPredTable[REF_PIC_LIST_0][RefIdx[0] >=0 ? RefIdx[0] : RefIdx[1]][plane].iWeight;
-                    w1[plane] = pCU->m_SliceHeader->m_weightPredTable[REF_PIC_LIST_1][RefIdx[1] >=0 ? RefIdx[1] : RefIdx[0]][plane].iWeight;
-                    o0[plane] = pCU->m_SliceHeader->m_weightPredTable[REF_PIC_LIST_0][RefIdx[0] >=0 ? RefIdx[0] : RefIdx[1]][plane].iOffset * (1 << (bitDepth - 8));
-                    o1[plane] = pCU->m_SliceHeader->m_weightPredTable[REF_PIC_LIST_1][RefIdx[1] >=0 ? RefIdx[1] : RefIdx[0]][plane].iOffset * (1 << (bitDepth - 8));
-
-                    if (RefIdx[0] >= 0)
-                        logWD[plane] = pCU->m_SliceHeader->m_weightPredTable[REF_PIC_LIST_0][RefIdx[0]][plane].uiLog2WeightDenom;
-                    else
-                        logWD[plane] = pCU->m_SliceHeader->m_weightPredTable[REF_PIC_LIST_1][RefIdx[1]][plane].uiLog2WeightDenom;
-
-                    logWD[plane] += 14 - bitDepth;
-                    round[plane] = 0;
-
-                    if (logWD[plane] >= 1)
-                        round[plane] = 1 << (logWD[plane] - 1);
-                    else
-                        logWD[plane] = 0;
+                    logWD[plane] += 1;
+                    round[plane] = (o0[plane] + o1[plane] + 1) << (logWD[plane] - 1);
                 }
-
-                if (RefIdx[0] >= 0 && RefIdx[1] < 0)
-                    pPredYUV->CopyWeighted_S16U8(&m_YUVPred[0], PartAddr, Width, Height, w0, o0, logWD, round);
-                else if (RefIdx[0] < 0 && RefIdx[1] >= 0)
-                    pPredYUV->CopyWeighted_S16U8(&m_YUVPred[1], PartAddr, Width, Height, w1, o1, logWD, round);
-                else
-                {
-                    for (Ipp32s plane = 0; plane < 3; plane++)
-                    {
-                        logWD[plane] += 1;
-                        round[plane] = (o0[plane] + o1[plane] + 1) << (logWD[plane] - 1);
-                    }
-                    pPredYUV->CopyWeightedBidi_S16U8(&m_YUVPred[0], &m_YUVPred[1], PartAddr, Width, Height, w0, w1, logWD, round);
-                }
-
-                pPredYUV->CopyPartToPic(pCU->m_Frame, pCU->CUAddr, AbsPartIdx, PartAddr, Width, Height);
+                pPredYUV->CopyWeightedBidi_S16U8(&m_YUVPred[0], &m_YUVPred[1], PartAddr, Width, Height, w0, w1, logWD, round);
             }
+
+            pPredYUV->CopyPartToPic(pCU->m_Frame, pCU->CUAddr, AbsPartIdx, PartAddr, Width, Height);
         }
     }
 }
@@ -786,345 +821,194 @@ bool H265Prediction::CheckIdenticalMotion(H265CodingUnit* pCU, Ipp32u PartAddr)
     return false;
 }
 
-void H265Prediction::PredInterUni(H265CodingUnit* pCU, Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefPicList RefPicList,
-                                  H265DecYUVBufferPadded *YUVPred, bool bi)
+template <EnumTextType c_plane_type >
+static void PrepareInterpSrc( H265CodingUnit* pCU, Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefPicList RefPicList, H265DecYUVBufferPadded *YUVPred,
+                              IppVCInterpolateBlock_8u& interpolateInfo, Ipp8u* temp_interpolarion_buffer )
 {
     Ipp32s RefIdx = pCU->m_CUMVbuffer[RefPicList].RefIdx[PartAddr];
     VM_ASSERT(RefIdx >= 0);
+    YUVPred;
 
     H265MotionVector MV = pCU->m_CUMVbuffer[RefPicList].MV[PartAddr];
     H265DecoderFrame *PicYUVRef = pCU->m_Frame->GetRefPicList(pCU->m_SliceIdx, RefPicList)->m_refPicList[RefIdx].refFrame;
 
-    // LUMA
-    Ipp32s in_SrcPitch = PicYUVRef->pitch_luma();
-    Ipp32s refOffset = (MV.Horizontal >> 2) + (MV.Vertical >> 2) * in_SrcPitch;
-    H265PlanePtrUVCommon in_pSrc = PicYUVRef->GetLumaAddr(pCU->CUAddr, pCU->m_AbsIdxInLCU + PartAddr) + refOffset;
+    Ipp32s in_SrcPitch = (c_plane_type == TEXT_CHROMA) ? PicYUVRef->pitch_chroma() : PicYUVRef->pitch_luma();
 
-    Ipp32s in_DstPitch = YUVPred->pitch_luma();
-    // Hack to get correct offset in 2-byte elements
-    H265CoeffsPtrCommon in_pDst = (H265CoeffsPtrCommon)YUVPred->GetLumaAddr() + (YUVPred->GetPartLumaAddr(PartAddr) - YUVPred->GetLumaAddr());
+    Ipp32s refOffset = (c_plane_type == TEXT_CHROMA) ? 
+                            (MV.Horizontal >> 3) * 2 + (MV.Vertical >> 3) * in_SrcPitch :
+                            (MV.Horizontal >> 2) + (MV.Vertical >> 2) * in_SrcPitch;
 
-    Ipp32s in_dx, in_dy;
-    Ipp32s bitDepth, shift, tap;
-    Ipp32s bitDepthLuma = g_bitDepthY;
-    Ipp32s bitDepthChroma = g_bitDepthC;
+    H265PlanePtrYCommon in_pSrc = (c_plane_type == TEXT_CHROMA) ?
+                            PicYUVRef->GetCbCrAddr(pCU->CUAddr, pCU->m_AbsIdxInLCU + PartAddr) + refOffset :
+                            PicYUVRef->GetLumaAddr(pCU->CUAddr, pCU->m_AbsIdxInLCU + PartAddr) + refOffset;
 
-    IppVCInterpolateBlock_8u interpolateInfo;
-    interpolateInfo.pSrc[0] = (const Ipp8u*)PicYUVRef->m_pYPlane;
+    interpolateInfo.pSrc[0] = (c_plane_type == TEXT_CHROMA) ? (const Ipp8u*)PicYUVRef->m_pUVPlane : (const Ipp8u*)PicYUVRef->m_pYPlane;
     interpolateInfo.srcStep = in_SrcPitch;
-    interpolateInfo.pDst[0] = (Ipp8u*) in_pDst;
-    interpolateInfo.dstStep = in_DstPitch;
     interpolateInfo.pointVector.x= MV.Horizontal;
     interpolateInfo.pointVector.y= MV.Vertical;
 
-    // ML: TODO: two divisions - ouch ... 
-    interpolateInfo.pointBlockPos.x = Ipp32u(PicYUVRef->GetLumaAddr(pCU->CUAddr, pCU->m_AbsIdxInLCU + PartAddr) - interpolateInfo.pSrc[0]) % in_SrcPitch;
-    interpolateInfo.pointBlockPos.y = Ipp32u(PicYUVRef->GetLumaAddr(pCU->CUAddr, pCU->m_AbsIdxInLCU + PartAddr) - interpolateInfo.pSrc[0]) / in_SrcPitch;
+    Ipp32u block_offset = (Ipp32u)( ( (c_plane_type == TEXT_CHROMA) ?
+                                      PicYUVRef->GetCbCrAddr(pCU->CUAddr, pCU->m_AbsIdxInLCU + PartAddr) :
+                                      PicYUVRef->GetLumaAddr(pCU->CUAddr, pCU->m_AbsIdxInLCU + PartAddr) )
+                          - interpolateInfo.pSrc[0]);
+
+    // ML: TODO: make sure compiler generates only one division
+    interpolateInfo.pointBlockPos.x = block_offset % in_SrcPitch;
+    interpolateInfo.pointBlockPos.y = block_offset / in_SrcPitch;
+
     interpolateInfo.sizeBlock.width = Width;
     interpolateInfo.sizeBlock.height = Height;
-    /**/
+
     interpolateInfo.sizeFrame.width = pCU->m_SliceHeader->m_SeqParamSet->pic_width_in_luma_samples;
     interpolateInfo.sizeFrame.height = pCU->m_SliceHeader->m_SeqParamSet->pic_height_in_luma_samples;
 
-    bitDepth = bitDepthLuma;
-    tap = 8;
-    in_dx = MV.Horizontal & 3;
-    in_dy = MV.Vertical & 3;
-
-    shift = 6;
-    Ipp16s offset = 32;
-
-    if (bi)
+    if ( c_plane_type == TEXT_CHROMA )
     {
-        shift = bitDepth - 8;
-        offset = 0;
+        interpolateInfo.pointBlockPos.x >>= 1;
+        interpolateInfo.sizeFrame.width >>= 1;
+        interpolateInfo.sizeFrame.height >>= 1;
     }
 
-    IppStatus sts = ippiInterpolateLumaBlock_H265_8u(&interpolateInfo, m_temp_interpolarion_buffer);
+    IppStatus sts = ( c_plane_type == TEXT_CHROMA ) ? 
+            ippiInterpolateChromaBlock_H264_8u(&interpolateInfo, temp_interpolarion_buffer) :
+            ippiInterpolateLumaBlock_H265_8u(&interpolateInfo, temp_interpolarion_buffer);
+
     if (sts != ippStsNoOperation)
-    {
-        in_pSrc = (H265PlanePtrUVCommon)interpolateInfo.pSrc[0];
-        in_SrcPitch = 128;
-    }
-
-    Ipp32u DstStride = pCU->m_Frame->pitch_luma();
-    H265PlanePtrYCommon pDst = pCU->m_Frame->GetLumaAddr(pCU->CUAddr, pCU->m_AbsIdxInLCU) + GetAddrOffset(PartAddr, DstStride);
-
-    if ((in_dx == 0) && (in_dy == 0))
-    {
-        shift = 0;
-
-        if (bi)
-            shift = 14 - bitDepth;
-
-        if (!bi)
-        {
-            H265PlanePtrYCommon pSrc = in_pSrc;
-
-            for (Ipp32s j = 0; j < Height; j++)
-            {
-                // ML: OPT: TODO: Replace with rep movsd inline asm 
-                memcpy(pDst, pSrc, sizeof(pSrc[0])*Width);
-                pSrc += in_SrcPitch;
-                pDst += DstStride;
-            }
-        }
-        else
-        {
-            // ML: OPT: TODO: Optimize CopyPULuma for known const shifts
-            CopyPULuma(in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, Width, Height, shift);
-        }
-    }
-    else if (in_dy == 0)
-    {
-#if (HEVC_OPT_CHANGES & 8)
-        if (!bi)
-            Interpolate<TEXT_LUMA>( INTERP_HOR,
-                                    in_pSrc, in_SrcPitch, pDst, DstStride,
-                                    in_dx, Width, Height, shift, offset);
-        else
-            Interpolate<TEXT_LUMA>( INTERP_HOR,
-                                    in_pSrc, in_SrcPitch, in_pDst, in_DstPitch,
-                                    in_dx, Width, Height, shift, offset);
-
-#else
-        InterpolateHorLuma(in_pSrc, in_SrcPitch, in_pDst, in_DstPitch,
-                           in_dx, Width, Height, shift, offset);
-        if (!bi)
-        {
-            YUVPred->CopyPartToPicAndSaturate(pCU->m_Frame, pCU->CUAddr, pCU->m_AbsIdxInLCU, PartAddr, Width, Height, 1);
-        }
-#endif
-    }
-    else if (in_dx == 0)
-    {
-#if (HEVC_OPT_CHANGES & 8)
-        if (!bi)
-            Interpolate<TEXT_LUMA>( INTERP_VER,
-                                    in_pSrc, in_SrcPitch, pDst, DstStride,
-                                    in_dy, Width, Height, shift, offset);
-        else
-            Interpolate<TEXT_LUMA>( INTERP_VER,
-                                    in_pSrc, in_SrcPitch, in_pDst, in_DstPitch,
-                                    in_dy, Width, Height, shift, offset);
-#else
-        InterpolateVert0Luma(in_pSrc, in_SrcPitch, in_pDst, in_DstPitch,
-                             in_dy, Width, Height, shift, offset);
-        if (!bi)
-        {
-            YUVPred->CopyPartToPicAndSaturate(pCU->m_Frame, pCU->CUAddr, pCU->m_AbsIdxInLCU, PartAddr, Width, Height, 1);
-        }
-#endif
-   }
+        interpolateInfo.srcStep = 128;
     else
     {
-        Ipp16s tmpBuf[80 * 80];
-
-        shift = 20 - bitDepth;
-        offset = 1 << (19 - bitDepth);
-
-        if (bi)
-        {
-            shift = 6;
-            offset = 0;
-        }
-
-#if (HEVC_OPT_CHANGES & 8)
-        Ipp32s tmpStride = Width + tap;
-
-        Interpolate<TEXT_LUMA>( INTERP_HOR, 
-                                 in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, tmpStride,
-                                 in_dx, Width, Height + tap - 1, bitDepth - 8, 0);
-#else
-        InterpolateHorLuma(in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, 80,
-                           in_dx, Width, Height + tap - 1, bitDepth - 8, 0);
-#endif
-
-#if (HEVC_OPT_CHANGES & 8)
-        if (!bi)
-            Interpolate<TEXT_LUMA>( INTERP_VER, 
-                                    tmpBuf + ((tap >> 1) - 1) * tmpStride, tmpStride, pDst, DstStride,
-                                    in_dy, Width, Height, shift, offset);
-        else
-            Interpolate<TEXT_LUMA>( INTERP_VER, 
-                                    tmpBuf + ((tap >> 1) - 1) * tmpStride, tmpStride, in_pDst, in_DstPitch,
-                                    in_dy, Width, Height, shift, offset);
-#else
-        InterpolateVertLuma(tmpBuf + ((tap >> 1) - 1) * 80, 80, in_pDst, in_DstPitch,
-                            in_dy, Width, Height, shift, offset);
-        if (!bi)
-        {
-            YUVPred->CopyPartToPicAndSaturate(pCU->m_Frame, pCU->CUAddr, pCU->m_AbsIdxInLCU, PartAddr, Width, Height, 1);
-        }
-#endif
+        interpolateInfo.pSrc[0] = in_pSrc;
+        interpolateInfo.srcStep = in_SrcPitch;
     }
+}
 
-
-    // CHROMA
-    Width >>= 1;
-    Height >>= 1;
-    in_SrcPitch = PicYUVRef->pitch_chroma();
-    refOffset = (MV.Horizontal >> 3) * 2 + (MV.Vertical >> 3) * in_SrcPitch;
-    in_DstPitch = YUVPred->pitch_chroma();
-    bitDepth = bitDepthChroma;
-    tap = 4;
-    in_dx = MV.Horizontal & 7;
-    in_dy = MV.Vertical & 7;
-
-    // CHROMA UV
-    in_pSrc = PicYUVRef->GetCbCrAddr(pCU->CUAddr, pCU->m_AbsIdxInLCU + PartAddr) + refOffset;
+template <EnumTextType c_plane_type, bool c_bi>
+void H265Prediction::PredInterUni(H265CodingUnit* pCU, Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefPicList RefPicList, H265DecYUVBufferPadded *YUVPred, EnumAddAverageType eAddAverage )
+{
     // Hack to get correct offset in 2-byte elements
-    in_pDst = (H265CoeffsPtrCommon)YUVPred->GetCbCrAddr() + (YUVPred->GetPartCbCrAddr(PartAddr) - YUVPred->GetCbCrAddr());
+    Ipp32s in_DstPitch = (c_plane_type == TEXT_CHROMA) ? YUVPred->pitch_chroma() : YUVPred->pitch_luma();
+    H265CoeffsPtrCommon in_pDst = (c_plane_type == TEXT_CHROMA) ? 
+                            (H265CoeffsPtrCommon)YUVPred->GetCbCrAddr() + (YUVPred->GetPartCbCrAddr(PartAddr) - YUVPred->GetCbCrAddr()) :
+                            (H265CoeffsPtrCommon)YUVPred->GetLumaAddr() + (YUVPred->GetPartLumaAddr(PartAddr) - YUVPred->GetLumaAddr());
 
-    shift = 6;
-    offset = 32;
+    IppVCInterpolateBlock_8u interpolateSrc;
+    PrepareInterpSrc< c_plane_type >( pCU, PartAddr, Width, Height, RefPicList, YUVPred, interpolateSrc, m_temp_interpolarion_buffer );
+    const H265PlaneYCommon * in_pSrc = interpolateSrc.pSrc[0];
+    Ipp32s in_SrcPitch = interpolateSrc.srcStep, in_SrcPic2Pitch;
 
-    interpolateInfo.pSrc[0] = (const Ipp8u*)PicYUVRef->m_pUVPlane;
-    interpolateInfo.srcStep = in_SrcPitch;
-    interpolateInfo.pDst[0] = (Ipp8u*) in_pDst;
-    interpolateInfo.dstStep = in_DstPitch;
-    interpolateInfo.pointVector.x= MV.Horizontal;
-    interpolateInfo.pointVector.y= MV.Vertical;
-
-    interpolateInfo.pointBlockPos.x = (Ipp32u(PicYUVRef->GetCbCrAddr(pCU->CUAddr, pCU->m_AbsIdxInLCU + PartAddr) - interpolateInfo.pSrc[0]) % in_SrcPitch) / 2;
-    interpolateInfo.pointBlockPos.y = Ipp32u(PicYUVRef->GetCbCrAddr(pCU->CUAddr, pCU->m_AbsIdxInLCU + PartAddr) - interpolateInfo.pSrc[0]) / in_SrcPitch;
-    interpolateInfo.sizeBlock.width = Width;
-    interpolateInfo.sizeBlock.height = Height;
-    /**/
-    interpolateInfo.sizeFrame.width = pCU->m_SliceHeader->m_SeqParamSet->pic_width_in_luma_samples >> 1;
-    interpolateInfo.sizeFrame.height = pCU->m_SliceHeader->m_SeqParamSet->pic_height_in_luma_samples >> 1;
-
-    if (bi)
+    const H265PlaneYCommon * in_pSrcPic2;
+    if ( eAddAverage == AVERAGE_FROM_PIC )
     {
-        shift = bitDepth - 8;
-        offset = 0;
+        PrepareInterpSrc< c_plane_type >( pCU, PartAddr, Width, Height, (EnumRefPicList)(RefPicList ^ 1), YUVPred, interpolateSrc, m_temp_interpolarion_buffer + (128*128) );
+        in_pSrcPic2 = interpolateSrc.pSrc[0];
+        in_SrcPic2Pitch = interpolateSrc.srcStep;
     }
 
-    sts = ippiInterpolateChromaBlock_H264_8u(&interpolateInfo, m_temp_interpolarion_buffer);
-    if (sts != ippStsNoOperation)
+    Ipp32s bitDepth = ( c_plane_type == TEXT_CHROMA ) ? g_bitDepthC : g_bitDepthY;
+    Ipp32s tap = ( c_plane_type == TEXT_CHROMA ) ? 4 : 8;
+    Ipp32s shift = c_bi ? bitDepth - 8 : 6;
+    Ipp32s  offset = c_bi ? 0 : 32;
+
+    const Ipp32s low_bits_mask = ( c_plane_type == TEXT_CHROMA ) ? 7 : 3;
+    H265MotionVector MV = pCU->m_CUMVbuffer[RefPicList].MV[PartAddr]; 
+    Ipp32s in_dx = MV.Horizontal & low_bits_mask;
+    Ipp32s in_dy = MV.Vertical & low_bits_mask;
+
+    Ipp32s iPUWidth = Width;
+    if ( c_plane_type == TEXT_CHROMA )
     {
-        in_pSrc = (H265PlanePtrUVCommon)interpolateInfo.pSrc[0];
-        in_SrcPitch = 128;
+        Width >>= 1;
+        Height >>= 1;
     }
 
-    DstStride = pCU->m_Frame->pitch_chroma();
-    pDst = pCU->m_Frame->GetCbCrAddr(pCU->CUAddr, pCU->m_AbsIdxInLCU) + GetAddrOffset(PartAddr, DstStride >> 1);
+    Ipp32u PicDstStride = ( c_plane_type == TEXT_CHROMA ) ? pCU->m_Frame->pitch_chroma() : pCU->m_Frame->pitch_luma();
+    H265PlanePtrYCommon pPicDst = ( c_plane_type == TEXT_CHROMA ) ? 
+                pCU->m_Frame->GetCbCrAddr(pCU->CUAddr, pCU->m_AbsIdxInLCU) + GetAddrOffset(PartAddr, PicDstStride >> 1) :
+                pCU->m_Frame->GetLumaAddr(pCU->CUAddr, pCU->m_AbsIdxInLCU) + GetAddrOffset(PartAddr, PicDstStride);
 
     if ((in_dx == 0) && (in_dy == 0))
     {
-        if (!bi)
+        if ( ! c_bi )
         {
-            H265PlanePtrYCommon pSrc = in_pSrc;
+            VM_ASSERT( eAddAverage == AVERAGE_NO );
 
+            const H265PlaneYCommon * pSrc = in_pSrc;
             for (Ipp32s j = 0; j < Height; j++)
             {
-                // ML: OPT: TODO: Replace with rep movsd inline asm 
-                memcpy(pDst, pSrc, sizeof(pSrc[0])*Width*2);
+                small_memcpy( pPicDst, pSrc, iPUWidth );
                 pSrc += in_SrcPitch;
-                pDst += DstStride;
+                pPicDst += PicDstStride;
             }
         }
         else
         {
-            shift = 14 - bitDepth;
-            // ML: OPT: TODO: Optimize CopyPUChroma for known const shifts
-            CopyPUChroma(in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, Width, Height, shift);
+            if ( eAddAverage == AVERAGE_FROM_PIC )
+                WriteAverageToPic( in_pSrc, in_SrcPitch, in_pSrcPic2, in_SrcPic2Pitch, pPicDst, PicDstStride, iPUWidth, Height );
+            else if ( eAddAverage == AVERAGE_FROM_BUF )
+                VM_ASSERT(0); // must be handled by AVERAGE_FROM_PIC
+            else // weighted prediction still requires intermediate copies
+            {
+                const int c_shift = 14 - g_bitDepthY;
+                if ( c_plane_type == TEXT_CHROMA ) 
+                    CopyPUChroma< c_shift >(in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, Width, Height);
+                else
+                    CopyPULuma< c_shift >(in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, Width, Height);
+            }
         }
     }
     else if (in_dy == 0)
     {
-#if (HEVC_OPT_CHANGES & 8)
-        if (!bi)
-            Interpolate<TEXT_CHROMA>( INTERP_HOR,
-                                       in_pSrc, in_SrcPitch, pDst, DstStride,
-                                       in_dx, Width, Height, shift, offset);
-        else
-            Interpolate<TEXT_CHROMA>( INTERP_HOR,
-                                       in_pSrc, in_SrcPitch, in_pDst, in_DstPitch,
-                                       in_dx, Width, Height, shift, offset);
-#else
-        InterpolateHorChroma(in_pSrc, in_SrcPitch, in_pDst, in_DstPitch,
-                             in_dx, Width, Height, shift, offset);
-        if (!bi)
-        {
-            Width <<= 1;
-            Height <<= 1;
-
-            YUVPred->CopyPartToPicAndSaturate(pCU->m_Frame, pCU->CUAddr, pCU->m_AbsIdxInLCU, PartAddr, Width, Height, 2);
-        }
-#endif
+        if (!c_bi) // Write directly into buffer
+            Interpolate<c_plane_type>( INTERP_HOR, in_pSrc, in_SrcPitch, pPicDst, PicDstStride, in_dx, Width, Height, shift, offset);
+        else if (eAddAverage == AVERAGE_NO)
+            Interpolate<c_plane_type>( INTERP_HOR, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dx, Width, Height, shift, offset);
+        else if (eAddAverage == AVERAGE_FROM_BUF)
+            Interpolate<c_plane_type>( INTERP_HOR, in_pSrc, in_SrcPitch, pPicDst, PicDstStride, in_dx, Width, Height, shift, offset, AVERAGE_FROM_BUF, in_pDst, in_DstPitch );
+        else // eAddAverage == AVERAGE_FROM_PIC
+            Interpolate<c_plane_type>( INTERP_HOR, in_pSrc, in_SrcPitch, pPicDst, PicDstStride, in_dx, Width, Height, shift, offset, AVERAGE_FROM_PIC, in_pSrcPic2, in_SrcPic2Pitch );
     }
     else if (in_dx == 0)
     {
-#if (HEVC_OPT_CHANGES & 8)
-        if (!bi)
-            Interpolate<TEXT_CHROMA>( INTERP_VER,
-                                       in_pSrc, in_SrcPitch, pDst, DstStride,
-                                       in_dy, Width, Height, shift, offset);
-        else
-            Interpolate<TEXT_CHROMA>( INTERP_VER,
-                                       in_pSrc, in_SrcPitch, in_pDst, in_DstPitch,
-                                       in_dy, Width, Height, shift, offset);
-
-#else
-        InterpolateVert0Chroma(in_pSrc, in_SrcPitch, in_pDst, in_DstPitch,
-                               in_dy, Width, Height, shift, offset);
-        if (!bi)
-        {
-            Width <<= 1;
-            Height <<= 1;
-
-            YUVPred->CopyPartToPicAndSaturate(pCU->m_Frame, pCU->CUAddr, pCU->m_AbsIdxInLCU, PartAddr, Width, Height, 2);
-        }
-#endif
+        if (!c_bi) // Write directly into buffer
+            Interpolate<c_plane_type>( INTERP_VER, in_pSrc, in_SrcPitch, pPicDst, PicDstStride, in_dy, Width, Height, shift, offset);
+        else if (eAddAverage == AVERAGE_NO)
+            Interpolate<c_plane_type>( INTERP_VER, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dy, Width, Height, shift, offset);
+        else if (eAddAverage == AVERAGE_FROM_BUF)
+            Interpolate<c_plane_type>( INTERP_VER, in_pSrc, in_SrcPitch, pPicDst, PicDstStride, in_dy, Width, Height, shift, offset, AVERAGE_FROM_BUF, in_pDst, in_DstPitch );
+        else // eAddAverage == AVERAGE_FROM_PIC
+            Interpolate<c_plane_type>( INTERP_VER, in_pSrc, in_SrcPitch, pPicDst, PicDstStride, in_dy, Width, Height, shift, offset, AVERAGE_FROM_PIC, in_pSrcPic2, in_SrcPic2Pitch );
     }
     else
     {
         Ipp16s tmpBuf[80 * 80];
+        Ipp32u tmpStride = iPUWidth + tap;
 
-        shift = 20 - bitDepth;
-        offset = 1 << (19 - bitDepth);
+        shift = c_bi ? 6 : 20 - bitDepth;
+        offset = c_bi ? 0 : 1 << (19 - bitDepth);
 
-        if (bi)
-        {
-            shift = 6;
-            offset = 0;
-        }
+        Interpolate<c_plane_type>( INTERP_HOR, 
+                                   in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, tmpStride,
+                                   in_dx, Width, Height + tap - 1, bitDepth - 8, 0);
 
-#if (HEVC_OPT_CHANGES & 8)
-        Ipp32s tmpStride = Width*2 + tap;
-
-        Interpolate<TEXT_CHROMA>( INTERP_HOR, 
-                            in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, tmpStride,
-                            in_dx, Width, Height + tap - 1, bitDepth - 8, 0);
-
-        if (!bi)
-            Interpolate<TEXT_CHROMA>( INTERP_VER,
-                                      tmpBuf + ((tap >> 1) - 1) * tmpStride, tmpStride, pDst, DstStride,
-                                      in_dy, Width, Height, shift, offset);
-        else
-            Interpolate<TEXT_CHROMA>( INTERP_VER,
-                                      tmpBuf + ((tap >> 1) - 1) * tmpStride, tmpStride, in_pDst, in_DstPitch,
-                                      in_dy, Width, Height, shift, offset);
-#else
-        InterpolateHorChroma(in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, 80,
-                             in_dx, Width, Height + tap - 1, bitDepth - 8, 0);
-
-        InterpolateVertChroma(tmpBuf + ((tap >> 1) - 1) * 80, 80, in_pDst, in_DstPitch,
-                              in_dy, Width, Height, shift, offset);
-        if (!bi)
-        {
-            Width <<= 1;
-            Height <<= 1;
-
-            YUVPred->CopyPartToPicAndSaturate(pCU->m_Frame, pCU->CUAddr, pCU->m_AbsIdxInLCU, PartAddr, Width, Height, 2);
-        }
-#endif
+        if (!c_bi) // Write directly into buffer
+            Interpolate<c_plane_type>( INTERP_VER,
+                                       tmpBuf + ((tap >> 1) - 1) * tmpStride, tmpStride, pPicDst, PicDstStride,
+                                       in_dy, Width, Height, shift, offset);
+        else if (eAddAverage == AVERAGE_NO)
+            Interpolate<c_plane_type>( INTERP_VER,
+                                       tmpBuf + ((tap >> 1) - 1) * tmpStride, tmpStride, in_pDst, in_DstPitch,
+                                       in_dy, Width, Height, shift, offset );
+        else if (eAddAverage == AVERAGE_FROM_BUF)
+            Interpolate<c_plane_type>( INTERP_VER,
+                                       tmpBuf + ((tap >> 1) - 1) * tmpStride, tmpStride, pPicDst, PicDstStride,
+                                       in_dy, Width, Height, shift, offset, AVERAGE_FROM_BUF, in_pDst, in_DstPitch );
+        else // eAddAverage == AVERAGE_FROM_PIC
+            Interpolate<c_plane_type>( INTERP_VER,
+                                       tmpBuf + ((tap >> 1) - 1) * tmpStride, tmpStride, pPicDst, PicDstStride,
+                                       in_dy, Width, Height, shift, offset, AVERAGE_FROM_PIC, in_pSrcPic2, in_SrcPic2Pitch );
     }
+}
 
-} /*void H265Prediction::PredInterUni*/
-
-#if (HEVC_OPT_CHANGES & 8)
 
 //=================================================================================================
 const Ipp16s g_lumaInterpolateFilter8X[3][8 * 8] =
@@ -1203,19 +1087,6 @@ const Ipp16s g_chromaInterpolateFilter8X[7][4 * 8] =
     }
 };
 
-// This better be placed in some general/common header
-#ifdef __INTEL_COMPILER
-# define RESTRICT __restrict
-#elif defined _MSC_VER
-# if _MSC_VER >= 1400
-#  define RESTRICT __restrict
-# else
-#  define RESTRICT
-# endif
-#else
-# define RESTRICT
-#endif
-
 template <typename> class upconvert_int;
 template <> class upconvert_int<Ipp8u>  { public: typedef Ipp16s  result; };
 template <> class upconvert_int<Ipp16s> { public: typedef Ipp32s  result; };
@@ -1233,7 +1104,7 @@ class t_InterpKernel_intrin
 {
 public:
     static void func(
-        t_dst* RESTRICT pDst, 
+        t_dst* H265_RESTRICT pDst, 
         const t_src* pSrc, 
         int    in_SrcPitch, // in samples
         int    in_DstPitch, // in samples
@@ -1242,11 +1113,13 @@ public:
         int    accum_pitch,
         int    tab_index,
         int    shift,
-        int    offset
+        int    offset,
+        H265Prediction::EnumAddAverageType eAddAverage = AVERAGE_NO,
+        const void* in_pSrc2 = NULL,
+        int   in_Src2Pitch = 0 // in samples
     );
 };
 
-#pragma warning(disable: 4127)
 //=================================================================================================
 // partioal specialization for __m128i; TODO: add __m256i version for AVX2 + dispatch
 // NOTE: always reads a block with a width extended to a multiple of 8
@@ -1262,7 +1135,7 @@ class t_InterpKernel_intrin< __m128i, c_plane_type, t_src, t_dst >
 
 public:
     static void func(
-        t_dst* RESTRICT pDst, 
+        t_dst* H265_RESTRICT pDst, 
         const t_src* pSrc, 
         int    in_SrcPitch, // in samples
         int    in_DstPitch, // in samples
@@ -1271,7 +1144,10 @@ public:
         int    accum_pitch,
         int    tab_index,
         int    shift,
-        int    offset
+        int    offset,
+        H265Prediction::EnumAddAverageType eAddAverage,
+        const void* in_pSrc2,
+        int   in_Src2Pitch // in samples
     )
     {
         typedef typename upconvert_int< t_src >::result t_acc;
@@ -1283,10 +1159,12 @@ public:
 
         t_vec v_offset = _mm_cvtsi32_si128( sizeof(t_acc)==4 ? offset : (offset << 16) | offset );
         v_offset = _mm_shuffle_epi32( v_offset, 0 ); // broadcast
+        in_Src2Pitch *= (eAddAverage == H265Prediction::AVERAGE_FROM_BUF ? 2 : 1);
 
         for (int i, j = 0; j < height; ++j) 
         {
             t_dst* pDst_ = pDst;
+            const Ipp8u* pSrc2 = (const Ipp8u*)in_pSrc2;
             t_vec  v_acc;
 
             _mm_prefetch( (const char*)(pSrc + in_SrcPitch), _MM_HINT_NTA ); 
@@ -1305,7 +1183,11 @@ public:
 
                     if (sizeof(t_src) == 1) // 8-bit source, 16-bit accum [check is resolved/eliminated at compile time]
                     {
+#ifdef DEBUG // in debug mode compiler attempts to load data with MOVNTDQA while it is only 8-byte aligned, but PMOVZX does not require 16-byte alignment
+                        t_vec v_chunk = _mm_cvtepu8_epi16( _mm_loadu_si128( (const t_vec*)pSrc_ ) );
+#else
                         t_vec v_chunk = _mm_cvtepu8_epi16( *(const t_vec*)pSrc_ );
+#endif
                         v_chunk = _mm_mullo_epi16( v_chunk, v_coeff );
                         v_acc = _mm_add_epi16( v_acc, v_chunk );
                     }
@@ -1328,13 +1210,13 @@ public:
 
                 if ( sizeof(t_acc) == 2 ) // resolved at compile time
                 {
-                    if ( offset )
-                        v_acc = _mm_add_epi16( v_acc, v_offset );
+                    if ( offset ) // cmp/jmp is nearly free, branch prediction removes 1-instruction from critical dep chain
+                        v_acc = _mm_add_epi16( v_acc, v_offset ); 
 
                     if ( shift == 6 )
                         v_acc = _mm_srai_epi16( v_acc, 6 );
-                    else if ( shift == 12 )
-                        v_acc = _mm_srai_epi16( v_acc, 12 );
+                    else
+                        VM_ASSERT(0);
                 }
                 else // if ( sizeof(t_acc) == 4 ) // 16-bit src, 32-bit accum
                 {
@@ -1351,8 +1233,30 @@ public:
                         v_acc  = _mm_srai_epi32( v_acc, 12 );
                         v_acc2 = _mm_srai_epi32( v_acc2, 12 );
                     }
+                    else
+                        VM_ASSERT(0);
 
                     v_acc = _mm_packs_epi32( v_acc, v_acc2 );
+                }
+
+                if ( eAddAverage != H265Prediction::AVERAGE_NO )
+                {
+                    if ( eAddAverage == H265Prediction::AVERAGE_FROM_PIC ) {
+#ifdef DEBUG // in debug mode compiler attempts to load data with MOVNTDQA while it is only 8-byte aligned, but PMOVZX does not require 16-byte alignment
+                        v_acc2 = _mm_cvtepu8_epi16( _mm_loadu_si128( (const t_vec*)pSrc2 ) );
+#else
+                        v_acc2 = _mm_cvtepu8_epi16( *(const t_vec*)pSrc2 );
+#endif
+                        pSrc2 += 8;
+                        v_acc2 = _mm_slli_epi16( v_acc2, 6 );
+                    }
+                    else {
+                        v_acc2 = _mm_loadu_si128( (const t_vec*)pSrc2 ); pSrc2 += 16;
+                    }
+
+                    v_acc2 = _mm_adds_epi16( v_acc2, _mm_set1_epi16( 1<<6 ) );
+                    v_acc = _mm_adds_epi16( v_acc, v_acc2 );
+                    v_acc = _mm_srai_epi16( v_acc, 7 );
                 }
 
                 if ( sizeof( t_dst ) == 1 )
@@ -1388,24 +1292,27 @@ public:
 
             pSrc += in_SrcPitch;
             pDst += in_DstPitch;
+            in_pSrc2 = (const Ipp8u*)in_pSrc2 + in_Src2Pitch;
         }
     }
 };
-#pragma warning(default: 4127)
 
 //=================================================================================================
 template < EnumTextType plane_type, typename t_src, typename t_dst >
-void H265Prediction::Interpolate( 
+void H265_FORCEINLINE H265Prediction::Interpolate( 
                         EnumInterpType interp_type,
                         const t_src* in_pSrc,
                         Ipp32u in_SrcPitch, // in samples
-                        t_dst* in_pDst,
+                        t_dst* H265_RESTRICT in_pDst,
                         Ipp32u in_DstPitch, // in samples
                         Ipp32s tab_index,
                         Ipp32s width,
                         Ipp32s height,
                         Ipp32s shift,
-                        Ipp16s offset)
+                        Ipp16s offset,
+                        H265Prediction::EnumAddAverageType eAddAverage,
+                        const void* in_pSrc2,
+                        int    in_Src2Pitch ) // in samples
 {
     Ipp32s accum_pitch = ((interp_type == INTERP_HOR) ? (plane_type == TEXT_LUMA ? 1 : 2) : in_SrcPitch);
 
@@ -1413,251 +1320,34 @@ void H265Prediction::Interpolate(
 
     width <<= int(plane_type == TEXT_CHROMA);
 
-    t_InterpKernel_intrin< __m128i, plane_type, t_src, t_dst >::func( in_pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, tab_index, shift, offset );
+    t_InterpKernel_intrin< __m128i, plane_type, t_src, t_dst >::func( in_pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, tab_index, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
 }
-#endif
 
-#if !defined(HEVC_OPT_CHANGES) || !(HEVC_OPT_CHANGES & 0x8) || (HEVC_OPT_CHANGES  & 0x10000)
-
-/* ****************************************************************************** *\
-FUNCTION: InterpolateHor
-DESCRIPTION:
-\* ****************************************************************************** */
-
-void H265Prediction::InterpolateHorLuma(const H265PlanePtrYCommon in_pSrc,
-                                        Ipp32u in_SrcPitch, // in samples
-                                        Ipp16s *in_pDst,
-                                        Ipp32u in_DstPitch, // in samples
-                                        Ipp32s tab_index,
-                                        Ipp32s width,
-                                        Ipp32s height,
-                                        Ipp32s shift,
-                                        Ipp32s offset)
+//=================================================================================================
+void H265Prediction::WriteAverageToPic(
+                const H265PlaneYCommon * pSrc0,
+                Ipp32u in_Src0Pitch,      // in samples
+                const H265PlaneYCommon * pSrc1,
+                Ipp32u in_Src1Pitch,      // in samples
+                H265PlaneYCommon* H265_RESTRICT pDst,
+                Ipp32u in_DstPitch,       // in samples
+                Ipp32s width,
+                Ipp32s height )
 {
-    H265PlanePtrYCommon pSrc = in_pSrc;
-    Ipp16s *pDst = in_pDst;
-    const Ipp16s *coeffs;
-    Ipp32s i, j, k;
-
-    const Ipp32s tap = 8;
-    coeffs = &g_lumaInterpolateFilter[tab_index][0];
-    pSrc -= ((tap >> 1) - 1);
-
-    for (j = 0; j < height; j++)
+    #pragma unroll(2)
+    #pragma ivdep
+    for (int j = 0; j < height; j++)
     {
-        for (i = 0; i < width; i++)
-        {
-            Ipp32s tmp = 0;
+        #pragma ivdep
+        #pragma vector always
+        for (int i = 0; i < width; i++)
+             pDst[i] = (((Ipp16u)pSrc0[i] + (Ipp16u)pSrc1[i] + 1) >> 1);
 
-            for (k = 0; k < tap; k++)
-            {
-                tmp += ((Ipp32s)pSrc[i + k]) * coeffs[k];
-            }
-            pDst[i] = (Ipp16s)((tmp + offset) >> shift);
-        }
-
-        pSrc += in_SrcPitch;
+        pSrc0 += in_Src0Pitch;
+        pSrc1 += in_Src1Pitch;
         pDst += in_DstPitch;
     }
 }
-
-void H265Prediction::InterpolateHorChroma(const H265PlanePtrUVCommon in_pSrc,
-                                          Ipp32u in_SrcPitch, // in samples
-                                          Ipp16s *in_pDst,
-                                          Ipp32u in_DstPitch, // in samples
-                                          Ipp32s tab_index,
-                                          Ipp32s width,
-                                          Ipp32s height,
-                                          Ipp32s shift,
-                                          Ipp32s offset)
-{
-    H265PlanePtrUVCommon pSrc = in_pSrc;
-    Ipp16s *pDst = in_pDst;
-    const Ipp16s *coeffs;
-    Ipp32s i, j, k;
-
-    const Ipp32s tap = 4;
-    coeffs = &g_chromaInterpolateFilter[tab_index][0];
-    pSrc -= ((tap >> 1) - 1) * 2;
-
-    for (j = 0; j < height; j++)
-    {
-        for (i = 0; i < width * 2; i += 2)
-        {
-            Ipp32s tmp1 = 0, tmp2 = 0;
-
-            for (k = 0; k < tap; k++)
-            {
-                Ipp32s k2 = k * 2;
-                tmp1 += ((Ipp32s)pSrc[i + k2]) * coeffs[k];
-                tmp2 += ((Ipp32s)pSrc[i + 1 + k2]) * coeffs[k];
-            }
-            pDst[i] = (Ipp16s)((tmp1 + offset) >> shift);
-            pDst[i + 1] = (Ipp16s)((tmp2 + offset) >> shift);
-        }
-
-        pSrc += in_SrcPitch;
-        pDst += in_DstPitch;
-    }
-}
-
-/* ****************************************************************************** *\
-FUNCTION: InterpolateVert
-DESCRIPTION:
-\* ****************************************************************************** */
-
-void H265Prediction::InterpolateVertLuma(const Ipp16s *in_pSrc,
-                                         Ipp32u in_SrcPitch, // in samples
-                                         Ipp16s *in_pDst,
-                                         Ipp32u in_DstPitch, // in samples
-                                         Ipp32s tab_index,
-                                         Ipp32s width,
-                                         Ipp32s height,
-                                         Ipp32s shift,
-                                         Ipp32s offset)
-{
-    Ipp16s *pSrc = const_cast<Ipp16s *>(in_pSrc);
-    Ipp16s *pDst = in_pDst;
-    const Ipp16s *coeffs;
-    Ipp32s i, j, k;
-
-    const Ipp32s tap = 8;
-    coeffs = &g_lumaInterpolateFilter[tab_index][0];
-    pSrc -= ((tap >> 1) - 1) * in_SrcPitch;
-
-    for (j = 0; j < height; j++)
-    {
-        for (i = 0; i < width; i++)
-        {
-            Ipp32s tmp = 0;
-
-            for (k = 0; k < tap; k++)
-            {
-                tmp += ((Ipp32s)pSrc[i + k * in_SrcPitch]) * coeffs[k];
-            }
-            pDst[i] = (Ipp16s)((tmp + offset) >> shift);
-        }
-
-        pSrc += in_SrcPitch;
-        pDst += in_DstPitch;
-    }
-}
-
-void H265Prediction::InterpolateVertChroma(const Ipp16s *in_pSrc,
-                                           Ipp32u in_SrcPitch, // in samples
-                                           Ipp16s *in_pDst,
-                                           Ipp32u in_DstPitch, // in samples
-                                           Ipp32s tab_index,
-                                           Ipp32s width,
-                                           Ipp32s height,
-                                           Ipp32s shift,
-                                           Ipp32s offset)
-{
-    Ipp16s *pSrc = const_cast<Ipp16s *>(in_pSrc);
-    Ipp16s *pDst = in_pDst;
-    const Ipp16s *coeffs;
-    Ipp32s i, j, k;
-
-    const Ipp32s tap = 4;
-    coeffs = &g_chromaInterpolateFilter[tab_index][0];
-    pSrc -= ((tap >> 1) - 1) * in_SrcPitch;
-
-    for (j = 0; j < height; j++)
-    {
-        for (i = 0; i < width * 2; i += 2)
-        {
-            Ipp32s tmp1 = 0, tmp2 = 0;
-
-            for (k = 0; k < tap; k++)
-            {
-                tmp1 += ((Ipp32s)pSrc[i + k * in_SrcPitch]) * coeffs[k];
-                tmp2 += ((Ipp32s)pSrc[i + 1 + k * in_SrcPitch]) * coeffs[k];
-            }
-            pDst[i] = (Ipp16s)((tmp1 + offset) >> shift);
-            pDst[i + 1] = (Ipp16s)((tmp2 + offset) >> shift);
-        }
-
-        pSrc += in_SrcPitch;
-        pDst += in_DstPitch;
-    }
-}
-
-void H265Prediction::InterpolateVert0Luma(const H265PlanePtrYCommon in_pSrc,
-                                          Ipp32u in_SrcPitch, // in samples
-                                          Ipp16s *in_pDst,
-                                          Ipp32u in_DstPitch, // in samples
-                                          Ipp32s tab_index,
-                                          Ipp32s width,
-                                          Ipp32s height,
-                                          Ipp32s shift,
-                                          Ipp32s offset)
-{
-    H265PlanePtrYCommon pSrc = in_pSrc;
-    Ipp16s *pDst = in_pDst;
-    const Ipp16s *coeffs;
-    Ipp32s i, j, k;
-
-    const Ipp32s tap = 8;
-    coeffs = &g_lumaInterpolateFilter[tab_index][0];
-    pSrc -= ((tap >> 1) - 1) * in_SrcPitch;
-
-    for (j = 0; j < height; j++)
-    {
-        for (i = 0; i < width; i++)
-        {
-            Ipp32s tmp = 0;
-
-            for (k = 0; k < tap; k++)
-            {
-                tmp += ((Ipp32s)pSrc[i + k * in_SrcPitch]) * coeffs[k];
-            }
-            pDst[i] = (Ipp16s)((tmp + offset) >> shift);
-        }
-
-        pSrc += in_SrcPitch;
-        pDst += in_DstPitch;
-    }
-}
-
-void H265Prediction::InterpolateVert0Chroma(const H265PlanePtrUVCommon in_pSrc,
-                                            Ipp32u in_SrcPitch, // in samples
-                                            Ipp16s *in_pDst,
-                                            Ipp32u in_DstPitch, // in samples
-                                            Ipp32s tab_index,
-                                            Ipp32s width,
-                                            Ipp32s height,
-                                            Ipp32s shift,
-                                            Ipp32s offset)
-{
-    H265PlanePtrUVCommon pSrc = in_pSrc;
-    Ipp16s *pDst = in_pDst;
-    const Ipp16s *coeffs;
-    Ipp32s i, j, k;
-
-    const Ipp32s tap = 4;
-    coeffs = &g_chromaInterpolateFilter[tab_index][0];
-    pSrc -= ((tap >> 1) - 1) * in_SrcPitch;
-
-    for (j = 0; j < height; j++)
-    {
-        for (i = 0; i < width * 2; i += 2)
-        {
-            Ipp32s tmp1 = 0, tmp2 = 0;
-
-            for (k = 0; k < tap; k++)
-            {
-                tmp1 += ((Ipp32s)pSrc[i + k * in_SrcPitch]) * coeffs[k];
-                tmp2 += ((Ipp32s)pSrc[i + 1 + k * in_SrcPitch]) * coeffs[k];
-            }
-            pDst[i] = (Ipp16s)((tmp1 + offset) >> shift);
-            pDst[i + 1] = (Ipp16s)((tmp2 + offset) >> shift);
-        }
-
-        pSrc += in_SrcPitch;
-        pDst += in_DstPitch;
-    }
-}
-#endif // HEVC_OPT_CHANGES
 
 /* ****************************************************************************** *\
 FUNCTION: CopyPU
@@ -1665,23 +1355,25 @@ DESCRIPTION:
 \* ****************************************************************************** */
 
 // ML: OPT: TODO: Parameterize for const shift
-void H265Prediction::CopyPULuma(const H265PlanePtrYCommon in_pSrc,
+template <int c_shift>
+void H265Prediction::CopyPULuma(const H265PlaneYCommon * in_pSrc,
                                 Ipp32u in_SrcPitch, // in samples
-                                Ipp16s *in_pDst,
+                                Ipp16s* H265_RESTRICT in_pDst,
                                 Ipp32u in_DstPitch, // in samples
                                 Ipp32s width,
-                                Ipp32s height,
-                                Ipp32s shift)
+                                Ipp32s height )
 {
-    H265PlanePtrYCommon pSrc = in_pSrc;
+    const H265PlaneYCommon * pSrc = in_pSrc;
     Ipp16s *pDst = in_pDst;
     Ipp32s i, j;
 
+#pragma ivdep
     for (j = 0; j < height; j++)
     {
+#pragma vector always
         for (i = 0; i < width; i++)
         {
-            pDst[i] = (Ipp16s)(((Ipp32s)pSrc[i]) << shift);
+            pDst[i] = (Ipp16s)(((Ipp32s)pSrc[i]) << c_shift);
         }
 
         pSrc += in_SrcPitch;
@@ -1689,23 +1381,25 @@ void H265Prediction::CopyPULuma(const H265PlanePtrYCommon in_pSrc,
     }
 }
 
-void H265Prediction::CopyPUChroma(const H265PlanePtrUVCommon in_pSrc,
+template <int c_shift>
+void H265Prediction::CopyPUChroma(const H265PlaneUVCommon * in_pSrc,
                                   Ipp32u in_SrcPitch, // in samples
-                                  Ipp16s *in_pDst,
+                                  Ipp16s* H265_RESTRICT in_pDst,
                                   Ipp32u in_DstPitch, // in samples
                                   Ipp32s width,
-                                  Ipp32s height,
-                                  Ipp32s shift)
+                                  Ipp32s height)
 {
-    H265PlanePtrUVCommon pSrc = in_pSrc;
+    const H265PlaneUVCommon * pSrc = in_pSrc;
     Ipp16s *pDst = in_pDst;
     Ipp32s i, j;
 
+#pragma ivdep
     for (j = 0; j < height; j++)
     {
+#pragma vector always
         for (i = 0; i < width * 2; i++)
         {
-            pDst[i] = (Ipp16s)(((Ipp32s)pSrc[i]) << shift);
+            pDst[i] = (Ipp16s)(((Ipp32s)pSrc[i]) << c_shift);
         }
 
         pSrc += in_SrcPitch;

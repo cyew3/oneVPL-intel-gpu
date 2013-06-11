@@ -77,7 +77,7 @@ public:
     }
 
     //set
-    void  setZero()
+    H265_FORCEINLINE void  setZero()
     {
         Horizontal = 0;
         Vertical = 0;

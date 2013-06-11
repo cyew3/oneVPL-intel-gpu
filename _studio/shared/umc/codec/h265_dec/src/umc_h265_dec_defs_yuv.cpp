@@ -416,6 +416,7 @@ void H265DecYUVBufferPadded::CopyPartToPic(H265DecoderFrame* pPicYuvDst, Ipp32u 
     }
 }
 
+#if 0
 void H265DecYUVBufferPadded::AddAverageToPic(H265DecoderFrame* pPicYuvDst, H265DecYUVBufferPadded* pPicYuvSrc1, Ipp32u CUAddr, Ipp32u AbsZorderIdx, Ipp32u PartIdx, Ipp32u Width, Ipp32u Height)
 {
     // Should add partition offset explicitly to pointer because it should be multiplied by 2 in case of 2-byte elements
@@ -546,6 +547,7 @@ void H265DecYUVBufferPadded::CopyPartToPicAndSaturate(H265DecoderFrame* pPicYuvD
         }
     }
 }
+#endif
 
 } // namespace UMC_HEVC_DECODER
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

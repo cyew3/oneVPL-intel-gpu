@@ -2757,7 +2757,7 @@ Ipp32u GetLevelIDCIndex(Ipp32u level_idc)
 }
 
 // can increase level_idc to hold num_ref_frames
-Ipp32s CalculateDPBSize(Ipp32u level_idc, Ipp32s width, Ipp32s height)
+Ipp32s _cdecl CalculateDPBSize(Ipp32u level_idc, Ipp32s width, Ipp32s height)
 {
     Ipp32u lumaPsArray[] = {36864, 122880, 245760, 552960, 983040, 2228224, 2228224, 8912896, 8912896, 8912896, 35651584, 35651584, 35651584};
     Ipp32u index = GetLevelIDCIndex(level_idc);

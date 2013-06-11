@@ -190,9 +190,8 @@ IPPFUN(IppStatus, ippiInterpolateLumaBlock_H265_8u, (IppVCInterpolateBlock_8u *i
     H264InterpolationParams_8u params;
 
     /* check error(s) */
-    IPP_BAD_PTR1_RET(interpolateInfo)
-    IPP_BAD_PTR2_RET(interpolateInfo->pSrc[0],
-                     interpolateInfo->pDst[0]);
+    // IPP_BAD_PTR1_RET(interpolateInfo)
+    // IPP_BAD_PTR1_RET(interpolateInfo->pSrc[0]);
     //IPP_BADARG_RET( ( interpolateInfo->sizeBlock.height & 3 ) |
       //              ( interpolateInfo->sizeBlock.width & ~0x1c ),  ippStsSizeErr);
 
@@ -372,8 +371,8 @@ IPPFUN(IppStatus, ippiInterpolateChromaBlock_H264_8u, (IppVCInterpolateBlock_8u 
 
     /* check error(s) */
     IPP_BAD_PTR1_RET(interpolateInfo);
-    IPP_BAD_PTR2_RET(interpolateInfo->pSrc[0],
-                     interpolateInfo->pDst[0]);
+    IPP_BAD_PTR1_RET(interpolateInfo->pSrc[0]);
+                     /*interpolateInfo->pDst[0]);*/
     //IPP_BADARG_RET( ( interpolateInfo->sizeBlock.height & 1 ) |
       //              ( interpolateInfo->sizeBlock.width & ~0x0e ),  ippStsSizeErr);
 

@@ -30,6 +30,14 @@ namespace UMC_HEVC_DECODER
 // prediction class
 class H265Prediction
 {
+public:
+    enum EnumAddAverageType
+    {
+        AVERAGE_NO = 0,
+        AVERAGE_FROM_PIC,
+        AVERAGE_FROM_BUF
+    };
+
 protected:
     H265PlanePtrYCommon m_temp_interpolarion_buffer;
     H265PlanePtrYCommon m_YUVExt;
@@ -38,6 +46,12 @@ protected:
 
     H265DecYUVBufferPadded m_YUVPred[2];
 
+    enum EnumInterpType
+    {
+        INTERP_HOR = 0,
+        INTERP_VER
+    };
+
     void PredIntraAngLuma(Ipp32s bitDepth, H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrYCommon Dst, Ipp32s dstStride, Ipp32s width, Ipp32s height, Ipp32u dirMode, bool Filter);
     void PredIntraPlanarLuma(H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrYCommon rpDst, Ipp32s dstStride, Ipp32s blkSize);
 
@@ -45,106 +59,52 @@ protected:
     void PredIntraPlanarChroma(H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrUVCommon rpDst, Ipp32s dstStride, Ipp32s blkSize);
 
     // motion compensation functions
-    void PredInterUni(H265CodingUnit* pCU, Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefPicList RefPicList, H265DecYUVBufferPadded *YUVPred, bool bi = false);
+    template <EnumTextType c_plane_type, bool bi>
+    void H265_FORCEINLINE PredInterUni(H265CodingUnit* pCU, Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefPicList RefPicList, H265DecYUVBufferPadded *YUVPred, EnumAddAverageType eAddAverage = AVERAGE_NO
+        );
+
     bool CheckIdenticalMotion(H265CodingUnit* pCU, Ipp32u PartAddr);
     
-#if (HEVC_OPT_CHANGES & 8)
-    enum EnumInterpType
-    {
-        INTERP_HOR = 0,
-        INTERP_VER
-
-    };
-
     template < EnumTextType plane_type, typename t_src, typename t_dst >
-    void Interpolate(   EnumInterpType interp_type,
+    static void H265_FORCEINLINE Interpolate( EnumInterpType interp_type,
                         const t_src* in_pSrc,
                         Ipp32u in_SrcPitch, // in samples
-                        t_dst* in_pDst,
+                        t_dst* H265_RESTRICT in_pDst,
                         Ipp32u in_DstPitch, // in samples
                         Ipp32s tab_index,
                         Ipp32s width,
                         Ipp32s height,
                         Ipp32s shift,
-                        Ipp16s offset);
-#endif
+                        Ipp16s offset,
+                        EnumAddAverageType eAddAverage = AVERAGE_NO,
+                        const void* in_pSrc2 = NULL,
+                        int   in_Src2Pitch = 0 ); // in samples
 
-#if !defined(HEVC_OPT_CHANGES) || !(HEVC_OPT_CHANGES & 8) || (HEVC_OPT_CHANGES  & 0x10000)
-    void InterpolateHorLuma(const H265PlanePtrYCommon in_pSrc,
-                            Ipp32u in_SrcPitch, // in samples
-                            Ipp16s *in_pDst,
-                            Ipp32u in_DstPitch, // in samples
-                            Ipp32s tab_index,
-                            Ipp32s width,
-                            Ipp32s height,
-                            Ipp32s shift,
-                            Ipp32s offset);
+     static void WriteAverageToPic(
+                     const H265PlaneYCommon * in_pSrc0,
+                     Ipp32u in_Src0Pitch,      // in samples
+                     const H265PlaneYCommon * in_pSrc1,
+                     Ipp32u in_Src1Pitch,      // in samples
+                     H265PlaneYCommon* H265_RESTRICT in_pDst,
+                     Ipp32u in_DstPitch,       // in samples
+                     Ipp32s width,
+                     Ipp32s height );
 
-    void InterpolateVert0Luma(const H265PlanePtrYCommon in_pSrc,
-                              Ipp32u in_SrcPitch, // in samples
-                              Ipp16s *in_pDst,
-                              Ipp32u in_DstPitch, // in samples
-                              Ipp32s tab_index,
-                              Ipp32s width,
-                              Ipp32s height,
-                              Ipp32s shift,
-                              Ipp32s offset);
-
-    void InterpolateVertLuma(const Ipp16s *in_pSrc,
-                             Ipp32u in_SrcPitch, // in samples
-                             Ipp16s *in_pDst,
-                             Ipp32u in_DstPitch, // in samples
-                             Ipp32s tab_index,
-                             Ipp32s width,
-                             Ipp32s height,
-                             Ipp32s shift,
-                             Ipp32s offset);
-
-    void InterpolateHorChroma(const H265PlanePtrYCommon in_pSrc,
-                              Ipp32u in_SrcPitch, // in samples
-                              Ipp16s *in_pDst,
-                              Ipp32u in_DstPitch, // in samples
-                              Ipp32s tab_index,
-                              Ipp32s width,
-                              Ipp32s height,
-                              Ipp32s shift,
-                              Ipp32s offset);
-
-    void InterpolateVert0Chroma(const H265PlanePtrUVCommon in_pSrc,
-                                Ipp32u in_SrcPitch, // in samples
-                                Ipp16s *in_pDst,
-                                Ipp32u in_DstPitch, // in samples
-                                Ipp32s tab_index,
-                                Ipp32s width,
-                                Ipp32s height,
-                                Ipp32s shift,
-                                Ipp32s offset);
-
-    void InterpolateVertChroma(const Ipp16s *in_pSrc,
-                               Ipp32u in_SrcPitch, // in samples
-                               Ipp16s *in_pDst,
-                               Ipp32u in_DstPitch, // in samples
-                               Ipp32s tab_index,
-                               Ipp32s width,
-                               Ipp32s height,
-                               Ipp32s shift,
-                               Ipp32s offset);
-#endif // HEVC_OPT_CHANGES
-
-     void CopyPULuma(const H265PlanePtrYCommon in_pSrc,
+     template <int c_shift>
+     static void CopyPULuma(const H265PlaneYCommon * in_pSrc,
                      Ipp32u in_SrcPitch, // in samples
-                     Ipp16s *in_pDst,
+                     Ipp16s* H265_RESTRICT in_pDst,
                      Ipp32u in_DstPitch, // in samples
                      Ipp32s width,
-                     Ipp32s height,
-                     Ipp32s shift);
-     void CopyPUChroma(const H265PlanePtrUVCommon in_pSrc,
+                     Ipp32s height);
+
+     template <int c_shift>
+     static void CopyPUChroma(const H265PlaneYCommon * in_pSrc,
                        Ipp32u in_SrcPitch, // in samples
-                       Ipp16s *in_pDst,
+                       Ipp16s* H265_RESTRICT in_pDst,
                        Ipp32u in_DstPitch, // in samples
                        Ipp32s width,
-                       Ipp32s height,
-                       Ipp32s shift);
+                       Ipp32s height);
 
     void DCPredFiltering(H265PlanePtrYCommon pSrc, Ipp32s SrcStride, H265PlanePtrYCommon Dst, Ipp32s DstStride, Ipp32s Width, Ipp32s Height);
 
