@@ -143,7 +143,7 @@ void H265Prediction::PredIntraLumaAng(H265Pattern* pPattern, Ipp32u DirMode, H26
  *
  * This function derives the prediction samples for planar mode (intra coding).
  */
-void H265Prediction::PredIntraPlanarLuma(H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrYCommon pDst, Ipp32s dstStride, Ipp32u blkSize)
+void H265Prediction::PredIntraPlanarLuma(H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrYCommon pDst, Ipp32s dstStride, Ipp32s blkSize)
 {
     Ipp32s bottomLeft;
     Ipp32s topRight;
@@ -159,7 +159,7 @@ void H265Prediction::PredIntraPlanarLuma(H265PlanePtrYCommon pSrc, Ipp32s srcStr
     // ML: OPT: TODO: For faster vectorized code convert the below code into template function with shift1D as a const parameter, runtime check/dispatch based on shift1D value 
 
     // Get left and above reference column and row
-    for(Ipp32u k = 0; k < blkSize + 1; k++)
+    for(Ipp32s k = 0; k < blkSize + 1; k++)
     {
         topRow[k] = pSrc[k - srcStride];
         leftColumn[k] = pSrc[k * srcStride - 1];
@@ -168,7 +168,7 @@ void H265Prediction::PredIntraPlanarLuma(H265PlanePtrYCommon pSrc, Ipp32s srcStr
     // Prepare intermediate variables used in interpolation
     bottomLeft = leftColumn[blkSize];
     topRight = topRow[blkSize];
-    for (Ipp32u k = 0; k < blkSize; k++)
+    for (Ipp32s k = 0; k < blkSize; k++)
     {
         bottomRow[k] = bottomLeft - topRow[k];
         rightColumn[k] = topRight - leftColumn[k];
@@ -177,10 +177,10 @@ void H265Prediction::PredIntraPlanarLuma(H265PlanePtrYCommon pSrc, Ipp32s srcStr
     }
 
     // Generate prediction signal
-    for (Ipp32u k = 0; k < blkSize; k++)
+    for (Ipp32s k = 0; k < blkSize; k++)
     {
         horPred = leftColumn[k] + offset2D;
-        for (Ipp32u l = 0; l < blkSize; l++)
+        for (Ipp32s l = 0; l < blkSize; l++)
         {
             horPred += rightColumn[k];
             topRow[l] += bottomRow[l];
@@ -199,7 +199,7 @@ void H265Prediction::PredIntraPlanarLuma(H265PlanePtrYCommon pSrc, Ipp32s srcStr
  *
  * This function derives the prediction samples for planar mode (intra coding).
  */
-void H265Prediction::PredIntraPlanarChroma(H265PlanePtrUVCommon pSrc, Ipp32s srcStride, H265PlanePtrUVCommon pDst, Ipp32s dstStride, Ipp32u blkSize)
+void H265Prediction::PredIntraPlanarChroma(H265PlanePtrUVCommon pSrc, Ipp32s srcStride, H265PlanePtrUVCommon pDst, Ipp32s dstStride, Ipp32s blkSize)
 {
     Ipp32s bottomLeft1, bottomLeft2;
     Ipp32s topRight1, topRight2;
@@ -214,7 +214,7 @@ void H265Prediction::PredIntraPlanarChroma(H265PlanePtrUVCommon pSrc, Ipp32s src
     Ipp32s srcStrideHalf = srcStride >> 1;
 
     // Get left and above reference column and row
-    for(Ipp32u k = 0; k < (blkSize + 1) * 2; k += 2)
+    for(Ipp32s k = 0; k < (blkSize + 1) * 2; k += 2)
     {
         topRow[k] = pSrc[k - srcStride];
         leftColumn[k] = pSrc[k * srcStrideHalf - 2];
@@ -227,7 +227,7 @@ void H265Prediction::PredIntraPlanarChroma(H265PlanePtrUVCommon pSrc, Ipp32s src
     topRight1 = topRow[blkSize * 2];
     bottomLeft2 = leftColumn[blkSize * 2 + 1];
     topRight2 = topRow[blkSize * 2 + 1];
-    for (Ipp32u k = 0; k < blkSize * 2; k += 2)
+    for (Ipp32s k = 0; k < blkSize * 2; k += 2)
     {
         bottomRow[k] = bottomLeft1 - topRow[k];
         rightColumn[k] = topRight1 - leftColumn[k];
@@ -241,11 +241,11 @@ void H265Prediction::PredIntraPlanarChroma(H265PlanePtrUVCommon pSrc, Ipp32s src
     }
 
     // Generate prediction signal
-    for (Ipp32u k = 0; k < blkSize; k++)
+    for (Ipp32s k = 0; k < blkSize; k++)
     {
         horPred1 = leftColumn[k * 2] + offset2D;
         horPred2 = leftColumn[k * 2 + 1] + offset2D;
-        for (Ipp32u l = 0; l < blkSize * 2; l += 2)
+        for (Ipp32s l = 0; l < blkSize * 2; l += 2)
         {
             horPred1 += rightColumn[k * 2];
             topRow[l] += bottomRow[l];
@@ -282,7 +282,7 @@ void H265Prediction::PredIntraPlanarChroma(H265PlanePtrUVCommon pSrc, Ipp32s src
 static Ipp32s angTableLuma[9] = {0,    2,    5,   9,  13,  17,  21,  26,  32};
 static Ipp32s invAngTableLuma[9] = {0, 4096, 1638, 910, 630, 482, 390, 315, 256}; // (256 * 32) / Angle
 
-void H265Prediction::PredIntraAngLuma(Ipp32s bitDepth, H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrYCommon Dst, Ipp32s dstStride, Ipp32u width, Ipp32u height, Ipp32u dirMode, bool Filter)
+void H265Prediction::PredIntraAngLuma(Ipp32s bitDepth, H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrYCommon Dst, Ipp32s dstStride, Ipp32s width, Ipp32s height, Ipp32u dirMode, bool Filter)
 {
     Ipp32s k;
     Ipp32s l;
@@ -458,7 +458,7 @@ void H265Prediction::PredIntraAngLuma(Ipp32s bitDepth, H265PlanePtrYCommon pSrc,
 static Ipp32s angTableChroma[9] = {0,    2,    5,   9,  13,  17,  21,  26,  32};
 static Ipp32s invAngTableChroma[9] = {0, 4096, 1638, 910, 630, 482, 390, 315, 256}; // (256 * 32) / Angle
 
-void H265Prediction::PredIntraAngChroma(Ipp32s bitDepth, H265PlanePtrUVCommon pSrc, Ipp32s srcStride, H265PlanePtrUVCommon Dst, Ipp32s dstStride, Ipp32u width, Ipp32u height, Ipp32u dirMode)
+void H265Prediction::PredIntraAngChroma(Ipp32s bitDepth, H265PlanePtrUVCommon pSrc, Ipp32s srcStride, H265PlanePtrUVCommon Dst, Ipp32s dstStride, Ipp32s width, Ipp32s height, Ipp32u dirMode)
 {
     bitDepth;
     Ipp32s k;
@@ -486,12 +486,12 @@ void H265Prediction::PredIntraAngChroma(Ipp32s bitDepth, H265PlanePtrUVCommon pS
     {
         H265PlaneUVCommon dc1, dc2;
         Ipp32s Sum1 = 0, Sum2 = 0;
-        for (Ipp32u Ind = 0; Ind < width * 2; Ind += 2)
+        for (Ipp32s Ind = 0; Ind < width * 2; Ind += 2)
         {
             Sum1 += pSrc[Ind - srcStride];
             Sum2 += pSrc[Ind - srcStride + 1];
         }
-        for (Ipp32u Ind = 0; Ind < height; Ind++)
+        for (Ipp32s Ind = 0; Ind < height; Ind++)
         {
             Sum1 += pSrc[Ind * srcStride - 2];
             Sum2 += pSrc[Ind * srcStride - 2 + 1];
@@ -639,7 +639,7 @@ void H265Prediction::PredIntraAngChroma(Ipp32s bitDepth, H265PlanePtrUVCommon pS
  *
  * This function performs filtering left and top edges of the prediction samples for DC mode (intra coding).
  */
-void H265Prediction::DCPredFiltering(H265PlanePtrYCommon pSrc, Ipp32s SrcStride, H265PlanePtrYCommon Dst, Ipp32s DstStride, Ipp32u Width, Ipp32u Height)
+void H265Prediction::DCPredFiltering(H265PlanePtrYCommon pSrc, Ipp32s SrcStride, H265PlanePtrYCommon Dst, Ipp32s DstStride, Ipp32s Width, Ipp32s Height)
 {
     H265PlanePtrYCommon pDst = Dst;
 
@@ -647,13 +647,13 @@ void H265Prediction::DCPredFiltering(H265PlanePtrYCommon pSrc, Ipp32s SrcStride,
     pDst[0] = (H265PlaneYCommon)((pSrc[-SrcStride] + pSrc[-1] + 2 * pDst[0] + 2) >> 2);
 
     #pragma ivdep
-    for (Ipp32u x = 1; x < Width; x++)
+    for (Ipp32s x = 1; x < Width; x++)
     {
         pDst[x] = (H265PlaneYCommon)((pSrc[x - SrcStride] + 3 * pDst[x] + 2) >> 2);
     }
 
     #pragma ivdep
-    for (Ipp32u y = 1, DstStride2 = DstStride, SrcStride2 = SrcStride - 1; y < Height; y++, DstStride2 += DstStride, SrcStride2 += SrcStride)
+    for (Ipp32s y = 1, DstStride2 = DstStride, SrcStride2 = SrcStride - 1; y < Height; y++, DstStride2 += DstStride, SrcStride2 += SrcStride)
     {
         pDst[DstStride2] = (H265PlaneYCommon)((pSrc[SrcStride2] + 3 * pDst[DstStride2] + 2) >> 2);
     }
@@ -805,12 +805,11 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, Ipp32u PartAddr, Ipp32s W
     H265CoeffsPtrCommon in_pDst = (H265CoeffsPtrCommon)YUVPred->GetLumaAddr() + (YUVPred->GetPartLumaAddr(PartAddr) - YUVPred->GetLumaAddr());
 
     Ipp32s in_dx, in_dy;
-    Ipp32s bitDepth, shift, offset, tap;
+    Ipp32s bitDepth, shift, tap;
     Ipp32s bitDepthLuma = g_bitDepthY;
     Ipp32s bitDepthChroma = g_bitDepthC;
 
     IppVCInterpolateBlock_8u interpolateInfo;
-    IppVCInterpolateBlock_8u interpolateInfo_temp;
     interpolateInfo.pSrc[0] = (const Ipp8u*)PicYUVRef->m_pYPlane;
     interpolateInfo.srcStep = in_SrcPitch;
     interpolateInfo.pDst[0] = (Ipp8u*) in_pDst;
@@ -833,7 +832,7 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, Ipp32u PartAddr, Ipp32s W
     in_dy = MV.Vertical & 3;
 
     shift = 6;
-    offset = 32;
+    Ipp16s offset = 32;
 
     if (bi)
     {
@@ -931,7 +930,7 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, Ipp32u PartAddr, Ipp32s W
         }
 
 #if (HEVC_OPT_CHANGES & 8)
-        Ipp16s tmpStride = Width + tap;
+        Ipp32s tmpStride = Width + tap;
 
         Interpolate<TEXT_LUMA>( INTERP_HOR, 
                                  in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, tmpStride,
@@ -1093,7 +1092,7 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, Ipp32u PartAddr, Ipp32s W
         }
 
 #if (HEVC_OPT_CHANGES & 8)
-        Ipp16s tmpStride = Width*2 + tap;
+        Ipp32s tmpStride = Width*2 + tap;
 
         Interpolate<TEXT_CHROMA>( INTERP_HOR, 
                             in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, tmpStride,
@@ -1247,6 +1246,7 @@ public:
     );
 };
 
+#pragma warning(disable: 4127)
 //=================================================================================================
 // partioal specialization for __m128i; TODO: add __m256i version for AVX2 + dispatch
 // NOTE: always reads a block with a width extended to a multiple of 8
@@ -1391,6 +1391,7 @@ public:
         }
     }
 };
+#pragma warning(default: 4127)
 
 //=================================================================================================
 template < EnumTextType plane_type, typename t_src, typename t_dst >

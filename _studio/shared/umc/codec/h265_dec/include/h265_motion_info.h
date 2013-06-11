@@ -70,10 +70,10 @@ public:
         Vertical = 0;
     }
 
-    H265MotionVector(Ipp16s horizontal, Ipp16s vertical)
+    H265MotionVector(Ipp32s horizontal, Ipp32s vertical)
     {
-        Horizontal = horizontal;
-        Vertical = vertical;
+        Horizontal = (Ipp16s)horizontal;
+        Vertical = (Ipp16s)vertical;
     }
 
     //set

@@ -1916,7 +1916,7 @@ struct H265SliceHeader
     ReferencePictureSet m_localRPS;
     RefPicListModification m_RefPicListModification;
 
-    Ipp32u m_MaxNumMergeCand;
+    Ipp32s m_MaxNumMergeCand;
     bool m_MvdL1Zero;
 
     // flag equal 1 means that the slice belong to IDR or anchor access unit

@@ -159,19 +159,19 @@ void H265SegmentDecoder::create(H265SeqParamSet* pSPS)
             g_SigLastScan_inv[i][1] = (Ipp16u*)malloc(2*64);
             g_SigLastScan_inv[i][2] = (Ipp16u*)malloc(2*16*16);
             g_SigLastScan_inv[i][3] = (Ipp16u*)malloc(2*32*32);
-            for(int j = 0; j < 16; j++)
+            for(Ipp16u j = 0; j < 16; j++)
             {
                 g_SigLastScan_inv[i][0][g_SigLastScan[i][0][j]] = j;
             }
-            for(int j = 0; j < 64; j++)
+            for(Ipp16u j = 0; j < 64; j++)
             {
                 g_SigLastScan_inv[i][1][g_SigLastScan[i][1][j]] = j;
             }
-            for(int j = 0; j < 16*16; j++)
+            for(Ipp16u j = 0; j < 16*16; j++)
             {
                 g_SigLastScan_inv[i][2][g_SigLastScan[i][2][j]] = j;
             }
-            for(int j = 0; j < 32*32; j++)
+            for(Ipp16u j = 0; j < 32*32; j++)
             {
                g_SigLastScan_inv[i][3][g_SigLastScan[i][3][j]] = j;
             }
@@ -314,7 +314,7 @@ void H265SegmentDecoder::parseSaoMaxUvlc(Ipp32u& val, Ipp32u maxSymbol)
     }
 
     Ipp32u code;
-    Ipp32s  i;
+    Ipp32u  i;
 
     code = m_pBitStream->DecodeSingleBinEP_CABAC();
 
@@ -325,7 +325,7 @@ void H265SegmentDecoder::parseSaoMaxUvlc(Ipp32u& val, Ipp32u maxSymbol)
     }
 
     i = 1;
-    while (1)
+    for (;;)
     {
         code = m_pBitStream->DecodeSingleBinEP_CABAC();
 
@@ -554,14 +554,14 @@ void H265SegmentDecoder::parseSaoOneLcuInterleaving(Ipp32s rx,
         if (rx>0 && iCUAddrInSlice!=0 && allowMergeLeft)
         {
             parseSaoMerge(uiSymbol);
-            saoLcuParam[0][iAddr].m_mergeLeftFlag = (bool)uiSymbol;
+            saoLcuParam[0][iAddr].m_mergeLeftFlag = uiSymbol != 0;
         }
         if (saoLcuParam[0][iAddr].m_mergeLeftFlag==0)
         {
             if ((ry > 0) && (iCUAddrUpInSlice>=0) && allowMergeUp)
             {
                 parseSaoMerge(uiSymbol);
-                saoLcuParam[0][iAddr].m_mergeUpFlag = (bool)uiSymbol;
+                saoLcuParam[0][iAddr].m_mergeUpFlag = uiSymbol != 0;
             }
         }
     }
@@ -743,7 +743,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
         Ipp8u InterDirNeighbours[MRG_MAX_NUM_CANDS];
         Ipp32s numValidMergeCand = 0;
 
-        for (Ipp32u ui = 0; ui < pCU->m_SliceHeader->m_MaxNumMergeCand; ++ui)
+        for (Ipp32s ui = 0; ui < pCU->m_SliceHeader->m_MaxNumMergeCand; ++ui)
         {
             InterDirNeighbours[ui] = 0;
         }
@@ -1276,7 +1276,7 @@ void H265SegmentDecoder::DecodePUWiseCABAC(H265CodingUnit* pCU, Ipp32u AbsPartId
     MVBuffer MvBufferNeighbours[MRG_MAX_NUM_CANDS << 1]; // double length for mv of both lists
     Ipp8u InterDirNeighbours[MRG_MAX_NUM_CANDS];
 
-    for (Ipp32u ui = 0; ui < pCU->m_SliceHeader->m_MaxNumMergeCand; ui++ )
+    for (Ipp32s ui = 0; ui < pCU->m_SliceHeader->m_MaxNumMergeCand; ui++ )
     {
         InterDirNeighbours[ui] = 0;
     }
@@ -1347,7 +1347,7 @@ void H265SegmentDecoder::DecodePUWiseCABAC(H265CodingUnit* pCU, Ipp32u AbsPartId
                 {
                     DecodeRefFrmIdxPUCABAC(pCU, SubPartIdx, Depth, PartIdx, EnumRefPicList(RefListIdx));
                     DecodeMVdPUCABAC(pCU, SubPartIdx, Depth, PartIdx, EnumRefPicList(RefListIdx));
-                    RefIdx[RefListIdx] = DecodeMVPIdxPUCABAC(pCU, SubPartIdx, Depth, PartIdx, EnumRefPicList(RefListIdx), MV[RefListIdx]);
+                    RefIdx[RefListIdx] = (RefIndexType)DecodeMVPIdxPUCABAC(pCU, SubPartIdx, Depth, PartIdx, EnumRefPicList(RefListIdx), MV[RefListIdx]);
                 }
             }
         }
@@ -1664,7 +1664,6 @@ void H265SegmentDecoder::DecodeTransform(H265CodingUnit* pCU, Ipp32u offsetLuma,
 
         for (Ipp32s i = 0; i < 4; i++)
         {
-            Ipp32u nsAddr = AbsPartIdx;
             DecodeTransform(pCU, offsetLuma, AbsPartIdx, Depth, width, height, TrIdx, CodeDQP);
 
             YCbf |= pCU->getCbf(AbsPartIdx, TEXT_LUMA, TrDepth + 1);
@@ -1830,7 +1829,7 @@ void H265SegmentDecoder::ParseDeltaQPCABAC(H265CodingUnit* pCU, Ipp32u AbsPartId
     }
 
     pCU->setQPSubParts(qp, AbsPartIdx, Depth);
-    pCU->m_CodedQP = qp;
+    pCU->m_CodedQP = (Ipp8u)qp;
 }
 
 void H265SegmentDecoder::ReadUnarySymbolCABAC(Ipp32u& Value, Ipp32s ctxIdx, Ipp32s Offset)
@@ -1967,13 +1966,7 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
     Ipp32u c1 = 1;
     Ipp32u GoRiceParam       = 0;
 
-    bool beValid;
-    if (pCU->m_CUTransquantBypass[AbsPartIdx])
-        beValid = false;
-    else
-// ML: FIXME: legit warning C4804: '>' : unsafe use of type 'bool' in operation
-//            sign_data_hiding_flag is already 'bool' really need '> 0'?
-        beValid = pCU->m_SliceHeader->m_PicParamSet->sign_data_hiding_flag > 0;
+    bool beValid = pCU->m_CUTransquantBypass[AbsPartIdx] ? false : pCU->m_SliceHeader->m_PicParamSet->sign_data_hiding_flag;
     Ipp32u absSum;
 
     Ipp32u SigCoeffGroupFlag[MLS_GRP_NUM];
@@ -2146,7 +2139,7 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
                 Ipp32s blkPos = pos[idx];
 
                 // Signs applied later.
-                pCoef[blkPos] = absCoeff[idx];
+                pCoef[blkPos] = (H265CoeffsCommon)absCoeff[idx];
                 absSum += absCoeff[idx];
 
                 if (idx == numNonZero - 1 && signHidden && beValid)
@@ -2158,7 +2151,7 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
                 else
                 {
                     Ipp32s sign = static_cast<Ipp32s>(coeffSigns) >> 31;
-                    pCoef[blkPos] = (pCoef[blkPos] ^ sign) - sign;
+                    pCoef[blkPos] = (H265CoeffsCommon)((pCoef[blkPos] ^ sign) - sign);
                     coeffSigns <<= 1;
                 }
                 pCoef[blkPos] = Clip3(H265_COEFF_MIN, H265_COEFF_MAX, pCoef[blkPos]);
@@ -2784,14 +2777,14 @@ void H265SegmentDecoder::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr
         if (newCUX > lastCUX)
         {
             // Init top margin from previous row
-            for (Ipp32u i = 0; i < m_CurrCTBStride; i++)
+            for (Ipp32s i = 0; i < m_CurrCTBStride; i++)
             {
                 CurrCTBFlags[i].data = TopNgbrs[newCUX + i].data;
                 CurrCTB[i].mvinfo[0] = TopMVInfo[newCUX + i].mvinfo[0];
                 CurrCTB[i].mvinfo[1] = TopMVInfo[newCUX + i].mvinfo[1];
             }
             // Store bottom margin for next row if next CTB is to the right. This is necessary for left-top diagonal
-            for (Ipp32u i = 1; i < m_CurrCTBStride - 1; i++)
+            for (Ipp32s i = 1; i < m_CurrCTBStride - 1; i++)
             {
                 TopNgbrs[lastCUX + i].data = CurrCTBFlags[m_CurrCTBStride * (m_CurrCTBStride - 2) + i].data;
                 TopMVInfo[lastCUX + i].mvinfo[0] = CurrCTB[m_CurrCTBStride * (m_CurrCTBStride - 2) + i].mvinfo[0];
@@ -2801,14 +2794,14 @@ void H265SegmentDecoder::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr
         else if (newCUX < lastCUX)
         {
             // Store bottom margin for next row if next CTB is to the left-below. This is necessary for right-top diagonal
-            for (Ipp32u i = 1; i < m_CurrCTBStride - 1; i++)
+            for (Ipp32s i = 1; i < m_CurrCTBStride - 1; i++)
             {
                 TopNgbrs[lastCUX + i].data = CurrCTBFlags[m_CurrCTBStride * (m_CurrCTBStride - 2) + i].data;
                 TopMVInfo[lastCUX + i].mvinfo[0] = CurrCTB[m_CurrCTBStride * (m_CurrCTBStride - 2) + i].mvinfo[0];
                 TopMVInfo[lastCUX + i].mvinfo[1] = CurrCTB[m_CurrCTBStride * (m_CurrCTBStride - 2) + i].mvinfo[1];
             }
             // Init top margin from previous row
-            for (Ipp32u i = 0; i < m_CurrCTBStride; i++)
+            for (Ipp32s i = 0; i < m_CurrCTBStride; i++)
             {
                 CurrCTBFlags[i].data = TopNgbrs[newCUX + i].data;
                 CurrCTB[i].mvinfo[0] = TopMVInfo[newCUX + i].mvinfo[0];
@@ -2818,7 +2811,7 @@ void H265SegmentDecoder::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr
         else // New CTB right under previous CTB
         {
             // Copy data from bottom row
-            for (Ipp32u i = 0; i < m_CurrCTBStride; i++)
+            for (Ipp32s i = 0; i < m_CurrCTBStride; i++)
             {
                 CurrCTBFlags[i].data = CurrCTBFlags[m_CurrCTBStride * (m_CurrCTBStride - 2) + i].data;
                 CurrCTB[i].mvinfo[0] = CurrCTB[m_CurrCTBStride * (m_CurrCTBStride - 2) + i].mvinfo[0];
@@ -2829,14 +2822,14 @@ void H265SegmentDecoder::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr
     else
     {
         // Should be reset from the beginning and not filled up until 2nd row
-        for (Ipp32u i = 0; i < m_CurrCTBStride; i++)
+        for (Ipp32s i = 0; i < m_CurrCTBStride; i++)
             VM_ASSERT(CurrCTBFlags[i].data == 0);
     }
 
     if (newCUX != lastCUX)
     {
         // Store bottom margin for next row if next CTB is not underneath. This is necessary for left-top diagonal
-        for (Ipp32u i = 1; i < m_CurrCTBStride - 1; i++)
+        for (Ipp32s i = 1; i < m_CurrCTBStride - 1; i++)
         {
             TopNgbrs[lastCUX + i].data = CurrCTBFlags[m_CurrCTBStride * (m_CurrCTBStride - 2) + i].data;
             TopMVInfo[lastCUX + i].mvinfo[0] = CurrCTB[m_CurrCTBStride * (m_CurrCTBStride - 2) + i].mvinfo[0];
@@ -2847,10 +2840,10 @@ void H265SegmentDecoder::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr
     if (lastCUY == newCUY)
     {
         // Copy left margin from right
-        for (Ipp32u i = 1; i < m_CurrCTBStride - 1; i++)
+        for (Ipp32s i = 1; i < m_CurrCTBStride - 1; i++)
             CurrCTBFlags[i * m_CurrCTBStride].data = CurrCTBFlags[i * m_CurrCTBStride + m_CurrCTBStride - 2].data;
 
-        for (Ipp32u i = 1; i < m_CurrCTBStride - 1; i++)
+        for (Ipp32s i = 1; i < m_CurrCTBStride - 1; i++)
         {
             CurrCTB[i * m_CurrCTBStride].mvinfo[0] = CurrCTB[i * m_CurrCTBStride + m_CurrCTBStride - 2].mvinfo[0];
             CurrCTB[i * m_CurrCTBStride].mvinfo[1] = CurrCTB[i * m_CurrCTBStride + m_CurrCTBStride - 2].mvinfo[1];
@@ -2858,15 +2851,15 @@ void H265SegmentDecoder::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr
     }
     else
     {
-        for (Ipp32u i = 1; i < m_CurrCTBStride; i++)
+        for (Ipp32s i = 1; i < m_CurrCTBStride; i++)
             CurrCTBFlags[i * m_CurrCTBStride].data = 0;
     }
 
     VM_ASSERT(CurrCTBFlags[m_CurrCTBStride * (m_CurrCTBStride - 1)].data == 0);
 
     // Clean inside of CU context
-    for (Ipp32u i = 1; i < m_CurrCTBStride; i++)
-        for (Ipp32u j = 1; j < m_CurrCTBStride; j++)
+    for (Ipp32s i = 1; i < m_CurrCTBStride; i++)
+        for (Ipp32s j = 1; j < m_CurrCTBStride; j++)
             CurrCTBFlags[i * m_CurrCTBStride + j].data = 0;
 }
 
@@ -2878,7 +2871,7 @@ void H265SegmentDecoder::ResetRowBuffer(void)
     for (Ipp32u i = 0; i < m_pSeqParamSet->NumPartitionsInFrameWidth + 2; i++)
         TopNgbrs[i].data = 0;
 
-    for (Ipp32u i = 0; i < m_CurrCTBStride * m_CurrCTBStride; i++)
+    for (Ipp32s i = 0; i < m_CurrCTBStride * m_CurrCTBStride; i++)
         CurrCTBFlags[i].data = 0;
 }
 
@@ -3332,12 +3325,12 @@ void H265SegmentDecoder::getInterMergeCandidates(H265CodingUnit *pCU, Ipp32u Abs
     if (Count == m_pSliceHeader->m_MaxNumMergeCand)
         return;
 
-    Ipp32u ArrayAddr = Count;
-    Ipp32u Cutoff = ArrayAddr;
+    Ipp32s ArrayAddr = Count;
+    Ipp32s Cutoff = ArrayAddr;
 
     if (m_pSliceHeader->slice_type == B_SLICE)
     {
-        for (Ipp32u idx = 0; idx < Cutoff * (Cutoff - 1) && ArrayAddr != m_pSliceHeader->m_MaxNumMergeCand; idx++)
+        for (Ipp32s idx = 0; idx < Cutoff * (Cutoff - 1) && ArrayAddr != m_pSliceHeader->m_MaxNumMergeCand; idx++)
         {
             Ipp32s i = PriorityList0[idx];
             Ipp32s j = PriorityList1[idx];
