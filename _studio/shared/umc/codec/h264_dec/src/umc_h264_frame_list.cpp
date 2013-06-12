@@ -1552,23 +1552,23 @@ void H264DBPList::AddInterViewRefs(H264Slice *slice, H264DecoderFrame **pRefPicL
 void H264DBPList::DebugPrint()
 {
 #if 1
-    Trace((char *)VM_STRING("-==========================================\n"));
+    Trace(VM_STRING("-==========================================\n"));
     for (H264DecoderFrame * pTmp = m_pHead; pTmp; pTmp = pTmp->future())
     {
-        Trace((char *)VM_STRING("\n\nUID - %d POC - %d %d  - resetcount - %d\n"), pTmp->m_UID, pTmp->m_PicOrderCnt[0], pTmp->m_PicOrderCnt[1], pTmp->RefPicListResetCount(0));
-        Trace((char *)VM_STRING("ViewId - %d, m_isInterViewRef - %d \n"), pTmp->m_viewId, pTmp->m_isInterViewRef[0]);
-        Trace((char *)VM_STRING("Short - %d %d \n"), pTmp->isShortTermRef(0), pTmp->isShortTermRef(1));
-        Trace((char *)VM_STRING("Long - %d %d \n"), pTmp->isLongTermRef(0), pTmp->isLongTermRef(1));
-        Trace((char *)VM_STRING("Busy - %d \n"), pTmp->GetRefCounter());
-        Trace((char *)VM_STRING("Skipping - %d, FrameExist - %d \n"), pTmp->IsSkipped(), pTmp->IsFrameExist());
-        Trace((char *)VM_STRING("FrameNum - %d \n"), pTmp->m_FrameNum);
-        Trace((char *)VM_STRING("PicNum - (%d, %d) \n"), pTmp->m_PicNum[0], pTmp->m_PicNum[1]);
-        Trace((char *)VM_STRING("LongPicNum - (%d, %d) \n"), pTmp->m_LongTermPicNum[0], pTmp->m_LongTermPicNum[1]);
-        Trace((char *)VM_STRING("Disp - %d , wasOutput - %d wasDisplayed - %d\n"), pTmp->isDisplayable(), pTmp->wasOutputted(), pTmp->wasDisplayed());
-        Trace((char *)VM_STRING("frame ID - %d, this - %d, decoded - %d, %d \n"), pTmp->GetFrameData()->GetFrameMID(), pTmp, pTmp->m_Flags.isDecoded, pTmp->m_Flags.isDecodingCompleted);
+        Trace(VM_STRING("\n\nUID - %d POC - %d %d  - resetcount - %d\n"), pTmp->m_UID, pTmp->m_PicOrderCnt[0], pTmp->m_PicOrderCnt[1], pTmp->RefPicListResetCount(0));
+        Trace(VM_STRING("ViewId - %d, m_isInterViewRef - %d \n"), pTmp->m_viewId, pTmp->m_isInterViewRef[0]);
+        Trace(VM_STRING("Short - %d %d \n"), pTmp->isShortTermRef(0), pTmp->isShortTermRef(1));
+        Trace(VM_STRING("Long - %d %d \n"), pTmp->isLongTermRef(0), pTmp->isLongTermRef(1));
+        Trace(VM_STRING("Busy - %d \n"), pTmp->GetRefCounter());
+        Trace(VM_STRING("Skipping - %d, FrameExist - %d \n"), pTmp->IsSkipped(), pTmp->IsFrameExist());
+        Trace(VM_STRING("FrameNum - %d \n"), pTmp->m_FrameNum);
+        Trace(VM_STRING("PicNum - (%d, %d) \n"), pTmp->m_PicNum[0], pTmp->m_PicNum[1]);
+        Trace(VM_STRING("LongPicNum - (%d, %d) \n"), pTmp->m_LongTermPicNum[0], pTmp->m_LongTermPicNum[1]);
+        Trace(VM_STRING("Disp - %d , wasOutput - %d wasDisplayed - %d\n"), pTmp->isDisplayable(), pTmp->wasOutputted(), pTmp->wasDisplayed());
+        Trace(VM_STRING("frame ID - %d, this - %d, decoded - %d, %d \n"), pTmp->GetFrameData()->GetFrameMID(), pTmp, pTmp->m_Flags.isDecoded, pTmp->m_Flags.isDecodingCompleted);
     }
 
-    Trace((char *)VM_STRING("-==========================================\n"));
+    Trace(VM_STRING("-==========================================\n"));
     //fflush(stdout);
 #endif
 }
