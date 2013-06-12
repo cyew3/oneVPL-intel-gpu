@@ -427,9 +427,9 @@ static inline Ipp32s GetLenght(Ipp32s len_bytes_count, Ipp8u * buf)
 
 
 NALUnitSplitter::NALUnitSplitter(H264_Heap * heap)
-    : m_pHeap(heap)
-    , m_pSupplier(0)
+    : m_pSupplier(0)
     , m_bWaitForIDR(true)
+    , m_pHeap(heap)
     , m_pSwapper(0)
     , m_pStartCodeIter(0)
 {

@@ -5772,7 +5772,7 @@ public:
 
     static SegmentDecoderHPBase* CreateSoftSegmentDecoder(Ipp32s color_format, bool is_high_profile)
     {
-        static SegmentDecoderHPBase* global_sds_array[4][2] = {0};
+        static SegmentDecoderHPBase* global_sds_array[4][2] = {{0,0},{0,0},{0,0},{0,0}};
 
         if (global_sds_array[0][0] == 0)
         {

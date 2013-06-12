@@ -206,7 +206,7 @@ Status H264HeadersBitstream::GetSequenceParamSet(H264SeqParamSet *sps)
 
     // id
     Ipp32s sps_id = GetVLCElement(false);
-    if (sps_id > MAX_NUM_SEQ_PARAM_SETS - 1)
+    if (sps_id > (Ipp32s)(MAX_NUM_SEQ_PARAM_SETS - 1))
     {
         return UMC_ERR_INVALID_STREAM;
     }
@@ -1753,7 +1753,7 @@ Status H264HeadersBitstream::GetSliceHeaderPart3(
             }
         }    // ref idx override
 
-        if (hdr->num_ref_idx_l1_active > MAX_NUM_REF_FRAMES || hdr->num_ref_idx_l0_active > MAX_NUM_REF_FRAMES)
+        if (hdr->num_ref_idx_l1_active > (Ipp32s)MAX_NUM_REF_FRAMES || hdr->num_ref_idx_l0_active > (Ipp32s)MAX_NUM_REF_FRAMES)
             return UMC_ERR_INVALID_STREAM;
 
         if (hdr->slice_type != INTRASLICE && hdr->slice_type != S_INTRASLICE)
@@ -2623,7 +2623,7 @@ bool H264Bitstream::SearchBits(const Ipp32u nbits, const Ipp32u code, const Ipp3
 
     for (n = 0; w != code && n < lookahead; n ++)
     {
-        w = (w << 1) & GetBitsMask[nbits] | Get1Bit();
+        w = ((w << 1) & GetBitsMask[nbits]) | Get1Bit();
     }
 
     if (w == code)

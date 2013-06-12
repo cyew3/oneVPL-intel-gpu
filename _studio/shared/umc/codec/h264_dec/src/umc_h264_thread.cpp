@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -22,9 +22,9 @@ namespace UMC
 {
 
 H264Thread::H264Thread()
-    : m_bQuit(false)
-    , m_isSleepNow(0)
+    : m_isSleepNow(0)
     , m_isDoneWait(0)
+    , m_bQuit(false)
 {
 } // H264Thread() :
 

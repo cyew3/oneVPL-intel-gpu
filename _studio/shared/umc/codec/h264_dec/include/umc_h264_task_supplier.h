@@ -155,22 +155,22 @@ public:
     struct SEI_Message
     {
         H264DecoderFrame * frame;
-        size_t  msg_size;
-        size_t  offset;
-        Ipp8u*  data;
-        Ipp64f  timestamp;
-        SEI_TYPE type;
-        Ipp32s  isUsed;
-        Ipp32s  auID;
+        size_t             msg_size;
+        size_t             offset;
+        Ipp8u            * data;
+        Ipp64f             timestamp;
+        SEI_TYPE           type;
+        Ipp32s             isUsed;
+        Ipp32s             auID;
 
         SEI_Message()
-            : msg_size(0)
-            , timestamp(0)
+            : frame(0)
+            , msg_size(0)
             , offset(0)
-            , frame(0)
-            , isUsed(0)
             , data(0)
+            , timestamp(0)
             , type(SEI_RESERVED)
+            , isUsed(0)
             , auID(0)
         {
         }
@@ -489,8 +489,10 @@ public:
 
     H264DBPList *GetDPBList(Ipp32u viewId, Ipp32s dIdRev)
     {
-        ViewItem &pView = GetView(viewId);
-        return pView.GetDPBList(dIdRev);
+        ViewItem *pView = FindView(viewId);
+        if (!pView)
+            return NULL;
+        return pView->GetDPBList(dIdRev);
     }
 
     TaskBroker * GetTaskBroker()

@@ -1018,7 +1018,7 @@ void H264DBPList::InitPSliceRefPicList(H264Slice *slice, H264DecoderFrame **pRef
                     for (k=NumFramesInList; k>j; k--)
                     {
                         // Avoid writing beyond end of list
-                        if (k > MAX_NUM_REF_FRAMES-1)
+                        if (k > (Ipp32s)(MAX_NUM_REF_FRAMES-1))
                         {
                             VM_ASSERT(0);
                             bError = true;
@@ -1053,7 +1053,7 @@ void H264DBPList::InitPSliceRefPicList(H264Slice *slice, H264DecoderFrame **pRef
                     for (k=NumFramesInList; k>j; k--)
                     {
                         // Avoid writing beyond end of list
-                        if (k > MAX_NUM_REF_FRAMES-1)
+                        if (k > (Ipp32s)(MAX_NUM_REF_FRAMES-1))
                         {
                             VM_ASSERT(0);
                             bError = true;
@@ -1093,7 +1093,7 @@ void H264DBPList::InitPSliceRefPicList(H264Slice *slice, H264DecoderFrame **pRef
                     for (k=NumFramesInList; k>j; k--)
                     {
                         // Avoid writing beyond end of list
-                        if (k > MAX_NUM_REF_FRAMES-1)
+                        if (k > (Ipp32s)(MAX_NUM_REF_FRAMES-1))
                         {
                             VM_ASSERT(0);
                             bError = true;
@@ -1128,7 +1128,7 @@ void H264DBPList::InitPSliceRefPicList(H264Slice *slice, H264DecoderFrame **pRef
                     for (k=NumFramesInList; k>j; k--)
                     {
                         // Avoid writing beyond end of list
-                        if (k > MAX_NUM_REF_FRAMES-1)
+                        if (k > (Ipp32s)(MAX_NUM_REF_FRAMES-1))
                         {
                             VM_ASSERT(0);
                             bError = true;
@@ -1167,7 +1167,7 @@ void H264DBPList::InitBSliceRefPicLists(H264Slice *slice, H264DecoderFrame **pRe
         pHead = GetAuxiliaryFrame(pHead);
     }
 
-    for (i=0; i<MAX_NUM_REF_FRAMES; i++)
+    for (i=0; i<(Ipp32s)MAX_NUM_REF_FRAMES; i++)
     {
         LTRefPicList[i] = 0;
     }
@@ -1216,7 +1216,7 @@ void H264DBPList::InitBSliceRefPicLists(H264Slice *slice, H264DecoderFrame **pRe
                         for (k = NumFramesInL0List; k > j; k--)
                         {
                             // Avoid writing beyond end of list
-                            if (k > MAX_NUM_REF_FRAMES-1)
+                            if (k > (Ipp32s)(MAX_NUM_REF_FRAMES-1))
                             {
                                 VM_ASSERT(0);
                                 bError = true;
@@ -1244,7 +1244,7 @@ void H264DBPList::InitBSliceRefPicLists(H264Slice *slice, H264DecoderFrame **pRe
                         for (k=NumFramesInL1List; k>j; k--)
                         {
                             // Avoid writing beyond end of list
-                            if (k > MAX_NUM_REF_FRAMES-1)
+                            if (k > (Ipp32s)(MAX_NUM_REF_FRAMES-1))
                             {
                                 VM_ASSERT(0);
                                 bError = true;
@@ -1276,7 +1276,7 @@ void H264DBPList::InitBSliceRefPicLists(H264Slice *slice, H264DecoderFrame **pRe
                     for (k=NumFramesInLTList; k>j; k--)
                     {
                         // Avoid writing beyond end of list
-                        if (k > MAX_NUM_REF_FRAMES-1)
+                        if (k > (Ipp32s)(MAX_NUM_REF_FRAMES-1))
                         {
                             VM_ASSERT(0);
                             bError = true;
@@ -1372,7 +1372,7 @@ void H264DBPList::InitBSliceRefPicLists(H264Slice *slice, H264DecoderFrame **pRe
                         for (k = NumFramesInL0List; k > j; k--)
                         {
                             // Avoid writing beyond end of list
-                            if (k > MAX_NUM_REF_FRAMES-1)
+                            if (k > (Ipp32s)(MAX_NUM_REF_FRAMES-1))
                             {
                                 VM_ASSERT(0);
                                 bError = true;
@@ -1399,7 +1399,7 @@ void H264DBPList::InitBSliceRefPicLists(H264Slice *slice, H264DecoderFrame **pRe
                         for (k=NumFramesInL1List; k>j; k--)
                         {
                             // Avoid writing beyond end of list
-                            if (k > MAX_NUM_REF_FRAMES-1)
+                            if (k > (Ipp32s)(MAX_NUM_REF_FRAMES-1))
                             {
                                 VM_ASSERT(0);
                                 bError = true;
@@ -1431,7 +1431,7 @@ void H264DBPList::InitBSliceRefPicLists(H264Slice *slice, H264DecoderFrame **pRe
                     for (k=NumFramesInLTList; k>j; k--)
                     {
                         // Avoid writing beyond end of list
-                        if (k > MAX_NUM_REF_FRAMES-1)
+                        if (k > (Ipp32s)(MAX_NUM_REF_FRAMES-1))
                         {
                             VM_ASSERT(0);
                             bError = true;
@@ -1552,23 +1552,23 @@ void H264DBPList::AddInterViewRefs(H264Slice *slice, H264DecoderFrame **pRefPicL
 void H264DBPList::DebugPrint()
 {
 #if 1
-    Trace(VM_STRING("-==========================================\n"));
+    Trace((char *)VM_STRING("-==========================================\n"));
     for (H264DecoderFrame * pTmp = m_pHead; pTmp; pTmp = pTmp->future())
     {
-        Trace(VM_STRING("\n\nUID - %d POC - %d %d  - resetcount - %d\n"), pTmp->m_UID, pTmp->m_PicOrderCnt[0], pTmp->m_PicOrderCnt[1], pTmp->RefPicListResetCount(0));
-        Trace(VM_STRING("ViewId - %d, m_isInterViewRef - %d \n"), pTmp->m_viewId, pTmp->m_isInterViewRef[0]);
-        Trace(VM_STRING("Short - %d %d \n"), pTmp->isShortTermRef(0), pTmp->isShortTermRef(1));
-        Trace(VM_STRING("Long - %d %d \n"), pTmp->isLongTermRef(0), pTmp->isLongTermRef(1));
-        Trace(VM_STRING("Busy - %d \n"), pTmp->GetRefCounter());
-        Trace(VM_STRING("Skipping - %d, FrameExist - %d \n"), pTmp->IsSkipped(), pTmp->IsFrameExist());
-        Trace(VM_STRING("FrameNum - %d \n"), pTmp->m_FrameNum);
-        Trace(VM_STRING("PicNum - (%d, %d) \n"), pTmp->m_PicNum[0], pTmp->m_PicNum[1]);
-        Trace(VM_STRING("LongPicNum - (%d, %d) \n"), pTmp->m_LongTermPicNum[0], pTmp->m_LongTermPicNum[1]);
-        Trace(VM_STRING("Disp - %d , wasOutput - %d wasDisplayed - %d\n"), pTmp->isDisplayable(), pTmp->wasOutputted(), pTmp->wasDisplayed());
-        Trace(VM_STRING("frame ID - %d, this - %d, decoded - %d, %d \n"), pTmp->GetFrameData()->GetFrameMID(), pTmp, pTmp->m_Flags.isDecoded, pTmp->m_Flags.isDecodingCompleted);
+        Trace((char *)VM_STRING("\n\nUID - %d POC - %d %d  - resetcount - %d\n"), pTmp->m_UID, pTmp->m_PicOrderCnt[0], pTmp->m_PicOrderCnt[1], pTmp->RefPicListResetCount(0));
+        Trace((char *)VM_STRING("ViewId - %d, m_isInterViewRef - %d \n"), pTmp->m_viewId, pTmp->m_isInterViewRef[0]);
+        Trace((char *)VM_STRING("Short - %d %d \n"), pTmp->isShortTermRef(0), pTmp->isShortTermRef(1));
+        Trace((char *)VM_STRING("Long - %d %d \n"), pTmp->isLongTermRef(0), pTmp->isLongTermRef(1));
+        Trace((char *)VM_STRING("Busy - %d \n"), pTmp->GetRefCounter());
+        Trace((char *)VM_STRING("Skipping - %d, FrameExist - %d \n"), pTmp->IsSkipped(), pTmp->IsFrameExist());
+        Trace((char *)VM_STRING("FrameNum - %d \n"), pTmp->m_FrameNum);
+        Trace((char *)VM_STRING("PicNum - (%d, %d) \n"), pTmp->m_PicNum[0], pTmp->m_PicNum[1]);
+        Trace((char *)VM_STRING("LongPicNum - (%d, %d) \n"), pTmp->m_LongTermPicNum[0], pTmp->m_LongTermPicNum[1]);
+        Trace((char *)VM_STRING("Disp - %d , wasOutput - %d wasDisplayed - %d\n"), pTmp->isDisplayable(), pTmp->wasOutputted(), pTmp->wasDisplayed());
+        Trace((char *)VM_STRING("frame ID - %d, this - %d, decoded - %d, %d \n"), pTmp->GetFrameData()->GetFrameMID(), pTmp, pTmp->m_Flags.isDecoded, pTmp->m_Flags.isDecodingCompleted);
     }
 
-    Trace(VM_STRING("-==========================================\n"));
+    Trace((char *)VM_STRING("-==========================================\n"));
     //fflush(stdout);
 #endif
 }

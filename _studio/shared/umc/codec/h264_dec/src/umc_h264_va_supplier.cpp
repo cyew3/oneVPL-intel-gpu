@@ -295,7 +295,7 @@ Status VATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
 
     // skipping algorithm
     {
-        if ((slicesInfo->IsField() && field || !slicesInfo->IsField()) &&
+        if (((slicesInfo->IsField() && field) || !slicesInfo->IsField()) &&
             IsShouldSkipFrame(pFrame, field))
         {
             if (slicesInfo->IsField())

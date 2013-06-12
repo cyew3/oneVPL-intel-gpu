@@ -102,8 +102,8 @@ Ipp32s DPBOutput::GetDPBOutputDelay(H264SEIPayLoad * payload)
 /****************************************************************************************************/
 SVC_Extension::SVC_Extension()
     : MVC_Extension()
-    , m_quality_id(H264_MAX_QUALITY_ID)
     , m_dependency_id(H264_MAX_DEPENDENCY_ID)
+    , m_quality_id(H264_MAX_QUALITY_ID)
 {
 }
 
@@ -184,8 +184,8 @@ void SVC_Extension::ChooseLevelIdc(const H264SeqParamSetSVCExtension * extension
 // DecReferencePictureMarking
 /****************************************************************************************************/
 DecReferencePictureMarking::DecReferencePictureMarking()
-    : m_frameCount(0)
-    , m_isDPBErrorFound(0)
+    : m_isDPBErrorFound(0)
+    , m_frameCount(0)
 {
 }
 
@@ -781,7 +781,7 @@ void DecReferencePictureMarking::SlideWindow(ViewItem &view, H264Slice * pSlice,
     // frames buffer
     view.GetDPBList(index)->countActiveRefs(NumShortTermRefs, NumLongTermRefs);
     while (NumShortTermRefs > 0 &&
-        (NumShortTermRefs + NumLongTermRefs >= (Ipp32s)sps->num_ref_frames) &&
+        (NumShortTermRefs + NumLongTermRefs >= sps->num_ref_frames) &&
         !field_index)
     {
         // mark oldest short-term reference as unused
@@ -1306,7 +1306,7 @@ Status MVC_Extension::AllocateView(Ipp32s view_id)
     ViewItem view;
 
     // check error(s)
-    if (H264_MAX_NUM_VIEW <= view_id && view_id != INVALID_VIEW_ID)
+    if (((Ipp32s)H264_MAX_NUM_VIEW <= view_id) && (view_id != (Ipp32s)INVALID_VIEW_ID) )
     {
         return UMC_ERR_INVALID_PARAMS;
     }
@@ -1327,7 +1327,7 @@ Status MVC_Extension::AllocateView(Ipp32s view_id)
     try
     {
         // allocate DPB and POC counter
-        for (Ipp32s i = 0; i < MAX_NUM_LAYERS; i++)
+        for (Ipp32u i = 0; i < MAX_NUM_LAYERS; i++)
         {
             view.pDPB[i].reset(new H264DBPList());
             view.pPOCDec[i].reset(new POCDecoder());
@@ -1505,8 +1505,8 @@ Skipping::Skipping()
     : m_VideoDecodingSpeed(0)
     , m_SkipCycle(1)
     , m_ModSkipCycle(1)
-    , m_SkipFlag(0)
     , m_PermanentTurnOffDeblocking(0)
+    , m_SkipFlag(0)
     , m_NumberOfSkippedFrames(0)
 {
 }
@@ -2048,7 +2048,7 @@ ViewItem::ViewItem(const ViewItem &src)
     Reset();
 
     viewId = src.viewId;
-    for (Ipp32s i = 0; i < MAX_NUM_LAYERS; i++) {
+    for (Ipp32u i = 0; i < MAX_NUM_LAYERS; i++) {
         pDPB[i].reset(src.pDPB[i].release());
         pPOCDec[i].reset(src.pPOCDec[i].release());
         MaxLongTermFrameIdx[i] = src.MaxLongTermFrameIdx[i];
@@ -2071,7 +2071,7 @@ Status ViewItem::Init(Ipp32u view_id)
 
     try
     {
-        for (Ipp32s i = 0; i < MAX_NUM_LAYERS; i++) {
+        for (Ipp32u i = 0; i < MAX_NUM_LAYERS; i++) {
             // allocate DPB and POC counter
             pDPB[i].reset(new H264DBPList());
             pPOCDec[i].reset(new POCDecoder());
@@ -2095,7 +2095,7 @@ void ViewItem::Close(void)
     // Reset the parameters before close
     Reset();
 
-    for (Ipp32s i = MAX_NUM_LAYERS - 1; i >= 0; i--) {
+    for (Ipp32u i = MAX_NUM_LAYERS - 1; i >= 0; i--) {
         if (pDPB[i].get())
         {
             pDPB[i].reset();
@@ -2116,7 +2116,7 @@ void ViewItem::Close(void)
 
 void ViewItem::Reset(void)
 {
-    for (Ipp32s i = MAX_NUM_LAYERS - 1; i >= 0; i--)
+    for (Ipp32u i = MAX_NUM_LAYERS - 1; i >= 0; i--)
     {
         if (pDPB[i].get())
         {
@@ -2155,7 +2155,7 @@ void ViewItem::SetDPBSize(H264SeqParamSet *pSps, Ipp8u & level_idc)
     }
 
     // provide the new value to the DPBList
-    for (Ipp32s i = 0; i < MAX_NUM_LAYERS; i++)
+    for (Ipp32u i = 0; i < MAX_NUM_LAYERS; i++)
     {
         if (pDPB[i].get())
         {
@@ -2339,24 +2339,26 @@ void InferredSliceParameterSVC(H264DecoderFrameInfo * au, H264Slice* pSlice)
 /****************************************************************************************************/
 TaskSupplier::TaskSupplier()
     : AU_Splitter(&m_Heap, &m_ObjHeap)
+
+    , m_pSegmentDecoder(0)
+    , m_iThreadNum(0)
+    , m_use_external_framerate(false)
+
+    , m_pLastSlice(0)
+    , m_pLastDisplayed(0)
+    , m_pMemoryAllocator(0)
+    , m_pFrameAllocator(0)
+
+    , m_DPBSizeEx(0)
+    , m_TrickModeSpeed(1)
+    , m_frameOrder(0)
     , m_pTaskBroker(0)
 
     , m_pPostProcessing(0)
-    , m_iThreadNum(0)
-    , m_DPBSizeEx(0)
-    , m_TrickModeSpeed(1)
-    , m_UIDFrameCounter(0)
-    , m_pSegmentDecoder(0)
-    , m_pLastDisplayed(0)
     , m_DefaultNotifyChain(&m_ObjHeap)
-    , m_pLastSlice(0)
-
-    , m_pFrameAllocator(0)
-    , m_pMemoryAllocator(0)
-    , m_isInitialized(false)
-    , m_use_external_framerate(false)
+    , m_UIDFrameCounter(0)
     , m_sei_messages(0)
-    , m_frameOrder(0)
+    , m_isInitialized(false)
 {
 }
 
@@ -2695,7 +2697,7 @@ void TaskSupplier::AfterErrorRestore()
     ViewList::iterator iter_end = m_views.end();
     for (; iter != iter_end; ++iter)
     {
-        for (Ipp32s i = 0; i < MAX_NUM_LAYERS; i++)
+        for (Ipp32u i = 0; i < MAX_NUM_LAYERS; i++)
             iter->GetDPBList(i)->Reset();
     }
 
@@ -3107,7 +3109,9 @@ Status TaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                 H264SeqParamSet sps;
                 umcRes = bitStream.GetSequenceParamSet(&sps);
                 if (UMC_OK != umcRes)
+                {
                     return UMC_ERR_INVALID_STREAM;
+                }
 
                 m_pNALSplitter->SetSuggestedSize(CalculateSuggestedSize(&sps));
 
@@ -3123,7 +3127,9 @@ Status TaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
 
                     umcRes = bitStream.GetSequenceParamSetSvcExt(&spsSvcExt);
                     if (UMC_OK != umcRes)
+                    {
                         return UMC_ERR_INVALID_STREAM;
+                    }
 
                     const H264SeqParamSetSVCExtension * old_sps = m_Headers.m_SeqParamsSvcExt.GetCurrentHeader();
                     bool newResolution = false;
@@ -3162,7 +3168,9 @@ Status TaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                     // decode  MVC extension
                     umcRes = bitStream.GetSequenceParamSetMvcExt(&spsMvcExt);
                     if (UMC_OK != umcRes)
+                    {
                         return UMC_ERR_INVALID_STREAM;
+                    }
 
                     const H264SeqParamSetMVCExtension * old_sps = m_Headers.m_SeqParamsMvcExt.GetCurrentHeader();
                     bool newResolution = false;
@@ -3251,9 +3259,9 @@ Status TaskSupplier::ProcessFrameNumGap(H264Slice *pSlice, Ipp32s field, Ipp32s 
     }
     else
     {
-        if (frameNumGap > (Ipp32s)sps->num_ref_frames)
+        if (frameNumGap > sps->num_ref_frames)
         {
-            frameNumGap = (Ipp32s)sps->num_ref_frames;
+            frameNumGap = sps->num_ref_frames;
         }
     }
 
@@ -4100,7 +4108,7 @@ void TaskSupplier::PreventDPBFullness()
                 // frames buffer
                 pDPB->countActiveRefs(NumShortTermRefs, NumLongTermRefs);
 
-                if (NumLongTermRefs == (Ipp32s)sps->num_ref_frames)
+                if (NumLongTermRefs == sps->num_ref_frames)
                 {
                     H264DecoderFrame *pFrame = pDPB->findOldestLongTermRef();
                     if (pFrame)
@@ -4464,6 +4472,18 @@ Status TaskSupplier::AddOneFrame(MediaData * pSource, MediaData *dst)
                     {
                         return UMC_OK;
                     }
+                case NAL_UT_UNSPECIFIED:
+                case NAL_UT_SPS:
+                case NAL_UT_PPS:
+                case NAL_UT_AUD:
+                case NAL_UT_END_OF_SEQ:
+                case NAL_UT_END_OF_STREAM:
+                case NAL_UT_FD:
+                case NAL_UT_SPS_EX:
+                case NAL_UT_PREFIX:
+                case NAL_UT_SUBSET_SPS:
+                default:
+                    break;
                 }
             }
 
@@ -4526,13 +4546,6 @@ Status TaskSupplier::AddOneFrame(MediaData * pSource, MediaData *dst)
                 }*/
                 break;
 
-            case NAL_UT_DPA: //ignore it
-            case NAL_UT_DPB:
-            case NAL_UT_DPC:
-            case NAL_UT_FD:
-            case NAL_UT_UNSPECIFIED:
-                break;
-
             case NAL_UT_END_OF_STREAM:
             case NAL_UT_END_OF_SEQ:
                 {
@@ -4545,6 +4558,10 @@ Status TaskSupplier::AddOneFrame(MediaData * pSource, MediaData *dst)
                 }
                 break;
 
+            case NAL_UT_DPA: //ignore it
+            case NAL_UT_DPB:
+            case NAL_UT_DPC:
+            case NAL_UT_FD:
             default:
                 break;
             };
@@ -5555,7 +5572,7 @@ Status TaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
 
     // skipping algorithm
     {
-        if ((slicesInfo->IsField() && field || !slicesInfo->IsField()) &&
+        if (((slicesInfo->IsField() && field) || !slicesInfo->IsField()) &&
             IsShouldSkipFrame(pFrame, field))
         {
             if (slicesInfo->IsField())

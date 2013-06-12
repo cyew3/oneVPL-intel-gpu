@@ -337,10 +337,10 @@ protected:
 
 
 TaskBroker::TaskBroker(TaskSupplier * pTaskSupplier)
-    : m_iConsumerNumber(0)
-    , m_pTaskSupplier(pTaskSupplier)
-    , m_nWaitingThreads(0)
+    : m_pTaskSupplier(pTaskSupplier)
+    , m_iConsumerNumber(0)
     , m_FirstAU(0)
+    , m_nWaitingThreads(0)
     , m_IsShouldQuit(false)
     , m_isExistMainThread(true)
 {
@@ -2540,16 +2540,16 @@ bool TaskBrokerTwoThread::GetFrameDeblockingTaskThreaded(H264DecoderFrameInfo * 
 /****************************************************************************************************/
 
 LocalResources::LocalResources()
-    : m_ppMBIntraTypes(0)
+    : next_mb_tables(0)
+
+    , m_ppMBIntraTypes(0)
     , m_piMBIntraProp(0)
     , m_pMBInfo(0)
     , m_numberOfBuffers(0)
     , m_pMemoryAllocator(0)
-    , next_mb_tables(0)
-
-    , m_midParsedData(0)
-    , m_pParsedData(0)
     , m_parsedDataLength(0)
+    , m_pParsedData(0)
+    , m_midParsedData(0)
     , m_currentResourceIndex(0)
 {
 }

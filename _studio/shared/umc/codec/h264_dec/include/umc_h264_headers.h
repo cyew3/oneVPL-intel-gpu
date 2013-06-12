@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -166,13 +166,13 @@ class Headers
 public:
 
     Headers(H264_Heap_Objects  *pObjHeap)
-        : m_pObjHeap(pObjHeap)
-        , m_SeqParams(pObjHeap)
+        : m_SeqParams(pObjHeap)
         , m_SeqExParams(pObjHeap)
         , m_SeqParamsMvcExt(pObjHeap)
         , m_SeqParamsSvcExt(pObjHeap)
-        , m_SEIParams(pObjHeap)
         , m_PicParams(pObjHeap)
+        , m_SEIParams(pObjHeap)
+        , m_pObjHeap(pObjHeap)
     {
         memset(&m_nalExtension, 0, sizeof(m_nalExtension));
     }

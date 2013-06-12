@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -121,7 +121,7 @@ namespace UMC
     // 16 bits functions
     ///****************************************************************************************/
 #define CONVERT_TO_16U(size_alpha, size_clipping)   \
-        Ipp32s i;\
+        Ipp32u i;\
         Ipp32s bitDepthScale = 1 << (bit_depth - 8);\
         \
         Ipp16u pAlpha_16u[size_alpha];\

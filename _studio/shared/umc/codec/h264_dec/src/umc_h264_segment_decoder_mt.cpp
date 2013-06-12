@@ -3422,7 +3422,7 @@ void H264SegmentDecoderMultiThreaded::CopyMacroblockInfoFromBaseLayer(H264Decode
         IntraType *pMBIntraTypes = m_pMBIntraTypes + mbAddr*NUM_INTRA_TYPE_ELEMENTS;
         IntraType *pRefMBIntraTypes = m_pMBIntraTypes + refMbAddr*NUM_INTRA_TYPE_ELEMENTS;
 
-        for (Ipp32s k = 0; k < NUM_INTRA_TYPE_ELEMENTS; k++)
+        for (Ipp32u k = 0; k < NUM_INTRA_TYPE_ELEMENTS; k++)
         {
             pMBIntraTypes[k] = pRefMBIntraTypes[k];
         }

@@ -1089,6 +1089,17 @@ UMC::Status PosibleMVC::ProcessNalUnit(UMC::MediaData * data)
         case UMC::NAL_UT_PREFIX:
             needProcess = true;
             break;
+
+        case UMC::NAL_UT_UNSPECIFIED:
+        case UMC::NAL_UT_DPA:
+        case UMC::NAL_UT_DPB:
+        case UMC::NAL_UT_DPC:
+        case UMC::NAL_UT_END_OF_SEQ:
+        case UMC::NAL_UT_END_OF_STREAM:
+        case UMC::NAL_UT_FD:
+        case UMC::NAL_UT_SPS_EX:
+        default:
+            break;
         };
 
         if (!nalUnit)
@@ -1137,6 +1148,21 @@ UMC::Status PosibleMVC::ProcessNalUnit(UMC::MediaData * data)
                 }
                 break;
 
+            case UMC::NAL_UT_UNSPECIFIED:
+            case UMC::NAL_UT_SLICE:
+            case UMC::NAL_UT_IDR_SLICE:
+            case UMC::NAL_UT_AUD:
+            case UMC::NAL_UT_DPA:
+            case UMC::NAL_UT_DPB:
+            case UMC::NAL_UT_DPC:
+            case UMC::NAL_UT_END_OF_SEQ:
+            case UMC::NAL_UT_END_OF_STREAM:
+            case UMC::NAL_UT_FD:
+            case UMC::NAL_UT_SPS_EX:
+            case UMC::NAL_UT_AUXILIARY:
+            case UMC::NAL_UT_CODED_SLICE_EXTENSION:
+            default:
+                break;
             };
 
             return UMC::UMC_OK;

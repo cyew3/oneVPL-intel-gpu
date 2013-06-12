@@ -34,10 +34,10 @@ namespace UMC
 
 static vm_char * frameTypes[] =
 {
-    VM_STRING("None"),
-    VM_STRING("I_PICTURE"),
-    VM_STRING("P_PICTURE"),
-    VM_STRING("B_PICTURE")
+    (char *)VM_STRING("None"),
+    (char *)VM_STRING("I_PICTURE"),
+    (char *)VM_STRING("P_PICTURE"),
+    (char *)VM_STRING("B_PICTURE")
 };
 
 #ifdef ENABLE_LOGGING

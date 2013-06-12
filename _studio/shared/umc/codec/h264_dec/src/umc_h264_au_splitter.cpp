@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -229,9 +229,9 @@ void SetOfSlices::SortSlices()
 // AccessUnit class routine
 /****************************************************************************************************/
 AccessUnit::AccessUnit()
-    : m_auCounter(0)
+    : m_isInitialized(false)
     , m_isFullAU(false)
-    , m_isInitialized(false)
+    , m_auCounter(0)
 {
 }
 
@@ -457,9 +457,9 @@ static bool IsNeedSPSInvalidate(const H264SeqParamSet *old_sps, const H264SeqPar
 #endif
 
 AU_Splitter::AU_Splitter(H264_Heap *heap, H264_Heap_Objects *objectHeap)
-    : m_objHeap(objectHeap)
+    : m_Headers(objectHeap)
+    , m_objHeap(objectHeap)
     , m_heap(heap)
-    , m_Headers(objectHeap)
 {
 }
 

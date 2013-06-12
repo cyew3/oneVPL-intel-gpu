@@ -64,10 +64,10 @@ public:
 
     H264DecoderFrameInfo(H264DecoderFrame * pFrame, H264_Heap * heap, H264_Heap_Objects * pObjHeap)
         : m_pFrame(pFrame)
+        , m_prepared(0)
+        , m_SliceCount(0)
         , m_pHeap(heap)
         , m_pObjHeap(pObjHeap)
-        , m_SliceCount(0)
-        , m_prepared(0)
     {
         Reset();
     }

@@ -332,10 +332,9 @@ median_8x16_0_aff:
                 {
                     isRightUnavailable = (above_right_avail_8x4[block] == 0);
                     if (isRightUnavailable)
-                        if (left_edge_block)
-                            isLeftUnavailable = (Left.mb_num<0);
-                        else
-                            isLeftUnavailable = 0;
+                    {
+                        isLeftUnavailable = left_edge_block ? (Left.mb_num<0) : 0 ;
+                    }
                 }
                 else
                 {
@@ -843,10 +842,9 @@ median_8x16_0:
                 {
                     isRightUnavailable = (above_right_avail_8x4[block] == 0);
                     if (isRightUnavailable)
-                        if (left_edge_block)
-                            isLeftUnavailable = (Left.mb_num<0);
-                        else
-                            isLeftUnavailable = 0;
+                    {
+                        isLeftUnavailable = left_edge_block ? (Left.mb_num<0) : 0 ;
+                    }
                 }
                 else
                 {

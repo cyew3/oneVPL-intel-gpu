@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -82,8 +82,8 @@ public:
     };
 
     H264VideoDecoderParams()
-        : m_DPBSize(16)
-        , m_entropy_coding_type(ENTROPY_CODING_CAVLC)
+        : m_entropy_coding_type(ENTROPY_CODING_CAVLC)
+        , m_DPBSize(16)
         , m_auxiliary_format_idc(0)
         , m_bufferedFrames(0)
     {

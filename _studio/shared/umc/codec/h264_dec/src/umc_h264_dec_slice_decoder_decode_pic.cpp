@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -103,7 +103,7 @@ Status H264Slice::UpdateReferenceList(ViewList &views,
                                    m_SliceHeader.bottom_field_flag);
     }
 
-    for (Ipp32s number = 0; number <= MAX_NUM_REF_FRAMES + 1; number++)
+    for (Ipp32u number = 0; number <= MAX_NUM_REF_FRAMES + 1; number++)
     {
         pRefPicList0[number] = 0;
         pRefPicList1[number] = 0;
@@ -719,7 +719,7 @@ Ipp32s H264Slice::AdjustRefPicListForFields(H264DecoderFrame **pRefPicList,
         j++;
     }
 
-    while(j < MAX_NUM_REF_FRAMES)//fill remaining entries
+    while(j < (Ipp32s)MAX_NUM_REF_FRAMES)//fill remaining entries
     {
         pRefPicList[j] = NULL;
         pFields[j].field = 0;

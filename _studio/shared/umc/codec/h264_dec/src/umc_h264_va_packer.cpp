@@ -1913,7 +1913,7 @@ void PackerVA::FillFrame(VAPictureH264 * pic, const H264DecoderFrame *pFrame,
     if (reference == 2)
         pic->flags |= VA_PICTURE_H264_LONG_TERM_REFERENCE;
 
-    if (pic->picture_id == -1)
+    if (pic->picture_id == VA_INVALID_ID)
     {
         pic->TopFieldOrderCnt = 0;
         pic->BottomFieldOrderCnt = 0;
@@ -1958,7 +1958,7 @@ Ipp32s PackerVA::FillRefFrame(VAPictureH264 * pic, const H264DecoderFrame *pFram
 
     pic->flags |= flags.isShortReference ? VA_PICTURE_H264_SHORT_TERM_REFERENCE : VA_PICTURE_H264_LONG_TERM_REFERENCE;
 
-    if (pic->picture_id == -1)
+    if (pic->picture_id == VA_INVALID_ID)
     {
         pic->TopFieldOrderCnt = 0;
         pic->BottomFieldOrderCnt = 0;

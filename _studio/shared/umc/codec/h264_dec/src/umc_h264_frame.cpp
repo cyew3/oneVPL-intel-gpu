@@ -35,29 +35,28 @@ H264DecoderFrameInfo::FakeFrameInitializer::FakeFrameInitializer()
 
 H264DecoderFrame::H264DecoderFrame(MemoryAllocator *pMemoryAllocator, H264_Heap * heap, H264_Heap_Objects * pObjHeap)
     : H264DecYUVBufferPadded()
-    , m_pPreviousFrame(0)
-    , m_pFutureFrame(0)
-    , m_dFrameTime(-1.0)
-    , m_isOriginalPTS(false)
-    , post_procces_complete(false)
-    , m_index(-1)
-    , m_auIndex(-1)
-    , m_UID(-1)
+    , m_TopSliceCount(0)
+    , m_ErrorType(0)
     , m_pSlicesInfo(0)
     , m_pSlicesInfoBottom(0)
-    , m_TopSliceCount(0)
-    , m_pObjHeap(pObjHeap)
-    , m_pHeap(heap)
+    , m_pPreviousFrame(0)
+    , m_pFutureFrame(0)
     , m_NotifiersChain(pObjHeap)
-    , m_ErrorType(0)
+    , m_dFrameTime(-1.0)
+    , m_isOriginalPTS(false)
     , m_dpb_output_delay(INVALID_DPB_OUTPUT_DELAY)
+    , post_procces_complete(false)
+    , m_auIndex(-1)
+    , m_index(-1)
+    , m_UID(-1)
     , m_minDId(0)
     , m_maxDId(0)
     , m_maxQId(0)
+    , m_pObjHeap(pObjHeap)
+    , m_pHeap(heap)
 {
-    Ipp32s i;
 
-    for (i = 0; i < MAX_NUM_LAYERS; i++)
+    for (Ipp32u i = 0; i < MAX_NUM_LAYERS; i++)
     {
         m_pLayerFrames[i] = 0;
     }
@@ -178,7 +177,7 @@ void H264DecoderFrame::Reset()
 
     ResetRefCounter();
 
-    for (Ipp32s i = 0; i < MAX_NUM_LAYERS; i++)
+    for (Ipp32u i = 0; i < MAX_NUM_LAYERS; i++)
     {
         m_pLayerFrames[i] = 0;
     }

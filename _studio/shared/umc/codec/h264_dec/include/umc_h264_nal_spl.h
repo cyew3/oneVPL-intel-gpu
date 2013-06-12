@@ -25,9 +25,9 @@ namespace UMC
 inline
 bool IsItAllowedCode(Ipp32s iCode)
 {
-    return (NAL_UT_SLICE <= (iCode & NAL_UNITTYPE_BITS)) &&
+    return ((NAL_UT_SLICE <= (iCode & NAL_UNITTYPE_BITS)) &&
         (NAL_UT_PPS >= (iCode & NAL_UNITTYPE_BITS)) &&
-        (NAL_UT_SEI != (iCode & NAL_UNITTYPE_BITS)) ||
+        (NAL_UT_SEI != (iCode & NAL_UNITTYPE_BITS))) ||
         (NAL_UT_SPS_EX == (iCode & NAL_UNITTYPE_BITS)) ||
         (NAL_UT_AUXILIARY == (iCode & NAL_UNITTYPE_BITS));
 } // bool IsItAllowedCode(Ipp32s iCode)
@@ -44,8 +44,8 @@ bool IsHeaderCode(Ipp32s iCode)
 inline
 bool IsVLCCode(Ipp32s iCode)
 {
-    return (NAL_UT_SLICE <= (iCode & NAL_UNITTYPE_BITS)) &&
-           (NAL_UT_IDR_SLICE >= (iCode & NAL_UNITTYPE_BITS)) ||
+    return ((NAL_UT_SLICE <= (iCode & NAL_UNITTYPE_BITS)) &&
+           (NAL_UT_IDR_SLICE >= (iCode & NAL_UNITTYPE_BITS))) ||
            (NAL_UT_AUXILIARY == (iCode & NAL_UNITTYPE_BITS)) ||
            (NAL_UT_CODED_SLICE_EXTENSION == (iCode & NAL_UNITTYPE_BITS));
 }
@@ -69,10 +69,10 @@ class StartCodeIteratorBase
 public:
 
     StartCodeIteratorBase()
-        : m_pSourceBase(0)
-        , m_pSource(0)
-        , m_nSourceBaseSize(0)
+        : m_pSource(0)
         , m_nSourceSize(0)
+        , m_pSourceBase(0)
+        , m_nSourceBaseSize(0)
         , m_suggestedSize(10 * 1024)
     {
     }

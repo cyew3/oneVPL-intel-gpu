@@ -42,9 +42,9 @@ VideoDecoder *CreateH264Decoder() { return (new H264VideoDecoder()); }
 // H264Decoder constructor
 //////////////////////////////////////////////////////////////////////////////
 H264VideoDecoder::H264VideoDecoder ()
-    : m_IsOwnPostProcessing(false)
+    : m_pFrameAllocator(0)
+    , m_IsOwnPostProcessing(false)
     , m_IsInitialized(false)
-    , m_pFrameAllocator(0)
 {
     // allocator tools
     INIT_TIMING;

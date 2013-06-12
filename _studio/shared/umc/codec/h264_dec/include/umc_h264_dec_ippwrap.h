@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -18,6 +18,11 @@
 #include "umc_h264_dec_ipplevel.h"
 #include "vm_debug.h"
 #include "umc_h264_dec_defs_dec.h"
+
+#if defined(LINUX) && defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 typedef struct _IppiBidir1_8u
 {
@@ -1982,6 +1987,10 @@ inline Ipp32s countShift(Ipp32s src)
 }
 
 } // namespace UMC
+
+#if defined(LINUX) && defined(__GNUC__)
+# pragma GCC diagnistic pop
+#endif
 
 #endif // __UMC_H264_DEC_IPP_WRAP_H
 #endif // UMC_ENABLE_H264_VIDEO_DECODER
