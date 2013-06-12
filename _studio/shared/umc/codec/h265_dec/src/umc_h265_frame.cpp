@@ -405,6 +405,13 @@ void H265DecoderFrame::deallocateCodingData()
     }
 }
 
+#if !defined(_WIN32) && !defined(_WIN64)
+H265DecoderRefPicList* H265DecoderFrame::GetRefPicList(Ipp32s sliceNumber, Ipp32s list) const
+{
+    return GetAU()->GetRefPicList(sliceNumber, list);
+}   // RefPicList. Returns pointer to start of specified ref pic list.
+#endif
+
 H265CodingUnit* H265DecoderFrame::getCU(Ipp32u CUaddr)
 {
     return m_CodingData->getCU(CUaddr);

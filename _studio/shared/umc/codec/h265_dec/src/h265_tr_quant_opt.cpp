@@ -28,39 +28,61 @@ typedef signed short        int16_t;
 typedef signed long         int32_t;
 typedef unsigned long       uint32_t;
 
-#define ALIGNED_SSE2 __declspec(align(16))
+#if defined(_WIN32) || defined(_WIN64)
+  #define ALIGN_DECL(X) __declspec(align(X))
+  #define FORCEINLINE __forceinline
+  #define M128I_VAR(x, v) \
+    static const __m128i x = v
+#else
+  #define ALIGN_DECL(X) __attribute__ ((aligned(X)))
+  #define FORCEINLINE __attribute__((always_inline))
+  #define M128I_VAR(x, v) \
+    static ALIGN_DECL(16) const char array_##x[16] = v; \
+    static const __m128i* p_##x = (const __m128i*) array_##x; \
+    static const __m128i x = * p_##x
+#endif
+#define ALIGNED_SSE2 ALIGN_DECL(16)
 #define FASTCALL     __fastcall
 
-#define M128I_WC(x, v) static const __m128i x = {\
+#define M128I_WC_INIT(v) {\
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)((v)&0xFF), (char)(((v)>>8)&0xFF), \
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)((v)&0xFF), (char)(((v)>>8)&0xFF), \
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)((v)&0xFF), (char)(((v)>>8)&0xFF), \
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)((v)&0xFF), (char)(((v)>>8)&0xFF)}
 
-#define M128I_W2x4C(x, w0,w1) static const __m128i x = {\
+#define M128I_W2x4C_INIT(w0,w1) {\
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF), \
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF), \
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF), \
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF)}
 
-#define M128I_W8C(x, w0,w1,w2,w3,w4,w5,w6,w7) static const __m128i x = {\
+#define M128I_W8C_INIT(w0,w1,w2,w3,w4,w5,w6,w7) {\
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF), \
     (char)((w2)&0xFF),(char)(((w2)>>8)&0xFF), (char)((w3)&0xFF),(char)(((w3)>>8)&0xFF), \
     (char)((w4)&0xFF),(char)(((w4)>>8)&0xFF), (char)((w5)&0xFF),(char)(((w5)>>8)&0xFF), \
     (char)((w6)&0xFF),(char)(((w6)>>8)&0xFF), (char)((w7)&0xFF),(char)(((w7)>>8)&0xFF)}
 
-#define M128I_DC(x, v) static const __m128i x = {\
+#define M128I_DC_INIT(v) {\
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)(((v)>>16)&0xFF), (char)(((v)>>24)&0xFF), \
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)(((v)>>16)&0xFF), (char)(((v)>>24)&0xFF), \
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)(((v)>>16)&0xFF), (char)(((v)>>24)&0xFF), \
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)(((v)>>16)&0xFF),(char)(((v)>>24)&0xFF)}
 
-#define M128I_D4C(x, w0,w1,w2,w3) static const __m128i x = {\
+#define M128I_D4C_INIT(w0,w1,w2,w3) {\
     (char)((w0)&0xFF), (char)(((w0)>>8)&0xFF), (char)(((w0)>>16)&0xFF), (char)(((w0)>>24)&0xFF), \
     (char)((w1)&0xFF), (char)(((w1)>>8)&0xFF), (char)(((w1)>>16)&0xFF), (char)(((w1)>>24)&0xFF), \
     (char)((w2)&0xFF), (char)(((w2)>>8)&0xFF), (char)(((w2)>>16)&0xFF), (char)(((w2)>>24)&0xFF), \
     (char)((w3)&0xFF), (char)(((w3)>>8)&0xFF), (char)(((w3)>>16)&0xFF), (char)(((w3)>>24)&0xFF)}
 
+#define M128I_WC(x, v) M128I_VAR(x, M128I_WC_INIT(v))
+
+#define M128I_W2x4C(x, w0,w1) M128I_VAR(x, M128I_W2x4C_INIT(w0,w1))
+
+#define M128I_W8C(x, w0,w1,w2,w3,w4,w5,w6,w7) M128I_VAR(x, M128I_W8C_INIT(w0,w1,w2,w3,w4,w5,w6,w7))
+
+#define M128I_DC(x, v) M128I_VAR(x, M128I_DC_INIT(v))
+
+#define M128I_D4C(x, w0,w1,w2,w3) M128I_VAR(x, M128I_D4C_INIT(w0,w1,w2,w3))
 
 #define _mm_movehl_epi64(A, B) _mm_castps_si128(_mm_movehl_ps(_mm_castsi128_ps(A), _mm_castsi128_ps(B)))
 
@@ -299,7 +321,7 @@ void inv_4x4_dst_sse2(void *destPtr, const short *__restrict coeff, int destStri
 
 void inv_8x8_dct_sse2(void *destPtr, const short *__restrict coeff, int destStride, int destSize)
 {
-    __declspec(align(16)) short tmp[8 * 8];
+    ALIGN_DECL(16) short tmp[8 * 8];
 
     int16_t *__restrict p_tmp = tmp;
 
@@ -442,7 +464,7 @@ void inv_8x8_dct_sse2(void *destPtr, const short *__restrict coeff, int destStri
 #undef coef_stride
 #define coef_stride 16
 
-static __forceinline void DCTInverse16x16_h_2nd_sse2(void *destPtr, const short *__restrict coeff, int destStride, int destSize)
+static FORCEINLINE void DCTInverse16x16_h_2nd_sse2(void *destPtr, const short *__restrict coeff, int destStride, int destSize)
 {
     M128I_W8C( t_16_a0101_08,  64, 64,  64,-64,  64,-64,  64, 64);
     M128I_W8C( t_16_b0110_4C,  83, 36,  36,-83, -36, 83, -83,-36);
@@ -633,7 +655,7 @@ void inv_16x16_dct_sse2(void *destPtr, const short *__restrict coeff, int destSt
 
     M128I_DC ( round1, 1<<(SHIFT_INV_1ST-1));
 
-    __declspec(align(16)) short tmp[16 * 16];
+    ALIGN_DECL(16) short tmp[16 * 16];
 
 
     short *__restrict p_tmp = tmp;
@@ -833,7 +855,7 @@ signed short koef14153[] ={-46, 85,  67,-88, -82, 90,  90,-90};
 void DCTInverse32x32_sse(const short* __restrict src, void *destPtr, int destStride, int destSize)
 {
    int i;
-   short __declspec(align(16)) temp[32*32];
+   ALIGN_DECL(16) short temp[32*32];
    __m128i s0, s1, s2, s3, s4, s5, s6, s7;
    unsigned char* __restrict destByte;
    short* __restrict destWord;

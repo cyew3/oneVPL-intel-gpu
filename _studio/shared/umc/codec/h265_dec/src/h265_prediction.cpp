@@ -1114,7 +1114,7 @@ public:
         int    tab_index,
         int    shift,
         int    offset,
-        H265Prediction::EnumAddAverageType eAddAverage = AVERAGE_NO,
+        H265Prediction::EnumAddAverageType eAddAverage = H265Prediction::AVERAGE_NO,
         const void* in_pSrc2 = NULL,
         int   in_Src2Pitch = 0 // in samples
     );
