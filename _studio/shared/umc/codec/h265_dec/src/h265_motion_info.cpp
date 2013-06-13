@@ -66,8 +66,8 @@ void CUMVBuffer::destroy()
 void CUMVBuffer::clearMVBuffer()
 {
 #if (HEVC_OPT_CHANGES & 4)
-    memset( MV, 0, sizeof( MV ) * m_NumPartition );
-    memset( MVd, 0, sizeof( MV ) * m_NumPartition );
+    memset( MV, 0, sizeof( *MV ) * m_NumPartition );
+    memset( MVd, 0, sizeof( *MVd ) * m_NumPartition );
 #else
     for (Ipp32u i = 0; i < m_NumPartition; i++)
     {
