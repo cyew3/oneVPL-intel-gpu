@@ -150,12 +150,12 @@ public:
     void ReadCoefRemainExGolombCABAC(Ipp32u &Symbol, Ipp32u &GoRiceParam);
 
     void ReconstructCU(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
-    void ReconIntraQT(H265CodingUnit* pCU, Ipp32u Depth);
+    void ReconIntraQT(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void ReconInter(H265CodingUnit* pCU, Ipp32u AbsPartIdx);
-    void ReconPCM(H265CodingUnit* pCU, Ipp32u Depth);
+    void ReconPCM(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void DecodeInterTexture(H265CodingUnit* pCU, Ipp32u AbsPartIdx);
-    void DecodePCMTextureLuma(H265CodingUnit* pCU, Ipp16s PartIdx, H265PlanePtrYCommon pPCM, H265PlanePtrYCommon pReco, Ipp32u Stride, Ipp32u Width, Ipp32u Height);
-    void DecodePCMTextureChroma(H265CodingUnit* pCU, Ipp16s PartIdx, H265PlanePtrUVCommon pPCMCb, H265PlanePtrUVCommon pPCMCr, H265PlanePtrUVCommon pReco, Ipp32u Stride, Ipp32u Width, Ipp32u Height);
+    void DecodePCMTextureLuma(H265CodingUnit* pCU, Ipp32u AbsPartIdx, H265PlanePtrYCommon pPCM, H265PlanePtrYCommon pReco, Ipp32u Stride, Ipp32u Width, Ipp32u Height);
+    void DecodePCMTextureChroma(H265CodingUnit* pCU, Ipp32u AbsPartIdx, H265PlanePtrUVCommon pPCMCb, H265PlanePtrUVCommon pPCMCr, H265PlanePtrUVCommon pReco, Ipp32u Stride, Ipp32u Width, Ipp32u Height);
     void FillPCMBuffer(H265CodingUnit* pCU, Ipp32u Depth);
     void IntraLumaRecQT(H265CodingUnit* pCU,
                          Ipp32u TrDepth,
@@ -175,9 +175,6 @@ public:
     void IntraRecChromaBlk(H265CodingUnit* pCU,
                            Ipp32u TrDepth,
                            Ipp32u AbsPartIdx);
-    void IntraRecQT(H265CodingUnit* pCU,
-                    Ipp32u TrDepth,
-                    Ipp32u AbsPartIdx);
 
     void DeblockOneLCU(Ipp32s curLCUAddr, Ipp32s cross);
     void DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curPixelColumn, Ipp32s curPixelRow,
@@ -285,6 +282,13 @@ private:
     bool AddMVPCandOrder(AMVPInfo* pInfo, EnumRefPicList RefPicList, Ipp32s RefIdx, Ipp32s NeibAddr);
     bool GetColMVP(EnumRefPicList refPicListIdx, Ipp32u PartX, Ipp32u PartY, H265MotionVector& rcMV, Ipp32s RefIdx);
     bool hasEqualMotion(Ipp32s dir1, Ipp32s dir2);
+
+    /// constrained intra prediction
+    Ipp32s isIntraAboveAvailable(Ipp32s TUPartNumberInCTB, Ipp32s NumUnitsInCU, bool *ValidFlags);
+    Ipp32s isIntraLeftAvailable(Ipp32s TUPartNumberInCTB, Ipp32s NumUnitsInCU, bool *ValidFlags);
+    Ipp32s isIntraAboveRightAvailable(Ipp32s TUPartNumberInCTB, Ipp32s PartX, Ipp32s XInc, Ipp32s NumUnitsInCU, bool *ValidFlags);
+    Ipp32s isIntraAboveRightAvailableOtherCTB(Ipp32s PartX, Ipp32s NumUnitsInCU, bool *ValidFlags);
+    Ipp32s isIntraBelowLeftAvailable(Ipp32s TUPartNumberInCTB, Ipp32s PartY, Ipp32s YInc, Ipp32s NumUnitsInCU, bool *ValidFlags);
 
     // we lock the assignment operator to avoid any
     // accasional assignments

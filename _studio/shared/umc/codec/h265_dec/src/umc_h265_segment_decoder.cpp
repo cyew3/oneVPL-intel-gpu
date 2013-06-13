@@ -1067,9 +1067,9 @@ void H265SegmentDecoder::DecodePartSizeCABAC(H265CodingUnit* pCU, Ipp32u AbsPart
 
 void H265SegmentDecoder::DecodeIPCMInfoCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    if (!pCU->m_SliceHeader->m_SeqParamSet->pcm_enabled_flag
-        || (pCU->m_WidthArray[AbsPartIdx] > (1 << pCU->m_SliceHeader->m_SeqParamSet->log2_max_pcm_luma_coding_block_size))
-        || (pCU->m_WidthArray[AbsPartIdx] < (1 << pCU->m_SliceHeader->m_SeqParamSet->log2_min_pcm_luma_coding_block_size)))
+    if (!m_pSeqParamSet->pcm_enabled_flag
+        || (pCU->m_WidthArray[AbsPartIdx] > (1 << m_pSeqParamSet->log2_max_pcm_luma_coding_block_size))
+        || (pCU->m_WidthArray[AbsPartIdx] < (1 << m_pSeqParamSet->log2_min_pcm_luma_coding_block_size)))
     {
         return;
     }
@@ -1124,7 +1124,7 @@ void H265SegmentDecoder::DecodeIPCMInfoCABAC(H265CodingUnit* pCU, Ipp32u AbsPart
         H265PlanePtrUVCommon PCMSampleUV = pCU->m_IPCMSampleCb + ChromaOffset;
         Width = pCU->m_WidthArray[AbsPartIdx] / 2;
         Height = pCU->m_HeightArray[AbsPartIdx] / 2;
-        SampleBits = pCU->m_SliceHeader->m_SeqParamSet->getPCMBitDepthChroma();
+        SampleBits = m_pSeqParamSet->getPCMBitDepthChroma();
 
         for (Y = 0; Y < Height; Y++)
         {
@@ -1141,7 +1141,7 @@ void H265SegmentDecoder::DecodeIPCMInfoCABAC(H265CodingUnit* pCU, Ipp32u AbsPart
         PCMSampleUV = pCU->m_IPCMSampleCr + ChromaOffset;
         Width = pCU->m_WidthArray[AbsPartIdx] / 2;
         Height = pCU->m_HeightArray[AbsPartIdx] / 2;
-        SampleBits = pCU->m_SliceHeader->m_SeqParamSet->getPCMBitDepthChroma();
+        SampleBits = m_pSeqParamSet->getPCMBitDepthChroma();
 
         for (Y = 0; Y < Height; Y++)
         {
@@ -2338,40 +2338,41 @@ void H265SegmentDecoder::ReconstructCU(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
             ReconInter(m_ppcCU[Depth], AbsPartIdx);
             break;
         case MODE_INTRA:
-            ReconIntraQT(m_ppcCU[Depth], Depth);
+            ReconIntraQT(pCU, AbsPartIdx, Depth);
             break;
         default:
             VM_ASSERT(0);
         break;
     }
 
-    if (m_ppcCU[Depth]->isLosslessCoded(0) && !m_ppcCU[Depth]->m_IPCMFlag[0])
+    if (pCU->isLosslessCoded(0) && !m_ppcCU[Depth]->m_IPCMFlag[0])
     {
         // Saving reconstruct contents in PCM buffer is necessary for later PCM restoration when SAO is enabled
         FillPCMBuffer(m_ppcCU[Depth], Depth);
     }
 }
 
-void H265SegmentDecoder::ReconIntraQT(H265CodingUnit* pCU, Ipp32u Depth)
+void H265SegmentDecoder::ReconIntraQT(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    Ipp32u InitTrDepth = (pCU->m_PartSizeArray[0] == SIZE_2Nx2N ? 0 : 1);
-    Ipp32u NumPart = pCU->getNumPartInter(0);
-    Ipp32u NumQParts = pCU->m_NumPartition >> 2;
+    Ipp32u InitTrDepth = (pCU->m_PartSizeArray[AbsPartIdx] == SIZE_2Nx2N ? 0 : 1);
+    Ipp32u NumPart = pCU->getNumPartInter(AbsPartIdx);
+    Ipp32u NumQParts = pCU->m_NumPartition >> (Depth << 1); // Number of partitions on this depth
+    NumQParts >>= 2;
 
-    if (pCU->m_IPCMFlag[0])
+    if (pCU->m_IPCMFlag[AbsPartIdx])
     {
-        ReconPCM(pCU, Depth);
+        ReconPCM(pCU, AbsPartIdx, Depth);
         return;
     }
 
     for (Ipp32u PU = 0; PU < NumPart; PU++)
     {
-        IntraLumaRecQT(pCU, InitTrDepth, PU * NumQParts);
+        IntraLumaRecQT(pCU, InitTrDepth, AbsPartIdx + PU * NumQParts);
     }
 
     for (Ipp32u PU = 0; PU < NumPart; PU++)
     {
-        IntraChromaRecQT(pCU, InitTrDepth, PU * NumQParts);
+        IntraChromaRecQT(pCU, InitTrDepth, AbsPartIdx + PU * NumQParts);
     }
 }
 
@@ -2396,8 +2397,9 @@ void H265SegmentDecoder::DecodeInterTexture(H265CodingUnit* pCU, Ipp32u AbsPartI
     m_TrQuant->InvRecurTransformNxN(pCU, 0, Width, Height, 0);
 }
 
-void H265SegmentDecoder::ReconPCM(H265CodingUnit* pCU, Ipp32u Depth)
+void H265SegmentDecoder::ReconPCM(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
+    VM_ASSERT(pCU->m_AbsIdxInLCU == 0);
     // Luma
     Ipp32u Width  = (g_MaxCUWidth >> Depth);
     Ipp32u Height = (g_MaxCUHeight >> Depth);
@@ -2406,7 +2408,7 @@ void H265SegmentDecoder::ReconPCM(H265CodingUnit* pCU, Ipp32u Depth)
     H265PlanePtrYCommon pRecoY = m_ppcYUVReco->GetLumaAddr();
     Ipp32u PitchLuma = m_ppcYUVReco->pitch_luma();
 
-    DecodePCMTextureLuma(pCU, 0, pPcmY, pRecoY, PitchLuma, Width, Height);
+    DecodePCMTextureLuma(pCU, AbsPartIdx, pPcmY, pRecoY, PitchLuma, Width, Height);
 
     // Cb and Cr
     Ipp32u WidthChroma = (Width >> 1);
@@ -2417,7 +2419,7 @@ void H265SegmentDecoder::ReconPCM(H265CodingUnit* pCU, Ipp32u Depth)
     H265PlanePtrUVCommon pRecoCbCr = m_ppcYUVReco->GetCbCrAddr();
     Ipp32u PitchChroma = m_ppcYUVReco->pitch_chroma();
 
-    DecodePCMTextureChroma(pCU, 0, pPcmCb, pPcmCr, pRecoCbCr, PitchChroma, WidthChroma, HeightChroma);
+    DecodePCMTextureChroma(pCU, AbsPartIdx, pPcmCb, pPcmCr, pRecoCbCr, PitchChroma, WidthChroma, HeightChroma);
 }
 
 
@@ -2432,7 +2434,7 @@ void H265SegmentDecoder::ReconPCM(H265CodingUnit* pCU, Ipp32u Depth)
  * \param ttText texture component type
  * \returns Void
  */
-void H265SegmentDecoder::DecodePCMTextureLuma(H265CodingUnit* pCU, Ipp16s PartIdx, H265PlanePtrYCommon pPCM, H265PlanePtrYCommon pReco,
+void H265SegmentDecoder::DecodePCMTextureLuma(H265CodingUnit* pCU, Ipp32u AbsPartIdx, H265PlanePtrYCommon pPCM, H265PlanePtrYCommon pReco,
                                               Ipp32u Stride, Ipp32u Width, Ipp32u Height)
 {
     Ipp32u X, Y;
@@ -2441,7 +2443,7 @@ void H265SegmentDecoder::DecodePCMTextureLuma(H265CodingUnit* pCU, Ipp16s PartId
     Ipp32u PcmLeftShiftBit;
 
     PicStride = pCU->m_Frame->pitch_luma();
-    pPicReco = pCU->m_Frame->GetLumaAddr(pCU->CUAddr, pCU->m_AbsIdxInLCU + PartIdx);
+    pPicReco = pCU->m_Frame->GetLumaAddr(pCU->CUAddr, AbsPartIdx);
     PcmLeftShiftBit = g_bitDepthY - pCU->m_SliceHeader->m_SeqParamSet->pcm_bit_depth_luma;
 
     for (Y = 0; Y < Height; Y++)
@@ -2468,7 +2470,7 @@ void H265SegmentDecoder::DecodePCMTextureLuma(H265CodingUnit* pCU, Ipp16s PartId
  * \param ttText texture component type
  * \returns Void
  */
-void H265SegmentDecoder::DecodePCMTextureChroma(H265CodingUnit* pCU, Ipp16s PartIdx, H265PlanePtrUVCommon pPCMCb, H265PlanePtrUVCommon pPCMCr, H265PlanePtrUVCommon pReco, Ipp32u Stride, Ipp32u Width, Ipp32u Height)
+void H265SegmentDecoder::DecodePCMTextureChroma(H265CodingUnit* pCU, Ipp32u AbsPartIdx, H265PlanePtrUVCommon pPCMCb, H265PlanePtrUVCommon pPCMCr, H265PlanePtrUVCommon pReco, Ipp32u Stride, Ipp32u Width, Ipp32u Height)
 {
     Ipp32u X, Y;
     H265PlanePtrUVCommon pPicReco;
@@ -2476,7 +2478,7 @@ void H265SegmentDecoder::DecodePCMTextureChroma(H265CodingUnit* pCU, Ipp16s Part
     Ipp32u PcmLeftShiftBit;
 
     PicStride = pCU->m_Frame->pitch_chroma();
-    pPicReco = pCU->m_Frame->GetCbCrAddr(pCU->CUAddr, pCU->m_AbsIdxInLCU + PartIdx);
+    pPicReco = pCU->m_Frame->GetCbCrAddr(pCU->CUAddr, AbsPartIdx);
     PcmLeftShiftBit = g_bitDepthC - pCU->m_SliceHeader->m_SeqParamSet->pcm_bit_depth_chroma;
 
     for (Y = 0; Y < Height; Y++)
@@ -2552,7 +2554,7 @@ void H265SegmentDecoder::IntraLumaRecQT(H265CodingUnit* pCU,
                      Ipp32u TrDepth,
                      Ipp32u AbsPartIdx)
 {
-    Ipp32u FullDepth  = pCU->m_DepthArray[0] + TrDepth;
+    Ipp32u FullDepth = pCU->m_DepthArray[AbsPartIdx] + TrDepth;
     Ipp32u TrMode = pCU->m_TrIdxArray[AbsPartIdx];
     if (TrMode == TrDepth)
     {
@@ -2582,7 +2584,7 @@ void H265SegmentDecoder::IntraChromaRecQT(H265CodingUnit* pCU,
                      Ipp32u TrDepth,
                      Ipp32u AbsPartIdx)
 {
-    Ipp32u FullDepth = pCU->m_DepthArray[0] + TrDepth;
+    Ipp32u FullDepth = pCU->m_DepthArray[AbsPartIdx] + TrDepth;
     Ipp32u TrMode = pCU->m_TrIdxArray[AbsPartIdx];
     if (TrMode == TrDepth)
     {
@@ -2604,28 +2606,74 @@ void H265SegmentDecoder::IntraRecLumaBlk(H265CodingUnit* pCU,
                          Ipp32u TrDepth,
                          Ipp32u AbsPartIdx)
 {
-    Ipp32u Width = pCU->m_WidthArray[0] >> TrDepth;
-    Ipp32u Height = pCU->m_HeightArray[0] >> TrDepth;
+    VM_ASSERT(pCU->m_AbsIdxInLCU == 0);
+
+    Ipp32u Size = pCU->m_WidthArray[AbsPartIdx] >> TrDepth;
 
     //===== init availability pattern =====
     pCU->m_Pattern->InitPattern(pCU, TrDepth, AbsPartIdx);
+
+    bool NeighborFlags[4 * MAX_NUM_SPU_W + 1];
+    Ipp32s NumIntraNeighbor = 0;
+
+    // compute the location of the current PU
+    Ipp32s XInc = g_RasterToPelX[g_ZscanToRaster[AbsPartIdx]];
+    Ipp32s YInc = g_RasterToPelY[g_ZscanToRaster[AbsPartIdx]];
+    Ipp32s LPelX = pCU->m_CUPelX + XInc;
+    Ipp32s TPelY = pCU->m_CUPelY + YInc;
+    XInc >>= m_pSeqParamSet->getQuadtreeTULog2MinSize();
+    YInc >>= m_pSeqParamSet->getQuadtreeTULog2MinSize();
+    Ipp32s PartX = LPelX >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
+    Ipp32s PartY = TPelY >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
+    Ipp32s TUPartNumberInCTB = m_CurrCTBStride * YInc + XInc;
+    Ipp32s NumUnitsInCU = Size >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
+
+    if (XInc > 0 && g_RasterToZscan[g_ZscanToRaster[AbsPartIdx] - 1 + NumUnitsInCU * m_pSeqParamSet->NumPartitionsInCUSize] > AbsPartIdx)
+    {
+        for (Ipp32s i = 0; i < NumUnitsInCU; i++)
+            NeighborFlags[NumUnitsInCU - 1 - i] = false;
+    }
+    else
+    {
+        NumIntraNeighbor += isIntraBelowLeftAvailable(TUPartNumberInCTB - 1 + NumUnitsInCU * m_CurrCTBStride, PartY, YInc, NumUnitsInCU, NeighborFlags + NumUnitsInCU - 1);
+    }
+    NumIntraNeighbor += isIntraLeftAvailable(TUPartNumberInCTB - 1, NumUnitsInCU, NeighborFlags + (NumUnitsInCU * 2) - 1);
+
+    NeighborFlags[NumUnitsInCU * 2] = m_CurrCTBFlags[TUPartNumberInCTB - 1 - m_CurrCTBStride].members.IsAvailable &&
+        (m_CurrCTBFlags[TUPartNumberInCTB - 1 - m_CurrCTBStride].members.IsIntra || !m_pPicParamSet->constrained_intra_pred_flag);
+    NumIntraNeighbor += (Ipp32s)(NeighborFlags[NumUnitsInCU * 2]);
+
+    NumIntraNeighbor += isIntraAboveAvailable(TUPartNumberInCTB - m_CurrCTBStride, NumUnitsInCU, NeighborFlags + (NumUnitsInCU * 2) + 1);
+    if (YInc > 0 && g_RasterToZscan[g_ZscanToRaster[AbsPartIdx] + NumUnitsInCU - m_pSeqParamSet->NumPartitionsInCUSize] > AbsPartIdx)
+    {
+        for (Ipp32s i = 0; i < NumUnitsInCU; i++)
+            NeighborFlags[NumUnitsInCU * 3 + 1 + i] = false;
+    }
+    else
+    {
+        if (YInc == 0)
+            NumIntraNeighbor += isIntraAboveRightAvailableOtherCTB(PartX, NumUnitsInCU, NeighborFlags + (NumUnitsInCU * 3) + 1);
+        else
+            NumIntraNeighbor += isIntraAboveRightAvailable(TUPartNumberInCTB + NumUnitsInCU - m_CurrCTBStride, PartX, XInc, NumUnitsInCU, NeighborFlags + (NumUnitsInCU * 3) + 1);
+    }
+
     pCU->m_Pattern->InitAdiPatternLuma(pCU, AbsPartIdx, TrDepth,
                                        m_Prediction->GetPredicBuf(),
                                        m_Prediction->GetPredicBufWidth(),
-                                       m_Prediction->GetPredicBufHeight());
+                                       m_Prediction->GetPredicBufHeight(),
+                                       NeighborFlags, NumIntraNeighbor);
 
     //===== get prediction signal =====
     Ipp32u LumaPredMode = pCU->m_LumaIntraDir[AbsPartIdx];
-    Ipp32u ZOrder = pCU->m_AbsIdxInLCU + AbsPartIdx;
-    H265PlanePtrYCommon pRecIPred = pCU->m_Frame->GetLumaAddr(pCU->CUAddr, ZOrder);
+    H265PlanePtrYCommon pRecIPred = pCU->m_Frame->GetLumaAddr(pCU->CUAddr, AbsPartIdx);
     Ipp32u RecIPredStride = pCU->m_Frame->pitch_luma();
-    m_Prediction->PredIntraLumaAng(pCU->m_Pattern, LumaPredMode, pRecIPred, RecIPredStride, Width, Height);
+    m_Prediction->PredIntraLumaAng(pCU->m_Pattern, LumaPredMode, pRecIPred, RecIPredStride, Size);
 
     //===== inverse transform =====
     if (!pCU->getCbf(AbsPartIdx, TEXT_LUMA, TrDepth))
         return;
 
-    m_TrQuant->SetQPforQuant(pCU->m_QPArray[0], TEXT_LUMA, pCU->m_SliceHeader->m_SeqParamSet->m_QPBDOffsetY, 0);
+    m_TrQuant->SetQPforQuant(pCU->m_QPArray[AbsPartIdx], TEXT_LUMA, pCU->m_SliceHeader->m_SeqParamSet->m_QPBDOffsetY, 0);
 
     Ipp32s scalingListType = (pCU->m_PredModeArray[AbsPartIdx] ? 0 : 3) + g_Table[(Ipp32s)TEXT_LUMA];
     Ipp32u NumCoeffInc = (pCU->m_SliceHeader->m_SeqParamSet->MaxCUWidth * pCU->m_SliceHeader->m_SeqParamSet->MaxCUHeight) >> (pCU->m_SliceHeader->m_SeqParamSet->MaxCUDepth << 1);
@@ -2633,20 +2681,22 @@ void H265SegmentDecoder::IntraRecLumaBlk(H265CodingUnit* pCU,
     bool useTransformSkip = pCU->m_TransformSkip[g_ConvertTxtTypeToIdx[TEXT_LUMA]][AbsPartIdx] != 0;
 
     m_TrQuant->InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_LUMA, pCU->m_LumaIntraDir[AbsPartIdx],
-        pRecIPred, RecIPredStride, pCoeff, Width, Height, scalingListType, useTransformSkip);
+        pRecIPred, RecIPredStride, pCoeff, Size, Size, scalingListType, useTransformSkip);
 }
 
 void H265SegmentDecoder::IntraRecChromaBlk(H265CodingUnit* pCU,
                          Ipp32u TrDepth,
                          Ipp32u AbsPartIdx)
 {
-    Ipp32u FullDepth  = pCU->m_DepthArray[0] + TrDepth;
+    VM_ASSERT(pCU->m_AbsIdxInLCU == 0);
+
+    Ipp32u FullDepth  = pCU->m_DepthArray[AbsPartIdx] + TrDepth;
     Ipp32u Log2TrSize = g_ConvertToBit[pCU->m_SliceHeader->m_SeqParamSet->MaxCUWidth >> FullDepth] + 2;
     if (Log2TrSize == 2)
     {
-        assert(TrDepth > 0);
+        VM_ASSERT(TrDepth > 0);
         TrDepth--;
-        Ipp32u QPDiv = pCU->m_Frame->getCD()->getNumPartInCU() >> ((pCU->m_DepthArray[0] + TrDepth) << 1);
+        Ipp32u QPDiv = pCU->m_Frame->getCD()->getNumPartInCU() >> ((pCU->m_DepthArray[AbsPartIdx] + TrDepth) << 1);
         bool FirstQFlag = ((AbsPartIdx % QPDiv) == 0);
         if (!FirstQFlag)
         {
@@ -2654,30 +2704,72 @@ void H265SegmentDecoder::IntraRecChromaBlk(H265CodingUnit* pCU,
         }
     }
 
-    Ipp32u Width = pCU->m_WidthArray[0] >> (TrDepth + 1);
-    Ipp32u Height = pCU->m_HeightArray[0] >> (TrDepth + 1);
+    Ipp32u Size = pCU->m_WidthArray[AbsPartIdx] >> TrDepth;
 
     //===== init availability pattern =====
     pCU->m_Pattern->InitPattern(pCU, TrDepth, AbsPartIdx);
 
+    bool NeighborFlags[4 * MAX_NUM_SPU_W + 1];
+    Ipp32s NumIntraNeighbor = 0;
+
+    // compute the location of the current PU
+    Ipp32s XInc = g_RasterToPelX[g_ZscanToRaster[AbsPartIdx]];
+    Ipp32s YInc = g_RasterToPelY[g_ZscanToRaster[AbsPartIdx]];
+    Ipp32s LPelX = pCU->m_CUPelX + XInc;
+    Ipp32s TPelY = pCU->m_CUPelY + YInc;
+    XInc >>= m_pSeqParamSet->getQuadtreeTULog2MinSize();
+    YInc >>= m_pSeqParamSet->getQuadtreeTULog2MinSize();
+    Ipp32s PartX = LPelX >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
+    Ipp32s PartY = TPelY >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
+    Ipp32s TUPartNumberInCTB = m_CurrCTBStride * YInc + XInc;
+    Ipp32s NumUnitsInCU = Size >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
+
+    if (XInc > 0 && g_RasterToZscan[g_ZscanToRaster[AbsPartIdx] - 1 + NumUnitsInCU * m_pSeqParamSet->NumPartitionsInCUSize] > AbsPartIdx)
+    {
+        for (Ipp32s i = 0; i < NumUnitsInCU; i++)
+            NeighborFlags[NumUnitsInCU - 1 - i] = false;
+    }
+    else
+        NumIntraNeighbor += isIntraBelowLeftAvailable(TUPartNumberInCTB - 1 + NumUnitsInCU * m_CurrCTBStride, PartY, YInc, NumUnitsInCU, NeighborFlags + NumUnitsInCU - 1);
+    NumIntraNeighbor += isIntraLeftAvailable(TUPartNumberInCTB - 1, NumUnitsInCU, NeighborFlags + (NumUnitsInCU * 2) - 1);
+
+    NeighborFlags[NumUnitsInCU * 2] = m_CurrCTBFlags[TUPartNumberInCTB - 1 - m_CurrCTBStride].members.IsAvailable &&
+        (m_CurrCTBFlags[TUPartNumberInCTB - 1 - m_CurrCTBStride].members.IsIntra || !m_pPicParamSet->constrained_intra_pred_flag);
+    NumIntraNeighbor += (Ipp32s)(NeighborFlags[NumUnitsInCU * 2]);
+
+    NumIntraNeighbor += isIntraAboveAvailable(TUPartNumberInCTB - m_CurrCTBStride, NumUnitsInCU, NeighborFlags + (NumUnitsInCU * 2) + 1);
+    if (YInc > 0 && g_RasterToZscan[g_ZscanToRaster[AbsPartIdx] + NumUnitsInCU - m_pSeqParamSet->NumPartitionsInCUSize] > AbsPartIdx)
+    {
+        for (Ipp32s i = 0; i < NumUnitsInCU; i++)
+            NeighborFlags[NumUnitsInCU * 3 + 1 + i] = false;
+    }
+    else
+    {
+        if (YInc == 0)
+            NumIntraNeighbor += isIntraAboveRightAvailableOtherCTB(PartX, NumUnitsInCU, NeighborFlags + (NumUnitsInCU * 3) + 1);
+        else
+            NumIntraNeighbor += isIntraAboveRightAvailable(TUPartNumberInCTB + NumUnitsInCU - m_CurrCTBStride, PartX, XInc, NumUnitsInCU, NeighborFlags + (NumUnitsInCU * 3) + 1);
+    }
+
     pCU->m_Pattern->InitAdiPatternChroma(pCU, AbsPartIdx, TrDepth,
                                          m_Prediction->GetPredicBuf(),
                                          m_Prediction->GetPredicBufWidth(),
-                                         m_Prediction->GetPredicBufHeight());
+                                         m_Prediction->GetPredicBufHeight(),
+                                         NeighborFlags, NumIntraNeighbor);
 
     //===== get prediction signal =====
+    Size = pCU->m_WidthArray[AbsPartIdx] >> (TrDepth + 1);
     H265PlanePtrUVCommon pPatChroma = m_Prediction->GetPredicBuf();
-    Ipp32u ChromaPredMode = pCU->m_ChromaIntraDir[0];
+    Ipp32u ChromaPredMode = pCU->m_ChromaIntraDir[AbsPartIdx];
     if (ChromaPredMode == DM_CHROMA_IDX)
     {
-        ChromaPredMode = pCU->m_LumaIntraDir[0];
+        ChromaPredMode = pCU->m_LumaIntraDir[AbsPartIdx];
     }
 
-    Ipp32u ZOrder = pCU->m_AbsIdxInLCU + AbsPartIdx;
-    H265PlanePtrUVCommon pRecIPred = pCU->m_Frame->GetCbCrAddr(pCU->CUAddr, ZOrder);
+    H265PlanePtrUVCommon pRecIPred = pCU->m_Frame->GetCbCrAddr(pCU->CUAddr, AbsPartIdx);
     Ipp32u RecIPredStride = pCU->m_Frame->pitch_chroma();
 
-    m_Prediction->PredIntraChromaAng(pPatChroma, ChromaPredMode, pRecIPred, RecIPredStride, Width, Height);
+    m_Prediction->PredIntraChromaAng(pPatChroma, ChromaPredMode, pRecIPred, RecIPredStride, Size);
 
     bool chromaUPresent = pCU->getCbf(AbsPartIdx, TEXT_CHROMA_U, TrDepth) != 0;
     bool chromaVPresent = pCU->getCbf(AbsPartIdx, TEXT_CHROMA_V, TrDepth) != 0;
@@ -2693,35 +2785,35 @@ void H265SegmentDecoder::IntraRecChromaBlk(H265CodingUnit* pCU,
     if (chromaUPresent)
     {
         Ipp32s curChromaQpOffset = pCU->m_SliceHeader->m_PicParamSet->getChromaCbQpOffset() + pCU->m_SliceHeader->m_slice_qp_delta_cb;
-        m_TrQuant->SetQPforQuant(pCU->m_QPArray[0], TEXT_CHROMA_U, pCU->m_SliceHeader->m_SeqParamSet->m_QPBDOffsetC, curChromaQpOffset);
+        m_TrQuant->SetQPforQuant(pCU->m_QPArray[AbsPartIdx], TEXT_CHROMA_U, pCU->m_SliceHeader->m_SeqParamSet->m_QPBDOffsetC, curChromaQpOffset);
         Ipp32s scalingListType = (pCU->m_PredModeArray[AbsPartIdx] == MODE_INTRA ? 0 : 3) + g_Table[TEXT_CHROMA_U];
         H265CoeffsPtrCommon pCoeff = pCU->m_TrCoeffCb + (NumCoeffInc * AbsPartIdx);
         H265CoeffsPtrCommon pResi = (H265CoeffsPtrCommon)m_ppcYUVResi->GetCbAddr();
         bool useTransformSkip = pCU->m_TransformSkip[g_ConvertTxtTypeToIdx[TEXT_CHROMA_U]][AbsPartIdx] != 0;
         m_TrQuant->InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_CHROMA_U, REG_DCT,
-            pResi, residualPitch, pCoeff, Width, Height, scalingListType, useTransformSkip);
+            pResi, residualPitch, pCoeff, Size, Size, scalingListType, useTransformSkip);
     }
 
     // Cr
     if (chromaVPresent)
     {
         Ipp32s curChromaQpOffset = pCU->m_SliceHeader->m_PicParamSet->getChromaCrQpOffset() + pCU->m_SliceHeader->m_slice_qp_delta_cr;
-        m_TrQuant->SetQPforQuant(pCU->m_QPArray[0], TEXT_CHROMA_V, pCU->m_SliceHeader->m_SeqParamSet->m_QPBDOffsetC, curChromaQpOffset);
+        m_TrQuant->SetQPforQuant(pCU->m_QPArray[AbsPartIdx], TEXT_CHROMA_V, pCU->m_SliceHeader->m_SeqParamSet->m_QPBDOffsetC, curChromaQpOffset);
         Ipp32s scalingListType = (pCU->m_PredModeArray[AbsPartIdx] == MODE_INTRA ? 0 : 3) + g_Table[TEXT_CHROMA_V];
         H265CoeffsPtrCommon pCoeff = pCU->m_TrCoeffCr + (NumCoeffInc * AbsPartIdx);
         H265CoeffsPtrCommon pResi = (H265CoeffsPtrCommon)m_ppcYUVResi->GetCrAddr();
         bool useTransformSkip = pCU->m_TransformSkip[g_ConvertTxtTypeToIdx[TEXT_CHROMA_V]][AbsPartIdx] != 0;
         m_TrQuant->InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_CHROMA_V, REG_DCT,
-            pResi, residualPitch, pCoeff, Width, Height, scalingListType, useTransformSkip);
+            pResi, residualPitch, pCoeff, Size, Size, scalingListType, useTransformSkip);
     }
 
     //===== reconstruction =====
     {
         H265CoeffsPtrCommon p_ResiU = (H265CoeffsPtrCommon)m_ppcYUVResi->GetCbAddr();
         H265CoeffsPtrCommon p_ResiV = (H265CoeffsPtrCommon)m_ppcYUVResi->GetCrAddr();
-        for (Ipp32u y = 0; y < Height; y++)
+        for (Ipp32u y = 0; y < Size; y++)
         {
-            for (Ipp32u x = 0; x < Width; x++)
+            for (Ipp32u x = 0; x < Size; x++)
             {
                 if (chromaUPresent)
                     pRecIPred[2*x] = (H265PlaneUVCommon)ClipC(pRecIPred[2*x] + p_ResiU[x]);
@@ -2732,27 +2824,6 @@ void H265SegmentDecoder::IntraRecChromaBlk(H265CodingUnit* pCU,
             p_ResiU     += residualPitch;
             p_ResiV     += residualPitch;
             pRecIPred += RecIPredStride;
-        }
-    }
-}
-
-void H265SegmentDecoder::IntraRecQT(H265CodingUnit* pCU,
-                                    Ipp32u TrDepth,
-                                    Ipp32u AbsPartIdx)
-{
-    Ipp32u FullDepth = pCU->m_DepthArray[0] + TrDepth;
-    Ipp32u TrMode = pCU->m_TrIdxArray[AbsPartIdx];
-    if (TrMode == TrDepth)
-    {
-        IntraRecLumaBlk(pCU, TrDepth, AbsPartIdx);
-        IntraRecChromaBlk(pCU, TrDepth, AbsPartIdx);
-    }
-    else
-    {
-        Ipp32u NumQPart = pCU->m_Frame->getCD()->getNumPartInCU() >> ((FullDepth + 1) << 1);
-        for (Ipp32u Part = 0; Part < 4; Part++)
-        {
-            IntraRecQT(pCU, TrDepth + 1, AbsPartIdx + Part * NumQPart);
         }
     }
 }
@@ -2813,7 +2884,7 @@ void H265SegmentDecoder::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr
             // Copy data from bottom row
             for (Ipp32s i = 0; i < m_CurrCTBStride; i++)
             {
-                CurrCTBFlags[i].data = CurrCTBFlags[m_CurrCTBStride * (m_CurrCTBStride - 2) + i].data;
+                TopNgbrs[lastCUX + i].data = CurrCTBFlags[i].data = CurrCTBFlags[m_CurrCTBStride * (m_CurrCTBStride - 2) + i].data;
                 CurrCTB[i].mvinfo[0] = CurrCTB[m_CurrCTBStride * (m_CurrCTBStride - 2) + i].mvinfo[0];
                 CurrCTB[i].mvinfo[1] = CurrCTB[m_CurrCTBStride * (m_CurrCTBStride - 2) + i].mvinfo[1];
             }
@@ -2942,12 +3013,21 @@ void H265SegmentDecoder::UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPa
     Ipp32s PartSize = pCU->m_WidthArray[AbsPartIdx] >> 2;
 
     H265FrameHLDNeighborsInfo info;
+    info.data = 0;
     info.members.IsAvailable = 1;
     info.members.IsIntra = pCU->m_PredModeArray[AbsPartIdx];
     info.members.Depth = pCU->m_DepthArray[AbsPartIdx];
     info.members.SkipFlag = pCU->m_skipFlag[AbsPartIdx];
     info.members.IntraDir = pCU->m_LumaIntraDir[AbsPartIdx];
     Ipp16u data = info.data;
+
+    if (info.members.IsIntra)
+    {
+        // Fill up inside of whole CU to predict intra parts inside of it
+        for (Ipp32s y = YInc; y < YInc + PartSize - 1; y++)
+            for (Ipp32s x = XInc; x < XInc + PartSize - 1; x++)
+                m_CurrCTBFlags[m_CurrCTBStride * y + x].data = data;
+    }
 
     if (SIZE_2Nx2N == pCU->m_PartSizeArray[AbsPartIdx])
     {
@@ -3681,6 +3761,257 @@ bool H265SegmentDecoder::GetColMVP(EnumRefPicList refPicListIdx, Ipp32u PartX, I
     }
 
     return true;
+}
+
+Ipp32s H265SegmentDecoder::isIntraAboveAvailable(Ipp32s TUPartNumberInCTB, Ipp32s NumUnitsInCU, bool *ValidFlags)
+{
+    Ipp32s NumIntra = 0;
+
+    if (m_pPicParamSet->constrained_intra_pred_flag)
+    {
+        for (Ipp32s i = 0; i < NumUnitsInCU; i++)
+        {
+            if (m_CurrCTBFlags[TUPartNumberInCTB].members.IsAvailable &&
+                m_CurrCTBFlags[TUPartNumberInCTB].members.IsIntra)
+            {
+                NumIntra++;
+                *ValidFlags = true;
+            }
+            else
+            {
+                *ValidFlags = false;
+            }
+
+            ValidFlags++; //opposite direction
+            TUPartNumberInCTB++;
+        }
+    }
+    else
+    {
+        for (Ipp32s i = 0; i < NumUnitsInCU; i++)
+        {
+            if (m_CurrCTBFlags[TUPartNumberInCTB].members.IsAvailable)
+            {
+                NumIntra++;
+                *ValidFlags = true;
+            }
+            else
+            {
+                *ValidFlags = false;
+            }
+
+            ValidFlags++; //opposite direction
+            TUPartNumberInCTB++;
+        }
+    }
+
+    return NumIntra;
+}
+
+Ipp32s H265SegmentDecoder::isIntraLeftAvailable(Ipp32s TUPartNumberInCTB, Ipp32s NumUnitsInCU, bool *ValidFlags)
+{
+    Ipp32s NumIntra = 0;
+
+    if (m_pPicParamSet->constrained_intra_pred_flag)
+    {
+        for (Ipp32s i = 0; i < NumUnitsInCU; i++)
+        {
+            if (m_CurrCTBFlags[TUPartNumberInCTB].members.IsAvailable &&
+                m_CurrCTBFlags[TUPartNumberInCTB].members.IsIntra)
+            {
+                NumIntra++;
+                *ValidFlags = true;
+            }
+            else
+            {
+                *ValidFlags = false;
+            }
+
+            ValidFlags--; //opposite direction
+            TUPartNumberInCTB += m_CurrCTBStride;
+        }
+    }
+    else
+    {
+        for (Ipp32s i = 0; i < NumUnitsInCU; i++)
+        {
+            if (m_CurrCTBFlags[TUPartNumberInCTB].members.IsAvailable)
+            {
+                NumIntra++;
+                *ValidFlags = true;
+            }
+            else
+            {
+                *ValidFlags = false;
+            }
+
+            ValidFlags--; //opposite direction
+            TUPartNumberInCTB += m_CurrCTBStride;
+        }
+    }
+
+    return NumIntra;
+}
+
+Ipp32s H265SegmentDecoder::isIntraAboveRightAvailableOtherCTB(Ipp32s PartX, Ipp32s NumUnitsInCU, bool *ValidFlags)
+{
+    Ipp32s NumIntra = 0;
+
+    PartX += NumUnitsInCU;
+
+    if (m_pPicParamSet->constrained_intra_pred_flag)
+    {
+        for (Ipp32s i = 0; i < NumUnitsInCU; i++)
+        {
+            if ((PartX << m_pSeqParamSet->getQuadtreeTULog2MinSize()) < m_pSeqParamSet->pic_width_in_luma_samples &&
+                m_TopNgbrs[PartX].members.IsAvailable &&
+                m_TopNgbrs[PartX].members.IsIntra)
+            {
+                NumIntra++;
+                *ValidFlags = true;
+            }
+            else
+            {
+                *ValidFlags = false;
+            }
+
+            ValidFlags++; //opposite direction
+            PartX++;
+        }
+    }
+    else
+    {
+        for (Ipp32s i = 0; i < NumUnitsInCU; i++)
+        {
+            if ((PartX << m_pSeqParamSet->getQuadtreeTULog2MinSize()) < m_pSeqParamSet->pic_width_in_luma_samples &&
+                m_TopNgbrs[PartX].members.IsAvailable)
+            {
+                NumIntra++;
+                *ValidFlags = true;
+            }
+            else
+            {
+                *ValidFlags = false;
+            }
+
+            ValidFlags++; //opposite direction
+            PartX++;
+        }
+    }
+
+    return NumIntra;
+}
+
+Ipp32s H265SegmentDecoder::isIntraAboveRightAvailable(Ipp32s TUPartNumberInCTB, Ipp32s PartX, Ipp32s XInc, Ipp32s NumUnitsInCU, bool *ValidFlags)
+{
+    Ipp32s NumIntra = 0;
+
+    PartX += NumUnitsInCU;
+    XInc += NumUnitsInCU;
+
+    if (m_pPicParamSet->constrained_intra_pred_flag)
+    {
+        for (Ipp32s i = 0; i < NumUnitsInCU; i++)
+        {
+            if ((PartX << m_pSeqParamSet->getQuadtreeTULog2MinSize()) < m_pSeqParamSet->pic_width_in_luma_samples &&
+                XInc < m_pCurrentFrame->getNumPartInCUSize() &&
+                m_CurrCTBFlags[TUPartNumberInCTB].members.IsAvailable &&
+                m_CurrCTBFlags[TUPartNumberInCTB].members.IsIntra)
+            {
+                NumIntra++;
+                *ValidFlags = true;
+            }
+            else
+            {
+                *ValidFlags = false;
+            }
+
+            ValidFlags++; //opposite direction
+            TUPartNumberInCTB++;
+            XInc++;
+            PartX++;
+        }
+    }
+    else
+    {
+        for (Ipp32s i = 0; i < NumUnitsInCU; i++)
+        {
+            if ((PartX << m_pSeqParamSet->getQuadtreeTULog2MinSize()) < m_pSeqParamSet->pic_width_in_luma_samples &&
+                XInc < m_pCurrentFrame->getNumPartInCUSize() &&
+                m_CurrCTBFlags[TUPartNumberInCTB].members.IsAvailable)
+            {
+                NumIntra++;
+                *ValidFlags = true;
+            }
+            else
+            {
+                *ValidFlags = false;
+            }
+
+            ValidFlags++; //opposite direction
+            TUPartNumberInCTB++;
+            XInc++;
+            PartX++;
+        }
+    }
+
+    return NumIntra;
+}
+
+Ipp32s H265SegmentDecoder::isIntraBelowLeftAvailable(Ipp32s TUPartNumberInCTB, Ipp32s PartY, Ipp32s YInc, Ipp32s NumUnitsInCU, bool *ValidFlags)
+{
+    Ipp32s NumIntra = 0;
+
+    PartY += NumUnitsInCU;
+    YInc += NumUnitsInCU;
+
+    if (m_pPicParamSet->constrained_intra_pred_flag)
+    {
+        for (Ipp32s i = 0; i < NumUnitsInCU; i++)
+        {
+            if ((PartY << m_pSeqParamSet->getQuadtreeTULog2MinSize()) < m_pSeqParamSet->pic_height_in_luma_samples &&
+                YInc < m_pCurrentFrame->getNumPartInCUSize() &&
+                m_CurrCTBFlags[TUPartNumberInCTB].members.IsAvailable &&
+                m_CurrCTBFlags[TUPartNumberInCTB].members.IsIntra)
+            {
+                NumIntra++;
+                *ValidFlags = true;
+            }
+            else
+            {
+                *ValidFlags = false;
+            }
+
+            ValidFlags--; //opposite direction
+            TUPartNumberInCTB += m_CurrCTBStride;
+            YInc++;
+            PartY++;
+        }
+    }
+    else
+    {
+        for (Ipp32s i = 0; i < NumUnitsInCU; i++)
+        {
+            if ((PartY << m_pSeqParamSet->getQuadtreeTULog2MinSize()) < m_pSeqParamSet->pic_height_in_luma_samples &&
+                YInc < m_pCurrentFrame->getNumPartInCUSize() &&
+                m_CurrCTBFlags[TUPartNumberInCTB].members.IsAvailable)
+            {
+                NumIntra++;
+                *ValidFlags = true;
+            }
+            else
+            {
+                *ValidFlags = false;
+            }
+
+            ValidFlags--; //opposite direction
+            TUPartNumberInCTB += m_CurrCTBStride;
+            YInc++;
+            PartY++;
+        }
+    }
+
+    return NumIntra;
 }
 
 } // namespace UMC_HEVC_DECODER

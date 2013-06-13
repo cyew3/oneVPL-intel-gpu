@@ -224,19 +224,10 @@ public:
     // utility functions for neighbouring information - (only functions with declaration here. simple get/set are removed)
     H265CodingUnit* getPULeft        (Ipp32u& LPartUnitIdx , Ipp32u CurrPartUnitIdx, bool EnforceSliceRestriction = true, bool bEnforceTileRestriction = true);
     H265CodingUnit* getPUAbove       (Ipp32u& APartUnitIdx , Ipp32u CurrPartUnitIdx, bool EnforceSliceRestriction = true, bool planarAtLCUBoundary = false, bool EnforceTileRestriction = true);
-    H265CodingUnit* getPUAboveLeft   (Ipp32u& ALPartUnitIdx, Ipp32u CurrPartUnitIdx, bool EnforceSliceRestriction = true);
-    H265CodingUnit* getPUAboveRight  (Ipp32u& ARPartUnitIdx, Ipp32u CurrPartUnitIdx, bool EnforceSliceRestriction = true);
-    H265CodingUnit* getPUBelowLeft   (Ipp32u& BLPartUnitIdx, Ipp32u CurrPartUnitIdx, bool EnforceSliceRestriction = true);
 
     H265CodingUnit* getQPMinCULeft (Ipp32u& LPartUnitIdx, Ipp32u CurrAbsIdxInLCU);
     H265CodingUnit* getQPMinCUAbove(Ipp32u& aPartUnitIdx, Ipp32u currAbsIdxInLCU);
     Ipp8u getRefQP (Ipp32u CurrAbsIdxInLCU);
-
-    H265CodingUnit* getPUAboveRightAdi (Ipp32u& ARPartUnitIdx, Ipp32u CurrPartUnitIdx, Ipp32u PartUnitOffset = 1, bool EnforceSliceRestriction = true);
-    H265CodingUnit* getPUBelowLeftAdi (Ipp32u& BLPartUnitIdx, Ipp32u CurrPartUnitIdx, Ipp32u PartUnitOffset = 1, bool EnforceSliceRestriction = true);
-
-    void deriveLeftRightTopIdxAdi (Ipp32u& PartIdxLT, Ipp32u& PartIdxRT, Ipp32u PartOffset, Ipp32u PartDepth);
-    void deriveLeftBottomIdxAdi (Ipp32u& PartIdxLB, Ipp32u  PartOffset, Ipp32u PartDepth);
 
     bool hasEqualMotion (Ipp32u AbsPartIdx, H265CodingUnit* CandCU, Ipp32u CandAbsPartIdx);
 

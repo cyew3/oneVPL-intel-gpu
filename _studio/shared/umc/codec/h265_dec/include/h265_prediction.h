@@ -52,10 +52,10 @@ protected:
         INTERP_VER
     };
 
-    void PredIntraAngLuma(Ipp32s bitDepth, H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrYCommon Dst, Ipp32s dstStride, Ipp32s width, Ipp32s height, Ipp32u dirMode, bool Filter);
+    void PredIntraAngLuma(Ipp32s bitDepth, H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrYCommon Dst, Ipp32s dstStride, Ipp32s blkSize, Ipp32u dirMode, bool Filter);
     void PredIntraPlanarLuma(H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrYCommon rpDst, Ipp32s dstStride, Ipp32s blkSize);
 
-    void PredIntraAngChroma(Ipp32s bitDepth, H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrUVCommon Dst, Ipp32s dstStride, Ipp32s width, Ipp32s height, Ipp32u dirMode);
+    void PredIntraAngChroma(Ipp32s bitDepth, H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrUVCommon Dst, Ipp32s dstStride, Ipp32s blkSize, Ipp32u dirMode);
     void PredIntraPlanarChroma(H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrUVCommon rpDst, Ipp32s dstStride, Ipp32s blkSize);
 
     // motion compensation functions
@@ -106,7 +106,7 @@ protected:
                        Ipp32s width,
                        Ipp32s height);
 
-    void DCPredFiltering(H265PlanePtrYCommon pSrc, Ipp32s SrcStride, H265PlanePtrYCommon Dst, Ipp32s DstStride, Ipp32s Width, Ipp32s Height);
+    void DCPredFiltering(H265PlanePtrYCommon pSrc, Ipp32s SrcStride, H265PlanePtrYCommon Dst, Ipp32s DstStride, Ipp32s Size);
 
 public:
     H265Prediction();
@@ -121,10 +121,10 @@ public:
     void GetMVPredAMVP(H265CodingUnit* pCU, Ipp32u PartIdx, Ipp32u PartAddr, EnumRefPicList RefPicList, Ipp32s RefIdx, H265MotionVector& m_MVPred);
 
     // Angular Intra
-    void PredIntraLumaAng(H265Pattern* pPattern, Ipp32u DirMode, H265PlanePtrYCommon pPred, Ipp32u Stride, Ipp32s Width, Ipp32s Height);
-    void PredIntraChromaAng(H265PlanePtrUVCommon pSrc, Ipp32u DirMode, H265PlanePtrUVCommon pPred, Ipp32u Stride, Ipp32s Width, Ipp32s Height);
+    void PredIntraLumaAng(H265Pattern* pPattern, Ipp32u DirMode, H265PlanePtrYCommon pPred, Ipp32u Stride, Ipp32s Size);
+    void PredIntraChromaAng(H265PlanePtrUVCommon pSrc, Ipp32u DirMode, H265PlanePtrUVCommon pPred, Ipp32u Stride, Ipp32s Size);
 
-    H265PlaneYCommon PredIntraGetPredValDC(H265PlanePtrYCommon pSrc, Ipp32s SrcStride, Ipp32s Width, Ipp32s Height);
+    H265PlaneYCommon PredIntraGetPredValDC(H265PlanePtrYCommon pSrc, Ipp32s SrcStride, Ipp32s Size);
 
     H265PlanePtrYCommon GetPredicBuf()
     {

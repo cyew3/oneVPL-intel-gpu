@@ -97,15 +97,16 @@ void H265Pattern::InitPattern(Ipp32s RoiWidth,
 
 void H265Pattern::InitPattern(H265CodingUnit* pCU, Ipp32u PartDepth, Ipp32u AbsPartIdx)
 {
+    VM_ASSERT(pCU->m_AbsIdxInLCU == 0);
+
     Ipp32u OffsetLeft  = 0;
     Ipp32u OffsetAbove = 0;
 
-    Ipp8u Width = (Ipp8u) (pCU->m_WidthArray[0] >> PartDepth);
-    Ipp8u Height = (Ipp8u) (pCU->m_HeightArray[0] >> PartDepth);
+    Ipp8u Width = (Ipp8u) (pCU->m_WidthArray[AbsPartIdx] >> PartDepth);
+    Ipp8u Height = (Ipp8u) (pCU->m_HeightArray[AbsPartIdx] >> PartDepth);
 
-    Ipp32u AbsZorderIdx = pCU->m_AbsIdxInLCU + AbsPartIdx;
-    Ipp32u CurrPicPelX = pCU->m_CUPelX + g_RasterToPelX[g_ZscanToRaster[AbsZorderIdx]];
-    Ipp32u CurrPicPelY = pCU->m_CUPelY + g_RasterToPelY[g_ZscanToRaster[AbsZorderIdx]];
+    Ipp32u CurrPicPelX = pCU->m_CUPelX + g_RasterToPelX[g_ZscanToRaster[AbsPartIdx]];
+    Ipp32u CurrPicPelY = pCU->m_CUPelY + g_RasterToPelY[g_ZscanToRaster[AbsPartIdx]];
 
     if (CurrPicPelX != 0)
     {
@@ -121,48 +122,23 @@ void H265Pattern::InitPattern(H265CodingUnit* pCU, Ipp32u PartDepth, Ipp32u AbsP
     m_PatternCr.SetPatternParamCU(Width >> 1, Height >> 1, OffsetLeft, OffsetAbove);
 }
 
-void H265Pattern::InitAdiPatternLuma(H265CodingUnit* pCU, Ipp32u ZorderIdxInPart, Ipp32u PartDepth, H265PlanePtrYCommon pAdiBuf, Ipp32u OrgBufStride, Ipp32u OrgBufHeight)
+void H265Pattern::InitAdiPatternLuma(H265CodingUnit* pCU, Ipp32u ZorderIdxInPart, Ipp32u PartDepth, H265PlanePtrYCommon pAdiBuf,
+                                     Ipp32u OrgBufStride, Ipp32u OrgBufHeight, bool *NeighborFlags, Ipp32s NumIntraNeighbor)
 {
     H265PlanePtrYCommon pRoiOrigin;
     H265PlanePtrYCommon pAdiTemp;
-    Ipp32u CUWidth   = pCU->m_WidthArray[0] >> PartDepth;
-    Ipp32u CUHeight  = pCU->m_HeightArray[0] >> PartDepth;
-    Ipp32u CUWidth2  = CUWidth << 1;
-    Ipp32u CUHeight2 = CUHeight << 1;
-    Ipp32u Width;
-    Ipp32u Height;
+    Ipp32s CUSize = pCU->m_WidthArray[ZorderIdxInPart] >> PartDepth;
+    Ipp32s CUSize2 = CUSize << 1;
+    Ipp32s Size;
     Ipp32s PicStride = pCU->m_Frame->pitch_luma();
 
-    Ipp32s UnitSize = 0;
-    Ipp32s NumUnitsInCU = 0;
-    Ipp32s TotalUnits = 0;
-    bool NeighborFlags[4 * MAX_NUM_SPU_W + 1];
-    Ipp32s NumIntraNeighbor = 0;
+    Ipp32s UnitSize = g_MaxCUWidth >> g_MaxCUDepth;
+    Ipp32s NumUnitsInCU = CUSize / UnitSize;
+    Ipp32s TotalUnits = (NumUnitsInCU << 2) + 1;
 
-    Ipp32u PartIdxLT;
-    Ipp32u PartIdxRT;
-    Ipp32u PartIdxLB;
+    Size = (CUSize << 1) + 1;
 
-    pCU->deriveLeftRightTopIdxAdi(PartIdxLT, PartIdxRT, ZorderIdxInPart, PartDepth);
-    pCU->deriveLeftBottomIdxAdi(PartIdxLB, ZorderIdxInPart, PartDepth);
-
-    {
-        UnitSize = g_MaxCUWidth >> g_MaxCUDepth;
-        NumUnitsInCU = CUWidth / UnitSize;
-        TotalUnits = (NumUnitsInCU << 2) + 1;
-
-        NeighborFlags[NumUnitsInCU * 2] = isAboveLeftAvailable(pCU, PartIdxLT);
-        NumIntraNeighbor += (Ipp32s)(NeighborFlags[NumUnitsInCU * 2]);
-        NumIntraNeighbor += isAboveAvailable(pCU, PartIdxLT, PartIdxRT, NeighborFlags + (NumUnitsInCU * 2) + 1);
-        NumIntraNeighbor += isAboveRightAvailable(pCU, PartIdxLT, PartIdxRT, NeighborFlags + (NumUnitsInCU * 3) + 1);
-        NumIntraNeighbor += isLeftAvailable(pCU, PartIdxLT, PartIdxLB, NeighborFlags + (NumUnitsInCU * 2) - 1);
-        NumIntraNeighbor += isBelowLeftAvailable(pCU, PartIdxLT, PartIdxLB, NeighborFlags + NumUnitsInCU -1);
-    }
-
-    Width = CUWidth2 + 1;
-    Height = CUHeight2 + 1;
-
-    if (((Width << 2) > OrgBufStride) || ((Height << 2) > OrgBufHeight))
+    if (((Size << 2) > OrgBufStride) || ((Size << 2) > OrgBufHeight))
     {
         return;
     }
@@ -170,14 +146,12 @@ void H265Pattern::InitAdiPatternLuma(H265CodingUnit* pCU, Ipp32u ZorderIdxInPart
     pRoiOrigin = pCU->m_Frame->GetLumaAddr(pCU->CUAddr, pCU->m_AbsIdxInLCU + ZorderIdxInPart);
     pAdiTemp = pAdiBuf;
 
-
-    FillReferenceSamplesLuma(g_bitDepthY, pRoiOrigin, pAdiTemp, NeighborFlags, NumIntraNeighbor, UnitSize, NumUnitsInCU, TotalUnits, CUWidth, CUHeight, Width, Height, PicStride);
+    FillReferenceSamplesLuma(g_bitDepthY, pRoiOrigin, pAdiTemp, NeighborFlags, NumIntraNeighbor, UnitSize, NumUnitsInCU, TotalUnits, CUSize, Size, PicStride);
 
     Ipp32u i;
     // generate filtered intra prediction samples
-    Ipp32u BufSize = CUHeight2 + CUWidth2 + 1;  // left and left above border + above and above right border + top left corner = length of 3. filter buffer
-
-    Ipp32u WH = Width * Height;               // number of elements in one buffer
+    Ipp32u BufSize = CUSize2 + CUSize2 + 1;  // left and left above border + above and above right border + top left corner = length of 3. filter buffer
+    Ipp32u WH = Size * Size;               // number of elements in one buffer
 
     H265PlanePtrYCommon pFilteredBuf1 = pAdiBuf + WH;        // 1. filter buffer
     H265PlanePtrYCommon pFilteredBuf2 = pFilteredBuf1 + WH;  // 2. filter buffer
@@ -186,14 +160,14 @@ void H265Pattern::InitAdiPatternLuma(H265CodingUnit* pCU, Ipp32u ZorderIdxInPart
 
     Ipp32s l = 0;
     // left border from bottom to top
-    for (i = 0; i < CUHeight2; i++)
+    for (i = 0; i < CUSize2; i++)
     {
-        pFilterBuf[l++] = pAdiTemp[Width * (CUHeight2 - i)];
+        pFilterBuf[l++] = pAdiTemp[Size * (CUSize2 - i)];
     }
     // top left corner
     pFilterBuf[l++] = pAdiTemp[0];
     // above border from left to right
-    for (i=0; i < CUWidth2; i++)
+    for (i=0; i < CUSize2; i++)
     {
         pFilterBuf[l++] = pAdiTemp[1 + i];
     }
@@ -202,27 +176,27 @@ void H265Pattern::InitAdiPatternLuma(H265CodingUnit* pCU, Ipp32u ZorderIdxInPart
     {
         unsigned blkSize = 32;
         int bottomLeft = pFilterBuf[0];
-        int topLeft = pFilterBuf[CUHeight2];
+        int topLeft = pFilterBuf[CUSize2];
         int topRight = pFilterBuf[BufSize - 1];
         int threshold = 1 << (g_bitDepthY - 5);
-        bool bilinearLeft = abs(bottomLeft + topLeft - 2 * pFilterBuf[CUHeight]) < threshold;
-        bool bilinearAbove  = abs(topLeft + topRight - 2 * pFilterBuf[CUHeight2 + CUHeight]) < threshold;
+        bool bilinearLeft = abs(bottomLeft + topLeft - 2 * pFilterBuf[CUSize]) < threshold;
+        bool bilinearAbove  = abs(topLeft + topRight - 2 * pFilterBuf[CUSize2 + CUSize]) < threshold;
 
-        if (CUWidth >= blkSize && (bilinearLeft && bilinearAbove))
+        if (CUSize >= blkSize && (bilinearLeft && bilinearAbove))
         {
-            int shift = g_ConvertToBit[CUWidth] + 3;  // log2(uiCuHeight2)
+            int shift = g_ConvertToBit[CUSize] + 3;  // log2(uiCuSize2)
             pFilterBufN[0] = pFilterBuf[0];
-            pFilterBufN[CUHeight2] = pFilterBuf[CUHeight2];
+            pFilterBufN[CUSize2] = pFilterBuf[CUSize2];
             pFilterBufN[BufSize - 1] = pFilterBuf[BufSize - 1];
 
-            for (i = 1; i < CUHeight2; i++)
+            for (i = 1; i < CUSize2; i++)
             {
-                pFilterBufN[i] = ((CUHeight2 - i) * bottomLeft + i * topLeft + CUHeight) >> shift;
+                pFilterBufN[i] = ((CUSize2 - i) * bottomLeft + i * topLeft + CUSize) >> shift;
             }
 
-            for (i = 1; i < CUWidth2; i++)
+            for (i = 1; i < CUSize2; i++)
             {
-                pFilterBufN[CUHeight2 + i] = ((CUWidth2 - i) * topLeft + i * topRight + CUWidth) >> shift;
+                pFilterBufN[CUSize2 + i] = ((CUSize2 - i) * topLeft + i * topRight + CUSize) >> shift;
             }
         }
         else
@@ -249,12 +223,12 @@ void H265Pattern::InitAdiPatternLuma(H265CodingUnit* pCU, Ipp32u ZorderIdxInPart
 
     // fill 1. filter buffer with filtered values
     l = 0;
-    for (i = 0; i < CUHeight2; i++)
+    for (i = 0; i < CUSize2; i++)
     {
-        pFilteredBuf1[Width * (CUHeight2 - i)] = pFilterBufN[l++];
+        pFilteredBuf1[Size * (CUSize2 - i)] = pFilterBufN[l++];
     }
     pFilteredBuf1[0] = pFilterBufN[l++];
-    for (i = 0; i < CUWidth2; i++)
+    for (i = 0; i < CUSize2; i++)
     {
         pFilteredBuf1[1 + i] = pFilterBufN[l++];
     }
@@ -268,17 +242,17 @@ void H265Pattern::FillReferenceSamplesChroma(Ipp32s bitDepth,
                                              Ipp32u UnitSize,
                                              Ipp32s NumUnitsInCU,
                                              Ipp32s TotalUnits,
-                                             Ipp32u CUWidth,
-                                             Ipp32u CUHeight,
-                                             Ipp32u Width,
-                                             Ipp32u Height,
+                                             Ipp32u CUSize,
+                                             Ipp32u Size,
                                              Ipp32s PicStride)
 {
     H265PlanePtrUVCommon pRoiTemp;
     Ipp32u i, j;
     Ipp32s DCValue = 1 << (bitDepth - 1);
-    Width <<= 1;
-    CUWidth <<= 1;
+    Ipp32s Width = Size << 1;
+    Ipp32s Height = Size;
+    Ipp32s CUWidth = CUSize << 1;
+    Ipp32s CUHeight = CUSize;
 
     if (NumIntraNeighbor == 0)
     {
@@ -466,57 +440,33 @@ void H265Pattern::FillReferenceSamplesChroma(Ipp32s bitDepth,
     }
 }
 
-void H265Pattern::InitAdiPatternChroma(H265CodingUnit* pCU, Ipp32u ZorderIdxInPart, Ipp32u PartDepth, H265PlanePtrUVCommon pAdiBuf, Ipp32u OrgBufStride, Ipp32u OrgBufHeight)
+void H265Pattern::InitAdiPatternChroma(H265CodingUnit* pCU, Ipp32u ZorderIdxInPart, Ipp32u PartDepth, H265PlanePtrUVCommon pAdiBuf,
+                                       Ipp32u OrgBufStride, Ipp32u OrgBufHeight, bool *NeighborFlags, Ipp32s NumIntraNeighbor)
 {
     H265PlanePtrUVCommon pRoiOrigin;
     H265PlanePtrUVCommon pAdiTemp;
-    Ipp32u CUWidth = pCU->m_WidthArray[0] >> PartDepth;
-    Ipp32u CUHeight = pCU->m_HeightArray[0] >> PartDepth;
-    Ipp32u Width;
-    Ipp32u Height;
-    Ipp32s PicStride = pCU->m_Frame->pitch_chroma();
-    Ipp32s UnitSize = 0;
-    Ipp32s NumUnitsInCU = 0;
-    Ipp32s TotalUnits = 0;
-    bool NeighborFlags[4 * MAX_NUM_SPU_W + 1];
-    Ipp32s NumIntraNeighbor = 0;
+    Ipp32u CUSize = pCU->m_WidthArray[ZorderIdxInPart] >> PartDepth;
+    Ipp32u Size;
 
-    Ipp32u PartIdxLT;
-    Ipp32u PartIdxRT;
-    Ipp32u PartIdxLB;
+    Ipp32s UnitSize = (g_MaxCUWidth >> g_MaxCUDepth) >> 1; // for chroma
+    Ipp32s NumUnitsInCU = (CUSize / UnitSize) >> 1;            // for chroma
+    Ipp32s TotalUnits = (NumUnitsInCU << 2) + 1;
 
-    pCU->deriveLeftRightTopIdxAdi(PartIdxLT, PartIdxRT, ZorderIdxInPart, PartDepth);
-    pCU->deriveLeftBottomIdxAdi(PartIdxLB, ZorderIdxInPart, PartDepth);
+    CUSize >>= 1;  // for chroma
+    Size = CUSize * 2 + 1;
 
-    {
-        UnitSize = (g_MaxCUWidth >> g_MaxCUDepth) >> 1; // for chroma
-        NumUnitsInCU = (CUWidth / UnitSize) >> 1;            // for chroma
-        TotalUnits = (NumUnitsInCU << 2) + 1;
-
-        NeighborFlags[NumUnitsInCU * 2] = isAboveLeftAvailable(pCU, PartIdxLT);
-        NumIntraNeighbor += (Ipp32s)(NeighborFlags[NumUnitsInCU * 2]);
-        NumIntraNeighbor += isAboveAvailable(pCU, PartIdxLT, PartIdxRT, NeighborFlags + (NumUnitsInCU * 2) + 1);
-        NumIntraNeighbor += isAboveRightAvailable(pCU, PartIdxLT, PartIdxRT, NeighborFlags + (NumUnitsInCU * 3) + 1);
-        NumIntraNeighbor += isLeftAvailable(pCU, PartIdxLT, PartIdxLB, NeighborFlags + (NumUnitsInCU * 2) - 1);
-        NumIntraNeighbor += isBelowLeftAvailable(pCU, PartIdxLT, PartIdxLB, NeighborFlags + NumUnitsInCU - 1);
-    }
-
-    CUWidth = CUWidth >> 1;  // for chroma
-    CUHeight = CUHeight >> 1;  // for chroma
-
-    Width = CUWidth * 2 + 1;
-    Height = CUHeight * 2 + 1;
-
-    if ((4 * Width > OrgBufStride) || (4 * Height > OrgBufHeight))
+    if ((4 * Size > OrgBufStride) || (4 * Size > OrgBufHeight))
     {
         return;
     }
 
+    Ipp32s PicStride = pCU->m_Frame->pitch_chroma();
+
     // get CbCb pattern
-    pRoiOrigin = pCU->m_Frame->GetCbCrAddr(pCU->CUAddr, pCU->m_AbsIdxInLCU + ZorderIdxInPart);
+    pRoiOrigin = pCU->m_Frame->GetCbCrAddr(pCU->CUAddr, ZorderIdxInPart);
     pAdiTemp = pAdiBuf;
 
-    FillReferenceSamplesChroma(g_bitDepthC, pRoiOrigin, pAdiTemp, NeighborFlags, NumIntraNeighbor, UnitSize, NumUnitsInCU, TotalUnits, CUWidth, CUHeight, Width, Height, PicStride);
+    FillReferenceSamplesChroma(g_bitDepthC, pRoiOrigin, pAdiTemp, NeighborFlags, NumIntraNeighbor, UnitSize, NumUnitsInCU, TotalUnits, CUSize, Size, PicStride);
 }
 
 void H265Pattern::FillReferenceSamplesLuma(Ipp32s bitDepth,
@@ -527,10 +477,8 @@ void H265Pattern::FillReferenceSamplesLuma(Ipp32s bitDepth,
                                            Ipp32u UnitSize,
                                            Ipp32s NumUnitsInCU,
                                            Ipp32s TotalUnits,
-                                           Ipp32u CUWidth,
-                                           Ipp32u CUHeight,
-                                           Ipp32u Width,
-                                           Ipp32u Height,
+                                           Ipp32u CUSize,
+                                           Ipp32u Size,
                                            Ipp32s PicStride)
 {
     H265PlanePtrYCommon pRoiTemp;
@@ -540,13 +488,13 @@ void H265Pattern::FillReferenceSamplesLuma(Ipp32s bitDepth,
     if (NumIntraNeighbor == 0)
     {
         // Fill border with DC value
-        for (i = 0; i < Width; i++)
+        for (i = 0; i < Size; i++)
         {
             pAdiTemp[i] = DCValue;
         }
-        for (i = 1; i < Height; i++)
+        for (i = 1; i < Size; i++)
         {
-            pAdiTemp[i * Width] = DCValue;
+            pAdiTemp[i * Size] = DCValue;
         }
     }
     else if (NumIntraNeighbor == TotalUnits)
@@ -558,31 +506,31 @@ void H265Pattern::FillReferenceSamplesLuma(Ipp32s bitDepth,
         // Fill left border with rec. samples
         pRoiTemp = pRoiOrigin - 1;
 
-        for (i = 0; i < CUHeight; i++)
+        for (i = 0; i < CUSize; i++)
         {
-            pAdiTemp[(1 + i) * Width] = pRoiTemp[0];
+            pAdiTemp[(1 + i) * Size] = pRoiTemp[0];
             pRoiTemp += PicStride;
         }
 
         // Fill below left border with rec. samples
-        for (i = 0; i < CUHeight; i++)
+        for (i = 0; i < CUSize; i++)
         {
-            pAdiTemp[(1 + CUHeight + i) * Width] = pRoiTemp[0];
+            pAdiTemp[(1 + CUSize + i) * Size] = pRoiTemp[0];
             pRoiTemp += PicStride;
         }
 
         // Fill top border with rec. samples
         pRoiTemp = pRoiOrigin - PicStride;
-        for (i = 0; i < CUWidth; i++)
+        for (i = 0; i < CUSize; i++)
         {
             pAdiTemp[1 + i] = pRoiTemp[i];
         }
 
         // Fill top right border with rec. samples
-        pRoiTemp = pRoiOrigin - PicStride + CUWidth;
-        for (i = 0; i < CUWidth; i++)
+        pRoiTemp = pRoiOrigin - PicStride + CUSize;
+        for (i = 0; i < CUSize; i++)
         {
-            pAdiTemp[1 + CUWidth + i] = pRoiTemp[i];
+            pAdiTemp[1 + CUSize + i] = pRoiTemp[i];
         }
     }
     else // reference samples are partially available
@@ -698,15 +646,15 @@ void H265Pattern::FillReferenceSamplesLuma(Ipp32s bitDepth,
         }
 
         // Copy processed samples
-        pAdiLineTemp = pAdiLine + Height + UnitSize - 2;
-        for (i = 0; i < Width; i++)
+        pAdiLineTemp = pAdiLine + Size + UnitSize - 2;
+        for (i = 0; i < Size; i++)
         {
             pAdiTemp[i] = pAdiLineTemp[i];
         }
-        pAdiLineTemp = pAdiLine + Height - 1;
-        for (i = 1; i < Height; i++)
+        pAdiLineTemp = pAdiLine + Size - 1;
+        for (i = 1; i < Size; i++)
         {
-            pAdiTemp[i * Width] = pAdiLineTemp[-(Ipp32s)i];
+            pAdiTemp[i * Size] = pAdiLineTemp[-(Ipp32s)i];
         }
     }
 }
@@ -731,191 +679,15 @@ H265PlanePtrYCommon H265Pattern::GetPredictorPtr(Ipp32u DirMode, Ipp32u log2BlkS
     }
     VM_ASSERT(FiltIdx <= 1);
 
-    Ipp32s width  = 1 << log2BlkSize;
-    Ipp32s height = 1 << log2BlkSize;
-
     pSrc = pAdiBuf;
 
     if (FiltIdx)
     {
-        pSrc += (2 * width + 1) * (2 * height + 1);
+        Ipp32s size = (2 << log2BlkSize) + 1;
+        pSrc += size * size;
     }
 
     return pSrc;
-}
-
-bool H265Pattern::isAboveLeftAvailable(H265CodingUnit* pCU, Ipp32u PartIdxLT)
-{
-    bool AboveLeftFlag;
-    Ipp32u PartAboveLeft;
-    H265CodingUnit* pCUAboveLeft = pCU->getPUAboveLeft(PartAboveLeft, PartIdxLT);
-
-    if (pCU->m_SliceHeader->m_PicParamSet->constrained_intra_pred_flag)
-        AboveLeftFlag = (pCUAboveLeft && pCUAboveLeft->m_PredModeArray[PartAboveLeft] == MODE_INTRA);
-    else
-        AboveLeftFlag = pCUAboveLeft ? true : false;
-
-    return AboveLeftFlag;
-}
-
-Ipp32s H265Pattern::isAboveAvailable(H265CodingUnit* pCU, Ipp32u PartIdxLT, Ipp32u PartIdxRT, bool *ValidFlags)
-{
-    const Ipp32u RasterPartBegin = g_ZscanToRaster[PartIdxLT];
-    const Ipp32u RasterPartEnd = g_ZscanToRaster[PartIdxRT] + 1;
-    const Ipp32u IdxStep = 1;
-    bool *pValidFlags = ValidFlags;
-    Ipp32s NumIntra = 0;
-
-    for (Ipp32u RasterPart = RasterPartBegin; RasterPart < RasterPartEnd; RasterPart += IdxStep)
-    {
-        Ipp32u PartAbove;
-        H265CodingUnit* pCUAbove = pCU->getPUAbove(PartAbove, g_RasterToZscan[RasterPart]);
-        if (pCU->m_SliceHeader->m_PicParamSet->constrained_intra_pred_flag)
-        {
-            if (pCUAbove && pCUAbove->m_PredModeArray[PartAbove] == MODE_INTRA)
-            {
-                NumIntra++;
-                *pValidFlags = true;
-            }
-            else
-            {
-                *pValidFlags = false;
-            }
-        }
-        else
-        {
-            if (pCUAbove)
-            {
-                NumIntra++;
-                *pValidFlags = true;
-            }
-            else
-            {
-                *pValidFlags = false;
-            }
-        }
-        pValidFlags++;
-    }
-    return NumIntra;
-}
-
-Ipp32s H265Pattern::isLeftAvailable(H265CodingUnit* pCU, Ipp32u PartIdxLT, Ipp32u PartIdxLB, bool *ValidFlags)
-{
-    const Ipp32u RasterPartBegin = g_ZscanToRaster[PartIdxLT];
-    const Ipp32u RasterPartEnd = g_ZscanToRaster[PartIdxLB] + 1;
-    const Ipp32u IdxStep = pCU->m_Frame->getNumPartInWidth();
-    bool *pValidFlags = ValidFlags;
-    Ipp32s NumIntra = 0;
-
-    for (Ipp32u RasterPart = RasterPartBegin; RasterPart < RasterPartEnd; RasterPart += IdxStep)
-    {
-        Ipp32u PartLeft;
-        H265CodingUnit* pCULeft = pCU->getPULeft(PartLeft, g_RasterToZscan[RasterPart]);
-        if (pCU->m_SliceHeader->m_PicParamSet->constrained_intra_pred_flag)
-        {
-            if (pCULeft && pCULeft->m_PredModeArray[PartLeft] == MODE_INTRA)
-            {
-                NumIntra++;
-                *pValidFlags = true;
-            }
-            else
-            {
-                *pValidFlags = false;
-            }
-        }
-        else
-        {
-            if (pCULeft)
-            {
-                NumIntra++;
-                *pValidFlags = true;
-            }
-            else
-            {
-                *pValidFlags = false;
-            }
-        }
-        pValidFlags--; //opposite direction
-    }
-    return NumIntra;
-}
-
-Ipp32s H265Pattern::isAboveRightAvailable(H265CodingUnit* pCU, Ipp32u PartIdxLT, Ipp32u PartIdxRT, bool *ValidFlags)
-{
-    const Ipp32u NumUnitsInPU = g_ZscanToRaster[PartIdxRT] - g_ZscanToRaster[PartIdxLT] + 1;
-    bool *pValidFlags = ValidFlags;
-    Ipp32s NumIntra = 0;
-
-    for (Ipp32u Offset = 1; Offset <= NumUnitsInPU; Offset++)
-    {
-        Ipp32u PartAboveRight;
-        H265CodingUnit* pCUAboveRight = pCU->getPUAboveRightAdi(PartAboveRight, PartIdxRT, Offset);
-        if (pCU->m_SliceHeader->m_PicParamSet->constrained_intra_pred_flag)
-        {
-            if (pCUAboveRight && pCUAboveRight->m_PredModeArray[PartAboveRight] == MODE_INTRA)
-            {
-                NumIntra++;
-                *pValidFlags = true;
-            }
-            else
-            {
-                *pValidFlags = false;
-            }
-        }
-        else
-        {
-            if (pCUAboveRight)
-            {
-                NumIntra++;
-                *pValidFlags = true;
-            }
-            else
-            {
-                *pValidFlags = false;
-            }
-        }
-        pValidFlags++;
-    }
-    return NumIntra;
-}
-
-Ipp32s H265Pattern::isBelowLeftAvailable(H265CodingUnit* pCU, Ipp32u PartIdxLT, Ipp32u PartIdxLB, bool *ValidFlags)
-{
-    const Ipp32u NumUnitsInPU = (g_ZscanToRaster[PartIdxLB] - g_ZscanToRaster[PartIdxLT]) / pCU->m_Frame->getNumPartInWidth() + 1;
-    bool *pValidFlags = ValidFlags;
-    Ipp32s NumIntra = 0;
-
-    for (Ipp32u Offset = 1; Offset <= NumUnitsInPU; Offset++)
-    {
-        Ipp32u PartBelowLeft;
-        H265CodingUnit* pCUBelowLeft = pCU->getPUBelowLeftAdi(PartBelowLeft, PartIdxLB, Offset);
-        if (pCU->m_SliceHeader->m_PicParamSet->constrained_intra_pred_flag)
-        {
-            if (pCUBelowLeft && pCUBelowLeft->m_PredModeArray[PartBelowLeft] == MODE_INTRA)
-            {
-                NumIntra++;
-                *pValidFlags = true;
-            }
-            else
-            {
-                *pValidFlags = false;
-            }
-        }
-        else
-        {
-            if (pCUBelowLeft)
-            {
-                NumIntra++;
-                *pValidFlags = true;
-            }
-            else
-            {
-                *pValidFlags = false;
-            }
-        }
-        pValidFlags--; //opposite direction
-    }
-    return NumIntra;
 }
 
 } // end namespace UMC_HEVC_DECODER

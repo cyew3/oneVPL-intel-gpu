@@ -79,7 +79,9 @@ public:
                             Ipp32u PartDepth,
                             H265PlanePtrYCommon pAdiBuf,
                             Ipp32u OrgBufStride,
-                            Ipp32u OrgBufHeight);
+                            Ipp32u OrgBufHeight,
+                            bool *NeighborFlags,
+                            Ipp32s NumIntraNeighbor);
 
     /// set chroma parameters from CU data for accessing ADI data
     void InitAdiPatternChroma(H265CodingUnit* pCU,
@@ -87,22 +89,15 @@ public:
                               Ipp32u PartDepth,
                               H265PlanePtrUVCommon pAdiBuf,
                               Ipp32u OrgBufStride,
-                              Ipp32u OrgBufHeight);
+                              Ipp32u OrgBufHeight,
+                              bool *NeighborFlags,
+                              Ipp32s NumIntraNeighbor);
 
 private:
 
     /// padding of unavailable reference samples for intra prediction
-    void FillReferenceSamplesLuma(Ipp32s bitDepth, H265PlanePtrYCommon pRoiOrigin, H265PlanePtrYCommon pAdiTemp, bool* NeighborFlags, Ipp32s NumIntraNeighbor, Ipp32u UnitSize, Ipp32s NumUnitsInCU, Ipp32s TotalUnits, Ipp32u CUWidth, Ipp32u CUHeight, Ipp32u Width, Ipp32u Height, Ipp32s PicStride);
-    void FillReferenceSamplesChroma(Ipp32s bitDepth, H265PlanePtrUVCommon pRoiOrigin, H265PlanePtrUVCommon pAdiTemp, bool* NeighborFlags, Ipp32s NumIntraNeighbor, Ipp32u UnitSize, Ipp32s NumUnitsInCU, Ipp32s TotalUnits, Ipp32u CUWidth, Ipp32u CUHeight, Ipp32u Width, Ipp32u Height, Ipp32s PicStride);
-
-    /// constrained intra prediction
-    bool isAboveLeftAvailable(H265CodingUnit* pCU, Ipp32u PartIdxLT);
-
-    Ipp32s isAboveAvailable(H265CodingUnit* pCU, Ipp32u PartIdxLT, Ipp32u PartIdxRT, bool* ValidFlags);
-    Ipp32s isLeftAvailable(H265CodingUnit* pCU, Ipp32u PartIdxLT, Ipp32u PartIdxLB, bool* ValidFlags);
-    Ipp32s isAboveRightAvailable(H265CodingUnit* pCU, Ipp32u PartIdxLT, Ipp32u PartIdxRT, bool* ValidFlags);
-    Ipp32s isBelowLeftAvailable(H265CodingUnit* pCU, Ipp32u PartIdxLT, Ipp32u PartIdxLB, bool* ValidFlags);
-
+    void FillReferenceSamplesLuma(Ipp32s bitDepth, H265PlanePtrYCommon pRoiOrigin, H265PlanePtrYCommon pAdiTemp, bool* NeighborFlags, Ipp32s NumIntraNeighbor, Ipp32u UnitSize, Ipp32s NumUnitsInCU, Ipp32s TotalUnits, Ipp32u CUSize, Ipp32u Size, Ipp32s PicStride);
+    void FillReferenceSamplesChroma(Ipp32s bitDepth, H265PlanePtrUVCommon pRoiOrigin, H265PlanePtrUVCommon pAdiTemp, bool* NeighborFlags, Ipp32s NumIntraNeighbor, Ipp32u UnitSize, Ipp32s NumUnitsInCU, Ipp32s TotalUnits, Ipp32u CUSize, Ipp32u Size, Ipp32s PicStride);
 };
 
 } // end namespace UMC_HEVC_DECODER

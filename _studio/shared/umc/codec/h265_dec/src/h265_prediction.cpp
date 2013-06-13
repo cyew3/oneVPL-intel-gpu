@@ -75,74 +75,62 @@ void H265Prediction::InitTempBuff()
 // Public member functions
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Function for calculating DC value of the reference samples used in Intra prediction
-H265PlaneYCommon H265Prediction::PredIntraGetPredValDC(H265PlanePtrYCommon pSrc, Ipp32s SrcStride, Ipp32s Width, Ipp32s Height)
+H265PlaneYCommon H265Prediction::PredIntraGetPredValDC(H265PlanePtrYCommon pSrc, Ipp32s SrcStride, Ipp32s Size)
 {
     Ipp32s Ind;
     Ipp32s Sum = 0;
     H265PlaneYCommon DCVal;
 
-    for (Ind = 0; Ind < Width; Ind++)
+    for (Ind = 0; Ind < Size; Ind++)
     {
         Sum += pSrc[Ind - SrcStride];
     }
-    for (Ind = 0; Ind < Height; Ind++)
+    for (Ind = 0; Ind < Size; Ind++)
     {
         Sum += pSrc[Ind * SrcStride - 1];
     }
 
-    DCVal = (H265PlaneYCommon) ((Sum + Width) / (Width + Height));
+    DCVal = (H265PlaneYCommon) ((Sum + Size) / (Size << 1));
 
     return DCVal;
 }
 
-void H265Prediction::PredIntraLumaAng(H265Pattern* pPattern, Ipp32u DirMode, H265PlanePtrYCommon pPred, Ipp32u Stride, Ipp32s Width, Ipp32s Height)
+void H265Prediction::PredIntraLumaAng(H265Pattern* pPattern, Ipp32u DirMode, H265PlanePtrYCommon pPred, Ipp32u Stride, Ipp32s Size)
 {
     H265PlanePtrYCommon pDst = pPred;
     H265PlanePtrYCommon pSrc;
 
-    VM_ASSERT(g_ConvertToBit[Width] >= 0); //   4x  4
-    VM_ASSERT(g_ConvertToBit[Width] <= 5); // 128x128
-    VM_ASSERT(Width == Height);
+    VM_ASSERT(g_ConvertToBit[Size] >= 0); //   4x  4
+    VM_ASSERT(g_ConvertToBit[Size] <= 5); // 128x128
 
-    pSrc = pPattern->GetPredictorPtr(DirMode, g_ConvertToBit[Width] + 2, m_YUVExt);
+    pSrc = pPattern->GetPredictorPtr(DirMode, g_ConvertToBit[Size] + 2, m_YUVExt);
 
     // get starting pixel in block
-    Ipp32s sw = 2 * Width + 1;
+    Ipp32s sw = 2 * Size + 1;
 
     // Create the prediction
     if (DirMode == PLANAR_IDX)
     {
-        PredIntraPlanarLuma(pSrc + sw + 1, sw, pDst, Stride, Width);
+        PredIntraPlanarLuma(pSrc + sw + 1, sw, pDst, Stride, Size);
     }
     else
     {
-        if ((Width > 16) || (Height > 16))
+        if (Size > 16)
         {
-            PredIntraAngLuma(g_bitDepthY, pSrc + sw + 1, sw, pDst, Stride, Width, Height, DirMode, false);
+            PredIntraAngLuma(g_bitDepthY, pSrc + sw + 1, sw, pDst, Stride, Size, DirMode, false);
         }
         else
         {
-            PredIntraAngLuma(g_bitDepthY, pSrc + sw + 1, sw, pDst, Stride, Width, Height, DirMode, true);
+            PredIntraAngLuma(g_bitDepthY, pSrc + sw + 1, sw, pDst, Stride, Size, DirMode, true);
 
             if(DirMode == DC_IDX)
             {
-                DCPredFiltering(pSrc + sw + 1, sw, pDst, Stride, Width, Height);
+                DCPredFiltering(pSrc + sw + 1, sw, pDst, Stride, Size);
             }
         }
     }
 }
 
-/** Function for deriving planar intra prediction.
- * \param pSrc pointer to reconstructed sample array
- * \param srcStride the stride of the reconstructed sample array
- * \param rpDst reference to pointer for the prediction sample array
- * \param dstStride the stride of the prediction sample array
- * \param width the width of the block
- * \param height the height of the block
- *
- * This function derives the prediction samples for planar mode (intra coding).
- */
 void H265Prediction::PredIntraPlanarLuma(H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrYCommon pDst, Ipp32s dstStride, Ipp32s blkSize)
 {
     Ipp32s bottomLeft;
@@ -189,16 +177,6 @@ void H265Prediction::PredIntraPlanarLuma(H265PlanePtrYCommon pSrc, Ipp32s srcStr
   }
 }
 
-/** Function for deriving planar intra prediction.
- * \param pSrc pointer to reconstructed sample array
- * \param srcStride the stride of the reconstructed sample array
- * \param rpDst reference to pointer for the prediction sample array
- * \param dstStride the stride of the prediction sample array
- * \param width the width of the block
- * \param height the height of the block
- *
- * This function derives the prediction samples for planar mode (intra coding).
- */
 void H265Prediction::PredIntraPlanarChroma(H265PlanePtrUVCommon pSrc, Ipp32s srcStride, H265PlanePtrUVCommon pDst, Ipp32s dstStride, Ipp32s blkSize)
 {
     Ipp32s bottomLeft1, bottomLeft2;
@@ -258,35 +236,13 @@ void H265Prediction::PredIntraPlanarChroma(H265PlanePtrUVCommon pSrc, Ipp32s src
     }
 }
 
-// Function for deriving the angular Intra predictions
-
-/** Function for deriving the simplified angular intra predictions.
- * \param pSrc pointer to reconstructed sample array
- * \param srcStride the stride of the reconstructed sample array
- * \param rpDst reference to pointer for the prediction sample array
- * \param dstStride the stride of the prediction sample array
- * \param width the width of the block
- * \param height the height of the block
- * \param dirMode the intra prediction mode index
- * \param blkAboveAvailable boolean indication if the block above is available
- * \param blkLeftAvailable boolean indication if the block to the left is available
- *
- * This function derives the prediction samples for the angular mode based on the prediction direction indicated by
- * the prediction mode index. The prediction direction is given by the displacement of the bottom row of the block and
- * the reference row above the block in the case of vertical prediction or displacement of the rightmost column
- * of the block and reference column left from the block in the case of the horizontal prediction. The displacement
- * is signalled at 1/32 pixel accuracy. When projection of the predicted pixel falls inbetween reference samples,
- * the predicted value for the pixel is linearly interpolated from the reference samples. All reference samples are taken
- * from the extended main reference.
- */
 static Ipp32s angTableLuma[9] = {0,    2,    5,   9,  13,  17,  21,  26,  32};
 static Ipp32s invAngTableLuma[9] = {0, 4096, 1638, 910, 630, 482, 390, 315, 256}; // (256 * 32) / Angle
 
-void H265Prediction::PredIntraAngLuma(Ipp32s bitDepth, H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrYCommon Dst, Ipp32s dstStride, Ipp32s width, Ipp32s height, Ipp32u dirMode, bool Filter)
+void H265Prediction::PredIntraAngLuma(Ipp32s bitDepth, H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrYCommon Dst, Ipp32s dstStride, Ipp32s blkSize, Ipp32u dirMode, bool Filter)
 {
     Ipp32s k;
     Ipp32s l;
-    Ipp32s blkSize = (Ipp32s) width;
     H265PlanePtrYCommon pDst = Dst;
 
     // Map the mode index to main prediction direction and angle
@@ -307,7 +263,7 @@ void H265Prediction::PredIntraAngLuma(Ipp32s bitDepth, H265PlanePtrYCommon pSrc,
     // Do the DC prediction
     if (modeDC)
     {
-        H265PlaneYCommon dcval = PredIntraGetPredValDC(pSrc, srcStride, width, height);
+        H265PlaneYCommon dcval = PredIntraGetPredValDC(pSrc, srcStride, blkSize);
 
         for (k = 0; k < blkSize; k++)
         {
@@ -434,36 +390,14 @@ void H265Prediction::PredIntraAngLuma(Ipp32s bitDepth, H265PlanePtrYCommon pSrc,
     }
 }
 
-// Function for deriving the angular Intra predictions
-
-/** Function for deriving the simplified angular intra predictions.
- * \param pSrc pointer to reconstructed sample array
- * \param srcStride the stride of the reconstructed sample array
- * \param rpDst reference to pointer for the prediction sample array
- * \param dstStride the stride of the prediction sample array
- * \param width the width of the block
- * \param height the height of the block
- * \param dirMode the intra prediction mode index
- * \param blkAboveAvailable boolean indication if the block above is available
- * \param blkLeftAvailable boolean indication if the block to the left is available
- *
- * This function derives the prediction samples for the angular mode based on the prediction direction indicated by
- * the prediction mode index. The prediction direction is given by the displacement of the bottom row of the block and
- * the reference row above the block in the case of vertical prediction or displacement of the rightmost column
- * of the block and reference column left from the block in the case of the horizontal prediction. The displacement
- * is signalled at 1/32 pixel accuracy. When projection of the predicted pixel falls inbetween reference samples,
- * the predicted value for the pixel is linearly interpolated from the reference samples. All reference samples are taken
- * from the extended main reference.
- */
 static Ipp32s angTableChroma[9] = {0,    2,    5,   9,  13,  17,  21,  26,  32};
 static Ipp32s invAngTableChroma[9] = {0, 4096, 1638, 910, 630, 482, 390, 315, 256}; // (256 * 32) / Angle
 
-void H265Prediction::PredIntraAngChroma(Ipp32s bitDepth, H265PlanePtrUVCommon pSrc, Ipp32s srcStride, H265PlanePtrUVCommon Dst, Ipp32s dstStride, Ipp32s width, Ipp32s height, Ipp32u dirMode)
+void H265Prediction::PredIntraAngChroma(Ipp32s bitDepth, H265PlanePtrUVCommon pSrc, Ipp32s srcStride, H265PlanePtrUVCommon Dst, Ipp32s dstStride, Ipp32s blkSize, Ipp32u dirMode)
 {
     bitDepth;
     Ipp32s k;
     Ipp32s l;
-    Ipp32s blkSize = (Ipp32s) width;
     H265PlanePtrUVCommon pDst = Dst;
 
     // Map the mode index to main prediction direction and angle
@@ -486,19 +420,19 @@ void H265Prediction::PredIntraAngChroma(Ipp32s bitDepth, H265PlanePtrUVCommon pS
     {
         H265PlaneUVCommon dc1, dc2;
         Ipp32s Sum1 = 0, Sum2 = 0;
-        for (Ipp32s Ind = 0; Ind < width * 2; Ind += 2)
+        for (Ipp32s Ind = 0; Ind < blkSize * 2; Ind += 2)
         {
             Sum1 += pSrc[Ind - srcStride];
             Sum2 += pSrc[Ind - srcStride + 1];
         }
-        for (Ipp32s Ind = 0; Ind < height; Ind++)
+        for (Ipp32s Ind = 0; Ind < blkSize; Ind++)
         {
             Sum1 += pSrc[Ind * srcStride - 2];
             Sum2 += pSrc[Ind * srcStride - 2 + 1];
         }
 
-        dc1 = (H265PlaneUVCommon)((Sum1 + width) / (width + height));
-        dc2 = (H265PlaneUVCommon)((Sum2 + width) / (width + height));
+        dc1 = (H265PlaneUVCommon)((Sum1 + blkSize) / (blkSize << 1));
+        dc2 = (H265PlaneUVCommon)((Sum2 + blkSize) / (blkSize << 1));
 
 #if (HEVC_OPT_CHANGES & 128)
 // ML: TODO: ICC generates bad seq with PEXTR instead of vectorizing properly
@@ -629,17 +563,7 @@ void H265Prediction::PredIntraAngChroma(Ipp32s bitDepth, H265PlanePtrUVCommon pS
     }
 }
 
-/** Function for filtering intra DC predictor.
- * \param pSrc pointer to reconstructed sample array
- * \param iSrcStride the stride of the reconstructed sample array
- * \param rpDst reference to pointer for the prediction sample array
- * \param iDstStride the stride of the prediction sample array
- * \param iWidth the width of the block
- * \param iHeight the height of the block
- *
- * This function performs filtering left and top edges of the prediction samples for DC mode (intra coding).
- */
-void H265Prediction::DCPredFiltering(H265PlanePtrYCommon pSrc, Ipp32s SrcStride, H265PlanePtrYCommon Dst, Ipp32s DstStride, Ipp32s Width, Ipp32s Height)
+void H265Prediction::DCPredFiltering(H265PlanePtrYCommon pSrc, Ipp32s SrcStride, H265PlanePtrYCommon Dst, Ipp32s DstStride, Ipp32s Size)
 {
     H265PlanePtrYCommon pDst = Dst;
 
@@ -647,13 +571,13 @@ void H265Prediction::DCPredFiltering(H265PlanePtrYCommon pSrc, Ipp32s SrcStride,
     pDst[0] = (H265PlaneYCommon)((pSrc[-SrcStride] + pSrc[-1] + 2 * pDst[0] + 2) >> 2);
 
     #pragma ivdep
-    for (Ipp32s x = 1; x < Width; x++)
+    for (Ipp32s x = 1; x < Size; x++)
     {
         pDst[x] = (H265PlaneYCommon)((pSrc[x - SrcStride] + 3 * pDst[x] + 2) >> 2);
     }
 
     #pragma ivdep
-    for (Ipp32s y = 1, DstStride2 = DstStride, SrcStride2 = SrcStride - 1; y < Height; y++, DstStride2 += DstStride, SrcStride2 += SrcStride)
+    for (Ipp32s y = 1, DstStride2 = DstStride, SrcStride2 = SrcStride - 1; y < Size; y++, DstStride2 += DstStride, SrcStride2 += SrcStride)
     {
         pDst[DstStride2] = (H265PlaneYCommon)((pSrc[SrcStride2] + 3 * pDst[DstStride2] + 2) >> 2);
     }
@@ -662,23 +586,23 @@ void H265Prediction::DCPredFiltering(H265PlanePtrYCommon pSrc, Ipp32s SrcStride,
 }
 
 // Angular chroma
-void H265Prediction::PredIntraChromaAng(H265PlanePtrUVCommon pSrc, Ipp32u DirMode, H265PlanePtrUVCommon pPred, Ipp32u Stride, Ipp32s Width, Ipp32s Height)
+void H265Prediction::PredIntraChromaAng(H265PlanePtrUVCommon pSrc, Ipp32u DirMode, H265PlanePtrUVCommon pPred, Ipp32u Stride, Ipp32s Size)
 {
     H265PlanePtrUVCommon pDst = pPred;
     H265PlanePtrUVCommon ptrSrc = pSrc;
 
     // get starting pixel in block
-    Ipp32s sw = 2 * Width + 1;
+    Ipp32s sw = 2 * Size + 1;
     sw *= 2;
 
     if (DirMode == PLANAR_IDX)
     {
-        PredIntraPlanarChroma(ptrSrc + sw + 2, sw, pDst, Stride, Width);
+        PredIntraPlanarChroma(ptrSrc + sw + 2, sw, pDst, Stride, Size);
     }
     else
     {
         // Create the prediction
-        PredIntraAngChroma(g_bitDepthC, ptrSrc + sw + 2, sw, pDst, Stride, Width, Height, DirMode);
+        PredIntraAngChroma(g_bitDepthC, ptrSrc + sw + 2, sw, pDst, Stride, Size, DirMode);
     }
 }
 
