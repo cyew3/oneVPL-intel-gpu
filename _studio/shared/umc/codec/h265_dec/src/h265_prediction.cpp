@@ -1140,7 +1140,7 @@ public:
                     if ( shift == 6 )
                         v_acc = _mm_srai_epi16( v_acc, 6 );
                     else
-                        VM_ASSERT(0);
+                        VM_ASSERT(shift == 0);
                 }
                 else // if ( sizeof(t_acc) == 4 ) // 16-bit src, 32-bit accum
                 {
@@ -1158,7 +1158,7 @@ public:
                         v_acc2 = _mm_srai_epi32( v_acc2, 12 );
                     }
                     else
-                        VM_ASSERT(0);
+                        VM_ASSERT(shift == 0);
 
                     v_acc = _mm_packs_epi32( v_acc, v_acc2 );
                 }
