@@ -13,7 +13,7 @@
 
 #include "sbr_settings.h"
 #include "sbr_huff_tabs.h"
-
+#pragma warning(disable:4996)
 /********************************************************************/
 
 Ipp32s vlcSbrTableSizes[] = {

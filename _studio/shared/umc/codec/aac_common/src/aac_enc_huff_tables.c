@@ -10,7 +10,7 @@
 
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_AAC_AUDIO_ENCODER)
-
+#pragma warning(disable:4996)
 #include "aac_enc_huff_tables.h"
 #include "aac_status.h"
 

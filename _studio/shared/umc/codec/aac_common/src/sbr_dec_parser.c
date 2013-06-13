@@ -10,7 +10,7 @@
 
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_AAC_AUDIO_DECODER)
-
+#pragma warning(disable:4996)
 #include <stdio.h>
 #include "aac_status.h"
 /* sbr decoder */
