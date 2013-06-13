@@ -92,9 +92,6 @@ inline void H264BaseBitstream::CheckBSLeft()
     } \
 }
 
-/*#define ippiGetBits1( current_data, offset, data) \
-//    _h264GetBits(current_data, offset, 1, data);
-*/
 #define ippiGetBits8( current_data, offset, data) \
     _h264GetBits(current_data, offset, 8, data);
 

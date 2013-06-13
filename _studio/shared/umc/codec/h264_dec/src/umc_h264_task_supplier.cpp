@@ -2095,7 +2095,7 @@ void ViewItem::Close(void)
     // Reset the parameters before close
     Reset();
 
-    for (Ipp32u i = MAX_NUM_LAYERS - 1; i >= 0; i--) {
+    for (Ipp32s i = MAX_NUM_LAYERS - 1; i >= 0; i--) {
         if (pDPB[i].get())
         {
             pDPB[i].reset();
@@ -2116,7 +2116,7 @@ void ViewItem::Close(void)
 
 void ViewItem::Reset(void)
 {
-    for (Ipp32u i = MAX_NUM_LAYERS - 1; i >= 0; i--)
+    for (Ipp32s i = MAX_NUM_LAYERS - 1; i >= 0; i--)
     {
         if (pDPB[i].get())
         {

@@ -312,10 +312,13 @@ typedef enum {
 #define IS_SKIP_DEBLOCKING_MODE_PERMANENT (m_PermanentTurnOffDeblocking == 2)
 #define IS_SKIP_DEBLOCKING_MODE_PREVENTIVE (m_PermanentTurnOffDeblocking == 3)
 
-enum
+enum //  unsigned enum
 {
     INVALID_DPB_OUTPUT_DELAY = 0xffffffff,
+};
 
+enum // usual int
+{
     MAX_NUM_SEQ_PARAM_SETS = 32,
     MAX_NUM_PIC_PARAM_SETS = 256,
 
