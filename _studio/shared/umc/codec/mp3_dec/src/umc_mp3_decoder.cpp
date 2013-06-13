@@ -143,8 +143,9 @@ Status MP3Decoder::GetFrame(MediaData* in, MediaData* out)
     {
         if ((MP3_OK == resMP3 || MP3_BAD_STREAM == resMP3))
         {
-            Ipp64f  pts_start = in->m_pts_start;
-            Ipp64f  pts_end;
+            Ipp64f  pts_start, pts_end;
+            in->GetTime(pts_start, pts_end);
+            Ipp64f pts_end_snapshot = pts_end;
 
             mp3decGetFrameSize(&frameSize, state);
             mp3decGetSampleFrequency(&freq, state);
@@ -153,9 +154,9 @@ Status MP3Decoder::GetFrame(MediaData* in, MediaData* out)
                 pts_start = m_pts_prev;
             m_pts_prev = pts_end =
                 pts_start + (Ipp64f)frameSize / (Ipp64f)freq;
-
+            // ELENA: it is no clear why input structure is changed here
             in->MoveDataPointer(shift);
-            in->m_pts_start = pts_end;
+            in->SetTime(pts_start, pts_end_snapshot);
 
             if (out_size >= frameSize * ch)
             {
@@ -165,8 +166,7 @@ Status MP3Decoder::GetFrame(MediaData* in, MediaData* out)
                     ippsZero_16s(out_ptr, frameSize * ch);
                 }
                 out->SetDataSize(frameSize * sizeof(Ipp16s) * ch);
-                out->m_pts_start = pts_start;
-                out->m_pts_end   = pts_end;
+                out->SetTime(pts_start, pts_end);
             }
             else
                 resMP3 = MP3_NOT_ENOUGH_BUFFER;
@@ -362,7 +362,7 @@ Status MP3Decoder::FrameConstruct(MediaData *in, Ipp32s *outFrameSize, Ipp32s *o
     memset(&state,0,sizeof(state));
     *outFrameSize = 0;
    // mp3decInit_com(&state, NULL);
-    Ipp32s decodedBytes;
+//    Ipp32s decodedBytes;
     state.m_bInit = 0;
     if (!inPointer)
         return StatusMP3_2_UMC(MP3_NULL_PTR);
@@ -405,7 +405,7 @@ Status MP3Decoder::FrameConstruct(MediaData *in, Ipp32s *outFrameSize, Ipp32s *o
         break;
     } */
 
-    return UMC_OK;
+//    return UMC_OK;
 }
 
 
