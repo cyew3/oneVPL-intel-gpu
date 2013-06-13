@@ -23,6 +23,8 @@
 
 FILE* logFile;
 
+#else
+# pragma warning( disable: 4206 )
 #endif
 
 #else
