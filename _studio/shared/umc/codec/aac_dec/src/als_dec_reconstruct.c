@@ -24,7 +24,7 @@
 
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_AAC_AUDIO_DECODER)
-
+#pragma warning(disable:4996)
 #include "als_dec.h"
 #include "als_dec_own.h"
 #include "als_dec_tabs.h"
