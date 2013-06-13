@@ -562,6 +562,8 @@ namespace UMC
 
         AudioStreamType stream_type;                            // (AudioStreamType) general type of stream
         AudioStreamSubType stream_subtype;                      // (AudioStreamSubType) minor type of stream
+        Ipp32s iProfile;   // profile
+        Ipp32s iLevel;   // level
 
         Ipp32u channel_mask;                                    // (Ipp32u) channel mask
         Ipp32u streamPID;                                       // (Ipp32u) unique ID
