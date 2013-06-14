@@ -25,8 +25,8 @@ namespace UMC_HEVC_DECODER
 
 typedef unsigned char       uint8_t;
 typedef signed short        int16_t;
-typedef signed long         int32_t;
-typedef unsigned long       uint32_t;
+typedef signed int          int32_t;
+typedef unsigned int        uint32_t;
 
 #if defined(_WIN32) || defined(_WIN64)
   #define ALIGN_DECL(X) __declspec(align(X))
@@ -43,6 +43,14 @@ typedef unsigned long       uint32_t;
 #endif
 #define ALIGNED_SSE2 ALIGN_DECL(16)
 #define FASTCALL     __fastcall
+
+/* NOTE: In debug mode compiler attempts to load data with MOVNTDQA while data is
+only 8-byte aligned, but PMOVZX does not require 16-byte alignment. */
+#ifdef NDEBUG 
+  #define MM_LOAD_EPI64(x) (*(__m128i*)x)
+#else
+  #define MM_LOAD_EPI64(x) _mm_loadl_epi64( (__m128i*)x )
+#endif
 
 #define M128I_WC_INIT(v) {\
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)((v)&0xFF), (char)(((v)>>8)&0xFF), \
@@ -445,7 +453,7 @@ void inv_8x8_dct_sse2(void *destPtr, const short *__restrict coeff, int destStri
 
         if (destSize == 1) {
              /* load dst[0-7], expand to 16 bits, add temp[0-7], clip/pack to 8 bytes */
-             s = _mm_cvtepu8_epi16(*(__m128i *)&destByte[0]);    
+             s = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&destByte[0]));
              s = _mm_add_epi16(s, r76543210);
              s = _mm_packus_epi16(s, s);
              _mm_storel_epi64((__m128i *)&destByte[0], s);        /* store dst[0-7] (bytes) */
@@ -581,12 +589,12 @@ static FORCEINLINE void DCTInverse16x16_h_2nd_sse2(void *destPtr, const short *_
 
         if (destSize == 1) {
             /* load dst[0-7], expand to 16 bits, add temp[0-7], clip/pack to 8 bytes */
-            xmm1 = _mm_cvtepu8_epi16(*(__m128i *)&destByte[0]);
+            xmm1 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&destByte[0]));
             xmm1 = _mm_add_epi16(xmm1, xmm5);
             xmm1 = _mm_packus_epi16(xmm1, xmm1);
 
             /* repeat for [8-15] */
-            xmm2 = _mm_cvtepu8_epi16(*(__m128i *)&destByte[8]);
+            xmm2 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&destByte[8]));
             xmm2 = _mm_add_epi16(xmm2, xmm3);
             xmm2 = _mm_packus_epi16(xmm2, xmm2);
 
@@ -1265,12 +1273,12 @@ void DCTInverse32x32_sse(const short* __restrict src, void *destPtr, int destStr
 
          if (destSize == 1) {
              /* load dst[0-7], expand to 16 bits, add temp[0-7], clip/pack to 8 bytes */
-             s6 = _mm_cvtepu8_epi16(*(__m128i *)&destByte[0]);    
+             s6 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&destByte[0]));    
              s6 = _mm_add_epi16(s6, s0);
              s6 = _mm_packus_epi16(s6, s6);
 
              /* repeat for [24-31] */
-             s7 = _mm_cvtepu8_epi16(*(__m128i *)&destByte[24]);    
+             s7 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&destByte[24]));    
              s7 = _mm_add_epi16(s7, s1);
              s7 = _mm_packus_epi16(s7, s7);
 
@@ -1331,11 +1339,11 @@ void DCTInverse32x32_sse(const short* __restrict src, void *destPtr, int destStr
 
          if (destSize == 1) {
              /* load dst[8-15], expand to 16 bits, add temp[8-15], clip/pack to 8 bytes */
-             s6 = _mm_cvtepu8_epi16(*(__m128i *)&destByte[8]);    
+             s6 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&destByte[8]));
              s6 = _mm_add_epi16(s6, s3);
 
              /* repeat for [24-31] */
-             s7 = _mm_cvtepu8_epi16(*(__m128i *)&destByte[16]);
+             s7 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&destByte[16]));
              s7 = _mm_add_epi16(s7, s2);
 
              s6 = _mm_packus_epi16(s6, s7);

@@ -15,6 +15,14 @@
 
 #include <immintrin.h>
 
+/* NOTE: In debug mode compiler attempts to load data with MOVNTDQA while data is
++only 8-byte aligned, but PMOVZX does not require 16-byte alignment. */
+#ifdef NDEBUG
+  #define MM_LOAD_EPI64(x) (*(__m128i*)x)
+#else
+  #define MM_LOAD_EPI64(x) _mm_loadl_epi64( (__m128i*)x )
+#endif
+
 #include "h265_prediction.h"
 #include "umc_h265_dec_ipplevel.h"
 #include "umc_h265_frame_info.h"
@@ -1107,11 +1115,7 @@ public:
 
                     if (sizeof(t_src) == 1) // 8-bit source, 16-bit accum [check is resolved/eliminated at compile time]
                     {
-#ifdef DEBUG // in debug mode compiler attempts to load data with MOVNTDQA while it is only 8-byte aligned, but PMOVZX does not require 16-byte alignment
-                        t_vec v_chunk = _mm_cvtepu8_epi16( _mm_loadu_si128( (const t_vec*)pSrc_ ) );
-#else
-                        t_vec v_chunk = _mm_cvtepu8_epi16( *(const t_vec*)pSrc_ );
-#endif
+                        t_vec v_chunk = _mm_cvtepu8_epi16( MM_LOAD_EPI64(pSrc_) );
                         v_chunk = _mm_mullo_epi16( v_chunk, v_coeff );
                         v_acc = _mm_add_epi16( v_acc, v_chunk );
                     }
@@ -1166,11 +1170,7 @@ public:
                 if ( eAddAverage != H265Prediction::AVERAGE_NO )
                 {
                     if ( eAddAverage == H265Prediction::AVERAGE_FROM_PIC ) {
-#ifdef DEBUG // in debug mode compiler attempts to load data with MOVNTDQA while it is only 8-byte aligned, but PMOVZX does not require 16-byte alignment
-                        v_acc2 = _mm_cvtepu8_epi16( _mm_loadu_si128( (const t_vec*)pSrc2 ) );
-#else
-                        v_acc2 = _mm_cvtepu8_epi16( *(const t_vec*)pSrc2 );
-#endif
+                        v_acc2 = _mm_cvtepu8_epi16( MM_LOAD_EPI64(pSrc2) );
                         pSrc2 += 8;
                         v_acc2 = _mm_slli_epi16( v_acc2, 6 );
                     }
