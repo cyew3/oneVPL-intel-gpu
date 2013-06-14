@@ -2377,7 +2377,7 @@ inline size_t CalculateSuggestedSize(const H265SeqParamSet * sps)
 static void H265_FORCEINLINE small_memcpy( void* dst, const void* src, int len )
 {
 // ML: OPT: TODO: Tweak <= 64-byte memory copy performance
-#if defined( __INTEL_COMPILER ) || defined( __GNUC__ )
+#if defined( __INTEL_COMPILER ) //|| defined( __GNUC__ ) // NOTE: there is some issue for GCC in the code below at the moment
     int len_rem = len & 3; 
     len >>= 2;
     __asm__ ( "cld; rep movsd; mov %[len_rem_], %[len_]; rep movsb" : [len_] "+c" (len), "+S" (src), "+D" (dst) : [len_rem_] "r" (len_rem) : "memory" );
