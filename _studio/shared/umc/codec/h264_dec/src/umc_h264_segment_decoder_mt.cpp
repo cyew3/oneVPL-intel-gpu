@@ -233,7 +233,7 @@ void H264SegmentDecoderMultiThreaded::EndProcessingSegment(H264Task &Task)
 Status H264SegmentDecoderMultiThreaded::ProcessSegment(void)
 {
     H264Task Task(m_iNumber);
-
+    try{
     if (m_pTaskBroker->GetNextTask(&Task))
     {
         Status umcRes = UMC_OK;
@@ -296,7 +296,9 @@ Status H264SegmentDecoderMultiThreaded::ProcessSegment(void)
     {
         return UMC_ERR_NOT_ENOUGH_DATA;
     }
-
+    }catch(h264_exception ex){
+        return ex.GetStatus();
+    }
     return UMC_OK;
 } // Status H264SegmentDecoderMultiThreaded::ProcessSegment(void)
 

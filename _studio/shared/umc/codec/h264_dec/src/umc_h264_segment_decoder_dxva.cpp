@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2003-2012 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -73,7 +73,7 @@ void H264_DXVA_SegmentDecoder::PackAllHeaders(H264DecoderFrame * pFrame, Ipp32s 
 Status H264_DXVA_SegmentDecoder::ProcessSegment(void)
 {
     H264Task Task(m_iNumber);
-
+    try{
     if (m_pTaskBroker->GetNextTask(&Task))
     {
     }
@@ -81,7 +81,9 @@ Status H264_DXVA_SegmentDecoder::ProcessSegment(void)
     {
         return UMC_ERR_NOT_ENOUGH_DATA;
     }
-
+    }catch(h264_exception ex){
+        return ex.GetStatus();
+    }
     return UMC_OK;
 }
 
@@ -237,11 +239,16 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
         SwitchCurrentAU();
     }
 
-    memset (&pStatusReport, 0, sizeof(pStatusReport));
+    //memset (&pStatusReport, 0, sizeof(pStatusReport));
+    for(int i = 0; i < NUMBER_OF_STATUS; i++)
+        pStatusReport[i].bStatus = 3;
+
     dxva_sd->GetPacker()->GetStatusReport(&pStatusReport[0], sizeof(DXVA_Status_H264)* NUMBER_OF_STATUS);
 
     for (Ipp32u i = 0; i < NUMBER_OF_STATUS; i++)
     {
+        if(pStatusReport[i].bStatus == 3)
+            throw h264_exception(UMC_ERR_DEVICE_FAILED);
         if (!pStatusReport[i].StatusReportFeedbackNumber || pStatusReport[i].CurrPic.Index7Bits == 127 ||
             (pStatusReport[i].StatusReportFeedbackNumber & 0x80000000))
             continue;
