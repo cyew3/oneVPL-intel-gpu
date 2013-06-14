@@ -153,10 +153,8 @@ public:
     void ReconIntraQT(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void ReconInter(H265CodingUnit* pCU, Ipp32u AbsPartIdx);
     void ReconPCM(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
+    void FillPCMBuffer(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void DecodeInterTexture(H265CodingUnit* pCU, Ipp32u AbsPartIdx);
-    void DecodePCMTextureLuma(H265CodingUnit* pCU, Ipp32u AbsPartIdx, H265PlanePtrYCommon pPCM, H265PlanePtrYCommon pReco, Ipp32u Stride, Ipp32u Width, Ipp32u Height);
-    void DecodePCMTextureChroma(H265CodingUnit* pCU, Ipp32u AbsPartIdx, H265PlanePtrUVCommon pPCMCb, H265PlanePtrUVCommon pPCMCr, H265PlanePtrUVCommon pReco, Ipp32u Stride, Ipp32u Width, Ipp32u Height);
-    void FillPCMBuffer(H265CodingUnit* pCU, Ipp32u Depth);
     void IntraLumaRecQT(H265CodingUnit* pCU,
                          Ipp32u TrDepth,
                          Ipp32u AbsPartIdx);

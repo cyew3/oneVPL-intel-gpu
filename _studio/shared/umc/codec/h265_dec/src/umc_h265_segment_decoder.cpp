@@ -2345,10 +2345,10 @@ void H265SegmentDecoder::ReconstructCU(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
         break;
     }
 
-    if (pCU->isLosslessCoded(0) && !m_ppcCU[Depth]->m_IPCMFlag[0])
+    if (pCU->isLosslessCoded(AbsPartIdx) && !pCU->m_IPCMFlag[AbsPartIdx])
     {
         // Saving reconstruct contents in PCM buffer is necessary for later PCM restoration when SAO is enabled
-        FillPCMBuffer(m_ppcCU[Depth], Depth);
+        FillPCMBuffer(pCU, AbsPartIdx, Depth);
     }
 }
 
@@ -2400,112 +2400,61 @@ void H265SegmentDecoder::DecodeInterTexture(H265CodingUnit* pCU, Ipp32u AbsPartI
 void H265SegmentDecoder::ReconPCM(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     VM_ASSERT(pCU->m_AbsIdxInLCU == 0);
+
     // Luma
-    Ipp32u Width  = (g_MaxCUWidth >> Depth);
-    Ipp32u Height = (g_MaxCUHeight >> Depth);
+    Ipp32u Size  = (g_MaxCUWidth >> Depth);
+    Ipp32u MinCoeffSize = m_pCurrentFrame->getMinCUWidth() * m_pCurrentFrame->getMinCUHeight();
+    Ipp32u LumaOffset = MinCoeffSize * AbsPartIdx;
+    Ipp32u ChromaOffset = LumaOffset >> 2;
 
-    H265PlanePtrYCommon pPcmY = pCU->m_IPCMSampleY;
-    H265PlanePtrYCommon pRecoY = m_ppcYUVReco->GetLumaAddr();
-    Ipp32u PitchLuma = m_ppcYUVReco->pitch_luma();
+    H265PlanePtrYCommon pPcmY = pCU->m_IPCMSampleY + LumaOffset;
+    H265PlanePtrYCommon pPicReco = m_pCurrentFrame->GetLumaAddr(pCU->CUAddr, AbsPartIdx);
+    Ipp32u PitchLuma = m_pCurrentFrame->pitch_luma();
+    Ipp32u PcmLeftShiftBit = g_bitDepthY - m_pSeqParamSet->pcm_bit_depth_luma;
 
-    DecodePCMTextureLuma(pCU, AbsPartIdx, pPcmY, pRecoY, PitchLuma, Width, Height);
+    for (Ipp32u Y = 0; Y < Size; Y++)
+    {
+        for (Ipp32u X = 0; X < Size; X++)
+        {
+            pPicReco[X] = pPcmY[X] << PcmLeftShiftBit;
+        }
+        pPcmY += Size;
+        pPicReco += PitchLuma;
+    }
 
     // Cb and Cr
-    Ipp32u WidthChroma = (Width >> 1);
-    Ipp32u HeightChroma = (Height >> 1);
+    Size >>= 1;
+    H265PlanePtrUVCommon pPcmCb = pCU->m_IPCMSampleCb + ChromaOffset;
+    H265PlanePtrUVCommon pPcmCr = pCU->m_IPCMSampleCr + ChromaOffset;
+    pPicReco = m_pCurrentFrame->GetCbCrAddr(pCU->CUAddr, AbsPartIdx);
+    Ipp32u PitchChroma = m_pCurrentFrame->pitch_chroma();
+    PcmLeftShiftBit = g_bitDepthC - m_pSeqParamSet->pcm_bit_depth_chroma;
 
-    H265PlanePtrUVCommon pPcmCb = pCU->m_IPCMSampleCb;
-    H265PlanePtrUVCommon pPcmCr = pCU->m_IPCMSampleCr;
-    H265PlanePtrUVCommon pRecoCbCr = m_ppcYUVReco->GetCbCrAddr();
-    Ipp32u PitchChroma = m_ppcYUVReco->pitch_chroma();
-
-    DecodePCMTextureChroma(pCU, AbsPartIdx, pPcmCb, pPcmCr, pRecoCbCr, PitchChroma, WidthChroma, HeightChroma);
-}
-
-
-/** Function for deriving reconstructed luma/chroma samples of a PCM mode CU.
- * \param pcCU pointer to current CU
- * \param uiPartIdx part index
- * \param piPCM pointer to PCM code arrays
- * \param piReco pointer to reconstructed sample arrays
- * \param uiStride stride of reconstructed sample arrays
- * \param uiWidth CU width
- * \param uiHeight CU height
- * \param ttText texture component type
- * \returns Void
- */
-void H265SegmentDecoder::DecodePCMTextureLuma(H265CodingUnit* pCU, Ipp32u AbsPartIdx, H265PlanePtrYCommon pPCM, H265PlanePtrYCommon pReco,
-                                              Ipp32u Stride, Ipp32u Width, Ipp32u Height)
-{
-    Ipp32u X, Y;
-    H265PlanePtrYCommon pPicReco;
-    Ipp32u PicStride;
-    Ipp32u PcmLeftShiftBit;
-
-    PicStride = pCU->m_Frame->pitch_luma();
-    pPicReco = pCU->m_Frame->GetLumaAddr(pCU->CUAddr, AbsPartIdx);
-    PcmLeftShiftBit = g_bitDepthY - pCU->m_SliceHeader->m_SeqParamSet->pcm_bit_depth_luma;
-
-    for (Y = 0; Y < Height; Y++)
+    for (Ipp32u Y = 0; Y < Size; Y++)
     {
-        for (X = 0; X < Width; X++)
+        for (Ipp32u X = 0; X < Size; X++)
         {
-            pReco[X] = pPCM[X] << PcmLeftShiftBit;
-            pPicReco[X] = pReco[X];
+            pPicReco[X * 2] = pPcmCb[X] << PcmLeftShiftBit;
+            pPicReco[X * 2 + 1] = pPcmCr[X] << PcmLeftShiftBit;
         }
-        pPCM += Width;
-        pReco += Stride;
-        pPicReco += PicStride;
+        pPcmCb += Size;
+        pPcmCr += Size;
+        pPicReco += PitchChroma;
     }
 }
 
-/** Function for deriving reconstructed luma/chroma samples of a PCM mode CU.
- * \param pcCU pointer to current CU
- * \param uiPartIdx part index
- * \param piPCM pointer to PCM code arrays
- * \param piReco pointer to reconstructed sample arrays
- * \param uiStride stride of reconstructed sample arrays
- * \param uiWidth CU width
- * \param uiHeight CU height
- * \param ttText texture component type
- * \returns Void
- */
-void H265SegmentDecoder::DecodePCMTextureChroma(H265CodingUnit* pCU, Ipp32u AbsPartIdx, H265PlanePtrUVCommon pPCMCb, H265PlanePtrUVCommon pPCMCr, H265PlanePtrUVCommon pReco, Ipp32u Stride, Ipp32u Width, Ipp32u Height)
-{
-    Ipp32u X, Y;
-    H265PlanePtrUVCommon pPicReco;
-    Ipp32u PicStride;
-    Ipp32u PcmLeftShiftBit;
-
-    PicStride = pCU->m_Frame->pitch_chroma();
-    pPicReco = pCU->m_Frame->GetCbCrAddr(pCU->CUAddr, AbsPartIdx);
-    PcmLeftShiftBit = g_bitDepthC - pCU->m_SliceHeader->m_SeqParamSet->pcm_bit_depth_chroma;
-
-    for (Y = 0; Y < Height; Y++)
-    {
-        for (X = 0; X < Width; X++)
-        {
-            pReco[X * 2] = pPCMCb[X] << PcmLeftShiftBit;
-            pPicReco[X * 2] = pReco[X * 2];
-            pReco[X * 2 + 1] = pPCMCr[X] << PcmLeftShiftBit;
-            pPicReco[X * 2 + 1] = pReco[X * 2 + 1];
-        }
-        pPCMCb += Width;
-        pPCMCr += Width;
-        pReco += Stride;
-        pPicReco += PicStride;
-    }
-}
-
-void H265SegmentDecoder::FillPCMBuffer(H265CodingUnit* pCU, Ipp32u Depth)
+void H265SegmentDecoder::FillPCMBuffer(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     // Luma
     Ipp32u Width  = (g_MaxCUWidth >> Depth);
     Ipp32u Height = (g_MaxCUHeight >> Depth);
+    Ipp32u MinCoeffSize = m_pCurrentFrame->getMinCUWidth() * m_pCurrentFrame->getMinCUHeight();
+    Ipp32u LumaOffset = MinCoeffSize * AbsPartIdx;
+    Ipp32u ChromaOffset = LumaOffset >> 2;
 
-    H265PlanePtrYCommon pPcmY = pCU->m_IPCMSampleY;
-    H265PlanePtrYCommon pRecoY = m_ppcYUVReco->GetLumaAddr();
-    Ipp32u stride = m_ppcYUVReco->pitch_luma();
+    H265PlanePtrYCommon pPcmY = pCU->m_IPCMSampleY + LumaOffset;
+    H265PlanePtrYCommon pRecoY = m_pCurrentFrame->GetLumaAddr(pCU->CUAddr, AbsPartIdx);
+    Ipp32u stride = m_pCurrentFrame->pitch_luma();
 
     for(Ipp32u y = 0; y < Height; y++)
     {
@@ -2521,11 +2470,10 @@ void H265SegmentDecoder::FillPCMBuffer(H265CodingUnit* pCU, Ipp32u Depth)
     Width >>= 1;
     Height >>= 1;
 
-    H265PlanePtrUVCommon pPcmCb = pCU->m_IPCMSampleCb;
-    H265PlanePtrUVCommon pPcmCr = pCU->m_IPCMSampleCr;
-    H265PlanePtrUVCommon pRecoCbCr = m_ppcYUVReco->GetCbCrAddr();
-
-    stride = m_ppcYUVReco->pitch_chroma();
+    H265PlanePtrUVCommon pPcmCb = pCU->m_IPCMSampleCb + ChromaOffset;
+    H265PlanePtrUVCommon pPcmCr = pCU->m_IPCMSampleCr + ChromaOffset;
+    H265PlanePtrUVCommon pRecoCbCr = m_pCurrentFrame->GetCbCrAddr(pCU->CUAddr, AbsPartIdx);
+    stride = m_pCurrentFrame->pitch_chroma();
 
     for(Ipp32u y = 0; y < Height; y++)
     {
@@ -2724,6 +2672,7 @@ void H265SegmentDecoder::IntraRecChromaBlk(H265CodingUnit* pCU,
     Ipp32s TUPartNumberInCTB = m_CurrCTBStride * YInc + XInc;
     Ipp32s NumUnitsInCU = Size >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
 
+    // TODO: Use neighbours information from Luma block
     if (XInc > 0 && g_RasterToZscan[g_ZscanToRaster[AbsPartIdx] - 1 + NumUnitsInCU * m_pSeqParamSet->NumPartitionsInCUSize] > AbsPartIdx)
     {
         for (Ipp32s i = 0; i < NumUnitsInCU; i++)
