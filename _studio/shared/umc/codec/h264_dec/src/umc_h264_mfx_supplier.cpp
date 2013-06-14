@@ -396,8 +396,10 @@ mfxStatus MFXTaskSupplier::RunThread(mfxU32 threadNumber)
     sts = m_pSegmentDecoder[threadNumber]->ProcessSegment();
     if (sts == UMC_ERR_NOT_ENOUGH_DATA)
         return MFX_TASK_BUSY;
+#if defined (MFX_VA)
     else if(sts == UMC_ERR_DEVICE_FAILED)
         return MFX_ERR_DEVICE_FAILED;
+#endif
 
     return MFX_TASK_WORKING;
 }
