@@ -1216,7 +1216,7 @@ mfxStatus D3D9Encoder::QueryStatus(
     //WA for d3d9 runtime or driver bug in case of TDR:
     // set default error status, in normal case driver will update it to right status
     // in case if TDR occur driver device failed, runtime always return S_OK and doesn't change anything in fitback structures
-    for(int i=0; i< m_feedbackUpdate.size(); i++)
+    for(int i=0; i< (int)m_feedbackUpdate.size(); i++)
         m_feedbackUpdate[i].bStatus = ENCODE_ERROR;
     // if task is not in cache then query its status
     if (feedback == 0 || feedback->bStatus != ENCODE_OK)
