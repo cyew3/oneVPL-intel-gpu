@@ -119,6 +119,7 @@ enum VideoAccelerationProfile
     VA_VC1          = 0x0004,
     VA_JPEG         = 0x0005,
     VA_VP8          = 0x0006,
+    VA_H265            = 0x0007,
 
     // Entry points
     VA_ENTRY_POINT  = 0xff00,
@@ -147,6 +148,7 @@ enum VideoAccelerationProfile
 
     MPEG2_VLD       = VA_MPEG2 | VA_VLD,
     H264_VLD        = VA_H264 | VA_VLD,
+    H265_VLD        = VA_H265 | VA_VLD,
     VC1_VLD         = VA_VC1 | VA_VLD,
     JPEG_VLD        = VA_JPEG | VA_VLD,
     VP8_VLD         = VA_VP8 | VA_VLD,

@@ -13,7 +13,7 @@
 #pragma warning(disable: 4201)
 
 #define MK_HEVCVER(j, n)    (((j & 0x0000ffff) << 16) | (n & 0x0000ffff))
-#define HEVC_SPEC_VER       MK_HEVCVER(0, 82)
+#define HEVC_SPEC_VER       MK_HEVCVER(0, 81)
 
 typedef struct _DXVA_PicEntry_HEVC
 {
@@ -152,7 +152,7 @@ typedef struct _DXVA_PicParams_HEVC
     CHAR                beta_offset_div2;
     CHAR                tc_offset_div2;
 } DXVA_PicParams_HEVC, *LPDXVA_PicParams_HEVC;
-#elif HEVC_SPEC_VER == MK_HEVCVER(0, 82)
+#elif HEVC_SPEC_VER == MK_HEVCVER(0, 84)
 typedef struct _DXVA_PicParams_HEVC
 {
     USHORT  PicWidthInMinCbsY;
@@ -265,7 +265,7 @@ typedef struct _DXVA_Slice_HEVC_Short
     UINT        BSNALunitDataLocation;
     UINT        SliceBytesInBuffer;
 } DXVA_Slice_HEVC_Short, *LPDXVA_Slice_HEVC_Short;
-#elif HEVC_SPEC_VER == MK_HEVCVER(0, 82)
+#elif HEVC_SPEC_VER == MK_HEVCVER(0, 84)
 typedef struct _DXVA_Slice_HEVC_Short
 {
     UINT        BSNALunitDataLocation;
@@ -324,7 +324,7 @@ typedef struct _DXVA_Slice_HEVC_Long
     UINT    num_entry_point_offsets;
 
 } DXVA_Slice_HEVC_Long, *LPDXVA_Slice_HEVC_Long;
-#elif HEVC_SPEC_VER == MK_HEVCVER(0, 82)
+#elif HEVC_SPEC_VER == MK_HEVCVER(0, 84)
 typedef struct _DXVA_Slice_HEVC_Long
 {
     UINT            BSNALunitDataLocation;
@@ -383,7 +383,7 @@ typedef struct _DXVA_Qmatrix_HEVC
     UCHAR  ucScalingLists2[3][2][64];
     UCHAR  ucScalingLists3[2][64];
     UCHAR  bScalingListDC[2][3][2];
-#else //lif HEVC_SPEC_VER == MK_HEVCVER(0, 82)
+#else //lif HEVC_SPEC_VER == MK_HEVCVER(0, 84)
     UCHAR   ucScalingLists0[6][16]; // 2 inter/intra 3: YUV
     UCHAR   ucScalingLists1[6][64];
     UCHAR   ucScalingLists2[6][64];

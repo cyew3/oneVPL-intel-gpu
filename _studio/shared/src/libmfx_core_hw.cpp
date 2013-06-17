@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
 
 File Name: libmf_core_hw.cpp
 
@@ -120,6 +120,10 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType hwType)
     case MFX_CODEC_VP8:
         profile |= VA_VP8;
         break;
+    case MFX_CODEC_HEVC:
+        profile |= VA_H265;
+        break;
+
 
     default:
         return 0;

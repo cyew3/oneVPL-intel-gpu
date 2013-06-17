@@ -410,6 +410,8 @@ static const GuidProfile guidProfiles[] =
     { VA_H264 | VA_VLD | VA_PROFILE_MVC_MV,            sDXVA_ModeH264_VLD_Multiview_NoFGT },
     { VA_H264 | VA_VLD | VA_PROFILE_MVC_STEREO,        sDXVA_ModeH264_VLD_Stereo_NoFGT },
     { VA_H264 | VA_VLD | VA_PROFILE_MVC_STEREO_PROG,   sDXVA_ModeH264_VLD_Stereo_Progressive_NoFGT },
+
+    { VA_H265 | VA_VLD, DXVA_ModeHEVC_VLD_MainProfile }
 };
 
 const GuidProfile * GuidProfile::GetGuidProfiles()

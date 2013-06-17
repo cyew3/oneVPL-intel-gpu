@@ -204,6 +204,11 @@ bool CheckDXVAConfig(Ipp32s profile_flags, T *config, ProtectedVA * protectedVA)
              (5 == config->ConfigBitstreamRaw || 6 == config->ConfigBitstreamRaw);
         break;
 
+    case H265_VLD:
+        res = true;
+        break;
+
+
     default:
         break;
     }

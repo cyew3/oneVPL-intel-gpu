@@ -98,7 +98,9 @@ private:
     //pointer to the beginning of offset for next slice in HW buffer
     Ipp8u * pBuf;
 
-    Ipp32u  m_statusReportFeedbackCounter;
+    Ipp32u              m_statusReportFeedbackCounter;
+    DXVA_PicEntry_HEVC  m_refFrameListCache[16];
+    int                 m_refFrameListCacheSize;
 };
 
 #endif // UMC_VA_DXVA

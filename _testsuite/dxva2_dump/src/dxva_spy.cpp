@@ -542,7 +542,9 @@ static GUID g_guids[] =
     sDXVA_ModeH264_VLD_Stereo_Progressive_NoFGT,
 
     DXVA2_Intel_Auxiliary_Device,
-    DXVADDI_Intel_Decode_PrivateData_Report
+    DXVADDI_Intel_Decode_PrivateData_Report,
+
+    DXVA_ModeHEVC_VLD_MainProfile
 };
 
 static DXVA2_ConfigPictureDecode configs[]=
