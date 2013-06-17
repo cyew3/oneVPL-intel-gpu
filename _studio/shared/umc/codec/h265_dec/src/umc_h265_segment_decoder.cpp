@@ -2332,10 +2332,10 @@ void H265SegmentDecoder::ReconstructCU(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
 
     m_ppcCU[Depth]->copySubCU(pCU, AbsPartIdx, Depth);
 
-    switch (m_ppcCU[Depth]->m_PredModeArray[0])
+    switch (pCU->m_PredModeArray[AbsPartIdx])
     {
         case MODE_INTER:
-            ReconInter(m_ppcCU[Depth], AbsPartIdx);
+            ReconInter(pCU, AbsPartIdx, Depth);
             break;
         case MODE_INTRA:
             ReconIntraQT(pCU, AbsPartIdx, Depth);
@@ -2376,25 +2376,24 @@ void H265SegmentDecoder::ReconIntraQT(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ip
     }
 }
 
-void H265SegmentDecoder::ReconInter(H265CodingUnit* pCU, Ipp32u AbsPartIdx)
+void H265SegmentDecoder::ReconInter(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     // inter prediction
-    m_Prediction->MotionCompensation(pCU, m_ppcYUVReco, AbsPartIdx);
+    m_Prediction->MotionCompensation(m_ppcCU[Depth], m_ppcYUVReco, AbsPartIdx);
 
     // clip for only non-zero cbp case
-    if ((pCU->getCbf(0, TEXT_LUMA)) || (pCU->getCbf(0, TEXT_CHROMA_U)) || (pCU->getCbf(0, TEXT_CHROMA_V )))
+    if ((pCU->getCbf(AbsPartIdx, TEXT_LUMA)) || (pCU->getCbf(AbsPartIdx, TEXT_CHROMA_U)) || (pCU->getCbf(AbsPartIdx, TEXT_CHROMA_V )))
     {
         // inter recon
-        DecodeInterTexture(pCU, 0);
+        DecodeInterTexture(pCU, AbsPartIdx);
     }
 }
 
 void H265SegmentDecoder::DecodeInterTexture(H265CodingUnit* pCU, Ipp32u AbsPartIdx)
 {
-    Ipp32u Width = pCU->m_WidthArray[AbsPartIdx];
-    Ipp32u Height = pCU->m_HeightArray[AbsPartIdx];
+    Ipp32u Size = pCU->m_WidthArray[AbsPartIdx];
 
-    m_TrQuant->InvRecurTransformNxN(pCU, 0, Width, Height, 0);
+    m_TrQuant->InvRecurTransformNxN(pCU, AbsPartIdx, Size, 0);
 }
 
 void H265SegmentDecoder::ReconPCM(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
