@@ -2370,9 +2370,15 @@ void H265SegmentDecoder::ReconIntraQT(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ip
         IntraLumaRecQT(pCU, InitTrDepth, AbsPartIdx + PU * NumQParts);
     }
 
+    Ipp32u ChromaPredMode = pCU->m_ChromaIntraDir[AbsPartIdx];
+    if (ChromaPredMode == DM_CHROMA_IDX)
+    {
+        ChromaPredMode = pCU->m_LumaIntraDir[AbsPartIdx];
+    }
+
     for (Ipp32u PU = 0; PU < NumPart; PU++)
     {
-        IntraChromaRecQT(pCU, InitTrDepth, AbsPartIdx + PU * NumQParts);
+        IntraChromaRecQT(pCU, InitTrDepth, AbsPartIdx + PU * NumQParts, ChromaPredMode);
     }
 }
 
@@ -2529,22 +2535,21 @@ void H265SegmentDecoder::IntraLumaRecQT(H265CodingUnit* pCU,
  */
 void H265SegmentDecoder::IntraChromaRecQT(H265CodingUnit* pCU,
                      Ipp32u TrDepth,
-                     Ipp32u AbsPartIdx)
+                     Ipp32u AbsPartIdx,
+                     Ipp32u ChromaPredMode)
 {
     Ipp32u FullDepth = pCU->m_DepthArray[AbsPartIdx] + TrDepth;
     Ipp32u TrMode = pCU->m_TrIdxArray[AbsPartIdx];
     if (TrMode == TrDepth)
     {
-        // NV12
-        //IntraRecChromaBlkNV12(pCU, TrDepth, AbsPartIdx, pRecoYUV, pPredYUV, pResiYUV);
-        IntraRecChromaBlk(pCU, TrDepth, AbsPartIdx);
+        IntraRecChromaBlk(pCU, TrDepth, AbsPartIdx, ChromaPredMode);
     }
     else
     {
         Ipp32u NumQPart = pCU->m_Frame->getCD()->getNumPartInCU() >> ((FullDepth + 1) << 1);
         for (Ipp32u Part = 0; Part < 4; Part++)
         {
-            IntraChromaRecQT(pCU, TrDepth + 1, AbsPartIdx + Part * NumQPart);
+            IntraChromaRecQT(pCU, TrDepth + 1, AbsPartIdx + Part * NumQPart, ChromaPredMode);
         }
     }
 }
@@ -2633,7 +2638,8 @@ void H265SegmentDecoder::IntraRecLumaBlk(H265CodingUnit* pCU,
 
 void H265SegmentDecoder::IntraRecChromaBlk(H265CodingUnit* pCU,
                          Ipp32u TrDepth,
-                         Ipp32u AbsPartIdx)
+                         Ipp32u AbsPartIdx,
+                         Ipp32u ChromaPredMode)
 {
     VM_ASSERT(pCU->m_AbsIdxInLCU == 0);
 
@@ -2708,12 +2714,6 @@ void H265SegmentDecoder::IntraRecChromaBlk(H265CodingUnit* pCU,
     //===== get prediction signal =====
     Size = pCU->m_WidthArray[AbsPartIdx] >> (TrDepth + 1);
     H265PlanePtrUVCommon pPatChroma = m_Prediction->GetPredicBuf();
-    Ipp32u ChromaPredMode = pCU->m_ChromaIntraDir[AbsPartIdx];
-    if (ChromaPredMode == DM_CHROMA_IDX)
-    {
-        ChromaPredMode = pCU->m_LumaIntraDir[AbsPartIdx];
-    }
-
     H265PlanePtrUVCommon pRecIPred = pCU->m_Frame->GetCbCrAddr(pCU->CUAddr, AbsPartIdx);
     Ipp32u RecIPredStride = pCU->m_Frame->pitch_chroma();
 

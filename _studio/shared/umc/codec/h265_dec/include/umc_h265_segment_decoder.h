@@ -160,19 +160,15 @@ public:
                          Ipp32u AbsPartIdx);
     void IntraChromaRecQT(H265CodingUnit* pCU,
                          Ipp32u TrDepth,
-                         Ipp32u AbsPartIdx);
+                         Ipp32u AbsPartIdx,
+                         Ipp32u ChromaPredMode);
     void IntraRecLumaBlk(H265CodingUnit* pCU,
                          Ipp32u TrDepth,
                          Ipp32u AbsPartIdx);
-    void IntraRecChromaBlkNV12(H265CodingUnit* pCU,
-                           Ipp32u TrDepth,
-                           Ipp32u AbsPartIdx,
-                           H265DecYUVBufferPadded* pRecoYUV,
-                           H265DecYUVBufferPadded* pPredYUV,
-                           H265DecYUVBufferPadded* pResiYUV);
     void IntraRecChromaBlk(H265CodingUnit* pCU,
                            Ipp32u TrDepth,
-                           Ipp32u AbsPartIdx);
+                           Ipp32u AbsPartIdx,
+                           Ipp32u ChromaPredMode);
 
     void DeblockOneLCU(Ipp32s curLCUAddr, Ipp32s cross);
     void DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curPixelColumn, Ipp32s curPixelRow,
