@@ -9,6 +9,7 @@
 */
 
 #include "umc_defs.h"
+#include <memory.h>
 #if defined (UMC_ENABLE_MP3_AUDIO_DECODER)
 
 #include "mp3dec_own.h"

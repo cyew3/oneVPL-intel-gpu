@@ -344,7 +344,7 @@ Status AACEncoder::GetFrame(MediaData* in, MediaData* out)
         }
     }
 
-    pts_start = in->m_pts_start;
+    in->GetTime(pts_start, pts_end);
 
     if(pts_start < 0)
         pts_start = m_pts_prev;
@@ -352,13 +352,12 @@ Status AACEncoder::GetFrame(MediaData* in, MediaData* out)
     //rested_bytes = in->GetDataSize()- nSamples*sizeof(Ipp16s);
     m_pts_prev = pts_end = pts_start+(Ipp32f)(nSamples/m_channel_number)/(Ipp32f)(m_sampling_frequency);
 
-    out->m_pts_start = pts_start;
-    out->m_pts_end   = pts_end;
+    out->SetTime(pts_start, pts_end);
     out->SetDataSize(headerBytes + nEncodedBytes);
     in->MoveDataPointer(nSamples*sizeof(Ipp16s));
 
     //if (rested_bytes) {
-    in->m_pts_start = pts_end;
+    in->SetTime(pts_end, pts_end);
     //}
 
     MemUnlock();

@@ -462,8 +462,8 @@ Status  AACDecoder::SetObjectType(AudioObjectType mType,
 Status AACDecoder::FrameConstruct(MediaData *in, Ipp32s *outFrameSize)
 {
     sBitsreamBuffer BS;
-    Ipp32s res;
-    Ipp32s nDecodedBytes, tmp_decodedBytes;
+//    Ipp32s res;
+    Ipp32s tmp_decodedBytes;
     Ipp8u *inPointer;
 
     sAdts_fixed_header     m_adts_fixed_header;
@@ -536,7 +536,7 @@ Status AACDecoder::FrameConstruct(MediaData *in, Ipp32s *outFrameSize)
         GET_BITS_COUNT(&BS, decodedBits2)
 
         if (m_adts_fixed_header.protection_absent == 0) {
-            Ipp32s tmp_crc;
+//            Ipp32s tmp_crc;
            (Ipp32s)Getbits(&BS, 16);
         }
 
@@ -548,6 +548,9 @@ Status AACDecoder::FrameConstruct(MediaData *in, Ipp32s *outFrameSize)
 
         Byte_alignment(&BS);
         GET_BITS_COUNT(&BS, tmp_decodedBytes)
+
+        num_channel = m_adts_fixed_header.channel_configuration;
+        if (num_channel == 7) num_channel = 8;
 
         if (m_adts_variable_header.aac_frame_length >
             num_channel * 768 + tmp_decodedBytes) {
@@ -631,7 +634,7 @@ Status  AACDecoder::GetFrame(MediaData * in,
     if (state == NULL)
         return UMC_ERR_NOT_INITIALIZED;
 
-    pts_start = in->m_pts_start;
+    pts_start = in->GetTime();
 
     aacdecInitCRC(0, state);
 
@@ -889,7 +892,7 @@ Status  AACDecoder::GetFrame(MediaData * in,
             Byte_alignment(&BS);
             GET_BITS_COUNT(&BS, tmp_decodedBytes)
 
-                num_channel = m_adts_fixed_header.channel_configuration;
+            num_channel = m_adts_fixed_header.channel_configuration;
             if (num_channel == 7) num_channel = 8;
 
             if (m_adts_variable_header.aac_frame_length >
@@ -1034,9 +1037,8 @@ Status  AACDecoder::GetFrame(MediaData * in,
         m_pts_prev = pts_end = pts_start +
             ((Ipp64f)frameSize / (Ipp64f)freq);
 
-        in->m_pts_start = pts_end;
-        out->m_pts_start = pts_start;
-        out->m_pts_end   = pts_end;
+        in->SetTime(pts_end);
+        out->SetTime(pts_start, pts_end);
 
         m_info.m_frame_number++;
 

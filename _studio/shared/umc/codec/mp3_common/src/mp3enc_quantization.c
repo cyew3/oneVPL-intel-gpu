@@ -10,6 +10,7 @@
 
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_MP3_AUDIO_ENCODER)
+#pragma warning(disable:4996)
 
 #include "align.h"
 #include "mp3enc_own.h"
