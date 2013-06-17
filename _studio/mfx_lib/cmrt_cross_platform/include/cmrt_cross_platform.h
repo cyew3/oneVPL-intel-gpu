@@ -33,8 +33,14 @@ struct IDirect3DSurface9;
 struct IDirect3DDeviceManager9;
 struct ID3D11Texture2D;
 struct ID3D11Device;
+
+#ifdef __GNUC__
+typedef unsigned int AbstractSurfaceHandle;
+typedef unsigned int AbstractDeviceHandle;
+#else //__GNUC__
 typedef void * AbstractSurfaceHandle;
 typedef void * AbstractDeviceHandle;
+#endif //__GNUC__
 
 #ifdef __GNUC__
 #include "cm_rt_linux.h"
@@ -1179,6 +1185,8 @@ namespace CmLinux
         CM_RT_API virtual INT CreateBuffer(UINT size, CmBuffer* & pSurface )=0;
         CM_RT_API virtual INT CreateSurface2D(UINT width, UINT height, CM_SURFACE_FORMAT format, CmSurface2D* & pSurface ) = 0;
         CM_RT_API virtual INT CreateSurface3D(UINT width, UINT height, UINT depth, CM_SURFACE_FORMAT format, CmSurface3D* & pSurface ) = 0;
+        CM_RT_API virtual INT CreateSurface2D(VASurfaceID iVASurface, CmSurface2D *& pSurface ) = 0;
+        CM_RT_API virtual INT CreateSurface2D(VASurfaceID * iVASurface, const UINT surfaceCount, CmSurface2D ** pSurface ) = 0;
         CM_RT_API virtual INT DestroySurface( CmBuffer* & pSurface) = 0;
         CM_RT_API virtual INT DestroySurface( CmSurface2D* & pSurface) = 0;
         CM_RT_API virtual INT DestroySurface( CmSurface3D* & pSurface) = 0;
@@ -1317,9 +1325,9 @@ INT CreateCmDeviceEmu(CmDevice* &pDevice, UINT& version, IDirect3DDeviceManager9
 INT CreateCmDeviceEmu(CmDevice* &pDevice, UINT& version, ID3D11Device * pD3D11Device = NULL);
 INT CreateCmDeviceSim(CmDevice* &pDevice, UINT& version, IDirect3DDeviceManager9 * pD3DDeviceMgr = NULL);
 INT CreateCmDeviceSim(CmDevice* &pDevice, UINT& version, ID3D11Device * pD3D11Device = NULL);
-#else __GNUC__
-INT CreateCmDevice(CmDevice* &pD, UINT& version);
-INT CreateCmDeviceEmu(CmDevice* &pDevice, UINT& version);
+#else //__GNUC__
+INT CreateCmDevice(CmDevice* &pD, UINT& version, VADisplay va_dpy = NULL);
+INT CreateCmDeviceEmu(CmDevice* &pDevice, UINT& version, VADisplay va_dpy = NULL);
 INT CreateCmDeviceSim(CmDevice* &pDevice, UINT& version);
 #endif //__GNUC__
 

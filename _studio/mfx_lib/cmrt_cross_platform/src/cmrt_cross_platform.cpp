@@ -9,33 +9,32 @@
 */
 
 #include "assert.h"
-#include "dxgiformat.h"
 #include "vm_shared_object.h"
 #include "cmrt_cross_platform.h"
 
-
 #ifdef WIN64
-const vm_char * DLL_NAME_DX9  = VM_STRING("igfxcmrt64.dll");
-const vm_char * DLL_NAME_DX11 = VM_STRING("igfx11cmrt64.dll");
+const vm_char * DLL_NAME_DX9   = VM_STRING("igfxcmrt64.dll");
+const vm_char * DLL_NAME_DX11  = VM_STRING("igfx11cmrt64.dll");
 #elif defined WIN32
-const vm_char * DLL_NAME_DX9  = VM_STRING("igfxcmrt32.dll");
-const vm_char * DLL_NAME_DX11 = VM_STRING("igfx11cmrt32.dll");
+const vm_char * DLL_NAME_DX9   = VM_STRING("igfxcmrt32.dll");
+const vm_char * DLL_NAME_DX11  = VM_STRING("igfx11cmrt32.dll");
+#elif defined(LINUX64)
+const vm_char * DLL_NAME_LINUX = VM_STRING("igfxcmrt64.so");
+#elif defined(LINUX32)
+const vm_char * DLL_NAME_LINUX = VM_STRING("igfxcmrt32.so");
 #else
-error_undefined_configuration
+#error "undefined configuration"
 #endif
-
-const vm_char * DLL_NAME_LINUX  = VM_STRING("igfxcmrt32.so");
 
 const char * FUNC_NAME_CREATE_CM_DEVICE  = "CreateCmDevice";
 const char * FUNC_NAME_DESTROY_CM_DEVICE = "DestroyCmDevice";
-
 
 #define IMPL_FOR_ALL(RET, FUNC, PROTO, PARAM)   \
     RET FUNC PROTO {                            \
         switch (m_platform) {                   \
         case DX9:   return m_dx9->FUNC PARAM;   \
         case DX11:  return m_dx11->FUNC PARAM;  \
-        case LINUX: return m_linux->FUNC PARAM; \
+        case VAAPI: return m_linux->FUNC PARAM; \
         default:    return CM_NOT_IMPLEMENTED;  \
         }                                       \
     }
@@ -57,18 +56,12 @@ const char * FUNC_NAME_DESTROY_CM_DEVICE = "DestroyCmDevice";
         }                                       \
     }
 
+#ifndef __GNUC__
+
+#include "dxgiformat.h"
+
 #define CONVERT_FORMAT(FORMAT) \
     (m_platform == DX11 ? (D3DFORMAT)ConvertFormatToDx11(FORMAT) : (FORMAT))
-
-
-enum { DX9=1, DX11=2, LINUX=3 };
-
-
-typedef INT (* CreateCmDeviceDx9FuncType)(CmDx9::CmDevice *&, UINT &, IDirect3DDeviceManager9 *);
-typedef INT (* CreateCmDeviceDx11FuncType)(CmDx11::CmDevice *&, UINT &, ID3D11Device *);
-typedef INT (* DestroyCmDeviceDx9FuncType)(CmDx9::CmDevice *&);
-typedef INT (* DestroyCmDeviceDx11FuncType)(CmDx11::CmDevice *&);
-
 
 namespace
 {
@@ -90,6 +83,19 @@ namespace
     }
 };
 
+#else /* __GNUC__ */
+
+#define CONVERT_FORMAT(FORMAT) (FORMAT)
+
+#endif /* __GNUC__ */
+
+enum { DX9=1, DX11=2, VAAPI=3 };
+
+typedef INT (* CreateCmDeviceDx9FuncType)(CmDx9::CmDevice *&, UINT &, IDirect3DDeviceManager9 *);
+typedef INT (* CreateCmDeviceDx11FuncType)(CmDx11::CmDevice *&, UINT &, ID3D11Device *);
+typedef INT (* CreateCmDeviceLinuxFuncType)(CmLinux::CmDevice *&, UINT &, VADisplay);
+typedef INT (* DestroyCmDeviceDx9FuncType)(CmDx9::CmDevice *&);
+typedef INT (* DestroyCmDeviceDx11FuncType)(CmDx11::CmDevice *&);
 
 class CmDeviceImpl : public CmDevice
 {
@@ -109,7 +115,7 @@ public:
         switch (m_platform) {
         case DX9:   return m_dx9->GetD3DDeviceManager((IDirect3DDeviceManager9 *&)pDevice);
         case DX11:  return m_dx11->GetD3D11Device((ID3D11Device *&)pDevice);
-        case LINUX: return CM_NOT_IMPLEMENTED;
+        case VAAPI: return CM_NOT_IMPLEMENTED;
         default:    return CM_NOT_IMPLEMENTED;
         }
     }
@@ -119,7 +125,7 @@ public:
         switch (m_platform) {
         case DX9:   return m_dx9->CreateSurface2D((IDirect3DSurface9 *)pD3DSurf, pSurface);
         case DX11:  return m_dx11->CreateSurface2D((ID3D11Texture2D *)pD3DSurf, pSurface);
-        case LINUX: return CM_NOT_IMPLEMENTED;
+        case VAAPI: return m_linux->CreateSurface2D((VASurfaceID)pD3DSurf, pSurface);
         default:    return CM_NOT_IMPLEMENTED;
         }
     }
@@ -129,7 +135,7 @@ public:
         switch (m_platform) {
         case DX9:   return m_dx9->CreateSurface2D((IDirect3DSurface9 **)pD3DSurf, surfaceCount, pSurface);
         case DX11:  return m_dx11->CreateSurface2D((ID3D11Texture2D **)pD3DSurf, surfaceCount, pSurface);
-        case LINUX: return CM_NOT_IMPLEMENTED;
+        case VAAPI: return m_linux->CreateSurface2D((VASurfaceID *)pD3DSurf, surfaceCount, pSurface);
         default:    return CM_NOT_IMPLEMENTED;
         }
     }
@@ -139,7 +145,7 @@ public:
         switch (m_platform) {
         case DX9:   return CM_NOT_IMPLEMENTED;
         case DX11:  return m_dx11->CreateSurface2DSubresource((ID3D11Texture2D *)pD3D11Texture2D, subresourceCount, ppSurfaces, createdSurfaceCount, option);
-        case LINUX: return CM_NOT_IMPLEMENTED;
+        case VAAPI: return CM_NOT_IMPLEMENTED;
         default:    return CM_NOT_IMPLEMENTED;
         }
     }
@@ -149,7 +155,7 @@ public:
         switch (m_platform) {
         case DX9:   return CM_NOT_IMPLEMENTED;
         case DX11:  return m_dx11->CreateSurface2DbySubresourceIndex((ID3D11Texture2D *)pD3D11Texture2D, FirstArraySlice, FirstMipSlice, pSurface);
-        case LINUX: return CM_NOT_IMPLEMENTED;
+        case VAAPI: return CM_NOT_IMPLEMENTED;
         default:    return CM_NOT_IMPLEMENTED;
         }
     }
@@ -204,7 +210,7 @@ public:
     IMPL_FOR_ALL(INT, FlushPrintBuffer, (), ());
 };
 
-
+#ifndef __GNUC__
 INT CreateCmDevice(CmDevice *& pD, UINT & version, IDirect3DDeviceManager9 * pD3DDeviceMgr)
 {
     CmDeviceImpl * device = new CmDeviceImpl;
@@ -266,6 +272,39 @@ INT CreateCmDevice(CmDevice* &pD, UINT& version, ID3D11Device * pD3D11Device)
     return CM_SUCCESS;
 }
 
+#else /* #ifndef __GNUC__ */  
+
+INT CreateCmDevice(CmDevice *& pD, UINT & version, VADisplay va_dpy)
+{
+    CmDeviceImpl * device = new CmDeviceImpl;
+
+    device->m_platform = VAAPI;
+    device->m_dll = vm_so_load(DLL_NAME_LINUX);
+    if (device->m_dll == 0)
+    {
+        delete device;
+        return CM_FAILURE;
+    }
+
+    CreateCmDeviceLinuxFuncType createFunc = (CreateCmDeviceLinuxFuncType)vm_so_get_addr(device->m_dll, FUNC_NAME_CREATE_CM_DEVICE);
+    if (createFunc == 0)
+    {
+        delete device;
+        return CM_FAILURE;
+    }
+
+    INT res = createFunc(device->m_linux, version, va_dpy);
+    if (res != CM_SUCCESS)
+    {
+        delete device;
+        return CM_FAILURE;
+    }
+
+    pD = device;
+    return CM_SUCCESS;
+}
+
+#endif /* #ifndef __GNUC__ */
 
 INT DestroyCmDevice(CmDevice *& pD)
 {

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2009 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -21,8 +21,8 @@ typedef void (*vm_so_func)(void);
 extern "C" {
 #endif /* __cplusplus */
 
-vm_so_handle vm_so_load(vm_char* so_file_name);
-vm_so_func   vm_so_get_addr(vm_so_handle so_handle, vm_char* so_func_name);
+vm_so_handle vm_so_load(const vm_char* so_file_name);
+vm_so_func   vm_so_get_addr(vm_so_handle so_handle, const char* so_func_name);
 void         vm_so_free(vm_so_handle so_handle);
 
 #ifdef __cplusplus

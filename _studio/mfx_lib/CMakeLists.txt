@@ -27,7 +27,7 @@ foreach( enc ${encoders} )
 endforeach( )
 
 list( APPEND dirs scheduler )
-list( APPEND dirs_impl vpp genx/h264_encode )
+list( APPEND dirs_impl vpp genx/h264_encode cmrt_cross_platform )
 
 list( APPEND umc_dirs
   mpeg2_enc h264_enc jpeg_enc
