@@ -897,22 +897,21 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
         // pass requirements of CheckPlatformLimitation for frame interpolation 
 
         /* vppIn */
-        out->vpp.In.FourCC       = MFX_FOURCC_NV12;
+        out->vpp.In.FourCC       = 1;
         out->vpp.In.Height       = 1;
         out->vpp.In.Width        = 1;
         out->vpp.In.PicStruct    = 1;
-        out->vpp.In.FrameRateExtN = 30;
+        out->vpp.In.FrameRateExtN = 1;
         out->vpp.In.FrameRateExtD = 1;
 
         /* vppOut */
-        out->vpp.Out.FourCC       = MFX_FOURCC_NV12;
+        out->vpp.Out.FourCC       = 1;
         out->vpp.Out.Height       = 1;
         out->vpp.Out.Width        = 1;
         out->vpp.Out.PicStruct    = 1;
-        out->vpp.Out.FrameRateExtN = 60;
+        out->vpp.Out.FrameRateExtN = 1;
         out->vpp.Out.FrameRateExtD = 1;
 
-        /* vppCommon */
         out->IOPattern           = 1;
         /* protected content is not supported. check it */
         out->Protected           = 1;
@@ -922,8 +921,20 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
         last day test has been added */
         out->AsyncDepth          = 1;
 
+        if (0 == out->NumExtParam)
+        {
+            out->NumExtParam     = 1;
+        }
+        else
+        {
         // check for IS and AFRC
+
+            out->vpp.In.FourCC         = MFX_FOURCC_NV12;
+            out->vpp.Out.FourCC        = MFX_FOURCC_NV12;
+            out->vpp.In.FrameRateExtN  = 30;
+            out->vpp.Out.FrameRateExtN = 60;
         mfxSts = CheckPlatformLimitations(core, *out, true);
+        }
         return mfxSts;
     }
     else

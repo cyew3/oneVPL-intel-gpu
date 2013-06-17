@@ -1157,6 +1157,11 @@ mfxStatus GetPipelineList(
     mfxU32*   pExtList = NULL;
     mfxU32    extCount = 0;
 
+    if( 0 != videoParam->NumExtParam && NULL == videoParam->ExtParam )
+    {
+        return MFX_ERR_NULL_PTR;
+    }
+
     GetDoUseFilterList( videoParam, &pExtList, &extCount );
 
     /* [Core Frame Rate Conversion] FILTER */
