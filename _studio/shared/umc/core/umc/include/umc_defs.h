@@ -82,7 +82,7 @@
     //#define UMC_ENABLE_MP3_INT_AUDIO_DECODER
     #define UMC_ENABLE_AAC_AUDIO_DECODER
     //#define UMC_ENABLE_AC3_AUDIO_DECODER
-    //#define UMC_ENABLE_MP3_AUDIO_DECODER
+    #define UMC_ENABLE_MP3_AUDIO_DECODER
     //#define UMC_ENABLE_AMR_AUDIO_DECODER
     //#define UMC_ENABLE_LPCM_AUDIO_DECODER
     //#define UMC_ENABLE_DTS_AUDIO_DECODER
@@ -159,7 +159,7 @@
     #define UMC_ENABLE_MP3_INT_AUDIO_DECODER
     #define UMC_ENABLE_AAC_AUDIO_DECODER
     #define UMC_ENABLE_AC3_AUDIO_DECODER
-    //#define UMC_ENABLE_MP3_AUDIO_DECODER
+    #define UMC_ENABLE_MP3_AUDIO_DECODER
     #define UMC_ENABLE_LPCM_AUDIO_DECODER
     #define UMC_ENABLE_DTS_AUDIO_DECODER
 
@@ -635,4 +635,3 @@ VideoDecoder *CreateAsynchronousVideoDecoder(VideoDecoder *pDecoder);
 /******************************************************************************/
 
 #endif // __UMC_DEFS_H__
-
