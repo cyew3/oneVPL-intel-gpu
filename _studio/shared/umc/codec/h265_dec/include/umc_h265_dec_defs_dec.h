@@ -2376,11 +2376,22 @@ inline size_t CalculateSuggestedSize(const H265SeqParamSet * sps)
 
 static void H265_FORCEINLINE small_memcpy( void* dst, const void* src, int len )
 {
-// ML: OPT: TODO: Tweak <= 64-byte memory copy performance
-#if defined( __INTEL_COMPILER ) //|| defined( __GNUC__ ) // NOTE: there is some issue for GCC in the code below at the moment
-    int len_rem = len & 3; 
-    len >>= 2;
-    __asm__ ( "cld; rep movsd; mov %[len_rem_], %[len_]; rep movsb" : [len_] "+c" (len), "+S" (src), "+D" (dst) : [len_rem_] "r" (len_rem) : "memory" );
+#if defined( __INTEL_COMPILER ) // || defined( __GNUC__ )  // TODO: check with GCC
+    // 128-bit loads/stores first with then REP MOVSB, aligning dst on 16-bit to avoid costly store splits
+    int peel = (0xf & (-(size_t)dst));
+    __asm__ ( "cld" );
+    if ( peel ) {
+        if ( peel < len ) peel = len;
+        len -= peel;
+        __asm__ ( "rep movsb" : "+c" (peel), "+S" (src), "+D" (dst) :: "memory" );
+    }
+    while (len > 15) {
+        __m128i v_tmp;
+        __asm__ ( "movdqu (%[src_]), %%xmm0; movdqu %%xmm0, (%[dst_])" : : [src_] "S" (src), [dst_] "D" (dst) : "%xmm0", "memory" );
+        src = 16 + (const Ipp8u*)src; dst = 16 + (Ipp8u*)dst; len -= 16;
+    }
+    if (len > 0)
+        __asm__ ( "rep movsb" : "+c" (len), "+S" (src), "+D" (dst) :: "memory" );
 #else
     memcpy(dst, src, len);
 #endif

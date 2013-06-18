@@ -456,8 +456,6 @@ const Ipp8u g_ChromaScale[58] =
   45,46,47,48,49,50,51
 };
 
-const Ipp8u g_ConvertTxtTypeToIdx[4] = { 0, 1, 1, 2 };
-
 const Ipp8u g_AngModeMapping[4][34] = // intra mode conversion for most probable
 {
     {2,3,2,2,4, 4,4,0,0,0, 0,0,0,0,2, 2,2,2,2,2, 2,1,1,1,1, 1,1,1,1,1, 2,2,2,2},               // conversion to 5 modes
@@ -543,31 +541,6 @@ Ipp32s g_quantInterDefault8x8[64] =
   18,20,24,25,28,33,41,54,
   20,24,25,28,33,41,54,71,
   24,25,28,33,41,54,71,91
-};
-
-Ipp32u g_scalingListSize [4] = {16, 64, 256, 1024};
-Ipp32u g_scalingListSizeX[4] = { 4,  8,  16,   32};
-Ipp32u g_scalingListNum[SCALING_LIST_SIZE_NUM]={6, 6, 6, 2};
-Ipp32u g_Table[4] = {0, 3, 1, 2};
-
-const Ipp16s g_lumaInterpolateFilter[4][8] =
-{
-    {  0, 0,   0, 64,  0,   0, 0,  0 },
-    { -1, 4, -10, 58, 17,  -5, 1,  0 },
-    { -1, 4, -11, 40, 40, -11, 4, -1 },
-    {  0, 1,  -5, 17, 58, -10, 4, -1 }
-};
-
-const Ipp16s g_chromaInterpolateFilter[8][4] =
-{
-    {  0, 64,  0,  0 },
-    { -2, 58, 10, -2 },
-    { -4, 54, 16, -2 },
-    { -6, 46, 28, -4 },
-    { -4, 36, 36, -4 },
-    { -4, 28, 46, -6 },
-    { -2, 16, 54, -4 },
-    { -2, 10, 58, -2 }
 };
 
 } // end namespace UMC_HEVC_DECODER

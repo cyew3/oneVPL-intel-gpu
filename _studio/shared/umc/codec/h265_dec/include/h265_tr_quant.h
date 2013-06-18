@@ -54,7 +54,7 @@ public:
 
 public:
 
-    void SetQPParam(Ipp32s qpScaled)
+    H265_FORCEINLINE void SetQPParam(Ipp32s qpScaled)
     {
         m_QP   = qpScaled;
         m_Per  = qpScaled / 6;
@@ -149,7 +149,7 @@ public:
     void setDefaultScalingList();
 
 protected:
-    __inline void processScalingListDec(Ipp32s *coeff, Ipp32s *dequantcoeff, Ipp32s invQuantScales, Ipp32u height, Ipp32u width, Ipp32u ratio, Ipp32u sizuNum, Ipp32u dc);
+    __inline void processScalingListDec(Ipp32s *coeff, Ipp16s *dequantcoeff, Ipp32s invQuantScales, Ipp32u height, Ipp32u width, Ipp32u ratio, Ipp32u sizuNum, Ipp32u dc);
 
     QPParam m_QPParam;
     Ipp64f m_Lambda;
@@ -159,7 +159,7 @@ protected:
     bool m_UseRDOQ;
 
     // ML: OPT: TODO: Check if we really need 32-bit here
-    Ipp32s* m_dequantCoef[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM][SCALING_LIST_REM_NUM]; ///< array of dequantization matrix coefficient 4x4
+    Ipp16s* m_dequantCoef[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM][SCALING_LIST_REM_NUM]; ///< array of dequantization matrix coefficient 4x4
 
 private:
     void initScalingList();
@@ -172,7 +172,7 @@ private:
 #if (HEVC_OPT_CHANGES & 2)
     H265_FORCEINLINE
 #endif
-    Ipp32s* getDequantCoeff(Ipp32u list, Ipp32u qp, Ipp32u size)
+    Ipp16s* getDequantCoeff(Ipp32u list, Ipp32u qp, Ipp32u size)
     {
         return m_dequantCoef[size][list][qp];
     }; //!< get DeQuant Coefficent
@@ -192,6 +192,30 @@ private:
     void DeQuant(Ipp32s bitDepth, H265CoeffsPtrCommon pSrc, Ipp32u Width, Ipp32u Height, Ipp32s scalingListType);
 #endif // (HEVC_OPT_CHANGES & 128)
 };// END CLASS DEFINITION H265TrQuant
+
+H265_FORCEINLINE void H265TrQuant::SetQPforQuant(Ipp32s QP, EnumTextType TxtType, Ipp32s qpBdOffset, Ipp32s chromaQPOffset)
+{
+    Ipp32s qpScaled;
+
+    if (TxtType == TEXT_LUMA)
+    {
+        qpScaled = QP + qpBdOffset;
+    }
+    else
+    {
+        qpScaled = Clip3(-qpBdOffset, 57, QP + chromaQPOffset);
+
+        if (qpScaled < 0)
+        {
+            qpScaled = qpScaled + qpBdOffset;
+        }
+        else
+        {
+            qpScaled = g_ChromaScale[qpScaled] + qpBdOffset;
+        }
+    }
+    m_QPParam.SetQPParam(qpScaled);
+}
 
 } // end namespace UMC_HEVC_DECODER
 

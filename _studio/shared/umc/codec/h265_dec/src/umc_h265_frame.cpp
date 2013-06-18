@@ -491,6 +491,7 @@ H265PlanePtrUVCommon H265DecoderFrame::GetCbCrAddr(Ipp32s CUAddr)
     return m_pUVPlane + m_cuOffsetC[CUAddr];
 }
 
+// ML: OPT: TODO: Make these functions available for inlining 
 H265PlanePtrYCommon H265DecoderFrame::GetLumaAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx)
 {
     return m_pYPlane + m_cuOffsetY[CUAddr] + m_buOffsetY[g_ZscanToRaster[AbsZorderIdx]];

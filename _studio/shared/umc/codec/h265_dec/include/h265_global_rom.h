@@ -106,23 +106,20 @@ const Ipp32s g_bitDepthC = 8;
 /** clip x, such that 0 <= x <= #g_maxLumaVal */
 // ML: OPT: called in hot loops, compiler does not seem to always honor 'inline'
 // ML: OPT: TODO: Make sure compiler recognizes saturation idiom for vectorization
-template <typename T> 
-static T H265_FORCEINLINE ClipY(T Value, int c_bitDepth = 8) 
+#if 0
+template<typename T>
+static Ipp8u H265_FORCEINLINE ClipY(T Value)
 { 
-    Value = (Value < 0) ? 0 : Value;
-    const int c_Mask = ((1 << c_bitDepth) - 1);
-    Value = (Value >= c_Mask) ? c_Mask : Value;
-    return ( Value );
+    const T c_Mask = 0xff;
+    Ipp8u Ret = (Ipp8u)(Value < 0) ? 0 : ((Value > c_Mask) ? c_Mask : Value);
+    return ( Ret );
 }
+#else
+template <typename T> inline T ClipY(T x) { return std::min<T>(T((1 << g_bitDepthY) - 1), std::max<T>( T(0), x)); }
+#endif
 
-template <typename T> 
-static T H265_FORCEINLINE ClipC(T Value, int c_bitDepth = 8) 
-{ 
-    Value = (Value < 0) ? 0 : Value;
-    const int c_Mask = ((1 << c_bitDepth) - 1);
-    Value = (Value >= c_Mask) ? c_Mask : Value;
-    return ( Value );
-}
+#define ClipC ClipY
+
 #else
 extern Ipp32s g_bitDepthY;
 extern Ipp32s g_bitDepthC;
@@ -135,7 +132,7 @@ extern Ipp32u g_PCMBitDepthLuma;
 extern Ipp32u g_PCMBitDepthChroma;
 
 // Texture type to integer mapping ------------------------------------------------------------------------------------
-extern const Ipp8u g_ConvertTxtTypeToIdx[4];
+static const Ipp8u g_ConvertTxtTypeToIdx[4] = { 0, 1, 1, 2 }; // resolved at compile time to avoid tablelookup
 
 // Mode-Dependent DST Matrices ----------------------------------------------------------------------------------------
 extern const Ipp8u g_DCTDSTMode_Vert[NUM_INTRA_MODE];
@@ -428,13 +425,13 @@ static const char MatrixType_DC[4][12][22] =
 extern Ipp32s g_quantIntraDefault8x8[64];
 extern Ipp32s g_quantInterDefault8x8[64];
 extern Ipp32s g_quantTSDefault4x4[16];
-extern Ipp32u g_scalingListSize [SCALING_LIST_SIZE_NUM];
-extern Ipp32u g_scalingListSizeX[SCALING_LIST_SIZE_NUM];
-extern Ipp32u g_scalingListNum  [SCALING_LIST_SIZE_NUM];
-extern Ipp32u g_Table[4];
 
-extern const Ipp16s g_lumaInterpolateFilter[4][8];
-extern const Ipp16s g_chromaInterpolateFilter[8][4];
+static const Ipp32u g_Table[4] = {0, 3, 1, 2};
+static const Ipp32u g_scalingListSize [4] = {16, 64, 256, 1024};
+static const Ipp32u g_scalingListSizeX[4] = { 4,  8,  16,   32};
+static const Ipp32u g_scalingListNum[SCALING_LIST_SIZE_NUM]={6, 6, 6, 2};
+
+
 
 } // end namespace UMC_HEVC_DECODER
 

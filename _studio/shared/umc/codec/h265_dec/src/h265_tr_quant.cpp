@@ -57,30 +57,6 @@ H265TrQuant::~H265TrQuant()
     delete[] m_tempTransformBuffer;
 }
 
-void H265TrQuant::SetQPforQuant(Ipp32s QP, EnumTextType TxtType, Ipp32s qpBdOffset, Ipp32s chromaQPOffset)
-{
-    Ipp32s qpScaled;
-
-    if (TxtType == TEXT_LUMA)
-    {
-        qpScaled = QP + qpBdOffset;
-    }
-    else
-    {
-        qpScaled = Clip3(-qpBdOffset, 57, QP + chromaQPOffset);
-
-        if (qpScaled < 0)
-        {
-            qpScaled = qpScaled + qpBdOffset;
-        }
-        else
-        {
-            qpScaled = g_ChromaScale[qpScaled] + qpBdOffset;
-        }
-    }
-    m_QPParam.SetQPParam(qpScaled);
-}
-
 // give identical results
 #if (HEVC_OPT_CHANGES & 128)
 // ML: OPT: Parameterized to allow const 'shift' propogation
@@ -431,11 +407,17 @@ void DCTInverse32x32_sse(const short* __restrict src, void *destPtr, int destStr
 
 // ML: OPT: Parameterized to allow const 'shift' propogation
 template <Ipp32s bitDepth, typename DstCoeffsType>
-void InverseTransform(H265CoeffsPtrCommon coeff, DstCoeffsType* dst, Ipp32s dstPitch, Ipp32s Size, Ipp32u Mode, H265CoeffsCommon * tempBuffer)
+void InverseTransform(H265CoeffsPtrCommon coeff, DstCoeffsType* dst, Ipp32s dstPitch, Ipp32s Size, Ipp32u Mode
+#if !defined(OPT_IDCT)
+                      , H265CoeffsCommon * tempBuffer
+#endif
+)
 {
+#if !defined(OPT_IDCT)
     const Ipp32s shift_1st = SHIFT_INV_1ST;
     const Ipp32s shift_2nd = SHIFT_INV_2ND - (bitDepth - 8);
     tempBuffer[0] = 0; /* TMP - avoid compiler warning (tempBuffer unusued with optimized IDCT kernels) */
+#endif
 
     if (Size == 4)
     {
@@ -537,7 +519,7 @@ void H265TrQuant::DeQuant_inner(const H265CoeffsPtrCommon pQCoef, Ipp32u Length,
     if (m_UseScalingList)
     {
         Shift += 4;
-        Ipp32s *pDequantCoef = getDequantCoeff(scalingListType, m_QPParam.m_Rem, c_Log2TrSize - 2);
+        Ipp16s *pDequantCoef = getDequantCoeff(scalingListType, m_QPParam.m_Rem, c_Log2TrSize - 2);
 
         if (Shift > m_QPParam.m_Per)
         {
@@ -566,9 +548,10 @@ void H265TrQuant::DeQuant_inner(const H265CoeffsPtrCommon pQCoef, Ipp32u Length,
     }
     else
     {
-        Ipp32s Add = 1 << (Shift - 1);
-        Ipp32s scale = g_invQuantScales[m_QPParam.m_Rem] << m_QPParam.m_Per;
+        Ipp16s Add = 1 << (Shift - 1);
+        Ipp16s scale = g_invQuantScales[m_QPParam.m_Rem] << m_QPParam.m_Per;
 
+        // ML: OPT: verify vectorization
         #pragma ivdep
         #pragma vector always
         for (Ipp32u n = 0; n < Length; n++)
@@ -601,8 +584,6 @@ void H265TrQuant::DeQuant(Ipp32s bitDepth, H265CoeffsPtrCommon pSrc, Ipp32u Widt
     Ipp32u Log2TrSize = g_ConvertToBit[Width] + 2;
 
 #if (HEVC_OPT_CHANGES & 512)
-// ML: OPT: g_ConvertToBit[Width] == -1 for most sizes, making special test check for Log2TrSize == '1' const to allow getting const 'Shift'
-//          transforming the rest of the function into inlined function so that const shift propogated 
     Ipp32u Length = Width * Height;
     if (Log2TrSize == 1)
         DeQuant_inner< 1, bitDepth >( pQCoef, Length, scalingListType );
@@ -680,6 +661,7 @@ void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, I
     if(transQuantBypass)
     {
         for (Ipp32u k = 0; k < Height; k++)
+            // ML: OPT: TODO: verify vectorization
             for (Ipp32u j = 0; j < Width; j++)
             {
                 if (sizeof(DstCoeffsType) == 1)
@@ -715,7 +697,11 @@ void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, I
         else
         {
             VM_ASSERT(Width == Height);
-            InverseTransform< 8 >(pCoeff, pResidual, Stride, Width, Mode, m_tempTransformBuffer);
+            InverseTransform< 8 >(pCoeff, pResidual, Stride, Width, Mode
+#if !defined(OPT_IDCT)
+                , m_tempTransformBuffer
+#endif
+            );
         }
     } 
     else
@@ -883,6 +869,7 @@ void H265TrQuant::InvTransformSkip(Ipp32s bitDepth, H265CoeffsPtrCommon pCoeff, 
         offset = (1 << (transformSkipShift -1));
         for (j = 0; j < Height; j++)
         {
+            // ML: OPT: TODO: verify vectorization
             for (k = 0; k < Width; k ++)
             {
                 if (sizeof(DstCoeffsType) == 1)
@@ -1074,7 +1061,7 @@ void H265TrQuant::setScalingListDec(H265ScalingList *scalingList)
               Ipp32u width = g_scalingListSizeX[sizeId];
               Ipp32u height = g_scalingListSizeX[sizeId];
               Ipp32u ratio = g_scalingListSizeX[sizeId] / IPP_MIN(MAX_MATRIX_SIZE_NUM, (Ipp32s)g_scalingListSizeX[sizeId]);
-              Ipp32s *dequantcoeff;
+              Ipp16s *dequantcoeff;
               Ipp32s *coeff = scalingList->getScalingListAddress(sizeId, listId);
 
               dequantcoeff = getDequantCoeff(listId, qp, sizeId);
@@ -1104,7 +1091,7 @@ void H265TrQuant::setDefaultScalingList()
 }
 
 
-void H265TrQuant::processScalingListDec(Ipp32s *coeff, Ipp32s *dequantcoeff, Ipp32s invQuantScales, Ipp32u height, Ipp32u width, Ipp32u ratio, Ipp32u sizuNum, Ipp32u dc)
+void H265TrQuant::processScalingListDec(Ipp32s *coeff, Ipp16s *dequantcoeff, Ipp32s invQuantScales, Ipp32u height, Ipp32u width, Ipp32u ratio, Ipp32u sizuNum, Ipp32u dc)
 {
     for(Ipp32u j = 0; j < height; j++)
     {
@@ -1129,7 +1116,8 @@ void H265TrQuant::initScalingList()
         size_t scalingListNum = g_scalingListNum[sizeId];
         size_t scalingListSize = g_scalingListSize[sizeId];
 
-        Ipp32s* pScalingList = new Ipp32s[scalingListNum * scalingListSize * SCALING_LIST_REM_NUM ];
+//        Ipp32s* pScalingList = new Ipp32s[scalingListNum * scalingListSize * SCALING_LIST_REM_NUM ];
+        Ipp16s* pScalingList = new Ipp16s[scalingListNum * scalingListSize * SCALING_LIST_REM_NUM ];
 
         for (Ipp32u listId = 0; listId < scalingListNum; listId++)
         {

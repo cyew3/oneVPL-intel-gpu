@@ -40,7 +40,8 @@ Ipp8u * CumulativeArraysAllocation(int n, ...)
     int cumulativeSize = 0;
     for (int i = 0; i < n; i++)
     {
-        va_arg(args, void *);
+        void * ptr = va_arg(args, void *);
+        ptr; // just skip it
 
         int currSize = va_arg(args, int);
         cumulativeSize += currSize;

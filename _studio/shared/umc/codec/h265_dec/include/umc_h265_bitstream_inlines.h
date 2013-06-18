@@ -224,7 +224,7 @@ bool H265Bitstream::NextBit()
 
 } // H265Bitstream::SearchBits()
 
-inline
+H265_FORCEINLINE
 Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
 {
     Ipp32u codIRangeLPS;
@@ -304,7 +304,7 @@ Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
 
 } //Ipp32s H265Bitstream::DecodeSingleBin_CABAC(Ipp32s ctxIdx)
 
-inline
+H265_FORCEINLINE
 Ipp32u H265Bitstream::DecodeSymbolEnd_CABAC(void)
 {
     Ipp32u binVal = 1;
@@ -354,7 +354,7 @@ Ipp32u H265Bitstream::DecodeSymbolEnd_CABAC(void)
 
 } //Ipp32u H265Bitstream::DecodeSymbolEnd_CABAC(void)
 
-inline
+H265_FORCEINLINE
 Ipp32u H265Bitstream::DecodeTerminatingBit_CABAC(void)
 {
     Ipp32u Bin = 1;
@@ -395,7 +395,7 @@ Ipp32u H265Bitstream::DecodeTerminatingBit_CABAC(void)
 } //Ipp32u H265Bitstream::DecodeTerminatingBit_CABAC(void)
 
 
-inline
+H265_FORCEINLINE
 Ipp32u H265Bitstream::DecodeSingleBinEP_CABAC(void)
 {
     m_lcodIOffset += m_lcodIOffset;
@@ -432,7 +432,7 @@ Ipp32u H265Bitstream::DecodeSingleBinEP_CABAC(void)
     return Bin;
 } //Ipp32u H265Bitstream::DecodeSingleBinEP_CABAC(void)
 
-inline
+H265_FORCEINLINE
 Ipp32u H265Bitstream::DecodeBypassBins_CABAC(Ipp32s numBins)
 {
     Ipp32u bins = 0;
