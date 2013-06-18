@@ -2958,7 +2958,7 @@ void H265SegmentDecoder::UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPa
 
     Ipp32s XInc = g_RasterToPelX[g_ZscanToRaster[AbsPartIdx]] >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
     Ipp32s YInc = g_RasterToPelY[g_ZscanToRaster[AbsPartIdx]] >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
-    Ipp32s PartSize = pCU->m_WidthArray[AbsPartIdx] >> 2;
+    Ipp32s PartSize = pCU->m_WidthArray[AbsPartIdx] >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
 
     H265FrameHLDNeighborsInfo info;
     info.data = 0;
