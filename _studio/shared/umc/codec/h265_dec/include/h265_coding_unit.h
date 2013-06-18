@@ -84,7 +84,6 @@ public:
     H265CodingUnit*            m_CUAboveRight;    // pointer of above-right CU
     H265CodingUnit*            m_CUAbove;         // pointer of above CU
     H265CodingUnit*            m_CULeft;          // pointer of left CU
-    H265CodingUnit*            m_CUColocated[2];  // pointer of temporally colocated CU's for both directions
     MVBuffer                m_MVBufferA;       // motion vector of position A
     MVBuffer                m_MVBufferB;       // motion vector of position B
     MVBuffer                m_MVBufferC;       // motion vector of position C
@@ -104,8 +103,6 @@ public:
     // misc. variables -------------------------------------------------------------------------------------
     bool                    m_DecSubCU;         // indicates decoder-mode
 
-    Ipp32u*                    m_SliceStartCU;    // Start CU address of current slice
-    Ipp32u*                    m_DependentSliceStartCU; // Start CU address of current slice
     Ipp8s                   m_CodedQP;
 
     bool isLosslessCoded(Ipp32u absPartIdx);
@@ -240,9 +237,6 @@ public:
     // member functions for SBAC context ----------------------------------------------------------------------------------
     Ipp32u getCtxQtCbf (EnumTextType Type, Ipp32u TrDepth);
     Ipp32u getCtxInterDir (Ipp32u AbsPartIdx);
-
-    Ipp32u getSliceStartCU (Ipp32u pos) { return m_SliceStartCU[pos - m_AbsIdxInLCU]; }
-    Ipp32u getSliceSegmentStartCU (Ipp32u pos) { return m_DependentSliceStartCU[pos - m_AbsIdxInLCU]; }
 
     // member functions for RD cost storage  ------------(only functions with declaration here. simple get/set are removed)
     Ipp32u getCoefScanIdx(Ipp32u AbsPartIdx, Ipp32u Width, bool IsLuma, bool IsIntra);
