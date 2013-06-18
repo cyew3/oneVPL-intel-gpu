@@ -641,8 +641,8 @@ void H265Prediction::MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPad
             }
             else
             {
-                PredInterUni<TEXT_LUMA, true>(pCU, PartAddr, Width, Height, direction, &m_YUVPred[0]);
-                PredInterUni<TEXT_CHROMA, true>(pCU, PartAddr, Width, Height, direction, &m_YUVPred[0]);
+                PredInterUni<TEXT_LUMA, true>(pCU, PartAddr, Width, Height, direction, &m_YUVPred[direction]);
+                PredInterUni<TEXT_CHROMA, true>(pCU, PartAddr, Width, Height, direction, &m_YUVPred[direction]);
             }
         }
         else
