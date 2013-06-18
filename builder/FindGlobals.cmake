@@ -96,6 +96,13 @@ else( )
   append("-msse4.1" CMAKE_CXX_FLAGS) # -std=c++0x
   append("-msse4.1" LINK_FLAGS)
 
+  if (CMAKE_C_COMPILER MATCHES icc)
+    append("-static-intel" CMAKE_C_FLAGS)
+  endif()
+  if (CMAKE_CXX_COMPILER MATCHES icpc)
+    append("-static-intel" CMAKE_CXX_FLAGS)
+  endif()
+
   if(__ARCH MATCHES ia32)
     append("-m32" CMAKE_C_FLAGS)
     append("-m32" CMAKE_CXX_FLAGS)

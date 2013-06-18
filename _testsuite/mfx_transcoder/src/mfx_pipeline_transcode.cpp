@@ -1115,7 +1115,7 @@ mfxStatus MFXTranscodingPipeline::CreateVPP()
         //only extsequencedescription required
         MFXExtBufferVector :: iterator it = std::find_if(m_components[eREN].m_extParams.begin()
             , m_components[eREN].m_extParams.end()
-            , std::bind2nd(MFXExtBufferCompareByID<mfxExtBuffer>(), BufferIdOf<mfxExtSVCSeqDesc>::id));
+            , std::bind2nd(MFXExtBufferCompareByID<mfxExtBuffer>(), (mfxU32)BufferIdOf<mfxExtSVCSeqDesc>::id));
 
         //looks incorrect calling sequence dueto not properly assigned ext buffers
         MFX_CHECK(it != m_components[eREN].m_extParams.end());
