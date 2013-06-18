@@ -402,7 +402,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInitAudio)(mfxIMPL impl, mfxVersion *pVer
     // implementation method masked from the input parameter
     const mfxIMPL implMethod = impl & (MFX_IMPL_VIA_ANY - 1);
     // implementation interface masked from the input parameter
-    mfxIMPL implInterface = impl & -MFX_IMPL_VIA_ANY;
+    mfxIMPL implInterface = MFX_IMPL_VIA_ANY;
     mfxVersion requiredVersion = {{MFX_VERSION_MINOR, MFX_VERSION_MAJOR}};
 
     // check error(s)
@@ -467,13 +467,6 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInitAudio)(mfxIMPL impl, mfxVersion *pVer
             // looking for a suitable library with higher merit value.
             if (MFX_ERR_NONE == mfxRes)
             {
-            
-                if (
-                    !implInterface || 
-                    implInterface == MFX_IMPL_VIA_ANY)
-                {
-                    implInterface = libIterator.GetImplementationType();
-                }
                 do
                 {
                     eMfxImplType implType;
@@ -564,7 +557,23 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXCloseAudio)(mfxSession session)
         try
         {
             // unload the DLL library
-            mfxRes = pHandle->Close();
+            // we can't use Close() here, because it calls mfxClose() function, but we need mfxAudioClose()
+//            mfxRes = pHandle->Close();
+            mfxRes = pHandle->UnLoadSelectedAudioDLL();
+
+            // the library wasn't unloaded
+            if (MFX_ERR_NONE == mfxRes)
+            {
+                pHandle->implType = MFX_LIB_SOFTWARE;
+                pHandle->impl = MFX_IMPL_SOFTWARE;
+                pHandle->dispVersion.Major = MFX_DISPATCHER_VERSION_MAJOR;
+                pHandle->dispVersion.Minor = MFX_DISPATCHER_VERSION_MINOR;
+                pHandle->session = (mfxSession) 0;
+
+                pHandle->hModule = (mfxModuleHandle) 0;
+
+                memset(pHandle->callTable, 0, sizeof(pHandle->callTable));
+            }
 
             // it is possible, that there is an active child session.
             // can't unload library in that case.

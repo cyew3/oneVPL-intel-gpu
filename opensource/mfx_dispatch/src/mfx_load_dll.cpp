@@ -99,9 +99,19 @@ mfxStatus mfx_get_default_dll_name(msdk_disp_char *pPath, size_t pathSize, eMfxI
 
 mfxStatus mfx_get_default_audio_dll_name(msdk_disp_char *pPath, size_t pathSize, eMfxImplType implType)
 {
+    if (!pPath)
+    {
+        return MFX_ERR_NULL_PTR;
+    }
+    
     // there are only 2 implementation with default DLL names
+#if _MSC_VER >= 1400
     return 0 == wcscpy_s(pPath, pathSize, defaultAudioDLLName[implType & 1])
         ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
+#else    
+    wcscpy(pPath, defaultAudioDLLName[implType & 1]);
+    return MFX_ERR_NONE;
+#endif
 } // mfxStatus mfx_get_default_audio_dll_name(wchar_t *pPath, size_t pathSize, eMfxImplType implType)
 
 mfxModuleHandle mfx_dll_load(const msdk_disp_char *pFileName)

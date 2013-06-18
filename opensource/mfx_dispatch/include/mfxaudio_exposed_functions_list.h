@@ -49,11 +49,6 @@ FUNCTION(mfxStatus, MFXAudioQueryIMPL, (mfxSession session, mfxIMPL *impl), (ses
 FUNCTION(mfxStatus, MFXAudioQueryVersion, (mfxSession session, mfxVersion *version), (session, version))
 
 // CORE interface functions
-FUNCTION(mfxStatus, MFXAudioCORE_SetBufferAllocator, (mfxSession session, mfxBufferAllocator *allocator), (session, allocator))
-FUNCTION(mfxStatus, MFXAudioCORE_SetFrameAllocator, (mfxSession session, mfxFrameAllocator *allocator), (session, allocator))
-FUNCTION(mfxStatus, MFXAudioCORE_SetHandle, (mfxSession session, mfxHandleType type, mfxHDL hdl), (session, type, hdl))
-FUNCTION(mfxStatus, MFXAudioCORE_GetHandle, (mfxSession session, mfxHandleType type, mfxHDL *hdl), (session, type, hdl))
-
 FUNCTION(mfxStatus, MFXAudioCORE_SyncOperation, (mfxSession session, mfxSyncPoint syncp, mfxU32 wait), (session, syncp, wait))
 
 // ENCODE interface functions
@@ -64,8 +59,6 @@ FUNCTION(mfxStatus, MFXAudioENCODE_Reset, (mfxSession session, mfxAudioParam *pa
 FUNCTION(mfxStatus, MFXAudioENCODE_Close, (mfxSession session), (session))
 
 FUNCTION(mfxStatus, MFXAudioENCODE_GetAudioParam, (mfxSession session, mfxAudioParam *par), (session, par))
-FUNCTION(mfxStatus, MFXAudioENCODE_GetEncodeStat, (mfxSession session, mfxEncodeStat *stat), (session, stat))
-//FUNCTION(mfxStatus, MFXAudioENCODE_EncodeFrameAsync, (mfxSession session, mfxBitstream *bs, mfxBitstream *buffer_out, mfxSyncPoint *syncp), (session, bs, buffer_out, syncp))
 
 // DECODE interface functions
 FUNCTION(mfxStatus, MFXAudioDECODE_Query, (mfxSession session, mfxAudioParam *in, mfxAudioParam *out), (session, in, out))
@@ -76,9 +69,6 @@ FUNCTION(mfxStatus, MFXAudioDECODE_Reset, (mfxSession session, mfxAudioParam *pa
 FUNCTION(mfxStatus, MFXAudioDECODE_Close, (mfxSession session), (session))
 
 FUNCTION(mfxStatus, MFXAudioDECODE_GetAudioParam, (mfxSession session, mfxAudioParam *par), (session, par))
-//FUNCTION(mfxStatus, MFXAudioDECODE_GetDecodeStat, (mfxSession session, mfxDecodeStat *stat), (session, stat))
-//FUNCTION(mfxStatus, MFXAudioDECODE_SetSkipMode, (mfxSession session, mfxSkipMode mode), (session, mode))
-//FUNCTION(mfxStatus, MFXAudioDECODE_GetPayload, (mfxSession session, mfxU64 *ts, mfxPayload *payload), (session, ts, payload))
 FUNCTION(mfxStatus, MFXAudioDECODE_DecodeFrameAsync, (mfxSession session, mfxBitstream *bs, mfxBitstream *buffer_out, mfxSyncPoint *syncp), (session, bs, buffer_out, syncp))
 
 // VPP interface functions
