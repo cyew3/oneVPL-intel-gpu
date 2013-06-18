@@ -34,6 +34,7 @@ File Name: main.cpp
 #include "mfx_library_iterator.h"
 #include "mfx_critical_section.h"
 
+#include <string.h> /* for memset on Linux */
 #include <memory>
 
 // module-local definitions
