@@ -1353,8 +1353,7 @@ mfxStatus D3D11VideoProcessor::QueryVariance(
         queryVarianceParam.BufferSize = queryVarianceParam.FrameCount * ( sizeof(VPE_STATUS_PARAM) + ( m_varianceCaps.VarianceCount * m_varianceCaps.VarianceSize) );
 
         // aya: should be precalculated\pre-allocated on ::Init() stage
-        std::vector<mfxU8> varianceBuffer(queryVarianceParam.BufferSize);
-        memset(&varianceBuffer, 0, sizeof(queryVarianceParam.BufferSize));
+        std::vector<mfxU8> varianceBuffer(queryVarianceParam.BufferSize, 0);
 
         queryVarianceParam.pBuffer    = &varianceBuffer[0];
 
