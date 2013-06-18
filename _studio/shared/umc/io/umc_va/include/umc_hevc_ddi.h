@@ -13,7 +13,7 @@
 #pragma warning(disable: 4201)
 
 #define MK_HEVCVER(j, n)    (((j & 0x0000ffff) << 16) | (n & 0x0000ffff))
-#define HEVC_SPEC_VER       MK_HEVCVER(0, 81)
+#define HEVC_SPEC_VER       MK_HEVCVER(0, 84)
 
 typedef struct _DXVA_PicEntry_HEVC
 {
@@ -260,22 +260,6 @@ typedef struct _DXVA_PicParams_HEVC
 
 
 #if HEVC_SPEC_VER == MK_HEVCVER(0, 81)
-typedef struct _DXVA_Slice_HEVC_Short
-{
-    UINT        BSNALunitDataLocation;
-    UINT        SliceBytesInBuffer;
-} DXVA_Slice_HEVC_Short, *LPDXVA_Slice_HEVC_Short;
-#elif HEVC_SPEC_VER == MK_HEVCVER(0, 84)
-typedef struct _DXVA_Slice_HEVC_Short
-{
-    UINT        BSNALunitDataLocation;
-    UINT        SliceBytesInBuffer;
-    UINT        wBadSliceChopping;
-    UINT        StRPSBits;
-} DXVA_Slice_HEVC_Short, *LPDXVA_Slice_HEVC_Short;
-#endif
-
-#if HEVC_SPEC_VER == MK_HEVCVER(0, 81)
 typedef struct _DXVA_Slice_HEVC_Long
 {
     UINT        BSNALunitDataLocation;
@@ -324,55 +308,69 @@ typedef struct _DXVA_Slice_HEVC_Long
     UINT    num_entry_point_offsets;
 
 } DXVA_Slice_HEVC_Long, *LPDXVA_Slice_HEVC_Long;
+
 #elif HEVC_SPEC_VER == MK_HEVCVER(0, 84)
+
 typedef struct _DXVA_Slice_HEVC_Long
 {
-    UINT            BSNALunitDataLocation;
-    UINT            SliceBytesInBuffer;
-    UINT            wBadSliceChopping;
-    UINT            ByteOffsetToSliceData;
-    UINT            slice_segment_address;
-    UINT            num_LCUs_for_slice;
+    UINT        BSNALunitDataLocation;
+    UINT        SliceBytesInBuffer;
+    UINT        wBadSliceChopping;
+    UINT        ByteOffsetToSliceData;
+    UINT        slice_segment_address;
+    UINT        NumCTUsInSlice;
 
-    DXVA_PicEntry_HEVC    RefPicList[2][16];
+    DXVA_PicEntry_HEVC    RefPicList[2][15];
 
     union
     {
-        UINT        dwPicFlags;
+        UINT        value;
         struct
         {
-            UINT    last_slice_of_pic               : 1;
-            UINT    dependent_slice_segment_flag    : 1;
-            UINT    slice_type                      : 2;
-            UINT    color_plane_id                  : 2;
-            UINT    slice_sao_luma_flag             : 1;
-            UINT    slice_sao_chroma_flag           : 1;
-            UINT    mvd_l1_zero_flag                : 1;
-            UINT    cabac_init_flag                 : 1;
-            UINT    slice_disable_lf_flag           : 1;
-            UINT    collocated_from_l0_flag         : 1;
-            UINT    lf_across_slices_enabled_flag   : 1;
-            UINT    reserved                        : 19;
-        };
-    };
+            UINT        LastSliceOfPic                                  : 1;
+            UINT        dependent_slice_segment_flag                    : 1;
+            UINT        slice_type                                      : 2;
+            UINT        color_plane_id                                  : 2;
+            UINT        slice_sao_luma_flag                             : 1;
+            UINT        slice_sao_chroma_flag                           : 1;
+            UINT        mvd_l1_zero_flag                                : 1;
+            UINT        cabac_init_flag                                 : 1;
+            UINT        slice_temporal_mvp_enabled_flag                 : 1;
+            UINT        slice_deblocking_filter_disabled_flag           : 1;
+            UINT        collocated_from_l0_flag                         : 1;
+            UINT        slice_loop_filter_across_slices_enabled_flag    : 1;
+            UINT        reserved : 18;
+        } fields;
+    } LongSliceFlags;
 
-    UCHAR           num_ref_idx_l0_active_minus1;
-    UCHAR           num_ref_idx_l1_active_minus1;
-    CHAR            slice_qp_delta;
-    CHAR            slice_cb_qp_offset;
-    CHAR            slice_cr_qp_offset;
-    CHAR            beta_offset_div2;
-    CHAR            tc_offset_div2;
-    UCHAR           luma_log2_weight_denom;
-    UCHAR           chroma_log2_weight_denom;
-    CHAR            luma_offset[2][16];
-    CHAR            delta_luma_weight[2][16];
-    CHAR            chroma_offset[2][16][2];
-    CHAR            delta_chroma_weight[2][16][2];
-    UCHAR           max_num_merge_candidates;
-    UINT            num_entry_point_offsets;
-
+    UCHAR   collocated_ref_idx;
+    UCHAR   num_ref_idx_l0_active_minus1;
+    UCHAR   num_ref_idx_l1_active_minus1;
+    CHAR    slice_qp_delta;
+    CHAR    slice_cb_qp_offset;
+    CHAR    slice_cr_qp_offset;
+    CHAR    slice_beta_offset_div2;                // [-6..6]
+    CHAR    slice_tc_offset_div2;                    // [-6..6]
+    UCHAR   luma_log2_weight_denom;
+    UCHAR   delta_chroma_log2_weight_denom;
+    CHAR    delta_luma_weight_l0[15];
+    CHAR    luma_offset_l0[15];
+    CHAR    delta_chroma_weight_l0[15][2];
+    CHAR    ChromaOffsetL0[15][2];
+    CHAR    delta_luma_weight_l1[15];
+    CHAR    luma_offset_l1[15];
+    CHAR    delta_chroma_weight_l1[15][2];
+    CHAR    ChromaOffsetL1[15][2];
+    UCHAR   five_minus_max_num_merge_cand;
+    UINT    num_entry_point_offsets;
 } DXVA_Slice_HEVC_Long, *LPDXVA_Slice_HEVC_Long;
+
+typedef struct _DXVA_Slice_HEVC_Short
+{
+UINT        BSNALunitDataLocation;
+UINT        SliceBytesInBuffer;
+UINT        wBadSliceChopping;
+} DXVA_Slice_HEVC_Short, *LPDXVA_Slice_HEVC_Short;
 #endif
 
 typedef struct _DXVA_Qmatrix_HEVC

@@ -523,6 +523,7 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
 }
 #endif
 
+#if HEVC_SPEC_VER == MK_HEVCVER(0, 81)
 void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSlice)
 {
     size_t headerSize = sizeof(DXVA_Slice_HEVC_Short);
@@ -622,6 +623,128 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
     // copy slice data to slice data buffer
     memcpy(pSliceData, pSlice->m_BitStream.GetRawDataPtr(), rawDataSize);
 }
+#endif
+
+#if HEVC_SPEC_VER == MK_HEVCVER(0, 84)
+void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSlice)
+{
+    size_t headerSize = sizeof(DXVA_Slice_HEVC_Short);
+
+    if(isLong)
+        headerSize = sizeof(DXVA_Slice_HEVC_Long);
+
+    DXVA_Slice_HEVC_Long* pDXVASlice = 0;
+    void *pSliceData = 0;
+    size_t rawDataSize = pSlice->m_BitStream.BytesLeft();
+
+    GetSliceVABuffers(&pDXVASlice, headerSize, &pSliceData, rawDataSize, 64);
+
+    if(isLong)
+    {
+//      const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
+        const H265PicParamSet *pPicParamSet = pSlice->GetPicParam();
+        const H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
+        int sliceNum = pSlice->GetSliceNum();
+
+        pDXVASlice->ByteOffsetToSliceData = 0;  // ???
+        pDXVASlice->slice_segment_address = pSlice->getSliceAddr();
+        pDXVASlice->NumCTUsInSlice = 0; 
+
+        for(int iDir = 0; iDir < 2; iDir++)
+        {
+            int index = 0;
+            const H265DecoderRefPicList::ReferenceInformation* pRefPicList = pCurrentFrame->GetRefPicList(sliceNum, iDir)->m_refPicList;
+
+            for(int i=0;i < 15;i++)
+            {
+                const H265DecoderRefPicList::ReferenceInformation &frameInfo = pRefPicList[i];
+                if(frameInfo.refFrame)
+                {
+                    for(int j=0 ; j < m_refFrameListCacheSize ; j++)
+                    {
+                        if(m_refFrameListCache[j].Index7bits == (UCHAR)frameInfo.refFrame->m_index)
+                        {
+                            pDXVASlice->RefPicList[iDir][index].Index7bits = j;
+                            index++;
+
+                            break;
+                        }
+                    }
+                }
+            }
+
+            for(;index < 15;index++)
+                pDXVASlice->RefPicList[iDir][index].bPicEntry = (UCHAR)-1;
+        }
+
+
+        // picFlags
+        //
+
+        pDXVASlice->LongSliceFlags.fields.LastSliceOfPic                                = isLastSlice;
+        pDXVASlice->LongSliceFlags.fields.dependent_slice_segment_flag                  = (UINT)pPicParamSet->getDependentSliceSegmentEnabledFlag();   // dependent_slices_enabled_flag
+        pDXVASlice->LongSliceFlags.fields.slice_type                                    = (UINT)pSlice->getSliceType();
+        pDXVASlice->LongSliceFlags.fields.color_plane_id                                = 0; // field is left for future expansion
+        pDXVASlice->LongSliceFlags.fields.slice_sao_luma_flag                           = (UINT)pSlice->getSaoEnabledFlag(); 
+        pDXVASlice->LongSliceFlags.fields.slice_sao_chroma_flag                         = (UINT)pSlice->getSaoEnabledFlagChroma();
+        pDXVASlice->LongSliceFlags.fields.mvd_l1_zero_flag                              = (UINT)pSlice->getMvdL1ZeroFlag();
+        pDXVASlice->LongSliceFlags.fields.cabac_init_flag                               = (UINT)pSlice->getCabacInitFlag();
+        pDXVASlice->LongSliceFlags.fields.slice_temporal_mvp_enabled_flag               = (UINT)pSlice->getEnableTMVPFlag();
+        pDXVASlice->LongSliceFlags.fields.slice_deblocking_filter_disabled_flag         = (UINT)pSlice->getDeblockingFilterDisable();
+        pDXVASlice->LongSliceFlags.fields.collocated_from_l0_flag                       = (UINT)pSlice->getColFromL0Flag();
+        pDXVASlice->LongSliceFlags.fields.slice_loop_filter_across_slices_enabled_flag  = (UINT)pPicParamSet->getLoopFilterAcrossSlicesEnabledFlag();
+
+        pDXVASlice->collocated_ref_idx              = (UCHAR)(pSlice->getSliceType() != I_SLICE ? pSlice->getColRefIdx() : -1 );
+        pDXVASlice->num_ref_idx_l0_active_minus1    = (UCHAR)pSlice->getNumRefIdx(REF_PIC_LIST_0) - 1;
+        pDXVASlice->num_ref_idx_l1_active_minus1    = (UCHAR)pSlice->getNumRefIdx(REF_PIC_LIST_1) - 1;
+        pDXVASlice->slice_qp_delta                  = (CHAR)(pSlice->getSliceQp() - (pPicParamSet->getPicInitQP()));
+        pDXVASlice->slice_cb_qp_offset              = (CHAR)pSlice->getSliceQpDeltaCb();
+        pDXVASlice->slice_cr_qp_offset              = (CHAR)pSlice->getSliceQpDeltaCr();
+        pDXVASlice->slice_beta_offset_div2          = (CHAR)pPicParamSet->getDeblockingFilterBetaOffsetDiv2();
+        pDXVASlice->slice_tc_offset_div2            = (CHAR)pPicParamSet->getDeblockingFilterTcOffsetDiv2();
+        pDXVASlice->luma_log2_weight_denom          = (UCHAR)pSlice->getLog2WeightDenomLuma();
+        pDXVASlice->delta_chroma_log2_weight_denom  = (UCHAR)(pSlice->getLog2WeightDenomChroma() - pSlice->getLog2WeightDenomLuma());
+
+        for(int l=0;l < 2;l++)
+        {
+            wpScalingParam *wp;
+            EnumRefPicList eRefPicList = ( l == 1 ? REF_PIC_LIST_1 : REF_PIC_LIST_0 );
+            for (int iRefIdx=0;iRefIdx < pSlice->getNumRefIdx(eRefPicList);iRefIdx++)
+            {
+                pSlice->getWpScaling(eRefPicList, iRefIdx, wp);
+
+                if(eRefPicList == REF_PIC_LIST_0)
+                {
+                    pDXVASlice->luma_offset_l0[iRefIdx]             = (CHAR)wp[0].iOffset;
+                    pDXVASlice->delta_luma_weight_l0[iRefIdx]    = (CHAR)wp[0].iDeltaWeight;
+                    for(int chroma=0;chroma < 2;chroma++)
+                    {
+                        pDXVASlice->delta_chroma_weight_l0[iRefIdx][chroma] = (CHAR)wp[1 + chroma].iDeltaWeight;
+                        pDXVASlice->ChromaOffsetL0        [iRefIdx][chroma] = (CHAR)wp[1 + chroma].iOffset;
+                    }
+                }
+                else
+                {
+                    pDXVASlice->luma_offset_l1[iRefIdx]         = (CHAR)wp[0].iOffset;
+                    pDXVASlice->delta_luma_weight_l1[iRefIdx]   = (CHAR)wp[0].iDeltaWeight;
+                    for(int chroma=0;chroma < 2;chroma++)
+                    {
+                        pDXVASlice->delta_chroma_weight_l1[iRefIdx][chroma] = (CHAR)wp[1 + chroma].iDeltaWeight;
+                        pDXVASlice->ChromaOffsetL1        [iRefIdx][chroma] = (CHAR)wp[1 + chroma].iOffset;
+                    }
+                }
+            }
+        }
+
+        pDXVASlice->five_minus_max_num_merge_cand   = (UCHAR)(5 - pSlice->getMaxNumMergeCand());
+        pDXVASlice->num_entry_point_offsets         = pSlice->getNumEntryPointOffsets();
+    }
+
+    // copy slice data to slice data buffer
+    memcpy(pSliceData, pSlice->m_BitStream.GetRawDataPtr(), rawDataSize);
+}
+#endif
+
 
 template<int COUNT> static inline
 void initQMatrix(const H265ScalingList *scalingList, int sizeId, UCHAR qm[6][COUNT])

@@ -382,7 +382,6 @@ public:  // DEBUG !!!! should remove dependence
 
     void setDeblockingFilterDisable( bool b )                { m_SliceHeader.m_deblockingFilterDisable = b;      }
     bool getDeblockingFilterDisable() const    { return m_SliceHeader.m_deblockingFilterDisable; }
-    bool getDeblockingFilterDisable()          { return m_SliceHeader.m_deblockingFilterDisable; }
     void setDeblockingFilterOverrideFlag( bool b )           { m_SliceHeader.m_deblockingFilterOverrideFlag = b; }
     bool getDeblockingFilterOverrideFlag()           { return m_SliceHeader.m_deblockingFilterOverrideFlag; }
     void setDeblockingFilterBetaOffsetDiv2( int i )          { m_SliceHeader.m_deblockingFilterBetaOffsetDiv2 = i; }
