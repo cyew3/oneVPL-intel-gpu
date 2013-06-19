@@ -13,6 +13,7 @@
 #include <vector>
 #include <memory>
 #include "mfx_common.h"
+#include "mfxaudio.h"
 
 mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 codecId);
 mfxStatus CheckFrameInfoEncoders(mfxFrameInfo  *info);
@@ -20,6 +21,10 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId = MFX_CODEC_A
 
 mfxStatus CheckVideoParamEncoders(mfxVideoParam *in, bool IsExternalFrameAllocator, eMFXHWType type);
 mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocator, eMFXHWType type);
+
+mfxStatus CheckAudioParamEncoders(mfxAudioParam *in);
+mfxStatus CheckAudioParamCommon(mfxAudioParam *in);
+mfxStatus CheckAudioParamDecoders(mfxAudioParam *in);
 
 mfxStatus CheckBitstream(const mfxBitstream *bs);
 mfxStatus CheckEncryptedBitstream(const mfxBitstream *bs);
