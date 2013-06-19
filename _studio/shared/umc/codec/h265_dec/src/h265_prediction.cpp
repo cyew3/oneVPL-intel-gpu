@@ -614,16 +614,18 @@ void H265Prediction::PredIntraChromaAng(H265PlanePtrUVCommon pSrc, Ipp32u DirMod
     }
 }
 
-void H265Prediction::MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPadded* pPredYUV, Ipp32u AbsPartIdx)
+void H265Prediction::MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPadded* pPredYUV, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
+    VM_ASSERT(pCU->m_AbsIdxInLCU == 0);
     bool weighted_prediction = pCU->m_SliceHeader->slice_type == P_SLICE ? pCU->m_SliceHeader->m_PicParamSet->weighted_pred_flag :
         pCU->m_SliceHeader->m_PicParamSet->weighted_bipred_idc;
 
-    for (Ipp32s PartIdx = 0; PartIdx < pCU->getNumPartInter(0); PartIdx++)
+    for (Ipp32s PartIdx = 0; PartIdx < pCU->getNumPartInter(AbsPartIdx); PartIdx++)
     {
         Ipp32u PartAddr;
         Ipp32u Width, Height;
-        pCU->getPartIndexAndSize(0, PartIdx, PartAddr, Width, Height);
+        pCU->getPartIndexAndSize(AbsPartIdx, Depth, PartIdx, PartAddr, Width, Height);
+        PartAddr += AbsPartIdx;
 
         Ipp32s RefIdx[2] = {-1, -1};
         RefIdx[REF_PIC_LIST_0] = pCU->m_CUMVbuffer[REF_PIC_LIST_0].RefIdx[PartAddr];
@@ -731,7 +733,7 @@ void H265Prediction::MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPad
                 pPredYUV->CopyWeightedBidi_S16U8(&m_YUVPred[0], &m_YUVPred[1], PartAddr, Width, Height, w0, w1, logWD, round);
             }
 
-            pPredYUV->CopyPartToPic(pCU->m_Frame, pCU->CUAddr, AbsPartIdx, PartAddr, Width, Height);
+            pPredYUV->CopyPartToPic(pCU->m_Frame, pCU->CUAddr, PartAddr, Width, Height);
         }
     }
 }
@@ -817,6 +819,7 @@ static void PrepareInterpSrc( H265CodingUnit* pCU, Ipp32u PartAddr, Ipp32s Width
 template <EnumTextType c_plane_type, bool c_bi>
 void H265Prediction::PredInterUni(H265CodingUnit* pCU, Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefPicList RefPicList, H265DecYUVBufferPadded *YUVPred, EnumAddAverageType eAddAverage )
 {
+    VM_ASSERT(pCU->m_AbsIdxInLCU == 0);
     // Hack to get correct offset in 2-byte elements
     Ipp32s in_DstPitch = (c_plane_type == TEXT_CHROMA) ? YUVPred->pitch_chroma() : YUVPred->pitch_luma();
     H265CoeffsPtrCommon in_pDst = (c_plane_type == TEXT_CHROMA) ? 

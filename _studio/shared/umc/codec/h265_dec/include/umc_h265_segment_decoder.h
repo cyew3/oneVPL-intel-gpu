@@ -196,12 +196,9 @@ public:
     //h265 members
     H265SampleAdaptiveOffset m_SAO;
 
-    bool m_AlfCtrl;
-    Ipp32u m_MaxAlfCtrlDepth;
     H265CodingUnit* m_curCU;
     bool m_DecodeDQPFlag;
     Ipp32u m_MaxDepth; //max number of depth
-    H265CodingUnit** m_ppcCU; // CU data array
     H265DecYUVBufferPadded* m_ppcYUVResi; //array of residual buffer
     H265DecYUVBufferPadded* m_ppcYUVReco; //array of prediction & reconstruction buffer
 

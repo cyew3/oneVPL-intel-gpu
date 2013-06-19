@@ -303,34 +303,6 @@ void CUMVBuffer::setAllMVBuffer(MVBuffer const & mvBuffer, EnumPartSize CUMode, 
     setAllMV (mvBuffer.MV, CUMode, PartAddr, Depth, PartIdx);
     setAllRefIdx (mvBuffer.RefIdx, CUMode, PartAddr, Depth, PartIdx);
 }
-
-/**Subsampling of the stored prediction mode, reference index and motion vector
- * \param pePredMode Pointer to prediction modes
- * \param scale      Factor by which to subsample motion information
- */
-void CUMVBuffer::compress(Ipp8s* PredMode, Ipp32s scale)
-{
-    Ipp32u N = scale * scale;
-    VM_ASSERT(N > 0 && N <= m_NumPartition);
-
-    for (Ipp32u PartIdx = 0; PartIdx < m_NumPartition; PartIdx += N)
-    {
-        H265MotionVector cMV(0,0);
-        EnumPredMode predMode = MODE_INTRA;
-        Ipp32s iRefIdx = 0;
-
-        cMV = MV[PartIdx];
-        predMode = static_cast<EnumPredMode>(PredMode[PartIdx]);
-        iRefIdx = RefIdx[PartIdx];
-
-        for (Ipp32u i = 0; i < N; i++)
-        {
-            MV[PartIdx + i] = cMV;
-            PredMode[PartIdx + i] = (Ipp8s)predMode;
-            RefIdx[PartIdx + i] = (RefIndexType)iRefIdx;
-        }
-    }
-}
 } // end namespace UMC_HEVC_DECODER
 
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

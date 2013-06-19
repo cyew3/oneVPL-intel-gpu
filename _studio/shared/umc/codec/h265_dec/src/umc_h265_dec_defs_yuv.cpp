@@ -384,13 +384,13 @@ void H265DecYUVBufferPadded::CopyWeightedBidi_S16U8(H265DecYUVBufferPadded* pPic
     }
 }
 
-void H265DecYUVBufferPadded::CopyPartToPic(H265DecoderFrame* pPicYuvDst, Ipp32u CUAddr, Ipp32u AbsZorderIdx, Ipp32u PartIdx, Ipp32u Width, Ipp32u Height)
+void H265DecYUVBufferPadded::CopyPartToPic(H265DecoderFrame* pPicYuvDst, Ipp32u CUAddr, Ipp32u PartIdx, Ipp32u Width, Ipp32u Height)
 {
     Ipp32u SrcStride = pitch_luma();
     Ipp32u DstStride = pPicYuvDst->pitch_luma();
 
     H265PlanePtrYCommon pSrc = GetPartLumaAddr(PartIdx);
-    H265PlanePtrYCommon pDst = pPicYuvDst->GetLumaAddr(CUAddr, AbsZorderIdx) + GetAddrOffset(PartIdx, DstStride);
+    H265PlanePtrYCommon pDst = pPicYuvDst->GetLumaAddr(CUAddr) + GetAddrOffset(PartIdx, DstStride);
 
     for (Ipp32s y = Height; y != 0; y--)
     {
@@ -406,7 +406,7 @@ void H265DecYUVBufferPadded::CopyPartToPic(H265DecoderFrame* pPicYuvDst, Ipp32u 
     DstStride = pPicYuvDst->pitch_chroma();
 
     H265PlanePtrUVCommon pSrcUV = GetPartCbCrAddr(PartIdx);
-    H265PlanePtrUVCommon pDstUV = pPicYuvDst->GetCbCrAddr(CUAddr, AbsZorderIdx) + GetAddrOffset(PartIdx, DstStride >> 1);
+    H265PlanePtrUVCommon pDstUV = pPicYuvDst->GetCbCrAddr(CUAddr) + GetAddrOffset(PartIdx, DstStride >> 1);
 
     for (Ipp32s y = Height; y != 0; y--)
     {

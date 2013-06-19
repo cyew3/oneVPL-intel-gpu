@@ -80,8 +80,6 @@ public:
     Ipp32s*                    m_SliceSUMap;         // pointer of slice ID map
 
     //neighbour access variables -------------------------------------------------------------------------
-    H265CodingUnit*            m_CUAboveLeft;     // pointer of above-left CU
-    H265CodingUnit*            m_CUAboveRight;    // pointer of above-right CU
     H265CodingUnit*            m_CUAbove;         // pointer of above CU
     H265CodingUnit*            m_CULeft;          // pointer of left CU
     MVBuffer                m_MVBufferA;       // motion vector of position A
@@ -130,8 +128,6 @@ public:
 
     void initCU (H265SegmentDecoderMultiThreaded* sd, Ipp32u CUAddr);
     void setOutsideCUPart (Ipp32u AbsPartIdx, Ipp32u Depth);
-
-    void copySubCU (H265CodingUnit* CU, Ipp32u PartUnitIdx, Ipp32u Depth);
 
     // member functions for CU description ------- (only functions with declaration here. simple get/set are removed)
     Ipp32u getSCUAddr();
@@ -203,7 +199,7 @@ public:
     void setIPCMFlagSubParts (bool IpcmFlag, Ipp32u AbsPartIdx, Ipp32u Depth);
 
     // member functions for accessing partition information -----------------------------------------------------------
-    void getPartIndexAndSize (Ipp32u AbsPartIdx, Ipp32u PartIdx, Ipp32u &PartAddr, Ipp32u &Width, Ipp32u &Height);
+    void getPartIndexAndSize (Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u PartIdx, Ipp32u &PartAddr, Ipp32u &Width, Ipp32u &Height);
     void getPartSize(Ipp32u AbsPartIdx, Ipp32u partIdx, Ipp32s &nPSW, Ipp32s &nPSH);
     Ipp8u getNumPartInter(Ipp32u AbsPartIdx);
 

@@ -80,7 +80,7 @@ public:
     H265PlanePtrUVCommon GetPartCrAddr(Ipp32u TransUnitIdx, Ipp32u BlkSize);
     H265PlanePtrUVCommon GetPartCbCrAddr(Ipp32u TransUnitIdx, Ipp32u BlkSize);
 
-    void CopyPartToPic(H265DecoderFrame* pPicYuvDst, Ipp32u CUAddr, Ipp32u AbsZorderIdx, Ipp32u PartIdx, Ipp32u Width, Ipp32u Height);
+    void CopyPartToPic(H265DecoderFrame* pPicYuvDst, Ipp32u CUAddr, Ipp32u PartIdx, Ipp32u Width, Ipp32u Height);
 #if 0
 // ML: OPT: Interpolation now averages, saturates and writes into pic directly
     void CopyPartToPicAndSaturate(H265DecoderFrame* pPicYuvDst, Ipp32u CUAddr, Ipp32u AbsZorderIdx, Ipp32u PartIdx, Ipp32u Width, Ipp32u Height, Ipp32s copyPart = 0);

@@ -37,7 +37,6 @@ H265SegmentDecoder::H265SegmentDecoder(TaskBroker_H265 * pTaskBroker)
 
     //h265 members from TDecCu:
     m_curCU = NULL;
-    m_ppcCU = NULL;
     m_TopNgbrs = NULL;
     m_TopMVInfo = NULL;
     m_CurrCTBFlags = NULL;
@@ -76,26 +75,6 @@ void H265SegmentDecoder::create(H265SeqParamSet* pSPS)
     Ipp32u MaxHeight = pSPS->MaxCUHeight;
 
     m_DecodeDQPFlag = false;
-    
-    if (m_MaxDepth != MaxDepth + 1)
-    {
-        delete [] m_ppcCU;
-        m_ppcCU = new H265CodingUnit* [MaxDepth];
-    }
-    
-    if (m_MaxDepth != MaxDepth + 1)
-    {
-        m_MaxDepth = MaxDepth + 1;
-        for (Ipp32u ind = 0; ind < MaxDepth; ind++)
-        {
-            Ipp32u NumPartitions = 1 << ((m_MaxDepth - ind - 1) << 1);
-            Ipp32u Width = MaxWidth  >> ind;
-            Ipp32u Height = MaxHeight >> ind;
-
-            m_ppcCU[ind] = new H265CodingUnit;
-            m_ppcCU[ind]->create(NumPartitions, Width, Height, true, MaxWidth >> (m_MaxDepth - 1));
-        }
-    }
 
     m_MaxDepth = MaxDepth + 1;
 
@@ -210,19 +189,6 @@ void H265SegmentDecoder::Release(void)
 
    g_SigLastScan_inv[0][0] = 0;
 #endif
-
-    if (m_ppcCU)
-    {
-        for (Ipp32u ind = 0; ind < m_MaxDepth - 1; ind++)
-        {
-            m_ppcCU[ind]->destroy();
-            delete m_ppcCU[ind];
-            m_ppcCU[ind] = NULL;
-        }
-
-        delete [] m_ppcCU;
-        m_ppcCU = NULL;
-    }
 
     if (m_ppcYUVResi)
     {
@@ -2330,8 +2296,6 @@ void H265SegmentDecoder::ReconstructCU(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
         return;
     }
 
-    m_ppcCU[Depth]->copySubCU(pCU, AbsPartIdx, Depth);
-
     switch (pCU->m_PredModeArray[AbsPartIdx])
     {
         case MODE_INTER:
@@ -2385,7 +2349,7 @@ void H265SegmentDecoder::ReconIntraQT(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ip
 void H265SegmentDecoder::ReconInter(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     // inter prediction
-    m_Prediction->MotionCompensation(m_ppcCU[Depth], m_ppcYUVReco, AbsPartIdx);
+    m_Prediction->MotionCompensation(pCU, m_ppcYUVReco, AbsPartIdx, Depth);
 
     // clip for only non-zero cbp case
     if ((pCU->getCbf(AbsPartIdx, TEXT_LUMA)) || (pCU->getCbf(AbsPartIdx, TEXT_CHROMA_U)) || (pCU->getCbf(AbsPartIdx, TEXT_CHROMA_V )))

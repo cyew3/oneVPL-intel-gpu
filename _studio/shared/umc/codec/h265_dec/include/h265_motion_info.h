@@ -195,14 +195,6 @@ public:
     void copyTo(CUMVBuffer* CUMVBufferDst, Ipp32s PartAddrDst) const;
     void copyTo(CUMVBuffer* CUMVBufferDst, Ipp32s PartAddrDst, Ipp32u offset, Ipp32u NumPart) const;
 
-    void linkToWithOffset(CUMVBuffer const * src, Ipp32s offset )
-    {
-        MV = src->MV + offset;
-        MVd = src->MVd + offset;
-        RefIdx = src->RefIdx + offset;
-    }
-    void compress(Ipp8s* PredMode, Ipp32s scale);
-
     template <typename T>
     void setAll(T *p, T const & val, EnumPartSize CUMode, Ipp32s PartAddr, Ipp32u Depth, Ipp32s PartIdx);
     void setAllMV(H265MotionVector const & mv, EnumPartSize CUMode, Ipp32s PartAddr, Ipp32u Depth, Ipp32s PartIdx);

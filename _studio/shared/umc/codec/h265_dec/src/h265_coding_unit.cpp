@@ -107,8 +107,6 @@ H265CodingUnit::H265CodingUnit()
 
     m_Pattern = NULL;
 
-    m_CUAboveLeft = NULL;
-    m_CUAboveRight = NULL;
     m_CUAbove = NULL;
     m_CULeft = NULL;
 
@@ -232,10 +230,6 @@ void H265CodingUnit::create (Ipp32u numPartition, Ipp32u Width, Ipp32u Height, b
   // create pattern memory
     m_Pattern = (H265Pattern*) H265_ALIGNED_MALLOC(sizeof(H265Pattern), 32);
 
-  // create motion vector fields
-
-    m_CUAboveLeft      = NULL;
-    m_CUAboveRight     = NULL;
     m_CUAbove          = NULL;
     m_CULeft           = NULL;
 }
@@ -357,8 +351,6 @@ void H265CodingUnit::destroy()
         m_CUMVbuffer[1].destroy();
     }
 
-    m_CUAboveLeft = NULL;
-    m_CUAboveRight = NULL;
     m_CUAbove = NULL;
     m_CULeft = NULL;
 }
@@ -395,8 +387,6 @@ void H265CodingUnit::initCU(H265SegmentDecoderMultiThreaded* sd, Ipp32u iCUAddr)
     // Setting neighbor CU
     m_CULeft = NULL;
     m_CUAbove = NULL;
-    m_CUAboveLeft = NULL;
-    m_CUAboveRight = NULL;
 
     Ipp32u WidthInCU = sps->WidthInCU;
     if (CUAddr % WidthInCU)
@@ -407,16 +397,6 @@ void H265CodingUnit::initCU(H265SegmentDecoderMultiThreaded* sd, Ipp32u iCUAddr)
     if (CUAddr / WidthInCU)
     {
         m_CUAbove = Pic->getCU(CUAddr - WidthInCU);
-    }
-
-    if (m_CULeft && m_CUAbove)
-    {
-        m_CUAboveLeft = Pic->getCU(CUAddr - WidthInCU - 1);
-    }
-
-    if (m_CUAbove && ((CUAddr % WidthInCU) < (WidthInCU - 1)))
-    {
-        m_CUAboveRight = Pic->getCU(CUAddr - WidthInCU + 1);
     }
 }
 
@@ -430,82 +410,6 @@ void H265CodingUnit::setOutsideCUPart(Ipp32u AbsPartIdx, Ipp32u Depth)
     memset(m_DepthArray + AbsPartIdx, Depth,  SizeInUchar);
     memset(m_WidthArray + AbsPartIdx, Width,  SizeInUchar);
     memset(m_HeightArray + AbsPartIdx, Height, SizeInUchar);
-}
-
-// copy -------------------------------------------------------------------------------------------------------------------
-void H265CodingUnit::copySubCU(H265CodingUnit* CU, Ipp32u AbsPartIdx, Ipp32u Depth)
-{
-    Ipp32u PartIdx = AbsPartIdx;
-
-    m_Frame = CU->m_Frame;
-    m_SliceHeader = CU->m_SliceHeader;
-    m_SliceIdx = CU->m_SliceIdx;
-    CUAddr = CU->CUAddr;
-    m_AbsIdxInLCU = AbsPartIdx;
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    m_CUPelX = CU->m_CUPelX + g_RasterToPelX[g_ZscanToRaster[AbsPartIdx]];
-    m_CUPelY = CU->m_CUPelY + g_RasterToPelY[g_ZscanToRaster[AbsPartIdx]];
-
-    Ipp32u Width = g_MaxCUWidth  >> Depth;
-    Ipp32u Height = g_MaxCUHeight >> Depth;
-
-    m_skipFlag = CU->m_skipFlag + PartIdx;
-
-    m_QPArray = CU->m_QPArray + PartIdx;
-    m_PartSizeArray = CU->m_PartSizeArray + PartIdx;
-    m_PredModeArray = CU->m_PredModeArray + PartIdx;
-    m_CUTransquantBypass = CU->m_CUTransquantBypass + PartIdx;
-
-    m_MergeFlag = CU->m_MergeFlag + PartIdx;
-    m_MergeIndex = CU->m_MergeIndex + PartIdx;
-
-    m_LumaIntraDir = CU->m_LumaIntraDir + PartIdx;
-    m_ChromaIntraDir = CU->m_ChromaIntraDir + PartIdx;
-    m_InterDir = CU->m_InterDir + PartIdx;
-    m_TrIdxArray = CU->m_TrIdxArray + PartIdx;
-    m_TrStartArray = CU->m_TrStartArray + PartIdx;
-    for (Ipp32s i = 0; i < 3; i++)
-        m_TransformSkip[i] = CU->m_TransformSkip[i] + PartIdx;
-
-    m_Cbf[0] = CU->getCbf(TEXT_LUMA) + PartIdx;
-    m_Cbf[1] = CU->getCbf(TEXT_CHROMA_U) + PartIdx;
-    m_Cbf[2] = CU->getCbf(TEXT_CHROMA_V) + PartIdx;
-
-    m_DepthArray = CU->m_DepthArray + PartIdx;
-    m_WidthArray = CU->m_WidthArray + PartIdx;
-    m_HeightArray = CU->m_HeightArray + PartIdx;
-
-    m_MVPIdx[0] = CU->m_MVPIdx[REF_PIC_LIST_0] + PartIdx;
-    m_MVPIdx[1] = CU->m_MVPIdx[REF_PIC_LIST_1] + PartIdx;
-    m_MVPNum[0] = CU->m_MVPNum[REF_PIC_LIST_0] + PartIdx;
-    m_MVPNum[1] = CU->m_MVPNum[REF_PIC_LIST_1] + PartIdx;
-
-    m_IPCMFlag = CU->m_IPCMFlag + PartIdx;
-
-    m_CUAboveLeft = CU->m_CUAboveLeft;
-    m_CUAboveRight = CU->m_CUAboveRight;
-    m_CUAbove = CU->m_CUAbove;
-    m_CULeft = CU->m_CULeft;
-
-    Ipp32u Tmp = Width * Height;
-    Ipp32u MaxCuWidth = CU->m_Frame->m_pSlicesInfo->GetSlice(0)->GetSeqParam()->MaxCUWidth;
-    Ipp32u MaxCuHeight = CU->m_Frame->m_pSlicesInfo->GetSlice(0)->GetSeqParam()->MaxCUHeight;
-
-    Ipp32u CoffOffset = MaxCuWidth * MaxCuHeight * AbsPartIdx / CU->m_Frame->getCD()->getNumPartInCU();
-
-    m_TrCoeffY = CU->m_TrCoeffY + CoffOffset;
-    m_IPCMSampleY = CU->m_IPCMSampleY + CoffOffset;
-
-    Tmp >>= 2;
-    CoffOffset >>=2;
-    m_TrCoeffCb = CU->m_TrCoeffCb + CoffOffset;
-    m_TrCoeffCr = CU->m_TrCoeffCr + CoffOffset;
-
-    m_IPCMSampleCb = CU->m_IPCMSampleCb + CoffOffset;
-    m_IPCMSampleCr = CU->m_IPCMSampleCr + CoffOffset;
-
-    m_CUMVbuffer[0].linkToWithOffset(&(CU->m_CUMVbuffer[REF_PIC_LIST_0]), PartIdx);
-    m_CUMVbuffer[1].linkToWithOffset(&(CU->m_CUMVbuffer[REF_PIC_LIST_1]), PartIdx);
 }
 
 // Other public functions ----------------------------------------------------------------------------------------------------------
@@ -1044,44 +948,46 @@ Ipp8u H265CodingUnit::getNumPartInter(Ipp32u AbsPartIdx)
     return  iNumPart;
 }
 
-void H265CodingUnit::getPartIndexAndSize(Ipp32u AbsPartIdx, Ipp32u uPartIdx, Ipp32u &PartAddr, Ipp32u &Width, Ipp32u &Height)
+void H265CodingUnit::getPartIndexAndSize(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u uPartIdx, Ipp32u &PartAddr, Ipp32u &Width, Ipp32u &Height)
 {
-    switch (m_PartSizeArray[AbsPartIdx])
+    Ipp32u NumPartition = m_NumPartition >> (Depth << 1);
+
+        switch (m_PartSizeArray[AbsPartIdx])
     {
         case SIZE_2NxN:
             Width = m_WidthArray[AbsPartIdx];
             Height = m_HeightArray[AbsPartIdx] >> 1;
-            PartAddr = (uPartIdx == 0) ? 0 : m_NumPartition >> 1;
+            PartAddr = (uPartIdx == 0) ? 0 : NumPartition >> 1;
             break;
         case SIZE_Nx2N:
             Width = m_WidthArray[AbsPartIdx] >> 1;
             Height = m_HeightArray[AbsPartIdx];
-            PartAddr = (uPartIdx == 0) ? 0 : m_NumPartition >> 2;
+            PartAddr = (uPartIdx == 0) ? 0 : NumPartition >> 2;
             break;
         case SIZE_NxN:
             Width = m_WidthArray[AbsPartIdx] >> 1;
             Height = m_HeightArray[AbsPartIdx] >> 1;
-            PartAddr = (m_NumPartition >> 2) * uPartIdx;
+            PartAddr = (NumPartition >> 2) * uPartIdx;
             break;
         case SIZE_2NxnU:
             Width    = m_WidthArray[AbsPartIdx];
             Height   = (uPartIdx == 0) ? m_HeightArray[AbsPartIdx] >> 2 : (m_HeightArray[AbsPartIdx] >> 2) + (m_HeightArray[AbsPartIdx] >> 1);
-            PartAddr = (uPartIdx == 0) ? 0 : m_NumPartition >> 3;
+            PartAddr = (uPartIdx == 0) ? 0 : NumPartition >> 3;
             break;
         case SIZE_2NxnD:
             Width    = m_WidthArray[AbsPartIdx];
             Height   = (uPartIdx == 0) ?  (m_HeightArray[AbsPartIdx] >> 2) + (m_HeightArray[AbsPartIdx] >> 1) : m_HeightArray[AbsPartIdx] >> 2;
-            PartAddr = (uPartIdx == 0) ? 0 : (m_NumPartition >> 1) + (m_NumPartition >> 3);
+            PartAddr = (uPartIdx == 0) ? 0 : (NumPartition >> 1) + (NumPartition >> 3);
             break;
         case SIZE_nLx2N:
             Width    = (uPartIdx == 0) ? m_WidthArray[AbsPartIdx] >> 2 : (m_WidthArray[AbsPartIdx] >> 2) + (m_WidthArray[AbsPartIdx] >> 1);
             Height   = m_HeightArray[AbsPartIdx];
-            PartAddr = (uPartIdx == 0) ? 0 : m_NumPartition >> 4;
+            PartAddr = (uPartIdx == 0) ? 0 : NumPartition >> 4;
             break;
         case SIZE_nRx2N:
             Width    = (uPartIdx == 0) ? (m_WidthArray[AbsPartIdx] >> 2) + (m_WidthArray[AbsPartIdx] >> 1) : m_WidthArray[AbsPartIdx] >> 2;
             Height   = m_HeightArray[AbsPartIdx];
-            PartAddr = (uPartIdx == 0) ? 0 : (m_NumPartition >> 2) + (m_NumPartition >> 4);
+            PartAddr = (uPartIdx == 0) ? 0 : (NumPartition >> 2) + (NumPartition >> 4);
             break;
         default:
             VM_ASSERT(m_PartSizeArray[AbsPartIdx] == SIZE_2Nx2N);
