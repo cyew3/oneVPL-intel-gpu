@@ -90,5 +90,6 @@ DECL_STRUCT_TRACE(mfxExtEncoderCapability);
 DECL_STRUCT_TRACE(mfxExtEncoderResetOption);
 DECL_STRUCT_TRACE(mfxExtAVCEncodedFrameInfo);
 #endif //#if ((MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 7))
+DECL_STRUCT_TRACE(mfxExtAvcTemporalLayers);
 
 void allow_debug_output();

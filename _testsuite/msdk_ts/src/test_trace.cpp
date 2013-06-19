@@ -239,7 +239,22 @@ DEF_STRUCT_TRACE(mfxFrameAllocRequest){
 };
 DEF_STRUCT_TRACE(mfxBitstream){
     os  << "{\n"
-        << PUT_ARR(reserved, 6)
+        << PUT_PAR(EncryptedData)
+        << PUT_PAR(NumExtParam)
+        << PUT_PAR(ExtParam);
+
+    if(p.NumExtParam && p.ExtParam){
+        INC_PADDING();
+        os << print_param.padding << "{\n";
+        INC_PADDING();
+        for(mfxU32 i = 0; i < p.NumExtParam; i++)
+            os << print_param.padding << p.ExtParam[i] << '\n';
+        DEC_PADDING();
+        os << print_param.padding << "}\n";
+        DEC_PADDING();
+    }
+
+    os  << PUT_ARR(reserved, 6)
         << PUT_PAR(DecodeTimeStamp)
         << PUT_PAR(TimeStamp)
         << PUT_PAR(Data)
@@ -301,7 +316,7 @@ DEF_STRUCT_TRACE(mfxExtBuffer){
         PRINT_BUF(MFX_EXTBUFF_ENCODER_CAPABILITY        , mfxExtEncoderCapability       );
         PRINT_BUF(MFX_EXTBUFF_ENCODER_RESET_OPTION      , mfxExtEncoderResetOption      );
         PRINT_BUF(MFX_EXTBUFF_ENCODED_FRAME_INFO        , mfxExtAVCEncodedFrameInfo     );
-#endif //#if ((MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 7))
+        PRINT_BUF(MFX_EXTBUFF_AVC_TEMPORAL_LAYERS       , mfxExtAvcTemporalLayers       );
         default: break;
     }
     return os  << "{\n"
@@ -865,6 +880,20 @@ DEF_STRUCT_TRACE(mfxExtEncoderResetOption){
     return os;
 }
 
+#define PUT_LXP(prefix, name)                                    \
+    print_param.padding << "  " << #name << " = {\n";            \
+    INC_PADDING();INC_PADDING();                                 \
+    for(mfxU32 i = 0; i < 32 && prefix.name[i].FrameOrder; i++){ \
+        os  << print_param.padding << "{\n"                      \
+            << PUT_PARP(prefix.name[i], FrameOrder)              \
+            << PUT_PARP(prefix.name[i], PicStruct)               \
+            << PUT_PARP(prefix.name[i], LongTermIdx)             \
+            << PUT_ARRP(prefix.name[i], reserved, 4)             \
+            << print_param.padding << "}\n";                     \
+    }                                                            \
+    DEC_PADDING();DEC_PADDING();                                 \
+    os  << print_param.padding << "  }\n"
+
 DEF_STRUCT_TRACE(mfxExtAVCEncodedFrameInfo){
     os  << "{\n"
         << PUT_4CC(Header.BufferId)
@@ -873,11 +902,32 @@ DEF_STRUCT_TRACE(mfxExtAVCEncodedFrameInfo){
         << PUT_PAR(PicStruct)
         << PUT_PAR(LongTermIdx)
         << PUT_ARR(reserved, 8)
-        //TODO: print ref lists here when struct will be updated with list sizes
+        << PUT_LXP(p, UsedRefListL0)
+        << PUT_LXP(p, UsedRefListL1)
         << print_param.padding << '}';
     return os;
 }
 #endif //#if ((MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 7))
+
+
+DEF_STRUCT_TRACE(mfxExtAvcTemporalLayers){
+    os  << "{\n"
+        << PUT_4CC(Header.BufferId)
+        << PUT_PAR(Header.BufferSz)
+        << PUT_ARR(reserved1, 4)
+        << PUT_PAR(reserved2);
+
+    for(mfxU32 i = 0; i < 8; i++){
+        os  << print_param.padding << "  Layer[" << i << "] = {\n";
+        INC_PADDING();
+        os  << PUT_PARP(p.Layer[i], Scale)
+            << PUT_ARRP(p.Layer[i], reserved, 3)
+            << print_param.padding << "}\n";
+        DEC_PADDING();
+    }
+    os  << print_param.padding << '}';
+    return os;
+}
 
 #if (defined(_WIN32) || defined(_WIN64))
 
