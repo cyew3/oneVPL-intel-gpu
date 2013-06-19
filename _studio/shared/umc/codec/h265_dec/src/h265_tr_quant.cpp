@@ -904,35 +904,7 @@ void H265TrQuant::InvTransformSkip(Ipp32s bitDepth, H265CoeffsPtrCommon pCoeff, 
     }
 }
 
-/** Context derivation process of coeff_abs_significant_flag
- * \param uiSigCoeffGroupFlag significance map of L1
- * \param uiBlkX column of current scan position
- * \param uiBlkY row of current scan position
- * \param uiLog2BlkSize log2 value of block size
- * \returns ctxInc for current scan position
- */
-Ipp32u H265TrQuant::getSigCoeffGroupCtxInc(const Ipp32u* SigCoeffGroupFlag,
-                                           const Ipp32u  CGPosX,
-                                           const Ipp32u  CGPosY,
-                                           Ipp32u width, Ipp32u height)
-{
-    Ipp32u Right = 0;
-    Ipp32u Lower = 0;
 
-    width >>= 2;
-    height >>= 2;
-
-    if (CGPosX < width - 1)
-    {
-        Right = (SigCoeffGroupFlag[CGPosY * width + CGPosX + 1] != 0);
-    }
-    if (CGPosY < height - 1)
-    {
-        Lower = (SigCoeffGroupFlag[(CGPosY  + 1 ) * width + CGPosX] != 0);
-    }
-
-    return (Right || Lower);
-}
 
 // return 1 if both right neighbour and lower neighour are 1's
 bool H265TrQuant::bothCGNeighboursOne(const Ipp32u* SigCoeffGroupFlag,
@@ -964,91 +936,8 @@ bool H265TrQuant::bothCGNeighboursOne(const Ipp32u* SigCoeffGroupFlag,
     }
 }
 
-/** Pattern decision for context derivation process of significant_coeff_flag
- * \param sigCoeffGroupFlag pointer to prior coded significant coeff group
- * \param posXCG column of current coefficient group
- * \param posYCG row of current coefficient group
- * \param width width of the block
- * \param height height of the block
- * \returns pattern for current coefficient group
- */
-Ipp32s H265TrQuant::calcPatternSigCtx(const Ipp32u* sigCoeffGroupFlag, Ipp32u posXCG, Ipp32u posYCG, Ipp32s width, Ipp32s height)
-{
-    if( width == 4 && height == 4 )
-        return -1;
 
-    Ipp32u sigRight = 0;
-    Ipp32u sigLower = 0;
 
-    width >>= 2;
-    height >>= 2;
-    if(posXCG < (Ipp32u)width - 1)
-    {
-        sigRight = (sigCoeffGroupFlag[ posYCG * width + posXCG + 1 ] != 0);
-    }
-    if (posYCG < (Ipp32u)height - 1)
-    {
-        sigLower = (sigCoeffGroupFlag[ (posYCG  + 1 ) * width + posXCG ] != 0);
-    }
-
-    return sigRight + (sigLower<<1);
-}
-
-//LUMA map
-static const Ipp32u ctxIndMap[16] =
-{
-    0, 1, 4, 5,
-    2, 3, 4, 5,
-    6, 6, 8, 8,
-    7, 7, 8, 8
-};
-/** Context derivation process of coeff_abs_significant_flag
- * \param pcCoeff pointer to prior coded transform coefficients
- * \param uiPosX column of current scan position
- * \param uiPosY row of current scan position
- * \param uiLog2BlkSize log2 value of block size
- * \param uiStride stride of the block
- * \returns ctxInc for current scan position
- */
-Ipp32u H265TrQuant::getSigCtxInc(Ipp32s patternSigCtx,
-                                 Ipp32u scanIdx,
-                                 const Ipp32u PosX,
-                                 const Ipp32u PosY,
-                                 const Ipp32u log2BlockSize,
-                                 EnumTextType Type)
-{
-    if (PosX + PosY == 0)
-        return 0;
-
-    if (log2BlockSize == 2)
-    {
-        return ctxIndMap[4 * PosY + PosX];
-    }
-
-    Ipp32u Offset = log2BlockSize == 3 ? (scanIdx == SCAN_DIAG ? 9 : 15) : (Type == TEXT_LUMA ? 21 : 12);
-
-    Ipp32s posXinSubset = PosX - ((PosX >> 2) << 2);
-    Ipp32s posYinSubset = PosY - ((PosY >> 2) << 2);
-    Ipp32s cnt = 0;
-    if(patternSigCtx == 0)
-    {
-        cnt = posXinSubset + posYinSubset <= 2 ? (posXinSubset + posYinSubset == 0 ? 2 : 1) : 0;
-    }
-    else if(patternSigCtx == 1)
-    {
-        cnt = posYinSubset <= 1 ? (posYinSubset == 0 ? 2 : 1) : 0;
-    }
-    else if(patternSigCtx == 2)
-    {
-        cnt = posXinSubset <= 1 ? (posXinSubset == 0 ? 2 : 1) : 0;
-    }
-    else
-    {
-        cnt = 2;
-    }
-
-    return ((Type == TEXT_LUMA && ((PosX >> 2) + (PosY >> 2)) > 0 ) ? 3 : 0) + Offset + cnt;
-}
 
 void H265TrQuant::setScalingListDec(H265ScalingList *scalingList)
 {

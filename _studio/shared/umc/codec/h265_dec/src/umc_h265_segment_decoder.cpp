@@ -1822,6 +1822,100 @@ bool H265SegmentDecoder::DecodeSliceEnd(H265CodingUnit* pCU, Ipp32u AbsPartIdx, 
     return (IsLast > 0);
 }
 
+//LUMA map
+static const Ipp32u ctxIndMap[16] =
+{
+    0, 1, 4, 5,
+    2, 3, 4, 5,
+    6, 6, 8, 8,
+    7, 7, 8, 8
+};
+static const Ipp32u ctxIndMap1[16] =
+{
+    2, 1, 1, 0, 0, 0,0,0,0,0,0,0,0,0,0,0
+}; 
+static const Ipp32u ctxIndMap2[16] =
+{
+    2, 1, 0, 0, 0,0,0,0,0,0,0,0,0,0,0,0
+};
+H265_FORCEINLINE Ipp32u getSigCtxInc(Ipp32s patternSigCtx,
+                                 Ipp32u scanIdx,
+                                 const Ipp32u PosX,
+                                 const Ipp32u PosY,
+                                 const Ipp32u log2BlockSize,
+                                 EnumTextType Type)
+{
+    if (PosX + PosY == 0)
+        return 0;
+
+    if (log2BlockSize == 2)
+    {
+        return ctxIndMap[4 * PosY + PosX];
+    }
+
+    Ipp32u Offset = log2BlockSize == 3 ? (scanIdx == SCAN_DIAG ? 9 : 15) : (Type == TEXT_LUMA ? 21 : 12);
+
+    Ipp32s px = (PosX >> 2);
+    Ipp32s py = (PosY >> 2);
+    Ipp32s posXinSubset = PosX - (px << 2);
+    Ipp32s posYinSubset = PosY - (py << 2);
+    Ipp32s cnt = 2;
+    if(patternSigCtx == 0)
+    {
+        cnt = ctxIndMap1[posXinSubset + posYinSubset];
+    }
+    else if(patternSigCtx == 1)
+    {
+        cnt = ctxIndMap2[posYinSubset];
+    }
+    else if(patternSigCtx == 2)
+    {
+        cnt = ctxIndMap2[posXinSubset];
+    }
+
+
+    return ((Type == TEXT_LUMA && (px + py) > 0 ) ? 3 : 0) + Offset + cnt;
+}
+
+#define CALC_SIG_CTX            \
+    Ipp32u Right = 0;           \
+    Ipp32u Lower = 0;           \
+    width >>= 2;                \
+    height >>= 2;               \
+                                \
+    if(posX < (Ipp32u)width - 1)\
+    {                           \
+        Right = (sigCoeffGroupFlag[ posY * width + posX + 1 ] != 0);    \
+    }                                                                   \
+    if (posY < (Ipp32u)height - 1)                                      \
+    {                                                                   \
+        Lower = (sigCoeffGroupFlag[ (posY  + 1 ) * width + posX ] != 0);\
+    }                                                                   \
+                                                                        \
+
+H265_FORCEINLINE Ipp32s calcPatternSigCtx(const Ipp8u* sigCoeffGroupFlag,
+                                          Ipp32u posX,
+                                          Ipp32u posY,
+                                          Ipp32s width, Ipp32s height)
+{
+    if( width == 4 && height == 4 )
+        return -1;
+
+    CALC_SIG_CTX;
+
+    return Right + (Lower<<1);
+}
+
+
+H265_FORCEINLINE Ipp32u getSigCoeffGroupCtxInc(const Ipp8u* sigCoeffGroupFlag,
+                                           const Ipp32u  posX,
+                                           const Ipp32u  posY,
+                                           Ipp32u width, Ipp32u height)
+{
+    CALC_SIG_CTX;
+
+    return (Right || Lower);
+}
 
 void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCommon pCoef, Ipp32u AbsPartIdx, Ipp32u Width, Ipp32u Height, Ipp32u Depth, EnumTextType Type)
 {
@@ -1881,8 +1975,8 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
     bool beValid = pCU->m_CUTransquantBypass[AbsPartIdx] ? false : pCU->m_SliceHeader->m_PicParamSet->sign_data_hiding_flag;
     Ipp32u absSum;
 
-    Ipp32u SigCoeffGroupFlag[MLS_GRP_NUM];
-    ::memset(SigCoeffGroupFlag, 0, sizeof(Ipp32u) * MLS_GRP_NUM);
+    Ipp8u SigCoeffGroupFlag[MLS_GRP_NUM];
+    ::memset(SigCoeffGroupFlag, 0, sizeof(Ipp8u) * MLS_GRP_NUM);
     const Ipp32u NumBlkSide = Width >> (MLS_CG_SIZE >> 1);
     const Ipp16u * scanCG;
 
@@ -1924,14 +2018,14 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
         else
         {
             Ipp32u SigCoeffGroup;
-            Ipp32u CtxSig = H265TrQuant::getSigCoeffGroupCtxInc(SigCoeffGroupFlag, CGPosX, CGPosY, Width, Height);
+            Ipp32u CtxSig = getSigCoeffGroupCtxInc(SigCoeffGroupFlag, CGPosX, CGPosY, Width, Height);
 
             SigCoeffGroup = m_pBitStream->DecodeSingleBin_CABAC(baseCoeffGroupCtxIdx + CtxSig);
             SigCoeffGroupFlag[CGBlkPos] = SigCoeffGroup;
         }
 
         // decode significant_coeff_flag
-        Ipp32s patternSigCtx = H265TrQuant::calcPatternSigCtx(SigCoeffGroupFlag, CGPosX, CGPosY, Width, Height);
+        Ipp32s patternSigCtx = calcPatternSigCtx(SigCoeffGroupFlag, CGPosX, CGPosY, Width, Height);
         Ipp32u BlkPos, PosY, PosX, Sig, CtxSig;
 
         for (; ScanPosSig >= SubPos; ScanPosSig--)
@@ -1945,7 +2039,7 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
             {
                 if (ScanPosSig > SubPos || SubSet == 0 || numNonZero)
                 {
-                    CtxSig = H265TrQuant::getSigCtxInc(patternSigCtx, ScanIdx, PosX, PosY, Log2BlockSize, Type);
+                    CtxSig = getSigCtxInc(patternSigCtx, ScanIdx, PosX, PosY, Log2BlockSize, Type);
                     Sig = m_pBitStream->DecodeSingleBin_CABAC(baseCtxIdx + CtxSig);
                 }
                 else

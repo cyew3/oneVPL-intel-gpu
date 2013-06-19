@@ -146,20 +146,6 @@ public:
 
     EstBitsSbacStruct* m_EstBitsSbac;
 
-    static Ipp32s calcPatternSigCtx(const Ipp32u* sigCoeffGroupFlag, Ipp32u posXCG, Ipp32u posYCG, Ipp32s width, Ipp32s height);
-
-    static Ipp32u getSigCtxInc(Ipp32s patternSigCtx,
-                               Ipp32u scanIdx,
-                               const Ipp32u PosX,
-                               const Ipp32u PosY,
-                               const Ipp32u log2BlockSize,
-                               EnumTextType Type);
-
-    static Ipp32u getSigCoeffGroupCtxInc(const Ipp32u* SigCoeffGroupFlag,
-                                         const Ipp32u  CGPosX,
-                                         const Ipp32u  CGPosY,
-                                         Ipp32u width, Ipp32u height);
-
     static bool bothCGNeighboursOne(const Ipp32u* SigCoeffGroupFlag,
                                     const Ipp32u  CGPosX,
                                     const Ipp32u  CGPosY,
