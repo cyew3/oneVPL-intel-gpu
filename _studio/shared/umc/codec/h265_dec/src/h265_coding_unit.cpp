@@ -86,7 +86,6 @@ H265CodingUnit::H265CodingUnit()
 
     m_LumaIntraDir = NULL;
     m_ChromaIntraDir = NULL;
-    m_InterDir = NULL;
     m_TrIdxArray = NULL;
     m_TrStartArray = NULL;
     // ML: FIXED: changed the last 3 into 2
@@ -126,7 +125,7 @@ void H265CodingUnit::create (Ipp32u numPartition, Ipp32u Width, Ipp32u Height, b
 
     if (!DecSubCu)
     {
-         m_cumulativeMemoryPtr = CumulativeArraysAllocation(26,  &m_QPArray, sizeof(Ipp8u) * numPartition,
+         m_cumulativeMemoryPtr = CumulativeArraysAllocation(25,  &m_QPArray, sizeof(Ipp8u) * numPartition,
                                         &m_DepthArray, sizeof(Ipp8u) * numPartition,
                                         &m_WidthArray, sizeof(Ipp8u) * numPartition,
                                         &m_HeightArray, sizeof(Ipp8u) * numPartition,
@@ -138,7 +137,6 @@ void H265CodingUnit::create (Ipp32u numPartition, Ipp32u Width, Ipp32u Height, b
 
                                         &m_LumaIntraDir, sizeof(Ipp8u) * numPartition,
                                         &m_ChromaIntraDir, sizeof(Ipp8u) * numPartition,
-                                        &m_InterDir, sizeof(Ipp8u) * numPartition,
 
                                         &m_TrIdxArray, sizeof(Ipp8u) * numPartition,
                                         &m_TrStartArray, sizeof(Ipp8u) * numPartition,
@@ -709,11 +707,6 @@ void H265CodingUnit::setChromIntraDirSubParts(Ipp32u uDir, Ipp32u AbsPartIdx, Ip
     Ipp32u uCurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
 
     memset(m_ChromaIntraDir + AbsPartIdx, uDir, sizeof(Ipp8u) * uCurrPartNumb);
-}
-
-void H265CodingUnit::setInterDirSubParts(Ipp32u uDir, Ipp32u AbsPartIdx, Ipp32u uPartIdx, Ipp32u Depth)
-{
-    setSubPart<Ipp8u>((Ipp8u) uDir, m_InterDir, AbsPartIdx, Depth, uPartIdx);
 }
 
 void H265CodingUnit::setTrIdxSubParts(Ipp32u uTrIdx, Ipp32u AbsPartIdx, Ipp32u Depth)

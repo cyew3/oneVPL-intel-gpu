@@ -89,7 +89,6 @@ public:
 
     Ipp8u*                    m_LumaIntraDir;    // array of intra directions (luma)
     Ipp8u*                    m_ChromaIntraDir;  // array of intra directions (chroma)
-    Ipp8u*                    m_InterDir;        // array of inter directions
 
     bool*                    m_IPCMFlag;        // array of intra_pcm flags
     // misc. variables -------------------------------------------------------------------------------------
@@ -184,7 +183,6 @@ public:
     void setSubPart (T Parameter, T* pBaseLCU, Ipp32u CUAddr, Ipp32u CUDepth, Ipp32u PUIdx);
     void setLumaIntraDirSubParts (Ipp32u Dir, Ipp32u AbsPartIdx, Ipp32u Depth);
     void setChromIntraDirSubParts (Ipp32u Dir, Ipp32u AbsPartIdx, Ipp32u Depth);
-    void setInterDirSubParts (Ipp32u Dir, Ipp32u AbsPartIdx, Ipp32u PartIdx, Ipp32u Depth);
 
     void setTransformSkipSubParts(Ipp32u useTransformSkip, EnumTextType Type, Ipp32u AbsPartIdx, Ipp32u Depth);
 
