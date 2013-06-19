@@ -209,7 +209,7 @@ mfxStatus MFX_DISP_HANDLE::LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImpl
 
         {
             DISPATCHER_LOG_BLOCK( ("MFXInit(%s,ver=%u.%u,session=0x%p)\n"
-                                , DispatcherLog_GetMFXImplString(impl).c_str()
+                                , DispatcherLog_GetMFXImplString(impl| implInterface).c_str()
                                 , apiVersion.Major
                                 , apiVersion.Minor
                                 , &session));

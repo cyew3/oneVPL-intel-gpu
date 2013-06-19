@@ -117,6 +117,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
     const mfxIMPL implMethod = impl & (MFX_IMPL_VIA_ANY - 1);
     // implementation interface masked from the input parameter
     mfxIMPL implInterface = impl & -MFX_IMPL_VIA_ANY;
+    mfxIMPL implInterfaceOrig = implInterface;
     mfxVersion requiredVersion = {{MFX_VERSION_MINOR, MFX_VERSION_MAJOR}};
 
     // check error(s)
@@ -225,6 +226,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
 
     // use the default DLL search mechanism fail,
     // if hard-coded software library's path from the registry fails
+    implInterface = implInterfaceOrig;
     if (MFX_ERR_NONE != mfxRes)
     {
         // set current library index again
