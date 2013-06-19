@@ -19,6 +19,7 @@ File Name: mfx_session.h
 #include <mfxdefs.h>
 #include <mfxstructures.h>
 #include <mfxvideo++int.h>
+#include <mfxaudio++int.h>
 #include <mfxplugin.h>
 #include "mfx_common.h"
 
@@ -49,8 +50,11 @@ struct _mfxSession
 
     // Declare session's components
     std::auto_ptr<VideoCORE> m_pCORE;
+    std::auto_ptr<AudioCORE> m_pAudioCORE;
     std::auto_ptr<VideoENCODE> m_pENCODE;
     std::auto_ptr<VideoDECODE> m_pDECODE;
+    std::auto_ptr<AudioENCODE> m_pAudioENCODE;
+    std::auto_ptr<AudioDECODE> m_pAudioDECODE;
     std::auto_ptr<VideoVPP> m_pVPP;
     std::auto_ptr<VideoENC> m_pENC;
     std::auto_ptr<VideoPAK> m_pPAK;
@@ -160,6 +164,43 @@ mfxStatus MFXVideo##component##_##func_name formal_param_list \
     return mfxRes; \
 }
 
+#undef FUNCTION_AUDIO_IMPL
+#define FUNCTION_AUDIO_IMPL(component, func_name, formal_param_list, actual_param_list) \
+    mfxStatus MFXAudio##component##_##func_name formal_param_list \
+{ \
+    mfxStatus mfxRes; \
+    try \
+    { \
+    /* the absent components caused many issues in application. \
+check the pointer to avoid extra exceptions */ \
+    if (0 == session->m_pAudio##component.get()) \
+        { \
+        mfxRes = MFX_ERR_NOT_INITIALIZED; \
+} \
+        else \
+        { \
+        /* call the codec's method */ \
+        mfxRes = session->m_pAudio##component->func_name actual_param_list; \
+} \
+} \
+    /* handle error(s) */ \
+    catch(MFX_CORE_CATCH_TYPE) \
+    { \
+    /* set the default error value */ \
+    mfxRes = MFX_ERR_NULL_PTR; \
+    if (0 == session) \
+        { \
+        mfxRes = MFX_ERR_INVALID_HANDLE; \
+} \
+        else if (0 == session->m_pAudio##component.get()) \
+        { \
+        mfxRes = MFX_ERR_NOT_INITIALIZED; \
+} \
+} \
+    return mfxRes; \
+}
+
+
 #undef FUNCTION_RESET_IMPL
 #define FUNCTION_RESET_IMPL(component, func_name, formal_param_list, actual_param_list) \
 mfxStatus MFXVideo##component##_##func_name formal_param_list \
@@ -199,6 +240,44 @@ mfxStatus MFXVideo##component##_##func_name formal_param_list \
             mfxRes = MFX_ERR_NOT_INITIALIZED; \
         } \
     } \
+    return mfxRes; \
+}
+
+#undef FUNCTION_AUDIO_RESET_IMPL
+#define FUNCTION_AUDIO_RESET_IMPL(component, func_name, formal_param_list, actual_param_list) \
+    mfxStatus MFXAudio##component##_##func_name formal_param_list \
+{ \
+    mfxStatus mfxRes; \
+    try \
+    { \
+    /* the absent components caused many issues in application. \
+check the pointer to avoid extra exceptions */ \
+    if (0 == session->m_pAudio##component.get()) \
+        { \
+        mfxRes = MFX_ERR_NOT_INITIALIZED; \
+} \
+        else \
+        { \
+        /* wait until all tasks are processed */ \
+        session->m_pScheduler->WaitForTaskCompletion(session->m_pAudio##component.get()); \
+        /* call the codec's method */ \
+        mfxRes = session->m_pAudio##component->func_name actual_param_list; \
+} \
+} \
+    /* handle error(s) */ \
+    catch(MFX_CORE_CATCH_TYPE) \
+    { \
+    /* set the default error value */ \
+    mfxRes = MFX_ERR_NULL_PTR; \
+    if (0 == session) \
+        { \
+        mfxRes = MFX_ERR_INVALID_HANDLE; \
+} \
+        else if (0 == session->m_pAudio##component.get()) \
+        { \
+        mfxRes = MFX_ERR_NOT_INITIALIZED; \
+} \
+} \
     return mfxRes; \
 }
 
