@@ -739,9 +739,8 @@ struct H265ScalingList
   unsigned getRefMatrixId               (unsigned sizeId, unsigned listId)           { return m_refMatrixId[sizeId][listId]; }     //!< get reference matrix ID
   int*     getScalingListDefaultAddress (unsigned sizeId, unsigned listId);                                                        //!< get default matrix coefficient
   void     processDefaultMarix          (unsigned sizeId, unsigned listId);
-  void     setScalingListDC             (unsigned sizeId, unsigned listId, unsigned u)   { m_scalingListDC[sizeId][listId] = u; }      //!< set DC value
-
-  int      getScalingListDC             (unsigned sizeId, unsigned listId) const     { return m_scalingListDC[sizeId][listId]; }   //!< get DC value
+  void     setScalingListDC             (unsigned sizeId, unsigned listId, unsigned u)   {        m_scalingListDC[sizeId][listId] = u; }    //!< set DC value
+  int      getScalingListDC             (unsigned sizeId, unsigned listId) const         { return m_scalingListDC[sizeId][listId];     }    //!< get DC value
   void     checkDcOfMatrix              ();
   void     processRefMatrix             (unsigned sizeId, unsigned listId , unsigned refListId );
 

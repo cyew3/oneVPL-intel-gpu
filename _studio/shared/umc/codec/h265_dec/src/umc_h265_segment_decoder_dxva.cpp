@@ -76,7 +76,7 @@ void H265_DXVA_SegmentDecoder::PackAllHeaders(H265DecoderFrame * pFrame)
 
     static int frameCounter = 0;
     frameCounter++;
-    printf("\n=== Frame%d/%d ======================\n", pFrame->m_index, frameCounter);
+    //printf("\n=== Frame%d/%d ======================\n", pFrame->m_index, frameCounter);
     if(sliceCount)
     {
 #ifdef UMC_VA_DXVA
@@ -110,7 +110,7 @@ void H265_DXVA_SegmentDecoder::PackAllHeaders(H265DecoderFrame * pFrame)
 
         for (int n=0;n < sliceCount;n++)
         {
-            printf("  Slice %d/%d\n", n, sliceCount);
+            //printf("  Slice %d/%d\n", n, sliceCount);
             m_Packer->PackSliceParams(sliceInfo->GetSlice(n), isLongFormat, n == sliceCount - 1);
         }
 

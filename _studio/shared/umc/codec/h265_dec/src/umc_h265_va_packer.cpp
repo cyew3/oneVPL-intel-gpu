@@ -715,8 +715,8 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
 
                 if(eRefPicList == REF_PIC_LIST_0)
                 {
-                    pDXVASlice->luma_offset_l0[iRefIdx]             = (CHAR)wp[0].iOffset;
-                    pDXVASlice->delta_luma_weight_l0[iRefIdx]    = (CHAR)wp[0].iDeltaWeight;
+                    pDXVASlice->luma_offset_l0[iRefIdx]         = (CHAR)wp[0].iOffset;
+                    pDXVASlice->delta_luma_weight_l0[iRefIdx]   = (CHAR)wp[0].iDeltaWeight;
                     for(int chroma=0;chroma < 2;chroma++)
                     {
                         pDXVASlice->delta_chroma_weight_l0[iRefIdx][chroma] = (CHAR)wp[1 + chroma].iDeltaWeight;
@@ -913,17 +913,29 @@ void PackerDXVA2::PackQmatrix(const H265Slice *pSlice/*const H265PicParamSet *pP
     initQMatrix(scalingList, SCALING_LIST_16x16, pQmatrix->ucScalingLists2);    // 16x16
     initQMatrix(scalingList, SCALING_LIST_32x32, pQmatrix->ucScalingLists3);    // 32x32
 
-    // TODO
-    //for(int k=SCALING_LIST_16x16;k <= SCALING_LIST_32x32;k++)
+    // DDI 0.84
+    //for(int sizeId = SCALING_LIST_16x16; sizeId <= SCALING_LIST_32x32; sizeId++)
     //{
-    //    for(int m=0;m < 3;m++)  // Y, Cb, Cr
+    //    for(int listId = 0; listId <  g_scalingListNum[sizeId]; listId++)
     //    {
-    //        for(int n=0;n < 2;n++)  // Intra, Inter
-    //        {
-    //            pQmatrix->bScalingListDC[k][m][n] = (UCHAR)scalingList->getScalingListDC(k, k == SCALING_LIST_16x16 ? 3*n + m : n );
-    //        }
+    //        if(sizeId == SCALING_LIST_16x16)
+    //            pQmatrix->ucScalingListDCCoefSizeID2[listId] = scalingList->getScalingListDC(sizeId, listId);
+    //        else if(sizeId == SCALING_LIST_32x32)
+    //            pQmatrix->ucScalingListDCCoefSizeID3[listId] = scalingList->getScalingListDC(sizeId, listId);
     //    }
     //}
+
+    // DDI 0.81
+    for(int k=SCALING_LIST_16x16;k <= SCALING_LIST_32x32;k++)
+    {
+        for(int m=0;m < 3;m++)  // Y, Cb, Cr
+        {
+            for(int n=0;n < 2;n++)  // Intra, Inter
+            {
+                pQmatrix->bScalingListDC[k][m][n] = (UCHAR)scalingList->getScalingListDC(k, k == SCALING_LIST_16x16 ? 3*n + m : n );
+            }
+        }
+    }
 }
 
 #endif // UMC_VA_DXVA
