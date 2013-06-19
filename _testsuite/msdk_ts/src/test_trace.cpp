@@ -317,6 +317,7 @@ DEF_STRUCT_TRACE(mfxExtBuffer){
         PRINT_BUF(MFX_EXTBUFF_ENCODER_RESET_OPTION      , mfxExtEncoderResetOption      );
         PRINT_BUF(MFX_EXTBUFF_ENCODED_FRAME_INFO        , mfxExtAVCEncodedFrameInfo     );
         PRINT_BUF(MFX_EXTBUFF_AVC_TEMPORAL_LAYERS       , mfxExtAvcTemporalLayers       );
+#endif
         default: break;
     }
     return os  << "{\n"
