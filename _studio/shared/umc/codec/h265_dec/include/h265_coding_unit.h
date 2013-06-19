@@ -24,9 +24,6 @@
 #include "umc_h265_frame.h"
 #include "h265_motion_info.h"
 #include "h265_global_rom.h"
-#include "h265_pattern.h"
-
-
 
 namespace UMC_HEVC_DECODER
 {
@@ -41,7 +38,6 @@ public:
     //pointers --------------------------------------------------------------------------------------
     H265DecoderFrame*        m_Frame;          // frame pointer
     H265SliceHeader *        m_SliceHeader;    // slice header pointer
-    H265Pattern*             m_Pattern;        // neighbour access class pointer
 
     Ipp32s                   m_SliceIdx;
     bool                     m_AvailBorder[8];

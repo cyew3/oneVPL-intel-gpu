@@ -2472,9 +2472,6 @@ void H265SegmentDecoder::IntraRecLumaBlk(H265CodingUnit* pCU,
 
     Ipp32u Size = pCU->m_WidthArray[AbsPartIdx] >> TrDepth;
 
-    //===== init availability pattern =====
-    pCU->m_Pattern->InitPattern(pCU, TrDepth, AbsPartIdx);
-
     bool NeighborFlags[4 * MAX_NUM_SPU_W + 1];
     Ipp32s NumIntraNeighbor = 0;
 
@@ -2519,17 +2516,17 @@ void H265SegmentDecoder::IntraRecLumaBlk(H265CodingUnit* pCU,
             NumIntraNeighbor += isIntraAboveRightAvailable(TUPartNumberInCTB + NumUnitsInCU - m_CurrCTBStride, PartX, XInc, NumUnitsInCU, NeighborFlags + (NumUnitsInCU * 3) + 1);
     }
 
-    pCU->m_Pattern->InitAdiPatternLuma(pCU, AbsPartIdx, TrDepth,
-                                       m_Prediction->GetPredicBuf(),
-                                       m_Prediction->GetPredicBufWidth(),
-                                       m_Prediction->GetPredicBufHeight(),
-                                       NeighborFlags, NumIntraNeighbor);
+    InitNeighbourPatternLuma(pCU, AbsPartIdx, TrDepth,
+        m_Prediction->GetPredicBuf(),
+        m_Prediction->GetPredicBufWidth(),
+        m_Prediction->GetPredicBufHeight(),
+        NeighborFlags, NumIntraNeighbor);
 
     //===== get prediction signal =====
     Ipp32u LumaPredMode = pCU->m_LumaIntraDir[AbsPartIdx];
     H265PlanePtrYCommon pRecIPred = pCU->m_Frame->GetLumaAddr(pCU->CUAddr, AbsPartIdx);
     Ipp32u RecIPredStride = pCU->m_Frame->pitch_luma();
-    m_Prediction->PredIntraLumaAng(pCU->m_Pattern, LumaPredMode, pRecIPred, RecIPredStride, Size);
+    m_Prediction->PredIntraLumaAng(LumaPredMode, pRecIPred, RecIPredStride, Size);
 
     //===== inverse transform =====
     if (!pCU->getCbf(AbsPartIdx, TEXT_LUMA, TrDepth))
@@ -2568,9 +2565,6 @@ void H265SegmentDecoder::IntraRecChromaBlk(H265CodingUnit* pCU,
     }
 
     Ipp32u Size = pCU->m_WidthArray[AbsPartIdx] >> TrDepth;
-
-    //===== init availability pattern =====
-    pCU->m_Pattern->InitPattern(pCU, TrDepth, AbsPartIdx);
 
     bool NeighborFlags[4 * MAX_NUM_SPU_W + 1];
     Ipp32s NumIntraNeighbor = 0;
@@ -2615,11 +2609,11 @@ void H265SegmentDecoder::IntraRecChromaBlk(H265CodingUnit* pCU,
             NumIntraNeighbor += isIntraAboveRightAvailable(TUPartNumberInCTB + NumUnitsInCU - m_CurrCTBStride, PartX, XInc, NumUnitsInCU, NeighborFlags + (NumUnitsInCU * 3) + 1);
     }
 
-    pCU->m_Pattern->InitAdiPatternChroma(pCU, AbsPartIdx, TrDepth,
-                                         m_Prediction->GetPredicBuf(),
-                                         m_Prediction->GetPredicBufWidth(),
-                                         m_Prediction->GetPredicBufHeight(),
-                                         NeighborFlags, NumIntraNeighbor);
+    InitNeighbourPatternChroma(pCU, AbsPartIdx, TrDepth,
+        m_Prediction->GetPredicBuf(),
+        m_Prediction->GetPredicBufWidth(),
+        m_Prediction->GetPredicBufHeight(),
+        NeighborFlags, NumIntraNeighbor);
 
     //===== get prediction signal =====
     Size = pCU->m_WidthArray[AbsPartIdx] >> (TrDepth + 1);

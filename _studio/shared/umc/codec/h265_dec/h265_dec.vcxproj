@@ -23,8 +23,8 @@
     <ClCompile Include="src\h265_dec_defs_dec.cpp" />
     <ClCompile Include="src\h265_frame_coding_data.cpp" />
     <ClCompile Include="src\h265_global_rom.cpp" />
+    <ClCompile Include="src\h265_intrapred.cpp" />
     <ClCompile Include="src\h265_motion_info.cpp" />
-    <ClCompile Include="src\h265_pattern.cpp" />
     <ClCompile Include="src\h265_prediction.cpp" />
     <ClCompile Include="src\h265_tr_quant.cpp" />
     <ClCompile Include="src\h265_tr_quant_opt.cpp" />
@@ -63,7 +63,6 @@
     <ClInclude Include="include\h265_frame_coding_data.h" />
     <ClInclude Include="include\h265_global_rom.h" />
     <ClInclude Include="include\h265_motion_info.h" />
-    <ClInclude Include="include\h265_pattern.h" />
     <ClInclude Include="include\h265_prediction.h" />
     <ClInclude Include="include\h265_tr_quant.h" />
     <ClInclude Include="include\umc_h265_au_splitter.h" />

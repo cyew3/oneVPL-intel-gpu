@@ -166,6 +166,48 @@ public:
                            Ipp32u AbsPartIdx,
                            Ipp32u ChromaPredMode);
 
+    void InitNeighbourPatternLuma(H265CodingUnit* pCU,
+        Ipp32u ZorderIdxInPart,
+        Ipp32u PartDepth,
+        H265PlanePtrYCommon pAdiBuf,
+        Ipp32u OrgBufStride,
+        Ipp32u OrgBufHeight,
+        bool *NeighborFlags,
+        Ipp32s NumIntraNeighbor);
+
+    void InitNeighbourPatternChroma(H265CodingUnit* pCU,
+        Ipp32u ZorderIdxInPart,
+        Ipp32u PartDepth,
+        H265PlanePtrUVCommon pAdiBuf,
+        Ipp32u OrgBufStride,
+        Ipp32u OrgBufHeight,
+        bool *NeighborFlags,
+        Ipp32s NumIntraNeighbor);
+
+    void FillReferenceSamplesLuma(Ipp32s bitDepth,
+        H265PlanePtrYCommon pRoiOrigin,
+        H265PlanePtrYCommon pAdiTemp,
+        bool* NeighborFlags,
+        Ipp32s NumIntraNeighbor,
+        Ipp32u UnitSize,
+        Ipp32s NumUnitsInCU,
+        Ipp32s TotalUnits,
+        Ipp32u CUSize,
+        Ipp32u Size,
+        Ipp32s PicStride);
+
+    void FillReferenceSamplesChroma(Ipp32s bitDepth,
+        H265PlanePtrUVCommon pRoiOrigin,
+        H265PlanePtrUVCommon pAdiTemp,
+        bool* NeighborFlags,
+        Ipp32s NumIntraNeighbor,
+        Ipp32u UnitSize,
+        Ipp32s NumUnitsInCU,
+        Ipp32s TotalUnits,
+        Ipp32u CUSize,
+        Ipp32u Size,
+        Ipp32s PicStride);
+
     void DeblockOneLCU(Ipp32s curLCUAddr, Ipp32s cross);
     void DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curPixelColumn, Ipp32s curPixelRow,
                              Ipp32s onlyOneUp, Ipp32s onlyOneLeft, Ipp32s cross);

@@ -82,6 +82,37 @@ void H265Prediction::InitTempBuff()
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Public member functions
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+static const Ipp8u g_IntraFilter[5] =
+{
+    10, //4x4
+    7, //8x8
+    1, //16x16
+    0, //32x32
+    10, //64x64
+};
+
+H265PlanePtrYCommon H265Prediction::GetPredictorPtr(Ipp32u DirMode, Ipp32u log2BlkSize, H265PlanePtrYCommon pAdiBuf)
+{
+    H265PlanePtrYCommon pSrc;
+    VM_ASSERT(log2BlkSize >= 2 && log2BlkSize < 7);
+    Ipp32s diff = IPP_MIN((abs((Ipp32s) DirMode - HOR_IDX)), (abs((Ipp32s)DirMode - VER_IDX)));
+    Ipp8u FiltIdx = diff > (Ipp32s)g_IntraFilter[log2BlkSize - 2] ? 1 : 0;
+    if (DirMode == DC_IDX)
+    {
+        FiltIdx = 0; //no smoothing for DC or LM chroma
+    }
+    VM_ASSERT(FiltIdx <= 1);
+
+    pSrc = pAdiBuf;
+
+    if (FiltIdx)
+    {
+        Ipp32s size = (2 << log2BlkSize) + 1;
+        pSrc += size * size;
+    }
+
+    return pSrc;
+}
 
 H265PlaneYCommon H265Prediction::PredIntraGetPredValDC(H265PlanePtrYCommon pSrc, Ipp32s SrcStride, Ipp32s Size)
 {
@@ -103,7 +134,7 @@ H265PlaneYCommon H265Prediction::PredIntraGetPredValDC(H265PlanePtrYCommon pSrc,
     return DCVal;
 }
 
-void H265Prediction::PredIntraLumaAng(H265Pattern* pPattern, Ipp32u DirMode, H265PlanePtrYCommon pPred, Ipp32u Stride, Ipp32s Size)
+void H265Prediction::PredIntraLumaAng(Ipp32u DirMode, H265PlanePtrYCommon pPred, Ipp32u Stride, Ipp32s Size)
 {
     H265PlanePtrYCommon pDst = pPred;
     H265PlanePtrYCommon pSrc;
@@ -111,7 +142,7 @@ void H265Prediction::PredIntraLumaAng(H265Pattern* pPattern, Ipp32u DirMode, H26
     VM_ASSERT(g_ConvertToBit[Size] >= 0); //   4x  4
     VM_ASSERT(g_ConvertToBit[Size] <= 5); // 128x128
 
-    pSrc = pPattern->GetPredictorPtr(DirMode, g_ConvertToBit[Size] + 2, m_YUVExt);
+    pSrc = GetPredictorPtr(DirMode, g_ConvertToBit[Size] + 2, m_YUVExt);
 
     // get starting pixel in block
     Ipp32s sw = 2 * Size + 1;

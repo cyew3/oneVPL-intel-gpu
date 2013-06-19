@@ -18,7 +18,6 @@
 #include "umc_h265_dec_defs_dec.h"
 #include "umc_h265_frame.h"
 #include "h265_motion_info.h"
-#include "h265_pattern.h"
 
 namespace UMC_HEVC_DECODER
 {
@@ -118,8 +117,9 @@ public:
     void MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPadded* YUVPred, Ipp32u AbsPartIdx, Ipp32u Depth);
 
     // Angular Intra
-    void PredIntraLumaAng(H265Pattern* pPattern, Ipp32u DirMode, H265PlanePtrYCommon pPred, Ipp32u Stride, Ipp32s Size);
+    void PredIntraLumaAng(Ipp32u DirMode, H265PlanePtrYCommon pPred, Ipp32u Stride, Ipp32s Size);
     void PredIntraChromaAng(H265PlanePtrUVCommon pSrc, Ipp32u DirMode, H265PlanePtrUVCommon pPred, Ipp32u Stride, Ipp32s Size);
+    H265PlanePtrYCommon GetPredictorPtr(Ipp32u DirMode, Ipp32u WidthBits, H265PlanePtrYCommon pAdiBuf);
 
     H265PlaneYCommon PredIntraGetPredValDC(H265PlanePtrYCommon pSrc, Ipp32s SrcStride, Ipp32s Size);
 

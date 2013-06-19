@@ -102,8 +102,6 @@ H265CodingUnit::H265CodingUnit()
     m_IPCMSampleCb = NULL;
     m_IPCMSampleCr = NULL;
 
-    m_Pattern = NULL;
-
     m_CUAbove = NULL;
     m_CULeft = NULL;
 
@@ -168,9 +166,6 @@ void H265CodingUnit::create (Ipp32u numPartition, Ipp32u Width, Ipp32u Height, b
         m_CUMVbuffer[1].m_NumPartition = numPartition;
     }
 
-  // create pattern memory
-    m_Pattern = (H265Pattern*) H265_ALIGNED_MALLOC(sizeof(H265Pattern), 32);
-
     m_CUAbove          = NULL;
     m_CULeft           = NULL;
 }
@@ -179,12 +174,6 @@ void H265CodingUnit::destroy()
 {
     m_Frame = NULL;
     m_SliceHeader = NULL;
-
-    if (m_Pattern)
-    {
-        H265_ALIGNED_FREE(m_Pattern);
-        m_Pattern = NULL;
-    }
 
     if (!m_DecSubCU)
     {
