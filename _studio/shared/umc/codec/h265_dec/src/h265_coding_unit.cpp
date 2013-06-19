@@ -121,7 +121,6 @@ void H265CodingUnit::create (Ipp32u numPartition, Ipp32u Width, Ipp32u Height, b
     m_Frame = NULL;
     m_SliceHeader = NULL;
     m_NumPartition = numPartition;
-    m_UnitSize = unitSize;
 
     if (!DecSubCu)
     {

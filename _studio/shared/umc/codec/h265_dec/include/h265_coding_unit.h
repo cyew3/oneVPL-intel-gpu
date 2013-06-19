@@ -55,7 +55,6 @@ public:
     Ipp8u *                    m_WidthArray;     // array of widths
     Ipp8u *                    m_HeightArray;    // array of heights
     Ipp8u *                    m_DepthArray;     // array of depths
-    Ipp32s                    m_UnitSize;       // size of a "minimum partition"
 
     //CU data ----------------------------------------------------------------------------------------
     bool*                     m_skipFlag;           // array of skip flags
@@ -77,15 +76,9 @@ public:
     H265PlanePtrUVCommon       m_IPCMSampleCb;    // PCM sample buffer (Cb)
     H265PlanePtrUVCommon       m_IPCMSampleCr;    // PCM sample buffer (Cr)
 
-    Ipp32s*                    m_SliceSUMap;         // pointer of slice ID map
-
     //neighbour access variables -------------------------------------------------------------------------
     H265CodingUnit*            m_CUAbove;         // pointer of above CU
     H265CodingUnit*            m_CULeft;          // pointer of left CU
-    MVBuffer                m_MVBufferA;       // motion vector of position A
-    MVBuffer                m_MVBufferB;       // motion vector of position B
-    MVBuffer                m_MVBufferC;       // motion vector of position C
-    MVBuffer                m_MVPred;          // motion vector predictor
 
     Ipp8u*                    m_LumaIntraDir;    // array of intra directions (luma)
     Ipp8u*                    m_ChromaIntraDir;  // array of intra directions (chroma)
