@@ -169,7 +169,6 @@ public:
     H265MotionVector*    MV;
     RefIndexType*        RefIdx;
     Ipp32u            m_NumPartition;
-    AMVPInfo        AMVPinfo;
 
     CUMVBuffer()
     {

@@ -725,9 +725,6 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
         {
             if (m_pSliceHeader->m_numRefIdx[RefListIdx] > 0)
             {
-                pCU->setMVPIdxSubParts(0, EnumRefPicList(RefListIdx), AbsPartIdx, 0, Depth);
-                pCU->setMVPNumSubParts(0, EnumRefPicList(RefListIdx), AbsPartIdx, 0, Depth);
-
                 pCU->m_CUMVbuffer[RefListIdx].setAllMVBuffer(MvBufferNeighbours[2 * MergeIndex + RefListIdx], SIZE_2Nx2N, AbsPartIdx, Depth, 0);
 
                 MVBuffer &mvb = MvBufferNeighbours[2 * MergeIndex + RefListIdx];
@@ -878,57 +875,36 @@ void H265SegmentDecoder::ParseMergeIndexCABAC(H265CodingUnit* pCU, Ipp32u& Merge
 
 RefIndexType H265SegmentDecoder::DecodeMVPIdxPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartAddr, Ipp32u Depth, Ipp32u PartIdx, EnumRefPicList RefList, H265MotionVector &MVd)
 {
-    Ipp32s MVPIdx = -1;
-
-    H265MotionVector MV(0, 0);
-
-    AMVPInfo* pAMVPInfo = &(pCU->m_CUMVbuffer[RefList].AMVPinfo);
+    Ipp32u MVPIdx;
+    AMVPInfo AMVPInfo;
     RefIndexType RefIdx = pCU->m_CUMVbuffer[RefList].RefIdx[AbsPartAddr];
 
     if (pCU->m_InterDir[AbsPartAddr] & (1 << RefList))
-        ParseMVPIdxCABAC(MVPIdx);
+    {
+        VM_ASSERT(RefIdx >= 0);
+        MVPIdx = ParseMVPIdxCABAC();
+    }
+    else
+        return -1;
 
-    fillMVPCand(pCU, AbsPartAddr, PartIdx, RefList, RefIdx, pAMVPInfo);
-    pCU->setMVPNumSubParts(pAMVPInfo->NumbOfCands, RefList, AbsPartAddr, PartIdx, Depth);
-    pCU->setMVPIdxSubParts(MVPIdx, RefList, AbsPartAddr, PartIdx, Depth);
+    fillMVPCand(pCU, AbsPartAddr, PartIdx, RefList, RefIdx, &AMVPInfo);
     EnumPartSize PartSize = (EnumPartSize)pCU->m_PartSizeArray[AbsPartAddr];
 
     if (RefIdx >= 0)
     {
-        getMVPredAMVP(pCU, PartIdx, AbsPartAddr, RefList, MV);
-        MVd = MV + MVd;
+        MVd = AMVPInfo.MVCandidate[MVPIdx] + MVd;
     }
 
     pCU->m_CUMVbuffer[RefList].setAllMV(MVd, PartSize, AbsPartAddr, Depth, PartIdx);
     return RefIdx;
 }
 
-void H265SegmentDecoder::ParseMVPIdxCABAC(Ipp32s& MVPIdx)
+Ipp32u H265SegmentDecoder::ParseMVPIdxCABAC(void)
 {
     Ipp32u uVal;
     ReadUnaryMaxSymbolCABAC(uVal, ctxIdxOffsetHEVC[MVP_IDX_HEVC], 1, AMVP_MAX_NUM_CANDS - 1);
-
-    MVPIdx = uVal;
+    return uVal;
 }
-
-void H265SegmentDecoder::getMVPredAMVP(H265CodingUnit* pCU, Ipp32u PartIdx, Ipp32u PartAddr, EnumRefPicList RefPicList, H265MotionVector& m_MVPred)
-{
-    AMVPInfo* pAMVPInfo = &(pCU->m_CUMVbuffer[RefPicList].AMVPinfo);
-
-    if (pAMVPInfo->NumbOfCands <= 1)
-    {
-        m_MVPred = pAMVPInfo->MVCandidate[0];
-
-        pCU->setMVPIdxSubParts( 0, RefPicList, PartAddr, PartIdx, pCU->m_DepthArray[PartAddr]);
-        pCU->setMVPNumSubParts( pAMVPInfo->NumbOfCands, RefPicList, PartAddr, PartIdx, pCU->m_DepthArray[PartAddr]);
-        return;
-    }
-
-    VM_ASSERT(pCU->m_MVPIdx[RefPicList][PartAddr] >= 0);
-    m_MVPred = pAMVPInfo->MVCandidate[pCU->m_MVPIdx[RefPicList][PartAddr]];
-    return;
-}
-
 
 Ipp32s H265SegmentDecoder::DecodePredModeCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
@@ -1281,9 +1257,6 @@ void H265SegmentDecoder::DecodePUWiseCABAC(H265CodingUnit* pCU, Ipp32u AbsPartId
             {
                 if (pCU->m_SliceHeader->m_numRefIdx[RefListIdx] > 0)
                 {
-                    pCU->setMVPIdxSubParts(0, EnumRefPicList(RefListIdx), SubPartIdx, PartIdx, Depth);
-                    pCU->setMVPNumSubParts(0, EnumRefPicList(RefListIdx), SubPartIdx, PartIdx, Depth);
-
                     pCU->m_CUMVbuffer[RefListIdx].setAllMVBuffer(MvBufferNeighbours[2 * MergeIndex + RefListIdx], PartSize, SubPartIdx, Depth, PartIdx);
 
                     MVBuffer &mvb = MvBufferNeighbours[2 * MergeIndex + RefListIdx];

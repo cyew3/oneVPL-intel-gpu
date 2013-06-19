@@ -110,11 +110,6 @@ H265CodingUnit::H265CodingUnit()
     m_CUAbove = NULL;
     m_CULeft = NULL;
 
-    m_MVPIdx[0] = NULL;
-    m_MVPIdx[1] = NULL;
-    m_MVPNum[0] = NULL;
-    m_MVPNum[1] = NULL;
-
     m_DecSubCU = false;
 }
 
@@ -133,7 +128,7 @@ void H265CodingUnit::create (Ipp32u numPartition, Ipp32u Width, Ipp32u Height, b
 
     if (!DecSubCu)
     {
-         m_cumulativeMemoryPtr = CumulativeArraysAllocation(32,  &m_QPArray, sizeof(Ipp8u) * numPartition,
+         m_cumulativeMemoryPtr = CumulativeArraysAllocation(28,  &m_QPArray, sizeof(Ipp8u) * numPartition,
                                         &m_DepthArray, sizeof(Ipp8u) * numPartition,
                                         &m_WidthArray, sizeof(Ipp8u) * numPartition,
                                         &m_HeightArray, sizeof(Ipp8u) * numPartition,
@@ -163,11 +158,6 @@ void H265CodingUnit::create (Ipp32u numPartition, Ipp32u Width, Ipp32u Height, b
                                         &m_Cbf[0], sizeof(Ipp8u) * numPartition,
                                         &m_Cbf[1], sizeof(Ipp8u) * numPartition,
                                         &m_Cbf[2], sizeof(Ipp8u) * numPartition,
-
-                                        &m_MVPIdx[0], sizeof(Ipp8s) * numPartition,
-                                        &m_MVPIdx[1], sizeof(Ipp8s) * numPartition,
-                                        &m_MVPNum[0], sizeof(Ipp8s) * numPartition,
-                                        &m_MVPNum[1], sizeof(Ipp8s) * numPartition,
 
                                         &m_IPCMFlag, sizeof(bool) * numPartition,
                                         &m_IPCMSampleY, sizeof(H265PlaneYCommon) * Width * Height,
@@ -876,17 +866,6 @@ void H265CodingUnit::setInterDirSubParts(Ipp32u uDir, Ipp32u AbsPartIdx, Ipp32u 
     setSubPart<Ipp8u>((Ipp8u) uDir, m_InterDir, AbsPartIdx, Depth, uPartIdx);
 }
 
-void H265CodingUnit::setMVPIdxSubParts(Ipp32s iMVPIdx, EnumRefPicList RefPicList, Ipp32u AbsPartIdx, Ipp32u uPartIdx, Ipp32u Depth)
-{
-    setSubPart<Ipp8s>((Ipp8s) iMVPIdx, m_MVPIdx[RefPicList], AbsPartIdx, Depth, uPartIdx);
-}
-
-void H265CodingUnit::setMVPNumSubParts(Ipp32s iMVPNum, EnumRefPicList RefPicList, Ipp32u AbsPartIdx, Ipp32u uPartIdx, Ipp32u Depth)
-{
-    setSubPart<Ipp8s>((Ipp8s) iMVPNum, m_MVPNum[RefPicList], AbsPartIdx, Depth, uPartIdx);
-}
-
-
 void H265CodingUnit::setTrIdxSubParts(Ipp32u uTrIdx, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
@@ -998,45 +977,6 @@ void H265CodingUnit::getPartIndexAndSize(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u
     }
 }
 
-void H265CodingUnit::getMVBuffer (H265CodingUnit* CU, Ipp32u AbsPartIdx, EnumRefPicList RefPicList, MVBuffer& MVbuffer)
-{
-    if (CU == NULL)  // OUT OF BOUNDARY
-    {
-        H265MotionVector ZeroMV;
-        MVbuffer.MV = ZeroMV;
-        MVbuffer.RefIdx = NOT_VALID;
-        return;
-    }
-
-    CUMVBuffer*  pCUMVbuffer = &(CU->m_CUMVbuffer[RefPicList]);
-    MVbuffer.MV = pCUMVbuffer->MV[AbsPartIdx];
-    MVbuffer.RefIdx = pCUMVbuffer->RefIdx[AbsPartIdx];
-}
-
-bool H265CodingUnit::hasEqualMotion (Ipp32u AbsPartIdx, H265CodingUnit* CandCU, Ipp32u CandAbsPartIdx)
-{
-    VM_ASSERT( m_InterDir[AbsPartIdx] != 0 );
-
-    if ( m_InterDir[AbsPartIdx] != CandCU->m_InterDir[CandAbsPartIdx] )
-    {
-        return false;
-    }
-
-    for ( Ipp32u uRefListIdx = 0; uRefListIdx < 2; uRefListIdx++ )
-    {
-        if ( m_InterDir[AbsPartIdx] & ( 1 << uRefListIdx ) )
-        {
-            if ( m_CUMVbuffer[EnumRefPicList(uRefListIdx)].MV[AbsPartIdx] != CandCU->m_CUMVbuffer[EnumRefPicList(uRefListIdx)].MV[CandAbsPartIdx] ||
-                m_CUMVbuffer[EnumRefPicList(uRefListIdx)].RefIdx[AbsPartIdx] != CandCU->m_CUMVbuffer[EnumRefPicList(uRefListIdx)].RefIdx[CandAbsPartIdx])
-            {
-                return false;
-            }
-        }
-    }
-
-    return true;
-}
-
 void H265CodingUnit::getPartSize(Ipp32u AbsPartIdx, Ipp32u partIdx, Ipp32s &nPSW, Ipp32s &nPSH)
 {
     switch (m_PartSizeArray[AbsPartIdx])
@@ -1075,18 +1015,6 @@ void H265CodingUnit::getPartSize(Ipp32u AbsPartIdx, Ipp32u partIdx, Ipp32s &nPSW
         nPSH = m_HeightArray[AbsPartIdx];
         break;
     }
-}
-
-Ipp32s H265CodingUnit::searchMVPIdx(H265MotionVector cMv, AMVPInfo* pInfo)
-{
-    for (Ipp32s i = 0; i < pInfo->NumbOfCands; i++)
-    {
-        if (cMv == pInfo->MVCandidate[i])
-        return i;
-    }
-
-    VM_ASSERT(0);
-    return -1;
 }
 
 /** Set a I_PCM flag for all sub-partitions of a partition.

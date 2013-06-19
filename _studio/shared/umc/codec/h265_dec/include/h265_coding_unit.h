@@ -94,8 +94,6 @@ public:
     Ipp8u*                    m_LumaIntraDir;    // array of intra directions (luma)
     Ipp8u*                    m_ChromaIntraDir;  // array of intra directions (chroma)
     Ipp8u*                    m_InterDir;        // array of inter directions
-    Ipp8s*                    m_MVPIdx[2];       // array of motion vector predictor candidates
-    Ipp8s*                    m_MVPNum[2];       // array of number of possible motion vectors predictors
 
     bool*                    m_IPCMFlag;        // array of intra_pcm flags
     // misc. variables -------------------------------------------------------------------------------------
@@ -203,16 +201,8 @@ public:
     void getPartSize(Ipp32u AbsPartIdx, Ipp32u partIdx, Ipp32s &nPSW, Ipp32s &nPSH);
     Ipp8u getNumPartInter(Ipp32u AbsPartIdx);
 
-    // member functions for motion vector ---------- (only functions with declaration here. simple get/set are removed)
-    void getMVBuffer (H265CodingUnit* pCU, Ipp32u AbsPartIdx, EnumRefPicList RefPicList, MVBuffer& MVbuffer);
-
     void fillMVPCand (Ipp32u PartIdx, Ipp32u PartAddr, EnumRefPicList RefPicList, Ipp32s RefIdx, AMVPInfo* pInfo);
     bool isDiffMER(Ipp32s xN, Ipp32s yN, Ipp32s xP, Ipp32s yP);
-    Ipp32s searchMVPIdx (H265MotionVector MV,  AMVPInfo* pInfo);
-
-    void setMVPIdxSubParts (Ipp32s m_MVPIdx, EnumRefPicList RefPicList, Ipp32u AbsPartIdx, Ipp32u PartIdx, Ipp32u Depth);
-    void setMVPNumSubParts (Ipp32s m_MVPNum, EnumRefPicList RefPicList, Ipp32u AbsPartIdx, Ipp32u PartIdx, Ipp32u Depth);
-
 
     // utility functions for neighbouring information - (only functions with declaration here. simple get/set are removed)
     H265CodingUnit* getPULeft        (Ipp32u& LPartUnitIdx , Ipp32u CurrPartUnitIdx, bool EnforceSliceRestriction = true, bool bEnforceTileRestriction = true);
@@ -221,8 +211,6 @@ public:
     H265CodingUnit* getQPMinCULeft (Ipp32u& LPartUnitIdx, Ipp32u CurrAbsIdxInLCU);
     H265CodingUnit* getQPMinCUAbove(Ipp32u& aPartUnitIdx, Ipp32u currAbsIdxInLCU);
     Ipp8u getRefQP (Ipp32u CurrAbsIdxInLCU);
-
-    bool hasEqualMotion (Ipp32u AbsPartIdx, H265CodingUnit* CandCU, Ipp32u CandAbsPartIdx);
 
     // member functions for modes ---------------------- (only functions with declaration here. simple get/set are removed)
     bool isSkipped (Ipp32u PartIdx);  // SKIP - no residual
