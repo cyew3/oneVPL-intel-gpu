@@ -59,7 +59,7 @@ msdk_ts_DECLARE_BLOCK(b_MFXVideoVPP_GetVideoParam);
 msdk_ts_DECLARE_BLOCK(b_MFXVideoVPP_GetVPPStat);
 msdk_ts_DECLARE_BLOCK(b_MFXVideoVPP_RunFrameVPPAsync);
 
-/*
+
 // audio core
 msdk_ts_DECLARE_BLOCK(b_MFXAudioCORE_SyncOperation);
 msdk_ts_DECLARE_BLOCK(b_MFXInitAudio);
@@ -98,7 +98,7 @@ msdk_ts_DECLARE_BLOCK(b_MFXAudioPP_Close);
 
 msdk_ts_DECLARE_BLOCK(b_MFXAudioPP_GetAudioParam);
 msdk_ts_DECLARE_BLOCK(b_MFXAudioPP_RunFrameAudioPPAsync);
-*/
+
 
 /*tools*/
 //IN : request
