@@ -83,8 +83,6 @@ H265CodingUnit::H265CodingUnit()
     m_WidthArray = NULL;
     m_HeightArray = NULL;
     m_QPArray = NULL;
-    m_MergeFlag = NULL;
-    m_MergeIndex = NULL;
 
     m_LumaIntraDir = NULL;
     m_ChromaIntraDir = NULL;
@@ -128,7 +126,7 @@ void H265CodingUnit::create (Ipp32u numPartition, Ipp32u Width, Ipp32u Height, b
 
     if (!DecSubCu)
     {
-         m_cumulativeMemoryPtr = CumulativeArraysAllocation(28,  &m_QPArray, sizeof(Ipp8u) * numPartition,
+         m_cumulativeMemoryPtr = CumulativeArraysAllocation(26,  &m_QPArray, sizeof(Ipp8u) * numPartition,
                                         &m_DepthArray, sizeof(Ipp8u) * numPartition,
                                         &m_WidthArray, sizeof(Ipp8u) * numPartition,
                                         &m_HeightArray, sizeof(Ipp8u) * numPartition,
@@ -137,9 +135,6 @@ void H265CodingUnit::create (Ipp32u numPartition, Ipp32u Width, Ipp32u Height, b
 
                                         &m_skipFlag, sizeof(bool) * numPartition,
                                         &m_CUTransquantBypass, sizeof(bool) * numPartition,
-
-                                        &m_MergeFlag, sizeof(bool) * numPartition,
-                                        &m_MergeIndex, sizeof(bool) * numPartition,
 
                                         &m_LumaIntraDir, sizeof(Ipp8u) * numPartition,
                                         &m_ChromaIntraDir, sizeof(Ipp8u) * numPartition,
@@ -165,47 +160,6 @@ void H265CodingUnit::create (Ipp32u numPartition, Ipp32u Width, Ipp32u Height, b
                                         &m_IPCMSampleCr, sizeof(H265PlaneYCommon) * Width * Height / 4
 
                                       );
-
-        /*m_QPArray = (Ipp8u*) H265_ALIGNED_MALLOC(sizeof(Ipp8u) * numPartition, 32);
-        m_DepthArray = (Ipp8u*) H265_ALIGNED_MALLOC(sizeof(Ipp8u) * numPartition, 32);
-        m_WidthArray = (Ipp8u*) H265_ALIGNED_MALLOC(sizeof(Ipp8u) * numPartition, 32);
-        m_HeightArray = (Ipp8u*) H265_ALIGNED_MALLOC(sizeof(Ipp8u) * numPartition, 32);
-        m_PartSizeArray = new Ipp8s[numPartition];
-        m_PredModeArray = new Ipp8s[numPartition];
-
-        m_skipFlag = (bool*) H265_ALIGNED_MALLOC(sizeof(bool) * numPartition, 32);
-        m_CUTransquantBypass = (bool*) H265_ALIGNED_MALLOC(sizeof(bool) * numPartition, 32);
-
-        m_MergeFlag = (bool*) H265_ALIGNED_MALLOC(sizeof(bool) * numPartition, 32);
-        m_MergeIndex = (Ipp8u*) H265_ALIGNED_MALLOC(sizeof(bool) * numPartition, 32);
-
-        m_LumaIntraDir = (Ipp8u*) H265_ALIGNED_MALLOC(sizeof(Ipp8u) * numPartition, 32);
-        m_ChromaIntraDir = (Ipp8u*) H265_ALIGNED_MALLOC(sizeof(Ipp8u) * numPartition, 32);
-        m_InterDir = (Ipp8u*) H265_ALIGNED_MALLOC(sizeof(Ipp8u) * numPartition, 32);
-
-        m_TrIdxArray = (Ipp8u*) H265_ALIGNED_MALLOC(sizeof(Ipp8u) * numPartition, 32);
-        m_TrStartArray = (Ipp8u*) H265_ALIGNED_MALLOC(sizeof(Ipp8u) * numPartition, 32);
-        m_TransformSkip[0] = (Ipp8u*) H265_ALIGNED_MALLOC(sizeof(Ipp8u) * numPartition, 32);
-        m_TransformSkip[1] = (Ipp8u*) H265_ALIGNED_MALLOC(sizeof(Ipp8u) * numPartition, 32);
-        m_TransformSkip[2] = (Ipp8u*) H265_ALIGNED_MALLOC(sizeof(Ipp8u) * numPartition, 32);
-
-        m_TrCoeffY = (H265CoeffsPtrCommon)H265_ALIGNED_MALLOC(sizeof(Ipp32s) * Width * Height, 32);
-        m_TrCoeffCb = (H265CoeffsPtrCommon)H265_ALIGNED_MALLOC(sizeof(Ipp32s) * Width * Height / 4, 32);
-        m_TrCoeffCr = (H265CoeffsPtrCommon)H265_ALIGNED_MALLOC(sizeof(Ipp32s) * Width * Height / 4, 32);
-
-        m_Cbf[0] = (Ipp8u*) H265_ALIGNED_MALLOC(sizeof(Ipp8u) * numPartition, 32);
-        m_Cbf[1] = (Ipp8u*) H265_ALIGNED_MALLOC(sizeof(Ipp8u) * numPartition, 32);
-        m_Cbf[2] = (Ipp8u*) H265_ALIGNED_MALLOC(sizeof(Ipp8u) * numPartition, 32);
-
-        m_MVPIdx[0] = new Ipp8s[numPartition];
-        m_MVPIdx[1] = new Ipp8s[numPartition];
-        m_MVPNum[0] = new Ipp8s[numPartition];
-        m_MVPNum[1] = new Ipp8s[numPartition];
-
-        m_IPCMFlag = (bool*) H265_ALIGNED_MALLOC(sizeof(bool) * numPartition, 32);
-        m_IPCMSampleY = (H265PlanePtrYCommon)H265_ALIGNED_MALLOC(sizeof(Ipp16s) * Width * Height, 32);
-        m_IPCMSampleCb = (H265PlanePtrUVCommon)H265_ALIGNED_MALLOC(sizeof(Ipp16s) * Width * Height / 4, 32);
-        m_IPCMSampleCr = (H265PlanePtrUVCommon)H265_ALIGNED_MALLOC(sizeof(Ipp16s) * Width * Height / 4, 32);*/
 
         m_CUMVbuffer[0].create(numPartition);
         m_CUMVbuffer[1].create(numPartition);
@@ -235,106 +189,12 @@ void H265CodingUnit::destroy()
         m_Pattern = NULL;
     }
 
-  // encoder-side buffer free
     if (!m_DecSubCU)
     {
         if (m_cumulativeMemoryPtr)
         {
             delete[] m_cumulativeMemoryPtr;
             m_cumulativeMemoryPtr = 0;
-
-            /*H265_ALIGNED_FREE(m_QPArray);
-            m_QPArray = NULL;
-
-            H265_ALIGNED_FREE(m_DepthArray);
-            m_DepthArray = NULL;
-
-            H265_ALIGNED_FREE(m_WidthArray);
-            m_WidthArray = NULL;
-
-            H265_ALIGNED_FREE(m_HeightArray);
-            m_HeightArray = NULL;
-
-            delete[] m_PartSizeArray;
-            m_PartSizeArray = NULL;
-
-            delete[] m_PredModeArray;
-            m_PredModeArray = NULL;
-
-            H265_ALIGNED_FREE(m_skipFlag);
-            m_skipFlag = NULL;
-
-            H265_ALIGNED_FREE(m_MergeFlag);
-            m_MergeFlag = NULL;
-
-            H265_ALIGNED_FREE(m_MergeIndex);
-            m_MergeIndex = NULL;
-
-            H265_ALIGNED_FREE(m_LumaIntraDir);
-            m_LumaIntraDir = NULL;
-
-            H265_ALIGNED_FREE(m_InterDir);
-            m_InterDir = NULL;
-
-            H265_ALIGNED_FREE(m_ChromaIntraDir);
-            m_ChromaIntraDir = NULL;
-
-            H265_ALIGNED_FREE(m_CUTransquantBypass);
-            m_CUTransquantBypass = NULL; 
-
-            H265_ALIGNED_FREE(m_TrCoeffY);
-            m_TrCoeffY = NULL;
-
-            H265_ALIGNED_FREE(m_TrCoeffCb);
-            m_TrCoeffCb = NULL;
- 
-            H265_ALIGNED_FREE(m_TrCoeffCr);
-            m_TrCoeffCr = NULL;
-
-
-            H265_ALIGNED_FREE(m_TrIdxArray);
-            m_TrIdxArray = NULL;
-
-            H265_ALIGNED_FREE(m_TrStartArray);
-            m_TrStartArray = NULL;
-
-            for (Ipp32s i = 0; i < 3; i++)
-                if (m_TransformSkip[i])
-                {
-                    H265_ALIGNED_FREE(m_TransformSkip[i]);
-                    m_TransformSkip[i] = NULL;
-                }
-
-            H265_ALIGNED_FREE(m_Cbf[0]);
-            m_Cbf[0] = NULL;
-            H265_ALIGNED_FREE(m_Cbf[1]);
-            m_Cbf[1] = NULL;
-            H265_ALIGNED_FREE(m_Cbf[2]);
-            m_Cbf[2] = NULL;
-
-            H265_ALIGNED_FREE(m_IPCMFlag);
-            m_IPCMFlag = NULL;
-
-            H265_ALIGNED_FREE(m_IPCMSampleY);
-            m_IPCMSampleY = NULL;
-
-            H265_ALIGNED_FREE(m_IPCMSampleCb);
-            m_IPCMSampleCb = NULL;
-
-            H265_ALIGNED_FREE(m_IPCMSampleCr);
-            m_IPCMSampleCr = NULL;
-
-            delete[] m_MVPIdx[0];
-            m_MVPIdx[0] = NULL;
-
-            delete[] m_MVPIdx[1];
-            m_MVPIdx[1] = NULL;
-
-            delete[] m_MVPNum[0];
-            m_MVPNum[0] = NULL;
-
-            delete[] m_MVPNum[1];
-            m_MVPNum[1] = NULL;*/
         }
 
         m_CUMVbuffer[0].destroy();
@@ -842,16 +702,6 @@ void H265CodingUnit::setSubPart(T Parameter, T* pBaseLCU, Ipp32u uCUAddr, Ipp32u
         default:
             VM_ASSERT(0);
     }
-}
-
-void H265CodingUnit::setMergeFlagSubParts (bool bMergeFlag, Ipp32u AbsPartIdx, Ipp32u uPartIdx, Ipp32u Depth)
-{
-    setSubPart(bMergeFlag, m_MergeFlag, AbsPartIdx, Depth, uPartIdx);
-}
-
-void H265CodingUnit::setMergeIndexSubParts (Ipp32u uMergeIndex, Ipp32u AbsPartIdx, Ipp32u uPartIdx, Ipp32u Depth)
-{
-    setSubPart<Ipp8u>((Ipp8u) uMergeIndex, m_MergeIndex, AbsPartIdx, Depth, uPartIdx);
 }
 
 void H265CodingUnit::setChromIntraDirSubParts(Ipp32u uDir, Ipp32u AbsPartIdx, Ipp32u Depth)

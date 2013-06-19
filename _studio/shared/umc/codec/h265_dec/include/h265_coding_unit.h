@@ -87,10 +87,6 @@ public:
     MVBuffer                m_MVBufferC;       // motion vector of position C
     MVBuffer                m_MVPred;          // motion vector predictor
 
-    //coding tool information ---------------------------------------------------------------------------
-    bool*                    m_MergeFlag;       // array of merge flags
-    Ipp8u*                    m_MergeIndex;      // array of merge candidate indices
-
     Ipp8u*                    m_LumaIntraDir;    // array of intra directions (luma)
     Ipp8u*                    m_ChromaIntraDir;  // array of intra directions (chroma)
     Ipp8u*                    m_InterDir;        // array of inter directions
@@ -184,8 +180,6 @@ public:
     void setCbfSubParts (Ipp32u m_Cbf, EnumTextType TType, Ipp32u AbsPartIdx, Ipp32u PartIdx, Ipp32u Depth);
 
     // member functions for coding tool information (only functions with declaration here. simple get/set are removed)
-    void setMergeFlagSubParts (bool m_MergeFlag, Ipp32u AbsPartIdx, Ipp32u PartIdx, Ipp32u Depth);
-    void setMergeIndexSubParts (Ipp32u MergeIndex, Ipp32u AbsPartIdx, Ipp32u PartIdx, Ipp32u Depth);
     template <typename T>
     void setSubPart (T Parameter, T* pBaseLCU, Ipp32u CUAddr, Ipp32u CUDepth, Ipp32u PUIdx);
     void setLumaIntraDirSubParts (Ipp32u Dir, Ipp32u AbsPartIdx, Ipp32u Depth);
