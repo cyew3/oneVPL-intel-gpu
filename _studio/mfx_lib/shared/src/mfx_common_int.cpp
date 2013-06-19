@@ -142,6 +142,45 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId)
     return MFX_ERR_NONE;
 }
 
+mfxStatus CheckAudioParamCommon(mfxAudioParam *in)
+{
+//    mfxStatus sts;
+
+    switch (in->mfx.CodecId)
+    {
+        case MFX_CODEC_AAC:
+        case MFX_CODEC_MP3:
+            break;
+        default:
+            return MFX_ERR_INVALID_AUDIO_PARAM;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+
+
+
+
+mfxStatus CheckAudioParamDecoders(mfxAudioParam *in)
+{
+    mfxStatus sts = CheckAudioParamCommon(in);
+    if (sts < MFX_ERR_NONE)
+        return sts;
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus CheckAudioParamEncoders(mfxAudioParam *in)
+{
+    mfxStatus sts = CheckAudioParamCommon(in);
+    if (sts < MFX_ERR_NONE)
+        return sts;
+
+    return MFX_ERR_NONE;
+}
+
+  
 mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type)
 {
     if (!in)
