@@ -36,11 +36,9 @@ Ipp32s H265MotionVector::getAbsVer() const
 void CUMVBuffer::create(Ipp32u numPartition )
 {
     VM_ASSERT(MV == NULL);
-    VM_ASSERT(MVd == NULL);
     VM_ASSERT(RefIdx == NULL);
 
     MV = new H265MotionVector[numPartition];
-    MVd = new H265MotionVector[numPartition];
     RefIdx = new RefIndexType[numPartition];
 
     m_NumPartition = numPartition;
@@ -49,58 +47,15 @@ void CUMVBuffer::create(Ipp32u numPartition )
 void CUMVBuffer::destroy()
 {
     VM_ASSERT(MV != NULL);
-    VM_ASSERT(MVd != NULL);
     VM_ASSERT(RefIdx != NULL);
 
     delete[] MV;
-    delete[] MVd;
     delete[] RefIdx;
 
     MV = NULL;
-    MVd = NULL;
     RefIdx = NULL;
 
     m_NumPartition = 0;
-}
-
-void CUMVBuffer::clearMVBuffer()
-{
-#if (HEVC_OPT_CHANGES & 4)
-    memset( MV, 0, sizeof( *MV ) * m_NumPartition );
-    memset( MVd, 0, sizeof( *MVd ) * m_NumPartition );
-#else
-    for (Ipp32u i = 0; i < m_NumPartition; i++)
-    {
-        MV[i].setZero();
-        MVd[i].setZero();
-    }
-#endif
-    VM_ASSERT(sizeof(*RefIdx) == 1);
-    memset(RefIdx, NOT_VALID, m_NumPartition * sizeof(*RefIdx));
-}
-
-void CUMVBuffer::copyFrom(CUMVBuffer const * CUMVBufferSrc, Ipp32s NumPartSrc, Ipp32s PartAddrDst)
-{
-    Ipp32s SizeInMV = sizeof(H265MotionVector) * NumPartSrc;
-
-    memcpy(MV + PartAddrDst, CUMVBufferSrc->MV, SizeInMV);
-    memcpy(MVd + PartAddrDst, CUMVBufferSrc->MVd, SizeInMV);
-    memcpy(RefIdx + PartAddrDst, CUMVBufferSrc->RefIdx, sizeof(*RefIdx) * NumPartSrc);
-}
-
-void CUMVBuffer::copyTo(CUMVBuffer* CUMVBufferDst, Ipp32s PartAddrDst) const
-{
-    copyTo(CUMVBufferDst, PartAddrDst, 0, m_NumPartition);
-}
-
-void CUMVBuffer::copyTo(CUMVBuffer* CUMVBufferDst, Ipp32s PartAddrDst, Ipp32u offset, Ipp32u NumPart) const
-{
-    Ipp32s SizeInMV = sizeof(H265MotionVector) * NumPart;
-    Ipp32s Offset = offset + PartAddrDst;
-
-    memcpy(CUMVBufferDst->MV + Offset, MV + offset, SizeInMV);
-    memcpy(CUMVBufferDst->MVd + Offset, MVd + offset, SizeInMV);
-    memcpy(CUMVBufferDst->RefIdx + Offset, RefIdx + offset, sizeof(*RefIdx) * NumPart);
 }
 
 // set
@@ -286,11 +241,6 @@ void CUMVBuffer::setAll(T *p, T const & val, EnumPartSize CUMode, Ipp32s PartAdd
 void CUMVBuffer::setAllMV(H265MotionVector const & mv, EnumPartSize CUMode, Ipp32s PartAddr, Ipp32u Depth, Ipp32s PartIdx)
 {
     setAll(MV, mv, CUMode, PartAddr, Depth, PartIdx);
-}
-
-void CUMVBuffer::setAllMVd(H265MotionVector const & mvd, EnumPartSize CUMode, Ipp32s PartAddr, Ipp32u Depth, Ipp32s PartIdx)
-{
-    setAll(MVd, mvd, CUMode, PartAddr, Depth, PartIdx);
 }
 
 void CUMVBuffer::setAllRefIdx (Ipp32s refIdx, EnumPartSize CUMode, Ipp32s PartAddr, Ipp32u Depth, Ipp32s PartIdx)

@@ -167,7 +167,6 @@ struct CUMVBuffer
 {
 public:
     H265MotionVector*    MV;
-    H265MotionVector*    MVd;
     RefIndexType*        RefIdx;
     Ipp32u            m_NumPartition;
     AMVPInfo        AMVPinfo;
@@ -175,7 +174,6 @@ public:
     CUMVBuffer()
     {
         MV = NULL;
-        MVd = NULL;
         RefIdx = NULL;
         m_NumPartition = 0;
     }
@@ -188,17 +186,9 @@ public:
     void create(Ipp32u numpartition);
     void destroy();
 
-    // clear-copy
-    void clearMVBuffer();
-
-    void copyFrom(CUMVBuffer const * CUMVBufferSrc, Ipp32s NumPartSrc, Ipp32s PartAddrDst);
-    void copyTo(CUMVBuffer* CUMVBufferDst, Ipp32s PartAddrDst) const;
-    void copyTo(CUMVBuffer* CUMVBufferDst, Ipp32s PartAddrDst, Ipp32u offset, Ipp32u NumPart) const;
-
     template <typename T>
     void setAll(T *p, T const & val, EnumPartSize CUMode, Ipp32s PartAddr, Ipp32u Depth, Ipp32s PartIdx);
     void setAllMV(H265MotionVector const & mv, EnumPartSize CUMode, Ipp32s PartAddr, Ipp32u Depth, Ipp32s PartIdx);
-    void setAllMVd(H265MotionVector const & mvd, EnumPartSize CUMode, Ipp32s PartAddr, Ipp32u Depth, Ipp32s PartIdx);
     void setAllRefIdx (Ipp32s refIdx, EnumPartSize CUMode, Ipp32s PartAddr, Ipp32u Depth, Ipp32s PartIdx);
     void setAllMVBuffer(MVBuffer const & mvBuffer, EnumPartSize CUMode, Ipp32s PartAddr, Ipp32u Depth, Ipp32s PartIdx);
 };

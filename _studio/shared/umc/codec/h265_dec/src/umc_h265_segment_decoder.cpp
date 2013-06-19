@@ -709,7 +709,6 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
         getInterMergeCandidates(pCU, AbsPartIdx, 0, MvBufferNeighbours, InterDirNeighbours, numValidMergeCand, MergeIndex);
         pCU->setInterDirSubParts(InterDirNeighbours[MergeIndex], AbsPartIdx, 0, Depth);
 
-        H265MotionVector TmpMV(0, 0);
         Ipp32s PartWidth, PartHeight;
         pCU->getPartSize(AbsPartIdx, 0, PartWidth, PartHeight);
 
@@ -729,7 +728,6 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
                 pCU->setMVPIdxSubParts(0, EnumRefPicList(RefListIdx), AbsPartIdx, 0, Depth);
                 pCU->setMVPNumSubParts(0, EnumRefPicList(RefListIdx), AbsPartIdx, 0, Depth);
 
-                pCU->m_CUMVbuffer[RefListIdx].setAllMVd(TmpMV, SIZE_2Nx2N, AbsPartIdx, Depth, 0);
                 pCU->m_CUMVbuffer[RefListIdx].setAllMVBuffer(MvBufferNeighbours[2 * MergeIndex + RefListIdx], SIZE_2Nx2N, AbsPartIdx, Depth, 0);
 
                 MVBuffer &mvb = MvBufferNeighbours[2 * MergeIndex + RefListIdx];
@@ -878,15 +876,14 @@ void H265SegmentDecoder::ParseMergeIndexCABAC(H265CodingUnit* pCU, Ipp32u& Merge
 }
 
 
-Ipp32s H265SegmentDecoder::DecodeMVPIdxPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartAddr, Ipp32u Depth, Ipp32u PartIdx, EnumRefPicList RefList, H265MotionVector &MV)
+RefIndexType H265SegmentDecoder::DecodeMVPIdxPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartAddr, Ipp32u Depth, Ipp32u PartIdx, EnumRefPicList RefList, H265MotionVector &MVd)
 {
     Ipp32s MVPIdx = -1;
 
-    H265MotionVector ZeroMV(0, 0);
-    MV = ZeroMV;
+    H265MotionVector MV(0, 0);
 
     AMVPInfo* pAMVPInfo = &(pCU->m_CUMVbuffer[RefList].AMVPinfo);
-    Ipp32s RefIdx = pCU->m_CUMVbuffer[RefList].RefIdx[AbsPartAddr];
+    RefIndexType RefIdx = pCU->m_CUMVbuffer[RefList].RefIdx[AbsPartAddr];
 
     if (pCU->m_InterDir[AbsPartAddr] & (1 << RefList))
         ParseMVPIdxCABAC(MVPIdx);
@@ -899,10 +896,10 @@ Ipp32s H265SegmentDecoder::DecodeMVPIdxPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPa
     if (RefIdx >= 0)
     {
         getMVPredAMVP(pCU, PartIdx, AbsPartAddr, RefList, MV);
-        MV = MV + pCU->m_CUMVbuffer[RefList].MVd[AbsPartAddr];
+        MVd = MV + MVd;
     }
 
-    pCU->m_CUMVbuffer[RefList].setAllMV(MV, PartSize, AbsPartAddr, Depth, PartIdx);
+    pCU->m_CUMVbuffer[RefList].setAllMV(MVd, PartSize, AbsPartAddr, Depth, PartIdx);
     return RefIdx;
 }
 
@@ -1045,7 +1042,7 @@ void H265SegmentDecoder::DecodeIPCMInfoCABAC(H265CodingUnit* pCU, Ipp32u AbsPart
     Ipp32u uVal;
 
     uVal = m_pBitStream->DecodeTerminatingBit_CABAC();
-    pCU->setIPCMFlagSubParts(uVal, AbsPartIdx, Depth);
+    pCU->setIPCMFlagSubParts(uVal != 0, AbsPartIdx, Depth);
 
     if (uVal)
     {
@@ -1280,7 +1277,6 @@ void H265SegmentDecoder::DecodePUWiseCABAC(H265CodingUnit* pCU, Ipp32u AbsPartId
             }
             pCU->setInterDirSubParts(InterDirNeighbours[MergeIndex], SubPartIdx, PartIdx, Depth);
 
-            H265MotionVector TmpMV( 0, 0 );
             for (Ipp32u RefListIdx = 0; RefListIdx < 2; RefListIdx++)
             {
                 if (pCU->m_SliceHeader->m_numRefIdx[RefListIdx] > 0)
@@ -1288,7 +1284,6 @@ void H265SegmentDecoder::DecodePUWiseCABAC(H265CodingUnit* pCU, Ipp32u AbsPartId
                     pCU->setMVPIdxSubParts(0, EnumRefPicList(RefListIdx), SubPartIdx, PartIdx, Depth);
                     pCU->setMVPNumSubParts(0, EnumRefPicList(RefListIdx), SubPartIdx, PartIdx, Depth);
 
-                    pCU->m_CUMVbuffer[RefListIdx].setAllMVd(TmpMV, PartSize, SubPartIdx, Depth, PartIdx);
                     pCU->m_CUMVbuffer[RefListIdx].setAllMVBuffer(MvBufferNeighbours[2 * MergeIndex + RefListIdx], PartSize, SubPartIdx, Depth, PartIdx);
 
                     MVBuffer &mvb = MvBufferNeighbours[2 * MergeIndex + RefListIdx];
@@ -1310,8 +1305,8 @@ void H265SegmentDecoder::DecodePUWiseCABAC(H265CodingUnit* pCU, Ipp32u AbsPartId
                 if (pCU->m_SliceHeader->m_numRefIdx[EnumRefPicList(RefListIdx)] > 0)
                 {
                     DecodeRefFrmIdxPUCABAC(pCU, SubPartIdx, Depth, PartIdx, EnumRefPicList(RefListIdx));
-                    DecodeMVdPUCABAC(pCU, SubPartIdx, Depth, PartIdx, EnumRefPicList(RefListIdx));
-                    RefIdx[RefListIdx] = (RefIndexType)DecodeMVPIdxPUCABAC(pCU, SubPartIdx, Depth, PartIdx, EnumRefPicList(RefListIdx), MV[RefListIdx]);
+                    DecodeMVdPUCABAC(pCU, SubPartIdx, Depth, PartIdx, EnumRefPicList(RefListIdx), MV[RefListIdx]);
+                    RefIdx[RefListIdx] = DecodeMVPIdxPUCABAC(pCU, SubPartIdx, Depth, PartIdx, EnumRefPicList(RefListIdx), MV[RefListIdx]);
                 }
                 else
                     pCU->m_CUMVbuffer[RefListIdx].setAllRefIdx(-1, PartSize, SubPartIdx, Depth, PartIdx);
@@ -1425,7 +1420,7 @@ void H265SegmentDecoder::ParseRefFrmIdxCABAC(H265CodingUnit* pCU, Ipp32s& RefFrm
 }
 
 //decode motion vector difference for a PU block
-void H265SegmentDecoder::DecodeMVdPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u PartIdx, EnumRefPicList RefList)
+void H265SegmentDecoder::DecodeMVdPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u PartIdx, EnumRefPicList RefList, H265MotionVector &MVd)
 {
     if (pCU->m_InterDir[AbsPartIdx] & (1 << RefList))
     {
@@ -1486,8 +1481,9 @@ void H265SegmentDecoder::DecodeMVdPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx
             HorAbs = -HorAbs;
         if (VerSign)
             VerAbs = -VerAbs;
-        H265MotionVector MV(HorAbs, VerAbs);
-        pCU->m_CUMVbuffer[RefList].setAllMVd(MV, (EnumPartSize)pCU->m_PartSizeArray[AbsPartIdx], AbsPartIdx, Depth, PartIdx);
+
+        MVd.Horizontal = HorAbs;
+        MVd.Vertical = VerAbs;
     }
 }
 
