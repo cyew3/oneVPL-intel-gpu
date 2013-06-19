@@ -111,7 +111,29 @@ public:
 #endif
 
     // Misc functions
-    void SetQPforQuant(Ipp32s QP, EnumTextType TxtType, Ipp32s qpBdOffset, Ipp32s chromaQPOffset);
+    H265_FORCEINLINE void SetQPforQuant(Ipp32s QP, EnumTextType TxtType, Ipp32s qpBdOffset, Ipp32s chromaQPOffset)
+    {
+        Ipp32s qpScaled;
+
+        if (TxtType == TEXT_LUMA)
+        {
+            qpScaled = QP + qpBdOffset;
+        }
+        else
+        {
+            qpScaled = Clip3(-qpBdOffset, 57, QP + chromaQPOffset);
+
+            if (qpScaled < 0)
+            {
+                qpScaled = qpScaled + qpBdOffset;
+            }
+            else
+            {
+                qpScaled = g_ChromaScale[qpScaled] + qpBdOffset;
+            }
+        }
+        m_QPParam.SetQPParam(qpScaled);
+    }
 
     void SetLambda(Ipp64f Lambda)
     {
@@ -192,30 +214,6 @@ private:
     void DeQuant(Ipp32s bitDepth, H265CoeffsPtrCommon pSrc, Ipp32u Width, Ipp32u Height, Ipp32s scalingListType);
 #endif // (HEVC_OPT_CHANGES & 128)
 };// END CLASS DEFINITION H265TrQuant
-
-H265_FORCEINLINE void H265TrQuant::SetQPforQuant(Ipp32s QP, EnumTextType TxtType, Ipp32s qpBdOffset, Ipp32s chromaQPOffset)
-{
-    Ipp32s qpScaled;
-
-    if (TxtType == TEXT_LUMA)
-    {
-        qpScaled = QP + qpBdOffset;
-    }
-    else
-    {
-        qpScaled = Clip3(-qpBdOffset, 57, QP + chromaQPOffset);
-
-        if (qpScaled < 0)
-        {
-            qpScaled = qpScaled + qpBdOffset;
-        }
-        else
-        {
-            qpScaled = g_ChromaScale[qpScaled] + qpBdOffset;
-        }
-    }
-    m_QPParam.SetQPParam(qpScaled);
-}
 
 } // end namespace UMC_HEVC_DECODER
 

@@ -19,6 +19,8 @@
 #include <string.h>
 #include <vector>
 
+#include <immintrin.h> /* for __m128i */
+
 #include "ippdefs.h"
 #include "vm_types.h"
 #include "ippvc.h"
