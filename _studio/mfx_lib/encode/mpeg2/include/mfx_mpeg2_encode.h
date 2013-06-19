@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          MPEG2 encoder
@@ -39,7 +39,7 @@ struct sIntTaskInfo
 struct sIntTasks
 {
     UMC::MPEG2VideoEncoderBase::threadSpecificData *       m_TaskSpec;
-    sIntTaskInfo*                                        m_TaskInfo;
+    sIntTaskInfo  *                                        m_TaskInfo;
     mfxU32                                                 m_NumTasks;
     mfxU32                                                 m_CurrTask;
     vm_mutex                                               m_mGuard;
@@ -50,6 +50,7 @@ struct sIntTasks
         m_TaskSpec = 0;
         m_TaskInfo = 0;
         m_NumTasks = 0;
+        m_CurrTask = 0;
         vm_mutex_set_invalid(&m_mGuard);
         vm_event_set_invalid (&m_exit_event);        
     }
