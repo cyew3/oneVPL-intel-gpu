@@ -4,14 +4,14 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
 
 File Name: libmfxsw_query.cpp
 
 \* ****************************************************************************** */
 
 #include <mfxvideo.h>
-
+#include <mfxaudio.h>
 #include <mfx_session.h>
 
 mfxStatus MFXQueryIMPL(mfxSession session, mfxIMPL *impl)
@@ -68,3 +68,48 @@ mfxStatus MFXQueryVersion(mfxSession session, mfxVersion *pVersion)
     return MFX_ERR_NONE;
 
 } // mfxStatus MFXQueryVersion(mfxSession session, mfxVersion *pVersion)
+
+mfxStatus MFXAudioQueryIMPL(mfxSession session, mfxIMPL *impl)
+{
+    mfxIMPL currentImpl;
+
+    // check error(s)
+    if (0 == session)
+    {
+        return MFX_ERR_INVALID_HANDLE;
+    }
+    if (0 == impl)
+    {
+        return MFX_ERR_NULL_PTR;
+    }
+
+    // set the library's type
+
+    currentImpl = MFX_IMPL_SOFTWARE;
+
+
+    // save the current implementation type
+    *impl = currentImpl;
+
+    return MFX_ERR_NONE;
+
+} // mfxStatus MFXAudioQueryIMPL(mfxSession session, mfxIMPL *impl)
+
+mfxStatus MFXAudioQueryVersion(mfxSession session, mfxVersion *pVersion)
+{
+    if (0 == session)
+    {
+        return MFX_ERR_INVALID_HANDLE;
+    }
+    if (0 == pVersion)
+    {
+        return MFX_ERR_NULL_PTR;
+    }
+
+    // set the library's version
+    pVersion->Major = MFX_AUDIO_VERSION_MAJOR;
+    pVersion->Minor = MFX_AUDIO_VERSION_MINOR;
+
+    return MFX_ERR_NONE;
+
+} // mfxStatus MFXAudioQueryVersion(mfxSession session, mfxVersion *pVersion)
