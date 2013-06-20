@@ -212,16 +212,6 @@ mfxStatus MFX_CDECL MFXAudioDECODE_QueryIOSize(mfxSession session, mfxAudioParam
 mfxStatus MFX_CDECL MFXAudioDECODE_GetAudioParam(mfxSession session, mfxAudioParam *par);
 mfxStatus MFX_CDECL MFXAudioDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs /*mfxRAWAudio *buffer_out*/,mfxBitstream *buffer_out, mfxSyncPoint *syncp);
 
-/* AudioPP */
-mfxStatus MFX_CDECL MFXAudioPP_Query(mfxSession session, mfxAudioParam *in, mfxAudioParam *out);
-mfxStatus MFX_CDECL MFXAudioPP_QueryIOSSize(mfxSession session, mfxAudioParam *par, mfxAudioAllocRequest request[2]);
-mfxStatus MFX_CDECL MFXAudioPP_Init(mfxSession session, mfxAudioParam *par);
-
-mfxStatus MFX_CDECL MFXAudioPP_Reset(mfxSession session, mfxAudioParam *par);
-mfxStatus MFX_CDECL MFXAudioPP_Close(mfxSession session);
-
-mfxStatus MFX_CDECL MFXAudioPP_GetAudioParam(mfxSession session, mfxAudioParam *par);
-mfxStatus MFX_CDECL MFXAudioPP_RunFrameAudioPPAsync(mfxSession session, mfxBitstream **in, mfxU16 NumIn, mfxBitstream **out, mfxU16 NumOut, mfxSyncPoint *syncp);
 
 
 #endif

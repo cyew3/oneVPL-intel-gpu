@@ -68,3 +68,24 @@ protected:
 
     mfxSession m_session;                                       // (mfxSession) handle to the owning session
 };
+
+
+class MFXAudioENCODE
+{
+public:
+
+    MFXAudioENCODE(mfxSession session) { m_session = session; }
+    virtual ~MFXAudioENCODE(void) { Close(); }
+
+    mfxStatus Query(mfxAudioParam *in, mfxAudioParam *out) { return MFXAudioENCODE_Query(m_session, in, out); }
+    mfxStatus QueryIOSize(mfxAudioParam *par, mfxFrameAllocRequest *request) { return MFXAudioENCODE_QueryIOSize(m_session, par, request); }
+    mfxStatus Init(mfxAudioParam *par) { return MFXAudioENCODE_Init(m_session, par); }
+    mfxStatus Reset(mfxAudioParam *par) { return MFXAudioENCODE_Reset(m_session, par); }
+    mfxStatus Close(void) { return MFXAudioENCODE_Close(m_session); }
+    mfxStatus GetAudioParam(mfxAudioParam *par) { return MFXAudioENCODE_GetAudioParam(m_session, par); }
+    mfxStatus EncodeFrameAsync(mfxBitstream *bs, mfxBitstream *buffer_out, mfxSyncPoint *syncp) { return MFXAudioENCODE_EncodeFrameAsync(m_session, bs, buffer_out, syncp); }
+
+protected:
+
+    mfxSession m_session;                                       // (mfxSession) handle to the owning session
+};
