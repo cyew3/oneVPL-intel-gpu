@@ -137,7 +137,7 @@ public:
     void DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& IsLast);
     bool DecodeSliceEnd(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
 
-    void ParseLastSignificantXYCABAC(Ipp32u& PosLastX, Ipp32u& PosLastY, Ipp32u width, Ipp32u height, EnumTextType Type, Ipp32u ScanIdx);
+    Ipp32u ParseLastSignificantXYCABAC(Ipp32u L2Width, bool IsLuma, Ipp32u ScanIdx);
 
     void ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCommon pCoef, Ipp32u AbsPartIdx, Ipp32u Width, Ipp32u Height, Ipp32u Depth, EnumTextType Type);
 

@@ -869,72 +869,37 @@ bool H265CodingUnit::isBipredRestriction(Ipp32u AbsPartIdx, Ipp32u PartIdx)
     return false;
 }
 
-Ipp32u H265CodingUnit::getCoefScanIdx(Ipp32u AbsPartIdx, Ipp32u Width, bool IsLuma, bool IsIntra)
+Ipp32u H265CodingUnit::getCoefScanIdx(Ipp32u AbsPartIdx, Ipp32u L2Width, bool IsLuma, bool IsIntra)
 {
-    Ipp32u CTXIdx;
-    Ipp32u ScanIdx;
-    Ipp32u DirMode;
+    Ipp32u uiScanIdx = SCAN_DIAG;
+    Ipp32u uiDirMode;
 
-    if (!IsIntra)
-    {
-        ScanIdx = SCAN_DIAG;
-        return ScanIdx;
-    }
-
-    switch (Width)
-    {
-        case  2:
-            CTXIdx = 6;
-            break;
-        case  4:
-            CTXIdx = 5;
-            break;
-        case  8:
-            CTXIdx = 4;
-            break;
-        case 16:
-            CTXIdx = 3;
-            break;
-        case 32:
-            CTXIdx = 2;
-            break;
-        case 64:
-            CTXIdx = 1;
-            break;
-        default:
-            CTXIdx = 0;
-            break;
-    }
-
-    if (IsLuma)
-    {
-        DirMode = m_LumaIntraDir[AbsPartIdx];
-        ScanIdx = SCAN_DIAG;
-        if (CTXIdx > 3 && CTXIdx < 6) //if multiple scans supported for PU size
+    if(IsIntra) {
+        if ( IsLuma )
         {
-            ScanIdx = abs((Ipp32s)DirMode - VER_IDX) < 5 ? SCAN_HOR : (abs((Ipp32s)DirMode - HOR_IDX) < 5 ? SCAN_VER : SCAN_DIAG);
+            uiDirMode = m_LumaIntraDir[AbsPartIdx];
+            if (L2Width > 1 && L2Width < 4 )
+            {
+                uiScanIdx = abs((Ipp32s) uiDirMode - VER_IDX) < 5 ? SCAN_HOR : (abs((Ipp32s)uiDirMode - HOR_IDX) < 5 ? SCAN_VER : SCAN_DIAG);
+            }
         }
-    }
-    else
-    {
-        DirMode = m_ChromaIntraDir[AbsPartIdx];
-        if (DirMode == DM_CHROMA_IDX)
+        else
         {
-            // get number of partitions in current CU
-            Ipp32u depth = m_DepthArray[AbsPartIdx];
-            Ipp32u numParts = m_Frame->getCD()->getNumPartInCU() >> (2 * depth);
-
-            // get luma mode from upper-left corner of current CU
-            DirMode = m_LumaIntraDir[(AbsPartIdx / numParts) * numParts];
-        }
-        ScanIdx = SCAN_DIAG;
-        if (CTXIdx > 4 && CTXIdx < 7) //if multiple scans supported for PU size
-        {
-            ScanIdx = abs((Ipp32s)DirMode - VER_IDX) < 5 ? SCAN_HOR : (abs((Ipp32s)DirMode - HOR_IDX) < 5 ? SCAN_VER : SCAN_DIAG);
+            uiDirMode = m_ChromaIntraDir[AbsPartIdx];
+            if (uiDirMode == DM_CHROMA_IDX)
+            {
+                Ipp32u depth = m_DepthArray[AbsPartIdx];
+                Ipp32u numParts = m_Frame->getCD()->getNumPartInCU() >> (depth << 1);
+                uiDirMode = m_LumaIntraDir[(AbsPartIdx / numParts) * numParts];
+            }
+            if (L2Width < 3)
+            {
+                uiScanIdx = abs((Ipp32s)uiDirMode - VER_IDX) < 5 ? SCAN_HOR : (abs((Ipp32s)uiDirMode - HOR_IDX) < 5 ? SCAN_VER : SCAN_DIAG);
+            }
         }
     }
 
-    return ScanIdx;
+    return uiScanIdx;
 }
 
 Ipp32u H265CodingUnit::getSCUAddr()

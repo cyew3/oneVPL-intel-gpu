@@ -201,7 +201,7 @@ public:
     Ipp32u getCtxInterDir (Ipp32u AbsPartIdx);
 
     // member functions for RD cost storage  ------------(only functions with declaration here. simple get/set are removed)
-    Ipp32u getCoefScanIdx(Ipp32u AbsPartIdx, Ipp32u Width, bool IsLuma, bool IsIntra);
+    Ipp32u getCoefScanIdx(Ipp32u AbsPartIdx, Ipp32u L2Width, bool IsLuma, bool IsIntra);
 
     void setNDBFilterBlockBorderAvailability(bool independentTileBoundaryEnabled);
 };

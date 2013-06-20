@@ -1857,97 +1857,36 @@ static const Ipp32u ctxIndMap[16] =
     6, 6, 8, 8,
     7, 7, 8, 8
 };
-static const Ipp32u ctxIndMap1[16] =
-{
-    2, 1, 1, 0, 0, 0,0,0,0,0,0,0,0,0,0,0
-}; 
-static const Ipp32u ctxIndMap2[16] =
-{
-    2, 1, 0, 0, 0,0,0,0,0,0,0,0,0,0,0,0
-};
+
+static const Ipp32u lCtx[4] = {0x00010516, 0x06060606, 0x000055AA, 0xAAAAAAAA};
+
 H265_FORCEINLINE Ipp32u getSigCtxInc(Ipp32s patternSigCtx,
                                  Ipp32u scanIdx,
                                  const Ipp32u PosX,
                                  const Ipp32u PosY,
                                  const Ipp32u log2BlockSize,
-                                 EnumTextType Type)
+                                 bool IsLuma)
 {
-    if (PosX + PosY == 0)
+    if ((PosX|PosY) == 0)
         return 0;
 
     if (log2BlockSize == 2)
     {
-        return ctxIndMap[4 * PosY + PosX];
+        return ctxIndMap[(PosY<<2) + PosX];
     }
 
-    Ipp32u Offset = log2BlockSize == 3 ? (scanIdx == SCAN_DIAG ? 9 : 15) : (Type == TEXT_LUMA ? 21 : 12);
+    Ipp32u Offset = log2BlockSize == 3 ? (scanIdx == SCAN_DIAG ? 9 : 15) : (IsLuma ? 21 : 12);
 
-    Ipp32s px = (PosX >> 2);
-    Ipp32s py = (PosY >> 2);
-    Ipp32s posXinSubset = PosX - (px << 2);
-    Ipp32s posYinSubset = PosY - (py << 2);
-    Ipp32s cnt = 2;
-    if(patternSigCtx == 0)
-    {
-        cnt = ctxIndMap1[posXinSubset + posYinSubset];
-    }
-    else if(patternSigCtx == 1)
-    {
-        cnt = ctxIndMap2[posYinSubset];
-    }
-    else if(patternSigCtx == 2)
-    {
-        cnt = ctxIndMap2[posXinSubset];
-    }
+    Ipp32s posXinSubset = PosX & 0x3;
+    Ipp32s posYinSubset = PosY & 0x3;
+ 
+    Ipp32s cnt = (lCtx[patternSigCtx] >> (((posXinSubset<<2) + posYinSubset)<<1)) & 0x3;
 
-
-    return ((Type == TEXT_LUMA && (px + py) > 0 ) ? 3 : 0) + Offset + cnt;
-}
-
-#define CALC_SIG_CTX            \
-    Ipp32u Right = 0;           \
-    Ipp32u Lower = 0;           \
-    width >>= 2;                \
-    height >>= 2;               \
-                                \
-    if(posX < (Ipp32u)width - 1)\
-    {                           \
-        Right = (sigCoeffGroupFlag[ posY * width + posX + 1 ] != 0);    \
-    }                                                                   \
-    if (posY < (Ipp32u)height - 1)                                      \
-    {                                                                   \
-        Lower = (sigCoeffGroupFlag[ (posY  + 1 ) * width + posX ] != 0);\
-    }                                                                   \
-                                                                        \
-
-H265_FORCEINLINE Ipp32s calcPatternSigCtx(const Ipp8u* sigCoeffGroupFlag,
-                                          Ipp32u posX,
-                                          Ipp32u posY,
-                                          Ipp32s width, Ipp32s height)
-{
-    if( width == 4 && height == 4 )
-        return -1;
-
-    CALC_SIG_CTX;
-
-    return Right + (Lower<<1);
-}
-
-
-H265_FORCEINLINE Ipp32u getSigCoeffGroupCtxInc(const Ipp8u* sigCoeffGroupFlag,
-                                           const Ipp32u  posX,
-                                           const Ipp32u  posY,
-                                           Ipp32u width, Ipp32u height)
-{
-    CALC_SIG_CTX;
-
-    return (Right || Lower);
+    return ((IsLuma && ((PosX|PosY) > 3) ) ? 3 : 0) + Offset + cnt;
 }
 
 void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCommon pCoef, Ipp32u AbsPartIdx, Ipp32u Width, Ipp32u Height, Ipp32u Depth, EnumTextType Type)
 {
-    memset(pCoef, 0, sizeof(H265CoeffsCommon) * Width*Height);
-
     assert(sizeof(Depth) != 0); //wtf unreferenced parameter
     if (Width > pCU->m_SliceHeader->m_SeqParamSet->m_maxTrSize)
     {
@@ -1957,22 +1896,21 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
 
     if (pCU->m_SliceHeader->m_PicParamSet->getUseTransformSkip())
         ParseTransformSkipFlags(pCU, AbsPartIdx, Width, Height, Depth, Type);
-
-    Type = Type == TEXT_LUMA ? TEXT_LUMA : (Type == TEXT_NONE ? TEXT_NONE : TEXT_CHROMA);
+    
+    bool IsLuma = (Type==TEXT_LUMA);
 
     //----- parse significance map -----
     const Ipp32u Log2BlockSize = g_ConvertToBit[Width] + 2;
-    const Ipp32u MaxNumCoeff  = Width * Height;
+    const Ipp32u MaxNumCoeff  = 1 << (Log2BlockSize << 1);
     const Ipp32u MaxNumCoeffM1 = MaxNumCoeff - 1;
-    Ipp32u ScanIdx = pCU->getCoefScanIdx(AbsPartIdx, Width, Type == TEXT_LUMA, pCU->m_PredModeArray[AbsPartIdx] == MODE_INTRA);
+
+    memset(pCoef, 0, sizeof(H265CoeffsCommon) << (Log2BlockSize << 1));
+
+    Ipp32u ScanIdx = pCU->getCoefScanIdx(AbsPartIdx, Log2BlockSize, IsLuma, pCU->m_PredModeArray[AbsPartIdx] == MODE_INTRA);
 
     //===== decode last significant =====
-    Ipp32u PosLastX;
-    Ipp32u PosLastY;
+    Ipp32u BlkPosLast = ParseLastSignificantXYCABAC(Log2BlockSize-2, IsLuma, ScanIdx);
 
-    ParseLastSignificantXYCABAC(PosLastX, PosLastY, Width, Height, Type, ScanIdx);
-
-    Ipp32u BlkPosLast = PosLastX + (PosLastY << Log2BlockSize);
     pCoef[BlkPosLast] = 1;
 
     //===== decode significance flags =====
@@ -1992,8 +1930,8 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
     }
 #endif
 
-    Ipp32u baseCoeffGroupCtxIdx = ctxIdxOffsetHEVC[SIG_COEFF_GROUP_FLAG_HEVC] + NUM_SIG_CG_FLAG_CTX * Type;
-    Ipp32u baseCtxIdx = (Type == TEXT_LUMA) ? ctxIdxOffsetHEVC[SIG_FLAG_HEVC] : ctxIdxOffsetHEVC[SIG_FLAG_HEVC] + NUM_SIG_FLAG_CTX_LUMA;
+    Ipp32u baseCoeffGroupCtxIdx = ctxIdxOffsetHEVC[SIG_COEFF_GROUP_FLAG_HEVC] + (IsLuma ? 0 : NUM_SIG_CG_FLAG_CTX);
+    Ipp32u baseCtxIdx = ctxIdxOffsetHEVC[SIG_FLAG_HEVC] + ( IsLuma ? 0 : NUM_SIG_FLAG_CTX_LUMA);
 
     const Ipp32s LastScanSet = ScanPosLast >> LOG2_SCAN_SET_SIZE;
     Ipp32u c1 = 1;
@@ -2002,10 +1940,12 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
     bool beValid = pCU->m_CUTransquantBypass[AbsPartIdx] ? false : pCU->m_SliceHeader->m_PicParamSet->sign_data_hiding_flag;
     Ipp32u absSum;
 
-    Ipp8u SigCoeffGroupFlag[MLS_GRP_NUM];
-    ::memset(SigCoeffGroupFlag, 0, sizeof(Ipp8u) * MLS_GRP_NUM);
-    const Ipp32u NumBlkSide = Width >> (MLS_CG_SIZE >> 1);
-    const Ipp16u * scanCG;
+    Ipp64u SCGroupFlagMask     = 0;
+    Ipp16u SCGroupFlagRightMask = 0;
+    Ipp16u SCGroupFlagLowerMask  = 0;
+
+    const Ipp32u NumBlkSide = 1 << (Log2BlockSize - 2);
+    const Ipp16u *scanCG;
 
     scanCG = g_SigLastScan[ScanIdx][Log2BlockSize > 3 ? Log2BlockSize - 2 - 2 : 0];
 
@@ -2013,7 +1953,7 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
         scanCG = g_sigLastScan8x8[ScanIdx];
     else if (Log2BlockSize == 5)
         scanCG = g_sigLastScanCG32x32;
-
+    
     Ipp32s ScanPosSig = (Ipp32s) ScanPosLast;
     for (Ipp32s SubSet = LastScanSet; SubSet >= 0; SubSet--)
     {
@@ -2035,24 +1975,32 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
 
         // decode significant_coeffgroup_flag
         Ipp32s CGBlkPos = scanCG[SubSet];
-        Ipp32s CGPosY   = CGBlkPos / NumBlkSide;
-        Ipp32s CGPosX   = CGBlkPos - (CGPosY * NumBlkSide);
+        Ipp32s CGPosY   = CGBlkPos >> (Log2BlockSize - 2);
+        Ipp32s CGPosX   = CGBlkPos - (CGPosY << (Log2BlockSize - 2));
+        Ipp32u SigCoeffGroup;
 
         if (SubSet == LastScanSet || SubSet == 0)
         {
-            SigCoeffGroupFlag[CGBlkPos] = 1;
+            SCGroupFlagMask |= (1 << CGBlkPos);
+            SigCoeffGroup = 1;
         }
         else
         {
-            Ipp32u SigCoeffGroup;
-            Ipp32u CtxSig = getSigCoeffGroupCtxInc(SigCoeffGroupFlag, CGPosX, CGPosY, Width, Height);
+            Ipp32u CtxSig = ((SCGroupFlagRightMask >> CGPosY) & 0x1) || ((SCGroupFlagLowerMask >> CGPosX) & 0x1);
 
             SigCoeffGroup = m_pBitStream->DecodeSingleBin_CABAC(baseCoeffGroupCtxIdx + CtxSig);
-            SigCoeffGroupFlag[CGBlkPos] = SigCoeffGroup;
+            SCGroupFlagMask &= ~(1 << CGBlkPos);
+            SCGroupFlagMask |= (SigCoeffGroup << CGBlkPos);
         }
 
         // decode significant_coeff_flag
-        Ipp32s patternSigCtx = calcPatternSigCtx(SigCoeffGroupFlag, CGPosX, CGPosY, Width, Height);
+        Ipp32u patternSigCtx = ((SCGroupFlagRightMask >> CGPosY) & 0x1) | (((SCGroupFlagLowerMask >> CGPosX) & 0x1)<<1);
+
+        SCGroupFlagRightMask &= ~(1 << CGPosY);
+        SCGroupFlagRightMask |= (SigCoeffGroup << CGPosY);
+        SCGroupFlagLowerMask &= ~(1 << CGPosX);
+        SCGroupFlagLowerMask |= (SigCoeffGroup << CGPosX);
+
         Ipp32u BlkPos, PosY, PosX, Sig, CtxSig;
 
         for (; ScanPosSig >= SubPos; ScanPosSig--)
@@ -2062,11 +2010,11 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
             PosX    = BlkPos - (PosY << Log2BlockSize);
             Sig     = 0;
 
-            if (SigCoeffGroupFlag[CGBlkPos])
+            if (SCGroupFlagMask&(1 << CGBlkPos))
             {
                 if (ScanPosSig > SubPos || SubSet == 0 || numNonZero)
                 {
-                    CtxSig = getSigCtxInc(patternSigCtx, ScanIdx, PosX, PosY, Log2BlockSize, Type);
+                    CtxSig = getSigCtxInc(patternSigCtx, ScanIdx, PosX, PosY, Log2BlockSize, IsLuma);
                     Sig = m_pBitStream->DecodeSingleBin_CABAC(baseCtxIdx + CtxSig);
                 }
                 else
@@ -2090,7 +2038,7 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
         {
             bool signHidden = (lastNZPosInCG - firstNZPosInCG >= SBH_THRESHOLD);
             absSum = 0;
-            Ipp32u CtxSet = (SubSet > 0 && Type == TEXT_LUMA) ? 2 : 0;
+            Ipp32u CtxSet = (SubSet > 0 && IsLuma) ? 2 : 0;
             Ipp32u Bin;
 
             if (c1 == 0)
@@ -2098,7 +2046,7 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
 
             c1 = 1;
 
-            Ipp32u baseCtxIdx = (Type == TEXT_LUMA) ? ctxIdxOffsetHEVC[ONE_FLAG_HEVC] + 4 * CtxSet : ctxIdxOffsetHEVC[ONE_FLAG_HEVC] + NUM_ONE_FLAG_CTX_LUMA + 4 * CtxSet;
+            Ipp32u baseCtxIdx = ctxIdxOffsetHEVC[ONE_FLAG_HEVC] + (CtxSet<<2) + (IsLuma ? 0 : NUM_ONE_FLAG_CTX_LUMA);
 
             Ipp32s absCoeff[SCAN_SET_SIZE];
             for (Ipp32s i = 0; i < numNonZero; i++)
@@ -2124,7 +2072,7 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
 
             if (c1 == 0)
             {
-                baseCtxIdx = (Type == TEXT_LUMA) ? ctxIdxOffsetHEVC[ABS_FLAG_HEVC] + CtxSet : ctxIdxOffsetHEVC[ABS_FLAG_HEVC] + NUM_ABS_FLAG_CTX_LUMA + CtxSet;
+                baseCtxIdx = ctxIdxOffsetHEVC[ABS_FLAG_HEVC] + CtxSet + (IsLuma ? 0 : NUM_ABS_FLAG_CTX_LUMA);
                 if (firstC2FlagIdx != -1)
                 {
                     Bin = m_pBitStream->DecodeSingleBin_CABAC(baseCtxIdx);
@@ -2230,59 +2178,55 @@ void H265SegmentDecoder::ParseTransformSkipFlags(H265CodingUnit* pCU, Ipp32u Abs
  * \returns Void
  * This method decodes the X and Y component within a block of the last significant coefficient.
  */
-void H265SegmentDecoder::ParseLastSignificantXYCABAC(Ipp32u& PosLastX, Ipp32u& PosLastY, Ipp32u width, Ipp32u height, EnumTextType Type, Ipp32u ScanIdx)
+
+Ipp32u H265SegmentDecoder::ParseLastSignificantXYCABAC(Ipp32u L2Width, bool IsLuma, Ipp32u ScanIdx)
 {
-    Ipp32u Last;
-    Ipp32u CtxIdxX = ctxIdxOffsetHEVC[LAST_X_HEVC] + Type * NUM_CTX_LAST_FLAG_XY;
-    Ipp32u CtxIdxY = ctxIdxOffsetHEVC[LAST_Y_HEVC] + Type * NUM_CTX_LAST_FLAG_XY;
+    Ipp8u mGIdx = g_GroupIdx[(1<<(L2Width+2)) - 1];
 
-    Ipp32s blkSizeOffsetX, blkSizeOffsetY, shiftX, shiftY;
-    blkSizeOffsetX = Type ? 0: (g_ConvertToBit[width] * 3 + ((g_ConvertToBit[width] + 1) >> 2));
-    blkSizeOffsetY = Type ? 0: (g_ConvertToBit[height] * 3 + ((g_ConvertToBit[height]+ 1) >> 2));
-    shiftX= Type ? g_ConvertToBit[width] : ((g_ConvertToBit[width] + 3) >> 2);
-    shiftY= Type ? g_ConvertToBit[height] : ((g_ConvertToBit[height] + 3) >> 2);
+    Ipp8u blkSizeOffset = IsLuma ? (L2Width*3 + ((L2Width+1)>>2)) : NUM_CTX_LAST_FLAG_XY;
+    Ipp8u shift = IsLuma ? ((L2Width+3) >> 2) : L2Width;
+    Ipp8u CtxIdxX = ctxIdxOffsetHEVC[LAST_X_HEVC] + blkSizeOffset;
+    Ipp8u CtxIdxY = ctxIdxOffsetHEVC[LAST_Y_HEVC] + blkSizeOffset;
+    Ipp32u PosLastX, PosLastY;
 
-    // posX
-    for (PosLastX = 0; PosLastX < g_GroupIdx[width - 1]; PosLastX++)
+    for (PosLastX = 0; PosLastX < mGIdx; PosLastX++)
     {
-        Last = m_pBitStream->DecodeSingleBin_CABAC(CtxIdxX + blkSizeOffsetX + (PosLastX >> shiftX));
-        if (!Last)
-            break;
+        if (!m_pBitStream->DecodeSingleBin_CABAC(CtxIdxX + (PosLastX >> shift))) break;
     }
 
-    for (PosLastY = 0; PosLastY < g_GroupIdx[height - 1 ]; PosLastY++)
+    for (PosLastY = 0; PosLastY < mGIdx; PosLastY++)
     {
-        Last = m_pBitStream->DecodeSingleBin_CABAC(CtxIdxY + blkSizeOffsetY + (PosLastY >> shiftY));
-        if (!Last)
-            break;
+        if (!m_pBitStream->DecodeSingleBin_CABAC(CtxIdxY + (PosLastY >> shift))) break;
     }
 
     if (PosLastX > 3 )
     {
         Ipp32u Temp  = 0;
         Ipp32u Count = (PosLastX - 2) >> 1;
-        for (Ipp32s i = Count - 1; i >= 0; i--)
+        for (Ipp32s i = 0; i < Count; i++)
         {
-            Last = m_pBitStream->DecodeSingleBinEP_CABAC();
-            Temp += Last << i;
+            Temp |= m_pBitStream->DecodeSingleBinEP_CABAC();
+            Temp <<= 1;
         }
-        PosLastX = g_MinInGroup[PosLastX] + Temp;
+        PosLastX = g_MinInGroup[PosLastX] + (Temp >> 1);
     }
 
     if (PosLastY > 3)
     {
         Ipp32u Temp  = 0;
         Ipp32s Count = (PosLastY - 2) >> 1;
-        for (Ipp32s i = Count - 1; i >= 0; i--)
+        for (Ipp32s i = 0; i < Count; i++)
         {
-            Last = m_pBitStream->DecodeSingleBinEP_CABAC();
-            Temp += Last << i;
+            Temp |= m_pBitStream->DecodeSingleBinEP_CABAC();
+            Temp <<= 1;
         }
-        PosLastY = g_MinInGroup[PosLastY] + Temp;
+        PosLastY = g_MinInGroup[PosLastY] + (Temp >> 1);
     }
-    if (ScanIdx == SCAN_VER)
-    {
-        std::swap(PosLastX, PosLastY);
+
+    if (ScanIdx == SCAN_VER) {
+        return PosLastY + (PosLastX << (L2Width+2));
+    } else {
+        return PosLastX + (PosLastY << (L2Width+2));
     }
 }
 
