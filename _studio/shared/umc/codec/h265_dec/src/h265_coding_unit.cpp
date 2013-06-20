@@ -246,6 +246,7 @@ void H265CodingUnit::setOutsideCUPart(Ipp32u AbsPartIdx, Ipp32u Depth)
     memset(m_DepthArray + AbsPartIdx, Depth,  SizeInUchar);
     memset(m_WidthArray + AbsPartIdx, Width,  SizeInUchar);
     memset(m_HeightArray + AbsPartIdx, Height, SizeInUchar);
+    memset(m_PredModeArray + AbsPartIdx, MODE_NONE, SizeInUchar);
 }
 
 // Other public functions ----------------------------------------------------------------------------------------------------------
