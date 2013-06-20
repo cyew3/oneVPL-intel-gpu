@@ -53,7 +53,6 @@ public:
     Ipp8u *                    m_DepthArray;     // array of depths
 
     //CU data ----------------------------------------------------------------------------------------
-    bool*                     m_skipFlag;           // array of skip flags
     Ipp8s*                    m_PartSizeArray;  // array of partition sizes
     Ipp8s*                    m_PredModeArray;  // array of prediction modes
     bool*                     m_CUTransquantBypass; // array of cu_transquant_bypass flags
@@ -131,7 +130,6 @@ public:
 
     void setPartSizeSubParts (EnumPartSize Mode, Ipp32u AbsPartIdx, Ipp32u Depth);
     void setCUTransquantBypassSubParts(bool flag, Ipp32u AbsPartIdx, Ipp32u Depth);
-    void setSkipFlagSubParts(bool skip, Ipp32u AbsPartIdx, Ipp32u Depth);
     void setPredModeSubParts (EnumPredMode Mode, Ipp32u AbsPartIdx, Ipp32u Depth);
     void setSizeSubParts (Ipp32u Width, Ipp32u Height, Ipp32u AbsPartIdx, Ipp32u Depth);
     void setQPSubParts (Ipp32u QP, Ipp32u AbsPartIdx, Ipp32u Depth);
@@ -194,7 +192,6 @@ public:
     Ipp8u getRefQP (Ipp32u CurrAbsIdxInLCU);
 
     // member functions for modes ---------------------- (only functions with declaration here. simple get/set are removed)
-    bool isSkipped (Ipp32u PartIdx);  // SKIP - no residual
     bool isBipredRestriction(Ipp32u AbsPartIdx, Ipp32u PartIdx);
 
     void getAllowedChromaDir (Ipp32u AbsPartIdx, Ipp32u* ModeList);

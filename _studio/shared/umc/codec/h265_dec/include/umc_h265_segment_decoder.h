@@ -106,7 +106,7 @@ public:
     void ReadUnaryMaxSymbolCABAC(Ipp32u& uVal, Ipp32u CtxIdx, Ipp32s Offset, Ipp32u MaxSymbol);
     void DecodeSplitFlagCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     Ipp32u DecodeMergeIndexCABAC(void);
-    void DecodeSkipFlagCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
+    bool DecodeSkipFlagCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void DecodeCUTransquantBypassFlag(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     RefIndexType DecodeMVPIdxPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartAddr, Ipp32u Depth, Ipp32u PartIdx, EnumRefPicList RefList, H265MotionVector &MVd, Ipp8u InterDir);
     Ipp32u ParseMVPIdxCABAC(void);
@@ -262,7 +262,7 @@ public:
     std::vector<H265TUData> m_CurrCTBHolder;
     std::vector<H265FrameHLDNeighborsInfo> m_CurrCTBFlagsHolder;
 
-    void UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPartIdx);
+    void UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPartIdx, bool isSkipped);
     void ResetRowBuffer(void);
     void UpdatePUInfo(H265CodingUnit *pCU, Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight, RefIndexType RefIdx[2], H265MotionVector MV[2]);
     void UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr);
@@ -301,7 +301,7 @@ public:
 private:
     Ipp16u *g_SigLastScan_inv[3][4];
     Ipp32u getCtxSplitFlag(H265CodingUnit *pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
-    Ipp32u getCtxSkipFlag(H265CodingUnit *pCU, Ipp32u AbsPartIdx);
+    Ipp32u getCtxSkipFlag(Ipp32u AbsPartIdx);
     void getIntraDirLumaPredictor(H265CodingUnit *pCU, Ipp32u AbsPartIdx, Ipp32s IntraDirPred[]);
     void getInterMergeCandidates(H265CodingUnit *pCU, Ipp32u AbsPartIdx, Ipp32u PUIdx, MVBuffer* MVBufferNeighbours,
         Ipp8u* InterDirNeighbours, Ipp32s &numValidMergeCand, Ipp32s mrgCandIdx);

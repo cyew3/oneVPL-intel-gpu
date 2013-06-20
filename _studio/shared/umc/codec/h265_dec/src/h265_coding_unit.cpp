@@ -122,14 +122,13 @@ void H265CodingUnit::create (Ipp32u numPartition, Ipp32u Width, Ipp32u Height, b
 
     if (!DecSubCu)
     {
-         m_cumulativeMemoryPtr = CumulativeArraysAllocation(25,  &m_QPArray, sizeof(Ipp8u) * numPartition,
+         m_cumulativeMemoryPtr = CumulativeArraysAllocation(24,  &m_QPArray, sizeof(Ipp8u) * numPartition,
                                         &m_DepthArray, sizeof(Ipp8u) * numPartition,
                                         &m_WidthArray, sizeof(Ipp8u) * numPartition,
                                         &m_HeightArray, sizeof(Ipp8u) * numPartition,
                                         &m_PartSizeArray, sizeof(Ipp8u) * numPartition,
                                         &m_PredModeArray, sizeof(Ipp8u) * numPartition,
 
-                                        &m_skipFlag, sizeof(bool) * numPartition,
                                         &m_CUTransquantBypass, sizeof(bool) * numPartition,
 
                                         &m_LumaIntraDir, sizeof(Ipp8u) * numPartition,
@@ -558,11 +557,6 @@ void H265CodingUnit::setCUTransquantBypassSubParts(bool flag, Ipp32u AbsPartIdx,
     memset(m_CUTransquantBypass + AbsPartIdx, flag, m_Frame->getCD()->getNumPartInCU() >> (2 * Depth));
 }
 
-void H265CodingUnit::setSkipFlagSubParts(bool skip, Ipp32u AbsPartIdx, Ipp32u Depth)
-{
-    memset(m_skipFlag + AbsPartIdx, skip, m_Frame->getCD()->getNumPartInCU() >> (2 * Depth));
-}
-
 void H265CodingUnit::setPredModeSubParts(EnumPredMode Mode, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     VM_ASSERT(sizeof(*m_PartSizeArray) == 1);
@@ -860,15 +854,6 @@ void H265CodingUnit::setIPCMFlagSubParts (bool IpcmFlag, Ipp32u AbsPartIdx, Ipp3
     Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
 
     memset(m_IPCMFlag + AbsPartIdx, IpcmFlag, sizeof(bool) * CurrPartNumb);
-}
-
-/** Test whether the current block is skipped
- * \param uiPartIdx Block index
- * \returns Flag indicating whether the block is skipped
- */
-bool H265CodingUnit::isSkipped(Ipp32u PartIdx)
-{
-    return m_skipFlag[PartIdx];
 }
 
 bool H265CodingUnit::isBipredRestriction(Ipp32u AbsPartIdx, Ipp32u PartIdx)
