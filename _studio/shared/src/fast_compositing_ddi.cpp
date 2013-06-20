@@ -675,7 +675,11 @@ mfxStatus FastCompositingDDI::QueryTaskStatus(mfxU32 taskIndex)
     FASTCOMP_QUERY_STATUS queryStatus[numStructures];
 
     std::set<mfxU32>::iterator iterator;
-
+    for (mfxU32 i = 0; i < numStructures; i += 1)
+    {
+        queryStatus[i].Status = VPREP_GPU_FAILED;
+    }
+    
     // execute call
     hRes = m_pAuxDevice->Execute(
         FASTCOMP_QUERY_STATUS_FUNC_ID, 

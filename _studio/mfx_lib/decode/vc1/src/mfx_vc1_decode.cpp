@@ -2945,6 +2945,10 @@ mfxStatus MFXVideoDECODEVC1::GetStatusReport(mfxFrameSurface1 *surface_disp)
         // get statuses from HW for several frames only if there are no ready 
         while (NeedToGetStatus(pCurrDescriptor))
         {
+            //TDR handling.
+            for(i=0; i< MAX_NUM_STATUS_REPORTS;i++){
+                m_pStatusReport[i].bStatus = 4;
+            }
             umcRes = m_pVC1VideoDecoder->GetReport(m_pStatusReport);
             if (UMC_WRN_INFO_NOT_READY == umcRes)
             {

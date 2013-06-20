@@ -516,6 +516,7 @@ Status PackVA::GetStatusReport(DXVA_Status_VC1 *pStatusReport)
     while (!pStatusReport->StatusReportFeedbackNumber && UMC_OK == sts && iterNum != 0)
     {
         iterNum -= 1;
+        
         sts = m_va->ExecuteStatusReportBuffer((void*)pStatusReport, sizeof(DXVA_Status_VC1) * 32);
 
         if (pStatusReport->StatusReportFeedbackNumber)

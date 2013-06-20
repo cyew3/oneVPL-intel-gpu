@@ -163,7 +163,10 @@ mfxStatus MJPEGVideoDecoderMFX_HW::CheckStatusReportNumber(Ipp32u statusReportFe
 
     std::set<mfxU32>::iterator iteratorReady;
     std::set<mfxU32>::iterator iteratorCorrupted;
-
+    //in Case TDR occur status won't be updated, otherwise driver will change status to correct.
+    for (mfxU32 i = 0; i < numStructures; i += 1){
+        queryStatus[i].bStatus = 3;
+    }
     // execute call
     sts = m_va->ExecuteStatusReportBuffer((void*)queryStatus, sizeof(JPEG_DECODE_QUERY_STATUS) * numStructures);
 
@@ -184,6 +187,10 @@ mfxStatus MJPEGVideoDecoderMFX_HW::CheckStatusReportNumber(Ipp32u statusReportFe
         {
             AutomaticUMCMutex guard(m_guard);
             m_cachedCorruptedTaskIndex.insert(queryStatus[i].StatusReportFeedbackNumber);
+        }
+        else if (3 == queryStatus[i].bStatus)
+        {
+            return MFX_ERR_DEVICE_FAILED;
         }
         else if (5 == queryStatus[i].bStatus)
         {

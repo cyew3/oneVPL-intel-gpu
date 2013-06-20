@@ -3456,6 +3456,10 @@ mfxStatus VideoDECODEMPEG2::GetStatusReportByIndex(mfxFrameSurface1 *displaySurf
 
     if (false == isStatusExist)
     {
+        //TDR handling.
+        for(int i=0; i< MPEG2_STATUS_REPORT_NUM;i++){
+            m_pStatusReport[i].bStatus = 3;
+        }
         // ask driver to provide tasks status
         sts = m_implUmc.pack_w.GetStatusReport(m_pStatusReport);
         MFX_CHECK_STS((mfxStatus)sts);
@@ -3562,6 +3566,10 @@ mfxStatus VideoDECODEMPEG2::GetStatusReport(mfxFrameSurface1 *displaySurface)
     }
     else
     {
+        //TDR handling.
+        for(int i=0; i< MPEG2_STATUS_REPORT_NUM;i++){
+            m_pStatusReport[i].bStatus = 3;
+        }
         // ask driver to provide tasks status
         sts = m_implUmc.pack_w.GetStatusReport(m_pStatusReport);
 

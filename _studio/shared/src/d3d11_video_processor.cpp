@@ -1238,13 +1238,17 @@ mfxStatus D3D11VideoProcessor::QueryTaskStatus(mfxU32 idx)
         PREPROC_MODE preprocMode;
         memset(&preprocMode, 0, sizeof(PREPROC_MODE));
 
-        preprocMode.Version  = m_iface.version;
-        preprocMode.Function = VPE_FN_QUERY_PREPROC_STATUS;
-        preprocMode.pPreprocQueryStatus = &queryStatusParams;
-
-        hRes = GetOutputExtension(
-            &(m_iface.guid), 
-            sizeof(PREPROC_MODE), 
+    preprocMode.Version  = m_iface.version;
+    preprocMode.Function = VPE_FN_QUERY_PREPROC_STATUS;
+    preprocMode.pPreprocQueryStatus = &queryStatusParams;
+    //to handle TDR, if TDR occured no changes in status will be visible, if not driver will change to corrrect status.
+    for (mfxU32 i = 0; i < numStructures; i++)
+    {
+        queryStatusParams.pStatusBuffer[i].Status = VPREP_GPU_FAILED;
+    }
+    hRes = GetOutputExtension(
+        &(m_iface.guid), 
+        sizeof(PREPROC_MODE), 
             &preprocMode);
         CHECK_HRES(hRes);
 
