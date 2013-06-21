@@ -832,6 +832,14 @@ bool TaskBroker_H265::GetSAOTask(H265DecoderFrameInfo * info, H265Task *pTask)
 
     if (pSlice->GetSeqParam()->sample_adaptive_offset_enabled_flag && (sliceHeder->m_SaoEnabledFlag || sliceHeder->m_SaoEnabledFlagChroma))
     {
+        Ipp32s sliceCount = info->GetSliceCount();
+        for (Ipp32s i = 0; i < sliceCount; i += 1)
+        {
+            H265Slice *pTemp = info->GetSlice(i);
+            if (pTemp->m_bInProcess || !pTemp->m_bDeblocked)
+                return false;
+        }
+
         InitTask(info, pTask, pSlice);
         pTask->m_iFirstMB = 0;
         pTask->m_iMBToProcess = pSlice->m_iAvailableMB;
@@ -839,16 +847,13 @@ bool TaskBroker_H265::GetSAOTask(H265DecoderFrameInfo * info, H265Task *pTask)
         pTask->m_pBuffer = NULL;
         pTask->pFunction = &H265SegmentDecoderMultiThreaded::SAOFrameTask;
 
+        for (Ipp32s i = 0; i < sliceCount; i += 1)
+        {
+            H265Slice *pTemp = info->GetSlice(i);
+            pTemp->m_bInProcess = true;
+        }
+
         return true;
-    }
-
-    Ipp32s sliceCount = m_FirstAU->GetSliceCount();
-
-    for (Ipp32s i = 0; i < sliceCount; i += 1)
-    {
-        H265Slice *pTemp = m_FirstAU->GetSlice(i);
-
-        pTemp->m_bSAOed = true;
     }
 
     return false;
@@ -1023,13 +1028,6 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
         //if (DEBLOCK_FILTER_ON_NO_SLICE_EDGES_H265 == pSlice->m_SliceHeader.disable_deblocking_filter_idc)
         //m_bDoFrameDeblocking = false; // DEBUG : ADB
 
-        if (false == pSlice->m_bDeblocked)
-            pSlice->m_bDeblocked = pSlice->m_bPrevDeblocked;
-
-        if (!info->IsNeedDeblocking())
-        {
-            pSlice->m_bDeblocked = true;
-        }
         // slice is decoded
         pSlice->m_bDecoded = true;
         pSlice->m_bDecVacant = 0;
@@ -1045,12 +1043,12 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
     }
     else if (TASK_DEB_FRAME_H265 == pTask->m_iTaskID)
     {
-        Ipp32s sliceCount = m_FirstAU->GetSliceCount();
+        Ipp32s sliceCount = info->GetSliceCount();
 
         // frame is deblocked
         for (Ipp32s i = 0; i < sliceCount; i += 1)
         {
-            H265Slice *pTemp = m_FirstAU->GetSlice(i);
+            H265Slice *pTemp = info->GetSlice(i);
 
             pTemp->m_bDebVacant = 1;
             pTemp->m_bDeblocked = true;
@@ -1059,13 +1057,14 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
     }
     else if (TASK_SAO_H265 == pTask->m_iTaskID)
     {
-        Ipp32s sliceCount = m_FirstAU->GetSliceCount();
+        Ipp32s sliceCount = info->GetSliceCount();
 
         for (Ipp32s i = 0; i < sliceCount; i += 1)
         {
-            H265Slice *pTemp = m_FirstAU->GetSlice(i);
+            H265Slice *pTemp = info->GetSlice(i);
 
             pTemp->m_bSAOed = true;
+            pTemp->m_bInProcess = false;
         }
     }
     else

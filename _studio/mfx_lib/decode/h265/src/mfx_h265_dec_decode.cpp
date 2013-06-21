@@ -107,7 +107,6 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
 
     mfxU32 asyncDepth = par->AsyncDepth ? par->AsyncDepth : m_core->GetAutoAsyncDepth();
     m_vPar.mfx.NumThread = (mfxU16)asyncDepth;
-    m_vPar.mfx.NumThread = 1;
     if (MFX_PLATFORM_SOFTWARE != m_platform)
         m_vPar.mfx.NumThread = 1;
 
