@@ -100,7 +100,7 @@ class MFXMuxer
     MFXDataIO *_dataIO;
     mfxDataIO io;
 public:
-    MFXMuxer(mfxMuxer mux) { m_mux = mux; }
+    MFXMuxer() : m_mux() { }
     virtual ~MFXMuxer() { Close(); }
 
     mfxStatus Init(MFXMuxerParam &par, MFXDataIO &dataIO)
