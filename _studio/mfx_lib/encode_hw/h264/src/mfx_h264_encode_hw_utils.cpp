@@ -593,79 +593,6 @@ void FrameTypeGenerator::Next()
     m_frameOrder = (m_frameOrder + 1) % m_idrDist;
 }
 
-
-void IntraRefreshManager::Init(MfxVideoParam const & video)
-{
-    mfxExtCodingOption2 * extOpt2 = GetExtBuffer(video);
-
-    if (extOpt2->IntRefType == 0 || video.mfx.GopRefDist > 1 || video.mfx.GopPicSize <= extOpt2->IntRefCycleSize)
-        m_isInitialized = false;
-    else
-    {
-        // use vertical refresh by default
-        m_refrType = extOpt2->IntRefType;
-        m_firstLineInStripe = 0;
-        m_refrDimension = m_refrType == HORIZ_REFRESH ? video.mfx.FrameInfo.Height >> 4 : video.mfx.FrameInfo.Width >> 4;
-        m_stopRefreshFrames = 0;
-        // use frame rate as refresh cycle size by default
-        mfxU16 refrCycleSize = extOpt2->IntRefCycleSize ? extOpt2->IntRefCycleSize :
-            (mfxU16)((video.mfx.FrameInfo.FrameRateExtN + video.mfx.FrameInfo.FrameRateExtD - 1) / video.mfx.FrameInfo.FrameRateExtD);
-        m_stripeWidth = (m_refrDimension + refrCycleSize - 1) / refrCycleSize;
-        mfxU16 refreshTime = (m_refrDimension + m_stripeWidth - 1) / m_stripeWidth;
-        m_stopRefreshFrames = refrCycleSize - refreshTime;
-        m_refrSpeed = m_stripeWidth;
-        m_QPDelta = extOpt2->IntRefQPDelta;
-        m_stopFramesCounter = 0;
-
-        m_isInitialized = true;
-    }
-}
-
-
-IntraRefreshState IntraRefreshManager::GetRefreshState(mfxEncodeCtrl const * ctrl, bool bIsIFrame)
-{
-    IntraRefreshState state;
-    mfxExtCodingOption2 * opts = 0;
-    if (ctrl)
-        opts = GetExtBuffer(*ctrl);
-
-    if (!bIsIFrame && m_isInitialized &&
-        (m_stopRefreshFrames == 0 || (m_stopFramesCounter >= m_stopRefreshFrames)))
-    {
-        state.refrType      = m_refrType;
-        state.IntraLocation = m_firstLineInStripe;
-        state.IntraSize     = m_stripeWidth;
-        if (opts && opts->IntRefQPDelta <= 51 && opts->IntRefQPDelta >= -51)
-            state.IntRefQPDelta = opts->IntRefQPDelta;
-        else
-            state.IntRefQPDelta = m_QPDelta;
-
-        if (m_firstLineInStripe + m_stripeWidth >= m_refrDimension)
-        {
-            m_firstLineInStripe = 0;
-            m_stopFramesCounter = 0;
-        }
-        else if (m_stopFramesCounter ++ >= m_stopRefreshFrames)
-            m_firstLineInStripe = (m_firstLineInStripe + m_stripeWidth) % m_refrDimension;
-    }
-    else
-    {
-        state.refrType      = NO_REFRESH;
-        state.IntraLocation = 0;
-        state.IntraSize     = 0;
-        state.IntRefQPDelta = 0;
-
-        if (bIsIFrame)
-        {
-            m_firstLineInStripe = 0;
-            m_stopFramesCounter = 0;
-        }
-    }
-
-    return state;
-}
-
-
 void TaskManager::UpdateRefFrames(
     ArrayDpbFrame const & dpb,
     DdiTask const &       task,
@@ -968,9 +895,6 @@ void TaskManager::Init(
     m_dpb.Resize(0);
 
     m_frameTypeGen.Init(m_video);
-//  Intra refresh {
-    m_intraRefrMan.Init(m_video);
-//  Intra refresh }
     m_bitstreams.resize(CalcNumSurfBitstream(m_video));
     m_recons.resize(CalcNumSurfRecon(m_video));
     m_tasks.resize(CalcNumTasks(m_video));

@@ -1158,9 +1158,7 @@ bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
         id == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION ||
         id == MFX_EXTBUFF_PICTURE_TIMING_SEI        ||
         id == MFX_EXTBUFF_AVC_TEMPORAL_LAYERS       ||
-//  Intra refresh {
         id == MFX_EXTBUFF_CODING_OPTION2            ||
-//  Intra refresh }
         id == MFX_EXTBUFF_SVC_SEQ_DESC              ||
         id == MFX_EXTBUFF_SVC_RATE_CONTROL;
 }
@@ -1423,9 +1421,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     mfxExtMVCSeqDesc *         extMvc  = GetExtBuffer(par);
     mfxExtAvcTemporalLayers *  extTemp = GetExtBuffer(par);
     mfxExtSVCSeqDesc *         extSvc  = GetExtBuffer(par);
-//  Intra refresh {
     mfxExtCodingOption2 *      extOpt2 = GetExtBuffer(par);
-//  Intra refresh }
 
     // check hw capabilities
     if (par.mfx.FrameInfo.Width  > hwCaps.MaxPicWidth ||
@@ -2531,6 +2527,14 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         changed = true;
     }
 
+    if (extOpt2->IntRefCycleSize != 0 && extOpt2->IntRefCycleSize >= par.mfx.GopPicSize)
+    {
+        // refresh period shouldn't be greater or equal to GOP size
+        extOpt2->IntRefType = 0;
+        extOpt2->IntRefCycleSize = 0;
+        changed = true;
+    }
+
     if (extDdi->BiPyramid        != 0 &&
         extDdi->BiPyramid        != 3 &&
         par.mfx.CodecLevel       != 0 &&
@@ -3325,6 +3329,13 @@ void MfxHwH264Encode::SetDefaults(
     {
         // turn off MBBRC by default
         extOpt2->MBBRC = MFX_CODINGOPTION_OFF;
+    }
+
+    if (extOpt2->IntRefType && extOpt2->IntRefCycleSize == 0)
+    {
+        // set intra refresh cycle to 1 sec by default
+        extOpt2->IntRefCycleSize =
+            (mfxU16)((par.mfx.FrameInfo.FrameRateExtN + par.mfx.FrameInfo.FrameRateExtD - 1) / par.mfx.FrameInfo.FrameRateExtD);
     }
 
     if (par.calcParam.mvcPerViewPar.codecLevel == MFX_LEVEL_UNKNOWN)
@@ -4308,7 +4319,6 @@ MfxVideoParam::MfxVideoParam()
     memset(&m_extSps, 0, sizeof(m_extSps));
     memset(&m_extPps, 0, sizeof(m_extPps));
 
-    //  Intra refresh {
     memset(&m_extOpt2, 0, sizeof(m_extOpt2));
     memset(&calcParam, 0, sizeof(calcParam));
 }
@@ -4481,9 +4491,7 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     InitExtBufHeader(m_extDumpFiles);
     InitExtBufHeader(m_extSps);
     InitExtBufHeader(m_extPps);
-//  Intra refresh {
     InitExtBufHeader(m_extOpt2);
-//  Intra refresh }
 
     if (mfxExtCodingOption * opts = GetExtBuffer(par))
         m_extOpt = *opts;
@@ -4527,10 +4535,8 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     if (mfxExtPpsHeader * opts = GetExtBuffer(par))
         m_extPps = *opts;
 
-//  Intra refresh {
     if (mfxExtCodingOption2 * opts = GetExtBuffer(par))
         m_extOpt2 = *opts;
-//  Intra refresh }
 
     m_extParam[0]  = &m_extOpt.Header;
     m_extParam[1]  = &m_extOptSpsPps.Header;
@@ -4546,9 +4552,7 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     m_extParam[11]  = &m_extDumpFiles.Header;
     m_extParam[12] = &m_extSps.Header;
     m_extParam[13] = &m_extPps.Header;
-//  Intra refresh {
     m_extParam[14] = &m_extOpt2.Header;
-//  Intra refresh }
 
     ExtParam = m_extParam;
     NumExtParam = mfxU16(sizeof m_extParam / sizeof m_extParam[0]);

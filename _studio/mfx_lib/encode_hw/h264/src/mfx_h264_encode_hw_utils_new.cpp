@@ -1330,6 +1330,36 @@ PairU8 MfxHwH264Encode::GetFrameType(
     return ExtendFrameType(MFX_FRAMETYPE_B);
 }
 
+IntraRefreshState MfxHwH264Encode::GetIntraRefreshState(
+    MfxVideoParam const & video,
+    mfxU32                frameOrderInGopDispOrder,
+    mfxEncodeCtrl const & ctrl,
+    mfxU16                intraStripeWidthInMBs)
+{
+    IntraRefreshState state;
+    mfxExtCodingOption2 * extOpt2Init = GetExtBuffer(video);
+    if (extOpt2Init->IntRefType == 0 || frameOrderInGopDispOrder == 0)
+        return state;
+
+    // check if Intra refresh required for current frame
+    mfxU32 refreshDimension = extOpt2Init->IntRefType == HORIZ_REFRESH ? video.mfx.FrameInfo.Height >> 4 : video.mfx.FrameInfo.Width >> 4;
+    mfxU32 numFramesWithoutRefresh = extOpt2Init->IntRefCycleSize - (refreshDimension + intraStripeWidthInMBs - 1) / intraStripeWidthInMBs;
+    mfxI32 idxInActualRefreshPeriod = (frameOrderInGopDispOrder - 1) % extOpt2Init->IntRefCycleSize - numFramesWithoutRefresh;
+    if (idxInActualRefreshPeriod < 0)
+        return state; // actual refresh isn't started yet within current refresh cycle, no Intra column/row required for current frame
+
+    state.refrType = extOpt2Init->IntRefType;
+    state.IntraSize = intraStripeWidthInMBs;
+    state.IntraLocation = (mfxU16)idxInActualRefreshPeriod * intraStripeWidthInMBs;
+    // set QP for Intra macroblocks within refreshing line
+    state.IntRefQPDelta = extOpt2Init->IntRefQPDelta;
+    mfxExtCodingOption2 * extOpt2Runtime = GetExtBuffer(ctrl);
+    if (extOpt2Runtime && extOpt2Runtime->IntRefQPDelta <= 51 && extOpt2Runtime->IntRefQPDelta >= -51)
+        state.IntRefQPDelta = extOpt2Runtime->IntRefQPDelta;
+
+    return state;
+}
+
 
 namespace
 {

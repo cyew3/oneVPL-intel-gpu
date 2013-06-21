@@ -711,7 +711,13 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     m_lastTask.m_aesCounter[0] = m_aesCounter;
     Decrement(m_lastTask.m_aesCounter[0], *extOptPavp);
 
-    m_intraRefresh.Init(m_video);
+    // initialization of parameters for Intra refresh
+    if (extOpt2->IntRefType)
+    {
+        mfxU16 refreshDimension = extOpt2->IntRefType == HORIZ_REFRESH ? m_video.mfx.FrameInfo.Height >> 4 : m_video.mfx.FrameInfo.Width >> 4;
+        m_intraStripeWidthInMBs = (refreshDimension + extOpt2->IntRefCycleSize - 1) / extOpt2->IntRefCycleSize;
+        m_frameOrderIFrameInDisplayOrder = 0;
+    }
     Zero(m_stat);
 
     // FIXME: w/a for SNB issue with HRD at high bitrates
@@ -819,7 +825,6 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
 
     m_hrd.Reset(newPar);
     m_ddi->Reset(newPar);
-    m_intraRefresh.Init(newPar);
 
     m_flushStage     = false;
     m_epilogCounter  = 0;
@@ -878,7 +883,14 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
         m_rec.Unlock();
         m_bit.Unlock();
 
-        m_intraRefresh.Init(newPar);
+        // reset of Intra refresh
+        mfxExtCodingOption2 * extOpt2New = GetExtBuffer(newPar);
+        if (extOpt2New->IntRefType)
+        {
+            mfxU16 refreshDimension = extOpt2New->IntRefType == HORIZ_REFRESH ? m_video.mfx.FrameInfo.Height >> 4 : m_video.mfx.FrameInfo.Width >> 4;
+            m_intraStripeWidthInMBs = (refreshDimension + extOpt2New->IntRefCycleSize - 1) / extOpt2New->IntRefCycleSize;
+            m_frameOrderIFrameInDisplayOrder = 0;
+        }
     }
 
     if (changeLyncLayers && tempLayerIdx == 0)
@@ -1165,9 +1177,16 @@ mfxStatus ImplementationAvc::Submit(mfxBitstream * bs)
                 newTask.m_frameOrderStartLyncStructure = m_frameOrderStartLyncStructure;
             }
 
-            newTask.m_IRState = m_intraRefresh.GetRefreshState(
-                &newTask.m_ctrl,
-                !!(newTask.GetFrameType() & MFX_FRAMETYPE_I));
+            if (newTask.GetFrameType() & MFX_FRAMETYPE_I)
+            {
+                m_frameOrderIFrameInDisplayOrder = newTask.m_frameOrder;
+            }
+
+            newTask.m_IRState = GetIntraRefreshState(
+                m_video,
+                newTask.m_frameOrder - m_frameOrderIFrameInDisplayOrder,
+                newTask.m_ctrl,
+                m_intraStripeWidthInMBs);
 
             m_frameOrder++;
         }

@@ -561,7 +561,6 @@ namespace MfxHwH264Encode
         mfxU32 m_idrDist;
     };
 
-//  Intra refresh {
     enum
     {
         NO_REFRESH             = 0,
@@ -578,28 +577,6 @@ namespace MfxHwH264Encode
         mfxU16  IntraSize;
         mfxI16  IntRefQPDelta;
     };
-
-    class IntraRefreshManager
-    {
-    public:
-        void Init(MfxVideoParam const & video);
-        IntraRefreshState GetRefreshState(mfxEncodeCtrl const * ctrl, bool bIsIFrame);
-
-    private:
-
-        bool    m_isInitialized;
-
-        Ipp16u  m_refrType; // disabled, horizontal, vertical
-        Ipp16u  m_stripeWidth; // width of refresh stripe in MBs
-        Ipp16u  m_refrDimension;
-        Ipp16u  m_stopRefreshFrames;
-        Ipp16u  m_refrSpeed;
-        Ipp16s  m_QPDelta;
-
-        Ipp16u  m_firstLineInStripe;
-        Ipp32u  m_stopFramesCounter;
-    };
-//  Intra refresh }
 
     class Surface
     {
@@ -1052,9 +1029,6 @@ namespace MfxHwH264Encode
 
         mfxEncodeStat              m_stat;
         FrameTypeGenerator         m_frameTypeGen;
-//  Intra refresh {
-        IntraRefreshManager        m_intraRefrMan;
-//  Intra refresh }
         ArrayDpbFrame              m_dpb;
         DecRefPicMarkingRepeatInfo m_decRefPicMrkRep;
 
@@ -1549,7 +1523,6 @@ namespace MfxHwH264Encode
         std::list<DdiTask>  m_encoding;
         UMC::Mutex          m_listMutex;
         DdiTask             m_lastTask;
-        IntraRefreshManager m_intraRefresh;
 
         mfxU32      m_inputCounter;
         mfxU32      m_epilogCounter;
@@ -1560,6 +1533,9 @@ namespace MfxHwH264Encode
         mfxU32      m_frameOrderStartLyncStructure; // starting point of Lync temporal scalability structure
         bool        m_flushStage;
 
+        // parameters for Intra refresh
+        mfxU32      m_frameOrderIFrameInDisplayOrder;    // frame order of last I frame (in display order)
+        mfxU16      m_intraStripeWidthInMBs; // width of Intra MB stripe (column or row depending on refresh type)
 
         mfxU32      m_enabledSwBrc;
         Brc         m_brc;
@@ -2482,6 +2458,12 @@ namespace MfxHwH264Encode
     PairU8 GetFrameType(
         MfxVideoParam const & video,
         mfxU32                frameOrder);
+
+    IntraRefreshState GetIntraRefreshState(
+        MfxVideoParam const & video,
+        mfxU32                frameOrderInGop,
+        mfxEncodeCtrl const & ctrl,
+        mfxU16                intraStripeWidthInMBs);
 
     BiFrameLocation GetBiFrameLocation(
         MfxVideoParam const & video,

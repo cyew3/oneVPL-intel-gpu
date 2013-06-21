@@ -480,10 +480,7 @@ namespace MfxHwH264Encode
         mfxExtDumpFiles             m_extDumpFiles;
         mfxExtSpsHeader             m_extSps;
         mfxExtPpsHeader             m_extPps;
-
-//  Intra refresh {
         mfxExtCodingOption2         m_extOpt2;
-//  Intra refresh }
 
         std::vector<mfxMVCViewDependency> m_storageView;
         std::vector<mfxMVCOperationPoint> m_storageOp;
