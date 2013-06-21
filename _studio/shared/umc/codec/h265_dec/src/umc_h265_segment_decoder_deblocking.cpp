@@ -615,11 +615,31 @@ void H265SegmentDecoder::GetEdgeStrength(H265CodingUnit* pcCUQ,
 
     edge->qp = (pcCUQ->m_QPArray[uiPartQ] + pcCUP->m_QPArray[uiPartP] + 1) >> 1;
 
+    // TODO: Use raster coordinates passed as arguments to this function
+    // P coordinate
+    Ipp32u XIncP = g_RasterToPelX[g_ZscanToRaster[uiPartP]];
+    Ipp32u YIncP = g_RasterToPelY[g_ZscanToRaster[uiPartP]];
+    Ipp32s LPelXP = pcCUP->m_CUPelX + XIncP;
+    Ipp32s TPelYP = pcCUP->m_CUPelY + YIncP;
+    Ipp32s PartXP = LPelXP >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
+    Ipp32s PartYP = TPelYP >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
+    Ipp32u PartNumberP = PartYP * m_pCurrentFrame->getNumPartInCUSize() * m_pCurrentFrame->getFrameWidthInCU() + PartXP;
+
+    // Q coordinate
+    Ipp32u XIncQ = g_RasterToPelX[g_ZscanToRaster[uiPartQ]];
+    Ipp32u YIncQ = g_RasterToPelY[g_ZscanToRaster[uiPartQ]];
+    Ipp32s LPelXQ = pcCUQ->m_CUPelX + XIncQ;
+    Ipp32s TPelYQ = pcCUQ->m_CUPelY + YIncQ;
+    Ipp32s PartXQ = LPelXQ >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
+    Ipp32s PartYQ = TPelYQ >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
+    Ipp32u PartNumberQ = PartYQ * m_pCurrentFrame->getNumPartInCUSize() * m_pCurrentFrame->getFrameWidthInCU() + PartXQ;
+
+    // Intra CUs
     if ((pcCUQ->CUAddr != pcCUP->CUAddr)||
         (pcCUQ->m_TrStartArray[uiPartQ] != pcCUP->m_TrStartArray[uiPartP]))
     {
-        if ((pcCUQ->m_PredModeArray[uiPartQ] == MODE_INTRA) ||
-            (pcCUP->m_PredModeArray[uiPartP] == MODE_INTRA))
+        if (COL_TU_INTRA == m_pCurrentFrame->m_CodingData->m_ColTUFlags[REF_PIC_LIST_0][PartNumberP] ||
+            COL_TU_INTRA == m_pCurrentFrame->m_CodingData->m_ColTUFlags[REF_PIC_LIST_0][PartNumberQ])
         {
             edge->strength = 2;
             return;
@@ -634,27 +654,25 @@ void H265SegmentDecoder::GetEdgeStrength(H265CodingUnit* pcCUQ,
     }
     else
     {
-        if ((pcCUQ->m_PredModeArray[uiPartQ] == MODE_INTRA) ||
-            (pcCUP->m_PredModeArray[uiPartP] == MODE_INTRA))
+        if (COL_TU_INTRA == m_pCurrentFrame->m_CodingData->m_ColTUFlags[REF_PIC_LIST_0][PartNumberP] ||
+            COL_TU_INTRA == m_pCurrentFrame->m_CodingData->m_ColTUFlags[REF_PIC_LIST_0][PartNumberQ])
         {
             edge->strength = 0;
             return;
         }
     }
 
+    // Inter CUs
     /* Check MV */
     {
-        Ipp32s RefPOCQ0, RefPOCQ1, RefPOCP0, RefPOCP1;
         Ipp32s numRefsP, numRefsQ;
-        H265MotionVector MVQ0, MVQ1, MVP0, MVP1;
         Ipp32s i;
 
         numRefsP = 0;
 
         for (i = 0; i < 2; i++)
         {
-            EnumRefPicList RefPicList = (i ? REF_PIC_LIST_1 : REF_PIC_LIST_0);
-            if (pcCUP->m_CUMVbuffer[RefPicList].RefIdx[uiPartP] >= 0)
+            if (COL_TU_INVALID_INTER != m_pCurrentFrame->m_CodingData->m_ColTUFlags[i][PartNumberP])
             {
                 numRefsP++;
             }
@@ -664,8 +682,7 @@ void H265SegmentDecoder::GetEdgeStrength(H265CodingUnit* pcCUQ,
 
         for (i = 0; i < 2; i++)
         {
-            EnumRefPicList RefPicList = (i ? REF_PIC_LIST_1 : REF_PIC_LIST_0);
-            if (pcCUQ->m_CUMVbuffer[RefPicList].RefIdx[uiPartQ] >= 0)
+            if (COL_TU_INVALID_INTER != m_pCurrentFrame->m_CodingData->m_ColTUFlags[i][PartNumberQ])
             {
                 numRefsQ++;
             }
@@ -679,14 +696,16 @@ void H265SegmentDecoder::GetEdgeStrength(H265CodingUnit* pcCUQ,
 
         if (numRefsQ == 2)
         {
-            RefPOCQ0 = m_pCurrentFrame->GetRefPicList(pcCUQ->m_SliceIdx, REF_PIC_LIST_0)->m_refPicList[pcCUQ->m_CUMVbuffer[REF_PIC_LIST_0].RefIdx[uiPartQ]].refFrame->m_PicOrderCnt;
-            RefPOCQ1 = m_pCurrentFrame->GetRefPicList(pcCUQ->m_SliceIdx, REF_PIC_LIST_1)->m_refPicList[pcCUQ->m_CUMVbuffer[REF_PIC_LIST_1].RefIdx[uiPartQ]].refFrame->m_PicOrderCnt;
-            MVQ0 = pcCUQ->m_CUMVbuffer[REF_PIC_LIST_0].MV[uiPartQ];
-            MVQ1 = pcCUQ->m_CUMVbuffer[REF_PIC_LIST_1].MV[uiPartQ];
-            RefPOCP0 = m_pCurrentFrame->GetRefPicList(pcCUP->m_SliceIdx, REF_PIC_LIST_0)->m_refPicList[pcCUP->m_CUMVbuffer[REF_PIC_LIST_0].RefIdx[uiPartP]].refFrame->m_PicOrderCnt;
-            RefPOCP1 = m_pCurrentFrame->GetRefPicList(pcCUP->m_SliceIdx, REF_PIC_LIST_1)->m_refPicList[pcCUP->m_CUMVbuffer[REF_PIC_LIST_1].RefIdx[uiPartP]].refFrame->m_PicOrderCnt;
-            MVP0 = pcCUP->m_CUMVbuffer[REF_PIC_LIST_0].MV[uiPartP];
-            MVP1 = pcCUP->m_CUMVbuffer[REF_PIC_LIST_1].MV[uiPartP];
+            // Two references in both CUs
+            Ipp32s RefPOCP0 = m_pCurrentFrame->m_CodingData->m_ColTUPOCDelta[REF_PIC_LIST_0][PartNumberP];
+            Ipp32s RefPOCP1 = m_pCurrentFrame->m_CodingData->m_ColTUPOCDelta[REF_PIC_LIST_1][PartNumberP];
+            H265MotionVector MVP0 = m_pCurrentFrame->m_CodingData->m_ColTUMV[REF_PIC_LIST_0][PartNumberP];
+            H265MotionVector MVP1 = m_pCurrentFrame->m_CodingData->m_ColTUMV[REF_PIC_LIST_1][PartNumberP];
+
+            Ipp32s RefPOCQ0 = m_pCurrentFrame->m_CodingData->m_ColTUPOCDelta[REF_PIC_LIST_0][PartNumberQ];
+            Ipp32s RefPOCQ1 = m_pCurrentFrame->m_CodingData->m_ColTUPOCDelta[REF_PIC_LIST_1][PartNumberQ];
+            H265MotionVector MVQ0 = m_pCurrentFrame->m_CodingData->m_ColTUMV[REF_PIC_LIST_0][PartNumberQ];
+            H265MotionVector MVQ1 = m_pCurrentFrame->m_CodingData->m_ColTUMV[REF_PIC_LIST_1][PartNumberQ];
 
             if (((RefPOCQ0 == RefPOCP0) && (RefPOCQ1 == RefPOCP1)) ||
                 ((RefPOCQ0 == RefPOCP1) && (RefPOCQ1 == RefPOCP0)))
@@ -721,19 +740,20 @@ void H265SegmentDecoder::GetEdgeStrength(H265CodingUnit* pcCUQ,
         }
         else
         {
+            // One reference in both CUs
             EnumRefPicList RefPicList;
 
-            RefPicList = ((pcCUQ->m_CUMVbuffer[REF_PIC_LIST_0].RefIdx[uiPartQ] >= 0) ? REF_PIC_LIST_0 : REF_PIC_LIST_1);
-            RefPOCQ0 = m_pCurrentFrame->GetRefPicList(pcCUQ->m_SliceIdx, RefPicList)->m_refPicList[pcCUQ->m_CUMVbuffer[RefPicList].RefIdx[uiPartQ]].refFrame->m_PicOrderCnt;
-            MVQ0 = pcCUQ->m_CUMVbuffer[RefPicList].MV[uiPartQ];
+            RefPicList = COL_TU_INVALID_INTER != m_pCurrentFrame->m_CodingData->m_ColTUFlags[REF_PIC_LIST_0][PartNumberP] ? REF_PIC_LIST_0 : REF_PIC_LIST_1;
+            Ipp32s RefPOCP = m_pCurrentFrame->m_CodingData->m_ColTUPOCDelta[RefPicList][PartNumberP];
+            H265MotionVector MVP = m_pCurrentFrame->m_CodingData->m_ColTUMV[RefPicList][PartNumberP];
 
-            RefPicList = ((pcCUP->m_CUMVbuffer[REF_PIC_LIST_0].RefIdx[uiPartP] >= 0) ? REF_PIC_LIST_0 : REF_PIC_LIST_1);
-            RefPOCP0 = m_pCurrentFrame->GetRefPicList(pcCUP->m_SliceIdx, RefPicList)->m_refPicList[pcCUP->m_CUMVbuffer[RefPicList].RefIdx[uiPartP]].refFrame->m_PicOrderCnt;
-            MVP0 = pcCUP->m_CUMVbuffer[RefPicList].MV[uiPartP];
+            RefPicList = COL_TU_INVALID_INTER != m_pCurrentFrame->m_CodingData->m_ColTUFlags[REF_PIC_LIST_0][PartNumberQ] ? REF_PIC_LIST_0 : REF_PIC_LIST_1;
+            Ipp32s RefPOCQ = m_pCurrentFrame->m_CodingData->m_ColTUPOCDelta[RefPicList][PartNumberQ];
+            H265MotionVector MVQ = m_pCurrentFrame->m_CodingData->m_ColTUMV[RefPicList][PartNumberQ];
 
-            if (RefPOCQ0 == RefPOCP0)
+            if (RefPOCQ == RefPOCP)
             {
-                Ipp32s bs = (MVIsnotEq(MVP0, MVQ0) ? 1 : 0);
+                Ipp32s bs = (MVIsnotEq(MVP, MVQ) ? 1 : 0);
                 edge->strength = (Ipp8u)bs;
                 return;
             }

@@ -59,10 +59,10 @@ protected:
 
     // motion compensation functions
     template <EnumTextType c_plane_type, bool bi>
-    void H265_FORCEINLINE PredInterUni(H265CodingUnit* pCU, Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefPicList RefPicList, H265DecYUVBufferPadded *YUVPred, EnumAddAverageType eAddAverage = AVERAGE_NO
+    void H265_FORCEINLINE PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicList RefPicList, H265DecYUVBufferPadded *YUVPred, EnumAddAverageType eAddAverage = AVERAGE_NO
         );
 
-    bool CheckIdenticalMotion(H265CodingUnit* pCU, Ipp32u PartAddr);
+    bool CheckIdenticalMotion(H265CodingUnit* pCU, H265PUInfo &MVi);
     
     template < EnumTextType plane_type, typename t_src, typename t_dst >
     static void H265_FORCEINLINE Interpolate( EnumInterpType interp_type,
@@ -114,7 +114,7 @@ public:
     void InitTempBuff();
 
     // inter
-    void MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPadded* YUVPred, Ipp32u AbsPartIdx, Ipp32u Depth);
+    void MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPadded* YUVPred, Ipp32u AbsPartIdx, Ipp32u Depth, H265PUInfo *PUInfo);
 
     // Angular Intra
     void PredIntraLumaAng(Ipp32u DirMode, H265PlanePtrYCommon pPred, Ipp32u Stride, Ipp32s Size);

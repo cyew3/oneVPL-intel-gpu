@@ -154,15 +154,6 @@ void H265CodingUnit::create (Ipp32u numPartition, Ipp32u Width, Ipp32u Height, b
                                         &m_IPCMSampleCr, sizeof(H265PlaneYCommon) * Width * Height / 4
 
                                       );
-
-        m_CUMVbuffer[0].create(numPartition);
-        m_CUMVbuffer[1].create(numPartition);
-
-    }
-    else
-    {
-        m_CUMVbuffer[0].m_NumPartition = numPartition;
-        m_CUMVbuffer[1].m_NumPartition = numPartition;
     }
 
     m_CUAbove          = NULL;
@@ -181,9 +172,6 @@ void H265CodingUnit::destroy()
             delete[] m_cumulativeMemoryPtr;
             m_cumulativeMemoryPtr = 0;
         }
-
-        m_CUMVbuffer[0].destroy();
-        m_CUMVbuffer[1].destroy();
     }
 
     m_CUAbove = NULL;

@@ -61,7 +61,6 @@ public:
     Ipp8u*                    m_TrStartArray;
     Ipp8u*                    m_TransformSkip[3];  // array of transform skipping flags
     Ipp8u*                    m_Cbf[3];         // array of coded block flags (CBF)
-    CUMVBuffer                m_CUMVbuffer[2];    // array of motion vectors
     H265CoeffsPtrCommon        m_TrCoeffY;       // transformed coefficient buffer (Y)
     H265CoeffsPtrCommon        m_TrCoeffCb;      // transformed coefficient buffer (Cb)
     H265CoeffsPtrCommon        m_TrCoeffCr;      // transformed coefficient buffer (Cr)
@@ -220,9 +219,17 @@ struct H265FrameHLDNeighborsInfo
     };
 };
 
-struct H265TUData
+struct H265MVInfo
 {
     MVBuffer mvinfo[2];
+};
+
+struct H265PUInfo
+{
+    H265MVInfo interinfo;
+    H265DecoderFrame *refFrame[2];
+    Ipp32u PartAddr;
+    Ipp32s Width, Height;
 };
 
 namespace RasterAddress

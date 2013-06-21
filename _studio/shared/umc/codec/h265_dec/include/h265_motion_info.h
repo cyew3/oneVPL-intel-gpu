@@ -161,37 +161,6 @@ public:
         RefIdx = iRefIdx;
     }
 };
-
-//structure for motion information in one CU
-struct CUMVBuffer
-{
-public:
-    H265MotionVector*    MV;
-    RefIndexType*        RefIdx;
-    Ipp32u            m_NumPartition;
-
-    CUMVBuffer()
-    {
-        MV = NULL;
-        RefIdx = NULL;
-        m_NumPartition = 0;
-    }
-
-    ~CUMVBuffer()
-    {
-    }
-
-    // create-destroy
-    void create(Ipp32u numpartition);
-    void destroy();
-
-    template <typename T>
-    void setAll(T *p, T const & val, EnumPartSize CUMode, Ipp32s PartAddr, Ipp32u Depth, Ipp32s PartIdx);
-    void setAllMV(H265MotionVector const & mv, EnumPartSize CUMode, Ipp32s PartAddr, Ipp32u Depth, Ipp32s PartIdx);
-    void setAllRefIdx (Ipp32s refIdx, EnumPartSize CUMode, Ipp32s PartAddr, Ipp32u Depth, Ipp32s PartIdx);
-    void setAllMVBuffer(MVBuffer const & mvBuffer, EnumPartSize CUMode, Ipp32s PartAddr, Ipp32u Depth, Ipp32s PartIdx);
-};
-
 } // end namespace UMC_HEVC_DECODER
 
 #endif //__H265_MOTION_INFO_H

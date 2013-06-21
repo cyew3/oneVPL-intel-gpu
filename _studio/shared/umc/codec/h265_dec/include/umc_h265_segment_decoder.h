@@ -27,7 +27,7 @@ namespace UMC_HEVC_DECODER
 
 struct H265SliceHeader;
 struct H265FrameHLDNeighborsInfo;
-struct H265TUData;
+struct H265MVInfo;
 struct H265MotionVector;
 struct MVBuffer;
 struct SAOParams;
@@ -108,19 +108,17 @@ public:
     Ipp32u DecodeMergeIndexCABAC(void);
     bool DecodeSkipFlagCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void DecodeCUTransquantBypassFlag(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
-    RefIndexType DecodeMVPIdxPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartAddr, Ipp32u Depth, Ipp32u PartIdx, EnumRefPicList RefList, H265MotionVector &MVd, Ipp8u InterDir);
-    Ipp32u ParseMVPIdxCABAC(void);
+    void DecodeMVPIdxPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartAddr, Ipp32u Depth, Ipp32u PartIdx, EnumRefPicList RefList, MVBuffer &MVb, Ipp8u InterDir);
     Ipp32s DecodePredModeCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void DecodePartSizeCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void DecodeIPCMInfoCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void DecodePCMAlignBits();
-    bool DecodePredInfoCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void DecodeIntraDirLumaAngCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void DecodeIntraDirChromaCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     bool DecodePUWiseCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     bool DecodeMergeFlagCABAC(void);
     Ipp8u DecodeInterDirPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx);
-    void DecodeRefFrmIdxPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u PartIdx, EnumRefPicList RefList, Ipp8u InterDir);
+    RefIndexType DecodeRefFrmIdxPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u PartIdx, EnumRefPicList RefList, Ipp8u InterDir);
     void DecodeMVdPUCABAC(EnumRefPicList RefList, H265MotionVector &MVd, Ipp8u InterDir);
     void ParseTransformSubdivFlagCABAC(Ipp32u& SubdivFlag, Ipp32u Log2TransformBlockSize);
     void ReadEpExGolombCABAC(Ipp32u& Value, Ipp32u Count);
@@ -251,23 +249,24 @@ public:
 
     // Updated after whole CTB is done for initializing external neighbour data in m_CurCTB
     H265FrameHLDNeighborsInfo *m_TopNgbrs;
-    H265TUData *m_TopMVInfo;
+    H265MVInfo *m_TopMVInfo;
     // Updated after every PU is processed and MV info is available
     H265FrameHLDNeighborsInfo *m_CurrCTBFlags;
-    H265TUData *m_CurrCTB;
+    H265MVInfo *m_CurrCTB;
     Ipp32s m_CurrCTBStride;
 
     std::vector<H265FrameHLDNeighborsInfo> m_TopNgbrsHolder;
-    std::vector<H265TUData> m_TopMVInfoHolder;
-    std::vector<H265TUData> m_CurrCTBHolder;
+    std::vector<H265MVInfo> m_TopMVInfoHolder;
+    std::vector<H265MVInfo> m_CurrCTBHolder;
     std::vector<H265FrameHLDNeighborsInfo> m_CurrCTBFlagsHolder;
 
     void UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPartIdx, bool isSkipped);
     void ResetRowBuffer(void);
-    void UpdatePUInfo(H265CodingUnit *pCU, Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight, RefIndexType RefIdx[2], H265MotionVector MV[2]);
+    void UpdatePUInfo(H265CodingUnit *pCU, Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight, H265PUInfo &PUi);
     void UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr);
 
-    //end of h265 members
+    // Current CU local state
+    H265PUInfo m_puinfo[4];
 
     Ipp32s m_iNumber;                                           // (Ipp32s) ordinal number of decoder
     H265Slice *m_pSlice;                                        // (H265Slice *) current slice pointer
