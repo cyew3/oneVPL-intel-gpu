@@ -619,7 +619,6 @@ typedef enum {
 #define IS_P_SLICE(SliceType) ((SliceType) == PREDSLICE || (SliceType) == S_PREDSLICE)
 #define IS_B_SLICE(SliceType) ((SliceType) == BPREDSLICE)
 
-#define IS_SKIP_DEBLOCKING_MODE_NON_REF (m_PermanentTurnOffDeblocking == 1)
 #define IS_SKIP_DEBLOCKING_MODE_PERMANENT (m_PermanentTurnOffDeblocking == 2)
 #define IS_SKIP_DEBLOCKING_MODE_PREVENTIVE (m_PermanentTurnOffDeblocking == 3)
 
@@ -1605,7 +1604,8 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
 
 struct TileInfo
 {
-    Ipp32u startAddressOfTile;
+    Ipp32s firstCUAddr;
+    Ipp32s endCUAddr;
 };
 
 // Picture parameter set structure, corresponding to the H.264 bitstream definition.

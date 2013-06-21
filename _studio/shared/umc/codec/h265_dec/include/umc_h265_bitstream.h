@@ -175,7 +175,6 @@ public:
     UMC::Status GetNALUnitType(NalUnitType &nal_unit_type, Ipp32u &nuh_temporal_id, Ipp32u &reserved_zero_6bits);
     UMC::Status GetAccessUnitDelimiter(Ipp32u &PicCodType);
 
-    UMC::Status ReadFillerData();
     void RollbackCurrentNALU();
 
     // Parse SEI message
@@ -184,13 +183,6 @@ public:
     void GetOrg(Ipp32u **pbs, Ipp32u *size);
     void GetState(Ipp32u **pbs, Ipp32u *bitOffset);
     void SetState(Ipp32u *pbs, Ipp32u bitOffset);
-
-
-    // Searches for a code with known number of bits.
-    bool SearchBits(const Ipp32u nbits,
-                    const Ipp32u code,
-                    const Ipp32u lookahead);
-    bool NextBit();
 
     // Set current decoding position
     void SetDecodedBytes(size_t);

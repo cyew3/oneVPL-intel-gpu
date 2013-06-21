@@ -65,11 +65,9 @@ public:
 
         const H265SliceHeader &sliceHeader = *(pSlice->GetSliceHeader());
 
-        m_IsIntraAU = m_IsIntraAU && (sliceHeader.slice_type == I_SLICE);
-        m_isBExist = m_isBExist || (sliceHeader.slice_type == B_SLICE);
-        m_isPExist = m_isPExist || (sliceHeader.slice_type == P_SLICE);
-
-        m_IsNeedDeblocking = m_IsNeedDeblocking || (!pSlice->getDeblockingFilterDisable());
+        m_isIntraAU = m_isIntraAU && (sliceHeader.slice_type == I_SLICE);
+        m_hasDependentSliceSegments = m_hasDependentSliceSegments || pSlice->getDependentSliceSegmentFlag();
+        m_isNeedDeblocking = m_isNeedDeblocking || (!pSlice->getDeblockingFilterDisable());
     }
 
     Ipp32u GetSliceCount() const
@@ -112,18 +110,13 @@ public:
     {
         Free();
 
-        m_iDecMBReady = 0;
-        m_iRecMBReady = 0;
-        m_IsNeedDeblocking = false;
+        m_isNeedDeblocking = false;
 
-        m_IsReferenceAU = false;
-        m_IsIntraAU = true;
-        m_isPExist = false;
-        m_isBExist = false;
+        m_isIntraAU = true;
+        m_hasDependentSliceSegments = false;
 
         m_NextAU = 0;
         m_PrevAU = 0;
-        m_RefAU = 0;
 
         m_Status = STATUS_NONE;
         m_prepared = 0;
@@ -173,12 +166,12 @@ public:
 
     bool IsNeedDeblocking () const
     {
-        return m_IsNeedDeblocking;
+        return m_isNeedDeblocking;
     }
 
     void SkipDeblocking()
     {
-        m_IsNeedDeblocking = false;
+        m_isNeedDeblocking = false;
 
         for (Ipp32s i = 0; i < m_SliceCount; i ++)
         {
@@ -218,19 +211,15 @@ public:
 
     bool IsIntraAU() const
     {
-        return m_IsIntraAU;
+        return m_isIntraAU;
     }
 
-    bool IsReference() const
+    bool HasDependentSliceSegments() const
     {
-        return m_IsReferenceAU;
+        return m_hasDependentSliceSegments;
     }
 
-#if (HEVC_OPT_CHANGES & 2)
-// ML: OPT: compilers do not seem to honor implicit 'inline' for this one
-    H265_FORCEINLINE
-#endif
-    H265DecoderRefPicList* GetRefPicList(Ipp32u sliceNumber, Ipp32s list)
+    H265_FORCEINLINE H265DecoderRefPicList* GetRefPicList(Ipp32u sliceNumber, Ipp32s list)
     {
         VM_ASSERT(list <= LIST_1 && list >= 0);
 
@@ -267,19 +256,12 @@ public:
 
     H265DecoderFrameInfo * GetNextAU() {return m_NextAU;}
     H265DecoderFrameInfo * GetPrevAU() {return m_PrevAU;}
-    H265DecoderFrameInfo * GetRefAU() {return m_RefAU;}
 
     void SetNextAU(H265DecoderFrameInfo *au) {m_NextAU = au;}
     void SetPrevAU(H265DecoderFrameInfo *au) {m_PrevAU = au;}
-    void SetRefAU(H265DecoderFrameInfo *au) {m_RefAU = au;}
 
-    Ipp32s m_iDecMBReady;
-    Ipp32s m_iRecMBReady;
     H265DecoderFrame * m_pFrame;
     Ipp32s m_prepared;
-
-    bool m_isBExist;
-    bool m_isPExist;
 
 private:
 
@@ -291,13 +273,12 @@ private:
 
     Heap *m_pHeap;
     Heap_Objects * m_pObjHeap;
-    bool m_IsNeedDeblocking;
+    bool m_isNeedDeblocking;
 
-    bool m_IsReferenceAU;
-    bool m_IsIntraAU;
+    bool m_isIntraAU;
+    bool m_hasDependentSliceSegments;
 
     H265DecoderFrameInfo *m_NextAU;
-    H265DecoderFrameInfo *m_RefAU;
     H265DecoderFrameInfo *m_PrevAU;
 
     struct H264DecoderRefPicListPair

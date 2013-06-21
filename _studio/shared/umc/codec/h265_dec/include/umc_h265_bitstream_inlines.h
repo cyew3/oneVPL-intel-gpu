@@ -189,41 +189,6 @@ inline void H265BaseBitstream::AlignPointerRight(void)
     ippiAlignBSPointerRight(m_pbs, m_bitOffset);
 
 } // void H265BaseBitstream::AlignPointerRight(void)
-
-
-
-inline
-bool H265Bitstream::NextBit()
-{
-    Ipp32s bp;
-    Ipp32u w;
-
-    bp = m_bitOffset - 1;
-
-    if (bp < 0)
-    {
-        w = m_pbs[0] & 1;
-        if (w)
-        {
-            m_pbs++;
-            m_bitOffset = 31;
-            return true;
-        }
-    }
-    else
-    {
-        w = m_pbs[0] >> m_bitOffset;
-        w = w & 1;
-        if (w)
-        {
-            m_bitOffset = bp;
-            return true;
-        }
-    }
-    return false;
-
-} // H265Bitstream::SearchBits()
-
 H265_FORCEINLINE
 Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
 {

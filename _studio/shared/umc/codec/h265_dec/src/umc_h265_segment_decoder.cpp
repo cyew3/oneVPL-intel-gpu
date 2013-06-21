@@ -226,28 +226,16 @@ H265CoeffsPtrCommon H265SegmentDecoder::GetCoefficientsBuffer(Ipp32u nNum)
 
 } // Ipp16s *H265SegmentDecoder::GetCoefficientsBuffer(Ipp32u nNum)
 
-SegmentDecoderHPBase_H265 *CreateSD_H265(Ipp32s bit_depth_luma,
-                               Ipp32s bit_depth_chroma,
-                               bool is_field,
-                               Ipp32s color_format,
-                               bool is_high_profile)
+SegmentDecoderHPBase_H265 *CreateSD_H265(Ipp32s bit_depth_luma, Ipp32s bit_depth_chroma)
 {
     if (bit_depth_chroma > 8 || bit_depth_luma > 8)
     {
-        return CreateSD_ManyBits_H265(bit_depth_luma,
-                                 bit_depth_chroma,
-                                 is_field,
-                                 color_format,
-                                 is_high_profile);
+        VM_ASSERT(false);
+        return 0;
     }
     else
     {
-        if (is_field)
-        {
-            return CreateSegmentDecoderWrapper<Ipp16s, Ipp8u, Ipp8u, true>::CreateSoftSegmentDecoder(color_format, is_high_profile);
-        } else {
-            return CreateSegmentDecoderWrapper<Ipp16s, Ipp8u, Ipp8u, false>::CreateSoftSegmentDecoder(color_format, is_high_profile);
-        }
+        return CreateSegmentDecoderWrapper<Ipp16s, Ipp8u, Ipp8u>::CreateSoftSegmentDecoder();
     }
 
 } // SegmentDecoderHPBase_H265 *CreateSD(Ipp32s bit_depth_luma,
@@ -255,8 +243,7 @@ SegmentDecoderHPBase_H265 *CreateSD_H265(Ipp32s bit_depth_luma,
 static
 void InitializeSDCreator()
 {
-    CreateSegmentDecoderWrapper<Ipp16s, Ipp8u, Ipp8u, true>::CreateSoftSegmentDecoder(0, false);
-    CreateSegmentDecoderWrapper<Ipp16s, Ipp8u, Ipp8u, false>::CreateSoftSegmentDecoder(0, false);
+    CreateSegmentDecoderWrapper<Ipp16s, Ipp8u, Ipp8u>::CreateSoftSegmentDecoder();
 }
 
 class SDInitializer
@@ -265,7 +252,6 @@ public:
     SDInitializer()
     {
         InitializeSDCreator();
-        InitializeSDCreator_ManyBits_H265();
     }
 };
 

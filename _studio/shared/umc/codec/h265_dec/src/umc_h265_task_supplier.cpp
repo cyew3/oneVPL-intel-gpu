@@ -258,35 +258,14 @@ void Skipping_H265::PermanentDisableDeblocking(bool disable)
     m_PermanentTurnOffDeblocking = disable ? 3 : 0;
 }
 
-bool Skipping_H265::IsShouldSkipDeblocking(H265DecoderFrame * pFrame)
+bool Skipping_H265::IsShouldSkipDeblocking(H265DecoderFrame *)
 {
-    return (IS_SKIP_DEBLOCKING_MODE_PREVENTIVE || IS_SKIP_DEBLOCKING_MODE_PERMANENT ||
-        (IS_SKIP_DEBLOCKING_MODE_NON_REF && !pFrame->GetAU()->IsReference()));
+    return (IS_SKIP_DEBLOCKING_MODE_PREVENTIVE || IS_SKIP_DEBLOCKING_MODE_PERMANENT);
 }
 
-bool Skipping_H265::IsShouldSkipFrame(H265DecoderFrame * pFrame)
+bool Skipping_H265::IsShouldSkipFrame(H265DecoderFrame * )
 {
-    bool isShouldSkip = false;
-
-    bool isReference = pFrame->GetAU()->IsReference();
-
-    if ((m_VideoDecodingSpeed > 0) && !isReference)
-    {
-        if ((m_SkipFlag % m_ModSkipCycle) == 0)
-        {
-            isShouldSkip = true;
-        }
-
-        m_SkipFlag++;
-
-        if (m_SkipFlag >= m_SkipCycle)
-            m_SkipFlag = 0;
-    }
-
-    if (isShouldSkip)
-        m_NumberOfSkippedFrames++;
-
-    return isShouldSkip;
+    return false;
 }
 
 void Skipping_H265::ChangeVideoDecodingSpeed(Ipp32s & num)
@@ -301,54 +280,6 @@ void Skipping_H265::ChangeVideoDecodingSpeed(Ipp32s & num)
     num = m_VideoDecodingSpeed;
 
     Ipp32s deblocking_off = m_PermanentTurnOffDeblocking;
-
-    if (m_VideoDecodingSpeed > 6)
-    {
-        m_SkipCycle = 1;
-        m_ModSkipCycle = 1;
-        m_PermanentTurnOffDeblocking = 2;
-    }
-    else if (m_VideoDecodingSpeed > 5)
-    {
-        m_SkipCycle = 1;
-        m_ModSkipCycle = 1;
-        m_PermanentTurnOffDeblocking = 0;
-    }
-    else if (m_VideoDecodingSpeed > 4)
-    {
-        m_SkipCycle = 3;
-        m_ModSkipCycle = 2;
-        m_PermanentTurnOffDeblocking = 1;
-    }
-    else if (m_VideoDecodingSpeed > 3)
-    {
-        m_SkipCycle = 3;
-        m_ModSkipCycle = 2;
-        m_PermanentTurnOffDeblocking = 0;
-    }
-    else if (m_VideoDecodingSpeed > 2)
-    {
-        m_SkipCycle = 2;
-        m_ModSkipCycle = 2;
-        m_PermanentTurnOffDeblocking = 0;
-    }
-    else if (m_VideoDecodingSpeed > 1)
-    {
-        m_SkipCycle = 3;
-        m_ModSkipCycle = 3;
-        m_PermanentTurnOffDeblocking = 0;
-    }
-    else if (m_VideoDecodingSpeed == 1)
-    {
-        m_SkipCycle = 4;
-        m_ModSkipCycle = 4;
-        m_PermanentTurnOffDeblocking = 0;
-    }
-    else
-    {
-        m_PermanentTurnOffDeblocking = 0;
-    }
-
     if (deblocking_off == 3)
         m_PermanentTurnOffDeblocking = 3;
 }
@@ -1509,7 +1440,8 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
     if (!numberOfTiles)
     {
         pps.tilesInfo.resize(1);
-        pps.tilesInfo[0].startAddressOfTile = 0;
+        pps.tilesInfo[0].firstCUAddr = 0;
+        pps.tilesInfo[0].endCUAddr = WidthInLCU*HeightInLCU;
     }
 
     for (size_t i = 0; i < numberOfTiles; i++)
@@ -1530,7 +1462,8 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
             startY += pps.m_RowHeightArray[j];
         }
 
-        pps.tilesInfo[i].startAddressOfTile = startY * WidthInLCU + startX;
+        pps.tilesInfo[i].endCUAddr = (startY + pps.m_RowHeightArray[tileY] - 1)* WidthInLCU + startX + pps.m_ColumnWidthArray[tileX] - 1;
+        pps.tilesInfo[i].firstCUAddr = startY * WidthInLCU + startX;
     }
 
     m_Headers.m_PicParams.AddHeader(&pps);
@@ -2107,6 +2040,12 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
         }
     }
 
+    size_t currOffset = pSlice->GetSliceHeader()->m_HeaderBitstreamOffset;
+    for (Ipp32u tile = 0; tile < pSlice->getTileLocationCount(); tile++)
+    {
+        pSlice->setTileLocation(tile, pSlice->getTileLocation(tile) + currOffset);
+    }
+
     // Update entry points
     size_t offsets = removed_offsets.size();
     if (pSlice->m_pPicParamSet->getTilesEnabledFlag() && pSlice->getTileLocationCount() > 0 && offsets > 0)
@@ -2115,9 +2054,9 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
         std::vector<Ipp32u>::iterator it = removed_offsets.begin();
         Ipp32u offset = *it;
 
-        for (Ipp32u tile = 0; tile < pSlice->getTileLocationCount(); tile++)
+        for (Ipp32s tile = 0; tile < (Ipp32s)pSlice->getTileLocationCount(); tile++)
         {
-            while (pSlice->getTileLocation(tile) + pSlice->m_SliceHeader.m_HeaderBitstreamOffset < offset)
+            while (pSlice->getTileLocation(tile) > offset && removed_bytes < offsets)
             {
                 removed_bytes++;
                 if (removed_bytes < offsets)
@@ -2128,6 +2067,7 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
                 else
                     break;
             }
+
             pSlice->setTileLocation(tile, pSlice->getTileLocation(tile) - removed_bytes);
         }
     }

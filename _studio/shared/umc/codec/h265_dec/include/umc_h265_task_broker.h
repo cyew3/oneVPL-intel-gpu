@@ -83,9 +83,6 @@ protected:
 
     bool GetPreparationTask(H265DecoderFrameInfo * info);
 
-    // Get number of slices to decode
-    Ipp32s GetNumberOfSlicesToDecode(H265DecoderFrameInfo * info);
-
     bool GetSAOTask(H265DecoderFrameInfo * info, H265Task *pTask);
 
     // Check current frame condition
@@ -149,13 +146,9 @@ public:
 
 private:
 
-    bool WrapDecodingTask(H265DecoderFrameInfo * info, H265Task *pTask, H265Slice *pSlice);
-    bool WrapReconstructTask(H265DecoderFrameInfo * info, H265Task *pTask, H265Slice *pSlice);
     bool WrapDecRecTask(H265DecoderFrameInfo * info, H265Task *pTask, H265Slice *pSlice);
 
     bool GetDecRecTask(H265DecoderFrameInfo * info, H265Task *pTask);
-    bool GetDecodingTask(H265DecoderFrameInfo * info, H265Task *pTask);
-    bool GetReconstructTask(H265DecoderFrameInfo * info, H265Task *pTask);
     bool GetDeblockingTask(H265DecoderFrameInfo * info, H265Task *pTask);
     bool GetFrameDeblockingTaskThreaded(H265DecoderFrameInfo * info, H265Task *pTask);
 #if defined (__ICL)

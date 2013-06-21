@@ -880,6 +880,12 @@ UMC::Status H265HeadersBitstream::GetPictureParamSetFull(H265PicParamSet  *pcPPS
             READ_FLAG ( uiCode, "loop_filter_across_tiles_enabled_flag" );   pcPPS->loop_filter_across_tiles_enabled_flag = (uiCode != 0);
         }
     }
+    else
+    {
+        pcPPS->num_tile_columns = 1;
+        pcPPS->num_tile_rows = 1;
+    }
+
     READ_FLAG( uiCode, "loop_filter_across_slices_enabled_flag" );       pcPPS->setLoopFilterAcrossSlicesEnabledFlag( uiCode ? true : false );
     READ_FLAG( uiCode, "deblocking_filter_control_present_flag" );       pcPPS->setDeblockingFilterControlPresentFlag( uiCode ? true : false );
     if(pcPPS->getDeblockingFilterControlPresentFlag())
@@ -1040,12 +1046,12 @@ UMC::Status H265HeadersBitstream::GetSliceHeaderPart1(H265Slice *rpcSlice)
 {
     unsigned uiCode;
 
-    rpcSlice->m_SliceHeader.IdrPicFlag = (NAL_UNIT_CODED_SLICE_IDR == rpcSlice->m_SliceHeader.nal_unit_type) ? 1 : 0;
+    rpcSlice->GetSliceHeader()->IdrPicFlag = (NAL_UNIT_CODED_SLICE_IDR == rpcSlice->GetSliceHeader()->nal_unit_type) ? 1 : 0;
 
     unsigned firstSliceSegmentInPic;
     READ_FLAG( firstSliceSegmentInPic, "first_slice_in_pic_flag" );
     
-    rpcSlice->m_SliceHeader.first_slice_segment_in_pic_flag = firstSliceSegmentInPic;
+    rpcSlice->GetSliceHeader()->first_slice_segment_in_pic_flag = firstSliceSegmentInPic;
 
     if ( rpcSlice->getNalUnitType() == NAL_UNIT_CODED_SLICE_IDR
       || rpcSlice->getNalUnitType() == NAL_UNIT_CODED_SLICE_IDR_N_LP
@@ -1065,11 +1071,11 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
     Ipp32u uiCode;
     Ipp32s iCode;
 
-    rpcSlice->m_SliceHeader.collocated_from_l0_flag = 1;
+    rpcSlice->GetSliceHeader()->collocated_from_l0_flag = 1;
 
     VM_ASSERT(pps!=0);
     VM_ASSERT(sps!=0);
-    if( pps->getDependentSliceSegmentEnabledFlag() && ( !rpcSlice->m_SliceHeader.first_slice_segment_in_pic_flag ))
+    if( pps->getDependentSliceSegmentEnabledFlag() && ( !rpcSlice->GetSliceHeader()->first_slice_segment_in_pic_flag ))
     {
         READ_FLAG( uiCode, "dependent_slice_segment_flag" );       rpcSlice->setDependentSliceSegmentFlag(uiCode ? true : false);
     }
@@ -1086,7 +1092,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
         bitsSliceSegmentAddress++;
     }
 
-    if (!rpcSlice->m_SliceHeader.first_slice_segment_in_pic_flag)
+    if (!rpcSlice->GetSliceHeader()->first_slice_segment_in_pic_flag)
     {
         READ_CODE( bitsSliceSegmentAddress, sliceSegmentAddress, "slice_segment_address" );
     }
@@ -1543,6 +1549,13 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
         rpcSlice->setLFCrossSliceBoundaryFlag( (uiCode==1)?true:false);
 
     }
+
+    if (!pps->getTilesEnabledFlag())
+    {
+        rpcSlice->setTileLocationCount(1);
+        rpcSlice->setTileLocation(0, 0);
+    }
+
     if( pps->getTilesEnabledFlag() || pps->getEntropyCodingSyncEnabledFlag() )
     {
         unsigned *entryPointOffset          = NULL;
@@ -1848,55 +1861,6 @@ UMC::Status H265Bitstream::GetAccessUnitDelimiter(Ipp32u &PicCodType)
     PicCodType = GetBits(3);
     return UMC::UMC_OK;
 }    // GetAccessUnitDelimiter
-
-// ---------------------------------------------------------------------------
-//  H265Bitstream::ReadFillerData()
-//    Filler data RBSP, read and discard all bytes == 0xff
-// ---------------------------------------------------------------------------
-UMC::Status H265Bitstream::ReadFillerData()
-{
-    while (SearchBits(8, 0xff, 0));
-    return UMC::UMC_OK;
-}    // SkipFillerData
-
-
-// ---------------------------------------------------------------------------
-//        H265Bitstream::SearchBits()
-//        Searches for a code with known number of bits.  Bitstream state,
-//        pointer and bit offset, will be updated if code found.
-//        nbits        : number of bits in the code
-//        code        : code to search for
-//        lookahead    : maximum number of bits to parse for the code
-// ---------------------------------------------------------------------------
-
-bool H265Bitstream::SearchBits(const Ipp32u nbits, const Ipp32u code, const Ipp32u lookahead)
-{
-    Ipp32u w;
-    Ipp32u n = nbits;
-    Ipp32u* pbs;
-    Ipp32s offset;
-
-    pbs    = m_pbs;
-    offset = m_bitOffset;
-
-    ippiGetNBits(m_pbs, m_bitOffset, n, w)
-
-    for (n = 0; w != code && n < lookahead; n ++)
-    {
-        w = (w << 1) & GetBitsMask[nbits] | Get1Bit();
-    }
-
-    if (w == code)
-        return(true);
-    else
-    {
-        m_pbs        = pbs;
-        m_bitOffset = offset;
-        return(false);
-    }
-
-} // H265Bitstream::SearchBits()
-
 
 void H265Bitstream::SetDecodedBytes(size_t nBytes)
 {

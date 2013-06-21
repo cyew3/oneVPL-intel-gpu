@@ -303,6 +303,8 @@ public:  // DEBUG !!!! should remove dependence
 
     static int m_prevPOC;
 
+public:
+
     // refcodec compatibility
     unsigned getSPSId() const   { return 0; }
     void setPPSId(Ipp32u val)     { m_SliceHeader.pic_parameter_set_id = (Ipp16u)val; }

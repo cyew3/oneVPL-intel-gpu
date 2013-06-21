@@ -1635,11 +1635,11 @@ void H265SampleAdaptiveOffset::createNonDBFilterInfo()
                 independentTileBoundaryForNDBFilter = true;
             }
 
-            Ipp32u firstCU = pSlice->m_pCurrentFrame->m_CodingData->GetInverseCUOrderMap(pSlice->m_iFirstMB);
-            Ipp32u lastCU = pSlice->m_pCurrentFrame->m_CodingData->GetInverseCUOrderMap(pSlice->m_iMaxMB);
+            Ipp32u firstCU = pSlice->GetCurrentFrame()->m_CodingData->GetInverseCUOrderMap(pSlice->m_iFirstMB);
+            Ipp32u lastCU = pSlice->GetCurrentFrame()->m_CodingData->GetInverseCUOrderMap(pSlice->m_iMaxMB);
             for (Ipp32u j = firstCU; j < lastCU; j++)
             {
-                m_Frame->getCU(pSlice->m_pCurrentFrame->m_CodingData->getCUOrderMap(j))->setNDBFilterBlockBorderAvailability(independentTileBoundaryForNDBFilter);
+                m_Frame->getCU(pSlice->GetCurrentFrame()->m_CodingData->getCUOrderMap(j))->setNDBFilterBlockBorderAvailability(independentTileBoundaryForNDBFilter);
             }
         }
     }
@@ -1648,9 +1648,9 @@ void H265SampleAdaptiveOffset::createNonDBFilterInfo()
 void H265SampleAdaptiveOffset::PCMRestoration()
 {
     H265Slice *pSlice = m_Frame->GetAU()->GetSlice(0);
-    bool PCMFilter = (pSlice->m_SliceHeader.m_SeqParamSet->getUsePCM() && pSlice->m_SliceHeader.m_SeqParamSet->getPCMFilterDisableFlag()) ? true : false;
+    bool PCMFilter = (pSlice->GetSliceHeader()->m_SeqParamSet->getUsePCM() && pSlice->GetSliceHeader()->m_SeqParamSet->getPCMFilterDisableFlag()) ? true : false;
 
-    if(PCMFilter || pSlice->m_SliceHeader.m_PicParamSet->getTransquantBypassEnableFlag())
+    if(PCMFilter || pSlice->GetSliceHeader()->m_PicParamSet->getTransquantBypassEnableFlag())
     {
         for(Ipp32u CUAddr = 0; CUAddr < m_Frame->getNumCUsInFrame(); CUAddr++)
         {

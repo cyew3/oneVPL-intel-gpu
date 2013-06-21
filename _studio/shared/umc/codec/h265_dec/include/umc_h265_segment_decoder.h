@@ -327,8 +327,6 @@ private:
     } // H265SegmentDecoder & operator = (H265SegmentDecoder &)
 };
 
-extern void InitializeSDCreator_ManyBits_H265();
-
 } // namespace UMC_HEVC_DECODER
 
 #endif /* __UMC_H264_SEGMENT_DECODER_H */

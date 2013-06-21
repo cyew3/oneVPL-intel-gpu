@@ -306,16 +306,16 @@ H265Slice * VATaskSupplier::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
     Ipp32u* pbs;
     Ipp32u bitOffset;
 
-    slice->m_BitStream.GetState(&pbs, &bitOffset);
+    slice->GetBitStream()->GetState(&pbs, &bitOffset);
 
-    size_t bytes = slice->m_BitStream.BytesDecodedRoundOff();
+    size_t bytes = slice->GetBitStream()->BytesDecodedRoundOff();
 
     m_Heap.Free(slice->m_pSource);
 
     slice->m_pSource = pMemCopy;
-    slice->m_BitStream.Reset(slice->m_pSource->GetPointer(), bitOffset,
+    slice->GetBitStream()->Reset(slice->m_pSource->GetPointer(), bitOffset,
         (Ipp32u)slice->m_pSource->GetDataSize());
-    slice->m_BitStream.SetState((Ipp32u*)(slice->m_pSource->GetPointer() + bytes), bitOffset);
+    slice->GetBitStream()->SetState((Ipp32u*)(slice->m_pSource->GetPointer() + bytes), bitOffset);
 
     memory_leak_preventing1.ClearNotification();
 

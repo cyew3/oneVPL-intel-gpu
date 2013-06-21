@@ -409,7 +409,7 @@ bool H265Slice::Reset(void *pSource, size_t nSourceSize, Ipp32s iConsumerNumber)
     if (nSourceSize && false == DecodeSliceHeader())
         return false;
 
-    m_SliceHeader.m_HeaderBitstreamOffset = m_BitStream.BytesDecodedRoundOff();
+    m_SliceHeader.m_HeaderBitstreamOffset = m_BitStream.BytesDecoded();
 
     m_SliceHeader.m_SeqParamSet = m_pSeqParamSet;
     m_SliceHeader.m_PicParamSet = m_pPicParamSet;
@@ -431,8 +431,8 @@ bool H265Slice::Reset(void *pSource, size_t nSourceSize, Ipp32s iConsumerNumber)
         return false;
 
     // reset all internal variables
-    m_iCurMBToDec = m_iFirstMB;
-    m_iCurMBToRec = m_iFirstMB;
+    m_iCurMBToDec = 0;
+    m_iCurMBToRec = 0;
     m_iCurMBToDeb = m_iFirstMB;
 
     m_bInProcess = false;

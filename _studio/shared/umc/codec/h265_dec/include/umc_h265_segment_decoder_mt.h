@@ -55,10 +55,6 @@ public:
 
     void RestoreErrorRect(Ipp32s startMb, Ipp32s endMb, H265Slice * pSlice);
 
-    UMC::Status DecodeMacroBlockCABAC(Ipp32u nCurMBNumber, Ipp32u &nMaxMBNumber);
-
-    UMC::Status ReconstructMacroBlockCABAC(Ipp32u nCurMBNumber, Ipp32u nMaxMBNumber);
-
     H265CoeffsPtrCommon  m_psBuffer;
 
     SegmentDecoderHPBase_H265* m_SD;

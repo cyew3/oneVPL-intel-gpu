@@ -46,10 +46,8 @@
     <ClCompile Include="src\umc_h265_mfx_supplier.cpp" />
     <ClCompile Include="src\umc_h265_nal_spl.cpp" />
     <ClCompile Include="src\umc_h265_segment_decoder.cpp" />
-    <ClCompile Include="src\umc_h265_segment_decoder_cabac_mt.cpp" />
     <ClCompile Include="src\umc_h265_segment_decoder_deblocking.cpp" />
     <ClCompile Include="src\umc_h265_segment_decoder_dxva.cpp" />
-    <ClCompile Include="src\umc_h265_segment_decoder_hp.cpp" />
     <ClCompile Include="src\umc_h265_segment_decoder_mt.cpp" />
     <ClCompile Include="src\umc_h265_slice_decoding.cpp" />
     <ClCompile Include="src\umc_h265_task_broker.cpp" />
