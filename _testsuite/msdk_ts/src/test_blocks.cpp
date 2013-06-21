@@ -1030,7 +1030,7 @@ msdk_ts_BLOCK(b_MFXAudioDECODE_DecodeFrameAsync){
     mfxSyncPoint&       syncp       = var_def<mfxSyncPoint>     ("syncp",       NULL);
     mfxSyncPoint*&      pSyncp      = var_def<mfxSyncPoint*>    ("p_syncp",     &syncp);
 
-    TRACE_FUNC4(MFXAudioDECODE_DecodeFrameAsync, session, pBsIn, pBsOut, pSyncp);
+    TRACE_FUNC4(M// audio coreFXAudioDECODE_DecodeFrameAsync, session, pBsIn, pBsOut, pSyncp);
     mfxRes = MFXAudioDECODE_DecodeFrameAsync(session, pBsIn, pBsOut, pSyncp);
     TRACE_PAR(mfxRes);
     TRACE_PAR(pBsIn);
