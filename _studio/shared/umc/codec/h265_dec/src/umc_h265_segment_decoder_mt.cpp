@@ -357,6 +357,9 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(Ipp32s iCurMBNumber, I
     Ipp32s iFirstCU = iFirstPartition / m_pCurrentFrame->m_CodingData->m_NumPartitions;
     Ipp32s iMaxCUNumber = m_pCurrentFrame->getNumCUsInFrame();
 
+    m_pSlice->GetBitStream()->InitializeDecodingEngine_CABAC();
+    m_pSlice->InitializeContexts();
+    
     if (m_pSlice->getDependentSliceSegmentFlag())
     {
         Ipp32u CUAddr = m_pCurrentFrame->m_CodingData->getCUOrderMap(iFirstCU);

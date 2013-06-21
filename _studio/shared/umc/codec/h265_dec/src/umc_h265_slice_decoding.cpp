@@ -476,8 +476,8 @@ bool H265Slice::Reset(void *pSource, size_t nSourceSize, Ipp32s iConsumerNumber)
     // set conditional flags
     m_bDecoded = false;
     m_bPrevDeblocked = false;
-    m_bDeblocked = false;
-    m_bSAOed = false;
+    m_bDeblocked = getDeblockingFilterDisable();
+    m_bSAOed = !(GetSeqParam()->sample_adaptive_offset_enabled_flag && (GetSliceHeader()->m_SaoEnabledFlag || GetSliceHeader()->m_SaoEnabledFlagChroma));
 
     if (m_bDeblocked)
     {

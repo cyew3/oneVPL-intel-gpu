@@ -294,10 +294,6 @@ H264Slice::~H264Slice()
 
 void H264Slice::Reset()
 {
-    // DEBUG tools: set following variable to turn of deblocking
-    m_bPermanentTurnOffDeblocking = false;
-    // end of DEBUG tools
-
     if (m_pHeap)
     {
         m_pHeap->Free(m_pSource);
@@ -604,9 +600,6 @@ bool H264Slice::DecodeSliceHeader(H264NalExtension *pNalExt)
 
         m_iMBWidth = m_pSeqParamSet->frame_width_in_mbs;
         m_iMBHeight = m_pSeqParamSet->frame_height_in_mbs;
-
-        if (m_bPermanentTurnOffDeblocking)
-            m_SliceHeader.disable_deblocking_filter_idc = DEBLOCK_FILTER_OFF;
 
         // redundant slice, discard
         if (m_SliceHeader.redundant_pic_cnt)

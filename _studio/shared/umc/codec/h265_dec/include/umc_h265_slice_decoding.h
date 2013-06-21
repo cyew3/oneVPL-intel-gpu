@@ -269,7 +269,6 @@ public:  // DEBUG !!!! should remove dependence
     Ipp32s m_bRecVacant;                                        // (Ipp32s) reconstruct is vacant
     Ipp32s m_bDebVacant;                                        // (Ipp32s) de-blocking is vacant
     bool m_bFirstDebThreadedCall;                               // (bool) "first threaded deblocking call" flag
-    bool m_bPermanentTurnOffDeblocking;                         // (bool) "disable deblocking" flag
     bool m_bError;                                              // (bool) there is an error in decoding
 
     Ipp32s m_MVsDistortion;
