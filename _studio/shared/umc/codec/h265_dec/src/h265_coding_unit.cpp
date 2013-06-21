@@ -387,7 +387,7 @@ Ipp32s H265CodingUnit::getLastValidPartIdx(Ipp32s AbsPartIdx)
 
 Ipp8u H265CodingUnit::getLastCodedQP(Ipp32u AbsPartIdx)
 {
-    Ipp32u QUPartIdxMask = ~((1 << ((g_MaxCUDepth - m_Frame->m_pSlicesInfo->GetSlice(0)->GetPicParam()->diff_cu_qp_delta_depth) << 1)) - 1);
+    Ipp32u QUPartIdxMask = ~((1 << ((g_MaxCUDepth - m_SliceHeader->m_PicParamSet->diff_cu_qp_delta_depth) << 1)) - 1);
     Ipp32s LastValidPartIdx = getLastValidPartIdx(AbsPartIdx & QUPartIdxMask);
     if (AbsPartIdx < m_NumPartition
         && (getSCUAddr() + LastValidPartIdx < m_SliceHeader->SliceCurStartCUAddr))
@@ -472,25 +472,26 @@ Ipp32u H265CodingUnit::getQuadtreeTULog2MinSizeInCU(Ipp32u Idx)
 {
     Ipp32u Log2CbSize = g_ConvertToBit[m_WidthArray[Idx]] + 2;
     EnumPartSize partSize = static_cast<EnumPartSize>(m_PartSizeArray[Idx]);
-    Ipp32u QuadtreeTUMaxDepth = m_PredModeArray[Idx] == MODE_INTRA ? m_Frame->m_pSlicesInfo->GetSlice(0)->GetSeqParam()->max_transform_hierarchy_depth_intra : m_Frame->m_pSlicesInfo->GetSlice(0)->GetSeqParam()->max_transform_hierarchy_depth_inter;
+    const H265SeqParamSet *SPS = m_SliceHeader->m_SeqParamSet;
+    Ipp32u QuadtreeTUMaxDepth = m_PredModeArray[Idx] == MODE_INTRA ? SPS->max_transform_hierarchy_depth_intra : SPS->max_transform_hierarchy_depth_inter;
     Ipp32s IntraSplitFlag = m_PredModeArray[Idx] == MODE_INTRA && partSize == SIZE_NxN;
     Ipp32s InterSplitFlag = ((QuadtreeTUMaxDepth == 1) && (m_PredModeArray[Idx] == MODE_INTER) && (partSize != SIZE_2Nx2N));
 
     Ipp32u Log2MinTUSizeInCU = 0;
 
-    if (Log2CbSize < m_Frame->m_pSlicesInfo->GetSlice(0)->GetSeqParam()->log2_min_transform_block_size + QuadtreeTUMaxDepth - 1 + InterSplitFlag + IntraSplitFlag)
+    if (Log2CbSize < SPS->log2_min_transform_block_size + QuadtreeTUMaxDepth - 1 + InterSplitFlag + IntraSplitFlag)
     {
         // when fully making use of signaled TUMaxDepth + inter/intraSplitFlag, resulting luma TB size is < log2_min_transform_block_size
-        Log2MinTUSizeInCU = m_Frame->m_pSlicesInfo->GetSlice(0)->GetSeqParam()->log2_min_transform_block_size;
+        Log2MinTUSizeInCU = SPS->log2_min_transform_block_size;
     }
     else
     {
         // when fully making use of signaled TUMaxDepth + inter/intraSplitFlag, resulting luma TB size is still >= log2_min_transform_block_size
         Log2MinTUSizeInCU = Log2CbSize - (QuadtreeTUMaxDepth - 1 + InterSplitFlag + IntraSplitFlag);
 
-        if (Log2MinTUSizeInCU > m_Frame->m_pSlicesInfo->GetSlice(0)->GetSeqParam()->log2_max_transform_block_size)
+        if (Log2MinTUSizeInCU > SPS->log2_max_transform_block_size)
             // when fully making use of signaled TUMaxDepth + inter/intraSplitFlag, resulting luma TB size is still > log2_max_transform_block_size
-            Log2MinTUSizeInCU = m_Frame->m_pSlicesInfo->GetSlice(0)->GetSeqParam()->log2_max_transform_block_size;
+            Log2MinTUSizeInCU = SPS->log2_max_transform_block_size;
     }
 
     return Log2MinTUSizeInCU;
