@@ -69,7 +69,6 @@ class MFXSplitter
         return reinterpret_cast<MFXSplitter*>(p)->_dataIO->Seek(offset, origin);
     }
     MFXDataIO *_dataIO;
-    mfxDataIO io;
 public:
     MFXSplitter() : m_spl() { }
     virtual ~MFXSplitter() { Close(); }
@@ -77,6 +76,7 @@ public:
     mfxStatus Init(MFXSplitterParam &par, MFXDataIO &dataIO)
     {
         _dataIO = &dataIO;
+        mfxDataIO io;
         io.p = this;
         io.Read = staticRead;
         io.Seek = staticSeek;
@@ -98,7 +98,6 @@ class MFXMuxer
         return reinterpret_cast<MFXMuxer*>(p)->_dataIO->Write(outBitStream);
     }
     MFXDataIO *_dataIO;
-    mfxDataIO io;
 public:
     MFXMuxer() : m_mux() { }
     virtual ~MFXMuxer() { Close(); }
@@ -106,6 +105,7 @@ public:
     mfxStatus Init(MFXMuxerParam &par, MFXDataIO &dataIO)
     {
         _dataIO = &dataIO;
+        mfxDataIO io;
         io.p = this;
         io.Write = staticWrite;
         return MFXMuxer_Init(&(mfxMuxerParam)par, io, &m_mux);
