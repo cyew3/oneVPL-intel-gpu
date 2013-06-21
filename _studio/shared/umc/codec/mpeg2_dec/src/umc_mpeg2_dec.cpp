@@ -754,27 +754,30 @@ Status MPEG2VideoDecoderBase::GetCCData(Ipp8u* ptr, Ipp32u *size, Ipp64u *time, 
 
     Ipp8u *p_user_data = m_user_data.front().first;
     Ipp32u user_data_size = (Ipp32u) m_user_data.front().second;
+    m_user_data.erase(m_user_data.begin());
 
     *size = user_data_size;
 
-    if(*size > 0)
+    if (*size <= 0 || p_user_data == NULL)
     {
-        if (bufsize < *size)
-        {
-            return UMC_ERR_NOT_ENOUGH_BUFFER;
-        }
+        *size = 0;
+        *time = 0;
+        return UMC_OK;
+    }
 
-        ippsCopy_8u(p_user_data, ptr, *size);
-        *size *= 8;
+    if (bufsize < *size)
+    {
+        return UMC_ERR_NOT_ENOUGH_BUFFER;
+    }
+
+    ippsCopy_8u(p_user_data, ptr, *size);
+    *size *= 8;
 
 #if defined(_WIN32) || defined(_WIN64)
-        _aligned_free(p_user_data);
+    _aligned_free(p_user_data);
 #else
-        free(p_user_data);
+    free(p_user_data);
 #endif
-
-        m_user_data.erase(m_user_data.begin());
-    }
 
     return umcRes;
 }
@@ -1678,8 +1681,48 @@ Status MPEG2VideoDecoderBase::Close()
         m_pCCDataTS = NULL;
     }
 
+    size_t userDataCount = m_user_data.size();
+
+    for (int i = 0; i < userDataCount; i++)
+    {
+        Ipp8u* buffer = m_user_data[i].first;
+        size_t size = m_user_data[i].second;
+
+        if (size > 0 && buffer != NULL)
+        {
+#if defined(_WIN32) || defined(_WIN64)
+            _aligned_free(buffer);
+#else
+            free(buffer);
+#endif
+        }
+    }
     m_user_data.clear();
     m_user_ts_data.clear();
+    
+    for (int i = 0; i < DPB_SIZE*2; i++)
+    {
+        sVideoFrameBuffer *framepcn = &frame_buffer.frame_p_c_n[i];
+
+        size_t vectorSize = framepcn->user_data_v.size();
+        if (vectorSize == 0)
+            continue;
+        
+        for (int j = 0; j < vectorSize; j++)
+        {
+            Ipp8u* buffer = framepcn->user_data_v[j].first;
+            size_t size = framepcn->user_data_v[j].second;
+
+            if (size > 0 && buffer != NULL)
+            {
+#if defined(_WIN32) || defined(_WIN64)
+                _aligned_free(buffer);
+#else
+                free(buffer);
+#endif
+            }
+        }
+    }
 
     if (shMask.memMask)
     {
