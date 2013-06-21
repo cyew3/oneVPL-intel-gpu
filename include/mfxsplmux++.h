@@ -58,29 +58,44 @@ public:
     virtual mfxI64 Seek (mfxI64 offset, mfxI32 origin) = 0;
 };
 
-class MFXSplitter
+class MFXDataIOAdapter
 {
+    MFXDataIO *m_dataIO;
+public:
+    MFXDataIOAdapter (MFXDataIO& io) : 
+        m_dataIO(&io){
+        io.p = this;
+        io.Read = staticRead;
+        io.Seek = staticSeek;
+    }
+    operator MFXDataIO () {
+        return *m_dataIO;
+    }
+private:
     static mfxI32 staticRead (mfxHDL p, mfxBitstream *outBitStream)
     {
-        return reinterpret_cast<MFXSplitter*>(p)->_dataIO->Read(outBitStream);
+        return reinterpret_cast<MFXDataIOAdapter*>(p)->_dataIO->Read(outBitStream);
     }
     static mfxI64 staticSeek (mfxHDL p, mfxI64 offset, mfxI32 origin)
     {
-        return reinterpret_cast<MFXSplitter*>(p)->_dataIO->Seek(offset, origin);
+        return reinterpret_cast<MFXDataIOAdapter*>(p)->_dataIO->Seek(offset, origin);
     }
-    MFXDataIO *_dataIO;
+
+    static mfxI32 staticWrite (mfxHDL p, mfxBitstream *outBitStream)
+    {
+        return reinterpret_cast<MFXDataIOAdapter*>(p)->_dataIO->Write(outBitStream);
+    }
+};
+
+class MFXSplitter
+{
 public:
     MFXSplitter() : m_spl() { }
     virtual ~MFXSplitter() { Close(); }
 
     mfxStatus Init(MFXSplitterParam &par, MFXDataIO &dataIO)
     {
-        _dataIO = &dataIO;
-        mfxDataIO io;
-        io.p = this;
-        io.Read = staticRead;
-        io.Seek = staticSeek;
-        return MFXSplitter_Init(&(mfxSplitterParam)par, io, &m_spl);
+        return MFXSplitter_Init(&(mfxSplitterParam)par, MFXDataIOAdapter(dataIO), &m_spl);
     }
     mfxStatus Close() { return MFXSplitter_Close(m_spl); }
     mfxStatus GetInfo(MFXSplitterParam &par) { return MFXSplitter_GetInfo(m_spl, &(mfxSplitterParam)par); }
@@ -93,22 +108,14 @@ protected:
 
 class MFXMuxer
 {
-    static mfxI32 staticWrite (mfxHDL p, mfxBitstream *outBitStream)
-    {
-        return reinterpret_cast<MFXMuxer*>(p)->_dataIO->Write(outBitStream);
-    }
-    MFXDataIO *_dataIO;
+
 public:
     MFXMuxer() : m_mux() { }
     virtual ~MFXMuxer() { Close(); }
 
     mfxStatus Init(MFXMuxerParam &par, MFXDataIO &dataIO)
     {
-        _dataIO = &dataIO;
-        mfxDataIO io;
-        io.p = this;
-        io.Write = staticWrite;
-        return MFXMuxer_Init(&(mfxMuxerParam)par, io, &m_mux);
+        return MFXMuxer_Init(&(mfxMuxerParam)par, MFXDataIOAdapter(io), &m_mux);
     }
     mfxStatus Close() { return MFXMuxer_Close(m_mux); }
     mfxStatus PutData(mfxU32 iTrack, mfxBitstream *Bitstream) { return MFXMuxer_PutData(m_mux, iTrack, Bitstream); }
