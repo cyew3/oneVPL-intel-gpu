@@ -78,31 +78,33 @@ class TestVideoData : public UMC::VideoData
 
 public:
     TestVideoData()
-        : m_native_crc32(0)
-        , m_frameNum(-1)
-        , m_seqNum(-1)
-        , m_time(0)
-
-        , m_is_mfx(false)
-        , m_mfx_picStruct(0)
+        : m_mfx_picStruct(0)
         , m_mfx_dataFlag(0)
         , m_mfx_viewId(0)
         , m_mfx_temporalId(0)
         , m_mfx_priorityId(0)
+        , m_is_mfx(false)
+
+        , m_frameNum(-1)
+        , m_seqNum(-1)
+        , m_native_crc32(0)
+        , m_time(0)
+
     {
     };
 
     TestVideoData(const TestVideoData & data)
-        : m_native_crc32(data.m_native_crc32)
-        , m_frameNum(data.m_frameNum)
-        , m_seqNum(data.m_seqNum)
-        , m_time(data.m_time)
-        , m_is_mfx(data.m_is_mfx)
-        , m_mfx_picStruct(data.m_mfx_picStruct)
+        : m_mfx_picStruct(data.m_mfx_picStruct)
         , m_mfx_dataFlag(data.m_mfx_dataFlag)
         , m_mfx_viewId(data.m_mfx_viewId)
         , m_mfx_temporalId(data.m_mfx_temporalId)
         , m_mfx_priorityId(data.m_mfx_priorityId)
+        , m_is_mfx(data.m_is_mfx)
+
+        , m_frameNum(data.m_frameNum)
+        , m_seqNum(data.m_seqNum)
+        , m_native_crc32(data.m_native_crc32)
+        , m_time(data.m_time)
     {
         VideoData::operator = (data);
     };
