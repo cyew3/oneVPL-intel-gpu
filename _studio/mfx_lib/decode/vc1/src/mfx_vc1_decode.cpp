@@ -2824,7 +2824,7 @@ mfxStatus MFXVideoDECODEVC1::RunThread(mfxFrameSurface1 *surface_work,
 
 static mfxStatus VC1CompleteProc(void *, void *pParam, mfxStatus )
 {
-    delete pParam;
+    delete (MFXVideoDECODEVC1::AsyncSurface *)pParam;    // NOT SAFE !!!
     return MFX_ERR_NONE;
 }
 

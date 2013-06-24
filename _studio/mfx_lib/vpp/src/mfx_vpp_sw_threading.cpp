@@ -327,7 +327,7 @@ mfxStatus CompleteFrameVPPRoutine(void *pState, void *pParam, mfxStatus taskRes)
 
     if (pParam)
     {
-        delete pParam;
+        delete (VideoVPPSW::AsyncParams *)pParam;   // NOT SAFE !!!
     }
 
     return pVPP->ResetTaskCounters();

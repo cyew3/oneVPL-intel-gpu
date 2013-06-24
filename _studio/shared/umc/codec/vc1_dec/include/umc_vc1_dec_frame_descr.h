@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, Frame description for multi-frame parallelization
@@ -46,6 +46,8 @@ namespace UMC
                                                               m_iBitplaneID((MemID)-1),
                                                               m_iFrameCounter(0),
                                                               m_bIsWarningStream(false),
+                                                              m_bIsFieldAbsent(false),
+
                                                               m_iRemainActiveTasks(0),
                                                               m_iSelfID(0),
                                                               m_bIsReadyToLoad(true),
@@ -53,8 +55,8 @@ namespace UMC
                                                               m_iBFramesDst(0),
                                                               m_bIsReferenceReady(false),
                                                               m_bIsBReady(false),
-                                                              m_bIsBusy(false),
                                                               m_bIsReadyToDisplay(false),
+                                                              m_bIsBusy(false),
                                                               m_bIsReadyToProcess(false),
                                                               m_bIsSkippedFrame(false),
                                                               m_pDiffMem(NULL),
@@ -62,15 +64,14 @@ namespace UMC
                                                               m_pStore(NULL),
                                                               m_pMemoryAllocator(NULL),
                                                               m_iDiffMemID((MemID)-1),
-                                                              m_iDCACParamsMemID((MemID)-1),
                                                               m_iMBsMemID((MemID)-1),
+                                                              m_iDCACParamsMemID((MemID)-1),
                                                               m_iInernBufferID((MemID)-1),
                                                               m_iMemContextID((MemID)-1),
                                                               m_bIsValidFrame(true),
                                                               m_bBframeDelay(false),
                                                               m_bIsSpecialBSkipFrame(false),
-                                                              m_bIsReorder(true),
-                                                              m_bIsFieldAbsent(false)
+                                                              m_bIsReorder(true)
 
         {
             m_pMemoryAllocator = pMemoryAllocator;

@@ -2641,8 +2641,15 @@ const ColorFormat H264ParsingCore::ColorFormats[4] = {
     GRAY, YUV420, YUV422, YUV444
 };
 
-H264ParsingCore::H264ParsingCore()
-: m_synced(false), m_skip(0), m_sps(), m_pps(), m_prev(), m_last(), m_type(NONE_PICTURE), m_spsParsed(false)
+H264ParsingCore::H264ParsingCore() :
+    m_sps(),
+    m_pps(),
+    m_prev(),
+    m_last(),
+    m_synced(false), 
+    m_skip(0),
+    m_type(NONE_PICTURE),
+    m_spsParsed(false)
 {
 }
 

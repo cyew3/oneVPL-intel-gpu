@@ -456,7 +456,7 @@ mfxStatus VideoDECODEH264::SetTargetViewList(mfxVideoParam *par)
             if (svcDesc)
             {
                 mfxU32 maxDependencyId = 0;
-                for (int i = 0; i < sizeof(svcDesc->DependencyLayer)/sizeof(svcDesc->DependencyLayer[0]); i++)
+                for (size_t i = 0; i < sizeof(svcDesc->DependencyLayer)/sizeof(svcDesc->DependencyLayer[0]); i++)
                 {
                     if (svcDesc->DependencyLayer[i].Active)
                         maxDependencyId = i;
@@ -990,7 +990,7 @@ static mfxStatus __CDECL AVCDECODERoutine(void *pState, void *pParam, mfxU32 thr
 
 static mfxStatus AVCCompleteProc(void *, void *pParam, mfxStatus )
 {
-    delete pParam;
+    delete (ThreadTaskInfo *)pParam;    // NOT SAFE !!!
     return MFX_ERR_NONE;
 }
 

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 
 File Name: mfxsvc.h
 
@@ -70,54 +70,57 @@ typedef struct {
     }Layer[1024];
 } mfxExtSVCRateControl;
 
-
 typedef struct {
-    mfxExtBuffer    Header;
+    mfxU16    Active;
 
-    mfxU16 TemporalScale[8];
-    mfxU16 RefBaseDist;
-    mfxU16 reserved1[3];
+    mfxU16    Width;
+    mfxU16    Height;
 
-    struct mfxDependencyLayer {
-        mfxU16    Active;
+    mfxU16    CropX;
+    mfxU16    CropY;
+    mfxU16    CropW;
+    mfxU16    CropH;
 
-        mfxU16    Width;
-        mfxU16    Height;
+    mfxU16    RefLayerDid;
+    mfxU16    RefLayerQid;
 
-        mfxU16    CropX;
-        mfxU16    CropY;
-        mfxU16    CropW;
-        mfxU16    CropH;
+    mfxU16    GopPicSize;
+    mfxU16    GopRefDist;
+    mfxU16    GopOptFlag;
+    mfxU16    IdrInterval;
 
-        mfxU16    RefLayerDid;
-        mfxU16    RefLayerQid;
+    mfxU16    BasemodePred; /* four-state option, UNKNOWN/ON/OFF/ADAPTIVE */
+    mfxU16    MotionPred;   /* four-state option, UNKNOWN/ON/OFF/ADAPTIVE */
+    mfxU16    ResidualPred; /* four-state option, UNKNOWN/ON/OFF/ADAPTIVE */
 
-        mfxU16    GopPicSize;
-        mfxU16    GopRefDist;
-        mfxU16    GopOptFlag;
-        mfxU16    IdrInterval;
+    mfxU16    DisableDeblockingFilter;  /* tri -state option */
+    mfxI16    ScaledRefLayerOffsets[4];
+    mfxU16    ScanIdxPresent; /* tri -state option */
+    mfxU16    reserved2[8];
 
-        mfxU16    BasemodePred; /* four-state option, UNKNOWN/ON/OFF/ADAPTIVE */
-        mfxU16    MotionPred;   /* four-state option, UNKNOWN/ON/OFF/ADAPTIVE */
-        mfxU16    ResidualPred; /* four-state option, UNKNOWN/ON/OFF/ADAPTIVE */
+    mfxU16   TemporalNum;
+    mfxU16   TemporalId[8];
 
-        mfxU16    DisableDeblockingFilter;  /* tri -state option */
-        mfxI16    ScaledRefLayerOffsets[4];
-        mfxU16    ScanIdxPresent; /* tri -state option */
-        mfxU16    reserved2[8];
+    mfxU16   QualityNum;
 
-        mfxU16   TemporalNum;
-        mfxU16   TemporalId[8];
-
-        mfxU16   QualityNum;
-        struct mfxQualityLayer {
+    struct mfxQualityLayer {
             mfxU16 ScanIdxStart; 
             mfxU16 ScanIdxEnd;
 
             mfxU16 TcoeffPredictionFlag; /* tri -state option */
             mfxU16 reserved3[5];
-        } QualityLayer[16];
-    } DependencyLayer [8];
+    } QualityLayer[16];
+
+}  mfxExtSVCDepLayer;
+
+typedef struct {
+    mfxExtBuffer        Header;
+
+    mfxU16              TemporalScale[8];
+    mfxU16              RefBaseDist;
+    mfxU16              reserved1[3];
+
+    mfxExtSVCDepLayer   DependencyLayer[8];
 } mfxExtSVCSeqDesc;
 
 typedef struct {
