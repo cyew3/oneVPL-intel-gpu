@@ -41,7 +41,7 @@ void CommandLine::Parse(char argc, const vm_char** argv)
     m_valid = false;
     m_OutputOutlineFile[0] = m_RefOutlineFile[0] = VM_STRING('\0');
 
-    for (char i = 1; i < argc; i++)
+    for (int i = 1; i < argc; i++)
     {
         if (vm_string_strncmp(argv[i], VM_STRING("-i"), 2) == 0)
         {

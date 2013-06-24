@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -21,8 +21,8 @@
 
 XercesVideoOutlineWriter::XercesVideoOutlineWriter()
     : m_pBXMLObj(0)
-    , m_sequenceElement(0)
     , m_frameElement(0)
+    , m_sequenceElement(0)
     , isSequenceWasWritten(false)
 {
     m_pBXMLObj = NULL;
@@ -191,7 +191,7 @@ void XercesVideoOutlineWriter::FillFrame(TestVideoData *pData)
     m_frameElement->SetAttributeFormat(FRAME_TYPE, VM_STRING("%d"), pData->GetFrameType());
     m_frameElement->SetAttributeFormat(PICTURE_STRUCTURE, VM_STRING("%d"), pData->GetPictureStructure());
 
-    m_frameElement->SetAttributeFormat(TIME_STAMP, VM_STRING("%I64d"), pData->GetIntTime());
+    m_frameElement->SetAttributeFormat(TIME_STAMP, VM_STRING("%llu"), pData->GetIntTime());
 
     m_frameElement->SetAttributeFormat(IS_INVALID, VM_STRING("%d"), pData->GetInvalid());
 

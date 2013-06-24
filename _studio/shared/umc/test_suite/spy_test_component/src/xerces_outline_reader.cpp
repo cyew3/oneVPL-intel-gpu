@@ -33,7 +33,7 @@ void OutlineReader::ReadEntryStruct(Entry_Read * entry, TestVideoData * data)
 
     Ipp64u ts;
 
-    entry->GetAttributeFormat(TIME_STAMP, VM_STRING("%I64d"), &ts);
+    entry->GetAttributeFormat(TIME_STAMP, VM_STRING("%llu"), &ts);
     data->SetIntTime(ts);
     data->SetTime(GetFloatTimeStamp(ts));
 
@@ -273,7 +273,7 @@ std::list<Entry_Read *> XercesOutlineReader::FindEntry(const TestVideoData & tst
         if (mode & FIND_MODE_TIMESTAMP)
         {
             Ipp64u ts;
-            entry.GetAttributeFormat(TIME_STAMP, VM_STRING("%I64d"), &ts);
+            entry.GetAttributeFormat(TIME_STAMP, VM_STRING("%llu"), &ts);
 
             if (ts == timestamp)
                 canAdd = true;
