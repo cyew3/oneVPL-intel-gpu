@@ -16,7 +16,7 @@ File Name: mfxaudio.h
 #include "mfxvideo.h"
 
 
-/* This is the external include file for the Intel(R) Media Sofware Development Kit product */
+/* This is the external include file for the Intel(R) Media Software Development Kit product */
 #define MFX_AUDIO_VERSION_MAJOR 1
 #define MFX_AUDIO_VERSION_MINOR 0
 
@@ -211,7 +211,5 @@ mfxStatus MFX_CDECL MFXAudioDECODE_Close(mfxSession session);
 mfxStatus MFX_CDECL MFXAudioDECODE_QueryIOSize(mfxSession session, mfxAudioParam *par, mfxAudioAllocRequest *request);
 mfxStatus MFX_CDECL MFXAudioDECODE_GetAudioParam(mfxSession session, mfxAudioParam *par);
 mfxStatus MFX_CDECL MFXAudioDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs /*mfxRAWAudio *buffer_out*/,mfxBitstream *buffer_out, mfxSyncPoint *syncp);
-
-
 
 #endif
