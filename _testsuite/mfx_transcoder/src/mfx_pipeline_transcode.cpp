@@ -1095,7 +1095,7 @@ mfxStatus MFXTranscodingPipeline::CreateVPP()
         mfxFrameInfo &info = m_inParams.FrameInfo;
         for (size_t i = 0; i < MFX_ARRAY_SIZE(m_svcSeq->DependencyLayer) && (MFX_CODINGOPTION_ON == m_svcSeq->DependencyLayer[i].Active); i++)
         {
-            mfxExtSVCSeqDesc::mfxDependencyLayer &dep_info = m_svcSeq->DependencyLayer[i];
+            mfxExtSVCDepLayer &dep_info = m_svcSeq->DependencyLayer[i];
             if (info.Width != dep_info.Width || info.Height != dep_info.Height)
             {
                 PrintInfo(VM_STRING("Vpp.ENABLED"), VM_STRING("source=(%dx%d) but SVC.DependencyLayer[%d]=(%dx%d)"),
@@ -1175,7 +1175,7 @@ mfxStatus    MFXTranscodingPipeline::CreateAllocator()
             && (MFX_CODINGOPTION_ON == m_svcSeq->DependencyLayer[i].Active); i++);
         i--;
 
-        mfxExtSVCSeqDesc::mfxDependencyLayer &top_layer = m_svcSeq->DependencyLayer[i];
+        mfxExtSVCDepLayer &top_layer = m_svcSeq->DependencyLayer[i];
 
         mfxU32 Width   = top_layer.CropW ? top_layer.CropW : top_layer.Width;
         mfxU32 Height  = top_layer.CropH ? top_layer.CropH : top_layer.Height;

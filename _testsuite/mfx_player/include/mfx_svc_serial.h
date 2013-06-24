@@ -85,7 +85,7 @@ public:
 //
 
 template<>
-struct SerialTypeTrait<mfxExtSVCSeqDesc::mfxDependencyLayer::mfxQualityLayer>
+struct SerialTypeTrait<mfxExtSVCDepLayer::mfxQualityLayer>
 {
     typedef ListNode< PODNode<mfxU16>               // ScanIdxStart
                     , ListNode<PODNode<mfxU16>      // ScanIdxEnd
@@ -94,15 +94,15 @@ struct SerialTypeTrait<mfxExtSVCSeqDesc::mfxDependencyLayer::mfxQualityLayer>
 };
 
 template<>
-class StructureBuilder <mfxExtSVCSeqDesc::mfxDependencyLayer::mfxQualityLayer>
-    : public SerialTypeTrait< mfxExtSVCSeqDesc::mfxDependencyLayer::mfxQualityLayer >::value_type
+class StructureBuilder <mfxExtSVCDepLayer::mfxQualityLayer>
+    : public SerialTypeTrait< mfxExtSVCDepLayer::mfxQualityLayer >::value_type
 {
 public:
-    typedef mfxExtSVCSeqDesc::mfxDependencyLayer::mfxQualityLayer element_type;
+    typedef mfxExtSVCDepLayer::mfxQualityLayer element_type;
     typedef SerialSingleElement<NullData> init_type;
     
     StructureBuilder(const tstring & m_name, element_type &obj,  const init_type & aux)
-        : SerialTypeTrait<mfxExtSVCSeqDesc::mfxDependencyLayer::mfxQualityLayer>::value_type (
+        : SerialTypeTrait<mfxExtSVCDepLayer::mfxQualityLayer>::value_type (
                m_name,
                make_pod_node(STRING_PAIR(obj, ScanIdxStart)),
                make_list_node(make_pod_node(STRING_PAIR(obj, ScanIdxEnd)),
@@ -114,7 +114,7 @@ public:
 };
 
 template<>
-struct SerialTypeTrait<mfxExtSVCSeqDesc::mfxDependencyLayer>
+struct SerialTypeTrait<mfxExtSVCDepLayer>
 {
     typedef ListNode<PODNode<tstring>
                     , ListNode<PODNode<mfxU16>                       // Active
@@ -139,21 +139,21 @@ struct SerialTypeTrait<mfxExtSVCSeqDesc::mfxDependencyLayer>
                     , ListNode<PODNode<mfxU16>                       // TemporalNum
                     , ListNode<ArrayNode<PODNode<mfxU16>, 8, mfxU16> // TemporalId[8]
                     , ListNode<PODNode<mfxU16>                       // QualityNum
-                    , ListNode<ArrayNode<StructureBuilder<mfxExtSVCSeqDesc::mfxDependencyLayer::mfxQualityLayer>, 16, mfxU16> // mfxQualityLayer[16]
+                    , ListNode<ArrayNode<StructureBuilder<mfxExtSVCDepLayer::mfxQualityLayer>, 16, mfxU16> // mfxQualityLayer[16]
                      > > > > > > > > > > > > > > > > > > > > > > > > value_type;
 };
 
 
 template<>
-class StructureBuilder <mfxExtSVCSeqDesc::mfxDependencyLayer>
-    : public SerialTypeTrait<mfxExtSVCSeqDesc::mfxDependencyLayer>::value_type
+class StructureBuilder <mfxExtSVCDepLayer>
+    : public SerialTypeTrait<mfxExtSVCDepLayer>::value_type
 {
 public:
-    typedef mfxExtSVCSeqDesc::mfxDependencyLayer element_type;
+    typedef mfxExtSVCDepLayer element_type;
     typedef tstring init_type;
 
     StructureBuilder(const tstring & m_name, element_type &obj, tstring & inputFile)
-        : SerialTypeTrait<mfxExtSVCSeqDesc::mfxDependencyLayer>::value_type(
+        : SerialTypeTrait<mfxExtSVCDepLayer>::value_type(
             m_name,
             make_pod_node(VM_STRING(".InputFile"), inputFile), 
             make_list_node(make_pod_node(STRING_PAIR(obj, Active)), 
@@ -189,7 +189,7 @@ struct SerialTypeTrait<mfxExtSVCSeqDesc>
 {
     typedef ListNode<ArrayNode<PODNode<mfxU16>, 8>
           , ListNode<PODNode<mfxU16>
-          , ListNode<ArrayNode<StructureBuilder<mfxExtSVCSeqDesc::mfxDependencyLayer>, 8 > > > > value_type;
+          , ListNode<ArrayNode<StructureBuilder<mfxExtSVCDepLayer>, 8 > > > > value_type;
 };
 
 template <>
@@ -203,7 +203,7 @@ public:
         name, 
         ArrayNode<PODNode<mfxU16>, 8>(STRING_PAIR(obj, TemporalScale)),
         make_list_node(make_pod_node(STRING_PAIR(obj, RefBaseDist)),
-        make_list_node(ArrayNode<StructureBuilder<mfxExtSVCSeqDesc::mfxDependencyLayer>, 8 >(STRING_PAIR(obj, DependencyLayer), inputFiles, true))))
+        make_list_node(ArrayNode<StructureBuilder<mfxExtSVCDepLayer>, 8 >(STRING_PAIR(obj, DependencyLayer), inputFiles, true))))
     {
     }
 };
