@@ -291,7 +291,6 @@ mfxStatus AudioDECODEMP3::DecodeFrameCheck(mfxBitstream *bs,
 
         pEntryPoint->pRoutine = &MP3ECODERoutine;
         pEntryPoint->pCompleteProc = &MP3CompleteProc;
-        pEntryPoint->pAbortProc = &MP3AbortProc;    
         pEntryPoint->pState = this;
         pEntryPoint->requiredNumThreads = 1; // need only one thread
         pEntryPoint->pParam = info;
@@ -336,21 +335,6 @@ mfxStatus AudioDECODEMP3::MP3ECODERoutine(void *pState, void *pParam,
     return mfxRes;
 
 } // mfxStatus AudioDECODEMP3::MP3ECODERoutine(void *pState, void *pParam,
-
-mfxStatus AudioDECODEMP3::MP3AbortProc(void *pState, void *pParam)
-{
-    pParam;
-    AudioDECODEMP3 &obj = *((AudioDECODEMP3 *) pState);
-
-    if (MFX_PLATFORM_SOFTWARE == obj.m_platform)
-    {
-        return MFX_ERR_NONE;
-    }
-    else
-    {
-        return MFX_ERR_UNSUPPORTED;
-    }
-}
 
 mfxStatus AudioDECODEMP3::MP3CompleteProc(void *pState, void *pParam,
                                           mfxStatus taskRes)

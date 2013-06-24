@@ -259,8 +259,6 @@ mfxStatus MFXVideoENCODEMJPEG_HW::EncodeFrameCheck(
     // definition tasks for MSDK scheduler
     pEntryPoints[0].pState               = this;
     pEntryPoints[0].pParam               = task;
-    // callback to run after abort task / (NON-OBLIGATORY)
-    pEntryPoints[0].pAbortProc           = 0; 
     // callback to run after complete task / depricated
     pEntryPoints[0].pCompleteProc        = 0;
     // callback to run after complete sub-task (for SW implementation makes sense) / (NON-OBLIGATORY)

@@ -593,21 +593,6 @@ mfxStatus MFXVideoENCODEMJPEG::MJPEGENCODERoutine(void *pState, void *pParam, mf
     return mfxRes;
 }
 
-mfxStatus MFXVideoENCODEMJPEG::MJPEGENCODEAbortProc(void *pState, void *pParam)
-{
-    MFXVideoENCODEMJPEG &obj = *((MFXVideoENCODEMJPEG *) pState);
-    MJPEGEncodeTask *pTask = (MJPEGEncodeTask*)pParam;
-
-    pTask->Reset();
-
-    {
-        UMC::AutomaticUMCMutex guard(obj.m_guard);
-        obj.m_freeTasks.push(pTask);
-    }
-
-    return MFX_ERR_NONE;
-}
-
 mfxStatus MFXVideoENCODEMJPEG::MJPEGENCODECompleteProc(void *pState, void *pParam, mfxStatus /*taskRes*/)
 {
     UMC::Status umc_sts = UMC::UMC_OK;
@@ -1976,7 +1961,6 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
 
     pEntryPoint->pState = this;
     pEntryPoint->pRoutine = MJPEGENCODERoutine;
-    pEntryPoint->pAbortProc = 0;//AbortRoutine;
     pEntryPoint->pCompleteProc = MJPEGENCODECompleteProc;//TaskCompleteProc;
     pEntryPoint->pRoutineName = "EncodeMJPEG";
 

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2012-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VP8 encoder part
@@ -406,7 +406,6 @@ namespace MFX_VP8ENC
         MFX_CHECK_STS(sts);        
 
         pEntryPoint->pState               = this;
-        pEntryPoint->pAbortProc           = 0;
         pEntryPoint->pCompleteProc        = 0;
         pEntryPoint->pGetSubTaskProc      = 0;
         pEntryPoint->pCompleteSubTaskProc = 0;
@@ -799,7 +798,6 @@ namespace MFX_VP8ENC
         MFX_CHECK_STS(sts);        
 
         pEntryPoint->pState               = this;
-        pEntryPoint->pAbortProc           = 0;
         pEntryPoint->pCompleteProc        = 0;
         pEntryPoint->pGetSubTaskProc      = 0;
         pEntryPoint->pCompleteSubTaskProc = 0;

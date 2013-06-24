@@ -881,33 +881,6 @@ mfxStatus VideoDECODEMJPEG::MJPEGDECODERoutine(void *pState, void *pParam,
 
 } // mfxStatus VideoDECODEMJPEG::MJPEGDECODERoutine(void *pState, void *pParam,
 
-mfxStatus VideoDECODEMJPEG::MJPEGAbortProc(void *pState, void *pParam)
-{
-    VideoDECODEMJPEG &obj = *((VideoDECODEMJPEG *) pState);
-
-    if (MFX_PLATFORM_SOFTWARE == obj.m_platform)
-    {
-        CJpegTask *pTask = (CJpegTask *) pParam;
-
-        pTask->Reset();
-
-        {
-            UMC::AutomaticUMCMutex guard(obj.m_guard);
-            obj.m_freeTasks.push(pTask);
-        }
-    }
-    else
-    {
-#if defined (MFX_VA_WIN)
-        delete pParam;
-#else
-        return MFX_ERR_UNSUPPORTED;
-#endif
-    }
-
-    return MFX_ERR_NONE;
-}
-
 mfxStatus VideoDECODEMJPEG::MJPEGCompleteProc(void *pState, void *pParam,
                                               mfxStatus taskRes)
 {
@@ -1162,7 +1135,6 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
         // prepare output structure
         pEntryPoint->pRoutine = &MJPEGDECODERoutine;
         pEntryPoint->pCompleteProc = &MJPEGCompleteProc;
-        pEntryPoint->pAbortProc = &MJPEGAbortProc;
         pEntryPoint->pState = this;
 
         if (MFX_PLATFORM_SOFTWARE == m_platform)

@@ -2488,8 +2488,6 @@ static mfxStatus AbortRoutine(void *pState, void *param)
 
     // pointer to the task processing routine
     pEntryPoint->pRoutine = MPEG2ENCODERoutine;
-    // pointer to the task aborting procedure
-    pEntryPoint->pAbortProc = AbortRoutine;
     // task name
     pEntryPoint->pRoutineName = "EncodeMPEG2";
 

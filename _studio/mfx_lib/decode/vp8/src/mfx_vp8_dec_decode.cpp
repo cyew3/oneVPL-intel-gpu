@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2012-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -778,14 +778,6 @@ mfxStatus VideoDECODEVP8::GetDecodeStat(mfxDecodeStat *p_stat)
 
 } // mfxStatus VideoDECODEVP8::GetDecodeStat(mfxDecodeStat *p_stat)
 
-static mfxStatus VP8AbortProc(void *, void *p_param)
-{
-    p_param;
-
-    return MFX_ERR_NONE;
-
-} // static mfxStatus VP8AbortProc(void *, void *p_param)
-
 static mfxStatus VP8CompleteProc(void *, void *p_param, mfxStatus )
 {
     delete p_param;
@@ -1004,7 +996,6 @@ mfxStatus VideoDECODEVP8::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurface1 
 
     p_entry_point->pRoutine = &VP8DECODERoutine;
     p_entry_point->pCompleteProc = &VP8CompleteProc;
-    p_entry_point->pAbortProc = &VP8AbortProc;
     p_entry_point->pState = m_vpx_codec;
     p_entry_point->requiredNumThreads = 1;
     p_entry_point->pParam = p_info;

@@ -737,15 +737,9 @@ static mfxStatus __CDECL HEVCDECODERoutine(void *pState, void *pParam, mfxU32 th
     return sts;
 }
 
-static mfxStatus HEVCAbortProc(void *, void *pParam)
-{
-    delete pParam;
-    return MFX_ERR_NONE;
-}
-
 static mfxStatus HEVCCompleteProc(void *, void *pParam, mfxStatus )
 {
-    delete pParam;
+    delete (ThreadTaskInfo *)pParam;
     return MFX_ERR_NONE;
 }
 
@@ -840,7 +834,6 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs,
 
         pEntryPoint->pRoutine = &HEVCDECODERoutine;
         pEntryPoint->pCompleteProc = &HEVCCompleteProc;
-        pEntryPoint->pAbortProc = &HEVCAbortProc;
         pEntryPoint->pState = this;
         pEntryPoint->requiredNumThreads = m_vPar.mfx.NumThread;
         pEntryPoint->pParam = info;
@@ -855,7 +848,6 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs,
 
             pEntryPoint->pRoutine = &HEVCDECODERoutine;
             pEntryPoint->pCompleteProc = &HEVCCompleteProc;
-            pEntryPoint->pAbortProc = &HEVCAbortProc;
             pEntryPoint->pState = this;
             pEntryPoint->requiredNumThreads = m_vPar.mfx.NumThread;
             pEntryPoint->pParam = info;

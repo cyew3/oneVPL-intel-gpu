@@ -555,7 +555,6 @@ mfxStatus FullEncode::EncodeFrameCheck(
     entryPoints[0].pState = this;
     entryPoints[0].pParam = pExtTask;
     entryPoints[0].pRoutine = TaskRoutineSubmit;
-    entryPoints[0].pAbortProc = 0;
     entryPoints[0].pCompleteProc = 0;
     entryPoints[0].pGetSubTaskProc = 0;
     entryPoints[0].pCompleteSubTaskProc = 0;
@@ -564,7 +563,6 @@ mfxStatus FullEncode::EncodeFrameCheck(
     entryPoints[1].pState = this;
     entryPoints[1].pParam = pExtTask;
     entryPoints[1].pRoutine = TaskRoutineQuery;
-    entryPoints[1].pAbortProc = 0;
     entryPoints[1].pCompleteProc = 0;
     entryPoints[1].pGetSubTaskProc = 0;
     entryPoints[1].pCompleteSubTaskProc = 0;

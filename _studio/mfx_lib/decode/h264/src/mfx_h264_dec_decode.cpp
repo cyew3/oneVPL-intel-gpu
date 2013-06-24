@@ -988,12 +988,6 @@ static mfxStatus __CDECL AVCDECODERoutine(void *pState, void *pParam, mfxU32 thr
     return sts;
 }
 
-static mfxStatus AVCAbortProc(void *, void *pParam)
-{
-    delete pParam;
-    return MFX_ERR_NONE;
-}
-
 static mfxStatus AVCCompleteProc(void *, void *pParam, mfxStatus )
 {
     delete pParam;
@@ -1091,7 +1085,6 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs,
 
         pEntryPoint->pRoutine = &AVCDECODERoutine;
         pEntryPoint->pCompleteProc = &AVCCompleteProc;
-        pEntryPoint->pAbortProc = &AVCAbortProc;
         pEntryPoint->pState = this;
         pEntryPoint->requiredNumThreads = m_vPar.mfx.NumThread;
         pEntryPoint->pParam = info;
@@ -1106,7 +1099,6 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs,
 
             pEntryPoint->pRoutine = &AVCDECODERoutine;
             pEntryPoint->pCompleteProc = &AVCCompleteProc;
-            pEntryPoint->pAbortProc = &AVCAbortProc;
             pEntryPoint->pState = this;
             pEntryPoint->requiredNumThreads = m_vPar.mfx.NumThread;
             pEntryPoint->pParam = info;

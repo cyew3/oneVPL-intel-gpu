@@ -1533,7 +1533,6 @@ mfxStatus ImplementationAvc::EncodeFrameCheck(
             m_listOfPairsForStupidFieldOutputMode.push_back(std::make_pair(bs, 1));
             entryPoints[0].pState               = this;
             entryPoints[0].pParam               = &m_listOfPairsForStupidFieldOutputMode.back();
-            entryPoints[0].pAbortProc           = 0;
             entryPoints[0].pCompleteProc        = 0;
             entryPoints[0].pGetSubTaskProc      = 0;
             entryPoints[0].pCompleteSubTaskProc = 0;
@@ -1634,7 +1633,6 @@ mfxStatus ImplementationAvc::EncodeFrameCheckNormalWay(
 
     entryPoints[0].pState               = this;
     entryPoints[0].pParam               = bs;
-    entryPoints[0].pAbortProc           = 0;
     entryPoints[0].pCompleteProc        = 0;
     entryPoints[0].pGetSubTaskProc      = 0;
     entryPoints[0].pCompleteSubTaskProc = 0;

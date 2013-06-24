@@ -300,7 +300,6 @@ mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxBitstream *bs,
 
         pEntryPoint->pRoutine = &AACECODERoutine;
         pEntryPoint->pCompleteProc = &AACCompleteProc;
-        pEntryPoint->pAbortProc = &AACAbortProc;    
         pEntryPoint->pState = this;
         pEntryPoint->requiredNumThreads = 1; // need only one thread
         pEntryPoint->pParam = info;
@@ -356,23 +355,6 @@ mfxStatus AudioENCODEAAC::AACECODERoutine(void *pState, void *pParam,
     return mfxRes;
 
 } // mfxStatus AudioENCODEAAC::AACECODERoutine(void *pState, void *pParam,
-
-mfxStatus AudioENCODEAAC::AACAbortProc(void *pState, void *pParam)
-{
-    pParam;
-    AudioENCODEAAC &obj = *((AudioENCODEAAC *) pState);
-
-    if (MFX_PLATFORM_SOFTWARE == obj.m_platform)
-    {
-        return MFX_ERR_NONE;
-    }
-    else
-    {
-        return MFX_ERR_UNSUPPORTED;
-    }
-
-//    return MFX_ERR_NONE;
-}
 
 mfxStatus AudioENCODEAAC::AACCompleteProc(void *pState, void *pParam,
                                           mfxStatus taskRes)

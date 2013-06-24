@@ -1365,7 +1365,6 @@ mfxStatus MFXVideoENCODEMVC::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurfa
         return MFX_ERR_NULL_PTR;
 
     pEntryPoint->pRoutine = TaskRoutine;
-    pEntryPoint->pAbortProc = 0;
     pEntryPoint->pCompleteProc = TaskCompleteProc;
     pEntryPoint->pState = this;
     pEntryPoint->requiredNumThreads = m_views[0].enc->m_info.numThreads;

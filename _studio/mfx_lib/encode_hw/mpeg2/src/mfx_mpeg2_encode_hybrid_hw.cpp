@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          MPEG2 encoder
@@ -798,8 +798,6 @@ namespace MPEG2EncoderHW
 
         // pointer to the task processing routine
         pEntryPoint->pRoutine = MPEG2ENCODERoutine;
-        // pointer to the task aborting procedure
-        pEntryPoint->pAbortProc = AbortRoutine;
         // task name
         pEntryPoint->pRoutineName = "EncodeMPEG2";
 

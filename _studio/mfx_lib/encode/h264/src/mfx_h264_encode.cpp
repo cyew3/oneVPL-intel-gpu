@@ -1746,7 +1746,6 @@ mfxStatus MFXVideoENCODEH264::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
     h264Layer* layer = m_layerSync;
 
     pEntryPoint->pRoutine = TaskRoutine;
-    pEntryPoint->pAbortProc = 0;
     pEntryPoint->pCompleteProc = TaskCompleteProc;
     pEntryPoint->pState = this;
     pEntryPoint->requiredNumThreads = layer->enc->m_info.numThreads;

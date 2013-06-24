@@ -525,12 +525,6 @@ static mfxStatus __CDECL VP8DECODERoutine(void *p_state, void *pp_param, mfxU32 
     return MFX_ERR_NONE;
 }
 
-static mfxStatus VP8AbortProc(void *, void *pp_param)
-{
-    pp_param;
-    return MFX_ERR_NONE;
-}
-
 static mfxStatus VP8CompleteProc(void *, void *pp_param, mfxStatus)
 {
     pp_param;
@@ -687,7 +681,6 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
 
     p_entry_point->pRoutine = &VP8DECODERoutine;
     p_entry_point->pCompleteProc = &VP8CompleteProc;
-    p_entry_point->pAbortProc = &VP8AbortProc;
     p_entry_point->pState = this;
     p_entry_point->requiredNumThreads = 1;
 

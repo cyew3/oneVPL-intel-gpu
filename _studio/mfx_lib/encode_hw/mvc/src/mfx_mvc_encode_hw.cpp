@@ -1363,7 +1363,6 @@ mfxStatus ImplementationMvc::EncodeFrameCheck(
         }
 
 // MVC BD }
-        entryPoints[0].pAbortProc           = 0;
         entryPoints[0].pCompleteProc        = 0;
         entryPoints[0].pGetSubTaskProc      = 0;
         entryPoints[0].pCompleteSubTaskProc = 0;
@@ -1401,7 +1400,6 @@ mfxStatus ImplementationMvc::EncodeFrameCheck(
         entryPoints[0].pState               = 0;
         entryPoints[0].pParam               = 0;
         entryPoints[0].pRoutine             = TaskRoutineDoNothing;
-        entryPoints[0].pAbortProc           = 0;
         entryPoints[0].pCompleteProc        = 0;
         entryPoints[0].pGetSubTaskProc      = 0;
         entryPoints[0].pCompleteSubTaskProc = 0;

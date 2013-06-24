@@ -2821,16 +2821,13 @@ mfxStatus MFXVideoDECODEVC1::RunThread(mfxFrameSurface1 *surface_work,
 
     return MFX_ERR_ABORTED;
 }
-static mfxStatus VC1AbortProc(void *, void *pParam)
-{
-    delete pParam;
-    return MFX_ERR_NONE;
-}
+
 static mfxStatus VC1CompleteProc(void *, void *pParam, mfxStatus )
 {
     delete pParam;
     return MFX_ERR_NONE;
 }
+
 mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs,
                                               mfxFrameSurface1 *surface_work,
                                               mfxFrameSurface1 **surface_out,
@@ -2860,7 +2857,6 @@ mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs,
   
         pEntryPoint->pRoutine = &VC1DECODERoutine;
         pEntryPoint->pCompleteProc = &VC1CompleteProc;
-        pEntryPoint->pAbortProc = &VC1AbortProc;
         pEntryPoint->pState = this;
         pEntryPoint->requiredNumThreads = m_par.mfx.NumThread;
         pEntryPoint->pParam = pAsyncSurface;

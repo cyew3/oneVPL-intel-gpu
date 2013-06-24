@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008-2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008-2013 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -343,7 +343,6 @@ void MFXVideoENCODEVP8::ParallelRegionEnd()
 mfxStatus MFXVideoENCODEVP8::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxFrameSurface1 **reordered_surface, mfxEncodeInternalParams *pInternalParams, MFX_ENTRY_POINT *pEntryPoint)
 {
     pEntryPoint->pRoutine = TaskRoutine;
-    pEntryPoint->pAbortProc = 0;
     pEntryPoint->pCompleteProc = TaskCompleteProc;
     pEntryPoint->pState = this;
     pEntryPoint->requiredNumThreads = m_mfxVideoParam.mfx.NumThread;

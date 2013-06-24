@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2010-2011 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2010-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -66,7 +66,6 @@ pParam - is an addition parameter to destingush one task from the another inside
 threadNumber - number of the current additional thread. It can be any number
     not exceeding the maximum required threads for given task. */
 typedef mfxStatus (*mfxTaskRoutine) (void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber);
-typedef mfxStatus (*mfxTaskAbortProc) (void *pState, void *pParam);
 typedef mfxStatus (*mfxTaskCompleteProc) (void *pState, void *pParam, mfxStatus taskRes);
 typedef mfxStatus (*mfxGetSubTaskProc) (void *pState, void *pParam, void **ppSubTask);
 typedef mfxStatus (*mfxCompleteSubTaskProc) (void *pState, void *pParam, void *pSubTask, mfxStatus taskRes);
@@ -81,8 +80,6 @@ struct MFX_ENTRY_POINT
 
     // pointer to the task processing routine
     mfxTaskRoutine pRoutine;
-    // pointer to the task aborting procedure (DEPRICATED)
-    mfxTaskAbortProc pAbortProc;
     // pointer to the task completing procedure
     mfxTaskCompleteProc pCompleteProc;
 

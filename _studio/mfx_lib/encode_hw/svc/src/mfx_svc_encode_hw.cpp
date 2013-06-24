@@ -832,7 +832,6 @@ mfxStatus ImplementationSvc::EncodeFrameCheck(
         entryPoints[0].pState               = this;
         entryPoints[0].pParam               = task;
         entryPoints[0].pRoutine             = TaskRoutineSubmit;
-        entryPoints[0].pAbortProc           = 0;
         entryPoints[0].pCompleteProc        = 0;
         entryPoints[0].pGetSubTaskProc      = 0;
         entryPoints[0].pCompleteSubTaskProc = 0;
@@ -853,7 +852,6 @@ mfxStatus ImplementationSvc::EncodeFrameCheck(
         entryPoints[0].pState               = 0;
         entryPoints[0].pParam               = 0;
         entryPoints[0].pRoutine             = TaskRoutineDoNothing;
-        entryPoints[0].pAbortProc           = 0;
         entryPoints[0].pCompleteProc        = 0;
         entryPoints[0].pGetSubTaskProc      = 0;
         entryPoints[0].pCompleteSubTaskProc = 0;
