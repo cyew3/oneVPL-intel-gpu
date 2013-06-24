@@ -96,6 +96,7 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
     if (!MFX_Utility::CheckVideoParam_H265(par, type))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
+    m_vInitPar = *par;
     m_vFirstPar = *par;
     m_vFirstPar.mfx.NumThread = 0;
 
@@ -485,9 +486,7 @@ mfxStatus VideoDECODEH265::GetVideoParam(mfxVideoParam *par)
     mfxExtCodingOptionSPSPPS * spsPps = (mfxExtCodingOptionSPSPPS *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_CODING_OPTION_SPSPPS);
     if (spsPps)
     {
-        mfxExtCodingOptionSPSPPS * spsPpsInternal = (mfxExtCodingOptionSPSPPS *)GetExtendedBuffer(m_vPar.ExtParam, m_vPar.NumExtParam, MFX_EXTBUFF_CODING_OPTION_SPSPPS);
-
-        VM_ASSERT(spsPpsInternal);
+        mfxExtCodingOptionSPSPPS * spsPpsInternal = m_vPar.GetExtendedBuffer<mfxExtCodingOptionSPSPPS>(MFX_EXTBUFF_CODING_OPTION_SPSPPS);
 
         spsPps->SPSId = spsPpsInternal->SPSId;
         spsPps->PPSId = spsPpsInternal->PPSId;

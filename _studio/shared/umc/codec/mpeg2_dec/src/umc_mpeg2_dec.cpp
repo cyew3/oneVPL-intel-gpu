@@ -1683,7 +1683,7 @@ Status MPEG2VideoDecoderBase::Close()
 
     size_t userDataCount = m_user_data.size();
 
-    for (int i = 0; i < userDataCount; i++)
+    for (size_t i = 0; i < userDataCount; i++)
     {
         Ipp8u* buffer = m_user_data[i].first;
         size_t size = m_user_data[i].second;
@@ -1700,7 +1700,7 @@ Status MPEG2VideoDecoderBase::Close()
     m_user_data.clear();
     m_user_ts_data.clear();
     
-    for (int i = 0; i < DPB_SIZE*2; i++)
+    for (size_t i = 0; i < DPB_SIZE*2; i++)
     {
         sVideoFrameBuffer *framepcn = &frame_buffer.frame_p_c_n[i];
 
@@ -1708,7 +1708,7 @@ Status MPEG2VideoDecoderBase::Close()
         if (vectorSize == 0)
             continue;
         
-        for (int j = 0; j < vectorSize; j++)
+        for (size_t j = 0; j < vectorSize; j++)
         {
             Ipp8u* buffer = framepcn->user_data_v[j].first;
             size_t size = framepcn->user_data_v[j].second;
