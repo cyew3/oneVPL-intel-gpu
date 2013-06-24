@@ -59,7 +59,6 @@ msdk_ts_DECLARE_BLOCK(b_MFXVideoVPP_GetVideoParam);
 msdk_ts_DECLARE_BLOCK(b_MFXVideoVPP_GetVPPStat);
 msdk_ts_DECLARE_BLOCK(b_MFXVideoVPP_RunFrameVPPAsync);
 
-#ifdef __MFXAUDIO_H__
 // audio core
 msdk_ts_DECLARE_BLOCK(b_MFXAudioCORE_SyncOperation);
 msdk_ts_DECLARE_BLOCK(b_MFXInitAudio);
@@ -87,18 +86,6 @@ msdk_ts_DECLARE_BLOCK(b_MFXAudioDECODE_Close);
 msdk_ts_DECLARE_BLOCK(b_MFXAudioDECODE_QueryIOSize);
 msdk_ts_DECLARE_BLOCK(b_MFXAudioDECODE_GetAudioParam);
 msdk_ts_DECLARE_BLOCK(b_MFXAudioDECODE_DecodeFrameAsync);
-
-//AudioPP
-msdk_ts_DECLARE_BLOCK(b_MFXAudioPP_Query);
-msdk_ts_DECLARE_BLOCK(b_MFXAudioPP_QueryIOSSize);
-msdk_ts_DECLARE_BLOCK(b_MFXAudioPP_Init);
-
-msdk_ts_DECLARE_BLOCK(b_MFXAudioPP_Reset);
-msdk_ts_DECLARE_BLOCK(b_MFXAudioPP_Close);
-
-msdk_ts_DECLARE_BLOCK(b_MFXAudioPP_GetAudioParam);
-msdk_ts_DECLARE_BLOCK(b_MFXAudioPP_RunFrameAudioPPAsync);
-#endif //#ifdef __MFXAUDIO_H__
 
 /*tools*/
 //IN : request

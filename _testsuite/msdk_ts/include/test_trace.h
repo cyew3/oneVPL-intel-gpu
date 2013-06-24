@@ -6,7 +6,7 @@
 #include "mfxmvc.h"
 #include "mfxjpeg.h"
 #include "mfxpcp.h"
-// #include "mfxaudio.h"
+#include "mfxaudio.h"
 
 enum print_flags{
     PRINT_OPT_ENC   = 0x00000001,
