@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright (c) 2003-2008 Intel Corporation. All Rights Reserved.
+//          Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -28,7 +28,7 @@ static Ipp32s slen[2][16] = {
 };
 
 /* Table 3-B.8. Layer III scalefactor bands (p.33 Annex_AB ISO/IEC 11172-3)*/
-ssfBandIndex_l mp3dec_sfBandIndex_l[3][3] = {
+const ssfBandIndex_l mp3dec_sfBandIndex_l[3][3] = {
     {
       { 0, 6, 12, 18, 24, 30, 36, 44, 54, 66, 80, 96, 116, 140, 168, 200, 238,
           284, 336, 396, 464, 522, 576 },
@@ -55,7 +55,7 @@ ssfBandIndex_l mp3dec_sfBandIndex_l[3][3] = {
     }
 };
 
-ssfBandIndex_s mp3dec_sfBandIndex_s[3][3] = {
+const ssfBandIndex_s mp3dec_sfBandIndex_s[3][3] = {
   {
     {0, 4, 8, 12, 18, 24, 32, 42, 56, 74, 100, 132, 174, 192},
     {0, 4, 8, 12, 18, 26, 36, 48, 62, 80, 104, 136, 180, 192},
@@ -73,7 +73,7 @@ ssfBandIndex_s mp3dec_sfBandIndex_s[3][3] = {
   }
 };
 
-Ipp8u mp3dec_nr_of_sfb[6][3][4] =
+const Ipp8u mp3dec_nr_of_sfb[6][3][4] =
 {
     {{0x6, 0x5, 0x5, 0x5}, { 0x9,  0x9, 0x9, 0x9}, {0x6,  0x9, 0x9, 0x9}},
     {{0x6, 0x5, 0x7, 0x3}, { 0x9,  0x9, 0xc, 0x6}, {0x6,  0x9, 0xc, 0x6}},
@@ -384,7 +384,7 @@ Ipp32s mp3dec_GetScaleFactorsL3_LSF(MP3Dec_com *state, Ipp32s ch) {
     Ipp32s i, j, k, sfb;
     Ipp32u scale_fact, int_scale_fact;
     Ipp16s scale_buffer[36];
-    Ipp8u *ptr;
+    const Ipp8u *ptr;
 
     IppMP3FrameHeader *header = &(state->header);
     sBitsreamBuffer *BS = &(state->m_MainData);
