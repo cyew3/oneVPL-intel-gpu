@@ -177,7 +177,7 @@
     <ClInclude Include="include\mp3_status.h" />
     <ClInclude Include="include\mp3dec.h" />
     <ClInclude Include="include\mp3dec_huftabs.h" />
-    <ClInclude Include="include\mp3dec_own.h" />
+    <ClInclude Include="..\mp3_common\include\mp3dec_own.h" />
     <ClInclude Include="include\mp3enc.h" />
     <ClInclude Include="include\mp3enc_hufftables.h" />
     <ClInclude Include="include\mp3enc_own.h" />
