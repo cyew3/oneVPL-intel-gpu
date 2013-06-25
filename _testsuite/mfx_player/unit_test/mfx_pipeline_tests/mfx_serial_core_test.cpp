@@ -256,12 +256,12 @@ SUITE(structure_builder)
     
     TEST(StructureBuilder_mfxQualityLayer)
     {
-        mfxExtSVCSeqDesc::mfxDependencyLayer::mfxQualityLayer qlt;
+        mfxExtSVCDepLayer::mfxQualityLayer qlt;
         qlt.ScanIdxStart = 12;
         qlt.ScanIdxEnd = 23;
         qlt.TcoeffPredictionFlag = 7;
 
-        StructureBuilder <mfxExtSVCSeqDesc::mfxDependencyLayer::mfxQualityLayer> bld(_T("qlt"), qlt, NullData());
+        StructureBuilder <mfxExtSVCDepLayer::mfxQualityLayer> bld(_T("qlt"), qlt, NullData());
 
         std::stringstream stream;
         stream<<"qlt.ScanIdxStart: " << qlt.ScanIdxStart << std::endl;
@@ -278,7 +278,7 @@ SUITE(structure_builder)
 
     TEST(StructureBuilder_mfxDependencyLayer)
     {
-        mfxExtSVCSeqDesc::mfxDependencyLayer dep_layer = 
+        mfxExtSVCDepLayer dep_layer = 
         { 1,2,3,4,5,6,7,8,9,11,12,13,14,2};
         
         dep_layer.QualityNum=2;
@@ -292,7 +292,7 @@ SUITE(structure_builder)
         dep_layer.TemporalId[3]=4;
 
         tstring fileName = _T("file1.yuv");
-        StructureBuilder <mfxExtSVCSeqDesc::mfxDependencyLayer> sdep_layer(_T("dep"), dep_layer, fileName);
+        StructureBuilder <mfxExtSVCDepLayer> sdep_layer(_T("dep"), dep_layer, fileName);
         //SerialCollection <tstring> stringCollection;
         //stringCollection.resize(8);
         
@@ -454,9 +454,9 @@ SUITE(structure_builder)
 
     TEST(StructureBuilder_DESERIALIZE_mfxDependencyLayer_NON_AUTO_ARRAY_LEN)
     {
-        mfxExtSVCSeqDesc::mfxDependencyLayer dep_layer = {0};
+        mfxExtSVCDepLayer dep_layer = {0};
         tstring fileName = _T("myfile");
-        StructureBuilder <mfxExtSVCSeqDesc::mfxDependencyLayer> sdep_layer(_T(""), dep_layer, fileName);
+        StructureBuilder <mfxExtSVCDepLayer> sdep_layer(_T(""), dep_layer, fileName);
         SerialNode *pNode = NULL;
 
         int n;
