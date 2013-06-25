@@ -1015,8 +1015,19 @@ void H265CodingUnit::setAllColPOCDelta(const Ipp32s POCDelta, Ipp32u RefListIdx,
 
 void H265CodingUnit::setAllColMV(const H265MotionVector &mv, Ipp32u RefListIdx, Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight)
 {
-    setAll(m_Frame->m_CodingData->m_ColTUMV[RefListIdx] + m_Frame->getNumPartInCUSize() * m_Frame->getFrameWidthInCU() * PartY + PartX,
-        mv, PartWidth, PartHeight);
+    H265MotionVector *p = m_Frame->m_CodingData->m_ColTUMV[RefListIdx] + m_Frame->getNumPartInCUSize() * m_Frame->getFrameWidthInCU() * PartY + PartX;
+    Ipp32s stride = m_Frame->getNumPartInCUSize() * m_Frame->getFrameWidthInCU();
+
+    for (Ipp32u y = 0; y < PartHeight; y++)
+    {
+        for (Ipp32u x = 0; x < PartWidth; x++)
+        {
+            p[x].Horizontal = mv.Horizontal;
+            p[x].Vertical = mv.Vertical;
+        }
+
+        p += stride;
+    }
 }
 
 } // namespace UMC_HEVC_DECODER
