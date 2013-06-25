@@ -401,7 +401,7 @@ Status VC1VideoDecoder::Init(BaseCodecParams *pInit)
     if (!m_pSelfDecoder->InitAlloc(m_pContext,2*m_iMaxFramesInProcessing))
         return UMC_ERR_ALLOC;
 
-
+    m_pInitContext = *m_pContext;
     try
     // memory allocation and Init all env for frames/tasks store - VC1TaskStore object
     {
@@ -815,7 +815,7 @@ Status VC1VideoDecoder::StartCodesProcessing(Ipp8u*   pBStream,
             bool isFPSChange;
             VC1Context context;
             size_t alignment;
-            umcRes =  UMC_ERR_NOT_ENOUGH_DATA;
+           umcRes =  UMC_ERR_NOT_ENOUGH_DATA;
             context = *m_pContext;
             sts = SequenceLayer(&context);
             VC1_TO_UMC_CHECK_STS(sts);
@@ -823,11 +823,11 @@ Status VC1VideoDecoder::StartCodesProcessing(Ipp8u*   pBStream,
             alignment = (context.m_seqLayerHeader.INTERLACE)?32:16;
 
 
-            if (align_value<Ipp32u>(2*(context.m_seqLayerHeader.MAX_CODED_WIDTH+1)) != align_value<Ipp32u>(2*(m_pContext->m_seqLayerHeader.MAX_CODED_WIDTH+1)))
+            if (align_value<Ipp32u>(2*(context.m_seqLayerHeader.MAX_CODED_WIDTH+1)) > align_value<Ipp32u>(2*(m_pInitContext.m_seqLayerHeader.MAX_CODED_WIDTH+1)))
                 return UMC_ERR_INVALID_PARAMS;
-            if (context.m_seqLayerHeader.INTERLACE != m_pContext->m_seqLayerHeader.INTERLACE )
+            if (context.m_seqLayerHeader.INTERLACE != m_pInitContext.m_seqLayerHeader.INTERLACE )
                 return UMC_ERR_INVALID_PARAMS;
-            if (align_value<Ipp32u>(2*(context.m_seqLayerHeader.MAX_CODED_HEIGHT+1),alignment) != align_value<Ipp32u>(2*(m_pContext->m_seqLayerHeader.MAX_CODED_HEIGHT+1),alignment))
+            if (align_value<Ipp32u>(2*(context.m_seqLayerHeader.MAX_CODED_HEIGHT+1),alignment) > align_value<Ipp32u>(2*(m_pInitContext.m_seqLayerHeader.MAX_CODED_HEIGHT+1),alignment))
                 return UMC_ERR_INVALID_PARAMS;
             // start codes are applicable for advanced profile only
             if (context.m_seqLayerHeader.PROFILE != VC1_PROFILE_ADVANCED)
@@ -847,7 +847,10 @@ Status VC1VideoDecoder::StartCodesProcessing(Ipp8u*   pBStream,
             else
             {
                 *m_pContext = context;
-                umcRes = UMC_WRN_INVALID_STREAM;
+
+                if (align_value<Ipp32u>(2*(context.m_seqLayerHeader.MAX_CODED_WIDTH+1)) != align_value<Ipp32u>(2*(m_pInitContext.m_seqLayerHeader.MAX_CODED_WIDTH+1))
+                   || align_value<Ipp32u>(2*(context.m_seqLayerHeader.MAX_CODED_HEIGHT+1),alignment) != align_value<Ipp32u>(2*(m_pInitContext.m_seqLayerHeader.MAX_CODED_HEIGHT+1),alignment))
+                    umcRes = UMC_NTF_NEW_RESOLUTION;
              }
             VC1_TO_UMC_CHECK_STS(sts);
             break;
@@ -1248,8 +1251,6 @@ Status VC1VideoDecoder::GetFrame(MediaData* in, MediaData* out)
 
 
     }
-    if(umcRes == VC1_WRN_INVALID_STREAM)
-        umcRes = UMC_ERR_INVALID_STREAM;
 
     return umcRes;
 }
@@ -1344,6 +1345,8 @@ Status VC1VideoDecoder::Close(void)
     m_stCodes = NULL;
     m_frameData = NULL;
     m_pHeap = NULL;
+
+    memset(&m_pInitContext,0,sizeof(VC1Context));
 
     if (m_allocatedPostProcessing)
     {

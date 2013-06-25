@@ -79,7 +79,7 @@ UMC::Status mfx_UMC_MemAllocator::Alloc(UMC::MemID *pNewMemID, size_t Size, Ipp3
     {
         if (m_AddrStore[i] == 0)
         {
-            Sts = m_pCore->AllocBuffer((mfxU32)Size, MFX_MEMTYPE_PERSISTENT_MEMORY, &m_AddrStore[i]);
+            Sts = m_pCore->AllocBuffer((mfxU32)Size, /*MFX_MEMTYPE_PERSISTENT_MEMORY*/ MFX_MEMTYPE_SYSTEM_MEMORY, &m_AddrStore[i]);
             MFX_CHECK_UMC_STS(Sts);
             if (m_AddrStore[i])
             {

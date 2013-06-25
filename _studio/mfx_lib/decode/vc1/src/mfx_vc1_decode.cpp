@@ -692,7 +692,8 @@ mfxStatus MFXVideoDECODEVC1::Init(mfxVideoParam *par)
     m_CurrentBufFrame = 0;
     m_bIsBuffering = (disp_queue_size > 0)?IsBufferMode(m_pCore, par):false;
     m_par = *par;
-    m_par = *par;
+    m_Initpar = *par;
+    
     m_par.mfx.NumThread = 0;
 
     bool isNeedChangeVideoParamWarning = IsNeedChangeVideoParam(&m_par);
@@ -920,7 +921,8 @@ mfxStatus MFXVideoDECODEVC1::Reset(mfxVideoParam *par)
     
     ConvertMfxToCodecParams(par);
     m_VideoParams->lpMemoryAllocator = &m_MemoryAllocator;
-    umcSts = m_pVC1VideoDecoder->Init(m_VideoParams);
+    //umcSts = m_pVC1VideoDecoder->Init(m_VideoParams);
+    umcSts = m_pVC1VideoDecoder->Reset();
     MFX_CHECK_UMC_STS(umcSts);
     // Clear output display index queue
     m_qMemID.clear();
@@ -1032,6 +1034,8 @@ mfxStatus MFXVideoDECODEVC1::Close(void)
 
     m_bIsDecInit = false;
     m_pPrevOutSurface = NULL;
+
+    memset(&m_Initpar,0, sizeof(mfxVideoParam));
     return MFXSts;
 }
 
@@ -1543,7 +1547,7 @@ mfxStatus MFXVideoDECODEVC1::SelfDecodeFrame(mfxFrameSurface1 *surface_work, mfx
     }
 
     if (bs &&
-        (IntUMCStatus == UMC::UMC_ERR_NOT_ENOUGH_DATA)&&
+        (IntUMCStatus == UMC::UMC_ERR_NOT_ENOUGH_DATA )&&
         (m_InternMediaDataOut.GetFrameType() == NONE_PICTURE)) // SH, EH processing
     {
         PrepareMediaIn();
@@ -1721,7 +1725,9 @@ mfxStatus MFXVideoDECODEVC1::SelfDecodeFrame(mfxFrameSurface1 *surface_work, mfx
         return MFX_WRN_VIDEO_PARAM_CHANGED;
     }
     else if (IntUMCStatus == UMC::UMC_ERR_INVALID_PARAMS) // SH with invalid params
-        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM
+    else if (IntUMCStatus == UMC::UMC_NTF_NEW_RESOLUTION) // SH with valid params
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM
     else
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 }
@@ -2308,9 +2314,9 @@ void MFXVideoDECODEVC1::CalculateFramesNumber(bool isSW, mfxFrameAllocRequest *r
 }
 mfxStatus MFXVideoDECODEVC1::CheckFrameInfo(mfxFrameInfo *info)
 {
-    if (info->Width  > m_par.mfx.FrameInfo.Width)
+    if (info->Width  > m_Initpar.mfx.FrameInfo.Width)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-    if (info->Height > m_par.mfx.FrameInfo.Height)
+    if (info->Height > m_Initpar.mfx.FrameInfo.Height)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
     return MFX_ERR_NONE;
@@ -2339,18 +2345,18 @@ mfxStatus MFXVideoDECODEVC1::CheckForCriticalChanges(mfxVideoParam *in)
     MFX_CHECK_STS(sts);
 
     if ((in->IOPattern & (MFX_IOPATTERN_OUT_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY)) != 
-        (m_par.IOPattern & (MFX_IOPATTERN_OUT_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY)) )
+        (m_Initpar.IOPattern & (MFX_IOPATTERN_OUT_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY)) )
     {
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     }
 
-    if (in->mfx.CodecProfile != m_par.mfx.CodecProfile)
+    if (in->mfx.CodecProfile != m_Initpar.mfx.CodecProfile)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     
-    if (in->AsyncDepth != m_par.AsyncDepth)
+    if (in->AsyncDepth != m_Initpar.AsyncDepth)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
-    if (in->Protected != m_par.Protected)
+    if (in->Protected != m_Initpar.Protected)
     {
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     }

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 */
 #include "umc_defs.h"
@@ -182,6 +182,7 @@ namespace UMC
 
         
         VC1Context*                m_pContext;
+        VC1Context                 m_pInitContext;
         VC1ThreadDecoder**         m_pdecoder;                              // (VC1ThreadDecoder *) pointer to array of thread decoders
         Ipp32u                     m_iThreadDecoderNum;                     // (Ipp32u) number of slice decoders
         Ipp8u*                     m_dataBuffer;                            //uses for swap data into decoder

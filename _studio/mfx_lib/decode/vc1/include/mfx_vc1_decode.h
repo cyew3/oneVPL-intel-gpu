@@ -231,6 +231,7 @@ protected:
     UMC::MemID                       m_stCodesID;
 
     mfxVideoParam                    m_par;
+    mfxVideoParam                    m_Initpar;
     Ipp32u                           m_FrameSize;
     bool                             m_bIsInit; // need for sm profile - construct frame
 
