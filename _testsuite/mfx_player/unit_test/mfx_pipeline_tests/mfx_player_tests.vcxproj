@@ -201,6 +201,7 @@
     <ClCompile Include="mfx_serial_core_test.cpp" />
     <ClCompile Include="mfx_serializer_tests.cpp" />
     <ClCompile Include="mfx_shared_ptr_test.cpp" />
+    <ClCompile Include="mfx_ssim_test.cpp" />
     <ClCompile Include="mfx_svc_vpp.cpp" />
     <ClCompile Include="mfx_target_views_decoder_test.cpp" />
     <ClCompile Include="mfx_timeout_test.cpp" />

@@ -89,6 +89,9 @@
     <ClCompile Include="utest_common.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="mfx_ssim_test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="mfx_serializer_test.h">

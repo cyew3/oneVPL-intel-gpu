@@ -308,6 +308,9 @@ vm_char* MFXSSIMCalc::GetMetricName()
 
 mfxStatus MFXSSIMCalc::GetLastCmpResult(double pResult[3])
 {
+    if(m_nSize == 0)
+        return MFX_ERR_UNKNOWN;
+
     MFX_FOR(3, pResult[i] = m_fLastResults[i]);
     return MFX_ERR_NONE;
 }
