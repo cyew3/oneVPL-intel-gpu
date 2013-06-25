@@ -859,7 +859,7 @@ Ipp32u H265SegmentDecoder::DecodeMergeIndexCABAC(void)
 
 void H265SegmentDecoder::DecodeMVPIdxPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartAddr, Ipp32u Depth, Ipp32u PartIdx, EnumRefPicList RefList, MVBuffer &MVb, Ipp8u InterDir)
 {
-    Ipp32u MVPIdx = -1;
+    Ipp32u MVPIdx = 0;
     AMVPInfo AMVPInfo;
 
     if (InterDir & (1 << RefList))
@@ -1393,8 +1393,8 @@ void H265SegmentDecoder::DecodeMVdPUCABAC(EnumRefPicList RefList, H265MotionVect
         if (VerSign)
             VerAbs = -VerAbs;
 
-        MVd.Horizontal = HorAbs;
-        MVd.Vertical = VerAbs;
+        MVd.Horizontal = (Ipp16s)HorAbs;
+        MVd.Vertical = (Ipp16s)VerAbs;
     }
 }
 

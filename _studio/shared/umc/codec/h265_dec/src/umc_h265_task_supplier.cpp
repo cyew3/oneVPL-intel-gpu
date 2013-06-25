@@ -1433,7 +1433,7 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
         memset(pps.m_TileIdx, 0, sizeof(Ipp32u) * WidthInLCU * HeightInLCU);
     }
 
-    size_t numberOfTiles = pps.getTilesEnabledFlag() ? pps.num_tile_columns * pps.num_tile_rows : 0;
+    Ipp32s numberOfTiles = pps.getTilesEnabledFlag() ? pps.num_tile_columns * pps.num_tile_rows : 0;
 
     pps.tilesInfo.resize(numberOfTiles);
 
@@ -1444,20 +1444,20 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
         pps.tilesInfo[0].endCUAddr = WidthInLCU*HeightInLCU;
     }
 
-    for (size_t i = 0; i < numberOfTiles; i++)
+    for (Ipp32s i = 0; i < numberOfTiles; i++)
     {
-        size_t tileY = i / pps.num_tile_columns;
-        size_t tileX = i % pps.num_tile_columns;
+        Ipp32s tileY = i / pps.num_tile_columns;
+        Ipp32s tileX = i % pps.num_tile_columns;
 
-        size_t startY = 0;
-        size_t startX = 0;
+        Ipp32s startY = 0;
+        Ipp32s startX = 0;
 
-        for (size_t j = 0; j < tileX; j++)
+        for (Ipp32s j = 0; j < tileX; j++)
         {
             startX += pps.m_ColumnWidthArray[j];
         }
 
-        for (size_t j = 0; j < tileY; j++)
+        for (Ipp32s j = 0; j < tileY; j++)
         {
             startY += pps.m_RowHeightArray[j];
         }
@@ -2040,7 +2040,7 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
         }
     }
 
-    size_t currOffset = pSlice->GetSliceHeader()->m_HeaderBitstreamOffset;
+    Ipp32u currOffset = pSlice->GetSliceHeader()->m_HeaderBitstreamOffset;
     for (Ipp32s tile = 0; tile < pSlice->getTileLocationCount(); tile++)
     {
         pSlice->setTileLocation(tile, pSlice->getTileLocation(tile) + currOffset);
