@@ -7,12 +7,9 @@ include_directories (
   ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/test_suite/spy_test_component/xerces/include
 )
 
-find_library( XERCES_LIBRARY xerces-c )
+pkg_check_modules(PKG_XERCES xerces-c>=3.0)
 
-if(NOT XERCES_LIBRARY MATCHES NOTFOUND)
-
-  message( -- Found: ${XERCES_LIBRARY} !  )
-
+if( PKG_XERCES_FOUND )
   link_directories ( ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/test_suite/spy_test_component/xerces/lib )
 
   list(APPEND sources
@@ -42,6 +39,4 @@ if(NOT XERCES_LIBRARY MATCHES NOTFOUND)
   set( defs "-DXERCES_XML" )
 
   make_library( outline none shared )
-else ()
-  message( !! ${XERCES_LIBRARY} )
 endif()
