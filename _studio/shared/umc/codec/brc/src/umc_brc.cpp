@@ -23,6 +23,7 @@ CommonBRC::CommonBRC()
   mRCMode = BRC_CBR;
   mGOPPicSize = 20;
   mGOPRefDist = 1;
+  memset(&mHRD, 0, sizeof(mHRD));
 }
 
 CommonBRC::~CommonBRC()
@@ -32,8 +33,6 @@ CommonBRC::~CommonBRC()
 
 Status CommonBRC::InitHRD()
 {
-  memset(&mHRD, 0, sizeof(mHRD));
-
   Ipp32s bitsPerFrame;
   if (mFramerate <= 0)
     return UMC_ERR_INVALID_PARAMS;
