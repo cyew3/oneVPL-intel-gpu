@@ -771,10 +771,6 @@ namespace MPEG2EncoderHW
         }
         return MFX_TASK_BUSY;
     }
-    static mfxStatus AbortRoutine(void * /*pState*/, void * /*param*/)
-    {
-        return MFX_TASK_DONE;
-    }
 
 
     mfxStatus HybridEncode::EncodeFrameCheck(mfxEncodeCtrl *ctrl,

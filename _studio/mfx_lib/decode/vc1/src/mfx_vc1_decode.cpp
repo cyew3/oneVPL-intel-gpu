@@ -1725,9 +1725,9 @@ mfxStatus MFXVideoDECODEVC1::SelfDecodeFrame(mfxFrameSurface1 *surface_work, mfx
         return MFX_WRN_VIDEO_PARAM_CHANGED;
     }
     else if (IntUMCStatus == UMC::UMC_ERR_INVALID_PARAMS) // SH with invalid params
-        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     else if (IntUMCStatus == UMC::UMC_NTF_NEW_RESOLUTION) // SH with valid params
-        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     else
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 }

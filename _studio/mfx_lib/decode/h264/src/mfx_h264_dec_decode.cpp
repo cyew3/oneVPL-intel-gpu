@@ -459,7 +459,7 @@ mfxStatus VideoDECODEH264::SetTargetViewList(mfxVideoParam *par)
                 for (size_t i = 0; i < sizeof(svcDesc->DependencyLayer)/sizeof(svcDesc->DependencyLayer[0]); i++)
                 {
                     if (svcDesc->DependencyLayer[i].Active)
-                        maxDependencyId = i;
+                        maxDependencyId = (mfxU32)i;
                 }
 
                 m_pH264VideoDecoder->SetSVCTargetLayer(maxDependencyId, UMC::H264_MAX_QUALITY_ID, UMC::H264_MAX_TEMPORAL_ID);

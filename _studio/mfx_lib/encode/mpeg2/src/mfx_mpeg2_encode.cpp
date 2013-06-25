@@ -2450,23 +2450,6 @@ mfxStatus MPEG2ENCODERoutine(void *pState, void *param, mfxU32 /*n*/, mfxU32 /*c
   }
   return MFX_TASK_BUSY;
 }
-static mfxStatus AbortRoutine(void *pState, void *param)
-{
-  MFXVideoENCODEMPEG2* th = (MFXVideoENCODEMPEG2*)pState;
-  mfxStatus sts = MFX_ERR_NONE;
-
-  sExtTask1 *pTask = (sExtTask1 *)param;
-  sts = th->m_pExtTasks->CheckTask(pTask);
-  MFX_CHECK_STS(sts);
-
-  if(VM_TIMEOUT != vm_event_timed_wait(&pTask->m_new_frame_event, 0))
-  {
-    sts = th->CancelFrame(0, &pTask->m_inputInternalParams, pTask->m_pInput_surface, pTask->m_pBs);
-    MFX_CHECK_STS(sts);
-    return MFX_TASK_DONE;
-  }
-  return MFX_TASK_NEED_CONTINUE;
-}
 
 
  mfxStatus MFXVideoENCODEMPEG2::EncodeFrameCheck(   mfxEncodeCtrl *ctrl,
