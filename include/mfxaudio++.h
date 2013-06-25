@@ -56,13 +56,14 @@ public:
     virtual ~MFXAudioDECODE(void) { Close(); }
 
     mfxStatus Query(mfxAudioParam *in, mfxAudioParam *out) { return MFXAudioDECODE_Query(m_session, in, out); }
-    mfxStatus DecodeHeader(mfxBitstream *bs, mfxVideoParam *par) { return MFXAudioDECODE_DecodeHeader(m_session, bs, par); }
-    mfxStatus QueryIOSurf(mfxAudioParam *par, mfxFrameAllocRequest *request) { return MFXAudioDECODE_QueryIOSurf(m_session, par, request); }
+    mfxStatus DecodeHeader(mfxBitstream *bs, mfxAudioParam *par) { return MFXAudioDECODE_DecodeHeader(m_session, bs, par); }
+    mfxStatus QueryIOSurf(mfxAudioParam *par, mfxAudioAllocRequest *request) { return MFXAudioDECODE_QueryIOSurf(m_session, par, request); }
     mfxStatus Init(mfxAudioParam *par) { return MFXAudioDECODE_Init(m_session, par); }
     mfxStatus Reset(mfxAudioParam *par) { return MFXAudioDECODE_Reset(m_session, par); }
     mfxStatus Close(void) { return MFXAudioDECODE_Close(m_session); }
     mfxStatus GetAudioParam(mfxAudioParam *par) { return MFXAudioDECODE_GetAudioParam(m_session, par); }
-    mfxStatus DecodeFrameAsync(mfxBitstream *bs, mfxBitstream *bitstream_work, mfxBitstream **bitstream_out, mfxSyncPoint *syncp) { return MFXAudioDECODE_DecodeFrameAsync(m_session, bs, bitstream_work, bitstream_out, syncp); }
+    mfxStatus DecodeFrameAsync(mfxBitstream *bs, mfxBitstream *bitstream_work, mfxBitstream **bitstream_out, mfxSyncPoint *syncp) { return MFXAudioDECODE_DecodeFrameAsync(m_session, bs, /*bitstream_work,*/ *bitstream_out, syncp); }
+
 
 protected:
 
@@ -78,7 +79,7 @@ public:
     virtual ~MFXAudioENCODE(void) { Close(); }
 
     mfxStatus Query(mfxAudioParam *in, mfxAudioParam *out) { return MFXAudioENCODE_Query(m_session, in, out); }
-    mfxStatus QueryIOSize(mfxAudioParam *par, mfxFrameAllocRequest *request) { return MFXAudioENCODE_QueryIOSize(m_session, par, request); }
+    mfxStatus QueryIOSize(mfxAudioParam *par, mfxAudioAllocRequest *request) { return MFXAudioENCODE_QueryIOSize(m_session, par, request); }
     mfxStatus Init(mfxAudioParam *par) { return MFXAudioENCODE_Init(m_session, par); }
     mfxStatus Reset(mfxAudioParam *par) { return MFXAudioENCODE_Reset(m_session, par); }
     mfxStatus Close(void) { return MFXAudioENCODE_Close(m_session); }
@@ -89,3 +90,5 @@ protected:
 
     mfxSession m_session;                                       // (mfxSession) handle to the owning session
 };
+
+#endif

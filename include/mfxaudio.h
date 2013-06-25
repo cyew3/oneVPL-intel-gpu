@@ -208,7 +208,7 @@ mfxStatus MFX_CDECL MFXAudioDECODE_DecodeHeader(mfxSession session, mfxBitstream
 mfxStatus MFX_CDECL MFXAudioDECODE_Init(mfxSession session, mfxAudioParam *par);
 mfxStatus MFX_CDECL MFXAudioDECODE_Reset(mfxSession session, mfxAudioParam *par);
 mfxStatus MFX_CDECL MFXAudioDECODE_Close(mfxSession session);
-mfxStatus MFX_CDECL MFXAudioDECODE_QueryIOSize(mfxSession session, mfxAudioParam *par, mfxAudioAllocRequest *request);
+mfxStatus MFX_CDECL MFXAudioDECODE_QueryIOSurf(mfxSession session, mfxAudioParam *par, mfxAudioAllocRequest *request);
 mfxStatus MFX_CDECL MFXAudioDECODE_GetAudioParam(mfxSession session, mfxAudioParam *par);
 mfxStatus MFX_CDECL MFXAudioDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs /*mfxRAWAudio *buffer_out*/,mfxBitstream *buffer_out, mfxSyncPoint *syncp);
 
