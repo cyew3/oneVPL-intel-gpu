@@ -153,13 +153,6 @@ typedef struct {
     };
 } mfxInfoAudioMFX;
 
-typedef struct {
-    mfxU16                 NumIn;
-    mfxAudioStreamInfo*    In;
-    mfxU16                 NumOut;
-    mfxAudioStreamInfo*    Out;
-    mfxU32  reserved[8];
-} mfxInfoAudioPP;
 
 typedef struct {
     mfxU32  reserved[5];
@@ -167,7 +160,6 @@ typedef struct {
 
     union {
         mfxInfoAudioMFX  mfx;
-        mfxInfoAudioPP   audiopp;
     };
     mfxU16            Protected;
     mfxExtBuffer**    ExtParam;
