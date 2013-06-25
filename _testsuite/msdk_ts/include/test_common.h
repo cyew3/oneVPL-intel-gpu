@@ -1,6 +1,7 @@
 #pragma once
 #include "msdk_ts.h"
 #include "mfxvideo.h"
+#include "mfxaudio.h"
 #include "mfxvp8.h"
 #include "mfxsvc.h"
 #include "mfxmvc.h"

@@ -989,24 +989,6 @@ msdk_ts_BLOCK(b_MFXAudioDECODE_Close){
     return msdk_ts::resOK;
 }
 
-msdk_ts_BLOCK(b_MFXAudioDECODE_QueryIOSize){
-    mfxAudioAllocRequest d = {0};
-    mfxStatus&             mfxRes      = var_def<mfxStatus>             ("mfxRes",      MFX_ERR_NONE);
-    mfxStatus&             expectedRes = var_def<mfxStatus>             ("expectedRes", MFX_ERR_NONE);
-    mfxSession&            session     = var_def<mfxSession>            ("session",     0);
-    mfxAudioParam*&        pIn         = var_def<mfxAudioParam*>        ("p_mfxap_in",  NULL);
-    mfxAudioAllocRequest&  request     = var_def<mfxAudioAllocRequest>  ("request",     d);
-    mfxAudioAllocRequest*& pRequest    = var_def<mfxAudioAllocRequest*> ("p_request",   &request);
-
-    TRACE_FUNC3(MFXAudioDECODE_QueryIOSize, session, pIn, pRequest);
-    mfxRes = MFXAudioDECODE_QueryIOSize(session, pIn, pRequest);
-    TRACE_PAR(mfxRes);
-    TRACE_PAR(pRequest);
-    CHECK_STS(mfxRes, expectedRes);
-
-    return msdk_ts::resOK;
-}
-
 msdk_ts_BLOCK(b_MFXAudioDECODE_GetAudioParam){
     mfxStatus&      mfxRes      = var_def<mfxStatus>    ("mfxRes",      MFX_ERR_NONE);
     mfxStatus&      expectedRes = var_def<mfxStatus>    ("expectedRes", MFX_ERR_NONE);

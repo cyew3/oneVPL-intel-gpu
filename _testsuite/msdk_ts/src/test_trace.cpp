@@ -808,17 +808,6 @@ DEF_STRUCT_TRACE(mfxInfoAudioMFX){
     return os;
 };
 
-DEF_STRUCT_TRACE(mfxInfoAudioPP){
-    os  << "{\n"
-        << PUT_PAR(NumIn)
-        << PUT_ARR(In, p.NumIn)
-        << PUT_PAR(NumOut)
-        << PUT_ARR(Out, p.NumOut)
-        << PUT_ARR(reserved, 8)
-        << print_param.padding << '}';
-    return os;
-};
-
 DEF_STRUCT_TRACE(mfxAudioParam){
     os  << "{\n"
         << PUT_ARR(reserved, 5)
@@ -826,9 +815,7 @@ DEF_STRUCT_TRACE(mfxAudioParam){
 
     if(!pflag(PRINT_OPT_VPP)) {
         os  << PUT_STRUCT(mfx);
-    } else {
-        os  << PUT_STRUCT(audiopp);
-    }
+    } 
 
     os  << PUT_PAR(Protected)
         << PUT_PAR(NumExtParam)
