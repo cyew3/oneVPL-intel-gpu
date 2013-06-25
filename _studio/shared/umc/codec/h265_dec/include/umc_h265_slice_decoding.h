@@ -409,8 +409,8 @@ public:
     int  getNumEntryPointOffsets() const   { return m_SliceHeader.m_numEntryPointOffsets; }
     void setNumEntryPointOffsets(int val)  { m_SliceHeader.m_numEntryPointOffsets = val;  }
 
-    unsigned getTileLocationCount() const   { return m_SliceHeader.m_TileCount; }
-    void setTileLocationCount(unsigned val)
+    Ipp32s getTileLocationCount() const   { return m_SliceHeader.m_TileCount; }
+    void setTileLocationCount(Ipp32s val)
     {
         m_SliceHeader.m_TileCount = val;
 

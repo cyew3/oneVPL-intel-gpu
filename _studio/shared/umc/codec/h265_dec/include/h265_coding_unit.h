@@ -138,24 +138,17 @@ public:
 
     Ipp32u getQuadtreeTULog2MinSizeInCU (Ipp32u Idx);
 
-#if (HEVC_OPT_CHANGES & 2)
-    H265_FORCEINLINE
-#endif
-    Ipp8u* getCbf (EnumTextType Type)
+    H265_FORCEINLINE Ipp8u* getCbf (EnumTextType Type)
     {
         return m_Cbf[g_ConvertTxtTypeToIdx[Type]];
     }
-#if (HEVC_OPT_CHANGES & 2)
-    H265_FORCEINLINE
-#endif
-    Ipp8u getCbf(Ipp32u Idx, EnumTextType Type)
+
+    H265_FORCEINLINE  Ipp8u getCbf(Ipp32u Idx, EnumTextType Type)
     {
         return m_Cbf[g_ConvertTxtTypeToIdx[Type]][Idx];
     }
-#if (HEVC_OPT_CHANGES & 2)
-    H265_FORCEINLINE
-#endif
-    Ipp8u getCbf(Ipp32u Idx, EnumTextType Type, Ipp32u TrDepth)
+
+    H265_FORCEINLINE Ipp8u getCbf(Ipp32u Idx, EnumTextType Type, Ipp32u TrDepth)
     {
         return (Ipp8u)((getCbf(Idx, Type) >> TrDepth ) & 0x1);
     }

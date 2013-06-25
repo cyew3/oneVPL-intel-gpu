@@ -115,8 +115,6 @@ class MFX_Utility
 {
 public:
 
-#if (HEVC_OPT_CHANGES & 1)
-// ML: OPT: to allow the use of __fastcall default inside of a project these need to be explicitely __cdecl
     static eMFXPlatform MFX_CDECL GetPlatform_H265(VideoCORE * core, mfxVideoParam * par);
     static UMC::Status MFX_CDECL FillVideoParam(TaskSupplier_H265 * supplier, ::mfxVideoParam *par, bool full);
     static UMC::Status MFX_CDECL FillVideoParamMVCEx(TaskSupplier_H265 * supplier, ::mfxVideoParam *par, eMFXHWType type);
@@ -124,14 +122,6 @@ public:
 
     static mfxStatus MFX_CDECL Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMFXHWType type);
     static bool MFX_CDECL CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType type);
-#else // HEVC_OPT_CHANGES
-    static eMFXPlatform GetPlatform_H265(VideoCORE * core, mfxVideoParam * par);
-    static UMC::Status FillVideoParam(TaskSupplier_H265 * supplier, ::mfxVideoParam *par, bool full);
-    static UMC::Status DecodeHeader(TaskSupplier_H265 * supplier, UMC::BaseCodecParams* params, mfxBitstream *bs, mfxVideoParam *out);
-
-    static mfxStatus Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMFXHWType type);
-    static bool CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType type);
-#endif // HEVC_OPT_CHANGES
 
 private:
 

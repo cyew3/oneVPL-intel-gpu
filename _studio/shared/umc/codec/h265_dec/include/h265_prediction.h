@@ -74,7 +74,7 @@ protected:
                         Ipp32s width,
                         Ipp32s height,
                         Ipp32s shift,
-                        Ipp16s offset,
+                        Ipp32s offset,
                         EnumAddAverageType eAddAverage = AVERAGE_NO,
                         const void* in_pSrc2 = NULL,
                         int   in_Src2Pitch = 0 ); // in samples
@@ -114,7 +114,7 @@ public:
     void InitTempBuff();
 
     // inter
-    void MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPadded* YUVPred, Ipp32u AbsPartIdx, Ipp32u Depth, H265PUInfo *PUInfo);
+    void MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPadded* YUVPred, Ipp32u AbsPartIdx, H265PUInfo *PUInfo);
 
     // Angular Intra
     void PredIntraLumaAng(Ipp32u DirMode, H265PlanePtrYCommon pPred, Ipp32u Stride, Ipp32s Size);

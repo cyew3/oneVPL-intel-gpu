@@ -695,12 +695,7 @@ UMC::Status MFX_Utility::DecodeHeader(TaskSupplier_H265 * supplier, UMC::BaseCod
     return umcRes;
 }
 
-#if (HEVC_OPT_CHANGES & 1)
-// ML: OPT: to allow the use of __fastcall default inside of a project below needs to be explicitely __cdecl
 mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMFXHWType type)
-#else
-mfxStatus MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMFXHWType type)
-#endif
 {
     MFX_CHECK_NULL_PTR1(out);
     mfxStatus  sts = MFX_ERR_NONE;
@@ -1044,12 +1039,7 @@ mfxStatus MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
     return sts;
 }
 
-#if (HEVC_OPT_CHANGES & 1)
-// ML: OPT: to allow the use of __fastcall default inside of a project below needs to be explicitely __cdecl
 bool MFX_CDECL MFX_Utility::CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType type)
-#else
-bool MFX_Utility::CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType type)
-#endif
 {
     if (!in)
         return false;

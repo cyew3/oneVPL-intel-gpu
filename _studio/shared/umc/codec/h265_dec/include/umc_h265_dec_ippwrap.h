@@ -15,6 +15,7 @@
 #define __UMC_H265_DEC_IPP_WRAP_H
 
 #include "ippi.h"
+#include "ipps.h"
 #include "vm_debug.h"
 #include "umc_h265_dec_defs_dec.h"
 
@@ -85,21 +86,6 @@ namespace UMC_HEVC_DECODER
                         roiSize);
     }
 
-    inline IppStatus ExpandPlane_H265(Ipp16u *StartPtr,
-                                 Ipp32u uFrameWidth,
-                                 Ipp32u uFrameHeight,
-                                 Ipp32u uPitch,
-                                 Ipp32u uPels,
-                                 IppvcFrameFieldFlag uFrameFieldFlag)
-    {
-        VM_ASSERT(false);
-        return ippStsNoErr;/*ippiExpandPlane_H264_8u_C1R(StartPtr,
-                                            uFrameWidth,
-                                            uFrameHeight,
-                                            uPitch,
-                                            uPels,
-                                            uFrameFieldFlag);*/
-    }
 
 #pragma warning(default: 4100)
 

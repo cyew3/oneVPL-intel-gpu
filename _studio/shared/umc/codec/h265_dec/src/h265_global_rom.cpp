@@ -352,22 +352,14 @@ void initRasterToPelXY (Ipp32u MaxCUWidth, Ipp32u MaxCUHeight, Ipp32u MaxDepth)
     }
 };
 
-#if (HEVC_OPT_CHANGES & 64)
 // ML: OPT: 16-bit allow compiler to use PMULLW/PMULHW instead of PMULLD
 Ipp16u g_quantScales[6] =
-#else
-Ipp32u g_quantScales[6] =
-#endif
 {
     26214,23302,20560,18396,16384,14564
 };
 
-#if (HEVC_OPT_CHANGES & 64)
 // ML: OPT: 16-bit allow compiler to use PMULLW/PMULHW instead of PMULLD
 Ipp16u g_invQuantScales[6] =
-#else
-Ipp32u g_invQuantScales[6] =
-#endif
 {
     40,45,51,57,64,72
 };
@@ -463,13 +455,6 @@ const Ipp8u g_AngModeMapping[4][34] = // intra mode conversion for most probable
     {2,3,3,10,10, 4,11,11,0,0, 0,12,12,5,5, 13,13,6,14,14, 7,7,15,15,1, 1,1,16,16,8, 8,2,2,9}, // conversion to 17 modes
     {2,2,2,2,2, 2,2,0,0,0, 0,0,0,0,2, 2,2,2,2,2, 2,1,1,1,1, 1,1,1,1,1, 2,2,2,2}                // conversion to 3 modes
 };
-
-#if !(HEVC_OPT_CHANGES & 16)
-// ML: OPT: Moved into header
-// Bit-depth ---------------------------------------------------------------------------------------------------------------
-Ipp32s g_bitDepthY = 8;
-Ipp32s g_bitDepthC = 8;
-#endif
 
 Ipp32u g_PCMBitDepthLuma     = 8;    // PCM bit-depth
 Ipp32u g_PCMBitDepthChroma   = 8;    // PCM bit-depth

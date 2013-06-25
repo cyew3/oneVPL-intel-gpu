@@ -16,20 +16,10 @@
 
 #define HEVC_OPT_CHANGES 0xffff
 
-#include <string.h>
 #include <vector>
 
-#include <immintrin.h> /* for __m128i */
-
-#include "ippdefs.h"
-#include "vm_types.h"
-#include "ippvc.h"
-#include "ipps.h"
 #include "umc_memory_allocator.h"
 #include "umc_structures.h"
-
-#include "umc_mutex.h"
-#include "umc_h265_dec_tables.h"
 
 namespace UMC_HEVC_DECODER
 {
@@ -398,13 +388,11 @@ enum SGUBorderID
     NUM_SGU_BORDER
 };
 
-#if (HEVC_OPT_CHANGES & 8)
 enum InterpolateType
 {
     INTER_HOR = 0,
     INTER_VERT
 };
-#endif
 
 struct SAOLCUParam
 {
@@ -1901,7 +1889,7 @@ struct H265SliceHeader
     const H265PicParamSet* m_PicParamSet;
     SAOParams m_SAOParam;
     Ipp32u *m_TileByteLocation;
-    Ipp32u m_TileCount;
+    Ipp32s m_TileCount;
 
     Ipp32u* m_SubstreamSizes;
 

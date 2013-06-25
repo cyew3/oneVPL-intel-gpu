@@ -57,20 +57,14 @@ H265TrQuant::~H265TrQuant()
     delete[] m_tempTransformBuffer;
 }
 
-// give identical results
-#if (HEVC_OPT_CHANGES & 128)
 // ML: OPT: Parameterized to allow const 'shift' propogation
 template <Ipp32s shift, typename DstCoeffsType>
 void FastInverseDst(H265CoeffsPtrCommon tmp, DstCoeffsType* block, Ipp32s dstStride)  // input tmp, output block
-#else
-template <typename DstCoeffsType>
-void FastInverseDst(H265CoeffsPtrCommon tmp, DstCoeffsType* block, Ipp32s dstStride, Ipp32s shift)  // input tmp, output block
-#endif
 {
   Ipp32s i, c[4];
   Ipp32s rnd_factor = 1<<(shift-1);
 
-#if (HEVC_OPT_CHANGES & 128)
+#ifdef __INTEL_COMPILER
 // ML: OPT: vectorize with constant shift
 #pragma unroll
 #pragma vector always
@@ -106,21 +100,16 @@ void FastInverseDst(H265CoeffsPtrCommon tmp, DstCoeffsType* block, Ipp32s dstStr
  *  \param block output data (residual)
  *  \param shift specifies right shift after 1D transform
  */
-#if (HEVC_OPT_CHANGES & 128)
 // ML: OPT: Parameterized to allow const 'shift' propogation
 template <Ipp32s shift, typename DstCoeffsType>
 void PartialButterflyInverse4x4(H265CoeffsPtrCommon src, DstCoeffsType*dst, Ipp32s dstStride)
-#else
-template <typename DstCoeffsType>
-void PartialButterflyInverse4x4(H265CoeffsPtrCommon src, DstCoeffsType*dst, Ipp32s dstStride, Ipp32s shift)
-#endif
 {
   Ipp32s j;
   Ipp32s E[2],O[2];
   Ipp32s add = 1<<(shift-1);
   const Ipp32s line = 4;
 
-#if (HEVC_OPT_CHANGES & 128)
+#ifdef __INTEL_COMPILER
 // ML: OPT: vectorize with constant shift
 #pragma vector always
 #endif
@@ -158,14 +147,9 @@ void PartialButterflyInverse4x4(H265CoeffsPtrCommon src, DstCoeffsType*dst, Ipp3
  *  \param block output data (residual)
  *  \param shift specifies right shift after 1D transform
  */
-#if (HEVC_OPT_CHANGES & 128)
 // ML: OPT: Parameterized to allow const 'shift' propogation
 template <Ipp32s shift, typename DstCoeffsType>
 void PartialButterflyInverse8x8(H265CoeffsPtrCommon src, DstCoeffsType* dst, Ipp32s dstStride)
-#else
-template <typename DstCoeffsType>
-void PartialButterflyInverse8x8(H265CoeffsPtrCommon src, DstCoeffsType* dst, Ipp32s dstStride, Ipp32s shift)
-#endif
 {
     Ipp32s j;
     Ipp32s k;
@@ -176,13 +160,13 @@ void PartialButterflyInverse8x8(H265CoeffsPtrCommon src, DstCoeffsType* dst, Ipp
     Ipp32s add = 1 << (shift - 1);
     const Ipp32s line = 8;
 
-#if (HEVC_OPT_CHANGES & 128)
-// ML: OPT: TODO: vectorize manually, ICC does poor auto-vec
-#endif
+    // ML: OPT: TODO: vectorize manually, ICC does poor auto-vec
     for (j = 0; j < line; j++)
     {
         /* Utilizing symmetry properties to the maximum to minimize the number of multiplications */
+#ifdef __INTEL_COMPILER
         #pragma unroll(4)
+#endif
         for (k = 0; k < 4; k++)
         {
             O[k] = g_T8[1][k] * src[line] + g_T8[3][k] * src[3 * line] + g_T8[5][k] * src[5 * line] + g_T8[7][k] * src[7 * line];
@@ -224,14 +208,9 @@ void PartialButterflyInverse8x8(H265CoeffsPtrCommon src, DstCoeffsType* dst, Ipp
  *  \param block output data (residual)
  *  \param shift specifies right shift after 1D transform
  */
-#if (HEVC_OPT_CHANGES & 128)
 // ML: OPT: Parameterized to allow const 'shift' propogation
 template <Ipp32s shift, typename DstCoeffsType>
 void PartialButterflyInverse16x16(H265CoeffsPtrCommon src, DstCoeffsType* dst, Ipp32s dstStride)
-#else
-template <typename DstCoeffsType>
-void PartialButterflyInverse16x16(H265CoeffsPtrCommon src, DstCoeffsType* dst, Ipp32s dstStride, Ipp32s shift)
-#endif
 {
     Ipp32s j;
     Ipp32s k;
@@ -244,19 +223,22 @@ void PartialButterflyInverse16x16(H265CoeffsPtrCommon src, DstCoeffsType* dst, I
     Ipp32s add = 1 << (shift - 1);
     const Ipp32s line = 16;
 
-#if (HEVC_OPT_CHANGES & 128)
-// ML: OPT: TODO: vectorize manually, ICC does not auto-vec
-#endif
+    // ML: OPT: TODO: vectorize manually, ICC does not auto-vec
     for (j = 0; j < line; j++)
     {
         /* Utilizing symmetry properties to the maximum to minimize the number of multiplications */
+#ifdef __INTEL_COMPILER
         #pragma unroll(8)
+#endif
         for (k = 0; k < 8; k++)
         {
             O[k] = g_T16[ 1][k] * src[line]     + g_T16[ 3][k] * src[ 3 * line] + g_T16[ 5][k] * src[ 5 * line] + g_T16[ 7][k] * src[ 7 * line] +
                    g_T16[ 9][k] * src[9 * line] + g_T16[11][k] * src[11 * line] + g_T16[13][k] * src[13 * line] + g_T16[15][k] * src[15 * line];
         }
+
+#ifdef __INTEL_COMPILER
         #pragma unroll(4)
+#endif
         for (k = 0; k < 4; k++)
         {
             EO[k] = g_T16[2][k] * src[2 * line] + g_T16[6][k] * src[6 * line] + g_T16[10][k]*src[10*line] + g_T16[14][k]*src[14*line];
@@ -277,7 +259,10 @@ void PartialButterflyInverse16x16(H265CoeffsPtrCommon src, DstCoeffsType* dst, I
             E[k]     = EE[k]     + EO[k];
             E[k + 4] = EE[3 - k] - EO[3 - k];
         }
+
+#ifdef __INTEL_COMPILER
         #pragma unroll(8)
+#endif
         for (k = 0; k < 8; k++)
         {
             if (sizeof(DstCoeffsType) == 1)
@@ -301,14 +286,9 @@ void PartialButterflyInverse16x16(H265CoeffsPtrCommon src, DstCoeffsType* dst, I
  *  \param block output data (residual)
  *  \param shift specifies right shift after 1D transform
  */
-#if (HEVC_OPT_CHANGES & 128)
 // ML: OPT: Parameterized to allow const 'shift' propogation
 template <Ipp32s shift, typename DstCoeffsType>
 void PartialButterflyInverse32x32(H265CoeffsPtrCommon src, DstCoeffsType* dst, Ipp32s dstStride)
-#else
-template <typename DstCoeffsType>
-void PartialButterflyInverse32x32(H265CoeffsPtrCommon src, DstCoeffsType* dst, Ipp32s dstStride, Ipp32s shift)
-#endif
 {
     Ipp32s j;
     Ipp32s k;
@@ -323,13 +303,13 @@ void PartialButterflyInverse32x32(H265CoeffsPtrCommon src, DstCoeffsType* dst, I
     Ipp32s add = 1 << (shift - 1);
     const Ipp32s line = 32;
 
-#if (HEVC_OPT_CHANGES & 128)
-// ML: OPT: TODO: vectorize manually, ICC does not auto-vec
-#endif
+    // ML: OPT: TODO: vectorize manually, ICC does not auto-vec
     for (j = 0; j < line; j++)
     {
         /* Utilizing symmetry properties to the maximum to minimize the number of multiplications */
+#ifdef __INTEL_COMPILER
         #pragma unroll(16)
+#endif
         for (k = 0; k < 16; k++)
         {
             O[k] = g_T32[ 1][k]*src[line]      + g_T32[ 3][k] * src[ 3 * line] + g_T32[ 5][k] * src[ 5 * line] + g_T32[ 7][k] * src[ 7 * line] +
@@ -337,13 +317,17 @@ void PartialButterflyInverse32x32(H265CoeffsPtrCommon src, DstCoeffsType* dst, I
                    g_T32[17][k]*src[17 * line] + g_T32[19][k] * src[19 * line] + g_T32[21][k] * src[21 * line] + g_T32[23][k] * src[23 * line] +
                    g_T32[25][k]*src[25 * line] + g_T32[27][k] * src[27 * line] + g_T32[29][k] * src[29 * line] + g_T32[31][k] * src[31 * line];
         }
+#ifdef __INTEL_COMPILER
         #pragma unroll(8)
+#endif
         for (k = 0; k < 8; k++)
         {
             EO[k] = g_T32[ 2][k] * src[ 2 * line] + g_T32[ 6][k] * src[ 6 * line] + g_T32[10][k] * src[10 * line] + g_T32[14][k] * src[14 * line] +
                     g_T32[18][k] * src[18 * line] + g_T32[22][k] * src[22 * line] + g_T32[26][k] * src[26 * line] + g_T32[30][k] * src[30 * line];
         }
+#ifdef __INTEL_COMPILER
         #pragma unroll(4)
+#endif
         for (k = 0; k < 4; k++)
         {
             EEO[k] = g_T32[4][k] * src[ 4 * line] + g_T32[12][k] * src[12 * line] + g_T32[20][k] * src[20 * line] + g_T32[28][k] * src[28 * line];
@@ -358,19 +342,26 @@ void PartialButterflyInverse32x32(H265CoeffsPtrCommon src, DstCoeffsType* dst, I
         EEE[3] = EEEE[0] - EEEO[0];
         EEE[1] = EEEE[1] + EEEO[1];
         EEE[2] = EEEE[1] - EEEO[1];
+#ifdef __INTEL_COMPILER
         #pragma unroll(4)
+#endif
         for (k = 0; k < 4; k++)
         {
             EE[k]     = EEE[k]     + EEO[k];
             EE[k + 4] = EEE[3 - k] - EEO[3 - k];
         }
+
+#ifdef __INTEL_COMPILER
         #pragma unroll(8)
+#endif
         for (k = 0; k < 8; k++)
         {
             E[k]     = EE[k]     + EO[k];
             E[k + 8] = EE[7 - k] - EO[7 - k];
         }
+#ifdef __INTEL_COMPILER
         #pragma unroll(16)
+#endif
         for (k = 0; k < 16; k++)
         {
             if (sizeof(DstCoeffsType) == 1)
@@ -395,8 +386,6 @@ void PartialButterflyInverse32x32(H265CoeffsPtrCommon src, DstCoeffsType* dst, I
 *  \param iWidth input data (width of transform)
 *  \param iHeight input data (height of transform)
 */
-#if (HEVC_OPT_CHANGES & 128)
-
 #define OPT_IDCT
 
 void inv_4x4_dct_sse2(void *destPtr, const short *__restrict coeff, int destStride, int destSize);
@@ -469,46 +458,6 @@ void InverseTransform(H265CoeffsPtrCommon coeff, DstCoeffsType* dst, Ipp32s dstP
     }
 }
 
-#else // HEVC_OPT_CHANGES
-
-template <typename DstCoeffsType>
-void InverseTransform(Ipp32s bitDepth, H265CoeffsPtrCommon coeff, DstCoeffsType* dst, Ipp32s dstPitch, Ipp32s Size, Ipp32u Mode, H265CoeffsCommon * tempBuffer)
-{
-    Ipp32s shift_1st = SHIFT_INV_1ST;
-    Ipp32s shift_2nd = SHIFT_INV_2ND - (bitDepth - 8);
-
-    if (Size == 4)
-    {
-        if (Mode != REG_DCT)
-        {
-            FastInverseDst(coeff, tempBuffer, 4, shift_1st);    // Inverse DST by FAST Algorithm, coeff input, tmp output
-            FastInverseDst(tempBuffer, dst, dstPitch, shift_2nd); // Inverse DST by FAST Algorithm, tmp input, coeff output
-        }
-        else
-        {
-            PartialButterflyInverse4x4(coeff, tempBuffer, 4, shift_1st);
-            PartialButterflyInverse4x4(tempBuffer, dst, dstPitch, shift_2nd);
-        }
-    }
-    else if (Size == 8)
-    {
-        PartialButterflyInverse8x8(coeff, tempBuffer, 8, shift_1st);
-        PartialButterflyInverse8x8(tempBuffer, dst, dstPitch, shift_2nd);
-    }
-    else if (Size == 16)
-    {
-        PartialButterflyInverse16x16(coeff, tempBuffer, 16, shift_1st);
-        PartialButterflyInverse16x16(tempBuffer, dst, dstPitch, shift_2nd);
-    }
-    else if (Size == 32)
-    {
-        PartialButterflyInverse32x32(coeff, tempBuffer, 32, shift_1st);
-        PartialButterflyInverse32x32(tempBuffer, dst, dstPitch, shift_2nd);
-    }
-}
-#endif // HEVC_OPT_CHANGES
-
-#if (HEVC_OPT_CHANGES & 512)
 // ML: OPT: Parameterized to allow const 'bitDepth' propogation
 template< Ipp32u c_Log2TrSize, Ipp32s bitDepth >
 void H265TrQuant::DeQuant_inner(const H265CoeffsPtrCommon pQCoef, Ipp32u Length, Ipp32s scalingListType)
@@ -525,8 +474,10 @@ void H265TrQuant::DeQuant_inner(const H265CoeffsPtrCommon pQCoef, Ipp32u Length,
         {
             Ipp32s Add = 1 << (Shift - m_QPParam.m_Per - 1);
 
+#ifdef __INTEL_COMPILER
             #pragma ivdep
             #pragma vector always
+#endif
             for (Ipp32u n = 0; n < Length; n++)
             {
                 // clipped when decoded
@@ -536,8 +487,10 @@ void H265TrQuant::DeQuant_inner(const H265CoeffsPtrCommon pQCoef, Ipp32u Length,
         }
         else
         {
+#ifdef __INTEL_COMPILER
             #pragma ivdep
             #pragma vector always
+#endif
             for (Ipp32u n = 0; n < Length; n++)
             {
                 // clipped when decoded
@@ -552,8 +505,10 @@ void H265TrQuant::DeQuant_inner(const H265CoeffsPtrCommon pQCoef, Ipp32u Length,
         Ipp16s scale = g_invQuantScales[m_QPParam.m_Rem] << m_QPParam.m_Per;
 
         // ML: OPT: verify vectorization
+#ifdef __INTEL_COMPILER
         #pragma ivdep
         #pragma vector always
+#endif
         for (Ipp32u n = 0; n < Length; n++)
         {
             // clipped when decoded
@@ -562,16 +517,9 @@ void H265TrQuant::DeQuant_inner(const H265CoeffsPtrCommon pQCoef, Ipp32u Length,
         }
     }
 }
-#endif
 
-
-#if (HEVC_OPT_CHANGES & 512)
-// ML: OPT: Parameterized to allow const 'bitDepth' propogation
 template < Ipp32s bitDepth >
 void H265TrQuant::DeQuant(H265CoeffsPtrCommon pSrc, Ipp32u Width, Ipp32u Height, Ipp32s scalingListType)
-#else
-void H265TrQuant::DeQuant(Ipp32s bitDepth, H265CoeffsPtrCommon pSrc, Ipp32u Width, Ipp32u Height, Ipp32s scalingListType)
-#endif
 {
     const H265CoeffsPtrCommon pQCoef = pSrc;
 
@@ -583,7 +531,6 @@ void H265TrQuant::DeQuant(Ipp32s bitDepth, H265CoeffsPtrCommon pSrc, Ipp32u Widt
 
     Ipp32u Log2TrSize = g_ConvertToBit[Width] + 2;
 
-#if (HEVC_OPT_CHANGES & 512)
     Ipp32u Length = Width * Height;
     if (Log2TrSize == 1)
         DeQuant_inner< 1, bitDepth >( pQCoef, Length, scalingListType );
@@ -601,46 +548,6 @@ void H265TrQuant::DeQuant(Ipp32s bitDepth, H265CoeffsPtrCommon pSrc, Ipp32u Widt
         DeQuant_inner< 7, bitDepth >( pQCoef, Length, scalingListType );
     else
         VM_ASSERT(0); // should never happen
-#else
-    Ipp32u TransformShift = MAX_TR_DYNAMIC_RANGE - bitDepth - Log2TrSize;
-    Ipp32s Shift = QUANT_IQUANT_SHIFT - QUANT_SHIFT - TransformShift;
-
-    if (m_UseScalingList)
-    {
-        Shift += 4;
-        Ipp32s *pDequantCoef = getDequantCoeff(scalingListType, m_QPParam.m_Rem, Log2TrSize - 2);
-
-        if (Shift > m_QPParam.m_Per)
-        {
-            Ipp32s Add = 1 << (Shift - m_QPParam.m_Per - 1);
-
-            for (Ipp32u n = 0; n < Width * Height; n++)
-            {
-                Ipp32s CoeffQ = ((pQCoef[n] * pDequantCoef[n]) + Add) >> (Shift -  m_QPParam.m_Per);
-                pQCoef[n] = (H265CoeffsCommon)Clip3(-32768, 32767, CoeffQ);
-            }
-        }
-        else
-        {
-            for (Ipp32u n = 0; n < Width * Height; n++)
-            {
-                Ipp32s CoeffQ   = Clip3(-32768, 32767, pQCoef[n] * pDequantCoef[n]); // Clip to avoid possible overflow in following shift left operation
-                pQCoef[n] = (H265CoeffsCommon)Clip3(-32768, 32767, CoeffQ << ( m_QPParam.m_Per - Shift ) );
-            }
-        }
-    }
-    else
-    {
-        Ipp32s Add = 1 << (Shift - 1);
-        Ipp32s scale = g_invQuantScales[m_QPParam.m_Rem] << m_QPParam.m_Per;
-
-        for (Ipp32u n = 0; n < Width * Height; n++)
-        {
-            Ipp32s CoeffQ = (pQCoef[n] * scale + Add) >> Shift;
-            pQCoef[n] = (H265CoeffsCommon)Clip3(-32768, 32767, CoeffQ);
-        }
-    }
-#endif // HEVC_OPT_CHANGES
 }
 
 void H265TrQuant::Init(Ipp32u MaxWidth, Ipp32u MaxHeight, Ipp32u MaxTrSize)
@@ -679,17 +586,12 @@ void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, I
 
     Ipp32s bitDepth = TxtType == TEXT_LUMA ? g_bitDepthY : g_bitDepthC;
 
-#if (HEVC_OPT_CHANGES & 512)
 // ML: OPT: allows inlining and constant propogation for the most common case
     if (bitDepth == 8 )
         DeQuant< 8 >(pCoeff, Width, Height, scalingListType);
     else
         VM_ASSERT( 0 ); // no 10-bit support yet
-#else
-    DeQuant(bitDepth, pCoeff, Width, Height, scalingListType);
-#endif 
 
-#if (HEVC_OPT_CHANGES & 128)
     if (bitDepth == 8 )
     {
         if (transformSkip)
@@ -706,15 +608,6 @@ void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, I
     } 
     else
         VM_ASSERT( 0 ); // no 10-bit support yet
-#else
-    if (transformSkip)
-        InvTransformSkip(bitDepth, pCoeff, pResidual, Stride, Width, Height);
-    else
-    {
-        VM_ASSERT(Width == Height);
-        InverseTransform(bitDepth, pCoeff, pResidual, Stride, Width, Mode, m_tempTransformBuffer);
-    }
-#endif
 }
 
 /* ----------------------------------------------------------------------------*/
@@ -847,14 +740,9 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
     }
 }
 
-#if (HEVC_OPT_CHANGES & 128)
 // ML: OPT: Parameterized to allow const 'bitDepth' propogation
 template <int bitDepth, typename DstCoeffsType>
 void H265TrQuant::InvTransformSkip(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, Ipp32u Stride, Ipp32u Width, Ipp32u Height)
-#else
-template <typename DstCoeffsType>
-void H265TrQuant::InvTransformSkip(Ipp32s bitDepth, H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, Ipp32u Stride, Ipp32u Width, Ipp32u Height)
-#endif
 {
     VM_ASSERT(Width == Height);
     Ipp32u Log2TrSize = g_ConvertToBit[Width] + 2;
@@ -984,15 +872,17 @@ void H265TrQuant::processScalingListDec(Ipp32s *coeff, Ipp16s *dequantcoeff, Ipp
 {
     for(Ipp32u j = 0; j < height; j++)
     {
+#ifdef __INTEL_COMPILER
         #pragma vector always
+#endif
         for(Ipp32u i = 0; i < width; i++)
         {
-            dequantcoeff[j * width + i] = invQuantScales * coeff[sizuNum * (j / ratio) + i / ratio];
+            dequantcoeff[j * width + i] = (Ipp16s)(invQuantScales * coeff[sizuNum * (j / ratio) + i / ratio]);
         }
     }
     if(ratio > 1)
     {
-        dequantcoeff[0] = invQuantScales * dc;
+        dequantcoeff[0] = (Ipp16s)(invQuantScales * dc);
     }
 }
 

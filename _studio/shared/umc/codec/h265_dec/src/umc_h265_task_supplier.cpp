@@ -2041,7 +2041,7 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
     }
 
     size_t currOffset = pSlice->GetSliceHeader()->m_HeaderBitstreamOffset;
-    for (Ipp32u tile = 0; tile < pSlice->getTileLocationCount(); tile++)
+    for (Ipp32s tile = 0; tile < pSlice->getTileLocationCount(); tile++)
     {
         pSlice->setTileLocation(tile, pSlice->getTileLocation(tile) + currOffset);
     }

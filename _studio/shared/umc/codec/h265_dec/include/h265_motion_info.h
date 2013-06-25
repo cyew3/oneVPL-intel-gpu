@@ -22,7 +22,6 @@
 namespace UMC_HEVC_DECODER
 {
 
-#if (HEVC_OPT_CHANGES & 16)
 // ML: OPT: significant overhead if not inlined (ICC does not honor implied 'inline' with -Qipo)
 // ML: OPT: TODO: Make sure compiler recognizes saturation idiom for vectorization when used
 #if 1
@@ -42,19 +41,6 @@ T Clip3(const T& Min, const T& Max, T Value)
     return ( Value );
     // return ( Value < Min ? Min : (Value > Max) ? Max : Value ); 
 #endif
-#else // HEVC_OPT_CHANGES
-template <class T> inline
-T Clip3(T Min, T Max, T Value)
-{
-    if (Value < Min)
-        return Min;
-    else if (Value > Max)
-        return Max;
-    else
-        return Value;
-
-} //T Clip3(T Min, T Max, T Value)
-#endif // HEVC_OPT_CHANGES
 
 //structure vector class
 struct H265MotionVector
@@ -84,14 +70,8 @@ public:
     }
 
     //get
-#if (HEVC_OPT_CHANGES & 2)
-    // ML: OPT: moving into the header to allow inlining
     H265_FORCEINLINE Ipp32s getAbsHor() const { return abs(Horizontal); }
     H265_FORCEINLINE Ipp32s getAbsVer() const { return abs(Vertical);   }
-#else
-    Ipp32s getAbsHor() const;
-    Ipp32s getAbsVer() const;
-#endif
 
     //const H265MotionVector& operator += (const H265MotionVector& MV)
     //{

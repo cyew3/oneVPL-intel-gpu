@@ -19,8 +19,6 @@
 #include "vm_event.h"
 #include "vm_thread.h"
 
-#define COEFBLOCK_OPT
-
 namespace UMC_HEVC_DECODER
 {
 
@@ -51,10 +49,7 @@ H265SegmentDecoder::H265SegmentDecoder(TaskBroker_H265 * pTaskBroker)
 
     m_MaxDepth = 0;
 
-#ifdef COEFBLOCK_OPT
     g_SigLastScan_inv[0][0] = 0;
-#endif
-
 } // H265SegmentDecoder::H265SegmentDecoder(H264SliceStore &Store)
 
 H265SegmentDecoder::~H265SegmentDecoder(void)
@@ -129,15 +124,12 @@ void H265SegmentDecoder::create(H265SeqParamSet* pSPS)
 
     m_SAO.init(pSPS);
 
-#ifdef COEFBLOCK_OPT
     if (!g_SigLastScan_inv[0][0])
     {
         for(int i = 0; i < 3; i++)
         {
-            g_SigLastScan_inv[i][0] = (Ipp16u*)malloc(2*16);
-            g_SigLastScan_inv[i][1] = (Ipp16u*)malloc(2*64);
-            g_SigLastScan_inv[i][2] = (Ipp16u*)malloc(2*16*16);
-            g_SigLastScan_inv[i][3] = (Ipp16u*)malloc(2*32*32);
+            CumulativeArraysAllocation(4, 0, &g_SigLastScan_inv[i][0], 2*16, &g_SigLastScan_inv[i][1], 2*64, &g_SigLastScan_inv[i][2], 2*16*16, &g_SigLastScan_inv[i][3], 2*32*32);
+
             for(Ipp16u j = 0; j < 16; j++)
             {
                 g_SigLastScan_inv[i][0][g_SigLastScan[i][0][j]] = j;
@@ -156,7 +148,6 @@ void H265SegmentDecoder::create(H265SeqParamSet* pSPS)
             }
         }
     }
-#endif
 }
 
 void H265SegmentDecoder::destroy()
@@ -175,20 +166,15 @@ void H265SegmentDecoder::Release(void)
     delete m_TrQuant;
     m_TrQuant = NULL; //TRQUANT
 
-#ifdef COEFBLOCK_OPT
     if (g_SigLastScan_inv[0][0])
     {
         for(int i = 0; i < 3; i++)
         {
-            free(g_SigLastScan_inv[i][0]);
-            free(g_SigLastScan_inv[i][1]);
-            free(g_SigLastScan_inv[i][2]);
-            free(g_SigLastScan_inv[i][3]);
+            CumulativeFree(g_SigLastScan_inv[i][0]);
         }
     }
 
    g_SigLastScan_inv[0][0] = 0;
-#endif
 
     if (m_ppcYUVResi)
     {
@@ -720,7 +706,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
         FinishDecodeCU(pCU, AbsPartIdx, Depth, IsLast);
         UpdateNeighborBuffers(pCU, AbsPartIdx, true);
 
-        ReconInter(pCU, AbsPartIdx, Depth);
+        ReconInter(pCU, AbsPartIdx);
         if (pCU->isLosslessCoded(AbsPartIdx))
         {
             // Saving reconstruct contents in PCM buffer is necessary for later PCM restoration when SAO is enabled
@@ -785,7 +771,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
     switch (PredMode)
     {
         case MODE_INTER:
-            ReconInter(pCU, AbsPartIdx, Depth);
+            ReconInter(pCU, AbsPartIdx);
             break;
         case MODE_INTRA:
             ReconIntraQT(pCU, AbsPartIdx, Depth);
@@ -1849,8 +1835,6 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
 
     //----- parse significance map -----
     const Ipp32u Log2BlockSize = g_ConvertToBit[Width] + 2;
-    const Ipp32u MaxNumCoeff  = 1 << (Log2BlockSize << 1);
-    const Ipp32u MaxNumCoeffM1 = MaxNumCoeff - 1;
 
     memset(pCoef, 0, sizeof(H265CoeffsCommon) << (Log2BlockSize << 1));
 
@@ -1862,21 +1846,8 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
     pCoef[BlkPosLast] = 1;
 
     //===== decode significance flags =====
-    Ipp32u ScanPosLast = BlkPosLast;
     const Ipp16u* scan = g_SigLastScan[ScanIdx][Log2BlockSize - 2];
-
-#ifdef COEFBLOCK_OPT
-   ScanPosLast = g_SigLastScan_inv[ScanIdx][Log2BlockSize - 2][BlkPosLast];
-#else
-    for (ScanPosLast = 0; ScanPosLast < MaxNumCoeffM1; ScanPosLast++)
-    {
-        Ipp32u BlkPos = scan[ScanPosLast];
-        if (BlkPosLast == BlkPos)
-        {
-            break;
-        }
-    }
-#endif
+    Ipp32u ScanPosLast = g_SigLastScan_inv[ScanIdx][Log2BlockSize - 2][BlkPosLast];
 
     Ipp32u baseCoeffGroupCtxIdx = ctxIdxOffsetHEVC[SIG_COEFF_GROUP_FLAG_HEVC] + (IsLuma ? 0 : NUM_SIG_CG_FLAG_CTX);
     Ipp32u baseCtxIdx = ctxIdxOffsetHEVC[SIG_FLAG_HEVC] + ( IsLuma ? 0 : NUM_SIG_FLAG_CTX_LUMA);
@@ -1892,7 +1863,6 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
     Ipp16u SCGroupFlagRightMask = 0;
     Ipp16u SCGroupFlagLowerMask  = 0;
 
-    const Ipp32u NumBlkSide = 1 << (Log2BlockSize - 2);
     const Ipp16u *scanCG;
 
     scanCG = g_SigLastScan[ScanIdx][Log2BlockSize > 3 ? Log2BlockSize - 2 - 2 : 0];
@@ -2129,12 +2099,12 @@ void H265SegmentDecoder::ParseTransformSkipFlags(H265CodingUnit* pCU, Ipp32u Abs
 
 Ipp32u H265SegmentDecoder::ParseLastSignificantXYCABAC(Ipp32u L2Width, bool IsLuma, Ipp32u ScanIdx)
 {
-    Ipp8u mGIdx = g_GroupIdx[(1<<(L2Width+2)) - 1];
+    Ipp32u mGIdx = g_GroupIdx[(1<<(L2Width+2)) - 1];
 
-    Ipp8u blkSizeOffset = IsLuma ? (L2Width*3 + ((L2Width+1)>>2)) : NUM_CTX_LAST_FLAG_XY;
-    Ipp8u shift = IsLuma ? ((L2Width+3) >> 2) : L2Width;
-    Ipp8u CtxIdxX = ctxIdxOffsetHEVC[LAST_X_HEVC] + blkSizeOffset;
-    Ipp8u CtxIdxY = ctxIdxOffsetHEVC[LAST_Y_HEVC] + blkSizeOffset;
+    Ipp32u blkSizeOffset = IsLuma ? (L2Width*3 + ((L2Width+1)>>2)) : NUM_CTX_LAST_FLAG_XY;
+    Ipp32u shift = IsLuma ? ((L2Width+3) >> 2) : L2Width;
+    Ipp32u CtxIdxX = ctxIdxOffsetHEVC[LAST_X_HEVC] + blkSizeOffset;
+    Ipp32u CtxIdxY = ctxIdxOffsetHEVC[LAST_Y_HEVC] + blkSizeOffset;
     Ipp32u PosLastX, PosLastY;
 
     for (PosLastX = 0; PosLastX < mGIdx; PosLastX++)
@@ -2150,7 +2120,7 @@ Ipp32u H265SegmentDecoder::ParseLastSignificantXYCABAC(Ipp32u L2Width, bool IsLu
     if (PosLastX > 3 )
     {
         Ipp32u Temp  = 0;
-        Ipp32u Count = (PosLastX - 2) >> 1;
+        Ipp32s Count = (PosLastX - 2) >> 1;
         for (Ipp32s i = 0; i < Count; i++)
         {
             Temp |= m_pBitStream->DecodeSingleBinEP_CABAC();
@@ -2258,7 +2228,7 @@ void H265SegmentDecoder::ReconstructCU(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
     switch (pCU->m_PredModeArray[AbsPartIdx])
     {
         case MODE_INTER:
-            ReconInter(pCU, AbsPartIdx, Depth);
+            ReconInter(pCU, AbsPartIdx);
             break;
         case MODE_INTRA:
             ReconIntraQT(pCU, AbsPartIdx, Depth);
@@ -2299,10 +2269,10 @@ void H265SegmentDecoder::ReconIntraQT(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ip
     }
 }
 
-void H265SegmentDecoder::ReconInter(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
+void H265SegmentDecoder::ReconInter(H265CodingUnit* pCU, Ipp32u AbsPartIdx)
 {
     // inter prediction
-    m_Prediction->MotionCompensation(pCU, m_ppcYUVReco, AbsPartIdx, Depth, m_puinfo);
+    m_Prediction->MotionCompensation(pCU, m_ppcYUVReco, AbsPartIdx, m_puinfo);
 
     // clip for only non-zero cbp case
     if ((pCU->getCbf(AbsPartIdx, TEXT_LUMA)) || (pCU->getCbf(AbsPartIdx, TEXT_CHROMA_U)) || (pCU->getCbf(AbsPartIdx, TEXT_CHROMA_V )))

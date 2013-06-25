@@ -81,13 +81,13 @@ public:
     H265MotionVector *m_ColTUMV[2];
 
     void setCUOrderMap(Ipp32s encCUOrder, Ipp32s cuAddr)        { *(m_CUOrderMap + encCUOrder) = cuAddr; }
-    Ipp32u getCUOrderMap(Ipp32u encCUOrder)
+    Ipp32s getCUOrderMap(Ipp32u encCUOrder)
     {
         return *(m_CUOrderMap + (encCUOrder >= m_NumCUsInFrame ? m_NumCUsInFrame : encCUOrder));
     }
     Ipp32u getTileIdxMap(Ipp32s i)                              { return *(m_TileIdxMap + i); }
     void setInverseCUOrderMap(Ipp32s cuAddr, Ipp32s encCUOrder) {*(m_InverseCUOrderMap + cuAddr) = encCUOrder;}
-    Ipp32u GetInverseCUOrderMap(Ipp32u cuAddr)                  {return *(m_InverseCUOrderMap + (cuAddr >= m_NumCUsInFrame ? m_NumCUsInFrame : cuAddr));}
+    Ipp32s GetInverseCUOrderMap(Ipp32u cuAddr)                  {return *(m_InverseCUOrderMap + (cuAddr >= m_NumCUsInFrame ? m_NumCUsInFrame : cuAddr));}
 };
 
 } // end namespace UMC_HEVC_DECODER

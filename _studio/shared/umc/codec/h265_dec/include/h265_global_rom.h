@@ -59,14 +59,10 @@ extern Ipp32u g_PUOffset[8];
 #define SHIFT_INV_1ST          7 // Shift after first inverse transform stage
 #define SHIFT_INV_2ND         12 // Shift after second inverse transform stage
 
-#if (HEVC_OPT_CHANGES & 64)
 // ML: OPT: 16-bit to allow the use of PMULLW/PMULHW instead of PMULLD
 extern Ipp16u g_quantScales[6];             // Q(QP%6)
 extern Ipp16u g_invQuantScales[6];            // IQ(QP%6)
-#else
-extern Ipp32u g_quantScales[6];             // Q(QP%6)
-extern Ipp32u g_invQuantScales[6];            // IQ(QP%6)
-#endif
+
 extern const Ipp16s g_T4[4][4];
 extern const Ipp16s g_T8[8][8];
 extern const Ipp16s g_T16[16][16];
@@ -98,7 +94,6 @@ extern const Ipp8u g_AngModeMapping[4][34];
 extern const Ipp8u g_AngIntraModeOrder[NUM_INTRA_MODE];
 
 // Bit-depth ----------------------------------------------------------------------------------------------------------
-#if (HEVC_OPT_CHANGES & 16)
 // ML: OPT: Replacing with compile time const
 const Ipp32s g_bitDepthY = 8;
 const Ipp32s g_bitDepthC = 8;
@@ -119,14 +114,6 @@ template <typename T> inline T ClipY(T x) { return std::min<T>(T((1 << g_bitDept
 #endif
 
 #define ClipC ClipY
-
-#else
-extern Ipp32s g_bitDepthY;
-extern Ipp32s g_bitDepthC;
-
-template <typename T> inline T ClipY(T x) { return std::min<T>(T((1 << g_bitDepthY) - 1), std::max<T>( T(0), x)); }
-template <typename T> inline T ClipC(T x) { return std::min<T>(T((1 << g_bitDepthC) - 1), std::max<T>( T(0), x)); }
-#endif // HEVC_OPT_CHANGES
 
 extern Ipp32u g_PCMBitDepthLuma;
 extern Ipp32u g_PCMBitDepthChroma;

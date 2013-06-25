@@ -19,53 +19,8 @@
 
 #include <cstdarg>
 
-#if defined(_WIN32) || defined(_WIN64)
-  #define H265_ALIGNED_MALLOC _aligned_malloc
-  #define H265_ALIGNED_FREE _aligned_free
-#else
-  // TODO: aligned_alloc is available in C11, do we need to use it?
-  #define H265_ALIGNED_MALLOC(M,A) malloc(M)
-  #define H265_ALIGNED_FREE free
-#endif
-
 namespace UMC_HEVC_DECODER
 {
-
-
-Ipp8u * CumulativeArraysAllocation(int n, ...)
-{
-    va_list args;
-    va_start(args, n);
-
-    int cumulativeSize = 0;
-    for (int i = 0; i < n; i++)
-    {
-        void * ptr = va_arg(args, void *);
-        ptr; // just skip it
-
-        int currSize = va_arg(args, int);
-        cumulativeSize += currSize;
-    }
-
-    va_end(args);
-
-    Ipp8u *cumulativePtr = new Ipp8u[cumulativeSize + 32*n];
-    Ipp8u *cumulativePtrSaved = cumulativePtr;
-
-    va_start(args, n);
-
-    for (int i = 0; i < n; i++)
-    {
-        void ** ptr = va_arg(args, void **);
-        *ptr = UMC::align_pointer<void*> (cumulativePtr, 32);
-
-        int currSize = va_arg(args, int);
-        cumulativePtr = (Ipp8u*)*ptr + currSize;
-    }
-
-    va_end(args);
-    return cumulativePtrSaved;
-}
 
 // Constructor, destructor, create, destroy -------------------------------------------------------------
 H265CodingUnit::H265CodingUnit()
@@ -122,7 +77,7 @@ void H265CodingUnit::create (Ipp32u numPartition, Ipp32u Width, Ipp32u Height, b
 
     if (!DecSubCu)
     {
-         m_cumulativeMemoryPtr = CumulativeArraysAllocation(24,  &m_QPArray, sizeof(Ipp8u) * numPartition,
+         m_cumulativeMemoryPtr = CumulativeArraysAllocation(24, 32, &m_QPArray, sizeof(Ipp8u) * numPartition,
                                         &m_DepthArray, sizeof(Ipp8u) * numPartition,
                                         &m_WidthArray, sizeof(Ipp8u) * numPartition,
                                         &m_HeightArray, sizeof(Ipp8u) * numPartition,
@@ -169,7 +124,7 @@ void H265CodingUnit::destroy()
     {
         if (m_cumulativeMemoryPtr)
         {
-            delete[] m_cumulativeMemoryPtr;
+            CumulativeFree(m_cumulativeMemoryPtr);
             m_cumulativeMemoryPtr = 0;
         }
     }

@@ -540,18 +540,10 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
     }
 
     READ_UVLC(uiCode, "bit_depth_luma_minus8");
-#if !(HEVC_OPT_CHANGES & 16)
-// ML: OPT: Making bitDepth constant
-    g_bitDepthY = 8 + uiCode;
-#endif
     pcSPS->setBitDepthY(g_bitDepthY);
     pcSPS->setQpBDOffsetY((int) (6*uiCode));
 
     READ_UVLC(uiCode, "bit_depth_chroma_minus8");
-#if !(HEVC_OPT_CHANGES & 16)
-// ML: OPT: Making bitDepth constant
-    g_bitDepthC = 8 + uiCode;
-#endif
     pcSPS->setBitDepthC(g_bitDepthC);
     pcSPS->setQpBDOffsetC( (int) (6*uiCode) );
 
@@ -989,7 +981,6 @@ void H265HeadersBitstream::xParsePredWeightTable(H265Slice* pcSlice)
             pcSlice->getWpScaling(eRefPicList, iRefIdx, wp);
             if ( wp[0].bPresentFlag )
             {
-                int iDeltaWeight;
                 READ_SVLC( wp[0].iDeltaWeight, "delta_luma_weight_lX" );  // se(v): delta_luma_weight_l0[i]
                 wp[0].iWeight = (wp[0].iDeltaWeight + (1<<wp[0].uiLog2WeightDenom));
                 READ_SVLC( wp[0].iOffset, "luma_offset_lX" );       // se(v): luma_offset_l0[i]

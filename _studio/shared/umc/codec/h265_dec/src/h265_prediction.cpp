@@ -368,10 +368,9 @@ void H265Prediction::PredIntraAngLuma(Ipp32s bitDepth, H265PlanePtrYCommon pSrc,
             }
             if (Filter)
             {
-#if (HEVC_OPT_CHANGES & 32)
+#ifdef __INTEL_COMPILER
                 // ML : OPT: TODO: vectorize, replace 'maxVals' with constant to allow for PACKS usage
                 #pragma ivdep
-                // #pragma vector always
 #endif
                 for (k = 0;k < blkSize; k++)
                 {
@@ -473,9 +472,7 @@ void H265Prediction::PredIntraAngChroma(Ipp32s bitDepth, H265PlanePtrUVCommon pS
         dc1 = (H265PlaneUVCommon)((Sum1 + blkSize) / (blkSize << 1));
         dc2 = (H265PlaneUVCommon)((Sum2 + blkSize) / (blkSize << 1));
 
-#if (HEVC_OPT_CHANGES & 128)
-// ML: TODO: ICC generates bad seq with PEXTR instead of vectorizing properly
-#endif
+        // ML: TODO: ICC generates bad seq with PEXTR instead of vectorizing properly
         for (k = 0; k < blkSize; k++)
         {
             for (l = 0; l < blkSize * 2; l += 2)
@@ -609,13 +606,17 @@ void H265Prediction::DCPredFiltering(H265PlanePtrYCommon pSrc, Ipp32s SrcStride,
     // boundary pixels processing
     pDst[0] = (H265PlaneYCommon)((pSrc[-SrcStride] + pSrc[-1] + 2 * pDst[0] + 2) >> 2);
 
+#ifdef __INTEL_COMPILER
     #pragma ivdep
+#endif
     for (Ipp32s x = 1; x < Size; x++)
     {
         pDst[x] = (H265PlaneYCommon)((pSrc[x - SrcStride] + 3 * pDst[x] + 2) >> 2);
     }
 
+#ifdef __INTEL_COMPILER
     #pragma ivdep
+#endif
     for (Ipp32s y = 1, DstStride2 = DstStride, SrcStride2 = SrcStride - 1; y < Size; y++, DstStride2 += DstStride, SrcStride2 += SrcStride)
     {
         pDst[DstStride2] = (H265PlaneYCommon)((pSrc[SrcStride2] + 3 * pDst[DstStride2] + 2) >> 2);
@@ -645,7 +646,7 @@ void H265Prediction::PredIntraChromaAng(H265PlanePtrUVCommon pSrc, Ipp32u DirMod
     }
 }
 
-void H265Prediction::MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPadded* pPredYUV, Ipp32u AbsPartIdx, Ipp32u Depth, H265PUInfo *PUInfo)
+void H265Prediction::MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPadded* pPredYUV, Ipp32u AbsPartIdx, H265PUInfo *PUInfo)
 {
     VM_ASSERT(pCU->m_AbsIdxInLCU == 0);
     bool weighted_prediction = pCU->m_SliceHeader->slice_type == P_SLICE ? pCU->m_SliceHeader->m_PicParamSet->weighted_pred_flag :
@@ -1135,15 +1136,19 @@ public:
             t_vec  v_acc;
 
             _mm_prefetch( (const char*)(pSrc + in_SrcPitch), _MM_HINT_NTA ); 
+#ifdef __INTEL_COMPILER
             #pragma ivdep
             #pragma nounroll
+#endif
             for (i = 0; i < width; i += 8, pDst_ += 8 )
             {
                 t_vec v_acc2 = _mm_setzero_si128(); v_acc = _mm_setzero_si128();
                 const Ipp16s* coeffs = coeffs8x;
                 const t_src*  pSrc_ = pSrc + i;
 
+#ifdef __INTEL_COMPILER
                 #pragma unroll(c_tap)
+#endif
                 for (int k = 0; k < c_tap; ++k )
                 {
                     t_vec v_coeff = _mm_loadu_si128( k + ( const __m128i* )coeffs );
@@ -1268,7 +1273,7 @@ void H265_FORCEINLINE H265Prediction::Interpolate(
                         Ipp32s width,
                         Ipp32s height,
                         Ipp32s shift,
-                        Ipp16s offset,
+                        Ipp32s offset,
                         H265Prediction::EnumAddAverageType eAddAverage,
                         const void* in_pSrc2,
                         int    in_Src2Pitch ) // in samples
@@ -1293,12 +1298,17 @@ void H265Prediction::WriteAverageToPic(
                 Ipp32s width,
                 Ipp32s height )
 {
+#ifdef __INTEL_COMPILER
     #pragma unroll(2)
     #pragma ivdep
+#endif
     for (int j = 0; j < height; j++)
     {
+
+#ifdef __INTEL_COMPILER
         #pragma ivdep
         #pragma vector always
+#endif
         for (int i = 0; i < width; i++)
              pDst[i] = (((Ipp16u)pSrc0[i] + (Ipp16u)pSrc1[i] + 1) >> 1);
 
@@ -1326,10 +1336,14 @@ void H265Prediction::CopyPULuma(const H265PlaneYCommon * in_pSrc,
     Ipp16s *pDst = in_pDst;
     Ipp32s i, j;
 
-#pragma ivdep
+#ifdef __INTEL_COMPILER
+    #pragma ivdep
+#endif
     for (j = 0; j < height; j++)
     {
-#pragma vector always
+#ifdef __INTEL_COMPILER
+    #pragma vector always
+#endif
         for (i = 0; i < width; i++)
         {
             pDst[i] = (Ipp16s)(((Ipp32s)pSrc[i]) << c_shift);
@@ -1352,10 +1366,14 @@ void H265Prediction::CopyPUChroma(const H265PlaneUVCommon * in_pSrc,
     Ipp16s *pDst = in_pDst;
     Ipp32s i, j;
 
+#ifdef __INTEL_COMPILER
 #pragma ivdep
+#endif
     for (j = 0; j < height; j++)
     {
+#ifdef __INTEL_COMPILER
 #pragma vector always
+#endif
         for (i = 0; i < width * 2; i++)
         {
             pDst[i] = (Ipp16s)(((Ipp32s)pSrc[i]) << c_shift);

@@ -174,7 +174,7 @@ void H265SegmentDecoderMultiThreaded::RestoreErrorRect(Ipp32s , Ipp32s , H265Sli
     return;
 }
 
-UMC::Status H265SegmentDecoderMultiThreaded::DecRecSegment(Ipp32s iCurMBNumber, Ipp32s &iMBToProcess)
+UMC::Status H265SegmentDecoderMultiThreaded::DecRecSegment(Ipp32s iCurMBNumber, Ipp32s &)
 {
     H265Bitstream  bitstream;
     UMC::Status umcRes = UMC::UMC_OK;
@@ -362,7 +362,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(Ipp32s iCurMBNumber, I
     
     if (m_pSlice->getDependentSliceSegmentFlag())
     {
-        Ipp32u CUAddr = m_pCurrentFrame->m_CodingData->getCUOrderMap(iFirstCU);
+        Ipp32s CUAddr = m_pCurrentFrame->m_CodingData->getCUOrderMap(iFirstCU);
 
         size_t tile = m_pCurrentFrame->m_CodingData->getTileIdxMap(CUAddr);
         if (m_pPicParamSet->tilesInfo[tile].firstCUAddr != CUAddr)
