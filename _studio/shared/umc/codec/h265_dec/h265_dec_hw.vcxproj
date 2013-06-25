@@ -24,7 +24,6 @@
     <ClCompile Include="src\h265_frame_coding_data.cpp" />
     <ClCompile Include="src\h265_global_rom.cpp" />
     <ClCompile Include="src\h265_intrapred.cpp" />
-    <ClCompile Include="src\h265_motion_info.cpp" />
     <ClCompile Include="src\h265_prediction.cpp" />
     <ClCompile Include="src\h265_tr_quant.cpp" />
     <ClCompile Include="src\h265_tr_quant_opt.cpp" />
