@@ -755,7 +755,10 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
         DecodeIntraDirChromaCABAC(pCU, AbsPartIdx, Depth);
     }
     else
+    {
+        pCU->setIPCMFlagSubParts(false, AbsPartIdx, Depth);
         isFirstPartMerge = DecodePUWiseCABAC(pCU, AbsPartIdx, Depth);
+    }
 
     Ipp32u CurrWidth = pCU->m_WidthArray[AbsPartIdx];
     Ipp32u CurrHeight = pCU->m_HeightArray[AbsPartIdx];
@@ -826,6 +829,7 @@ bool H265SegmentDecoder::DecodeSkipFlagCABAC(H265CodingUnit* pCU, Ipp32u AbsPart
         pCU->setPredModeSubParts(MODE_INTER, AbsPartIdx, Depth);
         pCU->setPartSizeSubParts(SIZE_2Nx2N, AbsPartIdx, Depth);
         pCU->setSizeSubParts(g_MaxCUWidth >> Depth, g_MaxCUHeight >> Depth, AbsPartIdx, Depth);
+        pCU->setIPCMFlagSubParts(false, AbsPartIdx, Depth);
         return true;
     }
     else
