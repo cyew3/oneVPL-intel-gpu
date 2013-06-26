@@ -439,8 +439,12 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
     {
         VPE_GUID_INFO *pGuidInfo = &guidEnum.pGuidArray[guidIdx];
 
+#ifdef DEBUG_DETAIL_INFO
+#ifndef MSDK_BANNED
         printf("GUID[%d] = ", guidIdx);
         printGuid(pGuidInfo->Guid);
+#endif
+#endif
 
         if(VPE_GUID_INTERFACE_V1 == pGuidInfo->Guid)
         {
@@ -454,6 +458,8 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
             idxVer2      = guidIdx;
         }
 
+#ifdef DEBUG_DETAIL_INFO
+#ifndef MSDK_BANNED
         for(mfxU16 verIdx = 0; verIdx < pGuidInfo->VersionCount; verIdx++)
         {
             printf("\n\tVersion = %04x\n", pGuidInfo->pVersion[verIdx]);
@@ -463,8 +469,11 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
              printf("\n\tVersion = N/A\n");
         }
         printf("\n");
+#endif
+#endif
     }
-
+/*
+    TODO: VPP enable query of new interface only for 15.36 (HSW and BDW)
     if(isVer2Enable)
     {
         m_iface.guid    = guidEnum.pGuidArray[idxVer2].Guid;       
@@ -476,6 +485,7 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
         m_iface.version = guidEnum.pGuidArray[idxVer1].pVersion[0];
     }
     else
+*/
     {
         //AYA: critical: MSDK should pick one of VPE_GUID & Version which supported by driver. 
         // selection is simple: pick iface with maximum capabilities. will be implemented later.
@@ -503,8 +513,8 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
             &preprocMode);
         CHECK_HRES(hRes);
 
-    #ifdef DEBUG_DETAIL_INFO
-    #ifndef MSDK_BANNED
+#ifdef DEBUG_DETAIL_INFO
+#ifndef MSDK_BANNED
         printf("Success: get preproc caps\n");
 
         printf("bInterlacedScaling  = [%d]\n", m_vpreCaps.bInterlacedScaling);
@@ -513,8 +523,8 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
         printf("bIS                 = [%d]\n", m_vpreCaps.bIS);
         printf("bVariance           = [%d]\n", m_vpreCaps.bVariance);
         printf("bFieldWeavingControl= [%d]\n", m_vpreCaps.bFieldWeavingControl);
-    #endif
-    #endif
+#endif
+#endif
     }
     else //if( VPE_GUID_INTERFACE_V2  == m_iface.guid )
     {
@@ -563,8 +573,8 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
             &iFunc);
         CHECK_HRES(hRes);
 
-    //#ifdef DEBUG_DETAIL_INFO
-    //#ifndef MSDK_BANNED
+#ifdef DEBUG_DETAIL_INFO
+#ifndef MSDK_BANNED
         printf("Success: VPE VPREP CAPS\n");
 
         printf("bImageStabilization  = [%d]\n", vpeCaps.bImageStabilization);
@@ -582,8 +592,8 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
         // to prevent any issues (HLD not completed yet on VPG side)
         //m_vpreCaps.bVariance = 0;
 
-    //#endif
-    //#endif
+#endif
+#endif
     }
 
     return MFX_ERR_NONE;
