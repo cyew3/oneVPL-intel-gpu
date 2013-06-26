@@ -53,9 +53,9 @@ enum {
 /* Frame Info */
 typedef struct  
 {
-    mfxU16                Bitrate;         // bitstream in bps
+    mfxU32                Bitrate;         // bitstream in bps
     mfxU16                Channels;        // number of audio channels
-    mfxU16                SampleFrequency; // sample rate in Hz
+    mfxU32                SampleFrequency; // sample rate in Hz
     mfxU16                BitPerSample;    // 0 if compressed
     mfxU32                reserved[5]; 
 } mfxAudioStreamInfo;
@@ -200,7 +200,7 @@ mfxStatus MFX_CDECL MFXAudioDECODE_DecodeHeader(mfxSession session, mfxBitstream
 mfxStatus MFX_CDECL MFXAudioDECODE_Init(mfxSession session, mfxAudioParam *par);
 mfxStatus MFX_CDECL MFXAudioDECODE_Reset(mfxSession session, mfxAudioParam *par);
 mfxStatus MFX_CDECL MFXAudioDECODE_Close(mfxSession session);
-mfxStatus MFX_CDECL MFXAudioDECODE_QueryIOSurf(mfxSession session, mfxAudioParam *par, mfxAudioAllocRequest *request);
+mfxStatus MFX_CDECL MFXAudioDECODE_QueryIOSize(mfxSession session, mfxAudioParam *par, mfxAudioAllocRequest *request);
 mfxStatus MFX_CDECL MFXAudioDECODE_GetAudioParam(mfxSession session, mfxAudioParam *par);
 mfxStatus MFX_CDECL MFXAudioDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs /*mfxRAWAudio *buffer_out*/,mfxBitstream *buffer_out, mfxSyncPoint *syncp);
 
