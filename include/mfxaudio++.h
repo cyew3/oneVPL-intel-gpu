@@ -62,7 +62,7 @@ public:
     mfxStatus Reset(mfxAudioParam *par) { return MFXAudioDECODE_Reset(m_session, par); }
     mfxStatus Close(void) { return MFXAudioDECODE_Close(m_session); }
     mfxStatus GetAudioParam(mfxAudioParam *par) { return MFXAudioDECODE_GetAudioParam(m_session, par); }
-    mfxStatus DecodeFrameAsync(mfxBitstream *bs, mfxBitstream *bitstream_work, mfxBitstream **bitstream_out, mfxSyncPoint *syncp) { return MFXAudioDECODE_DecodeFrameAsync(m_session, bs, /*bitstream_work,*/ *bitstream_out, syncp); }
+    mfxStatus DecodeFrameAsync(mfxBitstream *bs, mfxBitstream *buffer_out, mfxSyncPoint *syncp) { return MFXAudioDECODE_DecodeFrameAsync(m_session, bs, buffer_out, syncp); }
 
 
 protected:
