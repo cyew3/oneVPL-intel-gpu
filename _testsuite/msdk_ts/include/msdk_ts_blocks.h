@@ -79,6 +79,7 @@ msdk_ts_DECLARE_BLOCK(b_MFXAudioENCODE_EncodeFrameAsync);
 
 //AudioDecode
 msdk_ts_DECLARE_BLOCK(b_MFXAudioDECODE_Query);
+msdk_ts_DECLARE_BLOCK(b_MFXAudioDECODE_QueryIOSize);
 msdk_ts_DECLARE_BLOCK(b_MFXAudioDECODE_DecodeHeader);
 msdk_ts_DECLARE_BLOCK(b_MFXAudioDECODE_Init);
 msdk_ts_DECLARE_BLOCK(b_MFXAudioDECODE_Reset);
