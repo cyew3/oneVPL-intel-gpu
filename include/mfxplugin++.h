@@ -156,9 +156,7 @@ public:
 
 /* Class adapter between "C" structure mfxPlugin and C++ interface MFXPlugin */
 
-/* adapter for particular plugin type*/
-template<class T>
-class MFXPluginAdapter
+namespace detail 
 {
     template <class T>
     class MFXPluginAdapterBase
@@ -304,9 +302,14 @@ class MFXPluginAdapter
             return reinterpret_cast<MFXEncoderPlugin*>(pthis)->EncodeFrameSubmit(ctrl, surface, bs, task);
         }
     };
+}
 
+/* adapter for particular plugin type*/
+template<class T>
+class MFXPluginAdapter
+{
 public:
-    MFXPluginAdapterInternal<T> m_Adapter;
+    detail::MFXPluginAdapterInternal<T> m_Adapter;
     
     operator  mfxPlugin* () {
         return m_Adapter.operator mfxPlugin*();
