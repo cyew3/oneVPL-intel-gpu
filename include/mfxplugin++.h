@@ -116,9 +116,11 @@ public:
     MFXCoreInterface(const mfxCoreInterface & pCore)
         : m_pCore(pCore) {
         FrameAllocator = m_pCore.FrameAllocator;
+        InternalSurfaceAllocator = m_pCore.InternalSurfaceAllocator;
     }
 
     mfxFrameAllocator FrameAllocator;
+    mfxFrameAllocator InternalSurfaceAllocator;
 
     mfxStatus GetCoreParam(mfxCoreParam *par) {
         return m_pCore.GetCoreParam(m_pCore.pthis, par);
@@ -249,7 +251,7 @@ namespace detail
         MFXGenericPlugin* m_genPlugin;
     public:
         MFXPluginAdapterInternal(MFXGenericPlugin *pPlugin)
-            : MFXPluginAdapterBase(pPlugin, NULL)
+            : MFXPluginAdapterBase(pPlugin, 0)
             , m_genPlugin(pPlugin)
         {
             m_mfxAPI.pthis = m_genPlugin;
