@@ -32,7 +32,7 @@
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <Import Project="..\..\Intel.Mfx.Common.props" />  
+  <Import Project="..\..\Intel.Mfx.Common.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
@@ -119,7 +119,7 @@
       <Outputs>%(Outputs)</Outputs>
     </CustomBuildStep>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\include;..\..\mfx_hw\shared\include\;..\shared\include;..\..\shared\include;vc1\include;mjpeg\include;h264\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\brc\vc1\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\me\include;$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\ia32\include;..\..\shared\umc\core\vm_plus\include;..\enc_hw\mpeg2\include;..\pak\mpeg2\include;..\pak\h264\include;..\pak\vp8\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\brc\include;..\encode\h264\include;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_enc\include;mpeg2\include;vp8\include;svc\include;..\..\..\thirdparty\vp8_cmodel;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;..\..\..\include;..\..\mfx_hw\shared\include\;..\shared\include;..\..\shared\include;vc1\include;mjpeg\include;h264\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\brc\vc1\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\me\include;$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\ia32\include;..\..\shared\umc\core\vm_plus\include;..\enc_hw\mpeg2\include;..\pak\mpeg2\include;..\pak\h264\include;..\pak\vp8\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\brc\include;..\encode\h264\include;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_enc\include;mpeg2\include;vp8\include;svc\include;..\..\..\thirdparty\vp8_cmodel;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;MFX_VA;ENABLE_CM;CM_GEN7_5;USE_HSW_VME;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
@@ -139,7 +139,7 @@
       <Outputs>%(Outputs)</Outputs>
     </CustomBuildStep>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\include;..\..\mfx_hw\shared\include\;..\shared\include;..\..\shared\include;vc1\include;mjpeg\include;h264\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\brc\vc1\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\me\include;$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\ia32\include;..\..\shared\umc\core\vm_plus\include;..\enc_hw\mpeg2\include;..\pak\mpeg2\include;..\pak\h264\include;..\pak\vp8\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\brc\include;..\encode\h264\include;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_enc\include;mpeg2\include;vp8\include;svc\include;..\..\..\thirdparty\vp8_cmodel;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;..\..\..\include;..\..\mfx_hw\shared\include\;..\shared\include;..\..\shared\include;vc1\include;mjpeg\include;h264\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\brc\vc1\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\me\include;$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\ia32\include;..\..\shared\umc\core\vm_plus\include;..\enc_hw\mpeg2\include;..\pak\mpeg2\include;..\pak\h264\include;..\pak\vp8\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\brc\include;..\encode\h264\include;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_enc\include;mpeg2\include;vp8\include;svc\include;..\..\..\thirdparty\vp8_cmodel;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;MFX_VA;ENABLE_CM;CM_GEN7_5;USE_HSW_VME;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
@@ -155,7 +155,7 @@
     <ClCompile>
       <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;MFX_VA;CMRT_EMU;ENABLE_CM;CM_GEN7_5;USE_HSW_VME;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -179,7 +179,7 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll ..\..\..\..\build\win_$(Pl
     </Midl>
     <ClCompile>
       <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>..\..\..\include;..\..\mfx_hw\shared\include\;..\shared\include;..\..\shared\include;vc1\include;mpeg2\include;h264\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\brc\vc1\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\me\include;$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\em64t\include;..\..\shared\umc\core\vm_plus\include;..\enc_hw\mpeg2\include;..\pak\mpeg2\include;..\pak\h264\include;..\pak\vp8\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\brc\include;..\encode\h264\include;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_enc\include;mjpeg\include;vp8\include;svc\include;..\..\..\thirdparty\vp8_cmodel;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;..\..\..\include;..\..\mfx_hw\shared\include\;..\shared\include;..\..\shared\include;vc1\include;mpeg2\include;h264\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\brc\vc1\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\me\include;$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\em64t\include;..\..\shared\umc\core\vm_plus\include;..\enc_hw\mpeg2\include;..\pak\mpeg2\include;..\pak\h264\include;..\pak\vp8\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\brc\include;..\encode\h264\include;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_enc\include;mjpeg\include;vp8\include;svc\include;..\..\..\thirdparty\vp8_cmodel;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;MFX_VA;ENABLE_CM;CM_GEN7_5;USE_HSW_VME;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -200,7 +200,7 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll ..\..\..\..\build\win_$(Pl
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>..\..\..\include;..\..\mfx_hw\shared\include\;..\shared\include;..\..\shared\include;vc1\include;mpeg2\include;h264\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\brc\vc1\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\me\include;$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\em64t\include;..\..\shared\umc\core\vm_plus\include;..\enc_hw\mpeg2\include;..\pak\mpeg2\include;..\pak\h264\include;..\pak\vp8\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\brc\include;..\encode\h264\include;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_enc\include;mjpeg\include;vp8\include;svc\include;..\..\..\thirdparty\vp8_cmodel;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;..\..\..\include;..\..\mfx_hw\shared\include\;..\shared\include;..\..\shared\include;vc1\include;mpeg2\include;h264\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\brc\vc1\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\me\include;$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\em64t\include;..\..\shared\umc\core\vm_plus\include;..\enc_hw\mpeg2\include;..\pak\mpeg2\include;..\pak\h264\include;..\pak\vp8\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\brc\include;..\encode\h264\include;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_enc\include;mjpeg\include;vp8\include;svc\include;..\..\..\thirdparty\vp8_cmodel;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;MFX_VA;ENABLE_CM;CM_GEN7_5;USE_HSW_VME;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
@@ -216,7 +216,7 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll ..\..\..\..\build\win_$(Pl
     <ClCompile>
       <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\..\include;..\..\mfx_hw\shared\include\;..\shared\include;..\..\shared\include;vc1\include;mpeg2\include;h264\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\brc\vc1\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\me\include;$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\em64t\include;..\..\shared\umc\core\vm_plus\include;..\enc_hw\mpeg2\include;..\pak\mpeg2\include;..\pak\h264\include;..\pak\vp8\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\brc\include;..\encode\h264\include;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_enc\include;mjpeg\include;vp8\include;svc\include;..\..\..\thirdparty\vp8_cmodel;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;..\..\..\include;..\..\mfx_hw\shared\include\;..\shared\include;..\..\shared\include;vc1\include;mpeg2\include;h264\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\brc\vc1\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\me\include;$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\em64t\include;..\..\shared\umc\core\vm_plus\include;..\enc_hw\mpeg2\include;..\pak\mpeg2\include;..\pak\h264\include;..\pak\vp8\include;..\..\shared\umc\io\umc_va\include;..\..\shared\umc\codec\brc\include;..\encode\h264\include;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_enc\include;mjpeg\include;vp8\include;svc\include;..\..\..\thirdparty\vp8_cmodel;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -237,6 +237,7 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll ..\..\..\..\build\win_$(Pl
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="src\genx_hsw_simple_me_isa.cpp" />
+    <ClCompile Include="src\genx_hsw_simple_me_proto.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\genx_hsw_simple_me_isa.h" />

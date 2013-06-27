@@ -187,6 +187,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "genx_h264_encode_embeded", 
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "h265_dec_hw", "..\shared\umc\codec\h265_dec\h265_dec_hw.vcxproj", "{C712BA45-AC67-4A16-BD5D-2619EB325182}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cmrt_cross_platform", "cmrt_cross_platform\cmrt_cross_platform.vcxproj", "{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug_HSW_Emu|Win32 = Debug_HSW_Emu|Win32
@@ -786,6 +788,22 @@ Global
 		{C712BA45-AC67-4A16-BD5D-2619EB325182}.Release|Win32.Build.0 = release|Win32
 		{C712BA45-AC67-4A16-BD5D-2619EB325182}.Release|x64.ActiveCfg = release|x64
 		{C712BA45-AC67-4A16-BD5D-2619EB325182}.Release|x64.Build.0 = release|x64
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Debug_HSW_Emu|Win32.ActiveCfg = Debug|Win32
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Debug_HSW_Emu|Win32.Build.0 = Debug|Win32
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Debug_HSW_Emu|x64.ActiveCfg = Debug|x64
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Debug_HSW_Emu|x64.Build.0 = Debug|x64
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Debug|Win32.ActiveCfg = Debug|Win32
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Debug|Win32.Build.0 = Debug|Win32
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Debug|x64.ActiveCfg = Debug|x64
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Debug|x64.Build.0 = Debug|x64
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Release (Intel)|Win32.ActiveCfg = Release|Win32
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Release (Intel)|Win32.Build.0 = Release|Win32
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Release (Intel)|x64.ActiveCfg = Release|x64
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Release (Intel)|x64.Build.0 = Release|x64
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Release|Win32.ActiveCfg = Release|Win32
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Release|Win32.Build.0 = Release|Win32
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Release|x64.ActiveCfg = Release|x64
+		{811626EB-8608-4CAC-ABEE-CD99DAEC38C4}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

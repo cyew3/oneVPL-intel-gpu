@@ -1,4 +1,4 @@
-/*//////////////////////////////////////////////////////////////////////////////
+/*
 //
 //                  INTEL CORPORATION PROPRIETARY INFORMATION
 //     This software is supplied under the terms of a license agreement or
@@ -16,61 +16,13 @@
 #include <string>
 #include <stdexcept> /* for std exceptions on Linux/Android */
 
-#pragma warning(push)
-#pragma warning(disable: 4100)
-#include "cm_rt.h"
-#pragma warning(pop)
+#include "libmfx_core_interface.h"
 
+#include "cmrt_cross_platform.h"
 #include "mfx_h264_encode_cm_defs.h"
 #include "mfx_h264_encode_cm.h"
 #include "mfx_h264_encode_hw_utils.h"
-#include "../../../genx/h264_encode/include/genx_hsw_simple_me_isa.h"
-
-namespace MfxHwH264Encode
-{
-
-CmDevice *  g_cmDevice = 0;
-mfxU32      g_refCount = 0;
-UMC::Mutex  g_cmDeviceMutex;
-
-CmDevice * CreateGlobalCmDevice(IDirect3DDeviceManager9 * manager)
-{
-    UMC::AutomaticUMCMutex guard(g_cmDeviceMutex);
-    if (g_cmDevice == 0)
-    {
-        mfxU32 version = 0;
-        CmDevice * device = CreateCmDevicePtr(manager, &version);
-
-        if (version < 204)
-        {
-            ::DestroyCmDevice(device);
-            throw CmRuntimeError();
-        }
-
-        if (version == 204)
-        {
-            g_cmDevice = device;
-            g_refCount++;
-        }
-
-        return device;
-    }
-
-    g_refCount++;
-    return g_cmDevice;
-}
-
-void DestroyGlobalCmDevice(CmDevice * device)
-{
-    if (device)
-    {
-        UMC::AutomaticUMCMutex guard(g_cmDeviceMutex);
-        if (g_refCount == 0 || --g_refCount == 0)
-            ::DestroyCmDevice(device);
-    }
-}
-
-};
+#include "genx_hsw_simple_me_isa.h"
 
 
 namespace
@@ -82,65 +34,15 @@ const char   ME_PROGRAM_NAME[] = "genx_hsw_simple_me.isa";
 const mfxU32 SEARCHPATHSIZE    = 56;
 const mfxU32 BATCHBUFFER_END   = 0x5000000;
 
-CmProgram * ReadProgram(CmDevice * device, std::istream & is)
-{
-    CmProgram * program = 0;
-    char * code = 0;
-    std::streamsize size = 0;
-    device, is;
-
-#ifndef CMRT_EMU
-    is.seekg(0, std::ios::end);
-    size = is.tellg();
-    is.seekg(0, std::ios::beg);
-    if (size == 0)
-        throw CmRuntimeError();
-
-    std::vector<char> buf((unsigned int)size);
-    code = &buf[0];
-    is.read(code, size);
-    if (is.gcount() != size)
-        throw CmRuntimeError();
-#endif // CMRT_EMU
-
-    if (device->LoadProgram(code, mfxU32(size), program, "nojitter") != CM_SUCCESS)
-        throw CmRuntimeError();
-
-    return program;
-}
-
-CmProgram * ReadProgram(CmDevice * device, char const * filename)
-{
-    std::fstream f;
-    filename;
-#ifndef CMRT_EMU
-    f.open(filename, std::ios::binary | std::ios::in);
-    if (!f)
-        throw CmRuntimeError();
-#endif // CMRT_EMU
-    return ReadProgram(device, f);
-}
-
-CmProgram * ReadProgram(CmDevice * device, const unsigned char* buffer, int len)
+CmProgram * ReadProgram(CmDevice * device, const mfxU8 * buffer, size_t len)
 {
     int result = CM_SUCCESS;
     CmProgram * program = 0;
 
-    if ((result = device->LoadProgram((void*)buffer, len, program, "nojitter")) != CM_SUCCESS)
+    if ((result = ::ReadProgram(device, program, buffer, (mfxU32)len)) != CM_SUCCESS)
         throw CmRuntimeError();
 
     return program;
-}
-
-CmKernel * CreateKernel(CmDevice * device, CmProgram * program, char const * name)
-{
-    int result = CM_SUCCESS;
-    CmKernel * kernel = 0;
-
-    if ((result = device->CreateKernel(program, name, kernel)) != CM_SUCCESS)
-        throw CmRuntimeError();
-
-    return kernel;
 }
 
 CmKernel * CreateKernel(CmDevice * device, CmProgram * program, char const * name, void * funcptr)
@@ -148,7 +50,7 @@ CmKernel * CreateKernel(CmDevice * device, CmProgram * program, char const * nam
     int result = CM_SUCCESS;
     CmKernel * kernel = 0;
 
-    if ((result = device->CreateKernel(program, name, funcptr, kernel)) != CM_SUCCESS)
+    if ((result = ::CreateKernel(device, program, name, funcptr, kernel)) != CM_SUCCESS)
         throw CmRuntimeError();
 
     return kernel;
@@ -243,15 +145,47 @@ void Write(CmBuffer * buffer, void * buf, CmEvent * e = 0)
 namespace MfxHwH264Encode
 {
 
-CmDevice * CreateCmDevicePtr(IDirect3DDeviceManager9 * manager, mfxU32 * version)
+CmDevice * TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * version)
 {
     mfxU32 versionPlaceholder = 0;
     if (version == 0)
         version = &versionPlaceholder;
 
     CmDevice * device = 0;
-    int result = ::CreateCmDevice(device, *version, manager);
-    if (result != CM_SUCCESS )
+
+    int result = CM_SUCCESS;
+    if (core->GetVAType() == MFX_HW_D3D9)
+    {
+#if defined(_WIN32) || defined(_WIN64)
+        D3D9Interface * d3dIface = QueryCoreInterface<D3D9Interface>(core, MFXICORED3D_GUID);
+        if (d3dIface == 0)
+            return 0;
+        if ((result = ::CreateCmDevice(device, *version, d3dIface->GetD3D9DeviceManager())) != CM_SUCCESS)
+            return 0;
+#endif
+    }
+    else if (core->GetVAType() == MFX_HW_D3D11)
+    {
+#if defined(_WIN32) || defined(_WIN64)
+        D3D11Interface * d3dIface = QueryCoreInterface<D3D11Interface>(core, MFXICORED3D11_GUID);
+        if (d3dIface == 0)
+            return 0;
+        if ((result = ::CreateCmDevice(device, *version, d3dIface->GetD3D11Device())) != CM_SUCCESS)
+            return 0;
+#endif
+    }
+    else if (core->GetVAType() == MFX_HW_VAAPI)
+    {
+        throw std::logic_error("GetDeviceManager not implemented on Linux for Look Ahead");
+    }
+
+    return device;
+}
+
+CmDevice * CreateCmDevicePtr(VideoCORE * core, mfxU32 * version)
+{
+    CmDevice * device = TryCreateCmDevicePtr(core, version);
+    if (device == 0)
         throw CmRuntimeError();
     return device;
 }
@@ -288,38 +222,6 @@ CmDevicePtr & CmDevicePtr::operator = (CmDevice * device)
 }
 
 CmDevicePtr::operator CmDevice * ()
-{
-    return m_device;
-}
-
-
-GlobalCmDevicePtr::GlobalCmDevicePtr()
-    : m_device(0)
-{
-}
-
-GlobalCmDevicePtr::~GlobalCmDevicePtr()
-{
-    Destroy();
-}
-
-void GlobalCmDevicePtr::Create(IDirect3DDeviceManager9 * manager)
-{
-    m_device = CreateGlobalCmDevice(manager);
-}
-
-void GlobalCmDevicePtr::Destroy()
-{
-    DestroyGlobalCmDevice(m_device);
-    m_device = 0;
-}
-
-CmDevice * GlobalCmDevicePtr::operator -> ()
-{
-    return m_device;
-}
-
-GlobalCmDevicePtr::operator CmDevice * ()
 {
     return m_device;
 }
@@ -392,15 +294,6 @@ SurfaceIndex const & CmSurface::GetIndex()
 {
     return ::GetIndex(m_surface);
 }
-
-/*
-IDirect3DSurface9 const & CmSurface::GetDXSurface()
-{
-    IDirect3DSurface9* dxSurface = 0;
-    if (m_surface->GetD3DSurface(dxSurface) != CM_SUCCESS)
-        throw CmRuntimeError();
-    return *dxSurface;
-}*/
 
 void CmSurface::Read(void * buf, CmEvent * e)
 {
@@ -537,13 +430,44 @@ CmSurface2D * CreateSurface(CmDevice * device, IDirect3DSurface9 * d3dSurface)
 {
     int result = CM_SUCCESS;
     CmSurface2D * cmSurface = 0;
-#if defined(_WIN32) || defined(_WIN64)
     if (device && d3dSurface && (result = device->CreateSurface2D(d3dSurface, cmSurface)) != CM_SUCCESS)
         throw CmRuntimeError();
-#else
-    throw std::logic_error("CreateSurface2D is not available on Linux at the moment");
-#endif
     return cmSurface;
+}
+
+
+CmSurface2D * CreateSurface(CmDevice * device, ID3D11Texture2D * d3dSurface)
+{
+    int result = CM_SUCCESS;
+    CmSurface2D * cmSurface = 0;
+    if (device && d3dSurface && (result = device->CreateSurface2D(d3dSurface, cmSurface)) != CM_SUCCESS)
+        throw CmRuntimeError(); 
+    return cmSurface;
+}
+
+
+CmSurface2D * CreateSurface2DSubresource(CmDevice * device, ID3D11Texture2D * d3dSurface)
+{
+    int result = CM_SUCCESS;
+    CmSurface2D * cmSurface = 0;
+    mfxU32 cmSurfaceCount = 1;
+    if (device && d3dSurface && (result = device->CreateSurface2DSubresource(d3dSurface, 1, &cmSurface, cmSurfaceCount)) != CM_SUCCESS)
+        throw CmRuntimeError();
+    return cmSurface;
+}
+
+
+CmSurface2D * CreateSurface(CmDevice * device, mfxHDL nativeSurface, eMFXVAType vatype)
+{
+    switch (vatype)
+    {
+    case MFX_HW_D3D9:
+        return CreateSurface(device, (IDirect3DSurface9 *)nativeSurface);
+    case MFX_HW_D3D11:
+        return CreateSurface2DSubresource(device, (ID3D11Texture2D *)nativeSurface);
+    default:
+        throw CmRuntimeError();
+    }
 }
 
 
@@ -887,19 +811,15 @@ void CmContext::Setup(
     m_video  = video;
     m_device = cmDevice;
 
-#ifndef CMRT_EMU
-    m_program = ReadProgram(m_device, genx_hsw_simple_me, sizeof(genx_hsw_simple_me)/sizeof(genx_hsw_simple_me[0]));
-#else
-    m_program = ReadProgram(m_device, ME_PROGRAM_NAME);
-#endif
+    m_program = ReadProgram(m_device, genx_hsw_simple_me, SizeOf(genx_hsw_simple_me));
 
-    m_kernelI = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(SVCEncMB_I));
-    m_kernelP = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(SVCEncMB_P));
-    m_kernelB = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(SVCEncMB_B));
+    m_kernelI = CreateKernel(m_device, m_program, "SVCEncMB_I", (void *)SVCEncMB_I);
+    m_kernelP = CreateKernel(m_device, m_program, "SVCEncMB_P", (void *)SVCEncMB_P);
+    m_kernelB = CreateKernel(m_device, m_program, "SVCEncMB_B", (void *)SVCEncMB_B);
 
-    m_kernelDownSample = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(DownSampleMB));
-    m_kernelHme_P = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(HmeMB_P));
-    m_kernelHme_B = CreateKernel(m_device, m_program, CM_KERNEL_FUNCTION(HmeMB_B));
+    m_kernelDownSample = CreateKernel(m_device, m_program, "DownSampleMB", (void *)DownSampleMB);
+    m_kernelHme_P = CreateKernel(m_device, m_program, "HmeMB_P", (void *)HmeMB_P);
+    m_kernelHme_B = CreateKernel(m_device, m_program, "HmeMB_B", (void *)HmeMB_B);
 
     m_curbeData.Reset(m_device, sizeof(SVCEncCURBEData));
     m_nullBuf.Reset(m_device, 4);
@@ -907,7 +827,7 @@ void CmContext::Setup(
     m_hme.Reset(m_device,
         video.mfx.FrameInfo.Width / 16 * sizeof(mfxI16Pair) * 2,
         video.mfx.FrameInfo.Height / 16,
-        CM_SURFACE_FORMAT_P8); // 8 bytes (2 MVs) for every Mb
+        CM_SURFACE_FORMAT_A8); // 8 bytes (2 MVs) for every Mb
 
     SetCosts(m_costsI, MFX_FRAMETYPE_I, 26, 2, 3);
     SetCosts(m_costsP, MFX_FRAMETYPE_P, 26, 2, 3);

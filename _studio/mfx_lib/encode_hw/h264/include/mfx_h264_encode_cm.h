@@ -16,11 +16,7 @@
 #include <vector>
 #include <assert.h>
 
-#if !defined(_WIN32) && !defined(_WIN64)
-#include <cm_rt.h>
-#endif
-
-#include <mfx_platform_headers.h>
+#include "cmrt_cross_platform.h"
 
 class CmDevice;
 class CmBuffer;
@@ -33,13 +29,6 @@ class CmKernel;
 class SurfaceIndex;
 class CmThreadSpace;
 class CmTask;
-#if defined(_WIN32) || defined(_WIN64)
-interface IDirect3DSurface9;
-interface IDirect3DDeviceManager9;
-#else
-typedef void IDirect3DSurface9;
-typedef void IDirect3DDeviceManager9;
-#endif
 
 namespace MfxHwH264Encode
 {
@@ -86,27 +75,6 @@ private:
     CmDevice * m_device;
 };
 
-class GlobalCmDevicePtr
-{
-public:
-    explicit GlobalCmDevicePtr();
-
-    ~GlobalCmDevicePtr();
-
-    void Create(IDirect3DDeviceManager9 * manager);
-
-    void Destroy();
-
-    CmDevice * operator -> ();
-
-    operator CmDevice * ();
-
-private:
-    GlobalCmDevicePtr(GlobalCmDevicePtr const &);
-    void operator = (GlobalCmDevicePtr const &);
-
-    CmDevice * m_device;
-};
 
 class CmSurface
 {
@@ -128,8 +96,6 @@ public:
     void Reset(CmDevice * device, mfxU32 width, mfxU32 height, mfxU32 fourcc);
 
     SurfaceIndex const & GetIndex();
-
-//    IDirect3DSurface9 const & GetDXSurface();
 
     void Read(void * buf, CmEvent * e = 0);
 
@@ -186,7 +152,9 @@ private:
     CmBuffer *  m_buffer;
 };
 
-CmDevice * CreateCmDevicePtr(IDirect3DDeviceManager9 * manager, mfxU32 * version = 0);
+CmDevice * TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * version = 0);
+
+CmDevice * CreateCmDevicePtr(VideoCORE * core, mfxU32 * version = 0);
 
 void DestroyGlobalCmDevice(CmDevice * device);
 
@@ -195,6 +163,12 @@ CmBuffer * CreateBuffer(CmDevice * device, mfxU32 size);
 CmBufferUP * CreateBuffer(CmDevice * device, mfxU32 size, void * mem);
 
 CmSurface2D * CreateSurface(CmDevice * device, IDirect3DSurface9 * d3dSurface);
+
+CmSurface2D * CreateSurface(CmDevice * device, ID3D11Texture2D * d3dSurface);
+
+CmSurface2D * CreateSurface2DSubresource(CmDevice * device, ID3D11Texture2D * d3dSurface);
+
+CmSurface2D * CreateSurface(CmDevice * device, mfxHDL nativeSurface, eMFXVAType vatype);
 
 CmSurface2D * CreateSurface(CmDevice * device, mfxU32 width, mfxU32 height, mfxU32 fourcc);
 

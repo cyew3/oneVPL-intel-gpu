@@ -34,13 +34,13 @@ struct IDirect3DDeviceManager9;
 struct ID3D11Texture2D;
 struct ID3D11Device;
 
-#ifdef __GNUC__
-typedef unsigned int AbstractSurfaceHandle;
-typedef unsigned int AbstractDeviceHandle;
-#else //__GNUC__
 typedef void * AbstractSurfaceHandle;
 typedef void * AbstractDeviceHandle;
-#endif //__GNUC__
+
+#if defined(_WIN32) || defined(_WIN64)
+typedef unsigned int VASurfaceID;
+typedef unsigned int VADisplay;
+#endif
 
 #ifdef __GNUC__
 #include "cm_rt_linux.h"
@@ -1244,7 +1244,7 @@ public:
     CM_RT_API virtual INT CreateSurface2D(UINT width, UINT height, CM_SURFACE_FORMAT format, CmSurface2D* & pSurface ) = 0;
     CM_RT_API virtual INT CreateSurface3D(UINT width, UINT height, UINT depth, CM_SURFACE_FORMAT format, CmSurface3D* & pSurface ) = 0;
     CM_RT_API virtual INT CreateSurface2D( AbstractSurfaceHandle pD3DSurf, CmSurface2D* & pSurface ) = 0;
-    CM_RT_API virtual INT CreateSurface2D( AbstractSurfaceHandle * pD3DSurf, const UINT surfaceCount, CmSurface2D**  pSpurface ) = 0;
+    //CM_RT_API virtual INT CreateSurface2D( AbstractSurfaceHandle * pD3DSurf, const UINT surfaceCount, CmSurface2D**  pSpurface ) = 0;
     CM_RT_API virtual INT DestroySurface( CmBuffer* & pSurface) = 0;
     CM_RT_API virtual INT DestroySurface( CmSurface2D* & pSurface) = 0;
     CM_RT_API virtual INT DestroySurface( CmSurface3D* & pSurface) = 0;
@@ -1335,12 +1335,7 @@ INT DestroyCmDevice(CmDevice* &pDevice);
 INT DestroyCmDeviceEmu(CmDevice* &pDevice);
 INT DestroyCmDeviceSim(CmDevice* &pDevice);
 
-#ifdef CMRT_EMU
-    #define CreateCmDevice CreateCmDeviceEmu
-    #define DestroyCmDevice DestroyCmDeviceEmu
-#elif CMRT_SIM
-    #define CreateCmDevice CreateCmDeviceSim
-    #define DestroyCmDevice DestroyCmDeviceSim
-#endif
+int ReadProgram(CmDevice * device, CmProgram *& program, const unsigned char * buffer, unsigned int len);
+int CreateKernel(CmDevice * device, CmProgram * program, const char * kernelName, const void * fncPnt, CmKernel *& kernel, const char * options = NULL);
 
 #pragma warning(pop)

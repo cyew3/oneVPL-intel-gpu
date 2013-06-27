@@ -70,7 +70,11 @@ typedef unsigned int       DWORD;
 #define TRUE                1
 
 // DXVA2 types
-typedef void IDirect3DSurface9;
+struct IDirect3DSurface9;
+struct IDirect3DDeviceManager9;
+struct ID3D11Texture2D;
+struct ID3D11Device;
+
 typedef int D3DFORMAT;
 
 typedef struct _DXVA2_Frequency

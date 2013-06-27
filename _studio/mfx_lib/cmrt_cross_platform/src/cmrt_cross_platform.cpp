@@ -13,11 +13,25 @@
 #include "cmrt_cross_platform.h"
 
 #ifdef WIN64
-const vm_char * DLL_NAME_DX9   = VM_STRING("igfxcmrt64.dll");
-const vm_char * DLL_NAME_DX11  = VM_STRING("igfx11cmrt64.dll");
+
+#   ifdef CMRT_EMU
+        const vm_char * DLL_NAME_DX9  = VM_STRING("igfxcmrt64_emu.dll");
+        const vm_char * DLL_NAME_DX11 = VM_STRING("igfx11cmrt64_emu.dll");
+#   else //CMRT_EMU
+        const vm_char * DLL_NAME_DX9  = VM_STRING("igfxcmrt64.dll");
+        const vm_char * DLL_NAME_DX11 = VM_STRING("igfx11cmrt64.dll");
+#   endif //CMRT_EMU
+
 #elif defined WIN32
-const vm_char * DLL_NAME_DX9   = VM_STRING("igfxcmrt32.dll");
-const vm_char * DLL_NAME_DX11  = VM_STRING("igfx11cmrt32.dll");
+
+#   ifdef CMRT_EMU
+        const vm_char * DLL_NAME_DX9  = VM_STRING("igfxcmrt32_emu.dll");
+        const vm_char * DLL_NAME_DX11 = VM_STRING("igfx11cmrt32_emu.dll");
+#   else //CMRT_EMU
+    const vm_char * DLL_NAME_DX9  = VM_STRING("igfxcmrt32.dll");
+    const vm_char * DLL_NAME_DX11 = VM_STRING("igfx11cmrt32.dll");
+#   endif //CMRT_EMU
+
 #elif defined(LINUX64)
 const vm_char * DLL_NAME_LINUX = VM_STRING("igfxcmrt64.so");
 #elif defined(LINUX32)
@@ -26,8 +40,14 @@ const vm_char * DLL_NAME_LINUX = VM_STRING("igfxcmrt32.so");
 #error "undefined configuration"
 #endif
 
-const char * FUNC_NAME_CREATE_CM_DEVICE  = "CreateCmDevice";
-const char * FUNC_NAME_DESTROY_CM_DEVICE = "DestroyCmDevice";
+#ifdef CMRT_EMU
+    const char * FUNC_NAME_CREATE_CM_DEVICE  = "CreateCmDeviceEmu";
+    const char * FUNC_NAME_DESTROY_CM_DEVICE = "DestroyCmDeviceEmu";
+#else //CMRT_EMU
+    const char * FUNC_NAME_CREATE_CM_DEVICE  = "CreateCmDevice";
+    const char * FUNC_NAME_DESTROY_CM_DEVICE = "DestroyCmDevice";
+#endif //CMRT_EMU
+
 
 #define IMPL_FOR_ALL(RET, FUNC, PROTO, PARAM)   \
     RET FUNC PROTO {                            \
@@ -125,21 +145,21 @@ public:
         switch (m_platform) {
         case DX9:   return m_dx9->CreateSurface2D((IDirect3DSurface9 *)pD3DSurf, pSurface);
         case DX11:  return m_dx11->CreateSurface2D((ID3D11Texture2D *)pD3DSurf, pSurface);
-        case VAAPI: return m_linux->CreateSurface2D((VASurfaceID)pD3DSurf, pSurface);
+        case VAAPI: return m_linux->CreateSurface2D(*(VASurfaceID*)pD3DSurf, pSurface);
         default:    return CM_NOT_IMPLEMENTED;
         }
     }
-
-    INT CreateSurface2D(AbstractSurfaceHandle * pD3DSurf, const UINT surfaceCount, CmSurface2D ** pSurface)
-    {
-        switch (m_platform) {
-        case DX9:   return m_dx9->CreateSurface2D((IDirect3DSurface9 **)pD3DSurf, surfaceCount, pSurface);
-        case DX11:  return m_dx11->CreateSurface2D((ID3D11Texture2D **)pD3DSurf, surfaceCount, pSurface);
-        case VAAPI: return m_linux->CreateSurface2D((VASurfaceID *)pD3DSurf, surfaceCount, pSurface);
-        default:    return CM_NOT_IMPLEMENTED;
-        }
-    }
-
+/*
+     INT CreateSurface2D(AbstractSurfaceHandle * pD3DSurf, const UINT surfaceCount, CmSurface2D ** pSurface)
+     {
+         switch (m_platform) {
+         case DX9:   return m_dx9->CreateSurface2D((IDirect3DSurface9 **)pD3DSurf, surfaceCount, pSurface);
+         case DX11:  return m_dx11->CreateSurface2D((ID3D11Texture2D **)pD3DSurf, surfaceCount, pSurface);
+         case VAAPI: return m_linux->CreateSurface2D((VASurfaceID *)pD3DSurf, surfaceCount, pSurface);
+         default:    return CM_NOT_IMPLEMENTED;
+         }
+     }
+*/ 
     INT CreateSurface2DSubresource(AbstractSurfaceHandle pD3D11Texture2D, UINT subresourceCount, CmSurface2D ** ppSurfaces, UINT & createdSurfaceCount, UINT option)
     {
         switch (m_platform) {
@@ -333,3 +353,24 @@ INT DestroyCmDevice(CmDevice *& pD)
     pD = 0;
     return res;
 }
+
+int ReadProgram(CmDevice * device, CmProgram *& program, const unsigned char * buffer, unsigned int len)
+{
+#ifdef CMRT_EMU
+    buffer; len;
+    return device->LoadProgram(0, 0, program, "nojitter");
+#else //CMRT_EMU
+    return device->LoadProgram((void *)buffer, len, program, "nojitter");
+#endif //CMRT_EMU
+}
+
+int CreateKernel(CmDevice * device, CmProgram * program, const char * kernelName, const void * fncPnt, CmKernel *& kernel, const char * options)
+{
+#ifdef CMRT_EMU
+    return device->CreateKernel(program, kernelName, fncPnt, kernel, options);
+#else //CMRT_EMU
+    fncPnt;
+    return device->CreateKernel(program, kernelName, kernel, options);
+#endif //CMRT_EMU
+}
+

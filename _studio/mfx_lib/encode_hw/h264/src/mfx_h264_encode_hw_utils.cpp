@@ -22,10 +22,7 @@
 #include <atlbase.h>
 #endif
 
-#pragma warning(push)
-#pragma warning(disable: 4100)
-#include "cm_rt.h"
-#pragma warning(pop)
+#include "cmrt_cross_platform.h"
 
 #include <assert.h>
 #include "ippi.h"

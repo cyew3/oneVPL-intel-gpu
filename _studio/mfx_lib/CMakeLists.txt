@@ -163,6 +163,7 @@ foreach( variant sw hw )
     ${ITT_LIBS}
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
     pthread
+    dl
     )
 
   make_library( ${mfxlibname} ${variant} shared)

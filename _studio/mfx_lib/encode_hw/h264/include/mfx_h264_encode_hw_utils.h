@@ -1503,7 +1503,7 @@ namespace MfxHwH264Encode
             mfxU16* requiredFrameType);
 
         VideoCORE *         m_core;
-        GlobalCmDevicePtr   m_cmDevice;
+        CmDevicePtr         m_cmDevice;
         MfxVideoParam       m_video;
         MfxVideoParam       m_videoInit;  // m_video may change by Reset, m_videoInit doesn't change
         mfxEncodeStat       m_stat;

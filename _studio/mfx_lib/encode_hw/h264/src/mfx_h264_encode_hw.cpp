@@ -13,10 +13,7 @@
 #include <algorithm>
 #include <numeric>
 
-#pragma warning(push)
-#pragma warning(disable: 4100)
-#include "cm_rt.h"
-#pragma warning(pop)
+#include "cmrt_cross_platform.h"
 
 #include "mfx_session.h"
 #include "mfx_task.h"
@@ -635,8 +632,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     if (extDdi->LookAhead > 1)
     {
-        //m_cmDevice = CreateCmDevicePtr(GetDeviceManager(m_core));
-        m_cmDevice.Create(GetDeviceManager(m_core));
+        m_cmDevice.Reset(CreateCmDevicePtr(m_core));
         m_cmCtx.reset(new CmContext(m_video, m_cmDevice));
 
         mfxU32 numMb = m_video.mfx.FrameInfo.Width * m_video.mfx.FrameInfo.Height / 256;
@@ -1243,7 +1239,7 @@ mfxStatus ImplementationAvc::Submit(mfxBitstream * bs)
             if (!task->m_cmRaw4x || !task->m_cmMb || !task->m_cmHme || !task->m_cmCurbe || !task->m_vmeData)
                 return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
 
-            task->m_cmRaw = CreateSurface(m_cmDevice, (IDirect3DSurface9 *)task->m_handleRaw.first);
+            task->m_cmRaw = CreateSurface(m_cmDevice, task->m_handleRaw.first, m_currentVaType);
         }
 
         ConfigureTask(*task, m_lastTask, m_video);

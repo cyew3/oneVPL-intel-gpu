@@ -52,6 +52,3 @@ else ( )
   message( STATUS "Intel(R) MDF was found here $ENV{MFX_MDF_PATH}" )
 endif( )
 
-set( MDF_LIBS "" )
-list(APPEND MDF_LIBS "igfxcmrt${mdf_lib_suffix}")
-#set(APPEND MDF_LIBS ${mdf_root}/runtime/lib/${mdf_arch}/igfxcmrt${mdf_lib_suffix}.so)
