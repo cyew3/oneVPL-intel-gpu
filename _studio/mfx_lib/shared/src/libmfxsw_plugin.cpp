@@ -20,16 +20,82 @@ File Name: libmfxsw_plugin.cpp
 namespace
 {
 
-VideoUSER *CreateUSERSpecificClass(mfxU32 type)
-{
-    // touch unreferenced parameter(s)
-    type = type;
+    VideoCodecUSER *CreateUSERSpecificClass(mfxU32 type)
+    {
+        type;
+        return new VideoUSERPlugin;
 
-    return new VideoUSERPlugin();
+    } // VideoUSER *CreateUSERSpecificClass(mfxU32 type)
 
-} // VideoUSER *CreateUSERSpecificClass(mfxU32 type)
+    struct SessionPtr
+    {
+    private:
+        mfxSession _session;
+        mfxU32 _type;
+        std::auto_ptr<VideoCodecUSER> *_ptr;
+        bool _isNeedCodec;
+        bool _isNeedDeCoder;
+        mutable std::auto_ptr<VideoDECODE> _stubDecode;
+        mutable std::auto_ptr<VideoENCODE> _stubEncode;
+    public:
+        SessionPtr(mfxSession session, mfxU32 type = MFX_PLUGINTYPE_GENERAL)
+            : _session(session)
+        {
+            switch(type)
+            {
+            case MFX_PLUGINTYPE_DECODE :
+                _ptr = &_session->m_plgDec; 
+                _isNeedCodec = false;
+                _isNeedDeCoder = true;
+                break;
+            case MFX_PLUGINTYPE_ENCODE:
+                _ptr =&_session->m_plgEnc; 
+                _isNeedCodec = true;
+                _isNeedDeCoder = false;
+                break;
+            case MFX_PLUGINTYPE_GENERAL :
+                _ptr = &_session->m_plgGen; 
+                _isNeedCodec = false;
+                _isNeedDeCoder = false;
+                break;
+            default : 
+                //unknown plugin type
+                throw MFX_ERR_UNDEFINED_BEHAVIOR;
+            }
+        }
+        std::auto_ptr<VideoCodecUSER>& plugin()const
+        {
+            return *_ptr;
+        }
+
+        template <class T>
+        std::auto_ptr<T>& codec()const
+        {
+        }
+
+        bool isNeedEncoder()const
+        {
+            return _isNeedCodec ;
+        }
+        bool isNeedDecoder()const
+        {
+            return _isNeedDeCoder;
+        }
+    };      
+
+    template <>
+    std::auto_ptr<VideoENCODE>& SessionPtr::codec<VideoENCODE>()const
+    {
+        return _isNeedCodec ? _session->m_pENCODE : _stubEncode;
+    }
+    template <>
+    std::auto_ptr<VideoDECODE>& SessionPtr::codec<VideoDECODE>()const
+    {
+        return _isNeedDeCoder ? _session->m_pDECODE : _stubDecode;
+    }
 
 } // namespace
+
 
 mfxStatus MFXVideoUSER_Register(mfxSession session, mfxU32 type,
                                 const mfxPlugin *par)
@@ -37,26 +103,34 @@ mfxStatus MFXVideoUSER_Register(mfxSession session, mfxU32 type,
     mfxStatus mfxRes;
 
     // check error(s)
-    if (0 != type)
-    {
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
-
+    
     try
     {
-        // the plugin with the same ID is already exist
-        if (session->m_pUSER.get())
+        SessionPtr sessionPtr(session, type);
+        std::auto_ptr<VideoCodecUSER> & pluginPtr = sessionPtr.plugin();
+        std::auto_ptr<VideoENCODE> &encPtr = sessionPtr.codec<VideoENCODE>();
+        std::auto_ptr<VideoDECODE> &decPtr = sessionPtr.codec<VideoDECODE>();
+
+        // the plugin with the same type is already exist
+        if (pluginPtr.get() || decPtr.get() || encPtr.get())
         {
             return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
-
         // create a new plugin's instance
-        session->m_pUSER.reset(CreateUSERSpecificClass(type));
-        MFX_CHECK(session->m_pUSER.get(), MFX_ERR_INVALID_VIDEO_PARAM);
+        pluginPtr.reset(CreateUSERSpecificClass(type));
+        MFX_CHECK(pluginPtr.get(), MFX_ERR_INVALID_VIDEO_PARAM);
+
+        if (sessionPtr.isNeedDecoder()) {
+            decPtr.reset(pluginPtr->GetDecodePtr());
+        }
+
+        if (sessionPtr.isNeedEncoder()) {
+            encPtr.reset(pluginPtr->GetEncodePtr());
+        }
 
         // initialize the plugin
-        mfxRes = session->m_pUSER->Init(par, &(session->m_coreInt));
+        mfxRes = pluginPtr->PluginInit(par, &(session->m_coreInt), type);
     }
     catch(MFX_CORE_CATCH_TYPE)
     {
@@ -66,10 +140,10 @@ mfxStatus MFXVideoUSER_Register(mfxSession session, mfxU32 type,
         {
             mfxRes = MFX_ERR_INVALID_HANDLE;
         }
-        else if (0 == session->m_pUSER.get())
+       /* else if (0 == registeredPlg || 0 == registeredPlg->get())
         {
             mfxRes = MFX_ERR_INVALID_VIDEO_PARAM;
-        }
+        }*/
         else if (0 == par)
         {
             mfxRes = MFX_ERR_NULL_PTR;
@@ -84,23 +158,20 @@ mfxStatus MFXVideoUSER_Unregister(mfxSession session, mfxU32 type)
 {
     mfxStatus mfxRes;
 
-    // check error(s)
-    if (0 != type)
-    {
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
-    MFX_CHECK(session->m_pUSER.get(), MFX_ERR_NOT_INITIALIZED);
-
     try
     {
+        std::auto_ptr<VideoCodecUSER> & registeredPlg = SessionPtr(session, type).plugin();
+        if (NULL == registeredPlg.get())
+            return MFX_ERR_NOT_INITIALIZED;
+
         // wait until all tasks are processed
-        session->m_pScheduler->WaitForTaskCompletion(session->m_pUSER.get());
+        session->m_pScheduler->WaitForTaskCompletion(registeredPlg.get());
 
         // deinitialize the plugin
-        mfxRes = session->m_pUSER->Close();
+        mfxRes = registeredPlg->Close();
         // delete the plugin's instance
-        session->m_pUSER.reset();
+        registeredPlg.reset();
     }
     catch(MFX_CORE_CATCH_TYPE)
     {
@@ -109,10 +180,6 @@ mfxStatus MFXVideoUSER_Unregister(mfxSession session, mfxU32 type)
         if (0 == session)
         {
             mfxRes = MFX_ERR_INVALID_HANDLE;
-        }
-        else if (0 == session->m_pUSER.get())
-        {
-            return MFX_ERR_NOT_INITIALIZED;
         }
     }
 
@@ -128,23 +195,26 @@ mfxStatus MFXVideoUSER_ProcessFrameAsync(mfxSession session,
     mfxStatus mfxRes;
 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
-    MFX_CHECK(session->m_pUSER.get(), MFX_ERR_NOT_INITIALIZED);
+    //MFX_CHECK(session->m_pUSER.get(), MFX_ERR_NOT_INITIALIZED);
     MFX_CHECK(syncp, MFX_ERR_NULL_PTR);
     try
     {
+        //generic plugin function
+        std::auto_ptr<VideoCodecUSER> & registeredPlg = SessionPtr(session).plugin();
+
         mfxSyncPoint syncPoint = NULL;
         MFX_TASK task;
 
         memset(&task, 0, sizeof(MFX_TASK));
-        mfxRes = session->m_pUSER->Check(in, in_num, out, out_num, &task.entryPoint);
+        mfxRes = registeredPlg->Check(in, in_num, out, out_num, &task.entryPoint);
         // source data is OK, go forward
         if (MFX_ERR_NONE == mfxRes)
         {
             mfxU32 i;
 
-            task.pOwner = session->m_pUSER.get();
+            task.pOwner = registeredPlg.get();
             task.priority = session->m_priority;
-            task.threadingPolicy = session->m_pUSER->GetThreadingPolicy();
+            task.threadingPolicy = registeredPlg->GetThreadingPolicy();
             // fill dependencies
             for (i = 0; i < in_num; i += 1)
             {
@@ -170,7 +240,7 @@ mfxStatus MFXVideoUSER_ProcessFrameAsync(mfxSession session,
         {
             return MFX_ERR_INVALID_HANDLE;
         }
-        else if (0 == session->m_pUSER.get())
+        else if (0 == session->m_plgGen.get())
         {
             return MFX_ERR_NOT_INITIALIZED;
         }

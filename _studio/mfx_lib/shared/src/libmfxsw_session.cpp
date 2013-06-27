@@ -88,7 +88,7 @@ mfxStatus MFXDisjoinSession(mfxSession session)
         session->m_pScheduler->WaitForTaskCompletion(session->m_pVPP.get());
         session->m_pScheduler->WaitForTaskCompletion(session->m_pENC.get());
         session->m_pScheduler->WaitForTaskCompletion(session->m_pPAK.get());
-        session->m_pScheduler->WaitForTaskCompletion(session->m_pUSER.get());
+        session->m_pScheduler->WaitForTaskCompletion(session->m_plgGen.get());
 
         // remove child core from parent core operator
         session->m_pOperatorCore->RemoveCore(session->m_pCORE.get());

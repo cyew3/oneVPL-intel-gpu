@@ -134,14 +134,16 @@
 //#define MFX_ENABLE_H264_VIDEO_ENC_HW
 #define MFX_ENABLE_MVC_VIDEO_ENCODE_HW
 
+// user plugin for decoder/encoder
+#define MFX_ENABLE_USER_DECODE
+#define MFX_ENABLE_USER_ENCODE
+
 // aac
 #define MFX_ENABLE_AAC_AUDIO_DECODE
 #define MFX_ENABLE_AAC_AUDIO_ENCODE
 
 //mp3
-#define MFX_ENABLE_MP3_AUDIO_DECODE
-
-// linux support
+#define MFX_ENABLE_MP3_AUDIO_DECODE// linux support
 #if defined(LINUX32) || defined(LINUX64) || defined(__APPLE__)
     // HW limitation
     #if defined (MFX_VA)

@@ -20,6 +20,7 @@ File Name: mfxvideo++int.h
 #include "mfxsvc.h"
 #include "mfxjpeg.h"
 #include "mfxvp8.h"
+#include "mfxplugin.h"
 
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -256,6 +257,9 @@ public:
     mfxStatus CopyFrame(mfxFrameSurface1 *dst, mfxFrameSurface1 *src) = 0;
     virtual
     mfxStatus CopyBuffer(mfxU8 *dst, mfxU32 dst_size, mfxFrameSurface1 *src) = 0;
+
+    virtual
+    mfxStatus CopyFrameEx(mfxFrameSurface1 *pDst, mfxU16 dstMemType, mfxFrameSurface1 *pSrc, mfxU16 srcMemType) = 0;
 
     virtual mfxStatus IsGuidSupported(const GUID guid, mfxVideoParam *par, bool isEncoder = false) = 0;
     virtual bool CheckOpaqueRequest(mfxFrameAllocRequest *request, mfxFrameSurface1 **pOpaqueSurface, mfxU32 NumOpaqueSurface, bool ExtendedSearch = true) = 0;
@@ -620,8 +624,9 @@ public:
 
     // Initialize the user's plugin
     virtual
-    mfxStatus Init(const mfxPlugin *pParam,
-                   mfxCoreInterface *pCore) = 0;
+    mfxStatus PluginInit(const mfxPlugin *pParam,
+                   mfxCoreInterface *pCore,
+                   mfxU32 type = MFX_PLUGINTYPE_GENERAL) = 0;
     // Release the user's plugin
     virtual
     mfxStatus Close(void) = 0;
@@ -635,6 +640,21 @@ public:
                     const mfxHDL *out, mfxU32 out_num,
                     MFX_ENTRY_POINT *pEntryPoint) = 0;
 
+};
+
+class VideoCodecUSER
+    : public VideoUSER
+{
+public:
+    //statically exposed for mediasdk components but are plugin dependent
+    virtual mfxStatus Init(mfxVideoParam *par) = 0;
+    virtual mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request) = 0;
+    virtual mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out) = 0;
+    virtual mfxStatus DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVideoParam *par) = 0;
+
+    //expose new encoder/decoder view
+    virtual VideoENCODE* GetEncodePtr() = 0;
+    virtual VideoDECODE* GetDecodePtr() = 0;
 };
 
 #endif // __MFXVIDEOPLUSPLUS_INTERNAL_H

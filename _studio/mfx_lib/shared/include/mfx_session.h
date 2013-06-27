@@ -59,7 +59,10 @@ struct _mfxSession
     std::auto_ptr<VideoENC> m_pENC;
     std::auto_ptr<VideoPAK> m_pPAK;
     std::auto_ptr<VideoBRC> m_pBRC;
-    std::auto_ptr<VideoUSER> m_pUSER;
+    
+    std::auto_ptr<VideoCodecUSER> m_plgDec;
+    std::auto_ptr<VideoCodecUSER> m_plgEnc;
+    std::auto_ptr<VideoCodecUSER> m_plgGen;
 
     // Wrapper of interface for core object
     mfxCoreInterface m_coreInt;

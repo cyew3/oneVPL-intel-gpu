@@ -48,6 +48,10 @@ File Name: libmfxsw_decode.cpp
 #endif
 #endif
 
+#ifdef MFX_ENABLE_USER_DECODE
+#include "mfx_user_plugin.h"
+#endif
+
 VideoDECODE *CreateDECODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSession session)
 {
     VideoDECODE *pDECODE = (VideoDECODE *) 0;
@@ -144,6 +148,15 @@ mfxStatus MFXVideoDECODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
 
     try
     {
+#ifdef MFX_ENABLE_USER_DECODE
+        mfxRes = MFX_ERR_UNSUPPORTED;
+        if (session->m_plgDec.get())
+        {
+            mfxRes = session->m_plgDec->Query(session->m_pCORE.get(), in, out);
+        }
+        // unsupported reserved to codecid != requested codecid
+        if (MFX_ERR_UNSUPPORTED == mfxRes)
+#endif
         switch (out->mfx.CodecId)
         {
 #ifdef MFX_ENABLE_VC1_VIDEO_DECODE
@@ -225,6 +238,15 @@ mfxStatus MFXVideoDECODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
     mfxStatus mfxRes;
     try
     {
+#ifdef MFX_ENABLE_USER_DECODE
+        mfxRes = MFX_ERR_UNSUPPORTED;
+        if (session->m_plgDec.get())
+        {
+            mfxRes = session->m_plgDec->QueryIOSurf(session->m_pCORE.get(), par, request);
+        }
+        // unsupported reserved to codecid != requested codecid
+        if (MFX_ERR_UNSUPPORTED == mfxRes)
+#endif
         switch (par->mfx.CodecId)
         {
 #ifdef MFX_ENABLE_VC1_VIDEO_DECODE
@@ -304,6 +326,17 @@ mfxStatus MFXVideoDECODE_DecodeHeader(mfxSession session, mfxBitstream *bs, mfxV
     mfxStatus mfxRes;
     try
     {
+#ifdef MFX_ENABLE_USER_DECODE
+        mfxRes = MFX_ERR_UNSUPPORTED;
+        if (session->m_plgDec.get())
+        {
+            mfxRes = session->m_plgDec->DecodeHeader(session->m_pCORE.get(), bs, par);
+        }
+
+        // unsupported reserved to codecid != requested codecid
+        if (MFX_ERR_UNSUPPORTED == mfxRes)
+#endif
+
         switch (par->mfx.CodecId)
         {
 #ifdef MFX_ENABLE_VC1_VIDEO_DECODE

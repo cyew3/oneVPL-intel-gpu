@@ -126,6 +126,9 @@ public:
     virtual
     mfxStatus CopyBuffer(mfxU8 * /*dst*/, mfxU32 /*dst_size*/, mfxFrameSurface1 * /*src*/) {return MFX_ERR_UNKNOWN;}
 
+    virtual
+    mfxStatus CopyFrameEx(mfxFrameSurface1 *pDst, mfxU16 dstMemType, mfxFrameSurface1 *pSrc, mfxU16 srcMemType) {return DoFastCopyWrapper(pDst, dstMemType, pSrc, srcMemType);}
+
     mfxU32 m_ExtOptions; // 1=force Intel custom guid, 2=force standard decode guid, 4=force SW VPP, 8=force BLT VPP, 16=force FC VPP
 
     // just a WA for a while

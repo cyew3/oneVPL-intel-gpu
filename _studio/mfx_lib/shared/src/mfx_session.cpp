@@ -247,40 +247,85 @@ CORE_FUNC_IMPL(IncreaseReference, (mfxHDL pthis, mfxFrameData *fd), (fd))
 CORE_FUNC_IMPL(DecreaseReference, (mfxHDL pthis, mfxFrameData *fd), (fd))
 CORE_FUNC_IMPL(CopyFrame, (mfxHDL pthis, mfxFrameSurface1 *dst, mfxFrameSurface1 *src), (dst, src))
 CORE_FUNC_IMPL(CopyBuffer, (mfxHDL pthis, mfxU8 *dst, mfxU32 dst_size, mfxFrameSurface1 *src), (dst, dst_size, src))
+CORE_FUNC_IMPL(CopyFrameEx, (mfxHDL pthis, mfxFrameSurface1 *dst, mfxU16  dstMemType, mfxFrameSurface1 *src, mfxU16  srcMemType), (dst, dstMemType, src, srcMemType))
 
 #undef CORE_FUNC_IMPL
 
 // exposed default allocator
 mfxStatus mfxDefAllocFrames(mfxHDL pthis, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
 {
+    MFX_CHECK_NULL_PTR1(pthis);
     VideoCORE *pCore = (VideoCORE*)pthis;
     return pCore->AllocFrames(request,response); 
 
 } // mfxStatus mfxDefAllocFrames(mfxHDL pthis, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
 mfxStatus mfxDefLockFrame(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
 {
+    MFX_CHECK_NULL_PTR1(pthis);
     VideoCORE *pCore = (VideoCORE*)pthis;
     return pCore->LockFrame(mid,ptr); 
 
 } // mfxStatus mfxDefLockFrame(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
 mfxStatus mfxDefGetHDL(mfxHDL pthis, mfxMemId mid, mfxHDL *handle)
 {
+    MFX_CHECK_NULL_PTR1(pthis);
     VideoCORE *pCore = (VideoCORE*)pthis;
     return pCore->GetFrameHDL(mid, handle);
 
 } // mfxStatus mfxDefGetHDL(mfxHDL pthis, mfxMemId mid, mfxHDL *handle)
 mfxStatus mfxDefUnlockFrame(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr=0)
 {
+    MFX_CHECK_NULL_PTR1(pthis);
     VideoCORE *pCore = (VideoCORE*)pthis;
     return pCore->UnlockFrame(mid, ptr); 
 
 } // mfxStatus mfxDefUnlockFrame(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr=0)
 mfxStatus mfxDefFreeFrames(mfxHDL pthis, mfxFrameAllocResponse *response)
 {
+    MFX_CHECK_NULL_PTR1(pthis);
     VideoCORE *pCore = (VideoCORE*)pthis;
     return pCore->FreeFrames(response); 
 
 } // mfxStatus mfxDefFreeFrames(mfxHDL pthis, mfxFrameAllocResponse *response)
+
+
+
+// exposed external allocator
+mfxStatus mfxExtAllocFrames(mfxHDL pthis, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
+{
+    MFX_CHECK_NULL_PTR1(pthis);
+    if (request->Type & MFX_MEMTYPE_EXTERNAL_FRAME)
+    {
+        VideoCORE *pCore = (VideoCORE*)pthis;
+        return pCore->AllocFrames(request,response); 
+    }
+    return MFX_ERR_UNSUPPORTED;
+
+} // mfxStatus mfxExtAllocFrames(mfxHDL pthis, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
+mfxStatus mfxExtLockFrame(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
+{
+    VideoCORE *pCore = (VideoCORE*)pthis;
+    return pCore->LockExternalFrame(mid,ptr); 
+
+} // mfxStatus mfxExtLockFrame(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
+mfxStatus mfxExtGetHDL(mfxHDL pthis, mfxMemId mid, mfxHDL *handle)
+{
+    VideoCORE *pCore = (VideoCORE*)pthis;
+    return pCore->GetExternalFrameHDL(mid, handle);
+
+} // mfxStatus mfxExtGetHDL(mfxHDL pthis, mfxMemId mid, mfxHDL *handle)
+mfxStatus mfxExtUnlockFrame(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr=0)
+{
+    VideoCORE *pCore = (VideoCORE*)pthis;
+    return pCore->UnlockExternalFrame(mid, ptr); 
+
+} // mfxStatus mfxExtUnlockFrame(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr=0)
+mfxStatus mfxExtFreeFrames(mfxHDL pthis, mfxFrameAllocResponse *response)
+{
+    VideoCORE *pCore = (VideoCORE*)pthis;
+    return pCore->FreeFrames(response); 
+
+} // mfxStatus mfxExtFreeFrames(mfxHDL pthis, mfxFrameAllocResponse *response)
 
 void InitCoreInterface(mfxCoreInterface *pCoreInterface,
                        const mfxSession session)
@@ -288,13 +333,21 @@ void InitCoreInterface(mfxCoreInterface *pCoreInterface,
     // reset the structure
     memset(pCoreInterface, 0, sizeof(mfxCoreInterface));
 
-    // fill allocator
+    // fill default allocator
+    pCoreInterface->InternalSurfaceAllocator.pthis = session->m_pCORE.get();
+    pCoreInterface->InternalSurfaceAllocator.Alloc = &mfxDefAllocFrames;
+    pCoreInterface->InternalSurfaceAllocator.Lock = &mfxDefLockFrame;
+    pCoreInterface->InternalSurfaceAllocator.GetHDL = &mfxDefGetHDL;
+    pCoreInterface->InternalSurfaceAllocator.Unlock = &mfxDefUnlockFrame;
+    pCoreInterface->InternalSurfaceAllocator.Free = &mfxDefFreeFrames;
+
+     // fill external allocator
     pCoreInterface->FrameAllocator.pthis = session->m_pCORE.get();
-    pCoreInterface->FrameAllocator.Alloc = &mfxDefAllocFrames;
-    pCoreInterface->FrameAllocator.Lock = &mfxDefLockFrame;
-    pCoreInterface->FrameAllocator.GetHDL = &mfxDefGetHDL;
-    pCoreInterface->FrameAllocator.Unlock = &mfxDefUnlockFrame;
-    pCoreInterface->FrameAllocator.Free = &mfxDefFreeFrames;
+    pCoreInterface->FrameAllocator.Alloc = &mfxExtAllocFrames;
+    pCoreInterface->FrameAllocator.Lock = &mfxExtLockFrame;
+    pCoreInterface->FrameAllocator.GetHDL = &mfxExtGetHDL;
+    pCoreInterface->FrameAllocator.Unlock = &mfxExtUnlockFrame;
+    pCoreInterface->FrameAllocator.Free = &mfxExtFreeFrames;
 
     // fill the methods
     pCoreInterface->pthis = (mfxHDL) session;
@@ -357,15 +410,22 @@ void _mfxSession::Release(void)
     }
 
     // unregister plugin before closing
-    if (m_pUSER.get())
+    if (m_plgGen.get())
     {
-        m_pUSER->Close();
+        m_plgGen->Close();
     }
-
+    if (m_plgEnc.get())
+    {
+        m_plgEnc->Close();
+    }
+    if (m_plgDec.get())
+    {
+        m_plgDec->Close();
+    }
     // release the components the excplicit way.
     // do not relay on default deallocation order,
     // somebody could change it.
-    m_pUSER.reset();
+    m_plgGen.reset();
     m_pBRC.reset();
     m_pPAK.reset();
     m_pENC.reset();
