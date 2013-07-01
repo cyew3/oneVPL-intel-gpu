@@ -372,7 +372,8 @@ mfxStatus AudioDECODEMP3::DecodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffe
         sts = CheckBitstream(bs);
         MFX_CHECK_STS(sts);
 
-        sts = ConstructFrame(bs, &m_frame);
+        //sts = ConstructFrame(bs, &m_frame);
+        sts = ConstructFrame(bs, buffer_out);
 
         if (MFX_ERR_NONE != sts)
         {
