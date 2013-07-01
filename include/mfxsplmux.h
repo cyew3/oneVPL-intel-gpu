@@ -143,8 +143,10 @@ typedef struct {
     mfxU8              Enable;
     mfxU8              Header[MFX_TRACK_HEADER_MAX_SIZE]; // Header with codec specific data
     mfxU64             HeaderLength;
-    mfxAudioStreamInfo audioParam;
-    mfxVideoParam      videoParam;
+    union {
+        mfxAudioStreamInfo audioParam;
+        mfxVideoParam videoParam;
+    };
     mfxU32             reserved[8];
 } mfxTrackInfo;
 
