@@ -126,7 +126,10 @@ mfxStatus CommonCORE::AllocFrames(mfxFrameAllocRequest *request,
         return MFX_ERR_MEMORY_ALLOC;
 
     if (IsOpaqSurfacesAlreadyMapped(pOpaqueSurface, NumOpaqueSurface, response))
-        return MFX_ERR_NONE; // surface already allocated
+    {
+        m_RespMidQ.insert(pair<mfxMemId*, mfxMemId*>(response->mids, response->mids));
+        return MFX_ERR_NONE;
+    }
 
     sts = AllocFrames(request, response);
     MFX_CHECK_STS(sts);
