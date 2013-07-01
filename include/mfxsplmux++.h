@@ -16,23 +16,23 @@ File Name: mfxsplmux++.h
 
 #include "mfxsplmux.h"
 
-class MFXStreamParam {
-    mfxStreamParam m_param;
+class MFXStreamParams {
+    mfxStreamParams m_params;
 public:
-    MFXStreamParam()
-        : m_param() {
+    MFXStreamParams()
+        : m_params() {
     }
-    const mfxStreamParam* operator & () const {
-        return &m_param;
+    const mfxStreamParams* operator & () const {
+        return &m_params;
     }
-    mfxStreamParam* operator & ()  {
-        return &m_param;
+    mfxStreamParams* operator & ()  {
+        return &m_params;
     }
-    operator const mfxStreamParam& () const {
-        return m_param;
+    operator const mfxStreamParams& () const {
+        return m_params;
     }
-    operator mfxStreamParam& () {
-        return m_param;
+    operator mfxStreamParams& () {
+        return m_params;
     }
 };
 
@@ -81,7 +81,7 @@ public:
         return MFXSplitter_Init(MFXDataIOAdapter(dataIO), &m_spl);
     }
     virtual mfxStatus Close() { return MFXSplitter_Close(m_spl); }
-    virtual mfxStatus GetInfo(MFXStreamParam &par) { return MFXSplitter_GetInfo(m_spl, &par); }
+    virtual mfxStatus GetInfo(MFXStreamParams &par) { return MFXSplitter_GetInfo(m_spl, &par); }
     virtual mfxStatus GetBitstream(mfxU32 iTrack, mfxBitstream *Bitstream) { return MFXSplitter_GetBitstream(m_spl, iTrack, Bitstream); }
     virtual mfxStatus ReleaseBitstream(mfxU32 iTrack, mfxBitstream *Bitstream) { return MFXSplitter_ReleaseBitstream(m_spl, iTrack, Bitstream); }
 
@@ -94,7 +94,7 @@ class MFXMuxer
 public:
     MFXMuxer() : m_mux() { }
     virtual ~MFXMuxer() { Close(); }
-    virtual mfxStatus Init(MFXStreamParam &par, MFXDataIO &dataIO){
+    virtual mfxStatus Init(MFXStreamParams &par, MFXDataIO &dataIO){
         return MFXMuxer_Init(&par, MFXDataIOAdapter(dataIO), &m_mux);
     }
     virtual mfxStatus Close() { return MFXMuxer_Close(m_mux); }
