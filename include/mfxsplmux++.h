@@ -38,13 +38,15 @@ public:
     }
 };
 
+typedef MFXIOParam<mfxSplitterParam> MFXSplitterParams;
+typedef MFXIOParam<mfxMuxerParam> MFXMuxerParams;
 
 struct MFXDataIO
 {
     virtual ~MFXDataIO() { }
-    virtual mfxI32 Read (mfxBitstream *outBitStream) = 0;
+    virtual mfxI32 Read  (mfxBitstream *outBitStream) = 0;
     virtual mfxI32 Write (mfxBitstream *outBitStream) = 0;
-    virtual mfxI64 Seek (mfxI64 offset, mfxI32 origin) = 0;
+    virtual mfxI64 Seek  (mfxI64 offset, mfxI32 origin) = 0;
 };
 
 class MFXDataIOAdapter
@@ -80,11 +82,11 @@ class MFXSplitter
 public:
     MFXSplitter() : m_spl() { }
     virtual ~MFXSplitter() { Close(); }
-    mfxStatus Init(MFXIOParam<mfxSplitterParam> &par, MFXDataIO &dataIO){
+    mfxStatus Init(MFXSplitterParams &par, MFXDataIO &dataIO){
         return MFXSplitter_Init(&par, MFXDataIOAdapter(dataIO), &m_spl);
     }
     virtual mfxStatus Close() { return MFXSplitter_Close(m_spl); }
-    virtual mfxStatus GetInfo(MFXIOParam<mfxSplitterParam> &par) { return MFXSplitter_GetInfo(m_spl, &par); }
+    virtual mfxStatus GetInfo(MFXSplitterParams &par) { return MFXSplitter_GetInfo(m_spl, &par); }
     virtual mfxStatus GetBitstream(mfxU32 iTrack, mfxBitstream *Bitstream) { return MFXSplitter_GetBitstream(m_spl, iTrack, Bitstream); }
     virtual mfxStatus ReleaseBitstream(mfxU32 iTrack, mfxBitstream *Bitstream) { return MFXSplitter_ReleaseBitstream(m_spl, iTrack, Bitstream); }
 
@@ -97,7 +99,7 @@ class MFXMuxer
 public:
     MFXMuxer() : m_mux() { }
     virtual ~MFXMuxer() { Close(); }
-    virtual mfxStatus Init(MFXIOParam<mfxMuxerParam> &par, MFXDataIO &dataIO){
+    virtual mfxStatus Init(MFXMuxerParams &par, MFXDataIO &dataIO){
         return MFXMuxer_Init(&par, MFXDataIOAdapter(dataIO), &m_mux);
     }
     virtual mfxStatus Close() { return MFXMuxer_Close(m_mux); }
