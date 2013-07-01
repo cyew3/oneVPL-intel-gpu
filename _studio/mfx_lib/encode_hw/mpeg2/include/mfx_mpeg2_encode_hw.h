@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          HW MPEG2  encoder
@@ -47,7 +47,7 @@ public:
     virtual mfxStatus Init(mfxVideoParam *par)
     {
         mfxStatus     sts  = MFX_ERR_NONE;
-        ENCODE_CAPS   Caps = {0};
+        ENCODE_CAPS   Caps = {};
         MPEG2EncoderHW::HW_MODE  mode = MPEG2EncoderHW::UNSUPPORTED;
         if (pEncoder)
         {

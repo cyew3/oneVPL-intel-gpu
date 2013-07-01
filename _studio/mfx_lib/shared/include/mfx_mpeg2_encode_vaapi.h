@@ -49,7 +49,10 @@ namespace MfxHwMpeg2Encode
         mfxStatus QueryEncodeCaps(ENCODE_CAPS & caps);
 
         virtual
-        mfxStatus Init(ExecuteBuffers* pExecuteBuffers, mfxU32 numRefFrames, mfxU32 funcId);                 
+        mfxStatus Init(ExecuteBuffers* pExecuteBuffers, mfxU32 numRefFrames, mfxU32 funcId);
+
+        virtual
+        mfxStatus CreateContext(ExecuteBuffers* pExecuteBuffers, mfxU32 numRefFrames, mfxU32 funcId);
 
         virtual
         mfxStatus Execute(ExecuteBuffers* pExecuteBuffers, mfxU8* pUserData = 0, mfxU32 userDataLen = 0);                
@@ -85,6 +88,7 @@ namespace MfxHwMpeg2Encode
         mfxStatus QueryMbDataLayout();
         mfxStatus Init(ENCODE_FUNC func, ExecuteBuffers* pExecuteBuffers);
         mfxStatus FillSlices(ExecuteBuffers* pExecuteBuffers);
+        mfxStatus FillMiscParameterBuffer(ExecuteBuffers* pExecuteBuffers);
         mfxStatus Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 func, mfxU8* pUserData, mfxU32 userDataLen);        
         mfxStatus Register (const mfxFrameAllocResponse* pResponse, D3DDDIFORMAT type);
         mfxI32    GetRecFrameIndex (mfxMemId memID);
@@ -109,6 +113,15 @@ namespace MfxHwMpeg2Encode
         int                                 m_codedbufISize;
         int                                 m_codedbufPBSize;
 
+        VAEncMiscParameterBuffer           *m_pMiscParamsFps;
+        VAEncMiscParameterBuffer           *m_pMiscParamsPrivate;
+
+        VABufferID                          m_miscParamFpsId;
+        VABufferID                          m_miscParamPrivateId;
+
+        int                                 m_vbvBufSize;
+        mfxU16                              m_initFrameWidth;
+        mfxU16                              m_initFrameHeight;
 
         std::vector<ENCODE_COMP_BUFFER_INFO> m_compBufInfo;
         std::vector<D3DDDIFORMAT> m_uncompBufInfo;

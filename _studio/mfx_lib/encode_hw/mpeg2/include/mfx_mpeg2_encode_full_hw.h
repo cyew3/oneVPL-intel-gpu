@@ -103,6 +103,11 @@ namespace MPEG2EncoderHW
               sts = m_pDdiEncoder->RegisterRefFrames(par->pRecFramesResponse_hw);
               MFX_CHECK_STS(sts);
 
+              // in VAAPI encoder context have to be created after reference frames
+              sts = m_pDdiEncoder->CreateContext(m_pExecuteBuffers,
+                  par->pRecFramesResponse_hw->NumFrameActual,
+                  ENCODE_ENC_PAK_ID);
+              MFX_CHECK_STS(sts);
 
               m_bStage2Ready = false;
               m_bHWInput = (par->mfxVideoParams.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY) != 0;

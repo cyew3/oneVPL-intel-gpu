@@ -1045,9 +1045,9 @@ namespace MPEG2EncoderHW
         mfxExtCodingOption* ext = GetExtCodingOptions(par->ExtParam, par->NumExtParam);
         mfxExtCodingOptionSPSPPS* pSPSPPS = GetExtCodingOptionsSPSPPS (par->ExtParam, par->NumExtParam);
 
-        mfxVideoParam parFromSpsPps = { 0 };
+        mfxVideoParam parFromSpsPps = {};
 
-        mfxExtCodingOption extFromSpsPps = { 0 };
+        mfxExtCodingOption extFromSpsPps = {};
 
         if (pSPSPPS)
         {
@@ -1067,7 +1067,7 @@ namespace MPEG2EncoderHW
             ext = &extFromSpsPps;
         }
 
-        ENCODE_CAPS EncCaps = {0};
+        ENCODE_CAPS EncCaps = {};
 
         mfxStatus sts = CheckHwCaps(core, par, ext, &EncCaps);
         MFX_CHECK_STS(sts);
@@ -1234,7 +1234,7 @@ namespace MPEG2EncoderHW
         }   
 #endif
 
-        mfxExtCodingOption extFromSpsPps = { 0 };
+        mfxExtCodingOption extFromSpsPps = {};
         mfxExtCodingOption* ext = GetExtCodingOptions(par->ExtParam, par->NumExtParam);
 
 
@@ -1328,7 +1328,7 @@ namespace MPEG2EncoderHW
 
         if (ext)
         {
-            mfxExtCodingOption temp = {0};
+            mfxExtCodingOption temp = {};
 
             mfxU32 bufOffset = sizeof(mfxExtBuffer);
             mfxU32 bufSize   = sizeof(mfxExtCodingOption) - bufOffset;
@@ -1464,7 +1464,7 @@ namespace MPEG2EncoderHW
         m_VideoParamsEx.mfxVideoParams.mfx.NumSlice = (mfxU16)((m_VideoParamsEx.mfxVideoParams.mfx.FrameInfo.Height)>>4);
 
         {
-            mfxFrameAllocRequest request = { 0 };
+            mfxFrameAllocRequest request = {};
             sts = QueryIOSurf(m_pCore, par, &request);
             MFX_CHECK(sts>=0,sts);
             sts = m_InputSurfaces.Reset (par, request.NumFrameMin);

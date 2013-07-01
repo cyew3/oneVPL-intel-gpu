@@ -235,7 +235,10 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         VACodedBufferSegment *coded_buffer_segment;
         va_res =  vaMapBuffer(m_dpy, *(vaapi_mid->m_surface), (void **)(&coded_buffer_segment));
         mfx_res = va_to_mfx_status(va_res);
-        ptr->Y = (mfxU8*)coded_buffer_segment->buf; // !!! bug
+        if (MFX_ERR_NONE == mfx_res)
+        {
+            ptr->Y = (mfxU8*)coded_buffer_segment->buf;
+        }
     }
     else   // Image processing
     {
