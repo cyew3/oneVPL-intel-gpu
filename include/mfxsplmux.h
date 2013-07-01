@@ -143,18 +143,10 @@ typedef struct {
     mfxU8              Enable;
     mfxU8              Header[MFX_TRACK_HEADER_MAX_SIZE]; // Header with codec specific data
     mfxU64             HeaderLength;
-    mfxAudioStreamInfo audioInfo;
+    mfxAudioStreamInfo audioParam;
+    mfxVideoParam      videoParam;
     mfxU32             reserved[8];
 } mfxTrackInfo;
-
-typedef struct {
-    mfxSystemStreamType  SystemType;        // system type (MPEG4, MPEG2, AVI, pure)
-    mfxU64               Duration;          // May be zero if undefined
-    mfxU32               NumTrack;          // number of tracks detected
-    mfxU32               NumTrackAllocated; // Number of allocated elements in TrackInfo
-    mfxTrackInfo**       TrackInfo;         // array of pointers to TrackInfo(s)
-    mfxU32               reserved[8];
-} mfxStreamInfo;
 
 /* DataReaderWriter */
 typedef struct {
@@ -168,31 +160,30 @@ typedef struct {
 
 /* Splitter */
 
-typedef struct mfxSplitterParam{
-    mfxU32         reserved[4];
-    mfxStreamInfo* StreamInfo;
-    mfxU32         Flags;
-} mfxSplitterParam;
+typedef struct mfxStreamParam{
+    mfxU32               reserved[12];
+    mfxSystemStreamType  SystemType;        // system type (MPEG4, MPEG2, AVI, pure)
+    mfxU64               Duration;          // May be zero if undefined
+    mfxU32               NumTrack;          // number of tracks detected
+    mfxU32               NumTrackAllocated; // Number of allocated elements in TrackInfo
+    mfxTrackInfo**       TrackInfo;         // array of pointers to TrackInfo(s)
+    mfxU32               Flags;
+} mfxStreamParam;
 
 typedef struct _mfxSplitter *mfxSplitter;
 
-mfxStatus  MFX_CDECL MFXSplitter_Init(mfxSplitterParam *par, mfxDataIO dataIO, mfxSplitter *spl);
+mfxStatus  MFX_CDECL MFXSplitter_Init(mfxDataIO dataIO, mfxSplitter *spl);
 mfxStatus  MFX_CDECL MFXSplitter_Close(mfxSplitter spl);
-mfxStatus  MFX_CDECL MFXSplitter_GetInfo(mfxSplitter spl, mfxSplitterParam *par);
+mfxStatus  MFX_CDECL MFXSplitter_GetInfo(mfxSplitter spl, mfxStreamParam *par);
 
 mfxStatus  MFX_CDECL MFXSplitter_GetBitstream(mfxSplitter spl,  mfxU32 iTrack, mfxBitstream *Bitstream);
 mfxStatus  MFX_CDECL MFXSplitter_ReleaseBitstream(mfxSplitter spl,  mfxU32 iTrack, mfxBitstream *Bitstream);
 
 /* Muxer */
 
-typedef struct mfxMuxerParam{
-    mfxU32         reserved[4];
-    mfxStreamInfo* StreamInfo;
-} mfxMuxerParam;
-
 typedef struct _mfxMuxer *mfxMuxer;
 
-mfxStatus  MFX_CDECL MFXMuxer_Init(mfxMuxerParam* par, mfxDataIO dataIO, mfxMuxer *mux);
+mfxStatus  MFX_CDECL MFXMuxer_Init(mfxStreamParam* par, mfxDataIO dataIO, mfxMuxer *mux);
 mfxStatus  MFX_CDECL MFXMuxer_Close(mfxMuxer mux);
 
 mfxStatus  MFX_CDECL MFXMuxer_PutData(mfxMuxer mux, mfxU32 iTrack, mfxBitstream *Bitstream);
