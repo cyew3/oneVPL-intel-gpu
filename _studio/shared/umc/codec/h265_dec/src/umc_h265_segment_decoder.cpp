@@ -922,6 +922,8 @@ void H265SegmentDecoder::DecodePartSizeCABAC(H265CodingUnit* pCU, Ipp32u AbsPart
             //m_pcTDecBinIf->decodeBin( uiSymbol, m_cCUPartSizeSCModel.get( 0, 0, 0) );
         }
         Mode = uVal ? SIZE_2Nx2N : SIZE_NxN;
+        pCU->setSizeSubParts(g_MaxCUWidth >> Depth, g_MaxCUHeight >> Depth, AbsPartIdx, Depth);
+
         Ipp32u TrLevel = 0;
         Ipp32u WidthInBit  = g_ConvertToBit[pCU->m_WidthArray[AbsPartIdx]] + 2;
         Ipp32u TrSizeInBit = g_ConvertToBit[pCU->m_SliceHeader->m_SeqParamSet->m_maxTrSize] + 2;
@@ -977,9 +979,10 @@ void H265SegmentDecoder::DecodePartSizeCABAC(H265CodingUnit* pCU, Ipp32u AbsPart
                 }
             }
         }
+
+        pCU->setSizeSubParts(g_MaxCUWidth >> Depth, g_MaxCUHeight >> Depth, AbsPartIdx, Depth);
     }
     pCU->setPartSizeSubParts(Mode, AbsPartIdx, Depth);
-    pCU->setSizeSubParts(g_MaxCUWidth >> Depth, g_MaxCUHeight >> Depth, AbsPartIdx, Depth);
 }
 
 void H265SegmentDecoder::DecodeIPCMInfoCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)

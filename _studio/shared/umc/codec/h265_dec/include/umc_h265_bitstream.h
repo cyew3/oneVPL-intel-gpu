@@ -161,6 +161,13 @@ public:
 #if INSTRUMENTED_CABAC
     static Ipp32u m_c;
     static FILE* cabac_bits;
+
+    inline void PRINT_CABAC_VALUES()
+    {
+        fprintf(cabac_bits, "\nCount: %d \tValue: %d \tRange: %d \t", m_c++, (Ipp32u)(m_lcodIOffset>>CABAC_MAGIC_BITS), (Ipp32u)(m_lcodIRange>>CABAC_MAGIC_BITS));
+        fflush(cabac_bits);
+    }
+
 #endif
     H265Bitstream(void);
     H265Bitstream(Ipp8u * const pb, const Ipp32u maxsize);

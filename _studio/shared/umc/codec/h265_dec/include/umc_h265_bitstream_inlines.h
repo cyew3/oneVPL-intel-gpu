@@ -24,12 +24,6 @@ namespace UMC_HEVC_DECODER
 
 const Ipp64u g_scaled256 = (Ipp64u)0x100 << (7+ CABAC_MAGIC_BITS);
 
-#define PRINT_CABAC_VALUES \
-{\
-    fprintf(cabac_bits, "\nCount: %d \tValue: %d \tRange: %d \t", m_c++, (Ipp32u)(m_lcodIOffset>>CABAC_MAGIC_BITS), (Ipp32u)(m_lcodIRange>>CABAC_MAGIC_BITS));\
-    fflush(cabac_bits);\
-}
-
 #define _h265GetBits(current_data, offset, nbits, data) \
 { \
     Ipp32u x; \
@@ -217,7 +211,7 @@ Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
         if ( scaledRange >= g_scaled256)
         {
 #if INSTRUMENTED_CABAC
-            PRINT_CABAC_VALUES;
+            PRINT_CABAC_VALUES();
 #endif
             return binVal;
         }
@@ -263,7 +257,7 @@ Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
  
     }
 #if INSTRUMENTED_CABAC
-    PRINT_CABAC_VALUES;
+    PRINT_CABAC_VALUES();
 #endif
     return binVal;
 
@@ -312,7 +306,7 @@ Ipp32u H265Bitstream::DecodeSymbolEnd_CABAC(void)
 
     }
 #if INSTRUMENTED_CABAC
-    PRINT_CABAC_VALUES;
+    PRINT_CABAC_VALUES();
 #endif
 
     return binVal;
@@ -354,7 +348,7 @@ Ipp32u H265Bitstream::DecodeTerminatingBit_CABAC(void)
         }
     }
 #if INSTRUMENTED_CABAC
-    PRINT_CABAC_VALUES;
+    PRINT_CABAC_VALUES();
 #endif
     return Bin;
 } //Ipp32u H265Bitstream::DecodeTerminatingBit_CABAC(void)
@@ -392,7 +386,7 @@ Ipp32u H265Bitstream::DecodeSingleBinEP_CABAC(void)
     }
 
 #if INSTRUMENTED_CABAC
-    PRINT_CABAC_VALUES;
+    PRINT_CABAC_VALUES();
 #endif
     return Bin;
 } //Ipp32u H265Bitstream::DecodeSingleBinEP_CABAC(void)
@@ -478,7 +472,7 @@ Ipp32u H265Bitstream::DecodeBypassBins_CABAC(Ipp32s numBins)
     }
 
 #if INSTRUMENTED_CABAC
-    PRINT_CABAC_VALUES;
+    PRINT_CABAC_VALUES();
 #endif
     return bins;
 }

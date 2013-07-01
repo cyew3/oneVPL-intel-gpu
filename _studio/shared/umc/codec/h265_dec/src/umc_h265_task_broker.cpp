@@ -1440,21 +1440,21 @@ bool TaskBrokerTwoThread_H265::GetNextTaskManySlices(H265DecoderFrameInfo * info
     if (info->m_prepared != 2)
         return false;
 
-    if (m_FirstAU->HasDependentSliceSegments())
+    if (info->HasDependentSliceSegments())
     {
         return TaskBrokerSingleThread_H265::GetNextTaskInternal(pTask);
     }
 
-    if (GetDecRecTask(m_FirstAU, pTask))
+    if (GetDecRecTask(info, pTask))
         return true;
 
-    if (m_FirstAU->IsNeedDeblocking())
+    if (info->IsNeedDeblocking())
     {
-        if (GetNextSliceToDeblocking(m_FirstAU, pTask))
+        if (GetNextSliceToDeblocking(info, pTask))
             return true;
     }
 
-    if (GetSAOTask(m_FirstAU, pTask))
+    if (GetSAOTask(info, pTask))
         return true;
 
     return false;
