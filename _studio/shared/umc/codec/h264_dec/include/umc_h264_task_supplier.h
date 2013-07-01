@@ -689,6 +689,11 @@ inline Ipp32s CalculateDPBSize(Ipp8u & level_idc, Ipp32s width, Ipp32s height, I
             break;
         }
 
+        if (width == 0 && height == 0)
+        {
+            throw h264_exception(UMC_ERR_INVALID_PARAMS);
+        }
+
         Ipp32u dpbLevel = (MaxDPBx2 * 512) / ((width * height) + ((width * height)>>1));
         dpbSize = IPP_MIN(16, dpbLevel);
 
