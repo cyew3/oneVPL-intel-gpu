@@ -75,6 +75,8 @@ File Name: .h
 #define HANDLE_CAP_OPTION(member, OPT_TYPE, description) \
 {VM_STRING("-")VM_STRING(#member), OPT_TYPE, &m_extEncoderCapability->member, VM_STRING(description), NULL}
 
+#define HANDLE_HEVC_OPTION(member, OPT_TYPE, description)\
+{VM_STRING("-")VM_STRING(#member), OPT_TYPE, &m_extCodingOptionsHEVC->member, VM_STRING(description), NULL}
 
 #define FILL_MASK(type, ptr)\
     if (m_bResetParamsStart)\
@@ -107,6 +109,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
 , m_extCodingOptionsQuantMatrix(new mfxExtCodingOptionQuantMatrix())
 , m_extDumpFiles(new mfxExtDumpFiles())
 , m_extVideoSignalInfo(new mfxExtVideoSignalInfo())
+, m_extCodingOptionsHEVC(new mfxExtCodingOptionHEVC())
 , m_extAvcTemporalLayers(new mfxExtAvcTemporalLayers())
 , m_extCodingOptionsSPSPPS(new mfxExtCodingOptionSPSPPS())
 , m_extEncoderCapability(new mfxExtEncoderCapability())
@@ -190,6 +193,29 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION(PicTimingSEI,           OPT_TRI_STATE,  ""),
         HANDLE_EXT_OPTION(VuiNalHrdParameters,    OPT_TRI_STATE,  ""),
         HANDLE_EXT_OPTION(NalHrdConformance,      OPT_TRI_STATE,  ""),
+
+        HANDLE_HEVC_OPTION(Log2MaxCUSize,          OPT_UINT_16,    "4-6"),
+        HANDLE_HEVC_OPTION(MaxCUDepth,             OPT_UINT_16,    ""),
+        HANDLE_HEVC_OPTION(QuadtreeTULog2MaxSize,          OPT_UINT_16,    ""),
+        HANDLE_HEVC_OPTION(QuadtreeTULog2MinSize,          OPT_UINT_16,    ""),
+        HANDLE_HEVC_OPTION(QuadtreeTUMaxDepthIntra,        OPT_UINT_16,    ""),
+        HANDLE_HEVC_OPTION(QuadtreeTUMaxDepthInter,        OPT_UINT_16,    ""),
+        HANDLE_HEVC_OPTION(AnalyzeChroma,                  OPT_TRI_STATE,    ""),
+        HANDLE_HEVC_OPTION(SignBitHiding,          OPT_UINT_16,    ""),
+        HANDLE_HEVC_OPTION(RDOQuant,               OPT_UINT_16,    ""),
+        HANDLE_HEVC_OPTION(SplitThresholdStrengthCU,      OPT_UINT_16,    "0=disabled, 1-3"),
+        HANDLE_HEVC_OPTION(SplitThresholdStrengthTU,      OPT_UINT_16,    "0=disabled, 1-3"),
+        HANDLE_HEVC_OPTION(IntraNumCand1_2,               OPT_UINT_16,    "1-35: 4x4 stage1"),
+        HANDLE_HEVC_OPTION(IntraNumCand1_3,               OPT_UINT_16,    "1-35: 8x8 stage1"),
+        HANDLE_HEVC_OPTION(IntraNumCand1_4,               OPT_UINT_16,    "1-35: 16x16 stage1"),
+        HANDLE_HEVC_OPTION(IntraNumCand1_5,               OPT_UINT_16,    "1-35: 32x32 stage1"),
+        HANDLE_HEVC_OPTION(IntraNumCand1_6,               OPT_UINT_16,    "1-35: 64x64 stage1"),
+        HANDLE_HEVC_OPTION(IntraNumCand2_2,               OPT_UINT_16,    "1-35: 4x4 stage2"),
+        HANDLE_HEVC_OPTION(IntraNumCand2_3,               OPT_UINT_16,    "1-35: 8x8 stage2"),
+        HANDLE_HEVC_OPTION(IntraNumCand2_4,               OPT_UINT_16,    "1-35: 16x16 stage2"),
+        HANDLE_HEVC_OPTION(IntraNumCand2_5,               OPT_UINT_16,    "1-35: 32x32 stage2"),
+        HANDLE_HEVC_OPTION(IntraNumCand2_6,               OPT_UINT_16,    "1-35: 64x14 stage2"),
+        HANDLE_HEVC_OPTION(WPP,                           OPT_UINT_16,    "0=disabled, 1=enabled"),
 
         // mfxExtCodingOption2
         HANDLE_EXT_OPTION2(IntRefType,             OPT_UINT_16,   ""),
@@ -316,8 +342,8 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
     for (; argv < argvEnd; argv++)
     {
         int nPattern = 0;
-        if ((0 != (nPattern = m_OptProc.Check(argv[0], VM_STRING("(-| )(m2|mpeg2|avc|h264|jpeg|vp8)"), VM_STRING("target format")))) ||
-            m_OptProc.Check(argv[0], VM_STRING("-CodecType"), VM_STRING("target format"),OPT_SPECIAL, VM_STRING("m2|mpeg2|avc|h264|jpeg|vp8")))
+        if ((0 != (nPattern = m_OptProc.Check(argv[0], VM_STRING("(-| )(m2|mpeg2|avc|h264|jpeg|vp8|h265)"), VM_STRING("target format")))) || 
+            m_OptProc.Check(argv[0], VM_STRING("-CodecType"), VM_STRING("target format"),OPT_SPECIAL, VM_STRING("m2|mpeg2|avc|h264|jpeg|vp8|h265")))  
 
         {
             if (!nPattern)
@@ -327,7 +353,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                 argv++;
             }
 
-            switch ((nPattern - 1) % 6)
+            switch ((nPattern - 1) % 7)
             {
                 case 0:
                 case 1:
@@ -355,6 +381,11 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                         pMFXParams->mfx.CodecId = MFX_CODEC_VP8;
                     #endif
 
+                    break;
+                }
+                case 6:
+                {
+                    pMFXParams->mfx.CodecId = MFX_CODEC_HEVC;
                     break;
                 }
             }
@@ -1009,6 +1040,9 @@ mfxStatus MFXTranscodingPipeline::CheckParams()
 
     if (!m_extVideoSignalInfo.IsZero())
         m_components[eREN].m_extParams.push_back(m_extVideoSignalInfo);
+
+    if (!m_extCodingOptionsHEVC.IsZero())
+        m_components[eREN].m_extParams.push_back(m_extCodingOptionsHEVC);
 
     if (!m_extCodingOptionsSPSPPS.IsZero())
         m_components[eREN].m_extParams.push_back(m_extCodingOptionsSPSPPS);

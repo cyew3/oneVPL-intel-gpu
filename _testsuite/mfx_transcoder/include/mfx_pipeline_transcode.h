@@ -79,8 +79,9 @@ protected:
     MFXExtBufferPtr<mfxExtCodingOptionQuantMatrix> m_extCodingOptionsQuantMatrix;
     MFXExtBufferPtr<mfxExtDumpFiles>   m_extDumpFiles;
     MFXExtBufferPtr<mfxExtVideoSignalInfo> m_extVideoSignalInfo;
-    
-      //lync support
+    MFXExtBufferPtr<mfxExtCodingOptionHEVC >  m_extCodingOptionsHEVC;
+
+    //lync support
     MFXExtBufferPtr<mfxExtCodingOptionSPSPPS> m_extCodingOptionsSPSPPS;
     MFXExtBufferPtr<mfxExtAvcTemporalLayers> m_extAvcTemporalLayers;
 

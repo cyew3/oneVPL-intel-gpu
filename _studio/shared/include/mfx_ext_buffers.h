@@ -155,5 +155,33 @@ typedef struct {
     mfxU32          Variances[11];
 } mfxExtVppReport;
 
+#define MFX_EXTBUFF_HEVCENC MFX_MAKEFOURCC('B','2','6','5')
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16      Log2MaxCUSize;
+    mfxU16      MaxCUDepth;
+    mfxU16      QuadtreeTULog2MaxSize;
+    mfxU16      QuadtreeTULog2MinSize;
+    mfxU16      QuadtreeTUMaxDepthIntra;
+    mfxU16      QuadtreeTUMaxDepthInter;
+    mfxU16      AnalyzeChroma;              /* tri-state option */
+    mfxU16      SignBitHiding;
+    mfxU16      RDOQuant;
+    mfxU16      SplitThresholdStrengthCU;
+    mfxU16      SplitThresholdStrengthTU;
+    mfxU16      IntraNumCand1_2;
+    mfxU16      IntraNumCand1_3;
+    mfxU16      IntraNumCand1_4;
+    mfxU16      IntraNumCand1_5;
+    mfxU16      IntraNumCand1_6;
+    mfxU16      IntraNumCand2_2;
+    mfxU16      IntraNumCand2_3;
+    mfxU16      IntraNumCand2_4;
+    mfxU16      IntraNumCand2_5;
+    mfxU16      IntraNumCand2_6;
+    mfxU16      WPP;
+
+} mfxExtCodingOptionHEVC;
 
 #endif // __MFX_EXT_BUFFERS_H__

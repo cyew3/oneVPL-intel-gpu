@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2012-2013 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -17,7 +17,7 @@ File Name: .h
 #if defined(DEBUG) || defined (_DEBUG)
     #define MAX_SYNC_WAIT      300000u // 5 min
 #else
-    #define MAX_SYNC_WAIT      15000u // 15 sec
+    #define MAX_SYNC_WAIT      60000u // 60 sec
 #endif
 
 mfxU32 g_TimeoutGeneric = MAX_SYNC_WAIT;

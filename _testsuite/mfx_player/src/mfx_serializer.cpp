@@ -145,6 +145,11 @@ void   MFXStructureRef <mfxVideoParam>::ConstructValues () const
                 SerializeStruct(VM_STRING("QuantMatrix."), *(mfxExtCodingOptionQuantMatrix*)m_pStruct->ExtParam[i]);
                 break;
             }
+            case MFX_EXTBUFF_HEVCENC :
+            {
+                SerializeStruct(VM_STRING("HEVC."), *(mfxExtCodingOptionHEVC*)m_pStruct->ExtParam[i]);
+                break;
+            }
             case MFX_EXTBUFF_MVC_SEQ_DESC : 
             {
                 
@@ -278,6 +283,32 @@ void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const
     SERIALIZE_INT(CabacInitIdcPlus1);
 
 }
+void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
+{
+    SERIALIZE_INT(Log2MaxCUSize);
+    SERIALIZE_INT(MaxCUDepth);
+    SERIALIZE_INT(QuadtreeTULog2MaxSize);
+    SERIALIZE_INT(QuadtreeTULog2MinSize);
+    SERIALIZE_INT(QuadtreeTUMaxDepthIntra);
+    SERIALIZE_INT(QuadtreeTUMaxDepthInter);
+    SERIALIZE_INT(AnalyzeChroma);
+    SERIALIZE_INT(SignBitHiding);
+    SERIALIZE_INT(RDOQuant);
+    SERIALIZE_INT(SplitThresholdStrengthCU);
+    SERIALIZE_INT(SplitThresholdStrengthTU);
+    SERIALIZE_INT(IntraNumCand1_2);
+    SERIALIZE_INT(IntraNumCand1_3);
+    SERIALIZE_INT(IntraNumCand1_4);
+    SERIALIZE_INT(IntraNumCand1_5);
+    SERIALIZE_INT(IntraNumCand1_6);
+    SERIALIZE_INT(IntraNumCand2_2);
+    SERIALIZE_INT(IntraNumCand2_3);
+    SERIALIZE_INT(IntraNumCand2_4);
+    SERIALIZE_INT(IntraNumCand2_5);
+    SERIALIZE_INT(IntraNumCand2_6);
+    SERIALIZE_INT(WPP);
+}
+
 void MFXStructureRef <mfxFrameInfo>::ConstructValues () const
 {
     SERIALIZE_INT(FrameId.TemporalId);

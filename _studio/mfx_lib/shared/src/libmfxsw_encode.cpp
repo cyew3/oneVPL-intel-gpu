@@ -61,6 +61,14 @@ File Name: libmfxsw_encode.cpp
 #endif
 #endif
 
+#if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
+#if defined(MFX_VA)
+#include "mfx_h265_encode.h"
+#else
+#include "mfx_h265_encode.h"
+#endif
+#endif
+
 // declare static file section
 namespace
 {
@@ -163,6 +171,12 @@ VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
 #endif // MFX_VA
         break;
 #endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE
+
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+    case MFX_CODEC_HEVC:
+        pENCODE = new MFXVideoENCODEH265(core, &mfxRes);
+        break;
+#endif
 
     default:
         break;
@@ -278,6 +292,11 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
             break;
 #endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE
 
+#ifdef MFX_ENABLE_H265_VIDEO_ENCODE
+        case MFX_CODEC_HEVC:
+            mfxRes = MFXVideoENCODEH265::Query(in, out);
+            break;
+#endif
 
         default:
             mfxRes = MFX_ERR_UNSUPPORTED;
@@ -395,6 +414,12 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
 #endif // MFX_VA
             break;
 #endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE
+
+#ifdef MFX_ENABLE_H265_VIDEO_ENCODE
+        case MFX_CODEC_HEVC:
+            mfxRes = MFXVideoENCODEH265::QueryIOSurf(par, request);
+            break;
+#endif // MFX_ENABLE_VC1_VIDEO_ENC
 
         default:
             mfxRes = MFX_ERR_UNSUPPORTED;

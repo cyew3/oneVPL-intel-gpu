@@ -6,6 +6,7 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfxsw", "libmfxsw.vcxproj", "{D719372D-BA13-4730-AFF6-1994B26EFF6C}"
 	ProjectSection(ProjectDependencies) = postProject
 		{F0AFE44D-3A26-45F6-BC3F-6131F91DEC80} = {F0AFE44D-3A26-45F6-BC3F-6131F91DEC80}
+		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055} = {83F019AE-AF39-49C6-B17C-5C4C3FCA2055}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "brc", "brc\brc.vcxproj", "{349FB219-E367-4AFD-B43B-36C580D4ED3D}"
@@ -75,6 +76,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Intel.Mfx.Common.props = Intel.Mfx.Common.props
 		Intel.Mfx.StaticLib.props = Intel.Mfx.StaticLib.props
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "h265_enc", "encode\h265_enc.vcxproj", "{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -600,6 +603,22 @@ Global
 		{F0AFE44D-3A26-45F6-BC3F-6131F91DEC80}.Release|Win32.Build.0 = release|Win32
 		{F0AFE44D-3A26-45F6-BC3F-6131F91DEC80}.Release|x64.ActiveCfg = release|x64
 		{F0AFE44D-3A26-45F6-BC3F-6131F91DEC80}.Release|x64.Build.0 = release|x64
+		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Debug (Intel)|Win32.ActiveCfg = Debug|Win32
+		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Debug (Intel)|Win32.Build.0 = Debug|Win32
+		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Debug (Intel)|x64.ActiveCfg = Debug|x64
+		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Debug (Intel)|x64.Build.0 = Debug|x64
+		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Debug|Win32.ActiveCfg = Debug|Win32
+		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Debug|Win32.Build.0 = Debug|Win32
+		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Debug|x64.ActiveCfg = Debug|x64
+		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Debug|x64.Build.0 = Debug|x64
+		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Release (Intel)|Win32.ActiveCfg = Release|Win32
+		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Release (Intel)|Win32.Build.0 = Release|Win32
+		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Release (Intel)|x64.ActiveCfg = Release|x64
+		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Release (Intel)|x64.Build.0 = Release|x64
+		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Release|Win32.ActiveCfg = Release|Win32
+		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Release|Win32.Build.0 = Release|Win32
+		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Release|x64.ActiveCfg = Release|x64
+		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -494,6 +494,25 @@ protected:
 };
 
 template<>
+class MFXStructureRef <mfxExtCodingOptionHEVC>
+    : public MFXStructureBase<mfxExtCodingOptionHEVC>
+{
+public:
+    MFXStructureRef(mfxExtBuffer & refStruct, int flags = 0)
+        : MFXStructureBase<mfxExtCodingOptionHEVC>((mfxExtCodingOptionHEVC &)refStruct, flags)
+    {
+    }
+
+    MFXStructureRef(mfxExtCodingOptionHEVC & refStruct, int flags = 0)
+        :MFXStructureBase<mfxExtCodingOptionHEVC>(refStruct, flags)
+    {
+    }
+
+protected:
+    virtual void ConstructValues () const;
+};
+
+template<>
 class MFXStructureRef <mfxFrameInfo>
     : public MFXStructureBase<mfxFrameInfo>
 {
