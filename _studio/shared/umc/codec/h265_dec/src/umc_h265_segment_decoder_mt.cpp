@@ -105,6 +105,10 @@ void H265SegmentDecoderMultiThreaded::EndProcessingSegment(H265Task &Task)
 
 UMC::Status H265SegmentDecoderMultiThreaded::ProcessSegment(void)
 {
+#ifdef __EXCEPTION_HANDLER_
+    exceptionHandler.setTranslator();
+#endif
+
     H265Task Task(m_iNumber);
 
     if (m_pTaskBroker->GetNextTask(&Task))

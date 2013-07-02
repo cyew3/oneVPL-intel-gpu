@@ -836,7 +836,7 @@ bool TaskBroker_H265::GetSAOTask(H265DecoderFrameInfo * info, H265Task *pTask)
         for (Ipp32s i = 0; i < sliceCount; i += 1)
         {
             H265Slice *pTemp = info->GetSlice(i);
-            if (pTemp->m_bInProcess || !pTemp->m_bDeblocked)
+            if (pTemp->m_bInProcess || !pTemp->m_bDeblocked || !pTemp->m_bDecoded)
                 return false;
         }
 

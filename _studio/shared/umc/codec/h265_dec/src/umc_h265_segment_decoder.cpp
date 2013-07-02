@@ -606,7 +606,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
         boundaryFlag = true;
     }
 
-    if (((Depth < pCU->m_DepthArray[AbsPartIdx]) && (Depth < g_MaxCUDepth - g_AddCUDepth)) || boundaryFlag)
+    if (boundaryFlag || ((Depth < pCU->m_DepthArray[AbsPartIdx]) && (Depth < g_MaxCUDepth - g_AddCUDepth)))
     {
         Ipp32u Idx = AbsPartIdx;
         if ((g_MaxCUWidth >> Depth) == m_pPicParamSet->MinCUDQPSize && m_pPicParamSet->cu_qp_delta_enabled_flag)

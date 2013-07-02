@@ -14,32 +14,12 @@
 #include "umc_h265_dec_debug.h"
 #include <cstdarg>
 
-// #define __EXCEPTION_HANDLER_
-
-#ifdef __EXCEPTION_HANDLER_
-
-#include <eh.h>
-class ExceptionHandlerInitializer
-{
-public:
-
-    ExceptionHandlerInitializer()
-    {
-        _set_se_translator(ExceptionHandlerInitializer::trans_func);
-    }
-
-    static void trans_func(unsigned int , EXCEPTION_POINTERS* )
-    {
-        __asm int 3;
-        throw UMC::h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-    }
-};
-
-static ExceptionHandlerInitializer exceptionHandler;
-#endif // __EXCEPTION_HANDLER_
-
 namespace UMC_HEVC_DECODER
 {
+
+#ifdef __EXCEPTION_HANDLER_
+ExceptionHandlerInitializer exceptionHandler;
+#endif // __EXCEPTION_HANDLER_
 
 void Trace(vm_char * format, ...)
 {

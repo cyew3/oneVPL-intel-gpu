@@ -466,7 +466,7 @@ void H265HeadersBitstream::parsePTL(H265ProfileTierLevel *rpcPTL, bool profilePr
 
     for(int i = 0; i < maxNumSubLayersMinus1; i++)
     {
-        if(rpcPTL->sub_layer_level_present_flag & (1 << i) != 0)
+        if((rpcPTL->sub_layer_level_present_flag & (1 << i)) != 0)
         {
             if(profilePresentFlag)
                 parseProfileTier(rpcPTL->getSubLayerPTL(i));

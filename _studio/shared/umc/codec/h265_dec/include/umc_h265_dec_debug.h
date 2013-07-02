@@ -21,6 +21,8 @@
 #include <windows.h>
 #endif
 
+//#define __EXCEPTION_HANDLER_
+
 namespace UMC_HEVC_DECODER
 {
 
@@ -112,6 +114,33 @@ private:
 #endif // defined(_MSC_VER)
     }
 };
+
+#ifdef __EXCEPTION_HANDLER_
+
+#include <eh.h>
+class ExceptionHandlerInitializer
+{
+public:
+
+    ExceptionHandlerInitializer()
+    {
+        _set_se_translator(ExceptionHandlerInitializer::trans_func);
+    }
+
+    void setTranslator()
+    {
+        _set_se_translator(ExceptionHandlerInitializer::trans_func);
+    }
+
+    static void trans_func(unsigned int , EXCEPTION_POINTERS* )
+    {
+        throw UMC_HEVC_DECODER::h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+    }
+};
+
+extern ExceptionHandlerInitializer exceptionHandler;
+
+#endif // __EXCEPTION_HANDLER_
 
 } // namespace UMC_HEVC_DECODER
 
