@@ -372,8 +372,7 @@ mfxStatus AudioDECODEMP3::DecodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffe
         sts = CheckBitstream(bs);
         MFX_CHECK_STS(sts);
 
-        //sts = ConstructFrame(bs, &m_frame);
-        sts = ConstructFrame(bs, buffer_out);
+        sts = ConstructFrame(bs, &m_frame);
 
         if (MFX_ERR_NONE != sts)
         {
@@ -453,8 +452,10 @@ mfxStatus AudioDECODEMP3::ConstructFrame(mfxBitstream *in, mfxBitstream *out)
     mInData.SetBufferPointer((Ipp8u *)in->Data + in->DataOffset, in->DataLength);
     mInData.SetDataSize(in->DataLength);
 
+    unsigned int RawFrameSize;
+
     UMC::Status stsUMC = m_pMP3AudioDecoder->FrameConstruct(&mInData, &inBufferSize, 
-                                                                &inBufferID3HeaderSize);
+                                                                &inBufferID3HeaderSize, &RawFrameSize);
     switch (stsUMC)
     {
     case UMC::UMC_OK: 
