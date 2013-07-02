@@ -786,8 +786,7 @@ template <EnumTextType c_plane_type >
 static void PrepareInterpSrc( H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicList RefPicList,
                               IppVCInterpolateBlock_8u& interpolateInfo, Ipp8u* temp_interpolarion_buffer )
 {
-    Ipp32s RefIdx = PUi.interinfo.mvinfo[RefPicList].RefIdx;
-    VM_ASSERT(RefIdx >= 0);
+    VM_ASSERT(PUi.interinfo.mvinfo[RefPicList].RefIdx >= 0);
 
     Ipp32u PartAddr = PUi.PartAddr;
     Ipp32s Width = PUi.Width;
@@ -875,7 +874,7 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
     Ipp32s bitDepth = ( c_plane_type == TEXT_CHROMA ) ? g_bitDepthC : g_bitDepthY;
     Ipp32s tap = ( c_plane_type == TEXT_CHROMA ) ? 4 : 8;
     Ipp32s shift = c_bi ? bitDepth - 8 : 6;
-    Ipp32s  offset = c_bi ? 0 : 32;
+    Ipp16s offset = c_bi ? 0 : 32;
 
     const Ipp32s low_bits_mask = ( c_plane_type == TEXT_CHROMA ) ? 7 : 3;
     H265MotionVector MV = PUi.interinfo.mvinfo[RefPicList].MV; 
@@ -913,14 +912,15 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
             if ( eAddAverage == AVERAGE_FROM_PIC )
                 WriteAverageToPic( in_pSrc, in_SrcPitch, in_pSrcPic2, in_SrcPic2Pitch, pPicDst, PicDstStride, iPUWidth, Height );
             else if ( eAddAverage == AVERAGE_FROM_BUF )
-                VM_ASSERT(0); // must be handled by AVERAGE_FROM_PIC
+                VM_ASSERT(0); // it should have been passed with AVERAGE_FROM_PIC in H265Prediction::MotionCompensation with the other block
             else // weighted prediction still requires intermediate copies
             {
                 const int c_shift = 14 - g_bitDepthY;
-                if ( c_plane_type == TEXT_CHROMA ) 
-                    CopyPUChroma< c_shift >(in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, Width, Height);
-                else
-                    CopyPULuma< c_shift >(in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, Width, Height);
+                int copy_width = Width; 
+                if (c_plane_type == TEXT_CHROMA) 
+                    copy_width <<= 1;
+
+                CopyExtendPU< c_shift >(in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, copy_width, Height);
             }
         }
     }
@@ -951,12 +951,12 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
         Ipp16s tmpBuf[80 * 80];
         Ipp32u tmpStride = iPUWidth + tap;
 
-        shift = c_bi ? 6 : 20 - bitDepth;
-        offset = c_bi ? 0 : 1 << (19 - bitDepth);
-
         Interpolate<c_plane_type>( INTERP_HOR, 
                                    in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, tmpStride,
                                    in_dx, Width, Height + tap - 1, bitDepth - 8, 0);
+
+        shift = c_bi ? 6 : 20 - bitDepth;
+        offset = c_bi ? 0 : 1 << (19 - bitDepth);
 
         if (!c_bi) // Write directly into buffer
             Interpolate<c_plane_type>( INTERP_VER,
@@ -979,114 +979,185 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
 
 
 //=================================================================================================
-const Ipp16s g_lumaInterpolateFilter8X[3][8 * 8] =
+void H265Prediction::WriteAverageToPic(
+                const H265PlaneYCommon * pSrc0,
+                Ipp32u in_Src0Pitch,      // in samples
+                const H265PlaneYCommon * pSrc1,
+                Ipp32u in_Src1Pitch,      // in samples
+                H265PlaneYCommon* H265_RESTRICT pDst,
+                Ipp32u in_DstPitch,       // in samples
+                Ipp32s width,
+                Ipp32s height )
 {
-    {   
-      -1, -1, -1, -1, -1, -1, -1, -1, 
-       4,  4,  4,  4,  4,  4,  4,  4,
-     -10,-10,-10,-10,-10,-10,-10,-10,
-      58, 58, 58, 58, 58, 58, 58, 58, 
-      17, 17, 17, 17, 17, 17, 17, 17, 
-      -5, -5, -5, -5, -5, -5, -5, -5, 
-       1,  1,  1,  1,  1,  1,  1,  1,
-       0,  0,  0,  0,  0,  0,  0,  0 
-    },
+    #pragma ivdep
+    for (int j = 0; j < height; j++)
     {
-      -1, -1, -1, -1, -1, -1, -1, -1, 
-       4,  4,  4,  4,  4,  4,  4,  4,
-     -11,-11,-11,-11,-11,-11,-11,-11,
-      40, 40, 40, 40, 40, 40, 40, 40,
-      40, 40, 40, 40, 40, 40, 40, 40,
-     -11,-11,-11,-11,-11,-11,-11,-11,
-       4,  4,  4,  4,  4,  4,  4,  4,
-      -1, -1, -1, -1, -1, -1, -1, -1 
-    },
-    {
-       0,  0,  0,  0,  0,  0,  0,  0,
-       1,  1,  1,  1,  1,  1,  1,  1,
-      -5, -5, -5, -5, -5, -5, -5, -5, 
-      17, 17, 17, 17, 17, 17, 17, 17, 
-      58, 58, 58, 58, 58, 58, 58, 58, 
-     -10,-10,-10,-10,-10,-10,-10,-10,
-       4,  4,  4,  4,  4,  4,  4,  4,
-      -1, -1, -1, -1, -1, -1, -1, -1 
+        #pragma ivdep
+        #pragma vector always
+        for (int i = 0; i < width; i++)
+             pDst[i] = (((Ipp16u)pSrc0[i] + (Ipp16u)pSrc1[i] + 1) >> 1);
+
+        pSrc0 += in_Src0Pitch;
+        pSrc1 += in_Src1Pitch;
+        pDst += in_DstPitch;
     }
-};
+}
 
+/* ****************************************************************************** *\
+FUNCTION: CopyPU
+DESCRIPTION:
+\* ****************************************************************************** */
 
-// ML: OPT: Doubled length of the filter to process both U and V at once
-const Ipp16s g_chromaInterpolateFilter8X[7][4 * 8] =
+// ML: OPT: TODO: Parameterize for const shift
+template <int c_shift>
+void H265Prediction::CopyExtendPU(const H265PlaneYCommon * in_pSrc,
+                                Ipp32u in_SrcPitch, // in samples
+                                Ipp16s* H265_RESTRICT in_pDst,
+                                Ipp32u in_DstPitch, // in samples
+                                Ipp32s width,
+                                Ipp32s height )
 {
-    {
-      -2, -2, -2, -2, -2, -2, -2, -2, 
-      58, 58, 58, 58, 58, 58, 58, 58, 
-      10, 10, 10, 10, 10, 10, 10, 10, 
-      -2, -2, -2, -2, -2, -2, -2, -2 
-    },
-    { -4, -4, -4, -4, -4, -4, -4, -4, 
-      54, 54, 54, 54, 54, 54, 54, 54, 
-      16, 16, 16, 16, 16, 16, 16, 16, 
-      -2, -2, -2, -2, -2, -2, -2, -2 
-    },
-    { -6, -6, -6, -6, -6, -6, -6, -6, 
-      46, 46, 46, 46, 46, 46, 46, 46,
-      28, 28, 28, 28, 28, 28, 28, 28,
-      -4, -4, -4, -4, -4, -4, -4, -4
-    },
-    { -4, -4, -4, -4, -4, -4, -4, -4, 
-      36, 36, 36, 36, 36, 36, 36, 36, 
-      36, 36, 36, 36, 36, 36, 36, 36, 
-      -4, -4, -4, -4, -4, -4, -4, -4
-    },
-    { -4, -4, -4, -4, -4, -4, -4, -4, 
-      28, 28, 28, 28, 28, 28, 28, 28,
-      46, 46, 46, 46, 46, 46, 46, 46,
-      -6, -6, -6, -6, -6, -6, -6, -6 
-    },
-    { -2, -2, -2, -2, -2, -2, -2, -2, 
-      16, 16, 16, 16, 16, 16, 16, 16, 
-      54, 54, 54, 54, 54, 54, 54, 54, 
-      -4, -4, -4, -4, -4, -4, -4, -4
-    },
-    { -2, -2, -2, -2, -2, -2, -2, -2, 
-      10, 10, 10, 10, 10, 10, 10, 10, 
-      58, 58, 58, 58, 58, 58, 58, 58, 
-      -2, -2, -2, -2, -2, -2, -2, -2 
-    }
-};
+    const H265PlaneYCommon * pSrc = in_pSrc;
+    Ipp16s *pDst = in_pDst;
+    Ipp32s i, j;
 
-template <typename> class upconvert_int;
-template <> class upconvert_int<Ipp8u>  { public: typedef Ipp16s  result; };
-template <> class upconvert_int<Ipp16s> { public: typedef Ipp32s  result; };
+    #pragma ivdep
+    for (j = 0; j < height; j++)
+    {
+        #pragma vector always
+        for (i = 0; i < width; i++)
+        {
+            pDst[i] = (Ipp16s)(((Ipp32s)pSrc[i]) << c_shift);
+        }
+
+        pSrc += in_SrcPitch;
+        pDst += in_DstPitch;
+    }
+}
 
 //=================================================================================================
-// general template for Interpolate kernel
-template
-< 
-    typename     t_vec, 
-    EnumTextType c_plane_type,
-    typename     t_src, 
-    typename     t_dst
->
-class t_InterpKernel_intrin
+// 4-tap and 8-tap filter implemntation using filter constants as template params where general case 
+// is to multiply by constant but for some trivial constants specializations are provided
+// to get the result faster
+
+static __m128i H265_FORCEINLINE _mm_interp_load( const Ipp8u* pSrc )  { return _mm_cvtepu8_epi16( MM_LOAD_EPI64( pSrc ) ); }
+static __m128i H265_FORCEINLINE _mm_interp_load( const Ipp16s* pSrc ) { return _mm_loadu_si128( (const __m128i *)pSrc ); }
+
+template <int c1, int c2, int c3, int c4, typename t_src >
+static __m128i H265_FORCEINLINE _mm_interp_4tap_kernel( const t_src* pSrc, Ipp32s accum_pitch, __m128i& )
+{
+    __m128i v_acc1 = t_interp_mulw< c1 >::func( _mm_interp_load( pSrc ) );
+    v_acc1 = t_interp_addmulw< c2 >::func( v_acc1, _mm_interp_load( pSrc + accum_pitch   ) );
+    v_acc1 = t_interp_addmulw< c3 >::func( v_acc1, _mm_interp_load( pSrc + accum_pitch*2 ) );
+    v_acc1 = t_interp_addmulw< c4 >::func( v_acc1, _mm_interp_load( pSrc + accum_pitch*3 ) );
+    return ( v_acc1 );
+}
+
+template <int c1, int c2, int c3, int c4 >
+static __m128i H265_FORCEINLINE _mm_interp_4tap_kernel( const Ipp16s* pSrc, Ipp32s accum_pitch, __m128i& v_ret_acc2 )
+{
+    __m128i v_acc1_lo = _mm_setzero_si128(), v_acc1_hi = _mm_setzero_si128();
+    t_interp_addmuld< c1 >::func( _mm_interp_load( pSrc                 ), v_acc1_lo, v_acc1_hi );
+    t_interp_addmuld< c2 >::func( _mm_interp_load( pSrc + accum_pitch   ), v_acc1_lo, v_acc1_hi );
+    t_interp_addmuld< c3 >::func( _mm_interp_load( pSrc + accum_pitch*2 ), v_acc1_lo, v_acc1_hi );
+    t_interp_addmuld< c4 >::func( _mm_interp_load( pSrc + accum_pitch*3 ), v_acc1_lo, v_acc1_hi );
+    v_ret_acc2 = v_acc1_hi;
+    return ( v_acc1_lo );
+}
+
+template <int c1, int c2, int c3, int c4, int c5, int c6, int c7, int c8 >
+static __m128i H265_FORCEINLINE _mm_interp_8tap_kernel( const Ipp16s* pSrc, Ipp32s accum_pitch, __m128i& v_ret_acc2 )
+{
+    __m128i v_acc1_hi, v_acc1 = _mm_interp_4tap_kernel<c1, c2, c3, c4 >( pSrc, accum_pitch, v_acc1_hi );
+    __m128i v_acc2_hi, v_acc2 = _mm_interp_4tap_kernel<c5, c6, c7, c8 >( pSrc + accum_pitch*4, accum_pitch, v_acc2_hi );
+    v_ret_acc2 = _mm_add_epi32( v_acc1_hi, v_acc2_hi );
+    return ( _mm_add_epi32( v_acc1, v_acc2 ) );
+}
+
+template <int c1, int c2, int c3, int c4, int c5, int c6, int c7, int c8 >
+static __m128i H265_FORCEINLINE _mm_interp_8tap_kernel( const Ipp8u* pSrc, Ipp32s accum_pitch, __m128i& )
+{
+    __m128i v_unused1, v_acc1 = _mm_interp_4tap_kernel<c1, c2, c3, c4 >( pSrc, accum_pitch, v_unused1 );
+    __m128i v_unused2, v_acc2 = _mm_interp_4tap_kernel<c5, c6, c7, c8 >( pSrc + accum_pitch*4, accum_pitch, v_unused2 );
+    return ( _mm_adds_epi16( v_acc1, v_acc2 ) );
+}
+
+
+
+//=================================================================================================
+// general multiplication by const form
+template <int c_coeff> class t_interp_mulw
+{ 
+public: 
+    static __m128i H265_FORCEINLINE func( __m128i v_src ) { return _mm_mullo_epi16( v_src, _mm_set1_epi16( c_coeff ) ); } }
+;
+
+template <int c_coeff> class t_interp_muld
+{ 
+public:
+    static __m128i H265_FORCEINLINE func( __m128i v_src, __m128i& v_ret_hi )
+    {
+        __m128i v_coeff = _mm_set1_epi16( c_coeff );
+
+        __m128i v_chunk = _mm_mullo_epi16( v_src, v_coeff );
+        __m128i v_chunk_h = _mm_mulhi_epi16( v_src, v_coeff );
+
+        v_ret_hi = _mm_unpackhi_epi16( v_chunk, v_chunk_h );
+        return ( _mm_unpacklo_epi16( v_chunk, v_chunk_h ) );
+    }
+};
+
+template <int c_coeff> class t_interp_addmulw 
+{ public: static __m128i H265_FORCEINLINE func( __m128i v_acc, __m128i v_src ) { return _mm_adds_epi16( v_acc, t_interp_mulw< c_coeff >::func( v_src ) ); } };
+
+template <int c_coeff> class t_interp_addmuld
 {
 public:
-    static void func(
-        t_dst* H265_RESTRICT pDst, 
-        const t_src* pSrc, 
-        int    in_SrcPitch, // in samples
-        int    in_DstPitch, // in samples
-        int    width,
-        int    height,
-        int    accum_pitch,
-        int    tab_index,
-        int    shift,
-        int    offset,
-        H265Prediction::EnumAddAverageType eAddAverage = H265Prediction::AVERAGE_NO,
-        const void* in_pSrc2 = NULL,
-        int   in_Src2Pitch = 0 // in samples
-    );
+    static void H265_FORCEINLINE func( __m128i v_src, __m128i& v_acc1, __m128i& v_acc2 )
+    {
+        __m128i v_hi, v_lo = t_interp_muld< c_coeff >::func( v_src, v_hi );
+        v_acc2 = _mm_add_epi32( v_acc2, v_hi );
+        v_acc1 = _mm_add_epi32( v_acc1, v_lo );
+    } 
 };
+
+//=================================================================================================
+// specializations for particular constants that are faster to compute without doing multiply - who said metaprogramming is too complex??
+
+// pass-through accumulators for zero 
+template <> class t_interp_addmulw< 0 > 
+{ public: static __m128i H265_FORCEINLINE func( __m128i v_acc, __m128i v_src ) { return v_acc; } };
+template <> class t_interp_addmuld< 0 >
+{ public: static void H265_FORCEINLINE func( __m128i v_src, __m128i& v_acc1, __m128i& v_acc2 ) {} };
+
+template <> class t_interp_mulw< 1 >
+{ public: static __m128i H265_FORCEINLINE func( __m128i v_src ) { return v_src; } };
+template <> class t_interp_muld< 1 >
+{ public: static __m128i H265_FORCEINLINE func( __m128i v_src, __m128i& v_ret_hi ) { v_ret_hi = _mm_cvtepi16_epi32( _mm_unpackhi_epi64( v_src, v_src ) ); return ( _mm_cvtepi16_epi32( v_src ) ); } };
+
+template <> class t_interp_mulw< -1 >
+{ public: static __m128i H265_FORCEINLINE func( __m128i v_src ) { return _mm_sub_epi16( _mm_setzero_si128(), v_src ); } };
+template <> class t_interp_muld< -1 >
+{ public: static __m128i H265_FORCEINLINE func( __m128i v_src, __m128i& v_ret_hi ) { return t_interp_muld< 1 >::func( t_interp_mulw< -1 >::func( v_src ), v_ret_hi ); } };
+    // although the above does not properly work for -32768 (0x8000) value (proper unpack-sign-extend first with two subtracts from 0 is slower) it should be OK as 0x8000 cannot be in the source
+
+template <> class t_interp_mulw< 2 >
+{ public: static __m128i H265_FORCEINLINE func( __m128i v_src ) { return _mm_slli_epi16( v_src, 1 ); } };
+template <> class t_interp_muld< 2 >
+{ public: static __m128i H265_FORCEINLINE func( __m128i v_src, __m128i& v_ret_hi ) { return t_interp_muld< 1 >::func( t_interp_mulw< 2 >::func( v_src ), v_ret_hi ); } };
+
+template <> class t_interp_mulw< -2 >
+{ public: static __m128i H265_FORCEINLINE func( __m128i v_src ) { return t_interp_mulw< -1 >::func( t_interp_mulw< 2 >::func( v_src ) ); } };
+
+template <> class t_interp_mulw< 4 >
+{ public: static __m128i H265_FORCEINLINE func( __m128i v_src ) { return _mm_slli_epi16( v_src, 2 ); } };
+
+template <> class t_interp_mulw< -4 >
+{ public: static __m128i H265_FORCEINLINE func( __m128i v_src ) { return t_interp_mulw< -1 >::func( t_interp_mulw< 4 >::func( v_src ) ); } };
+
+template <> class t_interp_mulw< 16 >
+{ public: static __m128i H265_FORCEINLINE func( __m128i v_src ) { return _mm_slli_epi16( v_src, 4 ); } };
+
 
 //=================================================================================================
 // partioal specialization for __m128i; TODO: add __m256i version for AVX2 + dispatch
@@ -1095,9 +1166,10 @@ template
 < 
     EnumTextType c_plane_type,
     typename     t_src, 
-    typename     t_dst
+    typename     t_dst,
+    int          tab_index
 >
-class t_InterpKernel_intrin< __m128i, c_plane_type, t_src, t_dst >
+class t_InterpKernel_intrin< __m128i, c_plane_type, t_src, t_dst, tab_index >
 {
     typedef __m128i t_vec;
 
@@ -1110,7 +1182,6 @@ public:
         int    width,
         int    height,
         int    accum_pitch,
-        int    tab_index,
         int    shift,
         int    offset,
         H265Prediction::EnumAddAverageType eAddAverage,
@@ -1118,14 +1189,9 @@ public:
         int   in_Src2Pitch // in samples
     )
     {
-        typedef typename upconvert_int< t_src >::result t_acc;
         const int c_tap = (c_plane_type == TEXT_LUMA) ? 8 : 4;
 
-        const Ipp16s* coeffs8x = (c_plane_type == TEXT_LUMA) 
-            ? g_lumaInterpolateFilter8X[tab_index - 1] 
-            : g_chromaInterpolateFilter8X[tab_index - 1];
-
-        t_vec v_offset = _mm_cvtsi32_si128( sizeof(t_acc)==4 ? offset : (offset << 16) | offset );
+        t_vec v_offset = _mm_cvtsi32_si128( sizeof(t_src)==2 ? offset : (offset << 16) | offset );
         v_offset = _mm_shuffle_epi32( v_offset, 0 ); // broadcast
         in_Src2Pitch *= (eAddAverage == H265Prediction::AVERAGE_FROM_BUF ? 2 : 1);
 
@@ -1136,47 +1202,40 @@ public:
             t_vec  v_acc;
 
             _mm_prefetch( (const char*)(pSrc + in_SrcPitch), _MM_HINT_NTA ); 
-#ifdef __INTEL_COMPILER
-            #pragma ivdep
-            #pragma nounroll
-#endif
+
             for (i = 0; i < width; i += 8, pDst_ += 8 )
             {
                 t_vec v_acc2 = _mm_setzero_si128(); v_acc = _mm_setzero_si128();
-                const Ipp16s* coeffs = coeffs8x;
                 const t_src*  pSrc_ = pSrc + i;
 
-#ifdef __INTEL_COMPILER
-                #pragma unroll(c_tap)
-#endif
-                for (int k = 0; k < c_tap; ++k )
+                if ( c_plane_type == TEXT_LUMA )   // resolved at compile time
                 {
-                    t_vec v_coeff = _mm_loadu_si128( k + ( const __m128i* )coeffs );
-
-                    if (sizeof(t_src) == 1) // 8-bit source, 16-bit accum [check is resolved/eliminated at compile time]
-                    {
-                        t_vec v_chunk = _mm_cvtepu8_epi16( MM_LOAD_EPI64(pSrc_) );
-                        v_chunk = _mm_mullo_epi16( v_chunk, v_coeff );
-                        v_acc = _mm_add_epi16( v_acc, v_chunk );
-                    }
-                    else // (sizeof(t_src)==2  // 16-bit source, 32-bit accum 
-                    {
-                        t_vec v_chunk = _mm_loadu_si128( (const t_vec*)pSrc_ );
-
-                        t_vec v_chunk_h = _mm_mulhi_epi16( v_chunk, v_coeff );
-                        v_chunk = _mm_mullo_epi16( v_chunk, v_coeff );
-
-                        t_vec v_lo = _mm_unpacklo_epi16( v_chunk, v_chunk_h );
-                        t_vec v_hi = _mm_unpackhi_epi16( v_chunk, v_chunk_h );
-
-                        v_acc  = _mm_add_epi32( v_acc,  v_lo );
-                        v_acc2 = _mm_add_epi32( v_acc2, v_hi );
-                    }
-
-                    pSrc_ += accum_pitch;
+                    if ( tab_index == 1 )   // resolved at compile time
+                        v_acc = _mm_interp_8tap_kernel< -1,   4, -10,  58,  17,  -5,   1,   0 >( pSrc_, accum_pitch, v_acc2 );
+                    else if ( tab_index == 2 )
+                        v_acc = _mm_interp_8tap_kernel< -1,   4, -11,  40,  40, -11,   4,  -1 >( pSrc_, accum_pitch, v_acc2 );
+                    else
+                        v_acc = _mm_interp_8tap_kernel<  0,   1,  -5,  17,  58, -10,   4,  -1 >( pSrc_, accum_pitch, v_acc2 );
+                }
+                else // ( c_plane_type == TEXT_CHROMA  )
+                {
+                    if ( tab_index == 1 )
+                        v_acc = _mm_interp_4tap_kernel< -2, 58, 10, -2 >( pSrc_, accum_pitch, v_acc2 );
+                    else if ( tab_index == 2 )
+                        v_acc = _mm_interp_4tap_kernel< -4, 54, 16, -2 >( pSrc_, accum_pitch, v_acc2 );
+                    else if ( tab_index == 3 )
+                        v_acc = _mm_interp_4tap_kernel< -6, 46, 28, -4 >( pSrc_, accum_pitch, v_acc2 );
+                    else if ( tab_index == 4 )
+                        v_acc = _mm_interp_4tap_kernel< -4, 36, 36, -4 >( pSrc_, accum_pitch, v_acc2 );
+                    else if ( tab_index == 5 )
+                        v_acc = _mm_interp_4tap_kernel< -4, 28, 46, -6 >( pSrc_, accum_pitch, v_acc2 );
+                    else if ( tab_index == 6 )
+                        v_acc = _mm_interp_4tap_kernel< -2, 16, 54, -4 >( pSrc_, accum_pitch, v_acc2 );
+                    else
+                        v_acc = _mm_interp_4tap_kernel< -2, 10, 58, -2 >( pSrc_, accum_pitch, v_acc2 );
                 }
 
-                if ( sizeof(t_acc) == 2 ) // resolved at compile time
+                if ( sizeof(t_src) == 1 ) // resolved at compile time
                 {
                     if ( offset ) // cmp/jmp is nearly free, branch prediction removes 1-instruction from critical dep chain
                         v_acc = _mm_add_epi16( v_acc, v_offset ); 
@@ -1186,7 +1245,7 @@ public:
                     else
                         VM_ASSERT(shift == 0);
                 }
-                else // if ( sizeof(t_acc) == 4 ) // 16-bit src, 32-bit accum
+                else // 16-bit src, 32-bit accum
                 {
                     if ( offset ) {
                         v_acc  = _mm_add_epi32( v_acc,  v_offset );
@@ -1262,8 +1321,42 @@ public:
 };
 
 //=================================================================================================
+template < typename t_vec, EnumTextType plane_type, typename t_src, typename t_dst >
+void t_InterpKernel_dispatch(
+        t_dst* H265_RESTRICT pDst, 
+        const t_src* pSrc, 
+        int    in_SrcPitch, // in samples
+        int    in_DstPitch, // in samples
+        int    tab_index,
+        int    width,
+        int    height,
+        int    accum_pitch,
+        int    shift,
+        int    offset,
+        H265Prediction::EnumAddAverageType eAddAverage,
+        const void* in_pSrc2,
+        int   in_Src2Pitch // in samples
+)
+{
+    if ( tab_index == 1 )
+        t_InterpKernel_intrin< t_vec, plane_type, t_src, t_dst, 1 >::func( pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
+    else if ( tab_index == 2 )
+        t_InterpKernel_intrin< t_vec, plane_type, t_src, t_dst, 2 >::func( pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
+    else if ( tab_index == 3 )
+        t_InterpKernel_intrin< t_vec, plane_type, t_src, t_dst, 3 >::func( pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
+    else if ( tab_index == 4 )
+        t_InterpKernel_intrin< t_vec, plane_type, t_src, t_dst, 4 >::func( pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
+    else if ( tab_index == 5 )
+        t_InterpKernel_intrin< t_vec, plane_type, t_src, t_dst, 5 >::func( pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
+    else if ( tab_index == 6 )
+        t_InterpKernel_intrin< t_vec, plane_type, t_src, t_dst, 6 >::func( pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
+    else if ( tab_index == 7 )
+        t_InterpKernel_intrin< t_vec, plane_type, t_src, t_dst, 7 >::func( pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
+}
+
+//=================================================================================================
 template < EnumTextType plane_type, typename t_src, typename t_dst >
-void H265_FORCEINLINE H265Prediction::Interpolate( 
+void H265Prediction::Interpolate(
                         EnumInterpType interp_type,
                         const t_src* in_pSrc,
                         Ipp32u in_SrcPitch, // in samples
@@ -1273,7 +1366,7 @@ void H265_FORCEINLINE H265Prediction::Interpolate(
                         Ipp32s width,
                         Ipp32s height,
                         Ipp32s shift,
-                        Ipp32s offset,
+                        Ipp16s offset,
                         H265Prediction::EnumAddAverageType eAddAverage,
                         const void* in_pSrc2,
                         int    in_Src2Pitch ) // in samples
@@ -1284,105 +1377,22 @@ void H265_FORCEINLINE H265Prediction::Interpolate(
 
     width <<= int(plane_type == TEXT_CHROMA);
 
-    t_InterpKernel_intrin< __m128i, plane_type, t_src, t_dst >::func( in_pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, tab_index, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
+#ifdef __INTEL_COMPILER
+    if ( _may_i_use_cpu_feature( _FEATURE_AVX2 ) && (width > 8) )
+        t_InterpKernel_dispatch< __m256i, plane_type >( in_pDst, pSrc, in_SrcPitch, in_DstPitch, tab_index, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
+    else
+#endif // __INTEL_COMPILER
+        t_InterpKernel_dispatch< __m128i, plane_type >( in_pDst, pSrc, in_SrcPitch, in_DstPitch, tab_index, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
 }
 
-//=================================================================================================
-void H265Prediction::WriteAverageToPic(
-                const H265PlaneYCommon * pSrc0,
-                Ipp32u in_Src0Pitch,      // in samples
-                const H265PlaneYCommon * pSrc1,
-                Ipp32u in_Src1Pitch,      // in samples
-                H265PlaneYCommon* H265_RESTRICT pDst,
-                Ipp32u in_DstPitch,       // in samples
-                Ipp32s width,
-                Ipp32s height )
-{
-#ifdef __INTEL_COMPILER
-    #pragma unroll(2)
-    #pragma ivdep
+#if 0
+        t_dst tmpBuf[ 80 * 80 * 4 ];
+        t_InterpKernel_dispatch< __m128i, plane_type >( (t_dst*)tmpBuf, pSrc, in_SrcPitch, 64, tab_index, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
+        for (int j = 0; j < height; ++j )
+            for (int i = 0; i < width; ++i )
+                if ( in_pDst[i + j*in_DstPitch] != tmpBuf[ i + j*64] )
+                    _asm int 3;
 #endif
-    for (int j = 0; j < height; j++)
-    {
-
-#ifdef __INTEL_COMPILER
-        #pragma ivdep
-        #pragma vector always
-#endif
-        for (int i = 0; i < width; i++)
-             pDst[i] = (((Ipp16u)pSrc0[i] + (Ipp16u)pSrc1[i] + 1) >> 1);
-
-        pSrc0 += in_Src0Pitch;
-        pSrc1 += in_Src1Pitch;
-        pDst += in_DstPitch;
-    }
-}
-
-/* ****************************************************************************** *\
-FUNCTION: CopyPU
-DESCRIPTION:
-\* ****************************************************************************** */
-
-// ML: OPT: TODO: Parameterize for const shift
-template <int c_shift>
-void H265Prediction::CopyPULuma(const H265PlaneYCommon * in_pSrc,
-                                Ipp32u in_SrcPitch, // in samples
-                                Ipp16s* H265_RESTRICT in_pDst,
-                                Ipp32u in_DstPitch, // in samples
-                                Ipp32s width,
-                                Ipp32s height )
-{
-    const H265PlaneYCommon * pSrc = in_pSrc;
-    Ipp16s *pDst = in_pDst;
-    Ipp32s i, j;
-
-#ifdef __INTEL_COMPILER
-    #pragma ivdep
-#endif
-    for (j = 0; j < height; j++)
-    {
-#ifdef __INTEL_COMPILER
-    #pragma vector always
-#endif
-        for (i = 0; i < width; i++)
-        {
-            pDst[i] = (Ipp16s)(((Ipp32s)pSrc[i]) << c_shift);
-        }
-
-        pSrc += in_SrcPitch;
-        pDst += in_DstPitch;
-    }
-}
-
-template <int c_shift>
-void H265Prediction::CopyPUChroma(const H265PlaneUVCommon * in_pSrc,
-                                  Ipp32u in_SrcPitch, // in samples
-                                  Ipp16s* H265_RESTRICT in_pDst,
-                                  Ipp32u in_DstPitch, // in samples
-                                  Ipp32s width,
-                                  Ipp32s height)
-{
-    const H265PlaneUVCommon * pSrc = in_pSrc;
-    Ipp16s *pDst = in_pDst;
-    Ipp32s i, j;
-
-#ifdef __INTEL_COMPILER
-#pragma ivdep
-#endif
-    for (j = 0; j < height; j++)
-    {
-#ifdef __INTEL_COMPILER
-#pragma vector always
-#endif
-        for (i = 0; i < width * 2; i++)
-        {
-            pDst[i] = (Ipp16s)(((Ipp32s)pSrc[i]) << c_shift);
-        }
-
-        pSrc += in_SrcPitch;
-        pDst += in_DstPitch;
-    }
-}
 
 } // end namespace UMC_HEVC_DECODER
 

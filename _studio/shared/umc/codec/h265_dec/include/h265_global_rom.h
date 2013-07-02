@@ -101,20 +101,23 @@ const Ipp32s g_bitDepthC = 8;
 /** clip x, such that 0 <= x <= #g_maxLumaVal */
 // ML: OPT: called in hot loops, compiler does not seem to always honor 'inline'
 // ML: OPT: TODO: Make sure compiler recognizes saturation idiom for vectorization
-#if 0
-template<typename T>
-static Ipp8u H265_FORCEINLINE ClipY(T Value)
+template <typename T> 
+static T H265_FORCEINLINE ClipY(T Value, int c_bitDepth = 8) 
 { 
-    const T c_Mask = 0xff;
-    Ipp8u Ret = (Ipp8u)(Value < 0) ? 0 : ((Value > c_Mask) ? c_Mask : Value);
-    return ( Ret );
+    Value = (Value < 0) ? 0 : Value;
+    const int c_Mask = ((1 << c_bitDepth) - 1);
+    Value = (Value >= c_Mask) ? c_Mask : Value;
+    return ( Value );
 }
-#else
-template <typename T> inline T ClipY(T x) { return std::min<T>(T((1 << g_bitDepthY) - 1), std::max<T>( T(0), x)); }
-#endif
 
-#define ClipC ClipY
-
+template <typename T> 
+static T H265_FORCEINLINE ClipC(T Value, int c_bitDepth = 8) 
+{ 
+    Value = (Value < 0) ? 0 : Value;
+    const int c_Mask = ((1 << c_bitDepth) - 1);
+    Value = (Value >= c_Mask) ? c_Mask : Value;
+    return ( Value );
+}
 extern Ipp32u g_PCMBitDepthLuma;
 extern Ipp32u g_PCMBitDepthChroma;
 

@@ -707,6 +707,7 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
                     scalingListType, pCU->m_TransformSkip[g_ConvertTxtTypeToIdx[TEXT_CHROMA_V]][AbsPartIdx] != 0);
             }
   
+            // ML: OPT: TODO: Vectorize this
             for (Ipp32u y = 0; y < Size; y++)
             {
                 for (Ipp32u x = 0; x < Size; x++)
@@ -823,9 +824,6 @@ bool H265TrQuant::bothCGNeighboursOne(const Ipp32u* SigCoeffGroupFlag,
         return false;
     }
 }
-
-
-
 
 void H265TrQuant::setScalingListDec(H265ScalingList *scalingList)
 {

@@ -14,12 +14,10 @@
 #include "umc_structures.h"
 #include "umc_h265_heap.h"
 #include "umc_h265_dec_defs_dec.h"
+#include <cstdarg>
 
 namespace UMC_HEVC_DECODER
 {
-Ipp32s lock_failed_H265 = 0;
-
-//#define LIGHT_SYNC
 
 enum
 {

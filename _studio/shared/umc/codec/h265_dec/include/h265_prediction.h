@@ -59,8 +59,7 @@ protected:
 
     // motion compensation functions
     template <EnumTextType c_plane_type, bool bi>
-    void H265_FORCEINLINE PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicList RefPicList, H265DecYUVBufferPadded *YUVPred, EnumAddAverageType eAddAverage = AVERAGE_NO
-        );
+    void H265_FORCEINLINE PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicList RefPicList, H265DecYUVBufferPadded *YUVPred, EnumAddAverageType eAddAverage = AVERAGE_NO);
 
     bool CheckIdenticalMotion(H265CodingUnit* pCU, H265PUInfo &MVi);
     
@@ -74,7 +73,7 @@ protected:
                         Ipp32s width,
                         Ipp32s height,
                         Ipp32s shift,
-                        Ipp32s offset,
+                        Ipp16s offset,
                         EnumAddAverageType eAddAverage = AVERAGE_NO,
                         const void* in_pSrc2 = NULL,
                         int   in_Src2Pitch = 0 ); // in samples
@@ -90,20 +89,12 @@ protected:
                      Ipp32s height );
 
      template <int c_shift>
-     static void CopyPULuma(const H265PlaneYCommon * in_pSrc,
+     static void CopyExtendPU(const H265PlaneYCommon * in_pSrc,
                      Ipp32u in_SrcPitch, // in samples
                      Ipp16s* H265_RESTRICT in_pDst,
                      Ipp32u in_DstPitch, // in samples
                      Ipp32s width,
                      Ipp32s height);
-
-     template <int c_shift>
-     static void CopyPUChroma(const H265PlaneYCommon * in_pSrc,
-                       Ipp32u in_SrcPitch, // in samples
-                       Ipp16s* H265_RESTRICT in_pDst,
-                       Ipp32u in_DstPitch, // in samples
-                       Ipp32s width,
-                       Ipp32s height);
 
     void DCPredFiltering(H265PlanePtrYCommon pSrc, Ipp32s SrcStride, H265PlanePtrYCommon Dst, Ipp32s DstStride, Ipp32s Size);
 
@@ -136,6 +127,36 @@ public:
         return m_YUVExtHeight;
     }
 };
+
+//=================================================================================================
+// general template for Interpolate kernel
+template
+< 
+    typename     t_vec,
+    EnumTextType c_plane_type,
+    typename     t_src, 
+    typename     t_dst,
+    int        tab_index
+>
+class t_InterpKernel_intrin
+{
+public:
+    static void func(
+        t_dst* H265_RESTRICT pDst, 
+        const t_src* pSrc, 
+        int    in_SrcPitch, // in samples
+        int    in_DstPitch, // in samples
+        int    width,
+        int    height,
+        int    accum_pitch,
+        int    shift,
+        int    offset,
+        H265Prediction::EnumAddAverageType eAddAverage = H265Prediction::AVERAGE_NO,
+        const void* in_pSrc2 = NULL,
+        int   in_Src2Pitch = 0 // in samples
+    );
+};
+
 
 } // end namespace UMC_HEVC_DECODER
 
