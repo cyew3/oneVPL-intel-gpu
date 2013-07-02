@@ -223,6 +223,7 @@ mfxStatus MFXAudioENCODE_EncodeFrameAsync(mfxSession session, mfxBitstream *bs, 
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, bs);
 #endif
 
+    MFX_CHECK(bs, MFX_ERR_NULL_PTR);
     MFX_CHECK(session->m_pAudioENCODE.get(), MFX_ERR_NOT_INITIALIZED);
 
     try
