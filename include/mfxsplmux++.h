@@ -93,6 +93,7 @@ public:
         sts = MFXSplitter_GetInfo(m_spl, splitterPar);
         if (sts == MFX_ERR_NONE)
         {
+            freeTrackInfo();
             m_trackInfo = (mfxTrackInfo**) malloc(sizeof(mfxTrackInfo*)*splitterPar->NumTrack);
             if (!m_trackInfo)
                 sts = MFX_ERR_MEMORY_ALLOC;
