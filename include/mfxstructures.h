@@ -377,10 +377,18 @@ enum {
 
 /* TargetUsages: from 1 to 7 inclusive */
 enum {
+    MFX_TARGETUSAGE_1    =1,
+    MFX_TARGETUSAGE_2    =2,
+    MFX_TARGETUSAGE_3    =3,
+    MFX_TARGETUSAGE_4    =4,
+    MFX_TARGETUSAGE_5    =5,
+    MFX_TARGETUSAGE_6    =6,
+    MFX_TARGETUSAGE_7    =7,
+
     MFX_TARGETUSAGE_UNKNOWN         =0,
-    MFX_TARGETUSAGE_BEST_QUALITY    =1,
-    MFX_TARGETUSAGE_BALANCED        =4,
-    MFX_TARGETUSAGE_BEST_SPEED      =7
+    MFX_TARGETUSAGE_BEST_QUALITY    =MFX_TARGETUSAGE_1,
+    MFX_TARGETUSAGE_BALANCED        =MFX_TARGETUSAGE_4,
+    MFX_TARGETUSAGE_BEST_SPEED      =MFX_TARGETUSAGE_7
 };
 
 /* RateControlMethod */
@@ -790,10 +798,12 @@ typedef struct {
         mfxU32      FrameOrder;
         mfxU16      PicStruct;
         mfxU16      ViewId;
-        mfxU32      reserved[2];
+        mfxU16      LongTermIdx;
+        mfxU16      reserved[3];
     } PreferredRefList[32], RejectedRefList[16], LongTermRefList[16];
 
-    mfxU32      reserved[8];
+    mfxU16      ApplyLongTermIdx;
+    mfxU16      reserved[15];
 } mfxExtAVCRefListCtrl;
 
 enum {
@@ -884,6 +894,35 @@ typedef struct {
             mfxU16      reserved[4];
     } UsedRefListL0[32], UsedRefListL1[32];
 } mfxExtAVCEncodedFrameInfo;
+
+typedef struct {
+    mfxExtBuffer    Header;
+    mfxU16      NumInputStream;
+
+    /* background color*/
+    union {
+        mfxU16   Y;
+        mfxU16   R;
+    };
+    union {
+        mfxU16   U;
+        mfxU16   G;
+    };
+    union {
+        mfxU16   V;
+        mfxU16   B;
+    };
+
+    mfxU16      reserved1[24];
+
+    struct mfxVPPCompInputStream {
+        mfxU32  DstX;
+        mfxU32  DstY;
+        mfxU32  DstW;
+        mfxU32  DstH;
+        mfxU16  reserved2[48];
+    } InputStream[128];     
+} mfxExtVPPComposite;
 
 #ifdef __cplusplus
 } // extern "C"

@@ -33,7 +33,7 @@ File Name: mfxvideo.h
 
 /* This is the external include file for the Intel(R) Media Software Development Kit product */
 #define MFX_VERSION_MAJOR 1
-#define MFX_VERSION_MINOR 7
+#define MFX_VERSION_MINOR 8
 
 #ifdef _WIN32
     #define MFX_CDECL __cdecl
