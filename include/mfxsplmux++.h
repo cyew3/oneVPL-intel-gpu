@@ -75,17 +75,68 @@ private:
 class MFXSplitter
 {
 public:
-    MFXSplitter() : m_spl() { }
-    virtual ~MFXSplitter() { Close(); }
-    virtual mfxStatus Init(MFXDataIO &dataIO) {
+    MFXSplitter() : m_spl(), m_trackInfo(NULL) { }
+    virtual ~MFXSplitter()
+    {
+        freeTrackInfo();
+        Close();
+    }
+    virtual mfxStatus Init(MFXDataIO &dataIO)
+    {
         return MFXSplitter_Init(MFXDataIOAdapter(dataIO), &m_spl);
     }
     virtual mfxStatus Close() { return MFXSplitter_Close(m_spl); }
-    virtual mfxStatus GetInfo(MFXStreamParams &par) { return MFXSplitter_GetInfo(m_spl, &par); }
+    virtual mfxStatus GetInfo(MFXStreamParams &par)
+    {
+        mfxStatus sts = MFX_ERR_NONE;
+        mfxStreamParams *splitterPar = &par;
+        sts = MFXSplitter_GetInfo(m_spl, splitterPar);
+        if (sts == MFX_ERR_NONE)
+        {
+            m_trackInfo = (mfxTrackInfo**) malloc(sizeof(mfxTrackInfo*)*splitterPar->NumTrack);
+            if (!m_trackInfo)
+                sts = MFX_ERR_MEMORY_ALLOC;
+        }
+        if (sts == MFX_ERR_NONE)
+        {
+            memset(m_trackInfo, 0, sizeof(mfxTrackInfo*)*splitterPar->NumTrack);
+            for (int i = 0; i < splitterPar->NumTrack; i++)
+            {
+                m_trackInfo[i] = (mfxTrackInfo*) malloc(sizeof(mfxTrackInfo));
+                if (!m_trackInfo[i])
+                    sts = MFX_ERR_MEMORY_ALLOC;
+            }
+        }
+        if (sts == MFX_ERR_NONE)
+        {
+            splitterPar->NumTrackAllocated = splitterPar->NumTrack;
+            splitterPar->TrackInfo = m_trackInfo;
+            sts = MFXSplitter_GetInfo(m_spl, splitterPar);
+        }
+        if (sts != MFX_ERR_NONE)
+        {
+            freeTrackInfo();
+        }
+        return sts;
+    }
     virtual mfxStatus GetBitstream(mfxU32 iTrack, mfxBitstream *Bitstream) { return MFXSplitter_GetBitstream(m_spl, iTrack, Bitstream); }
     virtual mfxStatus ReleaseBitstream(mfxU32 iTrack, mfxBitstream *Bitstream) { return MFXSplitter_ReleaseBitstream(m_spl, iTrack, Bitstream); }
 
 protected:
+    void freeTrackInfo()
+    {
+        if (m_trackInfo)
+        {
+            for (int i = 0; i < sizeof(m_trackInfo) / sizeof(mfxTrackInfo*); i++)
+            {
+                if (m_trackInfo[i])
+                    free (m_trackInfo[i]);
+            }
+            free(m_trackInfo);
+        }
+    }
+
+    mfxTrackInfo **m_trackInfo;
     mfxSplitter m_spl;
 };
 
