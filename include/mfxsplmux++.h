@@ -101,7 +101,7 @@ public:
         if (sts == MFX_ERR_NONE)
         {
             memset(m_trackInfo, 0, sizeof(mfxTrackInfo*)*splitterPar->NumTrack);
-            for (int i = 0; i < splitterPar->NumTrack; i++)
+            for (mfxU32 i = 0; i < splitterPar->NumTrack; i++)
             {
                 m_trackInfo[i] = (mfxTrackInfo*) malloc(sizeof(mfxTrackInfo));
                 if (!m_trackInfo[i])
