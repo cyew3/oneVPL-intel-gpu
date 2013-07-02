@@ -107,53 +107,97 @@ struct MFXEncoderPlugin : MFXCodecPlugin
 };
 
 
-
 class MFXCoreInterface
 {
 protected:
-    mfxCoreInterface m_pCore;
+    mfxCoreInterface m_core;
 public:
+
+    MFXCoreInterface()
+        : m_core() {
+    }
     MFXCoreInterface(const mfxCoreInterface & pCore)
-        : m_pCore(pCore) {
-        FrameAllocator = m_pCore.FrameAllocator;
-        InternalSurfaceAllocator = m_pCore.InternalSurfaceAllocator;
+        : m_core(pCore) {
     }
 
-    mfxFrameAllocator FrameAllocator;
-    mfxFrameAllocator InternalSurfaceAllocator;
-
+    MFXCoreInterface(const MFXCoreInterface & that)
+        : m_core(that.m_core) {
+    }
+    MFXCoreInterface &operator = (const MFXCoreInterface & that)
+    { 
+        m_core = that.m_core;
+        return *this;
+    }
+    bool IsCoreSet() {
+        return m_core.pthis != 0;
+    }
     mfxStatus GetCoreParam(mfxCoreParam *par) {
-        return m_pCore.GetCoreParam(m_pCore.pthis, par);
+        if (!IsCoreSet()) {
+            return MFX_ERR_NULL_PTR;
+        }
+        return m_core.GetCoreParam(m_core.pthis, par);
     }
     mfxStatus GetHandle (mfxHandleType type, mfxHDL *handle) {
-        return m_pCore.GetHandle(m_pCore.pthis, type, handle);
+        if (!IsCoreSet()) {
+            return MFX_ERR_NULL_PTR;
+        }
+        return m_core.GetHandle(m_core.pthis, type, handle);
     }
     mfxStatus IncreaseReference (mfxFrameData *fd) {
-        return m_pCore.IncreaseReference(m_pCore.pthis, fd);
+        if (!IsCoreSet()) {
+            return MFX_ERR_NULL_PTR;
+        }
+        return m_core.IncreaseReference(m_core.pthis, fd);
     }
     mfxStatus DecreaseReference (mfxFrameData *fd) {
-        return m_pCore.DecreaseReference(m_pCore.pthis, fd);
+        if (!IsCoreSet()) {
+            return MFX_ERR_NULL_PTR;
+        }
+        return m_core.DecreaseReference(m_core.pthis, fd);
     }
     mfxStatus CopyFrame (mfxFrameSurface1 *dst, mfxFrameSurface1 *src) {
-        return m_pCore.CopyFrame(m_pCore.pthis, dst, src);
+        if (!IsCoreSet()) {
+            return MFX_ERR_NULL_PTR;
+        }
+        return m_core.CopyFrame(m_core.pthis, dst, src);
     }
     mfxStatus CopyBuffer(mfxU8 *dst, mfxU32 size, mfxFrameSurface1 *src) {
-        return m_pCore.CopyBuffer(m_pCore.pthis, dst, size, src);
+        if (!IsCoreSet()) {
+            return MFX_ERR_NULL_PTR;
+        }
+        return m_core.CopyBuffer(m_core.pthis, dst, size, src);
     }
-
     mfxStatus MapOpaqueSurface(mfxU32  num, mfxU32  type, mfxFrameSurface1 **op_surf) {
-        return m_pCore.MapOpaqueSurface(m_pCore.pthis, num, type, op_surf);
+        if (!IsCoreSet()) {
+            return MFX_ERR_NULL_PTR;
+        }
+        return m_core.MapOpaqueSurface(m_core.pthis, num, type, op_surf);
     }
     mfxStatus UnmapOpaqueSurface(mfxU32  num, mfxU32  type, mfxFrameSurface1 **op_surf) {
-        return m_pCore.UnmapOpaqueSurface(m_pCore.pthis, num, type, op_surf);
+        if (!IsCoreSet()) {
+            return MFX_ERR_NULL_PTR;
+        }
+        return m_core.UnmapOpaqueSurface(m_core.pthis, num, type, op_surf);
     }
-
     mfxStatus GetRealSurface(mfxFrameSurface1 *op_surf, mfxFrameSurface1 **surf) {
-        return m_pCore.GetRealSurface(m_pCore.pthis, op_surf, surf);
+        if (!IsCoreSet()) {
+            return MFX_ERR_NULL_PTR;
+        }
+        return m_core.GetRealSurface(m_core.pthis, op_surf, surf);
     }
     mfxStatus GetOpaqueSurface(mfxFrameSurface1 *surf, mfxFrameSurface1 **op_surf) {
-        return m_pCore.GetOpaqueSurface(m_pCore.pthis, surf, op_surf);
+        if (!IsCoreSet()) {
+            return MFX_ERR_NULL_PTR;
+        }
+        return m_core.GetOpaqueSurface(m_core.pthis, surf, op_surf);
     }
+    mfxFrameAllocator & InternalSurfaceAllocator() {
+        return m_core.InternalSurfaceAllocator;
+    }
+    mfxFrameAllocator & FrameAllocator() {
+        return m_core.FrameAllocator;
+    }
+
 } ;
 
 /* Class adapter between "C" structure mfxPlugin and C++ interface MFXPlugin */
@@ -165,22 +209,24 @@ namespace detail
     {
     protected:
         mfxPlugin m_mfxAPI;
-        T* m_pPlugin;
     public:
-        MFXPluginAdapterBase(T *pPlugin, mfxCodecPlugin *pCodec)
-            : m_pPlugin(pPlugin)
+        MFXPluginAdapterBase( T *plugin, mfxCodecPlugin *pCodec)
         {
-            m_mfxAPI.pthis = pPlugin;
+            SetupCallbacks(plugin, pCodec);
+        }
+
+        operator  mfxPlugin () const {
+            return m_mfxAPI;
+        }
+
+        void SetupCallbacks( T *plugin, mfxCodecPlugin *pCodec) {
+            m_mfxAPI.pthis = plugin;
             m_mfxAPI.PluginInit = _PluginInit;
             m_mfxAPI.PluginClose = _PluginClose;
             m_mfxAPI.GetPluginParam = _GetPluginParam;
             m_mfxAPI.Execute = _Execute;
             m_mfxAPI.FreeResources = _FreeResources;
             m_mfxAPI.CodecPlugin = pCodec;
-        }
-
-        operator  mfxPlugin* () {
-            return &m_mfxAPI;
         }
 
     private:
@@ -220,8 +266,26 @@ namespace detail
             m_codecPlg.Close = _Close;
             m_codecPlg.GetVideoParam = _GetVideoParam;
         }
+        MFXCodecPluginAdapterBase(const MFXCodecPluginAdapterBase<T> & that) 
+            : MFXPluginAdapterBase<T>(reinterpret_cast<T*>(that.m_mfxAPI.pthis), &m_codecPlg)
+            , m_codecPlg() {
+            SetupCallbacks();
+        }
+        MFXCodecPluginAdapterBase<T>& operator = (const MFXCodecPluginAdapterBase<T> & that) {
+            MFXPluginAdapterBase<T> :: SetupCallbacks(reinterpret_cast<T*>(that.m_mfxAPI.pthis), &m_codecPlg);
+            SetupCallbacks();
+            return *this;
+        }
 
     private:
+        void SetupCallbacks() {
+            m_codecPlg.Query = _Query;
+            m_codecPlg.QueryIOSurf = _QueryIOSurf ;
+            m_codecPlg.Init = _Init;
+            m_codecPlg.Reset = _Reset;
+            m_codecPlg.Close = _Close;
+            m_codecPlg.GetVideoParam = _GetVideoParam;
+        }
         static mfxStatus _Query(mfxHDL pthis, mfxVideoParam *in, mfxVideoParam *out) {
             return reinterpret_cast<T*>(pthis)->Query(in, out);
         }
@@ -248,14 +312,20 @@ namespace detail
     template<>
     class MFXPluginAdapterInternal<MFXGenericPlugin> : public MFXPluginAdapterBase<MFXGenericPlugin>
     {
-        MFXGenericPlugin* m_genPlugin;
     public:
         MFXPluginAdapterInternal(MFXGenericPlugin *pPlugin)
-            : MFXPluginAdapterBase(pPlugin, 0)
-            , m_genPlugin(pPlugin)
+            : MFXPluginAdapterBase<MFXGenericPlugin>(pPlugin, NULL)
         {
-            m_mfxAPI.pthis = m_genPlugin;
             m_mfxAPI.Submit = _Submit;
+        }
+        MFXPluginAdapterInternal(const MFXPluginAdapterInternal & that )
+            : MFXPluginAdapterBase(that) {
+            m_mfxAPI.Submit = that._Submit;
+        }
+        MFXPluginAdapterInternal<MFXGenericPlugin>& operator = (const MFXPluginAdapterInternal<MFXGenericPlugin> & that) {
+            MFXPluginAdapterBase<MFXGenericPlugin>::operator=(that);
+            m_mfxAPI.Submit = that._Submit;
+            return *this;
         }
 
     private:
@@ -271,12 +341,26 @@ namespace detail
         MFXPluginAdapterInternal(MFXDecoderPlugin *pPlugin)
             : MFXCodecPluginAdapterBase<MFXDecoderPlugin>(pPlugin)
         {
+            SetupCallbacks();
+        }
+
+        MFXPluginAdapterInternal(const MFXPluginAdapterInternal & that)
+        : MFXCodecPluginAdapterBase<MFXDecoderPlugin>(that) {
+            SetupCallbacks();
+        }
+
+        MFXPluginAdapterInternal<MFXDecoderPlugin>& operator = (const MFXPluginAdapterInternal<MFXDecoderPlugin> & that) {
+            MFXCodecPluginAdapterBase<MFXDecoderPlugin>::operator=(that);
+            SetupCallbacks();
+            return *this;
+        }
+
+    private:
+        void SetupCallbacks() {
             m_codecPlg.DecodeHeader = _DecodeHeader;
             m_codecPlg.GetPayload = _GetPayload;
             m_codecPlg.DecodeFrameSubmit = _DecodeFrameSubmit;
         }
-
-    private:
         static mfxStatus _DecodeHeader(mfxHDL pthis, mfxBitstream *bs, mfxVideoParam *par) {
             return reinterpret_cast<MFXDecoderPlugin*>(pthis)->DecodeHeader(bs, par);
         }
@@ -298,6 +382,16 @@ namespace detail
         {
             m_codecPlg.EncodeFrameSubmit = _EncodeFrameSubmit;
         }
+        MFXPluginAdapterInternal(const MFXPluginAdapterInternal & that)
+            : MFXCodecPluginAdapterBase<MFXEncoderPlugin>(that) {
+            m_codecPlg.EncodeFrameSubmit = _EncodeFrameSubmit;
+        }
+
+        MFXPluginAdapterInternal<MFXEncoderPlugin>& operator = (const MFXPluginAdapterInternal<MFXEncoderPlugin> & that) {
+            MFXCodecPluginAdapterBase<MFXEncoderPlugin>::operator = (that);
+            m_codecPlg.EncodeFrameSubmit = _EncodeFrameSubmit;
+            return *this;
+        }
 
     private:
         static mfxStatus _EncodeFrameSubmit(mfxHDL pthis, mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxThreadTask *task) {
@@ -313,11 +407,11 @@ class MFXPluginAdapter
 public:
     detail::MFXPluginAdapterInternal<T> m_Adapter;
     
-    operator  mfxPlugin* () {
-        return m_Adapter.operator mfxPlugin*();
+    operator  mfxPlugin () const {
+        return m_Adapter.operator mfxPlugin();
     }
 
-    MFXPluginAdapter(T* pPlugin)
+    MFXPluginAdapter(T* pPlugin = NULL)
         : m_Adapter(pPlugin)
     {
     }
