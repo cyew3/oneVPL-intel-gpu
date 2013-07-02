@@ -363,7 +363,10 @@ enum {
     MFX_LEVEL_VC1_1                         =(0x01+1),
     MFX_LEVEL_VC1_2                         =(0x02+1),
     MFX_LEVEL_VC1_3                         =(0x03+1),
-    MFX_LEVEL_VC1_4                         =(0x04+1)
+    MFX_LEVEL_VC1_4                         =(0x04+1),
+
+    /* HEVC Profiles */
+    MFX_PROFILE_HEVC_MAIN                   = 1,
 };
 
 /* GopOptFlag */
