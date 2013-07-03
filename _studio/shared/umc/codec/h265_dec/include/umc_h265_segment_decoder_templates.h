@@ -101,6 +101,10 @@ public:
             bool is_last = Decoder::DecodeCodingUnit_CABAC(sd); //decode CU
             END_TICK(decode_time);
 
+            START_TICK1;
+            Reconstructor::ReconstructCodingUnit(sd); //Reconstruct CU h265 must be here
+            END_TICK1(reconstruction_time);
+
             if (is_last)
             {
                 umcRes = UMC::UMC_ERR_END_OF_STREAM;

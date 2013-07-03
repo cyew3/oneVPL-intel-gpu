@@ -36,10 +36,10 @@ static bool IsNeedSPSInvalidate(const H265SeqParamSet *old_sps, const H265SeqPar
     //if (new_sps->no_output_of_prior_pics_flag)
       //  return true;
 
-    if (old_sps->frame_width_in_mbs != new_sps->frame_width_in_mbs)
+    if (old_sps->pic_width_in_luma_samples != new_sps->pic_width_in_luma_samples)
         return true;
 
-    if (old_sps->frame_height_in_mbs != new_sps->frame_height_in_mbs)
+    if (old_sps->pic_height_in_luma_samples != new_sps->pic_height_in_luma_samples)
         return true;
 
     //if (old_sps->max_dec_frame_buffering != new_sps->max_dec_frame_buffering)

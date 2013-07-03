@@ -1158,11 +1158,33 @@ struct RefPicListModification
 struct H265SeqParamSetBase
 {
     //h265
+    Ipp32s sps_video_parameter_set_id;
     Ipp32u sps_max_sub_layers;
+    bool   sps_temporal_id_nesting_flag;
+    Ipp8u  seq_parameter_set_id;                // id of this sequence parameter set
+    Ipp8u  chroma_format_idc;
+
+    Ipp32s separate_colour_plane_flag;
+
     Ipp32u pic_width_in_luma_samples;
     Ipp32u pic_height_in_luma_samples;
+    Ipp8u  frame_cropping_flag;
+    Ipp32u frame_cropping_rect_left_offset;
+    Ipp32u frame_cropping_rect_right_offset;
+    Ipp32u frame_cropping_rect_top_offset;
+    Ipp32u frame_cropping_rect_bottom_offset;
+
     Ipp32u bit_depth_luma;
     Ipp32u bit_depth_chroma;
+
+    Ipp32u log2_max_pic_order_cnt_lsb;
+    bool   sps_sub_layer_ordering_info_present_flag;
+
+    Ipp32u sps_max_dec_pic_buffering[MAX_TLAYER];
+    Ipp32u sps_max_num_reorder_pics[MAX_TLAYER];
+    Ipp32u sps_max_latency_increase[MAX_TLAYER];
+
+
     Ipp32u pcm_bit_depth_luma;
     Ipp32u pcm_bit_depth_chroma;
     Ipp32u MaxCUWidth;
@@ -1184,13 +1206,9 @@ struct H265SeqParamSetBase
     bool pcm_enabled_flag;
     bool sample_adaptive_offset_enabled_flag; //sample_adaptive_offset
     bool pcm_loop_filter_disable_flag;
-    bool sps_temporal_id_nesting_flag;
-    Ipp32u PadX;
-    Ipp32u PadY;
     bool m_UseLDC;
     bool sps_temporal_mvp_enable_flag;
     bool m_enableTMVPFlag;
-    Ipp32u log2_max_pic_order_cnt_lsb;
 
     unsigned    m_log2MinCUSize;
     unsigned    m_log2CtbSize;
@@ -1212,10 +1230,6 @@ struct H265SeqParamSetBase
     bool loop_filter_across_tiles_enabled_flag;
 
     Ipp32u m_MaxNumberOfReferencePictures;
-    Ipp32u m_MaxNumberOfReorderPictures[MAX_TLAYER];
-
-    Ipp32u m_MaxDecFrameBuffering[MAX_TLAYER];
-    Ipp32u m_MaxLatencyIncrease[MAX_TLAYER];
     bool m_UseDF;
     bool        sps_strong_intra_smoothing_enable_flag;
 
@@ -1234,25 +1248,17 @@ struct H265SeqParamSetBase
     Ipp16u       reserved_indicator_flags;
     Ipp8u        level_idc;
     Ipp32u       profile_compatibility;
-    Ipp32s       sps_video_parameter_set_id;
-    Ipp8u        chroma_format_idc;
     Ipp8u        residual_colour_transform_flag;
     Ipp8u        qpprime_y_zero_transform_bypass_flag;
     Ipp8u        seq_scaling_matrix_present_flag;
     H265ScalingList4x4 ScalingLists4x4[6];
     H265ScalingList8x8 ScalingLists8x8[2];
     Ipp8u        gaps_in_frame_num_value_allowed_flag;
-    Ipp8u        frame_cropping_flag;
-    Ipp32u       frame_cropping_rect_left_offset;
-    Ipp32u       frame_cropping_rect_right_offset;
-    Ipp32u       frame_cropping_rect_top_offset;
-    Ipp32u       frame_cropping_rect_bottom_offset;
     int          def_disp_win_left_offset;
     int          def_disp_win_right_offset;
     int          def_disp_win_top_offset;
     int          def_disp_win_bottom_offset;
     Ipp8u        more_than_one_slice_group_allowed_flag;
-    Ipp8u        seq_parameter_set_id;                // id of this sequence parameter set
     Ipp8u        log2_max_frame_num;                  // Number of bits to hold the frame_num
 
     bool         vui_parameters_present_flag;         // Zero indicates default VUI parameters
@@ -1260,8 +1266,6 @@ struct H265SeqParamSetBase
 
     Ipp32u       num_ref_frames_in_pic_order_cnt_cycle;
     Ipp32u       num_ref_frames;                      // total number of pics in decoded pic buffer
-    Ipp32u       frame_width_in_mbs;
-    Ipp32u       frame_height_in_mbs;
 
     // These fields are calculated from values above.  They are not written to the bitstream
     Ipp32u       MaxMbAddress;
@@ -1405,13 +1409,6 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
     void setPCMBitDepthLuma(unsigned val)       { pcm_bit_depth_luma = val; }
     unsigned getPCMBitDepthChroma() const       { return pcm_bit_depth_chroma; }
     void setPCMBitDepthChroma(unsigned val)     { pcm_bit_depth_chroma = val; }
-
-    unsigned getMaxDecPicBuffering(int tLayer) const        { return m_MaxDecFrameBuffering[tLayer]; }
-    void setMaxDecPicBuffering(unsigned val, int tLayer)    { m_MaxDecFrameBuffering[tLayer] = val; }
-    unsigned getNumReorderPics(int tLayer) const            { return m_MaxNumberOfReorderPictures[tLayer]; }
-    void setNumReorderPics(unsigned val, int tLayer)        { m_MaxNumberOfReorderPictures[tLayer] = val; }
-    unsigned getMaxLatencyIncrease(int tLayer) const        { return m_MaxLatencyIncrease[tLayer]; }
-    void setMaxLatencyIncrease(unsigned val, int tLayer)    { m_MaxLatencyIncrease[tLayer] = val; }
 
     unsigned getMaxCUWidth() const              { return MaxCUWidth; }
     void setMaxCUWidth(unsigned val)            { MaxCUWidth = val; }

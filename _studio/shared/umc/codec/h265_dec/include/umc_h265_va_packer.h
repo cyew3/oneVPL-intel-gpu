@@ -111,27 +111,8 @@ private:
 class PackerVA : public Packer
 {
 public:
-    PackerVA(UMC::VideoAccelerator * va);
-
-    virtual void PackPicParams(const H265DecoderFrame *pCurrentFrame,
-                        H265DecoderFrameInfo * pSliceInfo,
-                        TaskSupplier_H265 * supplier);
-
-    virtual bool PackSliceParams(H265Slice *pSlice,
-                         Ipp32s sliceNum, bool all_data);
-
-    virtual void PackQmatrix(const H265Slice *pSlice);
 
 private:
-    void FillFrame(VAPictureH264 * pic, const H265DecoderFrame *pFrame,
-        Ipp32s field, Ipp32s reference, Ipp32s defaultIndex);
-
-    void FillFrameAsInvalid(VAPictureH264 * pic);
-
-    enum
-    {
-        VA_FRAME_INDEX_INVALID = 0x7f
-    };
 };
 
 #endif // UMC_VA_LINUX

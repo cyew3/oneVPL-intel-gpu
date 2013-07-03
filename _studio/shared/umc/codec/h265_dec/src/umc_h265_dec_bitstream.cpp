@@ -526,6 +526,7 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
     {
         READ_FLAG(uiCode, "separate_colour_plane_flag");
         VM_ASSERT(uiCode == 0);
+        pcSPS->separate_colour_plane_flag = uiCode;
     }
 
     READ_UVLC(uiCode, "pic_width_in_luma_samples" );    pcSPS->pic_width_in_luma_samples  = uiCode;
@@ -555,19 +556,19 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
     for(unsigned i=0; i <= pcSPS->getMaxTLayers()-1; i++)
     {
         READ_UVLC ( uiCode, "sps_max_dec_pic_buffering_minus1");
-        pcSPS->setMaxDecPicBuffering(uiCode + 1, i);
+        pcSPS->sps_max_dec_pic_buffering[i] = uiCode + 1;
         READ_UVLC ( uiCode, "sps_num_reorder_pics" );
-        pcSPS->setNumReorderPics(uiCode, i);
+        pcSPS->sps_max_num_reorder_pics[i] = uiCode;
         READ_UVLC ( uiCode, "sps_max_latency_increase_plus1");
-        pcSPS->setMaxLatencyIncrease( uiCode, i );
+        pcSPS->sps_max_latency_increase[i] = uiCode - 1;
 
         if (!subLayerOrderingInfoPresentFlag)
         {
             for (i++; i <= pcSPS->getMaxTLayers()-1; i++)
             {
-                pcSPS->setMaxDecPicBuffering(pcSPS->getMaxDecPicBuffering(0), i);
-                pcSPS->setNumReorderPics(pcSPS->getNumReorderPics(0), i);
-                pcSPS->setMaxLatencyIncrease(pcSPS->getMaxLatencyIncrease(0), i);
+                pcSPS->sps_max_dec_pic_buffering[i] = pcSPS->sps_max_dec_pic_buffering[0];
+                pcSPS->sps_max_num_reorder_pics[i] = pcSPS->sps_max_num_reorder_pics[0];
+                pcSPS->sps_max_latency_increase[i] = pcSPS->sps_max_latency_increase[0];
             }
             break;
         }
@@ -638,7 +639,7 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
         READ_UVLC(uiCode, "num_long_term_ref_pic_sps" );
         pcSPS->num_long_term_ref_pic_sps = uiCode;
 
-        VM_ASSERT(pcSPS->num_long_term_ref_pic_sps <= pcSPS->m_MaxDecFrameBuffering[pcSPS->sps_max_sub_layers - 1] - 1);
+        VM_ASSERT(pcSPS->num_long_term_ref_pic_sps <= pcSPS->sps_max_dec_pic_buffering[pcSPS->sps_max_sub_layers - 1] - 1);
 
         for (unsigned k = 0; k < pcSPS->num_long_term_ref_pic_sps; k++)
         {
@@ -1210,7 +1211,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
                     numLtrpInSPS = uiCode;
                     numOfLtrp += numLtrpInSPS;
                     rps->setNumberOfLongtermPictures(numOfLtrp);
-                    VM_ASSERT(numOfLtrp <= sps->m_MaxDecFrameBuffering[sps->sps_max_sub_layers - 1] - 1);
+                    VM_ASSERT(numOfLtrp <= sps->sps_max_dec_pic_buffering[sps->sps_max_sub_layers - 1] - 1);
                 }
                 int bitsForLtrpInSPS = 0;
                 while (rpcSlice->getSPS()->getNumLongTermRefPicSPS() > (unsigned)(1 << bitsForLtrpInSPS))

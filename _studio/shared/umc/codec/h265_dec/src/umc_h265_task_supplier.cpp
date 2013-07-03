@@ -702,7 +702,7 @@ void ViewItem_H265::SetDPBSize(H265SeqParamSet *pSps, Ipp8u & level_idc)
 
     // FIXME: should have correct temporal layer
     
-    dpbSize = pSps->getMaxDecPicBuffering(pSps->getMaxTLayers()-1);
+    dpbSize = pSps->sps_max_dec_pic_buffering[pSps->getMaxTLayers()-1];
 
     if (level_idc)
     {
@@ -1240,13 +1240,13 @@ UMC::Status TaskSupplier_H265::xDecodeSPS(H265Bitstream &bs)
                                    sps.pic_height_in_luma_samples);
 
         HighestTid = sps.getMaxTLayers() - 1;
-        sps.setMaxDecPicBuffering(sps.getMaxDecPicBuffering(HighestTid) ? sps.getMaxDecPicBuffering(HighestTid) : newDPBsize, 0);
+        sps.sps_max_dec_pic_buffering[0] = sps.sps_max_dec_pic_buffering[HighestTid] ? sps.sps_max_dec_pic_buffering[HighestTid] : newDPBsize;
 
         if (ViewItem_H265 *view = GetView())
         {
             view->SetDPBSize(&sps, m_level_idc);
-            view->sps_max_dec_pic_buffering = sps.getMaxDecPicBuffering(HighestTid) ? sps.getMaxDecPicBuffering(HighestTid) : view->dpbSize;
-            view->sps_max_num_reorder_pics = sps.getNumReorderPics(HighestTid);
+            view->sps_max_dec_pic_buffering = sps.sps_max_dec_pic_buffering[HighestTid] ? sps.sps_max_dec_pic_buffering[HighestTid] : view->dpbSize;
+            view->sps_max_num_reorder_pics = sps.sps_max_num_reorder_pics[HighestTid];
         }
 
         m_pNALSplitter->SetSuggestedSize(CalculateSuggestedSize(&sps));
@@ -2122,11 +2122,11 @@ UMC::Status TaskSupplier_H265::AddSlice(H265Slice * pSlice, bool )
 
     ViewItem_H265 &view = *GetView();
     view.SetDPBSize(const_cast<H265SeqParamSet*>(pSlice->m_pSeqParamSet), m_level_idc);
-    view.sps_max_dec_pic_buffering = pSlice->m_pSeqParamSet->getMaxDecPicBuffering(pSlice->getTLayer()) ?
-                                    pSlice->m_pSeqParamSet->getMaxDecPicBuffering(pSlice->getTLayer()) :
+    view.sps_max_dec_pic_buffering = pSlice->m_pSeqParamSet->sps_max_dec_pic_buffering[pSlice->getTLayer()] ?
+                                    pSlice->m_pSeqParamSet->sps_max_dec_pic_buffering[pSlice->getTLayer()] :
                                     view.dpbSize;
 
-    view.sps_max_num_reorder_pics = pSlice->m_pSeqParamSet->getNumReorderPics(HighestTid);
+    view.sps_max_num_reorder_pics = pSlice->m_pSeqParamSet->sps_max_num_reorder_pics[HighestTid];
 
     H265DecoderFrame * pFrame = view.pCurFrame;
 
