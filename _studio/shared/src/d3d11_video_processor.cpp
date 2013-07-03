@@ -1666,6 +1666,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             inColorSpace.RGB_Range = 0;
             inColorSpace.YCbCr_Matrix = 0;
             inColorSpace.YCbCr_xvYCC = 0;
+            inColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_UNDEFINED;
 
             SetStreamColorSpace(refIdx, &inColorSpace);
 
@@ -1674,6 +1675,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             outColorSpace.RGB_Range = 0;
             outColorSpace.YCbCr_Matrix = 0;
             outColorSpace.YCbCr_xvYCC = 0;
+            outColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_UNDEFINED;
 
             SetOutputColorSpace(&outColorSpace);
 
