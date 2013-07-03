@@ -10,14 +10,17 @@
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
-#define PixType Ipp8u
-#define CoeffsType Ipp16s
+#include "ipp.h"
+#include "mfx_h265_quant_opt.h"
 
-typedef signed char     Ipp8s;
-typedef unsigned char   Ipp8u;
-typedef signed short   Ipp16s;
-typedef unsigned short Ipp16u;
-typedef signed int     Ipp32s;
+typedef Ipp8u PixType; 
+typedef Ipp16s CoeffsType; 
+
+//typedef signed char     Ipp8s;
+//typedef unsigned char   Ipp8u;
+//typedef signed short   Ipp16s;
+//typedef unsigned short Ipp16u;
+//typedef signed int     Ipp32s;
 
 #define Saturate(min_val, max_val, val) MAX((min_val), MIN((max_val), (val)))
 #undef  MAX

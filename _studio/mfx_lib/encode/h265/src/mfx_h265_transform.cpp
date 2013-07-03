@@ -61,22 +61,27 @@ void H265CU::TransformInv(Ipp32s offset, Ipp32s width, Ipp8u is_luma, Ipp8u is_i
     else */
         if (is_luma && is_intra && width == 4)
         {
-            h265_dst_inv4x4(residuals, bit_depth);
+            //h265_dst_inv4x4(residuals, bit_depth);            
+            MFX_HEVC_ENCODER::inv_4x4_dst_sse2(residuals, residuals, 4, 2);
         }
         else
         {
             switch (width) {
             case 4:
-                h265_dct_inv4x4(residuals, bit_depth);
+                //h265_dct_inv4x4(residuals, bit_depth);
+                MFX_HEVC_ENCODER::inv_4x4_dct_sse2(residuals, residuals, 4, 2);
                 break;
             case 8:
-                h265_dct_inv8x8(residuals, bit_depth);
+                //h265_dct_inv8x8(residuals, bit_depth);
+                MFX_HEVC_ENCODER::inv_8x8_dct_sse2(residuals, residuals, 8, 2);
                 break;
             case 16:
-                h265_dct_inv16x16(residuals, bit_depth);
+                //h265_dct_inv16x16(residuals, bit_depth);
+                MFX_HEVC_ENCODER::inv_16x16_dct_sse2(residuals, residuals, 16, 2);
                 break;
             case 32:
-                h265_dct_inv32x32(residuals, bit_depth);
+                //h265_dct_inv32x32(residuals, bit_depth);
+                MFX_HEVC_ENCODER::DCTInverse32x32_sse(residuals, residuals, 32, 2);
                 break;
             }
         }

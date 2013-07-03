@@ -9,7 +9,7 @@
 typedef signed short   Ipp16s;
 typedef signed int     Ipp32s;
 
-#define CoeffsType Ipp16s
+//#define CoeffsType Ipp16s
 #define Saturate(min_val, max_val, val) MAX((min_val), MIN((max_val), (val)))
 #undef  MAX
 #define MAX(a, b)  (((a) > (b)) ? (a) : (b))
