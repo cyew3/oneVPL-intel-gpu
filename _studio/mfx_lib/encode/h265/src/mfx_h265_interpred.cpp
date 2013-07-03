@@ -510,12 +510,12 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height,
         }
         else if (in_dy == 0)
         {
-            InterpolateHor(TEXT_CHROMA, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch,
+            InterpolateHor_opt(TEXT_CHROMA, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch,
                            in_dx, Width, Height, shift, offset);
         }
         else if (in_dx == 0)
         {
-            InterpolateVert0(TEXT_CHROMA, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dy,
+            InterpolateVert0_opt(TEXT_CHROMA, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dy,
                              Width, Height, shift, offset);
         }
         else
@@ -532,10 +532,10 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height,
                 offset = 0;
             }
 
-            InterpolateHor(TEXT_CHROMA, in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, 80,
+            InterpolateHor_opt(TEXT_CHROMA, in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, 80,
                            in_dx, Width, Height + tap, bitDepth - 8, 0);
 
-            InterpolateVert(TEXT_CHROMA, tmpBuf + ((tap >> 1) - 1) * 80, 80, in_pDst, in_DstPitch,
+            InterpolateVert_opt(TEXT_CHROMA, tmpBuf + ((tap >> 1) - 1) * 80, 80, in_pDst, in_DstPitch,
                             in_dy, Width, Height, shift, offset);
         }
 
@@ -550,12 +550,12 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height,
         }
         else if (in_dy == 0)
         {
-            InterpolateHor(TEXT_CHROMA, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch,
+            InterpolateHor_opt(TEXT_CHROMA, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch,
                            in_dx, Width, Height, shift, offset);
         }
         else if (in_dx == 0)
         {
-            InterpolateVert0(TEXT_CHROMA, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dy,
+            InterpolateVert0_opt(TEXT_CHROMA, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dy,
                              Width, Height, shift, offset);
         }
         else
@@ -563,10 +563,10 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height,
             Ipp16s tmp[80 * 80];
             Ipp16s *tmpBuf = tmp + 80 * 8 + 8;
 
-            InterpolateHor(TEXT_CHROMA, in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, 80,
+            InterpolateHor_opt(TEXT_CHROMA, in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, 80,
                            in_dx, Width, Height + tap, bitDepth - 8, 0);
 
-            InterpolateVert(TEXT_CHROMA, tmpBuf + ((tap >> 1) - 1) * 80, 80, in_pDst, in_DstPitch,
+            InterpolateVert_opt(TEXT_CHROMA, tmpBuf + ((tap >> 1) - 1) * 80, 80, in_pDst, in_DstPitch,
                             in_dy, Width, Height, shift, offset);
         }
     }
@@ -1365,11 +1365,12 @@ void H265_FORCEINLINE H265Prediction::Interpolate(
                         const void* in_pSrc2,
                         int    in_Src2Pitch ) // in samples
 {
-    Ipp32s accum_pitch = ((interp_type == INTERP_HOR) ? (plane_type == TEXT_LUMA ? 1 : 2) : in_SrcPitch);
+    //Ipp32s accum_pitch = ((interp_type == INTERP_HOR) ? (plane_type == TEXT_LUMA ? 1 : 2) : in_SrcPitch);
+    Ipp32s accum_pitch = ((interp_type == INTERP_HOR) ? (plane_type == TEXT_LUMA ? 1 : 1) : in_SrcPitch);
 
     const t_src* pSrc = in_pSrc - (((( plane_type == TEXT_LUMA) ? 8 : 4) >> 1) - 1) * accum_pitch;
 
-    width <<= int(plane_type == TEXT_CHROMA);
+    //width <<= int(plane_type == TEXT_CHROMA);
 
     t_InterpKernel_intrin< __m128i, plane_type, t_src, t_dst >::func( in_pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, tab_index, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
 }
