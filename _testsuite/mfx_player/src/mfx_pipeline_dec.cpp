@@ -2971,7 +2971,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         {
             std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_libType, (int)MFX_IMPL_AUTO_ANY));
         }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-mfxdll"), VM_STRING("load MediaSDK DLL library from explicit dll path")))
+        else if (m_OptProc.Check(argv[0], VM_STRING("-mfxdll"), VM_STRING("load MediaSDK DLL library from explicit dll path"), OPT_FILENAME))
         {
             MFX_CHECK(1 + argv != argvEnd);
             MFX_CHECK(0==vm_string_strcpy_s(m_inParams.pMFXLibraryPath,  MFX_ARRAY_SIZE(m_inParams.pMFXLibraryPath), argv[1]));
