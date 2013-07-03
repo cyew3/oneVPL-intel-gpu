@@ -644,10 +644,12 @@ mfxStatus mfxSchedulerCore::AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoi
         int type;
 
         // Make sure that there is an empty task object
+        
         mfxRes = AllocateEmptyTask();
         if (MFX_ERR_NONE != mfxRes)
         {
-            return mfxRes;
+            // better to return error instead of WRN  (two-tasks per component scheme)
+            return MFX_ERR_MEMORY_ALLOC;
         }
 
         // initialize the task
