@@ -24,6 +24,7 @@
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="..\Intel.Mfx.Common.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <PlatformToolset>v110</PlatformToolset>
@@ -49,42 +50,30 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\Intel.Mfx.StaticLib.props" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\Intel.Mfx.StaticLib.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\Intel.Mfx.StaticLib.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\Intel.Mfx.StaticLib.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>11.0.51106.1</_ProjectFileVersion>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>..\..\..\build\win_$(Platform)\</OutDir>
-    <IntDir>$(OutDir)objs\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>..\..\..\build\win_$(Platform)\</OutDir>
-    <IntDir>$(OutDir)objs\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>..\..\..\build\win_$(Platform)\</OutDir>
-    <IntDir>$(OutDir)objs\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>..\..\..\build\win_$(Platform)\</OutDir>
-    <IntDir>$(OutDir)objs\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\ia32\include;..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;VM_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -94,9 +83,7 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
-    <Lib>
-      <OutputFile>$(OutDir)lib\$(ProjectName)_d.lib</OutputFile>
-    </Lib>
+    <Lib />
     <Bscmake>
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
     </Bscmake>
@@ -107,7 +94,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\em64t\include;..\..\..\include;..\shared\include;..\..\shared\include;h265\include;vc1\include;mpeg2\include;h264\include;vp8\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\brc\vc1\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\brc\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\..\thirdparty\vp8_libvpx;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_enc\include;mjpeg\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -116,9 +103,7 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
-    <Lib>
-      <OutputFile>$(OutDir)lib\$(ProjectName)_d.lib</OutputFile>
-    </Lib>
+    <Lib />
     <Bscmake>
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
     </Bscmake>
@@ -126,7 +111,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\ia32\include;..\..\..\include;..\shared\include;..\..\shared\include;vc1\include;mpeg2\include;h264\include;h265\include;vp8\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\brc\vc1\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\brc\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\..\thirdparty\vp8_libvpx;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_enc\include;mjpeg\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -136,9 +121,7 @@
       <TreatWarningAsError>false</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
-    <Lib>
-      <OutputFile>$(OutDir)lib\$(ProjectName).lib</OutputFile>
-    </Lib>
+    <Lib />
     <Bscmake>
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
     </Bscmake>
@@ -149,7 +132,7 @@
     </Midl>
     <ClCompile>
       <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\em64t\include;..\..\..\include;..\shared\include;..\..\shared\include;h265\include;vc1\include;mpeg2\include;h264\include;vp8\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\brc\vc1\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\brc\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\..\thirdparty\vp8_libvpx;..\..\shared\umc\codec\jpeg_common\include;..\..\shared\umc\codec\jpeg_enc\include;mjpeg\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader />
@@ -157,9 +140,7 @@
       <TreatWarningAsError>false</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
-    <Lib>
-      <OutputFile>$(OutDir)lib\$(ProjectName).lib</OutputFile>
-    </Lib>
+    <Lib />
     <Bscmake>
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
     </Bscmake>
