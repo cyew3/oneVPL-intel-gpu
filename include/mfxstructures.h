@@ -146,12 +146,17 @@ enum {
 
 /* Frame Data Info */
 typedef struct {
-    mfxU32      reserved[8];
+    mfxU32      reserved[7];
+    mfxU16      reserved1;
+    mfxU16      PitchHigh;
 
     mfxU64      TimeStamp;
     mfxU32      FrameOrder;
     mfxU16      Locked;
-    mfxU16      Pitch;
+    union{
+        mfxU16  Pitch;
+        mfxU16  PitchLow;
+    };
 
     /* color planes */
     union {
