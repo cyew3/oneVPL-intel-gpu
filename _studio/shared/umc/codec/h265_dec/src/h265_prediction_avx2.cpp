@@ -22,6 +22,7 @@
 
 namespace UMC_HEVC_DECODER
 {
+#ifdef __INTEL_COMPILER
 
 //=================================================================================================
 // below is a 4-tap and 8-tap filter implemntation using filter constants as template params
@@ -376,6 +377,8 @@ template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp8u, 5 >;
 template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp8u, 6 >;
 template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp8u, 7 >;
 template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp8u, 8 >;
+
+#endif // __INTEL_COMPILER
 
 } // end namespace UMC_HEVC_DECODER
 
