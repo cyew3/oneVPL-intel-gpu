@@ -91,39 +91,43 @@ UMC::Status DecReferencePictureMarking_H265::UpdateRefPicMarking(ViewItem_H265 &
                 continue;
 
             bool isReferenced = false;
-            // loop through all pictures in the Reference Picture Set
-            // to see if the picture should be kept as reference picture
-            Ipp32s i;
-            Ipp32s count = rps->getNumberOfPositivePictures() + rps->getNumberOfNegativePictures();
-            for(i = 0; i < count; i++)
-            {
-                if (!pTmp->isLongTermRef() && pTmp->m_PicOrderCnt == pSlice->getPOC() + rps->getDeltaPOC(i))
-                {
-                    isReferenced = true;
-                    pTmp->SetisShortTermRef(true);
-                    pTmp->SetisLongTermRef(false);
-                }
-            }
 
-            count = rps->getNumberOfPictures();
-            for( ; i < count; i++)
+            if (!pTmp->RefPicListResetCount())
             {
-                if (rps->getCheckLTMSBPresent(i) == true)
+                // loop through all pictures in the Reference Picture Set
+                // to see if the picture should be kept as reference picture
+                Ipp32s i;
+                Ipp32s count = rps->getNumberOfPositivePictures() + rps->getNumberOfNegativePictures();
+                for(i = 0; i < count; i++)
                 {
-                    if (pTmp->m_PicOrderCnt == rps->getPOC(i))
+                    if (!pTmp->isLongTermRef() && pTmp->m_PicOrderCnt == pSlice->getPOC() + rps->getDeltaPOC(i))
                     {
                         isReferenced = true;
-                        pTmp->SetisLongTermRef(true);
-                        pTmp->SetisShortTermRef(false);
+                        pTmp->SetisShortTermRef(true);
+                        pTmp->SetisLongTermRef(false);
                     }
                 }
-                else
+
+                count = rps->getNumberOfPictures();
+                for( ; i < count; i++)
                 {
-                    if ((pTmp->m_PicOrderCnt % (1 << sliceHeader->m_SeqParamSet->log2_max_pic_order_cnt_lsb)) == rps->getPOC(i) % (1 << sliceHeader->m_SeqParamSet->log2_max_pic_order_cnt_lsb))
+                    if (rps->getCheckLTMSBPresent(i) == true)
                     {
-                        isReferenced = true;
-                        pTmp->SetisLongTermRef(true);
-                        pTmp->SetisShortTermRef(false);
+                        if (pTmp->m_PicOrderCnt == rps->getPOC(i))
+                        {
+                            isReferenced = true;
+                            pTmp->SetisLongTermRef(true);
+                            pTmp->SetisShortTermRef(false);
+                        }
+                    }
+                    else
+                    {
+                        if ((pTmp->m_PicOrderCnt % (1 << sliceHeader->m_SeqParamSet->log2_max_pic_order_cnt_lsb)) == rps->getPOC(i) % (1 << sliceHeader->m_SeqParamSet->log2_max_pic_order_cnt_lsb))
+                        {
+                            isReferenced = true;
+                            pTmp->SetisLongTermRef(true);
+                            pTmp->SetisShortTermRef(false);
+                        }
                     }
                 }
             }

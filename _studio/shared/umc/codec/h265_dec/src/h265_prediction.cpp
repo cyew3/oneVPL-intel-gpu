@@ -20,7 +20,7 @@
 #ifdef NDEBUG
   #define MM_LOAD_EPI64(x) (*(__m128i*)x)
 #else
-  #define MM_LOAD_EPI64(x) _mm_loadl_epi64( (__m128i*)x )
+  #define MM_LOAD_EPI64(x) _mm_loadl_epi64( (const __m128i*)x )
 #endif
 
 #include "h265_prediction.h"
