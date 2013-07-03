@@ -275,12 +275,18 @@ mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffe
         sts = CheckBitstream(bs);
         MFX_CHECK_STS(sts);
 
+//        unsigned int RawFrameSize;
         sts = ConstructFrame(bs, &m_frame);
 
         if (MFX_ERR_NONE != sts)
         {
             return sts;
         }
+
+//         if (buffer_out->MaxLength < RawFrameSize)
+//         {
+//             sts = MFX_ERR_NOT_ENOUGH_BUFFER;
+//         }
     }
 
     return sts;
