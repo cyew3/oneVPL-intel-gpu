@@ -372,8 +372,16 @@ mfxStatus AudioDECODEMP3::DecodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffe
         sts = CheckBitstream(bs);
         MFX_CHECK_STS(sts);
 
-        sts = ConstructFrame(bs, &m_frame);
+        unsigned int RawFrameSize;
 
+        sts = ConstructFrame(bs, &m_frame, &RawFrameSize);
+
+        //check that buffer_out.MaxLength < RawFrameSize
+        if (buffer_out->MaxLength < RawFrameSize)
+        {
+            sts = MFX_ERR_NOT_ENOUGH_BUFFER;
+        }
+        
         if (MFX_ERR_NONE != sts)
         {
             return sts;
@@ -409,8 +417,9 @@ mfxStatus AudioDECODEMP3::DecodeFrame(mfxBitstream *bs, mfxBitstream *buffer_out
     {
         sts = CheckBitstream(bs);
         MFX_CHECK_STS(sts);
-
-        sts = ConstructFrame(bs, &m_frame);
+        
+        unsigned int RawFrameSize;
+        sts = ConstructFrame(bs, &m_frame,  &RawFrameSize);
 
         if (MFX_ERR_NONE != sts)
         {
@@ -439,7 +448,7 @@ void AudioDECODEMP3::MoveBitstreamData(mfxBitstream& bs, mfxU32 offset)
     bs.DataLength -= offset;
 }
 
-mfxStatus AudioDECODEMP3::ConstructFrame(mfxBitstream *in, mfxBitstream *out)
+mfxStatus AudioDECODEMP3::ConstructFrame(mfxBitstream *in, mfxBitstream *out, unsigned int *p_RawFrameSize)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -452,10 +461,8 @@ mfxStatus AudioDECODEMP3::ConstructFrame(mfxBitstream *in, mfxBitstream *out)
     mInData.SetBufferPointer((Ipp8u *)in->Data + in->DataOffset, in->DataLength);
     mInData.SetDataSize(in->DataLength);
 
-    unsigned int RawFrameSize;
-
     UMC::Status stsUMC = m_pMP3AudioDecoder->FrameConstruct(&mInData, &inBufferSize, 
-                                                                &inBufferID3HeaderSize, &RawFrameSize);
+                                                                &inBufferID3HeaderSize, p_RawFrameSize);
     switch (stsUMC)
     {
     case UMC::UMC_OK: 

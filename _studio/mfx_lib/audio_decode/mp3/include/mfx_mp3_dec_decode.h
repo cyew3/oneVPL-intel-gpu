@@ -65,7 +65,7 @@ public:
     virtual mfxStatus DecodeFrame(mfxBitstream *bs, mfxBitstream *buffer_out);
 
 protected:
-    virtual mfxStatus ConstructFrame(mfxBitstream *in, mfxBitstream *out);
+    virtual mfxStatus ConstructFrame(mfxBitstream *in, mfxBitstream *out, unsigned int *p_RawFrameSize);
 
     static mfxStatus FillAudioParamMP3(MP3Dec_com* res, mfxAudioParam *out);
 

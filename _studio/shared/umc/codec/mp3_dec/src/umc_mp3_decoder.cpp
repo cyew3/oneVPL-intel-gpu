@@ -17,6 +17,7 @@
 
 using namespace UMC;
 
+
 MP3Decoder::MP3Decoder(void)
 {
     state         = NULL;
@@ -353,7 +354,7 @@ Status MP3Decoder::MemUnlock()
     return UMC_OK;
 }
 
-Status MP3Decoder::FrameConstruct(MediaData *in, Ipp32s *outFrameSize, Ipp32s *outID3HeaderSize)
+Status MP3Decoder::FrameConstruct(MediaData *in, Ipp32s *outFrameSize, Ipp32s *outID3HeaderSize, unsigned int *p_RawFrameSize)
 {
     MP3Status res = MP3_OK;
     Ipp8u *inPointer = (Ipp8u *)(in->GetDataPointer());
@@ -385,7 +386,11 @@ Status MP3Decoder::FrameConstruct(MediaData *in, Ipp32s *outFrameSize, Ipp32s *o
     mp3dec_ReceiveBuffer(&(state.m_StreamData), inPointer, inDataSize);
 
     MP3Status stsMP3 = mp3dec_GetSynch(&state);
+
+    Ipp32s channels = state.stereo + state.mc_channel + state.mc_header.lfe;
+    *p_RawFrameSize = 1152 * (channels + 1) * sizeof(Ipp16s);
     *outFrameSize += state.decodedBytes;
+
     return StatusMP3_2_UMC(stsMP3);
    /* switch(stsMP3)
     {
