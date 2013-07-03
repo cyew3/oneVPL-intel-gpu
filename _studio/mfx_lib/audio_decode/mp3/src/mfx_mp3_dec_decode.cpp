@@ -461,8 +461,14 @@ mfxStatus AudioDECODEMP3::ConstructFrame(mfxBitstream *in, mfxBitstream *out, un
     mInData.SetBufferPointer((Ipp8u *)in->Data + in->DataOffset, in->DataLength);
     mInData.SetDataSize(in->DataLength);
 
+<<<<<<< HEAD
     UMC::Status stsUMC = m_pMP3AudioDecoder->FrameConstruct(&mInData, &inBufferSize, 
                                                                 &inBufferID3HeaderSize, p_RawFrameSize);
+=======
+    unsigned int RawFrameSize;
+
+    UMC::Status stsUMC = m_pMP3AudioDecoder->FrameConstruct(&mInData, &inBufferSize, &inBufferID3HeaderSize);
+>>>>>>> what changed: Add behavior test for AudioEncode_Close(); Fix Release configuration
     switch (stsUMC)
     {
     case UMC::UMC_OK: 
