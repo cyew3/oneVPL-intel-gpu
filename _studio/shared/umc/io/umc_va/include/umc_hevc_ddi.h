@@ -15,7 +15,7 @@
 #define MK_HEVCVER(j, n)    (((j & 0x0000ffff) << 16) | (n & 0x0000ffff))
 #define HEVC_SPEC_VER       MK_HEVCVER(0, 84)
 
-typedef struct _DXVA_PicEntry_HEVC
+typedef struct _DXVA_Intel_PicEntry_HEVC
 {
     union
     {
@@ -28,33 +28,33 @@ typedef struct _DXVA_PicEntry_HEVC
         UCHAR   bPicEntry;
     };
 
-} DXVA_PicEntry_HEVC, *LPDXVA_PicEntry_HEVC;
+} DXVA_Intel_PicEntry_HEVC, *LPDXVA_Intel_PicEntry_HEVC;
 
-//typedef struct _DXVA_Status_HEVC 
+//typedef struct _DXVA_Intel_Status_HEVC 
 //{
 //    USHORT StatusReportFeedbackNumber; 
-//    DXVA_PicEntry_HEVC current_picture; 
+//    DXVA_Intel_PicEntry_HEVC current_picture; 
 //    UCHAR  bBufType; 
 //    UCHAR  bStatus; 
 //    UCHAR  bReserved8Bits; 
 //    USHORT wNumMbsAffected; 
-//} DXVA_Status_HEVC, *LPDXVA_Status_HEVC;
+//} DXVA_Intel_Status_HEVC, *LPDXVA_Intel_Status_HEVC;
 
-typedef struct _DXVA_Status_HEVC {
+typedef struct _DXVA_Intel_Status_HEVC {
   UINT                      StatusReportFeedbackNumber;
-  DXVA_PicEntry_HEVC        current_picture; /* flag is bot field flag */
+  DXVA_Intel_PicEntry_HEVC        current_picture; /* flag is bot field flag */
   UCHAR                     field_pic_flag;
   UCHAR                     bDXVA_Func;
   UCHAR                     bBufType;
   UCHAR                     bStatus;
   UCHAR                     bReserved8Bits;
   USHORT                    wNumMbsAffected;
-} DXVA_Status_HEVC, *LPDXVA_Status_HEVC;
+} DXVA_Intel_Status_HEVC, *LPDXVA_Intel_Status_HEVC;
 
 
 
 #if HEVC_SPEC_VER == MK_HEVCVER(0, 81)
-typedef struct _DXVA_PicParams_HEVC
+typedef struct _DXVA_Intel_PicParams_HEVC
 {
     USHORT          wFrameWidthInMinCbMinus1;
     USHORT          wFrameHeightInMinCbMinus1;
@@ -88,10 +88,10 @@ typedef struct _DXVA_PicParams_HEVC
         };
     };
 
-    DXVA_PicEntry_HEVC  CurrPic; 
+    DXVA_Intel_PicEntry_HEVC  CurrPic; 
     INT                 poc_curr_pic;
     UCHAR               num_ref_frames;
-    DXVA_PicEntry_HEVC  RefFrameList[16];
+    DXVA_Intel_PicEntry_HEVC  RefFrameList[16];
     INT                 poc_list[16];
     USHORT              ref_field_pic_flag;
     USHORT              ref_bottom_field_flag;
@@ -141,7 +141,7 @@ typedef struct _DXVA_PicParams_HEVC
         };
     };
 
-    DXVA_PicEntry_HEVC  CollocatedRefIdx;
+    DXVA_Intel_PicEntry_HEVC  CollocatedRefIdx;
     UCHAR               log2_max_pic_order_cnt_lsb_minus4;
     UCHAR               num_short_term_ref_pic_sets;
     UCHAR               num_long_term_ref_pic_sps;
@@ -151,116 +151,231 @@ typedef struct _DXVA_PicParams_HEVC
     UCHAR               num_ref_idx_l1_default_active_minus1;
     CHAR                beta_offset_div2;
     CHAR                tc_offset_div2;
-} DXVA_PicParams_HEVC, *LPDXVA_PicParams_HEVC;
+} DXVA_Intel_PicParams_HEVC, *LPDXVA_Intel_PicParams_HEVC;
+
 #elif HEVC_SPEC_VER == MK_HEVCVER(0, 84)
-typedef struct _DXVA_PicParams_HEVC
+
+typedef struct _DXVA_Intel_PicParams_HEVC
 {
-    USHORT  PicWidthInMinCbsY;
-    USHORT  PicHeightInMinCbsY;
+    USHORT        PicWidthInMinCbsY;
+    USHORT        PicHeightInMinCbsY;
     union
     {
         UINT        value;
         struct
         {
-            UINT    chroma_format_idc                           : 2;
-            UINT    separate_colour_plane_flag                  : 1;
-            UINT    pcm_enabled_flag                            : 1;
-            UINT    scaling_list_enabled_flag                   : 1;
-            UINT    transform_skip_enabled_flag                 : 1;
-            UINT    amp_enabled_flag                            : 1;
-            UINT    strong_intra_smoothing_enabled_flag         : 1;
-            UINT    sign_data_hiding_flag                       : 1;
-            UINT    constrained_intra_pred_flag                 : 1;
-            UINT    cu_qp_delta_enabled_flag                    : 1;
-            UINT    weighted_pred_flag                          : 1;
-            UINT    weighted_bipred_flag                        : 1;
-            UINT    transquant_bypass_enabled_flag              : 1;
-            UINT    tiles_enabled_flag                          : 1;
-            UINT    entropy_coding_sync_enabled_flag            : 1;
-            UINT    pps_loop_filter_across_slices_enabled_flag  : 1;    //  loop filter flags
-            UINT    loop_filter_across_tiles_enabled_flag       : 1;
-            UINT    pcm_loop_filter_disabled_flag               : 1;
-            UINT    field_pic_flag                              : 1;
-            UINT    bottom_field_flag                           : 1;
-            UINT    NoPicReorderingFlag                         : 1;
-            UINT    NoBiPredFlag                                : 1;
-            UINT    reserved_bits                               : 9;
+            UINT        chroma_format_idc                            : 2;
+            UINT        separate_colour_plane_flag                    : 1;
+            UINT        pcm_enabled_flag                            : 1;
+            UINT        scaling_list_enabled_flag                    : 1;
+            UINT        transform_skip_enabled_flag                    : 1;
+            UINT        amp_enabled_flag                            : 1;
+            UINT        strong_intra_smoothing_enabled_flag            : 1;
+            UINT        sign_data_hiding_flag                        : 1;
+            UINT        constrained_intra_pred_flag                    : 1;
+            UINT        cu_qp_delta_enabled_flag                    : 1;
+            UINT        weighted_pred_flag                            : 1;
+            UINT        weighted_bipred_flag                        : 1;
+            UINT        transquant_bypass_enabled_flag                : 1;
+            UINT        tiles_enabled_flag                            : 1;
+            UINT        entropy_coding_sync_enabled_flag            : 1;
+            UINT        pps_loop_filter_across_slices_enabled_flag  : 1;
+            UINT        loop_filter_across_tiles_enabled_flag        : 1;
+            UINT        pcm_loop_filter_disabled_flag                : 1;
+            UINT        field_pic_flag                                : 1;
+            UINT        bottom_field_flag                            : 1;
+            UINT        NoPicReorderingFlag                            : 1;
+            UINT        NoBiPredFlag                                : 1;
+            UINT        reserved_bits                                : 9;
         } fields;
     } PicFlags;
 
-    DXVA_PicEntry_HEVC    CurrPic; 
-    INT             CurrPicOrderCntVal;
-    UCHAR           sps_max_dec_pic_buffering_minus1;    // [0..15]
-    DXVA_PicEntry_HEVC    RefFrameList[16];
-    INT             PicOrderCntValList[16];
-    USHORT          RefFieldPicFlag;
-    USHORT          RefBottomFieldFlag;
-    UCHAR           bit_depth_luma_minus8;            // [0..6]
-    UCHAR           bit_depth_chroma_minus8;            // [0..6]
-    UCHAR           pcm_sample_bit_depth_luma_minus1;    // [0..13]
-    UCHAR           pcm_sample_bit_depth_chroma_minus1;    // [0..13]
-    UCHAR           log2_min_luma_coding_block_size_minus3; //[0..3]
-    UCHAR           log2_diff_max_min_luma_coding_block_size;//[0..3]
-    UCHAR           log2_min_transform_block_size_minus2;    // [0..3]
-    UCHAR           log2_diff_max_min_transform_block_size;// [0..3]
-    UCHAR           log2_min_pcm_luma_coding_block_size_minus3; // [0..2]
-    UCHAR           log2_diff_max_min_pcm_luma_coding_block_size;        // [0..2]
-    UCHAR           max_transform_hierarchy_depth_intra;    // [0..4]
-    UCHAR           max_transform_hierarchy_depth_inter;    // [0..4]
-    CHAR            init_qp_minus26;            // [-26..25]
-    UCHAR           diff_cu_qp_delta_depth;            // [0..3]
-    CHAR            pps_cb_qp_offset;
-    CHAR            pps_cr_qp_offset;
-    UCHAR           num_tile_columns_minus1;
-    UCHAR           num_tile_rows_minus1;
-    USHORT          column_width_minus1[20];
-    USHORT          row_height_minus1[22];
-    UCHAR           log2_parallel_merge_level_minus2;
-    UINT            StatusReportFeedbackNumber;
+    DXVA_Intel_PicEntry_HEVC    CurrPic; 
+    INT            CurrPicOrderCntVal;
+    UCHAR            sps_max_dec_pic_buffering_minus1;    // [0..15]
+    DXVA_Intel_PicEntry_HEVC    RefFrameList[15];
+    INT            PicOrderCntValList[15];
+    USHORT  RefFieldPicFlag;
+    USHORT    RefBottomFieldFlag;
+    UCHAR    bit_depth_luma_minus8;
+    UCHAR    bit_depth_chroma_minus8;
+    UCHAR    pcm_sample_bit_depth_luma_minus1;
+    UCHAR    pcm_sample_bit_depth_chroma_minus1;
+    UCHAR     log2_min_luma_coding_block_size_minus3;
+    UCHAR     log2_diff_max_min_luma_coding_block_size;
+    UCHAR     log2_min_transform_block_size_minus2;    
+    UCHAR     log2_diff_max_min_transform_block_size;
+    UCHAR     log2_min_pcm_luma_coding_block_size_minus3;
+    UCHAR     log2_diff_max_min_pcm_luma_coding_block_size;
+    UCHAR    max_transform_hierarchy_depth_intra;    
+    UCHAR    max_transform_hierarchy_depth_inter;    
+    CHAR    init_qp_minus26;
+    UCHAR    diff_cu_qp_delta_depth;
+    CHAR    pps_cb_qp_offset;
+    CHAR    pps_cr_qp_offset;
+    UCHAR    num_tile_columns_minus1;
+    UCHAR    num_tile_rows_minus1;
+    USHORT    column_width_minus1[19];
+    USHORT    row_height_minus1[21];
+    UCHAR    log2_parallel_merge_level_minus2;
+    UINT     StatusReportFeedbackNumber;
 
-    UCHAR           continuation_flag;
+    UCHAR    continuation_flag;
 
     union
     {
         UINT        value;
         struct
         {
-            UINT    lists_modification_present_flag             : 1;
-            UINT    long_term_ref_pics_present_flag             : 1;
-            UINT    sps_temporal_mvp_enabled_flag               : 1;
-            UINT    cabac_init_present_flag                     : 1;
-            UINT    output_flag_present_flag                    : 1;
-            UINT    dependent_slice_segments_enabled_flag       : 1;
-            UINT    pps_slice_chroma_qp_offsets_present_flag    : 1;
-            UINT    slice_temporal_mvp_enabled_flag             : 1;
-            UINT    sample_adaptive_offset_enabled_flag         : 1;
-            UINT    deblocking_filter_control_present_flag      : 1;
-            UINT    deblocking_filter_override_enabled_flag     : 1;
-            UINT    pps_disable_deblocking_filter_flag          : 1;
-            UINT    IrapPicFlag                                 : 1;
-            UINT    IdrPicFlag                                  : 1;
-            UINT    IntraPicFlag                                : 1;
-            UINT    reserved_bits                               :17;
+            UINT        lists_modification_present_flag                : 1;
+            UINT        long_term_ref_pics_present_flag                : 1;
+            UINT        sps_temporal_mvp_enabled_flag                : 1;
+            UINT        cabac_init_present_flag                        : 1;
+            UINT        output_flag_present_flag                    : 1;
+            UINT        dependent_slice_segments_enabled_flag        : 1;
+            UINT        pps_slice_chroma_qp_offsets_present_flag    : 1;
+            UINT        sample_adaptive_offset_enabled_flag            : 1;
+            UINT        deblocking_filter_override_enabled_flag        : 1;
+            UINT        pps_disable_deblocking_filter_flag            : 1;
+            UINT        IrapPicFlag                                    : 1;
+            UINT        IdrPicFlag                                    : 1;
+            UINT        IntraPicFlag                                : 1;
+            UINT        slice_segment_header_extension_present_flag : 1;
+            UINT        reserved_bits                                : 18;
         } fields;
-    } pic_short_format_flags;
+    } PicShortFormatFlags;
 
-    DXVA_PicEntry_HEVC    CollocatedRefIdx;
-    UCHAR           RefPicSetStCurrBefore[16];
-    UCHAR           RefPicSetStCurrAfter[16];
-    UCHAR           RefPicSetLtCurr[16];
-    UCHAR           log2_max_pic_order_cnt_lsb_minus4;    // [0..12]
-    UCHAR           num_short_term_ref_pic_sets;
-    UCHAR           num_long_term_ref_pics_sps;
-    UCHAR           num_ref_idx_l0_default_active_minus1;
-    UCHAR           num_ref_idx_l1_default_active_minus1;
+    UCHAR   RefPicSetStCurrBefore[8];
+    UCHAR    RefPicSetStCurrAfter[8];
+    UCHAR    RefPicSetLtCurr[8];
+    UCHAR    log2_max_pic_order_cnt_lsb_minus4;
+    UCHAR    num_short_term_ref_pic_sets;
+    UCHAR    num_long_term_ref_pics_sps;
+    UCHAR    num_ref_idx_l0_default_active_minus1;
+    UCHAR    num_ref_idx_l1_default_active_minus1;
+    CHAR    pps_beta_offset_div2;
+    CHAR    pps_tc_offset_div2;
+    USHORT    StRPSBits;
+    UCHAR    num_extra_slice_header_bits;
+    
+} DXVA_Intel_PicParams_HEVC, *LPDXVA_Intel_PicParams_HEVC;
+
+#elif HEVC_SPEC_VER == MK_HEVCVER(0, 83)
+
+typedef struct _DXVA_Intel_PicParams_HEVC
+{
+    USHORT        PicWidthInMinCbsY;
+    USHORT        PicHeightInMinCbsY;
+    union
+    {
+        UINT        value;
+        struct
+        {
+            UINT        chroma_format_idc                : 2;
+            UINT        separate_colour_plane_flag            : 1;
+            UINT        pcm_enabled_flag                : 1;
+            UINT        scaling_list_enabled_flag            : 1;
+            UINT        transform_skip_enabled_flag        : 1;
+            UINT        amp_enabled_flag                : 1;
+            UINT        strong_intra_smoothing_enabled_flag    : 1;
+            UINT        sign_data_hiding_flag            : 1;
+            UINT        constrained_intra_pred_flag            : 1;
+            UINT        cu_qp_delta_enabled_flag            : 1;
+            UINT        weighted_pred_flag                : 1;
+            UINT        weighted_bipred_flag            : 1;
+            UINT        transquant_bypass_enabled_flag        : 1;
+            UINT        tiles_enabled_flag                : 1;
+            UINT        entropy_coding_sync_enabled_flag        : 1;
+            UINT        pps_loop_filter_across_slices_enabled_flag: 1;
+            UINT        loop_filter_across_tiles_enabled_flag    : 1;
+            UINT        pcm_loop_filter_disabled_flag        : 1;
+            UINT        field_pic_flag                    : 1;
+            UINT        bottom_field_flag                : 1;
+            UINT        NoPicReorderingFlag                : 1;
+            UINT        NoBiPredFlag                    : 1;
+            UINT        reserved_bits                    : 9;
+        } fields;
+    } PicFlags;
+
+    DXVA_Intel_PicEntry_HEVC    CurrPic; 
+    INT            CurrPicOrderCntVal;
+    UCHAR            sps_max_dec_pic_buffering_minus1;    // [0..15]
+    DXVA_Intel_PicEntry_HEVC    RefFrameList[16];
+    INT            PicOrderCntValList[16];
+    USHORT        RefFieldPicFlag;
+    USHORT        RefBottomFieldFlag;
+    UCHAR            bit_depth_luma_minus8;            // [0..6]
+    UCHAR            bit_depth_chroma_minus8;            // [0..6]
+    UCHAR            pcm_sample_bit_depth_luma_minus1;    // [0..13]
+    UCHAR            pcm_sample_bit_depth_chroma_minus1;    // [0..13]
+    UCHAR         log2_min_luma_coding_block_size_minus3; //[0..3]
+    UCHAR         log2_diff_max_min_luma_coding_block_size;//[0..3]
+    UCHAR         log2_min_transform_block_size_minus2;    // [0..3]
+    UCHAR         log2_diff_max_min_transform_block_size;// [0..3]
+    UCHAR         log2_min_pcm_luma_coding_block_size_minus3; // [0..2]
+    UCHAR         log2_diff_max_min_pcm_luma_coding_block_size;        // [0..2]
+    UCHAR            max_transform_hierarchy_depth_intra;    // [0..4]
+    UCHAR            max_transform_hierarchy_depth_inter;    // [0..4]
+    CHAR            init_qp_minus26;                // [-26..25]
+    UCHAR            diff_cu_qp_delta_depth;            // [0..3]
+    CHAR            pps_cb_qp_offset;
+    CHAR            pps_cr_qp_offset;
+    UCHAR            num_tile_columns_minus1;
+    UCHAR            num_tile_rows_minus1;
+    USHORT        column_width_minus1[19];
+    USHORT        row_height_minus1[21];
+    UCHAR            log2_parallel_merge_level_minus2;
+    UINT             StatusReportFeedbackNumber;
+
+    UCHAR            continuation_flag;
+
+    union
+    {
+        UINT        value;
+        struct
+        {
+            UINT        lists_modification_present_flag        : 1;
+            UINT        long_term_ref_pics_present_flag        : 1;
+            UINT        sps_temporal_mvp_enabled_flag        : 1;
+            UINT        cabac_init_present_flag            : 1;
+            UINT        output_flag_present_flag            : 1;
+            UINT        dependent_slice_segments_enabled_flag    : 1;
+            UINT        pps_slice_chroma_qp_offsets_present_flag: 1;
+
+            UINT        sample_adaptive_offset_enabled_flag    : 1;
+            UINT        deblocking_filter_control_present_flag    : 1;
+            UINT        deblocking_filter_override_enabled_flag    : 1;
+            UINT        pps_disable_deblocking_filter_flag        : 1;
+            UINT        IrapPicFlag                    : 1;
+            UINT        IdrPicFlag                    : 1;
+            UINT        IntraPicFlag                    : 1;
+            UINT        slice_segment_header_extension_present_flag : 1;
+            UINT        reserved_bits                    : 17;
+        } fields;
+    } PicShortFormatFlags;
+
+
+    UCHAR            RefPicSetStCurrBefore[8];
+    UCHAR            RefPicSetStCurrAfter[8];
+    UCHAR            RefPicSetLtCurr[8];
+    UCHAR            log2_max_pic_order_cnt_lsb_minus4;    // [0..12]
+    UCHAR            num_short_term_ref_pic_sets;
+    UCHAR            num_long_term_ref_pics_sps;
+    UCHAR            num_ref_idx_l0_default_active_minus1;
+    UCHAR            num_ref_idx_l1_default_active_minus1;
     CHAR            pps_beta_offset_div2;
     CHAR            pps_tc_offset_div2;
-} DXVA_PicParams_HEVC, *LPDXVA_PicParams_HEVC;
+    USHORT        StRPSBits;
+    UCHAR            num_extra_slice_header_bits;        // [0..7]
+
+}
+DXVA_Intel_PicParams_HEVC, *LPDXVA_Intel_PicParams_HEVC;
 #endif
 
 
+
 #if HEVC_SPEC_VER == MK_HEVCVER(0, 81)
-typedef struct _DXVA_Slice_HEVC_Long
+typedef struct _DXVA_Intel_Slice_HEVC_Long
 {
     UINT        BSNALunitDataLocation;
     UINT        SliceBytesInBuffer;
@@ -269,7 +384,7 @@ typedef struct _DXVA_Slice_HEVC_Long
     UINT        slice_segment_address;
     UINT        num_LCUs_for_slice;
 
-    DXVA_PicEntry_HEVC    RefPicList[2][16];
+    DXVA_Intel_PicEntry_HEVC    RefPicList[2][16];
 
     union
     {
@@ -307,11 +422,76 @@ typedef struct _DXVA_Slice_HEVC_Long
     UCHAR   max_num_merge_candidates;
     UINT    num_entry_point_offsets;
 
-} DXVA_Slice_HEVC_Long, *LPDXVA_Slice_HEVC_Long;
+} DXVA_Intel_Slice_HEVC_Long, *LPDXVA_Intel_Slice_HEVC_Long;
+
+#elif HEVC_SPEC_VER == MK_HEVCVER(0, 83)
+typedef struct _DXVA_Intel_Slice_HEVC_Long
+{
+    UINT        BSNALunitDataLocation;
+    UINT        SliceBytesInBuffer;
+    UINT        wBadSliceChopping;
+    UINT        ByteOffsetToSliceData;
+    UINT        slice_segment_address;
+    UINT        NumCTUsInSlice;
+    DXVA_Intel_PicEntry_HEVC    RefPicList[2][16];
+
+    union
+    {
+        UINT        value;
+        struct
+        {
+            UINT        LastSliceOfPic                    : 1;
+            UINT        dependent_slice_segment_flag        : 1;
+            UINT        slice_type                    : 2;
+            UINT        color_plane_id                : 2;
+            UINT        slice_sao_luma_flag                : 1;
+            UINT        slice_sao_chroma_flag            : 1;
+            UINT        mvd_l1_zero_flag                : 1;
+            UINT        cabac_init_flag                : 1;
+            UINT        slice_temporal_mvp_enabled_flag        : 1;
+            UINT        slice_deblocking_filter_disabled_flag    : 1;
+            UINT        collocated_from_l0_flag            : 1;
+            UINT        slice_loop_filter_across_slices_enabled_flag : 1;
+            UINT        reserved                    : 18;
+        } fields;
+    } LongSliceFlags;
+
+    DXVA_Intel_PicEntry_HEVC    CollocatedRefIdx;
+    UCHAR        num_ref_idx_l0_active_minus1;
+    UCHAR        num_ref_idx_l1_active_minus1;
+    CHAR        slice_qp_delta;
+    CHAR        slice_cb_qp_offset;
+    CHAR        slice_cr_qp_offset;
+    CHAR        slice_beta_offset_div2;                // [-6..6]
+    CHAR        slice_tc_offset_div2;                    // [-6..6]
+    UCHAR        luma_log2_weight_denom;
+    UCHAR        delta_chroma_log2_weight_denom;
+
+    CHAR        delta_luma_weight_l0[16];
+    CHAR        luma_offset_l0[16];
+    CHAR        delta_chroma_weight_l0[16][2];
+    CHAR        ChromaOffsetL0[16][2];
+    CHAR        delta_luma_weight_l1[16];
+    CHAR        luma_offset_l1[16];
+    CHAR        delta_chroma_weight_l1[16][2];
+    CHAR        ChromaOffsetL1[16][2];
+
+    UCHAR        five_minus_max_num_merge_cand;
+    UINT        num_entry_point_offsets;
+} DXVA_Intel_Slice_HEVC_Long, *LPDXVA_Intel_Slice_HEVC_Long;
+
+typedef struct _DXVA_Intel_Slice_HEVC_Short
+{
+    UINT    BSNALunitDataLocation;
+    UINT    SliceBytesInBuffer;
+    UINT    wBadSliceChopping;
+
+} DXVA_Intel_Slice_HEVC_Short, *LPDXVA_Intel_Slice_HEVC_Short;
+
 
 #elif HEVC_SPEC_VER == MK_HEVCVER(0, 84)
 
-typedef struct _DXVA_Slice_HEVC_Long
+typedef struct _DXVA_Intel_Slice_HEVC_Long
 {
     UINT        BSNALunitDataLocation;
     UINT        SliceBytesInBuffer;
@@ -320,7 +500,7 @@ typedef struct _DXVA_Slice_HEVC_Long
     UINT        slice_segment_address;
     UINT        NumCTUsInSlice;
 
-    DXVA_PicEntry_HEVC    RefPicList[2][15];
+    DXVA_Intel_PicEntry_HEVC    RefPicList[2][15];
 
     union
     {
@@ -363,17 +543,18 @@ typedef struct _DXVA_Slice_HEVC_Long
     CHAR    ChromaOffsetL1[15][2];
     UCHAR   five_minus_max_num_merge_cand;
     UINT    num_entry_point_offsets;
-} DXVA_Slice_HEVC_Long, *LPDXVA_Slice_HEVC_Long;
+} DXVA_Intel_Slice_HEVC_Long, *LPDXVA_Intel_Slice_HEVC_Long;
 
-typedef struct _DXVA_Slice_HEVC_Short
+typedef struct _DXVA_Intel_Slice_HEVC_Short
 {
 UINT        BSNALunitDataLocation;
 UINT        SliceBytesInBuffer;
 UINT        wBadSliceChopping;
-} DXVA_Slice_HEVC_Short, *LPDXVA_Slice_HEVC_Short;
+} DXVA_Intel_Slice_HEVC_Short, *LPDXVA_Intel_Slice_HEVC_Short;
+
 #endif
 
-typedef struct _DXVA_Qmatrix_HEVC
+typedef struct _DXVA_Intel_Qmatrix_HEVC
 {
 #if 1 //HEVC_SPEC_VER == MK_HEVCVER(0, 81)
     UCHAR  ucScalingLists0[3][2][16];
@@ -389,7 +570,7 @@ typedef struct _DXVA_Qmatrix_HEVC
     UCHAR   ucScalingListDCCoefSizeID2[6];
     UCHAR   ucScalingListDCCoefSizeID3[2];
 #endif
-} DXVA_Qmatrix_HEVC, *LPDXVA_Qmatrix_HEVC;
+} DXVA_Intel_Qmatrix_HEVC, *LPDXVA_Intel_Qmatrix_HEVC;
 
 
 #endif __UMC_HEVC_DDI_H

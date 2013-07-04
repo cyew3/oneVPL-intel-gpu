@@ -85,7 +85,7 @@ static inline int LengthInMinCb(int length, int cbsize)
     return length/(1 << cbsize);
 }
 
-void PackerDXVA2::GetPicParamVABuffer(DXVA_PicParams_HEVC **ppPicParam, size_t headerSize)
+void PackerDXVA2::GetPicParamVABuffer(DXVA_Intel_PicParams_HEVC **ppPicParam, size_t headerSize)
 {
     VM_ASSERT(ppPicParam);
 
@@ -113,7 +113,7 @@ void PackerDXVA2::GetPicParamVABuffer(DXVA_PicParams_HEVC **ppPicParam, size_t h
             return;
         }
 
-        *ppPicParam = (DXVA_PicParams_HEVC *)((char *)headBffr + headBffrOffs);
+        *ppPicParam = (DXVA_Intel_PicParams_HEVC *)((char *)headBffr + headBffrOffs);
         compBuf->SetDataSize(headBffrOffs + headerSize);
 
         memset(*ppPicParam, 0, headerSize);
@@ -123,7 +123,7 @@ void PackerDXVA2::GetPicParamVABuffer(DXVA_PicParams_HEVC **ppPicParam, size_t h
 }
 
 void PackerDXVA2::GetSliceVABuffers(
-    DXVA_Slice_HEVC_Long **ppSliceHeader, size_t headerSize, 
+    DXVA_Intel_Slice_HEVC_Long **ppSliceHeader, size_t headerSize, 
     void **ppSliceData, size_t dataSize, 
     size_t dataAlignment)
 {
@@ -169,7 +169,7 @@ void PackerDXVA2::GetSliceVABuffers(
             return;
         }
 
-        *ppSliceHeader = (DXVA_Slice_HEVC_Long *)((char *)headBffr + headBffrOffs);
+        *ppSliceHeader = (DXVA_Intel_Slice_HEVC_Long *)((char *)headBffr + headBffrOffs);
         *ppSliceData = (char *)dataBffr + dataBffrOffs;
 
         headVABffr->SetDataSize(headBffrOffs + headerSize);
@@ -187,7 +187,7 @@ void PackerDXVA2::GetSliceVABuffers(
     }
 }
 
-void PackerDXVA2::GetIQMVABuffer(DXVA_Qmatrix_HEVC **ppQmatrix, size_t size)
+void PackerDXVA2::GetIQMVABuffer(DXVA_Intel_Qmatrix_HEVC **ppQmatrix, size_t size)
 {
     VM_ASSERT(ppQmatrix);
 
@@ -215,7 +215,7 @@ void PackerDXVA2::GetIQMVABuffer(DXVA_Qmatrix_HEVC **ppQmatrix, size_t size)
             return;
         }
 
-        *ppQmatrix = (DXVA_Qmatrix_HEVC *)((char *)headBffr + bffrOffs);
+        *ppQmatrix = (DXVA_Intel_Qmatrix_HEVC *)((char *)headBffr + bffrOffs);
         compBuf->SetDataSize(bffrOffs + size);
 
         memset(*ppQmatrix, 0, size);
@@ -233,13 +233,13 @@ void PackerDXVA2::EndFrame()
 {
 }
 
-#if HEVC_SPEC_VER == MK_HEVCVER(0, 84)
+#if HEVC_SPEC_VER == MK_HEVCVER(0, 84) || HEVC_SPEC_VER == MK_HEVCVER(0, 83)
 void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
                         H265DecoderFrameInfo * pSliceInfo,
                         TaskSupplier_H265 *supplier)
 {
-    DXVA_PicParams_HEVC* pPicParam = 0;
-    GetPicParamVABuffer(&pPicParam, sizeof(DXVA_PicParams_HEVC));
+    DXVA_Intel_PicParams_HEVC* pPicParam = 0;
+    GetPicParamVABuffer(&pPicParam, sizeof(DXVA_Intel_PicParams_HEVC));
 
     H265Slice *pSlice = pSliceInfo->GetSlice(0);
     const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
@@ -274,7 +274,6 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->PicFlags.fields.bottom_field_flag                            = 0;
     pPicParam->PicFlags.fields.NoPicReorderingFlag                          = 0;
     pPicParam->PicFlags.fields.NoBiPredFlag                                 = 0;
-    //pPicParam->PicFlags.fields.tiles_fixed_structure_flag                   = pSeqParamSet->getTilesFixedStructureFlag();
     
     //
     //
@@ -282,7 +281,7 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->CurrPicOrderCntVal   = pSlice->getPOC();
 
     
-    int num_ref_frames = pSeqParamSet->getMaxDecPicBuffering(pSlice->getTLayer());
+    int num_ref_frames = pSeqParamSet->sps_max_dec_pic_buffering[pSlice->getTLayer()];
 
     pPicParam->sps_max_dec_pic_buffering_minus1 = (UCHAR)(num_ref_frames - 1);
 
@@ -350,37 +349,48 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
 
     pPicParam->continuation_flag = 1;
 
-    // pic_short_format_flags
+    // PicShortFormatFlags
     //
-    pPicParam->pic_short_format_flags.fields.lists_modification_present_flag            = pPicParamSet->getListsModificationPresentFlag() ? 1 : 0 ;
-    pPicParam->pic_short_format_flags.fields.long_term_ref_pics_present_flag            = pSeqParamSet->getLongTermRefsPresent() ? 1 : 0 ;
-    pPicParam->pic_short_format_flags.fields.sps_temporal_mvp_enabled_flag              = pSeqParamSet->getTMVPFlagsPresent() ? 1 : 0 ;
-    pPicParam->pic_short_format_flags.fields.cabac_init_present_flag                    = pPicParamSet->getCabacInitPresentFlag() ? 1 : 0 ;
-    pPicParam->pic_short_format_flags.fields.output_flag_present_flag                   = pPicParamSet->getOutputFlagPresentFlag() ? 1 : 0 ;
-    pPicParam->pic_short_format_flags.fields.dependent_slice_segments_enabled_flag      = pPicParamSet->getDependentSliceSegmentEnabledFlag() ? 1 : 0 ;
-    pPicParam->pic_short_format_flags.fields.pps_slice_chroma_qp_offsets_present_flag   = pPicParamSet->getSliceChromaQpFlag() ? 1 : 0 ;
-    pPicParam->pic_short_format_flags.fields.slice_temporal_mvp_enabled_flag            = pSlice->getEnableTMVPFlag() ? 1 : 0 ;
-    pPicParam->pic_short_format_flags.fields.sample_adaptive_offset_enabled_flag        = pSeqParamSet->getUseSAO() ? 1 : 0 ;
-    pPicParam->pic_short_format_flags.fields.deblocking_filter_control_present_flag     = pPicParamSet->getDeblockingFilterControlPresentFlag() ? 1 : 0 ;
-    pPicParam->pic_short_format_flags.fields.deblocking_filter_override_enabled_flag    = pPicParamSet->getDeblockingFilterOverrideEnabledFlag() ? 1 : 0 ;
-    pPicParam->pic_short_format_flags.fields.pps_disable_deblocking_filter_flag         = pPicParamSet->getPicDisableDeblockingFilterFlag() ? 1 : 0 ;
-    pPicParam->pic_short_format_flags.fields.IrapPicFlag                                = 0;
-    pPicParam->pic_short_format_flags.fields.IdrPicFlag                                 = 0;
-    pPicParam->pic_short_format_flags.fields.IntraPicFlag                               = 0;
+    pPicParam->PicShortFormatFlags.fields.lists_modification_present_flag               = pPicParamSet->getListsModificationPresentFlag() ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.long_term_ref_pics_present_flag               = pSeqParamSet->getLongTermRefsPresent() ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.sps_temporal_mvp_enabled_flag                 = pSeqParamSet->getTMVPFlagsPresent() ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.cabac_init_present_flag                       = pPicParamSet->getCabacInitPresentFlag() ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.output_flag_present_flag                      = pPicParamSet->getOutputFlagPresentFlag() ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.dependent_slice_segments_enabled_flag         = pPicParamSet->getDependentSliceSegmentEnabledFlag() ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.pps_slice_chroma_qp_offsets_present_flag      = pPicParamSet->getSliceChromaQpFlag() ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.sample_adaptive_offset_enabled_flag           = pSeqParamSet->getUseSAO() ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.deblocking_filter_override_enabled_flag       = pPicParamSet->getDeblockingFilterOverrideEnabledFlag() ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.pps_disable_deblocking_filter_flag            = pPicParamSet->getPicDisableDeblockingFilterFlag() ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.IrapPicFlag                                   = 0;
+    pPicParam->PicShortFormatFlags.fields.IdrPicFlag                                    = 0;
+    pPicParam->PicShortFormatFlags.fields.IntraPicFlag                                  = 0;
+    pPicParam->PicShortFormatFlags.fields.slice_segment_header_extension_present_flag   = pPicParamSet->getSliceHeaderExtensionPresentFlag() ? 1 : 0 ;
 
     //
     //
-    pPicParam->CollocatedRefIdx.Index7bits          = (UCHAR)(pSlice->getSliceType() != I_SLICE ? pSlice->getColRefIdx() : -1 );
+    for(int i=0;i < 8;i++)
+    {
+        pPicParam->RefPicSetStCurrBefore[i] = 0xff;
+        pPicParam->RefPicSetStCurrAfter[i] = 0xff;
+        pPicParam->RefPicSetLtCurr[i] = 0xff;
+    }
     pPicParam->log2_max_pic_order_cnt_lsb_minus4    = (UCHAR)(pSeqParamSet->log2_max_pic_order_cnt_lsb - 4);
     pPicParam->num_short_term_ref_pic_sets          = (UCHAR)pSeqParamSet->getRPSList()->getNumberOfReferencePictureSets();
-    pPicParam->num_long_term_ref_pics_sps            = (UCHAR)pSeqParamSet->getNumLongTermRefPicSPS();
+    pPicParam->num_long_term_ref_pics_sps           = (UCHAR)pSeqParamSet->getNumLongTermRefPicSPS();
+    pPicParam->num_ref_idx_l0_default_active_minus1 = (UCHAR)(pPicParamSet->getNumRefIdxL0DefaultActive() - 1);
+    pPicParam->num_ref_idx_l1_default_active_minus1 = (UCHAR)(pPicParamSet->getNumRefIdxL1DefaultActive() - 1);
+    pPicParam->pps_beta_offset_div2                 = (CHAR)pPicParamSet->getDeblockingFilterBetaOffsetDiv2();
+    pPicParam->pps_tc_offset_div2                   = (CHAR)pPicParamSet->getDeblockingFilterTcOffsetDiv2();    
+    pPicParam->StRPSBits                            = 0;    // TODO
+    pPicParam->num_extra_slice_header_bits          = (UCHAR)pPicParamSet->getNumExtraSliceHeaderBits();
+
+    //pPicParam->CollocatedRefIdx.Index7bits          = (UCHAR)(pSlice->getSliceType() != I_SLICE ? pSlice->getColRefIdx() : -1 );
+    //pPicParam->PicShortFormatFlags.fields.deblocking_filter_control_present_flag     = pPicParamSet->getDeblockingFilterControlPresentFlag() ? 1 : 0 ;
+    //pPicParam->PicShortFormatFlags.fields.slice_temporal_mvp_enabled_flag            = pSlice->getEnableTMVPFlag() ? 1 : 0 ;
     //for(unsigned k=0;k < 32 && k < pSeqParamSet->getNumLongTermRefPicSPS();k++)
     //    pPicParam->lt_ref_pic_poc_lsb_sps[k] = (USHORT)pSeqParamSet->getLtRefPicPocLsbSps(k);
     //pPicParam->used_by_curr_pic_lt_sps_flags        = (UINT)0;
-    pPicParam->num_ref_idx_l0_default_active_minus1 = (UCHAR)(pPicParamSet->getNumRefIdxL0DefaultActive() - 1);
-    pPicParam->num_ref_idx_l1_default_active_minus1 = (UCHAR)(pPicParamSet->getNumRefIdxL1DefaultActive() - 1);
-    pPicParam->pps_beta_offset_div2                     = (CHAR)pPicParamSet->getDeblockingFilterBetaOffsetDiv2();
-    pPicParam->pps_tc_offset_div2                       = (CHAR)pPicParamSet->getDeblockingFilterTcOffsetDiv2();    
+
 }
 #endif
 
@@ -389,8 +399,8 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
                         H265DecoderFrameInfo * pSliceInfo,
                         TaskSupplier_H265 *supplier)
 {
-    DXVA_PicParams_HEVC* pPicParam = 0;
-    GetPicParamVABuffer(&pPicParam, sizeof(DXVA_PicParams_HEVC));
+    DXVA_Intel_PicParams_HEVC* pPicParam = 0;
+    GetPicParamVABuffer(&pPicParam, sizeof(DXVA_Intel_PicParams_HEVC));
 
     H265Slice *pSlice = pSliceInfo->GetSlice(0);
     const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
@@ -526,12 +536,12 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
 #if HEVC_SPEC_VER == MK_HEVCVER(0, 81)
 void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSlice)
 {
-    size_t headerSize = sizeof(DXVA_Slice_HEVC_Short);
+    size_t headerSize = sizeof(DXVA_Intel_Slice_HEVC_Short);
 
     if(isLong)
-        headerSize = sizeof(DXVA_Slice_HEVC_Long);
+        headerSize = sizeof(DXVA_Intel_Slice_HEVC_Long);
 
-    DXVA_Slice_HEVC_Long* pDXVASlice = 0;
+    DXVA_Intel_Slice_HEVC_Long* pDXVASlice = 0;
     void *pSliceData = 0;
     size_t rawDataSize = pSlice->m_BitStream.BytesLeft();
 
@@ -625,15 +635,15 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
 }
 #endif
 
-#if HEVC_SPEC_VER == MK_HEVCVER(0, 84)
+#if HEVC_SPEC_VER == MK_HEVCVER(0, 84) || HEVC_SPEC_VER == MK_HEVCVER(0, 83)
 void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSlice)
 {
-    size_t headerSize = sizeof(DXVA_Slice_HEVC_Short);
+    size_t headerSize = sizeof(DXVA_Intel_Slice_HEVC_Short);
 
     if(isLong)
-        headerSize = sizeof(DXVA_Slice_HEVC_Long);
+        headerSize = sizeof(DXVA_Intel_Slice_HEVC_Long);
 
-    DXVA_Slice_HEVC_Long* pDXVASlice = 0;
+    DXVA_Intel_Slice_HEVC_Long* pDXVASlice = 0;
     void *pSliceData = 0;
     size_t rawDataSize = pSlice->m_BitStream.BytesLeft();
 
@@ -641,7 +651,6 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
 
     if(isLong)
     {
-//      const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
         const H265PicParamSet *pPicParamSet = pSlice->GetPicParam();
         const H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
         int sliceNum = pSlice->GetSliceNum();
@@ -694,7 +703,11 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
         pDXVASlice->LongSliceFlags.fields.collocated_from_l0_flag                       = (UINT)pSlice->getColFromL0Flag();
         pDXVASlice->LongSliceFlags.fields.slice_loop_filter_across_slices_enabled_flag  = (UINT)pPicParamSet->getLoopFilterAcrossSlicesEnabledFlag();
 
+#if HEVC_SPEC_VER == MK_HEVCVER(0, 84)
         pDXVASlice->collocated_ref_idx              = (UCHAR)(pSlice->getSliceType() != I_SLICE ? pSlice->getColRefIdx() : -1 );
+#else
+        pDXVASlice->CollocatedRefIdx.Index7bits     = (UCHAR)(pSlice->getSliceType() != I_SLICE ? pSlice->getColRefIdx() : -1 );
+#endif
         pDXVASlice->num_ref_idx_l0_active_minus1    = (UCHAR)pSlice->getNumRefIdx(REF_PIC_LIST_0) - 1;
         pDXVASlice->num_ref_idx_l1_active_minus1    = (UCHAR)pSlice->getNumRefIdx(REF_PIC_LIST_1) - 1;
         pDXVASlice->slice_qp_delta                  = (CHAR)(pSlice->getSliceQp() - (pPicParamSet->getPicInitQP()));
@@ -715,8 +728,8 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
 
                 if(eRefPicList == REF_PIC_LIST_0)
                 {
-                    pDXVASlice->luma_offset_l0[iRefIdx]         = (CHAR)wp[0].iOffset;
-                    pDXVASlice->delta_luma_weight_l0[iRefIdx]   = (CHAR)wp[0].iDeltaWeight;
+                    pDXVASlice->luma_offset_l0[iRefIdx]       = (CHAR)wp[0].iOffset;
+                    pDXVASlice->delta_luma_weight_l0[iRefIdx] = (CHAR)wp[0].iDeltaWeight;
                     for(int chroma=0;chroma < 2;chroma++)
                     {
                         pDXVASlice->delta_chroma_weight_l0[iRefIdx][chroma] = (CHAR)wp[1 + chroma].iDeltaWeight;
@@ -725,8 +738,8 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
                 }
                 else
                 {
-                    pDXVASlice->luma_offset_l1[iRefIdx]         = (CHAR)wp[0].iOffset;
-                    pDXVASlice->delta_luma_weight_l1[iRefIdx]   = (CHAR)wp[0].iDeltaWeight;
+                    pDXVASlice->luma_offset_l1[iRefIdx]       = (CHAR)wp[0].iOffset;
+                    pDXVASlice->delta_luma_weight_l1[iRefIdx] = (CHAR)wp[0].iDeltaWeight;
                     for(int chroma=0;chroma < 2;chroma++)
                     {
                         pDXVASlice->delta_chroma_weight_l1[iRefIdx][chroma] = (CHAR)wp[1 + chroma].iDeltaWeight;
@@ -736,8 +749,8 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
             }
         }
 
-        pDXVASlice->five_minus_max_num_merge_cand   = (UCHAR)(5 - pSlice->getMaxNumMergeCand());
-        pDXVASlice->num_entry_point_offsets         = pSlice->getNumEntryPointOffsets();
+        pDXVASlice->five_minus_max_num_merge_cand = (UCHAR)(5 - pSlice->getMaxNumMergeCand());
+        pDXVASlice->num_entry_point_offsets       = pSlice->getNumEntryPointOffsets();
     }
 
     // copy slice data to slice data buffer
@@ -876,8 +889,8 @@ static const int *getDefaultScalingList(unsigned sizeId, unsigned listId)
 
 void PackerDXVA2::PackQmatrix(const H265Slice *pSlice/*const H265PicParamSet *pPicParamSet*/)
 {
-    DXVA_Qmatrix_HEVC* pQmatrix = 0;
-    GetIQMVABuffer(&pQmatrix, sizeof(DXVA_Qmatrix_HEVC));
+    DXVA_Intel_Qmatrix_HEVC* pQmatrix = 0;
+    GetIQMVABuffer(&pQmatrix, sizeof(DXVA_Intel_Qmatrix_HEVC));
     const H265ScalingList *scalingList = 0;
 
     if(!pSlice->GetSeqParam()->sps_scaling_list_data_present_flag)

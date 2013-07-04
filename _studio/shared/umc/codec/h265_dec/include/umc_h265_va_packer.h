@@ -75,22 +75,22 @@ public:
 
     virtual void PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSlice);
 
-    void GetPicParamVABuffer(DXVA_PicParams_HEVC **ppPicParam, size_t headerSize);
+    void GetPicParamVABuffer(DXVA_Intel_PicParams_HEVC **ppPicParam, size_t headerSize);
 
     void GetSliceVABuffers(
-        DXVA_Slice_HEVC_Long **ppSliceHeader, size_t headerSize,
+        DXVA_Intel_Slice_HEVC_Long **ppSliceHeader, size_t headerSize,
         void **ppSliceData, size_t dataSize,
         size_t dataAlignment);
 
-    void GetIQMVABuffer(DXVA_Qmatrix_HEVC **, size_t bffrSize);
+    void GetIQMVABuffer(DXVA_Intel_Qmatrix_HEVC **, size_t bffrSize);
 
     void ExecuteBuffers();
 
 private:
-    void AddReferenceFrame(DXVA_PicParams_HEVC * pPicParams_H264, Ipp32s &pos,
+    void AddReferenceFrame(DXVA_Intel_PicParams_HEVC * pPicParams_H264, Ipp32s &pos,
         H265DecoderFrame * pFrame, Ipp32s reference);
 
-    void PackSliceGroups(DXVA_PicParams_HEVC * pPicParams_H264, H265DecoderFrame * frame);
+    void PackSliceGroups(DXVA_Intel_PicParams_HEVC * pPicParams_H264, H265DecoderFrame * frame);
 
     void SendPAVPStructure(Ipp32s numSlicesOfPrevField, H265Slice *pSlice);
     //check correctness of encrypted data
@@ -99,7 +99,7 @@ private:
     Ipp8u * pBuf;
 
     Ipp32u              m_statusReportFeedbackCounter;
-    DXVA_PicEntry_HEVC  m_refFrameListCache[16];
+    DXVA_Intel_PicEntry_HEVC  m_refFrameListCache[16];
     int                 m_refFrameListCacheSize;
 };
 

@@ -214,7 +214,7 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
         return false;
 
 #ifdef UMC_VA_DXVA
-    DXVA_Status_HEVC pStatusReport[NUMBER_OF_STATUS];
+    DXVA_Intel_Status_HEVC pStatusReport[NUMBER_OF_STATUS];
 
     bool wasCompleted = false;
 
@@ -269,7 +269,7 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
     for (;;)
     {
         memset (&pStatusReport, 0, sizeof(pStatusReport));
-        dxva_sd->GetPacker()->GetStatusReport(&pStatusReport[0], sizeof(DXVA_Status_HEVC)* NUMBER_OF_STATUS);
+        dxva_sd->GetPacker()->GetStatusReport(&pStatusReport[0], sizeof(DXVA_Intel_Status_HEVC)* NUMBER_OF_STATUS);
 
         for (Ipp32u i = 0; i < NUMBER_OF_STATUS; i++)
         {
