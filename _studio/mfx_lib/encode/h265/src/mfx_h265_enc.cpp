@@ -143,7 +143,7 @@ mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxE
     pars->QPPChroma = h265_QPtoChromaQP[pars->QPP];
     pars->QPBChroma = h265_QPtoChromaQP[pars->QPB];
     pars->QP = pars->QPI;
-    pars->QPChroma = pars->QPChroma;
+    pars->QPChroma = pars->QPIChroma;
 
     pars->MaxTrSize = 1 << pars->QuadtreeTULog2MaxSize;
     pars->MaxCUSize = 1 << pars->Log2MaxCUSize;
@@ -202,6 +202,9 @@ mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxE
             pars->SplitThresholdStrengthCU, pars->QPI);
         pars->cu_split_threshold_tu[i] = h265_calc_split_threshold(1, pars->Log2MaxCUSize - i,
             pars->SplitThresholdStrengthTU, pars->QPI);
+    }
+    for (Ipp32s i = pars->MaxTotalDepth; i < MAX_TOTAL_DEPTH; i++) {
+        pars->cu_split_threshold_cu[i] = pars->cu_split_threshold_tu[i] = 0;
     }
 
     return MFX_ERR_NONE;
@@ -352,7 +355,7 @@ mfxStatus H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice)
             slice->slice_type = I_SLICE; break;
     }
 
-    if (m_frameCountEncoded == 0 || m_pCurrentFrame->m_bIsIDRPic)
+    if (m_pCurrentFrame->m_bIsIDRPic)
     {
         slice->IdrPicFlag = 1;
         slice->RapPicFlag = 1;
@@ -1231,10 +1234,7 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
             if (m_pCurrentFrame->m_bIsIDRPic)
             {
                 m_cpb.IncreaseRefPicListResetCount(m_pCurrentFrame);
-            }
-
-            if (m_pCurrentFrame->m_bIsIDRPic)
-            {
+                m_l1_cnt_to_start_B = 0;
 //                PrepareToEndSequence();
             }
 
@@ -1249,6 +1249,8 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
 
     m_pCurrentFrame = m_cpb.findOldestToEncode(&m_dpb, m_l1_cnt_to_start_B,
                                                0, 0 /*m_isBpyramid, m_Bpyramid_nextNumFrame*/);
+    if (m_l1_cnt_to_start_B == 0 && m_pCurrentFrame && m_pCurrentFrame->m_PicCodType == MFX_FRAMETYPE_B)
+        m_pCurrentFrame->m_PicCodType = MFX_FRAMETYPE_P;
 
 //        if (!m_isBpyramid)
     {
@@ -1290,14 +1292,17 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
     case MFX_FRAMETYPE_I:
         m_videoParam.QP = m_videoParam.QPI;
         m_videoParam.QPChroma = m_videoParam.QPIChroma;
-        if (m_pCurrentFrame->m_bIsIDRPic || m_frameCountEncoded == 0)
-        {
-            // Right now, only the first INTRAPIC in a sequence is an IDR Frame
+        if (m_videoParam.GopPicSize == 1) {
+             ePic_Class = DISPOSABLE_PIC;
+        } else if (m_pCurrentFrame->m_bIsIDRPic) {
+            if (m_frameCountEncoded) {
+                m_dpb.unMarkAll();
+                m_dpb.removeAllUnmarkedRef(); 
+            }
             ePic_Class = IDR_PIC;
             m_l1_cnt_to_start_B = m_videoParam.NumRefToStartCodeBSlice;
-        }
-        else
-        {
+        } 
+        else {
             ePic_Class = REFERENCE_PIC;
         }
         break;

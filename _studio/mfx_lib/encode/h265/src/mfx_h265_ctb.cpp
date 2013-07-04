@@ -1243,7 +1243,13 @@ void H265CU::CalcCostLuma(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u depth,
             (par->Log2MaxCUSize - depth - tr_depth >
                 getQuadtreeTULog2MinSizeInCU(abs_part_idx, par->MaxCUSize >> depth, part_size, MODE_INTRA)))
     {
-                if (par->Log2MaxCUSize - depth - tr_depth > par->QuadtreeTULog2MaxSize) {
+                Ipp32u lpel_x   = ctb_pelx +
+                    ((h265_scan_z2r[par->MaxCUDepth][abs_part_idx] & (par->NumMinTUInMaxCU - 1)) << par->QuadtreeTULog2MinSize);
+                Ipp32u tpel_y   = ctb_pely +
+                    ((h265_scan_z2r[par->MaxCUDepth][abs_part_idx] >> par->MaxCUDepth) << par->QuadtreeTULog2MinSize);
+
+                if (par->Log2MaxCUSize - depth - tr_depth > par->QuadtreeTULog2MaxSize ||
+                    lpel_x + width >= par->Width || tpel_y + width >= par->Height) {
                     split_mode = SPLIT_MUST;
                 } else {
                     split_mode = SPLIT_TRY;

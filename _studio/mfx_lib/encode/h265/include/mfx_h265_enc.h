@@ -71,8 +71,8 @@ struct H265VideoParam {
     Ipp32u PicHeightInMinCbs;
     Ipp32u Log2MinTUSize;
     Ipp8u  AMPAcc[MAX_CU_DEPTH];
-    Ipp64f cu_split_threshold_cu[6];
-    Ipp64f cu_split_threshold_tu[6];
+    Ipp64f cu_split_threshold_cu[MAX_TOTAL_DEPTH];
+    Ipp64f cu_split_threshold_tu[MAX_TOTAL_DEPTH];
     Ipp32s MaxTotalDepth;
 
     Ipp8u UseDQP;
