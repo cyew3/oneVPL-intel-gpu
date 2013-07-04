@@ -547,7 +547,9 @@ enum {
     MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION    = MFX_MAKEFOURCC('I','D','E','T'),
     MFX_EXTBUFF_ENCODER_CAPABILITY         = MFX_MAKEFOURCC('E','N','C','P'),
     MFX_EXTBUFF_ENCODER_RESET_OPTION       = MFX_MAKEFOURCC('E','N','R','O'),
-    MFX_EXTBUFF_ENCODED_FRAME_INFO         = MFX_MAKEFOURCC('E','N','F','I')
+    MFX_EXTBUFF_ENCODED_FRAME_INFO         = MFX_MAKEFOURCC('E','N','F','I'),
+    MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO      = MFX_MAKEFOURCC('V','V','S','I'),
+    MFX_EXTBUFF_ENCODER_ROI                = MFX_MAKEFOURCC('E','R','O','I')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -928,6 +930,48 @@ typedef struct {
         mfxU16  reserved2[48];
     } InputStream[128];     
 } mfxExtVPPComposite;
+
+/* TransferMatrix */
+enum {
+    MFX_TRANSFERMATRIX_UNKNOWN = 0,
+    MFX_TRANSFERMATRIX_BT709   = 1,
+    MFX_TRANSFERMATRIX_BT601   = 2
+};
+
+/* NominalRange */
+enum {
+    MFX_NOMINALRANGE_UNKNOWN   = 0,
+    MFX_NOMINALRANGE_0_255     = 1,
+    MFX_NOMINALRANGE_16_235    = 2
+};
+
+typedef struct {
+    mfxExtBuffer    Header;
+    mfxU16          reserved1[4];
+
+    struct  {
+        mfxU16  TransferMatrix;
+        mfxU16  NominalRange;
+        mfxU16  reserved2[6];
+    } In, Out;
+} mfxExtVPPVideoSignalInfo;
+
+typedef struct {
+    mfxExtBuffer    Header;
+
+    mfxU16  NumROI;
+    mfxU16  reserved1[11];
+
+    struct  {
+        mfxU32  Left;
+        mfxU32  Top;
+        mfxU32  Right;
+        mfxU32  Bottom;
+
+        mfxI16  Priority;
+        mfxU16  reserved2[7];
+    } ROI[16];
+} mfxExtEncoderROI;
 
 #ifdef __cplusplus
 } // extern "C"
