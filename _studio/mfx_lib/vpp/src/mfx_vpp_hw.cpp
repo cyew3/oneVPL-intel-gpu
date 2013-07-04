@@ -1960,6 +1960,12 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
 
 
     sts = m_ddi->Execute(&m_executeParams);
+    if (sts != MFX_ERR_NONE)
+    {
+        pTask->SetFree(true);
+        return sts;
+    }
+
     MFX_CHECK_STS(sts);
 
     //aya: wa for variance
