@@ -21,7 +21,7 @@ class TargetViewsDecoder : public InterfaceProxy<IYUVSource>
 public:
     TargetViewsDecoder( std::vector<std::pair<mfxU16, mfxU16> > & targetViewsMap
                       , mfxU16      temporalId
-                      , IYUVSource *pTarget);
+                      , std::auto_ptr<IYUVSource>& pTarget);
 
     virtual mfxStatus Init(mfxVideoParam *par);
     virtual mfxStatus DecodeHeader(mfxBitstream *bs, mfxVideoParam *par);
@@ -55,7 +55,7 @@ protected:
     public:
         MVCDecoderHelper( bool bGenerateViewIds
                         , mfxVideoParam &frameParam
-                        , IYUVSource *pTarget)
+                        , std::auto_ptr<IYUVSource>& pTarget)
             : MVCDecoder(bGenerateViewIds, frameParam, pTarget )
         {
         }

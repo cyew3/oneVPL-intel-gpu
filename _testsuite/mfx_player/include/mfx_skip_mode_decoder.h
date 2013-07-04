@@ -22,7 +22,7 @@ class SkipModesSeterDecoder
     std::vector<mfxI32> m_skipModes; 
 
 public:
-    SkipModesSeterDecoder(std::vector<mfxI32>& nSkipModes, IYUVSource *pBase)
+    SkipModesSeterDecoder(std::vector<mfxI32>& nSkipModes, std::auto_ptr<IYUVSource>& pBase)
         : base(pBase)
         , m_skipModes(nSkipModes)
     {

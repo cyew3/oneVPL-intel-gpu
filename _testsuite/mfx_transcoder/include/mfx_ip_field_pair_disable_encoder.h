@@ -21,7 +21,7 @@ class IPFieldPairDisableEncode
 {
     typedef InterfaceProxy<IVideoEncode> base;
 public:
-    IPFieldPairDisableEncode(IVideoEncode * pTarget)
+    IPFieldPairDisableEncode(std::auto_ptr<IVideoEncode>& pTarget)
         : base(pTarget)
         , m_gopPicSize()
         , m_nPos()

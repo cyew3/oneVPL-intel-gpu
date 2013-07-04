@@ -23,7 +23,7 @@ class LCCheckFrameAllocator
     typedef InterfaceProxy<MFXFrameAllocatorRW> base;
 public:
     typedef base::result_type result_type;
-    LCCheckFrameAllocator(MFXFrameAllocatorRW * pTargetAlloc)
+    LCCheckFrameAllocator(std::auto_ptr<MFXFrameAllocatorRW>& pTargetAlloc)
         : base(pTargetAlloc)
     {
         m_nLocked      = 0;
@@ -52,7 +52,7 @@ class LockRWEnabledFrameAllocator
     typedef  InterfaceProxy<MFXFrameAllocatorRW> base;
 public:
     typedef base::result_type result_type;
-    LockRWEnabledFrameAllocator(MFXFrameAllocatorRW *pTarget)
+    LockRWEnabledFrameAllocator(std::auto_ptr<MFXFrameAllocatorRW >&pTarget)
         : base(pTarget)
     {
     }

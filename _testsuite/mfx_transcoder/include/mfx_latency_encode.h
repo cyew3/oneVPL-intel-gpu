@@ -22,7 +22,7 @@ class LatencyEncode : public InterfaceProxy<IVideoEncode>
 public:
     //if bAggregateStat=true it means that timestamp that was in decode input will be used for latency calculation
     //always use this in async pipelines
-    LatencyEncode(bool bAggregateStat, IStringPrinter * pPrinter, ITime * pTime, IVideoEncode * pTarget);
+    LatencyEncode(bool bAggregateStat, IStringPrinter * pPrinter, ITime * pTime, std::auto_ptr<IVideoEncode>& pTarget);
     virtual ~LatencyEncode();   
     virtual mfxStatus Close();
     virtual mfxStatus EncodeFrameAsync(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxSyncPoint *syncp);

@@ -31,7 +31,8 @@ SUITE(ip_field_disabler)
     TEST(frame_type)
     {
         MockVideoEncode *pMock = new MockVideoEncode();
-        IPFieldPairDisableEncode ipfield_pair_enc(pMock);
+        std::auto_ptr<IVideoEncode> pEnc (pMock);
+        IPFieldPairDisableEncode ipfield_pair_enc(pEnc);
 
         mfxVideoParam vParamMfx = {0};
         vParamMfx.mfx.GopPicSize = 3;

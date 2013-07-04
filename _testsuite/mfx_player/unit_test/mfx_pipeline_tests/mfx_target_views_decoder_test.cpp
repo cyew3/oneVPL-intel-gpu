@@ -125,8 +125,8 @@ SUITE(TargetViewsDecoder)
 
         args_dec_header.ret_val = MFX_ERR_MORE_DATA;
         pMockSource->_DecodeHeader.WillReturn(args_dec_header);
-
-        TargetViewsDecoder * pDecoder = new TargetViewsDecoder(viewMap, 0, pMockSource);
+        std::auto_ptr<IYUVSource>tmp(pMockSource);
+        TargetViewsDecoder * pDecoder = new TargetViewsDecoder(viewMap, 0, tmp);
 
         CHECK_EQUAL(MFX_ERR_MORE_DATA, pDecoder->DecodeHeader(NULL, &vParamsFromLocal));
     }
@@ -137,6 +137,7 @@ SUITE(TargetViewsDecoder)
         viewMap.push_back(std::pair<mfxU16, mfxU16>(0, 5));
 
         MockYUVSource *pMockSource = new MockYUVSource();
+        std::auto_ptr<IYUVSource>tmp(pMockSource);
 
         args_dec_header.ret_val = MFX_WRN_PARTIAL_ACCELERATION;
         sequence.NumViewIdAlloc = 3; //return value matches to requested = completely whitebox
@@ -144,7 +145,7 @@ SUITE(TargetViewsDecoder)
         sequence.NumOPAlloc = 1; 
         pMockSource->_DecodeHeader.WillReturn(args_dec_header);
 
-        TargetViewsDecoder * pDecoder = new TargetViewsDecoder(viewMap, 0, pMockSource);
+        TargetViewsDecoder * pDecoder = new TargetViewsDecoder(viewMap, 0, tmp);
 
         vParamsFromLocal.mfx.CodecProfile = 100;
 
@@ -161,7 +162,7 @@ SUITE(TargetViewsDecoder)
         viewMap.push_back(std::pair<mfxU16, mfxU16>(1, 6));
 
         MockYUVSource *pMockSource = new MockYUVSource();
-
+        std::auto_ptr<IYUVSource>tmp(pMockSource);
         args_dec_header.ret_val = MFX_ERR_NOT_ENOUGH_BUFFER;
         pMockSource->_DecodeHeader.WillReturn(args_dec_header);
 
@@ -171,7 +172,7 @@ SUITE(TargetViewsDecoder)
         sequence.NumOPAlloc = 1; 
         pMockSource->_DecodeHeader.WillReturn(args_dec_header);
 
-        TargetViewsDecoder * pDecoder = new TargetViewsDecoder(viewMap, 0, pMockSource);
+        TargetViewsDecoder * pDecoder = new TargetViewsDecoder(viewMap, 0, tmp);
 
         CHECK_EQUAL(MFX_ERR_NONE, pDecoder->DecodeHeader(NULL, &vParamsFromLocal));
         
@@ -195,6 +196,7 @@ SUITE(TargetViewsDecoder)
         viewMap.push_back(std::pair<mfxU16, mfxU16>(2, 6));
 
         MockYUVSource *pMockSource = new MockYUVSource();
+        std::auto_ptr<IYUVSource>tmp(pMockSource);
 
         args_dec_header.ret_val = MFX_ERR_NOT_ENOUGH_BUFFER;
         pMockSource->_DecodeHeader.WillReturn(args_dec_header);
@@ -205,7 +207,7 @@ SUITE(TargetViewsDecoder)
         sequence.NumViewAlloc = 2;
         pMockSource->_DecodeHeader.WillReturn(args_dec_header);
 
-        TargetViewsDecoder * pDecoder = new TargetViewsDecoder(viewMap, 7, pMockSource);
+        TargetViewsDecoder * pDecoder = new TargetViewsDecoder(viewMap, 7, tmp);
 
         //checking for target view overflows
         CHECK_EQUAL(MFX_ERR_UNKNOWN, pDecoder->DecodeHeader(NULL, &vParamsFromLocal));
@@ -245,6 +247,7 @@ SUITE(TargetViewsDecoder)
         viewMap.push_back(std::pair<mfxU16, mfxU16>(1, 6));
 
         MockYUVSource *pMockSource = new MockYUVSource();
+        std::auto_ptr<IYUVSource>tmp(pMockSource);
 
         args_dec_header.ret_val = MFX_ERR_NOT_ENOUGH_BUFFER;
         pMockSource->_DecodeHeader.WillReturn(args_dec_header);
@@ -255,7 +258,7 @@ SUITE(TargetViewsDecoder)
         sequence.NumOPAlloc = 1; 
         pMockSource->_DecodeHeader.WillReturn(args_dec_header);
 
-        TargetViewsDecoder * pDecoder = new TargetViewsDecoder(viewMap, 0, pMockSource);
+        TargetViewsDecoder * pDecoder = new TargetViewsDecoder(viewMap, 0, tmp);
 
         mfxU16               _viewIds[3];
         mfxMVCViewDependency _dependency[3];
@@ -397,7 +400,7 @@ SUITE(TargetViewsDecoder)
 
         //setting up mock decoder
         MockYUVSource *pMockSource = new MockYUVSource();
-
+        std::auto_ptr<IYUVSource>tmp(pMockSource);
         
         //we need to configure decode header as well
         args_dec_header.ret_val = MFX_ERR_NOT_ENOUGH_BUFFER;
@@ -410,7 +413,7 @@ SUITE(TargetViewsDecoder)
         pMockSource->_DecodeHeader.WillReturn(args_dec_header);
 
         //creating test unit
-        TargetViewsDecoder * pDecoder = new TargetViewsDecoder(viewMap, 0, pMockSource);
+        TargetViewsDecoder * pDecoder = new TargetViewsDecoder(viewMap, 0, tmp);
 
         CHECK_EQUAL(MFX_ERR_NONE, pDecoder->DecodeHeader(NULL, &vParamsFromLocal));
 
@@ -436,11 +439,11 @@ SUITE(TargetViewsDecoder)
 
         //setting up mock decoder
         MockYUVSource *pMockSource = new MockYUVSource();
-
+        std::auto_ptr<IYUVSource>tmp(pMockSource);
         pMockSource->_DecodeFrameAsync.WillReturn(args3);
 
         //creating test unit
-        TargetViewsDecoder * pDecoder = new TargetViewsDecoder(viewMap, 0, pMockSource);
+        TargetViewsDecoder * pDecoder = new TargetViewsDecoder(viewMap, 0, tmp);
         mfxFrameSurface1 *ret_surface;
         CHECK(MFX_ERR_NONE != pDecoder->DecodeFrameAsync(zero, NULL, &ret_surface, NULL));
     }

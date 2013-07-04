@@ -18,7 +18,7 @@ class SeparateFilesWriter
     IMPLEMENT_CLONE(SeparateFilesWriter);
 
 public :
-    SeparateFilesWriter(IFile * ptarget)
+    SeparateFilesWriter(std::auto_ptr<IFile>& ptarget)
         : InterfaceProxy<IFile>(ptarget)
         , m_nTimesReopened(0)
     {

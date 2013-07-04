@@ -22,7 +22,7 @@ class JPEGBsParser
     typedef InterfaceProxy<IYUVSource> base;
     mfxFrameInfo m_splInfo;
 public :
-    JPEGBsParser(const mfxFrameInfo &splInfo, IYUVSource *pTarget)
+    JPEGBsParser(const mfxFrameInfo &splInfo, std::auto_ptr<IYUVSource>& pTarget)
         : base(pTarget)
         , m_splInfo(splInfo)
     {

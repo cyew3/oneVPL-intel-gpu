@@ -47,7 +47,7 @@ class InterfaceProxy<IVideoSession> : public InterfaceProxyBase<IVideoSession>
 public:
     typedef InterfaceProxyBase<IVideoSession> base;
 
-    InterfaceProxy(IVideoSession *pSession)
+    InterfaceProxy(std::auto_ptr<IVideoSession> &pSession)
         : base(pSession)
     {
     }

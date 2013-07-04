@@ -24,7 +24,7 @@ class MVCDecoder
 public:
     MVCDecoder( bool bGenerateViewIds
               , mfxVideoParam &frameParam
-              , IYUVSource *pTarget);
+              , std::auto_ptr<IYUVSource>& pTarget);
 
 
     virtual mfxStatus DecodeFrameAsync( mfxBitstream2 &bs,

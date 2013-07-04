@@ -16,7 +16,7 @@ File Name: .h
 
 TargetViewsDecoder::TargetViewsDecoder( std::vector<std::pair<mfxU16, mfxU16> > & targetViewsMap
                                       , mfxU16      temporalId
-                                      , IYUVSource *pTarget)
+                                      , std::auto_ptr<IYUVSource>& pTarget)
     : InterfaceProxy<IYUVSource>(pTarget)
     , m_ViewOrder_ViewIdMap(targetViewsMap)
     , m_targetProfile()
@@ -79,7 +79,8 @@ mfxStatus TargetViewsDecoder::DecodeHeader(mfxBitstream *bs, mfxVideoParam *par)
         par->NumExtParam = (mfxU16)m_ModifiedExtParams.size();
         par->ExtParam = &m_ModifiedExtParams;
         
-        std::auto_ptr<MVCDecoderHelper> pHlp (new MVCDecoderHelper(false, *par, NULL));
+        std::auto_ptr<IYUVSource> nullSource;
+        std::auto_ptr<MVCDecoderHelper> pHlp (new MVCDecoderHelper(false, *par, nullSource));
 
         //swapping extparams back;
         par->NumExtParam      = nOldNExtParams;

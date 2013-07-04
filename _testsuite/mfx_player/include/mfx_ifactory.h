@@ -57,7 +57,7 @@ class InterfaceProxy <IMFXPipelineFactory>
     typedef InterfaceProxyBase<IMFXPipelineFactory> base;
 
 public:
-    InterfaceProxy<IMFXPipelineFactory>(IMFXPipelineFactory * pActual)
+    InterfaceProxy(std::auto_ptr<IMFXPipelineFactory> & pActual)
         : base(pActual)
     {
     }

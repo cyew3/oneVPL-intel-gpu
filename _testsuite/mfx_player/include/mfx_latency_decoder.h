@@ -27,7 +27,7 @@ public:
                   , IStringPrinter * pPrinter
                   , ITime * pTimer
                   , const tstring & name
-                  , IYUVSource *pTarget);
+                  , std::auto_ptr<IYUVSource>& pTarget);
     virtual ~LatencyDecoder();
     //decode header also impact to latency
     virtual mfxStatus DecodeHeader(mfxBitstream *bs, mfxVideoParam *par) ;

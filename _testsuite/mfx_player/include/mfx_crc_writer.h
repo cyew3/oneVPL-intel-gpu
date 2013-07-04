@@ -26,7 +26,7 @@ class CRCFileWriter
     mfxU32  m_crc32;
     tstring m_crcFile;
 public:
-    CRCFileWriter(const tstring &sCrcFile, IFile* pTargetFile)
+    CRCFileWriter(const tstring &sCrcFile, std::auto_ptr<IFile>& pTargetFile)
         : base(pTargetFile)
         , m_crc32()
         , m_crcFile(sCrcFile)

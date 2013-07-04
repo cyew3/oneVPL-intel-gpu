@@ -14,7 +14,7 @@ File Name: .h
 #include "mfx_latency_decoder.h"
 #include <iomanip>
 
-LatencyDecoder::LatencyDecoder(bool bAggregateInfo, IStringPrinter * pPrinter, ITime * pTimer, const tstring & name, IYUVSource * pTarget)
+LatencyDecoder::LatencyDecoder(bool bAggregateInfo, IStringPrinter * pPrinter, ITime * pTimer, const tstring & name, std::auto_ptr<IYUVSource>&  pTarget)
     : InterfaceProxy<IYUVSource>(pTarget)
     , m_pTime(pTimer)
     , m_pPrinter(NULL == pPrinter ? new ConsolePrinter() : pPrinter)

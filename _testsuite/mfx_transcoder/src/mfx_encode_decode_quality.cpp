@@ -19,7 +19,7 @@ Copyright(c) 2008-2011 Intel Corporation. All Rights Reserved.
 
 EncodeDecodeQuality::EncodeDecodeQuality( ComponentParams &refParams
                                         , mfxStatus *status
-                                        , IVideoEncode * pEncode)
+                                        , std::auto_ptr<IVideoEncode>& pEncode)
 : MFXEncodeWRAPPER(refParams, status, pEncode)
 , m_pAllocator()
 , m_bInitialized()
@@ -146,7 +146,8 @@ mfxStatus EncodeDecodeQuality::CreateAllocator()
 
     // Create allocator and frames
     request.Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_DECODE;
-    m_pAllocator = new LCCheckFrameAllocator(new Adapter<MFXFrameAllocatorRW, MFXFrameAllocator> (new SysMemFrameAllocator));
+    std::auto_ptr<MFXFrameAllocatorRW> rw_ptr (new Adapter<MFXFrameAllocatorRW, MFXFrameAllocator> (new SysMemFrameAllocator));
+    m_pAllocator = new LCCheckFrameAllocator(rw_ptr);
     MFX_CHECK_POINTER(m_pAllocator);
     MFX_CHECK_STS(m_pAllocator->Init(NULL));
     MFX_CHECK_STS(m_pAllocator->Alloc(m_pAllocator->pthis, &request, &m_allocResponce));

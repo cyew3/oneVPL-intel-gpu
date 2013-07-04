@@ -23,7 +23,7 @@ class MFXEncodeWRAPPER : public MFXFileWriteRender
 public:
     MFXEncodeWRAPPER( ComponentParams &refParams
                     , mfxStatus *status
-                    , IVideoEncode *pTargetEncode);
+                    , std::auto_ptr<IVideoEncode> &pTargetEncode);
     ~MFXEncodeWRAPPER();
 
     virtual mfxStatus Init(mfxVideoParam *par, const vm_char *pFilename);

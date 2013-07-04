@@ -18,10 +18,14 @@ SUITE(SeparateFilesWriter)
     struct Init : public CleanTestEnvironment
     {
         MockFile *mFile;
+        std::auto_ptr<IFile> tmp;
+        SeparateFilesWriter wrt;
+        
         TEST_METHOD_TYPE(MockFile::isOpen) open_state;
-        Init()
+        Init() : mFile(new MockFile())
+               , tmp(mFile)
+               , wrt(tmp)
         {
-            mFile = new MockFile();
             open_state = true;
             mFile->_isOpen.WillDefaultReturn(&open_state);
         }
@@ -29,9 +33,6 @@ SUITE(SeparateFilesWriter)
 
     TEST_FIXTURE(Init, bypass_open_and_close)
     {
-        MockFile *mFile = new MockFile();
-        SeparateFilesWriter wrt(mFile);
-
         CHECK_EQUAL(0, wrt.Open(VM_STRING("aaa.f"), VM_STRING("a")));
 
         TEST_METHOD_TYPE(MockFile::Open) open_params;// (0,VM_STRING(""),VM_STRING(""));
@@ -46,8 +47,6 @@ SUITE(SeparateFilesWriter)
 
     TEST_FIXTURE(Init, new_file_on_reopen)
     {
-        SeparateFilesWriter wrt(mFile);
-
         CHECK_EQUAL(0, wrt.Open(VM_STRING("aaa.f.l"), VM_STRING("a")));
 
         TEST_METHOD_TYPE(MockFile::Open) open_params;
@@ -76,8 +75,6 @@ SUITE(SeparateFilesWriter)
 
     TEST_FIXTURE(Init, no_new_file_if_close_then_reopen_open)
     {
-        SeparateFilesWriter wrt(mFile);
-
         CHECK_EQUAL(0, wrt.Open(VM_STRING("aaa.f.l"), VM_STRING("a")));
 
         TEST_METHOD_TYPE(MockFile::Open) open_params;

@@ -40,18 +40,22 @@ public:
 
     virtual result_type* CreateD3DAllocator()
     {
-        return new TCreator(base::m_pTarget->CreateD3DAllocator());
+        std::auto_ptr<result_type> ptr (base::m_pTarget->CreateD3DAllocator());
+        return new TCreator(ptr);
     }
     virtual result_type* CreateD3D11Allocator()
     {
-        return new TCreator(base::m_pTarget->CreateD3D11Allocator());
+        std::auto_ptr<result_type> ptr (base::m_pTarget->CreateD3D11Allocator());
+        return new TCreator(ptr);
     }
     virtual result_type* CreateVAAPIAllocator()
     {
-        return new TCreator(base::m_pTarget->CreateVAAPIAllocator());
+        std::auto_ptr<result_type> ptr (base::m_pTarget->CreateVAAPIAllocator());
+        return new TCreator(ptr);
     }
     virtual result_type* CreateSysMemAllocator()
     {
-        return new TCreator(base::m_pTarget->CreateSysMemAllocator());
+        std::auto_ptr<result_type> ptr (base::m_pTarget->CreateSysMemAllocator());
+        return new TCreator(ptr);
     }
 };

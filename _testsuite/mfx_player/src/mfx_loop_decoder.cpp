@@ -15,9 +15,8 @@ File Name: .h
 //#include "mfx_io_utils.h"
 #include "vm_thread.h"
 
-MFXLoopDecoder::MFXLoopDecoder( mfxI32 nNumFramesInLoop
-                              , IYUVSource *pTarget)
-    : base(pTarget)
+MFXLoopDecoder::MFXLoopDecoder( mfxI32 nNumFramesInLoop, std::auto_ptr<IYUVSource>& target )
+    : base(target)
     , m_syncPoint((mfxSyncPoint)0x101) //some random constant to distinguish from zero
     , m_CurrSurfaceIndex()
 {

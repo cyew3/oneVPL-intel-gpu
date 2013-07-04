@@ -58,7 +58,7 @@ class UnifiedExecuteProxy<IYUVSource>
     : public InterfaceProxy<IYUVSource>
 {
 public:
-    UnifiedExecuteProxy(IYUVSource *p)
+    UnifiedExecuteProxy(std::auto_ptr<IYUVSource>&p)
         : InterfaceProxy<IYUVSource>(p)
     {}
     virtual mfxStatus DecodeFrameAsync(mfxBitstream2 &bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxSyncPoint *syncp)
@@ -162,7 +162,7 @@ class UnifiedExecuteProxy<IVideoEncode>
     : public InterfaceProxy<IVideoEncode>
 {
 public:
-    UnifiedExecuteProxy(IVideoEncode *p)
+    UnifiedExecuteProxy(std::auto_ptr<IVideoEncode> p)
         : InterfaceProxy<IVideoEncode>(p)
     {}
     virtual mfxStatus EncodeFrameAsync(mfxEncodeCtrl * pCtrl, mfxFrameSurface1 *surface, mfxBitstream *pBs, mfxSyncPoint *pSync)

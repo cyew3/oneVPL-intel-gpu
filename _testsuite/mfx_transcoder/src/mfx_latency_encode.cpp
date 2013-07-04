@@ -14,7 +14,7 @@ File Name: .h
 #include "mfx_latency_encode.h"
 #include <iomanip>
 
-LatencyEncode::LatencyEncode(bool bAggregateStat, IStringPrinter * pPrinter, ITime * pTime, IVideoEncode * pTarget)
+LatencyEncode::LatencyEncode(bool bAggregateStat, IStringPrinter * pPrinter, ITime * pTime, std::auto_ptr<IVideoEncode>& pTarget)
     : InterfaceProxy<IVideoEncode>(pTarget)
     , m_pPrinter(pPrinter)
     , m_pTime(pTime)

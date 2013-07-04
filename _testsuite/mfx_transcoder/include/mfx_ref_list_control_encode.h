@@ -21,7 +21,7 @@ class RefListControlEncode
     , public IRefListControl
 {
 public:
-    RefListControlEncode (IVideoEncode * pTarget);
+    RefListControlEncode (std::auto_ptr<IVideoEncode>& pTarget);
 
     //IRefListControl
     virtual mfxStatus SetCurrentRefList(mfxExtAVCRefListCtrl *pRefList);

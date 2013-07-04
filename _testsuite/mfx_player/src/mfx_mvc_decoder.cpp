@@ -13,7 +13,7 @@ File Name: .h
 #include "mfx_pipeline_defs.h"
 #include "mfx_mvc_decoder.h"
 
-MVCDecoder::MVCDecoder(bool bGenerateViewIds, mfxVideoParam &frameParam, IYUVSource *pTarget)
+MVCDecoder::MVCDecoder(bool bGenerateViewIds, mfxVideoParam &frameParam, std::auto_ptr<IYUVSource>& pTarget)
 : InterfaceProxy<IYUVSource>(pTarget)
 , m_extParams(frameParam)
 , m_sequence(m_extParams)

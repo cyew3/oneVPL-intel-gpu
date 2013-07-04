@@ -50,7 +50,7 @@ class InterfaceProxy<IYUVSource>
     : public InterfaceProxyBase<IYUVSource>
 {
 public:
-    InterfaceProxy(IYUVSource* pTarget)
+    InterfaceProxy(std::auto_ptr<IYUVSource>& pTarget)
         : InterfaceProxyBase<IYUVSource>(pTarget)
     {
     }

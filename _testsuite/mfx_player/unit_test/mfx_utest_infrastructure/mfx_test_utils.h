@@ -13,6 +13,7 @@ File Name: .h
 #pragma once
 
 #include "mfx_ipipeline_config.h"
+#include "mfx_ibitstream_reader.h"
 
 //warning C4345: behavior change: an object of POD type constructed with an initializer of the form () will be default-initialized
 #pragma warning (disable:4345)
@@ -23,8 +24,8 @@ class UnDeletableProxy
     : public InterfaceProxy<T>
 {
 public:
-    UnDeletableProxy ( T &pTarget)
-        : InterfaceProxy<T>(&pTarget)
+    UnDeletableProxy ( std::auto_ptr<T> &pTarget)
+        : InterfaceProxy<T>(pTarget)
     {
     }
     ~UnDeletableProxy()
@@ -33,10 +34,42 @@ public:
     }
 };
 
+template<>
+class UnDeletableProxy <IMFXVideoVPP>
+    : public InterfaceProxy<IMFXVideoVPP>
+{
+public:
+    UnDeletableProxy ( std::auto_ptr<IMFXVideoVPP> &pTarget)
+        : InterfaceProxy<IMFXVideoVPP>(pTarget.release())
+    {
+    }
+    ~UnDeletableProxy()
+    {
+        m_pTarget.release();
+    }
+};
+
+template<>
+class UnDeletableProxy <IBitstreamReader>
+    : public InterfaceProxy<IBitstreamReader>
+{
+public:
+    UnDeletableProxy ( std::auto_ptr<IBitstreamReader> &pTarget)
+        : InterfaceProxy<IBitstreamReader>(pTarget.release())
+    {
+    }
+    ~UnDeletableProxy()
+    {
+        m_pTarget.release();
+    }
+};
+
+
 template<class T>
 typename T::InterfaceType * MakeUndeletable(T& refTarget)
 {
-    return new UnDeletableProxy<T::InterfaceType>(refTarget);
+    std::auto_ptr<T::InterfaceType> tmp(&refTarget);
+    return new UnDeletableProxy<T::InterfaceType>(tmp);
 }
 
 

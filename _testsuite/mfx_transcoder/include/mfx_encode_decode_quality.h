@@ -20,7 +20,7 @@ class EncodeDecodeQuality : public MFXEncodeWRAPPER, public IMetricComparator
 public:
     EncodeDecodeQuality( ComponentParams &refParams
                        , mfxStatus       *status
-                       , IVideoEncode * pEncode);
+                       , std::auto_ptr<IVideoEncode> & pEncode);
     ~EncodeDecodeQuality();
 
     mfxStatus Init(mfxVideoParam *pInit, const vm_char *pFilename);

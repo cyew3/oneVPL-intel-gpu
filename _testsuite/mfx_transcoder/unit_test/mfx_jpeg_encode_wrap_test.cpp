@@ -13,6 +13,7 @@ File Name: .h
 #include "utest_common.h"
 #include "mfx_jpeg_encode_wrap.h"
 #include "mfx_extended_buffer.h"
+#include "mfx_test_utils.h"
 
 SUITE(JpegEncodeWrap)
 {
@@ -20,6 +21,7 @@ SUITE(JpegEncodeWrap)
     {
         MockVideoEncode *pEnc;
         TEST_METHOD_TYPE(MockVideoEncode::Query) args;
+        std::auto_ptr<IVideoEncode> tmp;
         MFXJpegEncWrap jpege;
         
         mfxExtCodingOption extCO;
@@ -29,9 +31,12 @@ SUITE(JpegEncodeWrap)
         mfxExtBuffer *buf[2];
 
         Init()
-            : jpege(pEnc = new MockVideoEncode())
-            , params()
+            : params()
+            , pEnc (new MockVideoEncode())
+            , tmp(pEnc)
+            , jpege(tmp)
         {
+
             mfx_init_ext_buffer(extCO);
             mfx_init_ext_buffer(proAmp);
             //buffers are same if all fields are same

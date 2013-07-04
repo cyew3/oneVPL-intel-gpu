@@ -26,7 +26,7 @@ class MFXJpegEncWrap
 {
     typedef InterfaceProxy<IVideoEncode> base;
 public:
-    MFXJpegEncWrap(IVideoEncode * pEncode)
+    MFXJpegEncWrap(std::auto_ptr<IVideoEncode>& pEncode)
         : base(pEncode)
     {
     }

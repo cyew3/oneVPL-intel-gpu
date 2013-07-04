@@ -26,7 +26,7 @@ class MFXAdvanceDecoder
     : public InterfaceProxy<IYUVSource>
 {
 public:
-    MFXAdvanceDecoder( int nOutputBuffering, IYUVSource *pTarget) 
+    MFXAdvanceDecoder( int nOutputBuffering, std::auto_ptr<IYUVSource>& pTarget) 
         : InterfaceProxy<IYUVSource>(pTarget)
         , m_OutputBuffering(nOutputBuffering)
     {}

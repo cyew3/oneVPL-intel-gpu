@@ -253,7 +253,7 @@ protected:
     
     //Pipeline objects
     IBitstreamReader       * m_pSpl;         // splitter
-    IYUVSource             * m_pYUVSource;   // decoder
+    std::auto_ptr<IYUVSource>             m_pYUVSource;   // decoder
     IMFXVideoVPP           * m_pVPP;         // vpp
     IMFXVideoRender        * m_pRender;      // render
     

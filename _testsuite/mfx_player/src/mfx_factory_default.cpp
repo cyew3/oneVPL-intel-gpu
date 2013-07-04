@@ -160,11 +160,13 @@ IFile * MFXPipelineFactory::CreateFileWriter( IPipelineObjectDesc * pParams)
         }
         case FILE_SEPARATE :
         {
-            return new SeparateFilesWriter(create->m_pObject);
+            std::auto_ptr<IFile> ptr(create->m_pObject);
+            return new SeparateFilesWriter(ptr);
         }
         case FILE_CRC :
         {
-            return new CRCFileWriter(create->sCrcFile, create->m_pObject);
+            std::auto_ptr<IFile> ptr(create->m_pObject);
+            return new CRCFileWriter(create->sCrcFile, ptr);
         }
     default:
         return NULL;

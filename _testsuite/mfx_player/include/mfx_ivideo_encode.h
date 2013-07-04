@@ -40,7 +40,7 @@ class InterfaceProxy<IVideoEncode>
 {
 public:
 
-    InterfaceProxy (IVideoEncode * pTarget)
+    InterfaceProxy (std::auto_ptr<IVideoEncode>& pTarget)
         : InterfaceProxyBase<IVideoEncode>(pTarget){}
    mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out) 
    {

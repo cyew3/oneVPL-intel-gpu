@@ -16,11 +16,16 @@ File Name: .h
 
 SUITE(FieldOutputEncoder)
 {
-    TEST(MORE_BITSTREAM)
-    {
+    struct SInit {
         MockVideoEncode mock_encode;
-        FieldOutputEncoder enc(MakeUndeletable(mock_encode));
-
+        std::auto_ptr<IVideoEncode> ptr;
+        FieldOutputEncoder enc;
+        
+        SInit() : ptr(MakeUndeletable(mock_encode)), enc(ptr) {
+        }
+    };
+    TEST_FIXTURE(SInit, MORE_BITSTREAM)
+    {
         TEST_METHOD_TYPE(MockVideoEncode::EncodeFrameAsync) arg;
 
         mfxFrameSurface1 Surf = {0};
@@ -50,11 +55,8 @@ SUITE(FieldOutputEncoder)
     }
     
     //in async_depth scenarios encoder might buffer frames 
-    TEST(ASYNC)
+    TEST_FIXTURE(SInit, ASYNC)
     {
-        MockVideoEncode mock_encode;
-        FieldOutputEncoder enc(MakeUndeletable(mock_encode));
-
         TEST_METHOD_TYPE(MockVideoEncode::EncodeFrameAsync) arg;
 
         mfxFrameSurface1 Surf = {0};

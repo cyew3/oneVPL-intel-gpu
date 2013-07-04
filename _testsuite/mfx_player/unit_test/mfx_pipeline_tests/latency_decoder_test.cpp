@@ -69,7 +69,9 @@ SUITE(LatencyDecoder)
 
     TEST_FIXTURE(Init, DecodeFrameAsync_DEVICE_BUSY)
     {
-        pLatencyDec = new LatencyDecoder(false, pPrinter, pTime, VM_STRING("Decode"), MakeUndeletable(mockSource));
+        std::auto_ptr<IYUVSource> ptr(MakeUndeletable(mockSource));
+
+        pLatencyDec = new LatencyDecoder(false, pPrinter, pTime, VM_STRING("Decode"), ptr);
         mockSource._DecodeFrameAsync.WillReturn(dfa_returns);
         
 
@@ -122,7 +124,8 @@ SUITE(LatencyDecoder)
 
     TEST_FIXTURE(Init, SyncOperation_IN_EXECUTION)
     {
-        pLatencyDec = new LatencyDecoder(false, pPrinter, pTime, VM_STRING("Decode"), MakeUndeletable(mockSource));
+        std::auto_ptr<IYUVSource> ptr(MakeUndeletable(mockSource));
+        pLatencyDec = new LatencyDecoder(false, pPrinter, pTime, VM_STRING("Decode"), ptr);
         mockSource._DecodeFrameAsync.WillReturn(dfa_returns);
         //time = 1
         CHECK_EQUAL(MFX_ERR_NONE, pLatencyDec->DecodeFrameAsync(zero, NULL, &pSurface2, &syncp2));
@@ -161,7 +164,8 @@ SUITE(LatencyDecoder)
 
     TEST_FIXTURE(Init, SyncOperation_AgregatedStat)
     {
-        pLatencyDec = new LatencyDecoder(true, pPrinter, pTime, VM_STRING(""), MakeUndeletable(mockSource));
+        std::auto_ptr<IYUVSource> ptr(MakeUndeletable(mockSource));
+        pLatencyDec = new LatencyDecoder(true, pPrinter, pTime, VM_STRING(""), ptr);
 
         mockSource._DecodeFrameAsync.WillReturn(dfa_returns);
         //time = 1
@@ -175,7 +179,8 @@ SUITE(LatencyDecoder)
 
     TEST_FIXTURE(Init, Multiple_SyncOperations)
     {
-        pLatencyDec = new LatencyDecoder(false, pPrinter, pTime, VM_STRING("Decode"), MakeUndeletable(mockSource));
+        std::auto_ptr<IYUVSource> ptr(MakeUndeletable(mockSource));
+        pLatencyDec = new LatencyDecoder(false, pPrinter, pTime, VM_STRING("Decode"), ptr);
 
         mockSource._DecodeFrameAsync.WillReturn(dfa_returns);
         //time = 1
@@ -230,7 +235,8 @@ SUITE(LatencyDecoder)
 
     TEST_FIXTURE(Init, Closing_by_destructor)
     {
-        pLatencyDec = new LatencyDecoder(true, pPrinter, pTime, VM_STRING(""), MakeUndeletable(mockSource));
+        std::auto_ptr<IYUVSource> ptr(MakeUndeletable(mockSource));
+        pLatencyDec = new LatencyDecoder(true, pPrinter, pTime, VM_STRING(""), ptr);
 
         mockSource._DecodeFrameAsync.WillReturn(dfa_returns);
         //time = 1
@@ -245,7 +251,8 @@ SUITE(LatencyDecoder)
 
     TEST_FIXTURE(Init, Latency_Should_Start_FromDecodingHeader)
     {
-        pLatencyDec = new LatencyDecoder(false, pPrinter, pTime, VM_STRING("Decode"), MakeUndeletable(mockSource));
+        std::auto_ptr<IYUVSource> ptr(MakeUndeletable(mockSource));
+        pLatencyDec = new LatencyDecoder(false, pPrinter, pTime, VM_STRING("Decode"), ptr);
         mockSource._DecodeFrameAsync.WillReturn(dfa_returns);
         
         //time = 1 - this is starttime for bitstream decoding if any

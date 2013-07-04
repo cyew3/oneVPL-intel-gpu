@@ -24,7 +24,7 @@ class MVCHandlerCommon
     typedef InterfaceProxy<T> base;
 public:
     //external buffer since pipeline uses it's information to setup followed filters
-    MVCHandlerCommon  ( MFXExtBufferVector &extBufferVector, bool bForceMVCDetection, T * pTarget)
+    MVCHandlerCommon  ( MFXExtBufferVector &extBufferVector, bool bForceMVCDetection, std::auto_ptr<T>& pTarget)
           : base(pTarget)
           , m_extParams(extBufferVector)
           , m_bForceMVCDetection(bForceMVCDetection)
@@ -184,7 +184,7 @@ class MVCHandler
     : public MVCHandlerCommon<T>
 {
 public:
-    MVCHandler( MFXExtBufferVector &extBufferVector, bool bForceMVCDetection, T * pTarget)
+    MVCHandler( MFXExtBufferVector &extBufferVector, bool bForceMVCDetection, std::auto_ptr<T>& pTarget)
         : MVCHandlerCommon<T>(extBufferVector, bForceMVCDetection, pTarget)
     {
     }
@@ -196,7 +196,7 @@ class MVCHandler<IYUVSource>
 {
     typedef MVCHandlerCommon<IYUVSource> base;
 public:
-    MVCHandler( MFXExtBufferVector &extBufferVector, bool bForceMVCDetection, IYUVSource * pTarget)
+    MVCHandler( MFXExtBufferVector &extBufferVector, bool bForceMVCDetection, std::auto_ptr<IYUVSource>& pTarget)
         : base(extBufferVector, bForceMVCDetection, pTarget)
     {
     }

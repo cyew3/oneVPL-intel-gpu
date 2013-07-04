@@ -76,5 +76,8 @@
     <ClInclude Include="include\mfx_ref_list_control_encode.h">
       <Filter>encode</Filter>
     </ClInclude>
+    <ClInclude Include="include\mfx_detach_buffer_after_query_encoder.h">
+      <Filter>encode</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

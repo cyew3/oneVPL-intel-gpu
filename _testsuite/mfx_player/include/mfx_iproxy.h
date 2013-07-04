@@ -34,6 +34,10 @@ public:
         : m_pTarget (pTarget)
     {
     }
+    InterfaceProxyBase(std::auto_ptr<TIface> &pTarget)
+        : m_pTarget (pTarget)
+    {
+    }
     virtual ~InterfaceProxyBase(){}
 
 protected:

@@ -31,7 +31,8 @@ SUITE(EncodeWrap)
 
         ComponentParams cParams(VM_STRING(""), VM_STRING(""), &mkfac);
         MockVideoEncode *mock_encode = new MockVideoEncode();
-        MFXEncodeWRAPPER encWrapper(cParams, NULL, mock_encode);
+        std::auto_ptr<IVideoEncode> tmp(mock_encode);
+        MFXEncodeWRAPPER encWrapper(cParams, NULL, tmp);
 
         //only setdownstream required
         encWrapper.SetDownStream(mock_file);
@@ -73,8 +74,9 @@ SUITE(EncodeWrap)
 
         ComponentParams cParams(VM_STRING(""), VM_STRING(""), &mkfac);
         MockVideoEncode *mock_encode = new MockVideoEncode();
-        FieldOutputEncoder *fieldOutput = new FieldOutputEncoder(mock_encode);
-        MFXEncodeWRAPPER encWrapper(cParams, NULL, fieldOutput);
+        std::auto_ptr<IVideoEncode> tmp(mock_encode);
+        tmp.reset(new FieldOutputEncoder(tmp));
+        MFXEncodeWRAPPER encWrapper(cParams, NULL, tmp);
 
         //only setdownstream required
         encWrapper.SetDownStream(mock_file);
@@ -146,8 +148,9 @@ SUITE(EncodeWrap)
         ComponentParams cParams(VM_STRING(""), VM_STRING(""), &mkfac);
         cParams.m_nMaxAsync = 2;
         MockVideoEncode *mock_encode = new MockVideoEncode();
-        FieldOutputEncoder *fieldOutput = new FieldOutputEncoder(mock_encode);
-        MFXEncodeWRAPPER encWrapper(cParams, NULL, fieldOutput);
+        std::auto_ptr<IVideoEncode> tmp(mock_encode);
+        tmp.reset(new FieldOutputEncoder(tmp));
+        MFXEncodeWRAPPER encWrapper(cParams, NULL, tmp);
 
         //only setdownstream required
         encWrapper.SetDownStream(mock_file);
@@ -227,7 +230,8 @@ SUITE(EncodeWrap)
 
         ComponentParams cParams(VM_STRING(""), VM_STRING(""), &mkfac);
         MockVideoEncode *mock_encode = new MockVideoEncode();
-        MFXEncodeWRAPPER encWrapper(cParams, NULL, mock_encode);
+        std::auto_ptr<IVideoEncode> tmp(mock_encode);
+        MFXEncodeWRAPPER encWrapper(cParams, NULL, tmp);
 
         mock_encode->_EncodeFrameAsync.WillDefaultReturn(&arg);
         mock_encode->_SyncOperation.WillDefaultReturn(&arg_so);

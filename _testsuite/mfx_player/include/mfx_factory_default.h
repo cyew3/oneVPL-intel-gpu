@@ -164,8 +164,15 @@ template<>
 class PipelineObjectDesc<IFile> : public PipelineObjectBaseTmpl<IFile>
 {
 public:
-    PipelineObjectDesc(const tstring &crcFile, int objType, IFile *pObj)
-        : PipelineObjectBaseTmpl<IFile>(objType, pObj)
+    PipelineObjectDesc(const tstring &crcFile, int objType)
+        //TODO: fix memory leaks by deferring this release as much as possible
+        : PipelineObjectBaseTmpl<IFile>(objType, NULL)
+        , sCrcFile(crcFile)
+    {
+    }
+    PipelineObjectDesc(const tstring &crcFile, int objType, std::auto_ptr<IFile>& pObj)
+        //TODO: fix memory leaks by deferring this release as much as possible
+        : PipelineObjectBaseTmpl<IFile>(objType, pObj.release())
         , sCrcFile(crcFile)
     {
     }

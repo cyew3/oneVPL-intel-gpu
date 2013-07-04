@@ -62,7 +62,8 @@ SUITE(MFXMVCDecoder)
         vParam.ExtParam = NULL;
 
         MockYUVSource *mockSource = new MockYUVSource();
-        MVCDecoder * pDecoder = new MVCDecoder(false, vParam, mockSource);
+        std::auto_ptr<IYUVSource> tmp(mockSource);
+        MVCDecoder * pDecoder = new MVCDecoder(false, vParam, tmp);
 
         mfxVideoParam vParamLocal = {0};
 
@@ -83,7 +84,8 @@ SUITE(MFXMVCDecoder)
         vParam.ExtParam = NULL;
 
         MockYUVSource *mockSource = new MockYUVSource();
-        MVCDecoder * pDecoder = new MVCDecoder(false, vParam, mockSource);
+        std::auto_ptr<IYUVSource> tmp(mockSource);
+        MVCDecoder * pDecoder = new MVCDecoder(false, vParam, tmp);
 
         mfxVideoParam vParamLocal = {0};
 
@@ -94,7 +96,8 @@ SUITE(MFXMVCDecoder)
     TEST_FIXTURE(InitParams, DECODE_HEADER_NO_BUFFERS)
     {
         MockYUVSource *mockSource = new MockYUVSource();
-        MVCDecoder * pDecoder = new MVCDecoder(false, vParam, mockSource);
+        std::auto_ptr<IYUVSource> tmp(mockSource);
+        MVCDecoder * pDecoder = new MVCDecoder(false, vParam, tmp);
 
         mfxVideoParam vParamLocal = {0};
 
@@ -105,7 +108,8 @@ SUITE(MFXMVCDecoder)
     TEST_FIXTURE(InitParams, DECODE_HEADER_EXTMVC_NOT_ENOUGH_ALLOCATED)
     {
         MockYUVSource *mockSource = new MockYUVSource();
-        MVCDecoder * pDecoder = new MVCDecoder(false, vParam, mockSource);
+        std::auto_ptr<IYUVSource> tmp(mockSource);
+        MVCDecoder * pDecoder = new MVCDecoder(false, vParam, tmp);
 
         mfxVideoParam vParamLocal = {0};
 
@@ -121,7 +125,8 @@ SUITE(MFXMVCDecoder)
     TEST_FIXTURE(InitParams, DECODE_HEADER_EXTMVC_ENOUGH_BUFERS)
     {
         MockYUVSource *mockSource = new MockYUVSource();
-        MVCDecoder * pDecoder = new MVCDecoder(false, vParam, mockSource);
+        std::auto_ptr<IYUVSource> tmp(mockSource);
+        MVCDecoder * pDecoder = new MVCDecoder(false, vParam, tmp);
 
         mfxVideoParam vParamLocal = {0};
 
@@ -176,7 +181,8 @@ SUITE(MFXMVCDecoder)
     TEST_FIXTURE(InitParams, DEcodeFrameAsync_GenerateViewIds)
     {
         MockYUVSource *mockSource = new MockYUVSource();
-        MVCDecoder * pDecoder = new MVCDecoder(true, vParam, mockSource);
+        std::auto_ptr<IYUVSource> tmp(mockSource);
+        MVCDecoder * pDecoder = new MVCDecoder(true, vParam, tmp);
 
         TEST_METHOD_TYPE(MockYUVSource::DecodeFrameAsync) args;
 
@@ -209,7 +215,8 @@ SUITE(MFXMVCDecoder)
     TEST_FIXTURE(InitParams, DEcodeFrameAsync_NONGenerateViewIds)
     {
         MockYUVSource *mockSource = new MockYUVSource();
-        MVCDecoder * pDecoder = new MVCDecoder(false, vParam, mockSource);
+        std::auto_ptr<IYUVSource> tmp(mockSource);
+        MVCDecoder * pDecoder = new MVCDecoder(false, vParam, tmp);
 
         TEST_METHOD_TYPE(MockYUVSource::DecodeFrameAsync) args;
 

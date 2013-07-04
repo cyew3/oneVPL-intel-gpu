@@ -19,7 +19,7 @@ class EncodeOrderEncode
     : public InterfaceProxy<IVideoEncode>
 {
 public:
-    EncodeOrderEncode (IVideoEncode * pTarget)
+    EncodeOrderEncode (std::auto_ptr<IVideoEncode>& pTarget)
         : InterfaceProxy<IVideoEncode>(pTarget)
     {
     }

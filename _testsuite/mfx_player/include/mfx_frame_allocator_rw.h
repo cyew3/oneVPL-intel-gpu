@@ -33,7 +33,7 @@ class InterfaceProxy<MFXFrameAllocatorRW>
 {
     typedef InterfaceProxyBase<MFXFrameAllocatorRW> base;
 public:
-    InterfaceProxy(MFXFrameAllocatorRW *pTarget)
+    InterfaceProxy(std::auto_ptr<MFXFrameAllocatorRW>& pTarget)
         : base(pTarget)
     {
     }

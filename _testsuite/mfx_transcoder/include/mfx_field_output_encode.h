@@ -21,7 +21,7 @@ class FieldOutputEncoder : public InterfaceProxy<IVideoEncode>
     typedef  InterfaceProxy<IVideoEncode> base;
 public:
 
-    FieldOutputEncoder (IVideoEncode * pTarget)
+    FieldOutputEncoder (std::auto_ptr<IVideoEncode>& pTarget)
         : base(pTarget)
         , bPairCompleted(true)
     {}

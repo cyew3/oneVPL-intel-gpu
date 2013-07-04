@@ -61,7 +61,7 @@ class InterfaceProxy<IFile>
 {
     IMPLEMENT_CLONE(InterfaceProxy<IFile>);
 public:
-    InterfaceProxy(IFile* pTargetFile)
+    InterfaceProxy(std::auto_ptr<IFile>& pTargetFile)
         : InterfaceProxyBase<IFile>(pTargetFile)
     {
     }

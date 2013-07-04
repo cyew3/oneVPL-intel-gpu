@@ -33,6 +33,7 @@ SUITE(LatencyEncoder)
         mfxSyncPoint syncp, syncp2;
         int s1, s2;
 
+        std::auto_ptr<IVideoEncode> mock_encode_ptr;
         MockPrinter * pMockPrinter;
 
         LatencyEncode * pTestEncode;
@@ -49,7 +50,7 @@ SUITE(LatencyEncoder)
             pSurface = &actual_srf;
             
             pTime       = new MockTime();
-            pMockEncode = new MockVideoEncode();
+            mock_encode_ptr.reset(pMockEncode = new MockVideoEncode());
             pMockPrinter= new MockPrinter();
 
 
@@ -63,7 +64,7 @@ SUITE(LatencyEncoder)
 
     TEST_FIXTURE(Init, EncodeFrameAsync_Decode_plus_encode_no_between_sync)
     {
-        pTestEncode = new LatencyEncode(true, pMockPrinter, pTime, pMockEncode);
+        pTestEncode = new LatencyEncode(true, pMockPrinter, pTime, mock_encode_ptr);
 
         actual_srf.Data.TimeStamp = 2;
 
@@ -89,7 +90,7 @@ SUITE(LatencyEncoder)
     
     TEST_FIXTURE(Init, EncodeFrameAsync_DeviceBusy)
     {
-        pTestEncode = new LatencyEncode(false, pMockPrinter, pTime, pMockEncode);
+        pTestEncode = new LatencyEncode(false, pMockPrinter, pTime, mock_encode_ptr);
 
         //time = 3
         pTime->_GetTick.WillDefaultReturn(&ticks);
@@ -150,7 +151,7 @@ SUITE(LatencyEncoder)
 
     TEST_FIXTURE(Init, SyncOperation_WrnInExecution)
     {
-        pTestEncode = new LatencyEncode(false, pMockPrinter, pTime, pMockEncode);
+        pTestEncode = new LatencyEncode(false, pMockPrinter, pTime, mock_encode_ptr);
 
         //time = 3
         bitstream.TimeStamp = 3;
@@ -195,7 +196,7 @@ SUITE(LatencyEncoder)
 
     TEST_FIXTURE(Init, Multiple_SyncOperations)
     {
-        pTestEncode = new LatencyEncode(false, pMockPrinter, pTime, pMockEncode);
+        pTestEncode = new LatencyEncode(false, pMockPrinter, pTime, mock_encode_ptr);
 
         //time = 3
         bitstream.TimeStamp = 3;

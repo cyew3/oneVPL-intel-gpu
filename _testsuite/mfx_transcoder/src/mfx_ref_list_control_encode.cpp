@@ -13,7 +13,7 @@ File Name: .h
 #include "mfx_pipeline_defs.h"
 #include "mfx_ref_list_control_encode.h"
 
-RefListControlEncode::RefListControlEncode (IVideoEncode * pTarget)
+RefListControlEncode::RefListControlEncode (std::auto_ptr<IVideoEncode>& pTarget)
     : InterfaceProxy<IVideoEncode>(pTarget)
     , m_bAttach()
     , m_nFramesEncoded()

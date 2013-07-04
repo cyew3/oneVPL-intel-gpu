@@ -74,7 +74,7 @@ public:
     }
     virtual ~IMultiple()
     {
-       // ForEach( deleter<IFace *>());
+       //ForEach( deleter<IFace *>());
     }
 protected:
     //TODO: better to have pointer to member in template form here, to reduce casting in child code

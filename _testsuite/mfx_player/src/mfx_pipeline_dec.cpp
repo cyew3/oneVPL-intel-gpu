@@ -132,7 +132,6 @@ bool loadFromFile(FILE *f, void **buf, mfxU32 *bufSize)
 
 MFXDecPipeline::MFXDecPipeline(IMFXPipelineFactory *pFactory)
     : m_RenderType(MFX_SCREEN_RENDER)
-    , m_pYUVSource()
     //, m_d3dDeviceManagerSpy()
     , m_pVPP()
     , m_pSpl()
@@ -388,7 +387,7 @@ mfxStatus MFXDecPipeline::ReleaseMFXPart()
     }
     //cleaning up a decoder
     m_components[eDEC].m_extParams.clear();
-    MFX_DELETE(m_pYUVSource);
+    m_pYUVSource.reset(0);
 
 
     //cleaning up VPP and its buffers
@@ -1489,7 +1488,7 @@ mfxStatus MFXDecPipeline::CreateFileSink(std::auto_ptr<IFile> &pSink)
     //file sink will be decorated or created
     if (NULL == pSink.get())
     {
-        PipelineObjectDesc<IFile> dsc(m_inParams.crcFile, UKNOWN_COMPONENT, NULL);
+        PipelineObjectDesc<IFile> dsc(m_inParams.crcFile, UKNOWN_COMPONENT);
         if (m_inParams.bNullFileWriter)
         {
             dsc.Type = FILE_NULL;
@@ -1504,13 +1503,13 @@ mfxStatus MFXDecPipeline::CreateFileSink(std::auto_ptr<IFile> &pSink)
 
     if (m_inParams.bUseSeparateFileWriter)
     {
-        PipelineObjectDesc<IFile> dsc(m_inParams.crcFile, FILE_SEPARATE, pSink.release());
+        PipelineObjectDesc<IFile> dsc(m_inParams.crcFile, FILE_SEPARATE, pSink);
         pSink.reset(m_pFactory->CreateFileWriter(&dsc));
     }
 
     if (m_inParams.bCalcCRC)
     {
-        PipelineObjectDesc<IFile> dsc(m_inParams.crcFile, FILE_CRC, pSink.release());
+        PipelineObjectDesc<IFile> dsc(m_inParams.crcFile, FILE_CRC, pSink);
         pSink.reset(m_pFactory->CreateFileWriter(&dsc));
     }
 
@@ -1896,79 +1895,71 @@ mfxStatus MFXDecPipeline::CreateYUVSource()
         //others decoder will take this information from bitstream itself
         yuvDecParam.mfx.FrameInfo.PicStruct = Convert_CmdPS_to_MFXPS(m_inParams.nPicStruct);
 
-        m_pYUVSource = new MFXYUVDecoder( m_components[eDEC].m_pSession
+        m_pYUVSource.reset(new MFXYUVDecoder( m_components[eDEC].m_pSession
                                         , yuvDecParam
                                         , m_components[eDEC].m_fFrameRate
                                         , m_inParams.FrameInfo.FourCC
                                         , m_pFactory.get()
-                                        , m_inParams.strOutlineInputFile);
+                                        , m_inParams.strOutlineInputFile));
         bGenerateViewIds = true;
     }
     else
     {
-        m_pYUVSource = new MFXDecoder(m_components[eDEC].m_pSession->GetMFXSession());
+        m_pYUVSource .reset( new MFXDecoder(m_components[eDEC].m_pSession->GetMFXSession()));
     }
 
-    MFX_CHECK_WITH_ERR(m_pYUVSource, MFX_ERR_MEMORY_ALLOC);
-
-    if (m_inParams.nYUVLoop)
-    {
-        m_pYUVSource = new MFXLoopDecoder( m_inParams.nYUVLoop
-                                         , m_pYUVSource);
+    if (m_inParams.nYUVLoop) {
+        m_pYUVSource .reset( new MFXLoopDecoder( m_inParams.nYUVLoop, m_pYUVSource));
     }
 
-    if (m_inParams.nDecodeInAdvance)
-    {
-        m_pYUVSource = new MFXAdvanceDecoder(m_inParams.nDecodeInAdvance, m_pYUVSource);
+    if (m_inParams.nDecodeInAdvance) {
+        m_pYUVSource .reset( new MFXAdvanceDecoder(m_inParams.nDecodeInAdvance, m_pYUVSource));
     }
 
-    if (!m_viewOrderMap.empty())
-    {
-        m_pYUVSource = new TargetViewsDecoder(m_viewOrderMap, m_inParams.targetViewsTemporalId, m_pYUVSource);
+    if (!m_viewOrderMap.empty()) {
+        m_pYUVSource .reset( new TargetViewsDecoder(m_viewOrderMap, m_inParams.targetViewsTemporalId, m_pYUVSource));
     }
 
     //dependency structure specified
-    if (!m_InputExtBuffers.empty())
-    {
-        m_pYUVSource = new MVCDecoder(bGenerateViewIds, yuvDecParam, m_pYUVSource);
+    if (!m_InputExtBuffers.empty()) {
+        m_pYUVSource .reset( new MVCDecoder(bGenerateViewIds, yuvDecParam, m_pYUVSource));
     }
 
     if (m_components[eDEC].m_bCalcLatency)
     {
         //calc aggregated timestamps only if there is no intermediate synchronizations
-        m_pYUVSource = new LatencyDecoder(m_components[eREN].m_bCalcLatency && m_inParams.bNoPipelineSync, NULL, &PerfCounterTime::Instance(), VM_STRING("Decoder"), m_pYUVSource);
+        m_pYUVSource .reset( new LatencyDecoder(m_components[eREN].m_bCalcLatency && m_inParams.bNoPipelineSync, NULL, &PerfCounterTime::Instance(), VM_STRING("Decoder"), m_pYUVSource));
     }
 
     if (!m_InputExtBuffers.empty() || MFX_CODEC_AVC == m_components[eDEC].m_params.mfx.CodecId)
     {
-        m_pYUVSource = new MVCHandler<IYUVSource>(m_components[eDEC].m_extParams, m_components[eDEC].m_bForceMVCDetection, m_pYUVSource);
+        m_pYUVSource .reset( new MVCHandler<IYUVSource>(m_components[eDEC].m_extParams, m_components[eDEC].m_bForceMVCDetection, m_pYUVSource));
     }
 
     if (MFX_CODEC_JPEG == m_components[eDEC].m_params.mfx.CodecId)
     {
-        m_pYUVSource = new JPEGBsParser(m_inParams.FrameInfo, m_pYUVSource);
+        m_pYUVSource .reset( new JPEGBsParser(m_inParams.FrameInfo, m_pYUVSource));
 
         if (0 != m_inParams.nRotation)
         {
-            m_pYUVSource = new RotatedDecoder(m_inParams.nRotation, m_pYUVSource);
+            m_pYUVSource .reset( new RotatedDecoder(m_inParams.nRotation, m_pYUVSource));
         }
     }
 
     if (!m_components[eDEC].m_SkipModes.empty())
     {
-        m_pYUVSource = new SkipModesSeterDecoder(m_components[eDEC].m_SkipModes, m_pYUVSource);
+        m_pYUVSource .reset( new SkipModesSeterDecoder(m_components[eDEC].m_SkipModes, m_pYUVSource));
     }
 
     //header is inited if option is specified
     if (m_inParams.svc_layer.Header.BufferId != 0 )
     {
-        m_pYUVSource = new TargetLayerSvcDecoder(m_inParams.svc_layer, m_pYUVSource);
+        m_pYUVSource .reset( new TargetLayerSvcDecoder(m_inParams.svc_layer, m_pYUVSource));
     }
 
     ///should be created on top of decorators
-    m_pYUVSource = new PrintInfoDecoder(m_pYUVSource);
+    m_pYUVSource.reset(new PrintInfoDecoder(m_pYUVSource));
 
-    MFX_CHECK_WITH_ERR(m_pYUVSource, MFX_ERR_MEMORY_ALLOC);
     return MFX_ERR_NONE;
 }
 
@@ -2153,7 +2144,7 @@ mfxStatus MFXDecPipeline::CreateAllocator()
         }
     }
     //always true
-    if (NULL != m_pYUVSource)
+    if (m_pYUVSource.get())
     {
         MFX_CHECK_STS(m_pYUVSource->QueryIOSurf(&m_components[eDEC].m_params, _request[eDEC]));
 
@@ -4291,9 +4282,8 @@ mfxF64 MFXDecPipeline::Current()
 mfxStatus MFXDecPipeline::GetYUVSource(IYUVSource**ppSource)
 {
     MFX_CHECK_POINTER(ppSource);
-    MFX_CHECK_POINTER(m_pYUVSource);
 
-    *ppSource = m_pYUVSource;
+    *ppSource = m_pYUVSource.get();
 
     return MFX_ERR_NONE;
 }

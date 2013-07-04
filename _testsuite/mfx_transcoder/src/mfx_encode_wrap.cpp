@@ -18,7 +18,7 @@ File Name: .h
 #include "ippi.h"
 
 
-MFXEncodeWRAPPER::MFXEncodeWRAPPER(ComponentParams & refParams, mfxStatus *status, IVideoEncode * pEncode)
+MFXEncodeWRAPPER::MFXEncodeWRAPPER(ComponentParams & refParams, mfxStatus *status, std::auto_ptr<IVideoEncode>& pEncode)
     : MFXFileWriteRender(mfxFrameInfoCpp(), refParams.m_pSession, status)
     , m_refParams(refParams)
     , m_encoder(pEncode)

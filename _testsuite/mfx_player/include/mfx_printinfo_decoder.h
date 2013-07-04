@@ -24,7 +24,7 @@ class PrintInfoDecoder : public InterfaceProxy<IYUVSource>
     typedef InterfaceProxy<IYUVSource> base;
 
 public:
-    PrintInfoDecoder(IYUVSource* pTarget)
+    PrintInfoDecoder(std::auto_ptr<IYUVSource>& pTarget)
         : base(pTarget)
     {
     }

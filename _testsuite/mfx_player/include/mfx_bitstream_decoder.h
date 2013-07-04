@@ -22,7 +22,7 @@ Copyright(c) 2011-2012 Intel Corporation. All Rights Reserved.
 class DecodeContext
 {
 public :
-    IYUVSource        * pSource;
+    std::auto_ptr<IYUVSource> pSource;
     //allocator already set to session and initialized
     MFXFrameAllocatorRW * pAlloc;
     //session life time managed by object accepted context

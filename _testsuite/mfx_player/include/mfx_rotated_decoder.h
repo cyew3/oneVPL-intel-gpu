@@ -20,7 +20,7 @@ class RotatedDecoder : public InterfaceProxy<IYUVSource>
     std::map<mfxU16, mfxU16> rotations;
 public:
 
-    RotatedDecoder(mfxU16 nRotation, IYUVSource * pActual)
+    RotatedDecoder(mfxU16 nRotation, std::auto_ptr<IYUVSource>& pActual)
         : base(pActual)
         , m_rotation(nRotation)
     {

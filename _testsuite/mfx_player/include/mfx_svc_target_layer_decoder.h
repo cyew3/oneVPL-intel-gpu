@@ -23,7 +23,7 @@ protected:
     mfxExtSvcTargetLayer m_refLayerDesc;
     std::vector<mfxExtBuffer*> m_pAttachedBuffers;
 public:
-    TargetLayerSvcDecoder( mfxExtSvcTargetLayer &refLayerDesc, IYUVSource *pTarget)
+    TargetLayerSvcDecoder( mfxExtSvcTargetLayer &refLayerDesc, std::auto_ptr<IYUVSource>&pTarget)
         : base(pTarget)
         , m_refLayerDesc(refLayerDesc)
     {
