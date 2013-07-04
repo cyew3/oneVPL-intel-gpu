@@ -1356,6 +1356,8 @@ mfxStatus MFXVideoDECODEVC1::SelfConstructFrame(mfxBitstream *bs)
         }
 
         Ipp32u dataSize = ((bs->DataLength) > (m_FrameSize - ReadDataSize))?(m_FrameSize - ReadDataSize):(bs->DataLength);
+        Ipp32u remainedBytes = m_FrameConstrData.GetBufferSize() - m_FrameConstrData.GetDataSize();
+        dataSize = (dataSize > remainedBytes) ? remainedBytes : dataSize;
         ippsCopy_8u(bs->Data + bs->DataOffset,
                    (Ipp8u*)m_FrameConstrData.GetBufferPointer() + m_FrameConstrData.GetDataSize(),
                     dataSize);
