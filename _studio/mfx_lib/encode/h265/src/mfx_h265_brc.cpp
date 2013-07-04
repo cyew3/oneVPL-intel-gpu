@@ -143,7 +143,7 @@ mfxStatus H265BRC::Init(mfxVideoParam *params)
 
     mFramerate = mParams.frameRateExtN / mParams.frameRateExtD;
     mBitrate = mParams.targetBitrate;
-    mRCMode = mParams.BRCMode;
+    mRCMode = (mfxU16)mParams.BRCMode;
 
     if (mBitrate <= 0 || mFramerate <= 0)
         return MFX_ERR_INVALID_VIDEO_PARAM;

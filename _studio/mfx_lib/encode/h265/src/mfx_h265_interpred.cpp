@@ -1175,6 +1175,10 @@ public:
     );
 };
 
+// to disable v_acc can be used uninitialized warning
+#pragma warning( push )
+#pragma warning( disable : 4701 )
+
 //=================================================================================================
 // partioal specialization for __m128i; TODO: add __m256i version for AVX2 + dispatch
 // NOTE: always reads a block with a width extended to a multiple of 8
@@ -1347,6 +1351,7 @@ public:
         }
     }
 };
+#pragma warning( pop ) 
 
 //=================================================================================================
 template < EnumTextType plane_type, typename t_src, typename t_dst >

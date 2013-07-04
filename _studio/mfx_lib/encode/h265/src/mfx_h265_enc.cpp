@@ -1331,7 +1331,7 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
     }
 
     if (m_brc) {
-        m_videoParam.QP = (Ipp8s)m_brc->GetQP(ePictureType);
+        m_videoParam.QP = (Ipp8s)m_brc->GetQP((mfxU16)ePictureType);
         m_videoParam.QPChroma = h265_QPtoChromaQP[m_videoParam.QP];
     }
 
@@ -1503,7 +1503,7 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
     frameBytes = mfxBS->DataLength - initialDatalength;
 
     if (m_brc)
-        m_brc->PostPackFrame(m_pCurrentFrame->m_PicCodType, frameBytes << 3, overheadBytes << 3, 0, m_pCurrentFrame->PicOrderCnt());
+        m_brc->PostPackFrame((mfxU16)m_pCurrentFrame->m_PicCodType, frameBytes << 3, overheadBytes << 3, 0, m_pCurrentFrame->PicOrderCnt());
 
     switch (ePic_Class)
     {
