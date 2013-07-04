@@ -2205,7 +2205,7 @@ void H265SegmentDecoder::ReconstructCU(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
     switch (pCU->m_PredModeArray[AbsPartIdx])
     {
         case MODE_INTER:
-            ReconInter(pCU, AbsPartIdx);
+            ReconInter(pCU, AbsPartIdx, Depth);
             break;
         case MODE_INTRA:
             ReconIntraQT(pCU, AbsPartIdx, Depth);
@@ -2252,10 +2252,10 @@ void H265SegmentDecoder::ReconIntraQT(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ip
     }
 }
 
-void H265SegmentDecoder::ReconInter(H265CodingUnit* pCU, Ipp32u AbsPartIdx)
+void H265SegmentDecoder::ReconInter(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     // inter prediction
-    m_Prediction->MotionCompensation(pCU, m_ppcYUVReco, AbsPartIdx, m_puinfo);
+    m_Prediction->MotionCompensation(pCU, m_ppcYUVReco, AbsPartIdx, Depth, m_puinfo);
 
     // clip for only non-zero cbp case
     if ((pCU->getCbf(AbsPartIdx, TEXT_LUMA)) || (pCU->getCbf(AbsPartIdx, TEXT_CHROMA_U)) || (pCU->getCbf(AbsPartIdx, TEXT_CHROMA_V )))

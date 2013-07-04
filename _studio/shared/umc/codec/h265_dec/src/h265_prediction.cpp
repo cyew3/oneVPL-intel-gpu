@@ -646,7 +646,7 @@ void H265Prediction::PredIntraChromaAng(H265PlanePtrUVCommon pSrc, Ipp32u DirMod
     }
 }
 
-void H265Prediction::MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPadded* pPredYUV, Ipp32u AbsPartIdx, H265PUInfo *PUInfo)
+void H265Prediction::MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPadded* pPredYUV, Ipp32u AbsPartIdx, Ipp32u Depth, H265PUInfo *PUInfo)
 {
     VM_ASSERT(pCU->m_AbsIdxInLCU == 0);
     bool weighted_prediction = pCU->m_SliceHeader->slice_type == P_SLICE ? pCU->m_SliceHeader->m_PicParamSet->weighted_pred_flag :
@@ -654,8 +654,17 @@ void H265Prediction::MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPad
 
     for (Ipp32s PartIdx = 0; PartIdx < pCU->getNumPartInter(AbsPartIdx); PartIdx++)
     {
+        /*Ipp32u PartAddr;
+        Ipp32u Width, Height;
+        pCU->getPartIndexAndSize(AbsPartIdx, Depth, PartIdx, PartAddr, Width, Height);
+        PartAddr += AbsPartIdx;*/
+
         H265PUInfo &PUi = PUInfo[PartIdx];
         H265MVInfo &MVi = PUi.interinfo;
+
+        /*PUi.PartAddr = PartAddr;
+        PUi.Height = Height;
+        PUi.Width = Width;*/
 
         Ipp32s RefIdx[2] = {-1, -1};
         RefIdx[REF_PIC_LIST_0] = MVi.mvinfo[REF_PIC_LIST_0].RefIdx;

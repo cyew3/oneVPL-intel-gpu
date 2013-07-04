@@ -105,7 +105,7 @@ public:
     void InitTempBuff();
 
     // inter
-    void MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPadded* YUVPred, Ipp32u AbsPartIdx, H265PUInfo *PUInfo);
+    void MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPadded* YUVPred, Ipp32u AbsPartIdx, Ipp32u Depth, H265PUInfo *PUInfo);
 
     // Angular Intra
     void PredIntraLumaAng(Ipp32u DirMode, H265PlanePtrYCommon pPred, Ipp32u Stride, Ipp32s Size);
