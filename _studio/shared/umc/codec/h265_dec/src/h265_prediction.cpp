@@ -1045,55 +1045,6 @@ void H265Prediction::CopyExtendPU(const H265PlaneYCommon * in_pSrc,
 }
 
 //=================================================================================================
-// 4-tap and 8-tap filter implemntation using filter constants as template params where general case 
-// is to multiply by constant but for some trivial constants specializations are provided
-// to get the result faster
-
-static __m128i H265_FORCEINLINE _mm_interp_load( const Ipp8u* pSrc )  { return _mm_cvtepu8_epi16( MM_LOAD_EPI64( pSrc ) ); }
-static __m128i H265_FORCEINLINE _mm_interp_load( const Ipp16s* pSrc ) { return _mm_loadu_si128( (const __m128i *)pSrc ); }
-
-template <int c1, int c2, int c3, int c4, typename t_src >
-static __m128i H265_FORCEINLINE _mm_interp_4tap_kernel( const t_src* pSrc, Ipp32s accum_pitch, __m128i& )
-{
-    __m128i v_acc1 = t_interp_mulw< c1 >::func( _mm_interp_load( pSrc ) );
-    v_acc1 = t_interp_addmulw< c2 >::func( v_acc1, _mm_interp_load( pSrc + accum_pitch   ) );
-    v_acc1 = t_interp_addmulw< c3 >::func( v_acc1, _mm_interp_load( pSrc + accum_pitch*2 ) );
-    v_acc1 = t_interp_addmulw< c4 >::func( v_acc1, _mm_interp_load( pSrc + accum_pitch*3 ) );
-    return ( v_acc1 );
-}
-
-template <int c1, int c2, int c3, int c4 >
-static __m128i H265_FORCEINLINE _mm_interp_4tap_kernel( const Ipp16s* pSrc, Ipp32s accum_pitch, __m128i& v_ret_acc2 )
-{
-    __m128i v_acc1_lo = _mm_setzero_si128(), v_acc1_hi = _mm_setzero_si128();
-    t_interp_addmuld< c1 >::func( _mm_interp_load( pSrc                 ), v_acc1_lo, v_acc1_hi );
-    t_interp_addmuld< c2 >::func( _mm_interp_load( pSrc + accum_pitch   ), v_acc1_lo, v_acc1_hi );
-    t_interp_addmuld< c3 >::func( _mm_interp_load( pSrc + accum_pitch*2 ), v_acc1_lo, v_acc1_hi );
-    t_interp_addmuld< c4 >::func( _mm_interp_load( pSrc + accum_pitch*3 ), v_acc1_lo, v_acc1_hi );
-    v_ret_acc2 = v_acc1_hi;
-    return ( v_acc1_lo );
-}
-
-template <int c1, int c2, int c3, int c4, int c5, int c6, int c7, int c8 >
-static __m128i H265_FORCEINLINE _mm_interp_8tap_kernel( const Ipp16s* pSrc, Ipp32s accum_pitch, __m128i& v_ret_acc2 )
-{
-    __m128i v_acc1_hi, v_acc1 = _mm_interp_4tap_kernel<c1, c2, c3, c4 >( pSrc, accum_pitch, v_acc1_hi );
-    __m128i v_acc2_hi, v_acc2 = _mm_interp_4tap_kernel<c5, c6, c7, c8 >( pSrc + accum_pitch*4, accum_pitch, v_acc2_hi );
-    v_ret_acc2 = _mm_add_epi32( v_acc1_hi, v_acc2_hi );
-    return ( _mm_add_epi32( v_acc1, v_acc2 ) );
-}
-
-template <int c1, int c2, int c3, int c4, int c5, int c6, int c7, int c8 >
-static __m128i H265_FORCEINLINE _mm_interp_8tap_kernel( const Ipp8u* pSrc, Ipp32s accum_pitch, __m128i& )
-{
-    __m128i v_unused1, v_acc1 = _mm_interp_4tap_kernel<c1, c2, c3, c4 >( pSrc, accum_pitch, v_unused1 );
-    __m128i v_unused2, v_acc2 = _mm_interp_4tap_kernel<c5, c6, c7, c8 >( pSrc + accum_pitch*4, accum_pitch, v_unused2 );
-    return ( _mm_adds_epi16( v_acc1, v_acc2 ) );
-}
-
-
-
-//=================================================================================================
 // general multiplication by const form
 template <int c_coeff> class t_interp_mulw
 { 
@@ -1167,6 +1118,53 @@ template <> class t_interp_mulw< -4 >
 template <> class t_interp_mulw< 16 >
 { public: static __m128i H265_FORCEINLINE func( __m128i v_src ) { return _mm_slli_epi16( v_src, 4 ); } };
 
+
+//=================================================================================================
+// 4-tap and 8-tap filter implemntation using filter constants as template params where general case 
+// is to multiply by constant but for some trivial constants specializations are provided
+// to get the result faster
+
+static __m128i H265_FORCEINLINE _mm_interp_load( const Ipp8u* pSrc )  { return _mm_cvtepu8_epi16( MM_LOAD_EPI64( pSrc ) ); }
+static __m128i H265_FORCEINLINE _mm_interp_load( const Ipp16s* pSrc ) { return _mm_loadu_si128( (const __m128i *)pSrc ); }
+
+template <int c1, int c2, int c3, int c4, typename t_src >
+static __m128i H265_FORCEINLINE _mm_interp_4tap_kernel( const t_src* pSrc, Ipp32s accum_pitch, __m128i& )
+{
+    __m128i v_acc1 = t_interp_mulw< c1 >::func( _mm_interp_load( pSrc ) );
+    v_acc1 = t_interp_addmulw< c2 >::func( v_acc1, _mm_interp_load( pSrc + accum_pitch   ) );
+    v_acc1 = t_interp_addmulw< c3 >::func( v_acc1, _mm_interp_load( pSrc + accum_pitch*2 ) );
+    v_acc1 = t_interp_addmulw< c4 >::func( v_acc1, _mm_interp_load( pSrc + accum_pitch*3 ) );
+    return ( v_acc1 );
+}
+
+template <int c1, int c2, int c3, int c4 >
+static __m128i H265_FORCEINLINE _mm_interp_4tap_kernel( const Ipp16s* pSrc, Ipp32s accum_pitch, __m128i& v_ret_acc2 )
+{
+    __m128i v_acc1_lo = _mm_setzero_si128(), v_acc1_hi = _mm_setzero_si128();
+    t_interp_addmuld< c1 >::func( _mm_interp_load( pSrc                 ), v_acc1_lo, v_acc1_hi );
+    t_interp_addmuld< c2 >::func( _mm_interp_load( pSrc + accum_pitch   ), v_acc1_lo, v_acc1_hi );
+    t_interp_addmuld< c3 >::func( _mm_interp_load( pSrc + accum_pitch*2 ), v_acc1_lo, v_acc1_hi );
+    t_interp_addmuld< c4 >::func( _mm_interp_load( pSrc + accum_pitch*3 ), v_acc1_lo, v_acc1_hi );
+    v_ret_acc2 = v_acc1_hi;
+    return ( v_acc1_lo );
+}
+
+template <int c1, int c2, int c3, int c4, int c5, int c6, int c7, int c8 >
+static __m128i H265_FORCEINLINE _mm_interp_8tap_kernel( const Ipp16s* pSrc, Ipp32s accum_pitch, __m128i& v_ret_acc2 )
+{
+    __m128i v_acc1_hi, v_acc1 = _mm_interp_4tap_kernel<c1, c2, c3, c4 >( pSrc, accum_pitch, v_acc1_hi );
+    __m128i v_acc2_hi, v_acc2 = _mm_interp_4tap_kernel<c5, c6, c7, c8 >( pSrc + accum_pitch*4, accum_pitch, v_acc2_hi );
+    v_ret_acc2 = _mm_add_epi32( v_acc1_hi, v_acc2_hi );
+    return ( _mm_add_epi32( v_acc1, v_acc2 ) );
+}
+
+template <int c1, int c2, int c3, int c4, int c5, int c6, int c7, int c8 >
+static __m128i H265_FORCEINLINE _mm_interp_8tap_kernel( const Ipp8u* pSrc, Ipp32s accum_pitch, __m128i& )
+{
+    __m128i v_unused1, v_acc1 = _mm_interp_4tap_kernel<c1, c2, c3, c4 >( pSrc, accum_pitch, v_unused1 );
+    __m128i v_unused2, v_acc2 = _mm_interp_4tap_kernel<c5, c6, c7, c8 >( pSrc + accum_pitch*4, accum_pitch, v_unused2 );
+    return ( _mm_adds_epi16( v_acc1, v_acc2 ) );
+}
 
 //=================================================================================================
 // partioal specialization for __m128i; TODO: add __m256i version for AVX2 + dispatch

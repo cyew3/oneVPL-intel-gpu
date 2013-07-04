@@ -702,8 +702,17 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
 
         pCU->setCbfSubParts( 0, 0, 0, AbsPartIdx, Depth);
         pCU->setTrStartSubParts(AbsPartIdx, Depth);
+
         FinishDecodeCU(pCU, AbsPartIdx, Depth, IsLast);
         UpdateNeighborBuffers(pCU, AbsPartIdx, true);
+
+        ReconInter(pCU, AbsPartIdx, Depth);
+        if (pCU->isLosslessCoded(AbsPartIdx))
+        {
+            // Saving reconstruct contents in PCM buffer is necessary for later PCM restoration when SAO is enabled
+            FillPCMBuffer(pCU, AbsPartIdx, Depth);
+        }
+
         return;
     }
 
@@ -734,6 +743,8 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
             {
                 FinishDecodeCU(pCU, AbsPartIdx, Depth, IsLast);
                 UpdateNeighborBuffers(pCU, AbsPartIdx, false);
+
+                ReconPCM(pCU, AbsPartIdx, Depth);
                 return;
             }
         }
@@ -759,6 +770,25 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
 
     FinishDecodeCU(pCU, AbsPartIdx, Depth, IsLast);
     UpdateNeighborBuffers(pCU, AbsPartIdx, false);
+
+    switch (PredMode)
+    {
+        case MODE_INTER:
+            ReconInter(pCU, AbsPartIdx, Depth);
+            break;
+        case MODE_INTRA:
+            ReconIntraQT(pCU, AbsPartIdx, Depth);
+            break;
+        default:
+            VM_ASSERT(0);
+        break;
+    }
+
+    if (pCU->isLosslessCoded(AbsPartIdx) && !pCU->m_IPCMFlag[AbsPartIdx])
+    {
+        // Saving reconstruct contents in PCM buffer is necessary for later PCM restoration when SAO is enabled
+        FillPCMBuffer(pCU, AbsPartIdx, Depth);
+    }
 }
 
 void H265SegmentDecoder::DecodeSplitFlagCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
@@ -2228,12 +2258,6 @@ void H265SegmentDecoder::ReconIntraQT(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ip
     Ipp32u NumPart = pCU->getNumPartInter(AbsPartIdx);
     Ipp32u NumQParts = pCU->m_NumPartition >> (Depth << 1); // Number of partitions on this depth
     NumQParts >>= 2;
-
-    if (pCU->m_IPCMFlag[AbsPartIdx])
-    {
-        ReconPCM(pCU, AbsPartIdx, Depth);
-        return;
-    }
 
     for (Ipp32u PU = 0; PU < NumPart; PU++)
     {
