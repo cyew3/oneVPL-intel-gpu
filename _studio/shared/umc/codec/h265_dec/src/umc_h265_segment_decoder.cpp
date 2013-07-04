@@ -694,9 +694,9 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
             }
         }
 
-        Ipp32s PartX = LPelX >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
-        Ipp32s PartY = TPelY >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
-        Size >>= m_pSeqParamSet->getQuadtreeTULog2MinSize();
+        Ipp32s PartX = LPelX >> m_pSeqParamSet->log2_min_transform_block_size;
+        Ipp32s PartY = TPelY >> m_pSeqParamSet->log2_min_transform_block_size;
+        Size >>= m_pSeqParamSet->log2_min_transform_block_size;
 
         UpdatePUInfo(pCU, PartX, PartY, Size, Size, m_puinfo[0]);
 
@@ -713,10 +713,10 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
     if (MODE_INTRA == PredMode)
     {
         // Inter mode is marked later when RefIdx is read from bitstream
-        Ipp32s PartX = LPelX >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
-        Ipp32s PartY = TPelY >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
-        Ipp32s PartWidth = pCU->m_WidthArray[AbsPartIdx] >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
-        Ipp32s PartHeight = pCU->m_HeightArray[AbsPartIdx] >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
+        Ipp32s PartX = LPelX >> m_pSeqParamSet->log2_min_transform_block_size;
+        Ipp32s PartY = TPelY >> m_pSeqParamSet->log2_min_transform_block_size;
+        Ipp32s PartWidth = pCU->m_WidthArray[AbsPartIdx] >> m_pSeqParamSet->log2_min_transform_block_size;
+        Ipp32s PartHeight = pCU->m_HeightArray[AbsPartIdx] >> m_pSeqParamSet->log2_min_transform_block_size;
 
         pCU->setAllColFlags(COL_TU_INTRA, REF_PIC_LIST_0, PartX, PartY, PartWidth, PartHeight);
     }
@@ -1171,10 +1171,10 @@ bool H265SegmentDecoder::DecodePUWiseCABAC(H265CodingUnit* pCU, Ipp32u AbsPartId
 
         Ipp32s LPelX = pCU->m_CUPelX + g_RasterToPelX[g_ZscanToRaster[SubPartIdx]];
         Ipp32s TPelY = pCU->m_CUPelY + g_RasterToPelY[g_ZscanToRaster[SubPartIdx]];
-        Ipp32s PartX = LPelX >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
-        Ipp32s PartY = TPelY >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
-        PartWidth >>= m_pSeqParamSet->getQuadtreeTULog2MinSize();
-        PartHeight >>= m_pSeqParamSet->getQuadtreeTULog2MinSize();
+        Ipp32s PartX = LPelX >> m_pSeqParamSet->log2_min_transform_block_size;
+        Ipp32s PartY = TPelY >> m_pSeqParamSet->log2_min_transform_block_size;
+        PartWidth >>= m_pSeqParamSet->log2_min_transform_block_size;
+        PartHeight >>= m_pSeqParamSet->log2_min_transform_block_size;
 
         H265MVInfo &MVi = m_puinfo[PartIdx].interinfo;
         MVi.mvinfo[REF_PIC_LIST_0].RefIdx = MVi.mvinfo[REF_PIC_LIST_1].RefIdx = -1;
@@ -2440,12 +2440,12 @@ void H265SegmentDecoder::IntraRecLumaBlk(H265CodingUnit* pCU,
     Ipp32s YInc = g_RasterToPelY[g_ZscanToRaster[AbsPartIdx]];
     Ipp32s LPelX = pCU->m_CUPelX + XInc;
     Ipp32s TPelY = pCU->m_CUPelY + YInc;
-    XInc >>= m_pSeqParamSet->getQuadtreeTULog2MinSize();
-    YInc >>= m_pSeqParamSet->getQuadtreeTULog2MinSize();
-    Ipp32s PartX = LPelX >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
-    Ipp32s PartY = TPelY >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
+    XInc >>= m_pSeqParamSet->log2_min_transform_block_size;
+    YInc >>= m_pSeqParamSet->log2_min_transform_block_size;
+    Ipp32s PartX = LPelX >> m_pSeqParamSet->log2_min_transform_block_size;
+    Ipp32s PartY = TPelY >> m_pSeqParamSet->log2_min_transform_block_size;
     Ipp32s TUPartNumberInCTB = m_CurrCTBStride * YInc + XInc;
-    Ipp32s NumUnitsInCU = Size >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
+    Ipp32s NumUnitsInCU = Size >> m_pSeqParamSet->log2_min_transform_block_size;
 
     if (XInc > 0 && g_RasterToZscan[g_ZscanToRaster[AbsPartIdx] - 1 + NumUnitsInCU * m_pSeqParamSet->NumPartitionsInCUSize] > AbsPartIdx)
     {
@@ -2534,12 +2534,12 @@ void H265SegmentDecoder::IntraRecChromaBlk(H265CodingUnit* pCU,
     Ipp32s YInc = g_RasterToPelY[g_ZscanToRaster[AbsPartIdx]];
     Ipp32s LPelX = pCU->m_CUPelX + XInc;
     Ipp32s TPelY = pCU->m_CUPelY + YInc;
-    XInc >>= m_pSeqParamSet->getQuadtreeTULog2MinSize();
-    YInc >>= m_pSeqParamSet->getQuadtreeTULog2MinSize();
-    Ipp32s PartX = LPelX >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
-    Ipp32s PartY = TPelY >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
+    XInc >>= m_pSeqParamSet->log2_min_transform_block_size;
+    YInc >>= m_pSeqParamSet->log2_min_transform_block_size;
+    Ipp32s PartX = LPelX >> m_pSeqParamSet->log2_min_transform_block_size;
+    Ipp32s PartY = TPelY >> m_pSeqParamSet->log2_min_transform_block_size;
     Ipp32s TUPartNumberInCTB = m_CurrCTBStride * YInc + XInc;
-    Ipp32s NumUnitsInCU = Size >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
+    Ipp32s NumUnitsInCU = Size >> m_pSeqParamSet->log2_min_transform_block_size;
 
     // TODO: Use neighbours information from Luma block
     if (XInc > 0 && g_RasterToZscan[g_ZscanToRaster[AbsPartIdx] - 1 + NumUnitsInCU * m_pSeqParamSet->NumPartitionsInCUSize] > AbsPartIdx)
@@ -2821,9 +2821,9 @@ void H265SegmentDecoder::UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPa
 {
     Ipp32s i;
 
-    Ipp32s XInc = g_RasterToPelX[g_ZscanToRaster[AbsPartIdx]] >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
-    Ipp32s YInc = g_RasterToPelY[g_ZscanToRaster[AbsPartIdx]] >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
-    Ipp32s PartSize = pCU->m_WidthArray[AbsPartIdx] >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
+    Ipp32s XInc = g_RasterToPelX[g_ZscanToRaster[AbsPartIdx]] >> m_pSeqParamSet->log2_min_transform_block_size;
+    Ipp32s YInc = g_RasterToPelY[g_ZscanToRaster[AbsPartIdx]] >> m_pSeqParamSet->log2_min_transform_block_size;
+    Ipp32s PartSize = pCU->m_WidthArray[AbsPartIdx] >> m_pSeqParamSet->log2_min_transform_block_size;
 
     H265FrameHLDNeighborsInfo info;
     info.data = 0;
@@ -2894,8 +2894,8 @@ Ipp32u H265SegmentDecoder::getCtxSplitFlag(H265CodingUnit *, Ipp32u AbsPartIdx, 
 
     uiCtx = 0;
 
-    Ipp32s XInc = g_RasterToPelX[g_ZscanToRaster[AbsPartIdx]] >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
-    Ipp32s YInc = g_RasterToPelY[g_ZscanToRaster[AbsPartIdx]] >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
+    Ipp32s XInc = g_RasterToPelX[g_ZscanToRaster[AbsPartIdx]] >> m_pSeqParamSet->log2_min_transform_block_size;
+    Ipp32s YInc = g_RasterToPelY[g_ZscanToRaster[AbsPartIdx]] >> m_pSeqParamSet->log2_min_transform_block_size;
 
     if ((m_CurrCTBFlags[YInc * m_CurrCTBStride + XInc - 1].members.Depth > Depth))
     {
@@ -2914,8 +2914,8 @@ Ipp32u H265SegmentDecoder::getCtxSkipFlag(Ipp32u AbsPartIdx)
 {
     Ipp32u uiCtx = 0;
 
-    Ipp32s XInc = g_RasterToPelX[g_ZscanToRaster[AbsPartIdx]] >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
-    Ipp32s YInc = g_RasterToPelY[g_ZscanToRaster[AbsPartIdx]] >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
+    Ipp32s XInc = g_RasterToPelX[g_ZscanToRaster[AbsPartIdx]] >> m_pSeqParamSet->log2_min_transform_block_size;
+    Ipp32s YInc = g_RasterToPelY[g_ZscanToRaster[AbsPartIdx]] >> m_pSeqParamSet->log2_min_transform_block_size;
 
     if (m_CurrCTBFlags[YInc * m_CurrCTBStride + XInc - 1].members.SkipFlag)
     {
@@ -2934,8 +2934,8 @@ void H265SegmentDecoder::getIntraDirLumaPredictor(H265CodingUnit *pCU, Ipp32u Ab
 {
     Ipp32s LeftIntraDir = DC_IDX;
     Ipp32s AboveIntraDir = DC_IDX;
-    Ipp32s XInc = g_RasterToPelX[g_ZscanToRaster[AbsPartIdx]] >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
-    Ipp32s YInc = g_RasterToPelY[g_ZscanToRaster[AbsPartIdx]] >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
+    Ipp32s XInc = g_RasterToPelX[g_ZscanToRaster[AbsPartIdx]] >> m_pSeqParamSet->log2_min_transform_block_size;
+    Ipp32s YInc = g_RasterToPelY[g_ZscanToRaster[AbsPartIdx]] >> m_pSeqParamSet->log2_min_transform_block_size;
 
     Ipp32s PartOffsetY = (m_pSeqParamSet->NumPartitionsInCU >> (pCU->m_DepthArray[AbsPartIdx] << 1)) >> 1;
     Ipp32s PartOffsetX = PartOffsetY >> 1;
@@ -3065,16 +3065,16 @@ void H265SegmentDecoder::getInterMergeCandidates(H265CodingUnit *pCU, Ipp32u Abs
     Ipp32u YInc = g_RasterToPelY[g_ZscanToRaster[AbsPartIdx]];
     Ipp32s LPelX = pCU->m_CUPelX + XInc;
     Ipp32s TPelY = pCU->m_CUPelY + YInc;
-    XInc >>= m_pSeqParamSet->getQuadtreeTULog2MinSize();
-    YInc >>= m_pSeqParamSet->getQuadtreeTULog2MinSize();
-    Ipp32s PartX = LPelX >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
-    Ipp32s PartY = TPelY >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
+    XInc >>= m_pSeqParamSet->log2_min_transform_block_size;
+    YInc >>= m_pSeqParamSet->log2_min_transform_block_size;
+    Ipp32s PartX = LPelX >> m_pSeqParamSet->log2_min_transform_block_size;
+    Ipp32s PartY = TPelY >> m_pSeqParamSet->log2_min_transform_block_size;
     Ipp32s TUPartNumberInCTB = m_CurrCTBStride * YInc + XInc;
 
     Ipp32s nPSW, nPSH;
     pCU->getPartSize(AbsPartIdx, PartIdx, nPSW, nPSH);
-    Ipp32s PartWidth = nPSW >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
-    Ipp32s PartHeight = nPSH >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
+    Ipp32s PartWidth = nPSW >> m_pSeqParamSet->log2_min_transform_block_size;
+    Ipp32s PartHeight = nPSH >> m_pSeqParamSet->log2_min_transform_block_size;
     EnumPartSize CurPS = (EnumPartSize)pCU->m_PartSizeArray[AbsPartIdx];
 
     Ipp32s Count = 0;
@@ -3162,8 +3162,8 @@ void H265SegmentDecoder::getInterMergeCandidates(H265CodingUnit *pCU, Ipp32u Abs
         bool ExistMV = false;
         bool checkBottomRight = true;
 
-        if ((bottomRightPartX << m_pSeqParamSet->getQuadtreeTULog2MinSize()) >= m_pSeqParamSet->pic_width_in_luma_samples ||
-            (bottomRightPartY << m_pSeqParamSet->getQuadtreeTULog2MinSize()) >= m_pSeqParamSet->pic_height_in_luma_samples ||
+        if ((bottomRightPartX << m_pSeqParamSet->log2_min_transform_block_size) >= m_pSeqParamSet->pic_width_in_luma_samples ||
+            (bottomRightPartY << m_pSeqParamSet->log2_min_transform_block_size) >= m_pSeqParamSet->pic_height_in_luma_samples ||
             YInc + PartHeight >= m_pCurrentFrame->getNumPartInCUSize()) // is not at the last column of LCU But is last row of LCU
         {
             checkBottomRight = false;
@@ -3300,16 +3300,16 @@ void H265SegmentDecoder::fillMVPCand(H265CodingUnit *pCU, Ipp32u AbsPartIdx, Ipp
     Ipp32s YInc = g_RasterToPelY[g_ZscanToRaster[AbsPartIdx]];
     Ipp32s LPelX = pCU->m_CUPelX + XInc;
     Ipp32s TPelY = pCU->m_CUPelY + YInc;
-    XInc >>= m_pSeqParamSet->getQuadtreeTULog2MinSize();
-    YInc >>= m_pSeqParamSet->getQuadtreeTULog2MinSize();
-    Ipp32s PartX = LPelX >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
-    Ipp32s PartY = TPelY >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
+    XInc >>= m_pSeqParamSet->log2_min_transform_block_size;
+    YInc >>= m_pSeqParamSet->log2_min_transform_block_size;
+    Ipp32s PartX = LPelX >> m_pSeqParamSet->log2_min_transform_block_size;
+    Ipp32s PartY = TPelY >> m_pSeqParamSet->log2_min_transform_block_size;
     Ipp32s TUPartNumberInCTB = m_CurrCTBStride * YInc + XInc;
 
     Ipp32s nPSW, nPSH;
     pCU->getPartSize(AbsPartIdx, PartIdx, nPSW, nPSH);
-    Ipp32u PartWidth = nPSW >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
-    Ipp32u PartHeight = nPSH >> m_pSeqParamSet->getQuadtreeTULog2MinSize();
+    Ipp32u PartWidth = nPSW >> m_pSeqParamSet->log2_min_transform_block_size;
+    Ipp32u PartHeight = nPSH >> m_pSeqParamSet->log2_min_transform_block_size;
 
     // Left predictor search
     Ipp32s leftAddr = TUPartNumberInCTB + m_CurrCTBStride * (PartHeight - 1) - 1;
@@ -3384,8 +3384,8 @@ void H265SegmentDecoder::fillMVPCand(H265CodingUnit *pCU, Ipp32u AbsPartIdx, Ipp
         H265MotionVector ColMv;
         bool checkBottomRight = true;
 
-        if ((bottomRightPartX << m_pSeqParamSet->getQuadtreeTULog2MinSize()) >= m_pSeqParamSet->pic_width_in_luma_samples ||
-            (bottomRightPartY << m_pSeqParamSet->getQuadtreeTULog2MinSize()) >= m_pSeqParamSet->pic_height_in_luma_samples ||
+        if ((bottomRightPartX << m_pSeqParamSet->log2_min_transform_block_size) >= m_pSeqParamSet->pic_width_in_luma_samples ||
+            (bottomRightPartY << m_pSeqParamSet->log2_min_transform_block_size) >= m_pSeqParamSet->pic_height_in_luma_samples ||
             YInc + PartHeight >= m_pCurrentFrame->getNumPartInCUSize()) // is not at the last column of LCU But is last row of LCU
         {
             checkBottomRight = false;
@@ -3510,7 +3510,7 @@ bool H265SegmentDecoder::GetColMVP(EnumRefPicList refPicListIdx, Ipp32u PartX, I
 {
     bool isCurrRefLongTerm, isColRefLongTerm;
 
-    Ipp32u Log2MinTUSize = m_pSeqParamSet->getQuadtreeTULog2MinSize();
+    Ipp32u Log2MinTUSize = m_pSeqParamSet->log2_min_transform_block_size;
 
     /* MV compression */
     if (Log2MinTUSize < 4)
@@ -3676,7 +3676,7 @@ Ipp32s H265SegmentDecoder::isIntraAboveRightAvailableOtherCTB(Ipp32s PartX, Ipp3
     {
         for (Ipp32s i = 0; i < NumUnitsInCU; i++)
         {
-            if ((PartX << m_pSeqParamSet->getQuadtreeTULog2MinSize()) < m_pSeqParamSet->pic_width_in_luma_samples &&
+            if ((PartX << m_pSeqParamSet->log2_min_transform_block_size) < m_pSeqParamSet->pic_width_in_luma_samples &&
                 m_TopNgbrs[PartX].members.IsAvailable &&
                 m_TopNgbrs[PartX].members.IsIntra)
             {
@@ -3696,7 +3696,7 @@ Ipp32s H265SegmentDecoder::isIntraAboveRightAvailableOtherCTB(Ipp32s PartX, Ipp3
     {
         for (Ipp32s i = 0; i < NumUnitsInCU; i++)
         {
-            if ((PartX << m_pSeqParamSet->getQuadtreeTULog2MinSize()) < m_pSeqParamSet->pic_width_in_luma_samples &&
+            if ((PartX << m_pSeqParamSet->log2_min_transform_block_size) < m_pSeqParamSet->pic_width_in_luma_samples &&
                 m_TopNgbrs[PartX].members.IsAvailable)
             {
                 NumIntra++;
@@ -3726,7 +3726,7 @@ Ipp32s H265SegmentDecoder::isIntraAboveRightAvailable(Ipp32s TUPartNumberInCTB, 
     {
         for (Ipp32s i = 0; i < NumUnitsInCU; i++)
         {
-            if ((PartX << m_pSeqParamSet->getQuadtreeTULog2MinSize()) < m_pSeqParamSet->pic_width_in_luma_samples &&
+            if ((PartX << m_pSeqParamSet->log2_min_transform_block_size) < m_pSeqParamSet->pic_width_in_luma_samples &&
                 XInc < m_pCurrentFrame->getNumPartInCUSize() &&
                 m_CurrCTBFlags[TUPartNumberInCTB].members.IsAvailable &&
                 m_CurrCTBFlags[TUPartNumberInCTB].members.IsIntra)
@@ -3749,7 +3749,7 @@ Ipp32s H265SegmentDecoder::isIntraAboveRightAvailable(Ipp32s TUPartNumberInCTB, 
     {
         for (Ipp32s i = 0; i < NumUnitsInCU; i++)
         {
-            if ((PartX << m_pSeqParamSet->getQuadtreeTULog2MinSize()) < m_pSeqParamSet->pic_width_in_luma_samples &&
+            if ((PartX << m_pSeqParamSet->log2_min_transform_block_size) < m_pSeqParamSet->pic_width_in_luma_samples &&
                 XInc < m_pCurrentFrame->getNumPartInCUSize() &&
                 m_CurrCTBFlags[TUPartNumberInCTB].members.IsAvailable)
             {
@@ -3782,7 +3782,7 @@ Ipp32s H265SegmentDecoder::isIntraBelowLeftAvailable(Ipp32s TUPartNumberInCTB, I
     {
         for (Ipp32s i = 0; i < NumUnitsInCU; i++)
         {
-            if ((PartY << m_pSeqParamSet->getQuadtreeTULog2MinSize()) < m_pSeqParamSet->pic_height_in_luma_samples &&
+            if ((PartY << m_pSeqParamSet->log2_min_transform_block_size) < m_pSeqParamSet->pic_height_in_luma_samples &&
                 YInc < m_pCurrentFrame->getNumPartInCUSize() &&
                 m_CurrCTBFlags[TUPartNumberInCTB].members.IsAvailable &&
                 m_CurrCTBFlags[TUPartNumberInCTB].members.IsIntra)
@@ -3805,7 +3805,7 @@ Ipp32s H265SegmentDecoder::isIntraBelowLeftAvailable(Ipp32s TUPartNumberInCTB, I
     {
         for (Ipp32s i = 0; i < NumUnitsInCU; i++)
         {
-            if ((PartY << m_pSeqParamSet->getQuadtreeTULog2MinSize()) < m_pSeqParamSet->pic_height_in_luma_samples &&
+            if ((PartY << m_pSeqParamSet->log2_min_transform_block_size) < m_pSeqParamSet->pic_height_in_luma_samples &&
                 YInc < m_pCurrentFrame->getNumPartInCUSize() &&
                 m_CurrCTBFlags[TUPartNumberInCTB].members.IsAvailable)
             {
