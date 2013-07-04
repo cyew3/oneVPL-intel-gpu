@@ -148,6 +148,10 @@ mfxStatus MFXAudioENCODE_Init(mfxSession session, mfxAudioParam *par)
             session->m_pAudioENCODE.reset(CreateAudioENCODESpecificClass(par->mfx.CodecId, session->m_pAudioCORE.get(), session));
         }
 
+        if (0 == session->m_pAudioENCODE.get()) {
+            return MFX_ERR_INVALID_AUDIO_PARAM;
+        }
+
         mfxRes = session->m_pAudioENCODE->Init(par);
 
     }
@@ -163,7 +167,7 @@ mfxStatus MFXAudioENCODE_Init(mfxSession session, mfxAudioParam *par)
 
         if (0 == session->m_pAudioENCODE.get())
         {
-            mfxRes = MFX_ERR_INVALID_VIDEO_PARAM;
+            mfxRes = MFX_ERR_INVALID_AUDIO_PARAM;
         }
 
         if (0 == par)
