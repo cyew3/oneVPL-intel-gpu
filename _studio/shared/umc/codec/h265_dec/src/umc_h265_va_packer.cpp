@@ -327,8 +327,8 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->pcm_sample_bit_depth_chroma_minus1           = (UCHAR)(pSeqParamSet->getPCMBitDepthChroma() - 1);
     pPicParam->log2_min_luma_coding_block_size_minus3       = (UCHAR)(pSeqParamSet->getLog2MinCUSize() - 3);
     pPicParam->log2_diff_max_min_luma_coding_block_size     = (UCHAR)(pSeqParamSet->getLog2CtbSize() - pSeqParamSet->getLog2MinCUSize());
-    pPicParam->log2_min_transform_block_size_minus2         = (UCHAR)(pSeqParamSet->getQuadtreeTULog2MinSize() - 2);
-    pPicParam->log2_diff_max_min_transform_block_size       = (UCHAR)(pSeqParamSet->getQuadtreeTULog2MaxSize() - pSeqParamSet->getQuadtreeTULog2MinSize());
+    pPicParam->log2_min_transform_block_size_minus2         = (UCHAR)(pSeqParamSet->log2_min_transform_block_size - 2);
+    pPicParam->log2_diff_max_min_transform_block_size       = (UCHAR)(pSeqParamSet->log2_max_transform_block_size - pSeqParamSet->log2_min_transform_block_size);
     pPicParam->log2_min_pcm_luma_coding_block_size_minus3   = (UCHAR)(pSeqParamSet->getPCMLog2MinSize() - 3);
     pPicParam->log2_diff_max_min_pcm_luma_coding_block_size = (UCHAR)(pSeqParamSet->getPCMLog2MaxSize() - pSeqParamSet->getPCMLog2MinSize());
     pPicParam->max_transform_hierarchy_depth_intra          = (UCHAR)pSeqParamSet->getQuadtreeTUMaxDepthIntra() - 1;
@@ -484,8 +484,8 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->pcm_bit_depth_chroma                 = (UCHAR)pSeqParamSet->getPCMBitDepthChroma();
     pPicParam->log2_min_coding_block_size           = (UCHAR)pSeqParamSet->getLog2MinCUSize();
     pPicParam->log2_max_coding_block_size           = (UCHAR)pSeqParamSet->getLog2CtbSize();
-    pPicParam->log2_min_transform_block_size        = (UCHAR)pSeqParamSet->getQuadtreeTULog2MinSize();
-    pPicParam->log2_max_transform_block_size        = (UCHAR)pSeqParamSet->getQuadtreeTULog2MaxSize();
+    pPicParam->log2_min_transform_block_size        = (UCHAR)pSeqParamSet->log2_min_transform_block_size;
+    pPicParam->log2_max_transform_block_size        = (UCHAR)pSeqParamSet->log2_max_transform_block_size;
     pPicParam->log2_min_PCM_cb_size                 = (UCHAR)pSeqParamSet->getPCMLog2MinSize();
     pPicParam->log2_max_PCM_cb_size                 = (UCHAR)pSeqParamSet->getPCMLog2MaxSize();
     pPicParam->max_transform_hierarchy_depth_intra  = (UCHAR)pSeqParamSet->getQuadtreeTUMaxDepthIntra() - 1;
