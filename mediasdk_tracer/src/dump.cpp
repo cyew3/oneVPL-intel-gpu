@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2009-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
 
 File Name: dump.cpp
 
@@ -1000,7 +1000,7 @@ void dump_format_wprefix(FILE *fd, int level, int nPrefix, TCHAR *format,...)
     }
 }
 
-void DispatcherLogRecorder::Write(int level, int /*opcode*/, char * msg, va_list argptr)
+void DispatcherLogRecorder::Write(int level, int /*opcode*/, const char * msg, va_list argptr)
 {
     if (NULL == msg || level == DL_LOADED_LIBRARY)
         return;

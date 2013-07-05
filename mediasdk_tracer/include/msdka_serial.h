@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2009-2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
 
 File Name: msdka_serial.h
 
@@ -23,7 +23,7 @@ class DispatcherLogRecorder : public IMsgHandler
     static DispatcherLogRecorder m_Instance;
 public:
     static DispatcherLogRecorder& get(){return m_Instance;}
-    virtual void Write(int level, int opcode, char * msg, va_list argptr);
+    virtual void Write(int level, int opcode, const char * msg, va_list argptr);
 };
 
 
