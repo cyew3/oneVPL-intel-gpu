@@ -127,7 +127,6 @@ mfxStatus CommonCORE::AllocFrames(mfxFrameAllocRequest *request,
 
     if (IsOpaqSurfacesAlreadyMapped(pOpaqueSurface, NumOpaqueSurface, response))
     {
-        m_RespMidQ.insert(pair<mfxMemId*, mfxMemId*>(response->mids, response->mids));
         return MFX_ERR_NONE;
     }
 
