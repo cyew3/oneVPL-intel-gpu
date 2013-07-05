@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2012 - 2013 Intel Corporation. All Rights Reserved.
 
 File Name: shared_mem.cpp
 
@@ -58,7 +58,7 @@ namespace
         for (int nRegKey = 0; !g_bQuit;)
         {
             HANDLE hMetroProcess = NULL;
-            ProcessListenerInfo pinfo;
+            ProcessListenerInfo pinfo = {0};
             for (; !g_bQuit ; nRegKey++)
             {
                 if(RegEnumKey(key, nRegKey, SubKeyName, sizeof(SubKeyName)) != ERROR_SUCCESS)
@@ -124,21 +124,36 @@ namespace
                 }
                 if (RegQueryValueEx(hSubkey, TEXT("EVTDataReady"), NULL, &dwType, (BYTE*)&numVal, &cbData) != ERROR_SUCCESS)
                 {
+                    CloseHandle(pinfo.BufferReadyEvent);
                     break;
                 }
-                if (numVal > 0xFFFFFFFF) break;
+                if (numVal > 0xFFFFFFFF)
+                {
+                    CloseHandle(pinfo.BufferReadyEvent);
+                    break;
+                }
                 if (!DuplicateHandle(hMetroProcess,(HANDLE)numVal,CurrentProcess,&pinfo.DataReadyEvent,0,false,DUPLICATE_SAME_ACCESS))
                 {
+                    CloseHandle(pinfo.BufferReadyEvent);
                     break;
                 }
                 if (RegQueryValueEx(hSubkey, TEXT("SHMemHDL"), NULL, &dwType, (BYTE*)&numVal, &cbData)!= ERROR_SUCCESS)
                 {
+                    CloseHandle(pinfo.BufferReadyEvent);
+                    CloseHandle(pinfo.DataReadyEvent);
                     break;
                 }
-                if (numVal > 0xFFFFFFFF) break;
+                if (numVal > 0xFFFFFFFF)
+                {
+                    CloseHandle(pinfo.BufferReadyEvent);
+                    CloseHandle(pinfo.DataReadyEvent);
+                    break;
+                }
                 HANDLE BufferMapping;
                 if (!DuplicateHandle(hMetroProcess,(HANDLE)numVal,CurrentProcess,&BufferMapping,0,false,DUPLICATE_SAME_ACCESS))
                 {
+                    CloseHandle(pinfo.BufferReadyEvent);
+                    CloseHandle(pinfo.DataReadyEvent);
                     break;
                 }
             
@@ -204,12 +219,12 @@ void stop_shared_memory_server()
     if (g_RegScannerThread)
     {
         EnterCriticalSection(&g_threadAcc);
-        WaitForSingleObject(g_RegScannerThread, INFINITE);
+        WaitForSingleObject(g_RegScannerThread, 10 * 1000);
         std::list<ProcessListenerInfo>::iterator it;
         for (it = g_ListenedProcIds.begin(); it != g_ListenedProcIds.end(); it++)
         {
             UnmapViewOfFile(it->SharedBuffer);
-            WaitForSingleObject(it->Handle, INFINITE);
+            WaitForSingleObject(it->Handle, 10 * 1000);
             CloseHandle(it->Handle);
         }
         CloseHandle(g_RegScannerThread);

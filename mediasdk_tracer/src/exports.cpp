@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2009-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
 
 File Name: exports.cpp
 
@@ -262,7 +262,7 @@ SDK_ANALYZER_EXPORT(UINT) install(TCHAR *installDir,
                 {
                     //we need to create keys 
                     DWORD dwDisposistion;
-                    if (ERROR_SUCCESS != RegCreateKeyEx(key, reg_path, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &key2, &dwDisposistion))
+                    if (ERROR_SUCCESS != RegCreateKeyEx(key, reg_path, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_QUERY_VALUE | KEY_SET_VALUE, NULL, &key2, &dwDisposistion))
                     {
                         RegCloseKey(key);
                         return 0;
