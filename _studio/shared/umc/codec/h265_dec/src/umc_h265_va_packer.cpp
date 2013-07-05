@@ -331,8 +331,8 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->log2_diff_max_min_transform_block_size       = (UCHAR)(pSeqParamSet->log2_max_transform_block_size - pSeqParamSet->log2_min_transform_block_size);
     pPicParam->log2_min_pcm_luma_coding_block_size_minus3   = (UCHAR)(pSeqParamSet->getPCMLog2MinSize() - 3);
     pPicParam->log2_diff_max_min_pcm_luma_coding_block_size = (UCHAR)(pSeqParamSet->getPCMLog2MaxSize() - pSeqParamSet->getPCMLog2MinSize());
-    pPicParam->max_transform_hierarchy_depth_intra          = (UCHAR)pSeqParamSet->getQuadtreeTUMaxDepthIntra() - 1;
-    pPicParam->max_transform_hierarchy_depth_inter          = (UCHAR)pSeqParamSet->getQuadtreeTUMaxDepthInter() - 1;
+    pPicParam->max_transform_hierarchy_depth_intra          = (UCHAR)pSeqParamSet->max_transform_hierarchy_depth_intra - 1;
+    pPicParam->max_transform_hierarchy_depth_inter          = (UCHAR)pSeqParamSet->max_transform_hierarchy_depth_inter - 1;
     pPicParam->init_qp_minus26                              = (CHAR)pPicParamSet->getPicInitQP() - 26;
     pPicParam->diff_cu_qp_delta_depth                       = (UCHAR)(pPicParamSet->getMaxCuDQPDepth());
     pPicParam->pps_cb_qp_offset                             = (CHAR)pPicParamSet->getChromaCbQpOffset();
