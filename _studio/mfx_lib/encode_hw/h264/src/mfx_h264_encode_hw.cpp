@@ -1612,6 +1612,7 @@ mfxStatus ImplementationAvc::EncodeFrameCheck(
             if (sts == MFX_WRN_DEVICE_BUSY || sts < MFX_ERR_NONE)
                 return sts;
 
+            UMC::AutomaticUMCMutex guard(m_listMutex);
             m_listOfPairsForStupidFieldOutputMode.push_back(std::make_pair(bs, 0));
             entryPoints->pParam = &m_listOfPairsForStupidFieldOutputMode.back();
 
@@ -1625,6 +1626,7 @@ mfxStatus ImplementationAvc::EncodeFrameCheck(
 
             *reordered_surface = surface;
 
+            UMC::AutomaticUMCMutex guard(m_listMutex);
             m_listOfPairsForStupidFieldOutputMode.push_back(std::make_pair(bs, 1));
             entryPoints[0].pState               = this;
             entryPoints[0].pParam               = &m_listOfPairsForStupidFieldOutputMode.back();
@@ -1699,6 +1701,7 @@ mfxStatus ImplementationAvc::EncodeFrameCheckNormalWay(
         if (ctrl == 0) 
             ctrl = &defaultCtrl;
 
+        UMC::AutomaticUMCMutex guard(m_listMutex);
         m_free.front().m_yuv  = surface;
         m_free.front().m_ctrl = *ctrl;
         m_free.front().m_type = ExtendFrameType(ctrl->FrameType);

@@ -2423,6 +2423,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         Zero(par.calcParam.scale);
         Zero(par.calcParam.tid);
         par.calcParam.numTemporalLayer = 0;
+        par.calcParam.lyncMode = 0;
     }
 
     if (par.calcParam.lyncMode && par.mfx.GopRefDist > 1)
