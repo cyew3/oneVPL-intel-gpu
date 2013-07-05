@@ -44,7 +44,7 @@ public:
     Ipp8u    m_isBRef;
     Ipp8u    m_isMarked;
 
-    H265Frame::H265Frame() {
+    H265Frame() {
         m_pPreviousFrame = m_pFutureFrame = NULL;
         mem = NULL;
         y = u = v = uv = NULL;

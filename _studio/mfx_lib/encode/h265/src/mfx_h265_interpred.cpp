@@ -149,8 +149,8 @@ void H265CU::clipMV(H265MV& rcMv)
     Ipp32s VerMax = (par->Height + offset - ctb_pely - 1) << MvShift;
     Ipp32s VerMin = ( - (Ipp32s) par->MaxCUSize - offset - (Ipp32s) ctb_pely + 1) << MvShift;
 
-    rcMv.mvx = (Ipp16s) min(HorMax, max(HorMin, rcMv.mvx));
-    rcMv.mvy = (Ipp16s) min(VerMax, max(VerMin, rcMv.mvy));
+    rcMv.mvx = (Ipp16s) IPP_MIN(HorMax, IPP_MAX(HorMin, rcMv.mvx));
+    rcMv.mvy = (Ipp16s) IPP_MIN(VerMax, IPP_MAX(VerMin, rcMv.mvy));
 }
 
 const Ipp16s g_lumaInterpolateFilter[4][8] =

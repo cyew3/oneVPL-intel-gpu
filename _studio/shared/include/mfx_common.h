@@ -188,13 +188,13 @@
         #undef MFX_ENABLE_VP8_VIDEO_DECODE
         #undef MFX_ENABLE_VP8_VIDEO_ENCODE
 
-        #undef MFX_ENABLE_H265_VIDEO_ENCODE
+        //#undef MFX_ENABLE_H265_VIDEO_ENCODE
     // SW limitation
     #else // #if defined (MFX_VA)
         #undef MFX_ENABLE_VP8_VIDEO_DECODE
         #undef MFX_ENABLE_VP8_VIDEO_ENCODE
 
-        #undef MFX_ENABLE_H265_VIDEO_ENCODE
+        //#undef MFX_ENABLE_H265_VIDEO_ENCODE
     #endif // #if defined (MFX_VA)
 #endif // #if defined(LINUX32) || defined(LINUX64)
 

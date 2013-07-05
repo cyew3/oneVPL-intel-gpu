@@ -862,12 +862,15 @@ void H265CU::h265_code_coeff_NxN(H265Bs *bs, H265CU* pCU, CoeffsType* coeffs, Ip
     }
 }
 
+#if 0
+// NOTE: ALF_CU_FLAG_HEVC is not defined at the moment
 template <class H265Bs>
 static inline
 void h265_code_alf_ctrl_flag(H265Bs *bs, Ipp32u code)
 {
     bs->EncodeSingleBin_CABAC(CTX(bs,ALF_CU_FLAG_HEVC), code);
 }
+#endif
 
 template <class H265Bs>
 static inline

@@ -15,7 +15,7 @@
 #define ALIGN_VALUE 16
 // template to align a pointer
 template<class T> inline
-T align_pointer(void *pv, size_t lAlignValue = DEFAULT_ALIGN_VALUE)
+T align_pointer(void *pv, size_t lAlignValue = UMC::DEFAULT_ALIGN_VALUE)
 {
     // some compilers complain to conversion to/from
     // pointer types from/to integral types.

@@ -3,7 +3,7 @@ list( APPEND decoders
   )
 
 list( APPEND encoders
-  h264 mpeg2 vc1 mjpeg mvc svc
+  h265 h264 mpeg2 vc1 mjpeg mvc svc
   )
 
 foreach( dec ${decoders} )

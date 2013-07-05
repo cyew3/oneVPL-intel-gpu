@@ -10,6 +10,8 @@
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
+#include <limits.h> /* for INT_MAX on Linux/Android */
+
 #include "mfx_h265_defs.h"
 
 static Ipp32s GetLumaOffset(H265VideoParam *par, Ipp32s abs_part_idx, Ipp32s pitch) {
