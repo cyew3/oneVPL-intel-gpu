@@ -1701,7 +1701,7 @@ mfxStatus ImplementationAvc::EncodeFrameCheckNormalWay(
         if (ctrl == 0) 
             ctrl = &defaultCtrl;
 
-        UMC::AutomaticUMCMutex guard(m_listMutex);
+        //UMC::AutomaticUMCMutex guard(m_listMutex);
         m_free.front().m_yuv  = surface;
         m_free.front().m_ctrl = *ctrl;
         m_free.front().m_type = ExtendFrameType(ctrl->FrameType);
