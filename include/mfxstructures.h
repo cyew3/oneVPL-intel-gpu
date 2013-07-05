@@ -970,7 +970,7 @@ typedef struct {
 
         mfxI16  Priority;
         mfxU16  reserved2[7];
-    } ROI[16];
+    } ROI[256];
 } mfxExtEncoderROI;
 
 #ifdef __cplusplus
