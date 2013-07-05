@@ -2795,14 +2795,17 @@ void H265SegmentDecoder::UpdatePUInfo(H265CodingUnit *pCU, Ipp32u PartX, Ipp32u 
             {
                 pCU->setAllColMV(MVi.mvinfo[RefListIdx].MV, RefListIdx, PartX, PartY, PartWidth, PartHeight);
 
-                if (m_pRefPicList[RefListIdx][MVi.mvinfo[RefListIdx].RefIdx].isLongReference)
+                H265DecoderRefPicList::ReferenceInformation &refInfo = m_pRefPicList[RefListIdx][MVi.mvinfo[RefListIdx].RefIdx];
+                if (refInfo.isLongReference)
+                {
+                    PUi.refFrame[RefListIdx] = refInfo.refFrame;
                     pCU->setAllColFlags(COL_TU_LT_INTER, RefListIdx, PartX, PartY, PartWidth, PartHeight);
+                }
                 else
                 {
-                    H265DecoderFrame *refFrame = m_pRefPicList[RefListIdx][MVi.mvinfo[RefListIdx].RefIdx].refFrame;
-                    Ipp32s POCDelta = m_pCurrentFrame->m_PicOrderCnt - refFrame->m_PicOrderCnt;
+                    Ipp32s POCDelta = m_pCurrentFrame->m_PicOrderCnt - refInfo.refFrame->m_PicOrderCnt;
 
-                    PUi.refFrame[RefListIdx] = refFrame;
+                    PUi.refFrame[RefListIdx] = refInfo.refFrame;
                     pCU->setAllColPOCDelta(POCDelta, RefListIdx, PartX, PartY, PartWidth, PartHeight);
                     pCU->setAllColFlags(COL_TU_ST_INTER, RefListIdx, PartX, PartY, PartWidth, PartHeight);
                 }

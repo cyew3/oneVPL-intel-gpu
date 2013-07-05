@@ -1442,6 +1442,9 @@ bool TaskBrokerTwoThread_H265::GetNextTaskManySlices(H265DecoderFrameInfo * info
 
     if (info->HasDependentSliceSegments())
     {
+        if (pTask->m_iThreadNumber)
+            return false;
+
         return TaskBrokerSingleThread_H265::GetNextTaskInternal(pTask);
     }
 
