@@ -50,21 +50,28 @@ typedef IDirect3DSurface9*              _mfxPlatformVideoSurface;
 #define D3DDDIFORMAT        D3DFORMAT
 #endif
 
-typedef int           BOOL;
-typedef char          CHAR;
-typedef unsigned char BYTE;
-typedef short         SHORT;
-typedef int           INT;
-typedef long          LONG;
+typedef int             BOOL;
+typedef char            CHAR;
+typedef unsigned char   BYTE;
+typedef short           SHORT;
+typedef int             INT;
+
 
 typedef unsigned char  UCHAR;
 typedef unsigned short USHORT;
 typedef unsigned int   UINT;
-typedef unsigned long  ULONG;
+
+#if defined(_WIN32) || defined(_WIN64)
+typedef long            LONG;
+typedef unsigned long   ULONG;
+typedef unsigned long   DWORD;
+#else
+typedef int            LONG;  // should be 32 bit to align with Windows
+typedef unsigned int   ULONG;
+typedef unsigned int   DWORD;
+#endif
 
 typedef unsigned long long UINT64;
-
-typedef unsigned int       DWORD;
 
 #define FALSE               0
 #define TRUE                1

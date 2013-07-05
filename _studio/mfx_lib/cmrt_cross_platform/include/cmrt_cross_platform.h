@@ -43,6 +43,8 @@ typedef unsigned int VADisplay;
 #endif
 
 #ifdef __GNUC__
+#define LONG INCORRECT_64BIT_LONG
+#define ULONG INCORRECT_64BIT_ULONG
 #include "cm_rt_linux.h"
 #else
 #include "cm_rt_win.h"  
@@ -1339,3 +1341,9 @@ int ReadProgram(CmDevice * device, CmProgram *& program, const unsigned char * b
 int CreateKernel(CmDevice * device, CmProgram * program, const char * kernelName, const void * fncPnt, CmKernel *& kernel, const char * options = NULL);
 
 #pragma warning(pop)
+
+#ifdef __GNUC__
+#undef LONG
+#undef ULONG
+#endif
+
