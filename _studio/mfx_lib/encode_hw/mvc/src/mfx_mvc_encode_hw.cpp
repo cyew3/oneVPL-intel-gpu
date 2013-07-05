@@ -2713,6 +2713,16 @@ void ImplementationMvc::PatchTask(MvcTask const & mvcTask, DdiTask & curTask, mf
                 {
                     DdiTask const* pBaseViewTask = mvcTask[0];
 
+                    // tried to copy via FastCopy. It doesn't work as well ass lock + memcpy
+                    /*mfxFrameSurface1 src = { 0, };
+                    mfxFrameSurface1 dst = { 0, };
+
+                    src.Info = dst.Info = m_video.mfx.FrameInfo;
+                    src.Data.MemId = m_recon[0].mids[pBaseViewTask->m_idxRecon];
+                    dst.Data.MemId = m_recon[1].mids[newDpbFrame.m_frameIdx];
+
+                    m_core->DoFastCopyWrapper(&dst, MFX_MEMTYPE_D3D_INT, &src, MFX_MEMTYPE_D3D_INT);*/
+
                     // lock base view recon
                     FrameLocker lockSrc(
                         m_core,
@@ -2732,47 +2742,48 @@ void ImplementationMvc::PatchTask(MvcTask const & mvcTask, DdiTask & curTask, mf
                     memcpy(distD3DBits.UV, sourceD3DBits.UV, lumaSize / 2);
                 }
 
+                // workaround for DX11: copy from D3D surface to D3D surface doesn't work w/o repeated lock/unlock
+                // begin to work after copying of DEFAULT surface to STAGING during repeated lock
+                if (curTask.m_frameOrder && m_core->GetVAType() == MFX_HW_D3D11)
+                {
+                    FrameLocker lockDst(
+                        m_core,
+                        distD3DBits,
+                        m_recon[1].mids[newDpbFrame.m_frameIdx]);
 
-                // test that copied!!!!!!!!!!!!
-                //if (/*curTask.m_frameOrder == 0 &&*/ curDpb.Size())
-                //{
-                //    mfxFrameData distD3DBits = { 0, };
-                //    FrameLocker lockDst(
-                //        m_core,
-                //        distD3DBits,
-                //        m_recon[1].mids[curDpb[curTask.m_interViewReconIdx].m_frameIdx]); // no need for offset since 2 encoders are in action
-
-                //    char fileName[100];
-                //    sprintf(fileName, "recon_%d.yuv", curTask.m_frameOrder);
-
-                //    FILE * file = fopen(fileName, "w + b");
-                //    mfxI16 i, j;
-                //    mfxU8 buf[2048];
-                //    mfxI16 W = m_video.mfx.FrameInfo.Width;
-                //    mfxI16 H = m_video.mfx.FrameInfo.Height;
-                //    mfxU8 * p = distD3DBits.Y;
-                //    for (i = 0; i < H; i++) {
-                //        fwrite(p, 1, W, file);
-                //        p += distD3DBits.Pitch;
-                //    }
-                //    p = distD3DBits.U;
-                //    for (i = 0; i < H >> 1; i++) {
-                //        for (j = 0; j < W >> 1; j++) {
-                //            buf[j] = p[2*j];
-                //        }
-                //        fwrite(buf, 1, W >> 1, file);
-                //        p += distD3DBits.Pitch;
-                //    }
-                //    p = distD3DBits.V;
-                //    for (i = 0; i < H >> 1; i++) {
-                //        for (j = 0; j < W >> 1; j++) {
-                //            buf[j] = p[2*j];
-                //        }
-                //        fwrite(buf, 1, W >> 1, file);
-                //        p += distD3DBits.Pitch;
-                //    }
-                //    fclose(file);
-                //}
+#if 0 // dump copied frame
+                    char fileName[100];
+                    sprintf(fileName, "recon_%d.yuv", curTask.m_frameOrder);
+                
+                    FILE * file = fopen(fileName, "w + b");
+                    mfxI16 i, j;
+                    mfxU8 buf[2048];
+                    mfxI16 W = m_video.mfx.FrameInfo.Width;
+                    mfxI16 H = m_video.mfx.FrameInfo.Height;
+                    mfxU8 * p = distD3DBits.Y;
+                    for (i = 0; i < H; i++) {
+                        fwrite(p, 1, W, file);
+                        p += distD3DBits.Pitch;
+                    }
+                    p = distD3DBits.U;
+                    for (i = 0; i < H >> 1; i++) {
+                        for (j = 0; j < W >> 1; j++) {
+                            buf[j] = p[2*j];
+                        }
+                        fwrite(buf, 1, W >> 1, file);
+                        p += distD3DBits.Pitch;
+                    }
+                    p = distD3DBits.V;
+                    for (i = 0; i < H >> 1; i++) {
+                        for (j = 0; j < W >> 1; j++) {
+                            buf[j] = p[2*j];
+                        }
+                        fwrite(buf, 1, W >> 1, file);
+                        p += distD3DBits.Pitch;
+                    }
+                    fclose(file);
+#endif // dump copied frame
+                }
 
 #else // MVC_ADD_REF
                 curTask.m_dpb[0].Resize(0);

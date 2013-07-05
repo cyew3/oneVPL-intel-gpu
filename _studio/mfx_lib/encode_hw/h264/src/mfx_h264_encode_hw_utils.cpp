@@ -504,6 +504,17 @@ namespace MfxHwH264Encode
 /////////////////////////////////////////////////////////////////////////////////
 // FrameTypeGenerator
 
+FrameTypeGenerator::FrameTypeGenerator()
+    : m_frameOrder (0)    // in display order
+    , m_gopOptFlag (0)
+    , m_gopPicSize (0)
+    , m_gopRefDist (0)
+    , m_refBaseDist(0)   // key picture distance
+    , m_biPyramid  (0)
+    , m_idrDist    (0)
+{
+}
+
 void FrameTypeGenerator::Init(MfxVideoParam const & video)
 {
     m_gopOptFlag = video.mfx.GopOptFlag;
@@ -975,6 +986,31 @@ void TaskManager::SwitchLastB2P()
             latestFrame->m_type.top = latestFrame->m_type.bot = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
         }
     }
+}
+
+DdiTask * TaskManager::SelectNextBFrameFromTail()
+{
+    DdiTask * toEncode = 0;
+
+    for (size_t i = 0; i < m_tasks.size(); i++)
+    {
+        DdiTask & task = m_tasks[i];
+
+        if (task.IsFree() || IsSubmitted(task))
+        {
+            continue;
+        }
+
+        if ((task.GetFrameType() & MFX_FRAMETYPE_B) == 0)
+            return 0;
+
+        if (toEncode == 0 || Less(task.m_frameOrder, toEncode->m_frameOrder))
+        {
+            toEncode = &task;
+        }
+    }
+
+    return toEncode;
 }
 
 DdiTask * TaskManager::FindFrameToEncode()
@@ -1543,8 +1579,13 @@ mfxStatus TaskManager::AssignTask(
         {
             // it is possible that all buffered frames are B frames
             // so that none of them has L1 reference
-            SwitchLastB2P();
-            toEncode = FindFrameToEncode();
+            if (m_video.mfx.GopOptFlag & MFX_GOP_STRICT)
+                toEncode = SelectNextBFrameFromTail(); // find first B frame from buffer and encode it w/o future refs
+            else
+            {
+                SwitchLastB2P();
+                toEncode = FindFrameToEncode();
+            }
         }
 
         if (toEncode == 0)

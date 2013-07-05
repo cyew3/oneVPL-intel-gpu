@@ -543,6 +543,8 @@ namespace MfxHwH264Encode
     class FrameTypeGenerator
     {
     public:
+        FrameTypeGenerator();
+
         void Init(MfxVideoParam const & video);
 
         PairU8 Get() const;
@@ -1012,6 +1014,7 @@ namespace MfxHwH264Encode
         bool IsSubmitted(
             DdiTask const & task) const;
 
+        DdiTask * SelectNextBFrameFromTail();
         DdiTask * FindFrameToEncode();
 
     private:
