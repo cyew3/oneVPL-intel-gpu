@@ -3694,6 +3694,11 @@ mfxStatus MFXVideoENCODEH264::Close()
 
 #ifdef H264_NEW_THREADING
     vm_event_destroy(&m_taskParams.parallel_region_done);
+    if (m_taskParams.threads_data)
+    {
+        H264_Free(m_taskParams.threads_data);
+        m_taskParams.threads_data = 0;
+    }
 #else
 #ifdef VM_SLICE_THREADING_H264
     Ipp32s i;
