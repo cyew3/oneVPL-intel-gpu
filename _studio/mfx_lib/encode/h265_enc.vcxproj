@@ -300,6 +300,7 @@
     <ClCompile Include="h265\src\mfx_h265_interpred.cpp" />
     <ClCompile Include="h265\src\mfx_h265_intrapred.cpp" />
     <ClCompile Include="h265\src\mfx_h265_intrapred_opt.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_itransf_2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_quant.cpp" />
     <ClCompile Include="h265\src\mfx_h265_quant_opt.cpp" />
     <ClCompile Include="h265\src\mfx_h265_quant_rdo.cpp" />

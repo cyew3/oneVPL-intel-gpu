@@ -51,11 +51,13 @@ void h265_dct_inv32x32(CoeffsType *srcdst,
 
 namespace MFX_HEVC_ENCODER
 {
-void inv_4x4_dct_sse2(void *destPtr, const short *__restrict coeff, int destStride, int destSize);
-void inv_4x4_dst_sse2(void *destPtr, const short *__restrict coeff, int destStride, int destSize);
-void inv_8x8_dct_sse2(void *destPtr, const short *__restrict coeff, int destStride, int destSize);
-void inv_16x16_dct_sse2(void *destPtr, const short *__restrict coeff, int destStride, int destSize);
-void DCTInverse32x32_sse(const short* __restrict src, void *destPtr, int destStride, int destSize);
+    void inv_4x4_dct_sse2(void *destPtr, const short *__restrict coeff, int destStride, int destSize);
+    void inv_4x4_dst_sse2(void *destPtr, const short *__restrict coeff, int destStride, int destSize);
+    void inv_8x8_dct_sse2(void *destPtr, const short *__restrict coeff, int destStride, int destSize);
+    void inv_16x16_dct_sse2(void *destPtr, const short *__restrict coeff, int destStride, int destSize);
+    void DCTInverse32x32_sse(const short* __restrict src, void *destPtr, int destStride, int destSize);
+
+    void DCTInverse32x32_sse_update(const short* __restrict src, short* __restrict dst, int dstStride, int shift0);
 };
 
 #endif // __MFX_H265_TRANSFORM_OPT_H__

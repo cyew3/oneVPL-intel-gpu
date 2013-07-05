@@ -81,7 +81,8 @@ void H265CU::TransformInv(Ipp32s offset, Ipp32s width, Ipp8u is_luma, Ipp8u is_i
                 break;
             case 32:
                 //h265_dct_inv32x32(residuals, bit_depth);
-                MFX_HEVC_ENCODER::DCTInverse32x32_sse(residuals, residuals, 32, 2);
+                //MFX_HEVC_ENCODER::DCTInverse32x32_sse(residuals, residuals, 32, 2);
+                MFX_HEVC_ENCODER::DCTInverse32x32_sse_update(residuals, residuals, 32, 2);
                 break;
             }
         }
