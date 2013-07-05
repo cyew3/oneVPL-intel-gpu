@@ -710,9 +710,9 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
 #endif
         pDXVASlice->num_ref_idx_l0_active_minus1    = (UCHAR)pSlice->getNumRefIdx(REF_PIC_LIST_0) - 1;
         pDXVASlice->num_ref_idx_l1_active_minus1    = (UCHAR)pSlice->getNumRefIdx(REF_PIC_LIST_1) - 1;
-        pDXVASlice->slice_qp_delta                  = (CHAR)(pSlice->getSliceQp() - (pPicParamSet->getPicInitQP()));
-        pDXVASlice->slice_cb_qp_offset              = (CHAR)pSlice->getSliceQpDeltaCb();
-        pDXVASlice->slice_cr_qp_offset              = (CHAR)pSlice->getSliceQpDeltaCr();
+        pDXVASlice->slice_qp_delta                  = (CHAR)(pSlice->GetSliceHeader()->SliceQP - (pPicParamSet->getPicInitQP()));
+        pDXVASlice->slice_cb_qp_offset              = (CHAR)pSlice->GetSliceHeader()->slice_cb_qp_offset;
+        pDXVASlice->slice_cr_qp_offset              = (CHAR)pSlice->GetSliceHeader()->slice_cr_qp_offset;
         pDXVASlice->slice_beta_offset_div2          = (CHAR)pPicParamSet->getDeblockingFilterBetaOffsetDiv2();
         pDXVASlice->slice_tc_offset_div2            = (CHAR)pPicParamSet->getDeblockingFilterTcOffsetDiv2();
         pDXVASlice->luma_log2_weight_denom          = (UCHAR)pSlice->getLog2WeightDenomLuma();

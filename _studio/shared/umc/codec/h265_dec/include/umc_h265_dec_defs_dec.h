@@ -1889,8 +1889,9 @@ struct H265SliceHeader
     Ipp32u m_sliceSegmentCurEndCUAddr;
     bool m_DependentSliceSegmentFlag;
     Ipp32s SliceQP;
-    Ipp32s m_slice_qp_delta_cb;
-    Ipp32s m_slice_qp_delta_cr;
+    Ipp32s slice_qp_delta;                       // to calculate default slice QP
+    Ipp32s slice_cb_qp_offset;
+    Ipp32s slice_cr_qp_offset;
     bool m_deblockingFilterDisable;
     bool m_deblockingFilterOverrideFlag;      //< offsets for deblocking filter inherit from PPS
     Ipp32s m_deblockingFilterBetaOffsetDiv2;    //< beta offset for deblocking filter
@@ -1931,7 +1932,6 @@ struct H265SliceHeader
     Ipp8u         long_term_reference_flag;             // How to set MaxLongTermFrameIdx
     Ipp32u        cabac_init_idc;                      // CABAC initialization table index (0..2)
     bool          m_CabacInitFlag;
-    Ipp32s        slice_qp_delta;                       // to calculate default slice QP
     SliceType     slice_type;
     Ipp32s        pic_order_cnt_lsb;                    // picture order count (mod MaxPicOrderCntLsb)
     Ipp32s        num_ref_idx_l0_active;                // num of ref pics in list 0 used to decode the slice,
@@ -1944,9 +1944,6 @@ struct H265SliceHeader
     unsigned    m_uBitsForPOC;
     bool        m_enableTMVPFlag;
     bool        m_LFCrossSliceBoundaryFlag;
-
-    Ipp32s m_SliceQpDeltaCb;
-    Ipp32s m_SliceQpDeltaCr;
 
     wpScalingParam  m_weightPredTable[2][MAX_NUM_REF][3]; // [REF_PIC_LIST_0 or REF_PIC_LIST_1][refIdx][0:Y, 1:U, 2:V]
 

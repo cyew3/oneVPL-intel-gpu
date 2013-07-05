@@ -2620,7 +2620,7 @@ void H265SegmentDecoder::IntraRecChromaBlk(H265CodingUnit* pCU,
     // Cb
     if (chromaUPresent)
     {
-        Ipp32s curChromaQpOffset = pCU->m_SliceHeader->m_PicParamSet->getChromaCbQpOffset() + pCU->m_SliceHeader->m_slice_qp_delta_cb;
+        Ipp32s curChromaQpOffset = pCU->m_SliceHeader->m_PicParamSet->getChromaCbQpOffset() + pCU->m_SliceHeader->slice_cb_qp_offset;
         m_TrQuant->SetQPforQuant(pCU->m_QPArray[AbsPartIdx], TEXT_CHROMA_U, pCU->m_SliceHeader->m_SeqParamSet->m_QPBDOffsetC, curChromaQpOffset);
         Ipp32s scalingListType = (pCU->m_PredModeArray[AbsPartIdx] == MODE_INTRA ? 0 : 3) + g_Table[TEXT_CHROMA_U];
         H265CoeffsPtrCommon pCoeff = pCU->m_TrCoeffCb + (NumCoeffInc * AbsPartIdx);
@@ -2633,7 +2633,7 @@ void H265SegmentDecoder::IntraRecChromaBlk(H265CodingUnit* pCU,
     // Cr
     if (chromaVPresent)
     {
-        Ipp32s curChromaQpOffset = pCU->m_SliceHeader->m_PicParamSet->getChromaCrQpOffset() + pCU->m_SliceHeader->m_slice_qp_delta_cr;
+        Ipp32s curChromaQpOffset = pCU->m_SliceHeader->m_PicParamSet->getChromaCrQpOffset() + pCU->m_SliceHeader->slice_cr_qp_offset;
         m_TrQuant->SetQPforQuant(pCU->m_QPArray[AbsPartIdx], TEXT_CHROMA_V, pCU->m_SliceHeader->m_SeqParamSet->m_QPBDOffsetC, curChromaQpOffset);
         Ipp32s scalingListType = (pCU->m_PredModeArray[AbsPartIdx] == MODE_INTRA ? 0 : 3) + g_Table[TEXT_CHROMA_V];
         H265CoeffsPtrCommon pCoeff = pCU->m_TrCoeffCr + (NumCoeffInc * AbsPartIdx);

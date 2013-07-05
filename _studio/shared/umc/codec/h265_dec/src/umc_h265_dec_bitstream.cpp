@@ -1063,6 +1063,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
     Ipp32u uiCode;
     Ipp32s iCode;
 
+    H265SliceHeader * sliceHdr = rpcSlice->GetSliceHeader();
     rpcSlice->GetSliceHeader()->collocated_from_l0_flag = 1;
 
     VM_ASSERT(pps!=0);
@@ -1472,26 +1473,26 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
         }
 
         READ_SVLC( iCode, "slice_qp_delta" );
-        rpcSlice->setSliceQp (pps->getPicInitQP() + iCode);
+        sliceHdr->SliceQP = pps->getPicInitQP() + iCode;
 
-        VM_ASSERT( rpcSlice->getSliceQp() >= -sps->getQpBDOffsetY() );
-        VM_ASSERT( rpcSlice->getSliceQp() <=  51 );
+        VM_ASSERT( sliceHdr->SliceQP >= -sps->getQpBDOffsetY() );
+        VM_ASSERT( sliceHdr->SliceQP <=  51 );
 
         if (rpcSlice->getPPS()->getSliceChromaQpFlag())
         {
-            READ_SVLC( iCode, "slice_qp_delta_cb" );
-            rpcSlice->setSliceQpDeltaCb( iCode );
-            VM_ASSERT( rpcSlice->getSliceQpDeltaCb() >= -12 );
-            VM_ASSERT( rpcSlice->getSliceQpDeltaCb() <=  12 );
-            VM_ASSERT( (rpcSlice->getPPS()->getChromaCbQpOffset() + rpcSlice->getSliceQpDeltaCb()) >= -12 );
-            VM_ASSERT( (rpcSlice->getPPS()->getChromaCbQpOffset() + rpcSlice->getSliceQpDeltaCb()) <=  12 );
+            READ_SVLC( iCode, "slice_cb_qp_offset" );
+            sliceHdr->slice_cb_qp_offset =  iCode;
+            VM_ASSERT( sliceHdr->slice_cb_qp_offset >= -12 );
+            VM_ASSERT( sliceHdr->slice_cb_qp_offset <=  12 );
+            VM_ASSERT( (rpcSlice->getPPS()->getChromaCbQpOffset() + sliceHdr->slice_cb_qp_offset) >= -12 );
+            VM_ASSERT( (rpcSlice->getPPS()->getChromaCbQpOffset() + sliceHdr->slice_cb_qp_offset) <=  12 );
 
-            READ_SVLC( iCode, "slice_qp_delta_cr" );
-            rpcSlice->setSliceQpDeltaCr( iCode );
-            VM_ASSERT( rpcSlice->getSliceQpDeltaCr() >= -12 );
-            VM_ASSERT( rpcSlice->getSliceQpDeltaCr() <=  12 );
-            VM_ASSERT( (rpcSlice->getPPS()->getChromaCrQpOffset() + rpcSlice->getSliceQpDeltaCr()) >= -12 );
-            VM_ASSERT( (rpcSlice->getPPS()->getChromaCrQpOffset() + rpcSlice->getSliceQpDeltaCr()) <=  12 );
+            READ_SVLC( iCode, "slice_cr_qp_offset" );
+            sliceHdr->slice_cr_qp_offset = iCode;
+            VM_ASSERT( sliceHdr->slice_cr_qp_offset >= -12 );
+            VM_ASSERT( sliceHdr->slice_cr_qp_offset <=  12 );
+            VM_ASSERT( (rpcSlice->getPPS()->getChromaCrQpOffset() + sliceHdr->slice_cr_qp_offset) >= -12 );
+            VM_ASSERT( (rpcSlice->getPPS()->getChromaCrQpOffset() + sliceHdr->slice_cr_qp_offset) <=  12 );
         }
 
         if (rpcSlice->getPPS()->getDeblockingFilterControlPresentFlag())

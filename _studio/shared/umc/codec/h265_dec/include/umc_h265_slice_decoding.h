@@ -373,14 +373,6 @@ public:
     bool getCabacInitFlag() const   { return m_SliceHeader.m_CabacInitFlag; }
     void setCabacInitFlag(bool f)   { m_SliceHeader.m_CabacInitFlag = f; }
 
-    int getSliceQp() const      { return m_SliceHeader.SliceQP; }
-    void setSliceQp(int val)    { m_SliceHeader.SliceQP = val; }
-
-    void setSliceQpDeltaCb   ( Ipp32s i )      { m_SliceHeader.m_SliceQpDeltaCb   = i;      }
-    void setSliceQpDeltaCr   ( Ipp32s i )      { m_SliceHeader.m_SliceQpDeltaCr   = i;      }
-    Ipp32s getSliceQpDeltaCb ()                { return  m_SliceHeader.m_SliceQpDeltaCb;      }
-    Ipp32s getSliceQpDeltaCr ()                { return  m_SliceHeader.m_SliceQpDeltaCr;      }
-
     void setDeblockingFilterDisable( bool b )                { m_SliceHeader.m_deblockingFilterDisable = b;      }
     bool getDeblockingFilterDisable() const    { return m_SliceHeader.m_deblockingFilterDisable; }
     void setDeblockingFilterOverrideFlag( bool b )           { m_SliceHeader.m_deblockingFilterOverrideFlag = b; }

@@ -706,8 +706,8 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
     m_SliceHeader.m_CheckLDC            = slice->m_CheckLDC;
     m_SliceHeader.slice_type            = slice->slice_type;
     m_SliceHeader.slice_qp_delta        = slice->slice_qp_delta;
-    m_SliceHeader.m_slice_qp_delta_cb   = slice->m_slice_qp_delta_cb;
-    m_SliceHeader.m_slice_qp_delta_cr   = slice->m_slice_qp_delta_cr;
+    m_SliceHeader.slice_cb_qp_offset    = slice->slice_cb_qp_offset;
+    m_SliceHeader.slice_cr_qp_offset    = slice->slice_cr_qp_offset;
 
     for (Ipp32s i = 0; i < 2; i++)
     {
