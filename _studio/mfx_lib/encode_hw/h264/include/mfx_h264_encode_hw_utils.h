@@ -1376,7 +1376,8 @@ namespace MfxHwH264Encode
         static mfxStatus Query(
             VideoCORE *     core,
             mfxVideoParam * in,
-            mfxVideoParam * out);
+            mfxVideoParam * out,
+            void          * state = 0);
 
         static mfxStatus QueryIOSurf(
             VideoCORE *            core,
@@ -1501,6 +1502,10 @@ namespace MfxHwH264Encode
             mfxEncodeCtrl**           ctrl,
             mfxFrameSurface1**        surface,
             mfxU16* requiredFrameType);
+
+        mfxStatus ProcessAndCheckNewParameters(
+            MfxVideoParam & newPar,
+            bool & isIdrRequired);
 
         VideoCORE *         m_core;
         CmDevicePtr         m_cmDevice;

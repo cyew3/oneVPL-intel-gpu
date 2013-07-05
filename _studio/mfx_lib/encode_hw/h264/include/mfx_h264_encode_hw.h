@@ -20,7 +20,7 @@
 class MFXHWVideoENCODEH264 : public VideoENCODE
 {
 public:
-    static mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out);
+    static mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, void * state = 0);
     static mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
 
     MFXHWVideoENCODEH264(VideoCORE *core, mfxStatus *sts)

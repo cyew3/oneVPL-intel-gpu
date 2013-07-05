@@ -160,6 +160,9 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtSVCSeqDesc,           MFX_EXTBUFF_SVC_SEQ_DESC             );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtSVCRateControl,       MFX_EXTBUFF_SVC_RATE_CONTROL         );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOption2,        MFX_EXTBUFF_CODING_OPTION2           );
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtAVCEncodedFrameInfo,  MFX_EXTBUFF_ENCODED_FRAME_INFO       );
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtEncoderResetOption,   MFX_EXTBUFF_ENCODER_RESET_OPTION     );
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtEncoderCapability,    MFX_EXTBUFF_ENCODER_CAPABILITY       );
 #undef BIND_EXTBUF_TYPE_TO_ID
 
     template <class T> inline void InitExtBufHeader(T & extBuf)
@@ -461,10 +464,11 @@ namespace MfxHwH264Encode
         void ConstructMvcSeqDesc(mfxExtMVCSeqDesc const & desc);
 
     private:
-        mfxExtBuffer *              m_extParam[15];
+        mfxExtBuffer *              m_extParam[16];
 
         // external, documented
         mfxExtCodingOption          m_extOpt;
+        mfxExtCodingOption2         m_extOpt2;
         mfxExtCodingOptionSPSPPS    m_extOptSpsPps;
         mfxExtPAVPOption            m_extOptPavp;
         mfxExtVideoSignalInfo       m_extVideoSignal;
@@ -474,13 +478,13 @@ namespace MfxHwH264Encode
         mfxExtAvcTemporalLayers     m_extTempLayers;
         mfxExtSVCSeqDesc            m_extSvcSeqDescr;
         mfxExtSVCRateControl        m_extSvcRateCtrl;
+        mfxExtEncoderResetOption    m_extEncResetOpt;
 
         // internal, not documented
         mfxExtCodingOptionDDI       m_extOptDdi;
         mfxExtDumpFiles             m_extDumpFiles;
         mfxExtSpsHeader             m_extSps;
         mfxExtPpsHeader             m_extPps;
-        mfxExtCodingOption2         m_extOpt2;
 
         std::vector<mfxMVCViewDependency> m_storageView;
         std::vector<mfxMVCOperationPoint> m_storageOp;
@@ -542,7 +546,7 @@ namespace MfxHwH264Encode
 
     mfxU8 GetCabacInitIdc(mfxU32 targetUsage);
 
-    mfxStatus DetermineQueryMode(mfxVideoParam * in, mfxVideoParam * out, mfxU32 & mode);
+    mfxU8 DetermineQueryMode(mfxVideoParam * in);
 
     mfxStatus QueryHwCaps(
         VideoCORE *     core,
@@ -563,6 +567,9 @@ namespace MfxHwH264Encode
 
     mfxStatus CorrectCropping(
         MfxVideoParam & par);
+
+    bool IsRunTimeExtBufferIdSupported(
+        mfxU32 id);
 
     bool IsVideoParamExtBufferIdSupported(
         mfxU32 id);
@@ -1145,46 +1152,6 @@ namespace MfxHwH264Encode
     };
 
     void DumpExecuteBuffers(ENCODE_EXECUTE_PARAMS const & params, GUID guid);
-
-    typedef struct {
-        union {
-             struct {
-                 mfxExtBuffer **ExtParam;
-                 mfxU16  NumExtParam;
-             };
-             mfxEncryptedData* EncryptedData;
-             mfxU32  reserved[6];
-         };
-        mfxI64  DecodeTimeStamp;
-        mfxU64  TimeStamp;
-        mfxU8*  Data;
-        mfxU32  DataOffset;
-        mfxU32  DataLength;
-        mfxU32  MaxLength;
-
-        mfxU16  PicStruct;
-        mfxU16  FrameType;
-        mfxU16  DataFlag;
-        mfxU16  reserved2;
-    } mfxBitstreamApi17;
-
-    typedef struct {
-        mfxExtBuffer    Header;
-        mfxU16          NumRefIdxL0Active;
-        mfxU16          NumRefIdxL1Active;
-
-        struct {
-            mfxU32      FrameOrder;
-            mfxU16      PicStruct;
-            mfxU16      ViewId;
-            mfxU16      LongTermIdx;
-            mfxU16      reserved[3];
-        } PreferredRefList[32], RejectedRefList[16], LongTermRefList[16];
-
-        mfxU16      ApplyLongTermIdx;
-        mfxU16      reserved[15];
-    } mfxExtAVCRefListCtrlApi17;
-
 };
 
 #endif // MFX_ENABLE_H264_VIDEO_..._HW

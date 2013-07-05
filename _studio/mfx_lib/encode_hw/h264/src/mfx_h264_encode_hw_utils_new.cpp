@@ -1071,10 +1071,7 @@ namespace
                         // mark it as 'long-term'
 
                         mfxU8 longTermIdx;
-                        // use updated structure mfxExtAVCRefListCtrl from API 1.7 to get flag for external LTR idx application
-                        // TODO: use regular mfxExtAVCRefListCtrl when MSDK API will be updated to 1.7
-                        mfxExtAVCRefListCtrlApi17 const * ctrlApi17 = (mfxExtAVCRefListCtrlApi17*)ctrl;
-                        if (ctrlApi17->ApplyLongTermIdx != 1)
+                        if (ctrl->ApplyLongTermIdx != 1)
                         {
                             // first make free space in dpb if it is full
                             if (currDpb.Size() == video.mfx.NumRefFrame)
@@ -1111,9 +1108,8 @@ namespace
                         }
                         else
                         {
-                            // use updated structure mfxExtAVCRefListCtrl from API 1.7 to get external LTR idx
-                            // TODO: use regular mfxExtAVCRefListCtrl when MSDK API will be updated to 1.7
-                            longTermIdx = (mfxU8)ctrlApi17->LongTermRefList[i].LongTermIdx;
+                            // use LTR idx provided by application
+                            longTermIdx = (mfxU8)ctrl->LongTermRefList[i].LongTermIdx;
 
                             // don't validate input, just perform quick check
                             assert(longTermIdx < video.mfx.NumRefFrame);

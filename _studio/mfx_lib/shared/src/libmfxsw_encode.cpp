@@ -223,7 +223,10 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
 #ifdef MFX_ENABLE_H264_VIDEO_ENCODE
         case MFX_CODEC_AVC:
 #if defined(MFX_VA) && defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW)
-            mfxRes = MFXHWVideoENCODEH264::Query(session->m_pCORE.get(), in, out);
+            if (!session->m_pENCODE.get())
+                mfxRes = MFXHWVideoENCODEH264::Query(session->m_pCORE.get(), in, out);
+            else
+                mfxRes = MFXHWVideoENCODEH264::Query(session->m_pCORE.get(), in, out, session->m_pENCODE.get());
             if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
             {
 #ifdef MFX_ENABLE_MVC_VIDEO_ENCODE

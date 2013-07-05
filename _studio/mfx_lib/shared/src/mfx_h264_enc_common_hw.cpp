@@ -970,39 +970,28 @@ mfxU8 MfxHwH264Encode::GetCabacInitIdc(mfxU32 targetUsage)
 }
 
 // determine and return mode of Query operation (valid modes are 1, 2, 3, 4 - see MSDK spec for details)
-mfxStatus MfxHwH264Encode::DetermineQueryMode(mfxVideoParam * in,  mfxVideoParam * out, mfxU32 & mode)
+mfxU8 MfxHwH264Encode::DetermineQueryMode(mfxVideoParam * in)
 {
-    MFX_CHECK_NULL_PTR1(out);
-
     if (in == 0)
-        mode = 1;
+        return 1;
     else
     {
-        mfxExtEncoderCapability * caps = (mfxExtEncoderCapability*)MfxHwH264Encode::GetExtBuffer(
-            out->ExtParam,
-            out->NumExtParam,
-            MFX_EXTBUFF_ENCODER_CAPABILITY);
-        mfxExtEncoderResetOption * resetOpt = (mfxExtEncoderResetOption*)MfxHwH264Encode::GetExtBuffer(
-            in->ExtParam,
-            in->NumExtParam,
-            MFX_EXTBUFF_ENCODER_RESET_OPTION);
+        mfxExtEncoderCapability * caps = GetExtBuffer(*in);
+        mfxExtEncoderResetOption * resetOpt = GetExtBuffer(*in);
         if (caps)
         {
-            if (/*out->NumExtParam > 1 ||*/ resetOpt)
+            if (resetOpt)
             {
-                // attached mfxExtEncoderCapability indicates mode 4. In this mode no other ext buffers should be attached to out.
-                // attached mfxExtEncoderResetOption indicates mode 3. It can't be combined with mode 3.
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
+                // attached mfxExtEncoderCapability indicates mode 4. In this mode mfxExtEncoderResetOption shouldn't be attached
+                return 0;
             }
 
-            mode = 4;
+            return 4;
         }else if (resetOpt)
-            mode = 3;
+            return 3;
         else
-            mode = 2;
+            return 2;
     }
-
-    return MFX_ERR_NONE;
 }
 
 mfxStatus MfxHwH264Encode::QueryHwCaps(VideoCORE* core, ENCODE_CAPS & hwCaps, GUID guid)
@@ -1145,6 +1134,13 @@ mfxStatus MfxHwH264Encode::CorrectCropping(MfxVideoParam& par)
     return sts;
 }
 
+bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(mfxU32 id)
+{
+    return
+        id == MFX_EXTBUFF_AVC_REFLIST_CTRL ||
+        id == MFX_EXTBUFF_ENCODED_FRAME_INFO;
+}
+
 bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
 {
     return
@@ -1160,7 +1156,9 @@ bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
         id == MFX_EXTBUFF_AVC_TEMPORAL_LAYERS       ||
         id == MFX_EXTBUFF_CODING_OPTION2            ||
         id == MFX_EXTBUFF_SVC_SEQ_DESC              ||
-        id == MFX_EXTBUFF_SVC_RATE_CONTROL;
+        id == MFX_EXTBUFF_SVC_RATE_CONTROL          ||
+        id == MFX_EXTBUFF_ENCODER_RESET_OPTION      ||
+        id == MFX_EXTBUFF_ENCODER_CAPABILITY;
 }
 
 mfxStatus MfxHwH264Encode::CheckExtBufferId(mfxVideoParam const & par)
@@ -4303,6 +4301,7 @@ MfxVideoParam::MfxVideoParam()
     memset(m_extParam, 0, sizeof(m_extParam));
     // external, documented
     memset(&m_extOpt, 0, sizeof(m_extOpt));
+    memset(&m_extOpt2, 0, sizeof(m_extOpt2));
     memset(&m_extOptSpsPps, 0, sizeof(m_extOptSpsPps));
     memset(&m_extOptPavp, 0, sizeof(m_extOptPavp));
     memset(&m_extVideoSignal, 0, sizeof(m_extVideoSignal));
@@ -4312,6 +4311,7 @@ MfxVideoParam::MfxVideoParam()
     memset(&m_extTempLayers, 0, sizeof(m_extTempLayers));
     memset(&m_extSvcSeqDescr, 0, sizeof(m_extSvcSeqDescr));
     memset(&m_extSvcRateCtrl, 0, sizeof(m_extSvcRateCtrl));
+    memset(&m_extEncResetOpt, 0, sizeof(m_extEncResetOpt));
 
     // internal, not documented
     memset(&m_extOptDdi, 0, sizeof(m_extOptDdi));
@@ -4319,7 +4319,6 @@ MfxVideoParam::MfxVideoParam()
     memset(&m_extSps, 0, sizeof(m_extSps));
     memset(&m_extPps, 0, sizeof(m_extPps));
 
-    memset(&m_extOpt2, 0, sizeof(m_extOpt2));
     memset(&calcParam, 0, sizeof(calcParam));
 }
 
@@ -4492,6 +4491,7 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     InitExtBufHeader(m_extSps);
     InitExtBufHeader(m_extPps);
     InitExtBufHeader(m_extOpt2);
+    InitExtBufHeader(m_extEncResetOpt);
 
     if (mfxExtCodingOption * opts = GetExtBuffer(par))
         m_extOpt = *opts;
@@ -4538,6 +4538,9 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     if (mfxExtCodingOption2 * opts = GetExtBuffer(par))
         m_extOpt2 = *opts;
 
+    if (mfxExtEncoderResetOption * opts = GetExtBuffer(par))
+        m_extEncResetOpt = *opts;
+
     m_extParam[0]  = &m_extOpt.Header;
     m_extParam[1]  = &m_extOptSpsPps.Header;
     m_extParam[2]  = &m_extOptPavp.Header;
@@ -4553,10 +4556,11 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     m_extParam[12] = &m_extSps.Header;
     m_extParam[13] = &m_extPps.Header;
     m_extParam[14] = &m_extOpt2.Header;
+    m_extParam[15] = &m_extEncResetOpt.Header;
 
     ExtParam = m_extParam;
     NumExtParam = mfxU16(sizeof m_extParam / sizeof m_extParam[0]);
-    assert(NumExtParam == 15);
+    assert(NumExtParam == 16);
 }
 
 void MfxVideoParam::ConstructMvcSeqDesc(

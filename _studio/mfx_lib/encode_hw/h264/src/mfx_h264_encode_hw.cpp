@@ -191,7 +191,8 @@ mfxStatus MFXHWVideoENCODEH264::Init(mfxVideoParam * par)
 mfxStatus MFXHWVideoENCODEH264::Query(
     VideoCORE *     core,
     mfxVideoParam * in,
-    mfxVideoParam * out)
+    mfxVideoParam * out,
+    void *          state)
 {
     // FIXME: remove when mfx_transcoder start sending correct Profile
     if (in && in->mfx.CodecProfile == 0)
@@ -209,6 +210,19 @@ mfxStatus MFXHWVideoENCODEH264::Query(
 
     if (IsSvcProfile(in->mfx.CodecProfile))
         return ImplementationSvc::Query(core, in, out);
+
+    if (state)
+    {
+        MFXHWVideoENCODEH264 * AVCEncoder = (MFXHWVideoENCODEH264*)state;
+
+        if (!AVCEncoder->m_impl.get())
+        {
+            assert(!"Encoder implementation isn't initialized");
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
+
+        return ImplementationAvc::Query(core, in, out, AVCEncoder->m_impl.get());
+    }
 
     return ImplementationAvc::Query(core, in, out);
 }
@@ -237,49 +251,20 @@ mfxStatus MFXHWVideoENCODEH264::QueryIOSurf(
 mfxStatus ImplementationAvc::Query(
     VideoCORE *     core,
     mfxVideoParam * in,
-    mfxVideoParam * out)
+    mfxVideoParam * out,
+    void *          state)
 {
     MFX_CHECK_NULL_PTR2(core, out);
 
-    mfxU32 queryMode = 0;
-    // "in" and "out" uniquely identify one of 4 Query operation modes (see MSDK spec for details)
-    mfxStatus sts = DetermineQueryMode(in, out, queryMode);
-    MFX_CHECK_STS(sts);
+    mfxStatus sts;
 
-    if (queryMode == 4) // in mode 4 Query should do a single thing: report MB processing rate
-    {
-        mfxU32 mbPerSec[16] = {0, };
-        // query MB processing rate from driver
-        sts = QueryMbProcRate(core, *in, mbPerSec, DXVA2_Intel_Encode_AVC);
-        if (sts == MFX_ERR_UNSUPPORTED)
-            return sts; // driver don't support reporting of MB processing rate
-        else if (sts != MFX_ERR_NONE)
-            return MFX_WRN_PARTIAL_ACCELERATION; // any other HW problem
 
-        mfxExtEncoderCapability * extCaps = (mfxExtEncoderCapability*)MfxHwH264Encode::GetExtBuffer(
-            out->ExtParam,
-            out->NumExtParam,
-            MFX_EXTBUFF_ENCODER_CAPABILITY);
+    // "in" parameters should uniquely identify one of 4 Query operation modes (see MSDK spec for details)
+    mfxU8 queryMode = DetermineQueryMode(in);
+    if (queryMode == 0)
+        return MFX_ERR_UNDEFINED_BEHAVIOR; // input parameters are contradictory and don't allow to choose Query mode
 
-        assert(extCaps);
-
-        extCaps->MBPerSec = mbPerSec[0];
-
-        if (extCaps->MBPerSec == 0)
-        {
-            // driver returned status OK and MAX_MB_PER_SEC = 0. Treat this as driver doesn't support reporting of MAX_MB_PER_SEC for requested encoding configuration
-            return MFX_ERR_UNSUPPORTED;
-        }
-
-        return MFX_ERR_NONE;
-    }
-
-    ENCODE_CAPS hwCaps = { { 0,}  };
-    sts = QueryHwCaps(core, hwCaps, DXVA2_Intel_Encode_AVC);
-    if (sts != MFX_ERR_NONE)
-        return MFX_WRN_PARTIAL_ACCELERATION;
-
-    if (in == 0)
+    if (queryMode == 1) // see MSDK spec for details related to Query mode 1
     {
         Zero(out->mfx);
 
@@ -325,9 +310,35 @@ mfxStatus ImplementationAvc::Query(
             opt->NumView   = 1;
             opt->NumViewId = 1;
         }
+
+        if (mfxExtAVCRefListCtrl * ctrl = GetExtBuffer(*out))
+        {
+            mfxExtBuffer tmp = ctrl->Header;
+            Zero(*ctrl);
+            ctrl->Header = tmp;
+
+            ctrl->NumRefIdxL0Active = 1;
+            ctrl->NumRefIdxL1Active = 1;
+            ctrl->ApplyLongTermIdx  = 1;
+
+            ctrl->LongTermRefList[0].FrameOrder   = 1;
+            ctrl->LongTermRefList[0].LongTermIdx  = 1;
+            ctrl->PreferredRefList[0].FrameOrder  = 1;
+            ctrl->RejectedRefList[0].FrameOrder   = 1;
+        }
+
+        if (mfxExtEncoderResetOption * resetOpt = GetExtBuffer(*out))
+        {
+            resetOpt->StartNewSequence = 1;
+        }
     }
-    else
+    else if (queryMode == 2)  // see MSDK spec for details related to Query mode 2
     {
+        ENCODE_CAPS hwCaps = { 0, };
+        sts = QueryHwCaps(core, hwCaps, DXVA2_Intel_Encode_AVC);
+        if (sts != MFX_ERR_NONE)
+            return MFX_WRN_PARTIAL_ACCELERATION;
+
         MfxVideoParam tmp = *in; // deep copy, create all supported extended buffers
 
         sts = ReadSpsPpsHeaders(tmp);
@@ -363,6 +374,9 @@ mfxStatus ImplementationAvc::Query(
             {
                 if (in->ExtParam[i])
                 {
+                    if (IsRunTimeExtBufferIdSupported(in->ExtParam[i]->BufferId))
+                        continue; // it's runtime only ext buffer. Nothing to check, just move on.
+
                     if (!IsVideoParamExtBufferIdSupported(in->ExtParam[i]->BufferId))
                         return MFX_ERR_UNSUPPORTED;
 
@@ -415,6 +429,62 @@ mfxStatus ImplementationAvc::Query(
         }
 
         return checkSts;
+    }
+    else if (queryMode == 3)  // see MSDK spec for details related to Query mode 3
+    {
+        mfxStatus checkSts = MFX_ERR_NONE;
+        if (state == 0)
+            return MFX_ERR_UNDEFINED_BEHAVIOR; // encoder isn't initialized. Query() can't operate in mode 3
+
+        checkSts = CheckExtBufferId(*in);
+        MFX_CHECK_STS(checkSts);
+
+        MfxVideoParam newPar = *in;
+        bool isIdrRequired = false;
+
+        ImplementationAvc * AVCEncoder = (ImplementationAvc*)state;
+
+        checkSts = AVCEncoder->ProcessAndCheckNewParameters(newPar, isIdrRequired);
+        if (checkSts < MFX_ERR_NONE)
+            return checkSts;
+
+        mfxExtEncoderResetOption * extResetOptIn = GetExtBuffer(*in);
+        mfxExtEncoderResetOption * extResetOptOut = GetExtBuffer(*out);
+
+        if (extResetOptOut != 0)
+        {
+            extResetOptOut->StartNewSequence = extResetOptIn->StartNewSequence;
+            if (extResetOptIn->StartNewSequence == MFX_CODINGOPTION_UNKNOWN)
+            {
+                extResetOptOut->StartNewSequence = mfxU16(isIdrRequired ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF);
+            }
+        }
+
+        return checkSts;
+    }
+    else // Query mode 4: Query should do a single thing - report MB processing rate
+    {
+        mfxU32 mbPerSec[16] = {0, };
+        // query MB processing rate from driver
+        sts = QueryMbProcRate(core, *in, mbPerSec, DXVA2_Intel_Encode_AVC);
+        if (sts == MFX_ERR_UNSUPPORTED)
+            return sts; // driver don't support reporting of MB processing rate
+        else if (sts != MFX_ERR_NONE)
+            return MFX_WRN_PARTIAL_ACCELERATION; // any other HW problem
+
+        mfxExtEncoderCapability * extCaps = GetExtBuffer(*out);
+        if (extCaps == 0)
+            return MFX_ERR_UNDEFINED_BEHAVIOR; // can't return MB processing rate since mfxExtEncoderCapability isn't attached to "out"
+
+        extCaps->MBPerSec = mbPerSec[0];
+
+        if (extCaps->MBPerSec == 0)
+        {
+            // driver returned status OK and MAX_MB_PER_SEC = 0. Treat this as driver doesn't support reporting of MAX_MB_PER_SEC for requested encoding configuration
+            return MFX_ERR_UNSUPPORTED;
+        }
+
+        return MFX_ERR_NONE;
     }
 
     return MFX_ERR_NONE;
@@ -742,19 +812,17 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     return checkStatus;
 }
 
-mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
+mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
+    MfxVideoParam & newPar,
+    bool & isIdrRequired)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    MFX_CHECK_NULL_PTR1(par);
-
-    sts = CheckExtBufferId(*par);
-    MFX_CHECK_STS(sts);
-
-    MfxVideoParam newPar = *par;
 
     mfxExtPAVPOption * extPavpNew = GetExtBuffer(newPar);
     mfxExtPAVPOption * extPavpOld = GetExtBuffer(m_video);
     *extPavpNew = *extPavpOld; // ignore any change in mfxExtPAVPOption
+
+    mfxExtEncoderResetOption * extResetOpt = GetExtBuffer(newPar);
 
     sts = ReadSpsPpsHeaders(newPar);
     MFX_CHECK_STS(sts);
@@ -778,6 +846,38 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
     else if (checkStatus == MFX_ERR_NONE)
         checkStatus = spsppsSts;
 
+    // check if change of Lync temporal scalability required by new parameters
+    mfxU32 tempLayerIdx = 0;
+    bool changeLyncLayers = false;
+
+    if (m_video.calcParam.lyncMode && newPar.calcParam.lyncMode)
+    {
+        // calculate Lync temporal layer for next frame
+        tempLayerIdx     = CalcTemporalLayerIndex(m_video, m_frameOrder - m_frameOrderStartLyncStructure);
+        changeLyncLayers = m_video.calcParam.numTemporalLayer != newPar.calcParam.numTemporalLayer;
+    }
+
+    mfxExtSpsHeader const * extSpsNew = GetExtBuffer(newPar);
+    mfxExtSpsHeader const * extSpsOld = GetExtBuffer(m_video);
+
+    // check if IDR required after change of encoding parameters
+    isIdrRequired = !Equal(*extSpsNew, *extSpsOld)
+        || tempLayerIdx != 0 && changeLyncLayers;
+
+    if (isIdrRequired && IsOff(extResetOpt->StartNewSequence))
+        return MFX_ERR_INVALID_VIDEO_PARAM; // Reset can't change parameters w/o IDR. Report an error
+
+    mfxExtCodingOption * extOptNew = GetExtBuffer(newPar);
+    mfxExtCodingOption * extOptOld = GetExtBuffer(m_video);
+
+    bool brcReset =
+        m_video.calcParam.targetKbps != newPar.calcParam.targetKbps ||
+        m_video.calcParam.maxKbps    != newPar.calcParam.maxKbps;
+
+    if (brcReset && IsOn(extOptNew->NalHrdConformance) &&
+        m_video.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
     MFX_CHECK(
         IsAvcProfile(newPar.mfx.CodecProfile)                                   &&
         m_video.AsyncDepth                 == newPar.AsyncDepth                 &&
@@ -792,20 +892,27 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
         m_video.mfx.FrameInfo.ChromaFormat == newPar.mfx.FrameInfo.ChromaFormat,
         MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
-    mfxExtCodingOption * extOptNew = GetExtBuffer(newPar);
-    mfxExtCodingOption * extOptOld = GetExtBuffer(m_video);
     MFX_CHECK(
         IsOn(extOptOld->FieldOutput) || extOptOld->FieldOutput == extOptNew->FieldOutput,
         MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
-    bool brcReset =
-        m_video.calcParam.targetKbps != newPar.calcParam.targetKbps ||
-        m_video.calcParam.maxKbps    != newPar.calcParam.maxKbps;
+    return checkStatus;
+} // ProcessAndCheckNewParameters
 
-    if (brcReset && IsOn(extOptNew->NalHrdConformance) &&
-        m_video.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
-        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    MFX_CHECK_NULL_PTR1(par);
 
+    sts = CheckExtBufferId(*par);
+    MFX_CHECK_STS(sts);
+
+    MfxVideoParam newPar = *par;
+    bool isIdrRequired = false;
+
+    mfxStatus checkStatus = ProcessAndCheckNewParameters(newPar, isIdrRequired);
+    if (checkStatus < MFX_ERR_NONE)
+        return checkStatus;
 
     // m_encoding contains few submitted and not queried tasks, wait for their completion
     for (DdiTaskIter i = m_encoding.begin(); i != m_encoding.end(); ++i)
@@ -829,21 +936,13 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
     m_inputCounter   = mfxU32(m_incoming.size() + m_reordering.size() + m_lookaheadStarted.size() +
         m_lookaheadFinished.size() + m_encoding.size()); // sum tasks in use
 
-    // check if change of Lync temporal scalability required
-    mfxU32 tempLayerIdx = 0;
-    bool changeLyncLayers = false;
 
-    if (m_video.calcParam.lyncMode && newPar.calcParam.lyncMode)
-    {
-        // calculate Lync temporal layer for next frame
-        tempLayerIdx     = CalcTemporalLayerIndex(m_video, m_frameOrder - m_frameOrderStartLyncStructure);
-        changeLyncLayers = m_video.calcParam.numTemporalLayer != newPar.calcParam.numTemporalLayer;
-    }
+    mfxExtEncoderResetOption const * extResetOpt = GetExtBuffer(newPar);
 
-    mfxExtSpsHeader const * extSpsNew = GetExtBuffer(newPar);
-    mfxExtSpsHeader const * extSpsOld = GetExtBuffer(m_video);
-    if (!Equal(*extSpsNew, *extSpsOld)
-        || tempLayerIdx != 0 && changeLyncLayers)
+    // perform reset of encoder and start new sequence with IDR in following cases:
+    // 1) change of encoding parameters require insertion of IDR
+    // 2) application explicitly asked about starting new sequence
+    if (isIdrRequired || IsOn(extResetOpt->StartNewSequence))
     {
         m_free.splice(m_free.end(), m_incoming);
         m_free.splice(m_free.end(), m_reordering);
@@ -887,10 +986,10 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
             m_intraStripeWidthInMBs = (refreshDimension + extOpt2New->IntRefCycleSize - 1) / extOpt2New->IntRefCycleSize;
             m_frameOrderIFrameInDisplayOrder = 0;
         }
-    }
-
-    if (changeLyncLayers && tempLayerIdx == 0)
+    } else if (m_video.calcParam.lyncMode && newPar.calcParam.lyncMode &&
+        m_video.calcParam.numTemporalLayer != newPar.calcParam.numTemporalLayer)
     {
+        // reset starting point of Lync temporal scalability calculation if number of temporal layers was changed w/o IDR
         m_frameOrderStartLyncStructure = m_frameOrder;
     }
 
@@ -1965,35 +2064,36 @@ mfxStatus ImplementationAvc::UpdateBitstream(
     // to support WinBlue HMFT API related to LTR control Intel HMFT should return actual reference lists to application
     // MSDK release for WinBlie officially uses API 1.6 which is insufficient to provide HMFT with required data
     // encoder unofficially uses new MSDK API 1.7 to return ref lists to HMFT
-    if (task.m_fieldPicFlag == 0 && m_video.Protected == 0)
+    if (task.m_fieldPicFlag == 0)
     {
         // use updated structure mfxBitstream from API 1.7 to attach ext buffer
-        mfxBitstreamApi17 * bsApi17 = (mfxBitstreamApi17 *)task.m_bs;
-        if (bsApi17->NumExtParam == 1)  //olny 1 ext buffer is supported for mfxBitstream at the moment. Treat other number as incorrect and ignore ext buffers
+        mfxBitstream * bs = (mfxBitstream*)task.m_bs;
+        if (bs->NumExtParam == 1)  //olny 1 ext buffer is supported for mfxBitstream at the moment. Treat other number as incorrect and ignore ext buffers
         {
-            mfxExtAVCRefListCtrlApi17 * ctrlApi17 = (mfxExtAVCRefListCtrlApi17*)GetExtBuffer(bsApi17->ExtParam, bsApi17->NumExtParam, MFX_EXTBUFF_AVC_REFLIST_CTRL);
-            if (ctrlApi17)
+            mfxExtAVCEncodedFrameInfo * encFrameInfo = (mfxExtAVCEncodedFrameInfo*)GetExtBuffer(bs->ExtParam, bs->NumExtParam, MFX_EXTBUFF_ENCODED_FRAME_INFO);
+            if (encFrameInfo)
             {
-                // LongTermRefList[0] is temporarily used to pass FrameOrder and LTR idx (if any) of current frame
-                ctrlApi17->LongTermRefList[0].FrameOrder = task.m_extFrameTag;
-                ctrlApi17->LongTermRefList[0].LongTermIdx = task.m_longTermFrameIdx == NO_INDEX_U8 ? NO_INDEX_U16 : task.m_longTermFrameIdx;
+                encFrameInfo->FrameOrder = task.m_extFrameTag;
+                encFrameInfo->LongTermIdx = task.m_longTermFrameIdx == NO_INDEX_U8 ? NO_INDEX_U16 : task.m_longTermFrameIdx;
 
-                // actual ref list is returned via PreferredRefList
+                // only return of ref list L0 is supported at the moment
                 mfxU8 i = 0;
                 for (i = 0; i < task.m_list0[0].Size(); i ++)
                 {
                     DpbFrame& refFrame = task.m_dpb[0][task.m_list0[0][i] & 127]; // retrieve corresponding ref frame from DPB
-                    ctrlApi17->PreferredRefList[0].FrameOrder = refFrame.m_extFrameTag;
+                    encFrameInfo->UsedRefListL0[i].FrameOrder = refFrame.m_extFrameTag;
                     if (refFrame.m_longterm && refFrame.m_longTermIdxPlus1) // reference frame is LTR with valid LTR idx
-                        ctrlApi17->PreferredRefList[0].LongTermIdx = refFrame.m_longTermIdxPlus1 - 1;
+                        encFrameInfo->UsedRefListL0[i].LongTermIdx = refFrame.m_longTermIdxPlus1 - 1;
                     else
-                        ctrlApi17->PreferredRefList[0].LongTermIdx = NO_INDEX_U16;
+                        encFrameInfo->UsedRefListL0[i].LongTermIdx = NO_INDEX_U16;
+                    encFrameInfo->UsedRefListL0[i].PicStruct = (mfxU16)MFX_PICSTRUCT_PROGRESSIVE;
                 }
 
                 for (; i < 32; i ++)
                 {
-                    ctrlApi17->PreferredRefList[i].FrameOrder = (mfxU32)MFX_FRAMEORDER_UNKNOWN;
-                    ctrlApi17->PreferredRefList[i].LongTermIdx = NO_INDEX_U16;
+                    encFrameInfo->UsedRefListL0[i].FrameOrder  = (mfxU32)MFX_FRAMEORDER_UNKNOWN;
+                    encFrameInfo->UsedRefListL0[i].LongTermIdx = NO_INDEX_U16;
+                    encFrameInfo->UsedRefListL0[i].PicStruct   = (mfxU16)MFX_PICSTRUCT_UNKNOWN;
                 }
             }
         }
