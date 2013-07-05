@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 #include "xerces_entry.h"
@@ -150,8 +150,8 @@ void XML_Entry_Write::SetChildNodeFormatValue(const vm_char * tag, const vm_char
 
     vm_char value[256];
     vm_string_vsprintf(value, format, arglist);
-
-    SetChildNodeValue(tag, (vm_char *)transcodeToXML(value));
+    va_end(arglist);
+    SetChildNodeValue(tag, value);
 }
 
 void XML_Entry_Write::SetAttribute(const vm_char * tag, const vm_char * value)
@@ -166,7 +166,7 @@ void XML_Entry_Write::SetAttributeFormat(const vm_char * tag, const vm_char * fo
 
     vm_char value[256];
     vm_string_vsprintf(value, format, arglist);
-
+    va_end(arglist);
     SetAttribute(tag, value);
 }
 

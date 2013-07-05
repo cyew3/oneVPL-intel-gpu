@@ -58,9 +58,11 @@ OutlineFactoryAbstract * GetOutlineFactory()
 
 #endif // #ifdef _DEBUG
     if(lib_handle == NULL) {
-       return 0;
+#if defined(_DEBUG)
+              printf("LIBOUTLINE!: %s\n",dlerror());
+#endif
+              return 0;
     }
-    dlerror();
 
     func = (func_ptr)dlsym(lib_handle, "GetOutlineFactory");
 #endif // defined(_WIN32) || defined(_WIN64)
