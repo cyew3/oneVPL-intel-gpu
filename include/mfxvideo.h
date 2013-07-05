@@ -82,7 +82,7 @@ mfxStatus MFX_CDECL MFXDisjoinSession(mfxSession session);
 mfxStatus MFX_CDECL MFXCloneSession(mfxSession session, mfxSession *clone);
 mfxStatus MFX_CDECL MFXSetPriority(mfxSession session, mfxPriority priority);
 mfxStatus MFX_CDECL MFXGetPriority(mfxSession session, mfxPriority *priority);
-mfxStatus MFX_CDECL MFXGetLogMessage(char *msg, mfxU32 size); 
+mfxStatus MFX_CDECL MFXGetLogMessage(mfxSession session, char *msg, mfxU32 size); 
 
 /* VideoCORE */
 mfxStatus MFX_CDECL MFXVideoCORE_SetBufferAllocator(mfxSession session, mfxBufferAllocator *allocator);
