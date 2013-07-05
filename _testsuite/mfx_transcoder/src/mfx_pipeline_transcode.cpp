@@ -271,7 +271,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_DDI_OPTION(CabacInitIdcPlus1,       OPT_UINT_16,    "0-to use default value (depends on Target Usaeg), 1-cabacinitidc=0, 2-cabacinitidc=1,  etc"),
 
         //mfxExtEncoderCapability
-        HANDLE_CAP_OPTION(MBPerSec,                OPT_UINT_32,    "Max MB Per Second"),
+        HANDLE_CAP_OPTION(MBPerSec,                OPT_BOOL,    "Max MB Per Second"),
 
         // Quant Matrix parameters
         {VM_STRING("-qm"), OPT_AUTO_DESERIAL, &m_QuantMatrix, VM_STRING("Quant Matrix structure")},

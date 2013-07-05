@@ -72,6 +72,14 @@ typename T::InterfaceType * MakeUndeletable(T& refTarget)
     return new UnDeletableProxy<T::InterfaceType>(tmp);
 }
 
+//to create short life time object valid for only 1 call 
+template <class T>
+inline std::auto_ptr<T> & make_instant_auto_ptr(T* obj) {
+    static std::auto_ptr<T> x;
+    x.reset(obj);
+    return x;
+}
+
 
 class TestUtils
 {

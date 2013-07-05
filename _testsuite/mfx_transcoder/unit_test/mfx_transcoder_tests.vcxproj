@@ -200,6 +200,7 @@
   <ItemGroup>
     <ClCompile Include="cmdline_parser_test.cpp" />
     <ClCompile Include="latency_encoder_test.cpp" />
+    <ClCompile Include="mfx_detach_ext_buffer_encode_test.cpp" />
     <ClCompile Include="mfx_encode_wrap_test.cpp" />
     <ClCompile Include="mfx_field_output_encode_test.cpp" />
     <ClCompile Include="mfx_ip_field_pair_disable_encoder_test.cpp" />

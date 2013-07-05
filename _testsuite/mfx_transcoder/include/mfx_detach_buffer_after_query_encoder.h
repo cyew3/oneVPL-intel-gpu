@@ -11,6 +11,7 @@ Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 #pragma once
 
 #include <mfx_ivideo_encode.h>
+#include "mfx_extended_buffer.h"
 
 //detach specific buffer prior encoding initialze
 template <class TDetachBuffer>
@@ -22,7 +23,24 @@ public:
     }
     
     virtual mfxStatus Init(mfxVideoParam *par) {
-        std::vector<mfxExtBuffer*> buffers;
+        DetachBuffers(par);
+        mfxStatus sts = base::Init(par);
+        RestoreBuffers(par);
+        return sts;
+    }
+    virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request) {
+        DetachBuffers(par);
+        mfxStatus sts = base::QueryIOSurf(par, request);
+        RestoreBuffers(par);
+        return sts;
+    }
+protected:
+    
+    mfxExtBuffer ** m_pOld;
+    mfxU16 m_numExtOld;
+    std::vector<mfxExtBuffer*> buffers;
+
+    void DetachBuffers(mfxVideoParam *par) {
         for (size_t i = 0; i < par->NumExtParam; i++)
         {
             if (par->ExtParam[i]->BufferId == BufferIdOf<TDetachBuffer>::id)
@@ -30,13 +48,14 @@ public:
 
             buffers.push_back(par->ExtParam[i]);
         }
-        mfxExtBuffer ** pOld = par->ExtParam;
-        mfxU16 numExtOld = par->NumExtParam;
-        par->ExtParam = &buffers.front();
+        m_pOld = par->ExtParam;
+        m_numExtOld = par->NumExtParam;
+
+        par->ExtParam = buffers.empty() ? NULL : &buffers.front();
         par->NumExtParam = (mfxU16)buffers.size();
-        mfxStatus sts = base::Init(par);
-        par->ExtParam = pOld;
-        par->NumExtParam = numExtOld;
-        return sts;
+    }
+    void RestoreBuffers(mfxVideoParam *par) {
+        par->ExtParam = m_pOld;
+        par->NumExtParam = m_numExtOld;
     }
 };

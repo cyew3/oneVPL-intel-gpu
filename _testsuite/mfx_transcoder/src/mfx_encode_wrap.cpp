@@ -148,7 +148,14 @@ mfxStatus MFXEncodeWRAPPER::Query(mfxVideoParam *in, mfxVideoParam *out)
     //ATTENTION:
     //default behavior of query function is to set 0 to fields 
     //validity of that is cannot be defined by this function
-    return m_encoder->Query(in, out);
+    mfxStatus sts = m_encoder->Query(in, out);
+    if (MFX_ERR_NONE <= sts) 
+    {
+        PipelineTrace((VM_STRING("------------------MFXQuery SUCCEED-----------------\n")
+                     VM_STRING("%s---------------------------------------------------\n"), MFXStructuresPair<mfxVideoParam>(*in, *out).Serialize().c_str()));
+        Serialize(*out);
+    }
+    return sts;
 }
 
 mfxStatus MFXEncodeWRAPPER::GetEncodeStat(mfxEncodeStat *stat)

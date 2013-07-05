@@ -27,7 +27,13 @@ public:
     }
     DECLARE_TEST_METHOD1(mfxStatus, Init, MAKE_DYNAMIC_TRAIT(mfxVideoParam, mfxVideoParam *))
     {
-        _Init.RegisterEvent(TEST_METHOD_TYPE(Init)(MFX_ERR_NONE, *_0));
+        mfxVideoParam *newIn = _0;
+        if (_0) {
+            newIn = new mfxVideoParam();
+            TestUtils::CopyVideoParams(newIn, _0, true);
+        }
+
+        _Init.RegisterEvent(TEST_METHOD_TYPE(Init)(MFX_ERR_NONE, *newIn));
 
         TEST_METHOD_TYPE(Init) result_val;
         if (!_Init.GetReturn(result_val))
