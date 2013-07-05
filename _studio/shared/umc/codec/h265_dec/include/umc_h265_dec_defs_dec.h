@@ -1417,15 +1417,6 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
     unsigned getMaxCUDepth() const              { return MaxCUDepth; }
     void setMaxCUDepth(unsigned val)            { MaxCUDepth = val; }
 
-    unsigned getQuadtreeTULog2MinSize() const       { return log2_min_transform_block_size; }
-    void setQuadtreeTULog2MinSize(unsigned val)     { log2_min_transform_block_size = val; }
-    unsigned getQuadtreeTULog2MaxSize() const       { return log2_max_transform_block_size; }
-    void setQuadtreeTULog2MaxSize(unsigned val)     { log2_max_transform_block_size = val; }
-    unsigned getQuadtreeTUMaxDepthInter() const     { return max_transform_hierarchy_depth_inter; }
-    void setQuadtreeTUMaxDepthInter(unsigned val)   { max_transform_hierarchy_depth_inter = val; }
-    unsigned getQuadtreeTUMaxDepthIntra() const     { return max_transform_hierarchy_depth_intra; }
-    void setQuadtreeTUMaxDepthIntra(unsigned val)   { max_transform_hierarchy_depth_intra = val; }
-
     void createRPSList(Ipp32s numRPS)
     {
         m_RPSList.allocate(numRPS);
