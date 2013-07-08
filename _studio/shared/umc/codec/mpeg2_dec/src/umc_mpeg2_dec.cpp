@@ -1722,6 +1722,7 @@ Status MPEG2VideoDecoderBase::Close()
 #endif
             }
         }
+        framepcn->user_data_v.clear();
     }
 
     if (shMask.memMask)
