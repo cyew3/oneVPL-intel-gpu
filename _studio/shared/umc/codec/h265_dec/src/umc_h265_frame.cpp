@@ -188,8 +188,8 @@ void H265DecoderFrame::FreeResources()
 {
     FreeReferenceFrames();
 
-    //if (m_pSlicesInfo && IsDecoded())
-      //  m_pSlicesInfo->Free();
+    if (m_pSlicesInfo && IsDecoded())
+        m_pSlicesInfo->Free();
 }
 
 void H265DecoderFrame::CompleteDecoding()
