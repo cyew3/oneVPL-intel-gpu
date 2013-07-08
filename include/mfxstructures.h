@@ -29,7 +29,7 @@ File Name: mfxstructures.h
 *******************************************************************************/
 #ifndef __MFXSTRUCTURES_H__
 #define __MFXSTRUCTURES_H__
-#include "mfxdefs.h"
+#include "mfxcommon.h"
 
 #pragma warning(disable: 4201)
 
@@ -37,13 +37,6 @@ File Name: mfxstructures.h
 extern "C" {
 #endif
 
-#define MFX_MAKEFOURCC(A,B,C,D)    ((((int)A))+(((int)B)<<8)+(((int)C)<<16)+(((int)D)<<24))
-
-/* Extended Configuration Header Structure */
-typedef struct {
-    mfxU32  BufferId;
-    mfxU32  BufferSz;
-} mfxExtBuffer;
 
 /* Frame ID for SVC and MVC */
 typedef struct {
@@ -494,31 +487,7 @@ enum {
     MFX_CODINGOPTION_ADAPTIVE   =0x30
 };
 
-typedef struct _mfxEncryptedData mfxEncryptedData;
-
-typedef struct {
-     union {
-        struct {
-            mfxEncryptedData* EncryptedData;
-            mfxExtBuffer **ExtParam;
-            mfxU16  NumExtParam;
-        };
-         mfxU32  reserved[6];
-     };
-    mfxI64  DecodeTimeStamp; 
-    mfxU64  TimeStamp;
-    mfxU8*  Data;
-    mfxU32  DataOffset;
-    mfxU32  DataLength;
-    mfxU32  MaxLength;
-
-    mfxU16  PicStruct;
-    mfxU16  FrameType;
-    mfxU16  DataFlag;
-    mfxU16  reserved2;
-} mfxBitstream;
-
-/* Data Flag */
+/* Data Flag for mfxBitstream*/
 enum {
     MFX_BITSTREAM_COMPLETE_FRAME    = 0x0001,        /* the bitstream contains a complete frame or field pair of data */
     MFX_BITSTREAM_EOS               = 0x0002
@@ -720,37 +689,6 @@ typedef enum {
     MFX_SKIPMODE_LESS=2
 } mfxSkipMode;
 
-/* Library initialization and deinitialization */
-typedef mfxI32 mfxIMPL;
-#define MFX_IMPL_BASETYPE(x) (0x00ff & (x))
-
-enum  {
-    MFX_IMPL_AUTO         = 0x0000,  /* Auto Selection/In or Not Supported/Out */
-    MFX_IMPL_SOFTWARE     = 0x0001,  /* Pure Software Implementation */
-    MFX_IMPL_HARDWARE     = 0x0002,  /* Hardware Accelerated Implementation (default device) */
-    MFX_IMPL_AUTO_ANY     = 0x0003,  /* Auto selection of any hardware/software implementation */
-    MFX_IMPL_HARDWARE_ANY = 0x0004,  /* Auto selection of any hardware implementation */
-    MFX_IMPL_HARDWARE2    = 0x0005,  /* Hardware accelerated implementation (2nd device) */
-    MFX_IMPL_HARDWARE3    = 0x0006,  /* Hardware accelerated implementation (3rd device) */
-    MFX_IMPL_HARDWARE4    = 0x0007,  /* Hardware accelerated implementation (4th device) */
-
-    MFX_IMPL_VIA_ANY      = 0x0100,
-    MFX_IMPL_VIA_D3D9     = 0x0200,
-    MFX_IMPL_VIA_D3D11    = 0x0300,
-    MFX_IMPL_VIA_RESERVED1 = 0x0400,
-
-    MFX_IMPL_UNSUPPORTED  = 0x0000  /* One of the MFXQueryIMPL returns */
-};
-
-/* Version Info */
-typedef union {
-    struct {
-        mfxU16  Minor;
-        mfxU16  Major;
-    };
-    mfxU32  Version;
-} mfxVersion;
-
 typedef struct {
     mfxExtBuffer    Header;
     mfxU8           *SPSBuffer;
@@ -760,15 +698,6 @@ typedef struct {
     mfxU16          SPSId;
     mfxU16          PPSId;
 } mfxExtCodingOptionSPSPPS;
-
-/* session priority */
-typedef enum
-{
-    MFX_PRIORITY_LOW = 0,
-    MFX_PRIORITY_NORMAL = 1,
-    MFX_PRIORITY_HIGH = 2
-
-} mfxPriority;
 
 typedef struct {
     mfxExtBuffer    Header;

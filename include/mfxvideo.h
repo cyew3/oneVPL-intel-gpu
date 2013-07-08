@@ -29,19 +29,11 @@ File Name: mfxvideo.h
 \* ****************************************************************************** */
 #ifndef __MFXVIDEO_H__
 #define __MFXVIDEO_H__
-#include "mfxstructures.h"
+#include "mfxsession.h"
+#include "mfxvstructures.h"
 
-/* This is the external include file for the Intel(R) Media Software Development Kit product */
 #define MFX_VERSION_MAJOR 1
 #define MFX_VERSION_MINOR 8
-
-#ifdef _WIN32
-    #define MFX_CDECL __cdecl
-    #define MFX_STDCALL __stdcall
-#else
-    #define MFX_CDECL
-    #define MFX_STDCALL
-#endif /* _WIN32 */
 
 #ifdef __cplusplus
 extern "C"
@@ -68,21 +60,6 @@ typedef struct {
     mfxStatus  (MFX_CDECL  *GetHDL)   (mfxHDL pthis, mfxMemId mid, mfxHDL *handle);
     mfxStatus  (MFX_CDECL  *Free)     (mfxHDL pthis, mfxFrameAllocResponse *response);
 } mfxFrameAllocator;
-
-/* Global Functions */
-typedef struct _mfxSession *mfxSession;
-mfxStatus MFX_CDECL MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session);
-mfxStatus MFX_CDECL MFXClose(mfxSession session);
-
-mfxStatus MFX_CDECL MFXQueryIMPL(mfxSession session, mfxIMPL *impl);
-mfxStatus MFX_CDECL MFXQueryVersion(mfxSession session, mfxVersion *version);
-
-mfxStatus MFX_CDECL MFXJoinSession(mfxSession session, mfxSession child);
-mfxStatus MFX_CDECL MFXDisjoinSession(mfxSession session);
-mfxStatus MFX_CDECL MFXCloneSession(mfxSession session, mfxSession *clone);
-mfxStatus MFX_CDECL MFXSetPriority(mfxSession session, mfxPriority priority);
-mfxStatus MFX_CDECL MFXGetPriority(mfxSession session, mfxPriority *priority);
-mfxStatus MFX_CDECL MFXGetLogMessage(mfxSession session, char *msg, mfxU32 size); 
 
 /* VideoCORE */
 mfxStatus MFX_CDECL MFXVideoCORE_SetBufferAllocator(mfxSession session, mfxBufferAllocator *allocator);

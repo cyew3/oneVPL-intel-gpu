@@ -31,7 +31,7 @@ File Name: mfxplugin.h
 #define __MFXPLUGIN_H__
 #include "mfxvideo.h"
 
-#pragma warning(disable: 4201)
+//#pragma warning(disable: 4201)
 
 #ifdef __cplusplus
 extern "C"

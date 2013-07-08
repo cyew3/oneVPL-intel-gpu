@@ -44,6 +44,14 @@ extern "C"
   #define __UINT64  unsigned long long
 #endif
 
+#ifdef _WIN32
+    #define MFX_CDECL __cdecl
+    #define MFX_STDCALL __stdcall
+#else
+    #define MFX_CDECL
+    #define MFX_STDCALL
+#endif /* _WIN32 */
+
 #define MFX_INFINITE 0xFFFFFFFF
 
 typedef unsigned char       mfxU8;
