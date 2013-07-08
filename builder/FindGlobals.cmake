@@ -91,17 +91,17 @@ else( )
   set(CMAKE_CXX_FLAGS_DEBUG   "-O0 -Wall ${no_warnings} -g -D_DEBUG" CACHE STRING "" FORCE)
   set(CMAKE_CXX_FLAGS_RELEASE "-O2 -D_FORTIFY_SOURCE=2 -fstack-protector -Wall ${no_warnings} -DNDEBUG"    CACHE STRING "" FORCE)
 
-  # SW HEVC decoder requires SSE4.1
+  # SW HEVC decoder & encoder require SSE4.2
   if (CMAKE_C_COMPILER MATCHES icc)
-    append("-xSSE4.1 -static-intel" CMAKE_C_FLAGS)
+    append("-xSSE4.2 -static-intel" CMAKE_C_FLAGS)
   else()
-    append("-msse4.1" CMAKE_C_FLAGS)
+    append("-msse4.2" CMAKE_C_FLAGS)
   endif()
 
   if (CMAKE_CXX_COMPILER MATCHES icpc)
-    append("-xSSE4.1 -static-intel" CMAKE_CXX_FLAGS)
+    append("-xSSE4.2 -static-intel" CMAKE_CXX_FLAGS)
   else()
-    append("-msse4.1" CMAKE_CXX_FLAGS)
+    append("-msse4.2" CMAKE_CXX_FLAGS)
   endif()
 
   if(__ARCH MATCHES ia32)
