@@ -3124,7 +3124,7 @@ void MfxHwH264Encode::SetDefaults(
         assert(par.mfx.GopRefDist > 0);
         assert(par.mfx.GopPicSize > 0);
 
-        if (hwCaps.HeaderInsertion == 0 &&
+        if (platform >= MFX_HW_HSW && platform != MFX_HW_VLV &&
             IsDyadic(par.calcParam.scale, par.calcParam.numTemporalLayer) &&
             par.mfx.GopRefDist >= 4 &&
             IsPowerOf2(par.mfx.GopRefDist) &&
