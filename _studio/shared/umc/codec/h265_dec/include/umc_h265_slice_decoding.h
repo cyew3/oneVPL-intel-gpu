@@ -279,8 +279,6 @@ public:  // DEBUG !!!! should remove dependence
 
     Ipp32s m_iAllocatedMB;                                      // (Ipp32s) size of allocated buffer in macroblock
 
-    CoeffsBuffer   m_CoeffsBuffers;
-
     // through-decoding variable(s)
     Ipp32s m_nMBSkipCount;                                      // (Ipp32u) current count of skipped macro blocks
     Ipp32s m_nQuantPrev;                                        // (Ipp32u) quantize value of previous macro block

@@ -345,10 +345,7 @@ void H265Slice::Reset()
 
 void H265Slice::Release()
 {
-    m_CoeffsBuffers.Reset();
-
     Reset();
-
 } // void H265Slice::Release(void)
 
 bool H265Slice::Init(Ipp32s )
@@ -443,26 +440,6 @@ bool H265Slice::Reset(void *pSource, size_t nSourceSize, Ipp32s iConsumerNumber)
     m_bError = false;
 
     m_MVsDistortion = 0;
-
-    // reallocate internal buffer
-    if (iConsumerNumber > 1)
-    {
-        Ipp32s iMBRowSize = GetMBRowWidth();
-        Ipp32s iMBRowBuffers;
-        Ipp32s bit_depth_luma, bit_depth_chroma;
-        bit_depth_luma = GetSeqParam()->bit_depth_luma;
-        bit_depth_chroma = GetSeqParam()->bit_depth_chroma;
-
-        Ipp32s isU16Mode = (bit_depth_luma > 8 || bit_depth_chroma > 8) ? 2 : 1;
-
-        // decide number of buffers
-        iMBRowBuffers = IPP_MAX(MINIMUM_NUMBER_OF_ROWS_H265, MB_BUFFER_SIZE_H265 / iMBRowSize);
-        iMBRowBuffers = IPP_MIN(MAXIMUM_NUMBER_OF_ROWS_H265, iMBRowBuffers);
-
-        m_CoeffsBuffers.Init(iMBRowBuffers, (Ipp32s)sizeof(Ipp16s) * isU16Mode * (iMBRowSize * COEFFICIENTS_BUFFER_SIZE_H265 + UMC::DEFAULT_ALIGN_VALUE));
-    }
-
-    m_CoeffsBuffers.Reset();
 
     // reset through-decoding variables
     m_nMBSkipCount = 0;

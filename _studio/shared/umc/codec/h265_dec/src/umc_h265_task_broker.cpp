@@ -96,7 +96,6 @@ void PrintInfoStatus(H265DecoderFrameInfo * info)
         printf("cur to rec - %d\n", pSlice->m_iCurMBToRec);
         printf("cur to deb - %d\n", pSlice->m_iCurMBToDeb);
         printf("dec, rec, deb vacant - %d, %d, %d\n", pSlice->m_bDecVacant, pSlice->m_bRecVacant, pSlice->m_bDebVacant);
-        printf("in/out buffers available - %d, %d\n", pSlice->m_CoeffsBuffers.IsInputAvailable(), pSlice->m_CoeffsBuffers.IsOutputAvailable());
         fflush(stdout);
     }
 }
@@ -731,54 +730,6 @@ bool TaskBroker_H265::IsFrameCompleted(H265DecoderFrame * pFrame) const
 
     return ret;
 }
-
-Ipp32s TaskBroker_H265::GetNumberOfSlicesToReconstruct(H265DecoderFrameInfo * info, bool bOnlyReadySlices)
-{
-    Ipp32s i, iCount = 0;
-
-    Ipp32s sliceCount = info->GetSliceCount();
-
-    for (i = 0; i < sliceCount; i ++)
-    {
-        H265Slice *pSlice = info->GetSlice(i);
-
-        if (pSlice->m_iMaxMB > pSlice->m_iCurMBToRec)
-        {
-            // we count up all decoding slices
-            if ((false == bOnlyReadySlices) ||
-            // or only ready to reconstruct
-                ((pSlice->m_bRecVacant) && (pSlice->m_CoeffsBuffers.IsOutputAvailable())))
-                iCount += 1;
-        }
-    }
-
-    return iCount;
-
-} // Ipp32s TaskBroker_H265::GetNumberOfSlicesToReconstruct(void)
-
-bool TaskBroker_H265::IsFrameDeblocked(H265DecoderFrameInfo * info)
-{
-    // this is guarded function, safe to touch any variable
-
-    Ipp32s i;
-
-    // there is nothing to do
-    Ipp32s sliceCount = info->GetSliceCount();
-    if (0 == sliceCount)
-        return true;
-
-    for (i = 0; i < sliceCount; i += 1)
-    {
-        H265Slice *pSlice = info->GetSlice(i);
-
-        if ((pSlice) &&
-            (false == pSlice->m_bDeblocked))
-            return false;
-    }
-
-    return true;
-
-} // bool TaskBroker_H265::IsFrameDeblocked(void)
 
 bool TaskBroker_H265::GetNextTask(H265Task *pTask)
 {

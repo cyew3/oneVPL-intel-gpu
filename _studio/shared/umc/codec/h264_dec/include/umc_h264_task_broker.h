@@ -139,19 +139,10 @@ protected:
     bool GetNextSlice(H264DecoderFrameInfo * info, H264Task *pTask);
     bool GetNextSliceToDecoding(H264DecoderFrameInfo * info, H264Task *pTask);
 
-    // Get number of slices to reconstruct
-    Ipp32s GetNumberOfSlicesToReconstruct(H264DecoderFrameInfo * info, bool bOnlyReadySlices = false);
-
     // Get next available slice to deblocking
     bool GetNextSliceToDeblocking(H264DecoderFrameInfo * info, H264Task *pTask);
 
     bool GetPreparationTask(H264DecoderFrameInfo * info);
-
-    // Get number of slices to decode
-    Ipp32s GetNumberOfSlicesToDecode(H264DecoderFrameInfo * info);
-
-    // Check current frame condition
-    bool IsFrameDeblocked(H264DecoderFrameInfo * info);
 
     void InitTask(H264DecoderFrameInfo * info, H264Task *pTask, H264Slice *pSlice);
 
