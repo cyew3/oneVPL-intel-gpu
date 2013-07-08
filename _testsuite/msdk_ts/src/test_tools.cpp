@@ -532,6 +532,25 @@ msdk_ts_BLOCK(t_ParseH264AU){
 }
 
 
+msdk_ts_BLOCK(t_ParseHEVCAU){
+    BS_HEVC_parser& p = var_old_or_new<BS_HEVC_parser>("hevc_parser");
+    mfxBitstream& bs = var_old<mfxBitstream>("bitstream");
+    BS_HEVC::AU*& pAU = var_def<BS_HEVC::AU*>("p_hevcau_hdr", NULL);
+    BSErr sts = BS_ERR_NONE;
+
+    sts = p.set_buffer(bs.Data+bs.DataOffset, bs.DataLength);
+    CHECK_STS(sts, BS_ERR_NONE);
+
+    sts = p.parse_next_au(pAU);
+    CHECK_STS(sts, BS_ERR_NONE);
+
+    bs.DataOffset += (Bs32u)p.get_offset();
+    if(pAU) m_var["hevc_au_hdr"] = pAU;
+
+    return msdk_ts::resOK;
+}
+
+
 msdk_ts_BLOCK(t_ParseMPEG2){
     BS_MPEG2_parser& p = var_old_or_new<BS_MPEG2_parser>("mpeg2_parser");
     mfxBitstream& bs = var_old<mfxBitstream>("bitstream");

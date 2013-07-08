@@ -1353,7 +1353,7 @@ SWIGRUNTIME void _swig_create_magic(CPerlObj *pPerl, SV *sv, const char *name, i
 #endif
 {
   MAGIC *mg;
-  sv_magic(sv,sv,'U',name,strlen(name));
+  sv_magic(sv,sv,'U',name,(I32)strlen(name));
   mg = mg_find(sv,'U');
   mg->mg_virtual = (MGVTBL *) malloc(sizeof(MGVTBL));
   mg->mg_virtual->svt_get = (SwigMagicFunc) get;
@@ -1735,14 +1735,14 @@ SWIG_AsVal_unsigned_SS_long SWIG_PERL_DECL_ARGS_2(SV *obj, unsigned long *val)
   if (SvUOK(obj)) {
     UV v = SvUV(obj);
     if (v <= ULONG_MAX) {
-      if (val) *val = v;
+      if (val) *val = (unsigned long)v;
       return SWIG_OK;
     }
     return SWIG_OverflowError;
   } else if (SvIOK(obj)) {
     IV v = SvIV(obj);
     if (v >= 0 && v <= ULONG_MAX) {
-      if (val) *val = v;
+      if (val) *val = (unsigned long)v;
       return SWIG_OK;
     }
     return SWIG_OverflowError;
@@ -2120,14 +2120,14 @@ SWIG_AsVal_long SWIG_PERL_DECL_ARGS_2(SV *obj, long* val)
   if (SvUOK(obj)) {
     UV v = SvUV(obj);
     if (v <= LONG_MAX) {
-      if (val) *val = v;
+      if (val) *val = (long)v;
       return SWIG_OK;
     }
     return SWIG_OverflowError;
   } else if (SvIOK(obj)) {
     IV v = SvIV(obj);
     if (v >= LONG_MIN && v <= LONG_MAX) {
-      if(val) *val = v;
+      if(val) *val = (long)v;
       return SWIG_OK;
     }
     return SWIG_OverflowError;
@@ -4686,6 +4686,54 @@ XS(_wrap_memmove) {
 }
 
 
+XS(_wrap_memmove_raw) {
+  {
+    void *arg1 = (void *) 0 ;
+    void *arg2 = (void *) 0 ;
+    size_t arg3 ;
+    int res1 ;
+    int res2 ;
+    int res3 ;
+    char *buf2 = 0 ;
+    size_t size2 = 0 ;
+    int alloc2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 3)) {
+      SWIG_croak("Usage: memmove_raw(data,indata,inlen=length(indata));");
+    }
+    res1 = SWIG_ConvertPtr(ST(0),SWIG_as_voidptrptr(&arg1), 0, 0);
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "memmove_raw" "', argument " "1"" of type '" "void *""'"); 
+    }
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, &size2, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "memmove_raw" "', argument " "2"" of type '" "void const *""'");
+    }
+    if(items == 3){
+        res3 = SWIG_AsVal_size_t(ST(2), &arg3 );
+        if (!SWIG_IsOK(res3)) {
+          SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "memmove_raw" "', argument " "3"" of type '" "size_t""'");
+        }
+        if (arg3 > size2){
+            SWIG_exception_fail(SWIG_ValueError, "in method '" "memmove_raw" "', argument " "3"" value is incorrect");
+        }
+    } else {
+        arg3 = static_cast< size_t >(size2) - 1;//indata size except last zero-byte
+    }
+    arg2 = reinterpret_cast< void * >(buf2);
+    memmove(arg1,(void const *)arg2,arg3); 
+    ST(argvi) = sv_newmortal();
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_deref) {
   {
     void **arg1 = (void **) 0 ;
@@ -4888,6 +4936,7 @@ static swig_command_info swig_commands[] = {
 {"msdk_tsc::p2pp", _wrap_p2pp},
 {"msdk_tsc::cdata", _wrap_cdata},
 {"msdk_tsc::memmove", _wrap_memmove},
+{"msdk_tsc::memmove_raw", _wrap_memmove_raw},
 {"msdk_tsc::deref", _wrap_deref},
 {0,0}
 };

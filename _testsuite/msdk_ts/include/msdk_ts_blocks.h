@@ -151,6 +151,7 @@ msdk_ts_DECLARE_BLOCK(t_Dump_mfxBitstream);
 msdk_ts_DECLARE_BLOCK(t_Wipe_mfxBitstream);
 msdk_ts_DECLARE_BLOCK(t_AttachBuffers);
 msdk_ts_DECLARE_BLOCK(t_ParseH264AU);
+msdk_ts_DECLARE_BLOCK(t_ParseHEVCAU);
 msdk_ts_DECLARE_BLOCK(t_ParseMPEG2);
 
 //IN : global_allocator_instance

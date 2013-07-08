@@ -317,6 +317,8 @@ DEF_STRUCT_TRACE(mfxExtBuffer){
         PRINT_BUF(MFX_EXTBUFF_ENCODER_RESET_OPTION      , mfxExtEncoderResetOption      );
         PRINT_BUF(MFX_EXTBUFF_ENCODED_FRAME_INFO        , mfxExtAVCEncodedFrameInfo     );
         PRINT_BUF(MFX_EXTBUFF_AVC_TEMPORAL_LAYERS       , mfxExtAvcTemporalLayers       );
+        PRINT_BUF(MFX_EXTBUFF_CODING_OPTION_SPSPPS      , mfxExtCodingOptionSPSPPS      );
+        PRINT_BUF(MFX_EXTBUFF_VIDEO_SIGNAL_INFO         , mfxExtVideoSignalInfo         );
 #endif
         default: break;
     }
@@ -914,6 +916,34 @@ DEF_STRUCT_TRACE(mfxExtAvcTemporalLayers){
         DEC_PADDING();
     }
     os  << print_param.padding << '}';
+    return os;
+}
+
+DEF_STRUCT_TRACE(mfxExtCodingOptionSPSPPS){
+    os  << "{\n"
+        << PUT_4CC(Header.BufferId)
+        << PUT_PAR(Header.BufferSz)
+        << PUT_PAR(SPSBuffer)
+        << PUT_PAR(PPSBuffer)
+        << PUT_PAR(SPSBufSize)
+        << PUT_PAR(PPSBufSize)
+        << PUT_PAR(SPSId)
+        << PUT_PAR(PPSId)
+        << print_param.padding << '}';
+    return os;
+}
+
+DEF_STRUCT_TRACE(mfxExtVideoSignalInfo){
+    os  << "{\n"
+        << PUT_4CC(Header.BufferId)
+        << PUT_PAR(Header.BufferSz)
+        << PUT_PAR(VideoFormat)
+        << PUT_PAR(VideoFullRange)
+        << PUT_PAR(ColourDescriptionPresent)
+        << PUT_PAR(ColourPrimaries)
+        << PUT_PAR(TransferCharacteristics)
+        << PUT_PAR(MatrixCoefficients)
+        << print_param.padding << '}';
     return os;
 }
 
