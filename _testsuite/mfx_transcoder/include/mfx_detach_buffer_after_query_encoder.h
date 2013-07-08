@@ -13,7 +13,7 @@ Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 #include <mfx_ivideo_encode.h>
 #include "mfx_extended_buffer.h"
 
-//detach specific buffer prior encoding initialze
+//detach specific buffer prior encoding initialize
 template <class TDetachBuffer>
 class DetachExtBufferEncode : public InterfaceProxy<IVideoEncode> {
     typedef InterfaceProxy<IVideoEncode> base;
