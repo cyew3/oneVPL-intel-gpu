@@ -283,10 +283,13 @@ mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffe
             return sts;
         }
 
-//         if (buffer_out->MaxLength < RawFrameSize)
-//         {
-//             sts = MFX_ERR_NOT_ENOUGH_BUFFER;
-//         }
+        mfxAudioAllocRequest audioAllocRequest;
+        sts = QueryIOSize(m_core, &m_vPar, &audioAllocRequest);
+        MFX_CHECK_STS(sts);
+
+        if (buffer_out->DataLength < audioAllocRequest.SuggestedOutputSize) {
+            sts = MFX_ERR_NOT_ENOUGH_BUFFER;
+        }
     }
 
     return sts;
