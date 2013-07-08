@@ -66,23 +66,17 @@ void H265FrameCodingData::destroy()
     delete [] m_CUData;
     m_CUData = NULL;
 
-    delete [] m_ColTUFlags[0];
-    m_ColTUFlags[0] = NULL;
+    for (int i = 0; i < 2; i++)
+    {
+        delete [] m_ColTUFlags[i];
+        m_ColTUFlags[i] = 0;
 
-    delete [] m_ColTUFlags[1];
-    m_ColTUFlags[1] = NULL;
+        delete [] m_ColTUPOCDelta[i];
+        m_ColTUPOCDelta[i] = 0;
 
-    delete [] m_ColTUPOCDelta[0];
-    m_ColTUPOCDelta[0] = NULL;
-
-    delete [] m_ColTUPOCDelta[1];
-    m_ColTUPOCDelta[1] = NULL;
-
-    delete [] m_ColTUMV[0];
-    m_ColTUMV[0] = NULL;
-
-    delete [] m_ColTUMV[1];
-    m_ColTUMV[1] = NULL;
+        delete [] m_ColTUMV[i];
+        m_ColTUMV[i] = 0;
+    }
 }
 
 /*

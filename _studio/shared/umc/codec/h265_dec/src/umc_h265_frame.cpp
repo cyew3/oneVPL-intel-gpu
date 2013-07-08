@@ -359,6 +359,7 @@ void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* pSeqParamSet, c
     if (m_CodingData->m_MaxCUWidth != MaxCUWidth || m_CodingData->m_MaxCUHeight != MaxCUHeight ||
         m_CodingData->m_WidthInCU != widthInCU  || m_CodingData->m_HeightInCU != heightInCU || m_CodingData->m_MaxCUDepth != MaxCUDepth)
     {
+        m_CodingData->destroy();
         m_CodingData->create(m_lumaSize.width, m_lumaSize.height, MaxCUWidth, MaxCUHeight, pSeqParamSet->MaxCUDepth);
 
         delete[] m_cuOffsetY;

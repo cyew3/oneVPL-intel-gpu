@@ -394,7 +394,7 @@ Ipp32s H265Slice::RetrievePicParamSetNumber(void *pSource, size_t nSourceSize)
     return m_SliceHeader.pic_parameter_set_id;
 }
 
-bool H265Slice::Reset(void *pSource, size_t nSourceSize, Ipp32s iConsumerNumber)
+bool H265Slice::Reset(void *pSource, size_t nSourceSize, Ipp32s )
 {
     Ipp32s iMBInFrame;
     //Ipp32s iCUInFrame;

@@ -47,6 +47,11 @@ public:
     Ipp32u* m_TileIdxMap;                   //the map of the tile index relative to LCU raster scan address
     Ipp32u* m_InverseCUOrderMap;
 
+    // 18 bytes of data per TU
+    Ipp8u *m_ColTUFlags[2];
+    Ipp32s *m_ColTUPOCDelta[2];
+    H265MotionVector *m_ColTUMV[2];
+
     void create (Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiMaxWidth, Ipp32u uiMaxHeight, Ipp32u uiMaxDepth);
     void destroy();
 
@@ -55,7 +60,20 @@ public:
         , m_HeightInCU(0)
         , m_MaxCUWidth(0)
         , m_MaxCUHeight(0)
+
+        , m_NumCUsInFrame(0)
+
+        , m_CUData(0)
+        , m_CUOrderMap(0)
+        , m_TileIdxMap(0)
+        , m_InverseCUOrderMap(0)
     {
+        for (int i = 0; i < 2; i++)
+        {
+            m_ColTUFlags[i] = 0;
+            m_ColTUPOCDelta[i] = 0;
+            m_ColTUMV[i] = 0;
+        }
     }
 
     ~H265FrameCodingData()
@@ -78,11 +96,6 @@ public:
 #define COL_TU_INVALID_INTER 1
 #define COL_TU_ST_INTER      2
 #define COL_TU_LT_INTER      3
-
-    // 18 bytes of data per TU
-    Ipp8u *m_ColTUFlags[2];
-    Ipp32s *m_ColTUPOCDelta[2];
-    H265MotionVector *m_ColTUMV[2];
 
     void setCUOrderMap(Ipp32s encCUOrder, Ipp32s cuAddr)        { *(m_CUOrderMap + encCUOrder) = cuAddr; }
     Ipp32s getCUOrderMap(Ipp32u encCUOrder)
