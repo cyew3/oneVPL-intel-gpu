@@ -1712,6 +1712,8 @@ void H265SampleAdaptiveOffset::PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u
     Ipp32u LumaOffset   = MinCoeffSize * AbsZorderIdx;
     Ipp32u ChromaOffset = LumaOffset >> 2;
 
+    H265FrameCodingData * cd = pcCU->m_Frame->getCD();
+
     if(Text == TEXT_LUMA)
     {
         H265PlaneYCommon* Pcm;
@@ -1719,8 +1721,8 @@ void H265SampleAdaptiveOffset::PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u
         Src = m_Frame->GetLumaAddr(pcCU->CUAddr, AbsZorderIdx);
         Pcm = pcCU->m_IPCMSampleY + LumaOffset;
         Stride  = m_Frame->pitch_luma();
-        Width  = (g_MaxCUWidth >> Depth);
-        Height = (g_MaxCUHeight >> Depth);
+        Width  = (cd->m_MaxCUWidth >> Depth);
+        Height = (cd->m_MaxCUHeight >> Depth);
 
         if (pcCU->isLosslessCoded(AbsZorderIdx) && !pcCU->m_IPCMFlag[AbsZorderIdx])
         {
@@ -1750,8 +1752,8 @@ void H265SampleAdaptiveOffset::PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u
         PcmCr = pcCU->m_IPCMSampleCr + ChromaOffset;
 
         Stride = m_Frame->pitch_chroma();
-        Width  = ((g_MaxCUWidth >> Depth) / 2);
-        Height = ((g_MaxCUWidth >> Depth) / 2);
+        Width  = ((cd->m_MaxCUWidth >> Depth) / 2);
+        Height = ((cd->m_MaxCUWidth >> Depth) / 2);
         if (pcCU->isLosslessCoded(AbsZorderIdx) && !pcCU->m_IPCMFlag[AbsZorderIdx])
         {
             PcmLeftShiftBit = 0;

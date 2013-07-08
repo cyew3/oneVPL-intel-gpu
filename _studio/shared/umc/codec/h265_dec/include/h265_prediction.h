@@ -102,7 +102,7 @@ public:
     H265Prediction();
     virtual ~H265Prediction();
 
-    void InitTempBuff();
+    void InitTempBuff(const H265SeqParamSet* sps);
 
     // inter
     void MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPadded* YUVPred, Ipp32u AbsPartIdx, Ipp32u Depth, H265PUInfo *PUInfo);

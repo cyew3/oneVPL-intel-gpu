@@ -52,10 +52,10 @@ H265Prediction::~H265Prediction()
     m_temp_interpolarion_buffer = 0;
 }
 
-void H265Prediction::InitTempBuff()
+void H265Prediction::InitTempBuff(const H265SeqParamSet* sps)
 {
-    if (m_YUVExt && m_YUVExtHeight == ((g_MaxCUHeight + 2) << 4) && 
-        m_YUVExtStride == ((g_MaxCUWidth  + 8) << 4))
+    if (m_YUVExt && m_YUVExtHeight == ((sps->MaxCUHeight + 2) << 4) && 
+        m_YUVExtStride == ((sps->MaxCUWidth  + 8) << 4))
         return;
 
     if (m_YUVExt)
@@ -67,13 +67,13 @@ void H265Prediction::InitTempBuff()
     }
 
     // ML: OPT: TODO: Allocate only when we need it
-    m_YUVExtHeight = ((g_MaxCUHeight + 2) << 4);
-    m_YUVExtStride = ((g_MaxCUWidth  + 8) << 4);
+    m_YUVExtHeight = ((sps->MaxCUHeight + 2) << 4);
+    m_YUVExtStride = ((sps->MaxCUWidth  + 8) << 4);
     m_YUVExt = new H265PlaneYCommon[m_YUVExtStride * m_YUVExtHeight];
 
     // new structure
-    m_YUVPred[0].create(g_MaxCUWidth, g_MaxCUHeight, sizeof(Ipp16s), sizeof(Ipp16s), g_MaxCUWidth, g_MaxCUHeight, g_MaxCUDepth);
-    m_YUVPred[1].create(g_MaxCUWidth, g_MaxCUHeight, sizeof(Ipp16s), sizeof(Ipp16s), g_MaxCUWidth, g_MaxCUHeight, g_MaxCUDepth);
+    m_YUVPred[0].create(sps->MaxCUWidth, sps->MaxCUHeight, sizeof(Ipp16s), sizeof(Ipp16s), sps->MaxCUWidth, sps->MaxCUHeight, sps->MaxCUDepth);
+    m_YUVPred[1].create(sps->MaxCUWidth, sps->MaxCUHeight, sizeof(Ipp16s), sizeof(Ipp16s), sps->MaxCUWidth, sps->MaxCUHeight, sps->MaxCUDepth);
 
     if (!m_temp_interpolarion_buffer)
         m_temp_interpolarion_buffer = ippsMalloc_8u(2*128*128);    

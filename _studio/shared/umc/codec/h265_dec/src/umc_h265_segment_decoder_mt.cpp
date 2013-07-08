@@ -68,7 +68,7 @@ void H265SegmentDecoderMultiThreaded::StartProcessingSegment(H265Task &Task)
     m_SD = CreateSegmentDecoder();
     this->create((H265SeqParamSet*)m_pSeqParamSet);
 
-    m_Prediction->InitTempBuff();
+    m_Prediction->InitTempBuff(m_pSeqParamSet);
 
     // Pad reference frames that weren't padded yet
     Ipp32s sliceNum = m_pSlice->GetSliceNum();

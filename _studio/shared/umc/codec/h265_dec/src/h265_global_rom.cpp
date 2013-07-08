@@ -275,11 +275,6 @@ const Ipp16u *g_SigLastScan[3][4] =
 };
 
 // Data structure related table & variable -----------------------------------------------------------------------------
-Ipp32u g_MaxCUWidth  = MAX_CU_SIZE;
-Ipp32u g_MaxCUHeight = MAX_CU_SIZE;
-Ipp32u g_MaxCUDepth  = MAX_CU_DEPTH;
-Ipp32u g_AddCUDepth  = 0;
-
 Ipp32u g_ZscanToRaster [ MAX_NUM_SPU_W * MAX_NUM_SPU_W ] = { 0, };
 Ipp32u g_RasterToZscan [ MAX_NUM_SPU_W * MAX_NUM_SPU_W ] = { 0, };
 Ipp32u g_RasterToPelX  [ MAX_NUM_SPU_W * MAX_NUM_SPU_W ] = { 0, };
@@ -455,9 +450,6 @@ const Ipp8u g_AngModeMapping[4][34] = // intra mode conversion for most probable
     {2,3,3,10,10, 4,11,11,0,0, 0,12,12,5,5, 13,13,6,14,14, 7,7,15,15,1, 1,1,16,16,8, 8,2,2,9}, // conversion to 17 modes
     {2,2,2,2,2, 2,2,0,0,0, 0,0,0,0,2, 2,2,2,2,2, 2,1,1,1,1, 1,1,1,1,1, 2,2,2,2}                // conversion to 3 modes
 };
-
-Ipp32u g_PCMBitDepthLuma     = 8;    // PCM bit-depth
-Ipp32u g_PCMBitDepthChroma   = 8;    // PCM bit-depth
 
 // Misc. -------------------------------------------------------------------------------------------------------------------
 Ipp8s  g_ConvertToBit[MAX_CU_SIZE + 1] =

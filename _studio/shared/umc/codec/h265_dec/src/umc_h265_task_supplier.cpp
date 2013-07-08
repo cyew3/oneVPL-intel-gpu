@@ -2089,11 +2089,11 @@ void TaskSupplier_H265::ActivateHeaders(H265SeqParamSet *sps, H265PicParamSet *p
 {
     pps->MinCUDQPSize = sps->MaxCUWidth >> pps->diff_cu_qp_delta_depth;
 
-    for (Ipp32u i = 0; i < sps->MaxCUDepth - g_AddCUDepth; i++)
+    for (Ipp32u i = 0; i < sps->MaxCUDepth - sps->AddCUDepth; i++)
     {
         sps->m_AMPAcc[i] = sps->amp_enabled_flag;
     }
-    for (Ipp32u i = sps->MaxCUDepth - g_AddCUDepth; i < sps->MaxCUDepth; i++)
+    for (Ipp32u i = sps->MaxCUDepth - sps->AddCUDepth; i < sps->MaxCUDepth; i++)
     {
         sps->m_AMPAcc[i] = 0;
     }
@@ -2395,39 +2395,7 @@ UMC::Status TaskSupplier_H265::AllocateFrameData(H265DecoderFrame * pFrame, Ippi
     pFrame->allocate(frmData, &info);
     pFrame->m_index = frmMID;
 
-    if (pFrame->m_CodingData == NULL)
-    {
-        pFrame->allocateCodingData(pSeqParamSet);
-    }
-
-    pFrame->m_CodingData->m_CUOrderMap = pPicParamSet->m_CtbAddrTStoRS;
-    pFrame->m_CodingData->m_InverseCUOrderMap = pPicParamSet->m_CtbAddrRStoTS;
-    pFrame->m_CodingData->m_TileIdxMap = pPicParamSet->m_TileIdx;
-
-    if (pSeqParamSet->sample_adaptive_offset_enabled_flag)
-    {
-        Ipp32s size = pFrame->m_CodingData->m_WidthInCU * pFrame->m_CodingData->m_HeightInCU;
-        if (pFrame->m_sizeOfSAOData < size)
-        {
-            if (pFrame->m_sizeOfSAOData != 0)
-            {
-                delete[] pFrame->m_saoLcuParam[0];
-                pFrame->m_saoLcuParam[0] = NULL;
-
-                delete[] pFrame->m_saoLcuParam[1];
-                pFrame->m_saoLcuParam[1] = NULL;
-
-                delete[] pFrame->m_saoLcuParam[2];
-                pFrame->m_saoLcuParam[2] = NULL;
-            }
-
-            pFrame->m_saoLcuParam[0] = new SAOLCUParam[size];
-            pFrame->m_saoLcuParam[1] = new SAOLCUParam[size];
-            pFrame->m_saoLcuParam[2] = new SAOLCUParam[size];
-
-            pFrame->m_sizeOfSAOData = size;
-        }
-    }
+    pFrame->allocateCodingData(pSeqParamSet, pPicParamSet);
 
     return UMC::UMC_OK;
 }

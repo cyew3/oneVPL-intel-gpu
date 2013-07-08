@@ -32,6 +32,10 @@ H265DecoderFrame::H265DecoderFrame(UMC::MemoryAllocator *pMemoryAllocator, Heap 
     , post_procces_complete(false)
     , m_index(-1)
     , m_UID(-1)
+    , m_cuOffsetY(0)
+    , m_cuOffsetC(0)
+    , m_buOffsetY(0)
+    , m_buOffsetC(0)
     , m_pObjHeap(pObjHeap)
     , m_pHeap(heap)
 {
@@ -338,71 +342,101 @@ void H265DecoderFrame::DefaultFill(Ipp32s fields_mask, bool isChromaOnly, Ipp8u 
     }
 }
 
-void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* pSeqParamSet)
+void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* pSeqParamSet, const H265PicParamSet *pPicParamSet)
 {
+    if (!m_CodingData)
+    {
+        m_CodingData = new H265FrameCodingData();
+    }
+
     Ipp32u MaxCUWidth = pSeqParamSet->MaxCUWidth;
     Ipp32u MaxCUHeight = pSeqParamSet->MaxCUHeight;
     Ipp32u MaxCUDepth = pSeqParamSet->MaxCUDepth;
-    //initialization for m_sliceheaders in m_codingdata in Frame
-    m_CodingData = new H265FrameCodingData();
-    m_CodingData->create(m_lumaSize.width, m_lumaSize.height, pSeqParamSet->MaxCUWidth, pSeqParamSet->MaxCUHeight, pSeqParamSet->MaxCUDepth);
 
-    Ipp32s NumCUInWidth = m_CodingData->m_WidthInCU;
-    Ipp32s NumCUInHeight = m_CodingData->m_HeightInCU;
-    m_cuOffsetY = new Ipp32s[NumCUInWidth * NumCUInHeight];
-    m_cuOffsetC = new Ipp32s[NumCUInWidth * NumCUInHeight];
-    for (Ipp32s cuRow = 0; cuRow < NumCUInHeight; cuRow++)
+    Ipp32u widthInCU = (m_lumaSize.width % MaxCUWidth) ? m_lumaSize.width / MaxCUWidth + 1 : m_lumaSize.width / MaxCUWidth;
+    Ipp32u heightInCU = (m_lumaSize.height % MaxCUHeight) ? m_lumaSize.height / MaxCUHeight + 1 : m_lumaSize.height / MaxCUHeight;
+
+    if (m_CodingData->m_MaxCUWidth != MaxCUWidth || m_CodingData->m_MaxCUHeight != MaxCUHeight ||
+        m_CodingData->m_WidthInCU != widthInCU  || m_CodingData->m_HeightInCU != heightInCU || m_CodingData->m_MaxCUDepth != MaxCUDepth)
     {
-        for (Ipp32s cuCol = 0; cuCol < NumCUInWidth; cuCol++)
+        m_CodingData->create(m_lumaSize.width, m_lumaSize.height, MaxCUWidth, MaxCUHeight, pSeqParamSet->MaxCUDepth);
+
+        delete[] m_cuOffsetY;
+        delete[] m_cuOffsetC;
+        delete[] m_buOffsetY;
+        delete[] m_buOffsetC;
+
+        Ipp32s NumCUInWidth = m_CodingData->m_WidthInCU;
+        Ipp32s NumCUInHeight = m_CodingData->m_HeightInCU;
+        m_cuOffsetY = new Ipp32s[NumCUInWidth * NumCUInHeight];
+        m_cuOffsetC = new Ipp32s[NumCUInWidth * NumCUInHeight];
+        for (Ipp32s cuRow = 0; cuRow < NumCUInHeight; cuRow++)
         {
-            m_cuOffsetY[cuRow * NumCUInWidth + cuCol] = m_pitch_luma * cuRow * MaxCUHeight + cuCol * MaxCUWidth;
-            m_cuOffsetC[cuRow * NumCUInWidth + cuCol] = m_pitch_chroma * cuRow * (MaxCUHeight / 2) + cuCol * (MaxCUWidth);
+            for (Ipp32s cuCol = 0; cuCol < NumCUInWidth; cuCol++)
+            {
+                m_cuOffsetY[cuRow * NumCUInWidth + cuCol] = m_pitch_luma * cuRow * MaxCUHeight + cuCol * MaxCUWidth;
+                m_cuOffsetC[cuRow * NumCUInWidth + cuCol] = m_pitch_chroma * cuRow * (MaxCUHeight / 2) + cuCol * (MaxCUWidth);
+            }
+        }
+
+        m_buOffsetY = new Ipp32s[(Ipp32s)(1 << (2 * MaxCUDepth))];
+        m_buOffsetC = new Ipp32s[(Ipp32s)(1 << (2 * MaxCUDepth))];
+        for (Ipp32s buRow = 0; buRow < (1 << MaxCUDepth); buRow++)
+        {
+            for (Ipp32s buCol = 0; buCol < (1 << MaxCUDepth); buCol++)
+            {
+                m_buOffsetY[(buRow << MaxCUDepth) + buCol] = m_pitch_luma * buRow * (MaxCUHeight >> MaxCUDepth) + buCol * (MaxCUWidth  >> MaxCUDepth);
+                m_buOffsetC[(buRow << MaxCUDepth) + buCol] = m_pitch_chroma * buRow * (MaxCUHeight / 2 >> MaxCUDepth) + buCol * (MaxCUWidth >> MaxCUDepth);
+            }
         }
     }
 
-    m_buOffsetY = new Ipp32s[(Ipp32s)(1 << (2 * MaxCUDepth))];
-    m_buOffsetC = new Ipp32s[(Ipp32s)(1 << (2 * MaxCUDepth))];
-    for (Ipp32s buRow = 0; buRow < (1 << MaxCUDepth); buRow++)
+    m_CodingData->m_CUOrderMap = pPicParamSet->m_CtbAddrTStoRS;
+    m_CodingData->m_InverseCUOrderMap = pPicParamSet->m_CtbAddrRStoTS;
+    m_CodingData->m_TileIdxMap = pPicParamSet->m_TileIdx;
+
+    if (pSeqParamSet->sample_adaptive_offset_enabled_flag)
     {
-        for (Ipp32s buCol = 0; buCol < (1 << MaxCUDepth); buCol++)
+        Ipp32s size = m_CodingData->m_WidthInCU * m_CodingData->m_HeightInCU;
+        if (m_sizeOfSAOData < size)
         {
-            m_buOffsetY[(buRow << MaxCUDepth) + buCol] = m_pitch_luma * buRow * (MaxCUHeight >> MaxCUDepth) + buCol * (MaxCUWidth  >> MaxCUDepth);
-            m_buOffsetC[(buRow << MaxCUDepth) + buCol] = m_pitch_chroma * buRow * (MaxCUHeight / 2 >> MaxCUDepth) + buCol * (MaxCUWidth >> MaxCUDepth);
+            if (m_sizeOfSAOData != 0)
+            {
+                delete[] m_saoLcuParam[0];
+                m_saoLcuParam[0] = NULL;
+
+                delete[] m_saoLcuParam[1];
+                m_saoLcuParam[1] = NULL;
+
+                delete[] m_saoLcuParam[2];
+                m_saoLcuParam[2] = NULL;
+            }
+
+            m_saoLcuParam[0] = new SAOLCUParam[size];
+            m_saoLcuParam[1] = new SAOLCUParam[size];
+            m_saoLcuParam[2] = new SAOLCUParam[size];
+
+            m_sizeOfSAOData = size;
         }
     }
 }
 
 void H265DecoderFrame::deallocateCodingData()
 {
-    if (m_CodingData)
-    {
-        delete m_CodingData;
-        m_CodingData = NULL;
-    }
+    delete m_CodingData;
+    m_CodingData = NULL;
 
-    if (m_cuOffsetY)
-    {
-        delete [] m_cuOffsetY;
-        m_cuOffsetY = NULL;
-    }
+    delete [] m_cuOffsetY;
+    m_cuOffsetY = NULL;
 
-    if (m_cuOffsetC)
-    {
-        delete [] m_cuOffsetC;
-        m_cuOffsetC = NULL;
-    }
+    delete [] m_cuOffsetC;
+    m_cuOffsetC = NULL;
 
-    if (m_buOffsetY)
-    {
-        delete [] m_buOffsetY;
-        m_buOffsetY = NULL;
-    }
+    delete [] m_buOffsetY;
+    m_buOffsetY = NULL;
 
-    if (m_buOffsetC)
-    {
-        delete [] m_buOffsetC;
-        m_buOffsetC = NULL;
-    }
+    delete [] m_buOffsetC;
+    m_buOffsetC = NULL;
 }
 
 #if !defined(_WIN32) && !defined(_WIN64)

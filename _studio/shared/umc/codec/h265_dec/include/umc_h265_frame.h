@@ -334,7 +334,7 @@ public:
 
 
     //initialization for m_sliceheaders in m_codingdata in Frame
-    void allocateCodingData(const H265SeqParamSet* pSeqParamSet);
+    void allocateCodingData(const H265SeqParamSet* pSeqParamSet, const H265PicParamSet *pPicParamSet);
     void deallocateCodingData();
 
     //  Access starting position of original picture for specific coding unit (CU) or partition unit (PU)

@@ -20,14 +20,14 @@ void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiM
 {
     Ipp32u i;
 
-    m_TotalDepth = (Ipp8u) uiMaxDepth;
-    m_NumPartitions  = 1 << (m_TotalDepth<<1);
+    m_MaxCUDepth = (Ipp8u) uiMaxDepth;
+    m_NumPartitions  = 1 << (m_MaxCUDepth<<1);
 
     m_MaxCUWidth = uiMaxWidth;
     m_MaxCUHeight = uiMaxHeight;
 
-    m_MinCUWidth = uiMaxWidth >> m_TotalDepth;
-    m_MinCUHeight = uiMaxHeight >> m_TotalDepth;
+    m_MinCUWidth = uiMaxWidth >> m_MaxCUDepth;
+    m_MinCUHeight = uiMaxHeight >> m_MaxCUDepth;
 
     m_NumPartInWidth = m_MaxCUWidth / m_MinCUWidth;
     m_NumPartInHeight = m_MaxCUHeight / m_MinCUHeight;
@@ -48,7 +48,7 @@ void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiM
     for (i=0; i < m_NumCUsInFrame; i++)
     {
         m_CUData[i] = new H265CodingUnit;
-        m_CUData[i]->create (m_NumPartitions, m_MaxCUWidth, m_MaxCUHeight, false, m_MaxCUWidth >> m_TotalDepth);
+        m_CUData[i]->create (m_NumPartitions, m_MaxCUWidth, m_MaxCUHeight, false, m_MaxCUWidth >> m_MaxCUDepth);
     }
 }
 

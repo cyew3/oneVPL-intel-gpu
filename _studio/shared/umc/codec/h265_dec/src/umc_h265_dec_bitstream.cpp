@@ -580,8 +580,8 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
     READ_UVLC( uiCode, "log2_diff_max_min_coding_block_size");
     unsigned uiMaxCUDepthCorrect = uiCode;
     pcSPS->setLog2CtbSize(uiCode + log2MinCUSize);        // saved to use in HW decoder
-    pcSPS->setMaxCUWidth  ( 1<<(log2MinCUSize + uiMaxCUDepthCorrect) ); g_MaxCUWidth  = 1<<(log2MinCUSize + uiMaxCUDepthCorrect);
-    pcSPS->setMaxCUHeight ( 1<<(log2MinCUSize + uiMaxCUDepthCorrect) ); g_MaxCUHeight = 1<<(log2MinCUSize + uiMaxCUDepthCorrect);
+    pcSPS->setMaxCUWidth  ( 1<<(log2MinCUSize + uiMaxCUDepthCorrect) );
+    pcSPS->setMaxCUHeight ( 1<<(log2MinCUSize + uiMaxCUDepthCorrect) );
     READ_UVLC( uiCode, "log2_min_transform_block_size_minus2");   pcSPS->log2_min_transform_block_size = uiCode + 2;
 
     READ_UVLC(uiCode, "log2_diff_max_min_transform_block_size"); pcSPS->log2_max_transform_block_size = uiCode + pcSPS->log2_min_transform_block_size;
@@ -589,13 +589,14 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
 
     READ_UVLC(uiCode, "max_transform_hierarchy_depth_inter");   pcSPS->max_transform_hierarchy_depth_inter = uiCode + 1;
     READ_UVLC(uiCode, "max_transform_hierarchy_depth_intra");   pcSPS->max_transform_hierarchy_depth_intra = uiCode + 1;
-    g_AddCUDepth = 0;
-    while((pcSPS->getMaxCUWidth() >> uiMaxCUDepthCorrect ) > (unsigned)( 1 << ( pcSPS->log2_min_transform_block_size + g_AddCUDepth)))
+    
+    Ipp32u addCUDepth = 0;
+    while((pcSPS->getMaxCUWidth() >> uiMaxCUDepthCorrect ) > (unsigned)( 1 << ( pcSPS->log2_min_transform_block_size + addCUDepth)))
     {
-        g_AddCUDepth++;
+        addCUDepth++;
     }
-    pcSPS->setMaxCUDepth( uiMaxCUDepthCorrect+g_AddCUDepth  );
-    g_MaxCUDepth  = uiMaxCUDepthCorrect+g_AddCUDepth;
+    pcSPS->AddCUDepth = addCUDepth;
+    pcSPS->MaxCUDepth = uiMaxCUDepthCorrect + addCUDepth;
     // BB: these parameters may be removed completly and replaced by the fixed values
     pcSPS->setMinTrDepth( 0 );
     pcSPS->setMaxTrDepth( 1 );

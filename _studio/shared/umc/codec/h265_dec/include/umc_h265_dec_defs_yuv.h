@@ -32,11 +32,6 @@ public:
     Ipp32u m_MaxCUHeight;
     Ipp32u m_MaxCUDepth;
 
-    Ipp32u m_LumaMarginX;
-    Ipp32u m_LumaMarginY;
-    Ipp32u m_ChromaMarginX;
-    Ipp32u m_ChromaMarginY;
-
     Ipp32u m_ElementSizeY, m_ElementSizeUV;
     //end of h265
 

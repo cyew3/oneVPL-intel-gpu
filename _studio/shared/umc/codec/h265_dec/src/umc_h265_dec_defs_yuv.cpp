@@ -19,11 +19,7 @@
 namespace UMC_HEVC_DECODER
 {
 H265DecYUVBufferPadded::H265DecYUVBufferPadded()
-    : m_LumaMarginX(0)
-    , m_LumaMarginY(0)
-    , m_ChromaMarginX(0)
-    , m_ChromaMarginY(0)
-    , m_ElementSizeY(0)
+    : m_ElementSizeY(0)
     , m_ElementSizeUV(0)
     , m_pYPlane(NULL)
     , m_pUVPlane(NULL)
@@ -39,11 +35,7 @@ H265DecYUVBufferPadded::H265DecYUVBufferPadded()
 }
 
 H265DecYUVBufferPadded::H265DecYUVBufferPadded(UMC::MemoryAllocator *pMemoryAllocator)
-    : m_LumaMarginX(0)
-    , m_LumaMarginY(0)
-    , m_ChromaMarginX(0)
-    , m_ChromaMarginY(0)
-    , m_ElementSizeY(0)
+    : m_ElementSizeY(0)
     , m_ElementSizeUV(0)
     , m_pYPlane(NULL)
     , m_pUVPlane(NULL)
@@ -87,10 +79,6 @@ void H265DecYUVBufferPadded::deallocate()
     m_pitch_luma = 0;
     m_pitch_chroma = 0;
 
-    m_LumaMarginX = 0;
-    m_LumaMarginY = 0;
-    m_ChromaMarginX = 0;
-    m_ChromaMarginY = 0;
     m_ElementSizeY = 0;
     m_ElementSizeUV = 0;
 }
@@ -108,12 +96,6 @@ void H265DecYUVBufferPadded::Init(const UMC::VideoDataInfo *info)
     m_pUPlane = 0;
     m_pVPlane = 0;
     m_pUVPlane = 0;
-
-    m_LumaMarginX = g_MaxCUWidth  + 16;
-    m_LumaMarginY = g_MaxCUHeight + 16;
-
-    m_ChromaMarginX = m_LumaMarginX >> 1;
-    m_ChromaMarginY = m_LumaMarginY >> 1;
 
     m_ElementSizeY = sizeof(H265PlaneYCommon);
     m_ElementSizeUV = sizeof(H265PlaneUVCommon);

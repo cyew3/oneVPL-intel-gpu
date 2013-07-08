@@ -152,7 +152,7 @@ void H265CodingUnit::initCU(H265SegmentDecoderMultiThreaded* sd, Ipp32u iCUAddr)
     m_SliceIdx = sd->m_pSlice->GetSliceNum();
     m_SliceHeader = sd->m_pSliceHeader;
     CUAddr = iCUAddr;
-    m_CUPelX = (iCUAddr % sps->WidthInCU) * sps->MaxCUWidth; //HM uses g_MaxCUWidth & g_MaxCUHeight
+    m_CUPelX = (iCUAddr % sps->WidthInCU) * sps->MaxCUWidth;
     m_CUPelY = (iCUAddr / sps->WidthInCU) * sps->MaxCUHeight;
     m_AbsIdxInLCU = 0;
     m_NumPartition = sps->NumPartitionsInCU;
@@ -183,8 +183,8 @@ void H265CodingUnit::setOutsideCUPart(Ipp32u AbsPartIdx, Ipp32u Depth)
     Ipp32u numPartition = m_NumPartition >> (Depth << 1);
     Ipp32u SizeInUchar = sizeof(Ipp8u) * numPartition;
 
-    Ipp8u Width = (Ipp8u) (g_MaxCUWidth >> Depth);
-    Ipp8u Height = (Ipp8u) (g_MaxCUHeight >> Depth);
+    Ipp8u Width = (Ipp8u) (m_Frame->getCD()->m_MaxCUWidth >> Depth);
+    Ipp8u Height = (Ipp8u) (m_Frame->getCD()->m_MaxCUHeight >> Depth);
     memset(m_DepthArray + AbsPartIdx, Depth,  SizeInUchar);
     memset(m_WidthArray + AbsPartIdx, Width,  SizeInUchar);
     memset(m_HeightArray + AbsPartIdx, Height, SizeInUchar);
@@ -273,8 +273,8 @@ H265CodingUnit* H265CodingUnit::getPUAbove(Ipp32u& APartUnitIdx, Ipp32u CurrPart
 H265CodingUnit* H265CodingUnit::getQPMinCULeft(Ipp32u& LPartUnitIdx, Ipp32u CurrAbsIdxInLCU)
 {
     Ipp32u NumPartInCUWidth = m_Frame->getNumPartInWidth();
-    Ipp32u absZorderQpMinCUIdx = (CurrAbsIdxInLCU >> ((g_MaxCUDepth - m_SliceHeader->m_PicParamSet->diff_cu_qp_delta_depth) << 1)) <<
-        ((g_MaxCUDepth - m_SliceHeader->m_PicParamSet->diff_cu_qp_delta_depth) << 1);
+    Ipp32u absZorderQpMinCUIdx = (CurrAbsIdxInLCU >> ((m_Frame->getCD()->m_MaxCUDepth - m_SliceHeader->m_PicParamSet->diff_cu_qp_delta_depth) << 1)) <<
+        ((m_Frame->getCD()->m_MaxCUDepth - m_SliceHeader->m_PicParamSet->diff_cu_qp_delta_depth) << 1);
     Ipp32u AbsRorderQpMinCUIdx = g_ZscanToRaster[absZorderQpMinCUIdx];
 
     // check for left LCU boundary
@@ -299,8 +299,8 @@ H265CodingUnit* H265CodingUnit::getQPMinCULeft(Ipp32u& LPartUnitIdx, Ipp32u Curr
 H265CodingUnit* H265CodingUnit::getQPMinCUAbove(Ipp32u& aPartUnitIdx, Ipp32u CurrAbsIdxInLCU)
 {
     Ipp32u numPartInCUWidth = m_Frame->getNumPartInWidth();
-    Ipp32u absZorderQpMinCUIdx = (CurrAbsIdxInLCU >> ((g_MaxCUDepth - m_SliceHeader->m_PicParamSet->diff_cu_qp_delta_depth) << 1)) <<
-        ((g_MaxCUDepth - m_SliceHeader->m_PicParamSet->diff_cu_qp_delta_depth) << 1);
+    Ipp32u absZorderQpMinCUIdx = (CurrAbsIdxInLCU >> ((m_Frame->getCD()->m_MaxCUDepth - m_SliceHeader->m_PicParamSet->diff_cu_qp_delta_depth) << 1)) <<
+        ((m_Frame->getCD()->m_MaxCUDepth - m_SliceHeader->m_PicParamSet->diff_cu_qp_delta_depth) << 1);
     Ipp32u AbsRorderQpMinCUIdx = g_ZscanToRaster[absZorderQpMinCUIdx];
 
     // check for top LCU boundary
@@ -342,7 +342,7 @@ Ipp32s H265CodingUnit::getLastValidPartIdx(Ipp32s AbsPartIdx)
 
 Ipp8u H265CodingUnit::getLastCodedQP(Ipp32u AbsPartIdx)
 {
-    Ipp32u QUPartIdxMask = ~((1 << ((g_MaxCUDepth - m_SliceHeader->m_PicParamSet->diff_cu_qp_delta_depth) << 1)) - 1);
+    Ipp32u QUPartIdxMask = ~((1 << ((m_Frame->getCD()->m_MaxCUDepth - m_SliceHeader->m_PicParamSet->diff_cu_qp_delta_depth) << 1)) - 1);
     Ipp32s LastValidPartIdx = getLastValidPartIdx(AbsPartIdx & QUPartIdxMask);
     if (AbsPartIdx < m_NumPartition
         && (getSCUAddr() + LastValidPartIdx < m_SliceHeader->SliceCurStartCUAddr))
