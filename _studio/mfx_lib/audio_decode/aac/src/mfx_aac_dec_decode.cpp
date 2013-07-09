@@ -819,7 +819,15 @@ mfxStatus MFX_AAC_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfxAudioPar
                 sts = MFX_ERR_UNSUPPORTED;
             }
         }
-
+        if(in->mfx.AACHeaderDataSize)
+        {
+            memcpy(out->mfx.AACHeaderData,in->mfx.AACHeaderData,in->mfx.AACHeaderDataSize);
+            out->mfx.AACHeaderDataSize = in->mfx.AACHeaderDataSize;
+        }
+        else if(in->mfx.AACHeaderDataSize < 0)
+        {
+            sts = MFX_ERR_UNSUPPORTED;
+        }
     }
     else
     {
