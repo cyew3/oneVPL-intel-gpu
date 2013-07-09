@@ -415,9 +415,8 @@ void UpdateSlice(
         {
             slice[i].RefPicList0[ref].frame_idx    = idx  = dpb[list0[ref] & 0x7f].m_frameIdx & 0x7f;
             slice[i].RefPicList0[ref].picture_id          = reconQueue[idx].surface;
-            slice[i].RefPicList0[ref].flags               = dpb[list0[ref] & 0x7f].m_longterm ? VA_PICTURE_H264_LONG_TERM_REFERENCE : VA_PICTURE_H264_SHORT_TERM_REFERENCE;
-            slice[i].RefPicList0[ref].TopFieldOrderCnt    = dpb[list0[ref] & 0x7f].m_poc[0];
-            slice[i].RefPicList0[ref].BottomFieldOrderCnt = dpb[list0[ref] & 0x7f].m_poc[1];
+            if (task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE)
+                slice[i].RefPicList0[ref].flags               = list0[ref] >> 7 ? VA_PICTURE_H264_BOTTOM_FIELD : VA_PICTURE_H264_TOP_FIELD;
         }
         for (; ref < 32; ref++)
         {
@@ -429,9 +428,8 @@ void UpdateSlice(
         {
             slice[i].RefPicList1[ref].frame_idx    = idx  = dpb[list1[ref] & 0x7f].m_frameIdx & 0x7f;
             slice[i].RefPicList1[ref].picture_id          = reconQueue[idx].surface;
-            slice[i].RefPicList1[ref].flags               = dpb[list1[ref] & 0x7f].m_longterm ? VA_PICTURE_H264_LONG_TERM_REFERENCE : VA_PICTURE_H264_SHORT_TERM_REFERENCE;
-            slice[i].RefPicList1[ref].TopFieldOrderCnt    = dpb[list1[ref] & 0x7f].m_poc[0];
-            slice[i].RefPicList1[ref].BottomFieldOrderCnt = dpb[list1[ref] & 0x7f].m_poc[1];
+            if (task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE)
+                slice[i].RefPicList1[ref].flags               = list0[ref] >> 7 ? VA_PICTURE_H264_BOTTOM_FIELD : VA_PICTURE_H264_TOP_FIELD;
         }
         for (; ref < 32; ref++)
         {
