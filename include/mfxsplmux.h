@@ -36,7 +36,7 @@ mfxStatus  MFX_CDECL MFXSplitter_Init(mfxDataIO dataIO, mfxSplitter *spl);
 mfxStatus  MFX_CDECL MFXSplitter_Close(mfxSplitter spl);
 mfxStatus  MFX_CDECL MFXSplitter_GetInfo(mfxSplitter spl, mfxStreamParams *par);
 
-mfxStatus  MFX_CDECL MFXSplitter_GetBitstream(mfxSplitter spl,  mfxU32 iTrack, mfxBitstream *Bitstream);
+mfxStatus  MFX_CDECL MFXSplitter_GetBitstream(mfxSplitter spl, mfxU32 iInputTrack, mfxU32* iOutputTrack, mfxBitstream *Bitstream);
 mfxStatus  MFX_CDECL MFXSplitter_ReleaseBitstream(mfxSplitter spl,  mfxU32 iTrack, mfxBitstream *Bitstream);
 
 /* Muxer */
