@@ -22,6 +22,12 @@
 #include <immintrin.h>
 #include "mfx_h265_transform_opt.h"
 
+#if defined(_WIN32) || defined(_WIN64)
+  #define ALIGN_DECL(X) __declspec(align(X))
+#else
+  #define ALIGN_DECL(X) __attribute__ ((aligned(X)))
+#endif
+
 namespace MFX_HEVC_ENCODER
 {
 
@@ -95,8 +101,8 @@ unsigned int repos[32] =
 // 9200 CPU clocks. 
 void DCTInverse32x32_sse_update(const short* __restrict src, short* __restrict dst, int dstStride, int shift0)
 {
-   __m128i __declspec(align(16)) buff[32*32];
-   short __declspec(align(16)) temp[32*32];
+   ALIGN_DECL(16) __m128i buff[32*32];
+   ALIGN_DECL(16) short temp[32*32];
    __m128i s0, s1, s2, s3, s4, s5, s6, s7;
    s1 = _mm_setzero_si128();
    s2 = _mm_setzero_si128();
