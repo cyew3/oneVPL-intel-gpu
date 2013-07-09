@@ -1694,7 +1694,7 @@ mfxStatus MFXVideoDECODEVC1::SelfDecodeFrame(mfxFrameSurface1 *surface_work, mfx
         }
 
     }
-    else if (bs && IntUMCStatus == UMC::UMC_WRN_INVALID_STREAM) // SH with valid params
+    else if (bs && IntUMCStatus == UMC::UMC_NTF_NEW_RESOLUTION) // SH with valid params
     {
         // new frame rate parameters
         mfxU32 frCode;
@@ -1724,11 +1724,14 @@ mfxStatus MFXVideoDECODEVC1::SelfDecodeFrame(mfxFrameSurface1 *surface_work, mfx
 
         bs->DataLength -= m_SHSize;
         bs->DataOffset += m_SHSize;
+
+       //new crop parameters
+        m_par.mfx.FrameInfo.CropW = (mfxU16)(2*(m_pVC1VideoDecoder->m_pContext->m_seqLayerHeader.CODED_WIDTH+1));
+        m_par.mfx.FrameInfo.CropH = (mfxU16)(2*(m_pVC1VideoDecoder->m_pContext->m_seqLayerHeader.CODED_HEIGHT+1));
+
         return MFX_WRN_VIDEO_PARAM_CHANGED;
     }
     else if (IntUMCStatus == UMC::UMC_ERR_INVALID_PARAMS) // SH with invalid params
-        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-    else if (IntUMCStatus == UMC::UMC_NTF_NEW_RESOLUTION) // SH with valid params
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     else
         return MFX_ERR_UNDEFINED_BEHAVIOR;
