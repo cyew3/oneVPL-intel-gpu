@@ -22,4 +22,34 @@ typedef struct _VAEncMiscParameterPrivate
     unsigned int reserved[7];  // Reserved for future use.
 } VAEncMiscParameterPrivate;
 
+// structure for encoder capability
+typedef struct _VAEncQueryCapabilities
+{
+    /* these 2 fields should be preserved over all versions of this structure */
+    unsigned int version; /* [in] unique version of the sturcture interface  */
+    unsigned int size;    /* [in] size of the structure*/
+    union
+    {
+        struct
+        {
+            unsigned int SliceStructure    :3; /* 1 - SliceDividerSnb; 2 - SliceDividerHsw; 3 - SliceDividerBluRay; the other - SliceDividerOneSlice  */
+            unsigned int NoInterlacedField :1;
+        } bits;
+        unsigned int CodingLimits;
+    } EncLimits;
+    unsigned int MaxPicWidth;
+    unsigned int MaxPicHeight;
+    unsigned int MaxNum_ReferenceL0;
+    unsigned int MaxNum_ReferenceL1;
+    unsigned int MBBRCSupport;
+} VAEncQueryCapabilities;
+
+// VAAPI Extension to support querying encoder capability
+typedef VAStatus (*vaExtQueryEncCapabilities)(
+    VADisplay                   dpy,
+    VAProfile                   profile,
+    VAEncQueryCapabilities      *pVaEncCaps);
+
+#define VPG_EXT_QUERY_ENC_CAPS  "vpgExtQueryEncCapabilities"
+
 #endif

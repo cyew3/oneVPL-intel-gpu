@@ -515,21 +515,48 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
     VAAPIVideoCORE * hwcore = dynamic_cast<VAAPIVideoCORE *>(m_core);
     MFX_CHECK_WITH_ASSERT(hwcore != 0, MFX_ERR_DEVICE_FAILED);
+    if(hwcore)
+    {
+        mfxStatus mfxSts = hwcore->GetVAService(&m_vaDisplay);
+        MFX_CHECK_STS(mfxSts);
+    }
 
     m_width  = width;
     m_height = height;
 
     memset(&m_caps, 0, sizeof(m_caps));
 
-    m_caps.MaxPicWidth  = 1920;
-    m_caps.MaxPicHeight = 1088;
-    m_caps.NoInterlacedField = 1; // disable interlaced encoding
     m_caps.BRCReset = 1; // no bitrate resolution control
     m_caps.VCMBitrateControl = 0; //Video conference mode
     m_caps.HeaderInsertion = 0; // we will privide headers (SPS, PPS) in binary format to the driver
-    m_caps.SliceStructure = m_core->GetHWType() == MFX_HW_HSW ? 2 : 1; // 1 - SliceDividerSnb; 2 - SliceDividerHsw; 3 - SliceDividerBluRay; the other - SliceDividerOneSlice
-    m_caps.MaxNum_Reference = 1; //WA for HSW
-    m_caps.MaxNum_Reference1 = 1;
+
+    VAStatus vaSts;
+    vaExtQueryEncCapabilities pfnVaExtQueryCaps = NULL;
+    pfnVaExtQueryCaps = (vaExtQueryEncCapabilities)vaGetLibFunc(m_vaDisplay,VPG_EXT_QUERY_ENC_CAPS);
+    if (pfnVaExtQueryCaps)
+    {
+        VAEncQueryCapabilities VaEncCaps;
+        memset(&VaEncCaps, 0, sizeof(VaEncCaps));
+        VaEncCaps.size = sizeof(VAEncQueryCapabilities);
+        vaSts = pfnVaExtQueryCaps(m_vaDisplay, VAProfileH264Baseline, &VaEncCaps);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+        m_caps.MaxPicWidth  = VaEncCaps.MaxPicWidth;
+        m_caps.MaxPicHeight = VaEncCaps.MaxPicHeight;
+        m_caps.SliceStructure = VaEncCaps.EncLimits.bits.SliceStructure;
+        m_caps.NoInterlacedField = VaEncCaps.EncLimits.bits.NoInterlacedField;
+        m_caps.MaxNum_Reference = VaEncCaps.MaxNum_ReferenceL0;
+        m_caps.MaxNum_Reference1 = VaEncCaps.MaxNum_ReferenceL1;
+    }
+    else
+    {
+        m_caps.MaxPicWidth  = 1920;
+        m_caps.MaxPicHeight = 1088;
+        m_caps.SliceStructure = m_core->GetHWType() == MFX_HW_HSW ? 2 : 1; // 1 - SliceDividerSnb; 2 - SliceDividerHsw; 3 - SliceDividerBluRay; the other - SliceDividerOneSlice
+        m_caps.NoInterlacedField = 1;
+        m_caps.MaxNum_Reference = 1;
+        m_caps.MaxNum_Reference1 = 1;
+    }
 
     return MFX_ERR_NONE;
 
@@ -541,13 +568,6 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
     if(IsMvcProfile(par.mfx.CodecProfile))
         return MFX_WRN_PARTIAL_ACCELERATION;
 
-    VAAPIVideoCORE * hwcore = dynamic_cast<VAAPIVideoCORE *>(m_core);
-    if(hwcore)
-    {
-        mfxStatus mfxSts = hwcore->GetVAService(&m_vaDisplay);
-        MFX_CHECK_STS(mfxSts);
-    }
-
     if(0 == m_reconQueue.size())
     {
     /* We need to pass reconstructed surfaces wheh call vaCreateContext().
@@ -557,52 +577,46 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
         return MFX_ERR_NONE;
     }
 
+    MFX_CHECK(m_vaDisplay, MFX_ERR_DEVICE_FAILED);
     VAStatus vaSts;
 
-    // should be moved to core->IsGuidSupported()
+    mfxI32 entrypointsIndx = 0;
+    mfxI32 numEntrypoints = vaMaxNumEntrypoints(m_vaDisplay);
+    MFX_CHECK(numEntrypoints, MFX_ERR_DEVICE_FAILED);
+
+    std::vector<VAEntrypoint> pEntrypoints(numEntrypoints);
+
+    vaSts = vaQueryConfigEntrypoints(
+                m_vaDisplay,
+                ConvertProfileTypeMFX2VAAPI(par.mfx.CodecProfile),
+                Begin(pEntrypoints),
+                &numEntrypoints);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    bool bEncodeEnable = false;
+    for( entrypointsIndx = 0; entrypointsIndx < numEntrypoints; entrypointsIndx++ )
     {
-        VAEntrypoint* pEntrypoints = NULL;
-        mfxI32 entrypointsCount = 0, entrypointsIndx = 0;
-        mfxI32 maxNumEntrypoints   = vaMaxNumEntrypoints(m_vaDisplay);
-
-        if(maxNumEntrypoints)
-            pEntrypoints = (VAEntrypoint*)ippsMalloc_8u(maxNumEntrypoints*sizeof(VAEntrypoint));
-        else
-            return MFX_ERR_DEVICE_FAILED;
-
-        vaSts = vaQueryConfigEntrypoints(
-            m_vaDisplay,
-            ConvertProfileTypeMFX2VAAPI(par.mfx.CodecProfile),
-            pEntrypoints,
-            &entrypointsCount);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-        bool bEncodeEnable = false;
-        for( entrypointsIndx = 0; entrypointsIndx < entrypointsCount; entrypointsIndx++ )
+        if( VAEntrypointEncSlice == pEntrypoints[entrypointsIndx] )
         {
-            if( VAEntrypointEncSlice == pEntrypoints[entrypointsIndx] )
-            {
-                bEncodeEnable = true;
-                break;
-            }
-        }
-        ippsFree(pEntrypoints);
-        if( !bEncodeEnable )
-        {
-            return MFX_ERR_DEVICE_FAILED;// unsupport?
+            bEncodeEnable = true;
+            break;
         }
     }
-    // IsGuidSupported()
+    if( !bEncodeEnable )
+    {
+        return MFX_ERR_DEVICE_FAILED;
+    }
 
     // Configuration
     VAConfigAttrib attrib[2];
 
     attrib[0].type = VAConfigAttribRTFormat;
     attrib[1].type = VAConfigAttribRateControl;
-    vaGetConfigAttributes(m_vaDisplay,
+    vaSts = vaGetConfigAttributes(m_vaDisplay,
                           ConvertProfileTypeMFX2VAAPI(par.mfx.CodecProfile),
                           VAEntrypointEncSlice,
                           &attrib[0], 2);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     if ((attrib[0].value & VA_RT_FORMAT_YUV420) == 0)
         return MFX_ERR_DEVICE_FAILED;
