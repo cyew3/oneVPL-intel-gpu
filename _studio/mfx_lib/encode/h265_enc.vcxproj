@@ -283,6 +283,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\optimization\h265\src\mfx_h265_sad_sse.cpp" />
+    <ClCompile Include="..\optimization\h265\src\mfx_h265_transform_fwd_sse.cpp" />
     <ClCompile Include="..\optimization\h265\src\mfx_h265_transform_inv_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_bitstream.cpp">
       <AssemblerOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AssemblyAndSourceCode</AssemblerOutput>

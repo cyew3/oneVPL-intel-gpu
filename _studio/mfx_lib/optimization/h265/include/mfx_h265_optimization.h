@@ -13,14 +13,17 @@
 #ifndef __MFX_H265_OPTIMIZATION_H__
 #define __MFX_H265_OPTIMIZATION_H__
 
-//#include "mfx_h265_defs.h"
 
 #if defined(_WIN32) || defined(_WIN64)
   #define H265_FORCEINLINE __forceinline
   #define H265_NONLINE __declspec(noinline)
+  #define H265_FASTCALL __fastcall
+  #define ALIGN_DECL(X) __declspec(align(X))
 #else
   #define H265_FORCEINLINE __attribute__((always_inline))
   #define H265_NONLINE __attribute__((noinline))
+  #define H265_FASTCALL
+  #define ALIGN_DECL(X) __attribute__ ((aligned(X)))
 #endif
 
 // This better be placed in some general/common header
@@ -40,18 +43,23 @@
 namespace MFX_HEVC_COMMON
 {
     /* transform Inv */
-    void IDST_4x4_SSE4(void *destPtr, const short *__restrict coeff, int destStride, int destSize);
-    void IDCT_4x4_SSE4(void *destPtr, const short *__restrict coeff, int destStride, int destSize);
-    void IDCT_8x8_SSE4(void *destPtr, const short *__restrict coeff, int destStride, int destSize);
-    void IDCT_16x16_SSE4(void *destPtr, const short *__restrict coeff, int destStride, int destSize);
-    void IDCT_32x32_SSE4(void *destPtr, const short *__restrict coeff, int destStride, int destSize);
+    void IDST_4x4_SSE4  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
+    void IDCT_4x4_SSE4  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
+    void IDCT_8x8_SSE4  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
+    void IDCT_16x16_SSE4(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
+    void IDCT_32x32_SSE4(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
 
     /* interpolation ??? */       
 };
 
 namespace MFX_HEVC_ENCODER
 {
-    /* transform Fwd - NIY */
+    /* transform Fwd */
+    void H265_FASTCALL h265_DST4x4Fwd_sse2  (const short *H265_RESTRICT src, short *H265_RESTRICT dst);
+    void H265_FASTCALL h265_DCT4x4Fwd_sse2  (const short *H265_RESTRICT src, short *H265_RESTRICT dst);
+    void H265_FASTCALL h265_DCT8x8Fwd_sse2  (const short *H265_RESTRICT src, short *H265_RESTRICT dst);
+    void H265_FASTCALL h265_DCT16x16Fwd_sse2(const short *H265_RESTRICT src, short *H265_RESTRICT dst);
+    void H265_FASTCALL h265_DCT32x32Fwd_sse2(const short *H265_RESTRICT src, short *H265_RESTRICT dst);
 
     /* SAD */
     typedef IppStatus (__STDCALL *SADfunc8u)(
@@ -72,4 +80,3 @@ namespace MFX_HEVC_DECODER
 #endif // __MFX_H265_OPTIMIZATION_H__
 #endif // defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined(MFX_ENABLE_H265_VIDEO_DECODE)
 /* EOF */
-
