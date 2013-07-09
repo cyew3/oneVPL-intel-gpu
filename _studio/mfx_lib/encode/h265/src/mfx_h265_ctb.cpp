@@ -13,6 +13,7 @@
 #include <limits.h> /* for INT_MAX on Linux/Android */
 
 #include "mfx_h265_defs.h"
+#include "mfx_h265_optimization.h"
 
 static Ipp32s GetLumaOffset(H265VideoParam *par, Ipp32s abs_part_idx, Ipp32s pitch) {
     Ipp32s maxDepth = par->MaxTotalDepth;
@@ -1408,7 +1409,7 @@ Ipp32s H265CU::MatchingMetric_PU(H265MEInfo* me_info, H265MV* MV, H265Frame *Pic
         recPitch = MAX_CU_SIZE;
     }
 
-    SAD_8u[me_info->width >> 2][me_info->height >> 2](pSrc, pitch_src, pRec, recPitch, &cost, 0);
+    MFX_HEVC_ENCODER::SAD_8u[me_info->width >> 2][me_info->height >> 2](pSrc, pitch_src, pRec, recPitch, &cost, 0);
 
     return cost;
 }

@@ -11,7 +11,8 @@
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #include "mfx_h265_defs.h"
-#include "mfx_h265_transform_opt.h"
+
+#include "mfx_h265_optimization.h"
 
 /*
 void h265_transform_direct_copy(const VitIf in_VitIf)
@@ -62,27 +63,27 @@ void H265CU::TransformInv(Ipp32s offset, Ipp32s width, Ipp8u is_luma, Ipp8u is_i
         if (is_luma && is_intra && width == 4)
         {
             //h265_dst_inv4x4(residuals, bit_depth);            
-            MFX_HEVC_ENCODER::inv_4x4_dst_sse2(residuals, residuals, 4, 2);
+            MFX_HEVC_COMMON::IDST_4x4_SSE4(residuals, residuals, 4, 2);
         }
         else
         {
             switch (width) {
             case 4:
                 //h265_dct_inv4x4(residuals, bit_depth);
-                MFX_HEVC_ENCODER::inv_4x4_dct_sse2(residuals, residuals, 4, 2);
+                MFX_HEVC_COMMON::IDCT_4x4_SSE4(residuals, residuals, 4, 2);
                 break;
             case 8:
                 //h265_dct_inv8x8(residuals, bit_depth);
-                MFX_HEVC_ENCODER::inv_8x8_dct_sse2(residuals, residuals, 8, 2);
+                MFX_HEVC_COMMON::IDCT_8x8_SSE4(residuals, residuals, 8, 2);
                 break;
             case 16:
                 //h265_dct_inv16x16(residuals, bit_depth);
-                MFX_HEVC_ENCODER::inv_16x16_dct_sse2(residuals, residuals, 16, 2);
+                MFX_HEVC_COMMON::IDCT_16x16_SSE4(residuals, residuals, 16, 2);
                 break;
             case 32:
                 //h265_dct_inv32x32(residuals, bit_depth);
                 //MFX_HEVC_ENCODER::DCTInverse32x32_sse(residuals, residuals, 32, 2);
-                MFX_HEVC_ENCODER::DCTInverse32x32_sse_update(residuals, residuals, 32, 2);
+                MFX_HEVC_COMMON::IDCT_32x32_SSE4(residuals, residuals, 32, 2);
                 break;
             }
         }

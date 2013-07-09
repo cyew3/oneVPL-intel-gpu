@@ -346,17 +346,6 @@ public:
         bool m_isRDOQ;
 };
 
-
-typedef IppStatus (__STDCALL *SADfunc8u)(
-    const Ipp8u* pSrcCur,
-    Ipp32s srcCurStep,
-    const Ipp8u* pSrcRef,
-    Ipp32s srcRefStep,
-    Ipp32s* pDst,
-    Ipp32s mcType);
-
-extern SADfunc8u* SAD_8u[17];
-
 #endif // __MFX_H265_CTB_H__
 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE
