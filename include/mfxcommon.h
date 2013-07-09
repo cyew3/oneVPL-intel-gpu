@@ -109,6 +109,8 @@ typedef struct {
     mfxU16  reserved2;
 } mfxBitstream;
 
+typedef struct _mfxSyncPoint *mfxSyncPoint;
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

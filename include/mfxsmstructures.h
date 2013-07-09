@@ -88,43 +88,43 @@ typedef enum
 
 typedef enum
 {
-    MFX_UNDEF_STREAM            = 0x00000000, //unsupported stream type
-    MFX_AVI_STREAM              = 0x00000001, //AVI RIFF
-    MFX_MP4_ATOM_STREAM         = 0x00000010, //ISO/IEC 14496-14 stream
-    MFX_ASF_STREAM              = 0x00000100, //ASF stream                     ???
+    MFX_UNDEF_STREAM            = 0x00000000,
+    MFX_AVI_STREAM              = 0x00000001, 
+    MFX_MP4_ATOM_STREAM         = 0x00000010,
+    MFX_ASF_STREAM              = 0x00000100,
 
     MFX_H26x_PURE_VIDEO_STREAM  = 0x00100000,
     MFX_H261_PURE_VIDEO_STREAM  = MFX_H26x_PURE_VIDEO_STREAM + 1,
     MFX_H263_PURE_VIDEO_STREAM  = MFX_H26x_PURE_VIDEO_STREAM + 2,
     MFX_H264_PURE_VIDEO_STREAM  = MFX_H26x_PURE_VIDEO_STREAM + 3,
 
-    MFX_MPEGx_SYSTEM_STREAM     = 0x00001000,                    //MPEG 1,2,4 - like system
+    MFX_MPEGx_SYSTEM_STREAM     = 0x00001000,
 
-    MFX_MPEG1_SYSTEM_STREAM     = MFX_MPEGx_SYSTEM_STREAM|0x00000100,//MPEG 1 system
-    MFX_MPEG2_SYSTEM_STREAM     = MFX_MPEGx_SYSTEM_STREAM|0x00000200,//MPEG 2 system
-    MFX_MPEG4_SYSTEM_STREAM     = MFX_MPEGx_SYSTEM_STREAM|0x00000400,//MPEG 4 system
+    MFX_MPEG1_SYSTEM_STREAM     = MFX_MPEGx_SYSTEM_STREAM|0x00000100,
+    MFX_MPEG2_SYSTEM_STREAM     = MFX_MPEGx_SYSTEM_STREAM|0x00000200,
+    MFX_MPEG4_SYSTEM_STREAM     = MFX_MPEGx_SYSTEM_STREAM|0x00000400,
 
-    MFX_MPEGx_PURE_VIDEO_STREAM = MFX_MPEGx_SYSTEM_STREAM|0x00000010,//MPEG 1,2 - like pure video data
-    MFX_MPEGx_PURE_AUDIO_STREAM = MFX_MPEGx_SYSTEM_STREAM|0x00000020,//MPEG 1,2 - like pure audio data
-    MFX_MPEGx_PES_PACKETS_STREAM= MFX_MPEGx_SYSTEM_STREAM|0x00000040,//MPEG 1,2 - like pes packets system
-    MFX_MPEGx_PROGRAMM_STREAM   = MFX_MPEGx_SYSTEM_STREAM|0x00000080,//MPEG 1,2 - like program system
-    MFX_MPEGx_TRANSPORT_STREAM  = MFX_MPEGx_SYSTEM_STREAM|0x000000c0,//MPEG 1,2 - like transport system
+    MFX_MPEGx_PURE_VIDEO_STREAM = MFX_MPEGx_SYSTEM_STREAM|0x00000010,
+    MFX_MPEGx_PURE_AUDIO_STREAM = MFX_MPEGx_SYSTEM_STREAM|0x00000020,
+    MFX_MPEGx_PES_PACKETS_STREAM= MFX_MPEGx_SYSTEM_STREAM|0x00000040,
+    MFX_MPEGx_PROGRAMM_STREAM   = MFX_MPEGx_SYSTEM_STREAM|0x00000080,
+    MFX_MPEGx_TRANSPORT_STREAM  = MFX_MPEGx_SYSTEM_STREAM|0x000000c0,
 
 
-    MFX_MPEG1_PURE_VIDEO_STREAM = MFX_MPEG1_SYSTEM_STREAM|MFX_MPEGx_PURE_VIDEO_STREAM, //MPEG1 pure video stream
-    MFX_MPEG1_PURE_AUDIO_STREAM = MFX_MPEG1_SYSTEM_STREAM|MFX_MPEGx_PURE_AUDIO_STREAM, //MPEG1 pure video stream
-    MFX_MPEG1_PES_PACKETS_STREAM= MFX_MPEG1_SYSTEM_STREAM|MFX_MPEGx_PES_PACKETS_STREAM,//MPEG1 pes packets stream
-    MFX_MPEG1_PROGRAMM_STREAM   = MFX_MPEG1_SYSTEM_STREAM|MFX_MPEGx_PROGRAMM_STREAM,   //MPEG1 program stream
+    MFX_MPEG1_PURE_VIDEO_STREAM = MFX_MPEG1_SYSTEM_STREAM|MFX_MPEGx_PURE_VIDEO_STREAM,
+    MFX_MPEG1_PURE_AUDIO_STREAM = MFX_MPEG1_SYSTEM_STREAM|MFX_MPEGx_PURE_AUDIO_STREAM,
+    MFX_MPEG1_PES_PACKETS_STREAM= MFX_MPEG1_SYSTEM_STREAM|MFX_MPEGx_PES_PACKETS_STREAM,
+    MFX_MPEG1_PROGRAMM_STREAM   = MFX_MPEG1_SYSTEM_STREAM|MFX_MPEGx_PROGRAMM_STREAM,
 
-    MFX_MPEG2_PURE_VIDEO_STREAM = MFX_MPEG2_SYSTEM_STREAM|MFX_MPEGx_PURE_VIDEO_STREAM,//MPEG2 pure video stream
-    MFX_MPEG2_PURE_AUDIO_STREAM = MFX_MPEG2_SYSTEM_STREAM|MFX_MPEGx_PURE_AUDIO_STREAM,//MPEG2 pure audio stream
-    MFX_MPEG2_PES_PACKETS_STREAM= MFX_MPEG2_SYSTEM_STREAM|MFX_MPEGx_PES_PACKETS_STREAM,//MPEG2 pes packets stream
-    MFX_MPEG2_PROGRAMM_STREAM   = MFX_MPEG2_SYSTEM_STREAM|MFX_MPEGx_PROGRAMM_STREAM,   //MPEG2 program stream
-    MFX_MPEG2_TRANSPORT_STREAM  = MFX_MPEG2_SYSTEM_STREAM|MFX_MPEGx_TRANSPORT_STREAM,  //MPEG2 transport stream
-    MFX_MPEG2_TRANSPORT_STREAM_TTS  = MFX_MPEG2_SYSTEM_STREAM|MFX_MPEGx_TRANSPORT_STREAM | 1,  //MPEG2 transport stream with valid packet time stamps
-    MFX_MPEG2_TRANSPORT_STREAM_TTS0 = MFX_MPEG2_SYSTEM_STREAM|MFX_MPEGx_TRANSPORT_STREAM | 2,  //MPEG2 transport stream with zero packet time stamps
+    MFX_MPEG2_PURE_VIDEO_STREAM = MFX_MPEG2_SYSTEM_STREAM|MFX_MPEGx_PURE_VIDEO_STREAM,
+    MFX_MPEG2_PURE_AUDIO_STREAM = MFX_MPEG2_SYSTEM_STREAM|MFX_MPEGx_PURE_AUDIO_STREAM,
+    MFX_MPEG2_PES_PACKETS_STREAM= MFX_MPEG2_SYSTEM_STREAM|MFX_MPEGx_PES_PACKETS_STREAM,
+    MFX_MPEG2_PROGRAMM_STREAM   = MFX_MPEG2_SYSTEM_STREAM|MFX_MPEGx_PROGRAMM_STREAM,
+    MFX_MPEG2_TRANSPORT_STREAM  = MFX_MPEG2_SYSTEM_STREAM|MFX_MPEGx_TRANSPORT_STREAM,
+    MFX_MPEG2_TRANSPORT_STREAM_TTS  = MFX_MPEG2_SYSTEM_STREAM|MFX_MPEGx_TRANSPORT_STREAM | 1,
+    MFX_MPEG2_TRANSPORT_STREAM_TTS0 = MFX_MPEG2_SYSTEM_STREAM|MFX_MPEGx_TRANSPORT_STREAM | 2,
 
-    MFX_MPEG4_PURE_VIDEO_STREAM = MFX_MPEG4_SYSTEM_STREAM|MFX_MPEGx_PURE_VIDEO_STREAM,//MPEG4 pure video stream
+    MFX_MPEG4_PURE_VIDEO_STREAM = MFX_MPEG4_SYSTEM_STREAM|MFX_MPEGx_PURE_VIDEO_STREAM,
 
     MFX_WEB_CAM_STREAM          = 0x00100000,
     MFX_ADIF_STREAM             = 0x00200000,
@@ -140,35 +140,28 @@ typedef enum
 } mfxSystemStreamType;
 
 typedef struct {
-    mfxU8   Data[MFX_TRACK_HEADER_MAX_SIZE];
-    mfxU32  HeaderSize;
-} mfxTrackHeader;
-
-typedef struct {
-    mfxTrackType       Type;           // common type (all audio/video/other in one enum) //
+    mfxTrackType       Type;
     mfxU32             PID;
-    mfxU8              Enable;
-    mfxU8              Header[MFX_TRACK_HEADER_MAX_SIZE]; // Header with codec specific data
-    mfxU64             HeaderLength;
+    mfxU16             Enable;
+    mfxU16             HeaderLength;
+    mfxU8              Header[MFX_TRACK_HEADER_MAX_SIZE]; /* header with codec specific data */
+    mfxU16             reserved[16];
+
     union {
-        mfxAudioStreamInfo audioParam;
-        mfxVideoParam videoParam;
+        mfxAudioInfoMFX AudioParam;
+        mfxInfoMFX      VideoParam;
     };
-    mfxU32             reserved[8];
 } mfxTrackInfo;
 
-
-
 typedef struct mfxStreamParams {
-    mfxU32               reserved[12];
-    mfxSystemStreamType  SystemType;        // system type (MPEG4, MPEG2, AVI, pure)
-    mfxU64               Duration;          // May be zero if undefined
-    mfxU32               NumTrack;          // number of tracks detected
-    mfxU32               NumTrackAllocated; // Number of allocated elements in TrackInfo
-    mfxTrackInfo**       TrackInfo;         // array of pointers to TrackInfo(s)
+    mfxU16               reserved[22];
+    mfxSystemStreamType  SystemType;
     mfxU32               Flags;
+    mfxU64               Duration;          /* may be zero if undefined */
+    mfxU16               NumTrack;          /* number of tracks detected */
+    mfxU16               NumTrackAllocated; /* number of allocated elements in TrackInfo */
+    mfxTrackInfo**       TrackInfo;
 } mfxStreamParams;
-
 
 #ifdef __cplusplus
 }

@@ -13,40 +13,35 @@ File Name: mfxsplmux.h
 #define __MFXSPLMUX_H__
 #include "mfxsmstructures.h"
 
-
 #ifdef __cplusplus
-extern "C" //XXX
+extern "C"
 {
 #endif
 
-
 /* DataReaderWriter */
 typedef struct {
-    mfxHDL          p; // pointer on external reader struct
-    mfxI32         (*Read) (mfxHDL p, mfxBitstream *outBitStream);
-    mfxI32         (*Write) (mfxHDL p, mfxBitstream *outBitStream);
-    mfxI64         (*Seek) (mfxHDL p, mfxI64 offset, mfxI32 origin);  // Used only for read from file(mp4) or repositioning. Offset from begin of file
-    mfxU64          DataSize; // May be set zero if unknown
+    mfxU64         DataSize; /* may be set zero if unknown */
+    mfxU32         reserved1[6];
 
+    mfxHDL         pthis;
+    mfxI32         (*Read) (mfxHDL pthis, mfxBitstream *bs);
+    mfxI32         (*Write) (mfxHDL pthis, mfxBitstream *bs);
+    mfxI64         (*Seek) (mfxHDL pthis, mfxI64 offset, mfxI32 origin);
+    mfxHDL        reserved2[4];
 } mfxDataIO;
 
 typedef struct _mfxSplitter *mfxSplitter;
-
-mfxStatus  MFX_CDECL MFXSplitter_Init(mfxDataIO dataIO, mfxSplitter *spl);
+mfxStatus  MFX_CDECL MFXSplitter_Init(mfxDataIO *data_io, mfxSplitter *spl);
 mfxStatus  MFX_CDECL MFXSplitter_Close(mfxSplitter spl);
 mfxStatus  MFX_CDECL MFXSplitter_GetInfo(mfxSplitter spl, mfxStreamParams *par);
-
-mfxStatus  MFX_CDECL MFXSplitter_GetBitstream(mfxSplitter spl, mfxU32 iInputTrack, mfxU32* iOutputTrack, mfxBitstream *Bitstream);
-mfxStatus  MFX_CDECL MFXSplitter_ReleaseBitstream(mfxSplitter spl,  mfxU32 iTrack, mfxBitstream *Bitstream);
-
-/* Muxer */
+mfxStatus  MFX_CDECL MFXSplitter_GetBitstream(mfxSplitter spl, mfxU32 truck_num,mfxBitstream *bs);
+mfxStatus  MFX_CDECL MFXSplitter_GetBitstreamAny(mfxSplitter spl, mfxU32 *truck_num, mfxBitstream *bs);
+mfxStatus  MFX_CDECL MFXSplitter_ReleaseBitstream(mfxSplitter spl,  mfxU32 truck_num, mfxBitstream *bs);
 
 typedef struct _mfxMuxer *mfxMuxer;
-
-mfxStatus  MFX_CDECL MFXMuxer_Init(mfxStreamParams* par, mfxDataIO dataIO, mfxMuxer *mux);
+mfxStatus  MFX_CDECL MFXMuxer_Init(mfxStreamParams* par, mfxDataIO *data_io, mfxMuxer *mux);
 mfxStatus  MFX_CDECL MFXMuxer_Close(mfxMuxer mux);
-
-mfxStatus  MFX_CDECL MFXMuxer_PutData(mfxMuxer mux, mfxU32 iTrack, mfxBitstream *Bitstream);
+mfxStatus  MFX_CDECL MFXMuxer_PutData(mfxMuxer mux, mfxU32 truck_num, mfxBitstream *bs);
 
 #ifdef __cplusplus
 } // extern "C"

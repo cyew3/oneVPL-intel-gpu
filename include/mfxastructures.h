@@ -44,7 +44,6 @@ enum {
     MFX_CODEC_MP3         =MFX_MAKEFOURCC('M','P','3',' ')
 };
 
-/* CodecProfile, CodecLevel */
 enum {
     /* AAC Profiles & Levels */
     MFX_PROFILE_AAC_LC          =2,
@@ -65,26 +64,16 @@ enum {
     MFX_MPEG2_LAYER3_AUDIO      =0x00000240
 };
 
-/* Frame Info */
-typedef struct  
-{
-    mfxU32                Bitrate;         // bitstream in bps
-    mfxU16                Channels;        // number of audio channels
-    mfxU32                SampleFrequency; // sample rate in Hz
-    mfxU16                BitPerSample;    // 0 if compressed
-    mfxU32                reserved[5]; 
-} mfxAudioStreamInfo;
-
-
 /*AAC HE decoder modes*/
 enum {
-    MFX_AUDIO_AAC_HE_HQ_MODE=    1,  /* high quality mode */
-    MFX_AUDIO_AAC_HE_LP_MODE=    2   /* low process mode */
+    MFX_AUDIO_AAC_HE_HQ_MODE=    1,
+    MFX_AUDIO_AAC_HE_LP_MODE=    2 
 } ;
+
 /*AAC HE decoder down sampling*/
 enum {
-    MFX_AUDIO_AAC_HE_DWNSMPL_OFF=1,       /* downsampling mode is disabled */
-    MFX_AUDIO_AAC_HE_DWNSMPL_ON= 2        /* downsampling mode is enabled */
+    MFX_AUDIO_AAC_HE_DWNSMPL_OFF=1,
+    MFX_AUDIO_AAC_HE_DWNSMPL_ON= 2
 };
 
 /* AAC decoder support of PS */
@@ -121,6 +110,7 @@ enum{
     MFX_AUDIO_AAC_ADIF=            2,
     MFX_AUDIO_AAC_RAW=             3,
 };
+
 /*AAC encoder stereo mode*/
 enum 
 {
@@ -129,22 +119,30 @@ enum
     MFX_AUDIO_AAC_MS_STEREO=       2,
     MFX_AUDIO_AAC_JOINT_STEREO=    3
 };
+
 /*AAC encoder noise shaping*/
 enum
 {
-    MFX_AUDIO_AAC_NOISE_MODEL_SIMPLE=  0,   // to learn more
+    MFX_AUDIO_AAC_NOISE_MODEL_SIMPLE=  0,
     MFX_AUDIO_AAC_NOISE_MODEL_ADVANCED=1 
 };
 
+typedef struct  
+{
+    mfxU32                Bitrate;
+    mfxU16                Channels;
+    mfxU32                SampleFrequency;
+    mfxU16                BitPerSample;
+    mfxU16                reserved[10]; 
+} mfxAudioStreamInfo;
 
-
-/* Audio Info */
 typedef struct {
-    mfxAudioStreamInfo m_info;   // original audio stream info
+    mfxAudioStreamInfo m_info;
 
     mfxU32                CodecId;
     mfxU16                CodecProfile;
     mfxU16                CodecLevel;
+    mfxU16                reserved1[12]; 
 
     union {    
         struct {   /* AAC Decoding Options */
@@ -152,43 +150,38 @@ typedef struct {
             mfxU16       ModeDwnsmplHEAACprofile;
             mfxU16       FlagSBRSupportLev;
             mfxU16       FlagPSSupportLev;
-            mfxU16       Layer;                                //  used in bit slicing arithmetic coding. layer show decoding level
-            mfxU8        AACHeaderData[64];
+            mfxU16       Layer;
             mfxU16       AACHeaderDataSize;
+            mfxU8        AACHeaderData[64];
         };
         struct {   /* MP3 Decoding Options */
-            mfxU16 LFEFilter; /// Low Frequency Effect(LFE) filter. LFE-channel (Low Frequency Enhancement channel) for multi channel mode
-            mfxU16 SynchroMode; // set an algorithm of searching mp3 headers
+            mfxU16       LFEFilter;
+            mfxU16       SynchroMode;
         };
         struct {   /* AAC Encoding Options */
             mfxU16       OutputFormat;
             mfxU16       StereoMode;
             mfxU16       NoiseShapingModel;
+            mfxU16       reserved2[61]; 
         };
     };
-} mfxInfoAudioMFX;
-
+} mfxAudioInfoMFX;
 
 typedef struct {
-    mfxU32  reserved[5];
     mfxU16  AsyncDepth;
+    mfxU16  Protected;
+    mfxU16  reserved[14]; 
 
-    union {
-        mfxInfoAudioMFX  mfx;
-    };
-    mfxU16            Protected;
+    mfxAudioInfoMFX   mfx;
     mfxExtBuffer**    ExtParam;
     mfxU16            NumExtParam;
 } mfxAudioParam;
 
-
-//Memory allocation information
 typedef struct {
-    mfxU32  SuggestedInputSize;     // max suggested frame size of input stream
-    mfxU32  SuggestedOutputSize;    // max suggested frame size of output stream
+    mfxU32  SuggestedInputSize;
+    mfxU32  SuggestedOutputSize;
     mfxU32  reserved[6];
 } mfxAudioAllocRequest;
-
 
 #ifdef __cplusplus
 }
