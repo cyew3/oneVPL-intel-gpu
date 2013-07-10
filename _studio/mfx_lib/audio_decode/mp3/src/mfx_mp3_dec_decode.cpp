@@ -325,7 +325,7 @@ mfxStatus AudioDECODEMP3::MP3ECODERoutine(void *pState, void *pParam,
         MFX_CHECK_UMC_STS(sts);
 
         pTask->out->DataOffset = 0;
-        pTask->out->DataLength = obj.mOutData.GetDataSize();
+        pTask->out->DataLength = (mfxU32)obj.mOutData.GetDataSize();
     }
     else
     {

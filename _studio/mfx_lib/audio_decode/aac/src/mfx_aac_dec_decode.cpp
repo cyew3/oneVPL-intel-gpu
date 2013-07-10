@@ -492,7 +492,7 @@ mfxStatus AudioDECODEAAC::AACECODERoutine(void *pState, void *pParam,
         // set out buffer size;
         //if(pTask->out->MaxLength)  AR need to implement a check of output buffer size
         pTask->out->DataOffset = 0;
-        pTask->out->DataLength = obj.mOutData.GetDataSize();
+        pTask->out->DataLength = (mfxU32)obj.mOutData.GetDataSize();
     }
     else
     {

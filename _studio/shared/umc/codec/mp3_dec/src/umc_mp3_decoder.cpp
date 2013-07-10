@@ -358,7 +358,7 @@ Status MP3Decoder::FrameConstruct(MediaData *in, Ipp32s *outFrameSize, Ipp32s *o
 {
     MP3Status res = MP3_OK;
     Ipp8u *inPointer = (Ipp8u *)(in->GetDataPointer());
-    Ipp32s inDataSize = in->GetDataSize();
+    Ipp32s inDataSize = (Ipp32s)in->GetDataSize();
     MP3Dec_com state;
     memset(&state,0,sizeof(state));
     *outFrameSize = 0;
