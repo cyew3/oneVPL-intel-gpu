@@ -46,16 +46,9 @@ public:
     virtual UMC::Status DeblockSegmentTask(Ipp32s iCurMBNumber, Ipp32s &iMBToDeblock);
     UMC::Status SAOFrameTask(Ipp32s iCurMBNumber, Ipp32s &iMaxMBToDecRec);
 
-    H265CoeffsPtrCommon GetCoefficientsBuffer(void)
-    {
-        return m_psBuffer;
-    }
-
     virtual UMC::Status ProcessSlice(Ipp32s iCurMBNumber, Ipp32s &iMBToProcess);
 
     void RestoreErrorRect(Ipp32s startMb, Ipp32s endMb, H265Slice * pSlice);
-
-    H265CoeffsPtrCommon  m_psBuffer;
 
     SegmentDecoderHPBase_H265* m_SD;
 

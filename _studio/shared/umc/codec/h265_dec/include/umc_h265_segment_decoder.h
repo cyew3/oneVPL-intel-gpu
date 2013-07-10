@@ -35,6 +35,7 @@ struct AMVPInfo;
 class H265Prediction;
 class H265TrQuant;
 class TaskBroker_H265;
+class H265Task;
 
 struct H265EdgeData
 {
@@ -53,30 +54,46 @@ struct H265EdgeData
 struct Context
 {
     H265DecoderRefPicList::ReferenceInformation *m_pRefPicList[2];
-    Ipp32s m_CurMBAddr;
-
     H265Bitstream *m_pBitStream;                                // (H265Bitstream *) pointer to bit stream object
-
-    Ipp32s mb_width;                                            // (Ipp32s) width in MB
-    Ipp32s mb_height;                                           // (Ipp32s) height in MB
-
-    Ipp32s m_MBSkipCount;
-    Ipp32s m_QuantPrev;
-
-    H265CoeffsPtrCommon m_pCoeffBlocksWrite;                        // (Ipp16s *) pointer to write buffer
-    H265CoeffsPtrCommon m_pCoeffBlocksRead;                         // (Ipp16s *) pointer to read buffer
 
     Ipp32s bit_depth_luma;
     Ipp32s bit_depth_chroma;
-    Ipp32s m_prev_dquant;
 
     // external data
     const H265PicParamSet *m_pPicParamSet;                      // (const H265PicParamSet *) pointer to current picture parameters sets
     const H265SeqParamSet *m_pSeqParamSet;                      // (const H265SeqParamSet *) pointer to current sequence parameters sets
     H265DecoderFrame *m_pCurrentFrame;                          // (H265DecoderFrame *) pointer to frame being decoded
+};
 
-    H265CoeffsPtrCommon m_pCoefficientsBuffer;
-    Ipp32u m_nAllocatedCoefficientsBuffer;
+class DecodingContext
+{
+public:
+
+    DecodingContext();
+
+    const H265SeqParamSet *m_sps;
+    const H265PicParamSet *m_pps;
+    const H265DecoderFrame *m_frame;
+
+    std::vector<H265FrameHLDNeighborsInfo> m_TopNgbrsHolder;
+    std::vector<H265MVInfo> m_TopMVInfoHolder;
+    std::vector<H265MVInfo> m_CurrCTBHolder;
+    std::vector<H265FrameHLDNeighborsInfo> m_CurrCTBFlagsHolder;
+
+    // Updated after whole CTB is done for initializing external neighbour data in m_CurCTB
+    H265FrameHLDNeighborsInfo *m_TopNgbrs;
+    H265MVInfo *m_TopMVInfo;
+    // Updated after every PU is processed and MV info is available
+    H265FrameHLDNeighborsInfo *m_CurrCTBFlags;
+    H265MVInfo *m_CurrCTB;
+    Ipp32s m_CurrCTBStride;
+
+    void Init(H265Task *task);
+    void UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr);
+    void ResetRowBuffer();
+
+protected:
+
 };
 
 STRUCT_DECLSPEC_ALIGN class H265SegmentDecoder : public Context
@@ -247,23 +264,10 @@ public:
 
     H265EdgeData m_edge[9][9][4];
 
-    // Updated after whole CTB is done for initializing external neighbour data in m_CurCTB
-    H265FrameHLDNeighborsInfo *m_TopNgbrs;
-    H265MVInfo *m_TopMVInfo;
-    // Updated after every PU is processed and MV info is available
-    H265FrameHLDNeighborsInfo *m_CurrCTBFlags;
-    H265MVInfo *m_CurrCTB;
-    Ipp32s m_CurrCTBStride;
-
-    std::vector<H265FrameHLDNeighborsInfo> m_TopNgbrsHolder;
-    std::vector<H265MVInfo> m_TopMVInfoHolder;
-    std::vector<H265MVInfo> m_CurrCTBHolder;
-    std::vector<H265FrameHLDNeighborsInfo> m_CurrCTBFlagsHolder;
+    DecodingContext * m_context;
 
     void UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPartIdx, bool isSkipped);
-    void ResetRowBuffer(void);
     void UpdatePUInfo(H265CodingUnit *pCU, Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight, H265PUInfo &PUi);
-    void UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr);
 
     // Current CU local state
     H265PUInfo m_puinfo[4];
@@ -294,8 +298,6 @@ public:
 
     // Function to de-block partition of macro block row
     virtual void DeblockSegment(Ipp32s iCurMBNumber, Ipp32s iMBToProcess);
-
-    H265CoeffsPtrCommon GetCoefficientsBuffer(Ipp32u nNum = 0);
 
 private:
     Ipp16u *g_SigLastScan_inv[3][4];

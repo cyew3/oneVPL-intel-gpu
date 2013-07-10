@@ -25,6 +25,7 @@ namespace UMC_HEVC_DECODER
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Class definition
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+class DecodingContext;
 
 // prediction class
 class H265Prediction
@@ -42,6 +43,8 @@ protected:
     H265PlanePtrYCommon m_YUVExt;
     Ipp32s m_YUVExtStride;
     Ipp32s m_YUVExtHeight;
+
+    DecodingContext* m_context;
 
     H265DecYUVBufferPadded m_YUVPred[2];
 
@@ -102,7 +105,7 @@ public:
     H265Prediction();
     virtual ~H265Prediction();
 
-    void InitTempBuff(const H265SeqParamSet* sps);
+    void InitTempBuff(DecodingContext* context);
 
     // inter
     void MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPadded* YUVPred, Ipp32u AbsPartIdx, Ipp32u Depth, H265PUInfo *PUInfo);

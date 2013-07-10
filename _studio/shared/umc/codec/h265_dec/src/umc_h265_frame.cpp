@@ -508,38 +508,38 @@ Ipp32s H265DecoderFrame::getMaxCUDepth()
 }
 
 //  Access starting position of original picture for specific coding unit (CU) or partition unit (PU)
-H265PlanePtrYCommon H265DecoderFrame::GetLumaAddr(Ipp32s CUAddr)
+H265PlanePtrYCommon H265DecoderFrame::GetLumaAddr(Ipp32s CUAddr) const
 {
     return m_pYPlane + m_cuOffsetY[CUAddr];
 }
-H265PlanePtrUVCommon H265DecoderFrame::GetCbAddr(Ipp32s CUAddr)
+H265PlanePtrUVCommon H265DecoderFrame::GetCbAddr(Ipp32s CUAddr) const
 {
     return m_pUPlane + m_cuOffsetC[CUAddr];
 }
-H265PlanePtrUVCommon H265DecoderFrame::GetCrAddr(Ipp32s CUAddr)
+H265PlanePtrUVCommon H265DecoderFrame::GetCrAddr(Ipp32s CUAddr) const
 {
     return m_pVPlane + m_cuOffsetC[CUAddr];
 }
-H265PlanePtrUVCommon H265DecoderFrame::GetCbCrAddr(Ipp32s CUAddr)
+H265PlanePtrUVCommon H265DecoderFrame::GetCbCrAddr(Ipp32s CUAddr) const
 {
     // Chroma offset is already multiplied to chroma pitch (double for NV12)
     return m_pUVPlane + m_cuOffsetC[CUAddr];
 }
 
 // ML: OPT: TODO: Make these functions available for inlining 
-H265PlanePtrYCommon H265DecoderFrame::GetLumaAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx)
+H265PlanePtrYCommon H265DecoderFrame::GetLumaAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const
 {
     return m_pYPlane + m_cuOffsetY[CUAddr] + m_buOffsetY[g_ZscanToRaster[AbsZorderIdx]];
 }
-H265PlanePtrUVCommon H265DecoderFrame::GetCbAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx)
+H265PlanePtrUVCommon H265DecoderFrame::GetCbAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const
 {
     return m_pUPlane + m_cuOffsetC[CUAddr] + m_buOffsetC[g_ZscanToRaster[AbsZorderIdx]];
 }
-H265PlanePtrUVCommon H265DecoderFrame::GetCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx)
+H265PlanePtrUVCommon H265DecoderFrame::GetCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const
 {
     return m_pVPlane + m_cuOffsetC[CUAddr] + m_buOffsetC[g_ZscanToRaster[AbsZorderIdx]];
 }
-H265PlanePtrUVCommon H265DecoderFrame::GetCbCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx)
+H265PlanePtrUVCommon H265DecoderFrame::GetCbCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const
 {
     // Chroma offset is already multiplied to chroma pitch (double for NV12)
     return m_pUVPlane + m_cuOffsetC[CUAddr] + m_buOffsetC[g_ZscanToRaster[AbsZorderIdx]];

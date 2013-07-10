@@ -338,14 +338,14 @@ public:
     void deallocateCodingData();
 
     //  Access starting position of original picture for specific coding unit (CU) or partition unit (PU)
-    H265PlanePtrYCommon GetLumaAddr(Ipp32s CUAddr);
-    H265PlanePtrUVCommon GetCbAddr(Ipp32s CUAddr);
-    H265PlanePtrUVCommon GetCrAddr(Ipp32s CUAddr);
-    H265PlanePtrUVCommon GetCbCrAddr(Ipp32s CUAddr);
-    H265PlanePtrYCommon GetLumaAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx);
-    H265PlanePtrUVCommon GetCbAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx);
-    H265PlanePtrUVCommon GetCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx);
-    H265PlanePtrUVCommon GetCbCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx);
+    H265PlanePtrYCommon GetLumaAddr(Ipp32s CUAddr) const;
+    H265PlanePtrUVCommon GetCbAddr(Ipp32s CUAddr) const;
+    H265PlanePtrUVCommon GetCrAddr(Ipp32s CUAddr) const;
+    H265PlanePtrUVCommon GetCbCrAddr(Ipp32s CUAddr) const;
+    H265PlanePtrYCommon GetLumaAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const;
+    H265PlanePtrUVCommon GetCbAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const;
+    H265PlanePtrUVCommon GetCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const;
+    H265PlanePtrUVCommon GetCbCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const;
 protected:
     // Declare memory management tools
     UMC::MemoryAllocator *m_pMemoryAllocator;   // FIXME: should be removed because it duplicated in base class

@@ -89,7 +89,7 @@ public:
         Ipp32s rsCUAddr = sd->m_pCurrentFrame->m_CodingData->getCUOrderMap(curCUAddr);
 
         if (!sd->m_pSlice->getDependentSliceSegmentFlag())
-            sd->ResetRowBuffer();
+            sd->m_context->ResetRowBuffer();
 
         for (;;)
         {
@@ -116,7 +116,7 @@ public:
             if (sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(rsCUAddr) !=
                 sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(newRSCUAddr))
             {
-                sd->ResetRowBuffer();
+                sd->m_context->ResetRowBuffer();
                 sd->m_pBitStream->DecodeTerminatingBit_CABAC();
 
                 // reset CABAC engine
@@ -124,7 +124,7 @@ public:
                 sd->m_pSlice->InitializeContexts();
             }
             else
-                sd->UpdateCurrCUContext(rsCUAddr, newRSCUAddr);
+                sd->m_context->UpdateCurrCUContext(rsCUAddr, newRSCUAddr);
 
             curCUAddr = newCUAddr;
             rsCUAddr = newRSCUAddr;

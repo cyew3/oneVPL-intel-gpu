@@ -38,6 +38,7 @@ H265Prediction::H265Prediction()
 {
     m_YUVExt = 0;
     m_temp_interpolarion_buffer = 0;
+    m_context = 0;
 }
 
 H265Prediction::~H265Prediction()
@@ -52,8 +53,11 @@ H265Prediction::~H265Prediction()
     m_temp_interpolarion_buffer = 0;
 }
 
-void H265Prediction::InitTempBuff(const H265SeqParamSet* sps)
+void H265Prediction::InitTempBuff(DecodingContext* context)
 {
+    m_context = context;
+    const H265SeqParamSet * sps = m_context->m_sps;
+
     if (m_YUVExt && m_YUVExtHeight == ((sps->MaxCUHeight + 2) << 4) && 
         m_YUVExtStride == ((sps->MaxCUWidth  + 8) << 4))
         return;
@@ -649,22 +653,41 @@ void H265Prediction::PredIntraChromaAng(H265PlanePtrUVCommon pSrc, Ipp32u DirMod
 void H265Prediction::MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPadded* pPredYUV, Ipp32u AbsPartIdx, Ipp32u Depth, H265PUInfo *PUInfo)
 {
     VM_ASSERT(pCU->m_AbsIdxInLCU == 0);
-    bool weighted_prediction = pCU->m_SliceHeader->slice_type == P_SLICE ? pCU->m_SliceHeader->m_PicParamSet->weighted_pred_flag :
-        pCU->m_SliceHeader->m_PicParamSet->weighted_bipred_idc;
+    bool weighted_prediction = pCU->m_SliceHeader->slice_type == P_SLICE ? m_context->m_pps->weighted_pred_flag :
+        m_context->m_pps->weighted_bipred_idc;
 
-    for (Ipp32s PartIdx = 0; PartIdx < pCU->getNumPartInter(AbsPartIdx); PartIdx++)
+    Ipp32s countPart = pCU->getNumPartInter(AbsPartIdx);
+    EnumPartSize PartSize = (EnumPartSize) pCU->m_PartSizeArray[AbsPartIdx];
+    Ipp32u PUOffset = (g_PUOffset[Ipp32u(PartSize)] << ((m_context->m_sps->MaxCUDepth - Depth) << 1)) >> 4;
+
+    for (Ipp32s PartIdx = 0, subPartIdx = AbsPartIdx; PartIdx < countPart; PartIdx++, subPartIdx += PUOffset)
     {
-        /*Ipp32u PartAddr;
+#if 0
+        Ipp32u PartAddr;
         Ipp32u Width, Height;
         pCU->getPartIndexAndSize(AbsPartIdx, Depth, PartIdx, PartAddr, Width, Height);
-        PartAddr += AbsPartIdx;*/
+        PartAddr += AbsPartIdx;
 
+        Ipp32s LPelX = pCU->m_CUPelX + g_RasterToPelX[g_ZscanToRaster[subPartIdx]];
+        Ipp32s TPelY = pCU->m_CUPelY + g_RasterToPelY[g_ZscanToRaster[subPartIdx]];
+        Ipp32s PartX = LPelX >> m_context->m_sps->log2_min_transform_block_size;
+        Ipp32s PartY = TPelY >> m_context->m_sps->log2_min_transform_block_size;
+#endif
         H265PUInfo &PUi = PUInfo[PartIdx];
         H265MVInfo &MVi = PUi.interinfo;
 
-        /*PUi.PartAddr = PartAddr;
+#if 0
+        PUi.PartAddr = PartAddr;
         PUi.Height = Height;
-        PUi.Width = Width;*/
+        PUi.Width = Width;
+
+        Ipp32u mask = (1 << m_context->m_sps->MaxCUDepth) - 1;
+        PartX &= mask;
+        PartY &= mask;
+
+        H265MVInfo mvi = m_context->m_CurrCTB[(PartY + (Height >> m_context->m_sps->log2_min_transform_block_size) - 1) * m_context->m_CurrCTBStride + PartX];
+        MVi = mvi;
+#endif
 
         Ipp32s RefIdx[2] = {-1, -1};
         RefIdx[REF_PIC_LIST_0] = MVi.mvinfo[REF_PIC_LIST_0].RefIdx;
@@ -782,7 +805,7 @@ void H265Prediction::MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPad
 
 bool H265Prediction::CheckIdenticalMotion(H265CodingUnit* pCU, H265PUInfo &PUi)
 {
-    if(pCU->m_SliceHeader->slice_type == B_SLICE && !pCU->m_SliceHeader->m_PicParamSet->getWPBiPred() &&
+    if(pCU->m_SliceHeader->slice_type == B_SLICE && !m_context->m_pps->getWPBiPred() &&
         PUi.interinfo.mvinfo[REF_PIC_LIST_0].RefIdx >= 0 && PUi.interinfo.mvinfo[REF_PIC_LIST_1].RefIdx >= 0 &&
         PUi.refFrame[REF_PIC_LIST_0] == PUi.refFrame[REF_PIC_LIST_1] &&
         PUi.interinfo.mvinfo[REF_PIC_LIST_0].MV == PUi.interinfo.mvinfo[REF_PIC_LIST_1].MV)
