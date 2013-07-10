@@ -115,7 +115,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>ippcoremt.lib;ipps_l.lib;ippvc_l.lib;ippi_l.lib;ippcc_l.lib;ippcv_l.lib;ippj_l.lib;version.lib;ippmsdkmt.lib;ippac_l.lib;ippdc_l.lib;ippvm_l.lib;Advapi32.lib;User32.lib</AdditionalDependencies>
+      <AdditionalDependencies>ippacmt.lib;ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;version.lib;ippmsdkmt.lib;ippdcmt.lib;ipps_l.lib;ippvc_l.lib;ippi_l.lib;ippcc_l.lib;ippcv_l.lib;ippj_l.lib;version.lib;ippmsdkmt.lib;ippac_l.lib;ippdc_l.lib;ippvm_l.lib;Advapi32.lib;User32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>svml_disp.lib;libirc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ModuleDefinitionFile>libmfxaudio.def</ModuleDefinitionFile>
@@ -143,7 +143,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies);</AdditionalDependencies>
+      <AdditionalDependencies>ippacmt.lib;ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;version.lib;ippmsdkmt.lib;ippdcmt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies);</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ModuleDefinitionFile>libmfx.def</ModuleDefinitionFile>
@@ -166,7 +166,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>ippcoremt.lib;ipps_l.lib;ippvc_l.lib;ippi_l.lib;ippcc_l.lib;ippcv_l.lib;ippj_l.lib;version.lib;ippmsdkmt.lib;ippac_l.lib;ippdc_l.lib;ippvm_l.lib;Advapi32.lib;User32.lib</AdditionalDependencies>
+      <AdditionalDependencies>ippacmt.lib;ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;version.lib;ippmsdkmt.lib;ippdcmt.lib;ipps_l.lib;ippvc_l.lib;ippi_l.lib;ippcc_l.lib;ippcv_l.lib;ippj_l.lib;version.lib;ippmsdkmt.lib;ippac_l.lib;ippdc_l.lib;ippvm_l.lib;Advapi32.lib;User32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ModuleDefinitionFile>libmfxaudio.def</ModuleDefinitionFile>
@@ -194,7 +194,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ippacmt.lib;ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;version.lib;ippmsdkmt.lib;ippdcmt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ModuleDefinitionFile>libmfx.def</ModuleDefinitionFile>
