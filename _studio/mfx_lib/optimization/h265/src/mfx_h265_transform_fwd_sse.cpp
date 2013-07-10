@@ -977,10 +977,10 @@ namespace MFX_HEVC_ENCODER
 
     void H265_FASTCALL h265_DCT32x32Fwd_sse2(const short *H265_RESTRICT src, short *H265_RESTRICT dest)
     {
-        short __declspec(align(16)) temp[32*32];
+        short ALIGNED_SSE2 temp[32*32];
         // temporal buffer short[32*4]. Intermediate results will be stored here. Rotate 4x4 and moved to temp[]
         // Using this buffer will accelerate the functions: from 10000 CPU clocks to 8000
-        __m128i __declspec(align(16)) buff[16];
+        __m128i ALIGNED_SSE2 buff[16];
         int num = 0;
         __m128i s0, s1, s2, s3, s4, s5, s6, s7;
         s4 = _mm_setzero_si128();
