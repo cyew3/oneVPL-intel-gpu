@@ -684,9 +684,12 @@ mfxStatus VideoDECODEMPEG2::Init(mfxVideoParam *par)
 
     m_vdPar.info.framerate = 0;
 
+    m_InitW = par->mfx.FrameInfo.Width;
+    m_InitH = par->mfx.FrameInfo.Height;
+
     mfxSts = InternalReset(par);
     MFX_CHECK_STS(mfxSts);
-
+    
     m_vdPar.numThreads = (mfxU16)(par->AsyncDepth ? par->AsyncDepth : m_pCore->GetAutoAsyncDepth());
 
     if (m_pCore->GetPlatformType()== MFX_PLATFORM_HARDWARE)
@@ -2321,8 +2324,8 @@ mfxStatus VideoDECODEMPEG2::CheckFrameData(const mfxFrameSurface1 *pSurface)
         return MFX_ERR_MORE_SURFACE;
     }
 
-    if (pSurface->Info.Width <  m_InitW ||
-        pSurface->Info.Height < m_InitH)
+    if (pSurface->Info.Width >  m_InitW ||
+        pSurface->Info.Height > m_InitH)
     {
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     }
@@ -2387,6 +2390,13 @@ mfxStatus VideoDECODEMPEG2::CheckFrameData(const mfxFrameSurface1 *pSurface)
         {
             return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
+    }
+
+
+    if (pSurface->Info.Width <  m_InitW ||
+        pSurface->Info.Height < m_InitH)
+    {
+        return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     }
 
     return MFX_ERR_NONE;
@@ -3759,7 +3769,7 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
                 }
             }
 
-            if (m_InitW != Width || m_InitH != Height ||
+            if (/*m_InitW != Width || m_InitH != Height ||*/
                 surface_work->Info.Width <  Width || surface_work->Info.Height < Height)
             {
                 m_resizing = true;
@@ -3771,7 +3781,8 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
 
             if (false == m_first_SH)
             {
-                return MFX_WRN_VIDEO_PARAM_CHANGED;
+                m_resizing = true;
+                
             }
 
             m_first_SH = false;
@@ -4014,6 +4025,7 @@ mfxStatus VideoDECODEMPEG2::InternalResetUMC(mfxVideoParam* par, UMC::MediaData*
 mfxStatus VideoDECODEMPEG2::InternalReset(mfxVideoParam* par)
 {
     mfxStatus mfxSts = MFX_ERR_NONE;
+    m_resizing = false;
 
     eMFXHWType type = MFX_HW_UNKNOWN;
 #if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
@@ -4051,8 +4063,8 @@ mfxStatus VideoDECODEMPEG2::InternalReset(mfxVideoParam* par)
     mfxSts = InternalResetUMC(par, 0);
     MFX_CHECK_STS(mfxSts);
 
-    m_InitW = par->mfx.FrameInfo.Width;
-    m_InitH = par->mfx.FrameInfo.Height;
+    //m_InitW = par->mfx.FrameInfo.Width;
+    //m_InitH = par->mfx.FrameInfo.Height;
     m_InitPicStruct = par->mfx.FrameInfo.PicStruct;
     m_Protected = par->Protected;
 
