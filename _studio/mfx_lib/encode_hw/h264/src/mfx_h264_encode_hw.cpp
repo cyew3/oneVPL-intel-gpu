@@ -862,7 +862,8 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
 
     // check if IDR required after change of encoding parameters
     isIdrRequired = !Equal(*extSpsNew, *extSpsOld)
-        || tempLayerIdx != 0 && changeLyncLayers;
+        || tempLayerIdx != 0 && changeLyncLayers
+        || newPar.mfx.GopPicSize != m_video.mfx.GopPicSize;
 
     if (isIdrRequired && IsOff(extResetOpt->StartNewSequence))
         return MFX_ERR_INVALID_VIDEO_PARAM; // Reset can't change parameters w/o IDR. Report an error
