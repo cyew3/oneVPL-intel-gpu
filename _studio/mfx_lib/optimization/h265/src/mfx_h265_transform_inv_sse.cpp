@@ -497,7 +497,7 @@ namespace MFX_HEVC_COMMON
 #undef coef_stride
 #define coef_stride 16
 
-    static FORCEINLINE void IDCT_16x16_2ND_SSE4(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+    static H265_FORCEINLINE void IDCT_16x16_2ND_SSE4(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
     {
         __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
         unsigned char* H265_RESTRICT destByte;
