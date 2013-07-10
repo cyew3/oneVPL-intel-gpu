@@ -510,7 +510,7 @@ mfxStatus MFX_AAC_Encoder_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfx
         return Query(core, &in1, out);
     }
 
-    memset(&out->mfx, 0, sizeof(mfxInfoAudioMFX));
+    memset(&out->mfx, 0, sizeof(mfxAudioInfoMFX));
 
     if (in)
     {
