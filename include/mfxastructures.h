@@ -183,6 +183,35 @@ typedef struct {
     mfxU32  reserved[6];
 } mfxAudioAllocRequest;
 
+typedef struct {
+    mfxAudioStreamInfo m_info;   // original audio stream info
+
+    mfxU32                CodecId;
+    mfxU16                CodecProfile;
+    mfxU16                CodecLevel;
+
+    union {    
+        struct {   /* AAC Decoding Options */
+            mfxU16       ModeDecodeHEAACprofile;
+            mfxU16       ModeDwnsmplHEAACprofile;
+            mfxU16       FlagSBRSupportLev;
+            mfxU16       FlagPSSupportLev;
+            mfxU16       Layer;                                //  used in bit slicing arithmetic coding. layer show decoding level
+            mfxU8        AACHeaderData[64];
+            mfxU16       AACHeaderDataSize;
+        };
+        struct {   /* MP3 Decoding Options */
+            mfxU16 LFEFilter; /// Low Frequency Effect(LFE) filter. LFE-channel (Low Frequency Enhancement channel) for multi channel mode
+            mfxU16 SynchroMode; // set an algorithm of searching mp3 headers
+        };
+        struct {   /* AAC Encoding Options */
+            mfxU16       OutputFormat;
+            mfxU16       StereoMode;
+            mfxU16       NoiseShapingModel;
+        };
+    };
+} mfxInfoAudioMFX;
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
