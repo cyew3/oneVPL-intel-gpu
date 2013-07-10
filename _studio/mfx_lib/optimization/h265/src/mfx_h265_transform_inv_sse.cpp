@@ -23,40 +23,39 @@
 namespace MFX_HEVC_COMMON
 {
 
-    // Inverse HEVC Transform functions optimised by intrinsics
-    // Sizes: 4, 8, 16
+// Inverse HEVC Transform functions optimised by intrinsics
+// Sizes: 4, 8, 16, 32
 
 #define SHIFT_INV_1ST          7 // Shift after first inverse transform stage
 #define SHIFT_INV_2ND         12 // Shift after second inverse transform stage
 #define REG_DCT               65535
 
-    typedef unsigned char       uint8_t;
+    /*typedef unsigned char       uint8_t;
     typedef signed short        int16_t;
     typedef signed int          int32_t;
-    typedef unsigned int        uint32_t;
+    typedef unsigned int        uint32_t;*/
 
-#if defined(_WIN32) || defined(_WIN64)
-#define ALIGN_DECL(X) __declspec(align(X))
-#define FORCEINLINE __forceinline
-#define M128I_VAR(x, v) \
-    static const __m128i x = v
-#else
-#define ALIGN_DECL(X) __attribute__ ((aligned(X)))
-#define FORCEINLINE __attribute__((always_inline))
-#define M128I_VAR(x, v) \
-    static ALIGN_DECL(16) const char array_##x[16] = v; \
-    static const __m128i* p_##x = (const __m128i*) array_##x; \
-    static const __m128i x = * p_##x
-#endif
-#define ALIGNED_SSE2 ALIGN_DECL(16)
-#define FASTCALL     __fastcall
+//    NOTE: In debug mode compiler attempts to load data with MOVNTDQA while data is
+//    only 8-byte aligned, but PMOVZX does not require 16-byte alignment. 
 
-    /* NOTE: In debug mode compiler attempts to load data with MOVNTDQA while data is
-    only 8-byte aligned, but PMOVZX does not require 16-byte alignment. */
 #ifdef NDEBUG 
 #define MM_LOAD_EPI64(x) (*(__m128i*)x)
 #else
 #define MM_LOAD_EPI64(x) _mm_loadl_epi64( (__m128i*)x )
+#endif
+
+//---------------------------------------------------------
+// aya: should be move in common place (aka: mfx_h265_optimization_defs.h) 
+// but common include file mfx_h265_optimization.h should be free from platform specific defs
+
+#if defined(_WIN32) || defined(_WIN64)
+#define M128I_VAR(x, v) \
+    static const __m128i x = v
+#else
+#define M128I_VAR(x, v) \
+    static ALIGN_DECL(16) const char array_##x[16] = v; \
+    static const __m128i* p_##x = (const __m128i*) array_##x; \
+    static const __m128i x = * p_##x
 #endif
 
 #define M128I_WC_INIT(v) {\
@@ -99,6 +98,8 @@ namespace MFX_HEVC_COMMON
 
 #define M128I_D4C(x, w0,w1,w2,w3) M128I_VAR(x, M128I_D4C_INIT(w0,w1,w2,w3))
 
+//---------------------------------------------------------
+
 #define _mm_movehl_epi64(A, B) _mm_castps_si128(_mm_movehl_ps(_mm_castsi128_ps(A), _mm_castsi128_ps(B)))
 
 #define _mm_storeh_epi64(p, A) _mm_storeh_pd((double *)(p), _mm_castsi128_pd(A))
@@ -112,17 +113,19 @@ namespace MFX_HEVC_COMMON
 #define load_unaligned(x) _mm_loadu_si128(x)
 #endif
 
+//---------------------------------------------------------
+
 #undef coef_stride
 #define coef_stride 4
 
-    void IDCT_4x4_SSE4(void *destPtr, const short *__restrict coeff, int destStride, int destSize)
+    void IDCT_4x4_SSE4(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
     {
         __m128i s0, s1, s2, s3, s02L, s13L, O0L, O1L, E0L, E1L, H01L, H23L;
         __m128i R0, R1, R2, R3;
         __m128i xmm0, xmm1, xmm2, xmm3;
         __m128i tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
-        unsigned char* __restrict destByte;
-        short* __restrict destWord;
+        unsigned char* H265_RESTRICT destByte;
+        short* H265_RESTRICT destWord;
 
         M128I_W2x4C( t_4_O0_13,  83,  36); // g_T4[1][0], g_T4[3][0]
         M128I_W2x4C( t_4_O1_13,  36, -83); // g_T4[1][1], g_T4[3][1]
@@ -222,15 +225,15 @@ namespace MFX_HEVC_COMMON
         }
     }
 
-    void IDST_4x4_SSE4(void *destPtr, const short *__restrict coeff, int destStride, int destSize)
+    void IDST_4x4_SSE4(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
     {
         __m128i s0, s1, s2, s3, s01L, s23L, H01L, H23L;
         __m128i R0, R1, R2, R3;
         __m128i xmm0, xmm1, xmm2, xmm3;
         __m128i tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
 
-        unsigned char* __restrict destByte;
-        short* __restrict destWord;
+        unsigned char* H265_RESTRICT destByte;
+        short* H265_RESTRICT destWord;
 
         //    dst[i + 0*4] = (short)Clip3( -32768, 32767, ( 29*s0 + 74*s1 + 84*s2 + 55*s3 + rnd_factor ) >> SHIFT_INV_1ST );
         //    dst[i + 1*4] = (short)Clip3( -32768, 32767, ( 55*s0 + 74*s1 - 29*s2 - 84*s3 + rnd_factor ) >> SHIFT_INV_1ST );
@@ -341,7 +344,7 @@ namespace MFX_HEVC_COMMON
 #undef coef_stride
 #define coef_stride 8
 
-    void IDCT_8x8_SSE4(void *destPtr, const short *__restrict coeff, int destStride, int destSize)
+    void IDCT_8x8_SSE4(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
     {
         ALIGN_DECL(16) short tmp[8 * 8];
 
@@ -353,11 +356,11 @@ namespace MFX_HEVC_COMMON
         __m128i d10c10, d32c32, c3210, d3210;
         __m128i r4567, r3210, r7654, r76543210;
 
-        unsigned char* __restrict destByte;
-        short* __restrict destWord;
+        unsigned char* H265_RESTRICT destByte;
+        short* H265_RESTRICT destWord;
         int j;
 
-        int16_t *__restrict p_tmp = tmp;
+        signed short *H265_RESTRICT p_tmp = tmp;
 
         if (destSize == 1) {
             destByte = (unsigned char *)destPtr;
@@ -494,11 +497,11 @@ namespace MFX_HEVC_COMMON
 #undef coef_stride
 #define coef_stride 16
 
-    static FORCEINLINE void IDCT_16x16_2ND_SSE4(void *destPtr, const short *__restrict coeff, int destStride, int destSize)
+    static FORCEINLINE void IDCT_16x16_2ND_SSE4(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
     {
         __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
-        unsigned char* __restrict destByte;
-        short* __restrict destWord;
+        unsigned char* H265_RESTRICT destByte;
+        short* H265_RESTRICT destWord;
         int i;
 
         M128I_W8C( t_16_a0101_08,  64, 64,  64,-64,  64,-64,  64, 64);
@@ -634,7 +637,7 @@ namespace MFX_HEVC_COMMON
         }
     }
 
-    void IDCT_16x16_SSE4(void *destPtr, const short *__restrict coeff, int destStride, int destSize)
+    void IDCT_16x16_SSE4(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
     {
         __m128i s0, s2, s4, s6, s8, s1, s3, s5, s7, s9, s11, s13, s15;
         __m128i O0L, O1L, O2L, O3L, O4L, O5L, O6L, O7L;
@@ -696,7 +699,7 @@ namespace MFX_HEVC_COMMON
         M128I_DC ( round1, 1<<(SHIFT_INV_1ST-1));
 
         ALIGN_DECL(16) short tmp[16 * 16];
-        short *__restrict p_tmp = tmp;
+        short *H265_RESTRICT p_tmp = tmp;
 
         for (j = 0; j < 16; j += 4)
         {
@@ -907,7 +910,7 @@ namespace MFX_HEVC_COMMON
 
     // 9200 CPU clocks. 
     // 43 * _mm_madd_epi16 = 344
-    void IDCT_32x32_SSE4(void *destPtr, const short *__restrict coeff, int destStride, int destSize)
+    void IDCT_32x32_SSE4(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
     {
         int i;
         signed short * dest;
@@ -915,8 +918,8 @@ namespace MFX_HEVC_COMMON
         ALIGN_DECL(16) __m128i buff[32*32];
         ALIGN_DECL(16) short temp[32*32];
         __m128i s0, s1, s2, s3, s4, s5, s6, s7;
-        unsigned char* __restrict destByte;
-        short* __restrict destWord;
+        unsigned char* H265_RESTRICT destByte;
+        short* H265_RESTRICT destWord;
 
         if (destSize == 1) {
             destByte = (unsigned char *)destPtr;
@@ -1513,13 +1516,13 @@ namespace MFX_HEVC_COMMON
 
 #define src_stride 32  // strade for temp[]
 
-    void IDCT_32x32_SSE4(void *destPtr, const short *__restrict coeff, int destStride, int destSize)
+    void IDCT_32x32_SSE4(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
     {
         int i;
         ALIGN_DECL(16) short temp[32*32];
         __m128i s0, s1, s2, s3, s4, s5, s6, s7;
-        unsigned char* __restrict destByte;
-        short* __restrict destWord;
+        unsigned char* H265_RESTRICT destByte;
+        short* H265_RESTRICT destWord;
 
         if (destSize == 1) {
             destByte = (unsigned char *)destPtr;
