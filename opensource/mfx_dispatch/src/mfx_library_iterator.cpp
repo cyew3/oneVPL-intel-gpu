@@ -62,6 +62,66 @@ wchar_t pathKeyName[] = L"Path";
 const
 wchar_t apiVersionName[] = L"APIVersion";
 
+mfxStatus GetImplementationType(const mfxU32 adapterNum, mfxIMPL *pImplInterface, mfxU32 *pVendorID, mfxU32 *pDeviceID)
+{
+    if (NULL == pImplInterface)
+    {
+        return MFX_ERR_NULL_PTR;
+    }
+
+    DXVA2Device dxvaDevice;
+    if (MFX_IMPL_VIA_D3D9 == *pImplInterface)
+    {
+        // try to create the Direct3D 9 device and find right adapter
+        if (!dxvaDevice.InitD3D9(adapterNum))
+        {
+            DISPATCHER_LOG_INFO((("dxvaDevice.InitD3D9(%d) Failed "), adapterNum ));
+            return MFX_ERR_UNSUPPORTED;
+        }
+    }
+    else if (MFX_IMPL_VIA_D3D11 == *pImplInterface)
+    {
+        // try to open DXGI 1.1 device to get hardware ID
+        if (!dxvaDevice.InitDXGI1(adapterNum))
+        {
+            DISPATCHER_LOG_INFO((("dxvaDevice.InitDXGI1(%d) Failed "), adapterNum ));
+            return MFX_ERR_UNSUPPORTED;
+        }
+    } 
+    else if (MFX_IMPL_VIA_ANY == *pImplInterface)
+    {
+        // try the Direct3D 9 device
+        if (dxvaDevice.InitD3D9(adapterNum))
+        {
+            *pImplInterface = MFX_IMPL_VIA_D3D9; // store value for GetImplementationType() call
+        }
+        // else try to open DXGI 1.1 device to get hardware ID
+        else if (dxvaDevice.InitDXGI1(adapterNum))
+        {
+            *pImplInterface = MFX_IMPL_VIA_D3D11; // store value for GetImplementationType() call
+        }
+        else
+        {
+            DISPATCHER_LOG_INFO((("Unsupported adapter %d "), adapterNum ));
+            return MFX_ERR_UNSUPPORTED;
+        }
+    }
+    else
+    {
+        DISPATCHER_LOG_ERROR((("Unknown implementation type %d "), *pImplInterface ));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    // obtain card's parameters
+    if (pVendorID && pDeviceID)
+    {
+        *pVendorID = dxvaDevice.GetVendorID();
+        *pDeviceID = dxvaDevice.GetDeviceID();
+    }
+
+    return MFX_ERR_NONE;
+}
+
 MFXLibraryIterator::MFXLibraryIterator(void)
 {
     m_implType = MFX_LIB_PSEUDO;
@@ -94,7 +154,6 @@ void MFXLibraryIterator::Release(void)
 
 mfxStatus MFXLibraryIterator::Init(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum, int storageID)
 {
-    DXVA2Device dxvaDevice;
     HKEY rootHKey;
     bool bRes;
 
@@ -125,51 +184,11 @@ mfxStatus MFXLibraryIterator::Init(eMfxImplType implType, mfxIMPL implInterface,
                     ? implInterface
                     : MFX_IMPL_VIA_ANY;
 
-    if (MFX_IMPL_VIA_D3D9 == m_implInterface)
+    mfxStatus mfxRes = MFX::GetImplementationType(adapterNum, &m_implInterface, &m_vendorID, &m_deviceID);
+    if (MFX_ERR_NONE != mfxRes)
     {
-        // try to create the Direct3D 9 device and find right adapter
-        if (!dxvaDevice.InitD3D9(adapterNum))
-        {
-            DISPATCHER_LOG_INFO((("dxvaDevice.InitD3D9(%d) Failed "), adapterNum ));
-            return MFX_ERR_UNSUPPORTED;
-        }        
+        return mfxRes;
     }
-    else if (MFX_IMPL_VIA_D3D11 == m_implInterface)
-    {
-        // try to open DXGI 1.1 device to get hardware ID
-        if (!dxvaDevice.InitDXGI1(adapterNum))
-        {
-            DISPATCHER_LOG_INFO((("dxvaDevice.InitDXGI1(%d) Failed "), adapterNum ));
-            return MFX_ERR_UNSUPPORTED;
-        }
-    } 
-    else if (MFX_IMPL_VIA_ANY == m_implInterface)
-    {
-        // try the Direct3D 9 device
-        if (dxvaDevice.InitD3D9(adapterNum))
-        {
-            m_implInterface = MFX_IMPL_VIA_D3D9; // store value for GetImplementationType() call
-        }
-        // else try to open DXGI 1.1 device to get hardware ID
-        else if (dxvaDevice.InitDXGI1(adapterNum))
-        {
-            m_implInterface = MFX_IMPL_VIA_D3D11; // store value for GetImplementationType() call
-        }
-        else
-        {
-            DISPATCHER_LOG_INFO((("Unsupported adapter %d "), adapterNum ));
-            return MFX_ERR_UNSUPPORTED;
-        }
-    }
-    else
-    {
-        DISPATCHER_LOG_ERROR((("Unknown implementation type %d "), m_implInterface ));
-        return MFX_ERR_UNSUPPORTED;
-    }
-
-    // obtain card's parameters
-    m_vendorID = dxvaDevice.GetVendorID();
-    m_deviceID = dxvaDevice.GetDeviceID();
 
     DISPATCHER_LOG_INFO((("Inspecting %s\\%S\n"),
                    (MFX_LOCAL_MACHINE_KEY == storageID) ? ("HKEY_LOCAL_MACHINE") : ("HKEY_CURRENT_USER"),

@@ -241,10 +241,22 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
                 DISPATCHER_LOG_INFO((("loading default library %S\n"), dllName))
 
                 // try to load the selected DLL using default DLL search mechanism
-                mfxRes = pHandle->LoadSelectedDLL(dllName,
-                                                  implTypes[curImplIdx].implType,
-                                                  implTypes[curImplIdx].impl,
-                                                  implInterface);
+                if (!implInterface || MFX_IMPL_VIA_ANY == implInterface)
+                {
+                    if (!implInterface) 
+                    {
+                        implInterface = MFX_IMPL_VIA_ANY;
+                    }
+                    mfxRes = MFX::GetImplementationType(implTypes[curImplIdx].adapterID, &implInterface, NULL, NULL);
+                }
+                if (MFX_ERR_NONE == mfxRes)
+                {
+                    // try to load the selected DLL using default DLL search mechanism
+                    mfxRes = pHandle->LoadSelectedDLL(dllName,
+                                                      implTypes[curImplIdx].implType,
+                                                      implTypes[curImplIdx].impl,
+                                                      implInterface);
+                }
                 // unload the failed DLL
                 if ((MFX_ERR_NONE != mfxRes) &&
                     (MFX_WRN_PARTIAL_ACCELERATION != mfxRes))

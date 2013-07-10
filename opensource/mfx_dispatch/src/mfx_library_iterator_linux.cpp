@@ -231,6 +231,12 @@ static mfxU32 mfx_list_libraries(const char* path, bool search_hw, struct mfx_li
 namespace MFX
 {
 
+mfxStatus GetImplementationType(const mfxU32 /*adapterNum*/, mfxIMPL *pImplInterface, mfxU32 */*pVendorID*/, mfxU32 */*pDeviceID*/)
+{
+    *pImplInterface = MFX_IMPL_VIA_VAAPI;
+    return MFX_ERR_NONE;
+}
+
 MFXLibraryIterator::MFXLibraryIterator(void)
 {
     m_implType = MFX_LIB_PSEUDO;
@@ -344,7 +350,9 @@ mfxStatus MFXLibraryIterator::SelectDLLVersion(char *pPath, size_t pathSize,
 
 mfxIMPL MFXLibraryIterator::GetImplementationType()
 {
-    return MFX_IMPL_VIA_VAAPI;
+    mfxIMPL implInterface;
+    MFX::GetImplementationType(0, &implInterface, NULL, NULL);
+    return implInterface;
 }
 
 } // namespace MFX

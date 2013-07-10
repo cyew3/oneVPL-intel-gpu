@@ -78,6 +78,8 @@ enum
 };
 #endif
 
+mfxStatus GetImplementationType(const mfxU32 adapterNum, mfxIMPL *pImplInterface, mfxU32 *pVendorID, mfxU32 *pDeviceID);
+
 class MFXLibraryIterator
 {
 public:
