@@ -65,6 +65,8 @@ enum  {
     MFX_IMPL_VIA_D3D11    = 0x0300,
     MFX_IMPL_VIA_RESERVED1 = 0x0400,
 
+    MFX_IMPL_AUDIO = 0x8000,
+
     MFX_IMPL_UNSUPPORTED  = 0x0000  /* One of the MFXQueryIMPL returns */
 };
 
