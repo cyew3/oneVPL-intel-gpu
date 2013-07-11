@@ -79,7 +79,7 @@ DECL_STRUCT_TRACE(mfxEncryptedData);
 
 #ifdef __MFXAUDIO_H__
 DECL_STRUCT_TRACE(mfxAudioStreamInfo);
-DECL_STRUCT_TRACE(mfxInfoAudioMFX);
+DECL_STRUCT_TRACE(mfxAudioInfoMFX);
 DECL_STRUCT_TRACE(mfxAudioParam);
 DECL_STRUCT_TRACE(mfxAudioAllocRequest);
 #endif //#ifdef __MFXAUDIO_H__

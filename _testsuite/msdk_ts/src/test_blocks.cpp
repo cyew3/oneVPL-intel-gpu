@@ -709,7 +709,7 @@ msdk_ts_BLOCK(b_MFXInitAudio){
     mfxVersion default_ver;
     default_ver.Major = MFX_VERSION_MAJOR;
     default_ver.Minor = MFX_VERSION_MINOR;
-    mfxIMPL default_impl =  MFX_IMPL_AUTO;
+    mfxIMPL default_impl =  MFX_IMPL_AUDIO;
     std::string platform = var_def<char*>("platform", "");
     if(platform.size()){
         TRACE_PAR(platform);
@@ -730,26 +730,11 @@ msdk_ts_BLOCK(b_MFXInitAudio){
     mfxVersion&     version     = var_def<mfxVersion>   ("version",     default_ver);
     mfxVersion*&    pVersion    = var_def<mfxVersion*>  ("p_version",   &version);
 
-    TRACE_FUNC3(MFXInitAudio, impl, pVersion, pSession);
-    mfxRes = MFXInitAudio(impl, pVersion, pSession);
+    TRACE_FUNC3(MFXInit, impl, pVersion, pSession);
+    mfxRes = MFXInit(impl, pVersion, pSession);
     TRACE_PAR(mfxRes);
     TRACE_PAR(pVersion);
     TRACE_PAR(pSession);
-    CHECK_STS(mfxRes, expectedRes);
-
-    return msdk_ts::resOK;
-}
-
-msdk_ts_BLOCK(b_MFXAudioCORE_SyncOperation){
-    mfxStatus&      mfxRes      = var_def<mfxStatus>    ("mfxRes",      MFX_ERR_NONE);
-    mfxStatus&      expectedRes = var_def<mfxStatus>    ("expectedRes", MFX_ERR_NONE);
-    mfxSession&     session     = var_def<mfxSession>   ("session",     0);
-    mfxSyncPoint&   syncp       = var_def<mfxSyncPoint> ("syncp",       NULL);
-    mfxU32&         wait        = var_def<mfxU32>       ("wait",        MFX_INFINITE);
-
-    TRACE_FUNC3(MFXAudioCORE_SyncOperation, session, syncp, wait);
-    mfxRes = MFXAudioCORE_SyncOperation(session, syncp, wait);
-    TRACE_PAR(mfxRes);
     CHECK_STS(mfxRes, expectedRes);
 
     return msdk_ts::resOK;
@@ -760,8 +745,8 @@ msdk_ts_BLOCK(b_MFXCloseAudio){
     mfxStatus&      expectedRes = var_def<mfxStatus>    ("expectedRes", MFX_ERR_NONE);
     mfxSession&     session     = var_def<mfxSession>   ("session",     0);
 
-    TRACE_FUNC1(MFXCloseAudio, session);
-    mfxRes = MFXCloseAudio(session);
+    TRACE_FUNC1(MFXClose, session);
+    mfxRes = MFXClose(session);
     TRACE_PAR(mfxRes);
     CHECK_STS(mfxRes, expectedRes);
 
@@ -775,8 +760,8 @@ msdk_ts_BLOCK(b_MFXAudioQueryIMPL){
     mfxIMPL&        impl        = var_def<mfxIMPL>      ("impl",        MFX_IMPL_AUTO);
     mfxIMPL*&       pImpl       = var_def<mfxIMPL*>     ("p_impl",      &impl);
 
-    TRACE_FUNC2(MFXAudioQueryIMPL, session, pImpl);
-    mfxRes = MFXAudioQueryIMPL(session, pImpl);
+    TRACE_FUNC2(MFXQueryIMPL, session, pImpl);
+    mfxRes = MFXQueryIMPL(session, pImpl);
     TRACE_PAR(mfxRes);
     TRACE_PAR(pImpl);
     CHECK_STS(mfxRes, expectedRes);
@@ -792,8 +777,8 @@ msdk_ts_BLOCK(b_MFXAudioQueryVersion){
     mfxVersion&     version     = var_def<mfxVersion>   ("version",     default_ver);
     mfxVersion*&    pVersion    = var_def<mfxVersion*>  ("p_version",   &version);
 
-    TRACE_FUNC2(MFXAudioQueryVersion, session, pVersion);
-    mfxRes = MFXAudioQueryVersion(session, pVersion);
+    TRACE_FUNC2(MFXQueryVersion, session, pVersion);
+    mfxRes = MFXQueryVersion(session, pVersion);
     TRACE_PAR(mfxRes);
     TRACE_PAR(pVersion);
     CHECK_STS(mfxRes, expectedRes);
