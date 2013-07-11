@@ -452,22 +452,22 @@ H265CodingUnit* H265DecoderFrame::getCU(Ipp32u CUaddr)
     return m_CodingData->getCU(CUaddr);
 }
 
-Ipp32u H265DecoderFrame::getNumCUsInFrame()
+Ipp32u H265DecoderFrame::getNumCUsInFrame() const
 {
     return m_CodingData->m_NumCUsInFrame;
 }
 
-Ipp32u H265DecoderFrame::getNumPartInCUSize()
+Ipp32u H265DecoderFrame::getNumPartInCUSize() const
 {
     return m_CodingData->m_NumPartInWidth;
 }
 
-Ipp32u H265DecoderFrame::getNumPartInWidth()
+Ipp32u H265DecoderFrame::getNumPartInWidth() const
 {
     return m_CodingData->m_NumPartInWidth;
 }
 
-Ipp32u H265DecoderFrame::getNumPartInHeight()
+Ipp32u H265DecoderFrame::getNumPartInHeight() const
 {
     return m_CodingData->m_NumPartInHeight;
 }
@@ -477,32 +477,32 @@ Ipp32u H265DecoderFrame::getNumPartInHeight()
     return m_CodingData->m_NumPartitions;
 }*/
 
-Ipp32u H265DecoderFrame::getFrameWidthInCU()
+Ipp32u H265DecoderFrame::getFrameWidthInCU() const
 {
     return m_CodingData->m_WidthInCU;
 }
 
-Ipp32u H265DecoderFrame::getFrameHeightInCU()
+Ipp32u H265DecoderFrame::getFrameHeightInCU() const
 {
     return m_CodingData->m_HeightInCU;
 }
 
-Ipp32u H265DecoderFrame::getMinCUSize()
+Ipp32u H265DecoderFrame::getMinCUSize() const
 {
     return m_CodingData->m_MinCUWidth;
 }
 
-Ipp32u H265DecoderFrame::getMinCUWidth()
+Ipp32u H265DecoderFrame::getMinCUWidth() const
 {
     return m_CodingData->m_MinCUWidth;
 }
 
-Ipp32u H265DecoderFrame::getMinCUHeight()
+Ipp32u H265DecoderFrame::getMinCUHeight() const
 {
     return m_CodingData->m_MinCUHeight;
 }
 
-Ipp32s H265DecoderFrame::getMaxCUDepth()
+Ipp32s H265DecoderFrame::getMaxCUDepth() const
 {
     return m_pSlicesInfo->GetSlice(0)->GetSeqParam()->MaxCUDepth;
 }

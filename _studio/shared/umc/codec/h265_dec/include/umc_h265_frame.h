@@ -171,22 +171,22 @@ public:
     // FIXME: make coding data a member, not pointer
     H265FrameCodingData *m_CodingData;
 
-    H265FrameCodingData* getCD() {return m_CodingData;}
+    H265FrameCodingData* getCD() const {return m_CodingData;}
 
     H265CodingUnit* getCU(Ipp32u CUaddr);
 
-    Ipp32u getNumCUsInFrame();
-    Ipp32u getNumPartInCUSize();
-    Ipp32u getNumPartInWidth();
-    Ipp32u getNumPartInHeight();
-    Ipp32u getFrameWidthInCU();
-    Ipp32u getFrameHeightInCU();
-    Ipp32u getMinCUSize();
-    Ipp32u getMinCUWidth();
-    Ipp32u getMinCUHeight();
+    Ipp32u getNumCUsInFrame() const;
+    Ipp32u getNumPartInCUSize() const;
+    Ipp32u getNumPartInWidth() const;
+    Ipp32u getNumPartInHeight() const;
+    Ipp32u getFrameWidthInCU() const;
+    Ipp32u getFrameHeightInCU() const;
+    Ipp32u getMinCUSize() const;
+    Ipp32u getMinCUWidth() const;
+    Ipp32u getMinCUHeight() const;
 
-    Ipp32s getMaxCUDepth();
-    Ipp32u getMaxCUSize();
+    Ipp32s getMaxCUDepth() const;
+    Ipp32u getMaxCUSize() const;
 
     Ipp32s*  m_cuOffsetY;
     Ipp32s*  m_cuOffsetC;

@@ -662,7 +662,7 @@ void H265Prediction::MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPad
 
     for (Ipp32s PartIdx = 0, subPartIdx = AbsPartIdx; PartIdx < countPart; PartIdx++, subPartIdx += PUOffset)
     {
-#if 0
+#if 1
         Ipp32u PartAddr;
         Ipp32u Width, Height;
         pCU->getPartIndexAndSize(AbsPartIdx, Depth, PartIdx, PartAddr, Width, Height);
@@ -676,17 +676,32 @@ void H265Prediction::MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPad
         H265PUInfo &PUi = PUInfo[PartIdx];
         H265MVInfo &MVi = PUi.interinfo;
 
-#if 0
+#if 1
         PUi.PartAddr = PartAddr;
         PUi.Height = Height;
         PUi.Width = Width;
 
-        Ipp32u mask = (1 << m_context->m_sps->MaxCUDepth) - 1;
-        PartX &= mask;
-        PartY &= mask;
+        const H265FrameCodingData::ColocatedTUInfo &tuInfoL0 = m_context->m_frame->getCD()->GetTUInfo(REF_PIC_LIST_0, m_context->m_frame->getNumPartInCUSize() * m_context->m_frame->getFrameWidthInCU() * PartY + PartX);
+        const H265FrameCodingData::ColocatedTUInfo &tuInfoL1 = m_context->m_frame->getCD()->GetTUInfo(REF_PIC_LIST_1, m_context->m_frame->getNumPartInCUSize() * m_context->m_frame->getFrameWidthInCU() * PartY + PartX);
 
-        H265MVInfo mvi = m_context->m_CurrCTB[(PartY + (Height >> m_context->m_sps->log2_min_transform_block_size) - 1) * m_context->m_CurrCTBStride + PartX];
-        MVi = mvi;
+        if (tuInfoL0.m_flags != COL_TU_INVALID_INTER)
+        {
+            PUi.refFrame[REF_PIC_LIST_0] = tuInfoL0.m_refIdx >= 0 ? m_context->m_refPicList[REF_PIC_LIST_0][tuInfoL0.m_refIdx].refFrame : 0;
+            MVi.mvinfo[REF_PIC_LIST_0].MV = tuInfoL0.m_mv;
+            MVi.mvinfo[REF_PIC_LIST_0].RefIdx = tuInfoL0.m_refIdx;
+        }
+        else
+            MVi.mvinfo[REF_PIC_LIST_0].RefIdx = -1;
+
+
+        if (tuInfoL1.m_flags != COL_TU_INVALID_INTER)
+        {
+            PUi.refFrame[REF_PIC_LIST_1] = tuInfoL1.m_refIdx >= 0 ? m_context->m_refPicList[REF_PIC_LIST_1][tuInfoL1.m_refIdx].refFrame : 0;
+            MVi.mvinfo[REF_PIC_LIST_1].MV = tuInfoL1.m_mv;
+            MVi.mvinfo[REF_PIC_LIST_1].RefIdx = tuInfoL1.m_refIdx;
+        }
+        else
+            MVi.mvinfo[REF_PIC_LIST_1].RefIdx = -1;
 #endif
 
         Ipp32s RefIdx[2] = {-1, -1};

@@ -18,8 +18,6 @@ namespace UMC_HEVC_DECODER
 
 void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiMaxWidth, Ipp32u uiMaxHeight, Ipp32u uiMaxDepth)
 {
-    Ipp32u i;
-
     m_MaxCUDepth = (Ipp8u) uiMaxDepth;
     m_NumPartitions  = 1 << (m_MaxCUDepth<<1);
 
@@ -38,25 +36,19 @@ void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiM
     m_NumCUsInFrame = m_WidthInCU * m_HeightInCU;
     m_CUData = new H265CodingUnit*[m_NumCUsInFrame];
 
-    m_ColTUFlags[0] = new Ipp8u[m_NumCUsInFrame * m_NumPartitions];
-    m_ColTUFlags[1] = new Ipp8u[m_NumCUsInFrame * m_NumPartitions];
-    m_ColTUPOCDelta[0] = new Ipp32s[m_NumCUsInFrame * m_NumPartitions];
-    m_ColTUPOCDelta[1] = new Ipp32s[m_NumCUsInFrame * m_NumPartitions];
-    m_ColTUMV[0] = new H265MotionVector[m_NumCUsInFrame * m_NumPartitions];
-    m_ColTUMV[1] = new H265MotionVector[m_NumCUsInFrame * m_NumPartitions];
+    m_colocatedInfo[0] = new ColocatedTUInfo[m_NumCUsInFrame * m_NumPartitions];
+    m_colocatedInfo[1] = new ColocatedTUInfo[m_NumCUsInFrame * m_NumPartitions];
 
-    for (i=0; i < m_NumCUsInFrame; i++)
+    for (Ipp32u i = 0; i < m_NumCUsInFrame; i++)
     {
         m_CUData[i] = new H265CodingUnit;
-        m_CUData[i]->create (m_NumPartitions, m_MaxCUWidth, m_MaxCUHeight, false, m_MaxCUWidth >> m_MaxCUDepth);
+        m_CUData[i]->create (m_NumPartitions, m_MaxCUWidth, m_MaxCUHeight);
     }
 }
 
 void H265FrameCodingData::destroy()
 {
-    Ipp32u i;
-
-    for (i = 0; i < m_NumCUsInFrame; i++)
+    for (Ipp32u i = 0; i < m_NumCUsInFrame; i++)
     {
         m_CUData[i]->destroy();
         delete m_CUData[i];
@@ -68,55 +60,11 @@ void H265FrameCodingData::destroy()
 
     for (int i = 0; i < 2; i++)
     {
-        delete [] m_ColTUFlags[i];
-        m_ColTUFlags[i] = 0;
-
-        delete [] m_ColTUPOCDelta[i];
-        m_ColTUPOCDelta[i] = 0;
-
-        delete [] m_ColTUMV[i];
-        m_ColTUMV[i] = 0;
+        delete[] m_colocatedInfo[i];
+        m_colocatedInfo[i] = 0;
     }
 }
 
-/*
-Ipp32u H265FrameCodingData::CalculateNextCUAddr(Ipp32u CurrCUAddr)
-{
-    Ipp32u NextCUAddr;
-    Ipp32u TileIdx;
-
-    //get the tile index for the current LCU
-    TileIdx = this->getTileIdxMap(CurrCUAddr);
-
-    //get the raster scan address for the next LCU
-    if (CurrCUAddr % m_WidthInCU == this->getTile(TileIdx)->getRightEdgePosInCU() &&
-        CurrCUAddr / m_WidthInCU == this->getTile(TileIdx)->getBottomEdgePosInCU())
-    //the current LCU is the last LCU of the tile
-    {
-        if (TileIdx == (Ipp32u) (m_NumColumnsMinus1 + 1) * (m_NumRowsMinus1 + 1) - 1)
-        {
-            NextCUAddr = m_NumCUsInFrame;
-        }
-        else
-        {
-            NextCUAddr = this->getTile(TileIdx + 1)->getFirstCUAddr();
-        }
-    }
-    else//the current LCU is not the last LCU of the tile
-    {
-        if (CurrCUAddr % m_WidthInCU == this->getTile(TileIdx)->getRightEdgePosInCU())
-        //the current LCU is one the rightmost edge of the tile
-        {
-            NextCUAddr = CurrCUAddr + m_WidthInCU - this->getTile(TileIdx)->getTileWidth() + 1;
-        }
-        else
-        {
-            NextCUAddr = CurrCUAddr + 1;
-        }
-    }
-    return NextCUAddr;
-}
-*/
 } // end namespace UMC_HEVC_DECODER
 
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

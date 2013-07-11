@@ -79,8 +79,6 @@ public:
 
     bool*                    m_IPCMFlag;        // array of intra_pcm flags
     // misc. variables -------------------------------------------------------------------------------------
-    bool                    m_DecSubCU;         // indicates decoder-mode
-
     Ipp8s                   m_CodedQP;
 
     bool isLosslessCoded(Ipp32u absPartIdx);
@@ -94,16 +92,14 @@ protected:
 
     Ipp32s getLastValidPartIdx (Ipp32s AbsPartIdx);
 
-    template <typename T> void setAll(T *p, const T &val, Ipp32u PartWidth, Ipp32u PartHeight);
-
 public:
 
-  H265CodingUnit();
-  virtual ~H265CodingUnit();
+    H265CodingUnit();
+    virtual ~H265CodingUnit();
 
     // create / destroy / init  / copy -----------------------------------------------------------------------------
 
-    void create (Ipp32u numPartition, Ipp32u Width, Ipp32u Height, bool DecSubCu, Ipp32s unitSize);
+    void create (Ipp32u numPartition, Ipp32u Width, Ipp32u Height);
     void destroy ();
 
     void initCU (H265SegmentDecoderMultiThreaded* sd, Ipp32u CUAddr);
@@ -122,10 +118,6 @@ public:
     {
         return static_cast<EnumPredMode>(m_PredModeArray[Idx]);
     }
-
-    void setAllColFlags(const Ipp8u flags, Ipp32u RefListIdx, Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight);
-    void setAllColPOCDelta(const Ipp32s POCDelta, Ipp32u RefListIdx, Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight);
-    void setAllColMV(const H265MotionVector &mv, Ipp32u RefListIdx, Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight);
 
     void setPartSizeSubParts (EnumPartSize Mode, Ipp32u AbsPartIdx, Ipp32u Depth);
     void setCUTransquantBypassSubParts(bool flag, Ipp32u AbsPartIdx, Ipp32u Depth);

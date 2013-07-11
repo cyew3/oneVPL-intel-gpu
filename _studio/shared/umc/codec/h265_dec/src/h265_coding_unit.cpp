@@ -59,57 +59,50 @@ H265CodingUnit::H265CodingUnit()
 
     m_CUAbove = NULL;
     m_CULeft = NULL;
-
-    m_DecSubCU = false;
 }
 
 H265CodingUnit::~H265CodingUnit()
 {
 }
 
-void H265CodingUnit::create (Ipp32u numPartition, Ipp32u Width, Ipp32u Height, bool DecSubCu, Ipp32s unitSize)
+void H265CodingUnit::create (Ipp32u numPartition, Ipp32u Width, Ipp32u Height)
 {
-    m_DecSubCU = DecSubCu;
-
     m_Frame = NULL;
     m_SliceHeader = NULL;
     m_NumPartition = numPartition;
 
-    if (!DecSubCu)
-    {
-         m_cumulativeMemoryPtr = CumulativeArraysAllocation(24, 32, &m_QPArray, sizeof(Ipp8u) * numPartition,
-                                        &m_DepthArray, sizeof(Ipp8u) * numPartition,
-                                        &m_WidthArray, sizeof(Ipp8u) * numPartition,
-                                        &m_HeightArray, sizeof(Ipp8u) * numPartition,
-                                        &m_PartSizeArray, sizeof(Ipp8u) * numPartition,
-                                        &m_PredModeArray, sizeof(Ipp8u) * numPartition,
+    m_cumulativeMemoryPtr = CumulativeArraysAllocation(24, 32, &m_QPArray, sizeof(Ipp8u) * numPartition,
+                                &m_DepthArray, sizeof(Ipp8u) * numPartition,
+                                &m_WidthArray, sizeof(Ipp8u) * numPartition,
+                                &m_HeightArray, sizeof(Ipp8u) * numPartition,
+                                &m_PartSizeArray, sizeof(Ipp8u) * numPartition,
+                                &m_PredModeArray, sizeof(Ipp8u) * numPartition,
 
-                                        &m_CUTransquantBypass, sizeof(bool) * numPartition,
+                                &m_CUTransquantBypass, sizeof(bool) * numPartition,
 
-                                        &m_LumaIntraDir, sizeof(Ipp8u) * numPartition,
-                                        &m_ChromaIntraDir, sizeof(Ipp8u) * numPartition,
+                                &m_LumaIntraDir, sizeof(Ipp8u) * numPartition,
+                                &m_ChromaIntraDir, sizeof(Ipp8u) * numPartition,
 
-                                        &m_TrIdxArray, sizeof(Ipp8u) * numPartition,
-                                        &m_TrStartArray, sizeof(Ipp8u) * numPartition,
-                                        &m_TransformSkip[0], sizeof(Ipp8u) * numPartition,
-                                        &m_TransformSkip[1], sizeof(Ipp8u) * numPartition,
-                                        &m_TransformSkip[2], sizeof(Ipp8u) * numPartition,
+                                &m_TrIdxArray, sizeof(Ipp8u) * numPartition,
+                                &m_TrStartArray, sizeof(Ipp8u) * numPartition,
+                                &m_TransformSkip[0], sizeof(Ipp8u) * numPartition,
+                                &m_TransformSkip[1], sizeof(Ipp8u) * numPartition,
+                                &m_TransformSkip[2], sizeof(Ipp8u) * numPartition,
 
-                                        &m_TrCoeffY, sizeof(H265CoeffsCommon) * Width * Height,
-                                        &m_TrCoeffCb, sizeof(H265CoeffsCommon) * Width * Height / 4,
-                                        &m_TrCoeffCr, sizeof(H265CoeffsCommon) * Width * Height / 4,
+                                &m_TrCoeffY, sizeof(H265CoeffsCommon) * Width * Height,
+                                &m_TrCoeffCb, sizeof(H265CoeffsCommon) * Width * Height / 4,
+                                &m_TrCoeffCr, sizeof(H265CoeffsCommon) * Width * Height / 4,
 
-                                        &m_Cbf[0], sizeof(Ipp8u) * numPartition,
-                                        &m_Cbf[1], sizeof(Ipp8u) * numPartition,
-                                        &m_Cbf[2], sizeof(Ipp8u) * numPartition,
+                                &m_Cbf[0], sizeof(Ipp8u) * numPartition,
+                                &m_Cbf[1], sizeof(Ipp8u) * numPartition,
+                                &m_Cbf[2], sizeof(Ipp8u) * numPartition,
 
-                                        &m_IPCMFlag, sizeof(bool) * numPartition,
-                                        &m_IPCMSampleY, sizeof(H265PlaneYCommon) * Width * Height,
-                                        &m_IPCMSampleCb, sizeof(H265PlaneYCommon) * Width * Height / 4,
-                                        &m_IPCMSampleCr, sizeof(H265PlaneYCommon) * Width * Height / 4
+                                &m_IPCMFlag, sizeof(bool) * numPartition,
+                                &m_IPCMSampleY, sizeof(H265PlaneYCommon) * Width * Height,
+                                &m_IPCMSampleCb, sizeof(H265PlaneYCommon) * Width * Height / 4,
+                                &m_IPCMSampleCr, sizeof(H265PlaneYCommon) * Width * Height / 4
 
-                                      );
-    }
+                                );
 
     m_CUAbove          = NULL;
     m_CULeft           = NULL;
@@ -120,13 +113,10 @@ void H265CodingUnit::destroy()
     m_Frame = NULL;
     m_SliceHeader = NULL;
 
-    if (!m_DecSubCU)
+    if (m_cumulativeMemoryPtr)
     {
-        if (m_cumulativeMemoryPtr)
-        {
-            CumulativeFree(m_cumulativeMemoryPtr);
-            m_cumulativeMemoryPtr = 0;
-        }
+        CumulativeFree(m_cumulativeMemoryPtr);
+        m_cumulativeMemoryPtr = 0;
     }
 
     m_CUAbove = NULL;
@@ -938,50 +928,6 @@ void H265CodingUnit::setNDBFilterBlockBorderAvailability(bool independentTileBou
         {
             m_AvailBorder[SGU_B] = m_AvailBorder[SGU_BL] = m_AvailBorder[SGU_BR] = false;
         }
-    }
-}
-
-// set
-template <typename T>
-void H265CodingUnit::setAll(T *p, const T &val, Ipp32u PartWidth, Ipp32u PartHeight)
-{
-    Ipp32s stride = m_Frame->getNumPartInCUSize() * m_Frame->getFrameWidthInCU();
-
-    for (Ipp32u y = 0; y < PartHeight; y++)
-    {
-        for (Ipp32u x = 0; x < PartWidth; x++)
-            p[x] = val;
-
-        p += stride;
-    }
-};
-
-void H265CodingUnit::setAllColFlags(const Ipp8u flags, Ipp32u RefListIdx, Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight)
-{
-    setAll(m_Frame->m_CodingData->m_ColTUFlags[RefListIdx] + m_Frame->getNumPartInCUSize() * m_Frame->getFrameWidthInCU() * PartY + PartX,
-        flags, PartWidth, PartHeight);
-}
-
-void H265CodingUnit::setAllColPOCDelta(const Ipp32s POCDelta, Ipp32u RefListIdx, Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight)
-{
-    setAll(m_Frame->m_CodingData->m_ColTUPOCDelta[RefListIdx] + m_Frame->getNumPartInCUSize() * m_Frame->getFrameWidthInCU() * PartY + PartX,
-        POCDelta, PartWidth, PartHeight);
-}
-
-void H265CodingUnit::setAllColMV(const H265MotionVector &mv, Ipp32u RefListIdx, Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight)
-{
-    H265MotionVector *p = m_Frame->m_CodingData->m_ColTUMV[RefListIdx] + m_Frame->getNumPartInCUSize() * m_Frame->getFrameWidthInCU() * PartY + PartX;
-    Ipp32s stride = m_Frame->getNumPartInCUSize() * m_Frame->getFrameWidthInCU();
-
-    for (Ipp32u y = 0; y < PartHeight; y++)
-    {
-        for (Ipp32u x = 0; x < PartWidth; x++)
-        {
-            p[x].Horizontal = mv.Horizontal;
-            p[x].Vertical = mv.Vertical;
-        }
-
-        p += stride;
     }
 }
 

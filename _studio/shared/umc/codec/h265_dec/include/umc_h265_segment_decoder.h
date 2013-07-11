@@ -75,6 +75,8 @@ public:
     const H265PicParamSet *m_pps;
     const H265DecoderFrame *m_frame;
 
+    H265DecoderRefPicList::ReferenceInformation *m_refPicList[2];
+
     std::vector<H265FrameHLDNeighborsInfo> m_TopNgbrsHolder;
     std::vector<H265MVInfo> m_TopMVInfoHolder;
     std::vector<H265MVInfo> m_CurrCTBHolder;
@@ -96,7 +98,7 @@ protected:
 
 };
 
-STRUCT_DECLSPEC_ALIGN class H265SegmentDecoder : public Context
+class H265SegmentDecoder : public Context
 {
 public:
     //h265 functions
