@@ -262,7 +262,6 @@
     <ClCompile Include="shared\src\libmfxsw_audio_decode.cpp" />
     <ClCompile Include="shared\src\libmfxsw_audio_encode.cpp" />
     <ClCompile Include="shared\src\libmfxsw_ext.cpp" />
-    <ClCompile Include="shared\src\libmfxsw_query.cpp" />
     <ClCompile Include="shared\src\libmfxsw_session.cpp" />
     <ClCompile Include="shared\src\mfx_log.cpp" />
     <ClCompile Include="shared\src\mfx_session.cpp" />

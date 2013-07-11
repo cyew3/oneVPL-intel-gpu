@@ -11,7 +11,6 @@ File Name: libmfxsw_query.cpp
 \* ****************************************************************************** */
 
 #include <mfxvideo.h>
-#include <mfxaudio.h>
 #include <mfx_session.h>
 
 mfxStatus MFXQueryIMPL(mfxSession session, mfxIMPL *impl)
