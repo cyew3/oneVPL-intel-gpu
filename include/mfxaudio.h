@@ -18,6 +18,9 @@ File Name: mfxaudio.h
 #define MFX_AUDIO_VERSION_MAJOR 1
 #define MFX_AUDIO_VERSION_MINOR 8
 
+/* AudioCORE */
+mfxStatus MFX_CDECL MFXAudioCORE_SyncOperation(mfxSession session, mfxSyncPoint syncp, mfxU32 wait);
+
 /* AudioENCODE */
 mfxStatus MFX_CDECL MFXAudioENCODE_Query(mfxSession session, mfxAudioParam *in, mfxAudioParam *out);
 mfxStatus MFX_CDECL MFXAudioENCODE_QueryIOSize(mfxSession session, mfxAudioParam *par, mfxAudioAllocRequest *request);
