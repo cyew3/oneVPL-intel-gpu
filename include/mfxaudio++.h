@@ -38,7 +38,7 @@ public:
     mfxStatus SetPriority( mfxPriority priority) { return MFXSetPriority(m_session, priority);}
     mfxStatus GetPriority( mfxPriority *priority) { return MFXGetPriority(m_session, priority);}
 
-    mfxStatus SyncOperation(mfxSyncPoint syncp, mfxU32 wait) { return MFXVideoCORE_SyncOperation(m_session, syncp, wait); }
+//    mfxStatus SyncOperation(mfxSyncPoint syncp, mfxU32 wait) { return MFXVideoCORE_SyncOperation(m_session, syncp, wait); }
 
     operator mfxSession (void) { return m_session; }
 
