@@ -37,21 +37,3 @@ const char* g_MfxCopyright = "mediasdk_copyright: Copyright(c) 2007-2013 Intel C
 const char* g_MfxFileVersion = "mediasdk_file_version: " MFX_FILE_VERSION;
 const char* g_MfxProductVersion = "mediasdk_product_version: " MFX_PRODUCT_VERSION;
 #endif
-
-mfxStatus MFXInitAudio(mfxIMPL implParam,mfxVersion *ver, mfxSession *session)
-{
-        return MFXInit(implParam, ver, session);
-
-} //MFXInitAudio(mfxIMPL implParam,mfxVersion *verAudio, mfxSession *session)
-
-mfxStatus MFXCloseAudio(mfxSession session)
-{
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXEXTClose");
-    mfxStatus mfxRes = MFX_ERR_NONE;
-    //[SS] to do something for audio
-    mfxRes = MFXClose(session);
-    return mfxRes;
-
-} // mfxStatus MFXCloseExt(mfxHDL session)
-
-

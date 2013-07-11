@@ -51,9 +51,9 @@ mfxStatus MFXVideoCORE_SyncOperation(mfxSession session, mfxSyncPoint syncp, mfx
 
 } // mfxStatus MFXVideoCORE_SyncOperation(mfxSession session, mfxSyncPoint syncp, mfxU32 wait)
 
-mfxStatus MFXAudioCORE_SyncOperation(mfxSession session, mfxSyncPoint syncp, mfxU32 wait)
-{
-    return MFXVideoCORE_SyncOperation(session, syncp, wait);
-}
+//mfxStatus MFXAudioCORE_SyncOperation(mfxSession session, mfxSyncPoint syncp, mfxU32 wait)
+//{
+ //   return MFXVideoCORE_SyncOperation(session, syncp, wait);
+//}
 
 

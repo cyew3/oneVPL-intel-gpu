@@ -1,10 +1,14 @@
 EXPORTS
-    MFXAudioCORE_SyncOperation
-    MFXInitAudio
-    MFXCloseAudio
+    MFXInit
+    MFXClose
+    MFXQueryIMPL
+    MFXQueryVersion
 
-    MFXAudioQueryIMPL
-    MFXAudioQueryVersion
+    MFXJoinSession
+    MFXDisjoinSession
+    MFXCloneSession
+    MFXSetPriority
+    MFXGetPriority
 
     MFXAudioENCODE_Query
     MFXAudioENCODE_QueryIOSize
