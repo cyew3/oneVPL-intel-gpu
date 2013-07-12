@@ -231,9 +231,8 @@
     <ClInclude Include="include\test_trace.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\opensource\mfx_dispatch\libmfx.vcxproj">
-      <Project>{9e7b3527-11aa-46ba-a82f-c58761f9b56f}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    <ProjectReference Include="..\..\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj">
+      <Project>{430e22ba-bdf6-497c-bfc5-ec6907f90018}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\_studio\shared\umc\core\vm\vm.vcxproj">
       <Project>{d41d3178-5c65-4868-bdb1-42c44643274e}</Project>
