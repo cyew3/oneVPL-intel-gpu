@@ -139,14 +139,12 @@ struct H265MV
     Ipp32s qcost() const
     {
         Ipp32s dx = ABS(mvx), dy = ABS(mvy);
-        //return ABS(dx) + ABS(dy) + ((dx|dy) != 0);
         //return dx*dx + dy*dy;
-        Ipp32s i;
-        //dx = ABS(dx); dy = ABS(dy);
-        for(i=0; (dx>>i)!=0; i++);
-        dx = i;
-        for(i=0; (dy>>i)!=0; i++);
-        dy = i;
+        //Ipp32s i;
+        //for(i=0; (dx>>i)!=0; i++);
+        //dx = i;
+        //for(i=0; (dy>>i)!=0; i++);
+        //dy = i;
         return (dx + dy);
     }
 

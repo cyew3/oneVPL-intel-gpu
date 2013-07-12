@@ -1143,7 +1143,7 @@ void H265CU::ModeDecision(Ipp32u abs_part_idx, Ipp32u offset, Ipp8u depth, CostT
             if (rd_opt_flag)
                 bsf->CtxRestore(ctx_save[0], 0, NUM_CABAC_CONTEXT);
 
-            cost_inter = ME_CU(abs_part_idx, depth) * .9;
+            cost_inter = ME_CU(abs_part_idx, depth) * 1.;
 
             if (cost_best > cost_inter) {
                 memcpy(data_best + ((depth + 0) << par->Log2NumPartInCU) + abs_part_idx,
