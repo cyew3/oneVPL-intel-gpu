@@ -66,7 +66,7 @@ void H265SegmentDecoder::InitNeighbourPatternLuma(H265CodingUnit* pCU, Ipp32u Zo
         pFilterBuf[l++] = pAdiTemp[1 + i];
     }
 
-    if (pCU->m_SliceHeader->m_SeqParamSet->getUseStrongIntraSmoothing())
+    if (m_pSeqParamSet->getUseStrongIntraSmoothing())
     {
         unsigned blkSize = 32;
         int bottomLeft = pFilterBuf[0];

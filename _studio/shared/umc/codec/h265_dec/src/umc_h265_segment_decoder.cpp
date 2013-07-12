@@ -2514,6 +2514,7 @@ void H265SegmentDecoder::IntraRecLumaBlk(H265CodingUnit* pCU,
     Ipp32s TUPartNumberInCTB = m_context->m_CurrCTBStride * YInc + XInc;
     Ipp32s NumUnitsInCU = Size >> m_pSeqParamSet->log2_min_transform_block_size;
 
+    // below left
     if (XInc > 0 && g_RasterToZscan[g_ZscanToRaster[AbsPartIdx] - 1 + NumUnitsInCU * m_pSeqParamSet->NumPartitionsInCUSize] > AbsPartIdx)
     {
         for (Ipp32s i = 0; i < NumUnitsInCU; i++)
@@ -2523,13 +2524,19 @@ void H265SegmentDecoder::IntraRecLumaBlk(H265CodingUnit* pCU,
     {
         NumIntraNeighbor += isIntraBelowLeftAvailable(TUPartNumberInCTB - 1 + NumUnitsInCU * m_context->m_CurrCTBStride, PartY, YInc, NumUnitsInCU, NeighborFlags + NumUnitsInCU - 1);
     }
+
+    // left
     NumIntraNeighbor += isIntraLeftAvailable(TUPartNumberInCTB - 1, NumUnitsInCU, NeighborFlags + (NumUnitsInCU * 2) - 1);
 
+    // above left
     NeighborFlags[NumUnitsInCU * 2] = m_context->m_CurrCTBFlags[TUPartNumberInCTB - 1 - m_context->m_CurrCTBStride].members.IsAvailable &&
         (m_context->m_CurrCTBFlags[TUPartNumberInCTB - 1 - m_context->m_CurrCTBStride].members.IsIntra || !m_pPicParamSet->constrained_intra_pred_flag);
     NumIntraNeighbor += (Ipp32s)(NeighborFlags[NumUnitsInCU * 2]);
 
+    // above
     NumIntraNeighbor += isIntraAboveAvailable(TUPartNumberInCTB - m_context->m_CurrCTBStride, NumUnitsInCU, NeighborFlags + (NumUnitsInCU * 2) + 1);
+    
+    // above right
     if (YInc > 0 && g_RasterToZscan[g_ZscanToRaster[AbsPartIdx] + NumUnitsInCU - m_pSeqParamSet->NumPartitionsInCUSize] > AbsPartIdx)
     {
         for (Ipp32s i = 0; i < NumUnitsInCU; i++)
@@ -2552,17 +2559,17 @@ void H265SegmentDecoder::IntraRecLumaBlk(H265CodingUnit* pCU,
     //===== get prediction signal =====
     Ipp32u LumaPredMode = pCU->m_LumaIntraDir[AbsPartIdx];
     H265PlanePtrYCommon pRecIPred = m_context->m_frame->GetLumaAddr(pCU->CUAddr, AbsPartIdx);
-    Ipp32u RecIPredStride = pCU->m_Frame->pitch_luma();
+    Ipp32u RecIPredStride = m_context->m_frame->pitch_luma();
     m_Prediction->PredIntraLumaAng(LumaPredMode, pRecIPred, RecIPredStride, Size);
 
     //===== inverse transform =====
     if (!pCU->getCbf(AbsPartIdx, TEXT_LUMA, TrDepth))
         return;
 
-    m_TrQuant->SetQPforQuant(pCU->m_QPArray[AbsPartIdx], TEXT_LUMA, pCU->m_SliceHeader->m_SeqParamSet->m_QPBDOffsetY, 0);
+    m_TrQuant->SetQPforQuant(pCU->m_QPArray[AbsPartIdx], TEXT_LUMA, m_pSeqParamSet->m_QPBDOffsetY, 0);
 
     Ipp32s scalingListType = (pCU->m_PredModeArray[AbsPartIdx] ? 0 : 3) + g_Table[(Ipp32s)TEXT_LUMA];
-    Ipp32u NumCoeffInc = (pCU->m_SliceHeader->m_SeqParamSet->MaxCUWidth * pCU->m_SliceHeader->m_SeqParamSet->MaxCUHeight) >> (pCU->m_SliceHeader->m_SeqParamSet->MaxCUDepth << 1);
+    Ipp32u NumCoeffInc = (m_pSeqParamSet->MaxCUWidth * m_pSeqParamSet->MaxCUHeight) >> (m_pSeqParamSet->MaxCUDepth << 1);
     H265CoeffsPtrCommon pCoeff = pCU->m_TrCoeffY + (NumCoeffInc * AbsPartIdx);
     bool useTransformSkip = pCU->m_TransformSkip[g_ConvertTxtTypeToIdx[TEXT_LUMA]][AbsPartIdx] != 0;
 
