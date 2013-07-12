@@ -125,6 +125,7 @@ SetOfSlices::SetOfSlices()
 
 SetOfSlices::~SetOfSlices()
 {
+    Release();
 }
 
 H264Slice * SetOfSlices::GetSlice(size_t pos) const
@@ -143,6 +144,19 @@ size_t SetOfSlices::GetSliceCount() const
 void SetOfSlices::AddSlice(H264Slice * slice)
 {
     m_pSliceQueue.push_back(slice);
+}
+
+void SetOfSlices::Release()
+{
+    size_t count = GetSliceCount();
+    for (size_t sliceId = 0; sliceId < count; sliceId++)
+    {
+        H264Slice * slice = GetSlice(sliceId);
+        slice->Release();
+        slice->DecrementReference();
+    }
+
+    Reset();
 }
 
 void SetOfSlices::Reset()
@@ -346,6 +360,12 @@ bool AccessUnit::AddSlice(H264Slice * slice)
 
 void AccessUnit::Release()
 {
+    size_t count = GetLayersCount();
+    for (size_t i = 0; i < count; i++)
+    {
+        GetLayer(i)->Release();
+    }
+
     Reset();
     m_payloads.Release();
 }
