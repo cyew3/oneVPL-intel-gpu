@@ -123,9 +123,41 @@ SetOfSlices::SetOfSlices()
 {
 }
 
+SetOfSlices::SetOfSlices(const SetOfSlices& set)
+    : m_frame(set.m_frame)
+    , m_isCompleted(set.m_isCompleted)
+    , m_payloads(set.m_payloads)
+    , m_pSliceQueue(set.m_pSliceQueue)
+{
+    size_t count = GetSliceCount();
+    for (size_t sliceId = 0; sliceId < count; sliceId++)
+    {
+        H264Slice * slice = GetSlice(sliceId);
+        slice->IncrementReference();
+    }
+}
+
 SetOfSlices::~SetOfSlices()
 {
     Release();
+}
+
+SetOfSlices& SetOfSlices::operator=(const SetOfSlices& set)
+{
+    if (this == &set)
+    {
+        return *this;
+    }
+
+    *this = set;
+    size_t count = GetSliceCount();
+    for (size_t sliceId = 0; sliceId < count; sliceId++)
+    {
+        H264Slice * slice = GetSlice(sliceId);
+        slice->IncrementReference();
+    }
+
+    return *this;
 }
 
 H264Slice * SetOfSlices::GetSlice(size_t pos) const
@@ -152,7 +184,6 @@ void SetOfSlices::Release()
     for (size_t sliceId = 0; sliceId < count; sliceId++)
     {
         H264Slice * slice = GetSlice(sliceId);
-        slice->Release();
         slice->DecrementReference();
     }
 

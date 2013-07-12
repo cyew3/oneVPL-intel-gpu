@@ -68,6 +68,8 @@ public:
     SetOfSlices();
     ~SetOfSlices();
 
+    SetOfSlices(const SetOfSlices& set);
+
     H264Slice * GetSlice(size_t pos) const;
     size_t GetSliceCount() const;
     void AddSlice(H264Slice * slice);
@@ -84,6 +86,8 @@ public:
     bool m_isCompleted;
 
     SeiPayloadArray  m_payloads;
+
+    SetOfSlices& operator=(const SetOfSlices& set);
 
 protected:
     std::vector<H264Slice*> m_pSliceQueue;
