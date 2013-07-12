@@ -23,39 +23,15 @@ public:
     }
     
     virtual mfxStatus Init(mfxVideoParam *par) {
-        DetachBuffers(par);
-        mfxStatus sts = base::Init(par);
-        RestoreBuffers(par);
-        return sts;
+        auto_ext_buffer auto_buf(*par);
+        auto_buf.remove(BufferIdOf<TDetachBuffer>::id);
+
+        return base::Init(par);
     }
     virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request) {
-        DetachBuffers(par);
-        mfxStatus sts = base::QueryIOSurf(par, request);
-        RestoreBuffers(par);
-        return sts;
-    }
-protected:
-    
-    mfxExtBuffer ** m_pOld;
-    mfxU16 m_numExtOld;
-    std::vector<mfxExtBuffer*> buffers;
+        auto_ext_buffer auto_buf(*par);
+        auto_buf.remove(BufferIdOf<TDetachBuffer>::id);
 
-    void DetachBuffers(mfxVideoParam *par) {
-        for (size_t i = 0; i < par->NumExtParam; i++)
-        {
-            if (par->ExtParam[i]->BufferId == BufferIdOf<TDetachBuffer>::id)
-                continue;
-
-            buffers.push_back(par->ExtParam[i]);
-        }
-        m_pOld = par->ExtParam;
-        m_numExtOld = par->NumExtParam;
-
-        par->ExtParam = buffers.empty() ? NULL : &buffers.front();
-        par->NumExtParam = (mfxU16)buffers.size();
-    }
-    void RestoreBuffers(mfxVideoParam *par) {
-        par->ExtParam = m_pOld;
-        par->NumExtParam = m_numExtOld;
+        return base::QueryIOSurf(par, request);
     }
 };

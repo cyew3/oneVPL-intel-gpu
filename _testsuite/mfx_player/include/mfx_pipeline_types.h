@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2013 Intel Corporation. All Rights Reserved.
 
 File Name: mfxstructures.h
 
@@ -76,6 +76,26 @@ enum
     PE_DECODE_HEADER,
     PE_PAR_FILE,
     PE_OPTION
+};
+
+//! Base class for types that should not be assigned.
+class mfx_no_assign  {
+    // Deny assignment
+    void operator=( const mfx_no_assign& );
+public:
+#if __GNUC__
+    //! Explicitly define default construction, because otherwise gcc issues gratuitous warning.
+    mfx_no_assign() {}
+#endif /* __GNUC__ */
+};
+
+//! Base class for types that should not be copied or assigned.
+class mfx_no_copy: mfx_no_assign {
+    //! Deny copy construction
+    mfx_no_copy( const mfx_no_copy& );
+public:
+    //! Allow default construction
+    mfx_no_copy() {}
 };
 
 struct SrfEncCtl
@@ -244,26 +264,35 @@ public:
     }
 };
 
-class auto_ext_buffer
+class auto_ext_buffer_base
 {
 public:
-    auto_ext_buffer(mfxVideoParam *par)
-        : m_pPushed()
+    auto_ext_buffer_base() : m_bPushed()
     {
-        push(par);
     }
-    ~auto_ext_buffer()
+    virtual ~auto_ext_buffer_base()
     {
         pop();
     }
 
-    //temporally inserts more data, will remove this on exiting
+    void insert(mfxExtBuffer* bufToInsert) {
+        if (!m_bPushed ) return;
+     
+        IntergityMaintainer maintain(*this);
+        //copying inserted buffers
+        m_final_buffer.push_back(bufToInsert);
+        //keep unique buffers
+        std::sort(m_final_buffer.begin(), m_final_buffer.end(), mfxExtBufferIdCompare());
+        m_final_buffer.erase(std::unique(m_final_buffer.begin(), m_final_buffer.end(), mfxExtBufferIdEqual()), m_final_buffer.end());
+    }
+
+    //temporally inserts more buffers, will remove this on exiting
     void insert(std::vector<mfxExtBuffer*>::iterator start,
                 std::vector<mfxExtBuffer*>::iterator end)
     {
-        if (NULL != m_pPushed )
+        if (m_bPushed )
         {
-            IntergityMaintainer maintain(this);
+            IntergityMaintainer maintain(*this);
             //copying inserted buffers
             m_final_buffer.insert(m_final_buffer.end(), start, end);
             //keep unique buffers
@@ -274,67 +303,97 @@ public:
 
     void remove(mfxU32 buffedID)
     {
-        if (NULL != m_pPushed )
+        if (NULL != m_bPushed )
         {
-            IntergityMaintainer maintain(this);
+            IntergityMaintainer maintain(*this);
             m_final_buffer.erase(std::remove_if(m_final_buffer.begin(), m_final_buffer.end(), std::bind2nd(BufferIdCompare(), buffedID)), m_final_buffer.end());
         }
     }
 
-    void push(mfxVideoParam *par)
+    template <class T>
+    void push(T &par)
     {
-        if (m_pPushed || !par)
+        if (m_bPushed)
             return;
 
-        m_pOldExtBuf = par->ExtParam;
-        m_nOldExtBuf = par->NumExtParam;
-        m_pPushed    = par;
+        m_pOldExtBuf = par.ExtParam;
+        m_nOldExtBuf = par.NumExtParam;
+        
+        m_ppExtParamsRef = &par.ExtParam;
+        m_numExParamsRef = &par.NumExtParam;
+
+        m_bPushed = true;
     }
 
 
     void pop()
     {
-        if (!m_pPushed)
+        if (!m_bPushed)
             return;
 
-        m_pPushed->ExtParam    = m_pOldExtBuf;
-        m_pPushed->NumExtParam = m_nOldExtBuf;
-        m_pPushed              = NULL;
+        *m_ppExtParamsRef = m_pOldExtBuf;
+        *m_numExParamsRef = m_nOldExtBuf;
+        m_bPushed              = false;
     }
 protected:
     friend class IntergityMaintainer;
 
-    class IntergityMaintainer 
+    class IntergityMaintainer  : mfx_no_copy
     {
-        auto_ext_buffer * m_pOwner;
+        auto_ext_buffer_base & m_Owner;
     public:
-        IntergityMaintainer(auto_ext_buffer *pauto_ext)
-            : m_pOwner(pauto_ext)
+        IntergityMaintainer(auto_ext_buffer_base &auto_ext)
+            : m_Owner(auto_ext)
         {
-            if (!pauto_ext->m_pPushed)
+            if (!m_Owner.m_bPushed)
                 return;
 
             //recreating final buffer
-            m_pOwner->m_final_buffer.clear();
+            m_Owner.m_final_buffer.clear();
             //copying original buffers
-            m_pOwner->m_final_buffer.insert(m_pOwner->m_final_buffer.end(), m_pOwner->m_pOldExtBuf, m_pOwner->m_pOldExtBuf + m_pOwner->m_nOldExtBuf);
+            m_Owner.m_final_buffer.insert(m_Owner.m_final_buffer.end(), m_Owner.m_pOldExtBuf, m_Owner.m_pOldExtBuf + m_Owner.m_nOldExtBuf);
         }
 
         ~IntergityMaintainer()
         {
-            if (!m_pOwner->m_pPushed)
+            if (!m_Owner.m_bPushed)
                 return;
 
             //assign
-            m_pOwner->m_pPushed->NumExtParam = (mfxU16)m_pOwner->m_final_buffer.size();
-            m_pOwner->m_pPushed->ExtParam = m_pOwner->m_final_buffer.empty() ? NULL : &m_pOwner->m_final_buffer.front();
+            *m_Owner.m_numExParamsRef = (mfxU16)m_Owner.m_final_buffer.size();
+            *m_Owner.m_ppExtParamsRef = m_Owner.m_final_buffer.empty() ? NULL : &m_Owner.m_final_buffer.front();
         }
     };
 
     mfxExtBuffer **m_pOldExtBuf;
     mfxU16 m_nOldExtBuf; 
-    mfxVideoParam *m_pPushed;
+    
+    bool m_bPushed;
+    
+    mfxU16          *m_numExParamsRef;
+    mfxExtBuffer  ***m_ppExtParamsRef;
+
     std::vector<mfxExtBuffer*> m_final_buffer;
+};
+
+//push always if buffers array not empty
+class auto_ext_buffer : public auto_ext_buffer_base {
+public:
+    template <class T>
+    auto_ext_buffer(T &par) {
+        push(par);
+    }
+};
+
+//push only if buffers array not empty
+class auto_ext_buffer_if_exist : public auto_ext_buffer_base {
+public:
+    template <class T>
+    auto_ext_buffer_if_exist(T &par) {
+        if (0 != par.NumExtParam && 0 != par.ExtParam) {
+            push(par);
+        }
+    }
 };
 
 template <class T>
@@ -553,26 +612,6 @@ public:
     {
         return m_input.str();
     }
-};
-
-//! Base class for types that should not be assigned.
-class mfx_no_assign  {
-    // Deny assignment
-    void operator=( const mfx_no_assign& );
-public:
-#if __GNUC__
-    //! Explicitly define default construction, because otherwise gcc issues gratuitous warning.
-    mfx_no_assign() {}
-#endif /* __GNUC__ */
-};
-
-//! Base class for types that should not be copied or assigned.
-class mfx_no_copy: mfx_no_assign {
-    //! Deny copy construction
-    mfx_no_copy( const mfx_no_copy& );
-public:
-    //! Allow default construction
-    mfx_no_copy() {}
 };
 
 

@@ -70,7 +70,8 @@ struct sCommandlineParams
   bool           bNoPipelineSync;//removes syncpoints waiting between MSDK components
   bool           bNoExtPicstruct;//if specified decoder wont produce extended picstruct combinations
   bool           bMultiFiles;//used in multiview render to allow create output in different files
-  bool           bCreateRefListSelector;
+  bool           bCreateRefListControl;
+  bool           bCreateEncFrameInfo;
   bool           bCalcCRC;//create crc calculation wrapper over filewriter
   bool           bNullFileWriter;
   bool           bDisableIpFieldPair;//disables p field generation
@@ -227,7 +228,7 @@ public:
     virtual mfxStatus        GetVppParams(ComponentParams *& pParams);
     virtual mfxStatus        ResetAfterSeek();
     virtual mfxU32           GetNumDecodedFrames(void);
-    virtual mfxStatus        GetRefListControl(IRefListControl ** /*ppCtrl*/){return MFX_ERR_NONE;}
+    virtual mfxStatus        GetEncoder  (IVideoEncode **  /*ppCtrl*/){return MFX_ERR_NONE;}
 
     tstring GetAppName() { return VM_STRING("mfx_player");}
 

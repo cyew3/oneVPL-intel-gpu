@@ -48,6 +48,8 @@ File Name: .h
 #include "mfx_jpeg_encode_wrap.h"
 #include "mfx_factory_default.h"
 #include "mfx_detach_buffer_after_query_encoder.h"
+#include "mfx_lexical_cast.h"
+#include "mfx_encoded_frameInfo_encoder.h"
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -114,7 +116,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
 , m_extAvcTemporalLayers(new mfxExtAvcTemporalLayers())
 , m_extCodingOptionsSPSPPS(new mfxExtCodingOptionSPSPPS())
 , m_extEncoderCapability(new mfxExtEncoderCapability())
-, m_pRefListControl()
+, m_pEncoder()
 , m_bCreateDecode()
 , m_svcSeq(new mfxExtSVCSeqDesc())
 , m_svcSeqDeserial(VM_STRING(""), *m_svcSeq.get(), m_filesForDependency)
@@ -742,20 +744,82 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             MFX_CHECK(reflist.DeSerialize(argv += 3, argvEnd, rollback_offset));
 
             m_pFactories.push_back(new constnumFactory(1
-                , new FrameBasedCommandActivator(new selectRefListCommand(this), this)
-                , new baseCmdsInitializer(nStartFrame, 0.0, 0.0, 0, m_pRandom, NULL, NULL, &reflist)));
+                , new FrameBasedCommandActivator(new addExtBufferCommand(this), this)
+                , new baseCmdsInitializer(nStartFrame, 0.0, 0.0, 0, m_pRandom, NULL, NULL, (mfxExtBuffer*)&reflist)));
 
             m_pFactories.push_back(new constnumFactory(1
-                , new FrameBasedCommandActivator(new selectRefListCommand(this), this)
-                , new baseCmdsInitializer(nFinishFrame, 0.0, 0.0, 0, m_pRandom, NULL, NULL, NULL)));
+                , new FrameBasedCommandActivator(new removeExtBufferCommand(this), this)
+                , new baseCmdsInitializer(nFinishFrame, 0.0, 0.0, 0, m_pRandom, NULL, NULL, NULL, BufferIdOf<mfxExtAVCRefListCtrl>::id)));
 
             //pipeline will create a encode wrapper according to this flag
-            m_inParams.bCreateRefListSelector = true;
+            m_inParams.bCreateRefListControl = true;
         }
         else HANDLE_BOOL_OPTION(m_bCreateDecode, VM_STRING("-enc:dec"), VM_STRING("decoding of encoded frames "));
         else HANDLE_INT_OPTION(m_extCodingOptionsSPSPPS->SPSId, VM_STRING("-spsid"), VM_STRING("set SPSId in mfxExcodingOptionSPSPPS structure"))
         else HANDLE_INT_OPTION(m_extCodingOptionsSPSPPS->PPSId, VM_STRING("-ppsid"), VM_STRING("set PPSId in mfxExcodingOptionSPSPPS structure"))
         else HANDLE_SPECIAL_OPTION(*m_extAvcTemporalLayers.get(), VM_STRING("-AvcTemporalLayers"), VM_STRING("add mfxExtAvcTemporalLayers buffer to mfxVideoParam"), OPT_SPECIAL, VM_STRING("BaseLayerID [array:Layer.Scale]"))
+        else if (m_OptProc.Check(argv[0], VM_STRING("-enc_frame_info"), VM_STRING("shows encoded picture info from mfxExtAVCEncodedFrameInfo structure, for particular frame, for ranges of frames, or for every frame"), OPT_SPECIAL
+        , VM_STRING("[first [last]]"))) {
+            int firstFrame = 0;
+            int lastFrame  = 0;
+
+            //no params
+            mfxExtAVCEncodedFrameInfo avc_enc_info = {};
+            mfx_init_ext_buffer(avc_enc_info);
+
+            std::auto_ptr<addExtBufferCommand> pCmd (new addExtBufferCommand(this));
+            std::auto_ptr<FrameBasedCommandActivator> pActivator (new FrameBasedCommandActivator (pCmd.get(), this, false));
+            //expect no throw here
+            pCmd->RegisterExtBuffer((mfxExtBuffer&)avc_enc_info);
+            pCmd.release();
+            
+
+            if (argv + 1 <argvEnd ) {
+                try
+                {
+                    //check that next option is number
+                    lexical_cast(argv[1], firstFrame);
+                    //will detach on next frameorder
+                    lastFrame = firstFrame + 1;
+                    //at least 1 parameter
+                    argv ++;
+                
+                    if (argv + 1 < argvEnd ) {
+                        try {
+                            lexical_cast<int>(argv[1], lastFrame);
+                            //2params casr
+                            argv ++;
+                        }
+                        catch (...) {
+                            //1 params case
+                        }
+                    }
+                } catch (...) {
+                    //no_param_case
+                }
+            }
+
+            //0 or 1 parameters case
+            pActivator->SetExecuteFrameNumber(firstFrame);
+            m_commands.push_back(pActivator.get());
+            pActivator.release();
+
+            //2 parameters case
+            if (lastFrame != 0) {
+                //registering remover
+                std::auto_ptr<removeExtBufferCommand> pCmd2 (new removeExtBufferCommand(this));
+                std::auto_ptr<FrameBasedCommandActivator> pActivator2(new FrameBasedCommandActivator(pCmd2.get(), this, false));
+                pCmd2->RegisterExtBuffer(BufferIdOf<mfxExtAVCEncodedFrameInfo>::id);
+                pCmd2.release();
+
+                pActivator2->SetExecuteFrameNumber(lastFrame);
+                m_commands.push_back(pActivator2.get());
+                pActivator2.release();
+            }
+
+            //pipeline will create a encode proxy according to this flag
+            m_inParams.bCreateEncFrameInfo = true;
+        }
         else if (MFX_ERR_UNSUPPORTED == (mfxres = ProcessOption(argv, argvEnd)))
         {
             //check with base pipeline parser
@@ -1459,12 +1523,14 @@ std::auto_ptr<IVideoEncode> MFXTranscodingPipeline::CreateEncoder()
             , pEncoder));
     }
 
-    if (m_inParams.bCreateRefListSelector)
+    if (m_inParams.bCreateRefListControl )
     {
-        std::auto_ptr<RefListControlEncode> pControl (new RefListControlEncode(pEncoder));
+        pEncoder.reset(new RefListControlEncode(pEncoder));
+    }
 
-        m_pRefListControl = pControl.get();
-        pEncoder = pControl;
+    if (m_inParams.bCreateEncFrameInfo )
+    {
+        pEncoder.reset(new RefListControlEncode(pEncoder));
     }
 
     if (m_inParams.EncodedOrder)
@@ -1488,7 +1554,7 @@ std::auto_ptr<IVideoEncode> MFXTranscodingPipeline::CreateEncoder()
 
     //TODO: always attaching MVC handler, is it possible not to do this
     pEncoder.reset(new MVCHandler<IVideoEncode>(m_components[eREN].m_extParams, false, pEncoder));
-
+    m_pEncoder = pEncoder.get();
     return pEncoder;
 }
 
@@ -1628,10 +1694,10 @@ mfxStatus MFXTranscodingPipeline::WriteParFile()
     return MFX_ERR_NONE;
 }
 
-mfxStatus MFXTranscodingPipeline::GetRefListControl(IRefListControl **ppCtrl)
+mfxStatus MFXTranscodingPipeline::GetEncode(IVideoEncode **ppCtrl)
 {
     MFX_CHECK_POINTER(ppCtrl);
-    * ppCtrl = m_pRefListControl;
+    * ppCtrl = m_pEncoder;
 
     return MFX_ERR_NONE;
 }

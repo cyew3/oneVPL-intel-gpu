@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 
 
 File Name: mfx_encode.h
@@ -37,5 +37,8 @@ public:
     virtual mfxStatus SyncOperation(mfxSyncPoint syncp, mfxU32 wait){return MFXVideoCORE_SyncOperation(m_session, syncp, wait);}
 
 protected:
+    virtual bool      QueryInterface(int /*interface_id_registered_with_interface_map*/, void **  /*ppInterface*/) {
+        return false;
+    }
     mfxSession m_session;                                       // (mfxSession) handle to the owning session
 };

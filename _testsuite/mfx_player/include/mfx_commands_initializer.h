@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -59,13 +59,15 @@ public:
         , const mfx_shared_ptr<IRandom> & pRand
         , mfxVideoParam * pResetEncParam = NULL
         , mfxVideoParam * pMaskedEncParam = NULL
-        , mfxExtAVCRefListCtrl  * refList  = NULL);
+        , mfxExtBuffer  * bufToAttach = NULL
+        , mfxU32 nBufToRemove = 0);
 
     virtual bool Init(seekSourceCommand *pCmd);
     virtual bool Init(seekCommand *pCmd);
     virtual bool Init(skipCommand *pCmd);
     virtual bool Init(resetEncCommand* pCmd);
-    virtual bool Init(selectRefListCommand * pCmd);
+    virtual bool Init(addExtBufferCommand * pCmd);
+    virtual bool Init(removeExtBufferCommand * pCmd);
     virtual bool Init(reopenFileCommand *pCmd);
 
     virtual bool Init(PTSBasedCommandActivator* pActivator);
@@ -76,11 +78,11 @@ protected:
     double          m_fSeekToTime;
     int             m_nMaxSkipLevel;
     mfxU32          m_nActivatedFrame;
+    mfxU32          m_nBufferToRemove;
     mfxVideoParam   m_ResetParams;
     mfxVideoParam   m_maskedParams;
-
-    mfxExtAVCRefListCtrl  *m_pRefList; 
-    mfxExtAVCRefListCtrl  m_refList; 
+    mfxExtBuffer   *m_pBufferToAttach; 
+    std::vector<char> m_bufferToAttachData;
     mfx_shared_ptr<IRandom> m_Randomizer;
 };
 

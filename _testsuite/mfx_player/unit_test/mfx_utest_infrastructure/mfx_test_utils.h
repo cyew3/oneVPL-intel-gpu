@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2012-2013 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -17,6 +17,10 @@ File Name: .h
 
 //warning C4345: behavior change: an object of POD type constructed with an initializer of the form () will be default-initialized
 #pragma warning (disable:4345)
+
+#define CMD_PARAM(param, value)\
+    params[VM_STRING(param)].push_back(VM_STRING(value));
+
 
 //only limittion that interface has to be defined as proxyied 
 template<class T>
@@ -74,8 +78,8 @@ typename T::InterfaceType * MakeUndeletable(T& refTarget)
 
 //to create short life time object valid for only 1 call 
 template <class T>
-inline std::auto_ptr<T> & make_instant_auto_ptr(T* obj) {
-    static std::auto_ptr<T> x;
+inline std::auto_ptr<typename T::InterfaceType> & make_instant_auto_ptr(T* obj) {
+    static std::auto_ptr<T::InterfaceType> x;
     x.reset(obj);
     return x;
 }
@@ -84,40 +88,17 @@ inline std::auto_ptr<T> & make_instant_auto_ptr(T* obj) {
 class TestUtils
 {
 public:
-    static void CopyVideoParams( mfxVideoParam *pTo
-                               , mfxVideoParam *pFrom
-                               , bool bCreateExtBuffer)
+    template <class T>
+    static void CopyExtParamsEnabledStructures( T *pTo
+                                              , T *pFrom
+                                              , bool bCreateExtBuffer)
     {
         if (pTo && pFrom) 
         {
             //accurate copy of extended buffers
             if (pFrom->NumExtParam!=0)
             {
-                if (bCreateExtBuffer)
-                {
-                    //creating buffers by allocating same memory that in source buffer
-                    pTo->NumExtParam = pFrom->NumExtParam;
-                    pTo->ExtParam = new mfxExtBuffer*[pFrom->NumExtParam];
-                    for (int i = 0; i < pFrom->NumExtParam; i++)
-                    {
-                        pTo->ExtParam[i] = (mfxExtBuffer*)new char[pFrom->ExtParam[i]->BufferSz];
-                        pTo->ExtParam[i]->BufferId = pFrom->ExtParam[i]->BufferId;
-                    }
-                }
-
-                for (int i = 0; i < pFrom->NumExtParam; i++)
-                {
-                    //find matched buffers
-                    for (int j = 0; j < pTo->NumExtParam; j++)
-                    {
-                        if (pTo->ExtParam[j]->BufferId == pFrom->ExtParam[i]->BufferId)
-                        {
-                            //corresponding buffer found
-                            //lets copy content to this buffer
-                            memcpy(pTo->ExtParam[j], pFrom->ExtParam[i], pFrom->ExtParam[i]->BufferSz);
-                        }
-                    }
-                }
+                CopyExtBuffers(*pTo, *pFrom, bCreateExtBuffer);
             }
 
             //copying other fields
@@ -128,6 +109,35 @@ public:
 
             pTo->NumExtParam = nExtBuffers;
             pTo->ExtParam = ppExtBuffers;
+        }
+    }
+    
+    template <class T>
+    static void CopyExtBuffers (T& pTo, T& pFrom, bool bCreate) {
+        if (bCreate)
+        {
+            //creating buffers by allocating same memory that in source buffer
+            pTo.NumExtParam = pFrom.NumExtParam;
+            pTo.ExtParam = new mfxExtBuffer*[pFrom.NumExtParam];
+            for (int i = 0; i < pFrom.NumExtParam; i++)
+            {
+                pTo.ExtParam[i] = (mfxExtBuffer*)new char[pFrom.ExtParam[i]->BufferSz];
+                pTo.ExtParam[i]->BufferId = pFrom.ExtParam[i]->BufferId;
+            }
+        }
+
+        for (int i = 0; i < pFrom.NumExtParam; i++)
+        {
+            //find matched buffers
+            for (int j = 0; j < pTo.NumExtParam; j++)
+            {
+                if (pTo.ExtParam[j]->BufferId == pFrom.ExtParam[i]->BufferId)
+                {
+                    //corresponding buffer found
+                    //lets copy content to this buffer
+                    memcpy(pTo.ExtParam[j], pFrom.ExtParam[i], pFrom.ExtParam[i]->BufferSz);
+                }
+            }
         }
     }
 };

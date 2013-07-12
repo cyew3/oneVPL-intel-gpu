@@ -20,8 +20,12 @@ SUITE(FieldOutputEncoder)
         MockVideoEncode mock_encode;
         std::auto_ptr<IVideoEncode> ptr;
         FieldOutputEncoder enc;
-        
-        SInit() : ptr(MakeUndeletable(mock_encode)), enc(ptr) {
+        mfxBitstream nullbs;
+
+        SInit() 
+            : ptr(MakeUndeletable(mock_encode))
+            , enc(ptr)
+            , nullbs() {
         }
     };
     TEST_FIXTURE(SInit, MORE_BITSTREAM)
@@ -35,7 +39,7 @@ SUITE(FieldOutputEncoder)
         arg.ret_val = MFX_ERR_MORE_BITSTREAM;
         arg.value0  = NULL;  
         arg.value1  = NULL;  
-        arg.value2  = NULL;  
+        arg.value2  = nullbs;  
         arg.value3  = &syncp;  
 
         mock_encode._EncodeFrameAsync.WillReturn(arg);
@@ -66,7 +70,7 @@ SUITE(FieldOutputEncoder)
         arg.ret_val = MFX_ERR_MORE_DATA;
         arg.value0  = 0;
         arg.value1  = 0;
-        arg.value2  = 0;
+        arg.value2  = nullbs;
         arg.value3  = 0;  
 
         mock_encode._EncodeFrameAsync.WillReturn(arg);

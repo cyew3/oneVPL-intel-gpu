@@ -421,9 +421,6 @@
     <ClInclude Include="include\mfx_irandom.h">
       <Filter>interface</Filter>
     </ClInclude>
-    <ClInclude Include="include\mfx_ireflist_ctrl.h">
-      <Filter>interface</Filter>
-    </ClInclude>
     <ClInclude Include="include\mfx_istate.h">
       <Filter>interface</Filter>
     </ClInclude>
@@ -648,6 +645,12 @@
     </ClInclude>
     <ClInclude Include="include\vaapi_utils.h">
       <Filter>allocators</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_query_interface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_icurrent_frame_ctrl.h">
+      <Filter>interface</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

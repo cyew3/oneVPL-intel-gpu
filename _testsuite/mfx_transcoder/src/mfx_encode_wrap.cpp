@@ -113,7 +113,8 @@ mfxStatus MFXEncodeWRAPPER::Init(mfxVideoParam *pInit, const vm_char *pFilename)
     MFXStructureThree<mfxVideoParam> structThree(pBeforeInit, *pInit, vParamUser);
 
     MFX_CHECK_STS_CUSTOM_HANDLER(ret = m_encoder->Init(pInit), {
-        PipelineTrace((VM_STRING("%s"), structThree.Serialize().c_str()));
+        PipelineTrace((VM_STRING("---------------------- MFXInit FAILED -------------\n")
+                     VM_STRING("%s---------------------------------------------------\n"), structThree.Serialize().c_str()));
     });
     MFX_CHECK_STS(m_encoder->GetVideoParam(pInit));
 
@@ -124,7 +125,8 @@ mfxStatus MFXEncodeWRAPPER::Init(mfxVideoParam *pInit, const vm_char *pFilename)
         vParamUser.mfx.BufferSizeInKB = 1;
     }
     
-    PipelineTrace((VM_STRING("%s"), structThree.Serialize().c_str()));
+    PipelineTrace((VM_STRING("---------------------- MFXInit SUCEED -------------\n")
+                 VM_STRING("%s---------------------------------------------------\n"), structThree.Serialize().c_str()));
 
     MFX_CHECK_STS(MFXFileWriteRender::Init(pInit, pFilename));
 

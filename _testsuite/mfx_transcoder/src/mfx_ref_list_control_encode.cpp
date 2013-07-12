@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -24,18 +24,6 @@ RefListControlEncode::RefListControlEncode (std::auto_ptr<IVideoEncode>& pTarget
     m_pRefList = (mfxExtAVCRefListCtrl*)m_extParams.back();
     m_ctrl.NumExtParam = (mfxU16)m_extParams.size();
     m_ctrl.ExtParam = &m_extParams;
-}
-
-mfxStatus RefListControlEncode::SetCurrentRefList(mfxExtAVCRefListCtrl *pRefList)
-{
-    m_bAttach = (NULL != pRefList);
-    
-    if (m_bAttach)
-    {
-        m_currentPattern = * pRefList;
-    }
-    
-    return MFX_ERR_NONE;
 }
 
 mfxStatus RefListControlEncode::EncodeFrameAsync(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxSyncPoint *syncp) 
@@ -107,4 +95,15 @@ void RefListControlEncode::UpdateRefList(mfxExtAVCRefListCtrl * pCurrent)
 {
     //todo: implement
     * pCurrent = m_currentPattern;
+}
+
+void RefListControlEncode::AddExtBuffer( mfxExtBuffer &buffer )
+{
+    m_bAttach = true;
+    m_currentPattern = (mfxExtAVCRefListCtrl&)buffer;
+}
+
+void RefListControlEncode::RemoveExtBuffer( mfxU32 /*mfxExtBufferId*/ )
+{
+    m_bAttach = false;
 }

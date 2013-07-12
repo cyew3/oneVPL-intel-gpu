@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -41,7 +41,7 @@ public:
         //detaching ext seq buffer 
         //TODO: for some cases better to copy them back, it is not implemented
         {
-            auto_ext_buffer auto_buffer(par);
+            auto_ext_buffer auto_buffer(*par);
             auto_buffer.remove(BufferIdOf<mfxExtMVCSeqDesc>::id);
 
             MFX_CHECK_STS (sts = ProcessVideoParam(par, m_extParams_current, std::bind1st(fnc, this)));
@@ -83,7 +83,7 @@ public:
     //number of surfaces should match MVC
     virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request)
     {
-        auto_ext_buffer auto_buf(par);
+        auto_ext_buffer auto_buf(*par);
 
         //copying MVC buffers if any
         auto_buf.insert(m_extParams.begin(), m_extParams.end());
@@ -105,7 +105,7 @@ protected:
     mfxStatus ProcessVideoParam(mfxVideoParam *par, MFXExtBufferVector  &extParams, TFnc functor)
     {
         mfxStatus sts = MFX_ERR_NONE;
-        auto_ext_buffer auto_buf(par);
+        auto_ext_buffer auto_buf(*par);
 
         for (;;)
         {
@@ -202,7 +202,7 @@ public:
     }
     virtual mfxStatus Init(mfxVideoParam *par) 
     { 
-        auto_ext_buffer auto_buf(par);
+        auto_ext_buffer auto_buf(*par);
 
         //copying MVC buffers if any
         auto_buf.insert(m_extParams.begin(), m_extParams.end());

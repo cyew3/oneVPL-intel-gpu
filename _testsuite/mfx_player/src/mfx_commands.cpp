@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -218,10 +218,7 @@ mfxStatus    resetEncCommand::Execute()
 
     {
         // save ext buffers if those aren't specified in reset params
-        auto_ext_buffer save_buffers(
-        (0 != m_NewParams.ExtParam && 0 != m_NewParams.NumExtParam) 
-            ? NULL
-            : &newParams);
+        auto_ext_buffer_if_exist save_buffers(m_NewParams);
 
         //applying mask
         ippsAnd_8u_I((Ipp8u*)&m_NewParamsMask, (Ipp8u*)&newParams, sizeof(newParams));
@@ -298,8 +295,6 @@ mfxStatus    resetEncCommand::Execute()
     
 
 
-
-
     //changing file name for downstream
     if (!m_NewFileName.empty())
     {
@@ -328,41 +323,43 @@ mfxStatus    resetEncCommand::Execute()
     return MFX_ERR_NONE;
 }
 
-selectRefListCommand::selectRefListCommand(IPipelineControl *pHolder)
+addExtBufferCommand::addExtBufferCommand(IPipelineControl *pHolder)
     : commandBase(pHolder)
-    , m_pRefList()
-    , m_refList()
 {
 }
 
-mfxStatus    selectRefListCommand::Execute()
+mfxStatus    addExtBufferCommand::Execute()
 {
-    IRefListControl *pCtrl;
-    MFX_CHECK_STS(m_pControl->GetRefListControl(&pCtrl));
-
-    MFX_CHECK_STS(pCtrl->SetCurrentRefList(m_pRefList));
-
-    if (m_pRefList)
-    {
-        PipelineTrace((VM_STRING("Reference List Selected \n%s\n"), Serialize(*m_pRefList).c_str()));
+    if (NULL == m_pBuf) {
+        PipelineTrace((VM_STRING("ERROR: [addExtBufferCommand]:Execute buffer is NULL\n")));
+        return MFX_ERR_NULL_PTR;
     }
-    else
-    {
-        PipelineTrace((VM_STRING("Reference List UnSelected\n")));
-    }
+    IVideoEncode *pEnc;
+    ICurrentFrameControl *pCtrl;
+    MFX_CHECK_STS(m_pControl->GetEncoder(&pEnc));
+    MFX_CHECK_POINTER(pCtrl = pEnc->GetInterface<ICurrentFrameControl>());
+    pCtrl->AddExtBuffer((mfxExtBuffer&)*m_pBuf);
+    PipelineTrace((VM_STRING("ExtBufferAdded: \n%s\n"), Serialize(*m_pBuf).c_str()));
     
     return MFX_ERR_NONE;
 }
 
-void selectRefListCommand::SetRefList(mfxExtAVCRefListCtrl  * refList )
+void addExtBufferCommand::RegisterExtBuffer( const mfxExtBuffer & refBuf )
 {
-    if (NULL == refList)
-    {
-        m_pRefList = NULL;
-    }
-    else
-    {
-        m_refList = *refList;
-        m_pRefList = &m_refList;
-    }
+    m_bufData.resize(refBuf.BufferSz);
+    m_pBuf = (mfxExtBuffer*)&m_bufData.front();
+    memcpy(m_pBuf, &refBuf, m_bufData.size());
+}
+
+mfxStatus removeExtBufferCommand::Execute()
+{
+    IVideoEncode *pEnc;
+    ICurrentFrameControl *pCtrl;
+    MFX_CHECK_STS(m_pControl->GetEncoder(&pEnc));
+    MFX_CHECK_POINTER(pCtrl = pEnc->GetInterface<ICurrentFrameControl>());
+
+    pCtrl->RemoveExtBuffer(m_nBufferToRemove);
+    PipelineTrace((VM_STRING("Reference List UnSelected\n")));
+
+    return MFX_ERR_NONE;
 }

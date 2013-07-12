@@ -167,6 +167,9 @@ SUITE(CmdLineTransPipeline)
         {
             return MFXTranscodingPipeline::CreateVPP();
         }
+        std::list<ICommandActivator*>& GetCommands() {
+            return m_commands;
+        }
 
     };
 
@@ -270,16 +273,12 @@ SUITE(CmdLineTransPipeline)
         CHECK_EQUAL(MFX_CODINGOPTION_ON, pExtCO->PicTimingSEI);
     }
 
-#define CMD_PARAM(param, value)\
-    params[VM_STRING(param)].push_back(VM_STRING(value));
 
     struct ParFileForSvc_VPP
     {
         PipelineRunner<MockPipelineConfig>::CmdLineParams params;
         MockPipelineFactory mock_factory;
         TEST_METHOD_TYPE(MockPipelineFactory::CreateVPP) ret_params_factory;
-        
-
 
         ParFileForSvc_VPP()
         {
@@ -414,4 +413,5 @@ SUITE(CmdLineTransPipeline)
         //vpp not called at all 
         CHECK(!mock_factory._CreateVPP.WasCalled(&ret_params_factory));
     }
+
 }

@@ -122,7 +122,8 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>$(TargetPath)</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -200,6 +201,7 @@
   <ItemGroup>
     <ClCompile Include="cmdline_parser_test.cpp" />
     <ClCompile Include="latency_encoder_test.cpp" />
+    <ClCompile Include="mfx_ext_avc_frame_info_test.cpp" />
     <ClCompile Include="mfx_detach_ext_buffer_encode_test.cpp" />
     <ClCompile Include="mfx_encode_wrap_test.cpp" />
     <ClCompile Include="mfx_field_output_encode_test.cpp" />

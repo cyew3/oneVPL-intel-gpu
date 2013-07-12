@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -53,7 +53,7 @@ mfxStatus MockYUVSource::DecodeHeader(mfxBitstream * pBs, mfxVideoParam * pVpara
     if (pVparam)
     {
         newVparam = new mfxVideoParam();
-        TestUtils::CopyVideoParams(newVparam, pVparam, true);
+        TestUtils::CopyExtParamsEnabledStructures(newVparam, pVparam, true);
     }
 
     _DecodeHeader.RegisterEvent(TEST_METHOD_TYPE(DecodeHeader)(MFX_ERR_NONE, newBs, newVparam));
@@ -69,7 +69,7 @@ mfxStatus MockYUVSource::DecodeHeader(mfxBitstream * pBs, mfxVideoParam * pVpara
     //copying structures
     if (pBs && ret_params.value0) *pBs = *ret_params.value0;
 
-    TestUtils::CopyVideoParams(pVparam, ret_params.value1, false);
+    TestUtils::CopyExtParamsEnabledStructures(pVparam, ret_params.value1, false);
 
     return ret_params.ret_val;
 }
@@ -80,7 +80,7 @@ mfxStatus MockYUVSource::Init(mfxVideoParam * in)
     if (in)
     {
         newVparam = new mfxVideoParam();
-        TestUtils::CopyVideoParams(newVparam, in, true);
+        TestUtils::CopyExtParamsEnabledStructures(newVparam, in, true);
     }
 
     _Init.RegisterEvent(TEST_METHOD_TYPE(Init)(MFX_ERR_NONE, newVparam));

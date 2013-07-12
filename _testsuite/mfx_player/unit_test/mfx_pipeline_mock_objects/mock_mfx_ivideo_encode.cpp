@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -14,12 +14,14 @@ File Name: .h
 #include "mock_mfx_ivideo_encode.h"
 #include "mfx_test_utils.h"
 
-mfxStatus MockVideoEncode::EncodeFrameAsync(mfxEncodeCtrl *pCtrl
-                                            , mfxFrameSurface1 *pSurface
-                                            , mfxBitstream *pBs
-                                            , mfxSyncPoint *pSync)
+mfxStatus MockVideoEncode::EncodeFrameAsync( mfxEncodeCtrl *pCtrl
+                                           , mfxFrameSurface1 *pSurface
+                                           , mfxBitstream *pBs
+                                           , mfxSyncPoint *pSync)
 {
-    _EncodeFrameAsync.RegisterEvent(TEST_METHOD_TYPE(EncodeFrameAsync)(MFX_ERR_NONE, pCtrl, pSurface, pBs, pSync));
+    mfxBitstream bsTo = {};
+    TestUtils::CopyExtParamsEnabledStructures(&bsTo, pBs, true);
+    _EncodeFrameAsync.RegisterEvent(TEST_METHOD_TYPE(EncodeFrameAsync)(MFX_ERR_NONE, pCtrl, pSurface, bsTo, pSync));
 
     TEST_METHOD_TYPE(EncodeFrameAsync) return_args;
 
@@ -33,8 +35,8 @@ mfxStatus MockVideoEncode::EncodeFrameAsync(mfxEncodeCtrl *pCtrl
         *pCtrl = *return_args.value0;
     if (NULL != pSurface && NULL != return_args.value1)
         *pSurface = *return_args.value1;
-    if (NULL != pBs && NULL != return_args.value2)
-        *pBs = *return_args.value2;
+    if (NULL != pBs)
+        *pBs = return_args.value2;
 
     if (NULL != pSync && NULL != return_args.value3)
         *pSync = *return_args.value3;
@@ -63,12 +65,12 @@ mfxStatus MockVideoEncode::Query(mfxVideoParam * in, mfxVideoParam * out)
     if (in)
     {
         newIn = new mfxVideoParam();
-        TestUtils::CopyVideoParams(newIn, in, true);
+        TestUtils::CopyExtParamsEnabledStructures(newIn, in, true);
     }
     if (out)
     {
         out = new mfxVideoParam();
-        TestUtils::CopyVideoParams(newOut, out, true);
+        TestUtils::CopyExtParamsEnabledStructures(newOut, out, true);
     }    
     _Query.RegisterEvent(TEST_METHOD_TYPE(Query)(MFX_ERR_NONE, newIn, newOut));
 

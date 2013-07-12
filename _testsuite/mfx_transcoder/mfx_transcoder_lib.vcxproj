@@ -137,6 +137,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\mfx_detach_buffer_after_query_encoder.h" />
+    <ClInclude Include="include\mfx_encoded_frame_info_encoder.h" />
     <ClInclude Include="include\mfx_encode_decode_quality.h" />
     <ClInclude Include="include\mfx_encode_pipeline_config.h" />
     <ClInclude Include="include\mfx_factory_transcode.h" />

@@ -162,6 +162,7 @@
     <ClInclude Include="mock_allocator_factory.h" />
     <ClInclude Include="mock_bitstream_converter.h" />
     <ClInclude Include="mock_file.h" />
+    <ClInclude Include="mock_icurrent_frame_control.h" />
     <ClInclude Include="mock_mfx_bitstream_reader.h" />
     <ClInclude Include="mock_mfx_frame_allocator.h" />
     <ClInclude Include="mock_mfx_ivideo_encode.h" />

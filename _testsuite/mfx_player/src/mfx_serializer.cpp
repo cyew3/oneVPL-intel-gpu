@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010 - 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010 - 2013 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_serializer.cpp
 
@@ -121,81 +121,9 @@ void   MFXStructureRef <mfxVideoParam>::ConstructValues () const
     SERIALIZE_INT(IOPattern);
 
     //TODO: poor approach since we have magic mfxextendedbuffer helper
-    for (int i = 0; i < m_pStruct->NumExtParam; i++)
-    {
-        switch (m_pStruct->ExtParam[i]->BufferId)
-        {
-            case MFX_EXTBUFF_CODING_OPTION :
-            {
-                SerializeStruct(VM_STRING("ExtCO."), *(mfxExtCodingOption*)m_pStruct->ExtParam[i]);
-                break;
-            }
-            case MFX_EXTBUFF_CODING_OPTION2 :
-            {
-                SerializeStruct(VM_STRING("ExtCO2."), *(mfxExtCodingOption2*)m_pStruct->ExtParam[i]);
-                break;
-            }
-            case MFX_EXTBUFF_DDI : 
-            {
-                SerializeStruct(VM_STRING("DDI."), *(mfxExtCodingOptionDDI*)m_pStruct->ExtParam[i]);
-                break;
-            }
-            case MFX_EXTBUFF_QM: 
-            {
-                SerializeStruct(VM_STRING("QuantMatrix."), *(mfxExtCodingOptionQuantMatrix*)m_pStruct->ExtParam[i]);
-                break;
-            }
-            case MFX_EXTBUFF_HEVCENC :
-            {
-                SerializeStruct(VM_STRING("HEVC."), *(mfxExtCodingOptionHEVC*)m_pStruct->ExtParam[i]);
-                break;
-            }
-            case MFX_EXTBUFF_MVC_SEQ_DESC : 
-            {
-                
-                SerializeStruct(VM_STRING("MVC."), *(mfxExtMVCSeqDesc*)m_pStruct->ExtParam[i]);
-                break;
-            }
-            case MFX_EXTBUFF_SVC_SEQ_DESC : 
-            {
-                SerialCollection<tstring> files;
-                StructureBuilder<mfxExtSVCSeqDesc>
-                    (VM_STRING("SVC_SEQ"), *(mfxExtSVCSeqDesc*)m_pStruct->ExtParam[i], files).Serialize(Formaters2::MapPusherSerializer(m_values_map));
-                break;
-            }
-            case MFX_EXTBUFF_SVC_RATE_CONTROL : 
-            {
-                StructureBuilder<mfxExtSVCRateControl>
-                    (VM_STRING("SVC_RC"), *(mfxExtSVCRateControl*)m_pStruct->ExtParam[i]).Serialize(Formaters2::MapPusherSerializer(m_values_map));
-
-                break;
-            }
-            case MFX_EXTBUFF_VIDEO_SIGNAL_INFO : 
-            {
-                SerializeStruct(VM_STRING("VSIG."), *(mfxExtVideoSignalInfo*)m_pStruct->ExtParam[i]);
-                break;
-            }
-            case MFX_EXTBUFF_CODING_OPTION_SPSPPS : 
-            {
-                SerializeStruct(VM_STRING("ExtCOSPSPPS."), *(mfxExtCodingOptionSPSPPS*)m_pStruct->ExtParam[i]);
-                break;
-            }
-            case MFX_EXTBUFF_AVC_TEMPORAL_LAYERS : 
-            {
-                SerializeStruct(VM_STRING("AVCTL."), *(mfxExtAvcTemporalLayers*)m_pStruct->ExtParam[i]);
-                break;
-            }
-            case MFX_EXTBUFF_ENCODER_CAPABILITY :
-            {
-                SerializeStruct(VM_STRING("CAP."), *(mfxExtEncoderCapability*)m_pStruct->ExtParam[i]);
-                break;
-            }
-            default :
-                //unsupported buffer
-                break;
-        }
+    for (int i = 0; i < m_pStruct->NumExtParam; i++) {
+        SerializeStruct(VM_STRING(""), *m_pStruct->ExtParam[i]);
     }
-
 }
 
 void MFXStructureRef <mfxExtCodingOption>::ConstructValues () const
@@ -544,7 +472,7 @@ void MFXStructureRef<mfxExtAVCRefListCtrl>::ConstructValues () const
     //TODO: improve: it is possible to calc length automatically
     SerializeArrayOfPODs(VM_STRING("PreferredRefList"), (RefListFormater::RefListElement*)m_pStruct->PreferredRefList, MFX_ARRAY_SIZE(m_pStruct->PreferredRefList), RefListFormater());
     SerializeArrayOfPODs(VM_STRING("RejectedRefList"), (RefListFormater::RefListElement*)m_pStruct->RejectedRefList, MFX_ARRAY_SIZE(m_pStruct->RejectedRefList), RefListFormater());
-    SerializeArrayOfPODs(VM_STRING("LongTermRefList"), (RefListFormater::RefListElement*)m_pStruct->LongTermRefList, MFX_ARRAY_SIZE(m_pStruct->LongTermRefList), RefListFormater());
+    SerializeArrayOfPODs(VM_STRING("LongTermRefList"), (LTRRefListFormater::LTRElement*)m_pStruct->LongTermRefList, MFX_ARRAY_SIZE(m_pStruct->LongTermRefList), LTRRefListFormater());
 }
 
 bool MFXStructureRef<mfxExtAVCRefListCtrl>::DeSerialize(const tstring & refStr, int *nPosition)
@@ -711,4 +639,77 @@ void MFXStructureRef <mfxExtSvcTargetLayer>::ConstructValues () const
 void MFXStructureRef <mfxExtEncoderCapability>::ConstructValues () const
 {
     SERIALIZE_INT(MBPerSec);
+}
+
+void MFXStructureRef<mfxExtAVCEncodedFrameInfo>::ConstructValues () const {
+    SERIALIZE_INT(FrameOrder);
+    SERIALIZE_INT(PicStruct);
+    SERIALIZE_INT(LongTermIdx);
+
+    SerializeArrayOfPODs(VM_STRING("UsedRefListL0"), (RefListFormater::RefListElement*)m_pStruct->UsedRefListL0, MFX_ARRAY_SIZE(m_pStruct->UsedRefListL0), RefListFormater());
+    SerializeArrayOfPODs(VM_STRING("UsedRefListL1"), (RefListFormater::RefListElement*)m_pStruct->UsedRefListL1, MFX_ARRAY_SIZE(m_pStruct->UsedRefListL1), RefListFormater());
+}
+
+void MFXStructureRef <mfxExtBuffer>:: ConstructValues () const {
+    switch (m_pStruct->BufferId)
+    {
+        case MFX_EXTBUFF_CODING_OPTION :{
+            SerializeStruct(VM_STRING("ExtCO."), *(mfxExtCodingOption*)m_pStruct);
+            break;
+        }
+        case MFX_EXTBUFF_CODING_OPTION2 :{
+            SerializeStruct(VM_STRING("ExtCO2."), *(mfxExtCodingOption2*)m_pStruct);
+            break;
+        }
+        case MFX_EXTBUFF_DDI : {
+            SerializeStruct(VM_STRING("DDI."), *(mfxExtCodingOptionDDI*)m_pStruct);
+            break;
+        }
+        case MFX_EXTBUFF_QM: {
+            SerializeStruct(VM_STRING("QuantMatrix."), *(mfxExtCodingOptionQuantMatrix*)m_pStruct);
+            break;
+        }
+        case MFX_EXTBUFF_HEVCENC :{
+            SerializeStruct(VM_STRING("HEVC."), *(mfxExtCodingOptionHEVC*)m_pStruct);
+            break;
+        }
+        case MFX_EXTBUFF_MVC_SEQ_DESC : {
+            SerializeStruct(VM_STRING("MVC."), *(mfxExtMVCSeqDesc*)m_pStruct);
+            break;
+        }
+        case MFX_EXTBUFF_SVC_SEQ_DESC : {
+            SerialCollection<tstring> files;
+            StructureBuilder<mfxExtSVCSeqDesc>
+                (VM_STRING("SVC_SEQ"), *(mfxExtSVCSeqDesc*)m_pStruct, files).Serialize(Formaters2::MapPusherSerializer(m_values_map));
+            break;
+        }
+        case MFX_EXTBUFF_SVC_RATE_CONTROL : {
+            StructureBuilder<mfxExtSVCRateControl>
+                (VM_STRING("SVC_RC"), *(mfxExtSVCRateControl*)m_pStruct).Serialize(Formaters2::MapPusherSerializer(m_values_map));
+            break;
+        }
+        case MFX_EXTBUFF_VIDEO_SIGNAL_INFO : {
+            SerializeStruct(VM_STRING("VSIG."), *(mfxExtVideoSignalInfo*)m_pStruct);
+            break;
+        }
+        case MFX_EXTBUFF_CODING_OPTION_SPSPPS : {
+            SerializeStruct(VM_STRING("ExtCOSPSPPS."), *(mfxExtCodingOptionSPSPPS*)m_pStruct);
+            break;
+        }
+        case MFX_EXTBUFF_AVC_TEMPORAL_LAYERS : {
+            SerializeStruct(VM_STRING("AVCTL."), *(mfxExtAvcTemporalLayers*)m_pStruct);
+            break;
+        }
+        case MFX_EXTBUFF_ENCODER_CAPABILITY :{
+            SerializeStruct(VM_STRING("CAP."), *(mfxExtEncoderCapability*)m_pStruct);
+            break;
+        }
+        case MFX_EXTBUFF_ENCODED_FRAME_INFO :{
+            SerializeStruct(VM_STRING("ENC_FRAME_INFO."), *(mfxExtAVCEncodedFrameInfo*)m_pStruct);
+            break;
+                                             }
+        default :
+            //unsupported buffer
+        break;
+    }
 }

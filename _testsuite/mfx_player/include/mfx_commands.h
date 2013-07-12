@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -115,23 +115,44 @@ protected:
     bool                 m_bUseResizing;
 };
 
-class selectRefListCommand : public commandBase
+class addExtBufferCommand : public commandBase
 {
     IMPLEMENT_ACCEPT();
-    IMPLEMENT_CLONE(selectRefListCommand);
+    IMPLEMENT_CLONE(addExtBufferCommand);
 
 public:
-    selectRefListCommand(IPipelineControl *pHolder);
+    addExtBufferCommand(IPipelineControl *pHolder);
     
     //ICommand
     virtual mfxStatus    Execute();
-    virtual void         SetRefList(mfxExtAVCRefListCtrl  * pRefList );
+    virtual void         RegisterExtBuffer(const mfxExtBuffer & refBuf );
 
 protected:
-    
-    mfxExtAVCRefListCtrl m_refList;
-    mfxExtAVCRefListCtrl *m_pRefList;
+    std::vector<char> m_bufData;
+    mfxExtBuffer *m_pBuf;
 };
+
+class removeExtBufferCommand : public commandBase
+{
+    IMPLEMENT_ACCEPT();
+    IMPLEMENT_CLONE(removeExtBufferCommand);
+
+public:
+    removeExtBufferCommand(IPipelineControl *pHolder) 
+        : commandBase(pHolder)
+        , m_nBufferToRemove(){
+    }
+
+    //ICommand
+    virtual mfxStatus    Execute();
+    virtual void         RegisterExtBuffer(int nBufferIdToRemove) {
+        m_nBufferToRemove = nBufferIdToRemove;
+    }
+
+protected:
+    mfxU32 m_nBufferToRemove;
+};
+
 
 class reopenFileCommand : public commandBase
 {

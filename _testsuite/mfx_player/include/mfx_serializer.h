@@ -69,6 +69,7 @@ protected:
     {
         tstringstream stream;
 
+        stream << elementFormater.head();
         for (int i = 0; i < nElements; i++)
             stream<<elementFormater(pArray[i])<<((i+1==nElements) ? VM_STRING("") : VM_STRING(","));
         if (nElements)
@@ -90,7 +91,9 @@ protected:
         if (!refInput.good())
             return false;
 
-        return refInput>>refnum1;
+        refInput>>refnum1;
+
+        return !refInput.fail();
     }
     ///returns number of deserialised elements in array
     template <class _ElementType>
@@ -361,6 +364,21 @@ tstring SerializeWithKey(const tstring &key, T & input_to_be_serialized)
 {
     return Serialize(input_to_be_serialized, Formater::SingleKey(key));
 }
+
+template<>
+class MFXStructureRef <mfxExtBuffer>
+    : public MFXStructureBase<mfxExtBuffer>
+{
+public:
+    MFXStructureRef(mfxExtBuffer & refStruct, int flags = 0)
+        : MFXStructureBase<mfxExtBuffer>(refStruct, flags)
+    {
+    }
+
+protected:
+    virtual void ConstructValues () const;
+};
+
 
 
 template<>
@@ -747,6 +765,27 @@ protected:
     virtual void ConstructValues () const;
 };
 
+
+template<>
+class MFXStructureRef <mfxExtAVCEncodedFrameInfo>
+    : public MFXStructureBase<mfxExtAVCEncodedFrameInfo>
+{
+public:
+    MFXStructureRef(mfxExtAVCEncodedFrameInfo & refStruct, int flags = 0)
+        : MFXStructureBase<mfxExtAVCEncodedFrameInfo>(refStruct, flags)
+    {
+    }
+protected:
+    virtual void ConstructValues () const;
+};
+
+
+
+template <class T> 
+MFXStructureRef<T> make_structure_ref( T & structure) {
+    MFXStructureRef<T> struct_ref(structure);
+    return struct_ref;
+}
 
 
 template <class CharT, class Traits, class T>

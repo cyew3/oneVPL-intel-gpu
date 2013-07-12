@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -42,7 +42,7 @@ public :
 
     //////////////////////////////////////////////////////////////////////////
     //IPipelineControl
-    virtual mfxStatus GetRefListControl(IRefListControl **ppAdded);
+    virtual mfxStatus GetEncode(IVideoEncode **ppAdded);
 
 protected:
     typedef struct OptContainer
@@ -179,10 +179,7 @@ protected:
     
     BinderCall_0<mfxStatus, MFXTranscodingPipeline> m_applyBitrateParams;
     BinderCall_0<mfxStatus, MFXTranscodingPipeline> m_applyJpegParams;
-    
-    
-    //custom interface for encoder
-    IRefListControl *m_pRefListControl;
+    IVideoEncode *m_pEncoder ;
 };
 
 

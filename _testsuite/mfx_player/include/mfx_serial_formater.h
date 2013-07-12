@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2013 Intel Corporation. All Rights Reserved.
 
 File Name: mfxstructures.h
 
@@ -127,6 +127,9 @@ namespace Formater
         {
             return obj;
         }
+        tstring head() const {
+            return tstring();
+        } 
     };
     //todo: improve
     class RefListFormater
@@ -137,6 +140,7 @@ namespace Formater
             mfxExtAVCRefListCtrl ctrl;
             ctrl;
             STATIC_ASSERT(sizeof(ctrl.PreferredRefList[0]) == sizeof(RefListElement), c1);
+            STATIC_ASSERT(sizeof(ctrl.RejectedRefList[0]) == sizeof(RefListElement), c1);
         }
         
     public:
@@ -147,6 +151,7 @@ namespace Formater
             mfxU16      ViewId; //for MVC interview prediction
             mfxU32      reserved[2]; //QualityID, DependencyID + 2 more just in case
         };
+        
         template<class T>
         tstring operator () (const T & element) const
         {
@@ -160,6 +165,47 @@ namespace Formater
             stream << rlElement->FrameOrder;
             return stream.str();
         }
+        tstring head() const {
+            return tstring();
+        } 
+    };
+
+    class LTRRefListFormater
+    {
+        //to make 1:1 relation to mfx_structures
+        void _unused()
+        {
+            mfxExtAVCRefListCtrl ctrl;
+            ctrl;
+            STATIC_ASSERT(sizeof(ctrl.LongTermRefList[0]) == sizeof(LTRElement), c1);
+        }
+
+    public:
+
+        struct LTRElement{
+            mfxU32      FrameOrder;
+            mfxU16      PicStruct;
+            mfxU16      ViewId;
+            mfxU16      LongTermIdx;
+            mfxU16      reserved[3];
+        } ;
+
+        template<class T>
+        tstring operator () (const T & element) const
+        {
+            const LTRElement *rlElement = reinterpret_cast<const LTRElement*>(&element);
+
+            if (rlElement->FrameOrder == (mfxU32)MFX_FRAMEORDER_UNKNOWN)
+            {
+                return VM_STRING("UNK");
+            }
+            tstringstream stream;
+            stream << VM_STRING("{")<<rlElement->FrameOrder << VM_STRING(",") << rlElement->LongTermIdx << VM_STRING("}");
+            return stream.str();
+        }
+        tstring head() const {
+            return tstring(VM_STRING("{FrameOrder,LongTermIdx}:"));
+        } 
     };
 
     class AvcTemporalLayersFormater
@@ -186,6 +232,9 @@ namespace Formater
             stream << tlElement->Scale;
             return stream.str();
         }
+        tstring head() const {
+            return tstring();
+        } 
     };
 }
 

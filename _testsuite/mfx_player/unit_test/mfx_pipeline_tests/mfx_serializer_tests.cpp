@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010 - 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010 - 2013 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -681,7 +681,7 @@ SUITE(MFXSerializer)
         expected<<VM_STRING("NumRefIdxL1Active:10")<<std::endl;
         expected<<VM_STRING("PreferredRefList:5,6,7,UNK,UNK,UNK,UNK,UNK,UNK,UNK,UNK,UNK,UNK,UNK,UNK,UNK,UNK,UNK,UNK,UNK,UNK,UNK,UNK,UNK,UNK,UNK,UNK,UNK,UNK,UNK,UNK,UNK")<<std::endl;
         expected<<VM_STRING("RejectedRefList:15,16,0,0,0,0,0,0,0,0,0,0,0,0,0,0")<<std::endl;
-        expected<<VM_STRING("LongTermRefList:21,23,43,0,0,0,0,0,0,0,0,0,0,0,0,0")<<std::endl;
+        expected<<VM_STRING("LongTermRefList:{FrameOrder,LongTermIdx}:{21,0},{23,0},{43,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0}")<<std::endl;
 
         CHECK_EQUAL(convert_w2s(expected.str()), convert_w2s(reflistStructure.Serialize(MockFormater())));
     } 

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -12,22 +12,33 @@ File Name: .h
 
 #pragma once
 
-#include "mfx_ireflist_ctrl.h"
+#include "mfx_icurrent_frame_ctrl.h"
 #include "mfx_ivideo_encode.h"
 #include "mfx_extended_buffer.h"
+#include "mfx_icurrent_frame_ctrl.h"
 
 class RefListControlEncode 
     : public InterfaceProxy<IVideoEncode>
-    , public IRefListControl
+    , public ICurrentFrameControl
 {
 public:
     RefListControlEncode (std::auto_ptr<IVideoEncode>& pTarget);
 
-    //IRefListControl
-    virtual mfxStatus SetCurrentRefList(mfxExtAVCRefListCtrl *pRefList);
+    //ICurrentFrameControl
+    virtual void AddExtBuffer(mfxExtBuffer &buffer);
+    virtual void RemoveExtBuffer(mfxU32 mfxExtBufferId);
+
 
     //buffers attached to encode control structure
     mfxStatus EncodeFrameAsync(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxSyncPoint *syncp) ;
+
+    virtual bool QueryInterface(int interface_id_registered_with_interface_map, void **ppInterface) {
+        if (interface_id_registered_with_interface_map == QueryInterfaceMap<ICurrentFrameControl>::id) {
+            memcpy(ppInterface, (ICurrentFrameControl*)this, sizeof(this));
+            return true;
+        }
+        return false;
+    }
 
 protected:
     //updates frame orders based on current order

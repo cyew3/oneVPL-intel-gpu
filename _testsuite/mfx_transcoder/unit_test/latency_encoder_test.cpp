@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -38,12 +38,15 @@ SUITE(LatencyEncoder)
 
         LatencyEncode * pTestEncode;
 
+        mfxBitstream bs;
+
         Init()
             : ticks(3)
             , syncp((mfxSyncPoint)&s1)
             , syncp2((mfxSyncPoint)&s2)
             , bitstream()
             , actual_srf()
+            , bs()
         {
             bitstream.FrameType = MFX_FRAMETYPE_I;
 
@@ -57,7 +60,7 @@ SUITE(LatencyEncoder)
             efa_returns.ret_val = MFX_ERR_NONE;
             efa_returns.value0 = NULL;
             efa_returns.value1 = NULL;
-            efa_returns.value2 = &bitstream;
+            efa_returns.value2 = bitstream;
             efa_returns.value3 = &syncp;
         }
     };
@@ -69,11 +72,11 @@ SUITE(LatencyEncoder)
         actual_srf.Data.TimeStamp = 2;
 
         bitstream.TimeStamp = 2;
+        efa_returns.value2 = bitstream;
         pMockEncode->_EncodeFrameAsync.WillReturn(efa_returns);
 
         pTime->_GetTick.WillReturn(ticks);
-
-        mfxBitstream bs;
+        
         mfxSyncPoint sp = 0;
         //test function call
         CHECK_EQUAL(MFX_ERR_NONE, pTestEncode->EncodeFrameAsync(NULL, &actual_srf, &bs, &sp));
@@ -98,7 +101,6 @@ SUITE(LatencyEncoder)
         efa_returns.ret_val = MFX_WRN_DEVICE_BUSY;
         pMockEncode->_EncodeFrameAsync.WillReturn(efa_returns);
 
-        mfxBitstream bs;
         mfxSyncPoint sp = 0;
         //test function call
         CHECK_EQUAL(MFX_WRN_DEVICE_BUSY, pTestEncode->EncodeFrameAsync(NULL, &actual_srf, &bs, &sp));
@@ -109,10 +111,13 @@ SUITE(LatencyEncoder)
         pTime->_GetTick.WillDefaultReturn(&ticks);
 
         efa_returns.ret_val = MFX_ERR_NONE;
-        pMockEncode->_EncodeFrameAsync.WillReturn(efa_returns);
+        
 
         //we dont emulate buffering for now pts are equal to input pts
         bitstream.TimeStamp = 3;
+        efa_returns.value2 = bitstream;
+
+        pMockEncode->_EncodeFrameAsync.WillReturn(efa_returns);
 
         CHECK_EQUAL(MFX_ERR_NONE, pTestEncode->EncodeFrameAsync(NULL, &actual_srf, &bs, &sp));
         //pts of surface not changed to 4
@@ -127,6 +132,7 @@ SUITE(LatencyEncoder)
 
         //lets encode one more frame to check average calculation
         bitstream.TimeStamp = 5;
+        efa_returns.value2 = bitstream;
         pMockEncode->_EncodeFrameAsync.WillReturn(efa_returns);
 
         CHECK_EQUAL(MFX_ERR_NONE, pTestEncode->EncodeFrameAsync(NULL, &actual_srf, &bs, &sp));
@@ -155,9 +161,9 @@ SUITE(LatencyEncoder)
 
         //time = 3
         bitstream.TimeStamp = 3;
+        efa_returns.value2 = bitstream;
         pMockEncode->_EncodeFrameAsync.WillReturn(efa_returns);
 
-        mfxBitstream bs;
         mfxSyncPoint sp = 0;
         //test function call
         CHECK_EQUAL(MFX_ERR_NONE, pTestEncode->EncodeFrameAsync(NULL, &actual_srf, &bs, &sp));
@@ -200,10 +206,10 @@ SUITE(LatencyEncoder)
 
         //time = 3
         bitstream.TimeStamp = 3;
+        efa_returns.value2 = bitstream;
         pMockEncode->_EncodeFrameAsync.WillReturn(efa_returns);
 
-        mfxBitstream bs;
-        mfxBitstream bs2;
+        mfxBitstream bs2 = {};
         mfxSyncPoint sp = 0;
         mfxSyncPoint sp2 = 0;
         //test function call
@@ -215,6 +221,7 @@ SUITE(LatencyEncoder)
 
         bitstream.TimeStamp = 4;
         efa_returns.value3 = &syncp2;
+        efa_returns.value2 = bitstream;
         pMockEncode->_EncodeFrameAsync.WillReturn(efa_returns);
 
         //test function call
