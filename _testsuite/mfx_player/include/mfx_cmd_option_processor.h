@@ -65,18 +65,18 @@ public:
     virtual void    SetPrint(bool bPrintOption, bool bAdaptivePtinter = true);
     virtual bool    GetPrint();
     //TODO: return not value but order of matched pattern, zero otherwise
-    virtual mfxU32  Check( vm_char *opt
-                         , vm_char *pattern
-                         , vm_char *description
+    virtual mfxU32  Check( const vm_char *opt
+                         , const vm_char *pattern
+                         , const vm_char *description
                          , OptParamType param_type = OPT_UNDEFINED
-                         , vm_char *opt_param = NULL
+                         , const vm_char *opt_param = NULL
                          , SerialNode /*[in,out]*/ **pNode = NULL);
 
     virtual void    ClearCache();
 
 protected:
     virtual void    PrintPatternHelp( vm_char *print_at
-                                    , vm_char *pattern
+                                    , const vm_char *pattern
                                     , bool bUseComas);
     virtual std::list<tstring> &  GetOptionsFromPattern(const tstring &ref_pattern);
 };

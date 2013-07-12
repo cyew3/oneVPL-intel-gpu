@@ -32,35 +32,35 @@ class ComponentParams
 {
 public:
     ComponentParams(const tstring & name , const tstring & short_name, IMFXPipelineFactory *pFactory) 
-        : m_libType(MFX_IMPL_SOFTWARE)
+        : m_Name(name)
+        , m_ShortName(short_name)
+        , m_params()
+        , m_libType(MFX_IMPL_SOFTWARE)
         , m_bD39Feat(false)
+        , m_pLibVersion()
         , m_RealImpl(m_libType)
         , m_bHWStrict(false)
+        , m_bPrintTimeStamps()
         , m_bufType(MFX_BUF_UNSPECIFIED)
-        , m_bExternalAlloc(false)
-        , m_nMaxAsync(1)
         , m_NumThread(0)
+        , m_bExternalAlloc(false)
+        , m_bD3D11SingeTexture()
+        , m_nMaxAsync(1)
+        , m_fFrameRate()
         , m_uiMaxAsyncReached()
         , m_fAverageAsync()
-        , m_pAllocator()
         , m_zoomx()
         , m_zoomy()
-        , m_Name(name)
-        , m_ShortName(short_name)
-        , m_bPrintTimeStamps()
-        , m_fFrameRate()
-        , m_bOverPS()
-        , m_nSelectAlgo(USE_FIRST)
+        , m_pAllocator()
         , m_nStartSearch()
-        , m_pLibVersion()
+        , m_nSelectAlgo(USE_FIRST)
+        , m_pRandom()
+        , m_bOverPS()
+        , m_extCO()
         , m_bCalcLatency()
         , m_nDropCyle()
         , m_nDropCount()
         , m_bForceMVCDetection()
-        , m_extCO()
-        , m_pRandom()
-        , m_params()
-        , m_bD3D11SingeTexture()
       {
           PipelineObjectDescBase dsc(VIDEO_SESSION_NATIVE);
           m_Session = pFactory->CreateVideoSession(&dsc);
@@ -149,8 +149,8 @@ public:
         //used if Mediasdk required linear array of allocated surfaces -> for opaq memory support
         std::vector<mfxFrameSurface1*> surfacesLinear;
         SurfacesAllocated()
-            : allocResponce()
-            , request()
+            : request()
+            , allocResponce()
         {
         }
     };

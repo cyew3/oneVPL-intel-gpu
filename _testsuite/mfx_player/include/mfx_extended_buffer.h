@@ -183,7 +183,7 @@ public:
     
     static const T & zero()
     {
-        static T p = {0};
+        static T p = {};
         static bool bInitialized = false;
         if (!bInitialized)
         {
@@ -635,14 +635,15 @@ class MFXExtBufferPtrRef<mfxExtMVCSeqDesc>
 {
 public:
     MFXExtBufferPtrRef(MFXExtBufferPtr<mfxExtMVCSeqDesc> *pOwner)
-        : DECL_ELEMENTS_ALLOCATED(View, NumView, NumViewAlloc)
-        , DECL_ELEMENTS_ALLOCATED(ViewId, NumViewId, NumViewIdAlloc) 
+        : DECL_MFXU32_REF(NumOP)
         , DECL_ELEMENTS_ALLOCATED(OP, NumOP, NumOPAlloc)
-        , DECL_MFXU32_REF(NumView)
         , DECL_MFXU32_REF(NumViewId)
-        , DECL_MFXU32_REF(NumOP)
+        , DECL_ELEMENTS_ALLOCATED(View, NumView, NumViewAlloc)
+        , DECL_MFXU32_REF(NumView)
+        , DECL_ELEMENTS_ALLOCATED(ViewId, NumViewId, NumViewIdAlloc)
     {
     }
+
     MFXExtBufferPtrRef * operator -> ()
     {
         return this;

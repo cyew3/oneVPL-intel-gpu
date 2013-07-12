@@ -17,7 +17,7 @@ File Name: .h
 #include "mock_mfx_pipeline_config.h"
 #include "mock_mfx_vpp.h"
 #include "mock_icurrent_frame_control.h"
-#include "mfx_encoded_frameInfo_encoder.h"
+#include "mfx_encoded_frame_info_encoder.h"
 
 
 SUITE(mfxExtAvcFrameInfoSuite)

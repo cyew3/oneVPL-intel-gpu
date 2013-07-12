@@ -109,7 +109,7 @@ mfxStatus MFXEncodeWRAPPER::Init(mfxVideoParam *pInit, const vm_char *pFilename)
     mfxVideoParam pBeforeInit;
     memcpy(&pBeforeInit, pInit, sizeof(pBeforeInit));
 
-    mfxVideoParam vParamUser = {0};
+    mfxVideoParam vParamUser = {};
     MFXStructureThree<mfxVideoParam> structThree(pBeforeInit, *pInit, vParamUser);
 
     MFX_CHECK_STS_CUSTOM_HANDLER(ret = m_encoder->Init(pInit), {
@@ -174,9 +174,9 @@ mfxStatus MFXEncodeWRAPPER::GetVideoParam(mfxVideoParam *par)
 
 mfxStatus MFXEncodeWRAPPER::Reset(mfxVideoParam *pParam)
 {
-    mfxVideoParam pBeforeReset = {0};
-    mfxVideoParam pAfterReset  = {0};
-    mfxVideoParam vParamUser   = {0};
+    mfxVideoParam pBeforeReset = {};
+    mfxVideoParam pAfterReset  = {};
+    mfxVideoParam vParamUser   = {};
 
     //use input pparam since encoder may clean passed parameters in case of error
     MFXStructureThree<mfxVideoParam> structThree(pBeforeReset, *pParam, vParamUser);

@@ -71,7 +71,7 @@ mfxStatus seekSourceCommand::Execute()
         {
             IYUVSource *pSource;
             MFX_CHECK_STS(m_pControl->GetYUVSource(&pSource));
-            mfxVideoParam vParam = {0};
+            mfxVideoParam vParam = {};
             MFX_CHECK_STS(pSource->GetVideoParam(&vParam));
 
             MFX_CHECK_STS_SKIP(pSplitter->SeekFrameOffset(m_uiFramesOffset, vParam.mfx.FrameInfo), MFX_ERR_UNSUPPORTED);
@@ -108,7 +108,7 @@ mfxStatus seekCommand::Execute()
     MFX_CHECK_STS(m_pControl->GetRender(&pRender));
 
     ////cleaning decoder
-    mfxVideoParam vParam = {0};
+    mfxVideoParam vParam = {};
 
     //don't change current params
     MFX_CHECK_STS(pSource->GetVideoParam(&vParam));
@@ -210,7 +210,7 @@ mfxStatus    resetEncCommand::Execute()
     IMFXVideoRender *rnd;
     MFX_CHECK_STS(m_pControl->GetRender(&rnd));
     
-    mfxVideoParam currentParams = {0}, newParams;
+    mfxVideoParam currentParams = {}, newParams;
 
     MFX_CHECK_STS(rnd->GetVideoParam(&currentParams));
     

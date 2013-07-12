@@ -49,37 +49,37 @@ File Name: .h
 #include "mfx_factory_default.h"
 #include "mfx_detach_buffer_after_query_encoder.h"
 #include "mfx_lexical_cast.h"
-#include "mfx_encoded_frameInfo_encoder.h"
+#include "mfx_encoded_frame_info_encoder.h"
 
 
 //////////////////////////////////////////////////////////////////////////
 
 #define HANDLE_GLOBAL_OPTION(short_option, pref, member, OPT_TYPE, description, handler)\
-{VM_STRING(short_option)VM_STRING("-")VM_STRING(#member), OPT_TYPE, &pref##member, VM_STRING(description), handler}
+{VM_STRING(short_option)VM_STRING("-")VM_STRING(#member), OPT_TYPE, {&pref##member}, VM_STRING(description), handler}
 
 #define HANDLE_MFX_INFO(short_option, member, description)\
-{VM_STRING(short_option)VM_STRING("-")VM_STRING(#member), OPT_UINT_16, &pMFXParams->mfx.member, VM_STRING(description), NULL}
+{VM_STRING(short_option)VM_STRING("-")VM_STRING(#member), OPT_UINT_16, {&pMFXParams->mfx.member}, VM_STRING(description), NULL}
 
 #define HANDLE_MFX_FRAME_INFO(member, OPT_TYPE, description)\
-{VM_STRING("-")VM_STRING(#member), OPT_TYPE, &pMFXParams->mfx.FrameInfo.member, VM_STRING(description), NULL}
+{VM_STRING("-")VM_STRING(#member), OPT_TYPE, {&pMFXParams->mfx.FrameInfo.member}, VM_STRING(description), NULL}
 
 #define HANDLE_EXT_OPTION(member, OPT_TYPE, description)\
-{VM_STRING("-")VM_STRING(#member), OPT_TYPE, &m_extCodingOptions->member, VM_STRING(description), NULL}
+{VM_STRING("-")VM_STRING(#member), OPT_TYPE, {&m_extCodingOptions->member}, VM_STRING(description), NULL}
 
 #define HANDLE_EXT_OPTION2(member, OPT_TYPE, description)\
-{VM_STRING("-")VM_STRING(#member), OPT_TYPE, &m_extCodingOptions2->member, VM_STRING(description), NULL}
+{VM_STRING("-")VM_STRING(#member), OPT_TYPE, {&m_extCodingOptions2->member}, VM_STRING(description), NULL}
 
 #define HANDLE_DDI_OPTION(member, OPT_TYPE, description) \
-{VM_STRING("-")VM_STRING(#member), OPT_TYPE, &m_extCodingOptionsDDI->member, VM_STRING(description), NULL}
+{VM_STRING("-")VM_STRING(#member), OPT_TYPE, {&m_extCodingOptionsDDI->member}, VM_STRING(description), NULL}
 
 #define HANDLE_VSIG_OPTION(member, OPT_TYPE, description) \
-{VM_STRING("-")VM_STRING(#member), OPT_TYPE, &m_extVideoSignalInfo->member, VM_STRING(description), NULL}
+{VM_STRING("-")VM_STRING(#member), OPT_TYPE, {&m_extVideoSignalInfo->member}, VM_STRING(description), NULL}
 
 #define HANDLE_CAP_OPTION(member, OPT_TYPE, description) \
-{VM_STRING("-")VM_STRING(#member), OPT_TYPE, &m_extEncoderCapability->member, VM_STRING(description), NULL}
+{VM_STRING("-")VM_STRING(#member), OPT_TYPE, {&m_extEncoderCapability->member}, VM_STRING(description), NULL}
 
 #define HANDLE_HEVC_OPTION(member, OPT_TYPE, description)\
-{VM_STRING("-")VM_STRING(#member), OPT_TYPE, &m_extCodingOptionsHEVC->member, VM_STRING(description), NULL}
+{VM_STRING("-")VM_STRING(#member), OPT_TYPE, {&m_extCodingOptionsHEVC->member}, VM_STRING(description), NULL}
 
 #define FILL_MASK(type, ptr)\
     if (m_bResetParamsStart)\
@@ -276,7 +276,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_CAP_OPTION(MBPerSec,                OPT_BOOL,    "Max MB Per Second"),
 
         // Quant Matrix parameters
-        {VM_STRING("-qm"), OPT_AUTO_DESERIAL, &m_QuantMatrix, VM_STRING("Quant Matrix structure")},
+        {VM_STRING("-qm"), OPT_AUTO_DESERIAL, {&m_QuantMatrix}, VM_STRING("Quant Matrix structure")},
 
 
 
@@ -289,11 +289,11 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_VSIG_OPTION(MatrixCoefficients,      OPT_UINT_16,  ""),
 
         //svc
-        {VM_STRING("-svc_seq"), OPT_AUTO_DESERIAL, &m_svcSeqDeserial, VM_STRING("mfxExtSVCSeqDesc extended buffer - any member possible")},
-        {VM_STRING("-svc_rate_ctrl"), OPT_AUTO_DESERIAL, &m_svcRateCtrlDeserial, VM_STRING("mfxExtSVCRateControl extended buffer - any member possible")},
+        {VM_STRING("-svc_seq"), OPT_AUTO_DESERIAL, {&m_svcSeqDeserial}, VM_STRING("mfxExtSVCSeqDesc extended buffer - any member possible")},
+        {VM_STRING("-svc_rate_ctrl"), OPT_AUTO_DESERIAL, {&m_svcRateCtrlDeserial}, VM_STRING("mfxExtSVCRateControl extended buffer - any member possible")},
 
         //special modes
-        {VM_STRING("-yuvdump"), OPT_BOOL, &m_bYuvDumpMode, VM_STRING("used by mfx_transcoder team only")}
+        {VM_STRING("-yuvdump"), OPT_BOOL, {&m_bYuvDumpMode}, VM_STRING("used by mfx_transcoder team only")}
     };
 
     int i;

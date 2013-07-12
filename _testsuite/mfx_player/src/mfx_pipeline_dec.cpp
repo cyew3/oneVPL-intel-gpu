@@ -133,24 +133,24 @@ bool loadFromFile(FILE *f, void **buf, mfxU32 *bufSize)
 MFXDecPipeline::MFXDecPipeline(IMFXPipelineFactory *pFactory)
     : m_RenderType(MFX_SCREEN_RENDER)
     //, m_d3dDeviceManagerSpy()
-    , m_pVPP()
     , m_pSpl()
+    , m_pVPP()
     , m_pRender()
+    , m_inBSFrame()
     //, m_components[eDEC](VM_STRING("Decoder"))
     //, m_components[eVPP](VM_STRING("VPP"))
     //, m_components[eREN](VM_STRING("Encoder"))
-    , m_bResetAfterIncompatParams()
-    , m_bErrIncompatValid(true)
-    , m_bErrIncompat()
     , m_OptProc(false)
+    , m_bResetAfterIncompatParams()
+    , m_bErrIncompat()
+    , m_bErrIncompatValid(true)
     #ifdef PAVP_BUILD
     , m_encPavpInfoOut(NULL)
     , m_encPavpControl(NULL)
     , m_encPavpKey(NULL)
     #endif //PAVP_BUILD
-    , m_pFactory(pFactory)
     , m_externalsync()
-    , m_inBSFrame()
+    , m_pFactory(pFactory)
 {
 
     m_bStat                 = true;
@@ -283,11 +283,6 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
         MFX_CHECK_STS_CUSTOM_HANDLER(m_pRender->Query(&params, &m_components[eREN].m_params), {
             PipelineTrace((VM_STRING("%s"), MFXStructuresPair<mfxVideoParam>(params, m_components[eREN].m_params).Serialize().c_str()));
         });
-
-
-        //TODO: remove this workaround handling of extcoding options
-        //m_components[eREN].m_params.NumExtParam = params.NumExtParam;
-        //memcpy(&m_components[eREN].m_params.ExtParam, &params.ExtParam, sizeof(params.ExtParam));
     }
 
     m_components[eDEC].m_params.IOPattern = m_components[eDEC].GetIoPatternOut();
@@ -1270,7 +1265,7 @@ mfxStatus MFXDecPipeline::DecodeHeader()
 
     //handling of default values
     mfxFrameInfo &info = m_components[eDEC].m_params.mfx.FrameInfo;
-    vm_char * pFrameRateString;
+    const vm_char * pFrameRateString;
 
     if (0.0 == info.FrameRateExtD &&
         0.0 == info.FrameRateExtN)
@@ -1871,7 +1866,7 @@ mfxStatus MFXDecPipeline::InitRender()
 mfxStatus MFXDecPipeline::CreateYUVSource()
 {
     //TODO: is it possible to store decoder setup param???
-    mfxVideoParam yuvDecParam = {0};
+    mfxVideoParam yuvDecParam = {};
     yuvDecParam.NumExtParam = m_inParams.NumExtParam;
     yuvDecParam.ExtParam = m_inParams.ExtParam;
     yuvDecParam.mfx.FrameInfo = m_inParams.FrameInfo;
@@ -2116,7 +2111,7 @@ mfxStatus MFXDecPipeline::CreateAllocator()
     mfxU16 numVppSfrIn  = 0;
     mfxU16 numVppSfrOut = 0;
 
-    mfxFrameAllocRequest _request[3][2] = {0};
+    mfxFrameAllocRequest _request[3][2] = {};
 
     if (NULL != m_pRender)
     {
@@ -2158,7 +2153,7 @@ mfxStatus MFXDecPipeline::CreateAllocator()
 
     //if vpp isn't used we will keep frames in a single storage
     mfxU16 nSurfaces;
-    mfxFrameAllocRequest request[2] = {0};
+    mfxFrameAllocRequest request[2] = {};
 
     if (NULL == m_pVPP)
     {
@@ -2831,7 +2826,7 @@ vm_char * MFXDecPipeline::GetLastErrString()
         {PE_OPTION,               VM_STRING("Invalid command line")}
     };
 
-    for (int i=0; i < sizeof(errDetails)/sizeof(errDetails[0]); i++)
+    for (size_t i=0; i < sizeof(errDetails)/sizeof(errDetails[0]); i++)
     {
         if (errDetails[i].err == PipelineGetLastErr())
         {

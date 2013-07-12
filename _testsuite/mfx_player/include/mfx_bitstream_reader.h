@@ -74,7 +74,7 @@ public:
     virtual mfxStatus SeekFrameOffset(mfxU32 nFrameOffset, mfxFrameInfo &in_info)
     {
         mfxI64 nFileOffset;
-        mfxFrameInfo info = {0};
+        mfxFrameInfo info = {};
         if (m_bInfoSet)
         {
             info.Width  = m_sInfo.nWidth;

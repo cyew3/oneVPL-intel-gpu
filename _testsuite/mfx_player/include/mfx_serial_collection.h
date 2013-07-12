@@ -32,19 +32,19 @@ class SerialSingleElement
     bool m_bOwnElement;
 public:
     SerialSingleElement()
-        : m_element(m_realElement)
-        , m_bOwnElement(true)
+        : m_bOwnElement(true)
+        , m_element(m_realElement)
     {
     }
     SerialSingleElement(const T& realElement)
         : m_realElement(realElement)
-        , m_element(m_realElement)
         , m_bOwnElement(true)
+        , m_element(m_realElement)
     {
     }
     SerialSingleElement(T & ref_element, bool /*unused1*/)
-        : m_element(ref_element)
-        , m_bOwnElement(false)
+        : m_bOwnElement(false)
+        , m_element(ref_element)
     {
     }
     SerialSingleElement(const SerialSingleElement & that)

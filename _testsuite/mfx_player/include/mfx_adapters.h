@@ -89,7 +89,7 @@ public:
     virtual mfxStatus Reopen(){return MFX_ERR_NONE;}
     virtual mfxStatus Write(mfxU8* p, mfxU32 size)
     {
-        mfxBitstream bs = {0};
+        mfxBitstream bs = {};
         bs.Data       = p;
         bs.DataLength = size;
         bs.MaxLength  = size;

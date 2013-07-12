@@ -264,9 +264,9 @@ public:
              , SerialCollection<init_type> & data
              , bool )
         : SerialNode(name)
+        , m_pElements(elements)
         , m_nElements(NULL)
         , m_dataForBuilder(data)
-        , m_pElements(elements)
         , m_bOwnData(false)
     {
     }
@@ -276,9 +276,9 @@ public:
              , SerialCollection<init_type> & data
              , bool)
         : SerialNode(name)
+        , m_pElements(elements)
         , m_nElements(& size)
         , m_dataForBuilder(data)
-        , m_pElements(elements)
         , m_bOwnData(false)
     {
     }
@@ -286,10 +286,10 @@ public:
              , element_type(&elements)[nElem]
              , const SerialCollection<init_type> & data = SerialCollection<init_type>())
         : SerialNode(name)
-        , m_nElements(NULL)
-        , m_LocalDataForBuilder(data)
-        , m_dataForBuilder(m_LocalDataForBuilder)
         , m_pElements(elements)
+        , m_nElements(NULL)
+        , m_dataForBuilder(m_LocalDataForBuilder)
+        , m_LocalDataForBuilder(data)
         , m_bOwnData(true)
     {
     }
@@ -298,10 +298,10 @@ public:
              , ElementCountType &size
              , const SerialCollection<init_type> & data = SerialCollection<init_type>())
         : SerialNode(name)
-        , m_nElements(& size)
-        , m_LocalDataForBuilder(data)
-        , m_dataForBuilder(m_LocalDataForBuilder)
         , m_pElements(elements)
+        , m_nElements(& size)
+        , m_dataForBuilder(m_LocalDataForBuilder)
+        , m_LocalDataForBuilder(data)
         , m_bOwnData(true)
     {
     }
@@ -309,10 +309,10 @@ public:
     //copy ctor
     ArrayNode(const ArrayNode &that)
         : SerialNode(that.m_name)
-        , m_nElements(that.m_nElements)
-        , m_LocalDataForBuilder(that.m_LocalDataForBuilder)
-        , m_dataForBuilder(that.m_bOwnData ? m_LocalDataForBuilder : that.m_dataForBuilder)
         , m_pElements(that.m_pElements)
+        , m_nElements(that.m_nElements)
+        , m_dataForBuilder(that.m_bOwnData ? m_LocalDataForBuilder : that.m_dataForBuilder)
+        , m_LocalDataForBuilder(that.m_LocalDataForBuilder)
         , m_bOwnData(that.m_bOwnData)
     {
     }

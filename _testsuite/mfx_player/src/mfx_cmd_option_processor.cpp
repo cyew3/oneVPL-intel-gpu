@@ -27,11 +27,11 @@ bool    CmdOptionProcessor::GetPrint()
     return m_bPrint;
 }
 
-mfxU32 CmdOptionProcessor::Check( vm_char *opt
-                                , vm_char *pattern
-                                , vm_char *description
+mfxU32 CmdOptionProcessor::Check( const vm_char *opt
+                                , const vm_char *pattern
+                                , const vm_char *description
                                 , OptParamType param_type
-                                , vm_char *opt_param
+                                , const vm_char *opt_param
                                 , SerialNode **ppInOutNode) 
 {
     if (m_bPrint)
@@ -137,7 +137,7 @@ void CmdOptionProcessor::ClearCache()
 }
 
 void  CmdOptionProcessor::PrintPatternHelp( vm_char *print_at
-                                          , vm_char *pattern 
+                                          , const vm_char *pattern 
                                           , bool bUseComas)
 {
     std::list<tstring>  options = GetOptionsFromPattern(pattern);

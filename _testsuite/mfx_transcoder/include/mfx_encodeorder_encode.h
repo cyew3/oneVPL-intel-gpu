@@ -26,7 +26,7 @@ public:
     virtual mfxStatus Init(mfxVideoParam * pInit)
     {
         mfxStatus sts = MFX_ERR_NONE;
-        mfxVideoParam getVParams = {0};
+        mfxVideoParam getVParams = {};
         MFX_CHECK_POINTER(pInit);
         MFX_CHECK_STS(InterfaceProxy<IVideoEncode>::Init(pInit));
 

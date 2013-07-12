@@ -48,7 +48,7 @@ protected:
     typedef struct OptContainer
     {
         //pattern ()| operators could be use to construct pattern
-        vm_char   *opt_pattern;
+        const vm_char  *opt_pattern;
         //specifies parameter type : int, bool, etc
         OptParamType   nType;
         union
@@ -62,7 +62,7 @@ protected:
             bool      *  pTargetBool;
         };
 
-        vm_char   *description;
+        const vm_char   *description;
         IBinderCall<mfxStatus> * pHandler;
     } OptContainer;
     typedef std::list<OptContainer>::iterator OptIter;
