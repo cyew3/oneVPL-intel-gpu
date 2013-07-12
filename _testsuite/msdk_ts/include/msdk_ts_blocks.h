@@ -152,6 +152,7 @@ msdk_ts_DECLARE_BLOCK(t_AttachBuffers);
 msdk_ts_DECLARE_BLOCK(t_ParseH264AU);
 msdk_ts_DECLARE_BLOCK(t_ParseHEVCAU);
 msdk_ts_DECLARE_BLOCK(t_ParseMPEG2);
+msdk_ts_DECLARE_BLOCK(t_PackHEVCNALU);
 
 //IN : global_allocator_instance
 //OUT: surf_cnt

@@ -551,6 +551,20 @@ msdk_ts_BLOCK(t_ParseHEVCAU){
 }
 
 
+msdk_ts_BLOCK(t_PackHEVCNALU){
+    mfxBitstream& bs = var_old<mfxBitstream>("bitstream");
+    BS_HEVC::NALU*& p = var_def<BS_HEVC::NALU*>("p_hevc_nalu_hdr", NULL);
+    BSErr sts = BS_ERR_NONE;
+
+    bs.DataLength = bs.MaxLength - bs.DataOffset;
+
+    sts = BS_HEVC_Pack(bs.Data + bs.DataOffset, bs.DataLength, p);
+    CHECK_STS(sts, BS_ERR_NONE);
+    
+    return msdk_ts::resOK;
+}
+
+
 msdk_ts_BLOCK(t_ParseMPEG2){
     BS_MPEG2_parser& p = var_old_or_new<BS_MPEG2_parser>("mpeg2_parser");
     mfxBitstream& bs = var_old<mfxBitstream>("bitstream");
