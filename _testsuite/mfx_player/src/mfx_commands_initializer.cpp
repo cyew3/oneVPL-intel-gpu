@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -62,14 +62,15 @@ baseCmdsInitializer::baseCmdsInitializer( mfxU32 nActivatedFrame
                                         , const mfx_shared_ptr<IRandom> & pRand
                                         , mfxVideoParam * pResetEncParam
                                         , mfxVideoParam * pMaskedEncParam
-                                        , mfxExtAVCRefListCtrl  * refList)
+                                        , mfxExtBuffer  * bufToAttach
+                                        , mfxU32 nBufToRemove)
     : m_nActivatedFrame(nActivatedFrame)
     , m_fWarminUpTime(fWarminUpTime)
     , m_fSeekToTime(fSeekToTime)
     , m_nMaxSkipLevel(nMaxSkipLevel)
-    , m_pRefList()
+    , m_nBufferToRemove(nBufToRemove)
     , m_ResetParams()
-    , m_refList()
+    , m_pBufferToAttach(bufToAttach)
     , m_maskedParams()
     , m_Randomizer(pRand)
 {
@@ -82,12 +83,16 @@ baseCmdsInitializer::baseCmdsInitializer( mfxU32 nActivatedFrame
     {
         memcpy(&m_maskedParams, pMaskedEncParam, sizeof(*pMaskedEncParam));
     }
-
-    if (NULL != refList)
-    {
-        m_refList = *refList;
-        m_pRefList = &m_refList;
+    if (NULL != bufToAttach) {
+        m_bufferToAttachData.resize(bufToAttach->BufferSz);
+        m_pBufferToAttach = (mfxExtBuffer*)&m_bufferToAttachData.front();
+        memcpy(m_pBufferToAttach, bufToAttach, bufToAttach->BufferSz);
     }
+}
+
+bool baseCmdsInitializer::Init(removeExtBufferCommand * pCmd) {
+    pCmd->RegisterExtBuffer(m_nBufferToRemove);
+    return true;
 }
 
 bool baseCmdsInitializer::Init(seekSourceCommand *pCmd)
@@ -120,9 +125,9 @@ bool baseCmdsInitializer::Init(resetEncCommand* pCmd)
     return true;
 }
 
-bool baseCmdsInitializer::Init(selectRefListCommand * pCmd)
+bool baseCmdsInitializer::Init(addExtBufferCommand * pCmd)
 {
-    pCmd->SetRefList(m_pRefList);
+    pCmd->RegisterExtBuffer((mfxExtBuffer&)*m_pBufferToAttach);
     return true;
 }
 
