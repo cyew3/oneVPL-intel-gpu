@@ -92,3 +92,14 @@ mfxStatus MFXQueryVersion(mfxSession session, mfxVersion *pVersion)
     return MFX_ERR_NONE;
 
 } // mfxStatus MFXQueryVersion(mfxSession session, mfxVersion *pVersion)
+
+mfxStatus MFXAudioCORE_SyncOperation(mfxSession session, mfxSyncPoint syncp, mfxU32 wait)
+{
+    return MFXVideoCORE_SyncOperation(session, syncp, wait);
+}
+
+mfxStatus MFXGetLogMessage(mfxSession session, char *msg, mfxU32 size)
+{
+    session; msg; size;
+    return MFX_ERR_NONE;
+}

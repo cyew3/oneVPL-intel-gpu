@@ -91,7 +91,8 @@ mfxStatus MFXInit(mfxIMPL implParam, mfxVersion *ver, mfxSession *session)
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if ((0 != implInterface) &&
+    if (!(implInterface & MFX_IMPL_AUDIO) &&
+        (0 != implInterface) &&
 #if defined(MFX_VA_WIN)
         (MFX_IMPL_VIA_D3D11 != implInterface) &&
         (MFX_IMPL_VIA_D3D9 != implInterface) &&
