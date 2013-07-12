@@ -268,18 +268,19 @@ mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffe
 
 //    UMC::Status umcRes = UMC::UMC_OK;
 
-
-
     if (NULL != bs)
     {
         sts = CheckBitstream(bs);
         MFX_CHECK_STS(sts);
 
-//        unsigned int RawFrameSize;
         sts = ConstructFrame(bs, &m_frame);
 
         if (MFX_ERR_NONE != sts)
         {
+            return sts;
+        }
+
+        if (0 == buffer_out->DataLength) {
             return sts;
         }
 
