@@ -49,7 +49,6 @@ void H265CU::TransformInv(Ipp32s offset, Ipp32s width, Ipp8u is_luma, Ipp8u is_i
 
     for (Ipp32s c_idx = 0; c_idx < (is_luma ? 1 : 2); c_idx ++) {
         CoeffsType *residuals = is_luma ? residuals_y : (c_idx ? residuals_v : residuals_u);
-        Ipp32s bit_depth = is_luma ? BIT_DEPTH_LUMA : BIT_DEPTH_CHROMA;
         residuals += offset;
 
 /*    if (transform_bypass)
@@ -105,7 +104,6 @@ void H265CU::TransformFwd(Ipp32s offset, Ipp32s width, Ipp8u is_luma, Ipp8u is_i
     else */
     for (Ipp32s c_idx = 0; c_idx < (is_luma ? 1 : 2); c_idx ++) {
         CoeffsType *residuals = is_luma ? residuals_y : (c_idx ? residuals_v : residuals_u);
-        Ipp32s bit_depth = is_luma ? BIT_DEPTH_LUMA : BIT_DEPTH_CHROMA;
 
         residuals += offset;
 
