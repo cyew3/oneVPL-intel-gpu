@@ -64,16 +64,15 @@ extern const Ipp8u g_ChromaScale[58];
 
 // Scanning order & context mapping table ---------------------------------------------------------------------
 
-extern const Ipp16u* g_SigLastScan[3][4];  // raster index from scanning index (zigzag, hor, ver, diag)
+extern const Ipp8u scanGCZr[128];
+extern const Ipp16u g_sigLastScanCG32x32[64];
+extern const Ipp16u ScanTableDiag4x4[16];
 
 extern const Ipp32u g_GroupIdx[32];
 extern const Ipp32u g_MinInGroup[10];
 
 extern const Ipp32u g_GoRiceRange[5];                  // maximum value coded with Rice codes
 extern const Ipp32u g_GoRicePrefixLen[5];              // prefix length for each maximum value
-
-extern const Ipp16u g_sigLastScan8x8[3][4];           //!< coefficient group scan order for 8x8 TUs
-extern const Ipp16u g_sigLastScanCG32x32[64];
 
 // ADI table ----------------------------------------------------------------------------------------------------------
 extern const Ipp8u g_IntraModeNumFast[7];

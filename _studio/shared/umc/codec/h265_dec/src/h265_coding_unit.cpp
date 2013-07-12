@@ -174,10 +174,9 @@ void H265CodingUnit::setOutsideCUPart(Ipp32u AbsPartIdx, Ipp32u Depth)
     Ipp32u SizeInUchar = sizeof(Ipp8u) * numPartition;
 
     Ipp8u Width = (Ipp8u) (m_Frame->getCD()->m_MaxCUWidth >> Depth);
-    Ipp8u Height = (Ipp8u) (m_Frame->getCD()->m_MaxCUHeight >> Depth);
     memset(m_DepthArray + AbsPartIdx, Depth,  SizeInUchar);
     memset(m_WidthArray + AbsPartIdx, Width,  SizeInUchar);
-    memset(m_HeightArray + AbsPartIdx, Height, SizeInUchar);
+    memset(m_HeightArray + AbsPartIdx, Width, SizeInUchar);
     memset(m_PredModeArray + AbsPartIdx, MODE_NONE, SizeInUchar);
 }
 

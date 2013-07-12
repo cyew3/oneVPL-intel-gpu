@@ -31,14 +31,11 @@ public:
     Ipp32u m_HeightInCU;
 
     Ipp32u m_MaxCUWidth;
-    Ipp32u m_MaxCUHeight;
     Ipp32u m_MinCUWidth;
-    Ipp32u m_MinCUHeight;
 
     Ipp8u m_MaxCUDepth;                        // max. depth
     Ipp32u m_NumPartitions;
     Ipp32u m_NumPartInWidth;
-    Ipp32u m_NumPartInHeight;
     Ipp32u m_NumCUsInFrame;
 
     H265CodingUnit **m_CUData;                // array of CU data
@@ -131,10 +128,7 @@ public:
         : m_WidthInCU(0)
         , m_HeightInCU(0)
         , m_MaxCUWidth(0)
-        , m_MaxCUHeight(0)
-
         , m_NumCUsInFrame(0)
-
         , m_CUData(0)
         , m_CUOrderMap(0)
         , m_TileIdxMap(0)

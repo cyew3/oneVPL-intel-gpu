@@ -178,12 +178,10 @@ public:
     Ipp32u getNumCUsInFrame() const;
     Ipp32u getNumPartInCUSize() const;
     Ipp32u getNumPartInWidth() const;
-    Ipp32u getNumPartInHeight() const;
     Ipp32u getFrameWidthInCU() const;
     Ipp32u getFrameHeightInCU() const;
     Ipp32u getMinCUSize() const;
     Ipp32u getMinCUWidth() const;
-    Ipp32u getMinCUHeight() const;
 
     Ipp32s getMaxCUDepth() const;
     Ipp32u getMaxCUSize() const;

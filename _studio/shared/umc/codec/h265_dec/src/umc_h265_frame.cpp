@@ -350,17 +350,17 @@ void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* pSeqParamSet, c
     }
 
     Ipp32u MaxCUWidth = pSeqParamSet->MaxCUWidth;
-    Ipp32u MaxCUHeight = pSeqParamSet->MaxCUHeight;
-    Ipp32u MaxCUDepth = pSeqParamSet->MaxCUDepth;
+
+    Ipp32u MaxCUDepth   = pSeqParamSet->MaxCUDepth;
 
     Ipp32u widthInCU = (m_lumaSize.width % MaxCUWidth) ? m_lumaSize.width / MaxCUWidth + 1 : m_lumaSize.width / MaxCUWidth;
-    Ipp32u heightInCU = (m_lumaSize.height % MaxCUHeight) ? m_lumaSize.height / MaxCUHeight + 1 : m_lumaSize.height / MaxCUHeight;
+    Ipp32u heightInCU = (m_lumaSize.height % MaxCUWidth) ? m_lumaSize.height / MaxCUWidth + 1 : m_lumaSize.height / MaxCUWidth;
 
-    if (m_CodingData->m_MaxCUWidth != MaxCUWidth || m_CodingData->m_MaxCUHeight != MaxCUHeight ||
+    if (m_CodingData->m_MaxCUWidth != MaxCUWidth ||
         m_CodingData->m_WidthInCU != widthInCU  || m_CodingData->m_HeightInCU != heightInCU || m_CodingData->m_MaxCUDepth != MaxCUDepth)
     {
         m_CodingData->destroy();
-        m_CodingData->create(m_lumaSize.width, m_lumaSize.height, MaxCUWidth, MaxCUHeight, pSeqParamSet->MaxCUDepth);
+        m_CodingData->create(m_lumaSize.width, m_lumaSize.height, MaxCUWidth, MaxCUWidth, pSeqParamSet->MaxCUDepth);
 
         delete[] m_cuOffsetY;
         delete[] m_cuOffsetC;
@@ -375,8 +375,8 @@ void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* pSeqParamSet, c
         {
             for (Ipp32s cuCol = 0; cuCol < NumCUInWidth; cuCol++)
             {
-                m_cuOffsetY[cuRow * NumCUInWidth + cuCol] = m_pitch_luma * cuRow * MaxCUHeight + cuCol * MaxCUWidth;
-                m_cuOffsetC[cuRow * NumCUInWidth + cuCol] = m_pitch_chroma * cuRow * (MaxCUHeight / 2) + cuCol * (MaxCUWidth);
+                m_cuOffsetY[cuRow * NumCUInWidth + cuCol] = m_pitch_luma * cuRow * MaxCUWidth + cuCol * MaxCUWidth;
+                m_cuOffsetC[cuRow * NumCUInWidth + cuCol] = m_pitch_chroma * cuRow * (MaxCUWidth / 2) + cuCol * (MaxCUWidth);
             }
         }
 
@@ -386,8 +386,8 @@ void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* pSeqParamSet, c
         {
             for (Ipp32s buCol = 0; buCol < (1 << MaxCUDepth); buCol++)
             {
-                m_buOffsetY[(buRow << MaxCUDepth) + buCol] = m_pitch_luma * buRow * (MaxCUHeight >> MaxCUDepth) + buCol * (MaxCUWidth  >> MaxCUDepth);
-                m_buOffsetC[(buRow << MaxCUDepth) + buCol] = m_pitch_chroma * buRow * (MaxCUHeight / 2 >> MaxCUDepth) + buCol * (MaxCUWidth >> MaxCUDepth);
+                m_buOffsetY[(buRow << MaxCUDepth) + buCol] = m_pitch_luma * buRow * (MaxCUWidth >> MaxCUDepth) + buCol * (MaxCUWidth  >> MaxCUDepth);
+                m_buOffsetC[(buRow << MaxCUDepth) + buCol] = m_pitch_chroma * buRow * (MaxCUWidth / 2 >> MaxCUDepth) + buCol * (MaxCUWidth >> MaxCUDepth);
             }
         }
     }
@@ -467,11 +467,6 @@ Ipp32u H265DecoderFrame::getNumPartInWidth() const
     return m_CodingData->m_NumPartInWidth;
 }
 
-Ipp32u H265DecoderFrame::getNumPartInHeight() const
-{
-    return m_CodingData->m_NumPartInHeight;
-}
-
 /*Ipp32u H265DecoderFrame::getNumPartInCU()
 {
     return m_CodingData->m_NumPartitions;
@@ -495,11 +490,6 @@ Ipp32u H265DecoderFrame::getMinCUSize() const
 Ipp32u H265DecoderFrame::getMinCUWidth() const
 {
     return m_CodingData->m_MinCUWidth;
-}
-
-Ipp32u H265DecoderFrame::getMinCUHeight() const
-{
-    return m_CodingData->m_MinCUHeight;
 }
 
 Ipp32s H265DecoderFrame::getMaxCUDepth() const

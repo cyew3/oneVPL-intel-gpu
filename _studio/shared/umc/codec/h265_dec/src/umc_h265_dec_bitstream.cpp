@@ -339,7 +339,7 @@ void H265HeadersBitstream::xDecodeScalingList(H265ScalingList *scalingList, unsi
   int data;
   int scalingListDcCoefMinus8 = 0;
   int nextCoef = SCALING_LIST_START_VALUE;
-  const Ipp16u *scan  = (sizeId == 0) ? g_SigLastScan[SCAN_DIAG][0] : g_sigLastScanCG32x32;
+  const Ipp16u *scan  = (sizeId == 0) ? ScanTableDiag4x4 : g_sigLastScanCG32x32;
   int *dst = scalingList->getScalingListAddress(sizeId, listId);
 
   if( sizeId > SCALING_LIST_8x8 )
