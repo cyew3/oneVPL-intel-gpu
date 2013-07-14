@@ -10528,13 +10528,13 @@ static inline Ipp32s countShift(Ipp32s src)
 //
 
 static void MFXVideoENCODEH264_CalculateUpsamplingPars(
-    Ipp32s refW,
-    Ipp32s refH,
-    Ipp32s scaledW,
-    Ipp32s scaledH,
-    Ipp32s phaseX,
-    Ipp32s phaseY,
-    Ipp32s level_idc,
+    Ipp32u refW,
+    Ipp32u refH,
+    Ipp32u scaledW,
+    Ipp32u scaledH,
+    Ipp32u phaseX,
+    Ipp32u phaseY,
+    Ipp32u level_idc,
     IppiUpsampleSVCParams *pars
     ) {
     if (level_idc <= 30) {
