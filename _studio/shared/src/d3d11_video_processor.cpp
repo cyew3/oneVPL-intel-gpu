@@ -1663,7 +1663,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         {
             D3D11_VIDEO_PROCESSOR_COLOR_SPACE inColorSpace;
             inColorSpace.Usage = 0;
-            inColorSpace.RGB_Range = 0;
+            inColorSpace.RGB_Range = 1;
             inColorSpace.YCbCr_Matrix = 0;
             inColorSpace.YCbCr_xvYCC = 0;
             inColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_UNDEFINED;
@@ -1672,7 +1672,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 
             D3D11_VIDEO_PROCESSOR_COLOR_SPACE outColorSpace;
             outColorSpace.Usage = 0;
-            outColorSpace.RGB_Range = 0;
+            outColorSpace.RGB_Range = 1;
             outColorSpace.YCbCr_Matrix = 0;
             outColorSpace.YCbCr_xvYCC = 0;
             outColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_UNDEFINED;
@@ -1684,25 +1684,26 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             // [6.1.7] Set YUV Range Param
             VPE_VPREP_YUV_RANGE_PARAM yuvRangeParam;
             yuvRangeParam.bFullRangeEnabled = 1;
+            if(VPE_GUID_INTERFACE_V2 == m_iface.guid){
+                VPE_FUNCTION iFunc;
+                iFunc.Function = VPE_FN_VPREP_YUV_RANGE_PARAM;
+                iFunc.pYUVRangeParam = &yuvRangeParam;
 
-            VPE_FUNCTION iFunc;
-            iFunc.Function = VPE_FN_VPREP_YUV_RANGE_PARAM;
-            iFunc.pYUVRangeParam = &yuvRangeParam;
+                UINT streamIndex = 0;
 
-            UINT streamIndex = 0;
+                hRes = SetStreamExtension(
+                    streamIndex, 
+                    &(m_iface.guid),
+                    sizeof(VPE_FUNCTION),
+                    &iFunc);
+                CHECK_HRES(hRes);
 
-            hRes = SetStreamExtension(
-                streamIndex, 
-                &(m_iface.guid),
-                sizeof(VPE_FUNCTION),
-                &iFunc);
-            CHECK_HRES(hRes);
-
-            hRes = SetOutputExtension(
-                &(m_iface.guid), 
-                sizeof(VPE_FUNCTION), 
-                &iFunc);
-            CHECK_HRES(hRes);
+                hRes = SetOutputExtension(
+                    &(m_iface.guid), 
+                    sizeof(VPE_FUNCTION), 
+                    &iFunc);
+                CHECK_HRES(hRes);
+            }
         }
 
         D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputDesc;
