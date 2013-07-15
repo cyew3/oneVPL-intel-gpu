@@ -51,7 +51,7 @@ SUITE(TIMEOUT)
         std::vector<tstring> opt_detail;
         opt_detail.push_back(VM_STRING("32"));
 
-        params.insert(std::make_pair(VM_STRING("-syncop_timeout"), opt_detail));
+        params.push_back(std::make_pair(VM_STRING("-syncop_timeout"), opt_detail));
 
         PipelineRunner<MFXPipelineConfigDecode> pipeline;
         CHECK_EQUAL(MFX_ERR_NONE, pipeline.ProcessCommand(params));

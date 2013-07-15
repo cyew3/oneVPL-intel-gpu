@@ -270,7 +270,7 @@ SUITE(PipelineOptions)
             PipelineRunner<MFXPipelineConfigDecode> pipeline;
 
             // options receive no parameter
-            params[key] = CmdLineParams::mapped_type();
+            params[key].empty();
 
             //=new MockVideoSession();
             MockPipelineFactory mock_factory;

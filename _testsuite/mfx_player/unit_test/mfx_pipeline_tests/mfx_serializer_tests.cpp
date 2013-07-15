@@ -691,7 +691,7 @@ SUITE(MFXSerializer)
         MFXStructure<mfxExtAVCRefListCtrl> reflistStructure;
         int nPos = 0;
 
-        tstring input_str = VM_STRING("8 9 1 3 2 23 11 12 78 91 88");
+        tstring input_str = VM_STRING("8 9 1 3 2 23 11 12 78 91 1 88 3");
         CHECK(reflistStructure.DeSerialize(input_str, &nPos));
         CHECK_EQUAL(input_str.length(), (size_t)nPos);
         CHECK_EQUAL((mfxU32)MFX_EXTBUFF_AVC_REFLIST_CTRL, reflistStructure.operator mfxExtAVCRefListCtrl &().Header.BufferId);
@@ -705,7 +705,9 @@ SUITE(MFXSerializer)
         CHECK_EQUAL(78u, reflistStructure.operator mfxExtAVCRefListCtrl &().RejectedRefList[2].FrameOrder);
 
         CHECK_EQUAL(91u, reflistStructure.operator mfxExtAVCRefListCtrl &().LongTermRefList[0].FrameOrder);
+        CHECK_EQUAL(1u, reflistStructure.operator mfxExtAVCRefListCtrl &().LongTermRefList[0].LongTermIdx);
         CHECK_EQUAL(88u, reflistStructure.operator mfxExtAVCRefListCtrl &().LongTermRefList[1].FrameOrder);
+        CHECK_EQUAL(3u, reflistStructure.operator mfxExtAVCRefListCtrl &().LongTermRefList[1].LongTermIdx);
 
 
         int i;
@@ -751,8 +753,8 @@ SUITE(MFXSerializer)
         CHECK_EQUAL(false, reflistStructure.DeSerialize(VM_STRING("1 1 0 17 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1"), &nPos));
 
         //3rd array boundary overflow
-        CHECK_EQUAL(true, reflistStructure.DeSerialize(VM_STRING("1 1 0 0 16 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1"), &nPos));
-        CHECK_EQUAL(false, reflistStructure.DeSerialize(VM_STRING("1 1 0 0 17 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1"), &nPos));
+         CHECK_EQUAL(true, reflistStructure.DeSerialize(VM_STRING("1 1 0 0 16 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0"), &nPos));
+        CHECK_EQUAL(false, reflistStructure.DeSerialize(VM_STRING("1 1 0 0 17 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0"), &nPos));
 
         //1rst array not enough data
         CHECK_EQUAL(true, reflistStructure.DeSerialize(VM_STRING("1 1 3 0 0 1 1 1"), &nPos));
@@ -771,15 +773,15 @@ SUITE(MFXSerializer)
         CHECK_EQUAL(false, reflistStructure.DeSerialize(VM_STRING("1 1 3 3 0 1 1 1 1 1"), &nPos));
 
         //2nd +3rd array not enough data
-        CHECK_EQUAL(true, reflistStructure.DeSerialize(VM_STRING("1 1 0 3 3 1 1 1 1 1 1"), &nPos));
-        CHECK_EQUAL(false, reflistStructure.DeSerialize(VM_STRING("1 1 0 3 3 1 1 1 1 1"), &nPos));
+        CHECK_EQUAL(true, reflistStructure.DeSerialize(VM_STRING("1 1 0 3 3 1 1 1 1 0 1 0 1 0"), &nPos));
+        CHECK_EQUAL(false, reflistStructure.DeSerialize(VM_STRING("1 1 0 3 3 1 1 1 1 0 1 0 1"), &nPos));
 
         //1st+3rd array not enough data
-        CHECK_EQUAL(true, reflistStructure.DeSerialize(VM_STRING("1 1 3 0 3 1 1 1 1 1 1"), &nPos));
-        CHECK_EQUAL(false, reflistStructure.DeSerialize(VM_STRING("1 1 3 0 3 1 1 1 1 1"), &nPos));
+        CHECK_EQUAL(true, reflistStructure.DeSerialize(VM_STRING("1 1 3 0 3 1 1 1 1 0 1 0 1 0"), &nPos));
+        CHECK_EQUAL(false, reflistStructure.DeSerialize(VM_STRING("1 1 3 0 3 1 1 1 1 0 1 0 1"), &nPos));
 
         //1st+2nd+3rd array not enough data
-        CHECK_EQUAL(true, reflistStructure.DeSerialize(VM_STRING("1 1 3 3 3 1 1 1 1 1 1 1 1 1"), &nPos));
-        CHECK_EQUAL(false, reflistStructure.DeSerialize(VM_STRING("1 1 3 3 3 1 1 1 1 1 1 1 1"), &nPos));
+        CHECK_EQUAL(true, reflistStructure.DeSerialize(VM_STRING("1 1 3 3 3 1 1 1 1 1 1 1 0 1 0 1 0"), &nPos));
+        CHECK_EQUAL(false, reflistStructure.DeSerialize(VM_STRING("1 1 3 3 3 1 1 1 1 1 1 1 0 1 0 1"), &nPos));
     }
 }

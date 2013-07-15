@@ -525,6 +525,7 @@ bool MFXStructureRef<mfxExtAVCRefListCtrl>::DeSerialize(const tstring & refStr, 
         if (i < nLongTerm)
         {
             DESERIALIZE_INT(LongTermRefList[i].FrameOrder);
+            DESERIALIZE_INT(LongTermRefList[i].LongTermIdx);
         }else
         {
             m_pStruct->LongTermRefList[i].FrameOrder = (mfxU32)MFX_FRAMEORDER_UNKNOWN;
