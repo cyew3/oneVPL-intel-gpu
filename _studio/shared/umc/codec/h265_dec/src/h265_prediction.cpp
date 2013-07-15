@@ -657,7 +657,7 @@ void H265Prediction::MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPad
         m_context->m_pps->weighted_bipred_idc;
 
     Ipp32s countPart = pCU->getNumPartInter(AbsPartIdx);
-    EnumPartSize PartSize = (EnumPartSize) pCU->m_PartSizeArray[AbsPartIdx];
+    EnumPartSize PartSize = pCU->GetPartitionSize(AbsPartIdx);
     Ipp32u PUOffset = (g_PUOffset[Ipp32u(PartSize)] << ((m_context->m_sps->MaxCUDepth - Depth) << 1)) >> 4;
 
     for (Ipp32s PartIdx = 0, subPartIdx = AbsPartIdx; PartIdx < countPart; PartIdx++, subPartIdx += PUOffset)

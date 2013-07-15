@@ -627,9 +627,9 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
 {
     VM_ASSERT(pCU->m_AbsIdxInLCU == 0);
 
-    bool lumaPresent = pCU->getCbf(AbsPartIdx, TEXT_LUMA, TrMode) != 0;
-    bool chromaUPresent = pCU->getCbf(AbsPartIdx, TEXT_CHROMA_U, TrMode) != 0;
-    bool chromaVPresent = pCU->getCbf(AbsPartIdx, TEXT_CHROMA_V, TrMode) != 0;
+    bool lumaPresent = pCU->GetCbf(AbsPartIdx, TEXT_LUMA, TrMode) != 0;
+    bool chromaUPresent = pCU->GetCbf(AbsPartIdx, TEXT_CHROMA_U, TrMode) != 0;
+    bool chromaVPresent = pCU->GetCbf(AbsPartIdx, TEXT_CHROMA_V, TrMode) != 0;
 
     if (!lumaPresent && !chromaUPresent && !chromaVPresent)
     {
@@ -651,11 +651,11 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
             Ipp32u DstStride = pCU->m_Frame->pitch_luma();
             H265PlanePtrYCommon ptrLuma = pCU->m_Frame->GetLumaAddr(pCU->CUAddr, AbsPartIdx);
 
-            scalingListType = (pCU->m_PredModeArray[AbsPartIdx] ? 0 : 3) + g_Table[(Ipp32s)TEXT_LUMA];
+            scalingListType = (pCU->GetPredictionMode(AbsPartIdx) ? 0 : 3) + g_Table[(Ipp32s)TEXT_LUMA];
             pCoeff = pCU->m_TrCoeffY + coeffsOffset;
-            SetQPforQuant(pCU->m_QPArray[AbsPartIdx], TEXT_LUMA, pCU->m_SliceHeader->m_SeqParamSet->getQpBDOffsetY(), 0);
+            SetQPforQuant(pCU->GetQP(AbsPartIdx), TEXT_LUMA, pCU->m_SliceHeader->m_SeqParamSet->getQpBDOffsetY(), 0);
             InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_LUMA, REG_DCT, ptrLuma, DstStride, pCoeff, Size, Size,
-                scalingListType, pCU->m_TransformSkip[g_ConvertTxtTypeToIdx[TEXT_LUMA]][AbsPartIdx] != 0);
+                scalingListType, pCU->GetTransformSkip(g_ConvertTxtTypeToIdx[TEXT_LUMA], AbsPartIdx) != 0);
         }
 
         if (chromaUPresent || chromaVPresent)
@@ -666,7 +666,7 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
             Ipp32u DstStride = pCU->m_Frame->pitch_chroma();
             H265PlanePtrUVCommon ptrChroma = pCU->m_Frame->GetCbCrAddr(pCU->CUAddr, AbsPartIdx);
 
-            Ipp32u Depth = pCU->m_DepthArray[AbsPartIdx] + TrMode;
+            Ipp32u Depth = pCU->GetDepth(AbsPartIdx) + TrMode;
             Ipp32u Log2TrSize = g_ConvertToBit[pCU->m_SliceHeader->m_SeqParamSet->getMaxCUWidth() >> Depth ] + 2;
             if (Log2TrSize == 2)
             {
@@ -684,22 +684,22 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
 
             if (chromaUPresent)
             {
-                scalingListType = (pCU->m_PredModeArray[AbsPartIdx] ? 0 : 3) + g_Table[(Ipp32s)TEXT_CHROMA_U];
+                scalingListType = (pCU->GetPredictionMode(AbsPartIdx) ? 0 : 3) + g_Table[(Ipp32s)TEXT_CHROMA_U];
                 pCoeff = pCU->m_TrCoeffCb + (coeffsOffset >> 2);
                 Ipp32s curChromaQpOffset = pCU->m_SliceHeader->m_PicParamSet->getChromaCbQpOffset() + pCU->m_SliceHeader->slice_cb_qp_offset;
-                SetQPforQuant(pCU->m_QPArray[AbsPartIdx], TEXT_CHROMA, pCU->m_SliceHeader->m_SeqParamSet->getQpBDOffsetC(), curChromaQpOffset);
+                SetQPforQuant(pCU->GetQP(AbsPartIdx), TEXT_CHROMA, pCU->m_SliceHeader->m_SeqParamSet->getQpBDOffsetC(), curChromaQpOffset);
                 InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_CHROMA_U, REG_DCT, residualsTempBuffer, res_pitch, pCoeff, Size, Size,
-                    scalingListType, pCU->m_TransformSkip[g_ConvertTxtTypeToIdx[TEXT_CHROMA_U]][AbsPartIdx] != 0);
+                    scalingListType, pCU->GetTransformSkip(g_ConvertTxtTypeToIdx[TEXT_CHROMA_U], AbsPartIdx) != 0);
             }
 
             if (chromaVPresent)
             {
-                scalingListType = (pCU->m_PredModeArray[AbsPartIdx] ? 0 : 3) + g_Table[(Ipp32s)TEXT_CHROMA_V];
+                scalingListType = (pCU->GetPredictionMode(AbsPartIdx) ? 0 : 3) + g_Table[(Ipp32s)TEXT_CHROMA_V];
                 pCoeff = pCU->m_TrCoeffCr + (coeffsOffset >> 2);
                 Ipp32s curChromaQpOffset = pCU->m_SliceHeader->m_PicParamSet->getChromaCrQpOffset() + pCU->m_SliceHeader->slice_cr_qp_offset;
-                SetQPforQuant(pCU->m_QPArray[AbsPartIdx], TEXT_CHROMA, pCU->m_SliceHeader->m_SeqParamSet->getQpBDOffsetC(), curChromaQpOffset);
+                SetQPforQuant(pCU->GetQP(AbsPartIdx), TEXT_CHROMA, pCU->m_SliceHeader->m_SeqParamSet->getQpBDOffsetC(), curChromaQpOffset);
                 InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_CHROMA_V, REG_DCT, residualsTempBuffer1, res_pitch, pCoeff, Size, Size,
-                    scalingListType, pCU->m_TransformSkip[g_ConvertTxtTypeToIdx[TEXT_CHROMA_V]][AbsPartIdx] != 0);
+                    scalingListType, pCU->GetTransformSkip(g_ConvertTxtTypeToIdx[TEXT_CHROMA_V], AbsPartIdx) != 0);
             }
   
             // ML: OPT: TODO: Vectorize this
@@ -723,7 +723,7 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
         TrMode++;
         Size >>= 1;
 
-        Ipp32u Depth = pCU->m_DepthArray[AbsPartIdx] + TrMode;
+        Ipp32u Depth = pCU->GetDepth(AbsPartIdx) + TrMode;
         Ipp32u PartOffset = pCU->m_NumPartition >> (Depth << 1);
 
         InvRecurTransformNxN(pCU, AbsPartIdx, Size, TrMode);

@@ -590,12 +590,12 @@ void H265SegmentDecoder::GetEdgeStrength(H265CodingUnit* pcCUQ,
     edge->tcOffset = (Ipp8s)tcOffset;
     edge->betaOffset = (Ipp8s)betaOffset;
 
-    if ((pcCUP->m_IPCMFlag[uiPartP] != 0) && (m_pSeqParamSet->getPCMFilterDisableFlag() != 0))
+    if ((pcCUP->GetIPCMFlag(uiPartP) != 0) && (m_pSeqParamSet->getPCMFilterDisableFlag() != 0))
     {
         edge->deblockP = 0;
     }
 
-    if ((pcCUQ->m_IPCMFlag[uiPartQ] != 0) && (m_pSeqParamSet->getPCMFilterDisableFlag() != 0))
+    if ((pcCUQ->GetIPCMFlag(uiPartQ) != 0) && (m_pSeqParamSet->getPCMFilterDisableFlag() != 0))
     {
         edge->deblockQ = 0;
     }
@@ -610,7 +610,7 @@ void H265SegmentDecoder::GetEdgeStrength(H265CodingUnit* pcCUQ,
         edge->deblockQ = 0;
     }
 
-    edge->qp = (pcCUQ->m_QPArray[uiPartQ] + pcCUP->m_QPArray[uiPartP] + 1) >> 1;
+    edge->qp = (pcCUQ->GetQP(uiPartQ) + pcCUP->GetQP(uiPartP) + 1) >> 1;
 
     // TODO: Use raster coordinates passed as arguments to this function
     // P coordinate
@@ -642,8 +642,8 @@ void H265SegmentDecoder::GetEdgeStrength(H265CodingUnit* pcCUQ,
             return;
         }
 
-        if (((pcCUQ->m_Cbf[0][uiPartQ] >> pcCUQ->m_TrIdxArray[uiPartQ]) != 0) ||
-            ((pcCUP->m_Cbf[0][uiPartP] >> pcCUP->m_TrIdxArray[uiPartP]) != 0))
+        if (((pcCUQ->GetCbf(uiPartQ, 0) >> pcCUQ->m_TrIdxArray[uiPartQ]) != 0) ||
+            ((pcCUP->GetCbf(uiPartP, 0) >> pcCUP->m_TrIdxArray[uiPartP]) != 0))
         {
             edge->strength = 1;
             return;

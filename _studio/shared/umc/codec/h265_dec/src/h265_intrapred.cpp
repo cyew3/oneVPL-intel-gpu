@@ -21,7 +21,7 @@ void H265SegmentDecoder::InitNeighbourPatternLuma(H265CodingUnit* pCU, Ipp32u Zo
 {
     H265PlanePtrYCommon pRoiOrigin;
     H265PlanePtrYCommon pAdiTemp;
-    Ipp32s CUSize = pCU->m_WidthArray[ZorderIdxInPart] >> PartDepth;
+    Ipp32s CUSize = pCU->GetWidth(ZorderIdxInPart) >> PartDepth;
     Ipp32s CUSize2 = CUSize << 1;
     Ipp32s Size;
     Ipp32s PicStride = pCU->m_Frame->pitch_luma();
@@ -323,7 +323,7 @@ void H265SegmentDecoder::InitNeighbourPatternChroma(H265CodingUnit* pCU, Ipp32u 
 {
     H265PlanePtrUVCommon pRoiOrigin;
     H265PlanePtrUVCommon pAdiTemp;
-    Ipp32u CUSize = pCU->m_WidthArray[ZorderIdxInPart] >> PartDepth;
+    Ipp32u CUSize = pCU->GetWidth(ZorderIdxInPart) >> PartDepth;
     Ipp32u Size;
 
     Ipp32s UnitSize = (m_pSeqParamSet->MaxCUWidth >> m_pSeqParamSet->MaxCUDepth) >> 1; // for chroma

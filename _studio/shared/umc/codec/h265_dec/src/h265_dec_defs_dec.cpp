@@ -1673,7 +1673,7 @@ void H265SampleAdaptiveOffset::PCMCURestoration(H265CodingUnit* pcCU, Ipp32u Abs
     Ipp32u QNumParts   = CurNumParts >> 2;
 
     // go to sub-CU
-    if(pcCU->m_DepthArray[AbsZorderIdx] > Depth)
+    if(pcCU->GetDepth(AbsZorderIdx) > Depth)
     {
         for (Ipp32u PartIdx = 0; PartIdx < 4; PartIdx++, AbsZorderIdx += QNumParts)
         {
@@ -1686,7 +1686,7 @@ void H265SampleAdaptiveOffset::PCMCURestoration(H265CodingUnit* pcCU, Ipp32u Abs
     }
 
     // restore PCM samples
-    if ((pcCU->m_IPCMFlag[AbsZorderIdx] && pcCU->m_SliceHeader->m_SeqParamSet->getPCMFilterDisableFlag()) || pcCU->isLosslessCoded(AbsZorderIdx))
+    if ((pcCU->GetIPCMFlag(AbsZorderIdx) && pcCU->m_SliceHeader->m_SeqParamSet->getPCMFilterDisableFlag()) || pcCU->isLosslessCoded(AbsZorderIdx))
     {
         PCMSampleRestoration(pcCU, AbsZorderIdx, Depth, TEXT_LUMA);
         PCMSampleRestoration(pcCU, AbsZorderIdx, Depth, TEXT_CHROMA);
@@ -1724,7 +1724,7 @@ void H265SampleAdaptiveOffset::PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u
         Width  = (cd->m_MaxCUWidth >> Depth);
         Height = (cd->m_MaxCUWidth >> Depth);
 
-        if (pcCU->isLosslessCoded(AbsZorderIdx) && !pcCU->m_IPCMFlag[AbsZorderIdx])
+        if (pcCU->isLosslessCoded(AbsZorderIdx) && !pcCU->GetIPCMFlag(AbsZorderIdx))
         {
             PcmLeftShiftBit = 0;
         }
@@ -1754,7 +1754,7 @@ void H265SampleAdaptiveOffset::PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u
         Stride = m_Frame->pitch_chroma();
         Width  = ((cd->m_MaxCUWidth >> Depth) / 2);
         Height = ((cd->m_MaxCUWidth >> Depth) / 2);
-        if (pcCU->isLosslessCoded(AbsZorderIdx) && !pcCU->m_IPCMFlag[AbsZorderIdx])
+        if (pcCU->isLosslessCoded(AbsZorderIdx) && !pcCU->GetIPCMFlag(AbsZorderIdx))
         {
             PcmLeftShiftBit = 0;
         }

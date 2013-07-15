@@ -48,23 +48,78 @@ public:
     Ipp32u                    m_CUPelX;         // CU position in a pixel (X)
     Ipp32u                    m_CUPelY;         // CU position in a pixel (Y)
     Ipp32u                    m_NumPartition;   // total number of minimum partitions in a CU
-    Ipp8u *                    m_WidthArray;     // array of widths
-    Ipp8u *                    m_HeightArray;    // array of heights
-    Ipp8u *                    m_DepthArray;     // array of depths
 
     //CU data ----------------------------------------------------------------------------------------
-    Ipp8s*                    m_PartSizeArray;  // array of partition sizes
-    Ipp8s*                    m_PredModeArray;  // array of prediction modes
     bool*                     m_CUTransquantBypass; // array of cu_transquant_bypass flags
-    Ipp8u*                    m_QPArray;        // array of QP values
     Ipp8u*                    m_TrIdxArray;     // array of transform indices
     Ipp8u*                    m_TrStartArray;
-    Ipp8u*                    m_TransformSkip[3];  // array of transform skipping flags
-    Ipp8u*                    m_Cbf[3];         // array of coded block flags (CBF)
     H265CoeffsPtrCommon        m_TrCoeffY;       // transformed coefficient buffer (Y)
     H265CoeffsPtrCommon        m_TrCoeffCb;      // transformed coefficient buffer (Cb)
     H265CoeffsPtrCommon        m_TrCoeffCr;      // transformed coefficient buffer (Cr)
 
+protected:
+    Ipp8u *                    m_widthArray;     // array of widths
+    Ipp8u *                    m_heightArray;    // array of heights
+    Ipp8u *                    m_depthArray;     // array of depths
+
+    Ipp8u*                    m_partSizeArray;  // array of partition sizes
+    Ipp8u*                    m_predModeArray;  // array of prediction modes
+    Ipp8u*                    m_qpArray;        // array of QP values
+
+    Ipp8u*                    m_transformSkip[3];  // array of transform skipping flags
+    Ipp8u*                    m_cbf[3];         // array of coded block flags (CBF)
+
+    Ipp8u*                    m_lumaIntraDir;    // array of intra directions (luma)
+    Ipp8u*                    m_chromaIntraDir;  // array of intra directions (chroma)
+
+    bool*                    m_IPCMFlag;        // array of intra_pcm flags
+
+public:
+
+    inline Ipp8u GetLumaIntra(Ipp32s partAddr) const
+    {
+        return m_lumaIntraDir[partAddr];
+    }
+
+    inline Ipp8u GetChromaIntra(Ipp32s partAddr) const
+    {
+        return m_chromaIntraDir[partAddr];
+    }
+
+    inline bool GetIPCMFlag(Ipp32s partAddr) const
+    {
+        return m_IPCMFlag[partAddr];
+    }
+
+    inline Ipp8u GetTransformSkip(Ipp32s plane, Ipp32s partAddr) const
+    {
+        return m_transformSkip[plane][partAddr];
+    }
+
+    inline Ipp8u GetCbf(Ipp32s plane, Ipp32s partAddr) const
+    {
+        return m_cbf[plane][partAddr];
+    }
+
+    inline Ipp8u GetQP(Ipp32s partAddr) const
+    {
+        return m_qpArray[partAddr];
+    }
+
+    inline Ipp8u GetWidth(Ipp32s partAddr) const
+    {
+        return m_widthArray[partAddr];
+    }
+
+    inline Ipp8u GetHeight(Ipp32s partAddr) const
+    {
+        return m_heightArray[partAddr];
+    }
+
+    inline Ipp8u GetDepth(Ipp32s partAddr) const
+    {
+        return m_depthArray[partAddr];
+    }
 
     H265PlanePtrYCommon        m_IPCMSampleY;     // PCM sample buffer (Y)
     H265PlanePtrUVCommon       m_IPCMSampleCb;    // PCM sample buffer (Cb)
@@ -74,10 +129,6 @@ public:
     H265CodingUnit*            m_CUAbove;         // pointer of above CU
     H265CodingUnit*            m_CULeft;          // pointer of left CU
 
-    Ipp8u*                    m_LumaIntraDir;    // array of intra directions (luma)
-    Ipp8u*                    m_ChromaIntraDir;  // array of intra directions (chroma)
-
-    bool*                    m_IPCMFlag;        // array of intra_pcm flags
     // misc. variables -------------------------------------------------------------------------------------
     Ipp8s                   m_CodedQP;
 
@@ -110,13 +161,14 @@ public:
     void setDepthSubParts (Ipp32u Depth, Ipp32u AbsPartIdx);
 
     // member functions for CU data ------------- (only functions with declaration here. simple get/set are removed)
-    EnumPartSize getPartitionSize (Ipp32u Idx)
+    EnumPartSize GetPartitionSize (Ipp32u Idx) const
     {
-        return static_cast<EnumPartSize>(m_PartSizeArray[Idx]);
+        return static_cast<EnumPartSize>(m_partSizeArray[Idx]);
     }
-    EnumPredMode getPredictionMode (Ipp32u Idx)
+
+    EnumPredMode GetPredictionMode (Ipp32u Idx) const
     {
-        return static_cast<EnumPredMode>(m_PredModeArray[Idx]);
+        return static_cast<EnumPredMode>(m_predModeArray[Idx]);
     }
 
     void setPartSizeSubParts (EnumPartSize Mode, Ipp32u AbsPartIdx, Ipp32u Depth);
@@ -130,24 +182,23 @@ public:
 
     Ipp32u getQuadtreeTULog2MinSizeInCU (Ipp32u Idx);
 
-    H265_FORCEINLINE Ipp8u* getCbf (EnumTextType Type)
+    H265_FORCEINLINE Ipp8u* GetCbf (EnumTextType Type) const
     {
-        return m_Cbf[g_ConvertTxtTypeToIdx[Type]];
+        return m_cbf[g_ConvertTxtTypeToIdx[Type]];
     }
 
-    H265_FORCEINLINE  Ipp8u getCbf(Ipp32u Idx, EnumTextType Type)
+    H265_FORCEINLINE Ipp8u GetCbf(Ipp32u Idx, EnumTextType Type) const
     {
-        return m_Cbf[g_ConvertTxtTypeToIdx[Type]][Idx];
+        return m_cbf[g_ConvertTxtTypeToIdx[Type]][Idx];
     }
 
-    H265_FORCEINLINE Ipp8u getCbf(Ipp32u Idx, EnumTextType Type, Ipp32u TrDepth)
+    H265_FORCEINLINE Ipp8u GetCbf(Ipp32u Idx, EnumTextType Type, Ipp32u TrDepth) const
     {
-        return (Ipp8u)((getCbf(Idx, Type) >> TrDepth ) & 0x1);
+        return (Ipp8u)((GetCbf(Idx, Type) >> TrDepth ) & 0x1);
     }
 
     void setCbfSubParts (Ipp32u CbfY, Ipp32u CbfU, Ipp32u CbfV, Ipp32u AbsPartIdx, Ipp32u Depth);
     void setCbfSubParts (Ipp32u m_Cbf, EnumTextType TType, Ipp32u AbsPartIdx, Ipp32u Depth);
-    void setCbfSubParts (Ipp32u m_Cbf, EnumTextType TType, Ipp32u AbsPartIdx, Ipp32u PartIdx, Ipp32u Depth);
 
     // member functions for coding tool information (only functions with declaration here. simple get/set are removed)
     template <typename T>
@@ -182,7 +233,6 @@ public:
 
     // member functions for SBAC context ----------------------------------------------------------------------------------
     Ipp32u getCtxQtCbf (EnumTextType Type, Ipp32u TrDepth);
-    Ipp32u getCtxInterDir (Ipp32u AbsPartIdx);
 
     // member functions for RD cost storage  ------------(only functions with declaration here. simple get/set are removed)
     Ipp32u getCoefScanIdx(Ipp32u AbsPartIdx, Ipp32u L2Width, bool IsLuma, bool IsIntra);
