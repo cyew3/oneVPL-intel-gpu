@@ -374,7 +374,7 @@ void H265CU::GetEdgeStrength(H265CUPtr *pcCUQptr,
         getPUAbove(&CUPPtr, uiPartQ, !crossSliceBoundaryFlag, false, false, false, !crossTileBoundaryFlag);
         if (pcCUQ != data && CUPPtr.ctb_data_ptr) {
             // pcCUQptr is left of cur CTB, adjust CUPPtr
-            CUPPtr.ctb_data_ptr -= 1 << par->Log2NumPartInCU;
+            CUPPtr.ctb_data_ptr -= ((size_t)1 << (size_t)(par->Log2NumPartInCU));
             CUPPtr.ctb_addr --;
         }
     }

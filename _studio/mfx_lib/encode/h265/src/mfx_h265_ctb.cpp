@@ -1312,7 +1312,7 @@ void H265CU::CalcCostLuma(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u depth,
 
         if (cost_best > cost_split) {
             cost_best = cost_split;
-            memcpy(data_t + abs_part_idx, data_t + (1 << par->Log2NumPartInCU) + abs_part_idx,
+            memcpy(data_t + abs_part_idx, data_t + ((size_t)1 << (size_t)(par->Log2NumPartInCU)) + abs_part_idx,
                 sizeof(H265CUData) * num_parts);
         } else {
     // restore ctx
