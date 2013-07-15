@@ -95,6 +95,8 @@ protected:
 
     MFXExtBufferPtr<mfxExtEncoderCapability> m_extEncoderCapability;
 
+    MFXExtBufferPtr<mfxExtEncoderResetOption> m_extEncoderReset;
+
     //MFXExtmfxExtBuffer                   m_ExtParamsBuffer[MAX_EXT_BUFFERS];
     mfxVideoParam                   m_EncParams;
     // those vectors are used to store ext buffers for reset_start/reset_end.

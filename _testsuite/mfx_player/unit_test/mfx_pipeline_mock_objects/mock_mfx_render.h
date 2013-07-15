@@ -32,10 +32,7 @@ public:
     {
         return MFX_ERR_NONE;
     }
-    virtual mfxStatus Reset(mfxVideoParam * /*par*/)
-    {
-        return MFX_ERR_NONE;
-    }
+    DECLARE_TEST_METHOD1(mfxStatus, Reset, MAKE_DYNAMIC_TRAIT(mfxVideoParam,  mfxVideoParam*));
     virtual mfxStatus GetVideoParam(mfxVideoParam * /*par*/)
     {
         return MFX_ERR_NONE;

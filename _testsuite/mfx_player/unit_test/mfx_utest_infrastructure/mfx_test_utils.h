@@ -14,6 +14,7 @@ File Name: .h
 
 #include "mfx_ipipeline_config.h"
 #include "mfx_ibitstream_reader.h"
+#include "hash_array.h"
 
 //warning C4345: behavior change: an object of POD type constructed with an initializer of the form () will be default-initialized
 #pragma warning (disable:4345)
@@ -146,7 +147,7 @@ template <class TPipelineConfig>
 class PipelineRunner
 {
 public:
-    typedef std::map <tstring, std::vector<tstring> > CmdLineParams;
+    typedef hash_array <tstring, std::vector<tstring> > CmdLineParams;
     typedef std::multimap <tstring, std::vector<tstring> > MultiCmdLineParams;
     
     //can use either map or multimap params

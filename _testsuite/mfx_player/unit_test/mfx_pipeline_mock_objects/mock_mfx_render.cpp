@@ -12,6 +12,7 @@ File Name: .h
 
 #include "mfx_pipeline_defs.h"
 #include "mock_mfx_render.h"
+#include "mfx_test_utils.h"
 
 
 mfxStatus MockRender::QueryIOSurf(mfxVideoParam * /*par*/, mfxFrameAllocRequest *request)
@@ -41,8 +42,12 @@ mfxStatus MockRender::Init(mfxVideoParam *par, const vm_char *pFilename = NULL)
 mfxStatus MockRender::RenderFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl * pCtrl)
 {
     _RenderFrame.RegisterEvent(TEST_METHOD_TYPE(RenderFrame)(MFX_ERR_NONE, surface, pCtrl));
+    TEST_METHOD_TYPE(RenderFrame) ret_val;
+    if (!_RenderFrame.GetReturn(ret_val)) {
+        return MFX_ERR_NONE;
+    }
 
-    return MFX_ERR_NONE;
+    return ret_val.ret_val;
 }
 mfxStatus MockRender::SetAutoView( bool bAuto)
 {
@@ -58,4 +63,22 @@ mfxStatus MockRender::WaitTasks(mfxU32 /*nMilisecconds*/)
     _WaitTasks.GetReturn(ret_val);
 
     return ret_val.ret_val;
+}
+
+mfxStatus MockRender::Reset(mfxVideoParam * in) {
+    mfxVideoParam newIn = {};
+    if (in)
+    {
+        newIn = *in;
+        TestUtils::CopyExtParamsEnabledStructures(&newIn, in, true);
+    }
+    _Reset.RegisterEvent(TEST_METHOD_TYPE(Reset)(MFX_ERR_NONE, newIn));
+
+    TEST_METHOD_TYPE(Reset) return_args;
+
+    if (!_Reset.GetReturn(return_args))
+    {
+        return MFX_ERR_NONE;
+    }
+    return return_args.ret_val;
 }

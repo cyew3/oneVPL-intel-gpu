@@ -63,23 +63,17 @@ File Name: .h
 #define HANDLE_MFX_FRAME_INFO(member, OPT_TYPE, description)\
 {VM_STRING("-")VM_STRING(#member), OPT_TYPE, {&pMFXParams->mfx.FrameInfo.member}, VM_STRING(description), NULL}
 
-#define HANDLE_EXT_OPTION(member, OPT_TYPE, description)\
-{VM_STRING("-")VM_STRING(#member), OPT_TYPE, {&m_extCodingOptions->member}, VM_STRING(description), NULL}
+#define HANDLE_OPTION_FOR_EXT_BUFFER(extbuffer, member, OPT_TYPE, description)\
+    {VM_STRING("-")VM_STRING(#member), OPT_TYPE, {&extbuffer->member}, VM_STRING(description), NULL}
 
-#define HANDLE_EXT_OPTION2(member, OPT_TYPE, description)\
-{VM_STRING("-")VM_STRING(#member), OPT_TYPE, {&m_extCodingOptions2->member}, VM_STRING(description), NULL}
+#define HANDLE_EXT_OPTION(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptions, member, OPT_TYPE, description)
+#define HANDLE_EXT_OPTION2(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptions2, member, OPT_TYPE, description)
+#define HANDLE_DDI_OPTION(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptionsDDI, member, OPT_TYPE, description)
+#define HANDLE_VSIG_OPTION(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extVideoSignalInfo, member, OPT_TYPE, description)
+#define HANDLE_CAP_OPTION(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extEncoderCapability, member, OPT_TYPE, description)
+#define HANDLE_HEVC_OPTION(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptionsHEVC, member, OPT_TYPE, description)
+#define HANDLE_ENCRESET_OPTION(member, OPT_TYPE, description) HANDLE_OPTION_FOR_EXT_BUFFER(m_extEncoderReset, member, OPT_TYPE, description)
 
-#define HANDLE_DDI_OPTION(member, OPT_TYPE, description) \
-{VM_STRING("-")VM_STRING(#member), OPT_TYPE, {&m_extCodingOptionsDDI->member}, VM_STRING(description), NULL}
-
-#define HANDLE_VSIG_OPTION(member, OPT_TYPE, description) \
-{VM_STRING("-")VM_STRING(#member), OPT_TYPE, {&m_extVideoSignalInfo->member}, VM_STRING(description), NULL}
-
-#define HANDLE_CAP_OPTION(member, OPT_TYPE, description) \
-{VM_STRING("-")VM_STRING(#member), OPT_TYPE, {&m_extEncoderCapability->member}, VM_STRING(description), NULL}
-
-#define HANDLE_HEVC_OPTION(member, OPT_TYPE, description)\
-{VM_STRING("-")VM_STRING(#member), OPT_TYPE, {&m_extCodingOptionsHEVC->member}, VM_STRING(description), NULL}
 
 #define FILL_MASK(type, ptr)\
     if (m_bResetParamsStart)\
@@ -116,6 +110,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
 , m_extAvcTemporalLayers(new mfxExtAvcTemporalLayers())
 , m_extCodingOptionsSPSPPS(new mfxExtCodingOptionSPSPPS())
 , m_extEncoderCapability(new mfxExtEncoderCapability())
+, m_extEncoderReset(new mfxExtEncoderResetOption())
 , m_pEncoder()
 , m_bCreateDecode()
 , m_svcSeq(new mfxExtSVCSeqDesc())
@@ -273,11 +268,13 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_DDI_OPTION(CabacInitIdcPlus1,       OPT_UINT_16,    "0-to use default value (depends on Target Usaeg), 1-cabacinitidc=0, 2-cabacinitidc=1,  etc"),
 
         //mfxExtEncoderCapability
-        HANDLE_CAP_OPTION(MBPerSec,                OPT_BOOL,    "Max MB Per Second"),
+        HANDLE_CAP_OPTION(MBPerSec,                OPT_BOOL,       "Query Encoder for Max MB Per Second"),
+
+        //mfxExtEncoderResetOption        
+        HANDLE_ENCRESET_OPTION(StartNewSequence,   OPT_TRI_STATE,  "Start New Sequence"),
 
         // Quant Matrix parameters
         {VM_STRING("-qm"), OPT_AUTO_DESERIAL, {&m_QuantMatrix}, VM_STRING("Quant Matrix structure")},
-
 
 
         // video signal
@@ -650,6 +647,40 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                 return MFX_ERR_UNKNOWN;
 
             pExt->MaxFrameSize = val;
+            m_ExtBuffers.get()->push_back(pExt);
+
+            argv++;
+        }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-startnewsequence"), VM_STRING("")))
+        {
+            MFX_CHECK(1 + argv != argvEnd);
+
+            mfxU32 on;
+            if (!vm_string_stricmp(argv[1], VM_STRING("on")) || !vm_string_stricmp(argv[1], VM_STRING("1")) || !vm_string_stricmp(argv[1], VM_STRING("16")))
+            {
+                on = MFX_CODINGOPTION_ON;
+            }
+            else if (!vm_string_stricmp(argv[1], VM_STRING("off")) || !vm_string_stricmp(argv[1], VM_STRING("0")) || !vm_string_stricmp(argv[1], VM_STRING("32")))
+            {
+                on = MFX_CODINGOPTION_OFF;
+            }
+            else
+            {
+                MFX_CHECK_SET_ERR(!VM_STRING("Wrong OPT_TRI_STATE"), PE_CHECK_PARAMS, MFX_ERR_UNKNOWN);
+            }
+
+            mfxExtEncoderResetOption *pExt = NULL;
+
+            MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_ENCODER_RESET_OPTION);
+            if (!ppExt)
+            {
+                pExt = &mfx_init_ext_buffer(*new mfxExtEncoderResetOption());
+            }
+            else
+            {
+                pExt = reinterpret_cast<mfxExtEncoderResetOption *>(ppExt->get());
+            }
+
             m_ExtBuffers.get()->push_back(pExt);
 
             argv++;
@@ -1126,6 +1157,9 @@ mfxStatus MFXTranscodingPipeline::CheckParams()
 
     if (!m_extEncoderCapability.IsZero())
         m_components[eREN].m_extParams.push_back(m_extEncoderCapability);
+
+    if (!m_extEncoderReset.IsZero())
+        m_components[eREN].m_extParams.push_back(m_extEncoderReset);
 
     switch (pMFXParams->mfx.CodecId)
     {

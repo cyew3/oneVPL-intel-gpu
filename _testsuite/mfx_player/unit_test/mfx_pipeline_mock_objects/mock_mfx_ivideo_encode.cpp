@@ -82,3 +82,21 @@ mfxStatus MockVideoEncode::Query(mfxVideoParam * in, mfxVideoParam * out)
     }
     return return_args.ret_val;
 }
+
+mfxStatus MockVideoEncode::Reset(mfxVideoParam * in) {
+    mfxVideoParam newIn = {};
+    if (in)
+    {
+        newIn = *in;
+        TestUtils::CopyExtParamsEnabledStructures(&newIn, in, true);
+    }
+    _Reset.RegisterEvent(TEST_METHOD_TYPE(Reset)(MFX_ERR_NONE, newIn));
+
+    TEST_METHOD_TYPE(Reset) return_args;
+
+    if (!_Reset.GetReturn(return_args))
+    {
+        return MFX_ERR_NONE;
+    }
+    return return_args.ret_val;
+}

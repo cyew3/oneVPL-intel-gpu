@@ -34,14 +34,11 @@ public:
     template <class T>
     void RegisterBuffer()
     {
-        ContainerType::iterator it = m_registered.find(BufferIdOf<T>::id);
         //buffer already registered
-        if(it != m_registered.end())
+        if(m_registered.find(BufferIdOf<T>::id) != m_registered.end())
             return;
 
         m_registered[BufferIdOf<T>::id] = new MFXExtBufferPtr<T>();
-
-        return;
     }
 
     MFXExtBufferPtrBase* CreateBuffer(mfxU32 bufferId)
@@ -86,6 +83,7 @@ DECL_BUFFER_TYPE(mfxExtCodingOptionDDI, MFX_EXTBUFF_DDI);
 DECL_BUFFER_TYPE(mfxExtCodingOptionQuantMatrix, MFX_EXTBUFF_QM);
 DECL_BUFFER_TYPE(mfxExtCodingOptionHEVC, MFX_EXTBUFF_HEVCENC);
 DECL_BUFFER_TYPE(mfxExtEncoderCapability, MFX_EXTBUFF_ENCODER_CAPABILITY);
+DECL_BUFFER_TYPE(mfxExtEncoderResetOption, MFX_EXTBUFF_ENCODER_RESET_OPTION);
 
 DECL_BUFFER_TYPE(mfxExtAVCEncodedFrameInfo, MFX_EXTBUFF_ENCODED_FRAME_INFO);
 DECL_BUFFER_TYPE(mfxExtDumpFiles, MFX_EXTBUFF_DUMP);
@@ -103,11 +101,12 @@ DECL_BUFFER_TYPE(mfxExtSvcTargetLayer, MFX_EXTBUFF_SVC_TARGET_LAYER);
 
 //init helper
 template <class T>
-void mfx_init_ext_buffer(T & buffer)
+T& mfx_init_ext_buffer(T & buffer)
 {
     memset(&buffer, 0, sizeof(T));
     reinterpret_cast<mfxExtBuffer*>(&buffer)->BufferId = BufferIdOf<T>::id;
     reinterpret_cast<mfxExtBuffer*>(&buffer)->BufferSz = sizeof(T);
+    return buffer;
 }
 
 template <class T>

@@ -75,6 +75,8 @@ SUITE(mfxExtAvcFrameInfoSuite)
 
             vParam.value1 = (void*)&mock_control;
             mock_encode._QueryInterface.WillDefaultReturn(&vParam);
+
+            current_frame.ret_val = 0;
         }
         void VerifyAttached() {
             CHECK_EQUAL(MFX_ERR_NONE, pPipeline2->ProcessTrickCommands());
@@ -85,6 +87,11 @@ SUITE(mfxExtAvcFrameInfoSuite)
         void VerifyNOTAttached() {
             CHECK_EQUAL(MFX_ERR_NONE, pPipeline2->ProcessTrickCommands());
             CHECK_EQUAL(false, mock_control._AddExtBuffer.WasCalled(&buffer_to_add));
+        }
+        void MoveToNexFrame() {
+            //buffer set for 2nd frame 
+            current_frame.ret_val++;
+            pPipeline2->_GetNumDecodedFrames.WillDefaultReturn(&current_frame);
         }
         void VerifyDetached() {
             TEST_METHOD_TYPE(MockCurrentFrameControl::RemoveExtBuffer) buffer_to_remove;
@@ -98,7 +105,6 @@ SUITE(mfxExtAvcFrameInfoSuite)
     TEST_FIXTURE(mfxExtAVCEncodedFrameInfoTest, no_params)
     {
         params[VM_STRING("-enc_frame_info")] =  std::vector<tstring>();
-
         CHECK_EQUAL(MFX_ERR_NONE, pipeline.ProcessCommand(params, &mock_cfg));
 
         std::list<ICommandActivator*> &cmds = pPipeline2->GetCommands();
@@ -119,8 +125,6 @@ SUITE(mfxExtAvcFrameInfoSuite)
     TEST_FIXTURE(mfxExtAVCEncodedFrameInfoTest, 1_param)
     {
         CMD_PARAM("-enc_frame_info", "1");
-
-        PipelineRunner<MockPipelineConfig> pipeline;
 
         CHECK_EQUAL(MFX_ERR_NONE, pipeline.ProcessCommand(params, &mock_cfg));
 
@@ -155,8 +159,6 @@ SUITE(mfxExtAvcFrameInfoSuite)
         CMD_PARAM("-enc_frame_info", "2");
         params[VM_STRING("-h264")] =  std::vector<tstring>();
 
-        PipelineRunner<MockPipelineConfig> pipeline;
-
         CHECK_EQUAL(MFX_ERR_NONE, pipeline.ProcessCommand(params, &mock_cfg));
 
         std::list<ICommandActivator*> &cmds = pPipeline2->GetCommands();
@@ -185,15 +187,11 @@ SUITE(mfxExtAvcFrameInfoSuite)
         VerifyNOTAttached();
 
         //buffer set for 2nd frame 
-        current_frame.ret_val = 1;
-        pPipeline2->_GetNumDecodedFrames.WillDefaultReturn(&current_frame);
-
+        MoveToNexFrame();
         VerifyAttached();
         
         //buffer not set for 3rd frame
-        current_frame.ret_val = 2;
-        pPipeline2->_GetNumDecodedFrames.WillDefaultReturn(&current_frame);
-
+        MoveToNexFrame();
         VerifyDetached();
     }
 
@@ -207,21 +205,15 @@ SUITE(mfxExtAvcFrameInfoSuite)
         VerifyNOTAttached();
 
         //buffer set for 2nd frame 
-        current_frame.ret_val = 1;
-        pPipeline2->_GetNumDecodedFrames.WillDefaultReturn(&current_frame);
-
+        MoveToNexFrame();
         VerifyAttached();
 
         //buffer set for 3rd frame
-        current_frame.ret_val = 2;
-        pPipeline2->_GetNumDecodedFrames.WillDefaultReturn(&current_frame);
-
+        MoveToNexFrame();
         VerifyNOTAttached();
 
         //buffer detached 4rd frame
-        current_frame.ret_val = 3;
-        pPipeline2->_GetNumDecodedFrames.WillDefaultReturn(&current_frame);
-
+        MoveToNexFrame();
         VerifyDetached();
     }
 
