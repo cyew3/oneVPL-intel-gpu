@@ -153,7 +153,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_MFX_INFO("-r|",  GopRefDist,                       "Distance between I- or P- key frames (1 means no B-frames)"),
         HANDLE_MFX_INFO("",     GopOptFlag,                       "1=GOP_CLOSED, 2=GOP_STRICT"),
         HANDLE_MFX_INFO("",     IdrInterval,                      "IDR frame interval (0 means every I-frame is an IDR frame"),
-        HANDLE_MFX_INFO("",     RateControlMethod,                "1=CBR, 2=VBR, 3=ConstantQP"),
+        HANDLE_MFX_INFO("",     RateControlMethod,                "1=CBR, 2=VBR, 3=ConstantQP, 4=AVBR, 8=Lookahead"),
         HANDLE_MFX_INFO("",     TargetKbps,                       "Target bitrate in kbits per seconds"),
         HANDLE_MFX_INFO("",     MaxKbps,                          "Maximum bitrate in the case of VBR"),
         HANDLE_MFX_INFO("-id|", InitialDelayInKB,                 "For bitrate control"),
@@ -223,6 +223,8 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION2(BitrateLimit,           OPT_TRI_STATE,   ""),
         HANDLE_EXT_OPTION2(MBBRC,                  OPT_TRI_STATE,   ""),
         HANDLE_EXT_OPTION2(ExtBRC,                 OPT_TRI_STATE,   ""),
+        HANDLE_EXT_OPTION2(LookAheadDepth,         OPT_INT_16,      "how many frames ahead encoder analyze to choose quantization parameter"),
+        HANDLE_EXT_OPTION2(Trellis,                OPT_INT_16,      "bitfield: 0=default, 1=off, 2=on for I frames, 4=on for P frames, 8=on for B frames"),
 
         // mfxExtCodingOptionDDI
         HANDLE_DDI_OPTION(IntraPredCostType,       OPT_UINT_16,    "from DDI: 1=SAD, 2=SSD, 4=SATD_HADAMARD, 8=SATD_HARR"),
@@ -240,15 +242,12 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_DDI_OPTION(MVPrediction,            OPT_TRI_STATE,  ""),
         HANDLE_DDI_OPTION(DDI.IntraPredBlockSize,  OPT_UINT_16,    "from DDI, mask of 1=4x4, 2=8x8, 4=16x16, 8=PCM"),
         HANDLE_DDI_OPTION(DDI.InterPredBlockSize,  OPT_UINT_16,    "from DDI, mask of 1=16x16, 2=16x8, 4=8x16, 8=8x8, 16=8x4, 32=4x8, 64=4x4"),
-        HANDLE_DDI_OPTION(SwBrc,                   OPT_TRI_STATE,  "0=default, on=sw brc, off=hw brc"),
         HANDLE_DDI_OPTION(BRCPrecision,            OPT_UINT_16,    "0=default=normal, 1=lowest, 2=normal, 3=highest"),
+        HANDLE_DDI_OPTION(RepeatPPS,               OPT_TRI_STATE,  ""),
         HANDLE_DDI_OPTION(GlobalSearch,            OPT_UINT_16,    "0=default, 1=long, 2=medium, 3=short"),
         HANDLE_DDI_OPTION(LocalSearch,             OPT_UINT_16,    "0=default, 1=type, 2=small, 3=square, 4=diamond, 5=large diamond, 6=exhaustive, 7=heavy horizontal, 8=heavy vertical"),
         HANDLE_DDI_OPTION(EarlySkip,               OPT_UINT_16,    "0=default (let driver choose), 1=enabled, 2=disabled"),
-        HANDLE_DDI_OPTION(Trellis,                 OPT_UINT_16,    "0=default (let driver choose), 1=enabled, 2=disabled"),
         // superseded by corresponding option in mfxExtCodingOption2
-        //HANDLE_DDI_OPTION(MbBrc,                   OPT_UINT_16,    "0=default (let driver choose), 1=enabled, 2=disabled"),
-        HANDLE_DDI_OPTION(LookAhead,               OPT_UINT_16,    "0=no look-ahead"),
         HANDLE_DDI_OPTION(FractionalQP,            OPT_BOOL,       "enable fractional QP"),
         HANDLE_DDI_OPTION(StrengthN,               OPT_UINT_16,    "strength=StrengthN/100.0"),
         HANDLE_DDI_OPTION(NumActiveRefP,           OPT_UINT_16,    "0=default, max 16/32 for frames/fields"),
@@ -262,8 +261,6 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_DDI_OPTION(DisableBSubMBPartition,  OPT_TRI_STATE,  "on=disabled 4x4 4x8 8x4 for B frames, off=enabled 4x4 4x8 8x4 for B frames"),
         HANDLE_DDI_OPTION(WeightedBiPredIdc,       OPT_UINT_16,    "0 - off, 1 - implicit (unsupported), 2 - explicit"),
         HANDLE_DDI_OPTION(DirectSpatialMvPredFlag, OPT_TRI_STATE,  "on=spatial, off=temporal"),
-        HANDLE_DDI_OPTION(SeqParameterSetId,       OPT_UINT_16,    "0..31"),
-        HANDLE_DDI_OPTION(PicParameterSetId,       OPT_UINT_16,    "0..255"),
         HANDLE_DDI_OPTION(BiPyramid,               OPT_UINT_16,    "0=no B-pyramid"),
         HANDLE_DDI_OPTION(CabacInitIdcPlus1,       OPT_UINT_16,    "0-to use default value (depends on Target Usaeg), 1-cabacinitidc=0, 2-cabacinitidc=1,  etc"),
 

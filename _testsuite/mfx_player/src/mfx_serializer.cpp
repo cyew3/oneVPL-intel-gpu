@@ -162,6 +162,8 @@ void MFXStructureRef <mfxExtCodingOption2>::ConstructValues () const
     SERIALIZE_INT(BitrateLimit);
     SERIALIZE_INT(MBBRC);
     SERIALIZE_INT(ExtBRC);
+    SERIALIZE_INT(LookAheadDepth);
+    SERIALIZE_INT(Trellis);
 }
 
 void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const
@@ -185,16 +187,13 @@ void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const
     // MediaSDK parametrization
     SERIALIZE_INT(BRCPrecision);          
     SERIALIZE_INT(RefRaw);         
-    SERIALIZE_INT(SwBrc);      
+    SERIALIZE_INT(RepeatPPS);
     SERIALIZE_INT(ConstQP);        
     SERIALIZE_INT(GlobalSearch);       
     SERIALIZE_INT(LocalSearch);  
 
     // threading options
     SERIALIZE_INT(EarlySkip);     
-    SERIALIZE_INT(Trellis);     
-    SERIALIZE_INT(MbBrc);
-    SERIALIZE_INT(LookAhead);
     SERIALIZE_INT(LookAheadDep);
     SERIALIZE_INT(Hme);
     SERIALIZE_INT(NumActiveRefP);
@@ -205,8 +204,6 @@ void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const
     SERIALIZE_INT(DisableBSubMBPartition);
     SERIALIZE_INT(WeightedBiPredIdc);
     SERIALIZE_INT(DirectSpatialMvPredFlag);
-    SERIALIZE_INT(SeqParameterSetId);
-    SERIALIZE_INT(PicParameterSetId);
     SERIALIZE_INT(BiPyramid);
     SERIALIZE_INT(CabacInitIdcPlus1);
 
