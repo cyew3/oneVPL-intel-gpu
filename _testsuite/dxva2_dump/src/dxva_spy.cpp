@@ -1297,6 +1297,12 @@ HRESULT STDMETHODCALLTYPE CSpyVideoDecoder::Execute(
             LLLVDEC;
             logs("Execute: Skip\n");
         }
+
+        if (pExecuteParams->pExtensionData && pExecuteParams->pExtensionData->Function == 7) // zeroed dxva status resport structures
+        {
+            memset(pExecuteParams->pExtensionData->pPrivateOutputData, 0, pExecuteParams->pExtensionData->PrivateOutputDataSize);
+        }
+
         return S_OK;
     }
 
