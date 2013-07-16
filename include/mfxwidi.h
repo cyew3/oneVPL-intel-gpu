@@ -18,6 +18,7 @@ IT SHOULD NOT be released as part of public development package. */
 #define __MFXWIDI_H__
 #include "mfxstructures.h"
 
+extern "C" {
 enum {
     MFX_EXTBUFF_ENCODER_WIDI_USAGE = MFX_MAKEFOURCC('W','I','D','I')
 };
