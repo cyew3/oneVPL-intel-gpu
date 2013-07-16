@@ -11,7 +11,7 @@
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 #include <immintrin.h>
 #include "mfx_h265_defs.h"
-#include "mfx_h265_prediction.h"
+#include "mfx_h265_optimization.h"
 
 
 //#include <immintrin.h>
@@ -22,19 +22,6 @@
   #define MM_LOAD_EPI64(x) (*(__m128i*)x)
 #else
   #define MM_LOAD_EPI64(x) _mm_loadl_epi64( (__m128i*)x )
-#endif
-
-// This better be placed in some general/common header
-#ifdef __INTEL_COMPILER
-# define H265_RESTRICT __restrict
-#elif defined _MSC_VER
-# if _MSC_VER >= 1400
-#  define H265_RESTRICT __restrict
-# else
-#  define H265_RESTRICT
-# endif
-#else
-# define H265_RESTRICT
 #endif
 
 //========================================================
@@ -76,41 +63,35 @@ void InterpolateVert0(
 
 //========================================================
 // OPT
-void InterpolateHor_opt(
-    EnumTextType plane_type,
-    const PixType *in_pSrc,
-    Ipp32u in_SrcPitch, // in samples
-    Ipp16s* in_pDst,
-    Ipp32u in_DstPitch, // in samples
-    Ipp32s tab_index,
-    Ipp32s width,
-    Ipp32s height,
-    Ipp32s shift,
-    Ipp32s offset);
+enum EnumAddAverageType
+{
+    AVERAGE_NO = 0,
+    AVERAGE_FROM_PIC,
+    AVERAGE_FROM_BUF
+};
 
-void InterpolateVert_opt(
-    EnumTextType plane_type,
-    const Ipp16s *in_pSrc,
-    Ipp32u in_SrcPitch, // in samples
-    Ipp16s* in_pDst,
-    Ipp32u in_DstPitch, // in samples
-    Ipp32s tab_index,
-    Ipp32s width,
-    Ipp32s height,
-    Ipp32s shift,
-    Ipp32s offset);
+enum EnumInterpType
+{
+    INTERP_HOR = 0,
+    INTERP_VER
+};
 
-void InterpolateVert0_opt(
-    EnumTextType plane_type,
-    const PixType *in_pSrc,
+template < EnumTextType plane_type, typename t_src, typename t_dst >
+static void H265_FORCEINLINE Interpolate( 
+    EnumInterpType interp_type,
+    const t_src* in_pSrc,
     Ipp32u in_SrcPitch, // in samples
-    Ipp16s* in_pDst,
+    t_dst* H265_RESTRICT in_pDst,
     Ipp32u in_DstPitch, // in samples
     Ipp32s tab_index,
     Ipp32s width,
     Ipp32s height,
     Ipp32s shift,
-    Ipp32s offset);
+    Ipp16s offset,
+    EnumAddAverageType eAddAverage = AVERAGE_NO,
+    const void* in_pSrc2 = NULL,
+    int   in_Src2Pitch = 0 ); // in samples
+
 //========================================================
 
 
@@ -407,7 +388,7 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height,
         }
         else if (in_dy == 0)
         {
-            InterpolateHor_opt(
+            /*InterpolateHor_opt(
                 TEXT_LUMA,
                 in_pSrc,
                 in_SrcPitch,
@@ -417,11 +398,13 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height,
                 Width,
                 Height,
                 shift,
-                offset);
+                offset);*/
+
+            Interpolate<TEXT_LUMA>( INTERP_HOR, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dx, Width, Height, shift, (Ipp16s)offset);
         }
         else if (in_dx == 0)
         {
-            InterpolateVert0_opt(
+            /*InterpolateVert0_opt(
                 TEXT_LUMA,
                 in_pSrc,
                 in_SrcPitch,
@@ -431,7 +414,9 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height,
                 Width,
                 Height,
                 shift,
-                offset);
+                offset);*/
+
+            Interpolate<TEXT_LUMA>( INTERP_VER, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dy, Width, Height, shift, (Ipp16s)offset);
         }
         else
         {
@@ -447,7 +432,7 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height,
                 offset = 0;
             }
 
-            InterpolateHor_opt(
+            /*InterpolateHor_opt(
                 TEXT_LUMA,
                 in_pSrc - ((tap >> 1) - 1) * in_SrcPitch,
                 in_SrcPitch,
@@ -457,9 +442,11 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height,
                 Width,
                 Height + tap,
                 bitDepth - 8,
-                0);
+                0);*/
 
-            InterpolateVert_opt(
+            Interpolate<TEXT_LUMA>( INTERP_HOR, in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, 80, in_dx, Width, Height + tap, bitDepth - 8, (Ipp16s)0);
+
+            /*InterpolateVert_opt(
                 TEXT_LUMA,
                 tmpBuf + ((tap >> 1) - 1) * 80,
                 80,
@@ -469,7 +456,9 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height,
                 Width,
                 Height,
                 shift,
-                offset);
+                offset);*/
+
+            Interpolate<TEXT_LUMA>( INTERP_VER, tmpBuf + ((tap >> 1) - 1) * 80, 80, in_pDst, in_DstPitch, in_dy, Width, Height, shift, (Ipp16s)offset);
         }
     } else {
         // CHROMA
@@ -510,13 +499,18 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height,
         }
         else if (in_dy == 0)
         {
-            InterpolateHor_opt(TEXT_CHROMA, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch,
-                           in_dx, Width, Height, shift, offset);
+            /*InterpolateHor_opt(TEXT_CHROMA, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch,
+                           in_dx, Width, Height, shift, offset);*/
+
+            Interpolate<TEXT_CHROMA_U>( INTERP_HOR, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dx, Width, Height, shift, offset);
         }
         else if (in_dx == 0)
         {
-            InterpolateVert0_opt(TEXT_CHROMA, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dy,
-                             Width, Height, shift, offset);
+            /*InterpolateVert0_opt(TEXT_CHROMA, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dy,
+                             Width, Height, shift, offset);*/
+
+            Interpolate<TEXT_CHROMA_U>( INTERP_VER, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dy, Width, Height, shift, (Ipp16s)offset);
+            
         }
         else
         {
@@ -532,11 +526,15 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height,
                 offset = 0;
             }
 
-            InterpolateHor_opt(TEXT_CHROMA, in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, 80,
-                           in_dx, Width, Height + tap, bitDepth - 8, 0);
+            /*InterpolateHor_opt(TEXT_CHROMA, in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, 80,
+                           in_dx, Width, Height + tap, bitDepth - 8, 0);*/
 
-            InterpolateVert_opt(TEXT_CHROMA, tmpBuf + ((tap >> 1) - 1) * 80, 80, in_pDst, in_DstPitch,
-                            in_dy, Width, Height, shift, offset);
+            Interpolate<TEXT_CHROMA_U>( INTERP_HOR, in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, 80, in_dx, Width, Height + tap, bitDepth - 8, 0);
+            
+            /*InterpolateVert_opt(TEXT_CHROMA, tmpBuf + ((tap >> 1) - 1) * 80, 80, in_pDst, in_DstPitch,
+                            in_dy, Width, Height, shift, offset);*/
+            
+            Interpolate<TEXT_CHROMA_U>( INTERP_VER, tmpBuf + ((tap >> 1) - 1) * 80, 80, in_pDst, in_DstPitch, in_dy, Width, Height, shift, (Ipp16s)offset);
         }
 
         // CHROMA V
@@ -550,24 +548,30 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height,
         }
         else if (in_dy == 0)
         {
-            InterpolateHor_opt(TEXT_CHROMA, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch,
-                           in_dx, Width, Height, shift, offset);
+            /*InterpolateHor_opt(TEXT_CHROMA, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch,
+                           in_dx, Width, Height, shift, offset);*/
+
+            Interpolate<TEXT_CHROMA_V>( INTERP_HOR, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dx, Width, Height, shift, offset);
         }
         else if (in_dx == 0)
         {
-            InterpolateVert0_opt(TEXT_CHROMA, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dy,
-                             Width, Height, shift, offset);
+            /*InterpolateVert0_opt(TEXT_CHROMA, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dy,
+                             Width, Height, shift, offset);*/
+
+            Interpolate<TEXT_CHROMA_V>( INTERP_VER, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dy, Width, Height, shift, (Ipp16s)offset);
         }
         else
         {
             Ipp16s tmp[80 * 80];
             Ipp16s *tmpBuf = tmp + 80 * 8 + 8;
 
-            InterpolateHor_opt(TEXT_CHROMA, in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, 80,
-                           in_dx, Width, Height + tap, bitDepth - 8, 0);
+            /*InterpolateHor_opt(TEXT_CHROMA, in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, 80,
+                           in_dx, Width, Height + tap, bitDepth - 8, 0);*/
+            Interpolate<TEXT_CHROMA_V>( INTERP_HOR, in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, 80, in_dx, Width, Height + tap, bitDepth - 8, 0);
 
-            InterpolateVert_opt(TEXT_CHROMA, tmpBuf + ((tap >> 1) - 1) * 80, 80, in_pDst, in_DstPitch,
-                            in_dy, Width, Height, shift, offset);
+            /*InterpolateVert_opt(TEXT_CHROMA, tmpBuf + ((tap >> 1) - 1) * 80, 80, in_pDst, in_DstPitch,
+                            in_dy, Width, Height, shift, offset);*/
+            Interpolate<TEXT_CHROMA_V>( INTERP_VER, tmpBuf + ((tap >> 1) - 1) * 80, 80, in_pDst, in_DstPitch, in_dy, Width, Height, shift, (Ipp16s)offset);
         }
     }
 }
@@ -820,7 +824,7 @@ void H265CU::ME_Interpolate_old(H265MEInfo* me_info, H265MV* MV, PixType *in_pSr
     }
     else if (in_dy == 0)
     {
-        InterpolateHor_opt(
+        /*InterpolateHor_opt(
             TEXT_LUMA,
             in_pSrc,
             in_SrcPitch,
@@ -830,11 +834,12 @@ void H265CU::ME_Interpolate_old(H265MEInfo* me_info, H265MV* MV, PixType *in_pSr
             width,
             height,
             shift,
-            offset);
+            offset);*/
+        Interpolate<TEXT_LUMA>( INTERP_HOR, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dx, width, height, shift, (Ipp16s)offset);
     }
     else if (in_dx == 0)
     {
-        InterpolateVert0_opt(
+        /*InterpolateVert0_opt(
             TEXT_LUMA,
             in_pSrc,
             in_SrcPitch,
@@ -844,7 +849,9 @@ void H265CU::ME_Interpolate_old(H265MEInfo* me_info, H265MV* MV, PixType *in_pSr
             width,
             height,
             shift,
-            offset);
+            offset);*/
+
+        Interpolate<TEXT_LUMA>( INTERP_VER, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dy, width, height, shift, (Ipp16s)offset);
     }
     else
     {
@@ -860,7 +867,7 @@ void H265CU::ME_Interpolate_old(H265MEInfo* me_info, H265MV* MV, PixType *in_pSr
         //        offset = 0;
         //    }
 
-        InterpolateHor_opt(
+        /*InterpolateHor_opt(
             TEXT_LUMA,
             in_pSrc - ((tap >> 1) - 1) * in_SrcPitch,
             in_SrcPitch,
@@ -870,9 +877,11 @@ void H265CU::ME_Interpolate_old(H265MEInfo* me_info, H265MV* MV, PixType *in_pSr
             width,
             height + tap,
             bitDepth - 8,
-            0);
+            0);*/
 
-        InterpolateVert_opt(
+        Interpolate<TEXT_LUMA>( INTERP_HOR, in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, 80, in_dx, width, height + tap, bitDepth - 8, 0);
+
+        /*InterpolateVert_opt(
             TEXT_LUMA,
             tmpBuf + ((tap >> 1) - 1) * 80,
             80,
@@ -882,7 +891,9 @@ void H265CU::ME_Interpolate_old(H265MEInfo* me_info, H265MV* MV, PixType *in_pSr
             width,
             height,
             shift,
-            offset);
+            offset);*/
+
+        Interpolate<TEXT_LUMA>( INTERP_VER, tmpBuf + ((tap >> 1) - 1) * 80, 80, in_pDst, in_DstPitch, in_dy, width, height, shift, (Ipp16s)offset);
     }
 
     return;
@@ -904,13 +915,11 @@ void H265CU::ME_Interpolate(H265MEInfo* me_info, H265MV* MV, PixType *src, Ipp32
     }
     else if (dy == 0)
     {
-        H265Prediction::Interpolate<TEXT_LUMA>(H265Prediction::INTERP_HOR,
-            src, srcPitch, dst, dstPitch, dx, w, h, 6, 32);
+         Interpolate<TEXT_LUMA>( INTERP_HOR, src, srcPitch, dst, dstPitch, dx, w, h, 6, 32);
     }
     else if (dx == 0)
     {
-        H265Prediction::Interpolate<TEXT_LUMA>(H265Prediction::INTERP_VER,
-            src, srcPitch, dst, dstPitch, dy, w, h, 6, 32);
+         Interpolate<TEXT_LUMA>( INTERP_VER, src, srcPitch, dst, dstPitch, dy, w, h, 6, 32);
     }
     else
     {
@@ -918,13 +927,11 @@ void H265CU::ME_Interpolate(H265MEInfo* me_info, H265MV* MV, PixType *src, Ipp32
         Ipp16s *tmp = tmpBuf + 80 * 8 + 8;
         Ipp32s tmpPitch = 80;
 
-        H265Prediction::Interpolate<TEXT_LUMA>(H265Prediction::INTERP_HOR,
-            src - 3 * srcPitch, srcPitch, tmp, tmpPitch, dx, w, h + 8, bitDepth - 8, 0);
+         Interpolate<TEXT_LUMA>( INTERP_HOR, src - 3 * srcPitch, srcPitch, tmp, tmpPitch, dx, w, h + 8, bitDepth - 8, 0);
 
         Ipp32s shift  = 20 - bitDepth;
         Ipp16s offset = 1 << (shift - 1);
-        H265Prediction::Interpolate<TEXT_LUMA>(H265Prediction::INTERP_VER,
-            tmp + 3 * tmpPitch, tmpPitch, dst, dstPitch, dy, w, h, shift, offset);
+         Interpolate<TEXT_LUMA>( INTERP_VER,  tmp + 3 * tmpPitch, tmpPitch, dst, dstPitch, dy, w, h, shift, offset);
     }
 
     return;
@@ -986,21 +993,21 @@ void H265CU::ME_Interpolate_new_need_debug(H265MEInfo* me_info, H265MV* MV1, Pix
     else if (dy1 == 0)
     {
         if (intPelL1)
-            H265Prediction::Interpolate<TEXT_LUMA>(H265Prediction::INTERP_HOR,
+            Interpolate<TEXT_LUMA>(INTERP_HOR,
                 src1, srcPitch1, dst, dstPitch, dx1, w, h, 6, 0,
-                H265Prediction::AVERAGE_FROM_PIC, src2, srcPitch2);
+                AVERAGE_FROM_PIC, src2, srcPitch2);
         else
-            H265Prediction::Interpolate<TEXT_LUMA>(H265Prediction::INTERP_HOR,
+             Interpolate<TEXT_LUMA>( INTERP_HOR,
                 src1, srcPitch1, tmpL0, tmpL0Pitch, dx1, w, h, 6, 0);
     }
     else if (dx1 == 0)
     {
         if (intPelL1)
-            H265Prediction::Interpolate<TEXT_LUMA>(H265Prediction::INTERP_VER,
+             Interpolate<TEXT_LUMA>( INTERP_VER,
                 src1, srcPitch1, dst, dstPitch, dy1, w, h, 6, 0,
-                H265Prediction::AVERAGE_FROM_PIC, src2, srcPitch2);
+                 AVERAGE_FROM_PIC, src2, srcPitch2);
         else
-            H265Prediction::Interpolate<TEXT_LUMA>(H265Prediction::INTERP_VER,
+             Interpolate<TEXT_LUMA>( INTERP_VER,
                 src1, srcPitch1, tmpL0, tmpL0Pitch, dy1, w, h, 6, 0);
     }
     else
@@ -1009,15 +1016,15 @@ void H265CU::ME_Interpolate_new_need_debug(H265MEInfo* me_info, H265MV* MV1, Pix
         Ipp16s *tmp = tmpBuf + 80 * 8 + 8;
         Ipp32s tmpPitch = 80;
 
-        H265Prediction::Interpolate<TEXT_LUMA>(H265Prediction::INTERP_HOR,
+         Interpolate<TEXT_LUMA>( INTERP_HOR,
             src1 - 3 * srcPitch1, srcPitch1, tmp, tmpPitch, dx1, w, h + 8, 0, 0);
 
         if (intPelL1)
-            H265Prediction::Interpolate<TEXT_LUMA>(H265Prediction::INTERP_VER,
+             Interpolate<TEXT_LUMA>( INTERP_VER,
                 tmp + 3 * tmpPitch, tmpPitch, dst, dstPitch, dy1, w, h, 6, 0,
-                H265Prediction::AVERAGE_FROM_PIC, src2, srcPitch2);
+                 AVERAGE_FROM_PIC, src2, srcPitch2);
         else
-            H265Prediction::Interpolate<TEXT_LUMA>(H265Prediction::INTERP_VER,
+             Interpolate<TEXT_LUMA>( INTERP_VER,
                 tmp + 3 * tmpPitch, tmpPitch, tmpL0, tmpL0Pitch, dy1, w, h, 6, 0);
     }
 
@@ -1027,24 +1034,24 @@ void H265CU::ME_Interpolate_new_need_debug(H265MEInfo* me_info, H265MV* MV1, Pix
     else if (dy2 == 0)
     {
         if (intPelL0)
-            H265Prediction::Interpolate<TEXT_LUMA>(H265Prediction::INTERP_HOR,
+             Interpolate<TEXT_LUMA>( INTERP_HOR,
                 src2, srcPitch2, dst, dstPitch, dx2, w, h, 6, 0,
-                H265Prediction::AVERAGE_FROM_PIC, src1, srcPitch1);
+                 AVERAGE_FROM_PIC, src1, srcPitch1);
         else
-            H265Prediction::Interpolate<TEXT_LUMA>(H265Prediction::INTERP_HOR,
+             Interpolate<TEXT_LUMA>( INTERP_HOR,
                 src2, srcPitch2, dst, dstPitch, dx2, w, h, 6, 0,
-                H265Prediction::AVERAGE_FROM_BUF, tmpL0, tmpL0Pitch);
+                 AVERAGE_FROM_BUF, tmpL0, tmpL0Pitch);
     }
     else if (dx2 == 0)
     {
         if (intPelL0)
-            H265Prediction::Interpolate<TEXT_LUMA>(H265Prediction::INTERP_VER,
+             Interpolate<TEXT_LUMA>( INTERP_VER,
                 src2, srcPitch2, dst, dstPitch, dy2, w, h, 6, 0,
-                H265Prediction::AVERAGE_FROM_PIC, src1, srcPitch1);
+                 AVERAGE_FROM_PIC, src1, srcPitch1);
         else
-            H265Prediction::Interpolate<TEXT_LUMA>(H265Prediction::INTERP_VER,
+             Interpolate<TEXT_LUMA>( INTERP_VER,
                 src2, srcPitch2, dst, dstPitch, dy2, w, h, 6, 0,
-                H265Prediction::AVERAGE_FROM_BUF, tmpL0, tmpL0Pitch);
+                 AVERAGE_FROM_BUF, tmpL0, tmpL0Pitch);
     }
     else
     {
@@ -1052,19 +1059,21 @@ void H265CU::ME_Interpolate_new_need_debug(H265MEInfo* me_info, H265MV* MV1, Pix
         Ipp16s *tmp = tmpBuf + 80 * 8 + 8;
         Ipp32s tmpPitch = 80;
 
-        H265Prediction::Interpolate<TEXT_LUMA>(H265Prediction::INTERP_HOR,
+         Interpolate<TEXT_LUMA>( INTERP_HOR,
             src2 - 3 * srcPitch2, srcPitch2, tmp, tmpPitch, dx2, w, h + 8, 0, 0);
 
         if (intPelL0)
-            H265Prediction::Interpolate<TEXT_LUMA>(H265Prediction::INTERP_VER,
+             Interpolate<TEXT_LUMA>( INTERP_VER,
                 tmp + 3 * tmpPitch, tmpPitch, dst, dstPitch, dy2, w, h, 6, 0,
-                H265Prediction::AVERAGE_FROM_PIC, src1, srcPitch1);
+                 AVERAGE_FROM_PIC, src1, srcPitch1);
         else
-            H265Prediction::Interpolate<TEXT_LUMA>(H265Prediction::INTERP_VER,
+             Interpolate<TEXT_LUMA>( INTERP_VER,
                 tmp + 3 * tmpPitch, tmpPitch, dst, dstPitch, dy2, w, h, 6, 0,
-                H265Prediction::AVERAGE_FROM_BUF, tmpL0, tmpL0Pitch);
+                 AVERAGE_FROM_BUF, tmpL0, tmpL0Pitch);
     }
 }
+
+//=========================================================
 
 const Ipp16s g_lumaInterpolateFilter8X[3][8 * 8] =
 {
@@ -1169,7 +1178,7 @@ public:
         int    tab_index,
         int    shift,
         int    offset,
-        H265Prediction::EnumAddAverageType eAddAverage = H265Prediction::AVERAGE_NO,
+         EnumAddAverageType eAddAverage =  AVERAGE_NO,
         const void* in_pSrc2 = NULL,
         int   in_Src2Pitch = 0 // in samples
     );
@@ -1204,7 +1213,7 @@ public:
         int    tab_index,
         int    shift,
         int    offset,
-        H265Prediction::EnumAddAverageType eAddAverage,
+         EnumAddAverageType eAddAverage,
         const void* in_pSrc2,
         int   in_Src2Pitch // in samples
     )
@@ -1218,7 +1227,7 @@ public:
 
         t_vec v_offset = _mm_cvtsi32_si128( sizeof(t_acc)==4 ? offset : (offset << 16) | offset );
         v_offset = _mm_shuffle_epi32( v_offset, 0 ); // broadcast
-        in_Src2Pitch *= (eAddAverage == H265Prediction::AVERAGE_FROM_BUF ? 2 : 1);
+        in_Src2Pitch *= (eAddAverage ==  AVERAGE_FROM_BUF ? 2 : 1);
 
         for (int i, j = 0; j < height; ++j)
         {
@@ -1298,9 +1307,9 @@ public:
                     v_acc = _mm_packs_epi32( v_acc, v_acc2 );
                 }
 
-                if ( eAddAverage != H265Prediction::AVERAGE_NO )
+                if ( eAddAverage !=  AVERAGE_NO )
                 {
-                    if ( eAddAverage == H265Prediction::AVERAGE_FROM_PIC ) {
+                    if ( eAddAverage ==  AVERAGE_FROM_PIC ) {
                         v_acc2 = _mm_cvtepu8_epi16( MM_LOAD_EPI64(pSrc2) );
                         pSrc2 += 8;
                         v_acc2 = _mm_slli_epi16( v_acc2, 6 );
@@ -1355,7 +1364,7 @@ public:
 
 //=================================================================================================
 template < EnumTextType plane_type, typename t_src, typename t_dst >
-void H265_FORCEINLINE H265Prediction::Interpolate(
+void H265_FORCEINLINE Interpolate(
                         EnumInterpType interp_type,
                         const t_src* in_pSrc,
                         Ipp32u in_SrcPitch, // in samples
@@ -1366,89 +1375,19 @@ void H265_FORCEINLINE H265Prediction::Interpolate(
                         Ipp32s height,
                         Ipp32s shift,
                         Ipp16s offset,
-                        H265Prediction::EnumAddAverageType eAddAverage,
+                        EnumAddAverageType eAddAverage,
                         const void* in_pSrc2,
                         int    in_Src2Pitch ) // in samples
 {
-    //Ipp32s accum_pitch = ((interp_type == INTERP_HOR) ? (plane_type == TEXT_LUMA ? 1 : 2) : in_SrcPitch);
-    Ipp32s accum_pitch = ((interp_type == INTERP_HOR) ? (plane_type == TEXT_LUMA ? 1 : 1) : in_SrcPitch);
+    Ipp32s accum_pitch = ((interp_type == INTERP_HOR) ? (plane_type == TEXT_CHROMA ? 2 : 1) : in_SrcPitch);
 
     const t_src* pSrc = in_pSrc - (((( plane_type == TEXT_LUMA) ? 8 : 4) >> 1) - 1) * accum_pitch;
 
-    //width <<= int(plane_type == TEXT_CHROMA);
+    width <<= int(plane_type == TEXT_CHROMA);
 
     t_InterpKernel_intrin< __m128i, plane_type, t_src, t_dst >::func( in_pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, tab_index, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
 }
 
 //=================================================================================================
-
-
-void InterpolateHor_opt(
-    EnumTextType plane_type,
-    const PixType *in_pSrc,
-    Ipp32u in_SrcPitch, // in samples
-    Ipp16s* in_pDst,
-    Ipp32u in_DstPitch, // in samples
-    Ipp32s tab_index,
-    Ipp32s width,
-    Ipp32s height,
-    Ipp32s shift,
-    Ipp32s offset)
-{
-    if(plane_type == TEXT_LUMA)
-    {
-        H265Prediction::Interpolate<TEXT_LUMA>( H265Prediction::INTERP_HOR, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, tab_index, width, height, shift, (Ipp16s)offset);
-    }
-    else
-    {
-        H265Prediction::Interpolate<TEXT_CHROMA>( H265Prediction::INTERP_HOR, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, tab_index, width, height, shift, (Ipp16s)offset);
-    }
-} //
-
-
-void InterpolateVert_opt(
-    EnumTextType plane_type,
-    const Ipp16s *in_pSrc,
-    Ipp32u in_SrcPitch, // in samples
-    Ipp16s* in_pDst,
-    Ipp32u in_DstPitch, // in samples
-    Ipp32s tab_index,
-    Ipp32s width,
-    Ipp32s height,
-    Ipp32s shift,
-    Ipp32s offset)
-{
-    if(plane_type == TEXT_LUMA)
-    {
-        H265Prediction::Interpolate<TEXT_LUMA>( H265Prediction::INTERP_VER, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, tab_index, width, height, shift, (Ipp16s)offset);
-    }
-    else
-    {
-        H265Prediction::Interpolate<TEXT_CHROMA>( H265Prediction::INTERP_VER, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, tab_index, width, height, shift, (Ipp16s)offset);
-    }
-} //
-
-
-void InterpolateVert0_opt(
-    EnumTextType plane_type,
-    const PixType *in_pSrc,
-    Ipp32u in_SrcPitch, // in samples
-    Ipp16s* in_pDst,
-    Ipp32u in_DstPitch, // in samples
-    Ipp32s tab_index,
-    Ipp32s width,
-    Ipp32s height,
-    Ipp32s shift,
-    Ipp32s offset)
-{
-    if(plane_type == TEXT_LUMA)
-    {
-        H265Prediction::Interpolate<TEXT_LUMA>( H265Prediction::INTERP_VER, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, tab_index, width, height, shift, (Ipp16s)offset);
-    }
-    else
-    {
-        H265Prediction::Interpolate<TEXT_CHROMA>( H265Prediction::INTERP_VER, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, tab_index, width, height, shift, (Ipp16s)offset);
-    }
-} //
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE
-
+/* EOF */
