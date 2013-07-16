@@ -47,7 +47,7 @@ File Name: .h
 #include "mfx_multi_reader.h"
 #include "mfx_jpeg_encode_wrap.h"
 #include "mfx_factory_default.h"
-#include "mfx_detach_buffer_after_query_encoder.h"
+#include "mfx_encode_query_mod4.h"
 #include "mfx_lexical_cast.h"
 #include "mfx_encoded_frame_info_encoder.h"
 
@@ -1580,7 +1580,7 @@ std::auto_ptr<IVideoEncode> MFXTranscodingPipeline::CreateEncoder()
     }
 
     if (!m_extEncoderCapability.IsZero()) {
-        pEncoder.reset(new DetachExtBufferEncode<mfxExtEncoderCapability>(pEncoder));
+        pEncoder.reset(new QueryMode4Encode(pEncoder));
     }
 
     //TODO: always attaching MVC handler, is it possible not to do this

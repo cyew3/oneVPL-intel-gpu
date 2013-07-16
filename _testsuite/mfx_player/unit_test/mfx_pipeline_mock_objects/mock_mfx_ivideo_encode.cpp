@@ -60,17 +60,17 @@ mfxStatus MockVideoEncode::SyncOperation(mfxSyncPoint sp, mfxU32 wait)
 
 mfxStatus MockVideoEncode::Query(mfxVideoParam * in, mfxVideoParam * out)
 {
-    mfxVideoParam *newIn = in;
-    mfxVideoParam *newOut = out;
+    mfxVideoParam newIn = {};
+    mfxVideoParam newOut = {};
     if (in)
     {
-        newIn = new mfxVideoParam();
-        TestUtils::CopyExtParamsEnabledStructures(newIn, in, true);
+        newIn = *in;
+        TestUtils::CopyExtParamsEnabledStructures(&newIn, in, true);
     }
     if (out)
     {
-        out = new mfxVideoParam();
-        TestUtils::CopyExtParamsEnabledStructures(newOut, out, true);
+        newOut = *out;
+        TestUtils::CopyExtParamsEnabledStructures(&newOut, out, true);
     }    
     _Query.RegisterEvent(TEST_METHOD_TYPE(Query)(MFX_ERR_NONE, newIn, newOut));
 

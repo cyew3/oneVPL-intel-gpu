@@ -396,6 +396,16 @@ public:
     }
 };
 
+class auto_ext_buffer_remove : public auto_ext_buffer_base {
+public:
+    template <class T>
+    auto_ext_buffer_remove(T &par, mfxU32 IdToRemove) {
+        push(par);
+        remove(IdToRemove);
+    }
+};
+
+
 template <class T>
 struct deleter 
     : public std::unary_function<T, void> 

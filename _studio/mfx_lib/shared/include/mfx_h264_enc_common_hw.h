@@ -794,7 +794,7 @@ namespace MfxHwH264Encode
             return mfxSts;
         }
 
-    protected:
+    
         enum { LOCK_NO, LOCK_INT, LOCK_EXT };
 
         mfxU32 Lock(bool external)

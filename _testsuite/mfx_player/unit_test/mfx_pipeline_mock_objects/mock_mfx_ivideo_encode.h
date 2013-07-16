@@ -19,7 +19,7 @@ File Name: .h
 class MockVideoEncode : public IVideoEncode
 {
 public:
-    DECLARE_TEST_METHOD2(mfxStatus, Query, mfxVideoParam * , mfxVideoParam * );
+    DECLARE_TEST_METHOD2(mfxStatus, Query, MAKE_DYNAMIC_TRAIT(mfxVideoParam , mfxVideoParam * ), MAKE_DYNAMIC_TRAIT(mfxVideoParam, mfxVideoParam * ));
     
     virtual mfxStatus QueryIOSurf(mfxVideoParam * /*par*/, mfxFrameAllocRequest * /*request*/)
     {

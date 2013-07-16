@@ -67,9 +67,9 @@ SUITE(JpegEncodeWrap)
 
         //extco buffer shouldnot reach real decoder
         CHECK(pEnc->_Query.WasCalled(&args));
-        CHECK_EQUAL(1u, args.value0->NumExtParam);
+        CHECK_EQUAL(1u, args.value0.NumExtParam);
 
-        mfxExtVPPProcAmp *pStatPtr = (mfxExtVPPProcAmp *)args.value0->ExtParam[0];
+        mfxExtVPPProcAmp *pStatPtr = (mfxExtVPPProcAmp *)args.value0.ExtParam[0];
      
         CHECK_EQUAL(proAmp.Brightness, pStatPtr->Brightness);
         CHECK_EQUAL(proAmp.Contrast, pStatPtr->Contrast);
@@ -95,9 +95,9 @@ SUITE(JpegEncodeWrap)
 
         //extco buffer shouldnot reach real decoder
         CHECK(pEnc->_Query.WasCalled(&args));
-        CHECK_EQUAL(1u, args.value0->NumExtParam);
+        CHECK_EQUAL(1u, args.value0.NumExtParam);
 
-        mfxExtVPPProcAmp *pStatPtr = (mfxExtVPPProcAmp *)args.value0->ExtParam[0];
+        mfxExtVPPProcAmp *pStatPtr = (mfxExtVPPProcAmp *)args.value0.ExtParam[0];
 
         CHECK_EQUAL(proAmp.Brightness, pStatPtr->Brightness);
         CHECK_EQUAL(proAmp.Contrast, pStatPtr->Contrast);
@@ -123,7 +123,7 @@ SUITE(JpegEncodeWrap)
 
         //extco buffer shouldnot reach real decoder
         CHECK(pEnc->_Query.WasCalled(&args));
-        CHECK_EQUAL(0, args.value0->NumExtParam);
+        CHECK_EQUAL(0, args.value0.NumExtParam);
     }
 
     TEST_FIXTURE(Init, mfx_query_DONOTDETACH_ext_coding_options_IF_NOTONLY_FRAMEPICTURE_SET)
@@ -141,15 +141,15 @@ SUITE(JpegEncodeWrap)
 
         //extco buffer shouldnot reach real decoder
         CHECK(pEnc->_Query.WasCalled(&args));
-        CHECK_EQUAL(2u, args.value0->NumExtParam);
+        CHECK_EQUAL(2u, args.value0.NumExtParam);
 
-        mfxExtVPPProcAmp *pStatPtr = (mfxExtVPPProcAmp *)args.value0->ExtParam[0];
+        mfxExtVPPProcAmp *pStatPtr = (mfxExtVPPProcAmp *)args.value0.ExtParam[0];
         CHECK_EQUAL(proAmp.Brightness, pStatPtr->Brightness);
         CHECK_EQUAL(proAmp.Contrast, pStatPtr->Contrast);
         CHECK_EQUAL(proAmp.Hue, pStatPtr->Hue);
         CHECK_EQUAL(proAmp.Saturation, pStatPtr->Saturation);
 
-        mfxExtCodingOption *pExtCoPtr = (mfxExtCodingOption *)args.value0->ExtParam[1];
+        mfxExtCodingOption *pExtCoPtr = (mfxExtCodingOption *)args.value0.ExtParam[1];
         CHECK_EQUAL(extCO.FramePicture, pExtCoPtr->FramePicture);
         CHECK_EQUAL(extCO.EndOfSequence, pExtCoPtr->EndOfSequence);
         CHECK_EQUAL(extCO.MESearchType, pExtCoPtr->MESearchType);
@@ -168,9 +168,9 @@ SUITE(JpegEncodeWrap)
         CHECK_EQUAL(0, memcmp(&paramsOrig, &params, sizeof(mfxVideoParam)));
         
         CHECK(pEnc->_Query.WasCalled(&args));
-        CHECK_EQUAL(1u, args.value0->NumExtParam);
+        CHECK_EQUAL(1u, args.value0.NumExtParam);
 
-        mfxExtVPPProcAmp *pStatPtr = (mfxExtVPPProcAmp *)args.value0->ExtParam[0];
+        mfxExtVPPProcAmp *pStatPtr = (mfxExtVPPProcAmp *)args.value0.ExtParam[0];
         
         CHECK_EQUAL(proAmp.Brightness, pStatPtr->Brightness);
         CHECK_EQUAL(proAmp.Contrast, pStatPtr->Contrast);
