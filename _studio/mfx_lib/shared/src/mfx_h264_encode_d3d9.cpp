@@ -749,6 +749,7 @@ D3D9Encoder::D3D9Encoder()
 : m_core(0)
 , m_auxDevice(0)
 , m_infoQueried(false)
+, m_forcedCodingFunction(0)
 {
 }
 
@@ -807,7 +808,7 @@ mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
     ENCODE_CREATEDEVICE encodeCreateDevice;
     Zero(encodeCreateDevice);
     encodeCreateDevice.pVideoDesc = &desc;
-    encodeCreateDevice.CodingFunction = ENCODE_ENC_PAK;
+    encodeCreateDevice.CodingFunction = m_forcedCodingFunction ? m_forcedCodingFunction : ENCODE_ENC_PAK;
     encodeCreateDevice.EncryptionMode = DXVA_NoEncrypt;
 
     D3DAES_CTR_IV        initialCounter = { extPavp->CipherCounter.IV, extPavp->CipherCounter.Count };
@@ -1287,6 +1288,7 @@ namespace
 D3D9SvcEncoder::D3D9SvcEncoder()
 : m_core(0)
 , m_infoQueried(false)
+, m_forcedCodingFunction(0)
 {
 }
 
@@ -1370,7 +1372,7 @@ mfxStatus D3D9SvcEncoder::CreateAccelerationService(MfxVideoParam const & par)
 
     ENCODE_CREATEDEVICE encodeCreateDevice = { 0 };
     encodeCreateDevice.pVideoDesc     = &desc;
-    encodeCreateDevice.CodingFunction = ENCODE_ENC_PAK;
+    encodeCreateDevice.CodingFunction = m_forcedCodingFunction ? m_forcedCodingFunction : ENCODE_ENC_PAK;;
     encodeCreateDevice.EncryptionMode = DXVA_NoEncrypt;
 
     HRESULT hr = m_auxDevice->Execute(AUXDEV_CREATE_ACCEL_SERVICE, m_guid, encodeCreateDevice);

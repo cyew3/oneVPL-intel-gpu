@@ -996,13 +996,16 @@ mfxU8 MfxHwH264Encode::DetermineQueryMode(mfxVideoParam * in)
     }
 }
 
-mfxStatus MfxHwH264Encode::QueryHwCaps(VideoCORE* core, ENCODE_CAPS & hwCaps, GUID guid)
+mfxStatus MfxHwH264Encode::QueryHwCaps(VideoCORE* core, ENCODE_CAPS & hwCaps, GUID guid, bool isWiDi)
 {
     std::auto_ptr<DriverEncoder> ddi;
 
     ddi.reset(CreatePlatformH264Encoder(core));
     if (ddi.get() == 0)
         return Error(MFX_ERR_DEVICE_FAILED);
+
+    if (isWiDi)
+        ddi->ForceCodingFunction(ENCODE_ENC_PAK | ENCODE_WIDI);
 
     mfxStatus sts = ddi->CreateAuxilliaryDevice(core, guid, 640, 480, true);
     MFX_CHECK_STS(sts);
@@ -1013,13 +1016,16 @@ mfxStatus MfxHwH264Encode::QueryHwCaps(VideoCORE* core, ENCODE_CAPS & hwCaps, GU
     return MFX_ERR_NONE;
 }
 
-mfxStatus MfxHwH264Encode::QueryMbProcRate(VideoCORE* core, mfxVideoParam const & par, mfxU32 (&mbPerSec)[16], GUID guid)
+mfxStatus MfxHwH264Encode::QueryMbProcRate(VideoCORE* core, mfxVideoParam const & par, mfxU32 (&mbPerSec)[16], GUID guid, bool isWiDi)
 {
     std::auto_ptr<DriverEncoder> ddi;
 
     ddi.reset(CreatePlatformH264Encoder(core));
     if (ddi.get() == 0)
         return Error(MFX_ERR_DEVICE_FAILED);
+
+    if (isWiDi)
+        ddi->ForceCodingFunction(ENCODE_ENC_PAK | ENCODE_WIDI);
 
     mfxStatus sts = ddi->CreateAuxilliaryDevice(core, guid, 640, 480, true);
     MFX_CHECK_STS(sts);
@@ -1160,7 +1166,8 @@ bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
         id == MFX_EXTBUFF_SVC_SEQ_DESC              ||
         id == MFX_EXTBUFF_SVC_RATE_CONTROL          ||
         id == MFX_EXTBUFF_ENCODER_RESET_OPTION      ||
-        id == MFX_EXTBUFF_ENCODER_CAPABILITY;
+        id == MFX_EXTBUFF_ENCODER_CAPABILITY        ||
+        id == MFX_EXTBUFF_ENCODER_WIDI_USAGE;
 }
 
 mfxStatus MfxHwH264Encode::CheckExtBufferId(mfxVideoParam const & par)

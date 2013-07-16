@@ -65,11 +65,17 @@ namespace MfxHwH264Encode
 
         virtual mfxStatus Destroy();
 
+        void ForceCodingFunction (mfxU16 codingFunction)
+        {
+            m_forcedCodingFunction = codingFunction;
+        }
+
     private:
         VideoCORE *                  m_core;
         std::auto_ptr<DriverEncoder> m_ddi[8];
         mfxU32                       m_reconRegCnt;
         mfxU32                       m_bitsrRegCnt;
+        mfxU16                        m_forcedCodingFunction;
     };
 };
 

@@ -335,7 +335,8 @@ mfxStatus ImplementationAvc::Query(
     else if (queryMode == 2)  // see MSDK spec for details related to Query mode 2
     {
         ENCODE_CAPS hwCaps = { 0, };
-        sts = QueryHwCaps(core, hwCaps, DXVA2_Intel_Encode_AVC);
+        mfxExtAVCEncoderWiDiUsage * isWiDi = GetExtBuffer(*in);
+        sts = QueryHwCaps(core, hwCaps, DXVA2_Intel_Encode_AVC, isWiDi != 0);
         if (sts != MFX_ERR_NONE)
             return MFX_WRN_PARTIAL_ACCELERATION;
 
@@ -465,16 +466,22 @@ mfxStatus ImplementationAvc::Query(
     else // Query mode 4: Query should do a single thing - report MB processing rate
     {
         mfxU32 mbPerSec[16] = {0, };
-        // query MB processing rate from driver
-        sts = QueryMbProcRate(core, *in, mbPerSec, DXVA2_Intel_Encode_AVC);
-        if (sts == MFX_ERR_UNSUPPORTED)
-            return sts; // driver don't support reporting of MB processing rate
-        else if (sts != MFX_ERR_NONE)
-            return MFX_WRN_PARTIAL_ACCELERATION; // any other HW problem
 
         mfxExtEncoderCapability * extCaps = GetExtBuffer(*out);
         if (extCaps == 0)
             return MFX_ERR_UNDEFINED_BEHAVIOR; // can't return MB processing rate since mfxExtEncoderCapability isn't attached to "out"
+
+        mfxExtAVCEncoderWiDiUsage * isWiDi = GetExtBuffer(*in);
+        // query MB processing rate from driver
+        sts = QueryMbProcRate(core, *in, mbPerSec, DXVA2_Intel_Encode_AVC, isWiDi != 0);
+        if (sts != MFX_ERR_NONE)
+        {
+            extCaps->MBPerSec = 0;
+            if (sts == MFX_ERR_UNSUPPORTED)
+                return sts; // driver don't support reporting of MB processing rate
+
+            return MFX_WRN_PARTIAL_ACCELERATION; // any other HW problem
+        }
 
         extCaps->MBPerSec = mbPerSec[0];
 
@@ -505,7 +512,8 @@ mfxStatus ImplementationAvc::QueryIOSurf(
         MFX_ERR_INVALID_VIDEO_PARAM);
 
     ENCODE_CAPS hwCaps = { { 0 } };
-    sts = QueryHwCaps(core, hwCaps, DXVA2_Intel_Encode_AVC);
+    mfxExtAVCEncoderWiDiUsage * isWiDi = GetExtBuffer(*par);
+    sts = QueryHwCaps(core, hwCaps, DXVA2_Intel_Encode_AVC, isWiDi != 0);
     if (sts != MFX_ERR_NONE)
         return MFX_WRN_PARTIAL_ACCELERATION;
 
@@ -582,6 +590,10 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     m_ddi.reset( CreatePlatformH264Encoder( m_core ) );
     if (m_ddi.get() == 0)
         return MFX_WRN_PARTIAL_ACCELERATION;
+
+    mfxExtAVCEncoderWiDiUsage * isWiDi = GetExtBuffer(*par);
+    if (isWiDi)
+        m_ddi->ForceCodingFunction(ENCODE_ENC_PAK | ENCODE_WIDI);
 
     sts = m_ddi->CreateAuxilliaryDevice(
         m_core,

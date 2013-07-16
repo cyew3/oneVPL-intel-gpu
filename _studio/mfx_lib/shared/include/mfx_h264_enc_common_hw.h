@@ -22,6 +22,7 @@
 #include <memory>
 #include "vm_file.h"
 #include "mfx_ext_buffers.h"
+#include "mfxwidi.h"
 
 #if defined(MFX_VA_WIN)
 #include "encoding_ddi.h"
@@ -163,6 +164,7 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtAVCEncodedFrameInfo,  MFX_EXTBUFF_ENCODED_FRAME_INFO       );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtEncoderResetOption,   MFX_EXTBUFF_ENCODER_RESET_OPTION     );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtEncoderCapability,    MFX_EXTBUFF_ENCODER_CAPABILITY       );
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtAVCEncoderWiDiUsage,  MFX_EXTBUFF_ENCODER_WIDI_USAGE       );
 #undef BIND_EXTBUF_TYPE_TO_ID
 
     template <class T> inline void InitExtBufHeader(T & extBuf)
@@ -551,13 +553,15 @@ namespace MfxHwH264Encode
     mfxStatus QueryHwCaps(
         VideoCORE *     core,
         ENCODE_CAPS & hwCaps,
-        GUID guid);
+        GUID guid,
+        bool isWiDi = false);
 
     mfxStatus QueryMbProcRate(
         VideoCORE* core,
         mfxVideoParam const & par,
         mfxU32 (&mbPerSec)[16],
-        GUID guid);
+        GUID guid,
+        bool isWiDi = false);
 
     mfxStatus ReadSpsPpsHeaders(MfxVideoParam & par);
 

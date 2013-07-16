@@ -25,6 +25,7 @@ MultipleAvcEncoder::MultipleAvcEncoder()
 {
     m_reconRegCnt = 0;
     m_bitsrRegCnt = 0;
+    m_forcedCodingFunction = 0;
 }
 
 MultipleAvcEncoder::~MultipleAvcEncoder()

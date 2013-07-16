@@ -128,7 +128,8 @@ typedef enum tagENCODE_FUNC
     ENCODE_PAK        = 0x0002,
     ENCODE_ENC_PAK    = 0x0004,
     ENCODE_EFE        = 0x0008,   // reserved for now
-    ENCODE_HybridPAK  = 0x0010    // new for VP8
+    ENCODE_HybridPAK  = 0x0010,    // new for VP8
+    ENCODE_WIDI       = 0x8000
 } ENCODE_FUNC;
 
 typedef struct tagENCODE_UNCOMPRESSED_BUFFER_TYPE

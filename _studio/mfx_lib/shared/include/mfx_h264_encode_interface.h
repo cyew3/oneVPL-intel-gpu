@@ -133,7 +133,10 @@ namespace MfxHwH264Encode
             mfxU32    fieldId) = 0;
 
         virtual
-        mfxStatus Destroy() = 0;    
+        mfxStatus Destroy() = 0;
+
+        virtual
+        void ForceCodingFunction (mfxU16 codingFunction) = 0;
     };
 
     DriverEncoder* CreatePlatformH264Encoder( VideoCORE* core ); 

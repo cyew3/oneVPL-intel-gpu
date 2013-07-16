@@ -57,6 +57,7 @@ D3D11Encoder::D3D11Encoder()
 , m_pVideoContext(0)
 , m_pDecoder(0)
 , m_infoQueried(false)
+, m_forcedCodingFunction(0)
 {
 }
 
@@ -685,7 +686,7 @@ mfxStatus D3D11Encoder::Init(
     video_desc.Guid = DXVA2_Intel_Encode_AVC; 
 
     // D3D11_VIDEO_DECODER_CONFIG video_config;
-    video_config.ConfigDecoderSpecific = ENCODE_ENC_PAK;  
+    video_config.ConfigDecoderSpecific = m_forcedCodingFunction ? m_forcedCodingFunction : ENCODE_ENC_PAK;  
     video_config.guidConfigBitstreamEncryption = (extPavp) ? DXVA2_INTEL_PAVP : DXVA_NoEncrypt;
     
 
@@ -776,6 +777,7 @@ D3D11SvcEncoder::D3D11SvcEncoder()
 , m_pDecoder(0)
 , m_infoQueried(false)
 , m_pVDOView(0)
+, m_forcedCodingFunction(0)
 {
 }
 
@@ -1390,7 +1392,7 @@ mfxStatus D3D11SvcEncoder::Init(
 
     // D3D11_VIDEO_DECODER_CONFIG video_config;
     video_config.guidConfigBitstreamEncryption = DXVA_NoEncrypt;// aya: encrypto will be added late
-    video_config.ConfigDecoderSpecific = ENCODE_ENC_PAK;
+    video_config.ConfigDecoderSpecific = m_forcedCodingFunction ? m_forcedCodingFunction : ENCODE_ENC_PAK;
 
     hRes  = m_pVideoDevice->CreateVideoDecoder(&video_desc, &video_config, &m_pDecoder);
     CHECK_HRES(hRes);

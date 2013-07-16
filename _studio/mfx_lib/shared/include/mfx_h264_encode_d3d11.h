@@ -108,6 +108,11 @@ namespace MfxHwH264Encode
         virtual
         mfxStatus Destroy();
 
+        void ForceCodingFunction (mfxU16 codingFunction)
+        {
+            m_forcedCodingFunction = codingFunction;
+        }
+
     private:
         D3D11Encoder(D3D11Encoder const &); // no implementation
         D3D11Encoder & operator =(D3D11Encoder const &); // no implementation
@@ -144,6 +149,8 @@ namespace MfxHwH264Encode
 
         std::vector<mfxHDLPair>                     m_reconQueue;
         std::vector<mfxHDLPair>                     m_bsQueue;
+
+        mfxU16                                       m_forcedCodingFunction;
     };
 
 
@@ -210,6 +217,11 @@ namespace MfxHwH264Encode
         virtual
         mfxStatus Destroy();
 
+        void ForceCodingFunction (mfxU16 codingFunction)
+        {
+            m_forcedCodingFunction = codingFunction;
+        }
+
     private:
         D3D11SvcEncoder(D3D11SvcEncoder const &); // no implementation
         D3D11SvcEncoder & operator =(D3D11SvcEncoder const &); // no implementation
@@ -262,6 +274,8 @@ namespace MfxHwH264Encode
         static const mfxU32 MAX_PACKED_SLICE_SIZE  = 1024;
         mfxU8 m_packedSpsPpsBuffer[MAX_PACKED_SPSPPS_SIZE]; // aud, sps, pps, sei
         mfxU8 m_packedSliceBuffer[MAX_PACKED_SLICE_SIZE];   // all slices of picture
+
+        mfxU16                                           m_forcedCodingFunction;
     };
 
 }; // namespace

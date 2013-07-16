@@ -222,6 +222,11 @@ namespace MfxHwH264Encode
         virtual
         mfxStatus Destroy();
 
+        void ForceCodingFunction (mfxU16 codingFunction)
+        {
+            m_forcedCodingFunction = codingFunction;
+        }
+
     private:
         D3D9Encoder(D3D9Encoder const &); // no implementation
         D3D9Encoder & operator =(D3D9Encoder const &); // no implementation
@@ -247,6 +252,8 @@ namespace MfxHwH264Encode
         ENCODE_ENC_CTRL_CAPS m_capsQuery; // from ENCODE_ENC_CTRL_CAPS_ID
         ENCODE_ENC_CTRL_CAPS m_capsGet;   // from ENCODE_ENC_CTRL_GET_ID
         bool                 m_infoQueried;
+
+        mfxU16                m_forcedCodingFunction;
     };
 
     class D3D9SvcEncoder : public DriverEncoder
@@ -317,6 +324,11 @@ namespace MfxHwH264Encode
         virtual
         mfxStatus Destroy();
 
+        void ForceCodingFunction (mfxU16 codingFunction)
+        {
+            m_forcedCodingFunction = codingFunction;
+        }
+
     private:
         D3D9SvcEncoder(D3D9SvcEncoder const &); // no implementation
         D3D9SvcEncoder & operator =(D3D9SvcEncoder const &); // no implementation
@@ -340,6 +352,8 @@ namespace MfxHwH264Encode
         ENCODE_ENC_CTRL_CAPS  m_capsQuery; // from ENCODE_ENC_CTRL_CAPS_ID
         ENCODE_ENC_CTRL_CAPS  m_capsGet;   // from ENCODE_ENC_CTRL_GET_ID
         bool                  m_infoQueried;
+
+        mfxU16                m_forcedCodingFunction;
     };
 
 }; // namespace
