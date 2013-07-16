@@ -1726,8 +1726,8 @@ mfxStatus TaskManager::AssignTask(
     }
     else
     {
-        toEncode->m_insertPps[ ffid] = 1;
-        toEncode->m_insertPps[!ffid] = 1;
+        toEncode->m_insertPps[ ffid] = toEncode->m_insertSps[ ffid] || IsOn(extDdi->RepeatPPS);
+        toEncode->m_insertPps[!ffid] = toEncode->m_insertSps[!ffid] || IsOn(extDdi->RepeatPPS);
         toEncode->m_nalRefIdc[ ffid] = !!(toEncode->m_type[ ffid] & MFX_FRAMETYPE_REF);
         toEncode->m_nalRefIdc[!ffid] = !!(toEncode->m_type[!ffid] & MFX_FRAMETYPE_REF);
     }
@@ -2590,11 +2590,11 @@ void UmcBrc::Init(MfxVideoParam const & video)
         video.mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
         video.mfx.RateControlMethod == MFX_RATECONTROL_AVBR);
 
-    mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(video);
-    m_lookAhead = extDdi->LookAhead;
+    mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(video);
+    m_lookAhead = extOpt2->LookAheadDepth;
 
     mfxVideoParam tmpVideo = video;
-    tmpVideo.mfx.GopRefDist = (extDdi->LookAhead >= 5) ? 1 : tmpVideo.mfx.GopRefDist;
+    tmpVideo.mfx.GopRefDist = (extOpt2->LookAheadDepth >= 5) ? 1 : tmpVideo.mfx.GopRefDist;
 
     UMC::VideoBrcParams umcBrcParams;
     mfxStatus sts = ConvertVideoParam_Brc(&tmpVideo, &umcBrcParams);
@@ -2759,13 +2759,11 @@ namespace
 
 void LookAheadBrc2::Init(MfxVideoParam const & video)
 {
-    assert(
-        video.mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
-        video.mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
-        video.mfx.RateControlMethod == MFX_RATECONTROL_AVBR);
+    assert(video.mfx.RateControlMethod == MFX_RATECONTROL_LA);
 
-    mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(video);
-    m_lookAhead     = extDdi->LookAhead - extDdi->LookAheadDep;
+    mfxExtCodingOptionDDI const * extDdi  = GetExtBuffer(video);
+    mfxExtCodingOption2 const *   extOpt2 = GetExtBuffer(video);
+    m_lookAhead     = extOpt2->LookAheadDepth - extDdi->LookAheadDep;
     m_lookAheadDep  = extDdi->LookAheadDep;
     m_qpUpdateRange = extDdi->QpUpdateRange;
     m_strength      = extDdi->StrengthN;

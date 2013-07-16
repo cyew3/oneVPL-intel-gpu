@@ -609,9 +609,8 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         checkStatus = spsppsSts;
 
     // CQP enabled
-    mfxExtCodingOptionDDI * extDdi  = GetExtBuffer(m_video);
-    mfxExtCodingOption2 *   extOpt2 = GetExtBuffer(m_video);
-    m_enabledSwBrc = IsOn(extDdi->SwBrc) || IsOn(extOpt2->ExtBRC);
+    mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(m_video);
+    m_enabledSwBrc = IsOn(extOpt2->ExtBRC) || m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA;
 
     // need it for both ENCODE and ENC
     m_hrd.Setup(m_video);
@@ -619,7 +618,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     mfxExtPAVPOption * extOptPavp = GetExtBuffer(m_video);
     m_aesCounter.Init(*extOptPavp);
 
-    m_brc.SetImpl(extDdi->LookAhead > 1 ? (Brc *)new LookAheadBrc2 : (Brc *)new UmcBrc);
+    m_brc.SetImpl(m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA ? (Brc *)new LookAheadBrc2 : (Brc *)new UmcBrc);
 
     if (m_enabledSwBrc)
     {
@@ -700,16 +699,16 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     sts = m_bit.Alloc(m_core, request);
     MFX_CHECK_STS(sts);
 
-    if (extDdi->LookAhead > 1)
+    if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA)
     {
         m_cmDevice.Reset(CreateCmDevicePtr(m_core));
         m_cmCtx.reset(new CmContext(m_video, m_cmDevice));
 
         mfxU32 numMb = m_video.mfx.FrameInfo.Width * m_video.mfx.FrameInfo.Height / 256;
-        m_vmeDataStorage.resize(extDdi->LookAhead + m_video.AsyncDepth);
+        m_vmeDataStorage.resize(extOpt2->LookAheadDepth + m_video.AsyncDepth);
         for (size_t i = 0; i < m_vmeDataStorage.size(); i++)
             m_vmeDataStorage[i].mb.resize(numMb);
-        m_tmpVmeData.reserve(extDdi->LookAhead);
+        m_tmpVmeData.reserve(extOpt2->LookAheadDepth);
 
         request.Info.Width  = AlignValue<mfxU16>(m_video.mfx.FrameInfo.Width  / 4, 16);
         request.Info.Height = AlignValue<mfxU16>(m_video.mfx.FrameInfo.Height / 4, 16);
@@ -751,10 +750,8 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     sts = m_ddi->Register(m_bit, D3DDDIFMT_INTELENCODE_BITSTREAMDATA);
     MFX_CHECK_STS(sts);
 
-    m_maxSizeReordering        = m_video.mfx.EncodedOrder ? 1 : m_video.mfx.GopRefDist;
-    m_maxSizeLookaheadStarted  = 1 + (extDdi->LookAhead > 1 && m_video.AsyncDepth > 1);
-    m_maxSizeLookaheadFinished = IPP_MAX(1, extDdi->LookAhead);
-    m_maxSizeEncoding          = m_video.AsyncDepth;
+    m_emulatorForSyncPart.Init(m_video);
+    m_emulatorForAsyncPart = m_emulatorForSyncPart;
 
     m_free.resize(GetBufferingDepth(m_video) + m_video.AsyncDepth - 1);
     m_incoming.clear();
@@ -763,12 +760,10 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     m_lookaheadFinished.clear();
     m_encoding.clear();
 
-    m_inputCounter   = 0;
-    m_epilogCounter  = 0;
     m_fieldCounter   = 0;
     m_1stFieldStatus = MFX_ERR_NONE;
     m_frameOrder     = 0;
-    m_flushStage     = false;
+    m_stagesToGo     = AsyncRoutineEmulator::STAGE_CALL_EMULATOR;
     m_failedStatus   = MFX_ERR_NONE;
     m_frameOrderIdrInDisplayOrder = 0;
     m_frameOrderStartLyncStructure = 0;
@@ -923,20 +918,15 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
     for (size_t size = m_encoding.size(); size-->0;)
         OnEncodingQueried();
 
-    // m_incoming contains few empty tasks (with m_yuv=null), move them to free queue
-    m_free.splice(m_free.end(), m_incoming);
-    std::fill(m_free.begin(), m_free.end(), DdiTask());
+    m_emulatorForSyncPart.Init(newPar);
+    m_emulatorForAsyncPart = m_emulatorForSyncPart;
 
     m_hrd.Reset(newPar);
     m_ddi->Reset(newPar);
 
-    m_flushStage     = false;
-    m_epilogCounter  = 0;
     m_1stFieldStatus = MFX_ERR_NONE;
     m_fieldCounter   = 0;
-    m_inputCounter   = mfxU32(m_incoming.size() + m_reordering.size() + m_lookaheadStarted.size() +
-        m_lookaheadFinished.size() + m_encoding.size()); // sum tasks in use
-
+    m_stagesToGo     = AsyncRoutineEmulator::STAGE_CALL_EMULATOR;
 
     mfxExtEncoderResetOption const * extResetOpt = GetExtBuffer(newPar);
 
@@ -965,11 +955,8 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
         m_frameOrderIdrInDisplayOrder = 0;
         m_frameOrderStartLyncStructure = 0;
 
-        m_flushStage     = false;
-        m_epilogCounter  = 0;
         m_1stFieldStatus = MFX_ERR_NONE;
         m_fieldCounter   = 0;
-        m_inputCounter   = 0;
 
         m_raw.Unlock();
         m_raw4x.Unlock();
@@ -1090,6 +1077,8 @@ struct CompareByMidRaw4x
 
 void ImplementationAvc::OnNewFrame()
 {
+    m_stagesToGo &= ~AsyncRoutineEmulator::STAGE_ACCEPT_FRAME;
+
     UMC::AutomaticUMCMutex guard(m_listMutex);
     m_reordering.splice(m_reordering.end(), m_incoming, m_incoming.begin());
 }
@@ -1097,6 +1086,8 @@ void ImplementationAvc::OnNewFrame()
 
 void ImplementationAvc::OnLookaheadSubmitted(DdiTaskIter task)
 {
+    m_stagesToGo &= ~AsyncRoutineEmulator::STAGE_START_LA;
+
     if (m_inputFrameType == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
         m_core->DecreaseReference(&task->m_yuv->Data);
     m_lookaheadStarted.splice(m_lookaheadStarted.end(), m_reordering, task);
@@ -1105,6 +1096,8 @@ void ImplementationAvc::OnLookaheadSubmitted(DdiTaskIter task)
 
 void ImplementationAvc::OnLookaheadQueried()
 {
+    m_stagesToGo &= ~AsyncRoutineEmulator::STAGE_WAIT_LA;
+
     DdiTask & task = m_lookaheadStarted.front();
 
     ArrayDpbFrame & iniDpb = task.m_dpb[0];
@@ -1143,12 +1136,16 @@ void ImplementationAvc::OnLookaheadQueried()
 
 void ImplementationAvc::OnEncodingSubmitted(DdiTaskIter task)
 {
+    m_stagesToGo &= ~AsyncRoutineEmulator::STAGE_START_ENCODE;
+
     m_encoding.splice(m_encoding.end(), m_lookaheadFinished, task);
 }
 
 
 void ImplementationAvc::OnEncodingQueried()
 {
+    m_stagesToGo &= ~AsyncRoutineEmulator::STAGE_WAIT_ENCODE;
+
     DdiTask & task = m_encoding.front();
 
     if (m_inputFrameType == MFX_IOPATTERN_IN_VIDEO_MEMORY)
@@ -1166,11 +1163,12 @@ void ImplementationAvc::OnEncodingQueried()
     if ((task.m_reference[0] + task.m_reference[1]) == 0)
         ReleaseResource(m_rec, task.m_midRec);
 
-    m_encoding.front() = DdiTask();
+    mfxU32 numBits = 8 * (task.m_bsDataLength[0] + task.m_bsDataLength[1]);
+    task = DdiTask();
 
     UMC::AutomaticUMCMutex guard(m_listMutex);
 
-    m_stat.NumBit += 8 * (task.m_bsDataLength[0] + task.m_bsDataLength[1]);
+    m_stat.NumBit += numBits;
     m_stat.NumCachedFrame--;
     m_stat.NumFrame++;
 
@@ -1228,18 +1226,18 @@ void ImplementationAvc::BrcPreEnc(
 }
 
 
-mfxStatus ImplementationAvc::Submit(mfxBitstream * bs)
+mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 {
     mfxExtCodingOption    const * extOpt = GetExtBuffer(m_video);
     mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
 
+    if (m_stagesToGo == 0)
     {
         UMC::AutomaticUMCMutex guard(m_listMutex);
-        if (!m_incoming.empty())
-            m_flushStage = (m_incoming.front().m_yuv == 0);
+        m_stagesToGo = m_emulatorForAsyncPart.Go(!m_incoming.empty());
     }
 
-    if (!m_flushStage && !m_incoming.empty() && m_reordering.size() < m_maxSizeReordering)
+    if (m_stagesToGo & AsyncRoutineEmulator::STAGE_ACCEPT_FRAME)
     {
         DdiTask & newTask = m_incoming.front();
 
@@ -1301,18 +1299,15 @@ mfxStatus ImplementationAvc::Submit(mfxBitstream * bs)
         OnNewFrame();
     }
 
-    assert(m_reordering.size() <= m_maxSizeReordering);
-
-    if ((m_reordering.size() && m_flushStage ||
-         m_reordering.size() == m_maxSizeReordering) &&
-        m_lookaheadStarted.size() < m_maxSizeLookaheadStarted)
+    if (m_stagesToGo & AsyncRoutineEmulator::STAGE_START_LA)
     {
         bool gopStrict = !!(m_video.mfx.GopOptFlag & MFX_GOP_STRICT);
 
         DdiTaskIter task = (m_video.mfx.EncodedOrder)
             ? m_reordering.begin()
             : FindFrameToEncode(m_lastTask.m_dpbPostEncoding,
-                m_reordering.begin(), m_reordering.end(), gopStrict, m_flushStage);
+                m_reordering.begin(), m_reordering.end(),
+                gopStrict, m_reordering.size() < m_video.mfx.GopRefDist);
         if (task == m_reordering.end())
             return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
 
@@ -1327,7 +1322,7 @@ mfxStatus ImplementationAvc::Submit(mfxBitstream * bs)
         if (sts != MFX_ERR_NONE)
             return Error(sts);
 
-        if (extDdi->LookAhead > 1)
+        if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA)
         {
             mfxHDLPair cmMb = AcquireResourceUp(m_mb);
             task->m_cmMb    = (CmBufferUP *)cmMb.first;
@@ -1345,7 +1340,7 @@ mfxStatus ImplementationAvc::Submit(mfxBitstream * bs)
         ConfigureTask(*task, m_lastTask, m_video);
         m_lastTask = *task;
 
-        if (extDdi->LookAhead > 1)
+        if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA)
         {
             ArrayDpbFrame const & dpb = task->m_dpb[0];
             ArrayU8x33 const &    l0  = task->m_list0[0];
@@ -1377,13 +1372,10 @@ mfxStatus ImplementationAvc::Submit(mfxBitstream * bs)
         OnLookaheadSubmitted(task);
     }
 
-    assert(m_lookaheadStarted.size() <= m_maxSizeLookaheadStarted);
 
-    if ((m_lookaheadStarted.size() && m_flushStage ||
-         m_lookaheadStarted.size() == m_maxSizeLookaheadStarted) &&
-        m_lookaheadFinished.size() < m_maxSizeLookaheadFinished)
+    if (m_stagesToGo & AsyncRoutineEmulator::STAGE_WAIT_LA)
     {
-        if (extDdi->LookAhead > 1)
+        if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA)
             if (!QueryLookahead(m_lookaheadStarted.front()))
                 return MFX_TASK_BUSY;
 
@@ -1399,11 +1391,8 @@ mfxStatus ImplementationAvc::Submit(mfxBitstream * bs)
         }
     }
 
-    assert(m_lookaheadFinished.size() <= m_maxSizeLookaheadFinished);
 
-    if ((m_lookaheadFinished.size() && m_flushStage ||
-         m_lookaheadFinished.size() == m_maxSizeLookaheadFinished) &&
-        m_encoding.size() < m_maxSizeEncoding)
+    if (m_stagesToGo & AsyncRoutineEmulator::STAGE_START_ENCODE)
     {
         DdiTaskIter task = m_lookaheadFinished.begin();
 
@@ -1466,7 +1455,7 @@ mfxStatus ImplementationAvc::Submit(mfxBitstream * bs)
 
         if (m_enabledSwBrc)
         {
-            if (extDdi->LookAhead > 1)
+            if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA)
                 BrcPreEnc(*task);
             task->m_cqpValue[0] = task->m_cqpValue[1] = m_brc.GetQp(task->m_type[task->m_fid[0]], task->m_picStruct[ENC]);
         }
@@ -1487,11 +1476,8 @@ mfxStatus ImplementationAvc::Submit(mfxBitstream * bs)
         OnEncodingSubmitted(task);
     }
 
-    assert(m_encoding.size() <= m_maxSizeEncoding);
 
-    if ((m_encoding.size() && m_flushStage ||
-         m_encoding.size() == m_maxSizeEncoding) &&
-        bs != 0)
+    if (m_stagesToGo & AsyncRoutineEmulator::STAGE_WAIT_ENCODE)
     {
         mfxExtCodingOption const * extOpt = GetExtBuffer(m_video);
 
@@ -1543,9 +1529,6 @@ mfxStatus ImplementationAvc::Submit(mfxBitstream * bs)
             task.m_bs = stupidPair->first;
             mfxU32 fid = task.m_fid[stupidPair->second & 1];
 
-            if (task.m_fieldCounter == 0 && bs->FrameType == 1)
-                return MFX_TASK_BUSY;
-
             if ((sts = QueryStatus(task, fid)) != MFX_ERR_NONE)
                 return sts;
             if ((sts = UpdateBitstream(task, fid)) != MFX_ERR_NONE)
@@ -1554,18 +1537,24 @@ mfxStatus ImplementationAvc::Submit(mfxBitstream * bs)
             if (task.m_fieldCounter == 2)
             {
                 OnEncodingQueried();
+                UMC::AutomaticUMCMutex guard(m_listMutex);
                 m_listOfPairsForStupidFieldOutputMode.pop_front();
                 m_listOfPairsForStupidFieldOutputMode.pop_front();
             }
         }
+    }
 
+    if (m_stagesToGo & AsyncRoutineEmulator::STAGE_RESTART)
+    {
+        m_stagesToGo = AsyncRoutineEmulator::STAGE_CALL_EMULATOR;
+        return MFX_TASK_BUSY;
     }
 
     return MFX_TASK_DONE;
 }
 
 
-mfxStatus ImplementationAvc::TaskRoutineSubmit(void * state, void * param, mfxU32, mfxU32)
+mfxStatus ImplementationAvc::AsyncRoutineHelper(void * state, void * param, mfxU32, mfxU32)
 {
     ImplementationAvc & impl = *(ImplementationAvc *)state;
 
@@ -1575,7 +1564,7 @@ mfxStatus ImplementationAvc::TaskRoutineSubmit(void * state, void * param, mfxU3
     mfxStatus sts = MFX_ERR_NONE;
     try
     {
-        sts = impl.Submit((mfxBitstream *)param);
+        sts = impl.AsyncRoutine((mfxBitstream *)param);
         if (sts != MFX_TASK_BUSY && sts != MFX_TASK_DONE)
             impl.m_failedStatus = sts;
     }
@@ -1635,8 +1624,8 @@ mfxStatus ImplementationAvc::EncodeFrameCheck(
             entryPoints[0].pGetSubTaskProc      = 0;
             entryPoints[0].pCompleteSubTaskProc = 0;
             entryPoints[0].requiredNumThreads   = 1;
-            entryPoints[0].pRoutineName         = "Encode Submit 2nd field";
-            entryPoints[0].pRoutine             = TaskRoutineSubmit;
+            entryPoints[0].pRoutineName         = "AsyncRoutine";
+            entryPoints[0].pRoutine             = AsyncRoutineHelper;
             numEntryPoints = 1;
 
             return m_1stFieldStatus;
@@ -1669,66 +1658,63 @@ mfxStatus ImplementationAvc::EncodeFrameCheckNormalWay(
     MFX_ENTRY_POINT           entryPoints[],
     mfxU32 &                  numEntryPoints)
 {
-    mfxU32 bufferingDepth = GetBufferingDepth(m_video);
-    mfxU32 encOrder = m_video.mfx.EncodedOrder;
-
-    if (!encOrder && m_epilogCounter > 0 && surface != 0)
-        return Error(MFX_ERR_UNDEFINED_BEHAVIOR); // not-NULL after NULL is not allowed
-
     mfxStatus checkSts = CheckEncodeFrameParam(
         m_video, ctrl, surface, bs,
         m_core->IsExternalFrameAllocator());
     if (checkSts < MFX_ERR_NONE)
         return checkSts;
 
-    if (!encOrder && surface == 0 && m_epilogCounter >= IPP_MIN(m_inputCounter, bufferingDepth - 1))
-        return MFX_ERR_MORE_DATA;
-
     mfxStatus status = checkSts;
-
-    if (!encOrder && surface && m_inputCounter + 1 < bufferingDepth)
-        status = mfxStatus(MFX_ERR_MORE_DATA_RUN_TASK);
-
-    if (status == mfxStatus(MFX_ERR_MORE_DATA_RUN_TASK))
-        bs = 0; // no output will be generated
 
     {
         UMC::AutomaticUMCMutex guard(m_listMutex);
-
         if (m_free.empty())
             return MFX_WRN_DEVICE_BUSY;
+    }
 
+    mfxU32 stagesToGo = m_emulatorForSyncPart.Go(!!surface);
+
+    while (stagesToGo & AsyncRoutineEmulator::STAGE_RESTART)
+        stagesToGo = m_emulatorForSyncPart.Go(!!surface);
+
+    if (stagesToGo == AsyncRoutineEmulator::STAGE_CALL_EMULATOR)
+        return MFX_ERR_MORE_DATA; // end of encoding session
+
+    if ((stagesToGo & AsyncRoutineEmulator::STAGE_WAIT_ENCODE) == 0)
+    {
+        status = mfxStatus(MFX_ERR_MORE_DATA_RUN_TASK);
+        bs = 0; // no output will be generated
+    }
+
+    if (surface)
+    {
         mfxEncodeCtrl defaultCtrl = {};
         if (ctrl == 0) 
             ctrl = &defaultCtrl;
 
-        //UMC::AutomaticUMCMutex guard(m_listMutex);
+        UMC::AutomaticUMCMutex guard(m_listMutex);
+
         m_free.front().m_yuv  = surface;
         m_free.front().m_ctrl = *ctrl;
         m_free.front().m_type = ExtendFrameType(ctrl->FrameType);
 
-        if (surface)
-        {
-            m_free.front().m_extFrameTag = surface->Data.FrameOrder;
-            m_free.front().m_frameOrder  = surface->Data.FrameOrder;
-            m_free.front().m_timeStamp   = surface->Data.TimeStamp;
-            m_core->IncreaseReference(&surface->Data);
-        }
-
-        if (bs && IsProtectionPavp(m_video.Protected)) // AES counter is incremented only if output is expected
-        {
-            mfxU32 picStruct = m_video.mfx.FrameInfo.PicStruct;
-            if (IncrementAesCounterAndCheckIfWrapped(picStruct, m_aesCounter))
-                status = MFX_WRN_OUT_OF_RANGE;
-        }
+        m_free.front().m_extFrameTag = surface->Data.FrameOrder;
+        m_free.front().m_frameOrder  = surface->Data.FrameOrder;
+        m_free.front().m_timeStamp   = surface->Data.TimeStamp;
+        m_core->IncreaseReference(&surface->Data);
 
         m_stat.NumCachedFrame++;
         m_incoming.splice(m_incoming.end(), m_free, m_free.begin());
     }
 
-    *reordered_surface = surface;
+    if (bs && IsProtectionPavp(m_video.Protected)) // AES counter is incremented only if output is expected
+    {
+        mfxU32 picStruct = m_video.mfx.FrameInfo.PicStruct;
+        if (IncrementAesCounterAndCheckIfWrapped(picStruct, m_aesCounter))
+            status = MFX_WRN_OUT_OF_RANGE;
+    }
 
-    (surface) ? m_inputCounter++ : m_epilogCounter++;
+    *reordered_surface = surface;
 
     entryPoints[0].pState               = this;
     entryPoints[0].pParam               = bs;
@@ -1736,41 +1722,12 @@ mfxStatus ImplementationAvc::EncodeFrameCheckNormalWay(
     entryPoints[0].pGetSubTaskProc      = 0;
     entryPoints[0].pCompleteSubTaskProc = 0;
     entryPoints[0].requiredNumThreads   = 1;
-    entryPoints[0].pRoutineName         = "Encode Submit";
-    entryPoints[0].pRoutine             = TaskRoutineSubmit;
+    entryPoints[0].pRoutineName         = "AsyncRoutine";
+    entryPoints[0].pRoutine             = AsyncRoutineHelper;
     numEntryPoints = 1;
 
     return status;
 }
-
-
-namespace
-{
-    struct PocEquals
-    {
-        PocEquals(mfxU32 poc) : m_poc(poc) {}
-        bool operator () (VmeData const & vmeData) { return vmeData.used && vmeData.poc == m_poc; }
-    private:
-        mfxU32 m_poc;
-    };
-
-    bool Unused(VmeData const * vmeData)
-    {
-        return !vmeData->used;
-    }
-
-    bool EncOrderLess(VmeData const * l, VmeData const * r)
-    {
-        return l->used && (!r->used || l->encOrder < r->encOrder);
-    }
-
-    VmeData * FindVmeDataByPoc(std::vector<VmeData> & vmeData, mfxU32 poc)
-    {
-        std::vector<VmeData>::iterator i = std::find_if(vmeData.begin(), vmeData.end(), PocEquals(poc));
-        return i == vmeData.end() ? 0 : &*i;
-    }
-
-};
 
 
 void ImplementationAvc::SubmitLookahead(

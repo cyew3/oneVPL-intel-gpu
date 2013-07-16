@@ -1403,12 +1403,33 @@ BiFrameLocation MfxHwH264Encode::GetBiFrameLocation(
 }
 
 
+namespace
+{
+    mfxU8 GetPefFrameTrellisFlag(mfxExtCodingOption2 const & extOpt2, mfxU32 frameType)
+    {
+        if (extOpt2.Trellis == MFX_TRELLIS_UNKNOWN)
+            return 0; // let driver choose
+
+        if (extOpt2.Trellis & MFX_TRELLIS_OFF)
+            return 2; // off
+
+        if ((frameType & MFX_FRAMETYPE_I) && (extOpt2.Trellis & MFX_TRELLIS_I) ||
+            (frameType & MFX_FRAMETYPE_P) && (extOpt2.Trellis & MFX_TRELLIS_P) ||
+            (frameType & MFX_FRAMETYPE_B) && (extOpt2.Trellis & MFX_TRELLIS_B))
+            return 1; // on
+        else
+            return 2; // off
+    }
+};
+
+
 void MfxHwH264Encode::ConfigureTask(
     DdiTask &             task,
     DdiTask const &       prevTask,
     MfxVideoParam const & video)
 {
     mfxExtCodingOption const *      extOpt  = GetExtBuffer(video);
+    mfxExtCodingOption2 const *     extOpt2 = GetExtBuffer(video);
     mfxExtCodingOptionDDI const *   extDdi  = GetExtBuffer(video);
     mfxExtSpsHeader const *         extSps  = GetExtBuffer(video);
     mfxExtAvcTemporalLayers const * extTemp = GetExtBuffer(video);
@@ -1472,10 +1493,13 @@ void MfxHwH264Encode::ConfigureTask(
     task.m_insertAud[sfid] = IsOn(extOpt->AUDelimiter);
     task.m_insertSps[ffid] = intraPicFlag;
     task.m_insertSps[sfid] = 0;
-    task.m_insertPps[ffid] = 1;
-    task.m_insertPps[sfid] = 1;
+    task.m_insertPps[ffid] = task.m_insertSps[ffid] || IsOn(extDdi->RepeatPPS);
+    task.m_insertPps[sfid] = task.m_insertSps[sfid] || IsOn(extDdi->RepeatPPS);
     task.m_nalRefIdc[ffid] = task.m_reference[ffid];
     task.m_nalRefIdc[sfid] = task.m_reference[sfid];
+
+    task.m_trellis[ffid] = GetPefFrameTrellisFlag(*extOpt2, task.m_type[ffid]);
+    task.m_trellis[sfid] = GetPefFrameTrellisFlag(*extOpt2, task.m_type[sfid]);
 
     if (video.calcParam.lyncMode)
     {
@@ -1745,6 +1769,57 @@ void MfxHwH264Encode::AnalyzeVmeData(DdiTaskIter begin, DdiTaskIter end, mfxU32 
     begin->m_vmeData->propCost = 0;
     for (size_t i = 0; i < begin->m_vmeData->mb.size(); i++)
         begin->m_vmeData->propCost += begin->m_vmeData->mb[i].propCost;
+}
+
+
+void AsyncRoutineEmulator::Init(MfxVideoParam const & video)
+{
+    mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(video);
+
+    m_stageGreediness[STG_ACCEPT_FRAME] = 1;
+    m_stageGreediness[STG_START_LA    ] = video.mfx.EncodedOrder ? 1 : video.mfx.GopRefDist;
+    m_stageGreediness[STG_WAIT_LA     ] = 1 + (extOpt2->LookAheadDepth > 0 && video.AsyncDepth > 1);
+    m_stageGreediness[STG_START_ENCODE] = IPP_MAX(1, extOpt2->LookAheadDepth);
+    m_stageGreediness[STG_WAIT_ENCODE ] = video.AsyncDepth;
+
+    Zero(m_queueFullness);
+    Zero(m_queueFlush);
+}
+
+
+mfxU32 AsyncRoutineEmulator::CheckStageOutput(mfxU32 stage)
+{
+    mfxU32 in  = stage;
+    mfxU32 out = stage + 1;
+    mfxU32 hasOutput = 0;
+    if (m_queueFullness[in] >= m_stageGreediness[stage] ||
+        m_queueFullness[in] > 0 && m_queueFlush[in])
+    {
+        --m_queueFullness[in];
+        ++m_queueFullness[out];
+        hasOutput = 1;
+    }
+
+    m_queueFlush[out] = (m_queueFlush[in] && m_queueFullness[in] == 0);
+    return hasOutput;
+}
+
+
+mfxU32 AsyncRoutineEmulator::Go(bool hasInput)
+{
+    if (hasInput)
+        ++m_queueFullness[QU_INCOMING];
+    else
+        m_queueFlush[QU_INCOMING] = 1;
+
+    mfxU32 stages = 0;
+    for (mfxU32 i = 0; i < NUM_STAGES; i++)
+        stages += CheckStageOutput(i) << i;
+
+    if (!hasInput && stages != 0 && (stages & STAGE_WAIT_ENCODE) == 0)
+        stages += STAGE_RESTART;
+
+    return stages;
 }
 
 

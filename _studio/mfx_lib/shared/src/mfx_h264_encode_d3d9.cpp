@@ -88,7 +88,7 @@ void MfxHwH264Encode::FillSpsBuffer(
     sps.GlobalSearch                            = extDdi->GlobalSearch;
     sps.LocalSearch                             = extDdi->LocalSearch;
     sps.EarlySkip                               = extDdi->EarlySkip;
-    sps.Trellis                                 = extDdi->Trellis;
+    sps.Trellis                                 = 0;
     sps.MBBRC                                   = IsOn(extOpt2->MBBRC) ? 1 : IsOff(extOpt2->MBBRC) ? 2 : 0;
 
     sps.UserMaxFrameSize                        = extOpt2->MaxFrameSize;
@@ -1039,6 +1039,7 @@ mfxStatus D3D9Encoder::Execute(
     }
 
     m_sps.bNoAccelerationSPSInsertion = !task.m_insertSps[fieldId];
+    m_sps.Trellis = task.m_trellis[fieldId];
 
     m_compBufDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_SPSDATA;
     m_compBufDesc[bufCnt].DataSize = mfxU32(sizeof(m_sps));
@@ -1126,21 +1127,24 @@ mfxStatus D3D9Encoder::Execute(
 
             std::vector<ENCODE_PACKEDHEADER_DATA> const & packedPps = m_headerPacker.GetPps();
 
-            if (m_headerPacker.isMVC())
+            if (task.m_insertPps[fieldId])
             {
-                m_compBufDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA;
-                m_compBufDesc[bufCnt].DataSize             = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));
-                m_compBufDesc[bufCnt].pCompBuffer          = RemoveConst(&packedPps[!!task.m_viewIdx]);
-                bufCnt++;
-            }
-            else
-            {
-                for (size_t i = 0; i < packedPps.size(); i++)
+                if (m_headerPacker.isMVC())
                 {
                     m_compBufDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA;
                     m_compBufDesc[bufCnt].DataSize             = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));
-                    m_compBufDesc[bufCnt].pCompBuffer          = RemoveConst(&packedPps[i]);
+                    m_compBufDesc[bufCnt].pCompBuffer          = RemoveConst(&packedPps[!!task.m_viewIdx]);
                     bufCnt++;
+                }
+                else
+                {
+                    for (size_t i = 0; i < packedPps.size(); i++)
+                    {
+                        m_compBufDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA;
+                        m_compBufDesc[bufCnt].DataSize             = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));
+                        m_compBufDesc[bufCnt].pCompBuffer          = RemoveConst(&packedPps[i]);
+                        bufCnt++;
+                    }
                 }
             }
         }

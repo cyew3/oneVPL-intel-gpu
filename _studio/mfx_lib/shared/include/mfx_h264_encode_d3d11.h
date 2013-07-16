@@ -121,8 +121,8 @@ namespace MfxHwH264Encode
             mfxExtPAVPOption const * extPavp);
 
     private:
-        VideoCORE *                                    m_core;
-        ID3D11VideoDevice *                            m_pVideoDevice;
+        VideoCORE *                                 m_core;
+        ID3D11VideoDevice *                         m_pVideoDevice;
         ID3D11VideoContext *                        m_pVideoContext;
         ID3D11VideoDecoder *                        m_pDecoder;
         GUID                                        m_guid;

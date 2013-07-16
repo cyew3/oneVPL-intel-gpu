@@ -563,15 +563,13 @@ namespace
 
     mfxU16 GetDefaultAsyncDepth(MfxVideoParam const & par)
     {
-        mfxExtCodingOptionDDI const * extDdi  = GetExtBuffer(par);
-        mfxExtCodingOption2 const *   extOpt2 = GetExtBuffer(par);
+        mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(par);
 
         if (par.mfx.EncodedOrder)
             return 1;
 
-        if (IsOn(extDdi->SwBrc) || IsOn(extOpt2->ExtBRC))
-            if (extDdi->LookAhead <= 1)
-                return 1;
+        if (IsOn(extOpt2->ExtBRC))
+            return 1;
 
         mfxU32 picSize = par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height;
         if (picSize < 200000)
@@ -705,19 +703,12 @@ namespace
         return mfxU32(IPP_MIN(UINT_MAX, par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height * mvcMultiplier * 3u / 2000u));
     }
 
-    // aya:
 
-    // AYA:FillSpsBuffer()
-
-    // aya:
-
-    // aya:
-
-    // aya:
-
-   // aya: Convert
-
- // aya:FillSliceBuffer
+    mfxU8 GetDefaultLog2MaxFrameNumMinux4(mfxVideoParam const & video)
+    {
+        // frame_num should be able to distinguish NumRefFrame reference frames + current frame
+        return mfxU8(IPP_MAX(4, CeilLog2(video.mfx.NumRefFrame + 1)) - 4);
+    }
 
     mfxU32 CheckAgreementOfFrameRate(
         FunctionQuery,
@@ -869,10 +860,12 @@ namespace
 
 mfxU32 MfxHwH264Encode::CalcNumSurfRaw(MfxVideoParam const & video)
 {
-    mfxExtCodingOptionDDI * extDdi = GetExtBuffer(video);
+    mfxExtCodingOption2 const *   extOpt2 = GetExtBuffer(video);
+    mfxExtCodingOptionDDI const * extDdi  = GetExtBuffer(video);
 
     if (video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
-        return video.AsyncDepth + video.mfx.GopRefDist - 1 + extDdi->LookAhead +
+        return video.AsyncDepth + video.mfx.GopRefDist - 1 +
+            IPP_MAX(1, extOpt2->LookAheadDepth) + (video.AsyncDepth - 1) +
             (IsOn(extDdi->RefRaw) ? video.mfx.NumRefFrame : 0);
     else
         return 0;
@@ -896,12 +889,12 @@ mfxU32 MfxHwH264Encode::CalcNumSurfBitstream(MfxVideoParam const & video)
 
 mfxU16 MfxHwH264Encode::GetBufferingDepth(MfxVideoParam const & video)
 {
-    mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(video);
+    mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(video);
 
     mfxU32 depth = video.mfx.GopRefDist;
 
-    if (extDdi->LookAhead > 0)
-        depth += extDdi->LookAhead - 1;
+    if (video.mfx.RateControlMethod == MFX_RATECONTROL_LA)
+        depth += extOpt2->LookAheadDepth - 1;
 
     depth += (video.mfx.GopOptFlag & 4) ? (video.mfx.GopRefDist + 10) : 0;
 
@@ -909,8 +902,8 @@ mfxU16 MfxHwH264Encode::GetBufferingDepth(MfxVideoParam const & video)
     depth += video.AsyncDepth - 1;
 
     // one additional surface for async mode if lookahead is enabled
-    if (video.AsyncDepth > 1)
-        depth += !!(extDdi->LookAhead > 1);
+    if (video.AsyncDepth > 1 && video.mfx.RateControlMethod == MFX_RATECONTROL_LA)
+        depth += !!extOpt2->LookAheadDepth;
 
     assert(depth <= 128);
 
@@ -934,9 +927,10 @@ mfxU32 MfxHwH264Encode::CalcNumTasks(MfxVideoParam const & video)
 {
     assert(video.mfx.GopRefDist > 0);
     assert(video.AsyncDepth > 0);
-    mfxExtCodingOptionDDI * extDdi = GetExtBuffer(video);
+    mfxExtCodingOption2 const *   extOpt2 = GetExtBuffer(video);
+    mfxExtCodingOptionDDI const * extDdi  = GetExtBuffer(video);
 
-    return video.mfx.GopRefDist + (video.AsyncDepth - 1) + extDdi->LookAhead +
+    return video.mfx.GopRefDist + (video.AsyncDepth - 1) + IPP_MAX(1, extOpt2->LookAheadDepth) +
         (IsOn(extDdi->RefRaw) ? video.mfx.NumRefFrame : 0);
 }
 
@@ -1403,7 +1397,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     MfxVideoParam &     par,
     ENCODE_CAPS const & hwCaps,
     eMFXHWType          platform,
-    eMFXVAType          vaType)
+    eMFXVAType          /*vaType*/)
 {
     Bool unsupported(false);
     Bool changed(false);
@@ -1515,15 +1509,11 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.AsyncDepth = 6;
     }
 
-    if (par.AsyncDepth > 1 && (IsOn(extDdi->SwBrc) || IsOn(extOpt2->ExtBRC)) && extDdi->LookAhead == 1)
+    if (par.AsyncDepth > 1 && IsOn(extOpt2->ExtBRC))
     {
         changed = true;
         par.AsyncDepth = 1;
     }
-
-    if (IsOn(extDdi->SwBrc) || IsOn(extOpt2->ExtBRC))
-        if (extDdi->SwBrc == 0 || extOpt2->ExtBRC == 0)
-            extDdi->SwBrc = extOpt2->ExtBRC = MFX_CODINGOPTION_ON;
 
     if (par.mfx.TargetUsage > 7)
     {
@@ -1554,19 +1544,26 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.RateControlMethod != MFX_RATECONTROL_VBR &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_AVBR &&
-        par.mfx.RateControlMethod != MFX_RATECONTROL_WIDI_VBR/* &&
-        par.mfx.RateControlMethod != MFX_RATECONTROL_VCM*/)
+        par.mfx.RateControlMethod != MFX_RATECONTROL_WIDI_VBR &&
+        par.mfx.RateControlMethod != MFX_RATECONTROL_LA)
     {
         changed = true;
         par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
     }
 
-    //if (par.mfx.RateControlMethod == MFX_RATECONTROL_VCM &&
-    //    hwCaps.VCMBitrateControl == 0)
-    //{
-    //    changed = true;
-    //    par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
-    //}
+    if (extOpt2->LookAheadDepth > 0)
+    {
+        if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA)
+        {
+            changed = true;
+            extOpt2->LookAheadDepth = 0;
+        }
+        else if (par.mfx.GopRefDist > 0 && extOpt2->LookAheadDepth < 2 * par.mfx.GopRefDist)
+        {
+            changed = true;
+            extOpt2->LookAheadDepth = 2 * par.mfx.GopRefDist;
+        }
+    }
 
     if (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PART2)
     { // repeat/double/triple flags are for EncodeFrameAsync
@@ -1854,7 +1851,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     if (!CheckTriStateOption(extOpt->SingleSeiNalUnit))         changed = true;
     if (!CheckTriStateOption(extOpt->NalHrdConformance))        changed = true;
     if (!CheckTriStateOption(extDdi->RefRaw))                   changed = true;
-    if (!CheckTriStateOption(extDdi->SwBrc))                    changed = true;
+    if (!CheckTriStateOption(extDdi->RepeatPPS))                changed = true;
     if (!CheckTriStateOption(extDdi->DirectSpatialMvPredFlag))  changed = true;
     if (!CheckTriStateOption(extDdi->Hme))                      changed = true;
     if (!CheckTriStateOption(extOpt2->BitrateLimit))            changed = true;
@@ -1996,18 +1993,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         extOpt->VuiVclHrdParameters = MFX_CODINGOPTION_OFF;
     }
 
-    if (extDdi->SeqParameterSetId > 31)
-    {
-        changed = true;
-        extDdi->SeqParameterSetId = 0;
-    }
-
-    if (extDdi->PicParameterSetId > 255)
-    {
-        changed = true;
-        extDdi->PicParameterSetId = 0;
-    }
-
     if (extDdi->WeightedBiPredIdc == 1 || extDdi->WeightedBiPredIdc > 2)
     {
         changed = true;
@@ -2020,10 +2005,11 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         extDdi->CabacInitIdcPlus1 = 0;
     }
 
-    if (extDdi->LookAhead > 1 && (platform < MFX_HW_HSW || platform == MFX_HW_VLV || vaType == MFX_HW_D3D11))
+    if ((par.mfx.RateControlMethod == MFX_RATECONTROL_LA) &&
+        (platform < MFX_HW_HSW || platform == MFX_HW_VLV || par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE))
     {
-        changed = true;
-        extDdi->LookAhead = 1;
+        unsupported = true;
+        par.mfx.RateControlMethod = 0;
     }
 
 
@@ -2158,7 +2144,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         }
     }
 
-    if (par.calcParam.bufferSizeInKB != 0 && extDdi->LookAhead > 1 && (IsOn(extDdi->SwBrc) || IsOn(extOpt2->ExtBRC)))
+    if (par.calcParam.bufferSizeInKB != 0 && par.mfx.RateControlMethod == MFX_RATECONTROL_LA)
     {
         changed = true;
         par.calcParam.bufferSizeInKB = (par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height * 3 / 2 / 1000);
@@ -2531,6 +2517,18 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         // refresh period shouldn't be greater or equal to GOP size
         extOpt2->IntRefType = 0;
         extOpt2->IntRefCycleSize = 0;
+        changed = true;
+    }
+
+    if (extOpt2->Trellis & ~(MFX_TRELLIS_OFF | MFX_TRELLIS_I | MFX_TRELLIS_P | MFX_TRELLIS_B))
+    {
+        extOpt2->Trellis &= (MFX_TRELLIS_OFF | MFX_TRELLIS_I | MFX_TRELLIS_P | MFX_TRELLIS_B);
+        changed = true;
+    }
+
+    if ((extOpt2->Trellis & MFX_TRELLIS_OFF) && (extOpt2->Trellis & ~MFX_TRELLIS_OFF))
+    {
+        extOpt2->Trellis = MFX_TRELLIS_OFF;
         changed = true;
     }
 
@@ -3229,33 +3227,24 @@ void MfxHwH264Encode::SetDefaults(
     if (extDdi->RefRaw == MFX_CODINGOPTION_UNKNOWN)
         extDdi->RefRaw = MFX_CODINGOPTION_OFF;
 
+    if (extDdi->RepeatPPS == MFX_CODINGOPTION_UNKNOWN)
+        extDdi->RepeatPPS = MFX_CODINGOPTION_ON;
+
     if (extDdi->DirectSpatialMvPredFlag == MFX_CODINGOPTION_UNKNOWN)
         extDdi->DirectSpatialMvPredFlag = MFX_CODINGOPTION_ON;
 
     if (extDdi->Hme == MFX_CODINGOPTION_UNKNOWN)
         extDdi->Hme = MFX_CODINGOPTION_ON;
 
-    if (extDdi->SwBrc == MFX_CODINGOPTION_UNKNOWN)
-    {
-        extDdi->SwBrc = mfxU16((extOpt2->ExtBRC == MFX_CODINGOPTION_UNKNOWN) ? MFX_CODINGOPTION_OFF : extOpt2->ExtBRC);
-        if (extDdi->LookAhead > 0)
-            extDdi->SwBrc = MFX_CODINGOPTION_ON;
-    }
-
     if (extOpt2->ExtBRC == MFX_CODINGOPTION_UNKNOWN)
-        extOpt2->ExtBRC = mfxU16((extDdi->SwBrc == MFX_CODINGOPTION_UNKNOWN) ? MFX_CODINGOPTION_OFF : extDdi->SwBrc);
+        extOpt2->ExtBRC = MFX_CODINGOPTION_OFF;
 
-    if (extDdi->LookAhead == 0)
-    {
-        if ((IsOn(extDdi->SwBrc) || IsOn(extOpt2->ExtBRC)) &&
-            platform >= MFX_HW_HSW && platform != MFX_HW_VLV && vaType == MFX_HW_D3D9 && par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE)
-            extDdi->LookAhead = 40;
-        else
-            extDdi->LookAhead = 1;
-    }
+    if (extOpt2->LookAheadDepth == 0)
+        if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA)
+            extOpt2->LookAheadDepth = IPP_MAX(40, 2 * par.mfx.GopRefDist);
 
-    if (extDdi->LookAheadDep == 0 && extDdi->LookAhead >= 20)
-        extDdi->LookAheadDep = 10;
+    if (extDdi->LookAheadDep == 0)
+        extDdi->LookAheadDep = IPP_MIN(10, extOpt2->LookAheadDepth);
 
     if (extDdi->QpUpdateRange == 0)
         extDdi->QpUpdateRange = 10;
@@ -3382,7 +3371,7 @@ void MfxHwH264Encode::SetDefaults(
 
     if (par.calcParam.bufferSizeInKB == 0)
     {
-        if (extDdi->LookAhead > 1 && IsOn(extDdi->SwBrc))
+        if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA)
         {
             par.calcParam.bufferSizeInKB = (par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height * 3 / 2 / 1000);
         }
@@ -3525,6 +3514,7 @@ void MfxHwH264Encode::SetDefaults(
         {
         case MFX_RATECONTROL_CBR:
         case MFX_RATECONTROL_VBR:
+        case MFX_RATECONTROL_LA:
             extRc->Layer[0].CbrVbr.TargetKbps       = par.mfx.TargetKbps;
             extRc->Layer[0].CbrVbr.InitialDelayInKB = par.mfx.InitialDelayInKB;
             extRc->Layer[0].CbrVbr.BufferSizeInKB   = par.mfx.BufferSizeInKB;
@@ -3573,7 +3563,7 @@ void MfxHwH264Encode::SetDefaults(
         extSps->bitDepthChromaMinus8            = 0;
         extSps->qpprimeYZeroTransformBypassFlag = 0;
         extSps->seqScalingMatrixPresentFlag     = 0;
-        extSps->log2MaxFrameNumMinus4           = 4;
+        extSps->log2MaxFrameNumMinus4           = 4;//GetDefaultLog2MaxFrameNumMinux4(par);
         extSps->picOrderCntType                 = GetDefaultPicOrderCount(par);
         extSps->log2MaxPicOrderCntLsbMinus4     = GetDefaultLog2MaxPicOrdCntMinus4(par);
         extSps->deltaPicOrderAlwaysZeroFlag     = 1;

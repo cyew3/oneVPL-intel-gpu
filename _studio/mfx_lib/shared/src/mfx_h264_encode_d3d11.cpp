@@ -371,6 +371,8 @@ mfxStatus D3D11Encoder::Execute(
         m_pps.seq_parameter_set_id = m_sps.seq_parameter_set_id;
     }
 
+    m_sps.Trellis = task.m_trellis[fieldId];
+
     // update pps and slice structures
     FillVaringPartOfPpsBuffer(task, fieldId, m_pps);
     FillVaringPartOfSliceBuffer(m_caps, task, fieldId, m_sps, m_pps, m_slice);

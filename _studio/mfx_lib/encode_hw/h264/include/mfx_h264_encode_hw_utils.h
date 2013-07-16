@@ -790,6 +790,8 @@ namespace MfxHwH264Encode
             , m_insertAud(0, 0)
             , m_insertSps(0, 0)
             , m_insertPps(0, 0)
+            , m_nalRefIdc(0, 0)
+            , m_trellis(0, 0)
             , m_bs(0)
             , m_bsDataLength(0, 0)
             , m_numLeadingFF(0, 0)
@@ -882,6 +884,7 @@ namespace MfxHwH264Encode
         PairU8  m_insertSps;
         PairU8  m_insertPps;
         PairU8  m_nalRefIdc;
+        PairU8  m_trellis;              // 0-default, 1-on, 2-off
         PairU32 m_statusReportNumber;
         mfxU32  m_pid;                  // priority_id
         PairU32 m_fillerSize;
@@ -1328,6 +1331,37 @@ namespace MfxHwH264Encode
         std::vector<MbData> mb;
     };
 
+
+    class AsyncRoutineEmulator
+    {
+    public:
+        void Init(MfxVideoParam const & video);
+
+        mfxU32 Go(bool hasInput);
+
+    protected:
+        mfxU32 CheckStageOutput(mfxU32 stage);
+
+    private:
+        enum { QU_INCOMING, QU_REORDERING, QU_LA_STARTED, QU_LA_FINISHED, QA_ENCODING, QA_FREE };
+        enum { STG_ACCEPT_FRAME, STG_START_LA, STG_WAIT_LA, STG_START_ENCODE, STG_WAIT_ENCODE, NUM_STAGES };
+
+        mfxU32 m_stageGreediness[NUM_STAGES];
+        mfxU32 m_queueFullness[NUM_STAGES + 1];
+        mfxU32 m_queueFlush[NUM_STAGES + 1];
+
+    public:
+        enum {
+            STAGE_CALL_EMULATOR = 0,
+            STAGE_ACCEPT_FRAME  = 1 << STG_ACCEPT_FRAME,
+            STAGE_START_LA      = 1 << STG_START_LA,
+            STAGE_WAIT_LA       = 1 << STG_WAIT_LA,
+            STAGE_START_ENCODE  = 1 << STG_START_ENCODE,
+            STAGE_WAIT_ENCODE   = 1 << STG_WAIT_ENCODE,
+            STAGE_RESTART       = 1 << NUM_STAGES
+        };
+    };
+
     struct SVCPAKObject;
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -1455,7 +1489,7 @@ namespace MfxHwH264Encode
             DdiTask & task,
             mfxU32    fid); // 0 - top/progressive, 1 - bottom
 
-        mfxStatus Submit(
+        mfxStatus AsyncRoutine(
             mfxBitstream * bs);
 
         void OnNewFrame();
@@ -1470,7 +1504,7 @@ namespace MfxHwH264Encode
 
         void BrcPreEnc(DdiTask const & task);
 
-        static mfxStatus TaskRoutineSubmit(
+        static mfxStatus AsyncRoutineHelper(
             void * state,
             void * param,
             mfxU32 threadNumber,
@@ -1516,12 +1550,10 @@ namespace MfxHwH264Encode
         MfxVideoParam       m_videoInit;  // m_video may change by Reset, m_videoInit doesn't change
         mfxEncodeStat       m_stat;
 
-        mfxU32 m_maxSizeReordering;
-        mfxU32 m_maxSizeLookaheadStarted;
-        mfxU32 m_maxSizeLookaheadFinished;
-        mfxU32 m_maxSizeEncoding;
-
         std::list<std::pair<mfxBitstream *, mfxU32> > m_listOfPairsForStupidFieldOutputMode;
+
+        AsyncRoutineEmulator m_emulatorForSyncPart;
+        AsyncRoutineEmulator m_emulatorForAsyncPart;
 
         std::list<DdiTask>  m_free;
         std::list<DdiTask>  m_incoming;
@@ -1531,15 +1563,13 @@ namespace MfxHwH264Encode
         std::list<DdiTask>  m_encoding;
         UMC::Mutex          m_listMutex;
         DdiTask             m_lastTask;
+        mfxU32              m_stagesToGo;
 
-        mfxU32      m_inputCounter;
-        mfxU32      m_epilogCounter;
         mfxU32      m_fieldCounter;
         mfxStatus   m_1stFieldStatus;
         mfxU32      m_frameOrder;
         mfxU32      m_frameOrderIdrInDisplayOrder;    // frame order of last IDR frame (in display order)
         mfxU32      m_frameOrderStartLyncStructure; // starting point of Lync temporal scalability structure
-        bool        m_flushStage;
 
         // parameters for Intra refresh
         mfxU32      m_frameOrderIFrameInDisplayOrder;    // frame order of last I frame (in display order)
