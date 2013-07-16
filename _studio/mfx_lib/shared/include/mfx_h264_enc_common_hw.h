@@ -586,6 +586,9 @@ namespace MfxHwH264Encode
     mfxStatus CopySpsPpsToVideoParam(
         MfxVideoParam & par);
 
+    mfxStatus CheckForAllowedH264SpecViolations(
+        MfxVideoParam const & par);
+
     mfxStatus CheckVideoParam(
         MfxVideoParam &     par,
         ENCODE_CAPS const & hwCaps,

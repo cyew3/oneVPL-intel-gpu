@@ -35,6 +35,9 @@ using namespace MfxHwH264Encode;
 const mfxU32 DEFAULT_CPB_IN_SECONDS = 2000;          //  BufferSizeInBits = DEFAULT_CPB_IN_SECONDS * MaxKbps
 const mfxU32 MAX_BITRATE_RATIO = mfxU32(1.5 * 1000); //  MaxBps = MAX_BITRATE_RATIO * TargetKbps;
 
+const mfxU32 MIN_LOOKAHEAD_DEPTH = 10;
+const mfxU32 MAX_LOOKAHEAD_DEPTH = 100;
+
 namespace
 {
     static const mfxU8 EXTENDED_SAR = 0xff;
@@ -297,11 +300,8 @@ namespace
     {
         mfxExtSpsHeader * extSps = GetExtBuffer(par);
 
-        if (extSps->vui.flags.timingInfoPresent == 0 ||
-            par.mfx.FrameInfo.Width         == 0 ||
-            par.mfx.FrameInfo.Height        == 0 ||
-            par.mfx.FrameInfo.FrameRateExtN == 0 ||
-            par.mfx.FrameInfo.FrameRateExtD == 0)
+        if (par.mfx.FrameInfo.Width         == 0 ||
+            par.mfx.FrameInfo.Height        == 0)
         {
             // input information isn't enough to determine required level
             return 0;
@@ -314,6 +314,14 @@ namespace
         {
             // level is already maximum possible, return it
             return maxSupportedLevel;
+        }
+
+        if (extSps->vui.flags.timingInfoPresent == 0 ||
+            par.mfx.FrameInfo.FrameRateExtN == 0 ||
+            par.mfx.FrameInfo.FrameRateExtD == 0)
+        {
+            // no information about frame rate
+            return level;
         }
 
         mfxU16 levelMbps = GetLevelLimitByMbps(par);
@@ -1267,6 +1275,20 @@ mfxStatus MfxHwH264Encode::CopySpsPpsToVideoParam(
     return changed ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE;
 }
 
+// check encoding configuration for number of H264 spec violations allowed by MSDK
+// it's required to report correct status to application
+mfxStatus MfxHwH264Encode::CheckForAllowedH264SpecViolations(
+    MfxVideoParam const & par)
+{
+    if (par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE
+        && par.mfx.CodecLevel > MFX_LEVEL_AVC_41)
+    {
+        return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    }
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus MfxHwH264Encode::CheckVideoParam(
     MfxVideoParam &     par,
     ENCODE_CAPS const & hwCaps,
@@ -1351,6 +1373,10 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
 
     SetDefaults(par, hwCaps, setExtAlloc, platform, vaType);
 
+    sts = CheckForAllowedH264SpecViolations(par);
+    if (sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
+        checkSts = sts;
+
     if (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
         mfxExtCodingOptionDDI *    extDdi  = GetExtBuffer(par);
@@ -1401,6 +1427,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 {
     Bool unsupported(false);
     Bool changed(false);
+    Bool warning(false);
 
     mfxExtCodingOption *       extOpt  = GetExtBuffer(par);
     mfxExtCodingOptionDDI *    extDdi  = GetExtBuffer(par);
@@ -1553,6 +1580,18 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
     if (extOpt2->LookAheadDepth > 0)
     {
+        if (extOpt2->LookAheadDepth < MIN_LOOKAHEAD_DEPTH)
+        {
+            changed = true;
+            extOpt2->LookAheadDepth = MIN_LOOKAHEAD_DEPTH;
+        }
+
+        if (extOpt2->LookAheadDepth > MAX_LOOKAHEAD_DEPTH)
+        {
+            changed = true;
+            extOpt2->LookAheadDepth = MAX_LOOKAHEAD_DEPTH;
+        }
+
         if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA)
         {
             changed = true;
@@ -2246,12 +2285,21 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
                     par.mfx.CodecLevel = MFX_LEVEL_AVC_21;
                 changed = true;
             }
-            else if (par.mfx.CodecLevel > MFX_LEVEL_AVC_41
-                && GetMinLevelForResolutionAndFramerate(par) <= MFX_LEVEL_AVC_41)
+            else if (par.mfx.CodecLevel > MFX_LEVEL_AVC_41)
             {
-                // if it's possible to encode input stream with level <= 4.1 then 
-                par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-                changed = true;
+                if (GetMinLevelForResolutionAndFramerate(par) <= MFX_LEVEL_AVC_41)
+                {
+                    // it's possible to encode stream with level lower than 4.2
+                    // correct encoding parameters to satisfy H264 spec (table A-4, frame_mbs_only_flag)
+                    changed = true;
+                    par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+                }
+                else
+                {
+                    // it's impossible to encode stream with level lower than 4.2
+                    // allow H264 spec violation ((table A-4, frame_mbs_only_flag)) and return warning
+                    warning = true;
+                }
             }
         }
     }
@@ -2585,7 +2633,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
     return unsupported
         ? MFX_ERR_UNSUPPORTED
-        : changed
+        : (changed || warning)
             ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM
             : MFX_ERR_NONE;
 }
