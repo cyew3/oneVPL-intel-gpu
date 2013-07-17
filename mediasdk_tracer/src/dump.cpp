@@ -93,6 +93,7 @@ StringCodeItem tbl_rate_ctrl[] = {
     CODE_STRING(MFX_RATECONTROL_, VBR),
     CODE_STRING(MFX_RATECONTROL_, CQP),
     CODE_STRING(MFX_RATECONTROL_, AVBR),
+    CODE_STRING(MFX_RATECONTROL_, LA),
 };
 
 StringCodeItem tbl_frc_algm[] = {
@@ -357,6 +358,9 @@ void dump_ExtBuffers(FILE *fd, int level, TCHAR *prefix, TCHAR* prefix2, int cod
                 case MFX_EXTBUFF_VIDEO_SIGNAL_INFO:  _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtVideoSignalInfo")); break;
                 case MFX_EXTBUFF_PICTURE_TIMING_SEI: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtPictureTimingSEI")); break;
                 case MFX_EXTBUFF_CODING_OPTION2: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtCodingOption2")); break;
+                case MFX_EXTBUFF_ENCODER_CAPABILITY: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtEncoderCapability")); break;
+                case MFX_EXTBUFF_ENCODER_RESET_OPTION: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtEncoderResetOption")); break;
+                case MFX_EXTBUFF_ENCODED_FRAME_INFO: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtAVCEncodedFrameInfo")); break;
                 default: 
                     _tcscatformat_s(buf,TEXT("0x%x"),eb->BufferId); break;
             }
@@ -600,6 +604,50 @@ void dump_ExtBuffers(FILE *fd, int level, TCHAR *prefix, TCHAR* prefix2, int cod
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.BitrateLimit="),TEXT("%d"), co2->BitrateLimit);
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.MBBRC="),TEXT("%d"), co2->MBBRC);
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.ExtBRC="),TEXT("%d"), co2->ExtBRC);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.LookAheadDepth="),TEXT("%d"), co2->LookAheadDepth);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtCodingOption2.Trellis="),TEXT("%d"), co2->Trellis);
+                break;
+            }
+
+            case MFX_EXTBUFF_ENCODER_CAPABILITY:
+            {
+                mfxExtEncoderCapability *ec=(mfxExtEncoderCapability *)eb;
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtEncoderCapability.MBPerSec="),TEXT("%d"), ec->MBPerSec);
+                break;
+            }
+
+            case MFX_EXTBUFF_ENCODER_RESET_OPTION:
+            {
+                mfxExtEncoderResetOption *ero=(mfxExtEncoderResetOption *)eb;
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtEncoderResetOption.StartNewSequence="),TEXT("%d"), ero->StartNewSequence);
+                break;
+            }
+
+            case MFX_EXTBUFF_ENCODED_FRAME_INFO:
+            {
+                mfxExtAVCEncodedFrameInfo *efi=(mfxExtAVCEncodedFrameInfo *)eb;
+
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtAVCEncodedFrameInfo.FrameOrder="),TEXT("%d"), efi->FrameOrder);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtAVCEncodedFrameInfo.PicStruct="),TEXT("%d"), efi->PicStruct);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtAVCEncodedFrameInfo.LongTermIdx="),TEXT("%d"), efi->LongTermIdx);
+
+                for (int j = 0; j < sizeof(efi->UsedRefListL0) / sizeof(efi->UsedRefListL0[0]); j++)
+                {
+                    if (MFX_FRAMEORDER_UNKNOWN == efi->UsedRefListL0[j].FrameOrder)
+                        continue;
+                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtAVCEncodedFrameInfo.UsedRefListL0"),TEXT("[%d].FrameOrder=%d"), j, efi->UsedRefListL0[j].FrameOrder);
+                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtAVCEncodedFrameInfo.UsedRefListL0"),TEXT("[%d].PicStruct=%s"), j, GET_STRING_FROM_CODE_TABLE(efi->UsedRefListL0[j].PicStruct, tbl_picstruct));
+                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtAVCEncodedFrameInfo.UsedRefListL0"),TEXT("[%d].LongTermIdx=%u"), j, efi->UsedRefListL0[j].LongTermIdx);
+                }
+                for (int j = 0; j < sizeof(efi->UsedRefListL1) / sizeof(efi->UsedRefListL1[0]); j++)
+                {
+                    if (MFX_FRAMEORDER_UNKNOWN == efi->UsedRefListL1[j].FrameOrder)
+                        continue;
+                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtAVCEncodedFrameInfo.UsedRefListL1"),TEXT("[%d].FrameOrder=%d"), j, efi->UsedRefListL1[j].FrameOrder);
+                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtAVCEncodedFrameInfo.UsedRefListL1"),TEXT("[%d].PicStruct=%s"), j, GET_STRING_FROM_CODE_TABLE(efi->UsedRefListL1[j].PicStruct, tbl_picstruct));
+                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtAVCEncodedFrameInfo.UsedRefListL1"),TEXT("[%d].LongTermIdx=%u"), j, efi->UsedRefListL1[j].LongTermIdx);
+                }
+
                 break;
             }
 
@@ -805,6 +853,11 @@ void dump_mfxBitstream(FILE *fd, int level, TCHAR *prefix, mfxBitstream *bs) {
         dump_format_wprefix(fd,level, 2,prefix,TEXT(".PicStruct="),TEXT("%s"), GET_STRING_FROM_CODE_TABLE(bs->PicStruct, tbl_picstruct));
         dump_format_wprefix(fd,level, 2,prefix,TEXT(".FrameType="),TEXT("%s"), GET_STRING_FROM_CODE_TABLE(bs->FrameType, tbl_frame_type));
         dump_format_wprefix(fd,level, 2,prefix,TEXT(".DataFlag=0x"),TEXT("%x"), bs->DataFlag);
+        dump_format_wprefix(fd,level, 2,prefix,TEXT(".NumExtParam="),TEXT("%d"), bs->NumExtParam);
+        if (bs->NumExtParam > 0)
+        {
+            dump_ExtBuffers(fd,level, prefix, TEXT(".ExtParam"), 0, bs->ExtParam, bs->NumExtParam);
+        }
     } else {
         dump_format_wprefix(fd,level, 2,prefix,TEXT("=NULL"),TEXT(""));
     }
@@ -1000,7 +1053,7 @@ void dump_format_wprefix(FILE *fd, int level, int nPrefix, TCHAR *format,...)
     }
 }
 
-void DispatcherLogRecorder::Write(int level, int /*opcode*/, const char * msg, va_list argptr)
+void DispatcherLogRecorder::Write(int level, int /*opcode*/, char * msg, va_list argptr)
 {
     if (NULL == msg || level == DL_LOADED_LIBRARY)
         return;

@@ -203,7 +203,7 @@ SDK_ANALYZER_EXPORT(UINT) install(TCHAR *installDir,
     {
         DWORD dw; 
         TCHAR str[10];
-    }  msdk_analyzer_versions[] = {0x101, _T("v1.1"), 0x103, _T("v1.2"), 0x103, _T("v1.3"), 0x104, _T("v1.4"), 0x106, _T("v1.6")};
+    }  msdk_analyzer_versions[] = {0x101, _T("v1.1"), 0x103, _T("v1.2"), 0x103, _T("v1.3"), 0x104, _T("v1.4"), 0x106, _T("v1.6"), 0x107, _T("v1.7")};
 
 
     int nPlatforms = IsWow64() ? 2 : 1;
