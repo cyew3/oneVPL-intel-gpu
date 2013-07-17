@@ -9,6 +9,9 @@
 //
 */
 
+// Forward HEVC Transform functions optimised by intrinsics
+// Sizes: 4, 8, 16, 32
+// NOTE: we don't have AVX2 optimization, so the same SSE2(4) impl is used
 
 #include "mfx_common.h"
 
@@ -16,12 +19,12 @@
 
 #include "mfx_h265_optimization.h"
 
+#if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2)
+
 #pragma warning (disable : 4310 ) /* disable cast truncates constant value */
 
 namespace MFX_HEVC_ENCODER
 {
-    // Forward HEVC Transform functions optimised by intrinsics
-    // Sizes: 4, 8, 16, 32
 
 #define ALIGNED_SSE2 ALIGN_DECL(16)
 #define REG_DCT      65535
@@ -125,7 +128,7 @@ namespace MFX_HEVC_ENCODER
 #define coef_stride 4
 
 
-    void H265_FASTCALL h265_DST4x4Fwd_sse2(const short *H265_RESTRICT src, short *H265_RESTRICT dst)
+    void H265_FASTCALL h265_DST4x4Fwd_16s(const short *H265_RESTRICT src, short *H265_RESTRICT dst)
     {
         //const short iDST4[4][4] =
         //{
@@ -206,7 +209,7 @@ namespace MFX_HEVC_ENCODER
 
 
 
-    void H265_FASTCALL h265_DCT4x4Fwd_sse2(const short *H265_RESTRICT src, short *H265_RESTRICT dst)
+    void H265_FASTCALL h265_DCT4x4Fwd_16s(const short *H265_RESTRICT src, short *H265_RESTRICT dst)
     {
         //const short iDCT4[4][4] =
         //{
@@ -291,7 +294,7 @@ namespace MFX_HEVC_ENCODER
 #define org_stride  8
 #define coef_stride 8
 
-    void H265_FASTCALL h265_DCT8x8Fwd_sse2(const short *H265_RESTRICT src, short *H265_RESTRICT dst)
+    void H265_FASTCALL h265_DCT8x8Fwd_16s(const short *H265_RESTRICT src, short *H265_RESTRICT dst)
     {
         //static const short g_aiT8[8][8] =
         //{
@@ -509,7 +512,7 @@ namespace MFX_HEVC_ENCODER
 #define coef_stride 16
 
 
-    void H265_FASTCALL h265_DCT16x16Fwd_sse2(const short *H265_RESTRICT src, short *H265_RESTRICT dst)
+    void H265_FASTCALL h265_DCT16x16Fwd_16s(const short *H265_RESTRICT src, short *H265_RESTRICT dst)
     {
         M128I_W8C( tf_dct16_f0123_01,  90, 87,  87, 57,  80,  9,  70,-43);
         M128I_W8C( tf_dct16_f4567_01,  57,-80,  43,-90,  25,-70,   9,-25);
@@ -975,7 +978,7 @@ ALIGNED_SSE2 signed int kfv_0306[] = {64,  83, -64,  83};
 ALIGNED_SSE2 signed int kfv_0307[] = {18,  75, -89,  75};
 
 
-    void H265_FASTCALL h265_DCT32x32Fwd_sse2(const short *H265_RESTRICT src, short *H265_RESTRICT dest)
+    void H265_FASTCALL h265_DCT32x32Fwd_16s(const short *H265_RESTRICT src, short *H265_RESTRICT dest)
     {
         short ALIGNED_SSE2 temp[32*32];
         // temporal buffer short[32*4]. Intermediate results will be stored here. Rotate 4x4 and moved to temp[]
@@ -1923,5 +1926,6 @@ ALIGNED_SSE2 signed int kfv_0307[] = {18,  75, -89,  75};
 
 } // end namespace MFX_HEVC_ENCODER
 
-#endif // #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
+#endif // #if defined (MFX_TARGET_OPTIMIZATION_SSE4)
+#endif // #if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2)
 /* EOF */
