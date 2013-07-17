@@ -38,7 +38,7 @@ public:
     virtual mfx_shared_ptr<IRandom> CreateRandomizer() = 0;
     virtual IVideoSession     * CreateVideoSession( IPipelineObjectDesc * pParams) = 0;
     virtual IMFXVideoVPP      * CreateVPP   ( const IPipelineObjectDesc & pParams) = 0;
-    virtual IYUVSource        * CreateDecode( IPipelineObjectDesc * pParams) = 0;
+    virtual IYUVSource        * CreateDecode( const IPipelineObjectDesc & pParams) = 0;
     virtual IMFXVideoRender   * CreateRender( IPipelineObjectDesc * pParams) = 0;
     virtual IFile             * CreateFileWriter( IPipelineObjectDesc * pParams) = 0;
     //decorators
@@ -73,7 +73,7 @@ public:
     {
         return m_pTarget->CreateVPP(pParams);
     }
-    virtual IYUVSource        * CreateDecode( IPipelineObjectDesc * pParams) 
+    virtual IYUVSource        * CreateDecode( const IPipelineObjectDesc & pParams) 
     {
         return m_pTarget->CreateDecode(pParams);
     }    

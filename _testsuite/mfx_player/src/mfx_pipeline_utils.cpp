@@ -1288,3 +1288,22 @@ size_t BSUtil::Reserve(mfxBitstream *pTo, size_t nRequiredSize)
 
     return pTo->MaxLength - pTo->DataLength;
 }
+
+#ifdef UNICODE
+#include <clocale>
+#include <locale>
+#endif
+
+tstring cvt_s2t(const std::string & lhs)
+{
+#ifndef UNICODE
+    return lhs;
+#else
+    std::locale const loc("");
+    std::vector<wchar_t> buffer(lhs.size() + 1);
+    std::use_facet<std::ctype<wchar_t> >(loc).widen(&lhs.at(0), &lhs.at(0) + lhs.size(), &buffer[0]);
+    return tstring(&buffer[0], &buffer[lhs.size()]);
+
+#endif
+
+}

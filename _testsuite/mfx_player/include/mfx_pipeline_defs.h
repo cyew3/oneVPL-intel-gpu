@@ -276,14 +276,26 @@ if (0 == (expr))\
     MFX_CHECK_STS_TRACE_EXPR(s, expr);\
 }
 
+#define MFX_CHECK_STS_AND_THROW(expr)\
+{ \
+    mfxStatus s = expr; \
+    bool      bRet;\
+    MFX_CHECK_STS_NO_RETURN_TRACE_EXPR(s, _TSTR(expr), bRet);\
+    if (bRet)\
+    {\
+        throw std::runtime_error(#expr);\
+    }\
+}
+
+//////////////////////////////////////////////////////////////////////////
+//NON MFX err codes
+
 #define MFX_CHECK_UMC_STS(err) \
 {\
     mfxStatus sts = (0 == err) ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;\
     MFX_CHECK_STS_TRACE_EXPR(sts, err);\
 }
 
-//////////////////////////////////////////////////////////////////////////
-//NON MFX err codes
 #define MFX_CHECK_TRACE(value, trace_string)\
 { \
     int tmp_value = value;\
@@ -293,6 +305,19 @@ if (0 == (expr))\
     return MFX_ERR_UNKNOWN; \
     } \
 }
+
+#define MFX_TRACE_ERR(stream) { \
+    tstringstream s;\
+    s<< stream <<std::endl;\
+    PipelineSetLastErr(LAST_ERR_OR_UNK(), s.str().c_str(), __TFILE__,__LINE__); \
+}
+
+#define MFX_TRACE_INFO(stream) { \
+    tstringstream s;\
+    s<< stream <<std::endl;\
+    PipelineTrace((VM_STRING("%s"), s.str().c_str()));\
+}
+
 
 #define MFX_CHECK_TRACE_EXPR(value, expr) \
     MFX_CHECK_TRACE(value, _TSTR(expr))
@@ -520,6 +545,15 @@ if (m_OptProc.Check(argv[0], optname1, description, opt_special, params_descript
     argv++;                                                                 \
     flag_variable = true;                                                   \
 }
+
+#define HANDLE_FILENAME_OPTION(opt_variable, optname1, description)\
+if (m_OptProc.Check(argv[0], optname1, description, OPT_FILENAME)) \
+{\
+    MFX_CHECK(1 + argv != argvEnd);\
+    argv++;\
+    vm_string_strcpy_s(opt_variable, MFX_ARRAY_SIZE(opt_variable), argv[0]);\
+}
+
 
 //eliminating sizeof(a)==sizeof(b)
 #pragma warning (disable: 4127)

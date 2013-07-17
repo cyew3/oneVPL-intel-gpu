@@ -24,7 +24,7 @@ File Name: .h
 enum MFXVideoRenderType
 {
     MFX_NO_RENDER           = 0,
-    MFX_SCREEN_RENDER          = 0x01,
+    MFX_SCREEN_RENDER       = 0x01,
     MFX_FW_RENDER           = 0x04,
     MFX_ENC_RENDER          = 0x08,
     MFX_ENCDEC_RENDER       = 0x10,
@@ -96,14 +96,13 @@ protected:
     virtual mfxStatus WriteSurface(mfxFrameSurface1*pSurface);
 
     
-    //FILE*            m_fDest;
     mfxU32             m_nFourCC; //output color format
     const vm_char *    m_pOpenMode;
     mfxFrameSurface1   m_yv12Surface;
     bool               m_bCreateNewFileOnClose;
     tstring            m_OutputFileName;
     int                m_nTimesClosed;
-    char              *m_lucas_buffer;
+    std::map<int, char*>m_lucas_buffer; //per view buffer
 
     struct FramePosition
     {

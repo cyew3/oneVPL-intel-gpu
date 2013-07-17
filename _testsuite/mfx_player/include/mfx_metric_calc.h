@@ -16,6 +16,11 @@ File Name: .h
 #include "mfx_isurface_cmp.h"
 #include "mfx_singleton.h"
 
+//#define USE_CM 1
+#if USE_CM
+#include <cm_rt.h>
+#endif
+
 //////////////////////////////////////////////////////////////////////////////////////
 
 enum MetricType
@@ -27,6 +32,7 @@ enum MetricType
     METRIC_DELTA    = 8,
     METRIC_PSNR     = 16,
     METRIC_DUMP     = 32,
+    METRIC_SSIM_GPU = 64,
 };
 
 class ComparatorFactory

@@ -1019,7 +1019,7 @@ mfxStatus MFXDecPipeline::CreateVPP()
     } else
     {
         m_pVPP = m_pFactory->CreateVPP(
-            PipelineObjectDesc<IMFXVideoVPP>(m_components[eVPP].m_pSession->GetMFXSession(), VPP_MFX_NATIVE, NULL));
+            PipelineObjectDesc<IMFXVideoVPP>(m_components[eVPP].m_pSession->GetMFXSession(), VM_STRING(""), VPP_MFX_NATIVE, NULL));
     }
     MFX_CHECK_WITH_ERR(m_pVPP, MFX_ERR_MEMORY_ALLOC);
 
@@ -1294,7 +1294,7 @@ mfxStatus MFXDecPipeline::DecodeHeader()
         lucasCtx->parameter(lucasCtx->fmWrapperPtr, lucas::FM_WRAPPER_PARAM_RESOLUTION_X, m_components[eDEC].m_params.mfx.FrameInfo.CropW);
         lucasCtx->parameter(lucasCtx->fmWrapperPtr, lucas::FM_WRAPPER_PARAM_RESOLUTION_Y, m_components[eDEC].m_params.mfx.FrameInfo.CropH);
         mfxF64 dFrameRate = (mfxF64)info.FrameRateExtN / (mfxF64)info.FrameRateExtD;
-        lucasCtx->parameter(lucasCtx->fmWrapperPtr, lucas::FM_WRAPPER_PARAM_FRAME_RATE, static_cast<int>(dFrameRate));
+        lucasCtx->parameter(lucasCtx->fmWrapperPtr, lucas::FM_WRAPPER_PARAM_FRAME_RATE, reinterpret_cast<int>(&dFrameRate));
     }
 #endif // LUCAS_DLL
 
@@ -1879,7 +1879,15 @@ mfxStatus MFXDecPipeline::CreateYUVSource()
     //however is we will use outline to store viewids sequence viedids should be generated in YUV source
     bool bGenerateViewIds = false;
 
-    if (m_inParams.bYuvReaderMode ||
+    if (vm_string_strlen(m_inParams.strDecPlugin))
+    {
+        m_pYUVSource.reset(m_pFactory->CreateDecode(
+            PipelineObjectDesc<IYUVSource>(m_components[eDEC].m_pSession->GetMFXSession()
+                , m_inParams.strDecPlugin
+                , DECODER_MFX_PLUGIN
+                , NULL)));
+    }
+    else if (m_inParams.bYuvReaderMode ||
         MFX_FOURCC_NV12 == m_inParams.InputCodecType ||
         MFX_FOURCC_YV12 == m_inParams.InputCodecType)
     {
@@ -3898,6 +3906,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             else HANDLE_BOOL_OPTION(m_inParams.bPAFFDetect, VM_STRING("-paff"), VM_STRING("enabled picture structure detection by VPP"));
             else HANDLE_INT_OPTION(m_inParams.nSVCDownSampling, VM_STRING("-downsampling"), VM_STRING("use downsampling algorithm 1-best quality, 2-best speed"))
             else HANDLE_BOOL_OPTION(m_inParams.bDxgiDebug, VM_STRING("-dxgidebug"), VM_STRING("inject dxgidebug.dll to report live objects(dxgilevel memory leaks)"));
+            else HANDLE_FILENAME_OPTION(m_inParams.strDecPlugin, VM_STRING("-decode_plugin"), VM_STRING("MediaSDK Decoder plugin filename")) 
 
 #ifdef PAVP_BUILD
         else if (m_OptProc.Check(argv[0], VM_STRING("-epavp"), VM_STRING("enable PAVP for encoder"), OPT_INT_32))

@@ -60,10 +60,11 @@ public:
         return params_holder.ret_val;
     }
 
-    DECLARE_TEST_METHOD1(IYUVSource*, CreateDecode, IPipelineObjectDesc *)
+    DECLARE_TEST_METHOD1(IYUVSource*, CreateDecode,MAKE_DYNAMIC_TRAIT(PipelineObjectDescBase, const IPipelineObjectDesc& ) )
     {
-        UNREFERENCED_PARAMETER(_0);
         TEST_METHOD_TYPE(CreateDecode) params_holder;
+        const PipelineObjectDescBase &dsc = dynamic_cast<const PipelineObjectDescBase &>(_0);
+        _CreateDecode.RegisterEvent(TEST_METHOD_TYPE(CreateDecode)((IYUVSource* )NULL, dsc));
         _CreateDecode.GetReturn(params_holder);
 
         return params_holder.ret_val;

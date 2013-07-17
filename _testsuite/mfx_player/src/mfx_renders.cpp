@@ -111,8 +111,6 @@ mfxStatus MFXVideoRender::GetEncodeStat(mfxEncodeStat *stat)
 
 mfxStatus MFXVideoRender::LockFrame(mfxFrameSurface1 *pSurface)
 {
-    //MFXTimingDump_StartTimer("LockOutput", "app");
-
     if (NULL != pSurface)
     {
         if (NULL == pSurface->Data.Y && 
@@ -128,8 +126,6 @@ mfxStatus MFXVideoRender::LockFrame(mfxFrameSurface1 *pSurface)
             m_bFrameLocked = true; //to prevent double unlock case
         }
     }
-
-    //MFXTimingDump_StopTimer("LockOutput", "app", MFX_ERR_NONE);
 
     return MFX_ERR_NONE;
 }
@@ -206,7 +202,6 @@ mfxStatus MFXVideoRender::GetDevice(IHWDevice **ppDevice)
 MFXFileWriteRender::MFXFileWriteRender(const mfxFrameInfo &outInfo, IVideoSession * core, mfxStatus *status)
     : MFXVideoRender(core, status)
     , m_pOpenMode(VM_STRING("wb"))
-    , m_lucas_buffer(0)
     , m_nFourCC(outInfo.FourCC)
     , m_yv12Surface()
 {
@@ -217,22 +212,17 @@ MFXFileWriteRender::MFXFileWriteRender(const mfxFrameInfo &outInfo, IVideoSessio
 
 MFXFileWriteRender::~MFXFileWriteRender()
 {
-#ifdef LUCAS_DLL
-    lucas::CLucasCtx &lucasCtx = lucas::CLucasCtx::Instance();
-    //if (NULL != m_fDest && !lucasCtx->output)
-#else
-    //if (NULL != m_fDest)
-#endif
-    //{
-      //  fclose(m_fDest);
-//        m_fDest = 0;
-  //  }
     Close();
 
 #ifdef LUCAS_DLL
-    if(lucasCtx->output && m_lucas_buffer != 0)
-      // release last buffer
-      lucasCtx->output(lucasCtx->fmWrapperPtr, 0, m_lucas_buffer, 0, -1);
+    lucas::CLucasCtx &lucasCtx = lucas::CLucasCtx::Instance();
+    if(lucasCtx->output ) {
+        // release last buffer
+        for (std::map<int, char*>::iterator i = m_lucas_buffer.begin(); i != m_lucas_buffer.end(); i++)
+        {
+            lucasCtx->output(lucasCtx->fmWrapperPtr, i->first, i->second, 0, -1);
+        }
+    }
 #endif
 }
 
@@ -319,18 +309,7 @@ mfxStatus MFXFileWriteRender::Close()
     return MFX_ERR_NONE;
 }
 
-#ifdef LUCAS_DLL
-#define WRITE(buff, count) \
-  if(!lucasCtx->output) { \
-    MFX_CHECK_STS(PutData(buff, count)); \
-  } \
-  else { \
-    memcpy(lucas_ptr, buff, count); \
-    lucas_ptr += count; \
-  }
-#else
-#define WRITE(buff, count) MFX_CHECK_STS(PutData(buff, count));
-#endif
+
 
 mfxStatus MFXFileWriteRender::RenderFrame(mfxFrameSurface1 * pSurface, mfxEncodeCtrl * pCtrl)
 {
@@ -339,19 +318,18 @@ mfxStatus MFXFileWriteRender::RenderFrame(mfxFrameSurface1 * pSurface, mfxEncode
         return MFX_ERR_NONE;
 
 
+#ifndef LUCAS_DLL
     //need to open file if it is a view render
     if (m_bIsViewRender && !m_pFile->isOpen())
     {
         MFX_CHECK_STS(m_pFile->Open(FileNameWithId(m_OutputFileName.c_str(), pSurface->Info.FrameId.ViewId).c_str(), m_pOpenMode));
-        //MFX_CHECK_FOPEN(m_fDest, FileNameWithId(m_OutputFileName.c_str(), pSurface->Info.FrameId.ViewId).c_str(), m_pOpenMode);
     }
+#endif
 
     mfxFrameSurface1 * pConvertedSurface = pSurface;
     
     MFX_CHECK_STS(LockFrame(pSurface));
     
-    //MFXTimingDump_StartTimer("CopyFrame", "app");
-
     //so target fourcc is different than input
     if (m_nFourCC != pSurface->Info.FourCC)
     {
@@ -382,6 +360,19 @@ mfxStatus MFXFileWriteRender::RenderFrame(mfxFrameSurface1 * pSurface, mfxEncode
     return MFXVideoRender::RenderFrame(pSurface, pCtrl);
 }
 
+#ifdef LUCAS_DLL
+#define WRITE(buff, count) \
+    if(!lucasCtx->output) { \
+    MFX_CHECK_STS(PutData(buff, count)); \
+    } \
+  else { \
+  memcpy(lucas_ptr, buff, count); \
+  lucas_ptr += count; \
+}
+#else
+#define WRITE(buff, count) MFX_CHECK_STS(PutData(buff, count));
+#endif
+
 mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
 {
     int i;
@@ -391,10 +382,11 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
 #ifdef LUCAS_DLL
     lucas::CLucasCtx &lucasCtx = lucas::CLucasCtx::Instance();
     int lucas_bufferSize = pInfo->CropW * pInfo->CropH * 3 / 2;
-    if(lucasCtx->output && !m_lucas_buffer)
-      // get new buffer
-      m_lucas_buffer = lucasCtx->output(lucasCtx->fmWrapperPtr, 0, 0, 0, lucas_bufferSize);
-    char *lucas_ptr = m_lucas_buffer;
+    if(lucasCtx->output && NULL == m_lucas_buffer[pInfo->FrameId.ViewId]){
+          // get buffer for corresponding MVC view ID 
+          m_lucas_buffer[pInfo->FrameId.ViewId] = lucasCtx->output(lucasCtx->fmWrapperPtr, pInfo->FrameId.ViewId, 0, 0, lucas_bufferSize);
+    }
+    char *lucas_ptr = m_lucas_buffer[pInfo->FrameId.ViewId];
 #endif
     
     Ipp32s crop_x = pInfo->CropX;
@@ -484,9 +476,10 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
     }
 
 #ifdef LUCAS_DLL
-    if(lucasCtx->output)
+    if(lucasCtx->output) {
       // send current buffer and get a new one
-      m_lucas_buffer = lucasCtx->output(lucasCtx->fmWrapperPtr, 0, m_lucas_buffer, lucas_bufferSize, lucas_bufferSize);
+      m_lucas_buffer[pInfo->FrameId.ViewId] = lucasCtx->output(lucasCtx->fmWrapperPtr, pInfo->FrameId.ViewId, m_lucas_buffer[pInfo->FrameId.ViewId], lucas_bufferSize, lucas_bufferSize);
+    }
 #endif
 
     
@@ -953,6 +946,8 @@ mfxStatus MFXMetricComparatorRender::RenderFrame(mfxFrameSurface1 *surface, mfxE
 
     for(;;)
     {
+        mfxFrameSurface1 tmpSurface = m_refsurface;
+
         if(m_bFileSourceMode)
         {
             if (!m_bAllocated)
@@ -962,9 +957,15 @@ mfxStatus MFXMetricComparatorRender::RenderFrame(mfxFrameSurface1 *surface, mfxE
                     break;
                 }
                 m_bAllocated = true;
-            }
-            
-            if (MFX_ERR_NONE != (res = m_reader->LoadNextFrame(&m_refsurface.Data, &m_refsurface.Info)))
+            }            
+            //if surface info changed during runtime, lets stick with it updated crops
+            MFX_CHECK(m_pRefsurface->Info.Width  >= surface->Info.CropW + surface->Info.CropX);
+            MFX_CHECK(m_pRefsurface->Info.Height >= surface->Info.CropH + surface->Info.CropX);
+            //load surface with update info
+            tmpSurface.Data = m_refsurface.Data;
+            tmpSurface.Info = surface->Info;
+
+            if (MFX_ERR_NONE != (res = m_reader->LoadNextFrame(&tmpSurface.Data, &tmpSurface.Info)))
             {
                 //cleaning UP collected mectircs results
                 for(size_t i = 0; i < m_pComparators.size(); i++)
@@ -979,7 +980,7 @@ mfxStatus MFXMetricComparatorRender::RenderFrame(mfxFrameSurface1 *surface, mfxE
         {
             double metricVal[3];
 
-            res = m_pComparators[i].first->Compare(surface, m_pRefsurface);
+            res = m_pComparators[i].first->Compare(surface, &tmpSurface);
 
             if (MFX_ERR_NONE == res)
             {

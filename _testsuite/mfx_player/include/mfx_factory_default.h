@@ -28,6 +28,7 @@ enum /*Decoder type*/
     DECODER_BUFFERED,
     DECODER_ADVANCE, // decodes frames in advance
     DECODER_YUV_NATIVE,//decodes only yuv files
+    DECODER_MFX_PLUGIN, //create mediasdk decoder plugin based on filename
 
     DECODER_LAST_IDX //end of enum indicator
 };
@@ -131,11 +132,15 @@ class MFXPipelineObjectDesc
     : public PipelineObjectBaseTmpl<T>
 {
 public:
-    MFXPipelineObjectDesc(mfxSession ext_session, int objType, T *pObj)
+    MFXPipelineObjectDesc(mfxSession ext_session, const tstring &plugin_dll_name, int objType, T *pObj)
         : PipelineObjectBaseTmpl<T>(objType, pObj)
         , session(ext_session)
+        , splugin (plugin_dll_name)
     {
     }
+    //plugin filename
+    tstring splugin;
+    //
     mfxSession session;
 };
 
@@ -143,8 +148,10 @@ public:
 template<> class PipelineObjectDesc<class_type> : public MFXPipelineObjectDesc<class_type>\
 {\
 public:\
-    PipelineObjectDesc(mfxSession ext_session, int objType, class_type *pObj)\
-        : MFXPipelineObjectDesc<class_type>(ext_session, objType, pObj){}\
+    PipelineObjectDesc(mfxSession ext_session\
+        , const tstring &plugin_dll_name\
+        , int objType, class_type *pObj)\
+        : MFXPipelineObjectDesc<class_type>(ext_session, plugin_dll_name, objType, pObj){}\
 };
 
 //mediasdk specialization
@@ -155,7 +162,7 @@ DECL_MEDIASDK_SPEC(IVideoEncode);
 template <class T>
 PipelineObjectDesc<T> make_wrapper(int WrapperId, T * obj)
 {
-    PipelineObjectDesc<T> dsc(NULL, WrapperId, obj);
+    PipelineObjectDesc<T> dsc(NULL, VM_STRING(""), WrapperId, obj);
     return dsc;
 }
 
@@ -251,7 +258,7 @@ public:
     virtual mfx_shared_ptr<IRandom> CreateRandomizer();
     virtual IVideoSession       * CreateVideoSession( IPipelineObjectDesc * pParams);
     virtual IMFXVideoVPP        * CreateVPP( const IPipelineObjectDesc & pParams);
-    virtual IYUVSource          * CreateDecode( IPipelineObjectDesc * pParams);
+    virtual IYUVSource          * CreateDecode( const IPipelineObjectDesc & pParams);
     virtual IMFXVideoRender     * CreateRender( IPipelineObjectDesc * pParams);
     virtual IFile               * CreateFileWriter( IPipelineObjectDesc * pParams);
     virtual IVideoEncode        * CreateVideoEncode ( IPipelineObjectDesc * pParams);

@@ -23,6 +23,7 @@ File Name: .h
 #include "mfx_separate_file.h"
 #include "mfx_crc_writer.h"
 #include "mfx_svc_vpp.h"
+#include "mfx_decoder_plugin.h"
 
 MFXPipelineFactory :: MFXPipelineFactory ()
 {
@@ -43,7 +44,7 @@ IVideoSession     * MFXPipelineFactory ::CreateVideoSession( IPipelineObjectDesc
     }
 }
 
-IYUVSource      * MFXPipelineFactory ::CreateDecode( IPipelineObjectDesc * pParams)
+IYUVSource      * MFXPipelineFactory ::CreateDecode( const IPipelineObjectDesc & pParams)
 {
     PipelineObjectDescPtr<IYUVSource> create(pParams);
 
@@ -53,7 +54,10 @@ IYUVSource      * MFXPipelineFactory ::CreateDecode( IPipelineObjectDesc * pPara
         {
             return new MFXDecoder(create->session);
         }
-
+        case DECODER_MFX_PLUGIN:
+        {
+            return new DecoderPlugin(create->splugin, create->session);
+        }
     default:
         return NULL;
     }

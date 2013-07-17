@@ -197,6 +197,7 @@
     <ClCompile Include="mfx_mvc_decoder_test.cpp" />
     <ClCompile Include="mfx_pipeline_opts_general.cpp" />
     <ClCompile Include="mfx_pipeline_utils_test.cpp" />
+    <ClCompile Include="mfx_plugin_adapter_test.cpp" />
     <ClCompile Include="mfx_random_impl_test.cpp" />
     <ClCompile Include="mfx_separate_file_test.cpp" />
     <ClCompile Include="mfx_serial_core_test.cpp" />

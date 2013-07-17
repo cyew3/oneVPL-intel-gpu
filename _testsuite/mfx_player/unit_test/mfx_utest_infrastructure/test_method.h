@@ -32,28 +32,33 @@ File Name: .h
     ret_type method_name()
 
 #define DECLARE_TEST_METHOD1(ret_type, method_name, arg_type1)\
-    typedef ParameterHolder1<ret_type, arg_type1> TEST_METHOD_TYPE(method_name);\
-    TestMethod1<ret_type, arg_type1> TEST_METHOD_NAME(method_name);\
-    mfxTypeTrait<ret_type>::value_type method_name(mfxTypeTrait<arg_type1>::value_type _0)
+    typedef ParameterHolder1<ret_type, mfxTypeTrait<arg_type1>::store_type> TEST_METHOD_TYPE(method_name);\
+    TestMethod1<ret_type, mfxTypeTrait<arg_type1>::store_type> TEST_METHOD_NAME(method_name);\
+    ret_type method_name(mfxTypeTrait<arg_type1>::value_type _0)
     
 
 #define DECLARE_TEST_METHOD2(ret_type, method_name, arg_type1, arg_type2)\
-    typedef ParameterHolder2<ret_type, arg_type1, arg_type2> TEST_METHOD_TYPE(method_name);\
-    TestMethod2<ret_type, arg_type1, arg_type2> TEST_METHOD_NAME(method_name);\
+    typedef ParameterHolder2<ret_type, mfxTypeTrait<arg_type1>::store_type, mfxTypeTrait<arg_type2>::store_type> TEST_METHOD_TYPE(method_name);\
+    TestMethod2<ret_type, mfxTypeTrait<arg_type1>::store_type, mfxTypeTrait<arg_type2>::store_type> TEST_METHOD_NAME(method_name);\
     ret_type method_name(mfxTypeTrait<arg_type1>::value_type _0, mfxTypeTrait<arg_type2>::value_type _1)
     
 
 #define DECLARE_TEST_METHOD3(ret_type, method_name, arg_type1, arg_type2, arg_type3)\
-    typedef ParameterHolder3<ret_type, arg_type1, arg_type2, arg_type3> TEST_METHOD_TYPE(method_name);\
-    TestMethod3<ret_type, arg_type1, arg_type2, arg_type3> TEST_METHOD_NAME(method_name);\
+    typedef ParameterHolder3<ret_type, mfxTypeTrait<arg_type1>::store_type, mfxTypeTrait<arg_type2>::store_type, mfxTypeTrait<arg_type3>::store_type> TEST_METHOD_TYPE(method_name);\
+    TestMethod3<ret_type, mfxTypeTrait<arg_type1>::store_type, mfxTypeTrait<arg_type2>::store_type, mfxTypeTrait<arg_type3>::store_type> TEST_METHOD_NAME(method_name);\
     ret_type method_name(mfxTypeTrait<arg_type1>::value_type _0, mfxTypeTrait<arg_type2>::value_type _1, mfxTypeTrait<arg_type3>::value_type _2)
     
 
 #define DECLARE_TEST_METHOD4(ret_type, method_name, arg_type1, arg_type2, arg_type3, arg_type4 )\
-    typedef ParameterHolder4<ret_type, arg_type1, arg_type2, arg_type3, arg_type4> TEST_METHOD_TYPE(method_name);\
-    TestMethod4<ret_type, arg_type1, arg_type2, arg_type3, arg_type4> TEST_METHOD_NAME(method_name);\
+    typedef ParameterHolder4<ret_type, mfxTypeTrait<arg_type1>::store_type, mfxTypeTrait<arg_type2>::store_type, mfxTypeTrait<arg_type3>::store_type, mfxTypeTrait<arg_type4>::store_type> TEST_METHOD_TYPE(method_name);\
+    TestMethod4<ret_type, mfxTypeTrait<arg_type1>::store_type, mfxTypeTrait<arg_type2>::store_type, mfxTypeTrait<arg_type3>::store_type, mfxTypeTrait<arg_type4>::store_type> TEST_METHOD_NAME(method_name);\
     ret_type method_name(mfxTypeTrait<arg_type1>::value_type _0, mfxTypeTrait<arg_type2>::value_type _1, mfxTypeTrait<arg_type3>::value_type _2, mfxTypeTrait<arg_type4>::value_type _3)
-    
+
+#define DECLARE_TEST_METHOD5(ret_type, method_name, arg_type1, arg_type2, arg_type3, arg_type4 , arg_type5 )\
+    typedef ParameterHolder5<ret_type, mfxTypeTrait<arg_type1>::store_type, mfxTypeTrait<arg_type2>::store_type, mfxTypeTrait<arg_type3>::store_type, mfxTypeTrait<arg_type4>::store_type, mfxTypeTrait<arg_type5>::store_type> TEST_METHOD_TYPE(method_name);\
+    TestMethod5<ret_type, mfxTypeTrait<arg_type1>::store_type, mfxTypeTrait<arg_type2>::store_type, mfxTypeTrait<arg_type3>::store_type, mfxTypeTrait<arg_type4>::store_type, mfxTypeTrait<arg_type5>::store_type> TEST_METHOD_NAME(method_name);\
+    ret_type method_name(mfxTypeTrait<arg_type1>::value_type _0, mfxTypeTrait<arg_type2>::value_type _1, mfxTypeTrait<arg_type3>::value_type _2, mfxTypeTrait<arg_type4>::value_type _3, mfxTypeTrait<arg_type5>::value_type _4)
+
 
 
 #define DECL_POINTER(type) 
@@ -164,5 +169,13 @@ class TestMethod4 : public TestMethod
 {
 public:
     typedef ParameterHolder4<TRet, T0, T1, T2, T3> ArgsType;
+
+};
+
+template <class TRet, class T0, class T1, class T2, class T3, class T4>
+class TestMethod5 : public TestMethod
+{
+public:
+    typedef ParameterHolder5<TRet, T0, T1, T2, T3, T4> ArgsType;
 
 };

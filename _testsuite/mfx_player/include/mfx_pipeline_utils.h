@@ -13,6 +13,7 @@ File Name: .h
 #pragma once
 
 #include "mfxstructures.h"
+#include <vector>
 
 //////////////////////////////////////////////////////////////////////////
 //trace support functions
@@ -170,6 +171,8 @@ private:
     //no pointers or size checks, just copy and offsets adjustments
     static void MoveNBytesUnsafe(mfxU8 *pTo, mfxBitstream *pFrom, mfxU32 nBytes);
 };
+
+tstring cvt_s2t(const std::string & lhs);
 
 //aligns to arbitrary value
 template<class T> 

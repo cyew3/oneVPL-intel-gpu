@@ -652,5 +652,14 @@
     <ClInclude Include="include\hash_array.h">
       <Filter>serial</Filter>
     </ClInclude>
+    <ClInclude Include="include\mfx_decoder_plugin.h">
+      <Filter>decoders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_plugin_loader.h">
+      <Filter>decoders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_intrusive_ptr.h">
+      <Filter>decoders</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

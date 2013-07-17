@@ -169,6 +169,7 @@
     <ClInclude Include="mock_mfx_ivideo_session.h" />
     <ClInclude Include="mock_mfx_pipeline_config.h" />
     <ClInclude Include="mock_mfx_pipeline_factory.h" />
+    <ClInclude Include="mock_mfx_plugins.h" />
     <ClInclude Include="mock_mfx_random.h" />
     <ClInclude Include="mock_mfx_render.h" />
     <ClInclude Include="mock_mfx_vpp.h" />

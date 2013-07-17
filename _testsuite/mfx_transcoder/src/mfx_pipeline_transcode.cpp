@@ -1532,7 +1532,7 @@ mfxStatus  MFXTranscodingPipeline::CreateFileSink(std::auto_ptr<IFile> &pSink)
 std::auto_ptr<IVideoEncode> MFXTranscodingPipeline::CreateEncoder()
 {
     //create ivideencode implementation
-    PipelineObjectDesc<IVideoEncode> createParams(m_components[eREN].m_pSession->GetMFXSession(), ENCODER_MFX_NATIVE, NULL);
+    PipelineObjectDesc<IVideoEncode> createParams(m_components[eREN].m_pSession->GetMFXSession(), VM_STRING(""), ENCODER_MFX_NATIVE, NULL);
     std::auto_ptr<IVideoEncode> pEncoder ( m_pFactory->CreateVideoEncode(&createParams));
 
     //wrapper for jpeg encoder handles awkward behavior patterns
