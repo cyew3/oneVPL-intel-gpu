@@ -138,6 +138,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "audio_enc_con", "..\..\_tes
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spl_common", "..\shared\umc\codec\spl_common\spl_common.vcxproj", "{18D5AD19-B7CE-4158-8500-842216503D6D}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Optimization", "Optimization", "{39C6ABF8-ED5D-475E-B361-57005C8297E6}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hevc_pp", "optimization\hevc_pp.vcxproj", "{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug_Intel|Win32 = Debug_Intel|Win32
@@ -1179,6 +1183,26 @@ Global
 		{18D5AD19-B7CE-4158-8500-842216503D6D}.Release|Win32.Build.0 = Release|Win32
 		{18D5AD19-B7CE-4158-8500-842216503D6D}.Release|x64.ActiveCfg = Release|x64
 		{18D5AD19-B7CE-4158-8500-842216503D6D}.Release|x64.Build.0 = Release|x64
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Debug_Intel|Win32.ActiveCfg = Debug_Intel|Win32
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Debug_Intel|Win32.Build.0 = Debug_Intel|Win32
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Debug_Intel|x64.ActiveCfg = Debug_Intel|x64
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Debug_Intel|x64.Build.0 = Debug_Intel|x64
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Debug|Win32.Build.0 = Debug|Win32
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Debug|x64.ActiveCfg = Debug|x64
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Debug|x64.Build.0 = Debug|x64
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Release_Intel|Win32.ActiveCfg = Release_Intel|Win32
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Release_Intel|Win32.Build.0 = Release_Intel|Win32
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Release_Intel|x64.ActiveCfg = Release_Intel|x64
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Release_Intel|x64.Build.0 = Release_Intel|x64
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Release_MD|Win32.ActiveCfg = Release_Intel|Win32
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Release_MD|Win32.Build.0 = Release_Intel|Win32
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Release_MD|x64.ActiveCfg = Release_Intel|x64
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Release_MD|x64.Build.0 = Release_Intel|x64
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Release|Win32.ActiveCfg = Release|Win32
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Release|Win32.Build.0 = Release|Win32
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Release|x64.ActiveCfg = Release|x64
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1216,5 +1240,6 @@ Global
 		{E4EF614B-30DF-4954-8C53-580A0BF6B589} = {10FE9763-349D-4C64-AFF9-4C35CFFF6FE6}
 		{34681F0D-CE45-415D-B5F2-5C662DFE3BD5} = {10FE9763-349D-4C64-AFF9-4C35CFFF6FE6}
 		{BE161209-F2FA-43D1-B24D-0C8BC08B4906} = {10FE9763-349D-4C64-AFF9-4C35CFFF6FE6}
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A} = {39C6ABF8-ED5D-475E-B361-57005C8297E6}
 	EndGlobalSection
 EndGlobal
