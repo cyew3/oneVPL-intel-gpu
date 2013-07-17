@@ -183,7 +183,45 @@ public:
                 sd->m_pSlice->InitializeContexts();
             }
             else
+            {
+                if (sd->m_pPicParamSet->entropy_coding_sync_enabled_flag)
+                {
+                    Ipp32u CUX = rsCUAddr % sd->m_pSeqParamSet->WidthInCU;
+                    bool end_of_row = (CUX == sd->m_pSeqParamSet->WidthInCU - 1);
+
+                    if (end_of_row)
+                    {
+                        Ipp32u uVal = sd->m_pBitStream->DecodeTerminatingBit_CABAC();
+                        VM_ASSERT(uVal);
+                    }
+
+                    if (CUX == 1)
+                    {
+                        // Save CABAC context after 2nd CTB
+                        memcpy(sd->m_pBitStream->wpp_saved_cabac_context, sd->m_pBitStream->context_hevc, sizeof(sd->m_pBitStream->context_hevc));
+                    }
+
+                    if (end_of_row)
+                    {
+                        // Reset CABAC state
+                        sd->m_pBitStream->InitializeDecodingEngine_CABAC();
+
+                        // Should load CABAC context from saved buffer
+                        if (sd->m_pSeqParamSet->WidthInCU > 1 &&
+                            sd->m_pCurrentFrame->m_CodingData->GetInverseCUOrderMap(rsCUAddr + 1 - sd->m_pSeqParamSet->WidthInCU) >= sd->m_pSliceHeader->SliceCurStartCUAddr)
+                        {
+                            // Restore saved CABAC context
+                            memcpy(sd->m_pBitStream->context_hevc, sd->m_pBitStream->wpp_saved_cabac_context, sizeof(sd->m_pBitStream->context_hevc));
+                        }
+                        else
+                        {
+                            // Reset CABAC contexts
+                            sd->m_pSlice->InitializeContexts();
+                        }
+                    }
+                }
                 sd->m_context->UpdateCurrCUContext(rsCUAddr, newRSCUAddr);
+            }
 
             curCUAddr = newCUAddr;
             rsCUAddr = newRSCUAddr;

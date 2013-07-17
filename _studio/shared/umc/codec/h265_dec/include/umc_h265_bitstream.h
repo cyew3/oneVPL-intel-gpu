@@ -248,6 +248,7 @@ public:
     void parseShortTermRefPicSet(const H265SeqParamSet* sps, ReferencePictureSet* pRPS, Ipp32s idx);
 
     Ipp8u  context_hevc[NUM_CTX];
+    Ipp8u  wpp_saved_cabac_context[NUM_CTX];
 
 protected:
 
