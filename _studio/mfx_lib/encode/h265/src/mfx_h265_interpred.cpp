@@ -502,7 +502,7 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height,
             /*InterpolateHor_opt(TEXT_CHROMA, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch,
                            in_dx, Width, Height, shift, offset);*/
 
-            Interpolate<TEXT_CHROMA_U>( INTERP_HOR, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dx, Width, Height, shift, offset);
+            Interpolate<TEXT_CHROMA_U>( INTERP_HOR, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dx, Width, Height, shift, (Ipp16s)offset);
         }
         else if (in_dx == 0)
         {
@@ -551,7 +551,7 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height,
             /*InterpolateHor_opt(TEXT_CHROMA, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch,
                            in_dx, Width, Height, shift, offset);*/
 
-            Interpolate<TEXT_CHROMA_V>( INTERP_HOR, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dx, Width, Height, shift, offset);
+            Interpolate<TEXT_CHROMA_V>( INTERP_HOR, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dx, Width, Height, shift, (Ipp16s)offset);
         }
         else if (in_dx == 0)
         {
