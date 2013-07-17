@@ -34,8 +34,16 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="h265\include\mfx_h265_optimization.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="h265\src\mfx_h265_sad_sse.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_transform_fwd_sse.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_transform_inv_sse.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}</ProjectGuid>
+    <ProjectGuid>{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}</ProjectGuid>
     <RootNamespace>encode</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
@@ -127,7 +135,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\optimization\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\optimization\h265\include;include;..\encode\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;VM_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -146,7 +154,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\encode\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;VM_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -169,7 +177,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\optimization\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\optimization\h265\include;..\encode\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -189,7 +197,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\optimization\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\optimization\h265\include;..\encode\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -207,7 +215,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\optimization\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\optimization\h265\include;..\encode\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -225,7 +233,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">
     <ClCompile>
       <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\optimization\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\optimization\h265\include;..\encode\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -248,7 +256,7 @@
     </Midl>
     <ClCompile>
       <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\optimization\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\optimization\h265\include;..\encode\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader />
@@ -267,7 +275,7 @@
     </Midl>
     <ClCompile>
       <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\optimization\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\optimization\h265\include;..\encode\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -281,51 +289,6 @@
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
     </Bscmake>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="h265\src\mfx_h265_bitstream.cpp">
-      <AssemblerOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AssemblyAndSourceCode</AssemblerOutput>
-      <AssemblerOutput Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">AssemblyAndSourceCode</AssemblerOutput>
-      <AssemblerListingLocation Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)</AssemblerListingLocation>
-      <AssemblerListingLocation Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">$(IntDir)</AssemblerListingLocation>
-    </ClCompile>
-    <ClCompile Include="h265\src\mfx_h265_brc.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_cabac.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_cabac_init.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_cabac_tables.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_ctb.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_deblocking.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_enc.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_encode.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_frame.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_interpred.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_intrapred.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_intrapred_opt.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_quant.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_quant_opt.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_quant_rdo.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_set.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_tables.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_transform.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_transform_opt.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="h265\include\mfx_h265_bitstream.h" />
-    <ClInclude Include="h265\include\mfx_h265_brc.h" />
-    <ClInclude Include="h265\include\mfx_h265_cabac.h" />
-    <ClInclude Include="h265\include\mfx_h265_cabac_tables.h" />
-    <ClInclude Include="h265\include\mfx_h265_ctb.h" />
-    <ClInclude Include="h265\include\mfx_h265_defs.h" />
-    <ClInclude Include="h265\include\mfx_h265_enc.h" />
-    <ClInclude Include="h265\include\mfx_h265_encode.h" />
-    <ClInclude Include="h265\include\mfx_h265_frame.h" />
-    <ClInclude Include="h265\include\mfx_h265_intrapred_opt.h" />
-    <ClInclude Include="h265\include\mfx_h265_quant.h" />
-    <ClInclude Include="h265\include\mfx_h265_quant_opt.h" />
-    <ClInclude Include="h265\include\mfx_h265_quant_rdo.h" />
-    <ClInclude Include="h265\include\mfx_h265_set.h" />
-    <ClInclude Include="h265\include\mfx_h265_tables.h" />
-    <ClInclude Include="h265\include\mfx_h265_transform_opt.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

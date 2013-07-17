@@ -35,7 +35,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\mfx_lib\optimization\h265\src\mfx_h265_transform_inv_sse.cpp" />
     <ClCompile Include="src\h265_coding_unit.cpp" />
     <ClCompile Include="src\h265_dec_defs_dec.cpp" />
     <ClCompile Include="src\h265_frame_coding_data.cpp" />

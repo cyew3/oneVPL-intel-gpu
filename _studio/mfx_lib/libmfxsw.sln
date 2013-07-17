@@ -81,19 +81,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "h265_enc", "encode\h265_enc
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Optimization", "Optimization", "{7F062987-688B-4FFD-884C-18439EE8743F}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "h265", "h265", "{867948D9-E8DE-42B0-9F22-A6B060A98574}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "include", "include", "{B5BD9CBE-9339-4C8C-94E5-975F17A049A9}"
-	ProjectSection(SolutionItems) = preProject
-		optimization\h265\include\mfx_h265_optimization.h = optimization\h265\include\mfx_h265_optimization.h
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{71BAA7A4-245C-4829-8846-8BA9AC948F6A}"
-	ProjectSection(SolutionItems) = preProject
-		optimization\h265\src\mfx_h265_sad_sse.cpp = optimization\h265\src\mfx_h265_sad_sse.cpp
-		optimization\h265\src\mfx_h265_transform_fwd_sse.cpp = optimization\h265\src\mfx_h265_transform_fwd_sse.cpp
-		optimization\h265\src\mfx_h265_transform_inv_sse.cpp = optimization\h265\src\mfx_h265_transform_inv_sse.cpp
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hevc_pp", "optimization\hevc_pp.vcxproj", "{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -635,6 +623,22 @@ Global
 		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Release|Win32.Build.0 = Release|Win32
 		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Release|x64.ActiveCfg = Release|x64
 		{83F019AE-AF39-49C6-B17C-5C4C3FCA2055}.Release|x64.Build.0 = Release|x64
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Debug_Intel|Win32.ActiveCfg = Debug_Intel|Win32
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Debug_Intel|Win32.Build.0 = Debug_Intel|Win32
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Debug_Intel|x64.ActiveCfg = Debug_Intel|x64
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Debug_Intel|x64.Build.0 = Debug_Intel|x64
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Debug|Win32.Build.0 = Debug|Win32
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Debug|x64.ActiveCfg = Debug|x64
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Debug|x64.Build.0 = Debug|x64
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Release_Intel|Win32.ActiveCfg = Release_Intel|Win32
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Release_Intel|Win32.Build.0 = Release_Intel|Win32
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Release_Intel|x64.ActiveCfg = Release_Intel|x64
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Release_Intel|x64.Build.0 = Release_Intel|x64
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Release|Win32.ActiveCfg = Release|Win32
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Release|Win32.Build.0 = Release|Win32
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Release|x64.ActiveCfg = Release|x64
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -660,8 +664,6 @@ Global
 		{28FE5058-8F0D-4C9C-9065-EA43F2285858} = {03F908B1-B331-4B8C-9CCC-D88FAAC81551}
 		{FE112B8F-036E-4679-B07E-4F6F73C6C3B9} = {03F908B1-B331-4B8C-9CCC-D88FAAC81551}
 		{F0AFE44D-3A26-45F6-BC3F-6131F91DEC80} = {03F908B1-B331-4B8C-9CCC-D88FAAC81551}
-		{867948D9-E8DE-42B0-9F22-A6B060A98574} = {7F062987-688B-4FFD-884C-18439EE8743F}
-		{B5BD9CBE-9339-4C8C-94E5-975F17A049A9} = {867948D9-E8DE-42B0-9F22-A6B060A98574}
-		{71BAA7A4-245C-4829-8846-8BA9AC948F6A} = {867948D9-E8DE-42B0-9F22-A6B060A98574}
+		{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A} = {7F062987-688B-4FFD-884C-18439EE8743F}
 	EndGlobalSection
 EndGlobal

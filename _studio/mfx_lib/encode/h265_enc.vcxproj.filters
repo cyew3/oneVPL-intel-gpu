@@ -49,9 +49,6 @@
     <ClCompile Include="h265\src\mfx_h265_quant_rdo.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\optimization\h265\src\mfx_h265_sad_sse.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="h265\src\mfx_h265_set.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -61,13 +58,7 @@
     <ClCompile Include="h265\src\mfx_h265_transform.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\optimization\h265\src\mfx_h265_transform_inv_sse.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="h265\src\mfx_h265_transform_opt.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\optimization\h265\src\mfx_h265_transform_fwd_sse.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
@@ -109,9 +100,6 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="h265\include\mfx_h265_set.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="h265\include\mfx_h265_prediction.h">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="h265\include\mfx_h265_quant_rdo.h">
