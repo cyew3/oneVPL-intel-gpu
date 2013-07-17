@@ -550,6 +550,73 @@ msdk_ts_BLOCK(t_ParseHEVCAU){
     return msdk_ts::resOK;
 }
 
+msdk_ts_BLOCK(t_NewBsParser){
+    Bs32u& id = var_old<mfxU32>("parser_id");
+    BS_parser* parser = NULL;
+    char* f = NULL;
+
+    switch(id){
+    case MFX_CODEC_AVC: 
+        parser = &var_old_or_new<BS_H264_parser>("bs_parser");
+        break;
+    case MFX_CODEC_MPEG2: 
+        parser = &var_old_or_new<BS_MPEG2_parser>("bs_parser");
+        break;
+    case MFX_CODEC_VC1: 
+        parser = &var_old_or_new<BS_VC1_parser>("bs_parser");
+        break;
+    case MFX_CODEC_VP8: 
+        parser = &var_old_or_new<BS_VP8_parser>("bs_parser");
+        break;
+    case MFX_CODEC_HEVC: 
+        parser = &var_old_or_new<BS_HEVC_parser>("bs_parser");
+        break;
+    case MFX_CODEC_JPEG: 
+        parser = &var_old_or_new<BS_JPEG_parser>("bs_parser");
+        break;
+    default: 
+        RETERR(resFAIL, "Unknown parser_id: " << id);
+    }
+
+    var_old_or_new<BS_parser*>("p_bs_parser") = parser;
+
+    if(f = var_def<char*>("bs_file", NULL)){
+        if(parser->open(f)){
+            RETERR(resFAIL, "can't open file '" << f << "'");
+        }
+    }
+    parser->set_trace_level(var_def<Bs32u>("bs_trace_level", -1));
+
+    return msdk_ts::resOK;
+}
+
+msdk_ts_BLOCK(t_ParseNextUnit){
+    BS_parser* parser = var_old<BS_parser*>("p_bs_parser");
+    void*& hdr = var_def<void*>("bs_header", NULL);
+    mfxBitstream* pBS = NULL;
+    BSErr sts = BS_ERR_NONE;
+
+    if(!parser)
+        return msdk_ts::resFAIL;
+
+    if(!var_def<char*>("bs_file", NULL)){
+        mfxBitstream* pBS = &var_old<mfxBitstream>("bitstream");
+
+        sts = parser->set_buffer(pBS->Data+pBS->DataOffset, pBS->DataLength);
+        CHECK_STS(sts, BS_ERR_NONE);
+    }
+
+    sts = parser->parse_next_unit();
+    CHECK_STS(sts, BS_ERR_NONE);
+
+    if(pBS){
+        pBS->DataOffset += (Bs32u)parser->get_offset();
+    }
+
+    hdr = parser->get_header();
+
+    return msdk_ts::resOK;
+}
 
 msdk_ts_BLOCK(t_PackHEVCNALU){
     mfxBitstream& bs = var_old<mfxBitstream>("bitstream");

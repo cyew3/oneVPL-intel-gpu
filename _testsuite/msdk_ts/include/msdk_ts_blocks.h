@@ -154,6 +154,9 @@ msdk_ts_DECLARE_BLOCK(t_ParseHEVCAU);
 msdk_ts_DECLARE_BLOCK(t_ParseMPEG2);
 msdk_ts_DECLARE_BLOCK(t_PackHEVCNALU);
 
+msdk_ts_DECLARE_BLOCK(t_NewBsParser);
+msdk_ts_DECLARE_BLOCK(t_ParseNextUnit);
+
 //IN : global_allocator_instance
 //OUT: surf_cnt
 msdk_ts_DECLARE_BLOCK(t_CntAllocatedSurf);
