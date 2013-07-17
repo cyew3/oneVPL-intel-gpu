@@ -237,8 +237,8 @@ namespace UMC
             VC1PackPicParams(pContext,m_pPicPtr,m_va);
             if (VC1_IS_REFERENCE(pContext->m_picLayerHeader->PTYPE))
                 m_bIsPreviousSkip = false;
-            if (m_bIsPreviousSkip)
-                m_pPicPtr->wBackwardRefPictureIndex = m_pPicPtr->wForwardRefPictureIndex;
+            //if (m_bIsPreviousSkip)
+            //    m_pPicPtr->wBackwardRefPictureIndex = m_pPicPtr->wForwardRefPictureIndex;
         }
 
         void VC1PackOneSlice                      (VC1Context* pContext,
@@ -343,8 +343,8 @@ namespace UMC
 
             if (VC1_IS_REFERENCE(pContext->m_picLayerHeader->PTYPE))
                 m_bIsPreviousSkip = false;
-            if (m_bIsPreviousSkip)
-                m_pPicPtr->wBackwardRefPictureIndex = m_pPicPtr->wForwardRefPictureIndex;
+            //if (m_bIsPreviousSkip)
+            //    m_pPicPtr->wBackwardRefPictureIndex = m_pPicPtr->wForwardRefPictureIndex;
         }
 
         virtual void VC1PackerDXVA_EagleLake::VC1PackOneSlice  (VC1Context* pContext,
@@ -464,8 +464,8 @@ namespace UMC
 
             if (VC1_IS_REFERENCE(pContext->m_picLayerHeader->PTYPE))
                 m_bIsPreviousSkip = false;
-            if (m_bIsPreviousSkip)
-                m_pPicPtr->wBackwardRefPictureIndex = m_pPicPtr->wForwardRefPictureIndex;
+            /*if (m_bIsPreviousSkip)
+                m_pPicPtr->wBackwardRefPictureIndex = m_pPicPtr->wForwardRefPictureIndex;*/
         }
 
         virtual void VC1PackerDXVA_Protected::VC1PackOneSlice  (VC1Context* pContext,
