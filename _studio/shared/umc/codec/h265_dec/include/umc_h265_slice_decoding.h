@@ -29,16 +29,6 @@ namespace UMC_HEVC_DECODER
 class H265DBPList;
 class H265DecoderFrameList;
 
-// Slice decoding constant
-enum
-{
-    MINIMUM_NUMBER_OF_ROWS_H265      = 4,
-    MAXIMUM_NUMBER_OF_ROWS_H265      = 8,
-    MB_BUFFER_SIZE_H265              = 480,
-    NUMBER_OF_PIECES_H265            = 8,
-    NUMBER_OF_DEBLOCKERS_H265        = 2
-};
-
 // Task ID enumerator
 enum
 {
@@ -52,12 +42,6 @@ enum
     TASK_DEB_SLICE_H265,
     // piece of slice is deblocked
     TASK_DEB_H265,
-    // piece of slice is deblocked by several threads
-    TASK_DEB_THREADED_H265,
-    // whole frame is deblocked (when there is the slice groups)
-    TASK_DEB_FRAME_H265,
-    // whole frame is deblocked (when there is the slice groups)
-    TASK_DEB_FRAME_THREADED_H265,
     // //whole frame is deblocked (when there is the slice groups)
     TASK_DEC_REC_H265,
     TASK_SAO_H265
@@ -83,54 +67,8 @@ struct H265RefListInfo
 
 class H265Task;
 class MemoryPiece;
-
-class H265DecoderFrameInfo;
-
-#if 0
-class H264ThreadedDeblockingTools
-{
-public:
-    // Default constructor
-    H264ThreadedDeblockingTools(void);
-    // Destructor
-    virtual ~H264ThreadedDeblockingTools(void);
-
-    // Initialize tools
-    bool Init(Ipp32s iConsumerNumber);
-    // Reset tools when threaded deblocking is started
-    void Reset(Ipp32s iFirstMB, Ipp32s iMaxMB, Ipp32s iDebUnit, Ipp32s iMBWidth);
-
-    // Get next task
-    bool GetMBToProcess(H265Task *pTask);
-    // Set deblocked macroblocks
-    void SetProcessedMB(H265Task *pTask);
-    // Ask current segment deblocking finish
-    bool IsDeblockingDone(void);
-
-protected:
-    // Release object
-    void Release(void);
-
-    // Get next task for currect thread
-    bool GetMB(Ipp32s iThreadNumber, Ipp32s &iFirstMB, Ipp32s &iMBToProcess);
-    // Set deblocked macroblocks for current thread
-    void SetMB(Ipp32s iThreadNumber, Ipp32s iFirstMB, Ipp32s iMBToProcess);
-
-    Ipp32s m_iConsumerNumber;                                   // (Ipp32s) number of consumers
-    H264Array<Ipp32s> m_iCurMBToDeb;                            // (H264Array<Ipp32s>) array of current MB number to de-blocking
-    Ipp32s m_iMaxMB;                                            // (Ipp32s) maximum MB number in slice
-    Ipp32s m_iDebUnit;                                          // (Ipp32s) minimal unit of deblocking process
-    Ipp32s m_iMBWidth;                                          // (Ipp32s) width of MB row
-
-    H264Array<bool> m_bThreadWorking;                           // (H264Array<bool>) array of "thread does threaded deblocking" flag for threaded version
-};
-#endif
-
 class H265DecoderFrame;
 class H265DecoderFrameInfo;
-
-struct ViewItem_H265;
-typedef std::list<ViewItem_H265> ViewList;
 
 class H265Slice : public HeapObject
 {
@@ -170,18 +108,8 @@ public:
     H265SliceHeader *GetSliceHeader(void) {return &m_SliceHeader;}
     // Obtain bit stream object
     H265Bitstream *GetBitStream(void){return &m_BitStream;}
-    Ipp32s GetStreamFirstMB(void) const {return m_iFirstMB;}
+    Ipp32s GetFirstMB(void) const {return m_iFirstMB;}
     void SetFirstMBNumber(Ipp32s x) {m_iFirstMB = x;}
-    // Obtain MB width
-    Ipp32s GetMBWidth(void) const {return m_iMBWidth;}
-    // Obtain MB row width
-    Ipp32s GetMBRowWidth(void) const {return m_iMBWidth;}
-    // Obtain MB height
-    Ipp32s GetMBHeight(void) const {return m_iMBHeight;}
-    // Obtain current picture parameter set number
-    Ipp32s GetPicParamSet(void) const {return m_pPicParamSet->pic_parameter_set_id;}
-    // Obtain current sequence parameter set number
-    Ipp32s GetSeqParamSet(void) const {return m_pSeqParamSet->seq_parameter_set_id;}
     // Obtain current picture parameter set
     const H265PicParamSet *GetPicParam(void) const {return m_pPicParamSet;}
     void SetPicParam(const H265PicParamSet * pps) {m_pPicParamSet = pps;}
@@ -195,10 +123,6 @@ public:
 
     // Obtain slice number
     Ipp32s GetSliceNum(void) const {return m_iNumber;}
-    // Need to check slice edges
-    bool NeedToCheckSliceEdges(void) const {return m_bNeedToCheckMBSliceEdges;}
-    // Do we can doing deblocking
-    bool GetDeblockingCondition(void) const;
     // Obtain maximum of macroblock
     Ipp32s GetMaxMB(void) const {return m_iMaxMB;}
     void SetMaxMB(Ipp32s x) {m_iMaxMB = x;}
@@ -207,15 +131,6 @@ public:
 
     // Update reference list
     UMC::Status UpdateReferenceList(H265DBPList *dpb);
-
-    //
-    // Segment decoding mode's variables
-    //
-
-    // Obtain decoding state variables
-    void GetStateVariables(Ipp32s &iMBSkipFlag,  Ipp32s &iQuantPrev, Ipp32s &iPrevDQuant);
-    // Save decoding state variables
-    void SetStateVariables(Ipp32s iMBSkipCount, Ipp32s iQuantPrev, Ipp32s iPrevDQuant);
 
     bool IsError() const {return m_bError;}
 
@@ -248,8 +163,6 @@ public:  // DEBUG !!!! should remove dependence
 
     H265DecoderFrame *m_pCurrentFrame;        // (H265DecoderFrame *) pointer to destination frame
 
-    Ipp32s m_iMBWidth;                                          // (Ipp32s) width in macroblock units
-    Ipp32s m_iMBHeight;                                         // (Ipp32s) height in macroblock units
     Ipp32s m_CurrentVideoParamSet;                              // (Ipp32s) current video parameter set
     Ipp32s m_CurrentPicParamSet;                                // (Ipp32s) current picture parameter set
     Ipp32s m_CurrentSeqParamSet;                                // (Ipp32s) current sequence parameter set
@@ -263,27 +176,14 @@ public:  // DEBUG !!!! should remove dependence
     Ipp32s m_iCurMBToDec;                                       // (Ipp32s) current MB number to decode
     Ipp32s m_iCurMBToRec;                                       // (Ipp32s) current MB number to reconstruct
     Ipp32s m_iCurMBToDeb;                                       // (Ipp32s *) current MB number to de-blocking
+    Ipp32s m_curTileRec;                                          // (Ipp32s) current MB number to reconstruct
+    Ipp32s m_curTileDec;                                          // (Ipp32s) current MB number to reconstruct
 
     bool m_bInProcess;                                          // (bool) slice is under whole decoding
     Ipp32s m_bDecVacant;                                        // (Ipp32s) decoding is vacant
     Ipp32s m_bRecVacant;                                        // (Ipp32s) reconstruct is vacant
     Ipp32s m_bDebVacant;                                        // (Ipp32s) de-blocking is vacant
-    bool m_bFirstDebThreadedCall;                               // (bool) "first threaded deblocking call" flag
     bool m_bError;                                              // (bool) there is an error in decoding
-
-    Ipp32s m_MVsDistortion;
-
-#if 0
-    H264ThreadedDeblockingTools m_DebTools;                     // (H264ThreadedDeblockingTools) threaded deblocking tools
-#endif
-
-    Ipp32s m_iAllocatedMB;                                      // (Ipp32s) size of allocated buffer in macroblock
-
-    // through-decoding variable(s)
-    Ipp32s m_nMBSkipCount;                                      // (Ipp32u) current count of skipped macro blocks
-    Ipp32s m_nQuantPrev;                                        // (Ipp32u) quantize value of previous macro block
-    Ipp32s m_prev_dquant;
-    bool m_bNeedToCheckMBSliceEdges;                            // (bool) need to check inter-slice boundaries
 
     bool m_bDecoded;                                            // (bool) "slice has been decoded" flag
     bool m_bPrevDeblocked;                                      // (bool) "previous slice has been deblocked" flag
@@ -435,24 +335,6 @@ public:
 
     void CopyFromBaseSlice(const H265Slice * slice);
 };
-
-inline
-void H265Slice::GetStateVariables(Ipp32s &iMBSkipFlag, Ipp32s &iQuantPrev, Ipp32s &iPrevDQuant)
-{
-    iMBSkipFlag = m_nMBSkipCount;
-    iQuantPrev = m_nQuantPrev;
-    iPrevDQuant = m_prev_dquant;
-
-} // void H265Slice::GetStateVariables(Ipp32s &iMBSkipFlag, Ipp32s &iQuantPrev, bool &bSkipNextFDF, Ipp32s &iPrevDQuant)
-
-inline
-void H265Slice::SetStateVariables(Ipp32s iMBSkipFlag, Ipp32s iQuantPrev, Ipp32s iPrevDQuant)
-{
-    m_nMBSkipCount = iMBSkipFlag;
-    m_nQuantPrev = iQuantPrev;
-    m_prev_dquant = iPrevDQuant;
-
-} // void H265Slice::SetStateVariables(Ipp32s iMBSkipFlag, Ipp32s iQuantPrev, bool bSkipNextFDF, Ipp32s iPrevDQuant)
 
 inline
 bool IsPictureTheSame(H265Slice *pSliceOne, H265Slice *pSliceTwo)

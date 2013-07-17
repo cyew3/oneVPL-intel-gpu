@@ -31,13 +31,16 @@ public:
 
     virtual UMC::Status DecodeSegmentCABAC_Single_H265(Ipp32s curMB, Ipp32s nMacroBlocksToDecode,
         H265SegmentDecoderMultiThreaded * sd) = 0;
+
+    virtual UMC::Status DecodeSegment(Ipp32s curCUAddr, Ipp32s &nBorder, H265SegmentDecoderMultiThreaded * sd) = 0;
+
+    virtual UMC::Status ReconstructSegment(Ipp32s curCUAddr, Ipp32s nBorder, H265SegmentDecoderMultiThreaded * sd) = 0;
 };
 
 template <typename Coeffs, typename PlaneY, typename PlaneUV>
 class MBDecoder_H265
 {
 public:
-
 
     bool DecodeCodingUnit_CABAC(H265SegmentDecoderMultiThreaded *sd)
     {
@@ -52,45 +55,21 @@ public:
     } // void DecodeCodingUnit_CABAC(H265SegmentDecoderMultiThreaded *sd)
 };
 
-template <typename Coeffs, typename PlaneY, typename PlaneUV>
-class MBReconstructor_H265
-{
-public:
-
-    typedef PlaneY * PlanePtrY;
-    typedef PlaneUV * PlanePtrUV;
-    typedef Coeffs *  CoeffsPtr;
-
-    virtual ~MBReconstructor_H265() {}
-
-    void ReconstructCodingUnit(H265SegmentDecoderMultiThreaded * sd)
-    {
-        sd->ReconstructCU(sd->m_curCU, 0, 0);
-    } // void ReconstructCodingUnit(H265SegmentDecoderMultiThreaded * sd)
-};
-
-template <class Decoder, class Reconstructor, typename Coeffs, typename PlaneY, typename PlaneUV>
+template <class Decoder, typename Coeffs, typename PlaneY, typename PlaneUV>
 class SegmentDecoderHP_H265 : public SegmentDecoderHPBase_H265,
-    public Decoder,
-    public Reconstructor
+    public Decoder
 {
 public:
     typedef PlaneY * PlanePtrY;
     typedef PlaneUV * PlanePtrUV;
     typedef Coeffs *  CoeffsPtr;
 
-    typedef SegmentDecoderHP_H265<Decoder, Reconstructor, Coeffs,
-        PlaneY, PlaneUV> ThisClassType;
+    typedef SegmentDecoderHP_H265<Decoder, Coeffs, PlaneY, PlaneUV> ThisClassType;
 
-    virtual UMC::Status DecodeSegmentCABAC_Single_H265(Ipp32s curCUAddr1, Ipp32s nBorder,
-                                             H265SegmentDecoderMultiThreaded * sd)
+    virtual UMC::Status DecodeSegment(Ipp32s curCUAddr, Ipp32s &nBorder, H265SegmentDecoderMultiThreaded * sd)
     {
-        Ipp32s curCUAddr = curCUAddr1;
         UMC::Status umcRes = UMC::UMC_OK;
         Ipp32s rsCUAddr = sd->m_pCurrentFrame->m_CodingData->getCUOrderMap(curCUAddr);
-
-        if (!sd->m_pSlice->getDependentSliceSegmentFlag())
-            sd->m_context->ResetRowBuffer();
 
         for (;;)
         {
@@ -102,14 +81,10 @@ public:
             bool is_last = Decoder::DecodeCodingUnit_CABAC(sd); //decode CU
             END_TICK(decode_time);
 
-            START_TICK1;
-            Reconstructor::ReconstructCodingUnit(sd); //Reconstruct CU h265 must be here
-            END_TICK1(reconstruction_time);
-
             if (is_last)
             {
                 umcRes = UMC::UMC_ERR_END_OF_STREAM;
-                nBorder = curCUAddr;
+                nBorder = curCUAddr + 1;
                 break;
             }
 
@@ -136,15 +111,19 @@ public:
             rsCUAddr = newRSCUAddr;
         }
 
-#if 0
-        curCUAddr = curCUAddr1;
-        rsCUAddr = sd->m_pCurrentFrame->m_CodingData->getCUOrderMap(curCUAddr);
+        return umcRes;
+    }
+
+    virtual UMC::Status ReconstructSegment(Ipp32s curCUAddr, Ipp32s nBorder, H265SegmentDecoderMultiThreaded * sd)
+    {
+        UMC::Status umcRes = UMC::UMC_OK;
+        Ipp32s rsCUAddr = sd->m_pCurrentFrame->m_CodingData->getCUOrderMap(curCUAddr);
         for (;;)
         {
             sd->m_curCU = sd->m_pCurrentFrame->getCU(rsCUAddr);
 
             START_TICK1;
-            Reconstructor::ReconstructCodingUnit(sd); //Reconstruct CU h265 must be here
+            sd->ReconstructCU(sd->m_curCU, 0, 0);
             END_TICK1(reconstruction_time);
 
             ++curCUAddr;
@@ -153,7 +132,62 @@ public:
 
             rsCUAddr = sd->m_pCurrentFrame->m_CodingData->getCUOrderMap(curCUAddr);
         }
-#endif
+
+        return umcRes;
+    }
+
+
+    virtual UMC::Status DecodeSegmentCABAC_Single_H265(Ipp32s curCUAddr, Ipp32s nBorder, H265SegmentDecoderMultiThreaded * sd)
+    {
+        UMC::Status umcRes = UMC::UMC_OK;
+        Ipp32s rsCUAddr = sd->m_pCurrentFrame->m_CodingData->getCUOrderMap(curCUAddr);
+
+        if (!sd->m_pSlice->getDependentSliceSegmentFlag())
+            sd->m_context->ResetRowBuffer();
+
+        for (;;)
+        {
+            sd->m_curCU = sd->m_pCurrentFrame->getCU(rsCUAddr);
+            sd->m_curCU->initCU(sd, rsCUAddr);
+
+            START_TICK;
+            sd->DecodeSAOOneLCU(sd->m_curCU);
+            bool is_last = Decoder::DecodeCodingUnit_CABAC(sd); //decode CU
+            END_TICK(decode_time);
+
+            START_TICK1;
+            sd->ReconstructCU(sd->m_curCU, 0, 0);
+            END_TICK1(reconstruction_time);
+
+            if (is_last)
+            {
+                umcRes = UMC::UMC_ERR_END_OF_STREAM;
+                nBorder = curCUAddr + 1;
+                break;
+            }
+
+            Ipp32s newCUAddr = curCUAddr + 1;
+            Ipp32s newRSCUAddr = sd->m_pCurrentFrame->m_CodingData->getCUOrderMap(newCUAddr);
+
+            if (newCUAddr >= nBorder)
+                break;
+
+            if (sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(rsCUAddr) !=
+                sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(newRSCUAddr))
+            {
+                sd->m_context->ResetRowBuffer();
+                sd->m_pBitStream->DecodeTerminatingBit_CABAC();
+
+                // reset CABAC engine
+                sd->m_pBitStream->InitializeDecodingEngine_CABAC();
+                sd->m_pSlice->InitializeContexts();
+            }
+            else
+                sd->m_context->UpdateCurrCUContext(rsCUAddr, newRSCUAddr);
+
+            curCUAddr = newCUAddr;
+            rsCUAddr = newRSCUAddr;
+        }
 
         return umcRes;
     }
@@ -168,7 +202,6 @@ public:
     {
         static SegmentDecoderHP_H265<
             MBDecoder_H265<Coeffs, PlaneY, PlaneUV>,
-            MBReconstructor_H265<Coeffs, PlaneY, PlaneUV>,
             Coeffs, PlaneY, PlaneUV> k;
         return &k;
     }

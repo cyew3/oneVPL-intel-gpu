@@ -64,7 +64,7 @@ extern const Ipp8u g_ChromaScale[58];
 
 // Scanning order & context mapping table ---------------------------------------------------------------------
 
-extern const Ipp8u scanGCZr[128];
+extern __declspec(align(32)) const Ipp8u scanGCZr[128];
 extern const Ipp16u g_sigLastScanCG32x32[64];
 extern const Ipp16u ScanTableDiag4x4[16];
 

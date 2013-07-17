@@ -27,38 +27,40 @@ H265CodingUnit::H265CodingUnit()
 {
     m_cumulativeMemoryPtr = 0;
 
-    m_Frame = NULL;
-    m_SliceHeader = NULL;
+    m_Frame = 0;
+    m_SliceHeader = 0;
     m_SliceIdx = -1;
-    m_depthArray = NULL;
+    m_depthArray = 0;
 
-    m_partSizeArray = NULL;
-    m_predModeArray = NULL;
-    m_CUTransquantBypass = NULL;
-    m_widthArray = NULL;
-    m_heightArray = NULL;
-    m_qpArray = NULL;
+    m_partSizeArray = 0;
+    m_predModeArray = 0;
+    m_CUTransquantBypass = 0;
+    m_widthArray = 0;
+    m_heightArray = 0;
+    m_qpArray = 0;
 
-    m_lumaIntraDir = NULL;
-    m_chromaIntraDir = NULL;
-    m_TrIdxArray = NULL;
-    m_TrStartArray = NULL;
+    m_lumaIntraDir = 0;
+    m_chromaIntraDir = 0;
+    m_TrIdxArray = 0;
+    m_TrStartArray = 0;
     // ML: FIXED: changed the last 3 into 2
-    m_transformSkip[0] = m_transformSkip[1] = m_transformSkip[2] = NULL;
-    m_cbf[0] = NULL;
-    m_cbf[1] = NULL;
-    m_cbf[2] = NULL;
-    m_TrCoeffY = NULL;
-    m_TrCoeffCb = NULL;
-    m_TrCoeffCr = NULL;
+    m_transformSkip[0] = m_transformSkip[1] = m_transformSkip[2] = 0;
+    m_cbf[0] = 0;
+    m_cbf[1] = 0;
+    m_cbf[2] = 0;
+    m_TrCoeffY = 0;
+    m_TrCoeffCb = 0;
+    m_TrCoeffCr = 0;
 
-    m_IPCMFlag = NULL;
-    m_IPCMSampleY = NULL;
-    m_IPCMSampleCb = NULL;
-    m_IPCMSampleCr = NULL;
+    m_IPCMFlag = 0;
+    m_IPCMSampleY = 0;
+    m_IPCMSampleCb = 0;
+    m_IPCMSampleCr = 0;
 
-    m_CUAbove = NULL;
-    m_CULeft = NULL;
+    m_CUAbove = 0;
+    m_CULeft = 0;
+    m_intraNeighbors[0] = 0;
+    m_intraNeighbors[1] = 0;
 }
 
 H265CodingUnit::~H265CodingUnit()
@@ -71,7 +73,7 @@ void H265CodingUnit::create (Ipp32u numPartition, Ipp32u Width, Ipp32u Height)
     m_SliceHeader = NULL;
     m_NumPartition = numPartition;
 
-    m_cumulativeMemoryPtr = CumulativeArraysAllocation(24, 32, &m_qpArray, sizeof(Ipp8u) * numPartition,
+    m_cumulativeMemoryPtr = CumulativeArraysAllocation(26, 32, &m_qpArray, sizeof(Ipp8u) * numPartition,
                                 &m_depthArray, sizeof(Ipp8u) * numPartition,
                                 &m_widthArray, sizeof(Ipp8u) * numPartition,
                                 &m_heightArray, sizeof(Ipp8u) * numPartition,
@@ -100,8 +102,10 @@ void H265CodingUnit::create (Ipp32u numPartition, Ipp32u Width, Ipp32u Height)
                                 &m_IPCMFlag, sizeof(bool) * numPartition,
                                 &m_IPCMSampleY, sizeof(H265PlaneYCommon) * Width * Height,
                                 &m_IPCMSampleCb, sizeof(H265PlaneYCommon) * Width * Height / 4,
-                                &m_IPCMSampleCr, sizeof(H265PlaneYCommon) * Width * Height / 4
+                                &m_IPCMSampleCr, sizeof(H265PlaneYCommon) * Width * Height / 4,
 
+                                &m_intraNeighbors[0], sizeof(IntraNeighbors) * numPartition,
+                                &m_intraNeighbors[1], sizeof(IntraNeighbors) * numPartition
                                 );
 
     m_CUAbove          = NULL;

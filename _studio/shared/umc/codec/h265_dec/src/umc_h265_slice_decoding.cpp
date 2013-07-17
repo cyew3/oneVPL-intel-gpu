@@ -19,265 +19,6 @@
 
 namespace UMC_HEVC_DECODER
 {
-
-
-#if 0
-H264ThreadedDeblockingTools::H264ThreadedDeblockingTools(void)
-{
-
-} // H264ThreadedDeblockingTools::H264ThreadedDeblockingTools(void)
-
-H264ThreadedDeblockingTools::~H264ThreadedDeblockingTools(void)
-{
-    Release();
-
-} // H264ThreadedDeblockingTools::~H264ThreadedDeblockingTools(void)
-
-void H264ThreadedDeblockingTools::Release(void)
-{
-    // there is nothing to do
-
-} // void H264ThreadedDeblockingTools::Release(void)
-
-bool H264ThreadedDeblockingTools::Init(Ipp32s iConsumerNumber)
-{
-    // release object before initialization
-    Release();
-
-    // save variables
-    m_iConsumerNumber = IPP_MIN(NUMBER_OF_DEBLOCKERS_H265, iConsumerNumber) * 2;
-
-    // allocate working flags
-    if (false == m_bThreadWorking.Init(m_iConsumerNumber))
-        return false;
-
-    // allocate array for current macroblock number
-    if (false == m_iCurMBToDeb.Init(m_iConsumerNumber))
-        return false;
-
-    return true;
-
-} // bool H264ThreadedDeblockingTools::Init(Ipp32s iConsumerNumber)
-
-static void GetDeblockingRange(Ipp32s &iLeft,
-                        Ipp32s &iRight,
-                        Ipp32s iMBWidth,
-                        Ipp32s iThreadNumber,
-                        Ipp32s iConsumerNumber,
-                        Ipp32s iDebUnit)
-{
-    // calculate left value
-    if (0 == iThreadNumber)
-        iLeft = 0;
-    else
-        iLeft = ALIGN_VALUE_H265<Ipp32s> (iMBWidth * iThreadNumber / iConsumerNumber,
-                                     iDebUnit);
-
-    // calculate right value
-    if (iConsumerNumber - 1 == iThreadNumber)
-        iRight = iMBWidth - 1;
-    else
-        // calculate right as left_for_next_thread - deb_unit
-        iRight = ALIGN_VALUE_H265<Ipp32s> ((iMBWidth * (iThreadNumber + 1)) / iConsumerNumber,
-                                      iDebUnit) - 1;
-
-} // void GetDeblockingRange(Ipp32s &iLeft,
-
-void H264ThreadedDeblockingTools::Reset(Ipp32s iFirstMB, Ipp32s iMaxMB, Ipp32s iDebUnit, Ipp32s iMBWidth)
-{
-    Ipp32s i;
-    Ipp32s iCurrMB = iFirstMB;
-    Ipp32s iCurrMBInRow = iCurrMB % iMBWidth;
-
-    // save variables
-    m_iMaxMB = iMaxMB;
-    m_iDebUnit = iDebUnit;
-    m_iMBWidth = iMBWidth;
-
-    // reset event(s) & current position(s)
-    for (i = 0; i < m_iConsumerNumber; i += 1)
-    {
-        Ipp32s iLeft, iRight;
-
-        // get working range for this thread
-        GetDeblockingRange(iLeft, iRight, iMBWidth, i, m_iConsumerNumber, iDebUnit);
-
-        // reset current MB to deblock
-        if (iCurrMBInRow < iLeft)
-            m_iCurMBToDeb[i] = iCurrMB - iCurrMBInRow + iLeft;
-        else if (iCurrMBInRow > iRight)
-            m_iCurMBToDeb[i] = iCurrMB - iCurrMBInRow + iMBWidth + iLeft;
-        else
-            m_iCurMBToDeb[i] = iCurrMB;
-
-        // set current thread working status
-        m_bThreadWorking[i] = false;
-    }
-
-} // void H264ThreadedDeblockingTools::Reset(Ipp32s iFirstMB, Ipp32s iMaxMB, Ipp32s iDebUnit, Ipp32s iMBWidth)
-
-bool H264ThreadedDeblockingTools::GetMBToProcess(H265Task *pTask)
-{
-    Ipp32s iThreadNumber;
-    Ipp32s iFirstMB, iMBToProcess;
-
-    for (iThreadNumber = 0; iThreadNumber < m_iConsumerNumber; iThreadNumber += 1)
-    {
-        if (GetMB(iThreadNumber, iFirstMB, iMBToProcess))
-        {
-            // prepare task
-            pTask->m_bDone = false;
-            pTask->m_bError = false;
-            pTask->m_iFirstMB = iFirstMB;
-            pTask->m_iMaxMB = m_iMaxMB;
-            pTask->m_iMBToProcess = iMBToProcess;
-            pTask->m_iTaskID = TASK_DEB_THREADED_H265;
-            pTask->m_pSlice = NULL;
-            pTask->pFunction = &H265SegmentDecoderMultiThreaded::DeblockSegmentTask;
-
-#ifdef ECHO_DEB
-            DEBUG_PRINT(VM_STRING("(%d) dbt - % 4d to % 4d\n"), pTask->m_iThreadNumber,
-                pTask->m_iFirstMB, pTask->m_iFirstMB + pTask->m_iMBToProcess));
-#endif // ECHO_DEB
-
-            return true;
-        }
-    }
-
-    return false;
-
-} // bool H264ThreadedDeblockingTools::GetMBToProcess(H265Task *pTask)
-
-bool H264ThreadedDeblockingTools::GetMB(Ipp32s iThreadNumber,
-                                        Ipp32s &iFirstMB,
-                                        Ipp32s &iMBToProcess)
-{
-    Ipp32s iCur;
-    Ipp32s iNumber = iThreadNumber;
-    Ipp32s iLeft, iRight;
-
-    // do we have anything to do ?
-    iCur = m_iCurMBToDeb[iNumber];
-    if ((iCur >= m_iMaxMB) ||
-        (m_bThreadWorking[iThreadNumber]))
-        return false;
-
-    // get working range for this thread
-    GetDeblockingRange(iLeft, iRight, m_iMBWidth, iNumber, m_iConsumerNumber, m_iDebUnit);
-
-    // the left column
-    if (0 == iNumber)
-    {
-        if (m_iCurMBToDeb[iNumber + 1] <= iCur - (iCur % m_iMBWidth) - m_iMBWidth + iRight + m_iDebUnit)
-            return false;
-
-        iFirstMB = m_iCurMBToDeb[iNumber];
-        iMBToProcess = iRight - IPP_MAX(iLeft, iCur % m_iMBWidth) + 1;
-        m_bThreadWorking[iThreadNumber] = true;
-
-        return true;
-    }
-
-    // a middle column
-    if (m_iConsumerNumber - 1 != iNumber)
-    {
-        if ((m_iCurMBToDeb[iNumber - 1] < iCur) ||
-            (m_iCurMBToDeb[iNumber + 1] <= iCur - (iCur % m_iMBWidth) - m_iMBWidth + iRight + m_iDebUnit))
-            return false;
-
-        iFirstMB = m_iCurMBToDeb[iNumber];
-        iMBToProcess = iRight - IPP_MAX(iLeft, iCur % m_iMBWidth) + 1;
-        m_bThreadWorking[iThreadNumber] = true;
-
-        return true;
-    }
-
-    // the right column
-    if (m_iConsumerNumber - 1 == iNumber)
-    {
-        if (m_iCurMBToDeb[iNumber - 1] < iCur)
-            return false;
-
-        iFirstMB = m_iCurMBToDeb[iNumber];
-        iMBToProcess = iRight - IPP_MAX(iLeft, iCur % m_iMBWidth) + 1;
-        m_bThreadWorking[iThreadNumber] = true;
-
-        return true;
-    }
-
-    return false;
-
-} // bool H264ThreadedDeblockingTools::GetMB(Ipp32s iThreadNumber,
-
-void H264ThreadedDeblockingTools::SetProcessedMB(H265Task *pTask)
-{
-    Ipp32s iThreadNumber;
-
-    for (iThreadNumber = 0; iThreadNumber < m_iConsumerNumber; iThreadNumber += 1)
-    {
-        if (m_iCurMBToDeb[iThreadNumber] == pTask->m_iFirstMB)
-        {
-            SetMB(iThreadNumber, m_iCurMBToDeb[iThreadNumber], pTask->m_iMBToProcess);
-            break;
-        }
-    }
-
-} // void H264ThreadedDeblockingTools::SetProcessedMB(H265Task *pTask)
-
-void H264ThreadedDeblockingTools::SetMB(Ipp32s iThreadNumber,
-                                        Ipp32s iFirstMB,
-                                        Ipp32s iMBToProcess)
-{
-    Ipp32s iLeft, iRight, iCur;
-    Ipp32s iNumber;
-
-    // fill variables
-    iNumber = iThreadNumber;
-    iCur = iFirstMB;
-
-    // get working range for this thread
-    GetDeblockingRange(iLeft, iRight, m_iMBWidth, iNumber, m_iConsumerNumber, m_iDebUnit);
-
-    VM_ASSERT(iCur == m_iCurMBToDeb[iNumber]);
-
-    // increment current working MB index
-    iCur += iMBToProcess;
-
-    // correct current macroblock index to working range
-    {
-        Ipp32s iRest = iCur % m_iMBWidth;
-
-        iRest = (iRest) ? (iRest) : (m_iMBWidth);
-        if (iRest > iRight)
-            iCur = iCur - iRest + m_iMBWidth + iLeft;
-
-        // save current working MB index
-        m_iCurMBToDeb[iNumber] = iCur;
-    }
-
-    m_bThreadWorking[iNumber] = false;
-
-} // void H264ThreadedDeblockingTools::SetMB(Ipp32s iThreadNumber,
-
-bool H264ThreadedDeblockingTools::IsDeblockingDone(void)
-{
-    bool bDeblocked = false;
-    Ipp32s i;
-
-    // test whole slice deblocking condition
-    for (i = 0; i < m_iConsumerNumber; i += 1)
-    {
-        if (m_iCurMBToDeb[i] < m_iMaxMB)
-            break;
-    }
-    if (m_iConsumerNumber == i)
-        bDeblocked = true;
-
-    return bDeblocked;
-
-} // bool H264ThreadedDeblockingTools::IsDeblockingDone(void)
-#endif
-
 int H265Slice::m_prevPOC;
 
 H265Slice::H265Slice(UMC::MemoryAllocator *pMemoryAllocator)
@@ -315,13 +56,9 @@ void H265Slice::Reset()
         m_pPicParamSet = 0;
     }
 
-    m_iMBWidth = -1;
-    m_iMBHeight = -1;
     m_CurrentPicParamSet = -1;
     m_CurrentSeqParamSet = -1;
     m_CurrentVideoParamSet = -1;
-
-    m_iAllocatedMB = 0;
 
     m_pCurrentFrame = 0;
 
@@ -396,10 +133,6 @@ Ipp32s H265Slice::RetrievePicParamSetNumber(void *pSource, size_t nSourceSize)
 
 bool H265Slice::Reset(void *pSource, size_t nSourceSize, Ipp32s )
 {
-    Ipp32s iMBInFrame;
-    //Ipp32s iCUInFrame;
-    Ipp32s iFieldIndex;
-
     m_BitStream.Reset((Ipp8u *) pSource, (Ipp32u) nSourceSize);
 
     // decode slice header
@@ -411,12 +144,7 @@ bool H265Slice::Reset(void *pSource, size_t nSourceSize, Ipp32s )
     m_SliceHeader.m_SeqParamSet = m_pSeqParamSet;
     m_SliceHeader.m_PicParamSet = m_pPicParamSet;
 
-    m_iMBWidth  = GetSeqParam()->WidthInCU;
-    m_iMBHeight = GetSeqParam()->HeightInCU;
-
-    iMBInFrame = (m_iMBWidth * m_iMBHeight);
-    //iCUInFrame = m_iCUWidth * m_iCUHeight;
-    iFieldIndex = 0;
+    Ipp32s iMBInFrame = (GetSeqParam()->WidthInCU * GetSeqParam()->HeightInCU);
 
     // set slice variables
     m_iFirstMB = m_SliceHeader.m_sliceAddr;
@@ -431,24 +159,14 @@ bool H265Slice::Reset(void *pSource, size_t nSourceSize, Ipp32s )
     m_iCurMBToDec = 0;
     m_iCurMBToRec = 0;
     m_iCurMBToDeb = m_iFirstMB;
+    m_curTileDec = 0;
+    m_curTileRec = 0;
 
     m_bInProcess = false;
     m_bDecVacant = 1;
     m_bRecVacant = 1;
     m_bDebVacant = 1;
-    m_bFirstDebThreadedCall = true;
     m_bError = false;
-
-    m_MVsDistortion = 0;
-
-    // reset through-decoding variables
-    m_nMBSkipCount = 0;
-    //m_nQuantPrev = m_pPicParamSet->pic_init_qp +
-    //               m_SliceHeader.slice_qp_delta;
-    m_nQuantPrev = m_SliceHeader.SliceQP + m_SliceHeader.slice_qp_delta;
-    m_prev_dquant = 0;
-
-    m_bNeedToCheckMBSliceEdges = (0 == m_SliceHeader.m_sliceAddr) ? (false) : (true);
 
     // set conditional flags
     m_bDecoded = false;
@@ -581,22 +299,6 @@ void H265Slice::InitializeContexts()
     m_BitStream.InitializeContextVariablesHEVC_CABAC(InitializationType,
         m_SliceHeader.SliceQP + m_SliceHeader.slice_qp_delta);
 }
-
-bool H265Slice::GetDeblockingCondition(void) const
-{
-    // there is no deblocking
-    if (getDeblockingFilterDisable())
-        return false;
-
-    // no filtering edges of this slice
-    if (!getLFCrossSliceBoundaryFlag() || (m_bPrevDeblocked))
-    {
-        return true;
-    }
-
-    return false;
-
-} // bool H265Slice::GetDeblockingCondition(void)
 
 int H265Slice::getNumRpsCurrTempList() const
 {

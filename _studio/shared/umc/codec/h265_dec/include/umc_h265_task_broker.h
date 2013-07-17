@@ -141,10 +141,14 @@ public:
 private:
 
     bool WrapDecRecTask(H265DecoderFrameInfo * info, H265Task *pTask, H265Slice *pSlice);
+    bool WrapDecodingTask(H265DecoderFrameInfo * info, H265Task *pTask, H265Slice *pSlice);
+    bool WrapReconstructTask(H265DecoderFrameInfo * info, H265Task *pTask, H265Slice *pSlice);
 
     bool GetDecRecTask(H265DecoderFrameInfo * info, H265Task *pTask);
     bool GetDeblockingTask(H265DecoderFrameInfo * info, H265Task *pTask);
-    bool GetFrameDeblockingTaskThreaded(H265DecoderFrameInfo * info, H265Task *pTask);
+    bool GetDecodingTask(H265DecoderFrameInfo * info, H265Task *pTask);
+    bool GetReconstructTask(H265DecoderFrameInfo * info, H265Task *pTask);
+
 #if defined (__ICL)
 #pragma warning(disable:1125)
 #endif

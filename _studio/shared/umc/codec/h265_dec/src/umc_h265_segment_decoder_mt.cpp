@@ -173,6 +173,55 @@ void H265SegmentDecoderMultiThreaded::RestoreErrorRect(Ipp32s , Ipp32s , H265Sli
     return;
 }
 
+UMC::Status H265SegmentDecoderMultiThreaded::DecodeSegment(Ipp32s iCurMBNumber, Ipp32s & iMBToProcess)
+{
+    UMC::Status umcRes = UMC::UMC_OK;
+
+    // Convert slice beginning and end to encode order
+    //Ipp32s iFirstPartition = IPP_MAX(m_pSliceHeader->SliceCurStartCUAddr, m_pSliceHeader->m_sliceSegmentCurStartCUAddr);
+    //Ipp32s iFirstCU = iFirstPartition / m_pCurrentFrame->m_CodingData->m_NumPartitions;
+    Ipp32s iMaxCUNumber = iCurMBNumber + iMBToProcess;
+
+    if (m_pSlice->GetFirstMB() == iCurMBNumber)
+    {
+        m_pSlice->GetBitStream()->InitializeDecodingEngine_CABAC();
+        m_pSlice->InitializeContexts();
+
+        m_context->ResetRowBuffer();
+    }
+
+    try
+    {
+        umcRes = m_SD->DecodeSegment(iCurMBNumber, iMaxCUNumber, this);
+
+        iMBToProcess = iMaxCUNumber - iCurMBNumber;
+
+        if ((UMC::UMC_OK == umcRes) ||
+            (UMC::UMC_ERR_END_OF_STREAM == umcRes))
+        {
+            umcRes = UMC::UMC_ERR_END_OF_STREAM;
+        }
+        
+    } catch(...)
+    {
+        iMBToProcess = iMaxCUNumber - iCurMBNumber;
+        throw;
+    }
+    
+    return umcRes;
+}
+
+UMC::Status H265SegmentDecoderMultiThreaded::ReconstructSegment(Ipp32s iCurMBNumber, Ipp32s &iMBToProcess)
+{
+    UMC::Status umcRes = UMC::UMC_OK;
+    {
+        Ipp32s iMaxCUNumber = iCurMBNumber + iMBToProcess;
+        umcRes = m_SD->ReconstructSegment(iCurMBNumber, iMaxCUNumber, this);
+        iMBToProcess = iMaxCUNumber - iCurMBNumber;
+        return umcRes;
+    }
+}
+
 UMC::Status H265SegmentDecoderMultiThreaded::DecRecSegment(Ipp32s iCurMBNumber, Ipp32s &)
 {
     H265Bitstream  bitstream;
@@ -291,7 +340,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::SAOFrameTask(Ipp32s , Ipp32s &)
     END_TICK(sao_time)
     return UMC::UMC_OK;
 
-} // Status H265SegmentDecoderMultiThreaded::DeblockSegmentTask(Ipp32s iCurMBNumber, Ipp32s &iMBToDeblock)
+}
 
 UMC::Status H265SegmentDecoderMultiThreaded::DeblockSegmentTask(Ipp32s iCurMBNumber, Ipp32s &iMBToProcess)
 {
@@ -304,50 +353,14 @@ UMC::Status H265SegmentDecoderMultiThreaded::DeblockSegmentTask(Ipp32s iCurMBNum
     }
 
     Ipp32s iMaxMBNumber = iCurMBNumber + iMBToProcess;
-    Ipp32s iMBRowSize = m_pSlice->GetMBRowWidth();
-    Ipp32s iFirstMB = iCurMBNumber;
-
-    // this is a cicle for rows of MBs
-    for (; iCurMBNumber < iMaxMBNumber;)
-    {
-        Ipp32u nBorder;
-        Ipp32s iPreCallMBNumber;
-
-        // calculate the last MB in a row
-        nBorder = IPP_MIN(iMaxMBNumber,
-                      iCurMBNumber -
-                      (iCurMBNumber % iMBRowSize) +
-                      iMBRowSize);
-
-        // perform the decoding on the current row
-        iPreCallMBNumber = iCurMBNumber;
-
-        try
-        {
-            DeblockSegment(iCurMBNumber, nBorder);
-        } catch(...)
-        {
-            iMBToProcess = iCurMBNumber - iFirstMB;
-            throw;
-        }
-
-        // check error(s)
-        if ((iCurMBNumber >= iMaxMBNumber))
-            break;
-
-        // correct the MB number
-        iCurMBNumber = iPreCallMBNumber -
-                       (iPreCallMBNumber % iMBRowSize) +
-                       iMBRowSize;
-    }
-
+    DeblockSegment(iCurMBNumber, iMaxMBNumber);
     END_TICK(deblocking_time)
 
     return UMC::UMC_OK;
 
 } // Status H265SegmentDecoderMultiThreaded::DeblockSegmentTask(Ipp32s iCurMBNumber, Ipp32s &iMBToDeblock)
 
-UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(Ipp32s iCurMBNumber, Ipp32s &)
+UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(Ipp32s , Ipp32s &)
 {
     UMC::Status umcRes = UMC::UMC_OK;
 
@@ -378,16 +391,6 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(Ipp32s iCurMBNumber, I
         }
     }
 
-    Ipp32s iFirstMBToDeblock;
-//    Ipp32s iAvailableMBToDeblock = 0;
-
-     // set deblocking condition
-    //bDoDeblocking = m_pSlice->GetDeblockingCondition();
-    iFirstMBToDeblock = iCurMBNumber;
-
-    //m_psBuffer = align_pointer<UMC::CoeffsPtrCommon> (m_pCoefficientsBuffer, DEFAULT_ALIGN_VALUE);
-
-    // separate decoding and deblocking (tmp)
     {
         // perform decoding on current row(s)
         umcRes = m_SD->DecodeSegmentCABAC_Single_H265(iFirstCU, iMaxCUNumber, this);
@@ -399,72 +402,6 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(Ipp32s iCurMBNumber, I
 //        iMBToProcess = m_CurMBAddr - iCurMBNumber;
         return umcRes;
     }
-
-/*    // this is a cicle for rows of MBs
-    for (; iCurMBNumber < iMaxMBNumber;)
-    {
-        Ipp32u nBorder;
-        Ipp32s iPreCallMBNumber;
-
-        // calculate the last MB in a row
-        nBorder = IPP_MIN(iMaxMBNumber,
-                      iCurMBNumber -
-                      (iCurMBNumber % iMBRowSize) +
-                      iMBRowSize);
-
-        // perform the decoding on the current row
-        iPreCallMBNumber = iCurMBNumber;
-
-        try
-        {
-                umcRes = m_SD->DecodeSegmentCABAC_Single_H265(iCurMBNumber, nBorder, this);
-        } catch(...)
-        {
-            iMBToProcess = m_CurMBAddr - iFirstMB;
-            throw;
-        }
-
-        // sum count of MB to deblock
-        iAvailableMBToDeblock += nBorder - iPreCallMBNumber;
-        // check error(s)
-        if ((UMC_OK != umcRes) ||
-            (m_CurMBAddr >= iMaxMBNumber))
-            break;
-
-        // correct the MB number in a MBAFF case
-        iCurMBNumber = iPreCallMBNumber -
-                       (iPreCallMBNumber % iMBRowSize) +
-                       iMBRowSize;
-
-        // perform a deblocking on previous row(s)
-        if (iCurMBNumber < iMaxMBNumber)
-        {
-            if ((bDoDeblocking) &&
-                (iMBRowSize < iAvailableMBToDeblock))
-            {
-                Ipp32s iToDeblock = iAvailableMBToDeblock - iMBRowSize;
-
-                DeblockSegmentTask(iFirstMBToDeblock, iToDeblock);
-                iFirstMBToDeblock += iToDeblock;
-                iAvailableMBToDeblock -= iToDeblock;
-                m_cur_mb.isInited = false; // reset variables
-            }
-        }
-    }
-
-    if ((UMC_OK == umcRes) ||
-        (UMC_ERR_END_OF_STREAM == umcRes))
-    {
-        iMBToProcess = m_CurMBAddr - iFirstMB;
-
-        // perform deblocking of remain MBs
-        if (bDoDeblocking)
-            DeblockSegmentTask(iFirstMBToDeblock, iAvailableMBToDeblock);
-
-        // in any case it is end of slice
-        umcRes = UMC_ERR_END_OF_STREAM;
-    }
-*/
 }
 
 

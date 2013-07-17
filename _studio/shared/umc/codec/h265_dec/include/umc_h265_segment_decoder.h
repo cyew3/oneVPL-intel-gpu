@@ -125,6 +125,10 @@ public:
     void ReadUnaryMaxSymbolCABAC(Ipp32u& uVal, Ipp32u CtxIdx, Ipp32s Offset, Ipp32u MaxSymbol);
     void DecodeSplitFlagCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     Ipp32u DecodeMergeIndexCABAC(void);
+
+    void DecodeIntraNeighborsRec(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
+    void DecodeIntraNeighbors(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
+
     bool DecodeSkipFlagCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void DecodeCUTransquantBypassFlag(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void DecodeMVPIdxPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartAddr, Ipp32u Depth, Ipp32u PartIdx, EnumRefPicList RefList, MVBuffer &MVb, Ipp8u InterDir);
@@ -189,8 +193,7 @@ public:
         H265PlanePtrYCommon pAdiBuf,
         Ipp32u OrgBufStride,
         Ipp32u OrgBufHeight,
-        bool *NeighborFlags,
-        Ipp32s NumIntraNeighbor);
+        H265CodingUnit::IntraNeighbors *intraNeighbor);
 
     void InitNeighbourPatternChroma(H265CodingUnit* pCU,
         Ipp32u ZorderIdxInPart,
@@ -198,8 +201,7 @@ public:
         H265PlanePtrUVCommon pAdiBuf,
         Ipp32u OrgBufStride,
         Ipp32u OrgBufHeight,
-        bool *NeighborFlags,
-        Ipp32s NumIntraNeighbor);
+        H265CodingUnit::IntraNeighbors *intraNeighbor);
 
     void FillReferenceSamplesLuma(Ipp32s bitDepth,
         H265PlanePtrYCommon pRoiOrigin,

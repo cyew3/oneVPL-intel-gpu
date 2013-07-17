@@ -642,8 +642,8 @@ void H265SegmentDecoder::GetEdgeStrength(H265CodingUnit* pcCUQ,
             return;
         }
 
-        if (((pcCUQ->GetCbf(uiPartQ, 0) >> pcCUQ->m_TrIdxArray[uiPartQ]) != 0) ||
-            ((pcCUP->GetCbf(uiPartP, 0) >> pcCUP->m_TrIdxArray[uiPartP]) != 0))
+        if (((pcCUQ->GetCbf(0, uiPartQ) >> pcCUQ->m_TrIdxArray[uiPartQ]) != 0) ||
+            ((pcCUP->GetCbf(0, uiPartP) >> pcCUP->m_TrIdxArray[uiPartP]) != 0))
         {
             edge->strength = 1;
             return;

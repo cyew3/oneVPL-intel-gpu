@@ -17,10 +17,8 @@ namespace UMC_HEVC_DECODER
 {
 
 void H265SegmentDecoder::InitNeighbourPatternLuma(H265CodingUnit* pCU, Ipp32u ZorderIdxInPart, Ipp32u PartDepth, H265PlanePtrYCommon pAdiBuf,
-                                                  Ipp32u OrgBufStride, Ipp32u OrgBufHeight, bool *NeighborFlags, Ipp32s NumIntraNeighbor)
+                                                  Ipp32u OrgBufStride, Ipp32u OrgBufHeight, H265CodingUnit::IntraNeighbors *intraNeighbor)
 {
-    H265PlanePtrYCommon pRoiOrigin;
-    H265PlanePtrYCommon pAdiTemp;
     Ipp32s CUSize = pCU->GetWidth(ZorderIdxInPart) >> PartDepth;
     Ipp32s CUSize2 = CUSize << 1;
     Ipp32s Size;
@@ -37,10 +35,10 @@ void H265SegmentDecoder::InitNeighbourPatternLuma(H265CodingUnit* pCU, Ipp32u Zo
         return;
     }
 
-    pRoiOrigin = pCU->m_Frame->GetLumaAddr(pCU->CUAddr, pCU->m_AbsIdxInLCU + ZorderIdxInPart);
-    pAdiTemp = pAdiBuf;
+    H265PlanePtrYCommon pRoiOrigin = pCU->m_Frame->GetLumaAddr(pCU->CUAddr, pCU->m_AbsIdxInLCU + ZorderIdxInPart);
+    H265PlanePtrYCommon pAdiTemp = pAdiBuf;
 
-    FillReferenceSamplesLuma(g_bitDepthY, pRoiOrigin, pAdiTemp, NeighborFlags, NumIntraNeighbor, UnitSize, NumUnitsInCU, TotalUnits, CUSize, Size, PicStride);
+    FillReferenceSamplesLuma(g_bitDepthY, pRoiOrigin, pAdiTemp, intraNeighbor->neighborAvailable, intraNeighbor->numIntraNeighbors, UnitSize, NumUnitsInCU, TotalUnits, CUSize, Size, PicStride);
 
     Ipp32u i;
     // generate filtered intra prediction samples
@@ -319,7 +317,7 @@ void H265SegmentDecoder::FillReferenceSamplesLuma(Ipp32s bitDepth,
 }
 
 void H265SegmentDecoder::InitNeighbourPatternChroma(H265CodingUnit* pCU, Ipp32u ZorderIdxInPart, Ipp32u PartDepth, H265PlanePtrUVCommon pAdiBuf,
-                                                    Ipp32u OrgBufStride, Ipp32u OrgBufHeight, bool *NeighborFlags, Ipp32s NumIntraNeighbor)
+                                                    Ipp32u OrgBufStride, Ipp32u OrgBufHeight, H265CodingUnit::IntraNeighbors *intraNeighbor)
 {
     H265PlanePtrUVCommon pRoiOrigin;
     H265PlanePtrUVCommon pAdiTemp;
@@ -344,7 +342,7 @@ void H265SegmentDecoder::InitNeighbourPatternChroma(H265CodingUnit* pCU, Ipp32u 
     pRoiOrigin = pCU->m_Frame->GetCbCrAddr(pCU->CUAddr, ZorderIdxInPart);
     pAdiTemp = pAdiBuf;
 
-    FillReferenceSamplesChroma(g_bitDepthC, pRoiOrigin, pAdiTemp, NeighborFlags, NumIntraNeighbor, UnitSize, NumUnitsInCU, TotalUnits, CUSize, Size, PicStride);
+    FillReferenceSamplesChroma(g_bitDepthC, pRoiOrigin, pAdiTemp, intraNeighbor->neighborAvailable, intraNeighbor->numIntraNeighbors, UnitSize, NumUnitsInCU, TotalUnits, CUSize, Size, PicStride);
 }
 
 void H265SegmentDecoder::FillReferenceSamplesChroma(Ipp32s bitDepth,
