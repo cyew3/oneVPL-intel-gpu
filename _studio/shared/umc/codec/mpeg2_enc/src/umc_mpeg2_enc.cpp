@@ -56,6 +56,7 @@ MPEG2VideoEncoderBase::MPEG2VideoEncoderBase ()
   quantiser_scale_value = -1;
   intra_dc_precision = 0; // 8 bit
   varThreshold = 0;
+  qscale[0]   = qscale[1]   = qscale[2]   = 0;
   prqscale[0] = prqscale[1] = prqscale[2] = 0;
   prsize[0]   = prsize[1]   = prsize[2]   = 0;
 
