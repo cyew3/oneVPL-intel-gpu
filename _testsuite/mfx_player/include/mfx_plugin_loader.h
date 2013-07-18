@@ -14,7 +14,6 @@ File Name: .h
 
 #pragma once
 
-#include "mfx_plugin_module.h"
 #include "mfx_intrusive_ptr.h"
 #include <iostream>
 #include "vm_shared_object.h"
