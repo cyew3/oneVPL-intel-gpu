@@ -227,13 +227,13 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
 
     // use the default DLL search mechanism fail,
     // if hard-coded software library's path from the registry fails
-    implInterface = implInterfaceOrig;
     if (MFX_ERR_NONE != mfxRes)
     {
         // set current library index again
         curImplIdx = implTypesRange[implMethod].minIndex;
         do
         {
+            implInterface = implInterfaceOrig;
             mfxRes = MFX::mfx_get_default_dll_name(dllName,
                                        sizeof(dllName) / sizeof(dllName[0]),
                                        implTypes[curImplIdx].implType);
