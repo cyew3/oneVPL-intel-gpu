@@ -106,7 +106,7 @@ public:
         DispatchLog::get().DetachSink(DL_SINK_IMsgHandler, &DispatcherLogRecorder::get());
     }
 
-    virtual void Write(int level, int /*opcode*/, char * msg, va_list argptr)
+    virtual void Write(int level, int /*opcode*/, const char * msg, va_list argptr)
     {
         HMODULE libModule;
         if (level == DL_LOADED_LIBRARY)

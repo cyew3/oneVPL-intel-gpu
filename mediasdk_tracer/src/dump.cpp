@@ -1053,7 +1053,7 @@ void dump_format_wprefix(FILE *fd, int level, int nPrefix, TCHAR *format,...)
     }
 }
 
-void DispatcherLogRecorder::Write(int level, int /*opcode*/, char * msg, va_list argptr)
+void DispatcherLogRecorder::Write(int level, int /*opcode*/, const char * msg, va_list argptr)
 {
     if (NULL == msg || level == DL_LOADED_LIBRARY)
         return;

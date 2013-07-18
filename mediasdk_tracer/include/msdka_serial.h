@@ -23,7 +23,7 @@ class DispatcherLogRecorder : public IMsgHandler
     static DispatcherLogRecorder m_Instance;
 public:
     static DispatcherLogRecorder& get(){return m_Instance;}
-    virtual void Write(int level, int opcode, char * msg, va_list argptr);
+    virtual void Write(int level, int opcode, const char * msg, va_list argptr);
 };
 
 
