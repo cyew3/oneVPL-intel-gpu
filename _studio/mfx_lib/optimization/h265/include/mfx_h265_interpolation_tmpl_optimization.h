@@ -26,6 +26,7 @@
   #define MM_LOAD_EPI64(x) _mm_loadl_epi64( (const __m128i*)x )
 #endif
 
+
 namespace MFX_HEVC_COMMON
 {
     //=================================================================================================
@@ -393,22 +394,6 @@ void Interpolate(
     MFX_HEVC_COMMON::EnumAddAverageType eAddAverage = MFX_HEVC_COMMON::AVERAGE_NO,
     const void* in_pSrc2 = NULL,
     int   in_Src2Pitch = 0 ) // in samples
-
-//template < EnumTextType plane_type, typename t_src, typename t_dst >
-//void Interpolate(
-//    MFX_HEVC_COMMON::EnumInterpType interp_type,
-//    const t_src* in_pSrc,
-//    Ipp32u in_SrcPitch, // in samples
-//    t_dst* H265_RESTRICT in_pDst,
-//    Ipp32u in_DstPitch, // in samples
-//    Ipp32s tab_index,
-//    Ipp32s width,
-//    Ipp32s height,
-//    Ipp32s shift,
-//    Ipp16s offset,
-//    MFX_HEVC_COMMON::EnumAddAverageType eAddAverage,
-//    const void* in_pSrc2,
-//    int    in_Src2Pitch ) // in samples
 {
     Ipp32s accum_pitch = ((interp_type == MFX_HEVC_COMMON::INTERP_HOR) ? (plane_type == TEXT_LUMA ? 1 : 2) : in_SrcPitch);
 

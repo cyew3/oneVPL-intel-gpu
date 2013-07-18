@@ -44,6 +44,9 @@
 //#define MFX_TARGET_OPTIMIZATION_AVX2
 //#define MFX_TARGET_OPTIMIZATION_PX // ref C or IPP based, not supported yet
 
+// aya: special define to enable Jon/ken optimization of interpolation.
+#define OPT_INTERP_PMUL
+
 namespace MFX_HEVC_COMMON
 {
     /* transform Inv */
@@ -53,7 +56,16 @@ namespace MFX_HEVC_COMMON
     void h265_DCT16x16Inv_16sT(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
     void h265_DCT32x32Inv_16sT(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
 
-    /* interpolation ??? */       
+    /* interpolation, version from Jon/Ken */
+    void Interp_S8_NoAvg(const unsigned char* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height, int shift, short offset, int dir, int plane);
+
+    void Interp_S16_NoAvg(const short* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height, int shift, short offset, int dir, int plane);
+
+    void Interp_S8_WithAvg(const unsigned char* pSrc, unsigned int srcPitch, unsigned char *pDst, unsigned int dstPitch, void *pvAvg, unsigned int avgPitch, int avgMode, 
+        int tab_index, int width, int height, int shift, short offset, int dir, int plane);
+
+    void Interp_S16_WithAvg(const short* pSrc, unsigned int srcPitch, unsigned char *pDst, unsigned int dstPitch, void *pvAvg, unsigned int avgPitch, int avgMode, 
+        int tab_index, int width, int height, int shift, short offset, int dir, int plane);
 };
 
 namespace MFX_HEVC_ENCODER
