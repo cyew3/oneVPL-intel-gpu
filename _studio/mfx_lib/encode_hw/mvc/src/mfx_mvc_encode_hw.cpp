@@ -1705,10 +1705,13 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
                     interlace,
                     (dummyTask.m_type[firstFieldId] & MFX_FRAMETYPE_IDR) != 0);
 
-                impl.m_hrd[dummyTask.m_viewIdx].RemoveAccessUnit(
-                    dummyTask.m_bsDataLength[!firstFieldId],
-                    interlace,
-                    (dummyTask.m_type[!firstFieldId] & MFX_FRAMETYPE_IDR) != 0);
+                if (interlace)
+                {
+                    impl.m_hrd[dummyTask.m_viewIdx].RemoveAccessUnit(
+                        dummyTask.m_bsDataLength[!firstFieldId],
+                        interlace,
+                        (dummyTask.m_type[!firstFieldId] & MFX_FRAMETYPE_IDR) != 0);
+                }
 
                 m_initCpbRemovalDiff -= impl.m_hrd[task.m_viewIdx].GetInitCpbRemovalDelay();
 
