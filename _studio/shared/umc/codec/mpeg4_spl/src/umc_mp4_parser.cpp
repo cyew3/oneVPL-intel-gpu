@@ -367,18 +367,18 @@ Status MP4Splitter::Atom_Skip(DataReader *dr, T_atom_mp4 *atom)
 #endif
 }
 
-Status MP4Splitter::Compare_Atom(T_atom_mp4 *atom, char *type)
+bool MP4Splitter::Compare_Atom(T_atom_mp4 *atom, char *type)
 {
     if ( atom->type[0] == type[0] &&
         atom->type[1] == type[1] &&
         atom->type[2] == type[2] &&
         atom->type[3] == type[3] )
     {
-        return 1;
+        return true;
     }
     else
     {
-        return 0;
+        return false;
     }
 }
 
@@ -1432,7 +1432,7 @@ Ipp32s MP4Splitter::Read_h264_video(DataReader *dr, T_stsd_table_data *table, T_
         ret = Read_Atom(dr, &leaf_atom);
         UMC_CHECK_STATUS(ret)
 
-        if (Compare_Atom(&leaf_atom, "avcC") || (is_hevc = Compare_Atom(&leaf_atom, "hvcC")))
+        if (Compare_Atom(&leaf_atom, "avcC") || (true == (is_hevc = Compare_Atom(&leaf_atom, "hvcC"))))
         {
             Ipp32u    temp;
 

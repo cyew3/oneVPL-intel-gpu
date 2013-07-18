@@ -88,7 +88,7 @@ protected:
     Status          ParseTrackFragmentDuration(Ipp64u* dDuration, T_atom_mp4 *atom);
 
 
-    Ipp32s Compare_Atom(T_atom_mp4 *atom, char *type);
+    bool Compare_Atom(T_atom_mp4 *atom, char *type);
     Status Atom_Skip(UMC::DataReader *dr, T_atom_mp4 *atom);
 
     Status Read_Atom(DataReader *dr, T_atom_mp4 *atom);

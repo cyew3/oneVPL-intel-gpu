@@ -988,7 +988,6 @@ Status MP4Splitter::Init(SplitterParams& init)
   Ipp32u iES, nAudio = 0, nVideo = 0;
   IndexEntry entry;
   Status umcRes, umcResOut = UMC_OK;
-  int i_a = 0, i_v = 0;
 
   if (init.m_pDataReader == NULL)
     return UMC_ERR_NOT_ENOUGH_DATA;

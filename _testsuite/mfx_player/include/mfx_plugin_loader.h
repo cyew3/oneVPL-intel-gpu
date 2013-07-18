@@ -31,7 +31,11 @@ public:
         m_module = vm_so_load(pluginName.c_str());
         if (NULL == m_module)
         {
-            MFX_TRACE_ERR(VM_STRING("Failed to load shared module: ") << pluginName);
+            int lastErr = 0;
+            #ifdef WIN32
+                lastErr = GetLastError();
+            #endif
+            MFX_TRACE_ERR(VM_STRING("Failed to load shared module: ") << pluginName << VM_STRING(". Error=") << lastErr);
         }
     }
     template <class T>
