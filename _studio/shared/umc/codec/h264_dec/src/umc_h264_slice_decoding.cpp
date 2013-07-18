@@ -344,8 +344,6 @@ void H264Slice::ZeroedMembers()
 
     m_iMBWidth = -1;
     m_iMBHeight = -1;
-    m_CurrentPicParamSet = -1;
-    m_CurrentSeqParamSet = -1;
 
     m_pCurrentFrame = 0;
 
@@ -569,8 +567,6 @@ bool H264Slice::DecodeSliceHeader(H264NalExtension *pNalExt)
         if (UMC_OK != umcRes)
             return false;
 
-        m_CurrentPicParamSet = m_SliceHeader.pic_parameter_set_id;
-        m_CurrentSeqParamSet = m_pPicParamSet->seq_parameter_set_id;
 
         // decode second part of slice header
         umcRes = m_BitStream.GetSliceHeaderPart2(&m_SliceHeader,

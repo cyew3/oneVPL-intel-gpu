@@ -92,7 +92,14 @@ public:
             Ipp32s newRSCUAddr = sd->m_pCurrentFrame->m_CodingData->getCUOrderMap(newCUAddr);
 
             if (newCUAddr >= nBorder)
+            {
+                if (sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(rsCUAddr) ==
+                    sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(newRSCUAddr))
+                {
+                    sd->m_context->UpdateCurrCUContext(rsCUAddr, newRSCUAddr);
+                }
                 break;
+            }
 
             if (sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(rsCUAddr) !=
                 sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(newRSCUAddr))

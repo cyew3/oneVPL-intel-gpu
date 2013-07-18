@@ -152,7 +152,7 @@ public:  // DEBUG !!!! should remove dependence
     void Release();
 
     // Decode slice header
-    bool DecodeSliceHeader(bool bFullInitialization = true);
+    bool DecodeSliceHeader();
 
     H265SliceHeader m_SliceHeader;                              // (H265SliceHeader) slice header
     H265Bitstream m_BitStream;                                  // (H265Bitstream) slice bit stream
@@ -162,10 +162,6 @@ public:  // DEBUG !!!! should remove dependence
     const H265SeqParamSet* m_pSeqParamSet;                      // (H265SeqParamSet *) pointer to array of sequence parameters sets
 
     H265DecoderFrame *m_pCurrentFrame;        // (H265DecoderFrame *) pointer to destination frame
-
-    Ipp32s m_CurrentVideoParamSet;                              // (Ipp32s) current video parameter set
-    Ipp32s m_CurrentPicParamSet;                                // (Ipp32s) current picture parameter set
-    Ipp32s m_CurrentSeqParamSet;                                // (Ipp32s) current sequence parameter set
 
     Ipp32s m_iNumber;                                           // (Ipp32s) current slice number
     Ipp32s m_iFirstMB;                                          // (Ipp32s) first MB number in slice
@@ -197,6 +193,8 @@ public:  // DEBUG !!!! should remove dependence
 
     Heap_Objects           *m_pObjHeap;
     Heap                   *m_pHeap;
+
+    DecodingContext        *m_context;
 
     static int m_prevPOC;
 

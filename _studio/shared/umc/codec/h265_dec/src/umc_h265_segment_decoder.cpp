@@ -17,6 +17,8 @@
 #include "h265_tr_quant.h"
 #include "umc_h265_frame_info.h"
 
+//#define SPLIT_INTRA
+
 namespace UMC_HEVC_DECODER
 {
 
@@ -32,11 +34,15 @@ DecodingContext::DecodingContext()
     m_CurrCTBStride = 0;
 }
 
-void DecodingContext::Init(H265Task *task)
+void DecodingContext::Reset()
 {
-    m_sps = task->m_pSlice->GetSeqParam();
-    m_pps = task->m_pSlice->GetPicParam();
-    m_frame = task->m_pSlice->GetCurrentFrame();
+}
+
+void DecodingContext::Init(H265Slice *slice)
+{
+    m_sps = slice->GetSeqParam();
+    m_pps = slice->GetPicParam();
+    m_frame = slice->GetCurrentFrame();
 
     if (m_TopNgbrsHolder.size() < m_sps->NumPartitionsInFrameWidth + 2 || m_TopMVInfoHolder.size() < m_sps->NumPartitionsInFrameWidth + 2)
     {
@@ -59,7 +65,7 @@ void DecodingContext::Init(H265Task *task)
     m_CurrCTB = &m_CurrCTBHolder[m_CurrCTBStride + 1];
     m_CurrCTBFlags = &m_CurrCTBFlagsHolder[m_CurrCTBStride + 1];
 
-    Ipp32s sliceNum = task->m_pSlice->GetSliceNum();
+    Ipp32s sliceNum = slice->GetSliceNum();
     m_refPicList[0] = m_frame->GetRefPicList(sliceNum, REF_PIC_LIST_0)->m_refPicList;
     m_refPicList[1] = m_frame->GetRefPicList(sliceNum, REF_PIC_LIST_1)->m_refPicList;
 }
@@ -836,7 +842,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
     FinishDecodeCU(pCU, AbsPartIdx, Depth, IsLast);
     UpdateNeighborBuffers(pCU, AbsPartIdx, false);
 
-#if 0
+#if defined(SPLIT_INTRA)
     if (MODE_INTRA == PredMode)
     {
         Ipp32u InitTrDepth = (pCU->GetPartitionSize(AbsPartIdx) == SIZE_2Nx2N ? 0 : 1);
@@ -2650,7 +2656,7 @@ void H265SegmentDecoder::IntraRecLumaBlk(H265CodingUnit* pCU,
     Ipp32s NumUnitsInCU = Size >> m_pSeqParamSet->log2_min_transform_block_size;
 
     H265CodingUnit::IntraNeighbors *intraNeighbor = &pCU->m_intraNeighbors[0][AbsPartIdx];
-#if 1
+#if !defined(SPLIT_INTRA)
     intraNeighbor->numIntraNeighbors = 0;
 
     // below left
@@ -2754,7 +2760,7 @@ void H265SegmentDecoder::IntraRecChromaBlk(H265CodingUnit* pCU,
 
     // TODO: Use neighbours information from Luma block
     H265CodingUnit::IntraNeighbors *intraNeighbor = &pCU->m_intraNeighbors[1][AbsPartIdx];
-#if 1
+#if !defined(SPLIT_INTRA)
     intraNeighbor->numIntraNeighbors = 0;
 
     if (XInc > 0 && g_RasterToZscan[g_ZscanToRaster[AbsPartIdx] - 1 + NumUnitsInCU * m_pSeqParamSet->NumPartitionsInCUSize] > AbsPartIdx)

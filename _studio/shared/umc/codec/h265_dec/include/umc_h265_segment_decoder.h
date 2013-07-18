@@ -65,11 +65,13 @@ struct Context
     H265DecoderFrame *m_pCurrentFrame;                          // (H265DecoderFrame *) pointer to frame being decoded
 };
 
-class DecodingContext
+class DecodingContext : public HeapObject
 {
 public:
 
     DecodingContext();
+
+    virtual void Reset();
 
     const H265SeqParamSet *m_sps;
     const H265PicParamSet *m_pps;
@@ -90,7 +92,7 @@ public:
     H265MVInfo *m_CurrCTB;
     Ipp32s m_CurrCTBStride;
 
-    void Init(H265Task *task);
+    void Init(H265Slice *slice);
     void UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr);
     void ResetRowBuffer();
 

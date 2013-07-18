@@ -50,22 +50,20 @@ UMC::Status H265SegmentDecoderMultiThreaded::Init(Ipp32s iNumber)
 
 void H265SegmentDecoderMultiThreaded::StartProcessingSegment(H265Task &Task)
 {
-    //h265 segment processing
-    m_pSlice = Task.m_pSlice; //from h264, the same use
-    m_pSliceHeader = m_pSlice->GetSliceHeader(); //from h264, the same use
+    m_pSlice = Task.m_pSlice;
+    m_pSliceHeader = m_pSlice->GetSliceHeader();
     m_pBitStream = m_pSlice->GetBitStream();
 
     m_pPicParamSet = m_pSlice->GetPicParam();
     m_pSeqParamSet = m_pSlice->GetSeqParam();
-    m_pCurrentFrame = m_pSlice->GetCurrentFrame(); //from h264, the same use
+    m_pCurrentFrame = m_pSlice->GetCurrentFrame();
     m_SD = CreateSegmentDecoder();
 
-    m_context->Init(&Task);
+    m_context->Init(m_pSlice);
     this->create((H265SeqParamSet*)m_pSeqParamSet);
 
     m_Prediction->InitTempBuff(m_context);
 
-    // Pad reference frames that weren't padded yet
     Ipp32s sliceNum = m_pSlice->GetSliceNum();
 
     m_pRefPicList[0] = m_pCurrentFrame->GetRefPicList(sliceNum, REF_PIC_LIST_0)->m_refPicList;
@@ -186,8 +184,6 @@ UMC::Status H265SegmentDecoderMultiThreaded::DecodeSegment(Ipp32s iCurMBNumber, 
     {
         m_pSlice->GetBitStream()->InitializeDecodingEngine_CABAC();
         m_pSlice->InitializeContexts();
-
-        m_context->ResetRowBuffer();
     }
 
     try

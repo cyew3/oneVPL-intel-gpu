@@ -351,8 +351,6 @@ public:  // DEBUG !!!! should remove dependence
 
     Ipp32s m_iMBWidth;                                          // (Ipp32s) width in macroblock units
     Ipp32s m_iMBHeight;                                         // (Ipp32s) height in macroblock units
-    Ipp32s m_CurrentPicParamSet;                                // (Ipp32s) current picture parameter set
-    Ipp32s m_CurrentSeqParamSet;                                // (Ipp32s) current sequence parameter set
 
     Ipp32s m_iNumber;                                           // (Ipp32s) current slice number
     Ipp32s m_iFirstMB;                                          // (Ipp32s) first MB number in slice

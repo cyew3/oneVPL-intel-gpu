@@ -25,6 +25,7 @@ H265Slice::H265Slice(UMC::MemoryAllocator *pMemoryAllocator)
     : m_pSeqParamSet(0)
     , m_pMemoryAllocator(pMemoryAllocator)
     , m_pHeap(0)
+    , m_context(0)
 {
     m_SliceHeader.m_SubstreamSizes = NULL;
     m_SliceHeader.m_TileByteLocation = NULL;
@@ -56,10 +57,6 @@ void H265Slice::Reset()
         m_pPicParamSet = 0;
     }
 
-    m_CurrentPicParamSet = -1;
-    m_CurrentSeqParamSet = -1;
-    m_CurrentVideoParamSet = -1;
-
     m_pCurrentFrame = 0;
 
     m_SliceHeader.m_nuh_temporal_id = 0;
@@ -68,15 +65,16 @@ void H265Slice::Reset()
     m_SliceHeader.m_numEntryPointOffsets = 0;
     m_SliceHeader.m_TileCount = 0;
 
-    if (m_SliceHeader.m_SubstreamSizes)
+    delete[] m_SliceHeader.m_SubstreamSizes;
+    m_SliceHeader.m_SubstreamSizes = NULL;
+
+    delete[] m_SliceHeader.m_TileByteLocation;
+    m_SliceHeader.m_TileByteLocation = NULL;
+
+    if (m_context)
     {
-        delete[] m_SliceHeader.m_SubstreamSizes;
-        m_SliceHeader.m_SubstreamSizes = NULL;
-    }
-    if (m_SliceHeader.m_TileByteLocation)
-    {
-        delete[] m_SliceHeader.m_TileByteLocation;
-        m_SliceHeader.m_TileByteLocation = NULL;
+        m_context->DecrementReference();
+        m_context = 0;
     }
 }
 
@@ -87,16 +85,8 @@ void H265Slice::Release()
 
 bool H265Slice::Init(Ipp32s )
 {
-    // release object before initialization
     Release();
-
-#if 0
-    // initialize threading tools
-    m_DebTools.Init(iConsumerNumber);
-#endif
-
     return true;
-
 } // bool H265Slice::Init(Ipp32s iConsumerNumber)
 
 Ipp32s H265Slice::RetrievePicParamSetNumber(void *pSource, size_t nSourceSize)
@@ -197,14 +187,13 @@ void H265Slice::SetSliceNumber(Ipp32s iSliceNumber)
 
 } // void H265Slice::SetSliceNumber(Ipp32s iSliceNumber)
 
-bool H265Slice::DecodeSliceHeader(bool bFullInitialization)
+bool H265Slice::DecodeSliceHeader()
 {
     UMC::Status umcRes = UMC::UMC_OK;
     // Locals for additional slice data to be read into, the data
     // was read and saved from the first slice header of the picture,
     // is not supposed to change within the picture, so can be
     // discarded when read again here.
-    Ipp32s iSQUANT;
     try
     {
         memset(&m_SliceHeader, 0, sizeof(m_SliceHeader));
@@ -218,27 +207,6 @@ bool H265Slice::DecodeSliceHeader(bool bFullInitialization)
             return false;
 
         umcRes = m_BitStream.GetSliceHeaderFull(this, m_pSeqParamSet, m_pPicParamSet);
-
-        m_CurrentPicParamSet = m_SliceHeader.pic_parameter_set_id;
-        m_CurrentSeqParamSet = m_pPicParamSet->seq_parameter_set_id;
-        m_CurrentVideoParamSet = m_pSeqParamSet->sps_video_parameter_set_id;
-
-        // when we require only slice header
-        if (false == bFullInitialization)
-            return true;
-
-        Ipp32s bit_depth_luma = GetSeqParam()->bit_depth_luma;
-
-        iSQUANT = m_SliceHeader.SliceQP + m_SliceHeader.slice_qp_delta;
-        if (iSQUANT < QP_MIN - 6*(bit_depth_luma - 8)
-            || iSQUANT > QP_MAX)
-        {
-            return false;
-        }
-    }
-    catch(const h265_exception & )
-    {
-        return false;
     }
     catch(...)
     {
