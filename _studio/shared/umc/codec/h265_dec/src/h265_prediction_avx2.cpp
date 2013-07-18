@@ -22,7 +22,7 @@
 
 namespace UMC_HEVC_DECODER
 {
-#ifdef __INTEL_COMPILER
+#if defined(__INTEL_COMPILER) && defined(MFX_HEVC_FIXED)
 
 //=================================================================================================
 // below is a 4-tap and 8-tap filter implemntation using filter constants as template params
