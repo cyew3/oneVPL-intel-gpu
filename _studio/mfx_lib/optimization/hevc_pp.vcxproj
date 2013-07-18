@@ -35,6 +35,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="h265\include\mfx_h265_common_defs.h" />
+    <ClInclude Include="h265\include\mfx_h265_interpolation_tmpl_optimization.h" />
     <ClInclude Include="h265\include\mfx_h265_optimization.h" />
   </ItemGroup>
   <ItemGroup>

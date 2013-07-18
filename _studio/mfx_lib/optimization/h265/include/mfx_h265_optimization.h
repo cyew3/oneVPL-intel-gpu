@@ -39,7 +39,7 @@
 # define H265_RESTRICT
 #endif
 
-// chosoe only one arch
+// choose only one arch
 #define MFX_TARGET_OPTIMIZATION_SSE4
 //#define MFX_TARGET_OPTIMIZATION_AVX2
 //#define MFX_TARGET_OPTIMIZATION_PX // ref C or IPP based, not supported yet

@@ -19,6 +19,8 @@
 #include "umc_h265_frame.h"
 #include "h265_motion_info.h"
 
+#include "mfx_h265_common_defs.h"
+
 namespace UMC_HEVC_DECODER
 {
 
@@ -31,13 +33,7 @@ class DecodingContext;
 class H265Prediction
 {
 public:
-    enum EnumAddAverageType
-    {
-        AVERAGE_NO = 0,
-        AVERAGE_FROM_PIC,
-        AVERAGE_FROM_BUF
-    };
-
+    
 protected:
     H265PlanePtrYCommon m_temp_interpolarion_buffer;
     H265PlanePtrYCommon m_YUVExt;
@@ -47,12 +43,7 @@ protected:
     DecodingContext* m_context;
 
     H265DecYUVBufferPadded m_YUVPred[2];
-
-    enum EnumInterpType
-    {
-        INTERP_HOR = 0,
-        INTERP_VER
-    };
+    
 
     void PredIntraAngLuma(Ipp32s bitDepth, H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrYCommon Dst, Ipp32s dstStride, Ipp32s blkSize, Ipp32u dirMode, bool Filter);
     void PredIntraPlanarLuma(H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrYCommon rpDst, Ipp32s dstStride, Ipp32s blkSize);
@@ -62,24 +53,9 @@ protected:
 
     // motion compensation functions
     template <EnumTextType c_plane_type, bool bi>
-    void H265_FORCEINLINE PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicList RefPicList, H265DecYUVBufferPadded *YUVPred, EnumAddAverageType eAddAverage = AVERAGE_NO);
+    void H265_FORCEINLINE PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicList RefPicList, H265DecYUVBufferPadded *YUVPred, MFX_HEVC_COMMON::EnumAddAverageType eAddAverage = MFX_HEVC_COMMON::AVERAGE_NO);
 
-    bool CheckIdenticalMotion(H265CodingUnit* pCU, H265PUInfo &MVi);
-    
-    template < EnumTextType plane_type, typename t_src, typename t_dst >
-    static void H265_FORCEINLINE Interpolate( EnumInterpType interp_type,
-                        const t_src* in_pSrc,
-                        Ipp32u in_SrcPitch, // in samples
-                        t_dst* H265_RESTRICT in_pDst,
-                        Ipp32u in_DstPitch, // in samples
-                        Ipp32s tab_index,
-                        Ipp32s width,
-                        Ipp32s height,
-                        Ipp32s shift,
-                        Ipp16s offset,
-                        EnumAddAverageType eAddAverage = AVERAGE_NO,
-                        const void* in_pSrc2 = NULL,
-                        int   in_Src2Pitch = 0 ); // in samples
+    bool CheckIdenticalMotion(H265CodingUnit* pCU, H265PUInfo &MVi);    
 
      static void WriteAverageToPic(
                      const H265PlaneYCommon * in_pSrc0,
@@ -130,36 +106,6 @@ public:
         return m_YUVExtHeight;
     }
 };
-
-//=================================================================================================
-// general template for Interpolate kernel
-template
-< 
-    typename     t_vec,
-    EnumTextType c_plane_type,
-    typename     t_src, 
-    typename     t_dst,
-    int        tab_index
->
-class t_InterpKernel_intrin
-{
-public:
-    static void func(
-        t_dst* H265_RESTRICT pDst, 
-        const t_src* pSrc, 
-        int    in_SrcPitch, // in samples
-        int    in_DstPitch, // in samples
-        int    width,
-        int    height,
-        int    accum_pitch,
-        int    shift,
-        int    offset,
-        H265Prediction::EnumAddAverageType eAddAverage = H265Prediction::AVERAGE_NO,
-        const void* in_pSrc2 = NULL,
-        int   in_Src2Pitch = 0 // in samples
-    );
-};
-
 
 } // end namespace UMC_HEVC_DECODER
 
