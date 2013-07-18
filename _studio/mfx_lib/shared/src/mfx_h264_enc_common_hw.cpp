@@ -2653,6 +2653,54 @@ mfxStatus MfxHwH264Encode::CheckVideoParamMvcQueryLike(MfxVideoParam & par)
     mfxExtCodingOptionSPSPPS * extBits = GetExtBuffer(par);
     mfxExtSpsHeader *          extSps  = GetExtBuffer(par);
 
+// first of all allign CodecLevel with general (not per-view) parameters: resolution, framerate, DPB size
+    if (par.mfx.FrameInfo.Width  != 0 &&
+        par.mfx.FrameInfo.Height != 0)
+    {
+        mfxU16 minLevel = GetLevelLimitByFrameSize(par);
+        if (par.calcParam.mvcPerViewPar.codecLevel != 0 && par.calcParam.mvcPerViewPar.codecLevel < minLevel)
+        {
+            if (extBits->SPSBuffer)
+                return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+            changed = true;
+            par.calcParam.mvcPerViewPar.codecLevel = minLevel;
+        }
+    }
+
+    if (extSps->vui.flags.timingInfoPresent  &&
+        par.mfx.FrameInfo.Width         != 0 &&
+        par.mfx.FrameInfo.Height        != 0 &&
+        par.mfx.FrameInfo.FrameRateExtN != 0 &&
+        par.mfx.FrameInfo.FrameRateExtD != 0)
+    {
+        mfxU16 minLevel = GetLevelLimitByMbps(par);
+        if (par.calcParam.mvcPerViewPar.codecLevel != 0 && par.calcParam.mvcPerViewPar.codecLevel < minLevel)
+        {
+            if (extBits->SPSBuffer)
+                return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+            changed = true;
+            par.calcParam.mvcPerViewPar.codecLevel = minLevel;
+        }
+    }
+
+    if (par.mfx.NumRefFrame      != 0 &&
+        par.mfx.FrameInfo.Width  != 0 &&
+        par.mfx.FrameInfo.Height != 0)
+    {
+        mfxU16 minLevel = GetLevelLimitByDpbSize(par);
+        if (par.calcParam.mvcPerViewPar.codecLevel != 0 && par.calcParam.mvcPerViewPar.codecLevel < minLevel)
+        {
+            if (extBits->SPSBuffer)
+                return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+            changed = false;
+            par.calcParam.mvcPerViewPar.codecLevel = minLevel;
+        }
+    }
+
+    // check MVC per-view parameters (bitrates, buffer size, initial delay, level)
     if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP && par.calcParam.targetKbps != 0)
     {
         if (par.mfx.FrameInfo.Width         != 0 &&
