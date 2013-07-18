@@ -81,7 +81,6 @@
     <ClInclude Include="include\umc_h265_au_splitter.h" />
     <ClInclude Include="include\umc_h265_bitstream.h" />
     <ClInclude Include="include\umc_h265_bitstream_inlines.h" />
-    <ClInclude Include="include\umc_h265_bitstream_templates.h" />
     <ClInclude Include="include\umc_h265_dec.h" />
     <ClInclude Include="include\umc_h265_dec_debug.h" />
     <ClInclude Include="include\umc_h265_dec_defs_dec.h" />
