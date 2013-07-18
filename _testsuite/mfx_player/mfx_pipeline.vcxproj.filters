@@ -194,6 +194,9 @@
     <ClCompile Include="src\mfx_sysmem_allocator.cpp">
       <Filter>allocators</Filter>
     </ClCompile>
+    <ClCompile Include="src\mfx_mediasdk_spl_wrapper.cpp">
+      <Filter>readers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\mfx_adapters.h">
@@ -660,6 +663,9 @@
     </ClInclude>
     <ClInclude Include="include\mfx_intrusive_ptr.h">
       <Filter>decoders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_mediasdk_spl_wrapper.h">
+      <Filter>readers</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

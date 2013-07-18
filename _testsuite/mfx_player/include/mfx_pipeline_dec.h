@@ -77,6 +77,7 @@ struct sCommandlineParams
   bool           bDisableIpFieldPair;//disables p field generation
   bool           bPAFFDetect;//disables p field generation
   bool           bDxgiDebug;//
+  bool           bMediaSDKSplitter;
   mfxU16         nAdvanceFRCAlgorithm;//if non zero then directly specifies advanced FRC algorithm
   mfxU16         nImageStab;//image stabilization mode
   mfxU16         nSVCDownSampling;//downsampling method

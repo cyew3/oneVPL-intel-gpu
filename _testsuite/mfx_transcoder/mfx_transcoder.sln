@@ -31,6 +31,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "avi_spl", "..\..\_studio\shared\umc\codec\avi_spl\avi_sp.vcxproj", "{10A6C28A-72A4-4A75-9EA4-16F22E4791FB}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_pipeline", "..\mfx_player\mfx_pipeline.vcxproj", "{BF72A446-8425-40A2-856B-33B5742C60CE}"
+	ProjectSection(ProjectDependencies) = postProject
+		{44D60213-8682-48F3-ADD2-4885479FD9DB} = {44D60213-8682-48F3-ADD2-4885479FD9DB}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_transcoder", "mfx_transcoder.vcxproj", "{D706986E-D483-47A4-A696-0F8F0F5D1887}"
 EndProject
@@ -39,6 +42,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_trans_pipeline", "mfx_transcoder_lib.vcxproj", "{B9C19E53-8A34-418F-B96E-E551225E93C9}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_dispatch_trace", "..\..\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj", "{430E22BA-BDF6-497C-BFC5-EC6907F90018}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_spl_mux", "..\..\samples\sample_spl_mux\sample_spl_mux.vcxproj", "{44D60213-8682-48F3-ADD2-4885479FD9DB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -372,6 +377,22 @@ Global
 		{430E22BA-BDF6-497C-BFC5-EC6907F90018}.Release|Win32.Build.0 = Release|Win32
 		{430E22BA-BDF6-497C-BFC5-EC6907F90018}.Release|x64.ActiveCfg = Release|x64
 		{430E22BA-BDF6-497C-BFC5-EC6907F90018}.Release|x64.Build.0 = Release|x64
+		{44D60213-8682-48F3-ADD2-4885479FD9DB}.Debug (Lucas DLL)|Win32.ActiveCfg = Debug|Win32
+		{44D60213-8682-48F3-ADD2-4885479FD9DB}.Debug (Lucas DLL)|Win32.Build.0 = Debug|Win32
+		{44D60213-8682-48F3-ADD2-4885479FD9DB}.Debug (Lucas DLL)|x64.ActiveCfg = Debug|x64
+		{44D60213-8682-48F3-ADD2-4885479FD9DB}.Debug (Lucas DLL)|x64.Build.0 = Debug|x64
+		{44D60213-8682-48F3-ADD2-4885479FD9DB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{44D60213-8682-48F3-ADD2-4885479FD9DB}.Debug|Win32.Build.0 = Debug|Win32
+		{44D60213-8682-48F3-ADD2-4885479FD9DB}.Debug|x64.ActiveCfg = Debug|x64
+		{44D60213-8682-48F3-ADD2-4885479FD9DB}.Debug|x64.Build.0 = Debug|x64
+		{44D60213-8682-48F3-ADD2-4885479FD9DB}.Release (Lucas DLL)|Win32.ActiveCfg = Release|Win32
+		{44D60213-8682-48F3-ADD2-4885479FD9DB}.Release (Lucas DLL)|Win32.Build.0 = Release|Win32
+		{44D60213-8682-48F3-ADD2-4885479FD9DB}.Release (Lucas DLL)|x64.ActiveCfg = Release|x64
+		{44D60213-8682-48F3-ADD2-4885479FD9DB}.Release (Lucas DLL)|x64.Build.0 = Release|x64
+		{44D60213-8682-48F3-ADD2-4885479FD9DB}.Release|Win32.ActiveCfg = Release|Win32
+		{44D60213-8682-48F3-ADD2-4885479FD9DB}.Release|Win32.Build.0 = Release|Win32
+		{44D60213-8682-48F3-ADD2-4885479FD9DB}.Release|x64.ActiveCfg = Release|x64
+		{44D60213-8682-48F3-ADD2-4885479FD9DB}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

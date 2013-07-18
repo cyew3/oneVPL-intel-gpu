@@ -13,6 +13,7 @@ File Name: .h
 #include "mfx_pipeline_defs.h"
 #include "mfx_pipeline_dec.h"
 #include "mfx_spl_wrapper.h"
+#include "mfx_mediasdk_spl_wrapper.h"
 #include "mfx_sysmem_allocator.h"
 #include "umc_automatic_mutex.h"
 #include "vm_sys_info.h"
@@ -1361,7 +1362,11 @@ mfxStatus MFXDecPipeline::CreateSplitter()
 
     sStreamInfo sInfo;
 
-    if (!m_inParams.bYuvReaderMode && 0 == m_inParams.InputCodecType)
+    if (m_inParams.bMediaSDKSplitter)
+    {
+        pSpl.reset(new MediaSDKSplWrapper());
+    }
+    else if (!m_inParams.bYuvReaderMode && 0 == m_inParams.InputCodecType)
     {
         pSpl.reset(new UMCSplWrapper(m_inParams.nCorruptionLevel));
     }
@@ -3906,7 +3911,8 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             else HANDLE_BOOL_OPTION(m_inParams.bPAFFDetect, VM_STRING("-paff"), VM_STRING("enabled picture structure detection by VPP"));
             else HANDLE_INT_OPTION(m_inParams.nSVCDownSampling, VM_STRING("-downsampling"), VM_STRING("use downsampling algorithm 1-best quality, 2-best speed"))
             else HANDLE_BOOL_OPTION(m_inParams.bDxgiDebug, VM_STRING("-dxgidebug"), VM_STRING("inject dxgidebug.dll to report live objects(dxgilevel memory leaks)"));
-            else HANDLE_FILENAME_OPTION(m_inParams.strDecPlugin, VM_STRING("-decode_plugin"), VM_STRING("MediaSDK Decoder plugin filename")) 
+            else HANDLE_BOOL_OPTION(m_inParams.bMediaSDKSplitter, VM_STRING("-mediasdk_splitter"), VM_STRING("split stream from media container with MediaSDK splitter (ts, mp4)"));
+            else HANDLE_FILENAME_OPTION(m_inParams.strDecPlugin, VM_STRING("-decode_plugin"), VM_STRING("MediaSDK Decoder plugin filename"))
 
 #ifdef PAVP_BUILD
         else if (m_OptProc.Check(argv[0], VM_STRING("-epavp"), VM_STRING("enable PAVP for encoder"), OPT_INT_32))
