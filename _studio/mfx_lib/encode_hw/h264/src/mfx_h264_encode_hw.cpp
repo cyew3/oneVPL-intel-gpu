@@ -376,7 +376,10 @@ mfxStatus ImplementationAvc::Query(
                 if (in->ExtParam[i])
                 {
                     if (IsRunTimeExtBufferIdSupported(in->ExtParam[i]->BufferId))
-                        continue; // it's runtime only ext buffer. Nothing to check, just move on.
+                        continue; // it's runtime only ext buffer. Nothing to check or correct, just move on.
+
+                    if (in->ExtParam[i]->BufferId == MFX_EXTBUFF_ENCODER_WIDI_USAGE)
+                        continue; // this buffer notify that WiDi is caller for Query. Nothing to check or correct, just move on.
 
                     if (!IsVideoParamExtBufferIdSupported(in->ExtParam[i]->BufferId))
                         return MFX_ERR_UNSUPPORTED;
