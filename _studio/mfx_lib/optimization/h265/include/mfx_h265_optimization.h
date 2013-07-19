@@ -39,10 +39,20 @@
 # define H265_RESTRICT
 #endif
 
-// choose only one arch
+//=========================================================
+//   configuration macros
+//=========================================================
+
+// [1] choose only one arch
 #define MFX_TARGET_OPTIMIZATION_SSE4
 //#define MFX_TARGET_OPTIMIZATION_AVX2
 //#define MFX_TARGET_OPTIMIZATION_PX // ref C or IPP based, not supported yet
+
+// [2] to enable alternative interpolation optimization (Ken/Jon)
+// IVB demonstrates ~ 15% perf incr _vs_ tmpl version. THere is issue for Encoder (ChromaU/V) now 
+//#define OPT_INTERP_PMUL
+
+//=========================================================
 
 // data types shared btw decoder/encoder
 namespace UMC_HEVC_DECODER
@@ -228,12 +238,46 @@ namespace MFX_HEVC_COMMON
 
         width <<= int(plane_type == TEXT_CHROMA);
 
+#ifdef TIME_INTERP
+    startTime = __rdtsc();
+#endif
+
+#if defined OPT_INTERP_PMUL
+    if (sizeof(t_src) == 1) {
+        if (sizeof(t_dst) == 1)
+            Interp_S8_WithAvg((unsigned char *)pSrc, in_SrcPitch, (unsigned char *)in_pDst, in_DstPitch, (void *)in_pSrc2, in_Src2Pitch, eAddAverage, tab_index, width, height, shift, offset, interp_type, plane_type);
+        else
+            Interp_S8_NoAvg((unsigned char *)pSrc, in_SrcPitch, (short *)in_pDst, in_DstPitch, tab_index, width, height, shift, offset, interp_type, plane_type);
+    }
+
+    /* only used for vertical filter */
+    if (sizeof(t_src) == 2) {
+        if (sizeof(t_dst) == 1)
+            Interp_S16_WithAvg((short *)pSrc, in_SrcPitch, (unsigned char *)in_pDst, in_DstPitch, (void *)in_pSrc2, in_Src2Pitch, eAddAverage, tab_index, width, height, shift, offset, INTERP_VER, plane_type);
+        else
+            Interp_S16_NoAvg((short *)pSrc, in_SrcPitch, (short *)in_pDst, in_DstPitch, tab_index, width, height, shift, offset, INTERP_VER, plane_type);
+    }
+#else
 #ifdef __INTEL_COMPILER
         if ( _may_i_use_cpu_feature( _FEATURE_AVX2 ) && (width > 8) )
             t_InterpKernel_dispatch< __m256i, plane_type >( in_pDst, pSrc, in_SrcPitch, in_DstPitch, tab_index, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
         else
 #endif // __INTEL_COMPILER
             t_InterpKernel_dispatch< __m128i, plane_type >( in_pDst, pSrc, in_SrcPitch, in_DstPitch, tab_index, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
+#endif /* OPT_INTERP_PMUL */
+
+#ifdef TIME_INTERP
+    endTime = __rdtsc();
+    if (endTime > startTime) {
+        totalCycles[sizeof(t_src)-1][sizeof(t_dst)-1] += (endTime - startTime);
+        totalPixels[sizeof(t_src)-1][sizeof(t_dst)-1] += (width * height);
+
+        totalCyclesAll += (endTime - startTime);
+        totalPixelsAll += (width * height);
+    }
+
+#endif
+
     }
 
 } // namespace MFX_HEVC_COMMON
