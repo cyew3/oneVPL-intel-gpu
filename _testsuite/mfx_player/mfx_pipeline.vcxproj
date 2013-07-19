@@ -208,7 +208,7 @@
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;$(SolutionDir)..\..\samples\sample_spl_mux\api;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -485,11 +485,6 @@
     <ClInclude Include="include\mfx_separate_file.h" />
     <ClInclude Include="include\mfx_metric_calc.h" />
     <ClInclude Include="include\mfx_msu_adapter.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\samples\sample_spl_mux\sample_spl_mux.vcxproj">
-      <Project>{44d60213-8682-48f3-add2-4885479fd9db}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

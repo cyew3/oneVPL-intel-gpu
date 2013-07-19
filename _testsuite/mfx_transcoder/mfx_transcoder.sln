@@ -31,9 +31,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "avi_spl", "..\..\_studio\shared\umc\codec\avi_spl\avi_sp.vcxproj", "{10A6C28A-72A4-4A75-9EA4-16F22E4791FB}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_pipeline", "..\mfx_player\mfx_pipeline.vcxproj", "{BF72A446-8425-40A2-856B-33B5742C60CE}"
-	ProjectSection(ProjectDependencies) = postProject
-		{44D60213-8682-48F3-ADD2-4885479FD9DB} = {44D60213-8682-48F3-ADD2-4885479FD9DB}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_transcoder", "mfx_transcoder.vcxproj", "{D706986E-D483-47A4-A696-0F8F0F5D1887}"
 EndProject
