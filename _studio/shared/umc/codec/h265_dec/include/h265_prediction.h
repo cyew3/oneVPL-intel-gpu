@@ -19,7 +19,7 @@
 #include "umc_h265_frame.h"
 #include "h265_motion_info.h"
 
-#include "mfx_h265_common_defs.h"
+#include "mfx_h265_optimization.h" // common data types here for interpolation
 
 namespace UMC_HEVC_DECODER
 {

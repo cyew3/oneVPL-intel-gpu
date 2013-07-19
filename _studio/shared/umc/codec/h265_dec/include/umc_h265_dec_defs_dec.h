@@ -21,6 +21,7 @@
 #include "umc_memory_allocator.h"
 #include "umc_structures.h"
 
+#include "mfx_h265_optimization.h"
 namespace UMC_HEVC_DECODER
 {
   
@@ -325,17 +326,18 @@ enum EnumPartSize   // supported partition shape
 
     SIZE_NONE = 15
 };
+// aya: moved to common place to resolve issue with interpolation
+//// texture component type
+//enum EnumTextType
+//{
+//    TEXT_LUMA,            ///< luma
+//    TEXT_CHROMA,          ///< chroma (U+V)
+//    TEXT_CHROMA_U,        ///< chroma U
+//    TEXT_CHROMA_V,        ///< chroma V
+//    TEXT_ALL,             ///< Y+U+V
+//    TEXT_NONE = 15
+//};
 
-// texture component type
-enum EnumTextType
-{
-    TEXT_LUMA,            ///< luma
-    TEXT_CHROMA,          ///< chroma (U+V)
-    TEXT_CHROMA_U,        ///< chroma U
-    TEXT_CHROMA_V,        ///< chroma V
-    TEXT_ALL,             ///< Y+U+V
-    TEXT_NONE = 15
-};
 
 // supported prediction type
 enum EnumPredMode

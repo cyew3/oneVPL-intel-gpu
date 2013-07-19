@@ -14,7 +14,6 @@
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined (MFX_ENABLE_H265_VIDEO_DECODE)
 
 #include "mfx_h265_optimization.h"
-#include "mfx_h265_common_defs.h"
 
 #if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2)
 

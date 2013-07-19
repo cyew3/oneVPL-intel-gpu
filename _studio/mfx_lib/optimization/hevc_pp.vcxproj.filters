@@ -12,12 +12,6 @@
     <ClInclude Include="h265\include\mfx_h265_optimization.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="h265\include\mfx_h265_common_defs.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="h265\include\mfx_h265_interpolation_tmpl_optimization.h">
-      <Filter>include</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="h265\src\mfx_h265_sad_sse.cpp">
@@ -30,6 +24,12 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="h265\src\mfx_h265_interpolation_sse.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_interp_tmpl_avx2.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_interp_tmpl_sse.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

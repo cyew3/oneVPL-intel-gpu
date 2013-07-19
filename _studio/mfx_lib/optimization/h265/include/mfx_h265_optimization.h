@@ -44,8 +44,36 @@
 //#define MFX_TARGET_OPTIMIZATION_AVX2
 //#define MFX_TARGET_OPTIMIZATION_PX // ref C or IPP based, not supported yet
 
-// aya: special define to enable Jon/ken optimization of interpolation.
-#define OPT_INTERP_PMUL
+// data types shared btw decoder/encoder
+namespace UMC_HEVC_DECODER
+{
+    // texture component type
+    enum EnumTextType
+    {
+        TEXT_LUMA,            ///< luma
+        TEXT_CHROMA,          ///< chroma (U+V)
+        TEXT_CHROMA_U,        ///< chroma U
+        TEXT_CHROMA_V,        ///< chroma V
+        TEXT_ALL,             ///< Y+U+V
+        TEXT_NONE = 15
+    };
+};
+
+namespace MFX_HEVC_COMMON
+{
+    enum EnumAddAverageType
+    {
+        AVERAGE_NO = 0,
+        AVERAGE_FROM_PIC,
+        AVERAGE_FROM_BUF
+    };
+
+    enum EnumInterpType
+    {
+        INTERP_HOR = 0,
+        INTERP_VER
+    };
+};
 
 namespace MFX_HEVC_COMMON
 {
@@ -92,6 +120,125 @@ namespace MFX_HEVC_ENCODER
 namespace MFX_HEVC_DECODER
 {
 };
+
+//=================================================================================================
+
+namespace MFX_HEVC_COMMON
+{
+
+    template < UMC_HEVC_DECODER::EnumTextType plane_type, typename t_src, typename t_dst >
+    void H265_FORCEINLINE Interpolate( 
+        MFX_HEVC_COMMON::EnumInterpType interp_type,
+        const t_src* in_pSrc,
+        Ipp32u in_SrcPitch, // in samples
+        t_dst* H265_RESTRICT in_pDst,
+        Ipp32u in_DstPitch, // in samples
+        Ipp32s tab_index,
+        Ipp32s width,
+        Ipp32s height,
+        Ipp32s shift,
+        Ipp16s offset,
+        MFX_HEVC_COMMON::EnumAddAverageType eAddAverage = MFX_HEVC_COMMON::AVERAGE_NO,
+        const void* in_pSrc2 = NULL,
+        int   in_Src2Pitch = 0 ); // in samples
+
+    // general template for Interpolate kernel
+    template
+        < 
+        typename     t_vec,
+        UMC_HEVC_DECODER::EnumTextType c_plane_type,
+        typename     t_src, 
+        typename     t_dst,
+        int        tab_index
+        >
+    class t_InterpKernel_intrin
+    {
+    public:
+        static void func(
+            t_dst* H265_RESTRICT pDst, 
+            const t_src* pSrc, 
+            int    in_SrcPitch, // in samples
+            int    in_DstPitch, // in samples
+            int    width,
+            int    height,
+            int    accum_pitch,
+            int    shift,
+            int    offset,
+            MFX_HEVC_COMMON::EnumAddAverageType eAddAverage = MFX_HEVC_COMMON::AVERAGE_NO,
+            const void* in_pSrc2 = NULL,
+            int   in_Src2Pitch = 0 // in samples
+            );
+    };
+
+
+    template < typename t_vec, UMC_HEVC_DECODER::EnumTextType plane_type, typename t_src, typename t_dst >
+    void t_InterpKernel_dispatch(
+        t_dst* H265_RESTRICT pDst, 
+        const t_src* pSrc, 
+        int    in_SrcPitch, // in samples
+        int    in_DstPitch, // in samples
+        int    tab_index,
+        int    width,
+        int    height,
+        int    accum_pitch,
+        int    shift,
+        int    offset,
+        MFX_HEVC_COMMON::EnumAddAverageType eAddAverage,
+        const void* in_pSrc2,
+        int   in_Src2Pitch // in samples
+        )
+    {
+        if ( tab_index == 1 )
+            t_InterpKernel_intrin< t_vec, plane_type, t_src, t_dst, 1 >::func( pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
+        else if ( tab_index == 2 )
+            t_InterpKernel_intrin< t_vec, plane_type, t_src, t_dst, 2 >::func( pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
+        else if ( tab_index == 3 )
+            t_InterpKernel_intrin< t_vec, plane_type, t_src, t_dst, 3 >::func( pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
+        else if ( tab_index == 4 )
+            t_InterpKernel_intrin< t_vec, plane_type, t_src, t_dst, 4 >::func( pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
+        else if ( tab_index == 5 )
+            t_InterpKernel_intrin< t_vec, plane_type, t_src, t_dst, 5 >::func( pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
+        else if ( tab_index == 6 )
+            t_InterpKernel_intrin< t_vec, plane_type, t_src, t_dst, 6 >::func( pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
+        else if ( tab_index == 7 )
+            t_InterpKernel_intrin< t_vec, plane_type, t_src, t_dst, 7 >::func( pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
+    }
+
+    //=================================================================================================    
+
+    template < UMC_HEVC_DECODER::EnumTextType plane_type, typename t_src, typename t_dst >
+    void Interpolate(
+        MFX_HEVC_COMMON::EnumInterpType interp_type,
+        const t_src* in_pSrc,
+        Ipp32u in_SrcPitch, // in samples
+        t_dst* H265_RESTRICT in_pDst,
+        Ipp32u in_DstPitch, // in samples
+        Ipp32s tab_index,
+        Ipp32s width,
+        Ipp32s height,
+        Ipp32s shift,
+        Ipp16s offset,
+        MFX_HEVC_COMMON::EnumAddAverageType eAddAverage,
+        const void* in_pSrc2,
+        int    in_Src2Pitch ) // in samples
+    {
+        Ipp32s accum_pitch = ((interp_type == MFX_HEVC_COMMON::INTERP_HOR) ? (plane_type == UMC_HEVC_DECODER::TEXT_CHROMA ? 2 : 1) : in_SrcPitch);
+
+        const t_src* pSrc = in_pSrc - (((( plane_type == UMC_HEVC_DECODER::TEXT_LUMA) ? 8 : 4) >> 1) - 1) * accum_pitch;
+
+        width <<= int(plane_type == TEXT_CHROMA);
+
+#ifdef __INTEL_COMPILER
+        if ( _may_i_use_cpu_feature( _FEATURE_AVX2 ) && (width > 8) )
+            t_InterpKernel_dispatch< __m256i, plane_type >( in_pDst, pSrc, in_SrcPitch, in_DstPitch, tab_index, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
+        else
+#endif // __INTEL_COMPILER
+            t_InterpKernel_dispatch< __m128i, plane_type >( in_pDst, pSrc, in_SrcPitch, in_DstPitch, tab_index, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
+    }
+
+} // namespace MFX_HEVC_COMMON
+
+//=================================================================================================
 
 #endif // __MFX_H265_OPTIMIZATION_H__
 #endif // defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined(MFX_ENABLE_H265_VIDEO_DECODE)
