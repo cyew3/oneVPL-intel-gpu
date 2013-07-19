@@ -472,24 +472,21 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
 #endif
 #endif
     }
-/*
-    TODO: VPP enable query of new interface only for 15.36 (HSW and BDW)
-    if(isVer2Enable)
-    {
-        m_iface.guid    = guidEnum.pGuidArray[idxVer2].Guid;       
-        m_iface.version = guidEnum.pGuidArray[idxVer2].pVersion[0];
-    }
-    else if(isVer1Enable)
+
+    // Check v1 guid first to force 15.31 and 15.33 drivers use it
+    // 15.36 shouldn't report v1 guid and switches to v2 guid
+    if(isVer1Enable)
     {
         m_iface.guid    = guidEnum.pGuidArray[idxVer1].Guid;       
         m_iface.version = guidEnum.pGuidArray[idxVer1].pVersion[0];
     }
-    else
-*/
+    else if(isVer2Enable)
     {
-        //AYA: critical: MSDK should pick one of VPE_GUID & Version which supported by driver. 
-        // selection is simple: pick iface with maximum capabilities. will be implemented later.
-        // right now I know GUID & VERSION
+        m_iface.guid    = guidEnum.pGuidArray[idxVer2].Guid;       
+        m_iface.version = guidEnum.pGuidArray[idxVer2].pVersion[0];
+    }
+    else
+    {
         m_iface.guid    = guidEnum.pGuidArray[0].Guid;       // GUID {4E61148B-46D7-4179-81AA-1163EE8EA1E9}
         m_iface.version = guidEnum.pGuidArray[0].pVersion[0];// 0x0000
     }
