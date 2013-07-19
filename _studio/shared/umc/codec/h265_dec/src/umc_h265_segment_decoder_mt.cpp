@@ -383,11 +383,32 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(Ipp32s , Ipp32s &)
             H265Slice * slice = m_pCurrentFrame->GetAU()->GetSliceByNumber(m_pSlice->m_iNumber - 1);
             VM_ASSERT(slice);
             memcpy(m_pSlice->GetBitStream()->context_hevc, slice->GetBitStream()->context_hevc, sizeof(m_pSlice->GetBitStream()->context_hevc));
+
+            if (m_pPicParamSet->entropy_coding_sync_enabled_flag)
+            {
+                // Copy saved WPP CABAC state too
+                memcpy(m_pBitStream->wpp_saved_cabac_context, slice->GetBitStream()->wpp_saved_cabac_context, sizeof(m_pBitStream->wpp_saved_cabac_context));
+
+                // In case previous slice ended on the end of the row and WPP is enabled, CABAC state has to be corrected
+                if (CUAddr % m_pSeqParamSet->WidthInCU == 0)
+                {
+                    // CABAC state is already reset, should only restore contexts
+                    if (m_pSeqParamSet->WidthInCU > 1 &&
+                        m_pCurrentFrame->m_CodingData->GetInverseCUOrderMap(CUAddr + 1 - m_pSeqParamSet->WidthInCU) >= m_pSliceHeader->SliceCurStartCUAddr)
+                    {
+                        memcpy(m_pBitStream->context_hevc, m_pBitStream->wpp_saved_cabac_context, sizeof(m_pBitStream->context_hevc));
+                    }
+                    else
+                    {
+                        // Initialize here is necessary because otherwise CABAC state remains loaded from previous slice
+                        m_pSlice->InitializeContexts();
+                    }
+                }
+            }
             m_context->UpdateCurrCUContext(CUAddr - 1, CUAddr);
         }
         else
         {
-            m_pSlice->InitializeContexts();
             m_context->ResetRowBuffer();
         }
     }

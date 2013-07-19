@@ -179,6 +179,12 @@ public:
             {
                 umcRes = UMC::UMC_ERR_END_OF_STREAM;
                 nBorder = curCUAddr + 1;
+
+                if (sd->m_pPicParamSet->entropy_coding_sync_enabled_flag && rsCUAddr % sd->m_pSeqParamSet->WidthInCU == 1)
+                {
+                    // Save CABAC context after 2nd CTB
+                    memcpy(sd->m_pBitStream->wpp_saved_cabac_context, sd->m_pBitStream->context_hevc, sizeof(sd->m_pBitStream->context_hevc));
+                }
                 break;
             }
 
@@ -224,7 +230,7 @@ public:
 
                         // Should load CABAC context from saved buffer
                         if (sd->m_pSeqParamSet->WidthInCU > 1 &&
-                            sd->m_pCurrentFrame->m_CodingData->GetInverseCUOrderMap(rsCUAddr + 1 - sd->m_pSeqParamSet->WidthInCU) >= sd->m_pSliceHeader->SliceCurStartCUAddr)
+                            sd->m_pCurrentFrame->m_CodingData->GetInverseCUOrderMap(rsCUAddr + 2 - sd->m_pSeqParamSet->WidthInCU) >= sd->m_pSliceHeader->slice_segment_address)
                         {
                             // Restore saved CABAC context
                             memcpy(sd->m_pBitStream->context_hevc, sd->m_pBitStream->wpp_saved_cabac_context, sizeof(sd->m_pBitStream->context_hevc));
