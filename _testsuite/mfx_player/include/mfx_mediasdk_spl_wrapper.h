@@ -31,7 +31,7 @@ class MediaSDKSplWrapper : public IBitstreamReader
     mfxSplitter             m_mfxSplitter;
     mfxStreamParams         m_streamParams;
     MFXFrameConstructor*    m_pConstructor;
-    int                     m_videoTrackIndex;
+    mfxU32                  m_videoTrackIndex;
 
 public:
     MediaSDKSplWrapper();

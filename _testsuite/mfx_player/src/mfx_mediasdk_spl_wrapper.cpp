@@ -94,7 +94,7 @@ mfxStatus MediaSDKSplWrapper::Init(const vm_char *strFileName)
 mfxStatus MediaSDKSplWrapper::ReadNextFrame(mfxBitstream2 &bs2)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    mfxU32 iOutputTrack = -1;
+    mfxU32 iOutputTrack = 0;
     mfxBitstream bs;
 
     MFX_CHECK_POINTER(m_mfxSplitter);
@@ -103,8 +103,6 @@ mfxStatus MediaSDKSplWrapper::ReadNextFrame(mfxBitstream2 &bs2)
         if (sts == MFX_ERR_NONE)
         {
             sts = MFXSplitter_GetBitstream(m_mfxSplitter, &iOutputTrack, &bs);
-            if (iOutputTrack == -1)
-                sts = MFX_ERR_UNKNOWN;
         }
         if (sts == MFX_ERR_NONE && iOutputTrack == m_videoTrackIndex)
         {
@@ -147,20 +145,20 @@ mfxStatus MediaSDKSplWrapper::GetStreamInfo(sStreamInfo * pParams)
     return MFX_ERR_NONE;
 }
 
-mfxStatus MediaSDKSplWrapper::SeekTime(mfxF64 fSeekTo)
+mfxStatus MediaSDKSplWrapper::SeekTime(mfxF64 /*fSeekTo*/)
 {
     m_pConstructor->Reset();
 
     return MFX_ERR_NONE;
 }
 
-mfxStatus MediaSDKSplWrapper::SeekPercent(mfxF64 fSeekTo)
+mfxStatus MediaSDKSplWrapper::SeekPercent(mfxF64 /*fSeekTo*/)
 {
 
     return MFX_ERR_NONE;
 }
 
-mfxStatus MediaSDKSplWrapper::SeekFrameOffset(mfxU32 nFrameOffset, mfxFrameInfo & /*in_info*/)
+mfxStatus MediaSDKSplWrapper::SeekFrameOffset(mfxU32 /*nFrameOffset*/, mfxFrameInfo & /*in_info*/)
 {
     return MFX_ERR_NONE;
 }
@@ -217,7 +215,7 @@ mfxI64 MediaSDKSplWrapper::RdSeek(void* in_DataReader, mfxI64 offset, mfxSeekOri
         fseek(pRd->m_fSource, oldOffset, SEEK_SET);
         return fileSize;
     }
-    fseek(pRd->m_fSource, offset, whence);
+    fseek(pRd->m_fSource, (long) offset, whence);
 
     return MFX_ERR_NONE;
 }
