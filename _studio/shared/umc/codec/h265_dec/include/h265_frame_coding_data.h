@@ -23,7 +23,16 @@ namespace UMC_HEVC_DECODER
 {
 class H265CodingUnit;
 
-/// picture coding data class
+// Values for m_ColTUFlags
+enum
+{
+    COL_TU_INTRA         = 0,
+    COL_TU_INVALID_INTER = 1,
+    COL_TU_ST_INTER      = 2,
+    COL_TU_LT_INTER      = 3
+};
+
+// picture coding data class
 class H265FrameCodingData
 {
 public:
@@ -155,19 +164,11 @@ public:
         return m_NumPartitions;
     }
 
-    // Values for m_ColTUFlags
-#define COL_TU_INTRA         0
-#define COL_TU_INVALID_INTER 1
-#define COL_TU_ST_INTER      2
-#define COL_TU_LT_INTER      3
-
-    void setCUOrderMap(Ipp32s encCUOrder, Ipp32s cuAddr)        { *(m_CUOrderMap + encCUOrder) = cuAddr; }
     Ipp32s getCUOrderMap(Ipp32u encCUOrder)
     {
         return *(m_CUOrderMap + (encCUOrder >= m_NumCUsInFrame ? m_NumCUsInFrame : encCUOrder));
     }
     Ipp32u getTileIdxMap(Ipp32s i)                              { return *(m_TileIdxMap + i); }
-    void setInverseCUOrderMap(Ipp32s cuAddr, Ipp32s encCUOrder) {*(m_InverseCUOrderMap + cuAddr) = encCUOrder;}
     Ipp32s GetInverseCUOrderMap(Ipp32u cuAddr)                  {return *(m_InverseCUOrderMap + (cuAddr >= m_NumCUsInFrame ? m_NumCUsInFrame : cuAddr));}
 };
 

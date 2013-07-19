@@ -846,7 +846,7 @@ void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
         }
     }
 
-    if ((curLCU->CUAddr == curLCU->m_SliceHeader->m_sliceAddr) || (cross))
+    if ((curLCU->CUAddr == curLCU->m_SliceHeader->slice_segment_address) || (cross))
     {
         leftLCU = curLCU->getPULeft(uiPartP, 0, 0, 0);
 

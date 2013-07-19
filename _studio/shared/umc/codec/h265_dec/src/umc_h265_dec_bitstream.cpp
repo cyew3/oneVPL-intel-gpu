@@ -1065,7 +1065,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
     Ipp32s iCode;
 
     H265SliceHeader * sliceHdr = rpcSlice->GetSliceHeader();
-    rpcSlice->GetSliceHeader()->collocated_from_l0_flag = 1;
+    sliceHdr->collocated_from_l0_flag = 1;
 
     VM_ASSERT(pps!=0);
     VM_ASSERT(sps!=0);
@@ -1095,7 +1095,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
     rpcSlice->setSliceSegmentCurStartCUAddr( startCuAddress );
     rpcSlice->setSliceSegmentCurEndCUAddr(numCTUs*maxParts);
     // DO NOT REMOVE THIS LINE !!!!!!!!!!!!!!!!!!!!!!!!!!
-    rpcSlice->setSliceAddr(sliceSegmentAddress);
+    sliceHdr->slice_segment_address = sliceSegmentAddress;
 
     if (!rpcSlice->getDependentSliceSegmentFlag())
     {

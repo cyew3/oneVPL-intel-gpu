@@ -1950,7 +1950,7 @@ struct H265SliceHeader
     wpScalingParam  m_weightPredTable[2][MAX_NUM_REF][3]; // [REF_PIC_LIST_0 or REF_PIC_LIST_1][refIdx][0:Y, 1:U, 2:V]
 
     int m_numEntryPointOffsets;
-    unsigned m_sliceAddr;
+    unsigned slice_segment_address;
     unsigned m_RPSIndex;
 
     unsigned m_uiLog2WeightDenomLuma;

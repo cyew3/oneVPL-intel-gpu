@@ -656,7 +656,7 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
         int sliceNum = pSlice->GetSliceNum();
 
         pDXVASlice->ByteOffsetToSliceData = 0;  // ???
-        pDXVASlice->slice_segment_address = pSlice->getSliceAddr();
+        pDXVASlice->slice_segment_address = pSlice->GetSliceHeader()->slice_segment_address;
         pDXVASlice->NumCTUsInSlice = 0; 
 
         for(int iDir = 0; iDir < 2; iDir++)

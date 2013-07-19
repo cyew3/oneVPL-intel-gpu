@@ -31,6 +31,7 @@
 //static Ipp32s lock_failed_H265 = 0;
 //static Ipp32s sleep_count = 0;
 
+//#define NEW_MT_SCHEME
 #define NUM_CU_TO_PROCESS 30
 
 #if 0
@@ -466,7 +467,7 @@ bool TaskBroker_H265::GetPreparationTask(H265DecoderFrameInfo * info)
         sliceHeader->SliceCurEndCUAddr = pFrame->m_CodingData->GetInverseCUOrderMap(sliceHeader->SliceCurEndCUAddr / numPartitions) * numPartitions;
         sliceHeader->m_sliceSegmentCurStartCUAddr = pFrame->m_CodingData->GetInverseCUOrderMap(sliceHeader->m_sliceSegmentCurStartCUAddr / numPartitions) * numPartitions;
         sliceHeader->m_sliceSegmentCurEndCUAddr = pFrame->m_CodingData->GetInverseCUOrderMap(sliceHeader->m_sliceSegmentCurEndCUAddr / numPartitions) * numPartitions;
-
+        
         /*size_t currOffset = pSlice->GetSliceHeader()->m_HeaderBitstreamOffset;
         for (Ipp32u tile = 0; tile < pSlice->getTileLocationCount(); tile++)
         {
@@ -479,6 +480,17 @@ bool TaskBroker_H265::GetPreparationTask(H265DecoderFrameInfo * info)
     }
 
     Lock();
+
+    for (Ipp32s i = 0; i < sliceCount; i++)
+    {
+        H265Slice * slice = info->GetSlice(i);
+        VM_ASSERT(!slice->m_context);
+
+        slice->m_context = m_pTaskSupplier->GetObjHeap()->AllocateObject<DecodingContext>();
+        slice->m_context->IncrementReference();
+        slice->m_context->Init(slice);
+    }
+
     info->m_prepared = 2;
     return false;
 }
@@ -1048,6 +1060,50 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
             }
             break;
 
+        case TASK_DEB_H265:
+            {
+            VM_ASSERT(pTask->m_iFirstMB == pSlice->m_iCurMBToDeb);
+            pSlice->m_iCurMBToDeb += pTask->m_iMBToProcess;
+
+            // error handling
+            if (pTask->m_bError || pSlice->m_bError)
+            {
+                pSlice->m_iCurMBToDeb = pSlice->m_iMaxMB;
+                pSlice->m_bError = true;
+            }
+
+            if (pSlice->m_iMaxMB <= pSlice->m_iCurMBToDeb)
+            {
+                /*Ipp32s pos = info->GetPositionByNumber(pSlice->GetSliceNum());
+                if (isReadyIncrease)
+                {
+                    VM_ASSERT(pos >= 0);
+                    H264Slice * pNextSlice = info->GetSlice(pos + 1);
+                    if (pNextSlice)
+                    {
+                        if (pNextSlice->m_bDeblocked)
+                            info->m_iRecMBReady = pNextSlice->m_iCurMBToRec;
+                        else
+                            info->m_iRecMBReady = pNextSlice->m_iCurMBToDeb;
+                    }
+                }
+
+                info->RemoveSlice(pos);*/
+
+                pSlice->m_bDeblocked = true;
+                pSlice->m_bInProcess = false;
+                pSlice->m_bDecVacant = 0;
+                pSlice->m_bRecVacant = 0;
+            }
+            else
+            {
+                pSlice->m_bDebVacant = 1;
+            }
+
+            DEBUG_PRINT((VM_STRING("(%d) (%d) after deb ready %d\n"), pTask->m_iThreadNumber, info->m_pFrame->m_PicOrderCnt, pSlice->m_iCurMBToDeb));
+            }
+            break;
+
         default:
             // illegal case
             VM_ASSERT(false);
@@ -1397,7 +1453,7 @@ bool TaskBrokerTwoThread_H265::GetDeblockingTask(H265DecoderFrameInfo * info, H2
     for (i = 0; i < sliceCount; i += 1)
     {
         H265Slice *pSlice = info->GetSlice(i);
-        Ipp32s iAvailableToDeblock = pSlice->m_bDecoded ? pSlice->m_iMaxMB : pSlice->m_iCurMBToRec - pSlice->m_iCurMBToDeb;
+        Ipp32s iAvailableToDeblock = /*pSlice->m_bDecoded ? pSlice->m_iMaxMB - pSlice->m_iCurMBToDeb : */pSlice->m_iCurMBToRec - pSlice->m_iCurMBToDeb;
 
         if (!pSlice->m_bDeblocked &&
             (bPrevDeblocked || !pSlice->getLFCrossSliceBoundaryFlag()) &&
@@ -1463,15 +1519,19 @@ bool TaskBrokerTwoThread_H265::GetNextTaskManySlices(H265DecoderFrameInfo * info
 
     if (info->IsNeedDeblocking())
     {
+        
+#if defined(NEW_MT_SCHEME)
+        if (GetDeblockingTask(info, pTask))
+#else
         if (GetNextSliceToDeblocking(info, pTask))
-        //if (GetDeblockingTask(info, pTask))
+#endif
             return true;
     }
 
     if (GetSAOTask(info, pTask))
         return true;
 
-#if 0
+#if defined(NEW_MT_SCHEME)
     if (GetReconstructTask(info, pTask))
         return true;
 

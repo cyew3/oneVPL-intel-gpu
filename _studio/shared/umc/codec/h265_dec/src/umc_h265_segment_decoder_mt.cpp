@@ -25,6 +25,8 @@
 #include "mfx_trace.h"
 #include "umc_h265_dec_debug.h"
 
+//#define NEW_MT_SCHEME
+
 namespace UMC_HEVC_DECODER
 {
 H265SegmentDecoderMultiThreaded::H265SegmentDecoderMultiThreaded(TaskBroker_H265 * pTaskBroker)
@@ -59,7 +61,12 @@ void H265SegmentDecoderMultiThreaded::StartProcessingSegment(H265Task &Task)
     m_pCurrentFrame = m_pSlice->GetCurrentFrame();
     m_SD = CreateSegmentDecoder();
 
+#ifdef NEW_MT_SCHEME
+    m_context = m_pSlice->m_context;
+#else
     m_context->Init(m_pSlice);
+#endif
+    
     this->create((H265SeqParamSet*)m_pSeqParamSet);
 
     m_Prediction->InitTempBuff(m_context);
@@ -118,9 +125,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSegment(void)
             try // do decoding
             {
                 Ipp32s firstMB = Task.m_iFirstMB;
-                {
-                    umcRes = (this->*(Task.pFunction))(firstMB, Task.m_iMBToProcess); //ProcessSlice function
-                }
+                umcRes = (this->*(Task.pFunction))(firstMB, Task.m_iMBToProcess); //ProcessSlice function
 
                 if (UMC::UMC_ERR_END_OF_STREAM == umcRes)
                 {

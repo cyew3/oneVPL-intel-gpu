@@ -36,6 +36,9 @@ DecodingContext::DecodingContext()
 
 void DecodingContext::Reset()
 {
+#ifdef SPLIT_INTRA
+    ResetRowBuffer();
+#endif
 }
 
 void DecodingContext::Init(H265Slice *slice)
@@ -68,6 +71,10 @@ void DecodingContext::Init(H265Slice *slice)
     Ipp32s sliceNum = slice->GetSliceNum();
     m_refPicList[0] = m_frame->GetRefPicList(sliceNum, REF_PIC_LIST_0)->m_refPicList;
     m_refPicList[1] = m_frame->GetRefPicList(sliceNum, REF_PIC_LIST_1)->m_refPicList;
+
+#ifdef SPLIT_INTRA
+    ResetRowBuffer();
+#endif
 }
 
 void DecodingContext::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr)

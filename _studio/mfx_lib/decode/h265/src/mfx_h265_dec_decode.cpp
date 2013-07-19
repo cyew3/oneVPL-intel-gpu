@@ -751,7 +751,7 @@ mfxStatus VideoDECODEH265::RunThread(void * params, mfxU32 threadNumber)
 
     if (!info->surface_out)
     {
-        for (Ipp32s i = 0; i < 2 && sts == MFX_TASK_WORKING; i++)
+        //for (Ipp32s i = 0; i < 2 && sts == MFX_TASK_WORKING; i++)
         {
             sts = m_pH265VideoDecoder->RunThread(threadNumber);
         }
@@ -784,7 +784,7 @@ mfxStatus VideoDECODEH265::RunThread(void * params, mfxU32 threadNumber)
 
     if (!isDecoded)
     {
-        for (Ipp32s i = 0; i < 2 && sts == MFX_TASK_WORKING; i++)
+        //for (Ipp32s i = 0; i < 2 && sts == MFX_TASK_WORKING; i++)
         {
             sts = m_pH265VideoDecoder->RunThread(threadNumber);
         }

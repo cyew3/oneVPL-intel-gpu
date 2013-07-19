@@ -314,9 +314,6 @@ public:
     void allocSubstreamSizes(unsigned);
     unsigned* getSubstreamSizes() const     { return m_SliceHeader.m_SubstreamSizes; }
 
-    void setSliceAddr(unsigned val)         { m_SliceHeader.m_sliceAddr = val; }
-    unsigned getSliceAddr() const           { return m_SliceHeader.m_sliceAddr; }
-
     unsigned getRPSIndex() const            { return m_SliceHeader.m_RPSIndex; }
     void setRPSIndex(unsigned val)          { m_SliceHeader.m_RPSIndex = val; }
 

@@ -98,6 +98,15 @@ public:
                 {
                     sd->m_context->UpdateCurrCUContext(rsCUAddr, newRSCUAddr);
                 }
+                else
+                {
+                    sd->m_context->ResetRowBuffer();
+                    sd->m_pBitStream->DecodeTerminatingBit_CABAC();
+
+                    // reset CABAC engine
+                    sd->m_pBitStream->InitializeDecodingEngine_CABAC();
+                    sd->m_pSlice->InitializeContexts();
+                }
                 break;
             }
 

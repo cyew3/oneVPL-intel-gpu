@@ -137,7 +137,9 @@ bool H265Slice::Reset(void *pSource, size_t nSourceSize, Ipp32s )
     Ipp32s iMBInFrame = (GetSeqParam()->WidthInCU * GetSeqParam()->HeightInCU);
 
     // set slice variables
-    m_iFirstMB = m_SliceHeader.m_sliceAddr;
+    m_iFirstMB = m_SliceHeader.slice_segment_address;
+    m_iFirstMB = m_iFirstMB > iMBInFrame ? iMBInFrame : m_iFirstMB;
+    m_iFirstMB = m_pPicParamSet->m_CtbAddrRStoTS[m_iFirstMB];
     m_iMaxMB = iMBInFrame;
 
     m_iAvailableMB = iMBInFrame;
@@ -146,8 +148,8 @@ bool H265Slice::Reset(void *pSource, size_t nSourceSize, Ipp32s )
         return false;
 
     // reset all internal variables
-    m_iCurMBToDec = 0;
-    m_iCurMBToRec = 0;
+    m_iCurMBToDec = m_iFirstMB;
+    m_iCurMBToRec = m_iFirstMB;
     m_iCurMBToDeb = m_iFirstMB;
     m_curTileDec = 0;
     m_curTileRec = 0;
