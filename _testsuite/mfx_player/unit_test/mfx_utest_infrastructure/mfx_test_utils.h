@@ -19,9 +19,38 @@ File Name: .h
 //warning C4345: behavior change: an object of POD type constructed with an initializer of the form () will be default-initialized
 #pragma warning (disable:4345)
 
-#define CMD_PARAM(param, value)\
-    params[VM_STRING(param)].push_back(VM_STRING(value));
+#define CMD_PARAM1(param, v1)\
+    params[VM_STRING(param)].push_back(VM_STRING(v1));
 
+#define CMD_PARAM2(param, v1, v2)\
+    CMD_PARAM1(param, v1);\
+    CMD_PARAM1(param, v2);
+
+#define CMD_PARAM3(param, v1, v2, v3)\
+    CMD_PARAM1(param, v1);\
+    CMD_PARAM2(param, v2, v3);
+
+#define CMD_PARAM4(param, v1, v2, v3, v4)\
+    CMD_PARAM1(param, v1);\
+    CMD_PARAM3(param, v2, v3, v4);
+
+#define CMD_PARAM5(param, v1, v2, v3, v4, v5)\
+    CMD_PARAM1(param, v1);\
+    CMD_PARAM4(param, v2, v3, v4, v5);
+
+#define CMD_PARAM6(param, v1, v2, v3, v4, v5, v6)\
+    CMD_PARAM1(param, v1);\
+    CMD_PARAM5(param, v2, v3, v4, v5, v6);
+
+#define CMD_PARAM7(param, v1, v2, v3, v4, v5, v6, v7)\
+    CMD_PARAM1(param, v1);\
+    CMD_PARAM6(param, v2, v3, v4, v5, v6, v7);
+
+#define CMD_PARAM8(param, v1, v2, v3, v4, v5, v6, v7, v8)\
+    CMD_PARAM1(param, v1);CMD_PARAM7(param, v2, v3, v4, v5, v6, v7, v8 );
+
+#define CMD_PARAM9(param, v1, v2, v3, v4, v5, v6, v7, v8, v9)\
+    CMD_PARAM1(param, v1);CMD_PARAM8(param, v2, v3, v4, v5, v6, v7, v8, v9 );
 
 //only limittion that interface has to be defined as proxyied 
 template<class T>

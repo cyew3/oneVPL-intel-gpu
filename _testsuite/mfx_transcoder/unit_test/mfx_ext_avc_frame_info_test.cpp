@@ -124,7 +124,7 @@ SUITE(mfxExtAvcFrameInfoSuite)
 
     TEST_FIXTURE(mfxExtAVCEncodedFrameInfoTest, 1_param)
     {
-        CMD_PARAM("-enc_frame_info", "1");
+        CMD_PARAM1("-enc_frame_info", "1");
 
         CHECK_EQUAL(MFX_ERR_NONE, pipeline.ProcessCommand(params, &mock_cfg));
 
@@ -134,7 +134,7 @@ SUITE(mfxExtAvcFrameInfoSuite)
 
     TEST_FIXTURE(mfxExtAVCEncodedFrameInfoTest, 1_param_no_eos)
     {
-        CMD_PARAM("-enc_frame_info", "1");
+        CMD_PARAM1("-enc_frame_info", "1");
         params[VM_STRING("-h264")] =  std::vector<tstring>();
 
         CHECK_EQUAL(MFX_ERR_NONE, pipeline.ProcessCommand(params, &mock_cfg));
@@ -145,8 +145,8 @@ SUITE(mfxExtAvcFrameInfoSuite)
 
     TEST_FIXTURE(mfxExtAVCEncodedFrameInfoTest, 2_params)
     {
-        CMD_PARAM("-enc_frame_info", "1");
-        CMD_PARAM("-enc_frame_info", "2");
+        CMD_PARAM1("-enc_frame_info", "1");
+        CMD_PARAM1("-enc_frame_info", "2");
 
         CHECK_EQUAL(MFX_ERR_NONE, pipeline.ProcessCommand(params, &mock_cfg));
 
@@ -155,8 +155,8 @@ SUITE(mfxExtAvcFrameInfoSuite)
     }
     TEST_FIXTURE(mfxExtAVCEncodedFrameInfoTest, 2_params_no_eos)
     {
-        CMD_PARAM("-enc_frame_info", "1");
-        CMD_PARAM("-enc_frame_info", "2");
+        CMD_PARAM1("-enc_frame_info", "1");
+        CMD_PARAM1("-enc_frame_info", "2");
         params[VM_STRING("-h264")] =  std::vector<tstring>();
 
         CHECK_EQUAL(MFX_ERR_NONE, pipeline.ProcessCommand(params, &mock_cfg));
@@ -180,7 +180,7 @@ SUITE(mfxExtAvcFrameInfoSuite)
 
     TEST_FIXTURE(mfxExtAVCEncodedFrameInfoTest, 1_params_should_apply_only_2nd)
     {
-        CMD_PARAM("-enc_frame_info", "1");
+        CMD_PARAM1("-enc_frame_info", "1");
         CHECK_EQUAL(MFX_ERR_NONE, pipeline.ProcessCommand(params, &mock_cfg));
 
         //no buffers for 1st frame
@@ -197,8 +197,8 @@ SUITE(mfxExtAvcFrameInfoSuite)
 
     TEST_FIXTURE(mfxExtAVCEncodedFrameInfoTest, 2_params_should_apply_on_2nd_frame_3rd_frame_andNot_on_4th)
     {
-        CMD_PARAM("-enc_frame_info", "1");
-        CMD_PARAM("-enc_frame_info", "2");
+        CMD_PARAM1("-enc_frame_info", "1");
+        CMD_PARAM1("-enc_frame_info", "2");
         CHECK_EQUAL(MFX_ERR_NONE, pipeline.ProcessCommand(params, &mock_cfg));
 
         //no buffers for 1st frame

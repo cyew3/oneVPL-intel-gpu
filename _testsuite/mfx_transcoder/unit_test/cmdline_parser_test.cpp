@@ -283,45 +283,45 @@ SUITE(CmdLineTransPipeline)
         ParFileForSvc_VPP()
         {
             params[VM_STRING("-h264")] =  std::vector<tstring>();
-            CMD_PARAM("-i", "D:\\mediasdk_streams\\YUV\\foster_720x576.yuv");
-            CMD_PARAM("-o", "build\\win_x64\\output\\br_h264_encode_suite\\0001.h264");
+            CMD_PARAM1("-i", "D:\\mediasdk_streams\\YUV\\foster_720x576.yuv");
+            CMD_PARAM1("-o", "build\\win_x64\\output\\br_h264_encode_suite\\0001.h264");
             //svc sample layers description
-            CMD_PARAM("-svc_rate_ctrl.Layer[0].QualityId", "0");
-            CMD_PARAM("-svc_rate_ctrl.Layer[0].TemporalId", "0");
-            CMD_PARAM("-svc_rate_ctrl.Layer[0].DependencyId", "0");
-            CMD_PARAM("-svc_rate_ctrl.Layer[0].CbrVbr.MaxKbps", "630");
-            CMD_PARAM("-svc_rate_ctrl.Layer[0].CbrVbr.BufferSizeInKB", "157");
-            CMD_PARAM("-svc_rate_ctrl.Layer[0].CbrVbr.InitialDelayInKB", "78");
-            CMD_PARAM("-svc_rate_ctrl.Layer[0].CbrVbr.TargetKbps", "630");
-            CMD_PARAM("-svc_rate_ctrl.Layer[1].QualityId", "0");
-            CMD_PARAM("-svc_rate_ctrl.Layer[1].TemporalId", "0");
-            CMD_PARAM("-svc_rate_ctrl.Layer[1].DependencyId", "1");
-            CMD_PARAM("-svc_rate_ctrl.Layer[1].CbrVbr.MaxKbps", "1500");
-            CMD_PARAM("-svc_rate_ctrl.Layer[1].CbrVbr.BufferSizeInKB", "375");
-            CMD_PARAM("-svc_rate_ctrl.Layer[1].CbrVbr.InitialDelayInKB", "187");
-            CMD_PARAM("-svc_rate_ctrl.Layer[1].CbrVbr.TargetKbps", "1500");
-            CMD_PARAM("-svc_rate_ctrl.RateControlMethod", "1");
-            CMD_PARAM("-svc_seq.DependencyLayer[0].TemporalNum", "1");
-            CMD_PARAM("-svc_seq.DependencyLayer[0].QualityLayer[0].TcoeffPredictionFlag", "0");
-            CMD_PARAM("-svc_seq.DependencyLayer[0].GopPicSize", "24");
-            CMD_PARAM("-svc_seq.DependencyLayer[0].GopRefDist", "5");
-            CMD_PARAM("-svc_seq.DependencyLayer[0].Width", "176");
-            CMD_PARAM("-svc_seq.DependencyLayer[0].Height", "144");
-            CMD_PARAM("-svc_seq.DependencyLayer[0].TemporalId[0]", "0");
-            CMD_PARAM("-svc_seq.DependencyLayer[0].RefLayerDid", "0");
-            CMD_PARAM("-svc_seq.DependencyLayer[0].QualityNum", "1");
-            CMD_PARAM("-svc_seq.DependencyLayer[0].Active", "16");
-            CMD_PARAM("-svc_seq.DependencyLayer[1].TemporalNum", "1");
-            CMD_PARAM("-svc_seq.DependencyLayer[1].QualityLayer[0].TcoeffPredictionFlag", "0");
-            CMD_PARAM("-svc_seq.DependencyLayer[1].GopPicSize", "24");
-            CMD_PARAM("-svc_seq.DependencyLayer[1].GopRefDist", "5");
-            //CMD_PARAM("-svc_seq.DependencyLayer[1].Width", "352");
-            //CMD_PARAM("-svc_seq.DependencyLayer[1].Height", "288");
-            CMD_PARAM("-svc_seq.DependencyLayer[1].TemporalId[0]", "0");
-            CMD_PARAM("-svc_seq.DependencyLayer[1].RefLayerDid", "0");
-            CMD_PARAM("-svc_seq.DependencyLayer[1].QualityNum", "1");
-            CMD_PARAM("-svc_seq.DependencyLayer[1].Active", "16");
-            CMD_PARAM("-svc_seq.TemporalScale[0]", "1");
+            CMD_PARAM1("-svc_rate_ctrl.Layer[0].QualityId", "0");
+            CMD_PARAM1("-svc_rate_ctrl.Layer[0].TemporalId", "0");
+            CMD_PARAM1("-svc_rate_ctrl.Layer[0].DependencyId", "0");
+            CMD_PARAM1("-svc_rate_ctrl.Layer[0].CbrVbr.MaxKbps", "630");
+            CMD_PARAM1("-svc_rate_ctrl.Layer[0].CbrVbr.BufferSizeInKB", "157");
+            CMD_PARAM1("-svc_rate_ctrl.Layer[0].CbrVbr.InitialDelayInKB", "78");
+            CMD_PARAM1("-svc_rate_ctrl.Layer[0].CbrVbr.TargetKbps", "630");
+            CMD_PARAM1("-svc_rate_ctrl.Layer[1].QualityId", "0");
+            CMD_PARAM1("-svc_rate_ctrl.Layer[1].TemporalId", "0");
+            CMD_PARAM1("-svc_rate_ctrl.Layer[1].DependencyId", "1");
+            CMD_PARAM1("-svc_rate_ctrl.Layer[1].CbrVbr.MaxKbps", "1500");
+            CMD_PARAM1("-svc_rate_ctrl.Layer[1].CbrVbr.BufferSizeInKB", "375");
+            CMD_PARAM1("-svc_rate_ctrl.Layer[1].CbrVbr.InitialDelayInKB", "187");
+            CMD_PARAM1("-svc_rate_ctrl.Layer[1].CbrVbr.TargetKbps", "1500");
+            CMD_PARAM1("-svc_rate_ctrl.RateControlMethod", "1");
+            CMD_PARAM1("-svc_seq.DependencyLayer[0].TemporalNum", "1");
+            CMD_PARAM1("-svc_seq.DependencyLayer[0].QualityLayer[0].TcoeffPredictionFlag", "0");
+            CMD_PARAM1("-svc_seq.DependencyLayer[0].GopPicSize", "24");
+            CMD_PARAM1("-svc_seq.DependencyLayer[0].GopRefDist", "5");
+            CMD_PARAM1("-svc_seq.DependencyLayer[0].Width", "176");
+            CMD_PARAM1("-svc_seq.DependencyLayer[0].Height", "144");
+            CMD_PARAM1("-svc_seq.DependencyLayer[0].TemporalId[0]", "0");
+            CMD_PARAM1("-svc_seq.DependencyLayer[0].RefLayerDid", "0");
+            CMD_PARAM1("-svc_seq.DependencyLayer[0].QualityNum", "1");
+            CMD_PARAM1("-svc_seq.DependencyLayer[0].Active", "16");
+            CMD_PARAM1("-svc_seq.DependencyLayer[1].TemporalNum", "1");
+            CMD_PARAM1("-svc_seq.DependencyLayer[1].QualityLayer[0].TcoeffPredictionFlag", "0");
+            CMD_PARAM1("-svc_seq.DependencyLayer[1].GopPicSize", "24");
+            CMD_PARAM1("-svc_seq.DependencyLayer[1].GopRefDist", "5");
+            //CMD_PARAM1("-svc_seq.DependencyLayer[1].Width", "352");
+            //CMD_PARAM1("-svc_seq.DependencyLayer[1].Height", "288");
+            CMD_PARAM1("-svc_seq.DependencyLayer[1].TemporalId[0]", "0");
+            CMD_PARAM1("-svc_seq.DependencyLayer[1].RefLayerDid", "0");
+            CMD_PARAM1("-svc_seq.DependencyLayer[1].QualityNum", "1");
+            CMD_PARAM1("-svc_seq.DependencyLayer[1].Active", "16");
+            CMD_PARAM1("-svc_seq.TemporalScale[0]", "1");
         }
         void prepare() 
         {
@@ -352,10 +352,10 @@ SUITE(CmdLineTransPipeline)
 
     TEST_FIXTURE(ParFileForSvc_VPP, SVCedVpp_ON)
     {
-        CMD_PARAM("-h", "352");
-        CMD_PARAM("-w", "288");
-        CMD_PARAM("-svc_seq.DependencyLayer[1].Height", "288");
-        CMD_PARAM("-svc_seq.DependencyLayer[1].Width", "352");
+        CMD_PARAM1("-h", "352");
+        CMD_PARAM1("-w", "288");
+        CMD_PARAM1("-svc_seq.DependencyLayer[1].Height", "288");
+        CMD_PARAM1("-svc_seq.DependencyLayer[1].Width", "352");
 
         prepare();
 
@@ -373,10 +373,10 @@ SUITE(CmdLineTransPipeline)
     TEST_FIXTURE(ParFileForSvc_VPP, SVCedVpp_OFF)
     {
         //declaring both input files for each dependency layer force mfx_transcoder to work without vpp
-        CMD_PARAM("-svc_seq.DependencyLayer[0].InputFile", "m:\\mediasdk_streams\\SVC-YUV\\matrix_176x144_300.yuv");
-        CMD_PARAM("-svc_seq.DependencyLayer[1].InputFile", "m:\\mediasdk_streams\\SVC-YUV\\matrix_352x288_300.yuv");
-        CMD_PARAM("-svc_seq.DependencyLayer[1].Height", "288");
-        CMD_PARAM("-svc_seq.DependencyLayer[1].Width", "352");
+        CMD_PARAM1("-svc_seq.DependencyLayer[0].InputFile", "m:\\mediasdk_streams\\SVC-YUV\\matrix_176x144_300.yuv");
+        CMD_PARAM1("-svc_seq.DependencyLayer[1].InputFile", "m:\\mediasdk_streams\\SVC-YUV\\matrix_352x288_300.yuv");
+        CMD_PARAM1("-svc_seq.DependencyLayer[1].Height", "288");
+        CMD_PARAM1("-svc_seq.DependencyLayer[1].Width", "352");
 
         prepare();
 
@@ -387,10 +387,10 @@ SUITE(CmdLineTransPipeline)
     TEST_FIXTURE(ParFileForSvc_VPP, SVCedVpp_OFF_dueto_resolution)
     {
         //resolution of second layer is same as in input resolution
-        CMD_PARAM("-w", "176");
-        CMD_PARAM("-h", "144");
-        CMD_PARAM("-svc_seq.DependencyLayer[1].Width", "176");
-        CMD_PARAM("-svc_seq.DependencyLayer[1].Height", "144");
+        CMD_PARAM1("-w", "176");
+        CMD_PARAM1("-h", "144");
+        CMD_PARAM1("-svc_seq.DependencyLayer[1].Width", "176");
+        CMD_PARAM1("-svc_seq.DependencyLayer[1].Height", "144");
         
 
         prepare();
@@ -403,10 +403,10 @@ SUITE(CmdLineTransPipeline)
     {
         //input resolution not specified - cannot use vpp, also if there is no input files in every layer - processing should stop
         //, later, but create vpp - succedded
-        CMD_PARAM("-svc_seq.DependencyLayer[0].InputFile", "m:\\mediasdk_streams\\SVC-YUV\\matrix_176x144_300.yuv");
-        CMD_PARAM("-svc_seq.DependencyLayer[1].InputFile", "m:\\mediasdk_streams\\SVC-YUV\\matrix_352x288_300.yuv");
-        CMD_PARAM("-svc_seq.DependencyLayer[1].Width", "352");
-        CMD_PARAM("-svc_seq.DependencyLayer[1].Height", "288");
+        CMD_PARAM1("-svc_seq.DependencyLayer[0].InputFile", "m:\\mediasdk_streams\\SVC-YUV\\matrix_176x144_300.yuv");
+        CMD_PARAM1("-svc_seq.DependencyLayer[1].InputFile", "m:\\mediasdk_streams\\SVC-YUV\\matrix_352x288_300.yuv");
+        CMD_PARAM1("-svc_seq.DependencyLayer[1].Width", "352");
+        CMD_PARAM1("-svc_seq.DependencyLayer[1].Height", "288");
 
         prepare();
 

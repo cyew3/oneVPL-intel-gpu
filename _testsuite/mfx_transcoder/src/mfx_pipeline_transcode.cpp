@@ -785,7 +785,30 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
         else HANDLE_BOOL_OPTION(m_bCreateDecode, VM_STRING("-enc:dec"), VM_STRING("decoding of encoded frames "));
         else HANDLE_INT_OPTION(m_extCodingOptionsSPSPPS->SPSId, VM_STRING("-spsid"), VM_STRING("set SPSId in mfxExcodingOptionSPSPPS structure"))
         else HANDLE_INT_OPTION(m_extCodingOptionsSPSPPS->PPSId, VM_STRING("-ppsid"), VM_STRING("set PPSId in mfxExcodingOptionSPSPPS structure"))
-        else HANDLE_SPECIAL_OPTION(*m_extAvcTemporalLayers.get(), VM_STRING("-AvcTemporalLayers"), VM_STRING("add mfxExtAvcTemporalLayers buffer to mfxVideoParam"), OPT_SPECIAL, VM_STRING("BaseLayerID [array:Layer.Scale]"))
+        else if (m_OptProc.Check(argv[0], VM_STRING("-avctemporallayers"), VM_STRING("add mfxExtAvcTemporalLayers buffer to mfxVideoParam"), OPT_SPECIAL, VM_STRING("BaseLayerID [array:Layer.Scale]")))
+        {
+            if (!m_bResetParamsStart) {
+                MFX_CHECK(DeSerialize(*m_extAvcTemporalLayers.get(), ++argv, argvEnd));
+                continue;
+            }
+            mfxExtAvcTemporalLayers *pExt = NULL;
+
+            MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_AVC_TEMPORAL_LAYERS);
+            if (!ppExt)
+            {
+                pExt = &mfx_init_ext_buffer(*new mfxExtAvcTemporalLayers());
+            }
+            else
+            {
+                pExt = reinterpret_cast<mfxExtAvcTemporalLayers *>(ppExt->get());
+            }
+            
+            MFX_CHECK(DeSerialize(*pExt, ++argv, argvEnd));
+
+            if (!ppExt) {
+                m_ExtBuffers.get()->push_back(pExt);
+            }
+        }
         else if (m_OptProc.Check(argv[0], VM_STRING("-enc_frame_info"), VM_STRING("shows encoded picture info from mfxExtAVCEncodedFrameInfo structure, for particular frame, for ranges of frames, or for every frame"), OPT_SPECIAL
         , VM_STRING("[first [last]]"))) {
             int firstFrame = 0;

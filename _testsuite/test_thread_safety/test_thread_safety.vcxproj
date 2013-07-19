@@ -165,17 +165,18 @@
       <Project>{430e22ba-bdf6-497c-bfc5-ec6907f90018}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+    <ProjectReference Include="..\..\samples\sample_spl_mux\sample_spl_mux.vcxproj">
+      <Project>{44d60213-8682-48f3-add2-4885479fd9db}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\_studio\shared\umc\codec\asf_spl\asf_spl.vcxproj">
       <Project>{7662c9c6-5ce0-42e6-aca7-92fe6b7797a6}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\_studio\shared\umc\codec\avi_spl\avi_sp.vcxproj">
       <Project>{10a6c28a-72a4-4a75-9ea4-16f22e4791fb}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\_studio\shared\umc\codec\color_space_converter\color_space_converter.vcxproj">
       <Project>{57fe8dac-c7c4-4df4-9a36-2fee040dff38}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\_studio\shared\umc\codec\common\common.vcxproj">
       <Project>{df581e3f-1816-4384-9fac-cdf8c651f13d}</Project>

@@ -35,7 +35,7 @@ void MediaSDKSplWrapper::Close()
     delete m_streamParams.TrackInfo;
     m_streamParams.TrackInfo = NULL;
 
-    MFXSplitter_Close(m_mfxSplitter);
+    //MFXSplitter_Close(m_mfxSplitter);
 
     MFX_DELETE(m_pConstructor);
 }
@@ -54,11 +54,11 @@ mfxStatus MediaSDKSplWrapper::Init(const vm_char *strFileName)
     m_dataIO.Read = RdRead;
     m_dataIO.Seek = RdSeek;
 
-    sts = MFXSplitter_Init(&m_dataIO, &m_mfxSplitter);
+   // sts = MFXSplitter_Init(&m_dataIO, &m_mfxSplitter);
     MFX_CHECK_STS(sts);
 
     MFX_ZERO_MEM(m_streamParams);
-    sts = MFXSplitter_GetInfo(m_mfxSplitter, &m_streamParams);
+  //  sts = MFXSplitter_GetInfo(m_mfxSplitter, &m_streamParams);
     MFX_CHECK_STS(sts);
 
     m_streamParams.TrackInfo = new mfxTrackInfo*[m_streamParams.NumTrack];
@@ -66,7 +66,7 @@ mfxStatus MediaSDKSplWrapper::Init(const vm_char *strFileName)
         m_streamParams.TrackInfo[i] = new mfxTrackInfo;
     m_streamParams.NumTrackAllocated = m_streamParams.NumTrack;
 
-    sts = MFXSplitter_GetInfo(m_mfxSplitter, &m_streamParams);
+  //  sts = MFXSplitter_GetInfo(m_mfxSplitter, &m_streamParams);
     MFX_CHECK_STS(sts);
 
     for (mfxU32 i=0; i < m_streamParams.NumTrack; i++)
@@ -102,7 +102,7 @@ mfxStatus MediaSDKSplWrapper::ReadNextFrame(mfxBitstream2 &bs2)
     {
         if (sts == MFX_ERR_NONE)
         {
-            sts = MFXSplitter_GetBitstream(m_mfxSplitter, &iOutputTrack, &bs);
+   //         sts = MFXSplitter_GetBitstream(m_mfxSplitter, &iOutputTrack, &bs);
         }
         if (sts == MFX_ERR_NONE && iOutputTrack == m_videoTrackIndex)
         {
@@ -110,7 +110,7 @@ mfxStatus MediaSDKSplWrapper::ReadNextFrame(mfxBitstream2 &bs2)
         }
         if (sts == MFX_ERR_NONE)
         {
-            sts = MFXSplitter_ReleaseBitstream(m_mfxSplitter, iOutputTrack, &bs);
+  //          sts = MFXSplitter_ReleaseBitstream(m_mfxSplitter, iOutputTrack, &bs);
         }
     }
 

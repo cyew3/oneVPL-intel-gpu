@@ -32,10 +32,10 @@
     <ClCompile Include="mfx_ext_avc_frame_info_test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="mfx_encoder_reset_option_test.cpp">
+    <ClCompile Include="mfx_encode_query_mod4_test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="mfx_encode_query_mod4_test.cpp">
+    <ClCompile Include="mfx_encoder_reset_test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
