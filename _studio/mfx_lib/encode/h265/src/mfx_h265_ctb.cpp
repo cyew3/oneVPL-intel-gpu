@@ -15,6 +15,7 @@
 #include "mfx_h265_defs.h"
 #include "mfx_h265_optimization.h"
 
+
 static Ipp32s GetLumaOffset(H265VideoParam *par, Ipp32s abs_part_idx, Ipp32s pitch) {
     Ipp32s maxDepth = par->MaxTotalDepth;
     Ipp32s PURasterIdx = h265_scan_z2r[maxDepth][abs_part_idx];
@@ -1402,16 +1403,21 @@ Ipp32s H265CU::MatchingMetric_PU(H265MEInfo* me_info, H265MV* MV, H265Frame *Pic
     PixType *pSrc = y_src + ctbOffset;
     PixType *pRec = PicYUVRef->y + refOffset;
     Ipp32s recPitch = PicYUVRef->pitch_luma;
-    PixType pred_buf_y[MAX_CU_SIZE*MAX_CU_SIZE];
+    ALIGN_DECL(16) PixType pred_buf_y[MAX_CU_SIZE*MAX_CU_SIZE];
 
     if ((MV->mvx | MV->mvy) & 3)
     {
         ME_Interpolate(me_info, MV, PicYUVRef->y, PicYUVRef->pitch_luma, pred_buf_y, MAX_CU_SIZE);
         pRec = pred_buf_y;
         recPitch = MAX_CU_SIZE;
+        
+        //MFX_HEVC_ENCODER::h265_SAD_MxN_special_IPP_8u(pSrc, pRec, pitch_src, me_info->width, me_info->height, &cost);
+        cost = MFX_HEVC_ENCODER::h265_SAD_MxN_special_8u(pSrc, pRec, pitch_src, me_info->width, me_info->height);
     }
-
-    MFX_HEVC_ENCODER::SAD_8u[me_info->width >> 2][me_info->height >> 2](pSrc, pitch_src, pRec, recPitch, &cost, 0);
+    else
+    {
+        MFX_HEVC_ENCODER::SAD_8u[me_info->width >> 2][me_info->height >> 2](pSrc, pitch_src, pRec, recPitch, &cost, 0);
+    }
 
     return cost;
 }

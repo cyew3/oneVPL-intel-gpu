@@ -115,7 +115,7 @@ namespace MFX_HEVC_ENCODER
     void H265_FASTCALL h265_DCT16x16Fwd_16s(const short *H265_RESTRICT src, short *H265_RESTRICT dst);
     void H265_FASTCALL h265_DCT32x32Fwd_16s(const short *H265_RESTRICT src, short *H265_RESTRICT dst);
 
-    /* SAD */
+    /* IPP based version SAD */
     typedef IppStatus (__STDCALL *SADfunc8u)(
         const Ipp8u* pSrcCur,
         Ipp32s srcCurStep,
@@ -125,6 +125,16 @@ namespace MFX_HEVC_ENCODER
         Ipp32s mcType);
 
     extern SADfunc8u* SAD_8u[17];
+
+    IppStatus h265_SAD_MxN_special_IPP_8u(const unsigned char *image,  const unsigned char *ref, int stride, int SizeX, int SizeY, int* sad);
+
+    /* special version SAD from Nablet */
+    typedef int (__STDCALL *SADfunc8u_special)(
+        const unsigned char *image,  const unsigned char *block, int img_stride);
+
+    extern SADfunc8u_special* SAD_8u_special[17];
+    int h265_SAD_MxN_special_8u(const unsigned char *image,  const unsigned char *ref, int stride, int SizeX, int SizeY);
+
 };
 
 namespace MFX_HEVC_DECODER
