@@ -486,11 +486,4 @@ void H265BsReal::TerminateEncode_CABAC()
     m_base.m_bitOffset = bitoffset;
 }
 
-void H265BsReal::JoinHeadBytes(H265BsReal *bs_head)
-{
-    Ipp32s size_head = (Ipp32u)(bs_head->m_base.m_pbs - bs_head->m_base.m_pbsRBSPBase);
-    m_base.m_pbsRBSPBase -= size_head;
-    memcpy(m_base.m_pbsRBSPBase, bs_head->m_base.m_pbsRBSPBase, size_head);
-}
-
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE

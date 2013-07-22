@@ -384,8 +384,6 @@ void h265_code_reffrm_idx(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx, EnumRefP
     Ipp32s j;
     H265ENC_UNREFERENCED_PARAMETER(abs_part_idx);
 
-    H265VideoParam *par = pCU->par;
-
     T_RefIdx ref_idx = pCU->data[abs_part_idx].ref_idx[ref_list];
     bs->EncodeSingleBin_CABAC(CTX(bs,REF_FRAME_IDX_HEVC),( ref_idx == 0 ? 0 : 1 ));
 
@@ -395,7 +393,7 @@ void h265_code_reffrm_idx(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx, EnumRefP
     {
         j++;
         ref_idx--;
-        for (Ipp32s i = 0; i < par->cslice->num_ref_idx[ref_list] - 2; i++)
+        for (Ipp32s i = 0; i < pCU->cslice->num_ref_idx[ref_list] - 2; i++)
         {
             Ipp32u code = ((ref_idx == i) ? 0 : 1);
 
@@ -414,7 +412,7 @@ void h265_code_reffrm_idx(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx, EnumRefP
             }
         }
 //      h265_write_unary_max_symbol(bs, ref_idx - 1, CTX(bs,REF_FRAME_IDX_HEVC) + 1, 1,
-//          par->cslice->num_ref_idx[ref_list] - 2);
+//          cslice->num_ref_idx[ref_list] - 2);
     }
 }
 
@@ -422,8 +420,7 @@ template <class H265Bs>
 static
 void h265_code_mvd(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx, EnumRefPicList ref_list)
 {
-    H265VideoParam *par = pCU->par;
-    if(par->cslice->mvd_l1_zero_flag && ref_list == REF_PIC_LIST_1 && pCU->data[abs_part_idx].inter_dir==3)
+    if(pCU->cslice->mvd_l1_zero_flag && ref_list == REF_PIC_LIST_1 && pCU->data[abs_part_idx].inter_dir==3)
     {
         return;
     }
@@ -1222,12 +1219,12 @@ void h265_encode_PU_inter(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
     }
     else
     {
-        if (pCU->par->cslice->slice_type == B_SLICE) {
+        if (pCU->cslice->slice_type == B_SLICE) {
             h265_code_interdir(bs, pCU, sub_part_idx);
         }
         for (Ipp8u ref_list_idx = 0; ref_list_idx < 2; ref_list_idx++)
         {
-            Ipp32s num_ref_idx = pCU->par->cslice->num_ref_idx[ref_list_idx];
+            Ipp32s num_ref_idx = pCU->cslice->num_ref_idx[ref_list_idx];
             if (num_ref_idx > 0 && (pCU->data[sub_part_idx].inter_dir & (1 << ref_list_idx))) {
                 if (num_ref_idx > 1) {
                     h265_code_reffrm_idx(bs, pCU, sub_part_idx, (EnumRefPicList)ref_list_idx);
@@ -1323,7 +1320,7 @@ void H265CU::xEncodeCU(H265Bs *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_m
     if (par->cpps->transquant_bypass_enable_flag)
         h265_code_transquant_bypass_flag(bs, pCU, abs_part_idx );
 
-    if(par->cslice->slice_type != I_SLICE)
+    if(cslice->slice_type != I_SLICE)
     {
         Ipp8u skipped_flag = data[abs_part_idx].pred_mode == MODE_INTER &&
             data[abs_part_idx].part_size == PART_SIZE_2Nx2N && data[abs_part_idx].flags.merge_flag &&

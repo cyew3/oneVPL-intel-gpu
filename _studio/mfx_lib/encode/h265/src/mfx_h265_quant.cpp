@@ -151,7 +151,7 @@ void H265CU::QuantFwdTU(
                 coeff + offset,
                 log2TrSize,
                 BIT_DEPTH_LUMA,
-                par->cslice->slice_type == I_SLICE,
+                cslice->slice_type == I_SLICE,
                 abs_sum,
                 TEXT_LUMA,
                 abs_part_idx,
@@ -170,7 +170,7 @@ void H265CU::QuantFwdTU(
                 coeff + offset,
                 log2TrSize,
                 BIT_DEPTH_LUMA,
-                par->cslice->slice_type == I_SLICE,
+                cslice->slice_type == I_SLICE,
                 QP,
 
                 this->par->cpps->sign_data_hiding_enabled_flag ? delta_u : NULL,

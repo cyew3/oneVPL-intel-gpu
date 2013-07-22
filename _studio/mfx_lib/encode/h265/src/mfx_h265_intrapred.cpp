@@ -609,7 +609,7 @@ void H265CU::GetInitAvailablity()
     }
 
     /* Left */
-    if (left_addr >= par->cslice->slice_segment_address /* and in one tile */)
+    if (left_addr >= cslice->slice_segment_address /* and in one tile */)
     {
         for (i = 0; i < numMinTUInLCU; i++)
         {
@@ -631,7 +631,7 @@ void H265CU::GetInitAvailablity()
     }
 
     /* Above Left */
-    if (above_left_addr >= par->cslice->slice_segment_address /* and in one tile */)
+    if (above_left_addr >= cslice->slice_segment_address /* and in one tile */)
     {
         rasterIdx = numMinTUInLCU * numMinTUInLCU - 1;
         zScanIdx = RasterToZscanTab[rasterIdx];
@@ -650,7 +650,7 @@ void H265CU::GetInitAvailablity()
     }
 
     /* Above */
-    if (above_addr >= par->cslice->slice_segment_address /* and in one tile */)
+    if (above_addr >= cslice->slice_segment_address /* and in one tile */)
     {
         for (i = 0; i < numMinTUInLCU; i++)
         {
@@ -672,7 +672,7 @@ void H265CU::GetInitAvailablity()
     }
 
     /* Above Right*/
-    if (above_right_addr >= par->cslice->slice_segment_address /* and in one tile */)
+    if (above_right_addr >= cslice->slice_segment_address /* and in one tile */)
     {
         for (i = 0; i < numMinTUInLCU; i++)
         {

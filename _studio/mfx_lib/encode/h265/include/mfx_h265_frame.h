@@ -17,7 +17,6 @@ class H265Frame {
 public:
     void *mem;
     H265CUData *cu_data;
-    H265CU *cu;
     Ipp8u *y;
     Ipp8u *u;
     Ipp8u *v;
@@ -48,7 +47,6 @@ public:
         m_pPreviousFrame = m_pFutureFrame = NULL;
         mem = NULL;
         y = u = v = uv = NULL;
-        cu = NULL;
         cu_data = NULL;
         m_PicCodType = 0;
         m_RefPicListResetCount = 0;
@@ -74,7 +72,6 @@ public:
 
         void *_mem = mem;
         H265CUData *_cu_data = cu_data;
-        H265CU *_cu = cu;
         Ipp8u *_y = y;
         Ipp8u *_u = u;
         Ipp8u *_v = v;
@@ -82,7 +79,6 @@ public:
 
         mem = frame->mem;
         cu_data = frame->cu_data;
-        cu = frame->cu;
         y = frame->y;
         u = frame->u;
         v = frame->v;
@@ -90,7 +86,6 @@ public:
 
         frame->mem = _mem;
         frame->cu_data = _cu_data;
-        frame->cu = _cu;
         frame->y = _y;
         frame->u = _u;
         frame->v = _v;

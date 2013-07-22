@@ -19,12 +19,14 @@
 #include "mfx_tools.h"
 #include "vm_thread.h"
 #include "vm_interlocked.h"
+#include "vm_event.h"
 #include "mfx_ext_buffers.h"
 #include <new>
 
 #include "mfx_h265_defs.h"
 #include "umc_structures.h"
 #include "mfx_enc_common.h"
+
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -188,10 +190,26 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     m_frameCountBufferedSync = 0;
     m_frameCountBuffered = 0;
 
+    vm_event_set_invalid(&m_taskParams.parallel_region_done);
+    if (VM_OK != vm_event_init(&m_taskParams.parallel_region_done, 0, 0))
+    {
+        return MFX_ERR_MEMORY_ALLOC;
+    }
+    vm_mutex_set_invalid(&m_taskParams.parallel_region_end_lock);
+    if (VM_OK != vm_mutex_init(&m_taskParams.parallel_region_end_lock)) {
+        return MFX_ERR_MEMORY_ALLOC;
+    }
+
+    m_taskParams.single_thread_selected = 0;
+    m_taskParams.thread_number = 0;
+    m_taskParams.parallel_encoding_finished = false;
+    m_taskParams.parallel_execution_in_progress = false;
+
     m_enc = new H265Encoder();
     MFX_CHECK_STS_ALLOC(m_enc);
 
-    sts = InitEnc();
+    m_enc->mfx_video_encode_h265_ptr = this;
+    sts =  m_enc->Init(&m_mfxVideoParam, &m_mfxExtOpts, &m_mfxHEVCOpts);
     MFX_CHECK_STS(sts);
 
     m_isInitialized = true;
@@ -202,8 +220,12 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 mfxStatus MFXVideoENCODEH265::Close()
 {
     MFX_CHECK(m_isInitialized, MFX_ERR_NOT_INITIALIZED);
+
+    vm_event_destroy(&m_taskParams.parallel_region_done);
+    vm_mutex_destroy(&m_taskParams.parallel_region_end_lock);
+
     if (m_enc) {
-        CloseEnc();
+        m_enc->Close();
         delete m_enc;
         m_enc = NULL;
     }
@@ -213,7 +235,7 @@ mfxStatus MFXVideoENCODEH265::Close()
 
 mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
 {
-    mfxStatus sts;
+//    mfxStatus sts;
 
     MFX_CHECK_NULL_PTR1(par_in);
     MFX_CHECK(m_isInitialized, MFX_ERR_NOT_INITIALIZED);
@@ -223,8 +245,8 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
     m_frameCountBufferedSync = 0;
     m_frameCountBuffered = 0;
 
-    sts = ResetEnc();
-    MFX_CHECK_STS(sts);
+//    sts = m_enc->Reset();
+//    MFX_CHECK_STS(sts);
 
     return MFX_ERR_NONE;
 }
@@ -567,7 +589,7 @@ mfxStatus MFXVideoENCODEH265::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
         // need to call always now
 //        res = Encode(cur_enc, &m_data_in, &m_data_out, p_data_out_ext, picStruct, ctrl, initialSurface);
 
-        mfxRes = Encode(surface, bitstream);
+        mfxRes = m_enc->EncodeFrame(surface, bitstream);
         m_core->DecreaseReference(&(surface->Data));
 
         if (locked)
@@ -575,7 +597,7 @@ mfxStatus MFXVideoENCODEH265::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
 
         m_frameCount++;
     } else {
-        mfxRes = Encode(0, bitstream);
+        mfxRes = m_enc->EncodeFrame(NULL, bitstream);
         //        res = Encode(cur_enc, 0, &m_data_out, p_data_out_ext, 0, 0, 0);
     }
 
@@ -603,57 +625,168 @@ mfxStatus MFXVideoENCODEH265::GetFrameParam(mfxFrameParam * /*par*/)
     return MFX_ERR_UNSUPPORTED;
 }
 
-mfxStatus MFXVideoENCODEH265::InitEnc()
+mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxFrameSurface1 **reordered_surface, mfxEncodeInternalParams *pInternalParams, MFX_ENTRY_POINT *pEntryPoint)
 {
-    // temp buf size - todo reduce
-    Ipp32u bufSize = m_mfxVideoParam.mfx.FrameInfo.Width * m_mfxVideoParam.mfx.FrameInfo.Height * 3 / 2;
+    pEntryPoint->pRoutine = TaskRoutine;
+    pEntryPoint->pCompleteProc = TaskCompleteProc;
+    pEntryPoint->pState = this;
+    pEntryPoint->requiredNumThreads = m_mfxVideoParam.mfx.NumThread;
 
-    m_enc->memBuf = (Ipp8u *)H265_Malloc(sizeof(H265BsReal)*2 +sizeof(H265BsFake) +
-        bufSize + MAX_SLICEHEADER_LEN*2 + DATA_ALIGN * 4);
-    MFX_CHECK_STS_ALLOC(m_enc->memBuf);
+    mfxStatus status = EncodeFrameCheck(ctrl, surface, bs, reordered_surface, pInternalParams);
 
-    m_enc->bs = UMC::align_pointer<H265BsReal*>(m_enc->memBuf, DATA_ALIGN);
-    m_enc->bs_sh = UMC::align_pointer<H265BsReal*>((Ipp8u*)m_enc->bs + sizeof(H265BsReal), DATA_ALIGN);
-    m_enc->bsf = UMC::align_pointer<H265BsFake*>((Ipp8u*)m_enc->bs_sh + sizeof(H265BsReal), DATA_ALIGN);
-    m_enc->bs_sh->m_base.m_pbsBase = UMC::align_pointer<Ipp8u*>((Ipp8u*)m_enc->bsf + sizeof(H265BsFake), DATA_ALIGN);
-    m_enc->bs_sh->m_base.m_maxBsSize = MAX_SLICEHEADER_LEN;
-    m_enc->bs->m_base.m_pbsBase = m_enc->bs_sh->m_base.m_pbsBase + MAX_SLICEHEADER_LEN*2;
-    m_enc->bs->m_base.m_maxBsSize = bufSize;
-    m_enc->bs_sh->Reset();
-    m_enc->bs->Reset();
-    m_enc->bsf->Reset();
+    mfxFrameSurface1 *realSurface = surface;
 
-    return m_enc->Init(&m_mfxVideoParam, &m_mfxExtOpts, &m_mfxHEVCOpts);
-}
-
-mfxStatus MFXVideoENCODEH265::ResetEnc()
-{
-    // todo fixme - implement reset frame management reset
-    m_enc->bs->Reset();
-    m_enc->bsf->Reset();
-    m_enc->bs_sh->Reset();
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus MFXVideoENCODEH265::CloseEnc()
-{
-    m_enc->Close();
-    if (m_enc->memBuf) {
-        H265_Free(m_enc->memBuf);
-        m_enc->memBuf = NULL;
+    if (surface && !realSurface)
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
-    m_enc->bs = NULL;
-    m_enc->bs_sh = NULL;
-    m_enc->bsf = NULL;
+    if (MFX_ERR_NONE == status || MFX_ERR_MORE_DATA_RUN_TASK == status || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == status || MFX_ERR_MORE_BITSTREAM == status)
+    {
+        H265EncodeTaskInputParams *m_pTaskInputParams = (H265EncodeTaskInputParams*)H265_Malloc(sizeof(H265EncodeTaskInputParams));
+        // MFX_ERR_MORE_DATA_RUN_TASK means that frame will be buffered and will be encoded later. Output bitstream isn't required for this task
+        m_pTaskInputParams->bs = (status == MFX_ERR_MORE_DATA_RUN_TASK) ? 0 : bs;
+        m_pTaskInputParams->ctrl = ctrl;
+        m_pTaskInputParams->surface = surface;
+        pEntryPoint->pParam = m_pTaskInputParams;
+    }
 
-    return MFX_ERR_NONE;
-}
+    return status;
 
-mfxStatus MFXVideoENCODEH265::Encode(mfxFrameSurface1 *surface, mfxBitstream *mfxBS)
+} // mfxStatus MFXVideoENCODEVP8::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxFrameSurface1 **reordered_surface, mfxEncodeInternalParams *pInternalParams, MFX_ENTRY_POINT *pEntryPoint)
+
+
+mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
 {
-    return m_enc->EncodeFrame(surface, mfxBS);
-}
+    H265ENC_UNREFERENCED_PARAMETER(threadNumber);
+    H265ENC_UNREFERENCED_PARAMETER(callNumber);
+
+    if (pState == NULL || pParam == NULL)
+    {
+        return MFX_ERR_NULL_PTR;
+    }
+
+    MFXVideoENCODEH265 *th = static_cast<MFXVideoENCODEH265 *>(pState);
+
+    H265EncodeTaskInputParams *pTaskParams = (H265EncodeTaskInputParams*)pParam;
+
+    if (th->m_taskParams.parallel_encoding_finished)
+    {
+        return MFX_TASK_DONE;
+    }
+
+    mfxI32 single_thread_selected = vm_interlocked_cas32(reinterpret_cast<volatile Ipp32u *>(&th->m_taskParams.single_thread_selected), 1, 0);
+    if (!single_thread_selected)
+    {
+        // This task performs all single threaded regions
+        mfxStatus status = th->EncodeFrame(pTaskParams->ctrl, NULL, pTaskParams->surface, pTaskParams->bs);
+        th->m_taskParams.parallel_encoding_finished = true;
+        H265_Free(pParam);
+
+        return status;
+    }
+    else
+    {
+        vm_mutex_lock(&th->m_taskParams.parallel_region_end_lock);
+        if (th->m_taskParams.parallel_execution_in_progress)
+        {
+            // Here we get only when thread that performs single thread work sent event
+            // In this case m_taskParams.thread_number is set to 0, this is the number of single thread task
+            // All other tasks receive their number > 0
+            mfxI32 thread_number = vm_interlocked_inc32(reinterpret_cast<volatile Ipp32u *>(&th->m_taskParams.thread_number));
+
+            mfxStatus status = MFX_ERR_NONE;
+
+            // Some thread finished its work and was called again, but there is no work left for it since
+            // if it finished, the only work remaining is being done by other currently working threads. No
+            // work is possible so thread goes away waiting for maybe another parallel region
+            if (thread_number > th->m_taskParams.num_threads)
+            {
+                vm_mutex_unlock(&th->m_taskParams.parallel_region_end_lock);
+                return MFX_TASK_BUSY;
+            }
+
+            vm_interlocked_inc32(reinterpret_cast<volatile Ipp32u *>(&th->m_taskParams.parallel_executing_threads));
+            vm_mutex_unlock(&th->m_taskParams.parallel_region_end_lock);
+
+            mfxI32 parallel_region_selector = th->m_taskParams.parallel_region_selector;
+
+            if (parallel_region_selector == PARALLEL_REGION_MAIN)
+                th->m_enc->EncodeThread(thread_number);
+            else if (parallel_region_selector == PARALLEL_REGION_DEBLOCKING)
+                th->m_enc->DeblockThread(thread_number);
+
+            vm_interlocked_dec32(reinterpret_cast<volatile Ipp32u *>(&th->m_taskParams.parallel_executing_threads));
+
+            // We're done, let single thread to continue
+            vm_event_signal(&th->m_taskParams.parallel_region_done);
+
+            if (MFX_ERR_NONE == status)
+            {
+                return MFX_TASK_WORKING;
+            }
+            else
+            {
+                return status;
+            }
+        }
+        else
+        {
+            vm_mutex_unlock(&th->m_taskParams.parallel_region_end_lock);
+            return MFX_TASK_BUSY;
+        }
+    }
+
+} // mfxStatus MFXVideoENCODEVP8::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
+
+
+mfxStatus MFXVideoENCODEH265::TaskCompleteProc(void *pState, void *pParam, mfxStatus taskRes)
+{
+    H265ENC_UNREFERENCED_PARAMETER(pParam);
+    H265ENC_UNREFERENCED_PARAMETER(taskRes);
+    if (pState == NULL)
+    {
+        return MFX_ERR_NULL_PTR;
+    }
+
+    MFXVideoENCODEH265 *th = static_cast<MFXVideoENCODEH265 *>(pState);
+
+    th->m_taskParams.single_thread_selected = 0;
+    th->m_taskParams.thread_number = 0;
+    th->m_taskParams.parallel_encoding_finished = false;
+    th->m_taskParams.parallel_execution_in_progress = false;
+
+    return MFX_TASK_DONE;
+
+} // mfxStatus MFXVideoENCODEVP8::TaskCompleteProc(void *pState, void *pParam, mfxStatus taskRes)
+
+void MFXVideoENCODEH265::ParallelRegionStart(Ipp32s num_threads, Ipp32s region_selector) 
+{
+    m_taskParams.parallel_region_selector = region_selector;
+    m_taskParams.thread_number = 0;
+    m_taskParams.parallel_executing_threads = 0;
+    m_taskParams.num_threads = num_threads;
+    m_taskParams.parallel_execution_in_progress = true;
+
+    // Signal scheduler that all busy threads should be unleashed
+    m_core->INeedMoreThreadsInside(this);
+
+} // void MFXVideoENCODEVP8::ParallelRegionStart(threads_fun_type threads_fun, int num_threads, void *threads_data, int threads_data_size) 
+
+
+void MFXVideoENCODEH265::ParallelRegionEnd() 
+{
+    vm_mutex_lock(&m_taskParams.parallel_region_end_lock);
+    // Disable parallel task execution
+    m_taskParams.parallel_execution_in_progress = false;
+    vm_mutex_unlock(&m_taskParams.parallel_region_end_lock);
+
+    // Wait for other threads to finish encoding their last macroblock row
+    while(m_taskParams.parallel_executing_threads > 0)
+    {
+        vm_event_wait(&m_taskParams.parallel_region_done);
+    }
+
+} // void MFXVideoENCODEVP8::ParallelRegionEnd() 
 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE

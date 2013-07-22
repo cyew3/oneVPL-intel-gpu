@@ -84,7 +84,6 @@ class H265CU
 public:
     H265VideoParam *par;
     H265CUData *data;
-    Ipp32s          slice_id;
     Ipp32u          ctb_addr;           ///< CU address in a slice
     Ipp32u          m_uiAbsIdxInLCU;      ///< absolute address in a CU. It's Z scan order
     Ipp32u          ctb_pelx;           ///< CU position in a pixel (X)
@@ -93,9 +92,9 @@ public:
     CoeffsType      tr_coeff_y[MAX_CU_SIZE*MAX_CU_SIZE];
     CoeffsType      tr_coeff_u[MAX_CU_SIZE*MAX_CU_SIZE/4];
     CoeffsType      tr_coeff_v[MAX_CU_SIZE*MAX_CU_SIZE/4];
-    CoeffsType      residuals_y[MAX_CU_SIZE*MAX_CU_SIZE];
-    CoeffsType      residuals_u[MAX_CU_SIZE*MAX_CU_SIZE/4];
-    CoeffsType      residuals_v[MAX_CU_SIZE*MAX_CU_SIZE/4];
+    __ALIGN16 CoeffsType      residuals_y[MAX_CU_SIZE*MAX_CU_SIZE];
+    __ALIGN16 CoeffsType      residuals_u[MAX_CU_SIZE*MAX_CU_SIZE/4];
+    __ALIGN16 CoeffsType      residuals_v[MAX_CU_SIZE*MAX_CU_SIZE/4];
     Ipp8u           inNeighborFlags[4*MAX_CU_SIZE+1];
     Ipp8u           outNeighborFlags[4*MAX_CU_SIZE+1];
     H265CUData*   p_above;          ///< pointer of above CU
@@ -135,6 +134,7 @@ public:
     Ipp8u rd_opt_flag;
     Ipp64f rd_lambda;
     Ipp64f rd_lambda_inter;
+    H265Slice *cslice;
 
     inline bool  isIntra(Ipp32u part_idx)
     { return data[part_idx].pred_mode == MODE_INTRA; }
@@ -335,7 +335,7 @@ public:
 
     void InitCU(H265VideoParam *_par, H265CUData *_data, H265CUData *_data_temp, Ipp32s iCUAddr,
         PixType *_y, PixType *_u, PixType *_v, Ipp32s _pitch_luma, Ipp32s _pitch_chroma,
-        PixType *_y_src, PixType *uv_src, Ipp32s _pitch_src, H265BsFake *_bsf);
+        PixType *_y_src, PixType *uv_src, Ipp32s _pitch_src, H265BsFake *_bsf, H265Slice *cslice, Ipp8u initialize_data_flag);
     void FillRandom(Ipp32u abs_part_idx, Ipp8u depth);
     void ModeDecision(Ipp32u abs_part_idx, Ipp32u offset, Ipp8u depth, CostType *cost);
 

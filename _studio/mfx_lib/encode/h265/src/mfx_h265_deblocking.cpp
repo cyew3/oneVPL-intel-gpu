@@ -113,7 +113,7 @@ void H265CU::DeblockOneCrossChroma(Ipp32s curPixelColumn,
 
     srcDstStride = pitch_rec_chroma;
     baseSrcDst = u_rec + (curPixelRow >> 1) * srcDstStride + (curPixelColumn >> 1);
-    chromaQpOffset = par->cslice->slice_cb_qp_offset;
+    chromaQpOffset = cslice->slice_cb_qp_offset;
 
     for (c = 0; c < 2; c++)
     {
@@ -153,7 +153,7 @@ void H265CU::DeblockOneCrossChroma(Ipp32s curPixelColumn,
         }
 
         baseSrcDst = v_rec + (curPixelRow >> 1) * srcDstStride + (curPixelColumn >> 1);
-        chromaQpOffset = par->cslice->slice_cr_qp_offset;
+        chromaQpOffset = cslice->slice_cr_qp_offset;
     }
 }
 
@@ -594,16 +594,16 @@ void H265CU::SetEdges(Ipp32s width,
     Ipp32s dir;
     Ipp32s i, j, e;
 
+    crossSliceBoundaryFlag = cslice->slice_loop_filter_across_slices_enabled_flag;
+    crossTileBoundaryFlag = 1;
+    tcOffset = cslice->slice_tc_offset_div2 << 1;
+    betaOffset = cslice->slice_beta_offset_div2 << 1;
+
     H265CUPtr aboveLCU;
     getPUAbove(&aboveLCU, 0, 0, false, false, false, 0);
 
 // uncomment to hide false uninitialized memory read warning
 //    memset(&edge, 0, sizeof(edge));
-
-    crossSliceBoundaryFlag = par->cslice->slice_loop_filter_across_slices_enabled_flag;
-    crossTileBoundaryFlag = 1;
-    tcOffset = par->cslice->slice_tc_offset_div2 << 1;
-    betaOffset = par->cslice->slice_beta_offset_div2 << 1;
 
     if (aboveLCU.ctb_data_ptr)
     {

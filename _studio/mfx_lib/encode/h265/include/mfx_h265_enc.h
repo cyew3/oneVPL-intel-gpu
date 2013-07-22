@@ -49,6 +49,7 @@ struct H265VideoParam {
     Ipp8u SBHFlag;  // Sign Bit Hiding
     Ipp8u RDOQFlag; // RDO Quantization
     Ipp8u WPPFlag; // Wavefront
+    Ipp32u num_threads;
 
 // derived
     Ipp32u Width;
@@ -84,10 +85,8 @@ struct H265VideoParam {
     Ipp8s QP;
     Ipp8s QPChroma;
 
-//    H265Encoder *cenc;
     H265SeqParameterSet *csps;
     H265PicParameterSet *cpps;
-    H265Slice *cslice;
     EncoderRefPicList *m_pRefPicList;
     Ipp8u *m_slice_ids;
 };
@@ -107,11 +106,13 @@ struct H265ShortTermRefPicSet
 
 class H265Encoder {
 public:
+    MFXVideoENCODEH265 *mfx_video_encode_h265_ptr;
+
     H265BsReal *bs;
-    H265BsReal *bs_sh; // slice header
     H265BsFake *bsf;
     Ipp8u *memBuf;
     Ipp32s m_frameCountEncoded;
+    H265CU *cu;
 
     H265ProfileLevelSet m_profile_level;
     H265VidParameterSet m_vps;
@@ -120,7 +121,9 @@ public:
     H265VideoParam m_videoParam;
     H265Slice *m_slices;
     H265CUData *data_temp;
+    Ipp32u data_temp_size;
     Ipp8u *m_slice_ids;
+    H265EncoderRowInfo *m_row_info;
 
     EncoderRefPicList *m_pRefPicList;
     Ipp32u m_numShortTermRefPicSets;
@@ -146,17 +149,22 @@ public:
     Ipp8u m_isBpyramid;
     H265ShortTermRefPicSet m_ShortRefPicSet[66];
 
+    volatile Ipp32u m_incRow;
+    CABAC_CONTEXT_H265 *m_context_array_wpp;
+
     H265BRC *m_brc;
 
     H265Encoder() {
-        bs = NULL; bs_sh = NULL; bsf = NULL; memBuf = NULL;
+        memBuf = NULL; bs = NULL; bsf = NULL;
         data_temp = NULL;
         eFrameType = NULL;
         m_slices = NULL;
         m_slice_ids = NULL;
+        m_row_info = NULL;
         m_pCurrentFrame = m_pLastFrame = m_pReconstructFrame = NULL;
         m_pRefPicList = NULL;
         m_brc = NULL;
+        m_context_array_wpp = NULL;
     }
     ~H265Encoder() {};
 ///////////////
@@ -164,10 +172,10 @@ public:
     mfxStatus WriteEndOfSequence(mfxBitstream *bs);
     mfxStatus WriteEndOfStream(mfxBitstream *bs);
     mfxStatus WriteFillerData(mfxBitstream *bs, mfxI32 num);
-    void PutProfileLevel(Ipp8u profile_present_flag, Ipp32s max_sub_layers);
-    mfxStatus PutVPS();
-    mfxStatus PutSPS();
-    mfxStatus PutPPS();
+    void PutProfileLevel(H265BsReal *bs_, Ipp8u profile_present_flag, Ipp32s max_sub_layers);
+    mfxStatus PutVPS(H265BsReal *bs_);
+    mfxStatus PutSPS(H265BsReal *bs_);
+    mfxStatus PutPPS(H265BsReal *bs_);
     mfxStatus PutShortTermRefPicSet(H265BsReal *bs_, Ipp32s idx);
     mfxStatus PutSliceHeader(H265BsReal *bs_, H265Slice *slice);
 
@@ -184,6 +192,8 @@ public:
     void Close();
     Ipp32u DetermineFrameType();
     mfxStatus EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *bs);
+    mfxStatus DeblockThread(Ipp32s ithread);
+    mfxStatus EncodeThread(Ipp32s ithread);
     mfxStatus MoveFromCPBToDPB();
     mfxStatus CleanDPB();
 

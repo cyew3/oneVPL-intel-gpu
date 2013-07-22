@@ -11,6 +11,13 @@
 #ifndef __MFX_H265_SET_H__
 #define __MFX_H265_SET_H__
 
+typedef struct
+{
+    Ipp32s bs_id;
+    Ipp32s offset;
+    Ipp32s size;
+    Ipp32s mt_current_ctb_col;
+} H265EncoderRowInfo;
 
 typedef struct sH265VidParameterSet {
     Ipp8u vps_video_parameter_set_id;
@@ -197,6 +204,9 @@ public:
     Ipp8u RapPicFlag;
     Ipp32s slice_num;
     Ipp32u slice_address_last_ctb;
+    Ipp32u row_first;
+    Ipp32u row_last;
+    H265EncoderRowInfo m_row_info;
 
     Ipp32s m_NumRefsInL0List;
     Ipp32s m_NumRefsInL1List;

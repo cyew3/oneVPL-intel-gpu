@@ -11,7 +11,19 @@
 #ifndef __MFX_H265_DEFS_H__
 #define __MFX_H265_DEFS_H__
 
-#pragma warning(disable: 4100; disable: 4505; disable: 4127)
+#pragma warning(disable: 4100; disable: 4505; disable: 4127; disable: 4324)
+
+#if (defined(__INTEL_COMPILER) || defined(_MSC_VER)) && !defined(_WIN32_WCE)
+#define __ALIGN16 __declspec (align(16))
+#define __ALIGN8 __declspec (align(8))
+#elif defined(__GNUC__)
+#define __ALIGN16 __attribute__ ((aligned (16)))
+#define __ALIGN8 __attribute__ ((aligned (8)))
+#else
+#define __ALIGN16
+#define __ALIGN8
+#endif
+
 
 #define H265_Malloc  ippMalloc
 #define H265_Free    ippFree
@@ -28,8 +40,6 @@ extern int DEBUG_CABAC_PRINT;
 #define BIT_COST_SHIFT 8
 #define NUM_CAND_MAX_1 36
 #define NUM_CAND_MAX_2 36
-
-#define MAX_SLICEHEADER_LEN 1024
 
 #define MAX_NUM_REF_FRAMES  32
 

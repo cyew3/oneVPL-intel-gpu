@@ -58,12 +58,12 @@ bool H265CU::CheckIdenticalMotion(Ipp32u abs_part_idx)
 {
     EncoderRefPicListStruct *pList[2];
     T_RefIdx ref_idx[2];
-    pList[0] = &(par->cslice->m_pRefPicList[0].m_RefPicListL0);
-    pList[1] = &(par->cslice->m_pRefPicList[0].m_RefPicListL1);
+    pList[0] = &(cslice->m_pRefPicList[0].m_RefPicListL0);
+    pList[1] = &(cslice->m_pRefPicList[0].m_RefPicListL1);
     ref_idx[0] = data[abs_part_idx].ref_idx[0];
     ref_idx[1] = data[abs_part_idx].ref_idx[1];
 // TODO optimize: check B_SLISE && !weighted on entrance, POC after mv matched
-    if(par->cslice->slice_type == B_SLICE && !par->cpps->weighted_bipred_flag)
+    if(cslice->slice_type == B_SLICE && !par->cpps->weighted_bipred_flag)
     {
         if(ref_idx[0] >= 0 && ref_idx[1] >= 0)
         {
@@ -295,8 +295,8 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height,
     Ipp32s PUStartRow = PURasterIdx >> maxDepth;
     Ipp32s PUStartColumn = PURasterIdx & (numMinTUInLCU - 1);
 
-    pList[0] = &(par->cslice->m_pRefPicList[0].m_RefPicListL0);
-    pList[1] = &(par->cslice->m_pRefPicList[0].m_RefPicListL1);
+    pList[0] = &(cslice->m_pRefPicList[0].m_RefPicListL0);
+    pList[1] = &(cslice->m_pRefPicList[0].m_RefPicListL1);
     Ipp32s RefIdx = data[PartAddr].ref_idx[RefPicList];
     VM_ASSERT(RefIdx >= 0);
 
@@ -661,7 +661,7 @@ void H265CU::InterPredCU(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u is_luma)
     Ipp32s PartAddr;
     Ipp32s PartX, PartY, Width, Height;
     Ipp32u num_parts = ( par->NumPartInCU >> (depth<<1) );
-    Ipp8u weighted_prediction = par->cslice->slice_type == P_SLICE ? par->cpps->weighted_pred_flag :
+    Ipp8u weighted_prediction = cslice->slice_type == P_SLICE ? par->cpps->weighted_pred_flag :
         par->cpps->weighted_bipred_flag;
 
     for (Ipp32s PartIdx = 0; PartIdx < getNumPartInter(abs_part_idx); PartIdx++)
@@ -688,7 +688,7 @@ void H265CU::InterPredCU(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u is_luma)
                 if (RefIdx[RefList] < 0)
                     continue;
 
-                VM_ASSERT(RefIdx[RefList] < par->cslice->num_ref_idx[RefPicList]);
+                VM_ASSERT(RefIdx[RefList] < cslice->num_ref_idx[RefPicList]);
 
                 // FIXME: Unneeded copy is done to temporary buffer, instead it is possible to do interpolation right to
                 // pPredYUV in case only one reference is used

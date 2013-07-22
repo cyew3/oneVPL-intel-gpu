@@ -106,8 +106,6 @@ public:
 
     H265BsBase m_base;
 
-    CABAC_CONTEXT_H265 context_array_wpp[NUM_CABAC_CONTEXT];
-
     void Reset();
 
     void PutBit(Ipp32u code);
@@ -141,13 +139,11 @@ public:
 
     int isReal() { return 1; }
 
-    void JoinHeadBytes(H265BsReal *bs_before);
-
-    void CtxSaveWPP() {
+    void CtxSaveWPP(CABAC_CONTEXT_H265 *context_array_wpp) {
         memcpy(context_array_wpp, m_base.context_array,
             h265_ctxIdxOffset[END_OF_SLICE_FLAG_HEVC] * sizeof(CABAC_CONTEXT_H265));
     }
-    void CtxRestoreWPP() {
+    void CtxRestoreWPP(CABAC_CONTEXT_H265 *context_array_wpp) {
         memcpy(m_base.context_array, context_array_wpp,
             h265_ctxIdxOffset[END_OF_SLICE_FLAG_HEVC] * sizeof(CABAC_CONTEXT_H265));
         m_base.context_array[h265_ctxIdxOffset[END_OF_SLICE_FLAG_HEVC]] = 63;

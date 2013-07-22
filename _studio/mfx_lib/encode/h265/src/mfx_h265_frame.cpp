@@ -33,7 +33,7 @@ mfxStatus H265Frame::Create(H265VideoParam *par)
     padding = par->MaxCUSize + 16;
 
     width = par->Width;
-    height = par->Height;;
+    height = par->Height;
 
     Ipp32s plane_size = (width + padding * 2) * (height + padding * 2);
 
@@ -42,15 +42,13 @@ mfxStatus H265Frame::Create(H265VideoParam *par)
 
 
     Ipp32s len = numCtbs_parts * sizeof(H265CUData) + ALIGN_VALUE;
-    len += sizeof(H265CU) + ALIGN_VALUE;
     len += plane_size * 3 / 2 + ALIGN_VALUE*3;
 
     mem = H265_Malloc(len);
     MFX_CHECK_NULL_PTR1(len);
 
     cu_data = align_pointer<H265CUData *> (mem, ALIGN_VALUE);
-    cu = align_pointer<H265CU *> (cu_data + numCtbs_parts, ALIGN_VALUE);
-    y = align_pointer<Ipp8u *> (cu + 1, ALIGN_VALUE);
+    y = align_pointer<Ipp8u *> (cu_data + numCtbs_parts, ALIGN_VALUE);
     u = align_pointer<Ipp8u *> (y + plane_size, ALIGN_VALUE);
     v = align_pointer<Ipp8u *> (u + plane_size / 4, ALIGN_VALUE);
     uv = u;
@@ -59,8 +57,6 @@ mfxStatus H265Frame::Create(H265VideoParam *par)
     u += (pitch_chroma + 1) * padding >> 1;
     v += (pitch_chroma + 1) * padding >> 1;
     uv += (pitch_luma * padding >> 1) + padding;
-
-    memset(cu, 0, sizeof(H265CU));
 
     return MFX_ERR_NONE;
 }
@@ -146,8 +142,8 @@ void H265Frame::Dump(H265VideoParam *par, H265FrameList *dpb, Ipp32s frame_num)
 //    mfxU8 buf[2048];
     FILE *f;
     mfxU8* fbuf = NULL;
-    Ipp32s W = par->Width;
-    Ipp32s H = par->Height;
+    Ipp32s W = par->Width - par->CropRight;
+    Ipp32s H = par->Height - par->CropBottom;
 //    mfxU8* fbuf = 0;
 //    sprintf(fname, "rec%dx%d_l%d_q%d.yuv", W, H, core_enc->m_svc_layer.svc_ext.dependency_id, core_enc->m_svc_layer.svc_ext.quality_id);
 
