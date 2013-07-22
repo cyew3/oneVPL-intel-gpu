@@ -485,6 +485,7 @@ bool MFXStructureRef<mfxExtAVCRefListCtrl>::DeSerialize(const tstring & refStr, 
 
     DESERIALIZE_INT(NumRefIdxL0Active);
     DESERIALIZE_INT(NumRefIdxL1Active);
+    DESERIALIZE_INT(ApplyLongTermIdx);
 
     DESERIALIZE_ARRAY_SIZE(PreferredRefList, nPreferred);
     DESERIALIZE_ARRAY_SIZE(RejectedRefList, nRejected);
@@ -522,7 +523,9 @@ bool MFXStructureRef<mfxExtAVCRefListCtrl>::DeSerialize(const tstring & refStr, 
         if (i < nLongTerm)
         {
             DESERIALIZE_INT(LongTermRefList[i].FrameOrder);
-            DESERIALIZE_INT(LongTermRefList[i].LongTermIdx);
+            if (1 == m_pStruct->ApplyLongTermIdx) {
+                DESERIALIZE_INT(LongTermRefList[i].LongTermIdx);
+            }
         }else
         {
             m_pStruct->LongTermRefList[i].FrameOrder = (mfxU32)MFX_FRAMEORDER_UNKNOWN;

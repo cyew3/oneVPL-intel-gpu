@@ -759,7 +759,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             m_bResetParamsStart   = false;
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-ref_list"), VM_STRING("reference list selection for givven frames interval"), OPT_SPECIAL
-            , VM_STRING("start_frame end_frame NumRefFrameL0 NumRefFrameL1 <preferredArray Lenght> <rejectedArray Lenght> <longTermdArray Lenght> [array:PreferredRefList:{FrameOrder}] [array:RejectedRefList:{FrameOrder}] [array:LongTermRefLis:{<FrameOrder> <space> <LongTermIdx>} ]")))
+            , VM_STRING("start_frame end_frame NumRefFrameL0 NumRefFrameL1 ApplyLongTermIdx <preferredArray Lenght> <rejectedArray Lenght> <longTermdArray Lenght> [array:PreferredRefList:{FrameOrder}] [array:RejectedRefList:{FrameOrder}] [array:LongTermRefLis:{<FrameOrder>[ <space> <LongTermIdx>} ]]")))
         {
             MFX_CHECK(3 + argv < argvEnd);
             mfxU32 nStartFrame, nFinishFrame;
