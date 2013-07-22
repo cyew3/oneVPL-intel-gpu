@@ -163,9 +163,7 @@ mfxStatus MFXAudioENCODE_Init(mfxSession session, mfxAudioParam *par)
         if (0 == session)
         {
             mfxRes = MFX_ERR_INVALID_HANDLE;
-        }
-
-        if (0 != session && 0 == session->m_pAudioENCODE.get())
+        } else if (0 == session->m_pAudioENCODE.get())
         {
             mfxRes = MFX_ERR_INVALID_AUDIO_PARAM;
         }
@@ -228,6 +226,7 @@ mfxStatus MFXAudioENCODE_EncodeFrameAsync(mfxSession session, mfxBitstream *bs, 
 #endif
 
     MFX_CHECK(bs, MFX_ERR_NULL_PTR);
+    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     MFX_CHECK(session->m_pAudioENCODE.get(), MFX_ERR_NOT_INITIALIZED);
 
     try
