@@ -165,7 +165,7 @@ mfxStatus MFXAudioENCODE_Init(mfxSession session, mfxAudioParam *par)
             mfxRes = MFX_ERR_INVALID_HANDLE;
         }
 
-        if (0 == session->m_pAudioENCODE.get())
+        if (0 != session && 0 == session->m_pAudioENCODE.get())
         {
             mfxRes = MFX_ERR_INVALID_AUDIO_PARAM;
         }
