@@ -286,6 +286,9 @@ mfxStatus MFXAudioDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs ,
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, bs);
 #endif
 
+    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
+    MFX_CHECK(session->m_pAudioDECODE.get(), MFX_ERR_NOT_INITIALIZED);
+
     try
     {
         mfxSyncPoint syncPoint = NULL;
