@@ -782,7 +782,7 @@ mfxBRCStatus H265BRC::UpdateQuantHRD(mfxI32 totalFrameBits, mfxBRCStatus sts, mf
         mHRD.underflowQuant = quant;
 
     qstep = QP2Qstep(quant);
-    qstep_new = qstep * (mfxF64)wantedBits / bEncoded;
+    qstep_new = qstep * (mfxF64)bEncoded / wantedBits;
 
     quant = Qstep2QP(qstep_new);
     if (quant == quant_prev)
