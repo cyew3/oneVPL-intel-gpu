@@ -754,7 +754,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
         request.Info.Width  = m_video.mfx.FrameInfo.Width  / 16 * sizeof(mfxI16Pair) * 2;
         request.Info.Height = m_video.mfx.FrameInfo.Height / 16;
-        request.Info.FourCC = MFX_FOURCC_P8;
+        request.Info.FourCC = D3DFMT_A8;
         request.Type        = MFX_MEMTYPE_D3D_INT;
         request.NumFrameMin = 1 + !!(m_video.AsyncDepth > 1);
 
@@ -1529,7 +1529,6 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
                 break;
             }
-
             task.m_bs = bs;
             for (mfxU32 f = 0; f <= task.m_fieldPicFlag; f++)
                 if ((sts = UpdateBitstream(task, task.m_fid[f])) != MFX_ERR_NONE)
