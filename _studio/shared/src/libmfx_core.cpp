@@ -127,19 +127,6 @@ mfxStatus CommonCORE::AllocFrames(mfxFrameAllocRequest *request,
 
     if (IsOpaqSurfacesAlreadyMapped(pOpaqueSurface, NumOpaqueSurface, response))
     {
-        // encoder allocates surfaces for vpp out
-        // check that for DX11 they have MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET BingFlags
-        if (MFX_HW_D3D11 == this->GetVAType())
-        {
-            if(request->Type & MFX_MEMTYPE_FROM_VPPOUT)
-            {
-                if (!(request->Type & MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET))
-                {
-                    return MFX_ERR_INVALID_VIDEO_PARAM;
-                }
-            }
-        }
-
         return MFX_ERR_NONE;
     }
 

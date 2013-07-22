@@ -157,6 +157,18 @@ mfxStatus VideoVPPMain::Init(mfxVideoParam *par)
                                          pOpaqAlloc->Out.NumSurface);
 
             MFX_CHECK_STS( mfxSts );
+
+            // additional check for case when encoder allocates surfaces for vpp out
+            // check that for DX11 they have MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET BingFlags
+            if (MFX_HW_D3D11 == m_core->GetVAType())
+            {
+                if (!(requestOpaq.Type & MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET))
+                {
+                    mfxSts = MFX_ERR_INVALID_VIDEO_PARAM;
+                }
+            }
+
+            MFX_CHECK_STS( mfxSts );
         }
     }
     
