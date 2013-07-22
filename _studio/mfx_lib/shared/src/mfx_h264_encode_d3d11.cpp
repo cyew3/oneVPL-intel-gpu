@@ -252,11 +252,13 @@ mfxStatus D3D11Encoder::QueryMbPerSec(mfxVideoParam const & par, mfxU32 (&mbPerS
 {
     HRESULT hRes;
     ENCODE_QUERY_PROCESSING_RATE_INPUT inPar;
-    inPar.GopPicSize = par.mfx.GopPicSize;
-    inPar.GopRefDist = (mfxU8)par.mfx.GopRefDist;
-    inPar.Level = (mfxU8)par.mfx.CodecLevel;
-    inPar.Profile = (mfxU8)par.mfx.CodecProfile;
-    inPar.TargetUsage = (mfxU8)par.mfx.TargetUsage;
+    // Some encoding parameters affect MB processibng rate. Pass them to driver.
+    // DDI driver programming notes require to send 0x(ff) for undefined parameters
+    inPar.GopPicSize = par.mfx.GopPicSize ? par.mfx.GopPicSize : 0xffff;
+    inPar.GopRefDist = (mfxU8)(par.mfx.GopRefDist ? par.mfx.GopRefDist : 0xff);
+    inPar.Level = (mfxU8)(par.mfx.CodecLevel ? par.mfx.CodecLevel : 0xff);
+    inPar.Profile = (mfxU8)(par.mfx.CodecProfile ? par.mfx.CodecProfile : 0xff);
+    inPar.TargetUsage = (mfxU8)(par.mfx.TargetUsage ? par.mfx.TargetUsage : 0xff);
     D3D11_VIDEO_DECODER_EXTENSION decoderExtParam;
     decoderExtParam.Function = ENCODE_QUERY_MAX_MB_PER_SEC_ID;
     decoderExtParam.pPrivateInputData = &inPar;
