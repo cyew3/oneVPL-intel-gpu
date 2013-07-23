@@ -92,6 +92,23 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr,
         height = maxCUSize;
     }
 
+#ifdef _DEBUG
+    if (curLCU->m_CUPelX == 0)
+    {
+        for (j = 0; j < 9; j++)
+            for (i = 0; i < 9; i++)
+                for (Ipp32s e = 0; e < 4; e++)
+                    m_edge[j][i][e].strength = 100;
+    }
+    else
+    {
+        for (j = 0; j < maxCUSize >> 3; j++)
+            for (i = 0; i < maxCUSize >> 3; i++)
+                for (Ipp32s e = 0; e < 4; e++)
+                    m_edge[j][i][e].strength = 100;
+    }
+#endif
+
     if (pSlice->getDeblockingFilterDisable())
     {
         for (j = 0; j < (height >> 3); j++)
@@ -201,6 +218,7 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU,
         {
             edge = &m_edge[y + ((i + 1) >> 1)][x + 1][(i + 1) & 1];
 
+            VM_ASSERT(edge->strength < 3);
             if (edge->strength > 0)
             {
                 FilterEdgeLuma(edge, baseSrcDst + 4 * (i - 1) * srcDstStride,
@@ -228,6 +246,7 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU,
         {
             edge = &m_edge[y + 1][x + ((i + 1) >> 1)][((i + 1) & 1) + 2];
 
+            VM_ASSERT(edge->strength < 3);
             if (edge->strength > 0)
             {
                 FilterEdgeLuma(edge, baseSrcDst + 4 * (i - 1),
@@ -295,6 +314,7 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU,
         {
             edge = &m_edge[y + i][x + 1][0];
 
+            VM_ASSERT(edge->strength < 3);
             if (edge->strength > 1)
             {
                 FilterEdgeChroma(edge, baseSrcDst + 4 * (i - 1) * srcDstStride,
@@ -322,6 +342,7 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU,
         {
             edge = &m_edge[y + 1][x + i][2];
 
+            VM_ASSERT(edge->strength < 3);
             if (edge->strength > 1)
             {
                 FilterEdgeChroma(edge, baseSrcDst + 4 * (i - 1) * 2,
@@ -822,10 +843,12 @@ void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
 #endif
                     }
                 }
+                for (; i < maxCUSize; i += 8)
+                    m_edge[0][(i >> 3) + 1][0].strength = m_edge[0][(i >> 3) + 1][1].strength = 0;
             }
             else
             {
-                for (i = 0; i < width; i += 8)
+                for (i = 0; i < maxCUSize; i += 8)
                 {
                     for (e = 0; e < 2; e++)
                     {
@@ -836,7 +859,7 @@ void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
         }
         else
         {
-            for (i = 0; i < width; i += 8)
+            for (i = 0; i < maxCUSize; i += 8)
             {
                 for (e = 0; e < 2; e++)
                 {
@@ -885,22 +908,24 @@ void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
 #endif
                     }
                 }
+                for (; j < maxCUSize; j += 8)
+                    m_edge[(j >> 3) + 1][0][2].strength = m_edge[(j >> 3) + 1][0][3].strength = 0;
             }
             else
             {
-                for (j = 0; j < (height >> 3); j++)
+                for (j = 0; j < (maxCUSize >> 3); j++)
                 {
-                    m_edge[j+1][0][2].strength = 0;
-                    m_edge[j+1][0][3].strength = 0;
+                    m_edge[j + 1][0][2].strength = 0;
+                    m_edge[j + 1][0][3].strength = 0;
                 }
             }
         }
         else
         {
-            for (j = 0; j < (height >> 3); j++)
+            for (j = 0; j < (maxCUSize >> 3); j++)
             {
-                m_edge[j+1][0][2].strength = 0;
-                m_edge[j+1][0][3].strength = 0;
+                m_edge[j + 1][0][2].strength = 0;
+                m_edge[j + 1][0][3].strength = 0;
             }
         }
     }
@@ -908,18 +933,18 @@ void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
     {
         if (curLCU->m_CUPelX == 0)
         {
-            for (j = 0; j < (height >> 3); j++)
+            for (j = 0; j < (maxCUSize >> 3); j++)
             {
-                m_edge[j+1][0][2].strength = 0;
-                m_edge[j+1][0][3].strength = 0;
+                m_edge[j + 1][0][2].strength = 0;
+                m_edge[j + 1][0][3].strength = 0;
             }
         }
         else
         {
-            for (j = 0; j < (height >> 3); j++)
+            for (j = 0; j < (maxCUSize >> 3); j++)
             {
-                m_edge[j+1][0][2] = m_edge[j+1][maxCUSize >> 3][2];
-                m_edge[j+1][0][3] = m_edge[j+1][maxCUSize >> 3][3];
+                m_edge[j + 1][0][2] = m_edge[j + 1][maxCUSize >> 3][2];
+                m_edge[j + 1][0][3] = m_edge[j + 1][maxCUSize >> 3][3];
             }
         }
     }
@@ -987,7 +1012,14 @@ void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
             }
 #endif
         }
+        for (; i < maxCUSize; i += 8)
+            m_edge[(j >> 3) + 1][(i >> 3) + 1][0].strength = m_edge[(j >> 3) + 1][(i >> 3) + 1][1].strength =
+            m_edge[(j >> 3) + 1][(i >> 3) + 1][2].strength = m_edge[(j >> 3) + 1][(i >> 3) + 1][3].strength = 0;
     }
+    for (; j < maxCUSize; j += 8)
+        for (i = 0; i < maxCUSize; i += 8)
+            m_edge[(j >> 3) + 1][(i >> 3) + 1][0].strength = m_edge[(j >> 3) + 1][(i >> 3) + 1][1].strength =
+            m_edge[(j >> 3) + 1][(i >> 3) + 1][2].strength = m_edge[(j >> 3) + 1][(i >> 3) + 1][3].strength = 0;
 }
 
 
