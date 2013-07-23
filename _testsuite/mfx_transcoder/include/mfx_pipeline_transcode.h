@@ -10,8 +10,7 @@ File Name: .h
 
 \* ****************************************************************************** */
 
-#ifndef __MFX_PIPELINE_TRANSCODE_H
-#define __MFX_PIPELINE_TRANSCODE_H
+#pragma once
 
 #include "mfx_ipipeline.h"
 #include "mfx_pipeline_dec.h"
@@ -185,7 +184,3 @@ protected:
 };
 
 
-////////////////////////////////////////////////////////////////////
-
-
-#endif //__MFX_PIPELINE_TRANSCODE_H

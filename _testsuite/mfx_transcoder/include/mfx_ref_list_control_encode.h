@@ -15,7 +15,7 @@ File Name: .h
 #include "mfx_icurrent_frame_ctrl.h"
 #include "mfx_ivideo_encode.h"
 #include "mfx_extended_buffer.h"
-#include "mfx_icurrent_frame_ctrl.h"
+
 
 class RefListControlEncode 
     : public InterfaceProxy<IVideoEncode>
