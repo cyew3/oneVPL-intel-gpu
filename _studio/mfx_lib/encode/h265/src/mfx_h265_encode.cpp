@@ -113,6 +113,10 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
     H265ENC_UNREFERENCED_PARAMETER(pInternalParams);
     MFX_CHECK(bs->MaxLength > (bs->DataOffset + bs->DataLength),MFX_ERR_UNDEFINED_BEHAVIOR);
 
+    Ipp32u minBufferSize = m_mfxVideoParam.mfx.FrameInfo.Width * m_mfxVideoParam.mfx.FrameInfo.Height * 3 / 2;
+    if( bs->MaxLength - bs->DataOffset - bs->DataLength < minBufferSize)
+        return MFX_ERR_NOT_ENOUGH_BUFFER;
+
     if (surface)
     { // check frame parameters
         MFX_CHECK(surface->Info.ChromaFormat == m_mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_ERR_INVALID_VIDEO_PARAM);
@@ -173,7 +177,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     mfxVideoH265InternalParam *par = &inInt;
 
     if (!par->mfx.BufferSizeInKB)
-        par->mfx.BufferSizeInKB = 100; //temp
+        par->mfx.BufferSizeInKB = par->mfx.FrameInfo.Width * par->mfx.FrameInfo.Height * 3 / 2000 + 1; //temp
 
     memset(&m_mfxVideoParam,0,sizeof(mfxVideoParam));
     if (opts_in) m_mfxExtOpts = *opts_in;
