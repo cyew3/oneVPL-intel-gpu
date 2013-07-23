@@ -17,8 +17,6 @@
 #include "h265_tr_quant.h"
 #include "umc_h265_frame_info.h"
 
-//#define SPLIT_INTRA
-
 namespace UMC_HEVC_DECODER
 {
 
@@ -32,13 +30,14 @@ DecodingContext::DecodingContext()
     m_CurrCTBFlags = 0;
     m_CurrCTB = 0;
     m_CurrCTBStride = 0;
+
+    m_needToSplitDecAndRec = true;
 }
 
 void DecodingContext::Reset()
 {
-#ifdef SPLIT_INTRA
-    ResetRowBuffer();
-#endif
+    if (m_needToSplitDecAndRec)
+        ResetRowBuffer();
 }
 
 void DecodingContext::Init(H265Slice *slice)
@@ -72,9 +71,10 @@ void DecodingContext::Init(H265Slice *slice)
     m_refPicList[0] = m_frame->GetRefPicList(sliceNum, REF_PIC_LIST_0)->m_refPicList;
     m_refPicList[1] = m_frame->GetRefPicList(sliceNum, REF_PIC_LIST_1)->m_refPicList;
 
-#ifdef SPLIT_INTRA
-    ResetRowBuffer();
-#endif
+    if (m_needToSplitDecAndRec && !slice->getDependentSliceSegmentFlag())
+        ResetRowBuffer();
+
+    m_mvsDistortion = 0;
 }
 
 void DecodingContext::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr)
@@ -214,7 +214,8 @@ H265SegmentDecoder::H265SegmentDecoder(TaskBroker_H265 * pTaskBroker)
 
     m_MaxDepth = 0;
 
-    m_context = new DecodingContext();
+    m_context = 0;
+    m_context_single_thread.reset(new DecodingContext());
 } // H265SegmentDecoder::H265SegmentDecoder(H264SliceStore &Store)
 
 H265SegmentDecoder::~H265SegmentDecoder(void)
@@ -849,8 +850,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
     FinishDecodeCU(pCU, AbsPartIdx, Depth, IsLast);
     UpdateNeighborBuffers(pCU, AbsPartIdx, false);
 
-#if defined(SPLIT_INTRA)
-    if (MODE_INTRA == PredMode)
+    if (MODE_INTRA == PredMode && m_context->m_needToSplitDecAndRec)
     {
         Ipp32u InitTrDepth = (pCU->GetPartitionSize(AbsPartIdx) == SIZE_2Nx2N ? 0 : 1);
         Ipp32u NumPart = pCU->getNumPartInter(AbsPartIdx);
@@ -862,7 +862,6 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
             DecodeIntraNeighborsRec(pCU, AbsPartIdx + PU * NumQParts, InitTrDepth);
         }
     }
-#endif
 }
 
 void H265SegmentDecoder::DecodeIntraNeighborsRec(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u TrDepth)
@@ -2663,45 +2662,47 @@ void H265SegmentDecoder::IntraRecLumaBlk(H265CodingUnit* pCU,
     Ipp32s NumUnitsInCU = Size >> m_pSeqParamSet->log2_min_transform_block_size;
 
     H265CodingUnit::IntraNeighbors *intraNeighbor = &pCU->m_intraNeighbors[0][AbsPartIdx];
-#if !defined(SPLIT_INTRA)
-    intraNeighbor->numIntraNeighbors = 0;
 
-    // below left
-    if (XInc > 0 && g_RasterToZscan[g_ZscanToRaster[AbsPartIdx] - 1 + NumUnitsInCU * m_pSeqParamSet->NumPartitionsInCUSize] > AbsPartIdx)
+    if (!m_context->m_needToSplitDecAndRec)
     {
-        for (Ipp32s i = 0; i < NumUnitsInCU; i++)
-            intraNeighbor->neighborAvailable[NumUnitsInCU - 1 - i] = false;
-    }
-    else
-    {
-        intraNeighbor->numIntraNeighbors += isIntraBelowLeftAvailable(TUPartNumberInCTB - 1 + NumUnitsInCU * m_context->m_CurrCTBStride, PartY, YInc, NumUnitsInCU, intraNeighbor->neighborAvailable + NumUnitsInCU - 1);
-    }
+        intraNeighbor->numIntraNeighbors = 0;
 
-    // left
-    intraNeighbor->numIntraNeighbors += isIntraLeftAvailable(TUPartNumberInCTB - 1, NumUnitsInCU, intraNeighbor->neighborAvailable + (NumUnitsInCU * 2) - 1);
-
-    // above left
-    intraNeighbor->neighborAvailable[NumUnitsInCU * 2] = m_context->m_CurrCTBFlags[TUPartNumberInCTB - 1 - m_context->m_CurrCTBStride].members.IsAvailable &&
-        (m_context->m_CurrCTBFlags[TUPartNumberInCTB - 1 - m_context->m_CurrCTBStride].members.IsIntra || !m_pPicParamSet->constrained_intra_pred_flag);
-    intraNeighbor->numIntraNeighbors += (Ipp32s)(intraNeighbor->neighborAvailable[NumUnitsInCU * 2]);
-
-    // above
-    intraNeighbor->numIntraNeighbors += isIntraAboveAvailable(TUPartNumberInCTB - m_context->m_CurrCTBStride, NumUnitsInCU, intraNeighbor->neighborAvailable + (NumUnitsInCU * 2) + 1);
-    
-    // above right
-    if (YInc > 0 && g_RasterToZscan[g_ZscanToRaster[AbsPartIdx] + NumUnitsInCU - m_pSeqParamSet->NumPartitionsInCUSize] > AbsPartIdx)
-    {
-        for (Ipp32s i = 0; i < NumUnitsInCU; i++)
-            intraNeighbor->neighborAvailable[NumUnitsInCU * 3 + 1 + i] = false;
-    }
-    else
-    {
-        if (YInc == 0)
-            intraNeighbor->numIntraNeighbors += isIntraAboveRightAvailableOtherCTB(PartX, NumUnitsInCU, intraNeighbor->neighborAvailable + (NumUnitsInCU * 3) + 1);
+        // below left
+        if (XInc > 0 && g_RasterToZscan[g_ZscanToRaster[AbsPartIdx] - 1 + NumUnitsInCU * m_pSeqParamSet->NumPartitionsInCUSize] > AbsPartIdx)
+        {
+            for (Ipp32s i = 0; i < NumUnitsInCU; i++)
+                intraNeighbor->neighborAvailable[NumUnitsInCU - 1 - i] = false;
+        }
         else
-            intraNeighbor->numIntraNeighbors += isIntraAboveRightAvailable(TUPartNumberInCTB + NumUnitsInCU - m_context->m_CurrCTBStride, PartX, XInc, NumUnitsInCU, intraNeighbor->neighborAvailable + (NumUnitsInCU * 3) + 1);
+        {
+            intraNeighbor->numIntraNeighbors += isIntraBelowLeftAvailable(TUPartNumberInCTB - 1 + NumUnitsInCU * m_context->m_CurrCTBStride, PartY, YInc, NumUnitsInCU, intraNeighbor->neighborAvailable + NumUnitsInCU - 1);
+        }
+
+        // left
+        intraNeighbor->numIntraNeighbors += isIntraLeftAvailable(TUPartNumberInCTB - 1, NumUnitsInCU, intraNeighbor->neighborAvailable + (NumUnitsInCU * 2) - 1);
+
+        // above left
+        intraNeighbor->neighborAvailable[NumUnitsInCU * 2] = m_context->m_CurrCTBFlags[TUPartNumberInCTB - 1 - m_context->m_CurrCTBStride].members.IsAvailable &&
+            (m_context->m_CurrCTBFlags[TUPartNumberInCTB - 1 - m_context->m_CurrCTBStride].members.IsIntra || !m_pPicParamSet->constrained_intra_pred_flag);
+        intraNeighbor->numIntraNeighbors += (Ipp32s)(intraNeighbor->neighborAvailable[NumUnitsInCU * 2]);
+
+        // above
+        intraNeighbor->numIntraNeighbors += isIntraAboveAvailable(TUPartNumberInCTB - m_context->m_CurrCTBStride, NumUnitsInCU, intraNeighbor->neighborAvailable + (NumUnitsInCU * 2) + 1);
+    
+        // above right
+        if (YInc > 0 && g_RasterToZscan[g_ZscanToRaster[AbsPartIdx] + NumUnitsInCU - m_pSeqParamSet->NumPartitionsInCUSize] > AbsPartIdx)
+        {
+            for (Ipp32s i = 0; i < NumUnitsInCU; i++)
+                intraNeighbor->neighborAvailable[NumUnitsInCU * 3 + 1 + i] = false;
+        }
+        else
+        {
+            if (YInc == 0)
+                intraNeighbor->numIntraNeighbors += isIntraAboveRightAvailableOtherCTB(PartX, NumUnitsInCU, intraNeighbor->neighborAvailable + (NumUnitsInCU * 3) + 1);
+            else
+                intraNeighbor->numIntraNeighbors += isIntraAboveRightAvailable(TUPartNumberInCTB + NumUnitsInCU - m_context->m_CurrCTBStride, PartX, XInc, NumUnitsInCU, intraNeighbor->neighborAvailable + (NumUnitsInCU * 3) + 1);
+        }
     }
-#endif
 
     InitNeighbourPatternLuma(pCU, AbsPartIdx, TrDepth,
         m_Prediction->GetPredicBuf(),
@@ -2767,36 +2768,37 @@ void H265SegmentDecoder::IntraRecChromaBlk(H265CodingUnit* pCU,
 
     // TODO: Use neighbours information from Luma block
     H265CodingUnit::IntraNeighbors *intraNeighbor = &pCU->m_intraNeighbors[1][AbsPartIdx];
-#if !defined(SPLIT_INTRA)
-    intraNeighbor->numIntraNeighbors = 0;
-
-    if (XInc > 0 && g_RasterToZscan[g_ZscanToRaster[AbsPartIdx] - 1 + NumUnitsInCU * m_pSeqParamSet->NumPartitionsInCUSize] > AbsPartIdx)
+    if (!m_context->m_needToSplitDecAndRec)
     {
-        for (Ipp32s i = 0; i < NumUnitsInCU; i++)
-            intraNeighbor->neighborAvailable[NumUnitsInCU - 1 - i] = false;
-    }
-    else
-        intraNeighbor->numIntraNeighbors += isIntraBelowLeftAvailable(TUPartNumberInCTB - 1 + NumUnitsInCU * m_context->m_CurrCTBStride, PartY, YInc, NumUnitsInCU, intraNeighbor->neighborAvailable + NumUnitsInCU - 1);
-    intraNeighbor->numIntraNeighbors += isIntraLeftAvailable(TUPartNumberInCTB - 1, NumUnitsInCU, intraNeighbor->neighborAvailable + (NumUnitsInCU * 2) - 1);
+        intraNeighbor->numIntraNeighbors = 0;
 
-    intraNeighbor->neighborAvailable[NumUnitsInCU * 2] = m_context->m_CurrCTBFlags[TUPartNumberInCTB - 1 - m_context->m_CurrCTBStride].members.IsAvailable &&
-        (m_context->m_CurrCTBFlags[TUPartNumberInCTB - 1 - m_context->m_CurrCTBStride].members.IsIntra || !m_pPicParamSet->constrained_intra_pred_flag);
-    intraNeighbor->numIntraNeighbors += (Ipp32s)(intraNeighbor->neighborAvailable[NumUnitsInCU * 2]);
-
-    intraNeighbor->numIntraNeighbors += isIntraAboveAvailable(TUPartNumberInCTB - m_context->m_CurrCTBStride, NumUnitsInCU, intraNeighbor->neighborAvailable + (NumUnitsInCU * 2) + 1);
-    if (YInc > 0 && g_RasterToZscan[g_ZscanToRaster[AbsPartIdx] + NumUnitsInCU - m_pSeqParamSet->NumPartitionsInCUSize] > AbsPartIdx)
-    {
-        for (Ipp32s i = 0; i < NumUnitsInCU; i++)
-            intraNeighbor->neighborAvailable[NumUnitsInCU * 3 + 1 + i] = false;
-    }
-    else
-    {
-        if (YInc == 0)
-            intraNeighbor->numIntraNeighbors += isIntraAboveRightAvailableOtherCTB(PartX, NumUnitsInCU, intraNeighbor->neighborAvailable + (NumUnitsInCU * 3) + 1);
+        if (XInc > 0 && g_RasterToZscan[g_ZscanToRaster[AbsPartIdx] - 1 + NumUnitsInCU * m_pSeqParamSet->NumPartitionsInCUSize] > AbsPartIdx)
+        {
+            for (Ipp32s i = 0; i < NumUnitsInCU; i++)
+                intraNeighbor->neighborAvailable[NumUnitsInCU - 1 - i] = false;
+        }
         else
-            intraNeighbor->numIntraNeighbors += isIntraAboveRightAvailable(TUPartNumberInCTB + NumUnitsInCU - m_context->m_CurrCTBStride, PartX, XInc, NumUnitsInCU, intraNeighbor->neighborAvailable + (NumUnitsInCU * 3) + 1);
+            intraNeighbor->numIntraNeighbors += isIntraBelowLeftAvailable(TUPartNumberInCTB - 1 + NumUnitsInCU * m_context->m_CurrCTBStride, PartY, YInc, NumUnitsInCU, intraNeighbor->neighborAvailable + NumUnitsInCU - 1);
+        intraNeighbor->numIntraNeighbors += isIntraLeftAvailable(TUPartNumberInCTB - 1, NumUnitsInCU, intraNeighbor->neighborAvailable + (NumUnitsInCU * 2) - 1);
+
+        intraNeighbor->neighborAvailable[NumUnitsInCU * 2] = m_context->m_CurrCTBFlags[TUPartNumberInCTB - 1 - m_context->m_CurrCTBStride].members.IsAvailable &&
+            (m_context->m_CurrCTBFlags[TUPartNumberInCTB - 1 - m_context->m_CurrCTBStride].members.IsIntra || !m_pPicParamSet->constrained_intra_pred_flag);
+        intraNeighbor->numIntraNeighbors += (Ipp32s)(intraNeighbor->neighborAvailable[NumUnitsInCU * 2]);
+
+        intraNeighbor->numIntraNeighbors += isIntraAboveAvailable(TUPartNumberInCTB - m_context->m_CurrCTBStride, NumUnitsInCU, intraNeighbor->neighborAvailable + (NumUnitsInCU * 2) + 1);
+        if (YInc > 0 && g_RasterToZscan[g_ZscanToRaster[AbsPartIdx] + NumUnitsInCU - m_pSeqParamSet->NumPartitionsInCUSize] > AbsPartIdx)
+        {
+            for (Ipp32s i = 0; i < NumUnitsInCU; i++)
+                intraNeighbor->neighborAvailable[NumUnitsInCU * 3 + 1 + i] = false;
+        }
+        else
+        {
+            if (YInc == 0)
+                intraNeighbor->numIntraNeighbors += isIntraAboveRightAvailableOtherCTB(PartX, NumUnitsInCU, intraNeighbor->neighborAvailable + (NumUnitsInCU * 3) + 1);
+            else
+                intraNeighbor->numIntraNeighbors += isIntraAboveRightAvailable(TUPartNumberInCTB + NumUnitsInCU - m_context->m_CurrCTBStride, PartX, XInc, NumUnitsInCU, intraNeighbor->neighborAvailable + (NumUnitsInCU * 3) + 1);
+        }
     }
-#endif
 
     InitNeighbourPatternChroma(pCU, AbsPartIdx, TrDepth,
         m_Prediction->GetPredicBuf(),
@@ -2883,6 +2885,9 @@ void H265SegmentDecoder::UpdatePUInfo(H265CodingUnit *pCU, Ipp32u PartX, Ipp32u 
             Ipp16s POCDelta = Ipp16s(m_pCurrentFrame->m_PicOrderCnt - refInfo.refFrame->m_PicOrderCnt);
             pCU->m_Frame->m_CodingData->setBlockInfo(refInfo.isLongReference ? COL_TU_LT_INTER : COL_TU_ST_INTER, POCDelta, MVi.mvinfo[RefListIdx].MV, MVi.mvinfo[RefListIdx].RefIdx, 
                 (EnumRefPicList)RefListIdx, PartX, PartY, PartWidth, PartHeight);
+
+            if (MVi.mvinfo[RefListIdx].MV.Vertical > m_context->m_mvsDistortion)
+                m_context->m_mvsDistortion = MVi.mvinfo[RefListIdx].MV.Vertical;
         }
         else
         {

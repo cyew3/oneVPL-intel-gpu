@@ -31,8 +31,6 @@
 //static Ipp32s lock_failed_H265 = 0;
 //static Ipp32s sleep_count = 0;
 
-//#define NEW_MT_SCHEME
-#define NUM_CU_TO_PROCESS 30
 
 #if 0
 
@@ -102,174 +100,6 @@ void PrintInfoStatus(H265DecoderFrameInfo * info)
         fflush(stdout);
     }
 }
-/*
-void PrintAllInfos(H265DecoderFrame * frame)
-{
-    printf("all info\n");
-    for (; frame; frame = frame->future())
-    {
-        H265DecoderFrameInfo *slicesInfo = frame->GetAU();
-
-        if (slicesInfo->GetAllSliceCount())
-        {
-            printf("poc - %d\n", slicesInfo->m_pFrame->m_PicOrderCnt[0]);
-            PrintInfoStatus(slicesInfo);
-        }
-    }
-
-    printf("all info end\n");
-}*/
-
-
-#ifdef TIME
-
-static
-class CTimer
-{
-public:
-
-    enum
-    {
-        NUMBER_OF_THREADS = 4
-    };
-
-    CTimer(void)
-    {
-        memset(m_iDecTime, 0, sizeof(m_iDecTime));
-        memset(m_iRecTime, 0, sizeof(m_iRecTime));
-        memset(m_iDebTime, 0, sizeof(m_iDebTime));
-        memset(m_iDebTimeT, 0, sizeof(m_iDebTimeT));
-        memset(m_iSleepTime, 0, sizeof(m_iSleepTime));
-        memset(m_iDebSleepTime, 0, sizeof(m_iDebSleepTime));
-    }
-
-    ~CTimer(void)
-    {
-        Ipp32s i;
-
-        for (i = 0; i < NUMBER_OF_THREADS; i += 1)
-        {
-            DEBUG_PRINT((VM_STRING("%d: dec - % 8d, rec - % 8d, deb - % 8d, deb th - % 8d (sleep - % 8d, in deb - % 8d)\n"),
-                    i,
-                    (Ipp32s) (m_iDecTime[i] / 1000000),
-                    (Ipp32s) (m_iRecTime[i] / 1000000),
-                    (Ipp32s) (m_iDebTime[i] / 1000000),
-                    (Ipp32s) (m_iDebTimeT[i] / 1000000),
-                    (Ipp32s) (m_iSleepTime[i] / 1000000),
-                    (Ipp32s) (m_iDebSleepTime[i] / 1000000)));
-        }
-
-        Ipp64s iAll = 0;
-
-        for (i = 0; i < NUMBER_OF_THREADS; i += 1)
-        {
-            iAll += m_iDecTime[i]+
-                           m_iRecTime[i]+
-                           m_iDebTime[i]+
-                           m_iDebTimeT[i]+
-                           m_iSleepTime[i];
-        }
-
-        for (i = 0; i < NUMBER_OF_THREADS; i += 1)
-        {
-            DEBUG_PRINT((VM_STRING("%d: dec - % 8d%%, rec - % 8d%%, deb - % 8d%%, deb th - % 8d%%\n"),
-                    i,
-                    (Ipp32s) (100 * m_iDecTime[i] / iAll),
-                    (Ipp32s) (100 * m_iRecTime[i] / iAll),
-                    (Ipp32s) (100 * m_iDebTime[i] / iAll),
-                    (Ipp32s) (100 * m_iDebTimeT[i] / iAll)));
-        }
-    }
-
-    void ThreadStarted(Ipp32s iThread)
-    {
-        QueryPerformanceCounter((LARGE_INTEGER *) m_iStartTime + iThread);
-    }
-
-    void ThreadFinished(Ipp32s iThread, Ipp32s iTask)
-    {
-        Ipp64s iEnd;
-
-        QueryPerformanceCounter((LARGE_INTEGER *) &iEnd);
-
-        switch (iTask)
-        {
-        case TASK_DEC_NEXT:
-        case TASK_DEC_H265:
-            m_iDecTime[iThread] += iEnd - m_iStartTime[iThread];
-            break;
-
-        case TASK_REC_NEXT:
-        case TASK_REC_H265:
-            m_iRecTime[iThread] += iEnd - m_iStartTime[iThread];
-            break;
-
-        case TASK_DEB_H265:
-            m_iDebTime[iThread] += iEnd - m_iStartTime[iThread];
-            break;
-
-        default:
-            break;
-        };
-    }
-
-    void DebSleepStart(Ipp32s iThread)
-    {
-        QueryPerformanceCounter((LARGE_INTEGER *) m_iStartTime + iThread);
-    }
-
-    void DebSleepStop(Ipp32s iThread)
-    {
-        Ipp64s iEnd;
-
-        QueryPerformanceCounter((LARGE_INTEGER *) &iEnd);
-
-        m_iDebSleepTime[iThread] += iEnd - m_iStartTime[iThread];
-    }
-
-    void SleepStart(Ipp32s iThread)
-    {
-        QueryPerformanceCounter((LARGE_INTEGER *) m_iStartTime + iThread);
-    }
-
-    void SleepStop(Ipp32s iThread)
-    {
-        Ipp64s iEnd;
-
-        QueryPerformanceCounter((LARGE_INTEGER *) &iEnd);
-
-        m_iSleepTime[iThread] += iEnd - m_iStartTime[iThread];
-    }
-
-protected:
-    Ipp64s m_iDecTime[NUMBER_OF_THREADS];
-    Ipp64s m_iRecTime[NUMBER_OF_THREADS];
-    Ipp64s m_iDebTime[NUMBER_OF_THREADS];
-    Ipp64s m_iDebTimeT[NUMBER_OF_THREADS];
-    Ipp64s m_iDebSleepTime[NUMBER_OF_THREADS];
-    Ipp64s m_iSleepTime[NUMBER_OF_THREADS];
-    Ipp64s m_iStartTime[NUMBER_OF_THREADS];
-
-} timer;
-
-class CStarter
-{
-public:
-    CStarter(Ipp32s iThread)
-    {
-        m_iThread = iThread;
-    }
-    ~CStarter(void)
-    {
-        timer.ThreadStarted(m_iThread);
-    }
-
-protected:
-    Ipp32s m_iThread;
-};
-
-#endif // TIME
-
 
 TaskBroker_H265::TaskBroker_H265(TaskSupplier_H265 * pTaskSupplier)
     : m_pTaskSupplier(pTaskSupplier)
@@ -366,10 +196,6 @@ void TaskBroker_H265::SleepThread(Ipp32s threadNumber)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "AVCDec_sleep");
 
-#ifdef TIME
-    timer.SleepStart(threadNumber);
-#endif // TIME
-
     /*printf("\n\nstart sleeping for thrad - %d\n", threadNumber);
     PrintInfoStatus(m_FirstAU);
     printf("additional - \n");
@@ -388,10 +214,6 @@ void TaskBroker_H265::SleepThread(Ipp32s threadNumber)
     Lock();
 
     m_nWaitingThreads ^= (1 << threadNumber);
-
-#ifdef TIME
-    timer.SleepStop(threadNumber);
-#endif // TIME
 }
 
 void TaskBroker_H265::AwakeThreads()
@@ -480,16 +302,6 @@ bool TaskBroker_H265::GetPreparationTask(H265DecoderFrameInfo * info)
     }
 
     Lock();
-
-    for (Ipp32s i = 0; i < sliceCount; i++)
-    {
-        H265Slice * slice = info->GetSlice(i);
-        VM_ASSERT(!slice->m_context);
-
-        slice->m_context = m_pTaskSupplier->GetObjHeap()->AllocateObject<DecodingContext>();
-        slice->m_context->IncrementReference();
-        slice->m_context->Init(slice);
-    }
 
     info->m_prepared = 2;
     return false;
@@ -942,10 +754,6 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
         }
 #endif // defined(ECHO)
 
-#ifdef TIME
-    timer.ThreadFinished(pTask->m_iThreadNumber, pTask->m_iTaskID);
-#endif // TIME
-
     // when whole slice was processed
     if (TASK_PROCESS_H265 == pTask->m_iTaskID)
     {
@@ -988,10 +796,19 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
             VM_ASSERT(pTask->m_iFirstMB == pSlice->m_iCurMBToDec);
 
             pSlice->m_iCurMBToDec += pTask->m_iMBToProcess;
+            pSlice->m_mvsDistortion = pTask->m_mvsDistortion;
+
+            bool isReadyIncrease = (pTask->m_iFirstMB == info->m_decAddrReady);
+            if (isReadyIncrease)
+            {
+                info->m_decAddrReady += pTask->m_iMBToProcess;
+            }
 
             // error handling
             if (pTask->m_bError || pSlice->m_bError)
             {
+                if (isReadyIncrease)
+                    info->m_decAddrReady = pSlice->m_iMaxMB;
                 pSlice->m_iMaxMB = IPP_MIN(pSlice->m_iCurMBToDec, pSlice->m_iMaxMB);
                 pSlice->m_bError = true;
             }
@@ -1003,6 +820,20 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
             if (pSlice->m_iCurMBToDec >= pSlice->m_iMaxMB)
             {
                 pSlice->m_bDecVacant = 0;
+                if (isReadyIncrease)
+                {
+                    Ipp32s pos = info->GetPositionByNumber(pSlice->GetSliceNum());
+                    if (pos >= 0)
+                    {
+                        H265Slice * pNextSlice = info->GetSlice(++pos);
+                        for (; pNextSlice; pNextSlice = info->GetSlice(++pos))
+                        {
+                           info->m_decAddrReady = pNextSlice->m_iCurMBToDec;
+                           if (pNextSlice->m_iCurMBToDec < pNextSlice->m_iMaxMB)
+                               break;
+                        }
+                    }
+                }
             }
             else
             {
@@ -1019,15 +850,44 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
 
             pSlice->m_iCurMBToRec += pTask->m_iMBToProcess;
 
+            bool isReadyIncrease = (pTask->m_iFirstMB == info->m_recAddrReady) && pSlice->m_bDeblocked && pSlice->m_bSAOed;
+            if (isReadyIncrease)
+            {
+                info->m_recAddrReady += pTask->m_iMBToProcess;
+            }
+
             // error handling
             if (pTask->m_bError || pSlice->m_bError)
             {
+                if (isReadyIncrease)
+                {
+                    info->m_recAddrReady = pSlice->m_iMaxMB;
+                }
+
                 pSlice->m_iMaxMB = IPP_MIN(pSlice->m_iCurMBToRec, pSlice->m_iMaxMB);
                 pSlice->m_bError = true;
             }
 
             if (pSlice->m_iMaxMB <= pSlice->m_iCurMBToRec)
             {
+                if (isReadyIncrease)
+                {
+                    Ipp32s pos = info->GetPositionByNumber(pSlice->GetSliceNum());
+                    if (pos >= 0)
+                    {
+                        H265Slice * pNextSlice = info->GetSlice(pos + 1);
+                        if (pNextSlice)
+                        {
+                            if (pNextSlice->m_bDeblocked && pNextSlice->m_bSAOed)
+                                info->m_recAddrReady = pNextSlice->m_iCurMBToRec;
+                            else
+                                info->m_recAddrReady = pNextSlice->m_iCurMBToDeb;
+
+                            //info->RemoveSlice(pos);
+                        }
+                    }
+                }
+
                 pSlice->m_bRecVacant = 0;
                 pSlice->m_bDecoded = true;
             }
@@ -1247,12 +1107,6 @@ bool TaskBrokerTwoThread_H265::GetNextTaskInternal(H265Task *pTask)
 
     while (false == m_IsShouldQuit)
     {
-#if 0
-        if (pTask->m_iThreadNumber)
-            return false;
-
-        return TaskBrokerSingleThread_H265::GetNextTaskInternal(pTask);
-#else
         if (m_isExistMainThread)
         {
             if (!pTask->m_iThreadNumber && !m_completedQueue.empty())
@@ -1283,12 +1137,32 @@ bool TaskBrokerTwoThread_H265::GetNextTaskInternal(H265Task *pTask)
         }
         else
         {
-            if (GetNextTaskManySlices(m_FirstAU, pTask))
-                return true;
+#if 0 // for mt debug
+            H265DecoderFrameInfo * prev = m_FirstAU;
+            for (H265DecoderFrameInfo *info = m_FirstAU; info; info = info->GetNextAU())
+            {
+                prev = info;
+            }
+
+            if (prev)
+            {
+                for (H265DecoderFrameInfo *info = prev; info; info = info->GetPrevAU())
+                {
+                    if (GetNextTaskManySlices(info, pTask))
+                        return true;
+                }
+
+            }
+#else
+            for (H265DecoderFrameInfo *info = m_FirstAU; info; info = info->GetNextAU())
+            {
+                if (GetNextTaskManySlices(info, pTask))
+                    return true;
+            }
+#endif
         }
 
         break;
-#endif
     };
 
     if (!pTask->m_iThreadNumber && m_isExistMainThread) // check for slice groups only. need to review
@@ -1310,12 +1184,14 @@ bool TaskBrokerTwoThread_H265::WrapDecodingTask(H265DecoderFrameInfo * info, H26
     pSlice->m_bInProcess = true;
     pSlice->m_bDecVacant = 0;
 
-    Ipp32s maxMB = IPP_MIN(pSlice->m_iCurMBToDec + NUM_CU_TO_PROCESS, pSlice->m_iMaxMB);
+    Ipp32s maxMB = IPP_MIN(pSlice->m_iCurMBToDec + info->m_pFrame->getCD()->m_WidthInCU, pSlice->m_iMaxMB);
     InitTask(info, pTask, pSlice);
     pTask->m_iFirstMB = pSlice->m_iCurMBToDec;
     pTask->m_iMBToProcess = maxMB - pTask->m_iFirstMB;
     pTask->m_iTaskID = TASK_DEC_H265;
     pTask->pFunction = &H265SegmentDecoderMultiThreaded::DecodeSegment;
+
+    GetResources(pTask);
 
     pTask->m_taskPreparingGuard->Unlock();
 
@@ -1337,14 +1213,15 @@ bool TaskBrokerTwoThread_H265::WrapReconstructTask(H265DecoderFrameInfo * info, 
 
     pSlice->m_bRecVacant = 0;
 
-    Ipp32s maxMB = NUM_CU_TO_PROCESS;
+    Ipp32s maxMB = info->m_pFrame->getCD()->m_WidthInCU;
     InitTask(info, pTask, pSlice);
     pTask->m_iFirstMB = pSlice->m_iCurMBToRec;
     pTask->m_iMBToProcess = IPP_MIN(maxMB, pSlice->m_iCurMBToDec - pTask->m_iFirstMB);
+    pTask->m_iTaskID = TASK_REC_H265;
+    GetResources(pTask);
 
     pTask->m_taskPreparingGuard->Unlock();
 
-    pTask->m_iTaskID = TASK_REC_H265;
     pTask->pFunction = &H265SegmentDecoderMultiThreaded::ReconstructSegment;
 
 #ifdef ECHO
@@ -1362,12 +1239,12 @@ bool TaskBrokerTwoThread_H265::WrapDecRecTask(H265DecoderFrameInfo * info, H265T
     // this is guarded function, safe to touch any variable
     pSlice->m_curTileDec++;
     pTask->m_iFirstMB = pSlice->m_curTileDec;
-
-    pTask->m_taskPreparingGuard->Unlock();
-
     InitTask(info, pTask, pSlice);
     pTask->m_iTaskID = TASK_DEC_REC_H265;
     pTask->pFunction = &H265SegmentDecoderMultiThreaded::DecRecSegment;
+    GetResources(pTask);
+
+    pTask->m_taskPreparingGuard->Unlock();
 
 #ifdef ECHO
     DEBUG_PRINT((VM_STRING("(%d) (%d) dec_rec - % 4d to % 4d\n"), pTask->m_iThreadNumber,
@@ -1404,7 +1281,23 @@ bool TaskBrokerTwoThread_H265::GetDecRecTask(H265DecoderFrameInfo * info, H265Ta
 
 bool TaskBrokerTwoThread_H265::GetDecodingTask(H265DecoderFrameInfo * info, H265Task *pTask)
 {
-    // this is guarded function, safe to touch any variable
+    H265DecoderFrameInfo * refAU = info->GetPrevAU();
+    bool is_need_check = refAU != 0;
+    Ipp32s readyCount = 0;
+
+    if (is_need_check)
+    {
+        if (refAU->GetStatus() == H265DecoderFrameInfo::STATUS_COMPLETED)
+        {
+            is_need_check = false;
+        }
+        else
+        {
+            readyCount = refAU->m_decAddrReady;
+        }
+    }
+
+    // this is guarded function, safe to touch   any variable
     Ipp32s sliceCount = info->GetSliceCount();
     for (Ipp32s i = 0; i < sliceCount; i += 1)
     {
@@ -1412,6 +1305,12 @@ bool TaskBrokerTwoThread_H265::GetDecodingTask(H265DecoderFrameInfo * info, H265
 
         if (pSlice->m_bDecVacant != 1)
             continue;
+
+        if (is_need_check)
+        {
+            if (pSlice->m_iCurMBToDec + info->m_pFrame->getCD()->m_WidthInCU + 1 >= readyCount)
+                break;
+        }
 
         if (WrapDecodingTask(info, pTask, pSlice))
             return true;
@@ -1424,6 +1323,21 @@ bool TaskBrokerTwoThread_H265::GetDecodingTask(H265DecoderFrameInfo * info, H265
 bool TaskBrokerTwoThread_H265::GetReconstructTask(H265DecoderFrameInfo * info, H265Task *pTask)
 {
     // this is guarded function, safe to touch any variable
+    H265DecoderFrameInfo * refAU = info->GetPrevAU();
+    bool is_need_check = refAU != 0;
+    Ipp32s readyCount = 0;
+
+    if (is_need_check)
+    {
+        if (refAU->GetStatus() == H265DecoderFrameInfo::STATUS_COMPLETED)
+        {
+            is_need_check = false;
+        }
+        else
+        {
+            readyCount = refAU->m_recAddrReady;
+        }
+    }
 
     Ipp32s sliceCount = info->GetSliceCount();
     for (Ipp32s i = 0; i < sliceCount; i += 1)
@@ -1432,6 +1346,15 @@ bool TaskBrokerTwoThread_H265::GetReconstructTask(H265DecoderFrameInfo * info, H
 
         if (!pSlice->m_bRecVacant || pSlice->m_iCurMBToRec >= pSlice->m_iCurMBToDec)
             continue;
+
+        if (is_need_check)
+        {
+            Ipp32s cuSize = info->m_pFrame->getCD()->m_MaxCUWidth;
+            Ipp32s k = (( (pSlice->m_mvsDistortion + cuSize - 1) / cuSize) + 1); // +2 - (1 - for padding, 2 - current line)
+            k += refAU->IsNeedDeblocking() ? 1 : 0;
+            if (pSlice->m_iCurMBToRec + k*info->m_pFrame->getCD()->m_WidthInCU >= readyCount)
+                break;
+        }
 
         if (WrapReconstructTask(info, pTask, pSlice))
         {
@@ -1503,6 +1426,11 @@ bool TaskBrokerTwoThread_H265::GetNextTaskManySlices(H265DecoderFrameInfo * info
     if (!info)
         return false;
 
+    bool useSliceMT = info->m_hasTiles || info->IsNeedSAO() || info->IsNeedDeblocking();
+
+    if (info != m_FirstAU && useSliceMT)
+        return false;
+
     if (GetPreparationTask(info))
         return true;
 
@@ -1511,7 +1439,7 @@ bool TaskBrokerTwoThread_H265::GetNextTaskManySlices(H265DecoderFrameInfo * info
 
     if (info->HasDependentSliceSegments())
     {
-        if (pTask->m_iThreadNumber)
+        if (pTask->m_iThreadNumber || info != m_FirstAU)
             return false;
 
         return TaskBrokerSingleThread_H265::GetNextTaskInternal(pTask);
@@ -1519,28 +1447,37 @@ bool TaskBrokerTwoThread_H265::GetNextTaskManySlices(H265DecoderFrameInfo * info
 
     if (info->IsNeedDeblocking())
     {
-        
-#if defined(NEW_MT_SCHEME)
-        if (GetDeblockingTask(info, pTask))
-#else
-        if (GetNextSliceToDeblocking(info, pTask))
-#endif
+        if (useSliceMT)
+        {
+            if (GetNextSliceToDeblocking(info, pTask))
+                return true;
+        }
+        else
+        {
+            if (GetDeblockingTask(info, pTask))
+                return true;
+        }
+    }
+
+    if (info->IsNeedSAO())
+    {
+        if (GetSAOTask(info, pTask))
             return true;
     }
 
-    if (GetSAOTask(info, pTask))
-        return true;
+    if (useSliceMT)
+    {
+        if (GetDecRecTask(info, pTask))
+            return true;
+    }
+    else
+    {
+        if (GetReconstructTask(info, pTask))
+            return true;
 
-#if defined(NEW_MT_SCHEME)
-    if (GetReconstructTask(info, pTask))
-        return true;
-
-    if (GetDecodingTask(info, pTask))
-        return true;
-#else
-    if (GetDecRecTask(info, pTask))
-        return true;
-#endif
+        if (GetDecodingTask(info, pTask))
+            return true;
+    }
 
     return false;
 }
@@ -1556,10 +1493,67 @@ void TaskBrokerTwoThread_H265::AddPerformedTask(H265Task *pTask)
         pTask->m_pSlicesInfo->SetStatus(H265DecoderFrameInfo::STATUS_COMPLETED);
     }
 
+    FreeResources(pTask);
+
     SwitchCurrentAU();
     AwakeThreads();
 } // void TaskBrokerTwoThread_H265::AddPerformedTask(H265Task *pTask)
 
+void TaskBrokerTwoThread_H265::GetResources(H265Task *pTask)
+{
+    bool needAllocateContext = false;
+    switch (pTask->m_iTaskID)
+    {
+    case TASK_DEC_REC_H265:
+        needAllocateContext = true;
+        VM_ASSERT(!pTask->m_pSlice->m_context);
+        break;
+    case TASK_DEC_H265:
+        needAllocateContext = !pTask->m_pSlice->m_context;
+        pTask->m_context = pTask->m_pSlice->m_context;
+        break;
+    case TASK_REC_H265:
+        VM_ASSERT(pTask->m_pSlice->m_context);
+        pTask->m_context = pTask->m_pSlice->m_context;
+        break;
+    }
+
+    if (needAllocateContext)
+    {
+        pTask->m_context = m_pTaskSupplier->GetObjHeap()->AllocateObject<DecodingContext>();
+        pTask->m_context->IncrementReference();
+        pTask->m_context->Init(pTask->m_pSlice);
+
+        if (pTask->m_iTaskID == TASK_DEC_H265)
+        {
+            pTask->m_pSlice->m_context = pTask->m_context;
+        }
+    }
+}
+
+void TaskBrokerTwoThread_H265::FreeResources(H265Task *pTask)
+{
+    bool needDeallocateContext = false;
+    switch (pTask->m_iTaskID)
+    {
+    case TASK_DEC_REC_H265:
+        needDeallocateContext = true;
+        VM_ASSERT(!pTask->m_pSlice->m_context);
+        break;
+    case TASK_DEC_H265:
+    case TASK_REC_H265:
+        needDeallocateContext = pTask->m_pSlice->m_bDecoded; // fully decoded
+        if (needDeallocateContext)
+            pTask->m_pSlice->m_context = 0;
+        break;
+    }
+
+    if (needDeallocateContext)
+    {
+        pTask->m_context->DecrementReference();
+        pTask->m_context = 0;
+    }
+}
 
 } // namespace UMC_HEVC_DECODER
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

@@ -92,6 +92,10 @@ public:
     H265MVInfo *m_CurrCTB;
     Ipp32s m_CurrCTBStride;
 
+    // mt params
+    bool m_needToSplitDecAndRec;
+    Ipp32s m_mvsDistortion; // max y component of all mvs in slice
+
     void Init(H265Slice *slice);
     void UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr);
     void ResetRowBuffer();
@@ -271,6 +275,7 @@ public:
     H265EdgeData m_edge[9][9][4];
 
     DecodingContext * m_context;
+    std::auto_ptr<DecodingContext> m_context_single_thread;
 
     void UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPartIdx, bool isSkipped);
     void UpdatePUInfo(H265CodingUnit *pCU, Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight, H265PUInfo &PUi);

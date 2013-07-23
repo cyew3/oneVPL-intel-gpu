@@ -1754,7 +1754,7 @@ struct H265PicParamSet : public HeapObject, public H265PicParamSetBase
         return pic_parameter_set_id;
     }
 
-    Ipp32u getNumTiles() const { return ((num_tile_rows + 1) * (num_tile_columns + 1)); }
+    Ipp32u getNumTiles() const { return num_tile_rows*num_tile_columns; }
 
     unsigned getPPSId() const           { return pic_parameter_set_id; }
     void setPPSId(unsigned val)         { pic_parameter_set_id = (Ipp8u)val; }

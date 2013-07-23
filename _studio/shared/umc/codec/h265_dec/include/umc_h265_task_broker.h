@@ -149,6 +149,9 @@ private:
     bool GetDecodingTask(H265DecoderFrameInfo * info, H265Task *pTask);
     bool GetReconstructTask(H265DecoderFrameInfo * info, H265Task *pTask);
 
+    void GetResources(H265Task *pTask);
+    void FreeResources(H265Task *pTask);
+
 #if defined (__ICL)
 #pragma warning(disable:1125)
 #endif

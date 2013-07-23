@@ -70,12 +70,6 @@ void H265Slice::Reset()
 
     delete[] m_SliceHeader.m_TileByteLocation;
     m_SliceHeader.m_TileByteLocation = NULL;
-
-    if (m_context)
-    {
-        m_context->DecrementReference();
-        m_context = 0;
-    }
 }
 
 void H265Slice::Release()
@@ -148,6 +142,7 @@ bool H265Slice::Reset(void *pSource, size_t nSourceSize, Ipp32s )
         return false;
 
     // reset all internal variables
+    m_mvsDistortion = 0;
     m_iCurMBToDec = m_iFirstMB;
     m_iCurMBToRec = m_iFirstMB;
     m_iCurMBToDeb = m_iFirstMB;

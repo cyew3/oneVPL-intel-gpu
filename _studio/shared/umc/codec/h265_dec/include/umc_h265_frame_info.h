@@ -68,6 +68,8 @@ public:
         m_isIntraAU = m_isIntraAU && (sliceHeader.slice_type == I_SLICE);
         m_hasDependentSliceSegments = m_hasDependentSliceSegments || pSlice->getDependentSliceSegmentFlag();
         m_isNeedDeblocking = m_isNeedDeblocking || (!pSlice->getDeblockingFilterDisable());
+        m_isNeedSAO = m_isNeedSAO || !pSlice->m_bSAOed;
+        m_hasTiles = pSlice->GetPicParam()->getNumTiles() > 1;
     }
 
     Ipp32u GetSliceCount() const
@@ -110,7 +112,12 @@ public:
     {
         Free();
 
+        m_hasTiles = false;
+        m_decAddrReady = 0;
+        m_recAddrReady = 0;
+
         m_isNeedDeblocking = false;
+        m_isNeedSAO = false;
 
         m_isIntraAU = true;
         m_hasDependentSliceSegments = false;
@@ -164,9 +171,14 @@ public:
         m_pSliceQueue[m_SliceCount] = pCurSlice;
     }
 
-    bool IsNeedDeblocking () const
+    bool IsNeedDeblocking() const
     {
         return m_isNeedDeblocking;
+    }
+
+    bool IsNeedSAO() const
+    {
+        return m_isNeedSAO;
     }
 
     void SkipDeblocking()
@@ -186,6 +198,8 @@ public:
 
     void SkipSAO()
     {
+        m_isNeedSAO = false;
+
         for (Ipp32s i = 0; i < m_SliceCount; i ++)
         {
             H265Slice *pSlice = m_pSliceQueue[i];
@@ -260,6 +274,10 @@ public:
     void SetNextAU(H265DecoderFrameInfo *au) {m_NextAU = au;}
     void SetPrevAU(H265DecoderFrameInfo *au) {m_PrevAU = au;}
 
+    Ipp32s m_decAddrReady;
+    Ipp32s m_recAddrReady;
+    bool   m_hasTiles;
+
     H265DecoderFrame * m_pFrame;
     Ipp32s m_prepared;
 
@@ -274,6 +292,7 @@ private:
     Heap *m_pHeap;
     Heap_Objects * m_pObjHeap;
     bool m_isNeedDeblocking;
+    bool m_isNeedSAO;
 
     bool m_isIntraAU;
     bool m_hasDependentSliceSegments;

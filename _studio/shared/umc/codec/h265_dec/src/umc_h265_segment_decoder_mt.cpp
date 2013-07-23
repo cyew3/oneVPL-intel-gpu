@@ -25,8 +25,6 @@
 #include "mfx_trace.h"
 #include "umc_h265_dec_debug.h"
 
-//#define NEW_MT_SCHEME
-
 namespace UMC_HEVC_DECODER
 {
 H265SegmentDecoderMultiThreaded::H265SegmentDecoderMultiThreaded(TaskBroker_H265 * pTaskBroker)
@@ -61,11 +59,12 @@ void H265SegmentDecoderMultiThreaded::StartProcessingSegment(H265Task &Task)
     m_pCurrentFrame = m_pSlice->GetCurrentFrame();
     m_SD = CreateSegmentDecoder();
 
-#ifdef NEW_MT_SCHEME
-    m_context = m_pSlice->m_context;
-#else
-    m_context->Init(m_pSlice);
-#endif
+    m_context = Task.m_context;
+    if (!m_context)
+    {
+        m_context = m_context_single_thread.get();
+        m_context->Init(Task.m_pSlice);
+    }
     
     this->create((H265SeqParamSet*)m_pSeqParamSet);
 
@@ -96,10 +95,17 @@ void H265SegmentDecoderMultiThreaded::StartProcessingSegment(H265Task &Task)
     }
 }
 
-//void H265SegmentDecoderMultiThreaded::EndProcessingSegment(H265Task &Task, H265SampleAdaptiveOffset* pSAO)
 void H265SegmentDecoderMultiThreaded::EndProcessingSegment(H265Task &Task)
 {
     this->destroy();
+
+    if (TASK_DEC_H265 == Task.m_iTaskID)
+    {
+        Ipp32s mvsDistortion = m_context->m_mvsDistortion;
+        mvsDistortion = (mvsDistortion + 6) >> 2; // remove 1/2 pel
+        Task.m_mvsDistortion = IPP_MAX(mvsDistortion, m_pSlice->m_mvsDistortion);
+    }
+
     m_pTaskBroker->AddPerformedTask(&Task);
 }
 
@@ -179,10 +185,6 @@ void H265SegmentDecoderMultiThreaded::RestoreErrorRect(Ipp32s , Ipp32s , H265Sli
 UMC::Status H265SegmentDecoderMultiThreaded::DecodeSegment(Ipp32s iCurMBNumber, Ipp32s & iMBToProcess)
 {
     UMC::Status umcRes = UMC::UMC_OK;
-
-    // Convert slice beginning and end to encode order
-    //Ipp32s iFirstPartition = IPP_MAX(m_pSliceHeader->SliceCurStartCUAddr, m_pSliceHeader->m_sliceSegmentCurStartCUAddr);
-    //Ipp32s iFirstCU = iFirstPartition / m_pCurrentFrame->m_CodingData->m_NumPartitions;
     Ipp32s iMaxCUNumber = iCurMBNumber + iMBToProcess;
 
     if (m_pSlice->GetFirstMB() == iCurMBNumber)

@@ -169,6 +169,8 @@ public:  // DEBUG !!!! should remove dependence
 
     Ipp32s m_iAvailableMB;                                      // (Ipp32s) available number of macroblocks (used in "unknown mode")
 
+    Ipp32s m_mvsDistortion;
+
     Ipp32s m_iCurMBToDec;                                       // (Ipp32s) current MB number to decode
     Ipp32s m_iCurMBToRec;                                       // (Ipp32s) current MB number to reconstruct
     Ipp32s m_iCurMBToDeb;                                       // (Ipp32s *) current MB number to de-blocking
@@ -384,6 +386,7 @@ public:
         m_bError = false;
         m_mvsDistortion = 0;
         m_taskPreparingGuard = 0;
+        m_context = 0;
     }
 
     UMC::Status (H265SegmentDecoderMultiThreaded::*pFunction)(Ipp32s nCurMBNumber, Ipp32s &nMaxMBNumber); // (Status (*) (Ipp32s, Ipp32s &)) pointer to working function
@@ -391,6 +394,7 @@ public:
     H265CoeffsPtrCommon m_pBuffer;                                  // (Ipp16s *) pointer to working buffer
     size_t          m_WrittenSize;
 
+    DecodingContext * m_context;
     H265Slice *m_pSlice;                                        // (H265Slice *) pointer to owning slice
     H265DecoderFrameInfo * m_pSlicesInfo;
     UMC::AutomaticUMCMutex    * m_taskPreparingGuard;
