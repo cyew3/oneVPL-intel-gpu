@@ -367,30 +367,21 @@ mfxStatus AudioDECODEMP3::DecodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffe
         return sts;
 
 //    UMC::Status umcRes = UMC::UMC_OK;
-    if (NULL != bs)
-    {
+    if (NULL != bs) {
         sts = CheckBitstream(bs);
         MFX_CHECK_STS(sts);
 
         unsigned int RawFrameSize;
-
         sts = ConstructFrame(bs, &m_frame, &RawFrameSize);
+        MFX_CHECK_STS(sts);
 
         //check that buffer_out.MaxLength < RawFrameSize
-        if (buffer_out->MaxLength < RawFrameSize)
-        {
+        if (buffer_out->MaxLength < RawFrameSize) {
             sts = MFX_ERR_NOT_ENOUGH_BUFFER;
         }
-        
-        if (MFX_ERR_NONE != sts)
-        {
-            return sts;
-        }
     }
-
     return sts;
 }
-
 
 mfxStatus AudioDECODEMP3::DecodeFrame(mfxBitstream *bs, mfxBitstream *buffer_out)
 {
