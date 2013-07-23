@@ -165,9 +165,6 @@
       <Project>{430e22ba-bdf6-497c-bfc5-ec6907f90018}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\samples\sample_spl_mux\sample_spl_mux.vcxproj">
-      <Project>{44d60213-8682-48f3-add2-4885479fd9db}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\..\_studio\shared\umc\codec\asf_spl\asf_spl.vcxproj">
       <Project>{7662c9c6-5ce0-42e6-aca7-92fe6b7797a6}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
