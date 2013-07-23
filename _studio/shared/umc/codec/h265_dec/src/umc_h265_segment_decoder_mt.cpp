@@ -396,7 +396,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(Ipp32s , Ipp32s &)
                 {
                     // CABAC state is already reset, should only restore contexts
                     if (m_pSeqParamSet->WidthInCU > 1 &&
-                        m_pCurrentFrame->m_CodingData->GetInverseCUOrderMap(CUAddr + 1 - m_pSeqParamSet->WidthInCU) >= m_pSliceHeader->SliceCurStartCUAddr)
+                        m_pCurrentFrame->m_CodingData->GetInverseCUOrderMap(CUAddr + 1 - m_pSeqParamSet->WidthInCU) >= m_pSliceHeader->SliceCurStartCUAddr / m_pCurrentFrame->m_CodingData->m_NumPartitions)
                     {
                         memcpy(m_pBitStream->context_hevc, m_pBitStream->wpp_saved_cabac_context, sizeof(m_pBitStream->context_hevc));
                     }
