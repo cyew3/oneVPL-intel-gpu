@@ -460,8 +460,9 @@ typedef struct {
     mfxU16      MBBRC;                  /* tri-state option */
     mfxU16      ExtBRC;                 /* tri-state option */
     mfxU16      LookAheadDepth;
-    mfxU16      Trellis; 
-    mfxU16      reserved2[16];
+    mfxU16      Trellis;
+    mfxU16      RepeatPPS;
+    mfxU16      reserved2[15];
 } mfxExtCodingOption2;
 
 /* IntraPredBlockSize/InterPredBlockSize */
