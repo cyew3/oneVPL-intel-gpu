@@ -35,6 +35,26 @@ File Name: mfxplugin++.h
 #include "mfxvideo.h"
 #include "mfxplugin.h"
 
+//c++ wrapper over only 3 exposed functions from MFXVideoUSER module
+class MFXVideoUSER {
+public:
+    MFXVideoUSER(mfxSession session)
+        : m_session(session){}
+
+    mfxStatus Register(mfxU32 type, const mfxPlugin *par) {
+        return MFXVideoUSER_Register(m_session, type, par);
+    }
+    mfxStatus Unregister(mfxU32 type) {
+        return MFXVideoUSER_Unregister(m_session, type);
+    }
+    mfxStatus ProcessFrameAsync(const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxSyncPoint *syncp) {
+        return MFXVideoUSER_ProcessFrameAsync(m_session, in, in_num, out, out_num, syncp);
+    }
+
+protected:
+    mfxSession m_session;    
+};
+
 //adds constructuctor to c structure
 class MFXPluginParam {
     mfxPluginParam m_param;
