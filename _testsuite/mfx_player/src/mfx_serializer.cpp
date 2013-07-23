@@ -164,6 +164,7 @@ void MFXStructureRef <mfxExtCodingOption2>::ConstructValues () const
     SERIALIZE_INT(ExtBRC);
     SERIALIZE_INT(LookAheadDepth);
     SERIALIZE_INT(Trellis);
+    SERIALIZE_INT(RepeatPPS);
 }
 
 void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const
@@ -187,7 +188,6 @@ void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const
     // MediaSDK parametrization
     SERIALIZE_INT(BRCPrecision);          
     SERIALIZE_INT(RefRaw);         
-    SERIALIZE_INT(RepeatPPS);
     SERIALIZE_INT(ConstQP);        
     SERIALIZE_INT(GlobalSearch);       
     SERIALIZE_INT(LocalSearch);  

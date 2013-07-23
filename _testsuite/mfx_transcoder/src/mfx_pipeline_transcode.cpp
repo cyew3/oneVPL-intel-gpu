@@ -225,6 +225,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION2(ExtBRC,                 OPT_TRI_STATE,   ""),
         HANDLE_EXT_OPTION2(LookAheadDepth,         OPT_INT_16,      "how many frames ahead encoder analyze to choose quantization parameter"),
         HANDLE_EXT_OPTION2(Trellis,                OPT_INT_16,      "bitfield: 0=default, 1=off, 2=on for I frames, 4=on for P frames, 8=on for B frames"),
+        HANDLE_EXT_OPTION2(RepeatPPS,              OPT_TRI_STATE,  ""),
 
         // mfxExtCodingOptionDDI
         HANDLE_DDI_OPTION(IntraPredCostType,       OPT_UINT_16,    "from DDI: 1=SAD, 2=SSD, 4=SATD_HADAMARD, 8=SATD_HARR"),
@@ -243,7 +244,6 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_DDI_OPTION(DDI.IntraPredBlockSize,  OPT_UINT_16,    "from DDI, mask of 1=4x4, 2=8x8, 4=16x16, 8=PCM"),
         HANDLE_DDI_OPTION(DDI.InterPredBlockSize,  OPT_UINT_16,    "from DDI, mask of 1=16x16, 2=16x8, 4=8x16, 8=8x8, 16=8x4, 32=4x8, 64=4x4"),
         HANDLE_DDI_OPTION(BRCPrecision,            OPT_UINT_16,    "0=default=normal, 1=lowest, 2=normal, 3=highest"),
-        HANDLE_DDI_OPTION(RepeatPPS,               OPT_TRI_STATE,  ""),
         HANDLE_DDI_OPTION(GlobalSearch,            OPT_UINT_16,    "0=default, 1=long, 2=medium, 3=short"),
         HANDLE_DDI_OPTION(LocalSearch,             OPT_UINT_16,    "0=default, 1=type, 2=small, 3=square, 4=diamond, 5=large diamond, 6=exhaustive, 7=heavy horizontal, 8=heavy vertical"),
         HANDLE_DDI_OPTION(EarlySkip,               OPT_UINT_16,    "0=default (let driver choose), 1=enabled, 2=disabled"),

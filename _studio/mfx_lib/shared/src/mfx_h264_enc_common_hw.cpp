@@ -1897,12 +1897,12 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     if (!CheckTriStateOption(extOpt->SingleSeiNalUnit))         changed = true;
     if (!CheckTriStateOption(extOpt->NalHrdConformance))        changed = true;
     if (!CheckTriStateOption(extDdi->RefRaw))                   changed = true;
-    if (!CheckTriStateOption(extDdi->RepeatPPS))                changed = true;
     if (!CheckTriStateOption(extDdi->DirectSpatialMvPredFlag))  changed = true;
     if (!CheckTriStateOption(extDdi->Hme))                      changed = true;
     if (!CheckTriStateOption(extOpt2->BitrateLimit))            changed = true;
     if (!CheckTriStateOption(extOpt2->MBBRC))                   changed = true;
     if (!CheckTriStateOption(extOpt2->ExtBRC))                  changed = true;
+    if (!CheckTriStateOption(extOpt2->RepeatPPS))               changed = true;
 
     if (IsMvcProfile(par.mfx.CodecProfile) && IsOn(extOpt->FieldOutput))
     {
@@ -3330,9 +3330,6 @@ void MfxHwH264Encode::SetDefaults(
     if (extDdi->RefRaw == MFX_CODINGOPTION_UNKNOWN)
         extDdi->RefRaw = MFX_CODINGOPTION_OFF;
 
-    if (extDdi->RepeatPPS == MFX_CODINGOPTION_UNKNOWN)
-        extDdi->RepeatPPS = MFX_CODINGOPTION_ON;
-
     if (extDdi->DirectSpatialMvPredFlag == MFX_CODINGOPTION_UNKNOWN)
         extDdi->DirectSpatialMvPredFlag = MFX_CODINGOPTION_ON;
 
@@ -3357,6 +3354,9 @@ void MfxHwH264Encode::SetDefaults(
 
     if (extOpt2->BitrateLimit == MFX_CODINGOPTION_UNKNOWN)
         extOpt2->BitrateLimit = MFX_CODINGOPTION_ON;
+
+    if (extOpt2->RepeatPPS == MFX_CODINGOPTION_UNKNOWN)
+        extOpt2->RepeatPPS = MFX_CODINGOPTION_ON;
 
     extDdi->MaxMVs = 32;
     extDdi->SkipCheck = 1;

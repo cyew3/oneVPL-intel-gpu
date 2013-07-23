@@ -1726,8 +1726,9 @@ mfxStatus TaskManager::AssignTask(
     }
     else
     {
-        toEncode->m_insertPps[ ffid] = toEncode->m_insertSps[ ffid] || IsOn(extDdi->RepeatPPS);
-        toEncode->m_insertPps[!ffid] = toEncode->m_insertSps[!ffid] || IsOn(extDdi->RepeatPPS);
+        mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(m_video);
+        toEncode->m_insertPps[ ffid] = toEncode->m_insertSps[ ffid] || IsOn(extOpt2->RepeatPPS);
+        toEncode->m_insertPps[!ffid] = toEncode->m_insertSps[!ffid] || IsOn(extOpt2->RepeatPPS);
         toEncode->m_nalRefIdc[ ffid] = !!(toEncode->m_type[ ffid] & MFX_FRAMETYPE_REF);
         toEncode->m_nalRefIdc[!ffid] = !!(toEncode->m_type[!ffid] & MFX_FRAMETYPE_REF);
     }

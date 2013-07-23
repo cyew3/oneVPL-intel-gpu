@@ -1493,8 +1493,8 @@ void MfxHwH264Encode::ConfigureTask(
     task.m_insertAud[sfid] = IsOn(extOpt->AUDelimiter);
     task.m_insertSps[ffid] = intraPicFlag;
     task.m_insertSps[sfid] = 0;
-    task.m_insertPps[ffid] = task.m_insertSps[ffid] || IsOn(extDdi->RepeatPPS);
-    task.m_insertPps[sfid] = task.m_insertSps[sfid] || IsOn(extDdi->RepeatPPS);
+    task.m_insertPps[ffid] = task.m_insertSps[ffid] || IsOn(extOpt2->RepeatPPS);
+    task.m_insertPps[sfid] = task.m_insertSps[sfid] || IsOn(extOpt2->RepeatPPS);
     task.m_nalRefIdc[ffid] = task.m_reference[ffid];
     task.m_nalRefIdc[sfid] = task.m_reference[sfid];
 
