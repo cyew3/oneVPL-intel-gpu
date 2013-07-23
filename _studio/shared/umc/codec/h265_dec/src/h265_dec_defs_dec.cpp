@@ -1635,11 +1635,11 @@ void H265SampleAdaptiveOffset::createNonDBFilterInfo()
                 independentTileBoundaryForNDBFilter = true;
             }
 
-            Ipp32u firstCU = pSlice->GetCurrentFrame()->m_CodingData->GetInverseCUOrderMap(pSlice->m_iFirstMB);
-            Ipp32u lastCU = pSlice->GetCurrentFrame()->m_CodingData->GetInverseCUOrderMap(pSlice->m_iMaxMB);
-            for (Ipp32u j = firstCU; j < lastCU; j++)
+            // Encode order CUs in slice
+            for (Ipp32u j = pSlice->m_iFirstMB; j < pSlice->m_iMaxMB; j++)
             {
-                m_Frame->getCU(pSlice->GetCurrentFrame()->m_CodingData->getCUOrderMap(j))->setNDBFilterBlockBorderAvailability(independentTileBoundaryForNDBFilter);
+                Ipp32u idx = m_Frame->m_CodingData->getCUOrderMap(j);
+                m_Frame->getCU(idx)->setNDBFilterBlockBorderAvailability(independentTileBoundaryForNDBFilter);
             }
         }
     }

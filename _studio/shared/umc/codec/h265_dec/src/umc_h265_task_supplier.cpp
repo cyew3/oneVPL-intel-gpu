@@ -2132,17 +2132,17 @@ UMC::Status TaskSupplier_H265::AddSlice(H265Slice * pSlice, bool )
 
     if (pFrame)
     {
-        H265Slice * pFirstFrameSlice = pFrame->GetAU()->GetAnySlice();
-        VM_ASSERT(pFirstFrameSlice);
+        H265Slice *pLastFrameSlice = pFrame->GetAU()->GetSlice(pFrame->GetAU()->GetSliceCount() - 1);
+        VM_ASSERT(pLastFrameSlice);
 
         if (pSlice->getDependentSliceSegmentFlag())
         {
-            pSlice->CopyFromBaseSlice(pFirstFrameSlice);
+            pSlice->CopyFromBaseSlice(pLastFrameSlice);
         }
 
         // if the slices belong to different AUs,
         // close the current AU and start new one.
-        if ((false == IsPictureTheSame(pFirstFrameSlice, pSlice)))
+        if ((false == IsPictureTheSame(pLastFrameSlice, pSlice)))
         {
             CompleteFrame(view.pCurFrame);
             OnFullFrame(view.pCurFrame);

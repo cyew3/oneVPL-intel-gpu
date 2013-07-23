@@ -839,10 +839,11 @@ Ipp32u H265CodingUnit::getSCUAddr()
     else                                                                                       \
     {                                                                                          \
         H265CodingUnit* refCU = m_Frame->getCU(refCUAddr);                                     \
-        Ipp32s          refID = refCU->m_SliceIdx;                                             \
+        Ipp32u          refSA = refCU->m_SliceHeader->SliceCurStartCUAddr;                     \
+        Ipp32u          SA = m_SliceHeader->SliceCurStartCUAddr;                               \
                                                                                                \
-        m_AvailBorder[borderIndex] = (refID == m_SliceIdx )? (true) : ((refID > m_SliceIdx) ?  \
-                                     (refCU->m_SliceHeader->m_LFCrossSliceBoundaryFlag):       \
+        m_AvailBorder[borderIndex] = (refSA == SA) ? (true) : ((refSA > SA) ?                  \
+                                     (refCU->m_SliceHeader->m_LFCrossSliceBoundaryFlag) :      \
                                      (m_SliceHeader->m_LFCrossSliceBoundaryFlag));             \
     }                                                                                          \
 }

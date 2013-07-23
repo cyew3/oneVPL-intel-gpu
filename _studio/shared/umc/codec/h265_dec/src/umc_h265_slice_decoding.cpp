@@ -403,6 +403,9 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
     m_SliceHeader.m_LFCrossSliceBoundaryFlag = slice->m_LFCrossSliceBoundaryFlag;
     m_SliceHeader.m_enableTMVPFlag                = slice->m_enableTMVPFlag;
     m_SliceHeader.m_MaxNumMergeCand               = slice->m_MaxNumMergeCand;
+
+    // Set the start of real slice, not slice segment
+    m_SliceHeader.SliceCurStartCUAddr = slice->SliceCurStartCUAddr;
 }
 
 } // namespace UMC_HEVC_DECODER
