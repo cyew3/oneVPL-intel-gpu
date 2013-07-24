@@ -356,6 +356,8 @@ void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* pSeqParamSet, c
     Ipp32u widthInCU = (m_lumaSize.width % MaxCUWidth) ? m_lumaSize.width / MaxCUWidth + 1 : m_lumaSize.width / MaxCUWidth;
     Ipp32u heightInCU = (m_lumaSize.height % MaxCUWidth) ? m_lumaSize.height / MaxCUWidth + 1 : m_lumaSize.height / MaxCUWidth;
 
+    m_CodingData->m_partitionInfo.Init(pSeqParamSet);
+
     if (m_CodingData->m_MaxCUWidth != MaxCUWidth ||
         m_CodingData->m_WidthInCU != widthInCU  || m_CodingData->m_HeightInCU != heightInCU || m_CodingData->m_MaxCUDepth != MaxCUDepth)
     {
@@ -519,20 +521,20 @@ H265PlanePtrUVCommon H265DecoderFrame::GetCbCrAddr(Ipp32s CUAddr) const
 // ML: OPT: TODO: Make these functions available for inlining 
 H265PlanePtrYCommon H265DecoderFrame::GetLumaAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const
 {
-    return m_pYPlane + m_cuOffsetY[CUAddr] + m_buOffsetY[g_ZscanToRaster[AbsZorderIdx]];
+    return m_pYPlane + m_cuOffsetY[CUAddr] + m_buOffsetY[getCD()->m_partitionInfo.m_zscanToRaster[AbsZorderIdx]];
 }
 H265PlanePtrUVCommon H265DecoderFrame::GetCbAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const
 {
-    return m_pUPlane + m_cuOffsetC[CUAddr] + m_buOffsetC[g_ZscanToRaster[AbsZorderIdx]];
+    return m_pUPlane + m_cuOffsetC[CUAddr] + m_buOffsetC[getCD()->m_partitionInfo.m_zscanToRaster[AbsZorderIdx]];
 }
 H265PlanePtrUVCommon H265DecoderFrame::GetCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const
 {
-    return m_pVPlane + m_cuOffsetC[CUAddr] + m_buOffsetC[g_ZscanToRaster[AbsZorderIdx]];
+    return m_pVPlane + m_cuOffsetC[CUAddr] + m_buOffsetC[getCD()->m_partitionInfo.m_zscanToRaster[AbsZorderIdx]];
 }
 H265PlanePtrUVCommon H265DecoderFrame::GetCbCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const
 {
     // Chroma offset is already multiplied to chroma pitch (double for NV12)
-    return m_pUVPlane + m_cuOffsetC[CUAddr] + m_buOffsetC[g_ZscanToRaster[AbsZorderIdx]];
+    return m_pUVPlane + m_cuOffsetC[CUAddr] + m_buOffsetC[getCD()->m_partitionInfo.m_zscanToRaster[AbsZorderIdx]];
 }
 
 } // end namespace UMC_HEVC_DECODER

@@ -44,7 +44,6 @@ protected:
 
     H265DecYUVBufferPadded m_YUVPred[2];
     
-
     void PredIntraAngLuma(Ipp32s bitDepth, H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrYCommon Dst, Ipp32s dstStride, Ipp32s blkSize, Ipp32u dirMode, bool Filter);
     void PredIntraPlanarLuma(H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrYCommon rpDst, Ipp32s dstStride, Ipp32s blkSize);
 
@@ -77,6 +76,10 @@ protected:
 
     void DCPredFiltering(H265PlanePtrYCommon pSrc, Ipp32s SrcStride, H265PlanePtrYCommon Dst, Ipp32s DstStride, Ipp32s Size);
 
+    void CopyWeighted_S16U8(H265DecoderFrame* frame, H265DecYUVBufferPadded* src, Ipp32u CUAddr, Ipp32u PartIdx, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round);
+    void CopyWeightedBidi_S16U8(H265DecoderFrame* frame, H265DecYUVBufferPadded* src1, H265DecYUVBufferPadded* src2, Ipp32u CUAddr, Ipp32u PartIdx, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round);
+    Ipp32s GetAddrOffset(Ipp32u PartUnitIdx, Ipp32u width);
+
 public:
     H265Prediction();
     virtual ~H265Prediction();
@@ -84,7 +87,7 @@ public:
     void InitTempBuff(DecodingContext* context);
 
     // inter
-    void MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPadded* YUVPred, Ipp32u AbsPartIdx, Ipp32u Depth, H265PUInfo *PUInfo);
+    void MotionCompensation(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, H265PUInfo *PUInfo);
 
     // Angular Intra
     void PredIntraLumaAng(Ipp32u DirMode, H265PlanePtrYCommon pPred, Ipp32u Stride, Ipp32s Size);

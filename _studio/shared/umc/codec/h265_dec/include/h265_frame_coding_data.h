@@ -19,9 +19,35 @@
 #include "h265_coding_unit.h"
 #include "h265_motion_info.h"
 
+
 namespace UMC_HEVC_DECODER
 {
 class H265CodingUnit;
+
+class PartitionInfo
+{
+public:
+
+    PartitionInfo();
+
+    void Init(const H265SeqParamSet* sps);
+
+    // conversion of partition index to picture pel position
+    Ipp32u m_rasterToPelX[MAX_NUM_SPU_W * MAX_NUM_SPU_W];
+    Ipp32u m_rasterToPelY[MAX_NUM_SPU_W * MAX_NUM_SPU_W];
+
+    // flexible conversion from relative to absolute index
+    Ipp32u m_zscanToRaster[MAX_NUM_SPU_W * MAX_NUM_SPU_W];
+    Ipp32u m_rasterToZscan[MAX_NUM_SPU_W * MAX_NUM_SPU_W];
+
+private:
+    void InitZscanToRaster(Ipp32s MaxDepth, Ipp32s Depth, Ipp32u StartVal, Ipp32u*& CurrIdx);
+    void InitRasterToZscan(const H265SeqParamSet* sps);
+    void InitRasterToPelXY(const H265SeqParamSet* sps);
+
+    Ipp32u m_MaxCUDepth;
+    Ipp32u m_MaxCUSize;
+};
 
 // Values for m_ColTUFlags
 enum
@@ -52,6 +78,8 @@ public:
     Ipp32u* m_CUOrderMap;                   //the map of LCU raster scan address relative to LCU encoding order
     Ipp32u* m_TileIdxMap;                   //the map of the tile index relative to LCU raster scan address
     Ipp32u* m_InverseCUOrderMap;
+
+    PartitionInfo m_partitionInfo;
 
 public:
 

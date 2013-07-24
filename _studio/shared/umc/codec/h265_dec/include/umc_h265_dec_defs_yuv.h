@@ -50,11 +50,6 @@ public:
     void create(Ipp32u PicWidth, Ipp32u PicHeight, Ipp32u ElementSizeY, Ipp32u ElementSizeUV);
     void destroy();
 
-    void CopyPartToPic(H265DecoderFrame* pPicYuvDst, Ipp32u CUAddr, Ipp32u PartIdx, Ipp32u Width, Ipp32u Height);
-
-    void CopyWeighted_S16U8(H265DecYUVBufferPadded* pPicYuvSrc, Ipp32u PartIdx, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round);
-    void CopyWeightedBidi_S16U8(H265DecYUVBufferPadded* pPicYuvSrc0, H265DecYUVBufferPadded* pPicYuvSrc1, Ipp32u PartIdx, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round);
-
     //end of h265
 
     void deallocate();
@@ -92,8 +87,6 @@ protected:
 
     UMC::ColorFormat m_color_format;
 };
-
-Ipp32s GetAddrOffset(Ipp32u PartUnitIdx, Ipp32u width);
 
 } // namespace UMC_HEVC_DECODER
 

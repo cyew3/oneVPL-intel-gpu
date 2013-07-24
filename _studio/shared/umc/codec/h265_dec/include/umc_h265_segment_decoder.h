@@ -263,7 +263,6 @@ public:
     bool m_DecodeDQPFlag;
     Ipp32u m_MaxDepth; //max number of depth
     H265DecYUVBufferPadded* m_ppcYUVResi; //array of residual buffer
-    H265DecYUVBufferPadded* m_ppcYUVReco; //array of prediction & reconstruction buffer
 
     std::auto_ptr<H265Prediction> m_Prediction;
 

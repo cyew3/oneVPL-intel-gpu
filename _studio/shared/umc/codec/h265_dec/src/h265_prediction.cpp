@@ -21,7 +21,6 @@ using namespace MFX_HEVC_COMMON;
 
 namespace UMC_HEVC_DECODER
 {
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constructor / destructor / initialize
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -642,7 +641,7 @@ void H265Prediction::PredIntraChromaAng(H265PlanePtrUVCommon pSrc, Ipp32u DirMod
     }
 }
 
-void H265Prediction::MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPadded* pPredYUV, Ipp32u AbsPartIdx, Ipp32u Depth, H265PUInfo *PUInfo)
+void H265Prediction::MotionCompensation(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, H265PUInfo *PUInfo)
 {
     VM_ASSERT(pCU->m_AbsIdxInLCU == 0);
     bool weighted_prediction = pCU->m_SliceHeader->slice_type == P_SLICE ? m_context->m_pps->weighted_pred_flag :
@@ -660,8 +659,8 @@ void H265Prediction::MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPad
         pCU->getPartIndexAndSize(AbsPartIdx, Depth, PartIdx, PartAddr, Width, Height);
         PartAddr += AbsPartIdx;
 
-        Ipp32s LPelX = pCU->m_CUPelX + g_RasterToPelX[subPartIdx];
-        Ipp32s TPelY = pCU->m_CUPelY + g_RasterToPelY[subPartIdx];
+        Ipp32s LPelX = pCU->m_CUPelX + pCU->m_rasterToPelX[subPartIdx];
+        Ipp32s TPelY = pCU->m_CUPelY + pCU->m_rasterToPelY[subPartIdx];
         Ipp32s PartX = LPelX >> m_context->m_sps->log2_min_transform_block_size;
         Ipp32s PartY = TPelY >> m_context->m_sps->log2_min_transform_block_size;
 #endif
@@ -712,8 +711,8 @@ void H265Prediction::MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPad
             }
             else
             {
-                PredInterUni<TEXT_LUMA, true>(pCU, PUi, direction, &m_YUVPred[direction]);
-                PredInterUni<TEXT_CHROMA, true>(pCU, PUi, direction, &m_YUVPred[direction]);
+                PredInterUni<TEXT_LUMA, true>(pCU, PUi, direction, &m_YUVPred[0]);
+                PredInterUni<TEXT_CHROMA, true>(pCU, PUi, direction, &m_YUVPred[0]);
             }
         }
         else
@@ -791,21 +790,17 @@ void H265Prediction::MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPad
                     logWD[plane] = 0;
             }
 
-            if (RefIdx[0] >= 0 && RefIdx[1] < 0)
-                pPredYUV->CopyWeighted_S16U8(&m_YUVPred[0], PartAddr, Width, Height, w0, o0, logWD, round);
-            else if (RefIdx[0] < 0 && RefIdx[1] >= 0)
-                pPredYUV->CopyWeighted_S16U8(&m_YUVPred[1], PartAddr, Width, Height, w1, o1, logWD, round);
-            else
+            if (RefIdx[0] >= 0 && RefIdx[1] >= 0)
             {
                 for (Ipp32s plane = 0; plane < 3; plane++)
                 {
                     logWD[plane] += 1;
                     round[plane] = (o0[plane] + o1[plane] + 1) << (logWD[plane] - 1);
                 }
-                pPredYUV->CopyWeightedBidi_S16U8(&m_YUVPred[0], &m_YUVPred[1], PartAddr, Width, Height, w0, w1, logWD, round);
+                CopyWeightedBidi_S16U8(pCU->m_Frame, &m_YUVPred[0], &m_YUVPred[1], pCU->CUAddr, PartAddr, Width, Height, w0, w1, logWD, round);
             }
-
-            pPredYUV->CopyPartToPic(pCU->m_Frame, pCU->CUAddr, PartAddr, Width, Height);
+            else
+                CopyWeighted_S16U8(pCU->m_Frame, &m_YUVPred[0], pCU->CUAddr, PartAddr, Width, Height, w0, o0, logWD, round);
         }
     }
 }
@@ -1074,6 +1069,100 @@ void H265Prediction::CopyExtendPU(const H265PlaneYCommon * in_pSrc,
     }
 }
 
+void H265Prediction::CopyWeighted_S16U8(H265DecoderFrame* frame, H265DecYUVBufferPadded* src, Ipp32u CUAddr, Ipp32u PartIdx, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round)
+{
+    H265CoeffsPtrCommon pSrc = (H265CoeffsPtrCommon)src->m_pYPlane + GetAddrOffset(PartIdx, src->lumaSize().width);
+    H265CoeffsPtrCommon pSrcUV = (H265CoeffsPtrCommon)src->m_pUVPlane + GetAddrOffset(PartIdx, src->chromaSize().width);
+
+    Ipp32u SrcStride = src->pitch_luma();
+    Ipp32u DstStride = frame->pitch_luma();
+
+    H265PlanePtrYCommon pDst = frame->GetLumaAddr(CUAddr) + GetAddrOffset(PartIdx, DstStride);
+    H265PlanePtrUVCommon pDstUV = frame->GetCbCrAddr(CUAddr) + GetAddrOffset(PartIdx, DstStride >> 1);
+
+    for (Ipp32u y = 0; y < Height; y++)
+    {
+        // ML: OPT: TODO: make sure it is vectorized with PACK
+        for (Ipp32u x = 0; x < Width; x++)
+        {
+            pDst[x] = (H265PlaneYCommon)ClipY(((w[0] * pSrc[x] + round[0]) >> logWD[0]) + o[0]);
+        }
+        pSrc += SrcStride;
+        pDst += DstStride;
+    }
+
+    SrcStride = src->pitch_chroma();
+    DstStride = frame->pitch_chroma();
+    Width >>= 1;
+    Height >>= 1;
+
+    for (Ipp32u y = 0; y < Height; y++)
+    {
+        // ML: OPT: TODO: make sure it is vectorized with PACK
+        for (Ipp32u x = 0; x < Width * 2; x += 2)
+        {
+            pDstUV[x] = (H265PlaneUVCommon)ClipC(((w[1] * pSrcUV[x] + round[1]) >> logWD[1]) + o[1]);
+            pDstUV[x + 1] = (H265PlaneUVCommon)ClipC(((w[2] * pSrcUV[x + 1] + round[2]) >> logWD[2]) + o[2]);
+        }
+        pSrcUV += SrcStride;
+        pDstUV += DstStride;
+    }
+}
+
+void H265Prediction::CopyWeightedBidi_S16U8(H265DecoderFrame* frame, H265DecYUVBufferPadded* src0, H265DecYUVBufferPadded* src1, Ipp32u CUAddr, Ipp32u PartIdx, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round)
+{
+    H265CoeffsPtrCommon pSrc0 = (H265CoeffsPtrCommon)src0->m_pYPlane + GetAddrOffset(PartIdx, src0->lumaSize().width);
+    H265CoeffsPtrCommon pSrcUV0 = (H265CoeffsPtrCommon)src0->m_pUVPlane + GetAddrOffset(PartIdx, src0->chromaSize().width);
+
+    H265CoeffsPtrCommon pSrc1 = (H265CoeffsPtrCommon)src1->m_pYPlane + GetAddrOffset(PartIdx, src1->lumaSize().width);
+    H265CoeffsPtrCommon pSrcUV1 = (H265CoeffsPtrCommon)src1->m_pUVPlane + GetAddrOffset(PartIdx, src1->chromaSize().width);
+
+    Ipp32u SrcStride0 = src0->pitch_luma();
+    Ipp32u SrcStride1 = src1->pitch_luma();
+    Ipp32u DstStride = frame->pitch_luma();
+
+    H265PlanePtrYCommon pDst = frame->GetLumaAddr(CUAddr) + GetAddrOffset(PartIdx, DstStride);
+    H265PlanePtrUVCommon pDstUV = frame->GetCbCrAddr(CUAddr) + GetAddrOffset(PartIdx, DstStride >> 1);
+
+    for (Ipp32u y = 0; y < Height; y++)
+    {
+        // ML: OPT: TODO: make sure it is vectorized with PACK
+        for (Ipp32u x = 0; x < Width; x++)
+        {
+            pDst[x] = (H265PlaneYCommon)ClipY((w0[0] * pSrc0[x] + w1[0] * pSrc1[x] + round[0]) >> logWD[0]);
+        }
+        pSrc0 += SrcStride0;
+        pSrc1 += SrcStride1;
+        pDst += DstStride;
+    }
+
+    SrcStride0 = src0->pitch_chroma();
+    SrcStride1 = src1->pitch_chroma();
+    DstStride = frame->pitch_chroma();
+    Width >>= 1;
+    Height >>= 1;
+
+    for (Ipp32u y = 0; y < Height; y++)
+    {
+        // ML: OPT: TODO: make sure it is vectorized with PACK
+        for (Ipp32u x = 0; x < Width * 2; x += 2)
+        {
+            pDstUV[x] = (H265PlaneUVCommon)ClipC((w0[1] * pSrcUV0[x] + w1[1] * pSrcUV1[x] + round[1]) >> logWD[1]);
+            pDstUV[x + 1] = (H265PlaneUVCommon)ClipC((w0[2] * pSrcUV0[x + 1] + w1[2] * pSrcUV1[x + 1] + round[2]) >> logWD[2]);
+        }
+        pSrcUV0 += SrcStride0;
+        pSrcUV1 += SrcStride1;
+        pDstUV += DstStride;
+    }
+}
+
+Ipp32s H265Prediction::GetAddrOffset(Ipp32u PartUnitIdx, Ipp32u width)
+{
+    Ipp32s blkX = m_context->m_frame->getCD()->m_partitionInfo.m_rasterToPelX[PartUnitIdx];
+    Ipp32s blkY = m_context->m_frame->getCD()->m_partitionInfo.m_rasterToPelY[PartUnitIdx];
+
+    return blkX + blkY * width;
+}
 } // end namespace UMC_HEVC_DECODER
 
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

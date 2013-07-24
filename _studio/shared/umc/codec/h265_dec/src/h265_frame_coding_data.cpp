@@ -16,6 +16,86 @@
 namespace UMC_HEVC_DECODER
 {
 
+PartitionInfo::PartitionInfo()
+    : m_MaxCUDepth(0)
+    , m_MaxCUSize(0)
+{
+}
+
+void PartitionInfo::InitZscanToRaster(Ipp32s MaxDepth, Ipp32s Depth, Ipp32u StartVal, Ipp32u*& CurrIdx)
+{
+    Ipp32s Stride = 1 << (MaxDepth - 1);
+
+    if (Depth == MaxDepth)
+    {
+        CurrIdx[0] = StartVal;
+        CurrIdx++;
+    }
+    else
+    {
+        Ipp32s Step = Stride >> Depth;
+        InitZscanToRaster(MaxDepth, Depth + 1, StartVal, CurrIdx);
+        InitZscanToRaster(MaxDepth, Depth + 1, StartVal + Step, CurrIdx);
+        InitZscanToRaster(MaxDepth, Depth + 1, StartVal + Step * Stride, CurrIdx);
+        InitZscanToRaster(MaxDepth, Depth + 1, StartVal + Step * Stride + Step, CurrIdx);
+    }
+}
+
+void PartitionInfo::InitRasterToZscan(const H265SeqParamSet* sps)
+{
+    Ipp32u  MinCUWidth  = sps->MaxCUWidth  >> sps->MaxCUDepth;
+    Ipp32u  MinCUHeight = sps->MaxCUHeight >> sps->MaxCUDepth;
+
+    Ipp32u  NumPartInWidth  = sps->MaxCUWidth  / MinCUWidth;
+    Ipp32u  NumPartInHeight = sps->MaxCUHeight / MinCUHeight;
+
+    for (Ipp32u i = 0; i < NumPartInWidth * NumPartInHeight; i++)
+    {
+        m_rasterToZscan[m_zscanToRaster[i]] = i;
+    }
+}
+
+void PartitionInfo::InitRasterToPelXY(const H265SeqParamSet* sps)
+{
+    Ipp32u* TempX = &m_rasterToPelX[0];
+    Ipp32u* TempY = &m_rasterToPelY[0];
+
+    Ipp32u MinCUSize = sps->MaxCUWidth >> sps->MaxCUDepth;
+    Ipp32u NumPartInSize = sps->MaxCUWidth / MinCUSize;
+    
+    for (Ipp32u i = 0; i < NumPartInSize*NumPartInSize; i++)
+    {
+        TempX[i] = (m_zscanToRaster[i] % NumPartInSize) * MinCUSize;
+    }
+
+    for (Ipp32u i = 1; i < NumPartInSize * NumPartInSize; i++)
+    {
+        TempY[i] = (m_zscanToRaster[i] / NumPartInSize) * MinCUSize;
+    }
+};
+
+void PartitionInfo::Init(const H265SeqParamSet* sps)
+{
+    if (m_MaxCUDepth == sps->MaxCUDepth && m_MaxCUSize == sps->MaxCUWidth)
+        return;
+
+    m_MaxCUDepth = sps->MaxCUDepth;
+    m_MaxCUSize = sps->MaxCUWidth;
+
+    memset(m_rasterToPelX, 0, sizeof(m_rasterToPelX));
+    memset(m_rasterToPelY, 0, sizeof(m_rasterToPelY));
+    memset(m_zscanToRaster, 0, sizeof(m_zscanToRaster));
+    memset(m_rasterToZscan, 0, sizeof(m_rasterToZscan));
+
+    // initialize partition order.
+    Ipp32u* Tmp = &m_zscanToRaster[0];
+    InitZscanToRaster(sps->MaxCUDepth + 1, 1, 0, Tmp);
+    InitRasterToZscan(sps);
+
+    // initialize conversion matrix from partition index to pel
+    InitRasterToPelXY(sps);
+}
+
 void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiMaxWidth, Ipp32u uiMaxHeight, Ipp32u uiMaxDepth)
 {
     m_MaxCUDepth = (Ipp8u) uiMaxDepth;
@@ -39,7 +119,7 @@ void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiM
     for (Ipp32u i = 0; i < m_NumCUsInFrame; i++)
     {
         m_CUData[i] = new H265CodingUnit;
-        m_CUData[i]->create (m_NumPartitions, m_MaxCUWidth, m_MaxCUWidth);
+        m_CUData[i]->create (this);
     }
 }
 

@@ -33,11 +33,17 @@ class H265SegmentDecoderMultiThreaded;
 
 class H265CodingUnit
 {
-    //class H265DecoderFrameInfo;
 public:
     //pointers --------------------------------------------------------------------------------------
     H265DecoderFrame*        m_Frame;          // frame pointer
     H265SliceHeader *        m_SliceHeader;    // slice header pointer
+
+    // conversion of partition index to picture pel position
+    Ipp32u *m_rasterToPelX;
+    Ipp32u *m_rasterToPelY;
+
+    Ipp32u *m_zscanToRaster;
+    Ipp32u *m_rasterToZscan;
 
     Ipp32s                   m_SliceIdx;
     bool                     m_AvailBorder[8];
@@ -158,7 +164,7 @@ public:
 
     // create / destroy / init  / copy -----------------------------------------------------------------------------
 
-    void create (Ipp32u numPartition, Ipp32u Width, Ipp32u Height);
+    void create (H265FrameCodingData * frameCD);
     void destroy ();
 
     void initCU (H265SegmentDecoderMultiThreaded* sd, Ipp32u CUAddr);
