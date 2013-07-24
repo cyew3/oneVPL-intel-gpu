@@ -843,4 +843,14 @@ mfxStatus H265BRC::GetInitialCPBRemovalDelay(mfxU32 *initial_cpb_removal_delay, 
     return MFX_ERR_NONE;
 }
 
+
+
+void  H265BRC::GetMinMaxFrameSize(mfxI32 *minFrameSizeInBits, mfxI32 *maxFrameSizeInBits) 
+{
+    if (minFrameSizeInBits)
+      *minFrameSizeInBits = mHRD.minFrameSize;
+    if (maxFrameSizeInBits)
+      *maxFrameSizeInBits = mHRD.maxFrameSize;
+}
+
 #endif

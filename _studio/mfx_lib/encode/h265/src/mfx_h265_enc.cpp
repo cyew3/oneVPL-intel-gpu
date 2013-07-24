@@ -1543,11 +1543,6 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
         break;
     }
 
-    if (m_brc) {
-        m_videoParam.QP = (Ipp8s)m_brc->GetQP((mfxU16)ePictureType);
-        m_videoParam.QPChroma = h265_QPtoChromaQP[m_videoParam.QP];
-    }
-
     H265NALUnit nal;
     nal.nuh_layer_id = 0;
     nal.nuh_temporal_id = 0;
@@ -1578,7 +1573,20 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
         overheadBytes += bs[bs_main_id].WriteNAL(mfxBS, 0, &nal);
     }
 
-    Ipp32s frameBytes = overheadBytes;
+    Ipp8u *pbs0;
+    Ipp32u bitOffset0;
+    Ipp32s overheadBytes0 = overheadBytes;
+    H265Bs_GetState(&bs[bs_main_id], &pbs0, &bitOffset0);
+    Ipp32s min_qp = 1;
+    Ipp32u dataLength0 = mfxBS->DataLength;
+    Ipp32s brcRecode = 0;
+
+recode:
+
+    if (m_brc) {
+        m_videoParam.QP = (Ipp8s)m_brc->GetQP((mfxU16)ePictureType);
+        m_videoParam.QPChroma = h265_QPtoChromaQP[m_videoParam.QP];
+    }
 
     for (Ipp8u curr_slice = 0; curr_slice < m_videoParam.NumSlices; curr_slice++) {
         H265Slice *pSlice = m_slices + curr_slice;
@@ -1665,10 +1673,45 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
         nal.nal_unit_type = (Ipp8u)(pSlice->IdrPicFlag ? NAL_UT_CODED_SLICE_IDR : NAL_UT_CODED_SLICE_TRAIL_R);
         bs[bs_main_id].WriteNAL(mfxBS, 0, &nal);
     }
-    frameBytes = mfxBS->DataLength - initialDatalength;
+    Ipp32s frameBytes = mfxBS->DataLength - initialDatalength;
 
-    if (m_brc)
-        m_brc->PostPackFrame((mfxU16)m_pCurrentFrame->m_PicCodType, frameBytes << 3, overheadBytes << 3, 0, m_pCurrentFrame->PicOrderCnt());
+    if (m_brc) {
+        mfxBRCStatus brcSts;
+        brcSts =  m_brc->PostPackFrame((mfxU16)m_pCurrentFrame->m_PicCodType, frameBytes << 3, overheadBytes << 3, brcRecode, m_pCurrentFrame->PicOrderCnt());
+        brcRecode = 0;
+        if (brcSts != MFX_BRC_OK) {
+            if ((brcSts & MFX_BRC_ERR_SMALL_FRAME) && (m_videoParam.QP < min_qp))
+                brcSts |= MFX_BRC_NOT_ENOUGH_BUFFER;
+            if (!(brcSts & MFX_BRC_NOT_ENOUGH_BUFFER)) {
+                mfxBS->DataLength = dataLength0;
+                H265Bs_SetState(&bs[bs_main_id], pbs0, bitOffset0);
+                overheadBytes = overheadBytes0;
+                brcRecode = 1;
+                goto recode;
+            } else if (brcSts & MFX_BRC_ERR_SMALL_FRAME) {
+                Ipp32s maxSize, minSize, bitsize = frameBytes << 3;
+                Ipp8u *p = mfxBS->Data + mfxBS->DataOffset + mfxBS->DataLength;
+                m_brc->GetMinMaxFrameSize(&minSize, &maxSize);
+                if (minSize >  ((Ipp32s)mfxBS->MaxLength << 3))
+                    return MFX_ERR_NOT_ENOUGH_BUFFER;
+                while (bitsize < minSize - 32) {
+                    *(Ipp32u*)p = 0;
+                    p += 4;
+                    bitsize += 32;
+                }
+                while (bitsize < minSize) {
+                    *p = 0;
+                    p++;
+                    bitsize += 8;
+                }
+                m_brc->PostPackFrame((mfxU16)m_pCurrentFrame->m_PicCodType, bitsize, (overheadBytes << 3) + bitsize - (frameBytes << 3), 1, m_pCurrentFrame->PicOrderCnt());
+                mfxBS->DataLength += (bitsize >> 3) - frameBytes;
+            }  else
+                return MFX_ERR_NOT_ENOUGH_BUFFER;
+
+
+        }
+    }
 
     switch (ePic_Class)
     {
