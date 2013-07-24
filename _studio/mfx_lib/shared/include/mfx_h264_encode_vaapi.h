@@ -111,6 +111,11 @@ namespace MfxHwH264Encode
         virtual
         mfxStatus Destroy();
 
+        void ForceCodingFunction (mfxU16 /*codingFunction*/)
+        {
+            // no need in it on Linux
+        }
+
     private:
         VAAPIEncoder(const VAAPIEncoder&); // no implementation
         VAAPIEncoder& operator=(const VAAPIEncoder&); // no implementation
