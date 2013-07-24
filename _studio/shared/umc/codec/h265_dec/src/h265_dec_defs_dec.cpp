@@ -1256,48 +1256,37 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, I
     }
 }
 
-void H265SampleAdaptiveOffset::SAOProcess(H265DecoderFrame* pFrame, SAOParams* pSAOParam)
+void H265SampleAdaptiveOffset::SAOProcess(H265DecoderFrame* pFrame)
 {
-    if (pSAOParam->m_bSaoFlag[0] || pSAOParam->m_bSaoFlag[1])
+    H265Slice * slice = pFrame->GetAU()->GetAnySlice();
+    if (slice->getSaoEnabledFlag() || slice->getSaoEnabledFlagChroma())
     {
         m_SaoBitIncreaseY = IPP_MAX(g_bitDepthY - 10, 0);
         m_SaoBitIncreaseC = IPP_MAX(g_bitDepthC - 10, 0);
 
-        if (m_saoLcuBasedOptimization)
+        if (slice->getSaoEnabledFlag())
         {
-            pSAOParam->m_oneUnitFlag[0] = 0;
-            pSAOParam->m_oneUnitFlag[1] = 0;
-            pSAOParam->m_oneUnitFlag[2] = 0;
+            processSaoUnitAllLuma(pFrame->m_saoLcuParam[0]);
         }
 
-        if (pSAOParam->m_bSaoFlag[0])
+        if (slice->getSaoEnabledFlagChroma())
         {
-            processSaoUnitAllLuma(pFrame->m_saoLcuParam[0], pSAOParam->m_oneUnitFlag[0]);
-        }
-
-        if (pSAOParam->m_bSaoFlag[1])
-        {
-            VM_ASSERT(pSAOParam->m_oneUnitFlag[1] == pSAOParam->m_oneUnitFlag[2]);
-            processSaoUnitAllChroma(pFrame->m_saoLcuParam[1], pSAOParam->m_oneUnitFlag[1], 1);//Cb
-            processSaoUnitAllChroma(pFrame->m_saoLcuParam[2], pSAOParam->m_oneUnitFlag[2], 2);//Cr
+            processSaoUnitAllChroma(pFrame->m_saoLcuParam[1], 1);//Cb
+            processSaoUnitAllChroma(pFrame->m_saoLcuParam[2], 2);//Cr
         }
     }
 }
 
-void H265SampleAdaptiveOffset::processSaoUnitAllLuma(SAOLCUParam* saoLCUParam, bool oneUnitFlag)
+void H265SampleAdaptiveOffset::processSaoUnitAllLuma(SAOLCUParam* saoLCUParam)
 {
     H265PlaneYCommon tmpLeftBuff1[65];
     H265PlaneYCommon tmpLeftBuff2[65];
     H265PlaneYCommon *tmpL1;
     H265PlaneYCommon *tmpL2;
     H265PlaneYCommon *pRec;
-    H265PlaneYCommon *ppLumaTable = NULL;
     H265PlaneYCommon *tmpUSwap;
-    static Ipp32s offset[LUMA_GROUP_NUM + 1];
     Ipp32s frameWidthInCU = m_Frame->getFrameWidthInCU();
     Ipp32s frameHeightInCU = m_Frame->getFrameHeightInCU();
-    Ipp32u edgeType;
-    Ipp32s m_typeIdx;
     Ipp32s idxX;
     Ipp32s idxY;
     Ipp32s addr;
@@ -1307,7 +1296,6 @@ void H265SampleAdaptiveOffset::processSaoUnitAllLuma(SAOLCUParam* saoLCUParam, b
     Ipp32s picWidthTmp = m_PicWidth;
     Ipp32s picHeightTmp = m_PicHeight;
     bool m_mergeLeftFlag;
-    Ipp32u saoBitIncrease = m_SaoBitIncreaseY;
 
     tmpL1 = tmpLeftBuff1;
     tmpL2 = tmpLeftBuff2;
@@ -1317,7 +1305,6 @@ void H265SampleAdaptiveOffset::processSaoUnitAllLuma(SAOLCUParam* saoLCUParam, b
 
     memcpy(m_TmpU1, pRec, sizeof(H265PlaneYCommon) * picWidthTmp);
 
-    offset[0] = 0;
     for (idxY = 0; idxY < frameHeightInCU; idxY++)
     {
         Ipp32s CUHeightTmp = LCUHeight + 1;
@@ -1357,57 +1344,23 @@ void H265SampleAdaptiveOffset::processSaoUnitAllLuma(SAOLCUParam* saoLCUParam, b
                 }
             }
 
-            if (oneUnitFlag)
-            {
-                m_typeIdx = saoLCUParam[0].m_typeIdx;
-                m_mergeLeftFlag = (addr == 0) ? 0 : 1;
-            }
-            else
-            {
-                m_typeIdx = saoLCUParam[addr].m_typeIdx;
-                m_mergeLeftFlag = saoLCUParam[addr].m_mergeLeftFlag;
-            }
-            if (m_typeIdx >= 0)
+            Ipp32s typeIdx = saoLCUParam[addr].m_typeIdx;
+            m_mergeLeftFlag = saoLCUParam[addr].m_mergeLeftFlag;
+
+            if (typeIdx >= 0)
             {
                 if (!m_mergeLeftFlag)
                 {
-                    if (m_typeIdx == SAO_BO)
-                    {
-                        for (i = 0; i < SAO_MAX_BO_CLASSES + 1; i++)
-                        {
-                            offset[i] = 0;
-                        }
-                        for (i = 0; i < saoLCUParam[addr].m_length; i++)
-                        {
-                            offset[(saoLCUParam[addr].m_subTypeIdx +i) % SAO_MAX_BO_CLASSES + 1] = saoLCUParam[addr].m_offset[i] << saoBitIncrease;
-                        }
-                        ppLumaTable = m_lumaTableBo;
-                        for (i = 0; i < (1 << g_bitDepthY); i++)
-                        {
-                            m_OffsetBo[i] = m_ClipTable[i + offset[ppLumaTable[i]]];
-                        }
-                    }
-
-                    if (m_typeIdx == SAO_EO_0 || m_typeIdx == SAO_EO_1 || m_typeIdx == SAO_EO_2 || m_typeIdx == SAO_EO_3)
-                    {
-                        for (i = 0; i < saoLCUParam[addr].m_length; i++)
-                        {
-                            offset[i + 1] = saoLCUParam[addr].m_offset[i] << saoBitIncrease;
-                        }
-                        for (edgeType = 0; edgeType < 6; edgeType++)
-                        {
-                            m_OffsetEo[edgeType] = offset[EoTable[edgeType]];
-                        }
-                    }
+                    SetOffsets(saoLCUParam, addr, typeIdx, false);
                 }
 
                 if (!m_UseNIF)
                 {
-                    processSaoCuOrgLuma(addr, m_typeIdx, tmpL1);
+                    processSaoCuOrgLuma(addr, typeIdx, tmpL1);
                 }
                 else
                 {
-                    processSaoCuLuma(addr, m_typeIdx, tmpL1);
+                    processSaoCuLuma(addr, typeIdx, tmpL1);
                 }
             }
 
@@ -1421,20 +1374,54 @@ void H265SampleAdaptiveOffset::processSaoUnitAllLuma(SAOLCUParam* saoLCUParam, b
     }
 }
 
-void H265SampleAdaptiveOffset::processSaoUnitAllChroma(SAOLCUParam* saoLCUParam, bool oneUnitFlag, Ipp32s yCbCr)
+void H265SampleAdaptiveOffset::SetOffsets(SAOLCUParam* saoLCUParam, Ipp32s addr, Ipp32s typeIdx, bool isChroma)
+{
+    Ipp32s offset[LUMA_GROUP_NUM + 1];
+
+    Ipp32u saoBitIncrease = !isChroma ? m_SaoBitIncreaseY : m_SaoBitIncreaseC;
+
+    if (typeIdx == SAO_BO)
+    {
+        for (Ipp32s i = 0; i < SAO_MAX_BO_CLASSES + 1; i++)
+        {
+            offset[i] = 0;
+        }
+        for (Ipp32s i = 0; i < saoLCUParam[addr].m_length; i++)
+        {
+            offset[(saoLCUParam[addr].m_subTypeIdx +i) % SAO_MAX_BO_CLASSES + 1] = saoLCUParam[addr].m_offset[i] << saoBitIncrease;
+        }
+
+        H265PlaneYCommon *ppLumaTable = m_lumaTableBo;
+        for (Ipp32s i = 0; i < (1 << g_bitDepthY); i++)
+        {
+            m_OffsetBo[i] = m_ClipTable[i + offset[ppLumaTable[i]]];
+        }
+    }
+
+    if (typeIdx == SAO_EO_0 || typeIdx == SAO_EO_1 || typeIdx == SAO_EO_2 || typeIdx == SAO_EO_3)
+    {
+        offset[0] = 0;
+        for (Ipp32s i = 0; i < saoLCUParam[addr].m_length; i++)
+        {
+            offset[i + 1] = saoLCUParam[addr].m_offset[i] << saoBitIncrease;
+        }
+        for (Ipp32s edgeType = 0; edgeType < 6; edgeType++)
+        {
+            m_OffsetEo[edgeType] = offset[EoTable[edgeType]];
+        }
+    }
+}
+
+void H265SampleAdaptiveOffset::processSaoUnitAllChroma(SAOLCUParam* saoLCUParam, Ipp32s yCbCr)
 {
     H265PlaneUVCommon tmpLeftBuff1[65];
     H265PlaneUVCommon tmpLeftBuff2[65];
     H265PlanePtrUVCommon tmpL1;
     H265PlanePtrUVCommon tmpL2;
     H265PlanePtrUVCommon pRec;
-    H265PlanePtrUVCommon ppLumaTable = NULL;
     H265PlanePtrUVCommon tmpUSwap;
-    static Ipp32s offset[LUMA_GROUP_NUM + 1];
     Ipp32s frameWidthInCU = m_Frame->getFrameWidthInCU();
     Ipp32s frameHeightInCU = m_Frame->getFrameHeightInCU();
-    Ipp32u edgeType;
-    Ipp32s m_typeIdx;
     Ipp32s idxX;
     Ipp32s idxY;
     Ipp32s addr;
@@ -1444,7 +1431,6 @@ void H265SampleAdaptiveOffset::processSaoUnitAllChroma(SAOLCUParam* saoLCUParam,
     Ipp32s picWidthTmp = (m_PicWidth >> 1);
     Ipp32s picHeightTmp = (m_PicHeight >> 1);
     bool m_mergeLeftFlag;
-    Ipp32u saoBitIncrease = (yCbCr == 0) ? m_SaoBitIncreaseY : m_SaoBitIncreaseC;
     Ipp32s i;
 
     tmpL1 = tmpLeftBuff1;
@@ -1463,7 +1449,6 @@ void H265SampleAdaptiveOffset::processSaoUnitAllChroma(SAOLCUParam* saoLCUParam,
     for (i = 0; i < picWidthTmp; i++)
         m_TmpU1[i] = pRec[i * 2];
 
-    offset[0] = 0;
     for (idxY = 0; idxY < frameHeightInCU; idxY++)
     {
         Ipp32s CUHeightTmp = LCUHeight + 1;
@@ -1518,57 +1503,22 @@ void H265SampleAdaptiveOffset::processSaoUnitAllChroma(SAOLCUParam* saoLCUParam,
                 }
             }
 
-            if (oneUnitFlag)
-            {
-                m_typeIdx = saoLCUParam[0].m_typeIdx;
-                m_mergeLeftFlag = (addr == 0) ? 0 : 1;
-            }
-            else
-            {
-                m_typeIdx = saoLCUParam[addr].m_typeIdx;
-                m_mergeLeftFlag = saoLCUParam[addr].m_mergeLeftFlag;
-            }
-            if (m_typeIdx >= 0)
+            Ipp32s typeIdx = saoLCUParam[addr].m_typeIdx;
+            m_mergeLeftFlag = saoLCUParam[addr].m_mergeLeftFlag;
+            if (typeIdx >= 0)
             {
                 if (!m_mergeLeftFlag)
                 {
-                    if (m_typeIdx == SAO_BO)
-                    {
-                        for (i = 0; i < SAO_MAX_BO_CLASSES + 1; i++)
-                        {
-                            offset[i] = 0;
-                        }
-                        for (i = 0; i < saoLCUParam[addr].m_length; i++)
-                        {
-                            offset[(saoLCUParam[addr].m_subTypeIdx +i) % SAO_MAX_BO_CLASSES + 1] = saoLCUParam[addr].m_offset[i] << saoBitIncrease;
-                        }
-                        ppLumaTable = m_lumaTableBo;
-                        for (i = 0; i < (1 << g_bitDepthY); i++)
-                        {
-                            m_OffsetBo[i] = m_ClipTable[i + offset[ppLumaTable[i]]];
-                        }
-                    }
-
-                    if (m_typeIdx == SAO_EO_0 || m_typeIdx == SAO_EO_1 || m_typeIdx == SAO_EO_2 || m_typeIdx == SAO_EO_3)
-                    {
-                        for (i = 0; i < saoLCUParam[addr].m_length; i++)
-                        {
-                            offset[i + 1] = saoLCUParam[addr].m_offset[i] << saoBitIncrease;
-                        }
-                        for (edgeType = 0; edgeType < 6; edgeType++)
-                        {
-                            m_OffsetEo[edgeType] = offset[EoTable[edgeType]];
-                        }
-                    }
+                    SetOffsets(saoLCUParam, addr, typeIdx, true);
                 }
 
                 if (!m_UseNIF)
                 {
-                    processSaoCuOrgChroma(addr, m_typeIdx, yCbCr, tmpL1);
+                    processSaoCuOrgChroma(addr, typeIdx, yCbCr, tmpL1);
                 }
                 else
                 {
-                    processSaoCuChroma(addr, m_typeIdx, yCbCr, tmpL1);
+                    processSaoCuChroma(addr, typeIdx, yCbCr, tmpL1);
                 }
             }
 
@@ -1590,8 +1540,7 @@ void H265SampleAdaptiveOffset::createNonDBFilterInfo()
 
     pSlice = m_Frame->GetAU()->GetSlice(0);
 
-    if ((pSlice->getPPS()->getNumTiles() > 1) &&
-        (!pSlice->getPPS()->getLoopFilterAcrossTilesEnabledFlag()))
+    if (pSlice->getPPS()->getNumTiles() > 1 && !pSlice->getPPS()->getLoopFilterAcrossTilesEnabledFlag())
     {
         independentTileBoundaryForNDBFilter = true;
     }
@@ -1607,8 +1556,7 @@ void H265SampleAdaptiveOffset::createNonDBFilterInfo()
                 independentSliceBoundaryForNDBFilter = true;
             }
 
-            if ((pSlice->getPPS()->getNumTiles() > 1) &&
-                (!pSlice->getPPS()->getLoopFilterAcrossTilesEnabledFlag()))
+            if (pSlice->getPPS()->getNumTiles() > 1 && !pSlice->getPPS()->getLoopFilterAcrossTilesEnabledFlag())
             {
                 independentTileBoundaryForNDBFilter = true;
             }
@@ -1629,8 +1577,7 @@ void H265SampleAdaptiveOffset::createNonDBFilterInfo()
             pSlice = m_Frame->GetAU()->GetSlice(i);
             independentTileBoundaryForNDBFilter = false;
 
-            if ((pSlice->getPPS()->getNumTiles() > 1) &&
-                (!pSlice->getPPS()->getLoopFilterAcrossTilesEnabledFlag()))
+            if (pSlice->getPPS()->getNumTiles() > 1 && !pSlice->getPPS()->getLoopFilterAcrossTilesEnabledFlag())
             {
                 independentTileBoundaryForNDBFilter = true;
             }

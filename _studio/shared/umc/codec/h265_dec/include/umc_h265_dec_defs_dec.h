@@ -410,12 +410,6 @@ struct SAOLCUParam
     Ipp32s m_length;
 };
 
-struct SAOParams
-{
-    bool         m_bSaoFlag[2];
-    bool         m_oneUnitFlag[3];
-};
-
 class H265SampleAdaptiveOffset
 {
 public:
@@ -433,29 +427,30 @@ public:
     Ipp32u              m_MaxCUWidth;
     Ipp32u              m_MaxCUHeight;
     Ipp32u              m_SaoBitIncreaseY, m_SaoBitIncreaseC;
-    bool                m_saoLcuBasedOptimization;
     bool                m_UseNIF;
 
     bool                m_isInitialized;
 
     H265SampleAdaptiveOffset();
-//virtual ~H265SampleAdaptiveOffset();
 
     void init(Ipp32s Width, Ipp32s Height, Ipp32s MaxCUwidth, Ipp32s MaxCUHeight);
     void init(H265SeqParamSet* pSPS);
     void destroy();
 
-    void SAOProcess(H265DecoderFrame* pFrame, SAOParams* pSAOParam);
+    void SAOProcess(H265DecoderFrame* pFrame);
     void processSaoCuOrgLuma(Ipp32s Addr, Ipp32s PartIdx, H265PlaneYCommon *tmpL);
     void processSaoCuLuma(Ipp32s addr, Ipp32s saoType, H265PlaneYCommon *tmpL);
     void processSaoCuOrgChroma(Ipp32s Addr, Ipp32s PartIdx, Ipp32s YCbCr, H265PlaneUVCommon *tmpL);
     void processSaoCuChroma(Ipp32s addr, Ipp32s saoType, Ipp32s YCbCr, H265PlaneUVCommon *tmpL);
-    void processSaoUnitAllLuma(SAOLCUParam* saoLcuParam, bool oneUnitFlag);
-    void processSaoUnitAllChroma(SAOLCUParam *saoLcuParam, bool oneUnitFlagCbCr, Ipp32s yCbCr);
+    void processSaoUnitAllLuma(SAOLCUParam* saoLcuParam);
+    void processSaoUnitAllChroma(SAOLCUParam *saoLcuParam, Ipp32s yCbCr);
     void createNonDBFilterInfo();
     void PCMRestoration();
     void PCMCURestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth);
     void PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth, EnumTextType Text);
+
+protected:
+    void SetOffsets(SAOLCUParam* saoLCUParam, Ipp32s addr, Ipp32s typeIdx, bool isChroma);
 };
 
 inline
@@ -1881,7 +1876,6 @@ struct H265SliceHeader
     //h265 elements of slice header ----------------------------------------------------------------------------------------------------------------
     const H265SeqParamSet* m_SeqParamSet;
     const H265PicParamSet* m_PicParamSet;
-    SAOParams m_SAOParam;
     Ipp32u *m_TileByteLocation;
     Ipp32s m_TileCount;
 

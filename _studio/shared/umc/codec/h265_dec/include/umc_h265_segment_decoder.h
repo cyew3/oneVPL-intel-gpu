@@ -115,7 +115,8 @@ public:
     void DecodeSAOOneLCU(H265CodingUnit* pCU);
     void parseSaoOneLcuInterleaving(Ipp32s rx,
                                     Ipp32s ry,
-                                    SAOParams* pSaoParam,
+                                    bool saoLuma,
+                                    bool saoChroma,
                                     H265CodingUnit* pcCU,
                                     Ipp32s iCUAddrInSlice,
                                     Ipp32s iCUAddrUpInSlice,

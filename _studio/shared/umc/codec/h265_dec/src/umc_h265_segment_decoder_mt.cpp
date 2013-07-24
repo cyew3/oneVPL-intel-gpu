@@ -323,26 +323,18 @@ UMC::Status H265SegmentDecoderMultiThreaded::DecRecSegment(Ipp32s iCurMBNumber, 
 
 } // Status H265SegmentDecoderMultiThreaded::DecRecSegment(Ipp32s iCurMBNumber, Ipp32s &iMBToReconstruct)
 
-UMC::Status H265SegmentDecoderMultiThreaded::SAOFrameTask(Ipp32s , Ipp32s &)
+UMC::Status H265SegmentDecoderMultiThreaded::SAOFrameTask(Ipp32s iCurMBNumber, Ipp32s &iMBToProcess)
 {
     START_TICK
 
-    H265Slice* pSlice = m_pCurrentFrame->GetAU()->GetSliceByNumber(1);
-
-    SAOParams saoParam;
-    saoParam.m_bSaoFlag[0] = pSlice->getSaoEnabledFlag();
-    saoParam.m_bSaoFlag[1] = pSlice->getSaoEnabledFlagChroma();
-
-    m_SAO.m_saoLcuBasedOptimization = true;
     m_SAO.m_Frame = m_pCurrentFrame;
     m_SAO.createNonDBFilterInfo();
 
-    m_SAO.SAOProcess(m_pCurrentFrame, &saoParam);
+    m_SAO.SAOProcess(m_pCurrentFrame);
     m_SAO.PCMRestoration();
 
     END_TICK(sao_time)
     return UMC::UMC_OK;
-
 }
 
 UMC::Status H265SegmentDecoderMultiThreaded::DeblockSegmentTask(Ipp32s iCurMBNumber, Ipp32s &iMBToProcess)

@@ -1369,14 +1369,15 @@ bool TaskBrokerTwoThread_H265::GetReconstructTask(H265DecoderFrameInfo * info, H
 bool TaskBrokerTwoThread_H265::GetDeblockingTask(H265DecoderFrameInfo * info, H265Task *pTask)
 {
     // this is guarded function, safe to touch any variable
-    Ipp32s i;
     bool bPrevDeblocked = true;
 
     Ipp32s sliceCount = info->GetSliceCount();
-    for (i = 0; i < sliceCount; i += 1)
+    for (Ipp32s i = 0; i < sliceCount; i += 1)
     {
         H265Slice *pSlice = info->GetSlice(i);
-        Ipp32s iAvailableToDeblock = /*pSlice->m_bDecoded ? pSlice->m_iMaxMB - pSlice->m_iCurMBToDeb : */pSlice->m_iCurMBToRec - pSlice->m_iCurMBToDeb;
+
+        Ipp32s iMBWidth = info->m_pFrame->getCD()->m_WidthInCU;
+        Ipp32s iAvailableToDeblock = pSlice->m_iCurMBToRec - pSlice->m_iCurMBToDeb;
 
         if (!pSlice->m_bDeblocked &&
             (bPrevDeblocked || !pSlice->getLFCrossSliceBoundaryFlag()) &&
@@ -1388,7 +1389,7 @@ bool TaskBrokerTwoThread_H265::GetDeblockingTask(H265DecoderFrameInfo * info, H2
             pTask->m_taskPreparingGuard->Unlock();
             InitTask(info, pTask, pSlice);
             pTask->m_iFirstMB = pSlice->m_iCurMBToDeb;
-            pTask->m_iMBToProcess = iAvailableToDeblock;
+            pTask->m_iMBToProcess = IPP_MIN(iMBWidth - (pSlice->m_iCurMBToDeb % iMBWidth), iAvailableToDeblock);
 
             pTask->m_iTaskID = TASK_DEB_H265;
             pTask->pFunction = &H265SegmentDecoderMultiThreaded::DeblockSegmentTask;
@@ -1413,7 +1414,7 @@ bool TaskBrokerTwoThread_H265::GetDeblockingTask(H265DecoderFrameInfo * info, H2
         if (!pSlice->m_bDeblocked || pSlice->m_iCurMBToRec < pSlice->m_iMaxMB)
         {
             bPrevDeblocked = false;
-            break; // for mbaff deblocking could be performaed outside boundaries.
+            break;
         }
     }
 

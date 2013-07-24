@@ -499,7 +499,6 @@ void H265SegmentDecoder::DecodeSAOOneLCU(H265CodingUnit* pCU)
                                      m_pSliceHeader->m_SaoEnabledFlagChroma))
     {
         H265DecoderFrame* m_Frame = pCU->m_Frame;
-        SAOParams *saoParam  = &m_pSliceHeader->m_SAOParam;
         Ipp32u curCUAddr = pCU->CUAddr;
         Ipp32s numCuInWidth  = m_Frame->m_CodingData->m_WidthInCU;
         Ipp32s cuAddrInSlice = curCUAddr - m_Frame->m_CodingData->getCUOrderMap(m_pSliceHeader->SliceCurStartCUAddr/m_Frame->getCD()->getNumPartInCU());
@@ -508,13 +507,6 @@ void H265SegmentDecoder::DecodeSAOOneLCU(H265CodingUnit* pCU)
         Ipp32s ry = curCUAddr / numCuInWidth;
         Ipp32s allowMergeLeft = 1;
         Ipp32s allowMergeUp   = 1;
-
-        saoParam->m_bSaoFlag[0] = m_pSliceHeader->m_SaoEnabledFlag;
-
-        //if (curCUAddr == iStartCUAddr)
-        {
-            saoParam->m_bSaoFlag[1] = m_pSliceHeader->m_SaoEnabledFlagChroma;
-        }
 
         if (rx != 0)
         {
@@ -532,13 +524,14 @@ void H265SegmentDecoder::DecodeSAOOneLCU(H265CodingUnit* pCU)
             }
         }
 
-        parseSaoOneLcuInterleaving(rx, ry, saoParam, pCU, cuAddrInSlice, cuAddrUpInSlice, allowMergeLeft, allowMergeUp);
+        parseSaoOneLcuInterleaving(rx, ry, m_pSliceHeader->m_SaoEnabledFlag, m_pSliceHeader->m_SaoEnabledFlagChroma, pCU, cuAddrInSlice, cuAddrUpInSlice, allowMergeLeft, allowMergeUp);
     }
 }
 
 void H265SegmentDecoder::parseSaoOneLcuInterleaving(Ipp32s rx,
                                                     Ipp32s ry,
-                                                    SAOParams* pSaoParam,
+                                                    bool saoLuma,
+                                                    bool saoChroma,
                                                     H265CodingUnit* pcCU,
                                                     Ipp32s iCUAddrInSlice,
                                                     Ipp32s iCUAddrUpInSlice,
@@ -566,7 +559,7 @@ void H265SegmentDecoder::parseSaoOneLcuInterleaving(Ipp32s rx,
 
     }
 
-    if (pSaoParam->m_bSaoFlag[0] || pSaoParam->m_bSaoFlag[1])
+    if (saoLuma || saoChroma)
     {
         if (rx>0 && iCUAddrInSlice!=0 && allowMergeLeft)
         {
@@ -585,7 +578,7 @@ void H265SegmentDecoder::parseSaoOneLcuInterleaving(Ipp32s rx,
 
     for (Ipp32s iCompIdx=0; iCompIdx<3; iCompIdx++)
     {
-        if ((iCompIdx == 0  && pSaoParam->m_bSaoFlag[0]) || (iCompIdx > 0  && pSaoParam->m_bSaoFlag[1]) )
+        if ((iCompIdx == 0  && saoLuma) || (iCompIdx > 0  && saoChroma) )
         {
             if (rx>0 && iCUAddrInSlice!=0 && allowMergeLeft)
             {
