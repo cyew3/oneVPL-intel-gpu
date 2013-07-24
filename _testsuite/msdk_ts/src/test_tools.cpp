@@ -607,6 +607,10 @@ msdk_ts_BLOCK(t_ParseNextUnit){
     }
 
     sts = parser->parse_next_unit();
+    if(sts == BS_ERR_MORE_DATA){
+        hdr = NULL;
+        return msdk_ts::resOK;
+    }
     CHECK_STS(sts, BS_ERR_NONE);
 
     if(pBS){
