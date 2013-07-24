@@ -955,6 +955,9 @@ mfxStatus MFXVideoDECODEVC1::Reset(mfxVideoParam *par)
     m_bIsFirstField = true;
     m_pPrevOutSurface = NULL;
     m_ext_dur = 0;
+    m_iFrameBCounter = 0;
+    m_SHSize = 0;
+    m_SaveBytesSize = 0;
 
     if (false == IsHWSupported(m_pCore, par))
     {
@@ -968,6 +971,7 @@ mfxStatus MFXVideoDECODEVC1::Reset(mfxVideoParam *par)
 
     m_NumberOfQueries = 0;
     m_bPTSTaken = false;
+
 
     return MFXSts;
 }
@@ -1803,7 +1807,7 @@ mfxStatus MFXVideoDECODEVC1::ReturnLastFrame(mfxFrameSurface1 *surface_work, mfx
         *surface_disp = 0;
         if (-1 == m_qMemID.back())
         {
-            return MFX_ERR_NONE;
+            return MFX_ERR_MORE_DATA;//MFX_ERR_NONE;
         }
         else if (-2 == m_qMemID.back())
             return MFX_ERR_MORE_DATA;

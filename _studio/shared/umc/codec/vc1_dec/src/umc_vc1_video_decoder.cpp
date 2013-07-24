@@ -850,7 +850,10 @@ Status VC1VideoDecoder::StartCodesProcessing(Ipp8u*   pBStream,
 
                 if (align_value<Ipp32u>(2*(context.m_seqLayerHeader.MAX_CODED_WIDTH+1)) != align_value<Ipp32u>(2*(m_pInitContext.m_seqLayerHeader.MAX_CODED_WIDTH+1))
                    || align_value<Ipp32u>(2*(context.m_seqLayerHeader.MAX_CODED_HEIGHT+1),alignment) != align_value<Ipp32u>(2*(m_pInitContext.m_seqLayerHeader.MAX_CODED_HEIGHT+1),alignment))
+                {
+                    m_pStore->SetNewSHParams(m_pContext);
                     umcRes = UMC_NTF_NEW_RESOLUTION;
+                }
              }
             VC1_TO_UMC_CHECK_STS(sts);
             break;
@@ -1302,7 +1305,6 @@ Status VC1VideoDecoder::Close(void)
 
     if (m_pStore)
     {
-        m_pStore->Reset();
         delete m_pStore;
         m_pStore = 0;
     }
@@ -1404,43 +1406,35 @@ Status VC1VideoDecoder::Reset(void)
     if(m_pContext==NULL)
         return UMC_ERR_NOT_INITIALIZED;
 
-    //if(m_pdecoder)
-    //{
-    //    for(Ipp32u i = 1; i < m_iThreadDecoderNum; i += 1)
-    //    {
-    //        if(m_pdecoder[i])
-    //        {
-    //            //m_pdecoder[i]->WaitAndStop();
-    //            m_pdecoder[i]->WaitForEndOfProcessing();
-    //        }
-    //    }
-    //}
-
     m_bIsWarningStream = false;
     m_bLastFrameNeedDisplay = false;
-    if (m_pStore)
-    {
-        m_pStore->FreeIndexQueue();
-        m_pStore->ResetDSQueue();
-        m_pStore->Reset();
-        //va part
-        m_pStore->SetBFrameIndex(-1);
-        m_pStore->SetCurrIndex(-1);
-        m_pStore->SetRangeMapIndex(-1);
-        m_pStore->SetPrevIndex(-1);
-        m_pStore->SetNextIndex(-1);
+   if (m_pStore)
+   {
+ 
+        if (!m_pStore->Reset())
+            return UMC_ERR_NOT_INITIALIZED;
+    
+    #ifndef UMC_RESTRICTED_CODE_VA
+    #if defined UMC_VA_DXVA || defined UMC_VA_LINUX
+            m_pStore->CreateDSQueue(&m_pInitContext,m_va);
+    #else
+            m_pStore->CreateDSQueue(&m_pInitContext,m_bIsReorder,0);
+    #endif
+    #else
+            m_pStore->CreateDSQueue(&m_pInitContext, m_bIsReorder, 0);
+    #endif
+            m_pStore->CreateOutBuffersQueue();
+            m_pStore->SetDefinition(&(m_pInitContext.m_seqLayerHeader)); 
+            m_pStore->FillIdxVector(2 * (m_iMaxFramesInProcessing + VC1NUMREFFRAMES));
     }
     m_lFrameCount = 0;
     m_iRefFramesDst = 0;
     m_iBFramesDst = 0;
 
-    m_pContext->m_frmBuff.m_iDisplayIndex =  0;
-    m_pContext->m_frmBuff.m_iCurrIndex    =  0;
-    m_pContext->m_frmBuff.m_iPrevIndex    =  0;
-    m_pContext->m_frmBuff.m_iNextIndex    =  1;
-    //m_pContext->m_frmBuff.m_iICompIndex   =  3;
-
-    //memset(m_pContext->m_picLayerHeader, 0, sizeof(VC1PictureLayerHeader));
+    m_pContext->m_frmBuff.m_iDisplayIndex =  -1;
+    m_pContext->m_frmBuff.m_iCurrIndex    =  -1;
+    m_pContext->m_frmBuff.m_iPrevIndex    =  -1;
+    m_pContext->m_frmBuff.m_iNextIndex    =  -1;
 
     if (m_pContext->m_pSingleMB)
     {
@@ -1455,7 +1449,7 @@ Status VC1VideoDecoder::Reset(void)
     m_pContext->DeblockInfo.is_last_deblock = 1;
     m_pts = 0;
     m_bIsExternalFR = false;
-
+    m_bIsFrameToOut = false;
 
     return umcRes;
 }

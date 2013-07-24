@@ -139,6 +139,12 @@ bool VC1FrameDescriptor::Init(Ipp32u         DescriporID,
     m_iSelfID = DescriporID;
     return true;
 }
+
+bool VC1FrameDescriptor::SetNewSHParams(VC1Context* pContext)
+{
+    m_pContext->m_seqLayerHeader = pContext->m_seqLayerHeader;
+    return true;
+}
 void VC1FrameDescriptor::Reset()
 {
     m_iFrameCounter = 0;

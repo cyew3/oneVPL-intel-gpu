@@ -103,6 +103,7 @@ namespace UMC
             return m_bIsReadyToLoad;
         }
 
+        bool SetNewSHParams(VC1Context* pContext);
 
         virtual ~VC1FrameDescriptor()
         {

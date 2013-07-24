@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, Task processing base on H264
@@ -197,7 +197,7 @@ namespace UMC
                       Ipp32u iMaxFramesInParallel,
                       VC1VideoDecoder* pVC1Decoder);
 
-        void Reset();
+        bool Reset();
 
         bool AddSampleTask(VC1Task* _pTask, Ipp32u qID);
         void DistributeTasks(Ipp32u qID);
@@ -226,7 +226,7 @@ namespace UMC
 
         bool AddPerfomedTask(VC1Task* pTask, VC1FrameDescriptor *pFrameDS);
         void SetFrameSettings(Ipp32u _frame_settings) {frame_settings = _frame_settings;}
-        void ResetQueue(Ipp32u qID);
+        //void ResetQueue(Ipp32u qID);
 
         VC1PictureLayerHeader* GetFirstInSecondField(Ipp32u qID);
 
@@ -234,6 +234,7 @@ namespace UMC
         bool CreateDSQueue(VC1Context* pContext, VideoAccelerator* va);
 #endif
         bool CreateDSQueue(VC1Context* pContext, bool IsReorder,Ipp16s* pResidBuf); //pResidBuf - memory for residual coeffs
+        bool SetNewSHParams(VC1Context* pContext);
         void ResetDSQueue();
         bool IsReadyDS()
         {
@@ -450,7 +451,7 @@ namespace UMC
             --m_iNumDSActiveinQueue;
         }
         bool CreateTaskQueues();
-        void ReleaseTaskQueues();
+        //void ReleaseTaskQueues();
         void SetDefinition(VC1SequenceLayerHeader*    seqLayerHeader);
         void FillIdxVector(Ipp32u size);
         FrameMemID  GetIdx(Ipp32u Idx);
@@ -566,8 +567,8 @@ namespace UMC
         Ipp32u m_iNumFramesProcessing;
         Ipp32u m_iNumDSActiveinQueue;
 
-        Ipp32u m_iNumRefFrames;
-        Ipp32u m_iNumProcFrames;
+       // Ipp32u m_iNumRefFrames;
+       // Ipp32u m_iNumProcFrames;
         vm_mutex m_mDSGuard;
 
 

@@ -69,6 +69,7 @@ namespace UMC
                                                                   m_CurrIndex(-1),
                                                                   m_PrevIndex(-1),
                                                                   m_NextIndex(-1),
+                                                                  m_iICIndexB(-1),
                                                                   m_BFrameIndex(-1),
                                                                   m_iICIndex(-1),
                                                                   m_pMainQueueTasksState(NULL),
@@ -105,8 +106,12 @@ namespace UMC
 
         if(m_pMemoryAllocator)
         {
-            for (i = 0; i < m_iNumFramesProcessing; i++)
-                m_pDescriptorQueue[i]->Release();
+
+            if (m_pDescriptorQueue)
+            {
+                for (i = 0; i < m_iNumFramesProcessing; i++)
+                    m_pDescriptorQueue[i]->Release();
+            }
 
             if (m_iIntStructID != -1)
             {
@@ -253,58 +258,173 @@ namespace UMC
 
 
     }
-    void VC1TaskStore::Reset()
+    bool VC1TaskStore::Reset()
     {
-        //memset(m_pTasksInQueue,0,m_iNumFramesProcessing*sizeof(Ipp32u));
-        //memset(m_pSlicesInQueue,0,m_iNumFramesProcessing*sizeof(Ipp32u));
-        //m_iCurrentTaskID = 0;
-        m_iNumDecodeRefFrames = 0;
-        m_lNextRefFrameCounter = 1;
-        m_lFirstRefFrameCounter = 1;
-        //m_iCurrentTaskID = 0;
-        //m_iNumFramesProcessing = 0;
-        //m_iNumDSActiveinQueue = 0;
-        //m_lNextFrameCounter = 1 ;
-        //m_iNumDecodeRefFrames = 0;
-        //m_bNeedToCompField = false;
-        //m_iRangeMapIndex = 0;
-        //m_bIsNeedToDecode = true;
+        Ipp32u i = 0;
 
-        //ReleaseTaskQueues();
-        //for (Ipp32u i = 0; i < m_iNumFramesProcessing; i++)
-        //{
-        //    m_pCommonQueue[i]->Reset();
-        //    m_pAdditionalQueue[i]->Reset();
-        //}
-        m_CurrIndex = -1;
-        m_PrevIndex = -1;
-        m_NextIndex = -1;
-        m_BFrameIndex = -1;
-        m_iICIndex = -1;
+        //close
+        m_bIsLastFramesMode = false;
+        FreeIndexQueue();
+        ResetDSQueue();
 
-        UnLockAllAssocIdx();
-        
         IntIndexes.clear();
         AssocIdx.clear();
 
-        //for (Ipp32u i = 0; i < m_iConsumerNumber; i += 1)
-        //{
-        //    Event *pEvent = m_eWaiting[i];
+        if (vm_mutex_is_valid(&m_mDSGuard))
+            vm_mutex_destroy(&m_mDSGuard);
 
-        //    if (pEvent)
-        //        pEvent->Reset();
-        //}
+        for (i = 0; i < m_iNumFramesProcessing; i++)
+        {
+            vm_mutex_destroy(m_pGuardGet[i]);
+            m_pGuardGet[i] = 0;
+            vm_mutex_destroy(m_pGuardAdd[i]);
+            m_pGuardAdd[i] = 0;
+        }
+        for (i = 0; i <  m_iConsumerNumber; i++)
+            m_eWaiting[i]->~Event();
 
-        m_bIsLastFramesMode = false;
+        if(m_pMemoryAllocator)
+        {
+            if (m_pDescriptorQueue)
+            {
+                for (i = 0; i < m_iNumFramesProcessing; i++)
+                    m_pDescriptorQueue[i]->Release();
+            }
 
+            if (m_iIntStructID != -1)
+            {
+                m_pMemoryAllocator->Unlock(m_iIntStructID);
+                m_pMemoryAllocator->Free(m_iIntStructID);
+                m_iIntStructID = (MemID)-1;
+            }
+
+            if (m_iTSHeapID != -1)
+            {
+                m_pMemoryAllocator->Unlock(m_iTSHeapID);
+                m_pMemoryAllocator->Free(m_iTSHeapID);
+                m_iTSHeapID = (MemID)-1;
+            }
+        }
+
+        m_pDSIndicate = 0;
+        m_pDSIndicateSwap = 0;
+
+        //Init
+        // this not full initialization, need also call CreateDSQueue, CreateOutBuffersQueue,SetDefinition and FillIdxVector
+        // all functions need special input params
+
+        m_iNumDSActiveinQueue = 0;
+
+        if (!m_pDSIndicate)
+        {
+            Ipp8u* ptr = NULL;
+            ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32s));
+            ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32s));
+            ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32s));
+            ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32s));
+            ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32u)*64);
+            ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32u)*64);
+            ptr += align_value<Ipp32u>(sizeof(VC1TSHeap));
+
+            if (m_pMemoryAllocator->Alloc(&m_iIntStructID,
+                (size_t)ptr,
+                UMC_ALLOC_PERSISTENT,
+                16) != UMC_OK)
+                return false;
+
+            m_pDSIndicate = (Ipp32s*)(m_pMemoryAllocator->Lock(m_iIntStructID));
+            memset(m_pDSIndicate,0,size_t(ptr));
+            ptr = (Ipp8u*)m_pDSIndicate;
+
+            ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32s));
+            m_pDSIndicateSwap = (Ipp32s*)ptr;
+
+            ptr +=  align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32s));
+            m_pTasksInQueue = (Ipp32u*)ptr;
+
+            ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32s));
+            m_pSlicesInQueue = (Ipp32u*)ptr;
+
+            ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32s));
+            m_pMainQueueTasksState = (Ipp32u*)ptr;
+
+            ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32u)*64);
+            m_pAdditionaQueueTasksState = (Ipp32u*)ptr;
+
+            ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32u)*64);
+            m_pSHeap = (VC1TSHeap*)ptr;
+
+        }
+        //CalculateHeapSize();
+        // New Allocation
+        {
+            // Heap Allocation
+            {
+                Ipp32u heapSize = CalculateHeapSize();
+
+                if (m_pMemoryAllocator->Alloc(&m_iTSHeapID,
+                    heapSize,
+                    UMC_ALLOC_PERSISTENT,
+                    16) != UMC_OK)
+                    return false;
+
+                m_pSHeap = new(m_pSHeap) VC1TSHeap((Ipp8u*)m_pMemoryAllocator->Lock(m_iTSHeapID),heapSize);             
+            }
+
+            m_pSHeap->s_new(&m_pGuardGet,m_iNumFramesProcessing);
+            m_pSHeap->s_new(&m_pGuardAdd,m_iNumFramesProcessing);
+            m_pSHeap->s_new(&m_pCommonQueue,m_iNumFramesProcessing);
+            m_pSHeap->s_new(&m_pAdditionalQueue,m_iNumFramesProcessing);
+ 
+            for (i = 0; i < m_iNumFramesProcessing; i++)
+            {
+                m_pDSIndicate[i] = i;
+                m_pSHeap->s_new(&m_pCommonQueue[i],VC1SLICEINPARAL);
+                m_pSHeap->s_new(&m_pAdditionalQueue[i],VC1SLICEINPARAL);
+                m_pSHeap->s_new(&m_pGuardGet[i]);
+                m_pSHeap->s_new(&m_pGuardAdd[i]);
+
+                vm_mutex_set_invalid(m_pGuardGet[i]);
+                vm_mutex_set_invalid(m_pGuardAdd[i]);
+                if (VM_OK != vm_mutex_init(m_pGuardGet[i]))
+                    return false;
+                if (VM_OK != vm_mutex_init(m_pGuardAdd[i]))
+                    return false;
+            }
+        }
+        CreateTaskQueues();
+
+        if (0 == vm_mutex_is_valid(&m_mDSGuard))
+        {
+            if (VM_OK != vm_mutex_init(&m_mDSGuard))
+                return false;
+        }
+        m_pSHeap->s_new(&m_eWaiting,m_iConsumerNumber);
+        // initilaize event(s)
+        for (i = 0; i < m_iConsumerNumber; i += 1)
+        {
+            {
+                m_pSHeap->s_new(&(m_eWaiting[i]));
+                if (UMC_OK != m_eWaiting[i]->Init(0, 0))
+                    return false;
+            }
+        }
+        
+        SetBFrameIndex(-1);
+        SetCurrIndex(-1);
+        SetRangeMapIndex(-1);
+        SetPrevIndex(-1);
+        SetNextIndex(-1);
+
+        return true;
     }
 
-    void VC1TaskStore::ResetQueue(Ipp32u qID)
-    {
+    //void VC1TaskStore::ResetQueue(Ipp32u qID)
+    //{
         //m_pCommonQueue[qID]->Reset();
         //m_pAdditionalQueue[qID]->Reset();
         // need to reset m_iTasksInQueue - for every queue
-    }
+    //}
 
     inline bool VC1TaskStore::IsMainTaskPrepareForProcess(Ipp32u FrameID, Ipp32u TaskID)
     {
@@ -508,36 +628,36 @@ namespace UMC
         return true;
 
     }
-    void VC1TaskStore::ReleaseTaskQueues()
-    {
-        Ipp32u i,j;
-        for (j=0; j < m_iNumFramesProcessing; j++)
-        {
-            for (i=0; i < VC1SLICEINPARAL; i++)
-            {
-                // main queue
-               if ((m_pCommonQueue[j])[i])
-               {
-                   if ((m_pCommonQueue[j])[i]->m_pSlice)
-                   {
-                       delete((m_pCommonQueue[j])[i]->m_pSlice);
-                       (m_pCommonQueue[j])[i]->m_pSlice = NULL;
-                   }
-               }
+    //void VC1TaskStore::ReleaseTaskQueues()
+    //{
+    //    Ipp32u i,j;
+    //    for (j=0; j < m_iNumFramesProcessing; j++)
+    //    {
+    //        for (i=0; i < VC1SLICEINPARAL; i++)
+    //        {
+    //            // main queue
+    //           if ((m_pCommonQueue[j])[i])
+    //           {
+    //               if ((m_pCommonQueue[j])[i]->m_pSlice)
+    //               {
+    //                   delete((m_pCommonQueue[j])[i]->m_pSlice);
+    //                   (m_pCommonQueue[j])[i]->m_pSlice = NULL;
+    //               }
+    //           }
 
-               // add queue
-                   if ((m_pAdditionalQueue[j])[i])
-                   {
-                       if ((m_pAdditionalQueue[j])[i]->m_pSlice)
-                       {
-                           delete((m_pAdditionalQueue[j])[i]->m_pSlice);
-                           (m_pAdditionalQueue[j])[i]->m_pSlice = NULL;
-                       }
-                   }
+    //           // add queue
+    //               if ((m_pAdditionalQueue[j])[i])
+    //               {
+    //                   if ((m_pAdditionalQueue[j])[i]->m_pSlice)
+    //                   {
+    //                       delete((m_pAdditionalQueue[j])[i]->m_pSlice);
+    //                       (m_pAdditionalQueue[j])[i]->m_pSlice = NULL;
+    //                   }
+    //               }
 
-            }
-        }
-    }
+    //        }
+    //    }
+    //}
 
 
     bool VC1TaskStore::AddSampleTask(VC1Task* _pTask, Ipp32u qID)
@@ -1401,6 +1521,17 @@ STATISTICS_END_TIME(m_timeStatistics->AddPerfomed_StartTime,
             m_pDescriptorQueue[i]->Init(i,pContext,this,IsReorder,pResidBuf);
         }
         m_pPrefDS =  m_pDescriptorQueue[0];
+        return true;
+    }
+
+    bool VC1TaskStore::SetNewSHParams(VC1Context* pContext)
+    {
+         Ipp32u i = 0;
+        for (i = 0; i < m_iNumFramesProcessing; i++)
+        {
+            m_pDescriptorQueue[i]->SetNewSHParams(pContext);
+        }
+
         return true;
     }
 
