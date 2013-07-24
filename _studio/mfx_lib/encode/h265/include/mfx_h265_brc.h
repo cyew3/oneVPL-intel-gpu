@@ -113,6 +113,9 @@ public:
 
     mfxStatus GetInitialCPBRemovalDelay(mfxU32 *initial_cpb_removal_delay, mfxI32 recode = 0);
 
+    void GetMinMaxFrameSize(mfxI32 *minFrameSizeInBits, mfxI32 *maxFrameSizeInBits); 
+
+
 protected:
     mfxBRC_Params mParams;
     bool   mIsInit;
