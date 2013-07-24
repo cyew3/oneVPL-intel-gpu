@@ -68,14 +68,21 @@ mfxStatus H265Frame::CopyFrame(mfxFrameSurface1 *surface)
     PixType *uv0 = uv;
     mfxU8 *ysrc = surface->Data.Y;
     mfxU8 *uvsrc = surface->Data.UV;
+    Ipp32s input_width =  surface->Info.CropW ? surface->Info.CropW : surface->Info.Width;
+    Ipp32s input_height = surface->Info.CropH ? surface->Info.CropH : surface->Info.Height;
+    if (input_width > width || input_height > height) VM_ASSERT(0);
 
     memset(y0 - (pitch_luma + 1) * padding, 128, (pitch_luma + 1) * padding);
 
-    for (i = 0; i < height; i++) {
-        memcpy(y0, ysrc, width);
-        memset(y0 + width, 128, padding * 2);
+    for (i = 0; i < input_height; i++) {
+        memcpy(y0, ysrc, input_width);
+        memset(y0 + input_width, 128, padding * 2 + width - input_width);
         y0 += pitch_luma;
         ysrc += surface->Data.Pitch;
+    }
+    for (i = input_height; i < height; i++) {
+        memset(y0, 128, padding * 2 + width);
+        y0 += pitch_luma;
     }
 
     memset(y0, 128, (pitch_luma - 1) * padding);
@@ -83,11 +90,15 @@ mfxStatus H265Frame::CopyFrame(mfxFrameSurface1 *surface)
     memset(uv0 - ((pitch_luma * padding >> 1) + padding), 128,
         (pitch_luma * padding >> 1) + padding);
 
-    for (i = 0; i < height >> 1; i++) {
-        memcpy(uv0, uvsrc, width);
-        memset(uv0 + width, 128, padding * 2);
+    for (i = 0; i < input_height >> 1; i++) {
+        memcpy(uv0, uvsrc, input_width);
+        memset(uv0 + input_width, 128, padding * 2 + width - input_width);
         uv0 += pitch_luma;
         uvsrc += surface->Data.Pitch;
+    }
+    for (i = input_height >> 1; i < height >> 1; i++) {
+        memset(uv0, 128, padding * 2 + width);
+        uv0 += pitch_luma;
     }
 
     memset(uv0, 128, (pitch_luma * padding >> 1) - padding);
