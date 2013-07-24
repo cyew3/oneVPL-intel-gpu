@@ -13,6 +13,7 @@
 #ifndef __MFX_H265_OPTIMIZATION_H__
 #define __MFX_H265_OPTIMIZATION_H__
 
+#include <immintrin.h>
 
 #if defined(_WIN32) || defined(_WIN64)
   #define H265_FORCEINLINE __forceinline
@@ -246,7 +247,7 @@ namespace MFX_HEVC_COMMON
 
         const t_src* pSrc = in_pSrc - (((( plane_type == UMC_HEVC_DECODER::TEXT_LUMA) ? 8 : 4) >> 1) - 1) * accum_pitch;
 
-        width <<= int(plane_type == TEXT_CHROMA);
+        width <<= int(plane_type == UMC_HEVC_DECODER::TEXT_CHROMA);
 
 #ifdef TIME_INTERP
     startTime = __rdtsc();

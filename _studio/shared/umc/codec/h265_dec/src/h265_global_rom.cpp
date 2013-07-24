@@ -20,7 +20,7 @@
 namespace UMC_HEVC_DECODER
 {
 
-__declspec(align(32)) const Ipp8u scanGCZr[128] = {
+ALIGN_DECL(32) const Ipp8u scanGCZr[128] = {
      0,  0,  0,  0,  3,  1,  2,  0,  3,  2,  1,  0,  3,  1,  2,  0,
     15, 11, 14,  7, 10, 13,  3,  6,  9, 12,  2,  5,  8,  1,  4,  0,
     15, 14, 13, 12, 11, 10,  9,  8,  7,  6,  5,  4,  3,  2,  1,  0, 
