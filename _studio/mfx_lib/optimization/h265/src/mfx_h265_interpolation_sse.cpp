@@ -9,6 +9,20 @@
 //
 */
 
+/*
+// HEVC interpolation filters, implemented with SSE packed multiply-add 
+// 
+// NOTES:
+// - requires at least SSE4.1 (pextrw, pmovzxbw)
+// - functions assume that width = multiple of 4 (LUMA) or multiple of 2 (CHROMA), height > 0
+// - input data is read in chunks of 8 or 16 bytes regardless of width, so assume it's safe to read up to 16 bytes beyond right edge of block 
+//     (data not used, just must be allocated memory - pad inbuf as needed)
+// - best intrinsic performance requires up to date Intel compiler (check compiler output to make sure no unnecessary stack spills!)
+// - if compiler register allocates poorly, may need to turn /Qipo OFF for this file
+// - picture/buffer averaging is done as separate pass after filtering to allow simpler filter kernels 
+//     (pays off in performance by reducing branches for the most common modes, also makes code easier to read/change)
+*/
+
 #include "mfx_common.h"
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined (MFX_ENABLE_H265_VIDEO_DECODE)
@@ -154,13 +168,13 @@ static void InterpLuma_s8_d16_H(const unsigned char* pSrc, unsigned int srcPitch
     xmm_offset = _mm_shuffle_epi32(xmm_offset, 0x00);
     xmm_shift = _mm_cvtsi32_si128(shift);
 
-    /* calculate 8 (or 4) outputs per inner loop, working horizontally */
+    /* calculate 8 outputs per inner loop, working horizontally */
     do {
         pSrc = pSrcRef;
         pDst = pDstRef;
         col = width;
 
-        do {
+         while (col > 0) {
             /* load 16 8-bit pixels */
             xmm0 = _mm_loadu_si128((__m128i *)pSrc);
             xmm1 = xmm0;
@@ -186,15 +200,19 @@ static void InterpLuma_s8_d16_H(const unsigned char* pSrc, unsigned int srcPitch
             xmm0 = _mm_add_epi16(xmm0, xmm_offset);
             xmm0 = _mm_sra_epi16(xmm0, xmm_shift);
 
-            /* store 4 or 8 16-bit words */
-            if (col >= 8)
+            /* store 8 16-bit words */
+            if (col >= 8) {
                 _mm_storeu_si128((__m128i *)pDst, xmm0);
-            else
-                _mm_storel_epi64((__m128i *)pDst, xmm0);
-            pSrc += 8;
-            pDst += 8;
-            col -= 8;
-        } while (col > 0);
+                pSrc += 8;
+                pDst += 8;
+                col -= 8;
+                continue;
+            }
+
+            /* store 4 16-bit words */
+            _mm_storel_epi64((__m128i *)pDst, xmm0);
+            break;
+        }
 
         pSrcRef += srcPitch;
         pDstRef += dstPitch;
@@ -225,13 +243,13 @@ static void InterpChroma_s8_d16_H(const unsigned char* pSrc, unsigned int srcPit
     xmm2 = _mm_load_si128((__m128i *)(coeffs +  0));
     xmm3 = _mm_load_si128((__m128i *)(coeffs + 16));
 
-    /* calculate 8 (or 4) outputs per inner loop, working horizontally */
+    /* calculate 8 outputs per inner loop, working horizontally */
     do {
         pSrc = pSrcRef;
         pDst = pDstRef;
         col = width;
 
-        do {
+        while (col > 0) {
             /* load 16 8-bit pixels */
             xmm0 = _mm_loadu_si128((__m128i *)pSrc);
             xmm1 = xmm0;
@@ -249,15 +267,26 @@ static void InterpChroma_s8_d16_H(const unsigned char* pSrc, unsigned int srcPit
             xmm0 = _mm_add_epi16(xmm0, xmm_offset);
             xmm0 = _mm_sra_epi16(xmm0, xmm_shift);
 
-            /* store 4 or 8 16-bit words */
-            if (col >= 8)
+            /* store 8 16-bit words */
+            if (col >= 8) {
                 _mm_storeu_si128((__m128i *)pDst, xmm0);
-            else
+                pSrc += 8;
+                pDst += 8;
+                col -= 8;
+                continue;
+            }
+
+            /* store 2, 4, or 6 16-bit words - should compile to single compare with jg, je, jl */
+            if (col > 4) {
                 _mm_storel_epi64((__m128i *)pDst, xmm0);
-            pSrc += 8;
-            pDst += 8;
-            col -= 8;
-        } while (col > 0);
+                *(int *)(pDst+4) = _mm_extract_epi32(xmm0, 2);
+            } else if (col == 4) {
+                _mm_storel_epi64((__m128i *)pDst, xmm0);
+            } else {
+                *(int *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
+            }
+            break;
+        }
 
         pSrcRef += srcPitch;
         pDstRef += dstPitch;
@@ -286,7 +315,7 @@ static void InterpLuma_s8_d16_V(const unsigned char* pSrc, unsigned int srcPitch
     xmm0 = _mm_cvtsi32_si128(shift);
     _mm_storeu_si128((__m128i*)shiftTab, xmm0);
 
-    /* calculate 8 (or 4) outputs per inner loop, working vertically */
+    /* calculate 8 outputs per inner loop, working vertically */
     col = width;
     do {
         row = height;
@@ -374,7 +403,7 @@ static void InterpChroma_s8_d16_V(const unsigned char* pSrc, unsigned int srcPit
     xmm4 = _mm_load_si128((__m128i *)(coeffs +  0));
     xmm5 = _mm_load_si128((__m128i *)(coeffs + 16));
 
-    /* calculate 8 (or 4) outputs per inner loop, working vertically */
+    /* calculate 8 outputs per inner loop, working vertically */
     col = width;
     do {
         pSrc = pSrcRef;
@@ -404,11 +433,17 @@ static void InterpChroma_s8_d16_V(const unsigned char* pSrc, unsigned int srcPit
             xmm0 = _mm_add_epi16(xmm0, xmm_offset);
             xmm0 = _mm_sra_epi16(xmm0, xmm_shift);
 
-            /* store 4 or 8 16-bit words */
-            if (col >= 8)
+            /* store 2, 4, 6 or 8 16-bit words */
+            if (col >= 8) {
                 _mm_storeu_si128((__m128i*)pDst, xmm0);
-            else
+            } else if (col == 6) {
+                _mm_storel_epi64((__m128i *)pDst, xmm0);
+                *(int *)(pDst+4) = _mm_extract_epi32(xmm0, 2);
+            } else if (col == 4) {
                 _mm_storel_epi64((__m128i*)pDst, xmm0);
+            } else {
+                *(int *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
+            }
 
             /* shift row registers (1->0, 2->1, etc.) */
             xmm0 = xmm1;
@@ -544,7 +579,7 @@ static void InterpChroma_s16_d16_V(const short* pSrc, unsigned int srcPitch, sho
 
         do {
             /* load row 3 */
-           xmm3 = _mm_loadl_epi64((__m128i*)(pSrc + 3*srcPitch));
+            xmm3 = _mm_loadl_epi64((__m128i*)(pSrc + 3*srcPitch));
 
             /* interleave rows 0,1 and multiply by coefs 0,1 */
             xmm0 = _mm_unpacklo_epi16(xmm0, xmm1);
@@ -561,8 +596,11 @@ static void InterpChroma_s16_d16_V(const short* pSrc, unsigned int srcPitch, sho
             xmm0 = _mm_sra_epi32(xmm0, xmm_shift);
             xmm0 = _mm_packs_epi32(xmm0, xmm0);
 
-            /* always store 4 16-bit values */
-            _mm_storel_epi64((__m128i*)pDst, xmm0);
+            /* store 2 or 4 16-bit values */
+            if (col >= 4)
+                _mm_storel_epi64((__m128i*)pDst, xmm0);
+            else
+                *(int *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
 
             /* shift row registers (1->0, 2->1, etc.) */
             xmm0 = xmm1;
@@ -594,20 +632,31 @@ static void AverageModeN(short *pSrc, unsigned int srcPitch, unsigned char *pDst
         pDst = pDstRef;
         col = width;
 
-        do {
-            /* load 8 16-bit pixels, clip to 8-bit, store 8 8-bit pixels */
+        while (col > 0) {
+            /* load 8 16-bit pixels, clip to 8-bit */
             xmm0 = _mm_loadu_si128((__m128i *)pSrc);
             xmm0 = _mm_packus_epi16(xmm0, xmm0);
 
-            if (col >= 8)
+            /* store 8 pixels */
+            if (col >= 8) {
                 _mm_storel_epi64((__m128i*)pDst, xmm0);
-            else
-                *(int*)pDst = _mm_cvtsi128_si32(xmm0);
+                pSrc += 8;
+                pDst += 8;
+                col -= 8;
+                continue;
+            }
 
-            pSrc += 8;
-            pDst += 8;
-            col -= 8;
-        } while (col > 0);
+            /* store 2, 4, or 6 pixels - should compile to single compare with jg, je, jl */
+            if (col > 4) {
+                *(int   *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
+                *(short *)(pDst+4) = (short)_mm_extract_epi16(xmm0, 2);
+            } else if (col == 4) {
+                *(int   *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
+            } else {
+                *(short *)(pDst+0) = (short)_mm_extract_epi16(xmm0, 0);
+            }
+            break;
+        }
 
         pSrcRef += srcPitch;
         pDstRef += dstPitch;
@@ -629,7 +678,7 @@ static void AverageModeP(short *pSrc, unsigned int srcPitch, unsigned char *pAvg
         pAvg = pAvgRef;
         col = width;
 
-        do {
+        while (col > 0) {
             /* load 8 16-bit pixels from source */
             xmm0 = _mm_loadu_si128((__m128i *)pSrc);
             
@@ -643,17 +692,27 @@ static void AverageModeP(short *pSrc, unsigned int srcPitch, unsigned char *pAvg
             xmm0 = _mm_srai_epi16(xmm0, 7);
             xmm0 = _mm_packus_epi16(xmm0, xmm0);
 
-            /* store 4 or 8 8-bit words */
-            if (col >= 8)
+            /* store 8 pixels */
+            if (col >= 8) {
                 _mm_storel_epi64((__m128i*)pDst, xmm0);
-            else
-                *(int*)pDst = _mm_cvtsi128_si32(xmm0);
+                pSrc += 8;
+                pDst += 8;
+                pAvg += 8;
+                col -= 8;
+                continue;
+            }
 
-            pSrc += 8;
-            pDst += 8;
-            pAvg += 8;
-            col -= 8;
-        } while (col > 0);
+            /* store 2, 4, or 6 pixels - should compile to single compare with jg, je, jl */
+            if (col > 4) {
+                *(int   *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
+                *(short *)(pDst+4) = (short)_mm_extract_epi16(xmm0, 2);
+            } else if (col == 4) {
+                *(int   *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
+            } else {
+                *(short *)(pDst+0) = (short)_mm_extract_epi16(xmm0, 0);
+            }
+            break;
+        }
 
         pSrcRef += srcPitch;
         pDstRef += dstPitch;
@@ -676,7 +735,7 @@ static void AverageModeB(short *pSrc, unsigned int srcPitch, short *pAvg, unsign
         pAvg = pAvgRef;
         col = width;
 
-        do {
+        while (col > 0) {
             /* load 8 16-bit pixels from source and from avg */
             xmm0 = _mm_loadu_si128((__m128i *)pSrc);
             xmm1 = _mm_loadu_si128((__m128i *)pAvg);
@@ -687,17 +746,27 @@ static void AverageModeB(short *pSrc, unsigned int srcPitch, short *pAvg, unsign
             xmm0 = _mm_srai_epi16(xmm0, 7);
             xmm0 = _mm_packus_epi16(xmm0, xmm0);
 
-            /* store 4 or 8 8-bit words */
-            if (col >= 8)
+            /* store 8 pixels */
+            if (col >= 8) {
                 _mm_storel_epi64((__m128i*)pDst, xmm0);
-            else
-                *(int*)pDst = _mm_cvtsi128_si32(xmm0);
+                pSrc += 8;
+                pDst += 8;
+                pAvg += 8;
+                col -= 8;
+                continue;
+            }
 
-            pSrc += 8;
-            pDst += 8;
-            pAvg += 8;
-            col -= 8;
-        } while (col > 0);
+            /* store 2, 4, or 6 pixels - should compile to single compare with jg, je, jl */
+            if (col > 4) {
+                *(int   *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
+                *(short *)(pDst+4) = (short)_mm_extract_epi16(xmm0, 2);
+            } else if (col == 4) {
+                *(int   *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
+            } else {
+                *(short *)(pDst+0) = (short)_mm_extract_epi16(xmm0, 0);
+            }
+            break;
+        }
 
         pSrcRef += srcPitch;
         pDstRef += dstPitch;
@@ -711,10 +780,10 @@ static void AverageModeB(short *pSrc, unsigned int srcPitch, short *pAvg, unsign
 void Interp_S8_NoAvg(const unsigned char* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, 
                    int tab_index, int width, int height, int shift, short offset, int dir, int plane)
 {
-    assert((width & 0x3) == 0);
+    assert( ( (plane == TEXT_LUMA) && ((width & 0x3) == 0) ) || ( (plane != TEXT_LUMA) && ((width & 0x1) == 0) ) );
 
     if (plane == TEXT_LUMA) {
-        if (dir == MFX_HEVC_COMMON::INTERP_HOR)
+        if (dir == INTERP_HOR)
             InterpLuma_s8_d16_H(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset);
         else
             InterpLuma_s8_d16_V(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset);
@@ -730,7 +799,7 @@ void Interp_S8_NoAvg(const unsigned char* pSrc, unsigned int srcPitch, short *pD
 void Interp_S16_NoAvg(const short* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, 
                    int tab_index, int width, int height, int shift, short offset, int dir, int plane)
 {
-    assert((width & 0x3) == 0);
+    assert( ( (plane == TEXT_LUMA) && ((width & 0x3) == 0) ) || ( (plane != TEXT_LUMA) && ((width & 0x1) == 0) ) );
 
     /* only V is supported/needed */
     if (dir != INTERP_VER)
@@ -749,9 +818,9 @@ void Interp_S8_WithAvg(const unsigned char* pSrc, unsigned int srcPitch, unsigne
                 int tab_index, int width, int height, int shift, short offset, int dir, int plane)
 {
     /* pretty big stack buffer, probably want to pass this in (allocate on heap) */
-    ALIGN_DECL(16) short tmpBuf[(64+7)*(64)];
+    ALIGN_DECL(16) short tmpBuf[(64+8)*(64)];
     
-    assert((width & 0x3) == 0);
+    assert( ( (plane == TEXT_LUMA) && ((width & 0x3) == 0) ) || ( (plane != TEXT_LUMA) && ((width & 0x1) == 0) ) );
 
     if (plane == TEXT_LUMA) {
         if (dir == INTERP_HOR)
@@ -779,13 +848,13 @@ void Interp_S16_WithAvg(const short* pSrc, unsigned int srcPitch, unsigned char 
                    int tab_index, int width, int height, int shift, short offset, int dir, int plane)
 {
     /* pretty big stack buffer, probably want to pass this in (allocate on heap) */
-    ALIGN_DECL(16) short tmpBuf[(64+7)*(64)];
+    ALIGN_DECL(16) short tmpBuf[(64+8)*(64)];
 
     /* only V is supported/needed */
     if (dir != INTERP_VER)
         return;
 
-    assert((width & 0x3) == 0);
+    assert( ( (plane == TEXT_LUMA) && ((width & 0x3) == 0) ) || ( (plane != TEXT_LUMA) && ((width & 0x1) == 0) ) );
 
     if (plane == TEXT_LUMA)
         InterpLuma_s16_d16_V(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
