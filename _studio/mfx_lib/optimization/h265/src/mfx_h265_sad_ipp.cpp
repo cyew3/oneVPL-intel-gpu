@@ -659,8 +659,8 @@ namespace MFX_HEVC_ENCODER
         else if (SizeX == 8)
         {
             if(SizeY ==  4) { ippiSAD8x4_8u32s_C1R(image, stride, ref, 64, sad, 0); }
-            if(SizeY ==  8) { ippiSAD8x8_8u32s_C1R(image, stride, ref, 64, sad, 0); }
-            if(SizeY == 16) { ippiSAD8x16_8u32s_C1R(image, stride, ref, 64, sad, 0); }
+            else if(SizeY ==  8) { ippiSAD8x8_8u32s_C1R(image, stride, ref, 64, sad, 0); }
+            else if(SizeY == 16) { ippiSAD8x16_8u32s_C1R(image, stride, ref, 64, sad, 0); }
             else            { h265_SAD8x32_8u32s_C1R(image, stride, ref, 64, sad, 0); }
         }
         else if (SizeX == 12)
@@ -670,10 +670,10 @@ namespace MFX_HEVC_ENCODER
         else if (SizeX == 16)
         {
             if(SizeY ==  4) { h265_SAD16x4_8u32s_C1R(image, stride, ref, 64, sad, 0); }
-            if(SizeY ==  8) { ippiSAD16x8_8u32s_C1R(image, stride, ref, 64, sad, 0); }
-            if(SizeY == 12) { h265_SAD16x12_8u32s_C1R(image, stride, ref, 64, sad, 0); }
-            if(SizeY == 16) { ippiSAD16x16_8u32s(image, stride, ref, 64, sad, 0); }
-            if(SizeY == 32) { h265_SAD16x32_8u32s_C1R(image, stride, ref, 64, sad, 0); }
+            else if(SizeY ==  8) { ippiSAD16x8_8u32s_C1R(image, stride, ref, 64, sad, 0); }
+            else if(SizeY == 12) { h265_SAD16x12_8u32s_C1R(image, stride, ref, 64, sad, 0); }
+            else if(SizeY == 16) { ippiSAD16x16_8u32s(image, stride, ref, 64, sad, 0); }
+            else if(SizeY == 32) { h265_SAD16x32_8u32s_C1R(image, stride, ref, 64, sad, 0); }
             else            { h265_SAD16x64_8u32s_C1R(image, stride, ref, 64, sad, 0); }
         }
         else if (SizeX == 24)
@@ -683,9 +683,9 @@ namespace MFX_HEVC_ENCODER
         else if (SizeX == 32)
         {
             if(SizeY ==  8) { h265_SAD32x8_8u32s_C1R(image, stride, ref, 64, sad, 0);}
-            if(SizeY == 16) { h265_SAD32x16_8u32s_C1R(image, stride, ref, 64, sad, 0); }
-            if(SizeY == 24) { h265_SAD32x24_8u32s_C1R(image, stride, ref, 64, sad, 0); }
-            if(SizeY == 32) { h265_SAD32x32_8u32s_C1R(image, stride, ref, 64, sad, 0);}
+            else if(SizeY == 16) { h265_SAD32x16_8u32s_C1R(image, stride, ref, 64, sad, 0); }
+            else if(SizeY == 24) { h265_SAD32x24_8u32s_C1R(image, stride, ref, 64, sad, 0); }
+            else if(SizeY == 32) { h265_SAD32x32_8u32s_C1R(image, stride, ref, 64, sad, 0);}
             else            { h265_SAD32x64_8u32s_C1R(image, stride, ref, 64, sad, 0);}
         }
         else if (SizeX == 48)
@@ -695,8 +695,8 @@ namespace MFX_HEVC_ENCODER
         else if (SizeX == 64)
         {
             if(SizeY == 16) { h265_SAD64x16_8u32s_C1R(image, stride, ref, 64, sad, 0);}
-            if(SizeY == 32) { h265_SAD64x32_8u32s_C1R(image, stride, ref, 64, sad, 0);}
-            if(SizeY == 48) { h265_SAD64x48_8u32s_C1R(image, stride, ref, 64, sad, 0);}
+            else if(SizeY == 32) { h265_SAD64x32_8u32s_C1R(image, stride, ref, 64, sad, 0);}
+            else if(SizeY == 48) { h265_SAD64x48_8u32s_C1R(image, stride, ref, 64, sad, 0);}
             else            { h265_SAD64x64_8u32s_C1R(image, stride, ref, 64, sad, 0);}
         }
         
