@@ -19,12 +19,11 @@
 #include <immintrin.h>
 
 #if defined( _WIN32) || defined(_WIN64)
-#define x86_pause() _mm_pause();
 #define thread_sleep(nms) Sleep(nms)
 #else
-#define x86_pause()
 #define thread_sleep(nms)
 #endif
+#define x86_pause() _mm_pause()
 
 double h265_split_thresholds[2][3][3][2] = {
     {{{18.784248, 0.194168}, {21.838817, 0.201511}, {5.612814, 0.271913}},
@@ -1386,6 +1385,7 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
                 }
             }
             m_row_info[ctb_row].mt_current_ctb_col = ctb_col;
+//            vm_interlocked_inc32(reinterpret_cast<volatile Ipp32u *>(&(m_row_info[ctb_row].mt_current_ctb_col)));
         }
     }
     return MFX_ERR_NONE;
