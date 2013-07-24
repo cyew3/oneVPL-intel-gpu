@@ -35,10 +35,6 @@
 //#include <immintrin.h> // AVX
 //#include <ammintrin.h> // AMD extention SSE5 ? FMA4
 
-typedef unsigned char       uint8_t;
-typedef signed short        int16_t;
-typedef signed long         int32_t;
-typedef unsigned long       uint32_t;
 
 #define ALIGNED_SSE2 ALIGN_DECL(16)
 
@@ -56,8 +52,8 @@ typedef unsigned long       uint32_t;
 #define SAD_CALLING_CONVENTION H265_FASTCALL
 #define SAD_PARAMETERS_LIST const unsigned char *image,  const unsigned char *block, int img_stride
 #define SAD_PARAMETERS_LOAD const int lx1 = img_stride; \
-    const uint8_t *__restrict blk1 = image; \
-    const uint8_t *__restrict blk2 = block
+    const Ipp8u *__restrict blk1 = image; \
+    const Ipp8u *__restrict blk2 = block
 
 
 namespace MFX_HEVC_ENCODER

@@ -32,11 +32,6 @@ namespace MFX_HEVC_COMMON
 #define SHIFT_INV_2ND         12 // Shift after second inverse transform stage
 #define REG_DCT               65535
 
-    /*typedef unsigned char       uint8_t;
-    typedef signed short        int16_t;
-    typedef signed int          int32_t;
-    typedef unsigned int        uint32_t;*/
-
 //    NOTE: In debug mode compiler attempts to load data with MOVNTDQA while data is
 //    only 8-byte aligned, but PMOVZX does not require 16-byte alignment. 
 
