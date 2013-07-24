@@ -635,8 +635,8 @@ void H265SegmentDecoder::GetEdgeStrength(H265CodingUnit* pcCUQ,
 
     // TODO: Use raster coordinates passed as arguments to this function
     // P coordinate
-    Ipp32u XIncP = g_RasterToPelX[g_ZscanToRaster[uiPartP]];
-    Ipp32u YIncP = g_RasterToPelY[g_ZscanToRaster[uiPartP]];
+    Ipp32u XIncP = g_RasterToPelX[uiPartP];
+    Ipp32u YIncP = g_RasterToPelY[uiPartP];
     Ipp32s LPelXP = pcCUP->m_CUPelX + XIncP;
     Ipp32s TPelYP = pcCUP->m_CUPelY + YIncP;
     Ipp32s PartXP = LPelXP >> m_pSeqParamSet->log2_min_transform_block_size;
@@ -644,8 +644,8 @@ void H265SegmentDecoder::GetEdgeStrength(H265CodingUnit* pcCUQ,
     Ipp32u PartNumberP = PartYP * m_pCurrentFrame->getNumPartInCUSize() * m_pCurrentFrame->getFrameWidthInCU() + PartXP;
 
     // Q coordinate
-    Ipp32u XIncQ = g_RasterToPelX[g_ZscanToRaster[uiPartQ]];
-    Ipp32u YIncQ = g_RasterToPelY[g_ZscanToRaster[uiPartQ]];
+    Ipp32u XIncQ = g_RasterToPelX[uiPartQ];
+    Ipp32u YIncQ = g_RasterToPelY[uiPartQ];
     Ipp32s LPelXQ = pcCUQ->m_CUPelX + XIncQ;
     Ipp32s TPelYQ = pcCUQ->m_CUPelY + YIncQ;
     Ipp32s PartXQ = LPelXQ >> m_pSeqParamSet->log2_min_transform_block_size;

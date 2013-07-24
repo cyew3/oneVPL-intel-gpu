@@ -1677,8 +1677,8 @@ void H265SampleAdaptiveOffset::PCMCURestoration(H265CodingUnit* pcCU, Ipp32u Abs
     {
         for (Ipp32u PartIdx = 0; PartIdx < 4; PartIdx++, AbsZorderIdx += QNumParts)
         {
-            Ipp32u LPelX = pcCU->m_CUPelX + g_RasterToPelX[g_ZscanToRaster[AbsZorderIdx]];
-            Ipp32u TPelY = pcCU->m_CUPelY + g_RasterToPelY[g_ZscanToRaster[AbsZorderIdx]];
+            Ipp32u LPelX = pcCU->m_CUPelX + g_RasterToPelX[AbsZorderIdx];
+            Ipp32u TPelY = pcCU->m_CUPelY + g_RasterToPelY[AbsZorderIdx];
             if((LPelX < pcCU->m_SliceHeader->m_SeqParamSet->getPicWidthInLumaSamples()) && (TPelY < pcCU->m_SliceHeader->m_SeqParamSet->getPicHeightInLumaSamples()))
                 PCMCURestoration(pcCU, AbsZorderIdx, Depth + 1);
         }

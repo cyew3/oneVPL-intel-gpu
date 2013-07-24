@@ -24,19 +24,37 @@
 namespace UMC_HEVC_DECODER
 {
 
-//tables and variables ------------------------------------------------------------------------------------------
-// flexible conversion from relative to absolute index ----------------------------------------------------------
-extern Ipp32u g_ZscanToRaster[MAX_NUM_SPU_W * MAX_NUM_SPU_W];
-extern Ipp32u g_RasterToZscan[MAX_NUM_SPU_W * MAX_NUM_SPU_W];
-
-void initZscanToRaster (Ipp32s MaxDepth, Ipp32s Depth, Ipp32u StartVal, Ipp32u*& CurrIdx);
-void initRasterToZscan (Ipp32u MaxCUWidth, Ipp32u MaxCUHeight, Ipp32u MaxDepth);
+extern Ipp32u *g_ZscanToRaster;
+extern Ipp32u *g_RasterToZscan;
 
 // conversion of partition index to picture pel position ---------------------------------------------------------
-extern Ipp32u g_RasterToPelX[MAX_NUM_SPU_W * MAX_NUM_SPU_W];
-extern Ipp32u g_RasterToPelY[MAX_NUM_SPU_W * MAX_NUM_SPU_W];
+extern Ipp32u *g_RasterToPelX;
+extern Ipp32u *g_RasterToPelY;
 
-void initRasterToPelXY(Ipp32u MaxCUWidth, Ipp32u MaxCUHeight, Ipp32u MaxDepth);
+class PartitionInfo
+{
+public:
+
+    PartitionInfo();
+
+    void Init(const H265SeqParamSet* sps);
+
+    // conversion of partition index to picture pel position
+    Ipp32u m_rasterToPelX[MAX_NUM_SPU_W * MAX_NUM_SPU_W];
+    Ipp32u m_rasterToPelY[MAX_NUM_SPU_W * MAX_NUM_SPU_W];
+
+    // flexible conversion from relative to absolute index
+    Ipp32u m_zscanToRaster[MAX_NUM_SPU_W * MAX_NUM_SPU_W];
+    Ipp32u m_rasterToZscan[MAX_NUM_SPU_W * MAX_NUM_SPU_W];
+
+private:
+    void InitZscanToRaster(Ipp32s MaxDepth, Ipp32s Depth, Ipp32u StartVal, Ipp32u*& CurrIdx);
+    void InitRasterToZscan(const H265SeqParamSet* sps);
+    void InitRasterToPelXY(const H265SeqParamSet* sps);
+
+    Ipp32u m_MaxCUDepth;
+    Ipp32u m_MaxCUSize;
+};
 
 // global variables (LCU width/height, max. CU depth) ------------------------------------------------------------
 

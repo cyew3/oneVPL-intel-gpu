@@ -68,8 +68,8 @@ void H265Prediction::InitTempBuff(DecodingContext* context)
     m_YUVExt = new H265PlaneYCommon[m_YUVExtStride * m_YUVExtHeight];
 
     // new structure
-    m_YUVPred[0].create(sps->MaxCUWidth, sps->MaxCUHeight, sizeof(Ipp16s), sizeof(Ipp16s), sps->MaxCUWidth, sps->MaxCUHeight, sps->MaxCUDepth);
-    m_YUVPred[1].create(sps->MaxCUWidth, sps->MaxCUHeight, sizeof(Ipp16s), sizeof(Ipp16s), sps->MaxCUWidth, sps->MaxCUHeight, sps->MaxCUDepth);
+    m_YUVPred[0].create(sps->MaxCUWidth, sps->MaxCUHeight, sizeof(Ipp16s), sizeof(Ipp16s));
+    m_YUVPred[1].create(sps->MaxCUWidth, sps->MaxCUHeight, sizeof(Ipp16s), sizeof(Ipp16s));
 
     if (!m_temp_interpolarion_buffer)
         m_temp_interpolarion_buffer = ippsMalloc_8u(2*128*128);    
@@ -660,8 +660,8 @@ void H265Prediction::MotionCompensation(H265CodingUnit* pCU, H265DecYUVBufferPad
         pCU->getPartIndexAndSize(AbsPartIdx, Depth, PartIdx, PartAddr, Width, Height);
         PartAddr += AbsPartIdx;
 
-        Ipp32s LPelX = pCU->m_CUPelX + g_RasterToPelX[g_ZscanToRaster[subPartIdx]];
-        Ipp32s TPelY = pCU->m_CUPelY + g_RasterToPelY[g_ZscanToRaster[subPartIdx]];
+        Ipp32s LPelX = pCU->m_CUPelX + g_RasterToPelX[subPartIdx];
+        Ipp32s TPelY = pCU->m_CUPelY + g_RasterToPelY[subPartIdx];
         Ipp32s PartX = LPelX >> m_context->m_sps->log2_min_transform_block_size;
         Ipp32s PartY = TPelY >> m_context->m_sps->log2_min_transform_block_size;
 #endif
@@ -894,8 +894,8 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
     // Hack to get correct offset in 2-byte elements
     Ipp32s in_DstPitch = (c_plane_type == TEXT_CHROMA) ? YUVPred->pitch_chroma() : YUVPred->pitch_luma();
     H265CoeffsPtrCommon in_pDst = (c_plane_type == TEXT_CHROMA) ? 
-                            (H265CoeffsPtrCommon)YUVPred->GetCbCrAddr() + (YUVPred->GetPartCbCrAddr(PartAddr) - YUVPred->GetCbCrAddr()) :
-                            (H265CoeffsPtrCommon)YUVPred->GetLumaAddr() + (YUVPred->GetPartLumaAddr(PartAddr) - YUVPred->GetLumaAddr());
+                            (H265CoeffsPtrCommon)YUVPred->m_pUVPlane + GetAddrOffset(PartAddr, YUVPred->chromaSize().width) :
+                            (H265CoeffsPtrCommon)YUVPred->m_pYPlane + GetAddrOffset(PartAddr, YUVPred->lumaSize().width);
 
     IppVCInterpolateBlock_8u interpolateSrc;
     PrepareInterpSrc< c_plane_type >( pCU, PUi, RefPicList, interpolateSrc, m_temp_interpolarion_buffer );

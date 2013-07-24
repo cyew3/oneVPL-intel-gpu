@@ -53,16 +53,18 @@ const Ipp16u ScanTableDiag4x4[16] =
 };
 
 // Data structure related table & variable -----------------------------------------------------------------------------
-Ipp32u g_ZscanToRaster [ MAX_NUM_SPU_W * MAX_NUM_SPU_W ] = { 0, };
-Ipp32u g_RasterToZscan [ MAX_NUM_SPU_W * MAX_NUM_SPU_W ] = { 0, };
-Ipp32u g_RasterToPelX  [ MAX_NUM_SPU_W * MAX_NUM_SPU_W ] = { 0, };
-Ipp32u g_RasterToPelY  [ MAX_NUM_SPU_W * MAX_NUM_SPU_W ] = { 0, };
-
 Ipp32u g_PUOffset[8] = { 0, 8, 4, 4, 2, 10, 1, 5};
 
-void initZscanToRaster (Ipp32s MaxDepth, Ipp32s Depth, Ipp32u StartVal, Ipp32u*& CurrIdx)
+Ipp32u *g_ZscanToRaster = 0;
+Ipp32u *g_RasterToZscan = 0;
+
+// conversion of partition index to picture pel position ---------------------------------------------------------
+Ipp32u *g_RasterToPelX = 0;
+Ipp32u *g_RasterToPelY = 0;
+
+void PartitionInfo::InitZscanToRaster(Ipp32s MaxDepth, Ipp32s Depth, Ipp32u StartVal, Ipp32u*& CurrIdx)
 {
-    Ipp32s Stride = 1 << ( MaxDepth - 1 );
+    Ipp32s Stride = 1 << (MaxDepth - 1);
 
     if (Depth == MaxDepth)
     {
@@ -72,58 +74,79 @@ void initZscanToRaster (Ipp32s MaxDepth, Ipp32s Depth, Ipp32u StartVal, Ipp32u*&
     else
     {
         Ipp32s Step = Stride >> Depth;
-        initZscanToRaster(MaxDepth, Depth + 1, StartVal, CurrIdx);
-        initZscanToRaster(MaxDepth, Depth + 1, StartVal + Step, CurrIdx);
-        initZscanToRaster(MaxDepth, Depth + 1, StartVal + Step * Stride, CurrIdx);
-        initZscanToRaster(MaxDepth, Depth + 1, StartVal + Step * Stride + Step, CurrIdx);
+        InitZscanToRaster(MaxDepth, Depth + 1, StartVal, CurrIdx);
+        InitZscanToRaster(MaxDepth, Depth + 1, StartVal + Step, CurrIdx);
+        InitZscanToRaster(MaxDepth, Depth + 1, StartVal + Step * Stride, CurrIdx);
+        InitZscanToRaster(MaxDepth, Depth + 1, StartVal + Step * Stride + Step, CurrIdx);
     }
 }
 
-void initRasterToZscan (Ipp32u MaxCUWidth, Ipp32u MaxCUHeight, Ipp32u MaxDepth)
+void PartitionInfo::InitRasterToZscan(const H265SeqParamSet* sps)
 {
-    Ipp32u  MinCUWidth  = MaxCUWidth  >> (MaxDepth - 1);
-    Ipp32u  MinCUHeight = MaxCUHeight >> (MaxDepth - 1);
+    Ipp32u  MinCUWidth  = sps->MaxCUWidth  >> sps->MaxCUDepth;
+    Ipp32u  MinCUHeight = sps->MaxCUHeight >> sps->MaxCUDepth;
 
-    Ipp32u  NumPartInWidth  = (Ipp32u) MaxCUWidth  / MinCUWidth;
-    Ipp32u  NumPartInHeight = (Ipp32u) MaxCUHeight / MinCUHeight;
+    Ipp32u  NumPartInWidth  = sps->MaxCUWidth  / MinCUWidth;
+    Ipp32u  NumPartInHeight = sps->MaxCUHeight / MinCUHeight;
 
     for (Ipp32u i = 0; i < NumPartInWidth * NumPartInHeight; i++)
     {
-        g_RasterToZscan[g_ZscanToRaster[i]] = i;
+        m_rasterToZscan[m_zscanToRaster[i]] = i;
     }
 }
 
-void initRasterToPelXY (Ipp32u MaxCUWidth, Ipp32u MaxCUHeight, Ipp32u MaxDepth)
+void PartitionInfo::InitRasterToPelXY(const H265SeqParamSet* sps)
 {
-    Ipp32u i;
+    Ipp32u* TempX = &m_rasterToPelX[0];
+    Ipp32u* TempY = &m_rasterToPelY[0];
 
-    Ipp32u* TempX = &g_RasterToPelX[0];
-    Ipp32u* TempY = &g_RasterToPelY[0];
-
-    Ipp32u MinCUWidth  = MaxCUWidth  >> (MaxDepth - 1);
-    Ipp32u MinCUHeight = MaxCUHeight >> (MaxDepth - 1);
-
-    Ipp32u NumPartInWidth  = MaxCUWidth  / MinCUWidth;
-    Ipp32u NumPartInHeight = MaxCUHeight / MinCUHeight;
-
-    TempX[0] = 0;
-    TempX++;
-    for (i = 1; i < NumPartInWidth; i++)
+    Ipp32u MinCUSize = sps->MaxCUWidth >> sps->MaxCUDepth;
+    Ipp32u NumPartInSize = sps->MaxCUWidth / MinCUSize;
+    
+    for (Ipp32u i = 0; i < NumPartInSize*NumPartInSize; i++)
     {
-        TempX[0] = TempX[-1] + MinCUWidth;
-        TempX++;
-    }
-    for (i = 1; i < NumPartInHeight; i++)
-    {
-        memcpy(TempX, TempX - NumPartInWidth, sizeof(Ipp32u) * NumPartInWidth);
-        TempX += NumPartInWidth;
+        TempX[i] = (m_zscanToRaster[i] % NumPartInSize) * MinCUSize;
     }
 
-    for (i = 1; i < NumPartInWidth * NumPartInHeight; i++)
+    for (Ipp32u i = 1; i < NumPartInSize * NumPartInSize; i++)
     {
-        TempY[i] = (i / NumPartInWidth) * MinCUWidth;
+        TempY[i] = (m_zscanToRaster[i] / NumPartInSize) * MinCUSize;
     }
 };
+
+void PartitionInfo::Init(const H265SeqParamSet* sps)
+{
+    if (m_MaxCUDepth == sps->MaxCUDepth && m_MaxCUSize == sps->MaxCUWidth)
+        return;
+
+    m_MaxCUDepth = sps->MaxCUDepth;
+    m_MaxCUSize = sps->MaxCUWidth;
+
+    memset(m_rasterToPelX, 0, sizeof(m_rasterToPelX));
+    memset(m_rasterToPelY, 0, sizeof(m_rasterToPelY));
+    memset(m_zscanToRaster, 0, sizeof(m_zscanToRaster));
+    memset(m_rasterToZscan, 0, sizeof(m_rasterToZscan));
+
+    // initialize partition order.
+    Ipp32u* Tmp = &m_zscanToRaster[0];
+    InitZscanToRaster(sps->MaxCUDepth + 1, 1, 0, Tmp);
+    InitRasterToZscan(sps);
+
+    // initialize conversion matrix from partition index to pel
+    InitRasterToPelXY(sps);
+
+    g_ZscanToRaster = m_zscanToRaster;
+    g_RasterToZscan = m_rasterToZscan;
+    g_RasterToPelX = m_rasterToPelX;
+    g_RasterToPelY = m_rasterToPelY;
+}
+
+PartitionInfo::PartitionInfo()
+    : m_MaxCUDepth(0)
+    , m_MaxCUSize(0)
+{
+
+}
 
 // ML: OPT: 16-bit allow compiler to use PMULLW/PMULHW instead of PMULLD
 Ipp16u g_quantScales[6] =
