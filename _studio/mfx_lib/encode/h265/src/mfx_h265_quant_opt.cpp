@@ -134,10 +134,10 @@ void h265_quant_fwd_base(
     Ipp32s qp_rem = h265_qp_rem[QP];
     Ipp32s qp6 = h265_qp6[QP];
     Ipp32s len = 1 << (log2_tr_size << 1);
-    Ipp8s  sign;
+    //Ipp8s  sign;
     Ipp32s scaleLevel;
     Ipp32s scaleOffset;
-    Ipp32s qval;
+    //Ipp32s qval;
 
     Ipp32s scale = 29 + qp6 - bit_depth - log2_tr_size;
 
