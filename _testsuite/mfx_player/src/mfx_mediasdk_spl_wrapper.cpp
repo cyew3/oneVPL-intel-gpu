@@ -27,7 +27,7 @@ MediaSDKSplWrapper::~MediaSDKSplWrapper()
 
 void MediaSDKSplWrapper::Close()
 {
-    for (mfxU32 i=0; i < m_streamParams.NumTrackAllocated; i++)
+    for (mfxU32 i=0; i < m_streamParams.NumTracksAllocated; i++)
     {
         delete m_streamParams.TrackInfo[i];
         m_streamParams.TrackInfo[i] = NULL;
@@ -61,15 +61,15 @@ mfxStatus MediaSDKSplWrapper::Init(const vm_char *strFileName)
   //  sts = MFXSplitter_GetInfo(m_mfxSplitter, &m_streamParams);
     MFX_CHECK_STS(sts);
 
-    m_streamParams.TrackInfo = new mfxTrackInfo*[m_streamParams.NumTrack];
-    for (mfxU32 i=0; i < m_streamParams.NumTrack; i++)
+    m_streamParams.TrackInfo = new mfxTrackInfo*[m_streamParams.NumTracks];
+    for (mfxU32 i=0; i < m_streamParams.NumTracks; i++)
         m_streamParams.TrackInfo[i] = new mfxTrackInfo;
-    m_streamParams.NumTrackAllocated = m_streamParams.NumTrack;
+    m_streamParams.NumTracksAllocated = m_streamParams.NumTracks;
 
   //  sts = MFXSplitter_GetInfo(m_mfxSplitter, &m_streamParams);
     MFX_CHECK_STS(sts);
 
-    for (mfxU32 i=0; i < m_streamParams.NumTrack; i++)
+    for (mfxU32 i=0; i < m_streamParams.NumTracks; i++)
     {
         if (m_streamParams.TrackInfo[i]->Type & MFX_TRACK_ANY_VIDEO)
         {
