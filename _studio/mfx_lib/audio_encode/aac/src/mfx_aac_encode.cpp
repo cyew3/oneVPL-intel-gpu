@@ -149,6 +149,10 @@ mfxStatus AudioENCODEAAC::Init(mfxAudioParam *par)
     mOutData.SetDataSize(0);
 
     params.m_info.sample_frequency = par->mfx.m_info.SampleFrequency;
+    if (par->mfx.m_info.Channels == 1) {
+        params.stereo_mode = UMC_AAC_MONO;
+        params.m_info.channels = 1;
+    } 
     //params.m_info.channels = par->mfx.m_info.Channels;;
     params.m_info.bitrate = par->mfx.m_info.Bitrate;
     params.lpMemoryAllocator = NULL;
