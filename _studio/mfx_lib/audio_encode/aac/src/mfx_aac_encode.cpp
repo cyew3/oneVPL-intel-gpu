@@ -288,7 +288,7 @@ mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffe
         sts = QueryIOSize(m_core, &m_vPar, &audioAllocRequest);
         MFX_CHECK_STS(sts);
 
-        if (buffer_out->DataLength < audioAllocRequest.SuggestedOutputSize) {
+        if (buffer_out->MaxLength < audioAllocRequest.SuggestedOutputSize) {
             sts = MFX_ERR_NOT_ENOUGH_BUFFER;
         }
     }
