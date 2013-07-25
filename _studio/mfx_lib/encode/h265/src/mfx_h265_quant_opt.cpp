@@ -12,6 +12,7 @@
 
 #include "ipp.h"
 #include "mfx_h265_quant_opt.h"
+#include "mfx_h265_optimization.h"
 
 typedef Ipp8u PixType; 
 typedef Ipp16s CoeffsType; 
@@ -114,10 +115,7 @@ void h265_quant_inv(const CoeffsType *qcoeffs,
 
         for (Ipp32s i = 0; i < len; i++)
         {
-            Ipp32s tmp = qcoeffs[i];
-//            tmp = Saturate( -32768, 32767, tmp);
-            coeffs[i] = (CoeffsType)Saturate(-32768, 32767,
-                (tmp * scale + add) >> shift);
+            coeffs[i] = (CoeffsType)Saturate(-32768, 32767, (qcoeffs[i] * scale + add) >> shift);
         }
     }
 }
@@ -151,28 +149,11 @@ void h265_quant_fwd_base(
 
     if( delta )
     {
-        for (Ipp32s i = 0; i < len; i++)
-        {
-            sign = (Ipp8s) (coeffs[i] < 0 ? -1 : 1);
-
-            qval = (sign * coeffs[i] * scaleLevel + scaleOffset) >> scale;
-
-            qcoeffs[i] = (CoeffsType)Saturate(-32768, 32767, sign*qval);
-
-            delta[i] = (Ipp32s)( ((Ipp64s)abs(coeffs[i]) * scaleLevel - (qval<<scale) )>> (scale-8) );
-            abs_sum += qval;
-        }
+        abs_sum = (Ipp32u)MFX_HEVC_ENCODER::h265_QuantFwd_SBH_16s(coeffs, qcoeffs, delta, len, scaleLevel, scaleOffset, scale);
     }
     else
     {
-        for (Ipp32s i = 0; i < len; i++)
-        {
-            sign = (Ipp8s) (coeffs[i] < 0 ? -1 : 1);
-
-            qval = (sign * coeffs[i] * scaleLevel + scaleOffset) >> scale;
-
-            qcoeffs[i] = (CoeffsType)Saturate(-32768, 32767, sign*qval);
-        }
+        MFX_HEVC_ENCODER::h265_QuantFwd_16s(coeffs, qcoeffs, len, scaleLevel, scaleOffset, scale);
     }
 
 } // void h265_quant_fwd_base(...)

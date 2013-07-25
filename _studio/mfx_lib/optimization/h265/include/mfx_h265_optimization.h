@@ -136,6 +136,10 @@ namespace MFX_HEVC_ENCODER
     extern SADfunc8u_special* SAD_8u_special[17];
     int h265_SAD_MxN_special_8u(const unsigned char *image,  const unsigned char *ref, int stride, int SizeX, int SizeY);
 
+    /* Quantization Fwd */
+    void h265_QuantFwd_16s(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift);
+    Ipp32s h265_QuantFwd_SBH_16s(const Ipp16s* pSrc, Ipp16s* pDst, Ipp32s*  pDelta, int len, int scale, int offset, int shift);
+
 };
 
 namespace MFX_HEVC_DECODER
