@@ -50,8 +50,8 @@
 //#define MFX_TARGET_OPTIMIZATION_PX // ref C or IPP based, not supported yet
 
 // [2] to enable alternative interpolation optimization (Ken/Jon)
-// IVB demonstrates ~ 15% perf incr _vs_ tmpl version. THere is issue for Encoder (ChromaU/V) now 
-//#define OPT_INTERP_PMUL
+// IVB demonstrates ~ 15% perf incr _vs_ tmpl version.
+#define OPT_INTERP_PMUL
 
 //=========================================================
 
@@ -163,6 +163,7 @@ namespace MFX_HEVC_COMMON
         const void* in_pSrc2 = NULL,
         int   in_Src2Pitch = 0 ); // in samples
 
+#ifndef OPT_INTERP_PMUL
     // general template for Interpolate kernel
     template
         < 
@@ -224,11 +225,11 @@ namespace MFX_HEVC_COMMON
         else if ( tab_index == 7 )
             t_InterpKernel_intrin< t_vec, plane_type, t_src, t_dst, 7 >::func( pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
     }
-
+#endif // #ifndef OPT_INTERP_PMUL
     //=================================================================================================    
 
     template < UMC_HEVC_DECODER::EnumTextType plane_type, typename t_src, typename t_dst >
-    void Interpolate(
+    void H265_FORCEINLINE Interpolate(
         MFX_HEVC_COMMON::EnumInterpType interp_type,
         const t_src* in_pSrc,
         Ipp32u in_SrcPitch, // in samples

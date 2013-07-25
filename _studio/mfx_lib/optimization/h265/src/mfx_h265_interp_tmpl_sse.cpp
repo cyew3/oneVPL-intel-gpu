@@ -18,6 +18,8 @@
 
 #include "mfx_h265_optimization.h"
 
+#ifndef OPT_INTERP_PMUL
+
 using namespace UMC_HEVC_DECODER;
 
 /* NOTE: In debug mode compiler attempts to load data with MOVNTDQA while data is
@@ -455,5 +457,6 @@ namespace MFX_HEVC_COMMON
 
 } // end namespace MFX_HEVC_COMMON
 
+#endif //#ifndef OPT_INTERP_PMUL
 #endif //#if defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined (MFX_ENABLE_H265_VIDEO_DECODE)
 /* EOF */
