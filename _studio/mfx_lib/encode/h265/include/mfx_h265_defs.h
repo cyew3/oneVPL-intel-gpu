@@ -6,6 +6,8 @@
 //        Copyright (c) 2012 - 2013 Intel Corporation. All Rights Reserved.
 //
 
+#include "mfx_common.h"
+
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #ifndef __MFX_H265_DEFS_H__
@@ -343,17 +345,17 @@ struct EncoderRefPicList
     EncoderRefPicListStruct m_RefPicListL1;
 };    // EncoderRefPicList
 
-
-struct H265EdgeData
-{
-    Ipp8u strength;
-    Ipp8u qp;
-    Ipp8u deblockP;
-    Ipp8u deblockQ;
-    Ipp8s tcOffset;
-    Ipp8s betaOffset;
-    Ipp32s uiPartQ; // debug
-};
+// aya: moved to HEVC_PP
+//struct H265EdgeData
+//{
+//    Ipp8u strength;
+//    Ipp8u qp;
+//    Ipp8u deblockP;
+//    Ipp8u deblockQ;
+//    Ipp8s tcOffset;
+//    Ipp8s betaOffset;
+//    Ipp32s uiPartQ; // debug
+//};
 
 #include "mfxdefs.h"
 #include "mfx_h265_tables.h"

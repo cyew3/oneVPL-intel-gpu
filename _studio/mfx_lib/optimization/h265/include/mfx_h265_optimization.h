@@ -84,6 +84,18 @@ namespace MFX_HEVC_COMMON
         INTERP_HOR = 0,
         INTERP_VER
     };
+
+    struct H265EdgeData
+    {
+        Ipp8u strength;
+        Ipp8u qp;
+        Ipp8u deblockP;
+        Ipp8u deblockQ;
+        Ipp8s tcOffset;
+        Ipp8s betaOffset;
+        Ipp32s uiPartQ; // debug
+    };
+
 };
 
 namespace MFX_HEVC_COMMON
@@ -105,6 +117,9 @@ namespace MFX_HEVC_COMMON
 
     void Interp_S16_WithAvg(const short* pSrc, unsigned int srcPitch, unsigned char *pDst, unsigned int dstPitch, void *pvAvg, unsigned int avgPitch, int avgMode, 
         int tab_index, int width, int height, int shift, short offset, int dir, int plane);
+
+    /* Deblocking */
+    void h265_FilterEdgeLuma_8u_I(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir);
 };
 
 namespace MFX_HEVC_ENCODER

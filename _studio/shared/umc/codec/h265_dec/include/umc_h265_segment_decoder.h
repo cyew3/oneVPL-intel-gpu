@@ -21,6 +21,9 @@
 #include "umc_h265_frame.h"
 
 #include "h265_prediction.h"
+#include "mfx_h265_optimization.h"
+
+using namespace MFX_HEVC_COMMON;
 
 namespace UMC_HEVC_DECODER
 {
@@ -37,15 +40,15 @@ class H265TrQuant;
 class TaskBroker_H265;
 class H265Task;
 
-struct H265EdgeData
-{
-    Ipp8u strength;
-    Ipp8u qp;
-    Ipp8u deblockP;
-    Ipp8u deblockQ;
-    Ipp8s tcOffset;
-    Ipp8s betaOffset;
-};
+//struct H265EdgeData
+//{
+//    Ipp8u strength;
+//    Ipp8u qp;
+//    Ipp8u deblockP;
+//    Ipp8u deblockQ;
+//    Ipp8s tcOffset;
+//    Ipp8s betaOffset;
+//};
 
 //
 // Class to incapsulate functions, implementing common decoding functional.
@@ -239,7 +242,10 @@ public:
                              Ipp32s onlyOneUp, Ipp32s onlyOneLeft, Ipp32s cross);
     void DeblockOneCrossChroma(H265CodingUnit* curLCU, Ipp32s curPixelColumn, Ipp32s curPixelRow,
                                Ipp32s onlyOneUp, Ipp32s onlyOneLeft, Ipp32s cross);
-    void FilterEdgeLuma(H265EdgeData *edge, H265PlaneYCommon *srcDst, Ipp32s srcDstStride, Ipp32s dir);
+
+    //aya: moved to HEVC_PP
+    //void FilterEdgeLuma(H265EdgeData *edge, H265PlaneYCommon *srcDst, Ipp32s srcDstStride, Ipp32s dir);
+
     void FilterEdgeChroma(H265EdgeData *edge, H265PlaneUVCommon *srcDst, Ipp32s srcDstStride,
         Ipp32s chromaCbQpOffset, Ipp32s chromaCrQpOffset, Ipp32s dir);
 #if (HEVC_OPT_CHANGES & 32)

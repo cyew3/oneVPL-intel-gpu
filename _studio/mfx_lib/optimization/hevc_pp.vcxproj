@@ -38,6 +38,7 @@
     <ClInclude Include="h265\include\mfx_h265_optimization.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="h265\src\mfx_h265_deblocking_px.cpp" />
     <ClCompile Include="h265\src\mfx_h265_interpolation_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_interp_tmpl_avx2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_interp_tmpl_sse.cpp" />

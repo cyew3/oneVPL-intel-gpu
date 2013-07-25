@@ -6,10 +6,15 @@
 //        Copyright (c) 2012 - 2013 Intel Corporation. All Rights Reserved.
 //
 
+#include "mfx_common.h"
+
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #ifndef __MFX_H265_CTB_H__
 #define __MFX_H265_CTB_H__
+
+#include "mfx_h265_optimization.h"
+using namespace MFX_HEVC_COMMON;
 
 struct H265CUData
 {
@@ -289,10 +294,11 @@ public:
     void QuantFwdTU(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, Ipp32s is_luma);
 
     void Deblock();
-    void FilterEdgeLuma(H265EdgeData *edge,
+    //aya: moved to HEVC_PP
+    /*void FilterEdgeLuma(H265EdgeData *edge,
                             PixType *srcDst,
                             Ipp32s srcDstStride,
-                            Ipp32s dir);
+                            Ipp32s dir);*/
     void FilterEdgeChroma(H265EdgeData *edge,
                               PixType *srcDst,
                               Ipp32s srcDstStride,

@@ -38,5 +38,8 @@
     <ClCompile Include="h265\src\mfx_h265_quantization_px.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_deblocking_px.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
