@@ -303,7 +303,7 @@ public:
 
     void remove(mfxU32 buffedID)
     {
-        if (NULL != m_bPushed )
+        if (m_bPushed )
         {
             IntergityMaintainer maintain(*this);
             m_final_buffer.erase(std::remove_if(m_final_buffer.begin(), m_final_buffer.end(), std::bind2nd(BufferIdCompare(), buffedID)), m_final_buffer.end());

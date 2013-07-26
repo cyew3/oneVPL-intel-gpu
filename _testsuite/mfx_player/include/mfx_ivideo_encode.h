@@ -21,20 +21,12 @@ class IVideoEncode : public EnableProxyForThis<IVideoEncode>
 {
     friend class InterfaceProxy<IVideoEncode>;
 public:
-    //safe dynamic cast analog
+    /* Safe dynamic cast analog.
+     * dvrogozh: implementation moved to the mfx_pipeline_dec.cpp since
+     * declaring here specialization is invalid.
+     */
     template <class TTo>
-    TTo* GetInterface() {
-        void *pInterface = NULL;
-        if (!QueryInterface(QueryInterfaceMap<TTo>::id, &pInterface)) {
-            return NULL;
-        }
-        return reinterpret_cast<TTo*>(pInterface);
-    }
-    template <>
-    IVideoEncode * GetInterface<IVideoEncode>() {
-        return (IVideoEncode*)this;
-    }
-
+    TTo* GetInterface();
 
     virtual ~IVideoEncode(void) { }
 

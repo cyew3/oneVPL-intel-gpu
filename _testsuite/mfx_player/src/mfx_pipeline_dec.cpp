@@ -128,6 +128,21 @@ bool loadFromFile(FILE *f, void **buf, mfxU32 *bufSize)
 }
 #endif //PAVP_BUILD
 
+template <class TTo>
+TTo* IVideoEncode::GetInterface() {
+    void *pInterface = NULL;
+    if (!QueryInterface(QueryInterfaceMap<TTo>::id, &pInterface)) {
+        return NULL;
+    }
+    return reinterpret_cast<TTo*>(pInterface);
+}
+
+template <>
+IVideoEncode * IVideoEncode::GetInterface<IVideoEncode>() {
+    return (IVideoEncode*)this;
+}
+
+template ICurrentFrameControl* IVideoEncode::GetInterface<ICurrentFrameControl>();
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -1294,8 +1309,11 @@ mfxStatus MFXDecPipeline::DecodeHeader()
     {
         lucasCtx->parameter(lucasCtx->fmWrapperPtr, lucas::FM_WRAPPER_PARAM_RESOLUTION_X, m_components[eDEC].m_params.mfx.FrameInfo.CropW);
         lucasCtx->parameter(lucasCtx->fmWrapperPtr, lucas::FM_WRAPPER_PARAM_RESOLUTION_Y, m_components[eDEC].m_params.mfx.FrameInfo.CropH);
+#if defined(_WIN32) || defined(_WIN64)
         mfxF64 dFrameRate = (mfxF64)info.FrameRateExtN / (mfxF64)info.FrameRateExtD;
+        // dvrogozh: this cast is incompilable. I can't fix.
         lucasCtx->parameter(lucasCtx->fmWrapperPtr, lucas::FM_WRAPPER_PARAM_FRAME_RATE, reinterpret_cast<int>(&dFrameRate));
+#endif
     }
 #endif // LUCAS_DLL
 

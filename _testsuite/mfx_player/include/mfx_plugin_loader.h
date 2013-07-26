@@ -166,7 +166,7 @@ public:
     {
         if (!m_PluginModule.IsLoaded())
             return;
-        Plugin::TCreator pCreateFunc = m_PluginModule.GetAddr<Plugin::TCreator >(Plugin::Name());
+        typename Plugin::TCreator pCreateFunc = m_PluginModule.GetAddr<typename Plugin::TCreator >(Plugin::Name());
         if(NULL == pCreateFunc)
             return;
         

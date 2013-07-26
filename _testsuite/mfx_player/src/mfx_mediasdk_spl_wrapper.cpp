@@ -43,8 +43,8 @@ void MediaSDKSplWrapper::Close()
 mfxStatus MediaSDKSplWrapper::Init(const vm_char *strFileName)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    FILE* pSrcFile = NULL;
-    pSrcFile = _tfopen(strFileName, VM_STRING("rb"));
+    vm_file* pSrcFile = NULL;
+    pSrcFile = vm_file_fopen(strFileName, VM_STRING("rb"));
 
     MFX_ZERO_MEM(m_ffmpegSplReader);
     m_ffmpegSplReader.m_bInited = true;
@@ -177,7 +177,7 @@ mfxI32 MediaSDKSplWrapper::RdRead(void* in_DataReader, mfxBitstream *BS)
 
     size_t freeSpace = BS->MaxLength - BS->DataOffset - BS->DataLength;
     void *freeSpacePtr = (void*)(BS->Data + BS->DataOffset + BS->DataLength);
-    ReadSize = fread_s(freeSpacePtr, freeSpace, 1, freeSpace, pDr->m_fSource);
+    ReadSize = vm_file_fread(freeSpacePtr, 1, freeSpace, pDr->m_fSource);
     BS->DataLength +=  ReadSize;
 
     return ReadSize;
@@ -187,7 +187,7 @@ mfxI64 MediaSDKSplWrapper::RdSeek(void* in_DataReader, mfxI64 offset, mfxSeekOri
 {
     DataReader *pRd;
     int oldOffset, fileSize;
-    int whence;
+    VM_FILE_SEEK_MODE whence;
 
     if (NULL == in_DataReader)
         return MFX_ERR_NULL_PTR;
@@ -197,25 +197,25 @@ mfxI64 MediaSDKSplWrapper::RdSeek(void* in_DataReader, mfxI64 offset, mfxSeekOri
     switch(origin)
     {
     case MFX_SEEK_ORIGIN_BEGIN:
-        whence = SEEK_SET;
+        whence = VM_FILE_SEEK_SET;
         break;
     case MFX_SEEK_ORIGIN_CURRENT:
-        whence = SEEK_CUR;
+        whence = VM_FILE_SEEK_CUR;
         break;
     default:
-        whence = SEEK_END;
+        whence = VM_FILE_SEEK_END;
         break;
     }
 
     if (whence == VM_FILE_SEEK_END && offset == 0)
     {
-        oldOffset = ftell(pRd->m_fSource);
-        fseek(pRd->m_fSource, 0, SEEK_END);
-        fileSize = ftell(pRd->m_fSource);
-        fseek(pRd->m_fSource, oldOffset, SEEK_SET);
+        oldOffset = vm_file_ftell(pRd->m_fSource);
+        vm_file_fseek(pRd->m_fSource, 0, VM_FILE_SEEK_END);
+        fileSize = vm_file_ftell(pRd->m_fSource);
+        vm_file_fseek(pRd->m_fSource, oldOffset, VM_FILE_SEEK_SET);
         return fileSize;
     }
-    fseek(pRd->m_fSource, (long) offset, whence);
+    vm_file_fseek(pRd->m_fSource, (long) offset, whence);
 
     return MFX_ERR_NONE;
 }

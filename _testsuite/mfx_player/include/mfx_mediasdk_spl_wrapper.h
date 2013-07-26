@@ -22,8 +22,8 @@ class MediaSDKSplWrapper : public IBitstreamReader
 {
     struct  DataReader
     {
-        FILE* m_fSource;
-        bool  m_bInited;
+        vm_file* m_fSource;
+        bool m_bInited;
     };
 
     DataReader      m_ffmpegSplReader;

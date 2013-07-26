@@ -8,6 +8,7 @@ include_directories (
   ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/test_suite/spy_test_component/include
   ${CMAKE_HOME_DIRECTORY}/_testsuite/mfx_player/include
   ${CMAKE_HOME_DIRECTORY}/_testsuite/shared/include
+  ${CMAKE_HOME_DIRECTORY}/samples/sample_spl_mux/api
 #  ${CMAKE_HOME_DIRECTORY}/samples/sample_common/include
 )
 
