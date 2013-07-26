@@ -49,6 +49,7 @@ H265SampleAdaptiveOffset::H265SampleAdaptiveOffset()
     m_ClipTable = NULL;
     m_ClipTableBase = NULL;
     m_OffsetBo = NULL;
+    m_OffsetBo2 = NULL;
     m_lumaTableBo = NULL;
 
     m_TmpU1 = NULL;
