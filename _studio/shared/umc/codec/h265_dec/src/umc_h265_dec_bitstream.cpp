@@ -1307,8 +1307,8 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
 
         if(sps->getUseSAO())
         {
-            READ_FLAG(uiCode, "slice_sao_luma_flag");  rpcSlice->setSaoEnabledFlag((bool)uiCode);
-            READ_FLAG(uiCode, "slice_sao_chroma_flag");  rpcSlice->setSaoEnabledFlagChroma((bool)uiCode);
+            READ_FLAG(uiCode, "slice_sao_luma_flag");  rpcSlice->GetSliceHeader()->slice_sao_luma_flag = (bool)uiCode;
+            READ_FLAG(uiCode, "slice_sao_chroma_flag");  rpcSlice->GetSliceHeader()->slice_sao_chroma_flag = (bool)uiCode;
         }
 
         if (!rpcSlice->isIntra())
@@ -1529,8 +1529,8 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
             rpcSlice->setDeblockingFilterTcOffsetDiv2  ( 0 );
         }
 
-        bool isSAOEnabled = (!rpcSlice->getSPS()->getUseSAO())?(false):(rpcSlice->getSaoEnabledFlag()||rpcSlice->getSaoEnabledFlagChroma());
-        bool isDBFEnabled = (!rpcSlice->getDeblockingFilterDisable());
+        bool isSAOEnabled = sliceHdr->slice_sao_luma_flag || sliceHdr->slice_sao_chroma_flag;
+        bool isDBFEnabled = !rpcSlice->getDeblockingFilterDisable();
 
         if(rpcSlice->getPPS()->getLoopFilterAcrossSlicesEnabledFlag() && ( isSAOEnabled || isDBFEnabled ))
         {

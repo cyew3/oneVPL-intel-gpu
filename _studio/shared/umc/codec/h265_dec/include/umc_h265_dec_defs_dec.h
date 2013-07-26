@@ -413,6 +413,13 @@ struct SAOLCUParam
 class H265SampleAdaptiveOffset
 {
 public:
+    H265SampleAdaptiveOffset();
+
+    void init(H265SeqParamSet* pSPS);
+    void destroy();
+
+    void SAOProcess(H265DecoderFrame* pFrame, Ipp32s start, Ipp32s toProcess);
+protected:
     H265DecoderFrame*   m_Frame;
 
     Ipp32s              m_OffsetEo[LUMA_GROUP_NUM];
@@ -422,8 +429,7 @@ public:
     H265PlaneYCommon   *m_ClipTable;
     H265PlaneYCommon   *m_ClipTableBase;
     H265PlaneYCommon   *m_lumaTableBo;
-    H265PlaneYCommon   *m_TmpU1;
-    H265PlaneYCommon   *m_TmpU2;
+    H265PlaneYCommon   *m_TmpU[2];
     Ipp32s              m_PicWidth;
     Ipp32s              m_PicHeight;
     Ipp32u              m_MaxCUWidth;
@@ -433,27 +439,23 @@ public:
 
     bool                m_isInitialized;
 
-    H265SampleAdaptiveOffset();
+    void SetOffsetsLuma(SAOLCUParam &saoLCUParam, Ipp32s typeIdx);
+    void SetOffsetsChroma(SAOLCUParam &saoLCUParamCb, SAOLCUParam &saoLCUParamCr, Ipp32s typeIdx);
 
-    void init(Ipp32s Width, Ipp32s Height, Ipp32s MaxCUwidth, Ipp32s MaxCUHeight);
-    void init(H265SeqParamSet* pSPS);
-    void destroy();
-
-    void SAOProcess(H265DecoderFrame* pFrame);
     void processSaoCuOrgLuma(Ipp32s Addr, Ipp32s PartIdx, H265PlaneYCommon *tmpL);
     void processSaoCuLuma(Ipp32s addr, Ipp32s saoType, H265PlaneYCommon *tmpL);
     void processSaoCuOrgChroma(Ipp32s Addr, Ipp32s PartIdx, H265PlaneUVCommon *tmpL);
     void processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H265PlaneUVCommon *tmpL);
-    void processSaoUnitAllLuma(SAOLCUParam* saoLcuParam);
-    void processSaoUnitAllChroma(SAOLCUParam* saoLCUParamCb, SAOLCUParam* saoLCUParamCr);
     void createNonDBFilterInfo();
     void PCMRestoration();
     void PCMCURestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth);
     void PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth, EnumTextType Text);
 
-protected:
-    void SetOffsetsLuma(SAOLCUParam &saoLCUParam, Ipp32s typeIdx);
-    void SetOffsetsChroma(SAOLCUParam &saoLCUParamCb, SAOLCUParam &saoLCUParamCr, Ipp32s typeIdx);
+    void processSaoUnitAll();
+
+    void processSaoLineLuma(SAOLCUParam* saoLCUParam, Ipp32s addr);
+    void processSaoLineChroma(SAOLCUParam* saoLCUParamCb, SAOLCUParam* saoLCUParamCr, Ipp32s addr);
+
 };
 
 inline
@@ -1906,8 +1908,8 @@ struct H265SliceHeader
     Ipp32s RefPOCList[2][MAX_NUM_REF + 1];
     bool RefLTList[2][MAX_NUM_REF + 1];
 
-    bool m_SaoEnabledFlag;
-    bool m_SaoEnabledFlagChroma;      ///< SAO chroma enabled flag
+    bool slice_sao_luma_flag;
+    bool slice_sao_chroma_flag;      ///< SAO chroma enabled flag
     ReferencePictureSet *m_pRPS;
     ReferencePictureSet m_localRPS;
     RefPicListModification m_RefPicListModification;

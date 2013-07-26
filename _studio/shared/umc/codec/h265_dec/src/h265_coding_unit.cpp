@@ -840,7 +840,7 @@ Ipp32u H265CodingUnit::getSCUAddr()
     {                                                                                          \
         m_AvailBorder[borderIndex] = false;                                                    \
     }                                                                                          \
-    else if (m_Frame->m_iNumberOfSlices == 1)                                                  \
+    else if (m_Frame->GetAU()->GetSliceCount() == 1)                                           \
     {                                                                                          \
         m_AvailBorder[borderIndex] = true;                                                     \
     }                                                                                          \

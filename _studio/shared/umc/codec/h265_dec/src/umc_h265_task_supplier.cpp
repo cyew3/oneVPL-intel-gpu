@@ -2496,8 +2496,6 @@ void TaskSupplier_H265::AddSliceToFrame(H265DecoderFrame *pFrame, H265Slice *pSl
     H265DecoderFrameInfo * au_info = pFrame->GetAU();
     Ipp32s iSliceNumber = au_info->GetSliceCount() + 1;
 
-    pFrame->m_iNumberOfSlices++;
-
     pSlice->SetSliceNumber(iSliceNumber);
     pSlice->m_pCurrentFrame = pFrame;
     au_info->AddSlice(pSlice);

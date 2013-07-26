@@ -602,7 +602,7 @@ bool TaskBroker_H265::GetSAOTask(H265DecoderFrameInfo * info, H265Task *pTask)
     if (pSlice->m_bSAOed)
         return false;
 
-    if (pSlice->GetSeqParam()->sample_adaptive_offset_enabled_flag && (sliceHeder->m_SaoEnabledFlag || sliceHeder->m_SaoEnabledFlagChroma))
+    if (sliceHeder->slice_sao_luma_flag || sliceHeder->slice_sao_chroma_flag)
     {
         Ipp32s sliceCount = info->GetSliceCount();
         for (Ipp32s i = 0; i < sliceCount; i += 1)

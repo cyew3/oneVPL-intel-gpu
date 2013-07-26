@@ -152,7 +152,6 @@ void H265DecoderFrame::Reset()
     m_isOriginalPTS = false;
 
     m_IsFrameExist = false;
-    m_iNumberOfSlices = 0;
 
     m_UserData.Reset();
 

@@ -499,8 +499,7 @@ inline void copySaoOneLcuParam(SAOLCUParam* dst,  SAOLCUParam* src)
 
 void H265SegmentDecoder::DecodeSAOOneLCU(H265CodingUnit* pCU)
 {
-    if (m_pSeqParamSet->sample_adaptive_offset_enabled_flag && (m_pSliceHeader->m_SaoEnabledFlag ||
-                                     m_pSliceHeader->m_SaoEnabledFlagChroma))
+    if (m_pSliceHeader->slice_sao_luma_flag || m_pSliceHeader->slice_sao_chroma_flag)
     {
         H265DecoderFrame* m_Frame = pCU->m_Frame;
         Ipp32u curCUAddr = pCU->CUAddr;
@@ -528,7 +527,7 @@ void H265SegmentDecoder::DecodeSAOOneLCU(H265CodingUnit* pCU)
             }
         }
 
-        parseSaoOneLcuInterleaving(rx, ry, m_pSliceHeader->m_SaoEnabledFlag, m_pSliceHeader->m_SaoEnabledFlagChroma, pCU, cuAddrInSlice, cuAddrUpInSlice, allowMergeLeft, allowMergeUp);
+        parseSaoOneLcuInterleaving(rx, ry, m_pSliceHeader->slice_sao_luma_flag, m_pSliceHeader->slice_sao_chroma_flag, pCU, cuAddrInSlice, cuAddrUpInSlice, allowMergeLeft, allowMergeUp);
     }
 }
 

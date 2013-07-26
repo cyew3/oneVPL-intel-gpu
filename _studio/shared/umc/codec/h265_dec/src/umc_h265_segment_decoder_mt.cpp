@@ -327,12 +327,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::SAOFrameTask(Ipp32s iCurMBNumber, I
 {
     START_TICK
 
-    m_SAO.m_Frame = m_pCurrentFrame;
-    m_SAO.createNonDBFilterInfo();
-
-    m_SAO.SAOProcess(m_pCurrentFrame);
-    m_SAO.PCMRestoration();
-
+    m_SAO.SAOProcess(m_pCurrentFrame, iCurMBNumber, iMBToProcess);
     END_TICK(sao_time)
     return UMC::UMC_OK;
 }

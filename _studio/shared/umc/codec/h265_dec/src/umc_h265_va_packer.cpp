@@ -589,8 +589,8 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
         pDXVASlice->dependent_slice_segment_flag    = (UINT)pPicParamSet->getDependentSliceSegmentEnabledFlag();   // dependent_slices_enabled_flag
         pDXVASlice->slice_type                      = (UINT)pSlice->getSliceType();
         pDXVASlice->color_plane_id                  = 0; // field is left for future expansion
-        pDXVASlice->slice_sao_luma_flag             = (UINT)pSlice->getSaoEnabledFlag(); 
-        pDXVASlice->slice_sao_chroma_flag           = (UINT)pSlice->getSaoEnabledFlagChroma();
+        pDXVASlice->slice_sao_luma_flag             = (UINT)pSlice->GetSliceHeader()->slice_sao_luma_flag; 
+        pDXVASlice->slice_sao_chroma_flag           = (UINT)pSlice->GetSliceHeader()->slice_sao_chroma_flag;
         pDXVASlice->mvd_l1_zero_flag                = (UINT)pSlice->getMvdL1ZeroFlag();
         pDXVASlice->cabac_init_flag                 = (UINT)pSlice->getCabacInitFlag();
         pDXVASlice->slice_disable_lf_flag           = 0;//pSlice->getLoopFilterDisable() ? 1 : 0 ;        
@@ -694,8 +694,8 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
         pDXVASlice->LongSliceFlags.fields.dependent_slice_segment_flag                  = (UINT)pPicParamSet->getDependentSliceSegmentEnabledFlag();   // dependent_slices_enabled_flag
         pDXVASlice->LongSliceFlags.fields.slice_type                                    = (UINT)pSlice->getSliceType();
         pDXVASlice->LongSliceFlags.fields.color_plane_id                                = 0; // field is left for future expansion
-        pDXVASlice->LongSliceFlags.fields.slice_sao_luma_flag                           = (UINT)pSlice->getSaoEnabledFlag(); 
-        pDXVASlice->LongSliceFlags.fields.slice_sao_chroma_flag                         = (UINT)pSlice->getSaoEnabledFlagChroma();
+        pDXVASlice->LongSliceFlags.fields.slice_sao_luma_flag                           = (UINT)pSlice->GetSliceHeader()->slice_sao_luma_flag; 
+        pDXVASlice->LongSliceFlags.fields.slice_sao_chroma_flag                         = (UINT)pSlice->GetSliceHeader()->slice_sao_chroma_flag;
         pDXVASlice->LongSliceFlags.fields.mvd_l1_zero_flag                              = (UINT)pSlice->getMvdL1ZeroFlag();
         pDXVASlice->LongSliceFlags.fields.cabac_init_flag                               = (UINT)pSlice->getCabacInitFlag();
         pDXVASlice->LongSliceFlags.fields.slice_temporal_mvp_enabled_flag               = (UINT)pSlice->getEnableTMVPFlag();

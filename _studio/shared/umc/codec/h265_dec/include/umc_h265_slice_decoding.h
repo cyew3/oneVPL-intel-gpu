@@ -227,10 +227,6 @@ public:
 
     bool getPicOutputFlag() const           { return m_SliceHeader.pic_output_flag; }
     void setPicOutputFlag(bool f)           { m_SliceHeader.pic_output_flag = f; }
-    bool getSaoEnabledFlag() const          { return  m_SliceHeader.m_SaoEnabledFlag; }
-    void setSaoEnabledFlag(bool f)          { m_SliceHeader.m_SaoEnabledFlag = f; }
-    bool getSaoEnabledFlagChroma() const        { return m_SliceHeader.m_SaoEnabledFlagChroma; }
-    void setSaoEnabledFlagChroma(bool f)        { m_SliceHeader.m_SaoEnabledFlagChroma = f; }
 
     NalUnitType getNalUnitType() const              { return m_SliceHeader.nal_unit_type; }
     bool getIdrPicFlag()                            { return getNalUnitType() == NAL_UNIT_CODED_SLICE_IDR || getNalUnitType() == NAL_UNIT_CODED_SLICE_IDR_N_LP; }

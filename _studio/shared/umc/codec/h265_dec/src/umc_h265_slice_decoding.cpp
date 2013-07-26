@@ -159,7 +159,7 @@ bool H265Slice::Reset(void *pSource, size_t nSourceSize, Ipp32s )
     m_bDecoded = false;
     m_bPrevDeblocked = false;
     m_bDeblocked = getDeblockingFilterDisable();
-    m_bSAOed = !(GetSeqParam()->sample_adaptive_offset_enabled_flag && (GetSliceHeader()->m_SaoEnabledFlag || GetSliceHeader()->m_SaoEnabledFlagChroma));
+    m_bSAOed = !(GetSliceHeader()->slice_sao_luma_flag || GetSliceHeader()->slice_sao_chroma_flag);
 
     if (m_bDeblocked)
     {
@@ -394,8 +394,8 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
             memcpy(m_SliceHeader.m_weightPredTable[e][n], slice->m_weightPredTable[e][n], sizeof(wpScalingParam)*3 );
         }
     }
-    m_SliceHeader.m_SaoEnabledFlag = slice->m_SaoEnabledFlag;
-    m_SliceHeader.m_SaoEnabledFlagChroma = slice->m_SaoEnabledFlagChroma;
+    m_SliceHeader.slice_sao_luma_flag = slice->slice_sao_luma_flag;
+    m_SliceHeader.slice_sao_chroma_flag = slice->slice_sao_chroma_flag;
     m_SliceHeader.m_CabacInitFlag        = slice->m_CabacInitFlag;
     m_SliceHeader.m_numEntryPointOffsets  = slice->m_numEntryPointOffsets;
 
