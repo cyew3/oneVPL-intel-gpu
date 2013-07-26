@@ -120,6 +120,7 @@ namespace MFX_HEVC_COMMON
 
     /* Deblocking */
     void h265_FilterEdgeLuma_8u_I(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir);
+    void h265_FilterEdgeChroma_Plane_8u_I(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s chromaQpOffset, Ipp32s dir, Ipp32s chromaQp);
 };
 
 namespace MFX_HEVC_ENCODER

@@ -294,16 +294,18 @@ public:
     void QuantFwdTU(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, Ipp32s is_luma);
 
     void Deblock();
+
     //aya: moved to HEVC_PP
     /*void FilterEdgeLuma(H265EdgeData *edge,
                             PixType *srcDst,
                             Ipp32s srcDstStride,
                             Ipp32s dir);*/
-    void FilterEdgeChroma(H265EdgeData *edge,
+    /*void FilterEdgeChroma(H265EdgeData *edge,
                               PixType *srcDst,
                               Ipp32s srcDstStride,
                               Ipp32s chromaQpOffset,
-                              Ipp32s dir);
+                              Ipp32s dir);*/
+
     void DeblockOneCrossLuma(Ipp32s curPixelColumn,
                              Ipp32s curPixelRow);
     void DeblockOneCrossChroma(Ipp32s curPixelColumn,

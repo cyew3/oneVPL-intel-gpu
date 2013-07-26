@@ -27,6 +27,8 @@
                                                               (m_Value) ) )
 #endif
 
+typedef Ipp8u PixType;
+
 namespace MFX_HEVC_COMMON
 {
     enum FilterType
@@ -171,6 +173,53 @@ namespace MFX_HEVC_COMMON
         }
 
     } // void h265_FilterEdgeLuma_8u_I(...)
+    
+
+    void h265_FilterEdgeChroma_Plane_8u_I(H265EdgeData *edge, PixType *srcDst, Ipp32s srcDstStride, Ipp32s chromaQpOffset, Ipp32s dir, Ipp32s chromaQp)
+    {
+        Ipp32s bitDepthChroma = 8;
+        //Ipp32s qp = GetChromaQP(edge->qp, 0, 8);
+        Ipp32s qp = chromaQp;
+        Ipp32s tcIdx = Clip3(0, 53, qp + 2 * (edge->strength - 1) + edge->tcOffset);
+        Ipp32s tc =  tcTable[tcIdx] * (1 << (bitDepthChroma - 8));
+        Ipp32s offset, strDstStep;
+        Ipp32s i;
+
+        if (dir == VERT_FILT)
+        {
+            offset = 1;
+            strDstStep = srcDstStride;
+        }
+        else
+        {
+            offset = srcDstStride;
+            strDstStep = 1;
+        }
+
+        for (i = 0; i < 4; i++)
+        {
+            Ipp32s p0 = srcDst[-1*offset];
+            Ipp32s p1 = srcDst[-2*offset];
+            Ipp32s q0 = srcDst[0*offset];
+            Ipp32s q1 = srcDst[1*offset];
+            Ipp32s delta = ((((q0 - p0) << 2) + p1 - q1 + 4) >> 3);
+
+            delta = Clip3(-tc, tc, delta);
+
+            if (edge->deblockP)
+            {
+                srcDst[-offset] = (PixType)(Clip3(0, 255, (p0 + delta)));
+            }
+
+            if (edge->deblockQ)
+            {
+                srcDst[0] = (PixType)(Clip3(0, 255, (q0 - delta)));
+            }
+
+            srcDst += strDstStep;
+        }
+
+    } // void h265_FilterEdgeChroma_Plane_8u_I(H265EdgeData *edge, PixType *srcDst, Ipp32s srcDstStride, Ipp32s chromaQpOffset, Ipp32s dir, Ipp32s chromaQp)
 
 }; // namespace MFX_HEVC_COMMON
 
