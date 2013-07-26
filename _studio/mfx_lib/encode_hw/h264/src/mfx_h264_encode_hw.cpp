@@ -754,7 +754,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
         request.Info.Width  = m_video.mfx.FrameInfo.Width  / 16 * sizeof(mfxI16Pair) * 2;
         request.Info.Height = m_video.mfx.FrameInfo.Height / 16;
-        request.Info.FourCC = D3DFMT_A8;
+        request.Info.FourCC = (mfxU32)CM_SURFACE_FORMAT_A8; // dx11 does not allow 2d surfaces of format P8, use A8 instead
         request.Type        = MFX_MEMTYPE_D3D_INT;
         request.NumFrameMin = 1 + !!(m_video.AsyncDepth > 1);
 
