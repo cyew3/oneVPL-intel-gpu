@@ -156,6 +156,8 @@ msdk_ts_DECLARE_BLOCK(t_PackHEVCNALU);
 
 msdk_ts_DECLARE_BLOCK(t_NewBsParser);
 msdk_ts_DECLARE_BLOCK(t_ParseNextUnit);
+msdk_ts_DECLARE_BLOCK(t_BsLock);
+msdk_ts_DECLARE_BLOCK(t_BsUnlock);
 
 //IN : global_allocator_instance
 //OUT: surf_cnt

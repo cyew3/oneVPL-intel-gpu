@@ -600,7 +600,7 @@ msdk_ts_BLOCK(t_ParseNextUnit){
         return msdk_ts::resFAIL;
 
     if(!var_def<char*>("bs_file", NULL)){
-        mfxBitstream* pBS = &var_old<mfxBitstream>("bitstream");
+        pBS = &var_old<mfxBitstream>("bitstream");
 
         sts = parser->set_buffer(pBS->Data+pBS->DataOffset, pBS->DataLength);
         CHECK_STS(sts, BS_ERR_NONE);
@@ -620,6 +620,26 @@ msdk_ts_BLOCK(t_ParseNextUnit){
     hdr = parser->get_header();
 
     return msdk_ts::resOK;
+}
+
+msdk_ts_BLOCK(t_BsLock){
+    BS_parser* parser = var_old<BS_parser*>("p_bs_parser");
+    void*& hdr = var_def<void*>("bs_header", NULL);
+
+    if(parser && !parser->lock(hdr))
+        return msdk_ts::resOK;
+
+    return msdk_ts::resFAIL;
+}
+
+msdk_ts_BLOCK(t_BsUnlock){
+    BS_parser* parser = var_old<BS_parser*>("p_bs_parser");
+    void*& hdr = var_def<void*>("bs_header", NULL);
+
+    if(parser && !parser->unlock(hdr))
+        return msdk_ts::resOK;
+
+    return msdk_ts::resFAIL;
 }
 
 msdk_ts_BLOCK(t_PackHEVCNALU){
