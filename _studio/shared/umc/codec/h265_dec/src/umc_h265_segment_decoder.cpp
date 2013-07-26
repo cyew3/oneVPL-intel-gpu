@@ -408,9 +408,9 @@ void H265SegmentDecoder::parseSaoOffset(SAOLCUParam* psSaoLcuParam, Ipp32u compI
         SAO_BO_LEN
     };
 
-    if (compIdx==2)
+    if (compIdx == 2)
     {
-        uiSymbol = (Ipp32u)( psSaoLcuParam->m_typeIdx + 1);
+        uiSymbol = (Ipp32u)(psSaoLcuParam->m_typeIdx + 1);
     }
     else
     {
@@ -426,11 +426,11 @@ void H265SegmentDecoder::parseSaoOffset(SAOLCUParam* psSaoLcuParam, Ipp32u compI
         Ipp32s bitDepth = compIdx ? g_bitDepthC : g_bitDepthY;
         Ipp32s offsetTh = 1 << IPP_MIN(bitDepth - 5, 5);
 
-        if( psSaoLcuParam->m_typeIdx == SAO_BO )
+        if (psSaoLcuParam->m_typeIdx == SAO_BO)
         {
             for (Ipp32s i = 0; i < psSaoLcuParam->m_length; i++)
             {
-                parseSaoMaxUvlc(uiSymbol, offsetTh -1 );
+                parseSaoMaxUvlc(uiSymbol, offsetTh - 1);
                 psSaoLcuParam->m_offset[i] = uiSymbol;
             }
 
@@ -442,22 +442,26 @@ void H265SegmentDecoder::parseSaoOffset(SAOLCUParam* psSaoLcuParam, Ipp32u compI
 
                     if (uiSymbol)
                     {
-                        psSaoLcuParam->m_offset[i] = -psSaoLcuParam->m_offset[i] ;
+                        psSaoLcuParam->m_offset[i] = -psSaoLcuParam->m_offset[i];
                     }
                 }
             }
             parseSaoUflc(5, uiSymbol);
             psSaoLcuParam->m_subTypeIdx = uiSymbol;
         }
-        else if( psSaoLcuParam->m_typeIdx < 4 )
+        else if (psSaoLcuParam->m_typeIdx < 4)
         {
-            parseSaoMaxUvlc(uiSymbol, offsetTh -1 ); psSaoLcuParam->m_offset[0] = (Ipp32s)uiSymbol;
-            parseSaoMaxUvlc(uiSymbol, offsetTh -1 ); psSaoLcuParam->m_offset[1] = (Ipp32s)uiSymbol;
-            parseSaoMaxUvlc(uiSymbol, offsetTh -1 ); psSaoLcuParam->m_offset[2] = -(Ipp32s)uiSymbol;
-            parseSaoMaxUvlc(uiSymbol, offsetTh -1 ); psSaoLcuParam->m_offset[3] = -(Ipp32s)uiSymbol;
+            parseSaoMaxUvlc(uiSymbol, offsetTh - 1);
+            psSaoLcuParam->m_offset[0] = (Ipp32s)uiSymbol;
+            parseSaoMaxUvlc(uiSymbol, offsetTh - 1);
+            psSaoLcuParam->m_offset[1] = (Ipp32s)uiSymbol;
+            parseSaoMaxUvlc(uiSymbol, offsetTh - 1);
+            psSaoLcuParam->m_offset[2] = -(Ipp32s)uiSymbol;
+            parseSaoMaxUvlc(uiSymbol, offsetTh - 1);
+            psSaoLcuParam->m_offset[3] = -(Ipp32s)uiSymbol;
             if (compIdx != 2)
             {
-                parseSaoUflc(2, uiSymbol );
+                parseSaoUflc(2, uiSymbol);
                 psSaoLcuParam->m_subTypeIdx = (Ipp32s)uiSymbol;
                 psSaoLcuParam->m_typeIdx += psSaoLcuParam->m_subTypeIdx;
             }
@@ -561,14 +565,14 @@ void H265SegmentDecoder::parseSaoOneLcuInterleaving(Ipp32s rx,
 
     if (saoLuma || saoChroma)
     {
-        if (rx>0 && iCUAddrInSlice!=0 && allowMergeLeft)
+        if (rx > 0 && iCUAddrInSlice != 0 && allowMergeLeft)
         {
             parseSaoMerge(uiSymbol);
             saoLcuParam[0][iAddr].m_mergeLeftFlag = uiSymbol != 0;
         }
-        if (saoLcuParam[0][iAddr].m_mergeLeftFlag==0)
+        if (saoLcuParam[0][iAddr].m_mergeLeftFlag == 0)
         {
-            if ((ry > 0) && (iCUAddrUpInSlice>=0) && allowMergeUp)
+            if ((ry > 0) && (iCUAddrUpInSlice >= 0) && allowMergeUp)
             {
                 parseSaoMerge(uiSymbol);
                 saoLcuParam[0][iAddr].m_mergeUpFlag = uiSymbol != 0;
@@ -576,11 +580,11 @@ void H265SegmentDecoder::parseSaoOneLcuInterleaving(Ipp32s rx,
         }
     }
 
-    for (Ipp32s iCompIdx=0; iCompIdx<3; iCompIdx++)
+    for (Ipp32s iCompIdx = 0; iCompIdx < 3; iCompIdx++)
     {
-        if ((iCompIdx == 0  && saoLuma) || (iCompIdx > 0  && saoChroma) )
+        if ((iCompIdx == 0 && saoLuma) || (iCompIdx > 0 && saoChroma))
         {
-            if (rx>0 && iCUAddrInSlice!=0 && allowMergeLeft)
+            if (rx > 0 && iCUAddrInSlice != 0 && allowMergeLeft)
             {
                 saoLcuParam[iCompIdx][iAddr].m_mergeLeftFlag = saoLcuParam[0][iAddr].m_mergeLeftFlag;
             }
@@ -589,9 +593,9 @@ void H265SegmentDecoder::parseSaoOneLcuInterleaving(Ipp32s rx,
                 saoLcuParam[iCompIdx][iAddr].m_mergeLeftFlag = 0;
             }
 
-            if (saoLcuParam[iCompIdx][iAddr].m_mergeLeftFlag==0)
+            if (saoLcuParam[iCompIdx][iAddr].m_mergeLeftFlag == 0)
             {
-                if ((ry > 0) && (iCUAddrUpInSlice>=0) && allowMergeUp)
+                if ((ry > 0) && (iCUAddrUpInSlice >= 0) && allowMergeUp)
                 {
                     saoLcuParam[iCompIdx][iAddr].m_mergeUpFlag = saoLcuParam[0][iAddr].m_mergeUpFlag;
                 }
@@ -606,12 +610,12 @@ void H265SegmentDecoder::parseSaoOneLcuInterleaving(Ipp32s rx,
                 }
                 else
                 {
-                    copySaoOneLcuParam(&saoLcuParam[iCompIdx][iAddr], &saoLcuParam[iCompIdx][iAddr-pcCU->m_Frame->m_CodingData->m_WidthInCU]);
+                    copySaoOneLcuParam(&saoLcuParam[iCompIdx][iAddr], &saoLcuParam[iCompIdx][iAddr - pcCU->m_Frame->m_CodingData->m_WidthInCU]);
                 }
             }
             else
             {
-                copySaoOneLcuParam(&saoLcuParam[iCompIdx][iAddr],  &saoLcuParam[iCompIdx][iAddr-1]);
+                copySaoOneLcuParam(&saoLcuParam[iCompIdx][iAddr], &saoLcuParam[iCompIdx][iAddr - 1]);
             }
         }
         else

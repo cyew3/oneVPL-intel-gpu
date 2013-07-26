@@ -416,7 +416,9 @@ public:
     H265DecoderFrame*   m_Frame;
 
     Ipp32s              m_OffsetEo[LUMA_GROUP_NUM];
+    Ipp32s              m_OffsetEo2[LUMA_GROUP_NUM];
     H265PlaneYCommon   *m_OffsetBo;
+    H265PlaneYCommon   *m_OffsetBo2;
     H265PlaneYCommon   *m_ClipTable;
     H265PlaneYCommon   *m_ClipTableBase;
     H265PlaneYCommon   *m_lumaTableBo;
@@ -440,17 +442,18 @@ public:
     void SAOProcess(H265DecoderFrame* pFrame);
     void processSaoCuOrgLuma(Ipp32s Addr, Ipp32s PartIdx, H265PlaneYCommon *tmpL);
     void processSaoCuLuma(Ipp32s addr, Ipp32s saoType, H265PlaneYCommon *tmpL);
-    void processSaoCuOrgChroma(Ipp32s Addr, Ipp32s PartIdx, Ipp32s YCbCr, H265PlaneUVCommon *tmpL);
-    void processSaoCuChroma(Ipp32s addr, Ipp32s saoType, Ipp32s YCbCr, H265PlaneUVCommon *tmpL);
+    void processSaoCuOrgChroma(Ipp32s Addr, Ipp32s PartIdx, H265PlaneUVCommon *tmpL);
+    void processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H265PlaneUVCommon *tmpL);
     void processSaoUnitAllLuma(SAOLCUParam* saoLcuParam);
-    void processSaoUnitAllChroma(SAOLCUParam *saoLcuParam, Ipp32s yCbCr);
+    void processSaoUnitAllChroma(SAOLCUParam* saoLCUParamCb, SAOLCUParam* saoLCUParamCr);
     void createNonDBFilterInfo();
     void PCMRestoration();
     void PCMCURestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth);
     void PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth, EnumTextType Text);
 
 protected:
-    void SetOffsets(SAOLCUParam* saoLCUParam, Ipp32s addr, Ipp32s typeIdx, bool isChroma);
+    void SetOffsetsLuma(SAOLCUParam &saoLCUParam, Ipp32s typeIdx);
+    void SetOffsetsChroma(SAOLCUParam &saoLCUParamCb, SAOLCUParam &saoLCUParamCr, Ipp32s typeIdx);
 };
 
 inline

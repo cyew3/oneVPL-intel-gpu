@@ -83,6 +83,7 @@ void H265SampleAdaptiveOffset::init(Ipp32s Width, Ipp32s Height, Ipp32s MaxCUWid
 
     m_ClipTableBase = new H265PlaneYCommon[uiMaxY+2*iCRangeExt];
     m_OffsetBo      = new H265PlaneYCommon[uiMaxY+2*iCRangeExt];
+    m_OffsetBo2     = new H265PlaneYCommon[uiMaxY+2*iCRangeExt];
 
     for (i = 0; i < (uiMinY + iCRangeExt);i++)
     {
@@ -116,6 +117,10 @@ void H265SampleAdaptiveOffset::destroy()
     if (m_OffsetBo)
     {
         delete [] m_OffsetBo; m_OffsetBo = NULL;
+    }
+    if (m_OffsetBo2)
+    {
+        delete [] m_OffsetBo2; m_OffsetBo2 = NULL;
     }
     if (m_lumaTableBo)
     {
@@ -744,12 +749,12 @@ void H265SampleAdaptiveOffset::processSaoCuLuma(Ipp32s addr, Ipp32s saoType, H26
     }
 }
 
-void H265SampleAdaptiveOffset::processSaoCuOrgChroma(Ipp32s addr, Ipp32s saoType, Ipp32s YCbCr, H265PlanePtrUVCommon tmpL)
+void H265SampleAdaptiveOffset::processSaoCuOrgChroma(Ipp32s addr, Ipp32s saoType, H265PlanePtrUVCommon tmpL)
 {
     H265CodingUnit *pTmpCu = m_Frame->getCU(addr);
     H265PlanePtrUVCommon pRec;
-    Ipp32s tmpUpBuff1[65];
-    Ipp32s tmpUpBuff2[65];
+    Ipp32s tmpUpBuff1[66];
+    Ipp32s tmpUpBuff2[66];
     Ipp32s stride;
     Ipp32s LCUWidth  = m_MaxCUWidth;
     Ipp32s LCUHeight = m_MaxCUHeight;
@@ -757,11 +762,10 @@ void H265SampleAdaptiveOffset::processSaoCuOrgChroma(Ipp32s addr, Ipp32s saoType
     Ipp32s TPelY     = (Ipp32s)pTmpCu->m_CUPelY;
     Ipp32s RPelX;
     Ipp32s BPelY;
-    Ipp32s signLeft;
-    Ipp32s signRight;
-    Ipp32s signDown;
-    Ipp32s signDown1;
-    Ipp32u edgeType;
+    Ipp32s signLeftCb, signLeftCr;
+    Ipp32s signRightCb, signRightCr;
+    Ipp32s signDownCb, signDownCr;
+    Ipp32u edgeTypeCb, edgeTypeCr;
     Ipp32s picWidthTmp;
     Ipp32s picHeightTmp;
     Ipp32s startX;
@@ -770,12 +774,16 @@ void H265SampleAdaptiveOffset::processSaoCuOrgChroma(Ipp32s addr, Ipp32s saoType
     Ipp32s endY;
     Ipp32s x, y;
     H265PlanePtrUVCommon tmpU;
+    Ipp32s *pOffsetEoCb = m_OffsetEo;
+    Ipp32s *pOffsetEoCr = m_OffsetEo2;
+    H265PlanePtrUVCommon pOffsetBoCb = m_OffsetBo;
+    H265PlanePtrUVCommon pOffsetBoCr = m_OffsetBo2;
 
-    picWidthTmp  = m_PicWidth  >> 1;
+    picWidthTmp  = m_PicWidth;
     picHeightTmp = m_PicHeight >> 1;
-    LCUWidth     = LCUWidth    >> 1;
+    LCUWidth     = LCUWidth;
     LCUHeight    = LCUHeight   >> 1;
-    LPelX        = LPelX       >> 1;
+    LPelX        = LPelX;
     TPelY        = TPelY       >> 1;
     RPelX        = LPelX + LCUWidth;
     BPelY        = TPelY + LCUHeight;
@@ -784,14 +792,7 @@ void H265SampleAdaptiveOffset::processSaoCuOrgChroma(Ipp32s addr, Ipp32s saoType
     LCUWidth     = RPelX - LPelX;
     LCUHeight    = BPelY - TPelY;
 
-    if (YCbCr == 1)
-    {
-        pRec      = m_Frame->GetCbCrAddr(addr);
-    }
-    else
-    {
-        pRec      = m_Frame->GetCbCrAddr(addr) + 1;
-    }
+    pRec      = m_Frame->GetCbCrAddr(addr);
     stride    = m_Frame->pitch_chroma();
 
     tmpU = &(m_TmpU1[LPelX]);
@@ -800,20 +801,25 @@ void H265SampleAdaptiveOffset::processSaoCuOrgChroma(Ipp32s addr, Ipp32s saoType
     {
     case SAO_EO_0: // dir: -
         {
-            startX = (LPelX == 0) ? 1 : 0;
-            endX   = (RPelX == picWidthTmp) ? LCUWidth-1 : LCUWidth;
+            startX = (LPelX == 0) ? 2 : 0;
+            endX   = (RPelX == picWidthTmp) ? LCUWidth - 2 : LCUWidth;
 
             for (y = 0; y < LCUHeight; y++)
             {
-                signLeft = getSign(pRec[startX * 2] - tmpL[y]);
+                signLeftCb = getSign(pRec[startX] - tmpL[y * 2]);
+                signLeftCr = getSign(pRec[startX + 1] - tmpL[y * 2 + 1]);
 
-                for (x = startX; x < endX; x++)
+                for (x = startX; x < endX; x += 2)
                 {
-                    signRight =  getSign(pRec[x * 2] - pRec[x * 2 + 2]);
-                    edgeType  =  signRight + signLeft + 2;
-                    signLeft  = -signRight;
+                    signRightCb = getSign(pRec[x] - pRec[x + 2]);
+                    signRightCr = getSign(pRec[x + 1] - pRec[x + 3]);
+                    edgeTypeCb = signRightCb + signLeftCb + 2;
+                    edgeTypeCr = signRightCr + signLeftCr + 2;
+                    signLeftCb = -signRightCb;
+                    signLeftCr = -signRightCr;
 
-                    pRec[x * 2] = m_ClipTable[pRec[x * 2] + m_OffsetEo[edgeType]];
+                    pRec[x] = m_ClipTable[pRec[x] + pOffsetEoCb[edgeTypeCb]];
+                    pRec[x + 1] = m_ClipTable[pRec[x + 1] + pOffsetEoCr[edgeTypeCr]];
                 }
 
                 pRec += stride;
@@ -832,18 +838,22 @@ void H265SampleAdaptiveOffset::processSaoCuOrgChroma(Ipp32s addr, Ipp32s saoType
 
             for (x = 0; x < LCUWidth; x++)
             {
-                tmpUpBuff1[x] = getSign(pRec[x * 2] - tmpU[x]);
+                tmpUpBuff1[x] = getSign(pRec[x] - tmpU[x]);
             }
 
             for (y = startY; y < endY; y++)
             {
-                for (x = 0; x < LCUWidth; x++)
+                for (x = 0; x < LCUWidth; x += 2)
                 {
-                    signDown    = getSign(pRec[x * 2] - pRec[x * 2 + stride]);
-                    edgeType    = signDown + tmpUpBuff1[x] + 2;
-                    tmpUpBuff1[x]= -signDown;
+                    signDownCb = getSign(pRec[x] - pRec[x + stride]);
+                    signDownCr = getSign(pRec[x + 1] - pRec[x + 1 + stride]);
+                    edgeTypeCb = signDownCb + tmpUpBuff1[x] + 2;
+                    edgeTypeCr = signDownCr + tmpUpBuff1[x + 1] + 2;
+                    tmpUpBuff1[x] = -signDownCb;
+                    tmpUpBuff1[x + 1] = -signDownCr;
 
-                    pRec[x * 2] = m_ClipTable[pRec[x * 2] + m_OffsetEo[edgeType]];
+                    pRec[x] = m_ClipTable[pRec[x] + pOffsetEoCb[edgeTypeCb]];
+                    pRec[x + 1] = m_ClipTable[pRec[x + 1] + pOffsetEoCr[edgeTypeCr]];
                 }
                 pRec += stride;
             }
@@ -855,8 +865,8 @@ void H265SampleAdaptiveOffset::processSaoCuOrgChroma(Ipp32s addr, Ipp32s saoType
             Ipp32s *pUpBufft = tmpUpBuff2;
             Ipp32s *swapPtr;
 
-            startX = (LPelX == 0)           ? 1 : 0;
-            endX   = (RPelX == picWidthTmp) ? LCUWidth - 1 : LCUWidth;
+            startX = (LPelX == 0)           ? 2 : 0;
+            endX   = (RPelX == picWidthTmp) ? LCUWidth - 2 : LCUWidth;
 
             startY = (TPelY == 0) ?            1 : 0;
             endY   = (BPelY == picHeightTmp) ? LCUHeight - 1 : LCUHeight;
@@ -868,19 +878,24 @@ void H265SampleAdaptiveOffset::processSaoCuOrgChroma(Ipp32s addr, Ipp32s saoType
 
             for (x = startX; x < endX; x++)
             {
-                pUpBuff[x] = getSign(pRec[x * 2] - tmpU[x-1]);
+                pUpBuff[x] = getSign(pRec[x] - tmpU[x - 2]);
             }
 
             for (y = startY; y < endY; y++)
             {
-                pUpBufft[startX] = getSign(pRec[stride + startX * 2] - tmpL[y]);
+                pUpBufft[startX] = getSign(pRec[stride + startX] - tmpL[y * 2]);
+                pUpBufft[startX + 1] = getSign(pRec[stride + startX + 1] - tmpL[y * 2 + 1]);
 
-                for (x = startX; x < endX; x++)
+                for (x = startX; x < endX; x += 2)
                 {
-                    signDown1      =  getSign(pRec[x * 2] - pRec[x * 2 + stride + 2]) ;
-                    edgeType       =  signDown1 + pUpBuff[x] + 2;
-                    pUpBufft[x+1]  = -signDown1;
-                    pRec[x * 2] = m_ClipTable[pRec[x * 2] + m_OffsetEo[edgeType]];
+                    signDownCb = getSign(pRec[x] - pRec[x + stride + 2]);
+                    signDownCr = getSign(pRec[x + 1] - pRec[x + stride + 3]);
+                    edgeTypeCb = signDownCb + pUpBuff[x] + 2;
+                    edgeTypeCr = signDownCr + pUpBuff[x + 1] + 2;
+                    pUpBufft[x + 2] = -signDownCb;
+                    pUpBufft[x + 3] = -signDownCr;
+                    pRec[x] = m_ClipTable[pRec[x] + pOffsetEoCb[edgeTypeCb]];
+                    pRec[x + 1] = m_ClipTable[pRec[x + 1] + pOffsetEoCr[edgeTypeCr]];
                 }
 
                 swapPtr  = pUpBuff;
@@ -893,8 +908,8 @@ void H265SampleAdaptiveOffset::processSaoCuOrgChroma(Ipp32s addr, Ipp32s saoType
         }
     case SAO_EO_3: // dir: 45
         {
-            startX = (LPelX == 0) ? 1 : 0;
-            endX   = (RPelX == picWidthTmp) ? LCUWidth - 1 : LCUWidth;
+            startX = (LPelX == 0) ? 2 : 0;
+            endX   = (RPelX == picWidthTmp) ? LCUWidth - 2 : LCUWidth;
 
             startY = (TPelY == 0) ? 1 : 0;
             endY   = (BPelY == picHeightTmp) ? LCUHeight - 1 : LCUHeight;
@@ -904,28 +919,37 @@ void H265SampleAdaptiveOffset::processSaoCuOrgChroma(Ipp32s addr, Ipp32s saoType
                 pRec += stride;
             }
 
-            for (x = startX - 1; x < endX; x++)
+            for (x = startX - 2; x < endX; x++)
             {
-                tmpUpBuff1[x+1] = getSign(pRec[x * 2] - tmpU[x+1]);
+                tmpUpBuff1[x + 2] = getSign(pRec[x] - tmpU[x + 2]);
             }
 
             for (y = startY; y < endY; y++)
             {
                 x = startX;
-                signDown1      =  getSign(pRec[x * 2] - tmpL[y+1]) ;
-                edgeType       =  signDown1 + tmpUpBuff1[x+1] + 2;
-                tmpUpBuff1[x] = -signDown1;
-                pRec[x * 2] = m_ClipTable[pRec[x * 2] + m_OffsetEo[edgeType]];
+                signDownCb = getSign(pRec[x] - tmpL[y * 2 + 2]);
+                signDownCr = getSign(pRec[x + 1] - tmpL[y * 2 + 3]);
+                edgeTypeCb =  signDownCb + tmpUpBuff1[x + 2] + 2;
+                edgeTypeCr =  signDownCr + tmpUpBuff1[x + 3] + 2;
+                tmpUpBuff1[x] = -signDownCb;
+                tmpUpBuff1[x + 1] = -signDownCr;
+                pRec[x] = m_ClipTable[pRec[x] + pOffsetEoCb[edgeTypeCb]];
+                pRec[x + 1] = m_ClipTable[pRec[x + 1] + pOffsetEoCr[edgeTypeCr]];
 
-                for (x = startX + 1; x < endX; x++)
+                for (x = startX + 2; x < endX; x += 2)
                 {
-                    signDown1      =  getSign(pRec[x * 2] - pRec[x * 2 + stride - 2]) ;
-                    edgeType       =  signDown1 + tmpUpBuff1[x+1] + 2;
-                    tmpUpBuff1[x]  = -signDown1;
-                    pRec[x * 2] = m_ClipTable[pRec[x * 2] + m_OffsetEo[edgeType]];
+                    signDownCb = getSign(pRec[x] - pRec[x + stride - 2]);
+                    signDownCr = getSign(pRec[x + 1] - pRec[x + stride - 1]);
+                    edgeTypeCb =  signDownCb + tmpUpBuff1[x + 2] + 2;
+                    edgeTypeCr =  signDownCr + tmpUpBuff1[x + 3] + 2;
+                    tmpUpBuff1[x] = -signDownCb;
+                    tmpUpBuff1[x + 1] = -signDownCr;
+                    pRec[x] = m_ClipTable[pRec[x] + pOffsetEoCb[edgeTypeCb]];
+                    pRec[x + 1] = m_ClipTable[pRec[x + 1] + pOffsetEoCr[edgeTypeCr]];
                 }
 
-                tmpUpBuff1[endX] = getSign(pRec[endX * 2 - 2 + stride] - pRec[endX * 2]);
+                tmpUpBuff1[endX] = getSign(pRec[endX - 2 + stride] - pRec[endX]);
+                tmpUpBuff1[endX + 1] = getSign(pRec[endX - 1 + stride] - pRec[endX + 1]);
 
                 pRec += stride;
             }
@@ -935,9 +959,10 @@ void H265SampleAdaptiveOffset::processSaoCuOrgChroma(Ipp32s addr, Ipp32s saoType
         {
             for (y = 0; y < LCUHeight; y++)
             {
-                for (x = 0; x < LCUWidth; x++)
+                for (x = 0; x < LCUWidth; x += 2)
                 {
-                    pRec[x * 2] = m_OffsetBo[pRec[x * 2]];
+                    pRec[x] = pOffsetBoCb[pRec[x]];
+                    pRec[x + 1] = pOffsetBoCr[pRec[x + 1]];
                 }
                 pRec += stride;
             }
@@ -947,13 +972,13 @@ void H265SampleAdaptiveOffset::processSaoCuOrgChroma(Ipp32s addr, Ipp32s saoType
     }
 }
 
-void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, Ipp32s YCbCr, H265PlanePtrUVCommon tmpL)
+void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H265PlanePtrUVCommon tmpL)
 {
     H265CodingUnit *pTmpCu = m_Frame->getCU(addr);
     bool* pbBorderAvail = pTmpCu->m_AvailBorder;
     H265PlanePtrUVCommon pRec;
-    Ipp32s tmpUpBuff1[65];
-    Ipp32s tmpUpBuff2[65];
+    Ipp32s tmpUpBuff1[66];
+    Ipp32s tmpUpBuff2[66];
     Ipp32s stride;
     Ipp32s LCUWidth  = m_MaxCUWidth;
     Ipp32s LCUHeight = m_MaxCUHeight;
@@ -961,11 +986,10 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, I
     Ipp32s TPelY     = (Ipp32s)pTmpCu->m_CUPelY;
     Ipp32s RPelX;
     Ipp32s BPelY;
-    Ipp32s signLeft;
-    Ipp32s signRight;
-    Ipp32s signDown;
-    Ipp32s signDown1;
-    Ipp32u edgeType;
+    Ipp32s signLeftCb, signLeftCr;
+    Ipp32s signRightCb, signRightCr;
+    Ipp32s signDownCb, signDownCr;
+    Ipp32u edgeTypeCb, edgeTypeCr;
     Ipp32s picWidthTmp;
     Ipp32s picHeightTmp;
     Ipp32s startX;
@@ -976,30 +1000,26 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, I
     H265PlanePtrUVCommon startPtr;
     H265PlanePtrUVCommon tmpU;
     H265PlanePtrUVCommon pClipTbl = m_ClipTable;
-    H265PlanePtrUVCommon pOffsetBo = m_OffsetBo;
+    Ipp32s *pOffsetEoCb = m_OffsetEo;
+    Ipp32s *pOffsetEoCr = m_OffsetEo;
+    H265PlanePtrUVCommon pOffsetBoCb = m_OffsetBo;
+    H265PlanePtrUVCommon pOffsetBoCr = m_OffsetBo2;
     Ipp32s startStride;
 
-    picWidthTmp  = m_PicWidth  >> 1;
+    picWidthTmp  = m_PicWidth;
     picHeightTmp = m_PicHeight >> 1;
-    LCUWidth     = LCUWidth    >> 1;
+    LCUWidth     = LCUWidth;
     LCUHeight    = LCUHeight   >> 1;
-    LPelX        = LPelX       >> 1;
+    LPelX        = LPelX;
     TPelY        = TPelY       >> 1;
-    RPelX        = LPelX + LCUWidth  ;
-    BPelY        = TPelY + LCUHeight ;
+    RPelX        = LPelX + LCUWidth;
+    BPelY        = TPelY + LCUHeight;
     RPelX        = RPelX > picWidthTmp  ? picWidthTmp  : RPelX;
     BPelY        = BPelY > picHeightTmp ? picHeightTmp : BPelY;
     LCUWidth     = RPelX - LPelX;
     LCUHeight    = BPelY - TPelY;
 
-    if (YCbCr == 1)
-    {
-        pRec      = m_Frame->GetCbCrAddr(addr);
-    }
-    else
-    {
-        pRec      = m_Frame->GetCbCrAddr(addr) + 1;
-    }
+    pRec      = m_Frame->GetCbCrAddr(addr);
     stride    = m_Frame->pitch_chroma();
 
     tmpU = &(m_TmpU1[LPelX]);
@@ -1012,28 +1032,33 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, I
             {
                 startX = 0;
                 startPtr = tmpL;
-                startStride = 1;
+                startStride = 2;
             }
             else
             {
-                startX = 1;
+                startX = 2;
                 startPtr = pRec;
                 startStride = stride;
             }
 
-            endX   = (pbBorderAvail[SGU_R]) ? LCUWidth : (LCUWidth - 1);
+            endX = pbBorderAvail[SGU_R] ? LCUWidth : LCUWidth - 2;
 
             for (y = 0; y < LCUHeight; y++)
             {
-                signLeft = getSign(pRec[startX * 2] - startPtr[y * startStride]);
+                signLeftCb = getSign(pRec[startX] - startPtr[y * startStride]);
+                signLeftCr = getSign(pRec[startX + 1] - startPtr[y * startStride + 1]);
 
-                for (x = startX; x < endX; x++)
+                for (x = startX; x < endX; x += 2)
                 {
-                    signRight =  getSign(pRec[x * 2] - pRec[x * 2 + 2]);
-                    edgeType  =  signRight + signLeft + 2;
-                    signLeft  = -signRight;
+                    signRightCb = getSign(pRec[x] - pRec[x + 2]);
+                    signRightCr = getSign(pRec[x + 1] - pRec[x + 3]);
+                    edgeTypeCb = signRightCb + signLeftCb + 2;
+                    edgeTypeCr = signRightCr + signLeftCr + 2;
+                    signLeftCb = -signRightCb;
+                    signLeftCr = -signRightCr;
 
-                    pRec[x * 2]   = pClipTbl[pRec[x * 2] + m_OffsetEo[edgeType]];
+                    pRec[x] = pClipTbl[pRec[x] + pOffsetEoCb[edgeTypeCb]];
+                    pRec[x + 1] = pClipTbl[pRec[x + 1] + pOffsetEoCr[edgeTypeCr]];
                 }
                 pRec  += stride;
             }
@@ -1045,34 +1070,36 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, I
             {
                 startY = 0;
                 startPtr = tmpU;
-                startStride = 1;
             }
             else
             {
                 startY = 1;
                 startPtr = pRec;
-                startStride = 2;
                 pRec += stride;
             }
 
-            endY = (pbBorderAvail[SGU_B]) ? LCUHeight : LCUHeight - 1;
+            endY = pbBorderAvail[SGU_B] ? LCUHeight : LCUHeight - 1;
 
             for (x = 0; x < LCUWidth; x++)
             {
-                tmpUpBuff1[x] = getSign(pRec[x * 2] - startPtr[x * startStride]);
+                tmpUpBuff1[x] = getSign(pRec[x] - startPtr[x]);
             }
 
             for (y = startY; y < endY; y++)
             {
-                for (x = 0; x < LCUWidth; x++)
+                for (x = 0; x < LCUWidth; x += 2)
                 {
-                    signDown      = getSign(pRec[x * 2] - pRec[x * 2 + stride]);
-                    edgeType      = signDown + tmpUpBuff1[x] + 2;
-                    tmpUpBuff1[x] = -signDown;
+                    signDownCb = getSign(pRec[x] - pRec[x + stride]);
+                    signDownCr = getSign(pRec[x + 1] - pRec[x + stride + 1]);
+                    edgeTypeCb = signDownCb + tmpUpBuff1[x] + 2;
+                    edgeTypeCr = signDownCr + tmpUpBuff1[x + 1] + 2;
+                    tmpUpBuff1[x] = -signDownCb;
+                    tmpUpBuff1[x + 1] = -signDownCr;
 
-                    pRec[x * 2]   = pClipTbl[pRec[x * 2] + m_OffsetEo[edgeType]];
+                    pRec[x] = pClipTbl[pRec[x] + pOffsetEoCb[edgeTypeCb]];
+                    pRec[x + 1] = pClipTbl[pRec[x] + pOffsetEoCr[edgeTypeCr]];
                 }
-                pRec  += stride;
+                pRec += stride;
             }
             break;
         }
@@ -1086,37 +1113,42 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, I
             {
                 startX = 0;
                 startPtr = tmpL;
-                startStride = 1;
+                startStride = 2;
             }
             else
             {
-                startX = 1;
+                startX = 2;
                 startPtr = pRec;
                 startStride = stride;
             }
 
-            endX = (pbBorderAvail[SGU_R]) ? LCUWidth : (LCUWidth-1);
+            endX = pbBorderAvail[SGU_R] ? LCUWidth : LCUWidth - 2;
 
             //prepare 2nd line upper sign
-            pUpBuff[startX] = getSign(pRec[startX * 2 + stride] - startPtr[0]);
+            pUpBuff[startX] = getSign(pRec[startX + stride] - startPtr[0]);
+            pUpBuff[startX + 1] = getSign(pRec[startX + 1 + stride] - startPtr[1]);
             for (x = startX; x < endX; x++)
             {
-                pUpBuff[x+1] = getSign(pRec[x * 2 + stride + 2] - pRec[x * 2]);
+                pUpBuff[x + 2] = getSign(pRec[x + stride + 2] - pRec[x]);
             }
 
             //1st line
             if (pbBorderAvail[SGU_TL])
             {
-                edgeType = getSign(pRec[0] - tmpU[-1]) - pUpBuff[1] + 2;
-                pRec[0]  = pClipTbl[pRec[0] + m_OffsetEo[edgeType]];
+                edgeTypeCb = getSign(pRec[0] - tmpU[-2]) - pUpBuff[2] + 2;
+                edgeTypeCr = getSign(pRec[1] - tmpU[-1]) - pUpBuff[3] + 2;
+                pRec[0] = pClipTbl[pRec[0] + pOffsetEoCb[edgeTypeCb]];
+                pRec[1] = pClipTbl[pRec[1] + pOffsetEoCr[edgeTypeCr]];
             }
 
             if (pbBorderAvail[SGU_T])
             {
-                for (x = 1; x < endX; x++)
+                for (x = 2; x < endX; x += 2)
                 {
-                    edgeType = getSign(pRec[x * 2] - tmpU[x-1]) - pUpBuff[x+1] + 2;
-                    pRec[x * 2]  = pClipTbl[pRec[x * 2] + m_OffsetEo[edgeType]];
+                    edgeTypeCb = getSign(pRec[x] - tmpU[x - 2]) - pUpBuff[x + 2] + 2;
+                    edgeTypeCr = getSign(pRec[x + 1] - tmpU[x - 1]) - pUpBuff[x + 3] + 2;
+                    pRec[x] = pClipTbl[pRec[x] + pOffsetEoCb[edgeTypeCb]];
+                    pRec[x + 1] = pClipTbl[pRec[x + 1] + pOffsetEoCr[edgeTypeCr]];
                 }
             }
 
@@ -1125,19 +1157,24 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, I
             //middle lines
             for (y = 1; y < LCUHeight - 1; y++)
             {
-                pUpBufft[startX] = getSign(pRec[stride + startX * 2] - startPtr[y * startStride]);
+                pUpBufft[startX] = getSign(pRec[stride + startX] - startPtr[y * startStride]);
+                pUpBufft[startX + 1] = getSign(pRec[stride + startX + 1] - startPtr[y * startStride]);
 
-                for (x = startX; x < endX; x++)
+                for (x = startX; x < endX; x += 2)
                 {
-                    signDown1 = getSign(pRec[x * 2] - pRec[x * 2 + stride + 2]);
-                    edgeType  =  signDown1 + pUpBuff[x] + 2;
-                    pRec[x * 2]   = pClipTbl[pRec[x * 2] + m_OffsetEo[edgeType]];
+                    signDownCb = getSign(pRec[x] - pRec[x + stride + 2]);
+                    signDownCr = getSign(pRec[x + 1] - pRec[x + 1 + stride + 2]);
+                    edgeTypeCb = signDownCb + pUpBuff[x] + 2;
+                    edgeTypeCr = signDownCr + pUpBuff[x + 1] + 2;
+                    pRec[x] = pClipTbl[pRec[x] + pOffsetEoCb[edgeTypeCb]];
+                    pRec[x + 1] = pClipTbl[pRec[x + 1] + pOffsetEoCr[edgeTypeCr]];
 
-                    pUpBufft[x+1] = -signDown1;
+                    pUpBufft[x + 2] = -signDownCb;
+                    pUpBufft[x + 3] = -signDownCr;
                 }
 
-                swapPtr  = pUpBuff;
-                pUpBuff  = pUpBufft;
+                swapPtr = pUpBuff;
+                pUpBuff = pUpBufft;
                 pUpBufft = swapPtr;
 
                 pRec += stride;
@@ -1146,18 +1183,22 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, I
             //last line
             if (pbBorderAvail[SGU_B])
             {
-                for (x = startX; x < LCUWidth - 1; x++)
+                for (x = startX; x < LCUWidth - 2; x += 2)
                 {
-                    edgeType = getSign(pRec[x * 2] - pRec[x * 2 + stride + 2]) + pUpBuff[x] + 2;
-                    pRec[x * 2]  = pClipTbl[pRec[x * 2] + m_OffsetEo[edgeType]];
+                    edgeTypeCb = getSign(pRec[x] - pRec[x + stride + 2]) + pUpBuff[x] + 2;
+                    edgeTypeCr = getSign(pRec[x + 1] - pRec[x + 1 + stride + 2]) + pUpBuff[x + 1] + 2;
+                    pRec[x]  = pClipTbl[pRec[x] + pOffsetEoCb[edgeTypeCb]];
+                    pRec[x + 1]  = pClipTbl[pRec[x + 1] + pOffsetEoCr[edgeTypeCr]];
                 }
             }
 
             if (pbBorderAvail[SGU_BR])
             {
-                x = LCUWidth - 1;
-                edgeType = getSign(pRec[x * 2] - pRec[x * 2 + stride + 2]) + pUpBuff[x] + 2;
-                pRec[x * 2]  = pClipTbl[pRec[x * 2] + m_OffsetEo[edgeType]];
+                x = LCUWidth - 2;
+                edgeTypeCb = getSign(pRec[x] - pRec[x + stride + 2]) + pUpBuff[x] + 2;
+                edgeTypeCr = getSign(pRec[x + 1] - pRec[x + 1 + stride + 2]) + pUpBuff[x + 1] + 2;
+                pRec[x]  = pClipTbl[pRec[x] + pOffsetEoCb[edgeTypeCb]];
+                pRec[x + 1]  = pClipTbl[pRec[x + 1] + pOffsetEoCr[edgeTypeCr]];
             }
             break;
         }
@@ -1167,39 +1208,44 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, I
             {
                 startX = 0;
                 startPtr = tmpL;
-                startStride = 1;
+                startStride = 2;
             }
             else
             {
-                startX = 1;
+                startX = 2;
                 startPtr = pRec;
                 startStride = stride;
             }
 
-            endX   = (pbBorderAvail[SGU_R]) ? LCUWidth : (LCUWidth -1);
+            endX = pbBorderAvail[SGU_R] ? LCUWidth : LCUWidth - 2;
 
             //prepare 2nd line upper sign
-            tmpUpBuff1[startX] = getSign(startPtr[startStride] - pRec[startX * 2]);
+            tmpUpBuff1[startX] = getSign(startPtr[startStride] - pRec[startX]);
+            tmpUpBuff1[startX + 1] = getSign(startPtr[startStride] - pRec[startX + 1]);
             for (x = startX; x < endX; x++)
             {
-                tmpUpBuff1[x+1] = getSign(pRec[x * 2 + stride] - pRec[x * 2 + 2]);
+                tmpUpBuff1[x + 2] = getSign(pRec[x + stride] - pRec[x + 2]);
             }
 
             //first line
             if (pbBorderAvail[SGU_T])
             {
-                for (x = startX; x < LCUWidth - 1; x++)
+                for (x = startX; x < LCUWidth - 2; x += 2)
                 {
-                    edgeType = getSign(pRec[x * 2] - tmpU[x+1]) - tmpUpBuff1[x] + 2;
-                    pRec[x * 2] = pClipTbl[pRec[x * 2] + m_OffsetEo[edgeType]];
+                    edgeTypeCb = getSign(pRec[x] - tmpU[x + 2]) - tmpUpBuff1[x] + 2;
+                    edgeTypeCr = getSign(pRec[x + 1] - tmpU[x + 3]) - tmpUpBuff1[x + 1] + 2;
+                    pRec[x] = pClipTbl[pRec[x] + pOffsetEoCb[edgeTypeCb]];
+                    pRec[x + 1] = pClipTbl[pRec[x + 1] + pOffsetEoCr[edgeTypeCr]];
                 }
             }
 
             if (pbBorderAvail[SGU_TR])
             {
-                x= LCUWidth - 1;
-                edgeType = getSign(pRec[x * 2] - tmpU[x+1]) - tmpUpBuff1[x] + 2;
-                pRec[x * 2] = pClipTbl[pRec[x * 2] + m_OffsetEo[edgeType]];
+                x = LCUWidth - 2;
+                edgeTypeCb = getSign(pRec[x] - tmpU[x + 2]) - tmpUpBuff1[x] + 2;
+                edgeTypeCr = getSign(pRec[x + 1] - tmpU[x + 3]) - tmpUpBuff1[x + 1] + 2;
+                pRec[x] = pClipTbl[pRec[x] + pOffsetEoCb[edgeTypeCb]];
+                pRec[x + 1] = pClipTbl[pRec[x + 1] + pOffsetEoCr[edgeTypeCr]];
             }
 
             pRec += stride;
@@ -1207,17 +1253,23 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, I
             //middle lines
             for (y = 1; y < LCUHeight - 1; y++)
             {
-                signDown1 = getSign(pRec[startX * 2] - startPtr[(y + 1) * startStride]);
+                signDownCb = getSign(pRec[startX] - startPtr[(y + 1) * startStride]);
+                signDownCr = getSign(pRec[startX + 1] - startPtr[(y + 1) * startStride + 1]);
 
-                for (x = startX; x < endX; x++)
+                for (x = startX; x < endX; x += 2)
                 {
-                    edgeType       = signDown1 + tmpUpBuff1[x+1] + 2;
-                    pRec[x * 2]    = pClipTbl[pRec[x * 2] + m_OffsetEo[edgeType]];
-                    tmpUpBuff1[x]  = -signDown1;
-                    signDown1      = getSign(pRec[x * 2 + 2] - pRec[x * 2 + stride]) ;
+                    edgeTypeCb = signDownCb + tmpUpBuff1[x + 2] + 2;
+                    edgeTypeCr = signDownCr + tmpUpBuff1[x + 3] + 2;
+                    pRec[x] = pClipTbl[pRec[x] + pOffsetEoCb[edgeTypeCb]];
+                    pRec[x + 1] = pClipTbl[pRec[x + 1] + pOffsetEoCr[edgeTypeCr]];
+                    tmpUpBuff1[x] = -signDownCb;
+                    tmpUpBuff1[x + 1] = -signDownCr;
+                    signDownCb = getSign(pRec[x + 2] - pRec[x + stride]);
+                    signDownCr = getSign(pRec[x + 3] - pRec[x + 1 + stride]);
                 }
 
-                tmpUpBuff1[endX] = -signDown1;
+                tmpUpBuff1[endX] = -signDownCb;
+                tmpUpBuff1[endX + 1] = -signDownCr;
 
                 pRec  += stride;
             }
@@ -1225,16 +1277,20 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, I
             //last line
             if (pbBorderAvail[SGU_BL])
             {
-                edgeType = getSign(pRec[0] - pRec[stride - 2]) + tmpUpBuff1[1] + 2;
-                pRec[0] = pClipTbl[pRec[0] + m_OffsetEo[edgeType]];
+                edgeTypeCb = getSign(pRec[0] - pRec[stride - 2]) + tmpUpBuff1[2] + 2;
+                edgeTypeCr = getSign(pRec[1] - pRec[stride - 1]) + tmpUpBuff1[3] + 2;
+                pRec[0] = pClipTbl[pRec[0] + pOffsetEoCb[edgeTypeCb]];
+                pRec[1] = pClipTbl[pRec[1] + pOffsetEoCr[edgeTypeCr]];
             }
 
             if (pbBorderAvail[SGU_B])
             {
-                for (x = 1; x < endX; x++)
+                for (x = 2; x < endX; x += 2)
                 {
-                    edgeType = getSign(pRec[x * 2] - pRec[x * 2 + stride - 2]) + tmpUpBuff1[x+1] + 2;
-                    pRec[x * 2]  = pClipTbl[pRec[x * 2] + m_OffsetEo[edgeType]];
+                    edgeTypeCb = getSign(pRec[x] - pRec[x + stride - 2]) + tmpUpBuff1[x + 2] + 2;
+                    edgeTypeCr = getSign(pRec[x + 1] - pRec[x + stride - 1]) + tmpUpBuff1[x + 3] + 2;
+                    pRec[x]  = pClipTbl[pRec[x] + pOffsetEoCb[edgeTypeCb]];
+                    pRec[x + 1]  = pClipTbl[pRec[x + 1] + pOffsetEoCr[edgeTypeCr]];
                 }
             }
             break;
@@ -1243,9 +1299,10 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, I
         {
             for (y = 0; y < LCUHeight; y++)
             {
-                for (x = 0; x < LCUWidth; x++)
+                for (x = 0; x < LCUWidth; x += 2)
                 {
-                    pRec[x * 2] = pOffsetBo[pRec[x * 2]];
+                    pRec[x] = pOffsetBoCb[pRec[x]];
+                    pRec[x + 1] = pOffsetBoCr[pRec[x + 1]];
                 }
 
                 pRec += stride;
@@ -1271,8 +1328,7 @@ void H265SampleAdaptiveOffset::SAOProcess(H265DecoderFrame* pFrame)
 
         if (slice->getSaoEnabledFlagChroma())
         {
-            processSaoUnitAllChroma(pFrame->m_saoLcuParam[1], 1);//Cb
-            processSaoUnitAllChroma(pFrame->m_saoLcuParam[2], 2);//Cr
+            processSaoUnitAllChroma(pFrame->m_saoLcuParam[1], pFrame->m_saoLcuParam[2]);
         }
     }
 }
@@ -1295,7 +1351,7 @@ void H265SampleAdaptiveOffset::processSaoUnitAllLuma(SAOLCUParam* saoLCUParam)
     Ipp32s LCUHeight = m_MaxCUHeight;
     Ipp32s picWidthTmp = m_PicWidth;
     Ipp32s picHeightTmp = m_PicHeight;
-    bool m_mergeLeftFlag;
+    bool mergeLeftFlag;
 
     tmpL1 = tmpLeftBuff1;
     tmpL2 = tmpLeftBuff2;
@@ -1345,13 +1401,13 @@ void H265SampleAdaptiveOffset::processSaoUnitAllLuma(SAOLCUParam* saoLCUParam)
             }
 
             Ipp32s typeIdx = saoLCUParam[addr].m_typeIdx;
-            m_mergeLeftFlag = saoLCUParam[addr].m_mergeLeftFlag;
+            mergeLeftFlag = saoLCUParam[addr].m_mergeLeftFlag;
 
             if (typeIdx >= 0)
             {
-                if (!m_mergeLeftFlag)
+                if (!mergeLeftFlag)
                 {
-                    SetOffsets(saoLCUParam, addr, typeIdx, false);
+                    SetOffsetsLuma(saoLCUParam[addr], typeIdx);
                 }
 
                 if (!m_UseNIF)
@@ -1374,11 +1430,11 @@ void H265SampleAdaptiveOffset::processSaoUnitAllLuma(SAOLCUParam* saoLCUParam)
     }
 }
 
-void H265SampleAdaptiveOffset::SetOffsets(SAOLCUParam* saoLCUParam, Ipp32s addr, Ipp32s typeIdx, bool isChroma)
+void H265SampleAdaptiveOffset::SetOffsetsLuma(SAOLCUParam  &saoLCUParam, Ipp32s typeIdx)
 {
     Ipp32s offset[LUMA_GROUP_NUM + 1];
 
-    Ipp32u saoBitIncrease = !isChroma ? m_SaoBitIncreaseY : m_SaoBitIncreaseC;
+    Ipp32u saoBitIncrease = m_SaoBitIncreaseY;
 
     if (typeIdx == SAO_BO)
     {
@@ -1386,9 +1442,9 @@ void H265SampleAdaptiveOffset::SetOffsets(SAOLCUParam* saoLCUParam, Ipp32s addr,
         {
             offset[i] = 0;
         }
-        for (Ipp32s i = 0; i < saoLCUParam[addr].m_length; i++)
+        for (Ipp32s i = 0; i < saoLCUParam.m_length; i++)
         {
-            offset[(saoLCUParam[addr].m_subTypeIdx +i) % SAO_MAX_BO_CLASSES + 1] = saoLCUParam[addr].m_offset[i] << saoBitIncrease;
+            offset[(saoLCUParam.m_subTypeIdx + i) % SAO_MAX_BO_CLASSES + 1] = saoLCUParam.m_offset[i] << saoBitIncrease;
         }
 
         H265PlaneYCommon *ppLumaTable = m_lumaTableBo;
@@ -1397,13 +1453,12 @@ void H265SampleAdaptiveOffset::SetOffsets(SAOLCUParam* saoLCUParam, Ipp32s addr,
             m_OffsetBo[i] = m_ClipTable[i + offset[ppLumaTable[i]]];
         }
     }
-
-    if (typeIdx == SAO_EO_0 || typeIdx == SAO_EO_1 || typeIdx == SAO_EO_2 || typeIdx == SAO_EO_3)
+    else if (typeIdx == SAO_EO_0 || typeIdx == SAO_EO_1 || typeIdx == SAO_EO_2 || typeIdx == SAO_EO_3)
     {
         offset[0] = 0;
-        for (Ipp32s i = 0; i < saoLCUParam[addr].m_length; i++)
+        for (Ipp32s i = 0; i < saoLCUParam.m_length; i++)
         {
-            offset[i + 1] = saoLCUParam[addr].m_offset[i] << saoBitIncrease;
+            offset[i + 1] = saoLCUParam.m_offset[i] << saoBitIncrease;
         }
         for (Ipp32s edgeType = 0; edgeType < 6; edgeType++)
         {
@@ -1412,10 +1467,10 @@ void H265SampleAdaptiveOffset::SetOffsets(SAOLCUParam* saoLCUParam, Ipp32s addr,
     }
 }
 
-void H265SampleAdaptiveOffset::processSaoUnitAllChroma(SAOLCUParam* saoLCUParam, Ipp32s yCbCr)
+void H265SampleAdaptiveOffset::processSaoUnitAllChroma(SAOLCUParam* saoLCUParamCb, SAOLCUParam* saoLCUParamCr)
 {
-    H265PlaneUVCommon tmpLeftBuff1[65];
-    H265PlaneUVCommon tmpLeftBuff2[65];
+    H265PlaneUVCommon tmpLeftBuff1[66];
+    H265PlaneUVCommon tmpLeftBuff2[66];
     H265PlanePtrUVCommon tmpL1;
     H265PlanePtrUVCommon tmpL2;
     H265PlanePtrUVCommon pRec;
@@ -1426,28 +1481,21 @@ void H265SampleAdaptiveOffset::processSaoUnitAllChroma(SAOLCUParam* saoLCUParam,
     Ipp32s idxY;
     Ipp32s addr;
     Ipp32s stride;
-    Ipp32s LCUWidth = (m_MaxCUWidth >> 1);
+    Ipp32s LCUWidth = m_MaxCUWidth;
     Ipp32s LCUHeight = (m_MaxCUHeight >> 1);
-    Ipp32s picWidthTmp = (m_PicWidth >> 1);
+    Ipp32s picWidthTmp = m_PicWidth;
     Ipp32s picHeightTmp = (m_PicHeight >> 1);
-    bool m_mergeLeftFlag;
+    bool mergeLeftFlag;
     Ipp32s i;
 
     tmpL1 = tmpLeftBuff1;
     tmpL2 = tmpLeftBuff2;
 
-    if (yCbCr == 1)
-    {
-        pRec   = m_Frame->m_pUVPlane;
-    }
-    else
-    {
-        pRec   = m_Frame->m_pUVPlane + 1;
-    }
+    pRec   = m_Frame->m_pUVPlane;
     stride = m_Frame->pitch_chroma();
 
     for (i = 0; i < picWidthTmp; i++)
-        m_TmpU1[i] = pRec[i * 2];
+        m_TmpU1[i] = pRec[i];
 
     for (idxY = 0; idxY < frameHeightInCU; idxY++)
     {
@@ -1459,18 +1507,12 @@ void H265SampleAdaptiveOffset::processSaoUnitAllChroma(SAOLCUParam* saoLCUParam,
         }
 
         addr = idxY * frameWidthInCU;
-        if (yCbCr == 1)
-        {
-            pRec  = m_Frame->GetCbCrAddr(addr);
-        }
-        else
-        {
-            pRec  = m_Frame->GetCbCrAddr(addr) + 1;
-        }
+        pRec = m_Frame->GetCbCrAddr(addr);
 
         for (i = 0; i < CUHeightTmp; i++)
         {
-            tmpL1[i] = pRec[0];
+            tmpL1[i * 2] = pRec[0];
+            tmpL1[i * 2 + 1] = pRec[1];
             pRec += stride;
         }
 
@@ -1479,7 +1521,7 @@ void H265SampleAdaptiveOffset::processSaoUnitAllChroma(SAOLCUParam* saoLCUParam,
             pRec -= 2 * stride;
 
             for (i = 0; i < picWidthTmp; i++)
-                m_TmpU2[i] = pRec[i * 2];
+                m_TmpU2[i] = pRec[i];
         }
 
         for (idxX = 0; idxX < frameWidthInCU; idxX++)
@@ -1488,37 +1530,33 @@ void H265SampleAdaptiveOffset::processSaoUnitAllChroma(SAOLCUParam* saoLCUParam,
 
             if (idxX != (frameWidthInCU - 1))
             {
-                if (yCbCr == 1)
-                {
-                    pRec  = m_Frame->GetCbCrAddr(addr);
-                }
-                else
-                {
-                    pRec  = m_Frame->GetCbCrAddr(addr) + 1;
-                }
+                pRec  = m_Frame->GetCbCrAddr(addr);
 
                 for (i = 0; i < CUHeightTmp; i++)
                 {
-                    tmpL2[i] = pRec[i * stride + (LCUWidth - 1) * 2];
+                    tmpL2[i * 2] = pRec[i * stride + LCUWidth - 2];
+                    tmpL2[i * 2 + 1] = pRec[i * stride + LCUWidth - 1];
                 }
             }
 
-            Ipp32s typeIdx = saoLCUParam[addr].m_typeIdx;
-            m_mergeLeftFlag = saoLCUParam[addr].m_mergeLeftFlag;
+            VM_ASSERT(saoLCUParamCb[addr].m_typeIdx == saoLCUParamCr[addr].m_typeIdx);
+            VM_ASSERT(saoLCUParamCb[addr].m_mergeLeftFlag == saoLCUParamCr[addr].m_mergeLeftFlag);
+            Ipp32s typeIdx = saoLCUParamCb[addr].m_typeIdx;
+            mergeLeftFlag = saoLCUParamCb[addr].m_mergeLeftFlag;
             if (typeIdx >= 0)
             {
-                if (!m_mergeLeftFlag)
+                if (!mergeLeftFlag)
                 {
-                    SetOffsets(saoLCUParam, addr, typeIdx, true);
+                    SetOffsetsChroma(saoLCUParamCb[addr], saoLCUParamCr[addr], typeIdx);
                 }
 
                 if (!m_UseNIF)
                 {
-                    processSaoCuOrgChroma(addr, typeIdx, yCbCr, tmpL1);
+                    processSaoCuOrgChroma(addr, typeIdx, tmpL1);
                 }
                 else
                 {
-                    processSaoCuChroma(addr, typeIdx, yCbCr, tmpL1);
+                    processSaoCuChroma(addr, typeIdx, tmpL1);
                 }
             }
 
@@ -1529,6 +1567,51 @@ void H265SampleAdaptiveOffset::processSaoUnitAllChroma(SAOLCUParam* saoLCUParam,
         tmpUSwap = m_TmpU1;
         m_TmpU1 = m_TmpU2;
         m_TmpU2 = tmpUSwap;
+    }
+}
+
+void H265SampleAdaptiveOffset::SetOffsetsChroma(SAOLCUParam &saoLCUParamCb, SAOLCUParam &saoLCUParamCr, Ipp32s typeIdx)
+{
+    Ipp32s offsetCb[LUMA_GROUP_NUM + 1];
+    Ipp32s offsetCr[LUMA_GROUP_NUM + 1];
+
+    Ipp32u saoBitIncrease = m_SaoBitIncreaseC;
+    VM_ASSERT(saoLCUParamCb.m_length == saoLCUParamCr.m_length);
+
+    if (typeIdx == SAO_BO)
+    {
+        for (Ipp32s i = 0; i < SAO_MAX_BO_CLASSES + 1; i++)
+        {
+            offsetCb[i] = 0;
+            offsetCr[i] = 0;
+        }
+        for (Ipp32s i = 0; i < saoLCUParamCb.m_length; i++)
+        {
+            offsetCb[(saoLCUParamCb.m_subTypeIdx + i) % SAO_MAX_BO_CLASSES + 1] = saoLCUParamCb.m_offset[i] << saoBitIncrease;
+            offsetCr[(saoLCUParamCr.m_subTypeIdx + i) % SAO_MAX_BO_CLASSES + 1] = saoLCUParamCr.m_offset[i] << saoBitIncrease;
+        }
+
+        H265PlaneYCommon *ppLumaTable = m_lumaTableBo;
+        for (Ipp32s i = 0; i < (1 << g_bitDepthC); i++)
+        {
+            m_OffsetBo[i] = m_ClipTable[i + offsetCb[ppLumaTable[i]]];
+            m_OffsetBo2[i] = m_ClipTable[i + offsetCr[ppLumaTable[i]]];
+        }
+    }
+    else if (typeIdx == SAO_EO_0 || typeIdx == SAO_EO_1 || typeIdx == SAO_EO_2 || typeIdx == SAO_EO_3)
+    {
+        offsetCb[0] = 0;
+        offsetCr[0] = 0;
+        for (Ipp32s i = 0; i < saoLCUParamCb.m_length; i++)
+        {
+            offsetCb[i + 1] = saoLCUParamCb.m_offset[i] << saoBitIncrease;
+            offsetCr[i + 1] = saoLCUParamCr.m_offset[i] << saoBitIncrease;
+        }
+        for (Ipp32s edgeType = 0; edgeType < 6; edgeType++)
+        {
+            m_OffsetEo[edgeType] = offsetCb[EoTable[edgeType]];
+            m_OffsetEo2[edgeType] = offsetCr[EoTable[edgeType]];
+        }
     }
 }
 
@@ -1583,7 +1666,7 @@ void H265SampleAdaptiveOffset::createNonDBFilterInfo()
             }
 
             // Encode order CUs in slice
-            for (Ipp32u j = pSlice->m_iFirstMB; j < pSlice->m_iMaxMB; j++)
+            for (Ipp32s j = pSlice->m_iFirstMB; j < pSlice->m_iMaxMB; j++)
             {
                 Ipp32u idx = m_Frame->m_CodingData->getCUOrderMap(j);
                 m_Frame->getCU(idx)->setNDBFilterBlockBorderAvailability(independentTileBoundaryForNDBFilter);
