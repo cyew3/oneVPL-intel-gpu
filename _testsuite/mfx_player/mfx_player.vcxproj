@@ -204,6 +204,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <TargetMachine>MachineX86</TargetMachine>
       <AdditionalDependencies>winmm.lib; psapi.lib; ippcoremt.lib; ippccmt.lib; ippimt.lib; ippsmt.lib; ippvcmt.lib; ippjmt.lib;  ippcvmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
