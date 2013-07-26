@@ -2359,8 +2359,9 @@ static void H265_FORCEINLINE small_memcpy( void* dst, const void* src, int len )
     // 128-bit loads/stores first with then REP MOVSB, aligning dst on 16-bit to avoid costly store splits
     int peel = (0xf & (-(size_t)dst));
     __asm__ ( "cld" );
-    if ( peel ) {
-        if ( peel < len ) peel = len;
+    if (peel) {
+        if (peel > len)
+            peel = len;
         len -= peel;
         __asm__ ( "rep movsb" : "+c" (peel), "+S" (src), "+D" (dst) :: "memory" );
     }
