@@ -28,6 +28,7 @@
 #endif
 
 typedef Ipp8u PixType;
+typedef Ipp8u H265PlaneUVCommon;
 
 namespace MFX_HEVC_COMMON
 {
@@ -220,6 +221,74 @@ namespace MFX_HEVC_COMMON
         }
 
     } // void h265_FilterEdgeChroma_Plane_8u_I(H265EdgeData *edge, PixType *srcDst, Ipp32s srcDstStride, Ipp32s chromaQpOffset, Ipp32s dir, Ipp32s chromaQp)
+
+
+   void h265_FilterEdgeChroma_Interleaved_8u_I(
+        H265EdgeData *edge, 
+        Ipp8u *srcDst, 
+        Ipp32s srcDstStride,
+        Ipp32s chromaCbQpOffset, 
+        Ipp32s chromaCrQpOffset, 
+        Ipp32s dir,
+        Ipp32s chromaQpCb,
+        Ipp32s chromaQpCr)
+{
+    Ipp32s bitDepthChroma = 8;
+    //Ipp32s qpCb = QpUV(edge->qp + chromaCbQpOffset);
+    Ipp32s qpCb = chromaQpCb;
+
+    //Ipp32s qpCr = QpUV(edge->qp + chromaCrQpOffset);
+    Ipp32s qpCr = chromaQpCr;
+
+    Ipp32s tcIdxCb = Clip3(0, 53, qpCb + 2 * (edge->strength - 1) + edge->tcOffset);
+    Ipp32s tcIdxCr = Clip3(0, 53, qpCr + 2 * (edge->strength - 1) + edge->tcOffset);
+    Ipp32s tcCb =  tcTable[tcIdxCb] * (1 << (bitDepthChroma - 8));
+    Ipp32s tcCr =  tcTable[tcIdxCr] * (1 << (bitDepthChroma - 8));
+    Ipp32s offset, strDstStep;
+    Ipp32s i;
+
+    if (dir == VERT_FILT)
+    {
+        offset = 2;
+        strDstStep = srcDstStride;
+    }
+    else
+    {
+        offset = srcDstStride;
+        strDstStep = 2;
+    }
+
+    for (i = 0; i < 4; i++)
+    {
+        Ipp32s p0Cb = srcDst[-1*offset];
+        Ipp32s p1Cb = srcDst[-2*offset];
+        Ipp32s q0Cb = srcDst[0*offset];
+        Ipp32s q1Cb = srcDst[1*offset];
+        Ipp32s deltaCb = ((((q0Cb - p0Cb) << 2) + p1Cb - q1Cb + 4) >> 3);
+        deltaCb = Clip3(-tcCb, tcCb, deltaCb);
+
+        Ipp32s p0Cr = srcDst[-1*offset + 1];
+        Ipp32s p1Cr = srcDst[-2*offset + 1];
+        Ipp32s q0Cr = srcDst[0*offset + 1];
+        Ipp32s q1Cr = srcDst[1*offset + 1];
+        Ipp32s deltaCr = ((((q0Cr - p0Cr) << 2) + p1Cr - q1Cr + 4) >> 3);
+        deltaCr = Clip3(-tcCr, tcCr, deltaCr);
+
+        if (edge->deblockP)
+        {
+            srcDst[-offset] = (H265PlaneUVCommon)(Clip3(0, 255, (p0Cb + deltaCb)));
+            srcDst[-offset + 1] = (H265PlaneUVCommon)(Clip3(0, 255, (p0Cr + deltaCr)));
+        }
+
+        if (edge->deblockQ)
+        {
+            srcDst[0] = (H265PlaneUVCommon)(Clip3(0, 255, (q0Cb - deltaCb)));
+            srcDst[1] = (H265PlaneUVCommon)(Clip3(0, 255, (q0Cr - deltaCr)));
+        }
+
+        srcDst += strDstStep;
+    }
+}
 
 }; // namespace MFX_HEVC_COMMON
 

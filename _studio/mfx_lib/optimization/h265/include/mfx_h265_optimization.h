@@ -118,9 +118,30 @@ namespace MFX_HEVC_COMMON
     void Interp_S16_WithAvg(const short* pSrc, unsigned int srcPitch, unsigned char *pDst, unsigned int dstPitch, void *pvAvg, unsigned int avgPitch, int avgMode, 
         int tab_index, int width, int height, int shift, short offset, int dir, int plane);
 
-    /* Deblocking */
-    void h265_FilterEdgeLuma_8u_I(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir);
-    void h265_FilterEdgeChroma_Plane_8u_I(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s chromaQpOffset, Ipp32s dir, Ipp32s chromaQp);
+    /* Deblocking, "_I" means Implace operation */
+    void h265_FilterEdgeLuma_8u_I(
+        H265EdgeData *edge, 
+        Ipp8u *srcDst, 
+        Ipp32s srcDstStride, 
+        Ipp32s dir);
+
+    void h265_FilterEdgeChroma_Plane_8u_I(
+        H265EdgeData *edge, 
+        Ipp8u *srcDst, 
+        Ipp32s srcDstStride, 
+        Ipp32s chromaQpOffset, 
+        Ipp32s dir, 
+        Ipp32s chromaQp);
+
+    void h265_FilterEdgeChroma_Interleaved_8u_I(
+        H265EdgeData *edge, 
+        Ipp8u *srcDst, 
+        Ipp32s srcDstStride,
+        Ipp32s chromaCbQpOffset, 
+        Ipp32s chromaCrQpOffset, 
+        Ipp32s dir,
+        Ipp32s chromaQpCb,
+        Ipp32s chromaQpCr);
 };
 
 namespace MFX_HEVC_ENCODER

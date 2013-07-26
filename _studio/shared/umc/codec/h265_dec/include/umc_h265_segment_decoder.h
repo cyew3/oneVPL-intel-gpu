@@ -246,8 +246,9 @@ public:
     //aya: moved to HEVC_PP
     //void FilterEdgeLuma(H265EdgeData *edge, H265PlaneYCommon *srcDst, Ipp32s srcDstStride, Ipp32s dir);
 
-    void FilterEdgeChroma(H265EdgeData *edge, H265PlaneUVCommon *srcDst, Ipp32s srcDstStride,
-        Ipp32s chromaCbQpOffset, Ipp32s chromaCrQpOffset, Ipp32s dir);
+    /*void FilterEdgeChroma(H265EdgeData *edge, H265PlaneUVCommon *srcDst, Ipp32s srcDstStride,
+        Ipp32s chromaCbQpOffset, Ipp32s chromaCrQpOffset, Ipp32s dir);*/
+
 #if (HEVC_OPT_CHANGES & 32)
 // ML: OPT: Parameterized 'dir' to make it constant
     template< Ipp32s dir>
