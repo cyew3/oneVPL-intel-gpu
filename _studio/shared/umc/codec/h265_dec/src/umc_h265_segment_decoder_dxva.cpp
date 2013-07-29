@@ -94,7 +94,7 @@ void H265_DXVA_SegmentDecoder::PackAllHeaders(H265DecoderFrame * pFrame)
             m_Packer->PackQmatrix(pSlice/*->GetPicParam(), pSeqParamSet->sps_scaling_list_data_present_flag*/);
 
         bool isLongFormat = m_va->IsLongSliceControl();
-#if 1
+#if 0
         {
             const char *env = getenv("HEVC_SLICE_FORMAT");
             if(env != 0)
@@ -109,10 +109,7 @@ void H265_DXVA_SegmentDecoder::PackAllHeaders(H265DecoderFrame * pFrame)
 #endif
 
         for (int n=0;n < sliceCount;n++)
-        {
-            //printf("  Slice %d/%d\n", n, sliceCount);
             m_Packer->PackSliceParams(sliceInfo->GetSlice(n), isLongFormat, n == sliceCount - 1);
-        }
 
         m_Packer->ExecuteBuffers();
         m_Packer->EndFrame();
