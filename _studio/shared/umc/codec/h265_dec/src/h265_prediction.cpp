@@ -799,8 +799,10 @@ void H265Prediction::MotionCompensation(H265CodingUnit* pCU, Ipp32u AbsPartIdx, 
                 }
                 CopyWeightedBidi_S16U8(pCU->m_Frame, &m_YUVPred[0], &m_YUVPred[1], pCU->CUAddr, PartAddr, Width, Height, w0, w1, logWD, round);
             }
-            else
+            else if (RefIdx[0] >= 0)
                 CopyWeighted_S16U8(pCU->m_Frame, &m_YUVPred[0], pCU->CUAddr, PartAddr, Width, Height, w0, o0, logWD, round);
+            else
+                CopyWeighted_S16U8(pCU->m_Frame, &m_YUVPred[0], pCU->CUAddr, PartAddr, Width, Height, w1, o1, logWD, round);
         }
     }
 }
