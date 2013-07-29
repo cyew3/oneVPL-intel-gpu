@@ -132,10 +132,10 @@ void ics_calc_tns_data(s_SE_Individual_channel_stream *p_stream,
     num_swb = p_stream->num_swb_long;
   }
 
-  for (w = 0; w < p_stream->num_windows; w++) {
+  for (w = 0; (w < p_stream->num_windows) && (w < MAX_NUM_WINDOWS); w++) {
     bottom = num_swb;
 
-    for (f = 0; f < p_stream->n_filt[w]; f++) {
+    for (f = 0; (f < p_stream->n_filt[w]) && (f < MAX_FILT); f++) {
       p_data->m_order[w][f] = 0;
       top = bottom;
       bottom = MAX(top - p_stream->length[w][f], 0);
@@ -211,6 +211,7 @@ static void tns_decode_coef(Ipp32s order,
 
  /* Conversion to LPC coefficients */
   a[0] = 1;
+  order = MIN(order, sizeof(a)/sizeof(a[0]));
   for (m = 1; m <= order; m++) {
     Ipp32f tmp = tmp2[m - 1];
     a[m] = tmp;
