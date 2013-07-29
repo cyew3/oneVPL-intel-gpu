@@ -176,7 +176,7 @@ namespace MFX_HEVC_COMMON
     } // void h265_FilterEdgeLuma_8u_I(...)
     
 
-    void h265_FilterEdgeChroma_Plane_8u_I(H265EdgeData *edge, PixType *srcDst, Ipp32s srcDstStride, Ipp32s chromaQpOffset, Ipp32s dir, Ipp32s chromaQp)
+    void h265_FilterEdgeChroma_Plane_8u_I(H265EdgeData *edge, PixType *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQp)
     {
         Ipp32s bitDepthChroma = 8;
         //Ipp32s qp = GetChromaQP(edge->qp, 0, 8);
@@ -220,15 +220,13 @@ namespace MFX_HEVC_COMMON
             srcDst += strDstStep;
         }
 
-    } // void h265_FilterEdgeChroma_Plane_8u_I(H265EdgeData *edge, PixType *srcDst, Ipp32s srcDstStride, Ipp32s chromaQpOffset, Ipp32s dir, Ipp32s chromaQp)
+    } // void h265_FilterEdgeChroma_Plane_8u_I(H265EdgeData *edge, PixType *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQp)
 
 
    void h265_FilterEdgeChroma_Interleaved_8u_I(
         H265EdgeData *edge, 
         Ipp8u *srcDst, 
         Ipp32s srcDstStride,
-        Ipp32s chromaCbQpOffset, 
-        Ipp32s chromaCrQpOffset, 
         Ipp32s dir,
         Ipp32s chromaQpCb,
         Ipp32s chromaQpCr)

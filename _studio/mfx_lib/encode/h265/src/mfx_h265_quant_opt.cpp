@@ -60,7 +60,7 @@ static const Ipp16u h265_quant_table_fwd[] =
 };
 
 void h265_quant_inv(const CoeffsType *qcoeffs,
-                    const Ipp32s *scaling_list,
+                    const Ipp16s *scaling_list, // aya: replaced 32s->16s to align with decoder/hevc_pp
                     CoeffsType *coeffs,
                     Ipp32s log2_tr_size,
                     Ipp32s bit_depth,
@@ -89,34 +89,20 @@ void h265_quant_inv(const CoeffsType *qcoeffs,
 
         if (shift > qp6)
         {
-            for (Ipp32s i = 0; i < len; i++)
-            {
-                Ipp32s tmp = qcoeffs[i];
-//                tmp = Saturate(-32768, 32767, tmp);
-                coeffs[i] = (CoeffsType)Saturate(-32768, 32767,
-                    ((tmp * scaling_list[i]) + add) >> (shift -  qp6));
-            }
+            MFX_HEVC_COMMON::h265_QuantInv_ScaleList_RShift_16s(qcoeffs, scaling_list, coeffs, len, add, (shift -  qp6));
         }
         else
         {
-            for (Ipp32s i = 0; i < len; i++)
-            {
-                Ipp32s tmp = qcoeffs[i];
-//                tmp = Saturate(-levelLimit, levelLimit - 1, tmp);
-                coeffs[i] = (CoeffsType)Saturate(-32768, 32767,
-                    (tmp * scaling_list[i]) << (qp6 - shift));
-            }
+
+            MFX_HEVC_COMMON::h265_QuantInv_ScaleList_LShift_16s(qcoeffs, scaling_list, coeffs, len, (qp6 - shift));
         }
     }
     else
     {
         add = 1 << (shift - 1);
         Ipp32s scale = h265_quant_table_inv[qp_rem] << qp6;
-
-        for (Ipp32s i = 0; i < len; i++)
-        {
-            coeffs[i] = (CoeffsType)Saturate(-32768, 32767, (qcoeffs[i] * scale + add) >> shift);
-        }
+        
+        MFX_HEVC_COMMON::h265_QuantInv_16s(qcoeffs, coeffs, len, scale, add, shift);
     }
 }
 

@@ -63,6 +63,59 @@ namespace MFX_HEVC_ENCODER
 
 } // end namespace MFX_HEVC_ENCODER
 
+
+namespace MFX_HEVC_COMMON
+{
+    void h265_QuantInv_16s(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift)
+    {
+        // ML: OPT: verify vectorization
+#ifdef __INTEL_COMPILER
+#pragma ivdep
+#pragma vector always
+#endif
+        for (Ipp32s n = 0; n < len; n++)
+        {
+            // clipped when decoded
+            Ipp32s coeffQ = (pSrc[n] * scale + offset) >> shift;
+            pDst[n] = (Ipp16s)Saturate(-32768, 32767, coeffQ);
+        }
+
+    } // void h265_QuantInv_16s(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift)
+
+    
+    void h265_QuantInv_ScaleList_LShift_16s(const Ipp16s* pSrc, const Ipp16s* pScaleList, Ipp16s* pDst, int len, int shift)
+    {
+#ifdef __INTEL_COMPILER
+#pragma ivdep
+#pragma vector always
+#endif
+        for (Ipp32s n = 0; n < len; n++)
+        {
+            // clipped when decoded
+            Ipp32s CoeffQ   = Saturate(-32768, 32767, pSrc[n] * pScaleList[n]); 
+            pDst[n] = (Ipp16s)Saturate(-32768, 32767, CoeffQ << shift );
+        }
+
+    } // void h265_QuantInv_ScaleList_LShift_16s(const Ipp16s* pSrc, const Ipp16s* pScaleList, Ipp16s* pDst, int len, int shift)
+
+
+    void h265_QuantInv_ScaleList_RShift_16s(const Ipp16s* pSrc, const Ipp16s* pScaleList, Ipp16s* pDst, int len, int offset, int shift)
+    {
+#ifdef __INTEL_COMPILER
+#pragma ivdep
+#pragma vector always
+#endif
+        for (Ipp32s n = 0; n < len; n++)
+        {
+            // clipped when decoded
+            Ipp32s coeffQ = ((pSrc[n] * pScaleList[n]) + offset) >> shift;
+            pDst[n] = (Ipp16s)Saturate(-32768, 32767, coeffQ);
+        }
+
+    } // void h265_QuantInv_ScaleList_RShift_16s(const Ipp16s* pSrc, const Ipp16s* pScaleList, Ipp16s* pDst, int len, int offset, int shift)
+
+} // namespace MFX_HEVC_COMMON
+
 #endif // #if defined (MFX_TARGET_OPTIMIZATION_PX) || (MFX_TARGET_OPTIMIZATION_SSE4) || (MFX_TARGET_OPTIMIZATION_AVX2)
 #endif // #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 /* EOF */

@@ -153,7 +153,6 @@ void H265CU::DeblockOneCrossChroma(Ipp32s curPixelColumn,
                     edge, 
                     baseSrcDst + 4 * (i - 1) * srcDstStride,
                     srcDstStride, 
-                    chromaQpOffset, 
                     VERT_FILT, 
                     GetChromaQP(edge->qp, 0, 8));
             }
@@ -175,7 +174,6 @@ void H265CU::DeblockOneCrossChroma(Ipp32s curPixelColumn,
                     edge, 
                     baseSrcDst + 4 * (i - 1),
                     srcDstStride, 
-                    chromaQpOffset, 
                     HOR_FILT,
                     GetChromaQP(edge->qp, 0, 8));
             }

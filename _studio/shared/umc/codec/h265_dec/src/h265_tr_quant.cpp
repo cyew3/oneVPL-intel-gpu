@@ -459,6 +459,7 @@ void H265TrQuant::DeQuant_inner(const H265CoeffsPtrCommon pQCoef, Ipp32u Length,
 {
     Ipp32u TransformShift = MAX_TR_DYNAMIC_RANGE - bitDepth - c_Log2TrSize;
     Ipp32s Shift = QUANT_IQUANT_SHIFT - QUANT_SHIFT - TransformShift;
+    Ipp32s totalShift;
 
     if (m_UseScalingList)
     {
@@ -468,30 +469,15 @@ void H265TrQuant::DeQuant_inner(const H265CoeffsPtrCommon pQCoef, Ipp32u Length,
         if (Shift > m_QPParam.m_Per)
         {
             Ipp32s Add = 1 << (Shift - m_QPParam.m_Per - 1);
+            totalShift = Shift -  m_QPParam.m_Per;
 
-#ifdef __INTEL_COMPILER
-            #pragma ivdep
-            #pragma vector always
-#endif
-            for (Ipp32u n = 0; n < Length; n++)
-            {
-                // clipped when decoded
-                Ipp32s CoeffQ = ((pQCoef[n] * pDequantCoef[n]) + Add) >> (Shift -  m_QPParam.m_Per);
-                pQCoef[n] = (H265CoeffsCommon)Clip3(-32768, 32767, CoeffQ);
-            }
+            MFX_HEVC_COMMON::h265_QuantInv_ScaleList_RShift_16s(pQCoef, pDequantCoef, pQCoef, Length, Add, totalShift);
         }
         else
         {
-#ifdef __INTEL_COMPILER
-            #pragma ivdep
-            #pragma vector always
-#endif
-            for (Ipp32u n = 0; n < Length; n++)
-            {
-                // clipped when decoded
-                Ipp32s CoeffQ   = Clip3(-32768, 32767, pQCoef[n] * pDequantCoef[n]); 
-                pQCoef[n] = (H265CoeffsCommon)Clip3(-32768, 32767, CoeffQ << ( m_QPParam.m_Per - Shift ) );
-            }
+            totalShift = m_QPParam.m_Per - Shift;
+
+            MFX_HEVC_COMMON::h265_QuantInv_ScaleList_LShift_16s(pQCoef, pDequantCoef, pQCoef, Length, totalShift);
         }
     }
     else
@@ -499,17 +485,7 @@ void H265TrQuant::DeQuant_inner(const H265CoeffsPtrCommon pQCoef, Ipp32u Length,
         Ipp16s Add = 1 << (Shift - 1);
         Ipp16s scale = g_invQuantScales[m_QPParam.m_Rem] << m_QPParam.m_Per;
 
-        // ML: OPT: verify vectorization
-#ifdef __INTEL_COMPILER
-        #pragma ivdep
-        #pragma vector always
-#endif
-        for (Ipp32u n = 0; n < Length; n++)
-        {
-            // clipped when decoded
-            Ipp32s CoeffQ = (pQCoef[n] * scale + Add) >> Shift;
-            pQCoef[n] = (H265CoeffsCommon)Clip3(-32768, 32767, CoeffQ);
-        }
+        MFX_HEVC_COMMON::h265_QuantInv_16s(pQCoef, pQCoef, Length, scale, Add, Shift);
     }
 }
 

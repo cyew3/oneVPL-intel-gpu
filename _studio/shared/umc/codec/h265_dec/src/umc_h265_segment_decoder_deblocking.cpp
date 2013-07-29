@@ -322,9 +322,7 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU,
                 MFX_HEVC_COMMON::h265_FilterEdgeChroma_Interleaved_8u_I(
                     edge, 
                     baseSrcDst + 4 * (i - 1) * srcDstStride,
-                    srcDstStride, 
-                    chromaCbQpOffset, 
-                    chromaCrQpOffset, 
+                    srcDstStride,
                     VERT_FILT,
                     QpUV(edge->qp + chromaCbQpOffset),
                     QpUV(edge->qp + chromaCrQpOffset));
@@ -357,9 +355,7 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU,
                 MFX_HEVC_COMMON::h265_FilterEdgeChroma_Interleaved_8u_I(
                     edge, 
                     baseSrcDst + 4 * (i - 1) * 2,
-                    srcDstStride, 
-                    chromaCbQpOffset, 
-                    chromaCrQpOffset, 
+                    srcDstStride,
                     HOR_FILT,
                     QpUV(edge->qp + chromaCbQpOffset),
                     QpUV(edge->qp + chromaCrQpOffset));

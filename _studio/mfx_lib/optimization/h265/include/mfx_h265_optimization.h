@@ -128,8 +128,7 @@ namespace MFX_HEVC_COMMON
     void h265_FilterEdgeChroma_Plane_8u_I(
         H265EdgeData *edge, 
         Ipp8u *srcDst, 
-        Ipp32s srcDstStride, 
-        Ipp32s chromaQpOffset, 
+        Ipp32s srcDstStride,         
         Ipp32s dir, 
         Ipp32s chromaQp);
 
@@ -137,11 +136,14 @@ namespace MFX_HEVC_COMMON
         H265EdgeData *edge, 
         Ipp8u *srcDst, 
         Ipp32s srcDstStride,
-        Ipp32s chromaCbQpOffset, 
-        Ipp32s chromaCrQpOffset, 
         Ipp32s dir,
         Ipp32s chromaQpCb,
         Ipp32s chromaQpCr);
+
+    /* Inverse Quantization */
+    void h265_QuantInv_16s(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift);
+    void h265_QuantInv_ScaleList_LShift_16s(const Ipp16s* pSrc, const Ipp16s* pScaleList, Ipp16s* pDst, int len, int shift);
+    void h265_QuantInv_ScaleList_RShift_16s(const Ipp16s* pSrc, const Ipp16s* pScaleList, Ipp16s* pDst, int len, int offset, int shift);
 };
 
 namespace MFX_HEVC_ENCODER

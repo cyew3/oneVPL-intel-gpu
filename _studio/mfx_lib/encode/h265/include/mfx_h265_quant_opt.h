@@ -17,7 +17,7 @@
 
 void h265_quant_inv(
     const CoeffsType *qcoeffs,
-    const Ipp32s *scaling_list,
+    const Ipp16s *scaling_list,
     CoeffsType *coeffs,
     Ipp32s log2_tr_size,
     Ipp32s bit_depth,
