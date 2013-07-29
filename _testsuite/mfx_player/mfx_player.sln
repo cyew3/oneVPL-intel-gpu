@@ -38,9 +38,12 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_player", "mfx_player.vcxproj", "{D1A77718-1697-4556-A580-8C4E75E4B1D4}"
 	ProjectSection(ProjectDependencies) = postProject
 		{57FE8DAC-C7C4-4DF4-9A36-2FEE040DFF38} = {57FE8DAC-C7C4-4DF4-9A36-2FEE040DFF38}
+		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D} = {919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "color_space_converter", "..\..\_studio\shared\umc\codec\color_space_converter\color_space_converter.vcxproj", "{57FE8DAC-C7C4-4DF4-9A36-2FEE040DFF38}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_spl_mux_dispatcher", "..\..\samples\sample_spl_mux\dispatcher\sample_spl_mux_dispatcher.vcxproj", "{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -358,6 +361,22 @@ Global
 		{57FE8DAC-C7C4-4DF4-9A36-2FEE040DFF38}.release|Win32.Build.0 = release|Win32
 		{57FE8DAC-C7C4-4DF4-9A36-2FEE040DFF38}.release|x64.ActiveCfg = release|x64
 		{57FE8DAC-C7C4-4DF4-9A36-2FEE040DFF38}.release|x64.Build.0 = release|x64
+		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Debug (Lucas DLL)|Win32.ActiveCfg = Debug|Win32
+		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Debug (Lucas DLL)|Win32.Build.0 = Debug|Win32
+		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Debug (Lucas DLL)|x64.ActiveCfg = Debug|x64
+		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Debug (Lucas DLL)|x64.Build.0 = Debug|x64
+		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.debug|Win32.ActiveCfg = Debug|Win32
+		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.debug|Win32.Build.0 = Debug|Win32
+		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.debug|x64.ActiveCfg = Debug|x64
+		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.debug|x64.Build.0 = Debug|x64
+		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Release (Lucas DLL)|Win32.ActiveCfg = Release|Win32
+		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Release (Lucas DLL)|Win32.Build.0 = Release|Win32
+		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Release (Lucas DLL)|x64.ActiveCfg = Release|x64
+		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Release (Lucas DLL)|x64.Build.0 = Release|x64
+		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.release|Win32.ActiveCfg = Release|Win32
+		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.release|Win32.Build.0 = Release|Win32
+		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.release|x64.ActiveCfg = Release|x64
+		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
