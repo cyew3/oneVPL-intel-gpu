@@ -220,7 +220,7 @@ public:
     H265Frame *GetRefFrame(EnumRefPicList ref_list, T_RefIdx ref_idx) {
         if (!m_pRefPicList || ref_idx < 0) return NULL;
         if (ref_list == REF_PIC_LIST_0) return m_pRefPicList->m_RefPicListL0.m_RefPicList[ref_idx];
-        else m_pRefPicList->m_RefPicListL1.m_RefPicList[ref_idx];
+        else return m_pRefPicList->m_RefPicListL1.m_RefPicList[ref_idx];
     }
 };
 

@@ -470,11 +470,6 @@ void H265BsReal::EncodeBinsEP_CABAC(Ipp32u code, Ipp32s len)
     }
 }
 
-void H265BsReal::EncodeFinalSingleBin_CABAC(Ipp32s code)
-{
-    EncodeSingleBin_CABAC( m_base.context_array + 276, code );
-}
-
 void H265BsReal::TerminateEncode_CABAC()
 {
     Ipp32u streamBytes;

@@ -56,7 +56,7 @@ mfxStatus H265BRC::InitHRD()
     mHRD.maxBitrate = mParams.maxBitrate;
     mHRD.inputBitsPerFrame = mHRD.maxBitrate / mFramerate;
 
-    if (bufSizeBits > 0 && bufSizeBits < (bitsPerFrame << 1))
+    if (bufSizeBits > 0 && bufSizeBits < (mfxU64)(bitsPerFrame << 1))
         bufSizeBits = (bitsPerFrame << 1);
 
     mHRD.bufSize = (mfxU32)((bufSizeBits >> (4 + MFX_H265_CPBSIZE_SCALE)) << (4 + MFX_H265_CPBSIZE_SCALE));

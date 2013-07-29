@@ -90,8 +90,8 @@ inline Ipp32u h265enc_ConvertBitrate(mfxU16 TargetKbps)
 
 MFXVideoENCODEH265::MFXVideoENCODEH265(VideoCORE *core, mfxStatus *stat)
 : VideoENCODE(),
-  m_isInitialized(false),
-  m_core(core)
+  m_core(core),
+  m_isInitialized(false)
 {
     ippStaticInit();
     *stat = MFX_ERR_NONE;
@@ -314,7 +314,7 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
 
         out->mfx.NumThread = in->mfx.NumThread;
 
-        if( in->mfx.TargetUsage < MFX_TARGETUSAGE_UNKNOWN || in->mfx.TargetUsage > MFX_TARGETUSAGE_BEST_SPEED) {
+        if( /*in->mfx.TargetUsage < MFX_TARGETUSAGE_UNKNOWN ||*/ in->mfx.TargetUsage > MFX_TARGETUSAGE_BEST_SPEED) {
             isCorrected ++;
             out->mfx.TargetUsage = MFX_TARGETUSAGE_UNKNOWN;
         }

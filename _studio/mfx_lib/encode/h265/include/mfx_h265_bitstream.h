@@ -76,13 +76,6 @@ public:
         m_base.m_bitOffset += len << 8;
     }
 
-    inline void EncodeFinalSingleBin_CABAC(Ipp32s code)
-    {
-        if (code)
-            m_base.m_bitOffset += 7 << 8;
-        else
-            m_base.m_bitOffset += h265_cabac_p_bits[64];
-    }
     inline void Reset() {
         m_base.m_bitOffset = 0;
     }
@@ -132,8 +125,6 @@ public:
     void EncodeBins_CABAC(CABAC_CONTEXT_H265 *ctx,
         Ipp32u code,
         Ipp32s len);
-
-    void EncodeFinalSingleBin_CABAC(Ipp32s code);
 
     void TerminateEncode_CABAC();
 
