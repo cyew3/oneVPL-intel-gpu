@@ -569,7 +569,7 @@ static Ipp32s ownDecorrelation_PSDec_32fc(Ipp32fc** ppSrcL,
   Ipp32s  group = 0, bk = 0, k = 0, n = 0, bord = 0;
   Ipp32s  tmpDelayLenIndx = 0, tmpIndx2 = 0, condition = 0;
 
-  Ipp32s  delayIndxMem[3];
+  Ipp32s  delayIndxMem[3] = { 0, 0, 0};
 
   Ipp32s  eqThr = 0;
 
