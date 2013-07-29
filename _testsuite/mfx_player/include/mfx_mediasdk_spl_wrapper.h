@@ -26,7 +26,7 @@ class MediaSDKSplWrapper : public IBitstreamReader
         bool m_bInited;
     };
 
-    DataReader      m_ffmpegSplReader;
+    DataReader              m_splReader;
     mfxDataIO               m_dataIO;
     mfxSplitter             m_mfxSplitter;
     mfxStreamParams         m_streamParams;
