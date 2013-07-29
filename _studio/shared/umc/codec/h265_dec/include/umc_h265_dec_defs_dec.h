@@ -424,8 +424,12 @@ protected:
 
     Ipp32s              m_OffsetEo[LUMA_GROUP_NUM];
     Ipp32s              m_OffsetEo2[LUMA_GROUP_NUM];
+    Ipp32s              m_OffsetEoChroma[LUMA_GROUP_NUM];
+    Ipp32s              m_OffsetEo2Chroma[LUMA_GROUP_NUM];
     H265PlaneYCommon   *m_OffsetBo;
     H265PlaneYCommon   *m_OffsetBo2;
+    H265PlaneUVCommon  *m_OffsetBoChroma;
+    H265PlaneUVCommon  *m_OffsetBo2Chroma;
     H265PlaneYCommon   *m_ClipTable;
     H265PlaneYCommon   *m_ClipTableBase;
     H265PlaneYCommon   *m_lumaTableBo;
@@ -436,6 +440,9 @@ protected:
     Ipp32u              m_MaxCUHeight;
     Ipp32u              m_SaoBitIncreaseY, m_SaoBitIncreaseC;
     bool                m_UseNIF;
+    bool                m_needPCMRestoration;
+    bool                m_slice_sao_luma_flag;
+    bool                m_slice_sao_chroma_flag;
 
     bool                m_isInitialized;
 
@@ -447,15 +454,11 @@ protected:
     void processSaoCuOrgChroma(Ipp32s Addr, Ipp32s PartIdx, H265PlaneUVCommon *tmpL);
     void processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H265PlaneUVCommon *tmpL);
     void createNonDBFilterInfo();
-    void PCMRestoration();
     void PCMCURestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth);
     void PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth, EnumTextType Text);
 
     void processSaoUnitAll();
-
-    void processSaoLineLuma(SAOLCUParam* saoLCUParam, Ipp32s addr);
-    void processSaoLineChroma(SAOLCUParam* saoLCUParamCb, SAOLCUParam* saoLCUParamCr, Ipp32s addr);
-
+    void processSaoLine(SAOLCUParam* saoLCUParam, SAOLCUParam* saoLCUParamCb, SAOLCUParam* saoLCUParamCr, Ipp32s addr);
 };
 
 inline
@@ -1815,9 +1818,6 @@ struct H265PicParamSet : public HeapObject, public H265PicParamSetBase
     bool    getUseTransformSkip       () const   { return transform_skip_enabled_flag;     }
     void    setUseTransformSkip       ( bool b ) { transform_skip_enabled_flag  = b;       }
 
-    bool getLoopFilterAcrossTilesEnabledFlag() const { return loop_filter_across_tiles_enabled_flag; }
-    void setLoopFilterAcrossTilesEnabledFlag(bool f) { loop_filter_across_tiles_enabled_flag = f; }
-
     bool getCabacIndependentFlag() const    { return cabac_independent_flag; }
     void setCabacIndependentFlag(bool f)    { cabac_independent_flag = f; }
 
@@ -1944,7 +1944,7 @@ struct H265SliceHeader
     unsigned    m_uMaxTLayers;
     unsigned    m_uBitsForPOC;
     bool        m_enableTMVPFlag;
-    bool        m_LFCrossSliceBoundaryFlag;
+    bool        slice_loop_filter_across_slices_enabled_flag;
 
     wpScalingParam  m_weightPredTable[2][MAX_NUM_REF][3]; // [REF_PIC_LIST_0 or REF_PIC_LIST_1][refIdx][0:Y, 1:U, 2:V]
 

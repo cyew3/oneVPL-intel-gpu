@@ -649,8 +649,8 @@ void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
 
             if (!pSlice->getDeblockingFilterDisable())
             {
-                crossSliceBoundaryFlag = pSlice->getLFCrossSliceBoundaryFlag();
-                crossTileBoundaryFlag = pSlice->getPPS()->getLoopFilterAcrossTilesEnabledFlag();
+                crossSliceBoundaryFlag = pSlice->GetSliceHeader()->slice_loop_filter_across_slices_enabled_flag;
+                crossTileBoundaryFlag = pSlice->getPPS()->loop_filter_across_tiles_enabled_flag;
                 tcOffset = pSlice->getLoopFilterTcOffset() << 1;
                 betaOffset = pSlice->getLoopFilterBetaOffset() << 1;
 
@@ -713,8 +713,8 @@ void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
 
             if (!pSlice->getDeblockingFilterDisable())
             {
-                crossSliceBoundaryFlag = pSlice->getLFCrossSliceBoundaryFlag();
-                crossTileBoundaryFlag = pSlice->getPPS()->getLoopFilterAcrossTilesEnabledFlag();
+                crossSliceBoundaryFlag = pSlice->GetSliceHeader()->slice_loop_filter_across_slices_enabled_flag;
+                crossTileBoundaryFlag = pSlice->getPPS()->loop_filter_across_tiles_enabled_flag;
                 tcOffset = pSlice->getLoopFilterTcOffset() << 1;
                 betaOffset = pSlice->getLoopFilterBetaOffset() << 1;
 
@@ -787,8 +787,8 @@ void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
         return;
 
     pSlice = m_pCurrentFrame->GetAU()->GetSliceByNumber(curLCU->m_SliceIdx);
-    crossSliceBoundaryFlag = pSlice->getLFCrossSliceBoundaryFlag();
-    crossTileBoundaryFlag = pSlice->getPPS()->getLoopFilterAcrossTilesEnabledFlag();
+    crossSliceBoundaryFlag = pSlice->GetSliceHeader()->slice_loop_filter_across_slices_enabled_flag;
+    crossTileBoundaryFlag = pSlice->getPPS()->loop_filter_across_tiles_enabled_flag;
     tcOffset = pSlice->getLoopFilterTcOffset() << 1;
     betaOffset = pSlice->getLoopFilterBetaOffset() << 1;
 

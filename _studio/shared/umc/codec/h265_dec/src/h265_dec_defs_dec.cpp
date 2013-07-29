@@ -23,6 +23,11 @@
 namespace UMC_HEVC_DECODER
 {
 
+enum
+{
+    SAO_PRED_SIZE = 66
+};
+
 /** get the sign of input variable
  * \param   x
  */
@@ -50,6 +55,8 @@ H265SampleAdaptiveOffset::H265SampleAdaptiveOffset()
     m_ClipTableBase = 0;
     m_OffsetBo = 0;
     m_OffsetBo2 = 0;
+    m_OffsetBoChroma = 0;
+    m_OffsetBo2Chroma = 0;
     m_lumaTableBo = 0;
 
     m_TmpU[0] = 0;
@@ -63,6 +70,8 @@ void H265SampleAdaptiveOffset::destroy()
     delete [] m_ClipTableBase; m_ClipTableBase = 0;
     delete [] m_OffsetBo; m_OffsetBo = 0;
     delete [] m_OffsetBo2; m_OffsetBo2 = 0;
+    delete [] m_OffsetBoChroma; m_OffsetBoChroma = 0;
+    delete [] m_OffsetBo2Chroma; m_OffsetBo2Chroma = 0;
     delete[] m_lumaTableBo; m_lumaTableBo = 0;
     delete [] m_TmpU[0]; m_TmpU[0] = 0;
     delete [] m_TmpU[0]; m_TmpU[0] = 0;
@@ -98,6 +107,8 @@ void H265SampleAdaptiveOffset::init(H265SeqParamSet* pSPS)
     m_ClipTableBase = new H265PlaneYCommon[uiMaxY+2*iCRangeExt];
     m_OffsetBo      = new H265PlaneYCommon[uiMaxY+2*iCRangeExt];
     m_OffsetBo2     = new H265PlaneYCommon[uiMaxY+2*iCRangeExt];
+    m_OffsetBoChroma   = new H265PlaneYCommon[uiMaxY+2*iCRangeExt];
+    m_OffsetBo2Chroma  = new H265PlaneYCommon[uiMaxY+2*iCRangeExt];
 
     for (Ipp32u i = 0; i < (uiMinY + iCRangeExt);i++)
     {
@@ -750,10 +761,10 @@ void H265SampleAdaptiveOffset::processSaoCuOrgChroma(Ipp32s addr, Ipp32s saoType
     Ipp32s endY;
     Ipp32s x, y;
     H265PlanePtrUVCommon tmpU;
-    Ipp32s *pOffsetEoCb = m_OffsetEo;
-    Ipp32s *pOffsetEoCr = m_OffsetEo2;
-    H265PlanePtrUVCommon pOffsetBoCb = m_OffsetBo;
-    H265PlanePtrUVCommon pOffsetBoCr = m_OffsetBo2;
+    Ipp32s *pOffsetEoCb = m_OffsetEoChroma;
+    Ipp32s *pOffsetEoCr = m_OffsetEo2Chroma;
+    H265PlanePtrUVCommon pOffsetBoCb = m_OffsetBoChroma;
+    H265PlanePtrUVCommon pOffsetBoCr = m_OffsetBo2Chroma;
 
     picWidthTmp  = m_PicWidth;
     picHeightTmp = m_PicHeight >> 1;
@@ -976,10 +987,10 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H
     H265PlanePtrUVCommon startPtr;
     H265PlanePtrUVCommon tmpU;
     H265PlanePtrUVCommon pClipTbl = m_ClipTable;
-    Ipp32s *pOffsetEoCb = m_OffsetEo;
-    Ipp32s *pOffsetEoCr = m_OffsetEo;
-    H265PlanePtrUVCommon pOffsetBoCb = m_OffsetBo;
-    H265PlanePtrUVCommon pOffsetBoCr = m_OffsetBo2;
+    Ipp32s *pOffsetEoCb = m_OffsetEoChroma;
+    Ipp32s *pOffsetEoCr = m_OffsetEoChroma;
+    H265PlanePtrUVCommon pOffsetBoCb = m_OffsetBoChroma;
+    H265PlanePtrUVCommon pOffsetBoCr = m_OffsetBo2Chroma;
     Ipp32s startStride;
 
     picWidthTmp  = m_PicWidth;
@@ -1300,14 +1311,13 @@ void H265SampleAdaptiveOffset::SAOProcess(H265DecoderFrame* pFrame, Ipp32s start
     
         createNonDBFilterInfo();
         processSaoUnitAll();
-        PCMRestoration();
     }
 }
 
-void H265SampleAdaptiveOffset::processSaoLineLuma(SAOLCUParam* saoLCUParam, Ipp32s addr)
+void H265SampleAdaptiveOffset::processSaoLine(SAOLCUParam* saoLCUParam, SAOLCUParam* saoLCUParamCb, SAOLCUParam* saoLCUParamCr, Ipp32s addr)
 {
-    H265PlaneYCommon tmpLeftBuff1[65];
-    H265PlaneYCommon tmpLeftBuff2[65];
+    H265PlaneYCommon tmpLeftBuff1[SAO_PRED_SIZE*2];
+    H265PlaneYCommon tmpLeftBuff2[SAO_PRED_SIZE*2];
     Ipp32s frameWidthInCU = m_Frame->getFrameWidthInCU();
     Ipp32s LCUWidth = m_MaxCUWidth;
     Ipp32s LCUHeight = m_MaxCUHeight;
@@ -1316,23 +1326,31 @@ void H265SampleAdaptiveOffset::processSaoLineLuma(SAOLCUParam* saoLCUParam, Ipp3
     H265PlanePtrYCommon tmpL1 = tmpLeftBuff1;
     H265PlanePtrYCommon tmpL2 = tmpLeftBuff2;
 
-    H265PlanePtrYCommon pRec   = m_Frame->m_pYPlane;
-    Ipp32s stride = m_Frame->pitch_luma();
-
-    Ipp32s CUHeightTmp = LCUHeight + 1;
+    Ipp32s CUHeight = LCUHeight + 1;
+    Ipp32s CUHeightChroma = (LCUHeight>>1) + 1;
     Ipp32s idxY = addr / frameWidthInCU;
 
-    if ((idxY * LCUHeight + CUHeightTmp) > picHeightTmp)
+    if ((idxY * LCUHeight + CUHeight) > picHeightTmp)
     {
-        CUHeightTmp = picHeightTmp - idxY * LCUHeight;
+        CUHeight = picHeightTmp - idxY * LCUHeight;
+        CUHeightChroma = CUHeight >> 1;
     }
     
-    pRec  = m_Frame->GetLumaAddr(addr);
+    H265PlanePtrYCommon rec = m_Frame->GetLumaAddr(addr);
+    H265PlanePtrUVCommon recChroma = m_Frame->GetCbCrAddr(addr);
+    Ipp32s stride = m_Frame->pitch_luma();
 
-    for (Ipp32s i = 0; i < CUHeightTmp; i++)
+    for (Ipp32s i = 0; i < CUHeight; i++)
     {
-        tmpL1[i] = pRec[0];
-        pRec += stride;
+        tmpL1[i] = rec[0];
+        rec += stride;
+    }
+
+    for (Ipp32s i = 0; i < CUHeightChroma; i++)
+    {
+        tmpL1[SAO_PRED_SIZE + i*2] = recChroma[0];
+        tmpL1[SAO_PRED_SIZE + i*2 + 1] = recChroma[1];
+        recChroma += stride;
     }
 
     for (Ipp32s idxX = 0; idxX < frameWidthInCU; idxX++)
@@ -1341,29 +1359,49 @@ void H265SampleAdaptiveOffset::processSaoLineLuma(SAOLCUParam* saoLCUParam, Ipp3
 
         if (idxX != (frameWidthInCU - 1))
         {
-            pRec  = m_Frame->GetLumaAddr(addr);
-            for (Ipp32s i = 0; i < CUHeightTmp; i++)
+            rec  = m_Frame->GetLumaAddr(addr);
+            recChroma = m_Frame->GetCbCrAddr(addr);
+            for (Ipp32s i = 0; i < CUHeight; i++)
             {
-                tmpL2[i] = pRec[i*stride+LCUWidth-1];
+                tmpL2[i] = rec[i*stride+LCUWidth-1];
+            }
+
+            for (Ipp32s i = 0; i < CUHeightChroma; i++)
+            {
+                tmpL2[SAO_PRED_SIZE + i*2] = recChroma[i * stride + LCUWidth - 2];
+                tmpL2[SAO_PRED_SIZE + i*2 + 1] = recChroma[i * stride + LCUWidth - 1];
             }
         }
 
-        Ipp32s typeIdx = saoLCUParam[addr].m_typeIdx;
-        if (typeIdx >= 0)
+        if (m_slice_sao_luma_flag && saoLCUParam[addr].m_typeIdx >= 0)
         {
+            Ipp32s typeIdx = saoLCUParam[addr].m_typeIdx;
             if (!saoLCUParam[addr].m_mergeLeftFlag)
             {
                 SetOffsetsLuma(saoLCUParam[addr], typeIdx);
             }
 
             if (!m_UseNIF)
-            {
                 processSaoCuOrgLuma(addr, typeIdx, tmpL1);
-            }
             else
-            {
                 processSaoCuLuma(addr, typeIdx, tmpL1);
+        }
+
+        if (m_slice_sao_chroma_flag && saoLCUParamCb[addr].m_typeIdx >= 0)
+        {
+            Ipp32s typeIdx = saoLCUParamCb[addr].m_typeIdx;
+            VM_ASSERT(saoLCUParamCb[addr].m_typeIdx == saoLCUParamCr[addr].m_typeIdx);
+            VM_ASSERT(saoLCUParamCb[addr].m_mergeLeftFlag == saoLCUParamCr[addr].m_mergeLeftFlag);
+
+            if (!saoLCUParamCb[addr].m_mergeLeftFlag)
+            {
+                SetOffsetsChroma(saoLCUParamCb[addr], saoLCUParamCr[addr], typeIdx);
             }
+
+            if (!m_UseNIF)
+                processSaoCuOrgChroma(addr, typeIdx, tmpL1 + SAO_PRED_SIZE);
+            else
+                processSaoCuChroma(addr, typeIdx, tmpL1 + SAO_PRED_SIZE);
         }
 
         H265PlanePtrYCommon tmpUSwap = tmpL1;
@@ -1378,6 +1416,12 @@ void H265SampleAdaptiveOffset::processSaoUnitAll()
     SAOLCUParam* saoLCUParam = m_Frame->m_saoLcuParam[0];
     SAOLCUParam* saoLCUParamCb = m_Frame->m_saoLcuParam[1];
     SAOLCUParam* saoLCUParamCr = m_Frame->m_saoLcuParam[2];
+
+    m_slice_sao_luma_flag = slice->GetSliceHeader()->slice_sao_luma_flag;
+    m_slice_sao_chroma_flag = slice->GetSliceHeader()->slice_sao_chroma_flag;
+    
+    m_needPCMRestoration = (slice->GetSliceHeader()->m_SeqParamSet->getUsePCM() && slice->GetSliceHeader()->m_SeqParamSet->getPCMFilterDisableFlag()) ||
+        slice->GetSliceHeader()->m_PicParamSet->getTransquantBypassEnableFlag();
 
     Ipp32s frameWidthInCU = m_Frame->getFrameWidthInCU();
     Ipp32s frameHeightInCU = m_Frame->getFrameHeightInCU();
@@ -1400,10 +1444,16 @@ void H265SampleAdaptiveOffset::processSaoUnitAll()
             memcpy(m_TmpU[1] + picWidthTmp, pRec, sizeof(H265PlaneUVCommon) * picWidthTmp);
         }
 
-        if (slice->GetSliceHeader()->slice_sao_luma_flag)
-            processSaoLineLuma(saoLCUParam, addr);
-        if (slice->GetSliceHeader()->slice_sao_chroma_flag)
-            processSaoLineChroma(saoLCUParamCb, saoLCUParamCr, addr);
+        processSaoLine(saoLCUParam, saoLCUParamCb, saoLCUParamCr, addr);
+
+        if (m_needPCMRestoration)
+        {
+            for(Ipp32s CUAddr = addr; CUAddr < addr + frameWidthInCU; CUAddr++)
+            {
+                H265CodingUnit* pcCU = m_Frame->getCU(CUAddr);
+                PCMCURestoration(pcCU, 0, 0);
+            }
+        }
         
         H265PlanePtrYCommon tmpUSwap = m_TmpU[0];
         m_TmpU[0] = m_TmpU[1];
@@ -1448,77 +1498,6 @@ void H265SampleAdaptiveOffset::SetOffsetsLuma(SAOLCUParam  &saoLCUParam, Ipp32s 
     }
 }
 
-void H265SampleAdaptiveOffset::processSaoLineChroma(SAOLCUParam* saoLCUParamCb, SAOLCUParam* saoLCUParamCr, Ipp32s addr)
-{
-    H265PlaneUVCommon tmpLeftBuff1[66];
-    H265PlaneUVCommon tmpLeftBuff2[66];
-    Ipp32s frameWidthInCU = m_Frame->getFrameWidthInCU();
-    Ipp32s LCUWidth = m_MaxCUWidth;
-    Ipp32s LCUHeight = (m_MaxCUHeight >> 1);
-    Ipp32s picHeightTmp = (m_PicHeight >> 1);
-
-    H265PlanePtrUVCommon tmpL1 = tmpLeftBuff1;
-    H265PlanePtrUVCommon tmpL2 = tmpLeftBuff2;
-
-    Ipp32s idxY = addr / frameWidthInCU;
-    Ipp32s CUHeightTmp = LCUHeight + 1;
-
-    if ((idxY * LCUHeight + CUHeightTmp) > picHeightTmp)
-    {
-        CUHeightTmp = picHeightTmp - idxY * LCUHeight;
-    }
-
-    H265PlanePtrUVCommon pRec = m_Frame->GetCbCrAddr(addr);
-    Ipp32s stride = m_Frame->pitch_chroma();
-
-    for (Ipp32s i = 0; i < CUHeightTmp; i++)
-    {
-        tmpL1[i * 2] = pRec[0];
-        tmpL1[i * 2 + 1] = pRec[1];
-        pRec += stride;
-    }
-
-    for (Ipp32s idxX = 0; idxX < frameWidthInCU; idxX++)
-    {
-        addr = idxY * frameWidthInCU + idxX;
-
-        if (idxX != (frameWidthInCU - 1))
-        {
-            pRec  = m_Frame->GetCbCrAddr(addr);
-
-            for (Ipp32s i = 0; i < CUHeightTmp; i++)
-            {
-                tmpL2[i * 2] = pRec[i * stride + LCUWidth - 2];
-                tmpL2[i * 2 + 1] = pRec[i * stride + LCUWidth - 1];
-            }
-        }
-
-        VM_ASSERT(saoLCUParamCb[addr].m_typeIdx == saoLCUParamCr[addr].m_typeIdx);
-        VM_ASSERT(saoLCUParamCb[addr].m_mergeLeftFlag == saoLCUParamCr[addr].m_mergeLeftFlag);
-        Ipp32s typeIdx = saoLCUParamCb[addr].m_typeIdx;
-        if (typeIdx >= 0)
-        {
-            if (!saoLCUParamCb[addr].m_mergeLeftFlag)
-            {
-                SetOffsetsChroma(saoLCUParamCb[addr], saoLCUParamCr[addr], typeIdx);
-            }
-
-            if (!m_UseNIF)
-            {
-                processSaoCuOrgChroma(addr, typeIdx, tmpL1);
-            }
-            else
-            {
-                processSaoCuChroma(addr, typeIdx, tmpL1);
-            }
-        }
-
-        H265PlanePtrUVCommon tmpUSwap = tmpL1;
-        tmpL1  = tmpL2;
-        tmpL2  = tmpUSwap;
-    }
-}
-
 void H265SampleAdaptiveOffset::SetOffsetsChroma(SAOLCUParam &saoLCUParamCb, SAOLCUParam &saoLCUParamCr, Ipp32s typeIdx)
 {
     Ipp32s offsetCb[LUMA_GROUP_NUM + 1];
@@ -1543,8 +1522,8 @@ void H265SampleAdaptiveOffset::SetOffsetsChroma(SAOLCUParam &saoLCUParamCb, SAOL
         H265PlaneYCommon *ppLumaTable = m_lumaTableBo;
         for (Ipp32s i = 0; i < (1 << g_bitDepthC); i++)
         {
-            m_OffsetBo[i] = m_ClipTable[i + offsetCb[ppLumaTable[i]]];
-            m_OffsetBo2[i] = m_ClipTable[i + offsetCr[ppLumaTable[i]]];
+            m_OffsetBoChroma[i] = m_ClipTable[i + offsetCb[ppLumaTable[i]]];
+            m_OffsetBo2Chroma[i] = m_ClipTable[i + offsetCr[ppLumaTable[i]]];
         }
     }
     else if (typeIdx == SAO_EO_0 || typeIdx == SAO_EO_1 || typeIdx == SAO_EO_2 || typeIdx == SAO_EO_3)
@@ -1558,8 +1537,8 @@ void H265SampleAdaptiveOffset::SetOffsetsChroma(SAOLCUParam &saoLCUParamCb, SAOL
         }
         for (Ipp32s edgeType = 0; edgeType < 6; edgeType++)
         {
-            m_OffsetEo[edgeType] = offsetCb[EoTable[edgeType]];
-            m_OffsetEo2[edgeType] = offsetCr[EoTable[edgeType]];
+            m_OffsetEoChroma[edgeType] = offsetCb[EoTable[edgeType]];
+            m_OffsetEo2Chroma[edgeType] = offsetCr[EoTable[edgeType]];
         }
     }
 }
@@ -1571,7 +1550,7 @@ void H265SampleAdaptiveOffset::createNonDBFilterInfo()
 
     H265Slice* pSlice = m_Frame->GetAU()->GetSlice(0);
 
-    if (pSlice->getPPS()->getNumTiles() > 1 && !pSlice->getPPS()->getLoopFilterAcrossTilesEnabledFlag())
+    if (pSlice->getPPS()->getNumTiles() > 1 && !pSlice->getPPS()->loop_filter_across_tiles_enabled_flag)
     {
         independentTileBoundaryForNDBFilter = true;
     }
@@ -1582,12 +1561,12 @@ void H265SampleAdaptiveOffset::createNonDBFilterInfo()
         {
             H265Slice* slice = m_Frame->GetAU()->GetSlice(i);
 
-            if (slice->getLFCrossSliceBoundaryFlag() == false)
+            if (slice->GetSliceHeader()->slice_loop_filter_across_slices_enabled_flag == false)
             {
                 independentSliceBoundaryForNDBFilter = true;
             }
 
-            if (slice->getPPS()->getNumTiles() > 1 && !slice->getPPS()->getLoopFilterAcrossTilesEnabledFlag())
+            if (slice->getPPS()->getNumTiles() > 1 && !slice->getPPS()->loop_filter_across_tiles_enabled_flag)
             {
                 independentTileBoundaryForNDBFilter = true;
             }
@@ -1602,7 +1581,7 @@ void H265SampleAdaptiveOffset::createNonDBFilterInfo()
             H265Slice *slice = m_Frame->GetAU()->GetSlice(i);
             independentTileBoundaryForNDBFilter = false;
 
-            if (slice->getPPS()->getNumTiles() > 1 && !slice->getPPS()->getLoopFilterAcrossTilesEnabledFlag())
+            if (slice->getPPS()->getNumTiles() > 1 && !slice->getPPS()->loop_filter_across_tiles_enabled_flag)
             {
                 independentTileBoundaryForNDBFilter = true;
             }
@@ -1613,22 +1592,6 @@ void H265SampleAdaptiveOffset::createNonDBFilterInfo()
                 Ipp32u idx = m_Frame->m_CodingData->getCUOrderMap(j);
                 m_Frame->getCU(idx)->setNDBFilterBlockBorderAvailability(independentTileBoundaryForNDBFilter);
             }
-        }
-    }
-}
-
-void H265SampleAdaptiveOffset::PCMRestoration()
-{
-    H265Slice *pSlice = m_Frame->GetAU()->GetSlice(0);
-    bool PCMFilter = (pSlice->GetSliceHeader()->m_SeqParamSet->getUsePCM() && pSlice->GetSliceHeader()->m_SeqParamSet->getPCMFilterDisableFlag()) ? true : false;
-
-    if(PCMFilter || pSlice->GetSliceHeader()->m_PicParamSet->getTransquantBypassEnableFlag())
-    {
-        for(Ipp32u CUAddr = 0; CUAddr < m_Frame->getNumCUsInFrame(); CUAddr++)
-        {
-            H265CodingUnit* pcCU = m_Frame->getCU(CUAddr);
-
-            PCMCURestoration(pcCU, 0, 0);
         }
     }
 }
@@ -1702,7 +1665,7 @@ void H265SampleAdaptiveOffset::PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u
         }
         else
         {
-            PcmLeftShiftBit = g_bitDepthY - pcCU->m_SliceHeader->m_SeqParamSet->getPCMBitDepthLuma();
+            PcmLeftShiftBit = g_bitDepthY - pcCU->m_SliceHeader->m_SeqParamSet->pcm_bit_depth_luma;
         }
 
         for(Y = 0; Y < Height; Y++)
@@ -1732,7 +1695,7 @@ void H265SampleAdaptiveOffset::PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u
         }
         else
         {
-            PcmLeftShiftBit = g_bitDepthC - pcCU->m_SliceHeader->m_SeqParamSet->getPCMBitDepthChroma();
+            PcmLeftShiftBit = g_bitDepthC - pcCU->m_SliceHeader->m_SeqParamSet->pcm_bit_depth_chroma;
         }
 
         for(Y = 0; Y < Height; Y++)

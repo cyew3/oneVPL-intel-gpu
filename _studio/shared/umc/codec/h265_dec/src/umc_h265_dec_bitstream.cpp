@@ -1540,7 +1540,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
         {
             uiCode = rpcSlice->getPPS()->getLoopFilterAcrossSlicesEnabledFlag()?1:0;
         }
-        rpcSlice->setLFCrossSliceBoundaryFlag( (uiCode==1)?true:false);
+        sliceHdr->slice_loop_filter_across_slices_enabled_flag = uiCode == 1;
 
     }
 

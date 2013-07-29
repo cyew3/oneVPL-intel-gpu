@@ -400,7 +400,7 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
     m_SliceHeader.m_numEntryPointOffsets  = slice->m_numEntryPointOffsets;
 
     m_SliceHeader.m_MvdL1Zero = slice->m_MvdL1Zero;
-    m_SliceHeader.m_LFCrossSliceBoundaryFlag = slice->m_LFCrossSliceBoundaryFlag;
+    m_SliceHeader.slice_loop_filter_across_slices_enabled_flag = slice->slice_loop_filter_across_slices_enabled_flag;
     m_SliceHeader.m_enableTMVPFlag                = slice->m_enableTMVPFlag;
     m_SliceHeader.m_MaxNumMergeCand               = slice->m_MaxNumMergeCand;
 

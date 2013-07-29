@@ -851,8 +851,8 @@ Ipp32u H265CodingUnit::getSCUAddr()
         Ipp32u          SA = m_SliceHeader->SliceCurStartCUAddr;                               \
                                                                                                \
         m_AvailBorder[borderIndex] = (refSA == SA) ? (true) : ((refSA > SA) ?                  \
-                                     (refCU->m_SliceHeader->m_LFCrossSliceBoundaryFlag) :      \
-                                     (m_SliceHeader->m_LFCrossSliceBoundaryFlag));             \
+                                     (refCU->m_SliceHeader->slice_loop_filter_across_slices_enabled_flag) :      \
+                                     (m_SliceHeader->slice_loop_filter_across_slices_enabled_flag));             \
     }                                                                                          \
 }
 

@@ -1380,7 +1380,7 @@ bool TaskBrokerTwoThread_H265::GetDeblockingTask(H265DecoderFrameInfo * info, H2
         Ipp32s iAvailableToDeblock = pSlice->m_iCurMBToRec - pSlice->m_iCurMBToDeb;
 
         if (!pSlice->m_bDeblocked &&
-            (bPrevDeblocked || !pSlice->getLFCrossSliceBoundaryFlag()) &&
+            (bPrevDeblocked || !pSlice->GetSliceHeader()->slice_loop_filter_across_slices_enabled_flag) &&
             pSlice->m_bDebVacant &&
             (iAvailableToDeblock > 0 || pSlice->m_iCurMBToRec >= pSlice->m_iMaxMB))
         {

@@ -289,9 +289,6 @@ public:
     unsigned getMaxNumMergeCand() const     { return m_SliceHeader.m_MaxNumMergeCand; }
     void setMaxNumMergeCand(unsigned val)   { m_SliceHeader.m_MaxNumMergeCand = val; }
 
-    bool getLFCrossSliceBoundaryFlag() const    { return m_SliceHeader.m_LFCrossSliceBoundaryFlag;}
-    void setLFCrossSliceBoundaryFlag(bool val)  { m_SliceHeader.m_LFCrossSliceBoundaryFlag = val; }
-
     int  getNumEntryPointOffsets() const   { return m_SliceHeader.m_numEntryPointOffsets; }
     void setNumEntryPointOffsets(int val)  { m_SliceHeader.m_numEntryPointOffsets = val;  }
 

@@ -268,7 +268,7 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->PicFlags.fields.tiles_enabled_flag                           = pPicParamSet->getTilesEnabledFlag();
     pPicParam->PicFlags.fields.entropy_coding_sync_enabled_flag             = pPicParamSet->getEntropyCodingSyncEnabledFlag();
     pPicParam->PicFlags.fields.pps_loop_filter_across_slices_enabled_flag   = pPicParamSet->getLoopFilterAcrossSlicesEnabledFlag();
-    pPicParam->PicFlags.fields.loop_filter_across_tiles_enabled_flag        = pPicParamSet->getLoopFilterAcrossTilesEnabledFlag();
+    pPicParam->PicFlags.fields.loop_filter_across_tiles_enabled_flag        = pPicParamSet->loop_filter_across_tiles_enabled_flag;
     pPicParam->PicFlags.fields.pcm_loop_filter_disabled_flag                = pSeqParamSet->getPCMFilterDisableFlag() ? 1 : 0 ;
     pPicParam->PicFlags.fields.field_pic_flag                               = 0;
     pPicParam->PicFlags.fields.bottom_field_flag                            = 0;
@@ -428,7 +428,7 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->tiles_enabled_flag                   = pPicParamSet->getTilesEnabledFlag();
     pPicParam->entropy_coding_sync_enabled_flag     = pPicParamSet->getEntropyCodingSyncEnabledFlag();
     pPicParam->loop_filter_across_slices_flag       = pPicParamSet->getLoopFilterAcrossSlicesEnabledFlag();
-    pPicParam->loop_filter_across_tiles_flag        = pPicParamSet->getLoopFilterAcrossTilesEnabledFlag();
+    pPicParam->loop_filter_across_tiles_flag        = pPicParamSet->loop_filter_across_tiles_enabled_flag;
     pPicParam->pcm_loop_filter_disable_flag         = pSeqParamSet->getPCMFilterDisableFlag() ? 1 : 0 ;
     pPicParam->field_pic_flag                       = 0;
     pPicParam->bottom_field_flag                    = 0;    
