@@ -1382,7 +1382,7 @@ mfxStatus MFXDecPipeline::CreateSplitter()
 
     if (m_inParams.bMediaSDKSplitter)
     {
-        pSpl.reset(new MediaSDKSplWrapper());
+        pSpl.reset(new MediaSDKSplWrapper(m_inParams.extractedAudioFile));
     }
     else if (!m_inParams.bYuvReaderMode && 0 == m_inParams.InputCodecType)
     {
@@ -3924,12 +3924,27 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
 
                 argv++;
             }
+            else if (m_OptProc.Check(argv[0], VM_STRING("-mediasdk_splitter"), VM_STRING("split stream from media container with MediaSDK splitter (ts, mp4)"), OPT_BOOL))
+            {
+                if (1+argv != argvEnd && argv[1][0]!='-')
+                {
+                    //trying to open file
+                    vm_file * f = vm_file_fopen(argv[1], VM_STRING("wb"));
+                    if (f)
+                    {
+                        MFX_CHECK(0 == vm_string_strcpy_s(m_inParams.extractedAudioFile, MFX_ARRAY_SIZE(m_inParams.extractedAudioFile), argv[1]));
+                        argv++;
+                        vm_file_fclose(f);
+                    }
+                }
+
+                m_inParams.bMediaSDKSplitter = true;
+            }
             else HANDLE_BOOL_OPTION(m_inParams.bDisableIpFieldPair, VM_STRING("-disable_ip_field_pair"), VM_STRING("disable i/p field pair"));
             else HANDLE_INT_OPTION(m_inParams.nImageStab, VM_STRING("-stabilize"), VM_STRING("use particular image stabilization mode 1-upscale, 2-boxing"))
             else HANDLE_BOOL_OPTION(m_inParams.bPAFFDetect, VM_STRING("-paff"), VM_STRING("enabled picture structure detection by VPP"));
             else HANDLE_INT_OPTION(m_inParams.nSVCDownSampling, VM_STRING("-downsampling"), VM_STRING("use downsampling algorithm 1-best quality, 2-best speed"))
             else HANDLE_BOOL_OPTION(m_inParams.bDxgiDebug, VM_STRING("-dxgidebug"), VM_STRING("inject dxgidebug.dll to report live objects(dxgilevel memory leaks)"));
-            else HANDLE_BOOL_OPTION(m_inParams.bMediaSDKSplitter, VM_STRING("-mediasdk_splitter"), VM_STRING("split stream from media container with MediaSDK splitter (ts, mp4)"));
             else HANDLE_FILENAME_OPTION(m_inParams.strDecPlugin, VM_STRING("-decode_plugin"), VM_STRING("MediaSDK Decoder plugin filename"))
 
 #ifdef PAVP_BUILD

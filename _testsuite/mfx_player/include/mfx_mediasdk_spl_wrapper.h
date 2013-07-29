@@ -31,10 +31,10 @@ class MediaSDKSplWrapper : public IBitstreamReader
     mfxSplitter             m_mfxSplitter;
     mfxStreamParams         m_streamParams;
     MFXFrameConstructor*    m_pConstructor;
-    mfxU32                  m_videoTrackIndex;
+    vm_file*                m_extractedAudioFile;
 
 public:
-    MediaSDKSplWrapper();
+    MediaSDKSplWrapper(vm_char *extractedAudioFile);
     ~MediaSDKSplWrapper();
     virtual mfxStatus Init(const vm_char *strFileName);
     virtual void      Close();

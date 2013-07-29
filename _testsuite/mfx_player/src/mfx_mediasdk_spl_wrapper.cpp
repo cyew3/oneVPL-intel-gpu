@@ -14,10 +14,14 @@ File Name: .h
 #include "mfx_mediasdk_spl_wrapper.h"
 #include "mfx_frame_constructor.h"
 
-MediaSDKSplWrapper::MediaSDKSplWrapper()
+MediaSDKSplWrapper::MediaSDKSplWrapper(vm_char *extractedAudioFile)
     : m_pConstructor()
-    , m_videoTrackIndex(0)
+    , m_extractedAudioFile(NULL)
 {
+    if (0 != vm_string_strlen(extractedAudioFile))
+    {
+        m_extractedAudioFile = vm_file_fopen(extractedAudioFile, VM_STRING("wb"));
+    }
 }
 
 MediaSDKSplWrapper::~MediaSDKSplWrapper()
@@ -38,6 +42,9 @@ void MediaSDKSplWrapper::Close()
     MFXSplitter_Close(m_mfxSplitter);
 
     MFX_DELETE(m_pConstructor);
+
+    if (m_extractedAudioFile)
+        vm_file_fclose(m_extractedAudioFile);
 }
 
 mfxStatus MediaSDKSplWrapper::Init(const vm_char *strFileName)
@@ -69,44 +76,46 @@ mfxStatus MediaSDKSplWrapper::Init(const vm_char *strFileName)
     sts = MFXSplitter_GetInfo(m_mfxSplitter, &m_streamParams);
     MFX_CHECK_STS(sts);
 
+    MFX_CHECK_WITH_ERR(m_pConstructor = new MFXFrameConstructor(), MFX_ERR_MEMORY_ALLOC);
+
     for (mfxU32 i=0; i < m_streamParams.NumTracks; i++)
     {
         if (m_streamParams.TrackInfo[i]->Type & MFX_TRACK_ANY_VIDEO)
         {
-            m_videoTrackIndex = i;
+            //initializing of frame constructor
+            mfxVideoParam vParam;
+            vParam.mfx.FrameInfo.Width  = m_streamParams.TrackInfo[i]->VideoParam.FrameInfo.Width;
+            vParam.mfx.FrameInfo.Height = m_streamParams.TrackInfo[i]->VideoParam.FrameInfo.Height;
+            vParam.mfx.CodecProfile     = m_streamParams.TrackInfo[i]->VideoParam.CodecProfile;
+            MFX_CHECK_STS(m_pConstructor->Init(&vParam));
             break;
         }
     }
-
-    MFX_CHECK_WITH_ERR(m_pConstructor = new MFXFrameConstructor(), MFX_ERR_MEMORY_ALLOC);
-
-    //initializing of frame constructor
-    mfxVideoParam vParam;
-    vParam.mfx.FrameInfo.Width  = m_streamParams.TrackInfo[m_videoTrackIndex]->VideoParam.FrameInfo.Width;
-    vParam.mfx.FrameInfo.Height = m_streamParams.TrackInfo[m_videoTrackIndex]->VideoParam.FrameInfo.Height;
-    vParam.mfx.CodecProfile     = m_streamParams.TrackInfo[m_videoTrackIndex]->VideoParam.CodecProfile;
-
-    MFX_CHECK_STS(m_pConstructor->Init(&vParam));
-
     return sts;
 }
 
 mfxStatus MediaSDKSplWrapper::ReadNextFrame(mfxBitstream2 &bs2)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    mfxI32 iOutputTrack = -1;
+    mfxU32 iOutputTrack = 0;
+    bool bVideoFrame = false;
     mfxBitstream bs;
 
     MFX_CHECK_POINTER(m_mfxSplitter);
-    while (iOutputTrack != (mfxI32) m_videoTrackIndex && sts == MFX_ERR_NONE)
+    while (!bVideoFrame && sts == MFX_ERR_NONE)
     {
         if (sts == MFX_ERR_NONE)
         {
-            sts = MFXSplitter_GetBitstream(m_mfxSplitter, (mfxU32*) &iOutputTrack, &bs);
+            sts = MFXSplitter_GetBitstream(m_mfxSplitter, &iOutputTrack, &bs);
         }
-        if (sts == MFX_ERR_NONE && iOutputTrack == (mfxI32) m_videoTrackIndex)
+        if (sts == MFX_ERR_NONE && m_streamParams.TrackInfo[iOutputTrack]->Type & MFX_TRACK_ANY_VIDEO)
         {
             sts = m_pConstructor->ConstructFrame(&bs, &bs2);
+            bVideoFrame = true;
+        }
+        else if (sts == MFX_ERR_NONE && m_streamParams.TrackInfo[iOutputTrack]->Type & MFX_TRACK_ANY_AUDIO && m_extractedAudioFile)
+        {
+            vm_file_fwrite(bs.Data, 1, bs.DataLength, m_extractedAudioFile);
         }
         if (sts == MFX_ERR_NONE)
         {
@@ -121,25 +130,33 @@ mfxStatus MediaSDKSplWrapper::GetStreamInfo(sStreamInfo * pParams)
 {
     MFX_CHECK_POINTER(pParams);
 
-    pParams->nWidth  = m_streamParams.TrackInfo[0]->VideoParam.FrameInfo.Width;
-    pParams->nHeight = m_streamParams.TrackInfo[0]->VideoParam.FrameInfo.Height;
-
-    switch (m_streamParams.TrackInfo[0]->Type)
+    for (mfxU32 i=0; i < m_streamParams.NumTracks; i++)
     {
-        case MFX_TRACK_MPEG2V: pParams->videoType = MFX_CODEC_MPEG2; break;
-        case MFX_TRACK_H264  : pParams->videoType = MFX_CODEC_AVC;   break;
-        default : 
-            return MFX_ERR_UNKNOWN;
-    }
+        if (m_streamParams.TrackInfo[i]->Type & MFX_TRACK_ANY_VIDEO)
+        {
+            pParams->nWidth  = m_streamParams.TrackInfo[i]->VideoParam.FrameInfo.Width;
+            pParams->nHeight = m_streamParams.TrackInfo[i]->VideoParam.FrameInfo.Height;
 
-    pParams->CodecProfile = m_streamParams.TrackInfo[0]->VideoParam.CodecProfile;
+            switch (m_streamParams.TrackInfo[i]->Type)
+            {
+                case MFX_TRACK_MPEG2V: pParams->videoType = MFX_CODEC_MPEG2; break;
+                case MFX_TRACK_H264  : pParams->videoType = MFX_CODEC_AVC;   break;
+                default : 
+                    return MFX_ERR_UNKNOWN;
+            }
 
-    if (m_streamParams.SystemType == MFX_MP4_ATOM_STREAM && pParams->videoType == MFX_CODEC_AVC)
-    {
-        pParams->isDefaultFC = false;
-    }else
-    {
-        pParams->isDefaultFC = true;
+            pParams->CodecProfile = m_streamParams.TrackInfo[i]->VideoParam.CodecProfile;
+
+            if (m_streamParams.SystemType == MFX_MP4_ATOM_STREAM && pParams->videoType == MFX_CODEC_AVC)
+            {
+                pParams->isDefaultFC = false;
+            }else
+            {
+                pParams->isDefaultFC = true;
+            }
+
+            break;
+        }
     }
 
     return MFX_ERR_NONE;
