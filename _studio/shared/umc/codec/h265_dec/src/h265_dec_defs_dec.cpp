@@ -1300,17 +1300,13 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H
     }
 }
 
-void H265SampleAdaptiveOffset::SAOProcess(H265DecoderFrame* pFrame, Ipp32s start, Ipp32s toProcess)
+void H265SampleAdaptiveOffset::SAOProcess(H265DecoderFrame* pFrame, Ipp32s startCU, Ipp32s toProcessCU)
 {
     m_Frame = pFrame;
     H265Slice * slice = pFrame->GetAU()->GetAnySlice();
     if (slice->GetSliceHeader()->slice_sao_luma_flag || slice->GetSliceHeader()->slice_sao_chroma_flag)
     {
-        m_SaoBitIncreaseY = IPP_MAX(g_bitDepthY - 10, 0);
-        m_SaoBitIncreaseC = IPP_MAX(g_bitDepthC - 10, 0);
-    
-        createNonDBFilterInfo();
-        processSaoUnitAll();
+        processSaoUnits(startCU, toProcessCU);
     }
 }
 
@@ -1423,6 +1419,17 @@ void H265SampleAdaptiveOffset::processSaoUnitAll()
     m_needPCMRestoration = (slice->GetSliceHeader()->m_SeqParamSet->getUsePCM() && slice->GetSliceHeader()->m_SeqParamSet->getPCMFilterDisableFlag()) ||
         slice->GetSliceHeader()->m_PicParamSet->getTransquantBypassEnableFlag();
 
+    m_SaoBitIncreaseY = IPP_MAX(g_bitDepthY - 10, 0);
+    m_SaoBitIncreaseC = IPP_MAX(g_bitDepthC - 10, 0);
+    
+    createNonDBFilterInfo();
+
+    bool independentTileBoundaryForNDBFilter = false;
+    if (slice->getPPS()->getNumTiles() > 1 && !slice->getPPS()->loop_filter_across_tiles_enabled_flag)
+    {
+        independentTileBoundaryForNDBFilter = true;
+    }
+
     Ipp32s frameWidthInCU = m_Frame->getFrameWidthInCU();
     Ipp32s frameHeightInCU = m_Frame->getFrameHeightInCU();
     Ipp32s LCUHeight = m_MaxCUHeight;
@@ -1444,6 +1451,15 @@ void H265SampleAdaptiveOffset::processSaoUnitAll()
             memcpy(m_TmpU[1] + picWidthTmp, pRec, sizeof(H265PlaneUVCommon) * picWidthTmp);
         }
 
+        if (m_UseNIF)
+        {
+            for (Ipp32s j = addr; j < addr + frameWidthInCU; j++)
+            {
+                //Ipp32u idx = m_Frame->m_CodingData->getCUOrderMap(j);
+                m_Frame->getCU(j)->setNDBFilterBlockBorderAvailability(independentTileBoundaryForNDBFilter);
+            }
+        }
+
         processSaoLine(saoLCUParam, saoLCUParamCb, saoLCUParamCr, addr);
 
         if (m_needPCMRestoration)
@@ -1459,6 +1475,13 @@ void H265SampleAdaptiveOffset::processSaoUnitAll()
         m_TmpU[0] = m_TmpU[1];
         m_TmpU[1] = tmpUSwap;
     }
+}
+
+void H265SampleAdaptiveOffset::processSaoUnits(Ipp32s firstCU, Ipp32s toProcessCU)
+{
+    firstCU;
+    toProcessCU;
+    processSaoUnitAll();
 }
 
 void H265SampleAdaptiveOffset::SetOffsetsLuma(SAOLCUParam  &saoLCUParam, Ipp32s typeIdx)
@@ -1574,26 +1597,6 @@ void H265SampleAdaptiveOffset::createNonDBFilterInfo()
     }
 
     m_UseNIF = independentSliceBoundaryForNDBFilter || independentTileBoundaryForNDBFilter;
-    if (m_UseNIF)
-    {
-        for (Ipp32u i = 0; i < m_Frame->GetAU()->GetSliceCount(); i++)
-        {
-            H265Slice *slice = m_Frame->GetAU()->GetSlice(i);
-            independentTileBoundaryForNDBFilter = false;
-
-            if (slice->getPPS()->getNumTiles() > 1 && !slice->getPPS()->loop_filter_across_tiles_enabled_flag)
-            {
-                independentTileBoundaryForNDBFilter = true;
-            }
-
-            // Encode order CUs in slice
-            for (Ipp32s j = pSlice->m_iFirstMB; j < slice->m_iMaxMB; j++)
-            {
-                Ipp32u idx = m_Frame->m_CodingData->getCUOrderMap(j);
-                m_Frame->getCU(idx)->setNDBFilterBlockBorderAvailability(independentTileBoundaryForNDBFilter);
-            }
-        }
-    }
 }
 
 /** PCM CU restoration.

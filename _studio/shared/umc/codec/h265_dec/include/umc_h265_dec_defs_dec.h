@@ -458,6 +458,7 @@ protected:
     void PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth, EnumTextType Text);
 
     void processSaoUnitAll();
+    void processSaoUnits(Ipp32s first, Ipp32s toProcess);
     void processSaoLine(SAOLCUParam* saoLCUParam, SAOLCUParam* saoLCUParamCb, SAOLCUParam* saoLCUParamCr, Ipp32s addr);
 };
 
