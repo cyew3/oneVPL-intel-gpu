@@ -94,17 +94,17 @@ mfxStatus MediaSDKSplWrapper::Init(const vm_char *strFileName)
 mfxStatus MediaSDKSplWrapper::ReadNextFrame(mfxBitstream2 &bs2)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    mfxU32 iOutputTrack = 0;
+    mfxI32 iOutputTrack = -1;
     mfxBitstream bs;
 
     MFX_CHECK_POINTER(m_mfxSplitter);
-    while (iOutputTrack != m_videoTrackIndex && sts == MFX_ERR_NONE)
+    while (iOutputTrack != (mfxI32) m_videoTrackIndex && sts == MFX_ERR_NONE)
     {
         if (sts == MFX_ERR_NONE)
         {
-            sts = MFXSplitter_GetBitstream(m_mfxSplitter, &iOutputTrack, &bs);
+            sts = MFXSplitter_GetBitstream(m_mfxSplitter, (mfxU32*) &iOutputTrack, &bs);
         }
-        if (sts == MFX_ERR_NONE && iOutputTrack == m_videoTrackIndex)
+        if (sts == MFX_ERR_NONE && iOutputTrack == (mfxI32) m_videoTrackIndex)
         {
             sts = m_pConstructor->ConstructFrame(&bs, &bs2);
         }
