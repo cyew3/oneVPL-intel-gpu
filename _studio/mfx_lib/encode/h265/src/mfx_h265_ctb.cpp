@@ -1701,7 +1701,7 @@ void H265CU::TU_GetSplitInter(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u tr_idx, 
 
         for(j=0; j<width; j++)
             for(i=0; i<width;i++)
-                pred_save[j*width + i] = pRec[j*pitch_rec_luma+i];
+                pred_save[j*64 + i] = pRec[j*pitch_rec_luma+i];
     }
 
 
@@ -1722,8 +1722,9 @@ void H265CU::TU_GetSplitInter(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u tr_idx, 
             sizeof(H265CUData) * num_parts); // keep not split
 
         for(j=0; j<width; j++)
-            for(i=0; i<width;i++)
-                pRec[j*pitch_rec_luma+i] = pred_save[j*width + i];
+            for(i=0; i<width;i++) {
+                pRec[j*pitch_rec_luma+i] = pred_save[j*64 + i];
+            }
 
         CostType cost_temp, cost_split = 0;
         Ipp32s subsize = width /*<< (tr_idx_max - tr_idx)*/ >> 1;
@@ -1738,8 +1739,13 @@ void H265CU::TU_GetSplitInter(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u tr_idx, 
         }
 
         bsf->Reset();
-        const Ipp32u Log2TrafoSize = h265_log2m2[par->MaxCUSize]+2 - depth;
-        bsf->EncodeSingleBin_CABAC(CTX(bsf,TRANS_SUBDIV_FLAG_HEVC) + 5 - Log2TrafoSize, 1);
+        Ipp8u code_dqp;
+        put_transform(bsf, offset, 0, abs_part_idx, abs_part_idx,
+                data[abs_part_idx].depth + data[abs_part_idx].tr_idx,
+                width, width, data[abs_part_idx].tr_idx, code_dqp, 1);
+
+        //const Ipp32u Log2TrafoSize = h265_log2m2[par->MaxCUSize]+2 - depth;
+        //bsf->EncodeSingleBin_CABAC(CTX(bsf,TRANS_SUBDIV_FLAG_HEVC) + 5 - Log2TrafoSize, 1);
         cost_split += BIT_COST_INTER(bsf->GetNumBits());
 
         if (cost_best > cost_split /*&& nzt*/) {
@@ -1925,12 +1931,12 @@ void H265CU::ME_PU(H265MEInfo* me_info)
             continue;
 
         // Choose start point using predictors
-        H265MV MVtried[7];
+        H265MV MVtried[7+1];
         Ipp32s i, j, num_tried = 0;
 
         for (i=0; i<mergeInfo.numCand; i++) {
             if(curRefIdx[ME_dir] == mergeInfo.refIdx[2*i+ME_dir]) {
-                MVtried[num_tried++] == mergeInfo.mvCand[2*i+ME_dir];
+                MVtried[num_tried++] = mergeInfo.mvCand[2*i+ME_dir];
                 for(j=0; j<num_tried-1; j++)
                     if (MVtried[j] == mergeInfo.mvCand[2*i+ME_dir]) {
                         num_tried --;
@@ -1940,14 +1946,27 @@ void H265CU::ME_PU(H265MEInfo* me_info)
         }
         for (i=0; i<pInfo[ME_dir].numCand; i++) {
             if(curRefIdx[ME_dir] == pInfo[ME_dir].refIdx[i]) {
-                MVtried[num_tried++] == pInfo[ME_dir].mvCand[i];
-                for(j=0; j<num_tried; j++)
+                MVtried[num_tried++] = pInfo[ME_dir].mvCand[i];
+                for(j=0; j<num_tried-1; j++)
                     if (MVtried[j] == pInfo[ME_dir].mvCand[i]) {
                         num_tried --;
                         break;
                     }
             }
         }
+        // add from top level
+        if(me_info->depth>0) {
+            H265CUData* topdata = data_best + ((me_info->depth -1) << par->Log2NumPartInCU);           
+            if( topdata[me_info->abs_part_idx].pred_mode == MODE_INTER ) { // TODO also check same ref
+                MVtried[num_tried++] = topdata[me_info->abs_part_idx].mv[ME_dir];
+                for(j=0; j<num_tried-1; j++)
+                    if (MVtried[j] ==  MVtried[num_tried-1]) {
+                        num_tried --;
+                        break;
+                    }
+            }
+        }
+
         for (i=0; i<num_tried; i++) {
             cost_temp = MatchingMetric_PU( me_info, &MVtried[i], PicYUVRef) + i; // approx MVcost
             if (cost_best[ME_dir] > cost_temp) {
@@ -1959,9 +1978,10 @@ void H265CU::ME_PU(H265MEInfo* me_info)
         MV_cur.mvx = (MV_best[ME_dir].mvx + 1) & ~3;
         MV_cur.mvy = (MV_best[ME_dir].mvy + 1) & ~3;
         cost_best[ME_dir] = MatchingMetric_PU( me_info, &MV_cur, PicYUVRef);
-        ME_step_best = 0;
+        ME_step_best = 4;
 
         ME_step = MIN(me_info->width, me_info->height) * 4; // enable clipMV below if step > MaxCUSize
+        ME_step = MAX(ME_step, 16*4); // enable clipMV below if step > MaxCUSize
         ME_step_max = ME_step;
 
 //         // trying fullsearch
@@ -2093,7 +2113,7 @@ void H265CU::EncAndRecLuma(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u depth, Ipp8
     }
     if (depth == depth_max) {
         //AYA
-        Ipp64f cost = 0;
+        CostType cost = 0;
         EncAndRecLumaTU(
             abs_part_idx,
             offset,

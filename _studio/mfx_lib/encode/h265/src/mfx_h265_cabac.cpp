@@ -1177,7 +1177,7 @@ void H265CU::put_transform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_chroma,
 }
 
 template <class H265Bs>
-void H265CU::encode_coeff(H265Bs* bs, Ipp32u abs_part_idx, Ipp32u depth, Ipp32u width, Ipp32u height, Ipp8u &code_dqp)
+void H265CU::encode_coeff(H265Bs* bs, Ipp32u abs_part_idx, Ipp32u depth, Ipp32u width, Ipp32u height, Ipp8u &code_dqp, Ipp8u split_flag_only)
 {
     Ipp32u min_coeff_size = par->MinTUSize * par->MinTUSize;
     Ipp32u luma_offset   = min_coeff_size*abs_part_idx;
@@ -1198,7 +1198,7 @@ void H265CU::encode_coeff(H265Bs* bs, Ipp32u abs_part_idx, Ipp32u depth, Ipp32u 
         }
     }
 
-    put_transform(bs, luma_offset, chroma_offset, abs_part_idx, abs_part_idx, depth, width, height, 0, code_dqp);
+    put_transform(bs, luma_offset, chroma_offset, abs_part_idx, abs_part_idx, depth, width, height, 0, code_dqp, split_flag_only);
 }
 
 static
@@ -1357,12 +1357,10 @@ void H265CU::xEncodeCU(H265Bs *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_m
     // prediction Info ( Intra : direction mode, Inter : Mv, reference idx )
     h265_encode_pred_info(bs, pCU, abs_part_idx );
 
-    if (rd_mode == RD_CU_MODES) return;
-
     // Encode Coefficients
     Ipp8u code_dqp = false;//getdQPFlag();
     encode_coeff( bs, abs_part_idx, depth, data[abs_part_idx].size,
-        data[abs_part_idx].size, code_dqp );
+        data[abs_part_idx].size, code_dqp, rd_mode == RD_CU_MODES );
     //  setdQPFlag( code_dqp );
 
     // --- write terminating bit ---
