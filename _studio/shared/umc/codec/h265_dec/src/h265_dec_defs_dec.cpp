@@ -1145,7 +1145,7 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H
             for (y = 1; y < LCUHeight - 1; y++)
             {
                 pUpBufft[startX] = getSign(pRec[stride + startX] - startPtr[y * startStride]);
-                pUpBufft[startX + 1] = getSign(pRec[stride + startX + 1] - startPtr[y * startStride]);
+                pUpBufft[startX + 1] = getSign(pRec[stride + startX + 1] - startPtr[y * startStride + 1]);
 
                 for (x = startX; x < endX; x += 2)
                 {
@@ -1208,7 +1208,7 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H
 
             //prepare 2nd line upper sign
             tmpUpBuff1[startX] = getSign(startPtr[startStride] - pRec[startX]);
-            tmpUpBuff1[startX + 1] = getSign(startPtr[startStride] - pRec[startX + 1]);
+            tmpUpBuff1[startX + 1] = getSign(startPtr[startStride + 1] - pRec[startX + 1]);
             for (x = startX; x < endX; x++)
             {
                 tmpUpBuff1[x + 2] = getSign(pRec[x + stride] - pRec[x + 2]);
