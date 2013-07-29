@@ -323,7 +323,11 @@ void H265CU::h265_code_intradir_luma_ang(H265Bs *bs, Ipp32u abs_part_idx, Ipp8u 
     }
 }
 
-int tca = 0;
+template
+void H265CU::h265_code_intradir_luma_ang(H265BsFake *bs, Ipp32u abs_part_idx, Ipp8u multiple);
+
+// for DEBUG
+//int tca = 0;
 
 template <class H265Bs>
 static
