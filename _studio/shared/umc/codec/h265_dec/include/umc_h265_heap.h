@@ -377,6 +377,8 @@ public:
 
     Item * GetItemForAllocation(size_t size, bool typed = false)
     {
+        UMC::AutomaticUMCMutex guard(m_mGuard);
+
         if (!m_pFirstFree)
         {
             return 0;
@@ -386,6 +388,7 @@ public:
         {
             Item * ptr = m_pFirstFree;
             m_pFirstFree = m_pFirstFree->m_pNext;
+            VM_ASSERT(ptr->m_Size == size);
             return ptr;
         }
 
@@ -447,6 +450,7 @@ public:
         if (!obj)
             return;
 
+        UMC::AutomaticUMCMutex guard(m_mGuard);
         Item * item = (Item *) ((Ipp8u*)obj - sizeof(Item));
 
         // check
@@ -454,10 +458,8 @@ public:
 
         while (temp)
         {
-            if (temp == item)
-            { //was removed yet
+            if (temp == item) //was removed yet
                 return;
-            }
 
             temp = temp->m_pNext;
         }
@@ -482,6 +484,8 @@ public:
 
     void Release()
     {
+        UMC::AutomaticUMCMutex guard(m_mGuard);
+
         while (m_pFirstFree)
         {
             Item *pTemp = m_pFirstFree->m_pNext;
@@ -493,6 +497,7 @@ public:
 private:
 
     Item * m_pFirstFree;
+    UMC::Mutex m_mGuard;
 };
 
 
