@@ -249,8 +249,11 @@ void aac_UpdateThr(
 #endif
     Ipp32s totNumSfb, j;
 
-    minEnergy = avEnergy = energy[0][0];
-    totNumSfb = 0;
+    if (numCh > 0)
+    {
+        minEnergy = avEnergy = energy[0][0];
+        totNumSfb = 0;
+    }
 
     for (i = 0; i < numCh; i++) {
       for (sfb = 0; sfb < numSfb[i]; sfb++) {
@@ -262,7 +265,10 @@ void aac_UpdateThr(
       totNumSfb += numSfb[i];
     }
 
-    avEnergy /= totNumSfb;
+    if (numCh > 0)
+    {
+        avEnergy /= totNumSfb;
+    }
 
     if (minEnergy < 1) minEnergy = 1;
     if (avEnergy  < 1) avEnergy = 1;
