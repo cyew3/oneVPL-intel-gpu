@@ -14,8 +14,6 @@
 #ifndef __UMC_H265_DEC_DEFS_DEC_H__
 #define __UMC_H265_DEC_DEFS_DEC_H__
 
-#define HEVC_OPT_CHANGES 0xffff
-
 #include <vector>
 
 #include "umc_memory_allocator.h"

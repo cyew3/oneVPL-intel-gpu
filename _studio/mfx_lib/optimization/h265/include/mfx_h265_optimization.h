@@ -93,9 +93,7 @@ namespace MFX_HEVC_COMMON
         Ipp8u deblockQ;
         Ipp8s tcOffset;
         Ipp8s betaOffset;
-        Ipp32s uiPartQ; // debug
     };
-
 };
 
 namespace MFX_HEVC_COMMON

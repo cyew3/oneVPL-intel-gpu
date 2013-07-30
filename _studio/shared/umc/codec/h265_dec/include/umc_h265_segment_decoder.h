@@ -95,6 +95,11 @@ public:
     H265MVInfo *m_CurrCTB;
     Ipp32s m_CurrCTBStride;
 
+    // Deblocking data
+    std::vector<H265EdgeData> m_edgeHolder;
+    H265EdgeData *m_edge;
+    Ipp32s m_edgesInCTBWidth, m_edgesInCTBSize, m_edgesInCTB;
+
     // mt params
     bool m_needToSplitDecAndRec;
     Ipp32s m_mvsDistortion; // max y component of all mvs in slice
@@ -249,17 +254,10 @@ public:
     /*void FilterEdgeChroma(H265EdgeData *edge, H265PlaneUVCommon *srcDst, Ipp32s srcDstStride,
         Ipp32s chromaCbQpOffset, Ipp32s chromaCrQpOffset, Ipp32s dir);*/
 
-#if (HEVC_OPT_CHANGES & 32)
-// ML: OPT: Parameterized 'dir' to make it constant
     template< Ipp32s dir>
     void GetEdgeStrength(H265CodingUnit* pcCUQ, H265EdgeData *edge, Ipp32s curColumn, Ipp32s curRow,
                          Ipp32s crossSliceBoundaryFlag, Ipp32s crossTileBoundaryFlag, Ipp32s tcOffset,
                          Ipp32s betaOffset);
-#else
-    void GetEdgeStrength(H265CodingUnit* pcCUQ, H265EdgeData *edge, Ipp32s curColumn, Ipp32s curRow,
-                         Ipp32s crossSliceBoundaryFlag, Ipp32s crossTileBoundaryFlag, Ipp32s tcOffset,
-                         Ipp32s betaOffset, Ipp32s dir);
-#endif // HEVC_OPT_CHANGES
     void SetEdges(H265CodingUnit* curLCU, Ipp32s width, Ipp32s height, Ipp32s cross, Ipp32s calculateCurLCU);
 
     //end of h265 functions
@@ -278,8 +276,6 @@ public:
     Ipp32u m_BakAbsPartIdx;
     Ipp32u m_BakChromaOffset;
     Ipp32u m_bakAbsPartIdxCU;
-
-    H265EdgeData m_edge[9][9][4];
 
     DecodingContext * m_context;
     std::auto_ptr<DecodingContext> m_context_single_thread;

@@ -75,6 +75,14 @@ void DecodingContext::Init(H265Slice *slice)
         ResetRowBuffer();
 
     m_mvsDistortion = 0;
+
+    m_edgesInCTBSize = (m_sps->MaxCUWidth >> 3) + 1;
+    m_edgesInCTB = m_edgesInCTBSize * m_edgesInCTBSize * 4;
+    m_edgesInCTBWidth = m_edgesInCTBSize * 4;
+    Ipp32s deblocking_edges_count = (m_sps->WidthInCU * m_sps->HeightInCU) * m_edgesInCTB;
+    if (deblocking_edges_count > m_edgeHolder.size())
+        m_edgeHolder.resize(deblocking_edges_count);
+    m_edge = &m_edgeHolder[0];
 }
 
 void DecodingContext::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr)

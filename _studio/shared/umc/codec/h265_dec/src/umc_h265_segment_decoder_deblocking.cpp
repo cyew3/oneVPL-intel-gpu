@@ -79,6 +79,7 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr,
     Ipp32s frameWidthInSamples = m_pSeqParamSet->pic_width_in_luma_samples;
     Ipp32s width, height;
     Ipp32s i, j;
+    H265EdgeData *ctb_start_edge = m_context->m_edge + m_context->m_edgesInCTB * curLCU->CUAddr;
 
     width = frameWidthInSamples - curLCU->m_CUPelX;
 
@@ -97,17 +98,17 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr,
 #ifdef _DEBUG
     if (curLCU->m_CUPelX == 0)
     {
-        for (j = 0; j < 9; j++)
-            for (i = 0; i < 9; i++)
+        for (j = 0; j < m_context->m_edgesInCTBSize; j++)
+            for (i = 0; i < m_context->m_edgesInCTBSize; i++)
                 for (Ipp32s e = 0; e < 4; e++)
-                    m_edge[j][i][e].strength = 100;
+                    ctb_start_edge[j * m_context->m_edgesInCTBWidth + i * 4 + e].strength = 100;
     }
     else
     {
-        for (j = 0; j < maxCUSize >> 3; j++)
-            for (i = 0; i < maxCUSize >> 3; i++)
+        for (j = 0; j < m_context->m_edgesInCTBSize - 1; j++)
+            for (i = 0; i < m_context->m_edgesInCTBSize - 1; i++)
                 for (Ipp32s e = 0; e < 4; e++)
-                    m_edge[j][i][e].strength = 100;
+                    ctb_start_edge[j * m_context->m_edgesInCTBWidth + i * 4 + e].strength = 100;
     }
 #endif
 
@@ -115,8 +116,8 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr,
     {
         for (j = 0; j < (height >> 3); j++)
         {
-            m_edge[j+1][maxCUSize >> 3][2].strength = 0;
-            m_edge[j+1][maxCUSize >> 3][3].strength = 0;
+            ctb_start_edge[(j + 1) * m_context->m_edgesInCTBWidth + (maxCUSize >> 3) * 4 + 2].strength = 0;
+            ctb_start_edge[(j + 1) * m_context->m_edgesInCTBWidth + (maxCUSize >> 3) * 4 + 3].strength = 0;
         }
 
         SetEdges(curLCU, width, height, cross, 0);
@@ -179,7 +180,7 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU,
     Ipp32s y = curPixelRow >> 3;
     H265PlaneYCommon* baseSrcDst;
     Ipp32s srcDstStride;
-    H265EdgeData *edge;
+    H265EdgeData *ctb_start_edge, *edge;
     Ipp32s i, start, end;
 
     if (onlyOneUp && !cross)
@@ -190,6 +191,8 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU,
     srcDstStride = m_pCurrentFrame->pitch_luma();
     baseSrcDst = m_pCurrentFrame->GetLumaAddr(curLCU->CUAddr) +
                  curPixelRow * srcDstStride + curPixelColumn;
+
+    ctb_start_edge = m_context->m_edge + m_context->m_edgesInCTB * curLCU->CUAddr;
 
     if (!onlyOneLeft)
     {
@@ -218,7 +221,7 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU,
 
         for (i = start; i < end; i++)
         {
-            edge = &m_edge[y + ((i + 1) >> 1)][x + 1][(i + 1) & 1];
+            edge = ctb_start_edge + m_context->m_edgesInCTBWidth * (y + ((i + 1) >> 1)) + 4 * (x + 1) + ((i + 1) & 1);
 
             VM_ASSERT(edge->strength < 3);
             if (edge->strength > 0)
@@ -246,7 +249,7 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU,
 
         for (i = 0; i < end; i++)
         {
-            edge = &m_edge[y + 1][x + ((i + 1) >> 1)][((i + 1) & 1) + 2];
+            edge = ctb_start_edge + m_context->m_edgesInCTBWidth * (y + 1) + 4 * (x + ((i + 1) >> 1)) + (((i + 1) & 1) + 2);
 
             VM_ASSERT(edge->strength < 3);
             if (edge->strength > 0)
@@ -272,7 +275,7 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU,
     H265PlaneUVCommon* baseSrcDst;
     Ipp32s srcDstStride;
     Ipp32s chromaCbQpOffset, chromaCrQpOffset;
-    H265EdgeData *edge;
+    H265EdgeData *ctb_start_edge, *edge;
     Ipp32s i, start, end;
 
     if (onlyOneUp && !cross)
@@ -286,6 +289,8 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU,
 
     chromaCbQpOffset = m_pPicParamSet->getChromaCbQpOffset();
     chromaCrQpOffset = m_pPicParamSet->getChromaCrQpOffset();
+
+    ctb_start_edge = m_context->m_edge + m_context->m_edgesInCTB * curLCU->CUAddr;
 
     if (!onlyOneLeft)
     {
@@ -314,7 +319,7 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU,
 
         for (i = start; i < end; i++)
         {
-            edge = &m_edge[y + i][x + 1][0];
+            edge = ctb_start_edge + m_context->m_edgesInCTBWidth * (y + i) + 4 * (x + 1) + 0;
 
             VM_ASSERT(edge->strength < 3);
             if (edge->strength > 1)
@@ -347,7 +352,7 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU,
 
         for (i = 0; i < end; i++)
         {
-            edge = &m_edge[y + 1][x + i][2];
+            edge = ctb_start_edge + m_context->m_edgesInCTBWidth * (y + 1) + 4 * (x + i) + 2;
 
             VM_ASSERT(edge->strength < 3);
             if (edge->strength > 1)
@@ -380,7 +385,6 @@ static bool H265_FORCEINLINE MVIsnotEq(H265MotionVector mv0,
     }
 }
 
-#if (HEVC_OPT_CHANGES & 32)
 template< Ipp32s dir>
 void H265SegmentDecoder::GetEdgeStrength(H265CodingUnit* pcCUQ,
                                          H265EdgeData *edge,
@@ -390,17 +394,6 @@ void H265SegmentDecoder::GetEdgeStrength(H265CodingUnit* pcCUQ,
                                          Ipp32s crossTileBoundaryFlag,
                                          Ipp32s tcOffset,
                                          Ipp32s betaOffset)
-#else
-void H265SegmentDecoder::GetEdgeStrength(H265CodingUnit* pcCUQ,
-                                         H265EdgeData *edge,
-                                         Ipp32s curPixelColumn,
-                                         Ipp32s curPixelRow,
-                                         Ipp32s crossSliceBoundaryFlag,
-                                         Ipp32s crossTileBoundaryFlag,
-                                         Ipp32s tcOffset,
-                                         Ipp32s betaOffset,
-                                         Ipp32s dir)
-#endif
 {
     Ipp32s log2LCUSize = g_ConvertToBit[m_pSeqParamSet->getMaxCUWidth()] + 2;
     Ipp32s log2MinTUSize = m_pSeqParamSet->log2_min_transform_block_size;
@@ -631,9 +624,9 @@ void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
     Ipp32s curPixelColumn, curPixelRow;
     Ipp32s crossSliceBoundaryFlag, crossTileBoundaryFlag;
     Ipp32s tcOffset, betaOffset;
-    H265EdgeData edge;
     Ipp32u uiPartP;
     Ipp32s i, j, e;
+    H265EdgeData *ctb_start_edge = m_context->m_edge + m_context->m_edgesInCTB * curLCU->CUAddr;
 
     if (cross)
     {
@@ -657,33 +650,24 @@ void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
                         curPixelColumn = i;
                         curPixelRow = (maxCUSize - 8 + 4 * e);
 
-#if (HEVC_OPT_CHANGES & 32)
                         // ML: OPT: inline/constant propagation of direction
                         // ML: OPT: Passing pointer to edge structure in array directly to avoid failed forwarding from byte store to int load
-                        GetEdgeStrength< VERT_FILT >(aboveLCU, &m_edge[0][(i >> 3)+1][e],
+                        GetEdgeStrength<VERT_FILT>(aboveLCU, ctb_start_edge + 0 + ((i >> 3) + 1) * 4 + e,
                                         curPixelColumn, curPixelRow,
                                         crossSliceBoundaryFlag, crossTileBoundaryFlag,
                                         tcOffset, betaOffset);
-#else
-                        GetEdgeStrength(aboveLCU, &edge, curPixelColumn, curPixelRow,
-                                        crossSliceBoundaryFlag, crossTileBoundaryFlag,
-                                        tcOffset, betaOffset, VERT_FILT);
-
-                        m_edge[0][(i >> 3)+1][e] = edge;
-#endif
                     }
                 }
                 for (; i < maxCUSize; i += 8)
-                    m_edge[0][(i >> 3) + 1][0].strength = m_edge[0][(i >> 3) + 1][1].strength = 0;
+                    ctb_start_edge[0 + ((i >> 3) + 1) * 4 + 0].strength =
+                    ctb_start_edge[0 + ((i >> 3) + 1) * 4 + 1].strength = 0;
             }
             else
             {
                 for (i = 0; i < maxCUSize; i += 8)
                 {
                     for (e = 0; e < 2; e++)
-                    {
-                        m_edge[0][(i >> 3)+1][e].strength = 0;
-                    }
+                        ctb_start_edge[0 + ((i >> 3) + 1) * 4 + e].strength = 0;
                 }
             }
         }
@@ -692,9 +676,7 @@ void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
             for (i = 0; i < maxCUSize; i += 8)
             {
                 for (e = 0; e < 2; e++)
-                {
-                    m_edge[0][(i >> 3)+1][e].strength = 0;
-                }
+                    ctb_start_edge[0 + ((i >> 3) + 1) * 4 + e].strength = 0;
             }
         }
     }
@@ -721,32 +703,24 @@ void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
                         curPixelColumn = (maxCUSize - 8 + 4 * (e - 2));
                         curPixelRow = j;
 
-#if (HEVC_OPT_CHANGES & 32)
                         // ML: OPT: inline/constant propagation of direction
                         // ML: OPT: Passing pointer to edge structure in array directly to avoid failed forwarding from byte store to int load
-                        GetEdgeStrength< HOR_FILT >(leftLCU, 
-                                        &m_edge[(j >> 3)+1][0][e],
+                        GetEdgeStrength<HOR_FILT>(leftLCU, ctb_start_edge + ((j >> 3) + 1) * m_context->m_edgesInCTBWidth + 0 + e,
                                         curPixelColumn, curPixelRow,
                                         crossSliceBoundaryFlag, crossTileBoundaryFlag,
                                         tcOffset, betaOffset);
-#else
-                        GetEdgeStrength(leftLCU, &edge, curPixelColumn, curPixelRow,
-                                        crossSliceBoundaryFlag, crossTileBoundaryFlag,
-                                        tcOffset, betaOffset, HOR_FILT);
-
-                        m_edge[(j >> 3)+1][0][e] = edge;
-#endif
                     }
                 }
                 for (; j < maxCUSize; j += 8)
-                    m_edge[(j >> 3) + 1][0][2].strength = m_edge[(j >> 3) + 1][0][3].strength = 0;
+                    ctb_start_edge[((j >> 3) + 1) * m_context->m_edgesInCTBWidth + 0 + 2].strength =
+                    ctb_start_edge[((j >> 3) + 1) * m_context->m_edgesInCTBWidth + 0 + 3].strength = 0;
             }
             else
             {
                 for (j = 0; j < (maxCUSize >> 3); j++)
                 {
-                    m_edge[j + 1][0][2].strength = 0;
-                    m_edge[j + 1][0][3].strength = 0;
+                    for (e = 2; e < 4; e++)
+                        ctb_start_edge[(j + 1) * m_context->m_edgesInCTBWidth + 0 + e].strength = 0;
                 }
             }
         }
@@ -754,8 +728,8 @@ void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
         {
             for (j = 0; j < (maxCUSize >> 3); j++)
             {
-                m_edge[j + 1][0][2].strength = 0;
-                m_edge[j + 1][0][3].strength = 0;
+                for (e = 2; e < 4; e++)
+                    ctb_start_edge[(j + 1) * m_context->m_edgesInCTBWidth + 0 + e].strength = 0;
             }
         }
     }
@@ -765,16 +739,17 @@ void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
         {
             for (j = 0; j < (maxCUSize >> 3); j++)
             {
-                m_edge[j + 1][0][2].strength = 0;
-                m_edge[j + 1][0][3].strength = 0;
+                for (e = 2; e < 4; e++)
+                    ctb_start_edge[(j + 1) * m_context->m_edgesInCTBWidth + 0 + e].strength = 0;
             }
         }
         else
         {
             for (j = 0; j < (maxCUSize >> 3); j++)
             {
-                m_edge[j + 1][0][2] = m_edge[j + 1][maxCUSize >> 3][2];
-                m_edge[j + 1][0][3] = m_edge[j + 1][maxCUSize >> 3][3];
+                for (e = 2; e < 4; e++)
+                    ctb_start_edge[(j + 1) * m_context->m_edgesInCTBWidth + 0 + e] =
+                    ctb_start_edge[(j + 1) * m_context->m_edgesInCTBWidth + (maxCUSize >> 3) * 4 + e - m_context->m_edgesInCTB];
             }
         }
     }
@@ -792,7 +767,6 @@ void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
     {
         for (i = 0; i < width; i += 8)
         {
-#if (HEVC_OPT_CHANGES & 32)
             // ML: OPT: Breaking loop into 2 to allow constant propogation of '*_FILT' into GetEdgeStrength()
             // ML: OPT: Passing pointer to edge structure in array directly to avoid failed forwarding from byte store to int load
             for (e = 0; e < 2; e++)
@@ -800,7 +774,7 @@ void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
                 curPixelColumn = i;
                 curPixelRow = (j + 4 * e);
 
-                GetEdgeStrength< VERT_FILT >(curLCU, &m_edge[(j >> 3)+1][(i >> 3)+1][e],
+                GetEdgeStrength<VERT_FILT>(curLCU, ctb_start_edge + ((j >> 3) + 1) * m_context->m_edgesInCTBWidth + ((i >> 3) + 1) * 4 + e,
                                 curPixelColumn, curPixelRow,
                                 crossSliceBoundaryFlag, crossTileBoundaryFlag,
                                 tcOffset, betaOffset);
@@ -811,45 +785,26 @@ void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
                 curPixelColumn = (i + 4 * (e - 2));
                 curPixelRow = j;
 
-                GetEdgeStrength< HOR_FILT >(curLCU, &edge,
+                GetEdgeStrength<HOR_FILT>(curLCU, ctb_start_edge + ((j >> 3) + 1) * m_context->m_edgesInCTBWidth + ((i >> 3) + 1) * 4 + e,
                                 curPixelColumn, curPixelRow,
                                 crossSliceBoundaryFlag, crossTileBoundaryFlag,
                                 tcOffset, betaOffset);
-
-                m_edge[(j >> 3)+1][(i >> 3)+1][e] = edge;
             }
-#else
-            for (e = 0; e < 4; e++)
-            {
-                if (e < 2)
-                {
-                    curPixelColumn = i;
-                    curPixelRow = (j + 4 * e);
-                    dir = VERT_FILT;
-                }
-                else
-                {
-                    curPixelColumn = (i + 4 * (e - 2));
-                    curPixelRow = j;
-                    dir = HOR_FILT;
-                }
-
-                GetEdgeStrength(curLCU, &edge, curPixelColumn, curPixelRow,
-                                crossSliceBoundaryFlag, crossTileBoundaryFlag,
-                                tcOffset, betaOffset, dir);
-
-                m_edge[(j >> 3)+1][(i >> 3)+1][e] = edge;
-            }
-#endif
         }
         for (; i < maxCUSize; i += 8)
-            m_edge[(j >> 3) + 1][(i >> 3) + 1][0].strength = m_edge[(j >> 3) + 1][(i >> 3) + 1][1].strength =
-            m_edge[(j >> 3) + 1][(i >> 3) + 1][2].strength = m_edge[(j >> 3) + 1][(i >> 3) + 1][3].strength = 0;
+        {
+            Ipp32s offset = ((j >> 3) + 1) * m_context->m_edgesInCTBWidth + ((i >> 3) + 1) * 4;
+            ctb_start_edge[offset + 0].strength = ctb_start_edge[offset + 1].strength =
+                ctb_start_edge[offset + 2].strength = ctb_start_edge[offset + 3].strength = 0;
+        }
     }
     for (; j < maxCUSize; j += 8)
         for (i = 0; i < maxCUSize; i += 8)
-            m_edge[(j >> 3) + 1][(i >> 3) + 1][0].strength = m_edge[(j >> 3) + 1][(i >> 3) + 1][1].strength =
-            m_edge[(j >> 3) + 1][(i >> 3) + 1][2].strength = m_edge[(j >> 3) + 1][(i >> 3) + 1][3].strength = 0;
+        {
+            Ipp32s offset = ((j >> 3) + 1) * m_context->m_edgesInCTBWidth + ((i >> 3) + 1) * 4;
+            ctb_start_edge[offset + 0].strength = ctb_start_edge[offset + 1].strength =
+                ctb_start_edge[offset + 2].strength = ctb_start_edge[offset + 3].strength = 0;
+        }
 }
 
 

@@ -205,8 +205,6 @@ void H265CU::GetEdgeStrength(H265CUPtr *pcCUQptr,
 
     edge->strength = 0;
 
-    edge->uiPartQ = uiPartQ = h265_scan_r2z[maxDepth][((curPixelRow >> log2MinTUSize) << (log2LCUSize - log2MinTUSize)) + (curPixelColumn >> log2MinTUSize)];
-
     if (dir == HOR_FILT)
     {
         if ((curPixelRow >> log2MinTUSize) == ((curPixelRow - 1) >> log2MinTUSize))
