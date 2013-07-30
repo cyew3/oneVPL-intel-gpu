@@ -80,27 +80,27 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\mfx_hw\shared\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;./../../codec/color_space_converter/include;./../../io/umc_va/include;..\..\..\..\..\_studio\shared\include;..\..\..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\mfx_hw\shared\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;.\..\..\codec\color_space_converter\include;.\..\..\io\umc_va\include;..\..\..\..\..\_studio\shared\include;..\..\..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;UMC_VA_DXVA;VC1_EAGLELAKE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\mfx_hw\shared\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;./../../codec/color_space_converter/include;./../../io/umc_va/include;..\..\..\..\..\_studio\shared\include;..\..\..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\mfx_hw\shared\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;.\..\..\codec\color_space_converter\include;.\..\..\io\umc_va\include;..\..\..\..\..\_studio\shared\include;..\..\..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;UMC_VA_DXVA;VC1_EAGLELAKE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\mfx_hw\shared\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;./../../codec/color_space_converter/include;./../../io/umc_va/include;..\..\..\..\..\_studio\shared\include;..\..\..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\mfx_hw\shared\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;.\..\..\codec\color_space_converter\include;.\..\..\io\umc_va\include;..\..\..\..\..\_studio\shared\include;..\..\..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;UMC_VA_DXVA;VC1_EAGLELAKE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\mfx_hw\shared\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;./../../codec/color_space_converter/include;./../../io/umc_va/include;..\..\..\..\..\_studio\shared\include;..\..\..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\..\mfx_hw\shared\include;include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;.\..\..\codec\color_space_converter\include;.\..\..\io\umc_va\include;..\..\..\..\..\_studio\shared\include;..\..\..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;UMC_VA_DXVA;VC1_EAGLELAKE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib />
