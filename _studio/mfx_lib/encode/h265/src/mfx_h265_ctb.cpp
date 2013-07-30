@@ -1978,6 +1978,7 @@ void H265CU::ME_PU(H265MEInfo* me_info)
         MV_cur.mvx = (MV_best[ME_dir].mvx + 1) & ~3;
         MV_cur.mvy = (MV_best[ME_dir].mvy + 1) & ~3;
         cost_best[ME_dir] = MatchingMetric_PU( me_info, &MV_cur, PicYUVRef);
+        MV_best[ME_dir] = MV_cur;
         ME_step_best = 4;
 
         ME_step = MIN(me_info->width, me_info->height) * 4; // enable clipMV below if step > MaxCUSize
@@ -2001,7 +2002,7 @@ void H265CU::ME_PU(H265MEInfo* me_info)
 //         ME_step = 4;
 
         // expanding search
-        for (ME_step = 4; ME_step <= ME_step_max; ME_step *= 2) {
+        for (ME_step = ME_step_best; ME_step <= ME_step_max; ME_step *= 2) {
             for (ME_pos = 1; ME_pos < 9; ME_pos++) {
                 MV[ME_dir].mvx = MV_cur.mvx + ME_Cpattern[ME_pos][0] * ME_step * 1;
                 MV[ME_dir].mvy = MV_cur.mvy + ME_Cpattern[ME_pos][1] * ME_step * 1;
