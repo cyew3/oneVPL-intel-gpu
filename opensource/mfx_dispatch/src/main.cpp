@@ -62,7 +62,8 @@ struct
     {MFX_LIB_HARDWARE, MFX_IMPL_HARDWARE2, 1},
     {MFX_LIB_HARDWARE, MFX_IMPL_HARDWARE3, 2},
     {MFX_LIB_HARDWARE, MFX_IMPL_HARDWARE4, 3},
-    {MFX_LIB_SOFTWARE, MFX_IMPL_SOFTWARE,  0}
+    {MFX_LIB_SOFTWARE, MFX_IMPL_SOFTWARE,  0},
+    {MFX_LIB_SOFTWARE, MFX_IMPL_SOFTWARE | MFX_IMPL_AUDIO,  0}
 };
 
 const
@@ -82,7 +83,8 @@ struct
     {2, 5},  // MFX_IMPL_HARDWARE_ANY    
     {3, 3},  // MFX_IMPL_HARDWARE2    
     {4, 4},  // MFX_IMPL_HARDWARE3    
-    {5, 5}   // MFX_IMPL_HARDWARE4
+    {5, 5},  // MFX_IMPL_HARDWARE4
+    {7, 7}   // MFX_IMPL_AUDIO
 };
 
 MFX::mfxCriticalSection dispGuard = 0;
@@ -114,7 +116,9 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
     // particular implementation value
     mfxIMPL curImpl;
     // implementation method masked from the input parameter
-    const mfxIMPL implMethod = impl & (MFX_IMPL_VIA_ANY - 1);
+    // special case for audio library
+    const mfxIMPL implMethod = (impl & MFX_IMPL_AUDIO)?(sizeof(implTypesRange)/sizeof(implTypesRange[0])-1):(impl & (MFX_IMPL_VIA_ANY - 1));
+ 
     // implementation interface masked from the input parameter
     mfxIMPL implInterface = impl & -MFX_IMPL_VIA_ANY;
     mfxIMPL implInterfaceOrig = implInterface;
@@ -125,7 +129,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
     {
         return MFX_ERR_NULL_PTR;
     }
-    if ((MFX_IMPL_AUTO > implMethod) || (MFX_IMPL_HARDWARE4 < implMethod))
+    if (((MFX_IMPL_AUTO > implMethod) || (MFX_IMPL_HARDWARE4 < implMethod)) && !(impl & MFX_IMPL_AUDIO))
     {
         return MFX_ERR_UNSUPPORTED;
     }
@@ -234,9 +238,19 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
         do
         {
             implInterface = implInterfaceOrig;
-            mfxRes = MFX::mfx_get_default_dll_name(dllName,
-                                       sizeof(dllName) / sizeof(dllName[0]),
-                                       implTypes[curImplIdx].implType);
+            if (impl & MFX_IMPL_AUDIO)
+            {
+                mfxRes = MFX::mfx_get_default_audio_dll_name(dllName,
+                                           sizeof(dllName) / sizeof(dllName[0]),
+                                           implTypes[curImplIdx].implType);
+            }
+            else
+            {
+                mfxRes = MFX::mfx_get_default_dll_name(dllName,
+                                           sizeof(dllName) / sizeof(dllName[0]),
+                                           implTypes[curImplIdx].implType);
+            }
+
             if (MFX_ERR_NONE == mfxRes)
             {
                 DISPATCHER_LOG_INFO((("loading default library %S\n"), dllName))
@@ -327,8 +341,18 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXJoinSession)(mfxSession session, mfxSessi
     // get the function's address and make a call
     if ((pHandle) && (pChildHandle) && (pHandle->apiVersion == pChildHandle->apiVersion))
     {
-        mfxFunctionPointer pFunc = pHandle->callTable[eMFXJoinSession];
-
+        /* check whether it is audio session or video */
+        int tableIndex = eMFXJoinSession; 
+        mfxFunctionPointer pFunc;
+        if (pHandle->impl & MFX_IMPL_AUDIO) 
+        { 
+            pFunc = pHandle->callAudioTable[tableIndex];
+        }
+        else
+        {
+            pFunc = pHandle->callTable[tableIndex];
+        }
+ 
         if (pFunc)
         {
             // pass down the call
@@ -379,6 +403,45 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXCloneSession)(mfxSession session, mfxSess
 // They just call a procedure of DLL library from the table.
 //
 
+// define for common functions (from mfxsession.h)
+#undef FUNCTION
+#define FUNCTION(return_value, func_name, formal_param_list, actual_param_list) \
+return_value DISPATCHER_EXPOSED_PREFIX(func_name) formal_param_list \
+{ \
+    mfxStatus mfxRes = MFX_ERR_INVALID_HANDLE; \
+    MFX_DISP_HANDLE *pHandle = (MFX_DISP_HANDLE *) session; \
+    /* get the function's address and make a call */ \
+    if (pHandle) \
+    { \
+        /* check whether it is audio session or video */ \
+        int tableIndex = e##func_name; \
+        mfxFunctionPointer pFunc; \
+        if (pHandle->impl & MFX_IMPL_AUDIO) \
+        { \
+            pFunc = pHandle->callAudioTable[tableIndex]; \
+        } \
+        else \
+        { \
+            pFunc = pHandle->callTable[tableIndex]; \
+        } \
+        if (pFunc) \
+        { \
+            /* get the real session pointer */ \
+            session = pHandle->session; \
+            /* pass down the call */ \
+            mfxRes = (*(mfxStatus (MFX_CDECL  *) formal_param_list) pFunc) actual_param_list; \
+        } \
+    } \
+    return mfxRes; \
+}
+
+FUNCTION(mfxStatus, MFXQueryIMPL, (mfxSession session, mfxIMPL *impl), (session, impl))
+FUNCTION(mfxStatus, MFXQueryVersion, (mfxSession session, mfxVersion *version), (session, version))
+FUNCTION(mfxStatus, MFXDisjoinSession, (mfxSession session), (session))
+FUNCTION(mfxStatus, MFXSetPriority, (mfxSession session, mfxPriority priority), (session, priority))
+FUNCTION(mfxStatus, MFXGetPriority, (mfxSession session, mfxPriority *priority), (session, priority))
+FUNCTION(mfxStatus, MFXGetLogMessage, (mfxSession session, char *msg, mfxU32 size), (session, msg, size))
+
 #undef FUNCTION
 #define FUNCTION(return_value, func_name, formal_param_list, actual_param_list) \
 return_value DISPATCHER_EXPOSED_PREFIX(func_name) formal_param_list \
@@ -400,216 +463,26 @@ return_value DISPATCHER_EXPOSED_PREFIX(func_name) formal_param_list \
     return mfxRes; \
 }
 
-mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInitAudio)(mfxIMPL impl, mfxVersion *pVer, mfxSession *session)
-{
-    MFX::MFXAutomaticCriticalSection guard(&dispGuard);
-
-    DISPATCHER_LOG_BLOCK( ("MFXAudioInit (impl=%s, pVer=%d.%d session=0x%p\n"
-                        , DispatcherLog_GetMFXImplString(impl).c_str()
-                        , (pVer)? pVer->Major : 0
-                        , (pVer)? pVer->Minor : 0
-                        , session));
-
-    mfxStatus mfxRes;
-    std::auto_ptr<MFX_DISP_HANDLE> allocatedHandle;
-    MFX_DISP_HANDLE *pHandle;
-    msdk_disp_char dllName[MFX_MAX_DLL_PATH];
-    // there iterators are used only if the caller specified implicit type like AUTO
-    mfxU32 curImplIdx, maxImplIdx;
-    // particular implementation value
-    mfxIMPL curImpl;
-    // implementation method masked from the input parameter
-    const mfxIMPL implMethod = impl & (MFX_IMPL_VIA_ANY - 1);
-    // implementation interface masked from the input parameter
-    mfxIMPL implInterface = MFX_IMPL_VIA_ANY;
-    mfxVersion requiredVersion = {{MFX_VERSION_MINOR, MFX_VERSION_MAJOR}};
-
-    // check error(s)
-    if (NULL == session)
-    {
-        return MFX_ERR_NULL_PTR;
-    }
-    if ((MFX_IMPL_AUTO > implMethod) || (MFX_IMPL_HARDWARE4 < implMethod))
-    {
-        return MFX_ERR_UNSUPPORTED;
-    }
-
-    // set the minimal required version
-    if (pVer)
-    {
-        requiredVersion = *pVer;
-    }
-
-    try
-    {
-        // reset the session value
-        *session = 0;
-
-        // allocate the dispatching handle and call-table
-        allocatedHandle.reset(new MFX_DISP_HANDLE(requiredVersion));
-    }
-    catch(...)
-    {
-        return MFX_ERR_MEMORY_ALLOC;
-    }
-    pHandle = allocatedHandle.get();
-
-    DISPATCHER_LOG_OPERATION({
-        if (pVer)
-        {
-            DISPATCHER_LOG_INFO((("Required API version is %u.%u\n"), pVer->Major, pVer->Minor));
-        }
-        else
-        {
-            DISPATCHER_LOG_INFO((("Default API version is %u.%u\n"), DEFAULT_API_VERSION_MAJOR, DEFAULT_API_VERSION_MINOR));
-        }
-    });
-
-    // main query cycle
-    curImplIdx = implTypesRange[implMethod].minIndex;
-    maxImplIdx = implTypesRange[implMethod].maxIndex;
-
-    do
-    {
-        MFX::MFXLibraryIterator libIterator;
-        int currentStorage = MFX::MFX_STORAGE_ID_FIRST;
-
-        do
-        {
-            // initialize the library iterator
-            mfxRes = libIterator.Init(implTypes[curImplIdx].implType, 
-                                      implInterface,
-                                      implTypes[curImplIdx].adapterID,
-                                      currentStorage);
-
-            // look through the list of installed SDK version,
-            // looking for a suitable library with higher merit value.
-            if (MFX_ERR_NONE == mfxRes)
-            {
-                do
-                {
-                    eMfxImplType implType;
-
-                    // select a desired DLL
-                    mfxRes = libIterator.SelectDLLVersion(dllName,
-                                                          sizeof(dllName) / sizeof(dllName[0]),
-                                                          &implType,
-                                                          pHandle->apiVersion);
-                    if (MFX_ERR_NONE != mfxRes)
-                    {
-                        break;
-                    }
-                    DISPATCHER_LOG_INFO((("loading audio library %S\n"), dllName));
-                    
-                    // try to load the selected DLL
-                    curImpl = implTypes[curImplIdx].impl;
-                    mfxRes = pHandle->LoadSelectedAudioDLL(dllName, implType, curImpl, implInterface);
-                    // unload the failed DLL
-                    if (MFX_ERR_NONE != mfxRes)
-                    {
-                        pHandle->Close();
-                    }
-
-                } while (MFX_ERR_NONE != mfxRes);
-            }
-
-            // select another registry key
-            currentStorage += 1;
-
-        } while ((MFX_ERR_NONE != mfxRes) && (MFX::MFX_STORAGE_ID_LAST >= currentStorage));
-
-    } while ((MFX_ERR_NONE != mfxRes) && (++curImplIdx <= maxImplIdx));
-
-    // use the default DLL search mechanism fail,
-    // if hard-coded software library's path from the registry fails
-    if (MFX_ERR_NONE != mfxRes)
-    {
-        // set current library index again
-        curImplIdx = implTypesRange[implMethod].minIndex;
-        do
-        {
-            mfxRes = MFX::mfx_get_default_audio_dll_name(dllName,
-                                       sizeof(dllName) / sizeof(dllName[0]),
-                                       implTypes[curImplIdx].implType);
-            if (MFX_ERR_NONE == mfxRes)
-            {
-                DISPATCHER_LOG_INFO((("loading default audio library %S\n"), dllName))
-
-                // try to load the selected DLL using default DLL search mechanism
-                mfxRes = pHandle->LoadSelectedAudioDLL(dllName,
-                                                  implTypes[curImplIdx].implType,
-                                                  implTypes[curImplIdx].impl,
-                                                  implInterface);
-                // unload the failed DLL
-                if ((MFX_ERR_NONE != mfxRes) &&
-                    (MFX_WRN_PARTIAL_ACCELERATION != mfxRes))
-                {
-                    pHandle->UnLoadSelectedDLL();
-                }
-            }
-        }
-        while ((MFX_ERR_NONE > mfxRes) && (++curImplIdx <= maxImplIdx));
-    }
-
-    // check the final result of loading
-    if ((MFX_ERR_NONE == mfxRes) ||
-        (MFX_WRN_PARTIAL_ACCELERATION == mfxRes))
-    {
-        // everything is OK. Save pointers to the output variable
-        allocatedHandle.release();
-        *((MFX_DISP_HANDLE **) session) = pHandle;
-    }
-
-    return mfxRes;
-}
-
-mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXCloseAudio)(mfxSession session)
-{
-    MFX::MFXAutomaticCriticalSection guard(&dispGuard);
-
-    mfxStatus mfxRes = MFX_ERR_INVALID_HANDLE;
-    MFX_DISP_HANDLE *pHandle = (MFX_DISP_HANDLE *) session;
-
-    // check error(s)
-    if (pHandle)
-    {
-        try
-        {
-            // unload the DLL library
-            // we can't use Close() here, because it calls mfxClose() function, but we need mfxAudioClose()
-//            mfxRes = pHandle->Close();
-            mfxRes = pHandle->UnLoadSelectedAudioDLL();
-
-            // the library wasn't unloaded
-            if (MFX_ERR_NONE == mfxRes)
-            {
-                pHandle->implType = MFX_LIB_SOFTWARE;
-                pHandle->impl = MFX_IMPL_SOFTWARE;
-                pHandle->dispVersion.Major = MFX_DISPATCHER_VERSION_MAJOR;
-                pHandle->dispVersion.Minor = MFX_DISPATCHER_VERSION_MINOR;
-                pHandle->session = (mfxSession) 0;
-
-                pHandle->hModule = (mfxModuleHandle) 0;
-
-                memset(pHandle->callTable, 0, sizeof(pHandle->callTable));
-            }
-
-            // it is possible, that there is an active child session.
-            // can't unload library in that case.
-            if (MFX_ERR_UNDEFINED_BEHAVIOR != mfxRes)
-            {
-                // release the handle
-                delete pHandle;
-            }
-        }
-        catch(...)
-        {
-            mfxRes = MFX_ERR_INVALID_HANDLE;
-        }
-    }
-
-    return mfxRes;
-}
-
 #include "mfx_exposed_functions_list.h"
+#undef FUNCTION
+#define FUNCTION(return_value, func_name, formal_param_list, actual_param_list) \
+return_value DISPATCHER_EXPOSED_PREFIX(func_name) formal_param_list \
+{ \
+    mfxStatus mfxRes = MFX_ERR_INVALID_HANDLE; \
+    MFX_DISP_HANDLE *pHandle = (MFX_DISP_HANDLE *) session; \
+    /* get the function's address and make a call */ \
+    if (pHandle) \
+    { \
+        mfxFunctionPointer pFunc = pHandle->callAudioTable[e##func_name]; \
+        if (pFunc) \
+        { \
+            /* get the real session pointer */ \
+            session = pHandle->session; \
+            /* pass down the call */ \
+            mfxRes = (*(mfxStatus (MFX_CDECL  *) formal_param_list) pFunc) actual_param_list; \
+        } \
+    } \
+    return mfxRes; \
+}
+
 #include "mfxaudio_exposed_functions_list.h"

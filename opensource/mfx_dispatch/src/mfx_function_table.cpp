@@ -39,19 +39,40 @@ File Name: mfx_function_table.cpp
     {#func_name, API_VERSION, API_VERSION_PREV},
 
 const
-FUNCTION_DESCRIPTION APIFunc[eFuncTotal] =
+FUNCTION_DESCRIPTION APIFunc[eVideoFuncTotal] =
 {
     {"MFXInit", {{0, 1}}, {{0, 0}}},
     {"MFXClose", {{0, 1}}, {{0, 0}}},
 
     {"MFXJoinSession", {{2, 1}}, {{0, 1}}},
     {"MFXCloneSession", {{2, 1}}, {{0, 1}}},
+    {"MFXQueryIMPL", {{0, 1}}, {{0, 0}}},
+    {"MFXQueryVersion", {{0, 1}}, {{0, 0}}},
+    {"MFXDisjoinSession", {{0, 1}}, {{0, 0}}},
+    {"MFXSetPriority", {{0, 1}}, {{0, 0}}},
+    {"MFXGetPriority", {{0, 1}}, {{0, 0}}},
+    {"MFXGetLogMessage", {{0, 1}}, {{0, 0}}},
 
 #include "mfx_exposed_functions_list.h"
+};
 
-    {""},   // eVideoFuncTotal
-    {"MFXInitAudio", {{0, 1}}, {{0, 0}}},
-    {"MFXCloseAudio", {{0, 1}}, {{0, 0}}},
+//#undef FUNCTION
+//#define FUNCTION(return_value, func_name, formal_param_list, actual_param_list) \
+//    {#func_name, API_VERSION, API_VERSION_PREV},
+const
+FUNCTION_DESCRIPTION APIAudioFunc[eAudioFuncTotal] =
+{
+    {"MFXInit", {{0, 1}}, {{0, 0}}},
+    {"MFXClose", {{0, 1}}, {{0, 0}}},
+
+    {"MFXJoinSession", {{2, 1}}, {{0, 1}}},
+    {"MFXCloneSession", {{2, 1}}, {{0, 1}}},
+    {"MFXQueryIMPL", {{0, 1}}, {{0, 0}}},
+    {"MFXQueryVersion", {{0, 1}}, {{0, 0}}},
+    {"MFXDisjoinSession", {{0, 1}}, {{0, 0}}},
+    {"MFXSetPriority", {{0, 1}}, {{0, 0}}},
+    {"MFXGetPriority", {{0, 1}}, {{0, 0}}},
+    {"MFXGetLogMessage", {{0, 1}}, {{0, 0}}},
 
 #include "mfxaudio_exposed_functions_list.h"
 };

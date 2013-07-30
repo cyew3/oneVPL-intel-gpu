@@ -41,12 +41,8 @@ File Name: mfxaudio_exposed_function_list.h
 //
 
 // Minor value should precedes the major value
-#define API_VERSION {0, 1}
-#define API_VERSION_PREV {0, 0}
-
-// Library Common
-FUNCTION(mfxStatus, MFXAudioQueryIMPL, (mfxSession session, mfxIMPL *impl), (session, impl))
-FUNCTION(mfxStatus, MFXAudioQueryVersion, (mfxSession session, mfxVersion *version), (session, version))
+#define API_VERSION {{MFX_AUDIO_VERSION_MINOR, MFX_AUDIO_VERSION_MAJOR}}
+#define API_VERSION_PREV {{0, 0}}
 
 // CORE interface functions
 FUNCTION(mfxStatus, MFXAudioCORE_SyncOperation, (mfxSession session, mfxSyncPoint syncp, mfxU32 wait), (session, syncp, wait))
@@ -57,30 +53,18 @@ FUNCTION(mfxStatus, MFXAudioENCODE_QueryIOSize, (mfxSession session, mfxAudioPar
 FUNCTION(mfxStatus, MFXAudioENCODE_Init, (mfxSession session, mfxAudioParam *par), (session, par))
 FUNCTION(mfxStatus, MFXAudioENCODE_Reset, (mfxSession session, mfxAudioParam *par), (session, par))
 FUNCTION(mfxStatus, MFXAudioENCODE_Close, (mfxSession session), (session))
-
 FUNCTION(mfxStatus, MFXAudioENCODE_GetAudioParam, (mfxSession session, mfxAudioParam *par), (session, par))
 FUNCTION(mfxStatus, MFXAudioENCODE_EncodeFrameAsync, (mfxSession session, mfxBitstream *bs, mfxBitstream *buffer_out, mfxSyncPoint *syncp), (session, bs, buffer_out, syncp))
 
 // DECODE interface functions
 FUNCTION(mfxStatus, MFXAudioDECODE_Query, (mfxSession session, mfxAudioParam *in, mfxAudioParam *out), (session, in, out))
 FUNCTION(mfxStatus, MFXAudioDECODE_DecodeHeader, (mfxSession session, mfxBitstream *bs, mfxAudioParam *par), (session, bs, par))
-FUNCTION(mfxStatus, MFXAudioDECODE_QueryIOSize, (mfxSession session, mfxAudioParam *par, mfxAudioAllocRequest *request), (session, par, request))
 FUNCTION(mfxStatus, MFXAudioDECODE_Init, (mfxSession session, mfxAudioParam *par), (session, par))
 FUNCTION(mfxStatus, MFXAudioDECODE_Reset, (mfxSession session, mfxAudioParam *par), (session, par))
 FUNCTION(mfxStatus, MFXAudioDECODE_Close, (mfxSession session), (session))
-
+FUNCTION(mfxStatus, MFXAudioDECODE_QueryIOSize, (mfxSession session, mfxAudioParam *par, mfxAudioAllocRequest *request), (session, par, request))
 FUNCTION(mfxStatus, MFXAudioDECODE_GetAudioParam, (mfxSession session, mfxAudioParam *par), (session, par))
 FUNCTION(mfxStatus, MFXAudioDECODE_DecodeFrameAsync, (mfxSession session, mfxBitstream *bs, mfxBitstream *buffer_out, mfxSyncPoint *syncp), (session, bs, buffer_out, syncp))
-
-// VPP interface functions
-FUNCTION(mfxStatus, MFXAudioPP_Query, (mfxSession session, mfxAudioParam *in, mfxAudioParam *out), (session, in, out))
-FUNCTION(mfxStatus, MFXAudioPP_QueryIOSSize, (mfxSession session, mfxAudioParam *par, mfxAudioAllocRequest *request), (session, par, request))
-FUNCTION(mfxStatus, MFXAudioPP_Init, (mfxSession session, mfxAudioParam *par), (session, par))
-FUNCTION(mfxStatus, MFXAudioPP_Reset, (mfxSession session, mfxAudioParam *par), (session, par))
-FUNCTION(mfxStatus, MFXAudioPP_Close, (mfxSession session), (session))
-
-FUNCTION(mfxStatus, MFXAudioPP_GetAudioParam, (mfxSession session, mfxAudioParam *par), (session, par))
-FUNCTION(mfxStatus, MFXAudioPP_RunFrameAudioPPAsync, (mfxSession session, mfxBitstream **in, mfxU16 NumIn, mfxBitstream **out, mfxU16 NumOut, mfxSyncPoint *syncp), (session, in, NumIn, out, NumOut, syncp))
 
 #undef API_VERSION
 #undef API_VERSION_PREV

@@ -71,17 +71,21 @@ enum eFunc
     eMFXClose,
     eMFXJoinSession,
     eMFXCloneSession,
-
+    eMFXQueryIMPL,
+    eMFXQueryVersion,
+    eMFXDisjoinSession,
+    eMFXSetPriority,
+    eMFXGetPriority,
+    eMFXGetLogMessage,
 #include "mfx_exposed_functions_list.h"
+    eVideoFuncTotal
+};
 
-    eVideoFuncTotal,
-
-    eMFXAudioInit,
-    eMFXAudioClose,
-
+enum eAudioFunc
+{
+    eFakeAudioEnum = eMFXGetLogMessage,
 #include "mfxaudio_exposed_functions_list.h"
-
-    eFuncTotal
+    eAudioFuncTotal
 };
 
 // declare max buffer length for DLL path
@@ -131,11 +135,6 @@ struct MFX_DISP_HANDLE
     // Unload the library's module
     mfxStatus UnLoadSelectedDLL(void);
 
-    // AUDIO: Load the library's module
-    mfxStatus LoadSelectedAudioDLL(const msdk_disp_char *pPath, eMfxImplType implType, mfxIMPL impl, mfxIMPL implInterface);
-    // AUDIO: Unload the library's module
-    mfxStatus UnLoadSelectedAudioDLL(void);
-
     // Close the handle
     mfxStatus Close(void);
 
@@ -162,7 +161,8 @@ struct MFX_DISP_HANDLE
     mfxModuleHandle hModule;
 
     // function call table
-    mfxFunctionPointer callTable[eFuncTotal];
+    mfxFunctionPointer callTable[eVideoFuncTotal];
+    mfxFunctionPointer callAudioTable[eAudioFuncTotal];
 
 private:
     // Declare assignment operator and copy constructor to prevent occasional assignment
@@ -196,6 +196,8 @@ struct FUNCTION_DESCRIPTION
 } FUNCTION_DESCRIPTION;
 
 extern const
-FUNCTION_DESCRIPTION APIFunc[eFuncTotal];
+FUNCTION_DESCRIPTION APIFunc[eVideoFuncTotal];
 
+extern const
+FUNCTION_DESCRIPTION APIAudioFunc[eAudioFuncTotal];
 #endif // __MFX_DISPATCHER_H

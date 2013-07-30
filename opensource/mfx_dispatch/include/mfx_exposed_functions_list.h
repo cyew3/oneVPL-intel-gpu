@@ -44,10 +44,6 @@ File Name: mfx_exposed_functions_list.h
 #define API_VERSION {{0, 1}}
 #define API_VERSION_PREV {{0, 0}}
 
-// Library Common
-FUNCTION(mfxStatus, MFXQueryIMPL, (mfxSession session, mfxIMPL *impl), (session, impl))
-FUNCTION(mfxStatus, MFXQueryVersion, (mfxSession session, mfxVersion *version), (session, version))
-
 // CORE interface functions
 FUNCTION(mfxStatus, MFXVideoCORE_SetBufferAllocator, (mfxSession session, mfxBufferAllocator *allocator), (session, allocator))
 FUNCTION(mfxStatus, MFXVideoCORE_SetFrameAllocator, (mfxSession session, mfxFrameAllocator *allocator), (session, allocator))
@@ -104,10 +100,6 @@ FUNCTION(mfxStatus, MFXVideoVPP_RunFrameVPPAsync, (mfxSession session, mfxFrameS
 // VERSION values and new section with functions declarations must be started.
 #define API_VERSION {{MFX_VERSION_MINOR, MFX_VERSION_MAJOR}}
 #define API_VERSION_PREV {{0, 1}}
-
-FUNCTION(mfxStatus, MFXDisjoinSession, (mfxSession session), (session))
-FUNCTION(mfxStatus, MFXSetPriority, (mfxSession session, mfxPriority priority), (session, priority))
-FUNCTION(mfxStatus, MFXGetPriority, (mfxSession session, mfxPriority *priority), (session, priority))
 
 FUNCTION(mfxStatus, MFXVideoUSER_Register, (mfxSession session, mfxU32 type, const mfxPlugin *par), (session, type, par))
 FUNCTION(mfxStatus, MFXVideoUSER_Unregister, (mfxSession session, mfxU32 type), (session, type))
