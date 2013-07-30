@@ -106,15 +106,63 @@ namespace MFX_HEVC_COMMON
     void h265_DCT32x32Inv_16sT(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
 
     /* interpolation, version from Jon/Ken */
-    void Interp_S8_NoAvg(const unsigned char* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height, int shift, short offset, int dir, int plane);
+    void Interp_S8_NoAvg(
+        const unsigned char* pSrc, 
+        unsigned int srcPitch, 
+        short *pDst, 
+        unsigned int dstPitch, 
+        int tab_index, 
+        int width, 
+        int height, 
+        int shift, 
+        short offset, 
+        int dir, 
+        int plane);
 
-    void Interp_S16_NoAvg(const short* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height, int shift, short offset, int dir, int plane);
+    void Interp_S16_NoAvg(
+        const short* pSrc, 
+        unsigned int srcPitch, 
+        short *pDst, 
+        unsigned int dstPitch, 
+        int tab_index, 
+        int width, 
+        int height, 
+        int shift, 
+        short offset, 
+        int dir, 
+        int plane);
 
-    void Interp_S8_WithAvg(const unsigned char* pSrc, unsigned int srcPitch, unsigned char *pDst, unsigned int dstPitch, void *pvAvg, unsigned int avgPitch, int avgMode, 
-        int tab_index, int width, int height, int shift, short offset, int dir, int plane);
+    void Interp_S8_WithAvg(
+        const unsigned char* pSrc, 
+        unsigned int srcPitch, 
+        unsigned char *pDst, 
+        unsigned int dstPitch, 
+        void *pvAvg, 
+        unsigned int avgPitch, 
+        int avgMode, 
+        int tab_index, 
+        int width, 
+        int height, 
+        int shift, 
+        short offset, 
+        int dir, 
+        int plane);
 
-    void Interp_S16_WithAvg(const short* pSrc, unsigned int srcPitch, unsigned char *pDst, unsigned int dstPitch, void *pvAvg, unsigned int avgPitch, int avgMode, 
-        int tab_index, int width, int height, int shift, short offset, int dir, int plane);
+    void Interp_S16_WithAvg(
+        const short* pSrc, 
+        unsigned int srcPitch, 
+        unsigned char *pDst, 
+        unsigned int dstPitch, 
+        void *pvAvg, 
+        unsigned int avgPitch, 
+        int avgMode, 
+        int tab_index, 
+        int width, 
+        int height, 
+        int shift, 
+        short offset, 
+        int dir, 
+        int plane);
 
     /* Deblocking, "_I" means Implace operation */
     void h265_FilterEdgeLuma_8u_I(
@@ -142,6 +190,42 @@ namespace MFX_HEVC_COMMON
     void h265_QuantInv_16s(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift);
     void h265_QuantInv_ScaleList_LShift_16s(const Ipp16s* pSrc, const Ipp16s* pScaleList, Ipp16s* pDst, int len, int shift);
     void h265_QuantInv_ScaleList_RShift_16s(const Ipp16s* pSrc, const Ipp16s* pScaleList, Ipp16s* pDst, int len, int offset, int shift);
+    /* Intra prediction */
+    void h265_intrapred_ver(
+        Ipp8u* PredPel,
+        Ipp8u* pels,
+        Ipp32s pitch,
+        Ipp32s width,
+        Ipp32s bit_depth,
+        Ipp32s isLuma);
+
+    void h265_intrapred_hor(
+        Ipp8u* PredPel,
+        Ipp8u* pels,
+        Ipp32s pitch,
+        Ipp32s width,
+        Ipp32s bit_depth,
+        Ipp32s isLuma);
+
+    void h265_intrapred_dc(
+        Ipp8u* PredPel,
+        Ipp8u* pels,
+        Ipp32s pitch,
+        Ipp32s width,
+        Ipp32s isLuma);
+
+    void h265_intrapred_ang(
+        Ipp32s mode,
+        Ipp8u* PredPel,
+        Ipp8u* pels,
+        Ipp32s pitch,
+        Ipp32s width);
+
+    void h265_intrapred_planar(
+        Ipp8u* PredPel,
+        Ipp8u* pels,
+        Ipp32s pitch,
+        Ipp32s width);
 };
 
 namespace MFX_HEVC_ENCODER

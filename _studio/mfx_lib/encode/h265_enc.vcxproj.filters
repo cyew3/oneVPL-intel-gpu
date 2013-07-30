@@ -37,9 +37,6 @@
     <ClCompile Include="h265\src\mfx_h265_intrapred.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="h265\src\mfx_h265_intrapred_opt.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="h265\src\mfx_h265_quant.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -82,9 +79,6 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="h265\include\mfx_h265_frame.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="h265\include\mfx_h265_intrapred_opt.h">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="h265\include\mfx_h265_quant.h">

@@ -299,7 +299,6 @@
     <ClCompile Include="h265\src\mfx_h265_frame.cpp" />
     <ClCompile Include="h265\src\mfx_h265_interpred.cpp" />
     <ClCompile Include="h265\src\mfx_h265_intrapred.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_intrapred_opt.cpp" />
     <ClCompile Include="h265\src\mfx_h265_quant.cpp" />
     <ClCompile Include="h265\src\mfx_h265_quant_rdo.cpp" />
     <ClCompile Include="h265\src\mfx_h265_set.cpp" />
@@ -316,7 +315,6 @@
     <ClInclude Include="h265\include\mfx_h265_enc.h" />
     <ClInclude Include="h265\include\mfx_h265_encode.h" />
     <ClInclude Include="h265\include\mfx_h265_frame.h" />
-    <ClInclude Include="h265\include\mfx_h265_intrapred_opt.h" />
     <ClInclude Include="h265\include\mfx_h265_quant.h" />
     <ClInclude Include="h265\include\mfx_h265_quant_rdo.h" />
     <ClInclude Include="h265\include\mfx_h265_set.h" />

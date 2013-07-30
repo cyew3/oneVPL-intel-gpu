@@ -357,7 +357,6 @@ struct EncoderRefPicList
 #include "mfx_h265_quant.h"
 #include "mfx_h265_brc.h"
 #include "mfx_h265_enc.h"
-#include "mfx_h265_intrapred_opt.h"
 
 inline Ipp32s H265_CeilLog2(Ipp32s a) {
     Ipp32s r = 0;

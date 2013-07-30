@@ -14,6 +14,39 @@
 
 static Ipp32s FilteredModes[] = {10, 7, 1, 0, 10};
 
+void h265_filter_pred_pels(
+    PixType* PredPel,
+    Ipp32s width)
+{
+    PixType *tmpPtr;
+    PixType x0, x1, x2, xSaved;
+    Ipp32s i, j;
+
+    xSaved = (PredPel[1] + 2 * PredPel[0] + PredPel[2*width+1] + 2) >> 2;
+
+    tmpPtr = PredPel+1;
+
+    for (j = 0; j < 2; j++)
+    {
+        x0 = PredPel[0];
+        x1 = tmpPtr[0];
+
+        for (i = 0; i < 2*width-1; i++)
+        {
+            x2 = tmpPtr[1];
+            tmpPtr[0] = (x0 + 2*x1 + x2 + 2) >> 2;
+            x0 = x1; x1 = x2;
+            tmpPtr++;
+        }
+
+        tmpPtr = PredPel+2*width+1;
+    }
+
+    PredPel[0] = xSaved;
+
+} // void h265_filter_pred_pels(...)
+
+
 static
 void IsAboveLeftAvailable(H265CU *pCU,
                           Ipp32s blockZScanIdx,
