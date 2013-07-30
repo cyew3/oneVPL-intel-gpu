@@ -9,6 +9,7 @@ EXPORTS
     MFXCloneSession
     MFXSetPriority
     MFXGetPriority
+    MFXGetLogMessage
 
     MFXVideoCORE_SetBufferAllocator
     MFXVideoCORE_SetFrameAllocator

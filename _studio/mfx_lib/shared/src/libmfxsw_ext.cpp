@@ -97,9 +97,3 @@ mfxStatus MFXAudioCORE_SyncOperation(mfxSession session, mfxSyncPoint syncp, mfx
 {
     return MFXVideoCORE_SyncOperation(session, syncp, wait);
 }
-
-mfxStatus MFXGetLogMessage(mfxSession session, char *msg, mfxU32 size)
-{
-    session; msg; size;
-    return MFX_ERR_NONE;
-}

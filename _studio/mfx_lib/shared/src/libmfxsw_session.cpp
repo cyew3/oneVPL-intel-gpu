@@ -224,3 +224,8 @@ mfxStatus MFXGetPriority(mfxSession session, mfxPriority *priority)
 
 } // mfxStatus MFXGetPriority(mfxSession session, mfxPriority *priority)
 
+mfxStatus MFXGetLogMessage(mfxSession session, char *msg, mfxU32 size)
+{
+    session; msg; size;
+    return MFX_ERR_UNSUPPORTED;
+} // mfxStatus MFXGetLogMessage(mfxSession session, char *msg, mfxU32 size)
