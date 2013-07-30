@@ -11,6 +11,47 @@
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #include "mfx_h265_defs.h"
+#include "mfx_h265_quant.h"
+#include "mfx_h265_optimization.h"
+
+static const Ipp32s ctxIndMap[16] =
+{
+    0, 1, 4, 5,
+    2, 3, 4, 5,
+    6, 6, 8, 8,
+    7, 7, 8, 8
+};
+
+static const Ipp8u h265_qp_rem[90]=
+{
+    0,   1,   2,   3,   4,   5,   0,   1,   2,   3,   4,   5,   0,   1,   2,  3,   4,   5,
+    0,   1,   2,   3,   4,   5,   0,   1,   2,   3,   4,   5,   0,   1,   2,  3,   4,   5,
+    0,   1,   2,   3,   4,   5,   0,   1,   2,   3,   4,   5,   0,   1,   2,  3,   4,   5,
+    0,   1,   2,   3,   4,   5,   0,   1,   2,   3,   4,   5,   0,   1,   2,  3,   4,   5,
+    0,   1,   2,   3,   4,   5,   0,   1,   2,   3,   4,   5,   0,   1,   2,  3,   4,   5
+};
+
+static const Ipp8u h265_qp6[90] =
+{
+    0,   0,   0,   0,   0,   0,   1,   1,   1,   1,   1,   1,   2,   2,   2,  2,   2,   2,
+    3,   3,   3,   3,   3,   3,   4,   4,   4,   4,   4,   4,   5,   5,   5,  5,   5,   5,
+    6,   6,   6,   6,   6,   6,   7,   7,   7,   7,   7,   7,   8,   8,   8,  8,   8,   8,
+    9,   9,   9,   9,   9,   9,  10,  10,  10,  10,  10,  10,  11,  11,  11, 11,  11,  11,
+   12,  12,  12,  12,  12,  12,  13,  13,  13,  13,  13,  13,  14,  14,  14, 14,  14,  14
+};
+
+static const Ipp8u h265_quant_table_inv[] =
+{
+    40, 45, 51, 57, 64, 72
+};
+
+static const Ipp16u h265_quant_table_fwd[] =
+{
+    26214, 23302, 20560, 18396, 16384, 14564
+};
+
+static const Ipp32s matrixIdTable[] = {0, 1, 2};
+
 
 Ipp32s h265_quant_calcpattern_sig_ctx( const Ipp32u* sig_coeff_group_flag, Ipp32u posXCG, Ipp32u posYCG,
                                     Ipp32u width, Ipp32u height )
@@ -56,13 +97,6 @@ Ipp32u h265_quant_getSigCoeffGroupCtxInc  ( const Ipp32u*               sig_coef
 
 }
 
-static const Ipp32s ctxIndMap[16] =
-{
-    0, 1, 4, 5,
-    2, 3, 4, 5,
-    6, 6, 8, 8,
-    7, 7, 8, 8
-};
 
 Ipp32s h265_quant_getSigCtxInc(Ipp32s pattern_sig_ctx,
                                Ipp32s scan_idx,
@@ -110,7 +144,6 @@ Ipp32s h265_quant_getSigCtxInc(Ipp32s pattern_sig_ctx,
     return (( type == TEXT_LUMA && ((posX>>2) + (posY>>2)) > 0 ) ? 3 : 0) + offset + cnt;
 }
 
-static const Ipp32s matrixIdTable[] = {0, 1, 2};
 
 void H265CU::QuantInvTU(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, Ipp32s is_luma)
 {
@@ -199,5 +232,91 @@ void H265CU::QuantFwdTU(
         }
     }
 }
+
+
+void h265_quant_inv(const CoeffsType *qcoeffs,
+                    const Ipp16s *scaling_list, // aya: replaced 32s->16s to align with decoder/hevc_pp
+                    CoeffsType *coeffs,
+                    Ipp32s log2_tr_size,
+                    Ipp32s bit_depth,
+                    Ipp32s QP)
+{
+    Ipp32s qp_rem = h265_qp_rem[QP];
+    Ipp32s qp6 = h265_qp6[QP];
+    Ipp32s shift = bit_depth + log2_tr_size - 9;
+    Ipp32s add;
+    Ipp32s len = 1 << (log2_tr_size << 1);
+
+    if (scaling_list)
+    {
+        shift += 4;
+        if (shift > qp6)
+        {
+            add = 1 << (shift - qp6 - 1);
+        }
+        else
+        {
+            add = 0;
+        }
+
+//        const Ipp32s bitRange = MIN(15, ((Ipp32s)(12 + log2_tr_size + bit_depth - qp6)));
+//        const Ipp32s levelLimit = 1 << bitRange;
+
+        if (shift > qp6)
+        {
+            MFX_HEVC_COMMON::h265_QuantInv_ScaleList_RShift_16s(qcoeffs, scaling_list, coeffs, len, add, (shift -  qp6));
+        }
+        else
+        {
+
+            MFX_HEVC_COMMON::h265_QuantInv_ScaleList_LShift_16s(qcoeffs, scaling_list, coeffs, len, (qp6 - shift));
+        }
+    }
+    else
+    {
+        add = 1 << (shift - 1);
+        Ipp32s scale = h265_quant_table_inv[qp_rem] << qp6;
+        
+        MFX_HEVC_COMMON::h265_QuantInv_16s(qcoeffs, coeffs, len, scale, add, shift);
+    }
+}
+
+void h265_quant_fwd_base(
+    const CoeffsType *coeffs,
+    CoeffsType *qcoeffs,
+    Ipp32s log2_tr_size,
+    Ipp32s bit_depth,
+    Ipp32s is_slice_i,
+    Ipp32s QP,
+
+    Ipp32s*  delta,
+    Ipp32u&  abs_sum )
+{
+    Ipp32s qp_rem = h265_qp_rem[QP];
+    Ipp32s qp6 = h265_qp6[QP];
+    Ipp32s len = 1 << (log2_tr_size << 1);
+    //Ipp8s  sign;
+    Ipp32s scaleLevel;
+    Ipp32s scaleOffset;
+    //Ipp32s qval;
+
+    Ipp32s scale = 29 + qp6 - bit_depth - log2_tr_size;
+
+    scaleLevel = h265_quant_table_fwd[qp_rem];
+    scaleOffset = (is_slice_i ? 171 : 85) << (scale - 9);
+
+
+    abs_sum = 0;
+
+    if( delta )
+    {
+        abs_sum = (Ipp32u)MFX_HEVC_ENCODER::h265_QuantFwd_SBH_16s(coeffs, qcoeffs, delta, len, scaleLevel, scaleOffset, scale);
+    }
+    else
+    {
+        MFX_HEVC_ENCODER::h265_QuantFwd_16s(coeffs, qcoeffs, len, scaleLevel, scaleOffset, scale);
+    }
+
+} // void h265_quant_fwd_base(...)
 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE

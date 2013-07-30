@@ -61,26 +61,21 @@ void H265CU::TransformInv(Ipp32s offset, Ipp32s width, Ipp8u is_luma, Ipp8u is_i
     else */
         if (is_luma && is_intra && width == 4)
         {
-            //h265_dst_inv4x4(residuals, bit_depth);            
             MFX_HEVC_COMMON::h265_DST4x4Inv_16sT(residuals, residuals, 4, 2);
         }
         else
         {
             switch (width) {
             case 4:
-                //h265_dct_inv4x4(residuals, bit_depth);
                 MFX_HEVC_COMMON::h265_DCT4x4Inv_16sT(residuals, residuals, 4, 2);
                 break;
             case 8:
-                //h265_dct_inv8x8(residuals, bit_depth);
                 MFX_HEVC_COMMON::h265_DCT8x8Inv_16sT(residuals, residuals, 8, 2);
                 break;
-            case 16:
-                //h265_dct_inv16x16(residuals, bit_depth);
+            case 16:                
                 MFX_HEVC_COMMON::h265_DCT16x16Inv_16sT(residuals, residuals, 16, 2);
                 break;
-            case 32:
-                //h265_dct_inv32x32(residuals, bit_depth);
+            case 32:                
                 MFX_HEVC_COMMON::h265_DCT32x32Inv_16sT(residuals, residuals, 32, 2);
                 break;
             }
@@ -115,20 +110,16 @@ void H265CU::TransformFwd(Ipp32s offset, Ipp32s width, Ipp8u is_luma, Ipp8u is_i
         else
         {
             switch (width) {
-            case 4:
-                //h265_dct_fwd4x4(residuals, bit_depth);
+            case 4:                
                 MFX_HEVC_ENCODER::h265_DCT4x4Fwd_16s(residuals, residuals);
                 break;
-            case 8:
-                //h265_dct_fwd8x8(residuals, bit_depth);
+            case 8:                
                 MFX_HEVC_ENCODER::h265_DCT8x8Fwd_16s(residuals, residuals);
                 break;
-            case 16:
-                //h265_dct_fwd16x16(residuals, bit_depth);
+            case 16:                
                 MFX_HEVC_ENCODER::h265_DCT16x16Fwd_16s(residuals, residuals);
                 break;
-            case 32:
-                //h265_dct_fwd32x32(residuals, bit_depth);
+            case 32:                
                 MFX_HEVC_ENCODER::h265_DCT32x32Fwd_16s(residuals, residuals);
                 break;
             }

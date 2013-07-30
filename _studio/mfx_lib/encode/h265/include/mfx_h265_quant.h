@@ -14,6 +14,7 @@
 #define __MFX_H265_QUANT_H__
 
 #include "mfx_h265_defs.h"
+#include "mfx_h265_ctb.h"
 
 Ipp32s h265_quant_calcpattern_sig_ctx(
     const Ipp32u* sig_coeff_group_flag,
@@ -39,6 +40,51 @@ Ipp32s h265_quant_getSigCtxInc(
     Ipp32s width,
     Ipp32s height,
     EnumTextType type);
+
+void h265_quant_inv(
+    const CoeffsType *qcoeffs,
+    const Ipp16s *scaling_list,
+    CoeffsType *coeffs,
+    Ipp32s log2_tr_size,
+    Ipp32s bit_depth,
+    Ipp32s QP);
+
+void h265_quant_fwd_base(
+    const CoeffsType *coeffs,
+    CoeffsType *qcoeffs,
+    Ipp32s log2_tr_size,
+    Ipp32s bit_depth,
+    Ipp32s is_slice_i,
+    Ipp32s QP,
+
+    Ipp32s* delta,
+    Ipp32u& abs_sum );
+
+// RDO based quantization
+void h265_quant_fwd_rdo(
+    H265CU* pCU,
+    Ipp16s* pSrc,
+    Ipp16s* pDst,
+
+    Ipp32s  log2_tr_size,
+
+    Ipp32s  bit_depth,
+    Ipp32s  is_slice_i,
+
+    Ipp32u& abs_sum,
+    EnumTextType   type,
+    Ipp32u  abs_part_idx,
+
+    Ipp32s  QP,
+    H265BsFake* bs);
+
+void h265_sign_bit_hiding(
+    Ipp16s* levels,
+    Ipp16s* coeffs,
+    Ipp16u const *scan,
+    Ipp32s* delta_u,
+    Ipp32s width,
+    Ipp32s height);
 
 #endif // __MFX_H265_QUANT_H__
 

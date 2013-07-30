@@ -6,17 +6,52 @@
 //        Copyright (c) 2013 Intel Corporation. All Rights Reserved.
 //
 
-typedef signed short   Ipp16s;
-typedef signed int     Ipp32s;
+#include "ippdefs.h"
 
-//#define CoeffsType Ipp16s
+#define CoeffsType Ipp16s
 #define Saturate(min_val, max_val, val) MAX((min_val), MIN((max_val), (val)))
 #undef  MAX
 #define MAX(a, b)  (((a) > (b)) ? (a) : (b))
 #undef  MIN
 #define MIN(a, b)  (((a) < (b)) ? (a) : (b))
 
-#include "mfx_h265_transform_opt.h"
+//#include "mfx_h265_transform_opt.h"
+
+/* Forward transforms */
+
+void h265_dst_fwd4x4(CoeffsType *srcdst,
+                   Ipp32s bit_depth);
+
+void h265_dct_fwd4x4(CoeffsType *srcdst,
+                     Ipp32s bit_depth);
+
+void h265_dct_fwd8x8(CoeffsType *srcdst,
+                     Ipp32s bit_depth);
+
+void h265_dct_fwd16x16(CoeffsType *srcdst,
+                       Ipp32s bit_depth);
+
+
+void h265_dct_fwd32x32(CoeffsType *srcdst,
+                       Ipp32s bit_depth);
+
+/* Inverse transforms */
+
+void h265_dst_inv4x4(CoeffsType *srcdst,
+                   Ipp32s bit_depth);
+
+void h265_dct_inv4x4(CoeffsType *srcdst,
+                     Ipp32s bit_depth);
+
+void h265_dct_inv8x8(CoeffsType *srcdst,
+                     Ipp32s bit_depth);
+
+void h265_dct_inv16x16(CoeffsType *srcdst,
+                       Ipp32s bit_depth);
+
+void h265_dct_inv32x32(CoeffsType *srcdst,
+                       Ipp32s bit_depth);
+
 
 static const Ipp16s h265_t4[4][4] =
 {

@@ -345,18 +345,6 @@ struct EncoderRefPicList
     EncoderRefPicListStruct m_RefPicListL1;
 };    // EncoderRefPicList
 
-// aya: moved to HEVC_PP
-//struct H265EdgeData
-//{
-//    Ipp8u strength;
-//    Ipp8u qp;
-//    Ipp8u deblockP;
-//    Ipp8u deblockQ;
-//    Ipp8s tcOffset;
-//    Ipp8s betaOffset;
-//    Ipp32s uiPartQ; // debug
-//};
-
 #include "mfxdefs.h"
 #include "mfx_h265_tables.h"
 #include "mfx_h265_encode.h"
@@ -370,9 +358,6 @@ struct EncoderRefPicList
 #include "mfx_h265_brc.h"
 #include "mfx_h265_enc.h"
 #include "mfx_h265_intrapred_opt.h"
-#include "mfx_h265_transform_opt.h"
-#include "mfx_h265_quant_opt.h"
-
 
 inline Ipp32s H265_CeilLog2(Ipp32s a) {
     Ipp32s r = 0;

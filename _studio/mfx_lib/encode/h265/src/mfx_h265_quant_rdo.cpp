@@ -16,7 +16,6 @@
 #include "mfx_h265_defs.h"
 #include "mfx_h265_cabac.h"
 #include "mfx_h265_quant.h"
-#include "mfx_h265_quant_opt.h"
 #include "mfx_h265_quant_rdo.h"
 
 
@@ -228,84 +227,84 @@ void RDOQuant::EstimateCabacBits(Ipp32s log2_tr_size )
 typedef Ipp32u UInt;
 typedef int Int;
 
-void print_est_bits(CabacBits* pBits)
-{
-    printf("\n print_est_bits - START \n -------------------------- \n");
-
-    for( UInt uiCtxInc = 0; uiCtxInc < NUM_QT_CBF_CTX; uiCtxInc++ )
-    {
-        for(int bin = 0; bin < 2; bin++)
-        {
-            printf("blockCbpBits[%i][%i] = %i \n", uiCtxInc, bin,  pBits->blkCbfBits[ uiCtxInc ][ bin ]);
-        }
-    }
-
-    printf("\n");
-
-    for( UInt uiCtxInc = 0; uiCtxInc < 1; uiCtxInc++ )
-    {
-        for(int bin = 0; bin < 2; bin++)
-        {
-            printf("blockRootCbpBits[%i][%i] = %i \n", uiCtxInc, bin,  pBits->blkRootCbfBits[ uiCtxInc ][ bin ]);
-        }
-    }
-    printf("\n");
-
-    Int firstCtx = 0, numCtx = NUM_SIG_CG_FLAG_CTX;
-    for ( Int ctxIdx = firstCtx; ctxIdx < firstCtx + numCtx; ctxIdx++ )
-    {
-        for( UInt uiBin = 0; uiBin < 2; uiBin++ )
-        {
-            printf("significantCoeffGroupBits[%i][%i] = %i \n", ctxIdx, uiBin,  pBits->significantCoeffGroupBits[ ctxIdx ][ uiBin ]);
-        }
-    }
-
-    printf("\n");
-
-    for ( Int ctxIdx = 0; ctxIdx < 27; ctxIdx++ )
-    {
-        for( UInt uiBin = 0; uiBin < 2; uiBin++ )
-        {
-            //pBits->significantBits[ ctxIdx ][ uiBin ]
-            printf("significantBits[%i][%i] = %i \n", ctxIdx, uiBin, pBits->significantBits[ ctxIdx ][ uiBin ] );
-        }
-    }
-
-    printf("\n");
-
-    for (Int ctx = 0; ctx < 15; ctx++)
-    {
-        //pBits->lastXBits[ ctx ];
-        //pBits->lastYBits[ ctx ];
-        printf("lastXBits[%i] = %i \n", ctx, pBits->lastXBits[ ctx ]);
-        printf("lastYBits[%i] = %i \n", ctx, pBits->lastYBits[ ctx ]);
-    }
-
-    printf("\n");
-
-    for ( Int ctxIdx = 0; ctxIdx < 16; ctxIdx++ )
-    {
-        for( UInt uiBin = 0; uiBin < 2; uiBin++ )
-        {
-            //pBits->significantBits[ ctxIdx ][ uiBin ]
-            printf("m_greaterOneBits[%i][%i] = %i \n", ctxIdx, uiBin, pBits->greaterOneBits[ ctxIdx ][ uiBin ] );
-        }
-    }
-
-    printf("\n");
-
-    for ( Int ctxIdx = 0; ctxIdx < 4; ctxIdx++ )
-    {
-        for( UInt uiBin = 0; uiBin < 2; uiBin++ )
-        {
-            //pBits->significantBits[ ctxIdx ][ uiBin ]
-            printf("m_levelAbsBits[%i][%i] = %i \n", ctxIdx, uiBin, pBits->levelAbsBits[ ctxIdx ][ uiBin ] );
-        }
-    }
-
-    return;
-
-}
+//void print_est_bits(CabacBits* pBits)
+//{
+//    printf("\n print_est_bits - START \n -------------------------- \n");
+//
+//    for( UInt uiCtxInc = 0; uiCtxInc < NUM_QT_CBF_CTX; uiCtxInc++ )
+//    {
+//        for(int bin = 0; bin < 2; bin++)
+//        {
+//            printf("blockCbpBits[%i][%i] = %i \n", uiCtxInc, bin,  pBits->blkCbfBits[ uiCtxInc ][ bin ]);
+//        }
+//    }
+//
+//    printf("\n");
+//
+//    for( UInt uiCtxInc = 0; uiCtxInc < 1; uiCtxInc++ )
+//    {
+//        for(int bin = 0; bin < 2; bin++)
+//        {
+//            printf("blockRootCbpBits[%i][%i] = %i \n", uiCtxInc, bin,  pBits->blkRootCbfBits[ uiCtxInc ][ bin ]);
+//        }
+//    }
+//    printf("\n");
+//
+//    Int firstCtx = 0, numCtx = NUM_SIG_CG_FLAG_CTX;
+//    for ( Int ctxIdx = firstCtx; ctxIdx < firstCtx + numCtx; ctxIdx++ )
+//    {
+//        for( UInt uiBin = 0; uiBin < 2; uiBin++ )
+//        {
+//            printf("significantCoeffGroupBits[%i][%i] = %i \n", ctxIdx, uiBin,  pBits->significantCoeffGroupBits[ ctxIdx ][ uiBin ]);
+//        }
+//    }
+//
+//    printf("\n");
+//
+//    for ( Int ctxIdx = 0; ctxIdx < 27; ctxIdx++ )
+//    {
+//        for( UInt uiBin = 0; uiBin < 2; uiBin++ )
+//        {
+//            //pBits->significantBits[ ctxIdx ][ uiBin ]
+//            printf("significantBits[%i][%i] = %i \n", ctxIdx, uiBin, pBits->significantBits[ ctxIdx ][ uiBin ] );
+//        }
+//    }
+//
+//    printf("\n");
+//
+//    for (Int ctx = 0; ctx < 15; ctx++)
+//    {
+//        //pBits->lastXBits[ ctx ];
+//        //pBits->lastYBits[ ctx ];
+//        printf("lastXBits[%i] = %i \n", ctx, pBits->lastXBits[ ctx ]);
+//        printf("lastYBits[%i] = %i \n", ctx, pBits->lastYBits[ ctx ]);
+//    }
+//
+//    printf("\n");
+//
+//    for ( Int ctxIdx = 0; ctxIdx < 16; ctxIdx++ )
+//    {
+//        for( UInt uiBin = 0; uiBin < 2; uiBin++ )
+//        {
+//            //pBits->significantBits[ ctxIdx ][ uiBin ]
+//            printf("m_greaterOneBits[%i][%i] = %i \n", ctxIdx, uiBin, pBits->greaterOneBits[ ctxIdx ][ uiBin ] );
+//        }
+//    }
+//
+//    printf("\n");
+//
+//    for ( Int ctxIdx = 0; ctxIdx < 4; ctxIdx++ )
+//    {
+//        for( UInt uiBin = 0; uiBin < 2; uiBin++ )
+//        {
+//            //pBits->significantBits[ ctxIdx ][ uiBin ]
+//            printf("m_levelAbsBits[%i][%i] = %i \n", ctxIdx, uiBin, pBits->levelAbsBits[ ctxIdx ][ uiBin ] );
+//        }
+//    }
+//
+//    return;
+//
+//}
 
 
 //struct RDOQ_CoeffGroup_Report
@@ -897,6 +896,142 @@ Ipp64f RDOQuant::GetCost_LastXY(
     return GetCost( cost );
 
 } // Ipp64f RDOQuant::GetCost_LastXY(...)
+
+
+//---------------------------------------------------------
+//            SBH TOOL
+//---------------------------------------------------------
+void h265_sign_bit_hiding(
+    Ipp16s* levels,
+    Ipp16s* coeffs,
+    Ipp16u const *scan,
+    Ipp32s* delta_u,
+    Ipp32s width,
+    Ipp32s height )
+{
+    Ipp32s lastCG = -1;
+
+    const Ipp32s last_scan_set = (width * height - 1) >> LOG2_SCAN_SET_SIZE;
+
+    for(Ipp32s subset = last_scan_set; subset >= 0; subset-- )
+    {
+        Ipp32s sub_pos     = subset << LOG2_SCAN_SET_SIZE;
+        Ipp32s last_nz_pos_in_CG = -1, first_nz_pos_in_CG = SCAN_SET_SIZE;
+        Ipp32s abs_sum = 0;
+        Ipp32s pos_in_CG;
+
+        for(pos_in_CG = SCAN_SET_SIZE-1; pos_in_CG >= 0; pos_in_CG-- )
+        {
+            if( levels[ scan[sub_pos+pos_in_CG] ] )
+            {
+                last_nz_pos_in_CG = pos_in_CG;
+                break;
+            }
+        }
+
+        for(pos_in_CG = 0; pos_in_CG <SCAN_SET_SIZE; pos_in_CG++ )
+        {
+            if( levels[ scan[sub_pos+pos_in_CG] ] )
+            {
+                first_nz_pos_in_CG = pos_in_CG;
+                break;
+            }
+        }
+
+        for(pos_in_CG = first_nz_pos_in_CG; pos_in_CG <=last_nz_pos_in_CG; pos_in_CG++ )
+        {
+            abs_sum += levels[ scan[ pos_in_CG + sub_pos ] ];
+        }
+
+        if( (last_nz_pos_in_CG >= 0) && (-1 == lastCG) )
+        {
+            lastCG = 1;
+        }
+
+        bool sign_hidden = (last_nz_pos_in_CG - first_nz_pos_in_CG >= SBH_THRESHOLD);
+        if( sign_hidden )
+        {
+            Ipp8u sign_bit  = (levels[ scan[sub_pos + first_nz_pos_in_CG] ] > 0 ? 0 : 1);
+            Ipp8u sum_parity= (Ipp8u)(abs_sum & 0x1);
+
+            if( sign_bit != sum_parity )
+            {
+                Ipp32s min_cost_inc = IPP_MAX_32S,  min_pos =-1;
+                Ipp32s cur_cost = IPP_MAX_32S, cur_adjust = 0, final_adjust = 0;
+
+                Ipp32s last_pos_in_CG = (lastCG==1 ? last_nz_pos_in_CG : SCAN_SET_SIZE-1);
+                for( pos_in_CG =  last_pos_in_CG; pos_in_CG >= 0; pos_in_CG-- )
+                {
+                    Ipp32u blk_pos   = scan[ sub_pos + pos_in_CG ];
+                    if(levels[ blk_pos ] != 0)
+                    {
+                        if(delta_u[blk_pos] > 0)
+                        {
+                            cur_cost = - delta_u[blk_pos];
+                            cur_adjust=1 ;
+                        }
+                        else
+                        {
+                            if(pos_in_CG == first_nz_pos_in_CG && 1 == abs(levels[blk_pos]))
+                            {
+                                cur_cost=IPP_MAX_32S ;
+                            }
+                            else
+                            {
+                                cur_cost = delta_u[blk_pos];
+                                cur_adjust =-1;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if(pos_in_CG < first_nz_pos_in_CG)
+                        {
+                            Ipp8u local_sign_bit = (coeffs[blk_pos] >= 0 ? 0 : 1);
+                            if(local_sign_bit != sign_bit )
+                            {
+                                cur_cost = IPP_MAX_32S;
+                            }
+                            else
+                            {
+                                cur_cost = - (delta_u[blk_pos]);
+                                cur_adjust = 1;
+                            }
+                        }
+                        else
+                        {
+                            cur_cost = - (delta_u[blk_pos])  ;
+                            cur_adjust = 1 ;
+                        }
+                    }
+
+                    if( cur_cost < min_cost_inc)
+                    {
+                        min_cost_inc = cur_cost ;
+                        final_adjust = cur_adjust ;
+                        min_pos      = blk_pos ;
+                    }
+                } // for( pos_in_CG =
+
+                if(levels[min_pos] == 32767 || levels[min_pos] == -32768)
+                {
+                    final_adjust = -1;
+                }
+
+                levels[min_pos] = (Ipp16s)(levels[min_pos] + (coeffs[min_pos] >= 0 ? final_adjust : -final_adjust));
+            } // if( sign_bit != sum_parity )
+        } // if( sign_hidden )
+
+        if(lastCG == 1)
+        {
+            lastCG = 0 ;
+        }
+
+    } // for(Ipp32s subset = last_scan_set; subset >= 0; subset-- )
+
+    return;
+
+} // void h265_sign_bit_hiding(...)
 
 #endif // #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 /* EOF */

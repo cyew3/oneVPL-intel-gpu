@@ -301,12 +301,10 @@
     <ClCompile Include="h265\src\mfx_h265_intrapred.cpp" />
     <ClCompile Include="h265\src\mfx_h265_intrapred_opt.cpp" />
     <ClCompile Include="h265\src\mfx_h265_quant.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_quant_opt.cpp" />
     <ClCompile Include="h265\src\mfx_h265_quant_rdo.cpp" />
     <ClCompile Include="h265\src\mfx_h265_set.cpp" />
     <ClCompile Include="h265\src\mfx_h265_tables.cpp" />
     <ClCompile Include="h265\src\mfx_h265_transform.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_transform_opt.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="h265\include\mfx_h265_bitstream.h" />
@@ -320,11 +318,9 @@
     <ClInclude Include="h265\include\mfx_h265_frame.h" />
     <ClInclude Include="h265\include\mfx_h265_intrapred_opt.h" />
     <ClInclude Include="h265\include\mfx_h265_quant.h" />
-    <ClInclude Include="h265\include\mfx_h265_quant_opt.h" />
     <ClInclude Include="h265\include\mfx_h265_quant_rdo.h" />
     <ClInclude Include="h265\include\mfx_h265_set.h" />
     <ClInclude Include="h265\include\mfx_h265_tables.h" />
-    <ClInclude Include="h265\include\mfx_h265_transform_opt.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
