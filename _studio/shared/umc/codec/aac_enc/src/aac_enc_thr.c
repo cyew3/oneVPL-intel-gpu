@@ -241,16 +241,19 @@ void aac_UpdateThr(
 
   /* If currPE is very big - allow some frequency holes */
   if (currPE > NeededPE) {
-    Ipp32f minEnergy, avEnergy;
+    Ipp32f minEnergy = 0.0f;
+    Ipp32f avEnergy = 0.0f;
 #if !defined(ANDROID)
     Ipp32f boundEn[4];
 #else
     static Ipp32f boundEn[4];
 #endif
-    Ipp32s totNumSfb, j;
+    Ipp32s totNumSfb = 0, j;
 
-    minEnergy = avEnergy = energy[0][0];
-    totNumSfb = 0;
+    if (numCh > 0)
+    {
+        minEnergy = avEnergy = energy[0][0];
+    }
 
     for (i = 0; i < numCh; i++) {
       for (sfb = 0; sfb < numSfb[i]; sfb++) {
@@ -262,7 +265,10 @@ void aac_UpdateThr(
       totNumSfb += numSfb[i];
     }
 
-    avEnergy /= totNumSfb;
+    if (numCh > 0)
+    {
+        avEnergy /= totNumSfb;
+    }
 
     if (minEnergy < 1) minEnergy = 1;
     if (avEnergy  < 1) avEnergy = 1;
