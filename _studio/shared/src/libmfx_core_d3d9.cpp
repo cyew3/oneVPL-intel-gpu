@@ -142,6 +142,11 @@ mfxStatus D3D9VideoCORE::GetIntelDataPrivateReport(const GUID guid, DXVA2_Config
             isIntelGuidPresent = true;
     }
 
+    if (pDecoderGuids)
+    {
+        CoTaskMemFree(pDecoderGuids);
+    }
+
     if (!isRequestedGuidPresent)
         return MFX_ERR_NOT_FOUND;
 
@@ -167,8 +172,17 @@ mfxStatus D3D9VideoCORE::GetIntelDataPrivateReport(const GUID guid, DXVA2_Config
         if (pConfig[k].guidConfigBitstreamEncryption == guid)
         {
             memcpy_s(&config, sizeof(config), &pConfig[k], sizeof(DXVA2_ConfigPictureDecode));
+            if (pConfig)
+            {
+                CoTaskMemFree(pConfig);
+            }
             return MFX_ERR_NONE;
         }
+    }
+    
+    if (pConfig)
+    {
+        CoTaskMemFree(pConfig);
     }
 
     return MFX_WRN_PARTIAL_ACCELERATION;
@@ -375,6 +389,15 @@ mfxStatus D3D9VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
     {
         MFX_CHECK_NULL_PTR2(request, response);
         mfxStatus sts = MFX_ERR_NONE;
+        mfxFrameAllocRequest temp_request = *request;
+
+        // external allocator doesn't know how to allocate opaque surfaces
+        // we can treat opaque as internal
+        if (temp_request.Type & MFX_MEMTYPE_OPAQUE_FRAME)
+        {
+            temp_request.Type -= MFX_MEMTYPE_OPAQUE_FRAME;
+            temp_request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
+        }
         
         if (!m_bFastCopy)
         {
@@ -407,7 +430,7 @@ mfxStatus D3D9VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
                     return sts;
                 }
 
-                sts = (*m_FrameAllocator.frameAllocator.Alloc)(m_FrameAllocator.frameAllocator.pthis,request, response);
+                sts = (*m_FrameAllocator.frameAllocator.Alloc)(m_FrameAllocator.frameAllocator.pthis, &temp_request, response);
 
                 // if external allocator cannot allocate d3d frames - use default memory allocator
                 if (MFX_ERR_UNSUPPORTED == sts)

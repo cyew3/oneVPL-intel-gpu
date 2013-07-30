@@ -186,7 +186,7 @@ mfxStatus D3D11VideoCORE::InternalCreateDevice()
         return MFX_ERR_NONE;
 
     HRESULT hres = S_OK;
-    static D3D_FEATURE_LEVEL FeatureLevels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0 };
+    static D3D_FEATURE_LEVEL FeatureLevels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0};
     D3D_FEATURE_LEVEL pFeatureLevelsOut;
 
     D3D_DRIVER_TYPE type = D3D_DRIVER_TYPE_HARDWARE;
@@ -258,6 +258,15 @@ mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
     {
         MFX_CHECK_NULL_PTR2(request, response);
         mfxStatus sts = MFX_ERR_NONE;
+        mfxFrameAllocRequest temp_request = *request;
+
+        // external allocator doesn't know how to allocate opaque surfaces
+        // we can treat opaque as internal
+        if (temp_request.Type & MFX_MEMTYPE_OPAQUE_FRAME)
+        {
+            temp_request.Type -= MFX_MEMTYPE_OPAQUE_FRAME;
+            temp_request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
+        }
 
         if (!m_bFastCopy)
         {
@@ -281,7 +290,7 @@ mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
             if (m_bSetExtFrameAlloc)
             {
 
-                sts = (*m_FrameAllocator.frameAllocator.Alloc)(m_FrameAllocator.frameAllocator.pthis,request, response);
+                sts = (*m_FrameAllocator.frameAllocator.Alloc)(m_FrameAllocator.frameAllocator.pthis,&temp_request, response);
 
                 // if external allocator cannot allocate d3d frames - use default memory allocator
                 if (MFX_ERR_UNSUPPORTED == sts)

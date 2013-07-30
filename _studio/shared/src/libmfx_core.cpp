@@ -158,6 +158,16 @@ mfxStatus CommonCORE::AllocFrames(mfxFrameAllocRequest *request,
     try
     {
         MFX_CHECK_NULL_PTR2(request, response);
+        mfxFrameAllocRequest temp_request = *request;
+
+        // external allocator doesn't know how to allocate opaque surfaces
+        // we can treat opaque as internal
+        if (temp_request.Type & MFX_MEMTYPE_OPAQUE_FRAME)
+        {
+            temp_request.Type -= MFX_MEMTYPE_OPAQUE_FRAME;
+            temp_request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
+        }
+        
 
         if (!m_bFastCopy)
         {
@@ -171,7 +181,7 @@ mfxStatus CommonCORE::AllocFrames(mfxFrameAllocRequest *request,
         // external allocator
         if (m_bSetExtFrameAlloc)
         {
-            sts = (*m_FrameAllocator.frameAllocator.Alloc)(m_FrameAllocator.frameAllocator.pthis,request, response);
+            sts = (*m_FrameAllocator.frameAllocator.Alloc)(m_FrameAllocator.frameAllocator.pthis, &temp_request, response);
 
             if (MFX_ERR_UNSUPPORTED == sts)
             {
