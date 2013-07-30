@@ -21,6 +21,7 @@ foreach( variant x11 drm )
       umc_codecs_merged
       umc_io_merged_sw
       umc_core_merged
+      sample_spl_mux_dispatcher
       ${ITT_LIBS}
       ippvc_l ippcc_l ippdc_l ippi_l ipps_l ippcp_l ippcore_l
       pthread dl

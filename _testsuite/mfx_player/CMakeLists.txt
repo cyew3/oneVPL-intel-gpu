@@ -57,6 +57,7 @@ foreach( variant sw drm x11 )
         umc_core_merged
         ${ITT_LIBS}
         dispatch_trace
+        sample_spl_mux_dispatcher
         ippvc_l ippcc_l ippdc_l ippi_l ipps_l ippcp_l ippcore_l
         pthread dl
     )
@@ -78,6 +79,7 @@ foreach( variant sw drm x11 )
         umc_core_merged
         ${ITT_LIBS}
         dispatch_trace
+        sample_spl_mux_dispatcher
         ippvc_l ippcc_l ippdc_l ippi_l ipps_l ippcp_l ippcore_l
         pthread dl
     )
