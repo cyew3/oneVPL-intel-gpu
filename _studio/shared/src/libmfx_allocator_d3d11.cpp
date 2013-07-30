@@ -182,10 +182,17 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
              (MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET & request->Type))
         {
             Desc.BindFlags = D3D11_BIND_RENDER_TARGET;
+
+            // change request->Type
+            // only MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET is allowed for VPP OUT
+            if (!(MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET & request->Type))
+            {
+                request->Type = request->Type & 0xFF0F; //reset old flags
+                request->Type = request->Type | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
+            }
+
             if (Desc.ArraySize > 2)
                 return MFX_ERR_MEMORY_ALLOC;
-
-
         }
         pSelf->m_NumSurface = maxNumFrames;
         pSelf->m_SrfPool.resize(maxNumFrames);

@@ -160,7 +160,7 @@ mfxStatus VideoVPPMain::Init(mfxVideoParam *par)
 
             // additional check for case when encoder allocates surfaces for vpp out
             // check that for DX11 they have MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET BingFlags
-            if (MFX_HW_D3D11 == m_core->GetVAType())
+            if (MFX_HW_D3D11 == m_core->GetVAType() && !(requestOpaq.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
             {
                 if (!(requestOpaq.Type & MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET))
                 {
