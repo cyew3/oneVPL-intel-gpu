@@ -640,6 +640,8 @@ static void bsacdecInitHelpVariables(Ipp32s usedBits,
 
   memset(layerSiMaxLen, 0, BSAC_MAX_LAYER*sizeof(layerSiMaxLen[0]));
   memset(endSfb, 0, sizeof(endSfb)/sizeof(endSfb[0]));
+  memset(endInd, 0, sizeof(endInd)/sizeof(endInd[0]));
+  memset(endCBand, 0, sizeof(endCBand)/sizeof(endCBand[0]));
 
   /* sLayerSize calculation */
 
