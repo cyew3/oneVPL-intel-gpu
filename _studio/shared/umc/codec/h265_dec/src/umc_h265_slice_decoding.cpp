@@ -146,6 +146,7 @@ bool H265Slice::Reset(void *pSource, size_t nSourceSize, Ipp32s )
     m_iCurMBToDec = m_iFirstMB;
     m_iCurMBToRec = m_iFirstMB;
     m_iCurMBToDeb = m_iFirstMB;
+    m_iCurMBToSAO = m_iFirstMB;
     m_curTileDec = 0;
     m_curTileRec = 0;
 
@@ -153,18 +154,25 @@ bool H265Slice::Reset(void *pSource, size_t nSourceSize, Ipp32s )
     m_bDecVacant = 1;
     m_bRecVacant = 1;
     m_bDebVacant = 1;
+    m_bSAOVacant = 1;
     m_bError = false;
 
     // set conditional flags
     m_bDecoded = false;
     m_bPrevDeblocked = false;
-    m_bDeblocked = getDeblockingFilterDisable();
+    m_bDeblocked = GetSliceHeader()->m_deblockingFilterDisable;
     m_bSAOed = !(GetSliceHeader()->slice_sao_luma_flag || GetSliceHeader()->slice_sao_chroma_flag);
 
     if (m_bDeblocked)
     {
         m_bDebVacant = 0;
         m_iCurMBToDeb = m_iMaxMB;
+    }
+
+    if (m_bSAOed)
+    {
+        m_bSAOVacant = 0;
+        m_iCurMBToSAO = m_iMaxMB;
     }
 
     // frame is not associated yet

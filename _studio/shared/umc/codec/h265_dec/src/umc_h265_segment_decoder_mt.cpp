@@ -130,8 +130,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSegment(void)
         {
             try // do decoding
             {
-                Ipp32s firstMB = Task.m_iFirstMB;
-                umcRes = (this->*(Task.pFunction))(firstMB, Task.m_iMBToProcess); //ProcessSlice function
+                umcRes = (this->*(Task.pFunction))(Task); //ProcessSlice function
 
                 if (UMC::UMC_ERR_END_OF_STREAM == umcRes)
                 {
@@ -182,12 +181,12 @@ void H265SegmentDecoderMultiThreaded::RestoreErrorRect(Ipp32s , Ipp32s , H265Sli
     return;
 }
 
-UMC::Status H265SegmentDecoderMultiThreaded::DecodeSegment(Ipp32s iCurMBNumber, Ipp32s & iMBToProcess)
+UMC::Status H265SegmentDecoderMultiThreaded::DecodeSegment(H265Task & task)
 {
     UMC::Status umcRes = UMC::UMC_OK;
-    Ipp32s iMaxCUNumber = iCurMBNumber + iMBToProcess;
+    Ipp32s iMaxCUNumber = task.m_iFirstMB + task.m_iMBToProcess;
 
-    if (m_pSlice->GetFirstMB() == iCurMBNumber)
+    if (m_pSlice->GetFirstMB() == task.m_iFirstMB)
     {
         m_pSlice->GetBitStream()->InitializeDecodingEngine_CABAC();
         m_pSlice->InitializeContexts();
@@ -195,37 +194,36 @@ UMC::Status H265SegmentDecoderMultiThreaded::DecodeSegment(Ipp32s iCurMBNumber, 
 
     try
     {
-        umcRes = m_SD->DecodeSegment(iCurMBNumber, iMaxCUNumber, this);
+        umcRes = m_SD->DecodeSegment(task.m_iFirstMB, iMaxCUNumber, this);
 
-        iMBToProcess = iMaxCUNumber - iCurMBNumber;
+        task.m_iMBToProcess = iMaxCUNumber - task.m_iFirstMB;
 
-        if ((UMC::UMC_OK == umcRes) ||
-            (UMC::UMC_ERR_END_OF_STREAM == umcRes))
+        if (UMC::UMC_OK == umcRes || UMC::UMC_ERR_END_OF_STREAM == umcRes)
         {
             umcRes = UMC::UMC_ERR_END_OF_STREAM;
         }
         
     } catch(...)
     {
-        iMBToProcess = iMaxCUNumber - iCurMBNumber;
+        task.m_iMBToProcess = iMaxCUNumber - task.m_iFirstMB;
         throw;
     }
     
     return umcRes;
 }
 
-UMC::Status H265SegmentDecoderMultiThreaded::ReconstructSegment(Ipp32s iCurMBNumber, Ipp32s &iMBToProcess)
+UMC::Status H265SegmentDecoderMultiThreaded::ReconstructSegment(H265Task & task)
 {
     UMC::Status umcRes = UMC::UMC_OK;
     {
-        Ipp32s iMaxCUNumber = iCurMBNumber + iMBToProcess;
-        umcRes = m_SD->ReconstructSegment(iCurMBNumber, iMaxCUNumber, this);
-        iMBToProcess = iMaxCUNumber - iCurMBNumber;
+        Ipp32s iMaxCUNumber = task.m_iFirstMB + task.m_iMBToProcess;
+        umcRes = m_SD->ReconstructSegment(task.m_iFirstMB, iMaxCUNumber, this);
+        task.m_iMBToProcess = iMaxCUNumber - task.m_iFirstMB;
         return umcRes;
     }
 }
 
-UMC::Status H265SegmentDecoderMultiThreaded::DecRecSegment(Ipp32s iCurMBNumber, Ipp32s &)
+UMC::Status H265SegmentDecoderMultiThreaded::DecRecSegment(H265Task & task)
 {
     H265Bitstream  bitstream;
     UMC::Status umcRes = UMC::UMC_OK;
@@ -257,7 +255,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::DecRecSegment(Ipp32s iCurMBNumber, 
 
             usenessTiles++;
 
-            if (usenessTiles != iCurMBNumber)
+            if (usenessTiles != task.m_iFirstMB)
                 continue;
 
             if (iFirstCU > firstCU)
@@ -273,7 +271,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::DecRecSegment(Ipp32s iCurMBNumber, 
     Ipp32u size;
     m_pSlice->GetBitStream()->GetOrg(&ptr, &size);
     m_pBitStream->Reset((Ipp8u*)ptr, size);
-    size_t bsOffset = m_pSlice->getTileLocation(iCurMBNumber - 1);
+    size_t bsOffset = m_pSlice->getTileLocation(task.m_iFirstMB - 1);
     m_pBitStream->SetDecodedBytes(bsOffset);
 
     m_pBitStream->InitializeDecodingEngine_CABAC();
@@ -323,34 +321,25 @@ UMC::Status H265SegmentDecoderMultiThreaded::DecRecSegment(Ipp32s iCurMBNumber, 
 
 } // Status H265SegmentDecoderMultiThreaded::DecRecSegment(Ipp32s iCurMBNumber, Ipp32s &iMBToReconstruct)
 
-UMC::Status H265SegmentDecoderMultiThreaded::SAOFrameTask(Ipp32s iCurMBNumber, Ipp32s &iMBToProcess)
+UMC::Status H265SegmentDecoderMultiThreaded::SAOFrameTask(H265Task & task)
 {
     START_TICK
-
-    m_SAO.SAOProcess(m_pCurrentFrame, iCurMBNumber, iMBToProcess);
+    m_SAO.SAOProcess(m_pCurrentFrame, task.m_iFirstMB, task.m_iMBToProcess);
     END_TICK(sao_time)
     return UMC::UMC_OK;
 }
 
-UMC::Status H265SegmentDecoderMultiThreaded::DeblockSegmentTask(Ipp32s iCurMBNumber, Ipp32s &iMBToProcess)
+UMC::Status H265SegmentDecoderMultiThreaded::DeblockSegmentTask(H265Task & task)
 {
     START_TICK
     // when there is slice groups or threaded deblocking
-    if (NULL == m_pSlice)
-    {
-        H265SegmentDecoder::DeblockFrame(iCurMBNumber, iMBToProcess);
-        return UMC::UMC_OK;
-    }
-
-    Ipp32s iMaxMBNumber = iCurMBNumber + iMBToProcess;
-    DeblockSegment(iCurMBNumber, iMaxMBNumber);
+    DeblockSegment(task);
     END_TICK(deblocking_time)
-
     return UMC::UMC_OK;
 
 } // Status H265SegmentDecoderMultiThreaded::DeblockSegmentTask(Ipp32s iCurMBNumber, Ipp32s &iMBToDeblock)
 
-UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(Ipp32s , Ipp32s &)
+UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(H265Task & )
 {
     UMC::Status umcRes = UMC::UMC_OK;
 

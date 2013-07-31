@@ -80,7 +80,7 @@ protected:
 
     bool GetPreparationTask(H265DecoderFrameInfo * info);
 
-    bool GetSAOTask(H265DecoderFrameInfo * info, H265Task *pTask);
+    bool GetSAOFrameTask(H265DecoderFrameInfo * info, H265Task *pTask);
 
     void InitTask(H265DecoderFrameInfo * info, H265Task *pTask, H265Slice *pSlice);
 
@@ -148,6 +148,7 @@ private:
     bool GetDeblockingTask(H265DecoderFrameInfo * info, H265Task *pTask);
     bool GetDecodingTask(H265DecoderFrameInfo * info, H265Task *pTask);
     bool GetReconstructTask(H265DecoderFrameInfo * info, H265Task *pTask);
+    bool GetSAOTask(H265DecoderFrameInfo * info, H265Task *pTask);
 
     void GetResources(H265Task *pTask);
     void FreeResources(H265Task *pTask);

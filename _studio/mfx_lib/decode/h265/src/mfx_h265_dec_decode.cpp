@@ -773,7 +773,7 @@ mfxStatus VideoDECODEH265::RunThread(void * params, mfxU32 threadNumber)
         mfxI32 index = m_FrameAllocator->FindSurface(info->surface_out, m_isOpaq);
         pFrame = m_pH265VideoDecoder->FindSurface((UMC::FrameMemID)index);
 
-        if (!pFrame || pFrame->m_UID == -1)
+        if (!pFrame)
         {
             VM_ASSERT(false);
             return MFX_ERR_NOT_FOUND;
@@ -799,7 +799,6 @@ mfxStatus VideoDECODEH265::RunThread(void * params, mfxU32 threadNumber)
         if (isDecoded)
         {
             info->surface_work = 0;
-            pFrame->m_UID = -1;
         }
     }
 

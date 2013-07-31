@@ -44,7 +44,8 @@ enum
     TASK_DEB_H265,
     // //whole frame is deblocked (when there is the slice groups)
     TASK_DEC_REC_H265,
-    TASK_SAO_H265
+    TASK_SAO_H265,
+    TASK_SAO_FRAME_H265
 };
 
 struct H265RefListInfo
@@ -174,6 +175,7 @@ public:  // DEBUG !!!! should remove dependence
     Ipp32s m_iCurMBToDec;                                       // (Ipp32s) current MB number to decode
     Ipp32s m_iCurMBToRec;                                       // (Ipp32s) current MB number to reconstruct
     Ipp32s m_iCurMBToDeb;                                       // (Ipp32s *) current MB number to de-blocking
+    Ipp32s m_iCurMBToSAO;
     Ipp32s m_curTileRec;                                          // (Ipp32s) current MB number to reconstruct
     Ipp32s m_curTileDec;                                          // (Ipp32s) current MB number to reconstruct
 
@@ -181,6 +183,7 @@ public:  // DEBUG !!!! should remove dependence
     Ipp32s m_bDecVacant;                                        // (Ipp32s) decoding is vacant
     Ipp32s m_bRecVacant;                                        // (Ipp32s) reconstruct is vacant
     Ipp32s m_bDebVacant;                                        // (Ipp32s) de-blocking is vacant
+    Ipp32s m_bSAOVacant;
     bool m_bError;                                              // (bool) there is an error in decoding
 
     bool m_bDecoded;                                            // (bool) "slice has been decoded" flag
@@ -267,8 +270,6 @@ public:
     bool getCabacInitFlag() const   { return m_SliceHeader.m_CabacInitFlag; }
     void setCabacInitFlag(bool f)   { m_SliceHeader.m_CabacInitFlag = f; }
 
-    void setDeblockingFilterDisable( bool b )                { m_SliceHeader.m_deblockingFilterDisable = b;      }
-    bool getDeblockingFilterDisable() const    { return m_SliceHeader.m_deblockingFilterDisable; }
     void setDeblockingFilterOverrideFlag( bool b )           { m_SliceHeader.m_deblockingFilterOverrideFlag = b; }
     bool getDeblockingFilterOverrideFlag()           { return m_SliceHeader.m_deblockingFilterOverrideFlag; }
     void setDeblockingFilterBetaOffsetDiv2( int i )          { m_SliceHeader.m_deblockingFilterBetaOffsetDiv2 = i; }
@@ -382,7 +383,7 @@ public:
         m_context = 0;
     }
 
-    UMC::Status (H265SegmentDecoderMultiThreaded::*pFunction)(Ipp32s nCurMBNumber, Ipp32s &nMaxMBNumber); // (Status (*) (Ipp32s, Ipp32s &)) pointer to working function
+    UMC::Status (H265SegmentDecoderMultiThreaded::*pFunction)(H265Task &task);
 
     H265CoeffsPtrCommon m_pBuffer;                                  // (Ipp16s *) pointer to working buffer
     size_t          m_WrittenSize;

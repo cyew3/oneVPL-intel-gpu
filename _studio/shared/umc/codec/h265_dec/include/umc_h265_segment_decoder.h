@@ -302,16 +302,16 @@ public:
     // Decode slice's segment
     virtual UMC::Status ProcessSegment(void) = 0;
 
-    virtual UMC::Status ProcessSlice(Ipp32s nCurMBNumber, Ipp32s &nMBToProcess) = 0;
+    virtual UMC::Status ProcessSlice(H265Task & task) = 0;
 
 //protected:
     // Release object
     void Release(void);
 
-    void DeblockFrame(Ipp32s nCurMBNumber, Ipp32s nMacroBlocksToDeblock);
+    void DeblockFrame(H265Task & task);
 
     // Function to de-block partition of macro block row
-    virtual void DeblockSegment(Ipp32s iCurMBNumber, Ipp32s iMBToProcess);
+    virtual void DeblockSegment(H265Task & task);
 
 private:
     Ipp32u getCtxSplitFlag(H265CodingUnit *pCU, Ipp32u AbsPartIdx, Ipp32u Depth);

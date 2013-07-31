@@ -1109,7 +1109,7 @@ H265DecoderFrame *TaskSupplier_H265::GetFreeFrame()
     if (pDPB->countAllFrames() >= pView->dpbSize + m_DPBSizeEx)
         pFrame = pDPB->GetOldestDisposable();
 
-    pDPB->printDPB();
+    //pDPB->printDPB();
 
     VM_ASSERT(!pFrame || pFrame->GetRefCounter() == 0);
 

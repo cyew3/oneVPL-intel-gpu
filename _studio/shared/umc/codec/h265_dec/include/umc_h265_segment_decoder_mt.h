@@ -40,13 +40,13 @@ public:
     UMC::Status ProcessSegment(void);
 
     // asynchronous called functions
-    UMC::Status DecRecSegment(Ipp32s iCurMBNumber, Ipp32s &iMaxMBToDecRec);
-    UMC::Status DecodeSegment(Ipp32s iCurMBNumber, Ipp32s &iMBToDecode);
-    UMC::Status ReconstructSegment(Ipp32s iCurMBNumber, Ipp32s &iMBToReconstruct);
-    virtual UMC::Status DeblockSegmentTask(Ipp32s iCurMBNumber, Ipp32s &iMBToDeblock);
-    UMC::Status SAOFrameTask(Ipp32s iCurMBNumber, Ipp32s &iMaxMBToDecRec);
+    UMC::Status DecRecSegment(H265Task & task);
+    UMC::Status DecodeSegment(H265Task & task);
+    UMC::Status ReconstructSegment(H265Task & task);
+    virtual UMC::Status DeblockSegmentTask(H265Task & task);
+    UMC::Status SAOFrameTask(H265Task & task);
 
-    virtual UMC::Status ProcessSlice(Ipp32s iCurMBNumber, Ipp32s &iMBToProcess);
+    virtual UMC::Status ProcessSlice(H265Task & task);
 
     void RestoreErrorRect(Ipp32s startMb, Ipp32s endMb, H265Slice * pSlice);
 
