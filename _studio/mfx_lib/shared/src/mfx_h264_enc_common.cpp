@@ -2031,6 +2031,11 @@ mfxStatus CorrectProfileLevel_H264enc(mfxVideoInternalParam *parMFX, bool queryM
         level_ind++;
     }
 
+    bool IgnorePicStructCheck = ( // is interlaced coding for level > 4.1 allowed (AVC standard violation)
+            MB_per_frame > LevelProfileLimits[profile_ind][H264_LIMIT_TABLE_LEVEL_41][H264_LIMIT_TABLE_MAX_FS]
+         || wMB*wMB      > LevelProfileLimits[profile_ind][H264_LIMIT_TABLE_LEVEL_41][H264_LIMIT_TABLE_MAX_FS] * 8  
+         || hMB*hMB      > LevelProfileLimits[profile_ind][H264_LIMIT_TABLE_LEVEL_41][H264_LIMIT_TABLE_MAX_FS] * 8 );
+
     // process TU-defined parameters (such parameters shouldn't affect user-defined parameters)
     if (parMFXSetByTU && parMFXSetByTU->mfx.NumRefFrame) {
         // if CodecLevel is user-defined then truncate NumRefFrame by limitation of current level
@@ -2079,7 +2084,7 @@ mfxStatus CorrectProfileLevel_H264enc(mfxVideoInternalParam *parMFX, bool queryM
     if (parMFX->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE ) {
         if (levelUMC < MFX_LEVEL_AVC_21)
             levelUMC = MFX_LEVEL_AVC_21;
-        else if (levelUMC >= MFX_LEVEL_AVC_42) {
+        else if (levelUMC >= MFX_LEVEL_AVC_42 && !IgnorePicStructCheck ) {
             parMFX->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
             st = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         }
@@ -2317,6 +2322,11 @@ mfxStatus CheckProfileLevelLimits_H264enc(mfxVideoInternalParam *parMFX, bool qu
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     }
 
+    bool IgnorePicStructCheck = ( // is interlaced coding for level > 4.1 allowed (AVC standard violation)
+            MB_per_frame > LevelProfileLimits[profile_ind][H264_LIMIT_TABLE_LEVEL_41][H264_LIMIT_TABLE_MAX_FS]
+         || wMB*wMB      > LevelProfileLimits[profile_ind][H264_LIMIT_TABLE_LEVEL_41][H264_LIMIT_TABLE_MAX_FS] * 8  
+         || hMB*hMB      > LevelProfileLimits[profile_ind][H264_LIMIT_TABLE_LEVEL_41][H264_LIMIT_TABLE_MAX_FS] * 8 );
+
     if ((profileUMC == H264_BASE_PROFILE) && (parMFX->mfx.GopRefDist > 1)) {
         parMFX->mfx.GopRefDist = 1;
         st = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
@@ -2344,7 +2354,8 @@ mfxStatus CheckProfileLevelLimits_H264enc(mfxVideoInternalParam *parMFX, bool qu
     // PicStruct != MFX_PICSTRUCT_PROGRESSIVE means use of MBAFF or PicAFF encoding (frame_mbs_only_flag should be 0)
     if (parMFX->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE ) {
         if (levelUMC < MFX_LEVEL_AVC_21 || levelUMC >= MFX_LEVEL_AVC_42) {
-            parMFX->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+            if(!IgnorePicStructCheck)
+                parMFX->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
             st = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         }
     }
