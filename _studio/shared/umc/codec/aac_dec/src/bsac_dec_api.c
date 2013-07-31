@@ -639,6 +639,7 @@ static void bsacdecInitHelpVariables(Ipp32s usedBits,
   Ipp32s i, j;
 
   memset(layerSiMaxLen, 0, BSAC_MAX_LAYER*sizeof(layerSiMaxLen[0]));
+  memset(endSfb, 0, sizeof(endSfb)/sizeof(endSfb[0]));
 
   /* sLayerSize calculation */
 
@@ -758,10 +759,6 @@ static void bsacdecInitHelpVariables(Ipp32s usedBits,
   bsState->terminalLayer[maxLayer - 1] = 1;
 
   /* layerEndSfb calculation */
-
-  for (i = 0; i < numWindowGroups; i++) {
-    endSfb[i] = 0;
-  }
 
   for (layer = 0; layer < maxLayer; layer++) {
     Ipp32s stopLayer = layer;
