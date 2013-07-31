@@ -285,7 +285,7 @@ public:
 
     void GetInitAvailablity();
 
-    void EncAndRecLuma(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u depth, Ipp8u *nz);
+    void EncAndRecLuma(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u depth, Ipp8u *nz, CostType *cost);
     void EncAndRecChroma(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u depth, Ipp8u *nz, CostType *cost);
     void EncAndRecLumaTU(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, Ipp8u *nz, CostType *cost,
         Ipp8u cost_pred_flag = 0, Ipp8u skip_pred_flag = 0);
@@ -329,9 +329,9 @@ public:
                           Ipp8u tr_depth, CostOpt cost_opt,
                           Ipp8u part_size, Ipp8u luma_dir, CostType *cost);
 
-    CostType ME_CU(Ipp32u abs_part_idx, Ipp8u depth);
+    CostType ME_CU(Ipp32u abs_part_idx, Ipp8u depth, Ipp32s offset);
     void ME_PU(H265MEInfo* me_info);
-    CostType CU_cost(Ipp32u abs_part_idx, Ipp8u depth, const H265MEInfo* best_info);
+    CostType CU_cost(Ipp32u abs_part_idx, Ipp8u depth, const H265MEInfo* best_info, Ipp32s offset);
     void TU_GetSplitInter(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u tr_idx, Ipp8u tr_idx_max, Ipp8u *nz, CostType *cost);
     void DetailsXY(H265MEInfo* me_info) const;
     void ME_Interpolate_old(H265MEInfo* me_info, H265MV* MV, PixType *in_pSrc, Ipp32s in_SrcPitch, Ipp16s *buf, Ipp32s buf_pitch) const;

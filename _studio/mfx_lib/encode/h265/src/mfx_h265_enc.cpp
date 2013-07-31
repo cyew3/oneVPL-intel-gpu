@@ -1353,7 +1353,8 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
 
 //            m_pReconstructFrame->cu->FillRandom(0, 0);
             // inter pred for chroma is now performed in EncAndRecLuma
-            cu[ithread].EncAndRecLuma(0, 0, 0, nz);
+            CostType cost;
+            cu[ithread].EncAndRecLuma(0, 0, 0, nz, cu[ithread].IsRDOQ() ? &cost : NULL);
             cu[ithread].EncAndRecChroma(0, 0, 0, nz, NULL);
 
             if (!(m_slices[curr_slice].slice_deblocking_filter_disabled_flag) && pars->num_threads == 1)
