@@ -522,12 +522,12 @@ Status MPEG2VideoDecoderBase::Init(BaseCodecParams *pInit)
     m_picture_coding_type_save = MPEG2_I_PICTURE;
     m_IsLastFrameProcessed = false;
 
+    m_InitClipInfo = m_ClipInfo;
     /*
 //for user data:
 
   Ipp32s buff_size = 1024;
   Ipp32s size = 2*DPB_SIZE*buff_size;
-
   if(UMC_OK != m_pMemoryAllocator->Alloc(&frame_buffer.mid_context_data,
     size, UMC_ALLOC_PERSISTENT, ALIGN_VALUE)) {
     vm_debug_trace(VM_DEBUG_ERROR, VM_STRING("External allocation failed\n"));

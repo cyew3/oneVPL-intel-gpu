@@ -328,6 +328,7 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(IppVideoContext* video, int t
     Ipp8u  iqm[64];
     Ipp8u  niqm[64];
 
+
     if (0 != video)
     {
         if(GET_REMAINED_BYTES(video->bs) < 8)
@@ -341,6 +342,11 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(IppVideoContext* video, int t
         frame_rate_code = code  & ((1 << 4) - 1);
         m_ClipInfo.clip_info.height    = (code >> 8) & ((1 << 12) - 1);
         m_ClipInfo.clip_info.width     = (code >> 20) & ((1 << 12) - 1);
+
+        if(m_InitClipInfo.clip_info.height<m_ClipInfo.clip_info.height)
+            return UMC_ERR_INVALID_PARAMS;
+        if(m_InitClipInfo.clip_info.width<m_ClipInfo.clip_info.width)
+            return UMC_ERR_INVALID_PARAMS;
 
         dar_code = (code >> 4) & ((1 << 4) - 1);
 

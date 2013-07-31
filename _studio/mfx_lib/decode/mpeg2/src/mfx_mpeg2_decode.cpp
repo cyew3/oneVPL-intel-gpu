@@ -631,7 +631,8 @@ mfxStatus VideoDECODEMPEG2::Init(mfxVideoParam *par)
         else
         {
             mfxSts = m_pCore->AllocFrames(&allocRequest, &allocResponse);
-            MFX_CHECK_STS(mfxSts);
+            if(mfxSts)
+                return MFX_ERR_INVALID_VIDEO_PARAM;
         }
 
         if (mfxSts != MFX_ERR_NONE && mfxSts != MFX_ERR_NOT_FOUND)
@@ -645,7 +646,8 @@ mfxStatus VideoDECODEMPEG2::Init(mfxVideoParam *par)
             {
                 // create directx video accelerator
                 mfxSts = m_pCore->CreateVA(par, &allocRequest, &allocResponse);
-                MFX_CHECK_STS(mfxSts);
+                if(mfxSts)
+                    return MFX_ERR_INVALID_VIDEO_PARAM;
             }
         #endif
 
@@ -1873,10 +1875,6 @@ mfxStatus VideoDECODEMPEG2::UpdateCurrVideoParams(mfxFrameSurface1 *surface_work
     {
         sts = MFX_WRN_VIDEO_PARAM_CHANGED;
     }
-
-    UpdateMfxVideoParam(m_vPar, sh, ph);
-    UpdateMfxFrameParam(m_fPar, sh, ph);
-
     pSurface->Info.FrameRateExtD = m_vPar.mfx.FrameInfo.FrameRateExtD;
     pSurface->Info.FrameRateExtN = m_vPar.mfx.FrameInfo.FrameRateExtN;
     pSurface->Info.CropW = m_vPar.mfx.FrameInfo.CropW;
@@ -1888,6 +1886,9 @@ mfxStatus VideoDECODEMPEG2::UpdateCurrVideoParams(mfxFrameSurface1 *surface_work
     pSurface->Info.AspectRatioH = (mfxU16)m_implUmc.GetAspectRatioH();
     pSurface->Info.AspectRatioW = (mfxU16)m_implUmc.GetAspectRatioW();
 
+    UpdateMfxVideoParam(m_vPar, sh, ph);
+    UpdateMfxFrameParam(m_fPar, sh, ph);
+    
     return sts;
 }
 
@@ -2327,7 +2328,7 @@ mfxStatus VideoDECODEMPEG2::CheckFrameData(const mfxFrameSurface1 *pSurface)
     if (pSurface->Info.Width >  m_InitW ||
         pSurface->Info.Height > m_InitH)
     {
-        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+        return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
     // robustness checking
@@ -3769,8 +3770,7 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
                 }
             }
 
-            if (/*m_InitW != Width || m_InitH != Height ||*/
-                surface_work->Info.Width <  Width || surface_work->Info.Height < Height)
+            if (m_InitW <  Width || m_InitH < Height || surface_work->Info.Width <  Width || surface_work->Info.Height < Height)
             {
                 m_resizing = true;
 
@@ -3781,8 +3781,10 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
 
             if (false == m_first_SH)
             {
-                m_resizing = true;
-                
+               if (m_InitW >  Width || m_InitH > Height)
+              {
+                    m_resizing = true;  
+              }
             }
 
             m_first_SH = false;
@@ -3850,6 +3852,12 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
                     m_fcState.picHeader = FcState::NONE;
                     memset(m_last_bytes, 0, NUM_REST_BYTES);
 
+                    if(m_resizing)
+                    {              
+                        m_resizing = false; 
+                        return MFX_WRN_VIDEO_PARAM_CHANGED;
+                    }
+
                     return MFX_ERR_NONE;
                 }
             }
@@ -3881,6 +3889,12 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
                 m_last_bytes[m_last_bytes[3]] = *p;
                 p++;
                 m_last_bytes[3]++;
+            }
+
+            if(m_resizing)
+            {          
+                m_resizing = false; 
+                 return MFX_WRN_VIDEO_PARAM_CHANGED;
             }
 
             return MFX_ERR_MORE_DATA;

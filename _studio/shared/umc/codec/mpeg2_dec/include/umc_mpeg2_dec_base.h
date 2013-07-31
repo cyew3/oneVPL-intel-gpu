@@ -505,7 +505,7 @@ public:
         bool                      m_IsLastFrameProcessed;
         bool                      m_isFrameRateFromInit;
         bool                      m_isAspectRatioFromInit;
-
+        VideoStreamInfo           m_InitClipInfo;                         // (VideoStreamInfo) Init clip info
         class THREAD_ID
         {
         public:
