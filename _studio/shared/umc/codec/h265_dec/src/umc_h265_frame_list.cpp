@@ -455,21 +455,25 @@ H265DecoderFrame *H265DBPList::findLongTermRefPic(H265DecoderFrame *excludeFrame
     if (!isUseMask)
         POCmask = 0xffffffff;
 
+    Ipp32s excludeUID = excludeFrame ? excludeFrame->m_UID : 0x7fffffff;
+    H265DecoderFrame *correctPic = 0;
+
     while (pCurr)
     {
-        if (pCurr && pCurr != excludeFrame && (pCurr->PicOrderCnt() & POCmask) == (picPOC & POCmask))
+        if ((pCurr->PicOrderCnt() & POCmask) == (picPOC & POCmask) && pCurr->m_UID < excludeUID)
         {
-            if (pCurr->isLongTermRef())
-                return pCurr;
-            else
-                pStPic = pCurr;
-            break;
+            if (pCurr->isLongTermRef() && (!correctPic || correctPic->m_UID < pCurr->m_UID))
+                correctPic = pCurr;
+            pStPic = pCurr;
         }
 
         pCurr = pCurr->future();
     }
 
-    return pStPic;
+    if (!correctPic)
+        correctPic = pStPic;
+
+    return correctPic;
 } // findLongTermRefPic
 
 H265DecoderFrame * H265DBPList::FindClosest(H265DecoderFrame * pFrame)

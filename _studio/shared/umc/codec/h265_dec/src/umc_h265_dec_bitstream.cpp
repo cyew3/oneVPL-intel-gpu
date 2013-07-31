@@ -21,10 +21,6 @@
 #include "umc_h265_headers.h"
 #include "h265_global_rom.h"
 
-// globals (TODO: hide it in some related class)
-unsigned g_bitDepthY = 0;
-unsigned g_bitDepthC = 0;
-
 namespace UMC_HEVC_DECODER
 {
 
@@ -1224,7 +1220,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
                 numOfLtrp += uiCode;
                 rps->setNumberOfLongtermPictures(numOfLtrp);
                 int maxPicOrderCntLSB = 1 << rpcSlice->getSPS()->log2_max_pic_order_cnt_lsb;
-                int prevLSB = 0, prevDeltaMSB = 0, deltaPocMSBCycleLT = 0;;
+                int prevDeltaMSB = 0, deltaPocMSBCycleLT = 0;;
                 for(unsigned j=offset+rps->getNumberOfLongtermPictures()-1, k = 0; k < numOfLtrp; j--, k++)
                 {
                     int pocLsbLt;
@@ -1249,8 +1245,8 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
                     {
                         READ_UVLC( uiCode, "delta_poc_msb_cycle_lt[i]" );
                         bool deltaFlag = false;
-                        //            First LTRP                               || First LTRP from SH           || curr LSB    != prev LSB
-                        if( (j == offset+rps->getNumberOfLongtermPictures()-1) || (j == offset+(numOfLtrp-numLtrpInSPS)-1) || (pocLsbLt != prevLSB) )
+                        //            First LTRP                               || First LTRP from SH
+                        if( (j == offset+rps->getNumberOfLongtermPictures()-1) || (j == offset+(numOfLtrp-numLtrpInSPS)-1))
                         {
                             deltaFlag = true;
                         }
@@ -1274,8 +1270,10 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
                         rps->setPOC     (j, pocLsbLt);
                         rps->setDeltaPOC(j, - rpcSlice->getPOC() + pocLsbLt);
                         rps->setCheckLTMSBPresent(j,false);
+                        // reset deltaPocMSBCycleLT for first LTRP from slice header if MSB not present
+                        if (j == offset+(numOfLtrp-numLtrpInSPS)-1)
+                          deltaPocMSBCycleLT = 0;
                     }
-                    prevLSB = pocLsbLt;
                     prevDeltaMSB = deltaPocMSBCycleLT;
                 }
                 offset += rps->getNumberOfLongtermPictures();
@@ -1508,8 +1506,8 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
             }
             if(rpcSlice->getDeblockingFilterOverrideFlag())
             {
-                READ_FLAG ( uiCode, "slice_disable_deblocking_filter_flag" );   rpcSlice->setDeblockingFilterDisable(uiCode ? 1 : 0);
-                if(!rpcSlice->getDeblockingFilterDisable())
+                READ_FLAG ( uiCode, "slice_disable_deblocking_filter_flag" );   sliceHdr->m_deblockingFilterDisable = uiCode != 0;
+                if(!rpcSlice->GetSliceHeader()->m_deblockingFilterDisable)
                 {
                     READ_SVLC( iCode, "beta_offset_div2" );                       rpcSlice->setDeblockingFilterBetaOffsetDiv2(iCode);
                     READ_SVLC( iCode, "tc_offset_div2" );                         rpcSlice->setDeblockingFilterTcOffsetDiv2(iCode);
@@ -1517,20 +1515,20 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
             }
             else
             {
-                rpcSlice->setDeblockingFilterDisable   ( rpcSlice->getPPS()->getPicDisableDeblockingFilterFlag() );
+                sliceHdr->m_deblockingFilterDisable =  rpcSlice->getPPS()->getPicDisableDeblockingFilterFlag();
                 rpcSlice->setDeblockingFilterBetaOffsetDiv2( rpcSlice->getPPS()->getDeblockingFilterBetaOffsetDiv2() );
                 rpcSlice->setDeblockingFilterTcOffsetDiv2  ( rpcSlice->getPPS()->getDeblockingFilterTcOffsetDiv2() );
             }
         }
         else
         {
-            rpcSlice->setDeblockingFilterDisable       ( false );
+            sliceHdr->m_deblockingFilterDisable = false;
             rpcSlice->setDeblockingFilterBetaOffsetDiv2( 0 );
             rpcSlice->setDeblockingFilterTcOffsetDiv2  ( 0 );
         }
 
         bool isSAOEnabled = sliceHdr->slice_sao_luma_flag || sliceHdr->slice_sao_chroma_flag;
-        bool isDBFEnabled = !rpcSlice->getDeblockingFilterDisable();
+        bool isDBFEnabled = !rpcSlice->GetSliceHeader()->m_deblockingFilterDisable;
 
         if(rpcSlice->getPPS()->getLoopFilterAcrossSlicesEnabledFlag() && ( isSAOEnabled || isDBFEnabled ))
         {
