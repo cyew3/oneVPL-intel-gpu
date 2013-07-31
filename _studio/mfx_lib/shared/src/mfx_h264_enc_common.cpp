@@ -850,9 +850,8 @@ mfxStatus ConvertVideoParam_H264enc( mfxVideoInternalParam *parMFX, UMC::H264Enc
 
     if (parUMC->profile_idc != MFX_PROFILE_AVC_SCALABLE_BASELINE &&
         parUMC->profile_idc != MFX_PROFILE_AVC_SCALABLE_HIGH) // doesn't work in SVC
-    if (parMFX->mfx.GopRefDist > 3 && (parMFX->mfx.NumRefFrame == 0 || parMFX->mfx.NumRefFrame > 2)) { // enable B-refs
+    if (parMFX->mfx.GopRefDist > 3 && (parUMC->num_ref_frames > ((parMFX->mfx.GopRefDist - 1) / 2 + 1))) { // enable B-refs
         parUMC->treat_B_as_reference = 1;
-        parUMC->num_ref_frames = IPP_MAX(parMFX->mfx.NumRefFrame, 3);
     }
 
     if (parMFX->mfx.CodecLevel != MFX_LEVEL_UNKNOWN)
@@ -2144,9 +2143,23 @@ mfxStatus CheckProfileLevelLimits_H264enc(mfxVideoInternalParam *parMFX, bool qu
     {
         //allow to correct level, but not profile (if specified)
         mfxU16 profile_initial = parMFX->mfx.CodecProfile;
+        mfxU16 nrfInitial = parMFX->mfx.NumRefFrame;
+        mfxU16 nrfForPyramid = (parMFX->mfx.GopRefDist > 2) ? ((parMFX->mfx.GopRefDist - 1) / 2 + 2) : 0;
+
+        if(parMFXSetByTU && parMFXSetByTU->mfx.NumRefFrame && nrfForPyramid > nrfInitial
+            && parMFX->mfx.CodecProfile != MFX_PROFILE_AVC_SCALABLE_BASELINE
+            && parMFX->mfx.CodecProfile != MFX_PROFILE_AVC_SCALABLE_HIGH){
+            //try to enable B-pyramid
+            parMFX->mfx.NumRefFrame = nrfForPyramid;
+        }
 
         st = CorrectProfileLevel_H264enc(parMFX, queryMode, parMFXSetByTU);
-        if (profile_initial) parMFX->mfx.CodecProfile = profile_initial;
+
+        if (profile_initial) 
+            parMFX->mfx.CodecProfile = profile_initial;
+
+        if(parMFXSetByTU && parMFXSetByTU->mfx.NumRefFrame && parMFX->mfx.NumRefFrame < nrfForPyramid)
+            parMFX->mfx.NumRefFrame = IPP_MIN(parMFX->mfx.NumRefFrame, nrfInitial);
     }
 
     if (frameRate <= 0) {

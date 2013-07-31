@@ -2528,6 +2528,18 @@ mfxStatus MFXVideoENCODEH264::InitGopTemplate(mfxVideoParam* par)
 
 #define PIXTYPE Ipp8u
 
+mfxU8 GetNumReorderFrames(mfxU32 BFrameRate, bool BPyramid){
+    mfxU8 n = !!BFrameRate;
+
+    if(BPyramid && n--){
+        while(BFrameRate){
+            BFrameRate >>= 1;
+            n ++;
+        }
+    }
+    return n;
+}
+
 mfxStatus MFXVideoENCODEH264::Init(mfxVideoParam* par_in)
 {
     UMC::MemoryAllocatorParams pParams;
@@ -2899,6 +2911,9 @@ mfxStatus MFXVideoENCODEH264::Init(mfxVideoParam* par_in)
     videoParams.profile_idc = (UMC::H264_PROFILE_IDC)ConvertCUCProfileToUMC( par->mfx.CodecProfile );
     videoParams.level_idc = ConvertCUCLevelToUMC( par->mfx.CodecLevel );
     videoParams.num_ref_frames = par->mfx.NumRefFrame;
+    if (par->mfx.GopRefDist > 3 && (videoParams.num_ref_frames > ((par->mfx.GopRefDist - 1) / 2 + 1))) { // enable B-refs
+        videoParams.treat_B_as_reference = 1;
+    }
     if (opts && opts->NalHrdConformance == MFX_CODINGOPTION_OFF || par->mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
         videoParams.info.bitrate = par->calcParam.TargetKbps * 1000;
     else
@@ -3059,12 +3074,7 @@ mfxStatus MFXVideoENCODEH264::Init(mfxVideoParam* par_in)
             enc->m_SeqParamSet->vui_parameters.max_bits_per_mb_denom = 1;
             enc->m_SeqParamSet->vui_parameters.log2_max_mv_length_horizontal = 11;
             enc->m_SeqParamSet->vui_parameters.log2_max_mv_length_vertical = 11;
-            if (enc->m_info.B_frame_rate > 1 && enc->m_info.treat_B_as_reference)
-                enc->m_SeqParamSet->vui_parameters.num_reorder_frames = 2;
-            else if (enc->m_info.B_frame_rate)
-                enc->m_SeqParamSet->vui_parameters.num_reorder_frames = 1;
-            else
-                enc->m_SeqParamSet->vui_parameters.num_reorder_frames = 0;
+            enc->m_SeqParamSet->vui_parameters.num_reorder_frames = GetNumReorderFrames(enc->m_info.B_frame_rate, !!enc->m_info.treat_B_as_reference);
             enc->m_SeqParamSet->vui_parameters.max_dec_frame_buffering = opts->MaxDecFrameBuffering;
         }
         if( opts->AUDelimiter == MFX_CODINGOPTION_OFF ){
@@ -4347,12 +4357,7 @@ mfxStatus MFXVideoENCODEH264::Reset(mfxVideoParam *par_in)
             enc->m_SeqParamSet->vui_parameters.max_bits_per_mb_denom = 1;
             enc->m_SeqParamSet->vui_parameters.log2_max_mv_length_horizontal = 11;
             enc->m_SeqParamSet->vui_parameters.log2_max_mv_length_vertical = 11;
-            if (enc->m_info.B_frame_rate > 1 && enc->m_info.treat_B_as_reference)
-                enc->m_SeqParamSet->vui_parameters.num_reorder_frames = 2;
-            else if (enc->m_info.B_frame_rate)
-                enc->m_SeqParamSet->vui_parameters.num_reorder_frames = 1;
-            else
-                enc->m_SeqParamSet->vui_parameters.num_reorder_frames = 0;
+            enc->m_SeqParamSet->vui_parameters.num_reorder_frames = GetNumReorderFrames(enc->m_info.B_frame_rate, !!enc->m_info.treat_B_as_reference);
             enc->m_SeqParamSet->vui_parameters.max_dec_frame_buffering = opts->MaxDecFrameBuffering;
         }
 
@@ -10099,7 +10104,7 @@ Status MFXVideoENCODEH264::H264CoreEncoder_encodeSEI(
     // 1) delay = 2 for encoding with I, P and non-reference B frames
     // 2) delay = 4 for encoding with I, P and reference B frames
     if (need_insert[SEI_TYPE_BUFFERING_PERIOD])
-        core_enc->m_SEIData.PictureTiming.initial_dpb_output_delay = (core_enc->m_info.B_frame_rate == 0) ? 0 : ((core_enc->m_info.B_frame_rate > 1) && core_enc->m_info.treat_B_as_reference && (core_enc->m_info.num_ref_frames > 2)) ? 4 : 2;
+        core_enc->m_SEIData.PictureTiming.initial_dpb_output_delay = 2 * GetNumReorderFrames(core_enc->m_info.B_frame_rate, !!core_enc->m_info.treat_B_as_reference);
 
     core_enc->m_SEIData.PictureTiming.dpb_output_delay = core_enc->m_SEIData.PictureTiming.initial_dpb_output_delay +
         /*core_enc->m_PicOrderCnt_Accu*2 +*/ core_enc->m_pCurrentFrame->m_PicOrderCnt[core_enc->m_field_index] -
