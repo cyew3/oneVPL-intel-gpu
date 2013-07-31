@@ -136,14 +136,18 @@ Ipp32s best_codebooks_search(sEnc_individual_channel_stream* pStream,
 
       predPresent = 0;
       p_sfb_cb[pStream->max_sfb - 1] = (Ipp16s)index;
-      pred_flag[pStream->max_sfb - 1] = isPred[pStream->max_sfb - 1][index];
-      predPresent |= pred_flag[pStream->max_sfb - 1];
+      
+      if (pred_flag != NULL)
+      {
+        pred_flag[pStream->max_sfb - 1] = isPred[pStream->max_sfb - 1][index];
+        predPresent |= pred_flag[pStream->max_sfb - 1];
 
-      for (sfb = pStream->max_sfb - 2; sfb >= 0; sfb--) {
-        index = cb_trace[sfb][index];
-        p_sfb_cb[sfb] = (Ipp16s)index;
-        pred_flag[sfb] = isPred[sfb][index];
-        predPresent |= pred_flag[sfb];
+        for (sfb = pStream->max_sfb - 2; sfb >= 0; sfb--) {
+            index = cb_trace[sfb][index];
+            p_sfb_cb[sfb] = (Ipp16s)index;
+            pred_flag[sfb] = isPred[sfb][index];
+            predPresent |= pred_flag[sfb];
+        }
       }
 
       if (predPresent == 0) {
