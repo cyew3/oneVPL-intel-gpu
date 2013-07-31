@@ -28,6 +28,7 @@
 #include <math.h>
 #include "aac_enc_quantization_fp.h"
 #include "aac_enc_search.h"
+#include "memory.h"
 
 extern Ipp32u sf_huff_codebook[];
 
@@ -785,14 +786,17 @@ void aac_UpdateSF(sEnc_individual_channel_stream* pStream,
     iniBits = 0;
 
     for (sfb = 1; sfb < numSfb; sfb++) {
+      Ipp32f addBits;
 #if !defined(ANDROID)
       Ipp32f noiseBuffer[61];
       Ipp16s mXQuantBuffer[61];
+      memset(mXQuantBuffer, '0', sizeof(mXQuantBuffer));
 #else
       static Ipp32f noiseBuffer[61];
       static Ipp16s mXQuantBuffer[61];
+      memset(mXQuantBuffer, '0', sizeof(mXQuantBuffer));
 #endif
-      Ipp32f addBits = possibleAddBits/(numSfb - sfb + 1);
+      addBits = possibleAddBits/(numSfb - sfb + 1);
 
       iniBits += sf_huff_codebook[2*(scalefac[transferTable[sfb]] -
                                      scalefac[transferTable[sfb-1]] + SF_MID)];
