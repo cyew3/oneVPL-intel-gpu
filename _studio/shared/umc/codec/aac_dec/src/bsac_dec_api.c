@@ -33,6 +33,7 @@
 #include "aac_dec_own_fp.h"
 #include "aac_dec_decoding_fp.h"
 #include <math.h>
+#include "memory.h"
 
 #define BSAC_MAX_CBAND0_SI_LEN 11
 
@@ -636,6 +637,8 @@ static void bsacdecInitHelpVariables(Ipp32s usedBits,
   Ipp32s maxSfb = pData->max_sfb;
   Ipp32s sLayerSize, layer, maxLayer;
   Ipp32s i, j;
+
+  memset(layerSiMaxLen, 0, BSAC_MAX_LAYER*sizeof(layerSiMaxLen[0]));
 
   /* sLayerSize calculation */
 
