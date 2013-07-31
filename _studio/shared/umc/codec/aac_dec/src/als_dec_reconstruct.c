@@ -32,6 +32,7 @@
 
 #include "ipps.h"
 
+
 /********************************************************************/
 
 static const Ipp32s alsParcorTable[] =
@@ -345,6 +346,7 @@ static void MulMtxVec(Ipp64s *P,
   Ipp64s *ptr;
   Ipp64s imax, htemp1, ttemp1;
   Ipp32s i, j, pscale, nscale;
+  Ipp32s size_yi = sizeof(yi)/sizeof(yi[0]);
 
   *vscale = 0;
   imax = 0;
@@ -376,14 +378,14 @@ static void MulMtxVec(Ipp64s *P,
   nscale = alsFastBitcount(ttemp1);
   if (nscale > 28) {
     nscale -= 28;
-    for (i = 0; i < M; i++) {
+    for (i = 0; (i < M) && ( i < size_yi ); i++) {
       ya[i] >>= nscale;
       yi[i] = (Ipp32s)ya[i];
     }
     *vscale = nscale-pscale;
   } else {
     nscale -=28;
-    for (i = 0; i < M; i++) {
+    for (i = 0; (i < M) && ( i < size_yi ); i++) {
       yi[i] = (Ipp32s)ya[i];
     }
     *vscale = -pscale;
@@ -400,10 +402,11 @@ static Ipp64s MulVecVec(Ipp32s *x,
 {
   Ipp32s i;
   Ipp64s z, zh, temp;
+  Ipp32s size_y = sizeof(y)/sizeof(y[0]);
 
   *scale = 0;
   zh = 0;
-  for (i = 0; i < M; i++) {
+  for (i = 0; (i < M) && (i < size_y); i++) {
     zh += (Ipp64s)y[i] * x[i];
   }
 
