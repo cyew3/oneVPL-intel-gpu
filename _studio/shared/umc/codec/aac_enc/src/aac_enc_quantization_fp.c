@@ -32,6 +32,8 @@
 
 extern Ipp32u sf_huff_codebook[];
 
+
+
 /****************************************************************************/
 
 void main_loop(sQuantizationBlock* pBlock,
@@ -790,11 +792,11 @@ void aac_UpdateSF(sEnc_individual_channel_stream* pStream,
 #if !defined(ANDROID)
       Ipp32f noiseBuffer[61];
       Ipp16s mXQuantBuffer[61];
-      memset(mXQuantBuffer, '0', sizeof(mXQuantBuffer));
+      memset(mXQuantBuffer, 0, sizeof(mXQuantBuffer));
 #else
       static Ipp32f noiseBuffer[61];
       static Ipp16s mXQuantBuffer[61];
-      memset(mXQuantBuffer, '0', sizeof(mXQuantBuffer));
+      memset(mXQuantBuffer, 0, sizeof(mXQuantBuffer));
 #endif
       addBits = possibleAddBits/(numSfb - sfb + 1);
 
