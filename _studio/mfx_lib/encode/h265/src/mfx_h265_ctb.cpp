@@ -1416,7 +1416,8 @@ Ipp32s H265CU::MatchingMetric_PU(H265MEInfo* me_info, H265MV* MV, H265Frame *Pic
     }
     else
     {
-        MFX_HEVC_ENCODER::SAD_8u[me_info->width >> 2][me_info->height >> 2](pSrc, pitch_src, pRec, recPitch, &cost, 0);
+        //MFX_HEVC_ENCODER::h265_SAD_MxN_general_IPP_8u(pSrc, pitch_src, pRec, recPitch, me_info->width, me_info->height, &cost);
+        cost = MFX_HEVC_ENCODER::h265_SAD_MxN_general_8u(pRec,  recPitch, pSrc, pitch_src, me_info->width, me_info->height);        
     }
 
     return cost;

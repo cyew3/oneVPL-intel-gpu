@@ -609,36 +609,36 @@ namespace MFX_HEVC_ENCODER
         Ipp32s mcType);*/
 
     //                         [0,  Mx4,  Mx8,  Mx12,  Mx16,  Mx20, Mx24, Mx28, Mx32,  Mx36, Mx40, Mx44, Mx48, Mx52, Mx56, Mx60, Mx64]
-    SADfunc8u SAD_4xN_8u[]  = {NULL, NULL, (SADfunc8u)ippiSAD4x8_8u32s_C1R, NULL, (SADfunc8u)h265_SAD4x16_8u32s_C1R, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
-    SADfunc8u SAD_8xN_8u[]  = {NULL, (SADfunc8u)ippiSAD8x4_8u32s_C1R, (SADfunc8u)ippiSAD8x8_8u32s_C1R, NULL, (SADfunc8u)ippiSAD8x16_8u32s_C1R, NULL, NULL, NULL, (SADfunc8u)h265_SAD8x32_8u32s_C1R, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
-    SADfunc8u SAD_12xN_8u[] = {NULL, NULL, NULL, NULL, (SADfunc8u)h265_SAD12x16_8u32s_C1R, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
-    SADfunc8u SAD_16xN_8u[] = {NULL, (SADfunc8u)h265_SAD16x4_8u32s_C1R, (SADfunc8u)ippiSAD16x8_8u32s_C1R, (SADfunc8u)h265_SAD16x12_8u32s_C1R, (SADfunc8u)ippiSAD16x16_8u32s, NULL, NULL, NULL, (SADfunc8u)h265_SAD16x32_8u32s_C1R, NULL, NULL, NULL, NULL, NULL, NULL, NULL, (SADfunc8u)h265_SAD16x64_8u32s_C1R};
-    SADfunc8u SAD_24xN_8u[] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,    (SADfunc8u)h265_SAD24x32_8u32s_C1R, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
-    SADfunc8u SAD_32xN_8u[] = {NULL, NULL, (SADfunc8u)h265_SAD32x8_8u32s_C1R, NULL, (SADfunc8u)h265_SAD32x16_8u32s_C1R, NULL, (SADfunc8u)h265_SAD32x24_8u32s_C1R, NULL,  (SADfunc8u)h265_SAD32x32_8u32s_C1R, NULL, NULL, NULL, NULL, NULL, NULL, NULL, (SADfunc8u)h265_SAD32x64_8u32s_C1R};
-    SADfunc8u SAD_48xN_8u[] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, (SADfunc8u)h265_SAD48x64_8u32s_C1R};
-    SADfunc8u SAD_64xN_8u[] = {NULL, NULL, NULL, NULL, (SADfunc8u)h265_SAD64x16_8u32s_C1R, NULL, NULL, NULL, (SADfunc8u)h265_SAD64x32_8u32s_C1R, NULL, NULL, NULL, (SADfunc8u)h265_SAD64x48_8u32s_C1R, NULL, NULL, NULL, (SADfunc8u)h265_SAD64x64_8u32s_C1R};
+    //SADfunc8u SAD_4xN_8u[]  = {NULL, NULL, (SADfunc8u)ippiSAD4x8_8u32s_C1R, NULL, (SADfunc8u)h265_SAD4x16_8u32s_C1R, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+    //SADfunc8u SAD_8xN_8u[]  = {NULL, (SADfunc8u)ippiSAD8x4_8u32s_C1R, (SADfunc8u)ippiSAD8x8_8u32s_C1R, NULL, (SADfunc8u)ippiSAD8x16_8u32s_C1R, NULL, NULL, NULL, (SADfunc8u)h265_SAD8x32_8u32s_C1R, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+    //SADfunc8u SAD_12xN_8u[] = {NULL, NULL, NULL, NULL, (SADfunc8u)h265_SAD12x16_8u32s_C1R, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+    //SADfunc8u SAD_16xN_8u[] = {NULL, (SADfunc8u)h265_SAD16x4_8u32s_C1R, (SADfunc8u)ippiSAD16x8_8u32s_C1R, (SADfunc8u)h265_SAD16x12_8u32s_C1R, (SADfunc8u)ippiSAD16x16_8u32s, NULL, NULL, NULL, (SADfunc8u)h265_SAD16x32_8u32s_C1R, NULL, NULL, NULL, NULL, NULL, NULL, NULL, (SADfunc8u)h265_SAD16x64_8u32s_C1R};
+    //SADfunc8u SAD_24xN_8u[] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,    (SADfunc8u)h265_SAD24x32_8u32s_C1R, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+    //SADfunc8u SAD_32xN_8u[] = {NULL, NULL, (SADfunc8u)h265_SAD32x8_8u32s_C1R, NULL, (SADfunc8u)h265_SAD32x16_8u32s_C1R, NULL, (SADfunc8u)h265_SAD32x24_8u32s_C1R, NULL,  (SADfunc8u)h265_SAD32x32_8u32s_C1R, NULL, NULL, NULL, NULL, NULL, NULL, NULL, (SADfunc8u)h265_SAD32x64_8u32s_C1R};
+    //SADfunc8u SAD_48xN_8u[] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, (SADfunc8u)h265_SAD48x64_8u32s_C1R};
+    //SADfunc8u SAD_64xN_8u[] = {NULL, NULL, NULL, NULL, (SADfunc8u)h265_SAD64x16_8u32s_C1R, NULL, NULL, NULL, (SADfunc8u)h265_SAD64x32_8u32s_C1R, NULL, NULL, NULL, (SADfunc8u)h265_SAD64x48_8u32s_C1R, NULL, NULL, NULL, (SADfunc8u)h265_SAD64x64_8u32s_C1R};
 
-    //                       [0,  4xN,  8xN,  12xN,  16xN,  20xN, 24xN, 28xN, 32xN,  36xN, 40xN, 44xN, 48xN, 52xN, 56xN, 60xN, 64xN]
-    SADfunc8u* SAD_8u[17] = {NULL, SAD_4xN_8u, SAD_8xN_8u, SAD_12xN_8u, SAD_16xN_8u, NULL, SAD_24xN_8u, NULL, SAD_32xN_8u, NULL, NULL, NULL, SAD_48xN_8u, NULL, NULL, NULL, SAD_64xN_8u};
+    ////                       [0,  4xN,  8xN,  12xN,  16xN,  20xN, 24xN, 28xN, 32xN,  36xN, 40xN, 44xN, 48xN, 52xN, 56xN, 60xN, 64xN]
+    //SADfunc8u* SAD_8u[17] = {NULL, SAD_4xN_8u, SAD_8xN_8u, SAD_12xN_8u, SAD_16xN_8u, NULL, SAD_24xN_8u, NULL, SAD_32xN_8u, NULL, NULL, NULL, SAD_48xN_8u, NULL, NULL, NULL, SAD_64xN_8u};
 
-    IppStatus ippiSAD_General_8u32s_C1R(
-        const Ipp8u* pSrc,
-        Ipp32s srcStep,
-        const Ipp8u* pRef,
-        Ipp32s refStep,
-        Ipp32s width,
-        Ipp32s height,
-        Ipp32s* pSAD)
-    {
-        IppStatus sts = ippStsNoErr;
+    //IppStatus ippiSAD_General_8u32s_C1R(
+    //    const Ipp8u* pSrc,
+    //    Ipp32s srcStep,
+    //    const Ipp8u* pRef,
+    //    Ipp32s refStep,
+    //    Ipp32s width,
+    //    Ipp32s height,
+    //    Ipp32s* pSAD)
+    //{
+    //    IppStatus sts = ippStsNoErr;
 
-        SADfunc8u p_func = SAD_8u[width >> 2][height >> 2];
-        
-        p_func(pSrc, srcStep, pRef, refStep, pSAD, 0);//mc_type???
+    //    SADfunc8u p_func = SAD_8u[width >> 2][height >> 2];
+    //    
+    //    p_func(pSrc, srcStep, pRef, refStep, pSAD, 0);//mc_type???
 
-        return sts;
+    //    return sts;
 
-    } // IppStatus ippiSAD_General_8u32s_C1R(...)
+    //} // IppStatus ippiSAD_General_8u32s_C1R(...)
 
     /*IppStatus h265_SAD_MxN_special_IPP_8u(const unsigned char *image,  const unsigned char *ref, int stride, int SizeX, int SizeY, int* sad)
     {
