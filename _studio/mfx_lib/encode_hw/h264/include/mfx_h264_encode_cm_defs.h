@@ -713,41 +713,35 @@ const mfxU8 Diamond[56] =
 
 extern "C" void SVCEncMB_I(
     vector<mfxU8, sizeof(SVCEncCURBEData)> CURBEData,
+    SurfaceIndex SrcSurfIndexRaw,
     SurfaceIndex SrcSurfIndex,
     SurfaceIndex VMEInterPredictionSurfIndex,
     SurfaceIndex MBDataSurfIndex,
-    SurfaceIndex HMEMVPredFwdBwdSurfIndex,
     SurfaceIndex FwdFrmMBDataSurfIndex);
 
 extern "C" void SVCEncMB_P(
     vector<mfxU8, sizeof(SVCEncCURBEData)> CURBEData,
+    SurfaceIndex SrcSurfIndexRaw,
     SurfaceIndex SrcSurfIndex,
     SurfaceIndex VMEInterPredictionSurfIndex,
     SurfaceIndex MBDataSurfIndex,
-    SurfaceIndex HMEMVPredFwdBwdSurfIndex,
     SurfaceIndex FwdFrmMBDataSurfIndex);
 
 extern "C" void SVCEncMB_B(
     vector<mfxU8, sizeof(SVCEncCURBEData)> CURBEData,
+    SurfaceIndex SrcSurfIndexRaw,
     SurfaceIndex SrcSurfIndex,
     SurfaceIndex VMEInterPredictionSurfIndex,
     SurfaceIndex MBDataSurfIndex,
-    SurfaceIndex HMEMVPredFwdBwdSurfIndex,
     SurfaceIndex FwdFrmMBDataSurfIndex);
 
-extern "C" void DownSampleMB(
+extern "C" void DownSampleMB4X(
     SurfaceIndex SrcSurfIndex,
     SurfaceIndex SrcSurf4XIndex);
 
-extern "C" void HmeMB_P(
-    vector<mfxU8, sizeof(SVCEncCURBEData)> CURBEData,
-    SurfaceIndex HMESurfIndex,
-    SurfaceIndex HMEMVPredSurfIndex);
-
-extern "C" void HmeMB_B(
-    vector<mfxU8, sizeof(SVCEncCURBEData)> CURBEData,
-    SurfaceIndex HMESurfIndex,
-    SurfaceIndex HMEMVPredSurfIndex);
+extern "C" void DownSampleMB2X(
+    SurfaceIndex SrcSurfIndex,
+    SurfaceIndex SrcSurf2XIndex);
 
 };
 

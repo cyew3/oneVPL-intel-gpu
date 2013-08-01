@@ -2766,6 +2766,7 @@ void LookAheadBrc2::Init(MfxVideoParam const & video)
     mfxExtCodingOption2 const *   extOpt2 = GetExtBuffer(video);
     m_lookAhead     = extOpt2->LookAheadDepth - extDdi->LookAheadDep;
     m_lookAheadDep  = extDdi->LookAheadDep;
+    m_LaScaleFactor = extDdi->LaScaleFactor;
     m_qpUpdateRange = extDdi->QpUpdateRange;
     m_strength      = extDdi->StrengthN;
 
@@ -2938,17 +2939,18 @@ void LookAheadBrc2::PreEnc(mfxU32 /*frameType*/, std::vector<VmeData *> const & 
         newData.bframe    = vmeData[i]->pocL1 != mfxU32(-1);
         for (size_t j = 0; j < vmeData[i]->mb.size(); j++)
         {
+            mfxF64 LaMultiplier = m_LaScaleFactor * m_LaScaleFactor;
             MbData const & mb = vmeData[i]->mb[j];
             if (mb.intraMbFlag)
             {
                 for (mfxU32 qp = 0; qp < 52; qp++)
-                    newData.estRate[qp] += mb.dist / (QSTEP[qp] * INTRA_QSTEP_COEFF);
+                    newData.estRate[qp] += LaMultiplier * mb.dist / (QSTEP[qp] * INTRA_QSTEP_COEFF);
             }
             else
             {
                 mfxU32 skipQp = GetSkippedQp(mb);
                 for (mfxU32 qp = 0; qp < skipQp; qp++)
-                    newData.estRate[qp] += mb.dist / (QSTEP[qp]);
+                    newData.estRate[qp] += LaMultiplier * mb.dist / (QSTEP[qp]);
             }
         }
         for (mfxU32 qp = 0; qp < 52; qp++)

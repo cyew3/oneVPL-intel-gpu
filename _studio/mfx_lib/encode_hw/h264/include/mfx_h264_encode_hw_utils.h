@@ -699,7 +699,7 @@ namespace MfxHwH264Encode
 
         mfxMemId        m_midRec;
         CmSurface2D *   m_cmRaw;
-        CmSurface2D *   m_cmRaw4x;
+        CmSurface2D *   m_cmRawLa;
         CmBufferUP *    m_cmMb;
     };
 
@@ -813,14 +813,13 @@ namespace MfxHwH264Encode
             , m_midRec(MID_INVALID)
             , m_midBit(mfxMemId(MID_INVALID))
             , m_cmRaw(0)
-            , m_cmRaw4x(0)
-            , m_cmHme(0)
+            , m_cmRawLa(0)
             , m_cmMb(0)
             , m_cmMbSys(0)
             , m_cmRefMb(0)
             , m_cmCurbe(0)
             , m_cmRefs(0)
-            , m_cmRefs4x(0)
+            , m_cmRefsLa(0)
             , m_event(0)
             , m_vmeData(0)
             , m_fwdRef(0)
@@ -914,14 +913,13 @@ namespace MfxHwH264Encode
         mfxHDLPair      m_handleRaw;    // native handle to raw surface (self-allocated or given by app)
 
         CmSurface2D *   m_cmRaw;        // CM surface made of m_handleRaw
-        CmSurface2D *   m_cmRaw4x;      // down-sized input surface, HME kernel input
-        CmSurface2D *   m_cmHme;        // motion vectors, HME kernel output, VME kernel input
+        CmSurface2D *   m_cmRawLa;      // down-sized input surface for Lookahead
         CmBufferUP *    m_cmMb;         // macroblock data, VME kernel output
         void *          m_cmMbSys;      // pointer to associated system memory buffer
         CmBufferUP *    m_cmRefMb;      // macroblock data, VME kernel output for backward ref
         CmBuffer *      m_cmCurbe;      // control structure for ME & HME kernels
         SurfaceIndex *  m_cmRefs;       // VmeSurfaceG75 for ME kernel
-        SurfaceIndex *  m_cmRefs4x;     // VmeSurfaceG75 for HME kernel
+        SurfaceIndex *  m_cmRefsLa;     // VmeSurfaceG75 for 2X kernel
         CmEvent *       m_event;
         VmeData *       m_vmeData;
         DdiTask const * m_fwdRef;
@@ -1219,6 +1217,7 @@ namespace MfxHwH264Encode
     private:
         mfxU32  m_lookAhead;
         mfxU32  m_lookAheadDep;
+        mfxU16  m_LaScaleFactor;
         mfxU32  m_strength;
         mfxU32  m_totNumMb;
         mfxF64  m_initTargetRate;
@@ -1586,9 +1585,8 @@ namespace MfxHwH264Encode
         std::vector<mfxU32>     m_recFrameOrder; // !!! HACK !!!
 
         MfxFrameAllocResponse   m_raw;
-        MfxFrameAllocResponse   m_raw4x;
+        MfxFrameAllocResponse   m_rawLa;
         MfxFrameAllocResponse   m_mb;
-        MfxFrameAllocResponse   m_hme;
         MfxFrameAllocResponse   m_curbe;
         MfxFrameAllocResponse   m_rawSys;
         MfxFrameAllocResponse   m_rec;

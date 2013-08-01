@@ -247,6 +247,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_DDI_OPTION(GlobalSearch,            OPT_UINT_16,    "0=default, 1=long, 2=medium, 3=short"),
         HANDLE_DDI_OPTION(LocalSearch,             OPT_UINT_16,    "0=default, 1=type, 2=small, 3=square, 4=diamond, 5=large diamond, 6=exhaustive, 7=heavy horizontal, 8=heavy vertical"),
         HANDLE_DDI_OPTION(EarlySkip,               OPT_UINT_16,    "0=default (let driver choose), 1=enabled, 2=disabled"),
+        HANDLE_DDI_OPTION(LaScaleFactor,           OPT_UINT_16,    "0=default (let msdk choose), 1=1x, 2=2x, 4=4x"),
         // superseded by corresponding option in mfxExtCodingOption2
         HANDLE_DDI_OPTION(FractionalQP,            OPT_BOOL,       "enable fractional QP"),
         HANDLE_DDI_OPTION(StrengthN,               OPT_UINT_16,    "strength=StrengthN/100.0"),

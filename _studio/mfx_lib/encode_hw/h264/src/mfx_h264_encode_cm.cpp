@@ -811,23 +811,22 @@ void CmContext::Setup(
     m_video  = video;
     m_device = cmDevice;
 
+    mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
+
+    widthLa = video.calcParam.widthLa;
+    heightLa = video.calcParam.heightLa;
+    LaScaleFactor = extDdi->LaScaleFactor;
     m_program = ReadProgram(m_device, genx_hsw_simple_me, SizeOf(genx_hsw_simple_me));
 
     m_kernelI = CreateKernel(m_device, m_program, "SVCEncMB_I", (void *)SVCEncMB_I);
     m_kernelP = CreateKernel(m_device, m_program, "SVCEncMB_P", (void *)SVCEncMB_P);
     m_kernelB = CreateKernel(m_device, m_program, "SVCEncMB_B", (void *)SVCEncMB_B);
 
-    m_kernelDownSample = CreateKernel(m_device, m_program, "DownSampleMB", (void *)DownSampleMB);
-    m_kernelHme_P = CreateKernel(m_device, m_program, "HmeMB_P", (void *)HmeMB_P);
-    m_kernelHme_B = CreateKernel(m_device, m_program, "HmeMB_B", (void *)HmeMB_B);
+    m_kernelDownSample4X = CreateKernel(m_device, m_program, "DownSampleMB4X", (void *)DownSampleMB4X);
+    m_kernelDownSample2X = CreateKernel(m_device, m_program, "DownSampleMB2X", (void *)DownSampleMB2X);
 
     m_curbeData.Reset(m_device, sizeof(SVCEncCURBEData));
     m_nullBuf.Reset(m_device, 4);
-
-    m_hme.Reset(m_device,
-        video.mfx.FrameInfo.Width / 16 * sizeof(mfxI16Pair) * 2,
-        video.mfx.FrameInfo.Height / 16,
-        CM_SURFACE_FORMAT_A8); // 8 bytes (2 MVs) for every Mb
 
     SetCosts(m_costsI, MFX_FRAMETYPE_I, 26, 2, 3);
     SetCosts(m_costsP, MFX_FRAMETYPE_P, 26, 2, 3);
@@ -844,43 +843,31 @@ CmEvent * CmContext::RunVme(
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RunVme");
     qp = 26;
 
-    CmKernel * kernel = SelectKernel(task.m_type[0]);
+    CmKernel * kernelPreMe = SelectKernelPreMe(task.m_type[0]);
 
     SVCEncCURBEData curbeData;
     SetCurbeData(curbeData, task, qp);
     Write(task.m_cmCurbe, &curbeData);
 
-    mfxU32 numMbCols = m_video.mfx.FrameInfo.Width  / 16;
-    mfxU32 numMbRows = m_video.mfx.FrameInfo.Height / 16;
+    mfxU32 numMbColsLa = widthLa / 16;
+    mfxU32 numMbRowsLa = heightLa / 16;
 
-    //printf("%p: ", this);
-
-    if (curbeData.UseHMEPredictor)
+    if (LaScaleFactor > 1)
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Enqueue down-size kernel");
-
-        SetKernelArg(m_kernelDownSample, GetIndex(task.m_cmRaw), GetIndex(task.m_cmRaw4x));
-        EnqueueKernel(m_device, m_kernelDownSample, numMbCols, numMbRows, CM_NONE_DEPENDENCY);
-
-        if (task.m_type[0] & MFX_FRAMETYPE_PB)
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Enqueue HME kernel");
-
-            CmKernel * kernelHme = SelectKernelHme(task.m_type[0]);
-            SetKernelArg(kernelHme, GetIndex(task.m_cmCurbe), *task.m_cmRefs4x, GetIndex(task.m_cmHme));
-            EnqueueKernel(m_device, kernelHme, numMbCols / 4, numMbRows / 4, CM_NONE_DEPENDENCY);
-        }
+        SetKernelArg(kernelPreMe,
+            GetIndex(task.m_cmCurbe), GetIndex(task.m_cmRaw), GetIndex(task.m_cmRawLa), *task.m_cmRefsLa,
+            GetIndex(task.m_cmMb), task.m_cmRefMb ? GetIndex(task.m_cmRefMb) : GetIndex(m_nullBuf));
+    } else
+    {
+        SetKernelArg(kernelPreMe,
+            GetIndex(task.m_cmCurbe), GetIndex(m_nullBuf), GetIndex(task.m_cmRaw), *task.m_cmRefs,
+            GetIndex(task.m_cmMb), task.m_cmRefMb ? GetIndex(task.m_cmRefMb) : GetIndex(m_nullBuf));
     }
-
-    SetKernelArg(kernel,
-        GetIndex(task.m_cmCurbe), GetIndex(task.m_cmRaw), *task.m_cmRefs,
-        GetIndex(task.m_cmMb), GetIndex(task.m_cmHme),
-        task.m_cmRefMb ? GetIndex(task.m_cmRefMb) : GetIndex(m_nullBuf));
 
     CmEvent * e = 0;
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Enqueue ME kernel");
-        e = EnqueueKernel(m_device, kernel, numMbCols, numMbRows, CM_WAVEFRONT26);
+        e = EnqueueKernel(m_device, kernelPreMe, numMbColsLa, numMbRowsLa, CM_WAVEFRONT26);
     }
 
     return e;
@@ -966,6 +953,7 @@ bool CmContext::QueryVme(
     return true;
 }
 
+#if 0
 void CmContext::DownSample(const SurfaceIndex& surf, const SurfaceIndex& surf4X)
 {
     mfxU32 numMbCols = m_video.mfx.FrameInfo.Width >> 4;
@@ -1138,7 +1126,8 @@ void CmContext::RunVme(
 //    Update(m_mbData, task);
 }
 
-CmKernel * CmContext::SelectKernel(mfxU32 frameType)
+#endif
+CmKernel * CmContext::SelectKernelPreMe(mfxU32 frameType)
 {
     switch (frameType & MFX_FRAMETYPE_IPB)
     {
@@ -1149,12 +1138,12 @@ CmKernel * CmContext::SelectKernel(mfxU32 frameType)
     }
 }
 
-CmKernel * CmContext::SelectKernelHme(mfxU32 frameType)
+CmKernel * CmContext::SelectKernelDownSample(mfxU16 LaScaleFactor)
 {
-    switch (frameType & MFX_FRAMETYPE_PB)
+    switch (LaScaleFactor)
     {
-        case MFX_FRAMETYPE_P: return m_kernelHme_P;
-        case MFX_FRAMETYPE_B: return m_kernelHme_B;
+        case 2: return m_kernelDownSample2X;
+        case 4: return m_kernelDownSample4X;
         default: throw CmRuntimeError();
     }
 }
@@ -1235,9 +1224,14 @@ void CmContext::SetCurbeData(
     curbeData.IntraSAD              = intraSad;
     curbeData.SubMbPartMask         = (task.m_type[0] & MFX_FRAMETYPE_I) ? 0 : 0x7e; // only 16x16 for Inter
     //DW4
+/*
     curbeData.SliceMacroblockHeightMinusOne = m_video.mfx.FrameInfo.Height / 16 - 1;
     curbeData.PictureHeightMinusOne = m_video.mfx.FrameInfo.Height / 16 - 1;
     curbeData.PictureWidth          = m_video.mfx.FrameInfo.Width / 16;
+*/
+    curbeData.SliceMacroblockHeightMinusOne = widthLa / 16 - 1;
+    curbeData.PictureHeightMinusOne = heightLa / 16 - 1;
+    curbeData.PictureWidth          = widthLa / 16;
     //DW5
     curbeData.RefWidth              = (task.m_type[0] & MFX_FRAMETYPE_B) ? 32 : 48;
     curbeData.RefHeight             = (task.m_type[0] & MFX_FRAMETYPE_B) ? 32 : 40;
@@ -1369,7 +1363,7 @@ void CmContext::SetCurbeData(
     curbeData.Intra8x8ModeMask                = 0;
     //DW31
     curbeData.Intra16x16ModeMask              = 0;
-    curbeData.IntraChromaModeMask             = 0;
+    curbeData.IntraChromaModeMask             = 1; // 0; !sergo: 1 means Luma only
     curbeData.IntraComputeType                = 0;
     //DW32
     curbeData.SkipVal                         = skipVal;
@@ -1390,7 +1384,7 @@ void CmContext::SetCurbeData(
     curbeData.HMERefWindowsCombiningThreshold = (task.m_type[0] & MFX_FRAMETYPE_B) ? 8 : 16; //  0;  !sergo (should be =8 for B frames)
     curbeData.CheckAllFractionalEnable        = 0;
     //DW37
-    curbeData.CurLayerDQId                    = 0;
+    curbeData.CurLayerDQId                    = extDdi->LaScaleFactor;  // 0; !sergo use 8 bit as LaScaleFactor
     curbeData.TemporalId                      = 0;
     curbeData.NoInterLayerPredictionFlag      = 1;
     curbeData.AdaptivePredictionFlag          = 0;
@@ -1400,7 +1394,7 @@ void CmContext::SetCurbeData(
     curbeData.AdaptiveMotionPredictionFlag    = 0;
     curbeData.DefaultMotionPredictionFlag     = 0;
     curbeData.TcoeffLevelPredictionFlag       = 0;
-    curbeData.UseHMEPredictor                 = !!IsOn(extDdi->Hme);
+    curbeData.UseHMEPredictor                 = 0;  //!!IsOn(extDdi->Hme);
     curbeData.SpatialResChangeFlag            = 0;
     curbeData.isFwdFrameShortTermRef          = task.m_list0[0].Size() > 0 && !task.m_dpb[0][task.m_list0[0][0] & 127].m_longterm;
     //DW38

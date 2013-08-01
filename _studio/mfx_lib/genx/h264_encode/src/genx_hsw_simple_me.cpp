@@ -18,7 +18,6 @@
 #endif // defined(CMRT_EMU)
 
 #define MBDATA_SIZE     64      //sizeof(SVCPAKObject_t)
-#define HME_MVDATA_SIZE 8       //sizeof(mfxI16Pair * 2)
 #define CURBEDATA_SIZE  160     //sizeof(SVCEncCURBEData_t)
 
 enum
@@ -173,20 +172,14 @@ enum
 #define GET_CURBE_SkipVal(obj) \
     (obj.format<uint2> ()[64])
 
-#define GET_CURBE_HMECombineThreshold(obj) \
-    (obj[144])
-
-#define GET_CURBE_HMECombineOverlap(obj) \
-    (obj[145] & 3)
-
 #define GET_CURBE_AllFractional(obj) \
     ((obj[145] >> 2) & 1)
 
-#define GET_CURBE_UseHMEPredictor(obj) \
-    (obj[150] & 0x10)
-
 #define GET_CURBE_isFwdFrameShortTermRef(obj) \
     ((obj[150] >> 6) & 1)
+
+#define GET_CURBE_CurLayerDQId(obj) \
+    (obj[148])
 
 enum
 {
@@ -226,6 +219,8 @@ void SetUpVmeIntra(matrix_ref<uchar, 3, 32> uniIn,
 
     uint MbIndex = PicWidthInMB * mbY + mbX;
 
+    cm_wait();
+
     // read left macroblock info
     if (mbX)
     {
@@ -236,7 +231,7 @@ void SetUpVmeIntra(matrix_ref<uchar, 3, 32> uniIn,
 
             // read left macroblock parameters
             offset = (MbIndex - 1) * MBDATA_SIZE;
-            read(MODIFIED_DWALIGNED(MBDataSurfIndex), offset, leftMbInfo);
+            read(DWALIGNED(MBDataSurfIndex), offset, leftMbInfo);
 
             // copy left macroblock intra types
             leftMbIntraModes.select<4, 1> (0) = leftMbInfo.select<4, 1> (4);
@@ -270,7 +265,7 @@ void SetUpVmeIntra(matrix_ref<uchar, 3, 32> uniIn,
 
             // read upper macroblock parameters
             offset = (MbIndex - PicWidthInMB) * MBDATA_SIZE;
-            read(MODIFIED_DWALIGNED(MBDataSurfIndex), offset, upperMbInfo);
+            read(DWALIGNED(MBDataSurfIndex), offset, upperMbInfo);
 
             // copy upper macroblock intra types
             upperMbIntraModes = upperMbInfo.select<8, 1> (4);
@@ -418,7 +413,9 @@ void SetUpVmeIntra(matrix_ref<uchar, 3, 32> uniIn,
 
 _GENX_ inline
 void SetUpPakDataISlice(vector_ref<uchar, MBDATA_SIZE> MBData,
+/*
                         vector_ref<uchar, CURBEDATA_SIZE> CURBEData,
+*/
                         matrix_ref<uchar, 7, 32> uniOut,
                         uint mbX,
                         uint mbY)
@@ -427,9 +424,11 @@ void SetUpPakDataISlice(vector_ref<uchar, MBDATA_SIZE> MBData,
 
     MBData = 0;
 
+/*
     // read picture's width in MB units
     PicWidthInMB    = GET_CURBE_PictureWidth(CURBEData);
     PicHeightInMBs  = GET_CURBE_PictureHeight(CURBEData);
+*/
 
     // DW0 MB flags and modes
     VME_COPY_MB_INTRA_MODE_TYPE(MBData, 0, uniOut);
@@ -448,15 +447,107 @@ void SetUpPakDataISlice(vector_ref<uchar, MBDATA_SIZE> MBData,
 
 } // void SetUpPakDataISlice(vector_ref<uchar, MBDATA_SIZE> MBData,
 
+_GENX_ inline
+void DownSampleMB2Xf(SurfaceIndex SurfIndex,
+                     SurfaceIndex Surf2XIndex,
+                     uint mbX, uint mbY)
+{   // Luma only
+    uint ix = mbX << 5; // src 32x32
+    uint iy = mbY << 5;
+    uint ox2x = mbX << 4; // dst 16x16
+    uint oy2x = mbY << 4;
+
+    matrix<uint1,32,32> inMb;
+    matrix<uint1,16,16> outMb2x;
+
+    read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix, iy, inMb.select<16,1,16,1>(0,0));
+    read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 16, iy, inMb.select<16,1,16,1>(0,16));
+    read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix, iy + 16, inMb.select<16,1,16,1>(16,0));
+    read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 16, iy + 16, inMb.select<16,1,16,1>(16,16));
+
+    matrix<uint2,16,32> sum16x32_16;
+
+    sum16x32_16.select<16,1,32,1>(0,0) = inMb.select<16,2,32,1>(0,0) + inMb.select<16,2,32,1>(1,0);
+    sum16x32_16.select<16,1,16,1>(0,0) = sum16x32_16.select<16,1,16,2>(0,0) + sum16x32_16.select<16,1,16,2>(0,1);
+
+    sum16x32_16.select<16,1,16,1>(0,0) += 2;
+    outMb2x = sum16x32_16.select<16,1,16,1>(0,0) >> 2;
+
+    write_plane(Surf2XIndex, GENX_SURFACE_Y_PLANE, ox2x, oy2x, outMb2x);
+}
+
+_GENX_ inline
+void DownSampleMB4Xf(SurfaceIndex SurfIndex,
+                     SurfaceIndex Surf4XIndex,
+                     uint mbX, uint mbY)
+{   // Luma only
+    uint ix = mbX << 6; // src 64x64
+    uint iy = mbY << 6;
+    uint ox2x = mbX << 4; // dst 16x16
+    uint oy2x = mbY << 4;
+
+    matrix<uint1,32,32> inMb;
+    matrix<uint1,32,32> outMb2x;
+    matrix<uint1,16,16> outMb4x;
+
+    read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix +  0, iy +  0, inMb.select<16,1,16,1>(0,0));
+    read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 16, iy +  0, inMb.select<16,1,16,1>(0,16));
+    read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix +  0, iy + 16, inMb.select<16,1,16,1>(16,0));
+    read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 16, iy + 16, inMb.select<16,1,16,1>(16,16));
+
+    matrix<uint2,16,32> sum16x32_16;
+
+    sum16x32_16.select<16,1,32,1>(0,0) = inMb.select<16,2,32,1>(0,0) + inMb.select<16,2,32,1>(1,0);
+    sum16x32_16.select<16,1,16,1>(0,0) = sum16x32_16.select<16,1,16,2>(0,0) + sum16x32_16.select<16,1,16,2>(0,1);
+
+    read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 32, iy +  0, inMb.select<16,1,16,1>(0,0));
+    read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 48, iy +  0, inMb.select<16,1,16,1>(0,16));
+    read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 32, iy + 16, inMb.select<16,1,16,1>(16,0));
+    read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 48, iy + 16, inMb.select<16,1,16,1>(16,16));
+
+    sum16x32_16.select<16,1,32,1>(0,0) = inMb.select<16,2,32,1>(0,0) + inMb.select<16,2,32,1>(1,0);
+    sum16x32_16.select<16,1,16,1>(0,16) = sum16x32_16.select<16,1,16,2>(0,0) + sum16x32_16.select<16,1,16,2>(0,1);
+
+    sum16x32_16 += 2;
+    outMb2x.select<16,1,32,1>(0,0) = sum16x32_16 >> 2;
+
+    read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix +  0, iy + 32, inMb.select<16,1,16,1>(0,0));
+    read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 16, iy + 32, inMb.select<16,1,16,1>(0,16));
+    read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix +  0, iy + 48, inMb.select<16,1,16,1>(16,0));
+    read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 16, iy + 48, inMb.select<16,1,16,1>(16,16));
+
+    sum16x32_16.select<16,1,32,1>(0,0) = inMb.select<16,2,32,1>(0,0) + inMb.select<16,2,32,1>(1,0);
+    sum16x32_16.select<16,1,16,1>(0,0) = sum16x32_16.select<16,1,16,2>(0,0) + sum16x32_16.select<16,1,16,2>(0,1);
+
+    read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 32, iy + 32, inMb.select<16,1,16,1>(0,0));
+    read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 48, iy + 32, inMb.select<16,1,16,1>(0,16));
+    read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 32, iy + 48, inMb.select<16,1,16,1>(16,0));
+    read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 48, iy + 48, inMb.select<16,1,16,1>(16,16));
+
+    sum16x32_16.select<16,1,32,1>(0,0) = inMb.select<16,2,32,1>(0,0) + inMb.select<16,2,32,1>(1,0);
+    sum16x32_16.select<16,1,16,1>(0,16) = sum16x32_16.select<16,1,16,2>(0,0) + sum16x32_16.select<16,1,16,2>(0,1);
+
+    sum16x32_16 += 2;
+    outMb2x.select<16,1,32,1>(16,0) = sum16x32_16 >> 2;
+
+    sum16x32_16.select<16,1,32,1>(0,0) = outMb2x.select<16,2,32,1>(0,0) + outMb2x.select<16,2,32,1>(1,0);
+    sum16x32_16.select<16,1,16,1>(0,0) = sum16x32_16.select<16,1,16,2>(0,0) + sum16x32_16.select<16,1,16,2>(0,1);
+
+    sum16x32_16.select<16,1,16,1>(0,0) += 2;
+    outMb4x = sum16x32_16.select<16,1,16,1>(0,0) >> 2;
+
+    write_plane(Surf4XIndex, GENX_SURFACE_Y_PLANE, ox2x, oy2x, outMb4x);
+}
+
 extern "C" _GENX_MAIN_  void
 SVCEncMB_I(SurfaceIndex CurbeDataSurfIndex,
+           SurfaceIndex SrcSurfIndexRaw,
            SurfaceIndex SrcSurfIndex,
            SurfaceIndex VMEInterPredictionSurfIndex,
            SurfaceIndex MBDataSurfIndex,
-           SurfaceIndex /*HMEMVPredFwdBwdSurfIndex*/,
            SurfaceIndex /*FwdFrmMBDataSurfIndex*/)
 {
-    cm_wait();
+//    cm_wait();
     uint mbX = get_thread_origin_x();
     uint mbY = get_thread_origin_y();
     vector<uchar, CURBEDATA_SIZE> CURBEData;
@@ -465,12 +556,19 @@ SVCEncMB_I(SurfaceIndex CurbeDataSurfIndex,
 
     // read picture's width in MB units
     uint PicWidthInMB = GET_CURBE_PictureWidth(CURBEData);
-    //uint PicHeightInMBs  = GET_CURBE_PictureHeight(CURBEData);
     uint MbIndex = PicWidthInMB * mbY + mbX;
     
     int offset;
-    vector<uchar,16> input;
-    read_plane(SrcSurfIndex, GENX_SURFACE_Y_PLANE, mbX*16, mbY*16, input);
+
+    // down scale
+    uint LaScaleFactor = GET_CURBE_CurLayerDQId(CURBEData);
+    if (LaScaleFactor == 2)
+    {
+        DownSampleMB2Xf(SrcSurfIndexRaw, SrcSurfIndex, mbX, mbY);
+    } else if (LaScaleFactor == 4)
+    {
+        DownSampleMB4Xf(SrcSurfIndexRaw, SrcSurfIndex, mbX, mbY);
+    }
 
     // declare parameters for VME
     matrix<uchar, 3, 32> uniIn;
@@ -489,7 +587,7 @@ SVCEncMB_I(SurfaceIndex CurbeDataSurfIndex,
     vector<uchar, MBDATA_SIZE> MBData;
 
     // pack the VME result
-    SetUpPakDataISlice(MBData, CURBEData, best_uniOut, mbX, mbY);
+    SetUpPakDataISlice(MBData/*, CURBEData*/, best_uniOut, mbX, mbY);
 
     // write back updated MB data
     offset = MbIndex * MBDATA_SIZE;
@@ -563,6 +661,7 @@ void GetNeighbourParamP(matrix_ref<uint1, 16, 1> leftBlockValues,
         return;
     }
 
+    cm_wait();
     // read left macroblock parameters
     refIdxA = -1;
     mvA = 0;
@@ -575,7 +674,7 @@ void GetNeighbourParamP(matrix_ref<uint1, 16, 1> leftBlockValues,
 
         // read intra types
         offset = (mbIndex - 1) * MBDATA_SIZE;
-        read(MODIFIED_DWALIGNED(MBDataSurfIndex), offset, leftMbData);
+        read(DWALIGNED(MBDataSurfIndex), offset, leftMbData);
         intraMbMode = GET_MBDATA_GET_INTRA_MODE(leftMbData);
         intraMbFlag = GET_MBDATA_IntraMbFlag(leftMbData);
         intraMbFlagMask = (intraMbFlag & (0 < intraMbMode));
@@ -615,7 +714,7 @@ void GetNeighbourParamP(matrix_ref<uint1, 16, 1> leftBlockValues,
 
         // read intra types
         offset = (mbIndex - PicWidthInMB) * MBDATA_SIZE;
-        read(MODIFIED_DWALIGNED(MBDataSurfIndex), offset, upperMbData);
+        read(DWALIGNED(MBDataSurfIndex), offset, upperMbData);
         intraMbMode = GET_MBDATA_GET_INTRA_MODE(upperMbData);
         intraMbFlag = GET_MBDATA_IntraMbFlag(upperMbData);
         intraMbFlagMask = (intraMbFlag & (0 < intraMbMode));
@@ -645,7 +744,7 @@ void GetNeighbourParamP(matrix_ref<uint1, 16, 1> leftBlockValues,
             vector<uchar, MBDATA_SIZE> upperLeftMbData;
             // read intra types
             offset = (mbIndex - PicWidthInMB - 1) * MBDATA_SIZE;
-            read(MODIFIED_DWALIGNED(MBDataSurfIndex), offset, upperLeftMbData);
+            read(DWALIGNED(MBDataSurfIndex), offset, upperLeftMbData);
             intraMbFlagD = GET_MBDATA_IntraMbFlag(upperLeftMbData);
             upperLeftMask = 0x08;
 
@@ -659,7 +758,7 @@ void GetNeighbourParamP(matrix_ref<uint1, 16, 1> leftBlockValues,
             vector<uchar, MBDATA_SIZE> upperRightMbData;
             // read intra types
             offset = (mbIndex - PicWidthInMB + 1) * MBDATA_SIZE;
-            read(MODIFIED_DWALIGNED(MBDataSurfIndex), offset, upperRightMbData);
+            read(DWALIGNED(MBDataSurfIndex), offset, upperRightMbData);
             intraMbFlag = GET_MBDATA_IntraMbFlag(upperRightMbData);
             upperRightMask = 0x04;
 
@@ -687,7 +786,7 @@ void GetNeighbourParamP(matrix_ref<uint1, 16, 1> leftBlockValues,
 
             // read motion vector
             offset = (mbIndex - PicWidthInMB - 1) * MBDATA_SIZE;
-            read(MODIFIED_DWALIGNED(MBDataSurfIndex), offset, upperLeftMbData);
+            read(DWALIGNED(MBDataSurfIndex), offset, upperLeftMbData);
 
             GET_MBDATA_MV(tmp.format<uint4>()[0], upperLeftMbData, LIST_0);
 
@@ -715,14 +814,14 @@ void GetNeighbourParamP(matrix_ref<uint1, 16, 1> leftBlockValues,
         // read luminance samples
         {
             matrix<uint1, 16, 4> temp;
-            read_plane(MODIFIED(SrcSurfIndex), GENX_SURFACE_Y_PLANE, x - 4, y, temp);
+            read_plane(SrcSurfIndex, GENX_SURFACE_Y_PLANE, x - 4, y, temp);
             leftBlockValues = temp.select<16, 1, 1, 1> (0, 3);
         }
 
         // read chrominance samples
         {
             matrix<uint1, 8, 4> temp;
-            read_plane(MODIFIED(SrcSurfIndex), GENX_SURFACE_UV_PLANE, x - 4, y / 2, temp);
+            read_plane(SrcSurfIndex, GENX_SURFACE_UV_PLANE, x - 4, y / 2, temp);
             chromaLeftBlockValues = temp.select<8, 1, 2, 1> (0, 2);
         }
     }
@@ -734,18 +833,18 @@ void GetNeighbourParamP(matrix_ref<uint1, 16, 1> leftBlockValues,
             // read luminance samples
             if (upperRightMask[0])
             {
-                read_plane(MODIFIED(SrcSurfIndex), GENX_SURFACE_Y_PLANE, x - 4, y - 1, topBlocksValues);
+                read_plane(SrcSurfIndex, GENX_SURFACE_Y_PLANE, x - 4, y - 1, topBlocksValues);
             }
             else
             {
                 matrix<uint1, 1, 20> temp;
-                read_plane(MODIFIED(SrcSurfIndex), GENX_SURFACE_Y_PLANE, x - 4, y - 1, temp);
+                read_plane(SrcSurfIndex, GENX_SURFACE_Y_PLANE, x - 4, y - 1, temp);
                 topBlocksValues.select<1, 1, 20, 1> (0, 0) = temp;
                 topBlocksValues.select<1, 1, 8, 1> (0, 20) = temp.row(0)[19];
             }
 
             // read chrominance samples
-            read_plane(MODIFIED(SrcSurfIndex), GENX_SURFACE_UV_PLANE, x - 4, y / 2 - 1, chromaTopBlocksValues);
+            read_plane(SrcSurfIndex, GENX_SURFACE_UV_PLANE, x - 4, y / 2 - 1, chromaTopBlocksValues);
         }
         else
         {
@@ -753,14 +852,14 @@ void GetNeighbourParamP(matrix_ref<uint1, 16, 1> leftBlockValues,
             if (upperRightMask[0])
             {
                 matrix<uint1, 1, 24> temp;
-                read_plane(MODIFIED(SrcSurfIndex), GENX_SURFACE_Y_PLANE, x, y - 1, temp);
+                read_plane(SrcSurfIndex, GENX_SURFACE_Y_PLANE, x, y - 1, temp);
                 topBlocksValues.select<1, 1, 4, 1> (0, 0) = 0;
                 topBlocksValues.select<1, 1, 24, 1> (0, 4) = temp;
             }
             else
             {
                 matrix<uint1, 1, 16> temp;
-                read_plane(MODIFIED(SrcSurfIndex), GENX_SURFACE_Y_PLANE, x, y - 1, temp);
+                read_plane(SrcSurfIndex, GENX_SURFACE_Y_PLANE, x, y - 1, temp);
                 topBlocksValues.select<1, 1, 4, 1> (0, 0) = 0;
                 topBlocksValues.select<1, 1, 16, 1> (0, 4) = temp;
                 topBlocksValues.select<1, 1, 8, 1> (0, 20) = temp.row(0)[15];
@@ -769,7 +868,7 @@ void GetNeighbourParamP(matrix_ref<uint1, 16, 1> leftBlockValues,
             // read chrominance samples
             {
                 matrix<uint1, 1, 16> temp;
-                read_plane(MODIFIED(SrcSurfIndex), GENX_SURFACE_UV_PLANE, x, y / 2 - 1, temp);
+                read_plane(SrcSurfIndex, GENX_SURFACE_UV_PLANE, x, y / 2 - 1, temp);
                 chromaTopBlocksValues.select<1, 1, 4, 1> (0, 0) = 0;
                 chromaTopBlocksValues.select<1, 1, 16, 1> (0, 4) = temp;
             }
@@ -1069,17 +1168,6 @@ void LoadCosts(matrix_ref<uchar, 3, 32> uniIn,
     uniIn.row(2).format<uint4>().select<5, 1> (0) = CURBEData.format<uint4>().select<5, 1> (8);
 
 } // void LoadCosts(matrix_ref<uchar, 3, 32> uniIn,
-
-_GENX_ inline
-void LoadCostsHME(matrix_ref<uchar, 3, 32> uniIn,
-                  vector_ref<uchar, CURBEDATA_SIZE> CURBEData)
-{
-
-    // copy prepared costs from the CURBE data
-    uniIn.row(2).format<uint4>().select<3, 1> (0) = CURBEData.format<uint4>().select<3, 1> (8);
-    uniIn.row(2).format<uint4>().select<2, 1> (3) = 0;  // remove MV costs for MVs
-
-} // void LoadCostsHME(matrix_ref<uchar, 3, 32> uniIn,
 
 _GENX_ inline
 void LoadSearchPath(matrix_ref<uchar, 6, 32> imeIn,
@@ -1398,395 +1486,6 @@ void CheckAllFractional(matrix_ref<uchar, 3, 32> uniIn,
 
 } // void CheckAllFractional(matrix_ref<uchar, 3, 32> uniIn,
 
-// Format = U8
-#define VME_SET_UNIInput_ShapeMask(p, v) (VME_Input_S1(p, uint1, 0, 15) = v)
-
-_GENX_ inline
-void RefineHMEPSlice(SurfaceIndex VMEInterPredictionSurfIndex,
-                     matrix_ref<uchar, 3, 32> uniIn,
-                     matrix_ref<uchar, 6, 32> imeIn,
-                     matrix_ref<uchar, 7, 32> uniOut,
-                     matrix_ref<uchar, 4, 32> imeOut,
-                     SurfaceIndex HMEMVPredFwdBwdSurfIndex,
-                     vector_ref<uchar, CURBEDATA_SIZE> CURBEData)
-{
-    matrix<uchar, 4, 32> fbrIn;
-    matrix<uchar, 3, 32> uniInRefine = uniIn;
-    matrix<uchar, 7, 32> uniOutRefine;
-    matrix<uchar, 6, 32> imeInRefine = imeIn;
-    vector<int2, 2> coarse_mv;
-
-    {
-        vector<int2, 2> temp;   //1DW for forward MV
-
-        int x = ((VME_GET_UNIInput_SrcX(uniInRefine) >> 4) << 3);     //every MB use 2 DWs (8 bytes) to store the HME predicted MVs.
-        int y = (VME_GET_UNIInput_SrcY(uniInRefine) >> 4);
-
-        read(MODIFIED(HMEMVPredFwdBwdSurfIndex), x, y, temp);
-        coarse_mv = temp.select<2, 1> (0);
-    }
-
-    SetRef(uniInRefine,
-           uniInRefine.row(0).format<int2>().select<2, 1> (0),
-           coarse_mv,
-           uniInRefine.row(0).format<int1>().select<2, 1> (22),
-           CURBEData.format<int1>().select<2, 1> (17),
-           CURBEData.format<int2>()[68]);
-
-    vector<int2, 2> Dist0, Ref0, Ref0Refine;
-    vector<short, 2> mask;
-
-    Ref0 = uniIn.row(0).format<int2> ().select<2, 1> (0);
-    Ref0Refine = uniInRefine.row(0).format<int2> ().select<2, 1> (0);
-    mask = (Ref0 > Ref0Refine);
-    Dist0 = Ref0Refine - Ref0;
-    Dist0.merge(Ref0 - Ref0Refine, mask);
-
-/*
-    uint1 HMECombineOverlap = GET_CURBE_HMECombineOverlap(CURBEData);
-
-    if (HMECombineOverlap)//HMECombineOverlap assumes same ref window size for normal and hme calls
-*/
-    {
-        vector<int2, 2> HMECombineThreshold = GET_CURBE_HMECombineThreshold(CURBEData);
-
-        mask = (Dist0 >= HMECombineThreshold);
-
-        if (0 == mask.format<uint> ()[0])
-        {
-/*
-            if (HMECombineOverlap & 1)
-*/
-            {
-                VME_SET_UNIInput_LenSP(uniIn, VME_GET_UNIInput_LenSP(uniIn) + VME_GET_UNIInput_LenSP(uniInRefine));
-            }/*
-            else
-                uniIn->MaxLenSP = uniIn->MaxLenSP > uniInRefine.MaxLenSP ? uniIn->MaxLenSP : uniInRefine.MaxLenSP;*/
-            if (VME_GET_UNIInput_LenSP(uniIn) > VME_GET_UNIInput_MaxNumSU(uniIn))
-            {
-                VME_SET_UNIInput_LenSP(uniIn, VME_GET_UNIInput_MaxNumSU(uniIn));
-            }
-
-            {
-                matrix<uchar, 9, 32> temp;
-                vector<short, 2> ref0;
-                vector<ushort, 4> costCenter;
-                matrix<uchar, 3, 32> uniIn0 = uniIn;
-                matrix<uchar, 2, 32> imeIn0 = imeIn.select<2, 1, 32, 1> (0, 0);
-
-                ref0 = uniIn.row(0).format<short> ().select<2, 1> (0);
-                costCenter = uniIn.row(1).format<ushort> ().select<4, 1> (8);
-                run_vme_ime(uniIn0, imeIn0,
-                            VME_STREAM_OUT, VME_SEARCH_SINGLE_REF_SINGLE_REC_SINGLE_START,
-                            VMEInterPredictionSurfIndex, ref0, NULL, costCenter,
-                            temp);
-                uniOut = temp.select<7, 1, 32, 1> (0, 0);
-                imeOut.select<2, 1, 32, 1> (0, 0) = temp.select<2, 1, 32, 1> (7, 0);
-            }
-
-            PrepareFractionalCall(uniIn, fbrIn, uniOut, 0);
-
-            uchar FBRMbMode, FBRSubMbShape, FBRSubPredMode;
-            // copy mb mode
-            FBRMbMode = VME_GET_UNIInput_FBRMbModeInput(uniIn);
-            // copy sub mb shape
-            FBRSubMbShape = VME_GET_UNIInput_FBRSubMBShapeInput(uniIn);
-            // copy sub mb prediction modes
-            FBRSubPredMode = VME_GET_UNIInput_FBRSubPredModeInput(uniIn);
-
-            run_vme_fbr(uniIn, fbrIn, VMEInterPredictionSurfIndex, FBRMbMode, FBRSubMbShape, FBRSubPredMode, uniOut);
-
-            return;
-        }
-    }
-
-    VME_SET_UNIInput_LenSP(uniIn, GET_CURBE_LenSP(CURBEData));
-    U8 shapes = VME_GET_UNIInput_ShapeMask(uniIn);
-
-    {
-        matrix<uchar, 9, 32> temp;
-        vector<short, 2> ref0;
-        vector<ushort, 4> costCenter;
-        matrix<uchar, 3, 32> uniIn0 = uniIn;
-        matrix<uchar, 2, 32> imeIn0 = imeIn.select<2, 1, 32, 1> (0, 0);
-
-        ref0 = uniIn.row(0).format<short> ().select<2, 1> (0);
-        costCenter = uniIn.row(1).format<ushort> ().select<4, 1> (8);
-        run_vme_ime(uniIn0, imeIn0,
-                    VME_STREAM_OUT, VME_SEARCH_SINGLE_REF_SINGLE_REC_SINGLE_START,
-                    VMEInterPredictionSurfIndex, ref0, NULL, costCenter,
-                    temp);
-        uniOut = temp.select<7, 1, 32, 1> (0, 0);
-        imeOut.select<2, 1, 32, 1> (0, 0) = temp.select<2, 1, 32, 1> (7, 0);
-    }
-
-    PrepareFractionalCall(uniIn, fbrIn, uniOut, 0);
-
-    {
-        uchar FBRMbMode, FBRSubMbShape, FBRSubPredMode;
-        // copy mb mode
-        FBRMbMode = VME_GET_UNIInput_FBRMbModeInput(uniIn);
-        // copy sub mb shape
-        FBRSubMbShape = VME_GET_UNIInput_FBRSubMBShapeInput(uniIn);
-        // copy sub mb prediction modes
-        FBRSubPredMode = VME_GET_UNIInput_FBRSubPredModeInput(uniIn);
-
-        run_vme_fbr(uniIn, fbrIn, VMEInterPredictionSurfIndex, FBRMbMode, FBRSubMbShape, FBRSubPredMode, uniOut);
-    }
-
-    VME_SET_UNIInput_ShapeMask(uniIn, shapes);
-/*
-    imeInRefine.StreamOut = 1;imeInRefine.StreamIn = 1;*/
-    imeInRefine.select<4, 1, 32, 1> (2, 0) = imeOut;//.select<2, 1, 32, 1> (0, 0);
-/*
-    UpdateChecked(&uniInRefine, 0);*/
-
-    {
-        matrix<uchar, 9, 32> temp;
-        vector<short, 2> ref0;
-        vector<ushort, 4> costCenter;
-        matrix<uchar, 4, 32> imeInRefine0 = imeInRefine.select<4, 1, 32, 1> (0, 0);
-
-        ref0 = uniInRefine.row(0).format<short> ().select<2, 1> (0);
-        costCenter = uniInRefine.row(1).format<ushort> ().select<4, 1> (8);
-        run_vme_ime(uniInRefine, imeInRefine0,
-                    VME_STREAM_IN_OUT, VME_SEARCH_SINGLE_REF_SINGLE_REC_SINGLE_START,
-                    VMEInterPredictionSurfIndex, ref0, NULL, costCenter,
-                    temp);
-        uniOutRefine = temp.select<7, 1, 32, 1> (0, 0);
-        imeOut.select<2, 1, 32, 1> (0, 0) = temp.select<2, 1, 32, 1> (7, 0);
-    }
-
-    PrepareFractionalCall(uniInRefine, fbrIn, uniOutRefine, 0);
-
-    {
-        uchar FBRMbMode, FBRSubMbShape, FBRSubPredMode;
-        // copy mb mode
-        FBRMbMode = VME_GET_UNIInput_FBRMbModeInput(uniInRefine);
-        // copy sub mb shape
-        FBRSubMbShape = VME_GET_UNIInput_FBRSubMBShapeInput(uniInRefine);
-        // copy sub mb prediction modes
-        FBRSubPredMode = VME_GET_UNIInput_FBRSubPredModeInput(uniInRefine);
-
-        run_vme_fbr(uniInRefine, fbrIn, VMEInterPredictionSurfIndex, FBRMbMode, FBRSubMbShape, FBRSubPredMode, uniOutRefine);
-    }
-
-    uint uniOutRefine_DistInter;
-    VME_GET_UNIOutput_BestInterDistortion(uniOutRefine, uniOutRefine_DistInter);
-    uint uniOut_DistInter;
-    VME_GET_UNIOutput_BestInterDistortion(uniOut, uniOut_DistInter);
-
-    if (uniOutRefine_DistInter < uniOut_DistInter)
-    {
-        uniOut = uniOutRefine;
-    }
-
-} // void RefineHMEPSlice(SurfaceIndex VMEInterPredictionSurfIndex,
-
-_GENX_ inline
-void RefineHMEBSlice(SurfaceIndex VMEInterPredictionSurfIndex,
-                     matrix_ref<uchar, 3, 32> uniIn,
-                     matrix_ref<uchar, 6, 32> imeIn,
-                     matrix_ref<uchar, 7, 32> uniOut,
-                     matrix_ref<uchar, 4, 32> imeOut,
-                     SurfaceIndex HMEMVPredFwdBwdSurfIndex,
-                     vector_ref<uchar, CURBEDATA_SIZE> CURBEData)
-{
-    matrix<uchar, 4, 32> fbrIn;
-    matrix<uchar, 3, 32> uniInRefine = uniIn;
-    matrix<uchar, 7, 32> uniOutRefine;
-    matrix<uchar, 6, 32> imeInRefine = imeIn;
-    vector<int2, 4> coarse_mv;
-
-    {
-        vector<int2, 4> temp;   //1DW for forward/backward MV
-
-        int x = ((VME_GET_UNIInput_SrcX(uniInRefine) >> 4) << 3);     //every MB use 2 DWs (8 bytes) to store the HME predicted MVs.
-        int y = (VME_GET_UNIInput_SrcY(uniInRefine) >> 4);
-
-        read(MODIFIED(HMEMVPredFwdBwdSurfIndex), x, y, coarse_mv);
-    }
-
-    SetRef(uniInRefine,
-           uniInRefine.row(0).format<int2>().select<2, 1> (0),
-           coarse_mv.select<2, 1> (0),
-           uniInRefine.row(0).format<int1>().select<2, 1> (22),
-           CURBEData.format<int1>().select<2, 1> (17),
-           CURBEData.format<int2>()[68]);
-    SetRef(uniInRefine,
-           uniInRefine.row(0).format<int2>().select<2, 1> (2),
-           coarse_mv.select<2, 1> (2),
-           uniInRefine.row(0).format<int1>().select<2, 1> (22),
-           CURBEData.format<int1>().select<2, 1> (17),
-           CURBEData.format<int2>()[68]);
-
-    vector<int2, 2> Dist0, Ref0, Ref0Refine;
-    vector<short, 2> mask;
-
-    Ref0 = uniIn.row(0).format<int2> ().select<2, 1> (0);
-    Ref0Refine = uniInRefine.row(0).format<int2> ().select<2, 1> (0);
-    mask = (Ref0 > Ref0Refine);
-    Dist0 = Ref0Refine - Ref0;
-    Dist0.merge(Ref0 - Ref0Refine, mask);
-
-    {
-        vector<int2, 2> Dist1, Ref1, Ref1Refine;
-
-        Ref1 = uniIn.row(0).format<int2> ().select<2, 1> (2);
-        Ref1Refine = uniInRefine.row(0).format<int2> ().select<2, 1> (2);
-        mask = (Ref1 > Ref1Refine);
-        Dist1 = Ref1Refine - Ref1;
-        Dist1.merge(Ref1 - Ref1Refine, mask);
-
-        // get maximum from both distances
-        mask = (Dist0 < Dist1);
-        Dist0.merge(Dist1, mask);
-    }
-
-/*
-    uint1 HMECombineOverlap = GET_CURBE_HMECombineOverlap(CURBEData);
-
-    if (HMECombineOverlap)
-*/
-    {
-        vector<int2, 2> HMECombineThreshold = GET_CURBE_HMECombineThreshold(CURBEData);
-
-        mask = (Dist0 >= HMECombineThreshold);
-
-        if (0 == mask.format<uint> ()[0])
-        {
-/*
-            if (HMECombineOverlap & 1)
-*/
-            {
-                VME_SET_UNIInput_LenSP(uniIn, VME_GET_UNIInput_LenSP(uniIn) + VME_GET_UNIInput_LenSP(uniInRefine));
-            }/*
-            else
-                uniIn->MaxLenSP = uniIn->MaxLenSP > uniInRefine.MaxLenSP ? uniIn->MaxLenSP : uniInRefine.MaxLenSP;*/
-            if (VME_GET_UNIInput_LenSP(uniIn) > VME_GET_UNIInput_MaxNumSU(uniIn))
-            {
-                VME_SET_UNIInput_LenSP(uniIn, VME_GET_UNIInput_MaxNumSU(uniIn));
-            }
-
-            {
-                matrix<uchar, 11, 32> temp;
-                vector<short, 2> ref0, ref1;
-                vector<ushort, 4> costCenter;
-                matrix<uchar, 3, 32> uniIn0 = uniIn;
-                matrix<uchar, 2, 32> imeIn0 = imeIn.select<2, 1, 32, 1> (0, 0);
-
-                ref0 = uniIn.row(0).format<short> ().select<2, 1> (0);
-                ref1 = uniIn.row(0).format<short> ().select<2, 1> (2);
-                costCenter = uniIn.row(1).format<ushort> ().select<4, 1> (8);
-                run_vme_ime(uniIn0, imeIn0,
-                            VME_STREAM_OUT, VME_SEARCH_DUAL_REF_DUAL_REC,
-                            VMEInterPredictionSurfIndex, ref0, ref1, costCenter,
-                            temp);
-                uniOut = temp.select<7, 1, 32, 1> (0, 0);
-                imeOut = temp.select<4, 1, 32, 1> (7, 0);
-            }
-
-            PrepareFractionalCall(uniIn, fbrIn, uniOut, 1);
-
-            uchar FBRMbMode, FBRSubMbShape, FBRSubPredMode;
-            // copy mb mode
-            FBRMbMode = VME_GET_UNIInput_FBRMbModeInput(uniIn);
-            // copy sub mb shape
-            FBRSubMbShape = VME_GET_UNIInput_FBRSubMBShapeInput(uniIn);
-            // copy sub mb prediction modes
-            FBRSubPredMode = VME_GET_UNIInput_FBRSubPredModeInput(uniIn);
-
-            run_vme_fbr(uniIn, fbrIn, VMEInterPredictionSurfIndex, FBRMbMode, FBRSubMbShape, FBRSubPredMode, uniOut);
-
-            return;
-        }
-    }
-
-    VME_SET_UNIInput_LenSP(uniIn, GET_CURBE_LenSP(CURBEData));
-    U8 shapes = VME_GET_UNIInput_ShapeMask(uniIn);
-
-    {
-        matrix<uchar, 11, 32> temp;
-        vector<short, 2> ref0, ref1;
-        vector<ushort, 4> costCenter;
-        matrix<uchar, 3, 32> uniIn0 = uniIn;
-        matrix<uchar, 2, 32> imeIn0 = imeIn.select<2, 1, 32, 1> (0, 0);
-
-        ref0 = uniIn.row(0).format<short> ().select<2, 1> (0);
-        ref1 = uniIn.row(0).format<short> ().select<2, 1> (2);
-        costCenter = uniIn.row(1).format<ushort> ().select<4, 1> (8);
-        run_vme_ime(uniIn0, imeIn0,
-                    VME_STREAM_OUT, VME_SEARCH_DUAL_REF_DUAL_REC,
-                    VMEInterPredictionSurfIndex, ref0, ref1, costCenter,
-                    temp);
-        uniOut = temp.select<7, 1, 32, 1> (0, 0);
-        imeOut = temp.select<4, 1, 32, 1> (7, 0);
-    }
-
-    PrepareFractionalCall(uniIn, fbrIn, uniOut, 1);
-
-    {
-        uchar FBRMbMode, FBRSubMbShape, FBRSubPredMode;
-        // copy mb mode
-        FBRMbMode = VME_GET_UNIInput_FBRMbModeInput(uniIn);
-        // copy sub mb shape
-        FBRSubMbShape = VME_GET_UNIInput_FBRSubMBShapeInput(uniIn);
-        // copy sub mb prediction modes
-        FBRSubPredMode = VME_GET_UNIInput_FBRSubPredModeInput(uniIn);
-
-        run_vme_fbr(uniIn, fbrIn, VMEInterPredictionSurfIndex, FBRMbMode, FBRSubMbShape, FBRSubPredMode, uniOut);
-    }
-
-    VME_SET_UNIInput_ShapeMask(uniIn, shapes);
-/*
-    imeInRefine.StreamOut = 1;imeInRefine.StreamIn = 1;*/
-    imeInRefine.select<4, 1, 32, 1> (2, 0) = imeOut;//.select<2, 1, 32, 1> (0, 0);
-/*
-    UpdateChecked(&uniInRefine, 0);*/
-
-    {
-        matrix<uchar, 11, 32> temp;
-        vector<short, 2> ref0, ref1;
-        vector<ushort, 4> costCenter;
-
-        ref0 = uniInRefine.row(0).format<short> ().select<2, 1> (0);
-        ref1 = uniInRefine.row(0).format<short> ().select<2, 1> (2);
-        costCenter = uniInRefine.row(1).format<ushort> ().select<4, 1> (8);
-        run_vme_ime(uniInRefine, imeInRefine,
-                    VME_STREAM_IN_OUT, VME_SEARCH_DUAL_REF_DUAL_REC,
-                    VMEInterPredictionSurfIndex, ref0, ref1, costCenter,
-                    temp);
-        uniOutRefine = temp.select<7, 1, 32, 1> (0, 0);
-        imeOut = temp.select<4, 1, 32, 1> (7, 0);
-    }
-
-    PrepareFractionalCall(uniInRefine, fbrIn, uniOutRefine, 1);
-
-    {
-        uchar FBRMbMode, FBRSubMbShape, FBRSubPredMode;
-        // copy mb mode
-        FBRMbMode = VME_GET_UNIInput_FBRMbModeInput(uniInRefine);
-        // copy sub mb shape
-        FBRSubMbShape = VME_GET_UNIInput_FBRSubMBShapeInput(uniInRefine);
-        // copy sub mb prediction modes
-        FBRSubPredMode = VME_GET_UNIInput_FBRSubPredModeInput(uniInRefine);
-
-        run_vme_fbr(uniInRefine, fbrIn, VMEInterPredictionSurfIndex, FBRMbMode, FBRSubMbShape, FBRSubPredMode, uniOutRefine);
-    }
-
-    uint uniOutRefine_DistInter;
-    VME_GET_UNIOutput_BestInterDistortion(uniOutRefine, uniOutRefine_DistInter);
-    uint uniOut_DistInter;
-    VME_GET_UNIOutput_BestInterDistortion(uniOut, uniOut_DistInter);
-
-    if (uniOutRefine_DistInter < uniOut_DistInter)
-    {
-        uniOut = uniOutRefine;
-    }
-
-} // void RefineHMEBSlice(SurfaceIndex VMEInterPredictionSurfIndex,
-
-
 template <int sliceType>
 _GENX_ inline
 void DoInterFramePrediction(SurfaceIndex VMEInterPredictionSurfIndex,
@@ -1795,8 +1494,7 @@ void DoInterFramePrediction(SurfaceIndex VMEInterPredictionSurfIndex,
                             matrix_ref<uint4, 16, 2> Costs,
                             matrix_ref<uchar, 7, 32> best_uniOut,
                             vector_ref<uint1, 1> direct8x8pattern,
-                            vector_ref<uchar, CURBEDATA_SIZE> CURBEData,
-                            SurfaceIndex HMEMVPredFwdBwdSurfIndex)
+                            vector_ref<uchar, CURBEDATA_SIZE> CURBEData)
 {
     matrix<uchar, 4, 32> fbrIn = 0;
     matrix<uchar, 4, 32> best_imeOut = 0;
@@ -1811,19 +1509,6 @@ void DoInterFramePrediction(SurfaceIndex VMEInterPredictionSurfIndex,
 
     if (sliceType == PREDSLICE)
     {
-        // if HME enabled
-        if (GET_CURBE_UseHMEPredictor(CURBEData))
-        {
-            RefineHMEPSlice(VMEInterPredictionSurfIndex,
-                            uniIn, imeIn,
-                            best_uniOut, best_imeOut,
-                            HMEMVPredFwdBwdSurfIndex, CURBEData);
-            /* multiple predictions are not used
-            CheckAdditionalPred(uniIn, imeIn, best_uniOut, best_imeOut); */
-            /* there is only one reference
-            MultiRefCheck(in_SliceMBData, &uniIn, &imeIn, uMB, &best_uniOut, &best_imeOut, CMVFW_4X, DIST[0]);*/
-        }
-        else
         {
             /* multiple prediction is not supported yet
             UpdateChecked(uniIn, 0); */
@@ -1868,20 +1553,6 @@ void DoInterFramePrediction(SurfaceIndex VMEInterPredictionSurfIndex,
     }
     else if (sliceType == BPREDSLICE)
     {
-        // if HME enabled
-        if (GET_CURBE_UseHMEPredictor(CURBEData))
-        {
-            RefineHMEBSlice(VMEInterPredictionSurfIndex,
-                            uniIn, imeIn,
-                            best_uniOut, best_imeOut,
-                            HMEMVPredFwdBwdSurfIndex, CURBEData);
-/*
-            status |= CheckAdditionalPred(&uniIn, &imeIn, &best_uniOut, &best_imeOut);
-            if (CheckMultiRef)
-                status |= MultiRefBiCheck(in_SliceMBData, &uniIn, &imeIn, uMB, &best_uniOut, &best_imeOut, CMVFW_4X, CMVBW_4X, DIST);
-            if (status) return status;*/
-        }
-        else
         {
             /* multiple prediction is not supprted yet
             UpdateChecked(&uniIn, 0);  UpdateChecked(&uniIn, 1);*/
@@ -2004,13 +1675,13 @@ void SetUpPakDataPSlice(matrix_ref<uchar, 3, 32> uniIn,
 
 extern "C" _GENX_MAIN_ void
 SVCEncMB_P(SurfaceIndex CurbeDataSurfIndex,
+           SurfaceIndex SrcSurfIndexRaw,
            SurfaceIndex SrcSurfIndex,
            SurfaceIndex VMEInterPredictionSurfIndex,
            SurfaceIndex MBDataSurfIndex,
-           SurfaceIndex HMEMVPredFwdBwdSurfIndex,
            SurfaceIndex /*FwdFrmMBDataSurfIndex*/)
 {
-    cm_wait();
+//    cm_wait();
     uint mbX = get_thread_origin_x();
     uint mbY = get_thread_origin_y();
     uint x = mbX * 16;
@@ -2043,6 +1714,15 @@ SVCEncMB_P(SurfaceIndex CurbeDataSurfIndex,
         vector<int2, 2> ref0;
         U8 ftqSkip = 0;
 
+        // down scale
+        uint LaScaleFactor = GET_CURBE_CurLayerDQId(CURBEData);
+        if (LaScaleFactor == 2)
+        {
+            DownSampleMB2Xf(SrcSurfIndexRaw, SrcSurfIndex, mbX, mbY);
+        } else if (LaScaleFactor == 4)
+        {
+            DownSampleMB4Xf(SrcSurfIndexRaw, SrcSurfIndex, mbX, mbY);
+        }
         SetUpVmePSlice(uniIn, sicIn, Costs,
                        SrcSurfIndex, MBDataSurfIndex,
                        CURBEData,
@@ -2091,8 +1771,7 @@ SVCEncMB_P(SurfaceIndex CurbeDataSurfIndex,
                 // Calculate AVC INTER prediction costs
                 DoInterFramePrediction<PREDSLICE> (VMEInterPredictionSurfIndex, uniIn, imeIn, Costs,
                                                    best_uniOut, direct8x8pattern,
-                                                   CURBEData,
-                                                   HMEMVPredFwdBwdSurfIndex);
+                                                   CURBEData);
             }
 
             VME_GET_UNIOutput_BestInterDistortion(sic_uniOut, sic_uniOut_DistInter[0]);
@@ -2195,6 +1874,8 @@ void GetNeighbourParamB(matrix_ref<uint1, 16, 1> leftBlockValues,
         return;
     }
 
+    cm_wait();
+
     // read left macroblock parameters
     refIdxA = -1;
     mvA = 0;
@@ -2208,7 +1889,7 @@ void GetNeighbourParamB(matrix_ref<uint1, 16, 1> leftBlockValues,
 
         // read intra types
         offset = (mbIndex - 1) * MBDATA_SIZE;
-        read(MODIFIED_DWALIGNED(MBDataSurfIndex), offset, leftMbData);
+        read(DWALIGNED(MBDataSurfIndex), offset, leftMbData);
         intraMbMode = GET_MBDATA_GET_INTRA_MODE(leftMbData);
         intraMbFlag = GET_MBDATA_IntraMbFlag(leftMbData);
         intraMbFlagMask = (intraMbFlag & (0 < intraMbMode));
@@ -2252,7 +1933,7 @@ void GetNeighbourParamB(matrix_ref<uint1, 16, 1> leftBlockValues,
 
         // read intra types
         offset = (mbIndex - mbWidth) * MBDATA_SIZE;
-        read(MODIFIED_DWALIGNED(MBDataSurfIndex), offset, upperMbData);
+        read(DWALIGNED(MBDataSurfIndex), offset, upperMbData);
         intraMbMode = GET_MBDATA_GET_INTRA_MODE(upperMbData);
         intraMbFlag = GET_MBDATA_IntraMbFlag(upperMbData);
         intraMbFlagMask = (intraMbFlag & (0 < intraMbMode));
@@ -2287,7 +1968,7 @@ void GetNeighbourParamB(matrix_ref<uint1, 16, 1> leftBlockValues,
 
             // read intra types
             offset = (mbIndex - mbWidth - 1) * MBDATA_SIZE;
-            read(MODIFIED_DWALIGNED(MBDataSurfIndex), offset, upperLeftMbData);
+            read(DWALIGNED(MBDataSurfIndex), offset, upperLeftMbData);
             intraMbFlagD = GET_MBDATA_IntraMbFlag(upperLeftMbData);
             upperLeftMask = 0x08;
 
@@ -2305,7 +1986,7 @@ void GetNeighbourParamB(matrix_ref<uint1, 16, 1> leftBlockValues,
 
             // read intra types
             offset = (mbIndex - mbWidth + 1) * MBDATA_SIZE;
-            read(MODIFIED_DWALIGNED(MBDataSurfIndex), offset, upperRightMbData);
+            read(DWALIGNED(MBDataSurfIndex), offset, upperRightMbData);
             intraMbFlag = GET_MBDATA_IntraMbFlag(upperRightMbData);
             upperRightMask = 0x04;
 
@@ -2337,7 +2018,7 @@ void GetNeighbourParamB(matrix_ref<uint1, 16, 1> leftBlockValues,
 
             // read motion vector
             offset = (mbIndex - mbWidth - 1) * MBDATA_SIZE;
-            read(MODIFIED_DWALIGNED(MBDataSurfIndex), offset, upperLeftMbData);
+            read(DWALIGNED(MBDataSurfIndex), offset, upperLeftMbData);
 
             GET_MBDATA_MV(tmp.format<uint4>()[0], upperLeftMbData, LIST_0);
             GET_MBDATA_MV(tmp.format<uint4>()[1], upperLeftMbData, LIST_1);
@@ -2375,14 +2056,14 @@ void GetNeighbourParamB(matrix_ref<uint1, 16, 1> leftBlockValues,
         // read luminance samples
         {
             matrix<uint1, 16, 4> temp;
-            read_plane(MODIFIED(SrcSurfIndex), GENX_SURFACE_Y_PLANE, x - 4, y, temp);
+            read_plane(SrcSurfIndex, GENX_SURFACE_Y_PLANE, x - 4, y, temp);
             leftBlockValues = temp.select<16, 1, 1, 1> (0, 3);
         }
 
         // read chrominance samples
         {
             matrix<uint1, 8, 4> temp;
-            read_plane(MODIFIED(SrcSurfIndex), GENX_SURFACE_UV_PLANE, x - 4, y / 2, temp);
+            read_plane(SrcSurfIndex, GENX_SURFACE_UV_PLANE, x - 4, y / 2, temp);
             chromaLeftBlockValues = temp.select<8, 1, 2, 1> (0, 2);
         }
     }
@@ -2394,18 +2075,18 @@ void GetNeighbourParamB(matrix_ref<uint1, 16, 1> leftBlockValues,
             // read luminance samples
             if (upperRightMask[0])
             {
-                read_plane(MODIFIED(SrcSurfIndex), GENX_SURFACE_Y_PLANE, x - 4, y - 1, topBlocksValues);
+                read_plane(SrcSurfIndex, GENX_SURFACE_Y_PLANE, x - 4, y - 1, topBlocksValues);
             }
             else
             {
                 matrix<uint1, 1, 20> temp;
-                read_plane(MODIFIED(SrcSurfIndex), GENX_SURFACE_Y_PLANE, x - 4, y - 1, temp);
+                read_plane(SrcSurfIndex, GENX_SURFACE_Y_PLANE, x - 4, y - 1, temp);
                 topBlocksValues.select<1, 1, 20, 1> (0, 0) = temp;
                 topBlocksValues.select<1, 1, 8, 1> (0, 20) = temp.row(0)[19];
             }
 
             // read chrominance samples
-            read_plane(MODIFIED(SrcSurfIndex), GENX_SURFACE_UV_PLANE, x - 4, y / 2 - 1, chromaTopBlocksValues);
+            read_plane(SrcSurfIndex, GENX_SURFACE_UV_PLANE, x - 4, y / 2 - 1, chromaTopBlocksValues);
         }
         else
         {
@@ -2413,14 +2094,14 @@ void GetNeighbourParamB(matrix_ref<uint1, 16, 1> leftBlockValues,
             if (upperRightMask[0])
             {
                 matrix<uint1, 1, 24> temp;
-                read_plane(MODIFIED(SrcSurfIndex), GENX_SURFACE_Y_PLANE, x, y - 1, temp);
+                read_plane(SrcSurfIndex, GENX_SURFACE_Y_PLANE, x, y - 1, temp);
                 topBlocksValues.select<1, 1, 4, 1> (0, 0) = 0;
                 topBlocksValues.select<1, 1, 24, 1> (0, 4) = temp;
             }
             else
             {
                 matrix<uint1, 1, 16> temp;
-                read_plane(MODIFIED(SrcSurfIndex), GENX_SURFACE_Y_PLANE, x, y - 1, temp);
+                read_plane(SrcSurfIndex, GENX_SURFACE_Y_PLANE, x, y - 1, temp);
                 topBlocksValues.select<1, 1, 4, 1> (0, 0) = 0;
                 topBlocksValues.select<1, 1, 16, 1> (0, 4) = temp;
                 topBlocksValues.select<1, 1, 8, 1> (0, 20) = temp.row(0)[15];
@@ -2429,7 +2110,7 @@ void GetNeighbourParamB(matrix_ref<uint1, 16, 1> leftBlockValues,
             // read chrominance samples
             {
                 matrix<uint1, 1, 16> temp;
-                read_plane(MODIFIED(SrcSurfIndex), GENX_SURFACE_UV_PLANE, x, y / 2 - 1, temp);
+                read_plane(SrcSurfIndex, GENX_SURFACE_UV_PLANE, x, y / 2 - 1, temp);
                 chromaTopBlocksValues.select<1, 1, 4, 1> (0, 0) = 0;
                 chromaTopBlocksValues.select<1, 1, 16, 1> (0, 4) = temp;
             }
@@ -2482,7 +2163,7 @@ void ComputeBDirectMV(uint4 x, uint4 y, uint4 MbIndex,
 
         // read 'colocated' MB info
         offset = MbIndex * MBDATA_SIZE;
-        read(MODIFIED_DWALIGNED(FwdFrmMBDataSurfIndex), offset, colMbData);
+        read(DWALIGNED(FwdFrmMBDataSurfIndex), offset, colMbData);
 
         // read 'colocated' motion vectors
         GET_MBDATA_MV(fwdRefMV.format<uint4> ()(0), colMbData, LIST_0);
@@ -2834,13 +2515,13 @@ void SetUpPakDataBSlice(matrix_ref<uchar, 3, 32> uniIn,
 
 extern "C" _GENX_MAIN_  void
 SVCEncMB_B(SurfaceIndex CurbeDataSurfIndex,
+           SurfaceIndex SrcSurfIndexRaw,
            SurfaceIndex SrcSurfIndex,
            SurfaceIndex VMEInterPredictionSurfIndex,
            SurfaceIndex MBDataSurfIndex,
-           SurfaceIndex HMEMVPredFwdBwdSurfIndex,
            SurfaceIndex FwdFrmMBDataSurfIndex)
 {
-    cm_wait();
+//    cm_wait();
     uint mbX = get_thread_origin_x();
     uint mbY = get_thread_origin_y();
     uint x = mbX * 16;
@@ -2874,6 +2555,15 @@ SVCEncMB_B(SurfaceIndex CurbeDataSurfIndex,
         vector<int2, 2> ref0;
         U8 ftqSkip = 0;
 
+        // down scale
+        uint LaScaleFactor = GET_CURBE_CurLayerDQId(CURBEData);
+        if (LaScaleFactor == 2)
+        {
+            DownSampleMB2Xf(SrcSurfIndexRaw, SrcSurfIndex, mbX, mbY);
+        } else if (LaScaleFactor == 4)
+        {
+            DownSampleMB4Xf(SrcSurfIndexRaw, SrcSurfIndex, mbX, mbY);
+        }
         SetUpVmeBSlice(uniIn, sicIn, Costs,
                        SrcSurfIndex, MBDataSurfIndex,
                        FwdFrmMBDataSurfIndex,
@@ -2924,8 +2614,7 @@ SVCEncMB_B(SurfaceIndex CurbeDataSurfIndex,
             {
                 // Calculate AVC INTER prediction costs
                 DoInterFramePrediction<BPREDSLICE> (VMEInterPredictionSurfIndex, uniIn, imeIn,
-                                                    Costs, best_uniOut, direct8x8pattern,
-                                                    CURBEData, HMEMVPredFwdBwdSurfIndex);
+                                                    Costs, best_uniOut, direct8x8pattern, CURBEData);
             }
 
             VME_GET_UNIOutput_BestInterDistortion(sic_uniOut, sic_uniOut_DistInter[0]);
@@ -2987,286 +2676,6 @@ SVCEncMB_B(SurfaceIndex CurbeDataSurfIndex,
     write(MBDataSurfIndex, offset, MBData);
 
     cm_fence();
-}
-
-extern "C" _GENX_MAIN_  void
-DownSampleMB(SurfaceIndex SurfIndex,
-             SurfaceIndex Surf4XIndex)
-{   // Luma only
-    uint mbX = get_thread_origin_x();
-    uint mbY = get_thread_origin_y();
-    uint ix = mbX << 4;
-    uint iy = mbY << 4;
-    uint ox = mbX << 2;
-    uint oy = mbY << 2;
-
-    matrix<uint1,16,16> inMb;
-    matrix<uint1,4,4> outMb;
-
-    read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix, iy, inMb);
-
-    matrix<uint2,8,16> sum8x16_16;
-
-    sum8x16_16.select<4,1,16,1>(0,0) = inMb.select<4,4,16,1>(0,0) + inMb.select<4,4,16,1>(1,0);
-    sum8x16_16.select<4,1,16,1>(4,0) = inMb.select<4,4,16,1>(2,0) + inMb.select<4,4,16,1>(3,0);
-    sum8x16_16.select<4,1,16,1>(0,0) = sum8x16_16.select<4,1,16,1>(0,0) + sum8x16_16.select<4,1,16,1>(4,0);
-
-    sum8x16_16.select<2,1,16,1>(4,0) = sum8x16_16.select<4,1,8,2>(0,0) + sum8x16_16.select<4,1,8,2>(0,1);
-    sum8x16_16.select<1,1,16,1>(6,0) = sum8x16_16.select<2,1,8,2>(4,0) + sum8x16_16.select<2,1,8,2>(4,1);
-
-    sum8x16_16.select<1,1,16,1>(6,0) += 8;
-    outMb = sum8x16_16.select<1,1,16,1>(6,0) >> 4;
-
-    write_plane(Surf4XIndex, GENX_SURFACE_Y_PLANE, ox, oy, outMb);
-}
-
-extern "C" _GENX_MAIN_  void
-HmeMB_P(SurfaceIndex CurbeDataSurfIndex,
-        SurfaceIndex HMESurfIndex,
-        SurfaceIndex HMEMVPredSurfIndex)
-{
-///    cm_wait();
-
-    uint mbX = get_thread_origin_x();
-    uint mbY = get_thread_origin_y();
-    uint x = mbX * 16;
-    uint y = mbY * 16;
-    uint PicWidthInMB, PicHeightInMBs;       //Hme picture width/height in MB unit
-
-    vector<uchar, CURBEDATA_SIZE> CURBEData;
-    read(CurbeDataSurfIndex,0,CURBEData.select<128,1>());
-    read(CurbeDataSurfIndex,128,CURBEData.select<32,1>(128));
-
-    // read picture's width in MB units
-    PicWidthInMB    = GET_CURBE_PictureWidth(CURBEData);
-    PicHeightInMBs  = GET_CURBE_PictureHeight(CURBEData);
-    PicWidthInMB    = (PicWidthInMB + 3) >> 2;  // 4X sizes
-    PicHeightInMBs  = (PicHeightInMBs + 3) >> 2 ;
-
-    // update picture's size
-    SET_CURBE_PictureWidth(CURBEData, PicWidthInMB);
-    SET_CURBE_PictureHeight(CURBEData, PicHeightInMBs);
-
-    // read MB record data
-    vector<uchar, 1> direct8x8pattern = 0;
-    matrix<uchar, 3, 32> uniIn = 0;
-    matrix<uchar, 7, 32> best_uniOut = 0;
-
-    // declare parameters for VME
-    matrix<uchar, 6, 32> imeIn = 0;
-    matrix<uint4, 16, 2> Costs = 0;
-    vector<int2, 2> mvPred = 0;
-
-    VME_SET_UNIOutput_BestIntraDistortion(best_uniOut, -1);
-    VME_SET_UNIOutput_InterDistortion(best_uniOut, -1);
-    VME_SET_UNIOutput_SkipRawDistortion(best_uniOut, -1);
-
-    LoadCostsHME(uniIn, CURBEData);
-    LoadSearchPath(imeIn, CURBEData);
-
-    matrix<uchar, 9, 32> temp;
-    vector<short, 2> ref0;
-    vector<ushort, 4> costCenter;
-
-    VME_SET_UNIInput_SrcX(uniIn, x);
-    VME_SET_UNIInput_SrcY(uniIn, y);
-
-    VME_COPY_DWORD(uniIn, 0, 3, CURBEData, 3);
-    VME_SET_UNIInput_ShapeMask(uniIn, 0x3f);   // change SubMbPartMask to 4x4 instead of 16x16
-    VME_SET_UNIInput_MaxNumMVs(uniIn, 16);
-    VME_COPY_DWORD(uniIn, 0, 5, CURBEData, 5);  // RefWidth & RefHeight (48 & 40)
-
-    SetRef(uniIn,
-           uniIn.row(0).format<int2>().select<2, 1> (0),
-           mvPred,
-           uniIn.row(0).format<int1>().select<2, 1> (22),
-           CURBEData.format<int1>().select<2, 1> (17),
-           CURBEData.format<int2>()[68]);
-    // M0.6 debug
-    // M0.7 debug
-
-    // register M1
-    // M1.0/1.1/1.2 Search path parameters & start centers
-    uniIn.row(1).format<uint4> ().select<3, 1> (0) = CURBEData.format<uint4> ().select<3, 1> (0);
-    {
-        vector<uint1, 2> Start0;
-        Start0 = uniIn.row(0).format<int1>().select<2, 1> (22);
-        Start0 = ((Start0 - 16) >> 3) & 0x0f;
-        uniIn.row(1)[10] = Start0[0] | (Start0[1] << 4);
-    }
-    // M1.3 Weighted SAD (not used for HSW)
-    // M1.4 Cost center 0 FWD
-    VME_COPY_DWORD(uniIn, 1, 4, mvPred, 0);
-    // M1.5 Cost center 1 BWD
-    // M1.6 Fwd/Bwd Block RefID (used in B slices only)
-    // M1.7 various prediction parameters
-    VME_COPY_DWORD(uniIn, 1, 7, CURBEData, 7);
-    VME_CLEAR_UNIInput_IntraCornerSwap(uniIn);
-
-    matrix<uchar, 3, 32> uniIn0 = uniIn;
-    matrix<uchar, 2, 32> imeIn0 = imeIn.select<2, 1, 32, 1> (0, 0);
-
-    ref0 = uniIn.row(0).format<short> ().select<2, 1> (0);
-    costCenter = uniIn.row(1).format<ushort> ().select<4, 1> (8);
-    run_vme_ime(uniIn0, imeIn0,
-        VME_STREAM_OUT, VME_SEARCH_SINGLE_REF_SINGLE_REC_SINGLE_START,
-        HMESurfIndex, ref0, NULL, costCenter, temp);
-    best_uniOut = temp.select<7, 1, 32, 1> (0, 0);
-///    imeOut.select<2, 1, 32, 1> (0, 0) = temp.select<2, 1, 32, 1> (7, 0);
-
-/*  fractional HME is not checked
-    PrepareFractionalCall(uniIn, fbrIn, best_uniOut, 0);
-
-    uchar FBRMbMode, FBRSubMbShape, FBRSubPredMode;
-    // copy mb mode
-    FBRMbMode = VME_GET_UNIInput_FBRMbModeInput(uniIn);
-    // copy sub mb shape
-    FBRSubMbShape = VME_GET_UNIInput_FBRSubMBShapeInput(uniIn);
-    // copy sub mb prediction modes
-    FBRSubPredMode = VME_GET_UNIInput_FBRSubPredModeInput(uniIn);
-
-    if (GET_CURBE_SubPelMode(CURBEData))
-    {
-        matrix<uchar, 3, 32> uniIn0 = uniIn;
-        matrix<uchar, 7, 32> temp;
-        run_vme_fbr(uniIn0, fbrIn, HMESurfIndex, FBRMbMode, FBRSubMbShape, FBRSubPredMode, temp);
-        best_uniOut = temp;
-    }
-*/
-
-    // write 16 MVs (due to split 4x4) for 16 Mbs (4 rows x 32 bytes)
-    matrix<uint2,4,16> bestMV = best_uniOut.format<uint2,7,16>().select<4,1,16,1>(1,0) << 2;
-    write(HMEMVPredSurfIndex, mbX * HME_MVDATA_SIZE * 4, mbY * 4, bestMV);
-
-///    cm_fence();
-}
-
-extern "C" _GENX_MAIN_  void
-HmeMB_B(SurfaceIndex CurbeDataSurfIndex,
-        SurfaceIndex HMESurfIndex,
-        SurfaceIndex HMEMVPredSurfIndex)
-{
-    ///    cm_wait();
-
-    uint mbX = get_thread_origin_x();
-    uint mbY = get_thread_origin_y();
-    uint x = mbX * 16;
-    uint y = mbY * 16;
-    uint PicWidthInMB, PicHeightInMBs;       //Hme picture width/height in MB unit
-
-    vector<uchar, CURBEDATA_SIZE> CURBEData;
-    read(CurbeDataSurfIndex,0,CURBEData.select<128,1>());
-    read(CurbeDataSurfIndex,128,CURBEData.select<32,1>(128));
-
-    // read picture's width in MB units
-    PicWidthInMB    = GET_CURBE_PictureWidth(CURBEData);
-    PicHeightInMBs  = GET_CURBE_PictureHeight(CURBEData);
-    PicWidthInMB    = (PicWidthInMB + 3) >> 2;  // 4X sizes
-    PicHeightInMBs  = (PicHeightInMBs + 3) >> 2 ;
-    // update picture's size
-    SET_CURBE_PictureWidth(CURBEData, PicWidthInMB);
-    SET_CURBE_PictureHeight(CURBEData, PicHeightInMBs);
-
-    // read MB record data
-    vector<uchar, 1> direct8x8pattern = 0;
-    matrix<uchar, 3, 32> uniIn = 0;
-    matrix<uchar, 7, 32> best_uniOut = 0;
-
-    // declare parameters for VME
-    matrix<uchar, 6, 32> imeIn = 0;
-    matrix<uint4, 16, 2> Costs = 0;
-    vector<int2, 2> mvPred = 0;
-
-    VME_SET_UNIOutput_BestIntraDistortion(best_uniOut, -1);
-    VME_SET_UNIOutput_InterDistortion(best_uniOut, -1);
-    VME_SET_UNIOutput_SkipRawDistortion(best_uniOut, -1);
-
-    LoadCostsHME(uniIn, CURBEData);
-    LoadSearchPath(imeIn, CURBEData);
-
-    matrix<uchar, 11, 32> temp;
-    vector<short, 2> ref0, ref1;
-    vector<ushort, 4> costCenter;
-
-    VME_SET_UNIInput_SrcX(uniIn, x);
-    VME_SET_UNIInput_SrcY(uniIn, y);
-
-    VME_COPY_DWORD(uniIn, 0, 3, CURBEData, 3);
-    VME_SET_UNIInput_ShapeMask(uniIn, 0x3f);   // change SubMbPartMask to 4x4 instead of 16x16
-    VME_SET_UNIInput_MaxNumMVs(uniIn, 32);
-    VME_COPY_DWORD(uniIn, 0, 5, CURBEData, 5);  // RefWidth & RefHeight (32 & 32)
-
-    SetRef(uniIn,
-        uniIn.row(0).format<int2>().select<2, 1> (0),
-        mvPred,
-        uniIn.row(0).format<int1>().select<2, 1> (22),
-        CURBEData.format<int1>().select<2, 1> (17),
-        CURBEData.format<int2>()[68]);
-    SetRef(uniIn,
-        uniIn.row(0).format<int2>().select<2, 1> (2),
-        mvPred,
-        uniIn.row(0).format<int1>().select<2, 1> (22),
-        CURBEData.format<int1>().select<2, 1> (17),
-        CURBEData.format<int2>()[68]);
-    // M0.6 debug
-    // M0.7 debug
-
-    // register M1
-    // M1.0/1.1/1.2 Search path parameters & start centers
-    uniIn.row(1).format<uint4> ().select<3, 1> (0) = CURBEData.format<uint4> ().select<3, 1> (0);
-    {
-        vector<uint1, 2> Start0;
-        Start0 = uniIn.row(0).format<int1>().select<2, 1> (22);
-        Start0 = ((Start0 - 16) >> 3) & 0x0f;
-        uniIn.row(1)[10] = Start0[0] | (Start0[1] << 4);
-    }
-    // M1.3 Weighted SAD (not used for HSW)
-    // M1.4 Cost center 0 FWD
-    VME_COPY_DWORD(uniIn, 1, 4, mvPred, 0);
-    // M1.5 Cost center 1 BWD
-    VME_COPY_DWORD(uniIn, 1, 5, mvPred, 0);
-    // M1.6 Fwd/Bwd Block RefID (used in B slices only)
-    // M1.7 various prediction parameters
-    VME_COPY_DWORD(uniIn, 1, 7, CURBEData, 7);
-    VME_CLEAR_UNIInput_IntraCornerSwap(uniIn);
-
-    matrix<uchar, 3, 32> uniIn0 = uniIn;
-    matrix<uchar, 2, 32> imeIn0 = imeIn.select<2, 1, 32, 1> (0, 0);
-
-    ref0 = uniIn.row(0).format<short> ().select<2, 1> (0);
-    ref1 = uniIn.row(0).format<short> ().select<2, 1> (2);
-    costCenter = uniIn.row(1).format<ushort> ().select<4, 1> (8);
-    run_vme_ime(uniIn0, imeIn0,
-        VME_STREAM_OUT, VME_SEARCH_DUAL_REF_DUAL_REC,
-        HMESurfIndex, ref0, ref1, costCenter, temp);
-    best_uniOut = temp.select<7, 1, 32, 1> (0, 0);
-///    imeOut.select<2, 1, 32, 1> (0, 0) = temp.select<2, 1, 32, 1> (7, 0);
-
-/*  fractional HME is not checked
-    PrepareFractionalCall(uniIn, fbrIn, best_uniOut, 1);
-
-    uchar FBRMbMode, FBRSubMbShape, FBRSubPredMode;
-    // copy mb mode
-    FBRMbMode = VME_GET_UNIInput_FBRMbModeInput(uniIn);
-    // copy sub mb shape
-    FBRSubMbShape = VME_GET_UNIInput_FBRSubMBShapeInput(uniIn);
-    // copy sub mb prediction modes
-    FBRSubPredMode = VME_GET_UNIInput_FBRSubPredModeInput(uniIn);
-
-    if (GET_CURBE_SubPelMode(CURBEData))
-    {
-    matrix<uchar, 3, 32> uniIn0 = uniIn;
-    matrix<uchar, 7, 32> temp;
-    run_vme_fbr(uniIn0, fbrIn, HMESurfIndex, FBRMbMode, FBRSubMbShape, FBRSubPredMode, temp);
-    best_uniOut = temp;
-    }
-*/
-
-    // write MVs (due to split 4x4) for 16 Mbs (4 rows x 32 bytes)
-    matrix<uint2,4,16> bestMV = best_uniOut.format<uint2,7,16>().select<4,1,16,1>(1,0) << 2;
-    write(HMEMVPredSurfIndex, mbX * HME_MVDATA_SIZE * 4, mbY * 4, bestMV);
-
-    ///    cm_fence();
 }
 
 /****************************************************************************************/

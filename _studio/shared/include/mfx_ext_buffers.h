@@ -64,9 +64,9 @@ typedef struct {
     mfxU16  LocalSearch;    // 0=default, 1=type, 2=small, 3=square, 4=diamond, 5=large diamond, 6=exhaustive, 7=heavy horizontal, 8=heavy vertical
 
     mfxU16 EarlySkip;       // 0=default (let driver choose), 1=enabled, 2=disabled
+    mfxU16 LaScaleFactor;   // 0=default (let msdk choose), 1=1x, 2=2x, 4=4x
     mfxU16 reserved1;       //
     mfxU16 reserved2;       //
-    mfxU16 reserved3;       //
     mfxU16 StrengthN;       // strength=StrengthN/100.0
     mfxU16 FractionalQP;    // 0=disabled (default), 1=enabled
 
@@ -77,8 +77,8 @@ typedef struct {
     mfxU16 DisableBSubMBPartition;  // tri-state, default depends on Profile and Level
     mfxU16 WeightedBiPredIdc;       // 0 - off, 1 - explicit (unsupported), 2 - implicit
     mfxU16 DirectSpatialMvPredFlag; // (tri-state: 0, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_ON)on=spatial on, off=temporal on
-    mfxU16 reserved4;       // 0..31
-    mfxU16 reserved5;       // 0..255
+    mfxU16 reserved3;       // 0..31
+    mfxU16 reserved4;       // 0..255
     mfxU16 BiPyramid;               // 0 - no ref b, 1 - one ref b, 2 - pyramid
     mfxU16 CabacInitIdcPlus1;       // 0 - use default value, 1 - cabac_init_idc = 0 and so on
     mfxU16 NumActiveRefBL1;         //

@@ -288,23 +288,9 @@ public:
         DdiTask const & task,
         CmEvent *       e);
 
-    void RunVme(
-        mfxU32              qp,
-        IDirect3DSurface9 * cur,
-        IDirect3DSurface9 * fwd,
-        IDirect3DSurface9 * bwd,
-        SVCPAKObject *      mb,
-        mfxU32 biWeight,
-        CmSurface&  cur4X,
-        CmSurface&  fwd4X,
-        CmSurface&  bwd4X
-        );
-
-    void DownSample(const SurfaceIndex& surf, const SurfaceIndex& surf4X);
-
 protected:
-    CmKernel * SelectKernel(mfxU32 frameType);
-    CmKernel * SelectKernelHme(mfxU32 frameType);
+    CmKernel * SelectKernelPreMe(mfxU32 frameType);
+    CmKernel * SelectKernelDownSample(mfxU16 LaScaleFactor);
     mfxVMEUNIIn & SelectCosts(mfxU32 frameType);
 
     void SetCurbeData(
@@ -326,7 +312,6 @@ private:
     CmKernel *  m_kernelI;
     CmKernel *  m_kernelP;
     CmKernel *  m_kernelB;
-    CmSurface   m_hme;
     CmBuf       m_curbeData;
     CmBuf       m_nullBuf;
     mfxU32      m_lutMvP[65];
@@ -335,9 +320,12 @@ private:
     mfxVMEUNIIn m_costsP;
     mfxVMEUNIIn m_costsB;
 
-    CmKernel *  m_kernelDownSample;
-    CmKernel *  m_kernelHme_P;
-    CmKernel *  m_kernelHme_B;
+    CmKernel *  m_kernelDownSample4X;
+    CmKernel *  m_kernelDownSample2X;
+
+    mfxU16      widthLa;
+    mfxU16      heightLa;
+    mfxU16      LaScaleFactor;
 };
 
 }

@@ -869,7 +869,7 @@ namespace
         ref.m_refBase           = 0;
         ref.m_midRec            = task.m_midRec;
         ref.m_cmRaw             = task.m_cmRaw;
-        ref.m_cmRaw4x           = task.m_cmRaw4x;
+        ref.m_cmRawLa           = task.m_cmRawLa;
         ref.m_cmMb              = task.m_cmMb;
         ref.m_refPicFlag[ fid]  = !!(task.m_type[ fid] & MFX_FRAMETYPE_REF);
         ref.m_refPicFlag[!fid]  = !!(task.m_type[!fid] & MFX_FRAMETYPE_REF);

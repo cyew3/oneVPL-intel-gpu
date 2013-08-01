@@ -719,23 +719,28 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         m_cmDevice.Reset(CreateCmDevicePtr(m_core));
         m_cmCtx.reset(new CmContext(m_video, m_cmDevice));
 
-        mfxU32 numMb = m_video.mfx.FrameInfo.Width * m_video.mfx.FrameInfo.Height / 256;
+        request.Info.Width  = m_video.calcParam.widthLa;
+        request.Info.Height = m_video.calcParam.heightLa;
+
+        mfxU32 numMb = request.Info.Width * request.Info.Height / 256;
         m_vmeDataStorage.resize(extOpt2->LookAheadDepth + m_video.AsyncDepth);
         for (size_t i = 0; i < m_vmeDataStorage.size(); i++)
             m_vmeDataStorage[i].mb.resize(numMb);
         m_tmpVmeData.reserve(extOpt2->LookAheadDepth);
 
-        request.Info.Width  = AlignValue<mfxU16>(m_video.mfx.FrameInfo.Width  / 4, 16);
-        request.Info.Height = AlignValue<mfxU16>(m_video.mfx.FrameInfo.Height / 4, 16);
-        request.Info.FourCC = MFX_FOURCC_NV12;
-        request.Type        = MFX_MEMTYPE_D3D_INT;
-        request.NumFrameMin = mfxU16(m_video.mfx.NumRefFrame + m_video.AsyncDepth);
+        mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
+        if (extDdi->LaScaleFactor > 1)
+        {
+            request.Info.FourCC = MFX_FOURCC_NV12;
+            request.Type        = MFX_MEMTYPE_D3D_INT;
+            request.NumFrameMin = mfxU16(m_video.mfx.NumRefFrame + m_video.AsyncDepth);
 
-        sts = m_raw4x.AllocCmSurfaces(m_cmDevice, request);
-        MFX_CHECK_STS(sts);
+            sts = m_rawLa.AllocCmSurfaces(m_cmDevice, request);
+            MFX_CHECK_STS(sts);
+        }
 
-        request.Info.Width  = m_video.mfx.FrameInfo.Width  / 16 * sizeof(SVCPAKObject);
-        request.Info.Height = m_video.mfx.FrameInfo.Height / 16;
+        request.Info.Width  = m_video.calcParam.widthLa  / 16 * sizeof(SVCPAKObject);
+        request.Info.Height = m_video.calcParam.heightLa / 16;
         request.Info.FourCC = MFX_FOURCC_P8;
         request.Type        = MFX_MEMTYPE_D3D_INT;
         request.NumFrameMin = mfxU16(m_video.mfx.NumRefFrame + m_video.AsyncDepth);
@@ -750,15 +755,6 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         request.NumFrameMin = 1 + !!(m_video.AsyncDepth > 1);
 
         sts = m_curbe.AllocCmBuffers(m_cmDevice, request);
-        MFX_CHECK_STS(sts);
-
-        request.Info.Width  = m_video.mfx.FrameInfo.Width  / 16 * sizeof(mfxI16Pair) * 2;
-        request.Info.Height = m_video.mfx.FrameInfo.Height / 16;
-        request.Info.FourCC = (mfxU32)CM_SURFACE_FORMAT_A8; // dx11 does not allow 2d surfaces of format P8, use A8 instead
-        request.Type        = MFX_MEMTYPE_D3D_INT;
-        request.NumFrameMin = 1 + !!(m_video.AsyncDepth > 1);
-
-        sts = m_hme.AllocCmSurfaces(m_cmDevice, request);
         MFX_CHECK_STS(sts);
     }
 
@@ -974,9 +970,8 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
         m_fieldCounter   = 0;
 
         m_raw.Unlock();
-        m_raw4x.Unlock();
+        m_rawLa.Unlock();
         m_mb.Unlock();
-        m_hme.Unlock();
         m_rawSys.Unlock();
         m_rec.Unlock();
         m_bit.Unlock();
@@ -1082,13 +1077,12 @@ struct CompareByMidRec
     bool operator ()(DpbFrame const & frame) const { return frame.m_midRec == m_mid; }
 };
 
-struct CompareByMidRaw4x
+struct CompareByMidRaw
 {
     mfxMemId m_cmSurf;
-    CompareByMidRaw4x(mfxMemId cmSurf) : m_cmSurf(cmSurf) {}
-    bool operator ()(DpbFrame const & frame) const { return frame.m_cmRaw4x == m_cmSurf; }
+    CompareByMidRaw(mfxMemId cmSurf) : m_cmSurf(cmSurf) {}
+    bool operator ()(DpbFrame const & frame) const { return frame.m_cmRaw == m_cmSurf; }
 };
-
 
 void ImplementationAvc::OnNewFrame()
 {
@@ -1119,27 +1113,27 @@ void ImplementationAvc::OnLookaheadQueried()
     ArrayDpbFrame & finDpb = task.m_dpbPostEncoding;
     for (mfxU32 i = 0; i < iniDpb.Size(); i++)
     {
-        if (std::find_if(finDpb.Begin(), finDpb.End(), CompareByMidRaw4x(iniDpb[i].m_cmRaw4x)) == finDpb.End())
+        // m_cmRaw is always filled
+        if (std::find_if(finDpb.Begin(), finDpb.End(), CompareByMidRaw(iniDpb[i].m_cmRaw)) == finDpb.End())
         {
-            ReleaseResource(m_raw4x, iniDpb[i].m_cmRaw4x);
+            ReleaseResource(m_rawLa, iniDpb[i].m_cmRawLa);
             ReleaseResource(m_mb,    iniDpb[i].m_cmMb);
             if (m_cmDevice)
                 m_cmDevice->DestroySurface(iniDpb[i].m_cmRaw);
         }
     }
 
-    ReleaseResource(m_hme, task.m_cmHme);
     ReleaseResource(m_curbe, task.m_cmCurbe);
 
     if (m_cmDevice)
     {
         m_cmDevice->DestroyVmeSurfaceG7_5(task.m_cmRefs);
-        m_cmDevice->DestroyVmeSurfaceG7_5(task.m_cmRefs4x);
+        m_cmDevice->DestroyVmeSurfaceG7_5(task.m_cmRefsLa);
     }
 
     if ((task.GetFrameType() & MFX_FRAMETYPE_REF) == 0)
     {
-        ReleaseResource(m_raw4x, task.m_cmRaw4x);
+        ReleaseResource(m_rawLa, task.m_cmRawLa);
         ReleaseResource(m_mb,    task.m_cmMb);
         if (m_cmDevice)
             m_cmDevice->DestroySurface(task.m_cmRaw);
@@ -1342,11 +1336,10 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             mfxHDLPair cmMb = AcquireResourceUp(m_mb);
             task->m_cmMb    = (CmBufferUP *)cmMb.first;
             task->m_cmMbSys = (void *)cmMb.second;
-            task->m_cmRaw4x = (CmSurface2D *)AcquireResource(m_raw4x);
-            task->m_cmHme   = (CmSurface2D *)AcquireResource(m_hme);
+            task->m_cmRawLa = (CmSurface2D *)AcquireResource(m_rawLa);
             task->m_cmCurbe = (CmBuffer *)AcquireResource(m_curbe);
             task->m_vmeData = FindUnusedVmeData(m_vmeDataStorage);
-            if (!task->m_cmRaw4x || !task->m_cmMb || !task->m_cmHme || !task->m_cmCurbe || !task->m_vmeData)
+            if ((!task->m_cmRawLa && extDdi->LaScaleFactor > 1) || !task->m_cmMb || !task->m_cmCurbe || !task->m_vmeData)
                 return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
 
             task->m_cmRaw = CreateSurface(m_cmDevice, task->m_handleRaw.first, m_currentVaType);
@@ -1374,8 +1367,9 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             task->m_cmRefs = CreateVmeSurfaceG75(m_cmDevice, task->m_cmRaw,
                 fwd ? &fwd->m_cmRaw : 0, bwd ? &bwd->m_cmRaw : 0, !!fwd, !!bwd);
 
-            task->m_cmRefs4x = CreateVmeSurfaceG75(m_cmDevice, task->m_cmRaw4x,
-                fwd ? &fwd->m_cmRaw4x : 0, bwd ? &bwd->m_cmRaw4x : 0, !!fwd, !!bwd);
+            if (extDdi->LaScaleFactor > 1)
+                task->m_cmRefsLa = CreateVmeSurfaceG75(m_cmDevice, task->m_cmRawLa,
+                    fwd ? &fwd->m_cmRawLa : 0, bwd ? &bwd->m_cmRawLa : 0, !!fwd, !!bwd);
 
             task->m_cmRefMb = bwd ? bwd->m_cmMb : 0;
             task->m_fwdRef  = fwd;
@@ -1402,7 +1396,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             DdiTaskIter beg = end;
             std::advance(beg, -extDdi->LookAheadDep);
 
-            AnalyzeVmeData(beg, end, m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.Height);
+            AnalyzeVmeData(beg, end, m_video.calcParam.widthLa, m_video.calcParam.heightLa);
         }
     }
 
@@ -1818,6 +1812,7 @@ mfxU32 ImplementationAvc::RunPreMeCost(
         //fprintf(stderr,"biW: %d  %d\n", tb*tx+32, biWeight);
     }
 
+/*
     m_cmCtx->RunVme(q,
         (IDirect3DSurface9 *)ConvertMidToNativeHandle(*m_core, b->m_surface->Data.MemId),
         b == p0 ? 0 : (IDirect3DSurface9 *)ConvertMidToNativeHandle(*m_core, p0->m_surface->Data.MemId),
@@ -1827,7 +1822,7 @@ mfxU32 ImplementationAvc::RunPreMeCost(
         b->m_surface4X,
         p0->m_surface4X,
         p1->m_surface4X
-        );
+*/
 
     b->intraCost = 0;
     b->interCost = 0;
@@ -2092,6 +2087,7 @@ mfxStatus ImplementationAvc::UpdateBitstream(
     return MFX_ERR_NONE;
 }
 
+#if 0
 mfxStatus ImplementationAvc::AdaptiveGOP(
     mfxEncodeCtrl**           ctrl,
     mfxFrameSurface1**        surface,
@@ -2846,6 +2842,8 @@ mfxStatus ImplementationAvc::AdaptiveGOP1(
     }
     return MFX_ERR_NONE;
 }
+#endif
+
 #endif
 
 #endif // MFX_ENABLE_H264_VIDEO_ENCODE_HW

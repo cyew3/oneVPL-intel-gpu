@@ -520,6 +520,9 @@ namespace MfxHwH264Encode
             mfxU32 numLayerOffset[8];
             mfxU32 dqId1Exists;
             mfxU32 lyncMode;
+
+            mfxU16 widthLa;
+            mfxU16 heightLa;
         } calcParam;
     };
 

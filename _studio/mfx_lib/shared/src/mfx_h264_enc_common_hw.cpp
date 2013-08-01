@@ -2058,6 +2058,15 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.RateControlMethod = 0;
     }
 
+    if (extDdi->LaScaleFactor > 1)
+    {
+        par.calcParam.widthLa = AlignValue<mfxU16>((par.mfx.FrameInfo.Width / extDdi->LaScaleFactor), 16);
+        par.calcParam.heightLa = AlignValue<mfxU16>((par.mfx.FrameInfo.Height / extDdi->LaScaleFactor), 16);
+    } else
+    {
+        par.calcParam.widthLa = par.mfx.FrameInfo.Width;
+        par.calcParam.heightLa = par.mfx.FrameInfo.Height;
+    }
 
     if (!CheckRangeDflt(extVsi->VideoFormat,             0,   8, 5)) changed = true;
     if (!CheckRangeDflt(extVsi->ColourPrimaries,         0, 255, 2)) changed = true;
@@ -3345,6 +3354,10 @@ void MfxHwH264Encode::SetDefaults(
 
     if (extDdi->LookAheadDep == 0)
         extDdi->LookAheadDep = IPP_MIN(10, extOpt2->LookAheadDepth);
+
+    if ((extDdi->LaScaleFactor != 2) &&
+        (extDdi->LaScaleFactor != 4))
+        extDdi->LaScaleFactor = 1;
 
     if (extDdi->QpUpdateRange == 0)
         extDdi->QpUpdateRange = 10;
