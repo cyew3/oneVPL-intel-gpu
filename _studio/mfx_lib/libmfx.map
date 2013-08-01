@@ -54,3 +54,8 @@ LIBMFX {
   local:
     *;
 };
+
+LIBMFX_1.8 {
+  global:
+    MFXGetLogMessage;
+} LIBMFX;
