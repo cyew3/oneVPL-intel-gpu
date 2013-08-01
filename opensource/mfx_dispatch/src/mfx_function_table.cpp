@@ -46,12 +46,12 @@ FUNCTION_DESCRIPTION APIFunc[eVideoFuncTotal] =
 
     {"MFXJoinSession", {{2, 1}}, {{0, 1}}},
     {"MFXCloneSession", {{2, 1}}, {{0, 1}}},
-    {"MFXQueryIMPL", {{0, 1}}, {{0, 0}}},
-    {"MFXQueryVersion", {{0, 1}}, {{0, 0}}},
-    {"MFXDisjoinSession", {{0, 1}}, {{0, 0}}},
-    {"MFXSetPriority", {{0, 1}}, {{0, 0}}},
-    {"MFXGetPriority", {{0, 1}}, {{0, 0}}},
-    {"MFXGetLogMessage", {{0, 1}}, {{0, 0}}},
+    {"MFXQueryIMPL", {{1, 1}}, {{0, 1}}},
+    {"MFXQueryVersion", {{1, 1}}, {{0, 1}}},
+    {"MFXDisjoinSession", {{1, 1}}, {{0, 1}}},
+    {"MFXSetPriority", {{2, 1}}, {{0, 1}}},
+    {"MFXGetPriority", {{2, 1}}, {{0, 1}}},
+    {"MFXGetLogMessage", {{8, 1}}, {{7, 1}}},
 
 #include "mfx_exposed_functions_list.h"
 };
@@ -62,17 +62,17 @@ FUNCTION_DESCRIPTION APIFunc[eVideoFuncTotal] =
 const
 FUNCTION_DESCRIPTION APIAudioFunc[eAudioFuncTotal] =
 {
-    {"MFXInit", {{0, 1}}, {{0, 0}}},
-    {"MFXClose", {{0, 1}}, {{0, 0}}},
+    {"MFXInit", {{8, 1}}, {{0, 0}}},
+    {"MFXClose", {{8, 1}}, {{0, 0}}},
 
-    {"MFXJoinSession", {{2, 1}}, {{0, 1}}},
-    {"MFXCloneSession", {{2, 1}}, {{0, 1}}},
-    {"MFXQueryIMPL", {{0, 1}}, {{0, 0}}},
-    {"MFXQueryVersion", {{0, 1}}, {{0, 0}}},
-    {"MFXDisjoinSession", {{0, 1}}, {{0, 0}}},
-    {"MFXSetPriority", {{0, 1}}, {{0, 0}}},
-    {"MFXGetPriority", {{0, 1}}, {{0, 0}}},
-    {"MFXGetLogMessage", {{0, 1}}, {{0, 0}}},
+    {"MFXJoinSession", {{8, 1}}, {{0, 0}}},
+    {"MFXCloneSession", {{8, 1}}, {{0, 0}}},
+    {"MFXQueryIMPL", {{8, 1}}, {{0, 0}}},
+    {"MFXQueryVersion", {{8, 1}}, {{0, 0}}},
+    {"MFXDisjoinSession", {{8, 1}}, {{0, 0}}},
+    {"MFXSetPriority", {{8, 1}}, {{0, 0}}},
+    {"MFXGetPriority", {{8, 1}}, {{0, 0}}},
+    {"MFXGetLogMessage", {{8, 1}}, {{0, 0}}},
 
 #include "mfxaudio_exposed_functions_list.h"
 };
