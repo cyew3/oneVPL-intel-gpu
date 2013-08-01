@@ -349,6 +349,8 @@ void H264Slice::ZeroedMembers()
 
     m_DistScaleFactorAFF = 0;
     m_DistScaleFactorMVAFF = 0;
+    memset(&m_AdaptiveMarkingInfo, 0, sizeof(m_AdaptiveMarkingInfo));
+
     m_isInitialized = false;
 }
 
