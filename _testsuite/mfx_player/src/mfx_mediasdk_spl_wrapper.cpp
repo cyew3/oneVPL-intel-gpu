@@ -31,6 +31,7 @@ MediaSDKSplWrapper::~MediaSDKSplWrapper()
 
 void MediaSDKSplWrapper::Close()
 {
+    //TODO: initialize m_streamParams
     for (mfxU32 i=0; i < m_streamParams.NumTracksAllocated; i++)
     {
         delete m_streamParams.TrackInfo[i];
