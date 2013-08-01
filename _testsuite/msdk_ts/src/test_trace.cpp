@@ -320,6 +320,7 @@ DEF_STRUCT_TRACE(mfxExtBuffer){
         PRINT_BUF(MFX_EXTBUFF_CODING_OPTION_SPSPPS      , mfxExtCodingOptionSPSPPS      );
         PRINT_BUF(MFX_EXTBUFF_VIDEO_SIGNAL_INFO         , mfxExtVideoSignalInfo         );
 #endif
+        PRINT_BUF(MFX_EXTBUFF_AVC_REFLIST_CTRL          , mfxExtAVCRefListCtrl          );
         default: break;
     }
     return os  << "{\n"
@@ -870,7 +871,7 @@ DEF_STRUCT_TRACE(mfxExtEncoderResetOption){
     return os;
 }
 
-#define PUT_LXP(prefix, name)                                    \
+#define PUT_LXP_INFO(prefix, name)                                    \
     print_param.padding << "  " << #name << " = {\n";            \
     INC_PADDING();INC_PADDING();                                 \
     for(mfxU32 i = 0; i < 32 && prefix.name[i].FrameOrder; i++){ \
@@ -892,13 +893,44 @@ DEF_STRUCT_TRACE(mfxExtAVCEncodedFrameInfo){
         << PUT_PAR(PicStruct)
         << PUT_PAR(LongTermIdx)
         << PUT_ARR(reserved, 8)
-        << PUT_LXP(p, UsedRefListL0)
-        << PUT_LXP(p, UsedRefListL1)
+        << PUT_LXP_INFO(p, UsedRefListL0)
+        << PUT_LXP_INFO(p, UsedRefListL1)
         << print_param.padding << '}';
     return os;
 }
 #endif //#if ((MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 7))
 
+#define PUT_LXP_CTRL(prefix, name)                       \
+    print_param.padding << "  " << #name << " = {\n";    \
+    INC_PADDING();INC_PADDING();                         \
+    for(mfxU32 i = 0;                                    \
+        i < (sizeof(prefix.name)/sizeof(prefix.name[0])) \
+        && prefix.name[i].FrameOrder; i++){              \
+        os  << print_param.padding << "{\n"              \
+            << PUT_PARP(prefix.name[i], FrameOrder)      \
+            << PUT_PARP(prefix.name[i], PicStruct)       \
+            << PUT_PARP(prefix.name[i], ViewId)          \
+            << PUT_PARP(prefix.name[i], LongTermIdx)     \
+            << PUT_ARRP(prefix.name[i], reserved, 3)     \
+            << print_param.padding << "}\n";             \
+    }                                                    \
+    DEC_PADDING();DEC_PADDING();                         \
+    os  << print_param.padding << "  }\n"
+
+DEF_STRUCT_TRACE(mfxExtAVCRefListCtrl){
+    os  << "{\n"
+        << PUT_4CC(Header.BufferId)
+        << PUT_PAR(Header.BufferSz)
+        << PUT_PAR(NumRefIdxL0Active)
+        << PUT_PAR(NumRefIdxL1Active)
+        << PUT_LXP_CTRL(p, PreferredRefList)
+        << PUT_LXP_CTRL(p, RejectedRefList)
+        << PUT_LXP_CTRL(p, LongTermRefList)
+        << PUT_PAR(ApplyLongTermIdx)
+        << PUT_ARR(reserved, 15)
+        << print_param.padding << '}';
+    return os;
+}
 
 DEF_STRUCT_TRACE(mfxExtAvcTemporalLayers){
     os  << "{\n"

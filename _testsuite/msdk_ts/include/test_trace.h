@@ -93,5 +93,6 @@ DECL_STRUCT_TRACE(mfxExtAVCEncodedFrameInfo);
 DECL_STRUCT_TRACE(mfxExtAvcTemporalLayers);
 DECL_STRUCT_TRACE(mfxExtCodingOptionSPSPPS);
 DECL_STRUCT_TRACE(mfxExtVideoSignalInfo);
+DECL_STRUCT_TRACE(mfxExtAVCRefListCtrl);
 
 void allow_debug_output();
