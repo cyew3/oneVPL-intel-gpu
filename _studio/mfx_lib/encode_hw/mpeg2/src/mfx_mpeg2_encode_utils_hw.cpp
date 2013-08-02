@@ -2589,7 +2589,7 @@ namespace MPEG2EncoderHW
                 sizeof(mfxMbParam) + sizeof(mfxMbCode)*numMBs + sizeof(mfxExtMpeg2Coeffs) + 
                 sizeof(mfxI16)*numCoeffs + sizeof(mfxExtBuffer**)+ 64 + sizeof(mfxFrameSurface) + sizeof(mfxFrameData*)*4;
 
-            sts = m_pCore->AllocBuffer(bufferSize,MFX_MEMTYPE_PERSISTENT_MEMORY,&m_FrameCUCId);
+            sts = m_pCore->AllocBuffer(bufferSize,MFX_MEMTYPE_SYSTEM_MEMORY,&m_FrameCUCId);
             MFX_CHECK_STS(sts);
 
             sts = m_pCore->LockBuffer(m_FrameCUCId,&pBuffer);
