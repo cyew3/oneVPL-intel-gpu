@@ -1762,7 +1762,7 @@ mfxStatus MFX_JPEG_Utility::CheckDecodeCaps(VideoCORE * core, mfxVideoParam * pa
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    UMC::JPEG_DECODING_CAPS *info = NULL;
+    UMC::JPEG_DECODING_CAPS info = {0};
 
     if(MFX_HW_D3D9 == core->GetVAType())
     {
@@ -1793,7 +1793,11 @@ mfxStatus MFX_JPEG_Utility::CheckDecodeCaps(VideoCORE * core, mfxVideoParam * pa
             return MFX_ERR_UNSUPPORTED;
         }
 
-        info = (UMC::JPEG_DECODING_CAPS*)pConfig;
+        if (pConfig)
+        {
+            info = *((UMC::JPEG_DECODING_CAPS*)pConfig);
+            CoTaskMemFree(pConfig);
+        }
     }
     else if( MFX_HW_D3D11 == core->GetVAType() )
     {
@@ -1837,7 +1841,7 @@ mfxStatus MFX_JPEG_Utility::CheckDecodeCaps(VideoCORE * core, mfxVideoParam * pa
                             return MFX_ERR_UNSUPPORTED;
                         }
 
-                        info = (UMC::JPEG_DECODING_CAPS*)&video_config;
+                        info = *((UMC::JPEG_DECODING_CAPS*)&video_config);
                     }
                 }
             }
@@ -1848,17 +1852,10 @@ mfxStatus MFX_JPEG_Utility::CheckDecodeCaps(VideoCORE * core, mfxVideoParam * pa
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if(info)
-    {
-        if( par->mfx.FrameInfo.Width > info->MaxPicWidth ||
-            par->mfx.FrameInfo.Width < info->MinPicWidth ||
-            par->mfx.FrameInfo.Height > info->MaxPicHeight ||
-            par->mfx.FrameInfo.Height < info->MinPicHeight)
-        {
-            return MFX_ERR_UNSUPPORTED;
-        }
-    }
-    else
+    if( par->mfx.FrameInfo.Width > info.MaxPicWidth ||
+        par->mfx.FrameInfo.Width < info.MinPicWidth ||
+        par->mfx.FrameInfo.Height > info.MaxPicHeight ||
+        par->mfx.FrameInfo.Height < info.MinPicHeight)
     {
         return MFX_ERR_UNSUPPORTED;
     }
@@ -2266,13 +2263,14 @@ mfxStatus MFX_JPEG_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
             sts = MFX_ERR_UNSUPPORTED;
         }
 
-        if (in->mfx.FrameInfo.Width % 16 == 0 && in->mfx.FrameInfo.Width <= 16384)
-            out->mfx.FrameInfo.Width = in->mfx.FrameInfo.Width;
+        if (in->mfx.FrameInfo.Width <= 16384)
+            out->mfx.FrameInfo.Width = UMC::align_value<mfxU16>(in->mfx.FrameInfo.Width, 0x10);
         else
             sts = MFX_ERR_UNSUPPORTED;
 
-        if (in->mfx.FrameInfo.Height % 16 == 0 && in->mfx.FrameInfo.Height <= 16384)
-            out->mfx.FrameInfo.Height = in->mfx.FrameInfo.Height;
+        if (in->mfx.FrameInfo.Height <= 16384)
+            out->mfx.FrameInfo.Height = UMC::align_value<mfxU16>(in->mfx.FrameInfo.Height, 
+                                         (in->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) ? 0x10 : 0x20);
         else
             sts = MFX_ERR_UNSUPPORTED;
 

@@ -1930,15 +1930,28 @@ mfxStatus D3D11VideoProcessor::QueryCapabilities(mfxVppCaps& caps)
     }
 
     // [Max Resolution] - WA now
-    if(m_core->GetHWType() == MFX_HW_VLV)
+    switch(m_core->GetHWType())
     {
-        caps.uMaxWidth = 4096;
-        caps.uMaxHeight = 4096;
-    }
-    else
-    {
-        caps.uMaxWidth = 16352;
-        caps.uMaxHeight = 16352;
+        case MFX_HW_HSW:
+        case MFX_HW_HSW_ULT:
+        {
+            caps.uMaxWidth = 16352;
+            caps.uMaxHeight = 16352;
+            break;
+        }
+        case MFX_HW_VLV:
+        {
+            caps.uMaxWidth = 8176;
+            caps.uMaxHeight = 8176;
+            break;
+        }
+        case MFX_HW_IVB:
+        default:
+        {
+            caps.uMaxWidth = 4096;
+            caps.uMaxHeight = 4096;
+            break;
+        }
     }
 
     if( TRUE == m_vpreCaps.bFieldWeavingControl )
