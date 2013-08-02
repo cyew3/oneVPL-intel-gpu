@@ -29,10 +29,14 @@
 
 #include "mfx_h265_optimization.h"
 
-#if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2)
+#if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM)
 
 #include <immintrin.h>
 #include <assert.h>
+
+#if defined(MFX_TARGET_OPTIMIZATION_ATOM)
+#define ALT_NO_PSHUFB
+#endif
 
 /* workaround for compiler bug (see h265_tr_quant_opt.cpp) */
 #ifdef NDEBUG 
@@ -161,6 +165,9 @@ static void InterpLuma_s8_d16_H(const unsigned char* pSrc, unsigned int srcPitch
     const signed char* coeffs;
     __m128i xmm0, xmm1, xmm2, xmm3;        /* should compile without stack spills */
     __m128i xmm_offset, xmm_shift;
+#ifdef ALT_NO_PSHUFB
+    __m128i xmm4, xmm5;
+#endif
 
     coeffs = filtTabLuma_S8[4 * (tab_index-1)];
 
@@ -175,7 +182,39 @@ static void InterpLuma_s8_d16_H(const unsigned char* pSrc, unsigned int srcPitch
         col = width;
 
          while (col > 0) {
-            /* load 16 8-bit pixels */
+#ifdef ALT_NO_PSHUFB
+            /* load 16 8-bit pixels, make offsets of 1,2,3 bytes */
+            xmm0 = _mm_loadu_si128((__m128i *)pSrc); /* [0,1,2,3...] */
+            xmm1 = _mm_alignr_epi8(xmm1, xmm0, 1);   /* [1,2,3,4...] */
+            xmm2 = _mm_alignr_epi8(xmm2, xmm0, 2);   /* [2,3,4,5...] */
+            xmm3 = _mm_alignr_epi8(xmm3, xmm0, 3);   /* [3,4,5,6...] */
+
+            /* save shuffled copies for taps 4-7 */
+            xmm4 = _mm_shuffle_epi32(xmm0, 0xf9);    /* [4,5,6,7...] */
+            xmm5 = _mm_shuffle_epi32(xmm2, 0xf9);    /* [6,7,8,9...] */
+
+            /* interleave pixels */
+            xmm0 = _mm_unpacklo_epi16(xmm0, xmm1);   /* [0,1,1,2,2,3...] */
+            xmm2 = _mm_unpacklo_epi16(xmm2, xmm3);   /* [2,3,3,4,4,5...] */
+            xmm1 = _mm_shuffle_epi32(xmm1, 0xf9);    /* [5,6,7,8...] */
+            xmm3 = _mm_shuffle_epi32(xmm3, 0xf9);    /* [7,8,9,10...] */
+            xmm4 = _mm_unpacklo_epi16(xmm4, xmm1);   /* [4,5,5,6,6,7...] */
+            xmm5 = _mm_unpacklo_epi16(xmm5, xmm3);   /* [6,7,7,8,8,9...] */
+
+            /* packed (8*8 + 8*8) -> 16 */
+            xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i *)(coeffs +  0));    /* coefs 0,1 */
+            xmm2 = _mm_maddubs_epi16(xmm2, *(__m128i *)(coeffs + 16));    /* coefs 2,3 */
+            xmm4 = _mm_maddubs_epi16(xmm4, *(__m128i *)(coeffs + 32));    /* coefs 4,5 */
+            xmm5 = _mm_maddubs_epi16(xmm5, *(__m128i *)(coeffs + 48));    /* coefs 6,7 */
+
+            /* sum intermediate values, add offset, shift off fraction bits */
+            xmm0 = _mm_add_epi16(xmm0, xmm2);
+            xmm0 = _mm_add_epi16(xmm0, xmm4);
+            xmm0 = _mm_add_epi16(xmm0, xmm5);
+            xmm0 = _mm_add_epi16(xmm0, xmm_offset);
+            xmm0 = _mm_sra_epi16(xmm0, xmm_shift);
+#else
+             /* load 16 8-bit pixels */
             xmm0 = _mm_loadu_si128((__m128i *)pSrc);
             xmm1 = xmm0;
             xmm2 = xmm0;
@@ -199,6 +238,7 @@ static void InterpLuma_s8_d16_H(const unsigned char* pSrc, unsigned int srcPitch
             xmm0 = _mm_add_epi16(xmm0, xmm3);
             xmm0 = _mm_add_epi16(xmm0, xmm_offset);
             xmm0 = _mm_sra_epi16(xmm0, xmm_shift);
+#endif
 
             /* store 8 16-bit words */
             if (col >= 8) {
@@ -250,6 +290,48 @@ static void InterpChroma_s8_d16_H(const unsigned char* pSrc, unsigned int srcPit
         col = width;
 
         while (col > 0) {
+#ifdef ALT_NO_PSHUFB
+            /* different versions for U/V interleaved or separate planes - could replicate whole loop if necessary */
+            if (plane == TEXT_CHROMA) {
+                /* load 16 8-bit pixels, make offsets of 2,4,6 bytes */
+                xmm0 = _mm_loadu_si128((__m128i *)pSrc); /* [0,1,2,3...] */
+                xmm1 = _mm_alignr_epi8(xmm1, xmm0, 2);   /* [2,3,4,5...] */
+                xmm2 = _mm_alignr_epi8(xmm2, xmm0, 4);   /* [4,5,6,7...] */
+                xmm3 = _mm_alignr_epi8(xmm3, xmm0, 6);   /* [6,7,8,9...] */
+
+                /* interleave pixels */
+                xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);    /* [0,2,1,3,2,4,3,5...] = [UUVVUUVV...] */
+                xmm2 = _mm_unpacklo_epi8(xmm2, xmm3);    /* [4,6,5,7,6,8,7,9...] = [UUVVUUVV...] */
+
+                /* packed (8*8 + 8*8) -> 16 */
+                xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i *)(coeffs +  0));    /* coefs 0,1 */
+                xmm2 = _mm_maddubs_epi16(xmm2, *(__m128i *)(coeffs + 16));    /* coefs 2,3 */
+
+                /* sum intermediate values, add offset, shift off fraction bits */
+                xmm0 = _mm_add_epi16(xmm0, xmm2);
+                xmm0 = _mm_add_epi16(xmm0, xmm_offset);
+                xmm0 = _mm_sra_epi16(xmm0, xmm_shift);
+            } else {
+                /* load 16 8-bit pixels, make offsets of 1,2,3 bytes */
+                xmm0 = _mm_loadu_si128((__m128i *)pSrc); /* [0,1,2,3...] */
+                xmm1 = _mm_alignr_epi8(xmm1, xmm0, 1);   /* [1,2,3,4...] */
+                xmm2 = _mm_alignr_epi8(xmm2, xmm0, 2);   /* [2,3,4,5...] */
+                xmm3 = _mm_alignr_epi8(xmm3, xmm0, 3);   /* [3,4,5,6...] */
+
+                /* interleave pixels */
+                xmm0 = _mm_unpacklo_epi16(xmm0, xmm1);   /* [0,1,1,2,2,3,3,4...] */
+                xmm2 = _mm_unpacklo_epi16(xmm2, xmm3);   /* [2,3,3,4,4,5,5,6,...] */
+
+                /* packed (8*8 + 8*8) -> 16 */
+                xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i *)(coeffs +  0));    /* coefs 0,1 */
+                xmm2 = _mm_maddubs_epi16(xmm2, *(__m128i *)(coeffs + 16));    /* coefs 2,3 */
+
+                /* sum intermediate values, add offset, shift off fraction bits */
+                xmm0 = _mm_add_epi16(xmm0, xmm2);
+                xmm0 = _mm_add_epi16(xmm0, xmm_offset);
+                xmm0 = _mm_sra_epi16(xmm0, xmm_shift);
+            }
+#else
             /* load 16 8-bit pixels */
             xmm0 = _mm_loadu_si128((__m128i *)pSrc);
             xmm1 = xmm0;
@@ -266,7 +348,7 @@ static void InterpChroma_s8_d16_H(const unsigned char* pSrc, unsigned int srcPit
             xmm0 = _mm_add_epi16(xmm0, xmm1);
             xmm0 = _mm_add_epi16(xmm0, xmm_offset);
             xmm0 = _mm_sra_epi16(xmm0, xmm_shift);
-
+#endif
             /* store 8 16-bit words */
             if (col >= 8) {
                 _mm_storeu_si128((__m128i *)pDst, xmm0);

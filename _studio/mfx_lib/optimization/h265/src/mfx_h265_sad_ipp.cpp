@@ -12,7 +12,7 @@
 
 #include "mfx_h265_optimization.h"
 
-#if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2)
+#if defined (MFX_TARGET_OPTIMIZATION_PX)
 
 #include "ippvc.h"
 #include "mfx_h265_defs.h"
@@ -21,7 +21,7 @@ namespace MFX_HEVC_ENCODER
 {
 
     //---------------------------------------------------------
-    // general SAD
+    // aya: reference SAD. not used. IPP instead
     //---------------------------------------------------------
     IppStatus __STDCALL h265_SAD_reference_8u32s_C1R(
         const Ipp8u* pSrcCur,
@@ -645,63 +645,69 @@ namespace MFX_HEVC_ENCODER
         return SAD_8u[SizeX >> 2][SizeY >> 2](image, stride, ref, 64, sad, 0);
     }*/
 
-    IppStatus h265_SAD_MxN_special_IPP_8u(const unsigned char *image,  const unsigned char *ref, int stride, int SizeX, int SizeY, int* sad)
+    int h265_SAD_MxN_special_8u(const unsigned char *image,  const unsigned char *ref, int stride, int SizeX, int SizeY)
     {
+        return h265_SAD_MxN_general_8u(image, stride, ref, 64, SizeX, SizeY);
+    }
+
+    int h265_SAD_MxN_general_8u(const unsigned char *image,  int stride_img, const unsigned char *ref, int stride_ref, int SizeX, int SizeY)
+    {
+        int sad = 0;
 
         if (SizeX == 4)
         {
             if(SizeY == 4) { 
                 ; 
             }
-            if(SizeY == 8) { ippiSAD4x8_8u32s_C1R(image, stride, ref, 64, sad, 0); }
-            else           { h265_SAD4x16_8u32s_C1R(image, stride, ref, 64, sad, 0);}
+            if(SizeY == 8) { ippiSAD4x8_8u32s_C1R(image, stride_img, ref, stride_ref, &sad, 0); }
+            else           { h265_SAD4x16_8u32s_C1R(image, stride_img, ref, stride_ref, &sad, 0);}
         }
         else if (SizeX == 8)
         {
-            if(SizeY ==  4) { ippiSAD8x4_8u32s_C1R(image, stride, ref, 64, sad, 0); }
-            else if(SizeY ==  8) { ippiSAD8x8_8u32s_C1R(image, stride, ref, 64, sad, 0); }
-            else if(SizeY == 16) { ippiSAD8x16_8u32s_C1R(image, stride, ref, 64, sad, 0); }
-            else            { h265_SAD8x32_8u32s_C1R(image, stride, ref, 64, sad, 0); }
+            if(SizeY ==  4) { ippiSAD8x4_8u32s_C1R(image, stride_img, ref, stride_ref, &sad, 0); }
+            else if(SizeY ==  8) { ippiSAD8x8_8u32s_C1R(image, stride_img, ref, stride_ref, &sad, 0); }
+            else if(SizeY == 16) { ippiSAD8x16_8u32s_C1R(image, stride_img, ref, stride_ref, &sad, 0); }
+            else            { h265_SAD8x32_8u32s_C1R(image, stride_img, ref, stride_ref, &sad, 0); }
         }
         else if (SizeX == 12)
         {
-           h265_SAD12x16_8u32s_C1R(image, stride, ref, 64, sad, 0);
+           h265_SAD12x16_8u32s_C1R(image, stride_img, ref, stride_ref, &sad, 0);
         }
         else if (SizeX == 16)
         {
-            if(SizeY ==  4) { h265_SAD16x4_8u32s_C1R(image, stride, ref, 64, sad, 0); }
-            else if(SizeY ==  8) { ippiSAD16x8_8u32s_C1R(image, stride, ref, 64, sad, 0); }
-            else if(SizeY == 12) { h265_SAD16x12_8u32s_C1R(image, stride, ref, 64, sad, 0); }
-            else if(SizeY == 16) { ippiSAD16x16_8u32s(image, stride, ref, 64, sad, 0); }
-            else if(SizeY == 32) { h265_SAD16x32_8u32s_C1R(image, stride, ref, 64, sad, 0); }
-            else            { h265_SAD16x64_8u32s_C1R(image, stride, ref, 64, sad, 0); }
+            if(SizeY ==  4) { h265_SAD16x4_8u32s_C1R(image, stride_img, ref, stride_ref, &sad, 0); }
+            else if(SizeY ==  8) { ippiSAD16x8_8u32s_C1R(image, stride_img, ref, stride_ref, &sad, 0); }
+            else if(SizeY == 12) { h265_SAD16x12_8u32s_C1R(image, stride_img, ref, stride_ref, &sad, 0); }
+            else if(SizeY == 16) { ippiSAD16x16_8u32s(image, stride_img, ref, stride_ref, &sad, 0); }
+            else if(SizeY == 32) { h265_SAD16x32_8u32s_C1R(image, stride_img, ref, stride_ref, &sad, 0); }
+            else            { h265_SAD16x64_8u32s_C1R(image, stride_img, ref, stride_ref, &sad, 0); }
         }
         else if (SizeX == 24)
         {
-            h265_SAD24x32_8u32s_C1R(image, stride, ref, 64, sad, 0);
+            h265_SAD24x32_8u32s_C1R(image, stride_img, ref, stride_ref, &sad, 0);
         }
         else if (SizeX == 32)
         {
-            if(SizeY ==  8) { h265_SAD32x8_8u32s_C1R(image, stride, ref, 64, sad, 0);}
-            else if(SizeY == 16) { h265_SAD32x16_8u32s_C1R(image, stride, ref, 64, sad, 0); }
-            else if(SizeY == 24) { h265_SAD32x24_8u32s_C1R(image, stride, ref, 64, sad, 0); }
-            else if(SizeY == 32) { h265_SAD32x32_8u32s_C1R(image, stride, ref, 64, sad, 0);}
-            else            { h265_SAD32x64_8u32s_C1R(image, stride, ref, 64, sad, 0);}
+            if(SizeY ==  8) { h265_SAD32x8_8u32s_C1R(image, stride_img, ref, stride_ref, &sad, 0);}
+            else if(SizeY == 16) { h265_SAD32x16_8u32s_C1R(image, stride_img, ref, stride_ref, &sad, 0); }
+            else if(SizeY == 24) { h265_SAD32x24_8u32s_C1R(image, stride_img, ref, stride_ref, &sad, 0); }
+            else if(SizeY == 32) { h265_SAD32x32_8u32s_C1R(image, stride_img, ref, stride_ref, &sad, 0);}
+            else            { h265_SAD32x64_8u32s_C1R(image, stride_img, ref, stride_ref, &sad, 0);}
         }
         else if (SizeX == 48)
         {
-            h265_SAD48x64_8u32s_C1R(image, stride, ref, 64, sad, 0);
+            h265_SAD48x64_8u32s_C1R(image, stride_img, ref, stride_ref, &sad, 0);
         }
         else if (SizeX == 64)
         {
-            if(SizeY == 16) { h265_SAD64x16_8u32s_C1R(image, stride, ref, 64, sad, 0);}
-            else if(SizeY == 32) { h265_SAD64x32_8u32s_C1R(image, stride, ref, 64, sad, 0);}
-            else if(SizeY == 48) { h265_SAD64x48_8u32s_C1R(image, stride, ref, 64, sad, 0);}
-            else            { h265_SAD64x64_8u32s_C1R(image, stride, ref, 64, sad, 0);}
+            if(SizeY == 16) { h265_SAD64x16_8u32s_C1R(image, stride_img, ref, stride_ref, &sad, 0);}
+            else if(SizeY == 32) { h265_SAD64x32_8u32s_C1R(image, stride_img, ref, stride_ref, &sad, 0);}
+            else if(SizeY == 48) { h265_SAD64x48_8u32s_C1R(image, stride_img, ref, stride_ref, &sad, 0);}
+            else            { h265_SAD64x64_8u32s_C1R(image, stride_img, ref, stride_ref, &sad, 0);}
         }
         
 
-        return ippStsNoErr;
+        return sad;
     }
 
 } // end namespace MFX_HEVC_ENCODER

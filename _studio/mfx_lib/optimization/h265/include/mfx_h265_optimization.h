@@ -43,11 +43,16 @@
 //=========================================================
 //   configuration macros
 //=========================================================
-
 // [1] choose only one arch
-#define MFX_TARGET_OPTIMIZATION_SSE4
-//#define MFX_TARGET_OPTIMIZATION_AVX2
-//#define MFX_TARGET_OPTIMIZATION_PX // ref C or IPP based, not supported yet
+
+#if defined(ANDROID)
+    #define MFX_TARGET_OPTIMIZATION_ATOM
+#else
+    #define MFX_TARGET_OPTIMIZATION_SSE4
+    //#define MFX_TARGET_OPTIMIZATION_AVX2
+    //#define MFX_TARGET_OPTIMIZATION_PX // ref C or IPP based, not supported yet
+    //#define MFX_TARGET_OPTIMIZATION_ATOM // BYT
+#endif
 
 // [2] to enable alternative interpolation optimization (Ken/Jon)
 // IVB demonstrates ~ 15% perf incr _vs_ tmpl version.
@@ -239,9 +244,6 @@ namespace MFX_HEVC_ENCODER
     void H265_FASTCALL h265_DCT32x32Fwd_16s(const short *H265_RESTRICT src, short *H265_RESTRICT dst);
 
     /* SAD */
-    IppStatus h265_SAD_MxN_special_IPP_8u(const unsigned char *image,  const unsigned char *ref, int stride, int SizeX, int SizeY, int* sad);
-    IppStatus h265_SAD_MxN_general_IPP_8u(const unsigned char *image,  int stride_img, const unsigned char *ref, int stride_ref, int SizeX, int SizeY, int* sad);
-
     int h265_SAD_MxN_special_8u(const unsigned char *image,  const unsigned char *ref, int stride, int SizeX, int SizeY);
     int h265_SAD_MxN_general_8u(const unsigned char *image,  int stride_img, const unsigned char *ref, int stride_ref, int SizeX, int SizeY);
 
