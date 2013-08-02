@@ -209,6 +209,7 @@ mfxStatus AudioDECODEMP3::DecodeHeader(AudioCORE *core, mfxBitstream *bs, mfxAud
     if(par->mfx.CodecId == MFX_CODEC_MP3)
     {
         MP3Dec_com res;
+        memset((void*)&res, 0, sizeof(MP3Dec_com));
         if(bs->DataLength != 0)
         {
             UMC::Status sts =  UMC::DecodeMP3Header(bs->Data,bs->DataLength, &res);
