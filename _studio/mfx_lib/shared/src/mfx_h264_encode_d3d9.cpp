@@ -766,6 +766,11 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     bool        isTemporal)
 {
     m_core = core;
+
+    // Case of MVC dependent view doesn't require special processing for DX9. Just create AVC encoding device for dep. view.
+    if (guid == MSDK_Private_Guid_Encode_MVC_Dependent_View
+        || guid == MSDK_Private_Guid_Encode_AVC_Init)
+        guid == DXVA2_Intel_Encode_AVC;
     D3D9Interface *pID3D = QueryCoreInterface<D3D9Interface>(m_core, MFXICORED3D_GUID);
     MFX_CHECK_WITH_ASSERT(pID3D != 0, MFX_ERR_DEVICE_FAILED);
 

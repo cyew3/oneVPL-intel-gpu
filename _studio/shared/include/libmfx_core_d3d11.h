@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
 
 File Name: libmfx_core_d3d11.h
 
@@ -21,7 +21,7 @@ File Name: libmfx_core_d3d11.h
 
 #include "libmfx_core.h"
 #include "libmfx_allocator_d3d11.h"
-#include "libmfx_core_interface.h"
+
 #include <d3d11.h>
 
 #include "d3d11_video_processor.h"
@@ -154,6 +154,7 @@ private:
     eMFXHWType                           m_HWType;
     // Ordinal number of adapter to work
     const mfxU32                         m_adapterNum;
+    ComPtrCore<ID3D11VideoDecoder>       m_comptr;
 };
 
 

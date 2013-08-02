@@ -1018,7 +1018,7 @@ mfxStatus ImplementationMvc::Init(mfxVideoParam *par)
             return MFX_ERR_DEVICE_FAILED;
         sts = m_ddi[1]->CreateAuxilliaryDevice(
             m_core,
-            DXVA2_Intel_Encode_AVC,
+            MSDK_Private_Guid_Encode_MVC_Dependent_View,
             par->mfx.FrameInfo.Width,
             par->mfx.FrameInfo.Height);
         if (sts != MFX_ERR_NONE)

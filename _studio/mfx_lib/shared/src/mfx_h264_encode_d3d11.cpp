@@ -27,6 +27,9 @@
 #include "libmfx_core_interface.h"
 #include "encoder_ddi.hpp"
 
+DEFINE_GUID(DXVADDI_Intel_Decode_PrivateData_Report, 
+0x49761bec, 0x4b63, 0x4349, 0xa5, 0xff, 0x87, 0xff, 0xdf, 0x8, 0x84, 0x66);
+
 
 
 using namespace MfxHwH264Encode;
@@ -81,6 +84,7 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
 
     MFX_CHECK_NULL_PTR1(pD3d11);
 
+    m_core = core;
     mfxStatus sts = Init(
         guid,
         pD3d11->GetD3D11VideoDevice(isTemporal), 
@@ -89,7 +93,7 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
         height,
         NULL); // no encryption
 
-    m_core = core;
+
     return sts;
 
 } // mfxStatus D3D11Encoder::CreateAuxilliaryDevice(...)
@@ -604,14 +608,84 @@ mfxStatus D3D11Encoder::QueryStatus(
 
 } // mfxStatus D3D11Encoder::QueryStatus( DdiTask & task, mfxU32    fieldId)
 
+mfxStatus D3D11Encoder::QueryHWGUID(
+            VideoCORE * core,
+            GUID        guid,
+            bool        isTemporal)
+{
+    D3D11_VIDEO_DECODER_DESC video_desc = {0};
+    D3D11_VIDEO_DECODER_CONFIG video_config = {0};
+
+    MFX_CHECK_NULL_PTR1(core);
+
+    D3D11Interface* pD3d11 = QueryCoreInterface<D3D11Interface>(core);
+    MFX_CHECK_NULL_PTR1(pD3d11);
+    
+    ID3D11VideoDevice *pVideoDevice = pD3d11->GetD3D11VideoDevice(isTemporal);
+    MFX_CHECK_NULL_PTR1(pVideoDevice);
+
+    // [1] Query supported decode profiles
+    UINT profileCount = pVideoDevice->GetVideoDecoderProfileCount();
+    assert( profileCount > 0 );
+
+    bool EncodeGUIDFound = false;
+    bool PrivateIntelGUIDFound = false;
+
+ 
+    GUID profileGuid;
+    for( UINT indxProfile = 0; indxProfile < profileCount; indxProfile++ )
+    {
+        HRESULT hRes = pVideoDevice->GetVideoDecoderProfile(indxProfile, &profileGuid);
+        CHECK_HRES(hRes);
+
+        if(guid == profileGuid)
+            EncodeGUIDFound = true;
+
+        if (profileGuid == DXVADDI_Intel_Decode_PrivateData_Report)
+            PrivateIntelGUIDFound = true;
+    }
+
+    if (EncodeGUIDFound && PrivateIntelGUIDFound)
+    {
+        video_desc.Guid = DXVADDI_Intel_Decode_PrivateData_Report;
+        video_desc.OutputFormat = DXGI_FORMAT_NV12;
+        video_desc.SampleWidth = 640;
+        video_desc.SampleHeight = 480;
+        
+        mfxU32  count = 0;
+        HRESULT hr = pVideoDevice->GetVideoDecoderConfigCount(&video_desc, &count);
+        CHECK_HRES(hr);
+
+        for (mfxU32 i = 0; i < count; i++)
+        {
+            hr = pVideoDevice->GetVideoDecoderConfig(&video_desc, i, &video_config);
+            CHECK_HRES(hr);
+
+            if (video_config.guidConfigBitstreamEncryption == guid)
+            {
+                if (video_config.ConfigDecoderSpecific & 0x1) // WiDi usage model - not supported by MFT
+                    return MFX_WRN_PARTIAL_ACCELERATION;
+                else
+                   return MFX_ERR_NONE;
+            }
+
+       }
+    }
+    return MFX_WRN_PARTIAL_ACCELERATION;
+
+} // mfxStatus D3D11Encoder::QueryHWGUID(...)
+
+
 
 mfxStatus D3D11Encoder::Destroy()
-{  
-    //aya: on component level we release ones only
-    SAFE_RELEASE(m_pDecoder);
-
+{
+    if (m_requestedGuid == MSDK_Private_Guid_Encode_MVC_Dependent_View)
+    {
+        // Encoding device was used for MVC dependent view and isn't stored in core.
+        // Need to release it here since core knows nothing about it and doesn't release it itself.
+        SAFE_RELEASE(m_pDecoder);
+    }
     return MFX_ERR_NONE;
-
 } // mfxStatus D3D11Encoder::Destroy()
 
 
@@ -627,73 +701,108 @@ mfxStatus D3D11Encoder::Init(
 
     m_pVideoDevice  = pVideoDevice;
     m_pVideoContext = pVideoContext;
-    m_guid = guid;
 
+    m_guid = DXVA2_Intel_Encode_AVC;
+    m_requestedGuid = guid;
     HRESULT hRes;
 
-    // [1] Query supported decode profiles
-    UINT profileCount = m_pVideoDevice->GetVideoDecoderProfileCount( );
-    assert( profileCount > 0 );
+    // To avoid multiple re-creation of AVC encoding device for DX11 it's stored in Core since it was created first time.
 
-    bool isFound = false;    
-    GUID profileGuid;
-    for( UINT indxProfile = 0; indxProfile < profileCount; indxProfile++ )
+    // Device creation for MVC dependent view requires special processing for DX11.
+    // For MVC dependent view encoding device from Core can't be used (it's already used for base view). Need to create new one.
+    // Also newly created encoding device for MVC dependent view shouldn't be stored inside Core.
+    bool bUseDecoderInCore = (guid != MSDK_Private_Guid_Encode_MVC_Dependent_View);
+
+    ComPtrCore<ID3D11VideoDecoder>* pVideoDecoder = QueryCoreInterface<ComPtrCore<ID3D11VideoDecoder>>(m_core, MFXID3D11DECODER_GUID); 
+    if (!pVideoDecoder)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    else
     {
-        hRes = m_pVideoDevice->GetVideoDecoderProfile(indxProfile, &profileGuid);
-        CHECK_HRES(hRes);
-        if( guid == profileGuid )
+        D3D11_VIDEO_DECODER_DESC video_desc;
+        D3D11_VIDEO_DECODER_CONFIG video_config = {0};
+        m_pDecoder = NULL;
+
+        if (pVideoDecoder->get() && bUseDecoderInCore)
         {
-            isFound = true;
-            break;
+            hRes = pVideoDecoder->get()->GetCreationParameters(&video_desc, &video_config);
+            CHECK_HRES(hRes);
+            // video decoder from Core should be used if it has been created with same resolution
+            // also decoder from Core created with lower resolution could be used for Query, QueryIOSurf (but not for Init)
+            // for PAVP case new instance of decoder should be created
+            if ((width <= video_desc.SampleWidth && height <= video_desc.SampleHeight
+                || guid != MSDK_Private_Guid_Encode_AVC_Init)
+                && !extPavp)
+                m_pDecoder = pVideoDecoder->get();
+        }
+
+        if (!m_pDecoder)
+        {
+
+            // [1] Query supported decode profiles
+            UINT profileCount = m_pVideoDevice->GetVideoDecoderProfileCount( );
+            assert( profileCount > 0 );
+
+            bool isFound = false;    
+            GUID profileGuid;
+            for( UINT indxProfile = 0; indxProfile < profileCount; indxProfile++ )
+            {
+                hRes = m_pVideoDevice->GetVideoDecoderProfile(indxProfile, &profileGuid);
+                CHECK_HRES(hRes);
+                if( m_guid == profileGuid )
+                {
+                    isFound = true;
+                    break;
+                }
+            }
+
+            if( !isFound )
+            {
+                return MFX_ERR_DEVICE_FAILED;
+            }
+
+            // [2] Query the supported encode functions
+            video_desc.SampleWidth  = width;
+            video_desc.SampleHeight = height;
+            video_desc.OutputFormat = DXGI_FORMAT_NV12;
+            video_desc.Guid = DXVA2_Intel_Encode_AVC; 
+
+            mfxU32 count;
+
+            hRes = m_pVideoDevice->GetVideoDecoderConfigCount(&video_desc, &count);
+            CHECK_HRES(hRes);
+
+            //for (int i = 0; i < count; i++)
+            //{               
+            //    hRes = m_pVideoDevice->GetVideoDecoderConfig(&video_desc, i, &video_config);
+            //    CHECK_HRES(hRes);
+
+            // mfxSts = CheckDXVAConfig(video_desc->Guid, pConfig));
+            // MFX_CHECK_STS( mfxSts );
+            //}    
+
+            // [2] Calling other D3D11 Video Decoder API (as for normal proc) - aya:FIXME:skipped
+
+            //hRes = CheckVideoDecoderFormat(NV12); //aya???
+            //CHECK_HRES(hRes);
+
+            // [4] CreateVideoDecoder
+            // D3D11_VIDEO_DECODER_DESC video_desc;
+            video_desc.SampleWidth  = width;
+            video_desc.SampleHeight = height;
+            video_desc.OutputFormat = DXGI_FORMAT_NV12;
+            video_desc.Guid = DXVA2_Intel_Encode_AVC; 
+
+            // D3D11_VIDEO_DECODER_CONFIG video_config;
+            video_config.ConfigDecoderSpecific = m_forcedCodingFunction ? m_forcedCodingFunction : ENCODE_ENC_PAK;  
+            video_config.guidConfigBitstreamEncryption = (extPavp) ? DXVA2_INTEL_PAVP : DXVA_NoEncrypt;
+
+
+            hRes  = m_pVideoDevice->CreateVideoDecoder(&video_desc, &video_config, &m_pDecoder);
+            CHECK_HRES(hRes);
+            if (bUseDecoderInCore)
+                *pVideoDecoder = m_pDecoder;
         }
     }
-
-    if( !isFound )
-    {
-        return MFX_ERR_DEVICE_FAILED;
-    }
-
-    // [2] Query the supported encode functions
-    D3D11_VIDEO_DECODER_DESC video_desc;
-    video_desc.SampleWidth  = width;
-    video_desc.SampleHeight = height;
-    video_desc.OutputFormat = DXGI_FORMAT_NV12;
-    video_desc.Guid = DXVA2_Intel_Encode_AVC; 
-
-    D3D11_VIDEO_DECODER_CONFIG video_config = {0};
-    mfxU32 count;
-
-    hRes = m_pVideoDevice->GetVideoDecoderConfigCount(&video_desc, &count);
-    CHECK_HRES(hRes);
-
-    //for (int i = 0; i < count; i++)
-    //{               
-    //    hRes = m_pVideoDevice->GetVideoDecoderConfig(&video_desc, i, &video_config);
-    //    CHECK_HRES(hRes);
-
-        // mfxSts = CheckDXVAConfig(video_desc->Guid, pConfig));
-        // MFX_CHECK_STS( mfxSts );
-    //}    
-
-    // [2] Calling other D3D11 Video Decoder API (as for normal proc) - aya:FIXME:skipped
-
-    //hRes = CheckVideoDecoderFormat(NV12); //aya???
-    //CHECK_HRES(hRes);
-
-    // [4] CreateVideoDecoder
-    // D3D11_VIDEO_DECODER_DESC video_desc;
-    video_desc.SampleWidth  = width;
-    video_desc.SampleHeight = height;
-    video_desc.OutputFormat = DXGI_FORMAT_NV12;
-    video_desc.Guid = DXVA2_Intel_Encode_AVC; 
-
-    // D3D11_VIDEO_DECODER_CONFIG video_config;
-    video_config.ConfigDecoderSpecific = m_forcedCodingFunction ? m_forcedCodingFunction : ENCODE_ENC_PAK;  
-    video_config.guidConfigBitstreamEncryption = (extPavp) ? DXVA2_INTEL_PAVP : DXVA_NoEncrypt;
-    
-
-    hRes  = m_pVideoDevice->CreateVideoDecoder(&video_desc, &video_config, &m_pDecoder);
-    CHECK_HRES(hRes);
 
     // ENCRYPTION
     if(extPavp)
@@ -1415,6 +1524,37 @@ mfxStatus D3D11SvcEncoder::Init(
 
     return MFX_ERR_NONE;
 }
+
+mfxStatus D3D11SvcEncoder::QueryHWGUID(
+            VideoCORE * core,
+            GUID        guid,
+            bool        isTemporal)
+{
+    MFX_CHECK_NULL_PTR1(core);
+
+    D3D11Interface* pD3d11 = QueryCoreInterface<D3D11Interface>(core);
+    MFX_CHECK_NULL_PTR1(pD3d11);
+    
+    ID3D11VideoDevice *pVideoDevice = pD3d11->GetD3D11VideoDevice(isTemporal);
+    MFX_CHECK_NULL_PTR1(pVideoDevice);
+
+    // [1] Query supported decode profiles
+    UINT profileCount = pVideoDevice->GetVideoDecoderProfileCount( );
+    assert( profileCount > 0 );
+
+ 
+    GUID profileGuid;
+    for( UINT indxProfile = 0; indxProfile < profileCount; indxProfile++ )
+    {
+        HRESULT hRes = pVideoDevice->GetVideoDecoderProfile(indxProfile, &profileGuid);
+        CHECK_HRES(hRes);
+        if(guid == profileGuid)
+            return MFX_ERR_NONE;
+    }
+
+    return MFX_WRN_PARTIAL_ACCELERATION;
+
+} // mfxStatus D3D11Encoder::CreateAuxilliaryDevice(...)
 
 
 // aya: temporal solution to fix compiler error

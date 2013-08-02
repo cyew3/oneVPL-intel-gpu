@@ -672,8 +672,8 @@ void CommonCORE::Close()
     MemIDMap::iterator it;
     while(m_RespMidQ.size())
     {
-        // its mistake situation
-        // all mids should be freed already 
+        // now its NOT a mistake situation
+        // all mids should be freed already except opaque shared surfaces
         it = m_RespMidQ.begin();
         delete[] it->first;
         m_RespMidQ.erase(it);
@@ -1940,7 +1940,9 @@ bool CommonCORE::IsOpaqSurfacesAlreadyMapped(mfxFrameSurface1 **pOpaqueSurface,
         // consistent already checked in CheckOpaqueRequest function
         if (oqp_it != m_OpqTbl.end())
         {
-            m_pMemId.reset(new mfxMemId[NumOpaqueSurface]);
+            CorrespTbl::iterator ctbl_it;
+
+            m_pMemId.reset(new mfxMemId[2*NumOpaqueSurface]);
             response->mids = m_pMemId.get();
             m_pMemId.pop();
 
@@ -1949,7 +1951,11 @@ bool CommonCORE::IsOpaqSurfacesAlreadyMapped(mfxFrameSurface1 **pOpaqueSurface,
                 oqp_it = m_OpqTbl.find(pOpaqueSurface[i]);
                 if (oqp_it != m_OpqTbl.end())
                 {
+                    ctbl_it = m_CTbl.find(oqp_it->second.Data.MemId);
+                    if (m_CTbl.end() == ctbl_it)
+                        return false;
                     response->mids[i] = oqp_it->second.Data.MemId;
+                    response->mids[i+NumOpaqueSurface] = ctbl_it->second.InternalMid;
                 }
                 else
                     return false;
@@ -1964,8 +1970,7 @@ bool CommonCORE::IsOpaqSurfacesAlreadyMapped(mfxFrameSurface1 **pOpaqueSurface,
                 if (IsEqual(*ref_it->first, *response))
                 {
                     ref_it->second++;
-                    delete[] response->mids;
-                    response->mids = ref_it->first->mids;
+                    m_RespMidQ.insert(pair<mfxMemId*, mfxMemId*>(response->mids, response->mids+NumOpaqueSurface));
                     return true;
                 }
             }
@@ -2033,3 +2038,4 @@ mfxU16 CommonCORE::GetAutoAsyncDepth()
 {
     return (mfxU16)vm_sys_info_get_cpu_num();
 }
+

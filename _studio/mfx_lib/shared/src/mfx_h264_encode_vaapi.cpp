@@ -734,6 +734,15 @@ mfxStatus VAAPIEncoder::QueryMbPerSec(mfxVideoParam const & par, mfxU32 (&mbPerS
     return MFX_ERR_UNSUPPORTED;
 }
 
+mfxStatus VAAPIEncoder::QueryHWGUID(VideoCORE * core, GUID guid, bool isTemporal)
+{
+    core;
+    guid;
+    isTemporal;
+
+    return MFX_ERR_UNSUPPORTED;
+}
+
 mfxStatus VAAPIEncoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
 {
     std::vector<ExtVASurface> * pQueue;

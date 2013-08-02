@@ -24,6 +24,8 @@ using namespace MfxHwMJpegEncode;
 
 mfxStatus MfxHwMJpegEncode::QueryHwCaps(eMFXVAType va_type, mfxU32 adapterNum, ENCODE_CAPS_JPEG & hwCaps)
 {
+    //Should be replaced with once quering capabs as other encoders do
+
     // FIXME: remove this when driver starts returning actual encode caps
     hwCaps.Baseline         = 1;
     hwCaps.Sequential       = 1;

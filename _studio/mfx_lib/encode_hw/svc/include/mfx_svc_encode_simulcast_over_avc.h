@@ -70,6 +70,16 @@ namespace MfxHwH264Encode
             m_forcedCodingFunction = codingFunction;
         }
 
+        virtual
+        mfxStatus QueryHWGUID(
+            VideoCORE * core,
+            GUID        guid,
+            bool        isTemporal)
+        {
+            core; guid; isTemporal;
+            return MFX_ERR_UNSUPPORTED;
+        }
+
     private:
         VideoCORE *                  m_core;
         std::auto_ptr<DriverEncoder> m_ddi[8];

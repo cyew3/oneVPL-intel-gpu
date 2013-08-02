@@ -49,7 +49,7 @@ mfxStatus mfxSchedulerCore::StartWakeUpThread(void)
         {
             return MFX_ERR_UNKNOWN;
         }
-        m_zero_thread_wait = MFX_THREAD_TIME_TO_WAIT;
+        m_zero_thread_wait = 15; //let wait 15 ms instead of 1 sec (we might miss event in case of GlobalEvents, it affects latency in multi-instance)
     }
     else
         m_zero_thread_wait = 1; // w/o events main thread should poll driver to get status 

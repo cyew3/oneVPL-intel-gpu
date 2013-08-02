@@ -112,6 +112,12 @@ namespace MfxHwH264Encode
         {
             m_forcedCodingFunction = codingFunction;
         }
+        
+        virtual
+        mfxStatus QueryHWGUID(
+            VideoCORE * core,
+            GUID        guid,
+            bool        isTemporal);
 
     private:
         D3D11Encoder(D3D11Encoder const &); // no implementation
@@ -131,6 +137,7 @@ namespace MfxHwH264Encode
         ID3D11VideoContext *                        m_pVideoContext;
         ID3D11VideoDecoder *                        m_pDecoder;
         GUID                                        m_guid;
+        GUID                                        m_requestedGuid;
 
         ENCODE_CAPS                                 m_caps;
         std::vector<ENCODE_COMP_BUFFER_INFO>        m_compBufInfo;
@@ -221,6 +228,12 @@ namespace MfxHwH264Encode
         {
             m_forcedCodingFunction = codingFunction;
         }
+
+        virtual
+        mfxStatus QueryHWGUID(
+            VideoCORE * core,
+            GUID        guid,
+            bool        isTemporal);
 
     private:
         D3D11SvcEncoder(D3D11SvcEncoder const &); // no implementation

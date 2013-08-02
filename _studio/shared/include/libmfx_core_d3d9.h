@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
 
 File Name: libmfx_core_d3d9.h
 
@@ -20,7 +20,6 @@ File Name: libmfx_core_d3d9.h
 #include "libmfx_core_factory.h"
 
 #include "fast_compositing_ddi.h"
-#include "libmfx_core_interface.h"
 #include "auxiliary_device.h"
 
 // disable the "conditional expression is constant" warning
@@ -107,6 +106,7 @@ public:
     virtual mfxU16 GetAutoAsyncDepth() {return MFX_AUTO_ASYNC_DEPTH_VALUE;};//it can be platform based
     
     virtual bool IsCompatibleForOpaq();
+        
 
 protected:
     
@@ -152,6 +152,7 @@ private:
 
     IDirect3DSurface9 *m_pSystemMemorySurface;
     AuxiliaryDevice                      *m_pEncodeAuxDevice;
+
 
 public: // FIXME
     std::auto_ptr<D3D9Adapter>            m_pAdapter;

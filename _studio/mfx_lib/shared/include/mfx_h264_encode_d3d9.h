@@ -227,6 +227,16 @@ namespace MfxHwH264Encode
             m_forcedCodingFunction = codingFunction;
         }
 
+        virtual
+        mfxStatus QueryHWGUID(
+            VideoCORE * core,
+            GUID        guid,
+            bool        isTemporal)
+        {
+            core; guid; isTemporal;
+            return MFX_ERR_UNSUPPORTED;
+        }
+
     private:
         D3D9Encoder(D3D9Encoder const &); // no implementation
         D3D9Encoder & operator =(D3D9Encoder const &); // no implementation
@@ -327,6 +337,16 @@ namespace MfxHwH264Encode
         void ForceCodingFunction (mfxU16 codingFunction)
         {
             m_forcedCodingFunction = codingFunction;
+        }
+
+        virtual
+        mfxStatus QueryHWGUID(
+            VideoCORE * core,
+            GUID        guid,
+            bool        isTemporal)
+        {
+            core; guid; isTemporal;
+            return MFX_ERR_UNSUPPORTED;
         }
 
     private:

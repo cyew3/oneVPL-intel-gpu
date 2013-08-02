@@ -194,6 +194,7 @@ mfxStatus MFXHWVideoENCODEH264::Query(
     mfxVideoParam * out,
     void *          state)
 {
+
     // FIXME: remove when mfx_transcoder start sending correct Profile
     if (in && in->mfx.CodecProfile == 0)
         if (GetExtBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_SVC_SEQ_DESC))
@@ -336,7 +337,12 @@ mfxStatus ImplementationAvc::Query(
     {
         ENCODE_CAPS hwCaps = { 0, };
         mfxExtAVCEncoderWiDiUsage * isWiDi = GetExtBuffer(*in);
-        sts = QueryHwCaps(core, hwCaps, DXVA2_Intel_Encode_AVC, isWiDi != 0);
+        
+        // let use dedault values if input resolution is 0x0
+        mfxU32 Width  = in->mfx.FrameInfo.Width == 0 ? 1920: in->mfx.FrameInfo.Width;
+        mfxU32 Height =  in->mfx.FrameInfo.Height == 0 ? 1088: in->mfx.FrameInfo.Height;
+
+        sts = QueryHwCaps(core, hwCaps, DXVA2_Intel_Encode_AVC, isWiDi != 0, Width, Height);
         if (sts != MFX_ERR_NONE)
             return MFX_WRN_PARTIAL_ACCELERATION;
 
@@ -466,9 +472,13 @@ mfxStatus ImplementationAvc::Query(
 
         return checkSts;
     }
-    else // Query mode 4: Query should do a single thing - report MB processing rate
+    else if (4 == queryMode)// Query mode 4: Query should do a single thing - report MB processing rate
     {
         mfxU32 mbPerSec[16] = {0, };
+       
+        // let use dedault values if input resolution is 0x0, 1920x1088 - should cover almost all cases
+        mfxU32 Width  = in->mfx.FrameInfo.Width == 0 ? 1920: in->mfx.FrameInfo.Width;
+        mfxU32 Height =  in->mfx.FrameInfo.Height == 0 ? 1088: in->mfx.FrameInfo.Height;
 
         mfxExtEncoderCapability * extCaps = GetExtBuffer(*out);
         if (extCaps == 0)
@@ -476,7 +486,7 @@ mfxStatus ImplementationAvc::Query(
 
         mfxExtAVCEncoderWiDiUsage * isWiDi = GetExtBuffer(*in);
         // query MB processing rate from driver
-        sts = QueryMbProcRate(core, *in, mbPerSec, DXVA2_Intel_Encode_AVC, isWiDi != 0);
+        sts = QueryMbProcRate(core, *in, mbPerSec, DXVA2_Intel_Encode_AVC, isWiDi != 0, Width, Height);
         if (sts != MFX_ERR_NONE)
         {
             extCaps->MBPerSec = 0;
@@ -495,6 +505,10 @@ mfxStatus ImplementationAvc::Query(
         }
 
         return MFX_ERR_NONE;
+    }
+    else if (5 == queryMode)
+    {
+        return QueryGuid(core, DXVA2_Intel_Encode_AVC);
     }
 
     return MFX_ERR_NONE;
@@ -516,7 +530,12 @@ mfxStatus ImplementationAvc::QueryIOSurf(
 
     ENCODE_CAPS hwCaps = { { 0 } };
     mfxExtAVCEncoderWiDiUsage * isWiDi = GetExtBuffer(*par);
-    sts = QueryHwCaps(core, hwCaps, DXVA2_Intel_Encode_AVC, isWiDi != 0);
+    
+    // let use dedault values if input resolution is 0x0, 1920x1088 - should cover almost all cases
+    mfxU32 Width  = par->mfx.FrameInfo.Width == 0 ? 1920 : par->mfx.FrameInfo.Width;
+    mfxU32 Height =  par->mfx.FrameInfo.Height == 0 ? 1088: par->mfx.FrameInfo.Height;
+
+    sts = QueryHwCaps(core, hwCaps, DXVA2_Intel_Encode_AVC, isWiDi != 0, Width, Height);
     if (sts != MFX_ERR_NONE)
         return MFX_WRN_PARTIAL_ACCELERATION;
 

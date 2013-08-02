@@ -137,6 +137,13 @@ namespace MfxHwH264Encode
 
         virtual
         void ForceCodingFunction (mfxU16 codingFunction) = 0;
+
+        virtual
+        mfxStatus QueryHWGUID(
+            VideoCORE * core,
+            GUID        guid,
+            bool        isTemporal) = 0;
+            
     };
 
     DriverEncoder* CreatePlatformH264Encoder( VideoCORE* core ); 

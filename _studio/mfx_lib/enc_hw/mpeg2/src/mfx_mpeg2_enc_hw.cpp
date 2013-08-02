@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          MPEG2 encoder
@@ -87,6 +87,7 @@ mfxStatus MFXVideoENCMPEG2_HW_DDI::Reset(mfxVideoParamEx_MPEG2 *par)
         if (!m_pDdiEncoder)
         {
             m_pDdiEncoder = MfxHwMpeg2Encode::CreatePlatformMpeg2Encoder(m_core); //new Mpeg2EncDDI::D3D9Encoder(m_core);
+            MFX_CHECK_NULL_PTR1(m_pDdiEncoder);
         }
         else
         {

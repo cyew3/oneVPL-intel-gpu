@@ -463,6 +463,18 @@ void* D3D11VideoCORE::QueryCoreInterface(const MFX_GUID &guid)
         }
         return (void*)m_pid3d11Adapter.get();
     }
+    else if (MFXIHWCAPS_GUID == guid)
+    {
+        return (void*) &m_encode_caps;
+    }
+    else if (MFXIHWMBPROCRATE_GUID == guid)
+    {
+        return (void*) &m_encode_mbprocrate;
+    }
+    else if (MFXID3D11DECODER_GUID == guid)
+    {
+        return (void*)&m_comptr;
+    }
     return NULL;
 }
 
@@ -1184,6 +1196,7 @@ mfxStatus D3D11VideoCORE::SetHandle(mfxHandleType type, mfxHDL handle)
 
         m_pD11VideoDevice = m_pD11Device;
         m_pD11VideoContext = m_pD11Context;
+
 
         if (!m_pD11Context)
             return MFX_ERR_UNDEFINED_BEHAVIOR;

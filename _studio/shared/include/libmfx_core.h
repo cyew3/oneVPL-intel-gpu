@@ -20,6 +20,7 @@ File Name: libmfx_core.h
 #include "mfxvideo++int.h"
 #include "mfx_ext_buffers.h"
 #include "fast_copy.h"
+#include "libmfx_core_interface.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 
@@ -122,7 +123,7 @@ public:
     //virtual mfxStatus Init(mfxVideoParam *par);
 
     virtual
-    mfxStatus CopyFrame(mfxFrameSurface1 *dst, mfxFrameSurface1 *src) {return DoFastCopyExtended(dst, src);}
+    mfxStatus CopyFrame(mfxFrameSurface1 *dst, mfxFrameSurface1 *src) {return DoFastCopy(dst, src);}
     virtual
     mfxStatus CopyBuffer(mfxU8 * /*dst*/, mfxU32 /*dst_size*/, mfxFrameSurface1 * /*src*/) {return MFX_ERR_UNKNOWN;}
 
@@ -148,6 +149,7 @@ public:
     virtual mfxU16 GetAutoAsyncDepth();
 
     virtual bool IsCompatibleForOpaq() {return true;};
+
 
 protected:
     
@@ -272,6 +274,10 @@ protected:
     mfxU32      m_CoreId;
     
     mfx_UMC_FrameAllocator *m_pWrp;
+
+    EncodeHWCaps  m_encode_caps;
+    EncodeHWCaps  m_encode_mbprocrate;
+
 
 private:
     // Forbid the assignment operator

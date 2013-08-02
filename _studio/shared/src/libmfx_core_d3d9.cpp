@@ -1451,6 +1451,14 @@ void* D3D9VideoCORE::QueryCoreInterface(const MFX_GUID &guid)
     {
         return (void*) m_pAdapter.get();
     }
+    else if (MFXIHWCAPS_GUID == guid)
+    {
+        return (void*) &m_encode_caps;
+    }
+    else if (MFXIHWMBPROCRATE_GUID == guid)
+    {
+        return (void*) &m_encode_mbprocrate;
+    }
 
     return NULL;
 }

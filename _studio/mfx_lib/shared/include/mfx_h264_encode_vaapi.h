@@ -116,6 +116,12 @@ namespace MfxHwH264Encode
             // no need in it on Linux
         }
 
+        virtual
+        mfxStatus QueryHWGUID(
+            VideoCORE * core,
+            GUID        guid,
+            bool        isTemporal);
+
     private:
         VAAPIEncoder(const VAAPIEncoder&); // no implementation
         VAAPIEncoder& operator=(const VAAPIEncoder&); // no implementation

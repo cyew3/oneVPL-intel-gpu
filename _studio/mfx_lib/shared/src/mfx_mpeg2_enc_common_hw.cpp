@@ -113,6 +113,15 @@ mfxStatus MfxHwMpeg2Encode::QueryHwCaps(VideoCORE* pCore, ENCODE_CAPS & hwCaps)
     hwCaps.MaxPicWidth      = 4096;
     hwCaps.MaxPicHeight     = 4096;*/
 
+    EncodeHWCaps* pEncodeCaps = QueryCoreInterface<EncodeHWCaps>(pCore); 
+    if (!pEncodeCaps)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    else
+    {
+        if (pEncodeCaps->GetHWCaps<ENCODE_CAPS>(DXVA2_Intel_Encode_MPEG2, &hwCaps) == MFX_ERR_NONE)
+            return MFX_ERR_NONE;
+    }
+
     std::auto_ptr<DriverEncoder> ddi;
 
     ddi.reset( CreatePlatformMpeg2Encoder(pCore) );
@@ -121,7 +130,7 @@ mfxStatus MfxHwMpeg2Encode::QueryHwCaps(VideoCORE* pCore, ENCODE_CAPS & hwCaps)
     mfxStatus sts = ddi.get()->QueryEncodeCaps(hwCaps);
     MFX_CHECK_STS(sts);
 
-    return MFX_ERR_NONE;
+    return pEncodeCaps->SetHWCaps<ENCODE_CAPS>(DXVA2_Intel_Encode_MPEG2, &hwCaps);
 }
 
 #ifdef PAVP_SUPPORT

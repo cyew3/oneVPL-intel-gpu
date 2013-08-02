@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 
 File Name: libmfx_core_interface.h
 
@@ -35,6 +35,23 @@ static const MFX_GUID  MFXICORED3D11_GUID =
 static const MFX_GUID MFXICOREVAAPI_GUID = 
 { 0xb0fcb183, 0x1a6d, 0x4f00, { 0x8b, 0xaf, 0x93, 0xf2, 0x85, 0xac, 0xec, 0x93 } };
 
+// {6ED94B99-DB70-4EBB-BC5C-C7E348FC2396}
+static const 
+MFX_GUID  MFXIHWCAPS_GUID = 
+{ 0x6ed94b99, 0xdb70, 0x4ebb, {0xbc, 0x5c, 0xc7, 0xe3, 0x48, 0xfc, 0x23, 0x96 } };
+
+// {0CF4CE38-EA46-456d-A179-8A026AE4E101}
+static const 
+MFX_GUID  MFXIHWMBPROCRATE_GUID = 
+{0xcf4ce38, 0xea46, 0x456d, {0xa1, 0x79, 0x8a, 0x2, 0x6a, 0xe4, 0xe1, 0x1} };
+
+// {6A0665ED-2DE0-403B-A5EE-944E5AAFA8E5}
+static const 
+MFX_GUID  MFXID3D11DECODER_GUID = 
+{0x6a0665ed, 0x2de0, 0x403b, {0xa5, 0xee, 0x94, 0x4e, 0x5a, 0xaf, 0xa8, 0xe5} };
+
+
+
 
 // Try to obtain required interface
 // Declare a template to query an interface
@@ -56,6 +73,100 @@ T *QueryCoreInterface(VideoCORE* pUnk, const MFX_GUID &guid = T::getGuid())
     }
 
 } // T *QueryCoreInterface(MFXIUnknown *pUnk, const MFX_GUID &guid)
+
+class EncodeHWCaps
+{
+public:
+    static const MFX_GUID getGuid()
+    {
+        return MFXIHWCAPS_GUID;
+    }
+    EncodeHWCaps()
+    {
+        m_caps = NULL;
+        m_size = 0;
+    };
+    virtual ~EncodeHWCaps()
+    {
+        if (m_caps)
+        {
+            free(m_caps);
+            m_caps = NULL;
+        }
+    };
+    template <class CAPS> 
+    mfxStatus GetHWCaps(GUID encode_guid, CAPS *hwCaps, mfxU32 array_size = 1)
+    {
+        if (m_caps)
+        {
+            if (encode_guid == m_encode_guid && m_size == array_size)
+            {
+                memcpy(hwCaps, m_caps, sizeof(CAPS)*array_size);
+                return MFX_ERR_NONE;
+            }
+        }
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+            
+    }
+    template <class CAPS> 
+    mfxStatus SetHWCaps(GUID encode_guid, CAPS *hwCaps, mfxU32 array_size = 1)
+    {
+        if (!m_caps)
+        {
+            m_encode_guid = encode_guid;
+            m_size = array_size;
+            m_caps = malloc(sizeof(CAPS)*array_size);
+            memcpy(m_caps, hwCaps, sizeof(CAPS)*array_size);
+            return MFX_ERR_NONE;
+        }
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    }
+protected:
+    GUID   m_encode_guid;
+    mfxHDL m_caps;
+    mfxU32 m_size;
+
+};
+
+template <class T>
+class ComPtrCore
+{
+public: 
+    static const MFX_GUID getGuid()
+    {
+        return MFXID3D11DECODER_GUID;
+    }
+    ComPtrCore():m_pComPtr(NULL)
+    {
+    };
+    virtual ~ComPtrCore()
+    {
+        if (m_pComPtr)
+        {
+            m_pComPtr->Release();
+            m_pComPtr = NULL;
+        }
+    };
+    ComPtrCore& operator = (T* ptr)
+    {
+        if (m_pComPtr != ptr)
+        {
+            if (m_pComPtr)
+                m_pComPtr->Release();
+
+            m_pComPtr = ptr;
+        }
+        return *this;
+    };
+    T* get()
+    {
+        return m_pComPtr;
+    };
+
+protected:
+T* m_pComPtr;
+};
 
 #if defined (MFX_VA_WIN)
 
@@ -97,6 +208,7 @@ struct D3D11Interface
     virtual ID3D11DeviceContext * GetD3D11DeviceContext(bool isTemporal = false) = 0;
     virtual ID3D11VideoContext * GetD3D11VideoContext(bool isTemporal = false) = 0;
 };
+
 
 #elif defined (MFX_VA_LINUX)
     struct VAAPIInterface
