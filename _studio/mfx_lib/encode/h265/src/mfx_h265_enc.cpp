@@ -75,7 +75,7 @@ static Ipp64f h265_calc_split_threshold(Ipp32s tu_flag, Ipp32s log2width, Ipp32s
     return a * exp(b * QP);
 }
 
-mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxExtCodingOption *opts, mfxExtCodingOptionHEVC *opts_hevc)
+mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxExtCodingOptionHEVC *opts_hevc)
 {
     H265VideoParam *pars = &m_videoParam;
     Ipp32u width = param->mfx.FrameInfo.CropW ? param->mfx.FrameInfo.CropW : param->mfx.FrameInfo.Width;
@@ -454,8 +454,8 @@ void H265Encoder::InitShortTermRefPicSet()
     m_sps.num_short_term_ref_pic_sets = (Ipp8u)m_numShortTermRefPicSets;
 }
 
-mfxStatus H265Encoder::Init(mfxVideoH265InternalParam *param, mfxExtCodingOption *opts, mfxExtCodingOptionHEVC *opts_hevc) {
-    mfxStatus sts = InitH265VideoParam(param, opts, opts_hevc);
+mfxStatus H265Encoder::Init(mfxVideoH265InternalParam *param, mfxExtCodingOptionHEVC *opts_hevc) {
+    mfxStatus sts = InitH265VideoParam(param, opts_hevc);
     MFX_CHECK_STS(sts);
 
     Ipp32u numCtbs = m_videoParam.PicWidthInCtbs*m_videoParam.PicHeightInCtbs;

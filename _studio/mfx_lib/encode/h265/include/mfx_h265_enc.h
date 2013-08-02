@@ -187,7 +187,7 @@ public:
     mfxStatus SetSlice(H265Slice *slice, Ipp32u curr_slice);
 
     void InitShortTermRefPicSet();
-    mfxStatus Init(mfxVideoH265InternalParam *param, mfxExtCodingOption *opts, mfxExtCodingOptionHEVC *opts_hevc);
+    mfxStatus Init(mfxVideoH265InternalParam *param, mfxExtCodingOptionHEVC *opts_hevc);
 
     void Close();
     Ipp32u DetermineFrameType();
@@ -208,7 +208,7 @@ public:
 
     //////////////////
 
-    mfxStatus InitH265VideoParam(mfxVideoH265InternalParam *param, mfxExtCodingOption *opts, mfxExtCodingOptionHEVC *opts_hevc);
+    mfxStatus InitH265VideoParam(mfxVideoH265InternalParam *param, mfxExtCodingOptionHEVC *opts_hevc);
 };
 
 #endif // __MFX_H265_ENC_H__

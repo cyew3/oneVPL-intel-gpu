@@ -36,6 +36,16 @@
 #define CHECK_CODEC_ID(id, myid)
 #define CHECK_FUNCTION_ID(id, myid)
 
+#define CHECK_OPTION(input, output, corcnt) \
+  if ( input != MFX_CODINGOPTION_OFF &&     \
+      input != MFX_CODINGOPTION_ON  &&      \
+      input != MFX_CODINGOPTION_UNKNOWN ) { \
+    output = MFX_CODINGOPTION_UNKNOWN;      \
+    (corcnt) ++;                            \
+  } else output = input;
+
+#define CHECK_EXTBUF_SIZE(ebuf, errcounter) if ((ebuf).Header.BufferSz != sizeof(ebuf)) {(errcounter) = (errcounter) + 1;}
+
 //////////////////////////////////////////////////////////////////////////
 
 void mfxVideoH265InternalParam::SetCalcParams( mfxVideoParam *parMFX) {
@@ -86,6 +96,31 @@ inline Ipp32u h265enc_ConvertBitrate(mfxU16 TargetKbps)
     return (TargetKbps * 1000);
 }
 
+// check for known ExtBuffers, returns error code. or -1 if found unknown
+// zero mfxExtBuffer* are OK
+mfxStatus CheckExtBuffers_H265enc(mfxExtBuffer** ebuffers, mfxU32 nbuffers)
+{
+
+    mfxU32 ID_list[] = { MFX_EXTBUFF_HEVCENC };
+
+    mfxU32 ID_found[sizeof(ID_list)/sizeof(ID_list[0])] = {0,};
+    if (!ebuffers) return MFX_ERR_NONE;
+    for(mfxU32 i=0; i<nbuffers; i++) {
+        bool is_known = false;
+        if (!ebuffers[i]) return MFX_ERR_NULL_PTR; //continue;
+        for (mfxU32 j=0; j<sizeof(ID_list)/sizeof(ID_list[0]); j++)
+            if (ebuffers[i]->BufferId == ID_list[j]) {
+                if (ID_found[j])
+                    return MFX_ERR_UNDEFINED_BEHAVIOR;
+                is_known = true;
+                ID_found[j] = 1; // to avoid duplicated
+                break;
+            }
+        if (!is_known)
+            return MFX_ERR_UNSUPPORTED;
+    }
+    return MFX_ERR_NONE;
+}
 //////////////////////////////////////////////////////////////////////////
 
 MFXVideoENCODEH265::MFXVideoENCODEH265(VideoCORE *core, mfxStatus *stat)
@@ -170,7 +205,10 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     sts = CheckVideoParamEncoders(par_in, m_core->IsExternalFrameAllocator(), MFX_HW_UNKNOWN);
     MFX_CHECK_STS(sts);
 
-    mfxExtCodingOption* opts_in = GetExtCodingOptions( par_in->ExtParam, par_in->NumExtParam );
+    sts = CheckExtBuffers_H265enc( par_in->ExtParam, par_in->NumExtParam );
+    if (sts != MFX_ERR_NONE)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
     mfxExtCodingOptionHEVC* opts_hevc = (mfxExtCodingOptionHEVC*)GetExtBuffer( par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_HEVCENC );
 
     mfxVideoH265InternalParam inInt = *par_in;
@@ -180,9 +218,20 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
         par->mfx.BufferSizeInKB = par->mfx.FrameInfo.Width * par->mfx.FrameInfo.Height * 3 / 2000 + 1; //temp
 
     memset(&m_mfxVideoParam,0,sizeof(mfxVideoParam));
-    if (opts_in) m_mfxExtOpts = *opts_in;
-    if (opts_hevc) m_mfxHEVCOpts = *opts_hevc;
+    m_mfxHEVCOpts.Header.BufferId = MFX_EXTBUFF_HEVCENC;
+    m_mfxHEVCOpts.Header.BufferSz = sizeof(m_mfxHEVCOpts);
+    if (opts_hevc) {
+        //m_mfxHEVCOpts = *opts_hevc;
+        mfxExtBuffer *ptr_checked_ext[1] = {0};
+        ptr_checked_ext[0] = &m_mfxHEVCOpts.Header;
+        m_mfxVideoParam.ExtParam = ptr_checked_ext;
+        m_mfxVideoParam.NumExtParam = 1;
+    }
 
+    sts = Query(par_in, &m_mfxVideoParam);
+    MFX_CHECK_STS(sts);
+
+    // what is still needed?
     m_mfxVideoParam.mfx = par->mfx;
     m_mfxVideoParam.calcParam = par->calcParam;
     m_mfxVideoParam.IOPattern = par->IOPattern;
@@ -213,7 +262,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     MFX_CHECK_STS_ALLOC(m_enc);
 
     m_enc->mfx_video_encode_h265_ptr = this;
-    sts =  m_enc->Init(&m_mfxVideoParam, &m_mfxExtOpts, &m_mfxHEVCOpts);
+    sts =  m_enc->Init(&m_mfxVideoParam, &m_mfxHEVCOpts);
     MFX_CHECK_STS(sts);
 
     m_isInitialized = true;
@@ -259,6 +308,7 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
 {
     mfxU32 isCorrected = 0;
     mfxU32 isInvalid = 0;
+    mfxStatus st;
     MFX_CHECK_NULL_PTR1(par_out)
     CHECK_VERSION(par_in->Version);
     CHECK_VERSION(par_out->Version);
@@ -300,6 +350,40 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
         out->AsyncDepth = 1;
         out->IOPattern = 1;
         out->Protected = 0;
+
+        //Extended coding options
+        st = CheckExtBuffers_H265enc( out->ExtParam, out->NumExtParam );
+        MFX_CHECK_STS(st);
+
+        mfxExtCodingOptionHEVC* optsHEVC = (mfxExtCodingOptionHEVC*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_HEVCENC );
+        if (optsHEVC != 0) {
+            mfxExtBuffer HeaderCopy = optsHEVC->Header;
+            memset( optsHEVC, 0, sizeof( mfxExtCodingOptionHEVC ));
+            optsHEVC->Header = HeaderCopy;
+            optsHEVC->Log2MaxCUSize = 1;
+            optsHEVC->MaxCUDepth = 1;
+            optsHEVC->QuadtreeTULog2MaxSize = 1;
+            optsHEVC->QuadtreeTULog2MinSize = 1;
+            optsHEVC->QuadtreeTUMaxDepthIntra = 1;
+            optsHEVC->QuadtreeTUMaxDepthInter = 1;
+            optsHEVC->AnalyzeChroma = 1;              /* tri-state option */
+            optsHEVC->SignBitHiding = 1;
+            optsHEVC->RDOQuant = 1;
+            optsHEVC->SplitThresholdStrengthCU = 1;
+            optsHEVC->SplitThresholdStrengthTU = 1;
+            optsHEVC->IntraNumCand1_2 = 1;
+            optsHEVC->IntraNumCand1_3 = 1;
+            optsHEVC->IntraNumCand1_4 = 1;
+            optsHEVC->IntraNumCand1_5 = 1;
+            optsHEVC->IntraNumCand1_6 = 1;
+            optsHEVC->IntraNumCand2_2 = 1;
+            optsHEVC->IntraNumCand2_3 = 1;
+            optsHEVC->IntraNumCand2_4 = 1;
+            optsHEVC->IntraNumCand2_5 = 1;
+            optsHEVC->IntraNumCand2_6 = 1;
+            optsHEVC->WPP = 1;
+        }
+
         // ignore all reserved
     } else { //Check options for correctness
         mfxU16 cropSampleMask, correctCropTop, correctCropBottom;
@@ -312,6 +396,23 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
         if ( in->mfx.CodecId != MFX_CODEC_HEVC)
             return MFX_ERR_UNSUPPORTED;
 
+        st = CheckExtBuffers_H265enc( in->ExtParam, in->NumExtParam );
+        MFX_CHECK_STS(st);
+        st = CheckExtBuffers_H265enc( out->ExtParam, out->NumExtParam );
+        MFX_CHECK_STS(st);
+
+        const mfxExtCodingOptionHEVC* opts_in  = (mfxExtCodingOptionHEVC*)GetExtBuffer(  in->ExtParam,  in->NumExtParam, MFX_EXTBUFF_HEVCENC );
+        mfxExtCodingOptionHEVC*       opts_out = (mfxExtCodingOptionHEVC*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_HEVCENC );
+
+        if (opts_in           ) CHECK_EXTBUF_SIZE( *opts_in,            isInvalid)
+        if (opts_out          ) CHECK_EXTBUF_SIZE( *opts_out,           isInvalid)
+        if (isInvalid)
+            return MFX_ERR_UNSUPPORTED;
+
+        if ((opts_in==0) != (opts_out==0))
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+
         out->mfx.NumThread = in->mfx.NumThread;
 
         if( /*in->mfx.TargetUsage < MFX_TARGETUSAGE_UNKNOWN ||*/ in->mfx.TargetUsage > MFX_TARGETUSAGE_BEST_SPEED) {
@@ -319,6 +420,94 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
             out->mfx.TargetUsage = MFX_TARGETUSAGE_UNKNOWN;
         }
         else out->mfx.TargetUsage = in->mfx.TargetUsage;
+
+        if (opts_in) {
+            if ((opts_in->Log2MaxCUSize != 0 && opts_in->Log2MaxCUSize < 4) || opts_in->Log2MaxCUSize > 6) {
+                opts_out->Log2MaxCUSize = 0;
+                isInvalid ++;
+            } else opts_out->Log2MaxCUSize = opts_in->Log2MaxCUSize;
+
+            if ( (opts_in->MaxCUDepth > 5) ||
+                 (opts_out->Log2MaxCUSize!=0 && opts_in->MaxCUDepth + 1 > opts_out->Log2MaxCUSize) ) {
+                opts_out->MaxCUDepth = 0;
+                isInvalid ++;
+            } else opts_out->MaxCUDepth = opts_in->MaxCUDepth;
+
+            if ( (opts_in->QuadtreeTULog2MaxSize > 5) ||
+                 (opts_out->Log2MaxCUSize!=0 && opts_in->QuadtreeTULog2MaxSize > opts_out->Log2MaxCUSize) ) {
+                opts_out->QuadtreeTULog2MaxSize = 0;
+                isInvalid ++;
+            } else opts_out->QuadtreeTULog2MaxSize = opts_in->QuadtreeTULog2MaxSize;
+
+            if ( (opts_in->QuadtreeTULog2MinSize == 1) ||
+                 (opts_out->Log2MaxCUSize!=0 && opts_in->QuadtreeTULog2MinSize > opts_out->Log2MaxCUSize) ) {
+                opts_out->QuadtreeTULog2MinSize = 0;
+                isInvalid ++;
+            } else opts_out->QuadtreeTULog2MinSize = opts_in->QuadtreeTULog2MinSize;
+
+            if ( (opts_in->QuadtreeTUMaxDepthIntra > 5) ||
+                 (opts_out->Log2MaxCUSize!=0 && opts_in->QuadtreeTUMaxDepthIntra + 2 > opts_out->Log2MaxCUSize) ) {
+                opts_out->QuadtreeTUMaxDepthIntra = 0;
+                isInvalid ++;
+            } else opts_out->QuadtreeTUMaxDepthIntra = opts_in->QuadtreeTUMaxDepthIntra;
+
+            if ( (opts_in->QuadtreeTUMaxDepthInter > 5) ||
+                 (opts_out->Log2MaxCUSize!=0 && opts_in->QuadtreeTUMaxDepthInter + 2 > opts_out->Log2MaxCUSize) ) {
+                opts_out->QuadtreeTUMaxDepthInter = 0;
+                isInvalid ++;
+            } else opts_out->QuadtreeTUMaxDepthInter = opts_in->QuadtreeTUMaxDepthInter;
+
+            CHECK_OPTION(opts_in->AnalyzeChroma, opts_out->AnalyzeChroma, isInvalid);  /* tri-state option */
+
+            if (opts_in->SignBitHiding > 1) {
+                opts_out->SignBitHiding = 0;
+                isInvalid ++;
+            } else opts_out->SignBitHiding = opts_in->SignBitHiding;
+
+            if (opts_in->RDOQuant > 1) {
+                opts_out->RDOQuant = 0;
+                isInvalid ++;
+            } else opts_out->RDOQuant = opts_in->RDOQuant;
+
+            if (opts_in->SplitThresholdStrengthCU > 3) {
+                opts_out->SplitThresholdStrengthCU = 0;
+                isInvalid ++;
+            } else opts_out->SplitThresholdStrengthCU = opts_in->SplitThresholdStrengthCU;
+
+            if (opts_in->SplitThresholdStrengthTU > 3) {
+                opts_out->SplitThresholdStrengthTU = 0;
+                isInvalid ++;
+            } else opts_out->SplitThresholdStrengthTU = opts_in->SplitThresholdStrengthTU;
+
+#define CHECK_NUMCAND(field)                 \
+    if (opts_in->field > maxnum) {           \
+        opts_out->field = 0;                 \
+        isInvalid ++;                        \
+    } else opts_out->field = opts_in->field; \
+    if (opts_out->field > 0) maxnum = opts_out->field;
+
+            mfxU16 maxnum = 35;
+
+            CHECK_NUMCAND(IntraNumCand1_2)
+            CHECK_NUMCAND(IntraNumCand1_3)
+            CHECK_NUMCAND(IntraNumCand1_4)
+            CHECK_NUMCAND(IntraNumCand1_5)
+            CHECK_NUMCAND(IntraNumCand1_6)
+            CHECK_NUMCAND(IntraNumCand2_2)
+            CHECK_NUMCAND(IntraNumCand2_3)
+            CHECK_NUMCAND(IntraNumCand2_4)
+            CHECK_NUMCAND(IntraNumCand2_5)
+            CHECK_NUMCAND(IntraNumCand2_6)
+
+#undef CHECK_NUMCAND
+
+            if (opts_in->WPP > 1) {
+                opts_out->WPP = 0;
+                isInvalid ++;
+            } else opts_out->WPP = opts_in->WPP;
+
+        } // EO mfxExtCodingOptionHEVC
+
 
         if (in->mfx.RateControlMethod != 0 &&
             in->mfx.RateControlMethod != MFX_RATECONTROL_CBR && in->mfx.RateControlMethod != MFX_RATECONTROL_VBR && in->mfx.RateControlMethod != MFX_RATECONTROL_CQP && in->mfx.RateControlMethod != MFX_RATECONTROL_AVBR) {

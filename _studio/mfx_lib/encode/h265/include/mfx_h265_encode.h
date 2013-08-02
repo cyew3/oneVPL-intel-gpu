@@ -96,7 +96,6 @@ protected:
 // ------ mfx level
     VideoCORE *m_core;
     mfxVideoH265InternalParam            m_mfxVideoParam;
-    mfxExtCodingOption                   m_mfxExtOpts;
     mfxExtCodingOptionHEVC               m_mfxHEVCOpts;
     H265Encoder *m_enc;
 
