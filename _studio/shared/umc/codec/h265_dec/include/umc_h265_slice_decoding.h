@@ -29,6 +29,16 @@ namespace UMC_HEVC_DECODER
 class H265DBPList;
 class H265DecoderFrameList;
 
+enum
+{
+    DEC_PROCESS_ID,
+    REC_PROCESS_ID,
+    DEB_PROCESS_ID,
+    SAO_PROCESS_ID,
+
+    LAST_PROCESS_ID
+};
+
 // Task ID enumerator
 enum
 {
@@ -172,18 +182,13 @@ public:  // DEBUG !!!! should remove dependence
 
     Ipp32s m_mvsDistortion;
 
-    Ipp32s m_iCurMBToDec;                                       // (Ipp32s) current MB number to decode
-    Ipp32s m_iCurMBToRec;                                       // (Ipp32s) current MB number to reconstruct
-    Ipp32s m_iCurMBToDeb;                                       // (Ipp32s *) current MB number to de-blocking
-    Ipp32s m_iCurMBToSAO;
     Ipp32s m_curTileRec;                                          // (Ipp32s) current MB number to reconstruct
     Ipp32s m_curTileDec;                                          // (Ipp32s) current MB number to reconstruct
 
+    Ipp32s m_curMBToProcess[LAST_PROCESS_ID];
+
     bool m_bInProcess;                                          // (bool) slice is under whole decoding
-    Ipp32s m_bDecVacant;                                        // (Ipp32s) decoding is vacant
-    Ipp32s m_bRecVacant;                                        // (Ipp32s) reconstruct is vacant
-    Ipp32s m_bDebVacant;                                        // (Ipp32s) de-blocking is vacant
-    Ipp32s m_bSAOVacant;
+    Ipp32s m_processVacant[LAST_PROCESS_ID];
     bool m_bError;                                              // (bool) there is an error in decoding
 
     bool m_bDecoded;                                            // (bool) "slice has been decoded" flag

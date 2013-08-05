@@ -115,6 +115,8 @@ public:
         m_hasTiles = false;
         m_decAddrReady = 0;
         m_recAddrReady = 0;
+        m_curMBToSAO = 0;
+        m_saoInProcess = 0;
 
         m_isNeedDeblocking = false;
         m_isNeedSAO = false;
@@ -190,8 +192,8 @@ public:
             H265Slice *pSlice = m_pSliceQueue[i];
 
             pSlice->m_bDeblocked = true;
-            pSlice->m_bDebVacant = 0;
-            pSlice->m_iCurMBToDeb = pSlice->m_iMaxMB;
+            pSlice->m_processVacant[DEB_PROCESS_ID] = 0;
+            pSlice->m_curMBToProcess[DEB_PROCESS_ID] = pSlice->m_iMaxMB;
             pSlice->GetSliceHeader()->m_deblockingFilterDisable = true;
         }
     }
@@ -204,8 +206,8 @@ public:
         {
             H265Slice *pSlice = m_pSliceQueue[i];
             pSlice->m_bSAOed = true;
-            pSlice->m_bSAOVacant = 0;
-            pSlice->m_iCurMBToSAO = pSlice->m_iMaxMB;
+            pSlice->m_processVacant[SAO_PROCESS_ID] = 0;
+            pSlice->m_curMBToProcess[SAO_PROCESS_ID] = pSlice->m_iMaxMB;
         }
     }
 
@@ -278,6 +280,8 @@ public:
 
     Ipp32s m_decAddrReady;
     Ipp32s m_recAddrReady;
+    Ipp32s m_curMBToSAO;
+    Ipp32s m_saoInProcess;
     bool   m_hasTiles;
 
     H265DecoderFrame * m_pFrame;

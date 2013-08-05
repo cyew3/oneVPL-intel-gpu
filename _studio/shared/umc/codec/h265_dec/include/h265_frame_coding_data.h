@@ -80,6 +80,7 @@ public:
     Ipp32u* m_InverseCUOrderMap;
 
     PartitionInfo m_partitionInfo;
+    H265SampleAdaptiveOffset m_SAO;
 
 public:
 

@@ -341,27 +341,27 @@ void H265DecoderFrame::DefaultFill(Ipp32s fields_mask, bool isChromaOnly, Ipp8u 
     }
 }
 
-void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* pSeqParamSet, const H265PicParamSet *pPicParamSet)
+void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* sps, const H265PicParamSet *pps)
 {
     if (!m_CodingData)
     {
         m_CodingData = new H265FrameCodingData();
     }
 
-    Ipp32u MaxCUWidth = pSeqParamSet->MaxCUWidth;
+    Ipp32u MaxCUWidth = sps->MaxCUWidth;
 
-    Ipp32u MaxCUDepth   = pSeqParamSet->MaxCUDepth;
+    Ipp32u MaxCUDepth   = sps->MaxCUDepth;
 
     Ipp32u widthInCU = (m_lumaSize.width % MaxCUWidth) ? m_lumaSize.width / MaxCUWidth + 1 : m_lumaSize.width / MaxCUWidth;
     Ipp32u heightInCU = (m_lumaSize.height % MaxCUWidth) ? m_lumaSize.height / MaxCUWidth + 1 : m_lumaSize.height / MaxCUWidth;
 
-    m_CodingData->m_partitionInfo.Init(pSeqParamSet);
+    m_CodingData->m_partitionInfo.Init(sps);
 
     if (m_CodingData->m_MaxCUWidth != MaxCUWidth ||
         m_CodingData->m_WidthInCU != widthInCU  || m_CodingData->m_HeightInCU != heightInCU || m_CodingData->m_MaxCUDepth != MaxCUDepth)
     {
         m_CodingData->destroy();
-        m_CodingData->create(m_lumaSize.width, m_lumaSize.height, MaxCUWidth, MaxCUWidth, pSeqParamSet->MaxCUDepth);
+        m_CodingData->create(m_lumaSize.width, m_lumaSize.height, MaxCUWidth, MaxCUWidth, sps->MaxCUDepth);
 
         delete[] m_cuOffsetY;
         delete[] m_cuOffsetC;
@@ -393,12 +393,14 @@ void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* pSeqParamSet, c
         }
     }
 
-    m_CodingData->m_CUOrderMap = pPicParamSet->m_CtbAddrTStoRS;
-    m_CodingData->m_InverseCUOrderMap = pPicParamSet->m_CtbAddrRStoTS;
-    m_CodingData->m_TileIdxMap = pPicParamSet->m_TileIdx;
+    m_CodingData->m_CUOrderMap = pps->m_CtbAddrTStoRS;
+    m_CodingData->m_InverseCUOrderMap = pps->m_CtbAddrRStoTS;
+    m_CodingData->m_TileIdxMap = pps->m_TileIdx;
 
-    if (pSeqParamSet->sample_adaptive_offset_enabled_flag)
+    if (sps->sample_adaptive_offset_enabled_flag)
     {
+        m_CodingData->m_SAO.init(sps);
+
         Ipp32s size = m_CodingData->m_WidthInCU * m_CodingData->m_HeightInCU;
         if (m_sizeOfSAOData < size)
         {

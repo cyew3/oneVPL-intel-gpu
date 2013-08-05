@@ -140,6 +140,8 @@ void H265FrameCodingData::destroy()
         delete[] m_colocatedInfo[i];
         m_colocatedInfo[i] = 0;
     }
+
+    m_SAO.destroy();
 }
 
 } // end namespace UMC_HEVC_DECODER

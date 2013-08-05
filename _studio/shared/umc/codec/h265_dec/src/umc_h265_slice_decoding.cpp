@@ -143,18 +143,16 @@ bool H265Slice::Reset(void *pSource, size_t nSourceSize, Ipp32s )
 
     // reset all internal variables
     m_mvsDistortion = 0;
-    m_iCurMBToDec = m_iFirstMB;
-    m_iCurMBToRec = m_iFirstMB;
-    m_iCurMBToDeb = m_iFirstMB;
-    m_iCurMBToSAO = m_iFirstMB;
+
+    for (int i = 0; i < LAST_PROCESS_ID; i++)
+    {
+        m_curMBToProcess[i] = m_iFirstMB;
+        m_processVacant[i] = 1;
+    }
     m_curTileDec = 0;
     m_curTileRec = 0;
 
     m_bInProcess = false;
-    m_bDecVacant = 1;
-    m_bRecVacant = 1;
-    m_bDebVacant = 1;
-    m_bSAOVacant = 1;
     m_bError = false;
 
     // set conditional flags
@@ -165,14 +163,14 @@ bool H265Slice::Reset(void *pSource, size_t nSourceSize, Ipp32s )
 
     if (m_bDeblocked)
     {
-        m_bDebVacant = 0;
-        m_iCurMBToDeb = m_iMaxMB;
+        m_processVacant[DEB_PROCESS_ID] = 0;
+        m_curMBToProcess[DEB_PROCESS_ID] = m_iMaxMB;
     }
 
     if (m_bSAOed)
     {
-        m_bSAOVacant = 0;
-        m_iCurMBToSAO = m_iMaxMB;
+        m_processVacant[SAO_PROCESS_ID] = 0;
+        m_curMBToProcess[SAO_PROCESS_ID] = m_iMaxMB;
     }
 
     // frame is not associated yet

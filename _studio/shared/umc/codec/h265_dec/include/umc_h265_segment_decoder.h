@@ -264,7 +264,6 @@ public:
     void GetEdgeStrength(Ipp32s tuQ, Ipp32s tuP, bool anotherCU, Ipp8s tcOffset, Ipp8s betaOffset, H265EdgeData *edge);
 
     //h265 members
-    H265SampleAdaptiveOffset m_SAO;
 
     H265CodingUnit* m_curCU;
     bool m_DecodeDQPFlag;

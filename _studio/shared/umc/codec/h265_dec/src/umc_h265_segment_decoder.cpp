@@ -265,12 +265,10 @@ void H265SegmentDecoder::create(H265SeqParamSet* sps)
         m_TrQuant = new H265TrQuant(); //TRQUANT
 
     m_TrQuant->Init(sps->MaxCUWidth, sps->MaxCUHeight, m_pSeqParamSet->m_maxTrSize);
-    m_SAO.init(sps);
 }
 
 void H265SegmentDecoder::destroy()
 {
-    m_SAO.destroy();
 }
 
 void H265SegmentDecoder::Release(void)
