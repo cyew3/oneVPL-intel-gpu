@@ -251,7 +251,7 @@ mfxStatus MFXAudioENCODE_EncodeFrameAsync(mfxSession session, mfxBitstream *bs, 
         {
             mfxStatus mfxAddRes;
 
-            task.pOwner = session->m_pAudioDECODE.get();
+            task.pOwner = session->m_pAudioENCODE.get();
             task.priority = session->m_priority;
             task.threadingPolicy = session->m_pAudioENCODE->GetThreadingPolicy();
             // fill dependencies
@@ -285,7 +285,7 @@ mfxStatus MFXAudioENCODE_EncodeFrameAsync(mfxSession session, mfxBitstream *bs, 
         {
             return MFX_ERR_INVALID_HANDLE;
         }
-        else if (0 == session->m_pDECODE.get())
+        else if (0 == session->m_pAudioENCODE.get())
         {
             return MFX_ERR_NOT_INITIALIZED;
         }
