@@ -18,6 +18,7 @@ File Name: .h
 #include "vm_file.h"
 #include <iomanip>
 #include <limits>
+#include <DXGI.h>
 
 #if defined(_WIN32) || defined(_WIN64)
     #include <psapi.h>
@@ -723,7 +724,7 @@ mfxF64 ConvertMFXTime2mfxF64(mfxU64 nTime)
 
 mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &info)
 {
-    static const char valid_pattern [] = "nv12( |:mono)|yv12( |:mono)|rgb24|rgb32|yuy2(:h|:v|:mono)";
+    static const char valid_pattern [] = "nv12( |:mono)|yv12( |:mono)|rgb24|rgb32|yuy2(:h|:v|:mono)|ayuv";
 
     //if external pattern changed parsing need to be updated
     MFX_CHECK(!std::string(MFX_FOURCC_PATTERN()).compare(valid_pattern));
@@ -781,6 +782,12 @@ mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &
         {
             info.FourCC = MFX_FOURCC_YUY2;
             info.ChromaFormat = MFX_CHROMAFORMAT_MONOCHROME;
+            break;
+        }
+        case 10:
+        {
+            info.FourCC = DXGI_FORMAT_AYUV;
+            info.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
             break;
         }
         default:

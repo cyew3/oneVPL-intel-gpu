@@ -12,6 +12,7 @@
 #include "mfxpcp.h"
 #include <stdexcept>
 #include <string>
+#include <DXGI.h>
 
 mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type);
 
@@ -55,6 +56,7 @@ mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 /* codecId */)
     case MFX_FOURCC_YUY2:
     case MFX_FOURCC_RGB3:
     case MFX_FOURCC_RGB4:
+    case DXGI_FORMAT_AYUV:
         break;
     default:
         return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -113,7 +115,7 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId)
 
     if (codecId == MFX_CODEC_JPEG)
     {
-        if (info->FourCC != MFX_FOURCC_NV12 && info->FourCC != MFX_FOURCC_RGB4 && info->FourCC != MFX_FOURCC_YUY2)
+        if (info->FourCC != MFX_FOURCC_NV12 && info->FourCC != DXGI_FORMAT_AYUV && info->FourCC != MFX_FOURCC_RGB4 && info->FourCC != MFX_FOURCC_YUY2)
             return MFX_ERR_INVALID_VIDEO_PARAM;
     }
     else if (codecId == MFX_CODEC_VP8)
@@ -391,6 +393,10 @@ mfxStatus CheckFrameData(const mfxFrameSurface1 *surface)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             break;
         case MFX_FOURCC_RGB4:
+            if (!surface->Data.A || !surface->Data.R || !surface->Data.G || !surface->Data.B)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            break;
+        case DXGI_FORMAT_AYUV:
             if (!surface->Data.A || !surface->Data.R || !surface->Data.G || !surface->Data.B)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             break;

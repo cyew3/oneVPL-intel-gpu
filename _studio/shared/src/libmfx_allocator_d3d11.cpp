@@ -66,6 +66,9 @@ DXGI_FORMAT mfxDefaultAllocatorD3D11::MFXtoDXGI(mfxU32 format)
     case MFX_FOURCC_P8:
     case MFX_FOURCC_P8_MBDATA:
         return DXGI_FORMAT_P8;// aya???
+
+    case DXGI_FORMAT_AYUV:
+        return DXGI_FORMAT_AYUV;
     }
     return DXGI_FORMAT_UNKNOWN;
 
@@ -92,6 +95,7 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
     case MFX_FOURCC_RGB4:
     case MFX_FOURCC_P8:
     case MFX_FOURCC_P8_MBDATA:
+    case DXGI_FORMAT_AYUV:
         break;
     default:
         return MFX_ERR_UNSUPPORTED;
@@ -322,6 +326,13 @@ mfxStatus mfxDefaultAllocatorD3D11::LockFrameHW(mfxHDL pthis, mfxMemId mid, mfxF
     //    ptr->R = ptr->B + 2;
     //    break;
     case DXGI_FORMAT_B8G8R8A8_UNORM :
+        ptr->Pitch = (mfxU16)LockedRect.RowPitch;
+        ptr->B = (mfxU8 *)LockedRect.pData;
+        ptr->G = ptr->B + 1;
+        ptr->R = ptr->B + 2;
+        ptr->A = ptr->B + 3;
+        break;
+    case DXGI_FORMAT_AYUV :
         ptr->Pitch = (mfxU16)LockedRect.RowPitch;
         ptr->B = (mfxU8 *)LockedRect.pData;
         ptr->G = ptr->B + 1;

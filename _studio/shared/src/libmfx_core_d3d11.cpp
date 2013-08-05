@@ -910,6 +910,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
                     break;
 
                 case MFX_FOURCC_RGB4:
+                case DXGI_FORMAT_AYUV:
                 {
                     MFX_CHECK_NULL_PTR1(pDst->Data.R);
                     MFX_CHECK_NULL_PTR1(pDst->Data.G);
@@ -1008,6 +1009,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
                 break;
 
             case MFX_FOURCC_RGB4:
+            case DXGI_FORMAT_AYUV:
             {
                 MFX_CHECK_NULL_PTR1(pSrc->Data.R);
                 MFX_CHECK_NULL_PTR1(pSrc->Data.G);
@@ -1129,6 +1131,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
                 break;
 
             case MFX_FOURCC_RGB4:
+            case DXGI_FORMAT_AYUV:
             {
                 MFX_CHECK_NULL_PTR1(pSrc->Data.R);
                 MFX_CHECK_NULL_PTR1(pSrc->Data.G);

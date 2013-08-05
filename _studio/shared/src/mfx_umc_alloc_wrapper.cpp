@@ -211,6 +211,9 @@ UMC::Status mfx_UMC_FrameAllocator::InitMfx(UMC::FrameAllocatorParams *,
     case MFX_FOURCC_YUY2:
         color_format = UMC::YUY2;
         break;
+    case DXGI_FORMAT_AYUV:
+        color_format = UMC::RGB32;
+        break;
     default:
         return UMC::UMC_ERR_UNSUPPORTED;
     }
@@ -693,6 +696,7 @@ mfxI32 mfx_UMC_FrameAllocator::AddSurface(mfxFrameSurface1 *surface)
     case MFX_FOURCC_YV12:
     case MFX_FOURCC_YUY2:
     case MFX_FOURCC_RGB4:
+    case DXGI_FORMAT_AYUV:
         break;
     default:
         return UMC::UMC_ERR_UNSUPPORTED;

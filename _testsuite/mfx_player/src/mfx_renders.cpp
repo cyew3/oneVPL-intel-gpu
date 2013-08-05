@@ -453,6 +453,20 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             }
             break;
         }
+        case DXGI_FORMAT_AYUV :
+        {
+            m_Current.m_comp = VM_STRING('R');
+            m_Current.m_pixX = 0;
+            mfxU8* plane = pData->B + pInfo->CropX * 4;
+
+            for (i = 0; i <pInfo->CropH; i++)
+            {
+                m_Current.m_pixY = i;
+                MFX_CHECK_STS(PutData(plane, pInfo->CropW * 4));
+                plane += pData->Pitch;
+            }
+            break;
+        }
         case MFX_FOURCC_YUY2 :
         {
             m_Current.m_comp = VM_STRING('Y');
@@ -915,6 +929,9 @@ mfxStatus MFXMetricComparatorRender::RenderFrame(mfxFrameSurface1 *surface, mfxE
             nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 3 ;
             break;
         case MFX_FOURCC_RGB4 :
+            nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 4 ;
+            break;
+        case DXGI_FORMAT_AYUV :
             nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 4 ;
             break;
         case MFX_FOURCC_YUY2 :
