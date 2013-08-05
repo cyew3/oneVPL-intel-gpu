@@ -907,7 +907,7 @@ mfxStatus ImplementationMvc::QueryIOSurf(
         MFX_ERR_INVALID_VIDEO_PARAM);
 
     ENCODE_CAPS hwCaps = { 0 };
-    mfxStatus sts = QueryHwCaps(core, hwCaps, DXVA2_Intel_Encode_AVC);
+    mfxStatus sts = QueryHwCaps(core, hwCaps, MSDK_Private_Guid_Encode_AVC_Query);
     if (sts != MFX_ERR_NONE)
         return MFX_WRN_PARTIAL_ACCELERATION;
 

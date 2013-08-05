@@ -730,7 +730,7 @@ mfxStatus D3D11Encoder::Init(
             // also decoder from Core created with lower resolution could be used for Query, QueryIOSurf (but not for Init)
             // for PAVP case new instance of decoder should be created
             if ((width <= video_desc.SampleWidth && height <= video_desc.SampleHeight
-                || guid != MSDK_Private_Guid_Encode_AVC_Init)
+                || guid == MSDK_Private_Guid_Encode_AVC_Query)
                 && !extPavp)
                 m_pDecoder = pVideoDecoder->get();
         }

@@ -342,7 +342,7 @@ mfxStatus ImplementationAvc::Query(
         mfxU32 Width  = in->mfx.FrameInfo.Width == 0 ? 1920: in->mfx.FrameInfo.Width;
         mfxU32 Height =  in->mfx.FrameInfo.Height == 0 ? 1088: in->mfx.FrameInfo.Height;
 
-        sts = QueryHwCaps(core, hwCaps, DXVA2_Intel_Encode_AVC, isWiDi != 0, Width, Height);
+        sts = QueryHwCaps(core, hwCaps, MSDK_Private_Guid_Encode_AVC_Query, isWiDi != 0, Width, Height);
         if (sts != MFX_ERR_NONE)
             return MFX_WRN_PARTIAL_ACCELERATION;
 
@@ -486,7 +486,7 @@ mfxStatus ImplementationAvc::Query(
 
         mfxExtAVCEncoderWiDiUsage * isWiDi = GetExtBuffer(*in);
         // query MB processing rate from driver
-        sts = QueryMbProcRate(core, *in, mbPerSec, DXVA2_Intel_Encode_AVC, isWiDi != 0, Width, Height);
+        sts = QueryMbProcRate(core, *in, mbPerSec, MSDK_Private_Guid_Encode_AVC_Query, isWiDi != 0, Width, Height);
         if (sts != MFX_ERR_NONE)
         {
             extCaps->MBPerSec = 0;
@@ -508,7 +508,7 @@ mfxStatus ImplementationAvc::Query(
     }
     else if (5 == queryMode)
     {
-        return QueryGuid(core, DXVA2_Intel_Encode_AVC);
+        return QueryGuid(core, MSDK_Private_Guid_Encode_AVC_Query);
     }
 
     return MFX_ERR_NONE;
@@ -535,7 +535,7 @@ mfxStatus ImplementationAvc::QueryIOSurf(
     mfxU32 Width  = par->mfx.FrameInfo.Width == 0 ? 1920 : par->mfx.FrameInfo.Width;
     mfxU32 Height =  par->mfx.FrameInfo.Height == 0 ? 1088: par->mfx.FrameInfo.Height;
 
-    sts = QueryHwCaps(core, hwCaps, DXVA2_Intel_Encode_AVC, isWiDi != 0, Width, Height);
+    sts = QueryHwCaps(core, hwCaps, MSDK_Private_Guid_Encode_AVC_Query, isWiDi != 0, Width, Height);
     if (sts != MFX_ERR_NONE)
         return MFX_WRN_PARTIAL_ACCELERATION;
 

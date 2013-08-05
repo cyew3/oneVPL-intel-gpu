@@ -43,15 +43,15 @@
 #define STATIC_ASSERT(ASSERTION, MESSAGE) char MESSAGE[(ASSERTION) ? 1 : -1]; MESSAGE
 
 #if defined(MFX_VA_WIN)
-// this guid is used to identify that device creation is performed during initialization
-static const GUID MSDK_Private_Guid_Encode_AVC_Init = 
+// this guid is used to identify that device creation is performed during Query or QueryIOSurf call
+static const GUID MSDK_Private_Guid_Encode_AVC_Query = 
 { 0x32560c63, 0xe3dc, 0x43c9, { 0xa8, 0x16, 0xda, 0x73, 0x36, 0x45, 0x89, 0xe9 } };
 // this guid is used to identify device creation for MVC BD/AVCHD dependent view
 static const GUID MSDK_Private_Guid_Encode_MVC_Dependent_View =
 { 0x68bebcda, 0xefff, 0x4858, { 0x8d, 0x65, 0x92, 0x28, 0xab, 0xc5, 0x8c, 0x4e } };
 #else
 // no special guids for linux
-static const GUID MSDK_Private_Guid_Encode_AVC_Init           = DXVA2_Intel_Encode_AVC;
+static const GUID MSDK_Private_Guid_Encode_AVC_Query          = DXVA2_Intel_Encode_AVC;
 static const GUID MSDK_Private_Guid_Encode_MVC_Dependent_View = DXVA2_Intel_Encode_AVC;
 #endif
 
