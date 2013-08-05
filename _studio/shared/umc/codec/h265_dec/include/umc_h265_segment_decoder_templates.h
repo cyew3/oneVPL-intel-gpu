@@ -81,6 +81,9 @@ public:
             bool is_last = Decoder::DecodeCodingUnit_CABAC(sd); //decode CU
             END_TICK(decode_time);
 
+            // New version of deblocking edge strength calculations
+            // sd->GetCTBEdgeStrengths(sd->m_pSeqParamSet->log2_min_transform_block_size, rsCUAddr);
+
             if (is_last)
             {
                 umcRes = UMC::UMC_ERR_END_OF_STREAM;
@@ -170,6 +173,9 @@ public:
             sd->DecodeSAOOneLCU(sd->m_curCU);
             bool is_last = Decoder::DecodeCodingUnit_CABAC(sd); //decode CU
             END_TICK(decode_time);
+
+            // New version of deblocking edge strength calculations
+            // sd->GetCTBEdgeStrengths(sd->m_pSeqParamSet->log2_min_transform_block_size, rsCUAddr);
 
             START_TICK1;
             sd->ReconstructCU(sd->m_curCU, 0, 0);

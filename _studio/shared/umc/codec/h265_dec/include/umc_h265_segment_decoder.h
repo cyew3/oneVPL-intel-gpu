@@ -145,7 +145,7 @@ public:
     void DecodeIntraNeighbors(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
 
     bool DecodeSkipFlagCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
-    void DecodeCUTransquantBypassFlag(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
+    bool DecodeCUTransquantBypassFlag(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void DecodeMVPIdxPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartAddr, Ipp32u Depth, Ipp32u PartIdx, EnumRefPicList RefList, MVBuffer &MVb, Ipp8u InterDir);
     Ipp32s DecodePredModeCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void DecodePartSizeCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
@@ -260,7 +260,8 @@ public:
                          Ipp32s betaOffset);
     void SetEdges(H265CodingUnit* curLCU, Ipp32s width, Ipp32s height, Ipp32s cross, Ipp32s calculateCurLCU);
 
-    //end of h265 functions
+    void GetCTBEdgeStrengths(Ipp32s tusize, Ipp32s rasterAddress);
+    void GetEdgeStrength(Ipp32s tuQ, Ipp32s tuP, bool anotherCU, Ipp8s tcOffset, Ipp8s betaOffset, H265EdgeData *edge);
 
     //h265 members
     H265SampleAdaptiveOffset m_SAO;
@@ -280,7 +281,7 @@ public:
     DecodingContext * m_context;
     std::auto_ptr<DecodingContext> m_context_single_thread;
 
-    void UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPartIdx, bool isSkipped);
+    void UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPartIdx, bool isSkipped, bool isTranquantBypass, bool isIPCM);
     void UpdatePUInfo(H265CodingUnit *pCU, Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight, H265PUInfo &PUi);
 
     // Current CU local state

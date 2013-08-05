@@ -807,6 +807,193 @@ void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
         }
 }
 
+void H265SegmentDecoder::GetCTBEdgeStrengths(Ipp32s tusize, Ipp32s rasterAddress)
+{
+    H265EdgeData *ctb_start_edge = m_context->m_edge + m_context->m_edgesInCTB * rasterAddress;
+    Ipp32s maxCUSize = m_pSeqParamSet->getMaxCUWidth();
+    Ipp8s tcOffset = m_pSliceHeader->m_deblockingFilterTcOffsetDiv2 << 1;
+    Ipp8s betaOffset = m_pSliceHeader->m_deblockingFilterBetaOffsetDiv2 << 1;
+
+    VM_ASSERT(tusize <= 3);
+
+    for (Ipp32s yPel = 0; yPel < maxCUSize; yPel += 8)
+    {
+        Ipp32s yEdge = yPel >> 3;
+        Ipp32s yTU = yPel >> tusize;
+
+        for (Ipp32s xPel = 0; xPel < maxCUSize; xPel += 8)
+        {
+            Ipp32s xEdge = xPel >> 3;
+            Ipp32s xTU = xPel >> tusize;
+
+            Ipp32s curTU = yTU * m_context->m_CurrCTBStride + xTU;
+            Ipp32s leftTU = curTU - 1;
+            Ipp32s upTU = curTU - m_context->m_CurrCTBStride;
+
+            H265EdgeData *edge = ctb_start_edge + (yEdge + 1) * m_context->m_edgesInCTBWidth + (xEdge + 1) * 4;
+            bool anotherCU = (xPel == 0 || yPel == 0);
+
+            // Vertical edge
+            GetEdgeStrength(curTU, leftTU, anotherCU, tcOffset, betaOffset, edge);
+            if (tusize < 3)
+                GetEdgeStrength(curTU + m_context->m_CurrCTBStride, leftTU + m_context->m_CurrCTBStride, anotherCU, tcOffset, betaOffset, edge + 1);
+            else if (tusize == 3)
+                edge[1] = edge[0];
+
+            // Horizontal edge
+            GetEdgeStrength(curTU, upTU, anotherCU, tcOffset, betaOffset, edge + 2);
+            if (tusize < 3)
+                GetEdgeStrength(curTU + 1, upTU + 1, anotherCU, tcOffset, betaOffset, edge + 3);
+            else if (tusize == 3)
+                edge[3] = edge[2];
+        }
+    }
+}
+
+void H265SegmentDecoder::GetEdgeStrength(Ipp32s tuQ, Ipp32s tuP, bool anotherCU, Ipp8s tcOffset, Ipp8s betaOffset, H265EdgeData *edge)
+{
+    edge->strength = 0;
+
+    H265FrameHLDNeighborsInfo *infoP = m_context->m_CurrCTBFlags + tuP;
+
+    if (!infoP->members.IsAvailable)
+        return;
+
+    edge->tcOffset = tcOffset;
+    edge->betaOffset = betaOffset;
+
+    H265FrameHLDNeighborsInfo *infoQ = m_context->m_CurrCTBFlags + tuQ;
+
+    edge->deblockQ = infoQ->members.IsTransquantBypass ^ 1;
+    edge->deblockP = infoP->members.IsTransquantBypass ^ 1;
+    if (m_pSeqParamSet->pcm_loop_filter_disable_flag)
+    {
+        if (infoQ->members.IsIPCM)
+            edge->deblockQ = 0;
+        if (infoP->members.IsIPCM)
+            edge->deblockP = 0;
+    }
+
+    edge->qp = (infoQ->members.qp + infoP->members.qp + 1) >> 1;
+
+    // Intra
+
+    if (anotherCU || infoQ->members.TrStart != infoP->members.TrStart)
+    {
+        if (infoQ->members.IsIntra || infoP->members.IsIntra)
+        {
+            edge->strength = 2;
+            return;
+        }
+
+        if (infoQ->members.IsTrCbfY || infoQ->members.IsTrCbfY)
+        {
+            edge->strength = 1;
+            return;
+        }
+    }
+    else
+    {
+        if (infoQ->members.IsTrCbfY || infoQ->members.IsTrCbfY)
+        {
+            edge->strength = 0;
+            return;
+        }
+    }
+
+    // Inter
+    H265MVInfo *mvinfoQ = m_context->m_CurrCTB + tuQ;
+    H265MVInfo *mvinfoP = m_context->m_CurrCTB + tuP;
+
+    Ipp32s numRefsQ = 0;
+    for (Ipp32s i = 0; i < 2; i++)
+        if (mvinfoQ->mvinfo[i].RefIdx >= 0)
+            numRefsQ++;
+
+    Ipp32s numRefsP = 0;
+    for (Ipp32s i = 0; i < 2; i++)
+        if (mvinfoP->mvinfo[i].RefIdx >= 0)
+            numRefsP++;
+
+
+    if (numRefsP != numRefsQ)
+    {
+        edge->strength = 1;
+        return;
+    }
+
+    if (numRefsQ == 2)
+    {
+        if (((mvinfoQ->deltaPOC[REF_PIC_LIST_0] == mvinfoP->deltaPOC[REF_PIC_LIST_0]) &&
+            (mvinfoQ->deltaPOC[REF_PIC_LIST_1] == mvinfoP->deltaPOC[REF_PIC_LIST_1])) ||
+            ((mvinfoQ->deltaPOC[REF_PIC_LIST_0] == mvinfoP->deltaPOC[REF_PIC_LIST_1]) &&
+            (mvinfoQ->deltaPOC[REF_PIC_LIST_1] == mvinfoP->deltaPOC[REF_PIC_LIST_0])))
+        {
+            if (mvinfoP->deltaPOC[REF_PIC_LIST_0] != mvinfoP->deltaPOC[REF_PIC_LIST_1])
+            {
+                if (mvinfoQ->deltaPOC[REF_PIC_LIST_0] == mvinfoP->deltaPOC[REF_PIC_LIST_0])
+                {
+                    edge->strength = (MVIsnotEq(mvinfoQ->mvinfo[REF_PIC_LIST_0].MV, mvinfoP->mvinfo[REF_PIC_LIST_0].MV) |
+                        MVIsnotEq(mvinfoQ->mvinfo[REF_PIC_LIST_1].MV, mvinfoP->mvinfo[REF_PIC_LIST_1].MV)) ? 1 : 0;
+                    return;
+                }
+                else
+                {
+                    edge->strength = (MVIsnotEq(mvinfoQ->mvinfo[REF_PIC_LIST_0].MV, mvinfoP->mvinfo[REF_PIC_LIST_1].MV) |
+                        MVIsnotEq(mvinfoQ->mvinfo[REF_PIC_LIST_1].MV, mvinfoP->mvinfo[REF_PIC_LIST_0].MV)) ? 1 : 0;
+                    return;
+                }
+            }
+            else
+            {
+                edge->strength = ((MVIsnotEq(mvinfoQ->mvinfo[REF_PIC_LIST_0].MV, mvinfoP->mvinfo[REF_PIC_LIST_0].MV) |
+                        MVIsnotEq(mvinfoQ->mvinfo[REF_PIC_LIST_1].MV, mvinfoP->mvinfo[REF_PIC_LIST_1].MV)) &&
+                        (MVIsnotEq(mvinfoQ->mvinfo[REF_PIC_LIST_0].MV, mvinfoP->mvinfo[REF_PIC_LIST_1].MV) |
+                        MVIsnotEq(mvinfoQ->mvinfo[REF_PIC_LIST_1].MV, mvinfoP->mvinfo[REF_PIC_LIST_0].MV)) ? 1 : 0);
+                return;
+            }
+        }
+
+        edge->strength = 1;
+        return;
+    }
+    else
+    {
+        Ipp16s POCDeltaQ, POCDeltaP;
+        H265MotionVector MVQ, MVP;
+        
+        if (mvinfoQ->mvinfo[REF_PIC_LIST_0].RefIdx >= 0)
+        {
+            POCDeltaQ = mvinfoQ->deltaPOC[REF_PIC_LIST_0];
+            MVQ = mvinfoQ->mvinfo[REF_PIC_LIST_0].MV;
+        }
+        else
+        {
+            POCDeltaQ = mvinfoQ->deltaPOC[REF_PIC_LIST_1];
+            MVQ = mvinfoQ->mvinfo[REF_PIC_LIST_1].MV;
+        }
+
+        if (mvinfoP->mvinfo[REF_PIC_LIST_0].RefIdx >= 0)
+        {
+            POCDeltaP = mvinfoP->deltaPOC[REF_PIC_LIST_0];
+            MVP = mvinfoP->mvinfo[REF_PIC_LIST_0].MV;
+        }
+        else
+        {
+            POCDeltaP = mvinfoP->deltaPOC[REF_PIC_LIST_1];
+            MVP = mvinfoP->mvinfo[REF_PIC_LIST_1].MV;
+        }
+
+        if (POCDeltaQ == POCDeltaP)
+        {
+            edge->strength = MVIsnotEq(MVP, MVQ) ? 1 : 0;
+            return;
+        }
+
+        edge->strength = 1;
+        return;
+    }
+}
 
 } // namespace UMC_HEVC_DECODER
 #endif // UMC_ENABLE_H265_VIDEO_DECODER
