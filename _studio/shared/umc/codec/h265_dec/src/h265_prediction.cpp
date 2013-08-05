@@ -21,6 +21,20 @@ using namespace MFX_HEVC_COMMON;
 
 namespace UMC_HEVC_DECODER
 {
+    // Luma
+    void h265_PredictIntra_Planar_Luma_8u(H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrYCommon rpDst, Ipp32s dstStride, Ipp32s blkSize);
+    void h265_PredictIntra_DC_Luma_8u(H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrYCommon Dst, Ipp32s dstStride, Ipp32s blkSize);
+    void h265_PredictIntra_Ang_Luma_8u(H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrYCommon Dst, Ipp32s dstStride, Ipp32s blkSize, Ipp32u dirMode);
+    void h265_PredictIntra_Hor_Luma_8u(H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrYCommon Dst, Ipp32s dstStride, Ipp32s blkSize);
+    void h265_PredictIntra_Ver_Luma_8u(H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrYCommon Dst, Ipp32s dstStride, Ipp32s blkSize);
+
+    // Chroma    
+    void h265_PredictIntra_Planar_Chroma_8u(H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrUVCommon rpDst, Ipp32s dstStride, Ipp32s blkSize);
+    void h265_PredictIntra_DC_Chroma_8u(H265PlanePtrUVCommon pSrc, Ipp32s srcStride, H265PlanePtrUVCommon Dst, Ipp32s dstStride, Ipp32s blkSize);
+    void h265_PredictIntra_Ang_Chroma_8u(H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrUVCommon Dst, Ipp32s dstStride, Ipp32s blkSize, Ipp32u dirMode);
+    void h265_PredictIntra_Hor_Chroma_8u(H265PlanePtrUVCommon pSrc, Ipp32s srcStride, H265PlanePtrUVCommon Dst, Ipp32s dstStride, Ipp32s blkSize);
+    void h265_PredictIntra_Ver_Chroma_8u(H265PlanePtrUVCommon pSrc, Ipp32s srcStride, H265PlanePtrUVCommon Dst, Ipp32s dstStride, Ipp32s blkSize);
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constructor / destructor / initialize
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -109,7 +123,8 @@ H265PlanePtrYCommon H265Prediction::GetPredictorPtr(Ipp32u DirMode, Ipp32u log2B
     return pSrc;
 }
 
-H265PlaneYCommon H265Prediction::PredIntraGetPredValDC(H265PlanePtrYCommon pSrc, Ipp32s SrcStride, Ipp32s Size)
+
+H265PlaneYCommon PredIntraGetPredValDC(H265PlanePtrYCommon pSrc, Ipp32s SrcStride, Ipp32s Size)
 {
     Ipp32s Ind;
     Ipp32s Sum = 0;
@@ -127,9 +142,15 @@ H265PlaneYCommon H265Prediction::PredIntraGetPredValDC(H265PlanePtrYCommon pSrc,
     DCVal = (H265PlaneYCommon) ((Sum + Size) / (Size << 1));
 
     return DCVal;
-}
 
-void H265Prediction::PredIntraLumaAng(Ipp32u DirMode, H265PlanePtrYCommon pPred, Ipp32u Stride, Ipp32s Size)
+} //  H265PlaneYCommon PredIntraGetPredValDC(H265PlanePtrYCommon pSrc, Ipp32s SrcStride, Ipp32s Size)
+
+
+void H265Prediction::h265_PredictIntraLuma(
+    Ipp32u DirMode, 
+    H265PlanePtrYCommon pPred, 
+    Ipp32u Stride, 
+    Ipp32s Size)
 {
     H265PlanePtrYCommon pDst = pPred;
     H265PlanePtrYCommon pSrc;
@@ -142,30 +163,33 @@ void H265Prediction::PredIntraLumaAng(Ipp32u DirMode, H265PlanePtrYCommon pPred,
     // get starting pixel in block
     Ipp32s sw = 2 * Size + 1;
 
-    // Create the prediction
-    if (DirMode == PLANAR_IDX)
+    switch(DirMode)
     {
-        PredIntraPlanarLuma(pSrc + sw + 1, sw, pDst, Stride, Size);
+    case PLANAR_IDX:
+        h265_PredictIntra_Planar_Luma_8u(pSrc + sw + 1, sw, pDst, Stride, Size);
+        break;
+    case DC_IDX:
+        h265_PredictIntra_DC_Luma_8u(pSrc + sw + 1, sw, pDst, Stride, Size);
+        break;
+    case VER_IDX:
+        h265_PredictIntra_Ver_Luma_8u(pSrc + sw + 1, sw, pDst, Stride, Size);
+        break;
+    case HOR_IDX:
+        h265_PredictIntra_Hor_Luma_8u(pSrc + sw + 1, sw, pDst, Stride, Size);
+        break;
+    default:
+        h265_PredictIntra_Ang_Luma_8u(pSrc + sw + 1, sw, pDst, Stride, Size, DirMode);
     }
-    else
-    {
-        if (Size > 16)
-        {
-            PredIntraAngLuma(g_bitDepthY, pSrc + sw + 1, sw, pDst, Stride, Size, DirMode, false);
-        }
-        else
-        {
-            PredIntraAngLuma(g_bitDepthY, pSrc + sw + 1, sw, pDst, Stride, Size, DirMode, true);
 
-            if(DirMode == DC_IDX)
-            {
-                DCPredFiltering(pSrc + sw + 1, sw, pDst, Stride, Size);
-            }
-        }
-    }
-}
+} // void H265Prediction::h265_PredictIntraLuma(...)
 
-void H265Prediction::PredIntraPlanarLuma(H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrYCommon pDst, Ipp32s dstStride, Ipp32s blkSize)
+
+void h265_PredictIntra_Planar_Luma_8u(
+    H265PlanePtrYCommon pSrc, 
+    Ipp32s srcStride, 
+    H265PlanePtrYCommon pDst, 
+    Ipp32s dstStride, 
+    Ipp32s blkSize)
 {
     Ipp32s bottomLeft;
     Ipp32s topRight;
@@ -211,79 +235,75 @@ void H265Prediction::PredIntraPlanarLuma(H265PlanePtrYCommon pSrc, Ipp32s srcStr
   }
 }
 
-void H265Prediction::PredIntraPlanarChroma(H265PlanePtrUVCommon pSrc, Ipp32s srcStride, H265PlanePtrUVCommon pDst, Ipp32s dstStride, Ipp32s blkSize)
-{
-    Ipp32s bottomLeft1, bottomLeft2;
-    Ipp32s topRight1, topRight2;
-    Ipp32s horPred1, horPred2;
-    Ipp32s leftColumn[MAX_CU_SIZE];
-    Ipp32s topRow[MAX_CU_SIZE];
-    Ipp32s bottomRow[MAX_CU_SIZE];
-    Ipp32s rightColumn[MAX_CU_SIZE];
-    Ipp32u offset2D = blkSize;
-    Ipp32u shift1D = g_ConvertToBit[blkSize] + 2;
-    Ipp32u shift2D = shift1D + 1;
-    Ipp32s srcStrideHalf = srcStride >> 1;
-
-    // Get left and above reference column and row
-    for(Ipp32s k = 0; k < (blkSize + 1) * 2; k += 2)
-    {
-        topRow[k] = pSrc[k - srcStride];
-        leftColumn[k] = pSrc[k * srcStrideHalf - 2];
-        topRow[k + 1] = pSrc[k - srcStride + 1];
-        leftColumn[k + 1] = pSrc[k * srcStrideHalf - 2 + 1];
-    }
-
-    // Prepare intermediate variables used in interpolation
-    bottomLeft1 = leftColumn[blkSize * 2];
-    topRight1 = topRow[blkSize * 2];
-    bottomLeft2 = leftColumn[blkSize * 2 + 1];
-    topRight2 = topRow[blkSize * 2 + 1];
-    for (Ipp32s k = 0; k < blkSize * 2; k += 2)
-    {
-        bottomRow[k] = bottomLeft1 - topRow[k];
-        rightColumn[k] = topRight1 - leftColumn[k];
-        topRow[k] <<= shift1D;
-        leftColumn[k] <<= shift1D;
-
-        bottomRow[k + 1] = bottomLeft2 - topRow[k + 1];
-        rightColumn[k + 1] = topRight2 - leftColumn[k + 1];
-        topRow[k + 1] <<= shift1D;
-        leftColumn[k + 1] <<= shift1D;
-    }
-
-    // Generate prediction signal
-    for (Ipp32s k = 0; k < blkSize; k++)
-    {
-        horPred1 = leftColumn[k * 2] + offset2D;
-        horPred2 = leftColumn[k * 2 + 1] + offset2D;
-        for (Ipp32s l = 0; l < blkSize * 2; l += 2)
-        {
-            horPred1 += rightColumn[k * 2];
-            topRow[l] += bottomRow[l];
-            pDst[k * dstStride + l] = (H265PlaneUVCommon) ((horPred1 + topRow[l]) >> shift2D);
-
-            horPred2 += rightColumn[k * 2 + 1];
-            topRow[l + 1] += bottomRow[l + 1];
-            pDst[k * dstStride + l + 1] = (H265PlaneUVCommon) ((horPred2 + topRow[l + 1]) >> shift2D);
-        }
-    }
-}
-
 static Ipp32s angTableLuma[9] = {0,    2,    5,   9,  13,  17,  21,  26,  32};
 static Ipp32s invAngTableLuma[9] = {0, 4096, 1638, 910, 630, 482, 390, 315, 256}; // (256 * 32) / Angle
 
-void H265Prediction::PredIntraAngLuma(Ipp32s bitDepth, H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrYCommon Dst, Ipp32s dstStride, Ipp32s blkSize, Ipp32u dirMode, bool Filter)
+void h265_PredictIntra_DC_Luma_8u(H265PlanePtrYCommon pSrc, Ipp32s srcStride, H265PlanePtrYCommon Dst, Ipp32s dstStride, Ipp32s blkSize)
 {
+    Ipp32s bitDepth = 8; 
+    H265PlanePtrYCommon pDst = Dst;
+    H265PlaneYCommon dcval = PredIntraGetPredValDC(pSrc, srcStride, blkSize);
+    int k,l;
+
+    for (k = 0; k < blkSize; k++)
+    {
+        for (l = 0; l < blkSize; l++)
+        {
+            pDst[k * dstStride + l] = dcval;
+        }
+    }
+
+    if(blkSize > 16)
+    {
+        return;
+    }
+    
+    int Size = blkSize;
+
+    // boundary pixels processing
+    pDst[0] = (H265PlaneYCommon)((pSrc[-srcStride] + pSrc[-1] + 2 * pDst[0] + 2) >> 2);
+
+#ifdef __INTEL_COMPILER
+    #pragma ivdep
+#endif
+    for (Ipp32s x = 1; x < Size; x++)
+    {
+        pDst[x] = (H265PlaneYCommon)((pSrc[x - srcStride] + 3 * pDst[x] + 2) >> 2);
+    }
+
+#ifdef __INTEL_COMPILER
+    #pragma ivdep
+#endif
+    for (Ipp32s y = 1, DstStride2 = dstStride, SrcStride2 = srcStride - 1; y < Size; y++, DstStride2 += dstStride, SrcStride2 += srcStride)
+    {
+        pDst[DstStride2] = (H265PlaneYCommon)((pSrc[SrcStride2] + 3 * pDst[DstStride2] + 2) >> 2);
+    }
+
+    return;
+
+} // void h265_PredictIntra_DC_Luma_8u(...)
+
+
+void h265_PredictIntra_Ang_Luma_8u(
+    H265PlanePtrYCommon pSrc, 
+    Ipp32s srcStride, 
+    H265PlanePtrYCommon Dst, 
+    Ipp32s dstStride, 
+    Ipp32s blkSize, 
+    Ipp32u dirMode)
+{
+    Ipp32s bitDepth = 8; 
     Ipp32s k;
     Ipp32s l;
     H265PlanePtrYCommon pDst = Dst;
+    bool Filter = (blkSize > 16) ? false : true;
 
     // Map the mode index to main prediction direction and angle
     VM_ASSERT(dirMode > 0); //no planar
     bool modeDC        = dirMode < 2;
     bool modeHor       = !modeDC && (dirMode < 18);
     bool modeVer       = !modeDC && !modeHor;
+
     Ipp32s intraPredAngle = modeVer ? (Ipp32s) dirMode - VER_IDX : modeHor ? -((Ipp32s)dirMode - HOR_IDX) : 0;
     Ipp32s absAng = abs(intraPredAngle);
     Ipp32s signAng = intraPredAngle < 0 ? -1 : 1;
@@ -293,23 +313,7 @@ void H265Prediction::PredIntraAngLuma(Ipp32s bitDepth, H265PlanePtrYCommon pSrc,
     absAng = angTableLuma[absAng];
     intraPredAngle = signAng * absAng;
     Ipp32s maxVal = (1 << bitDepth) - 1;
-
-    // Do the DC prediction
-    if (modeDC)
-    {
-        H265PlaneYCommon dcval = PredIntraGetPredValDC(pSrc, srcStride, blkSize);
-
-        for (k = 0; k < blkSize; k++)
-        {
-            for (l = 0; l < blkSize; l++)
-            {
-                pDst[k * dstStride + l] = dcval;
-            }
-        }
-    }
-
-    // Do angular predictions
-    else
+    
     {
         H265PlanePtrYCommon refMain;
         H265PlanePtrYCommon refSide;
@@ -361,6 +365,7 @@ void H265Prediction::PredIntraAngLuma(Ipp32s bitDepth, H265PlanePtrYCommon pSrc,
                     pDst[k * dstStride + l] = refMain[l + 1];
                 }
             }
+
             if (Filter)
             {
 #ifdef __INTEL_COMPILER
@@ -421,20 +426,252 @@ void H265Prediction::PredIntraAngLuma(Ipp32s bitDepth, H265PlanePtrYCommon pSrc,
             }
         }
     }
-}
+
+} // void H265Prediction::h265_PredictIntra_Ang_Luma_8u(...)
+
+
+void h265_PredictIntra_Hor_Luma_8u(
+    H265PlanePtrYCommon pSrc, 
+    Ipp32s srcStride, 
+    H265PlanePtrYCommon Dst, 
+    Ipp32s dstStride, 
+    Ipp32s blkSize)
+{
+    Ipp32s bitDepth = 8; 
+    Ipp32s k;
+    Ipp32s l;
+    H265PlanePtrYCommon pDst = Dst;
+
+    // Map the mode index to main prediction direction and angle
+    Ipp32s maxVal = (1 << bitDepth) - 1;
+    
+    {
+        H265PlanePtrYCommon refMain;
+        H265PlanePtrYCommon refSide;
+        H265PlaneYCommon refAbove[2 * MAX_CU_SIZE + 1];
+        H265PlaneYCommon refLeft[2 * MAX_CU_SIZE + 1];
+
+        // Initialise the Main and Left reference array.        
+        {
+            for (k = 0; k < 2 * blkSize + 1; k++)
+            {
+                refAbove[k] = pSrc[k - srcStride - 1];
+            }
+            for (k = 0; k < 2 * blkSize + 1; k++)
+            {
+                refLeft[k] = pSrc[(k - 1) * srcStride - 1];
+            }
+            refMain = refLeft;
+            refSide = refAbove;
+        }
+
+        //if (intraPredAngle == 0)
+        {
+            for (k = 0; k < blkSize; k++)
+            {
+                for (l = 0; l < blkSize; l++)
+                {
+                    pDst[k * dstStride + l] = refMain[l + 1];
+                }
+            }
+            if (blkSize <= 16)
+            {
+#ifdef __INTEL_COMPILER
+                // ML : OPT: TODO: vectorize, replace 'maxVals' with constant to allow for PACKS usage
+                #pragma ivdep
+#endif
+                for (k = 0;k < blkSize; k++)
+                {
+                    pDst[k * dstStride] = (H265PlaneYCommon) Clip3(0, maxVal, pDst[k * dstStride] + ((refSide[k + 1] - refSide[0]) >> 1));
+                }
+            }
+        }
+
+        // Flip the block if this is the horizontal mode
+        //if (modeHor)
+        {
+            H265PlaneYCommon tmp;
+            for (k = 0; k < blkSize - 1; k++)
+            {
+                for (l = k + 1; l < blkSize; l++)
+                {
+                    tmp = pDst[k * dstStride + l];
+                    pDst[k * dstStride + l] = pDst[l * dstStride + k];
+                    pDst[l * dstStride + k] = tmp;
+                }
+            }
+        }
+    }
+
+} // void h265_PredictIntra_Hor_Luma_8u(...)
+
+
+void h265_PredictIntra_Ver_Luma_8u(
+    H265PlanePtrYCommon pSrc, 
+    Ipp32s srcStride, 
+    H265PlanePtrYCommon Dst, 
+    Ipp32s dstStride, 
+    Ipp32s blkSize)
+{
+    Ipp32s bitDepth = 8; 
+    Ipp32s k;
+    Ipp32s l;
+    H265PlanePtrYCommon pDst = Dst;
+
+    Ipp32s maxVal = (1 << bitDepth) - 1;
+   
+    for (k = 0; k < blkSize; k++)
+    {
+        for (l = 0; l < blkSize; l++)
+        {
+            pDst[k * dstStride + l] = pSrc[l - srcStride];//refMain[l + 1];
+        }
+    }
+
+    if (blkSize <= 16)
+    {
+#ifdef __INTEL_COMPILER
+        // ML : OPT: TODO: vectorize, replace 'maxVals' with constant to allow for PACKS usage
+#pragma ivdep
+#endif
+        for (k = 0;k < blkSize; k++)
+        {
+            pDst[k * dstStride] = (H265PlaneYCommon) Clip3(0, maxVal, 
+                pDst[k * dstStride] + ((pSrc[k*srcStride - 1] - pSrc[-srcStride - 1]) >> 1));
+        }
+    }
+
+} // void h265_PredictIntra_Ver_Luma_8u(...)
+
+
+//---------------------------------------------------------
+// CHROMA
+//---------------------------------------------------------
+
+void h265_PredictIntra_Planar_Chroma_8u(
+    H265PlanePtrUVCommon pSrc, 
+    Ipp32s srcStride, 
+    H265PlanePtrUVCommon pDst, 
+    Ipp32s dstStride, 
+    Ipp32s blkSize)
+{
+    Ipp32s bottomLeft1, bottomLeft2;
+    Ipp32s topRight1, topRight2;
+    Ipp32s horPred1, horPred2;
+    Ipp32s leftColumn[MAX_CU_SIZE];
+    Ipp32s topRow[MAX_CU_SIZE];
+    Ipp32s bottomRow[MAX_CU_SIZE];
+    Ipp32s rightColumn[MAX_CU_SIZE];
+    Ipp32u offset2D = blkSize;
+    Ipp32u shift1D = g_ConvertToBit[blkSize] + 2;
+    Ipp32u shift2D = shift1D + 1;
+    Ipp32s srcStrideHalf = srcStride >> 1;
+
+    // Get left and above reference column and row
+    for(Ipp32s k = 0; k < (blkSize + 1) * 2; k += 2)
+    {
+        topRow[k] = pSrc[k - srcStride];
+        leftColumn[k] = pSrc[k * srcStrideHalf - 2];
+        topRow[k + 1] = pSrc[k - srcStride + 1];
+        leftColumn[k + 1] = pSrc[k * srcStrideHalf - 2 + 1];
+    }
+
+    // Prepare intermediate variables used in interpolation
+    bottomLeft1 = leftColumn[blkSize * 2];
+    topRight1 = topRow[blkSize * 2];
+    bottomLeft2 = leftColumn[blkSize * 2 + 1];
+    topRight2 = topRow[blkSize * 2 + 1];
+    for (Ipp32s k = 0; k < blkSize * 2; k += 2)
+    {
+        bottomRow[k] = bottomLeft1 - topRow[k];
+        rightColumn[k] = topRight1 - leftColumn[k];
+        topRow[k] <<= shift1D;
+        leftColumn[k] <<= shift1D;
+
+        bottomRow[k + 1] = bottomLeft2 - topRow[k + 1];
+        rightColumn[k + 1] = topRight2 - leftColumn[k + 1];
+        topRow[k + 1] <<= shift1D;
+        leftColumn[k + 1] <<= shift1D;
+    }
+
+    // Generate prediction signal
+    for (Ipp32s k = 0; k < blkSize; k++)
+    {
+        horPred1 = leftColumn[k * 2] + offset2D;
+        horPred2 = leftColumn[k * 2 + 1] + offset2D;
+        for (Ipp32s l = 0; l < blkSize * 2; l += 2)
+        {
+            horPred1 += rightColumn[k * 2];
+            topRow[l] += bottomRow[l];
+            pDst[k * dstStride + l] = (H265PlaneUVCommon) ((horPred1 + topRow[l]) >> shift2D);
+
+            horPred2 += rightColumn[k * 2 + 1];
+            topRow[l + 1] += bottomRow[l + 1];
+            pDst[k * dstStride + l + 1] = (H265PlaneUVCommon) ((horPred2 + topRow[l + 1]) >> shift2D);
+        }
+    }
+
+} // void h265_PredictIntra_Planar_Chroma_8u(...)
+
 
 static Ipp32s angTableChroma[9] = {0,    2,    5,   9,  13,  17,  21,  26,  32};
 static Ipp32s invAngTableChroma[9] = {0, 4096, 1638, 910, 630, 482, 390, 315, 256}; // (256 * 32) / Angle
 
-void H265Prediction::PredIntraAngChroma(Ipp32s bitDepth, H265PlanePtrUVCommon pSrc, Ipp32s srcStride, H265PlanePtrUVCommon Dst, Ipp32s dstStride, Ipp32s blkSize, Ipp32u dirMode)
+void h265_PredictIntra_DC_Chroma_8u(
+    H265PlanePtrUVCommon pSrc, 
+    Ipp32s srcStride, 
+    H265PlanePtrUVCommon Dst, 
+    Ipp32s dstStride, 
+    Ipp32s blkSize)
 {
-    bitDepth;
+    Ipp32s k;
+    Ipp32s l;
+    H265PlanePtrUVCommon pDst = Dst;
+   
+    Ipp32s dstStrideHalf = dstStride >> 1;
+    
+    H265PlaneUVCommon dc1, dc2;
+    Ipp32s Sum1 = 0, Sum2 = 0;
+    for (Ipp32s Ind = 0; Ind < blkSize * 2; Ind += 2)
+    {
+        Sum1 += pSrc[Ind - srcStride];
+        Sum2 += pSrc[Ind - srcStride + 1];
+    }
+    for (Ipp32s Ind = 0; Ind < blkSize; Ind++)
+    {
+        Sum1 += pSrc[Ind * srcStride - 2];
+        Sum2 += pSrc[Ind * srcStride - 2 + 1];
+    }
+
+    dc1 = (H265PlaneUVCommon)((Sum1 + blkSize) / (blkSize << 1));
+    dc2 = (H265PlaneUVCommon)((Sum2 + blkSize) / (blkSize << 1));
+
+    // ML: TODO: ICC generates bad seq with PEXTR instead of vectorizing properly
+    for (k = 0; k < blkSize; k++)
+    {
+        for (l = 0; l < blkSize * 2; l += 2)
+        {
+            pDst[k * dstStride + l] = dc1;
+            pDst[k * dstStride + l + 1] = dc2;
+        }
+    }
+
+} // void h265_PredictIntra_DC_Chroma_8u(...)
+
+
+void h265_PredictIntra_Ang_Chroma_8u(
+    H265PlanePtrUVCommon pSrc, 
+    Ipp32s srcStride, 
+    H265PlanePtrUVCommon Dst, 
+    Ipp32s dstStride, 
+    Ipp32s blkSize, 
+    Ipp32u dirMode)
+{
     Ipp32s k;
     Ipp32s l;
     H265PlanePtrUVCommon pDst = Dst;
 
     // Map the mode index to main prediction direction and angle
-    VM_ASSERT(dirMode > 0); //no planar
     bool modeDC        = dirMode < 2;
     bool modeHor       = !modeDC && (dirMode < 18);
     bool modeVer       = !modeDC && !modeHor;
@@ -592,36 +829,97 @@ void H265Prediction::PredIntraAngChroma(Ipp32s bitDepth, H265PlanePtrUVCommon pS
             }
         }
     }
-}
 
-void H265Prediction::DCPredFiltering(H265PlanePtrYCommon pSrc, Ipp32s SrcStride, H265PlanePtrYCommon Dst, Ipp32s DstStride, Ipp32s Size)
+} // void h265_PredictIntra_Ang_Chroma_8u(...)
+
+
+void h265_PredictIntra_Hor_Chroma_8u(
+    H265PlanePtrUVCommon pSrc, 
+    Ipp32s srcStride, 
+    H265PlanePtrUVCommon Dst, 
+    Ipp32s dstStride, 
+    Ipp32s blkSize)
 {
-    H265PlanePtrYCommon pDst = Dst;
+    Ipp32s k;
+    Ipp32s l;
+    H265PlanePtrUVCommon pDst = Dst;
+   
 
-    // boundary pixels processing
-    pDst[0] = (H265PlaneYCommon)((pSrc[-SrcStride] + pSrc[-1] + 2 * pDst[0] + 2) >> 2);
+    Ipp32s dstStrideHalf = dstStride >> 1;
+    H265PlanePtrUVCommon refMain;    
 
-#ifdef __INTEL_COMPILER
-    #pragma ivdep
-#endif
-    for (Ipp32s x = 1; x < Size; x++)
+    H265PlaneUVCommon refLeft[2 * MAX_CU_SIZE + 1];
+
+    for (k = 0; k < 2 * blkSize + 1; k++)
     {
-        pDst[x] = (H265PlaneYCommon)((pSrc[x - SrcStride] + 3 * pDst[x] + 2) >> 2);
+        refLeft[k * 2] = pSrc[(k - 1) * srcStride - 2];
+        refLeft[k * 2 + 1] = pSrc[(k - 1) * srcStride - 2 + 1];
+    }
+    refMain = refLeft;
+
+    for (k = 0; k < blkSize; k++)
+    {
+        for (l = 0; l < blkSize * 2; l += 2)
+        {
+            pDst[k * dstStride + l] = refMain[l + 2];
+            pDst[k * dstStride + l + 1] = refMain[l + 2 + 1];
+        }
     }
 
-#ifdef __INTEL_COMPILER
-    #pragma ivdep
-#endif
-    for (Ipp32s y = 1, DstStride2 = DstStride, SrcStride2 = SrcStride - 1; y < Size; y++, DstStride2 += DstStride, SrcStride2 += SrcStride)
+    H265PlaneUVCommon tmp;
+    for (k = 0; k < blkSize - 1; k++)
     {
-        pDst[DstStride2] = (H265PlaneYCommon)((pSrc[SrcStride2] + 3 * pDst[DstStride2] + 2) >> 2);
+        for (l = (k + 1) * 2; l < blkSize * 2; l += 2)
+        {
+            tmp = pDst[k * dstStride + l];
+            pDst[k * dstStride + l] = pDst[l * dstStrideHalf + k * 2];
+            pDst[l * dstStrideHalf + k * 2] = tmp;
+
+            tmp = pDst[k * dstStride + l + 1];
+            pDst[k * dstStride + l + 1] = pDst[l * dstStrideHalf + k * 2 + 1];
+            pDst[l * dstStrideHalf + k * 2 + 1] = tmp;
+        }
     }
 
-    return;
-}
+} // void h265_PredictIntra_Hor_Chroma_8u(...)
 
-// Angular chroma
-void H265Prediction::PredIntraChromaAng(H265PlanePtrUVCommon pSrc, Ipp32u DirMode, H265PlanePtrUVCommon pPred, Ipp32u Stride, Ipp32s Size)
+
+void h265_PredictIntra_Ver_Chroma_8u(
+    H265PlanePtrUVCommon pSrc, 
+    Ipp32s srcStride, 
+    H265PlanePtrUVCommon Dst, 
+    Ipp32s dstStride, 
+    Ipp32s blkSize)
+{
+    Ipp32s k;
+    Ipp32s l;
+    H265PlanePtrUVCommon pDst = Dst;    
+    H265PlaneUVCommon refAbove[2 * MAX_CU_SIZE + 1];
+
+    for (k = 0; k < (2 * blkSize + 1) * 2; k += 2)
+    {
+        refAbove[k] = pSrc[k - srcStride - 2];
+        refAbove[k + 1] = pSrc[k - srcStride - 2 + 1];
+    }    
+
+    for (k = 0; k < blkSize; k++)
+    {
+        for (l = 0; l < blkSize * 2; l += 2)
+        {
+            pDst[k * dstStride + l] = refAbove[l + 2];
+            pDst[k * dstStride + l + 1] = refAbove[l + 2 + 1];
+        }
+    }
+
+} // void h265_PredictIntra_Ver_Chroma_8u(...)
+
+
+void H265Prediction::h265_PredictIntraChroma(
+    H265PlanePtrUVCommon pSrc, 
+    Ipp32u DirMode, 
+    H265PlanePtrUVCommon pPred, 
+    Ipp32u Stride, 
+    Ipp32s Size)
 {
     H265PlanePtrUVCommon pDst = pPred;
     H265PlanePtrUVCommon ptrSrc = pSrc;
@@ -630,17 +928,29 @@ void H265Prediction::PredIntraChromaAng(H265PlanePtrUVCommon pSrc, Ipp32u DirMod
     Ipp32s sw = 2 * Size + 1;
     sw *= 2;
 
-    if (DirMode == PLANAR_IDX)
+    switch(DirMode)
     {
-        PredIntraPlanarChroma(ptrSrc + sw + 2, sw, pDst, Stride, Size);
+    case PLANAR_IDX:
+        h265_PredictIntra_Planar_Chroma_8u(ptrSrc + sw + 2, sw, pDst, Stride, Size);
+        break;
+    case DC_IDX:
+        h265_PredictIntra_DC_Chroma_8u(ptrSrc + sw + 2, sw, pDst, Stride, Size);
+        break;
+    case VER_IDX:
+        h265_PredictIntra_Ver_Chroma_8u(ptrSrc + sw + 2, sw, pDst, Stride, Size);
+        break;
+    case HOR_IDX:
+        h265_PredictIntra_Hor_Chroma_8u(ptrSrc + sw + 2, sw, pDst, Stride, Size);
+        break;
+    default:
+        h265_PredictIntra_Ang_Chroma_8u(ptrSrc + sw + 2, sw, pDst, Stride, Size, DirMode);
     }
-    else
-    {
-        // Create the prediction
-        PredIntraAngChroma(g_bitDepthC, ptrSrc + sw + 2, sw, pDst, Stride, Size, DirMode);
-    }
-}
 
+} // void H265Prediction::h265_PredictIntraChroma(...)
+
+//---------------------------------------------------------
+// Motion Compensation
+//---------------------------------------------------------
 void H265Prediction::MotionCompensation(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, H265PUInfo *PUInfo)
 {
     VM_ASSERT(pCU->m_AbsIdxInLCU == 0);
