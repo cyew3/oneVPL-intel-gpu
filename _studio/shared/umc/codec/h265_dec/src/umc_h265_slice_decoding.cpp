@@ -211,7 +211,7 @@ bool H265Slice::DecodeSliceHeader()
         if (UMC::UMC_OK != umcRes)
             return false;
 
-        umcRes = m_BitStream.GetSliceHeaderFull(this, m_pSeqParamSet, m_pPicParamSet);
+        umcRes = m_BitStream.GetSliceHeaderFull(this, m_pSeqParamSet, const_cast<H265PicParamSet *>(m_pPicParamSet));
     }
     catch(...)
     {

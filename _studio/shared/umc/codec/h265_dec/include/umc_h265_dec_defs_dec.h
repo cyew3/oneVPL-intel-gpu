@@ -1667,6 +1667,8 @@ struct H265PicParamSetBase
     Ipp32u       num_ref_idx_l0_active;           // num of ref pics in list 0 used to decode the picture
     Ipp32u       num_ref_idx_l1_active;           // num of ref pics in list 1 used to decode the picture
 
+    Ipp32u      wNumBitsForShortTermRPSInSlice;
+
     Ipp32u getColumnWidth(Ipp32u columnIdx) { return *( m_ColumnWidthArray + columnIdx ); }
     void getColumnWidth(Ipp16u *buffer) const;    // copies columns width array into the given uint16 buffer
     void getColumnWidthMinus1(Ipp16u *buffer) const;    // copies columns width-1 array into the given uint16 buffer
@@ -1855,6 +1857,9 @@ struct H265PicParamSet : public HeapObject, public H265PicParamSetBase
 
     H265ScalingList* getScalingList()               { return &m_scalingList; }
     const H265ScalingList* getScalingList() const   { return &m_scalingList; }
+
+    int getNumBitsForShortTermRPSInSlice() const    { return wNumBitsForShortTermRPSInSlice; }
+    void setNumBitsForShortTermRPSInSlice(int val)  { wNumBitsForShortTermRPSInSlice = val; }
 };    // H265PicParamSet
 
 typedef Ipp32s H264DecoderMBAddr;
