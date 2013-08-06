@@ -274,7 +274,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
         if (m_mfxHEVCOpts.RDOQuant == MFX_CODINGOPTION_ON)
            m_mfxHEVCOpts.SignBitHiding = MFX_CODINGOPTION_OFF;
         if (m_mfxHEVCOpts.SignBitHiding == MFX_CODINGOPTION_ON)
-           m_mfxHEVCOpts.SignBitHiding = MFX_CODINGOPTION_OFF;
+           m_mfxHEVCOpts.RDOQuant = MFX_CODINGOPTION_OFF;
         if (m_mfxHEVCOpts.RDOQuant == MFX_CODINGOPTION_UNKNOWN)
             m_mfxHEVCOpts.RDOQuant = opts_tu->RDOQuant;
         if (m_mfxHEVCOpts.SignBitHiding == MFX_CODINGOPTION_UNKNOWN)
