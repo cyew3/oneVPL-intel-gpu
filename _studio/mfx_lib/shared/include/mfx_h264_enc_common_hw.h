@@ -564,6 +564,10 @@ namespace MfxHwH264Encode
 
     mfxU8 GetCabacInitIdc(mfxU32 targetUsage);
 
+    bool IsLookAheadSupported(
+        MfxVideoParam const & video,
+        eMFXHWType            platform);
+
     mfxU8 DetermineQueryMode(mfxVideoParam * in);
 
     mfxStatus QueryHwCaps(

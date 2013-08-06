@@ -971,6 +971,13 @@ mfxU8 MfxHwH264Encode::GetCabacInitIdc(mfxU32 targetUsage)
     //return CABAC_INIT_IDC_TABLE[targetUsage];
 }
 
+bool MfxHwH264Encode::IsLookAheadSupported(
+    MfxVideoParam const & video,
+    eMFXHWType            platform)
+{
+    return ((platform >= MFX_HW_HSW) && (platform != MFX_HW_VLV) && (video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE));
+}
+
 // determine and return mode of Query operation (valid modes are 1, 2, 3, 4 - see MSDK spec for details)
 mfxU8 MfxHwH264Encode::DetermineQueryMode(mfxVideoParam * in)
 {
@@ -1578,6 +1585,13 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.AsyncDepth = 6;
     }
 
+    if (IsOn(extOpt2->ExtBRC) && par.mfx.RateControlMethod == MFX_RATECONTROL_LA && IsLookAheadSupported(par, platform))
+    {
+        // turn on ExtBRC if LA will be used
+        changed = true;
+        extOpt2->ExtBRC = MFX_CODINGOPTION_OFF;
+    }
+
     if (par.AsyncDepth > 1 && IsOn(extOpt2->ExtBRC))
     {
         changed = true;
@@ -2087,7 +2101,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     }
 
     if ((par.mfx.RateControlMethod == MFX_RATECONTROL_LA) &&
-        (platform < MFX_HW_HSW || platform == MFX_HW_VLV || par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE))
+        false == IsLookAheadSupported(par, platform))
     {
         unsupported = true;
         par.mfx.RateControlMethod = 0;
