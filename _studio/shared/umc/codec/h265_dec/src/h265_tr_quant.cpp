@@ -32,9 +32,6 @@ H265TrQuant::H265TrQuant()
 {
     m_QPParam.Clear();
 
-    // allocate bit estimation class  (for RDOQ)
-    m_EstBitsSbac = new EstBitsSbacStruct;
-
     m_UseScalingList = false;
     initScalingList();
 
@@ -45,12 +42,6 @@ H265TrQuant::H265TrQuant()
 
 H265TrQuant::~H265TrQuant()
 {
-    // delete bit estimation class
-    if (m_EstBitsSbac)
-    {
-        delete m_EstBitsSbac;
-        m_EstBitsSbac = NULL;
-    }
     destroyScalingList();
 
     delete[] m_residualsBuffer;
@@ -761,38 +752,6 @@ void H265TrQuant::InvTransformSkip(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pR
                 }
             }
         }
-    }
-}
-
-
-
-// return 1 if both right neighbour and lower neighour are 1's
-bool H265TrQuant::bothCGNeighboursOne(const Ipp32u* SigCoeffGroupFlag,
-                                      const Ipp32u  CGPosX,
-                                      const Ipp32u  CGPosY,
-                                      Ipp32u width, Ipp32u height)
-{
-    Ipp32u Right = 0;
-    Ipp32u Lower = 0;
-
-    width >>= 2;
-    height >>= 2;
-    if (CGPosX < width - 1)
-    {
-        Right = (SigCoeffGroupFlag[CGPosY * width + CGPosX + 1] != 0);
-    }
-    if (CGPosY < height - 1)
-    {
-        Lower = (SigCoeffGroupFlag[(CGPosY  + 1) * width + CGPosX] != 0);
-    }
-
-    if (Right && Lower)
-    {
-        return true;
-    }
-    else
-    {
-        return false;
     }
 }
 

@@ -25,23 +25,6 @@
 namespace UMC_HEVC_DECODER
 {
 
-typedef struct
-{
-    Ipp32s m_SignificantCoeffGroupBits[NUM_SIG_CG_FLAG_CTX][2];
-
-    Ipp32s m_significantBits[NUM_SIG_FLAG_CTX][2];
-    Ipp32s m_LastXBits[32];
-    Ipp32s m_LastYBits[32];
-
-    Ipp32s m_GreaterOneBits[NUM_ONE_FLAG_CTX][2];
-    Ipp32s m_LevelAbsBits[NUM_ABS_FLAG_CTX][2];
-
-    Ipp32s m_BlockCbpBits[3 * NUM_QT_CBF_CTX][2];
-    Ipp32s m_BlockRootCbpBits[4][2];
-    Ipp32s m_ScanZigzag[2];            ///< flag for zigzag scan
-    Ipp32s m_ScanNonZigzag[2];         ///< flag for non zigzag scan
-} EstBitsSbacStruct;
-
 // QP class
 class QPParam
 {
@@ -134,17 +117,6 @@ public:
     {
         m_Lambda = Lambda;
     }
-    void SetRDOQOffset(Ipp32u RDOQOffset)
-    {
-        m_RDOQOffset = RDOQOffset;
-    }
-
-    EstBitsSbacStruct* m_EstBitsSbac;
-
-    static bool bothCGNeighboursOne(const Ipp32u* SigCoeffGroupFlag,
-                                    const Ipp32u  CGPosX,
-                                    const Ipp32u  CGPosY,
-                                    Ipp32u width, Ipp32u height);
 
     bool m_UseScalingList;
 
