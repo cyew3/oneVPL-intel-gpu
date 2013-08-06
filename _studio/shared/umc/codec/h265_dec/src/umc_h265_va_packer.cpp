@@ -502,7 +502,7 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     for(; index < rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures() + rps->getNumberOfLongtermPictures(); index++)
         if(rps->getUsed(index))
             pocList[numRefPicSetStCurrBefore + numRefPicSetStCurrAfter + numRefPicSetLtCurr++] = pPicParam->CurrPicOrderCntVal + rps->getDeltaPOC(index);
-    for(int n=0 ; n < numRefPicSetStCurrBefore + numRefPicSetStCurrAfter ; n++)
+    for(int n=0 ; n < numRefPicSetStCurrBefore + numRefPicSetStCurrAfter + numRefPicSetLtCurr ; n++)
     {
         for(int k=0;k < count;k++)
         {
@@ -752,7 +752,7 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
     DXVA_Intel_Slice_HEVC_Long* pDXVASlice = 0;
 
     void*   pSliceData = 0;
-    size_t  rawDataSize = 0;
+    Ipp32u  rawDataSize = 0;
     const void*   rawDataPtr = 0;
     size_t  headerSize = sizeof(DXVA_Intel_Slice_HEVC_Short);
 

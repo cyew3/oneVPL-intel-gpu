@@ -69,6 +69,14 @@ UMC::Status H265_DXVA_SegmentDecoder::Init(Ipp32s iNumber)
     return H265SegmentDecoderMultiThreaded::Init(iNumber);
 }
 
+static void logTime(const char *label)
+{
+    SYSTEMTIME tm;
+    GetSystemTime(&tm);
+
+    printf("*** %s>> %02d:%02d:%02d.%03d\n", label, tm.wHour, tm.wMinute, tm.wSecond, tm.wMilliseconds);
+}
+
 void H265_DXVA_SegmentDecoder::PackAllHeaders(H265DecoderFrame * pFrame)
 {
     H265DecoderFrameInfo * sliceInfo = pFrame->m_pSlicesInfo;
@@ -76,7 +84,8 @@ void H265_DXVA_SegmentDecoder::PackAllHeaders(H265DecoderFrame * pFrame)
 
     static int frameCounter = 0;
     frameCounter++;
-    //printf("\n=== Frame%d/%d ======================\n", pFrame->m_index, frameCounter);
+    printf("\n=== Frame%d/%d ======================\n", pFrame->m_index, frameCounter);
+    logTime("start");
     if(sliceCount)
     {
 #ifdef UMC_VA_DXVA
@@ -89,12 +98,17 @@ void H265_DXVA_SegmentDecoder::PackAllHeaders(H265DecoderFrame * pFrame)
         H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
 
         m_Packer->BeginFrame();
+        logTime("BeginFrame");
         m_Packer->PackPicParams(pCurrentFrame, sliceInfo, m_pTaskSupplier);
+        logTime("PackPicParams");
         if(pSeqParamSet->scaling_list_enabled_flag)
+        {
             m_Packer->PackQmatrix(pSlice/*->GetPicParam(), pSeqParamSet->sps_scaling_list_data_present_flag*/);
+            logTime("PackQmatrix");
+        }
 
-        //bool isLongFormat = false;//m_va->IsLongSliceControl();
-        bool isLongFormat = true;
+        bool isLongFormat = false;//m_va->IsLongSliceControl();
+        //bool isLongFormat = true;
 #if 0
         {
             const char *env = getenv("HEVC_SLICE_FORMAT");
@@ -110,10 +124,15 @@ void H265_DXVA_SegmentDecoder::PackAllHeaders(H265DecoderFrame * pFrame)
 #endif
 
         for (int n=0;n < sliceCount;n++)
+        {
             m_Packer->PackSliceParams(sliceInfo->GetSlice(n), isLongFormat, n == sliceCount - 1);
+            logTime("PackSliceParams");
+        }
 
         m_Packer->ExecuteBuffers();
+        logTime("ExecuteBuffers");
         m_Packer->EndFrame();
+        logTime("EndFrame");
     }
 }
 
