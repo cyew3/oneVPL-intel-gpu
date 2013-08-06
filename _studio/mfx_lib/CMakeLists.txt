@@ -26,7 +26,9 @@ foreach( enc ${encoders} )
     )
 endforeach( )
 
-list( APPEND dirs scheduler optimization/h265 )
+list( APPEND optimization_dirs optimization/h265 )
+
+list( APPEND dirs scheduler )
 list( APPEND dirs_impl vpp genx/h264_encode cmrt_cross_platform )
 
 list( APPEND umc_dirs
@@ -44,9 +46,21 @@ foreach( dir ${umc_dirs} )
   include_directories( ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/codec/${dir}/include )
 endforeach( )
 
-foreach( dir ${dirs} ${dirs_impl} ${dirs_hw} )
+foreach( dir ${dirs} ${dirs_impl} ${dirs_hw} ${optimization_dirs} )
   include_directories( ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/${dir}/include )
 endforeach( )
+
+# =============================================================================
+
+set( sources "" )
+set( sources.plus "" )
+
+foreach( dir ${optimization_dirs} )
+file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
+  list( APPEND sources ${srcs})
+endforeach()
+
+make_library( mfx_optimization none static )
 
 # =============================================================================
 
@@ -158,6 +172,7 @@ foreach( variant sw hw )
     mfx_lib_merged_${variant}
     umc_codecs_merged_${variant}
     umc_codecs_merged
+    mfx_optimization
     umc_io_merged_${variant}
     umc_core_merged 
     ${ITT_LIBS}
