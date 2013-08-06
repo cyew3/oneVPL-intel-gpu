@@ -233,8 +233,8 @@ namespace MFX_HEVC_COMMON
         Ipp32s pitch,
         Ipp32s width);
 
-    /* SAO Processing: may be structure instaed of 14 params is better */
-    void h265_processSaoCuOrg_Luma_8u(
+    /* SAO Processing: may be structure instead of 14 params is better. need to check */
+    void h265_ProcessSaoCuOrg_Luma_8u(
         Ipp8u* pRec,
         Ipp32s stride,
         Ipp32s saoType, 
@@ -249,6 +249,23 @@ namespace MFX_HEVC_COMMON
         Ipp8u* pClipTable,
         Ipp32u CUPelX,
         Ipp32u CUPelY);
+
+    void h265_ProcessSaoCu_Luma_8u(
+        Ipp8u* pRec,
+        Ipp32s stride,
+        Ipp32s saoType, 
+        Ipp8u* tmpL,
+        Ipp8u* tmpU,
+        Ipp32u maxCUWidth,
+        Ipp32u maxCUHeight,
+        Ipp32s picWidth,
+        Ipp32s picHeight,
+        Ipp32s* pOffsetEo,
+        Ipp8u* pOffsetBo,
+        Ipp8u* pClipTable,
+        Ipp32u CUPelX,
+        Ipp32u CUPelY,
+        bool* pbBorderAvail);
 };
 
 namespace MFX_HEVC_ENCODER

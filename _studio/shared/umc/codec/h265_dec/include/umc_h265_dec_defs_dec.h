@@ -451,10 +451,11 @@ protected:
     void SetOffsetsChroma(SAOLCUParam &saoLCUParamCb, SAOLCUParam &saoLCUParamCr, Ipp32s typeIdx);
 
     //void processSaoCuOrgLuma(Ipp32s Addr, Ipp32s PartIdx, H265PlaneYCommon *tmpL);
+    //void processSaoCuLuma(Ipp32s addr, Ipp32s saoType, H265PlaneYCommon *tmpL);
 
-    void processSaoCuLuma(Ipp32s addr, Ipp32s saoType, H265PlaneYCommon *tmpL);
     void processSaoCuOrgChroma(Ipp32s Addr, Ipp32s PartIdx, H265PlaneUVCommon *tmpL);
     void processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H265PlaneUVCommon *tmpL);
+
     void createNonDBFilterInfo();
     void PCMCURestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth);
     void PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth, EnumTextType Text);
