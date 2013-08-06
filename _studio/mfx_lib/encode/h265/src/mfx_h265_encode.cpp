@@ -46,6 +46,20 @@
 
 #define CHECK_EXTBUF_SIZE(ebuf, errcounter) if ((ebuf).Header.BufferSz != sizeof(ebuf)) {(errcounter) = (errcounter) + 1;}
 
+mfxExtCodingOptionHEVC hevc_tu_tab[8] = {               // CUS CUD 2TUS 2TUD chr sgn RDQ thrCU,TU 5numCand1  5numCand2 WPP
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  1,  0,  0, 1, 1,    6,6,3,3,3, 3,3,2,2,2, 0 }, // tu default (~=4)
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 6,  4, 5,2, 5,5,  1,  0,  1, 0, 0,    8,8,4,4,4, 4,4,2,2,2, 0 }, // tu 1
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  1,  1,  0, 1, 1,    6,6,3,3,3, 3,3,2,2,2, 0 }, // tu 2  (==4)
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  1,  1,  0, 1, 1,    6,6,3,3,3, 3,3,2,2,2, 0 }, // tu 3  (==4)
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  1,  1,  0, 1, 1,    6,6,3,3,3, 3,3,2,2,2, 0 }, // tu 4
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  1,  1,  0, 1, 1,    6,6,3,3,3, 3,3,2,2,2, 0 }, // tu 5  (==4)
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  1,  1,  0, 1, 1,    6,6,3,3,3, 3,3,2,2,2, 0 }, // tu 6  (==4)
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  2, 4,2, 2,2,  1,  0,  0, 2, 2,    4,4,2,2,2, 2,2,1,1,1, 0 }  // tu 7
+};
+
+#define H265_MAXREFDIST 1
+
+
 //////////////////////////////////////////////////////////////////////////
 
 void mfxVideoH265InternalParam::SetCalcParams( mfxVideoParam *parMFX) {
@@ -214,9 +228,6 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     mfxVideoH265InternalParam inInt = *par_in;
     mfxVideoH265InternalParam *par = &inInt;
 
-    if (!par->mfx.BufferSizeInKB)
-        par->mfx.BufferSizeInKB = par->mfx.FrameInfo.Width * par->mfx.FrameInfo.Height * 3 / 2000 + 1; //temp
-
     memset(&m_mfxVideoParam,0,sizeof(mfxVideoParam));
     m_mfxHEVCOpts.Header.BufferId = MFX_EXTBUFF_HEVCENC;
     m_mfxHEVCOpts.Header.BufferSz = sizeof(m_mfxHEVCOpts);
@@ -228,12 +239,108 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
         m_mfxVideoParam.NumExtParam = 1;
     }
 
-    sts = Query(par_in, &m_mfxVideoParam);
+    sts = Query(par_in, &m_mfxVideoParam); // [has to] copy all provided params
     MFX_CHECK_STS(sts);
 
+    // then fill not provided params with defaults or from targret usage
+
+    if (!opts_hevc) {
+        m_mfxHEVCOpts = hevc_tu_tab[m_mfxVideoParam.mfx.TargetUsage];
+    } else { // complete unspecified params
+         mfxExtCodingOptionHEVC* opts_tu = &hevc_tu_tab[m_mfxVideoParam.mfx.TargetUsage];
+
+         if(!m_mfxHEVCOpts.Log2MaxCUSize)
+             m_mfxHEVCOpts.Log2MaxCUSize = opts_tu->Log2MaxCUSize;
+
+         if(!m_mfxHEVCOpts.MaxCUDepth) // opts_in->MaxCUDepth <= opts_out->Log2MaxCUSize - 1
+             m_mfxHEVCOpts.MaxCUDepth = IPP_MIN(opts_tu->MaxCUDepth, m_mfxHEVCOpts.Log2MaxCUSize - 1);
+
+         if(!m_mfxHEVCOpts.QuadtreeTULog2MaxSize) // opts_in->QuadtreeTULog2MaxSize <= opts_out->Log2MaxCUSize
+             m_mfxHEVCOpts.QuadtreeTULog2MaxSize = IPP_MIN(opts_tu->QuadtreeTULog2MaxSize, m_mfxHEVCOpts.Log2MaxCUSize);
+
+         if(!m_mfxHEVCOpts.QuadtreeTULog2MinSize) // opts_in->QuadtreeTULog2MinSize <= opts_out->QuadtreeTULog2MaxSize
+             m_mfxHEVCOpts.QuadtreeTULog2MinSize = IPP_MIN(opts_tu->QuadtreeTULog2MinSize, m_mfxHEVCOpts.QuadtreeTULog2MaxSize);
+
+         if(!m_mfxHEVCOpts.QuadtreeTUMaxDepthIntra) // opts_in->QuadtreeTUMaxDepthIntra > opts_out->Log2MaxCUSize - 1
+             m_mfxHEVCOpts.QuadtreeTUMaxDepthIntra = IPP_MIN(opts_tu->QuadtreeTUMaxDepthIntra, m_mfxHEVCOpts.Log2MaxCUSize - 1);
+
+         if(!m_mfxHEVCOpts.QuadtreeTUMaxDepthInter) // opts_in->QuadtreeTUMaxDepthIntra > opts_out->Log2MaxCUSize - 1
+             m_mfxHEVCOpts.QuadtreeTUMaxDepthInter = IPP_MIN(opts_tu->QuadtreeTUMaxDepthInter, m_mfxHEVCOpts.Log2MaxCUSize - 1);
+
+         // do nothing for params that have zero as legal value
+        if (m_mfxHEVCOpts.SignBitHiding && m_mfxHEVCOpts.RDOQuant) // doesn't work together now
+            m_mfxHEVCOpts.SignBitHiding = 0;
+
+         // take from tu, but correct if contradixt with provided neighbours
+         int pos;
+         mfxU16 *candopt[10], candtu[10], *pleft[10], *plast;
+         candopt[0] = &m_mfxHEVCOpts.IntraNumCand1_2;  candtu[0] = opts_tu->IntraNumCand1_2;
+         candopt[1] = &m_mfxHEVCOpts.IntraNumCand1_3;  candtu[1] = opts_tu->IntraNumCand1_3;
+         candopt[2] = &m_mfxHEVCOpts.IntraNumCand1_4;  candtu[2] = opts_tu->IntraNumCand1_4;
+         candopt[3] = &m_mfxHEVCOpts.IntraNumCand1_5;  candtu[3] = opts_tu->IntraNumCand1_5;
+         candopt[4] = &m_mfxHEVCOpts.IntraNumCand1_6;  candtu[4] = opts_tu->IntraNumCand1_6;
+         candopt[5] = &m_mfxHEVCOpts.IntraNumCand2_2;  candtu[5] = opts_tu->IntraNumCand2_2;
+         candopt[6] = &m_mfxHEVCOpts.IntraNumCand2_3;  candtu[6] = opts_tu->IntraNumCand2_3;
+         candopt[7] = &m_mfxHEVCOpts.IntraNumCand2_4;  candtu[7] = opts_tu->IntraNumCand2_4;
+         candopt[8] = &m_mfxHEVCOpts.IntraNumCand2_5;  candtu[8] = opts_tu->IntraNumCand2_5;
+         candopt[9] = &m_mfxHEVCOpts.IntraNumCand2_6;  candtu[9] = opts_tu->IntraNumCand2_6;
+
+         for(pos=0, plast=0; pos<10; pos++) {
+             if (*candopt[pos]) plast = candopt[pos];
+             pleft[pos] = plast;
+         }
+         for(pos=9, plast=0; pos>=0; pos--) {
+             if (*candopt[pos]) plast = candopt[pos];
+             else {
+                 mfxU16 val = candtu[pos];
+                 if(pleft[pos] && val>*pleft[pos]) val = *pleft[pos];
+                 if(plast      && val<*plast     ) val = *plast;
+                 *candopt[pos] = val;
+             }
+         }
+
+    }
+
+    // check FrameInfo
+
+    //FourCC to check on encode frame
+
+    // to be provided:
+    if (!m_mfxVideoParam.mfx.FrameInfo.Width || !m_mfxVideoParam.mfx.FrameInfo.Height ||
+        !m_mfxVideoParam.mfx.FrameInfo.FrameRateExtN || !m_mfxVideoParam.mfx.FrameInfo.FrameRateExtD)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    // Crops, AspectRatio - ignore
+
+    if (!m_mfxVideoParam.mfx.FrameInfo.PicStruct) m_mfxVideoParam.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+    if (!m_mfxVideoParam.mfx.FrameInfo.ChromaFormat) m_mfxVideoParam.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+
+    // CodecId - only HEVC;  CodecProfile CodecLevel - ignore
+    // NumThread - set inside, >1 only if WPP
+    // TargetUsage - nothing to do
+
+    // can depend on target usage
+    if (!m_mfxVideoParam.mfx.GopPicSize) m_mfxVideoParam.mfx.GopPicSize = (mfxU16)
+       (( m_mfxVideoParam.mfx.FrameInfo.FrameRateExtN + m_mfxVideoParam.mfx.FrameInfo.FrameRateExtD - 1 ) / m_mfxVideoParam.mfx.FrameInfo.FrameRateExtD);
+    if (!m_mfxVideoParam.mfx.GopRefDist) m_mfxVideoParam.mfx.GopRefDist = 1;
+    if (!m_mfxVideoParam.mfx.IdrInterval) m_mfxVideoParam.mfx.IdrInterval = m_mfxVideoParam.mfx.GopPicSize * 8;
+    // GopOptFlag ignore
+
+    // to be provided:
+    if (!m_mfxVideoParam.mfx.RateControlMethod)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    if (!m_mfxVideoParam.mfx.BufferSizeInKB)
+        m_mfxVideoParam.mfx.BufferSizeInKB = par->mfx.FrameInfo.Width * par->mfx.FrameInfo.Height * 3 / 2000 + 1; //temp
+
+    if (!m_mfxVideoParam.mfx.NumSlice) m_mfxVideoParam.mfx.NumSlice = 1;
+    if (!m_mfxVideoParam.mfx.NumRefFrame) m_mfxVideoParam.mfx.NumRefFrame = 1; // for now
+
+
     // what is still needed?
-    m_mfxVideoParam.mfx = par->mfx;
-    m_mfxVideoParam.calcParam = par->calcParam;
+    //m_mfxVideoParam.mfx = par->mfx;
+    m_mfxVideoParam.SetCalcParams(&m_mfxVideoParam);
+    //m_mfxVideoParam.calcParam = par->calcParam;
     m_mfxVideoParam.IOPattern = par->IOPattern;
     m_mfxVideoParam.Protected = 0;
     m_mfxVideoParam.AsyncDepth = par->AsyncDepth;
@@ -346,7 +453,7 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
         out->mfx.MaxKbps = 1;
         out->mfx.NumSlice = 1;
         out->mfx.NumRefFrame = 1;
-        out->mfx.EncodedOrder = 1;
+        out->mfx.EncodedOrder = 0;
         out->AsyncDepth = 1;
         out->IOPattern = 1;
         out->Protected = 0;
@@ -386,12 +493,10 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
 
         // ignore all reserved
     } else { //Check options for correctness
-        mfxU16 cropSampleMask, correctCropTop, correctCropBottom;
         mfxVideoH265InternalParam inInt = *par_in;
         mfxVideoH265InternalParam outInt = *par_out;
         mfxVideoH265InternalParam *in = &inInt;
         mfxVideoH265InternalParam *out = &outInt;
-        mfxVideoH265InternalParam par_SPSPPS = *par_in;
 
         if ( in->mfx.CodecId != MFX_CODEC_HEVC)
             return MFX_ERR_UNSUPPORTED;
@@ -412,14 +517,223 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
         if ((opts_in==0) != (opts_out==0))
             return MFX_ERR_UNDEFINED_BEHAVIOR;
 
+        if (in->mfx.FrameInfo.FourCC != 0 && in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12) {
+            out->mfx.FrameInfo.FourCC = 0;
+            isInvalid ++;
+        }
+        else out->mfx.FrameInfo.FourCC = in->mfx.FrameInfo.FourCC;
+
+        if ( (in->mfx.FrameInfo.Width & 15) || in->mfx.FrameInfo.Width > 16384 ) {
+            out->mfx.FrameInfo.Width = 0;
+            isInvalid ++;
+        } else out->mfx.FrameInfo.Width = in->mfx.FrameInfo.Width;
+        if ( (in->mfx.FrameInfo.Height & 15) || in->mfx.FrameInfo.Height > 16384 ) {
+            out->mfx.FrameInfo.Height = 0;
+            isInvalid ++;
+        } else out->mfx.FrameInfo.Height = in->mfx.FrameInfo.Height;
+
+        // Check crops
+        if (in->mfx.FrameInfo.CropH > in->mfx.FrameInfo.Height && in->mfx.FrameInfo.Height) {
+            out->mfx.FrameInfo.CropH = 0;
+            isInvalid ++;
+        } else out->mfx.FrameInfo.CropH = in->mfx.FrameInfo.CropH;
+        if (in->mfx.FrameInfo.CropW > in->mfx.FrameInfo.Width && in->mfx.FrameInfo.Width) {
+            out->mfx.FrameInfo.CropW = 0;
+            isInvalid ++;
+        } else  out->mfx.FrameInfo.CropW = in->mfx.FrameInfo.CropW;
+        if (in->mfx.FrameInfo.CropX + in->mfx.FrameInfo.CropW > in->mfx.FrameInfo.Width) {
+            out->mfx.FrameInfo.CropX = 0;
+            isInvalid ++;
+        } else out->mfx.FrameInfo.CropX = in->mfx.FrameInfo.CropX;
+        if (in->mfx.FrameInfo.CropY + in->mfx.FrameInfo.CropH > in->mfx.FrameInfo.Height) {
+            out->mfx.FrameInfo.CropY = 0;
+            isInvalid ++;
+        } else out->mfx.FrameInfo.CropY = in->mfx.FrameInfo.CropY;
+
+        // Assume 420 checking horizontal crop to be even
+        if ((in->mfx.FrameInfo.CropX & 1) && (in->mfx.FrameInfo.CropW & 1)) {
+            if (out->mfx.FrameInfo.CropX == in->mfx.FrameInfo.CropX) // not to correct CropX forced to zero
+                out->mfx.FrameInfo.CropX = in->mfx.FrameInfo.CropX + 1;
+            if (out->mfx.FrameInfo.CropW) // can't decrement zero CropW
+                out->mfx.FrameInfo.CropW = in->mfx.FrameInfo.CropW - 1;
+            isCorrected ++;
+        } else if (in->mfx.FrameInfo.CropX & 1)
+        {
+            if (out->mfx.FrameInfo.CropX == in->mfx.FrameInfo.CropX) // not to correct CropX forced to zero
+                out->mfx.FrameInfo.CropX = in->mfx.FrameInfo.CropX + 1;
+            if (out->mfx.FrameInfo.CropW) // can't decrement zero CropW
+                out->mfx.FrameInfo.CropW = in->mfx.FrameInfo.CropW - 2;
+            isCorrected ++;
+        }
+        else if (in->mfx.FrameInfo.CropW & 1) {
+            if (out->mfx.FrameInfo.CropW) // can't decrement zero CropW
+                out->mfx.FrameInfo.CropW = in->mfx.FrameInfo.CropW - 1;
+            isCorrected ++;
+        }
+
+        //Check for valid framerate
+        if (!in->mfx.FrameInfo.FrameRateExtN && in->mfx.FrameInfo.FrameRateExtD ||
+            in->mfx.FrameInfo.FrameRateExtN && !in->mfx.FrameInfo.FrameRateExtD ||
+            in->mfx.FrameInfo.FrameRateExtD && ((mfxF64)in->mfx.FrameInfo.FrameRateExtN / in->mfx.FrameInfo.FrameRateExtD) > 172) {
+            isInvalid ++;
+            out->mfx.FrameInfo.FrameRateExtN = out->mfx.FrameInfo.FrameRateExtD = 0;
+        } else {
+            out->mfx.FrameInfo.FrameRateExtN = in->mfx.FrameInfo.FrameRateExtN;
+            out->mfx.FrameInfo.FrameRateExtD = in->mfx.FrameInfo.FrameRateExtD;
+        }
+
+        out->mfx.FrameInfo.AspectRatioW = in->mfx.FrameInfo.AspectRatioW;
+        out->mfx.FrameInfo.AspectRatioH = in->mfx.FrameInfo.AspectRatioH;
+
+        if (in->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE &&
+            in->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_UNKNOWN ) {
+            out->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_UNKNOWN;
+            isCorrected ++;
+        } else out->mfx.FrameInfo.PicStruct = in->mfx.FrameInfo.PicStruct;
+
+        if (in->mfx.FrameInfo.ChromaFormat != 0 && in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420) {
+            isCorrected ++;
+            out->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        } else out->mfx.FrameInfo.ChromaFormat = in->mfx.FrameInfo.ChromaFormat;
+
+        out->mfx.BRCParamMultiplier = in->mfx.BRCParamMultiplier;
+
+        out->mfx.CodecId = MFX_CODEC_HEVC;
+        if (in->mfx.CodecProfile != MFX_PROFILE_UNKNOWN && in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAIN) {
+            isCorrected ++;
+            out->mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
+        } else out->mfx.CodecProfile = in->mfx.CodecProfile;
+        if (in->mfx.CodecLevel != MFX_LEVEL_UNKNOWN) {
+            isCorrected ++;
+        }
+        out->mfx.CodecLevel = MFX_LEVEL_UNKNOWN;
 
         out->mfx.NumThread = in->mfx.NumThread;
 
-        if( /*in->mfx.TargetUsage < MFX_TARGETUSAGE_UNKNOWN ||*/ in->mfx.TargetUsage > MFX_TARGETUSAGE_BEST_SPEED) {
+        if (in->mfx.TargetUsage > MFX_TARGETUSAGE_BEST_SPEED) {
             isCorrected ++;
             out->mfx.TargetUsage = MFX_TARGETUSAGE_UNKNOWN;
         }
         else out->mfx.TargetUsage = in->mfx.TargetUsage;
+
+        out->mfx.GopPicSize = in->mfx.GopPicSize;
+
+        if (in->mfx.GopRefDist > H265_MAXREFDIST) {
+            out->mfx.GopRefDist = H265_MAXREFDIST;
+            isCorrected ++;
+        }
+        else out->mfx.GopRefDist = in->mfx.GopRefDist;
+
+        if ((in->mfx.GopOptFlag & (MFX_GOP_CLOSED | MFX_GOP_STRICT)) != in->mfx.GopOptFlag) {
+            out->mfx.GopOptFlag = 0;
+            isInvalid ++;
+        } else out->mfx.GopOptFlag = in->mfx.GopOptFlag & (MFX_GOP_CLOSED | MFX_GOP_STRICT);
+
+        out->mfx.IdrInterval = in->mfx.IdrInterval;
+
+        out->mfx.NumSlice = in->mfx.NumSlice;
+        if ( in->mfx.NumSlice > 0 && out->mfx.FrameInfo.Height && out->mfx.FrameInfo.Width && opts_out && opts_out->Log2MaxCUSize)
+        {
+            mfxU16 rnd = (1 << opts_out->Log2MaxCUSize) - 1, shft = opts_out->Log2MaxCUSize;
+            if (in->mfx.NumSlice > ((out->mfx.FrameInfo.Height+rnd)>>shft) * ((out->mfx.FrameInfo.Width+rnd)>>shft) )
+            {
+                out->mfx.NumSlice = 0;
+                isInvalid ++;
+            }
+        }
+        out->mfx.NumRefFrame = in->mfx.NumRefFrame;
+        out->mfx.EncodedOrder = 0; //in->mfx.EncodedOrder;
+
+        // RC
+
+        if (in->mfx.RateControlMethod != 0 &&
+            in->mfx.RateControlMethod != MFX_RATECONTROL_CBR && in->mfx.RateControlMethod != MFX_RATECONTROL_VBR && in->mfx.RateControlMethod != MFX_RATECONTROL_CQP && in->mfx.RateControlMethod != MFX_RATECONTROL_AVBR) {
+            out->mfx.RateControlMethod = MFX_RATECONTROL_VBR;
+            isCorrected ++;
+        } else out->mfx.RateControlMethod = in->mfx.RateControlMethod;
+
+        out->calcParam.BufferSizeInKB = in->calcParam.BufferSizeInKB;
+        if (out->mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
+            out->mfx.RateControlMethod != MFX_RATECONTROL_AVBR) {
+            out->calcParam.TargetKbps = in->calcParam.TargetKbps;
+            out->calcParam.InitialDelayInKB = in->calcParam.InitialDelayInKB;
+            if (out->mfx.FrameInfo.Width && out->mfx.FrameInfo.Height && out->mfx.FrameInfo.FrameRateExtD && out->calcParam.TargetKbps) {
+                // last denominator 1000 gives about 0.75 Mbps for 1080p x 30
+                mfxU32 minBitRate = (mfxU32)((mfxF64)out->mfx.FrameInfo.Width * out->mfx.FrameInfo.Height * 12 // size of raw image (luma + chroma 420) in bits
+                                             * out->mfx.FrameInfo.FrameRateExtN / out->mfx.FrameInfo.FrameRateExtD / 1000 / 1000);
+                if (minBitRate > out->calcParam.TargetKbps) {
+                    out->calcParam.TargetKbps = (mfxU32)minBitRate;
+                    isCorrected ++;
+                }
+                mfxU32 AveFrameKB = out->calcParam.TargetKbps * out->mfx.FrameInfo.FrameRateExtD / out->mfx.FrameInfo.FrameRateExtN / 8;
+                if (out->calcParam.BufferSizeInKB != 0 && out->calcParam.BufferSizeInKB < 2 * AveFrameKB) {
+                    out->calcParam.BufferSizeInKB = (mfxU32)(2 * AveFrameKB);
+                    isCorrected ++;
+                }
+                if (out->calcParam.InitialDelayInKB != 0 && out->calcParam.InitialDelayInKB < AveFrameKB) {
+                    out->calcParam.InitialDelayInKB = (mfxU32)AveFrameKB;
+                    isCorrected ++;
+                }
+            }
+
+            if (in->calcParam.MaxKbps != 0 && in->calcParam.MaxKbps < out->calcParam.TargetKbps) {
+                out->calcParam.MaxKbps = out->calcParam.TargetKbps;
+            } else
+                out->calcParam.MaxKbps = in->calcParam.MaxKbps;
+        }
+        // check for correct QPs for const QP mode
+        else if (out->mfx.RateControlMethod == MFX_RATECONTROL_CQP) {
+            if (in->mfx.QPI > 51) {
+                out->mfx.QPI = 0;
+                isInvalid ++;
+            } else out->mfx.QPI = in->mfx.QPI;
+            if (in->mfx.QPP > 51) {
+                out->mfx.QPP = 0;
+                isInvalid ++;
+            } else out->mfx.QPP = in->mfx.QPP;
+            if (in->mfx.QPB > 51) {
+                out->mfx.QPB = 0;
+                isInvalid ++;
+            } else out->mfx.QPB = in->mfx.QPB;
+        }
+        else {
+            out->calcParam.TargetKbps = in->calcParam.TargetKbps;
+            out->mfx.Accuracy = in->mfx.Accuracy;
+            out->mfx.Convergence = in->mfx.Convergence;
+        }
+
+        // KL seems to be incorrect - checked has original values and they overwrite coorected ones
+        ////mfxVideoH265InternalParam checked = *out;
+        ////if (out->mfx.CodecProfile != MFX_PROFILE_UNKNOWN && out->mfx.CodecProfile != checked.mfx.CodecProfile) {
+        ////    out->mfx.CodecProfile = checked.mfx.CodecProfile;
+        ////    isCorrected ++;
+        ////}
+        ////if (out->mfx.CodecLevel != MFX_LEVEL_UNKNOWN && out->mfx.CodecLevel != checked.mfx.CodecLevel) {
+        ////    out->mfx.CodecLevel = checked.mfx.CodecLevel;
+        ////    isCorrected ++;
+        ////}
+        ////if (out->calcParam.TargetKbps != 0 && out->calcParam.TargetKbps != checked.calcParam.TargetKbps) {
+        ////    out->calcParam.TargetKbps = checked.calcParam.TargetKbps;
+        ////    isCorrected ++;
+        ////}
+        ////if (out->calcParam.MaxKbps != 0 && out->calcParam.MaxKbps != checked.calcParam.MaxKbps) {
+        ////    out->calcParam.MaxKbps = checked.calcParam.MaxKbps;
+        ////    isCorrected ++;
+        ////}
+        ////if (out->calcParam.BufferSizeInKB != 0 && out->calcParam.BufferSizeInKB != checked.calcParam.BufferSizeInKB) {
+        ////    out->calcParam.BufferSizeInKB = checked.calcParam.BufferSizeInKB;
+        ////    isCorrected ++;
+        ////}
+        ////if (out->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_UNKNOWN && out->mfx.FrameInfo.PicStruct != checked.mfx.FrameInfo.PicStruct) {
+        ////    out->mfx.FrameInfo.PicStruct = checked.mfx.FrameInfo.PicStruct;
+        ////    isCorrected ++;
+        ////}
+
+        *par_out = *out;
+        if (out->mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+            out->GetCalcParams(par_out);
+
+
 
         if (opts_in) {
             if ((opts_in->Log2MaxCUSize != 0 && opts_in->Log2MaxCUSize < 4) || opts_in->Log2MaxCUSize > 6) {
@@ -446,13 +760,13 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
             } else opts_out->QuadtreeTULog2MinSize = opts_in->QuadtreeTULog2MinSize;
 
             if ( (opts_in->QuadtreeTUMaxDepthIntra > 5) ||
-                 (opts_out->Log2MaxCUSize!=0 && opts_in->QuadtreeTUMaxDepthIntra + 2 > opts_out->Log2MaxCUSize) ) {
+                 (opts_out->Log2MaxCUSize!=0 && opts_in->QuadtreeTUMaxDepthIntra + 1 > opts_out->Log2MaxCUSize) ) {
                 opts_out->QuadtreeTUMaxDepthIntra = 0;
                 isInvalid ++;
             } else opts_out->QuadtreeTUMaxDepthIntra = opts_in->QuadtreeTUMaxDepthIntra;
 
             if ( (opts_in->QuadtreeTUMaxDepthInter > 5) ||
-                 (opts_out->Log2MaxCUSize!=0 && opts_in->QuadtreeTUMaxDepthInter + 2 > opts_out->Log2MaxCUSize) ) {
+                 (opts_out->Log2MaxCUSize!=0 && opts_in->QuadtreeTUMaxDepthInter + 1 > opts_out->Log2MaxCUSize) ) {
                 opts_out->QuadtreeTUMaxDepthInter = 0;
                 isInvalid ++;
             } else opts_out->QuadtreeTUMaxDepthInter = opts_in->QuadtreeTUMaxDepthInter;
@@ -468,6 +782,11 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
                 opts_out->RDOQuant = 0;
                 isInvalid ++;
             } else opts_out->RDOQuant = opts_in->RDOQuant;
+
+            if (opts_out->SignBitHiding && opts_out->RDOQuant) { // doesn't work together now
+                opts_out->SignBitHiding = 0;
+                isCorrected++;
+            }
 
             if (opts_in->SplitThresholdStrengthCU > 3) {
                 opts_out->SplitThresholdStrengthCU = 0;
@@ -509,182 +828,28 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
         } // EO mfxExtCodingOptionHEVC
 
 
-        if (in->mfx.RateControlMethod != 0 &&
-            in->mfx.RateControlMethod != MFX_RATECONTROL_CBR && in->mfx.RateControlMethod != MFX_RATECONTROL_VBR && in->mfx.RateControlMethod != MFX_RATECONTROL_CQP && in->mfx.RateControlMethod != MFX_RATECONTROL_AVBR) {
-            out->mfx.RateControlMethod = MFX_RATECONTROL_VBR;
-            isCorrected ++;
-        } else out->mfx.RateControlMethod = in->mfx.RateControlMethod;
-
-        out->calcParam.BufferSizeInKB = in->calcParam.BufferSizeInKB;
-        if (out->mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
-            out->mfx.RateControlMethod != MFX_RATECONTROL_AVBR) {
-            out->calcParam.TargetKbps = in->calcParam.TargetKbps;
-            out->calcParam.InitialDelayInKB = in->calcParam.InitialDelayInKB;
-            if (out->mfx.FrameInfo.Width && out->mfx.FrameInfo.Height && out->mfx.FrameInfo.FrameRateExtD && out->calcParam.TargetKbps) {
-                // last denominator 1000 gives about 0.75 Mbps for 1080p x 30
-                mfxU32 minBitRate = (mfxU32)((mfxF64)out->mfx.FrameInfo.Width * out->mfx.FrameInfo.Height * 12 // size of raw image (luma + chroma 420) in bits
-                                             * out->mfx.FrameInfo.FrameRateExtN / out->mfx.FrameInfo.FrameRateExtD / 1000 / 1000);
-                if (minBitRate > out->calcParam.TargetKbps) {
-                    out->calcParam.TargetKbps = (mfxU32)minBitRate;
-                    isCorrected ++;
-                }
-                mfxU32 AveFrameKB = out->calcParam.TargetKbps * out->mfx.FrameInfo.FrameRateExtD / out->mfx.FrameInfo.FrameRateExtN / 8;
-                if (out->calcParam.BufferSizeInKB != 0 && out->calcParam.BufferSizeInKB < 2 * AveFrameKB) {
-                    out->calcParam.BufferSizeInKB = (mfxU32)(2 * AveFrameKB);
-                    isCorrected ++;
-                }
-                if (out->calcParam.InitialDelayInKB != 0 && out->calcParam.InitialDelayInKB < AveFrameKB) {
-                    out->calcParam.InitialDelayInKB = (mfxU32)AveFrameKB;
-                    isCorrected ++;
-                }
-            }
-
-            if (in->calcParam.MaxKbps != 0 && in->calcParam.MaxKbps < out->calcParam.TargetKbps) {
-                out->calcParam.MaxKbps = out->calcParam.TargetKbps;
-            } else
-                out->calcParam.MaxKbps = in->calcParam.MaxKbps;
-        }
-        // check for correct QPs for const QP mode
-        else if (out->mfx.RateControlMethod == MFX_RATECONTROL_CQP) {
-            if (in->mfx.QPI > 51) {
-                in->mfx.QPI = 0;
-                isInvalid ++;
-            }
-            if (in->mfx.QPP > 51) {
-                in->mfx.QPP = 0;
-                isInvalid ++;
-            }
-            if (in->mfx.QPB > 51) {
-                in->mfx.QPB = 0;
-                isInvalid ++;
-            }
-        }
-        else {
-            out->calcParam.TargetKbps = in->calcParam.TargetKbps;
-            out->mfx.Accuracy = in->mfx.Accuracy;
-            out->mfx.Convergence = in->mfx.Convergence;
-        }
-
-        out->mfx.EncodedOrder = in->mfx.EncodedOrder;
-
-        // Check crops
-        if (in->mfx.FrameInfo.CropH > in->mfx.FrameInfo.Height && in->mfx.FrameInfo.Height) {
-            out->mfx.FrameInfo.CropH = 0;
-            isInvalid ++;
-        } else
-            out->mfx.FrameInfo.CropH = in->mfx.FrameInfo.CropH;
-        if (in->mfx.FrameInfo.CropW > in->mfx.FrameInfo.Width && in->mfx.FrameInfo.Width) {
-            out->mfx.FrameInfo.CropW = 0;
-            isInvalid ++;
-        } else
-            out->mfx.FrameInfo.CropW = in->mfx.FrameInfo.CropW;
-        if (in->mfx.FrameInfo.CropX + in->mfx.FrameInfo.CropW > in->mfx.FrameInfo.Width) {
-            out->mfx.FrameInfo.CropX = 0;
-            isInvalid ++;
-        } else
-            out->mfx.FrameInfo.CropX = in->mfx.FrameInfo.CropX;
-        if (in->mfx.FrameInfo.CropY + in->mfx.FrameInfo.CropH > in->mfx.FrameInfo.Height) {
-            out->mfx.FrameInfo.CropY = 0;
-            isInvalid ++;
-        } else
-            out->mfx.FrameInfo.CropY = in->mfx.FrameInfo.CropY;
-
-        // Assume 420 checking horizontal crop to be even
-        if ((in->mfx.FrameInfo.CropX & 1) && (in->mfx.FrameInfo.CropW & 1)) {
-            if (out->mfx.FrameInfo.CropX == in->mfx.FrameInfo.CropX) // not to correct CropX forced to zero
-                out->mfx.FrameInfo.CropX = in->mfx.FrameInfo.CropX + 1;
-            if (out->mfx.FrameInfo.CropW) // can't decrement zero CropW
-                out->mfx.FrameInfo.CropW = in->mfx.FrameInfo.CropW - 1;
-            isCorrected ++;
-        } else if (in->mfx.FrameInfo.CropX & 1)
-        {
-            if (out->mfx.FrameInfo.CropX == in->mfx.FrameInfo.CropX) // not to correct CropX forced to zero
-                out->mfx.FrameInfo.CropX = in->mfx.FrameInfo.CropX + 1;
-            if (out->mfx.FrameInfo.CropW) // can't decrement zero CropW
-                out->mfx.FrameInfo.CropW = in->mfx.FrameInfo.CropW - 2;
-            isCorrected ++;
-        }
-        else if (in->mfx.FrameInfo.CropW & 1) {
-            if (out->mfx.FrameInfo.CropW) // can't decrement zero CropW
-                out->mfx.FrameInfo.CropW = in->mfx.FrameInfo.CropW - 1;
-            isCorrected ++;
-        }
-
-        // Assume 420 checking vertical crop to be even for progressive and multiple of 4 for other PicStruct
-        if ((in->mfx.FrameInfo.PicStruct & (MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF))  == MFX_PICSTRUCT_PROGRESSIVE)
-            cropSampleMask = 1;
-        else
-            cropSampleMask = 3;
-
-        correctCropTop = (in->mfx.FrameInfo.CropY + cropSampleMask) & ~cropSampleMask;
-        correctCropBottom = (in->mfx.FrameInfo.CropY + out->mfx.FrameInfo.CropH) & ~cropSampleMask;
-
-        if ((in->mfx.FrameInfo.CropY & cropSampleMask) || (out->mfx.FrameInfo.CropH & cropSampleMask)) {
-            if (out->mfx.FrameInfo.CropY == in->mfx.FrameInfo.CropY) // not to correct CropY forced to zero
-                out->mfx.FrameInfo.CropY = correctCropTop;
-            if (correctCropBottom >= out->mfx.FrameInfo.CropY)
-                out->mfx.FrameInfo.CropH = correctCropBottom - out->mfx.FrameInfo.CropY;
-            else // CropY < cropSample
-                out->mfx.FrameInfo.CropH = 0;
-            isCorrected ++;
-        }
-
-        out->mfx.FrameInfo.AspectRatioW = in->mfx.FrameInfo.AspectRatioW;
-        out->mfx.FrameInfo.AspectRatioH = in->mfx.FrameInfo.AspectRatioH;
-
-        if (in->mfx.FrameInfo.ChromaFormat != 0 && in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420) {
-            isCorrected ++;
-            out->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-        } else
-            out->mfx.FrameInfo.ChromaFormat = in->mfx.FrameInfo.ChromaFormat;
-
-        if( in->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE &&
-//            in->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_FIELD_TFF &&
-//            in->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_FIELD_BFF &&
-            in->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_UNKNOWN ) {
-            out->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_UNKNOWN;
-            isCorrected ++;
-        } else out->mfx.FrameInfo.PicStruct = in->mfx.FrameInfo.PicStruct;
-
-        if (out->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE && (out->mfx.FrameInfo.Height & 16)) {
-            out->mfx.FrameInfo.PicStruct = 0;
-            out->mfx.FrameInfo.Height = 0;
-            isInvalid ++;
-        }
-
-        out->mfx.NumRefFrame = in->mfx.NumRefFrame;
+        // reserved for any case
+        ////// Assume 420 checking vertical crop to be even for progressive PicStruct
+        ////mfxU16 cropSampleMask, correctCropTop, correctCropBottom;
+        ////if ((in->mfx.FrameInfo.PicStruct & (MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF))  == MFX_PICSTRUCT_PROGRESSIVE)
+        ////    cropSampleMask = 1;
+        ////else
+        ////    cropSampleMask = 3;
+        ////
+        ////correctCropTop = (in->mfx.FrameInfo.CropY + cropSampleMask) & ~cropSampleMask;
+        ////correctCropBottom = (in->mfx.FrameInfo.CropY + out->mfx.FrameInfo.CropH) & ~cropSampleMask;
+        ////
+        ////if ((in->mfx.FrameInfo.CropY & cropSampleMask) || (out->mfx.FrameInfo.CropH & cropSampleMask)) {
+        ////    if (out->mfx.FrameInfo.CropY == in->mfx.FrameInfo.CropY) // not to correct CropY forced to zero
+        ////        out->mfx.FrameInfo.CropY = correctCropTop;
+        ////    if (correctCropBottom >= out->mfx.FrameInfo.CropY)
+        ////        out->mfx.FrameInfo.CropH = correctCropBottom - out->mfx.FrameInfo.CropY;
+        ////    else // CropY < cropSample
+        ////        out->mfx.FrameInfo.CropH = 0;
+        ////    isCorrected ++;
+        ////}
 
 
-        mfxVideoH265InternalParam checked = *out;
-
-        if (out->mfx.CodecProfile != MFX_PROFILE_UNKNOWN && out->mfx.CodecProfile != checked.mfx.CodecProfile) {
-            out->mfx.CodecProfile = checked.mfx.CodecProfile;
-            isCorrected ++;
-        }
-        if (out->mfx.CodecLevel != MFX_LEVEL_UNKNOWN && out->mfx.CodecLevel != checked.mfx.CodecLevel) {
-            out->mfx.CodecLevel = checked.mfx.CodecLevel;
-            isCorrected ++;
-        }
-        if (out->calcParam.TargetKbps != 0 && out->calcParam.TargetKbps != checked.calcParam.TargetKbps) {
-            out->calcParam.TargetKbps = checked.calcParam.TargetKbps;
-            isCorrected ++;
-        }
-        if (out->calcParam.MaxKbps != 0 && out->calcParam.MaxKbps != checked.calcParam.MaxKbps) {
-            out->calcParam.MaxKbps = checked.calcParam.MaxKbps;
-            isCorrected ++;
-        }
-        if (out->calcParam.BufferSizeInKB != 0 && out->calcParam.BufferSizeInKB != checked.calcParam.BufferSizeInKB) {
-            out->calcParam.BufferSizeInKB = checked.calcParam.BufferSizeInKB;
-            isCorrected ++;
-        }
-        if (out->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_UNKNOWN && out->mfx.FrameInfo.PicStruct != checked.mfx.FrameInfo.PicStruct) {
-            out->mfx.FrameInfo.PicStruct = checked.mfx.FrameInfo.PicStruct;
-            isCorrected ++;
-        }
-
-        *par_out = *out;
-        if (out->mfx.RateControlMethod != MFX_RATECONTROL_CQP)
-            out->GetCalcParams(par_out);
     }
 
     if (isInvalid)
@@ -809,6 +974,10 @@ mfxStatus MFXVideoENCODEH265::GetVideoParam(mfxVideoParam *par)
     par->Protected = m_mfxVideoParam.Protected;
     par->AsyncDepth = m_mfxVideoParam.AsyncDepth;
     par->IOPattern = m_mfxVideoParam.IOPattern;
+
+    mfxExtCodingOptionHEVC* opts_hevc = (mfxExtCodingOptionHEVC*)GetExtBuffer( par->ExtParam, par->NumExtParam, MFX_EXTBUFF_HEVCENC );
+    if (opts_hevc)
+        *opts_hevc = m_mfxHEVCOpts;
 
     return MFX_ERR_NONE;
 }
