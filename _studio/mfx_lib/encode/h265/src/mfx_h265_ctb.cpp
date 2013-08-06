@@ -589,8 +589,12 @@ void H265CU::InitCU(H265VideoParam *_par, H265CUData *_data, H265CUData *_data_t
 
   if (initialize_data_flag) {
       rd_opt_flag = 1;
-      rd_lambda = rd_opt_flag ? (0.57 * pow(2.0, (par->QP - 12) * (1.0/3.0)) * (1.0 /  256.0)) : 1;
-      rd_lambda_inter = rd_opt_flag ? ((0.4624 / 0.57) * rd_lambda) : 1;
+      rd_lambda = 1;
+      if (rd_opt_flag) {
+          rd_lambda = pow(2.0, (par->QP - 12) * (1.0/3.0)) * (1.0 /  256.0);
+          rd_lambda *= cslice->slice_type == I_SLICE ? 0.57 : 0.46;
+      }
+      rd_lambda_inter = rd_lambda;
 
       if ( num_partition > 0 )
       {
