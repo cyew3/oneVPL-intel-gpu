@@ -287,7 +287,7 @@ Ipp32s mp3dec_initialize_huffman(sHuffmanTable *huff_table, Ipp8u *mem, Ipp32s *
               mp3dec_VLCSubTablesSizes[i],
               mp3dec_VLCNumSubTables[i], &ts);
             size += ts;
-            if (mem) {
+            if (mem && huff_table) {
               huff_table[i].phuftable = (IppsVLCDecodeSpec_32s *)mem;
               mem += ts;
               ippsVLCDecodeInit_32s(mp3dec_VLCBooks[i], mp3dec_VLCTableSizes[i],
@@ -308,7 +308,7 @@ Ipp32s mp3dec_initialize_huffman(sHuffmanTable *huff_table, Ipp8u *mem, Ipp32s *
     ippsVLCDecodeGetSize_32s(mp3dec_VLCBooks[24], mp3dec_VLCTableSizes[24],
       mp3dec_VLCSubTablesSizes[24], mp3dec_VLCNumSubTables[24], &ts);
     size += ts;
-    if (mem) {
+    if (mem && huff_table) {
       huff_table[24].phuftable = (IppsVLCDecodeSpec_32s *)mem;
       mem += ts;
       ippsVLCDecodeInit_32s(mp3dec_VLCBooks[24], mp3dec_VLCTableSizes[24],
@@ -329,7 +329,7 @@ Ipp32s mp3dec_initialize_huffman(sHuffmanTable *huff_table, Ipp8u *mem, Ipp32s *
           mp3dec_VLCSubTablesSizes[i],
           mp3dec_VLCNumSubTables[i], &ts);
         size += ts;
-        if (mem) {
+        if (mem && huff_table) {
           huff_table[i].phuftable = (IppsVLCDecodeSpec_32s *)mem;
           mem += ts;
           ippsVLCDecodeInit_32s(mp3dec_VLCBooks[i], mp3dec_VLCTableSizes[i],

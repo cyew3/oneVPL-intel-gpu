@@ -234,8 +234,8 @@ MP3Status  mp3dec_GetSynch(MP3Dec_com *state)
         }
 
         state->MP3nSlots =
-          size * mp3_bitrate[header->id][header->layer - 1][header->bitRate] /
-          mp3_frequency[header->id + state->mpg25][header->samplingFreq] + header->paddingBit;
+          size * mp3_bitrate[(header->id < 3)?header->id:2][header->layer - 1][header->bitRate] /
+          mp3_frequency[(header->id + state->mpg25 < 3)?(header->id + state->mpg25):2][header->samplingFreq] + header->paddingBit;
 
         if (header->layer == 1)
           state->MP3nSlots *= 4;

@@ -329,8 +329,15 @@ MP3Status mp3decGetFrame(Ipp8u *inPointer,
                     Ipp32f *ptr = (Ipp32f *)mp3_lfe_filter + div96;
                     tval = 0.0f;
                     for (j = 0; j < 5; j++) {
-                      tval += state->mc_lfe_buf[lfe_offset + j] * *ptr;
-                      ptr += 96;
+                        if (lfe_offset + j >= 17)
+                        {
+                            return MP3_UNSUPPORTED;
+                        }
+                        else
+                        {
+                            tval += state->mc_lfe_buf[lfe_offset + j] * *ptr;
+                            ptr += 96;
+                        }
                     }
                     buf[i] = tval;
 

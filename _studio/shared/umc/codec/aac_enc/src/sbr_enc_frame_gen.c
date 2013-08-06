@@ -661,7 +661,7 @@ sbrencSBRGrid2FrameInfo (sSBRGrid* pGridState, sSBRFrameInfoState* pFIState)
 
     out->bordersEnv[nEnv] = border;
 
-    for (k = 0, i = nEnv - 1; k < nEnv - 1; k++, i--) {
+    for (k = 0, i = nEnv - 1; (k < nEnv - 1) && (i < MAX_NUM_ENV+1); k++, i--) {
       border -= in->bs_rel_bord[k];
 
       out->bordersEnv[i] = border;
@@ -677,7 +677,7 @@ sbrencSBRGrid2FrameInfo (sSBRGrid* pGridState, sSBRFrameInfoState* pFIState)
       out->shortEnv = nEnv + 1 - bs_pointer;
     }
 
-    for (k = 0, i = nEnv - 1; k < nEnv; k++, i--) {
+    for (k = 0, i = nEnv - 1; k < nEnv && i < MAX_NUM_ENV; k++, i--) {
       out->freqRes[i] = in->bs_freq_res[k];
     }
 
@@ -707,7 +707,7 @@ sbrencSBRGrid2FrameInfo (sSBRGrid* pGridState, sSBRFrameInfoState* pFIState)
       out->shortEnv = bs_pointer - 1;
     }
 
-    for (k = 0; k < nEnv; k++) {
+    for (k = 0; k < nEnv && k < MAX_NUM_ENV; k++) {
       out->freqRes[k] = in->bs_freq_res[k];
     }
 
@@ -753,7 +753,7 @@ sbrencSBRGrid2FrameInfo (sSBRGrid* pGridState, sSBRFrameInfoState* pFIState)
       out->shortEnv = nEnv + 1 - bs_pointer;
     }
 
-    for (k = 0; k < nEnv; k++) {
+    for (k = 0; k < nEnv && k < MAX_NUM_ENV; k++) {
       out->freqRes[k] = in->bs_freq_res_LR[k];
     }
 

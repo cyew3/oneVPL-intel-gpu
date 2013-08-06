@@ -1247,7 +1247,7 @@ static Ipp32s bsacdecRawDataBlock(Ipp8u  *inPointer,
 
     for (ch = 0; ch < numChannels; ch++) {
       bsacdeinterlieve(&(cpe->streams[ch]), pData->len_window_group,
-                         numWindowGroups, pData->max_sfb);
+                         (numWindowGroups<=8)?numWindowGroups:8, pData->max_sfb);
     }
 
     if ((cpe->ms_mask_present == 1) || (cpe->ms_mask_present == 3)) {

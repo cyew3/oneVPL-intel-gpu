@@ -13,6 +13,7 @@
 
 #include<math.h>
 #include <stdio.h>
+#include <memory.h>
 #include "sbr_settings.h"
 #include "sbr_dec_struct.h"
 #include "sbr_dec_tabs_fp.h"
@@ -276,6 +277,8 @@ void sbrAdjustmentHF(Ipp32f **YBuf,
   sSBREnvDataState*   pEDState = &(comState->sbrEDState[ch] );
 
   //Ipp32f yRe, yIm;
+
+  memset(bufQMapped, 0, sizeof(Ipp32f)*64);
 
 /*
  * CODES

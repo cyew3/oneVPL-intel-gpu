@@ -53,7 +53,7 @@ Ipp32s mp3enc_huffInit(MP3Enc_HuffmanTable *htables, Ipp8u *mem, Ipp32s *size_al
         ippsVLCEncodeGetSize_32s(mp3enc_VLCBooks[i],
           mp3enc_VLCTableSizes[i], &ts);
         size += ts;
-        if (mem) {
+        if (mem && htables) {
           htables[i].phuftable = (IppsVLCEncodeSpec_32s *)mem;
           mem += ts;
           ippsVLCEncodeInit_32s(mp3enc_VLCBooks[i],
@@ -72,7 +72,7 @@ Ipp32s mp3enc_huffInit(MP3Enc_HuffmanTable *htables, Ipp8u *mem, Ipp32s *size_al
     ippsVLCEncodeGetSize_32s(mp3enc_VLCBooks[24],
       mp3enc_VLCTableSizes[24], &ts);
     size += ts;
-    if (mem) {
+    if (mem && htables) {
       htables[i].phuftable = (IppsVLCEncodeSpec_32s *)mem;
       mem += ts;
       ippsVLCEncodeInit_32s(mp3enc_VLCBooks[24],

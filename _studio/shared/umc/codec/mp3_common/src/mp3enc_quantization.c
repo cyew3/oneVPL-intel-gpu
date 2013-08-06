@@ -14,6 +14,7 @@
 
 #include "align.h"
 #include "mp3enc_own.h"
+#include <memory.h>
 
 /******************************************************************************
 //  Name:
@@ -366,6 +367,8 @@ Ipp32s mp3enc_quantCalcBits(MP3Enc_com *state,
     Ipp32s i;
     Ipp32s t0, t1, t2, st_t0 = 0, st_t1 = 0, st_t2 = 0;
     Ipp32s p;
+
+    memset(last_reg_tbl, 0, sizeof(Ipp32s)*22);
 
     ptr_int = (Ipp32s *)&state->quant_ix[gr][ch][zero_region - 2];
 

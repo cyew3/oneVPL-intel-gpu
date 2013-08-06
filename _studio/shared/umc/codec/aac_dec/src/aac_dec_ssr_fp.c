@@ -27,6 +27,7 @@
 #pragma warning(disable:4996)
 #include "aac_dec_own.h"
 #include "aac_dec_own_fp.h"
+#include <memory.h>
 
 /*****************************************************************************/
 
@@ -141,6 +142,7 @@ static Ipp32f ssr_fmd(SSR_GAIN *gainc,
   Ipp32s min, num;
   Ipp32s i, j;
 
+  memset(alev, 0, sizeof(Ipp32s)*16);
   for (i = 0; i < num_gain_data; i++) {
     alev[i + 1] = gainc->alevcode[i];
   }

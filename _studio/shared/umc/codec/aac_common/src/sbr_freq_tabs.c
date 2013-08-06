@@ -114,7 +114,7 @@ static Ipp32s sbrCalcMasterFreq1(Ipp32s k0, Ipp32s k2, Ipp32s bs_alter_scale, Ip
 
   k2Achieved = k0 + numBands * dk;
   k2Diff = k2 - k2Achieved;
-  for (k = 0; k < numBands; k++)
+  for (k = 0; k < numBands && k < 100; k++)
     vDk[k] = dk;
 
   if (k2Diff < 0) {
@@ -126,14 +126,14 @@ static Ipp32s sbrCalcMasterFreq1(Ipp32s k0, Ipp32s k2, Ipp32s bs_alter_scale, Ip
     k = numBands - 1;
   }
 
-  while (k2Diff != 0) {
+  while (k2Diff != 0 && k < 100 && k >= 0) {
     vDk[k] -= incr;
     k += incr;
     k2Diff += incr;
   }
 
   fMasterBandTab[0] = k0;
-  for (k = 1; k <= numBands; k++)
+  for (k = 1; k <= numBands && k < 100; k++)
     fMasterBandTab[k] = fMasterBandTab[k - 1] + vDk[k - 1];
 
   *nMasterBand = numBands;
@@ -283,7 +283,7 @@ Ipp32s sbrCalcMasterFreqBoundary(Ipp32s bs_start_freq, Ipp32s bs_stop_freq,
 #endif
 
   /* may be error form core AAC */
-  if( ( sbrFreqIndx < 0 ) || (sbrFreqIndx > 11) ) {
+  if( ( sbrFreqIndx < 0 ) || (sbrFreqIndx >= 9) ) {
      return SBR_ERR_REQUIREMENTS;
   }
 

@@ -214,7 +214,14 @@ mfxStatus MFXAudioDECODE_Init(mfxSession session, mfxAudioParam *par)
             session->m_pAudioDECODE.reset(CreateAudioDECODESpecificClass(par->mfx.CodecId, session->m_pAudioCORE.get(), session));
         }
         
-        mfxRes = session->m_pAudioDECODE->Init(par);
+        if (session->m_pAudioDECODE.get())
+        {
+            mfxRes = session->m_pAudioDECODE->Init(par);
+        }
+        else
+        {
+            throw;  // throw empty error, it will be recognized in catch
+        }
 
     }
     // handle error(s)
@@ -253,13 +260,15 @@ mfxStatus MFXAudioDECODE_Close(mfxSession session)
         {
             return MFX_ERR_NOT_INITIALIZED;
         }
+        else
+        {
+            // wait until all tasks are processed
+            session->m_pScheduler->WaitForTaskCompletion(session->m_pDECODE.get());
 
-        // wait until all tasks are processed
-        session->m_pScheduler->WaitForTaskCompletion(session->m_pDECODE.get());
-
-        mfxRes = session->m_pAudioDECODE->Close();
-        // delete the codec's instance
-        session->m_pAudioDECODE.reset((AudioDECODE *) 0);
+            mfxRes = session->m_pAudioDECODE->Close();
+            // delete the codec's instance
+            session->m_pAudioDECODE.reset((AudioDECODE *) 0);
+        }
     }
     // handle error(s)
     catch(MFX_CORE_CATCH_TYPE)
@@ -304,7 +313,10 @@ mfxStatus MFXAudioDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs ,
         }
 
         // reset the sync point
-        *syncp = NULL;
+        if (syncp)
+        {
+            *syncp = NULL;
+        }
 
         memset(&task, 0, sizeof(MFX_TASK));
         mfxRes = session->m_pAudioDECODE->DecodeFrameCheck(bs, buffer_out, &task.entryPoint);

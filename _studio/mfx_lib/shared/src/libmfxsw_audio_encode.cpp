@@ -151,8 +151,10 @@ mfxStatus MFXAudioENCODE_Init(mfxSession session, mfxAudioParam *par)
         if (0 == session->m_pAudioENCODE.get()) {
             return MFX_ERR_INVALID_AUDIO_PARAM;
         }
-
-        mfxRes = session->m_pAudioENCODE->Init(par);
+        else
+        {
+            mfxRes = session->m_pAudioENCODE->Init(par);
+        }
 
     }
     // handle error(s)
@@ -191,13 +193,15 @@ mfxStatus MFXAudioENCODE_Close(mfxSession session)
         {
             return MFX_ERR_NOT_INITIALIZED;
         }
+        else
+        {
+            // wait until all tasks are processed
+            session->m_pScheduler->WaitForTaskCompletion(session->m_pAudioENCODE.get());
 
-        // wait until all tasks are processed
-        session->m_pScheduler->WaitForTaskCompletion(session->m_pAudioENCODE.get());
-
-        mfxRes = session->m_pAudioENCODE->Close();
-        // delete the codec's instance
-        session->m_pAudioENCODE.reset((AudioENCODE *) 0);
+            mfxRes = session->m_pAudioENCODE->Close();
+            // delete the codec's instance
+            session->m_pAudioENCODE.reset((AudioENCODE *) 0);
+        }
     }
     // handle error(s)
     catch(MFX_CORE_CATCH_TYPE)
@@ -242,7 +246,10 @@ mfxStatus MFXAudioENCODE_EncodeFrameAsync(mfxSession session, mfxBitstream *bs, 
         }
 
         // reset the sync point
-        *syncp = NULL;
+        if (syncp)
+        {
+            *syncp = NULL;
+        }
 
         memset(&task, 0, sizeof(MFX_TASK));
         mfxRes = session->m_pAudioENCODE->EncodeFrameCheck(bs, buffer_out, &task.entryPoint);

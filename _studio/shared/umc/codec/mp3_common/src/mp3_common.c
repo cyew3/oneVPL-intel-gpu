@@ -183,7 +183,7 @@ Ipp32s mp3_SetAllocTable(Ipp32s header_id, Ipp32s mpg25, Ipp32s header_layer,
                          Ipp32s *sblimit)
 {
   Ipp32s bit_rate = mp3_bitrate[header_id][header_layer - 1][header_bitRate] >> (stereo - 1);
-  Ipp32s freq = mp3_frequency[header_id + mpg25][header_samplingFreq];
+  Ipp32s freq = mp3_frequency[(header_id + mpg25 < 3)?(header_id + mpg25):2][header_samplingFreq];
 
   if (header_id == 0) {
     *alloc_table = mp3_alloc_table5;
