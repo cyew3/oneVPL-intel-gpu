@@ -87,7 +87,7 @@ UMC::Status DecReferencePictureMarking_H265::UpdateRefPicMarking(ViewItem_H265 &
         // loop through all pictures in the reference picture buffer
         for (H265DecoderFrame *pTmp = view.pDPB->head(); pTmp; pTmp = pTmp->future())
         {
-            if (pTmp->isDisposable())
+            if (pTmp->isDisposable() || (!pTmp->isShortTermRef() && !pTmp->isLongTermRef()))
                 continue;
 
             bool isReferenced = false;
@@ -2254,8 +2254,6 @@ void TaskSupplier_H265::CompleteFrame(H265DecoderFrame * pFrame)
         return;
 
     DEBUG_PRINT((VM_STRING("Complete frame POC - (%d) type - %d, count - %d, m_uid - %d, IDR - %d\n"), pFrame->m_PicOrderCnt, pFrame->m_FrameType, slicesInfo->GetSliceCount(), pFrame->m_UID, slicesInfo->GetAnySlice()->GetSliceHeader()->IdrPicFlag));
-
-    //DPBUpdate(slicesInfo->GetAnySlice());
 
     pFrame->m_iResourceNumber = LocalResources_H265::GetCurrentResourceIndex();
 
