@@ -1239,10 +1239,13 @@ bool TaskBrokerTwoThread_H265::WrapDecodingTask(H265DecoderFrameInfo * info, H26
     pSlice->m_bInProcess = true;
     pSlice->m_processVacant[DEC_PROCESS_ID] = 0;
 
-    Ipp32s maxMB = IPP_MIN(pSlice->m_curMBToProcess[DEC_PROCESS_ID] + info->m_pFrame->getCD()->m_WidthInCU, pSlice->m_iMaxMB);
+    Ipp32s width = info->m_pFrame->getCD()->m_WidthInCU;
     InitTask(info, pTask, pSlice);
     pTask->m_iFirstMB = pSlice->m_curMBToProcess[DEC_PROCESS_ID];
-    pTask->m_iMBToProcess = maxMB - pTask->m_iFirstMB;
+    pTask->m_iMBToProcess = IPP_MIN(pSlice->m_curMBToProcess[DEC_PROCESS_ID] -
+                                    (pSlice->m_curMBToProcess[DEC_PROCESS_ID] % width) +
+                                    width,
+                                    pSlice->m_iMaxMB) - pSlice->m_curMBToProcess[DEC_PROCESS_ID];
     pTask->m_iTaskID = TASK_DEC_H265;
     pTask->pFunction = &H265SegmentDecoderMultiThreaded::DecodeSegment;
 
@@ -1267,10 +1270,11 @@ bool TaskBrokerTwoThread_H265::WrapReconstructTask(H265DecoderFrameInfo * info, 
 
     pSlice->m_processVacant[REC_PROCESS_ID] = 0;
 
-    Ipp32s maxMB = info->m_pFrame->getCD()->m_WidthInCU;
+    Ipp32s width = info->m_pFrame->getCD()->m_WidthInCU;
     InitTask(info, pTask, pSlice);
     pTask->m_iFirstMB = pSlice->m_curMBToProcess[REC_PROCESS_ID];
-    pTask->m_iMBToProcess = IPP_MIN(maxMB, pSlice->m_curMBToProcess[DEC_PROCESS_ID] - pTask->m_iFirstMB);
+    pTask->m_iMBToProcess = IPP_MIN(pSlice->m_curMBToProcess[REC_PROCESS_ID] - (pSlice->m_curMBToProcess[REC_PROCESS_ID] % width) + width,
+                                    pSlice->m_iMaxMB) - pSlice->m_curMBToProcess[REC_PROCESS_ID];
     pTask->m_iTaskID = TASK_REC_H265;
     GetResources(pTask);
 
