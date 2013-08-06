@@ -1636,12 +1636,22 @@ recode:
 
         row_info = &pSlice->m_row_info;
         if (m_pps.entropy_coding_sync_enabled_flag) {
-            for (Ipp32u row = pSlice->row_first; row < pSlice->row_last; row++) {
-                pSlice->entry_point_offset[row-pSlice->row_first] = row_info->size;
-                row_info = m_row_info + row + 1;
+            for (Ipp32u i = 0; i < pSlice->num_entry_point_offsets; i++) {
+                Ipp32u offset_add = 0;
+                Ipp8u *curPtr = bs[row_info->bs_id].m_base.m_pbsBase + row_info->offset;
+
+                for (Ipp32s j = 1; j < row_info->size - 1; j++) {
+                    if (!curPtr[j - 1] && !curPtr[j] && !(curPtr[j + 1] & 0xfc)) {
+                        j++;
+                        offset_add ++;
+                    }
+                }
+
+                pSlice->entry_point_offset[i] = row_info->size + offset_add;
+                row_info = m_row_info + pSlice->row_first + i + 1;
             }
+            row_info = &pSlice->m_row_info;
         }
-        row_info = &pSlice->m_row_info;
         bs[bs_main_id].Reset();
         PutSliceHeader(&bs[bs_main_id], pSlice);
         overheadBytes += H265Bs_GetBsSize(&bs[bs_main_id]);
@@ -1652,21 +1662,6 @@ recode:
                 bs[bs_main_id].m_base.m_pbs += row_info->size;
                 row_info = m_row_info + row + 1;
             }
-            // Here seems to be inconsistency between the standard and HM.
-            // The following commented code conforms to standard
-            // Need to add slice header rewriting after this block
-            /*
-            Ipp8u* curPtr = m_pbs_save + row_info->offset;
-            for (Ipp32u i = 0; i < pSlice->num_entry_point_offsets; i++) {
-                Ipp32u offset_add = 0;
-                for (Ipp32u j = i > 0 ? 0 : 1; j < pSlice->entry_point_offset[i]; j++) {
-                    if (!curPtr[j - 1] && !curPtr[j] && !(curPtr[j + 1] & 0xfc))
-                        offset_add ++;
-                }
-                curPtr += pSlice->entry_point_offset[i];
-                pSlice->entry_point_offset[i] += offset_add;
-            }
-            */
         } else {            
             memcpy(bs[bs_main_id].m_base.m_pbs, bs[row_info->bs_id].m_base.m_pbsBase + row_info->offset, row_info->size);
             bs[bs_main_id].m_base.m_pbs += row_info->size;
