@@ -19,6 +19,7 @@
 #include "umc_h265_slice_decoding.h"
 #include "assert.h"
 #include "math.h"
+#include "mfx_h265_optimization.h"
 
 namespace UMC_HEVC_DECODER
 {
@@ -247,201 +248,8 @@ void ReferencePictureSetList::allocate(unsigned NumberOfReferencePictureSets)
     referencePictureSet.resize(NumberOfReferencePictureSets);
 }
 
-void H265SampleAdaptiveOffset::processSaoCuOrgLuma(Ipp32s addr, Ipp32s saoType, H265PlanePtrYCommon tmpL)
-{
-    H265CodingUnit *pTmpCu = m_Frame->getCU(addr);
-    H265PlanePtrYCommon pRec;
-    Ipp32s tmpUpBuff1[65];
-    Ipp32s tmpUpBuff2[65];
-    Ipp32s stride;
-    Ipp32s LCUWidth  = m_MaxCUWidth;
-    Ipp32s LCUHeight = m_MaxCUHeight;
-    Ipp32s LPelX     = (Ipp32s)pTmpCu->m_CUPelX;
-    Ipp32s TPelY     = (Ipp32s)pTmpCu->m_CUPelY;
-    Ipp32s RPelX;
-    Ipp32s BPelY;
-    Ipp32s signLeft;
-    Ipp32s signRight;
-    Ipp32s signDown;
-    Ipp32s signDown1;
-    Ipp32u edgeType;
-    Ipp32s picWidthTmp;
-    Ipp32s picHeightTmp;
-    Ipp32s startX;
-    Ipp32s startY;
-    Ipp32s endX;
-    Ipp32s endY;
-    Ipp32s x, y;
-    H265PlanePtrYCommon tmpU;
 
-    picWidthTmp  = m_PicWidth;
-    picHeightTmp = m_PicHeight;
-    LCUWidth     = LCUWidth;
-    LCUHeight    = LCUHeight;
-    LPelX        = LPelX;
-    TPelY        = TPelY;
-    RPelX        = LPelX + LCUWidth;
-    BPelY        = TPelY + LCUHeight;
-    RPelX        = RPelX > picWidthTmp  ? picWidthTmp  : RPelX;
-    BPelY        = BPelY > picHeightTmp ? picHeightTmp : BPelY;
-    LCUWidth     = RPelX - LPelX;
-    LCUHeight    = BPelY - TPelY;
 
-    pRec      = m_Frame->GetLumaAddr(addr);
-    stride    = m_Frame->pitch_luma();
-
-    tmpU = &(m_TmpU[0][LPelX]);
-
-    switch (saoType)
-    {
-    case SAO_EO_0: // dir: -
-        {
-            startX = (LPelX == 0) ? 1 : 0;
-            endX   = (RPelX == picWidthTmp) ? LCUWidth-1 : LCUWidth;
-
-            for (y = 0; y < LCUHeight; y++)
-            {
-                signLeft = getSign(pRec[startX] - tmpL[y]);
-
-                for (x = startX; x < endX; x++)
-                {
-                    signRight =  getSign(pRec[x] - pRec[x+1]);
-                    edgeType  =  signRight + signLeft + 2;
-                    signLeft  = -signRight;
-
-                    pRec[x] = m_ClipTable[pRec[x] + m_OffsetEo[edgeType]];
-                }
-
-                pRec += stride;
-            }
-            break;
-        }
-    case SAO_EO_1: // dir: |
-        {
-            startY = (TPelY == 0) ? 1 : 0;
-            endY   = (BPelY == picHeightTmp) ? LCUHeight - 1 : LCUHeight;
-
-            if (TPelY == 0)
-            {
-                pRec += stride;
-            }
-
-            for (x = 0; x < LCUWidth; x++)
-            {
-                tmpUpBuff1[x] = getSign(pRec[x] - tmpU[x]);
-            }
-
-            for (y = startY; y < endY; y++)
-            {
-                for (x = 0; x < LCUWidth; x++)
-                {
-                    signDown    = getSign(pRec[x] - pRec[x+stride]);
-                    edgeType    = signDown + tmpUpBuff1[x] + 2;
-                    tmpUpBuff1[x]= -signDown;
-
-                    pRec[x] = m_ClipTable[pRec[x] + m_OffsetEo[edgeType]];
-                }
-                pRec += stride;
-            }
-            break;
-        }
-    case SAO_EO_2: // dir: 135
-        {
-            Ipp32s *pUpBuff = tmpUpBuff1;
-            Ipp32s *pUpBufft = tmpUpBuff2;
-            Ipp32s *swapPtr;
-
-            startX = (LPelX == 0)           ? 1 : 0;
-            endX   = (RPelX == picWidthTmp) ? LCUWidth - 1 : LCUWidth;
-
-            startY = (TPelY == 0) ?            1 : 0;
-            endY   = (BPelY == picHeightTmp) ? LCUHeight - 1 : LCUHeight;
-
-            if (TPelY == 0)
-            {
-                pRec += stride;
-            }
-
-            for (x = startX; x < endX; x++)
-            {
-                pUpBuff[x] = getSign(pRec[x] - tmpU[x-1]);
-            }
-
-            for (y = startY; y < endY; y++)
-            {
-                pUpBufft[startX] = getSign(pRec[stride+startX] - tmpL[y]);
-
-                for (x = startX; x < endX; x++)
-                {
-                    signDown1      =  getSign(pRec[x] - pRec[x+stride+1]) ;
-                    edgeType       =  signDown1 + pUpBuff[x] + 2;
-                    pUpBufft[x+1]  = -signDown1;
-                    pRec[x] = m_ClipTable[pRec[x] + m_OffsetEo[edgeType]];
-                }
-
-                swapPtr  = pUpBuff;
-                pUpBuff  = pUpBufft;
-                pUpBufft = swapPtr;
-
-                pRec += stride;
-            }
-            break;
-        }
-    case SAO_EO_3: // dir: 45
-        {
-            startX = (LPelX == 0) ? 1 : 0;
-            endX   = (RPelX == picWidthTmp) ? LCUWidth - 1 : LCUWidth;
-
-            startY = (TPelY == 0) ? 1 : 0;
-            endY   = (BPelY == picHeightTmp) ? LCUHeight - 1 : LCUHeight;
-
-            if (startY == 1)
-            {
-                pRec += stride;
-            }
-
-            for (x = startX - 1; x < endX; x++)
-            {
-                tmpUpBuff1[x+1] = getSign(pRec[x] - tmpU[x+1]);
-            }
-
-            for (y = startY; y < endY; y++)
-            {
-                x = startX;
-                signDown1      =  getSign(pRec[x] - tmpL[y+1]) ;
-                edgeType       =  signDown1 + tmpUpBuff1[x+1] + 2;
-                tmpUpBuff1[x] = -signDown1;
-                pRec[x] = m_ClipTable[pRec[x] + m_OffsetEo[edgeType]];
-
-                for (x = startX + 1; x < endX; x++)
-                {
-                    signDown1      =  getSign(pRec[x] - pRec[x+stride-1]) ;
-                    edgeType       =  signDown1 + tmpUpBuff1[x+1] + 2;
-                    tmpUpBuff1[x]  = -signDown1;
-                    pRec[x] = m_ClipTable[pRec[x] + m_OffsetEo[edgeType]];
-                }
-
-                tmpUpBuff1[endX] = getSign(pRec[endX-1 + stride] - pRec[endX]);
-
-                pRec += stride;
-            }
-            break;
-        }
-    case SAO_BO:
-        {
-            for (y = 0; y < LCUHeight; y++)
-            {
-                for (x = 0; x < LCUWidth; x++)
-                {
-                    pRec[x] = m_OffsetBo[pRec[x]];
-                }
-                pRec += stride;
-            }
-            break;
-        }
-    default: break;
-    }
-}
 
 void H265SampleAdaptiveOffset::processSaoCuLuma(Ipp32s addr, Ipp32s saoType, H265PlanePtrYCommon tmpL)
 {
@@ -1383,9 +1191,28 @@ void H265SampleAdaptiveOffset::processSaoLine(SAOLCUParam* saoLCUParam, SAOLCUPa
             }
 
             if (!m_UseNIF)
-                processSaoCuOrgLuma(addr, typeIdx, m_TmpL[0]);
+            {
+                H265CodingUnit *pTmpCu = m_Frame->getCU(addr);
+                MFX_HEVC_COMMON::h265_processSaoCuOrg_Luma_8u(
+                    m_Frame->GetLumaAddr(addr),
+                    m_Frame->pitch_luma(),
+                    typeIdx,
+                    m_TmpL[0],
+                    &(m_TmpU[0][pTmpCu->m_CUPelX]),
+                    m_MaxCUWidth,
+                    m_MaxCUHeight,
+                    m_PicWidth,
+                    m_PicHeight,
+                    m_OffsetEo,
+                    m_OffsetBo,
+                    m_ClipTable,
+                    pTmpCu->m_CUPelX,
+                    pTmpCu->m_CUPelY);
+            }
             else
+            {
                 processSaoCuLuma(addr, typeIdx, m_TmpL[0]);
+            }
         }
 
         if (m_slice_sao_chroma_flag && saoLCUParamCb[addr].m_typeIdx >= 0)

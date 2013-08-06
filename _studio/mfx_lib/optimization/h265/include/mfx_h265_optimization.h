@@ -196,7 +196,7 @@ namespace MFX_HEVC_COMMON
     void h265_QuantInv_ScaleList_LShift_16s(const Ipp16s* pSrc, const Ipp16s* pScaleList, Ipp16s* pDst, int len, int shift);
     void h265_QuantInv_ScaleList_RShift_16s(const Ipp16s* pSrc, const Ipp16s* pScaleList, Ipp16s* pDst, int len, int offset, int shift);
 
-    /* Intra prediction */
+    /* Intra prediction (aya: encoder version, decoder under redesign yet) Luma is OK, Chroma - plane/interleave for encoder/decoder accordingly */
     void h265_intrapred_ver(
         Ipp8u* PredPel,
         Ipp8u* pels,
@@ -232,6 +232,23 @@ namespace MFX_HEVC_COMMON
         Ipp8u* pels,
         Ipp32s pitch,
         Ipp32s width);
+
+    /* SAO Processing: may be structure instaed of 14 params is better */
+    void h265_processSaoCuOrg_Luma_8u(
+        Ipp8u* pRec,
+        Ipp32s stride,
+        Ipp32s saoType, 
+        Ipp8u* tmpL,
+        Ipp8u* tmpU,
+        Ipp32u maxCUWidth,
+        Ipp32u maxCUHeight,
+        Ipp32s picWidth,
+        Ipp32s picHeight,
+        Ipp32s* pOffsetEo,
+        Ipp8u* pOffsetBo,
+        Ipp8u* pClipTable,
+        Ipp32u CUPelX,
+        Ipp32u CUPelY);
 };
 
 namespace MFX_HEVC_ENCODER
