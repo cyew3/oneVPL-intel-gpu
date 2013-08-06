@@ -2258,13 +2258,18 @@ mfxStatus MFX_JPEG_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
             fourCC == MFX_FOURCC_NV12 && chromaFormat == MFX_CHROMAFORMAT_MONOCHROME ||
             fourCC == MFX_FOURCC_NV12 && chromaFormat == MFX_CHROMAFORMAT_YUV420 ||
             fourCC == MFX_FOURCC_RGB4 && chromaFormat == MFX_CHROMAFORMAT_YUV444 ||
-            fourCC == MFX_FOURCC_YUY2 && chromaFormat == MFX_CHROMAFORMAT_YUV422H || 
-            fourCC == DXGI_FORMAT_AYUV && chromaFormat == MFX_CHROMAFORMAT_YUV444)
+            fourCC == MFX_FOURCC_YUY2 && chromaFormat == MFX_CHROMAFORMAT_YUV422H)
         {
             out->mfx.FrameInfo.FourCC = in->mfx.FrameInfo.FourCC;
             out->mfx.FrameInfo.ChromaFormat = in->mfx.FrameInfo.ChromaFormat;
         }
-        else
+#if defined (MFX_VA_WIN)
+        else if (fourCC == DXGI_FORMAT_AYUV && chromaFormat == MFX_CHROMAFORMAT_YUV444)
+        {
+            out->mfx.FrameInfo.FourCC = in->mfx.FrameInfo.FourCC;
+            out->mfx.FrameInfo.ChromaFormat = in->mfx.FrameInfo.ChromaFormat;
+        }
+#endif
         {
             sts = MFX_ERR_UNSUPPORTED;
         }
@@ -2514,12 +2519,21 @@ bool MFX_JPEG_Utility::CheckVideoParam(mfxVideoParam *in, eMFXHWType )
     mfxU32 fourCC = in->mfx.FrameInfo.FourCC;
     mfxU16 chromaFormat = in->mfx.FrameInfo.ChromaFormat;
 
+#if defined (MFX_VA_WIN)
     if ((fourCC != MFX_FOURCC_NV12 || chromaFormat != MFX_CHROMAFORMAT_MONOCHROME) &&
         (fourCC != MFX_FOURCC_NV12 || chromaFormat != MFX_CHROMAFORMAT_YUV420) &&
         (fourCC != MFX_FOURCC_RGB4 || chromaFormat != MFX_CHROMAFORMAT_YUV444) &&
         (fourCC != DXGI_FORMAT_AYUV || chromaFormat != MFX_CHROMAFORMAT_YUV444) &&
         (fourCC != MFX_FOURCC_YUY2 || chromaFormat != MFX_CHROMAFORMAT_YUV422H))
         return false;
+#else if
+    if ((fourCC != MFX_FOURCC_NV12 || chromaFormat != MFX_CHROMAFORMAT_MONOCHROME) &&
+        (fourCC != MFX_FOURCC_NV12 || chromaFormat != MFX_CHROMAFORMAT_YUV420) &&
+        (fourCC != MFX_FOURCC_RGB4 || chromaFormat != MFX_CHROMAFORMAT_YUV444) &&
+        (fourCC != MFX_FOURCC_YUY2 || chromaFormat != MFX_CHROMAFORMAT_YUV422H))
+        return false;
+
+#endif
 
     if (!(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && !(in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) && !(in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
         return false;
