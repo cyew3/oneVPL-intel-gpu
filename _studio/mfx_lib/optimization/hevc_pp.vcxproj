@@ -48,6 +48,7 @@
     <ClCompile Include="h265\src\mfx_h265_sad_ipp.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sad_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sao_px.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_sao_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_transform_fwd_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_transform_inv_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_transform_px.cpp" />

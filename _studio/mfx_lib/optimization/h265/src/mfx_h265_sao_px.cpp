@@ -15,7 +15,7 @@
 
 #include "mfx_h265_optimization.h"
 
-#if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM)
+#if defined(MFX_TARGET_OPTIMIZATION_PX) 
 
 namespace MFX_HEVC_COMMON
 {
@@ -242,6 +242,6 @@ namespace MFX_HEVC_COMMON
 
 }; // namespace MFX_HEVC_COMMON
 
-#endif // #if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2)
+#endif // #if defined(MFX_TARGET_OPTIMIZATION_PX) 
 #endif // #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined(MFX_ENABLE_H265_VIDEO_DECODE)
 /* EOF */
