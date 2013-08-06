@@ -211,7 +211,7 @@ UMC::Status mfx_UMC_FrameAllocator::InitMfx(UMC::FrameAllocatorParams *,
     case MFX_FOURCC_YUY2:
         color_format = UMC::YUY2;
         break;
-#if defined (MFX_VA)
+#if defined (MFX_VA_WIN)
     case DXGI_FORMAT_AYUV:
         color_format = UMC::RGB32;
         break;
@@ -698,7 +698,7 @@ mfxI32 mfx_UMC_FrameAllocator::AddSurface(mfxFrameSurface1 *surface)
     case MFX_FOURCC_YV12:
     case MFX_FOURCC_YUY2:
     case MFX_FOURCC_RGB4:
-#if defined (MFX_VA)
+#if defined (MFX_VA_WIN)
     case DXGI_FORMAT_AYUV:
 #endif
         break;

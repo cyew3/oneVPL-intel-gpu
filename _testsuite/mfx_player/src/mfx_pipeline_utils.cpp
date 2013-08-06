@@ -18,9 +18,9 @@ File Name: .h
 #include "vm_file.h"
 #include <iomanip>
 #include <limits>
-#include <DXGI.h>
 
 #if defined(_WIN32) || defined(_WIN64)
+    #include <DXGI.h>
     #include <psapi.h>
 #endif
 
@@ -784,12 +784,14 @@ mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &
             info.ChromaFormat = MFX_CHROMAFORMAT_MONOCHROME;
             break;
         }
+#if defined(_WIN32) || defined(_WIN64)
         case 10:
         {
             info.FourCC = DXGI_FORMAT_AYUV;
             info.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
             break;
         }
+#endif
         default:
             return MFX_ERR_UNSUPPORTED;
     }

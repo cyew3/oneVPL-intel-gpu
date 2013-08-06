@@ -453,6 +453,7 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             }
             break;
         }
+#if defined(_WIN32) || defined(_WIN64)
         case DXGI_FORMAT_AYUV :
         {
             m_Current.m_comp = VM_STRING('R');
@@ -467,6 +468,7 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             }
             break;
         }
+#endif
         case MFX_FOURCC_YUY2 :
         {
             m_Current.m_comp = VM_STRING('Y');
@@ -931,9 +933,11 @@ mfxStatus MFXMetricComparatorRender::RenderFrame(mfxFrameSurface1 *surface, mfxE
         case MFX_FOURCC_RGB4 :
             nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 4 ;
             break;
+#if defined(_WIN32) || defined(_WIN64)
         case DXGI_FORMAT_AYUV :
             nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 4 ;
             break;
+#endif
         case MFX_FOURCC_YUY2 :
             nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 2 ;
             break;
