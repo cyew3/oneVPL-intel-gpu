@@ -46,15 +46,15 @@
 
 #define CHECK_EXTBUF_SIZE(ebuf, errcounter) if ((ebuf).Header.BufferSz != sizeof(ebuf)) {(errcounter) = (errcounter) + 1;}
 
-mfxExtCodingOptionHEVC hevc_tu_tab[8] = {               // CUS CUD 2TUS 2TUD chr sgn RDQ thrCU,TU 5numCand1  5numCand2 WPP
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  1,  0,  0, 1, 1,    6,6,3,3,3, 3,3,2,2,2, 0 }, // tu default (~=4)
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 6,  4, 5,2, 5,5,  1,  0,  1, 0, 0,    8,8,4,4,4, 4,4,2,2,2, 0 }, // tu 1
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  1,  1,  0, 1, 1,    6,6,3,3,3, 3,3,2,2,2, 0 }, // tu 2  (==4)
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  1,  1,  0, 1, 1,    6,6,3,3,3, 3,3,2,2,2, 0 }, // tu 3  (==4)
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  1,  1,  0, 1, 1,    6,6,3,3,3, 3,3,2,2,2, 0 }, // tu 4
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  1,  1,  0, 1, 1,    6,6,3,3,3, 3,3,2,2,2, 0 }, // tu 5  (==4)
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  1,  1,  0, 1, 1,    6,6,3,3,3, 3,3,2,2,2, 0 }, // tu 6  (==4)
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  2, 4,2, 2,2,  1,  0,  0, 2, 2,    4,4,2,2,2, 2,2,1,1,1, 0 }  // tu 7
+mfxExtCodingOptionHEVC hevc_tu_tab[8] = {               // CUS CUD 2TUS 2TUD  AnalyzeChroma         SignBitHiding          RDOQuant              thrCU,TU 5numCand1  5numCand2  WPP
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_OFF, 1, 1,    6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN }, // tu default (~=4)
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 6,  4, 5,2, 5,5,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,  0, 0,    8,8,4,4,4, 4,4,2,2,2, MFX_CODINGOPTION_UNKNOWN }, // tu 1
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF, 1, 1,    6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN }, // tu 2  (==4)
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF, 1, 1,    6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN }, // tu 3  (==4)
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF, 1, 1,    6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN }, // tu 4
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF, 1, 1,    6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN }, // tu 5  (==4)
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF, 1, 1,    6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN }, // tu 6  (==4)
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  2, 4,2, 2,2,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_OFF, 2, 2,    4,4,2,2,2, 2,2,1,1,1, MFX_CODINGOPTION_UNKNOWN }  // tu 7
 };
 
 #define H265_MAXREFDIST 1
@@ -247,57 +247,70 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     if (!opts_hevc) {
         m_mfxHEVCOpts = hevc_tu_tab[m_mfxVideoParam.mfx.TargetUsage];
     } else { // complete unspecified params
-         mfxExtCodingOptionHEVC* opts_tu = &hevc_tu_tab[m_mfxVideoParam.mfx.TargetUsage];
+        mfxExtCodingOptionHEVC* opts_tu = &hevc_tu_tab[m_mfxVideoParam.mfx.TargetUsage];
 
-         if(!m_mfxHEVCOpts.Log2MaxCUSize)
-             m_mfxHEVCOpts.Log2MaxCUSize = opts_tu->Log2MaxCUSize;
+        if(!m_mfxHEVCOpts.Log2MaxCUSize)
+            m_mfxHEVCOpts.Log2MaxCUSize = opts_tu->Log2MaxCUSize;
 
-         if(!m_mfxHEVCOpts.MaxCUDepth) // opts_in->MaxCUDepth <= opts_out->Log2MaxCUSize - 1
-             m_mfxHEVCOpts.MaxCUDepth = IPP_MIN(opts_tu->MaxCUDepth, m_mfxHEVCOpts.Log2MaxCUSize - 1);
+        if(!m_mfxHEVCOpts.MaxCUDepth) // opts_in->MaxCUDepth <= opts_out->Log2MaxCUSize - 1
+            m_mfxHEVCOpts.MaxCUDepth = IPP_MIN(opts_tu->MaxCUDepth, m_mfxHEVCOpts.Log2MaxCUSize - 1);
 
-         if(!m_mfxHEVCOpts.QuadtreeTULog2MaxSize) // opts_in->QuadtreeTULog2MaxSize <= opts_out->Log2MaxCUSize
-             m_mfxHEVCOpts.QuadtreeTULog2MaxSize = IPP_MIN(opts_tu->QuadtreeTULog2MaxSize, m_mfxHEVCOpts.Log2MaxCUSize);
+        if(!m_mfxHEVCOpts.QuadtreeTULog2MaxSize) // opts_in->QuadtreeTULog2MaxSize <= opts_out->Log2MaxCUSize
+            m_mfxHEVCOpts.QuadtreeTULog2MaxSize = IPP_MIN(opts_tu->QuadtreeTULog2MaxSize, m_mfxHEVCOpts.Log2MaxCUSize);
 
-         if(!m_mfxHEVCOpts.QuadtreeTULog2MinSize) // opts_in->QuadtreeTULog2MinSize <= opts_out->QuadtreeTULog2MaxSize
-             m_mfxHEVCOpts.QuadtreeTULog2MinSize = IPP_MIN(opts_tu->QuadtreeTULog2MinSize, m_mfxHEVCOpts.QuadtreeTULog2MaxSize);
+        if(!m_mfxHEVCOpts.QuadtreeTULog2MinSize) // opts_in->QuadtreeTULog2MinSize <= opts_out->QuadtreeTULog2MaxSize
+            m_mfxHEVCOpts.QuadtreeTULog2MinSize = IPP_MIN(opts_tu->QuadtreeTULog2MinSize, m_mfxHEVCOpts.QuadtreeTULog2MaxSize);
 
-         if(!m_mfxHEVCOpts.QuadtreeTUMaxDepthIntra) // opts_in->QuadtreeTUMaxDepthIntra > opts_out->Log2MaxCUSize - 1
-             m_mfxHEVCOpts.QuadtreeTUMaxDepthIntra = IPP_MIN(opts_tu->QuadtreeTUMaxDepthIntra, m_mfxHEVCOpts.Log2MaxCUSize - 1);
+        if(!m_mfxHEVCOpts.QuadtreeTUMaxDepthIntra) // opts_in->QuadtreeTUMaxDepthIntra > opts_out->Log2MaxCUSize - 1
+            m_mfxHEVCOpts.QuadtreeTUMaxDepthIntra = IPP_MIN(opts_tu->QuadtreeTUMaxDepthIntra, m_mfxHEVCOpts.Log2MaxCUSize - 1);
 
-         if(!m_mfxHEVCOpts.QuadtreeTUMaxDepthInter) // opts_in->QuadtreeTUMaxDepthIntra > opts_out->Log2MaxCUSize - 1
-             m_mfxHEVCOpts.QuadtreeTUMaxDepthInter = IPP_MIN(opts_tu->QuadtreeTUMaxDepthInter, m_mfxHEVCOpts.Log2MaxCUSize - 1);
+        if(!m_mfxHEVCOpts.QuadtreeTUMaxDepthInter) // opts_in->QuadtreeTUMaxDepthIntra > opts_out->Log2MaxCUSize - 1
+            m_mfxHEVCOpts.QuadtreeTUMaxDepthInter = IPP_MIN(opts_tu->QuadtreeTUMaxDepthInter, m_mfxHEVCOpts.Log2MaxCUSize - 1);
 
-         // do nothing for params that have zero as legal value
-        if (m_mfxHEVCOpts.SignBitHiding && m_mfxHEVCOpts.RDOQuant) // doesn't work together now
-            m_mfxHEVCOpts.SignBitHiding = 0;
+        if (m_mfxHEVCOpts.AnalyzeChroma == MFX_CODINGOPTION_UNKNOWN)
+            m_mfxHEVCOpts.AnalyzeChroma = opts_tu->AnalyzeChroma;
 
-         // take from tu, but correct if contradixt with provided neighbours
-         int pos;
-         mfxU16 *candopt[10], candtu[10], *pleft[10], *plast;
-         candopt[0] = &m_mfxHEVCOpts.IntraNumCand1_2;  candtu[0] = opts_tu->IntraNumCand1_2;
-         candopt[1] = &m_mfxHEVCOpts.IntraNumCand1_3;  candtu[1] = opts_tu->IntraNumCand1_3;
-         candopt[2] = &m_mfxHEVCOpts.IntraNumCand1_4;  candtu[2] = opts_tu->IntraNumCand1_4;
-         candopt[3] = &m_mfxHEVCOpts.IntraNumCand1_5;  candtu[3] = opts_tu->IntraNumCand1_5;
-         candopt[4] = &m_mfxHEVCOpts.IntraNumCand1_6;  candtu[4] = opts_tu->IntraNumCand1_6;
-         candopt[5] = &m_mfxHEVCOpts.IntraNumCand2_2;  candtu[5] = opts_tu->IntraNumCand2_2;
-         candopt[6] = &m_mfxHEVCOpts.IntraNumCand2_3;  candtu[6] = opts_tu->IntraNumCand2_3;
-         candopt[7] = &m_mfxHEVCOpts.IntraNumCand2_4;  candtu[7] = opts_tu->IntraNumCand2_4;
-         candopt[8] = &m_mfxHEVCOpts.IntraNumCand2_5;  candtu[8] = opts_tu->IntraNumCand2_5;
-         candopt[9] = &m_mfxHEVCOpts.IntraNumCand2_6;  candtu[9] = opts_tu->IntraNumCand2_6;
+        // doesn't work together now
+        if (m_mfxHEVCOpts.RDOQuant == MFX_CODINGOPTION_ON)
+           m_mfxHEVCOpts.SignBitHiding = MFX_CODINGOPTION_OFF;
+        if (m_mfxHEVCOpts.SignBitHiding == MFX_CODINGOPTION_ON)
+           m_mfxHEVCOpts.SignBitHiding = MFX_CODINGOPTION_OFF;
+        if (m_mfxHEVCOpts.RDOQuant == MFX_CODINGOPTION_UNKNOWN)
+            m_mfxHEVCOpts.RDOQuant = opts_tu->RDOQuant;
+        if (m_mfxHEVCOpts.SignBitHiding == MFX_CODINGOPTION_UNKNOWN)
+            m_mfxHEVCOpts.SignBitHiding = opts_tu->SignBitHiding;
 
-         for(pos=0, plast=0; pos<10; pos++) {
-             if (*candopt[pos]) plast = candopt[pos];
-             pleft[pos] = plast;
-         }
-         for(pos=9, plast=0; pos>=0; pos--) {
-             if (*candopt[pos]) plast = candopt[pos];
-             else {
-                 mfxU16 val = candtu[pos];
-                 if(pleft[pos] && val>*pleft[pos]) val = *pleft[pos];
-                 if(plast      && val<*plast     ) val = *plast;
-                 *candopt[pos] = val;
-             }
-         }
+        if (m_mfxHEVCOpts.WPP == MFX_CODINGOPTION_UNKNOWN)
+            m_mfxHEVCOpts.WPP = opts_tu->WPP;
+
+
+        // take from tu, but correct if contradict with provided neighbours
+        int pos;
+        mfxU16 *candopt[10], candtu[10], *pleft[10], *plast;
+        candopt[0] = &m_mfxHEVCOpts.IntraNumCand1_2;  candtu[0] = opts_tu->IntraNumCand1_2;
+        candopt[1] = &m_mfxHEVCOpts.IntraNumCand1_3;  candtu[1] = opts_tu->IntraNumCand1_3;
+        candopt[2] = &m_mfxHEVCOpts.IntraNumCand1_4;  candtu[2] = opts_tu->IntraNumCand1_4;
+        candopt[3] = &m_mfxHEVCOpts.IntraNumCand1_5;  candtu[3] = opts_tu->IntraNumCand1_5;
+        candopt[4] = &m_mfxHEVCOpts.IntraNumCand1_6;  candtu[4] = opts_tu->IntraNumCand1_6;
+        candopt[5] = &m_mfxHEVCOpts.IntraNumCand2_2;  candtu[5] = opts_tu->IntraNumCand2_2;
+        candopt[6] = &m_mfxHEVCOpts.IntraNumCand2_3;  candtu[6] = opts_tu->IntraNumCand2_3;
+        candopt[7] = &m_mfxHEVCOpts.IntraNumCand2_4;  candtu[7] = opts_tu->IntraNumCand2_4;
+        candopt[8] = &m_mfxHEVCOpts.IntraNumCand2_5;  candtu[8] = opts_tu->IntraNumCand2_5;
+        candopt[9] = &m_mfxHEVCOpts.IntraNumCand2_6;  candtu[9] = opts_tu->IntraNumCand2_6;
+
+        for(pos=0, plast=0; pos<10; pos++) {
+            if (*candopt[pos]) plast = candopt[pos];
+            pleft[pos] = plast;
+        }
+        for(pos=9, plast=0; pos>=0; pos--) {
+            if (*candopt[pos]) plast = candopt[pos];
+            else {
+                mfxU16 val = candtu[pos];
+                if(pleft[pos] && val>*pleft[pos]) val = *pleft[pos];
+                if(plast      && val<*plast     ) val = *plast;
+                *candopt[pos] = val;
+            }
+        }
 
     }
 
@@ -772,19 +785,11 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
             } else opts_out->QuadtreeTUMaxDepthInter = opts_in->QuadtreeTUMaxDepthInter;
 
             CHECK_OPTION(opts_in->AnalyzeChroma, opts_out->AnalyzeChroma, isInvalid);  /* tri-state option */
+            CHECK_OPTION(opts_in->SignBitHiding, opts_out->SignBitHiding, isInvalid);  /* tri-state option */
+            CHECK_OPTION(opts_in->RDOQuant, opts_out->RDOQuant, isInvalid);            /* tri-state option */
 
-            if (opts_in->SignBitHiding > 1) {
-                opts_out->SignBitHiding = 0;
-                isInvalid ++;
-            } else opts_out->SignBitHiding = opts_in->SignBitHiding;
-
-            if (opts_in->RDOQuant > 1) {
-                opts_out->RDOQuant = 0;
-                isInvalid ++;
-            } else opts_out->RDOQuant = opts_in->RDOQuant;
-
-            if (opts_out->SignBitHiding && opts_out->RDOQuant) { // doesn't work together now
-                opts_out->SignBitHiding = 0;
+            if (opts_out->SignBitHiding == MFX_CODINGOPTION_ON && opts_out->RDOQuant == MFX_CODINGOPTION_ON) { // doesn't work together now
+                opts_out->SignBitHiding = MFX_CODINGOPTION_OFF;
                 isCorrected++;
             }
 
@@ -820,10 +825,7 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
 
 #undef CHECK_NUMCAND
 
-            if (opts_in->WPP > 1) {
-                opts_out->WPP = 0;
-                isInvalid ++;
-            } else opts_out->WPP = opts_in->WPP;
+            CHECK_OPTION(opts_in->WPP, opts_out->WPP, isInvalid);  /* tri-state option */
 
         } // EO mfxExtCodingOptionHEVC
 

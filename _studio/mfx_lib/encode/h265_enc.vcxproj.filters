@@ -25,9 +25,6 @@
     <ClCompile Include="h265\src\mfx_h265_enc.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="h265\src\mfx_h265_encode.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="h265\src\mfx_h265_frame.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -52,6 +49,9 @@
     <ClCompile Include="h265\src\mfx_h265_transform.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_encode.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="h265\include\mfx_h265_brc.h">
@@ -72,9 +72,6 @@
     <ClInclude Include="h265\include\mfx_h265_enc.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="h265\include\mfx_h265_encode.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="h265\include\mfx_h265_tables.h">
       <Filter>include</Filter>
     </ClInclude>
@@ -91,6 +88,9 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="h265\include\mfx_h265_bitstream.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="h265\include\mfx_h265_encode.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>

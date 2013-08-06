@@ -118,9 +118,9 @@ mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxE
     pars->SplitThresholdStrengthCU = (Ipp8u)opts_hevc->SplitThresholdStrengthCU;
     pars->SplitThresholdStrengthTU = (Ipp8u)opts_hevc->SplitThresholdStrengthTU;
 
-    pars->SBHFlag  = (Ipp8u)opts_hevc->SignBitHiding;
-    pars->RDOQFlag = (Ipp8u)opts_hevc->RDOQuant;
-    pars->WPPFlag  = (Ipp8u)opts_hevc->WPP;
+    pars->SBHFlag  = (opts_hevc->SignBitHiding == MFX_CODINGOPTION_ON);
+    pars->RDOQFlag = (opts_hevc->RDOQuant == MFX_CODINGOPTION_ON);
+    pars->WPPFlag  = (opts_hevc->WPP == MFX_CODINGOPTION_ON) || (opts_hevc->WPP == MFX_CODINGOPTION_UNKNOWN && param->mfx.NumThread > 1);
     if (pars->WPPFlag) {
         pars->num_threads = param->mfx.NumThread;
         if (pars->num_threads == 0)
