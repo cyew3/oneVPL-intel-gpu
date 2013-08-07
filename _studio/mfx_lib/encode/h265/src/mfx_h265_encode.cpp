@@ -229,6 +229,8 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     mfxVideoH265InternalParam *par = &inInt;
 
     memset(&m_mfxVideoParam,0,sizeof(mfxVideoParam));
+    memset(&m_mfxHEVCOpts,0,sizeof(mfxExtCodingOptionHEVC));
+
     m_mfxHEVCOpts.Header.BufferId = MFX_EXTBUFF_HEVCENC;
     m_mfxHEVCOpts.Header.BufferSz = sizeof(m_mfxHEVCOpts);
     if (opts_hevc) {
