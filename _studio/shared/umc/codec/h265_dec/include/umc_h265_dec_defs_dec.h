@@ -774,7 +774,6 @@ struct H265PTL
     void  setTierFlag(bool x)       { PTL_tier_flag = x; }
 
     int   getProfileIdc()   const   { return PTL_profile_idc; }
-    void  setProfileIdc(int x)      { PTL_profile_idc = x; }
 
     bool  getProfileCompatibilityFlag(int i) const    { return (PTL_profile_compatibility_flags & (1 << i)) != 0; }
 
@@ -1368,7 +1367,6 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
     static int getWinUnitY (int /*chromaFormatIdc*/) { /*assert (chromaFormatIdc > 0 && chromaFormatIdc <= MAX_CHROMA_FORMAT_IDC);*/ return 1/*m_cropUnitY[chromaFormatIdc]*/; }
 
     void setProfileSpace(unsigned val)          { profile_space = (Ipp8u)val; }
-    void setProfileIdc(unsigned val)            { profile_idc = (Ipp8u)val; }
     void setRsvdIndFlags(unsigned flags)        { reserved_indicator_flags = (Ipp16u)flags; }
     void setLevelIdc(unsigned val)              { level_idc = (Ipp8u)val; }
     void setProfileCompat(unsigned val)         { profile_compatibility = val; }
@@ -1483,18 +1481,6 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
     H265ProfileTierLevel* getPTL()     { return &m_pcPTL; }
 
     // vui part
-    bool getAspectRatioInfoPresentFlag() const { return aspect_ratio_info_present_flag; }
-    void setAspectRatioInfoPresentFlag(bool i) { aspect_ratio_info_present_flag = i; }
-
-    int getAspectRatioIdc() { return aspect_ratio_idc; }
-    void setAspectRatioIdc(int i) { aspect_ratio_idc = i; }
-
-    int getSarWidth() const { return sar_width; }
-    void setSarWidth(int i) { sar_width = i; }
-
-    int getSarHeight() const { return sar_height; }
-    void setSarHeight(int i) { sar_height = i; }
-
     bool getOverscanInfoPresentFlag() { return overscan_info_present_flag; }
     void setOverscanInfoPresentFlag(bool i) { overscan_info_present_flag = i; }
 

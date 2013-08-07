@@ -98,6 +98,7 @@ public:
     virtual void Release();
 
     virtual Ipp32s CheckNalUnitType(UMC::MediaData * pSource);
+    virtual Ipp32s MoveToStartCode(UMC::MediaData * pSource);
     virtual UMC::MediaDataEx * GetNalUnits(UMC::MediaData * in);
 
     virtual void Reset();

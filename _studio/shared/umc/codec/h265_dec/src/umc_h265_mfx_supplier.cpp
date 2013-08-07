@@ -480,6 +480,207 @@ UMC::Status MFX_Utility::FillVideoParam(TaskSupplier_H265 * supplier, mfxVideoPa
     return UMC::UMC_OK;
 }
 
+class HeadersAnalyzer
+{
+public:
+    HeadersAnalyzer(TaskSupplier_H265 * supplier);
+    virtual ~HeadersAnalyzer();
+
+    virtual UMC::Status DecodeHeader(UMC::MediaData* params, mfxBitstream *bs, mfxVideoParam *out);
+    virtual UMC::Status ProcessNalUnit(UMC::MediaData * data);
+    virtual bool IsEnough() const;
+
+protected:
+    bool m_isVPSFound;
+    bool m_isSPSFound;
+    bool m_isPPSFound;
+
+    bool m_isFrameLooked;
+
+    TaskSupplier_H265 * m_supplier;
+    H265Slice * m_lastSlice;
+};
+
+HeadersAnalyzer::HeadersAnalyzer(TaskSupplier_H265 * supplier)
+    : m_isVPSFound(false)
+    , m_isSPSFound(false)
+    , m_isPPSFound(false)
+    , m_supplier(supplier)
+    , m_lastSlice(0)
+{
+}
+
+HeadersAnalyzer::~HeadersAnalyzer()
+{
+    if (m_lastSlice)
+        m_lastSlice->DecrementReference();
+}
+
+bool HeadersAnalyzer::IsEnough() const
+{
+    return m_isVPSFound && m_isSPSFound && m_isPPSFound;
+}
+
+UMC::Status HeadersAnalyzer::DecodeHeader(UMC::MediaData * data, mfxBitstream *bs, mfxVideoParam *)
+{
+    if (!data)
+        return UMC::UMC_ERR_NULL_PTR;
+
+    m_lastSlice = 0;
+
+    UMC::Status umcRes = UMC::UMC_ERR_NOT_ENOUGH_DATA;
+    for ( ; data->GetDataSize() > 3; )
+    {
+        m_supplier->GetNalUnitSplitter()->MoveToStartCode(data); // move data pointer to start code
+        if (!m_isVPSFound) // move point to first start code
+        {
+            bs->DataOffset = (mfxU32)((mfxU8*)data->GetDataPointer() - (mfxU8*)data->GetBufferPointer());
+            bs->DataLength = (mfxU32)data->GetDataSize();
+        }
+
+        umcRes = ProcessNalUnit(data);
+
+        if (umcRes == UMC::UMC_ERR_UNSUPPORTED)
+            umcRes = UMC::UMC_OK;
+
+        if (umcRes != UMC::UMC_OK)
+            break;
+
+        if (IsEnough())
+            return UMC::UMC_OK;
+    }
+
+    if (umcRes == UMC::UMC_ERR_SYNC) // move pointer
+    {
+        bs->DataOffset = (mfxU32)((mfxU8*)data->GetDataPointer() - (mfxU8*)data->GetBufferPointer());
+        bs->DataLength = (mfxU32)data->GetDataSize();
+        return UMC::UMC_ERR_NOT_ENOUGH_DATA;
+    }
+
+    if (umcRes == UMC::UMC_ERR_NOT_ENOUGH_DATA)
+    {
+        bool isEOS = ((data->GetFlags() & UMC::MediaData::FLAG_VIDEO_DATA_END_OF_STREAM) != 0) ||
+            ((data->GetFlags() & UMC::MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME) == 0);
+        if (isEOS)
+        {
+            return UMC::UMC_OK;
+        }
+    }
+
+    if (IsEnough())
+        return UMC::UMC_OK;
+
+    return UMC::UMC_ERR_NOT_ENOUGH_DATA;
+}
+
+UMC::Status HeadersAnalyzer::ProcessNalUnit(UMC::MediaData * data)
+{
+    try
+    {
+        Ipp32s startCode = m_supplier->GetNalUnitSplitter()->CheckNalUnitType(data);
+
+        bool needProcess = false;
+
+        UMC::MediaDataEx *nalUnit = m_supplier->GetNalUnit(data);
+
+        switch (startCode)
+        {
+            case NAL_UNIT_CODED_SLICE_TRAIL_R:
+            case NAL_UNIT_CODED_SLICE_TRAIL_N:
+            case NAL_UNIT_CODED_SLICE_TLA:
+            case NAL_UNIT_CODED_SLICE_TSA_N:
+            case NAL_UNIT_CODED_SLICE_STSA_R:
+            case NAL_UNIT_CODED_SLICE_STSA_N:
+            case NAL_UNIT_CODED_SLICE_BLA:
+            case NAL_UNIT_CODED_SLICE_BLANT:
+            case NAL_UNIT_CODED_SLICE_BLA_N_LP:
+            case NAL_UNIT_CODED_SLICE_IDR:
+            case NAL_UNIT_CODED_SLICE_IDR_N_LP:
+            case NAL_UNIT_CODED_SLICE_CRA:
+            case NAL_UNIT_CODED_SLICE_DLP:
+            case NAL_UNIT_CODED_SLICE_TFD:
+            {
+                if (IsEnough())
+                {
+                    return UMC::UMC_OK;
+                }
+                else
+                    break; // skip nal unit
+            }
+            break;
+
+        case NAL_UNIT_VPS:
+        case NAL_UNIT_SPS:
+        case NAL_UNIT_PPS:
+            needProcess = true;
+            break;
+
+
+        case NAL_UNIT_ACCESS_UNIT_DELIMITER:
+            //if (header_was_started)
+                //quite = true;
+            break;
+
+        case NAL_UNIT_SEI:
+            needProcess = true;
+            break;
+
+        default:
+            break;
+        };
+
+        if (!nalUnit)
+        {
+            return UMC::UMC_ERR_NOT_ENOUGH_DATA;
+        }
+
+        if (needProcess)
+        {
+            try
+            {
+                UMC::Status umcRes = m_supplier->ProcessNalUnit(nalUnit);
+                if (umcRes < UMC::UMC_OK)
+                {
+                    return UMC::UMC_OK;
+                }
+            }
+            catch(h265_exception ex)
+            {
+                if (ex.GetStatus() != UMC::UMC_ERR_UNSUPPORTED)
+                {
+                    throw;
+                }
+            }
+
+            switch (startCode)
+            {
+            case NAL_UNIT_VPS:
+                m_isVPSFound = true;
+                break;
+
+            case NAL_UNIT_SPS:
+                m_isSPSFound = true;
+                break;
+
+            case NAL_UNIT_PPS:
+                m_isPPSFound = true;
+                break;
+
+            default:
+                break;
+            };
+
+            return UMC::UMC_OK;
+        }
+    }
+    catch(const h265_exception & ex)
+    {
+        return ex.GetStatus();
+    }
+
+    return UMC::UMC_OK;
+}
+
 UMC::Status MFX_Utility::DecodeHeader(TaskSupplier_H265 * supplier, UMC::BaseCodecParams* params, mfxBitstream *bs, mfxVideoParam *out)
 {
     UMC::VideoDecoderParams *lpInfo = DynamicCast<UMC::VideoDecoderParams> (params);
@@ -496,200 +697,16 @@ UMC::Status MFX_Utility::DecodeHeader(TaskSupplier_H265 * supplier, UMC::BaseCod
     if (umcRes != UMC::UMC_OK)
         return UMC::UMC_ERR_FAILED;
 
-    bool header_was_started = false;
-    bool isMVC = GetExtendedBuffer(out->ExtParam, out->NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC) != 0;
-
-    struct HeadersFoundFlag
-    {
-        bool isVPS;
-        bool isSPS;
-        bool isPPS;
-
-        HeadersFoundFlag()
-            : isVPS(false)
-            , isSPS(false)
-            , isPPS(false)
-        {
-        }
-
-        bool IsAll()
-        {
-            return isVPS && isSPS && isPPS;
-        }
-    };
-
-    HeadersFoundFlag flags;
-
-    H265Slice * lastSlice = 0;
-
-    notifier2<Heap_Objects, void*, bool> memory_leak_preventing_slice(supplier->GetObjHeap(), &Heap_Objects::FreeObject, lastSlice, false);
-
-    umcRes = UMC::UMC_ERR_NOT_ENOUGH_DATA;
-    for ( ; lpInfo->m_pData->GetDataSize() > 4; )
-    {
-        try
-        {
-            if (flags.IsAll())
-                break;
-
-            bool quite = false;
-
-            Ipp32s startCode = supplier->CheckNalUnitType(lpInfo->m_pData);
-
-            if (!header_was_started) // move point to first start code
-            {
-                bs->DataOffset = (mfxU32)((mfxU8*)lpInfo->m_pData->GetDataPointer() - (mfxU8*)lpInfo->m_pData->GetBufferPointer());
-                bs->DataLength = (mfxU32)lpInfo->m_pData->GetDataSize();
-            }
-
-            bool needProcess = false;
-
-            switch ((NalUnitType)startCode)
-            {
-            case NAL_UNIT_CODED_SLICE_TRAIL_R:
-            case NAL_UNIT_CODED_SLICE_TRAIL_N:
-            case NAL_UNIT_CODED_SLICE_TLA:
-            case NAL_UNIT_CODED_SLICE_TSA_N:
-            case NAL_UNIT_CODED_SLICE_STSA_R:
-            case NAL_UNIT_CODED_SLICE_STSA_N:
-            case NAL_UNIT_CODED_SLICE_BLA:
-            case NAL_UNIT_CODED_SLICE_BLANT:
-            case NAL_UNIT_CODED_SLICE_BLA_N_LP:
-            case NAL_UNIT_CODED_SLICE_IDR:
-            case NAL_UNIT_CODED_SLICE_IDR_N_LP:
-            case NAL_UNIT_CODED_SLICE_CRA:
-            case NAL_UNIT_CODED_SLICE_DLP:
-            case NAL_UNIT_CODED_SLICE_TFD:
-                {
-                    if (header_was_started)
-                    {
-                        if (!isMVC)
-                        {
-                            quite = true;
-                            break;
-                        }
-                    }
-                    else
-                        break; // skip nal unit
-
-                    UMC::MediaDataEx *nalUnit = supplier->GetNalUnit(lpInfo->m_pData);
-                    if (!nalUnit)
-                    {
-                        supplier->Close();
-                        return UMC::UMC_ERR_NOT_ENOUGH_DATA;
-                    }
-
-                    H265Slice * pSlice = supplier->DecodeSliceHeader(nalUnit);
-                    if (pSlice)
-                    {
-                        if (!lastSlice)
-                        {
-                            lastSlice = pSlice;
-                            memory_leak_preventing_slice.SetParam1(lastSlice);
-                            lastSlice->Release();
-                            continue;
-                        }
-
-                        if ((false == IsPictureTheSame(pSlice, lastSlice)))
-                        {
-                            pSlice->Release();
-                            supplier->GetObjHeap()->FreeObject(pSlice);
-                            quite = true;
-                            break;
-                        }
-
-                        pSlice->Release();
-                        supplier->GetObjHeap()->FreeObject(lastSlice);
-
-                        lastSlice = pSlice;
-                        memory_leak_preventing_slice.SetParam1(lastSlice);
-                        continue;
-                    }
-                }
-                break;
-
-            case NAL_UNIT_VPS:
-                flags.isVPS = true;
-                header_was_started = true;
-                needProcess = true;
-                break;
-
-            case NAL_UNIT_SPS:
-                flags.isSPS = true;
-                header_was_started = true;
-                needProcess = true;
-                break;
-
-            case NAL_UNIT_PPS:
-                flags.isPPS = true;
-                header_was_started = flags.isSPS;
-                needProcess = true;
-                break;
-
-            //case UMC::NAL_UT_SUBSET_SPS:
-            //    flags.isSPS_MVC = true;
-            //    header_was_started = flags.isSPS;
-            //    needProcess = true;
-            //    break;
-
-            case NAL_UNIT_ACCESS_UNIT_DELIMITER:
-                if (header_was_started)
-                    quite = true;
-                break;
-
-            };
-            if (quite)
-                break;
-
-            UMC::MediaDataEx *nalUnit = supplier->GetNalUnit(lpInfo->m_pData);
-            if (!nalUnit)
-            {
-                supplier->Close();
-                return UMC::UMC_ERR_NOT_ENOUGH_DATA;
-            }
-
-            if (NAL_UNIT_SEI == startCode)
-                needProcess = true;
-
-            if (needProcess)
-                umcRes = supplier->ProcessNalUnit(nalUnit);
-        }
-        catch(const h265_exception & ex)
-        {
-            umcRes = ex.GetStatus();
-        }
-
-        if (umcRes == UMC::UMC_ERR_SYNC) // move pointer
-        {
-            bs->DataOffset = (mfxU32)((mfxU8*)lpInfo->m_pData->GetDataPointer() - (mfxU8*)lpInfo->m_pData->GetBufferPointer());
-            bs->DataLength = (mfxU32)lpInfo->m_pData->GetDataSize();
-            supplier->Close();
-            return UMC::UMC_ERR_NOT_ENOUGH_DATA;
-        }
-
-        if (umcRes == UMC::UMC_OK || umcRes == UMC::UMC_WRN_REPOSITION_INPROGRESS || umcRes == UMC::UMC_NTF_NEW_RESOLUTION)
-        {
-            umcRes = UMC::UMC_OK;
-        }
-
-        if (umcRes != UMC::UMC_OK) // move pointer
-        {
-            umcRes = UMC::UMC_OK;
-        }
-    }
+    HeadersAnalyzer headersDecoder(supplier);
+    umcRes = headersDecoder.DecodeHeader(lpInfo->m_pData, bs, out);
 
     if (umcRes != UMC::UMC_OK)
-    {
         return umcRes;
-    }
 
     umcRes = supplier->GetInfo(lpInfo);
     if (umcRes == UMC::UMC_OK)
     {
         FillVideoParam(supplier, out, false);
-    }
-    else
-    {
     }
 
     return umcRes;
@@ -714,19 +731,15 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
         if (in->mfx.CodecId == MFX_CODEC_HEVC)
             out->mfx.CodecId = in->mfx.CodecId;
 
-        if ((MFX_PROFILE_UNKNOWN == in->mfx.CodecProfile) ||
-            (MFX_PROFILE_AVC_BASELINE == in->mfx.CodecProfile) ||
-            (MFX_PROFILE_AVC_MAIN == in->mfx.CodecProfile) ||
-            (MFX_PROFILE_AVC_HIGH == in->mfx.CodecProfile) ||
-            (MFX_PROFILE_AVC_MULTIVIEW_HIGH == in->mfx.CodecProfile) ||
-            (MFX_PROFILE_AVC_STEREO_HIGH == in->mfx.CodecProfile))
+        if (MFX_PROFILE_UNKNOWN == in->mfx.CodecProfile ||
+            MFX_PROFILE_HEVC_MAIN == in->mfx.CodecProfile)
             out->mfx.CodecProfile = in->mfx.CodecProfile;
         else
         {
             sts = MFX_ERR_UNSUPPORTED;
         }
 
-        switch (in->mfx.CodecLevel)
+        /*switch (in->mfx.CodecLevel)
         {
         case MFX_LEVEL_UNKNOWN:
         case MFX_LEVEL_AVC_1:
@@ -750,7 +763,7 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
         default:
             sts = MFX_ERR_UNSUPPORTED;
             break;
-        }
+        }*/
 
         if (in->mfx.NumThread < 128)
         {
@@ -769,12 +782,30 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
             sts = MFX_ERR_UNSUPPORTED;
         }
 
+        if (in->mfx.TimeStampCalc)
+        {
+            if (in->mfx.TimeStampCalc == 1)
+                in->mfx.TimeStampCalc = out->mfx.TimeStampCalc;
+            else
+                sts = MFX_ERR_UNSUPPORTED;
+        }
+
+        if (in->mfx.ExtendedPicStruct)
+        {
+            if (in->mfx.ExtendedPicStruct == 1)
+                in->mfx.ExtendedPicStruct = out->mfx.ExtendedPicStruct;
+            else
+                sts = MFX_ERR_UNSUPPORTED;
+        }
+
         if ((in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) ||
             (in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
         {
             Ipp32u mask = in->IOPattern & 0xf0;
-            if (mask != MFX_IOPATTERN_OUT_VIDEO_MEMORY || mask != MFX_IOPATTERN_OUT_SYSTEM_MEMORY || mask != MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+            if (mask == MFX_IOPATTERN_OUT_VIDEO_MEMORY || mask == MFX_IOPATTERN_OUT_SYSTEM_MEMORY || mask == MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
                 out->IOPattern = in->IOPattern;
+            else
+                sts = MFX_ERR_UNSUPPORTED;
         }
 
         if (in->mfx.FrameInfo.FourCC)
@@ -786,22 +817,26 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
                 sts = MFX_ERR_UNSUPPORTED;
         }
 
-        if (in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV420 || (!in->mfx.FrameInfo.FourCC && !in->mfx.FrameInfo.ChromaFormat))
+        if (in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV420 || in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV400)
             out->mfx.FrameInfo.ChromaFormat = in->mfx.FrameInfo.ChromaFormat;
         else
             sts = MFX_ERR_UNSUPPORTED;
 
-        // FIXME: Add check that width is multiple of minimal CU size
-        if (/* in->mfx.FrameInfo.Width % 16 == 0 && */ in->mfx.FrameInfo.Width <= 16384)
+        if (in->mfx.FrameInfo.Width % 16 == 0 && in->mfx.FrameInfo.Width <= 16384)
             out->mfx.FrameInfo.Width = in->mfx.FrameInfo.Width;
         else
+        {
+            out->mfx.FrameInfo.Width = 0;
             sts = MFX_ERR_UNSUPPORTED;
+        }
 
-        // FIXME: Add check that height is multiple of minimal CU size
-        if (/* in->mfx.FrameInfo.Height % 16 == 0 && */ in->mfx.FrameInfo.Height <= 16384)
+        if (in->mfx.FrameInfo.Height % 16 == 0 && in->mfx.FrameInfo.Height <= 16384)
             out->mfx.FrameInfo.Height = in->mfx.FrameInfo.Height;
         else
+        {
+            out->mfx.FrameInfo.Height = 0;
             sts = MFX_ERR_UNSUPPORTED;
+        }
 
         if ((in->mfx.FrameInfo.Width || in->mfx.FrameInfo.Height) && !(in->mfx.FrameInfo.Width && in->mfx.FrameInfo.Height))
         {
@@ -846,11 +881,6 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
         {
         case MFX_PICSTRUCT_UNKNOWN:
         case MFX_PICSTRUCT_PROGRESSIVE:
-        case MFX_PICSTRUCT_FIELD_TFF:
-        case MFX_PICSTRUCT_FIELD_BFF:
-        case MFX_PICSTRUCT_FIELD_REPEATED:
-        case MFX_PICSTRUCT_FRAME_DOUBLING:
-        case MFX_PICSTRUCT_FRAME_TRIPLING:
             out->mfx.FrameInfo.PicStruct = in->mfx.FrameInfo.PicStruct;
             break;
         default:
@@ -872,7 +902,13 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
                 out->Protected = 0;
             }
 
-            if (!IS_PROTECTION_PAVP_ANY(in->Protected))
+            if (!IS_PROTECTION_ANY(in->Protected))
+            {
+                sts = MFX_ERR_UNSUPPORTED;
+                out->Protected = 0;
+            }
+
+            if (in->Protected == MFX_PROTECTION_GPUCP_AES128_CTR && core->GetVAType() != MFX_HW_D3D11)
             {
                 sts = MFX_ERR_UNSUPPORTED;
                 out->Protected = 0;
@@ -887,64 +923,63 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
             mfxExtPAVPOption * pavpOptIn = (mfxExtPAVPOption*)GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
             mfxExtPAVPOption * pavpOptOut = (mfxExtPAVPOption*)GetExtendedBuffer(out->ExtParam, out->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
 
-            if (!pavpOptIn)
-                sts = MFX_ERR_UNSUPPORTED;
-
-            if (pavpOptIn && pavpOptOut)
+            if (IS_PROTECTION_PAVP_ANY(in->Protected))
             {
-                pavpOptOut->Header.BufferId = pavpOptIn->Header.BufferId;
-                pavpOptOut->Header.BufferSz = pavpOptIn->Header.BufferSz;
-
-                switch(pavpOptIn->CounterType)
+                if (pavpOptIn && pavpOptOut)
                 {
-                case MFX_PAVP_CTR_TYPE_A:
-                    pavpOptOut->CounterType = pavpOptIn->CounterType;
-                    break;
-                case MFX_PAVP_CTR_TYPE_B:
-                    if (in->Protected == MFX_PROTECTION_PAVP)
+                    pavpOptOut->Header.BufferId = pavpOptIn->Header.BufferId;
+                    pavpOptOut->Header.BufferSz = pavpOptIn->Header.BufferSz;
+
+                    switch(pavpOptIn->CounterType)
                     {
+                    case MFX_PAVP_CTR_TYPE_A:
                         pavpOptOut->CounterType = pavpOptIn->CounterType;
                         break;
+                    case MFX_PAVP_CTR_TYPE_B:
+                        if (in->Protected == MFX_PROTECTION_PAVP)
+                        {
+                            pavpOptOut->CounterType = pavpOptIn->CounterType;
+                            break;
+                        }
+                        pavpOptOut->CounterType = 0;
+                        sts = MFX_ERR_UNSUPPORTED;
+                        break;
+                    case MFX_PAVP_CTR_TYPE_C:
+                        pavpOptOut->CounterType = pavpOptIn->CounterType;
+                        break;
+                    default:
+                        pavpOptOut->CounterType = 0;
+                        sts = MFX_ERR_UNSUPPORTED;
+                        break;
                     }
-                    pavpOptOut->CounterType = 0;
-                    sts = MFX_ERR_UNSUPPORTED;
-                    break;
-                case MFX_PAVP_CTR_TYPE_C:
-                    pavpOptOut->CounterType = pavpOptIn->CounterType;
-                    break;
-                default:
-                    pavpOptOut->CounterType = 0;
-                    sts = MFX_ERR_UNSUPPORTED;
-                    break;
-                }
 
-                if (pavpOptIn->EncryptionType == MFX_PAVP_AES128_CBC || pavpOptIn->EncryptionType == MFX_PAVP_AES128_CTR)
-                {
-                    pavpOptOut->EncryptionType = pavpOptIn->EncryptionType;
-                    if (pavpOptIn->EncryptionType == MFX_PAVP_AES128_CBC)
+                    if (pavpOptIn->EncryptionType == MFX_PAVP_AES128_CBC || pavpOptIn->EncryptionType == MFX_PAVP_AES128_CTR)
+                    {
+                        pavpOptOut->EncryptionType = pavpOptIn->EncryptionType;
+                    }
+                    else
                     {
                         pavpOptOut->EncryptionType = 0;
                         sts = MFX_ERR_UNSUPPORTED;
                     }
+
+                    pavpOptOut->CounterIncrement = 0;
+                    memset(&pavpOptOut->CipherCounter, 0, sizeof(mfxAES128CipherCounter));
+                    memset(pavpOptOut->reserved, 0, sizeof(pavpOptOut->reserved));
                 }
                 else
                 {
-                    pavpOptOut->EncryptionType = 0;
-                    sts = MFX_ERR_UNSUPPORTED;
+                    if (pavpOptOut || pavpOptIn)
+                    {
+                        sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+                    }
                 }
-
-                pavpOptOut->CounterIncrement = 0;
-                memset(&pavpOptOut->CipherCounter, 0, sizeof(mfxAES128CipherCounter));
-                memset(pavpOptOut->reserved, 0, sizeof(pavpOptOut->reserved));
             }
             else
             {
                 if (pavpOptOut || pavpOptIn)
                 {
-                    sts = MFX_ERR_UNDEFINED_BEHAVIOR;
-                    /*mfxExtBuffer header = pavpOptOut->Header;
-                    memset(pavpOptOut, 0, sizeof(mfxExtPAVPOption));
-                    pavpOptOut->Header = header;*/
+                    sts = MFX_ERR_UNSUPPORTED;
                 }
             }
         }
@@ -971,6 +1006,8 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
 
         out->mfx.DecodedOrder = 0;
 
+        out->mfx.SliceGroupsPresent = 1;
+        out->mfx.ExtendedPicStruct = 1;
         out->AsyncDepth = 1;
 
         // mfxFrameInfo
@@ -991,7 +1028,7 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
 
         out->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 
-        if (type == MFX_HW_SNB || type == MFX_HW_IVB || type == MFX_HW_HSW)
+        if (type >= MFX_HW_SNB)
         {
             out->Protected = MFX_PROTECTION_GPUCP_PAVP;
 
@@ -1001,27 +1038,12 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
                 mfxExtBuffer header = pavpOptOut->Header;
                 memset(pavpOptOut, 0, sizeof(mfxExtPAVPOption));
                 pavpOptOut->Header = header;
-                pavpOptOut->CounterType = (mfxU16)(type == MFX_HW_LAKE ? MFX_PAVP_CTR_TYPE_C : MFX_PAVP_CTR_TYPE_B);
+                pavpOptOut->CounterType = (mfxU16)((type == MFX_HW_IVB)||(type == MFX_HW_VLV) ? MFX_PAVP_CTR_TYPE_C : MFX_PAVP_CTR_TYPE_A);
                 pavpOptOut->EncryptionType = MFX_PAVP_AES128_CTR;
                 pavpOptOut->CounterIncrement = 0;
                 pavpOptOut->CipherCounter.Count = 0;
                 pavpOptOut->CipherCounter.IV = 0;
             }
-        }
-
-        mfxExtMVCTargetViews * targetViewsOut = (mfxExtMVCTargetViews *)GetExtendedBuffer(out->ExtParam, out->NumExtParam, MFX_EXTBUFF_MVC_TARGET_VIEWS);
-        if (targetViewsOut)
-        {
-        }
-
-        mfxExtMVCSeqDesc * mvcPointsOut = (mfxExtMVCSeqDesc *)GetExtendedBuffer(out->ExtParam, out->NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
-        if (mvcPointsOut)
-        {
-        }
-
-        mfxExtOpaqueSurfaceAlloc * opaqueOut = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(out->ExtParam, out->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-        if (opaqueOut)
-        {
         }
 
         out->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;

@@ -46,10 +46,10 @@ mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 /* codecId */)
     if (!info)
         return MFX_ERR_NULL_PTR;
 
-    if (info->Width > 0x7FFF || (info->Width % 16))
+    if (info->Width > 0x7FFF || (info->Width % 16) || !info->Width)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    if (info->Height > 0x7FFF || (info->Height % 16))
+    if (info->Height > 0x7FFF || (info->Height % 16) || !info->Height)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     switch (info->FourCC)

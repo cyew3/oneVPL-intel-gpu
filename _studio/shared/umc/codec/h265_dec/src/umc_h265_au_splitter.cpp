@@ -107,5 +107,11 @@ UMC::MediaDataEx * AU_Splitter_H265::GetNalUnit(UMC::MediaData * src)
     return m_pNALSplitter->GetNalUnits(src);
 }
 
+NALUnitSplitter_H265 * AU_Splitter_H265::GetNalUnitSplitter()
+{
+    return m_pNALSplitter.get();
+}
+
+
 } // namespace UMC_HEVC_DECODER
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

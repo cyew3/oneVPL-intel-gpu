@@ -58,6 +58,7 @@ public:
     Ipp32s CheckNalUnitType(UMC::MediaData * pSource);
 
     UMC::MediaDataEx * GetNalUnit(UMC::MediaData * src);
+    NALUnitSplitter_H265 * GetNalUnitSplitter();
 
 protected:
 

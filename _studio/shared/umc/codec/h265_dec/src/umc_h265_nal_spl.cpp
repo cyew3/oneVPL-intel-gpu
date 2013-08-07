@@ -429,6 +429,11 @@ Ipp32s NALUnitSplitter_H265::CheckNalUnitType(UMC::MediaData * pSource)
     return m_pStartCodeIter->CheckNalUnitType(pSource); // find first start code
 }
 
+Ipp32s NALUnitSplitter_H265::MoveToStartCode(UMC::MediaData * pSource)
+{
+    return m_pStartCodeIter->MoveToStartCode(pSource); // find first start code
+}
+
 UMC::MediaDataEx * NALUnitSplitter_H265::GetNalUnits(UMC::MediaData * pSource)
 {
     UMC::MediaDataEx * out = &m_MediaData;

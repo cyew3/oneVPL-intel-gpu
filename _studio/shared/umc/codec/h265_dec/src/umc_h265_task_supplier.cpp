@@ -1063,11 +1063,8 @@ UMC::Status TaskSupplier_H265::GetInfo(UMC::VideoDecoderParams *lpInfo)
     lpInfo->info.profile = sps->profile_idc;
     lpInfo->info.level = sps->level_idc;
 
-    if (sps->getAspectRatioIdc() == 255)
-    {
-        lpInfo->info.aspect_ratio_width  = sps->getSarWidth();
-        lpInfo->info.aspect_ratio_height = sps->getSarHeight();
-    }
+    lpInfo->info.aspect_ratio_width  = sps->sar_width;
+    lpInfo->info.aspect_ratio_height = sps->sar_height;
 
     Ipp32u multiplier = 1 << (6 + sps->getHrdParameters()->getBitRateScale());
     lpInfo->info.bitrate = (sps->getHrdParameters()->getBitRateValue(0, 0, 0) - 1) * multiplier;
@@ -2332,14 +2329,14 @@ UMC::Status TaskSupplier_H265::InitFreeFrame(H265DecoderFrame * pFrame, const H2
 
     pFrame->m_FrameType = SliceTypeToFrameType(pSlice->GetSliceHeader()->slice_type);
     pFrame->m_dFrameTime = pSlice->m_dTime;
-    pFrame->m_crop_left = SubWidthC[pSeqParam->chroma_format_idc] * pSeqParam->frame_cropping_rect_left_offset;
-    pFrame->m_crop_right = SubWidthC[pSeqParam->chroma_format_idc] * pSeqParam->frame_cropping_rect_right_offset;
-    pFrame->m_crop_top = SubHeightC[pSeqParam->chroma_format_idc] * pSeqParam->frame_cropping_rect_top_offset;
-    pFrame->m_crop_bottom = SubHeightC[pSeqParam->chroma_format_idc] * pSeqParam->frame_cropping_rect_bottom_offset;
+    pFrame->m_crop_left = SubWidthC[pSeqParam->chroma_format_idc] * (pSeqParam->frame_cropping_rect_left_offset + pSeqParam->def_disp_win_left_offset);
+    pFrame->m_crop_right = SubWidthC[pSeqParam->chroma_format_idc] * (pSeqParam->frame_cropping_rect_right_offset + pSeqParam->def_disp_win_right_offset);
+    pFrame->m_crop_top = SubHeightC[pSeqParam->chroma_format_idc] * (pSeqParam->frame_cropping_rect_top_offset + pSeqParam->def_disp_win_top_offset);
+    pFrame->m_crop_bottom = SubHeightC[pSeqParam->chroma_format_idc] * (pSeqParam->frame_cropping_rect_bottom_offset + pSeqParam->def_disp_win_bottom_offset);
     pFrame->m_crop_flag = pSeqParam->frame_cropping_flag;
 
-    pFrame->m_aspect_width  = pSeqParam->getSarWidth();
-    pFrame->m_aspect_height = pSeqParam->getSarHeight();
+    pFrame->m_aspect_width  = pSeqParam->sar_width;
+    pFrame->m_aspect_height = pSeqParam->sar_height;
 
     Ipp32s chroma_format_idc = pSeqParam->chroma_format_idc;
 

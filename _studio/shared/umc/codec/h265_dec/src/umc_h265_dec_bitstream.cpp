@@ -682,6 +682,11 @@ void H265HeadersBitstream::parseVUI(H265SeqParamSet *pcSPS)
             READ_CODE(16, uiCode, "sar_width");             pcSPS->sar_width = uiCode;
             READ_CODE(16, uiCode, "sar_height");            pcSPS->sar_height = uiCode;
         }
+        else
+        {
+            pcSPS->sar_width = SAspectRatio[pcSPS->aspect_ratio_idc][0];
+            pcSPS->sar_height = SAspectRatio[pcSPS->aspect_ratio_idc][1];
+        }
     }
 
     READ_FLAG(uiCode, "overscan_info_present_flag");                pcSPS->overscan_info_present_flag = (uiCode != 0);
@@ -712,7 +717,7 @@ void H265HeadersBitstream::parseVUI(H265SeqParamSet *pcSPS)
     }
 
     READ_FLAG(uiCode, "neutral_chroma_indication_flag");            pcSPS->neutral_chroma_indication_flag = (uiCode != 0);
-    READ_FLAG(uiCode, "field_seq_flag");                            pcSPS->field_seq_flag = (uiCode != 0);      VM_ASSERT(pcSPS->field_seq_flag == false); // not supported yet
+    READ_FLAG(uiCode, "field_seq_flag");                            pcSPS->field_seq_flag = (uiCode != 0);
     READ_FLAG(uiCode, "frame_field_info_present_flag");             pcSPS->frame_field_info_present_flag = (uiCode != 0);
 
     READ_FLAG(uiCode, "default_display_window_flag");
