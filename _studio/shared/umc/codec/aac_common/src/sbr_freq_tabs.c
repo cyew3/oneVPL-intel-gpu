@@ -596,7 +596,7 @@ Ipp32s sbrCalcPatchConstructTab(Ipp32s* fMasterBandTab,
                                 Ipp32s* patchStartSubbandTab,
                                 Ipp32s* numPatches)
 {
-  Ipp32s goalSb, sb, odd;
+  Ipp32s goalSb, sb = 0, odd = 0;
   Ipp32s i, k, j;
 #if !defined(ANDROID)
   Ipp32s SBR_TABLE_GOAL_SB[] = { 21, 23, 32, 43, 46, 64, 85, 93, 128, 171, 186, 256 };
