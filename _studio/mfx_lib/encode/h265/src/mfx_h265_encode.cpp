@@ -859,7 +859,7 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
     if (isCorrected)
         return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
 
-    return (IsHWLib())? MFX_WRN_PARTIAL_ACCELERATION : MFX_ERR_NONE;
+    return MFX_ERR_NONE;
 }
 
 mfxStatus MFXVideoENCODEH265::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request)
