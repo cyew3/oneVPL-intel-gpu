@@ -54,16 +54,21 @@ ParserCmd::~ParserCmd()
 void ParserCmd::Reset()
 {
     for(List<Key>::Iterator pKey = m_keys.ItrFront(); pKey != m_keys.ItrBackBound(); ++pKey)
-        pKey->Free();
+    {
+        if (pKey) pKey->Free();
+    }
 }
 
 bool ParserCmd::IsKeyExist(const vm_char *cName, const vm_char *cLongName)
 {
     for(List<Key>::Iterator pKey = m_keys.ItrFront(); pKey != m_keys.ItrBackBound(); ++pKey)
     {
-        if((pKey->m_sName.Size() && vm_string_strlen(cName) == pKey->m_sName.Size() && !vm_string_strncmp(pKey->m_sName, cName, pKey->m_sName.Size())) ||
-            (pKey->m_sLongName.Size() && vm_string_strlen(cLongName) == pKey->m_sLongName.Size() && !vm_string_strncmp(pKey->m_sLongName, cLongName, pKey->m_sLongName.Size())))
-                return true;
+        if (pKey)
+        {
+            if((pKey->m_sName.Size() && vm_string_strlen(cName) == pKey->m_sName.Size() && !vm_string_strncmp(pKey->m_sName, cName, pKey->m_sName.Size())) ||
+                (pKey->m_sLongName.Size() && vm_string_strlen(cLongName) == pKey->m_sLongName.Size() && !vm_string_strncmp(pKey->m_sLongName, cLongName, pKey->m_sLongName.Size())))
+                    return true;
+        }
     }
 
     return false;
@@ -82,59 +87,70 @@ void ParserCmd::PrintData()
     }
     for(List<Key>::Iterator pKey = m_keys.ItrFront(); pKey != m_keys.ItrBackBound(); ++pKey)
     {
-        if(pKey->m_sName.Size())
+        if (pKey)
         {
-            vm_string_printf(VM_STRING("-"));
-            vm_string_printf(pKey->m_sName);
-        }
-        for(Ipp32u i = 0; i < iSizeMax - pKey->m_sName.Size() + 1; i++)
-            vm_string_printf(VM_STRING(" "));
-
-        if(pKey->m_sLongName.Size())
-        {
-            vm_string_printf(VM_STRING("--"));
-            vm_string_printf(pKey->m_sLongName);
-        }
-        else
-            vm_string_printf(VM_STRING("  "));
-        for(Ipp32u i = 0; i < iLongSizeMax - pKey->m_sLongName.Size(); i++)
-            vm_string_printf(VM_STRING(" "));
-
-        vm_string_printf(VM_STRING(" [%d] ="), pKey->m_iArraySize);
-
-        if(pKey->m_bAllocated)
-        {
-            for(Ipp32u i = 0; i < pKey->m_iArraySize; i++)
+            if(pKey->m_sName.Size())
             {
-                switch(pKey->m_keyType)
-                {
-                case Boolean:
-                    if(pKey->m_bool[i] == true)
-                        vm_string_printf(VM_STRING(" true"));
-                    else
-                        vm_string_printf(VM_STRING(" false"));
-                    break;
-                case Integer:
-                    vm_string_printf(VM_STRING(" %d"), pKey->m_uint[i]);
-                    break;
-                case Real:
-                    vm_string_printf(VM_STRING(" %f"), pKey->m_double[i]);
-                    break;
-                case String:
-                    vm_string_printf(VM_STRING(" \""));
-                    vm_string_printf(pKey->m_string[i]);
-                    vm_string_printf(VM_STRING("\""));
-                    break;
-                default:
-                    break;
-                }
-                if(i != (pKey->m_iArraySize - 1))
-                    vm_string_printf(VM_STRING(","));
+                vm_string_printf(VM_STRING("-"));
+                vm_string_printf(pKey->m_sName);
             }
+            for(Ipp32u i = 0; i < iSizeMax - pKey->m_sName.Size() + 1; i++)
+                vm_string_printf(VM_STRING(" "));
+
+            if(pKey->m_sLongName.Size())
+            {
+                vm_string_printf(VM_STRING("--"));
+                vm_string_printf(pKey->m_sLongName);
+            }
+            else
+                vm_string_printf(VM_STRING("  "));
+            for(Ipp32u i = 0; i < iLongSizeMax - pKey->m_sLongName.Size(); i++)
+                vm_string_printf(VM_STRING(" "));
+
+            vm_string_printf(VM_STRING(" [%d] ="), pKey->m_iArraySize);
+
+            if(pKey->m_bAllocated)
+            {
+                for(Ipp32u i = 0; i < pKey->m_iArraySize; i++)
+                {
+                    switch(pKey->m_keyType)
+                    {
+                    case Boolean:
+                        if (pKey->m_bool)
+                        {
+                            if(pKey->m_bool[i] == true)
+                                vm_string_printf(VM_STRING(" true"));
+                            else
+                                vm_string_printf(VM_STRING(" false"));
+                        }
+                        break;
+                    case Integer:
+                        if (pKey->m_uint)
+                            vm_string_printf(VM_STRING(" %d"), pKey->m_uint[i]);
+                        break;
+                    case Real:
+                        if (pKey->m_double)
+                            vm_string_printf(VM_STRING(" %f"), pKey->m_double[i]);
+                        break;
+                    case String:
+                        if (pKey->m_string)
+                        {
+                            vm_string_printf(VM_STRING(" \""));
+                            vm_string_printf(pKey->m_string[i]);
+                            vm_string_printf(VM_STRING("\""));
+                        }
+                        break;
+                    default:
+                        break;
+                    }
+                    if(i != (pKey->m_iArraySize - 1))
+                        vm_string_printf(VM_STRING(","));
+                }
+            }
+            else
+                vm_string_printf(VM_STRING(" unallocated"));
+            vm_string_printf(VM_STRING("\n"));
         }
-        else
-            vm_string_printf(VM_STRING(" unallocated"));
-        vm_string_printf(VM_STRING("\n"));
     }
 }
 
@@ -184,69 +200,75 @@ void ParserCmd::PrintHelp()
         bNewGroup = true;
         for(pKey = m_keys.ItrFront(); pKey != m_keys.ItrBackBound(); ++pKey)
         {
-            if(pKey->m_sGroupName != *pGroup)
-                continue;
-
-            if(pKey->m_sGroupName.Size() && bNewGroup)
+            if (pKey)
             {
-                vm_string_printf(VM_STRING("\n%s:\n"), (vm_char*)pKey->m_sGroupName);
-                bNewGroup = false;
-            }
+                if(pKey->m_sGroupName != *pGroup)
+                    continue;
 
-            if(iMaxSizeShort)
-            {
-                if(pKey->m_sName.Size())
+                if(pKey->m_sGroupName.Size() && bNewGroup)
                 {
-                    vm_string_printf(VM_STRING("  -%s"), (vm_char*)pKey->m_sName);
-                    for(i = 0; i < iMaxSizeShort - pKey->m_sName.Size() - 3; i++)
-                        vm_string_printf(VM_STRING(" "));
+                    vm_string_printf(VM_STRING("\n%s:\n"), (vm_char*)pKey->m_sGroupName);
+                    bNewGroup = false;
+                }
+
+                if(iMaxSizeShort)
+                {
+                    if(pKey->m_sName.Size())
+                    {
+                        vm_string_printf(VM_STRING("  -%s"), (vm_char*)pKey->m_sName);
+                        for(i = 0; i < iMaxSizeShort - pKey->m_sName.Size() - 3; i++)
+                            vm_string_printf(VM_STRING(" "));
+                    }
+                    else
+                    {
+                        for(i = 0; i < iMaxSizeShort; i++)
+                            vm_string_printf(VM_STRING(" "));
+                    }
+                }
+
+                if(iMaxSizeLong)
+                {
+                    if(pKey->m_sLongName.Size())
+                    {
+                        vm_string_printf(VM_STRING("  --%s"), (vm_char*)pKey->m_sLongName);
+                        for(i = 0; i < iMaxSizeLong - pKey->m_sLongName.Size() - 4; i++)
+                            vm_string_printf(VM_STRING(" "));
+                    }
+                    else
+                    {
+                        for(i = 0; i < iMaxSizeLong; i++)
+                            vm_string_printf(VM_STRING(" "));
+                    }
+                }
+
+                sFDesc.Clear();
+                pDesc = pKey->m_sDescription;
+                i = 0;
+                if (pDesc)
+                {
+                    while(pDesc[i] != '\0')
+                    {
+                        if(pDesc[i] == '\n')
+                        {
+                            sFDesc.Append(pDesc, i+1);
+                            pDesc += i+1; i = 0;
+
+                            for(j = 0; j < iMaxSizeShort + iMaxSizeLong + 2; j++)
+                                sFDesc += VM_STRING(" ");
+                        }
+                        else
+                            i++;
+                    }
+                }
+                if(sFDesc.Size() && pDesc)
+                {
+                    sFDesc.Append(pDesc, i);
+                    sFDesc += VM_STRING("\n");
                 }
                 else
-                {
-                    for(i = 0; i < iMaxSizeShort; i++)
-                        vm_string_printf(VM_STRING(" "));
-                }
+                    sFDesc = pKey->m_sDescription;
+                vm_string_printf(VM_STRING("  %s\n"), (vm_char*)sFDesc);
             }
-
-            if(iMaxSizeLong)
-            {
-                if(pKey->m_sLongName.Size())
-                {
-                    vm_string_printf(VM_STRING("  --%s"), (vm_char*)pKey->m_sLongName);
-                    for(i = 0; i < iMaxSizeLong - pKey->m_sLongName.Size() - 4; i++)
-                        vm_string_printf(VM_STRING(" "));
-                }
-                else
-                {
-                    for(i = 0; i < iMaxSizeLong; i++)
-                        vm_string_printf(VM_STRING(" "));
-                }
-            }
-
-            sFDesc.Clear();
-            pDesc = pKey->m_sDescription;
-            i = 0;
-            while(pDesc[i] != '\0')
-            {
-                if(pDesc[i] == '\n')
-                {
-                    sFDesc.Append(pDesc, i+1);
-                    pDesc += i+1; i = 0;
-
-                    for(j = 0; j < iMaxSizeShort + iMaxSizeLong + 2; j++)
-                        sFDesc += VM_STRING(" ");
-                }
-                else
-                    i++;
-            }
-            if(sFDesc.Size())
-            {
-                sFDesc.Append(pDesc, i);
-                sFDesc += VM_STRING("\n");
-            }
-            else
-                sFDesc = pKey->m_sDescription;
-            vm_string_printf(VM_STRING("  %s\n"), (vm_char*)sFDesc);
         }
     }
 
@@ -363,24 +385,30 @@ Ipp32u ParserCmd::GetParam(const vm_char *cName, const vm_char *cLongName, bool 
     Ipp32u iMinArraySize;
     for(List<Key>::Iterator pKey = m_keys.ItrFront(); pKey != m_keys.ItrBackBound(); ++pKey)
     {
-        if((pKey->m_keyType != Boolean && pKey->m_keyType != Integer) || pKey->m_sName.Size() != vm_string_strlen(cName) || pKey->m_sLongName.Size() != vm_string_strlen(cLongName))
-            continue;
-        if(pKey->m_bAllocated && (!vm_string_strncmp(pKey->m_sName, cName, pKey->m_sName.Size()) && !vm_string_strncmp(pKey->m_sLongName, cLongName, pKey->m_sLongName.Size())))
+        if (pKey)
         {
-            if(!bValue)
-                return pKey->m_iArraySize;
-            iMinArraySize = IPP_MIN(pKey->m_iArraySize, iArraySize);
-            if(pKey->m_keyType == Boolean)
+            if((pKey->m_keyType != Boolean && pKey->m_keyType != Integer) || pKey->m_sName.Size() != vm_string_strlen(cName) || pKey->m_sLongName.Size() != vm_string_strlen(cLongName))
+                continue;
+            if(pKey->m_bAllocated && (!vm_string_strncmp(pKey->m_sName, cName, pKey->m_sName.Size()) && !vm_string_strncmp(pKey->m_sLongName, cLongName, pKey->m_sLongName.Size())))
             {
-                for(Ipp32u i = 0; i < iMinArraySize; i++)
-                    bValue[i] = pKey->m_bool[i];
+                if(!bValue)
+                    return pKey->m_iArraySize;
+                iMinArraySize = IPP_MIN(pKey->m_iArraySize, iArraySize);
+                if(pKey->m_keyType == Boolean)
+                {
+                    if (pKey->m_bool)
+                    {
+                        for(Ipp32u i = 0; i < iMinArraySize; i++)
+                            bValue[i] = pKey->m_bool[i];
+                    }
+                }
+                else if (pKey->m_uint)
+                {
+                    for(Ipp32u i = 0; i < iMinArraySize; i++)
+                        bValue[i] = (pKey->m_uint[i])?true:false;
+                }
+                return iMinArraySize;
             }
-            else
-            {
-                for(Ipp32u i = 0; i < iMinArraySize; i++)
-                    bValue[i] = (pKey->m_uint[i])?true:false;
-            }
-            return iMinArraySize;
         }
     }
 
@@ -432,16 +460,22 @@ Ipp32u ParserCmd::GetParam(const vm_char *cName, const vm_char *cLongName, DStri
     Ipp32u iMinArraySize;
     for(List<Key>::Iterator pKey = m_keys.ItrFront(); pKey != m_keys.ItrBackBound(); ++pKey)
     {
-        if(pKey->m_keyType != String || pKey->m_sName.Size() != vm_string_strlen(cName) || pKey->m_sLongName.Size() != vm_string_strlen(cLongName))
-            continue;
-        if(pKey->m_bAllocated && (!vm_string_strncmp(pKey->m_sName, cName, pKey->m_sName.Size()) && !vm_string_strncmp(pKey->m_sLongName, cLongName, pKey->m_sLongName.Size())))
+        if (pKey)
         {
-            if(!sValue)
-                return pKey->m_iArraySize;
-            iMinArraySize = IPP_MIN(pKey->m_iArraySize, iArraySize);
-            for(Ipp32u i = 0; i < iMinArraySize; i++)
-                sValue[i] = pKey->m_string[i];
-            return iMinArraySize;
+            if(pKey->m_keyType != String || pKey->m_sName.Size() != vm_string_strlen(cName) || pKey->m_sLongName.Size() != vm_string_strlen(cLongName))
+                continue;
+            if(pKey->m_bAllocated && (!vm_string_strncmp(pKey->m_sName, cName, pKey->m_sName.Size()) && !vm_string_strncmp(pKey->m_sLongName, cLongName, pKey->m_sLongName.Size())))
+            {
+                if(!sValue)
+                    return pKey->m_iArraySize;
+                iMinArraySize = IPP_MIN(pKey->m_iArraySize, iArraySize);
+                if (pKey->m_string)
+                {
+                    for(Ipp32u i = 0; i < iMinArraySize; i++)
+                        sValue[i] = pKey->m_string[i];
+                }
+                return iMinArraySize;
+            }
         }
     }
 
@@ -452,10 +486,13 @@ Ipp32u ParserCmd::GetParamSize(const vm_char *cName, const vm_char *cLongName)
 {
     for(List<Key>::Iterator pKey = m_keys.ItrFront(); pKey != m_keys.ItrBackBound(); ++pKey)
     {
-        if(pKey->m_sName.Size() != vm_string_strlen(cName) || pKey->m_sLongName.Size() != vm_string_strlen(cLongName))
-            continue;
-        if(pKey->m_bAllocated && (!vm_string_strncmp(pKey->m_sName, cName, pKey->m_sName.Size()) && !vm_string_strncmp(pKey->m_sLongName, cLongName, pKey->m_sLongName.Size())))
-            return pKey->m_iArraySize;
+        if (pKey)
+        {
+            if(pKey->m_sName.Size() != vm_string_strlen(cName) || pKey->m_sLongName.Size() != vm_string_strlen(cLongName))
+                continue;
+            if(pKey->m_bAllocated && (!vm_string_strncmp(pKey->m_sName, cName, pKey->m_sName.Size()) && !vm_string_strncmp(pKey->m_sLongName, cLongName, pKey->m_sLongName.Size())))
+                return pKey->m_iArraySize;
+        }
     }
 
     return 0;
@@ -472,12 +509,15 @@ ParserCmd::Key* ParserCmd::FindNextKey(const vm_char *cName, bool bLong, bool bE
     {
         for(List<Key>::Iterator pKey = m_keys.ItrFront(); pKey != m_keys.ItrBackBound(); ++pKey)
         {
-            if(pKey->m_bAllocated)
-                continue;
-            if(pKey->m_bAllowEmpty)
+            if (pKey)
             {
-                retKey = pKey;
-                break;
+                if(pKey->m_bAllocated)
+                    continue;
+                if(pKey->m_bAllowEmpty)
+                {
+                    retKey = pKey;
+                    break;
+                }
             }
         }
     }
@@ -485,16 +525,19 @@ ParserCmd::Key* ParserCmd::FindNextKey(const vm_char *cName, bool bLong, bool bE
     {
         for(List<Key>::Iterator pKey = m_keys.ItrFront(); pKey != m_keys.ItrBackBound(); ++pKey)
         {
-            if(pKey->m_bAllocated)
-                continue;
-            cKeyName  = ((bLong)?pKey->m_sLongName:pKey->m_sName);
-            iNameSize = (Ipp32u)vm_string_strlen(cKeyName);
-            if(!vm_string_strncmp(cKeyName, cName, iNameSize) && iNameSize)
+            if (pKey)
             {
-                if(iMaxSize <= iNameSize)
+                if(pKey->m_bAllocated)
+                    continue;
+                cKeyName  = ((bLong)?pKey->m_sLongName:pKey->m_sName);
+                iNameSize = (Ipp32u)vm_string_strlen(cKeyName);
+                if(!vm_string_strncmp(cKeyName, cName, iNameSize) && iNameSize)
                 {
-                    iMaxSize = iNameSize;
-                    retKey = pKey;
+                    if(iMaxSize <= iNameSize)
+                    {
+                        iMaxSize = iNameSize;
+                        retKey = pKey;
+                    }
                 }
             }
         }

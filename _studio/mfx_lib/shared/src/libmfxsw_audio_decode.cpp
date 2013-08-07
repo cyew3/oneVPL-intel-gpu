@@ -199,7 +199,7 @@ mfxStatus MFXAudioDECODE_DecodeHeader(mfxSession session, mfxBitstream *bs, mfxA
 
 mfxStatus MFXAudioDECODE_Init(mfxSession session, mfxAudioParam *par)
 {
-    mfxStatus mfxRes;
+    mfxStatus mfxRes = MFX_ERR_NONE;
     MFX_CHECK(par, MFX_ERR_NULL_PTR);
 
     MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
@@ -207,20 +207,23 @@ mfxStatus MFXAudioDECODE_Init(mfxSession session, mfxAudioParam *par)
 
     try
     {
-        // check existence of component
-        if (!session->m_pAudioDECODE.get())
+        if (!session)
         {
-            // create a new instance
-            session->m_pAudioDECODE.reset(CreateAudioDECODESpecificClass(par->mfx.CodecId, session->m_pAudioCORE.get(), session));
-        }
-        
-        if (session->m_pAudioDECODE.get())
-        {
-            mfxRes = session->m_pAudioDECODE->Init(par);
+            throw;
         }
         else
         {
-            throw;  // throw empty error, it will be recognized in catch
+            // check existence of component
+            if (!session->m_pAudioDECODE.get())
+            {
+                // create a new instance
+                session->m_pAudioDECODE.reset(CreateAudioDECODESpecificClass(par->mfx.CodecId, session->m_pAudioCORE.get(), session));
+            }
+        
+            if (session->m_pAudioDECODE.get())
+            {
+                mfxRes = session->m_pAudioDECODE->Init(par);
+            }
         }
 
     }
@@ -256,7 +259,10 @@ mfxStatus MFXAudioDECODE_Close(mfxSession session)
 
     try
     {
-        if (!session->m_pAudioDECODE.get())
+        if (!session)
+        {
+            throw;
+        } else if (!session->m_pAudioDECODE.get())
         {
             return MFX_ERR_NOT_INITIALIZED;
         }
@@ -345,7 +351,7 @@ mfxStatus MFXAudioDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs ,
         }
 
         // return pointer to synchronization point
-        if (MFX_ERR_NONE == mfxRes)
+        if (MFX_ERR_NONE == mfxRes && syncp)
         {
             *syncp = syncPoint;
         }

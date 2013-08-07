@@ -148,7 +148,7 @@ mfxStatus MFXAudioENCODE_Init(mfxSession session, mfxAudioParam *par)
             session->m_pAudioENCODE.reset(CreateAudioENCODESpecificClass(par->mfx.CodecId, session->m_pAudioCORE.get(), session));
         }
 
-        if (0 == session->m_pAudioENCODE.get()) {
+        if (!session || 0 == session->m_pAudioENCODE.get()) {
             return MFX_ERR_INVALID_AUDIO_PARAM;
         }
         else
@@ -189,7 +189,10 @@ mfxStatus MFXAudioENCODE_Close(mfxSession session)
 
     try
     {
-        if (!session->m_pAudioENCODE.get())
+        if (!session)
+        {
+            throw;
+        } else if (!session->m_pAudioENCODE.get())
         {
             return MFX_ERR_NOT_INITIALIZED;
         }
@@ -278,7 +281,7 @@ mfxStatus MFXAudioENCODE_EncodeFrameAsync(mfxSession session, mfxBitstream *bs, 
         }
 
         // return pointer to synchronization point
-        if (MFX_ERR_NONE == mfxRes)
+        if (MFX_ERR_NONE == mfxRes && syncp)
         {
             *syncp = syncPoint;
         }

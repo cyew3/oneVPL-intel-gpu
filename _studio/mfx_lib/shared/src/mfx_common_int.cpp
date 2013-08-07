@@ -661,28 +661,31 @@ void mfxVideoParamWrapper::CopyVideoParam(const mfxVideoParam & par)
 
                 mfxU8 * ptr = m_mvcSequenceBuffer;
 
-                points->NumView = points->NumViewAlloc = mvcPoints->NumView;
-                points->View = (mfxMVCViewDependency * )ptr;
-                memcpy(points->View, mvcPoints->View, mvcPoints->NumView * sizeof(mfxMVCViewDependency));
-                ptr += mvcPoints->NumView * sizeof(mfxMVCViewDependency);
-
-                points->NumView = points->NumViewAlloc = mvcPoints->NumView;
-                points->ViewId = (mfxU16 *)ptr;
-                memcpy(points->ViewId, mvcPoints->ViewId, mvcPoints->NumViewId * sizeof(mfxU16));
-                ptr += mvcPoints->NumViewId * sizeof(mfxU16);
-
-                points->NumOP = points->NumOPAlloc = mvcPoints->NumOP;
-                points->OP = (mfxMVCOperationPoint *)ptr;
-                memcpy(points->OP, mvcPoints->OP, mvcPoints->NumOP * sizeof(mfxMVCOperationPoint));
-
-                mfxU16 * targetView = points->ViewId;
-                for (mfxU32 i = 0; i < points->NumOP; i++)
+                if (points)
                 {
-                    points->OP[i].TargetViewId = targetView;
-                    targetView += points->OP[i].NumTargetViews;
-                }
+                    points->NumView = points->NumViewAlloc = mvcPoints->NumView;
+                    points->View = (mfxMVCViewDependency * )ptr;
+                    memcpy(points->View, mvcPoints->View, mvcPoints->NumView * sizeof(mfxMVCViewDependency));
+                    ptr += mvcPoints->NumView * sizeof(mfxMVCViewDependency);
 
-                //points->CompatibilityMode = mvcPoints->CompatibilityMode;
+                    points->NumView = points->NumViewAlloc = mvcPoints->NumView;
+                    points->ViewId = (mfxU16 *)ptr;
+                    memcpy(points->ViewId, mvcPoints->ViewId, mvcPoints->NumViewId * sizeof(mfxU16));
+                    ptr += mvcPoints->NumViewId * sizeof(mfxU16);
+
+                    points->NumOP = points->NumOPAlloc = mvcPoints->NumOP;
+                    points->OP = (mfxMVCOperationPoint *)ptr;
+                    memcpy(points->OP, mvcPoints->OP, mvcPoints->NumOP * sizeof(mfxMVCOperationPoint));
+
+                    mfxU16 * targetView = points->ViewId;
+                    for (mfxU32 i = 0; i < points->NumOP; i++)
+                    {
+                        points->OP[i].TargetViewId = targetView;
+                        targetView += points->OP[i].NumTargetViews;
+                    }
+
+                    //points->CompatibilityMode = mvcPoints->CompatibilityMode;
+                }
             }
             break;
 

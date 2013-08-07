@@ -661,7 +661,7 @@ sbrencSBRGrid2FrameInfo (sSBRGrid* pGridState, sSBRFrameInfoState* pFIState)
 
     out->bordersEnv[nEnv] = border;
 
-    for (k = 0, i = nEnv - 1; (k < nEnv - 1) && (i < MAX_NUM_ENV+1); k++, i--) {
+    for (k = 0, i = nEnv - 1; (k < nEnv - 1) && (i < MAX_NUM_ENV+1) && k < MAX_NUM_REL; k++, i--) {
       border -= in->bs_rel_bord[k];
 
       out->bordersEnv[i] = border;

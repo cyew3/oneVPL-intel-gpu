@@ -95,7 +95,7 @@ static Ipp32s sbrCalcMasterFreq1(Ipp32s k0, Ipp32s k2, Ipp32s bs_alter_scale, Ip
   Ipp32s k;
   Ipp32s incr = 0;
 
-  for (k = 0; k < 64; k++) {
+  for (k = 0; k < MAX_SIZE_FREQ_TABS; k++) {
     fMasterBandTab[k] = 0;
   }
 
@@ -126,14 +126,14 @@ static Ipp32s sbrCalcMasterFreq1(Ipp32s k0, Ipp32s k2, Ipp32s bs_alter_scale, Ip
     k = numBands - 1;
   }
 
-  while (k2Diff != 0 && k < 100 && k >= 0) {
+  while (k2Diff != 0 && k < 100) {
     vDk[k] -= incr;
     k += incr;
     k2Diff += incr;
   }
 
   fMasterBandTab[0] = k0;
-  for (k = 1; k <= numBands && k < 100; k++)
+  for (k = 1; k <= numBands && k < MAX_SIZE_FREQ_TABS; k++)
     fMasterBandTab[k] = fMasterBandTab[k - 1] + vDk[k - 1];
 
   *nMasterBand = numBands;
@@ -243,14 +243,14 @@ static Ipp32s sbrCalcMasterFreq2(Ipp32s k0, Ipp32s k2, Ipp32s bs_freq_scale,
       vk1[k] = vk1[k - 1] + vDk1[k - 1];
 
     *nMasterBand = numBands0 + numBands1;
-    for (k = 0; k <= numBands0; k++)
+    for (k = 0; k <= numBands0 && k < 64; k++)
       fMasterBandTab[k] = vk0[k];
 
-    for (k = numBands0 + 1; k <= (*nMasterBand); k++)
+    for (k = numBands0 + 1; k <= (*nMasterBand) && k < 64; k++)
       fMasterBandTab[k] = vk1[k - numBands0];
   } else {
     *nMasterBand = numBands0;
-    for (k = 0; k <= numBands0; k++)
+    for (k = 0; k <= numBands0 && k < 64; k++)
       fMasterBandTab[k] = vk0[k];
   }
 
@@ -350,7 +350,7 @@ Ipp32s sbrCalcHiFreqTab(Ipp32s* fMasterBandTab, Ipp32s nMasterBand, Ipp32s bs_xo
   if (*nHighBand < 0)
     return SBR_ERR_REQUIREMENTS;
 
-  for (k = 0; k <= *nHighBand; k++){
+  for (k = 0; k <= *nHighBand && k < MAX_SIZE_FREQ_TABS; k++){
     fHiFreqTab[k] = fMasterBandTab[k + bs_xover_band];
   }
 
@@ -610,7 +610,7 @@ Ipp32s sbrCalcPatchConstructTab(Ipp32s* fMasterBandTab,
   goalSb = SBR_TABLE_GOAL_SB[ sbrFreqIndx ];
 
   if (goalSb < kx + M) {
-    for (i = 0, k = 0; fMasterBandTab[i] < goalSb; i++) {
+    for (i = 0, k = 0; i < MAX_SIZE_FREQ_TABS && fMasterBandTab[i] < goalSb; i++) {
       k = i + 1;
     }
   } else
@@ -622,12 +622,14 @@ Ipp32s sbrCalcPatchConstructTab(Ipp32s* fMasterBandTab,
   do {
     j = k + 1;
 
-    do {
-      j--;
-      sb = fMasterBandTab[j];
-      odd = (sb - 2 + k0) & 1;
-    } while (sb > (k0 - 1 + msb - odd));
-
+    if (j < MAX_SIZE_FREQ_TABS)
+    {
+      do {
+          j--;
+          sb = fMasterBandTab[j];
+          odd = (sb - 2 + k0) & 1;
+        } while (sb > (k0 - 1 + msb - odd));
+    }
     patchNumSubbandsTab[ *numPatches ] = IPP_MAX(sb - usb, 0);
     patchStartSubbandTab[ *numPatches ] = k0 - odd - patchNumSubbandsTab[ *numPatches ];
 
@@ -638,7 +640,7 @@ Ipp32s sbrCalcPatchConstructTab(Ipp32s* fMasterBandTab,
     } else
       msb = kx;
 
-    if ((fMasterBandTab[k] - sb) < 3)
+    if (k < MAX_SIZE_FREQ_TABS && (fMasterBandTab[k] - sb) < 3)
       k = nMasterBand;
   } while (sb != (kx + M));
 /*
