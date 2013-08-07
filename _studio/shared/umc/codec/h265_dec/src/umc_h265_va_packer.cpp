@@ -550,8 +550,8 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->num_ref_idx_l1_default_active_minus1         = (UCHAR)(pPicParamSet->getNumRefIdxL1DefaultActive() - 1);
     pPicParam->init_qp_minus26                              = (CHAR)pPicParamSet->getPicInitQP() - 26;
     
-    pPicParam->wNumBitsForShortTermRPSInSlice               = (USHORT)pPicParamSet->getNumBitsForShortTermRPSInSlice();
-    pPicParam->ucNumDeltaPocsOfRefRpsIdx                    = (UCHAR)pPicParamSet->wNumBitsForShortTermRPSInSlice;
+    pPicParam->wNumBitsForShortTermRPSInSlice               = (USHORT)pSlice->getNumBitsForShortTermRPSInSlice();
+    pPicParam->ucNumDeltaPocsOfRefRpsIdx                    = (UCHAR)pPicParam->wNumBitsForShortTermRPSInSlice;
 
     // dwCodingParamToolFlags
     //
@@ -804,7 +804,7 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
         //
 
         pDXVASlice->LongSliceFlags.fields.LastSliceOfPic                                = isLastSlice;
-        pDXVASlice->LongSliceFlags.fields.dependent_slice_segment_flag                  = (UINT)pPicParamSet->getDependentSliceSegmentEnabledFlag();   // dependent_slices_enabled_flag
+        pDXVASlice->LongSliceFlags.fields.dependent_slice_segment_flag                  = (UINT)pSlice->getDependentSliceSegmentFlag();   // dependent_slices_enabled_flag
         pDXVASlice->LongSliceFlags.fields.slice_type                                    = (UINT)pSlice->getSliceType();
         pDXVASlice->LongSliceFlags.fields.color_plane_id                                = 0; // field is left for future expansion
         pDXVASlice->LongSliceFlags.fields.slice_sao_luma_flag                           = (UINT)pSlice->GetSliceHeader()->slice_sao_luma_flag; 

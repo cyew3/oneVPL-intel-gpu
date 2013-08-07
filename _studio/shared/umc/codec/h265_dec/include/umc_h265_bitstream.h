@@ -120,9 +120,9 @@ public:
     H265HeadersBitstream();
     H265HeadersBitstream(Ipp8u * const pb, const Ipp32u maxsize);
 
-    void decodeSlice(H265Slice *, const H265SeqParamSet *, H265PicParamSet *);
+    void decodeSlice(H265Slice *, const H265SeqParamSet *, const H265PicParamSet *);
     UMC::Status GetSliceHeaderPart1(H265Slice *);
-    UMC::Status GetSliceHeaderFull(H265Slice *, const H265SeqParamSet *, H265PicParamSet *);
+    UMC::Status GetSliceHeaderFull(H265Slice *, const H265SeqParamSet *, const H265PicParamSet *);
 
     void parseScalingList(H265ScalingList *);
     bool xMoreRbspData();

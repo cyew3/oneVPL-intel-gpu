@@ -196,7 +196,7 @@ public:  // DEBUG !!!! should remove dependence
     bool m_bDeblocked;                                          // (bool) "slice has been deblocked" flag
     bool m_bSAOed;
 
-    int m_LCU;  // used in h/w decoder
+    int m_wNumBitsForShortTermRPSInSlice;  // used in h/w decoder
 
     // memory management tools
     UMC::MemoryAllocator *m_pMemoryAllocator;                        // (MemoryAllocator *) pointer to memory allocation tool
@@ -318,9 +318,6 @@ public:
     unsigned getRPSIndex() const            { return m_SliceHeader.m_RPSIndex; }
     void setRPSIndex(unsigned val)          { m_SliceHeader.m_RPSIndex = val; }
 
-    int getLCU() const      { return m_LCU; }
-    void setLCU(int val)    { m_LCU = val; }
-
     unsigned getLog2WeightDenomLuma() const     { return m_SliceHeader.m_uiLog2WeightDenomLuma; }
     void setLog2WeightDenomLuma(unsigned val)   { m_SliceHeader.m_uiLog2WeightDenomLuma = val; }
     unsigned getLog2WeightDenomChroma() const   { return m_SliceHeader.m_uiLog2WeightDenomChroma; }
@@ -328,6 +325,9 @@ public:
 
     int getRefPOC(EnumRefPicList list, int index) const { return m_SliceHeader.RefPOCList[list][index]; }
     void setRefPOCList();
+
+    int getNumBitsForShortTermRPSInSlice() const    { return m_wNumBitsForShortTermRPSInSlice; }
+    void setNumBitsForShortTermRPSInSlice(int val)  { m_wNumBitsForShortTermRPSInSlice = val; }
 
     void CopyFromBaseSlice(const H265Slice * slice);
 };

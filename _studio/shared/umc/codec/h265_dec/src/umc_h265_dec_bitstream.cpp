@@ -1055,7 +1055,7 @@ UMC::Status H265HeadersBitstream::GetSliceHeaderPart1(H265Slice *rpcSlice)
     return UMC::UMC_OK;
 }
 
-void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSet *sps, H265PicParamSet *pps)
+void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSet *sps, const H265PicParamSet *pps)
 {
     Ipp32u uiCode;
     Ipp32s iCode;
@@ -1182,7 +1182,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
                 parseShortTermRefPicSet(sps,rps, sps->getRPSList()->getNumberOfReferencePictureSets());
                 rpcSlice->setRPS(rps);
 
-                pps->setNumBitsForShortTermRPSInSlice(BitsDecoded() - bitsCount);  // used in HW
+                rpcSlice->setNumBitsForShortTermRPSInSlice(BitsDecoded() - bitsCount);  // used in HW
             }
             else // use reference to short-term reference picture set in PPS
             {
@@ -1201,7 +1201,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
                 rpcSlice->setRPS(sps->getRPSList()->getReferencePictureSet(uiCode));
 
                 rps = rpcSlice->getRPS();
-                pps->setNumBitsForShortTermRPSInSlice(0);    // used in HW
+                rpcSlice->setNumBitsForShortTermRPSInSlice(0);    // used in HW
             }
             if(sps->getLongTermRefsPresent())
             {
@@ -1624,7 +1624,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
     return;
 }
 
-UMC::Status H265HeadersBitstream::GetSliceHeaderFull(H265Slice *rpcSlice, const H265SeqParamSet *sps, H265PicParamSet *pps)
+UMC::Status H265HeadersBitstream::GetSliceHeaderFull(H265Slice *rpcSlice, const H265SeqParamSet *sps, const H265PicParamSet *pps)
 {
     UMC::Status sts = GetSliceHeaderPart1(rpcSlice);
     if (UMC::UMC_OK != sts)

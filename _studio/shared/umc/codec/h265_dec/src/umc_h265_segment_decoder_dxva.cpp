@@ -84,7 +84,7 @@ void H265_DXVA_SegmentDecoder::PackAllHeaders(H265DecoderFrame * pFrame)
 
     static int frameCounter = 0;
     frameCounter++;
-    //printf("\n=== Frame%d/%d ======================\n", pFrame->m_index, frameCounter);
+    //printf("\n=== DXVA Frame%d/%d ==== %d ==================\n", pFrame->m_index, frameCounter, sliceCount);
     //logTime("start");
     if(sliceCount)
     {
