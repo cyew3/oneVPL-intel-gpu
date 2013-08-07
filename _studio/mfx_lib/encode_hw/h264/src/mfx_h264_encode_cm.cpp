@@ -822,8 +822,8 @@ void CmContext::Setup(
     m_kernelP = CreateKernel(m_device, m_program, "SVCEncMB_P", (void *)SVCEncMB_P);
     m_kernelB = CreateKernel(m_device, m_program, "SVCEncMB_B", (void *)SVCEncMB_B);
 
-    m_kernelDownSample4X = CreateKernel(m_device, m_program, "DownSampleMB4X", (void *)DownSampleMB4X);
-    m_kernelDownSample2X = CreateKernel(m_device, m_program, "DownSampleMB2X", (void *)DownSampleMB2X);
+    //m_kernelDownSample4X = CreateKernel(m_device, m_program, "DownSampleMB4X", (void *)DownSampleMB4X);
+    //m_kernelDownSample2X = CreateKernel(m_device, m_program, "DownSampleMB2X", (void *)DownSampleMB2X);
 
     m_curbeData.Reset(m_device, sizeof(SVCEncCURBEData));
     m_nullBuf.Reset(m_device, 4);

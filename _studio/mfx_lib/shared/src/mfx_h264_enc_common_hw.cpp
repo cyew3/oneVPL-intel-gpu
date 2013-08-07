@@ -3402,7 +3402,7 @@ void MfxHwH264Encode::SetDefaults(
             extOpt2->LookAheadDepth = IPP_MAX(40, 2 * par.mfx.GopRefDist);
 
     if (extDdi->LookAheadDep == 0)
-        extDdi->LookAheadDep = IPP_MIN(10, extOpt2->LookAheadDepth);
+        extDdi->LookAheadDep = IPP_MIN(10, extOpt2->LookAheadDepth / 2);
 
     if ((extDdi->LaScaleFactor != 2) &&
         (extDdi->LaScaleFactor != 4))
