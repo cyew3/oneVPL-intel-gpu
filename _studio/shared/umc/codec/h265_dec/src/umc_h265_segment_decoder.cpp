@@ -785,7 +785,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
         pCU->setCbfSubParts( 0, 0, 0, AbsPartIdx, Depth);
         pCU->setTrStartSubParts(AbsPartIdx, Depth);
         FinishDecodeCU(pCU, AbsPartIdx, Depth, IsLast);
-        UpdateNeighborBuffers(pCU, AbsPartIdx, true, transquant_bypass, false);
+        UpdateNeighborBuffers(pCU, AbsPartIdx, Depth, AbsPartIdx, true, transquant_bypass, false, false);
         return;
     }
 
@@ -812,7 +812,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
             if (pCU->GetIPCMFlag(AbsPartIdx))
             {
                 FinishDecodeCU(pCU, AbsPartIdx, Depth, IsLast);
-                UpdateNeighborBuffers(pCU, AbsPartIdx, false, transquant_bypass, true);
+                UpdateNeighborBuffers(pCU, AbsPartIdx, Depth, AbsPartIdx, false, transquant_bypass, true, false);
                 return;
             }
         }
@@ -832,12 +832,9 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
     Ipp32u CurrHeight = pCU->GetHeight(AbsPartIdx);
 
     // Coefficient decoding
-    bool CodeDQPFlag = m_DecodeDQPFlag;
-    DecodeCoeff(pCU, AbsPartIdx, Depth, CurrWidth, CurrHeight, CodeDQPFlag, isFirstPartMerge);
-    m_DecodeDQPFlag = CodeDQPFlag;
+    DecodeCoeff(pCU, AbsPartIdx, Depth, CurrWidth, CurrHeight, m_DecodeDQPFlag, isFirstPartMerge);
 
     FinishDecodeCU(pCU, AbsPartIdx, Depth, IsLast);
-    UpdateNeighborBuffers(pCU, AbsPartIdx, false, transquant_bypass, false);
 
     if (MODE_INTRA == PredMode && m_context->m_needToSplitDecAndRec)
     {
@@ -1618,10 +1615,7 @@ void H265SegmentDecoder::ReadEpExGolombCABAC(Ipp32u& Value, Ipp32u Count)
 // decode coefficients
 void H265SegmentDecoder::DecodeCoeff(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u Width, Ipp32u Height, bool& CodeDQP, bool isFirstPartMerge)
 {
-    if (MODE_INTRA == pCU->GetPredictionMode(AbsPartIdx))
-    {
-    }
-    else
+    if (MODE_INTRA != pCU->GetPredictionMode(AbsPartIdx))
     {
         Ipp32u QtRootCbf = 1;
         if (!(pCU->GetPartitionSize(AbsPartIdx) == SIZE_2Nx2N && isFirstPartMerge))
@@ -1633,6 +1627,7 @@ void H265SegmentDecoder::DecodeCoeff(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp
             pCU->setCbfSubParts( 0, 0, 0, AbsPartIdx, Depth);
             pCU->setTrIdxSubParts( 0 , AbsPartIdx, Depth);
             pCU->setTrStartSubParts(AbsPartIdx, Depth);
+            UpdateNeighborBuffers(pCU, AbsPartIdx, Depth, AbsPartIdx, false, pCU->m_CUTransquantBypass[AbsPartIdx], false, false);
             return;
         }
     }
@@ -1671,7 +1666,6 @@ void H265SegmentDecoder::DecodeTransform(H265CodingUnit* pCU, Ipp32u offsetLuma,
     {
         Subdiv = (Log2TrafoSize > pCU->getQuadtreeTULog2MinSizeInCU(AbsPartIdx));
     }
-
     else if (Log2TrafoSize > pCU->m_SliceHeader->m_SeqParamSet->log2_max_transform_block_size)
     {
         Subdiv = 1;
@@ -1748,7 +1742,7 @@ void H265SegmentDecoder::DecodeTransform(H265CodingUnit* pCU, Ipp32u offsetLuma,
     }
     else
     {
-        assert(Depth >= pCU->GetDepth(AbsPartIdx));
+        VM_ASSERT(Depth >= pCU->GetDepth(AbsPartIdx));
         pCU->setTrIdxSubParts(TrDepth, AbsPartIdx, Depth);
         pCU->setTrStartSubParts(AbsPartIdx, Depth);
 
@@ -1786,6 +1780,9 @@ void H265SegmentDecoder::DecodeTransform(H265CodingUnit* pCU, Ipp32u offsetLuma,
                 }
             }
         }
+
+        UpdateNeighborBuffers(pCU, AbsPartIdx, Depth, AbsPartIdx, false, pCU->m_CUTransquantBypass[AbsPartIdx], false, cbfY);
+
         if (cbfY)
         {
             Ipp32s trWidth = width;
@@ -2909,13 +2906,11 @@ void H265SegmentDecoder::UpdatePUInfo(H265CodingUnit *pCU, Ipp32u PartX, Ipp32u 
     }
 }
 
-void H265SegmentDecoder::UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPartIdx, bool isSkipped, bool isTranquantBypass, bool isIPCM)
+void H265SegmentDecoder::UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u TrStart, bool isSkipped, bool isTranquantBypass, bool isIPCM, bool isTrCbfY)
 {
-    Ipp32s i;
-
     Ipp32s XInc = pCU->m_rasterToPelX[AbsPartIdx] >> m_pSeqParamSet->log2_min_transform_block_size;
     Ipp32s YInc = pCU->m_rasterToPelY[AbsPartIdx] >> m_pSeqParamSet->log2_min_transform_block_size;
-    Ipp32s PartSize = pCU->GetWidth(AbsPartIdx) >> m_pSeqParamSet->log2_min_transform_block_size;
+    Ipp32s PartSize = m_pSeqParamSet->NumPartitionsInCUSize >> Depth;
 
     H265FrameHLDNeighborsInfo info;
     info.data = 0;
@@ -2926,9 +2921,12 @@ void H265SegmentDecoder::UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPa
     info.members.IntraDir = pCU->GetLumaIntra(AbsPartIdx);
     info.members.IsTransquantBypass = isTranquantBypass;
     info.members.IsIPCM = isIPCM;
-    Ipp16u data = info.data;
+    info.members.qp = pCU->GetQP(AbsPartIdx);
+    info.members.TrStart = TrStart;
+    info.members.IsTrCbfY = isTrCbfY;
+    Ipp32u data = info.data;
 
-    if (info.members.IsIntra)
+    if (!m_pSliceHeader->m_deblockingFilterDisable || info.members.IsIntra)
     {
         // Fill up inside of whole CU to predict intra parts inside of it
         for (Ipp32s y = YInc; y < YInc + PartSize - 1; y++)
@@ -2936,49 +2934,12 @@ void H265SegmentDecoder::UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPa
                 m_context->m_CurrCTBFlags[m_context->m_CurrCTBStride * y + x].data = data;
     }
 
-    if (SIZE_2Nx2N == pCU->GetPartitionSize(AbsPartIdx))
+    for (Ipp32s i = 0; i < PartSize; i++)
     {
-        for (i = 0; i < PartSize; i++)
-        {
-            // Bottom row
-            m_context->m_CurrCTBFlags[m_context->m_CurrCTBStride * (YInc + PartSize - 1) + (XInc + i)].data = data;
-            // Right column
-            m_context->m_CurrCTBFlags[m_context->m_CurrCTBStride * (YInc + i) + (XInc + PartSize - 1)].data = data;
-        }
-    }
-    else
-    {
-        H265FrameHLDNeighborsInfo info1, info2, info3;
-        Ipp16u data1, data2, data3;
-        Ipp32u PartOffset = (pCU->m_Frame->m_CodingData->m_NumPartitions >> (pCU->GetDepth(AbsPartIdx) << 1)) >> 2;
-
-        info1.data = data;
-        info2.data = data;
-        info3.data = data;
-        info1.members.IntraDir = pCU->GetLumaIntra(AbsPartIdx + PartOffset);
-        info2.members.IntraDir = pCU->GetLumaIntra(AbsPartIdx + PartOffset * 2);
-        info3.members.IntraDir = pCU->GetLumaIntra(AbsPartIdx + PartOffset * 3);
-        data1 = info1.data;
-        data2 = info2.data;
-        data3 = info3.data;
-
-        VM_ASSERT(PartSize >> 1);
-
-        for (i = 0; i < PartSize >> 1; i++)
-        {
-            // Bottom row
-            m_context->m_CurrCTBFlags[m_context->m_CurrCTBStride * (YInc + PartSize - 1) + (XInc + i)].data = data2;
-            // Right column
-            m_context->m_CurrCTBFlags[m_context->m_CurrCTBStride * (YInc + i) + (XInc + PartSize - 1)].data = data1;
-        }
-
-        for (i = PartSize >> 1; i < PartSize; i++)
-        {
-            // Bottom row
-            m_context->m_CurrCTBFlags[m_context->m_CurrCTBStride * (YInc + PartSize - 1) + (XInc + i)].data = data3;
-            // Right column
-            m_context->m_CurrCTBFlags[m_context->m_CurrCTBStride * (YInc + i) + (XInc + PartSize - 1)].data = data3;
-        }
+        // Bottom row
+        m_context->m_CurrCTBFlags[m_context->m_CurrCTBStride * (YInc + PartSize - 1) + (XInc + i)].data = data;
+        // Right column
+        m_context->m_CurrCTBFlags[m_context->m_CurrCTBStride * (YInc + i) + (XInc + PartSize - 1)].data = data;
     }
 }
 

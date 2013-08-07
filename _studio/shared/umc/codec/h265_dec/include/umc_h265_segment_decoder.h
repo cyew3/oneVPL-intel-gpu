@@ -40,16 +40,6 @@ class H265TrQuant;
 class TaskBroker_H265;
 class H265Task;
 
-//struct H265EdgeData
-//{
-//    Ipp8u strength;
-//    Ipp8u qp;
-//    Ipp8u deblockP;
-//    Ipp8u deblockQ;
-//    Ipp8s tcOffset;
-//    Ipp8s betaOffset;
-//};
-
 //
 // Class to incapsulate functions, implementing common decoding functional.
 //
@@ -280,7 +270,7 @@ public:
     DecodingContext * m_context;
     std::auto_ptr<DecodingContext> m_context_single_thread;
 
-    void UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPartIdx, bool isSkipped, bool isTranquantBypass, bool isIPCM);
+    void UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u TrStart, bool isSkipped, bool isTranquantBypass, bool isIPCM, bool isTrCbfY);
     void UpdatePUInfo(H265CodingUnit *pCU, Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight, H265PUInfo &PUi);
 
     // Current CU local state
