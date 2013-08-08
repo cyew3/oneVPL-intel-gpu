@@ -112,7 +112,7 @@ protected:
     }
 
     template <class _StructType>
-    void SerializeStruct(const tstring & prefix, _StructType obj) const;
+    void SerializeStruct(const tstring & prefix, _StructType &obj) const;
     //{
     //    MFXStructureRef<_StructType> struct_to_be_serialized(obj, m_flags);
     //    struct_to_be_serialized.Serialize(KeyPrefix(prefix , m_values_map));
@@ -185,7 +185,7 @@ public:
 //GCC specific template member should be not out of order -> move implementation of structref
 
 template <class _StructType>
-void MFXStructureSerializer::SerializeStruct(const tstring & prefix, _StructType obj) const
+void MFXStructureSerializer::SerializeStruct(const tstring & prefix, _StructType& obj) const
 {
     MFXStructureRef<_StructType> struct_to_be_serialized(obj, m_flags);
     struct_to_be_serialized.Serialize(Formater::KeyPrefix(prefix , m_values_map));

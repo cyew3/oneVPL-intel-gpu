@@ -128,21 +128,6 @@ bool loadFromFile(FILE *f, void **buf, mfxU32 *bufSize)
 }
 #endif //PAVP_BUILD
 
-template <class TTo>
-TTo* IVideoEncode::GetInterface() {
-    void *pInterface = NULL;
-    if (!QueryInterface(QueryInterfaceMap<TTo>::id, &pInterface)) {
-        return NULL;
-    }
-    return reinterpret_cast<TTo*>(pInterface);
-}
-
-template <>
-IVideoEncode * IVideoEncode::GetInterface<IVideoEncode>() {
-    return (IVideoEncode*)this;
-}
-
-template ICurrentFrameControl* IVideoEncode::GetInterface<ICurrentFrameControl>();
 
 //////////////////////////////////////////////////////////////////////////
 

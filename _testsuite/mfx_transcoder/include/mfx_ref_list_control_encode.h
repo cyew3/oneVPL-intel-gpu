@@ -34,7 +34,7 @@ public:
 
     virtual bool QueryInterface(int interface_id_registered_with_interface_map, void **ppInterface) {
         if (interface_id_registered_with_interface_map == QueryInterfaceMap<ICurrentFrameControl>::id) {
-            memcpy(ppInterface, (ICurrentFrameControl*)this, sizeof(this));
+            *((ICurrentFrameControl**)ppInterface) = (ICurrentFrameControl*)this;
             return true;
         }
         return false;

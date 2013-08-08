@@ -41,7 +41,7 @@ public :
 
     //////////////////////////////////////////////////////////////////////////
     //IPipelineControl
-    virtual mfxStatus GetEncode(IVideoEncode **ppAdded);
+    virtual mfxStatus GetEncoder(IVideoEncode **ppAdded);
 
 protected:
     typedef struct OptContainer

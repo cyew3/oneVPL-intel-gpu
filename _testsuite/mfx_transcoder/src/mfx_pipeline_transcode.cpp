@@ -1749,7 +1749,7 @@ mfxStatus MFXTranscodingPipeline::WriteParFile()
     return MFX_ERR_NONE;
 }
 
-mfxStatus MFXTranscodingPipeline::GetEncode(IVideoEncode **ppCtrl)
+mfxStatus MFXTranscodingPipeline::GetEncoder(IVideoEncode **ppCtrl)
 {
     MFX_CHECK_POINTER(ppCtrl);
     * ppCtrl = m_pEncoder;

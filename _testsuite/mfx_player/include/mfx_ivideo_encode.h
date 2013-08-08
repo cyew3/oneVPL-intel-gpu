@@ -26,7 +26,13 @@ public:
      * declaring here specialization is invalid.
      */
     template <class TTo>
-    TTo* GetInterface();
+    TTo* GetInterface() {
+        TTo *pInterface = NULL;
+        if (!QueryInterface(QueryInterfaceMap<TTo>::id, (void**)&pInterface)) {
+            return NULL;
+        }
+        return pInterface;
+    }
 
     virtual ~IVideoEncode(void) { }
 
