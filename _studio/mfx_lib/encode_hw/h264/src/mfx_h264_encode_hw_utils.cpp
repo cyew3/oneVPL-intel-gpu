@@ -3202,7 +3202,7 @@ void OutputBitstream::PutBit(mfxU32 bit)
         throw EndOfBuffer();
 
     mfxU8 mask = mfxU8(0xff << (8 - m_bitOff));
-    mfxU8 newBit = mfxU8(bit << (7 - m_bitOff));
+    mfxU8 newBit = mfxU8((bit & 1) << (7 - m_bitOff));
     *m_ptr = (*m_ptr & mask) | newBit;
 
     if (++m_bitOff == 8)
