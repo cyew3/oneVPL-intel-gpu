@@ -498,7 +498,7 @@ Status H264HeadersBitstream::GetVUIParam(H264SeqParamSet *sps)
         }
         else
         {
-            if (sps->aspect_ratio_idc >= sizeof(SAspectRatio)/sizeof(SAspectRatio[0]))
+            if (!sps->aspect_ratio_idc || sps->aspect_ratio_idc >= sizeof(SAspectRatio)/sizeof(SAspectRatio[0]))
             {
                 sps->aspect_ratio_info_present_flag = 0;
             }

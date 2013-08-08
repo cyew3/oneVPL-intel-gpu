@@ -684,8 +684,15 @@ void H265HeadersBitstream::parseVUI(H265SeqParamSet *pcSPS)
         }
         else
         {
-            pcSPS->sar_width = SAspectRatio[pcSPS->aspect_ratio_idc][0];
-            pcSPS->sar_height = SAspectRatio[pcSPS->aspect_ratio_idc][1];
+            if (!pcSPS->aspect_ratio_idc || pcSPS->aspect_ratio_idc >= sizeof(SAspectRatio)/sizeof(SAspectRatio[0]))
+            {
+                pcSPS->aspect_ratio_info_present_flag = 0;
+            }
+            else
+            {
+                pcSPS->sar_width = SAspectRatio[pcSPS->aspect_ratio_idc][0];
+                pcSPS->sar_height = SAspectRatio[pcSPS->aspect_ratio_idc][1];
+            }
         }
     }
 

@@ -65,22 +65,16 @@ namespace UMC_HEVC_DECODER
 #define CU_DQP_TU_CMAX 5 //max number bins for truncated unary
 #define CU_DQP_EG_k 0 //expgolomb order
 
-#define MLS_GRP_NUM                         64     ///< G644 : Max number of coefficient groups, max(16, 64)
-#define MLS_CG_SIZE                         4      ///< G644 : Coefficient group size of 4x4
 #define SCAN_SET_SIZE                     16
-#define LOG2_SCAN_SET_SIZE                4
 
 #define SBH_THRESHOLD                    4  ///< I0156: value of the fixed SBH controlling threshold
 
-#define CNU                          154      ///< dummy initialization value for unused context models 'Context model Not Used'
 #define NUM_SIG_CG_FLAG_CTX           2       ///< number of context models for MULTI_LEVEL_SIGNIFICANCE
 #define NUM_SIG_FLAG_CTX              42      ///< number of context models for sig flag
 #define NUM_SIG_FLAG_CTX_LUMA         27      ///< number of context models for luma sig flag
 #define NUM_CTX_LAST_FLAG_XY          15      ///< number of context models for last coefficient position
 #define C1FLAG_NUMBER               8 // maximum number of largerThan1 flag coded in one chunk :  16 in HM5
-#define NUM_ONE_FLAG_CTX              24      ///< number of context models for greater than 1 flag
 #define NUM_ONE_FLAG_CTX_LUMA         16      ///< number of context models for greater than 1 flag of luma
-#define NUM_ABS_FLAG_CTX               6      ///< number of context models for greater than 2 flag
 #define NUM_ABS_FLAG_CTX_LUMA          4      ///< number of context models for greater than 2 flag of luma
 #define NUM_TRANSFORMSKIP_FLAG_CTX    1       ///< number of context models for transform skipping
 
@@ -1237,8 +1231,7 @@ struct H265SeqParamSetBase
     bool loop_filter_across_tiles_enabled_flag;
 
     Ipp32u m_MaxNumberOfReferencePictures;
-    bool m_UseDF;
-    bool        sps_strong_intra_smoothing_enable_flag;
+    bool  sps_strong_intra_smoothing_enable_flag;
 
     int m_QPBDOffsetY;
     int m_QPBDOffsetC;
@@ -1265,7 +1258,6 @@ struct H265SeqParamSetBase
     int          def_disp_win_right_offset;
     int          def_disp_win_top_offset;
     int          def_disp_win_bottom_offset;
-    Ipp8u        more_than_one_slice_group_allowed_flag;
     Ipp8u        log2_max_frame_num;                  // Number of bits to hold the frame_num
 
     bool         vui_parameters_present_flag;         // Zero indicates default VUI parameters
@@ -1275,8 +1267,6 @@ struct H265SeqParamSetBase
     Ipp32u       num_ref_frames;                      // total number of pics in decoded pic buffer
 
     // These fields are calculated from values above.  They are not written to the bitstream
-    Ipp32u       MaxMbAddress;
-    Ipp32u       MaxPicOrderCntLsb;
 
     // vui part
     bool aspect_ratio_info_present_flag;
