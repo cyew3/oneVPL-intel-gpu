@@ -867,7 +867,8 @@ void H265CU::ME_Interpolate(H265MEInfo* me_info, H265MV* MV, PixType *src, Ipp32
     Ipp32s dy = MV->mvy & 3;
     Ipp32s bitDepth = BIT_DEPTH_LUMA;
 
-    src += ctb_pelx + me_info->posx + (MV->mvx >> 2) + (ctb_pely + me_info->posy + (MV->mvy >> 2)) * srcPitch;
+    Ipp32s refOffset = ctb_pelx + me_info->posx + (MV->mvx >> 2) + (ctb_pely + me_info->posy + (MV->mvy >> 2)) * srcPitch;
+    src += refOffset;
 
     if (dx == 0 && dy == 0)
     {
@@ -941,8 +942,11 @@ void H265CU::ME_Interpolate_new_need_debug(H265MEInfo* me_info, H265MV* MV1, Pix
     Ipp16s tmpL0[MAX_CU_SIZE * MAX_CU_SIZE];
     Ipp32s tmpL0Pitch = MAX_CU_SIZE;
 
-    src1 += ctb_pelx + me_info->posx + (MV1->mvx >> 2) + (ctb_pely + me_info->posy + (MV1->mvy >> 2)) * srcPitch1;
-    src2 += ctb_pelx + me_info->posx + (MV2->mvx >> 2) + (ctb_pely + me_info->posy + (MV2->mvy >> 2)) * srcPitch2;
+    Ipp32s offset1 = ctb_pelx + me_info->posx + (MV1->mvx >> 2) + (ctb_pely + me_info->posy + (MV1->mvy >> 2)) * srcPitch1;
+    Ipp32s offset2 = ctb_pelx + me_info->posx + (MV2->mvx >> 2) + (ctb_pely + me_info->posy + (MV2->mvy >> 2)) * srcPitch2;
+
+    src1 += offset1;
+    src2 += offset2;
 
     if (intPelL0)
     {
