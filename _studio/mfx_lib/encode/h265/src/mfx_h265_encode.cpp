@@ -229,13 +229,11 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     mfxVideoH265InternalParam *par = &inInt;
 
     memset(&m_mfxVideoParam,0,sizeof(mfxVideoParam));
-    memset(&m_mfxHEVCOpts,0,sizeof(mfxExtCodingOptionHEVC));
 
-    m_mfxHEVCOpts.Header.BufferId = MFX_EXTBUFF_HEVCENC;
-    m_mfxHEVCOpts.Header.BufferSz = sizeof(m_mfxHEVCOpts);
     if (opts_hevc) {
-        //m_mfxHEVCOpts = *opts_hevc;
         mfxExtBuffer *ptr_checked_ext[1] = {0};
+        m_mfxHEVCOpts.Header.BufferId = MFX_EXTBUFF_HEVCENC;
+        m_mfxHEVCOpts.Header.BufferSz = sizeof(m_mfxHEVCOpts);
         ptr_checked_ext[0] = &m_mfxHEVCOpts.Header;
         m_mfxVideoParam.ExtParam = ptr_checked_ext;
         m_mfxVideoParam.NumExtParam = 1;
@@ -646,10 +644,11 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
 
         out->mfx.IdrInterval = in->mfx.IdrInterval;
 
+        // NumSlice will be checked again after Log2MaxCUSize
         out->mfx.NumSlice = in->mfx.NumSlice;
         if ( in->mfx.NumSlice > 0 && out->mfx.FrameInfo.Height && out->mfx.FrameInfo.Width && opts_out && opts_out->Log2MaxCUSize)
         {
-            mfxU16 rnd = (1 << opts_out->Log2MaxCUSize) - 1, shft = opts_out->Log2MaxCUSize;
+            mfxU16 rnd = (1 << 4) - 1, shft = 4;
             if (in->mfx.NumSlice > ((out->mfx.FrameInfo.Height+rnd)>>shft) * ((out->mfx.FrameInfo.Width+rnd)>>shft) )
             {
                 out->mfx.NumSlice = 0;
@@ -828,6 +827,17 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
 #undef CHECK_NUMCAND
 
             CHECK_OPTION(opts_in->WPP, opts_out->WPP, isInvalid);  /* tri-state option */
+
+            // check again Numslice using Log2MaxCUSize
+            if ( out->mfx.NumSlice > 0 && out->mfx.FrameInfo.Height && out->mfx.FrameInfo.Width && opts_out->Log2MaxCUSize)
+            {
+                mfxU16 rnd = (1 << opts_out->Log2MaxCUSize) - 1, shft = opts_out->Log2MaxCUSize;
+                if (out->mfx.NumSlice > ((out->mfx.FrameInfo.Height+rnd)>>shft) * ((out->mfx.FrameInfo.Width+rnd)>>shft) )
+                {
+                    out->mfx.NumSlice = 0;
+                    isInvalid ++;
+                }
+            }
 
         } // EO mfxExtCodingOptionHEVC
 
