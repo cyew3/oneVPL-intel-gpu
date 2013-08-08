@@ -476,89 +476,19 @@ void H265CU::getPULeft(H265CUPtr *pCU,
 
 H265CUData* H265CU::getQpMinCuLeft( Ipp32u& uiLPartUnitIdx, Ipp32u uiCurrAbsIdxInLCU, bool bEnforceSliceRestriction, bool bEnforceDependentSliceRestriction)
 {
-/*  Ipp32u numPartInCUWidth = m_pcPic->getNumPartInWidth();
-  Ipp32u absZorderQpMinCUIdx = (uiCurrAbsIdxInLCU>>((g_uiMaxCUDepth - getSlice()->getPPS()->getMaxCuDQPDepth())<<1))<<((g_uiMaxCUDepth -getSlice()->getPPS()->getMaxCuDQPDepth())<<1);
-  Ipp32u absRorderQpMinCUIdx = g_auiZscanToRaster[absZorderQpMinCUIdx];
-
-  // check for left LCU boundary
-  if ( RasterAddress::isZeroCol(absRorderQpMinCUIdx, numPartInCUWidth) )
-  {
-    return NULL;
-  }
-
-  // get index of left-CU relative to top-left corner of current quantization group
-  uiLPartUnitIdx = g_auiRasterToZscan[absRorderQpMinCUIdx - 1];
-
-  // check for fine-grain slice boundaries
-  if ((bEnforceSliceRestriction        && (m_pcPic->getCU( getAddr() )->getSCUAddr()+uiLPartUnitIdx < m_pcPic->getCU( getAddr() )->getSliceStartCU       (absZorderQpMinCUIdx)))
-    ||(bEnforceDependentSliceRestriction && (m_pcPic->getCU( getAddr() )->getSCUAddr()+uiLPartUnitIdx < m_pcPic->getCU( getAddr() )->getDependentSliceStartCU(absZorderQpMinCUIdx))))
-  {
-    return NULL;
-  }
-
-  // return pointer to current LCU
-  return m_pcPic->getCU( getAddr() );*/
+    // not implemented
     return NULL;
 }
 
 H265CUData* H265CU::getQpMinCuAbove( Ipp32u& aPartUnitIdx, Ipp32u currAbsIdxInLCU, bool enforceSliceRestriction, bool enforceDependentSliceRestriction )
 {
-/*  UInt numPartInCUWidth = m_pcPic->getNumPartInWidth();
-  UInt absZorderQpMinCUIdx = (currAbsIdxInLCU>>((g_uiMaxCUDepth - getSlice()->getPPS()->getMaxCuDQPDepth())<<1))<<((g_uiMaxCUDepth - getSlice()->getPPS()->getMaxCuDQPDepth())<<1);
-  UInt absRorderQpMinCUIdx = g_auiZscanToRaster[absZorderQpMinCUIdx];
-
-  // check for top LCU boundary
-  if ( RasterAddress::isZeroRow( absRorderQpMinCUIdx, numPartInCUWidth) )
-  {
-    return NULL;
-  }
-
-  // get index of top-CU relative to top-left corner of current quantization group
-  aPartUnitIdx = g_auiRasterToZscan[absRorderQpMinCUIdx - numPartInCUWidth];
-
-  // check for fine-grain slice boundaries
-  if ((enforceSliceRestriction        && (m_pcPic->getCU( getAddr() )->getSCUAddr()+aPartUnitIdx < m_pcPic->getCU( getAddr() )->getSliceStartCU       (absZorderQpMinCUIdx)))
-    ||(enforceDependentSliceRestriction && (m_pcPic->getCU( getAddr() )->getSCUAddr()+aPartUnitIdx < m_pcPic->getCU( getAddr() )->getDependentSliceStartCU(absZorderQpMinCUIdx))))
-  {
-    return NULL;
-  }
-
-  // return pointer to current LCU
-  return m_pcPic->getCU( getAddr() );*/
+    // not implemented
     return NULL;
 }
 
 Ipp8s H265CU::getLastCodedQP( Ipp32u abs_part_idx )
 {
-/*  Ipp32u uiQUPartIdxMask = ~((1<<((g_uiMaxCUDepth - getSlice()->getPPS()->getMaxCuDQPDepth())<<1))-1);
-  Ipp32s iLastValidPartIdx = getLastValidPartIdx( abs_part_idx&uiQUPartIdxMask );
-  if ( abs_part_idx < num_partition
-    && (getSCUAddr()+iLastValidPartIdx < getSliceStartCU(m_uiAbsIdxInLCU+abs_part_idx) || getSCUAddr()+iLastValidPartIdx < getDependentSliceStartCU(m_uiAbsIdxInLCU+abs_part_idx) ))
-  {
-    return getSlice()->getSliceQp();
-  }
-  else
-  if ( iLastValidPartIdx >= 0 )
-  {
-    return getQP( iLastValidPartIdx );
-  }
-  else
-  {
-    if ( getZorderIdxInCU() > 0 )
-    {
-      return getPic()->getCU( getAddr() )->getLastCodedQP( getZorderIdxInCU() );
-    }
-    else if ( getPic()->getPicSym()->getInverseCUOrderMap(getAddr()) > 0
-      && getPic()->getPicSym()->getTileIdxMap(getAddr()) == getPic()->getPicSym()->getTileIdxMap(getPic()->getPicSym()->getCUOrderMap(getPic()->getPicSym()->getInverseCUOrderMap(getAddr())-1))
-      && !( getSlice()->getPPS()->getTilesOrEntropyCodingSyncIdc() == 2 && getAddr() % getPic()->getFrameWidthInCU() == 0 ) )
-    {
-      return getPic()->getCU( getPic()->getPicSym()->getCUOrderMap(getPic()->getPicSym()->getInverseCUOrderMap(getAddr())-1) )->getLastCodedQP( getPic()->getNumPartInCU() );
-    }
-    else
-    {
-      return getSlice()->getSliceQp();
-    }
-  }*/
+    // not implemented
     return 0;
 }
 
