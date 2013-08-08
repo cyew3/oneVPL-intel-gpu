@@ -120,27 +120,45 @@ void ParserCfg::PrintData()
                 switch(key->m_keyType)
                 {
                 case Key::Boolean:
-                    if(key->m_bool && (key->m_bool[i] == true))
-                        vm_string_printf(VM_STRING(" true"));
-                    else
-                        vm_string_printf(VM_STRING(" false"));
+                {
+                    bool* pB = key->m_bool;
+                    if(pB)
+                    {
+                        if (pB[i])
+                            vm_string_printf(VM_STRING(" true"));
+                        else
+                            vm_string_printf(VM_STRING(" false"));
+                    }
                     break;
+                }
                 case Key::Integer:
-                    if (key->m_uint)
-                        vm_string_printf(VM_STRING(" %d"), key->m_uint[i]);
+                {
+                    Ipp32u* pI = key->m_uint;
+                    if (pI)
+                    {
+                        vm_string_printf(VM_STRING(" %d"), pI[i]);
+                    }
                     break;
+                }
                 case Key::Real:
-                    if (key->m_double)
-                    vm_string_printf(VM_STRING(" %f"), key->m_double[i]);
+                {    Ipp64f* pR = key->m_double;
+                    if (pR)
+                    {
+                        vm_string_printf(VM_STRING(" %f"), pR[i]);
+                    }
                     break;
+                }
                 case Key::String:
-                    if (key->m_string)
+                {
+                    DString* pS = key->m_string;
+                    if (pS)
                     {
                         vm_string_printf(VM_STRING(" \""));
-                        vm_string_printf(key->m_string[i]);
+                        vm_string_printf(pS[i]);
                         vm_string_printf(VM_STRING("\""));
                     }
                     break;
+                }
                 }
                 if(i != (key->m_iArraySize - 1))
                     vm_string_printf(VM_STRING(","));
@@ -268,16 +286,21 @@ bool ParserCfg::GetParam(const vm_char *cName, bool *bValue, Ipp32u iArraySize)
 
             if(key->m_keyType == Key::Boolean)
             {
-                if (key->m_bool)
+                bool* pB = key->m_bool;
+                if (pB)
                 {
                     for(Ipp32u i = 0; i < iMinArraySize; i++)
-                        bValue[i] = key->m_bool[i];
+                        bValue[i] = pB[i];
                 }
             }
-            else if (key->m_uint)
+            else 
             {
-                for(Ipp32u i = 0; i < iMinArraySize; i++)
-                    bValue[i] = (key->m_uint[i])?true:false;
+                Ipp32u* pI = key->m_uint;
+                if (pI)
+                {
+                    for(Ipp32u i = 0; i < iMinArraySize; i++)
+                        bValue[i] = (pI[i])?true:false;
+                }
             }
             return true;
         }
@@ -335,10 +358,11 @@ bool ParserCfg::GetParam(const vm_char *cName, DString *sValue, Ipp32u iArraySiz
         if(key && (key->m_keyType == Key::String) && (vm_string_strncmp(key->m_sName, cName, key->m_sName.Size()) == 0))
         {
             iMinArraySize = IPP_MIN(key->m_iArraySize, iArraySize);
-            if (key->m_string)
+            DString* pS = key->m_string;
+            if (pS)
             {
                 for(Ipp32u i = 0; i < iMinArraySize; i++)
-                    sValue[i] = key->m_string[i];
+                    sValue[i] = pS[i];
             }
             return true;
         }

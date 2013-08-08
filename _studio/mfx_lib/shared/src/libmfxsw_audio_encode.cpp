@@ -134,6 +134,7 @@ mfxStatus MFXAudioENCODE_Init(mfxSession session, mfxAudioParam *par)
 {
     mfxStatus mfxRes;
     MFX_CHECK(par, MFX_ERR_NULL_PTR);
+    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
 
     MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, par);
@@ -148,12 +149,12 @@ mfxStatus MFXAudioENCODE_Init(mfxSession session, mfxAudioParam *par)
             session->m_pAudioENCODE.reset(CreateAudioENCODESpecificClass(par->mfx.CodecId, session->m_pAudioCORE.get(), session));
         }
 
-        if (!session || 0 == session->m_pAudioENCODE.get()) {
-            return MFX_ERR_INVALID_AUDIO_PARAM;
+        if (session->m_pAudioENCODE.get()) {
+            mfxRes = session->m_pAudioENCODE->Init(par);
         }
         else
         {
-            mfxRes = session->m_pAudioENCODE->Init(par);
+            return MFX_ERR_INVALID_AUDIO_PARAM;
         }
 
     }
@@ -185,18 +186,12 @@ mfxStatus MFXAudioENCODE_Close(mfxSession session)
 {
     mfxStatus mfxRes = MFX_ERR_NONE;
 
+    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
 
     try
     {
-        if (!session)
-        {
-            throw;
-        } else if (!session->m_pAudioENCODE.get())
-        {
-            return MFX_ERR_NOT_INITIALIZED;
-        }
-        else
+       if (session->m_pAudioENCODE.get())
         {
             // wait until all tasks are processed
             session->m_pScheduler->WaitForTaskCompletion(session->m_pAudioENCODE.get());
@@ -205,16 +200,16 @@ mfxStatus MFXAudioENCODE_Close(mfxSession session)
             // delete the codec's instance
             session->m_pAudioENCODE.reset((AudioENCODE *) 0);
         }
+        else
+        {
+            return MFX_ERR_NOT_INITIALIZED;
+        }
     }
     // handle error(s)
     catch(MFX_CORE_CATCH_TYPE)
     {
         // set the default error value
         mfxRes = MFX_ERR_UNKNOWN;
-        if (0 == session)
-        {
-            mfxRes = MFX_ERR_INVALID_HANDLE;
-        }
     }
 
     MFX_LTRACE_I(MFX_TRACE_LEVEL_API, mfxRes);

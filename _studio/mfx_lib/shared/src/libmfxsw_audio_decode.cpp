@@ -201,29 +201,23 @@ mfxStatus MFXAudioDECODE_Init(mfxSession session, mfxAudioParam *par)
 {
     mfxStatus mfxRes = MFX_ERR_NONE;
     MFX_CHECK(par, MFX_ERR_NULL_PTR);
+    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
 
     MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, par);
 
     try
     {
-        if (!session)
+        // check existence of component
+        if (!session->m_pAudioDECODE.get())
         {
-            throw;
+            // create a new instance
+            session->m_pAudioDECODE.reset(CreateAudioDECODESpecificClass(par->mfx.CodecId, session->m_pAudioCORE.get(), session));
         }
-        else
-        {
-            // check existence of component
-            if (!session->m_pAudioDECODE.get())
-            {
-                // create a new instance
-                session->m_pAudioDECODE.reset(CreateAudioDECODESpecificClass(par->mfx.CodecId, session->m_pAudioCORE.get(), session));
-            }
         
-            if (session->m_pAudioDECODE.get())
-            {
-                mfxRes = session->m_pAudioDECODE->Init(par);
-            }
+        if (session->m_pAudioDECODE.get())
+        {
+            mfxRes = session->m_pAudioDECODE->Init(par);
         }
 
     }
@@ -232,18 +226,6 @@ mfxStatus MFXAudioDECODE_Init(mfxSession session, mfxAudioParam *par)
     {
         // set the default error value
         mfxRes = MFX_ERR_UNKNOWN;
-        if (0 == session)
-        {
-            mfxRes = MFX_ERR_INVALID_HANDLE;
-        }
-        else if (0 == session->m_pAudioDECODE.get())
-        {
-            mfxRes = MFX_ERR_INVALID_AUDIO_PARAM;
-        }
-        else if (0 == par)
-        {
-            mfxRes = MFX_ERR_NULL_PTR;
-        }
     }
 
     MFX_LTRACE_I(MFX_TRACE_LEVEL_API, mfxRes);

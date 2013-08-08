@@ -667,6 +667,8 @@ mfxStatus ConvertVideoParam_H264enc( mfxVideoInternalParam *parMFX, UMC::H264Enc
 
     // apply target usage first
     Ipp32s indexTU = parMFX->mfx.TargetUsage == MFX_TARGETUSAGE_UNKNOWN ? MFX_TARGETUSAGE_BALANCED - 1 : parMFX->mfx.TargetUsage - 1;
+    if (indexTU < 0)
+        indexTU = 0;    // fix for KW
     parUMC->B_frame_rate = TargetUsageDefaults[DEFAULT_B_FRAME_RATE][indexTU];
     parUMC->treat_B_as_reference =  TargetUsageDefaults[DEFAULT_B_REF][indexTU];
     parUMC->num_ref_frames = TargetUsageDefaults[DEFAULT_NUM_REF_FRAME][indexTU];
@@ -2624,6 +2626,10 @@ void SetUMCFrame(H264EncoderFrame_8u16s* umcFrame, mfxExtAvcRefFrameParam* cucFr
                         assert(!"unsupported mvFormat > 6");
                     }
 
+                    if (umcMb.mbtype >= NUMBER_OF_MBTYPES)
+                    {
+                        umcMb.mbtype = MBTYPE_B_8x8;    // set latest mb type
+                    }
                     UnPackMVs(&umcMb, mfxMv, umcMvL0, umcMvL1);
                     UnPackRefIdxs(&umcMb, &mfxMb, umcRefL0, umcRefL1);
                 }

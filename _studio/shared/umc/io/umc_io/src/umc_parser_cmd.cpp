@@ -116,32 +116,45 @@ void ParserCmd::PrintData()
                     switch(pKey->m_keyType)
                     {
                     case Boolean:
-                        if (pKey->m_bool)
+                    {
+                        bool* pB = pKey->m_bool;
+                        if(pB)
                         {
-                            if(pKey->m_bool[i] == true)
+                            if (pB[i])
                                 vm_string_printf(VM_STRING(" true"));
                             else
                                 vm_string_printf(VM_STRING(" false"));
                         }
                         break;
+                    }
                     case Integer:
-                        if (pKey->m_uint)
-                            vm_string_printf(VM_STRING(" %d"), pKey->m_uint[i]);
+                    {
+                        Ipp32u* pI = pKey->m_uint;
+                        if (pI)
+                        {
+                            vm_string_printf(VM_STRING(" %d"), pI[i]);
+                        }
                         break;
+                    }
                     case Real:
-                        if (pKey->m_double)
-                            vm_string_printf(VM_STRING(" %f"), pKey->m_double[i]);
+                    {    Ipp64f* pR = pKey->m_double;
+                        if (pR)
+                        {
+                            vm_string_printf(VM_STRING(" %f"), pR[i]);
+                        }
                         break;
+                    }
                     case String:
-                        if (pKey->m_string)
+                    {
+                        DString* pS = pKey->m_string;
+                        if (pS)
                         {
                             vm_string_printf(VM_STRING(" \""));
-                            vm_string_printf(pKey->m_string[i]);
+                            vm_string_printf(pS[i]);
                             vm_string_printf(VM_STRING("\""));
                         }
                         break;
-                    default:
-                        break;
+                    }
                     }
                     if(i != (pKey->m_iArraySize - 1))
                         vm_string_printf(VM_STRING(","));
@@ -396,16 +409,21 @@ Ipp32u ParserCmd::GetParam(const vm_char *cName, const vm_char *cLongName, bool 
                 iMinArraySize = IPP_MIN(pKey->m_iArraySize, iArraySize);
                 if(pKey->m_keyType == Boolean)
                 {
-                    if (pKey->m_bool)
+                    bool* pB = pKey->m_bool;
+                    if (pB)
                     {
                         for(Ipp32u i = 0; i < iMinArraySize; i++)
-                            bValue[i] = pKey->m_bool[i];
+                            bValue[i] = pB[i];
                     }
                 }
-                else if (pKey->m_uint)
+                else 
                 {
-                    for(Ipp32u i = 0; i < iMinArraySize; i++)
-                        bValue[i] = (pKey->m_uint[i])?true:false;
+                    Ipp32u* pI = pKey->m_uint;
+                    if (pI)
+                    {
+                        for(Ipp32u i = 0; i < iMinArraySize; i++)
+                            bValue[i] = (pI[i])?true:false;
+                    }
                 }
                 return iMinArraySize;
             }
@@ -469,10 +487,11 @@ Ipp32u ParserCmd::GetParam(const vm_char *cName, const vm_char *cLongName, DStri
                 if(!sValue)
                     return pKey->m_iArraySize;
                 iMinArraySize = IPP_MIN(pKey->m_iArraySize, iArraySize);
-                if (pKey->m_string)
+                DString* pS = pKey->m_string;
+                if (pS)
                 {
                     for(Ipp32u i = 0; i < iMinArraySize; i++)
-                        sValue[i] = pKey->m_string[i];
+                        sValue[i] = pS[i];
                 }
                 return iMinArraySize;
             }
