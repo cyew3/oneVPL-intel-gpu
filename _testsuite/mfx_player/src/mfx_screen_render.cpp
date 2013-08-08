@@ -318,10 +318,10 @@ BOOL ScreenRender::EnableDwmQueuing()
     dwmpp.fQueue             = TRUE;
     dwmpp.cRefreshStart      = dwmti.cRefresh + 1;
     dwmpp.cBuffer            = DWM_BUFFER_COUNT;
-    dwmpp.fUseSourceRate     = FALSE;
-    /*dwmpp.rateSource.uiNumerator  = 24;
-    dwmpp.rateSource.uiDenominator = 1;*/
-    dwmpp.cRefreshesPerFrame = 1;
+    dwmpp.fUseSourceRate     = TRUE;
+    dwmpp.rateSource.uiNumerator  = 5000;
+    dwmpp.rateSource.uiDenominator = 1;
+    //dwmpp.cRefreshesPerFrame = 1;
     dwmpp.eSampling          = DWM_SOURCE_FRAME_SAMPLING_POINT;
 
     hr = ((PFNDWMSETPRESENTPARAMETERS) m_pfnDwmSetPresentParameters)(m_Hwnd, &dwmpp);
