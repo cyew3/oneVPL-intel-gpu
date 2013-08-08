@@ -39,7 +39,7 @@ public:
             MFX_CHECK_STS(base::Query(in, out));
         }
         //query mod3
-        return base::Query(in, NULL);
+        return base::Query(in, out);
     }
     virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request) {
         auto_ext_buffer_remove auto_buf(*par, idToRemove);
