@@ -554,7 +554,7 @@ void H265Prediction::h265_PredictIntraChroma(
 //---------------------------------------------------------
 // Motion Compensation
 //---------------------------------------------------------
-void H265Prediction::MotionCompensation(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, H265PUInfo *PUInfo)
+void H265Prediction::MotionCompensation(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     VM_ASSERT(pCU->m_AbsIdxInLCU == 0);
     bool weighted_prediction = pCU->m_SliceHeader->slice_type == P_SLICE ? m_context->m_pps->weighted_pred_flag :
@@ -566,24 +566,16 @@ void H265Prediction::MotionCompensation(H265CodingUnit* pCU, Ipp32u AbsPartIdx, 
 
     for (Ipp32s PartIdx = 0, subPartIdx = AbsPartIdx; PartIdx < countPart; PartIdx++, subPartIdx += PUOffset)
     {
-#if 1
-        Ipp32u PartAddr;
-        Ipp32u Width, Height;
-        pCU->getPartIndexAndSize(AbsPartIdx, Depth, PartIdx, PartAddr, Width, Height);
-        PartAddr += AbsPartIdx;
+        H265PUInfo PUi;
+        H265MVInfo &MVi = PUi.interinfo;
+
+        pCU->getPartIndexAndSize(AbsPartIdx, Depth, PartIdx, PUi.PartAddr, PUi.Width, PUi.Height);
+        PUi.PartAddr += AbsPartIdx;
 
         Ipp32s LPelX = pCU->m_CUPelX + pCU->m_rasterToPelX[subPartIdx];
         Ipp32s TPelY = pCU->m_CUPelY + pCU->m_rasterToPelY[subPartIdx];
         Ipp32s PartX = LPelX >> m_context->m_sps->log2_min_transform_block_size;
         Ipp32s PartY = TPelY >> m_context->m_sps->log2_min_transform_block_size;
-#endif
-        H265PUInfo &PUi = PUInfo[PartIdx];
-        H265MVInfo &MVi = PUi.interinfo;
-
-#if 1
-        PUi.PartAddr = PartAddr;
-        PUi.Height = Height;
-        PUi.Width = Width;
 
         const H265FrameCodingData::ColocatedTUInfo &tuInfoL0 = m_context->m_frame->getCD()->GetTUInfo(REF_PIC_LIST_0, m_context->m_frame->getNumPartInCUSize() * m_context->m_frame->getFrameWidthInCU() * PartY + PartX);
         const H265FrameCodingData::ColocatedTUInfo &tuInfoL1 = m_context->m_frame->getCD()->GetTUInfo(REF_PIC_LIST_1, m_context->m_frame->getNumPartInCUSize() * m_context->m_frame->getFrameWidthInCU() * PartY + PartX);
@@ -606,7 +598,6 @@ void H265Prediction::MotionCompensation(H265CodingUnit* pCU, Ipp32u AbsPartIdx, 
         }
         else
             MVi.mvinfo[REF_PIC_LIST_1].RefIdx = -1;
-#endif
 
         Ipp32s RefIdx[2] = {-1, -1};
         RefIdx[REF_PIC_LIST_0] = MVi.mvinfo[REF_PIC_LIST_0].RefIdx;
@@ -614,7 +605,7 @@ void H265Prediction::MotionCompensation(H265CodingUnit* pCU, Ipp32u AbsPartIdx, 
 
         VM_ASSERT(RefIdx[REF_PIC_LIST_0] >= 0 || RefIdx[REF_PIC_LIST_1] >= 0);
 
-        if ((CheckIdenticalMotion(pCU, PUInfo[PartIdx]) || !(RefIdx[REF_PIC_LIST_0] >= 0 && RefIdx[REF_PIC_LIST_1] >= 0)))
+        if ((CheckIdenticalMotion(pCU, PUi) || !(RefIdx[REF_PIC_LIST_0] >= 0 && RefIdx[REF_PIC_LIST_1] >= 0)))
         {
             EnumRefPicList direction = RefIdx[REF_PIC_LIST_0] >= 0 ? REF_PIC_LIST_0 : REF_PIC_LIST_1;
             if ( ! weighted_prediction )

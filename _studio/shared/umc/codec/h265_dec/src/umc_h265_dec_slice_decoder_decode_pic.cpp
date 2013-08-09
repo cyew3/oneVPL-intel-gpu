@@ -104,8 +104,8 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
 
     // ref_pic_list_init
     Ipp32s cIdx = 0;
-    H265DecoderFrame *refPicListTemp0[MAX_NUM_REF + 1];
-    H265DecoderFrame *refPicListTemp1[MAX_NUM_REF + 1];
+    H265DecoderFrame *refPicListTemp0[MAX_NUM_REF_PICS + 1];
+    H265DecoderFrame *refPicListTemp1[MAX_NUM_REF_PICS + 1];
     Ipp32s numPocTotalCurr = NumPocStCurr0 + NumPocStCurr1 + NumPocLtCurr;
 
     cIdx = 0;

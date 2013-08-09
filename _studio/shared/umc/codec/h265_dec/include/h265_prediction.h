@@ -79,7 +79,7 @@ public:
     void InitTempBuff(DecodingContext* context);
 
     // inter
-    void MotionCompensation(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, H265PUInfo *PUInfo);
+    void MotionCompensation(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
 
     // Intra Prediction
     void h265_PredictIntraLuma(Ipp32u DirMode, H265PlanePtrYCommon pPred, Ipp32u Stride, Ipp32s Size);

@@ -48,8 +48,6 @@ namespace UMC
 
 #define ABSOWN(x) ((x) > 0 ? (x) : (-(x)))
 
-#define    _IS_ALIGNED(p, n)    (!(((Ipp8u*)(p) - (Ipp8u*)(0)) & ((n)-1)))
-
 //#define STORE_CABAC_BITS
 //#define CABAC_DECORER_COMP
 //#define CABAC_CONTEXTS_COMP
@@ -303,10 +301,6 @@ typedef enum {
 
 // macro - yields TRUE if a given MB type is INTER
 #define IS_INTER_MBTYPE(mbtype) ((mbtype) >= MBTYPE_INTER)
-
-#define IS_I_SLICE(SliceType) ((SliceType) == INTRASLICE)
-#define IS_P_SLICE(SliceType) ((SliceType) == PREDSLICE || (SliceType) == S_PREDSLICE)
-#define IS_B_SLICE(SliceType) ((SliceType) == BPREDSLICE)
 
 #define IS_SKIP_DEBLOCKING_MODE_NON_REF (m_PermanentTurnOffDeblocking == 1)
 #define IS_SKIP_DEBLOCKING_MODE_PERMANENT (m_PermanentTurnOffDeblocking == 2)

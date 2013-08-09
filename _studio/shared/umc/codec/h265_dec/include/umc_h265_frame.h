@@ -69,7 +69,7 @@ public:
     }
 
 private:
-    ReferenceInformation m_refPicList1[MAX_NUM_REF + 3];
+    ReferenceInformation m_refPicList1[MAX_NUM_REF_PICS + 3];
 };
 
 enum BusyStates_H265

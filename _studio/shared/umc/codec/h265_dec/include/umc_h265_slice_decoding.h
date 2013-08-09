@@ -288,7 +288,7 @@ public:
     void setColRefIdx(unsigned val) { m_SliceHeader.m_ColRefIdx = val; }
 
     void initWpScaling()    { initWpScaling(m_SliceHeader.m_weightPredTable); }
-    void initWpScaling(wpScalingParam  wp[2][MAX_NUM_REF][3]);
+    void initWpScaling(wpScalingParam  wp[2][MAX_NUM_REF_PICS][3]);
     void getWpScaling(EnumRefPicList e, int iRefIdx, wpScalingParam *&wp) { wp = m_SliceHeader.m_weightPredTable[e][iRefIdx]; }
     void getWpScaling(int e, int iRefIdx, wpScalingParam *&wp) { wp = m_SliceHeader.m_weightPredTable[e][iRefIdx]; }
 

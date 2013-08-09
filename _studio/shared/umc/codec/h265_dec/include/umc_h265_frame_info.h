@@ -239,7 +239,7 @@ public:
 
     H265_FORCEINLINE H265DecoderRefPicList* GetRefPicList(Ipp32u sliceNumber, Ipp32s list)
     {
-        VM_ASSERT(list <= LIST_1 && list >= 0);
+        VM_ASSERT(list <= REF_PIC_LIST_1 && list >= 0);
 
         if (sliceNumber >= m_refPicList.size())
         {
@@ -254,14 +254,14 @@ public:
         Ipp32u checkedErrorMask = UMC::ERROR_FRAME_MINOR | UMC::ERROR_FRAME_MAJOR | UMC::ERROR_FRAME_REFERENCE_FRAME;
         for (size_t i = 0; i < m_refPicList.size(); i ++)
         {
-            H265DecoderRefPicList* list = &m_refPicList[i].m_refPicList[LIST_0];
+            H265DecoderRefPicList* list = &m_refPicList[i].m_refPicList[REF_PIC_LIST_0];
             for (size_t k = 0; list->m_refPicList[k].refFrame; k++)
             {
                 if (list->m_refPicList[k].refFrame->GetError() & checkedErrorMask)
                     return true;
             }
 
-            list = &m_refPicList[i].m_refPicList[LIST_1];
+            list = &m_refPicList[i].m_refPicList[REF_PIC_LIST_1];
             for (size_t k = 0; list->m_refPicList[k].refFrame; k++)
             {
                 if (list->m_refPicList[k].refFrame->GetError() & checkedErrorMask)

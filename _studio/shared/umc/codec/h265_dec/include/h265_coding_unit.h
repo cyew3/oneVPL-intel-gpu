@@ -284,7 +284,7 @@ struct H265PUInfo
     H265MVInfo interinfo;
     H265DecoderFrame *refFrame[2];
     Ipp32u PartAddr;
-    Ipp32s Width, Height;
+    Ipp32u Width, Height;
 };
 
 namespace RasterAddress

@@ -291,11 +291,11 @@ int H265Slice::getNumRpsCurrTempList() const
   return numRpsCurrTempList;
 }
 
-void  H265Slice::initWpScaling(wpScalingParam  wp[2][MAX_NUM_REF][3])
+void  H265Slice::initWpScaling(wpScalingParam  wp[2][MAX_NUM_REF_PICS][3])
 {
   for ( int e=0 ; e<2 ; e++ )
   {
-    for ( int i=0 ; i<MAX_NUM_REF ; i++ )
+    for ( int i=0 ; i<MAX_NUM_REF_PICS ; i++ )
     {
       for ( int yuv=0 ; yuv<3 ; yuv++ )
       {
@@ -348,7 +348,7 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
         m_SliceHeader.m_numRefIdx[i]     = slice->m_numRefIdx[i];
     }
 
-    /*for (i = 0; i < MAX_NUM_REF; i++)
+    /*for (i = 0; i < MAX_NUM_REF_PICS; i++)
     {
         m_SliceHeader.m_list1IdxToList0Idx[i] = slice->m_list1IdxToList0Idx[i];
     } */
@@ -361,7 +361,7 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
 
     for (Ipp32s i = 0; i < 2; i++)
     {
-        for (Ipp32s j = 0; j < MAX_NUM_REF; j++)
+        for (Ipp32s j = 0; j < MAX_NUM_REF_PICS; j++)
         {
             //m_SliceHeader.m_apcRefPicList[i][j]  = slice->m_apcRefPicList[i][j];
             m_SliceHeader.RefPOCList[i][j] = slice->RefPOCList[i][j];
@@ -371,7 +371,7 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
 
     for (Ipp32s i = 0; i < 2; i++)
     {
-        for (Ipp32s j = 0; j < MAX_NUM_REF + 1; j++)
+        for (Ipp32s j = 0; j < MAX_NUM_REF_PICS + 1; j++)
         {
             //m_bIsUsedAsLongTerm[i][j] = slice->m_bIsUsedAsLongTerm[i][j];
         }
@@ -395,7 +395,7 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
 
     for ( Ipp32s  e=0 ; e<2 ; e++ )
     {
-        for ( Ipp32s  n=0 ; n<MAX_NUM_REF ; n++ )
+        for ( Ipp32s  n=0 ; n<MAX_NUM_REF_PICS ; n++ )
         {
             memcpy(m_SliceHeader.m_weightPredTable[e][n], slice->m_weightPredTable[e][n], sizeof(wpScalingParam)*3 );
         }

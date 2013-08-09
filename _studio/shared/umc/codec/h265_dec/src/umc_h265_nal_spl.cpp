@@ -15,6 +15,13 @@
 
 namespace UMC_HEVC_DECODER
 {
+// NAL unit definitions
+enum
+{
+    NAL_UNITTYPE_SHIFT_H265     = 1,
+    NAL_UNITTYPE_BITS_H265      = 0x7e,
+};
+
 void SwapMemoryAndRemovePreventingBytes_H265(void *pDestination, size_t &nDstSize, void *pSource, size_t nSrcSize, std::vector<Ipp32u> *pRemovedOffsets);
 
 static Ipp8u start_code_prefix[] = {0, 0, 0, 1};

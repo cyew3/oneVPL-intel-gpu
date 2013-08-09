@@ -1029,7 +1029,7 @@ void H265HeadersBitstream::xParsePredWeightTable(H265Slice* pcSlice)
             }
         }
 
-        for ( int iRefIdx=pcSlice->getNumRefIdx(eRefPicList) ; iRefIdx<MAX_NUM_REF ; iRefIdx++ )
+        for ( int iRefIdx=pcSlice->getNumRefIdx(eRefPicList) ; iRefIdx<MAX_NUM_REF_PICS ; iRefIdx++ )
         {
             pcSlice->getWpScaling(eRefPicList, iRefIdx, wp);
 

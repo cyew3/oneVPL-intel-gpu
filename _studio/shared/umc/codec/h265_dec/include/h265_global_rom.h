@@ -24,6 +24,11 @@
 namespace UMC_HEVC_DECODER
 {
 
+enum
+{
+    NUM_INTRA_MODE = 36
+};
+
 // global variables (LCU width/height, max. CU depth) ------------------------------------------------------------
 
 extern Ipp32u g_PUOffset[8];

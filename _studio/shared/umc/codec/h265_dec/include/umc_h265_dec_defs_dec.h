@@ -56,8 +56,6 @@ namespace UMC_HEVC_DECODER
 #define MRG_MAX_NUM_CANDS           5
 #define MRG_MAX_NUM_CANDS 5                            // MERGE
 
-#define NUM_INTRA_MODE 36
-
 #define REG_DCT 65535
 
 #define NUM_QT_CBF_CTX                5       ///< number of context models for QT CBF
@@ -65,12 +63,22 @@ namespace UMC_HEVC_DECODER
 #define CU_DQP_TU_CMAX 5 //max number bins for truncated unary
 #define CU_DQP_EG_k 0 //expgolomb order
 
-#define SCAN_SET_SIZE                     16
+/// coefficient scanning type used in ACS
+enum COEFF_SCAN_TYPE
+{
+    SCAN_DIAG = 0,      ///< typical zigzag scan
+    SCAN_HOR,           ///< horizontal first scan
+    SCAN_VER            ///< vertical first scan
+};
 
-#define SBH_THRESHOLD                    4  ///< I0156: value of the fixed SBH controlling threshold
+enum
+{
+    SCAN_SET_SIZE = 16,
+    LAST_MINUS_FIRST_SIG_SCAN_THRESHOLD = 3,
+
+};
 
 #define NUM_SIG_CG_FLAG_CTX           2       ///< number of context models for MULTI_LEVEL_SIGNIFICANCE
-#define NUM_SIG_FLAG_CTX              42      ///< number of context models for sig flag
 #define NUM_SIG_FLAG_CTX_LUMA         27      ///< number of context models for luma sig flag
 #define NUM_CTX_LAST_FLAG_XY          15      ///< number of context models for last coefficient position
 #define C1FLAG_NUMBER               8 // maximum number of largerThan1 flag coded in one chunk :  16 in HM5
@@ -91,8 +99,6 @@ namespace UMC_HEVC_DECODER
 #define MAX_TLAYER 8
 #define MAX_CPB_CNT                     32  ///< Upper bound of (cpb_cnt_minus1 + 1)
 
-#define MAX_UINT 0xFFFFFFFFU // max. value of unsigned 32-bit integer
-#define MAX_NUM_REF 16
 #define MAX_CU_DEPTH 6 // log2(LCUSize)
 #define MAX_CU_SIZE (1<<(MAX_CU_DEPTH)) // maximum allowable size of CU
 #define MIN_PU_SIZE 4
@@ -128,24 +134,6 @@ namespace UMC_HEVC_DECODER
     #define STRUCT_DECLSPEC_ALIGN
 #endif
 
-#define ABSOWN(x) ((x) > 0 ? (x) : (-(x)))
-
-#define    _IS_ALIGNED(p, n)    (!(((Ipp8u*)(p) - (Ipp8u*)(0)) & ((n)-1)))
-
-// NAL unit definitions
-enum
-{
-    NAL_UNITTYPE_SHIFT_H265     = 1,
-    NAL_UNITTYPE_BITS_H265      = 0x7e,
-    NAL_TEMPORAL_ID_BITS_H265   = 0x7,
-    NAL_TEMPORAL_ID_SHIFT_H265  = 0
-};
-
-enum
-{
-    ALIGN_VALUE_H265            = 16
-};
-
 const int MAX_CHROMA_FORMAT_IDC = 3;
 
 // Although the standard allows for a minimum width or height of 4, this
@@ -163,32 +151,6 @@ enum DisplayPictureStruct_H265 {
     DPS_FRAME_TRIPLING_H265
 };
 
-/// coefficient scanning type used in ACS
-enum COEFF_SCAN_TYPE
-{
-    SCAN_DIAG = 0,      ///< typical zigzag scan
-    SCAN_HOR,           ///< horizontal first scan
-    SCAN_VER            ///< vertical first scan
-};
-
-#ifndef SHARED_ENCDEC_STRUCTURES_DEFS
-#define SHARED_ENCDEC_STRUCTURES_DEFS
-
-enum    // Valid QP range
-{
-    QP_MAX = 51,
-    QP_MIN = 0
-};
-
-enum
-{
-    LIST_0 = 0,     // Ref/mvs list 0 (L0)
-    LIST_1 = 1      // Ref/mvs list 1 (L1)
-};
-
-//  NAL Unit Types
-#ifndef SHARED_ENCDECBS_STRUCTURES_DEFS
-#define SHARED_ENCDECBS_STRUCTURES_DEFS
 
 // default plane & coeffs types:
 #if BITS_PER_PLANE == 8
@@ -284,8 +246,6 @@ enum NalUnitType
   NAL_UNIT_INVALID
 };
 
-#endif/* SHARED_ENCDECBS_STRUCTURES_DEFS */
-
 // Note!  The Picture Code Type values below are no longer used in the
 // core encoder.   It only knows about slice types, and whether or not
 // the frame is IDR, Reference or Disposable.  See enum above.
@@ -300,9 +260,7 @@ enum SliceType
 enum EnumRefPicList
 {
     REF_PIC_LIST_0 = 0,   ///< reference list 0
-    REF_PIC_LIST_1 = 1,   ///< reference list 1
-    REF_PIC_LIST_C = 2,   ///< combined reference list for uni-prediction in B-Slices
-    REF_PIC_LIST_X = 100  ///< special mark
+    REF_PIC_LIST_1 = 1    ///< reference list 1
 };
 
 enum EnumPartSize   // supported partition shape
@@ -318,18 +276,6 @@ enum EnumPartSize   // supported partition shape
 
     SIZE_NONE = 15
 };
-// aya: moved to common place to resolve issue with interpolation
-//// texture component type
-//enum EnumTextType
-//{
-//    TEXT_LUMA,            ///< luma
-//    TEXT_CHROMA,          ///< chroma (U+V)
-//    TEXT_CHROMA_U,        ///< chroma U
-//    TEXT_CHROMA_V,        ///< chroma V
-//    TEXT_ALL,             ///< Y+U+V
-//    TEXT_NONE = 15
-//};
-
 
 // supported prediction type
 enum EnumPredMode
@@ -386,12 +332,6 @@ enum SGUBorderID
     NUM_SGU_BORDER
 };
 
-enum InterpolateType
-{
-    INTER_HOR = 0,
-    INTER_VERT
-};
-
 struct SAOLCUParam
 {
     bool   m_mergeUpFlag;
@@ -444,9 +384,6 @@ protected:
     void SetOffsetsLuma(SAOLCUParam &saoLCUParam, Ipp32s typeIdx);
     void SetOffsetsChroma(SAOLCUParam &saoLCUParamCb, SAOLCUParam &saoLCUParamCr, Ipp32s typeIdx);
 
-    //void processSaoCuOrgLuma(Ipp32s Addr, Ipp32s PartIdx, H265PlaneYCommon *tmpL);
-    //void processSaoCuLuma(Ipp32s addr, Ipp32s saoType, H265PlaneYCommon *tmpL);
-
     void processSaoCuOrgChroma(Ipp32s Addr, Ipp32s PartIdx, H265PlaneUVCommon *tmpL);
     void processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H265PlaneUVCommon *tmpL);
 
@@ -473,57 +410,6 @@ UMC::FrameType SliceTypeToFrameType(SliceType slice_type)
 
     return UMC::NONE_PICTURE;
 }
-
-// Macroblock_H265 type definitions
-// Keep these ordered such that intra types are first, followed by
-// inter types.  Otherwise you'll need to change the definitions
-// of IS_INTRA_MBTYPE and IS_INTER_MBTYPE.
-//
-// WARNING:  Because the decoder exposes macroblock types to the application,
-// these values cannot be changed without affecting users of the decoder.
-// If new macroblock types need to be inserted in the middle of the list,
-// then perhaps existing types should retain their numeric value, the new
-// type should be given a new value, and for coding efficiency we should
-// perhaps decouple these values from the ones that are encoded in the
-// bitstream.
-//
-
-typedef enum {
-    MBTYPE_INTRA,            // 4x4
-    MBTYPE_INTRA_16x16,
-    MBTYPE_INTRA_BL,
-    MBTYPE_PCM,              // Raw Pixel Coding, qualifies as a INTRA type...
-    MBTYPE_INTER,            // 16x16
-    MBTYPE_INTER_16x8,
-    MBTYPE_INTER_8x16,
-    MBTYPE_INTER_8x8,
-    MBTYPE_INTER_8x8_REF0,
-    MBTYPE_FORWARD,
-    MBTYPE_BACKWARD,
-    MBTYPE_SKIPPED,
-    MBTYPE_DIRECT,
-    MBTYPE_BIDIR,
-    MBTYPE_FWD_FWD_16x8,
-    MBTYPE_FWD_FWD_8x16,
-    MBTYPE_BWD_BWD_16x8,
-    MBTYPE_BWD_BWD_8x16,
-    MBTYPE_FWD_BWD_16x8,
-    MBTYPE_FWD_BWD_8x16,
-    MBTYPE_BWD_FWD_16x8,
-    MBTYPE_BWD_FWD_8x16,
-    MBTYPE_BIDIR_FWD_16x8,
-    MBTYPE_BIDIR_FWD_8x16,
-    MBTYPE_BIDIR_BWD_16x8,
-    MBTYPE_BIDIR_BWD_8x16,
-    MBTYPE_FWD_BIDIR_16x8,
-    MBTYPE_FWD_BIDIR_8x16,
-    MBTYPE_BWD_BIDIR_16x8,
-    MBTYPE_BWD_BIDIR_8x16,
-    MBTYPE_BIDIR_BIDIR_16x8,
-    MBTYPE_BIDIR_BIDIR_8x16,
-    MBTYPE_B_8x8,
-    NUMBER_OF_MBTYPES
-} MB_Type;
 
 typedef enum
 {
@@ -580,39 +466,6 @@ typedef enum
 
 } SEI_TYPE;
 
-// 8x8 Macroblock_H265 subblock type definitions
-typedef enum {
-    SBTYPE_DIRECT = 0,            // B Slice modes
-    SBTYPE_8x8 = 1,               // P slice modes
-    SBTYPE_8x4 = 2,
-    SBTYPE_4x8 = 3,
-    SBTYPE_4x4 = 4,
-    SBTYPE_FORWARD_8x8 = 5,       // Subtract 4 for mode #
-    SBTYPE_BACKWARD_8x8 = 6,
-    SBTYPE_BIDIR_8x8 = 7,
-    SBTYPE_FORWARD_8x4 = 8,
-    SBTYPE_FORWARD_4x8 = 9,
-    SBTYPE_BACKWARD_8x4 = 10,
-    SBTYPE_BACKWARD_4x8 = 11,
-    SBTYPE_BIDIR_8x4 = 12,
-    SBTYPE_BIDIR_4x8 = 13,
-    SBTYPE_FORWARD_4x4 = 14,
-    SBTYPE_BACKWARD_4x4 = 15,
-    SBTYPE_BIDIR_4x4 = 16
-} SB_Type;
-#endif /*SHARED_ENCDEC_STRUCTURES_DEFS*/
-
-// macro - yields TRUE if a given MB type is INTRA
-#define IS_INTRA_MBTYPE_NOT_BL(mbtype) (((mbtype) < MBTYPE_INTER) && ((mbtype) != MBTYPE_INTRA_BL))
-#define IS_INTRA_MBTYPE(mbtype) ((mbtype) < MBTYPE_INTER)
-
-// macro - yields TRUE if a given MB type is INTER
-#define IS_INTER_MBTYPE(mbtype) ((mbtype) >= MBTYPE_INTER)
-
-#define IS_I_SLICE(SliceType) ((SliceType) == INTRASLICE)
-#define IS_P_SLICE(SliceType) ((SliceType) == PREDSLICE || (SliceType) == S_PREDSLICE)
-#define IS_B_SLICE(SliceType) ((SliceType) == BPREDSLICE)
-
 #define IS_SKIP_DEBLOCKING_MODE_PERMANENT (m_PermanentTurnOffDeblocking == 2)
 #define IS_SKIP_DEBLOCKING_MODE_PREVENTIVE (m_PermanentTurnOffDeblocking == 3)
 
@@ -623,6 +476,8 @@ enum
     MAX_NUM_SEQ_PARAM_SETS_H265 = 32,
     MAX_NUM_PIC_PARAM_SETS_H265 = 256,
 
+    MAX_NUM_REF_PICS            = 16,
+
     COEFFICIENTS_BUFFER_SIZE_H265    = 16 * 51,
 
     MINIMAL_DATA_SIZE_H265           = 4,
@@ -630,44 +485,6 @@ enum
     DEFAULT_NU_TAIL_VALUE       = 0xff,
     DEFAULT_NU_TAIL_SIZE        = 8
 };
-
-// Possible values for disable_deblocking_filter_idc:
-enum DeblockingModes_t_H265
-{
-    DEBLOCK_FILTER_ON_H265                   = 0,
-    DEBLOCK_FILTER_OFF_H265                  = 1,
-    DEBLOCK_FILTER_ON_NO_SLICE_EDGES_H265             = 2,
-    DEBLOCK_FILTER_ON_2_PASS_H265                     = 3,
-    DEBLOCK_FILTER_ON_NO_CHROMA_H265                  = 4,
-    DEBLOCK_FILTER_ON_NO_SLICE_EDGES_NO_CHROMA_H265   = 5,
-    DEBLOCK_FILTER_ON_2_PASS_NO_CHROMA_H265           = 6
-};
-
-#define SCLFLAT16     0
-#define SCLDEFAULT    1
-#define SCLREDEFINED  2
-
-#pragma pack(1)
-
-struct H265ScalingList4x4
-{
-    Ipp8u ScalingListCoeffs[16];
-};
-
-struct H265ScalingList8x8
-{
-    Ipp8u ScalingListCoeffs[64];
-};
-
-struct H265WholeQPLevelScale4x4
-{
-    Ipp16s LevelScaleCoeffs[88]/*since we do not support 422 and 444*/[16];
-};
-struct H265WholeQPLevelScale8x8
-{
-    Ipp16s LevelScaleCoeffs[88]/*since we do not support 422 and 444*/[64];
-};
-
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Memory class
@@ -712,8 +529,6 @@ public:
 
     virtual void Free();
 };
-
-#pragma pack()
 
 #pragma pack(16)
 
@@ -1074,7 +889,6 @@ public:
 
 typedef Ipp32u IntraType;
 
-#define MAX_NUM_REF_PICS 16
 struct ReferencePictureSet
 {
     Ipp32s m_NumberOfPictures;
@@ -1139,8 +953,8 @@ struct RefPicListModification
 {
     Ipp32u m_RefPicListModificationFlagL0;
     Ipp32u m_RefPicListModificationFlagL1;
-    Ipp32u m_RefPicSetIdxL0[MAX_NUM_REF + 1];
-    Ipp32u m_RefPicSetIdxL1[MAX_NUM_REF + 1];
+    Ipp32u m_RefPicSetIdxL0[MAX_NUM_REF_PICS + 1];
+    Ipp32u m_RefPicSetIdxL1[MAX_NUM_REF_PICS + 1];
 
     Ipp32u getRefPicListModificationFlagL0() const      { return m_RefPicListModificationFlagL0; }
     void setRefPicListModificationFlagL0(Ipp32u val)    { m_RefPicListModificationFlagL0 = val; }
@@ -1250,10 +1064,7 @@ struct H265SeqParamSetBase
     Ipp32u       profile_compatibility;
     Ipp8u        residual_colour_transform_flag;
     Ipp8u        qpprime_y_zero_transform_bypass_flag;
-    Ipp8u        seq_scaling_matrix_present_flag;
-    H265ScalingList4x4 ScalingLists4x4[6];
-    H265ScalingList8x8 ScalingLists8x8[2];
-    Ipp8u        gaps_in_frame_num_value_allowed_flag;
+
     int          def_disp_win_left_offset;
     int          def_disp_win_right_offset;
     int          def_disp_win_top_offset;
@@ -1884,8 +1695,8 @@ struct H265SliceHeader
     bool m_CheckLDC;
     int m_numRefIdx[3]; //  for multiple reference of current slice. IT SEEMS BE SAME AS num_ref_idx_l0_active, l1, lc
 
-    Ipp32s RefPOCList[2][MAX_NUM_REF + 1];
-    bool RefLTList[2][MAX_NUM_REF + 1];
+    Ipp32s RefPOCList[2][MAX_NUM_REF_PICS + 1];
+    bool RefLTList[2][MAX_NUM_REF_PICS + 1];
 
     bool slice_sao_luma_flag;
     bool slice_sao_chroma_flag;      ///< SAO chroma enabled flag
@@ -1925,7 +1736,7 @@ struct H265SliceHeader
     bool        m_enableTMVPFlag;
     bool        slice_loop_filter_across_slices_enabled_flag;
 
-    wpScalingParam  m_weightPredTable[2][MAX_NUM_REF][3]; // [REF_PIC_LIST_0 or REF_PIC_LIST_1][refIdx][0:Y, 1:U, 2:V]
+    wpScalingParam  m_weightPredTable[2][MAX_NUM_REF_PICS][3]; // [REF_PIC_LIST_0 or REF_PIC_LIST_1][refIdx][0:Y, 1:U, 2:V]
 
     int m_numEntryPointOffsets;
     unsigned slice_segment_address;
