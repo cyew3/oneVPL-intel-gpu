@@ -192,15 +192,8 @@ public:
                            Ipp32u AbsPartIdx,
                            Ipp32u ChromaPredMode);
 
-    void InitNeighbourPatternLuma(H265CodingUnit* pCU,
-        Ipp32u ZorderIdxInPart,
-        Ipp32u PartDepth,
-        H265PlanePtrYCommon pAdiBuf,
-        Ipp32u OrgBufStride,
-        Ipp32u OrgBufHeight,
-        H265CodingUnit::IntraNeighbors *intraNeighbor);
-
-    void InitNeighbourPatternChroma(H265CodingUnit* pCU,
+    void InitNeighbourPatternChroma(
+        H265CodingUnit* pCU,
         Ipp32u ZorderIdxInPart,
         Ipp32u PartDepth,
         H265PlanePtrUVCommon pAdiBuf,
@@ -208,19 +201,8 @@ public:
         Ipp32u OrgBufHeight,
         H265CodingUnit::IntraNeighbors *intraNeighbor);
 
-    void FillReferenceSamplesLuma(Ipp32s bitDepth,
-        H265PlanePtrYCommon pRoiOrigin,
-        H265PlanePtrYCommon pAdiTemp,
-        bool* NeighborFlags,
-        Ipp32s NumIntraNeighbor,
-        Ipp32u UnitSize,
-        Ipp32s NumUnitsInCU,
-        Ipp32s TotalUnits,
-        Ipp32u CUSize,
-        Ipp32u Size,
-        Ipp32s PicStride);
-
-    void FillReferenceSamplesChroma(Ipp32s bitDepth,
+    void FillReferenceSamplesChroma(
+        Ipp32s bitDepth,
         H265PlanePtrUVCommon pRoiOrigin,
         H265PlanePtrUVCommon pAdiTemp,
         bool* NeighborFlags,
@@ -237,12 +219,6 @@ public:
                              Ipp32s onlyOneUp, Ipp32s onlyOneLeft, Ipp32s cross);
     void DeblockOneCrossChroma(H265CodingUnit* curLCU, Ipp32s curPixelColumn, Ipp32s curPixelRow,
                                Ipp32s onlyOneUp, Ipp32s onlyOneLeft, Ipp32s cross);
-
-    //aya: moved to HEVC_PP
-    //void FilterEdgeLuma(H265EdgeData *edge, H265PlaneYCommon *srcDst, Ipp32s srcDstStride, Ipp32s dir);
-
-    /*void FilterEdgeChroma(H265EdgeData *edge, H265PlaneUVCommon *srcDst, Ipp32s srcDstStride,
-        Ipp32s chromaCbQpOffset, Ipp32s chromaCrQpOffset, Ipp32s dir);*/
 
     template< Ipp32s dir>
     void GetEdgeStrength(H265CodingUnit* pcCUQ, H265EdgeData *edge, Ipp32s curColumn, Ipp32s curRow,

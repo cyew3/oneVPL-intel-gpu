@@ -16,6 +16,7 @@
 #include "umc_h265_bitstream.h"
 #include "h265_tr_quant.h"
 #include "umc_h265_frame_info.h"
+#include "mfx_h265_optimization.h"
 
 namespace UMC_HEVC_DECODER
 {
@@ -2691,17 +2692,102 @@ void H265SegmentDecoder::IntraRecLumaBlk(H265CodingUnit* pCU,
         }
     }
 
-    InitNeighbourPatternLuma(pCU, AbsPartIdx, TrDepth,
-        m_Prediction->GetPredicBuf(),
-        m_Prediction->GetPredicBufWidth(),
-        m_Prediction->GetPredicBufHeight(),
-        intraNeighbor);
+    //===== get Predicted Pels =====
+    Ipp8u PredPel[4*64+1];
 
-    //===== get prediction signal =====
+    const Ipp32s FilteredModes[] = {10, 7, 1, 0, 10};
+    const Ipp8u h265_log2table[] =
+    {
+        2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+        5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6
+    };
+
+    Ipp32s UnitSize = m_pSeqParamSet->MaxCUWidth >> m_pSeqParamSet->MaxCUDepth;
+    Ipp32s width = Size;
+
+    h265_GetPredictPels_8u(
+        m_pSeqParamSet->log2_min_transform_block_size, 
+        pCU->m_Frame->GetLumaAddr(pCU->CUAddr, pCU->m_AbsIdxInLCU + AbsPartIdx),
+        PredPel, 
+        intraNeighbor->neighborAvailable,
+        intraNeighbor->numIntraNeighbors,
+
+        width, 
+        pCU->m_Frame->pitch_luma(), 
+        1,
+
+        UnitSize);
+    
+
+    bool isFilterNeeded = true;
     Ipp32u LumaPredMode = pCU->GetLumaIntra(AbsPartIdx);
-    H265PlanePtrYCommon pRecIPred = m_context->m_frame->GetLumaAddr(pCU->CUAddr, AbsPartIdx);
-    Ipp32u RecIPredStride = m_context->m_frame->pitch_luma();
-    m_Prediction->h265_PredictIntraLuma(LumaPredMode, pRecIPred, RecIPredStride, Size);
+
+    if (LumaPredMode == DC_IDX)
+    {
+        isFilterNeeded = false;
+    }
+    else
+    {
+        Ipp32s diff = IPP_MIN(abs((int)LumaPredMode - (int)HOR_IDX), abs((int)LumaPredMode - (int)VER_IDX));
+
+        if (diff <= FilteredModes[h265_log2table[width - 4] - 2])
+        {
+            isFilterNeeded = false;
+        }
+    }   
+
+    if (m_pSeqParamSet->getUseStrongIntraSmoothing() && isFilterNeeded)
+    {
+        Ipp32s CUSize = pCU->GetWidth(AbsPartIdx) >> TrDepth;
+
+        unsigned blkSize = 32;
+        int threshold = 1 << (g_bitDepthY - 5);        
+
+        int topLeft = PredPel[0];
+        int topRight = PredPel[2*width];
+        int midHor = PredPel[width];
+
+        int bottomLeft = PredPel[4*width];
+        int midVer = PredPel[3*width];
+
+        bool bilinearLeft = abs(topLeft + topRight - 2*midHor) < threshold; 
+        bool bilinearAbove = abs(topLeft + bottomLeft - 2*midVer) < threshold;
+
+        if (CUSize >= blkSize && (bilinearLeft && bilinearAbove))
+        {
+            h265_FilterPredictPels_Bilinear_8u(PredPel, width, topLeft, bottomLeft, topRight);
+        }
+        else
+        {
+            h265_FilterPredictPels_8u(PredPel, width);
+        }
+    }
+    else if(isFilterNeeded)
+    {
+        h265_FilterPredictPels_8u(PredPel, width);
+    }
+
+    //===== get prediction signal =====    
+    H265PlanePtrYCommon pRec = m_context->m_frame->GetLumaAddr(pCU->CUAddr, AbsPartIdx);
+    Ipp32u pitch = m_context->m_frame->pitch_luma();
+
+    switch(LumaPredMode)
+    {
+    case PLANAR_IDX:
+        MFX_HEVC_COMMON::h265_intrapred_planar(PredPel, pRec, pitch, width);
+        break;
+    case DC_IDX:
+        MFX_HEVC_COMMON::h265_intrapred_dc(PredPel, pRec, pitch, width, 1);
+        break;
+    case VER_IDX:
+        MFX_HEVC_COMMON::h265_intrapred_ver(PredPel, pRec, pitch, width, 8, 1);
+        break;
+    case HOR_IDX:
+        MFX_HEVC_COMMON::h265_intrapred_hor(PredPel, pRec, pitch, width, 8, 1);
+        break;
+    default:
+        MFX_HEVC_COMMON::h265_intrapred_ang(LumaPredMode, PredPel, pRec, pitch, width);
+    }    
 
     //===== inverse transform =====
     if (!pCU->GetCbf(AbsPartIdx, TEXT_LUMA, TrDepth))
@@ -2715,8 +2801,9 @@ void H265SegmentDecoder::IntraRecLumaBlk(H265CodingUnit* pCU,
     bool useTransformSkip = pCU->GetTransformSkip(g_ConvertTxtTypeToIdx[TEXT_LUMA], AbsPartIdx) != 0;
 
     m_TrQuant->InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_LUMA, pCU->GetLumaIntra(AbsPartIdx),
-        pRecIPred, RecIPredStride, pCoeff, Size, Size, scalingListType, useTransformSkip);
-}
+        pRec, pitch, pCoeff, Size, Size, scalingListType, useTransformSkip);
+
+} // void H265SegmentDecoder::IntraRecLumaBlk(...)
 
 void H265SegmentDecoder::IntraRecChromaBlk(H265CodingUnit* pCU,
                          Ipp32u TrDepth,
