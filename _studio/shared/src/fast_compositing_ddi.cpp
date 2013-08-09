@@ -954,12 +954,6 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
                 pInputSample->SampleFormat.SampleFormat = DXVA_SampleFieldSingleOdd;
         }
 
-        if (pRefSurf->frameInfo.FourCC == MFX_FOURCC_RGB4)
-        {   
-            // workaround for rgb4 interlace video
-            pInputSample->SampleFormat.SampleFormat = DXVA2_SampleProgressiveFrame;
-        }
-
         // no transparence
         pInputSample->Alpha = 1.0F; 
 
