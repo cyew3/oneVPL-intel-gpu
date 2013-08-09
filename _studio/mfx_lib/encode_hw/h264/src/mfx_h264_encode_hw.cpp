@@ -1158,6 +1158,8 @@ void ImplementationAvc::OnLookaheadQueried()
             m_cmDevice->DestroySurface(task.m_cmRaw);
     }
 
+    m_cmCtx->DestroyEvent(task.m_event);
+
     m_lookaheadFinished.splice(m_lookaheadFinished.end(), m_lookaheadStarted, m_lookaheadStarted.begin());
 }
 

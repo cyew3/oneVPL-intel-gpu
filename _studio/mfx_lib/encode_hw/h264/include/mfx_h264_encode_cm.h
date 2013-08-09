@@ -280,6 +280,12 @@ public:
         MfxVideoParam const & video,
         CmDevice *            cmDevice);
 
+    CmEvent* EnqueueKernel(
+        CmKernel *            kernel,
+        unsigned int          tsWidth,
+        unsigned int          tsHeight,
+        CM_DEPENDENCY_PATTERN tsPattern);
+
     CmEvent * RunVme(
         DdiTask const & task,
         mfxU32          qp);
@@ -287,6 +293,8 @@ public:
     bool QueryVme(
         DdiTask const & task,
         CmEvent *       e);
+
+    int DestroyEvent( CmEvent*& e ){ if(m_queue) return m_queue->DestroyEvent(e); else return 0; } 
 
 protected:
     CmKernel * SelectKernelPreMe(mfxU32 frameType);
@@ -308,6 +316,7 @@ private:
     mfxVideoParam m_video;
 
     CmDevice *  m_device;
+    CmQueue*    m_queue;
     CmProgram * m_program;
     CmKernel *  m_kernelI;
     CmKernel *  m_kernelP;

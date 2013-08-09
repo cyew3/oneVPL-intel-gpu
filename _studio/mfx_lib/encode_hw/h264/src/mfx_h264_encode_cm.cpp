@@ -56,47 +56,6 @@ CmKernel * CreateKernel(CmDevice * device, CmProgram * program, char const * nam
     return kernel;
 }
 
-
-CmEvent * EnqueueKernel(
-    CmDevice *            device,
-    CmKernel *            kernel,
-    unsigned int          tsWidth,
-    unsigned int          tsHeight,
-    CM_DEPENDENCY_PATTERN tsPattern)
-{
-    int result = CM_SUCCESS;
-
-    if ((result = kernel->SetThreadCount(tsWidth * tsHeight)) != CM_SUCCESS)
-        throw CmRuntimeError();
-
-    CmThreadSpace * cmThreadSpace = 0;
-    if ((result = device->CreateThreadSpace(tsWidth, tsHeight, cmThreadSpace)) != CM_SUCCESS)
-        throw CmRuntimeError();
-
-    cmThreadSpace->SelectThreadDependencyPattern(tsPattern);
-
-    CmTask * cmTask = 0;
-    if ((result = device->CreateTask(cmTask)) != CM_SUCCESS)
-        throw CmRuntimeError();
-
-    if ((result = cmTask->AddKernel(kernel)) != CM_SUCCESS)
-        throw CmRuntimeError();
-
-    CmQueue * queue = 0;
-    if ((result = device->CreateQueue(queue)) != CM_SUCCESS)
-        throw CmRuntimeError();
-
-    CmEvent * e = 0;
-    if ((result = queue->Enqueue(cmTask, e, cmThreadSpace)) != CM_SUCCESS)
-        throw CmRuntimeError();
-
-    device->DestroyThreadSpace(cmThreadSpace);
-    device->DestroyTask(cmTask);
-
-    return e;
-}
-
-
 SurfaceIndex & GetIndex(CmSurface2D * surface)
 {
     SurfaceIndex * index = 0;
@@ -505,6 +464,7 @@ SurfaceIndex * CreateVmeSurfaceG75(
 CmContext::CmContext()
 : m_device(0)
 , m_program(0)
+, m_queue(0)
 {
 /*
     Flog = fopen("HmeLog.txt", "wb");
@@ -811,6 +771,9 @@ void CmContext::Setup(
     m_video  = video;
     m_device = cmDevice;
 
+    if (m_device->CreateQueue(m_queue) != CM_SUCCESS)
+        throw CmRuntimeError();
+
     mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
 
     widthLa = video.calcParam.widthLa;
@@ -835,6 +798,39 @@ void CmContext::Setup(
     SetLutMv(m_costsB, m_lutMvB);
 }
 
+CmEvent * CmContext::EnqueueKernel(
+    CmKernel *            kernel,
+    unsigned int          tsWidth,
+    unsigned int          tsHeight,
+    CM_DEPENDENCY_PATTERN tsPattern)
+{
+    int result = CM_SUCCESS;
+
+    if ((result = kernel->SetThreadCount(tsWidth * tsHeight)) != CM_SUCCESS)
+        throw CmRuntimeError();
+
+    CmThreadSpace * cmThreadSpace = 0;
+    if ((result = m_device->CreateThreadSpace(tsWidth, tsHeight, cmThreadSpace)) != CM_SUCCESS)
+        throw CmRuntimeError();
+
+    cmThreadSpace->SelectThreadDependencyPattern(tsPattern);
+
+    CmTask * cmTask = 0;
+    if ((result = m_device->CreateTask(cmTask)) != CM_SUCCESS)
+        throw CmRuntimeError();
+
+    if ((result = cmTask->AddKernel(kernel)) != CM_SUCCESS)
+        throw CmRuntimeError();
+
+    CmEvent * e = 0;
+    if ((result = m_queue->Enqueue(cmTask, e, cmThreadSpace)) != CM_SUCCESS)
+        throw CmRuntimeError();
+
+    m_device->DestroyThreadSpace(cmThreadSpace);
+    m_device->DestroyTask(cmTask);
+
+    return e;
+}
 
 CmEvent * CmContext::RunVme(
     DdiTask const & task,
@@ -867,7 +863,7 @@ CmEvent * CmContext::RunVme(
     CmEvent * e = 0;
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Enqueue ME kernel");
-        e = EnqueueKernel(m_device, kernelPreMe, numMbColsLa, numMbRowsLa, CM_WAVEFRONT26);
+        e = EnqueueKernel(kernelPreMe, numMbColsLa, numMbRowsLa, CM_WAVEFRONT26);
     }
 
     return e;
@@ -961,7 +957,7 @@ void CmContext::DownSample(const SurfaceIndex& surf, const SurfaceIndex& surf4X)
 
     // DownSample source
     SetKernelArg(m_kernelDownSample, surf, surf4X);
-    CmEvent * e = EnqueueKernel(m_device, m_kernelDownSample, numMbCols, numMbRows, CM_NONE_DEPENDENCY);
+    CmEvent * e = EnqueueKernel(m_kernelDownSample, numMbCols, numMbRows, CM_NONE_DEPENDENCY);
     //e->WaitForTaskFinished();
     CM_STATUS status;
     do {
@@ -1014,7 +1010,7 @@ void CmContext::RunVme(
             SetKernelArg(kernelHme,
                 m_curbeData.GetIndex(), refs4X, m_hme.GetIndex());
 
-            /*CmEvent * e = */EnqueueKernel(m_device, kernelHme, numMbCols >> 2, numMbRows >> 2, CM_NONE_DEPENDENCY);
+            /*CmEvent * e = */EnqueueKernel(kernelHme, numMbCols >> 2, numMbRows >> 2, CM_NONE_DEPENDENCY);
             //e->WaitForTaskFinished();
 /* // No need to wait here because all kernels runs in queue sequentially, just wait last kernel
             CM_STATUS status;
@@ -1077,7 +1073,7 @@ void CmContext::RunVme(
 
     {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "EnqueueKernel and GetStatus");
-    CmEvent * e = EnqueueKernel(m_device, kernel, numMbCols, numMbRows, CM_WAVEFRONT26);
+    CmEvent * e = EnqueueKernel(kernel, numMbCols, numMbRows, CM_WAVEFRONT26);
 
     //e->WaitForTaskFinished();
     CM_STATUS status;
