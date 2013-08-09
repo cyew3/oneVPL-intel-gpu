@@ -13,10 +13,12 @@ File Name: .h
 
 #include "mfx_mediasdk_spl_wrapper.h"
 #include "mfx_frame_constructor.h"
+#include "mfxvp8.h"
 
 MediaSDKSplWrapper::MediaSDKSplWrapper(vm_char *extractedAudioFile)
     : m_pConstructor()
     , m_extractedAudioFile(NULL)
+    , m_streamParams()
 {
     if (0 != vm_string_strlen(extractedAudioFile))
     {
@@ -84,7 +86,7 @@ mfxStatus MediaSDKSplWrapper::Init(const vm_char *strFileName)
         if (m_streamParams.TrackInfo[i]->Type & MFX_TRACK_ANY_VIDEO)
         {
             //initializing of frame constructor
-            mfxVideoParam vParam;
+            mfxVideoParam vParam = {};
             vParam.mfx.FrameInfo.Width  = m_streamParams.TrackInfo[i]->VideoParam.FrameInfo.Width;
             vParam.mfx.FrameInfo.Height = m_streamParams.TrackInfo[i]->VideoParam.FrameInfo.Height;
             vParam.mfx.CodecProfile     = m_streamParams.TrackInfo[i]->VideoParam.CodecProfile;
@@ -142,6 +144,7 @@ mfxStatus MediaSDKSplWrapper::GetStreamInfo(sStreamInfo * pParams)
             {
                 case MFX_TRACK_MPEG2V: pParams->videoType = MFX_CODEC_MPEG2; break;
                 case MFX_TRACK_H264  : pParams->videoType = MFX_CODEC_AVC;   break;
+                case MFX_TRACK_VP8   : pParams->videoType = MFX_CODEC_VP8;   break;
                 default : 
                     return MFX_ERR_UNKNOWN;
             }

@@ -47,6 +47,7 @@ UMCSplWrapper::UMCSplWrapper(mfxU32 nCorruptionLevel)
     , m_isVC1()
     , m_nCorruptionLevel(nCorruptionLevel)
     , m_bInited()
+    , m_bDecSpecInfo()
 {
 }
 
