@@ -118,7 +118,7 @@ void ParserCmd::PrintData()
                     case Boolean:
                     {
                         bool* pB = pKey->m_bool;
-                        if(pB)
+                        if(pB != NULL)
                         {
                             if (pB[i])
                                 vm_string_printf(VM_STRING(" true"));
@@ -130,7 +130,7 @@ void ParserCmd::PrintData()
                     case Integer:
                     {
                         Ipp32u* pI = pKey->m_uint;
-                        if (pI)
+                        if (pI != NULL)
                         {
                             vm_string_printf(VM_STRING(" %d"), pI[i]);
                         }
@@ -138,7 +138,7 @@ void ParserCmd::PrintData()
                     }
                     case Real:
                     {    Ipp64f* pR = pKey->m_double;
-                        if (pR)
+                        if (pR != NULL)
                         {
                             vm_string_printf(VM_STRING(" %f"), pR[i]);
                         }
@@ -147,7 +147,7 @@ void ParserCmd::PrintData()
                     case String:
                     {
                         DString* pS = pKey->m_string;
-                        if (pS)
+                        if (pS != NULL)
                         {
                             vm_string_printf(VM_STRING(" \""));
                             vm_string_printf(pS[i]);
@@ -410,7 +410,7 @@ Ipp32u ParserCmd::GetParam(const vm_char *cName, const vm_char *cLongName, bool 
                 if(pKey->m_keyType == Boolean)
                 {
                     bool* pB = pKey->m_bool;
-                    if (pB)
+                    if (pB != NULL)
                     {
                         for(Ipp32u i = 0; i < iMinArraySize; i++)
                             bValue[i] = pB[i];
@@ -419,7 +419,7 @@ Ipp32u ParserCmd::GetParam(const vm_char *cName, const vm_char *cLongName, bool 
                 else 
                 {
                     Ipp32u* pI = pKey->m_uint;
-                    if (pI)
+                    if (pI != NULL)
                     {
                         for(Ipp32u i = 0; i < iMinArraySize; i++)
                             bValue[i] = (pI[i])?true:false;
@@ -488,7 +488,7 @@ Ipp32u ParserCmd::GetParam(const vm_char *cName, const vm_char *cLongName, DStri
                     return pKey->m_iArraySize;
                 iMinArraySize = IPP_MIN(pKey->m_iArraySize, iArraySize);
                 DString* pS = pKey->m_string;
-                if (pS)
+                if (pS != NULL)
                 {
                     for(Ipp32u i = 0; i < iMinArraySize; i++)
                         sValue[i] = pS[i];

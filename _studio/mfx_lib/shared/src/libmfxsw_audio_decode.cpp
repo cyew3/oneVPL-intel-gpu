@@ -208,16 +208,22 @@ mfxStatus MFXAudioDECODE_Init(mfxSession session, mfxAudioParam *par)
 
     try
     {
+        AudioDECODE* tmp = session->m_pAudioDECODE.get();
         // check existence of component
-        if (!session->m_pAudioDECODE.get())
+        if (tmp == NULL)
         {
             // create a new instance
-            session->m_pAudioDECODE.reset(CreateAudioDECODESpecificClass(par->mfx.CodecId, session->m_pAudioCORE.get(), session));
+            tmp = CreateAudioDECODESpecificClass(par->mfx.CodecId, session->m_pAudioCORE.get(), session);
+            session->m_pAudioDECODE.reset(tmp);
         }
         
-        if (session->m_pAudioDECODE.get())
+        if (tmp != NULL)
         {
-            mfxRes = session->m_pAudioDECODE->Init(par);
+            mfxRes = tmp->Init(par);
+        }
+        else
+        {
+            return MFX_ERR_INVALID_AUDIO_PARAM;
         }
 
     }

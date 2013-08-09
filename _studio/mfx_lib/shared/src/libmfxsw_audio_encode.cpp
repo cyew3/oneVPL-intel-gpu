@@ -141,16 +141,18 @@ mfxStatus MFXAudioENCODE_Init(mfxSession session, mfxAudioParam *par)
 
     try
     {
+        AudioENCODE* tmp = session->m_pAudioENCODE.get();
         // check existence of component
-        if (!session->m_pAudioENCODE.get())
+        if (tmp == NULL)
         {
             // create a new instance
             session->m_bIsHWENCSupport = true;
-            session->m_pAudioENCODE.reset(CreateAudioENCODESpecificClass(par->mfx.CodecId, session->m_pAudioCORE.get(), session));
+            tmp = CreateAudioENCODESpecificClass(par->mfx.CodecId, session->m_pAudioCORE.get(), session);
+            session->m_pAudioENCODE.reset(tmp);
         }
 
-        if (session->m_pAudioENCODE.get()) {
-            mfxRes = session->m_pAudioENCODE->Init(par);
+        if (tmp != NULL) {
+            mfxRes = tmp->Init(par);
         }
         else
         {

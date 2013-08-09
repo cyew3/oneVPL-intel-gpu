@@ -122,7 +122,7 @@ void ParserCfg::PrintData()
                 case Key::Boolean:
                 {
                     bool* pB = key->m_bool;
-                    if(pB)
+                    if(pB != NULL)
                     {
                         if (pB[i])
                             vm_string_printf(VM_STRING(" true"));
@@ -134,7 +134,7 @@ void ParserCfg::PrintData()
                 case Key::Integer:
                 {
                     Ipp32u* pI = key->m_uint;
-                    if (pI)
+                    if (pI != NULL)
                     {
                         vm_string_printf(VM_STRING(" %d"), pI[i]);
                     }
@@ -142,7 +142,7 @@ void ParserCfg::PrintData()
                 }
                 case Key::Real:
                 {    Ipp64f* pR = key->m_double;
-                    if (pR)
+                    if (pR != NULL)
                     {
                         vm_string_printf(VM_STRING(" %f"), pR[i]);
                     }
@@ -151,7 +151,7 @@ void ParserCfg::PrintData()
                 case Key::String:
                 {
                     DString* pS = key->m_string;
-                    if (pS)
+                    if (pS != NULL)
                     {
                         vm_string_printf(VM_STRING(" \""));
                         vm_string_printf(pS[i]);
@@ -287,7 +287,7 @@ bool ParserCfg::GetParam(const vm_char *cName, bool *bValue, Ipp32u iArraySize)
             if(key->m_keyType == Key::Boolean)
             {
                 bool* pB = key->m_bool;
-                if (pB)
+                if (pB != NULL)
                 {
                     for(Ipp32u i = 0; i < iMinArraySize; i++)
                         bValue[i] = pB[i];
@@ -296,7 +296,7 @@ bool ParserCfg::GetParam(const vm_char *cName, bool *bValue, Ipp32u iArraySize)
             else 
             {
                 Ipp32u* pI = key->m_uint;
-                if (pI)
+                if (pI != NULL)
                 {
                     for(Ipp32u i = 0; i < iMinArraySize; i++)
                         bValue[i] = (pI[i])?true:false;
@@ -359,7 +359,7 @@ bool ParserCfg::GetParam(const vm_char *cName, DString *sValue, Ipp32u iArraySiz
         {
             iMinArraySize = IPP_MIN(key->m_iArraySize, iArraySize);
             DString* pS = key->m_string;
-            if (pS)
+            if (pS != NULL)
             {
                 for(Ipp32u i = 0; i < iMinArraySize; i++)
                     sValue[i] = pS[i];

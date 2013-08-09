@@ -143,9 +143,8 @@ void ics_calc_tns_data(s_SE_Individual_channel_stream *p_stream,
 
       if (0 == tns_order)
         continue;
-
       tns_decode_coef(tns_order, p_stream->coef_res[w] + 3,
-                      p_stream->coef_compress[w][f], p_stream->coef[w][f],
+                      p_stream->coef_compress[w][f], p_stream->coef[(w < MAX_NUM_WINDOWS && w >= 0)?w:0][(f < MAX_FILT && f > 0)?f:0],
                       p_data->m_lpc[w][f]);
 
       min_sfb = MIN(tns_max_bands, p_stream->max_sfb);
