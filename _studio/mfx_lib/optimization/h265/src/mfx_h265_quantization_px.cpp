@@ -23,34 +23,43 @@ namespace MFX_HEVC_ENCODER
 {
     void h265_QuantFwd_16s(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift)
     {
-        Ipp8s  sign;
+        Ipp32s sign;
+        Ipp32s aval;
         Ipp32s qval;
+
+#pragma ivdep
+#pragma vector always
 
         for (Ipp32s i = 0; i < len; i++)
         {
-            sign = (Ipp8s) (pSrc[i] < 0 ? -1 : 1);
+            sign = pSrc[i] >> 15;
 
-            qval = (sign * pSrc[i] * scale + offset) >> shift;
+            aval = abs((Ipp32s)pSrc[i]);        // remove sign
+            qval = (aval * scale + offset) >> shift;
+            qval = (qval ^ sign) - sign;        // restore sign
 
-            pDst[i] = (Ipp16s)Saturate(-32768, 32767, sign*qval);
-        }
+            pDst[i] = (Ipp16s)Saturate(-32768, 32767, qval);
+        }        
 
     } // void h265_QuantFwd_16s(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scaleLevel, int scaleOffset, int scale)
 
 
     Ipp32s h265_QuantFwd_SBH_16s(const Ipp16s* pSrc, Ipp16s* pDst, Ipp32s*  pDelta, int len, int scale, int offset, int shift)
     {
-        Ipp8s  sign;
+        Ipp32s sign;
+        Ipp32s aval;
         Ipp32s qval;
         Ipp32s abs_sum = 0;
 
         for (Ipp32s i = 0; i < len; i++)
         {
-            sign = (Ipp8s) (pSrc[i] < 0 ? -1 : 1);
+            sign = pSrc[i] >> 15;
 
-            qval = (sign * pSrc[i] * scale + offset) >> shift;
+            aval = abs((Ipp32s)pSrc[i]);        // remove sign
+            qval = (aval * scale + offset) >> shift;
+            qval = (qval ^ sign) - sign;        // restore sign
 
-            pDst[i] = (Ipp16s)Saturate(-32768, 32767, sign*qval);
+            pDst[i] = (Ipp16s)Saturate(-32768, 32767, qval);
 
             pDelta[i] = (Ipp32s)( ((Ipp64s)abs(pSrc[i]) * scale - (qval<<shift) )>> (shift-8) );
 
