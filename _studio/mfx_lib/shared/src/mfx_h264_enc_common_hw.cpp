@@ -5607,13 +5607,53 @@ mfxU32 MfxHwH264Encode::WritePpsHeader(
         writer.PutBit(pps.picScalingMatrixPresentFlag);
         if (pps.picScalingMatrixPresentFlag)
         {
-            assert("pic_scaling_matrix is unsupported");
+            //for(int i=0; i < 6 + ((sps.chroma_format_idc != 3) ? 2:6)*pps.transform8x8ModeFlag; i++){
+            for(int i=0; i < 6+2*pps.transform8x8ModeFlag; i++){
+                //Put scaling list present flag
+                writer.PutBit(pps.picScalingListPresentFlag[i]);
+                if( pps.picScalingListPresentFlag[i] ){
+                   if( i<6 )
+                       WriteScalingList(writer, &pps.scalingList4x4[i][0], 16);
+                   else
+                       WriteScalingList(writer, &pps.scalingList8x8[i-6][0], 64);
+                }
+            }
         }
         writer.PutSe(pps.secondChromaQpIndexOffset);
     }
     writer.PutTrailingBits();
 
     return writer.GetNumBits() - initNumBits;
+}
+
+void MfxHwH264Encode::WriteScalingList(
+    OutputBitstream &       writer,
+    const mfxU8* scalingList,
+    mfxI32 sizeOfScalingList)
+{
+    Ipp16s lastScale, nextScale;
+    Ipp32s j;
+
+    Ipp16s delta_scale;
+    Ipp8s delta_code;
+    const Ipp32s* scan;
+
+    lastScale=nextScale=8;
+
+    if( sizeOfScalingList == 16 )
+        scan = UMC_H264_ENCODER::dec_single_scan[0];
+    else
+        scan = UMC_H264_ENCODER::dec_single_scan_8x8[0];
+
+    for( j = 0; j<sizeOfScalingList; j++ ){
+         if( nextScale != 0 ){
+            delta_scale = (Ipp16s)(scalingList[scan[j]]-lastScale);
+            delta_code = (Ipp8s)(delta_scale);
+            writer.PutSe(delta_scale);
+            nextScale = scalingList[scan[j]];
+         }
+         lastScale = (nextScale==0) ? lastScale:nextScale;
+    }
 }
 
 void MfxHwH264Encode::WriteRefPicListModification(

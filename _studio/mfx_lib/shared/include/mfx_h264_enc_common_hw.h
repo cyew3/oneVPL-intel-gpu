@@ -455,6 +455,7 @@ namespace MfxHwH264Encode
 
         mfxU8   scalingList4x4[6][16];
         mfxU8   scalingList8x8[6][64];
+        bool    picScalingListPresentFlag[12];
     };
 
     class MfxVideoParam : public mfxVideoParam
@@ -1072,6 +1073,11 @@ namespace MfxHwH264Encode
     mfxU32 WritePpsHeader(
         OutputBitstream &       writer,
         mfxExtPpsHeader const & pps);
+
+    void WriteScalingList(
+        OutputBitstream &       writer,
+        const mfxU8* scalingList,
+        mfxI32 sizeOfScalingList);
 
     mfxU32 WriteAud(
         OutputBitstream & writer,
