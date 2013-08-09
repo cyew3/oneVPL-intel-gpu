@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1(VC1) decoder, Common picture layer
@@ -20,15 +20,15 @@
 #include "umc_vc1_dec_debug.h"
 
 // need for VA structures filling
-
-static const Ipp32s VC1_VA_Bfraction_tbl[6][7] =
+static const Ipp32s VC1_VA_Bfraction_tbl[7][7] =
 {
-    0, 1, 3, 5, 9, 11, 17,
-    0, 2, 6, 12, 0, 0, 0,
-    0, 0, 4, 7, 13, 18, 0,
-    0, 0, 0, 8, 14, 0, 0,
+    0, 1, 3, 5,  9, 11, 17,
+    0, 2, 0, 6,  0, 12,  0,
+    0, 0, 4, 7,  0, 13, 18,
+    0, 0, 0, 8,  0, 14,  0,
     0, 0, 0, 0, 10, 15, 19,
-    0, 0, 0, 0, 0, 16, 20
+    0, 0, 0, 0,  0, 16,  0,
+    0, 0, 0, 0,  0,  0, 20
 };
 
 VC1Status DecodePictureHeader (VC1Context* pContext,  bool isExtHeader)
