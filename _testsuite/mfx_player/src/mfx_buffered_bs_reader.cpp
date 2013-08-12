@@ -293,3 +293,14 @@ mfxStatus BufferedBitstreamReader::SeekFrameOffset(mfxU32 nFrameOffset, mfxFrame
 
     return MFX_ERR_NONE;;
 }
+
+mfxStatus BufferedBitstreamReader::SeekTime(mfxF64 fSeekTo) {
+    if (fSeekTo != 0.)
+        return MFX_ERR_UNSUPPORTED;
+
+    m_CurChunk = m_BufferedFile.begin();
+    m_CurChunkOffset = 0;
+    m_CurrFrame = 0;
+    m_CurrFrameOffset = 0;
+    return MFX_ERR_NONE;
+}

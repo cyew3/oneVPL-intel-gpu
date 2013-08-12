@@ -54,6 +54,7 @@ public :
     virtual mfxStatus ReadNextFrame(mfxBitstream2 &pBS);
     //reposition to specific frames number offset in  input stream
     virtual mfxStatus SeekFrameOffset(mfxU32 nFrameOffset, mfxFrameInfo &in_info);
+    virtual mfxStatus SeekTime(mfxF64 fSeekTo);
 
 protected:
     
