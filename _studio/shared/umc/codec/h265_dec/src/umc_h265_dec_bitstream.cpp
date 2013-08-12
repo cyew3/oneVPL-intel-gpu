@@ -1047,19 +1047,19 @@ UMC::Status H265HeadersBitstream::GetSliceHeaderPart1(H265Slice *rpcSlice)
 {
     unsigned uiCode;
 
-    rpcSlice->GetSliceHeader()->IdrPicFlag = (NAL_UNIT_CODED_SLICE_IDR == rpcSlice->GetSliceHeader()->nal_unit_type) ? 1 : 0;
+    rpcSlice->GetSliceHeader()->IdrPicFlag = (NAL_UT_CODED_SLICE_IDR == rpcSlice->GetSliceHeader()->nal_unit_type) ? 1 : 0;
 
     unsigned firstSliceSegmentInPic;
     READ_FLAG( firstSliceSegmentInPic, "first_slice_in_pic_flag" );
     
     rpcSlice->GetSliceHeader()->first_slice_segment_in_pic_flag = firstSliceSegmentInPic;
 
-    if ( rpcSlice->getNalUnitType() == NAL_UNIT_CODED_SLICE_IDR
-      || rpcSlice->getNalUnitType() == NAL_UNIT_CODED_SLICE_IDR_N_LP
-      || rpcSlice->getNalUnitType() == NAL_UNIT_CODED_SLICE_BLA_N_LP
-      || rpcSlice->getNalUnitType() == NAL_UNIT_CODED_SLICE_BLANT
-      || rpcSlice->getNalUnitType() == NAL_UNIT_CODED_SLICE_BLA
-      || rpcSlice->getNalUnitType() == NAL_UNIT_CODED_SLICE_CRA )
+    if ( rpcSlice->getNalUnitType() == NAL_UT_CODED_SLICE_IDR
+      || rpcSlice->getNalUnitType() == NAL_UT_CODED_SLICE_IDR_N_LP
+      || rpcSlice->getNalUnitType() == NAL_UT_CODED_SLICE_BLA_N_LP
+      || rpcSlice->getNalUnitType() == NAL_UT_CODED_SLICE_BLANT
+      || rpcSlice->getNalUnitType() == NAL_UT_CODED_SLICE_BLA
+      || rpcSlice->getNalUnitType() == NAL_UT_CODED_SLICE_CRA )
     {
         READ_FLAG( uiCode, "no_output_of_prior_pics_flag" );  //ignored
     }
@@ -1175,9 +1175,9 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
             {
                 iPOCmsb = iPrevPOCmsb;
             }
-            if ( rpcSlice->getNalUnitType() == NAL_UNIT_CODED_SLICE_BLA
-                || rpcSlice->getNalUnitType() == NAL_UNIT_CODED_SLICE_BLANT
-                || rpcSlice->getNalUnitType() == NAL_UNIT_CODED_SLICE_BLA_N_LP )
+            if ( rpcSlice->getNalUnitType() == NAL_UT_CODED_SLICE_BLA
+                || rpcSlice->getNalUnitType() == NAL_UT_CODED_SLICE_BLANT
+                || rpcSlice->getNalUnitType() == NAL_UT_CODED_SLICE_BLA_N_LP )
             {
                 // For BLA picture types, POCmsb is set to 0.
                 iPOCmsb = 0;
@@ -1296,9 +1296,9 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
                 offset += rps->getNumberOfLongtermPictures();
                 rps->setNumberOfPictures(offset);
             }
-            if ( rpcSlice->getNalUnitType() == NAL_UNIT_CODED_SLICE_BLA
-                || rpcSlice->getNalUnitType() == NAL_UNIT_CODED_SLICE_BLANT
-                || rpcSlice->getNalUnitType() == NAL_UNIT_CODED_SLICE_BLA_N_LP )
+            if ( rpcSlice->getNalUnitType() == NAL_UT_CODED_SLICE_BLA
+                || rpcSlice->getNalUnitType() == NAL_UT_CODED_SLICE_BLANT
+                || rpcSlice->getNalUnitType() == NAL_UT_CODED_SLICE_BLA_N_LP )
             {
                 // In the case of BLA picture types, rps data is read from slice header but ignored
                 rps = rpcSlice->getLocalRPS();
@@ -1485,7 +1485,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
         if (!rpcSlice->isIntra())
         {
             READ_UVLC( uiCode, "five_minus_max_num_merge_cand");
-            rpcSlice->setMaxNumMergeCand(MRG_MAX_NUM_CANDS - uiCode);
+            rpcSlice->setMaxNumMergeCand(MERGE_MAX_NUM_CAND - uiCode);
         }
 
         READ_SVLC( iCode, "slice_qp_delta" );
@@ -1838,23 +1838,23 @@ UMC::Status H265Bitstream::GetNALUnitType(NalUnitType &nal_unit_type, Ipp32u &nu
 
     if (nuh_temporal_id)
     {
-        VM_ASSERT( nal_unit_type != NAL_UNIT_CODED_SLICE_BLA
-            && nal_unit_type != NAL_UNIT_CODED_SLICE_BLANT
-            && nal_unit_type != NAL_UNIT_CODED_SLICE_BLA_N_LP
-            && nal_unit_type != NAL_UNIT_CODED_SLICE_IDR
-            && nal_unit_type != NAL_UNIT_CODED_SLICE_IDR_N_LP
-            && nal_unit_type != NAL_UNIT_CODED_SLICE_CRA
-            && nal_unit_type != NAL_UNIT_VPS
-            && nal_unit_type != NAL_UNIT_SPS
-            && nal_unit_type != NAL_UNIT_EOS
-            && nal_unit_type != NAL_UNIT_EOB );
+        VM_ASSERT( nal_unit_type != NAL_UT_CODED_SLICE_BLA
+            && nal_unit_type != NAL_UT_CODED_SLICE_BLANT
+            && nal_unit_type != NAL_UT_CODED_SLICE_BLA_N_LP
+            && nal_unit_type != NAL_UT_CODED_SLICE_IDR
+            && nal_unit_type != NAL_UT_CODED_SLICE_IDR_N_LP
+            && nal_unit_type != NAL_UT_CODED_SLICE_CRA
+            && nal_unit_type != NAL_UT_VPS
+            && nal_unit_type != NAL_UT_SPS
+            && nal_unit_type != NAL_UT_EOS
+            && nal_unit_type != NAL_UT_EOB );
     }
     else
     {
-        VM_ASSERT( nal_unit_type != NAL_UNIT_CODED_SLICE_TLA
-            && nal_unit_type != NAL_UNIT_CODED_SLICE_TSA_N
-            && nal_unit_type != NAL_UNIT_CODED_SLICE_STSA_R
-            && nal_unit_type != NAL_UNIT_CODED_SLICE_STSA_N );
+        VM_ASSERT( nal_unit_type != NAL_UT_CODED_SLICE_TLA
+            && nal_unit_type != NAL_UT_CODED_SLICE_TSA_N
+            && nal_unit_type != NAL_UT_CODED_SLICE_STSA_R
+            && nal_unit_type != NAL_UT_CODED_SLICE_STSA_N );
     }
 
     return UMC::UMC_OK;

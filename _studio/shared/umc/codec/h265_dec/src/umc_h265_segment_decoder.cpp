@@ -747,8 +747,8 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
 
     if (skipped)
     {
-        MVBuffer MvBufferNeighbours[MRG_MAX_NUM_CANDS << 1]; // double length for mv of both lists
-        Ipp8u InterDirNeighbours[MRG_MAX_NUM_CANDS];
+        MVBuffer MvBufferNeighbours[MERGE_MAX_NUM_CAND << 1]; // double length for mv of both lists
+        Ipp8u InterDirNeighbours[MERGE_MAX_NUM_CAND];
         Ipp32s numValidMergeCand = 0;
 
         for (Ipp32s ui = 0; ui < pCU->m_SliceHeader->m_MaxNumMergeCand; ++ui)
@@ -1022,7 +1022,7 @@ bool H265SegmentDecoder::DecodeSkipFlagCABAC(H265CodingUnit* pCU, Ipp32u AbsPart
 
 Ipp32u H265SegmentDecoder::DecodeMergeIndexCABAC(void)
 {
-    Ipp32u NumCand = MRG_MAX_NUM_CANDS;
+    Ipp32u NumCand = MERGE_MAX_NUM_CAND;
     Ipp32u UnaryIdx = 0;
     NumCand = m_pSliceHeader->m_MaxNumMergeCand;
 
@@ -1053,7 +1053,7 @@ void H265SegmentDecoder::DecodeMVPIdxPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPart
     if (InterDir & (1 << RefList))
     {
         VM_ASSERT(MVb.RefIdx >= 0);
-        ReadUnaryMaxSymbolCABAC(MVPIdx, ctxIdxOffsetHEVC[MVP_IDX_HEVC], 1, AMVP_MAX_NUM_CANDS - 1);
+        ReadUnaryMaxSymbolCABAC(MVPIdx, ctxIdxOffsetHEVC[MVP_IDX_HEVC], 1, AMVP_MAX_NUM_CAND - 1);
     }
     else
     {
@@ -1359,8 +1359,8 @@ bool H265SegmentDecoder::DecodePUWiseCABAC(H265CodingUnit* pCU, Ipp32u AbsPartId
     Ipp32u NumPU = (PartSize == SIZE_2Nx2N ? 1 : (PartSize == SIZE_NxN ? 4 : 2));
     Ipp32u PUOffset = (g_PUOffset[Ipp32u(PartSize)] << ((m_pSeqParamSet->MaxCUDepth - Depth) << 1)) >> 4;
 
-    MVBuffer MvBufferNeighbours[MRG_MAX_NUM_CANDS << 1]; // double length for mv of both lists
-    Ipp8u InterDirNeighbours[MRG_MAX_NUM_CANDS];
+    MVBuffer MvBufferNeighbours[MERGE_MAX_NUM_CAND << 1]; // double length for mv of both lists
+    Ipp8u InterDirNeighbours[MERGE_MAX_NUM_CAND];
 
     for (Ipp32s ui = 0; ui < pCU->m_SliceHeader->m_MaxNumMergeCand; ui++ )
     {
@@ -1832,7 +1832,7 @@ void H265SegmentDecoder::ParseQtCbfCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx,
     Ipp32u uVal;
     const Ipp32u Ctx = pCU->getCtxQtCbf(Type, TrDepth);
 
-    uVal = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffsetHEVC[QT_CBF_HEVC] + Ctx + NUM_QT_CBF_CTX * (Type ? TEXT_CHROMA : Type));
+    uVal = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffsetHEVC[QT_CBF_HEVC] + Ctx + NUM_CONTEXT_QT_CBF * (Type ? TEXT_CHROMA : Type));
     //m_pcTDecBinIf->decodeBin( uiSymbol , m_cCUQtCbfSCModel.get( 0, eType ? eType - 1: eType, uiCtx ) );
 
     pCU->setCbfSubParts(uVal << TrDepth, Type, AbsPartIdx, Depth);
@@ -3114,7 +3114,7 @@ void H265SegmentDecoder::getInterMergeCandidates(H265CodingUnit *pCU, Ipp32u Abs
     VM_ASSERT(pCU->m_AbsIdxInLCU == 0);
 
     numValidMergeCand = m_pSliceHeader->m_MaxNumMergeCand;
-    bool CandIsInter[MRG_MAX_NUM_CANDS];
+    bool CandIsInter[MERGE_MAX_NUM_CAND];
     for (Ipp32s ind = 0; ind < numValidMergeCand; ++ind)
     {
         CandIsInter[ind] = false;
@@ -3469,11 +3469,11 @@ void H265SegmentDecoder::fillMVPCand(H265CodingUnit *pCU, Ipp32u AbsPartIdx, Ipp
         }
     }
 
-    if (pInfo->NumbOfCands > AMVP_MAX_NUM_CANDS)
+    if (pInfo->NumbOfCands > AMVP_MAX_NUM_CAND)
     {
-        pInfo->NumbOfCands = AMVP_MAX_NUM_CANDS;
+        pInfo->NumbOfCands = AMVP_MAX_NUM_CAND;
     }
-    while (pInfo->NumbOfCands < AMVP_MAX_NUM_CANDS)
+    while (pInfo->NumbOfCands < AMVP_MAX_NUM_CAND)
     {
         pInfo->MVCandidate[pInfo->NumbOfCands].setZero();
         pInfo->NumbOfCands++;

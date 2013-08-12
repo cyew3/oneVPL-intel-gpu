@@ -237,7 +237,7 @@ public:
     void setPicOutputFlag(bool f)           { m_SliceHeader.pic_output_flag = f; }
 
     NalUnitType getNalUnitType() const              { return m_SliceHeader.nal_unit_type; }
-    bool getIdrPicFlag()                            { return getNalUnitType() == NAL_UNIT_CODED_SLICE_IDR || getNalUnitType() == NAL_UNIT_CODED_SLICE_IDR_N_LP; }
+    bool getIdrPicFlag()                            { return getNalUnitType() == NAL_UT_CODED_SLICE_IDR || getNalUnitType() == NAL_UT_CODED_SLICE_IDR_N_LP; }
 
     unsigned getTLayer() const          { return m_SliceHeader.m_nuh_temporal_id;     }
     unsigned getMaxTLayers()            { return m_SliceHeader.m_uMaxTLayers; }

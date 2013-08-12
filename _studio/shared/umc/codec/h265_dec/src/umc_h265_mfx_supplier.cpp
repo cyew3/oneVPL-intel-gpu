@@ -293,13 +293,13 @@ UMC::Status MFXTaskSupplier_H265::DecodeHeaders(UMC::MediaDataEx *nalUnit)
         Ipp32u nal_unit_type = nalUnit->GetExData()->values[0];
         switch(nal_unit_type)
         {
-            case NAL_UNIT_SPS:
-            case NAL_UNIT_PPS:
+            case NAL_UT_SPS:
+            case NAL_UT_PPS:
                 {
                     static Ipp8u start_code_prefix[] = {0, 0, 0, 1};
 
                     size_t size = nalUnit->GetDataSize();
-                    bool isSPS = (nal_unit_type == NAL_UNIT_SPS);
+                    bool isSPS = (nal_unit_type == NAL_UT_SPS);
                     RawHeader_H265 * hdr = isSPS ? GetSPS() : GetPPS();
                     Ipp32s id = isSPS ? m_Headers.m_SeqParams.GetCurrentID() : m_Headers.m_PicParams.GetCurrentID();
                     hdr->Resize(id, size + sizeof(start_code_prefix));
@@ -311,7 +311,7 @@ UMC::Status MFXTaskSupplier_H265::DecodeHeaders(UMC::MediaDataEx *nalUnit)
     }
 
     UMC::MediaDataEx::_MediaDataEx* pMediaDataEx = nalUnit->GetExData();
-    if ((NalUnitType)pMediaDataEx->values[0] == NAL_UNIT_SPS && m_firstVideoParams.mfx.FrameInfo.Width)
+    if ((NalUnitType)pMediaDataEx->values[0] == NAL_UT_SPS && m_firstVideoParams.mfx.FrameInfo.Width)
     {
         H265SeqParamSet * currSPS = m_Headers.m_SeqParams.GetCurrentHeader();
 
@@ -585,20 +585,20 @@ UMC::Status HeadersAnalyzer::ProcessNalUnit(UMC::MediaData * data)
 
         switch (startCode)
         {
-            case NAL_UNIT_CODED_SLICE_TRAIL_R:
-            case NAL_UNIT_CODED_SLICE_TRAIL_N:
-            case NAL_UNIT_CODED_SLICE_TLA:
-            case NAL_UNIT_CODED_SLICE_TSA_N:
-            case NAL_UNIT_CODED_SLICE_STSA_R:
-            case NAL_UNIT_CODED_SLICE_STSA_N:
-            case NAL_UNIT_CODED_SLICE_BLA:
-            case NAL_UNIT_CODED_SLICE_BLANT:
-            case NAL_UNIT_CODED_SLICE_BLA_N_LP:
-            case NAL_UNIT_CODED_SLICE_IDR:
-            case NAL_UNIT_CODED_SLICE_IDR_N_LP:
-            case NAL_UNIT_CODED_SLICE_CRA:
-            case NAL_UNIT_CODED_SLICE_DLP:
-            case NAL_UNIT_CODED_SLICE_TFD:
+            case NAL_UT_CODED_SLICE_TRAIL_R:
+            case NAL_UT_CODED_SLICE_TRAIL_N:
+            case NAL_UT_CODED_SLICE_TLA:
+            case NAL_UT_CODED_SLICE_TSA_N:
+            case NAL_UT_CODED_SLICE_STSA_R:
+            case NAL_UT_CODED_SLICE_STSA_N:
+            case NAL_UT_CODED_SLICE_BLA:
+            case NAL_UT_CODED_SLICE_BLANT:
+            case NAL_UT_CODED_SLICE_BLA_N_LP:
+            case NAL_UT_CODED_SLICE_IDR:
+            case NAL_UT_CODED_SLICE_IDR_N_LP:
+            case NAL_UT_CODED_SLICE_CRA:
+            case NAL_UT_CODED_SLICE_DLP:
+            case NAL_UT_CODED_SLICE_TFD:
             {
                 if (IsEnough())
                 {
@@ -609,19 +609,19 @@ UMC::Status HeadersAnalyzer::ProcessNalUnit(UMC::MediaData * data)
             }
             break;
 
-        case NAL_UNIT_VPS:
-        case NAL_UNIT_SPS:
-        case NAL_UNIT_PPS:
+        case NAL_UT_VPS:
+        case NAL_UT_SPS:
+        case NAL_UT_PPS:
             needProcess = true;
             break;
 
 
-        case NAL_UNIT_ACCESS_UNIT_DELIMITER:
+        case NAL_UT_AU_DELIMITER:
             //if (header_was_started)
                 //quite = true;
             break;
 
-        case NAL_UNIT_SEI:
+        case NAL_UT_SEI:
             needProcess = true;
             break;
 
@@ -654,15 +654,15 @@ UMC::Status HeadersAnalyzer::ProcessNalUnit(UMC::MediaData * data)
 
             switch (startCode)
             {
-            case NAL_UNIT_VPS:
+            case NAL_UT_VPS:
                 m_isVPSFound = true;
                 break;
 
-            case NAL_UNIT_SPS:
+            case NAL_UT_SPS:
                 m_isSPSFound = true;
                 break;
 
-            case NAL_UNIT_PPS:
+            case NAL_UT_PPS:
                 m_isPPSFound = true;
                 break;
 

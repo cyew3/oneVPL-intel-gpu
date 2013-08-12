@@ -1502,9 +1502,9 @@ UMC::Status TaskSupplier_H265::DecodeHeaders(UMC::MediaDataEx *nalUnit)
 
         switch(nal_unit_type)
         {
-        case NAL_UNIT_VPS:  xDecodeVPS(bitStream);      break;
-        case NAL_UNIT_SPS:  xDecodeSPS(bitStream);      break;
-        case NAL_UNIT_PPS:  xDecodePPS(bitStream);      break;
+        case NAL_UT_VPS:  xDecodeVPS(bitStream);      break;
+        case NAL_UT_SPS:  xDecodeSPS(bitStream);      break;
+        case NAL_UT_PPS:  xDecodePPS(bitStream);      break;
 
         default:
             break;
@@ -1750,35 +1750,35 @@ UMC::Status TaskSupplier_H265::ProcessNalUnit(UMC::MediaDataEx *nalUnit)
 
     switch(unitType)
     {
-    case NAL_UNIT_CODED_SLICE_TRAIL_R:
-    case NAL_UNIT_CODED_SLICE_TRAIL_N:
-    case NAL_UNIT_CODED_SLICE_TLA:
-    case NAL_UNIT_CODED_SLICE_TSA_N:
-    case NAL_UNIT_CODED_SLICE_STSA_R:
-    case NAL_UNIT_CODED_SLICE_STSA_N:
-    case NAL_UNIT_CODED_SLICE_BLA:
-    case NAL_UNIT_CODED_SLICE_BLANT:
-    case NAL_UNIT_CODED_SLICE_BLA_N_LP:
-    case NAL_UNIT_CODED_SLICE_IDR:
-    case NAL_UNIT_CODED_SLICE_IDR_N_LP:
-    case NAL_UNIT_CODED_SLICE_CRA:
-    case NAL_UNIT_CODED_SLICE_DLP:
-    case NAL_UNIT_CODED_SLICE_TFD:
+    case NAL_UT_CODED_SLICE_TRAIL_R:
+    case NAL_UT_CODED_SLICE_TRAIL_N:
+    case NAL_UT_CODED_SLICE_TLA:
+    case NAL_UT_CODED_SLICE_TSA_N:
+    case NAL_UT_CODED_SLICE_STSA_R:
+    case NAL_UT_CODED_SLICE_STSA_N:
+    case NAL_UT_CODED_SLICE_BLA:
+    case NAL_UT_CODED_SLICE_BLANT:
+    case NAL_UT_CODED_SLICE_BLA_N_LP:
+    case NAL_UT_CODED_SLICE_IDR:
+    case NAL_UT_CODED_SLICE_IDR_N_LP:
+    case NAL_UT_CODED_SLICE_CRA:
+    case NAL_UT_CODED_SLICE_DLP:
+    case NAL_UT_CODED_SLICE_TFD:
         if (H265Slice * pSlice = DecodeSliceHeader(nalUnit))
             umcRes = AddSlice(pSlice, false);
         break;
 
-    case NAL_UNIT_VPS:
-    case NAL_UNIT_SPS:
-    case NAL_UNIT_PPS:
+    case NAL_UT_VPS:
+    case NAL_UT_SPS:
+    case NAL_UT_PPS:
         umcRes = DecodeHeaders(nalUnit);
         break;
 
-    case NAL_UNIT_SEI:
+    case NAL_UT_SEI:
         umcRes = DecodeSEI(nalUnit);
         break;
 
-    case NAL_UNIT_ACCESS_UNIT_DELIMITER:
+    case NAL_UT_AU_DELIMITER:
         umcRes = AddSlice(0, false);
         break;
 
@@ -1806,24 +1806,24 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource, UMC::MediaD
         {
             switch (m_pNALSplitter->CheckNalUnitType(pSource))
             {
-            case NAL_UNIT_CODED_SLICE_RASL_N:
-            case NAL_UNIT_CODED_SLICE_RADL_N:
-            case NAL_UNIT_CODED_SLICE_TRAIL_R:
-            case NAL_UNIT_CODED_SLICE_TRAIL_N:
-            case NAL_UNIT_CODED_SLICE_TLA:
-            case NAL_UNIT_CODED_SLICE_TSA_N:
-            case NAL_UNIT_CODED_SLICE_STSA_R:
-            case NAL_UNIT_CODED_SLICE_STSA_N:
-            case NAL_UNIT_CODED_SLICE_BLA:
-            case NAL_UNIT_CODED_SLICE_BLANT:
-            case NAL_UNIT_CODED_SLICE_BLA_N_LP:
-            case NAL_UNIT_CODED_SLICE_IDR:
-            case NAL_UNIT_CODED_SLICE_IDR_N_LP:
-            case NAL_UNIT_CODED_SLICE_CRA:
-            case NAL_UNIT_CODED_SLICE_DLP:
-            case NAL_UNIT_CODED_SLICE_TFD:
+            case NAL_UT_CODED_SLICE_RASL_N:
+            case NAL_UT_CODED_SLICE_RADL_N:
+            case NAL_UT_CODED_SLICE_TRAIL_R:
+            case NAL_UT_CODED_SLICE_TRAIL_N:
+            case NAL_UT_CODED_SLICE_TLA:
+            case NAL_UT_CODED_SLICE_TSA_N:
+            case NAL_UT_CODED_SLICE_STSA_R:
+            case NAL_UT_CODED_SLICE_STSA_N:
+            case NAL_UT_CODED_SLICE_BLA:
+            case NAL_UT_CODED_SLICE_BLANT:
+            case NAL_UT_CODED_SLICE_BLA_N_LP:
+            case NAL_UT_CODED_SLICE_IDR:
+            case NAL_UT_CODED_SLICE_IDR_N_LP:
+            case NAL_UT_CODED_SLICE_CRA:
+            case NAL_UT_CODED_SLICE_DLP:
+            case NAL_UT_CODED_SLICE_TFD:
 
-            case NAL_UNIT_SEI:
+            case NAL_UT_SEI:
                 return UMC::UMC_OK;
             }
         }
@@ -1853,24 +1853,24 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource, UMC::MediaD
             {
                 switch ((NalUnitType)pMediaDataEx->values[i]) // skip data at DecodeHeader mode
                 {
-                case NAL_UNIT_CODED_SLICE_RASL_N:
-                case NAL_UNIT_CODED_SLICE_RADL_N:
-                case NAL_UNIT_CODED_SLICE_TRAIL_R:
-                case NAL_UNIT_CODED_SLICE_TRAIL_N:
-                case NAL_UNIT_CODED_SLICE_TLA:
-                case NAL_UNIT_CODED_SLICE_TSA_N:
-                case NAL_UNIT_CODED_SLICE_STSA_R:
-                case NAL_UNIT_CODED_SLICE_STSA_N:
-                case NAL_UNIT_CODED_SLICE_BLA:
-                case NAL_UNIT_CODED_SLICE_BLANT:
-                case NAL_UNIT_CODED_SLICE_BLA_N_LP:
-                case NAL_UNIT_CODED_SLICE_IDR:
-                case NAL_UNIT_CODED_SLICE_IDR_N_LP:
-                case NAL_UNIT_CODED_SLICE_CRA:
-                case NAL_UNIT_CODED_SLICE_DLP:
-                case NAL_UNIT_CODED_SLICE_TFD:
+                case NAL_UT_CODED_SLICE_RASL_N:
+                case NAL_UT_CODED_SLICE_RADL_N:
+                case NAL_UT_CODED_SLICE_TRAIL_R:
+                case NAL_UT_CODED_SLICE_TRAIL_N:
+                case NAL_UT_CODED_SLICE_TLA:
+                case NAL_UT_CODED_SLICE_TSA_N:
+                case NAL_UT_CODED_SLICE_STSA_R:
+                case NAL_UT_CODED_SLICE_STSA_N:
+                case NAL_UT_CODED_SLICE_BLA:
+                case NAL_UT_CODED_SLICE_BLANT:
+                case NAL_UT_CODED_SLICE_BLA_N_LP:
+                case NAL_UT_CODED_SLICE_IDR:
+                case NAL_UT_CODED_SLICE_IDR_N_LP:
+                case NAL_UT_CODED_SLICE_CRA:
+                case NAL_UT_CODED_SLICE_DLP:
+                case NAL_UT_CODED_SLICE_TFD:
 
-                case NAL_UNIT_SEI:
+                case NAL_UT_SEI:
                     if (is_header_readed)
                         return UMC::UMC_OK;
                     continue;
@@ -1879,22 +1879,22 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource, UMC::MediaD
 
             switch ((NalUnitType)pMediaDataEx->values[i])
             {
-            case NAL_UNIT_CODED_SLICE_RASL_N:
-            case NAL_UNIT_CODED_SLICE_RADL_N:
-            case NAL_UNIT_CODED_SLICE_TRAIL_R:
-            case NAL_UNIT_CODED_SLICE_TRAIL_N:
-            case NAL_UNIT_CODED_SLICE_TLA:
-            case NAL_UNIT_CODED_SLICE_TSA_N:
-            case NAL_UNIT_CODED_SLICE_STSA_R:
-            case NAL_UNIT_CODED_SLICE_STSA_N:
-            case NAL_UNIT_CODED_SLICE_BLA:
-            case NAL_UNIT_CODED_SLICE_BLANT:
-            case NAL_UNIT_CODED_SLICE_BLA_N_LP:
-            case NAL_UNIT_CODED_SLICE_IDR:
-            case NAL_UNIT_CODED_SLICE_IDR_N_LP:
-            case NAL_UNIT_CODED_SLICE_CRA:
-            case NAL_UNIT_CODED_SLICE_DLP:
-            case NAL_UNIT_CODED_SLICE_TFD:
+            case NAL_UT_CODED_SLICE_RASL_N:
+            case NAL_UT_CODED_SLICE_RADL_N:
+            case NAL_UT_CODED_SLICE_TRAIL_R:
+            case NAL_UT_CODED_SLICE_TRAIL_N:
+            case NAL_UT_CODED_SLICE_TLA:
+            case NAL_UT_CODED_SLICE_TSA_N:
+            case NAL_UT_CODED_SLICE_STSA_R:
+            case NAL_UT_CODED_SLICE_STSA_N:
+            case NAL_UT_CODED_SLICE_BLA:
+            case NAL_UT_CODED_SLICE_BLANT:
+            case NAL_UT_CODED_SLICE_BLA_N_LP:
+            case NAL_UT_CODED_SLICE_IDR:
+            case NAL_UT_CODED_SLICE_IDR_N_LP:
+            case NAL_UT_CODED_SLICE_CRA:
+            case NAL_UT_CODED_SLICE_DLP:
+            case NAL_UT_CODED_SLICE_TFD:
                 if(H265Slice *pSlice = DecodeSliceHeader(nalUnit))
                 {
                     UMC::Status sts = AddSlice(pSlice, !pSource);
@@ -1903,16 +1903,16 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource, UMC::MediaD
                 }
                 break;
 
-            case NAL_UNIT_SEI:
+            case NAL_UT_SEI:
                 DecodeSEI(nalUnit);
                 break;
 
-            case NAL_UNIT_SEI_SUFFIX:
+            case NAL_UT_SEI_SUFFIX:
                 break;
 
-            case NAL_UNIT_VPS:
-            case NAL_UNIT_SPS:
-            case NAL_UNIT_PPS:
+            case NAL_UT_VPS:
+            case NAL_UT_SPS:
+            case NAL_UT_PPS:
                 {
                     UMC::Status umsRes = DecodeHeaders(nalUnit);
                     if (umsRes != UMC::UMC_OK)
@@ -1932,7 +1932,7 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource, UMC::MediaD
                 }
                 break;
 
-            case NAL_UNIT_ACCESS_UNIT_DELIMITER:
+            case NAL_UT_AU_DELIMITER:
                 if (AddSlice(0, !pSource) == UMC::UMC_OK)
                     return UMC::UMC_OK;
                 break;

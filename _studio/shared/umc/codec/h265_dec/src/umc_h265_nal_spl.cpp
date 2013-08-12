@@ -207,7 +207,7 @@ public:
 
         if (iCodeNext == -1)
         {
-            if (m_code == NAL_UNIT_SPS)
+            if (m_code == NAL_UT_SPS)
             {
                 pSource->MoveDataPointer(-startCodeSize); // leave start code for SPS
                 return -1;

@@ -118,7 +118,7 @@ public:
 //parameters for AMVP
 struct AMVPInfo
 {
-    H265MotionVector MVCandidate[AMVP_MAX_NUM_CANDS_MEM]; //array of motion vector predictor candidates
+    H265MotionVector MVCandidate[AMVP_MAX_NUM_CAND + 1]; //array of motion vector predictor candidates
     Ipp32s NumbOfCands;
 };
 
