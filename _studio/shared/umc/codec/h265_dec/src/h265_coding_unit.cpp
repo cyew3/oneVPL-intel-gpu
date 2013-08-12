@@ -393,15 +393,15 @@ bool H265CodingUnit::isLosslessCoded(Ipp32u absPartIdx)
 */
 void H265CodingUnit::getAllowedChromaDir(Ipp32u AbsPartIdx, Ipp32u* ModeList)
 {
-    ModeList[0] = PLANAR_IDX;
-    ModeList[1] = VER_IDX;
-    ModeList[2] = HOR_IDX;
-    ModeList[3] = DC_IDX;
-    ModeList[4] = DM_CHROMA_IDX;
+    ModeList[0] = INTRA_LUMA_PLANAR_IDX;
+    ModeList[1] = INTRA_LUMA_VER_IDX;
+    ModeList[2] = INTRA_LUMA_HOR_IDX;
+    ModeList[3] = INTRA_LUMA_DC_IDX;
+    ModeList[4] = INTRA_DM_CHROMA_IDX;
 
     Ipp32u LumaMode = GetLumaIntra(AbsPartIdx);
 
-    for (Ipp32s i = 0; i < NUM_CHROMA_MODE - 1; i++)
+    for (Ipp32s i = 0; i < INTRA_NUM_CHROMA_MODE - 1; i++)
     {
         if (LumaMode == ModeList[i])
         {
@@ -807,13 +807,13 @@ Ipp32u H265CodingUnit::getCoefScanIdx(Ipp32u AbsPartIdx, Ipp32u L2Width, bool Is
             uiDirMode = GetLumaIntra(AbsPartIdx);
             if (L2Width > 1 && L2Width < 4 )
             {
-                uiScanIdx = abs((Ipp32s) uiDirMode - VER_IDX) < 5 ? SCAN_HOR : (abs((Ipp32s)uiDirMode - HOR_IDX) < 5 ? SCAN_VER : SCAN_DIAG);
+                uiScanIdx = abs((Ipp32s) uiDirMode - INTRA_LUMA_VER_IDX) < 5 ? SCAN_HOR : (abs((Ipp32s)uiDirMode - INTRA_LUMA_HOR_IDX) < 5 ? SCAN_VER : SCAN_DIAG);
             }
         }
         else
         {
             uiDirMode = GetChromaIntra(AbsPartIdx);
-            if (uiDirMode == DM_CHROMA_IDX)
+            if (uiDirMode == INTRA_DM_CHROMA_IDX)
             {
                 Ipp32u depth = GetDepth(AbsPartIdx);
                 Ipp32u numParts = m_Frame->getCD()->getNumPartInCU() >> (depth << 1);
@@ -821,7 +821,7 @@ Ipp32u H265CodingUnit::getCoefScanIdx(Ipp32u AbsPartIdx, Ipp32u L2Width, bool Is
             }
             if (L2Width < 3)
             {
-                uiScanIdx = abs((Ipp32s)uiDirMode - VER_IDX) < 5 ? SCAN_HOR : (abs((Ipp32s)uiDirMode - HOR_IDX) < 5 ? SCAN_VER : SCAN_DIAG);
+                uiScanIdx = abs((Ipp32s)uiDirMode - INTRA_LUMA_VER_IDX) < 5 ? SCAN_HOR : (abs((Ipp32s)uiDirMode - INTRA_LUMA_HOR_IDX) < 5 ? SCAN_VER : SCAN_DIAG);
             }
         }
     }

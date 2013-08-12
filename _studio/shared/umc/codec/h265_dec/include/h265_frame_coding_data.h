@@ -33,12 +33,12 @@ public:
     void Init(const H265SeqParamSet* sps);
 
     // conversion of partition index to picture pel position
-    Ipp32u m_rasterToPelX[MAX_NUM_SPU_W * MAX_NUM_SPU_W];
-    Ipp32u m_rasterToPelY[MAX_NUM_SPU_W * MAX_NUM_SPU_W];
+    Ipp32u m_rasterToPelX[MAX_NUM_PU_IN_ROW * MAX_NUM_PU_IN_ROW];
+    Ipp32u m_rasterToPelY[MAX_NUM_PU_IN_ROW * MAX_NUM_PU_IN_ROW];
 
     // flexible conversion from relative to absolute index
-    Ipp32u m_zscanToRaster[MAX_NUM_SPU_W * MAX_NUM_SPU_W];
-    Ipp32u m_rasterToZscan[MAX_NUM_SPU_W * MAX_NUM_SPU_W];
+    Ipp32u m_zscanToRaster[MAX_NUM_PU_IN_ROW * MAX_NUM_PU_IN_ROW];
+    Ipp32u m_rasterToZscan[MAX_NUM_PU_IN_ROW * MAX_NUM_PU_IN_ROW];
 
 private:
     void InitZscanToRaster(Ipp32s MaxDepth, Ipp32s Depth, Ipp32u StartVal, Ipp32u*& CurrIdx);

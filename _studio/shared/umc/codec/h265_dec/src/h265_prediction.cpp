@@ -278,7 +278,7 @@ void h265_PredictIntra_Ang_Chroma_8u(
     bool modeDC        = dirMode < 2;
     bool modeHor       = !modeDC && (dirMode < 18);
     bool modeVer       = !modeDC && !modeHor;
-    Ipp32s intraPredAngle = modeVer ? (Ipp32s) dirMode - VER_IDX : modeHor ? -((Ipp32s)dirMode - HOR_IDX) : 0;
+    Ipp32s intraPredAngle = modeVer ? (Ipp32s) dirMode - INTRA_LUMA_VER_IDX : modeHor ? -((Ipp32s)dirMode - INTRA_LUMA_HOR_IDX) : 0;
     Ipp32s absAng = abs(intraPredAngle);
     Ipp32s signAng = intraPredAngle < 0 ? -1 : 1;
 
@@ -533,16 +533,16 @@ void H265Prediction::h265_PredictIntraChroma(
 
     switch(DirMode)
     {
-    case PLANAR_IDX:
+    case INTRA_LUMA_PLANAR_IDX:
         h265_PredictIntra_Planar_Chroma_8u(ptrSrc + sw + 2, sw, pDst, Stride, Size);
         break;
-    case DC_IDX:
+    case INTRA_LUMA_DC_IDX:
         h265_PredictIntra_DC_Chroma_8u(ptrSrc + sw + 2, sw, pDst, Stride, Size);
         break;
-    case VER_IDX:
+    case INTRA_LUMA_VER_IDX:
         h265_PredictIntra_Ver_Chroma_8u(ptrSrc + sw + 2, sw, pDst, Stride, Size);
         break;
-    case HOR_IDX:
+    case INTRA_LUMA_HOR_IDX:
         h265_PredictIntra_Hor_Chroma_8u(ptrSrc + sw + 2, sw, pDst, Stride, Size);
         break;
     default:

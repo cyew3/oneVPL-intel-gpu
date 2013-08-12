@@ -71,38 +71,45 @@ enum COEFF_SCAN_TYPE
     SCAN_VER            ///< vertical first scan
 };
 
+// coeffs decoding constants
 enum
 {
     SCAN_SET_SIZE = 16,
     LAST_MINUS_FIRST_SIG_SCAN_THRESHOLD = 3,
 
+    NUM_CONTEXT_SIG_COEFF_GROUP_FLAG        = 2,      // number of contexts for sig coeff group 
+    NUM_CONTEXT_SIG_FLAG_LUMA               = 27,     // number of contexts for luma sig flag
+    NUM_CONTEX_LAST_COEF_FLAG_XY            = 15,     // number of contexts for last coefficient position
+    NUM_CONTEXT_ONE_FLAG_LUMA               = 16,     // number of contexts for greater than 1 flag of luma
+    NUM_CONTEXT_ABS_FLAG_LUMA               = 4,      // number of contexts for greater than 2 flag of luma
+    NUM_CONTEXT_TRANSFORMSKIP_FLAG          = 1,      // number of contexts for transform skipping flag
+
+    LARGER_THAN_ONE_FLAG_NUMBER             = 8,       // maximum number of largerThan1 flag coded in one chunk
+    COEFF_ABS_LEVEL_REMAIN_BIN_THRESHOLD    = 3        // maximum codeword length of coeff_abs_level_remaining reduced to 32.
 };
 
-#define NUM_SIG_CG_FLAG_CTX           2       ///< number of context models for MULTI_LEVEL_SIGNIFICANCE
-#define NUM_SIG_FLAG_CTX_LUMA         27      ///< number of context models for luma sig flag
-#define NUM_CTX_LAST_FLAG_XY          15      ///< number of context models for last coefficient position
-#define C1FLAG_NUMBER               8 // maximum number of largerThan1 flag coded in one chunk :  16 in HM5
-#define NUM_ONE_FLAG_CTX_LUMA         16      ///< number of context models for greater than 1 flag of luma
-#define NUM_ABS_FLAG_CTX_LUMA          4      ///< number of context models for greater than 2 flag of luma
-#define NUM_TRANSFORMSKIP_FLAG_CTX    1       ///< number of context models for transform skipping
+enum
+{
+    INTRA_LUMA_PLANAR_IDX   = 0,                     // index for intra planar mode
+    INTRA_LUMA_VER_IDX      = 26,                    // index for intra vertical   mode
+    INTRA_LUMA_HOR_IDX      = 10,                    // index for intra hor mode
+    INTRA_LUMA_DC_IDX       = 1,                     // index for intra dc mode
+    INTRA_DM_CHROMA_IDX     = 36,                    // index for chroma from luma mode 
 
-#define COEF_REMAIN_BIN_REDUCTION        3 ///< J0142: Maximum codeword length of coeff_abs_level_remaining reduced to 32.
-                                           ///< COEF_REMAIN_BIN_REDUCTION is also used to indicate the level at which the VLC
-                                           ///< transitions from Golomb-Rice to TU+EG(k)
-#define PLANAR_IDX             0
-#define VER_IDX                26                    // index for intra VERTICAL   mode
-#define HOR_IDX                10                    // index for intra HORIZONTAL mode
-#define DC_IDX                 1                     // index for intra DC mode
-#define NUM_CHROMA_MODE        5                     // total number of chroma modes
-#define DM_CHROMA_IDX          36                    // chroma mode index for derived from luma intra mode
+    INTRA_NUM_CHROMA_MODE   = 5                      // total number of chroma modes
+};
 
-#define MAX_TLAYER 8
 #define MAX_CPB_CNT                     32  ///< Upper bound of (cpb_cnt_minus1 + 1)
 
-#define MAX_CU_DEPTH 6 // log2(LCUSize)
-#define MAX_CU_SIZE (1<<(MAX_CU_DEPTH)) // maximum allowable size of CU
-#define MIN_PU_SIZE 4
-#define MAX_NUM_SPU_W (MAX_CU_SIZE/MIN_PU_SIZE) // maximum number of SPU in horizontal line
+enum
+{
+    MAX_TEMPORAL_LAYER  = 8,
+
+    MAX_CU_DEPTH = 6,
+    MAX_CU_SIZE = (1 << MAX_CU_DEPTH), // maximum allowable size of CU
+    MIN_PU_SIZE = 4,
+    MAX_NUM_PU_IN_ROW = (MAX_CU_SIZE/MIN_PU_SIZE)
+};
 
 #define MAX_VPS_NUM_HRD_PARAMETERS_ALLOWED_PLUS1  1024
 #define MAX_VPS_NUH_RESERVED_ZERO_LAYER_ID_PLUS1  1
@@ -651,7 +658,7 @@ struct H265HRD
     unsigned    au_cpb_removal_delay_length;
     unsigned    dpb_output_delay_length;
 
-    H265HrdSubLayerInfo m_HRD[MAX_TLAYER];
+    H265HrdSubLayerInfo m_HRD[MAX_TEMPORAL_LAYER];
 
 
     H265HRD() {
@@ -771,9 +778,9 @@ public:
     unsigned    m_uiMaxLayers;
     bool        vps_temporal_id_nesting_flag;
 
-    unsigned    vps_num_reorder_pics[MAX_TLAYER];
-    unsigned    vps_max_dec_pic_buffering[MAX_TLAYER];
-    unsigned    vps_max_latency_increase[MAX_TLAYER];
+    unsigned    vps_num_reorder_pics[MAX_TEMPORAL_LAYER];
+    unsigned    vps_max_dec_pic_buffering[MAX_TEMPORAL_LAYER];
+    unsigned    vps_max_latency_increase[MAX_TEMPORAL_LAYER];
 
     unsigned    vps_num_hrd_parameters;
     unsigned    vps_max_nuh_reserved_zero_layer_id;
@@ -835,7 +842,7 @@ public:
         delete cprms_present_flag;
         cprms_present_flag = 0;
 
-        for (int i = 0; i < MAX_TLAYER; i++)
+        for (int i = 0; i < MAX_TEMPORAL_LAYER; i++)
         {
             vps_num_reorder_pics[i] = 0;
             vps_max_dec_pic_buffering[i] = 0;
@@ -995,9 +1002,9 @@ struct H265SeqParamSetBase
     Ipp32u log2_max_pic_order_cnt_lsb;
     bool   sps_sub_layer_ordering_info_present_flag;
 
-    Ipp32u sps_max_dec_pic_buffering[MAX_TLAYER];
-    Ipp32u sps_max_num_reorder_pics[MAX_TLAYER];
-    Ipp32u sps_max_latency_increase[MAX_TLAYER];
+    Ipp32u sps_max_dec_pic_buffering[MAX_TEMPORAL_LAYER];
+    Ipp32u sps_max_num_reorder_pics[MAX_TEMPORAL_LAYER];
+    Ipp32u sps_max_latency_increase[MAX_TEMPORAL_LAYER];
 
 
     Ipp32u pcm_bit_depth_luma;
@@ -1499,14 +1506,6 @@ struct H265PicParamSet : public HeapObject, public H265PicParamSetBase
 
     void Reset()
     {
-        H265PicParamSetBase::Reset();
-
-        pic_parameter_set_id = MAX_NUM_PIC_PARAM_SETS_H265;
-        seq_parameter_set_id = MAX_NUM_SEQ_PARAM_SETS_H265;
-
-        loop_filter_across_tiles_enabled_flag = true;
-        loop_filter_across_slices_enabled_flag = true;
-
         if (NULL != m_ColumnWidthArray)
         {
             delete[] m_ColumnWidthArray;
@@ -1536,6 +1535,14 @@ struct H265PicParamSet : public HeapObject, public H265PicParamSetBase
             delete[] m_TileIdx;
             m_TileIdx = NULL;
         }
+
+        H265PicParamSetBase::Reset();
+
+        pic_parameter_set_id = MAX_NUM_PIC_PARAM_SETS_H265;
+        seq_parameter_set_id = MAX_NUM_SEQ_PARAM_SETS_H265;
+
+        loop_filter_across_tiles_enabled_flag = true;
+        loop_filter_across_slices_enabled_flag = true;
     }
 
     ~H265PicParamSet()

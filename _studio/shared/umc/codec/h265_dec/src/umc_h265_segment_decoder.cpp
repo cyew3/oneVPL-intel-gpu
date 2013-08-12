@@ -888,7 +888,7 @@ void H265SegmentDecoder::DecodeIntraNeighbors(H265CodingUnit* pCU, Ipp32u AbsPar
     Ipp32s belowLeftAbsPartIdx = pCU->m_zscanToRaster[AbsPartIdx] - 1 + NumUnitsInCU * m_pSeqParamSet->NumPartitionsInCUSize;
 
     // below left
-    if (XInc > 0 && ((belowLeftAbsPartIdx >= MAX_NUM_SPU_W * MAX_NUM_SPU_W) || (pCU->m_rasterToZscan[pCU->m_zscanToRaster[AbsPartIdx] - 1 + NumUnitsInCU * m_pSeqParamSet->NumPartitionsInCUSize] > AbsPartIdx)))
+    if (XInc > 0 && ((belowLeftAbsPartIdx >= MAX_NUM_PU_IN_ROW * MAX_NUM_PU_IN_ROW) || (pCU->m_rasterToZscan[pCU->m_zscanToRaster[AbsPartIdx] - 1 + NumUnitsInCU * m_pSeqParamSet->NumPartitionsInCUSize] > AbsPartIdx)))
     {
         for (Ipp32s i = 0; i < NumUnitsInCU; i++)
             intraNeighbor->neighborAvailable[NumUnitsInCU - 1 - i] = false;
@@ -946,7 +946,7 @@ void H265SegmentDecoder::DecodeIntraNeighbors(H265CodingUnit* pCU, Ipp32u AbsPar
     intraNeighbor = &pCU->m_intraNeighbors[1][AbsPartIdx];
     intraNeighbor->numIntraNeighbors = 0;
 
-    if (XInc > 0 && ((belowLeftAbsPartIdx >= MAX_NUM_SPU_W * MAX_NUM_SPU_W) || (pCU->m_rasterToZscan[pCU->m_zscanToRaster[AbsPartIdx] - 1 + NumUnitsInCU * m_pSeqParamSet->NumPartitionsInCUSize] > AbsPartIdx)))
+    if (XInc > 0 && ((belowLeftAbsPartIdx >= MAX_NUM_PU_IN_ROW * MAX_NUM_PU_IN_ROW) || (pCU->m_rasterToZscan[pCU->m_zscanToRaster[AbsPartIdx] - 1 + NumUnitsInCU * m_pSeqParamSet->NumPartitionsInCUSize] > AbsPartIdx)))
     {
         for (Ipp32s i = 0; i < NumUnitsInCU; i++)
             intraNeighbor->neighborAvailable[NumUnitsInCU - 1 - i] = false;
@@ -1189,7 +1189,7 @@ void H265SegmentDecoder::DecodeIPCMInfoCABAC(H265CodingUnit* pCU, Ipp32u AbsPart
         DecodePCMAlignBits();
 
         pCU->setPartSizeSubParts(SIZE_2Nx2N, AbsPartIdx, Depth);
-        pCU->setLumaIntraDirSubParts(DC_IDX, AbsPartIdx, Depth);
+        pCU->setLumaIntraDirSubParts(INTRA_LUMA_DC_IDX, AbsPartIdx, Depth);
         pCU->setSizeSubParts(m_pSeqParamSet->MaxCUWidth >> Depth, m_pSeqParamSet->MaxCUHeight >> Depth, AbsPartIdx, Depth);
         pCU->setTrIdxSubParts(0, AbsPartIdx, Depth);
 
@@ -1338,14 +1338,14 @@ void H265SegmentDecoder::DecodeIntraDirChromaCABAC(H265CodingUnit* pCU, Ipp32u A
     //switch codeword
     if (uVal == 0)
     {
-        uVal = DM_CHROMA_IDX;
+        uVal = INTRA_DM_CHROMA_IDX;
     }
     else
     {
         Ipp32u IPredMode;
 
         IPredMode = m_pBitStream->DecodeBypassBins_CABAC(2);
-        Ipp32u AllowedChromaDir[NUM_CHROMA_MODE];
+        Ipp32u AllowedChromaDir[INTRA_NUM_CHROMA_MODE];
         pCU->getAllowedChromaDir(AbsPartIdx, AllowedChromaDir);
         uVal = AllowedChromaDir[IPredMode];
     }
@@ -2026,8 +2026,8 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
     const bool   IsLuma  = (Type==TEXT_LUMA);
     const bool   beValid = pCU->m_CUTransquantBypass[AbsPartIdx] ? false : pCU->m_SliceHeader->m_PicParamSet->sign_data_hiding_flag;
 
-    const Ipp32u baseCoeffGroupCtxIdx = ctxIdxOffsetHEVC[SIG_COEFF_GROUP_FLAG_HEVC] + (IsLuma ? 0 : NUM_SIG_CG_FLAG_CTX);
-    const Ipp32u baseCtxIdx = ctxIdxOffsetHEVC[SIG_FLAG_HEVC] + ( IsLuma ? 0 : NUM_SIG_FLAG_CTX_LUMA);
+    const Ipp32u baseCoeffGroupCtxIdx = ctxIdxOffsetHEVC[SIG_COEFF_GROUP_FLAG_HEVC] + (IsLuma ? 0 : NUM_CONTEXT_SIG_COEFF_GROUP_FLAG);
+    const Ipp32u baseCtxIdx = ctxIdxOffsetHEVC[SIG_FLAG_HEVC] + ( IsLuma ? 0 : NUM_CONTEXT_SIG_FLAG_LUMA);
 
     if (pCU->m_SliceHeader->m_PicParamSet->getUseTransformSkip() && !L2Width)
         ParseTransformSkipFlags(pCU, AbsPartIdx, Depth, Type);
@@ -2148,13 +2148,13 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
 
             c1 = 1;
 
-            Ipp32u baseCtxIdx = ctxIdxOffsetHEVC[ONE_FLAG_HEVC] + (CtxSet<<2) + (IsLuma ? 0 : NUM_ONE_FLAG_CTX_LUMA);
+            Ipp32u baseCtxIdx = ctxIdxOffsetHEVC[ONE_FLAG_HEVC] + (CtxSet<<2) + (IsLuma ? 0 : NUM_CONTEXT_ONE_FLAG_LUMA);
 
             Ipp32s absCoeff[SCAN_SET_SIZE];
             for (Ipp32s i = 0; i < numNonZero; i++)
                 absCoeff[i] = 1;
 
-            Ipp32s numC1Flag = IPP_MIN(numNonZero, C1FLAG_NUMBER);
+            Ipp32s numC1Flag = IPP_MIN(numNonZero, LARGER_THAN_ONE_FLAG_NUMBER);
             Ipp32s firstC2FlagIdx = -1;
 
             for (Ipp32s idx = 0; idx < numC1Flag; idx++)
@@ -2174,7 +2174,7 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
 
             if (c1 == 0)
             {
-                baseCtxIdx = ctxIdxOffsetHEVC[ABS_FLAG_HEVC] + CtxSet + (IsLuma ? 0 : NUM_ABS_FLAG_CTX_LUMA);
+                baseCtxIdx = ctxIdxOffsetHEVC[ABS_FLAG_HEVC] + CtxSet + (IsLuma ? 0 : NUM_CONTEXT_ABS_FLAG_LUMA);
                 if (firstC2FlagIdx != -1)
                 {
                     Bin = m_pBitStream->DecodeSingleBin_CABAC(baseCtxIdx);
@@ -2195,11 +2195,11 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
             }
 
             Ipp32s FirstCoeff2 = 1;
-            if (c1 == 0 || numNonZero > C1FLAG_NUMBER)
+            if (c1 == 0 || numNonZero > LARGER_THAN_ONE_FLAG_NUMBER)
             {
                 for (Ipp32s idx = 0; idx < numNonZero; idx++)
                 {
-                    Ipp32s baseLevel  = (idx < C1FLAG_NUMBER)? (2 + FirstCoeff2) : 1;
+                    Ipp32s baseLevel  = (idx < LARGER_THAN_ONE_FLAG_NUMBER)? (2 + FirstCoeff2) : 1;
 
                     if (absCoeff[ idx ] == baseLevel)
                     {
@@ -2250,7 +2250,7 @@ void H265SegmentDecoder::ParseTransformSkipFlags(H265CodingUnit* pCU, Ipp32u Abs
         return;
 
     Ipp32u useTransformSkip;
-    Ipp32u CtxIdx = ctxIdxOffsetHEVC[TRANSFORM_SKIP_HEVC] + (Type ? TEXT_CHROMA : TEXT_LUMA) * NUM_TRANSFORMSKIP_FLAG_CTX;
+    Ipp32u CtxIdx = ctxIdxOffsetHEVC[TRANSFORM_SKIP_HEVC] + (Type ? TEXT_CHROMA : TEXT_LUMA) * NUM_CONTEXT_TRANSFORMSKIP_FLAG;
     useTransformSkip = m_pBitStream->DecodeSingleBin_CABAC(CtxIdx);
 
     if (Type != TEXT_LUMA)
@@ -2280,7 +2280,7 @@ Ipp32u H265SegmentDecoder::ParseLastSignificantXYCABAC(Ipp32u &PosLastX, Ipp32u 
 {
     Ipp32u mGIdx = g_GroupIdx[(1<<(L2Width+2)) - 1];
 
-    Ipp32u blkSizeOffset = IsLuma ? (L2Width*3 + ((L2Width+1)>>2)) : NUM_CTX_LAST_FLAG_XY;
+    Ipp32u blkSizeOffset = IsLuma ? (L2Width*3 + ((L2Width+1)>>2)) : NUM_CONTEX_LAST_COEF_FLAG_XY;
     Ipp32u shift = IsLuma ? ((L2Width+3) >> 2) : L2Width;
     Ipp32u CtxIdxX = ctxIdxOffsetHEVC[LAST_X_HEVC] + blkSizeOffset;
     Ipp32u CtxIdxY = ctxIdxOffsetHEVC[LAST_Y_HEVC] + blkSizeOffset;
@@ -2347,15 +2347,15 @@ void H265SegmentDecoder::ReadCoefRemainExGolombCABAC(Ipp32u &Symbol, Ipp32u &Par
     prefix -= CodeWord;
     CodeWord = 0;
 
-    if (prefix < COEF_REMAIN_BIN_REDUCTION)
+    if (prefix < COEFF_ABS_LEVEL_REMAIN_BIN_THRESHOLD)
     {
         CodeWord = m_pBitStream->DecodeBypassBins_CABAC(Param);
         Symbol = (prefix << Param) + CodeWord;
     }
     else
     {
-        CodeWord = m_pBitStream->DecodeBypassBins_CABAC(prefix - COEF_REMAIN_BIN_REDUCTION + Param);
-        Symbol = (((1 << (prefix - COEF_REMAIN_BIN_REDUCTION)) + COEF_REMAIN_BIN_REDUCTION - 1) << Param) + CodeWord;
+        CodeWord = m_pBitStream->DecodeBypassBins_CABAC(prefix - COEFF_ABS_LEVEL_REMAIN_BIN_THRESHOLD + Param);
+        Symbol = (((1 << (prefix - COEFF_ABS_LEVEL_REMAIN_BIN_THRESHOLD)) + COEFF_ABS_LEVEL_REMAIN_BIN_THRESHOLD - 1) << Param) + CodeWord;
     }
 }
 
@@ -2442,7 +2442,7 @@ void H265SegmentDecoder::ReconIntraQT(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ip
     }
 
     Ipp32u ChromaPredMode = pCU->GetChromaIntra(AbsPartIdx);
-    if (ChromaPredMode == DM_CHROMA_IDX)
+    if (ChromaPredMode == INTRA_DM_CHROMA_IDX)
     {
         ChromaPredMode = pCU->GetLumaIntra(AbsPartIdx);
     }
@@ -2677,13 +2677,13 @@ void H265SegmentDecoder::IntraRecLumaBlk(H265CodingUnit* pCU,
     bool isFilterNeeded = true;
     Ipp32u LumaPredMode = pCU->GetLumaIntra(AbsPartIdx);
 
-    if (LumaPredMode == DC_IDX)
+    if (LumaPredMode == INTRA_LUMA_DC_IDX)
     {
         isFilterNeeded = false;
     }
     else
     {
-        Ipp32s diff = IPP_MIN(abs((int)LumaPredMode - (int)HOR_IDX), abs((int)LumaPredMode - (int)VER_IDX));
+        Ipp32s diff = IPP_MIN(abs((int)LumaPredMode - (int)INTRA_LUMA_HOR_IDX), abs((int)LumaPredMode - (int)INTRA_LUMA_VER_IDX));
 
         if (diff <= FilteredModes[h265_log2table[width - 4] - 2])
         {
@@ -2728,16 +2728,16 @@ void H265SegmentDecoder::IntraRecLumaBlk(H265CodingUnit* pCU,
 
     switch(LumaPredMode)
     {
-    case PLANAR_IDX:
+    case INTRA_LUMA_PLANAR_IDX:
         MFX_HEVC_COMMON::h265_intrapred_planar(PredPel, pRec, pitch, width);
         break;
-    case DC_IDX:
+    case INTRA_LUMA_DC_IDX:
         MFX_HEVC_COMMON::h265_intrapred_dc(PredPel, pRec, pitch, width, 1);
         break;
-    case VER_IDX:
+    case INTRA_LUMA_VER_IDX:
         MFX_HEVC_COMMON::h265_intrapred_ver(PredPel, pRec, pitch, width, 8, 1);
         break;
-    case HOR_IDX:
+    case INTRA_LUMA_HOR_IDX:
         MFX_HEVC_COMMON::h265_intrapred_hor(PredPel, pRec, pitch, width, 8, 1);
         break;
     default:
@@ -2994,8 +2994,8 @@ Ipp32u H265SegmentDecoder::getCtxSkipFlag(Ipp32u AbsPartIdx)
 
 void H265SegmentDecoder::getIntraDirLumaPredictor(H265CodingUnit *pCU, Ipp32u AbsPartIdx, Ipp32s IntraDirPred[])
 {
-    Ipp32s LeftIntraDir = DC_IDX;
-    Ipp32s AboveIntraDir = DC_IDX;
+    Ipp32s LeftIntraDir = INTRA_LUMA_DC_IDX;
+    Ipp32s AboveIntraDir = INTRA_LUMA_DC_IDX;
     Ipp32s XInc = pCU->m_rasterToPelX[AbsPartIdx] >> m_pSeqParamSet->log2_min_transform_block_size;
     Ipp32s YInc = pCU->m_rasterToPelY[AbsPartIdx] >> m_pSeqParamSet->log2_min_transform_block_size;
 
@@ -3005,7 +3005,7 @@ void H265SegmentDecoder::getIntraDirLumaPredictor(H265CodingUnit *pCU, Ipp32u Ab
     // Get intra direction of left PU
     if ((AbsPartIdx & PartOffsetX) == 0)
     {
-        LeftIntraDir = m_context->m_CurrCTBFlags[YInc * m_context->m_CurrCTBStride + XInc - 1].members.IsIntra ? m_context->m_CurrCTBFlags[YInc * m_context->m_CurrCTBStride + XInc - 1].members.IntraDir : DC_IDX;
+        LeftIntraDir = m_context->m_CurrCTBFlags[YInc * m_context->m_CurrCTBStride + XInc - 1].members.IsIntra ? m_context->m_CurrCTBFlags[YInc * m_context->m_CurrCTBStride + XInc - 1].members.IntraDir : INTRA_LUMA_DC_IDX;
     }
     else
     {
@@ -3016,7 +3016,7 @@ void H265SegmentDecoder::getIntraDirLumaPredictor(H265CodingUnit *pCU, Ipp32u Ab
     if ((AbsPartIdx & PartOffsetY) == 0)
     {
         if (YInc > 0)
-            AboveIntraDir = m_context->m_CurrCTBFlags[(YInc - 1) * m_context->m_CurrCTBStride + XInc].members.IsIntra ? m_context->m_CurrCTBFlags[(YInc - 1) * m_context->m_CurrCTBStride + XInc].members.IntraDir : DC_IDX;
+            AboveIntraDir = m_context->m_CurrCTBFlags[(YInc - 1) * m_context->m_CurrCTBStride + XInc].members.IsIntra ? m_context->m_CurrCTBFlags[(YInc - 1) * m_context->m_CurrCTBStride + XInc].members.IntraDir : INTRA_LUMA_DC_IDX;
     }
     else
     {
@@ -3033,9 +3033,9 @@ void H265SegmentDecoder::getIntraDirLumaPredictor(H265CodingUnit *pCU, Ipp32u Ab
         }
         else //non-angular
         {
-            IntraDirPred[0] = PLANAR_IDX;
-            IntraDirPred[1] = DC_IDX;
-            IntraDirPred[2] = VER_IDX;
+            IntraDirPred[0] = INTRA_LUMA_PLANAR_IDX;
+            IntraDirPred[1] = INTRA_LUMA_DC_IDX;
+            IntraDirPred[2] = INTRA_LUMA_VER_IDX;
         }
     }
     else
@@ -3045,11 +3045,11 @@ void H265SegmentDecoder::getIntraDirLumaPredictor(H265CodingUnit *pCU, Ipp32u Ab
 
         if (LeftIntraDir && AboveIntraDir) //both modes are non-planar
         {
-            IntraDirPred[2] = PLANAR_IDX;
+            IntraDirPred[2] = INTRA_LUMA_PLANAR_IDX;
         }
         else
         {
-            IntraDirPred[2] = (LeftIntraDir + AboveIntraDir) < 2 ? VER_IDX : DC_IDX;
+            IntraDirPred[2] = (LeftIntraDir + AboveIntraDir) < 2 ? INTRA_LUMA_VER_IDX : INTRA_LUMA_DC_IDX;
         }
     }
 }
