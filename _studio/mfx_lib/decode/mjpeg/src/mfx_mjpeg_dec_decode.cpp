@@ -2270,6 +2270,7 @@ mfxStatus MFX_JPEG_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
             out->mfx.FrameInfo.ChromaFormat = in->mfx.FrameInfo.ChromaFormat;
         }
 #endif
+        else
         {
             sts = MFX_ERR_UNSUPPORTED;
         }
