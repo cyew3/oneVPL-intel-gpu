@@ -111,6 +111,7 @@ namespace UMC
         }
         virtual Status  Close()
         {
+            m_bParsed = false;
             return UMC_OK;
         }
         virtual Status CheckNextData(MediaData*   data, Ipp32u /*nTrack*/)
