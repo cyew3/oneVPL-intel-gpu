@@ -31,13 +31,13 @@ UMC::Status FillVideoParam(const H265SeqParamSet * seq, mfxVideoParam *par, bool
 
     //if (seq->frame_cropping_flag)
     {
-        par->mfx.FrameInfo.CropX = (mfxU16)(SubWidthC[seq->chroma_format_idc] * (seq->frame_cropping_rect_left_offset + seq->def_disp_win_left_offset));
-        par->mfx.FrameInfo.CropY = (mfxU16)(SubHeightC[seq->chroma_format_idc] * (seq->frame_cropping_rect_top_offset + seq->def_disp_win_top_offset));
+        par->mfx.FrameInfo.CropX = (mfxU16)(SubWidthC[seq->chroma_format_idc] * (seq->conf_win_left_offset + seq->def_disp_win_left_offset));
+        par->mfx.FrameInfo.CropY = (mfxU16)(SubHeightC[seq->chroma_format_idc] * (seq->conf_win_top_offset + seq->def_disp_win_top_offset));
         par->mfx.FrameInfo.CropH = (mfxU16)(par->mfx.FrameInfo.Height - SubHeightC[seq->chroma_format_idc] *
-            (seq->frame_cropping_rect_top_offset + seq->frame_cropping_rect_bottom_offset + seq->def_disp_win_top_offset + seq->def_disp_win_bottom_offset));
+            (seq->conf_win_top_offset + seq->conf_win_bottom_offset + seq->def_disp_win_top_offset + seq->def_disp_win_bottom_offset));
 
         par->mfx.FrameInfo.CropW = (mfxU16)(par->mfx.FrameInfo.Width - SubWidthC[seq->chroma_format_idc] *
-            (seq->frame_cropping_rect_left_offset + seq->frame_cropping_rect_right_offset + seq->def_disp_win_left_offset + seq->def_disp_win_right_offset));
+            (seq->conf_win_left_offset + seq->conf_win_right_offset + seq->def_disp_win_left_offset + seq->def_disp_win_right_offset));
     }
 
     par->mfx.FrameInfo.PicStruct = (mfxU8) (seq->field_seq_flag  ? MFX_PICSTRUCT_UNKNOWN : MFX_PICSTRUCT_PROGRESSIVE);
@@ -54,10 +54,10 @@ UMC::Status FillVideoParam(const H265SeqParamSet * seq, mfxVideoParam *par, bool
         par->mfx.FrameInfo.AspectRatioH = 0;
     }
 
-    if (seq->getTimingInfo()->getTimingInfoPresentFlag() || full)
+    if (seq->getTimingInfo()->vps_timing_info_present_flag || full)
     {
-        par->mfx.FrameInfo.FrameRateExtD = seq->getTimingInfo()->getNumUnitsInTick() * 2;
-        par->mfx.FrameInfo.FrameRateExtN = seq->getTimingInfo()->getTimeScale();
+        par->mfx.FrameInfo.FrameRateExtD = seq->getTimingInfo()->vps_num_units_in_tick * 2;
+        par->mfx.FrameInfo.FrameRateExtN = seq->getTimingInfo()->vps_time_scale;
     }
     else
     {
@@ -65,8 +65,8 @@ UMC::Status FillVideoParam(const H265SeqParamSet * seq, mfxVideoParam *par, bool
         par->mfx.FrameInfo.FrameRateExtN = 0;
     }
 
-    par->mfx.CodecProfile = (mfxU16)seq->m_pcPTL.m_generalPTL.getProfileIdc();
-    par->mfx.CodecLevel = (mfxU16)seq->m_pcPTL.m_generalPTL.getLevelIdc();
+    par->mfx.CodecProfile = (mfxU16)seq->m_pcPTL.GetGeneralPTL()->profile_idc;
+    par->mfx.CodecLevel = (mfxU16)seq->m_pcPTL.GetGeneralPTL()->level_idc;
 
     par->mfx.DecodedOrder = 0;
 
@@ -74,12 +74,12 @@ UMC::Status FillVideoParam(const H265SeqParamSet * seq, mfxVideoParam *par, bool
     mfxExtVideoSignalInfo * videoSignal = (mfxExtVideoSignalInfo *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
     if (videoSignal)
     {
-        videoSignal->VideoFormat = (mfxU16)seq->getVideoFormat();
-        videoSignal->VideoFullRange = (mfxU16)seq->getVideoFullRangeFlag();
-        videoSignal->ColourDescriptionPresent = (mfxU16)seq->getColourDescriptionPresentFlag();
-        videoSignal->ColourPrimaries = (mfxU16)seq->getColourPrimaries();
-        videoSignal->TransferCharacteristics = (mfxU16)seq->getTransferCharacteristics();
-        videoSignal->MatrixCoefficients = (mfxU16)seq->getMatrixCoefficients();
+        videoSignal->VideoFormat = (mfxU16)seq->video_format;
+        videoSignal->VideoFullRange = (mfxU16)seq->video_full_range_flag;
+        videoSignal->ColourDescriptionPresent = (mfxU16)seq->colour_description_present_flag;
+        videoSignal->ColourPrimaries = (mfxU16)seq->colour_primaries;
+        videoSignal->TransferCharacteristics = (mfxU16)seq->transfer_characteristics;
+        videoSignal->MatrixCoefficients = (mfxU16)seq->matrix_coeffs;
     }
 
     return UMC::UMC_OK;

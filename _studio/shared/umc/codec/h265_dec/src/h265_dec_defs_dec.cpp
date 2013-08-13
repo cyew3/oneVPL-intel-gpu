@@ -1221,7 +1221,7 @@ void H265SampleAdaptiveOffset::PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u
         }
         else
         {
-            PcmLeftShiftBit = g_bitDepthY - pcCU->m_SliceHeader->m_SeqParamSet->pcm_bit_depth_luma;
+            PcmLeftShiftBit = g_bitDepthY - pcCU->m_SliceHeader->m_SeqParamSet->pcm_sample_bit_depth_luma;
         }
 
         for(Y = 0; Y < Height; Y++)
@@ -1251,7 +1251,7 @@ void H265SampleAdaptiveOffset::PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u
         }
         else
         {
-            PcmLeftShiftBit = g_bitDepthC - pcCU->m_SliceHeader->m_SeqParamSet->pcm_bit_depth_chroma;
+            PcmLeftShiftBit = g_bitDepthC - pcCU->m_SliceHeader->m_SeqParamSet->pcm_sample_bit_depth_chroma;
         }
 
         for(Y = 0; Y < Height; Y++)

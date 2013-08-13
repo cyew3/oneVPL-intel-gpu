@@ -1200,7 +1200,7 @@ void H265SegmentDecoder::DecodeIPCMInfoCABAC(H265CodingUnit* pCU, Ipp32u AbsPart
         H265PlanePtrYCommon PCMSampleY = pCU->m_IPCMSampleY + LumaOffset;
         Width = pCU->GetWidth(AbsPartIdx);
         Height = pCU->GetHeight(AbsPartIdx);
-        SampleBits = pCU->m_SliceHeader->m_SeqParamSet->getPCMBitDepthLuma();
+        SampleBits = pCU->m_SliceHeader->m_SeqParamSet->pcm_sample_bit_depth_luma;
 
         for (Y = 0; Y < Height; Y++)
         {
@@ -1217,7 +1217,7 @@ void H265SegmentDecoder::DecodeIPCMInfoCABAC(H265CodingUnit* pCU, Ipp32u AbsPart
         H265PlanePtrUVCommon PCMSampleUV = pCU->m_IPCMSampleCb + ChromaOffset;
         Width = pCU->GetWidth(AbsPartIdx) / 2;
         Height = pCU->GetHeight(AbsPartIdx) / 2;
-        SampleBits = m_pSeqParamSet->getPCMBitDepthChroma();
+        SampleBits = m_pSeqParamSet->pcm_sample_bit_depth_chroma;
 
         for (Y = 0; Y < Height; Y++)
         {
@@ -1234,7 +1234,7 @@ void H265SegmentDecoder::DecodeIPCMInfoCABAC(H265CodingUnit* pCU, Ipp32u AbsPart
         PCMSampleUV = pCU->m_IPCMSampleCr + ChromaOffset;
         Width = pCU->GetWidth(AbsPartIdx) / 2;
         Height = pCU->GetHeight(AbsPartIdx) / 2;
-        SampleBits = m_pSeqParamSet->getPCMBitDepthChroma();
+        SampleBits = m_pSeqParamSet->pcm_sample_bit_depth_chroma;
 
         for (Y = 0; Y < Height; Y++)
         {
@@ -2225,7 +2225,8 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
                     pCoef[blkPos] = (H265CoeffsCommon)((pCoef[blkPos] ^ sign) - sign);
                     coeffSigns <<= 1;
                 }
-                pCoef[blkPos] = Clip3(H265_COEFF_MIN, H265_COEFF_MAX, pCoef[blkPos]);
+                
+                //pCoef[blkPos] = Clip3(H265_COEFF_MIN, H265_COEFF_MAX, pCoef[blkPos]);
 
             }
         }
@@ -2476,7 +2477,7 @@ void H265SegmentDecoder::ReconPCM(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u
     H265PlanePtrYCommon pPcmY = pCU->m_IPCMSampleY + LumaOffset;
     H265PlanePtrYCommon pPicReco = m_pCurrentFrame->GetLumaAddr(pCU->CUAddr, AbsPartIdx);
     Ipp32u PitchLuma = m_pCurrentFrame->pitch_luma();
-    Ipp32u PcmLeftShiftBit = g_bitDepthY - m_pSeqParamSet->pcm_bit_depth_luma;
+    Ipp32u PcmLeftShiftBit = g_bitDepthY - m_pSeqParamSet->pcm_sample_bit_depth_luma;
 
     for (Ipp32u Y = 0; Y < Size; Y++)
     {
@@ -2494,7 +2495,7 @@ void H265SegmentDecoder::ReconPCM(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u
     H265PlanePtrUVCommon pPcmCr = pCU->m_IPCMSampleCr + ChromaOffset;
     pPicReco = m_pCurrentFrame->GetCbCrAddr(pCU->CUAddr, AbsPartIdx);
     Ipp32u PitchChroma = m_pCurrentFrame->pitch_chroma();
-    PcmLeftShiftBit = g_bitDepthC - m_pSeqParamSet->pcm_bit_depth_chroma;
+    PcmLeftShiftBit = g_bitDepthC - m_pSeqParamSet->pcm_sample_bit_depth_chroma;
 
     for (Ipp32u Y = 0; Y < Size; Y++)
     {
@@ -2681,7 +2682,7 @@ void H265SegmentDecoder::IntraRecLumaBlk(H265CodingUnit* pCU,
         }
     }   
 
-    if (m_pSeqParamSet->getUseStrongIntraSmoothing() && isFilterNeeded)
+    if (m_pSeqParamSet->sps_strong_intra_smoothing_enabled_flag && isFilterNeeded)
     {
         Ipp32s CUSize = pCU->GetWidth(AbsPartIdx) >> TrDepth;
 

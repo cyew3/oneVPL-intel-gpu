@@ -542,7 +542,7 @@ mfxStatus VideoDECODEH265::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVi
 //    DefaultMemoryAllocator tempAllocator;
     tempAllocator.InitMem(0, core);
 
-    H265VideoDecoderParams avcInfo;
+    UMC::VideoDecoderParams avcInfo;
     avcInfo.m_pData = &in;
 
     MFX_AVC_Decoder_H265 decoder;

@@ -1038,10 +1038,10 @@ UMC::Status TaskSupplier_H265::GetInfo(UMC::VideoDecoderParams *lpInfo)
     }
 
     lpInfo->info.clip_info.height = sps->pic_height_in_luma_samples -
-        SubHeightC[sps->chroma_format_idc] * (sps->frame_cropping_rect_top_offset + sps->frame_cropping_rect_bottom_offset);
+        SubHeightC[sps->chroma_format_idc] * (sps->conf_win_top_offset + sps->conf_win_bottom_offset);
 
     lpInfo->info.clip_info.width = sps->pic_width_in_luma_samples - SubWidthC[sps->chroma_format_idc] *
-        (sps->frame_cropping_rect_left_offset + sps->frame_cropping_rect_right_offset);
+        (sps->conf_win_left_offset + sps->conf_win_right_offset);
 
     if (0.0 < m_local_delta_frame_time)
     {
@@ -1066,31 +1066,10 @@ UMC::Status TaskSupplier_H265::GetInfo(UMC::VideoDecoderParams *lpInfo)
     lpInfo->info.aspect_ratio_width  = sps->sar_width;
     lpInfo->info.aspect_ratio_height = sps->sar_height;
 
-    Ipp32u multiplier = 1 << (6 + sps->getHrdParameters()->getBitRateScale());
-    lpInfo->info.bitrate = (sps->getHrdParameters()->getBitRateValue(0, 0, 0) - 1) * multiplier;
+    Ipp32u multiplier = 1 << (6 + sps->getHrdParameters()->bit_rate_scale);
+    lpInfo->info.bitrate = (sps->getHrdParameters()->GetHRDSubLayerParam(0)->bit_rate_value[0][0] - 1) * multiplier;
 
     lpInfo->info.interlace_type = UMC::PROGRESSIVE;
-
-    H265VideoDecoderParams *lpH264Info = DynamicCast<H265VideoDecoderParams> (lpInfo);
-    if (lpH264Info)
-    {
-        Ipp8u temp_level_idc = 0;
-        view.SetDPBSize(sps, temp_level_idc);
-        lpH264Info->m_DPBSize = view.dpbSize + m_DPBSizeEx;
-
-        IppiSize sz;
-        sz.width    = sps->pic_width_in_luma_samples;
-        sz.height   = sps->pic_height_in_luma_samples;
-        lpH264Info->m_fullSize = sz;
-
-        lpH264Info->m_entropy_coding_type = 1;
-
-        lpH264Info->m_cropArea.top = (Ipp16s)(SubHeightC[sps->chroma_format_idc] * sps->frame_cropping_rect_top_offset);
-        lpH264Info->m_cropArea.bottom = (Ipp16s)(SubHeightC[sps->chroma_format_idc] * sps->frame_cropping_rect_bottom_offset);
-        lpH264Info->m_cropArea.left = (Ipp16s)(SubWidthC[sps->chroma_format_idc] * sps->frame_cropping_rect_left_offset);
-        lpH264Info->m_cropArea.right = (Ipp16s)(SubWidthC[sps->chroma_format_idc] * sps->frame_cropping_rect_right_offset);
-    }
-
     return UMC::UMC_OK;
 }
 
@@ -1232,7 +1211,7 @@ UMC::Status TaskSupplier_H265::xDecodeSPS(H265Bitstream &bs)
 
         m_Headers.m_SeqParams.AddHeader(&sps);
 
-        Ipp8u newDPBsize = (Ipp8u)CalculateDPBSize(sps.getPTL()->getGeneralPTL()->getLevelIdc(),
+        Ipp8u newDPBsize = (Ipp8u)CalculateDPBSize(sps.getPTL()->GetGeneralPTL()->level_idc,
                                    sps.pic_width_in_luma_samples,
                                    sps.pic_height_in_luma_samples);
 
@@ -2329,11 +2308,11 @@ UMC::Status TaskSupplier_H265::InitFreeFrame(H265DecoderFrame * pFrame, const H2
 
     pFrame->m_FrameType = SliceTypeToFrameType(pSlice->GetSliceHeader()->slice_type);
     pFrame->m_dFrameTime = pSlice->m_dTime;
-    pFrame->m_crop_left = SubWidthC[pSeqParam->chroma_format_idc] * (pSeqParam->frame_cropping_rect_left_offset + pSeqParam->def_disp_win_left_offset);
-    pFrame->m_crop_right = SubWidthC[pSeqParam->chroma_format_idc] * (pSeqParam->frame_cropping_rect_right_offset + pSeqParam->def_disp_win_right_offset);
-    pFrame->m_crop_top = SubHeightC[pSeqParam->chroma_format_idc] * (pSeqParam->frame_cropping_rect_top_offset + pSeqParam->def_disp_win_top_offset);
-    pFrame->m_crop_bottom = SubHeightC[pSeqParam->chroma_format_idc] * (pSeqParam->frame_cropping_rect_bottom_offset + pSeqParam->def_disp_win_bottom_offset);
-    pFrame->m_crop_flag = pSeqParam->frame_cropping_flag;
+    pFrame->m_crop_left = SubWidthC[pSeqParam->chroma_format_idc] * (pSeqParam->conf_win_left_offset + pSeqParam->def_disp_win_left_offset);
+    pFrame->m_crop_right = SubWidthC[pSeqParam->chroma_format_idc] * (pSeqParam->conf_win_right_offset + pSeqParam->def_disp_win_right_offset);
+    pFrame->m_crop_top = SubHeightC[pSeqParam->chroma_format_idc] * (pSeqParam->conf_win_top_offset + pSeqParam->def_disp_win_top_offset);
+    pFrame->m_crop_bottom = SubHeightC[pSeqParam->chroma_format_idc] * (pSeqParam->conf_win_bottom_offset + pSeqParam->def_disp_win_bottom_offset);
+    pFrame->m_crop_flag = pSeqParam->conformance_window_flag;
 
     pFrame->m_aspect_width  = pSeqParam->sar_width;
     pFrame->m_aspect_height = pSeqParam->sar_height;
@@ -2439,7 +2418,7 @@ H265DecoderFrame * TaskSupplier_H265::AllocateNewFrame(const H265Slice *pSlice)
     }
 
     H265SEIPayLoad * payload = m_Headers.m_SEIParams.GetHeader(SEI_PIC_TIMING_TYPE);
-    if (payload && pSlice->GetSeqParam()->getFrameFieldInfoPresentFlag())
+    if (payload && pSlice->GetSeqParam()->frame_field_info_present_flag)
     {
         pFrame->m_DisplayPictureStruct_H265 = payload->SEI_messages.pic_timing.pic_struct;
     }
@@ -2633,23 +2612,23 @@ bool TaskSupplier_H265::IsShouldSuspendDisplay()
 Ipp32u GetLevelIDCIndex(Ipp32u level_idc)
 {
     Ipp32u levelIndexArray[] = {
-        H265VideoDecoderParams::H265_LEVEL_1,
-        H265VideoDecoderParams::H265_LEVEL_2,
-        H265VideoDecoderParams::H265_LEVEL_21,
+        H265_LEVEL_1,
+        H265_LEVEL_2,
+        H265_LEVEL_21,
 
-        H265VideoDecoderParams::H265_LEVEL_3,
-        H265VideoDecoderParams::H265_LEVEL_31,
+        H265_LEVEL_3,
+        H265_LEVEL_31,
 
-        H265VideoDecoderParams::H265_LEVEL_4,
-        H265VideoDecoderParams::H265_LEVEL_41,
+        H265_LEVEL_4,
+        H265_LEVEL_41,
 
-        H265VideoDecoderParams::H265_LEVEL_5,
-        H265VideoDecoderParams::H265_LEVEL_51,
-        H265VideoDecoderParams::H265_LEVEL_52,
+        H265_LEVEL_5,
+        H265_LEVEL_51,
+        H265_LEVEL_52,
 
-        H265VideoDecoderParams::H265_LEVEL_6,
-        H265VideoDecoderParams::H265_LEVEL_61,
-        H265VideoDecoderParams::H265_LEVEL_62
+        H265_LEVEL_6,
+        H265_LEVEL_61,
+        H265_LEVEL_62
     };
 
     for (Ipp32u i = 0; i < sizeof(levelIndexArray)/sizeof(levelIndexArray[0]); i++)

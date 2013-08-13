@@ -123,25 +123,10 @@ enum
 #pragma warning (disable: 4127 4068)
 #endif
 
-    struct H265SeqParamSet;
-    class H265DecoderFrame;
-    class H265DecYUVBufferPadded;
-    class H265CodingUnit;
-//    class H265CodingUnit;
-//
-// Define some useful macros
-//
-
-#if 0
-    #define STRUCT_DECLSPEC_ALIGN __declspec(align(16))
-#else
-    #define STRUCT_DECLSPEC_ALIGN
-#endif
-
-const int MAX_CHROMA_FORMAT_IDC = 3;
-
-// Although the standard allows for a minimum width or height of 4, this
-// implementation restricts the minimum value to 32.
+struct H265SeqParamSet;
+class H265DecoderFrame;
+class H265DecYUVBufferPadded;
+class H265CodingUnit;
 
 enum DisplayPictureStruct_H265 {
     DPS_FRAME_H265     = 0,
@@ -156,17 +141,9 @@ enum DisplayPictureStruct_H265 {
 };
 
 
-// default plane & coeffs types:
-#if BITS_PER_PLANE == 8
 typedef Ipp8u H265PlaneYCommon;
 typedef Ipp8u H265PlaneUVCommon;
-#else
-typedef Ipp16s H265PlaneYCommon;
-typedef Ipp16s H265PlaneUVCommon;
-#endif
 typedef Ipp16s H265CoeffsCommon;
-#define H265_COEFF_MIN (H265CoeffsCommon)-32768
-#define H265_COEFF_MAX (H265CoeffsCommon)32767
 
 typedef H265CoeffsCommon *H265CoeffsPtrCommon;
 typedef H265PlaneYCommon *H265PlanePtrYCommon;
@@ -527,179 +504,92 @@ private:
 
 struct H265PTL
 {
-    int         PTL_profile_space;
-    bool        PTL_tier_flag;
-    int         PTL_profile_idc;
-    unsigned    PTL_profile_compatibility_flags;    // bitfield
-    int         PTL_level_idc;
-    bool        PTL_progressive_source_flag;
-    bool        PTL_interlaced_source_flag;
-    bool        PTL_non_packed_constraint_flag;
-    bool        PTL_frame_only_constraint_flag;
+    Ipp32u      profile_space;
+    bool        tier_flag;
+    Ipp32u      profile_idc;
+    Ipp32u      profile_compatibility_flags;    // bitfield, 32 flags
+    bool        progressive_source_flag;
+    bool        interlaced_source_flag;
+    bool        non_packed_constraint_flag;
+    bool        frame_only_constraint_flag;
+    Ipp32u      level_idc;
 
-    H265PTL()   { ::memset(this, 0, sizeof(*this)); }
-
-    int   getProfileSpace() const   { return PTL_profile_space; }
-    void  setProfileSpace(int x)    { PTL_profile_space = x; }
-
-    bool  getTierFlag()     const   { return PTL_tier_flag; }
-    void  setTierFlag(bool x)       { PTL_tier_flag = x; }
-
-    int   getProfileIdc()   const   { return PTL_profile_idc; }
-
-    bool  getProfileCompatibilityFlag(int i) const    { return (PTL_profile_compatibility_flags & (1 << i)) != 0; }
-
-    int   getLevelIdc()   const   { return PTL_level_idc; }
-    void  setLevelIdc(int x)      { PTL_level_idc = x; }
-
-    bool getProgressiveSourceFlag() const { return PTL_progressive_source_flag; }
-    void setProgressiveSourceFlag(bool b) { PTL_progressive_source_flag = b; }
-
-    bool getInterlacedSourceFlag() const { return PTL_interlaced_source_flag; }
-    void setInterlacedSourceFlag(bool b) { PTL_interlaced_source_flag = b; }
-
-    bool getNonPackedConstraintFlag() const { return PTL_non_packed_constraint_flag; }
-    void setNonPackedConstraintFlag(bool b) { PTL_non_packed_constraint_flag = b; }
-
-    bool getFrameOnlyConstraintFlag() const { return PTL_frame_only_constraint_flag; }
-    void setFrameOnlyConstraintFlag(bool b) { PTL_frame_only_constraint_flag = b; }
+    H265PTL()   { memset(this, 0, sizeof(*this)); }
 };
 
 
 #define H265_MAX_SUBLAYER_PTL   6
 struct H265ProfileTierLevel
 {
-    H265PTL m_generalPTL;
-    H265PTL m_subLayerPTL[H265_MAX_SUBLAYER_PTL];
-    unsigned sub_layer_profile_present_flags;       // bitfield [0:H265_MAX_SUBLAYER_PTL]
-    unsigned sub_layer_level_present_flag;          // bitfield [0:H265_MAX_SUBLAYER_PTL]
+    H265PTL generalPTL;
+    H265PTL subLayerPTL[H265_MAX_SUBLAYER_PTL];
+    Ipp32u  sub_layer_profile_present_flags;       // bitfield [0:H265_MAX_SUBLAYER_PTL]
+    Ipp32u  sub_layer_level_present_flag;          // bitfield [0:H265_MAX_SUBLAYER_PTL]
 
-    H265ProfileTierLevel()  {
-        sub_layer_profile_present_flags = 0;
-        sub_layer_level_present_flag = 0;
+    H265ProfileTierLevel()
+        : sub_layer_profile_present_flags(0)
+        , sub_layer_level_present_flag(0)
+    {
     }
 
+    const H265PTL* GetGeneralPTL() const        { return &generalPTL; }
+    const H265PTL* GetSubLayerPTL(Ipp32s i) const  { return &subLayerPTL[i]; }
 
-    H265PTL* getGeneralPTL()        { return &m_generalPTL; }
-    H265PTL* getSubLayerPTL(int i)  { return &m_subLayerPTL[i]; }
+    H265PTL* GetGeneralPTL()       { return &generalPTL; }
+    H265PTL* GetSubLayerPTL(Ipp32s i) { return &subLayerPTL[i]; }
 };
 
 struct H265HrdSubLayerInfo
 {
-    bool        fixed_pic_rate_flag;
+    bool        fixed_pic_rate_general_flag;
     bool        fixed_pic_rate_within_cvs_flag;
-    unsigned    elemental_duration_in_tc;
+    Ipp32u      elemental_duration_in_tc;
     bool        low_delay_hrd_flag;
-    unsigned    cpb_cnt;
-    unsigned    bit_rate_value[MAX_CPB_CNT][2];
-    unsigned    cpb_size_value[MAX_CPB_CNT][2];
-    unsigned    cpb_size_du_value[MAX_CPB_CNT][2];
-    unsigned    cbr_flag[MAX_CPB_CNT][2];
-    unsigned    bit_rate_du_value[MAX_CPB_CNT][2];
+    Ipp32u      cpb_cnt;
+
+    // sub layer hrd params
+    Ipp32u      bit_rate_value[MAX_CPB_CNT][2];
+    Ipp32u      cpb_size_value[MAX_CPB_CNT][2];
+    Ipp32u      cpb_size_du_value[MAX_CPB_CNT][2];
+    Ipp32u      bit_rate_du_value[MAX_CPB_CNT][2];
+    Ipp32u      cbr_flag[MAX_CPB_CNT][2];
 };
 
 struct H265HRD
 {
     bool        nal_hrd_parameters_present_flag;
     bool        vcl_hrd_parameters_present_flag;
-    bool        sub_pic_cpb_params_present_flag;
-    unsigned    tick_divisor;
-    unsigned    du_cpb_removal_delay_length;
+    bool        sub_pic_hrd_params_present_flag;
+
+    // sub_pic_hrd_params_present_flag
+    Ipp32u      tick_divisor;
+    Ipp32u      du_cpb_removal_delay_increment_length;
     bool        sub_pic_cpb_params_in_pic_timing_sei_flag;
-    unsigned    dpb_output_delay_du_length;
-    unsigned    bit_rate_scale;
-    unsigned    cpb_size_scale;
-    unsigned    cpb_size_du_scale;
-    unsigned    initial_cpb_removal_delay_length;
-    unsigned    au_cpb_removal_delay_length;
-    unsigned    dpb_output_delay_length;
+    Ipp32u      dpb_output_delay_du_length;
+
+    Ipp32u      bit_rate_scale;
+    Ipp32u      cpb_size_scale;
+    Ipp32u      cpb_size_du_scale;
+    Ipp32u      initial_cpb_removal_delay_length;
+    Ipp32u      au_cpb_removal_delay_length;
+    Ipp32u      dpb_output_delay_length;
 
     H265HrdSubLayerInfo m_HRD[MAX_TEMPORAL_LAYER];
-
 
     H265HRD() {
         ::memset(this, 0, sizeof(*this));
     }
 
-    void setNalHrdParametersPresentFlag(bool flag)  { nal_hrd_parameters_present_flag = flag; }
-    bool getNalHrdParametersPresentFlag() const     { return nal_hrd_parameters_present_flag; }
-
-    void setVclHrdParametersPresentFlag(bool flag)  { vcl_hrd_parameters_present_flag = flag; }
-    bool getVclHrdParametersPresentFlag() const     { return vcl_hrd_parameters_present_flag; }
-
-    void setSubPicCpbParamsPresentFlag(bool flag)   { sub_pic_cpb_params_present_flag = flag; }
-    bool getSubPicCpbParamsPresentFlag() const      { return sub_pic_cpb_params_present_flag; }
-
-    void setTickDivisor(unsigned value)             { tick_divisor = value; }
-    unsigned getTickDivisor() const                 { return tick_divisor;  }
-
-    void setDuCpbRemovalDelayLength(unsigned value) { du_cpb_removal_delay_length = value; }
-    unsigned getDuCpbRemovalDelayLength() const     { return du_cpb_removal_delay_length;  }
-
-    void setSubPicCpbParamsInPicTimingSEIFlag(bool flag)    { sub_pic_cpb_params_in_pic_timing_sei_flag = flag;   }
-    bool getSubPicCpbParamsInPicTimingSEIFlag() const       { return sub_pic_cpb_params_in_pic_timing_sei_flag;   }
-
-    void setDpbOutputDelayDuLength(unsigned value)  { dpb_output_delay_du_length = value; }
-    unsigned getDpbOutputDelayDuLength() const      { return dpb_output_delay_du_length;  }
-
-    void setBitRateScale(unsigned value)            { bit_rate_scale = value; }
-    unsigned getBitRateScale() const                { return bit_rate_scale;  }
-
-    void setCpbSizeScale(unsigned value)            { cpb_size_scale = value; }
-    unsigned getCpbSizeScale() const                { return cpb_size_scale;  }
-
-    void setDuCpbSizeScale(unsigned value)          { cpb_size_du_scale = value; }
-    unsigned getDuCpbSizeScale()                    { return cpb_size_du_scale;  }
-
-    void setInitialCpbRemovalDelayLength(unsigned value)    { initial_cpb_removal_delay_length = value; }
-    unsigned getInitialCpbRemovalDelayLength() const        { return initial_cpb_removal_delay_length;  }
-
-    void setCpbRemovalDelayLength(unsigned value)   { au_cpb_removal_delay_length = value; }
-    unsigned getCpbRemovalDelayLength() const       { return au_cpb_removal_delay_length;  }
-
-    void setDpbOutputDelayLength(unsigned value)    { dpb_output_delay_length = value; }
-    unsigned getDpbOutputDelayLength() const        { return dpb_output_delay_length;  }
-
-    void setFixedPicRateFlag(int layer, bool flag)  { m_HRD[layer].fixed_pic_rate_flag = flag; }
-    bool getFixedPicRateFlag(int layer) const       { return m_HRD[layer].fixed_pic_rate_flag; }
-
-    void setFixedPicRateWithinCvsFlag(int layer, bool flag) { m_HRD[layer].fixed_pic_rate_within_cvs_flag = flag; }
-    bool getFixedPicRateWithinCvsFlag(int layer) const      { return m_HRD[layer].fixed_pic_rate_within_cvs_flag; }
-
-    void setPicDurationInTc(int layer, unsigned value)  { m_HRD[layer].elemental_duration_in_tc = value; }
-    unsigned getPicDurationInTc(int layer) const        { return m_HRD[layer].elemental_duration_in_tc; }
-
-    void setLowDelayHrdFlag(int layer, bool flag)   { m_HRD[layer].low_delay_hrd_flag = flag; }
-    bool getLowDelayHrdFlag(int layer) const        { return m_HRD[layer].low_delay_hrd_flag; }
-
-    void setCpbCnt(int layer, unsigned value)   { m_HRD[layer].cpb_cnt = value; }
-    unsigned getCpbCnt(int layer) const         { return m_HRD[layer].cpb_cnt; }
-
-    void setBitRateValue(int layer, int cpbcnt, int nalOrVcl, unsigned value)   { m_HRD[layer].bit_rate_value[cpbcnt][nalOrVcl] = value; }
-    unsigned getBitRateValue(int layer, int cpbcnt, int nalOrVcl) const         { return m_HRD[layer].bit_rate_value[cpbcnt][nalOrVcl];  }
-
-    void setCpbSizeValue(int layer, int cpbcnt, int nalOrVcl, unsigned value)   { m_HRD[layer].cpb_size_value[cpbcnt][nalOrVcl] = value; }
-    unsigned getCpbSizeValue(int layer, int cpbcnt, int nalOrVcl) const         { return m_HRD[layer].cpb_size_value[cpbcnt][nalOrVcl];  }
-
-    void setDuCpbSizeValue(int layer, int cpbcnt, int nalOrVcl, unsigned value) { m_HRD[layer].cpb_size_du_value[cpbcnt][nalOrVcl] = value; }
-    unsigned getDuCpbSizeValue(int layer, int cpbcnt, int nalOrVcl) const       { return m_HRD[layer].cpb_size_du_value[cpbcnt][nalOrVcl];  }
-
-    void setDuBitRateValue(int layer, int cpbcnt, int nalOrVcl, unsigned value) { m_HRD[layer].bit_rate_du_value[cpbcnt][nalOrVcl] = value; }
-    unsigned getDuBitRateValue(int layer, int cpbcnt, int nalOrVcl) const       { return m_HRD[layer].bit_rate_du_value[cpbcnt][nalOrVcl];  }
-
-    void setCbrFlag(int layer, int cpbcnt, int nalOrVcl, unsigned value)        { m_HRD[layer].cbr_flag[cpbcnt][nalOrVcl] = value;            }
-    bool getCbrFlag(int layer, int cpbcnt, int nalOrVcl) const                  { return m_HRD[layer].cbr_flag[cpbcnt][nalOrVcl] != 0; }
-
-    bool getCpbDpbDelaysPresentFlag() { return getNalHrdParametersPresentFlag() || getVclHrdParametersPresentFlag(); }
+    H265HrdSubLayerInfo * GetHRDSubLayerParam(Ipp32u i) { return &m_HRD[i]; }
 };
 
 struct H265TimingInfo
 {
-    bool vps_timing_info_present_flag;
-    unsigned vps_num_units_in_tick;
-    unsigned vps_time_scale;
-    bool vps_poc_proportional_to_timing_flag;
-    int  vps_num_ticks_poc_diff_one;
+    bool    vps_timing_info_present_flag;
+    Ipp32u  vps_num_units_in_tick;
+    Ipp32u  vps_time_scale;
+    bool    vps_poc_proportional_to_timing_flag;
+    Ipp32s  vps_num_ticks_poc_diff_one;
 
 public:
     H265TimingInfo()
@@ -707,93 +597,81 @@ public:
         , vps_num_units_in_tick(1001)
         , vps_time_scale(60000)
         , vps_poc_proportional_to_timing_flag(false)
-        , vps_num_ticks_poc_diff_one(0) {}
-
-    void setTimingInfoPresentFlag(bool flag)    { vps_timing_info_present_flag = flag;  }
-    bool getTimingInfoPresentFlag() const       { return vps_timing_info_present_flag;  }
-
-    void setNumUnitsInTick(unsigned value)      { vps_num_units_in_tick = value;        }
-    unsigned getNumUnitsInTick() const          { return vps_num_units_in_tick;         }
-
-    void setTimeScale(unsigned value)           { vps_time_scale = value;               }
-    unsigned getTimeScale() const               { return vps_time_scale;                }
-
-    void setPocProportionalToTimingFlag(bool x) { vps_poc_proportional_to_timing_flag = x;      }
-    bool getPocProportionalToTimingFlag() const { return vps_poc_proportional_to_timing_flag;   }
-
-    void setNumTicksPocDiffOne(int x)           { vps_num_ticks_poc_diff_one = x;       }
-    int  getNumTicksPocDiffOne( ) const         { return vps_num_ticks_poc_diff_one;    }
+        , vps_num_ticks_poc_diff_one(0)
+    {}
 };
 
 /// VPS class
 class H265VideoParamSet : public HeapObject
 {
 public:
-    unsigned    vps_video_parameter_set_id;
-    unsigned    vps_max_sub_layers;
-    unsigned    m_uiMaxLayers;
+    Ipp32u      vps_video_parameter_set_id;
+    Ipp32u      vps_max_layers;
+    Ipp32u      vps_max_sub_layers;
     bool        vps_temporal_id_nesting_flag;
 
-    unsigned    vps_num_reorder_pics[MAX_TEMPORAL_LAYER];
-    unsigned    vps_max_dec_pic_buffering[MAX_TEMPORAL_LAYER];
-    unsigned    vps_max_latency_increase[MAX_TEMPORAL_LAYER];
-
-    unsigned    vps_num_hrd_parameters;
-    unsigned    vps_max_nuh_reserved_zero_layer_id;
-    unsigned*   hrd_op_set_idx;
-    bool*       cprms_present_flag;
-    unsigned    vps_max_op_sets;
-    bool        layer_id_included_flag[MAX_VPS_NUM_HRD_PARAMETERS_ALLOWED_PLUS1][MAX_VPS_NUH_RESERVED_ZERO_LAYER_ID_PLUS1];
-
-    H265HRD*                m_hrdParameters;
-    H265TimingInfo          m_timingInfo;
+    // profile_tier_level
     H265ProfileTierLevel    m_pcPTL;
 
+    // vpd sub layer ordering info
+    Ipp32u      vps_max_dec_pic_buffering[MAX_TEMPORAL_LAYER];
+    Ipp32u      vps_num_reorder_pics[MAX_TEMPORAL_LAYER];
+    Ipp32u      vps_max_latency_increase[MAX_TEMPORAL_LAYER];
+
+    Ipp32u      vps_max_layer_id;
+    Ipp32u      vps_num_layer_sets;
+    bool        layer_id_included_flag[MAX_VPS_NUM_HRD_PARAMETERS_ALLOWED_PLUS1][MAX_VPS_NUH_RESERVED_ZERO_LAYER_ID_PLUS1];
+
+    // vps timing info
+    H265TimingInfo          m_timingInfo;
+
+    // hrd parameters
+    Ipp32u    vps_num_hrd_parameters;
+    Ipp32u*   hrd_layer_set_idx;
+    bool*     cprms_present_flag;
+    H265HRD*  m_hrdParameters;
 
 public:
-    H265VideoParamSet() : HeapObject(),
-        hrd_op_set_idx(0),
-        cprms_present_flag(0),
-        m_hrdParameters(0)
+    H265VideoParamSet()
+        : HeapObject()
+        , vps_num_hrd_parameters(0)
+        , hrd_layer_set_idx(0)
+        , cprms_present_flag(0)
+        , m_hrdParameters(0)
     {
         Reset();
     }
 
    ~H265VideoParamSet() {
         delete m_hrdParameters;
-        delete hrd_op_set_idx;
+        delete hrd_layer_set_idx;
         delete cprms_present_flag;
     }
 
     void createHrdParamBuffer()
     {
-        if(m_hrdParameters)
-            delete m_hrdParameters;
-        m_hrdParameters = new H265HRD[ getNumHrdParameters() ];
+        delete m_hrdParameters;
+        m_hrdParameters = new H265HRD[vps_num_hrd_parameters];
 
-        if(hrd_op_set_idx)
-            delete hrd_op_set_idx;
-        hrd_op_set_idx = new unsigned[ getNumHrdParameters() ];
+        delete hrd_layer_set_idx;
+        hrd_layer_set_idx = new unsigned[vps_num_hrd_parameters];
 
-        if(cprms_present_flag)
-            delete cprms_present_flag;
-        cprms_present_flag = new bool[ getNumHrdParameters() ];
+        delete cprms_present_flag;
+        cprms_present_flag = new bool[vps_num_hrd_parameters];
     }
 
     void Reset()
     {
         vps_video_parameter_set_id = 0;
         vps_max_sub_layers = 0;
-        m_uiMaxLayers = 0;
         vps_temporal_id_nesting_flag = false;
         vps_num_hrd_parameters = 0;
-        vps_max_nuh_reserved_zero_layer_id = 0;
 
         delete m_hrdParameters;
         m_hrdParameters = 0;
 
-        delete hrd_op_set_idx;
-        hrd_op_set_idx = 0;
+        delete hrd_layer_set_idx;
+        hrd_layer_set_idx = 0;
 
         delete cprms_present_flag;
         cprms_present_flag = 0;
@@ -809,43 +687,6 @@ public:
     int GetID()   { return 0; }
 
     H265HRD* getHrdParameters   ( unsigned i )             { return &m_hrdParameters[ i ]; }
-    unsigned getHrdOpSetIdx      ( unsigned i )             { return hrd_op_set_idx[ i ]; }
-    void    setHrdOpSetIdx      ( unsigned val, unsigned i )   { hrd_op_set_idx[ i ] = val;  }
-    bool    getCprmsPresentFlag ( unsigned i )             { return cprms_present_flag[ i ]; }
-    void    setCprmsPresentFlag ( bool val, unsigned i )   { cprms_present_flag[ i ] = val;  }
-
-    int     getVPSId       ()                   { return vps_video_parameter_set_id;          }
-    void    setVPSId       (int i)              { vps_video_parameter_set_id = i;             }
-
-    unsigned    getMaxTLayers  ()                   { return vps_max_sub_layers;   }
-    void    setMaxTLayers  (unsigned t)             { vps_max_sub_layers = t; }
-
-    unsigned    getMaxLayers   ()                   { return m_uiMaxLayers;   }
-    void    setMaxLayers   (unsigned l)             { m_uiMaxLayers = l; }
-
-    bool    getTemporalNestingFlag   ()         { return vps_temporal_id_nesting_flag;   }
-    void    setTemporalNestingFlag   (unsigned t)   { vps_temporal_id_nesting_flag = (t != 0); }
-
-    void    setNumReorderPics(unsigned v, unsigned tLayer)                { vps_num_reorder_pics[tLayer] = v;    }
-    unsigned    getNumReorderPics(unsigned tLayer)                        { return vps_num_reorder_pics[tLayer]; }
-
-    void    setMaxDecPicBuffering(unsigned v, unsigned tLayer)            { vps_max_dec_pic_buffering[tLayer] = v;    }
-    unsigned    getMaxDecPicBuffering(unsigned tLayer)                    { return vps_max_dec_pic_buffering[tLayer]; }
-
-    void    setMaxLatencyIncrease(unsigned v, unsigned tLayer)            { vps_max_latency_increase[tLayer] = v;    }
-    unsigned    getMaxLatencyIncrease(unsigned tLayer)                    { return vps_max_latency_increase[tLayer]; }
-
-    unsigned getNumHrdParameters()const     { return vps_num_hrd_parameters; }
-    void    setNumHrdParameters(unsigned v) { vps_num_hrd_parameters = v;    }
-
-    unsigned getMaxNuhReservedZeroLayerId()                        { return vps_max_nuh_reserved_zero_layer_id; }
-    void    setMaxNuhReservedZeroLayerId(unsigned v)                  { vps_max_nuh_reserved_zero_layer_id = v;    }
-
-    unsigned getMaxOpSets()                                        { return vps_max_op_sets; }
-    void    setMaxOpSets(unsigned v)                                  { vps_max_op_sets = v;    }
-    unsigned getLayerIdIncludedFlag(unsigned opIdx, unsigned id)         { return layer_id_included_flag[opIdx][id]; }
-    void    setLayerIdIncludedFlag(bool v, unsigned opIdx, unsigned id) { layer_id_included_flag[opIdx][id] = v;    }
-
     H265ProfileTierLevel* getPTL() { return &m_pcPTL; }
     H265TimingInfo* getTimingInfo() { return &m_timingInfo; }
 };
@@ -935,36 +776,126 @@ struct RefPicListModification
 // Sequence parameter set structure, corresponding to the H.264 bitstream definition.
 struct H265SeqParamSetBase
 {
-    //h265
-    Ipp32s sps_video_parameter_set_id;
-    Ipp32u sps_max_sub_layers;
-    bool   sps_temporal_id_nesting_flag;
-    Ipp8u  seq_parameter_set_id;                // id of this sequence parameter set
-    Ipp8u  chroma_format_idc;
+    // bitstream params
+    Ipp32s  sps_video_parameter_set_id;
+    Ipp32u  sps_max_sub_layers;
+    bool    sps_temporal_id_nesting_flag;
 
-    Ipp32s separate_colour_plane_flag;
+    H265ProfileTierLevel     m_pcPTL;
 
-    Ipp32u pic_width_in_luma_samples;
-    Ipp32u pic_height_in_luma_samples;
-    Ipp8u  frame_cropping_flag;
-    Ipp32u frame_cropping_rect_left_offset;
-    Ipp32u frame_cropping_rect_right_offset;
-    Ipp32u frame_cropping_rect_top_offset;
-    Ipp32u frame_cropping_rect_bottom_offset;
+    Ipp8u   sps_seq_parameter_set_id;
+    Ipp8u   chroma_format_idc;
 
-    Ipp32u bit_depth_luma;
-    Ipp32u bit_depth_chroma;
+    Ipp32s  separate_colour_plane_flag;
 
-    Ipp32u log2_max_pic_order_cnt_lsb;
-    bool   sps_sub_layer_ordering_info_present_flag;
+    Ipp32u  pic_width_in_luma_samples;
+    Ipp32u  pic_height_in_luma_samples;
 
-    Ipp32u sps_max_dec_pic_buffering[MAX_TEMPORAL_LAYER];
-    Ipp32u sps_max_num_reorder_pics[MAX_TEMPORAL_LAYER];
-    Ipp32u sps_max_latency_increase[MAX_TEMPORAL_LAYER];
+    // cropping params
+    Ipp8u   conformance_window_flag;
+    Ipp32u  conf_win_left_offset;
+    Ipp32u  conf_win_right_offset;
+    Ipp32u  conf_win_top_offset;
+    Ipp32u  conf_win_bottom_offset;
+
+    Ipp32u  bit_depth_luma;
+    Ipp32u  bit_depth_chroma;
+
+    Ipp32u  log2_max_pic_order_cnt_lsb;
+    bool    sps_sub_layer_ordering_info_present_flag;
+
+    Ipp32u  sps_max_dec_pic_buffering[MAX_TEMPORAL_LAYER];
+    Ipp32u  sps_max_num_reorder_pics[MAX_TEMPORAL_LAYER];
+    Ipp32u  sps_max_latency_increase[MAX_TEMPORAL_LAYER];
+
+    Ipp32u  log2_min_luma_coding_block_size;
+    Ipp32u  log2_max_luma_coding_block_size;
+    Ipp32u  log2_min_transform_block_size;
+    Ipp32u  log2_max_transform_block_size;
+    Ipp32u  max_transform_hierarchy_depth_inter;
+    Ipp32u  max_transform_hierarchy_depth_intra;
+
+    bool    scaling_list_enabled_flag;
+    bool    sps_scaling_list_data_present_flag;
+
+    bool    amp_enabled_flag;
+    bool    sample_adaptive_offset_enabled_flag;
+
+    bool pcm_enabled_flag;
+
+    // pcm params
+    Ipp32u  pcm_sample_bit_depth_luma;
+    Ipp32u  pcm_sample_bit_depth_chroma;
+    Ipp32u  log2_min_pcm_luma_coding_block_size;
+    Ipp32u  log2_max_pcm_luma_coding_block_size;
+    bool    pcm_loop_filter_disable_flag;
+
+    Ipp32u  num_short_term_ref_pic_sets;
+    ReferencePictureSetList m_RPSList;
+
+    bool    long_term_ref_pics_present_flag;
+    Ipp32u  num_long_term_ref_pic_sps;
+    Ipp32u  lt_ref_pic_poc_lsb_sps[33];
+    bool    used_by_curr_pic_lt_sps_flag[33];
+
+    bool    sps_temporal_mvp_enabled_flag;
+    bool    sps_strong_intra_smoothing_enabled_flag;
+
+    // vui part
+    bool    vui_parameters_present_flag;         // Zero indicates default VUI parameters
+
+    bool    aspect_ratio_info_present_flag;
+    Ipp32u  aspect_ratio_idc;
+    Ipp32u  sar_width;
+    Ipp32u  sar_height;
+
+    bool    overscan_info_present_flag;
+    bool    overscan_appropriate_flag;
+
+    bool    video_signal_type_present_flag;
+    Ipp32u  video_format;
+    bool    video_full_range_flag;
+    bool    colour_description_present_flag;
+    Ipp32u  colour_primaries;
+    Ipp32u  transfer_characteristics;
+    Ipp32u  matrix_coeffs;
+
+    bool    chroma_loc_info_present_flag;
+    Ipp32u  chroma_sample_loc_type_top_field;
+    Ipp32u  chroma_sample_loc_type_bottom_field;
+
+    bool    neutral_chroma_indication_flag;
+    bool    field_seq_flag;
+    bool    frame_field_info_present_flag;
+
+    bool    default_display_window_flag;
+    Ipp32u  def_disp_win_left_offset;
+    Ipp32u  def_disp_win_right_offset;
+    Ipp32u  def_disp_win_top_offset;
+    Ipp32u  def_disp_win_bottom_offset;
+
+    bool            vui_timing_info_present_flag;
+    H265TimingInfo  m_timingInfo;
+    
+    bool            vui_hrd_parameters_present_flag;
+    H265HRD         m_hrdParameters;
+
+    bool    bitstream_restriction_flag;
+    bool    tiles_fixed_structure_flag;
+    bool    motion_vectors_over_pic_boundaries_flag;
+    bool    restricted_ref_pic_lists_flag;
+    Ipp32u  min_spatial_segmentation_idc;
+    Ipp32u  max_bytes_per_pic_denom;
+    Ipp32u  max_bits_per_min_cu_denom;
+    Ipp32u  log2_max_mv_length_horizontal;
+    Ipp32u  log2_max_mv_length_vertical;
 
 
-    Ipp32u pcm_bit_depth_luma;
-    Ipp32u pcm_bit_depth_chroma;
+
+    ///////////////////////////////////////////////////////
+    // calculated params
+    ///////////////////////////////////////////////////////
+
     Ipp32u MaxCUWidth;
     Ipp32u MaxCUHeight;
     Ipp32u MaxCUDepth;
@@ -972,29 +903,17 @@ struct H265SeqParamSetBase
     Ipp32u WidthInCU;
     Ipp32u HeightInCU;
     Ipp32u NumPartitionsInCU, NumPartitionsInCUSize, NumPartitionsInFrameWidth, NumPartitionsInFrameHeight;
-    Ipp32u log2_min_transform_block_size;
-    Ipp32u log2_max_transform_block_size;
     Ipp32u m_maxTrSize;
-    Ipp32u log2_min_pcm_luma_coding_block_size;
-    Ipp32u log2_max_pcm_luma_coding_block_size;
-    Ipp32u max_transform_hierarchy_depth_inter;
-    Ipp32u max_transform_hierarchy_depth_intra;
     Ipp32u MinTrDepth;
     Ipp32u MaxTrDepth;
-    bool pcm_enabled_flag;
-    bool sample_adaptive_offset_enabled_flag; //sample_adaptive_offset
-    bool pcm_loop_filter_disable_flag;
+    
+    
     bool m_UseLDC;
-    bool sps_temporal_mvp_enable_flag;
-    bool m_enableTMVPFlag;
 
     unsigned    m_log2MinCUSize;
     unsigned    m_log2CtbSize;
 
-    H265ProfileTierLevel     m_pcPTL;
-
-    bool amp_enabled_flag;
-    Ipp32s m_AMPAcc[MAX_CU_DEPTH]; //AMP Accuracy
+        Ipp32s m_AMPAcc[MAX_CU_DEPTH]; //AMP Accuracy
 
     bool m_DisInter4x4Flag;
 
@@ -1002,79 +921,24 @@ struct H265SeqParamSetBase
 
     bool m_EnableTMVPFlag;
 
-    bool scaling_list_enabled_flag;
-    bool sps_scaling_list_data_present_flag;
-
     bool loop_filter_across_tiles_enabled_flag;
 
     Ipp32u m_MaxNumberOfReferencePictures;
-    bool  sps_strong_intra_smoothing_enable_flag;
+    
 
     int m_QPBDOffsetY;
     int m_QPBDOffsetC;
     bool m_RestrictedRefPicListsFlag;
-    ReferencePictureSetList m_RPSList;
-    bool long_term_ref_pics_present_flag;
 
-    Ipp32u      num_long_term_ref_pic_sps;
-    Ipp32u      lt_ref_pic_poc_lsb_sps[33];
-    bool        used_by_curr_pic_lt_sps_flag[33];
 
     Ipp8u        profile_space;
     Ipp8u        profile_idc;                        // baseline, main, etc.
     Ipp16u       reserved_indicator_flags;
     Ipp8u        level_idc;
     Ipp32u       profile_compatibility;
-    Ipp8u        residual_colour_transform_flag;
-    Ipp8u        qpprime_y_zero_transform_bypass_flag;
-
-    int          def_disp_win_left_offset;
-    int          def_disp_win_right_offset;
-    int          def_disp_win_top_offset;
-    int          def_disp_win_bottom_offset;
-    Ipp8u        log2_max_frame_num;                  // Number of bits to hold the frame_num
-
-    bool         vui_parameters_present_flag;         // Zero indicates default VUI parameters
-    Ipp32s       offset_for_non_ref_pic;
-
-    Ipp32u       num_ref_frames_in_pic_order_cnt_cycle;
-    Ipp32u       num_ref_frames;                      // total number of pics in decoded pic buffer
 
     // These fields are calculated from values above.  They are not written to the bitstream
-
-    // vui part
-    bool aspect_ratio_info_present_flag;
-    int  aspect_ratio_idc;
-    int  sar_width;
-    int  sar_height;
-    bool overscan_info_present_flag;
-    bool overscan_appropriate_flag;
-    bool video_signal_type_present_flag;
-    int  video_format;
-    bool video_full_range_flag;
-    bool colour_description_present_flag;
-    int  colour_primaries;
-    int  transfer_characteristics;
-    int  matrix_coefficients;
-    bool chroma_loc_info_present_flag;
-    int  chroma_sample_loc_type_top_field;
-    int  chroma_sample_loc_type_bottom_field;
-    bool neutral_chroma_indication_flag;
-    bool field_seq_flag;
-    bool frame_field_info_present_flag;
-    bool hrd_parameters_present_flag;
-    bool bitstream_restriction_flag;
-    bool tiles_fixed_structure_flag;
-    bool motion_vectors_over_pic_boundaries_flag;
-    bool m_restrictedRefPicListsFlag;
-    int  min_spatial_segmentation_idc;
-    int  max_bytes_per_pic_denom;
-    int  max_bits_per_mincu_denom;
-    int  log2_max_mv_length_horizontal;
-    int  log2_max_mv_length_vertical;
-    H265HRD m_hrdParameters;
-    H265TimingInfo m_timingInfo;
-
+   
     void Reset()
     {
         H265SeqParamSetBase sps = {0};
@@ -1103,7 +967,7 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
 
     Ipp32s GetID() const
     {
-        return seq_parameter_set_id;
+        return sps_seq_parameter_set_id;
     }
 
     virtual void Reset()
@@ -1112,19 +976,20 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
 
         m_RPSList.m_NumberOfReferencePictureSets = 0;
 
-        seq_parameter_set_id = MAX_NUM_SEQ_PARAM_SETS_H265;
+        sps_seq_parameter_set_id = MAX_NUM_SEQ_PARAM_SETS_H265;
 
         // set some parameters by default
         video_format = 5; // unspecified
         video_full_range_flag = 0;
         colour_primaries = 2; // unspecified
         transfer_characteristics = 2; // unspecified
-        matrix_coefficients = 2; // unspecified
-        frame_cropping_flag = 0;
-        frame_cropping_rect_left_offset = 0;
-        frame_cropping_rect_right_offset = 0;
-        frame_cropping_rect_top_offset = 0;
-        frame_cropping_rect_bottom_offset = 0;
+        matrix_coeffs = 2; // unspecified
+
+        conformance_window_flag = 0;
+        conf_win_left_offset = 0;
+        conf_win_right_offset = 0;
+        conf_win_top_offset = 0;
+        conf_win_bottom_offset = 0;
     }
 
     static int getWinUnitX (int /*chromaFormatIdc*/) { /*assert (chromaFormatIdc > 0 && chromaFormatIdc <= MAX_CHROMA_FORMAT_IDC);*/ return 1/*m_cropUnitX[chromaFormatIdc]*/; } // TODO
@@ -1134,8 +999,6 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
     void setRsvdIndFlags(unsigned flags)        { reserved_indicator_flags = (Ipp16u)flags; }
     void setLevelIdc(unsigned val)              { level_idc = (Ipp8u)val; }
     void setProfileCompat(unsigned val)         { profile_compatibility = val; }
-    void setSPSId(unsigned id)                  { seq_parameter_set_id = (Ipp8u)id; }
-    void setVPSId(unsigned id)                  { sps_video_parameter_set_id = (Ipp8u)id; }
     unsigned getChromaFormatIdc() const         { return chroma_format_idc; }
     void setChromaFormatIdc(unsigned val)       { chroma_format_idc = (Ipp8u)val; }
     unsigned getMaxTLayers() const              { return sps_max_sub_layers; }
@@ -1144,13 +1007,6 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
     void setPicWidthInLumaSamples(unsigned val) { pic_width_in_luma_samples = val; }
     unsigned getPicHeightInLumaSamples() const   { return pic_height_in_luma_samples; }
     void setPicHeightInLumaSamples(unsigned val){ pic_height_in_luma_samples = val; }
-
-    bool getPicCroppingFlag() const             { return frame_cropping_flag != 0; }
-    void setPicCroppingFlag(bool val)           { frame_cropping_flag = (Ipp8u)val; }
-    void setPicCropLeftOffset(unsigned val)     { frame_cropping_rect_left_offset = val; }
-    void setPicCropRightOffset(unsigned val)    { frame_cropping_rect_right_offset = val; }
-    void setPicCropTopOffset(unsigned val)      { frame_cropping_rect_top_offset = val; }
-    void setPicCropBottomOffset(unsigned val)   { frame_cropping_rect_bottom_offset = val; }
 
     Ipp32u getNumLongTermRefPicSPS() const      { return num_long_term_ref_pic_sps; }
     void setNumLongTermRefPicSPS(Ipp32u val)    { num_long_term_ref_pic_sps = val; }
@@ -1174,11 +1030,6 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
 
     bool getUsePCM() const                      { return pcm_enabled_flag; }
     void setUsePCM(bool flag)                   { pcm_enabled_flag = flag; }
-
-    unsigned getPCMBitDepthLuma() const         { return pcm_bit_depth_luma; }
-    void setPCMBitDepthLuma(unsigned val)       { pcm_bit_depth_luma = val; }
-    unsigned getPCMBitDepthChroma() const       { return pcm_bit_depth_chroma; }
-    void setPCMBitDepthChroma(unsigned val)     { pcm_bit_depth_chroma = val; }
 
     unsigned getMaxCUWidth() const              { return MaxCUWidth; }
     void setMaxCUWidth(unsigned val)            { MaxCUWidth = val; }
@@ -1221,10 +1072,6 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
 
     bool getLongTermRefsPresent() const         { return long_term_ref_pics_present_flag; }
     void setLongTermRefsPresent(bool f)         { long_term_ref_pics_present_flag = f; }
-    bool getTMVPFlagsPresent() const            { return sps_temporal_mvp_enable_flag; }
-    void setTMVPFlagsPresent(bool f)            { sps_temporal_mvp_enable_flag = f; }
-    bool getEnableTMVPFlag() const              { return m_enableTMVPFlag; }
-    void setEnableTMVPFlag(bool f)              { m_enableTMVPFlag = f; }
 
     H265ScalingList* getScalingList()           { return &m_scalingList; }
     const H265ScalingList* getScalingList() const     { return &m_scalingList; }
@@ -1236,108 +1083,12 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
     unsigned getLog2CtbSize() const         { return m_log2CtbSize; }
     void setLog2CtbSize(unsigned val)       { m_log2CtbSize = val; }
 
-    void setUseStrongIntraSmoothing (bool bVal)  {sps_strong_intra_smoothing_enable_flag = bVal;}
-    bool getUseStrongIntraSmoothing () const     {return sps_strong_intra_smoothing_enable_flag;}
-
-    bool getVuiParametersPresentFlag() { return vui_parameters_present_flag; }
-    void setVuiParametersPresentFlag(bool b) { vui_parameters_present_flag = b; }
-
     H265ProfileTierLevel* getPTL()     { return &m_pcPTL; }
-
-    // vui part
-    bool getOverscanInfoPresentFlag() { return overscan_info_present_flag; }
-    void setOverscanInfoPresentFlag(bool i) { overscan_info_present_flag = i; }
-
-    bool getOverscanAppropriateFlag() { return overscan_appropriate_flag; }
-    void setOverscanAppropriateFlag(bool i) { overscan_appropriate_flag = i; }
-
-    bool getVideoSignalTypePresentFlag() { return video_signal_type_present_flag; }
-    void setVideoSignalTypePresentFlag(bool i) { video_signal_type_present_flag = i; }
-
-    int getVideoFormat() const { return video_format; }
-    void setVideoFormat(int i) { video_format = i; }
-
-    bool getVideoFullRangeFlag() const { return video_full_range_flag; }
-    bool getVideoFullRangeFlag() { return video_full_range_flag; }
-    void setVideoFullRangeFlag(bool i) { video_full_range_flag = i; }
-
-    bool getColourDescriptionPresentFlag() const { return colour_description_present_flag; }
-    void setColourDescriptionPresentFlag(bool i) { colour_description_present_flag = i; }
-
-    int getColourPrimaries() const { return colour_primaries; }
-    void setColourPrimaries(int i) { colour_primaries = i; }
-
-    int getTransferCharacteristics() const { return transfer_characteristics; }
-    void setTransferCharacteristics(int i) { transfer_characteristics = i; }
-
-    int getMatrixCoefficients() const { return matrix_coefficients; }
-    void setMatrixCoefficients(int i) { matrix_coefficients = i; }
-
-    bool getChromaLocInfoPresentFlag() { return chroma_loc_info_present_flag; }
-    void setChromaLocInfoPresentFlag(bool i) { chroma_loc_info_present_flag = i; }
-
-    int getChromaSampleLocTypeTopField() { return chroma_sample_loc_type_top_field; }
-    void setChromaSampleLocTypeTopField(int i) { chroma_sample_loc_type_top_field = i; }
-
-    int getChromaSampleLocTypeBottomField() { return chroma_sample_loc_type_bottom_field; }
-    void setChromaSampleLocTypeBottomField(int i) { chroma_sample_loc_type_bottom_field = i; }
-
-    bool getNeutralChromaIndicationFlag() { return neutral_chroma_indication_flag; }
-    void setNeutralChromaIndicationFlag(bool i) { neutral_chroma_indication_flag = i; }
-
-    bool getFieldSeqFlag() const { return field_seq_flag; }
-    void setFieldSeqFlag(bool i) { field_seq_flag = i; }
-
-    bool getFrameFieldInfoPresentFlag() const { return frame_field_info_present_flag; }
-    void setFrameFieldInfoPresentFlag(bool i) { frame_field_info_present_flag = i; }
-
-    int           getDisplayWindowLeftOffset() const       { return def_disp_win_left_offset; }
-    void          setDisplayWindowLeftOffset(int val)      { def_disp_win_left_offset = val; }
-    int           getDisplayWindowRightOffset() const      { return def_disp_win_right_offset; }
-    void          setDisplayWindowRightOffset(int val)     { def_disp_win_right_offset = val; }
-    int           getDisplayWindowTopOffset() const        { return def_disp_win_top_offset; }
-    void          setDisplayWindowTopOffset(int val)       { def_disp_win_top_offset = val; }
-    int           getDisplayWindowBottomOffset() const     { return def_disp_win_bottom_offset; }
-    void          setDisplayWindowBottomOffset(int val)    { def_disp_win_bottom_offset = val; }
-
-    bool getHrdParametersPresentFlag() { return hrd_parameters_present_flag; }
-    void setHrdParametersPresentFlag(bool i) { hrd_parameters_present_flag = i; }
-
-    bool getBitstreamRestrictionFlag() { return bitstream_restriction_flag; }
-    void setBitstreamRestrictionFlag(bool i) { bitstream_restriction_flag = i; }
-
-    bool getTilesFixedStructureFlag() const { return tiles_fixed_structure_flag; }
-    void setTilesFixedStructureFlag(bool i) { tiles_fixed_structure_flag = i; }
-
-    bool getMotionVectorsOverPicBoundariesFlag() { return motion_vectors_over_pic_boundaries_flag; }
-    void setMotionVectorsOverPicBoundariesFlag(bool i) { motion_vectors_over_pic_boundaries_flag = i; }
-
-    bool getRestrictedRefPicListsFlag() { return m_restrictedRefPicListsFlag; }
-    void setRestrictedRefPicListsFlag(bool b) { m_restrictedRefPicListsFlag = b; }
-
-    int getMinSpatialSegmentationIdc() { return min_spatial_segmentation_idc; }
-    void setMinSpatialSegmentationIdc(int i) { min_spatial_segmentation_idc = i; }
-
-    int getMaxBytesPerPicDenom() { return max_bytes_per_pic_denom; }
-    void setMaxBytesPerPicDenom(int i) { max_bytes_per_pic_denom = i; }
-
-    int getMaxBitsPerMinCuDenom() { return max_bits_per_mincu_denom; }
-    void setMaxBitsPerMinCuDenom(int i) { max_bits_per_mincu_denom = i; }
-
-    int getLog2MaxMvLengthHorizontal() { return log2_max_mv_length_horizontal; }
-    void setLog2MaxMvLengthHorizontal(int i) { log2_max_mv_length_horizontal = i; }
-
-    int getLog2MaxMvLengthVertical() { return log2_max_mv_length_vertical; }
-    void setLog2MaxMvLengthVertical(int i) { log2_max_mv_length_vertical = i; }
 
     H265HRD* getHrdParameters                 ()             { return &m_hrdParameters; }
 
     const H265TimingInfo* getTimingInfo() const { return const_cast<const H265TimingInfo*>(&m_timingInfo); }
     H265TimingInfo* getTimingInfo() { return &m_timingInfo; }
-
-    //bool m_ListsModificationPresentFlag;
-    //bool getListsModificationPresentFlag() const    { return m_ListsModificationPresentFlag; }
-    //void setListsModificationPresentFlag(bool f)    { m_ListsModificationPresentFlag = f; }
 };    // H265SeqParamSet
 
 struct TileInfo
