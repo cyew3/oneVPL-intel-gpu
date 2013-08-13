@@ -258,16 +258,16 @@ struct H265FrameHLDNeighborsInfo
 {
     union {
         struct {
-            Ipp32u IsAvailable        : 1;  //  1
-            Ipp32u IsIntra            : 1;  //  2
-            Ipp32u SkipFlag           : 1;  //  3
-            Ipp32u Depth              : 3;  //  6
-            Ipp32u IntraDir           : 6;  // 12
-            Ipp32u qp                 : 6;  // 18
-            Ipp32u IsIPCM             : 1;  // 19
-            Ipp32u IsTransquantBypass : 1;  // 20
-            Ipp32u IsTrCbfY           : 1;  // 21
-            Ipp32u TrStart            : 8;  // 29
+            Ipp16u IsAvailable        : 1;  //  1
+            Ipp16u IsIntra            : 1;  //  2
+            Ipp16u SkipFlag           : 1;  //  3
+            Ipp16u Depth              : 3;  //  6
+            Ipp16u IntraDir           : 6;  // 12
+            Ipp16u IsIPCM             : 1;  // 13
+            Ipp16u IsTransquantBypass : 1;  // 14
+            Ipp16u IsTrCbfY           : 1;  // 15
+            Ipp8u qp;
+            Ipp8u TrStart;
         } members;
         Ipp32u data;
     };

@@ -82,6 +82,10 @@ public:
     PartitionInfo m_partitionInfo;
     H265SampleAdaptiveOffset m_SAO;
 
+    // Deblocking data
+    MFX_HEVC_COMMON::H265EdgeData *m_edge;
+    Ipp32s m_edgesInCTBWidth, m_edgesInCTBSize, m_edgesInCTB;
+
 public:
 
 #pragma pack(1)
@@ -171,6 +175,7 @@ public:
         , m_CUOrderMap(0)
         , m_TileIdxMap(0)
         , m_InverseCUOrderMap(0)
+        , m_edge(0)
     {
         for (int i = 0; i < 2; i++)
         {

@@ -94,10 +94,12 @@ namespace MFX_HEVC_COMMON
     {
         Ipp8u strength;
         Ipp8u qp;
-        Ipp8u deblockP;
-        Ipp8u deblockQ;
         Ipp8s tcOffset;
         Ipp8s betaOffset;
+        Ipp8u deblockP : 1;
+        Ipp8u deblockQ : 1;
+        Ipp8u isIntraP : 1;
+        Ipp8u isTrCbfYP : 1;
     };
 };
 

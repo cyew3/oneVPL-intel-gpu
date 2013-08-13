@@ -85,11 +85,6 @@ public:
     H265MVInfo *m_CurrCTB;
     Ipp32s m_CurrCTBStride;
 
-    // Deblocking data
-    std::vector<H265EdgeData> m_edgeHolder;
-    H265EdgeData *m_edge;
-    Ipp32s m_edgesInCTBWidth, m_edgesInCTBSize, m_edgesInCTB;
-
     // mt params
     bool m_needToSplitDecAndRec;
     Ipp32s m_mvsDistortion; // max y component of all mvs in slice
@@ -226,7 +221,7 @@ public:
                          Ipp32s betaOffset);
     void SetEdges(H265CodingUnit* curLCU, Ipp32s width, Ipp32s height, Ipp32s cross, Ipp32s calculateCurLCU);
 
-    void GetCTBEdgeStrengths(Ipp32s tusize, Ipp32s rasterAddress);
+    void GetCTBEdgeStrengths(Ipp32s tusize);
     void GetEdgeStrength(Ipp32s tuQ, Ipp32s tuP, bool anotherCU, Ipp8s tcOffset, Ipp8s betaOffset, H265EdgeData *edge);
 
     //h265 members
@@ -247,6 +242,7 @@ public:
     std::auto_ptr<DecodingContext> m_context_single_thread;
 
     void UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u TrStart, bool isSkipped, bool isTranquantBypass, bool isIPCM, bool isTrCbfY);
+    void UpdateNeighborDecodedQP(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void UpdatePUInfo(H265CodingUnit *pCU, Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight, const H265MVInfo &mvInfo);
 
     Ipp32s m_iNumber;                                           // (Ipp32s) ordinal number of decoder
