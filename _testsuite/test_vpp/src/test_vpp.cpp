@@ -328,10 +328,10 @@ int main(int argc, vm_char *argv[])
 
     //reset pointers to the all internal resources
     ZERO_MEMORY(Resources);
-    ZERO_MEMORY(mfxParamsVideo);
+    //ZERO_MEMORY(mfxParamsVideo);
     ZERO_MEMORY(Params);
     ZERO_MEMORY(allocator);
-    ZERO_MEMORY(frameProcessor);
+    //ZERO_MEMORY(frameProcessor);
     ZERO_MEMORY(realFrameInfo[VPP_IN]);
     ZERO_MEMORY(realFrameInfo[VPP_OUT]);
 
