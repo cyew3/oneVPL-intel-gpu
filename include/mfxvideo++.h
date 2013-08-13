@@ -69,6 +69,9 @@ public:
 protected:
 
     mfxSession m_session;                                       // (mfxSession) handle to the owning session
+private:
+    MFXVideoSession(const MFXVideoSession &);
+    void operator=(MFXVideoSession &);
 };
 
 class MFXVideoENCODE
