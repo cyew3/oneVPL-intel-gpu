@@ -312,7 +312,7 @@ namespace MFX_HEVC_COMMON
     } // void h265_GetPredictPels_8u(...)
 
 
-    void h265_intrapred_ver(
+    void h265_PredictIntra_Ver_8u(
         PixType* PredPel,
         PixType* pels,
         Ipp32s pitch,
@@ -339,10 +339,10 @@ namespace MFX_HEVC_COMMON
             }
         }
 
-    } // void h265_intrapred_ver(...)
+    } // void h265_PredictIntra_Ver_8u(...)
 
 
-    void h265_intrapred_hor(
+    void h265_PredictIntra_Hor_8u(
         PixType* PredPel,
         PixType* pels,
         Ipp32s pitch,
@@ -369,10 +369,10 @@ namespace MFX_HEVC_COMMON
             }
         }
 
-    } // void h265_intrapred_hor(
+    } // void h265_PredictIntra_Hor_8u(
 
 
-    void h265_intrapred_dc(
+    void h265_PredictIntra_DC_8u(
         PixType* PredPel,
         PixType* pels,
         Ipp32s pitch,
@@ -428,10 +428,10 @@ namespace MFX_HEVC_COMMON
             }
         }
 
-    } // void h265_intrapred_dc(
+    } // void h265_PredictIntra_DC_8u(
 
 
-    void h265_intrapred_ang(
+    void h265_PredictIntra_Ang_8u(
         Ipp32s mode,
         PixType* PredPel,
         PixType* pels,
@@ -523,10 +523,10 @@ namespace MFX_HEVC_COMMON
             }
         }
 
-    } // void h265_intrapred_ang(...)
+    } // void h265_PredictIntra_Ang_8u(...)
 
 
-    void h265_intrapred_planar(
+    void h265_PredictIntra_Planar_8u(
         PixType* PredPel,
         PixType* pels,
         Ipp32s pitch,
@@ -569,7 +569,7 @@ namespace MFX_HEVC_COMMON
             }
         }
 
-    } // void h265_intrapred_planar(...)
+    } // void h265_PredictIntra_Planar_8u(...)
 
 }; // namespace MFX_HEVC_COMMON
 

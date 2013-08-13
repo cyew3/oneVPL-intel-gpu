@@ -585,20 +585,19 @@ void H265CU::IntraPredTU(Ipp32s blockZScanIdx, Ipp32s width, Ipp32s pred_mode, I
         switch(pred_mode)
         {
         case INTRA_PLANAR:
-            h265_intrapred_planar(PredPel, pRec, pitch, width);
+            h265_PredictIntra_Planar_8u(PredPel, pRec, pitch, width);
             break;
         case INTRA_DC:
-            h265_intrapred_dc(PredPel, pRec, pitch, width, is_luma);
+            h265_PredictIntra_DC_8u(PredPel, pRec, pitch, width, is_luma);
             break;
         case INTRA_VER:
-            h265_intrapred_ver(PredPel, pRec, pitch, width, 8, is_luma);
+            h265_PredictIntra_Ver_8u(PredPel, pRec, pitch, width, 8, is_luma);
             break;
         case INTRA_HOR:
-            h265_intrapred_hor(PredPel, pRec, pitch, width, 8, is_luma);
+            h265_PredictIntra_Hor_8u(PredPel, pRec, pitch, width, 8, is_luma);
             break;
         default:
-            h265_intrapred_ang(pred_mode, PredPel, pRec,
-                pitch, width);
+            h265_PredictIntra_Ang_8u(pred_mode, PredPel, pRec, pitch, width);
         }
     }
 }

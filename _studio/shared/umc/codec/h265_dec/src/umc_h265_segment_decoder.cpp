@@ -2729,19 +2729,19 @@ void H265SegmentDecoder::IntraRecLumaBlk(H265CodingUnit* pCU,
     switch(LumaPredMode)
     {
     case INTRA_LUMA_PLANAR_IDX:
-        MFX_HEVC_COMMON::h265_intrapred_planar(PredPel, pRec, pitch, width);
+        MFX_HEVC_COMMON::h265_PredictIntra_Planar_8u(PredPel, pRec, pitch, width);
         break;
     case INTRA_LUMA_DC_IDX:
-        MFX_HEVC_COMMON::h265_intrapred_dc(PredPel, pRec, pitch, width, 1);
+        MFX_HEVC_COMMON::h265_PredictIntra_DC_8u(PredPel, pRec, pitch, width, 1);
         break;
     case INTRA_LUMA_VER_IDX:
-        MFX_HEVC_COMMON::h265_intrapred_ver(PredPel, pRec, pitch, width, 8, 1);
+        MFX_HEVC_COMMON::h265_PredictIntra_Ver_8u(PredPel, pRec, pitch, width, 8, 1);
         break;
     case INTRA_LUMA_HOR_IDX:
-        MFX_HEVC_COMMON::h265_intrapred_hor(PredPel, pRec, pitch, width, 8, 1);
+        MFX_HEVC_COMMON::h265_PredictIntra_Hor_8u(PredPel, pRec, pitch, width, 8, 1);
         break;
     default:
-        MFX_HEVC_COMMON::h265_intrapred_ang(LumaPredMode, PredPel, pRec, pitch, width);
+        MFX_HEVC_COMMON::h265_PredictIntra_Ang_8u(LumaPredMode, PredPel, pRec, pitch, width);
     }    
 
     //===== inverse transform =====
