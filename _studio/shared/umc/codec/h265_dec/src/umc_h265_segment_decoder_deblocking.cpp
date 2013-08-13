@@ -17,6 +17,8 @@
 #define VERT_FILT 0
 #define HOR_FILT  1
 
+//#define OPT_DEBLOCK
+
 namespace UMC_HEVC_DECODER
 {
 
@@ -226,8 +228,11 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU,
             VM_ASSERT(edge->strength < 3);
             if (edge->strength > 0)
             {
-                MFX_HEVC_COMMON::h265_FilterEdgeLuma_8u_I(edge, baseSrcDst + 4 * (i - 1) * srcDstStride,
-                               srcDstStride, VERT_FILT);
+#ifdef OPT_DEBLOCK
+                MFX_HEVC_COMMON::h265_FilterEdgeLuma_8u_I_SSE(edge, baseSrcDst + 4 * (i - 1) * srcDstStride, srcDstStride, VERT_FILT);
+#else
+                MFX_HEVC_COMMON::h265_FilterEdgeLuma_8u_I(edge, baseSrcDst + 4 * (i - 1) * srcDstStride, srcDstStride, VERT_FILT);
+#endif
             }
         }
     }
@@ -254,8 +259,11 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU,
             VM_ASSERT(edge->strength < 3);
             if (edge->strength > 0)
             {
-                MFX_HEVC_COMMON::h265_FilterEdgeLuma_8u_I(edge, baseSrcDst + 4 * (i - 1),
-                               srcDstStride, HOR_FILT);
+#ifdef OPT_DEBLOCK
+                MFX_HEVC_COMMON::h265_FilterEdgeLuma_8u_I_SSE(edge, baseSrcDst + 4 * (i - 1), srcDstStride, HOR_FILT);
+#else
+                MFX_HEVC_COMMON::h265_FilterEdgeLuma_8u_I(edge, baseSrcDst + 4 * (i - 1), srcDstStride, HOR_FILT);
+#endif
             }
         }
     }
