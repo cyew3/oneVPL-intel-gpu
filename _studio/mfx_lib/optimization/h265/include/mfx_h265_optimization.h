@@ -193,6 +193,9 @@ namespace MFX_HEVC_COMMON
         Ipp32s chromaQpCb,
         Ipp32s chromaQpCr);
 
+    /* SSE optimized deblocking kernels */
+    int h265_FilterEdgeLuma_8u_I_SSE(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir);
+
     /* Inverse Quantization */
     void h265_QuantInv_16s(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift);
     void h265_QuantInv_ScaleList_LShift_16s(const Ipp16s* pSrc, const Ipp16s* pScaleList, Ipp16s* pDst, int len, int shift);
