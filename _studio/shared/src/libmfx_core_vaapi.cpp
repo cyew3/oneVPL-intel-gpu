@@ -1237,6 +1237,10 @@ void* VAAPIVideoCORE::QueryCoreInterface(const MFX_GUID &guid)
     {
         return (void*) m_pAdapter.get();
     }
+    else if (MFXIHWCAPS_GUID == guid)
+    {
+        return (void*) &m_encode_caps;
+    }
     else
     {
         return NULL;

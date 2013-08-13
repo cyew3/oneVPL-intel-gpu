@@ -1001,34 +1001,37 @@ mfxStatus VAAPIEncoder::Execute(
             configBuffers[buffersCount++] = m_packedSpsBufferId;
         }
 
-        // PPS
-        std::vector<ENCODE_PACKEDHEADER_DATA> const & packedPpsArray = m_headerPacker.GetPps();
-        ENCODE_PACKEDHEADER_DATA const & packedPps = packedPpsArray[0];
+        if (task.m_insertPps[fieldId])
+        {
+            // PPS
+            std::vector<ENCODE_PACKEDHEADER_DATA> const & packedPpsArray = m_headerPacker.GetPps();
+            ENCODE_PACKEDHEADER_DATA const & packedPps = packedPpsArray[0];
 
-        packed_header_param_buffer.type = VAEncPackedHeaderPicture;
-        packed_header_param_buffer.has_emulation_bytes = !packedPps.SkipEmulationByteCount;
-        packed_header_param_buffer.bit_length = packedPps.DataLength*8;
+            packed_header_param_buffer.type = VAEncPackedHeaderPicture;
+            packed_header_param_buffer.has_emulation_bytes = !packedPps.SkipEmulationByteCount;
+            packed_header_param_buffer.bit_length = packedPps.DataLength*8;
 
-        MFX_DESTROY_VABUFFER(m_packedPpsHeaderBufferId, m_vaDisplay);
-        vaSts = vaCreateBuffer(m_vaDisplay,
-                m_vaContextEncode,
-                VAEncPackedHeaderParameterBufferType,
-                sizeof(packed_header_param_buffer),
-                1,
-                &packed_header_param_buffer,
-                &m_packedPpsHeaderBufferId);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+            MFX_DESTROY_VABUFFER(m_packedPpsHeaderBufferId, m_vaDisplay);
+            vaSts = vaCreateBuffer(m_vaDisplay,
+                    m_vaContextEncode,
+                    VAEncPackedHeaderParameterBufferType,
+                    sizeof(packed_header_param_buffer),
+                    1,
+                    &packed_header_param_buffer,
+                    &m_packedPpsHeaderBufferId);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-        MFX_DESTROY_VABUFFER(m_packedPpsBufferId, m_vaDisplay);
-        vaSts = vaCreateBuffer(m_vaDisplay,
-                            m_vaContextEncode,
-                            VAEncPackedHeaderDataBufferType,
-                            packedPps.DataLength, 1, packedPps.pData,
-                            &m_packedPpsBufferId);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+            MFX_DESTROY_VABUFFER(m_packedPpsBufferId, m_vaDisplay);
+            vaSts = vaCreateBuffer(m_vaDisplay,
+                                m_vaContextEncode,
+                                VAEncPackedHeaderDataBufferType,
+                                packedPps.DataLength, 1, packedPps.pData,
+                                &m_packedPpsBufferId);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-        configBuffers[buffersCount++] = m_packedPpsHeaderBufferId;
-        configBuffers[buffersCount++] = m_packedPpsBufferId;
+            configBuffers[buffersCount++] = m_packedPpsHeaderBufferId;
+            configBuffers[buffersCount++] = m_packedPpsBufferId;
+        }
 
         // SEI
         if (sei.Size() > 0)
