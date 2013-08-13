@@ -11,6 +11,9 @@
  #include "vaapi_utils_drm.h"
  #include "vaapi_utils_x11.h"
 #endif
+#ifdef __gnu_linux__
+  #include <stdint.h> // for uintptr_t on Linux
+#endif
 
 
 class frame_allocator{
