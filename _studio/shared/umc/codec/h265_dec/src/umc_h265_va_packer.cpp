@@ -255,7 +255,7 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->PicFlags.fields.chroma_format_idc                            = pSeqParamSet->getChromaFormatIdc();
     pPicParam->PicFlags.fields.separate_colour_plane_flag                   = 0;    // 0 in HEVC spec HM10 by design
     pPicParam->PicFlags.fields.pcm_enabled_flag                             = pSeqParamSet->getUsePCM() ? 1 : 0 ;
-    pPicParam->PicFlags.fields.scaling_list_enabled_flag                    = pSeqParamSet->getScalingListFlag() ? 1 : 0 ;
+    pPicParam->PicFlags.fields.scaling_list_enabled_flag                    = pSeqParamSet->scaling_list_enabled_flag ? 1 : 0 ;
     pPicParam->PicFlags.fields.transform_skip_enabled_flag                  = pPicParamSet->getUseTransformSkip() ? 1 : 0 ;
     pPicParam->PicFlags.fields.amp_enabled_flag                             = pSeqParamSet->getUseAMP() ? 1 : 0 ;
     pPicParam->PicFlags.fields.strong_intra_smoothing_enabled_flag          = pSeqParamSet->getUseStrongIntraSmoothing() ? 1 : 0 ;
@@ -373,8 +373,8 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->log2_diff_max_min_luma_coding_block_size     = (UCHAR)(pSeqParamSet->getLog2CtbSize() - pSeqParamSet->getLog2MinCUSize());
     pPicParam->log2_min_transform_block_size_minus2         = (UCHAR)(pSeqParamSet->log2_min_transform_block_size - 2);
     pPicParam->log2_diff_max_min_transform_block_size       = (UCHAR)(pSeqParamSet->log2_max_transform_block_size - pSeqParamSet->log2_min_transform_block_size);
-    pPicParam->log2_min_pcm_luma_coding_block_size_minus3   = (UCHAR)(pSeqParamSet->getPCMLog2MinSize() - 3);
-    pPicParam->log2_diff_max_min_pcm_luma_coding_block_size = (UCHAR)(pSeqParamSet->getPCMLog2MaxSize() - pSeqParamSet->getPCMLog2MinSize());
+    pPicParam->log2_min_pcm_luma_coding_block_size_minus3   = (UCHAR)(pSeqParamSet->log2_min_pcm_luma_coding_block_size - 3);
+    pPicParam->log2_diff_max_min_pcm_luma_coding_block_size = (UCHAR)(pSeqParamSet->log2_max_pcm_luma_coding_block_size - pSeqParamSet->log2_min_pcm_luma_coding_block_size);
     pPicParam->max_transform_hierarchy_depth_intra          = (UCHAR)pSeqParamSet->max_transform_hierarchy_depth_intra - 1;
     pPicParam->max_transform_hierarchy_depth_inter          = (UCHAR)pSeqParamSet->max_transform_hierarchy_depth_inter - 1;
     pPicParam->init_qp_minus26                              = (CHAR)pPicParamSet->getPicInitQP() - 26;
@@ -446,15 +446,15 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     
     //
     //
-    pPicParam->PicWidthInMinCbsY   = (USHORT)LengthInMinCb(pSeqParamSet->getPicWidthInLumaSamples(), pSeqParamSet->getLog2MinCUSize());
-    pPicParam->PicHeightInMinCbsY  = (USHORT)LengthInMinCb(pSeqParamSet->getPicHeightInLumaSamples(), pSeqParamSet->getLog2MinCUSize());
+    pPicParam->PicWidthInMinCbsY   = (USHORT)LengthInMinCb(pSeqParamSet->pic_width_in_luma_samples, pSeqParamSet->log2_min_luma_coding_block_size);
+    pPicParam->PicHeightInMinCbsY  = (USHORT)LengthInMinCb(pSeqParamSet->pic_height_in_luma_samples, pSeqParamSet->log2_min_luma_coding_block_size);
 
     //
     //
-    pPicParam->PicFlags.fields.chroma_format_idc                            = pSeqParamSet->getChromaFormatIdc();
+    pPicParam->PicFlags.fields.chroma_format_idc                            = pSeqParamSet->chroma_format_idc;
     pPicParam->PicFlags.fields.separate_colour_plane_flag                   = 0;    // 0 in HEVC spec HM10 by design
-    pPicParam->PicFlags.fields.bit_depth_luma_minus8                        = (UCHAR)(pSeqParamSet->getBitDepthY() - 8);
-    pPicParam->PicFlags.fields.bit_depth_chroma_minus8                      = (UCHAR)(pSeqParamSet->getBitDepthC() - 8);
+    pPicParam->PicFlags.fields.bit_depth_luma_minus8                        = (UCHAR)(pSeqParamSet->bit_depth_luma - 8);
+    pPicParam->PicFlags.fields.bit_depth_chroma_minus8                      = (UCHAR)(pSeqParamSet->bit_depth_chroma - 8);
     pPicParam->PicFlags.fields.log2_max_pic_order_cnt_lsb_minus4            = (UCHAR)(pSeqParamSet->log2_max_pic_order_cnt_lsb - 4);
     pPicParam->PicFlags.fields.NoPicReorderingFlag                          = 0;
     pPicParam->PicFlags.fields.NoBiPredFlag                                 = 0;
@@ -538,14 +538,14 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     //
     //
     pPicParam->sps_max_dec_pic_buffering_minus1             = (UCHAR)(pSeqParamSet->sps_max_dec_pic_buffering[pSlice->getTLayer()] - 1);
-    pPicParam->log2_min_luma_coding_block_size_minus3       = (UCHAR)(pSeqParamSet->getLog2MinCUSize() - 3);
+    pPicParam->log2_min_luma_coding_block_size_minus3       = (UCHAR)(pSeqParamSet->log2_min_luma_coding_block_size- 3);
     pPicParam->log2_diff_max_min_transform_block_size       = (UCHAR)(pSeqParamSet->log2_max_transform_block_size - pSeqParamSet->log2_min_transform_block_size);
     pPicParam->log2_min_transform_block_size_minus2         = (UCHAR)(pSeqParamSet->log2_min_transform_block_size - 2);
-    pPicParam->log2_diff_max_min_luma_coding_block_size     = (UCHAR)(pSeqParamSet->getLog2CtbSize() - pSeqParamSet->getLog2MinCUSize());
+    pPicParam->log2_diff_max_min_luma_coding_block_size     = (UCHAR)(pSeqParamSet->log2_max_luma_coding_block_size - pSeqParamSet->log2_min_luma_coding_block_size);
     pPicParam->max_transform_hierarchy_depth_intra          = (UCHAR)pSeqParamSet->max_transform_hierarchy_depth_intra - 1;
     pPicParam->max_transform_hierarchy_depth_inter          = (UCHAR)pSeqParamSet->max_transform_hierarchy_depth_inter - 1;
     pPicParam->num_short_term_ref_pic_sets                  = (UCHAR)pSeqParamSet->getRPSList()->getNumberOfReferencePictureSets();
-    pPicParam->num_long_term_ref_pics_sps                   = (UCHAR)pSeqParamSet->getNumLongTermRefPicSPS();
+    pPicParam->num_long_term_ref_pics_sps                   = (UCHAR)pSeqParamSet->num_long_term_ref_pic_sps;
     pPicParam->num_ref_idx_l0_default_active_minus1         = (UCHAR)(pPicParamSet->getNumRefIdxL0DefaultActive() - 1);
     pPicParam->num_ref_idx_l1_default_active_minus1         = (UCHAR)(pPicParamSet->getNumRefIdxL1DefaultActive() - 1);
     pPicParam->init_qp_minus26                              = (CHAR)pPicParamSet->getPicInitQP() - 26;
@@ -555,16 +555,16 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
 
     // dwCodingParamToolFlags
     //
-    pPicParam->fields.scaling_list_enabled_flag                      = pSeqParamSet->getScalingListFlag() ? 1 : 0 ;    
-    pPicParam->fields.amp_enabled_flag                               = pSeqParamSet->getUseAMP() ? 1 : 0 ;
-    pPicParam->fields.sample_adaptive_offset_enabled_flag            = pSeqParamSet->getUseSAO() ? 1 : 0 ;
-    pPicParam->fields.pcm_enabled_flag                               = pSeqParamSet->getUsePCM() ? 1 : 0 ;
+    pPicParam->fields.scaling_list_enabled_flag                      = pSeqParamSet->scaling_list_enabled_flag ? 1 : 0 ;    
+    pPicParam->fields.amp_enabled_flag                               = pSeqParamSet->amp_enabled_flag ? 1 : 0 ;
+    pPicParam->fields.sample_adaptive_offset_enabled_flag            = pSeqParamSet->sample_adaptive_offset_enabled_flag ? 1 : 0 ;
+    pPicParam->fields.pcm_enabled_flag                               = pSeqParamSet->pcm_enabled_flag ? 1 : 0 ;
     pPicParam->fields.pcm_sample_bit_depth_luma_minus1               = (UCHAR)(pSeqParamSet->pcm_sample_bit_depth_luma - 1);
     pPicParam->fields.pcm_sample_bit_depth_chroma_minus1             = (UCHAR)(pSeqParamSet->pcm_sample_bit_depth_chroma - 1);
-    pPicParam->fields.log2_min_pcm_luma_coding_block_size_minus3     = (UCHAR)(pSeqParamSet->getPCMLog2MinSize() - 3);
-    pPicParam->fields.log2_diff_max_min_pcm_luma_coding_block_size   = (UCHAR)(pSeqParamSet->getPCMLog2MaxSize() - pSeqParamSet->getPCMLog2MinSize());
-    pPicParam->fields.pcm_loop_filter_disabled_flag                  = pSeqParamSet->getPCMFilterDisableFlag() ? 1 : 0 ;
-    pPicParam->fields.long_term_ref_pics_present_flag                = pSeqParamSet->getLongTermRefsPresent() ? 1 : 0 ;
+    pPicParam->fields.log2_min_pcm_luma_coding_block_size_minus3     = (UCHAR)(pSeqParamSet->log2_min_pcm_luma_coding_block_size - 3);
+    pPicParam->fields.log2_diff_max_min_pcm_luma_coding_block_size   = (UCHAR)(pSeqParamSet->log2_max_pcm_luma_coding_block_size - pSeqParamSet->log2_min_pcm_luma_coding_block_size);
+    pPicParam->fields.pcm_loop_filter_disabled_flag                  = pSeqParamSet->pcm_loop_filter_disabled_flag ? 1 : 0 ;
+    pPicParam->fields.long_term_ref_pics_present_flag                = pSeqParamSet->long_term_ref_pics_present_flag ? 1 : 0 ;
     pPicParam->fields.sps_temporal_mvp_enabled_flag                  = pSeqParamSet->sps_temporal_mvp_enabled_flag ? 1 : 0 ;
     pPicParam->fields.strong_intra_smoothing_enabled_flag            = pSeqParamSet->sps_strong_intra_smoothing_enabled_flag ? 1 : 0 ;
     pPicParam->fields.dependent_slice_segments_enabled_flag          = pPicParamSet->getDependentSliceSegmentEnabledFlag() ? 1 : 0 ;

@@ -828,7 +828,7 @@ struct H265SeqParamSetBase
     Ipp32u  pcm_sample_bit_depth_chroma;
     Ipp32u  log2_min_pcm_luma_coding_block_size;
     Ipp32u  log2_max_pcm_luma_coding_block_size;
-    bool    pcm_loop_filter_disable_flag;
+    bool    pcm_loop_filter_disabled_flag;
 
     Ipp32u  num_short_term_ref_pic_sets;
     ReferencePictureSetList m_RPSList;
@@ -904,38 +904,13 @@ struct H265SeqParamSetBase
     Ipp32u HeightInCU;
     Ipp32u NumPartitionsInCU, NumPartitionsInCUSize, NumPartitionsInFrameWidth, NumPartitionsInFrameHeight;
     Ipp32u m_maxTrSize;
-    Ipp32u MinTrDepth;
-    Ipp32u MaxTrDepth;
-    
     
     bool m_UseLDC;
 
-    unsigned    m_log2MinCUSize;
-    unsigned    m_log2CtbSize;
-
-        Ipp32s m_AMPAcc[MAX_CU_DEPTH]; //AMP Accuracy
-
-    bool m_DisInter4x4Flag;
-
-    bool m_UseNewRefSettingFlag;
-
-    bool m_EnableTMVPFlag;
-
-    bool loop_filter_across_tiles_enabled_flag;
-
-    Ipp32u m_MaxNumberOfReferencePictures;
-    
+    Ipp32s m_AMPAcc[MAX_CU_DEPTH]; //AMP Accuracy
 
     int m_QPBDOffsetY;
     int m_QPBDOffsetC;
-    bool m_RestrictedRefPicListsFlag;
-
-
-    Ipp8u        profile_space;
-    Ipp8u        profile_idc;                        // baseline, main, etc.
-    Ipp16u       reserved_indicator_flags;
-    Ipp8u        level_idc;
-    Ipp32u       profile_compatibility;
 
     // These fields are calculated from values above.  They are not written to the bitstream
    
@@ -995,41 +970,10 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
     static int getWinUnitX (int /*chromaFormatIdc*/) { /*assert (chromaFormatIdc > 0 && chromaFormatIdc <= MAX_CHROMA_FORMAT_IDC);*/ return 1/*m_cropUnitX[chromaFormatIdc]*/; } // TODO
     static int getWinUnitY (int /*chromaFormatIdc*/) { /*assert (chromaFormatIdc > 0 && chromaFormatIdc <= MAX_CHROMA_FORMAT_IDC);*/ return 1/*m_cropUnitY[chromaFormatIdc]*/; }
 
-    void setProfileSpace(unsigned val)          { profile_space = (Ipp8u)val; }
-    void setRsvdIndFlags(unsigned flags)        { reserved_indicator_flags = (Ipp16u)flags; }
-    void setLevelIdc(unsigned val)              { level_idc = (Ipp8u)val; }
-    void setProfileCompat(unsigned val)         { profile_compatibility = val; }
-    unsigned getChromaFormatIdc() const         { return chroma_format_idc; }
-    void setChromaFormatIdc(unsigned val)       { chroma_format_idc = (Ipp8u)val; }
-    unsigned getMaxTLayers() const              { return sps_max_sub_layers; }
-    void setMaxTLayers(unsigned val)            { sps_max_sub_layers = val; }
-    unsigned getPicWidthInLumaSamples() const   { return pic_width_in_luma_samples; }
-    void setPicWidthInLumaSamples(unsigned val) { pic_width_in_luma_samples = val; }
-    unsigned getPicHeightInLumaSamples() const   { return pic_height_in_luma_samples; }
-    void setPicHeightInLumaSamples(unsigned val){ pic_height_in_luma_samples = val; }
-
-    Ipp32u getNumLongTermRefPicSPS() const      { return num_long_term_ref_pic_sps; }
-    void setNumLongTermRefPicSPS(Ipp32u val)    { num_long_term_ref_pic_sps = val; }
-
-    Ipp32u getLtRefPicPocLsbSps(Ipp32u index) const { return lt_ref_pic_poc_lsb_sps[index]; }
-    void setLtRefPicPocLsbSps(Ipp32u index, Ipp32u val)     { lt_ref_pic_poc_lsb_sps[index] = val; }
-
-    bool getUsedByCurrPicLtSPSFlag(Ipp32s i) const {return used_by_curr_pic_lt_sps_flag[i];}
-    void setUsedByCurrPicLtSPSFlag(Ipp32s i, bool x)      { used_by_curr_pic_lt_sps_flag[i] = x;}
-
-    int      getBitDepthY() const { return bit_depth_luma; }
-    void     setBitDepthY(int u) { bit_depth_luma = u; }
-
-    int      getBitDepthC() const { return bit_depth_chroma; }
-    void     setBitDepthC(int u) { bit_depth_chroma = u; }
-
     int getQpBDOffsetY() const                  { return m_QPBDOffsetY; }
     void setQpBDOffsetY(int val)                { m_QPBDOffsetY = val; }
     int getQpBDOffsetC() const                  { return m_QPBDOffsetC; }
     void setQpBDOffsetC(int val)                { m_QPBDOffsetC = val; }
-
-    bool getUsePCM() const                      { return pcm_enabled_flag; }
-    void setUsePCM(bool flag)                   { pcm_enabled_flag = flag; }
 
     unsigned getMaxCUWidth() const              { return MaxCUWidth; }
     void setMaxCUWidth(unsigned val)            { MaxCUWidth = val; }
@@ -1043,51 +987,16 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
         m_RPSList.allocate(numRPS);
     }
 
-    unsigned getMaxTrSize() const               { return m_maxTrSize; }
-    void setMaxTrSize(unsigned val)             { m_maxTrSize = val; }
-    unsigned getMinTrDepth() const              { return MinTrDepth; }
-    void setMinTrDepth(unsigned val)            { MinTrDepth = val; }
-    unsigned getMaxTrDepth() const              { return MaxTrDepth; }
-    void setMaxTrDepth(unsigned val)            { MaxTrDepth = val; }
-
-    bool getScalingListFlag() const             { return scaling_list_enabled_flag; }
-    void setScalingListFlag(bool f)             { scaling_list_enabled_flag = f; }
-    bool getScalingListPresentFlag()            { return sps_scaling_list_data_present_flag; }
-    bool getScalingListPresentFlag() const      { return sps_scaling_list_data_present_flag; }
-    void setScalingListPresentFlag(bool f)      { sps_scaling_list_data_present_flag  = f; }
-
-    unsigned getPCMLog2MinSize() const          { return log2_min_pcm_luma_coding_block_size; }
-    void setPCMLog2MinSize(unsigned val)        { log2_min_pcm_luma_coding_block_size = val; }
-    unsigned getPCMLog2MaxSize() const          { return log2_max_pcm_luma_coding_block_size; }
-    void setPCMLog2MaxSize(unsigned val)        { log2_max_pcm_luma_coding_block_size = val; }
-
-    bool getUseAMP() const                      { return amp_enabled_flag; }
-    void setUseAMP(bool f)                      { amp_enabled_flag = f; }
-    bool getUseSAO() const                      { return sample_adaptive_offset_enabled_flag; }
-    void setUseSAO(bool f)                      { sample_adaptive_offset_enabled_flag = f; }
-    bool getPCMFilterDisableFlag() const        { return pcm_loop_filter_disable_flag; }
-    void setPCMFilterDisableFlag(bool f)        { pcm_loop_filter_disable_flag = f; }
-    bool getTemporalIdNestingFlag() const       { return sps_temporal_id_nesting_flag; }
-    void setTemporalIdNestingFlag(bool f)       { sps_temporal_id_nesting_flag = f; }
-
-    bool getLongTermRefsPresent() const         { return long_term_ref_pics_present_flag; }
-    void setLongTermRefsPresent(bool f)         { long_term_ref_pics_present_flag = f; }
-
     H265ScalingList* getScalingList()           { return &m_scalingList; }
     const H265ScalingList* getScalingList() const     { return &m_scalingList; }
     ReferencePictureSetList *getRPSList()       { return &m_RPSList; }
     const ReferencePictureSetList *getRPSList() const       { return &m_RPSList; }
 
-    unsigned getLog2MinCUSize() const       { return m_log2MinCUSize; }
-    void setLog2MinCUSize(unsigned val)     { m_log2MinCUSize = val; }
-    unsigned getLog2CtbSize() const         { return m_log2CtbSize; }
-    void setLog2CtbSize(unsigned val)       { m_log2CtbSize = val; }
-
     H265ProfileTierLevel* getPTL()     { return &m_pcPTL; }
 
     H265HRD* getHrdParameters                 ()             { return &m_hrdParameters; }
 
-    const H265TimingInfo* getTimingInfo() const { return const_cast<const H265TimingInfo*>(&m_timingInfo); }
+    const H265TimingInfo* getTimingInfo() const { return &m_timingInfo; }
     H265TimingInfo* getTimingInfo() { return &m_timingInfo; }
 };    // H265SeqParamSet
 

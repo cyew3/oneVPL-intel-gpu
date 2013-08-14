@@ -696,13 +696,13 @@ void ViewItem_H265::Reset(void)
 
 void ViewItem_H265::SetDPBSize(H265SeqParamSet *pSps, Ipp8u & level_idc)
 {
-    Ipp8u level = level_idc ? level_idc : pSps->level_idc;
+    Ipp8u level = level_idc ? level_idc : pSps->m_pcPTL.GetGeneralPTL()->level_idc;
 
     // calculate the new DPB size value
 
     // FIXME: should have correct temporal layer
     
-    dpbSize = pSps->sps_max_dec_pic_buffering[pSps->getMaxTLayers()-1];
+    dpbSize = pSps->sps_max_dec_pic_buffering[pSps->sps_max_sub_layers-1];
 
     if (level_idc)
     {
@@ -710,7 +710,7 @@ void ViewItem_H265::SetDPBSize(H265SeqParamSet *pSps, Ipp8u & level_idc)
     }
     else
     {
-        pSps->level_idc = level;
+        pSps->m_pcPTL.GetGeneralPTL()->level_idc = level;
     }
 
     // provide the new value to the DPBList
@@ -1054,14 +1054,14 @@ UMC::Status TaskSupplier_H265::GetInfo(UMC::VideoDecoderParams *lpInfo)
 
     lpInfo->info.stream_type = UMC::HEVC_VIDEO;
 
-    lpInfo->profile = sps->profile_idc;
-    lpInfo->level = sps->level_idc;
+    lpInfo->profile = sps->m_pcPTL.GetGeneralPTL()->profile_idc;
+    lpInfo->level = sps->m_pcPTL.GetGeneralPTL()->level_idc;
 
     lpInfo->numThreads = m_iThreadNum;
     lpInfo->info.color_format = GetUMCColorFormat_H265(sps->chroma_format_idc);
 
-    lpInfo->info.profile = sps->profile_idc;
-    lpInfo->info.level = sps->level_idc;
+    lpInfo->info.profile = sps->m_pcPTL.GetGeneralPTL()->profile_idc;
+    lpInfo->info.level = sps->m_pcPTL.GetGeneralPTL()->level_idc;
 
     lpInfo->info.aspect_ratio_width  = sps->sar_width;
     lpInfo->info.aspect_ratio_height = sps->sar_height;
@@ -1215,7 +1215,7 @@ UMC::Status TaskSupplier_H265::xDecodeSPS(H265Bitstream &bs)
                                    sps.pic_width_in_luma_samples,
                                    sps.pic_height_in_luma_samples);
 
-        HighestTid = sps.getMaxTLayers() - 1;
+        HighestTid = sps.sps_max_sub_layers - 1;
         sps.sps_max_dec_pic_buffering[0] = sps.sps_max_dec_pic_buffering[HighestTid] ? sps.sps_max_dec_pic_buffering[HighestTid] : newDPBsize;
 
         if (ViewItem_H265 *view = GetView())

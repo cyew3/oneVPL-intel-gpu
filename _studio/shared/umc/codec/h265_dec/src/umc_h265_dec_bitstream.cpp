@@ -519,7 +519,7 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
         VM_ASSERT( uiCode == 1 );
     }
 
-    parsePTL(pcSPS->getPTL(), 1, pcSPS->getMaxTLayers() - 1);
+    parsePTL(pcSPS->getPTL(), 1, pcSPS->sps_max_sub_layers - 1);
     READ_UVLC(uiCode, "sps_seq_parameter_set_id" );               pcSPS->sps_seq_parameter_set_id = uiCode;
     READ_UVLC(uiCode, "chroma_format_idc" );                  pcSPS->chroma_format_idc = uiCode;
     if(pcSPS->chroma_format_idc == 3)
@@ -534,18 +534,18 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
     READ_FLAG( uiCode, "conformance_window_flag");      pcSPS->conformance_window_flag = uiCode != 0;
     if (pcSPS->conformance_window_flag)
     {
-        READ_UVLC(uiCode, "conf_win_left_offset");      pcSPS->conf_win_left_offset = uiCode*H265SeqParamSet::getWinUnitX(pcSPS->getChromaFormatIdc());
-        READ_UVLC(uiCode, "conf_win_right_offset");     pcSPS->conf_win_right_offset = uiCode*H265SeqParamSet::getWinUnitX(pcSPS->getChromaFormatIdc());
-        READ_UVLC(uiCode, "conf_win_top_offset");       pcSPS->conf_win_top_offset = uiCode*H265SeqParamSet::getWinUnitY(pcSPS->getChromaFormatIdc());
-        READ_UVLC(uiCode, "conf_win_bottom_offset");    pcSPS->conf_win_bottom_offset = uiCode*H265SeqParamSet::getWinUnitY(pcSPS->getChromaFormatIdc());
+        READ_UVLC(uiCode, "conf_win_left_offset");      pcSPS->conf_win_left_offset = uiCode*H265SeqParamSet::getWinUnitX(pcSPS->chroma_format_idc);
+        READ_UVLC(uiCode, "conf_win_right_offset");     pcSPS->conf_win_right_offset = uiCode*H265SeqParamSet::getWinUnitX(pcSPS->chroma_format_idc);
+        READ_UVLC(uiCode, "conf_win_top_offset");       pcSPS->conf_win_top_offset = uiCode*H265SeqParamSet::getWinUnitY(pcSPS->chroma_format_idc);
+        READ_UVLC(uiCode, "conf_win_bottom_offset");    pcSPS->conf_win_bottom_offset = uiCode*H265SeqParamSet::getWinUnitY(pcSPS->chroma_format_idc);
     }
 
     READ_UVLC(uiCode, "bit_depth_luma_minus8");
-    pcSPS->setBitDepthY(g_bitDepthY);
+    pcSPS->bit_depth_luma = g_bitDepthY;
     pcSPS->setQpBDOffsetY((int) (6*uiCode));
 
     READ_UVLC(uiCode, "bit_depth_chroma_minus8");
-    pcSPS->setBitDepthC(g_bitDepthC);
+    pcSPS->bit_depth_chroma = g_bitDepthC;
     pcSPS->setQpBDOffsetC( (int) (6*uiCode) );
 
     READ_UVLC(uiCode, "log2_max_pic_order_cnt_lsb_minus4");   pcSPS->log2_max_pic_order_cnt_lsb = 4 + uiCode;
@@ -553,7 +553,7 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
     unsigned subLayerOrderingInfoPresentFlag;
     READ_FLAG(subLayerOrderingInfoPresentFlag, "sps_sub_layer_ordering_info_present_flag");
 
-    for(unsigned i=0; i <= pcSPS->getMaxTLayers()-1; i++)
+    for(unsigned i=0; i <= pcSPS->sps_max_sub_layers-1; i++)
     {
         READ_UVLC ( uiCode, "sps_max_dec_pic_buffering_minus1");
         pcSPS->sps_max_dec_pic_buffering[i] = uiCode + 1;
@@ -564,7 +564,7 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
 
         if (!subLayerOrderingInfoPresentFlag)
         {
-            for (i++; i <= pcSPS->getMaxTLayers()-1; i++)
+            for (i++; i <= pcSPS->sps_max_sub_layers-1; i++)
             {
                 pcSPS->sps_max_dec_pic_buffering[i] = pcSPS->sps_max_dec_pic_buffering[0];
                 pcSPS->sps_max_num_reorder_pics[i] = pcSPS->sps_max_num_reorder_pics[0];
@@ -575,31 +575,28 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
     }
 
     READ_UVLC( uiCode, "log2_min_coding_block_size_minus3");
-    unsigned log2MinCUSize = uiCode + 3;
-    pcSPS->setLog2MinCUSize(log2MinCUSize);             // saved to use in HW decoder
+    pcSPS->log2_min_luma_coding_block_size = uiCode + 3;
     READ_UVLC( uiCode, "log2_diff_max_min_coding_block_size");
     unsigned uiMaxCUDepthCorrect = uiCode;
-    pcSPS->setLog2CtbSize(uiCode + log2MinCUSize);        // saved to use in HW decoder
-    pcSPS->setMaxCUWidth  ( 1<<(log2MinCUSize + uiMaxCUDepthCorrect) );
-    pcSPS->setMaxCUHeight ( 1<<(log2MinCUSize + uiMaxCUDepthCorrect) );
+    pcSPS->log2_max_luma_coding_block_size = uiMaxCUDepthCorrect + pcSPS->log2_min_luma_coding_block_size;
+    pcSPS->setMaxCUWidth  ( 1<<pcSPS->log2_max_luma_coding_block_size);
+    pcSPS->setMaxCUHeight ( 1<<pcSPS->log2_max_luma_coding_block_size);
     READ_UVLC( uiCode, "log2_min_transform_block_size_minus2");   pcSPS->log2_min_transform_block_size = uiCode + 2;
 
     READ_UVLC(uiCode, "log2_diff_max_min_transform_block_size"); pcSPS->log2_max_transform_block_size = uiCode + pcSPS->log2_min_transform_block_size;
-    pcSPS->setMaxTrSize( 1<<(uiCode + pcSPS->log2_min_transform_block_size) );
+    pcSPS->m_maxTrSize = 1 << pcSPS->log2_max_transform_block_size;
 
     READ_UVLC(uiCode, "max_transform_hierarchy_depth_inter");   pcSPS->max_transform_hierarchy_depth_inter = uiCode + 1;
     READ_UVLC(uiCode, "max_transform_hierarchy_depth_intra");   pcSPS->max_transform_hierarchy_depth_intra = uiCode + 1;
     
     Ipp32u addCUDepth = 0;
-    while((pcSPS->getMaxCUWidth() >> uiMaxCUDepthCorrect ) > (unsigned)( 1 << ( pcSPS->log2_min_transform_block_size + addCUDepth)))
+    while((pcSPS->getMaxCUWidth() >> uiMaxCUDepthCorrect) > (unsigned)( 1 << ( pcSPS->log2_min_transform_block_size + addCUDepth)))
     {
         addCUDepth++;
     }
     pcSPS->AddCUDepth = addCUDepth;
     pcSPS->MaxCUDepth = uiMaxCUDepthCorrect + addCUDepth;
     // BB: these parameters may be removed completly and replaced by the fixed values
-    pcSPS->setMinTrDepth( 0 );
-    pcSPS->setMaxTrDepth( 1 );
     READ_FLAG(uiCode, "scaling_list_enabled_flag"); pcSPS->scaling_list_enabled_flag = uiCode;
     if(pcSPS->scaling_list_enabled_flag)
     {
@@ -619,7 +616,7 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
         READ_CODE(4, uiCode, "pcm_sample_bit_depth_chroma_minus1");         pcSPS->pcm_sample_bit_depth_chroma = 1 + uiCode;
         READ_UVLC(uiCode, "log2_min_pcm_luma_coding_block_size_minus3");    pcSPS->log2_min_pcm_luma_coding_block_size = uiCode + 3;
         READ_UVLC(uiCode, "log2_diff_max_min_pcm_luma_coding_block_size");  pcSPS->log2_max_pcm_luma_coding_block_size = uiCode + pcSPS->log2_min_pcm_luma_coding_block_size;
-        READ_FLAG(uiCode, "pcm_loop_filter_disable_flag");                  pcSPS->pcm_loop_filter_disable_flag = (uiCode != 0);
+        READ_FLAG(uiCode, "pcm_loop_filter_disable_flag");                  pcSPS->pcm_loop_filter_disabled_flag = (uiCode != 0);
     }
 
     READ_UVLC( uiCode, "num_short_term_ref_pic_sets" );
@@ -734,10 +731,10 @@ void H265HeadersBitstream::parseVUI(H265SeqParamSet *pcSPS)
     READ_FLAG(uiCode, "default_display_window_flag");
     if (uiCode != 0)
     {
-        READ_UVLC(uiCode, "def_disp_win_left_offset");      pcSPS->def_disp_win_left_offset   = uiCode*H265SeqParamSet::getWinUnitX(pcSPS->getChromaFormatIdc());
-        READ_UVLC(uiCode, "def_disp_win_right_offset");     pcSPS->def_disp_win_right_offset  = uiCode*H265SeqParamSet::getWinUnitX(pcSPS->getChromaFormatIdc());
-        READ_UVLC(uiCode, "def_disp_win_top_offset");       pcSPS->def_disp_win_top_offset    = uiCode*H265SeqParamSet::getWinUnitY(pcSPS->getChromaFormatIdc());
-        READ_UVLC(uiCode, "def_disp_win_bottom_offset");    pcSPS->def_disp_win_bottom_offset = uiCode*H265SeqParamSet::getWinUnitY(pcSPS->getChromaFormatIdc());
+        READ_UVLC(uiCode, "def_disp_win_left_offset");      pcSPS->def_disp_win_left_offset   = uiCode*H265SeqParamSet::getWinUnitX(pcSPS->chroma_format_idc);
+        READ_UVLC(uiCode, "def_disp_win_right_offset");     pcSPS->def_disp_win_right_offset  = uiCode*H265SeqParamSet::getWinUnitX(pcSPS->chroma_format_idc);
+        READ_UVLC(uiCode, "def_disp_win_top_offset");       pcSPS->def_disp_win_top_offset    = uiCode*H265SeqParamSet::getWinUnitY(pcSPS->chroma_format_idc);
+        READ_UVLC(uiCode, "def_disp_win_bottom_offset");    pcSPS->def_disp_win_bottom_offset = uiCode*H265SeqParamSet::getWinUnitY(pcSPS->chroma_format_idc);
     }
 
     H265TimingInfo *timingInfo = pcSPS->getTimingInfo();
@@ -756,7 +753,7 @@ void H265HeadersBitstream::parseVUI(H265SeqParamSet *pcSPS)
         READ_FLAG(uiCode, "hrd_parameters_present_flag");          pcSPS->vui_hrd_parameters_present_flag = (uiCode != 0);
         if (pcSPS->vui_hrd_parameters_present_flag)
         {
-            parseHrdParameters( pcSPS->getHrdParameters(), 1, pcSPS->getMaxTLayers() - 1 );
+            parseHrdParameters( pcSPS->getHrdParameters(), 1, pcSPS->sps_max_sub_layers - 1);
         }
     }
 
@@ -1089,7 +1086,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
     {
         rpcSlice->setDependentSliceSegmentFlag(false);
     }
-    int numCTUs = ((sps->getPicWidthInLumaSamples()+sps->getMaxCUWidth()-1)/sps->getMaxCUWidth())*((sps->getPicHeightInLumaSamples()+sps->getMaxCUHeight()-1)/sps->getMaxCUHeight());
+    int numCTUs = ((sps->pic_width_in_luma_samples + sps->getMaxCUWidth()-1)/sps->getMaxCUWidth())*((sps->pic_height_in_luma_samples + sps->getMaxCUHeight()-1)/sps->getMaxCUHeight());
     int maxParts = (1<<(sps->getMaxCUDepth()<<1));
     unsigned sliceSegmentAddress = 0;
     int bitsSliceSegmentAddress = 0;
@@ -1144,7 +1141,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
             rpcSlice->setPicOutputFlag( true );
         }
         // in the first version chroma_format_idc is equal to one, thus colour_plane_id will not be present
-        VM_ASSERT (sps->getChromaFormatIdc() == 1 );
+        VM_ASSERT (sps->chroma_format_idc == 1 );
         // if( separate_colour_plane_flag  ==  1 )
         //   colour_plane_id                                      u(2)
 
@@ -1219,12 +1216,13 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
                 rps = rpcSlice->getRPS();
                 rpcSlice->setNumBitsForShortTermRPSInSlice(0);    // used in HW
             }
-            if(sps->getLongTermRefsPresent())
+
+            if (sps->long_term_ref_pics_present_flag)
             {
                 int offset = rps->getNumberOfNegativePictures()+rps->getNumberOfPositivePictures();
                 unsigned numOfLtrp = 0;
                 unsigned numLtrpInSPS = 0;
-                if (rpcSlice->getSPS()->getNumLongTermRefPicSPS() > 0)
+                if (rpcSlice->getSPS()->num_long_term_ref_pic_sps > 0)
                 {
                     READ_UVLC( uiCode, "num_long_term_sps");
                     numLtrpInSPS = uiCode;
@@ -1233,7 +1231,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
                     VM_ASSERT(numOfLtrp <= sps->sps_max_dec_pic_buffering[sps->sps_max_sub_layers - 1] - 1);
                 }
                 int bitsForLtrpInSPS = 0;
-                while (rpcSlice->getSPS()->getNumLongTermRefPicSPS() > (unsigned)(1 << bitsForLtrpInSPS))
+                while (rpcSlice->getSPS()->num_long_term_ref_pic_sps > (unsigned)(1 << bitsForLtrpInSPS))
                 {
                     bitsForLtrpInSPS++;
                 }
@@ -1250,9 +1248,9 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
                         uiCode = 0;
                         if (bitsForLtrpInSPS > 0)
                             READ_CODE(bitsForLtrpInSPS, uiCode, "lt_idx_sps[i]");
-                        int usedByCurrFromSPS=rpcSlice->getSPS()->getUsedByCurrPicLtSPSFlag(uiCode);
+                        int usedByCurrFromSPS=rpcSlice->getSPS()->used_by_curr_pic_lt_sps_flag[uiCode];
 
-                        pocLsbLt = rpcSlice->getSPS()->getLtRefPicPocLsbSps(uiCode);
+                        pocLsbLt = rpcSlice->getSPS()->lt_ref_pic_poc_lsb_sps[uiCode];
                         rps->setUsed(j,usedByCurrFromSPS);
                     }
                     else
@@ -1324,7 +1322,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
             }
         }
 
-        if(sps->getUseSAO())
+        if (sps->sample_adaptive_offset_enabled_flag)
         {
             READ_FLAG(uiCode, "slice_sao_luma_flag");  rpcSlice->GetSliceHeader()->slice_sao_luma_flag = (bool)uiCode;
             READ_FLAG(uiCode, "slice_sao_chroma_flag");  rpcSlice->GetSliceHeader()->slice_sao_chroma_flag = (bool)uiCode;

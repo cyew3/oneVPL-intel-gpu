@@ -442,12 +442,12 @@ void H265SegmentDecoder::GetEdgeStrength(H265CodingUnit* pcCUQ,
     edge->tcOffset = (Ipp8s)tcOffset;
     edge->betaOffset = (Ipp8s)betaOffset;
 
-    if ((pcCUP->GetIPCMFlag(uiPartP) != 0) && (m_pSeqParamSet->getPCMFilterDisableFlag() != 0))
+    if ((pcCUP->GetIPCMFlag(uiPartP) != 0) && (m_pSeqParamSet->pcm_loop_filter_disabled_flag != 0))
     {
         edge->deblockP = 0;
     }
 
-    if ((pcCUQ->GetIPCMFlag(uiPartQ) != 0) && (m_pSeqParamSet->getPCMFilterDisableFlag() != 0))
+    if ((pcCUQ->GetIPCMFlag(uiPartQ) != 0) && (m_pSeqParamSet->pcm_loop_filter_disabled_flag != 0))
     {
         edge->deblockQ = 0;
     }
@@ -1116,7 +1116,7 @@ void H265SegmentDecoder::GetEdgeStrength(Ipp32s tuQ, Ipp32s tuP, bool anotherCU,
 
     edge->deblockQ = infoQ->members.IsTransquantBypass ^ 1;
     edge->deblockP = infoP->members.IsTransquantBypass ^ 1;
-    if (m_pSeqParamSet->pcm_loop_filter_disable_flag)
+    if (m_pSeqParamSet->pcm_loop_filter_disabled_flag)
     {
         if (infoQ->members.IsIPCM)
             edge->deblockQ = 0;

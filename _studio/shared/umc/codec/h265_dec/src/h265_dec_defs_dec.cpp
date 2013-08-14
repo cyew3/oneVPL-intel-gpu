@@ -964,7 +964,7 @@ void H265SampleAdaptiveOffset::processSaoUnits(Ipp32s firstCU, Ipp32s toProcessC
     m_slice_sao_luma_flag = slice->GetSliceHeader()->slice_sao_luma_flag;
     m_slice_sao_chroma_flag = slice->GetSliceHeader()->slice_sao_chroma_flag;
     
-    m_needPCMRestoration = (slice->GetSliceHeader()->m_SeqParamSet->getUsePCM() && slice->GetSliceHeader()->m_SeqParamSet->getPCMFilterDisableFlag()) ||
+    m_needPCMRestoration = (slice->GetSliceHeader()->m_SeqParamSet->pcm_enabled_flag && slice->GetSliceHeader()->m_SeqParamSet->pcm_loop_filter_disabled_flag) ||
         slice->GetSliceHeader()->m_PicParamSet->getTransquantBypassEnableFlag();
 
     m_SaoBitIncreaseY = IPP_MAX(g_bitDepthY - 10, 0);
@@ -1170,14 +1170,14 @@ void H265SampleAdaptiveOffset::PCMCURestoration(H265CodingUnit* pcCU, Ipp32u Abs
         {
             Ipp32u LPelX = pcCU->m_CUPelX + pcCU->m_rasterToPelX[AbsZorderIdx];
             Ipp32u TPelY = pcCU->m_CUPelY + pcCU->m_rasterToPelY[AbsZorderIdx];
-            if((LPelX < pcCU->m_SliceHeader->m_SeqParamSet->getPicWidthInLumaSamples()) && (TPelY < pcCU->m_SliceHeader->m_SeqParamSet->getPicHeightInLumaSamples()))
+            if((LPelX < pcCU->m_SliceHeader->m_SeqParamSet->pic_width_in_luma_samples) && (TPelY < pcCU->m_SliceHeader->m_SeqParamSet->pic_height_in_luma_samples))
                 PCMCURestoration(pcCU, AbsZorderIdx, Depth + 1);
         }
         return;
     }
 
     // restore PCM samples
-    if ((pcCU->GetIPCMFlag(AbsZorderIdx) && pcCU->m_SliceHeader->m_SeqParamSet->getPCMFilterDisableFlag()) || pcCU->isLosslessCoded(AbsZorderIdx))
+    if ((pcCU->GetIPCMFlag(AbsZorderIdx) && pcCU->m_SliceHeader->m_SeqParamSet->pcm_loop_filter_disabled_flag) || pcCU->isLosslessCoded(AbsZorderIdx))
     {
         PCMSampleRestoration(pcCU, AbsZorderIdx, Depth, TEXT_LUMA);
         PCMSampleRestoration(pcCU, AbsZorderIdx, Depth, TEXT_CHROMA);

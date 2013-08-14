@@ -75,7 +75,7 @@ void H265SegmentDecoderMultiThreaded::StartProcessingSegment(H265Task &Task)
     m_pRefPicList[0] = m_pCurrentFrame->GetRefPicList(sliceNum, REF_PIC_LIST_0)->m_refPicList;
     m_pRefPicList[1] = m_pCurrentFrame->GetRefPicList(sliceNum, REF_PIC_LIST_1)->m_refPicList;
 
-    if (m_pSliceHeader->m_SeqParamSet->getScalingListFlag())
+    if (m_pSliceHeader->m_SeqParamSet->scaling_list_enabled_flag)
     {
         m_TrQuant->setScalingListDec(const_cast<H265ScalingList *>(m_pSliceHeader->m_SeqParamSet->getScalingList()));
 
@@ -83,7 +83,7 @@ void H265SegmentDecoderMultiThreaded::StartProcessingSegment(H265Task &Task)
         {
             m_TrQuant->setScalingListDec(const_cast<H265ScalingList *>(m_pSliceHeader->m_PicParamSet->getScalingList()));
         }
-        if (!m_pSliceHeader->m_PicParamSet->getScalingListPresentFlag() && !m_pSliceHeader->m_SeqParamSet->getScalingListPresentFlag())
+        if (!m_pSliceHeader->m_PicParamSet->getScalingListPresentFlag() && !m_pSliceHeader->m_SeqParamSet->sps_scaling_list_data_present_flag)
         {
             m_TrQuant->setDefaultScalingList();
         }
