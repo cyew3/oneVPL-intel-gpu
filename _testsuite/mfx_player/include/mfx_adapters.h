@@ -100,6 +100,10 @@ public:
     {
         return m_pTo->Write(pBs);
     }
+    virtual mfxStatus Seek(Ipp64s /*position*/, VM_FILE_SEEK_MODE /*mode*/)
+    {
+        return MFX_ERR_NONE;
+    }
 };
 
 //lock frames rw wont create special mid in call to lock

@@ -51,6 +51,7 @@ public:
     //generic filewriter may not use additional flags, however having this method simplify complicated pipelines
     //, say encode->decode providing timestamps, and frametype to decoder
     virtual mfxStatus Write(mfxBitstream * pBs) = 0;
+    virtual mfxStatus Seek(Ipp64s position, VM_FILE_SEEK_MODE mode) = 0;
 };
 
 
@@ -108,6 +109,10 @@ public:
     virtual mfxStatus Write(mfxBitstream * pBs)
     {
         return m_pTarget->Write(pBs);
+    }
+    virtual mfxStatus Seek(Ipp64s position, VM_FILE_SEEK_MODE mode)
+    {
+        return m_pTarget->Seek(position, mode);
     }
 
 protected:

@@ -55,6 +55,7 @@ mfxStatus MediaSDKSplWrapper::Init(const vm_char *strFileName)
     mfxStatus sts = MFX_ERR_NONE;
     vm_file* pSrcFile = NULL;
     pSrcFile = vm_file_fopen(strFileName, VM_STRING("rb"));
+    MFX_CHECK_POINTER(pSrcFile);
 
     MFX_ZERO_MEM(m_splReader);
     m_splReader.m_bInited = true;

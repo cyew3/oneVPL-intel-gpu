@@ -1442,7 +1442,7 @@ mfxStatus MFXDecPipeline::CreateSplitter()
     {
         if (MFX_ERR_NONE > sts)
         {
-            PipelineTrace((VM_STRING("FAILED to open input file %s\n"), m_inParams.strSrcFile));
+            PipelineTrace((VM_STRING("FAILED to open input file %s or find splitter\n"), m_inParams.strSrcFile));
         }else
         {
             if (PIPELINE_WRN_BUFFERING_UNAVAILABLE == sts)

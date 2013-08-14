@@ -108,6 +108,15 @@ public:
         
         return Write(pBs->Data + pBs->DataOffset, pBs->DataLength);
     }
+    mfxStatus Seek(Ipp64s position, VM_FILE_SEEK_MODE mode)
+    {
+        if (NULL == m_pFD)
+            return MFX_ERR_NONE;
+
+        MFX_CHECK(0 == vm_file_fseek(m_pFD, position, mode));
+
+        return MFX_ERR_NONE;
+    }
     bool isOpen()
     {
         return NULL != m_pFD;

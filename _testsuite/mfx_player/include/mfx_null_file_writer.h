@@ -66,4 +66,8 @@ public:
     {
         return MFX_ERR_NONE;
     }
+    virtual mfxStatus Seek(Ipp64s /*position*/, VM_FILE_SEEK_MODE /*mode*/)
+    {
+        return MFX_ERR_NONE;
+    }
 };
