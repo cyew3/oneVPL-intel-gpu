@@ -30,9 +30,8 @@ namespace UMC_HEVC_DECODER
 
 struct H265SliceHeader;
 struct H265FrameHLDNeighborsInfo;
-struct H265MVInfo;
 struct H265MotionVector;
-struct MVBuffer;
+struct H265MVInfo;
 struct SAOParams;
 struct AMVPInfo;
 class H265Prediction;
@@ -131,7 +130,7 @@ public:
 
     bool DecodeSkipFlagCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     bool DecodeCUTransquantBypassFlag(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
-    void DecodeMVPIdxPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartAddr, Ipp32u Depth, Ipp32u PartIdx, EnumRefPicList RefList, MVBuffer &MVb, Ipp8u InterDir);
+    void DecodeMVPIdxPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartAddr, Ipp32u Depth, Ipp32u PartIdx, EnumRefPicList RefList, H265MVInfo &MVi, Ipp8u InterDir);
     Ipp32s DecodePredModeCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void DecodePartSizeCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void DecodeIPCMInfoCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
@@ -156,6 +155,7 @@ public:
     void ReadUnarySymbolCABAC(Ipp32u& Value, Ipp32s ctxIdx, Ipp32s Offset);
     void FinishDecodeCU(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& IsLast);
     void DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& IsLast);
+    void SaveCTBContext(H265CodingUnit* pCU);
     bool DecodeSliceEnd(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
 
     Ipp32u ParseLastSignificantXYCABAC(Ipp32u &PosLastX, Ipp32u &PosLastY, Ipp32u L2Width, bool IsLuma, Ipp32u ScanIdx);
@@ -243,7 +243,7 @@ public:
 
     void UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u TrStart, bool isSkipped, bool isTranquantBypass, bool isIPCM, bool isTrCbfY);
     void UpdateNeighborDecodedQP(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
-    void UpdatePUInfo(H265CodingUnit *pCU, Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight, const H265MVInfo &mvInfo);
+    void UpdatePUInfo(H265CodingUnit *pCU, Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight, H265MVInfo &mvInfo);
 
     Ipp32s m_iNumber;                                           // (Ipp32s) ordinal number of decoder
     H265Slice *m_pSlice;                                        // (H265Slice *) current slice pointer
@@ -276,7 +276,7 @@ private:
     Ipp32u getCtxSplitFlag(H265CodingUnit *pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     Ipp32u getCtxSkipFlag(Ipp32u AbsPartIdx);
     void getIntraDirLumaPredictor(H265CodingUnit *pCU, Ipp32u AbsPartIdx, Ipp32s IntraDirPred[]);
-    void getInterMergeCandidates(H265CodingUnit *pCU, Ipp32u AbsPartIdx, Ipp32u PUIdx, MVBuffer* MVBufferNeighbours,
+    void getInterMergeCandidates(H265CodingUnit *pCU, Ipp32u AbsPartIdx, Ipp32u PUIdx, H265MVInfo *MVBufferNeighbours,
         Ipp8u* InterDirNeighbours, Ipp32s &numValidMergeCand, Ipp32s mrgCandIdx);
     void fillMVPCand(H265CodingUnit *pCU, Ipp32u AbsPartIdx, Ipp32u PartIdx, EnumRefPicList RefPicList, Ipp32s RefIdx, AMVPInfo* pInfo);
     // add possible motion vector predictor candidates

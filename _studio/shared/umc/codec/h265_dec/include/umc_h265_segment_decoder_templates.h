@@ -51,6 +51,7 @@ public:
 
         Ipp32u IsLast = 0;
         sd->DecodeCUCABAC(sd->m_curCU, 0, 0, IsLast);
+        sd->SaveCTBContext(sd->m_curCU);
         return IsLast > 0;
     } // void DecodeCodingUnit_CABAC(H265SegmentDecoderMultiThreaded *sd)
 };

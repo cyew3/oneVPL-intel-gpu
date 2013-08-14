@@ -111,8 +111,7 @@ void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiM
     m_NumCUsInFrame = m_WidthInCU * m_HeightInCU;
     m_CUData = new H265CodingUnit*[m_NumCUsInFrame];
 
-    m_colocatedInfo[0] = new ColocatedTUInfo[m_NumCUsInFrame * m_NumPartitions];
-    m_colocatedInfo[1] = new ColocatedTUInfo[m_NumCUsInFrame * m_NumPartitions];
+    m_colocatedInfo = new H265MVInfo[m_NumCUsInFrame * m_NumPartitions];
 
     for (Ipp32u i = 0; i < m_NumCUsInFrame; i++)
     {
@@ -139,11 +138,8 @@ void H265FrameCodingData::destroy()
     delete [] m_CUData;
     m_CUData = NULL;
 
-    for (int i = 0; i < 2; i++)
-    {
-        delete[] m_colocatedInfo[i];
-        m_colocatedInfo[i] = 0;
-    }
+    delete[] m_colocatedInfo;
+    m_colocatedInfo = NULL;
 
     delete m_edge;
     m_edge = NULL;

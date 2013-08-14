@@ -273,12 +273,6 @@ struct H265FrameHLDNeighborsInfo
     };
 };
 
-struct H265MVInfo
-{
-    MVBuffer mvinfo[2];
-    Ipp16s deltaPOC[2];
-};
-
 struct H265PUInfo
 {
     H265MVInfo interinfo;

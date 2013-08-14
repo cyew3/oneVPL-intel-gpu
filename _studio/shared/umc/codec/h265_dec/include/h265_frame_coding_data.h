@@ -88,79 +88,31 @@ public:
 
 public:
 
-#pragma pack(1)
-    typedef struct
-    {
-        H265MotionVector m_mv;
-        Ipp16s m_pocDelta;
-        Ipp8u m_flags;
-        RefIndexType m_refIdx;
-    } ColocatedTUInfo;
-#pragma pack()
-
-    ColocatedTUInfo * m_colocatedInfo[2];
+    H265MVInfo *m_colocatedInfo;
 
     H265MotionVector & GetMV(EnumRefPicList direction, Ipp32u partNumber)
     {
-        return m_colocatedInfo[direction][partNumber].m_mv;
+        return m_colocatedInfo[partNumber].m_mv[direction];
     }
 
     Ipp8u & GetTUFlags(EnumRefPicList direction, Ipp32u partNumber)
     {
-        return m_colocatedInfo[direction][partNumber].m_flags;
+        return m_colocatedInfo[partNumber].m_flags[direction];
     }
 
     Ipp16s & GetTUPOCDelta(EnumRefPicList direction, Ipp32u partNumber)
     {
-        return m_colocatedInfo[direction][partNumber].m_pocDelta;
+        return m_colocatedInfo[partNumber].m_pocDelta[direction];
     }
 
     RefIndexType & GetRefIdx(EnumRefPicList direction, Ipp32u partNumber)
     {
-        return m_colocatedInfo[direction][partNumber].m_refIdx;
+        return m_colocatedInfo[partNumber].m_refIdx[direction];
     }
 
-    ColocatedTUInfo & GetTUInfo(EnumRefPicList direction, Ipp32u partNumber)
+    H265MVInfo & GetTUInfo(Ipp32u partNumber)
     {
-        return m_colocatedInfo[direction][partNumber];
-    }
-
-    void setBlockInfo(const Ipp8u flags, const Ipp16s POCDelta, const H265MotionVector &mv, RefIndexType refIdx,
-        EnumRefPicList RefListIdx, Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight)
-    {
-        ColocatedTUInfo *clPtr = m_colocatedInfo[RefListIdx] + m_NumPartInWidth*m_WidthInCU * PartY + PartX;
-
-        Ipp32s stride = m_NumPartInWidth*m_WidthInCU;
-
-        for (Ipp32u y = 0; y < PartHeight; y++)
-        {
-            for (Ipp32u x = 0; x < PartWidth; x++)
-            {
-                clPtr[x].m_mv = mv;
-                clPtr[x].m_flags = flags;
-                clPtr[x].m_pocDelta = POCDelta;
-                clPtr[x].m_refIdx = refIdx;
-            }
-
-            clPtr += stride;
-        }
-    }
-
-    void setBlockFlags(const Ipp8u flags, EnumRefPicList RefListIdx, Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight)
-    {
-        ColocatedTUInfo *clPtr = m_colocatedInfo[RefListIdx] + m_NumPartInWidth*m_WidthInCU * PartY + PartX;
-
-        Ipp32s stride = m_NumPartInWidth*m_WidthInCU;
-
-        for (Ipp32u y = 0; y < PartHeight; y++)
-        {
-            for (Ipp32u x = 0; x < PartWidth; x++)
-            {
-                clPtr[x].m_flags = flags;
-            }
-
-            clPtr += stride;
-        }
+        return m_colocatedInfo[partNumber];
     }
 
     void create (Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiMaxWidth, Ipp32u uiMaxHeight, Ipp32u uiMaxDepth);
@@ -176,11 +128,8 @@ public:
         , m_TileIdxMap(0)
         , m_InverseCUOrderMap(0)
         , m_edge(0)
+        , m_colocatedInfo(0)
     {
-        for (int i = 0; i < 2; i++)
-        {
-            m_colocatedInfo[i] = 0;
-        }
     }
 
     ~H265FrameCodingData()

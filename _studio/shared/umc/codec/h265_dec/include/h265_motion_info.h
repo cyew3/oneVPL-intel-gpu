@@ -123,22 +123,19 @@ struct AMVPInfo
 };
 
 typedef Ipp8s RefIndexType;
-//structure for motion vector with reference index
-struct MVBuffer
+// Structure used for motion info. Contains both ref index and POC since both are used in different places of code
+struct H265MVInfo
 {
 public:
-    H265MotionVector    MV;
-    RefIndexType        RefIdx;
+    H265MotionVector    m_mv[2];
+    RefIndexType        m_refIdx[2];
+    Ipp16s              m_pocDelta[2];
+    Ipp8u               m_flags[2];
 
-    MVBuffer()
+    void setMVInfo(Ipp32s refList, RefIndexType iRefIdx, H265MotionVector const &cMV)
     {
-        RefIdx = -1; //not valid
-    };
-
-    void setMVBuffer(H265MotionVector const &cMV, RefIndexType iRefIdx)
-    {
-        MV = cMV;
-        RefIdx = iRefIdx;
+        m_refIdx[refList] = iRefIdx;
+        m_mv[refList] = cMV;
     }
 };
 } // end namespace UMC_HEVC_DECODER

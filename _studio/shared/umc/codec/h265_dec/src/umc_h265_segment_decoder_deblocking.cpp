@@ -1148,12 +1148,12 @@ void H265SegmentDecoder::GetEdgeStrength(Ipp32s tuQ, Ipp32s tuP, bool anotherCU,
 
     Ipp32s numRefsQ = 0;
     for (Ipp32s i = 0; i < 2; i++)
-        if (mvinfoQ->mvinfo[i].RefIdx >= 0)
+        if (mvinfoQ->m_refIdx[i] >= 0)
             numRefsQ++;
 
     Ipp32s numRefsP = 0;
     for (Ipp32s i = 0; i < 2; i++)
-        if (mvinfoP->mvinfo[i].RefIdx >= 0)
+        if (mvinfoP->m_refIdx[i] >= 0)
             numRefsP++;
 
     if (numRefsP != numRefsQ)
@@ -1164,32 +1164,32 @@ void H265SegmentDecoder::GetEdgeStrength(Ipp32s tuQ, Ipp32s tuP, bool anotherCU,
 
     if (numRefsQ == 2)
     {
-        if (((mvinfoQ->deltaPOC[REF_PIC_LIST_0] == mvinfoP->deltaPOC[REF_PIC_LIST_0]) &&
-            (mvinfoQ->deltaPOC[REF_PIC_LIST_1] == mvinfoP->deltaPOC[REF_PIC_LIST_1])) ||
-            ((mvinfoQ->deltaPOC[REF_PIC_LIST_0] == mvinfoP->deltaPOC[REF_PIC_LIST_1]) &&
-            (mvinfoQ->deltaPOC[REF_PIC_LIST_1] == mvinfoP->deltaPOC[REF_PIC_LIST_0])))
+        if (((mvinfoQ->m_pocDelta[REF_PIC_LIST_0] == mvinfoP->m_pocDelta[REF_PIC_LIST_0]) &&
+            (mvinfoQ->m_pocDelta[REF_PIC_LIST_1] == mvinfoP->m_pocDelta[REF_PIC_LIST_1])) ||
+            ((mvinfoQ->m_pocDelta[REF_PIC_LIST_0] == mvinfoP->m_pocDelta[REF_PIC_LIST_1]) &&
+            (mvinfoQ->m_pocDelta[REF_PIC_LIST_1] == mvinfoP->m_pocDelta[REF_PIC_LIST_0])))
         {
-            if (mvinfoP->deltaPOC[REF_PIC_LIST_0] != mvinfoP->deltaPOC[REF_PIC_LIST_1])
+            if (mvinfoP->m_pocDelta[REF_PIC_LIST_0] != mvinfoP->m_pocDelta[REF_PIC_LIST_1])
             {
-                if (mvinfoQ->deltaPOC[REF_PIC_LIST_0] == mvinfoP->deltaPOC[REF_PIC_LIST_0])
+                if (mvinfoQ->m_pocDelta[REF_PIC_LIST_0] == mvinfoP->m_pocDelta[REF_PIC_LIST_0])
                 {
-                    edge->strength = (MVIsnotEq(mvinfoQ->mvinfo[REF_PIC_LIST_0].MV, mvinfoP->mvinfo[REF_PIC_LIST_0].MV) |
-                        MVIsnotEq(mvinfoQ->mvinfo[REF_PIC_LIST_1].MV, mvinfoP->mvinfo[REF_PIC_LIST_1].MV)) ? 1 : 0;
+                    edge->strength = (MVIsnotEq(mvinfoQ->m_mv[REF_PIC_LIST_0], mvinfoP->m_mv[REF_PIC_LIST_0]) |
+                        MVIsnotEq(mvinfoQ->m_mv[REF_PIC_LIST_1], mvinfoP->m_mv[REF_PIC_LIST_1])) ? 1 : 0;
                     return;
                 }
                 else
                 {
-                    edge->strength = (MVIsnotEq(mvinfoQ->mvinfo[REF_PIC_LIST_0].MV, mvinfoP->mvinfo[REF_PIC_LIST_1].MV) |
-                        MVIsnotEq(mvinfoQ->mvinfo[REF_PIC_LIST_1].MV, mvinfoP->mvinfo[REF_PIC_LIST_0].MV)) ? 1 : 0;
+                    edge->strength = (MVIsnotEq(mvinfoQ->m_mv[REF_PIC_LIST_0], mvinfoP->m_mv[REF_PIC_LIST_1]) |
+                        MVIsnotEq(mvinfoQ->m_mv[REF_PIC_LIST_1], mvinfoP->m_mv[REF_PIC_LIST_0])) ? 1 : 0;
                     return;
                 }
             }
             else
             {
-                edge->strength = ((MVIsnotEq(mvinfoQ->mvinfo[REF_PIC_LIST_0].MV, mvinfoP->mvinfo[REF_PIC_LIST_0].MV) |
-                        MVIsnotEq(mvinfoQ->mvinfo[REF_PIC_LIST_1].MV, mvinfoP->mvinfo[REF_PIC_LIST_1].MV)) &&
-                        (MVIsnotEq(mvinfoQ->mvinfo[REF_PIC_LIST_0].MV, mvinfoP->mvinfo[REF_PIC_LIST_1].MV) |
-                        MVIsnotEq(mvinfoQ->mvinfo[REF_PIC_LIST_1].MV, mvinfoP->mvinfo[REF_PIC_LIST_0].MV)) ? 1 : 0);
+                edge->strength = ((MVIsnotEq(mvinfoQ->m_mv[REF_PIC_LIST_0], mvinfoP->m_mv[REF_PIC_LIST_0]) |
+                        MVIsnotEq(mvinfoQ->m_mv[REF_PIC_LIST_1], mvinfoP->m_mv[REF_PIC_LIST_1])) &&
+                        (MVIsnotEq(mvinfoQ->m_mv[REF_PIC_LIST_0], mvinfoP->m_mv[REF_PIC_LIST_1]) |
+                        MVIsnotEq(mvinfoQ->m_mv[REF_PIC_LIST_1], mvinfoP->m_mv[REF_PIC_LIST_0])) ? 1 : 0);
                 return;
             }
         }
@@ -1202,26 +1202,26 @@ void H265SegmentDecoder::GetEdgeStrength(Ipp32s tuQ, Ipp32s tuP, bool anotherCU,
         Ipp16s POCDeltaQ, POCDeltaP;
         H265MotionVector MVQ, MVP;
         
-        if (mvinfoQ->mvinfo[REF_PIC_LIST_0].RefIdx >= 0)
+        if (mvinfoQ->m_refIdx[REF_PIC_LIST_0] >= 0)
         {
-            POCDeltaQ = mvinfoQ->deltaPOC[REF_PIC_LIST_0];
-            MVQ = mvinfoQ->mvinfo[REF_PIC_LIST_0].MV;
+            POCDeltaQ = mvinfoQ->m_pocDelta[REF_PIC_LIST_0];
+            MVQ = mvinfoQ->m_mv[REF_PIC_LIST_0];
         }
         else
         {
-            POCDeltaQ = mvinfoQ->deltaPOC[REF_PIC_LIST_1];
-            MVQ = mvinfoQ->mvinfo[REF_PIC_LIST_1].MV;
+            POCDeltaQ = mvinfoQ->m_pocDelta[REF_PIC_LIST_1];
+            MVQ = mvinfoQ->m_mv[REF_PIC_LIST_1];
         }
 
-        if (mvinfoP->mvinfo[REF_PIC_LIST_0].RefIdx >= 0)
+        if (mvinfoP->m_refIdx[REF_PIC_LIST_0] >= 0)
         {
-            POCDeltaP = mvinfoP->deltaPOC[REF_PIC_LIST_0];
-            MVP = mvinfoP->mvinfo[REF_PIC_LIST_0].MV;
+            POCDeltaP = mvinfoP->m_pocDelta[REF_PIC_LIST_0];
+            MVP = mvinfoP->m_mv[REF_PIC_LIST_0];
         }
         else
         {
-            POCDeltaP = mvinfoP->deltaPOC[REF_PIC_LIST_1];
-            MVP = mvinfoP->mvinfo[REF_PIC_LIST_1].MV;
+            POCDeltaP = mvinfoP->m_pocDelta[REF_PIC_LIST_1];
+            MVP = mvinfoP->m_mv[REF_PIC_LIST_1];
         }
 
         if (POCDeltaQ == POCDeltaP)

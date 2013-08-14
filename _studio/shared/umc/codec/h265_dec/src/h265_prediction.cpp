@@ -231,8 +231,6 @@ void h265_PredictIntra_DC_Chroma_8u(
     Ipp32s l;
     H265PlanePtrUVCommon pDst = Dst;
    
-    Ipp32s dstStrideHalf = dstStride >> 1;
-    
     H265PlaneUVCommon dc1, dc2;
     Ipp32s Sum1 = 0, Sum2 = 0;
     for (Ipp32s Ind = 0; Ind < blkSize * 2; Ind += 2)
@@ -567,7 +565,6 @@ void H265Prediction::MotionCompensation(H265CodingUnit* pCU, Ipp32u AbsPartIdx, 
     for (Ipp32s PartIdx = 0, subPartIdx = AbsPartIdx; PartIdx < countPart; PartIdx++, subPartIdx += PUOffset)
     {
         H265PUInfo PUi;
-        H265MVInfo &MVi = PUi.interinfo;
 
         pCU->getPartIndexAndSize(AbsPartIdx, Depth, PartIdx, PUi.PartAddr, PUi.Width, PUi.Height);
         PUi.PartAddr += AbsPartIdx;
@@ -577,31 +574,28 @@ void H265Prediction::MotionCompensation(H265CodingUnit* pCU, Ipp32u AbsPartIdx, 
         Ipp32s PartX = LPelX >> m_context->m_sps->log2_min_transform_block_size;
         Ipp32s PartY = TPelY >> m_context->m_sps->log2_min_transform_block_size;
 
-        const H265FrameCodingData::ColocatedTUInfo &tuInfoL0 = m_context->m_frame->getCD()->GetTUInfo(REF_PIC_LIST_0, m_context->m_frame->getNumPartInCUSize() * m_context->m_frame->getFrameWidthInCU() * PartY + PartX);
-        const H265FrameCodingData::ColocatedTUInfo &tuInfoL1 = m_context->m_frame->getCD()->GetTUInfo(REF_PIC_LIST_1, m_context->m_frame->getNumPartInCUSize() * m_context->m_frame->getFrameWidthInCU() * PartY + PartX);
+        PUi.interinfo = m_context->m_frame->getCD()->GetTUInfo(m_context->m_frame->getNumPartInCUSize() * m_context->m_frame->getFrameWidthInCU() * PartY + PartX);
+        H265MVInfo &MVi = PUi.interinfo;
 
-        if (tuInfoL0.m_flags != COL_TU_INVALID_INTER)
+        VM_ASSERT(MVi.m_flags[REF_PIC_LIST_0] != COL_TU_INTRA);
+
+        Ipp32s RefIdx[2];
+
+        if (MVi.m_flags[REF_PIC_LIST_0] != COL_TU_INVALID_INTER)
         {
-            PUi.refFrame[REF_PIC_LIST_0] = tuInfoL0.m_refIdx >= 0 ? m_context->m_refPicList[REF_PIC_LIST_0][tuInfoL0.m_refIdx].refFrame : 0;
-            MVi.mvinfo[REF_PIC_LIST_0].MV = tuInfoL0.m_mv;
-            MVi.mvinfo[REF_PIC_LIST_0].RefIdx = tuInfoL0.m_refIdx;
+            RefIdx[REF_PIC_LIST_0] = MVi.m_refIdx[REF_PIC_LIST_0];
+            PUi.refFrame[REF_PIC_LIST_0] = MVi.m_refIdx[REF_PIC_LIST_0] >= 0 ? m_context->m_refPicList[REF_PIC_LIST_0][MVi.m_refIdx[REF_PIC_LIST_0]].refFrame : 0;
         }
         else
-            MVi.mvinfo[REF_PIC_LIST_0].RefIdx = -1;
+            RefIdx[REF_PIC_LIST_0] = -1;
 
-
-        if (tuInfoL1.m_flags != COL_TU_INVALID_INTER)
+        if (MVi.m_flags[REF_PIC_LIST_1] != COL_TU_INVALID_INTER)
         {
-            PUi.refFrame[REF_PIC_LIST_1] = tuInfoL1.m_refIdx >= 0 ? m_context->m_refPicList[REF_PIC_LIST_1][tuInfoL1.m_refIdx].refFrame : 0;
-            MVi.mvinfo[REF_PIC_LIST_1].MV = tuInfoL1.m_mv;
-            MVi.mvinfo[REF_PIC_LIST_1].RefIdx = tuInfoL1.m_refIdx;
+            RefIdx[REF_PIC_LIST_1] = MVi.m_refIdx[REF_PIC_LIST_1];
+            PUi.refFrame[REF_PIC_LIST_1] = MVi.m_refIdx[REF_PIC_LIST_1] >= 0 ? m_context->m_refPicList[REF_PIC_LIST_1][MVi.m_refIdx[REF_PIC_LIST_1]].refFrame : 0;
         }
         else
-            MVi.mvinfo[REF_PIC_LIST_1].RefIdx = -1;
-
-        Ipp32s RefIdx[2] = {-1, -1};
-        RefIdx[REF_PIC_LIST_0] = MVi.mvinfo[REF_PIC_LIST_0].RefIdx;
-        RefIdx[REF_PIC_LIST_1] = MVi.mvinfo[REF_PIC_LIST_1].RefIdx;
+            RefIdx[REF_PIC_LIST_1] = -1;
 
         VM_ASSERT(RefIdx[REF_PIC_LIST_0] >= 0 || RefIdx[REF_PIC_LIST_1] >= 0);
 
@@ -627,10 +621,10 @@ void H265Prediction::MotionCompensation(H265CodingUnit* pCU, Ipp32u AbsPartIdx, 
             if ( ! weighted_prediction )
             {
                 // Check if at least one ref doesn't require subsample interpolation to add average directly from pic
-                H265MotionVector MV = MVi.mvinfo[REF_PIC_LIST_0].MV;
+                H265MotionVector MV = MVi.m_mv[REF_PIC_LIST_0];
                 int mv_interp0 = (MV.Horizontal | MV.Vertical) & 7;
 
-                MV = MVi.mvinfo[REF_PIC_LIST_1].MV;
+                MV = MVi.m_mv[REF_PIC_LIST_1];
                 int mv_interp1 = (MV.Horizontal | MV.Vertical) & 7;
 
                 bOnlyOneIterpC = !( mv_interp0 && mv_interp1 );
@@ -714,9 +708,9 @@ void H265Prediction::MotionCompensation(H265CodingUnit* pCU, Ipp32u AbsPartIdx, 
 bool H265Prediction::CheckIdenticalMotion(H265CodingUnit* pCU, H265PUInfo &PUi)
 {
     if(pCU->m_SliceHeader->slice_type == B_SLICE && !m_context->m_pps->weighted_bipred_flag &&
-        PUi.interinfo.mvinfo[REF_PIC_LIST_0].RefIdx >= 0 && PUi.interinfo.mvinfo[REF_PIC_LIST_1].RefIdx >= 0 &&
+        PUi.interinfo.m_refIdx[REF_PIC_LIST_0] >= 0 && PUi.interinfo.m_refIdx[REF_PIC_LIST_1] >= 0 &&
         PUi.refFrame[REF_PIC_LIST_0] == PUi.refFrame[REF_PIC_LIST_1] &&
-        PUi.interinfo.mvinfo[REF_PIC_LIST_0].MV == PUi.interinfo.mvinfo[REF_PIC_LIST_1].MV)
+        PUi.interinfo.m_mv[REF_PIC_LIST_0] == PUi.interinfo.m_mv[REF_PIC_LIST_1])
         return true;
     else
         return false;
@@ -726,12 +720,12 @@ template <EnumTextType c_plane_type >
 static void PrepareInterpSrc( H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicList RefPicList,
                               IppVCInterpolateBlock_8u& interpolateInfo, Ipp8u* temp_interpolarion_buffer )
 {
-    VM_ASSERT(PUi.interinfo.mvinfo[RefPicList].RefIdx >= 0);
+    VM_ASSERT(PUi.interinfo.m_refIdx[RefPicList] >= 0);
 
     Ipp32u PartAddr = PUi.PartAddr;
     Ipp32s Width = PUi.Width;
     Ipp32s Height = PUi.Height;
-    H265MotionVector MV = PUi.interinfo.mvinfo[RefPicList].MV;
+    H265MotionVector MV = PUi.interinfo.m_mv[RefPicList];
     H265DecoderFrame *PicYUVRef = PUi.refFrame[RefPicList];
 
     Ipp32s in_SrcPitch = (c_plane_type == TEXT_CHROMA) ? PicYUVRef->pitch_chroma() : PicYUVRef->pitch_luma();
@@ -817,7 +811,7 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
     Ipp16s offset = c_bi ? 0 : 32;
 
     const Ipp32s low_bits_mask = ( c_plane_type == TEXT_CHROMA ) ? 7 : 3;
-    H265MotionVector MV = PUi.interinfo.mvinfo[RefPicList].MV; 
+    H265MotionVector MV = PUi.interinfo.m_mv[RefPicList];
     Ipp32s in_dx = MV.Horizontal & low_bits_mask;
     Ipp32s in_dy = MV.Vertical & low_bits_mask;
 
