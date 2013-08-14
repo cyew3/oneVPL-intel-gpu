@@ -630,6 +630,7 @@ mfxStatus MFXVideoENCODEMJPEG::MJPEGENCODECompleteProc(void *pState, void *pPara
     if(surf)
     {
         pTask->bs->TimeStamp = surf->Data.TimeStamp;
+        pTask->bs->DecodeTimeStamp = surf->Data.TimeStamp;
         obj.m_core->DecreaseReference(&(surf->Data));
     }
 
