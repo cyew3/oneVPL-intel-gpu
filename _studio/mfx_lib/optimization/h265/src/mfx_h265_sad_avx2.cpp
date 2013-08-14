@@ -63,8 +63,8 @@
 #define SAD_PARAMETERS_LIST const unsigned char *image,  const unsigned char *block, int img_stride, int block_stride
 
 #define SAD_PARAMETERS_LOAD const int lx1 = img_stride; \
-    const uint8_t *__restrict blk1 = image; \
-    const uint8_t *__restrict blk2 = block
+    const Ipp8u *__restrict blk1 = image; \
+    const Ipp8u *__restrict blk2 = block
 
 #else
 
@@ -79,8 +79,8 @@ struct sad_pars
 
 #define SAD_PARAMETERS_LOAD const int lx1 = pars->img_stride; \
     const int block_stride = pars->block_stride; \
-    const uint8_t *__restrict blk1 = image; \
-    const uint8_t *__restrict blk2 = pars->block
+    const Ipp8u *__restrict blk1 = image; \
+    const Ipp8u *__restrict blk2 = pars->block
 
 #endif
 
@@ -1157,7 +1157,7 @@ int SAD_CALLING_CONVENTION SAD_24x32_avx2(SAD_PARAMETERS_LIST)
 {
     SAD_PARAMETERS_LOAD;
 
-    if( (blk2 - (uint8_t *)0) & 15 )
+    if( (blk2 - (Ipp8u *)0) & 15 )
     {
         // 8-byte aligned
 
@@ -1495,7 +1495,7 @@ int SAD_CALLING_CONVENTION SAD_48x64_avx2(SAD_PARAMETERS_LIST) //OK
 {
     SAD_PARAMETERS_LOAD;
 
-    if( (blk2 - (uint8_t *)0) & 31 )
+    if( (blk2 - (Ipp8u *)0) & 31 )
     {
         __m256i s1 = _mm256_lddqu_si256( (const __m256i *) (blk1 + 16));
         __m256i s2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + 16 + lx1));

@@ -1129,7 +1129,7 @@ int SAD_CALLING_CONVENTION SAD_24x32_general_avx2(SAD_PARAMETERS_LIST)
 {
     SAD_PARAMETERS_LOAD;
 
-    if( (blk2 - (uint8_t *)0) & 15 )
+    if( (blk2 - (Ipp8u *)0) & 15 )
     {
         // 8-byte aligned
 
@@ -1467,7 +1467,7 @@ int SAD_CALLING_CONVENTION SAD_48x64_general_avx2(SAD_PARAMETERS_LIST) //OK
 {
     SAD_PARAMETERS_LOAD;
 
-    if( (blk2 - (uint8_t *)0) & 31 )
+    if( (blk2 - (Ipp8u *)0) & 31 )
     {
         __m256i s1 = _mm256_lddqu_si256( (const __m256i *) (blk1 + 16));
         __m256i s2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + 16 + lx1));
