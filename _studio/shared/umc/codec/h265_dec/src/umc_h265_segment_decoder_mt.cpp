@@ -278,7 +278,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::DecRecSegment(H265Task & task)
     {
         SliceType slice_type = m_pSlice->GetSliceHeader()->slice_type;
 
-        if (m_pSlice->GetPicParam()->cabac_init_present_flag && m_pSlice->GetSliceHeader()->m_CabacInitFlag)
+        if (m_pSlice->GetPicParam()->cabac_init_present_flag && m_pSlice->GetSliceHeader()->cabac_init_flag)
         {
             switch (slice_type)
             {
@@ -351,7 +351,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(H265Task & )
     m_pSlice->GetBitStream()->InitializeDecodingEngine_CABAC();
     m_pSlice->InitializeContexts();
     
-    if (m_pSlice->getDependentSliceSegmentFlag())
+    if (m_pSliceHeader->dependent_slice_segment_flag)
     {
         Ipp32s CUAddr = m_pCurrentFrame->m_CodingData->getCUOrderMap(iFirstCU);
 

@@ -294,7 +294,7 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
         if(rps->getUsed(index))
             pocList[numRefPicSetStCurrBefore + numRefPicSetStCurrAfter++] = pPicParam->CurrPicOrderCntVal + rps->getDeltaPOC(index);
 
-    int num_ref_frames = pSeqParamSet->sps_max_dec_pic_buffering[pSlice->getTLayer()];
+    int num_ref_frames = pSeqParamSet->sps_max_dec_pic_buffering[pSlice->GetSliceHeader()->nuh_temporal_id];
 
     pPicParam->sps_max_dec_pic_buffering_minus1 = (UCHAR)(num_ref_frames - 1);
 
@@ -424,7 +424,7 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
 
     //pPicParam->CollocatedRefIdx.Index7bits          = (UCHAR)(pSlice->getSliceType() != I_SLICE ? pSlice->getColRefIdx() : -1 );
     //pPicParam->PicShortFormatFlags.fields.deblocking_filter_control_present_flag     = pPicParamSet->getDeblockingFilterControlPresentFlag() ? 1 : 0 ;
-    //pPicParam->PicShortFormatFlags.fields.slice_temporal_mvp_enabled_flag            = pSlice->getEnableTMVPFlag() ? 1 : 0 ;
+    //pPicParam->PicShortFormatFlags.fields.slice_temporal_mvp_enabled_flag            = pSlice->GetSliceHeader()->slice_enable_temporal_mvp_flag ? 1 : 0 ;
     //for(unsigned k=0;k < 32 && k < pSeqParamSet->getNumLongTermRefPicSPS();k++)
     //    pPicParam->lt_ref_pic_poc_lsb_sps[k] = (USHORT)pSeqParamSet->getLtRefPicPocLsbSps(k);
     //pPicParam->used_by_curr_pic_lt_sps_flags        = (UINT)0;
@@ -537,7 +537,7 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
 
     //
     //
-    pPicParam->sps_max_dec_pic_buffering_minus1             = (UCHAR)(pSeqParamSet->sps_max_dec_pic_buffering[pSlice->getTLayer()] - 1);
+    pPicParam->sps_max_dec_pic_buffering_minus1             = (UCHAR)(pSeqParamSet->sps_max_dec_pic_buffering[pSlice->GetSliceHeader()->nuh_temporal_id] - 1);
     pPicParam->log2_min_luma_coding_block_size_minus3       = (UCHAR)(pSeqParamSet->log2_min_luma_coding_block_size- 3);
     pPicParam->log2_diff_max_min_transform_block_size       = (UCHAR)(pSeqParamSet->log2_max_transform_block_size - pSeqParamSet->log2_min_transform_block_size);
     pPicParam->log2_min_transform_block_size_minus2         = (UCHAR)(pSeqParamSet->log2_min_transform_block_size - 2);
@@ -684,9 +684,9 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
         pDXVASlice->LongSliceFlags.fields.color_plane_id                                = 0; // field is left for future expansion
         pDXVASlice->LongSliceFlags.fields.slice_sao_luma_flag                           = (UINT)pSlice->GetSliceHeader()->slice_sao_luma_flag; 
         pDXVASlice->LongSliceFlags.fields.slice_sao_chroma_flag                         = (UINT)pSlice->GetSliceHeader()->slice_sao_chroma_flag;
-        pDXVASlice->LongSliceFlags.fields.mvd_l1_zero_flag                              = (UINT)pSlice->getMvdL1ZeroFlag();
-        pDXVASlice->LongSliceFlags.fields.cabac_init_flag                               = (UINT)pSlice->getCabacInitFlag();
-        pDXVASlice->LongSliceFlags.fields.slice_temporal_mvp_enabled_flag               = (UINT)pSlice->getEnableTMVPFlag();
+        pDXVASlice->LongSliceFlags.fields.mvd_l1_zero_flag                              = (UINT)pSlice->GetSliceHeader()->mvd_l1_zero_flag;
+        pDXVASlice->LongSliceFlags.fields.cabac_init_flag                               = (UINT)pSlice->GetSliceHeader()->cabac_init_flag;
+        pDXVASlice->LongSliceFlags.fields.slice_temporal_mvp_enabled_flag               = (UINT)pSlice->GetSliceHeader()->slice_enable_temporal_mvp_flag;
         pDXVASlice->LongSliceFlags.fields.slice_deblocking_filter_disabled_flag         = (UINT)pSlice->GetSliceHeader()->m_deblockingFilterDisable;
         pDXVASlice->LongSliceFlags.fields.collocated_from_l0_flag                       = (UINT)pSlice->getColFromL0Flag();
         pDXVASlice->LongSliceFlags.fields.slice_loop_filter_across_slices_enabled_flag  = (UINT)pPicParamSet->pps_loop_filter_across_slices_enabled_flag;
@@ -737,8 +737,8 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
             }
         }
 
-        pDXVASlice->five_minus_max_num_merge_cand = (UCHAR)(5 - pSlice->getMaxNumMergeCand());
-        pDXVASlice->num_entry_point_offsets       = pSlice->getNumEntryPointOffsets();
+        pDXVASlice->five_minus_max_num_merge_cand = (UCHAR)(5 - pSlice->GetSliceHeader()->max_num_merge_cand);
+        pDXVASlice->num_entry_point_offsets       = pSlice->GetSliceHeader()->num_entry_point_offsets;
     }
 
     // copy slice data to slice data buffer
@@ -804,15 +804,15 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
         //
 
         pDXVASlice->LongSliceFlags.fields.LastSliceOfPic                                = isLastSlice;
-        pDXVASlice->LongSliceFlags.fields.dependent_slice_segment_flag                  = (UINT)pSlice->getDependentSliceSegmentFlag();   // dependent_slices_enabled_flag
+        pDXVASlice->LongSliceFlags.fields.dependent_slice_segment_flag                  = (UINT)pSlice->GetSliceHeader()->dependent_slice_segment_flag;   // dependent_slices_enabled_flag
         pDXVASlice->LongSliceFlags.fields.slice_type                                    = (UINT)pSlice->getSliceType();
         pDXVASlice->LongSliceFlags.fields.color_plane_id                                = 0; // field is left for future expansion
         pDXVASlice->LongSliceFlags.fields.slice_sao_luma_flag                           = (UINT)pSlice->GetSliceHeader()->slice_sao_luma_flag; 
         pDXVASlice->LongSliceFlags.fields.slice_sao_chroma_flag                         = (UINT)pSlice->GetSliceHeader()->slice_sao_chroma_flag;
-        pDXVASlice->LongSliceFlags.fields.mvd_l1_zero_flag                              = (UINT)pSlice->getMvdL1ZeroFlag();
-        pDXVASlice->LongSliceFlags.fields.cabac_init_flag                               = (UINT)pSlice->getCabacInitFlag();
-        pDXVASlice->LongSliceFlags.fields.slice_temporal_mvp_enabled_flag               = (UINT)pSlice->getEnableTMVPFlag();
-        pDXVASlice->LongSliceFlags.fields.slice_deblocking_filter_disabled_flag         = (UINT)pSlice->GetSliceHeader()->m_deblockingFilterDisable;
+        pDXVASlice->LongSliceFlags.fields.mvd_l1_zero_flag                              = (UINT)pSlice->GetSliceHeader()->mvd_l1_zero_flag;
+        pDXVASlice->LongSliceFlags.fields.cabac_init_flag                               = (UINT)pSlice->GetSliceHeader()->cabac_init_flag;
+        pDXVASlice->LongSliceFlags.fields.slice_temporal_mvp_enabled_flag               = (UINT)pSlice->GetSliceHeader()->slice_enable_temporal_mvp_flag;
+        pDXVASlice->LongSliceFlags.fields.slice_deblocking_filter_disabled_flag         = (UINT)pSlice->GetSliceHeader()->slice_deblocking_filter_disabled_flag;
         pDXVASlice->LongSliceFlags.fields.collocated_from_l0_flag                       = (UINT)pSlice->getColFromL0Flag();
         pDXVASlice->LongSliceFlags.fields.slice_loop_filter_across_slices_enabled_flag  = (UINT)pPicParamSet->pps_loop_filter_across_slices_enabled_flag;
 
@@ -865,7 +865,7 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
             }
         }
 
-        pDXVASlice->five_minus_max_num_merge_cand = (UCHAR)(5 - pSlice->getMaxNumMergeCand());
+        pDXVASlice->five_minus_max_num_merge_cand = (UCHAR)(5 - pSlice->GetSliceHeader()->max_num_merge_cand);
     }
     else
     {

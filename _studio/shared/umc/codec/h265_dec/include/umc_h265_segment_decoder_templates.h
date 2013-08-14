@@ -240,7 +240,7 @@ public:
         UMC::Status umcRes = UMC::UMC_OK;
         Ipp32s rsCUAddr = sd->m_pCurrentFrame->m_CodingData->getCUOrderMap(curCUAddr);
 
-        if (!sd->m_pSlice->getDependentSliceSegmentFlag())
+        if (!sd->m_pSliceHeader->dependent_slice_segment_flag)
             sd->m_context->ResetRowBuffer();
 
         for (;;)

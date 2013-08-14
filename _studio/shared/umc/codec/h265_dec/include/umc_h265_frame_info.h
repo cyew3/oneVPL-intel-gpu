@@ -66,8 +66,8 @@ public:
         const H265SliceHeader &sliceHeader = *(pSlice->GetSliceHeader());
 
         m_isIntraAU = m_isIntraAU && (sliceHeader.slice_type == I_SLICE);
-        m_hasDependentSliceSegments = m_hasDependentSliceSegments || pSlice->getDependentSliceSegmentFlag();
-        m_isNeedDeblocking = m_isNeedDeblocking || (!pSlice->GetSliceHeader()->m_deblockingFilterDisable);
+        m_hasDependentSliceSegments = m_hasDependentSliceSegments || sliceHeader.dependent_slice_segment_flag;
+        m_isNeedDeblocking = m_isNeedDeblocking || (!sliceHeader.slice_deblocking_filter_disabled_flag);
         m_isNeedSAO = m_isNeedSAO || !pSlice->m_bSAOed;
         m_hasTiles = pSlice->GetPicParam()->getNumTiles() > 1;
     }
@@ -194,7 +194,7 @@ public:
             pSlice->m_bDeblocked = true;
             pSlice->m_processVacant[DEB_PROCESS_ID] = 0;
             pSlice->m_curMBToProcess[DEB_PROCESS_ID] = pSlice->m_iMaxMB;
-            pSlice->GetSliceHeader()->m_deblockingFilterDisable = true;
+            pSlice->GetSliceHeader()->slice_deblocking_filter_disabled_flag = true;
         }
     }
 

@@ -211,9 +211,6 @@ public:  // DEBUG !!!! should remove dependence
 public:
 
     // refcodec compatibility
-    unsigned getSPSId() const   { return 0; }
-    void setPPSId(Ipp32u val)     { m_SliceHeader.pic_parameter_set_id = (Ipp16u)val; }
-
     const H265PicParamSet *getPPS() const { return m_pPicParamSet; }
     void setPPS(const H265PicParamSet *pps)     { m_pPicParamSet = pps; }
     const H265SeqParamSet *getSPS() const { return m_pSeqParamSet; }
@@ -221,8 +218,6 @@ public:
 
     void setSliceCurStartCUAddr(unsigned val)           { m_SliceHeader.SliceCurStartCUAddr = val; }
     void setSliceCurEndCUAddr(unsigned val)             { m_SliceHeader.SliceCurEndCUAddr = val; }
-    void setDependentSliceSegmentFlag(bool val)                { m_SliceHeader.m_DependentSliceSegmentFlag = val; }
-    bool getDependentSliceSegmentFlag(void)                    { return m_SliceHeader.m_DependentSliceSegmentFlag; }
     void setSliceSegmentCurStartCUAddr    ( unsigned uiAddr )     { m_SliceHeader.m_sliceSegmentCurStartCUAddr = uiAddr;    }
     unsigned getSliceSegmentCurStartCUAddr    ()                  { return m_SliceHeader.m_sliceSegmentCurStartCUAddr;      }
     void setSliceSegmentCurEndCUAddr      ( unsigned uiAddr )     { m_SliceHeader.m_sliceSegmentCurEndCUAddr = uiAddr;      }
@@ -233,21 +228,14 @@ public:
     SliceType getSliceType() const                      { return m_SliceHeader.slice_type; }
     void setSliceType(SliceType val)                    { m_SliceHeader.slice_type = val; }
 
-    bool getPicOutputFlag() const           { return m_SliceHeader.pic_output_flag; }
-    void setPicOutputFlag(bool f)           { m_SliceHeader.pic_output_flag = f; }
-
     NalUnitType getNalUnitType() const              { return m_SliceHeader.nal_unit_type; }
     bool getIdrPicFlag()                            { return getNalUnitType() == NAL_UT_CODED_SLICE_IDR || getNalUnitType() == NAL_UT_CODED_SLICE_IDR_N_LP; }
 
-    unsigned getTLayer() const          { return m_SliceHeader.m_nuh_temporal_id;     }
-    unsigned getMaxTLayers()            { return m_SliceHeader.m_uMaxTLayers; }
-    void setMaxTLayers(unsigned val)    { /*VA_ASSERT( val <= MAX_TLAYER ); */m_SliceHeader.m_uMaxTLayers = val; }
-
-    int getPOC() const  { return  m_SliceHeader.pic_order_cnt_lsb; }
+    int getPOC() const  { return  m_SliceHeader.slice_pic_order_cnt_lsb; }
     void setPOC (int i)
     {
-        m_SliceHeader.pic_order_cnt_lsb = i;
-        if (getTLayer() == 0)
+        m_SliceHeader.slice_pic_order_cnt_lsb = i;
+        if (m_SliceHeader.nuh_temporal_id == 0)
             m_prevPOC = i;
     }
 
@@ -263,36 +251,19 @@ public:
     int getNumRefIdx(EnumRefPicList e) const    { return m_SliceHeader.m_numRefIdx[e]; }
     void setNumRefIdx(EnumRefPicList e, int i)  { m_SliceHeader.m_numRefIdx[e] = i; }
 
-    bool getEnableTMVPFlag() const              { return m_SliceHeader.m_enableTMVPFlag; }
-    void setEnableTMVPFlag(bool f)              { m_SliceHeader.m_enableTMVPFlag = f; }
-
     RefPicListModification* getRefPicListModification() { return &m_SliceHeader.m_RefPicListModification; }
 
     int getNumRpsCurrTempList() const;
 
-    bool getMvdL1ZeroFlag() const   { return m_SliceHeader.m_MvdL1Zero; }
-    void setMvdL1ZeroFlag(bool f)   { m_SliceHeader.m_MvdL1Zero = f; }
-    bool getCabacInitFlag() const   { return m_SliceHeader.m_CabacInitFlag; }
-    void setCabacInitFlag(bool f)   { m_SliceHeader.m_CabacInitFlag = f; }
-
-    void setDeblockingFilterOverrideFlag( bool b )           { m_SliceHeader.m_deblockingFilterOverrideFlag = b; }
-    bool getDeblockingFilterOverrideFlag()           { return m_SliceHeader.m_deblockingFilterOverrideFlag; }
-
     unsigned getColFromL0Flag() const      { return m_SliceHeader.collocated_from_l0_flag; }
     void setColFromL0Flag(unsigned val)    { m_SliceHeader.collocated_from_l0_flag = val; }
-    unsigned getColRefIdx() const   { return m_SliceHeader.m_ColRefIdx; }
-    void setColRefIdx(unsigned val) { m_SliceHeader.m_ColRefIdx = val; }
+    unsigned getColRefIdx() const   { return m_SliceHeader.collocated_ref_idx; }
+    void setColRefIdx(unsigned val) { m_SliceHeader.collocated_ref_idx = val; }
 
     void initWpScaling()    { initWpScaling(m_SliceHeader.m_weightPredTable); }
     void initWpScaling(wpScalingParam  wp[2][MAX_NUM_REF_PICS][3]);
     void getWpScaling(EnumRefPicList e, int iRefIdx, wpScalingParam *&wp) { wp = m_SliceHeader.m_weightPredTable[e][iRefIdx]; }
     void getWpScaling(int e, int iRefIdx, wpScalingParam *&wp) { wp = m_SliceHeader.m_weightPredTable[e][iRefIdx]; }
-
-    unsigned getMaxNumMergeCand() const     { return m_SliceHeader.m_MaxNumMergeCand; }
-    void setMaxNumMergeCand(unsigned val)   { m_SliceHeader.m_MaxNumMergeCand = val; }
-
-    int  getNumEntryPointOffsets() const   { return m_SliceHeader.m_numEntryPointOffsets; }
-    void setNumEntryPointOffsets(int val)  { m_SliceHeader.m_numEntryPointOffsets = val;  }
 
     Ipp32s getTileLocationCount() const   { return m_SliceHeader.m_TileCount; }
     void setTileLocationCount(Ipp32s val)
@@ -346,10 +317,10 @@ bool IsPictureTheSame(H265Slice *pSliceOne, H265Slice *pSliceTwo)
     if (/*(pOne->SliceCurStartCUAddr == pTwo->SliceCurStartCUAddr) ||
         (pOne->m_sliceSegmentCurStartCUAddr == pTwo->m_sliceSegmentCurStartCUAddr) ||
         (pOne->m_sliceAddr == pTwo->m_sliceAddr) ||*/
-        (pOne->pic_parameter_set_id != pTwo->pic_parameter_set_id))
+        (pOne->slice_pic_parameter_set_id != pTwo->slice_pic_parameter_set_id))
         return false;
 
-    if (pOne->pic_order_cnt_lsb != pTwo->pic_order_cnt_lsb)
+    if (pOne->slice_pic_order_cnt_lsb != pTwo->slice_pic_order_cnt_lsb)
         return false;
 
     return true;

@@ -72,7 +72,7 @@ void DecodingContext::Init(H265Slice *slice)
     m_refPicList[0] = m_frame->GetRefPicList(sliceNum, REF_PIC_LIST_0)->m_refPicList;
     m_refPicList[1] = m_frame->GetRefPicList(sliceNum, REF_PIC_LIST_1)->m_refPicList;
 
-    if (m_needToSplitDecAndRec && !slice->getDependentSliceSegmentFlag())
+    if (m_needToSplitDecAndRec && !slice->GetSliceHeader()->dependent_slice_segment_flag)
         ResetRowBuffer();
 
     m_mvsDistortion = 0;
@@ -736,7 +736,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
         Ipp8u InterDirNeighbours[MERGE_MAX_NUM_CAND];
         Ipp32s numValidMergeCand = 0;
 
-        for (Ipp32s ui = 0; ui < pCU->m_SliceHeader->m_MaxNumMergeCand; ++ui)
+        for (Ipp32s ui = 0; ui < pCU->m_SliceHeader->max_num_merge_cand; ++ui)
         {
             InterDirNeighbours[ui] = 0;
         }
@@ -1018,7 +1018,7 @@ Ipp32u H265SegmentDecoder::DecodeMergeIndexCABAC(void)
 {
     Ipp32u NumCand = MERGE_MAX_NUM_CAND;
     Ipp32u UnaryIdx = 0;
-    NumCand = m_pSliceHeader->m_MaxNumMergeCand;
+    NumCand = m_pSliceHeader->max_num_merge_cand;
 
     if (NumCand >= 1)
     {
@@ -1356,7 +1356,7 @@ bool H265SegmentDecoder::DecodePUWiseCABAC(H265CodingUnit* pCU, Ipp32u AbsPartId
     MVBuffer MvBufferNeighbours[MERGE_MAX_NUM_CAND << 1]; // double length for mv of both lists
     Ipp8u InterDirNeighbours[MERGE_MAX_NUM_CAND];
 
-    for (Ipp32s ui = 0; ui < pCU->m_SliceHeader->m_MaxNumMergeCand; ui++ )
+    for (Ipp32s ui = 0; ui < pCU->m_SliceHeader->max_num_merge_cand; ui++ )
     {
         InterDirNeighbours[ui] = 0;
     }
@@ -1520,7 +1520,7 @@ void H265SegmentDecoder::DecodeMVdPUCABAC(EnumRefPicList RefList, H265MotionVect
         Ipp32s HorAbs, VerAbs;
         Ipp32u HorSign = 0, VerSign = 0;
 
-        if (m_pSliceHeader->m_MvdL1Zero && RefList == REF_PIC_LIST_1 && InterDir == 3)
+        if (m_pSliceHeader->mvd_l1_zero_flag && RefList == REF_PIC_LIST_1 && InterDir == 3)
         {
             HorAbs = 0;
             VerAbs = 0;
@@ -1946,7 +1946,7 @@ bool H265SegmentDecoder::DecodeSliceEnd(H265CodingUnit* pCU, Ipp32u AbsPartIdx, 
     }
     if (IsLast)
     {
-        if (pSliceHeader->m_DependentSliceSegmentFlag)
+        if (pSliceHeader->dependent_slice_segment_flag)
         {
             pSliceHeader->m_sliceSegmentCurEndCUAddr = pCU->getSCUAddr() + AbsPartIdx + CurNumParts;
         }
@@ -2890,7 +2890,7 @@ void H265SegmentDecoder::UpdatePUInfo(H265CodingUnit *pCU, Ipp32u PartX, Ipp32u 
     info.data = 0;
     info.members.IsAvailable = 1;
 
-    if (!m_pSliceHeader->m_deblockingFilterDisable)
+    if (!m_pSliceHeader->slice_deblocking_filter_disabled_flag)
     {
         for (Ipp32s y = 0; y < PartHeight - 1; y++)
             for (Ipp32s x = 0; x < PartWidth - 1; x++)
@@ -2932,7 +2932,7 @@ void H265SegmentDecoder::UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPa
     info.members.IsTrCbfY = isTrCbfY;
     Ipp32u data = info.data;
 
-    if (!m_pSliceHeader->m_deblockingFilterDisable || info.members.IsIntra)
+    if (!m_pSliceHeader->slice_deblocking_filter_disabled_flag || info.members.IsIntra)
     {
         // Fill up inside of whole CU to predict intra parts inside of it
         for (Ipp32s y = YInc; y < YInc + PartSize - 1; y++)
@@ -2951,7 +2951,7 @@ void H265SegmentDecoder::UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPa
 
 void H265SegmentDecoder::UpdateNeighborDecodedQP(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    if (!m_pSliceHeader->m_deblockingFilterDisable)
+    if (!m_pSliceHeader->slice_deblocking_filter_disabled_flag)
     {
         Ipp32s XInc = pCU->m_rasterToPelX[AbsPartIdx] >> m_pSeqParamSet->log2_min_transform_block_size;
         Ipp32s YInc = pCU->m_rasterToPelY[AbsPartIdx] >> m_pSeqParamSet->log2_min_transform_block_size;
@@ -3127,7 +3127,7 @@ void H265SegmentDecoder::getInterMergeCandidates(H265CodingUnit *pCU, Ipp32u Abs
 {
     VM_ASSERT(pCU->m_AbsIdxInLCU == 0);
 
-    numValidMergeCand = m_pSliceHeader->m_MaxNumMergeCand;
+    numValidMergeCand = m_pSliceHeader->max_num_merge_cand;
     bool CandIsInter[MERGE_MAX_NUM_CAND];
     for (Ipp32s ind = 0; ind < numValidMergeCand; ++ind)
     {
@@ -3166,7 +3166,7 @@ void H265SegmentDecoder::getInterMergeCandidates(H265CodingUnit *pCU, Ipp32u Abs
         UPDATE_MV_INFO(leftAddr);
     }
 
-    if (Count == m_pSliceHeader->m_MaxNumMergeCand)
+    if (Count == m_pSliceHeader->max_num_merge_cand)
         return;
 
     // above
@@ -3180,7 +3180,7 @@ void H265SegmentDecoder::getInterMergeCandidates(H265CodingUnit *pCU, Ipp32u Abs
         UPDATE_MV_INFO(aboveAddr);
     }
 
-    if (Count == m_pSliceHeader->m_MaxNumMergeCand)
+    if (Count == m_pSliceHeader->max_num_merge_cand)
         return;
 
     // above right
@@ -3193,7 +3193,7 @@ void H265SegmentDecoder::getInterMergeCandidates(H265CodingUnit *pCU, Ipp32u Abs
         UPDATE_MV_INFO(aboveRightAddr);
     }
 
-    if (Count == m_pSliceHeader->m_MaxNumMergeCand)
+    if (Count == m_pSliceHeader->max_num_merge_cand)
         return;
 
     // left bottom
@@ -3207,7 +3207,7 @@ void H265SegmentDecoder::getInterMergeCandidates(H265CodingUnit *pCU, Ipp32u Abs
     }
 
     // early termination
-    if (Count == m_pSliceHeader->m_MaxNumMergeCand)
+    if (Count == m_pSliceHeader->max_num_merge_cand)
         return;
 
     // above left
@@ -3226,10 +3226,10 @@ void H265SegmentDecoder::getInterMergeCandidates(H265CodingUnit *pCU, Ipp32u Abs
     }
 
     // early termination
-    if (Count == m_pSliceHeader->m_MaxNumMergeCand)
+    if (Count == m_pSliceHeader->max_num_merge_cand)
         return;
 
-    if (m_pSliceHeader->m_enableTMVPFlag)
+    if (m_pSliceHeader->slice_enable_temporal_mvp_flag)
     {
         Ipp32u bottomRightPartX = PartX + PartWidth;
         Ipp32u bottomRightPartY = PartY + PartHeight;
@@ -3291,7 +3291,7 @@ void H265SegmentDecoder::getInterMergeCandidates(H265CodingUnit *pCU, Ipp32u Abs
     }
 
     // early termination
-    if (Count == m_pSliceHeader->m_MaxNumMergeCand)
+    if (Count == m_pSliceHeader->max_num_merge_cand)
         return;
 
     Ipp32s ArrayAddr = Count;
@@ -3299,7 +3299,7 @@ void H265SegmentDecoder::getInterMergeCandidates(H265CodingUnit *pCU, Ipp32u Abs
 
     if (m_pSliceHeader->slice_type == B_SLICE)
     {
-        for (Ipp32s idx = 0; idx < Cutoff * (Cutoff - 1) && ArrayAddr != m_pSliceHeader->m_MaxNumMergeCand; idx++)
+        for (Ipp32s idx = 0; idx < Cutoff * (Cutoff - 1) && ArrayAddr != m_pSliceHeader->max_num_merge_cand; idx++)
         {
             Ipp32s i = PriorityList0[idx];
             Ipp32s j = PriorityList1[idx];
@@ -3327,14 +3327,14 @@ void H265SegmentDecoder::getInterMergeCandidates(H265CodingUnit *pCU, Ipp32u Abs
     }
 
     // early termination
-    if (Count == m_pSliceHeader->m_MaxNumMergeCand)
+    if (Count == m_pSliceHeader->max_num_merge_cand)
         return;
 
     Ipp32s numRefIdx = (m_pSliceHeader->slice_type == B_SLICE) ? IPP_MIN(m_pSliceHeader->m_numRefIdx[REF_PIC_LIST_0], m_pSliceHeader->m_numRefIdx[REF_PIC_LIST_1]) : m_pSliceHeader->m_numRefIdx[REF_PIC_LIST_0];
     Ipp8s r = 0;
     Ipp32s refcnt = 0;
 
-    while (ArrayAddr < m_pSliceHeader->m_MaxNumMergeCand)
+    while (ArrayAddr < m_pSliceHeader->max_num_merge_cand)
     {
         CandIsInter[ArrayAddr] = true;
         InterDirNeighbours[ArrayAddr] = 1;
@@ -3453,7 +3453,7 @@ void H265SegmentDecoder::fillMVPCand(H265CodingUnit *pCU, Ipp32u AbsPartIdx, Ipp
         }
     }
 
-    if (m_pSliceHeader->m_enableTMVPFlag)
+    if (m_pSliceHeader->slice_enable_temporal_mvp_flag)
     {
         Ipp32u bottomRightPartX = PartX + PartWidth;
         Ipp32u bottomRightPartY = PartY + PartHeight;
@@ -3597,7 +3597,7 @@ bool H265SegmentDecoder::GetColMVP(EnumRefPicList refPicListIdx, Ipp32u PartX, I
     }
 
     EnumRefPicList colPicListIdx = EnumRefPicList((B_SLICE == m_pSliceHeader->slice_type) ? 1 - m_pSliceHeader->collocated_from_l0_flag : 0);
-    H265DecoderFrame *colPic = m_pRefPicList[colPicListIdx][m_pSliceHeader->m_ColRefIdx].refFrame;
+    H265DecoderFrame *colPic = m_pRefPicList[colPicListIdx][m_pSliceHeader->collocated_ref_idx].refFrame;
     Ipp32u colocatedPartNumber = PartY * m_pCurrentFrame->getNumPartInCUSize() * m_pCurrentFrame->getFrameWidthInCU() + PartX;
 
     // Intra mode is marked in ref list 0 only

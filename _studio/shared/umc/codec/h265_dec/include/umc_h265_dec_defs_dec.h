@@ -1015,8 +1015,8 @@ struct H265PicParamSetBase
     bool    transform_skip_enabled_flag;
     bool    cu_qp_delta_enabled_flag;
     Ipp32u  diff_cu_qp_delta_depth;
-    Ipp32u  pps_cb_qp_offset;
-    Ipp32u  pps_cr_qp_offset;
+    Ipp32s  pps_cb_qp_offset;
+    Ipp32s  pps_cr_qp_offset;
 
     bool    pps_slice_chroma_qp_offsets_present_flag;
     bool    weighted_pred_flag;              // Nonzero indicates weighted prediction applied to P and SP slices
@@ -1150,7 +1150,57 @@ typedef struct {
 // Slice header structure, corresponding to the H.264 bitstream definition.
 struct H265SliceHeader
 {
-    Ipp32s first_slice_segment_in_pic_flag;
+    // from nal unit header
+    NalUnitType nal_unit_type;
+    Ipp32u      nuh_temporal_id;
+
+    // slice spec members
+    Ipp32s      first_slice_segment_in_pic_flag;
+    Ipp8u       no_output_of_prior_pics_flag;       // nonzero: remove previously decoded pictures from decoded picture buffer
+    Ipp16u      slice_pic_parameter_set_id;
+    bool        dependent_slice_segment_flag;
+
+    Ipp32u      slice_segment_address;
+    SliceType   slice_type;
+    bool        pic_output_flag;
+
+    Ipp32u      colour_plane_id; // if separate_colour_plane_flag = = 1 only
+
+    Ipp32s      slice_pic_order_cnt_lsb;                    // picture order count (mod MaxPicOrderCntLsb)
+
+    bool        slice_enable_temporal_mvp_flag;
+
+    bool        slice_sao_luma_flag;
+    bool        slice_sao_chroma_flag;
+
+    Ipp8u       num_ref_idx_active_override_flag;
+    Ipp32s      num_ref_idx_l0_active;
+    Ipp32s      num_ref_idx_l1_active;
+
+    bool        mvd_l1_zero_flag;
+    bool        cabac_init_flag;
+    Ipp32u      collocated_from_l0_flag;
+    Ipp32u      collocated_ref_idx;
+
+    Ipp32s      max_num_merge_cand;
+
+    Ipp32s      slice_qp_delta;                       // to calculate default slice QP
+    Ipp32s      slice_cb_qp_offset;
+    Ipp32s      slice_cr_qp_offset;
+
+    bool        deblocking_filter_override_flag;
+    bool        slice_deblocking_filter_disabled_flag;
+    Ipp32s      slice_beta_offset;
+    Ipp32s      slice_tc_offset;
+    bool        slice_loop_filter_across_slices_enabled_flag;
+
+    Ipp32u      num_entry_point_offsets;
+
+    ///////////////////////////////////////////////////////
+    // calculated params
+    // These fields are calculated from values above.  They are not written to the bitstream
+    ///////////////////////////////////////////////////////
+
     Ipp32u m_HeaderBitstreamOffset;
     //h265 elements of slice header ----------------------------------------------------------------------------------------------------------------
     const H265SeqParamSet* m_SeqParamSet;
@@ -1162,74 +1212,34 @@ struct H265SliceHeader
 
     Ipp32u m_sliceSegmentCurStartCUAddr;
     Ipp32u m_sliceSegmentCurEndCUAddr;
-    bool m_DependentSliceSegmentFlag;
+    
     Ipp32s SliceQP;
-    Ipp32s slice_qp_delta;                       // to calculate default slice QP
-    Ipp32s slice_cb_qp_offset;
-    Ipp32s slice_cr_qp_offset;
-    bool m_deblockingFilterDisable;
-    bool m_deblockingFilterOverrideFlag;      //< offsets for deblocking filter inherit from PPS
-    Ipp32s m_deblockingFilterBetaOffset;    //< beta offset for deblocking filter
-    Ipp32s m_deblockingFilterTcOffset;      //< tc offset for deblocking filter
 
     Ipp32u SliceCurStartCUAddr;
     Ipp32u SliceCurEndCUAddr;
-    Ipp32u collocated_from_l0_flag;   // direction to get colocated CUs
-    Ipp32u m_ColRefIdx;
+    
+    
     bool m_CheckLDC;
     int m_numRefIdx[3]; //  for multiple reference of current slice. IT SEEMS BE SAME AS num_ref_idx_l0_active, l1, lc
 
     Ipp32s RefPOCList[2][MAX_NUM_REF_PICS + 1];
     bool RefLTList[2][MAX_NUM_REF_PICS + 1];
 
-    bool slice_sao_luma_flag;
-    bool slice_sao_chroma_flag;      ///< SAO chroma enabled flag
     ReferencePictureSet *m_pRPS;
     ReferencePictureSet m_localRPS;
     RefPicListModification m_RefPicListModification;
 
-    Ipp32s m_MaxNumMergeCand;
-    bool m_MvdL1Zero;
-
     // flag equal 1 means that the slice belong to IDR or anchor access unit
     Ipp32u IdrPicFlag;
 
-    // specifies the type of RBSP data structure contained in the NAL unit as
-    // specified in Table 7-1 of h264 standard
-    NalUnitType nal_unit_type;
-    Ipp32u m_nuh_temporal_id;
-
-    Ipp16u        pic_parameter_set_id;                 // of pic param set used for this slice
-    Ipp8u         num_ref_idx_active_override_flag;     // nonzero: use ref_idx_active from slice header
-                                                        // instead of those from pic param set
-    Ipp8u         no_output_of_prior_pics_flag;         // nonzero: remove previously decoded pictures
-                                                        // from decoded picture buffer
-    Ipp8u         long_term_reference_flag;             // How to set MaxLongTermFrameIdx
-    Ipp32u        cabac_init_idc;                      // CABAC initialization table index (0..2)
-    bool          m_CabacInitFlag;
-    SliceType     slice_type;
-    Ipp32s        pic_order_cnt_lsb;                    // picture order count (mod MaxPicOrderCntLsb)
-    Ipp32s        num_ref_idx_l0_active;                // num of ref pics in list 0 used to decode the slice,
-                                                        // see num_ref_idx_active_override_flag
-    Ipp32s        num_ref_idx_l1_active;                // num of ref pics in list 1 used to decode the slice
-                                                        // see num_ref_idx_active_override_flag
-
-    bool        pic_output_flag;
-    unsigned    m_uMaxTLayers;
     unsigned    m_uBitsForPOC;
-    bool        m_enableTMVPFlag;
-    bool        slice_loop_filter_across_slices_enabled_flag;
-
+    
     wpScalingParam  m_weightPredTable[2][MAX_NUM_REF_PICS][3]; // [REF_PIC_LIST_0 or REF_PIC_LIST_1][refIdx][0:Y, 1:U, 2:V]
-
-    int m_numEntryPointOffsets;
-    unsigned slice_segment_address;
+    
     unsigned m_RPSIndex;
 
     unsigned m_uiLog2WeightDenomLuma;
     unsigned m_uiLog2WeightDenomChroma;
-
-    void setPPSId(unsigned val) { pic_parameter_set_id = (Ipp16u)val; }
 
 }; // H265SliceHeader
 

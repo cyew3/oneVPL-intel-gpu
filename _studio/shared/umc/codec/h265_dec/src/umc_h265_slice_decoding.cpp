@@ -59,10 +59,10 @@ void H265Slice::Reset()
 
     m_pCurrentFrame = 0;
 
-    m_SliceHeader.m_nuh_temporal_id = 0;
+    m_SliceHeader.nuh_temporal_id = 0;
     m_SliceHeader.m_CheckLDC = false;
-    m_SliceHeader.m_deblockingFilterDisable = false;
-    m_SliceHeader.m_numEntryPointOffsets = 0;
+    m_SliceHeader.slice_deblocking_filter_disabled_flag = false;
+    m_SliceHeader.num_entry_point_offsets = 0;
     m_SliceHeader.m_TileCount = 0;
 
     delete[] m_SliceHeader.m_SubstreamSizes;
@@ -97,7 +97,7 @@ Ipp32s H265Slice::RetrievePicParamSetNumber(void *pSource, size_t nSourceSize)
     {
         Ipp32u reserved_zero_6bits;
         umcRes = m_BitStream.GetNALUnitType(m_SliceHeader.nal_unit_type,
-                                            m_SliceHeader.m_nuh_temporal_id,
+                                            m_SliceHeader.nuh_temporal_id,
                                             reserved_zero_6bits);
         VM_ASSERT(0 == reserved_zero_6bits);
         if (UMC::UMC_OK != umcRes)
@@ -112,7 +112,7 @@ Ipp32s H265Slice::RetrievePicParamSetNumber(void *pSource, size_t nSourceSize)
         return -1;
     }
 
-    return m_SliceHeader.pic_parameter_set_id;
+    return m_SliceHeader.slice_pic_parameter_set_id;
 }
 
 bool H265Slice::Reset(void *pSource, size_t nSourceSize, Ipp32s )
@@ -158,7 +158,7 @@ bool H265Slice::Reset(void *pSource, size_t nSourceSize, Ipp32s )
     // set conditional flags
     m_bDecoded = false;
     m_bPrevDeblocked = false;
-    m_bDeblocked = GetSliceHeader()->m_deblockingFilterDisable;
+    m_bDeblocked = GetSliceHeader()->slice_deblocking_filter_disabled_flag;
     m_bSAOed = !(GetSliceHeader()->slice_sao_luma_flag || GetSliceHeader()->slice_sao_chroma_flag);
 
     if (m_bDeblocked)
@@ -203,7 +203,7 @@ bool H265Slice::DecodeSliceHeader()
 
         Ipp32u reserved_zero_6bits;
         umcRes = m_BitStream.GetNALUnitType(m_SliceHeader.nal_unit_type,
-                                            m_SliceHeader.m_nuh_temporal_id,
+                                            m_SliceHeader.nuh_temporal_id,
                                             reserved_zero_6bits);
         VM_ASSERT(0 == reserved_zero_6bits);
         if (UMC::UMC_OK != umcRes)
@@ -238,7 +238,7 @@ void H265Slice::InitializeContexts()
 {
     SliceType slice_type = m_SliceHeader.slice_type;
 
-    if (m_pPicParamSet->cabac_init_present_flag && m_SliceHeader.m_CabacInitFlag)
+    if (m_pPicParamSet->cabac_init_present_flag && m_SliceHeader.cabac_init_flag)
     {
         switch (slice_type)
         {
@@ -325,7 +325,7 @@ void H265Slice::allocSubstreamSizes(unsigned uiNumSubstreams)
 
 void H265Slice::CopyFromBaseSlice(const H265Slice * s)
 {
-    if (!s || !m_SliceHeader.m_DependentSliceSegmentFlag)
+    if (!s || !m_SliceHeader.dependent_slice_segment_flag)
         return;
 
     VM_ASSERT(s);
@@ -334,14 +334,14 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
     const H265SliceHeader * slice = s->GetSliceHeader();
 
     m_SliceHeader.IdrPicFlag = slice->IdrPicFlag;
-    m_SliceHeader.pic_order_cnt_lsb = slice->pic_order_cnt_lsb;
+    m_SliceHeader.slice_pic_order_cnt_lsb = slice->slice_pic_order_cnt_lsb;
     m_SliceHeader.nal_unit_type = slice->nal_unit_type;
     m_SliceHeader.SliceQP = slice->SliceQP;
 
-    m_SliceHeader.m_deblockingFilterDisable   = slice->m_deblockingFilterDisable;
-    m_SliceHeader.m_deblockingFilterOverrideFlag = slice->m_deblockingFilterOverrideFlag;
-    m_SliceHeader.m_deblockingFilterBetaOffset = slice->m_deblockingFilterBetaOffset;
-    m_SliceHeader.m_deblockingFilterTcOffset = slice->m_deblockingFilterTcOffset;
+    m_SliceHeader.slice_deblocking_filter_disabled_flag   = slice->slice_deblocking_filter_disabled_flag;
+    m_SliceHeader.deblocking_filter_override_flag = slice->deblocking_filter_override_flag;
+    m_SliceHeader.slice_beta_offset = slice->slice_beta_offset;
+    m_SliceHeader.slice_tc_offset = slice->slice_tc_offset;
 
     for (Ipp32s i = 0; i < 3; i++)
     {
@@ -389,9 +389,9 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
     m_SliceHeader.m_pRPS                    = slice->m_pRPS;
 
     m_SliceHeader.collocated_from_l0_flag   = slice->collocated_from_l0_flag;
-    m_SliceHeader.m_ColRefIdx               = slice->m_ColRefIdx;
+    m_SliceHeader.collocated_ref_idx               = slice->collocated_ref_idx;
 
-    m_SliceHeader.m_nuh_temporal_id                      = slice->m_nuh_temporal_id;
+    m_SliceHeader.nuh_temporal_id                      = slice->nuh_temporal_id;
 
     for ( Ipp32s  e=0 ; e<2 ; e++ )
     {
@@ -402,13 +402,13 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
     }
     m_SliceHeader.slice_sao_luma_flag = slice->slice_sao_luma_flag;
     m_SliceHeader.slice_sao_chroma_flag = slice->slice_sao_chroma_flag;
-    m_SliceHeader.m_CabacInitFlag        = slice->m_CabacInitFlag;
-    m_SliceHeader.m_numEntryPointOffsets  = slice->m_numEntryPointOffsets;
+    m_SliceHeader.cabac_init_flag        = slice->cabac_init_flag;
+    m_SliceHeader.num_entry_point_offsets = slice->num_entry_point_offsets;
 
-    m_SliceHeader.m_MvdL1Zero = slice->m_MvdL1Zero;
-    m_SliceHeader.slice_loop_filter_across_slices_enabled_flag = slice->slice_loop_filter_across_slices_enabled_flag;
-    m_SliceHeader.m_enableTMVPFlag                = slice->m_enableTMVPFlag;
-    m_SliceHeader.m_MaxNumMergeCand               = slice->m_MaxNumMergeCand;
+    m_SliceHeader.mvd_l1_zero_flag = slice->mvd_l1_zero_flag;
+    m_SliceHeader.slice_loop_filter_across_slices_enabled_flag  = slice->slice_loop_filter_across_slices_enabled_flag;
+    m_SliceHeader.slice_enable_temporal_mvp_flag                = slice->slice_enable_temporal_mvp_flag;
+    m_SliceHeader.max_num_merge_cand               = slice->max_num_merge_cand;
 
     // Set the start of real slice, not slice segment
     m_SliceHeader.SliceCurStartCUAddr = slice->SliceCurStartCUAddr;

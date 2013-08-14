@@ -1919,8 +1919,8 @@ UMC::Status TaskSupplier_H265::AddSlice(H265Slice * pSlice, bool )
 
     ViewItem_H265 &view = *GetView();
     view.SetDPBSize(const_cast<H265SeqParamSet*>(pSlice->m_pSeqParamSet), m_level_idc);
-    view.sps_max_dec_pic_buffering = pSlice->m_pSeqParamSet->sps_max_dec_pic_buffering[pSlice->getTLayer()] ?
-                                    pSlice->m_pSeqParamSet->sps_max_dec_pic_buffering[pSlice->getTLayer()] :
+    view.sps_max_dec_pic_buffering = pSlice->m_pSeqParamSet->sps_max_dec_pic_buffering[pSlice->GetSliceHeader()->nuh_temporal_id] ?
+                                    pSlice->m_pSeqParamSet->sps_max_dec_pic_buffering[pSlice->GetSliceHeader()->nuh_temporal_id] :
                                     view.dpbSize;
 
     view.sps_max_num_reorder_pics = pSlice->m_pSeqParamSet->sps_max_num_reorder_pics[HighestTid];
@@ -1932,7 +1932,7 @@ UMC::Status TaskSupplier_H265::AddSlice(H265Slice * pSlice, bool )
         H265Slice *pLastFrameSlice = pFrame->GetAU()->GetSlice(pFrame->GetAU()->GetSliceCount() - 1);
         VM_ASSERT(pLastFrameSlice);
 
-        if (pSlice->getDependentSliceSegmentFlag())
+        if (pSlice->GetSliceHeader()->dependent_slice_segment_flag)
         {
             pSlice->CopyFromBaseSlice(pLastFrameSlice);
         }
@@ -1978,7 +1978,7 @@ UMC::Status TaskSupplier_H265::AddSlice(H265Slice * pSlice, bool )
             AddFakeReferenceFrame(pSlice);
     }
 
-    //if (!pSlice->getDependentSliceSegmentFlag())
+    //if (!pSlice->GetSliceHeader()->dependent_slice_segment_flag)
     {
         // pSlice->checkCRA(pSlice->getRPS(), m_pocCRA, m_prevRAPisBLA, m_cListPic);
         // Set reference list
@@ -2273,7 +2273,7 @@ void TaskSupplier_H265::InitFrameCounter(H265DecoderFrame * pFrame, const H265Sl
         view.pDPB->IncreaseRefPicListResetCount(pFrame);
     }
 
-    pFrame->setPicOrderCnt(sliceHeader->pic_order_cnt_lsb);
+    pFrame->setPicOrderCnt(sliceHeader->slice_pic_order_cnt_lsb);
 
     DEBUG_PRINT((VM_STRING("Init frame POC - %d, uid - %d\n"), pFrame->m_PicOrderCnt, pFrame->m_UID));
 
