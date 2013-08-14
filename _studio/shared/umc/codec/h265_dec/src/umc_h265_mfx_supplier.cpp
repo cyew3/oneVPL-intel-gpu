@@ -174,8 +174,6 @@ UMC::Status MFXTaskSupplier_H265::Init(UMC::BaseCodecParams *pInit)
             return UMC::UMC_ERR_INIT;
     }
 
-    LocalResources_H265::Init(m_iThreadNum, m_pMemoryAllocator);
-
     m_isUseDelayDPBValues = true;
     m_local_delta_frame_time = 1.0/30;
     m_frameOrder             = 0;

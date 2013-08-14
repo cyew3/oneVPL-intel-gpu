@@ -42,7 +42,6 @@ class BaseCodecParams;
 class H265SegmentDecoderMultiThreaded;
 
 class MemoryAllocator;
-struct H265IntraTypesProp;
 
 class AU_Splitter_H265
 {

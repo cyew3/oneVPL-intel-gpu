@@ -43,7 +43,6 @@ class H265SegmentDecoderMultiThreaded;
 class TaskBrokerSingleThreadDXVA;
 
 class MemoryAllocator;
-struct H265IntraTypesProp;
 
 enum
 {
@@ -84,51 +83,6 @@ private:
     Ipp32s m_SkipFlag;
 
     Ipp32s m_NumberOfSkippedFrames;
-};
-
-/****************************************************************************************************/
-// Resources
-/****************************************************************************************************/
-class LocalResources_H265
-{
-public:
-
-    LocalResources_H265();
-    virtual ~LocalResources_H265();
-
-    UMC::Status Init(Ipp32s numberOfBuffers, UMC::MemoryAllocator *pMemoryAllocator);
-
-    void Reset();
-    void Close();
-
-    UMC::Status AllocateBuffers(H265SeqParamSet* sps, bool exactSizeRequested);
-
-    bool LockFrameResource(H265DecoderFrame * frame);
-    void UnlockFrameResource(H265DecoderFrame * frame);
-
-    H265DecoderFrame * IsBusyByFrame(Ipp32s number);
-
-    Ipp32u GetCurrentResourceIndex();
-
-protected:
-    Ipp8u         *m_pMBMap;
-    H264DecoderMBAddr **next_mb_tables;//0 linear scan, 1,.. - bitstream defined scan (slice groups)
-
-private:
-    IntraType *(*m_ppMBIntraTypes);
-    H265IntraTypesProp *m_piMBIntraProp;
-
-    Ipp32s m_numberOfBuffers;
-    UMC::MemoryAllocator *m_pMemoryAllocator;
-
-    Ipp32s          m_parsedDataLength;
-    IppiSize        m_paddedParsedDataSize;
-    Ipp8u          *m_pParsedData;
-    UMC::MemID           m_midParsedData;       // (MemID) mem id for allocated parsed data
-
-    Ipp32u          m_currentResourceIndex;
-
-    void DeallocateBuffers();
 };
 
 /****************************************************************************************************/
@@ -289,7 +243,7 @@ class RefInterfaceAdaptor;
 /****************************************************************************************************/
 // TaskSupplier_H265
 /****************************************************************************************************/
-class TaskSupplier_H265 : public Skipping_H265, protected LocalResources_H265, public AU_Splitter_H265, public MVC_Extension, public DecReferencePictureMarking_H265
+class TaskSupplier_H265 : public Skipping_H265, public AU_Splitter_H265, public MVC_Extension, public DecReferencePictureMarking_H265
 {
     friend class TaskBroker_H265;
     friend class TaskBrokerSingleThreadDXVA;

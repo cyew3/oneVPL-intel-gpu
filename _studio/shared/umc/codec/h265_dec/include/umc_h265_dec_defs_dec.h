@@ -311,8 +311,7 @@ protected:
 
     Ipp32s              m_PicWidth;
     Ipp32s              m_PicHeight;
-    Ipp32u              m_MaxCUWidth;
-    Ipp32u              m_MaxCUHeight;
+    Ipp32u              m_MaxCUSize;
     Ipp32u              m_SaoBitIncreaseY, m_SaoBitIncreaseC;
     bool                m_UseNIF;
     bool                m_needPCMRestoration;
@@ -894,25 +893,22 @@ struct H265SeqParamSetBase
 
     ///////////////////////////////////////////////////////
     // calculated params
+    // These fields are calculated from values above.  They are not written to the bitstream
     ///////////////////////////////////////////////////////
 
-    Ipp32u MaxCUWidth;
-    Ipp32u MaxCUHeight;
+    Ipp32u MaxCUSize;
     Ipp32u MaxCUDepth;
     Ipp32s AddCUDepth;
     Ipp32u WidthInCU;
     Ipp32u HeightInCU;
     Ipp32u NumPartitionsInCU, NumPartitionsInCUSize, NumPartitionsInFrameWidth, NumPartitionsInFrameHeight;
     Ipp32u m_maxTrSize;
-    
-    bool m_UseLDC;
 
     Ipp32s m_AMPAcc[MAX_CU_DEPTH]; //AMP Accuracy
 
     int m_QPBDOffsetY;
     int m_QPBDOffsetC;
-
-    // These fields are calculated from values above.  They are not written to the bitstream
+    
    
     void Reset()
     {
@@ -975,13 +971,6 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
     int getQpBDOffsetC() const                  { return m_QPBDOffsetC; }
     void setQpBDOffsetC(int val)                { m_QPBDOffsetC = val; }
 
-    unsigned getMaxCUWidth() const              { return MaxCUWidth; }
-    void setMaxCUWidth(unsigned val)            { MaxCUWidth = val; }
-    unsigned getMaxCUHeight() const             { return MaxCUHeight; }
-    void setMaxCUHeight(unsigned val)           { MaxCUHeight = val; }
-    unsigned getMaxCUDepth() const              { return MaxCUDepth; }
-    void setMaxCUDepth(unsigned val)            { MaxCUDepth = val; }
-
     void createRPSList(Ipp32s numRPS)
     {
         m_RPSList.allocate(numRPS);
@@ -1009,89 +998,72 @@ struct TileInfo
 // Picture parameter set structure, corresponding to the H.264 bitstream definition.
 struct H265PicParamSetBase
 {
-    bool    transquant_bypass_enable_flag;
+    Ipp32u  pps_pic_parameter_set_id;
+    Ipp32u  pps_seq_parameter_set_id;
+
+    bool    dependent_slice_segments_enabled_flag;
+    bool    output_flag_present_flag;
+    Ipp32u  num_extra_slice_header_bits;
+    bool    sign_data_hiding_enabled_flag;
+    bool    cabac_init_present_flag;
+
+    Ipp32u  num_ref_idx_l0_default_active;
+    Ipp32u  num_ref_idx_l1_default_active;
+
+    Ipp8s   init_qp;                     // default QP for I,P,B slices
     bool    constrained_intra_pred_flag;
+    bool    transform_skip_enabled_flag;
+    bool    cu_qp_delta_enabled_flag;
     Ipp32u  diff_cu_qp_delta_depth;
-    Ipp32u  MinCUDQPSize;
+    Ipp32u  pps_cb_qp_offset;
+    Ipp32u  pps_cr_qp_offset;
 
     bool    pps_slice_chroma_qp_offsets_present_flag;
+    bool    weighted_pred_flag;              // Nonzero indicates weighted prediction applied to P and SP slices
+    bool    weighted_bipred_flag;            // 0: no weighted prediction in B slices,  1: explicit weighted prediction
+    bool    transquant_bypass_enabled_flag;
+    bool    tiles_enabled_flag;
+    bool    entropy_coding_sync_enabled_flag;  // presence of wavefronts flag
 
-    bool    cu_qp_delta_enabled_flag;
-
-    bool    tiles_enabled_flag;              //!< Indicates the presence of tiles
-    bool    entropy_coding_sync_enabled_flag;  //!< Indicates the presence of wavefronts
-    Ipp32u  uniform_spacing_flag;
+    // tiles info
     Ipp32u  num_tile_columns;
-
     Ipp32u  num_tile_rows;
+    Ipp32u  uniform_spacing_flag;
+    Ipp32u* column_width;
+    Ipp32u* row_height;
+    bool    loop_filter_across_tiles_enabled_flag;
 
-    Ipp32u num_ref_idx_l0_default_active;
-    Ipp32u num_ref_idx_l1_default_active;
+    bool    pps_loop_filter_across_slices_enabled_flag;
 
-    bool loop_filter_across_tiles_enabled_flag;
-    bool loop_filter_across_slices_enabled_flag;
+    bool    deblocking_filter_control_present_flag;
+    bool    deblocking_filter_override_enabled_flag;
+    bool    pps_deblocking_filter_disabled_flag;
+    Ipp32u  pps_beta_offset;
+    Ipp32u  pps_tc_offset;
 
-    bool sign_data_hiding_flag;
-
-    bool deblocking_filter_control_present_flag;
-    bool deblocking_filter_override_enabled_flag;
-
-    bool cabac_init_present_flag;
-    bool output_flag_present_flag;
-    Ipp32u log2_parallel_merge_level;
-    int num_extra_slice_header_bits;
-
-    bool transform_skip_enabled_flag;
-
-    Ipp16u       pic_parameter_set_id;            // of this picture parameter set
-    Ipp8u        seq_parameter_set_id;            // of seq param set used for this pic param set
-
-    Ipp8u        pic_order_present_flag;          // Zero indicates only delta_pic_order_cnt[0] is
-                                                  // present in slice header; nonzero indicates
-                                                  // delta_pic_order_cnt[1] is also present.
-
-    bool         weighted_pred_flag;              // Nonzero indicates weighted prediction applied to
-                                                  // P and SP slices
-    bool         weighted_bipred_idc;             // 0: no weighted prediction in B slices
-                                                  // 1: explicit weighted prediction
-    Ipp8s        pic_init_qp;                     // default QP for I,P,B slices
-    Ipp8s        pic_init_qs;                     // default QP for SP, SI slices
-
-    int        chroma_qp_index_offset[2];       // offset to add to QP for chroma
-
-    Ipp8u        deblocking_filter_variables_present_flag;    // If nonzero, deblock filter params are
-                                                  // present in the slice header.
-    Ipp8u        redundant_pic_cnt_present_flag;  // Nonzero indicates presence of redundant_pic_cnt
-
-    bool         dependent_slices_enabled_flag;
-    bool         cabac_independent_flag;
-    bool         pps_deblocking_filter_flag;
-    bool         disable_deblocking_filter_flag;
-
-    int          pps_beta_offset_div2;
-    int          pps_tc_offset_div2;
-
-    bool lists_modification_present_flag;
-
-    bool         pps_scaling_list_data_present_flag;
-    bool         slice_header_extension_present_flag;
+    bool    pps_scaling_list_data_present_flag;
     H265ScalingList m_scalingList;
 
-                                                  // in slice header
-    Ipp32u       num_ref_idx_l0_active;           // num of ref pics in list 0 used to decode the picture
-    Ipp32u       num_ref_idx_l1_active;           // num of ref pics in list 1 used to decode the picture
+    bool    lists_modification_present_flag;
+    Ipp32u  log2_parallel_merge_level;
+    bool    slice_segment_header_extension_present_flag;
 
-    Ipp32u getColumnWidth(Ipp32u columnIdx) { return *( m_ColumnWidthArray + columnIdx ); }
+
+    ///////////////////////////////////////////////////////
+    // calculated params
+    // These fields are calculated from values above.  They are not written to the bitstream
+    ///////////////////////////////////////////////////////
+    Ipp32u  MinCUDQPSize;
+
+    Ipp32u getColumnWidth(Ipp32u columnIdx) { return *( column_width + columnIdx ); }
     void getColumnWidth(Ipp16u *buffer) const;    // copies columns width array into the given uint16 buffer
     void getColumnWidthMinus1(Ipp16u *buffer) const;    // copies columns width-1 array into the given uint16 buffer
     void setColumnWidth(Ipp32u* columnWidth);
-    Ipp32u getRowHeight(Ipp32u rowIdx)    { return *( m_RowHeightArray + rowIdx ); }
+    Ipp32u getRowHeight(Ipp32u rowIdx)    { return *( row_height + rowIdx ); }
     void getRowHeight(Ipp16u *buffer) const;      // copies rows height array into the given uint16 buffer
     void getRowHeightMinus1(Ipp16u *buffer) const;      // copies rows height-1 array into the given uint16 buffer
     void setRowHeight(Ipp32u* rowHeight);
 
-    Ipp32u* m_RowHeightArray;
-    Ipp32u* m_ColumnWidthArray;
     Ipp32u* m_CtbAddrRStoTS;
     Ipp32u* m_CtbAddrTStoRS;
     Ipp32u* m_TileIdx;
@@ -1111,54 +1083,39 @@ struct H265PicParamSet : public HeapObject, public H265PicParamSetBase
     H265PicParamSet()
         : H265PicParamSetBase()
     {
-        m_ColumnWidthArray = NULL;
-        m_RowHeightArray = NULL;
-        m_CtbAddrRStoTS = NULL;
-        m_CtbAddrTStoRS = NULL;
-        m_TileIdx = NULL;
+        column_width = 0;
+        row_height = 0;
+        m_CtbAddrRStoTS = 0;
+        m_CtbAddrTStoRS = 0;
+        m_TileIdx = 0;
 
         Reset();
     }
 
     void Reset()
     {
-        if (NULL != m_ColumnWidthArray)
-        {
-            delete[] m_ColumnWidthArray;
-            m_ColumnWidthArray = NULL;
-        }
+        delete[] column_width;
+        column_width = 0;
 
-        if (NULL != m_RowHeightArray)
-        {
-            delete[] m_RowHeightArray;
-            m_RowHeightArray = NULL;
-        }
+        delete[] row_height;
+        row_height = 0;
 
-        if (NULL != m_CtbAddrRStoTS)
-        {
-            delete[] m_CtbAddrRStoTS;
-            m_CtbAddrRStoTS = NULL;
-        }
+        delete[] m_CtbAddrRStoTS;
+        m_CtbAddrRStoTS = 0;
 
-        if (NULL != m_CtbAddrTStoRS)
-        {
-            delete[] m_CtbAddrTStoRS;
-            m_CtbAddrTStoRS = NULL;
-        }
+        delete[] m_CtbAddrTStoRS;
+        m_CtbAddrTStoRS = 0;
 
-        if (NULL != m_TileIdx)
-        {
-            delete[] m_TileIdx;
-            m_TileIdx = NULL;
-        }
+        delete[] m_TileIdx;
+        m_TileIdx = 0;
 
         H265PicParamSetBase::Reset();
 
-        pic_parameter_set_id = MAX_NUM_PIC_PARAM_SETS_H265;
-        seq_parameter_set_id = MAX_NUM_SEQ_PARAM_SETS_H265;
+        pps_pic_parameter_set_id = MAX_NUM_PIC_PARAM_SETS_H265;
+        pps_seq_parameter_set_id = MAX_NUM_SEQ_PARAM_SETS_H265;
 
         loop_filter_across_tiles_enabled_flag = true;
-        loop_filter_across_slices_enabled_flag = true;
+        pps_loop_filter_across_slices_enabled_flag = true;
     }
 
     ~H265PicParamSet()
@@ -1167,106 +1124,10 @@ struct H265PicParamSet : public HeapObject, public H265PicParamSetBase
 
     Ipp32s GetID() const
     {
-        return pic_parameter_set_id;
+        return pps_pic_parameter_set_id;
     }
 
     Ipp32u getNumTiles() const { return num_tile_rows*num_tile_columns; }
-
-    unsigned getPPSId() const           { return pic_parameter_set_id; }
-    void setPPSId(unsigned val)         { pic_parameter_set_id = (Ipp8u)val; }
-
-    unsigned getSPSId() const           { return seq_parameter_set_id; }
-    void setSPSId(unsigned val)         { seq_parameter_set_id = (Ipp8u)val; }
-
-    bool getSignHideFlag() const        { return sign_data_hiding_flag; }
-    void setSignHideFlag(bool f)        { sign_data_hiding_flag = f; }
-
-    bool getCabacInitPresentFlag() const    { return cabac_init_present_flag; }
-    void setCabacInitPresentFlag(bool f)    { cabac_init_present_flag = f; }
-
-    unsigned getNumRefIdxL0DefaultActive() const    { return num_ref_idx_l0_active; }
-    void setNumRefIdxL0DefaultActive(unsigned val)  { num_ref_idx_l0_active = val; }
-    unsigned getNumRefIdxL1DefaultActive() const    { return num_ref_idx_l1_active; }
-    void setNumRefIdxL1DefaultActive(unsigned val)  { num_ref_idx_l1_active = val; }
-    int getPicInitQP() const         { return pic_init_qp; }
-    void setPicInitQP(int val)       { pic_init_qp = (Ipp8s)val; }
-    bool getUseDQP () const             { return cu_qp_delta_enabled_flag;        }
-    void setUseDQP(bool f)              { cu_qp_delta_enabled_flag = f; }
-    bool getConstrainedIntraPred() const    { return constrained_intra_pred_flag; }
-    void setConstrainedIntraPred(bool f)    { constrained_intra_pred_flag = f; }
-
-    bool getSliceChromaQpFlag () const   { return  pps_slice_chroma_qp_offsets_present_flag; }
-    void setSliceChromaQpFlag ( bool b ) { pps_slice_chroma_qp_offsets_present_flag = b;     }
-
-    unsigned getMaxCuDQPDepth() const   { return diff_cu_qp_delta_depth; }
-    void setMaxCuDQPDepth(unsigned val) { diff_cu_qp_delta_depth = val; }
-
-    void setChromaCbQpOffset(int val)   { chroma_qp_index_offset[0] = val; }
-    Ipp32s getChromaCbQpOffset() const  { return chroma_qp_index_offset[0]; }
-    void setChromaCrQpOffset(int val)   { chroma_qp_index_offset[1] = val; }
-    Ipp32s getChromaCrQpOffset() const  { return chroma_qp_index_offset[1]; }
-
-    bool getUseWP() const       { return weighted_pred_flag != 0; }
-    void setUseWP(bool f)       { weighted_pred_flag = f? 1 : 0; }
-    bool getWPBiPred() const    { return weighted_bipred_idc != 0; }
-    void setWPBiPred(bool f)    { weighted_bipred_idc = f? 1 : 0; }
-    bool getOutputFlagPresentFlag() const       { return output_flag_present_flag; }
-    void setOutputFlagPresentFlag(bool f)       { output_flag_present_flag = f; }
-    bool getDependentSliceSegmentEnabledFlag() const  { return dependent_slices_enabled_flag; }
-    void setDependentSliceSegmentEnabledFlag(bool f)  { dependent_slices_enabled_flag = f; }
-    bool getTransquantBypassEnableFlag() const  { return transquant_bypass_enable_flag; }
-    void setTransquantBypassEnableFlag(bool f)  { transquant_bypass_enable_flag = f; }
-    bool getTilesEnabledFlag() const                      { return tiles_enabled_flag; }
-    void setTilesEnabledFlag(bool val)                    { tiles_enabled_flag = val; }
-    bool getEntropyCodingSyncEnabledFlag() const          { return entropy_coding_sync_enabled_flag; }
-    void setEntropyCodingSyncEnabledFlag(bool val)        { entropy_coding_sync_enabled_flag = val; }
-    unsigned getNumColumns() const    { return num_tile_columns; }
-    void setNumColumns(unsigned val)  { num_tile_columns = val; }
-    unsigned getNumRows() const       { return num_tile_rows; }
-    void setNumRows(unsigned val)     { num_tile_rows = val; }
-
-    unsigned getUniformSpacingFlag() const   { return uniform_spacing_flag; }
-    void setUniformSpacingFlag(unsigned val) { uniform_spacing_flag = val; }
-
-    bool    getUseTransformSkip       () const   { return transform_skip_enabled_flag;     }
-    void    setUseTransformSkip       ( bool b ) { transform_skip_enabled_flag  = b;       }
-
-    bool getCabacIndependentFlag() const    { return cabac_independent_flag; }
-    void setCabacIndependentFlag(bool f)    { cabac_independent_flag = f; }
-
-    bool getDeblockingFilterControlPresentFlag() const  { return deblocking_filter_control_present_flag; }
-    void setDeblockingFilterControlPresentFlag(bool f)  { deblocking_filter_control_present_flag = f; }
-
-    void setDeblockingFilterOverrideEnabledFlag( bool val ) { deblocking_filter_override_enabled_flag = val; }
-    bool getDeblockingFilterOverrideEnabledFlag() const     { return deblocking_filter_override_enabled_flag; }
-
-    void setPicDisableDeblockingFilterFlag(bool val)        { disable_deblocking_filter_flag = val; }       //!< set offset for deblocking filter disabled
-    bool getPicDisableDeblockingFilterFlag() const          { return disable_deblocking_filter_flag; }      //!< get offset for deblocking filter disabled
-
-    int getDeblockingFilterBetaOffsetDiv2() const     { return pps_beta_offset_div2; }
-    void setDeblockingFilterBetaOffsetDiv2(int val)   { pps_beta_offset_div2 = val; }
-
-    int getDeblockingFilterTcOffsetDiv2() const       { return pps_tc_offset_div2; }
-    void setDeblockingFilterTcOffsetDiv2(int val)     { pps_tc_offset_div2 = val; }
-
-    bool getScalingListPresentFlag() const  { return pps_scaling_list_data_present_flag; }
-    void setScalingListPresentFlag(bool f)  { pps_scaling_list_data_present_flag = f; }
-
-    bool getListsModificationPresentFlag() const    { return lists_modification_present_flag; }
-    void setListsModificationPresentFlag(bool f)    { lists_modification_present_flag = f; }
-
-    unsigned getLog2ParallelMergeLevel() const  { return log2_parallel_merge_level; }
-    void setLog2ParallelMergeLevel(unsigned val)  { log2_parallel_merge_level = val; }
-
-    int getNumExtraSliceHeaderBits() const { return num_extra_slice_header_bits; }
-    void setNumExtraSliceHeaderBits(int i) { num_extra_slice_header_bits = i; }
-
-    void setLoopFilterAcrossSlicesEnabledFlag     ( bool   bValue  )    { loop_filter_across_slices_enabled_flag = bValue; }
-    bool getLoopFilterAcrossSlicesEnabledFlag () const { return loop_filter_across_slices_enabled_flag;   }
-
-    bool getSliceHeaderExtensionPresentFlag() const     { return slice_header_extension_present_flag; }
-    void setSliceHeaderExtensionPresentFlag(bool f)     { slice_header_extension_present_flag = f; }
-
     H265ScalingList* getScalingList()               { return &m_scalingList; }
     const H265ScalingList* getScalingList() const   { return &m_scalingList; }
 };    // H265PicParamSet
@@ -1308,8 +1169,8 @@ struct H265SliceHeader
     Ipp32s slice_cr_qp_offset;
     bool m_deblockingFilterDisable;
     bool m_deblockingFilterOverrideFlag;      //< offsets for deblocking filter inherit from PPS
-    Ipp32s m_deblockingFilterBetaOffsetDiv2;    //< beta offset for deblocking filter
-    Ipp32s m_deblockingFilterTcOffsetDiv2;      //< tc offset for deblocking filter
+    Ipp32s m_deblockingFilterBetaOffset;    //< beta offset for deblocking filter
+    Ipp32s m_deblockingFilterTcOffset;      //< tc offset for deblocking filter
 
     Ipp32u SliceCurStartCUAddr;
     Ipp32u SliceCurEndCUAddr;
@@ -1644,23 +1505,6 @@ inline T * h265_new_throw_1(T1 t1)
         throw h265_exception(UMC::UMC_ERR_ALLOC);
     return t;
 }
-
-struct H265IntraTypesProp
-{
-    H265IntraTypesProp()
-    {
-        Reset();
-    }
-
-    Ipp32s m_nSize;                                             // (Ipp32s) size of allocated intra type array
-    UMC::MemID m_mid;                                                // (MemID) mem id of allocated buffer for intra types
-
-    void Reset(void)
-    {
-        m_nSize = 0;
-        m_mid = MID_INVALID;
-    }
-};
 
 inline UMC::ColorFormat GetUMCColorFormat_H265(Ipp32s color_format)
 {

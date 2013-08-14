@@ -340,8 +340,8 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
 
     m_SliceHeader.m_deblockingFilterDisable   = slice->m_deblockingFilterDisable;
     m_SliceHeader.m_deblockingFilterOverrideFlag = slice->m_deblockingFilterOverrideFlag;
-    m_SliceHeader.m_deblockingFilterBetaOffsetDiv2 = slice->m_deblockingFilterBetaOffsetDiv2;
-    m_SliceHeader.m_deblockingFilterTcOffsetDiv2 = slice->m_deblockingFilterTcOffsetDiv2;
+    m_SliceHeader.m_deblockingFilterBetaOffset = slice->m_deblockingFilterBetaOffset;
+    m_SliceHeader.m_deblockingFilterTcOffset = slice->m_deblockingFilterTcOffset;
 
     for (Ipp32s i = 0; i < 3; i++)
     {

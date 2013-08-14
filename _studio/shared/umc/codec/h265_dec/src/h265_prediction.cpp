@@ -56,8 +56,8 @@ void H265Prediction::InitTempBuff(DecodingContext* context)
     m_context = context;
     const H265SeqParamSet * sps = m_context->m_sps;
 
-    if (m_YUVExt && m_YUVExtHeight == ((sps->MaxCUHeight + 2) << 4) && 
-        m_YUVExtStride == ((sps->MaxCUWidth  + 8) << 4))
+    if (m_YUVExt && m_YUVExtHeight == ((sps->MaxCUSize + 2) << 4) && 
+        m_YUVExtStride == ((sps->MaxCUSize  + 8) << 4))
         return;
 
     if (m_YUVExt)
@@ -69,13 +69,13 @@ void H265Prediction::InitTempBuff(DecodingContext* context)
     }
 
     // ML: OPT: TODO: Allocate only when we need it
-    m_YUVExtHeight = ((sps->MaxCUHeight + 2) << 4);
-    m_YUVExtStride = ((sps->MaxCUWidth  + 8) << 4);
+    m_YUVExtHeight = ((sps->MaxCUSize + 2) << 4);
+    m_YUVExtStride = ((sps->MaxCUSize  + 8) << 4);
     m_YUVExt = new H265PlaneYCommon[m_YUVExtStride * m_YUVExtHeight];
 
     // new structure
-    m_YUVPred[0].create(sps->MaxCUWidth, sps->MaxCUHeight, sizeof(Ipp16s), sizeof(Ipp16s));
-    m_YUVPred[1].create(sps->MaxCUWidth, sps->MaxCUHeight, sizeof(Ipp16s), sizeof(Ipp16s));
+    m_YUVPred[0].create(sps->MaxCUSize, sps->MaxCUSize, sizeof(Ipp16s), sizeof(Ipp16s));
+    m_YUVPred[1].create(sps->MaxCUSize, sps->MaxCUSize, sizeof(Ipp16s), sizeof(Ipp16s));
 
     if (!m_temp_interpolarion_buffer)
         m_temp_interpolarion_buffer = ippsMalloc_8u(2*128*128);    
@@ -558,7 +558,7 @@ void H265Prediction::MotionCompensation(H265CodingUnit* pCU, Ipp32u AbsPartIdx, 
 {
     VM_ASSERT(pCU->m_AbsIdxInLCU == 0);
     bool weighted_prediction = pCU->m_SliceHeader->slice_type == P_SLICE ? m_context->m_pps->weighted_pred_flag :
-        m_context->m_pps->weighted_bipred_idc;
+        m_context->m_pps->weighted_bipred_flag;
 
     Ipp32s countPart = pCU->getNumPartInter(AbsPartIdx);
     EnumPartSize PartSize = pCU->GetPartitionSize(AbsPartIdx);
@@ -713,7 +713,7 @@ void H265Prediction::MotionCompensation(H265CodingUnit* pCU, Ipp32u AbsPartIdx, 
 
 bool H265Prediction::CheckIdenticalMotion(H265CodingUnit* pCU, H265PUInfo &PUi)
 {
-    if(pCU->m_SliceHeader->slice_type == B_SLICE && !m_context->m_pps->getWPBiPred() &&
+    if(pCU->m_SliceHeader->slice_type == B_SLICE && !m_context->m_pps->weighted_bipred_flag &&
         PUi.interinfo.mvinfo[REF_PIC_LIST_0].RefIdx >= 0 && PUi.interinfo.mvinfo[REF_PIC_LIST_1].RefIdx >= 0 &&
         PUi.refFrame[REF_PIC_LIST_0] == PUi.refFrame[REF_PIC_LIST_1] &&
         PUi.interinfo.mvinfo[REF_PIC_LIST_0].MV == PUi.interinfo.mvinfo[REF_PIC_LIST_1].MV)

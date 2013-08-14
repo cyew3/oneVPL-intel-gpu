@@ -154,8 +154,8 @@ void H265CodingUnit::initCU(H265SegmentDecoderMultiThreaded* sd, Ipp32u iCUAddr)
     m_SliceIdx = sd->m_pSlice->GetSliceNum();
     m_SliceHeader = sd->m_pSliceHeader;
     CUAddr = iCUAddr;
-    m_CUPelX = (iCUAddr % sps->WidthInCU) * sps->MaxCUWidth;
-    m_CUPelY = (iCUAddr / sps->WidthInCU) * sps->MaxCUHeight;
+    m_CUPelX = (iCUAddr % sps->WidthInCU) * sps->MaxCUSize;
+    m_CUPelY = (iCUAddr / sps->WidthInCU) * sps->MaxCUSize;
     m_AbsIdxInLCU = 0;
     m_NumPartition = sps->NumPartitionsInCU;
 
@@ -365,7 +365,7 @@ Ipp8u H265CodingUnit::getLastCodedQP(Ipp32u AbsPartIdx)
         else if (m_Frame->m_CodingData->GetInverseCUOrderMap(CUAddr) > 0
             && m_Frame->m_CodingData->getTileIdxMap(CUAddr) ==
                 m_Frame->m_CodingData->getTileIdxMap(m_Frame->m_CodingData->getCUOrderMap(m_Frame->m_CodingData->GetInverseCUOrderMap(CUAddr) - 1))
-            && !(m_SliceHeader->m_PicParamSet->getEntropyCodingSyncEnabledFlag() && CUAddr % m_Frame->m_CodingData->m_WidthInCU == 0))
+            && !(m_SliceHeader->m_PicParamSet->entropy_coding_sync_enabled_flag && CUAddr % m_Frame->m_CodingData->m_WidthInCU == 0))
         {
             return m_Frame->getCU(m_Frame->m_CodingData->getCUOrderMap(m_Frame->m_CodingData->GetInverseCUOrderMap(CUAddr) - 1))->getLastCodedQP(m_Frame->getCD()->getNumPartInCU());
         }
@@ -382,7 +382,7 @@ Ipp8u H265CodingUnit::getLastCodedQP(Ipp32u AbsPartIdx)
  */
 bool H265CodingUnit::isLosslessCoded(Ipp32u absPartIdx)
 {
-  return (m_SliceHeader->m_PicParamSet->transquant_bypass_enable_flag && m_CUTransquantBypass[absPartIdx]);
+  return (m_SliceHeader->m_PicParamSet->transquant_bypass_enabled_flag && m_CUTransquantBypass[absPartIdx]);
 }
 
 /** Get allowed chroma intra modes
@@ -860,8 +860,8 @@ void H265CodingUnit::setNDBFilterBlockBorderAvailability(bool independentTileBou
 {
     bool picLBoundary = ((m_CUPelX == 0) ? true : false);
     bool picTBoundary = ((m_CUPelY == 0) ? true : false);
-    bool picRBoundary = ((m_CUPelX + m_SliceHeader->m_SeqParamSet->MaxCUWidth >= m_SliceHeader->m_SeqParamSet->pic_width_in_luma_samples)   ? true : false);
-    bool picBBoundary = ((m_CUPelY + m_SliceHeader->m_SeqParamSet->MaxCUHeight >= m_SliceHeader->m_SeqParamSet->pic_height_in_luma_samples) ? true : false);
+    bool picRBoundary = ((m_CUPelX + m_SliceHeader->m_SeqParamSet->MaxCUSize >= m_SliceHeader->m_SeqParamSet->pic_width_in_luma_samples)   ? true : false);
+    bool picBBoundary = ((m_CUPelY + m_SliceHeader->m_SeqParamSet->MaxCUSize >= m_SliceHeader->m_SeqParamSet->pic_height_in_luma_samples) ? true : false);
     bool leftTileBoundary= false;
     bool rightTileBoundary= false;
     bool topTileBoundary = false;

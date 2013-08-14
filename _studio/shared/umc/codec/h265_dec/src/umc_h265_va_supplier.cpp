@@ -184,11 +184,6 @@ void VATaskSupplier::CompleteFrame(H265DecoderFrame * pFrame)
 
     DEBUG_PRINT((VM_STRING("Complete frame POC - (%d) type - %d, field - -, count - %d, m_uid - %d, IDR - %d\n"), pFrame->m_PicOrderCnt, pFrame->m_FrameType, slicesInfo->GetSliceCount(), pFrame->m_UID, slicesInfo->GetAnySlice()->GetSliceHeader()->IdrPicFlag));
 
-    //if (!field)
-    {
-        pFrame->m_iResourceNumber = LocalResources_H265::GetCurrentResourceIndex();
-    }
-
     // skipping algorithm
     {
         if (IsShouldSkipFrame(pFrame))

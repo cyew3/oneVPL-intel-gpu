@@ -297,177 +297,6 @@ Skipping_H265::SkipInfo Skipping_H265::GetSkipInfo() const
 }
 
 /****************************************************************************************************/
-// Resources
-/****************************************************************************************************/
-
-LocalResources_H265::LocalResources_H265()
-    : next_mb_tables(0)
-    , m_ppMBIntraTypes(0)
-    , m_piMBIntraProp(0)
-    , m_numberOfBuffers(0)
-    , m_pMemoryAllocator(0)
-    , m_parsedDataLength(0)
-    , m_pParsedData(0)
-    , m_midParsedData(0)
-    , m_currentResourceIndex(0)
-{
-    m_paddedParsedDataSize.width = 0;
-    m_paddedParsedDataSize.height = 0;
-}
-
-LocalResources_H265::~LocalResources_H265()
-{
-    Close();
-}
-
-UMC::Status LocalResources_H265::Init(Ipp32s numberOfBuffers, UMC::MemoryAllocator *pMemoryAllocator)
-{
-    Close();
-
-    m_numberOfBuffers = numberOfBuffers;
-    m_pMemoryAllocator = pMemoryAllocator;
-
-    next_mb_tables = new H264DecoderMBAddr *[numberOfBuffers + 1];
-    return UMC::UMC_OK;
-}
-
-void LocalResources_H265::Reset()
-{
-    m_currentResourceIndex = 0;
-}
-
-void LocalResources_H265::Close()
-{
-    delete[] next_mb_tables;
-    next_mb_tables = 0;
-
-    DeallocateBuffers();
-
-    m_numberOfBuffers = 0;
-    m_pMemoryAllocator = 0;
-    m_currentResourceIndex = 0;
-}
-
-Ipp32u LocalResources_H265::GetCurrentResourceIndex()
-{
-    Ipp32s index = m_currentResourceIndex % (m_numberOfBuffers);
-    m_currentResourceIndex++;
-    return index;
-}
-
-bool LocalResources_H265::LockFrameResource(H265DecoderFrame * )
-{
-    return true;
-}
-
-void LocalResources_H265::UnlockFrameResource(H265DecoderFrame * )
-{
-}
-
-H265DecoderFrame * LocalResources_H265::IsBusyByFrame(Ipp32s )
-{
-    return NULL;
-}
-
-UMC::Status LocalResources_H265::AllocateBuffers(H265SeqParamSet* sps, bool exactSizeRequested)
-{
-    UMC::Status      umcRes = UMC::UMC_OK;
-    IppiSize desiredPaddedSize;
-
-    IppiSize  size;
-    size.width = sps->pic_width_in_luma_samples;
-    size.height = sps->pic_height_in_luma_samples;
-
-    desiredPaddedSize.width  = (size.width  + 15) & ~15;
-    desiredPaddedSize.height = (size.height + 15) & ~15;
-
-    // If our buffer and internal pointers are already set up for this
-    // image size, then there's nothing more to do.
-    // But if exactSizeRequested, we need to see if our existing
-    // buffer is oversized, and perhaps reallocate it.
-
-    if (m_paddedParsedDataSize.width == desiredPaddedSize.width &&
-        m_paddedParsedDataSize.height == desiredPaddedSize.height &&
-        !exactSizeRequested)
-        return umcRes;
-
-    // Determine how much space we need
-    Ipp32s     MB_Frame_Width   = desiredPaddedSize.width >> 4;
-    Ipp32s     MB_Frame_Height  = desiredPaddedSize.height >> 4;
-
-    Ipp32s     uMBMapSize   = MB_Frame_Width * MB_Frame_Height;
-    Ipp32s     next_mb_size = (Ipp32s)(MB_Frame_Width*MB_Frame_Height*sizeof(H264DecoderMBAddr));
-
-    Ipp32s     totalSize = (m_numberOfBuffers + 1)*next_mb_size + uMBMapSize + 128; // 128 used for alignments
-
-    // Reallocate our buffer if its size is not appropriate.
-    if (m_parsedDataLength < totalSize ||
-        (exactSizeRequested && (m_parsedDataLength != totalSize)))
-    {
-        DeallocateBuffers();
-
-        if (m_pMemoryAllocator->Alloc(&m_midParsedData,
-                                      totalSize,
-                                      UMC::UMC_ALLOC_PERSISTENT))
-            return UMC::UMC_ERR_ALLOC;
-
-        m_pParsedData = (Ipp8u *) m_pMemoryAllocator->Lock(m_midParsedData);
-        ippsZero_8u(m_pParsedData, totalSize);
-
-        m_parsedDataLength = totalSize;
-    }
-
-    // Reassign our internal pointers if need be
-    if (m_paddedParsedDataSize.width != desiredPaddedSize.width ||
-        m_paddedParsedDataSize.height != desiredPaddedSize.height)
-    {
-        m_paddedParsedDataSize = desiredPaddedSize;
-
-        size_t     offset = 0;
-
-        m_pMBMap = UMC::align_pointer<Ipp8u *> (m_pParsedData);
-        offset += uMBMapSize;
-
-        if (offset & 0x7)
-            offset = (offset + 7) & ~7;
-        next_mb_tables[0] = UMC::align_pointer<H264DecoderMBAddr *> (m_pParsedData + offset);
-
-        //initialize first table
-        for (Ipp32s i = 0; i < uMBMapSize; i++)
-            next_mb_tables[0][i] = i + 1; // simple linear scan
-
-        offset += next_mb_size;
-
-        for (Ipp32s i = 1; i <= m_numberOfBuffers; i++)
-        {
-            if (offset & 0x7)
-                offset = (offset + 7) & ~7;
-
-            next_mb_tables[i] = UMC::align_pointer<H264DecoderMBAddr *> (m_pParsedData + offset);
-            offset += next_mb_size;
-        }
-    }
-
-    return umcRes;
-}
-
-void LocalResources_H265::DeallocateBuffers()
-{
-    if (m_pParsedData)
-    {
-        // Free the old buffer.
-        m_pMemoryAllocator->Unlock(m_midParsedData);
-        m_pMemoryAllocator->Free(m_midParsedData);
-        m_pParsedData = 0;
-        m_midParsedData = 0;
-    }
-
-    m_parsedDataLength = 0;
-    m_paddedParsedDataSize.width = 0;
-    m_paddedParsedDataSize.height = 0;
-}
-
-/****************************************************************************************************/
 // SEI_Storer_H265
 /****************************************************************************************************/
 SEI_Storer_H265::SEI_Storer_H265()
@@ -821,8 +650,6 @@ UMC::Status TaskSupplier_H265::Init(UMC::BaseCodecParams *pInit)
         m_threadGroup.AddThread(thread);
     }
 
-    LocalResources_H265::Init(m_iThreadNum, m_pMemoryAllocator);
-
     m_isUseDelayDPBValues = true;
     m_local_delta_frame_time = 1.0/30;
     m_frameOrder = 0;
@@ -869,7 +696,6 @@ UMC::Status TaskSupplier_H265::PreInit(UMC::BaseCodecParams *pInit)
     m_iThreadNum = (0 == nAllowedThreadNumber) ? (vm_sys_info_get_cpu_num()) : (nAllowedThreadNumber);
 
     AU_Splitter_H265::Init(init);
-    LocalResources_H265::Init(m_iThreadNum, m_pMemoryAllocator);
 
     m_isUseDelayDPBValues = true;
     m_local_delta_frame_time = 1.0/30;
@@ -941,9 +767,6 @@ void TaskSupplier_H265::Close()
     m_sei_messages = 0;
 
 // from reset
-
-    LocalResources_H265::Close();
-
     delete[] m_pSegmentDecoder;
     m_pSegmentDecoder = 0;
 
@@ -997,8 +820,6 @@ void TaskSupplier_H265::Reset()
 
     m_isUseDelayDPBValues = true;
     m_pLastDisplayed = 0;
-
-    LocalResources_H265::Reset();
 
     if (m_pTaskBroker)
         m_pTaskBroker->Init(m_iThreadNum, true);
@@ -1202,10 +1023,10 @@ UMC::Status TaskSupplier_H265::xDecodeSPS(H265Bitstream &bs)
     UMC::Status s = bs.GetSequenceParamSet(&sps);
     if(s == UMC::UMC_OK)
     {
-        sps.WidthInCU = (sps.pic_width_in_luma_samples % sps.MaxCUWidth) ? sps.pic_width_in_luma_samples / sps.MaxCUWidth + 1 : sps.pic_width_in_luma_samples / sps.MaxCUWidth;
-        sps.HeightInCU = (sps.pic_height_in_luma_samples % sps.MaxCUHeight) ? sps.pic_height_in_luma_samples / sps.MaxCUHeight  + 1 : sps.pic_height_in_luma_samples / sps.MaxCUHeight;
-        sps.NumPartitionsInCUSize = 1 << sps.getMaxCUDepth();
-        sps.NumPartitionsInCU = 1 << (sps.getMaxCUDepth() << 1);
+        sps.WidthInCU = (sps.pic_width_in_luma_samples % sps.MaxCUSize) ? sps.pic_width_in_luma_samples / sps.MaxCUSize + 1 : sps.pic_width_in_luma_samples / sps.MaxCUSize;
+        sps.HeightInCU = (sps.pic_height_in_luma_samples % sps.MaxCUSize) ? sps.pic_height_in_luma_samples / sps.MaxCUSize  + 1 : sps.pic_height_in_luma_samples / sps.MaxCUSize;
+        sps.NumPartitionsInCUSize = 1 << sps.MaxCUDepth;
+        sps.NumPartitionsInCU = 1 << (sps.MaxCUDepth << 1);
         sps.NumPartitionsInFrameWidth = sps.WidthInCU * sps.NumPartitionsInCUSize;
         sps.NumPartitionsInFrameHeight = sps.HeightInCU * sps.NumPartitionsInCUSize;
 
@@ -1242,7 +1063,7 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
         return s;
 
     // Initialize tiles data
-    H265SeqParamSet *sps = m_Headers.m_SeqParams.GetHeader(pps.getSPSId());
+    H265SeqParamSet *sps = m_Headers.m_SeqParams.GetHeader(pps.pps_seq_parameter_set_id);
     VM_ASSERT(sps != 0);
     Ipp32u WidthInLCU = sps->WidthInCU;
     Ipp32u HeightInLCU = sps->HeightInCU;
@@ -1268,10 +1089,10 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
         return UMC::UMC_ERR_ALLOC;
     }
 
-    if (pps.getTilesEnabledFlag())
+    if (pps.tiles_enabled_flag)
     {
-        Ipp32u colums = pps.getNumColumns();
-        Ipp32u rows = pps.getNumRows();
+        Ipp32u colums = pps.num_tile_columns;
+        Ipp32u rows = pps.num_tile_rows;
 
         Ipp32u *colBd = new Ipp32u[colums];
         if (NULL == colBd)
@@ -1287,18 +1108,18 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
             return UMC::UMC_ERR_ALLOC;
         }
 
-        if (pps.getUniformSpacingFlag())
+        if (pps.uniform_spacing_flag)
         {
             Ipp32u lastDiv, i;
 
-            pps.m_ColumnWidthArray = new Ipp32u[colums];
-            if (NULL == pps.m_ColumnWidthArray)
+            pps.column_width = new Ipp32u[colums];
+            if (NULL == pps.column_width)
             {
                 pps.Reset();
                 return UMC::UMC_ERR_ALLOC;
             }
-            pps.m_RowHeightArray = new Ipp32u[rows];
-            if (NULL == pps.m_RowHeightArray)
+            pps.row_height = new Ipp32u[rows];
+            if (NULL == pps.row_height)
             {
                 pps.Reset();
                 return UMC::UMC_ERR_ALLOC;
@@ -1308,7 +1129,7 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
             for (i = 0; i < colums; i++)
             {
                 Ipp32u tmp = ((i + 1) * WidthInLCU) / colums;
-                pps.m_ColumnWidthArray[i] = tmp - lastDiv;
+                pps.column_width[i] = tmp - lastDiv;
                 lastDiv = tmp;
             }
 
@@ -1316,7 +1137,7 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
             for (i = 0; i < rows; i++)
             {
                 Ipp32u tmp = ((i + 1) * HeightInLCU) / rows;
-                pps.m_RowHeightArray[i] = tmp - lastDiv;
+                pps.row_height[i] = tmp - lastDiv;
                 lastDiv = tmp;
             }
         }
@@ -1326,29 +1147,29 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
             Ipp32u i;
             Ipp32u tmp = 0;
 
-            for (i = 0; i < pps.getNumColumns() - 1; i++)
+            for (i = 0; i < pps.num_tile_columns - 1; i++)
                 tmp += pps.getColumnWidth(i);
 
-            pps.m_ColumnWidthArray[pps.getNumColumns() - 1] = WidthInLCU - tmp;
+            pps.column_width[pps.num_tile_columns - 1] = WidthInLCU - tmp;
 
             tmp = 0;
-            for (i = 0; i < pps.getNumRows() - 1; i++)
+            for (i = 0; i < pps.num_tile_rows - 1; i++)
                 tmp += pps.getRowHeight(i);
 
-            pps.m_RowHeightArray[pps.getNumRows() - 1] = HeightInLCU - tmp;
+            pps.row_height[pps.num_tile_rows - 1] = HeightInLCU - tmp;
         }
 
         Ipp32u tbX, tbY;
         Ipp32u i, j;
 
         colBd[0] = 0;
-        for (i = 0; i < pps.getNumColumns() - 1; i++)
+        for (i = 0; i < pps.num_tile_columns - 1; i++)
         {
             colBd[i + 1] = colBd[i] + pps.getColumnWidth(i);
         }
 
         rowBd[0] = 0;
-        for (i = 0; i < pps.getNumRows() - 1; i++)
+        for (i = 0; i < pps.num_tile_rows - 1; i++)
         {
             rowBd[i + 1] = rowBd[i] + pps.getRowHeight(i);
         }
@@ -1413,7 +1234,7 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
         memset(pps.m_TileIdx, 0, sizeof(Ipp32u) * WidthInLCU * HeightInLCU);
     }
 
-    Ipp32s numberOfTiles = pps.getTilesEnabledFlag() ? pps.num_tile_columns * pps.num_tile_rows : 0;
+    Ipp32s numberOfTiles = pps.tiles_enabled_flag ? pps.num_tile_columns * pps.num_tile_rows : 0;
 
     pps.tilesInfo.resize(numberOfTiles);
 
@@ -1434,15 +1255,15 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
 
         for (Ipp32s j = 0; j < tileX; j++)
         {
-            startX += pps.m_ColumnWidthArray[j];
+            startX += pps.column_width[j];
         }
 
         for (Ipp32s j = 0; j < tileY; j++)
         {
-            startY += pps.m_RowHeightArray[j];
+            startY += pps.row_height[j];
         }
 
-        pps.tilesInfo[i].endCUAddr = (startY + pps.m_RowHeightArray[tileY] - 1)* WidthInLCU + startX + pps.m_ColumnWidthArray[tileX] - 1;
+        pps.tilesInfo[i].endCUAddr = (startY + pps.row_height[tileY] - 1)* WidthInLCU + startX + pps.column_width[tileX] - 1;
         pps.tilesInfo[i].firstCUAddr = startY * WidthInLCU + startX;
     }
 
@@ -1982,7 +1803,7 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
         return 0;
     }
 
-    Ipp32s seq_parameter_set_id = pSlice->m_pPicParamSet->seq_parameter_set_id;
+    Ipp32s seq_parameter_set_id = pSlice->m_pPicParamSet->pps_seq_parameter_set_id;
 
     pSlice->m_pSeqParamSet = m_Headers.m_SeqParams.GetHeader(seq_parameter_set_id);
     if (!pSlice->m_pSeqParamSet)
@@ -1996,8 +1817,8 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
         return 0;
     }
 
-    m_Headers.m_SeqParams.SetCurrentID(pSlice->m_pPicParamSet->seq_parameter_set_id);
-    m_Headers.m_PicParams.SetCurrentID(pSlice->m_pPicParamSet->pic_parameter_set_id);
+    m_Headers.m_SeqParams.SetCurrentID(pSlice->m_pPicParamSet->pps_seq_parameter_set_id);
+    m_Headers.m_PicParams.SetCurrentID(pSlice->m_pPicParamSet->pps_pic_parameter_set_id);
 
     ActivateHeaders(const_cast<H265SeqParamSet *>(pSlice->m_pSeqParamSet), const_cast<H265PicParamSet *>(pSlice->m_pPicParamSet));
 
@@ -2028,7 +1849,7 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
 
     // Update entry points
     size_t offsets = removed_offsets.size();
-    if (pSlice->m_pPicParamSet->getTilesEnabledFlag() && pSlice->getTileLocationCount() > 0 && offsets > 0)
+    if (pSlice->m_pPicParamSet->tiles_enabled_flag && pSlice->getTileLocationCount() > 0 && offsets > 0)
     {
         Ipp32u removed_bytes = 0;
         std::vector<Ipp32u>::iterator it = removed_offsets.begin();
@@ -2063,7 +1884,7 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
 
 void TaskSupplier_H265::ActivateHeaders(H265SeqParamSet *sps, H265PicParamSet *pps)
 {
-    pps->MinCUDQPSize = sps->MaxCUWidth >> pps->diff_cu_qp_delta_depth;
+    pps->MinCUDQPSize = sps->MaxCUSize >> pps->diff_cu_qp_delta_depth;
 
     for (Ipp32u i = 0; i < sps->MaxCUDepth - sps->AddCUDepth; i++)
     {
@@ -2230,8 +2051,6 @@ void TaskSupplier_H265::CompleteFrame(H265DecoderFrame * pFrame)
         return;
 
     DEBUG_PRINT((VM_STRING("Complete frame POC - (%d) type - %d, count - %d, m_uid - %d, IDR - %d\n"), pFrame->m_PicOrderCnt, pFrame->m_FrameType, slicesInfo->GetSliceCount(), pFrame->m_UID, slicesInfo->GetAnySlice()->GetSliceHeader()->IdrPicFlag));
-
-    pFrame->m_iResourceNumber = LocalResources_H265::GetCurrentResourceIndex();
 
     // skipping algorithm
     {

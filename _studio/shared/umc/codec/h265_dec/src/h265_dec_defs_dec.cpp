@@ -93,8 +93,7 @@ void H265SampleAdaptiveOffset::init(const H265SeqParamSet* sps)
     m_PicWidth  = sps->pic_width_in_luma_samples;
     m_PicHeight = sps->pic_height_in_luma_samples;
 
-    m_MaxCUWidth  = sps->MaxCUWidth;
-    m_MaxCUHeight = sps->MaxCUWidth;
+    m_MaxCUSize  = sps->MaxCUSize;
 
     Ipp32u uiPixelRangeY = 1 << g_bitDepthY;
     Ipp32u uiBoRangeShiftY = g_bitDepthY - SAO_BO_BITS;
@@ -145,26 +144,26 @@ void H265SampleAdaptiveOffset::init(const H265SeqParamSet* sps)
 void H265PicParamSetBase::getColumnWidth(Ipp16u *columnWidth) const
 {
     for (unsigned i = 0; i < num_tile_columns - 1; i++)
-        columnWidth[i] = (Ipp16u)m_ColumnWidthArray[i];
+        columnWidth[i] = (Ipp16u)column_width[i];
 }
 
 void H265PicParamSetBase::getColumnWidthMinus1(Ipp16u *columnWidth) const
 {
     for (unsigned i = 0; i < num_tile_columns - 1; i++)
-        columnWidth[i] = (Ipp16u)(m_ColumnWidthArray[i] - 1);
+        columnWidth[i] = (Ipp16u)(column_width[i] - 1);
 }
 
 void H265PicParamSetBase::setColumnWidth(Ipp32u* columnWidth)
 {
     if (uniform_spacing_flag == 0)
     {
-        m_ColumnWidthArray = new Ipp32u[num_tile_columns];
-        if (NULL == m_ColumnWidthArray)
+        column_width = new Ipp32u[num_tile_columns];
+        if (NULL == column_width)
             return;
 
         for (Ipp32u i = 0; i < num_tile_columns - 1; i++)
         {
-            m_ColumnWidthArray[i] = columnWidth[i];
+            column_width[i] = columnWidth[i];
         }
     }
 }
@@ -172,24 +171,24 @@ void H265PicParamSetBase::setColumnWidth(Ipp32u* columnWidth)
 void H265PicParamSetBase::getRowHeight(Ipp16u* rowHeight) const
 {
     for (unsigned i = 0; i < num_tile_rows - 1; i++)
-        rowHeight[i] = (Ipp16u)m_RowHeightArray[i];
+        rowHeight[i] = (Ipp16u)row_height[i];
 }
 
 void H265PicParamSetBase::getRowHeightMinus1(Ipp16u* rowHeight) const
 {
     for (unsigned i = 0; i < num_tile_rows - 1; i++)
-        rowHeight[i] = (Ipp16u)(m_RowHeightArray[i] - 1);
+        rowHeight[i] = (Ipp16u)(row_height[i] - 1);
 }
 
 void H265PicParamSetBase::setRowHeight(Ipp32u* rowHeight)
 {
     if (uniform_spacing_flag == 0)
     {
-        m_RowHeightArray = new Ipp32u[num_tile_rows];
+        row_height = new Ipp32u[num_tile_rows];
 
         for (Ipp32u i = 0; i < num_tile_rows - 1; i++)
         {
-            m_RowHeightArray[i] = rowHeight[i];
+            row_height[i] = rowHeight[i];
         }
     }
 }
@@ -256,8 +255,8 @@ void H265SampleAdaptiveOffset::processSaoCuOrgChroma(Ipp32s addr, Ipp32s saoType
     Ipp32s tmpUpBuff1[66];
     Ipp32s tmpUpBuff2[66];
     Ipp32s stride;
-    Ipp32s LCUWidth  = m_MaxCUWidth;
-    Ipp32s LCUHeight = m_MaxCUHeight;
+    Ipp32s LCUWidth  = m_MaxCUSize;
+    Ipp32s LCUHeight = m_MaxCUSize;
     Ipp32s LPelX     = (Ipp32s)pTmpCu->m_CUPelX;
     Ipp32s TPelY     = (Ipp32s)pTmpCu->m_CUPelY;
     Ipp32s RPelX;
@@ -480,8 +479,8 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H
     Ipp32s tmpUpBuff1[66];
     Ipp32s tmpUpBuff2[66];
     Ipp32s stride;
-    Ipp32s LCUWidth  = m_MaxCUWidth;
-    Ipp32s LCUHeight = m_MaxCUHeight;
+    Ipp32s LCUWidth  = m_MaxCUSize;
+    Ipp32s LCUHeight = m_MaxCUSize;
     Ipp32s LPelX     = (Ipp32s)pTmpCu->m_CUPelX;
     Ipp32s TPelY     = (Ipp32s)pTmpCu->m_CUPelY;
     Ipp32s RPelX;
@@ -826,8 +825,8 @@ void H265SampleAdaptiveOffset::SAOProcess(H265DecoderFrame* pFrame, Ipp32s start
 void H265SampleAdaptiveOffset::processSaoLine(SAOLCUParam* saoLCUParam, SAOLCUParam* saoLCUParamCb, SAOLCUParam* saoLCUParamCr, Ipp32s firstCU, Ipp32s endCU)
 {
     Ipp32s frameWidthInCU = m_Frame->getFrameWidthInCU();
-    Ipp32s LCUWidth = m_MaxCUWidth;
-    Ipp32s LCUHeight = m_MaxCUHeight;
+    Ipp32s LCUWidth = m_MaxCUSize;
+    Ipp32s LCUHeight = m_MaxCUSize;
     Ipp32s picHeightTmp = m_PicHeight;
 
     Ipp32s CUHeight = LCUHeight + 1;
@@ -896,8 +895,8 @@ void H265SampleAdaptiveOffset::processSaoLine(SAOLCUParam* saoLCUParam, SAOLCUPa
                     typeIdx,
                     m_TmpL[0],
                     &(m_TmpU[0][pTmpCu->m_CUPelX]),
-                    m_MaxCUWidth,
-                    m_MaxCUHeight,
+                    m_MaxCUSize,
+                    m_MaxCUSize,
                     m_PicWidth,
                     m_PicHeight,
                     m_OffsetEo,
@@ -914,8 +913,8 @@ void H265SampleAdaptiveOffset::processSaoLine(SAOLCUParam* saoLCUParam, SAOLCUPa
                     typeIdx,
                     m_TmpL[0],
                     &(m_TmpU[0][pTmpCu->m_CUPelX]),
-                    m_MaxCUWidth,
-                    m_MaxCUHeight,
+                    m_MaxCUSize,
+                    m_MaxCUSize,
                     m_PicWidth,
                     m_PicHeight,
                     m_OffsetEo,
@@ -958,14 +957,14 @@ void H265SampleAdaptiveOffset::processSaoUnits(Ipp32s firstCU, Ipp32s toProcessC
 
     Ipp32s frameWidthInCU = m_Frame->getFrameWidthInCU();
     Ipp32s frameHeightInCU = m_Frame->getFrameHeightInCU();
-    Ipp32s LCUHeight = m_MaxCUHeight;
+    Ipp32s LCUHeight = m_MaxCUSize;
     Ipp32s picWidthTmp = m_PicWidth;
 
     m_slice_sao_luma_flag = slice->GetSliceHeader()->slice_sao_luma_flag;
     m_slice_sao_chroma_flag = slice->GetSliceHeader()->slice_sao_chroma_flag;
     
     m_needPCMRestoration = (slice->GetSliceHeader()->m_SeqParamSet->pcm_enabled_flag && slice->GetSliceHeader()->m_SeqParamSet->pcm_loop_filter_disabled_flag) ||
-        slice->GetSliceHeader()->m_PicParamSet->getTransquantBypassEnableFlag();
+        slice->GetSliceHeader()->m_PicParamSet->transquant_bypass_enabled_flag;
 
     m_SaoBitIncreaseY = IPP_MAX(g_bitDepthY - 10, 0);
     m_SaoBitIncreaseC = IPP_MAX(g_bitDepthC - 10, 0);

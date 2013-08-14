@@ -43,13 +43,11 @@ void PartitionInfo::InitZscanToRaster(Ipp32s MaxDepth, Ipp32s Depth, Ipp32u Star
 
 void PartitionInfo::InitRasterToZscan(const H265SeqParamSet* sps)
 {
-    Ipp32u  MinCUWidth  = sps->MaxCUWidth  >> sps->MaxCUDepth;
-    Ipp32u  MinCUHeight = sps->MaxCUHeight >> sps->MaxCUDepth;
+    Ipp32u  MinCUSize  = sps->MaxCUSize  >> sps->MaxCUDepth;
 
-    Ipp32u  NumPartInWidth  = sps->MaxCUWidth  / MinCUWidth;
-    Ipp32u  NumPartInHeight = sps->MaxCUHeight / MinCUHeight;
+    Ipp32u  NumPartInSize  = sps->MaxCUSize  / MinCUSize;
 
-    for (Ipp32u i = 0; i < NumPartInWidth * NumPartInHeight; i++)
+    for (Ipp32u i = 0; i < NumPartInSize * NumPartInSize; i++)
     {
         m_rasterToZscan[m_zscanToRaster[i]] = i;
     }
@@ -60,8 +58,8 @@ void PartitionInfo::InitRasterToPelXY(const H265SeqParamSet* sps)
     Ipp32u* TempX = &m_rasterToPelX[0];
     Ipp32u* TempY = &m_rasterToPelY[0];
 
-    Ipp32u MinCUSize = sps->MaxCUWidth >> sps->MaxCUDepth;
-    Ipp32u NumPartInSize = sps->MaxCUWidth / MinCUSize;
+    Ipp32u MinCUSize = sps->MaxCUSize >> sps->MaxCUDepth;
+    Ipp32u NumPartInSize = sps->MaxCUSize / MinCUSize;
     
     for (Ipp32u i = 0; i < NumPartInSize*NumPartInSize; i++)
     {
@@ -76,11 +74,11 @@ void PartitionInfo::InitRasterToPelXY(const H265SeqParamSet* sps)
 
 void PartitionInfo::Init(const H265SeqParamSet* sps)
 {
-    if (m_MaxCUDepth == sps->MaxCUDepth && m_MaxCUSize == sps->MaxCUWidth)
+    if (m_MaxCUDepth == sps->MaxCUDepth && m_MaxCUSize == sps->MaxCUSize)
         return;
 
     m_MaxCUDepth = sps->MaxCUDepth;
-    m_MaxCUSize = sps->MaxCUWidth;
+    m_MaxCUSize = sps->MaxCUSize;
 
     memset(m_rasterToPelX, 0, sizeof(m_rasterToPelX));
     memset(m_rasterToPelY, 0, sizeof(m_rasterToPelY));

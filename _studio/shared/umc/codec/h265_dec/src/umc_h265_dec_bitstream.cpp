@@ -579,8 +579,7 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
     READ_UVLC( uiCode, "log2_diff_max_min_coding_block_size");
     unsigned uiMaxCUDepthCorrect = uiCode;
     pcSPS->log2_max_luma_coding_block_size = uiMaxCUDepthCorrect + pcSPS->log2_min_luma_coding_block_size;
-    pcSPS->setMaxCUWidth  ( 1<<pcSPS->log2_max_luma_coding_block_size);
-    pcSPS->setMaxCUHeight ( 1<<pcSPS->log2_max_luma_coding_block_size);
+    pcSPS->MaxCUSize =  1<<pcSPS->log2_max_luma_coding_block_size;
     READ_UVLC( uiCode, "log2_min_transform_block_size_minus2");   pcSPS->log2_min_transform_block_size = uiCode + 2;
 
     READ_UVLC(uiCode, "log2_diff_max_min_transform_block_size"); pcSPS->log2_max_transform_block_size = uiCode + pcSPS->log2_min_transform_block_size;
@@ -590,7 +589,7 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
     READ_UVLC(uiCode, "max_transform_hierarchy_depth_intra");   pcSPS->max_transform_hierarchy_depth_intra = uiCode + 1;
     
     Ipp32u addCUDepth = 0;
-    while((pcSPS->getMaxCUWidth() >> uiMaxCUDepthCorrect) > (unsigned)( 1 << ( pcSPS->log2_min_transform_block_size + addCUDepth)))
+    while((pcSPS->MaxCUSize >> uiMaxCUDepthCorrect) > (unsigned)( 1 << ( pcSPS->log2_min_transform_block_size + addCUDepth)))
     {
         addCUDepth++;
     }
@@ -782,51 +781,51 @@ UMC::Status H265HeadersBitstream::GetPictureParamSetFull(H265PicParamSet  *pcPPS
     int      iCode;
     unsigned uiCode;
 
-    READ_UVLC( uiCode, "pps_pic_parameter_set_id");                 pcPPS->setPPSId (uiCode);
-    READ_UVLC( uiCode, "pps_seq_parameter_set_id");                 pcPPS->setSPSId (uiCode);
-    READ_FLAG( uiCode, "dependent_slice_segments_enabled_flag");    pcPPS->setDependentSliceSegmentEnabledFlag   ( uiCode != 0 );
-    READ_FLAG( uiCode, "output_flag_present_flag" );                pcPPS->setOutputFlagPresentFlag( uiCode==1 );
-    READ_CODE(3, uiCode, "num_extra_slice_header_bits");            pcPPS->setNumExtraSliceHeaderBits(uiCode);
-    READ_FLAG ( uiCode, "sign_data_hiding_flag" );                  pcPPS->setSignHideFlag( uiCode );
-    READ_FLAG( uiCode,   "cabac_init_present_flag" );               pcPPS->setCabacInitPresentFlag( uiCode ? true : false );
-    READ_UVLC(uiCode, "num_ref_idx_l0_default_active_minus1");      pcPPS->setNumRefIdxL0DefaultActive(uiCode + 1); VM_ASSERT(uiCode <= 14);
-    READ_UVLC(uiCode, "num_ref_idx_l1_default_active_minus1");      pcPPS->setNumRefIdxL1DefaultActive(uiCode+1);   VM_ASSERT(uiCode <= 14);
-    READ_SVLC(iCode, "init_qp_minus26" );                           pcPPS->setPicInitQP(iCode + 26);
-    READ_FLAG( uiCode, "constrained_intra_pred_flag" );             pcPPS->setConstrainedIntraPred( uiCode != 0 );
-    READ_FLAG( uiCode, "transform_skip_enabled_flag" );             pcPPS->setUseTransformSkip ( uiCode != 0 );
+    READ_UVLC( uiCode, "pps_pic_parameter_set_id");                 pcPPS->pps_pic_parameter_set_id = uiCode;
+    READ_UVLC( uiCode, "pps_seq_parameter_set_id");                 pcPPS->pps_seq_parameter_set_id = uiCode;
+    READ_FLAG( uiCode, "dependent_slice_segments_enabled_flag");    pcPPS->dependent_slice_segments_enabled_flag = uiCode != 0;
+    READ_FLAG( uiCode, "output_flag_present_flag" );                pcPPS->output_flag_present_flag = uiCode==1;
+    READ_CODE(3, uiCode, "num_extra_slice_header_bits");            pcPPS->num_extra_slice_header_bits = uiCode;
+    READ_FLAG ( uiCode, "sign_data_hiding_flag" );                  pcPPS->sign_data_hiding_enabled_flag =  uiCode;
+    READ_FLAG( uiCode,   "cabac_init_present_flag" );               pcPPS->cabac_init_present_flag =  uiCode ? true : false;
+    READ_UVLC(uiCode, "num_ref_idx_l0_default_active_minus1");      pcPPS->num_ref_idx_l0_default_active = uiCode + 1; VM_ASSERT(uiCode <= 14);
+    READ_UVLC(uiCode, "num_ref_idx_l1_default_active_minus1");      pcPPS->num_ref_idx_l1_default_active = uiCode + 1;   VM_ASSERT(uiCode <= 14);
+    READ_SVLC(iCode, "init_qp_minus26" );                           pcPPS->init_qp = iCode + 26;
+    READ_FLAG( uiCode, "constrained_intra_pred_flag" );             pcPPS->constrained_intra_pred_flag = uiCode != 0;
+    READ_FLAG( uiCode, "transform_skip_enabled_flag" );             pcPPS->transform_skip_enabled_flag = uiCode != 0;
 
     READ_FLAG( uiCode, "cu_qp_delta_enabled_flag" );                pcPPS->cu_qp_delta_enabled_flag = ( uiCode != 0 );
     if( pcPPS->cu_qp_delta_enabled_flag )
     {
         READ_UVLC( uiCode, "diff_cu_qp_delta_depth" );
-        pcPPS->setMaxCuDQPDepth( uiCode );
+        pcPPS->diff_cu_qp_delta_depth = uiCode;
     }
     else
     {
-        pcPPS->setMaxCuDQPDepth( 0 );
+        pcPPS->diff_cu_qp_delta_depth = 0;
     }
     READ_SVLC( iCode, "pps_cb_qp_offset");
-    pcPPS->setChromaCbQpOffset(iCode);
-    VM_ASSERT( pcPPS->getChromaCbQpOffset() >= -12 );
-    VM_ASSERT( pcPPS->getChromaCbQpOffset() <=  12 );
+    pcPPS->pps_cb_qp_offset = iCode;
+    VM_ASSERT( pcPPS->pps_cb_qp_offset >= -12 );
+    VM_ASSERT( pcPPS->pps_cb_qp_offset <=  12 );
 
     READ_SVLC( iCode, "pps_cr_qp_offset");
-    pcPPS->setChromaCrQpOffset(iCode);
-    VM_ASSERT( pcPPS->getChromaCrQpOffset() >= -12 );
-    VM_ASSERT( pcPPS->getChromaCrQpOffset() <=  12 );
+    pcPPS->pps_cr_qp_offset = iCode;
+    VM_ASSERT( pcPPS->pps_cr_qp_offset >= -12 );
+    VM_ASSERT( pcPPS->pps_cr_qp_offset <=  12 );
 
     READ_FLAG( uiCode, "pps_slice_chroma_qp_offsets_present_flag" );
     pcPPS->pps_slice_chroma_qp_offsets_present_flag = ( uiCode != 0 );
 
     READ_FLAG( uiCode, "weighted_pred_flag" );          // Use of Weighting Prediction (P_SLICE)
-    pcPPS->setUseWP( uiCode==1 );
+    pcPPS->weighted_pred_flag = uiCode==1;
     READ_FLAG( uiCode, "weighted_bipred_flag" );         // Use of Bi-Directional Weighting Prediction (B_SLICE)
-    pcPPS->setWPBiPred( uiCode==1 );
+    pcPPS->weighted_bipred_flag = uiCode==1;
 
     READ_FLAG( uiCode, "transquant_bypass_enable_flag");
-    pcPPS->setTransquantBypassEnableFlag(uiCode ? true : false);
-    READ_FLAG( uiCode, "tiles_enabled_flag"               );    pcPPS->setTilesEnabledFlag            ( uiCode == 1 );
-    READ_FLAG( uiCode, "entropy_coding_sync_enabled_flag" );    pcPPS->setEntropyCodingSyncEnabledFlag( uiCode == 1 );
+    pcPPS->transquant_bypass_enabled_flag =uiCode ? true : false;
+    READ_FLAG( uiCode, "tiles_enabled_flag"               );    pcPPS->tiles_enabled_flag = uiCode == 1;
+    READ_FLAG( uiCode, "entropy_coding_sync_enabled_flag" );    pcPPS->entropy_coding_sync_enabled_flag = uiCode == 1;
 
     if( pcPPS->tiles_enabled_flag )
     {
@@ -851,7 +850,7 @@ UMC::Status H265HeadersBitstream::GetPictureParamSetFull(H265PicParamSet  *pcPPS
             }
             pcPPS->setColumnWidth(columnWidth);
             free(columnWidth);
-            if (NULL == pcPPS->m_ColumnWidthArray && pcPPS->getNumColumns() - 1 > 0)
+            if (NULL == pcPPS->column_width && pcPPS->num_tile_columns - 1 > 0)
             {
                 pcPPS->Reset();
                 return UMC::UMC_ERR_ALLOC;
@@ -871,7 +870,7 @@ UMC::Status H265HeadersBitstream::GetPictureParamSetFull(H265PicParamSet  *pcPPS
             }
             pcPPS->setRowHeight(rowHeight);
             free(rowHeight);
-            if (NULL == pcPPS->m_RowHeightArray && pcPPS->num_tile_rows - 1 > 0)
+            if (NULL == pcPPS->row_height && pcPPS->num_tile_rows - 1 > 0)
             {
                 pcPPS->Reset();
                 return UMC::UMC_ERR_ALLOC;
@@ -889,32 +888,32 @@ UMC::Status H265HeadersBitstream::GetPictureParamSetFull(H265PicParamSet  *pcPPS
         pcPPS->num_tile_rows = 1;
     }
 
-    READ_FLAG( uiCode, "loop_filter_across_slices_enabled_flag" );       pcPPS->setLoopFilterAcrossSlicesEnabledFlag( uiCode ? true : false );
-    READ_FLAG( uiCode, "deblocking_filter_control_present_flag" );       pcPPS->setDeblockingFilterControlPresentFlag( uiCode ? true : false );
-    if(pcPPS->getDeblockingFilterControlPresentFlag())
+    READ_FLAG( uiCode, "loop_filter_across_slices_enabled_flag" );       pcPPS->pps_loop_filter_across_slices_enabled_flag = uiCode ? true : false;
+    READ_FLAG( uiCode, "deblocking_filter_control_present_flag" );       pcPPS->deblocking_filter_control_present_flag = uiCode ? true : false;
+    if (pcPPS->deblocking_filter_control_present_flag)
     {
-        READ_FLAG( uiCode, "deblocking_filter_override_enabled_flag" );    pcPPS->setDeblockingFilterOverrideEnabledFlag( uiCode ? true : false );
-        READ_FLAG( uiCode, "pps_disable_deblocking_filter_flag" );         pcPPS->setPicDisableDeblockingFilterFlag(uiCode ? true : false );
-        if(!pcPPS->getPicDisableDeblockingFilterFlag())
+        READ_FLAG( uiCode, "deblocking_filter_override_enabled_flag" );    pcPPS->deblocking_filter_override_enabled_flag = uiCode ? true : false;
+        READ_FLAG( uiCode, "pps_disable_deblocking_filter_flag" );         pcPPS->pps_deblocking_filter_disabled_flag = uiCode ? true : false;
+        if (!pcPPS->pps_deblocking_filter_disabled_flag)
         {
-            READ_SVLC ( iCode, "pps_beta_offset_div2" );                     pcPPS->setDeblockingFilterBetaOffsetDiv2( iCode );
-            READ_SVLC ( iCode, "pps_tc_offset_div2" );                       pcPPS->setDeblockingFilterTcOffsetDiv2( iCode );
+            READ_SVLC ( iCode, "pps_beta_offset_div2" );                     pcPPS->pps_beta_offset = iCode << 1;
+            READ_SVLC ( iCode, "pps_tc_offset_div2" );                       pcPPS->pps_tc_offset = iCode << 1;
         }
     }
-    READ_FLAG( uiCode, "pps_scaling_list_data_present_flag" );           pcPPS->setScalingListPresentFlag( uiCode ? true : false );
-    if(pcPPS->getScalingListPresentFlag ())
+    READ_FLAG( uiCode, "pps_scaling_list_data_present_flag" );           pcPPS->pps_scaling_list_data_present_flag = uiCode ? true : false;
+    if(pcPPS->pps_scaling_list_data_present_flag)
     {
         parseScalingList( pcPPS->getScalingList() );
     }
 
     READ_FLAG( uiCode, "lists_modification_present_flag");
-    pcPPS->setListsModificationPresentFlag(uiCode);
+    pcPPS->lists_modification_present_flag = uiCode;
 
     READ_UVLC( uiCode, "log2_parallel_merge_level_minus2");
-    pcPPS->setLog2ParallelMergeLevel(uiCode + 2);
+    pcPPS->log2_parallel_merge_level = uiCode + 2;
 
     READ_FLAG( uiCode, "slice_segment_header_extension_present_flag");
-    pcPPS->setSliceHeaderExtensionPresentFlag(uiCode);
+    pcPPS->slice_segment_header_extension_present_flag = uiCode;
 
     READ_FLAG( uiCode, "pps_extension_flag");
     if (uiCode)
@@ -1078,7 +1077,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
 
     VM_ASSERT(pps!=0);
     VM_ASSERT(sps!=0);
-    if( pps->getDependentSliceSegmentEnabledFlag() && ( !rpcSlice->GetSliceHeader()->first_slice_segment_in_pic_flag ))
+    if( pps->dependent_slice_segments_enabled_flag && ( !rpcSlice->GetSliceHeader()->first_slice_segment_in_pic_flag ))
     {
         READ_FLAG( uiCode, "dependent_slice_segment_flag" );       rpcSlice->setDependentSliceSegmentFlag(uiCode ? true : false);
     }
@@ -1086,8 +1085,8 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
     {
         rpcSlice->setDependentSliceSegmentFlag(false);
     }
-    int numCTUs = ((sps->pic_width_in_luma_samples + sps->getMaxCUWidth()-1)/sps->getMaxCUWidth())*((sps->pic_height_in_luma_samples + sps->getMaxCUHeight()-1)/sps->getMaxCUHeight());
-    int maxParts = (1<<(sps->getMaxCUDepth()<<1));
+    int numCTUs = ((sps->pic_width_in_luma_samples + sps->MaxCUSize-1)/sps->MaxCUSize)*((sps->pic_height_in_luma_samples + sps->MaxCUSize-1)/sps->MaxCUSize);
+    int maxParts = (1<<(sps->MaxCUDepth<<1));
     unsigned sliceSegmentAddress = 0;
     int bitsSliceSegmentAddress = 0;
     while(numCTUs>(1<<bitsSliceSegmentAddress))
@@ -1114,7 +1113,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
 
     if(!rpcSlice->getDependentSliceSegmentFlag())
     {
-        for (int i = 0; i < rpcSlice->getPPS()->getNumExtraSliceHeaderBits(); i++)
+        for (int i = 0; i < rpcSlice->getPPS()->num_extra_slice_header_bits; i++)
         {
             READ_FLAG(uiCode, "slice_reserved_undetermined_flag[]"); // ignored
         }
@@ -1125,14 +1124,14 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
     if(!rpcSlice->getDependentSliceSegmentFlag())
     {
 /*
-        for (int i = 0; i < rpcSlice->getPPS()->getNumExtraSliceHeaderBits(); i++)
+        for (int i = 0; i < rpcSlice->getPPS()->num_extra_slice_header_bits; i++)
         {
             READ_FLAG(uiCode, "slice_reserved_undetermined_flag[]"); // ignored
         }
 
         READ_UVLC (    uiCode, "slice_type" );            rpcSlice->setSliceType((SliceType)uiCode);
 */
-        if( pps->getOutputFlagPresentFlag() )
+        if (pps->output_flag_present_flag)
         {
             READ_FLAG( uiCode, "pic_output_flag" );    rpcSlice->setPicOutputFlag( uiCode ? true : false );
         }
@@ -1345,10 +1344,10 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
             }
             else
             {
-                rpcSlice->setNumRefIdx(REF_PIC_LIST_0, rpcSlice->getPPS()->getNumRefIdxL0DefaultActive());
+                rpcSlice->setNumRefIdx(REF_PIC_LIST_0, rpcSlice->getPPS()->num_ref_idx_l0_default_active);
                 if (rpcSlice->isInterB())
                 {
-                    rpcSlice->setNumRefIdx(REF_PIC_LIST_1, rpcSlice->getPPS()->getNumRefIdxL1DefaultActive());
+                    rpcSlice->setNumRefIdx(REF_PIC_LIST_1, rpcSlice->getPPS()->num_ref_idx_l1_default_active);
                 }
                 else
                 {
@@ -1360,7 +1359,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
         RefPicListModification* refPicListModification = rpcSlice->getRefPicListModification();
         if(!rpcSlice->isIntra())
         {
-            if( !rpcSlice->getPPS()->getListsModificationPresentFlag() || rpcSlice->getNumRpsCurrTempList() <= 1 )
+            if( !rpcSlice->getPPS()->lists_modification_present_flag || rpcSlice->getNumRpsCurrTempList() <= 1 )
             {
                 refPicListModification->setRefPicListModificationFlagL0( 0 );
             }
@@ -1403,7 +1402,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
         }
         if(rpcSlice->isInterB())
         {
-            if( !rpcSlice->getPPS()->getListsModificationPresentFlag() || rpcSlice->getNumRpsCurrTempList() <= 1 )
+            if( !rpcSlice->getPPS()->lists_modification_present_flag || rpcSlice->getNumRpsCurrTempList() <= 1 )
             {
                 refPicListModification->setRefPicListModificationFlagL1( 0 );
             }
@@ -1449,7 +1448,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
         }
 
         rpcSlice->setCabacInitFlag( false ); // default
-        if(pps->getCabacInitPresentFlag() && !rpcSlice->isIntra())
+        if(pps->cabac_init_present_flag && !rpcSlice->isIntra())
         {
             READ_FLAG(uiCode, "cabac_init_flag");
             rpcSlice->setCabacInitFlag( uiCode ? true : false );
@@ -1479,7 +1478,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
                 rpcSlice->setColRefIdx(0);
             }
         }
-        if ( (pps->getUseWP() && rpcSlice->getSliceType()==P_SLICE) || (pps->getWPBiPred() && rpcSlice->getSliceType()==B_SLICE) )
+        if ( (pps->weighted_pred_flag && rpcSlice->getSliceType()==P_SLICE) || (pps->weighted_bipred_flag && rpcSlice->getSliceType()==B_SLICE) )
         {
             xParsePredWeightTable(rpcSlice);
             rpcSlice->initWpScaling();
@@ -1491,31 +1490,31 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
         }
 
         READ_SVLC( iCode, "slice_qp_delta" );
-        sliceHdr->SliceQP = pps->getPicInitQP() + iCode;
+        sliceHdr->SliceQP = pps->init_qp + iCode;
 
         VM_ASSERT( sliceHdr->SliceQP >= -sps->getQpBDOffsetY() );
         VM_ASSERT( sliceHdr->SliceQP <=  51 );
 
-        if (rpcSlice->getPPS()->getSliceChromaQpFlag())
+        if (rpcSlice->getPPS()->pps_slice_chroma_qp_offsets_present_flag)
         {
             READ_SVLC( iCode, "slice_cb_qp_offset" );
             sliceHdr->slice_cb_qp_offset =  iCode;
             VM_ASSERT( sliceHdr->slice_cb_qp_offset >= -12 );
             VM_ASSERT( sliceHdr->slice_cb_qp_offset <=  12 );
-            VM_ASSERT( (rpcSlice->getPPS()->getChromaCbQpOffset() + sliceHdr->slice_cb_qp_offset) >= -12 );
-            VM_ASSERT( (rpcSlice->getPPS()->getChromaCbQpOffset() + sliceHdr->slice_cb_qp_offset) <=  12 );
+            VM_ASSERT( (rpcSlice->getPPS()->pps_cb_qp_offset + sliceHdr->slice_cb_qp_offset) >= -12 );
+            VM_ASSERT( (rpcSlice->getPPS()->pps_cb_qp_offset + sliceHdr->slice_cb_qp_offset) <=  12 );
 
             READ_SVLC( iCode, "slice_cr_qp_offset" );
             sliceHdr->slice_cr_qp_offset = iCode;
             VM_ASSERT( sliceHdr->slice_cr_qp_offset >= -12 );
             VM_ASSERT( sliceHdr->slice_cr_qp_offset <=  12 );
-            VM_ASSERT( (rpcSlice->getPPS()->getChromaCrQpOffset() + sliceHdr->slice_cr_qp_offset) >= -12 );
-            VM_ASSERT( (rpcSlice->getPPS()->getChromaCrQpOffset() + sliceHdr->slice_cr_qp_offset) <=  12 );
+            VM_ASSERT( (rpcSlice->getPPS()->pps_cr_qp_offset + sliceHdr->slice_cr_qp_offset) >= -12 );
+            VM_ASSERT( (rpcSlice->getPPS()->pps_cr_qp_offset + sliceHdr->slice_cr_qp_offset) <=  12 );
         }
 
-        if (rpcSlice->getPPS()->getDeblockingFilterControlPresentFlag())
+        if (rpcSlice->getPPS()->deblocking_filter_control_present_flag)
         {
-            if(rpcSlice->getPPS()->getDeblockingFilterOverrideEnabledFlag())
+            if (rpcSlice->getPPS()->deblocking_filter_override_enabled_flag)
             {
                 READ_FLAG ( uiCode, "deblocking_filter_override_flag" );        rpcSlice->setDeblockingFilterOverrideFlag(uiCode ? true : false);
             }
@@ -1528,46 +1527,46 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
                 READ_FLAG ( uiCode, "slice_disable_deblocking_filter_flag" );   sliceHdr->m_deblockingFilterDisable = uiCode != 0;
                 if(!rpcSlice->GetSliceHeader()->m_deblockingFilterDisable)
                 {
-                    READ_SVLC( iCode, "beta_offset_div2" );                       rpcSlice->setDeblockingFilterBetaOffsetDiv2(iCode);
-                    READ_SVLC( iCode, "tc_offset_div2" );                         rpcSlice->setDeblockingFilterTcOffsetDiv2(iCode);
+                    READ_SVLC( iCode, "beta_offset_div2" );                       sliceHdr->m_deblockingFilterBetaOffset =  iCode << 1;
+                    READ_SVLC( iCode, "tc_offset_div2" );                         sliceHdr->m_deblockingFilterTcOffset = iCode << 1;
                 }
             }
             else
             {
-                sliceHdr->m_deblockingFilterDisable =  rpcSlice->getPPS()->getPicDisableDeblockingFilterFlag();
-                rpcSlice->setDeblockingFilterBetaOffsetDiv2( rpcSlice->getPPS()->getDeblockingFilterBetaOffsetDiv2() );
-                rpcSlice->setDeblockingFilterTcOffsetDiv2  ( rpcSlice->getPPS()->getDeblockingFilterTcOffsetDiv2() );
+                sliceHdr->m_deblockingFilterDisable =  rpcSlice->getPPS()->pps_deblocking_filter_disabled_flag;
+                sliceHdr->m_deblockingFilterBetaOffset = rpcSlice->getPPS()->pps_beta_offset;
+                sliceHdr->m_deblockingFilterTcOffset = rpcSlice->getPPS()->pps_tc_offset;
             }
         }
         else
         {
             sliceHdr->m_deblockingFilterDisable = false;
-            rpcSlice->setDeblockingFilterBetaOffsetDiv2( 0 );
-            rpcSlice->setDeblockingFilterTcOffsetDiv2  ( 0 );
+            sliceHdr->m_deblockingFilterBetaOffset = 0;
+            sliceHdr->m_deblockingFilterTcOffset = 0;
         }
 
         bool isSAOEnabled = sliceHdr->slice_sao_luma_flag || sliceHdr->slice_sao_chroma_flag;
         bool isDBFEnabled = !rpcSlice->GetSliceHeader()->m_deblockingFilterDisable;
 
-        if(rpcSlice->getPPS()->getLoopFilterAcrossSlicesEnabledFlag() && ( isSAOEnabled || isDBFEnabled ))
+        if(rpcSlice->getPPS()->pps_loop_filter_across_slices_enabled_flag && ( isSAOEnabled || isDBFEnabled ))
         {
             READ_FLAG( uiCode, "slice_loop_filter_across_slices_enabled_flag");
         }
         else
         {
-            uiCode = rpcSlice->getPPS()->getLoopFilterAcrossSlicesEnabledFlag()?1:0;
+            uiCode = rpcSlice->getPPS()->pps_loop_filter_across_slices_enabled_flag?1:0;
         }
         sliceHdr->slice_loop_filter_across_slices_enabled_flag = uiCode == 1;
 
     }
 
-    if (!pps->getTilesEnabledFlag())
+    if (!pps->tiles_enabled_flag)
     {
         rpcSlice->setTileLocationCount(1);
         rpcSlice->setTileLocation(0, 0);
     }
 
-    if( pps->getTilesEnabledFlag() || pps->getEntropyCodingSyncEnabledFlag() )
+    if (pps->tiles_enabled_flag || pps->entropy_coding_sync_enabled_flag)
     {
         unsigned *entryPointOffset          = NULL;
         int numEntryPointOffsets, offsetLenMinus1 = 0;
@@ -1584,7 +1583,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
             entryPointOffset[ idx ] = uiCode + 1;
         }
 
-        if ( pps->getTilesEnabledFlag() )
+        if (pps->tiles_enabled_flag)
         {
             // THIS IS DIFFERENT FROM REFERENCE!!!
             rpcSlice->setTileLocationCount( numEntryPointOffsets + 1 );
@@ -1597,7 +1596,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
                 prevPos += entryPointOffset[ idx - 1 ];
             }
         }
-        else if ( pps->getEntropyCodingSyncEnabledFlag() )
+        else if (pps->entropy_coding_sync_enabled_flag)
         {
             int numSubstreams = rpcSlice->getNumEntryPointOffsets()+1;
             rpcSlice->allocSubstreamSizes(numSubstreams);
@@ -1625,7 +1624,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
         rpcSlice->setNumEntryPointOffsets ( 0 );
     }
 
-    if(pps->getSliceHeaderExtensionPresentFlag())
+    if(pps->slice_segment_header_extension_present_flag)
     {
         READ_UVLC(uiCode,"slice_header_extension_length");
         for(unsigned i=0; i<uiCode; i++)

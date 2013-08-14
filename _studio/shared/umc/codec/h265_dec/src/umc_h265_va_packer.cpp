@@ -256,18 +256,18 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->PicFlags.fields.separate_colour_plane_flag                   = 0;    // 0 in HEVC spec HM10 by design
     pPicParam->PicFlags.fields.pcm_enabled_flag                             = pSeqParamSet->getUsePCM() ? 1 : 0 ;
     pPicParam->PicFlags.fields.scaling_list_enabled_flag                    = pSeqParamSet->scaling_list_enabled_flag ? 1 : 0 ;
-    pPicParam->PicFlags.fields.transform_skip_enabled_flag                  = pPicParamSet->getUseTransformSkip() ? 1 : 0 ;
+    pPicParam->PicFlags.fields.transform_skip_enabled_flag                  = pPicParamSet->transform_skip_enabled_flag ? 1 : 0 ;
     pPicParam->PicFlags.fields.amp_enabled_flag                             = pSeqParamSet->getUseAMP() ? 1 : 0 ;
     pPicParam->PicFlags.fields.strong_intra_smoothing_enabled_flag          = pSeqParamSet->getUseStrongIntraSmoothing() ? 1 : 0 ;
-    pPicParam->PicFlags.fields.sign_data_hiding_flag                        = pPicParamSet->getSignHideFlag() ? 1 : 0 ;
-    pPicParam->PicFlags.fields.constrained_intra_pred_flag                  = pPicParamSet->getConstrainedIntraPred() ? 1 : 0 ;
-    pPicParam->PicFlags.fields.cu_qp_delta_enabled_flag                     = pPicParamSet->getUseDQP();
-    pPicParam->PicFlags.fields.weighted_pred_flag                           = pPicParamSet->getUseWP() ? 1 : 0 ;
-    pPicParam->PicFlags.fields.weighted_bipred_flag                         = pPicParamSet->getWPBiPred() ? 1 : 0 ;
-    pPicParam->PicFlags.fields.transquant_bypass_enabled_flag               = pPicParamSet->getTransquantBypassEnableFlag() ? 1 : 0 ;    
-    pPicParam->PicFlags.fields.tiles_enabled_flag                           = pPicParamSet->getTilesEnabledFlag();
-    pPicParam->PicFlags.fields.entropy_coding_sync_enabled_flag             = pPicParamSet->getEntropyCodingSyncEnabledFlag();
-    pPicParam->PicFlags.fields.pps_loop_filter_across_slices_enabled_flag   = pPicParamSet->getLoopFilterAcrossSlicesEnabledFlag();
+    pPicParam->PicFlags.fields.sign_data_hiding_flag                        = pPicParamSet->sign_data_hiding_enabled_flag ? 1 : 0 ;
+    pPicParam->PicFlags.fields.constrained_intra_pred_flag                  = pPicParamSet->constrained_intra_pred_flag ? 1 : 0 ;
+    pPicParam->PicFlags.fields.cu_qp_delta_enabled_flag                     = pPicParamSet->cu_qp_delta_enabled_flag;
+    pPicParam->PicFlags.fields.weighted_pred_flag                           = pPicParamSet->weighted_pred_flag ? 1 : 0 ;
+    pPicParam->PicFlags.fields.weighted_bipred_flag                         = pPicParamSet->weighted_bipred_flag ? 1 : 0 ;
+    pPicParam->PicFlags.fields.transquant_bypass_enabled_flag               = pPicParamSet->transquant_bypass_enabled_flag ? 1 : 0 ;    
+    pPicParam->PicFlags.fields.tiles_enabled_flag                           = pPicParamSet->tiles_enabled_flag;
+    pPicParam->PicFlags.fields.entropy_coding_sync_enabled_flag             = pPicParamSet->entropy_coding_sync_enabled_flag;
+    pPicParam->PicFlags.fields.pps_loop_filter_across_slices_enabled_flag   = pPicParamSet->pps_loop_filter_across_slices_enabled_flag;
     pPicParam->PicFlags.fields.loop_filter_across_tiles_enabled_flag        = pPicParamSet->loop_filter_across_tiles_enabled_flag;
     pPicParam->PicFlags.fields.pcm_loop_filter_disabled_flag                = pSeqParamSet->getPCMFilterDisableFlag() ? 1 : 0 ;
     pPicParam->PicFlags.fields.field_pic_flag                               = 0;
@@ -377,50 +377,50 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->log2_diff_max_min_pcm_luma_coding_block_size = (UCHAR)(pSeqParamSet->log2_max_pcm_luma_coding_block_size - pSeqParamSet->log2_min_pcm_luma_coding_block_size);
     pPicParam->max_transform_hierarchy_depth_intra          = (UCHAR)pSeqParamSet->max_transform_hierarchy_depth_intra - 1;
     pPicParam->max_transform_hierarchy_depth_inter          = (UCHAR)pSeqParamSet->max_transform_hierarchy_depth_inter - 1;
-    pPicParam->init_qp_minus26                              = (CHAR)pPicParamSet->getPicInitQP() - 26;
-    pPicParam->diff_cu_qp_delta_depth                       = (UCHAR)(pPicParamSet->getMaxCuDQPDepth());
-    pPicParam->pps_cb_qp_offset                             = (CHAR)pPicParamSet->getChromaCbQpOffset();
-    pPicParam->pps_cr_qp_offset                             = (CHAR)pPicParamSet->getChromaCrQpOffset();
+    pPicParam->init_qp_minus26                              = (CHAR)pPicParamSet->init_qp - 26;
+    pPicParam->diff_cu_qp_delta_depth                       = (UCHAR)(pPicParamSet->diff_cu_qp_delta_depth);
+    pPicParam->pps_cb_qp_offset                             = (CHAR)pPicParamSet->pps_cb_qp_offset;
+    pPicParam->pps_cr_qp_offset                             = (CHAR)pPicParamSet->pps_cr_qp_offset;
     if(pPicParam->PicFlags.fields.tiles_enabled_flag)
     {
-        pPicParam->num_tile_columns_minus1          = (UCHAR)pPicParamSet->getNumColumns() - 1;
-        pPicParam->num_tile_rows_minus1             = (UCHAR)pPicParamSet->getNumRows() - 1;
+        pPicParam->num_tile_columns_minus1          = (UCHAR)pPicParamSet->num_tile_columns - 1;
+        pPicParam->num_tile_rows_minus1             = (UCHAR)pPicParamSet->num_tile_rows - 1;
         pPicParamSet->getColumnWidthMinus1(pPicParam->column_width_minus1);
         pPicParamSet->getRowHeightMinus1(pPicParam->row_height_minus1);
     }
-    pPicParam->log2_parallel_merge_level_minus2     = (UCHAR)pPicParamSet->getLog2ParallelMergeLevel() - 2;
+    pPicParam->log2_parallel_merge_level_minus2     = (UCHAR)pPicParamSet->log2_parallel_merge_level - 2;
     pPicParam->StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
 
     pPicParam->continuation_flag = 1;
 
     // PicShortFormatFlags
     //
-    pPicParam->PicShortFormatFlags.fields.lists_modification_present_flag               = pPicParamSet->getListsModificationPresentFlag() ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.lists_modification_present_flag               = pPicParamSet->lists_modification_present_flag ? 1 : 0 ;
     pPicParam->PicShortFormatFlags.fields.long_term_ref_pics_present_flag               = pSeqParamSet->getLongTermRefsPresent() ? 1 : 0 ;
     pPicParam->PicShortFormatFlags.fields.sps_temporal_mvp_enabled_flag                 = pSeqParamSet->getTMVPFlagsPresent() ? 1 : 0 ;
-    pPicParam->PicShortFormatFlags.fields.cabac_init_present_flag                       = pPicParamSet->getCabacInitPresentFlag() ? 1 : 0 ;
-    pPicParam->PicShortFormatFlags.fields.output_flag_present_flag                      = pPicParamSet->getOutputFlagPresentFlag() ? 1 : 0 ;
-    pPicParam->PicShortFormatFlags.fields.dependent_slice_segments_enabled_flag         = pPicParamSet->getDependentSliceSegmentEnabledFlag() ? 1 : 0 ;
-    pPicParam->PicShortFormatFlags.fields.pps_slice_chroma_qp_offsets_present_flag      = pPicParamSet->getSliceChromaQpFlag() ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.cabac_init_present_flag                       = pPicParamSet->cabac_init_present_flag ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.output_flag_present_flag                      = pPicParamSet->output_flag_present_flag ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.dependent_slice_segments_enabled_flag         = pPicParamSet->dependent_slice_segments_enabled_flag ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.pps_slice_chroma_qp_offsets_present_flag      = pPicParamSet->pps_slice_chroma_qp_offsets_present_flag ? 1 : 0 ;
     pPicParam->PicShortFormatFlags.fields.sample_adaptive_offset_enabled_flag           = pSeqParamSet->getUseSAO() ? 1 : 0 ;
-    pPicParam->PicShortFormatFlags.fields.deblocking_filter_override_enabled_flag       = pPicParamSet->getDeblockingFilterOverrideEnabledFlag() ? 1 : 0 ;
-    pPicParam->PicShortFormatFlags.fields.pps_disable_deblocking_filter_flag            = pPicParamSet->getPicDisableDeblockingFilterFlag() ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.deblocking_filter_override_enabled_flag       = pPicParamSet->deblocking_filter_override_enabled_flag ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.pps_disable_deblocking_filter_flag            = pPicParamSet->pps_deblocking_filter_disabled_flag ? 1 : 0 ;
     pPicParam->PicShortFormatFlags.fields.IrapPicFlag                                   = 0;
     pPicParam->PicShortFormatFlags.fields.IdrPicFlag                                    = 0;
     pPicParam->PicShortFormatFlags.fields.IntraPicFlag                                  = 0;
-    pPicParam->PicShortFormatFlags.fields.slice_segment_header_extension_present_flag   = pPicParamSet->getSliceHeaderExtensionPresentFlag() ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.slice_segment_header_extension_present_flag   = pPicParamSet->slice_segment_header_extension_present_flag ? 1 : 0 ;
 
     //
     //
     pPicParam->log2_max_pic_order_cnt_lsb_minus4    = (UCHAR)(pSeqParamSet->log2_max_pic_order_cnt_lsb - 4);
     pPicParam->num_short_term_ref_pic_sets          = (UCHAR)pSeqParamSet->getRPSList()->getNumberOfReferencePictureSets();
     pPicParam->num_long_term_ref_pics_sps           = (UCHAR)pSeqParamSet->getNumLongTermRefPicSPS();
-    pPicParam->num_ref_idx_l0_default_active_minus1 = (UCHAR)(pPicParamSet->getNumRefIdxL0DefaultActive() - 1);
-    pPicParam->num_ref_idx_l1_default_active_minus1 = (UCHAR)(pPicParamSet->getNumRefIdxL1DefaultActive() - 1);
-    pPicParam->pps_beta_offset_div2                 = (CHAR)pPicParamSet->getDeblockingFilterBetaOffsetDiv2();
-    pPicParam->pps_tc_offset_div2                   = (CHAR)pPicParamSet->getDeblockingFilterTcOffsetDiv2();    
+    pPicParam->num_ref_idx_l0_default_active_minus1 = (UCHAR)(pPicParamSet->num_ref_idx_l0_default_active - 1);
+    pPicParam->num_ref_idx_l1_default_active_minus1 = (UCHAR)(pPicParamSet->num_ref_idx_l1_default_active - 1);
+    pPicParam->pps_beta_offset_div2                 = (CHAR)(pPicParamSet->pps_beta_offset >> 1);
+    pPicParam->pps_tc_offset_div2                   = (CHAR)(pPicParamSet->pps_tc_offset >> 1);    
     pPicParam->StRPSBits                            = 0;    // TODO
-    pPicParam->num_extra_slice_header_bits          = (UCHAR)pPicParamSet->getNumExtraSliceHeaderBits();
+    pPicParam->num_extra_slice_header_bits          = (UCHAR)pPicParamSet->num_extra_slice_header_bits;
 
     //pPicParam->CollocatedRefIdx.Index7bits          = (UCHAR)(pSlice->getSliceType() != I_SLICE ? pSlice->getColRefIdx() : -1 );
     //pPicParam->PicShortFormatFlags.fields.deblocking_filter_control_present_flag     = pPicParamSet->getDeblockingFilterControlPresentFlag() ? 1 : 0 ;
@@ -546,9 +546,9 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->max_transform_hierarchy_depth_inter          = (UCHAR)pSeqParamSet->max_transform_hierarchy_depth_inter - 1;
     pPicParam->num_short_term_ref_pic_sets                  = (UCHAR)pSeqParamSet->getRPSList()->getNumberOfReferencePictureSets();
     pPicParam->num_long_term_ref_pics_sps                   = (UCHAR)pSeqParamSet->num_long_term_ref_pic_sps;
-    pPicParam->num_ref_idx_l0_default_active_minus1         = (UCHAR)(pPicParamSet->getNumRefIdxL0DefaultActive() - 1);
-    pPicParam->num_ref_idx_l1_default_active_minus1         = (UCHAR)(pPicParamSet->getNumRefIdxL1DefaultActive() - 1);
-    pPicParam->init_qp_minus26                              = (CHAR)pPicParamSet->getPicInitQP() - 26;
+    pPicParam->num_ref_idx_l0_default_active_minus1         = (UCHAR)(pPicParamSet->num_ref_idx_l0_default_active - 1);
+    pPicParam->num_ref_idx_l1_default_active_minus1         = (UCHAR)(pPicParamSet->num_ref_idx_l1_default_active - 1);
+    pPicParam->init_qp_minus26                              = (CHAR)pPicParamSet->init_qp - 26;
     
     pPicParam->wNumBitsForShortTermRPSInSlice               = (USHORT)pSlice->getNumBitsForShortTermRPSInSlice();
     pPicParam->ucNumDeltaPocsOfRefRpsIdx                    = (UCHAR)pPicParam->wNumBitsForShortTermRPSInSlice;
@@ -567,48 +567,48 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->fields.long_term_ref_pics_present_flag                = pSeqParamSet->long_term_ref_pics_present_flag ? 1 : 0 ;
     pPicParam->fields.sps_temporal_mvp_enabled_flag                  = pSeqParamSet->sps_temporal_mvp_enabled_flag ? 1 : 0 ;
     pPicParam->fields.strong_intra_smoothing_enabled_flag            = pSeqParamSet->sps_strong_intra_smoothing_enabled_flag ? 1 : 0 ;
-    pPicParam->fields.dependent_slice_segments_enabled_flag          = pPicParamSet->getDependentSliceSegmentEnabledFlag() ? 1 : 0 ;
-    pPicParam->fields.output_flag_present_flag                       = pPicParamSet->getOutputFlagPresentFlag() ? 1 : 0 ;
-    pPicParam->fields.num_extra_slice_header_bits                    = (UCHAR)pPicParamSet->getNumExtraSliceHeaderBits();
-    pPicParam->fields.sign_data_hiding_flag                          = pPicParamSet->getSignHideFlag() ? 1 : 0 ;
-    pPicParam->fields.cabac_init_present_flag                        = pPicParamSet->getCabacInitPresentFlag() ? 1 : 0 ;
+    pPicParam->fields.dependent_slice_segments_enabled_flag          = pPicParamSet->dependent_slice_segments_enabled_flag ? 1 : 0 ;
+    pPicParam->fields.output_flag_present_flag                       = pPicParamSet->output_flag_present_flag ? 1 : 0 ;
+    pPicParam->fields.num_extra_slice_header_bits                    = (UCHAR)pPicParamSet->num_extra_slice_header_bits;
+    pPicParam->fields.sign_data_hiding_flag                          = pPicParamSet->sign_data_hiding_enabled_flag ? 1 : 0 ;
+    pPicParam->fields.cabac_init_present_flag                        = pPicParamSet->cabac_init_present_flag ? 1 : 0 ;
 
     // PicShortFormatFlags
     //
-    pPicParam->PicShortFormatFlags.fields.constrained_intra_pred_flag                   = pPicParamSet->getConstrainedIntraPred() ? 1 : 0 ;
-    pPicParam->PicShortFormatFlags.fields.transform_skip_enabled_flag                   = pPicParamSet->getUseTransformSkip() ? 1 : 0 ;
-    pPicParam->PicShortFormatFlags.fields.cu_qp_delta_enabled_flag                      = pPicParamSet->getUseDQP();
-    pPicParam->PicShortFormatFlags.fields.pps_slice_chroma_qp_offsets_present_flag      = pPicParamSet->getSliceChromaQpFlag() ? 1 : 0 ;
-    pPicParam->PicShortFormatFlags.fields.weighted_pred_flag                            = pPicParamSet->getUseWP() ? 1 : 0 ;
-    pPicParam->PicShortFormatFlags.fields.weighted_bipred_flag                          = pPicParamSet->getWPBiPred() ? 1 : 0 ;
-    pPicParam->PicShortFormatFlags.fields.transquant_bypass_enabled_flag                = pPicParamSet->getTransquantBypassEnableFlag() ? 1 : 0 ;    
-    pPicParam->PicShortFormatFlags.fields.tiles_enabled_flag                            = pPicParamSet->getTilesEnabledFlag();
-    pPicParam->PicShortFormatFlags.fields.entropy_coding_sync_enabled_flag              = pPicParamSet->getEntropyCodingSyncEnabledFlag();
+    pPicParam->PicShortFormatFlags.fields.constrained_intra_pred_flag                   = pPicParamSet->constrained_intra_pred_flag ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.transform_skip_enabled_flag                   = pPicParamSet->transform_skip_enabled_flag ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.cu_qp_delta_enabled_flag                      = pPicParamSet->cu_qp_delta_enabled_flag;
+    pPicParam->PicShortFormatFlags.fields.pps_slice_chroma_qp_offsets_present_flag      = pPicParamSet->pps_slice_chroma_qp_offsets_present_flag ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.weighted_pred_flag                            = pPicParamSet->weighted_pred_flag ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.weighted_bipred_flag                          = pPicParamSet->weighted_bipred_flag ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.transquant_bypass_enabled_flag                = pPicParamSet->transquant_bypass_enabled_flag ? 1 : 0 ;    
+    pPicParam->PicShortFormatFlags.fields.tiles_enabled_flag                            = pPicParamSet->tiles_enabled_flag;
+    pPicParam->PicShortFormatFlags.fields.entropy_coding_sync_enabled_flag              = pPicParamSet->entropy_coding_sync_enabled_flag;
     pPicParam->PicShortFormatFlags.fields.uniform_spacing_flag                          = 0 ;
     pPicParam->PicShortFormatFlags.fields.loop_filter_across_tiles_enabled_flag         = pPicParamSet->loop_filter_across_tiles_enabled_flag;
-    pPicParam->PicShortFormatFlags.fields.pps_loop_filter_across_slices_enabled_flag    = pPicParamSet->getLoopFilterAcrossSlicesEnabledFlag();
-    pPicParam->PicShortFormatFlags.fields.deblocking_filter_override_enabled_flag       = pPicParamSet->getDeblockingFilterOverrideEnabledFlag() ? 1 : 0 ;
-    pPicParam->PicShortFormatFlags.fields.pps_deblocking_filter_disabled_flag           = pPicParamSet->getPicDisableDeblockingFilterFlag() ? 1 : 0 ;
-    pPicParam->PicShortFormatFlags.fields.lists_modification_present_flag               = pPicParamSet->getListsModificationPresentFlag() ? 1 : 0 ;
-    pPicParam->PicShortFormatFlags.fields.slice_segment_header_extension_present_flag   = pPicParamSet->getSliceHeaderExtensionPresentFlag() ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.pps_loop_filter_across_slices_enabled_flag    = pPicParamSet->pps_loop_filter_across_slices_enabled_flag;
+    pPicParam->PicShortFormatFlags.fields.deblocking_filter_override_enabled_flag       = pPicParamSet->deblocking_filter_override_enabled_flag ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.pps_deblocking_filter_disabled_flag           = pPicParamSet->pps_deblocking_filter_disabled_flag ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.lists_modification_present_flag               = pPicParamSet->lists_modification_present_flag ? 1 : 0 ;
+    pPicParam->PicShortFormatFlags.fields.slice_segment_header_extension_present_flag   = pPicParamSet->slice_segment_header_extension_present_flag ? 1 : 0 ;
     pPicParam->PicShortFormatFlags.fields.IrapPicFlag                                   = 0;
     pPicParam->PicShortFormatFlags.fields.IdrPicFlag                                    = 0;
     pPicParam->PicShortFormatFlags.fields.IntraPicFlag                                  = 0;
 
 
-    pPicParam->pps_cb_qp_offset                                     = (CHAR)pPicParamSet->getChromaCbQpOffset();
-    pPicParam->pps_cr_qp_offset                                     = (CHAR)pPicParamSet->getChromaCrQpOffset();
+    pPicParam->pps_cb_qp_offset                                     = (CHAR)pPicParamSet->pps_cb_qp_offset;
+    pPicParam->pps_cr_qp_offset                                     = (CHAR)pPicParamSet->pps_cr_qp_offset;
     if(pPicParam->PicShortFormatFlags.fields.tiles_enabled_flag)
     {
-        pPicParam->num_tile_columns_minus1                          = (UCHAR)pPicParamSet->getNumColumns() - 1;
-        pPicParam->num_tile_rows_minus1                             = (UCHAR)pPicParamSet->getNumRows() - 1;
+        pPicParam->num_tile_columns_minus1                          = (UCHAR)pPicParamSet->num_tile_columns - 1;
+        pPicParam->num_tile_rows_minus1                             = (UCHAR)pPicParamSet->num_tile_rows - 1;
         pPicParamSet->getColumnWidthMinus1(pPicParam->column_width_minus1);
         pPicParamSet->getRowHeightMinus1(pPicParam->row_height_minus1);
     }
-    pPicParam->diff_cu_qp_delta_depth                               = (UCHAR)(pPicParamSet->getMaxCuDQPDepth());
-    pPicParam->pps_beta_offset_div2                                 = (CHAR)pPicParamSet->getDeblockingFilterBetaOffsetDiv2();
-    pPicParam->pps_tc_offset_div2                                   = (CHAR)pPicParamSet->getDeblockingFilterTcOffsetDiv2();  
-    pPicParam->log2_parallel_merge_level_minus2                     = (UCHAR)pPicParamSet->getLog2ParallelMergeLevel() - 2;
+    pPicParam->diff_cu_qp_delta_depth                               = (UCHAR)(pPicParamSet->diff_cu_qp_delta_depth);
+    pPicParam->pps_beta_offset_div2                                 = (CHAR)(pPicParamSet->pps_beta_offset >> 1);
+    pPicParam->pps_tc_offset_div2                                   = (CHAR)(pPicParamSet->pps_tc_offset >> 1);  
+    pPicParam->log2_parallel_merge_level_minus2                     = (UCHAR)pPicParamSet->log2_parallel_merge_level - 2;
     pPicParam->CurrPicOrderCntVal                                   = pSlice->getPOC();
 
 
@@ -679,7 +679,7 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
         //
 
         pDXVASlice->LongSliceFlags.fields.LastSliceOfPic                                = isLastSlice;
-        pDXVASlice->LongSliceFlags.fields.dependent_slice_segment_flag                  = (UINT)pPicParamSet->getDependentSliceSegmentEnabledFlag();   // dependent_slices_enabled_flag
+        pDXVASlice->LongSliceFlags.fields.dependent_slice_segment_flag                  = (UINT)pPicParamSet->dependent_slice_segments_enabled_flag;   // dependent_slices_enabled_flag
         pDXVASlice->LongSliceFlags.fields.slice_type                                    = (UINT)pSlice->getSliceType();
         pDXVASlice->LongSliceFlags.fields.color_plane_id                                = 0; // field is left for future expansion
         pDXVASlice->LongSliceFlags.fields.slice_sao_luma_flag                           = (UINT)pSlice->GetSliceHeader()->slice_sao_luma_flag; 
@@ -689,7 +689,7 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
         pDXVASlice->LongSliceFlags.fields.slice_temporal_mvp_enabled_flag               = (UINT)pSlice->getEnableTMVPFlag();
         pDXVASlice->LongSliceFlags.fields.slice_deblocking_filter_disabled_flag         = (UINT)pSlice->GetSliceHeader()->m_deblockingFilterDisable;
         pDXVASlice->LongSliceFlags.fields.collocated_from_l0_flag                       = (UINT)pSlice->getColFromL0Flag();
-        pDXVASlice->LongSliceFlags.fields.slice_loop_filter_across_slices_enabled_flag  = (UINT)pPicParamSet->getLoopFilterAcrossSlicesEnabledFlag();
+        pDXVASlice->LongSliceFlags.fields.slice_loop_filter_across_slices_enabled_flag  = (UINT)pPicParamSet->pps_loop_filter_across_slices_enabled_flag;
 
 #if HEVC_SPEC_VER == MK_HEVCVER(0, 84)
         pDXVASlice->collocated_ref_idx              = (UCHAR)(pSlice->getSliceType() != I_SLICE ? pSlice->getColRefIdx() : -1 );
@@ -698,11 +698,11 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
 #endif
         pDXVASlice->num_ref_idx_l0_active_minus1    = (UCHAR)pSlice->getNumRefIdx(REF_PIC_LIST_0) - 1;
         pDXVASlice->num_ref_idx_l1_active_minus1    = (UCHAR)pSlice->getNumRefIdx(REF_PIC_LIST_1) - 1;
-        pDXVASlice->slice_qp_delta                  = (CHAR)(pSlice->GetSliceHeader()->SliceQP - (pPicParamSet->getPicInitQP()));
+        pDXVASlice->slice_qp_delta                  = (CHAR)(pSlice->GetSliceHeader()->SliceQP - (pPicParamSet->init_qp));
         pDXVASlice->slice_cb_qp_offset              = (CHAR)pSlice->GetSliceHeader()->slice_cb_qp_offset;
         pDXVASlice->slice_cr_qp_offset              = (CHAR)pSlice->GetSliceHeader()->slice_cr_qp_offset;
-        pDXVASlice->slice_beta_offset_div2          = (CHAR)pPicParamSet->getDeblockingFilterBetaOffsetDiv2();
-        pDXVASlice->slice_tc_offset_div2            = (CHAR)pPicParamSet->getDeblockingFilterTcOffsetDiv2();
+        pDXVASlice->slice_beta_offset_div2          = (CHAR)(pPicParamSet->pps_beta_offset >> 1);
+        pDXVASlice->slice_tc_offset_div2            = (CHAR)(pPicParamSet->pps_tc_offset >> 1);
         pDXVASlice->luma_log2_weight_denom          = (UCHAR)pSlice->getLog2WeightDenomLuma();
         pDXVASlice->delta_chroma_log2_weight_denom  = (UCHAR)(pSlice->getLog2WeightDenomChroma() - pSlice->getLog2WeightDenomLuma());
 
@@ -814,7 +814,7 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
         pDXVASlice->LongSliceFlags.fields.slice_temporal_mvp_enabled_flag               = (UINT)pSlice->getEnableTMVPFlag();
         pDXVASlice->LongSliceFlags.fields.slice_deblocking_filter_disabled_flag         = (UINT)pSlice->GetSliceHeader()->m_deblockingFilterDisable;
         pDXVASlice->LongSliceFlags.fields.collocated_from_l0_flag                       = (UINT)pSlice->getColFromL0Flag();
-        pDXVASlice->LongSliceFlags.fields.slice_loop_filter_across_slices_enabled_flag  = (UINT)pPicParamSet->getLoopFilterAcrossSlicesEnabledFlag();
+        pDXVASlice->LongSliceFlags.fields.slice_loop_filter_across_slices_enabled_flag  = (UINT)pPicParamSet->pps_loop_filter_across_slices_enabled_flag;
 
         
         //
@@ -823,14 +823,14 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
         pDXVASlice->collocated_ref_idx              = (UCHAR)(pSlice->getSliceType() != I_SLICE ? pSlice->getColRefIdx() : -1 );
         pDXVASlice->num_ref_idx_l0_active_minus1    = (UCHAR)pSlice->getNumRefIdx(REF_PIC_LIST_0) - 1;
         pDXVASlice->num_ref_idx_l1_active_minus1    = (UCHAR)pSlice->getNumRefIdx(REF_PIC_LIST_1) - 1;
-        //pDXVASlice->slice_qp_delta                  = (CHAR)(pSlice->getSliceQp() - (pPicParamSet->getPicInitQP()));
-        pDXVASlice->slice_qp_delta                  = (CHAR)(pSlice->GetSliceHeader()->SliceQP - (pPicParamSet->getPicInitQP()));
+        //pDXVASlice->slice_qp_delta                  = (CHAR)(pSlice->getSliceQp() - (pPicParamSet->init_qp));
+        pDXVASlice->slice_qp_delta                  = (CHAR)(pSlice->GetSliceHeader()->SliceQP - (pPicParamSet->init_qp));
         //pDXVASlice->slice_cb_qp_offset              = (CHAR)pSlice->getSliceQpDeltaCb();
         pDXVASlice->slice_cb_qp_offset              = (CHAR)pSlice->GetSliceHeader()->slice_cb_qp_offset;
         //pDXVASlice->slice_cr_qp_offset              = (CHAR)pSlice->getSliceQpDeltaCr();
         pDXVASlice->slice_cr_qp_offset              = (CHAR)pSlice->GetSliceHeader()->slice_cr_qp_offset;
-        pDXVASlice->slice_beta_offset_div2          = (CHAR)pPicParamSet->getDeblockingFilterBetaOffsetDiv2();
-        pDXVASlice->slice_tc_offset_div2            = (CHAR)pPicParamSet->getDeblockingFilterTcOffsetDiv2();
+        pDXVASlice->slice_beta_offset_div2          = (CHAR)(pPicParamSet->pps_beta_offset >> 1);
+        pDXVASlice->slice_tc_offset_div2            = (CHAR)(pPicParamSet->pps_tc_offset >> 1);
         pDXVASlice->luma_log2_weight_denom          = (UCHAR)pSlice->getLog2WeightDenomLuma();
         pDXVASlice->delta_chroma_log2_weight_denom  = (UCHAR)(pSlice->getLog2WeightDenomChroma() - pSlice->getLog2WeightDenomLuma());
 

@@ -277,10 +277,6 @@ public:
 
     void setDeblockingFilterOverrideFlag( bool b )           { m_SliceHeader.m_deblockingFilterOverrideFlag = b; }
     bool getDeblockingFilterOverrideFlag()           { return m_SliceHeader.m_deblockingFilterOverrideFlag; }
-    void setDeblockingFilterBetaOffsetDiv2( int i )          { m_SliceHeader.m_deblockingFilterBetaOffsetDiv2 = i; }
-    int getLoopFilterBetaOffset() const        { return m_SliceHeader.m_deblockingFilterBetaOffsetDiv2; }
-    void setDeblockingFilterTcOffsetDiv2( int i )            { m_SliceHeader.m_deblockingFilterTcOffsetDiv2 = i; }
-    int getLoopFilterTcOffset() const          { return m_SliceHeader.m_deblockingFilterTcOffsetDiv2; }
 
     unsigned getColFromL0Flag() const      { return m_SliceHeader.collocated_from_l0_flag; }
     void setColFromL0Flag(unsigned val)    { m_SliceHeader.collocated_from_l0_flag = val; }

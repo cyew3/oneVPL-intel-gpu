@@ -166,20 +166,10 @@ void TaskBrokerSingleThreadDXVA::WaitFrameCompletion()
 
 bool TaskBrokerSingleThreadDXVA::PrepareFrame(H265DecoderFrame * pFrame)
 {
-    if (!pFrame || pFrame->m_iResourceNumber < 0)
+    if (!pFrame || pFrame->prepared)
     {
         return true;
     }
-
-    if (pFrame->prepared)
-        return true;
-
-    /*H265DecoderFrame * resourceHolder = m_pTaskSupplier->IsBusyByFrame(pFrame->m_iResourceNumber);
-    if (resourceHolder && resourceHolder != pFrame)
-        return false;
-
-    if (!m_pTaskSupplier->LockFrameResource(pFrame))
-        return false;*/
 
     if (!pFrame->prepared &&
         (pFrame->GetAU()->GetStatus() == H265DecoderFrameInfo::STATUS_FILLED || pFrame->GetAU()->GetStatus() == H265DecoderFrameInfo::STATUS_STARTED))

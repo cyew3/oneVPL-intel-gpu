@@ -76,7 +76,7 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr,
 {
     H265CodingUnit* curLCU = m_pCurrentFrame->getCU(curLCUAddr);
     H265Slice* pSlice = m_pCurrentFrame->GetAU()->GetSliceByNumber(curLCU->m_SliceIdx);
-    Ipp32s maxCUSize = m_pSeqParamSet->getMaxCUWidth();
+    Ipp32s maxCUSize = m_pSeqParamSet->MaxCUSize;
     Ipp32s frameHeightInSamples = m_pSeqParamSet->pic_height_in_luma_samples;
     Ipp32s frameWidthInSamples = m_pSeqParamSet->pic_width_in_luma_samples;
     Ipp32s width, height;
@@ -295,8 +295,8 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU,
     baseSrcDst = m_pCurrentFrame->GetCbCrAddr(curLCU->CUAddr) +
                  (curPixelRow >> 1) * srcDstStride + (curPixelColumn >> 1) * 2;
 
-    chromaCbQpOffset = m_pPicParamSet->getChromaCbQpOffset();
-    chromaCrQpOffset = m_pPicParamSet->getChromaCrQpOffset();
+    chromaCbQpOffset = m_pPicParamSet->pps_cb_qp_offset;
+    chromaCrQpOffset = m_pPicParamSet->pps_cr_qp_offset;
 
     ctb_start_edge = m_pCurrentFrame->getCD()->m_edge + m_pCurrentFrame->getCD()->m_edgesInCTB * curLCU->CUAddr;
 
@@ -403,7 +403,7 @@ void H265SegmentDecoder::GetEdgeStrength(H265CodingUnit* pcCUQ,
                                          Ipp32s tcOffset,
                                          Ipp32s betaOffset)
 {
-    Ipp32s log2LCUSize = g_ConvertToBit[m_pSeqParamSet->getMaxCUWidth()] + 2;
+    Ipp32s log2LCUSize = g_ConvertToBit[m_pSeqParamSet->MaxCUSize] + 2;
     Ipp32s log2MinTUSize = m_pSeqParamSet->log2_min_transform_block_size;
     H265CodingUnit* pcCUP;
     Ipp32u uiPartQ, uiPartP;
@@ -856,7 +856,7 @@ void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
 {
     H265CodingUnit *leftLCU, *aboveLCU;
     H265Slice* pSlice;
-    Ipp32s maxCUSize = m_pSeqParamSet->getMaxCUWidth();
+    Ipp32s maxCUSize = m_pSeqParamSet->MaxCUSize;
     Ipp32s curPixelColumn, curPixelRow;
     Ipp32s crossSliceBoundaryFlag, crossTileBoundaryFlag;
     Ipp32s tcOffset, betaOffset;
@@ -876,8 +876,8 @@ void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
             {
                 crossSliceBoundaryFlag = pSlice->GetSliceHeader()->slice_loop_filter_across_slices_enabled_flag;
                 crossTileBoundaryFlag = pSlice->getPPS()->loop_filter_across_tiles_enabled_flag;
-                tcOffset = pSlice->getLoopFilterTcOffset() << 1;
-                betaOffset = pSlice->getLoopFilterBetaOffset() << 1;
+                tcOffset = pSlice->GetSliceHeader()->m_deblockingFilterTcOffset;
+                betaOffset = pSlice->GetSliceHeader()->m_deblockingFilterBetaOffset;
 
                 for (i = 0; i < width; i += 8)
                 {
@@ -929,8 +929,8 @@ void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
             {
                 crossSliceBoundaryFlag = pSlice->GetSliceHeader()->slice_loop_filter_across_slices_enabled_flag;
                 crossTileBoundaryFlag = pSlice->getPPS()->loop_filter_across_tiles_enabled_flag;
-                tcOffset = pSlice->getLoopFilterTcOffset() << 1;
-                betaOffset = pSlice->getLoopFilterBetaOffset() << 1;
+                tcOffset = pSlice->GetSliceHeader()->m_deblockingFilterTcOffset;
+                betaOffset = pSlice->GetSliceHeader()->m_deblockingFilterBetaOffset;
 
                 for (j = 0; j < height; j += 8)
                 {
@@ -996,8 +996,8 @@ void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
     pSlice = m_pCurrentFrame->GetAU()->GetSliceByNumber(curLCU->m_SliceIdx);
     crossSliceBoundaryFlag = pSlice->GetSliceHeader()->slice_loop_filter_across_slices_enabled_flag;
     crossTileBoundaryFlag = pSlice->getPPS()->loop_filter_across_tiles_enabled_flag;
-    tcOffset = pSlice->getLoopFilterTcOffset() << 1;
-    betaOffset = pSlice->getLoopFilterBetaOffset() << 1;
+    tcOffset = pSlice->GetSliceHeader()->m_deblockingFilterTcOffset;
+    betaOffset = pSlice->GetSliceHeader()->m_deblockingFilterBetaOffset;
 
     for (j = 0; j < height; j += 8)
     {
@@ -1048,9 +1048,9 @@ void H265SegmentDecoder::GetCTBEdgeStrengths(Ipp32s tusize)
     Ipp32s rasterAddress = m_curCU->CUAddr;
     H265FrameCodingData *cd = m_pCurrentFrame->getCD();
     H265EdgeData *ctb_start_edge = cd->m_edge + cd->m_edgesInCTB * rasterAddress;
-    Ipp32s maxCUSize = m_pSeqParamSet->getMaxCUWidth();
-    Ipp8s tcOffset = m_pSliceHeader->m_deblockingFilterTcOffsetDiv2 << 1;
-    Ipp8s betaOffset = m_pSliceHeader->m_deblockingFilterBetaOffsetDiv2 << 1;
+    Ipp32s maxCUSize = m_pSeqParamSet->MaxCUSize;
+    Ipp8s tcOffset = m_pSliceHeader->m_deblockingFilterTcOffset;
+    Ipp8s betaOffset = m_pSliceHeader->m_deblockingFilterBetaOffset;
     bool anotherCU;
 
     VM_ASSERT(tusize <= 3);

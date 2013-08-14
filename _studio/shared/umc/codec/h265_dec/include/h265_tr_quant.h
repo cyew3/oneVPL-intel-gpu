@@ -75,7 +75,7 @@ public:
     ~H265TrQuant();
 
     // initialize class
-    void Init(Ipp32u MaxWidth, Ipp32u MaxHeight, Ipp32u MaxTrSize);
+    void Init(Ipp32u MaxTrSize);
 
     // transform & inverse transform functions
     template <typename DstCoeffsType>

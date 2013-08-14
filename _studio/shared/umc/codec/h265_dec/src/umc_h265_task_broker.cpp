@@ -199,11 +199,6 @@ void TaskBroker_H265::Reset()
     m_FirstAU = 0;
     m_IsShouldQuit = true;
 
-    for (FrameQueue::iterator iter = m_decodingQueue.begin(); iter != m_decodingQueue.end(); ++iter)
-    {
-        m_pTaskSupplier->UnlockFrameResource(*iter);
-    }
-
     m_decodingQueue.clear();
     m_completedQueue.clear();
 
@@ -288,7 +283,7 @@ void TaskBroker_H265::AwakeThreads()
 
 bool TaskBroker_H265::PrepareFrame(H265DecoderFrame * pFrame)
 {
-    if (!pFrame || pFrame->m_iResourceNumber < 0)
+    if (!pFrame || pFrame->prepared)
     {
         return true;
     }
@@ -296,20 +291,12 @@ bool TaskBroker_H265::PrepareFrame(H265DecoderFrame * pFrame)
     if (pFrame->prepared)
         return true;
 
-    H265DecoderFrame * resourceHolder = m_pTaskSupplier->IsBusyByFrame(pFrame->m_iResourceNumber);
-    if (resourceHolder && resourceHolder != pFrame)
-        return false;
-
-    if (!m_pTaskSupplier->LockFrameResource(pFrame))
-        return false;
-
-    if (!pFrame->prepared &&
-        (pFrame->GetAU()->GetStatus() == H265DecoderFrameInfo::STATUS_FILLED || pFrame->GetAU()->GetStatus() == H265DecoderFrameInfo::STATUS_STARTED))
+    if (pFrame->GetAU()->GetStatus() == H265DecoderFrameInfo::STATUS_FILLED || pFrame->GetAU()->GetStatus() == H265DecoderFrameInfo::STATUS_STARTED)
     {
         pFrame->prepared = true;
     }
 
-    DEBUG_PRINT((VM_STRING("Prepare frame - %d, %d\n"), pFrame->m_PicOrderCnt, pFrame->m_iResourceNumber));
+    DEBUG_PRINT((VM_STRING("Prepare frame - %d\n"), pFrame->m_PicOrderCnt));
 
     return true;
 }
@@ -429,7 +416,6 @@ void TaskBroker_H265::CompleteFrame(H265DecoderFrame * frame)
     if (!IsFrameCompleted(frame) || frame->IsDecodingCompleted())
         return;
 
-    m_pTaskSupplier->UnlockFrameResource(frame);
     if (frame == m_decodingQueue.front())
     {
         RemoveAU(frame->GetAU());
@@ -592,11 +578,6 @@ bool TaskBroker_H265::IsFrameCompleted(H265DecoderFrame * pFrame) const
     default:
         ret = pFrame->GetAU()->IsCompleted();
         break;
-    }
-
-    if (ret)
-    {
-        m_pTaskSupplier->UnlockFrameResource(pFrame);
     }
 
     return ret;

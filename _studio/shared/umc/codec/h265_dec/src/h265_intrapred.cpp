@@ -24,7 +24,7 @@ void H265SegmentDecoder::InitNeighbourPatternChroma(H265CodingUnit* pCU, Ipp32u 
     Ipp32u CUSize = pCU->GetWidth(ZorderIdxInPart) >> PartDepth;
     Ipp32u Size;
 
-    Ipp32s UnitSize = (m_pSeqParamSet->MaxCUWidth >> m_pSeqParamSet->MaxCUDepth) >> 1; // for chroma
+    Ipp32s UnitSize = (m_pSeqParamSet->MaxCUSize >> m_pSeqParamSet->MaxCUDepth) >> 1; // for chroma
     Ipp32s NumUnitsInCU = (CUSize / UnitSize) >> 1;            // for chroma
     Ipp32s TotalUnits = (NumUnitsInCU << 2) + 1;
 

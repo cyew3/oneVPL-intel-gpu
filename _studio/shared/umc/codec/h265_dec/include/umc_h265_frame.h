@@ -116,8 +116,6 @@ class H265DecoderFrame : public H265DecYUVBufferPadded, public RefCounter
 
     bool post_procces_complete;
 
-    Ipp32s m_iResourceNumber;
-
     Ipp32s m_index;
     Ipp32s m_UID;
     UMC::FrameType m_FrameType;
