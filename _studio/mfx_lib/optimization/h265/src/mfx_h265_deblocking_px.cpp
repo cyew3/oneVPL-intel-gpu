@@ -52,129 +52,369 @@ namespace MFX_HEVC_COMMON
         58, 60, 62, 64
     };
 
-    void h265_FilterEdgeLuma_8u_I(
-        H265EdgeData *edge, 
-        Ipp8u *srcDst,
-        Ipp32s srcDstStride,
-        Ipp32s dir)
+    //void h265_FilterEdgeLuma_8u_I(
+    //    H265EdgeData *edge, 
+    //    Ipp8u *srcDst,
+    //    Ipp32s srcDstStride,
+    //    Ipp32s dir)
+    //{
+    //    Ipp32s bitDepthLuma = 8;
+    //    Ipp32s tcIdx = Clip3(0, 53, edge->qp + 2 * (edge->strength - 1) + edge->tcOffset);
+    //    Ipp32s bIdx = Clip3(0, 51, edge->qp + edge->betaOffset);
+    //    Ipp32s tc =  tcTable[tcIdx] * (1 << (bitDepthLuma - 8));
+    //    Ipp32s beta = betaTable[bIdx] * (1 << (bitDepthLuma - 8));
+    //    Ipp32s sideThreshhold = (beta + (beta >> 1)) >> 3;
+    //    Ipp32s offset, strDstStep;
+    //    Ipp32s i;
+
+    //    if (dir == VERT_FILT)
+    //    {
+    //        offset = 1;
+    //        strDstStep = srcDstStride;
+    //    }
+    //    else
+    //    {
+    //        offset = srcDstStride;
+    //        strDstStep = 1;
+    //    }
+
+    //    {
+    //        Ipp32s dp0 = abs(srcDst[0*strDstStep-3*offset] - 2 * srcDst[0*strDstStep-2*offset] + srcDst[0*strDstStep-1*offset]);
+    //        Ipp32s dp3 = abs(srcDst[3*strDstStep-3*offset] - 2 * srcDst[3*strDstStep-2*offset] + srcDst[3*strDstStep-1*offset]);
+    //        Ipp32s dq0 = abs(srcDst[0*strDstStep+0*offset] - 2 * srcDst[0*strDstStep+1*offset] + srcDst[0*strDstStep+2*offset]);
+    //        Ipp32s dq3 = abs(srcDst[3*strDstStep+0*offset] - 2 * srcDst[3*strDstStep+1*offset] + srcDst[3*strDstStep+2*offset]);
+    //        Ipp32s d0 = dp0 + dq0;
+    //        Ipp32s d3 = dp3 + dq3;
+    //        Ipp32s dq = dq0 + dq3;
+    //        Ipp32s dp = dp0 + dp3;
+    //        Ipp32s d = d0 + d3;
+
+    //        if (d < beta)
+    //        {
+    //            Ipp32s ds0 = abs(srcDst[0*strDstStep-4*offset] - srcDst[0*strDstStep-1*offset]) +
+    //                abs(srcDst[0*strDstStep+3*offset] - srcDst[0*strDstStep+0*offset]);
+    //            Ipp32s ds3 = abs(srcDst[3*strDstStep-4*offset] - srcDst[3*strDstStep-1*offset]) +
+    //                abs(srcDst[3*strDstStep+3*offset] - srcDst[3*strDstStep+0*offset]);
+    //            Ipp32s dm0 = abs(srcDst[0*strDstStep-1*offset] - srcDst[0*strDstStep+0*offset]);
+    //            Ipp32s dm3 = abs(srcDst[3*strDstStep-1*offset] - srcDst[3*strDstStep+0*offset]);
+    //            bool strongFiltering = false;
+
+    //            if ((ds0 < (beta >> 3)) && (2 * d0 < (beta >> 2)) && (dm0 < ((tc * 5 + 1) >> 1)) &&
+    //                (ds3 < (beta >> 3)) && (2 * d3 < (beta >> 2)) && (dm3 < ((tc * 5 + 1) >> 1)))
+    //            {
+    //                strongFiltering = true;
+    //            }
+
+    //            for (i = 0; i < 4; i++)
+    //            {
+    //                Ipp32s p0 = srcDst[-1*offset];
+    //                Ipp32s p1 = srcDst[-2*offset];
+    //                Ipp32s p2 = srcDst[-3*offset];
+    //                Ipp32s q0 = srcDst[0*offset];
+    //                Ipp32s q1 = srcDst[1*offset];
+    //                Ipp32s q2 = srcDst[2*offset];
+    //                Ipp32s tmp;
+
+    //                if (strongFiltering)
+    //                {
+    //                    if (edge->deblockP)
+    //                    {
+    //                        Ipp32s p3 = srcDst[-4*offset];
+    //                        tmp = p1 + p0 + q0;
+    //                        srcDst[-1*offset] = (Ipp8u)(Clip3(p0 - 2 * tc, p0 + 2 * tc, (p2 + 2 * tmp + q1 + 4) >> 3));     //p0
+    //                        srcDst[-2*offset] = (Ipp8u)(Clip3(p1 - 2 * tc, p1 + 2 * tc, (p2 + tmp + 2) >> 2));              //p1
+    //                        srcDst[-3*offset] = (Ipp8u)(Clip3(p2 - 2 * tc, p2 + 2 * tc, (2 * p3 + 3 * p2 + tmp + 4) >> 3)); //p2
+    //                    }
+
+    //                    if (edge->deblockQ)
+    //                    {
+    //                        Ipp32s q3 = srcDst[3*offset];
+
+    //                        tmp = q1 + q0 + p0;
+    //                        srcDst[0*offset] = (Ipp8u)(Clip3(q0 - 2 * tc, q0 + 2 * tc, (q2 + 2 * tmp + p1 + 4) >> 3));     //q0
+    //                        srcDst[1*offset] = (Ipp8u)(Clip3(q1 - 2 * tc, q1 + 2 * tc, (q2 + tmp + 2) >> 2));              //q1
+    //                        srcDst[2*offset] = (Ipp8u)(Clip3(q2 - 2 * tc, q2 + 2 * tc, (2 * q3 + 3 * q2 + tmp + 4) >> 3)); //q2
+    //                    }
+    //                }
+    //                else
+    //                {
+    //                    Ipp32s delta = (9 * (q0 - p0) - 3 * (q1 - p1) + 8) >> 4;
+
+    //                    if (abs(delta) < tc * 10)
+    //                    {
+    //                        delta = Clip3(-tc, tc, delta);
+
+    //                        if (edge->deblockP)
+    //                        {
+    //                            srcDst[-1*offset] = (Ipp8u)(Clip3(0, 255, (p0 + delta)));
+
+    //                            if (dp < sideThreshhold)
+    //                            {
+    //                                tmp = Clip3(-(tc >> 1), (tc >> 1), ((((p2 + p0 + 1) >> 1) - p1 + delta) >> 1));
+    //                                srcDst[-2*offset] = (Ipp8u)(Clip3(0, 255, (p1 + tmp)));
+    //                            }
+    //                        }
+
+    //                        if (edge->deblockQ)
+    //                        {
+    //                            srcDst[0] = (Ipp8u)(Clip3(0, 255, (q0 - delta)));
+
+    //                            if (dq < sideThreshhold)
+    //                            {
+    //                                tmp = Clip3(-(tc >> 1), (tc >> 1), ((((q2 + q0 + 1) >> 1) - q1 - delta) >> 1));
+    //                                srcDst[1*offset] = (Ipp8u)(Clip3(0, 255, (q1 + tmp)));
+    //                            }
+    //                        }
+    //                    }
+    //                }
+
+    //                srcDst += strDstStep;
+    //            }
+    //        }
+    //    }
+
+    //} // void h265_FilterEdgeLuma_8u_I(...)
+
+#if defined(MFX_TARGET_OPTIMIZATION_PX)
+    Ipp32s h265_FilterEdgeLuma_8u_I(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir)
     {
-        Ipp32s bitDepthLuma = 8;
-        Ipp32s tcIdx = Clip3(0, 53, edge->qp + 2 * (edge->strength - 1) + edge->tcOffset);
-        Ipp32s bIdx = Clip3(0, 51, edge->qp + edge->betaOffset);
-        Ipp32s tc =  tcTable[tcIdx] * (1 << (bitDepthLuma - 8));
-        Ipp32s beta = betaTable[bIdx] * (1 << (bitDepthLuma - 8));
-        Ipp32s sideThreshhold = (beta + (beta >> 1)) >> 3;
-        Ipp32s offset, strDstStep;
+        Ipp32s tcIdx, bIdx, tc, beta, sideThreshhold;
         Ipp32s i;
+        Ipp32s dp0, dp3, dq0, dq3, d0, d3, dq, dp, d;
+        Ipp32s ds0, ds3, dm0, dm3, delta;
+        Ipp32s p0, p1, p2, p3, q0, q1, q2, q3, tmp;
+        Ipp32s strongFiltering = 2; /* 2 = no filtering, only for counting statistics */
+        Ipp8u *r[8];
 
-        if (dir == VERT_FILT)
-        {
-            offset = 1;
-            strDstStep = srcDstStride;
-        }
-        else
-        {
-            offset = srcDstStride;
-            strDstStep = 1;
-        }
+        tcIdx = Clip3(0, 53, edge->qp + 2 * (edge->strength - 1) + edge->tcOffset);
+        bIdx = Clip3(0, 51, edge->qp + edge->betaOffset);
+        tc =  tcTable[tcIdx];
+        beta = betaTable[bIdx];
+        sideThreshhold = (beta + (beta >> 1)) >> 3;
 
-        {
-            Ipp32s dp0 = abs(srcDst[0*strDstStep-3*offset] - 2 * srcDst[0*strDstStep-2*offset] + srcDst[0*strDstStep-1*offset]);
-            Ipp32s dp3 = abs(srcDst[3*strDstStep-3*offset] - 2 * srcDst[3*strDstStep-2*offset] + srcDst[3*strDstStep-1*offset]);
-            Ipp32s dq0 = abs(srcDst[0*strDstStep+0*offset] - 2 * srcDst[0*strDstStep+1*offset] + srcDst[0*strDstStep+2*offset]);
-            Ipp32s dq3 = abs(srcDst[3*strDstStep+0*offset] - 2 * srcDst[3*strDstStep+1*offset] + srcDst[3*strDstStep+2*offset]);
-            Ipp32s d0 = dp0 + dq0;
-            Ipp32s d3 = dp3 + dq3;
-            Ipp32s dq = dq0 + dq3;
-            Ipp32s dp = dp0 + dp3;
-            Ipp32s d = d0 + d3;
+        if (dir == VERT_FILT) {
+            r[0] = srcDst + 0*srcDstStride - 4;
+            r[1] = r[0] + srcDstStride;
+            r[2] = r[1] + srcDstStride;
+            r[3] = r[2] + srcDstStride;
 
-            if (d < beta)
-            {
-                Ipp32s ds0 = abs(srcDst[0*strDstStep-4*offset] - srcDst[0*strDstStep-1*offset]) +
-                    abs(srcDst[0*strDstStep+3*offset] - srcDst[0*strDstStep+0*offset]);
-                Ipp32s ds3 = abs(srcDst[3*strDstStep-4*offset] - srcDst[3*strDstStep-1*offset]) +
-                    abs(srcDst[3*strDstStep+3*offset] - srcDst[3*strDstStep+0*offset]);
-                Ipp32s dm0 = abs(srcDst[0*strDstStep-1*offset] - srcDst[0*strDstStep+0*offset]);
-                Ipp32s dm3 = abs(srcDst[3*strDstStep-1*offset] - srcDst[3*strDstStep+0*offset]);
-                bool strongFiltering = false;
+            dp0 = abs(r[0][1] - 2*r[0][2] + r[0][3]);
+            dq0 = abs(r[0][4] - 2*r[0][5] + r[0][6]);
 
-                if ((ds0 < (beta >> 3)) && (2 * d0 < (beta >> 2)) && (dm0 < ((tc * 5 + 1) >> 1)) &&
-                    (ds3 < (beta >> 3)) && (2 * d3 < (beta >> 2)) && (dm3 < ((tc * 5 + 1) >> 1)))
-                {
-                    strongFiltering = true;
-                }
+            dp3 = abs(r[3][1] - 2*r[3][2] + r[3][3]);
+            dq3 = abs(r[3][4] - 2*r[3][5] + r[3][6]);
 
-                for (i = 0; i < 4; i++)
-                {
-                    Ipp32s p0 = srcDst[-1*offset];
-                    Ipp32s p1 = srcDst[-2*offset];
-                    Ipp32s p2 = srcDst[-3*offset];
-                    Ipp32s q0 = srcDst[0*offset];
-                    Ipp32s q1 = srcDst[1*offset];
-                    Ipp32s q2 = srcDst[2*offset];
-                    Ipp32s tmp;
+            d0 = dp0 + dq0;
+            d3 = dp3 + dq3;
+            d = d0 + d3;
 
-                    if (strongFiltering)
+            if (d >= beta)
+                return strongFiltering;
+
+            dq = dq0 + dq3;
+            dp = dp0 + dp3;
+
+            /* since this is abs, can reverse the subtraction */
+            ds0  = abs(r[0][0] - r[0][3]);
+            ds0 += abs(r[0][4] - r[0][7]);
+
+            ds3  = abs(r[3][0] - r[3][3]);
+            ds3 += abs(r[3][4] - r[3][7]);
+
+            dm0  = abs(r[0][4] - r[0][3]);
+            dm3  = abs(r[3][4] - r[3][3]);
+
+            strongFiltering = 0;
+            if ((ds0 < (beta >> 3)) && (2*d0 < (beta >> 2)) && (dm0 < ((tc * 5 + 1) >> 1)) && (ds3 < (beta >> 3)) && (2*d3 < (beta >> 2)) && (dm3 < ((tc * 5 + 1) >> 1)))
+                strongFiltering = 1;
+
+            if (strongFiltering) {
+                for (i = 0; i < 4; i++) {
+                    p0 = srcDst[-1];
+                    p1 = srcDst[-2];
+                    p2 = srcDst[-3];
+                    q0 = srcDst[0];
+                    q1 = srcDst[1];
+                    q2 = srcDst[2];
+
+                    if (edge->deblockP)
                     {
+                        p3 = srcDst[-4];
+                        tmp = p1 + p0 + q0;
+                        srcDst[-1] = (Ipp8u)(Clip3(p0 - 2 * tc, p0 + 2 * tc, (p2 + 2 * tmp + q1 + 4) >> 3));     //p0
+                        srcDst[-2] = (Ipp8u)(Clip3(p1 - 2 * tc, p1 + 2 * tc, (p2 + tmp + 2) >> 2));              //p1
+                        srcDst[-3] = (Ipp8u)(Clip3(p2 - 2 * tc, p2 + 2 * tc, (2 * p3 + 3 * p2 + tmp + 4) >> 3)); //p2
+                    }
+
+                    if (edge->deblockQ)
+                    {
+                        q3 = srcDst[3];
+
+                        tmp = q1 + q0 + p0;
+                        srcDst[0] = (Ipp8u)(Clip3(q0 - 2 * tc, q0 + 2 * tc, (q2 + 2 * tmp + p1 + 4) >> 3));     //q0
+                        srcDst[1] = (Ipp8u)(Clip3(q1 - 2 * tc, q1 + 2 * tc, (q2 + tmp + 2) >> 2));              //q1
+                        srcDst[2] = (Ipp8u)(Clip3(q2 - 2 * tc, q2 + 2 * tc, (2 * q3 + 3 * q2 + tmp + 4) >> 3)); //q2
+                    }
+                    srcDst += srcDstStride;
+                }
+            } else {
+                for (i = 0; i < 4; i++) {
+                    p0 = srcDst[-1];
+                    p1 = srcDst[-2];
+                    p2 = srcDst[-3];
+                    q0 = srcDst[0];
+                    q1 = srcDst[1];
+                    q2 = srcDst[2];
+
+                    delta = (9 * (q0 - p0) - 3 * (q1 - p1) + 8) >> 4;
+
+                    if (abs(delta) < tc * 10)
+                    {
+                        delta = Clip3(-tc, tc, delta);
+
                         if (edge->deblockP)
                         {
-                            Ipp32s p3 = srcDst[-4*offset];
-                            tmp = p1 + p0 + q0;
-                            srcDst[-1*offset] = (Ipp8u)(Clip3(p0 - 2 * tc, p0 + 2 * tc, (p2 + 2 * tmp + q1 + 4) >> 3));     //p0
-                            srcDst[-2*offset] = (Ipp8u)(Clip3(p1 - 2 * tc, p1 + 2 * tc, (p2 + tmp + 2) >> 2));              //p1
-                            srcDst[-3*offset] = (Ipp8u)(Clip3(p2 - 2 * tc, p2 + 2 * tc, (2 * p3 + 3 * p2 + tmp + 4) >> 3)); //p2
+                            srcDst[-1] = (Ipp8u)(Clip3(0, 255, (p0 + delta)));
+
+                            if (dp < sideThreshhold)
+                            {
+                                tmp = Clip3(-(tc >> 1), (tc >> 1), ((((p2 + p0 + 1) >> 1) - p1 + delta) >> 1));
+                                srcDst[-2] = (Ipp8u)(Clip3(0, 255, (p1 + tmp)));
+                            }
                         }
 
                         if (edge->deblockQ)
                         {
-                            Ipp32s q3 = srcDst[3*offset];
+                            srcDst[0] = (Ipp8u)(Clip3(0, 255, (q0 - delta)));
 
-                            tmp = q1 + q0 + p0;
-                            srcDst[0*offset] = (Ipp8u)(Clip3(q0 - 2 * tc, q0 + 2 * tc, (q2 + 2 * tmp + p1 + 4) >> 3));     //q0
-                            srcDst[1*offset] = (Ipp8u)(Clip3(q1 - 2 * tc, q1 + 2 * tc, (q2 + tmp + 2) >> 2));              //q1
-                            srcDst[2*offset] = (Ipp8u)(Clip3(q2 - 2 * tc, q2 + 2 * tc, (2 * q3 + 3 * q2 + tmp + 4) >> 3)); //q2
+                            if (dq < sideThreshhold)
+                            {
+                                tmp = Clip3(-(tc >> 1), (tc >> 1), ((((q2 + q0 + 1) >> 1) - q1 - delta) >> 1));
+                                srcDst[1] = (Ipp8u)(Clip3(0, 255, (q1 + tmp)));
+                            }
                         }
                     }
-                    else
+
+                    srcDst += srcDstStride;
+                }
+            }
+        } else {
+            r[0] = srcDst - 4*srcDstStride;
+            r[1] = r[0] + srcDstStride;
+            r[2] = r[1] + srcDstStride;
+            r[3] = r[2] + srcDstStride;
+            r[4] = r[3] + srcDstStride;
+            r[5] = r[4] + srcDstStride;
+            r[6] = r[5] + srcDstStride;
+            r[7] = r[6] + srcDstStride;
+
+            dp0 = abs(r[1][0] - 2*r[2][0] + r[3][0]);
+            dq0 = abs(r[4][0] - 2*r[5][0] + r[6][0]);
+
+            dp3 = abs(r[1][3] - 2*r[2][3] + r[3][3]);
+            dq3 = abs(r[4][3] - 2*r[5][3] + r[6][3]);
+
+            d0 = dp0 + dq0;
+            d3 = dp3 + dq3;
+
+            dq = dq0 + dq3;
+            dp = dp0 + dp3;
+
+            d = d0 + d3;
+
+            if (d >= beta)
+                return strongFiltering;
+
+            /* since this is abs, can reverse the subtraction */
+            ds0  = abs(r[0][0] - r[3][0]);
+            ds0 += abs(r[4][0] - r[7][0]);
+
+            ds3  = abs(r[0][3] - r[3][3]);
+            ds3 += abs(r[4][3] - r[7][3]);
+
+            dm0  = abs(r[4][0] - r[3][0]);
+            dm3  = abs(r[4][3] - r[3][3]);
+
+            strongFiltering = 0;
+            if ((ds0 < (beta >> 3)) && (2 * d0 < (beta >> 2)) && (dm0 < ((tc * 5 + 1) >> 1)) && (ds3 < (beta >> 3)) && (2 * d3 < (beta >> 2)) && (dm3 < ((tc * 5 + 1) >> 1)))
+                strongFiltering = 1;
+
+            if (strongFiltering) {
+                for (i = 0; i < 4; i++)
+                {
+                    p0 = srcDst[-1*srcDstStride];
+                    p1 = srcDst[-2*srcDstStride];
+                    p2 = srcDst[-3*srcDstStride];
+                    q0 = srcDst[0*srcDstStride];
+                    q1 = srcDst[1*srcDstStride];
+                    q2 = srcDst[2*srcDstStride];
+
+                    if (edge->deblockP)
                     {
-                        Ipp32s delta = (9 * (q0 - p0) - 3 * (q1 - p1) + 8) >> 4;
+                        p3 = srcDst[-4*srcDstStride];
+                        tmp = p1 + p0 + q0;
+                        srcDst[-1*srcDstStride] = (Ipp8u)(Clip3(p0 - 2 * tc, p0 + 2 * tc, (p2 + 2 * tmp + q1 + 4) >> 3));     //p0
+                        srcDst[-2*srcDstStride] = (Ipp8u)(Clip3(p1 - 2 * tc, p1 + 2 * tc, (p2 + tmp + 2) >> 2));              //p1
+                        srcDst[-3*srcDstStride] = (Ipp8u)(Clip3(p2 - 2 * tc, p2 + 2 * tc, (2 * p3 + 3 * p2 + tmp + 4) >> 3)); //p2
+                    }
 
-                        if (abs(delta) < tc * 10)
+                    if (edge->deblockQ)
+                    {
+                        q3 = srcDst[3*srcDstStride];
+
+                        tmp = q1 + q0 + p0;
+                        srcDst[0*srcDstStride] = (Ipp8u)(Clip3(q0 - 2 * tc, q0 + 2 * tc, (q2 + 2 * tmp + p1 + 4) >> 3));     //q0
+                        srcDst[1*srcDstStride] = (Ipp8u)(Clip3(q1 - 2 * tc, q1 + 2 * tc, (q2 + tmp + 2) >> 2));              //q1
+                        srcDst[2*srcDstStride] = (Ipp8u)(Clip3(q2 - 2 * tc, q2 + 2 * tc, (2 * q3 + 3 * q2 + tmp + 4) >> 3)); //q2
+                    }
+                    srcDst += 1;
+                }
+            } else {
+                for (i = 0; i < 4; i++)
+                {
+                    p0 = srcDst[-1*srcDstStride];
+                    p1 = srcDst[-2*srcDstStride];
+                    p2 = srcDst[-3*srcDstStride];
+                    q0 = srcDst[0*srcDstStride];
+                    q1 = srcDst[1*srcDstStride];
+                    q2 = srcDst[2*srcDstStride];
+                    delta = (9 * (q0 - p0) - 3 * (q1 - p1) + 8) >> 4;
+
+                    if (abs(delta) < tc * 10)
+                    {
+                        delta = Clip3(-tc, tc, delta);
+
+                        if (edge->deblockP)
                         {
-                            delta = Clip3(-tc, tc, delta);
+                            srcDst[-1*srcDstStride] = (Ipp8u)(Clip3(0, 255, (p0 + delta)));
 
-                            if (edge->deblockP)
+                            if (dp < sideThreshhold)
                             {
-                                srcDst[-1*offset] = (Ipp8u)(Clip3(0, 255, (p0 + delta)));
-
-                                if (dp < sideThreshhold)
-                                {
-                                    tmp = Clip3(-(tc >> 1), (tc >> 1), ((((p2 + p0 + 1) >> 1) - p1 + delta) >> 1));
-                                    srcDst[-2*offset] = (Ipp8u)(Clip3(0, 255, (p1 + tmp)));
-                                }
+                                tmp = Clip3(-(tc >> 1), (tc >> 1), ((((p2 + p0 + 1) >> 1) - p1 + delta) >> 1));
+                                srcDst[-2*srcDstStride] = (Ipp8u)(Clip3(0, 255, (p1 + tmp)));
                             }
+                        }
 
-                            if (edge->deblockQ)
+                        if (edge->deblockQ)
+                        {
+                            srcDst[0] = (Ipp8u)(Clip3(0, 255, (q0 - delta)));
+
+                            if (dq < sideThreshhold)
                             {
-                                srcDst[0] = (Ipp8u)(Clip3(0, 255, (q0 - delta)));
-
-                                if (dq < sideThreshhold)
-                                {
-                                    tmp = Clip3(-(tc >> 1), (tc >> 1), ((((q2 + q0 + 1) >> 1) - q1 - delta) >> 1));
-                                    srcDst[1*offset] = (Ipp8u)(Clip3(0, 255, (q1 + tmp)));
-                                }
+                                tmp = Clip3(-(tc >> 1), (tc >> 1), ((((q2 + q0 + 1) >> 1) - q1 - delta) >> 1));
+                                srcDst[1*srcDstStride] = (Ipp8u)(Clip3(0, 255, (q1 + tmp)));
                             }
                         }
                     }
-
-                    srcDst += strDstStep;
+                    srcDst += 1;
                 }
             }
         }
 
-    } // void h265_FilterEdgeLuma_8u_I(...)
-    
+        return strongFiltering;
+
+    } // Ipp32s h265_FilterEdgeLuma_8u_I_C(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir)
+#endif
 
     void h265_FilterEdgeChroma_Plane_8u_I(H265EdgeData *edge, PixType *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQp)
     {
