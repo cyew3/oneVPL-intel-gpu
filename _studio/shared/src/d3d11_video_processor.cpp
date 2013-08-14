@@ -1934,15 +1934,10 @@ mfxStatus D3D11VideoProcessor::QueryCapabilities(mfxVppCaps& caps)
     {
         case MFX_HW_HSW:
         case MFX_HW_HSW_ULT:
+        case MFX_HW_VLV:
         {
             caps.uMaxWidth = 16352;
             caps.uMaxHeight = 16352;
-            break;
-        }
-        case MFX_HW_VLV:
-        {
-            caps.uMaxWidth = 8176;
-            caps.uMaxHeight = 8176;
             break;
         }
         case MFX_HW_IVB:
