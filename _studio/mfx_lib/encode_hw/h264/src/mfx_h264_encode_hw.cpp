@@ -748,7 +748,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         m_tmpVmeData.reserve(extOpt2->LookAheadDepth);
 
         mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
-        if (extDdi->LaScaleFactor > 1)
+        if (extDdi && extDdi->LaScaleFactor > 1)
         {
             request.Info.FourCC = MFX_FOURCC_NV12;
             request.Type        = MFX_MEMTYPE_D3D_INT;
