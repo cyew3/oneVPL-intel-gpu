@@ -71,6 +71,7 @@ StringCodeItem tbl_vpp_filters [] = {
     CODE_STRING(MFX_EXTBUFF_VPP_,IMAGE_STABILIZATION),
     CODE_STRING(MFX_EXTBUFF_VPP_,FRAME_RATE_CONVERSION),
     CODE_STRING(MFX_EXTBUFF_VPP_,PICSTRUCT_DETECTION),
+    CODE_STRING(MFX_EXTBUFF_VPP_,VIDEO_SIGNAL_INFO),
 };
 
 StringCodeItem tbl_frame_type[] = {
@@ -352,6 +353,7 @@ void dump_ExtBuffers(FILE *fd, int level, TCHAR *prefix, TCHAR* prefix2, int cod
                 case MFX_EXTBUFF_VPP_AUXDATA: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtVppAuxData")); break;
                 case MFX_EXTBUFF_VPP_SCENE_CHANGE: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("MFX_EXTBUFF_VPP_SCENE_CHANGE")); break;
                 case MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtVPPFrameRateConversion")); break;
+                case MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtVPPVideoSignalInfo")); break;
                 case MFX_EXTBUFF_AVC_TEMPORAL_LAYERS: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtAvcTemporalLayers")); break;
                 case MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtOpaqueSurfaceAlloc")); break;
                 case MFX_EXTBUFF_AVC_REFLIST_CTRL: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtAVCRefListCtrl")); break;
@@ -361,6 +363,7 @@ void dump_ExtBuffers(FILE *fd, int level, TCHAR *prefix, TCHAR* prefix2, int cod
                 case MFX_EXTBUFF_ENCODER_CAPABILITY: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtEncoderCapability")); break;
                 case MFX_EXTBUFF_ENCODER_RESET_OPTION: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtEncoderResetOption")); break;
                 case MFX_EXTBUFF_ENCODED_FRAME_INFO: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtAVCEncodedFrameInfo")); break;
+                case MFX_EXTBUFF_ENCODER_ROI: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtEncoderROI")); break;
                 default: 
                     _tcscatformat_s(buf,TEXT("0x%x"),eb->BufferId); break;
             }
@@ -494,6 +497,15 @@ void dump_ExtBuffers(FILE *fd, int level, TCHAR *prefix, TCHAR* prefix2, int cod
             {
                 mfxExtVPPFrameRateConversion *frc = (mfxExtVPPFrameRateConversion*)eb;
                 dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT("mfxExtVPPFrameRateConversion.Algorithm="), TEXT("%s"), GET_STRING_FROM_CODE_TABLE_EQUAL(frc->Algorithm, tbl_frc_algm));
+                break;
+            }
+            case MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
+            {
+                mfxExtVPPVideoSignalInfo *vsi = (mfxExtVPPVideoSignalInfo*)eb;
+                dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPVideoSignalInfo.In.TransferMatrix="),TEXT("%d"), vsi->In.TransferMatrix);
+                dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPVideoSignalInfo.In.NominalRange="),TEXT("%d"), vsi->In.NominalRange);
+                dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPVideoSignalInfo.Out.TransferMatrix="),TEXT("%d"), vsi->Out.TransferMatrix);
+                dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPVideoSignalInfo.Out.NominalRange="),TEXT("%d"), vsi->Out.NominalRange);
                 break;
             }
             case MFX_EXTBUFF_AVC_TEMPORAL_LAYERS:
@@ -646,6 +658,24 @@ void dump_ExtBuffers(FILE *fd, int level, TCHAR *prefix, TCHAR* prefix2, int cod
                     dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtAVCEncodedFrameInfo.UsedRefListL1"),TEXT("[%d].FrameOrder=%d"), j, efi->UsedRefListL1[j].FrameOrder);
                     dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtAVCEncodedFrameInfo.UsedRefListL1"),TEXT("[%d].PicStruct=%s"), j, GET_STRING_FROM_CODE_TABLE(efi->UsedRefListL1[j].PicStruct, tbl_picstruct));
                     dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtAVCEncodedFrameInfo.UsedRefListL1"),TEXT("[%d].LongTermIdx=%u"), j, efi->UsedRefListL1[j].LongTermIdx);
+                }
+
+                break;
+            }
+
+            case MFX_EXTBUFF_ENCODER_ROI:
+            {
+                mfxExtEncoderROI *eroi=(mfxExtEncoderROI *)eb;
+
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtEncoderROI.NumROI="),TEXT("%d"), eroi->NumROI);
+
+                for (int j = 0; j < sizeof(eroi->NumROI); j++)
+                {
+                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtEncoderROI.ROI"),TEXT("[%d].Left=%d"), j, eroi->ROI[j].Left);
+                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtEncoderROI.ROI"),TEXT("[%d].Top=%d"), j, eroi->ROI[j].Top);
+                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtEncoderROI.ROI"),TEXT("[%d].Right=%d"), j, eroi->ROI[j].Right);
+                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtEncoderROI.ROI"),TEXT("[%d].Bottom=%d"), j, eroi->ROI[j].Bottom);
+                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtEncoderROI.ROI"),TEXT("[%d].Priority=%d"), j, eroi->ROI[j].Priority);
                 }
 
                 break;
@@ -821,7 +851,8 @@ void dump_mfxFrameData(FILE *fd, int level, TCHAR *prefix, TCHAR *prefix2, mfxFr
         dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".TimeStamp=0x"),TEXT("%x"),data->TimeStamp);
         dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".FrameOrder="),TEXT("%d"),data->FrameOrder);
         dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".Locked="),TEXT("%d"),data->Locked);
-        dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".Pitch="),TEXT("%d"),data->Pitch);
+        dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".PitchHigh="),TEXT("%d"),data->PitchHigh);
+        dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".PitchLow="),TEXT("%d"),data->PitchLow);
         dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".Corrupted="),TEXT("%d"),data->Corrupted);
         RECORD_POINTERS(dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".Y=0x"),TEXT("%p"),data->Y));
         RECORD_POINTERS(dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".U=0x"),TEXT("%p"),data->U));
