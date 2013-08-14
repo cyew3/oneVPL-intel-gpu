@@ -71,6 +71,7 @@ StringCodeItem tbl_vpp_filters [] = {
     CODE_STRING(MFX_EXTBUFF_VPP_,IMAGE_STABILIZATION),
     CODE_STRING(MFX_EXTBUFF_VPP_,FRAME_RATE_CONVERSION),
     CODE_STRING(MFX_EXTBUFF_VPP_,PICSTRUCT_DETECTION),
+    CODE_STRING(MFX_EXTBUFF_VPP_,COMPOSITE),
     CODE_STRING(MFX_EXTBUFF_VPP_,VIDEO_SIGNAL_INFO),
 };
 
@@ -353,6 +354,7 @@ void dump_ExtBuffers(FILE *fd, int level, TCHAR *prefix, TCHAR* prefix2, int cod
                 case MFX_EXTBUFF_VPP_AUXDATA: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtVppAuxData")); break;
                 case MFX_EXTBUFF_VPP_SCENE_CHANGE: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("MFX_EXTBUFF_VPP_SCENE_CHANGE")); break;
                 case MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtVPPFrameRateConversion")); break;
+                case MFX_EXTBUFF_VPP_COMPOSITE: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtVPPComposite")); break;
                 case MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtVPPVideoSignalInfo")); break;
                 case MFX_EXTBUFF_AVC_TEMPORAL_LAYERS: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtAvcTemporalLayers")); break;
                 case MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION: _tcscat_s(buf, sizeof(buf)/ sizeof(buf[0]), TEXT("mfxExtOpaqueSurfaceAlloc")); break;
@@ -497,6 +499,22 @@ void dump_ExtBuffers(FILE *fd, int level, TCHAR *prefix, TCHAR* prefix2, int cod
             {
                 mfxExtVPPFrameRateConversion *frc = (mfxExtVPPFrameRateConversion*)eb;
                 dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT("mfxExtVPPFrameRateConversion.Algorithm="), TEXT("%s"), GET_STRING_FROM_CODE_TABLE_EQUAL(frc->Algorithm, tbl_frc_algm));
+                break;
+            }
+            case MFX_EXTBUFF_VPP_COMPOSITE:
+            {
+                mfxExtVPPComposite *c = (mfxExtVPPComposite*)eb;
+                dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPComposite.NumInputStream="),TEXT("%d"), c->NumInputStream);
+                dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPComposite.Y(R)="),TEXT("%d"), c->R);
+                dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPComposite.U(G)="),TEXT("%d"), c->G);
+                dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPComposite.V(B)="),TEXT("%d"), c->B);
+                for (int j = 0; j < c->NumInputStream; j++)
+                {
+                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPComposite.InputStream"),TEXT("[%d].DstX=%d"), j, c->InputStream[j].DstX);
+                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPComposite.InputStream"),TEXT("[%d].DstY=%d"), j, c->InputStream[j].DstY);
+                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPComposite.InputStream"),TEXT("[%d].DstW=%d"), j, c->InputStream[j].DstW);
+                    dump_format_wprefix(fd,level, 3, prefix, prefix2, TEXT(".mfxExtVPPComposite.InputStream"),TEXT("[%d].DstH=%d"), j, c->InputStream[j].DstH);
+                }
                 break;
             }
             case MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
@@ -852,6 +870,7 @@ void dump_mfxFrameData(FILE *fd, int level, TCHAR *prefix, TCHAR *prefix2, mfxFr
         dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".FrameOrder="),TEXT("%d"),data->FrameOrder);
         dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".Locked="),TEXT("%d"),data->Locked);
         dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".PitchHigh="),TEXT("%d"),data->PitchHigh);
+        dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".Pitch="),TEXT("%d"),data->Pitch);
         dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".PitchLow="),TEXT("%d"),data->PitchLow);
         dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".Corrupted="),TEXT("%d"),data->Corrupted);
         RECORD_POINTERS(dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".Y=0x"),TEXT("%p"),data->Y));
