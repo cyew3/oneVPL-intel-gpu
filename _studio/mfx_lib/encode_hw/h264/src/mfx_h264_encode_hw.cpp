@@ -1148,6 +1148,7 @@ void ImplementationAvc::OnLookaheadQueried()
     {
         m_cmDevice->DestroyVmeSurfaceG7_5(task.m_cmRefs);
         m_cmDevice->DestroyVmeSurfaceG7_5(task.m_cmRefsLa);
+        m_cmCtx->DestroyEvent(task.m_event);
     }
 
     if ((task.GetFrameType() & MFX_FRAMETYPE_REF) == 0)
@@ -1157,8 +1158,6 @@ void ImplementationAvc::OnLookaheadQueried()
         if (m_cmDevice)
             m_cmDevice->DestroySurface(task.m_cmRaw);
     }
-
-    m_cmCtx->DestroyEvent(task.m_event);
 
     m_lookaheadFinished.splice(m_lookaheadFinished.end(), m_lookaheadStarted, m_lookaheadStarted.begin());
 }
