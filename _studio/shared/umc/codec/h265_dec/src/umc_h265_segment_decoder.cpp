@@ -2886,21 +2886,38 @@ void H265SegmentDecoder::UpdatePUInfo(H265CodingUnit *pCU, Ipp32u PartX, Ipp32u 
     PartX &= mask;
     PartY &= mask;
 
+    H265MVInfo *pMVInfo;
+    Ipp32s stride = m_context->m_CurrCTBStride;
+    
+    pMVInfo = &m_context->m_CurrCTB[PartY * stride + PartX];
     for (Ipp32s y = 0; y < PartHeight; y++)
+    {
         for (Ipp32s x = 0; x < PartWidth; x++)
-            m_context->m_CurrCTB[(PartY + y) * m_context->m_CurrCTBStride + PartX + x] = MVi;
+        {
+            pMVInfo[x] = MVi;
+        }
+        pMVInfo += stride;
+    }
 
+    H265FrameHLDNeighborsInfo *pInfo;
     H265FrameHLDNeighborsInfo info;
     info.data = 0;
     info.members.IsAvailable = 1;
 
     // Bottom row
+    pInfo = &m_context->m_CurrCTBFlags[(PartY + PartHeight - 1) * stride + PartX];
     for (Ipp32u i = 0; i < PartWidth; i++)
-        m_context->m_CurrCTBFlags[(PartY + PartHeight - 1) * m_context->m_CurrCTBStride + PartX + i].data = info.data;
+    {
+        pInfo[i] = info;
+    }
 
     // Right column
+    pInfo = &m_context->m_CurrCTBFlags[PartY * stride + PartX];
     for (Ipp32u i = 0; i < PartHeight; i++)
-        m_context->m_CurrCTBFlags[(PartY + i) * m_context->m_CurrCTBStride + PartX + PartWidth - 1].data = info.data;
+    {
+        pInfo[PartWidth - 1] = info;
+        pInfo += stride;
+    }
 }
 
 void H265SegmentDecoder::UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u TrStart, bool isSkipped, bool isTranquantBypass, bool isIPCM, bool isTrCbfY)
@@ -2908,7 +2925,9 @@ void H265SegmentDecoder::UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPa
     Ipp32s XInc = pCU->m_rasterToPelX[AbsPartIdx] >> m_pSeqParamSet->log2_min_transform_block_size;
     Ipp32s YInc = pCU->m_rasterToPelY[AbsPartIdx] >> m_pSeqParamSet->log2_min_transform_block_size;
     Ipp32s PartSize = m_pSeqParamSet->NumPartitionsInCUSize >> Depth;
+    Ipp32s stride = m_context->m_CurrCTBStride;
 
+    H265FrameHLDNeighborsInfo *pInfo;
     H265FrameHLDNeighborsInfo info;
     info.data = 0;
     info.members.IsAvailable = 1;
@@ -2921,29 +2940,47 @@ void H265SegmentDecoder::UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPa
     info.members.qp = pCU->GetQP(AbsPartIdx);
     info.members.TrStart = TrStart;
     info.members.IsTrCbfY = isTrCbfY;
-    Ipp32u data = info.data;
 
     if (!m_pSliceHeader->slice_deblocking_filter_disabled_flag || info.members.IsIntra)
     {
         // Fill up inside of whole CU to predict intra parts inside of it
-        for (Ipp32s y = YInc; y < YInc + PartSize - 1; y++)
-            for (Ipp32s x = XInc; x < XInc + PartSize - 1; x++)
-                m_context->m_CurrCTBFlags[m_context->m_CurrCTBStride * y + x].data = data;
+        pInfo = &m_context->m_CurrCTBFlags[YInc * stride + XInc];
+        for (Ipp32s y = 0; y < PartSize - 1; y++)
+        {
+            for (Ipp32s x = 0; x < PartSize - 1; x++)
+            {
+                pInfo[x] = info;
+            }
+            pInfo += stride;
+        }
     }
 
+    // Bottom row
+    pInfo = &m_context->m_CurrCTBFlags[(YInc + PartSize - 1) * stride + XInc];
     for (Ipp32s i = 0; i < PartSize; i++)
     {
-        // Bottom row
-        m_context->m_CurrCTBFlags[m_context->m_CurrCTBStride * (YInc + PartSize - 1) + (XInc + i)].data = data;
-        // Right column
-        m_context->m_CurrCTBFlags[m_context->m_CurrCTBStride * (YInc + i) + (XInc + PartSize - 1)].data = data;
+        pInfo[i] = info;
+    }
+
+    // Right column
+    pInfo = &m_context->m_CurrCTBFlags[YInc * stride + XInc];
+    for (Ipp32s i = 0; i < PartSize; i++)
+    {
+        pInfo[PartSize - 1] = info;
+        pInfo += stride;
     }
 
     if (info.members.IsIntra)
     {
+        H265MVInfo *pMVInfo = &m_context->m_CurrCTB[YInc * stride + XInc];
         for (Ipp32s i = 0; i < PartSize; i++)
+        {
             for (Ipp32s j = 0; j < PartSize; j++)
-                m_context->m_CurrCTB[m_context->m_CurrCTBStride * (YInc + i) + (XInc + j)].m_flags[REF_PIC_LIST_0] = COL_TU_INTRA;
+            {
+                pMVInfo[j].m_flags[REF_PIC_LIST_0] = COL_TU_INTRA;
+            }
+            pMVInfo += stride;
+        }
     }
 }
 
