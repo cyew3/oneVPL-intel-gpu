@@ -761,7 +761,50 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
 // THE OTHER ENCODE FUNCTIONS HAVE IMPLICIT IMPLEMENTATION
 //
 
-FUNCTION_RESET_IMPL(ENCODE, Reset, (mfxSession session, mfxVideoParam *par), (par))
+mfxStatus MFXVideoENCODE_Reset(mfxSession session, mfxVideoParam *par)
+{
+    mfxStatus mfxRes;
+    try
+    {
+        /* the absent components caused many issues in application.
+        check the pointer to avoid extra exceptions */
+        if (0 == session->m_pENCODE.get())
+        {
+            mfxRes = MFX_ERR_NOT_INITIALIZED;
+        }
+        else
+        {
+            /* wait until all tasks are processed */
+            session->m_pScheduler->WaitForTaskCompletion(session->m_pENCODE.get());
+            /* call the codec's method */
+            mfxRes = session->m_pENCODE->Reset(par);
+
+            // SW fallback if EncodeGUID is absence
+            if (MFX_PLATFORM_HARDWARE == session->m_currentPlatform &&
+                !session->m_bIsHWENCSupport &&
+                MFX_ERR_NONE <= mfxRes)
+            {
+                mfxRes = MFX_WRN_PARTIAL_ACCELERATION;
+            }
+        }
+    }
+    /* handle error(s) */
+    catch(MFX_CORE_CATCH_TYPE)
+    {
+        /* set the default error value */
+        mfxRes = MFX_ERR_NULL_PTR;
+        if (0 == session)
+        {
+            mfxRes = MFX_ERR_INVALID_HANDLE;
+        }
+        else if (0 == session->m_pENCODE.get())
+        {
+            mfxRes = MFX_ERR_NOT_INITIALIZED;
+        }
+    }
+    return mfxRes;
+
+} // mfxStatus MFXVideoENCODE_Reset(mfxSession session, mfxVideoParam *par)
 
 FUNCTION_IMPL(ENCODE, GetVideoParam, (mfxSession session, mfxVideoParam *par), (par))
 FUNCTION_IMPL(ENCODE, GetEncodeStat, (mfxSession session, mfxEncodeStat *stat), (stat))
