@@ -49,7 +49,7 @@ frame_allocator::frame_allocator(AllocatorType _allocator_type, AllocMode _alloc
             CVAAPIDevice, 
             vaapiAllocatorParams,
             (mfxHandleType)MFX_HANDLE_VA_DISPLAY,
-            m_dpy = *(reinterpret_cast<VADisplay*>(hdl))
+            m_dpy = (reinterpret_cast<VADisplay>(hdl))
         );
 
 #elif defined(_WIN32) || defined(_WIN64)

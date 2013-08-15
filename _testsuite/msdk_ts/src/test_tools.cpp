@@ -249,6 +249,7 @@ msdk_ts_BLOCK(t_Read_mfxBitstream){
     const char* file_name = var_old<const char*>("file_name");
 
     if(!f.is_open()){
+        std::cout << "Opening file: " << file_name << "\n";
         CHECK(f.open(file_name, VM_STRING("rb")) , "Can't open file");
         f.file_size = 1;
         f.file_attr = 1;
