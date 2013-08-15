@@ -642,6 +642,8 @@ void mfxVideoParamWrapper::CopyVideoParam(const mfxVideoParam & par)
         case MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION:
         case MFX_EXTBUFF_SVC_SEQ_DESC:
         case MFX_EXTBUFF_SVC_TARGET_LAYER:
+        case MFX_EXTBUFF_JPEG_QT:
+        case MFX_EXTBUFF_JPEG_HUFFMAN:
             {
                 void * in = GetExtendedBufferInternal(par.ExtParam, par.NumExtParam, par.ExtParam[i]->BufferId);
                 m_buffers.AddBuffer(par.ExtParam[i]);

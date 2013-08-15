@@ -708,7 +708,8 @@ MFXVideoENCODEMJPEG::MFXVideoENCODEMJPEG(VideoCORE *core, mfxStatus *status) : V
     if(!m_core)
         *status =  MFX_ERR_MEMORY_ALLOC;
 
-    memset(&m_mfxVideoParam, 0, sizeof(mfxVideoParam));
+    memset(&m_vFirstParam, 0, sizeof(mfxVideoParam));
+    memset(&m_vParam, 0, sizeof(mfxVideoParam));
 }
 MFXVideoENCODEMJPEG::~MFXVideoENCODEMJPEG(void)
 {
@@ -1113,9 +1114,6 @@ mfxStatus MFXVideoENCODEMJPEG::Init(mfxVideoParam *par_in)
 
     QueryStatus = st;
 
-    m_mfxVideoParam.ExtParam = par->ExtParam;
-    m_mfxVideoParam.NumExtParam = par->NumExtParam;
-
     par = &checked; // from now work with fixed copy of input!
 
     if (opaqAllocReq)
@@ -1246,17 +1244,15 @@ mfxStatus MFXVideoENCODEMJPEG::Init(mfxVideoParam *par_in)
     m_tasksCount = 0;
     pLastTask = NULL;
 
-    m_mfxVideoParam.mfx = par->mfx;
+    m_vFirstParam = *par;
 
-    m_mfxVideoParam.IOPattern = par->IOPattern;
-    m_mfxVideoParam.Protected = 0;
-    m_mfxVideoParam.AsyncDepth = par->AsyncDepth;
+    m_vParam = m_vFirstParam;
 
     if (!par->mfx.FrameInfo.FrameRateExtD || !par->mfx.FrameInfo.FrameRateExtN) 
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     mfxU32 DoubleBytesPerPx = 0;
-    switch(m_mfxVideoParam.mfx.FrameInfo.FourCC)
+    switch(m_vParam.mfx.FrameInfo.FourCC)
     {
         case MFX_FOURCC_NV12:
         case MFX_FOURCC_YV12:
@@ -1273,17 +1269,17 @@ mfxStatus MFXVideoENCODEMJPEG::Init(mfxVideoParam *par_in)
 
     memset(&m_umcVideoParams, 0, sizeof(UMC::MJPEGEncoderParams));
 
-    m_umcVideoParams.profile               = m_mfxVideoParam.mfx.CodecProfile;
-    m_umcVideoParams.quality               = m_mfxVideoParam.mfx.Quality;
+    m_umcVideoParams.profile               = m_vParam.mfx.CodecProfile;
+    m_umcVideoParams.quality               = m_vParam.mfx.Quality;
     m_umcVideoParams.numThreads            = UMC::JPEG_ENC_MAX_THREADS;
-    m_umcVideoParams.chroma_format         = m_mfxVideoParam.mfx.FrameInfo.ChromaFormat;
-    m_umcVideoParams.info.clip_info.width  = m_mfxVideoParam.mfx.FrameInfo.Width;
-    m_umcVideoParams.info.clip_info.height = m_mfxVideoParam.mfx.FrameInfo.Height;
-    m_umcVideoParams.buf_size              = 16384 + m_mfxVideoParam.mfx.FrameInfo.Width * m_mfxVideoParam.mfx.FrameInfo.Height * DoubleBytesPerPx / 2;
-    m_umcVideoParams.restart_interval      = m_mfxVideoParam.mfx.RestartInterval;
-    m_umcVideoParams.interleaved           = (m_mfxVideoParam.mfx.Interleaved == MFX_SCANTYPE_INTERLEAVED) ? 1 : 0;
+    m_umcVideoParams.chroma_format         = m_vParam.mfx.FrameInfo.ChromaFormat;
+    m_umcVideoParams.info.clip_info.width  = m_vParam.mfx.FrameInfo.Width;
+    m_umcVideoParams.info.clip_info.height = m_vParam.mfx.FrameInfo.Height;
+    m_umcVideoParams.buf_size              = 16384 + m_vParam.mfx.FrameInfo.Width * m_vParam.mfx.FrameInfo.Height * DoubleBytesPerPx / 2;
+    m_umcVideoParams.restart_interval      = m_vParam.mfx.RestartInterval;
+    m_umcVideoParams.interleaved           = (m_vParam.mfx.Interleaved == MFX_SCANTYPE_INTERLEAVED) ? 1 : 0;
 
-    switch(m_mfxVideoParam.mfx.FrameInfo.PicStruct)
+    switch(m_vParam.mfx.FrameInfo.PicStruct)
     {
         case MFX_PICSTRUCT_UNKNOWN:
         case MFX_PICSTRUCT_PROGRESSIVE:
@@ -1388,7 +1384,7 @@ mfxStatus MFXVideoENCODEMJPEG::Reset(mfxVideoParam *par)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     // checks for opaque memory
-    if (!(m_mfxVideoParam.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY) && (par->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY))
+    if (!(m_vFirstParam.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY) && (par->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY))
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
     if(par->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_UNKNOWN && 
@@ -1400,10 +1396,10 @@ mfxStatus MFXVideoENCODEMJPEG::Reset(mfxVideoParam *par)
     }
 
     // check that new params don't require allocation of additional memory
-    if (par->mfx.FrameInfo.Width > m_mfxVideoParam.mfx.FrameInfo.Width ||
-        par->mfx.FrameInfo.Height > m_mfxVideoParam.mfx.FrameInfo.Height ||
-        m_mfxVideoParam.mfx.FrameInfo.FourCC != par->mfx.FrameInfo.FourCC ||
-        m_mfxVideoParam.mfx.FrameInfo.ChromaFormat != par->mfx.FrameInfo.ChromaFormat)
+    if (par->mfx.FrameInfo.Width > m_vFirstParam.mfx.FrameInfo.Width ||
+        par->mfx.FrameInfo.Height > m_vFirstParam.mfx.FrameInfo.Height ||
+        m_vFirstParam.mfx.FrameInfo.FourCC != par->mfx.FrameInfo.FourCC ||
+        m_vFirstParam.mfx.FrameInfo.ChromaFormat != par->mfx.FrameInfo.ChromaFormat)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
 
@@ -1420,19 +1416,19 @@ mfxStatus MFXVideoENCODEMJPEG::Reset(mfxVideoParam *par)
         m_freeTasks.pop();
     }
 
-    m_mfxVideoParam.mfx = par->mfx;
+    m_vParam.mfx = par->mfx;
 
-    m_mfxVideoParam.IOPattern = par->IOPattern;
-    m_mfxVideoParam.Protected = 0;
+    m_vParam.IOPattern = par->IOPattern;
+    m_vParam.Protected = 0;
     
-    if(par->AsyncDepth != m_mfxVideoParam.AsyncDepth)
+    if(par->AsyncDepth != m_vFirstParam.AsyncDepth)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     if (!par->mfx.FrameInfo.FrameRateExtD || !par->mfx.FrameInfo.FrameRateExtN) 
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     mfxU32 DoubleBytesPerPx = 0;
-    switch(m_mfxVideoParam.mfx.FrameInfo.FourCC)
+    switch(m_vParam.mfx.FrameInfo.FourCC)
     {
         case MFX_FOURCC_NV12:
         case MFX_FOURCC_YV12:
@@ -1449,17 +1445,17 @@ mfxStatus MFXVideoENCODEMJPEG::Reset(mfxVideoParam *par)
 
     memset(&m_umcVideoParams, 0, sizeof(UMC::MJPEGEncoderParams));
 
-    m_umcVideoParams.profile               = m_mfxVideoParam.mfx.CodecProfile;
-    m_umcVideoParams.quality               = m_mfxVideoParam.mfx.Quality;
+    m_umcVideoParams.profile               = m_vParam.mfx.CodecProfile;
+    m_umcVideoParams.quality               = m_vParam.mfx.Quality;
     m_umcVideoParams.numThreads            = UMC::JPEG_ENC_MAX_THREADS;
-    m_umcVideoParams.chroma_format         = m_mfxVideoParam.mfx.FrameInfo.ChromaFormat;
-    m_umcVideoParams.info.clip_info.width  = m_mfxVideoParam.mfx.FrameInfo.Width;
-    m_umcVideoParams.info.clip_info.height = m_mfxVideoParam.mfx.FrameInfo.Height;
-    m_umcVideoParams.buf_size              = 16384 + m_mfxVideoParam.mfx.FrameInfo.Width * m_mfxVideoParam.mfx.FrameInfo.Height * DoubleBytesPerPx / 2;
-    m_umcVideoParams.restart_interval      = m_mfxVideoParam.mfx.RestartInterval;
-    m_umcVideoParams.interleaved           = (m_mfxVideoParam.mfx.Interleaved == MFX_SCANTYPE_INTERLEAVED) ? 1 : 0;
+    m_umcVideoParams.chroma_format         = m_vParam.mfx.FrameInfo.ChromaFormat;
+    m_umcVideoParams.info.clip_info.width  = m_vParam.mfx.FrameInfo.Width;
+    m_umcVideoParams.info.clip_info.height = m_vParam.mfx.FrameInfo.Height;
+    m_umcVideoParams.buf_size              = 16384 + m_vParam.mfx.FrameInfo.Width * m_vParam.mfx.FrameInfo.Height * DoubleBytesPerPx / 2;
+    m_umcVideoParams.restart_interval      = m_vParam.mfx.RestartInterval;
+    m_umcVideoParams.interleaved           = (m_vParam.mfx.Interleaved == MFX_SCANTYPE_INTERLEAVED) ? 1 : 0;
 
-    switch(m_mfxVideoParam.mfx.FrameInfo.PicStruct)
+    switch(m_vParam.mfx.FrameInfo.PicStruct)
     {
         case MFX_PICSTRUCT_UNKNOWN:
         case MFX_PICSTRUCT_PROGRESSIVE:
@@ -1518,10 +1514,10 @@ mfxStatus MFXVideoENCODEMJPEG::GetVideoParam(mfxVideoParam *par)
     mfxExtJPEGHuffmanTables*  jpegHT = (mfxExtJPEGHuffmanTables*) GetExtBuffer( par->ExtParam, par->NumExtParam, MFX_EXTBUFF_JPEG_HUFFMAN );
 
     // copy structures and extCodingOption if exist in dst
-    par->mfx = m_mfxVideoParam.mfx;
+    par->mfx = m_vParam.mfx;
     par->Protected = 0;
-    par->AsyncDepth = m_mfxVideoParam.AsyncDepth;
-    par->IOPattern = m_mfxVideoParam.IOPattern;
+    par->AsyncDepth = m_vParam.AsyncDepth;
+    par->IOPattern = m_vParam.IOPattern;
 
     if(jpegQT || jpegHT)
     {
@@ -1610,7 +1606,7 @@ mfxStatus MFXVideoENCODEMJPEG::RunThread(MJPEGEncodeTask &task, mfxU32 threadNum
             }
         }
         
-        mfxRes = task.AddSource(task.surface, &(m_mfxVideoParam.mfx.FrameInfo), locked);
+        mfxRes = task.AddSource(task.surface, &(m_vParam.mfx.FrameInfo), locked);
         MFX_CHECK_STS(mfxRes);
 
         if(locked)
@@ -1644,12 +1640,12 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrame(mfxEncodeCtrl *, mfxEncodeInternalPar
     {
         initialDataLength = bs->DataLength;
 
-        if (m_mfxVideoParam.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+        if (m_vParam.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
             minBufferSize = 0;
         else
             minBufferSize = 0;
 
-        if(bs->MaxLength - (bs->DataOffset + bs->DataLength) < minBufferSize && m_mfxVideoParam.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+        if(bs->MaxLength - (bs->DataOffset + bs->DataLength) < minBufferSize && m_vParam.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
             return MFX_ERR_NOT_ENOUGH_BUFFER;
     }
 
@@ -1697,7 +1693,7 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrame(mfxEncodeCtrl *, mfxEncodeInternalPar
             }
         }
 
-        if (!surface->Data.Y || surface->Data.Pitch > 0x7fff || surface->Data.Pitch < m_mfxVideoParam.mfx.FrameInfo.Width || !surface->Data.Pitch ||
+        if (!surface->Data.Y || surface->Data.Pitch > 0x7fff || surface->Data.Pitch < m_vParam.mfx.FrameInfo.Width || !surface->Data.Pitch ||
             surface->Info.FourCC == MFX_FOURCC_NV12 && !surface->Data.UV ||
             surface->Info.FourCC == MFX_FOURCC_YV12 && (!surface->Data.U || !surface->Data.V) )
         {
@@ -1707,8 +1703,8 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrame(mfxEncodeCtrl *, mfxEncodeInternalPar
 
     if(surface)
     {
-        mfxU32  Width       = m_mfxVideoParam.mfx.FrameInfo.Width;
-        mfxU32  Height      = m_mfxVideoParam.mfx.FrameInfo.Height;
+        mfxU32  Width       = m_vParam.mfx.FrameInfo.Width;
+        mfxU32  Height      = m_vParam.mfx.FrameInfo.Height;
         mfxU32  ChromaPitch = 0;
 
         if(surface->Info.FourCC == MFX_FOURCC_NV12)
@@ -1817,7 +1813,7 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
         // make sure that there is a free task
         if (m_freeTasks.empty())
         {
-            if(m_tasksCount >= (m_mfxVideoParam.AsyncDepth ? m_mfxVideoParam.AsyncDepth : m_core->GetAutoAsyncDepth()))
+            if(m_tasksCount >= (m_vParam.AsyncDepth ? m_vParam.AsyncDepth : m_core->GetAutoAsyncDepth()))
             {
                 return MFX_WRN_DEVICE_BUSY;
             }
@@ -1872,13 +1868,13 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
             //surface->Info.Height < enc->m_info.info.clip_info.height ||
             //surface->Info.CropW > 0 && surface->Info.CropW != enc->m_info.info.clip_info.width ||
             //surface->Info.CropH > 0 && surface->Info.CropH != enc->m_info.info.clip_info.height ||
-            surface->Info.ChromaFormat != m_mfxVideoParam.mfx.FrameInfo.ChromaFormat)
+            surface->Info.ChromaFormat != m_vParam.mfx.FrameInfo.ChromaFormat)
         {
             return MFX_ERR_INVALID_VIDEO_PARAM;
         }
 
-        if (surface->Info.Width != m_mfxVideoParam.mfx.FrameInfo.Width ||
-            surface->Info.Height != m_mfxVideoParam.mfx.FrameInfo.Height)
+        if (surface->Info.Width != m_vParam.mfx.FrameInfo.Width ||
+            surface->Info.Height != m_vParam.mfx.FrameInfo.Height)
         {
             return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         }
@@ -1927,7 +1923,7 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
     }
     else if(!pMJPEGVideoEncoder->IsQuantTableInited())
     {
-        umc_sts = pMJPEGVideoEncoder->SetDefaultQuantTable(m_mfxVideoParam.mfx.Quality);
+        umc_sts = pMJPEGVideoEncoder->SetDefaultQuantTable(m_vParam.mfx.Quality);
     }
 
     if(jpegHT)
@@ -2000,8 +1996,8 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
         }
 
         pEntryPoint->requiredNumThreads = IPP_MIN(pTask->m_pMJPEGVideoEncoder->NumEncodersAllocated(),
-                                                  IPP_MIN(m_mfxVideoParam.mfx.NumThread,
-                                                          pTask->CalculateNumPieces(pOriginalSurface, &(m_mfxVideoParam.mfx.FrameInfo))));
+                                                  IPP_MIN(m_vParam.mfx.NumThread,
+                                                          pTask->CalculateNumPieces(pOriginalSurface, &(m_vParam.mfx.FrameInfo))));
 
         pTask->bs           = (sts == MFX_ERR_MORE_DATA_RUN_TASK) ? 0 : bs;
         pTask->ctrl         = ctrl;

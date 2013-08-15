@@ -12,6 +12,8 @@
 #ifndef _MFX_MPJEG_ENC_ENCODE_H_
 #define _MFX_MPJEG_ENC_ENCODE_H_
 
+#include "mfx_common_int.h"
+
 #include "mfxvideo++int.h"
 #include "mfxvideo.h"
 
@@ -97,7 +99,8 @@ protected:
 
     VideoCORE *m_core;
 
-    mfxVideoParam           m_mfxVideoParam;
+    mfxVideoParamWrapper    m_vFirstParam;
+    mfxVideoParamWrapper    m_vParam;
     mfxFrameParam           m_mfxFrameParam;
 
     //mfxFrameSurface1      m_auxInput;
