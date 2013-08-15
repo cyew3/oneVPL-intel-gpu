@@ -413,7 +413,7 @@ MP3Status mp3decGetInfo(cAudioCodecParams *a_info, MP3Dec *state)
 
         a_info->m_info_in.bitrate =
             mp3_bitrate[header->id][3 - header->layer][header->bitRate] * 1000;
-        a_info->m_info_out.bitrate = 0;
+        a_info->m_info_out.bitrate = mp3_bitrate[header->id][header->layer - 1][header->bitRate];
 
         mp3decGetChannels(&ch, &ch_mask, state);
         a_info->m_info_in.channels = ch;
