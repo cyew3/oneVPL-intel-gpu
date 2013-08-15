@@ -678,6 +678,23 @@ namespace MfxHwH264Encode
         mfxU16 m_diff;
     };
 
+    struct WeightTab
+    {
+        mfxU8 m_lumaWeightL0Flag:1;
+        mfxU8 m_chromaWeightL0Flag:1;
+        mfxU8 m_lumaWeightL1Flag:1;
+        mfxU8 m_chromaWeightL1Flag:1;
+
+        mfxI8 m_lumaWeightL0;
+        mfxI8 m_lumaOffsetL0;
+        mfxI8 m_lumaWeightL1;
+        mfxI8 m_lumaOffsetL1;
+        mfxI8 m_chromaWeightL0[2];
+        mfxI8 m_chromaOffsetL0[2];
+        mfxI8 m_chromaWeightL1[2];
+        mfxI8 m_chromaOffsetL1[2];
+    };
+
     struct DpbFrame
     {
         DpbFrame() { Zero(*this); }
@@ -854,6 +871,11 @@ namespace MfxHwH264Encode
         Pair<ArrayRefListMod> m_refPicList1Mod;
         Pair<mfxU32>          m_initSizeList0;
         Pair<mfxU32>          m_initSizeList1;
+
+        //weight table support
+        Pair<mfxU8> m_lumaLog2WeightDenom;
+        Pair<mfxU8> m_chromaLog2WeightDenom;
+        Pair<ArrayWeightTab>  m_weightTab;
 
         // currently used for dpb control when svc temporal layers enabled
         mfxExtAVCRefListCtrl  m_internalListCtrl;

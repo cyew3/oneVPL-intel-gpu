@@ -1084,8 +1084,10 @@ namespace MfxHwH264Encode
         mfxU32            frameType);
 
     struct RefListMod;
+    struct WeightTab;
     template<class T, mfxU32 N> struct FixedArray;
     typedef FixedArray<RefListMod, 32> ArrayRefListMod;
+    typedef FixedArray<WeightTab, 32> ArrayWeightTab;
 
     void WriteRefPicListModification(
         OutputBitstream &       writer,
