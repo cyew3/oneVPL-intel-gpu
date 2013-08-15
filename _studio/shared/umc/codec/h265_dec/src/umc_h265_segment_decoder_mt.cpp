@@ -271,7 +271,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::DecRecSegment(H265Task & task)
     Ipp32u size;
     m_pSlice->GetBitStream()->GetOrg(&ptr, &size);
     m_pBitStream->Reset((Ipp8u*)ptr, size);
-    size_t bsOffset = m_pSlice->getTileLocation(task.m_iFirstMB - 1);
+    size_t bsOffset = m_pSliceHeader->m_TileByteLocation[task.m_iFirstMB - 1];
     m_pBitStream->SetDecodedBytes(bsOffset);
 
     m_pBitStream->InitializeDecodingEngine_CABAC();

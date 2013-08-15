@@ -210,27 +210,6 @@ public:  // DEBUG !!!! should remove dependence
 
 public:
 
-    // refcodec compatibility
-    const H265PicParamSet *getPPS() const { return m_pPicParamSet; }
-    void setPPS(const H265PicParamSet *pps)     { m_pPicParamSet = pps; }
-    const H265SeqParamSet *getSPS() const { return m_pSeqParamSet; }
-    void setSPS(const H265SeqParamSet *sps)     { m_pSeqParamSet = sps; }
-
-    void setSliceCurStartCUAddr(unsigned val)           { m_SliceHeader.SliceCurStartCUAddr = val; }
-    void setSliceCurEndCUAddr(unsigned val)             { m_SliceHeader.SliceCurEndCUAddr = val; }
-    void setSliceSegmentCurStartCUAddr    ( unsigned uiAddr )     { m_SliceHeader.m_sliceSegmentCurStartCUAddr = uiAddr;    }
-    unsigned getSliceSegmentCurStartCUAddr    ()                  { return m_SliceHeader.m_sliceSegmentCurStartCUAddr;      }
-    void setSliceSegmentCurEndCUAddr      ( unsigned uiAddr )     { m_SliceHeader.m_sliceSegmentCurEndCUAddr = uiAddr;      }
-    unsigned getSliceSegmentCurEndCUAddr      ()                  { return m_SliceHeader.m_sliceSegmentCurEndCUAddr;        }
-    bool isIntra() const                                { return  m_SliceHeader.slice_type == I_SLICE;  }
-    bool isInterB() const                               { return  m_SliceHeader.slice_type == B_SLICE;  }
-    bool isInterP() const                               { return  m_SliceHeader.slice_type == P_SLICE;  }
-    SliceType getSliceType() const                      { return m_SliceHeader.slice_type; }
-    void setSliceType(SliceType val)                    { m_SliceHeader.slice_type = val; }
-
-    NalUnitType getNalUnitType() const              { return m_SliceHeader.nal_unit_type; }
-    bool getIdrPicFlag()                            { return getNalUnitType() == NAL_UT_CODED_SLICE_IDR || getNalUnitType() == NAL_UT_CODED_SLICE_IDR_N_LP; }
-
     int getPOC() const  { return  m_SliceHeader.slice_pic_order_cnt_lsb; }
     void setPOC (int i)
     {
@@ -245,25 +224,11 @@ public:
     void setRPS(ReferencePictureSet *rps)   { m_SliceHeader.m_pRPS = rps; }
     ReferencePictureSet*  getLocalRPS()     { return &m_SliceHeader.m_localRPS; }
 
-    void setBitsForPOC(unsigned val)    { m_SliceHeader.m_uBitsForPOC = val;      }
-    unsigned getBitsForPOC() const      { return m_SliceHeader.m_uBitsForPOC;   }
-
     int getNumRefIdx(EnumRefPicList e) const    { return m_SliceHeader.m_numRefIdx[e]; }
-    void setNumRefIdx(EnumRefPicList e, int i)  { m_SliceHeader.m_numRefIdx[e] = i; }
 
     RefPicListModification* getRefPicListModification() { return &m_SliceHeader.m_RefPicListModification; }
 
     int getNumRpsCurrTempList() const;
-
-    unsigned getColFromL0Flag() const      { return m_SliceHeader.collocated_from_l0_flag; }
-    void setColFromL0Flag(unsigned val)    { m_SliceHeader.collocated_from_l0_flag = val; }
-    unsigned getColRefIdx() const   { return m_SliceHeader.collocated_ref_idx; }
-    void setColRefIdx(unsigned val) { m_SliceHeader.collocated_ref_idx = val; }
-
-    void initWpScaling()    { initWpScaling(m_SliceHeader.m_weightPredTable); }
-    void initWpScaling(wpScalingParam  wp[2][MAX_NUM_REF_PICS][3]);
-    void getWpScaling(EnumRefPicList e, int iRefIdx, wpScalingParam *&wp) { wp = m_SliceHeader.m_weightPredTable[e][iRefIdx]; }
-    void getWpScaling(int e, int iRefIdx, wpScalingParam *&wp) { wp = m_SliceHeader.m_weightPredTable[e][iRefIdx]; }
 
     Ipp32s getTileLocationCount() const   { return m_SliceHeader.m_TileCount; }
     void setTileLocationCount(Ipp32s val)
@@ -276,21 +241,8 @@ public:
         m_SliceHeader.m_TileByteLocation = new Ipp32u[val];
     }
 
-    void setTileLocation(int i, unsigned uiLOC) { m_SliceHeader.m_TileByteLocation[i] = uiLOC; }
-    unsigned getTileLocation(int i)             { return m_SliceHeader.m_TileByteLocation[i];  }
-
     void allocSubstreamSizes(unsigned);
-    unsigned* getSubstreamSizes() const     { return m_SliceHeader.m_SubstreamSizes; }
 
-    unsigned getRPSIndex() const            { return m_SliceHeader.m_RPSIndex; }
-    void setRPSIndex(unsigned val)          { m_SliceHeader.m_RPSIndex = val; }
-
-    unsigned getLog2WeightDenomLuma() const     { return m_SliceHeader.m_uiLog2WeightDenomLuma; }
-    void setLog2WeightDenomLuma(unsigned val)   { m_SliceHeader.m_uiLog2WeightDenomLuma = val; }
-    unsigned getLog2WeightDenomChroma() const   { return m_SliceHeader.m_uiLog2WeightDenomChroma; }
-    void setLog2WeightDenomChroma(unsigned val) { m_SliceHeader.m_uiLog2WeightDenomChroma = val; }
-
-    int getRefPOC(EnumRefPicList list, int index) const { return m_SliceHeader.RefPOCList[list][index]; }
     void setRefPOCList();
 
     int getNumBitsForShortTermRPSInSlice() const    { return m_wNumBitsForShortTermRPSInSlice; }

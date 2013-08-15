@@ -669,15 +669,21 @@ void H265Prediction::MotionCompensation(H265CodingUnit* pCU, Ipp32u AbsPartIdx, 
             {
                 Ipp32s bitDepth = plane ? g_bitDepthC : g_bitDepthY;
 
-                w0[plane] = pCU->m_SliceHeader->m_weightPredTable[REF_PIC_LIST_0][RefIdx[0] >=0 ? RefIdx[0] : RefIdx[1]][plane].iWeight;
-                w1[plane] = pCU->m_SliceHeader->m_weightPredTable[REF_PIC_LIST_1][RefIdx[1] >=0 ? RefIdx[1] : RefIdx[0]][plane].iWeight;
-                o0[plane] = pCU->m_SliceHeader->m_weightPredTable[REF_PIC_LIST_0][RefIdx[0] >=0 ? RefIdx[0] : RefIdx[1]][plane].iOffset * (1 << (bitDepth - 8));
-                o1[plane] = pCU->m_SliceHeader->m_weightPredTable[REF_PIC_LIST_1][RefIdx[1] >=0 ? RefIdx[1] : RefIdx[0]][plane].iOffset * (1 << (bitDepth - 8));
+                if (RefIdx[1] >= 0)
+                {
+                    w1[plane] = pCU->m_SliceHeader->pred_weight_table[REF_PIC_LIST_1][RefIdx[1]][plane].weight;
+                    o1[plane] = pCU->m_SliceHeader->pred_weight_table[REF_PIC_LIST_1][RefIdx[1]][plane].offset * (1 << (bitDepth - 8));
+
+                    logWD[plane] = pCU->m_SliceHeader->pred_weight_table[REF_PIC_LIST_1][RefIdx[1]][plane].log2_weight_denom;
+                }
 
                 if (RefIdx[0] >= 0)
-                    logWD[plane] = pCU->m_SliceHeader->m_weightPredTable[REF_PIC_LIST_0][RefIdx[0]][plane].uiLog2WeightDenom;
-                else
-                    logWD[plane] = pCU->m_SliceHeader->m_weightPredTable[REF_PIC_LIST_1][RefIdx[1]][plane].uiLog2WeightDenom;
+                {
+                    w0[plane] = pCU->m_SliceHeader->pred_weight_table[REF_PIC_LIST_0][RefIdx[0]][plane].weight;
+                    o0[plane] = pCU->m_SliceHeader->pred_weight_table[REF_PIC_LIST_0][RefIdx[0]][plane].offset * (1 << (bitDepth - 8));
+
+                    logWD[plane] = pCU->m_SliceHeader->pred_weight_table[REF_PIC_LIST_0][RefIdx[0]][plane].log2_weight_denom;
+                }
 
                 logWD[plane] += 14 - bitDepth;
                 round[plane] = 0;

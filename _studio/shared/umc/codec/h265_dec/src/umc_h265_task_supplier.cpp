@@ -1841,23 +1841,24 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
         }
     }
 
-    Ipp32u currOffset = pSlice->GetSliceHeader()->m_HeaderBitstreamOffset;
-    for (Ipp32s tile = 0; tile < pSlice->getTileLocationCount(); tile++)
+    H265SliceHeader * sliceHdr = pSlice->GetSliceHeader();
+    Ipp32u currOffset = sliceHdr->m_HeaderBitstreamOffset;
+    for (Ipp32s tile = 0; tile < sliceHdr->m_TileCount; tile++)
     {
-        pSlice->setTileLocation(tile, pSlice->getTileLocation(tile) + currOffset);
+        sliceHdr->m_TileByteLocation[tile] = sliceHdr->m_TileByteLocation[tile] + currOffset;
     }
 
     // Update entry points
     size_t offsets = removed_offsets.size();
-    if (pSlice->m_pPicParamSet->tiles_enabled_flag && pSlice->getTileLocationCount() > 0 && offsets > 0)
+    if (pSlice->m_pPicParamSet->tiles_enabled_flag && sliceHdr->m_TileCount > 0 && offsets > 0)
     {
         Ipp32u removed_bytes = 0;
         std::vector<Ipp32u>::iterator it = removed_offsets.begin();
         Ipp32u offset = *it;
 
-        for (Ipp32s tile = 0; tile < (Ipp32s)pSlice->getTileLocationCount(); tile++)
+        for (Ipp32s tile = 0; tile < (Ipp32s)sliceHdr->m_TileCount; tile++)
         {
-            while (pSlice->getTileLocation(tile) > offset && removed_bytes < offsets)
+            while (sliceHdr->m_TileByteLocation[tile] > offset && removed_bytes < offsets)
             {
                 removed_bytes++;
                 if (removed_bytes < offsets)
@@ -1869,7 +1870,7 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
                     break;
             }
 
-            pSlice->setTileLocation(tile, pSlice->getTileLocation(tile) - removed_bytes);
+            sliceHdr->m_TileByteLocation[tile] = sliceHdr->m_TileByteLocation[tile] - removed_bytes;
         }
     }
 

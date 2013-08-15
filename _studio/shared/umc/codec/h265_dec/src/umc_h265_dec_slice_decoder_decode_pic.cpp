@@ -30,13 +30,13 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
     H265DecoderRefPicList::ReferenceInformation* pRefPicList0 = m_pCurrentFrame->GetRefPicList(m_iNumber, 0)->m_refPicList;
     H265DecoderRefPicList::ReferenceInformation* pRefPicList1 = m_pCurrentFrame->GetRefPicList(m_iNumber, 1)->m_refPicList;
 
-    if (getSliceType() == I_SLICE)
+    if (GetSliceHeader()->slice_type == I_SLICE)
     {
         m_pCurrentFrame->GetRefPicList(m_iNumber, 0)->Reset();
         m_pCurrentFrame->GetRefPicList(m_iNumber, 1)->Reset();
 
         for (Ipp32s number = 0; number < 3; number++)
-            m_SliceHeader.m_numRefIdx[number] = 0;
+            GetSliceHeader()->m_numRefIdx[number] = 0;
 
         return UMC::UMC_OK;
     }
@@ -91,7 +91,7 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
         {
             Ipp32s poc = getRPS()->getPOC(i);
 
-            pFrm = pDecoderFrameList->findLongTermRefPic(m_pCurrentFrame, poc, getSPS()->log2_max_pic_order_cnt_lsb, !getRPS()->getCheckLTMSBPresent(i));
+            pFrm = pDecoderFrameList->findLongTermRefPic(m_pCurrentFrame, poc, GetSeqParam()->log2_max_pic_order_cnt_lsb, !getRPS()->getCheckLTMSBPresent(i));
             m_pCurrentFrame->AddReference(pFrm);
 
             if (pFrm)
@@ -122,7 +122,7 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
         refPicListTemp0[cIdx] = RefPicSetLtCurr[i];
     }
 
-    if (getSliceType() == B_SLICE)
+    if (GetSliceHeader()->slice_type == B_SLICE)
     {
         cIdx = 0;
         for (Ipp32u i = 0; i < NumPocStCurr1; cIdx++, i++)
@@ -139,7 +139,7 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
         }
     }
 
-    for (cIdx = 0; cIdx <= m_SliceHeader.m_numRefIdx[0] - 1; cIdx ++)
+    for (cIdx = 0; cIdx <= GetSliceHeader()->m_numRefIdx[0] - 1; cIdx ++)
     {
         bool isLong = getRefPicListModification()->getRefPicListModificationFlagL0() ?
             (getRefPicListModification()->getRefPicSetIdxL0(cIdx) >= (NumPocStCurr0 + NumPocStCurr1))
@@ -150,14 +150,14 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
         pRefPicList0[cIdx].isLongReference = isLong;
     }
 
-    if (getSliceType() == P_SLICE)
+    if (GetSliceHeader()->slice_type == P_SLICE)
     {
-        m_SliceHeader.m_numRefIdx[1] = 0;
+        GetSliceHeader()->m_numRefIdx[1] = 0;
         m_pCurrentFrame->GetRefPicList(m_iNumber, 1)->Reset();
     }
     else
     {
-        for (cIdx = 0; cIdx <= m_SliceHeader.m_numRefIdx[1] - 1; cIdx ++)
+        for (cIdx = 0; cIdx <= GetSliceHeader()->m_numRefIdx[1] - 1; cIdx ++)
         {
             bool isLong = getRefPicListModification()->getRefPicListModificationFlagL1() ?
                 (getRefPicListModification()->getRefPicSetIdxL1(cIdx) >= (NumPocStCurr0 + NumPocStCurr1))
@@ -170,10 +170,10 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
 
     // For generalized B
     // note: maybe not existed case (always L0 is copied to L1 if L1 is empty)
-    if (isInterB() && getNumRefIdx(REF_PIC_LIST_1) == 0)
+    if (GetSliceHeader()->slice_type == B_SLICE && getNumRefIdx(REF_PIC_LIST_1) == 0)
     {
         Ipp32s iNumRefIdx = getNumRefIdx(REF_PIC_LIST_0);
-        setNumRefIdx(REF_PIC_LIST_1, iNumRefIdx);
+        GetSliceHeader()->m_numRefIdx[REF_PIC_LIST_1] = iNumRefIdx;
 
         for (Ipp32s iRefIdx = 0; iRefIdx < iNumRefIdx; iRefIdx++)
         {
@@ -181,7 +181,7 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
         }
     }
 
-    if (!isIntra())
+    if (GetSliceHeader()->slice_type != I_SLICE)
     {
         bool bLowDelay = true;
         Ipp32s iCurrPOC = getPOC();
@@ -195,7 +195,7 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
             }
         }
 
-        if (isInterB())
+        if (GetSliceHeader()->slice_type == B_SLICE)
         {
             for (iRefIdx = 0; iRefIdx < getNumRefIdx(REF_PIC_LIST_1) && bLowDelay; iRefIdx++)
             {

@@ -229,7 +229,6 @@ void H265Slice::setRefPOCList()
         for (Ipp32s NumRefIdx = 0; NumRefIdx < m_SliceHeader.m_numRefIdx[iDir]; NumRefIdx++)
         {
             m_SliceHeader.RefPOCList[iDir][NumRefIdx] = refInfo[NumRefIdx].refFrame->m_PicOrderCnt;
-            m_SliceHeader.RefLTList[iDir][NumRefIdx] = refInfo[NumRefIdx].isLongReference;
         }
     }
 }
@@ -275,7 +274,7 @@ int H265Slice::getNumRpsCurrTempList() const
 {
   int numRpsCurrTempList = 0;
 
-  if (!isIntra())
+  if (GetSliceHeader()->slice_type != I_SLICE)
   {
       ReferencePictureSet *rps = getRPS();
 
@@ -289,31 +288,6 @@ int H265Slice::getNumRpsCurrTempList() const
   }
 
   return numRpsCurrTempList;
-}
-
-void  H265Slice::initWpScaling(wpScalingParam  wp[2][MAX_NUM_REF_PICS][3])
-{
-  for ( int e=0 ; e<2 ; e++ )
-  {
-    for ( int i=0 ; i<MAX_NUM_REF_PICS ; i++ )
-    {
-      for ( int yuv=0 ; yuv<3 ; yuv++ )
-      {
-        wpScalingParam  *pwp = &(wp[e][i][yuv]);
-        if ( !pwp->bPresentFlag ) {
-          // Inferring values not present :
-          pwp->iWeight = (1 << pwp->uiLog2WeightDenom);
-          pwp->iOffset = 0;
-        }
-
-        pwp->w      = pwp->iWeight;
-        int bitDepth = yuv ? g_bitDepthC : g_bitDepthY;
-        pwp->o      = pwp->iOffset * (1 << (bitDepth-8));
-        pwp->shift  = pwp->uiLog2WeightDenom;
-        pwp->round  = (pwp->uiLog2WeightDenom>=1) ? (1 << (pwp->uiLog2WeightDenom-1)) : (0);
-      }
-    }
-  }
 }
 
 void H265Slice::allocSubstreamSizes(unsigned uiNumSubstreams)
@@ -348,11 +322,6 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
         m_SliceHeader.m_numRefIdx[i]     = slice->m_numRefIdx[i];
     }
 
-    /*for (i = 0; i < MAX_NUM_REF_PICS; i++)
-    {
-        m_SliceHeader.m_list1IdxToList0Idx[i] = slice->m_list1IdxToList0Idx[i];
-    } */
-
     m_SliceHeader.m_CheckLDC            = slice->m_CheckLDC;
     m_SliceHeader.slice_type            = slice->slice_type;
     m_SliceHeader.slice_qp_delta        = slice->slice_qp_delta;
@@ -363,41 +332,21 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
     {
         for (Ipp32s j = 0; j < MAX_NUM_REF_PICS; j++)
         {
-            //m_SliceHeader.m_apcRefPicList[i][j]  = slice->m_apcRefPicList[i][j];
             m_SliceHeader.RefPOCList[i][j] = slice->RefPOCList[i][j];
-            m_SliceHeader.RefLTList[i][j] = slice->RefLTList[i][j];
         }
     }
 
-    for (Ipp32s i = 0; i < 2; i++)
-    {
-        for (Ipp32s j = 0; j < MAX_NUM_REF_PICS + 1; j++)
-        {
-            //m_bIsUsedAsLongTerm[i][j] = slice->m_bIsUsedAsLongTerm[i][j];
-        }
-    }
-
-    /*m_SliceHeader.m_iDepth               = slice->m_iDepth;
-
-    // access channel
-    m_SliceHeader.m_pcSPS                = slice->m_pcSPS;
-    m_SliceHeader.m_pcPPS                = slice->m_pcPPS;
-    m_SliceHeader.m_iLastIDR             = slice->m_iLastIDR;
-
-    m_SliceHeader.m_pcPic                = slice->m_pcPic;*/
 
     m_SliceHeader.m_pRPS                    = slice->m_pRPS;
-
     m_SliceHeader.collocated_from_l0_flag   = slice->collocated_from_l0_flag;
-    m_SliceHeader.collocated_ref_idx               = slice->collocated_ref_idx;
+    m_SliceHeader.collocated_ref_idx        = slice->collocated_ref_idx;
+    m_SliceHeader.nuh_temporal_id           = slice->nuh_temporal_id;
 
-    m_SliceHeader.nuh_temporal_id                      = slice->nuh_temporal_id;
-
-    for ( Ipp32s  e=0 ; e<2 ; e++ )
+    for ( Ipp32s e = 0; e < 2; e++ )
     {
-        for ( Ipp32s  n=0 ; n<MAX_NUM_REF_PICS ; n++ )
+        for ( Ipp32s n = 0; n < MAX_NUM_REF_PICS; n++ )
         {
-            memcpy(m_SliceHeader.m_weightPredTable[e][n], slice->m_weightPredTable[e][n], sizeof(wpScalingParam)*3 );
+            memcpy(m_SliceHeader.pred_weight_table[e][n], slice->pred_weight_table[e][n], sizeof(wpScalingParam)*3);
         }
     }
     m_SliceHeader.slice_sao_luma_flag = slice->slice_sao_luma_flag;

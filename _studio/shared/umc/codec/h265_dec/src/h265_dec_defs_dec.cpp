@@ -981,7 +981,7 @@ void H265SampleAdaptiveOffset::processSaoUnits(Ipp32s firstCU, Ipp32s toProcessC
     }
 
     bool independentTileBoundaryForNDBFilter = false;
-    if (slice->getPPS()->getNumTiles() > 1 && !slice->getPPS()->loop_filter_across_tiles_enabled_flag)
+    if (slice->GetPicParam()->getNumTiles() > 1 && !slice->GetPicParam()->loop_filter_across_tiles_enabled_flag)
     {
         independentTileBoundaryForNDBFilter = true;
     }
@@ -1125,7 +1125,7 @@ void H265SampleAdaptiveOffset::createNonDBFilterInfo()
 
     H265Slice* pSlice = m_Frame->GetAU()->GetSlice(0);
 
-    if (pSlice->getPPS()->getNumTiles() > 1 && !pSlice->getPPS()->loop_filter_across_tiles_enabled_flag)
+    if (pSlice->GetPicParam()->getNumTiles() > 1 && !pSlice->GetPicParam()->loop_filter_across_tiles_enabled_flag)
     {
         independentTileBoundaryForNDBFilter = true;
     }
@@ -1141,7 +1141,7 @@ void H265SampleAdaptiveOffset::createNonDBFilterInfo()
                 independentSliceBoundaryForNDBFilter = true;
             }
 
-            if (slice->getPPS()->getNumTiles() > 1 && !slice->getPPS()->loop_filter_across_tiles_enabled_flag)
+            if (slice->GetPicParam()->getNumTiles() > 1 && !slice->GetPicParam()->loop_filter_across_tiles_enabled_flag)
             {
                 independentTileBoundaryForNDBFilter = true;
             }

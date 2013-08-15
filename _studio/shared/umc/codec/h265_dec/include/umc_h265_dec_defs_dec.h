@@ -1137,14 +1137,11 @@ typedef Ipp32s H264DecoderMBAddr;
 typedef struct {
   // Explicit weighted prediction parameters parsed in slice header,
   // or Implicit weighted prediction parameters (8 bits depth values).
-  bool        bPresentFlag;
-  unsigned    uiLog2WeightDenom;
-  int         iWeight;
-  int         iOffset;
-  int         iDeltaWeight; // for HW decoder
-
-  // Weighted prediction scaling values built from above parameters (bitdepth scaled):
-  int         w, o, offset, shift, round;
+  bool        present_flag;
+  Ipp32u      log2_weight_denom;
+  Ipp32s      weight;
+  Ipp32s      offset;
+  Ipp32s      delta_weight; // for HW decoder
 } wpScalingParam;
 
 // Slice header structure, corresponding to the H.264 bitstream definition.
@@ -1181,6 +1178,11 @@ struct H265SliceHeader
     bool        cabac_init_flag;
     Ipp32u      collocated_from_l0_flag;
     Ipp32u      collocated_ref_idx;
+
+    // pred_weight params
+    Ipp32u      luma_log2_weight_denom;
+    Ipp32u      chroma_log2_weight_denom;
+    wpScalingParam  pred_weight_table[2][MAX_NUM_REF_PICS][3]; // [REF_PIC_LIST_0 or REF_PIC_LIST_1][refIdx][0:Y, 1:U, 2:V]
 
     Ipp32s      max_num_merge_cand;
 
@@ -1223,7 +1225,6 @@ struct H265SliceHeader
     int m_numRefIdx[3]; //  for multiple reference of current slice. IT SEEMS BE SAME AS num_ref_idx_l0_active, l1, lc
 
     Ipp32s RefPOCList[2][MAX_NUM_REF_PICS + 1];
-    bool RefLTList[2][MAX_NUM_REF_PICS + 1];
 
     ReferencePictureSet *m_pRPS;
     ReferencePictureSet m_localRPS;
@@ -1231,16 +1232,6 @@ struct H265SliceHeader
 
     // flag equal 1 means that the slice belong to IDR or anchor access unit
     Ipp32u IdrPicFlag;
-
-    unsigned    m_uBitsForPOC;
-    
-    wpScalingParam  m_weightPredTable[2][MAX_NUM_REF_PICS][3]; // [REF_PIC_LIST_0 or REF_PIC_LIST_1][refIdx][0:Y, 1:U, 2:V]
-    
-    unsigned m_RPSIndex;
-
-    unsigned m_uiLog2WeightDenomLuma;
-    unsigned m_uiLog2WeightDenomChroma;
-
 }; // H265SliceHeader
 
 struct H265SEIPayLoadBase
