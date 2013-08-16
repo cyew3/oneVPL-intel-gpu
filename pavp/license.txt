@@ -1,0 +1,28 @@
+The following materials are defined as "Developer Tools" and are subject
+to the terms and conditions of the End User License Agreement
+
+<SoftwareRootFolder>\include\*
+<SoftwareRootFolder>\bin\win32\certgen.exe
+<SoftwareRootFolder>\bin\x64\certgen.exe
+
+<SoftwareRootFolder>\doc\[*.rtf, *.doc, *.docx, *.pdf, *.chm, *.txt]
+This includes any documentation files named *.rtf, *.doc, *.docx, *.pdf, *.chm, or *.txt under the "<SoftwareRootFolder>" folder
+
+<SoftwareRootFolder>\bin\[*.rtf, *.doc, *.docx, *.pdf, *.chm, *.txt]
+<SoftwareRootFolder>\samples\[*.rtf, *.doc, *.docx, *.pdf, *.chm, *.txt]
+<SoftwareRootFolder>\core\[*.rtf, *.doc, *.docx, *.pdf, *.chm, *.txt]
+
+--------------------------------------------------------------------------------
+
+The following materials are defined as "Sample Source" and are subject
+to the terms and conditions of the End User License Agreement
+
+All files excluding [*.rtf, *.doc, *.docx, *.pdf, *.chm, *.txt] under the <SoftwareRootFolder>\samples folder
+All files excluding [*.rtf, *.doc, *.docx, *.pdf, *.chm, *.txt] under the <SoftwareRootFolder>\core folder
+
+--------------------------------------------------------------------------------
+
+The following materials are defined as Intel(r) EPID SIK component and are subject 
+to the terms and conditions of the applicable license
+
+<SoftwareRootFolder>\thirdparty

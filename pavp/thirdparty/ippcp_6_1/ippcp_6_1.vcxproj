@@ -1,0 +1,328 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release IPPCP|Win32">
+      <Configuration>Release IPPCP</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release IPPCP|x64">
+      <Configuration>Release IPPCP</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{C6110C74-DCCA-453A-A62B-E37EC90ACC10}</ProjectGuid>
+    <RootNamespace>ippcp_6_1</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release IPPCP|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release IPPCP|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release IPPCP|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\include\common.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\include\common.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\include\common.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release IPPCP|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\include\common.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\include\common.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\include\common.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\_build\$(Platform)\$(Configuration)\lib\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\_build\$(Platform)\$(Configuration)\obj\$(ProjectName)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\_build\$(Platform)\$(Configuration)\lib\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\_build\$(Platform)\$(Configuration)\obj\$(ProjectName)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\_build\$(Platform)\$(Configuration)\lib\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\_build\$(Platform)\$(Configuration)\obj\$(ProjectName)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\_build\$(Platform)\$(Configuration)\lib\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\_build\$(Platform)\$(Configuration)\obj\$(ProjectName)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release IPPCP|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release IPPCP|Win32'">$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release IPPCP|x64'">..\..\_build\$(Platform)\$(Configuration)\lib\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release IPPCP|x64'">..\..\_build\$(Platform)\$(Configuration)\obj\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>./include;./src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_IPP_v50_;_RIPP _PX;_IPP_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>./include;./src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_IPP_v50_;_RIPP _PX;_IPP_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>./include;./src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_IPP_v50_;_RIPP;_PX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <AdditionalIncludeDirectories>./include;./src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_IPP_v50_;_RIPP _PX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release IPPCP|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <AdditionalIncludeDirectories>./include;./src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_IPP_v50_;_RIPP _PX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\pcpbn32ca.c" />
+    <ClCompile Include="src\pcpbnca.c" />
+    <ClCompile Include="src\pcpbnextpxca.c" />
+    <ClCompile Include="src\pcpbnpxca.c" />
+    <ClCompile Include="src\pcpbnresourceca.c" />
+    <ClCompile Include="src\pcpbnsetca.c" />
+    <ClCompile Include="src\pcpbnuca.c" />
+    <ClCompile Include="src\pcpbnuextpxca.c" />
+    <ClCompile Include="src\pcpbnupxca.c" />
+    <ClCompile Include="src\pcpbnusetca.c" />
+    <ClCompile Include="src\pcpciphertoolpxca.c" />
+    <ClCompile Include="src\pcpeccpdpca.c" />
+    <ClCompile Include="src\pcpeccpgenkeyca.c" />
+    <ClCompile Include="src\pcpeccpinitca.c" />
+    <ClCompile Include="src\pcpeccpmethod128ca.c" />
+    <ClCompile Include="src\pcpeccpmethod192ca.c" />
+    <ClCompile Include="src\pcpeccpmethod224ca.c" />
+    <ClCompile Include="src\pcpeccpmethod256ca.c" />
+    <ClCompile Include="src\pcpeccpmethod384ca.c" />
+    <ClCompile Include="src\pcpeccpmethod521ca.c" />
+    <ClCompile Include="src\pcpeccpmethodcomca.c" />
+    <ClCompile Include="src\pcpeccppointca.c" />
+    <ClCompile Include="src\pcpeccppointopca.c" />
+    <ClCompile Include="src\pcpeccppublickeyca.c" />
+    <ClCompile Include="src\pcpeccpsetkeyca.c" />
+    <ClCompile Include="src\pcpeccpsigndsaca.c" />
+    <ClCompile Include="src\pcpeccpstdca.c" />
+    <ClCompile Include="src\pcpeccpvalidatekeyca.c" />
+    <ClCompile Include="src\pcpeccpverifydsaca.c" />
+    <ClCompile Include="src\pcpecgfp.c" />
+    <ClCompile Include="src\pcpecgfppoint.c" />
+    <ClCompile Include="src\pcpecgfppointca.c" />
+    <ClCompile Include="src\pcpecgfpx.c" />
+    <ClCompile Include="src\pcpecgfpxpoint.c" />
+    <ClCompile Include="src\pcpecgfpxpointca.c" />
+    <ClCompile Include="src\pcpgfp.c" />
+    <ClCompile Include="src\pcpgfpca.c" />
+    <ClCompile Include="src\pcpgfpext.c" />
+    <ClCompile Include="src\pcpgfpextca.c" />
+    <ClCompile Include="src\pcpgfpqext.c" />
+    <ClCompile Include="src\pcpgfpqextca.c" />
+    <ClCompile Include="src\pcphmacsha256ca.c" />
+    <ClCompile Include="src\pcpmontexpbinca.c" />
+    <ClCompile Include="src\pcpmontgomeryca.c" />
+    <ClCompile Include="src\pcpmontmulca.c" />
+    <ClCompile Include="src\pcpmontmulpxca.c" />
+    <ClCompile Include="src\pcpmulbnupxca.c" />
+    <ClCompile Include="src\pcppma128.c" />
+    <ClCompile Include="src\pcppma192.c" />
+    <ClCompile Include="src\pcppma224.c" />
+    <ClCompile Include="src\pcppma256.c" />
+    <ClCompile Include="src\pcppma384.c" />
+    <ClCompile Include="src\pcppma521.c" />
+    <ClCompile Include="src\pcpprimeginitca.c" />
+    <ClCompile Include="src\pcpprngenca.c" />
+    <ClCompile Include="src\pcpprnginitca.c" />
+    <ClCompile Include="src\pcpprngsetca.c" />
+    <ClCompile Include="src\pcprij128ctrca.c" />
+    <ClCompile Include="src\pcprij128decryptcbcca.c" />
+    <ClCompile Include="src\pcprij128decryptecbca.c" />
+    <ClCompile Include="src\pcprij128decryptpxca.c" />
+    <ClCompile Include="src\pcprij128encryptcbcca.c" />
+    <ClCompile Include="src\pcprij128encryptecbca.c" />
+    <ClCompile Include="src\pcprij128encryptpxca.c" />
+    <ClCompile Include="src\pcprij128initca.c" />
+    <ClCompile Include="src\pcprij128safe.c" />
+    <ClCompile Include="src\pcprij128safedecpxca.c" />
+    <ClCompile Include="src\pcprij128safeencpxca.c" />
+    <ClCompile Include="src\pcprijdecsboxca.c" />
+    <ClCompile Include="src\pcprijdectableca.c" />
+    <ClCompile Include="src\pcprijencsboxca.c" />
+    <ClCompile Include="src\pcprijenctableca.c" />
+    <ClCompile Include="src\pcprijkeysca.c" />
+    <ClCompile Include="src\pcpsha1ca.c" />
+    <ClCompile Include="src\pcpsha1cntca.c" />
+    <ClCompile Include="src\pcpsha1pxca.c" />
+    <ClCompile Include="src\pcpsha256ca.c" />
+    <ClCompile Include="src\pcpsha256cntca.c" />
+    <ClCompile Include="src\pcpsha256pxca.c" />
+    <ClCompile Include="src\pcptatepade.c" />
+    <ClCompile Include="src\pcptatepadeca.c" />
+    <ClCompile Include="src\precomp.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\dependenceip.h" />
+    <ClInclude Include="src\dependencesp.h" />
+    <ClInclude Include="include\ippcp.h" />
+    <ClInclude Include="include\ippdefs.h" />
+    <ClInclude Include="include\ippversion.h" />
+    <ClInclude Include="src\owncp.h" />
+    <ClInclude Include="src\owndefs.h" />
+    <ClInclude Include="src\pcpbn.h" />
+    <ClInclude Include="src\pcpbn32.h" />
+    <ClInclude Include="src\pcpbnext.h" />
+    <ClInclude Include="src\pcpbnresource.h" />
+    <ClInclude Include="src\pcpbnu.h" />
+    <ClInclude Include="src\pcpbnuext.h" />
+    <ClInclude Include="src\pcpbnuresource.h" />
+    <ClInclude Include="src\pcpciphertool.h" />
+    <ClInclude Include="src\pcpcmac.h" />
+    <ClInclude Include="src\pcpeccb.h" />
+    <ClInclude Include="src\pcpeccbpoint.h" />
+    <ClInclude Include="src\pcpeccp.h" />
+    <ClInclude Include="src\pcpeccpmethod.h" />
+    <ClInclude Include="src\pcpeccpmethod128.h" />
+    <ClInclude Include="src\pcpeccpmethod192.h" />
+    <ClInclude Include="src\pcpeccpmethod224.h" />
+    <ClInclude Include="src\pcpeccpmethod256.h" />
+    <ClInclude Include="src\pcpeccpmethod384.h" />
+    <ClInclude Include="src\pcpeccpmethod521.h" />
+    <ClInclude Include="src\pcpeccpmethodcom.h" />
+    <ClInclude Include="src\pcpeccppoint.h" />
+    <ClInclude Include="src\pcpeccrandomizer.h" />
+    <ClInclude Include="src\pcpecgfp.h" />
+    <ClInclude Include="src\pcpecgfpx.h" />
+    <ClInclude Include="src\pcpgf128mul.h" />
+    <ClInclude Include="src\pcpgfp.h" />
+    <ClInclude Include="src\pcpgfpext.h" />
+    <ClInclude Include="src\pcpgfpqext.h" />
+    <ClInclude Include="src\pcphmac.h" />
+    <ClInclude Include="src\pcpmontext.h" />
+    <ClInclude Include="src\pcpmontgomery.h" />
+    <ClInclude Include="src\pcpmulbnuk.h" />
+    <ClInclude Include="src\pcpname.h" />
+    <ClInclude Include="src\pcppma.h" />
+    <ClInclude Include="src\pcppma128.h" />
+    <ClInclude Include="src\pcppma192.h" />
+    <ClInclude Include="src\pcppma224.h" />
+    <ClInclude Include="src\pcppma256.h" />
+    <ClInclude Include="src\pcppma384.h" />
+    <ClInclude Include="src\pcppma521.h" />
+    <ClInclude Include="src\pcppmafix.h" />
+    <ClInclude Include="src\pcppoly.h" />
+    <ClInclude Include="src\pcppolyarith.h" />
+    <ClInclude Include="src\pcppolyresource.h" />
+    <ClInclude Include="src\pcpprimeg.h" />
+    <ClInclude Include="src\pcpprimenumber_nnv.h" />
+    <ClInclude Include="src\pcpprng.h" />
+    <ClInclude Include="src\pcpprng_nnv.h" />
+    <ClInclude Include="src\pcprij.h" />
+    <ClInclude Include="src\pcprij128safe.h" />
+    <ClInclude Include="src\pcprijtables.h" />
+    <ClInclude Include="src\pcpshs.h" />
+    <ClInclude Include="src\pcptatep.h" />
+    <ClInclude Include="src\pcptf.h" />
+    <ClInclude Include="src\pcpvariant.h" />
+    <ClInclude Include="src\pcpvariant_mapd.h" />
+    <ClInclude Include="src\pcpver.h" />
+    <ClInclude Include="src\precomp.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
