@@ -246,8 +246,8 @@ Status MJPEGVideoEncoder::Close(void)
 {
     for (Ipp32u i = 0; i < m_numEnc; i += 1)
     {
-        m_enc[i].release();
-        m_pBitstreamBuffer[i].release();
+        m_enc[i].reset();
+        m_pBitstreamBuffer[i].reset();
     }
 
     if(m_frame.get())
