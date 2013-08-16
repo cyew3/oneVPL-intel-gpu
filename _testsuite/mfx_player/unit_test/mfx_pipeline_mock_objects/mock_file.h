@@ -69,6 +69,7 @@ public:
         return params_holder.ret_val;
     }
     DECLARE_TEST_METHOD2(mfxStatus, Write, mfxU8*, mfxU32 );
+    DECLARE_TEST_METHOD2(mfxStatus, Seek, Ipp64s, VM_FILE_SEEK_MODE );
     
     mfxStatus Write(mfxBitstream *);
 };

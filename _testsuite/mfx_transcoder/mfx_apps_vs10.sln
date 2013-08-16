@@ -49,6 +49,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_pipeline_tests", "..\mfx_player\unit_test\mfx_pipeline_tests\mfx_player_tests.vcxproj", "{974F33D8-D454-40BC-8D7B-83206FC1033E}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_trans_pipeline_tests", "unit_test\mfx_transcoder_tests.vcxproj", "{CD9209F1-F312-4268-9567-DF6E2FE159FF}"
+	ProjectSection(ProjectDependencies) = postProject
+		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D} = {919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "unittest++.vsnet2005", "..\..\thirdparty\unittest++\unittest++.vsnet2005.vcxproj", "{64A4FEFE-0461-4E95-8CC1-91EF5F57DBC6}"
 EndProject

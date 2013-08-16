@@ -73,6 +73,14 @@ mfxStatus MockFile::Write(mfxBitstream *pbs)
     return MFX_ERR_NONE;
 }
 
+mfxStatus MockFile::Seek(Ipp64s position, VM_FILE_SEEK_MODE mode)
+{
+    TEST_METHOD_TYPE(Seek) params_holder(MFX_ERR_NONE, position, mode);
+    _Seek.RegisterEvent(params_holder);
+
+    return MFX_ERR_NONE;
+}
+
 bool MockFile::isOpen()
 {
     TEST_METHOD_TYPE(isOpen) params_holder;
