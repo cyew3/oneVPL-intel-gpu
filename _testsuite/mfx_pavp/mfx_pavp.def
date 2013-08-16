@@ -1,0 +1,29 @@
+EXPORTS
+	PCPVideoDecode_Init
+	PCPVideoDecode_SetEncryptor
+	PCPVideoDecode_Close
+	PCPVideoDecode_PrepareNextFrame
+	
+	CCPDeviceD3D11_create
+	CCPDeviceD3D11_create4
+	CCPDeviceD3D11_NegotiateStreamKey
+	SAuthChannel11_Create
+	SAuthChannel11_ConfigureCryptoSession
+	SAuthChannel11_Destroy
+
+	CCPDeviceCryptoSession9_create
+	CCPDeviceAuxiliary9_create
+	SAuthChannel9_Create
+	SAuthChannel9_ConfigureCryptoSession
+	SAuthChannel9_Destroy
+
+	Test_v10_Cert3p
+	Test_v10_Cert3pSize
+	Test_v10_ApiVersion
+	Test_v10_DsaPrivateKey
+
+	CreateCSIGMASession
+	CreateCVideoProtection_CS11
+	CreateCPAVPVideo_D3D11
+	CreateCPAVPVideo_CryptoSession9
+	CreateCPAVPVideo_Auxiliary9
