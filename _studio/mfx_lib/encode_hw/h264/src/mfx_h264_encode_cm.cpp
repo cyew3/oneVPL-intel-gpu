@@ -785,8 +785,10 @@ void CmContext::Setup(
     m_kernelP = CreateKernel(m_device, m_program, "SVCEncMB_P", (void *)SVCEncMB_P);
     m_kernelB = CreateKernel(m_device, m_program, "SVCEncMB_B", (void *)SVCEncMB_B);
 
-    //m_kernelDownSample4X = CreateKernel(m_device, m_program, "DownSampleMB4X", (void *)DownSampleMB4X);
-    //m_kernelDownSample2X = CreateKernel(m_device, m_program, "DownSampleMB2X", (void *)DownSampleMB2X);
+#ifdef USE_DOWN_SAMPLE_KERNELS
+    m_kernelDownSample2X = CreateKernel(m_device, m_program, "DownSampleMB2X", (void *)DownSampleMB2X);
+    m_kernelDownSample4X = CreateKernel(m_device, m_program, "DownSampleMB4X", (void *)DownSampleMB4X);
+#endif
 
     m_curbeData.Reset(m_device, sizeof(SVCEncCURBEData));
     m_nullBuf.Reset(m_device, 4);
@@ -850,9 +852,21 @@ CmEvent * CmContext::RunVme(
 
     if (LaScaleFactor > 1)
     {
+
+#ifdef USE_DOWN_SAMPLE_KERNELS
+        CmKernel * kernelDS = SelectKernelDownSample(LaScaleFactor);
+        SetKernelArg(kernelDS, GetIndex(task.m_cmRaw), GetIndex(task.m_cmRawLa));
+        CmEvent * e = 0;
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Enqueue DS kernel");
+            e = EnqueueKernel(kernelDS, numMbColsLa, numMbRowsLa, CM_NONE_DEPENDENCY);
+        }
+#endif
+
         SetKernelArg(kernelPreMe,
             GetIndex(task.m_cmCurbe), GetIndex(task.m_cmRaw), GetIndex(task.m_cmRawLa), *task.m_cmRefsLa,
             GetIndex(task.m_cmMb), task.m_cmRefMb ? GetIndex(task.m_cmRefMb) : GetIndex(m_nullBuf));
+
     } else
     {
         SetKernelArg(kernelPreMe,
@@ -865,6 +879,7 @@ CmEvent * CmContext::RunVme(
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Enqueue ME kernel");
         e = EnqueueKernel(kernelPreMe, numMbColsLa, numMbRowsLa, CM_WAVEFRONT26);
     }
+
 
     return e;
 }
@@ -1134,6 +1149,7 @@ CmKernel * CmContext::SelectKernelPreMe(mfxU32 frameType)
     }
 }
 
+#ifdef USE_DOWN_SAMPLE_KERNELS
 CmKernel * CmContext::SelectKernelDownSample(mfxU16 LaScaleFactor)
 {
     switch (LaScaleFactor)
@@ -1143,6 +1159,7 @@ CmKernel * CmContext::SelectKernelDownSample(mfxU16 LaScaleFactor)
         default: throw CmRuntimeError();
     }
 }
+#endif
 
 mfxVMEUNIIn & CmContext::SelectCosts(mfxU32 frameType)
 {

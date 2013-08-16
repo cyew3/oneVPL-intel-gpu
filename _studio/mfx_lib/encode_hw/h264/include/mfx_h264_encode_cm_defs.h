@@ -735,13 +735,13 @@ extern "C" void SVCEncMB_B(
     SurfaceIndex MBDataSurfIndex,
     SurfaceIndex FwdFrmMBDataSurfIndex);
 
-extern "C" void DownSampleMB4X(
-    SurfaceIndex SrcSurfIndex,
-    SurfaceIndex SrcSurf4XIndex);
-
 extern "C" void DownSampleMB2X(
     SurfaceIndex SrcSurfIndex,
     SurfaceIndex SrcSurf2XIndex);
+
+extern "C" void DownSampleMB4X(
+    SurfaceIndex SrcSurfIndex,
+    SurfaceIndex SrcSurf4XIndex);
 
 };
 

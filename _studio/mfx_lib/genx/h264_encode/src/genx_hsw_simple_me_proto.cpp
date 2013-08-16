@@ -14,8 +14,8 @@ extern "C"
     void SVCEncMB_I() {}
     void SVCEncMB_P() {}
     void SVCEncMB_B() {}
-    void DownSampleMB4X() {}
     void DownSampleMB2X() {}
+    void DownSampleMB4X() {}
 }
 
 #endif CMRT_EMU

@@ -30,6 +30,8 @@ class SurfaceIndex;
 class CmThreadSpace;
 class CmTask;
 
+//#define USE_DOWN_SAMPLE_KERNELS
+
 namespace MfxHwH264Encode
 {
 class DdiTask;
@@ -316,7 +318,7 @@ private:
     mfxVideoParam m_video;
 
     CmDevice *  m_device;
-    CmQueue*    m_queue;
+    CmQueue *   m_queue;
     CmProgram * m_program;
     CmKernel *  m_kernelI;
     CmKernel *  m_kernelP;
@@ -329,8 +331,10 @@ private:
     mfxVMEUNIIn m_costsP;
     mfxVMEUNIIn m_costsB;
 
-    CmKernel *  m_kernelDownSample4X;
+#ifdef USE_DOWN_SAMPLE_KERNELS
     CmKernel *  m_kernelDownSample2X;
+    CmKernel *  m_kernelDownSample4X;
+#endif
 
     mfxU16      widthLa;
     mfxU16      heightLa;
