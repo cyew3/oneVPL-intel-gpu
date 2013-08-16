@@ -20,6 +20,7 @@ const vm_char CommandLine::CodecJpeg[] = VM_STRING("-jpeg");
 const vm_char CommandLine::CodecH264[] = VM_STRING("-h264");
 const vm_char CommandLine::CodecMpeg2[] = VM_STRING("-m2");
 const vm_char CommandLine::CodecVc1[] = VM_STRING("-vc1");
+const vm_char CommandLine::CodecHevc[] = VM_STRING("-hevc");
 const mfxU32 MAX_NUM_THREAD = 100;
 
 #define MAKE_PAIR(name)\
@@ -39,6 +40,7 @@ mfxU32 String2TestType(const vm_char* s)
         MAKE_PAIR(MPEG2DECODE),
         MAKE_PAIR(MVCDECODE),
         MAKE_PAIR(SVCDECODE),
+        MAKE_PAIR(HEVCDECODE),
         MAKE_PAIR(VC1DECODE),
         MAKE_PAIR(JPEGENCODE),
         MAKE_PAIR(H264ENCODE),
@@ -76,6 +78,8 @@ void CommandLine::PrintUsage(const vm_char* app)
         VM_STRING("  MVCDECODE\n")
         VM_STRING("  MVCENCODE\n")
         VM_STRING("  SVCDECODE\n")
+        VM_STRING("  HEVCDECODE\n")
+        VM_STRING("  HEVCENCODE\n")
         VM_STRING("  VC1DECODE\n")
         VM_STRING("  VC1ENCODE\n"));
     vm_string_printf(
@@ -180,12 +184,16 @@ CommandLine::CommandLine(mfxI32 argc, vm_char** argv)
         case TEST_VC1ENCODE:
             m_argv[m_argc++] = const_cast<vm_char *>(CommandLine::CodecVc1);
             break;
+        case TEST_HEVCENCODE:
+            m_argv[m_argc++] = const_cast<vm_char *>(CommandLine::CodecHevc);
+            break;
         case TEST_JPEGDECODE:
         case TEST_H264DECODE:
         case TEST_MPEG2DECODE:
         case TEST_MVCDECODE:
         case TEST_SVCDECODE:
         case TEST_VC1DECODE:
+        case TEST_HEVCDECODE:
             break;
         default:
             VM_ASSERT(!"bad test type");
