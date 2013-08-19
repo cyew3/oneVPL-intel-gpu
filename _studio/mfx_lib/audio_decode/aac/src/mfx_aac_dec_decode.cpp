@@ -346,7 +346,7 @@ mfxStatus AudioDECODEAAC::DecodeHeader(AudioCORE *core, mfxBitstream *bs, mfxAud
 mfxStatus AudioDECODEAAC::FillAudioParamESDS(sAudio_specific_config* config, mfxAudioParam *out)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    out->mfx.m_info.SampleFrequency = (mfxU16)config->samplingFrequency;
+    out->mfx.StreamInfo.SampleFrequency = (mfxU16)config->samplingFrequency;
 
 
     out->mfx.CodecId = MFX_CODEC_AAC;
@@ -387,7 +387,7 @@ mfxStatus AudioDECODEAAC::FillAudioParamADIF(sAdif_header* config, mfxAudioParam
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     if ((m_p_pce->sampling_frequency_index < 0) || (m_p_pce->sampling_frequency_index > 12))
         return MFX_ERR_UNDEFINED_BEHAVIOR;
-    out->mfx.m_info.SampleFrequency = (mfxU16)aac_sampling_frequency_table[m_p_pce->sampling_frequency_index];;
+    out->mfx.StreamInfo.SampleFrequency = (mfxU16)aac_sampling_frequency_table[m_p_pce->sampling_frequency_index];;
 
     out->mfx.CodecId = MFX_CODEC_AAC;
 
@@ -417,8 +417,8 @@ mfxStatus AudioDECODEAAC::FillAudioParamADTSFixed(sAdts_fixed_header* config, mf
     mfxStatus sts = MFX_ERR_NONE;
     if ((config->sampling_frequency_index < 0) || (config->sampling_frequency_index > 12))
         return MFX_ERR_UNDEFINED_BEHAVIOR;
-    out->mfx.m_info.SampleFrequency = (mfxU16)aac_sampling_frequency_table[config->sampling_frequency_index];;
-    out->mfx.m_info.Channels = (mfxU16)config->channel_configuration;
+    out->mfx.StreamInfo.SampleFrequency = (mfxU16)aac_sampling_frequency_table[config->sampling_frequency_index];;
+    out->mfx.StreamInfo.Channels = (mfxU16)config->channel_configuration;
 
     out->mfx.CodecId = MFX_CODEC_AAC;
     out->mfx.CodecProfile = (mfxU16)get_audio_object_type_by_adts_header(config);;
@@ -679,7 +679,7 @@ mfxStatus MFX_AAC_Utility::FillAudioParam( mfxAudioParam *in, mfxAudioParam *out
     out->mfx.CodecLevel = in->mfx.CodecLevel;
     out->mfx.CodecProfile = in->mfx.CodecProfile;
 
-    memcpy(&(out->mfx.m_info), &(in->mfx.m_info), sizeof(mfxAudioStreamInfo));
+    memcpy(&(out->mfx.StreamInfo), &(in->mfx.StreamInfo), sizeof(mfxAudioStreamInfo));
 
     out->mfx.FlagPSSupportLev = in->mfx.FlagPSSupportLev;
     out->mfx.FlagSBRSupportLev = in->mfx.FlagSBRSupportLev;
@@ -691,10 +691,10 @@ mfxStatus MFX_AAC_Utility::FillAudioParam( mfxAudioParam *in, mfxAudioParam *out
 
 mfxStatus MFX_AAC_Utility::FillAudioParamByUMC(UMC::AACDecoderParams *in, mfxAudioParam *out)
 {
-    out->mfx.m_info.BitPerSample = (mfxU16)in->m_info.bitPerSample;
-    out->mfx.m_info.Bitrate = (mfxU16)in->m_info.bitrate;
-    out->mfx.m_info.Channels = (mfxU16)in->m_info.channels;
-    out->mfx.m_info.SampleFrequency = (mfxU16)in->m_info.sample_frequency;
+    out->mfx.StreamInfo.BitPerSample = (mfxU16)in->m_info.bitPerSample;
+    out->mfx.StreamInfo.Bitrate = (mfxU16)in->m_info.bitrate;
+    out->mfx.StreamInfo.Channels = (mfxU16)in->m_info.channels;
+    out->mfx.StreamInfo.SampleFrequency = (mfxU16)in->m_info.sample_frequency;
     return MFX_ERR_NONE;
 }
 
@@ -718,7 +718,7 @@ mfxStatus MFX_AAC_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfxAudioPar
             out->mfx.CodecId = in->mfx.CodecId;
 
         //to do add checks
-        memcpy(&(out->mfx.m_info),&(in->mfx.m_info),sizeof(mfxAudioStreamInfo));
+        memcpy(&(out->mfx.StreamInfo),&(in->mfx.StreamInfo),sizeof(mfxAudioStreamInfo));
 
         switch(in->mfx.CodecProfile)
         {
