@@ -810,7 +810,7 @@ mfxStatus MFXVideoDECODEVC1::Init(mfxVideoParam *par)
     m_VideoParams->lpMemoryAllocator = &m_MemoryAllocator;
     if (par->mfx.FrameInfo.Width*par->mfx.FrameInfo.Height)
     {
-        m_BufSize = par->mfx.FrameInfo.Width*par->mfx.FrameInfo.Height;
+        m_BufSize = par->mfx.FrameInfo.Width*par->mfx.FrameInfo.Height*2;
         // Set surface number for decoding. HW requires
         m_VideoParams->m_SuggestedOutputSize = m_response.NumFrameActual;
         IntUMCStatus = m_pVC1VideoDecoder->Init(m_VideoParams);
