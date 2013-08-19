@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2010 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) MV decoding
@@ -420,7 +420,7 @@ void CalculateInterlaceFrame1MV_P(VC1MVPredictors* MVPredictors,
     Ipp16s MV_px[] = {0,0,0};
     Ipp16s MV_py[] = {0,0,0};
 
-    memcpy(&MVPred,MVPredictors,sizeof(VC1MVPredictors));
+    memcpy_s(&MVPred,sizeof(VC1MVPredictors),MVPredictors,sizeof(VC1MVPredictors));
 
     if(MVPred.AMVPred[0])
     {
@@ -506,7 +506,7 @@ void CalculateInterlaceFrame1MV_B(VC1MVPredictors* MVPredictors,
     Ipp16s MV_px_oppField[] = {0,0,0};
     Ipp16s MV_py_oppField[] = {0,0,0};
 
-    memcpy(&MVPred,MVPredictors,sizeof(VC1MVPredictors));
+    memcpy_s(&MVPred,sizeof(VC1MVPredictors),MVPredictors,sizeof(VC1MVPredictors));
 
     if(MVPred.AMVPred[0])
     {
@@ -657,7 +657,7 @@ void CalculateInterlaceFrame1MV_B_Interpolate(VC1MVPredictors* MVPredictors,
     Ipp16s b_MV_px[] = {0,0,0};
     Ipp16s b_MV_py[] = {0,0,0};
 
-    memcpy(&MVPred,MVPredictors,sizeof(VC1MVPredictors));
+    memcpy_s(&MVPred,sizeof(VC1MVPredictors),MVPredictors,sizeof(VC1MVPredictors));
 
     if(MVPred.AMVPred[0])
     {
@@ -762,7 +762,7 @@ void Calculate4MVFrame_Adv(VC1MVPredictors* MVPredictors,
     Ipp16s MV_px[] = {0,0,0};
     Ipp16s MV_py[] = {0,0,0};
 
-    memcpy(&MVPred,MVPredictors,sizeof(VC1MVPredictors));
+    memcpy_s(&MVPred,sizeof(VC1MVPredictors),MVPredictors,sizeof(VC1MVPredictors));
 
     if(MVPred.AMVPred[blk_num])
     {
@@ -904,7 +904,7 @@ void PredictInterlaceFrame1MV(VC1Context* pContext)
         }
     }
 
-    memcpy(&pContext->MVPred,&MVPred,sizeof(VC1MVPredictors));
+    memcpy_s(&pContext->MVPred,sizeof(VC1MVPredictors),&MVPred,sizeof(VC1MVPredictors));
 }
 
 
@@ -1049,7 +1049,7 @@ void PredictInterlace4MVFrame_Adv(VC1Context* pContext)
     MVPred.BMVPred[3] = &pCurrMB->m_pBlocks[0];
     MVPred.CMVPred[3] = &pCurrMB->m_pBlocks[1];
 
-    memcpy(&pContext->MVPred,&MVPred,sizeof(VC1MVPredictors));
+    memcpy_s(&pContext->MVPred,sizeof(VC1MVPredictors),&MVPred,sizeof(VC1MVPredictors));
 }
 
 void PredictInterlace4MVField_Adv(VC1Context* pContext)
@@ -1263,7 +1263,7 @@ void PredictInterlace4MVField_Adv(VC1Context* pContext)
     MVPred.AMVPred[3] = &pCurrMB->m_pBlocks[0];
     MVPred.FieldMB[3][0] = 1;
 
-    memcpy(&pContext->MVPred,&MVPred,sizeof(VC1MVPredictors));
+    memcpy_s(&pContext->MVPred,sizeof(VC1MVPredictors),&MVPred,sizeof(VC1MVPredictors));
 
 }
 //2 Field MV candidate MV derivation
@@ -1712,7 +1712,7 @@ void CalculateInterlace4MV_TopField_Adv(VC1MVPredictors* MVPredictors,
 
     VC1MVPredictors MVPred;
 
-    memcpy(&MVPred,MVPredictors,sizeof(VC1MVPredictors));
+    memcpy_s(&MVPred,sizeof(VC1MVPredictors),MVPredictors,sizeof(VC1MVPredictors));
 
     if(MVPred.AMVPred[blk_num])
     {
@@ -1809,7 +1809,7 @@ void CalculateInterlace4MV_BottomField_Adv(VC1MVPredictors* MVPredictors,
 
     VC1MVPredictors MVPred;
 
-    memcpy(&MVPred,MVPredictors,sizeof(VC1MVPredictors));
+    memcpy_s(&MVPred,sizeof(VC1MVPredictors),MVPredictors,sizeof(VC1MVPredictors));
 
     if(MVPred.AMVPred[blk_num])
     {
@@ -2660,7 +2660,7 @@ void Field1MVPrediction(VC1Context* pContext)
         if(!pC->IntraFlag)
             MVPred.CMVPred[0] = &pC->m_pBlocks[1];
     }
-    memcpy(&pContext->MVPred,&MVPred,sizeof(VC1MVPredictors));
+    memcpy_s(&pContext->MVPred,sizeof(VC1MVPredictors),&MVPred,sizeof(VC1MVPredictors));
 }
 
 
@@ -2783,7 +2783,7 @@ void Field4MVPrediction(VC1Context* pContext)
 
     MVPred.CMVPred[3] = &pCurrMB->m_pBlocks[2];
 
-    memcpy(&pContext->MVPred,&MVPred,sizeof(VC1MVPredictors));
+    memcpy_s(&pContext->MVPred,sizeof(VC1MVPredictors),&MVPred,sizeof(VC1MVPredictors));
 }
 
 void CalculateField1MVOneReferencePPic(VC1Context* pContext,

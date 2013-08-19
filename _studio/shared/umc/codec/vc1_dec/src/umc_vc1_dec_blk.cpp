@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2010 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, block layer, simple\main profile
@@ -64,7 +64,7 @@ static Ipp8u GetDCACPrediction(VC1DCBlkParam* CurrBlk, VC1DCPredictors* PredData
     Ipp16s DCA, DCB, DCC, DC = 0;
     Ipp32u step = VC1_pixel_table[blk_num];
 
-    memcpy(&DCPred, PredData, sizeof(VC1DCPredictors));
+    memcpy_s(&DCPred, sizeof(VC1DCPredictors), PredData, sizeof(VC1DCPredictors));
     PredPattern = DCPred.BlkPattern[blk_num];
 
     switch(PredPattern)
@@ -202,7 +202,7 @@ static Ipp8u GetDCPrediction(VC1DCBlkParam* CurrBlk,VC1DCPredictors* PredData,
 
     Ipp16s DCA, DCB, DCC = 0;
 
-    memcpy(&DCPred, PredData, sizeof(VC1DCPredictors));
+    memcpy_s(&DCPred, sizeof(VC1DCPredictors), PredData, sizeof(VC1DCPredictors));
 
     PredPattern = DCPred.BlkPattern[blk_num];
 

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, MB Layer in P picture for advanced profile
@@ -245,7 +245,7 @@ void GetIntraScaleDCPredictors(VC1Context* pContext)
         break;
     }
 
-    memcpy(&pContext->DCPred, &DCPred,sizeof(VC1DCPredictors));
+    memcpy_s(&pContext->DCPred,sizeof(VC1DCPredictors), &DCPred,sizeof(VC1DCPredictors));
 }
 
 void GetIntraDCPredictors(VC1Context* pContext)
@@ -418,7 +418,7 @@ void GetIntraDCPredictors(VC1Context* pContext)
     }
 
     }
-    memcpy(&pContext->DCPred, &DCPred,sizeof(VC1DCPredictors));
+    memcpy_s(&pContext->DCPred,sizeof(VC1DCPredictors), &DCPred,sizeof(VC1DCPredictors));
 }
 
 
@@ -764,7 +764,7 @@ void GetPScaleDCPredictors(VC1Context* pContext)
         break;
     }
 
-    memcpy(&pContext->DCPred, &DCPred,sizeof(VC1DCPredictors));
+    memcpy_s(&pContext->DCPred,sizeof(VC1DCPredictors), &DCPred,sizeof(VC1DCPredictors));
 
 }
 
@@ -1073,7 +1073,7 @@ void GetPDCPredictors(VC1Context* pContext)
         break;
     }
 
-    memcpy(&pContext->DCPred, &DCPred,sizeof(VC1DCPredictors));
+    memcpy_s(&pContext->DCPred,sizeof(VC1DCPredictors), &DCPred,sizeof(VC1DCPredictors));
 }
 
 

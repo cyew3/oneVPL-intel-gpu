@@ -2136,7 +2136,7 @@ namespace UMC
 
             printf("\n\n\nPicture type %d  %d\n\n\n", m_pContext->m_picLayerHeader->PTYPE, Num);
 #endif
-
+            
             if (m_pContext->m_picLayerHeader->PTYPE == VC1_SKIPPED_FRAME)
             {
                 m_bIsSkippedFrame = true;
@@ -3514,7 +3514,7 @@ namespace UMC
                     extensionInput.EncryptProtocolHeader.dwFunction = 0xffff0001;
                     extensionInput.EncryptProtocolHeader.guidEncryptProtocol = m_va->GetProtectedVA()->GetEncryptionGUID();
                     extensionInput.dwBufferSize = encryptedBufferSize;
-                    memcpy(extensionInput.dwAesCounter, &encryptedData->CipherCounter, sizeof(encryptedData->CipherCounter));
+                    memcpy_s(extensionInput.dwAesCounter, sizeof(encryptedData->CipherCounter), &encryptedData->CipherCounter, sizeof(encryptedData->CipherCounter));
 
                     extensionInput.PavpEncryptionMode.eEncryptionType = (PAVP_ENCRYPTION_TYPE) m_va->GetProtectedVA()->GetEncryptionMode();
                     extensionInput.PavpEncryptionMode.eCounterMode = (PAVP_COUNTER_TYPE) m_va->GetProtectedVA()->GetCounterMode();
@@ -3703,7 +3703,7 @@ namespace UMC
                             extensionInput.EncryptProtocolHeader.dwFunction = 0xffff0001;
                             extensionInput.EncryptProtocolHeader.guidEncryptProtocol = m_va->GetProtectedVA()->GetEncryptionGUID();
                             extensionInput.dwBufferSize = encryptedBufferSize;
-                            memcpy(extensionInput.dwAesCounter, &encryptedData->CipherCounter, sizeof(encryptedData->CipherCounter));
+                            memcpy_s(extensionInput.dwAesCounter, sizeof(encryptedData->CipherCounter), &encryptedData->CipherCounter, sizeof(encryptedData->CipherCounter));
 
                             extensionInput.PavpEncryptionMode.eEncryptionType = (PAVP_ENCRYPTION_TYPE) m_va->GetProtectedVA()->GetEncryptionMode();
                             extensionInput.PavpEncryptionMode.eCounterMode = (PAVP_COUNTER_TYPE) m_va->GetProtectedVA()->GetCounterMode();

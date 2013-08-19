@@ -1098,7 +1098,7 @@ mfxStatus MFXVideoDECODEVC1::GetVideoParam(mfxVideoParam *par)
 
     mfxStatus       MFXSts = MFX_ERR_NONE;
  
-    memcpy(&par->mfx, &m_par.mfx, sizeof(mfxInfoMFX));
+    memcpy_s(&par->mfx, sizeof(mfxInfoMFX), &m_par.mfx, sizeof(mfxInfoMFX));
 
     par->Protected = m_par.Protected;
     par->IOPattern = m_par.IOPattern;
@@ -1116,7 +1116,7 @@ mfxStatus MFXVideoDECODEVC1::GetVideoParam(mfxVideoParam *par)
         if (pSPS->SPSBufSize < m_RawSeq.size())
             return MFX_ERR_NOT_ENOUGH_BUFFER;
         
-        memcpy(pSPS->SPSBuffer, &m_RawSeq[0], m_RawSeq.size());
+        memcpy_s(pSPS->SPSBuffer, m_RawSeq.size(), &m_RawSeq[0], m_RawSeq.size());
         pSPS->SPSBufSize = (mfxU16)m_RawSeq.size();
 
     }
@@ -1345,7 +1345,7 @@ mfxStatus MFXVideoDECODEVC1::SelfConstructFrame(mfxBitstream *bs)
             m_bIsInit = true;
             
             m_RawSeq.resize(m_FrameSize);
-            memcpy(&m_RawSeq[0], bs->Data, m_FrameSize);
+            memcpy_s(&m_RawSeq[0], m_FrameSize, bs->Data, m_FrameSize);
         }
         else
         {
@@ -1409,7 +1409,7 @@ mfxStatus MFXVideoDECODEVC1::SelfConstructFrame(mfxBitstream *bs)
                     if (m_SHSize)
                     {
                         m_RawSeq.resize(m_SHSize);
-                        memcpy(&m_RawSeq[0], m_FrameConstrData.GetBufferPointer(), m_SHSize);
+                        memcpy_s(&m_RawSeq[0], m_SHSize, m_FrameConstrData.GetBufferPointer(), m_SHSize);
                     }
                     return MFX_ERR_NONE;
                 }
@@ -1445,7 +1445,7 @@ mfxStatus MFXVideoDECODEVC1::SelfConstructFrame(mfxBitstream *bs)
                 {
                     if (bs->DataLength <= 4)
                     {
-                        memcpy((Ipp8u*)m_FrameConstrData.GetBufferPointer() + m_FrameConstrData.GetDataSize(), bs->Data + bs->DataOffset, bs->DataLength);
+                        memcpy_s((Ipp8u*)m_FrameConstrData.GetBufferPointer() + m_FrameConstrData.GetDataSize(), bs->DataLength, bs->Data + bs->DataOffset, bs->DataLength);
                         m_sbs.TimeStamp = bs->TimeStamp;
                     }
                     m_SaveBytesSize = 0;    
@@ -1459,7 +1459,7 @@ mfxStatus MFXVideoDECODEVC1::SelfConstructFrame(mfxBitstream *bs)
                     m_SaveBytesSize = bs->DataLength;
                     if (m_SaveBytesSize <= 4)
                     {
-                        memcpy(m_pSaveBytes, bs->Data + bs->DataOffset, m_SaveBytesSize);
+                        memcpy_s(m_pSaveBytes, m_SaveBytesSize, bs->Data + bs->DataOffset, m_SaveBytesSize);
                         m_sbs.TimeStamp = bs->TimeStamp;
 
                     }
@@ -1972,7 +1972,7 @@ mfxStatus MFXVideoDECODEVC1::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfx
     
     MFX_CHECK_STS(MFXSts);
     
-    memcpy(&(par->mfx.FrameInfo), &temp.mfx.FrameInfo, sizeof(temp.mfx.FrameInfo));
+    memcpy_s(&(par->mfx.FrameInfo), sizeof(temp.mfx.FrameInfo), &temp.mfx.FrameInfo, sizeof(temp.mfx.FrameInfo));
 
     par->mfx.CodecProfile = temp.mfx.CodecProfile;
     par->mfx.CodecLevel = temp.mfx.CodecLevel;
@@ -2218,7 +2218,7 @@ mfxStatus MFXVideoDECODEVC1::SetAllocRequestInternal(VideoCORE *core, mfxVideoPa
         return MFX_ERR_INVALID_VIDEO_PARAM;
     par->mfx.FrameInfo.CropX = 0;
     par->mfx.FrameInfo.CropY = 0;
-    memcpy(&request->Info, &par->mfx.FrameInfo, sizeof(par->mfx.FrameInfo));
+    memcpy_s(&request->Info, sizeof(par->mfx.FrameInfo), &par->mfx.FrameInfo, sizeof(par->mfx.FrameInfo));
     request->Info.FourCC = MFX_FOURCC_NV12;
 
     bool isSWplatform = true;
@@ -2272,7 +2272,7 @@ mfxStatus MFXVideoDECODEVC1::SetAllocRequestExternal(VideoCORE *core, mfxVideoPa
         return MFX_ERR_INVALID_VIDEO_PARAM;
     par->mfx.FrameInfo.CropX = 0;
     par->mfx.FrameInfo.CropY = 0;
-    memcpy(&request->Info, &par->mfx.FrameInfo, sizeof(par->mfx.FrameInfo));
+    memcpy_s(&request->Info, sizeof(par->mfx.FrameInfo), &par->mfx.FrameInfo, sizeof(par->mfx.FrameInfo));
     request->Info.FourCC = MFX_FOURCC_NV12;
 
     bool isSWplatform = true;
