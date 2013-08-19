@@ -1714,16 +1714,6 @@ CostType H265CU::CU_cost(Ipp32u abs_part_idx, Ipp8u depth, const H265MEInfo* bes
     Ipp32u num_parts = ( par->NumPartInCU >> (depth<<1) );
     CostType cost, best_cost = 0;
 
-    // previous approach
-    if (!rd_opt_flag) {
-        Ipp32u num_pu = ( best_info->split_mode == PART_SIZE_2Nx2N ? 1 : (best_info->split_mode == PART_SIZE_NxN ? 4 : 2));
-        for (i = 0; i < num_pu; i++) {
-            best_cost += best_info[i].cost_inter;
-        }
-        if(best_info)
-            return best_cost;
-    }
-
 
     Ipp32u xborder = best_info[0].posx + best_info[0].width;
     Ipp32u yborder = best_info[0].posy + best_info[0].height;
