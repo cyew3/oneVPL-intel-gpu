@@ -783,7 +783,7 @@ DEF_STRUCT_TRACE(mfxAudioStreamInfo){
 
 DEF_STRUCT_TRACE(mfxAudioInfoMFX){
     os  << "{\n"
-        << PUT_STRUCT(m_info)
+        << PUT_STRUCT(StreamInfo)
         << PUT_PAR(CodecId)
         << PUT_PAR(CodecProfile)
         << PUT_PAR(CodecLevel);
