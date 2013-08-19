@@ -1493,6 +1493,9 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
         return MFX_ERR_MORE_DATA;
     }
 
+    if (!mfxBS)
+        return MFX_ERR_NULL_PTR;
+
     ePictureType = m_pCurrentFrame->m_PicCodType;
     // Determine the Pic_Class.  Right now this depends on ePictureType, but that could change
     // to permit disposable P frames, for example.
