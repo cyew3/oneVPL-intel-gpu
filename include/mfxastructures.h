@@ -137,7 +137,7 @@ typedef struct
 } mfxAudioStreamInfo;
 
 typedef struct {
-    mfxAudioStreamInfo m_info;
+    mfxAudioStreamInfo    StreamInfo;
 
     mfxU32                CodecId;
     mfxU16                CodecProfile;
