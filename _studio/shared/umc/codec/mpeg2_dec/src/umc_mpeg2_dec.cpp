@@ -1345,7 +1345,7 @@ Status MPEG2VideoDecoderBase::PostProcessUserData(int display_index)
           if (m_user_data.size() >= 300) 
           {
               // assert(m_user_data.size() == m_user_ts_data.size());
-              int items_to_discard = m_user_data.size() - 300;
+              int items_to_discard = (int)m_user_data.size() - 300;
               sVideoFrameBuffer::UserDataVector tmpvec(m_user_data.begin(), m_user_data.begin() + items_to_discard);
               ClearUserDataVector(tmpvec);
               m_user_data.erase(m_user_data.begin(), m_user_data.begin() + items_to_discard);
