@@ -25,7 +25,7 @@ typedef enum _test_result{
 #define msdk_ts_INDENT_SIZE 4
 #define msdk_ts_BLOCK(name)    msdk_ts::test_result msdk_ts::ts::name()
 
-class str_less{public: bool operator () (const char* s1, const char* s2) const {return strcmp(s1, s2) < 0;};};
+class str_less{public: bool operator () (std::string s1, std::string s2) const {return s1.compare(s2) < 0;};};
 
 class AbstractType{ 
 public: 
@@ -67,7 +67,7 @@ public:
 
     test_result run();
 
-    inline bool is_block_name(const char* name) { return !!m_block.count(name); }
+    inline bool is_block_name(const char* name) { return !!m_block.count(key(name)); }
 
     //dll only
     test_result run_block(const char* name);
@@ -83,10 +83,10 @@ private:
 
     typedef test_result (ts::*block)();
     typedef bool (ts::*_break_cond)();
-    typedef std::map<const char*, block, str_less> block_map_type;
+    typedef std::map<std::string, block, str_less> block_map_type;
 
     block_map_type m_block;
-    std::map<const char*, void*, str_less> m_var;
+    std::map<std::string, void*, str_less> m_var;
     std::map<void*, AbstractType*> m_mem;
     bool m_tmp_flag;
     unsigned int m_level; //current arg indent level
@@ -120,12 +120,12 @@ private:
     }
 
     char*   copy_str    (const char* str);
-    inline const char* key(const char* str){ return (is_defined(str) ? str : copy_str(str)); };
+    inline std::string key(const char* str){ return str; };
     bool    repeat_0() { return true; };
     bool    repeat_inf() { return false; };
     bool    less();
     bool    cnt();
-    bool    is_defined(const char* key) {return !!m_var.count(key);};
+    bool    is_defined(std::string key) {return !!m_var.count(key);};
 
     template<class T> T& var_old(const char* name, unsigned int offset = 0){
         if(!is_defined(name)) throw resINVPAR;

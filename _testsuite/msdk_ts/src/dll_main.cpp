@@ -30,7 +30,7 @@ void* set_var(test_hdl hdl, const char* key, void* val){
 }
 
 test_result ts::run_block(const char* name) { 
-    block_map_type::const_iterator it = m_block.find(name);
+    block_map_type::const_iterator it = m_block.find(key(name));
     test_result res = resUNKBLK;
     _break_cond& b = var_def<_break_cond>("break_cond", &ts::repeat_0);
 

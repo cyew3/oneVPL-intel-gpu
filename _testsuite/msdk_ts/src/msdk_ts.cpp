@@ -20,7 +20,7 @@ ts::ts(std::istream& in) :
 m_level(0),
 m_in(in.rdbuf())
 {
-    #define msdk_ts_DECLARE_BLOCK(block) m_block[#block] = &ts::block;
+    #define msdk_ts_DECLARE_BLOCK(block) m_block[key(#block)] = &ts::block;
     #include "msdk_ts_blocks.h"
     msdk_ts_DECLARE_BLOCK(loop);
     #undef  msdk_ts_DECLARE_BLOCK
@@ -193,7 +193,7 @@ test_result ts::run(){
 };
 
 test_result ts::run_block(const char* name, std::istream& in) { 
-    block_map_type::const_iterator it = m_block.find(name);
+    block_map_type::const_iterator it = m_block.find(key(name));
     test_result res = resUNKBLK;
     _break_cond& b = var_def<_break_cond>("break_cond", &ts::repeat_0);
 
@@ -289,7 +289,7 @@ msdk_ts_BLOCK(loop){
 
         //load_param(m_in, m_level+1);
         {
-            block blk = m_block[str];
+            block blk = m_block[key(str)];
             std::string par = "";
             while(!m_in.eof() && is_correct_indent(m_in, m_level+1, str)){
                 m_in.getline(str, 255);
