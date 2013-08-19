@@ -93,6 +93,7 @@ void DecodingContext::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr)
     Ipp32u newCUX = (newCUAddr % m_sps->WidthInCU) * m_sps->NumPartitionsInCUSize;
     Ipp32u newCUY = (newCUAddr / m_sps->WidthInCU) * m_sps->NumPartitionsInCUSize;
 
+    Ipp32s bottom_row_offset = m_CurrCTBStride * (m_CurrCTBStride - 2);
     if (newCUY > 0)
     {
         if (newCUX > lastCUX)
@@ -100,14 +101,14 @@ void DecodingContext::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr)
             // Init top margin from previous row
             for (Ipp32s i = 0; i < m_CurrCTBStride; i++)
             {
-                CurrCTBFlags[i].data = TopNgbrs[newCUX + i].data;
+                CurrCTBFlags[i] = TopNgbrs[newCUX + i];
                 CurrCTB[i] = TopMVInfo[newCUX + i];
             }
             // Store bottom margin for next row if next CTB is to the right. This is necessary for left-top diagonal
             for (Ipp32s i = 1; i < m_CurrCTBStride - 1; i++)
             {
-                TopNgbrs[lastCUX + i].data = CurrCTBFlags[m_CurrCTBStride * (m_CurrCTBStride - 2) + i].data;
-                TopMVInfo[lastCUX + i] = CurrCTB[m_CurrCTBStride * (m_CurrCTBStride - 2) + i];
+                TopNgbrs[lastCUX + i] = CurrCTBFlags[bottom_row_offset + i];
+                TopMVInfo[lastCUX + i] = CurrCTB[bottom_row_offset + i];
             }
         }
         else if (newCUX < lastCUX)
@@ -115,13 +116,13 @@ void DecodingContext::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr)
             // Store bottom margin for next row if next CTB is to the left-below. This is necessary for right-top diagonal
             for (Ipp32s i = 1; i < m_CurrCTBStride - 1; i++)
             {
-                TopNgbrs[lastCUX + i].data = CurrCTBFlags[m_CurrCTBStride * (m_CurrCTBStride - 2) + i].data;
-                TopMVInfo[lastCUX + i] = CurrCTB[m_CurrCTBStride * (m_CurrCTBStride - 2) + i];
+                TopNgbrs[lastCUX + i] = CurrCTBFlags[bottom_row_offset + i];
+                TopMVInfo[lastCUX + i] = CurrCTB[bottom_row_offset + i];
             }
             // Init top margin from previous row
             for (Ipp32s i = 0; i < m_CurrCTBStride; i++)
             {
-                CurrCTBFlags[i].data = TopNgbrs[newCUX + i].data;
+                CurrCTBFlags[i] = TopNgbrs[newCUX + i];
                 CurrCTB[i] = TopMVInfo[newCUX + i];
             }
         }
@@ -130,8 +131,8 @@ void DecodingContext::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr)
             // Copy data from bottom row
             for (Ipp32s i = 0; i < m_CurrCTBStride; i++)
             {
-                TopNgbrs[lastCUX + i].data = CurrCTBFlags[i].data = CurrCTBFlags[m_CurrCTBStride * (m_CurrCTBStride - 2) + i].data;
-                CurrCTB[i] = CurrCTB[m_CurrCTBStride * (m_CurrCTBStride - 2) + i];
+                TopNgbrs[lastCUX + i] = CurrCTBFlags[i] = CurrCTBFlags[bottom_row_offset + i];
+                CurrCTB[i] = CurrCTB[bottom_row_offset + i];
             }
         }
     }
@@ -147,8 +148,8 @@ void DecodingContext::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr)
         // Store bottom margin for next row if next CTB is not underneath. This is necessary for left-top diagonal
         for (Ipp32s i = 1; i < m_CurrCTBStride - 1; i++)
         {
-            TopNgbrs[lastCUX + i].data = CurrCTBFlags[m_CurrCTBStride * (m_CurrCTBStride - 2) + i].data;
-            TopMVInfo[lastCUX + i] = CurrCTB[m_CurrCTBStride * (m_CurrCTBStride - 2) + i];
+            TopNgbrs[lastCUX + i].data = CurrCTBFlags[bottom_row_offset + i].data;
+            TopMVInfo[lastCUX + i] = CurrCTB[bottom_row_offset + i];
         }
     }
 
@@ -156,10 +157,8 @@ void DecodingContext::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr)
     {
         // Copy left margin from right
         for (Ipp32s i = 1; i < m_CurrCTBStride - 1; i++)
-            CurrCTBFlags[i * m_CurrCTBStride].data = CurrCTBFlags[i * m_CurrCTBStride + m_CurrCTBStride - 2].data;
-
-        for (Ipp32s i = 1; i < m_CurrCTBStride - 1; i++)
         {
+            CurrCTBFlags[i * m_CurrCTBStride] = CurrCTBFlags[i * m_CurrCTBStride + m_CurrCTBStride - 2];
             CurrCTB[i * m_CurrCTBStride] = CurrCTB[i * m_CurrCTBStride + m_CurrCTBStride - 2];
         }
     }
