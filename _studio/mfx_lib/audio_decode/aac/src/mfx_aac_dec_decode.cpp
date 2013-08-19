@@ -255,7 +255,7 @@ mfxStatus AudioDECODEAAC::GetAudioParam(mfxAudioParam *par)
     memcpy(&par->mfx, &m_vPar.mfx, sizeof(mfxInfoMFX));
 
     UMC::AACDecoderParams params;
-    UMC::Status sts = m_pAACAudioDecoder->Init(&params);
+    UMC::Status sts = m_pAACAudioDecoder->GetInfo(&params);
     MFX_CHECK_UMC_STS(sts);
 
     MFXSts = MFX_AAC_Utility::FillAudioParamByUMC(&params, &m_vPar);
@@ -717,6 +717,8 @@ mfxStatus MFX_AAC_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfxAudioPar
         if (in->mfx.CodecId == MFX_CODEC_AAC)
             out->mfx.CodecId = in->mfx.CodecId;
 
+        //to do add checks
+        memcpy(&(out->mfx.m_info),&(in->mfx.m_info),sizeof(mfxAudioStreamInfo));
 
         switch(in->mfx.CodecProfile)
         {
