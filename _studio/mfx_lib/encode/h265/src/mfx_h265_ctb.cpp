@@ -3203,6 +3203,9 @@ void H265CU::GetPUMVInfo(Ipp32s blockZScanIdx,
     Ipp32s topLeftBlockZScanIdx = blockZScanIdx;
     blockZScanIdx += partAddr;
 
+    pInfo.numCand = 0;
+    mergeInfo.numCand = 0;
+
     if (cslice->slice_type == B_SLICE)
     {
         numRefLists = 2;
