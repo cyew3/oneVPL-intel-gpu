@@ -1875,20 +1875,22 @@ mfxStatus VideoDECODEMPEG2::UpdateCurrVideoParams(mfxFrameSurface1 *surface_work
     {
         sts = MFX_WRN_VIDEO_PARAM_CHANGED;
     }
-    pSurface->Info.FrameRateExtD = m_vPar.mfx.FrameInfo.FrameRateExtD;
-    pSurface->Info.FrameRateExtN = m_vPar.mfx.FrameInfo.FrameRateExtN;
+
     pSurface->Info.CropW = m_vPar.mfx.FrameInfo.CropW;
     pSurface->Info.CropH = m_vPar.mfx.FrameInfo.CropH;
     pSurface->Info.CropX = m_vPar.mfx.FrameInfo.CropX;
     pSurface->Info.CropY = m_vPar.mfx.FrameInfo.CropY;
-    pSurface->Info.PicStruct = m_vPar.mfx.FrameInfo.PicStruct;
+
 
     pSurface->Info.AspectRatioH = (mfxU16)m_implUmc.GetAspectRatioH();
     pSurface->Info.AspectRatioW = (mfxU16)m_implUmc.GetAspectRatioW();
 
     UpdateMfxVideoParam(m_vPar, sh, ph);
     UpdateMfxFrameParam(m_fPar, sh, ph);
-    
+
+    pSurface->Info.PicStruct = m_vPar.mfx.FrameInfo.PicStruct;    
+    pSurface->Info.FrameRateExtD = m_vPar.mfx.FrameInfo.FrameRateExtD;
+    pSurface->Info.FrameRateExtN = m_vPar.mfx.FrameInfo.FrameRateExtN;
     return sts;
 }
 
