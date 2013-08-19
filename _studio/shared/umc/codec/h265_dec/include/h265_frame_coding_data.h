@@ -84,7 +84,7 @@ public:
 
     // Deblocking data
     MFX_HEVC_COMMON::H265EdgeData *m_edge;
-    Ipp32s m_edgesInCTBWidth, m_edgesInCTBSize, m_edgesInCTB;
+    Ipp32s m_edgesInCTBSize, m_edgesInFrameWidth;
 
 public:
 

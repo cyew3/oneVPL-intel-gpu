@@ -119,11 +119,10 @@ void H265FrameCodingData::create(Ipp32s iPicWidth, Ipp32s iPicHeight, Ipp32u uiM
         m_CUData[i]->create (this);
     }
 
-    m_edgesInCTBSize = (m_MaxCUWidth >> 3) + 1;
-    m_edgesInCTB = m_edgesInCTBSize * m_edgesInCTBSize * 4;
-    m_edgesInCTBWidth = m_edgesInCTBSize * 4;
-    Ipp32s deblocking_edges_count = (m_WidthInCU * m_HeightInCU) * m_edgesInCTB;
-    m_edge = new MFX_HEVC_COMMON::H265EdgeData[deblocking_edges_count];
+    Ipp32s m_edgesInCTBSize = m_MaxCUWidth >> 3;
+    m_edgesInFrameWidth = (m_edgesInCTBSize * m_WidthInCU + 1) * 4;
+    Ipp32s edgesInFrameHeight = m_edgesInCTBSize * m_HeightInCU + 1;
+    m_edge = new MFX_HEVC_COMMON::H265EdgeData[m_edgesInFrameWidth * edgesInFrameHeight];
 }
 
 void H265FrameCodingData::destroy()
