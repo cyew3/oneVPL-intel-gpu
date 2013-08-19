@@ -254,6 +254,23 @@ extern Ipp32u SliceSize(mfxEncryptedData *first, PAVP_COUNTER_TYPE counterMode, 
 extern Ipp32u DistToNextSlice(mfxEncryptedData *encryptedData, PAVP_COUNTER_TYPE counterMode);
 #endif
 
+
+static void ClearUserDataVector(sVideoFrameBuffer::UserDataVector & data)
+{
+    for (sVideoFrameBuffer::UserDataVector::iterator 
+            it = data.begin(), et = data.end(); it != et; ++it)
+    {
+#if defined(_WIN32) || defined(_WIN64)
+        _aligned_free(it->first);
+#else
+        free(it->first);
+#endif
+    }
+
+    data.clear();
+}
+
+
 bool MPEG2VideoDecoderBase::InitTables()
 {
   if (ippStsNoErr != mp2_HuffmanTableInitAlloc(MBAdressing, 5, &vlcMBAdressing))
@@ -301,6 +318,8 @@ bool MPEG2VideoDecoderBase::DeleteTables()
             ippsFree(Video[i]);
             Video[i] = NULL;
         }
+        
+        ClearUserDataVector(frame_buffer.frame_p_c_n[i].user_data_v);
     }
     if(frame_buffer.ptr_context_data)
     {
@@ -496,8 +515,8 @@ Status MPEG2VideoDecoderBase::Init(BaseCodecParams *pInit)
         frame_buffer.frame_p_c_n[i].frame_time = -1;
         frame_buffer.frame_p_c_n[i].duration = 0;
         frame_buffer.frame_p_c_n[i].IsUserDataDecoded = false;
-        frame_buffer.frame_p_c_n[i].us_data_size = 0;
-        frame_buffer.frame_p_c_n[i].user_data_v.clear();
+        frame_buffer.frame_p_c_n[i].us_data_size = 0;        
+        ClearUserDataVector(frame_buffer.frame_p_c_n[i].user_data_v);
 
         frame_buffer.frame_p_c_n[i].va_index = -1;
         frame_buffer.task_locked[i]          = -1;
@@ -1322,6 +1341,17 @@ Status MPEG2VideoDecoderBase::PostProcessUserData(int display_index)
           }
             */
 
+          // TODO: implement payload limitation according to spec when it be ready. Currently ~10 seconds
+          if (m_user_data.size() >= 300) 
+          {
+              // assert(m_user_data.size() == m_user_ts_data.size());
+              int items_to_discard = m_user_data.size() - 300;
+              sVideoFrameBuffer::UserDataVector tmpvec(m_user_data.begin(), m_user_data.begin() + items_to_discard);
+              ClearUserDataVector(tmpvec);
+              m_user_data.erase(m_user_data.begin(), m_user_data.begin() + items_to_discard);
+              m_user_ts_data.erase(m_user_ts_data.begin(), m_user_ts_data.begin() + items_to_discard);
+          }
+
           size_t userDataCount = frame_buffer.frame_p_c_n[display_index].user_data_v.size();
           
           sVideoFrameBuffer *p_buffer = &frame_buffer.frame_p_c_n[display_index];
@@ -1332,7 +1362,8 @@ Status MPEG2VideoDecoderBase::PostProcessUserData(int display_index)
               m_user_ts_data.push_back(std::make_pair(m_dTime[display_index].time, sizeof(Ipp64f)));
           }
 
-            p_buffer->user_data_v.clear();
+          // memory ownership transfered to m_user_data, so just clear()
+          p_buffer->user_data_v.clear();
       }
     /*
       if(m_pCCDataTS->LockInputBuffer(&ccData) == UMC_OK)
@@ -1681,49 +1712,8 @@ Status MPEG2VideoDecoderBase::Close()
         m_pCCDataTS = NULL;
     }
 
-    size_t userDataCount = m_user_data.size();
-
-    for (size_t i = 0; i < userDataCount; i++)
-    {
-        Ipp8u* buffer = m_user_data[i].first;
-        size_t size = m_user_data[i].second;
-
-        if (size > 0 && buffer != NULL)
-        {
-#if defined(_WIN32) || defined(_WIN64)
-            _aligned_free(buffer);
-#else
-            free(buffer);
-#endif
-        }
-    }
-    m_user_data.clear();
+    ClearUserDataVector(m_user_data);
     m_user_ts_data.clear();
-    
-    for (size_t i = 0; i < DPB_SIZE*2; i++)
-    {
-        sVideoFrameBuffer *framepcn = &frame_buffer.frame_p_c_n[i];
-
-        size_t vectorSize = framepcn->user_data_v.size();
-        if (vectorSize == 0)
-            continue;
-        
-        for (size_t j = 0; j < vectorSize; j++)
-        {
-            Ipp8u* buffer = framepcn->user_data_v[j].first;
-            size_t size = framepcn->user_data_v[j].second;
-
-            if (size > 0 && buffer != NULL)
-            {
-#if defined(_WIN32) || defined(_WIN64)
-                _aligned_free(buffer);
-#else
-                free(buffer);
-#endif
-            }
-        }
-        framepcn->user_data_v.clear();
-    }
 
     if (shMask.memMask)
     {
@@ -1843,8 +1833,11 @@ Status MPEG2VideoDecoderBase::Reset()
         frame_buffer.frame_p_c_n[i].duration = 0;
         frame_buffer.frame_p_c_n[i].IsUserDataDecoded = false;
         frame_buffer.frame_p_c_n[i].us_data_size = 0;
+        ClearUserDataVector(frame_buffer.frame_p_c_n[i].user_data_v);
+
         frame_buffer.frame_p_c_n[i].va_index = -1;
         frame_buffer.task_locked[i]          = -1;
+
         m_dTime[i].time     = -1.;
         m_dTime[i].isOriginal = false;
         m_nNumberOfThreadsTask[i] = m_nNumberOfThreads;

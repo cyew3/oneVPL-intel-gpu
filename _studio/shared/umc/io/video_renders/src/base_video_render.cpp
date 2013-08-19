@@ -28,6 +28,7 @@ BaseVideoRender::BaseVideoRender():
     m_bRenderingError(false)
 {
     memset(m_Buffers, 0, sizeof(m_Buffers));
+    assert(!"Using memset on m_Buffers is incorrect");
     memset(&m_dst_rect, 0, sizeof(m_dst_rect));
     memset(&m_src_rect, 0, sizeof(m_src_rect));
 

@@ -473,7 +473,7 @@ public:
 
         SampleBuffer*             m_pCCData;
         SampleBuffer*             m_pCCDataTS;
-        std::vector< std::pair<Ipp8u *, size_t> > m_user_data;
+        sVideoFrameBuffer::UserDataVector m_user_data;
         std::vector< std::pair<Ipp64f, size_t> > m_user_ts_data;
         MediaData                 m_ccCurrData;
         MediaData                 m_ccCurrDataTS;
