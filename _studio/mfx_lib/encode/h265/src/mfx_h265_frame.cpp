@@ -614,7 +614,11 @@ H265Frame *H265FrameList::InsertFrame(mfxFrameSurface1 *surface,
     //if there are no unused frames allocate new frame
     if (!pFrm){
         pFrm = new H265Frame(); //Init/allocate from input data
-        if (pFrm->Create(par) != MFX_ERR_NONE) return NULL;
+        if (!pFrm) return NULL;
+        if (pFrm->Create(par) != MFX_ERR_NONE) {
+            delete pFrm;
+            return NULL;
+        }
         insertAtCurrent(pFrm);
     }
     else
