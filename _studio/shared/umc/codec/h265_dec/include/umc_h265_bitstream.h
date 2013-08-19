@@ -179,7 +179,7 @@ public:
     Ipp32s GetSCP();
 
     // Get type of current NAL
-    UMC::Status GetNALUnitType(NalUnitType &nal_unit_type, Ipp32u &nuh_temporal_id, Ipp32u &reserved_zero_6bits);
+    UMC::Status GetNALUnitType(NalUnitType &nal_unit_type, Ipp32u &nuh_temporal_id);
     UMC::Status GetAccessUnitDelimiter(Ipp32u &PicCodType);
 
     void RollbackCurrentNALU();

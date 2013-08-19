@@ -536,7 +536,7 @@ inline unsigned H265BaseBitstream::getNumBitsUntilByteAligned() const
 inline void H265BaseBitstream::readOutTrailingBits()
 {
     Ipp32u uVal = Get1Bit();
-    VM_ASSERT(1 == uVal);
+    //VM_ASSERT(1 == uVal);
 
     Ipp32u bits = getNumBitsUntilByteAligned();
 
@@ -544,7 +544,7 @@ inline void H265BaseBitstream::readOutTrailingBits()
     {
 //        VM_ASSERT(getNumBitsLeft() <= bits); TODO: Implement this assertion correctly
         uVal = GetBits(bits);
-        VM_ASSERT(0 == uVal);
+        //VM_ASSERT(0 == uVal);
     }
 }
 

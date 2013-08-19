@@ -694,14 +694,18 @@ typedef Ipp32u IntraType;
 
 struct ReferencePictureSet
 {
-    Ipp32s m_NumberOfPictures;
-    Ipp32s m_NumberOfNegativePictures;
-    Ipp32s m_NumberOfPositivePictures;
+    bool inter_ref_pic_set_prediction_flag;
+
+    Ipp32s num_negative_pics;
+    Ipp32s num_positive_pics;
+
+    Ipp32s num_pics;
+    
     Ipp32s m_NumberOfLongtermPictures;
     Ipp32s m_DeltaPOC[MAX_NUM_REF_PICS];
     Ipp32s m_POC[MAX_NUM_REF_PICS];
-    bool m_Used[MAX_NUM_REF_PICS];
-    bool inter_ref_pic_set_prediction_flag;
+    bool used_by_curr_pic_flag[MAX_NUM_REF_PICS];
+    
     Ipp32s m_DeltaRIdxMinus1;
     Ipp32s m_DeltaRPS;
     Ipp32s m_NumRefIdc;
@@ -714,18 +718,14 @@ struct ReferencePictureSet
     void sortDeltaPOC();
 
     void setInterRPSPrediction(bool f)      { inter_ref_pic_set_prediction_flag = f; }
-    Ipp32s getNumberOfPictures() const    { return m_NumberOfPictures; }
-    void setNumberOfPictures(Ipp32s val)  { m_NumberOfPictures = val; }
-    Ipp32s getNumberOfNegativePictures() const    { return m_NumberOfNegativePictures; }
-    void setNumberOfNegativePictures(Ipp32s val)  { m_NumberOfNegativePictures = val; }
-    Ipp32s getNumberOfPositivePictures() const    { return m_NumberOfPositivePictures; }
-    void setNumberOfPositivePictures(Ipp32s val)  { m_NumberOfPositivePictures = val; }
+    Ipp32s getNumberOfPictures() const    { return num_pics; }
+    Ipp32s getNumberOfNegativePictures() const    { return num_negative_pics; }
+    Ipp32s getNumberOfPositivePictures() const    { return num_positive_pics; }
     Ipp32s getNumberOfLongtermPictures() const    { return m_NumberOfLongtermPictures; }
     void setNumberOfLongtermPictures(Ipp32s val)  { m_NumberOfLongtermPictures = val; }
     int getDeltaPOC(int index) const        { return m_DeltaPOC[index]; }
     void setDeltaPOC(int index, int val)    { m_DeltaPOC[index] = val; }
-    bool getUsed(int index) const           { return m_Used[index]; }
-    void setUsed(int index, bool f)         { m_Used[index] = f; }
+    bool getUsed(int index) const           { return used_by_curr_pic_flag[index]; }
 
     void setNumRefIdc(int val)              { m_NumRefIdc = val; }
     void setRefIdc(int index, int val)      { m_RefIdc[index] = val; }
@@ -754,22 +754,11 @@ private:
 
 struct RefPicListModification
 {
-    Ipp32u m_RefPicListModificationFlagL0;
-    Ipp32u m_RefPicListModificationFlagL1;
-    Ipp32u m_RefPicSetIdxL0[MAX_NUM_REF_PICS + 1];
-    Ipp32u m_RefPicSetIdxL1[MAX_NUM_REF_PICS + 1];
+    Ipp32u ref_pic_list_modification_flag_l0;
+    Ipp32u ref_pic_list_modification_flag_l1;
 
-    Ipp32u getRefPicListModificationFlagL0() const      { return m_RefPicListModificationFlagL0; }
-    void setRefPicListModificationFlagL0(Ipp32u val)    { m_RefPicListModificationFlagL0 = val; }
-
-    Ipp32u getRefPicListModificationFlagL1() const      { return m_RefPicListModificationFlagL1; }
-    void setRefPicListModificationFlagL1(Ipp32u val)    { m_RefPicListModificationFlagL1 = val; }
-
-    void setRefPicSetIdxL0(unsigned idx, Ipp32u refPicSetIdx) { m_RefPicSetIdxL0[idx] = refPicSetIdx; }
-    Ipp32u getRefPicSetIdxL0(unsigned idx) { return m_RefPicSetIdxL0[idx]; }
-
-    void   setRefPicSetIdxL1(unsigned idx, Ipp32u refPicSetIdx) { m_RefPicSetIdxL1[idx] = refPicSetIdx; }
-    Ipp32u getRefPicSetIdxL1(unsigned idx)                      { return m_RefPicSetIdxL1[idx]; }
+    Ipp32u list_entry_l0[MAX_NUM_REF_PICS + 1];
+    Ipp32u list_entry_l1[MAX_NUM_REF_PICS + 1];
 };
 
 // Sequence parameter set structure, corresponding to the H.264 bitstream definition.
@@ -1131,8 +1120,6 @@ struct H265PicParamSet : public HeapObject, public H265PicParamSetBase
     H265ScalingList* getScalingList()               { return &m_scalingList; }
     const H265ScalingList* getScalingList() const   { return &m_scalingList; }
 };    // H265PicParamSet
-
-typedef Ipp32s H264DecoderMBAddr;
 
 typedef struct {
   // Explicit weighted prediction parameters parsed in slice header,

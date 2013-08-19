@@ -206,19 +206,7 @@ public:  // DEBUG !!!! should remove dependence
 
     DecodingContext        *m_context;
 
-    static int m_prevPOC;
-
 public:
-
-    int getPOC() const  { return  m_SliceHeader.slice_pic_order_cnt_lsb; }
-    void setPOC (int i)
-    {
-        m_SliceHeader.slice_pic_order_cnt_lsb = i;
-        if (m_SliceHeader.nuh_temporal_id == 0)
-            m_prevPOC = i;
-    }
-
-    int getPrevPOC() const                  { return  m_prevPOC; }
 
     ReferencePictureSet*  getRPS() const    { return m_SliceHeader.m_pRPS; }
     void setRPS(ReferencePictureSet *rps)   { m_SliceHeader.m_pRPS = rps; }

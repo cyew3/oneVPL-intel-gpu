@@ -41,7 +41,6 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
         return UMC::UMC_OK;
     }
 
-    H265DecoderFrame *pFrm = NULL;
     H265DecoderFrame *RefPicSetStCurr0[16];
     H265DecoderFrame *RefPicSetStCurr1[16];
     H265DecoderFrame *RefPicSetLtCurr[16];
@@ -54,9 +53,9 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
     {
         if(getRPS()->getUsed(i))
         {
-            Ipp32s poc = getPOC() + getRPS()->getDeltaPOC(i);
+            Ipp32s poc = GetSliceHeader()->slice_pic_order_cnt_lsb + getRPS()->getDeltaPOC(i);
 
-            pFrm = pDecoderFrameList->findShortRefPic(poc);
+            H265DecoderFrame *pFrm = pDecoderFrameList->findShortRefPic(poc);
             m_pCurrentFrame->AddReference(pFrm);
 
             if (pFrm)
@@ -71,9 +70,9 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
     {
         if(getRPS()->getUsed(i))
         {
-            Ipp32s poc = getPOC() + getRPS()->getDeltaPOC(i);
+            Ipp32s poc = GetSliceHeader()->slice_pic_order_cnt_lsb + getRPS()->getDeltaPOC(i);
 
-            pFrm = pDecoderFrameList->findShortRefPic(poc);
+            H265DecoderFrame *pFrm = pDecoderFrameList->findShortRefPic(poc);
             m_pCurrentFrame->AddReference(pFrm);
 
             if (pFrm)
@@ -91,7 +90,7 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
         {
             Ipp32s poc = getRPS()->getPOC(i);
 
-            pFrm = pDecoderFrameList->findLongTermRefPic(m_pCurrentFrame, poc, GetSeqParam()->log2_max_pic_order_cnt_lsb, !getRPS()->getCheckLTMSBPresent(i));
+            H265DecoderFrame *pFrm = pDecoderFrameList->findLongTermRefPic(m_pCurrentFrame, poc, GetSeqParam()->log2_max_pic_order_cnt_lsb, !getRPS()->getCheckLTMSBPresent(i));
             m_pCurrentFrame->AddReference(pFrm);
 
             if (pFrm)
@@ -103,12 +102,11 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
     }
 
     // ref_pic_list_init
-    Ipp32s cIdx = 0;
     H265DecoderFrame *refPicListTemp0[MAX_NUM_REF_PICS + 1];
     H265DecoderFrame *refPicListTemp1[MAX_NUM_REF_PICS + 1];
     Ipp32s numPocTotalCurr = NumPocStCurr0 + NumPocStCurr1 + NumPocLtCurr;
 
-    cIdx = 0;
+    Ipp32s cIdx = 0;
     for (Ipp32u i = 0; i < NumPocStCurr0; cIdx++, i++)
     {
         refPicListTemp0[cIdx] = RefPicSetStCurr0[i];
@@ -141,12 +139,11 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
 
     for (cIdx = 0; cIdx <= GetSliceHeader()->m_numRefIdx[0] - 1; cIdx ++)
     {
-        bool isLong = getRefPicListModification()->getRefPicListModificationFlagL0() ?
-            (getRefPicListModification()->getRefPicSetIdxL0(cIdx) >= (NumPocStCurr0 + NumPocStCurr1))
+        bool isLong = getRefPicListModification()->ref_pic_list_modification_flag_l0 ?
+            (getRefPicListModification()->list_entry_l0[cIdx] >= (NumPocStCurr0 + NumPocStCurr1))
             : ((Ipp32u)(cIdx % numPocTotalCurr) >= (NumPocStCurr0 + NumPocStCurr1));
 
-        pRefPicList0[cIdx].refFrame = getRefPicListModification()->getRefPicListModificationFlagL0() ? refPicListTemp0[getRefPicListModification()->getRefPicSetIdxL0(cIdx)] : refPicListTemp0[cIdx % numPocTotalCurr];
-
+        pRefPicList0[cIdx].refFrame = getRefPicListModification()->ref_pic_list_modification_flag_l0 ? refPicListTemp0[getRefPicListModification()->list_entry_l0[cIdx]] : refPicListTemp0[cIdx % numPocTotalCurr];
         pRefPicList0[cIdx].isLongReference = isLong;
     }
 
@@ -159,11 +156,11 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
     {
         for (cIdx = 0; cIdx <= GetSliceHeader()->m_numRefIdx[1] - 1; cIdx ++)
         {
-            bool isLong = getRefPicListModification()->getRefPicListModificationFlagL1() ?
-                (getRefPicListModification()->getRefPicSetIdxL1(cIdx) >= (NumPocStCurr0 + NumPocStCurr1))
+            bool isLong = getRefPicListModification()->ref_pic_list_modification_flag_l1 ?
+                (getRefPicListModification()->list_entry_l1[cIdx] >= (NumPocStCurr0 + NumPocStCurr1))
                 : ((Ipp32u)(cIdx % numPocTotalCurr) >= (NumPocStCurr0 + NumPocStCurr1));
 
-            pRefPicList1[cIdx].refFrame = getRefPicListModification()->getRefPicListModificationFlagL1() ? refPicListTemp1[getRefPicListModification()->getRefPicSetIdxL1(cIdx)] : refPicListTemp1[cIdx % numPocTotalCurr];
+            pRefPicList1[cIdx].refFrame = getRefPicListModification()->ref_pic_list_modification_flag_l1 ? refPicListTemp1[getRefPicListModification()->list_entry_l1[cIdx]] : refPicListTemp1[cIdx % numPocTotalCurr];
             pRefPicList1[cIdx].isLongReference = isLong;
         }
     }
@@ -184,12 +181,26 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
     if (GetSliceHeader()->slice_type != I_SLICE)
     {
         bool bLowDelay = true;
-        Ipp32s iCurrPOC = getPOC();
-        Ipp32s iRefIdx = 0;
+        Ipp32s currPOC = GetSliceHeader()->slice_pic_order_cnt_lsb;
 
-        for (iRefIdx = 0; iRefIdx < getNumRefIdx(REF_PIC_LIST_0) && bLowDelay; iRefIdx++)
+        H265DecoderFrame *missedReference = 0;
+        
+        for (Ipp32s i = 0; !missedReference && i < numPocTotalCurr; i++)
         {
-            if (pRefPicList0[iRefIdx].refFrame->PicOrderCnt() > iCurrPOC)
+            missedReference = refPicListTemp0[i];
+        }
+
+        for (Ipp32s k = 0; k < getNumRefIdx(REF_PIC_LIST_0) && bLowDelay; k++)
+        {
+            if (!pRefPicList0[k].refFrame)
+            {
+                pRefPicList0[k].refFrame = missedReference;
+            }
+        }
+
+        for (Ipp32s k = 0; k < getNumRefIdx(REF_PIC_LIST_0) && bLowDelay; k++)
+        {
+            if (pRefPicList0[k].refFrame && pRefPicList0[k].refFrame->PicOrderCnt() > currPOC)
             {
                 bLowDelay = false;
             }
@@ -197,9 +208,17 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
 
         if (GetSliceHeader()->slice_type == B_SLICE)
         {
-            for (iRefIdx = 0; iRefIdx < getNumRefIdx(REF_PIC_LIST_1) && bLowDelay; iRefIdx++)
+            for (Ipp32s k = 0; k < getNumRefIdx(REF_PIC_LIST_1) && bLowDelay; k++)
             {
-                if (pRefPicList1[iRefIdx].refFrame->PicOrderCnt() > iCurrPOC)
+                if (!pRefPicList1[k].refFrame)
+                {
+                    pRefPicList1[k].refFrame = missedReference;
+                }
+            }
+
+            for (Ipp32s k = 0; k < getNumRefIdx(REF_PIC_LIST_1) && bLowDelay; k++)
+            {
+                if (pRefPicList1[k].refFrame && pRefPicList1[k].refFrame->PicOrderCnt() > currPOC)
                 {
                     bLowDelay = false;
                 }

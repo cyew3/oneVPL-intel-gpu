@@ -278,7 +278,7 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     //
     //
     pPicParam->CurrPic.Index7bits   = pCurrentFrame->m_index;    // ?
-    pPicParam->CurrPicOrderCntVal   = pSlice->getPOC();
+    pPicParam->CurrPicOrderCntVal   = pSlice->GetSliceHeader()->slice_pic_order_cnt_lsb;
 
     int numRefPicSetStCurrBefore = 0,
         numRefPicSetStCurrAfter  = 0,
@@ -462,7 +462,7 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     //
     //
     pPicParam->CurrPic.Index7bits   = pCurrentFrame->m_index;    // ?
-    pPicParam->CurrPicOrderCntVal   = pSlice->getPOC();
+    pPicParam->CurrPicOrderCntVal   = pSlice->GetSliceHeader()->slice_pic_order_cnt_lsb;
 
     int count = 0;
     int cntRefPicSetStCurrBefore = 0,
@@ -609,7 +609,7 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->pps_beta_offset_div2                                 = (CHAR)(pPicParamSet->pps_beta_offset >> 1);
     pPicParam->pps_tc_offset_div2                                   = (CHAR)(pPicParamSet->pps_tc_offset >> 1);  
     pPicParam->log2_parallel_merge_level_minus2                     = (UCHAR)pPicParamSet->log2_parallel_merge_level - 2;
-    pPicParam->CurrPicOrderCntVal                                   = pSlice->getPOC();
+    pPicParam->CurrPicOrderCntVal                                   = pSlice->GetSliceHeader()->slice_pic_order_cnt_lsb;
 
 
     //

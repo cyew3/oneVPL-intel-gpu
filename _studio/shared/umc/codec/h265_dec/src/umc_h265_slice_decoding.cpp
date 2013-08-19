@@ -19,8 +19,6 @@
 
 namespace UMC_HEVC_DECODER
 {
-int H265Slice::m_prevPOC;
-
 H265Slice::H265Slice(UMC::MemoryAllocator *pMemoryAllocator)
     : m_pSeqParamSet(0)
     , m_pMemoryAllocator(pMemoryAllocator)
@@ -88,7 +86,9 @@ Ipp32s H265Slice::RetrievePicParamSetNumber(void *pSource, size_t nSourceSize)
     if (!nSourceSize)
         return -1;
 
+    Ipp32s tempPrevPoc = m_SliceHeader.slice_pic_order_cnt_lsb;
     memset(&m_SliceHeader, 0, sizeof(m_SliceHeader));
+    m_SliceHeader.slice_pic_order_cnt_lsb = tempPrevPoc;
     m_BitStream.Reset((Ipp8u *) pSource, (Ipp32u) nSourceSize);
 
     UMC::Status umcRes = UMC::UMC_OK;
@@ -97,9 +97,7 @@ Ipp32s H265Slice::RetrievePicParamSetNumber(void *pSource, size_t nSourceSize)
     {
         Ipp32u reserved_zero_6bits;
         umcRes = m_BitStream.GetNALUnitType(m_SliceHeader.nal_unit_type,
-                                            m_SliceHeader.nuh_temporal_id,
-                                            reserved_zero_6bits);
-        VM_ASSERT(0 == reserved_zero_6bits);
+                                            m_SliceHeader.nuh_temporal_id);
         if (UMC::UMC_OK != umcRes)
             return false;
 
@@ -199,13 +197,13 @@ bool H265Slice::DecodeSliceHeader()
     // discarded when read again here.
     try
     {
+        Ipp32s tempPrevPoc = m_SliceHeader.slice_pic_order_cnt_lsb;
         memset(&m_SliceHeader, 0, sizeof(m_SliceHeader));
+        m_SliceHeader.slice_pic_order_cnt_lsb = tempPrevPoc;
 
         Ipp32u reserved_zero_6bits;
         umcRes = m_BitStream.GetNALUnitType(m_SliceHeader.nal_unit_type,
-                                            m_SliceHeader.nuh_temporal_id,
-                                            reserved_zero_6bits);
-        VM_ASSERT(0 == reserved_zero_6bits);
+                                            m_SliceHeader.nuh_temporal_id);
         if (UMC::UMC_OK != umcRes)
             return false;
 

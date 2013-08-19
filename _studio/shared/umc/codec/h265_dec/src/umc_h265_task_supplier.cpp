@@ -100,7 +100,7 @@ UMC::Status DecReferencePictureMarking_H265::UpdateRefPicMarking(ViewItem_H265 &
                 Ipp32s count = rps->getNumberOfPositivePictures() + rps->getNumberOfNegativePictures();
                 for(i = 0; i < count; i++)
                 {
-                    if (!pTmp->isLongTermRef() && pTmp->m_PicOrderCnt == pSlice->getPOC() + rps->getDeltaPOC(i))
+                    if (!pTmp->isLongTermRef() && pTmp->m_PicOrderCnt == pSlice->GetSliceHeader()->slice_pic_order_cnt_lsb + rps->getDeltaPOC(i))
                     {
                         isReferenced = true;
                         pTmp->SetisShortTermRef(true);
@@ -134,7 +134,7 @@ UMC::Status DecReferencePictureMarking_H265::UpdateRefPicMarking(ViewItem_H265 &
 
             // mark the picture as "unused for reference" if it is not in
             // the Reference Picture Set
-            if(pTmp->m_PicOrderCnt != pSlice->getPOC() && !isReferenced)
+            if(pTmp->m_PicOrderCnt != pSlice->GetSliceHeader()->slice_pic_order_cnt_lsb && !isReferenced)
             {
                 pTmp->SetisShortTermRef(false);
                 pTmp->SetisLongTermRef(false);
@@ -972,10 +972,9 @@ UMC::Status TaskSupplier_H265::DecodeSEI(UMC::MediaDataEx *nalUnit)
           //  nalUnit->GetExData()->offsets[nalIndex + 1] - nalUnit->GetExData()->offsets[nalIndex]);
 
         NalUnitType nal_unit_type;
-        Ipp32u temporal_id, reserved_zero_6bits;
+        Ipp32u temporal_id;
 
-        bitStream.GetNALUnitType(nal_unit_type, temporal_id, reserved_zero_6bits);
-        VM_ASSERT(0 == reserved_zero_6bits);
+        bitStream.GetNALUnitType(nal_unit_type, temporal_id);
 
         do
         {
@@ -1295,10 +1294,9 @@ UMC::Status TaskSupplier_H265::DecodeHeaders(UMC::MediaDataEx *nalUnit)
         bitStream.Reset((Ipp8u*)pMem->GetPointer(), (Ipp32u)pMem->GetDataSize());
 
         NalUnitType nal_unit_type;
-        Ipp32u temporal_id, reserved_zero_6bits;
+        Ipp32u temporal_id;
 
-        bitStream.GetNALUnitType(nal_unit_type, temporal_id, reserved_zero_6bits);
-        VM_ASSERT(0 == reserved_zero_6bits);
+        bitStream.GetNALUnitType(nal_unit_type, temporal_id);
 
         switch(nal_unit_type)
         {
@@ -1827,11 +1825,16 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
     memory_leak_preventing.ClearNotification();
     pSlice->m_pSource = pMem;
     pSlice->m_dTime = pMem->GetTime();
+    
+    pSlice->GetSliceHeader()->slice_pic_order_cnt_lsb = m_prevPOC;
 
     if (!pSlice->Reset(pMem->GetPointer(), pMem->GetDataSize(), m_iThreadNum))
     {
         return 0;
     }
+
+    if (pSlice->GetSliceHeader()->nuh_temporal_id == 0)
+        m_prevPOC = pSlice->GetSliceHeader()->slice_pic_order_cnt_lsb;
 
     if (m_WaitForIDR)
     {

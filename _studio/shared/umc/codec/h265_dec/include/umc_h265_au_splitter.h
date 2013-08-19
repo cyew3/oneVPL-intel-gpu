@@ -28,20 +28,7 @@
 namespace UMC_HEVC_DECODER
 {
 
-class H265Task;
-class TaskBroker_H265;
-
-class H265DBPList;
-class H265DecoderFrame;
-struct H265SliceHeader;
-class MediaData;
 class NALUnitSplitter_H265;
-class H265Slice;
-
-class BaseCodecParams;
-class H265SegmentDecoderMultiThreaded;
-
-class MemoryAllocator;
 
 class AU_Splitter_H265
 {
@@ -63,9 +50,9 @@ protected:
 
     Headers     m_Headers;
     Heap_Objects   *m_objHeap;
-    Heap      *m_heap;
+    Heap      * m_heap;
+    Ipp32s      m_prevPOC;
 
-    ReferencePictureSetList m_RefPicSetList;
 protected:
 
     std::auto_ptr<NALUnitSplitter_H265> m_pNALSplitter;

@@ -359,8 +359,7 @@ UMC::Status MFXTaskSupplier_H265::DecodeSEI(UMC::MediaDataEx *nalUnit)
         NalUnitType nal_unit_type;
         Ipp32u temporal_id, reserved_zero_6bits;
 
-        bitStream.GetNALUnitType(nal_unit_type, temporal_id, reserved_zero_6bits);
-        VM_ASSERT(0 == reserved_zero_6bits);
+        bitStream.GetNALUnitType(nal_unit_type, temporal_id);
 
         do
         {
