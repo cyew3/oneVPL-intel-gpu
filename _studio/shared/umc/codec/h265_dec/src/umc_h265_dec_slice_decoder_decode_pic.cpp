@@ -210,7 +210,7 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
 
         if (GetSliceHeader()->slice_type == B_SLICE)
         {
-            for (Ipp32s k = 0; k < getNumRefIdx(REF_PIC_LIST_1) && bLowDelay; k++)
+            for (Ipp32s k = 0; k < getNumRefIdx(REF_PIC_LIST_1); k++)
             {
                 if (!pRefPicList1[k].refFrame)
                 {
