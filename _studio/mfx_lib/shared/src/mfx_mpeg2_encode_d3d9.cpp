@@ -163,8 +163,8 @@ mfxStatus D3D9Encoder::Init(const GUID& guid, ENCODE_FUNC func,ExecuteBuffers* p
 {
     mfxStatus   sts    = MFX_ERR_NONE;    
     
-    mfxU16          width   = pExecuteBuffers->m_sps.FrameWidth;
-    mfxU16          height  = pExecuteBuffers->m_sps.FrameHeight;
+    mfxU16          width   = ((pExecuteBuffers->m_sps.FrameWidth +15)>>4)<<4;
+    mfxU16          height  = ((pExecuteBuffers->m_sps.FrameHeight+15)>>4)<<4;
     memset (&m_rawFrames,0,sizeof(mfxRawFrames));
     m_feedback.Reset();
 

@@ -1256,7 +1256,7 @@ namespace MPEG2EncoderHW
         mfxExtCodingOptionQuantMatrix* pMatrix = GetExtCodingOptionsQuantMaxtrix(par->ExtParam, par->NumExtParam);
         if (pMatrix)
         {
-            memcpy(&m_VideoParamsEx.sQuantMatrix, pMatrix, sizeof(mfxExtCodingOptionQuantMatrix));
+            memcpy_s(&m_VideoParamsEx.sQuantMatrix, sizeof(mfxExtCodingOptionQuantMatrix), pMatrix, sizeof(mfxExtCodingOptionQuantMatrix));
         }
 
         sts = CheckHwCaps(m_pCore, &m_VideoParamsEx.mfxVideoParams, ext);

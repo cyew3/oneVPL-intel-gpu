@@ -327,8 +327,8 @@ mfxStatus D3D11Encoder::Init(
 
     // [2] Query the supported encode functions
     D3D11_VIDEO_DECODER_DESC video_desc;
-    video_desc.SampleWidth  = pExecuteBuffers->m_sps.FrameWidth;
-    video_desc.SampleHeight = pExecuteBuffers->m_sps.FrameHeight;
+    video_desc.SampleWidth  = ((pExecuteBuffers->m_sps.FrameWidth +15)>>4)<<4;
+    video_desc.SampleHeight = ((pExecuteBuffers->m_sps.FrameHeight+15)>>4)<<4;
     video_desc.OutputFormat = DXGI_FORMAT_NV12;
     video_desc.Guid = DXVA2_Intel_Encode_MPEG2; //aya:??? guid
 

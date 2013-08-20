@@ -221,10 +221,9 @@ public:
         }
         inline mfxStatus AddUserData(mfxEncodeInternalParams* pIntParams)
         {
-            if  (pIntParams == 0 || pIntParams->NumPayload == 0 || pIntParams->Payload == 0)
-                return MFX_ERR_NONE;
-            
             m_dataSize = 0;
+
+            MFX_CHECK(pIntParams != 0 && pIntParams->NumPayload != 0 && pIntParams->Payload != 0, MFX_ERR_NONE);
 
             for (mfxI32 i = 0; i < pIntParams->NumPayload; i++)
             {
