@@ -140,7 +140,7 @@ void H265FrameCodingData::destroy()
     delete[] m_colocatedInfo;
     m_colocatedInfo = NULL;
 
-    delete m_edge;
+    delete[] m_edge;
     m_edge = NULL;
 
     m_SAO.destroy();

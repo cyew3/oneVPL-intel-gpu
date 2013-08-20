@@ -247,24 +247,41 @@ UMC::Status H265HeadersBitstream::GetVideoParamSet(H265VideoParamSet *pcVPS)
     Ipp32u uiCode;
     UMC::Status ps = UMC::UMC_OK;
 
-    READ_CODE( 4, uiCode, "vps_video_parameter_set_id");    pcVPS->vps_video_parameter_set_id = uiCode;
-    READ_CODE( 2, uiCode, "vps_reserved_three_2bits");      VM_ASSERT(uiCode == 3);
-    READ_CODE( 6, uiCode, "vps_max_layers_minus1");         pcVPS->vps_max_layers = uiCode + 1;
-    READ_CODE( 3, uiCode, "vps_max_sub_layers_minus1");     pcVPS->vps_max_sub_layers = uiCode + 1;
-    READ_FLAG(    uiCode, "vps_temporal_id_nesting_flag");  pcVPS->vps_temporal_id_nesting_flag = (uiCode != 0);
-    READ_CODE(16, uiCode, "vps_reserved_ffff_16bits");      VM_ASSERT(uiCode == 0xffff);
-    VM_ASSERT(pcVPS->vps_max_sub_layers > 1 || pcVPS->vps_temporal_id_nesting_flag);
-    parsePTL ( pcVPS->getPTL(), true, pcVPS->vps_max_sub_layers - 1);
+    pcVPS->vps_video_parameter_set_id = GetBits(4);
 
-    unsigned subLayerOrderingInfoPresentFlag;
-    READ_FLAG(subLayerOrderingInfoPresentFlag, "vps_sub_layer_ordering_info_present_flag");
-    for(unsigned i=0;i < pcVPS->vps_max_sub_layers;i++)
+    Ipp32s vps_reserved_three_2bits = GetBits(2);
+    VM_ASSERT(vps_reserved_three_2bits == 3);
+    if (vps_reserved_three_2bits != 3)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+    pcVPS->vps_max_layers = GetBits(6) + 1; // vps_max_layers_minus1
+
+    Ipp32u vps_max_sub_layers_minus1 = GetBits(3);
+    if (vps_max_sub_layers_minus1 >= 6)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+    pcVPS->vps_max_sub_layers = vps_max_sub_layers_minus1 + 1;
+    pcVPS->vps_temporal_id_nesting_flag = Get1Bit();
+
+    VM_ASSERT(pcVPS->vps_max_sub_layers > 1 || pcVPS->vps_temporal_id_nesting_flag);
+    if (pcVPS->vps_max_sub_layers == 1 && !pcVPS->vps_temporal_id_nesting_flag)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+    
+    Ipp32u vps_reserved_ffff_16bits = GetBits(16);
+    VM_ASSERT(vps_reserved_ffff_16bits == 0xffff);
+    if (vps_reserved_ffff_16bits != 0xffff)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+    parsePTL(pcVPS->getPTL(), pcVPS->vps_max_sub_layers - 1);
+
+    Ipp8u vps_sub_layer_ordering_info_present_flag = Get1Bit();;
+    for(Ipp32u i = 0;i < pcVPS->vps_max_sub_layers; i++)
     {
         READ_UVLC(uiCode, "vps_max_dec_pic_buffering[]");   pcVPS->vps_max_dec_pic_buffering[i] = uiCode;
         READ_UVLC(uiCode, "vps_num_reorder_pics[i]");       pcVPS->vps_num_reorder_pics[i] = uiCode;
         READ_UVLC(uiCode, "vps_max_latency_increase[i]");   pcVPS->vps_max_latency_increase[i] = uiCode;
 
-        if (!subLayerOrderingInfoPresentFlag)
+        if (!vps_sub_layer_ordering_info_present_flag)
         {
             for (i++; i < pcVPS->vps_max_sub_layers; i++)
             {
@@ -433,46 +450,38 @@ void H265HeadersBitstream::parseScalingList(H265ScalingList *scalingList)
     }
 }
 
-void H265HeadersBitstream::parsePTL(H265ProfileTierLevel *rpcPTL, bool profilePresentFlag, int maxNumSubLayersMinus1 )
+void H265HeadersBitstream::parsePTL(H265ProfileTierLevel *rpcPTL, int maxNumSubLayersMinus1 )
 {
     Ipp32u uiCode;
 
-    if(profilePresentFlag)
-        parseProfileTier(rpcPTL->GetGeneralPTL());
+    parseProfileTier(rpcPTL->GetGeneralPTL());
 
-    READ_CODE(8, uiCode, "PTL_level_idc" );    rpcPTL->GetGeneralPTL()->level_idc = uiCode;
+    rpcPTL->GetGeneralPTL()->level_idc = GetBits(8);
 
-    rpcPTL->sub_layer_profile_present_flags = 0;
-    rpcPTL->sub_layer_level_present_flag = 0;
     for(int i = 0; i < maxNumSubLayersMinus1; i++)
     {
-        if(profilePresentFlag)
-        {
-            READ_FLAG(uiCode, "sub_layer_profile_present_flag[]");
-            rpcPTL->sub_layer_profile_present_flags = (uiCode ? (1 << i) : 0);
-        }
-        READ_FLAG(uiCode, "sub_layer_level_present_flag[]");
-        rpcPTL->sub_layer_level_present_flag = (uiCode ? (1 << i) : 0);
+        if (Get1Bit())
+            rpcPTL->sub_layer_profile_present_flags |= 1 << i;
+        if (Get1Bit())
+            rpcPTL->sub_layer_level_present_flag |= 1 << i;
     }
 
     if (maxNumSubLayersMinus1 > 0)
     {
         for (int i = maxNumSubLayersMinus1; i < 8; i++)
         {
-            READ_CODE(2, uiCode, "reserved_zero_2bits");
-            VM_ASSERT(uiCode == 0);
+            Ipp32u reserved_zero_2bits = GetBits(2);
+            if (reserved_zero_2bits)
+                throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
         }
     }
 
     for(int i = 0; i < maxNumSubLayersMinus1; i++)
     {
-        if((rpcPTL->sub_layer_level_present_flag & (1 << i)) != 0)
+        if (rpcPTL->sub_layer_level_present_flag & (1 << i))
         {
-            if(profilePresentFlag)
-                parseProfileTier(rpcPTL->GetSubLayerPTL(i));
-
-            READ_CODE(8, uiCode, "sub_layer_level_idc[i]" );
-            rpcPTL->GetSubLayerPTL(i)->level_idc = uiCode;
+            parseProfileTier(rpcPTL->GetSubLayerPTL(i));
+            rpcPTL->GetSubLayerPTL(i)->level_idc = GetBits(8);
         }
     }
 }
@@ -481,24 +490,35 @@ void H265HeadersBitstream::parseProfileTier(H265PTL *ptl)
 {
     Ipp32u uiCode;
 
-    READ_CODE(2, uiCode, "PTL_profile_space"); ptl->profile_space = uiCode;
-    READ_FLAG(   uiCode, "PTL_tier_flag"    ); ptl->tier_flag = (uiCode != 0);
-    READ_CODE(5, uiCode, "PTL_profile_idc"  ); ptl->profile_idc = uiCode;
+    ptl->profile_space = GetBits(2);
+    if (ptl->profile_space)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
-    ptl->profile_compatibility_flags = 0;
+    ptl->tier_flag = Get1Bit();
+    ptl->profile_idc = GetBits(5);
+
     for(int j = 0; j < 32; j++)
     {
-        READ_FLAG(  uiCode, "PTL_profile_compatibility_flag[]");
-        ptl->profile_compatibility_flags = (uiCode ? (1 << j) : 0);
+        if (Get1Bit())
+            ptl->profile_compatibility_flags |= 1 << j;
     }
 
-    READ_FLAG(uiCode, "PTL_progressive_source_flag");       ptl->progressive_source_flag    = (uiCode != 0);
-    READ_FLAG(uiCode, "PTL_interlaced_source_flag");        ptl->interlaced_source_flag     = (uiCode != 0);
-    READ_FLAG(uiCode, "PTL_non_packed_constraint_flag");    ptl->non_packed_constraint_flag = (uiCode != 0);
-    READ_FLAG(uiCode, "PTL_frame_only_constraint_flag");    ptl->frame_only_constraint_flag = (uiCode != 0);
-    READ_CODE(16, uiCode, "XXX_reserved_zero_44bits[0..15]");
-    READ_CODE(16, uiCode, "XXX_reserved_zero_44bits[16..31]");
-    READ_CODE(12, uiCode, "XXX_reserved_zero_44bits[32..43]");
+    ptl->progressive_source_flag    = Get1Bit();
+    ptl->interlaced_source_flag     = Get1Bit();
+    ptl->non_packed_constraint_flag = Get1Bit();
+    ptl->frame_only_constraint_flag = Get1Bit();
+
+    Ipp32u XXX_reserved_zero_44bits = GetBits(16);
+    if (XXX_reserved_zero_44bits)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+    XXX_reserved_zero_44bits = GetBits(16);
+    if (XXX_reserved_zero_44bits)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+    XXX_reserved_zero_44bits = GetBits(12);
+    if (XXX_reserved_zero_44bits)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 }
 
 // ---------------------------------------------------------------------------
@@ -519,7 +539,7 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
         VM_ASSERT( uiCode == 1 );
     }
 
-    parsePTL(pcSPS->getPTL(), 1, pcSPS->sps_max_sub_layers - 1);
+    parsePTL(pcSPS->getPTL(), pcSPS->sps_max_sub_layers - 1);
     READ_UVLC(uiCode, "sps_seq_parameter_set_id" );               pcSPS->sps_seq_parameter_set_id = uiCode;
     READ_UVLC(uiCode, "chroma_format_idc" );                  pcSPS->chroma_format_idc = uiCode;
     if(pcSPS->chroma_format_idc == 3)
@@ -1044,11 +1064,10 @@ void H265HeadersBitstream::xParsePredWeightTable(H265Slice* pcSlice)
 }
 
 
-UMC::Status H265HeadersBitstream::GetSliceHeaderPart1(H265Slice *rpcSlice)
+UMC::Status H265HeadersBitstream::GetSliceHeaderPart1(H265SliceHeader * sliceHdr)
 {
     unsigned uiCode;
 
-    H265SliceHeader * sliceHdr = rpcSlice->GetSliceHeader();
     sliceHdr->IdrPicFlag = (sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_IDR || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_IDR_N_LP) ? 1 : 0;
 
     unsigned firstSliceSegmentInPic;
@@ -1096,7 +1115,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
         bitsSliceSegmentAddress++;
     }
 
-    if (!rpcSlice->GetSliceHeader()->first_slice_segment_in_pic_flag)
+    if (!sliceHdr->first_slice_segment_in_pic_flag)
     {
         READ_CODE( bitsSliceSegmentAddress, sliceSegmentAddress, "slice_segment_address" );
     }
@@ -1322,8 +1341,8 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
 
         if (sps->sample_adaptive_offset_enabled_flag)
         {
-            READ_FLAG(uiCode, "slice_sao_luma_flag");  rpcSlice->GetSliceHeader()->slice_sao_luma_flag = (bool)uiCode;
-            READ_FLAG(uiCode, "slice_sao_chroma_flag");  rpcSlice->GetSliceHeader()->slice_sao_chroma_flag = (bool)uiCode;
+            READ_FLAG(uiCode, "slice_sao_luma_flag");  sliceHdr->slice_sao_luma_flag = (bool)uiCode;
+            READ_FLAG(uiCode, "slice_sao_chroma_flag");  sliceHdr->slice_sao_chroma_flag = (bool)uiCode;
         }
 
         if (sliceHdr->slice_type != I_SLICE)
@@ -1355,7 +1374,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
             }
         }
         // }
-        RefPicListModification* refPicListModification = rpcSlice->getRefPicListModification();
+        RefPicListModification* refPicListModification = &sliceHdr->m_RefPicListModification;
         if(sliceHdr->slice_type != I_SLICE)
         {
             if( !rpcSlice->GetPicParam()->lists_modification_present_flag || rpcSlice->getNumRpsCurrTempList() <= 1 )
@@ -1523,7 +1542,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
             if (sliceHdr->deblocking_filter_override_flag)
             {
                 READ_FLAG ( uiCode, "slice_disable_deblocking_filter_flag" );   sliceHdr->slice_deblocking_filter_disabled_flag = uiCode != 0;
-                if(!rpcSlice->GetSliceHeader()->slice_deblocking_filter_disabled_flag)
+                if(!sliceHdr->slice_deblocking_filter_disabled_flag)
                 {
                     READ_SVLC( iCode, "beta_offset_div2" );                       sliceHdr->slice_beta_offset =  iCode << 1;
                     READ_SVLC( iCode, "tc_offset_div2" );                         sliceHdr->slice_tc_offset = iCode << 1;
@@ -1544,7 +1563,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
         }
 
         bool isSAOEnabled = sliceHdr->slice_sao_luma_flag || sliceHdr->slice_sao_chroma_flag;
-        bool isDBFEnabled = !rpcSlice->GetSliceHeader()->slice_deblocking_filter_disabled_flag;
+        bool isDBFEnabled = !sliceHdr->slice_deblocking_filter_disabled_flag;
 
         if(rpcSlice->GetPicParam()->pps_loop_filter_across_slices_enabled_flag && ( isSAOEnabled || isDBFEnabled ))
         {
@@ -1637,7 +1656,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
 
 UMC::Status H265HeadersBitstream::GetSliceHeaderFull(H265Slice *rpcSlice, const H265SeqParamSet *sps, const H265PicParamSet *pps)
 {
-    UMC::Status sts = GetSliceHeaderPart1(rpcSlice);
+    UMC::Status sts = GetSliceHeaderPart1(rpcSlice->GetSliceHeader());
     if (UMC::UMC_OK != sts)
         return sts;
     decodeSlice(rpcSlice, sps, pps);

@@ -95,14 +95,13 @@ Ipp32s H265Slice::RetrievePicParamSetNumber(void *pSource, size_t nSourceSize)
 
     try
     {
-        Ipp32u reserved_zero_6bits;
         umcRes = m_BitStream.GetNALUnitType(m_SliceHeader.nal_unit_type,
                                             m_SliceHeader.nuh_temporal_id);
         if (UMC::UMC_OK != umcRes)
             return false;
 
         // decode first part of slice header
-        umcRes = m_BitStream.GetSliceHeaderPart1(this);
+        umcRes = m_BitStream.GetSliceHeaderPart1(&m_SliceHeader);
         if (UMC::UMC_OK != umcRes)
             return -1;
     } catch (...)
@@ -201,7 +200,6 @@ bool H265Slice::DecodeSliceHeader()
         memset(&m_SliceHeader, 0, sizeof(m_SliceHeader));
         m_SliceHeader.slice_pic_order_cnt_lsb = tempPrevPoc;
 
-        Ipp32u reserved_zero_6bits;
         umcRes = m_BitStream.GetNALUnitType(m_SliceHeader.nal_unit_type,
                                             m_SliceHeader.nuh_temporal_id);
         if (UMC::UMC_OK != umcRes)

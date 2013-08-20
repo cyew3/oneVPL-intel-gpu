@@ -121,7 +121,7 @@ public:
     H265HeadersBitstream(Ipp8u * const pb, const Ipp32u maxsize);
 
     void decodeSlice(H265Slice *, const H265SeqParamSet *, const H265PicParamSet *);
-    UMC::Status GetSliceHeaderPart1(H265Slice *);
+    UMC::Status GetSliceHeaderPart1(H265SliceHeader * sliceHdr);
     UMC::Status GetSliceHeaderFull(H265Slice *, const H265SeqParamSet *, const H265PicParamSet *);
 
     void parseScalingList(H265ScalingList *);
@@ -151,7 +151,7 @@ protected:
     void xDecodeScalingList(H265ScalingList *scalingList, unsigned sizeId, unsigned listId);
     void parseHrdParameters(H265HRD *hrd, bool commonInfPresentFlag, unsigned maxNumSubLayersMinus1);
 
-    void  parsePTL            ( H265ProfileTierLevel *rpcPTL, bool profilePresentFlag, int maxNumSubLayersMinus1 );
+    void  parsePTL            ( H265ProfileTierLevel *rpcPTL, int maxNumSubLayersMinus1);
     void  parseProfileTier    (H265PTL *ptl);
 };
 

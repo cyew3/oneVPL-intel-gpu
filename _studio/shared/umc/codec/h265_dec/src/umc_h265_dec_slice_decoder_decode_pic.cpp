@@ -137,13 +137,15 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
         }
     }
 
+    RefPicListModification &refPicListModification = GetSliceHeader()->m_RefPicListModification;
+
     for (cIdx = 0; cIdx <= GetSliceHeader()->m_numRefIdx[0] - 1; cIdx ++)
     {
-        bool isLong = getRefPicListModification()->ref_pic_list_modification_flag_l0 ?
-            (getRefPicListModification()->list_entry_l0[cIdx] >= (NumPocStCurr0 + NumPocStCurr1))
+        bool isLong = refPicListModification.ref_pic_list_modification_flag_l0 ?
+            (refPicListModification.list_entry_l0[cIdx] >= (NumPocStCurr0 + NumPocStCurr1))
             : ((Ipp32u)(cIdx % numPocTotalCurr) >= (NumPocStCurr0 + NumPocStCurr1));
 
-        pRefPicList0[cIdx].refFrame = getRefPicListModification()->ref_pic_list_modification_flag_l0 ? refPicListTemp0[getRefPicListModification()->list_entry_l0[cIdx]] : refPicListTemp0[cIdx % numPocTotalCurr];
+        pRefPicList0[cIdx].refFrame = refPicListModification.ref_pic_list_modification_flag_l0 ? refPicListTemp0[refPicListModification.list_entry_l0[cIdx]] : refPicListTemp0[cIdx % numPocTotalCurr];
         pRefPicList0[cIdx].isLongReference = isLong;
     }
 
@@ -156,11 +158,11 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
     {
         for (cIdx = 0; cIdx <= GetSliceHeader()->m_numRefIdx[1] - 1; cIdx ++)
         {
-            bool isLong = getRefPicListModification()->ref_pic_list_modification_flag_l1 ?
-                (getRefPicListModification()->list_entry_l1[cIdx] >= (NumPocStCurr0 + NumPocStCurr1))
+            bool isLong = refPicListModification.ref_pic_list_modification_flag_l1 ?
+                (refPicListModification.list_entry_l1[cIdx] >= (NumPocStCurr0 + NumPocStCurr1))
                 : ((Ipp32u)(cIdx % numPocTotalCurr) >= (NumPocStCurr0 + NumPocStCurr1));
 
-            pRefPicList1[cIdx].refFrame = getRefPicListModification()->ref_pic_list_modification_flag_l1 ? refPicListTemp1[getRefPicListModification()->list_entry_l1[cIdx]] : refPicListTemp1[cIdx % numPocTotalCurr];
+            pRefPicList1[cIdx].refFrame = refPicListModification.ref_pic_list_modification_flag_l1 ? refPicListTemp1[refPicListModification.list_entry_l1[cIdx]] : refPicListTemp1[cIdx % numPocTotalCurr];
             pRefPicList1[cIdx].isLongReference = isLong;
         }
     }

@@ -214,8 +214,6 @@ public:
 
     int getNumRefIdx(EnumRefPicList e) const    { return m_SliceHeader.m_numRefIdx[e]; }
 
-    RefPicListModification* getRefPicListModification() { return &m_SliceHeader.m_RefPicListModification; }
-
     int getNumRpsCurrTempList() const;
 
     Ipp32s getTileLocationCount() const   { return m_SliceHeader.m_TileCount; }

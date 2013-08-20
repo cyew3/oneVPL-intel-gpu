@@ -82,12 +82,17 @@ void H265SampleAdaptiveOffset::destroy()
     delete [] m_TmpL[0]; m_TmpL[0] = 0;
     delete [] m_TmpL[1]; m_TmpL[1] = 0;
 
+    m_PicWidth  = 0;
+    m_PicHeight = 0;
     m_isInitialized = false;
 }
 
 void H265SampleAdaptiveOffset::init(const H265SeqParamSet* sps)
 {
     if (!sps->sample_adaptive_offset_enabled_flag)
+        return;
+
+    if (m_PicWidth  == sps->pic_width_in_luma_samples && m_PicHeight == sps->pic_height_in_luma_samples && m_isInitialized)
         return;
 
     m_PicWidth  = sps->pic_width_in_luma_samples;
@@ -141,18 +146,6 @@ void H265SampleAdaptiveOffset::init(const H265SeqParamSet* sps)
     m_isInitialized = true;
 }
 
-void H265PicParamSetBase::getColumnWidth(Ipp16u *columnWidth) const
-{
-    for (unsigned i = 0; i < num_tile_columns - 1; i++)
-        columnWidth[i] = (Ipp16u)column_width[i];
-}
-
-void H265PicParamSetBase::getColumnWidthMinus1(Ipp16u *columnWidth) const
-{
-    for (unsigned i = 0; i < num_tile_columns - 1; i++)
-        columnWidth[i] = (Ipp16u)(column_width[i] - 1);
-}
-
 void H265PicParamSetBase::setColumnWidth(Ipp32u* columnWidth)
 {
     if (uniform_spacing_flag == 0)
@@ -166,18 +159,6 @@ void H265PicParamSetBase::setColumnWidth(Ipp32u* columnWidth)
             column_width[i] = columnWidth[i];
         }
     }
-}
-
-void H265PicParamSetBase::getRowHeight(Ipp16u* rowHeight) const
-{
-    for (unsigned i = 0; i < num_tile_rows - 1; i++)
-        rowHeight[i] = (Ipp16u)row_height[i];
-}
-
-void H265PicParamSetBase::getRowHeightMinus1(Ipp16u* rowHeight) const
-{
-    for (unsigned i = 0; i < num_tile_rows - 1; i++)
-        rowHeight[i] = (Ipp16u)(row_height[i] - 1);
 }
 
 void H265PicParamSetBase::setRowHeight(Ipp32u* rowHeight)

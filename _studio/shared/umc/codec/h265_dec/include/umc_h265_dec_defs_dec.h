@@ -412,8 +412,9 @@ enum
 {
     INVALID_DPB_DELAY_H265 = 0xffffffff,
 
-    MAX_NUM_SEQ_PARAM_SETS_H265 = 32,
-    MAX_NUM_PIC_PARAM_SETS_H265 = 256,
+    MAX_NUM_VPS_PARAM_SETS_H265 = 16,
+    MAX_NUM_SEQ_PARAM_SETS_H265 = 16,
+    MAX_NUM_PIC_PARAM_SETS_H265 = 64,
 
     MAX_NUM_REF_PICS            = 16,
 
@@ -504,13 +505,13 @@ private:
 struct H265PTL
 {
     Ipp32u      profile_space;
-    bool        tier_flag;
+    Ipp8u       tier_flag;
     Ipp32u      profile_idc;
     Ipp32u      profile_compatibility_flags;    // bitfield, 32 flags
-    bool        progressive_source_flag;
-    bool        interlaced_source_flag;
-    bool        non_packed_constraint_flag;
-    bool        frame_only_constraint_flag;
+    Ipp8u       progressive_source_flag;
+    Ipp8u       interlaced_source_flag;
+    Ipp8u       non_packed_constraint_flag;
+    Ipp8u       frame_only_constraint_flag;
     Ipp32u      level_idc;
 
     H265PTL()   { memset(this, 0, sizeof(*this)); }
@@ -607,7 +608,7 @@ public:
     Ipp32u      vps_video_parameter_set_id;
     Ipp32u      vps_max_layers;
     Ipp32u      vps_max_sub_layers;
-    bool        vps_temporal_id_nesting_flag;
+    Ipp8u       vps_temporal_id_nesting_flag;
 
     // profile_tier_level
     H265ProfileTierLevel    m_pcPTL;
@@ -936,6 +937,7 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
 
         m_RPSList.m_NumberOfReferencePictureSets = 0;
 
+        sps_video_parameter_set_id = MAX_NUM_VPS_PARAM_SETS_H265;
         sps_seq_parameter_set_id = MAX_NUM_SEQ_PARAM_SETS_H265;
 
         // set some parameters by default
@@ -1045,12 +1047,8 @@ struct H265PicParamSetBase
     Ipp32u  MinCUDQPSize;
 
     Ipp32u getColumnWidth(Ipp32u columnIdx) { return *( column_width + columnIdx ); }
-    void getColumnWidth(Ipp16u *buffer) const;    // copies columns width array into the given uint16 buffer
-    void getColumnWidthMinus1(Ipp16u *buffer) const;    // copies columns width-1 array into the given uint16 buffer
     void setColumnWidth(Ipp32u* columnWidth);
     Ipp32u getRowHeight(Ipp32u rowIdx)    { return *( row_height + rowIdx ); }
-    void getRowHeight(Ipp16u *buffer) const;      // copies rows height array into the given uint16 buffer
-    void getRowHeightMinus1(Ipp16u *buffer) const;      // copies rows height-1 array into the given uint16 buffer
     void setRowHeight(Ipp32u* rowHeight);
 
     Ipp32u* m_CtbAddrRStoTS;

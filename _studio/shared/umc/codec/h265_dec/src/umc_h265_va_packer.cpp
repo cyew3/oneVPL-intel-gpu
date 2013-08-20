@@ -385,8 +385,11 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     {
         pPicParam->num_tile_columns_minus1          = (UCHAR)pPicParamSet->num_tile_columns - 1;
         pPicParam->num_tile_rows_minus1             = (UCHAR)pPicParamSet->num_tile_rows - 1;
-        pPicParamSet->getColumnWidthMinus1(pPicParam->column_width_minus1);
-        pPicParamSet->getRowHeightMinus1(pPicParam->row_height_minus1);
+        for (Ipp32s i = 0; i < pPicParamSet->num_tile_columns; i++)
+            pPicParam->column_width_minus1[i] = (Ipp16u)(pPicParamSet->column_width[i] - 1);
+
+        for (Ipp32s i = 0; i < pPicParamSet->num_tile_rows; i++)
+            pPicParam->row_height_minus1[i] = (Ipp16u)(pPicParamSet->row_height[i] - 1);
     }
     pPicParam->log2_parallel_merge_level_minus2     = (UCHAR)pPicParamSet->log2_parallel_merge_level - 2;
     pPicParam->StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
@@ -602,8 +605,11 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     {
         pPicParam->num_tile_columns_minus1                          = (UCHAR)pPicParamSet->num_tile_columns - 1;
         pPicParam->num_tile_rows_minus1                             = (UCHAR)pPicParamSet->num_tile_rows - 1;
-        pPicParamSet->getColumnWidthMinus1(pPicParam->column_width_minus1);
-        pPicParamSet->getRowHeightMinus1(pPicParam->row_height_minus1);
+        for (Ipp32s i = 0; i < pPicParamSet->num_tile_columns; i++)
+            pPicParam->column_width_minus1[i] = (Ipp16u)(pPicParamSet->column_width[i] - 1);
+
+        for (Ipp32s i = 0; i < pPicParamSet->num_tile_rows; i++)
+            pPicParam->row_height_minus1[i] = (Ipp16u)(pPicParamSet->row_height[i] - 1);
     }
     pPicParam->diff_cu_qp_delta_depth                               = (UCHAR)(pPicParamSet->diff_cu_qp_delta_depth);
     pPicParam->pps_beta_offset_div2                                 = (CHAR)(pPicParamSet->pps_beta_offset >> 1);
