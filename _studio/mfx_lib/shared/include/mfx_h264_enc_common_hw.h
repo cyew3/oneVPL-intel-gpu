@@ -449,9 +449,9 @@ namespace MfxHwH264Encode
         mfxU8   constrainedIntraPredFlag;
         mfxU8   redundantPicCntPresentFlag;
         mfxU8   transform8x8ModeFlag;
-        bool    moreRbspData;
         mfxU8   picScalingMatrixPresentFlag;
         mfxI8   secondChromaQpIndexOffset;
+        bool    moreRbspData;
 
         mfxU8   scalingList4x4[6][16];
         mfxU8   scalingList8x8[6][64];

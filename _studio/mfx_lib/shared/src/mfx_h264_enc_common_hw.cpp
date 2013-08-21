@@ -5608,7 +5608,7 @@ mfxU32 MfxHwH264Encode::WritePpsHeader(
         if (pps.picScalingMatrixPresentFlag)
         {
             //for(int i=0; i < 6 + ((sps.chroma_format_idc != 3) ? 2:6)*pps.transform8x8ModeFlag; i++){
-            for(int i=0; i < 6+2*pps.transform8x8ModeFlag; i++){
+            for(int i=0; i < 6+2*(!!pps.transform8x8ModeFlag); i++){
                 //Put scaling list present flag
                 writer.PutBit(pps.picScalingListPresentFlag[i]);
                 if( pps.picScalingListPresentFlag[i] ){
