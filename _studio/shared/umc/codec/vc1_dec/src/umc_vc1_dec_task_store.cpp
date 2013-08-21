@@ -304,94 +304,97 @@ namespace UMC
                 m_pMemoryAllocator->Free(m_iTSHeapID);
                 m_iTSHeapID = (MemID)-1;
             }
-        }
 
-        m_pDSIndicate = 0;
-        m_pDSIndicateSwap = 0;
+            m_pDSIndicate = 0;
+            m_pDSIndicateSwap = 0;
 
-        //Init
-        // this not full initialization, need also call CreateDSQueue, CreateOutBuffersQueue,SetDefinition and FillIdxVector
-        // all functions need special input params
+            //Init
+            // this not full initialization, need also call CreateDSQueue, CreateOutBuffersQueue,SetDefinition and FillIdxVector
+            // all functions need special input params
 
-        m_iNumDSActiveinQueue = 0;
+            m_iNumDSActiveinQueue = 0;
 
-        if (!m_pDSIndicate)
-        {
-            Ipp8u* ptr = NULL;
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32s));
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32s));
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32s));
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32s));
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32u)*64);
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32u)*64);
-            ptr += align_value<Ipp32u>(sizeof(VC1TSHeap));
-
-            if (m_pMemoryAllocator->Alloc(&m_iIntStructID,
-                (size_t)ptr,
-                UMC_ALLOC_PERSISTENT,
-                16) != UMC_OK)
-                return false;
-
-            m_pDSIndicate = (Ipp32s*)(m_pMemoryAllocator->Lock(m_iIntStructID));
-            memset(m_pDSIndicate,0,size_t(ptr));
-            ptr = (Ipp8u*)m_pDSIndicate;
-
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32s));
-            m_pDSIndicateSwap = (Ipp32s*)ptr;
-
-            ptr +=  align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32s));
-            m_pTasksInQueue = (Ipp32u*)ptr;
-
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32s));
-            m_pSlicesInQueue = (Ipp32u*)ptr;
-
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32s));
-            m_pMainQueueTasksState = (Ipp32u*)ptr;
-
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32u)*64);
-            m_pAdditionaQueueTasksState = (Ipp32u*)ptr;
-
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32u)*64);
-            m_pSHeap = (VC1TSHeap*)ptr;
-
-        }
-        //CalculateHeapSize();
-        // New Allocation
-        {
-            // Heap Allocation
+            if (!m_pDSIndicate)
             {
-                Ipp32u heapSize = CalculateHeapSize();
+                Ipp8u* ptr = NULL;
+                ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32s));
+                ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32s));
+                ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32s));
+                ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32s));
+                ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32u)*64);
+                ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32u)*64);
+                ptr += align_value<Ipp32u>(sizeof(VC1TSHeap));
 
-                if (m_pMemoryAllocator->Alloc(&m_iTSHeapID,
-                    heapSize,
+                if (m_pMemoryAllocator->Alloc(&m_iIntStructID,
+                    (size_t)ptr,
                     UMC_ALLOC_PERSISTENT,
                     16) != UMC_OK)
                     return false;
 
-                m_pSHeap = new(m_pSHeap) VC1TSHeap((Ipp8u*)m_pMemoryAllocator->Lock(m_iTSHeapID),heapSize);             
+                m_pDSIndicate = (Ipp32s*)(m_pMemoryAllocator->Lock(m_iIntStructID));
+                memset(m_pDSIndicate,0,size_t(ptr));
+                ptr = (Ipp8u*)m_pDSIndicate;
+
+                ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32s));
+                m_pDSIndicateSwap = (Ipp32s*)ptr;
+
+                ptr +=  align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32s));
+                m_pTasksInQueue = (Ipp32u*)ptr;
+
+                ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32s));
+                m_pSlicesInQueue = (Ipp32u*)ptr;
+
+                ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32s));
+                m_pMainQueueTasksState = (Ipp32u*)ptr;
+
+                ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32u)*64);
+                m_pAdditionaQueueTasksState = (Ipp32u*)ptr;
+
+                ptr += align_value<Ipp32u>(m_iNumFramesProcessing*sizeof(Ipp32u)*64);
+                m_pSHeap = (VC1TSHeap*)ptr;
+
             }
 
-            m_pSHeap->s_new(&m_pGuardGet,m_iNumFramesProcessing);
-            m_pSHeap->s_new(&m_pGuardAdd,m_iNumFramesProcessing);
-            m_pSHeap->s_new(&m_pCommonQueue,m_iNumFramesProcessing);
-            m_pSHeap->s_new(&m_pAdditionalQueue,m_iNumFramesProcessing);
- 
-            for (i = 0; i < m_iNumFramesProcessing; i++)
+            //CalculateHeapSize();
+            // New Allocation
             {
-                m_pDSIndicate[i] = i;
-                m_pSHeap->s_new(&m_pCommonQueue[i],VC1SLICEINPARAL);
-                m_pSHeap->s_new(&m_pAdditionalQueue[i],VC1SLICEINPARAL);
-                m_pSHeap->s_new(&m_pGuardGet[i]);
-                m_pSHeap->s_new(&m_pGuardAdd[i]);
+                // Heap Allocation
+                {
+                    Ipp32u heapSize = CalculateHeapSize();
 
-                vm_mutex_set_invalid(m_pGuardGet[i]);
-                vm_mutex_set_invalid(m_pGuardAdd[i]);
-                if (VM_OK != vm_mutex_init(m_pGuardGet[i]))
-                    return false;
-                if (VM_OK != vm_mutex_init(m_pGuardAdd[i]))
-                    return false;
+                    if (m_pMemoryAllocator->Alloc(&m_iTSHeapID,
+                        heapSize,
+                        UMC_ALLOC_PERSISTENT,
+                        16) != UMC_OK)
+                        return false;
+
+                    m_pSHeap = new(m_pSHeap) VC1TSHeap((Ipp8u*)m_pMemoryAllocator->Lock(m_iTSHeapID),heapSize);             
+                }
+
+                m_pSHeap->s_new(&m_pGuardGet,m_iNumFramesProcessing);
+                m_pSHeap->s_new(&m_pGuardAdd,m_iNumFramesProcessing);
+                m_pSHeap->s_new(&m_pCommonQueue,m_iNumFramesProcessing);
+                m_pSHeap->s_new(&m_pAdditionalQueue,m_iNumFramesProcessing);
+ 
+                for (i = 0; i < m_iNumFramesProcessing; i++)
+                {
+                    m_pDSIndicate[i] = i;
+                    m_pSHeap->s_new(&m_pCommonQueue[i],VC1SLICEINPARAL);
+                    m_pSHeap->s_new(&m_pAdditionalQueue[i],VC1SLICEINPARAL);
+                    m_pSHeap->s_new(&m_pGuardGet[i]);
+                    m_pSHeap->s_new(&m_pGuardAdd[i]);
+
+                    vm_mutex_set_invalid(m_pGuardGet[i]);
+                    vm_mutex_set_invalid(m_pGuardAdd[i]);
+                    if (VM_OK != vm_mutex_init(m_pGuardGet[i]))
+                        return false;
+                    if (VM_OK != vm_mutex_init(m_pGuardAdd[i]))
+                        return false;
+                }
             }
+
         }
+
         CreateTaskQueues();
 
         if (0 == vm_mutex_is_valid(&m_mDSGuard))
