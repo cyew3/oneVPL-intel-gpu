@@ -299,6 +299,7 @@ namespace
     mfxU16 GetMinLevelForResolutionAndFramerate(MfxVideoParam const & par)
     {
         mfxExtSpsHeader * extSps = GetExtBuffer(par);
+        assert(extSps != 0);
 
         if (par.mfx.FrameInfo.Width         == 0 ||
             par.mfx.FrameInfo.Height        == 0)

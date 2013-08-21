@@ -57,7 +57,7 @@ void FillSps(
     VAEncSequenceParameterBufferH264 & sps)
 {
         mfxExtSpsHeader const * extSps = GetExtBuffer(par);
-
+        assert( extSps != 0 );
 
         sps.picture_width_in_mbs  = par.mfx.FrameInfo.Width >> 4;
         sps.picture_height_in_mbs = par.mfx.FrameInfo.Height >> 4;
@@ -284,6 +284,8 @@ void FillConstPartOfPps(
     {
         mfxExtPpsHeader const *       extPps = GetExtBuffer(par);
         mfxExtSpsHeader const *       extSps = GetExtBuffer(par);
+        assert( extPps != 0 );
+        assert( extSps != 0 );
 
         pps.seq_parameter_set_id = extSps->seqParameterSetId;
         pps.pic_parameter_set_id = extPps->picParameterSetId;
@@ -395,6 +397,7 @@ void UpdateSlice(
     mfxU32 idx = 0, ref = 0;
 
     mfxExtCodingOptionDDI * extDdi = GetExtBuffer(par);
+    assert( extDdi != 0 );
 
     SliceDivider divider = MakeSliceDivider(
         hwCaps.SliceStructure,

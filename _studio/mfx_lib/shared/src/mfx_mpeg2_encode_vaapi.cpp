@@ -93,7 +93,7 @@ namespace
 
     unsigned short CalculateAspectRatio(int width, int height)
     {
-        unsigned short ret;
+        unsigned short ret = 1;
         double rate;
         rate = ((double) width) / ((double)height);
         if(rate > 2.3)
