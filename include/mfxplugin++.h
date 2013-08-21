@@ -230,7 +230,7 @@ namespace detail
     protected:
         mfxPlugin m_mfxAPI;
     public:
-        MFXPluginAdapterBase( T *plugin, mfxCodecPlugin *pCodec)
+        MFXPluginAdapterBase( T *plugin, mfxVideoCodecPlugin *pCodec)
         {
             SetupCallbacks(plugin, pCodec);
         }
@@ -239,14 +239,14 @@ namespace detail
             return m_mfxAPI;
         }
 
-        void SetupCallbacks( T *plugin, mfxCodecPlugin *pCodec) {
+        void SetupCallbacks( T *plugin, mfxVideoCodecPlugin *pCodec) {
             m_mfxAPI.pthis = plugin;
             m_mfxAPI.PluginInit = _PluginInit;
             m_mfxAPI.PluginClose = _PluginClose;
             m_mfxAPI.GetPluginParam = _GetPluginParam;
             m_mfxAPI.Execute = _Execute;
             m_mfxAPI.FreeResources = _FreeResources;
-            m_mfxAPI.CodecPlugin = pCodec;
+            m_mfxAPI.Video = pCodec;
         }
 
     private:
@@ -273,7 +273,7 @@ namespace detail
     {
     protected:
         //stub to feed mediasdk plugin API
-        mfxCodecPlugin   m_codecPlg;
+        mfxVideoCodecPlugin   m_codecPlg;
     public:
         MFXCodecPluginAdapterBase(T * pCodecPlg)
             : MFXPluginAdapterBase<T>(pCodecPlg, &m_codecPlg)

@@ -30,6 +30,7 @@ File Name: mfxplugin.h
 #ifndef __MFXPLUGIN_H__
 #define __MFXPLUGIN_H__
 #include "mfxvideo.h"
+#include "mfxaudio.h"
 
 //#pragma warning(disable: 4201)
 
@@ -39,9 +40,11 @@ extern "C"
 #endif /* __cplusplus */
 
 typedef enum {
-    MFX_PLUGINTYPE_GENERAL   = 0,
-    MFX_PLUGINTYPE_DECODE    = 1,
-    MFX_PLUGINTYPE_ENCODE    = 2
+    MFX_PLUGINTYPE_VIDEO_GENERAL   = 0,
+    MFX_PLUGINTYPE_VIDEO_DECODE    = 1,
+    MFX_PLUGINTYPE_VIDEO_ENCODE    = 2,
+    MFX_PLUGINTYPE_AUDIO_DECODE    = 3,
+    MFX_PLUGINTYPE_AUDIO_ENCODE    = 4
 } mfxPluginType;
 
 typedef enum {
@@ -89,8 +92,8 @@ typedef struct mfxCoreInterface {
     mfxHDL reserved4[3];
 } mfxCoreInterface;
 
-/*codec plugin extension*/
-typedef struct mfxCodecPlugin{
+/* video codec plugin extension*/
+typedef struct mfxVideoCodecPlugin{
     mfxStatus (MFX_CDECL *Query)(mfxHDL pthis, mfxVideoParam *in, mfxVideoParam *out);
     mfxStatus (MFX_CDECL *QueryIOSurf)(mfxHDL pthis, mfxVideoParam *par, mfxFrameAllocRequest *request);
     mfxStatus (MFX_CDECL *Init)(mfxHDL pthis, mfxVideoParam *par);
@@ -106,7 +109,26 @@ typedef struct mfxCodecPlugin{
 
     mfxHDL reserved1[6];
     mfxU32 reserved2[8];
-} mfxCodecPlugin;
+} mfxVideoCodecPlugin;
+
+/* audio codec plugin extension*/
+typedef struct mfxAudioCodecPlugin{
+    mfxStatus (MFX_CDECL *Query)(mfxHDL pthis, mfxAudioParam *in, mfxAudioParam *out);
+    mfxStatus (MFX_CDECL *QueryIOSize)(mfxHDL pthis, mfxAudioParam *par, mfxAudioAllocRequest *request);
+    mfxStatus (MFX_CDECL *Init)(mfxHDL pthis, mfxAudioParam *par);
+    mfxStatus (MFX_CDECL *Reset)(mfxHDL pthis, mfxAudioParam *par);
+    mfxStatus (MFX_CDECL *Close)(mfxHDL pthis);
+    mfxStatus (MFX_CDECL *GetAudioParam)(mfxHDL pthis, mfxAudioParam *par);
+    
+    mfxStatus (MFX_CDECL *EncodeFrameSubmit)(mfxHDL pthis, mfxBitstream *in, mfxBitstream *out, mfxSyncPoint *syncp);
+
+    mfxStatus (MFX_CDECL *DecodeHeader)(mfxHDL pthis, mfxBitstream *bs, mfxAudioParam* par);
+    mfxStatus (MFX_CDECL *DecodeFrameSubmit)(mfxHDL pthis, mfxBitstream *in, mfxBitstream *out, mfxSyncPoint *syncp);
+
+
+    mfxHDL reserved1[7];
+    mfxU32 reserved2[8];
+} mfxAudioCodecPlugin;
 
 typedef struct mfxPlugin{
     mfxHDL pthis;
@@ -120,17 +142,22 @@ typedef struct mfxPlugin{
     mfxStatus (MFX_CDECL *Execute)(mfxHDL pthis, mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a);
     mfxStatus (MFX_CDECL *FreeResources)(mfxHDL pthis, mfxThreadTask task, mfxStatus sts);
 
-    mfxCodecPlugin  *CodecPlugin;
+    union {
+        mfxVideoCodecPlugin  *Video;
+        mfxAudioCodecPlugin  *Audio;
+    };
 
     mfxHDL reserved[8];
 } mfxPlugin;
-
 
 
 mfxStatus MFX_CDECL MFXVideoUSER_Register(mfxSession session, mfxU32 type, const mfxPlugin *par);
 mfxStatus MFX_CDECL MFXVideoUSER_Unregister(mfxSession session, mfxU32 type);
 
 mfxStatus MFX_CDECL MFXVideoUSER_ProcessFrameAsync(mfxSession session, const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxSyncPoint *syncp);
+
+mfxStatus MFX_CDECL MFXAudioUSER_Register(mfxSession session, mfxU32 type, const mfxPlugin *par);
+mfxStatus MFX_CDECL MFXAudioUSER_Unregister(mfxSession session, mfxU32 type);
 
 #ifdef __cplusplus
 } // extern "C"
