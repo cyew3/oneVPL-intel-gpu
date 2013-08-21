@@ -16,6 +16,7 @@
 
 #include <memory.h>
 #include "mfxdefs.h"
+#include "mfx_common_int.h"
 #include "vm_event.h"
 #include "vm_mutex.h"
 
