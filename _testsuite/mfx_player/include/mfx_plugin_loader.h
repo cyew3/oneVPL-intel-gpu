@@ -115,7 +115,7 @@ struct PluginCreateTrait<MFXDecoderPlugin>
         return "mfxCreateDecoderPlugin";
     }
     enum PluginType {
-        type=MFX_PLUGINTYPE_DECODE
+        type=MFX_PLUGINTYPE_VIDEO_DECODE
     };
     typedef PluginModuleTemplate::fncCreateDecoderPlugin TCreator;
 
@@ -128,7 +128,7 @@ struct PluginCreateTrait<MFXEncoderPlugin>
         return "mfxCreateEncoderPlugin";
     }
     enum PluginType {
-        type=MFX_PLUGINTYPE_ENCODE
+        type=MFX_PLUGINTYPE_VIDEO_ENCODE
     };
     typedef PluginModuleTemplate::fncCreateEncoderPlugin TCreator;
 };
@@ -140,7 +140,7 @@ struct PluginCreateTrait<MFXGenericPlugin>
         return "mfxCreateGenericPlugin";
     }
     enum PluginType {
-        type=MFX_PLUGINTYPE_GENERAL
+        type=MFX_PLUGINTYPE_VIDEO_GENERAL
     };
     typedef PluginModuleTemplate::fncCreateGenericPlugin TCreator;
 };

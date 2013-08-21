@@ -53,7 +53,7 @@ mfxStatus VideoUSERPlugin::PluginInit(const mfxPlugin *pParam,
     mfxStatus mfxRes;
 
     // check error(s)
-    if(MFX_PLUGINTYPE_GENERAL == type)
+    if(MFX_PLUGINTYPE_VIDEO_GENERAL == type)
     {
         if (!pParam ||
             (0 == pParam->PluginInit) ||
@@ -66,7 +66,7 @@ mfxStatus VideoUSERPlugin::PluginInit(const mfxPlugin *pParam,
             return MFX_ERR_NULL_PTR;
         }
     }
-    else if(MFX_PLUGINTYPE_DECODE == type)
+    else if(MFX_PLUGINTYPE_VIDEO_DECODE == type)
     {
         if (!pParam ||
             (0 == pParam->PluginInit) ||
@@ -74,21 +74,21 @@ mfxStatus VideoUSERPlugin::PluginInit(const mfxPlugin *pParam,
             (0 == pParam->GetPluginParam) ||
             (0 == pParam->Execute) ||
             (0 == pParam->FreeResources) ||
-            !(pParam->CodecPlugin) ||
-            (0 == pParam->CodecPlugin->Query) ||
-            (0 == pParam->CodecPlugin->QueryIOSurf) ||
-            (0 == pParam->CodecPlugin->Init) ||
-            (0 == pParam->CodecPlugin->Reset) ||
-            (0 == pParam->CodecPlugin->Close) ||
-            (0 == pParam->CodecPlugin->GetVideoParam) ||
-            (0 == pParam->CodecPlugin->DecodeHeader) ||
-            (0 == pParam->CodecPlugin->GetPayload) ||
-            (0 == pParam->CodecPlugin->DecodeFrameSubmit))
+            !(pParam->Video) ||
+            (0 == pParam->Video->Query) ||
+            (0 == pParam->Video->QueryIOSurf) ||
+            (0 == pParam->Video->Init) ||
+            (0 == pParam->Video->Reset) ||
+            (0 == pParam->Video->Close) ||
+            (0 == pParam->Video->GetVideoParam) ||
+            (0 == pParam->Video->DecodeHeader) ||
+            (0 == pParam->Video->GetPayload) ||
+            (0 == pParam->Video->DecodeFrameSubmit))
         {
             return MFX_ERR_NULL_PTR;
         }
     }
-    else if(MFX_PLUGINTYPE_ENCODE == type)
+    else if(MFX_PLUGINTYPE_VIDEO_ENCODE == type)
     {
         if (!pParam ||
             (0 == pParam->PluginInit) ||
@@ -96,14 +96,14 @@ mfxStatus VideoUSERPlugin::PluginInit(const mfxPlugin *pParam,
             (0 == pParam->GetPluginParam) ||
             (0 == pParam->Execute) ||
             (0 == pParam->FreeResources) ||
-            !(pParam->CodecPlugin) ||
-            (0 == pParam->CodecPlugin->Query) ||
-            (0 == pParam->CodecPlugin->QueryIOSurf) ||
-            (0 == pParam->CodecPlugin->Init) ||
-            (0 == pParam->CodecPlugin->Reset) ||
-            (0 == pParam->CodecPlugin->Close) ||
-            (0 == pParam->CodecPlugin->GetVideoParam) ||
-            (0 == pParam->CodecPlugin->EncodeFrameSubmit))
+            !(pParam->Video) ||
+            (0 == pParam->Video->Query) ||
+            (0 == pParam->Video->QueryIOSurf) ||
+            (0 == pParam->Video->Init) ||
+            (0 == pParam->Video->Reset) ||
+            (0 == pParam->Video->Close) ||
+            (0 == pParam->Video->GetVideoParam) ||
+            (0 == pParam->Video->EncodeFrameSubmit))
         {
             return MFX_ERR_NULL_PTR;
         }
@@ -202,7 +202,7 @@ mfxStatus VideoUSERPlugin::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
         return MFX_ERR_UNSUPPORTED;
     }
 
-    return m_plugin.CodecPlugin->QueryIOSurf(m_plugin.pthis, par, request);
+    return m_plugin.Video->QueryIOSurf(m_plugin.pthis, par, request);
 }
 
 mfxStatus VideoUSERPlugin::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out)
@@ -213,7 +213,7 @@ mfxStatus VideoUSERPlugin::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPar
         return MFX_ERR_UNSUPPORTED;
     }
     
-    return m_plugin.CodecPlugin->Query(m_plugin.pthis, in, out);
+    return m_plugin.Video->Query(m_plugin.pthis, in, out);
 }
 
 mfxStatus VideoUSERPlugin::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVideoParam *par)
@@ -224,7 +224,7 @@ mfxStatus VideoUSERPlugin::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVi
         return MFX_ERR_UNSUPPORTED;
     }
 
-    return m_plugin.CodecPlugin->DecodeHeader(m_plugin.pthis, bs, par);
+    return m_plugin.Video->DecodeHeader(m_plugin.pthis, bs, par);
 }
 
 mfxStatus VideoUSERPlugin::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, MFX_ENTRY_POINT * ep) {
@@ -233,7 +233,7 @@ mfxStatus VideoUSERPlugin::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
     mfxThreadTask userParam;
 
     // check the parameters with user object
-    mfxRes = m_plugin.CodecPlugin->DecodeFrameSubmit(m_plugin.pthis, bs, surface_work, surface_out,  &userParam);
+    mfxRes = m_plugin.Video->DecodeFrameSubmit(m_plugin.pthis, bs, surface_work, surface_out,  &userParam);
     if (MFX_ERR_NONE != mfxRes)
     {
         return mfxRes;
@@ -247,7 +247,7 @@ mfxStatus VideoUSERPlugin::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 }
 
 mfxStatus VideoUSERPlugin::Init(mfxVideoParam *par) {
-    return m_plugin.CodecPlugin->Init(m_plugin.pthis, par);
+    return m_plugin.Video->Init(m_plugin.pthis, par);
 }
 
 

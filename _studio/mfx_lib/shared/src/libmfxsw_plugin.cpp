@@ -38,22 +38,22 @@ namespace
         mutable std::auto_ptr<VideoDECODE> _stubDecode;
         mutable std::auto_ptr<VideoENCODE> _stubEncode;
     public:
-        SessionPtr(mfxSession session, mfxU32 type = MFX_PLUGINTYPE_GENERAL)
+        SessionPtr(mfxSession session, mfxU32 type = MFX_PLUGINTYPE_VIDEO_GENERAL)
             : _session(session)
         {
             switch(type)
             {
-            case MFX_PLUGINTYPE_DECODE :
+            case MFX_PLUGINTYPE_VIDEO_DECODE :
                 _ptr = &_session->m_plgDec; 
                 _isNeedCodec = false;
                 _isNeedDeCoder = true;
                 break;
-            case MFX_PLUGINTYPE_ENCODE:
+            case MFX_PLUGINTYPE_VIDEO_ENCODE:
                 _ptr =&_session->m_plgEnc; 
                 _isNeedCodec = true;
                 _isNeedDeCoder = false;
                 break;
-            case MFX_PLUGINTYPE_GENERAL :
+            case MFX_PLUGINTYPE_VIDEO_GENERAL :
                 _ptr = &_session->m_plgGen; 
                 _isNeedCodec = false;
                 _isNeedDeCoder = false;

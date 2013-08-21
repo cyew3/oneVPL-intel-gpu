@@ -29,7 +29,7 @@ public:
     // Initialize the user's plugin
     mfxStatus PluginInit(const mfxPlugin *pParam,
                    mfxCoreInterface *pCore,
-                   mfxU32 type = MFX_PLUGINTYPE_GENERAL);
+                   mfxU32 type = MFX_PLUGINTYPE_VIDEO_GENERAL);
     // Release the user's plugin
     mfxStatus Close(void);
     // Get the plugin's threading policy

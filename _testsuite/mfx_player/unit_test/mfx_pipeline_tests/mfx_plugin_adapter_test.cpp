@@ -85,33 +85,33 @@ SUITE(mfx_plugin_plusplus)
     TEST_FIXTURE(FixtureDec, Query)
     {
         mfxVideoParam vpar;
-        internalAPI.CodecPlugin->Query(internalAPI.pthis, &vpar, &vpar);
+        internalAPI.Video->Query(internalAPI.pthis, &vpar, &vpar);
         CHECK(m._Query.WasCalled());
     }
     TEST_FIXTURE(FixtureDec, Reset)
     {
         mfxVideoParam vpar;
-        internalAPI.CodecPlugin->Reset(internalAPI.pthis, &vpar);
+        internalAPI.Video->Reset(internalAPI.pthis, &vpar);
         CHECK(m._Reset.WasCalled());
     }
     TEST_FIXTURE(FixtureDec, GetVideoParam)
     {
         mfxVideoParam par;
-        internalAPI.CodecPlugin->GetVideoParam(internalAPI.pthis, &par);
+        internalAPI.Video->GetVideoParam(internalAPI.pthis, &par);
         CHECK(m._GetVideoParam.WasCalled());
     }
     TEST_FIXTURE(FixtureDec, DecodeHeader)
     {
         mfxBitstream bs;
         mfxVideoParam par;
-        internalAPI.CodecPlugin->DecodeHeader(internalAPI.pthis, &bs, &par);
+        internalAPI.Video->DecodeHeader(internalAPI.pthis, &bs, &par);
         CHECK(m._DecodeHeader.WasCalled());
     }
     TEST_FIXTURE(FixtureDec, GetPayload)
     {
         mfxU64 ts;
         mfxPayload payload;
-        internalAPI.CodecPlugin->GetPayload(internalAPI.pthis, &ts, &payload);
+        internalAPI.Video->GetPayload(internalAPI.pthis, &ts, &payload);
         CHECK(m._GetPayload.WasCalled());
     }
     TEST_FIXTURE(FixtureDec, DecodeFrameSubmit)
@@ -120,7 +120,7 @@ SUITE(mfx_plugin_plusplus)
         mfxFrameSurface1 surface_work;
         mfxFrameSurface1 *surface_out;
         mfxThreadTask task;
-        internalAPI.CodecPlugin->DecodeFrameSubmit(internalAPI.pthis, &bs,&surface_work,&surface_out,&task);
+        internalAPI.Video->DecodeFrameSubmit(internalAPI.pthis, &bs,&surface_work,&surface_out,&task);
         CHECK(m._DecodeFrameSubmit.WasCalled());
     }
 
@@ -130,7 +130,7 @@ SUITE(mfx_plugin_plusplus)
         mfxFrameSurface1 surface;
         mfxThreadTask task;
         mfxEncodeCtrl ctrl;
-        internalAPI.CodecPlugin->EncodeFrameSubmit(internalAPI.pthis, &ctrl, &surface,&bs,&task);
+        internalAPI.Video->EncodeFrameSubmit(internalAPI.pthis, &ctrl, &surface,&bs,&task);
         CHECK(m._EncodeFrameSubmit.WasCalled());
     }
     void fnc_co_call_encode(mfxPlugin * plg){
@@ -138,7 +138,7 @@ SUITE(mfx_plugin_plusplus)
         mfxFrameSurface1 surface;
         mfxThreadTask task;
         mfxEncodeCtrl ctrl;
-        plg->CodecPlugin->EncodeFrameSubmit(plg->pthis, &ctrl, &surface,&bs,&task);
+        plg->Video->EncodeFrameSubmit(plg->pthis, &ctrl, &surface,&bs,&task);
         
     }
     TEST_FIXTURE(FixtureEnc, AdapterCopyCtor) {
