@@ -211,7 +211,7 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
 
 mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 {
-    mfxStatus sts;
+    mfxStatus sts, stsQuery;
     MFX_CHECK(!m_isInitialized, MFX_ERR_UNDEFINED_BEHAVIOR);
     MFX_CHECK_NULL_PTR1(par_in);
     MFX_CHECK(par_in->Protected == 0,MFX_ERR_INVALID_VIDEO_PARAM);
@@ -239,8 +239,9 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
         m_mfxVideoParam.NumExtParam = 1;
     }
 
-    sts = Query(par_in, &m_mfxVideoParam); // [has to] copy all provided params
-    MFX_CHECK_STS(sts);
+    stsQuery = Query(par_in, &m_mfxVideoParam); // [has to] copy all provided params
+    if (stsQuery != MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
+        MFX_CHECK_STS(stsQuery);
 
     // then fill not provided params with defaults or from targret usage
 
@@ -387,7 +388,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 
     m_isInitialized = true;
 
-    return MFX_ERR_NONE;
+    return stsQuery;
 }
 
 mfxStatus MFXVideoENCODEH265::Close()
@@ -600,7 +601,7 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
 
         if (in->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE &&
             in->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_UNKNOWN ) {
-            out->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_UNKNOWN;
+            out->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
             isCorrected ++;
         } else out->mfx.FrameInfo.PicStruct = in->mfx.FrameInfo.PicStruct;
 

@@ -31,7 +31,7 @@
 #define H265_Free    ippFree
 
 //#define DEBUG_CABAC
-//#define DUMP_RECON
+#define DUMP_RECON
 
 #ifdef DEBUG_CABAC
 extern int DEBUG_CABAC_PRINT;
