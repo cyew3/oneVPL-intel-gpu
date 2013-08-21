@@ -528,7 +528,7 @@ mfxStatus ImplementationAvc::QueryIOSurf(
         inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY,
         MFX_ERR_INVALID_VIDEO_PARAM);
 
-    ENCODE_CAPS hwCaps = { { 0 } };
+    ENCODE_CAPS hwCaps = {};
     mfxExtAVCEncoderWiDiUsage * isWiDi = GetExtBuffer(*par);
     
     // let use dedault values if input resolution is 0x0, 1920x1088 - should cover almost all cases
