@@ -316,8 +316,8 @@ namespace MFX
     DXDevice::~DXDevice(void) {}
 
     // Obtain graphic card's parameter
-    mfxU32 DXDevice::GetVendorID(void) const {}
-    mfxU32 DXDevice::GetDeviceID(void) const {}
+    mfxU32 DXDevice::GetVendorID(void) const {return 0;}
+    mfxU32 DXDevice::GetDeviceID(void) const {return 0;}
     mfxU64 DXDevice::GetDriverVersion(void) const { return 0; }
     mfxU64 DXDevice::GetLUID(void) const { return 0; }
     mfxU32 DXDevice::GetAdapterCount(void) const { return 0; }
