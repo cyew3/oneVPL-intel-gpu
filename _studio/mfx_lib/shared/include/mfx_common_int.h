@@ -12,6 +12,7 @@
 
 #include <vector>
 #include <memory>
+#include <errno.h>
 #include "mfx_common.h"
 #include "mfxaudio.h"
 
@@ -138,9 +139,27 @@ mfxU32 memcpy_s(T1* pDst, T2* pSrc)
 }
 
 #if !defined(_WIN32) && !defined(_WIN64)
-inline void memcpy_s(void* pDst, size_t /*nDstSize*/, const void* pSrc, size_t nCount)
+#if defined(__GNUC__)
+inline 
+#else
+__attribute__((always_inline))
+#endif
+error_t memcpy_s(void* pDst, size_t nDstSize, const void* pSrc, size_t nCount)
 {
-    ippsCopy_8u((Ipp8u*)pSrc, (Ipp8u*)pDst, nCount);
+    if (pDst && pSrc && (nDstSize >= nCount))
+    {
+        ippsCopy_8u((Ipp8u*)pSrc, (Ipp8u*)pDst, nCount);
+        return 0;
+    }
+    if (!pDst) return EINVAL;
+    if (!pSrc)
+    {
+        ippsZero_8u((Ipp8u*)pDst, nDstSize);
+        return EINVAL;
+    }
+    // only remainnig option: nDstSize < nCount
+    ippsZero_8u((Ipp8u*)pDst, nDstSize);
+    return ERANGE;
 }
 
 #endif
