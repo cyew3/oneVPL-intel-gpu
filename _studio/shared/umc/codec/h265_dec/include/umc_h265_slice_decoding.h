@@ -86,7 +86,6 @@ class H265Slice : public HeapObject
     // It is OK. H264SliceStore is owner of H265Slice object.
     // He can do what he wants.
     friend class H265SegmentDecoderMultiThreaded;
-    friend class TaskSupplier_H265;
     friend class TaskBroker_H265;
     friend class TaskBrokerTwoThread_H265;
     friend class H265DecoderFrameInfo;
@@ -123,10 +122,28 @@ public:
     void SetFirstMBNumber(Ipp32s x) {m_iFirstMB = x;}
     // Obtain current picture parameter set
     const H265PicParamSet *GetPicParam(void) const {return m_pPicParamSet;}
-    void SetPicParam(const H265PicParamSet * pps) {m_pPicParamSet = pps;}
+    void SetPicParam(const H265PicParamSet * pps)
+    {
+        m_pPicParamSet = pps;
+        if (m_pPicParamSet)
+            m_pPicParamSet->IncrementReference();
+    }
     // Obtain current sequence parameter set
     const H265SeqParamSet *GetSeqParam(void) const {return m_pSeqParamSet;}
-    void SetSeqParam(const H265SeqParamSet * sps) {m_pSeqParamSet = sps;}
+    void SetSeqParam(const H265SeqParamSet * sps)
+    {
+        m_pSeqParamSet = sps;
+        if (m_pSeqParamSet)
+            m_pSeqParamSet->IncrementReference();
+    }
+
+    const H265VideoParamSet *GetVideoParam(void) const {return m_pVideoParamSet;}
+    void SetVideoParam(const H265VideoParamSet * sps)
+    {
+        m_pVideoParamSet = sps;
+        if (m_pVideoParamSet)
+            m_pVideoParamSet->IncrementReference();
+    }
 
     // Obtain current destination frame
     H265DecoderFrame *GetCurrentFrame(void) const {return m_pCurrentFrame;}
@@ -168,10 +185,11 @@ public:  // DEBUG !!!! should remove dependence
     H265SliceHeader m_SliceHeader;                              // (H265SliceHeader) slice header
     H265Bitstream m_BitStream;                                  // (H265Bitstream) slice bit stream
 
+private:
     const H265VideoParamSet *m_pVideoParamSet;
     const H265PicParamSet* m_pPicParamSet;                      // (H265PicParamSet *) pointer to array of picture parameters sets
     const H265SeqParamSet* m_pSeqParamSet;                      // (H265SeqParamSet *) pointer to array of sequence parameters sets
-
+public:
     H265DecoderFrame *m_pCurrentFrame;        // (H265DecoderFrame *) pointer to destination frame
 
     Ipp32s m_iNumber;                                           // (Ipp32s) current slice number

@@ -303,8 +303,10 @@ void H264Slice::Reset()
 
     if (m_pSeqParamSet)
     {
-        ((H264SeqParamSet*)m_pSeqParamSet)->DecrementReference();
-        ((H264PicParamSet*)m_pPicParamSet)->DecrementReference();
+        if (m_pSeqParamSet)
+            ((H264SeqParamSet*)m_pSeqParamSet)->DecrementReference();
+        if (m_pPicParamSet)
+            ((H264PicParamSet*)m_pPicParamSet)->DecrementReference();
         m_pSeqParamSet = 0;
         m_pPicParamSet = 0;
 

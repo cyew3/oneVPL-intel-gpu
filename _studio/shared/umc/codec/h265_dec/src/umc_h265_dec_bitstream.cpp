@@ -225,7 +225,7 @@ void H265HeadersBitstream::parseHrdParameters(H265HRD *hrd, bool commonInfPresen
             if((nalOrVcl == 0 && hrd->nal_hrd_parameters_present_flag) ||
                (nalOrVcl == 1 && hrd->vcl_hrd_parameters_present_flag))
             {
-                for(unsigned j=0 ; j <= hrdSubLayerInfo->cpb_cnt; j++)
+                for(unsigned j = 0 ; j < hrdSubLayerInfo->cpb_cnt; j++)
                 {
                     READ_UVLC(uiCode, "bit_rate_value_minus1" ); hrdSubLayerInfo->bit_rate_value[j][nalOrVcl] = uiCode + 1;
                     READ_UVLC(uiCode, "cpb_size_value_minus1" ); hrdSubLayerInfo->cpb_size_value[j][nalOrVcl] = uiCode + 1;
@@ -257,7 +257,7 @@ UMC::Status H265HeadersBitstream::GetVideoParamSet(H265VideoParamSet *pcVPS)
     pcVPS->vps_max_layers = GetBits(6) + 1; // vps_max_layers_minus1
 
     Ipp32u vps_max_sub_layers_minus1 = GetBits(3);
-    if (vps_max_sub_layers_minus1 >= 6)
+    if (vps_max_sub_layers_minus1 > 6)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
     pcVPS->vps_max_sub_layers = vps_max_sub_layers_minus1 + 1;
@@ -338,9 +338,11 @@ UMC::Status H265HeadersBitstream::GetVideoParamSet(H265VideoParamSet *pcVPS)
         }
     }
 
-    READ_FLAG( uiCode,  "vps_extension_flag" );          VM_ASSERT(!uiCode);
+    READ_FLAG( uiCode,  "vps_extension_flag" );
     if (uiCode)
     {
+        //throw h265_exception(UMC::UMC_ERR_INVALID_STREAM); // shall be zero
+        // just ignore it
         while ( xMoreRbspData() )
         {
             READ_FLAG( uiCode, "vps_extension_data_flag");

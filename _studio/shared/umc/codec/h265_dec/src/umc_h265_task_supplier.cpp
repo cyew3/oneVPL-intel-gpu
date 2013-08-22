@@ -1795,30 +1795,30 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
         return 0;
     }
 
-    pSlice->m_pPicParamSet = m_Headers.m_PicParams.GetHeader(pps_pid);
-    if (!pSlice->m_pPicParamSet)
+    pSlice->SetPicParam(m_Headers.m_PicParams.GetHeader(pps_pid));
+    if (!pSlice->GetPicParam())
     {
         return 0;
     }
 
-    Ipp32s seq_parameter_set_id = pSlice->m_pPicParamSet->pps_seq_parameter_set_id;
+    Ipp32s seq_parameter_set_id = pSlice->GetPicParam()->pps_seq_parameter_set_id;
 
-    pSlice->m_pSeqParamSet = m_Headers.m_SeqParams.GetHeader(seq_parameter_set_id);
-    if (!pSlice->m_pSeqParamSet)
+    pSlice->SetSeqParam(m_Headers.m_SeqParams.GetHeader(seq_parameter_set_id));
+    if (!pSlice->GetSeqParam())
     {
         return 0;
     }
 
-    pSlice->m_pVideoParamSet = m_Headers.m_VideoParams.GetHeader(pSlice->m_pSeqParamSet->sps_video_parameter_set_id);
-    if (!pSlice->m_pVideoParamSet)
+    pSlice->SetVideoParam(m_Headers.m_VideoParams.GetHeader(pSlice->GetSeqParam()->sps_video_parameter_set_id));
+    if (!pSlice->GetVideoParam())
     {
         return 0;
     }
 
-    m_Headers.m_SeqParams.SetCurrentID(pSlice->m_pPicParamSet->pps_seq_parameter_set_id);
-    m_Headers.m_PicParams.SetCurrentID(pSlice->m_pPicParamSet->pps_pic_parameter_set_id);
+    m_Headers.m_SeqParams.SetCurrentID(pSlice->GetPicParam()->pps_seq_parameter_set_id);
+    m_Headers.m_PicParams.SetCurrentID(pSlice->GetPicParam()->pps_pic_parameter_set_id);
 
-    ActivateHeaders(const_cast<H265SeqParamSet *>(pSlice->m_pSeqParamSet), const_cast<H265PicParamSet *>(pSlice->m_pPicParamSet));
+    ActivateHeaders(const_cast<H265SeqParamSet *>(pSlice->GetSeqParam()), const_cast<H265PicParamSet *>(pSlice->GetPicParam()));
 
     pSlice->m_pCurrentFrame = NULL;
 
@@ -1853,7 +1853,7 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
 
     // Update entry points
     size_t offsets = removed_offsets.size();
-    if (pSlice->m_pPicParamSet->tiles_enabled_flag && sliceHdr->m_TileCount > 0 && offsets > 0)
+    if (pSlice->GetPicParam()->tiles_enabled_flag && sliceHdr->m_TileCount > 0 && offsets > 0)
     {
         Ipp32u removed_bytes = 0;
         std::vector<Ipp32u>::iterator it = removed_offsets.begin();
@@ -1922,12 +1922,12 @@ UMC::Status TaskSupplier_H265::AddSlice(H265Slice * pSlice, bool )
     }
 
     ViewItem_H265 &view = *GetView();
-    view.SetDPBSize(const_cast<H265SeqParamSet*>(pSlice->m_pSeqParamSet), m_level_idc);
-    view.sps_max_dec_pic_buffering = pSlice->m_pSeqParamSet->sps_max_dec_pic_buffering[pSlice->GetSliceHeader()->nuh_temporal_id] ?
-                                    pSlice->m_pSeqParamSet->sps_max_dec_pic_buffering[pSlice->GetSliceHeader()->nuh_temporal_id] :
+    view.SetDPBSize(const_cast<H265SeqParamSet*>(pSlice->GetSeqParam()), m_level_idc);
+    view.sps_max_dec_pic_buffering = pSlice->GetSeqParam()->sps_max_dec_pic_buffering[pSlice->GetSliceHeader()->nuh_temporal_id] ?
+                                    pSlice->GetSeqParam()->sps_max_dec_pic_buffering[pSlice->GetSliceHeader()->nuh_temporal_id] :
                                     view.dpbSize;
 
-    view.sps_max_num_reorder_pics = pSlice->m_pSeqParamSet->sps_max_num_reorder_pics[HighestTid];
+    view.sps_max_num_reorder_pics = pSlice->GetSeqParam()->sps_max_num_reorder_pics[HighestTid];
 
     H265DecoderFrame * pFrame = view.pCurFrame;
 
@@ -2223,7 +2223,7 @@ H265DecoderFrame * TaskSupplier_H265::AllocateNewFrame(const H265Slice *pSlice)
     }
 
     //umcRes = AllocateFrameData(pFrame, pFrame->lumaSize(), pFrame->m_bpp, pFrame->GetColorFormat());
-    umcRes = AllocateFrameData(pFrame, pFrame->lumaSize(), pFrame->m_bpp, pSlice->m_pSeqParamSet, pSlice->m_pPicParamSet);
+    umcRes = AllocateFrameData(pFrame, pFrame->lumaSize(), pFrame->m_bpp, pSlice->GetSeqParam(), pSlice->GetPicParam());
     if (umcRes != UMC::UMC_OK)
     {
         return 0;

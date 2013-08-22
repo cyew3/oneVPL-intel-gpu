@@ -643,9 +643,9 @@ public:
     }
 
    ~H265VideoParamSet() {
-        delete m_hrdParameters;
-        delete hrd_layer_set_idx;
-        delete cprms_present_flag;
+        delete[] m_hrdParameters;
+        delete[] hrd_layer_set_idx;
+        delete[] cprms_present_flag;
     }
 
     void createHrdParamBuffer()
@@ -684,7 +684,10 @@ public:
         }
     }
 
-    int GetID()   { return 0; }
+    Ipp32s GetID() const
+    {
+        return vps_video_parameter_set_id;
+    }
 
     H265HRD* getHrdParameters   ( unsigned i )             { return &m_hrdParameters[ i ]; }
     H265ProfileTierLevel* getPTL() { return &m_pcPTL; }

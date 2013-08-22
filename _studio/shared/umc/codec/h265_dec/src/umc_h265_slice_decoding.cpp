@@ -47,9 +47,12 @@ void H265Slice::Reset()
 
     if (m_pSeqParamSet)
     {
-        ((H265VideoParamSet*)m_pVideoParamSet)->DecrementReference();
-        ((H265SeqParamSet*)m_pSeqParamSet)->DecrementReference();
-        ((H265PicParamSet*)m_pPicParamSet)->DecrementReference();
+        if (m_pVideoParamSet)
+            ((H265VideoParamSet*)m_pVideoParamSet)->DecrementReference();
+        if (m_pSeqParamSet)
+            ((H265SeqParamSet*)m_pSeqParamSet)->DecrementReference();
+        if (m_pPicParamSet)
+            ((H265PicParamSet*)m_pPicParamSet)->DecrementReference();
         m_pVideoParamSet = 0;
         m_pSeqParamSet = 0;
         m_pPicParamSet = 0;
@@ -172,11 +175,6 @@ bool H265Slice::Reset(void *pSource, size_t nSourceSize, Ipp32s )
 
     // frame is not associated yet
     m_pCurrentFrame = NULL;
-
-    m_pVideoParamSet->IncrementReference();
-    m_pSeqParamSet->IncrementReference();
-    m_pPicParamSet->IncrementReference();
-
     return true;
 
 } // bool H265Slice::Reset(void *pSource, size_t nSourceSize, Ipp32s iNumber)
@@ -357,6 +355,21 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
 
     // Set the start of real slice, not slice segment
     m_SliceHeader.SliceCurStartCUAddr = slice->SliceCurStartCUAddr;
+
+    m_bDeblocked = GetSliceHeader()->slice_deblocking_filter_disabled_flag;
+    m_bSAOed = !(GetSliceHeader()->slice_sao_luma_flag || GetSliceHeader()->slice_sao_chroma_flag);
+
+    if (m_bDeblocked)
+    {
+        m_processVacant[DEB_PROCESS_ID] = 0;
+        m_curMBToProcess[DEB_PROCESS_ID] = m_iMaxMB;
+    }
+
+    if (m_bSAOed)
+    {
+        m_processVacant[SAO_PROCESS_ID] = 0;
+        m_curMBToProcess[SAO_PROCESS_ID] = m_iMaxMB;
+    }
 }
 
 } // namespace UMC_HEVC_DECODER
