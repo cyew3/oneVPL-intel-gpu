@@ -318,6 +318,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     // check FrameInfo
 
     //FourCC to check on encode frame
+    m_mfxVideoParam.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12; // to return on GetVideoParam
 
     // to be provided:
     if (!m_mfxVideoParam.mfx.FrameInfo.Width || !m_mfxVideoParam.mfx.FrameInfo.Height ||
@@ -327,7 +328,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     // Crops, AspectRatio - ignore
 
     if (!m_mfxVideoParam.mfx.FrameInfo.PicStruct) m_mfxVideoParam.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-    if (!m_mfxVideoParam.mfx.FrameInfo.ChromaFormat) m_mfxVideoParam.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+    m_mfxVideoParam.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
 
     // CodecId - only HEVC;  CodecProfile CodecLevel - ignore
     // NumThread - set inside, >1 only if WPP
@@ -531,11 +532,18 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
         if ((opts_in==0) != (opts_out==0))
             return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-        if (in->mfx.FrameInfo.FourCC != 0 && in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12) {
+        if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 && in->mfx.FrameInfo.ChromaFormat == 0) { // because 0 == monochrome
+            out->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+            out->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            isCorrected ++;
+        } else if ((in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12) != (in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)) {
             out->mfx.FrameInfo.FourCC = 0;
+            out->mfx.FrameInfo.ChromaFormat = 0;
             isInvalid ++;
+        } else {
+            out->mfx.FrameInfo.FourCC = in->mfx.FrameInfo.FourCC;
+            out->mfx.FrameInfo.ChromaFormat = in->mfx.FrameInfo.ChromaFormat;
         }
-        else out->mfx.FrameInfo.FourCC = in->mfx.FrameInfo.FourCC;
 
         if ( (in->mfx.FrameInfo.Width & 15) || in->mfx.FrameInfo.Width > 16384 ) {
             out->mfx.FrameInfo.Width = 0;
@@ -585,6 +593,27 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
             isCorrected ++;
         }
 
+        // Assume 420 checking horizontal crop to be even
+        if ((in->mfx.FrameInfo.CropY & 1) && (in->mfx.FrameInfo.CropH & 1)) {
+            if (out->mfx.FrameInfo.CropY == in->mfx.FrameInfo.CropY) // not to correct CropY forced to zero
+                out->mfx.FrameInfo.CropY = in->mfx.FrameInfo.CropY + 1;
+            if (out->mfx.FrameInfo.CropH) // can't decrement zero CropH
+                out->mfx.FrameInfo.CropH = in->mfx.FrameInfo.CropH - 1;
+            isCorrected ++;
+        } else if (in->mfx.FrameInfo.CropY & 1)
+        {
+            if (out->mfx.FrameInfo.CropY == in->mfx.FrameInfo.CropY) // not to correct CropY forced to zero
+                out->mfx.FrameInfo.CropY = in->mfx.FrameInfo.CropY + 1;
+            if (out->mfx.FrameInfo.CropH) // can't decrement zero CropH
+                out->mfx.FrameInfo.CropH = in->mfx.FrameInfo.CropH - 2;
+            isCorrected ++;
+        }
+        else if (in->mfx.FrameInfo.CropH & 1) {
+            if (out->mfx.FrameInfo.CropH) // can't decrement zero CropH
+                out->mfx.FrameInfo.CropH = in->mfx.FrameInfo.CropH - 1;
+            isCorrected ++;
+        }
+
         //Check for valid framerate
         if (!in->mfx.FrameInfo.FrameRateExtN && in->mfx.FrameInfo.FrameRateExtD ||
             in->mfx.FrameInfo.FrameRateExtN && !in->mfx.FrameInfo.FrameRateExtD ||
@@ -604,11 +633,6 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
             out->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
             isCorrected ++;
         } else out->mfx.FrameInfo.PicStruct = in->mfx.FrameInfo.PicStruct;
-
-        if (in->mfx.FrameInfo.ChromaFormat != 0 && in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420) {
-            isCorrected ++;
-            out->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-        } else out->mfx.FrameInfo.ChromaFormat = in->mfx.FrameInfo.ChromaFormat;
 
         out->mfx.BRCParamMultiplier = in->mfx.BRCParamMultiplier;
 
@@ -647,7 +671,7 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
 
         // NumSlice will be checked again after Log2MaxCUSize
         out->mfx.NumSlice = in->mfx.NumSlice;
-        if ( in->mfx.NumSlice > 0 && out->mfx.FrameInfo.Height && out->mfx.FrameInfo.Width && opts_out && opts_out->Log2MaxCUSize)
+        if ( in->mfx.NumSlice > 0 && out->mfx.FrameInfo.Height && out->mfx.FrameInfo.Width /*&& opts_out && opts_out->Log2MaxCUSize*/)
         {
             mfxU16 rnd = (1 << 4) - 1, shft = 4;
             if (in->mfx.NumSlice > ((out->mfx.FrameInfo.Height+rnd)>>shft) * ((out->mfx.FrameInfo.Width+rnd)>>shft) )
@@ -933,20 +957,8 @@ mfxStatus MFXVideoENCODEH265::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
 
     if (surface)
     {
-        UMC::ColorFormat cf = UMC::NONE;
-        switch( surface->Info.FourCC ){
-            case MFX_FOURCC_YV12:
-                cf = UMC::YUV420;
-                break;
-            case MFX_FOURCC_RGB3:
-                cf = UMC::RGB24;
-                break;
-            case MFX_FOURCC_NV12:
-                cf = UMC::NV12;
-                break;
-            default:
-                return MFX_ERR_NULL_PTR;
-        }
+        if (surface->Info.FourCC != MFX_FOURCC_NV12)
+            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
         bool locked = false;
         if (surface->Data.Y == 0 && surface->Data.U == 0 &&
