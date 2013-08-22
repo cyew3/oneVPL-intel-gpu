@@ -222,6 +222,7 @@ typedef struct {
             union {
                 mfxU16  TargetKbps;
                 mfxU16  QPP;
+                mfxU16  CRFQuality;
             };
             union {
                 mfxU16  MaxKbps;
@@ -399,7 +400,9 @@ enum {
     MFX_RATECONTROL_RESERVED2 =6,
     MFX_RATECONTROL_RESERVED3 =100,
     MFX_RATECONTROL_RESERVED4 =7,
-    MFX_RATECONTROL_LA        =8
+    MFX_RATECONTROL_LA        =8,
+    MFX_RATECONTROL_CRF       =9,
+    MFX_RATECONTROL_VCM       =10
 };
 
 /* Trellis control*/
@@ -823,7 +826,9 @@ typedef struct {
     mfxU32          FrameOrder;
     mfxU16          PicStruct;
     mfxU16          LongTermIdx;
-    mfxU16          reserved[8];
+    mfxU32          MAD;
+    mfxU16          BRCPanicMode;
+    mfxU16          reserved[5];
 
     struct {
             mfxU32      FrameOrder;
