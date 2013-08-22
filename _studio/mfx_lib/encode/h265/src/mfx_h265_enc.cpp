@@ -179,6 +179,9 @@ mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxE
     pars->MinCUSize = pars->MaxCUSize >> (pars->MaxCUDepth - pars->AddCUDepth);
     pars->MinTUSize = pars->MaxCUSize >> pars->MaxCUDepth;
 
+    if (pars->MinTUSize != 1u << pars->QuadtreeTULog2MinSize)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
     pars->CropRight = pars->CropBottom = 0;
     if (width % pars->MinCUSize)
     {
@@ -1353,8 +1356,7 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
 
 //            m_pReconstructFrame->cu->FillRandom(0, 0);
             // inter pred for chroma is now performed in EncAndRecLuma
-            CostType cost;
-            cu[ithread].EncAndRecLuma(0, 0, 0, nz, cu[ithread].IsRDOQ() ? &cost : NULL);
+            cu[ithread].EncAndRecLuma(0, 0, 0, nz, NULL);
             cu[ithread].EncAndRecChroma(0, 0, 0, nz, NULL);
 
             if (!(m_slices[curr_slice].slice_deblocking_filter_disabled_flag) && pars->num_threads == 1)

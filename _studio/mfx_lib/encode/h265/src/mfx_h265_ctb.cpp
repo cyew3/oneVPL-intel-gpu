@@ -1778,6 +1778,9 @@ CostType H265CU::CU_cost(Ipp32u abs_part_idx, Ipp8u depth, const H265MEInfo* bes
     if (rd_opt_flag) {
         Ipp8u nz[2];
         Ipp32u pos;
+        CABAC_CONTEXT_H265 ctx_save[NUM_CABAC_CONTEXT];
+        if (IsRDOQ())
+            bsf->CtxSave(ctx_save, 0, NUM_CABAC_CONTEXT);
 
         InterPredCU(abs_part_idx, depth, 1);
 
@@ -1790,6 +1793,8 @@ CostType H265CU::CU_cost(Ipp32u abs_part_idx, Ipp8u depth, const H265MEInfo* bes
             pos += num_tr_parts;
         }
 
+        if (IsRDOQ())
+            bsf->CtxRestore(ctx_save, 0, NUM_CABAC_CONTEXT);
         EncAndRecLuma(abs_part_idx, offset, depth, nz, NULL);
 
         bsf->Reset();
@@ -2473,7 +2478,7 @@ static Ipp32s tu_sse_nv12(PixType *src, PixType *rec,
 void H265CU::EncAndRecLumaTU(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, Ipp8u *nz, CostType *cost,
                              Ipp8u cost_pred_flag, Ipp8u skip_pred_flag)
 {
-    CostType cost_pred;
+    CostType cost_pred, cost_rdoq;
     Ipp32u lpel_x   = ctb_pelx +
         ((h265_scan_z2r[par->MaxCUDepth][abs_part_idx] & (par->NumMinTUInMaxCU - 1)) << par->QuadtreeTULog2MinSize);
     Ipp32u tpel_y   = ctb_pely +
@@ -2481,6 +2486,7 @@ void H265CU::EncAndRecLumaTU(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, I
 
     if (nz) *nz = 0;
     if (cost) *cost = 0;
+    else if (IsRDOQ()) cost = &cost_rdoq;
 
     if (lpel_x >= par->Width || tpel_y >= par->Height)
         return;
