@@ -38,8 +38,10 @@ File Name: mfxplugin++.h
 //c++ wrapper over only 3 exposed functions from MFXVideoUSER module
 class MFXVideoUSER {
 public:
-    MFXVideoUSER(mfxSession session)
+    explicit MFXVideoUSER(mfxSession session)
         : m_session(session){}
+    
+    virtual ~MFXVideoUSER() {};
 
     virtual mfxStatus Register(mfxU32 type, const mfxPlugin *par) {
         return MFXVideoUSER_Register(m_session, type, par);
@@ -78,6 +80,8 @@ public:
 //common interface part for every plugin: decoder/encoder and generic
 struct MFXPlugin
 {
+    
+    virtual ~MFXPlugin() {};
     //init function always required for any transform or codec plugins, for codec plugins it maps to callback from MediaSDK
     //for generic plugin application should call it
     virtual mfxStatus Init(mfxVideoParam *par) = 0;
