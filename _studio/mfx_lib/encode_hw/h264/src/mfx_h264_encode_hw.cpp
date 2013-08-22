@@ -508,7 +508,7 @@ mfxStatus ImplementationAvc::Query(
     }
     else if (5 == queryMode)
     {
-        return QueryGuid(core, MSDK_Private_Guid_Encode_AVC_Query);
+        return QueryGuid(core, DXVA2_Intel_Encode_AVC);
     }
 
     return MFX_ERR_NONE;
@@ -1020,6 +1020,14 @@ mfxStatus ImplementationAvc::GetVideoParam(mfxVideoParam *par)
 
     for (mfxU32 i = 0; i < par->NumExtParam; i++)
     {
+        if (par->ExtParam[i]->BufferId == MFX_EXTBUFF_ENCODER_WIDI_USAGE)
+        {
+            // this buffer notify that WiDi is caller for MSDK functionality
+            // mfx_transcoder could pass this buffer to GetVideoParam()
+            // just ignore it
+            continue;
+        }
+
         if (mfxExtBuffer * buf = GetExtBuffer(m_video.ExtParam, m_video.NumExtParam, par->ExtParam[i]->BufferId))
         {
             if (par->ExtParam[i]->BufferId == MFX_EXTBUFF_CODING_OPTION_SPSPPS)

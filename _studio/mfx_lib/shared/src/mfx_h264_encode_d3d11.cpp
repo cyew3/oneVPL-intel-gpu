@@ -380,6 +380,13 @@ mfxStatus D3D11Encoder::Execute(
 
     m_sps.Trellis = task.m_trellis[fieldId];
 
+    if (m_sps.UserMaxFrameSize != task.m_maxFrameSize)
+    {
+        m_sps.UserMaxFrameSize = (UINT)task.m_maxFrameSize;
+        if (task.m_frameOrder)
+            m_sps.bResetBRC = true;
+    }
+
     // update pps and slice structures
     FillVaringPartOfPpsBuffer(task, fieldId, m_pps);
     FillVaringPartOfSliceBuffer(m_caps, task, fieldId, m_sps, m_pps, m_slice);

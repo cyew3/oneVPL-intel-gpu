@@ -1188,8 +1188,10 @@ mfxStatus MfxHwH264Encode::CorrectCropping(MfxVideoParam& par)
 bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(mfxU32 id)
 {
     return
-        id == MFX_EXTBUFF_AVC_REFLIST_CTRL ||
-        id == MFX_EXTBUFF_ENCODED_FRAME_INFO;
+        id == MFX_EXTBUFF_AVC_REFLIST_CTRL   ||
+        id == MFX_EXTBUFF_ENCODED_FRAME_INFO ||
+        id == MFX_EXTBUFF_PICTURE_TIMING_SEI ||
+        id == MFX_EXTBUFF_CODING_OPTION2;
 }
 
 bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
@@ -2177,6 +2179,18 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
                 changed = true;
                 par.calcParam.targetKbps = mfxU32(IPP_MIN(GetMaxBitrate(par) / 1000, UINT_MAX));
+            }
+        }
+
+        if (extOpt2->MaxFrameSize != 0 &&
+            par.mfx.FrameInfo.FrameRateExtN != 0 && par.mfx.FrameInfo.FrameRateExtD != 0)
+        {
+            mfxF64 frameRate = mfxF64(par.mfx.FrameInfo.FrameRateExtN) / par.mfx.FrameInfo.FrameRateExtD;
+            mfxU32 avgFrameSizeInBytes = mfxU32(par.calcParam.targetKbps * 1000 / frameRate / 8);
+            if (extOpt2->MaxFrameSize < avgFrameSizeInBytes)
+            {
+                changed = true;
+                extOpt2->MaxFrameSize = avgFrameSizeInBytes;
             }
         }
     }
@@ -3954,6 +3968,67 @@ mfxStatus MfxHwH264Encode::CheckPayloads(
     }
 
     return MFX_ERR_NONE;
+}
+
+mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
+    MfxVideoParam const & video,
+    mfxEncodeCtrl *       ctrl)
+{
+    mfxStatus checkSts = MFX_ERR_NONE;
+
+    for (mfxU32 i = 0; i < ctrl->NumExtParam; i++)
+        MFX_CHECK_NULL_PTR1(ctrl->ExtParam[i]);
+
+
+    for (mfxU32 i = 0; i < ctrl->NumExtParam; i++)
+    {
+        if (ctrl->ExtParam[i])
+        {
+            if (false == IsRunTimeExtBufferIdSupported(ctrl->ExtParam[i]->BufferId))
+                checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM; // don't return error in runtime, just ignore unsupported ext buffer and return warning
+
+            if (MfxHwH264Encode::GetExtBuffer(
+                ctrl->ExtParam + i + 1,
+                ctrl->NumExtParam - i - 1,
+                ctrl->ExtParam[i]->BufferId) != 0)
+            {
+                // buffer attached twice, ignore second one and return warning
+                checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            }
+        }
+    }
+
+    mfxExtAVCRefListCtrl * extRefListCtrl = GetExtBuffer(*ctrl);
+    if (extRefListCtrl && video.calcParam.numTemporalLayer > 0 && video.calcParam.lyncMode == 0)
+        checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+
+    // check timestamp from mfxExtPictureTimingSEI
+    mfxExtPictureTimingSEI * extPt   = GetExtBuffer(*ctrl);
+    
+    if (extPt)
+    {
+        for (mfxU32 i = 0; i < 3; i++)
+        {
+            // return warning if there is any 0xffff template except for CtType
+            if (extPt->TimeStamp[i].CountingType       == 0xffff ||
+                extPt->TimeStamp[i].NFrames            == 0xffff ||
+                extPt->TimeStamp[i].SecondsValue       == 0xffff ||
+                extPt->TimeStamp[i].MinutesValue       == 0xffff ||
+                extPt->TimeStamp[i].HoursValue         == 0xffff ||
+                extPt->TimeStamp[i].TimeOffset         == 0xffff ||
+                extPt->TimeStamp[i].ClockTimestampFlag == 0xffff ||
+                extPt->TimeStamp[i].NuitFieldBasedFlag == 0xffff ||
+                extPt->TimeStamp[i].FullTimestampFlag  == 0xffff ||
+                extPt->TimeStamp[i].DiscontinuityFlag  == 0xffff ||
+                extPt->TimeStamp[i].CntDroppedFlag     == 0xffff ||
+                extPt->TimeStamp[i].SecondsFlag        == 0xffff ||
+                extPt->TimeStamp[i].MinutesFlag        == 0xffff ||
+                extPt->TimeStamp[i].HoursFlag          == 0xffff)
+                checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        }
+    }
+
+    return checkSts;
 }
 
 mfxStatus MfxHwH264Encode::CheckRunTimePicStruct(

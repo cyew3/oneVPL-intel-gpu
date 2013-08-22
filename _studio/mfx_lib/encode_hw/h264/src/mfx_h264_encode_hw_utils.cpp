@@ -4124,9 +4124,8 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
                     MFX_ERR_INVALID_VIDEO_PARAM);
             }
 
-            mfxExtAVCRefListCtrl * extRefListCtrl = GetExtBuffer(*ctrl);
-            if (extRefListCtrl && video.calcParam.numTemporalLayer > 0 && video.calcParam.lyncMode == 0)
-                checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            if (ctrl->NumExtParam)
+                checkSts = CheckRunTimeExtBuffers(video, ctrl);
         }
     }
 

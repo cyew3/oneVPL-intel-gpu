@@ -1047,6 +1047,13 @@ mfxStatus D3D9Encoder::Execute(
     m_sps.bNoAccelerationSPSInsertion = !task.m_insertSps[fieldId];
     m_sps.Trellis = task.m_trellis[fieldId];
 
+    if (m_sps.UserMaxFrameSize != task.m_maxFrameSize)
+    {
+        m_sps.UserMaxFrameSize = (UINT)task.m_maxFrameSize;
+        if (task.m_frameOrder)
+            m_sps.bResetBRC = true;
+    }
+
     m_compBufDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_SPSDATA;
     m_compBufDesc[bufCnt].DataSize = mfxU32(sizeof(m_sps));
     m_compBufDesc[bufCnt].pCompBuffer = &m_sps;

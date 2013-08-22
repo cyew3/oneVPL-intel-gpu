@@ -656,6 +656,10 @@ namespace MfxHwH264Encode
         mfxPayload const * const * payload,
         mfxU16                     numPayload);
 
+    mfxStatus CheckRunTimeExtBuffers(
+        MfxVideoParam const & video,
+        mfxEncodeCtrl *       ctrl);
+
     mfxStatus CheckRunTimePicStruct(
         mfxU16 runtPicStruct,
         mfxU16 initPicStruct);

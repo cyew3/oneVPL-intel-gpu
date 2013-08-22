@@ -821,6 +821,7 @@ namespace MfxHwH264Encode
             , m_statusReportNumber(0, 0)
             , m_fillerSize(0, 0)
             , m_addRepackSize(0, 0)
+            , m_maxFrameSize(0)
             , m_internalListCtrlPresent(false)
             , m_idxInterLayerRecon(0)
             , m_nextLayerTask(0)
@@ -912,6 +913,7 @@ namespace MfxHwH264Encode
 // MVC BD {
         PairU32 m_addRepackSize; // w/a for SNB/IVB: size of padding to compensate re-pack of AVC headers to MVC headers
 // MVC BD }
+        mfxU32  m_maxFrameSize;
         mfxU32  m_did;                  // dependency_id
         mfxU32  m_qid;                  // quality_id
         mfxU32  m_storeRefBasePicFlag;  // for svc key picture

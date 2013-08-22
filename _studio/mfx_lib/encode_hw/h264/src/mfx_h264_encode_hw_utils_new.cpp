@@ -1428,12 +1428,13 @@ void MfxHwH264Encode::ConfigureTask(
     DdiTask const &       prevTask,
     MfxVideoParam const & video)
 {
-    mfxExtCodingOption const *      extOpt  = GetExtBuffer(video);
-    mfxExtCodingOption2 const *     extOpt2 = GetExtBuffer(video);
-    mfxExtCodingOptionDDI const *   extDdi  = GetExtBuffer(video);
-    mfxExtSpsHeader const *         extSps  = GetExtBuffer(video);
-    mfxExtAvcTemporalLayers const * extTemp = GetExtBuffer(video);
-    mfxExtPAVPOption const *        extPavp = GetExtBuffer(video);
+    mfxExtCodingOption const *      extOpt         = GetExtBuffer(video);
+    mfxExtCodingOption2 const *     extOpt2        = GetExtBuffer(video);
+    mfxExtCodingOption2 const *     extOpt2Runtime = GetExtBuffer(task.m_ctrl);
+    mfxExtCodingOptionDDI const *   extDdi         = GetExtBuffer(video);
+    mfxExtSpsHeader const *         extSps         = GetExtBuffer(video);
+    mfxExtAvcTemporalLayers const * extTemp        = GetExtBuffer(video);
+    mfxExtPAVPOption const *        extPavp        = GetExtBuffer(video);
 
     mfxU32 const FRAME_NUM_MAX = 1 << (extSps->log2MaxFrameNumMinus4 + 4);
     
@@ -1500,6 +1501,8 @@ void MfxHwH264Encode::ConfigureTask(
 
     task.m_trellis[ffid] = GetPefFrameTrellisFlag(*extOpt2, task.m_type[ffid]);
     task.m_trellis[sfid] = GetPefFrameTrellisFlag(*extOpt2, task.m_type[sfid]);
+
+    task.m_maxFrameSize = extOpt2Runtime ? extOpt2Runtime->MaxFrameSize : extOpt2->MaxFrameSize;
 
     if (video.calcParam.lyncMode)
     {
