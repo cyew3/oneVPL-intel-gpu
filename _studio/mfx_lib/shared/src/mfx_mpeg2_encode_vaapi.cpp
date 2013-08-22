@@ -131,15 +131,16 @@ namespace
         sps.aspect_ratio_information = CalculateAspectRatio(sps.picture_width, sps.picture_height);
         // sps.vbv_buffer_size = winSps.vbv_buffer_size; // B = 16 * 1024 * vbv_buffer_size 
 
-        sps.intra_period    = 1;//pExecuteBuffers->m_GOPPictureSize; // 22??
-        sps.ip_period       = 0;//pExecuteBuffers->m_GOPRefDist;
-        sps.bits_per_second = 104857200; //winSps.bit_rate;
-
+        sps.intra_period    = pExecuteBuffers->m_GOPPictureSize; // 22??
+        sps.ip_period       = pExecuteBuffers->m_GOPRefDist;
+        sps.bits_per_second = winSps.bit_rate; // 104857200;
+        sps.vbv_buffer_size = winSps.bit_rate * 45 / 1000;
         //sps.vbv_buffer_size = 3; // B = 16 * 1024 * vbv_buffer_size
 
         int profile = 4, level = 8;
 
-        switch (ConvertProfileTypeMFX2VAAPI(winSps.Profile)) {
+        switch (ConvertProfileTypeMFX2VAAPI(winSps.Profile))
+        {
         case VAProfileMPEG2Simple:
             profile = 5;
             break;
@@ -151,7 +152,8 @@ namespace
             break;
         }
 
-        switch (winSps.Level) {
+        switch (winSps.Level)
+        {
         case MFX_LEVEL_MPEG2_LOW:
             level = 10;
             break;
@@ -167,10 +169,10 @@ namespace
         }
         sps.sequence_extension.bits.profile_and_level_indication = profile << 4 | level;
         sps.sequence_extension.bits.chroma_format = 1; // CHROMA_FORMAT_420; // 4:2:0
-        sps.sequence_extension.bits.frame_rate_extension_n = 0;//winSps.FrameRateExtN;
-        sps.sequence_extension.bits.frame_rate_extension_d = 0;//winSps.FrameRateExtD;
-        sps.sequence_extension.bits.progressive_sequence = 1; 
-        sps.sequence_extension.bits.low_delay = 0; // FIXME
+        sps.sequence_extension.bits.frame_rate_extension_n = winSps.FrameRateExtN;
+        sps.sequence_extension.bits.frame_rate_extension_d = winSps.FrameRateExtD;
+        sps.sequence_extension.bits.progressive_sequence   = winSps.progressive_sequence; 
+        sps.sequence_extension.bits.low_delay              = winSps.low_delay; // FIXME
 
         sps.gop_header.bits.time_code = (1 << 12); // bit12: marker_bit
         sps.gop_header.bits.closed_gop = 0;
@@ -189,7 +191,7 @@ namespace
 
         pps.picture_type = ConvertCodingTypeMFX2VAAPI(winPps.picture_coding_type);
         pps.temporal_reference = winPps.temporal_reference;
-
+        pps.vbv_delay = winPps.vbv_delay;
 //         m_CurrFrameMemID        = curr;
 //         m_bExternalCurrFrame    = bExternal;
 //         m_RecFrameMemID         = rec;
@@ -207,42 +209,48 @@ namespace
         pps.f_code[1][0] = CODEC_MPEG2_ENC_FCODE_X(winSps.FrameWidth);
         pps.f_code[1][1] = CODEC_MPEG2_ENC_FCODE_Y(pps.f_code[1][0]);
 
-        pps.user_data_length = 0;
+//        pps.user_data_length = 0;
 
-        pps.picture_coding_extension.bits.intra_dc_precision = 0; /* 8bits */
-        pps.picture_coding_extension.bits.picture_structure = 3; /* frame picture */
-        pps.picture_coding_extension.bits.top_field_first = 0; 
-        pps.picture_coding_extension.bits.frame_pred_frame_dct = 1; /* FIXME */
-        pps.picture_coding_extension.bits.concealment_motion_vectors = 0;
-        pps.picture_coding_extension.bits.q_scale_type = 0;
-        pps.picture_coding_extension.bits.intra_vlc_format = 0;
-        pps.picture_coding_extension.bits.alternate_scan = 0;
-        pps.picture_coding_extension.bits.repeat_first_field = 0;
-        pps.picture_coding_extension.bits.progressive_frame = 1;
-        pps.picture_coding_extension.bits.composite_display_flag = 0;
+        pps.picture_coding_extension.bits.intra_dc_precision         = winPps.intra_dc_precision; /* 8bits */ 
+        pps.picture_coding_extension.bits.picture_structure          = 3; /* frame picture */
+        pps.picture_coding_extension.bits.top_field_first            = winPps.InterleavedFieldBFF == 0 ? 1 : 0; 
+        pps.picture_coding_extension.bits.frame_pred_frame_dct       = winPps.frame_pred_frame_dct;//1; /* FIXME */
+        pps.picture_coding_extension.bits.concealment_motion_vectors = winPps.concealment_motion_vectors;
+        pps.picture_coding_extension.bits.q_scale_type               = winPps.q_scale_type;
+        pps.picture_coding_extension.bits.intra_vlc_format           = winPps.intra_vlc_format;
+        pps.picture_coding_extension.bits.alternate_scan             = winPps.alternate_scan;
+        pps.picture_coding_extension.bits.repeat_first_field         = winPps.repeat_first_field;
+        pps.picture_coding_extension.bits.progressive_frame          = (winPps.FieldCodingFlag == 0) && (winPps.FieldFrameCodingFlag == 0) ? 1 : 0;
+        pps.picture_coding_extension.bits.composite_display_flag     = 0;
 
-        if (pps.picture_type == VAEncPictureTypeIntra) {
+        if (pps.picture_type == VAEncPictureTypeIntra)
+        {
             pps.f_code[0][0] = 0xf;
             pps.f_code[0][1] = 0xf;
             pps.f_code[1][0] = 0xf;
             pps.f_code[1][1] = 0xf;
             pps.forward_reference_picture = VA_INVALID_SURFACE;
             pps.backward_reference_picture = VA_INVALID_SURFACE;
-        } else if (pps.picture_type == VAEncPictureTypePredictive) {
+        } 
+        else if (pps.picture_type == VAEncPictureTypePredictive) 
+        {
             pps.f_code[0][0] = CODEC_MPEG2_ENC_FCODE_X(winSps.FrameWidth);
             pps.f_code[0][1] = CODEC_MPEG2_ENC_FCODE_Y(pps.f_code[0][0]);
             pps.f_code[1][0] = 0xf;
             pps.f_code[1][1] = 0xf;
             pps.forward_reference_picture = ConvertSurfaceIdMFX2VAAPI(core, pExecuteBuffers->m_RefFrameMemID[0]);
             pps.backward_reference_picture = VA_INVALID_SURFACE;
-        } else if (pps.picture_type == VAEncPictureTypeBidirectional) {
+        } 
+        else if (pps.picture_type == VAEncPictureTypeBidirectional) 
+        {
             pps.f_code[0][0] = CODEC_MPEG2_ENC_FCODE_X(winSps.FrameWidth);
             pps.f_code[0][1] = CODEC_MPEG2_ENC_FCODE_Y(pps.f_code[0][0]);
             pps.f_code[1][0] = CODEC_MPEG2_ENC_FCODE_X(winSps.FrameWidth);
             pps.f_code[1][1] = CODEC_MPEG2_ENC_FCODE_Y(pps.f_code[1][0]);
             pps.forward_reference_picture = ConvertSurfaceIdMFX2VAAPI(core, pExecuteBuffers->m_RefFrameMemID[0]);
             pps.backward_reference_picture = ConvertSurfaceIdMFX2VAAPI(core, pExecuteBuffers->m_RefFrameMemID[1]);
-        } else {
+        } else 
+        {
             assert(0);
         }
     } // void FillPps(...)
@@ -390,7 +398,6 @@ VAAPIEncoder::VAAPIEncoder(VideoCORE* core)
     , m_ppsBufferId(VA_INVALID_ID)
     , m_qmBufferId(VA_INVALID_ID)
     , m_numSliceGroups(0)
-    , m_codedbufBufferId(VA_INVALID_ID)
     , m_codedbufISize(0)
     , m_codedbufPBSize(0)
     , m_pMiscParamsFps(0)
@@ -442,16 +449,38 @@ mfxStatus VAAPIEncoder::QueryEncodeCaps(ENCODE_CAPS & caps)
 
     memset(&caps, 0, sizeof(caps));
 
-    caps.SliceIPBOnly     = 1;
     caps.EncodeFunc       = 1;
-    caps.MaxNum_Reference = 1;
-    caps.MaxPicWidth      = 1920;
-    caps.MaxPicHeight     = 1088;
-    caps.NoInterlacedField = 1; // disable interlaced encoding
     caps.BRCReset         = 1; // no bitrate resolution control
     caps.VCMBitrateControl = 0; //Video conference mode
     caps.HeaderInsertion  = 0; // we will privide headers (SPS, PPS) in binary format to the driver
-    caps.SliceStructure   = 1; // 1 - SliceDividerSnb; 2 - SliceDividerHsw; 3 - SliceDividerBluRay; the other - SliceDividerOneSlice
+
+    VAStatus vaSts;
+    vaExtQueryEncCapabilities pfnVaExtQueryCaps = NULL;
+    pfnVaExtQueryCaps = (vaExtQueryEncCapabilities)vaGetLibFunc(m_vaDisplay,VPG_EXT_QUERY_ENC_CAPS);
+    if (pfnVaExtQueryCaps)
+    {
+        VAEncQueryCapabilities VaEncCaps;
+        memset(&VaEncCaps, 0, sizeof(VaEncCaps));
+        VaEncCaps.size = sizeof(VAEncQueryCapabilities);
+        vaSts = pfnVaExtQueryCaps(m_vaDisplay, VAProfileH264Baseline, &VaEncCaps);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+        caps.MaxPicWidth  = VaEncCaps.MaxPicWidth;
+        caps.MaxPicHeight = VaEncCaps.MaxPicHeight;
+        caps.SliceStructure = VaEncCaps.EncLimits.bits.SliceStructure;
+        caps.NoInterlacedField = VaEncCaps.EncLimits.bits.NoInterlacedField;
+        caps.MaxNum_Reference = VaEncCaps.MaxNum_ReferenceL0;
+        caps.MaxNum_Reference1 = VaEncCaps.MaxNum_ReferenceL1;       
+    }
+    else
+    {
+        caps.SliceIPBOnly     = 1;
+        caps.MaxNum_Reference = 1;
+        caps.MaxPicWidth      = 1920;
+        caps.MaxPicHeight     = 1088;
+        caps.NoInterlacedField = 0; // enable interlaced encoding
+        caps.SliceStructure   = 1; // 1 - SliceDividerSnb; 2 - SliceDividerHsw; 3 - SliceDividerBluRay; the other - SliceDividerOneSlice
+    }
 
         
     return MFX_ERR_NONE;
@@ -479,7 +508,7 @@ mfxStatus VAAPIEncoder::Init(ENCODE_FUNC func, ExecuteBuffers* pExecuteBuffers)
     m_initFrameHeight  = pExecuteBuffers->m_sps.FrameHeight;
     memset (&m_rawFrames, 0, sizeof(mfxRawFrames));
 
-    ExtVASurface cleanSurf = {};
+    ExtVASurface cleanSurf = {VA_INVALID_ID, 0, 0};
     std::fill(m_feedback.begin(), m_feedback.end(), cleanSurf);
 
     VAAPIVideoCORE * hwcore = dynamic_cast<VAAPIVideoCORE *>(m_core);
@@ -540,7 +569,6 @@ mfxStatus VAAPIEncoder::Init(ENCODE_FUNC func, ExecuteBuffers* pExecuteBuffers)
         return MFX_ERR_DEVICE_FAILED;    
 
     mfxU8 vaRCType = ConvertRateControlMFX2VAAPI(pExecuteBuffers->m_sps.RateControlMethod);
-
 
     if ((attrib[1].value & vaRCType) == 0)
         return MFX_ERR_DEVICE_FAILED;
@@ -669,7 +697,7 @@ mfxStatus VAAPIEncoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
     }
     
     m_codedbufISize = pExecuteBuffers->m_sps.FrameWidth*pExecuteBuffers->m_sps.FrameHeight*3/2;
-    m_codedbufPBSize = 0;
+    m_codedbufPBSize =  pExecuteBuffers->m_sps.FrameWidth*pExecuteBuffers->m_sps.FrameHeight*3/2;
 
     // request linear buffer
     pRequest->Info.FourCC = MFX_FOURCC_P8;
@@ -740,7 +768,7 @@ mfxStatus VAAPIEncoder::RegisterRefFrames (const mfxFrameAllocResponse* pRespons
         m_recFrames[i].number = i;
     }
 
-    return MFX_ERR_NONE;
+    //return MFX_ERR_NONE;
 
     sts = Register(pResponse, D3DDDIFMT_NV12);
     MFX_CHECK_STS(sts);
@@ -897,18 +925,21 @@ mfxStatus VAAPIEncoder::FillSlices(ExecuteBuffers* pExecuteBuffers)
 
     assert(m_vaPpsBuf.picture_coding_extension.bits.q_scale_type == 0);
 
-    width_in_mbs = (m_vaSpsBuf.picture_width + 15) / 16;
-    height_in_mbs = (m_vaSpsBuf.picture_height + 15) / 16;
+    width_in_mbs = (m_vaSpsBuf.picture_width + 15) >> 4;
+    height_in_mbs = (m_vaSpsBuf.picture_height + 15) >> 4;
     m_numSliceGroups = 1;
 
 #if 1                   //multiple slice
     for (i = 0; i < height_in_mbs; i++) {
+        ENCODE_SET_SLICE_HEADER_MPEG2&  ddiSlice = pExecuteBuffers->m_pSlice[i];
+        assert(ddiSlice.NumMbsForSlice == width_in_mbs);                
         sliceParam = &m_sliceParam[i];
         //sliceParam->macroblock_address = i * width_in_mbs;
         sliceParam->macroblock_address = i;
-        sliceParam->num_macroblocks = width_in_mbs;
-        sliceParam->is_intra_slice = (m_vaPpsBuf.picture_type == VAEncPictureTypeIntra);
-        sliceParam->quantiser_scale_code = 13; /*ctx->qp*/ // TODO: where find QP value ?
+        sliceParam->num_macroblocks      = ddiSlice.NumMbsForSlice;
+        sliceParam->is_intra_slice       = ddiSlice.IntraSlice;
+        sliceParam->quantiser_scale_code = ddiSlice.quantiser_scale_code; 
+        //sliceParam->quantiser_scale_code = 4; /*ctx->qp*/ // TODO: where find QP value ?
     }
 
     vaSts = vaCreateBuffer(m_vaDisplay,
@@ -1040,21 +1071,8 @@ mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, 
     mfxSts = FillSlices(pExecuteBuffers);
     MFX_CHECK(mfxSts == MFX_ERR_NONE, MFX_ERR_DEVICE_FAILED);
 
-    MFX_DESTROY_VABUFFER(m_codedbufBufferId, m_vaDisplay);
-    int codedbuf_size = (m_vaPpsBuf.picture_type == VAEncPictureTypeIntra)
-        ? m_codedbufISize
-        : m_codedbufPBSize;
-
-    vaSts = vaCreateBuffer(m_vaDisplay,
-        m_vaContextEncode,
-        VAEncCodedBufferType,
-        codedbuf_size,
-        1,
-        NULL,
-        &m_codedbufBufferId);
-    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-    m_vaPpsBuf.coded_buf = m_codedbufBufferId;   
+    MFX_CHECK_WITH_ASSERT(pExecuteBuffers->m_idxBs >= 0  && pExecuteBuffers->m_idxBs < m_bsQueue.size(), MFX_ERR_DEVICE_FAILED);
+    m_vaPpsBuf.coded_buf = m_bsQueue[pExecuteBuffers->m_idxBs].surface;
 
     MFX_DESTROY_VABUFFER(m_ppsBufferId, m_vaDisplay);
     vaSts = vaCreateBuffer(m_vaDisplay,
@@ -1117,11 +1135,15 @@ mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, 
     //------------------------------------------------------------------
     // put to cache
     {
-        // UMC::AutomaticUMCMutex guard(m_guard);
-        ExtVASurface currentFeedback;
-        currentFeedback.number  =  pExecuteBuffers->m_pps.StatusReportFeedbackNumber;//   task.m_statusReportNumber[fieldId];
-        currentFeedback.surface = *(VASurfaceID*)pExecuteBuffers->m_pSurface; //ConvertSurfaceIdMFX2VAAPI(m_core, pExecuteBuffers->m_pSurface);
-        currentFeedback.idxBs    = pExecuteBuffers->m_idxBs;                         // task.m_idxBs[fieldId];
+        //UMC::AutomaticUMCMutex guard(m_guard);
+        ExtVASurface currentFeedback = {
+            *(VASurfaceID*)pExecuteBuffers->m_pSurface,
+            pExecuteBuffers->m_pps.StatusReportFeedbackNumber,            
+            pExecuteBuffers->m_idxBs
+        };
+        //currentFeedback.number  =  pExecuteBuffers->m_pps.StatusReportFeedbackNumber;//   task.m_statusReportNumber[fieldId];
+        //currentFeedback.surface = *(VASurfaceID*)pExecuteBuffers->m_pSurface; //ConvertSurfaceIdMFX2VAAPI(m_core, pExecuteBuffers->m_pSurface);
+        //currentFeedback.idxBs    = pExecuteBuffers->m_idxBs;                         // task.m_idxBs[fieldId];
         m_feedback.push_back( currentFeedback );
     }
 
@@ -1259,7 +1281,7 @@ mfxStatus VAAPIEncoder::Close()
     {
         MFX_DESTROY_VABUFFER(m_sliceParamBufferId[i], m_vaDisplay);
     }
-    //MFX_DESTROY_VABUFFER(m_codedbufBufferId, m_vaDisplay);
+
     MFX_DESTROY_VABUFFER(m_miscParamFpsId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_miscParamPrivateId, m_vaDisplay);
 
