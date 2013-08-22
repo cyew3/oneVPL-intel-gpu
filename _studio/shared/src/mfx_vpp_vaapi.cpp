@@ -403,7 +403,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         output_region[refIdx].width  = outInfo->CropW;
         m_pipelineParam[refIdx].output_region = &output_region[refIdx];
 
-        m_pipelineParam[refIdx].output_background_color = 0xff108080; // black for yuv
+        m_pipelineParam[refIdx].output_background_color = 0xff000000; // black for ARGB
 
         mfxU32  refFourcc = pRefSurf->frameInfo.FourCC;
         switch (refFourcc)
