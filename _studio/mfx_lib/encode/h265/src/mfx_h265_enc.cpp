@@ -208,6 +208,11 @@ mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxE
     pars->PicWidthInCtbs = (pars->Width + pars->MaxCUSize - 1) / pars->MaxCUSize;
     pars->PicHeightInCtbs = (pars->Height + pars->MaxCUSize - 1) / pars->MaxCUSize;
 
+    if (pars->num_threads > pars->PicHeightInCtbs)
+        pars->num_threads = pars->PicHeightInCtbs;
+    if (pars->num_threads > (pars->PicWidthInCtbs + 1) / 2)
+        pars->num_threads = (pars->PicWidthInCtbs + 1) / 2;
+    
     for (Ipp32s i = 0; i < pars->MaxCUDepth; i++ )
     {
         pars->AMPAcc[i] = i < pars->MaxCUDepth-pars->AddCUDepth ? pars->AMPFlag : 0;
