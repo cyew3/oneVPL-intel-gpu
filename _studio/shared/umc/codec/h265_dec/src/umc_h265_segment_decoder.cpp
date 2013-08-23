@@ -785,11 +785,6 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
     if (MODE_INTRA == PredMode)
     {
         // Inter mode is marked later when RefIdx is read from bitstream
-        Ipp32s PartX = LPelX >> m_pSeqParamSet->log2_min_transform_block_size;
-        Ipp32s PartY = TPelY >> m_pSeqParamSet->log2_min_transform_block_size;
-        Ipp32s PartWidth = pCU->GetWidth(AbsPartIdx) >> m_pSeqParamSet->log2_min_transform_block_size;
-        Ipp32s PartHeight = pCU->GetHeight(AbsPartIdx) >> m_pSeqParamSet->log2_min_transform_block_size;
-
         if (SIZE_2Nx2N == pCU->GetPartitionSize(AbsPartIdx))
         {
             DecodeIPCMInfoCABAC(pCU, AbsPartIdx, Depth);
@@ -2623,19 +2618,6 @@ void H265SegmentDecoder::IntraRecLumaBlk(H265CodingUnit* pCU,
     VM_ASSERT(pCU->m_AbsIdxInLCU == 0);
 
     Ipp32u Size = pCU->GetWidth(AbsPartIdx) >> TrDepth;
-
-    // compute the location of the current PU
-    Ipp32s XInc = pCU->m_rasterToPelX[AbsPartIdx];
-    Ipp32s YInc = pCU->m_rasterToPelY[AbsPartIdx];
-    Ipp32s LPelX = pCU->m_CUPelX + XInc;
-    Ipp32s TPelY = pCU->m_CUPelY + YInc;
-    XInc >>= m_pSeqParamSet->log2_min_transform_block_size;
-    YInc >>= m_pSeqParamSet->log2_min_transform_block_size;
-    Ipp32s PartX = LPelX >> m_pSeqParamSet->log2_min_transform_block_size;
-    Ipp32s PartY = TPelY >> m_pSeqParamSet->log2_min_transform_block_size;
-    Ipp32s TUPartNumberInCTB = m_context->m_CurrCTBStride * YInc + XInc;
-    Ipp32s NumUnitsInCU = Size >> m_pSeqParamSet->log2_min_transform_block_size;
-
     H265CodingUnit::IntraNeighbors *intraNeighbor = &pCU->m_intraNeighbors[0][AbsPartIdx];
 
     //===== get Predicted Pels =====
@@ -2774,18 +2756,6 @@ void H265SegmentDecoder::IntraRecChromaBlk(H265CodingUnit* pCU,
 
     Ipp32u Size = pCU->GetWidth(AbsPartIdx) >> TrDepth;
 
-    // compute the location of the current PU
-    Ipp32s XInc = pCU->m_rasterToPelX[AbsPartIdx];
-    Ipp32s YInc = pCU->m_rasterToPelY[AbsPartIdx];
-    Ipp32s LPelX = pCU->m_CUPelX + XInc;
-    Ipp32s TPelY = pCU->m_CUPelY + YInc;
-    XInc >>= m_pSeqParamSet->log2_min_transform_block_size;
-    YInc >>= m_pSeqParamSet->log2_min_transform_block_size;
-    Ipp32s PartX = LPelX >> m_pSeqParamSet->log2_min_transform_block_size;
-    Ipp32s PartY = TPelY >> m_pSeqParamSet->log2_min_transform_block_size;
-    Ipp32s TUPartNumberInCTB = m_context->m_CurrCTBStride * YInc + XInc;
-    Ipp32s NumUnitsInCU = Size >> m_pSeqParamSet->log2_min_transform_block_size;
-
     // TODO: Use neighbours information from Luma block
     H265CodingUnit::IntraNeighbors *intraNeighbor = &pCU->m_intraNeighbors[1][AbsPartIdx];
     InitNeighbourPatternChroma(pCU, AbsPartIdx, TrDepth,
@@ -2889,9 +2859,9 @@ void H265SegmentDecoder::UpdatePUInfo(H265CodingUnit *pCU, Ipp32u PartX, Ipp32u 
     Ipp32s stride = m_context->m_CurrCTBStride;
     
     pMVInfo = &m_context->m_CurrCTB[PartY * stride + PartX];
-    for (Ipp32s y = 0; y < PartHeight; y++)
+    for (Ipp32u y = 0; y < PartHeight; y++)
     {
-        for (Ipp32s x = 0; x < PartWidth; x++)
+        for (Ipp32u x = 0; x < PartWidth; x++)
         {
             pMVInfo[x] = MVi;
         }
