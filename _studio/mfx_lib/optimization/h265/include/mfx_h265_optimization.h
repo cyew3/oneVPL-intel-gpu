@@ -48,8 +48,8 @@
 #if defined(ANDROID)
     #define MFX_TARGET_OPTIMIZATION_ATOM
 #else
-    #define MFX_TARGET_OPTIMIZATION_SSE4
-    //#define MFX_TARGET_OPTIMIZATION_AVX2
+    //#define MFX_TARGET_OPTIMIZATION_SSE4
+    #define MFX_TARGET_OPTIMIZATION_AVX2
     //#define MFX_TARGET_OPTIMIZATION_PX // ref C or IPP based, not supported yet
     //#define MFX_TARGET_OPTIMIZATION_ATOM // BYT
 #endif
