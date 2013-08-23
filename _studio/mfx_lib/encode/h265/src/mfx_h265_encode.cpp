@@ -532,11 +532,12 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
         if ((opts_in==0) != (opts_out==0))
             return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-        if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 && in->mfx.FrameInfo.ChromaFormat == 0) { // because 0 == monochrome
-            out->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
-            out->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-            isCorrected ++;
-        } else if ((in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12) != (in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)) {
+        //if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 && in->mfx.FrameInfo.ChromaFormat == 0) { // because 0 == monochrome
+        //    out->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+        //    out->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        //    isCorrected ++;
+        //} else
+        if ((in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12) != (in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)) {
             out->mfx.FrameInfo.FourCC = 0;
             out->mfx.FrameInfo.ChromaFormat = 0;
             isInvalid ++;
@@ -545,11 +546,11 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
             out->mfx.FrameInfo.ChromaFormat = in->mfx.FrameInfo.ChromaFormat;
         }
 
-        if ( (in->mfx.FrameInfo.Width & 15) || in->mfx.FrameInfo.Width > 16384 ) {
+        if ( (in->mfx.FrameInfo.Width & 15) || in->mfx.FrameInfo.Width > 3840 ) {
             out->mfx.FrameInfo.Width = 0;
             isInvalid ++;
         } else out->mfx.FrameInfo.Width = in->mfx.FrameInfo.Width;
-        if ( (in->mfx.FrameInfo.Height & 15) || in->mfx.FrameInfo.Height > 16384 ) {
+        if ( (in->mfx.FrameInfo.Height & 15) || in->mfx.FrameInfo.Height > 2160 ) {
             out->mfx.FrameInfo.Height = 0;
             isInvalid ++;
         } else out->mfx.FrameInfo.Height = in->mfx.FrameInfo.Height;
@@ -617,7 +618,7 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
         //Check for valid framerate
         if (!in->mfx.FrameInfo.FrameRateExtN && in->mfx.FrameInfo.FrameRateExtD ||
             in->mfx.FrameInfo.FrameRateExtN && !in->mfx.FrameInfo.FrameRateExtD ||
-            in->mfx.FrameInfo.FrameRateExtD && ((mfxF64)in->mfx.FrameInfo.FrameRateExtN / in->mfx.FrameInfo.FrameRateExtD) > 172) {
+            in->mfx.FrameInfo.FrameRateExtD && ((mfxF64)in->mfx.FrameInfo.FrameRateExtN / in->mfx.FrameInfo.FrameRateExtD) > 120) {
             isInvalid ++;
             out->mfx.FrameInfo.FrameRateExtN = out->mfx.FrameInfo.FrameRateExtD = 0;
         } else {
