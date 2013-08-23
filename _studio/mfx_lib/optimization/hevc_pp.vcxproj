@@ -46,6 +46,7 @@
     <ClCompile Include="h265\src\mfx_h265_intrapred_px.cpp" />
     <ClCompile Include="h265\src\mfx_h265_intrapred_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_quantization_px.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_reordering_avx2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sad_avx2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sad_general_avx2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sad_general_sse.cpp" />
@@ -54,6 +55,8 @@
     <ClCompile Include="h265\src\mfx_h265_sao_px.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sao_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_transform_fwd_sse.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_transform_inv_32x32_avx2.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_transform_inv_avx2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_transform_inv_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_transform_px.cpp" />
   </ItemGroup>
@@ -249,7 +252,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">
     <ClCompile>
-      <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>$(CPPFLAGS) /QxCORE-AVX2 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\optimization\h265\include;..\encode\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
