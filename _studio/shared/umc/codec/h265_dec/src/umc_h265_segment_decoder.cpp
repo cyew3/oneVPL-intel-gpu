@@ -927,6 +927,8 @@ void H265SegmentDecoder::DecodeIntraNeighbors(H265CodingUnit* pCU, Ipp32u AbsPar
             return;
         }
     }
+    else
+        return;
 
     Size = pCU->GetWidth(AbsPartIdx) >> TrDepth;
     NumUnitsInCU = Size >> m_pSeqParamSet->log2_min_transform_block_size;
@@ -2757,7 +2759,7 @@ void H265SegmentDecoder::IntraRecChromaBlk(H265CodingUnit* pCU,
     Ipp32u Size = pCU->GetWidth(AbsPartIdx) >> TrDepth;
 
     // TODO: Use neighbours information from Luma block
-    H265CodingUnit::IntraNeighbors *intraNeighbor = &pCU->m_intraNeighbors[1][AbsPartIdx];
+    H265CodingUnit::IntraNeighbors *intraNeighbor = (Log2TrSize != 2) ? &pCU->m_intraNeighbors[0][AbsPartIdx] : &pCU->m_intraNeighbors[1][AbsPartIdx];
     InitNeighbourPatternChroma(pCU, AbsPartIdx, TrDepth,
         m_Prediction->GetPredicBuf(),
         m_Prediction->GetPredicBufWidth(),
