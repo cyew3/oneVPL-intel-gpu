@@ -240,6 +240,16 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     }
 
     stsQuery = Query(par_in, &m_mfxVideoParam); // [has to] copy all provided params
+
+    // return status for Init differs in these cases
+    if (stsQuery == MFX_ERR_UNSUPPORTED &&
+         ( (par_in->mfx.NumSlice > 0 && m_mfxVideoParam.mfx.NumSlice == 0) ||
+           (par_in->mfx.FrameInfo.FrameRateExtN != 0 && m_mfxVideoParam.mfx.FrameInfo.FrameRateExtN == 0) ||
+           (par_in->mfx.FrameInfo.FrameRateExtD != 0 && m_mfxVideoParam.mfx.FrameInfo.FrameRateExtD == 0) ||
+           (par_in->mfx.FrameInfo.FourCC != 0 && m_mfxVideoParam.mfx.FrameInfo.FourCC == 0) ||
+           (par_in->mfx.FrameInfo.ChromaFormat != 0 && m_mfxVideoParam.mfx.FrameInfo.ChromaFormat == 0) ) )
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
     if (stsQuery != MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
         MFX_CHECK_STS(stsQuery);
 
