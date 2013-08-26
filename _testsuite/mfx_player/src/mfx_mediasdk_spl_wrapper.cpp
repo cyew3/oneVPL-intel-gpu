@@ -104,7 +104,6 @@ mfxStatus MediaSDKSplWrapper::ReadNextFrame(mfxBitstream2 &bs2)
     mfxU32 iOutputTrack = 0;
     bool bVideoFrame = false;
     mfxBitstream bs;
-
     MFX_CHECK_POINTER(m_mfxSplitter);
     while (!bVideoFrame && sts == MFX_ERR_NONE)
     {
@@ -167,17 +166,18 @@ mfxStatus MediaSDKSplWrapper::GetStreamInfo(sStreamInfo * pParams)
     return MFX_ERR_NONE;
 }
 
-mfxStatus MediaSDKSplWrapper::SeekTime(mfxF64 /*fSeekTo*/)
+mfxStatus MediaSDKSplWrapper::SeekTime(mfxF64 fSeekTo)
 {
-    m_pConstructor->Reset();
+    MFX_CHECK_POINTER(m_mfxSplitter);
 
-    return MFX_ERR_NONE;
+    return MFXSplitter_SetTimePosition(m_mfxSplitter, fSeekTo);
 }
 
-mfxStatus MediaSDKSplWrapper::SeekPercent(mfxF64 /*fSeekTo*/)
+mfxStatus MediaSDKSplWrapper::SeekPercent(mfxF64 fSeekTo)
 {
+    MFX_CHECK_POINTER(m_mfxSplitter);
 
-    return MFX_ERR_NONE;
+    return MFXSplitter_SetTimePosition(m_mfxSplitter, (mfxF64) m_streamParams.Duration * fSeekTo * 1.e-8); // / 100, / AV_TIME_BASE
 }
 
 mfxStatus MediaSDKSplWrapper::SeekFrameOffset(mfxU32 /*nFrameOffset*/, mfxFrameInfo & /*in_info*/)
