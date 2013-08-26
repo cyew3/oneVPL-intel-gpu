@@ -11,7 +11,6 @@
 #include "umc_defs.h"
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
-#include "umc_h265_dec_defs_dec.h"
 #include "umc_h265_dec_tables.h"
 
 namespace UMC_HEVC_DECODER

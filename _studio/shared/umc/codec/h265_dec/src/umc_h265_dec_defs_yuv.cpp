@@ -10,9 +10,7 @@
 */
 #include "umc_defs.h"
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
-#include "umc_default_memory_allocator.h"
 #include "umc_h265_dec_defs_yuv.h"
-#include "ippvc.h"
 #include "umc_h265_frame.h"
 #include "h265_global_rom.h"
 

@@ -8,20 +8,14 @@
 //
 */
 
-#include <limits>
-#include <algorithm>
 #include "mfx_h265_dec_decode.h"
 
 #if defined (MFX_ENABLE_H265_VIDEO_DECODE)
 
 #include "mfx_common.h"
 #include "mfx_common_decode_int.h"
-
 #include "umc_h265_mfx_supplier.h"
-
-// debug
 #include "umc_h265_frame_list.h"
-
 #include "mfx_enc_common.h"
 
 #ifdef MFX_VA
@@ -29,6 +23,11 @@
 #include "umc_va_dxva2_protected.h"
 #endif
 
+
+static inline void mfx_memcpy(void * dst, size_t dstLen, void * src, size_t len)
+{
+    memcpy_s(dst, dstLen, src, len);
+}
 
 inline bool IsNeedToUseHWBuffering(eMFXHWType type)
 {
@@ -422,7 +421,7 @@ mfxStatus VideoDECODEH265::GetVideoParam(mfxVideoParam *par)
 
     MFX_CHECK_NULL_PTR1(par);
 
-    memcpy(&par->mfx, &m_vFirstPar.mfx, sizeof(mfxInfoMFX));
+    par->mfx = m_vFirstPar.mfx;
 
     FillVideoParam(&m_vPar, true);
 
@@ -437,49 +436,14 @@ mfxStatus VideoDECODEH265::GetVideoParam(mfxVideoParam *par)
             return MFX_ERR_INVALID_VIDEO_PARAM;
 
         mfxExtPAVPOption * bufferInternal = m_vPar.GetExtendedBuffer<mfxExtPAVPOption>(MFX_EXTBUFF_PAVP_OPTION);
-        memcpy(buffer, bufferInternal, sizeof(mfxExtPAVPOption));
+        *bufferInternal = *buffer;
     }
 
     mfxExtVideoSignalInfo * videoSignal = (mfxExtVideoSignalInfo *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
     if (videoSignal)
     {
         mfxExtVideoSignalInfo * videoSignalInternal = m_vPar.GetExtendedBuffer<mfxExtVideoSignalInfo>(MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
-        memcpy(videoSignal, videoSignalInternal, sizeof(mfxExtVideoSignalInfo));
-    }
-
-    // mvc headers
-    mfxExtMVCSeqDesc * mvcSeqDesc = (mfxExtMVCSeqDesc *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
-    mfxExtMVCSeqDesc * mvcSeqDescInternal = (mfxExtMVCSeqDesc *)GetExtendedBuffer(m_vPar.ExtParam, m_vPar.NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
-    if (mvcSeqDesc && mvcSeqDescInternal && mvcSeqDescInternal->NumView)
-    {
-        mvcSeqDesc->NumView = mvcSeqDescInternal->NumView;
-        mvcSeqDesc->NumViewId = mvcSeqDescInternal->NumViewId;
-        mvcSeqDesc->NumOP = mvcSeqDescInternal->NumOP;
-
-        if (mvcSeqDesc->NumViewAlloc < mvcSeqDescInternal->NumView ||
-            mvcSeqDesc->NumViewIdAlloc < mvcSeqDescInternal->NumViewId ||
-            mvcSeqDesc->NumOPAlloc < mvcSeqDescInternal->NumOP)
-        {
-            return MFX_ERR_NOT_ENOUGH_BUFFER;
-        }
-
-        memcpy(mvcSeqDesc->View, mvcSeqDescInternal->View, mvcSeqDescInternal->NumView * sizeof(mfxMVCViewDependency));
-        memcpy(mvcSeqDesc->ViewId, mvcSeqDescInternal->ViewId, mvcSeqDescInternal->NumViewId * sizeof(mfxU16));
-        memcpy(mvcSeqDesc->OP, mvcSeqDescInternal->OP, mvcSeqDescInternal->NumOP * sizeof(mfxMVCOperationPoint));
-
-        mfxU16 * targetView = mvcSeqDesc->ViewId;
-        for (mfxU32 i = 0; i < mvcSeqDesc->NumOP; i++)
-        {
-            mvcSeqDesc->OP[i].TargetViewId = targetView;
-            targetView += mvcSeqDesc->OP[i].NumTargetViews;
-        }
-    }
-
-    mfxExtMVCTargetViews * mvcTarget = (mfxExtMVCTargetViews *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_MVC_TARGET_VIEWS);
-    mfxExtMVCTargetViews * mvcTargetInternal = (mfxExtMVCTargetViews *)GetExtendedBuffer(m_vPar.ExtParam, m_vPar.NumExtParam, MFX_EXTBUFF_MVC_TARGET_VIEWS);
-    if (mvcTarget && mvcTargetInternal && mvcTargetInternal->NumView)
-    {
-        memcpy(mvcTarget, mvcTargetInternal, sizeof(mfxExtMVCTargetViews));
+        *videoSignal = *videoSignalInternal;
     }
 
     // sps/pps headers
@@ -498,8 +462,8 @@ mfxStatus VideoDECODEH265::GetVideoParam(mfxVideoParam *par)
         spsPps->SPSBufSize = spsPpsInternal->SPSBufSize;
         spsPps->PPSBufSize = spsPpsInternal->PPSBufSize;
 
-        memcpy(spsPps->SPSBuffer, spsPpsInternal->SPSBuffer, spsPps->SPSBufSize);
-        memcpy(spsPps->PPSBuffer, spsPpsInternal->PPSBuffer, spsPps->PPSBufSize);
+        mfx_memcpy(spsPps->SPSBuffer, spsPps->SPSBufSize, spsPpsInternal->SPSBuffer, spsPps->SPSBufSize);
+        mfx_memcpy(spsPps->PPSBuffer, spsPps->PPSBufSize, spsPpsInternal->PPSBuffer, spsPps->PPSBufSize);
     }
 
     if (!par->mfx.FrameInfo.FrameRateExtD && !par->mfx.FrameInfo.FrameRateExtN)
@@ -570,7 +534,7 @@ mfxStatus VideoDECODEH265::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVi
                 return MFX_ERR_NOT_ENOUGH_BUFFER;
 
             spsPps->SPSBufSize = (mfxU16)sps->GetSize();
-            memcpy(spsPps->SPSBuffer, sps->GetPointer(), spsPps->SPSBufSize);
+            mfx_memcpy(spsPps->SPSBuffer, spsPps->SPSBufSize, sps->GetPointer(), spsPps->SPSBufSize);
         }
         else
         {
@@ -585,7 +549,7 @@ mfxStatus VideoDECODEH265::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVi
                 return MFX_ERR_NOT_ENOUGH_BUFFER;
 
             spsPps->PPSBufSize = (mfxU16)pps->GetSize();
-            memcpy(spsPps->PPSBuffer, pps->GetPointer(), spsPps->PPSBufSize);
+            mfx_memcpy(spsPps->PPSBuffer, spsPps->PPSBufSize, pps->GetPointer(), spsPps->PPSBufSize);
         }
         else
         {
@@ -617,7 +581,7 @@ mfxStatus VideoDECODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
     }
 
     mfxVideoParam params;
-    memcpy(&params, par, sizeof(mfxVideoParam));
+    params = *par;
     bool isNeedChangeVideoParamWarning = IsNeedChangeVideoParam(&params);
 
     if (!(par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && !(par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) && !(par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
@@ -680,7 +644,7 @@ mfxStatus VideoDECODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
 
 mfxStatus VideoDECODEH265::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType type, mfxVideoParam *par, mfxFrameAllocRequest *request, VideoCORE *core)
 {
-    memcpy(&request->Info, &par->mfx.FrameInfo, sizeof(mfxFrameInfo));
+    request->Info = par->mfx.FrameInfo;
 
     mfxU32 asyncDepth = (par->AsyncDepth ? par->AsyncDepth : core->GetAutoAsyncDepth());
     bool useDelayedDisplay = (ENABLE_DELAYED_DISPLAY_MODE != 0) && IsNeedToUseHWBuffering(type) && (asyncDepth != 1);
@@ -720,11 +684,11 @@ mfxStatus VideoDECODEH265::GetDecodeStat(mfxDecodeStat *stat)
     H265DecoderFrame *pFrame = m_pH265VideoDecoder->GetDPBList()->head();
     for (; pFrame; pFrame = pFrame->future())
     {
-            if (!pFrame->wasOutputted() && !isAlmostDisposable(pFrame))
-                m_stat.NumCachedFrame++;
-        }
+        if (!pFrame->wasOutputted() && !isAlmostDisposable(pFrame))
+            m_stat.NumCachedFrame++;
+    }
 
-    memcpy(stat, &m_stat, sizeof(m_stat));
+    *stat = m_stat;
     return MFX_ERR_NONE;
 }
 
@@ -1231,7 +1195,7 @@ mfxStatus VideoDECODEH265::GetUserData(mfxU8 *ud, mfxU32 *sz, mfxU64 *ts)
 
     *sz = (mfxU32)data.GetDataSize();
     *ts = GetMfxTimeStamp(data.GetTime());
-    memcpy(ud, data.GetDataPointer(), data.GetDataSize());
+    mfx_memcpy(ud, *sz, data.GetDataPointer(), data.GetDataSize());
 
     return MFXSts;
 }
@@ -1258,7 +1222,7 @@ mfxStatus VideoDECODEH265::GetPayload(mfxSession , mfxU64 *ts, mfxPayload * payl
             return MFX_ERR_NOT_ENOUGH_BUFFER;
 
         *ts = GetMfxTimeStamp(msg->timestamp);
-        memcpy(payload->Data, msg->data, msg->msg_size);
+        mfx_memcpy(payload->Data, msg->msg_size, msg->data, msg->msg_size);
 
         payload->NumBit = (mfxU32)(msg->msg_size * 8);
         payload->Type = (mfxU16)msg->type;

@@ -15,10 +15,7 @@
     to umc_h264_dec_slice_decode_pic */
 
 #include "umc_h265_slice_decoding.h"
-#include "umc_h265_dec.h"
-#include "vm_debug.h"
 #include "umc_h265_frame_list.h"
-
 #include "umc_h265_task_supplier.h"
 
 namespace UMC_HEVC_DECODER

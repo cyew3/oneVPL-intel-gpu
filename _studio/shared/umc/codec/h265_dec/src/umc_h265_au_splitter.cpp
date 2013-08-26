@@ -11,18 +11,9 @@
 #include "umc_defs.h"
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
-#include "memory"
-
+#include <memory>
 #include "umc_h265_au_splitter.h"
-
 #include "umc_h265_nal_spl.h"
-#include "umc_h265_bitstream.h"
-#include "umc_h265_dec_defs_dec.h"
-#include "umc_structures.h"
-
-#include "umc_frame_data.h"
-#include "umc_h265_dec_debug.h"
-
 
 namespace UMC_HEVC_DECODER
 {

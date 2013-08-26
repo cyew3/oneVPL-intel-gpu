@@ -13,9 +13,6 @@
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
 #include "h265_global_rom.h"
-#include <memory.h>
-#include <stdlib.h>
-#include <stdio.h>
 
 namespace UMC_HEVC_DECODER
 {
