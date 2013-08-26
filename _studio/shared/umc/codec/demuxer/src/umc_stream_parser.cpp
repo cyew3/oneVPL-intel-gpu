@@ -374,7 +374,11 @@ Status Mpeg2PesParser::ParsePmtInfo(Mpeg2TsPmt &pmt)
                     AudioStreamInfo *pAudioSpec = (AudioStreamInfo *)m_pInfo[iTrack]->m_pStreamInfo;
                     Ipp8u id = (pPtr[0] >> 6) & 0x01;
                     Ipp8u layer = 4 - ((pPtr[0] >> 4) & 0x03);
-                    pAudioSpec->stream_type = AudioFrameConstructor::MpegAStreamType[id][layer - 1];
+                    const size_t maxLayerIndex = sizeof(AudioFrameConstructor::MpegAStreamType[0])/sizeof(AudioFrameConstructor::MpegAStreamType[0][0]);
+                    if (layer <= maxLayerIndex)
+                    {
+                        pAudioSpec->stream_type = AudioFrameConstructor::MpegAStreamType[id][layer - 1];
+                    }
                     m_pInfo[iTrack]->m_Type = TRACK_MPEGA;
                 }
                 else if ((DESC_AC3 == uiTag || DESC_ENH_AC3 == uiTag) && pmt.pESs[i].uiType == 0x06)
