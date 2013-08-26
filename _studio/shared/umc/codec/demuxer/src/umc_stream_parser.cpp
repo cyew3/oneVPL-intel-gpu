@@ -766,7 +766,9 @@ Status StreamParser::EstimateMPEGAudioDuration(void)
                 else
                 {
                     frame_len = 0;
-                    if (layer == 3)
+                    if (layer == 4)
+                        return UMC::UMC_WRN_INVALID_STREAM; // should not appear, but technically possible
+                    else if (layer == 3)
                         frame_len = 72000 * (id + 1);
                     else if (layer == 2)
                         frame_len = 72000 * 2;
