@@ -95,6 +95,7 @@ mfxStatus MediaSDKSplWrapper::Init(const vm_char *strFileName)
             break;
         }
     }
+
     return sts;
 }
 
@@ -145,13 +146,15 @@ mfxStatus MediaSDKSplWrapper::GetStreamInfo(sStreamInfo * pParams)
                 case MFX_TRACK_MPEG2V: pParams->videoType = MFX_CODEC_MPEG2; break;
                 case MFX_TRACK_H264  : pParams->videoType = MFX_CODEC_AVC;   break;
                 case MFX_TRACK_VP8   : pParams->videoType = MFX_CODEC_VP8;   break;
+                case MFX_TRACK_VC1   : pParams->videoType = MFX_CODEC_VC1;   break;
                 default : 
                     return MFX_ERR_UNKNOWN;
             }
 
             pParams->CodecProfile = m_streamParams.TrackInfo[i]->VideoParam.CodecProfile;
 
-            if (m_streamParams.SystemType == MFX_MP4_ATOM_STREAM && pParams->videoType == MFX_CODEC_AVC)
+            if (m_streamParams.SystemType == MFX_MP4_ATOM_STREAM && pParams->videoType == MFX_CODEC_AVC ||
+                m_streamParams.SystemType == MFX_ASF_STREAM && pParams->videoType == MFX_CODEC_VC1)
             {
                 pParams->isDefaultFC = false;
             }else
