@@ -170,14 +170,14 @@ mfxStatus MediaSDKSplWrapper::SeekTime(mfxF64 fSeekTo)
 {
     MFX_CHECK_POINTER(m_mfxSplitter);
 
-    return MFXSplitter_SetTimePosition(m_mfxSplitter, fSeekTo);
+    return MFXSplitter_Seek(m_mfxSplitter, fSeekTo);
 }
 
 mfxStatus MediaSDKSplWrapper::SeekPercent(mfxF64 fSeekTo)
 {
     MFX_CHECK_POINTER(m_mfxSplitter);
 
-    return MFXSplitter_SetTimePosition(m_mfxSplitter, (mfxF64) m_streamParams.Duration * fSeekTo * 1.e-8); // / 100, / AV_TIME_BASE
+    return MFXSplitter_Seek(m_mfxSplitter, (mfxF64) m_streamParams.Duration * fSeekTo * 1.e-8); // / 100, / AV_TIME_BASE
 }
 
 mfxStatus MediaSDKSplWrapper::SeekFrameOffset(mfxU32 /*nFrameOffset*/, mfxFrameInfo & /*in_info*/)
