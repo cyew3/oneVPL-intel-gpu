@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2005-2008 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2005-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -263,6 +263,9 @@ Status Mpeg2TsParser::ParseTsPat(Mpeg2TsPat &pat, Ipp32s iPos, bool bDetectChang
     if (pat.uiSecLen > 0 && !bDetectChanges)
         return UMC_OK;
 
+    if (iPos >= TTS_PACKET_SIZE)
+        return UMC_ERR_INVALID_STREAM;
+
     // read rest of packet
     Ipp8u tsHeader[TTS_PACKET_SIZE];
     CACHE_N_BYTES(&tsHeader[iPos], TTS_PACKET_SIZE - iPos, iPos);
@@ -352,6 +355,9 @@ Status Mpeg2TsParser::ParseTsPmt(Mpeg2TsPmt &pmt, Ipp32s iPos, bool bDetectChang
     if (pmt.uiSecLen > 0 && !bDetectChanges)
         return UMC_OK;
 
+    if (iPos >= TTS_PACKET_SIZE)
+        return UMC_ERR_INVALID_STREAM;
+
     // read rest of packet
     Ipp8u tsHeader[TTS_PACKET_SIZE];
     CACHE_N_BYTES(&tsHeader[iPos], TTS_PACKET_SIZE - iPos, iPos);
@@ -427,10 +433,12 @@ Status Mpeg2TsParser::ParseTsPmt(Mpeg2TsPmt &pmt, Ipp32s iPos, bool bDetectChang
     {
         Ipp8u stream_type = tsHeader[iPos];
         Ipp16u elementary_PID = GET_16U(&tsHeader[iPos + 1]) & 0x1fff;
-        ES_info_length = GET_16U(&tsHeader[iPos + 3]) & 0x0fff;
+        ES_info_length = GET_16U(&tsHeader[iPos + 3]) & 0x0fff;        
 
         if (!pmt.uiSecLen)
         { // first PMT
+            if (!pmt.pESs)
+                return UMC_WRN_INVALID_STREAM;
             pmt.pESs[i].uiType = stream_type;
             pmt.pESs[i].uiPid = elementary_PID;
             pmt.pESs[i].uiEsInfoLen = ES_info_length;
@@ -440,6 +448,8 @@ Status Mpeg2TsParser::ParseTsPmt(Mpeg2TsPmt &pmt, Ipp32s iPos, bool bDetectChang
         }
         else if (bDetectChanges)
         { // check ES description
+            if (!pmt.pESs)
+                return UMC_WRN_INVALID_STREAM;
             if (pmt.pESs[i].uiPid != elementary_PID || pmt.pESs[i].uiType != stream_type ||
                 pmt.pESs[i].uiEsInfoLen != (Ipp16u)ES_info_length)
             {
