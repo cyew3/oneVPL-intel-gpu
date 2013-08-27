@@ -775,6 +775,8 @@ void CmContext::Setup(
         throw CmRuntimeError();
 
     mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
+    if (!extDdi)
+        throw CmRuntimeError();
 
     widthLa = video.calcParam.widthLa;
     heightLa = video.calcParam.heightLa;
