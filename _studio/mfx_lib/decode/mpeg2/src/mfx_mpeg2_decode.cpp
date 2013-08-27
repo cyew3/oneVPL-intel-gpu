@@ -2327,8 +2327,8 @@ mfxStatus VideoDECODEMPEG2::CheckFrameData(const mfxFrameSurface1 *pSurface)
         return MFX_ERR_MORE_SURFACE;
     }
 
-    if (pSurface->Info.Width >  m_InitW ||
-        pSurface->Info.Height > m_InitH)
+    if (pSurface->Info.Width <  m_InitW ||
+        pSurface->Info.Height < m_InitH)
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
