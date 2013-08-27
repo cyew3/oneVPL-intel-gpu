@@ -578,6 +578,8 @@ Status VC1FrameDescriptor::SetPictureIndices(Ipp32u PTYPE, bool& skip)
         m_pStore->SetNextIndex(m_pContext->m_frmBuff.m_iNextIndex);
         m_pStore->SetCurrIndex(m_pContext->m_frmBuff.m_iCurrIndex);
         m_pStore->SetPrevIndex(m_pContext->m_frmBuff.m_iPrevIndex);
+
+        m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].corrupted= 0;
         break;
     case VC1_B_FRAME:
         if (m_pStore->IsNeedSkipFrame(PTYPE))
@@ -599,11 +601,13 @@ Status VC1FrameDescriptor::SetPictureIndices(Ipp32u PTYPE, bool& skip)
             m_bIsWarningStream = false;
             m_pContext->m_frmBuff.m_iNextIndex = m_pContext->m_frmBuff.m_iPrevIndex;
             m_pContext->m_frmBuff.m_iDisplayIndex = m_pContext->m_frmBuff.m_iCurrIndex;
+            m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].corrupted = ERROR_FRAME_MAJOR;
         }
         else
         {
             m_bIsWarningStream = false;
             m_pContext->m_frmBuff.m_iDisplayIndex = m_pContext->m_frmBuff.m_iCurrIndex;
+            m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].corrupted= 0;
         }
 
         m_pContext->m_frmBuff.m_iDisplayIndex = m_pContext->m_frmBuff.m_iCurrIndex;
@@ -623,6 +627,7 @@ Status VC1FrameDescriptor::SetPictureIndices(Ipp32u PTYPE, bool& skip)
         m_pStore->SetBFrameIndex(m_pContext->m_frmBuff.m_iBFrameIndex);
         m_bIsWarningStream = false;
         m_pContext->m_frmBuff.m_iDisplayIndex = m_pContext->m_frmBuff.m_iCurrIndex;
+        m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].corrupted= 0;
         break;
     case VC1_SKIPPED_FRAME:
         m_pContext->m_frmBuff.m_iCurrIndex = m_pContext->m_frmBuff.m_iNextIndex =  m_pContext->m_frmBuff.m_iDisplayIndex = m_pStore->GetNextIndex();
@@ -637,6 +642,7 @@ Status VC1FrameDescriptor::SetPictureIndices(Ipp32u PTYPE, bool& skip)
 
         m_pContext->m_frmBuff.m_iPrevIndex = m_pStore->GetPrevIndex();
         CheckIdx = m_pStore->LockSurface(&m_pContext->m_frmBuff.m_iToSkipCoping, true);
+        m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].corrupted= 0;
 
         break;
     default:
@@ -671,8 +677,7 @@ Status VC1FrameDescriptor::SetPictureIndices(Ipp32u PTYPE, bool& skip)
     m_pContext->ChromaTable[3] = m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].ChromaTable[3];
 
     m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].ICFieldMask = 0;
-    m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].corrupted= 0;
-
+    
     *m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].pRANGE_MAPY =
         m_pContext->m_picLayerHeader->RANGEREDFRM - 1;
 
