@@ -103,7 +103,7 @@ mfxStatus mfx_get_default_dll_name(msdk_disp_char *pPath, size_t /*pathSize*/, e
 
 mfxStatus mfx_get_default_audio_dll_name(msdk_disp_char *pPath, size_t /*pathSize*/, eMfxImplType implType)
 {
-    strcpy(pPath, defaultAudioDLLName[implType]);
+    strcpy(pPath, defaultAudioDLLName[implType & 1]);
 
     return MFX_ERR_NONE;
 
