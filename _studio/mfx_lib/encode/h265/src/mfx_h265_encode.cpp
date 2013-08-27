@@ -115,7 +115,7 @@ inline Ipp32u h265enc_ConvertBitrate(mfxU16 TargetKbps)
 mfxStatus CheckExtBuffers_H265enc(mfxExtBuffer** ebuffers, mfxU32 nbuffers)
 {
 
-    mfxU32 ID_list[] = { MFX_EXTBUFF_HEVCENC };
+    mfxU32 ID_list[] = { MFX_EXTBUFF_HEVCENC, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION };
 
     mfxU32 ID_found[sizeof(ID_list)/sizeof(ID_list[0])] = {0,};
     if (!ebuffers) return MFX_ERR_NONE;
@@ -140,7 +140,10 @@ mfxStatus CheckExtBuffers_H265enc(mfxExtBuffer** ebuffers, mfxU32 nbuffers)
 MFXVideoENCODEH265::MFXVideoENCODEH265(VideoCORE *core, mfxStatus *stat)
 : VideoENCODE(),
   m_core(core),
-  m_isInitialized(false)
+  m_isInitialized(false),
+  m_useSysOpaq(false),
+  m_useVideoOpaq(false),
+  m_isOpaque(false)
 {
     ippStaticInit();
     *stat = MFX_ERR_NONE;
@@ -224,20 +227,27 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     mfxExtCodingOptionHEVC* opts_hevc = (mfxExtCodingOptionHEVC*)GetExtBuffer( par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_HEVCENC );
+    mfxExtOpaqueSurfaceAlloc* opaqAllocReq = (mfxExtOpaqueSurfaceAlloc*)GetExtBuffer( par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION );
 
     mfxVideoH265InternalParam inInt = *par_in;
     mfxVideoH265InternalParam *par = &inInt;
 
+    mfxExtOpaqueSurfaceAlloc checked_opaqAllocReq;
+    mfxExtBuffer *ptr_checked_ext[2] = {0};
+    mfxU16 ext_counter = 0;
     memset(&m_mfxVideoParam,0,sizeof(mfxVideoParam));
 
     if (opts_hevc) {
-        mfxExtBuffer *ptr_checked_ext[1] = {0};
         m_mfxHEVCOpts.Header.BufferId = MFX_EXTBUFF_HEVCENC;
         m_mfxHEVCOpts.Header.BufferSz = sizeof(m_mfxHEVCOpts);
-        ptr_checked_ext[0] = &m_mfxHEVCOpts.Header;
-        m_mfxVideoParam.ExtParam = ptr_checked_ext;
-        m_mfxVideoParam.NumExtParam = 1;
+        ptr_checked_ext[ext_counter++] = &m_mfxHEVCOpts.Header;
     }
+    if (opaqAllocReq) {
+        checked_opaqAllocReq = *opaqAllocReq;
+        ptr_checked_ext[ext_counter++] = &checked_opaqAllocReq.Header;
+    }
+    m_mfxVideoParam.ExtParam = ptr_checked_ext;
+    m_mfxVideoParam.NumExtParam = ext_counter;
 
     stsQuery = Query(par_in, &m_mfxVideoParam); // [has to] copy all provided params
 
@@ -252,6 +262,112 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 
     if (stsQuery != MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
         MFX_CHECK_STS(stsQuery);
+
+
+    if ((par->IOPattern & 0xffc8) || (par->IOPattern == 0)) // 0 is possible after Query
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    if (!m_core->IsExternalFrameAllocator() && (par->IOPattern & (MFX_IOPATTERN_OUT_VIDEO_MEMORY | MFX_IOPATTERN_IN_VIDEO_MEMORY)))
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    if (par->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+    {
+        if (opaqAllocReq == 0)
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        else {
+            // check memory type in opaque allocation request
+            if (!(opaqAllocReq->In.Type & MFX_MEMTYPE_DXVA2_DECODER_TARGET) && !(opaqAllocReq->In.Type  & MFX_MEMTYPE_SYSTEM_MEMORY))
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+
+            if ((opaqAllocReq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY) && (opaqAllocReq->In.Type  & MFX_MEMTYPE_DXVA2_DECODER_TARGET))
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+
+            // use opaque surfaces. Need to allocate
+            m_isOpaque = true;
+        }
+    }
+
+    // return an error if requested opaque memory type isn't equal to native
+    if (m_isOpaque && (opaqAllocReq->In.Type & MFX_MEMTYPE_FROM_ENCODE) && !(opaqAllocReq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    //// to check if needed in hevc
+    //m_allocator = new mfx_UMC_MemAllocator;
+    //if (!m_allocator) return MFX_ERR_MEMORY_ALLOC;
+    //
+    //memset(&pParams, 0, sizeof(UMC::MemoryAllocatorParams));
+    //m_allocator->InitMem(&pParams, m_core);
+
+    if (m_isOpaque && opaqAllocReq->In.NumSurface < m_mfxVideoParam.mfx.GopRefDist)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+     // Allocate Opaque frames and frame for copy from video memory (if any)
+    memset(&m_auxInput, 0, sizeof(m_auxInput));
+    m_useAuxInput = false;
+    m_useSysOpaq = false;
+    m_useVideoOpaq = false;
+    if (par->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY || m_isOpaque) {
+        bool bOpaqVideoMem = m_isOpaque && !(opaqAllocReq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY);
+        bool bNeedAuxInput = (par->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY) || bOpaqVideoMem;
+        mfxFrameAllocRequest request;
+        memset(&request, 0, sizeof(request));
+        request.Info              = par->mfx.FrameInfo;
+
+        // try to allocate opaque surfaces in video memory for another component in transcoding chain
+        if (bOpaqVideoMem) {
+            memset(&m_response_alien, 0, sizeof(m_response_alien));
+            request.Type =  (mfxU16)opaqAllocReq->In.Type;
+            request.NumFrameMin =request.NumFrameSuggested = (mfxU16)opaqAllocReq->In.NumSurface;
+
+            sts = m_core->AllocFrames(&request,
+                                     &m_response_alien,
+                                     opaqAllocReq->In.Surfaces,
+                                     opaqAllocReq->In.NumSurface);
+
+            if (MFX_ERR_NONE != sts &&
+                MFX_ERR_UNSUPPORTED != sts) // unsupported means that current Core couldn;t allocate the surfaces
+                return sts;
+
+            if (m_response_alien.NumFrameActual < request.NumFrameMin)
+                return MFX_ERR_MEMORY_ALLOC;
+
+            if (sts != MFX_ERR_UNSUPPORTED)
+                m_useVideoOpaq = true;
+        }
+
+        // allocate all we need in system memory
+        memset(&m_response, 0, sizeof(m_response));
+        if (bNeedAuxInput) {
+            // allocate additional surface in system memory for FastCopy from video memory
+            request.Type              = MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY;
+            request.NumFrameMin       = 1;
+            request.NumFrameSuggested = 1;
+            sts = m_core->AllocFrames(&request, &m_response);
+            MFX_CHECK_STS(sts);
+        } else {
+            // allocate opaque surfaces in system memory
+            request.Type =  (mfxU16)opaqAllocReq->In.Type;
+            request.NumFrameMin       = opaqAllocReq->In.NumSurface;
+            request.NumFrameSuggested = opaqAllocReq->In.NumSurface;
+            sts = m_core->AllocFrames(&request,
+                                     &m_response,
+                                     opaqAllocReq->In.Surfaces,
+                                     opaqAllocReq->In.NumSurface);
+            MFX_CHECK_STS(sts);
+        }
+
+        if (m_response.NumFrameActual < request.NumFrameMin)
+            return MFX_ERR_MEMORY_ALLOC;
+
+        if (bNeedAuxInput) {
+            m_useAuxInput = true;
+            m_auxInput.Data.MemId = m_response.mids[0];
+            m_auxInput.Info = request.Info;
+        } else
+            m_useSysOpaq = true;
+    }
+
+
 
     // then fill not provided params with defaults or from targret usage
 
@@ -414,6 +530,21 @@ mfxStatus MFXVideoENCODEH265::Close()
         delete m_enc;
         m_enc = NULL;
     }
+
+    if (m_useAuxInput || m_useSysOpaq) {
+        //st = m_core->UnlockFrame(m_auxInput.Data.MemId, &m_auxInput.Data);
+        m_core->FreeFrames(&m_response);
+        m_response.NumFrameActual = 0;
+        m_useAuxInput = false;
+        m_useSysOpaq = false;
+    }
+
+    if (m_useVideoOpaq) {
+        m_core->FreeFrames(&m_response_alien);
+        m_response_alien.NumFrameActual = 0;
+        m_useVideoOpaq = false;
+    }
+
 
     return MFX_ERR_NONE;
 }
@@ -634,6 +765,26 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
         } else {
             out->mfx.FrameInfo.FrameRateExtN = in->mfx.FrameInfo.FrameRateExtN;
             out->mfx.FrameInfo.FrameRateExtD = in->mfx.FrameInfo.FrameRateExtD;
+        }
+
+        switch(in->IOPattern) {
+            case 0:
+            case MFX_IOPATTERN_IN_SYSTEM_MEMORY:
+            case MFX_IOPATTERN_IN_VIDEO_MEMORY:
+            case MFX_IOPATTERN_IN_OPAQUE_MEMORY:
+                out->IOPattern = in->IOPattern;
+                break;
+            default:
+                if (in->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY) {
+                    isCorrected ++;
+                    out->IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
+                } else if (in->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY) {
+                    isCorrected ++;
+                    out->IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
+                } else {
+                    isInvalid ++;
+                    out->IOPattern = 0;
+                }
         }
 
         out->mfx.FrameInfo.AspectRatioW = in->mfx.FrameInfo.AspectRatioW;
@@ -915,17 +1066,33 @@ mfxStatus MFXVideoENCODEH265::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocReque
     MFX_CHECK_NULL_PTR1(par)
     MFX_CHECK_NULL_PTR1(request)
 
+    // check for valid IOPattern
+    mfxU16 IOPatternIn = par->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_IN_OPAQUE_MEMORY);
+    if ((par->IOPattern & 0xffc8) || (par->IOPattern == 0) ||
+        (IOPatternIn != MFX_IOPATTERN_IN_VIDEO_MEMORY) && (IOPatternIn != MFX_IOPATTERN_IN_SYSTEM_MEMORY) && (IOPatternIn != MFX_IOPATTERN_IN_OPAQUE_MEMORY))
+       return MFX_ERR_INVALID_VIDEO_PARAM;
+
     if (par->Protected != 0)
-    {
         return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    mfxU16 nFrames = IPP_MAX(par->mfx.GopRefDist, H265_MAXREFDIST); // 1 for current and GopRefDist - 1 for reordering
+
+    if( nFrames == 0 ){
+        nFrames = 1; // 1 for current
+        // to add if B-frames from target usage
     }
-
-    mfxU16 nFrames = 1; // no reordering at all
-
     request->NumFrameMin = nFrames;
     request->NumFrameSuggested = IPP_MAX(nFrames,par->AsyncDepth);
 
-    return MFX_ERR_NONE;
+    if (par->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY){
+        request->Type = MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_DXVA2_DECODER_TARGET;
+    }else if(par->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY) {
+        request->Type = MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_OPAQUE_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY;
+    } else {
+        request->Type = MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY;
+    }
+
+    return (IsHWLib())? MFX_WRN_PARTIAL_ACCELERATION : MFX_ERR_NONE;
 }
 
 mfxStatus MFXVideoENCODEH265::GetEncodeStat(mfxEncodeStat *stat)
@@ -949,7 +1116,7 @@ mfxStatus MFXVideoENCODEH265::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
     MFX_CHECK(m_isInitialized, MFX_ERR_NOT_INITIALIZED);
 
     // inputSurface can be opaque. Get real surface from core
-//    surface = GetOriginalSurface(inputSurface);
+    surface = GetOriginalSurface(inputSurface);
 
     if (inputSurface != surface) { // input surface is opaque surface
         surface->Data.FrameOrder = inputSurface->Data.FrameOrder;
@@ -972,26 +1139,45 @@ mfxStatus MFXVideoENCODEH265::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
         bool locked = false;
-        if (surface->Data.Y == 0 && surface->Data.U == 0 &&
-            surface->Data.V == 0 && surface->Data.A == 0)
-        {
-            st = m_core->LockExternalFrame(surface->Data.MemId, &(surface->Data));
-            if (st == MFX_ERR_NONE)
-                locked = true;
-            else
-                return st;
-        }
+        if (m_useAuxInput) { // copy from d3d to internal frame in system memory
 
-        // need to call always now
-//        res = Encode(cur_enc, &m_data_in, &m_data_out, p_data_out_ext, picStruct, ctrl, initialSurface);
+            // Lock internal. FastCopy to use locked, to avoid additional lock/unlock
+            st = m_core->LockFrame(m_auxInput.Data.MemId, &m_auxInput.Data);
+            MFX_CHECK_STS(st);
+
+            st = m_core->DoFastCopyWrapper(&m_auxInput,
+                                           MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY,
+                                           surface,
+                                           MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET);
+            MFX_CHECK_STS(st);
+
+//            m_core->DecreaseReference(&(surface->Data)); // not here to keep related mfxEncodeCtrl
+
+            m_auxInput.Data.FrameOrder = surface->Data.FrameOrder;
+            m_auxInput.Data.TimeStamp = surface->Data.TimeStamp;
+            surface = &m_auxInput; // replace input pointer
+        } else {
+            if (surface->Data.Y == 0 && surface->Data.U == 0 &&
+                surface->Data.V == 0 && surface->Data.A == 0)
+            {
+                st = m_core->LockExternalFrame(surface->Data.MemId, &(surface->Data));
+                if (st == MFX_ERR_NONE)
+                    locked = true;
+                else
+                    return st;
+            }
+        }
 
         mfxRes = m_enc->EncodeFrame(surface, bitstream);
         m_core->DecreaseReference(&(surface->Data));
 
-        if (locked)
-            m_core->UnlockExternalFrame(surface->Data.MemId, &(surface->Data));
-
-        m_frameCount++;
+        if ( m_useAuxInput ) {
+            m_core->UnlockFrame(m_auxInput.Data.MemId, &m_auxInput.Data);
+        } else {
+            if (locked)
+                m_core->UnlockExternalFrame(surface->Data.MemId, &(surface->Data));
+        }
+        m_frameCount ++;
     } else {
         mfxRes = m_enc->EncodeFrame(NULL, bitstream);
         //        res = Encode(cur_enc, 0, &m_data_out, p_data_out_ext, 0, 0, 0);
@@ -1031,15 +1217,15 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
     pEntryPoint->pCompleteProc = TaskCompleteProc;
     pEntryPoint->pState = this;
     pEntryPoint->requiredNumThreads = m_mfxVideoParam.mfx.NumThread;
+    pEntryPoint->pRoutineName = "EncodeHEVC";
 
     mfxStatus status = EncodeFrameCheck(ctrl, surface, bs, reordered_surface, pInternalParams);
 
-    mfxFrameSurface1 *realSurface = surface;
+    mfxFrameSurface1 *realSurface = GetOriginalSurface(surface);
 
     if (surface && !realSurface)
-    {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
+
 
     if (MFX_ERR_NONE == status || MFX_ERR_MORE_DATA_RUN_TASK == status || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == status || MFX_ERR_MORE_BITSTREAM == status)
     {
@@ -1188,5 +1374,12 @@ void MFXVideoENCODEH265::ParallelRegionEnd()
     }
 
 } // void MFXVideoENCODEVP8::ParallelRegionEnd() 
+
+mfxFrameSurface1* MFXVideoENCODEH265::GetOriginalSurface(mfxFrameSurface1 *surface)
+{
+    if (m_isOpaque)
+        return m_core->GetNativeSurface(surface);
+    return surface;
+}
 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE

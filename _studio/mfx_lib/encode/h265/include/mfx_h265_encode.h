@@ -92,6 +92,8 @@ public:
     void ParallelRegionStart(int num_threads, Ipp32s region_selector);
     void ParallelRegionEnd();
 
+    mfxFrameSurface1 *GetOriginalSurface(mfxFrameSurface1 *surface);
+
 protected:
 // ------ mfx level
     VideoCORE *m_core;
@@ -107,6 +109,15 @@ protected:
 //    mfxU32  m_totalBits;
     mfxU32  m_encodedFrames;
     bool    m_isInitialized;
+
+    bool    m_useSysOpaq;
+    bool    m_useVideoOpaq;
+    bool    m_isOpaque;
+
+    bool    m_useAuxInput;
+    mfxFrameSurface1 m_auxInput;
+    mfxFrameAllocResponse m_response;
+    mfxFrameAllocResponse m_response_alien;
 
 //  threading
     static mfxStatus TaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber);
