@@ -209,6 +209,8 @@ public:
         Ipp32u Size,
         Ipp32s PicStride);
 
+    void H265SegmentDecoder::CleanLeftEdges(bool leftAvailable, H265EdgeData *ctb_start_edge, Ipp32s height);
+    void H265SegmentDecoder::CleanTopEdges(bool leftAvailable, H265EdgeData *ctb_start_edge, Ipp32s width);
     void DeblockOneLCU(Ipp32s curLCUAddr, Ipp32s cross);
     void DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curPixelColumn, Ipp32s curPixelRow,
                              Ipp32s onlyOneUp, Ipp32s onlyOneLeft, Ipp32s cross);
@@ -221,8 +223,12 @@ public:
                          Ipp32s betaOffset);
     void SetEdges(H265CodingUnit* curLCU, Ipp32s width, Ipp32s height, Ipp32s cross, Ipp32s calculateCurLCU);
 
-    void GetCTBEdgeStrengths(Ipp32s tusize);
-    void GetEdgeStrength(Ipp32s tuQ, Ipp32s tuP, bool anotherCU, Ipp8s tcOffset, Ipp8s betaOffset, H265EdgeData *edge);
+    void GetCTBEdgeStrengths(void);
+    template<Ipp32s tusize> inline void GetCTBEdgeStrengths(void);
+    template<Ipp32s tusize, Ipp32s dir> inline void GetEdgeStrength(Ipp32s tuQ, Ipp32s tuP, H265EdgeData *edge, Ipp32s xQ, Ipp32s yQ);
+    template<Ipp32s dir> inline void GetEdgeStrengthDelayed(Ipp32s x, Ipp32s y, H265EdgeData *edge);
+    template<Ipp32s tusize, Ipp32s dir> inline void GetEdgeStrengthDelayed(Ipp32s x, Ipp32s y, H265EdgeData *edge);
+    inline void GetEdgeStrengthInter(H265MVInfo *mvinfoQ, H265MVInfo *mvinfoP, H265EdgeData *edge);
 
     //h265 members
 

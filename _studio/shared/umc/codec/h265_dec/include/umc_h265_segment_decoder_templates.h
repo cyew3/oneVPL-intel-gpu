@@ -82,8 +82,8 @@ public:
             bool is_last = Decoder::DecodeCodingUnit_CABAC(sd); //decode CU
             END_TICK(decode_time);
 
-//            if (!sd->m_pSliceHeader->m_deblockingFilterDisable)
-//                sd->GetCTBEdgeStrengths(sd->m_pSeqParamSet->log2_min_transform_block_size);
+            if (!sd->m_pSliceHeader->slice_deblocking_filter_disabled_flag)
+                sd->GetCTBEdgeStrengths();
 
             if (is_last)
             {
@@ -254,8 +254,8 @@ public:
             bool is_last = Decoder::DecodeCodingUnit_CABAC(sd); //decode CU
             END_TICK(decode_time);
 
-//            if (!sd->m_pSliceHeader->m_deblockingFilterDisable)
-//                sd->GetCTBEdgeStrengths(sd->m_pSeqParamSet->log2_min_transform_block_size);
+            if (!sd->m_pSliceHeader->slice_deblocking_filter_disabled_flag)
+                sd->GetCTBEdgeStrengths();
 
             START_TICK1;
             sd->ReconstructCU(sd->m_curCU, 0, 0);
