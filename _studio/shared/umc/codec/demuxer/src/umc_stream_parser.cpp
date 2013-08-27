@@ -721,12 +721,20 @@ Status StreamParser::EstimateMPEGAudioDuration(void)
                 else
                 {
                     frame_len = 0;
-                    if (layer == 3)
+                    if (layer == 4)
+                        return UMC::UMC_ERR_INVALID_STREAM; // should not appear, but technically possible
+                    else if (layer == 3)
                         frame_len = 72000 * (id + 1);
                     else if (layer == 2)
                         frame_len = 72000 * 2;
                     else if (layer == 1)
                         frame_len = 12000;
+
+                    const size_t maxIdValue = sizeof(AudioFrameConstructor::MpegAFrequency)/sizeof(AudioFrameConstructor::MpegAFrequency[0]);
+                    if (id + mpg25 >= maxIdValue)
+                    {
+                        return UMC::UMC_ERR_INVALID_STREAM; // should not appear, but technically possible
+                    }
 
                     frame_len = frame_len * AudioFrameConstructor::MpegABitrate[id][layer - 1][bitRate] /
                     AudioFrameConstructor::MpegAFrequency[id + mpg25][samplingFreq] + paddingBit;
