@@ -15,11 +15,11 @@
 
 #include "mfx_h265_optimization.h"
 
-#if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM)
+#if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 
 #include <immintrin.h>
 
-namespace MFX_HEVC_COMMON
+namespace MFX_HEVC_PP
 {
     enum SAOType
     {
@@ -82,7 +82,11 @@ namespace MFX_HEVC_COMMON
         }
     }
 
+#ifndef MFX_TARGET_OPTIMIZATION_AUTO
     void h265_ProcessSaoCuOrg_Luma_8u(
+#else
+    void h265_ProcessSaoCuOrg_Luma_8u_sse(
+#endif
         Ipp8u* pRec,
         Ipp32s stride,
         Ipp32s saoType, 
@@ -551,7 +555,11 @@ namespace MFX_HEVC_COMMON
     } //  void h265_processSaoCuOrg_Luma_8u(...)
 
     //aya: FIXME!!! must be replaced by intrinsic version 
+#ifndef MFX_TARGET_OPTIMIZATION_AUTO
     void h265_ProcessSaoCu_Luma_8u(
+#else
+    void h265_ProcessSaoCu_Luma_8u_sse(
+#endif
         Ipp8u* pRec,
         Ipp32s stride,
         Ipp32s saoType, 
@@ -856,7 +864,7 @@ namespace MFX_HEVC_COMMON
 
     } // void h265_ProcessSaoCu_Luma_8u(...)
 
-}; // namespace MFX_HEVC_COMMON
+}; // namespace MFX_HEVC_PP
 
 #endif // #if defined(MFX_TARGET_OPTIMIZATION_PX) 
 #endif // #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined(MFX_ENABLE_H265_VIDEO_DECODE)

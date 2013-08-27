@@ -20,7 +20,7 @@
 
 #include "mfx_h265_optimization.h"
 
-#if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_ATOM)
+#if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 
 #include "mfx_h265_defs.h"
 
@@ -56,7 +56,7 @@
     const Ipp8u *__restrict blk2 = block
 
 
-namespace MFX_HEVC_ENCODER
+namespace MFX_HEVC_PP
 {
     // the 128-bit SSE2 cant be full loaded with 4 bytes rows...
     // the layout of block-buffer (32x32 for all blocks sizes or 4x4, 8x8 etc. depending on block-size) is not yet
@@ -2356,6 +2356,7 @@ namespace MFX_HEVC_ENCODER
     //    return SAD_32x32_sse(image,  ref, stride);
     //}
 
+#ifndef MFX_TARGET_OPTIMIZATION_AUTO
     int h265_SAD_MxN_general_8u(const unsigned char *image,  int stride_img, const unsigned char *ref, int stride_ref, int SizeX, int SizeY)
     {
         int index = 0;
@@ -2413,8 +2414,9 @@ namespace MFX_HEVC_ENCODER
         else return -1;
 
     } // int h265_SAD_MxN_general_8u(const unsigned char *image,  const unsigned char *ref, int stride, int SizeX, int SizeY)
+#endif
 
-} // end namespace MFX_HEVC_ENCODER
+} // end namespace MFX_HEVC_PP
 
 #endif // #if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2)
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE

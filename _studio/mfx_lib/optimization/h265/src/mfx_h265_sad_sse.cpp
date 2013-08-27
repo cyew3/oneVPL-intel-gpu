@@ -21,7 +21,7 @@
 
 #include "mfx_h265_optimization.h"
 
-#if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_ATOM)
+#if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 
 #include "mfx_h265_defs.h"
 
@@ -56,7 +56,7 @@
     const Ipp8u *__restrict blk2 = block
 
 
-namespace MFX_HEVC_ENCODER
+namespace MFX_HEVC_PP
 {
     // the 128-bit SSE2 cant be full loaded with 4 bytes rows...
     // the layout of block-buffer (32x32 for all blocks sizes or 4x4, 8x8 etc. depending on block-size) is not yet
@@ -2340,64 +2340,7 @@ namespace MFX_HEVC_ENCODER
         return _mm_cvtsi128_si32( s2);
     }
 
-
-
-
-
-    int getSAD_ref(const unsigned char *image,  const unsigned char *block, int img_stride, int size)
-    {
-        int sad = 0;
-
-        for (int y=0; y<size; y++)
-        {
-            const unsigned char *p1 = image + y * img_stride;
-            const unsigned char *p2 = block + y * size;   // stride in block buffer = size (linear buffer)
-
-            for (int x=0; x<size; x++)
-            {
-                sad += abs(p1[x] - p2[x]);
-            }
-        }
-
-        return sad;
-    }
-
-
-
-
-    int getSAD_ref2_block (const unsigned char *image,  const unsigned char *block, int img_stride, int SizeX, int SizeY)
-    {
-        int sad = 0;
-
-        for (int y=0; y<SizeY; y++)
-        {
-            const unsigned char *p1 = image + y * img_stride;
-            const unsigned char *p2 = block + y * block_stride;   // stride in block buffer = size (linear buffer)
-
-            for (int x=0; x<SizeX; x++)
-            {
-                sad += abs(p1[x] - p2[x]);
-            }
-        }
-
-        return sad;
-    }
-
-
-
-
-    int getSAD_sse(const unsigned char *image,  const unsigned char *ref, int stride, int Size)
-    {
-        if (Size == 4)
-            return SAD_4x4_sse(image,  ref, stride);
-        else if (Size == 8)
-            return SAD_8x8_sse(image,  ref, stride);
-        else if (Size == 16)
-            return SAD_16x16_sse(image,  ref, stride);
-        return SAD_32x32_sse(image,  ref, stride);
-    }
-
-
+#ifndef MFX_TARGET_OPTIMIZATION_AUTO
 
     int h265_SAD_MxN_special_8u(const unsigned char *image,  const unsigned char *ref, int stride, int SizeX, int SizeY)
     {
@@ -2455,21 +2398,9 @@ namespace MFX_HEVC_ENCODER
         else return -1;
         //return cost;
     }
+#endif
 
-    ////                         [0,  Mx4,  Mx8,  Mx12,  Mx16,  Mx20, Mx24, Mx28, Mx32,  Mx36, Mx40, Mx44, Mx48, Mx52, Mx56, Mx60, Mx64]
-    //SADfunc8u_special SAD_4xN_8u[]  = {NULL, NULL, (SADfunc8u_special)SAD_4x8_sse, NULL, (SADfunc8u_special)SAD_4x16_sse, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
-    //SADfunc8u_special SAD_8xN_8u[]  = {NULL, (SADfunc8u_special)SAD_8x4_sse, (SADfunc8u_special)SAD_8x8_sse, NULL, (SADfunc8u_special)SAD_8x16_sse, NULL, NULL, NULL, (SADfunc8u_special)SAD_8x32_sse, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
-    //SADfunc8u_special SAD_12xN_8u[] = {NULL, NULL, NULL, NULL, (SADfunc8u_special)SAD_12x16_sse, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
-    //SADfunc8u_special SAD_16xN_8u[] = {NULL, (SADfunc8u_special)SAD_16x4_sse, (SADfunc8u_special)SAD_16x8_sse, (SADfunc8u_special)SAD_16x12_sse, (SADfunc8u_special)SAD_16x16_sse, NULL, NULL, NULL, (SADfunc8u_special)SAD_16x32_sse, NULL, NULL, NULL, NULL, NULL, NULL, NULL, (SADfunc8u_special)SAD_16x64_sse};
-    //SADfunc8u_special SAD_24xN_8u[] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,    (SADfunc8u_special)SAD_24x32_sse, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
-    //SADfunc8u_special SAD_32xN_8u[] = {NULL, NULL, (SADfunc8u_special)SAD_32x8_sse, NULL, (SADfunc8u_special)SAD_32x16_sse, NULL, (SADfunc8u_special)SAD_32x24_sse, NULL,  (SADfunc8u_special)SAD_32x32_sse, NULL, NULL, NULL, NULL, NULL, NULL, NULL, (SADfunc8u_special)SAD_32x64_sse};
-    //SADfunc8u_special SAD_48xN_8u[] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, (SADfunc8u_special)SAD_48x64_sse};
-    //SADfunc8u_special SAD_64xN_8u[] = {NULL, NULL, NULL, NULL, (SADfunc8u_special)SAD_64x16_sse, NULL, NULL, NULL, (SADfunc8u_special)SAD_64x32_sse, NULL, NULL, NULL, (SADfunc8u_special)SAD_64x48_sse, NULL, NULL, NULL, (SADfunc8u_special)SAD_64x64_sse};
-
-    ////                       [0,  4xN,  8xN,  12xN,  16xN,  20xN, 24xN, 28xN, 32xN,  36xN, 40xN, 44xN, 48xN, 52xN, 56xN, 60xN, 64xN]
-    //SADfunc8u_special* SAD_8u_special[17] = {NULL, SAD_4xN_8u, SAD_8xN_8u, SAD_12xN_8u, SAD_16xN_8u, NULL, SAD_24xN_8u, NULL, SAD_32xN_8u, NULL, NULL, NULL, SAD_48xN_8u, NULL, NULL, NULL, SAD_64xN_8u};
-
-} // end namespace MFX_HEVC_ENCODER
+} // end namespace MFX_HEVC_PP
 
 #endif // #if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2)
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE

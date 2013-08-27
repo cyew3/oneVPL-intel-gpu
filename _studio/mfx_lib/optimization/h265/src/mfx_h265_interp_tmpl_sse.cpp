@@ -30,7 +30,7 @@ using namespace UMC_HEVC_DECODER;
 #define MM_LOAD_EPI64(x) _mm_loadl_epi64( (const __m128i*)x )
 #endif
 
-namespace MFX_HEVC_COMMON
+namespace MFX_HEVC_PP
 {
     //=====================================================
 
@@ -180,7 +180,7 @@ namespace MFX_HEVC_COMMON
             int    accum_pitch,
             int    shift,
             int    offset,
-            MFX_HEVC_COMMON::EnumAddAverageType eAddAverage,
+            MFX_HEVC_PP::EnumAddAverageType eAddAverage,
             const void* in_pSrc2,
             int   in_Src2Pitch // in samples
             )
@@ -189,7 +189,7 @@ namespace MFX_HEVC_COMMON
 
             t_vec v_offset = _mm_cvtsi32_si128( sizeof(t_src)==2 ? offset : (offset << 16) | offset );
             v_offset = _mm_shuffle_epi32( v_offset, 0 ); // broadcast
-            in_Src2Pitch *= (eAddAverage == MFX_HEVC_COMMON::AVERAGE_FROM_BUF ? 2 : 1);
+            in_Src2Pitch *= (eAddAverage == MFX_HEVC_PP::AVERAGE_FROM_BUF ? 2 : 1);
 
             for (int i, j = 0; j < height; ++j) 
             {
@@ -262,9 +262,9 @@ namespace MFX_HEVC_COMMON
                         v_acc = _mm_packs_epi32( v_acc, v_acc2 );
                     }
 
-                    if ( eAddAverage != MFX_HEVC_COMMON::AVERAGE_NO )
+                    if ( eAddAverage != MFX_HEVC_PP::AVERAGE_NO )
                     {
-                        if ( eAddAverage == MFX_HEVC_COMMON::AVERAGE_FROM_PIC ) {
+                        if ( eAddAverage == MFX_HEVC_PP::AVERAGE_FROM_PIC ) {
                             v_acc2 = _mm_cvtepu8_epi16( MM_LOAD_EPI64(pSrc2) );
                             pSrc2 += 8;
                             v_acc2 = _mm_slli_epi16( v_acc2, 6 );
@@ -455,7 +455,7 @@ namespace MFX_HEVC_COMMON
     template t_InterpKernel_intrin< __m128i, TEXT_CHROMA_V, Ipp16s, Ipp8u, 7 >;
     template t_InterpKernel_intrin< __m128i, TEXT_CHROMA_V, Ipp16s, Ipp8u, 8 >;
 
-} // end namespace MFX_HEVC_COMMON
+} // end namespace MFX_HEVC_PP
 
 #endif //#ifndef OPT_INTERP_PMUL
 #endif //#if defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined (MFX_ENABLE_H265_VIDEO_DECODE)

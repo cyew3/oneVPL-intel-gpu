@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{310ed5dc-3bf3-4dda-9d1f-0f77155cff59}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{8f6b8f73-0095-4058-b55f-cb3beae1fcc3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="h265\src\mfx_h265_deblocking_px.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_intrapred_px.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_quantization_px.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_sad_ipp.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_sao_px.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_transform_px.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

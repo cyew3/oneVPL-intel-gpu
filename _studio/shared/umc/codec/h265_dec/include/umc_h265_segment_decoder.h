@@ -23,7 +23,7 @@
 #include "h265_prediction.h"
 #include "mfx_h265_optimization.h"
 
-using namespace MFX_HEVC_COMMON;
+using namespace MFX_HEVC_PP;
 
 namespace UMC_HEVC_DECODER
 {

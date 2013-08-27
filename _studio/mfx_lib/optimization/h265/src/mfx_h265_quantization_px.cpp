@@ -15,11 +15,11 @@
 
 #include "mfx_h265_optimization.h"
 
-#if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM)
+#if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 
 #define Saturate(min_val, max_val, val) IPP_MAX((min_val), IPP_MIN((max_val), (val)))
 
-namespace MFX_HEVC_ENCODER
+namespace MFX_HEVC_PP
 {
     void h265_QuantFwd_16s(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift)
     {
@@ -70,10 +70,10 @@ namespace MFX_HEVC_ENCODER
 
     } // Ipp32s h265_QuantFwd_SBH_16s(const Ipp16s* pSrc, Ipp16s* pDst, Ipp32s*  pDelta, int len, int scaleLevel, int scaleOffset, int scale)
 
-} // end namespace MFX_HEVC_ENCODER
+} // end namespace MFX_HEVC_PP
 
 
-namespace MFX_HEVC_COMMON
+namespace MFX_HEVC_PP
 {
     void h265_QuantInv_16s(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift)
     {
@@ -123,7 +123,7 @@ namespace MFX_HEVC_COMMON
 
     } // void h265_QuantInv_ScaleList_RShift_16s(const Ipp16s* pSrc, const Ipp16s* pScaleList, Ipp16s* pDst, int len, int offset, int shift)
 
-} // namespace MFX_HEVC_COMMON
+} // namespace MFX_HEVC_PP
 
 #endif // #if defined (MFX_TARGET_OPTIMIZATION_PX) || (MFX_TARGET_OPTIMIZATION_SSE4) || (MFX_TARGET_OPTIMIZATION_AVX2)
 #endif // #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)

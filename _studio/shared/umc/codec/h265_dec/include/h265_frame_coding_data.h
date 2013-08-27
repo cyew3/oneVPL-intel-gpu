@@ -83,7 +83,7 @@ public:
     H265SampleAdaptiveOffset m_SAO;
 
     // Deblocking data
-    MFX_HEVC_COMMON::H265EdgeData *m_edge;
+    MFX_HEVC_PP::H265EdgeData *m_edge;
     Ipp32s m_edgesInCTBSize, m_edgesInFrameWidth;
 
 public:

@@ -48,10 +48,11 @@
 #if defined(ANDROID)
     #define MFX_TARGET_OPTIMIZATION_ATOM
 #else
-    #define MFX_TARGET_OPTIMIZATION_SSE4
+    //#define MFX_TARGET_OPTIMIZATION_SSE4
     //#define MFX_TARGET_OPTIMIZATION_AVX2
     //#define MFX_TARGET_OPTIMIZATION_PX // ref C or IPP based, not supported yet
     //#define MFX_TARGET_OPTIMIZATION_ATOM // BYT
+    #define MFX_TARGET_OPTIMIZATION_AUTO // work via dispatcher. decoder/encoder must call InitDispatcher() firstly
 #endif
 
 // [2] to enable alternative interpolation optimization (Ken/Jon)
@@ -75,7 +76,7 @@ namespace UMC_HEVC_DECODER
     };
 };
 
-namespace MFX_HEVC_COMMON
+namespace MFX_HEVC_PP
 {
     enum EnumAddAverageType
     {
@@ -112,16 +113,303 @@ namespace MFX_HEVC_COMMON
         Ipp8s tcOffset;
         Ipp8s betaOffset;
     };
-};
 
-namespace MFX_HEVC_COMMON
-{
-    /* transform Inv */
-    void h265_DST4x4Inv_16sT  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
-    void h265_DCT4x4Inv_16sT  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
-    void h265_DCT8x8Inv_16sT  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
-    void h265_DCT16x16Inv_16sT(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
-    void h265_DCT32x32Inv_16sT(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
+    /* ******************************************************** */
+    /*                    Data Types for Dispatcher             */
+    /* ******************************************************** */
+
+    // [PTR.Sad]
+    #define SAD_PARAMETERS_LIST_SPECIAL const unsigned char *image,  const unsigned char *block, int img_stride
+    #define SAD_PARAMETERS_LIST_GENERAL const unsigned char *image,  const unsigned char *block, int img_stride, int block_stride
+
+    typedef  int (H265_FASTCALL *PTR_SAD_MxN_8u)(SAD_PARAMETERS_LIST_SPECIAL);
+    typedef  int (H265_FASTCALL *PTR_SAD_MxN_General_8u)(SAD_PARAMETERS_LIST_GENERAL);
+
+    // [PTR.TransformInv]
+    typedef void (* PTR_TransformInv_16sT) (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
+
+    // [PTR.TransformFwd]
+    typedef void (H265_FASTCALL *PTR_TransformFwd_16s)(const short *H265_RESTRICT src, short *H265_RESTRICT dst);
+
+    // [PTR.deblocking]
+    typedef Ipp32s (* PTR_FilterEdgeLuma_8u_I)(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir);
+
+    // [PTR.SAO]
+    typedef void (* PTR_ProcessSaoCuOrg_Luma_8u)(
+        Ipp8u* pRec,
+        Ipp32s stride,
+        Ipp32s saoType, 
+        Ipp8u* tmpL,
+        Ipp8u* tmpU,
+        Ipp32u maxCUWidth,
+        Ipp32u maxCUHeight,
+        Ipp32s picWidth,
+        Ipp32s picHeight,
+        Ipp32s* pOffsetEo,
+        Ipp8u* pOffsetBo,
+        Ipp8u* pClipTable,
+        Ipp32u CUPelX,
+        Ipp32u CUPelY);
+
+    typedef void (* PTR_ProcessSaoCu_Luma_8u)(
+        Ipp8u* pRec,
+        Ipp32s stride,
+        Ipp32s saoType, 
+        Ipp8u* tmpL,
+        Ipp8u* tmpU,
+        Ipp32u maxCUWidth,
+        Ipp32u maxCUHeight,
+        Ipp32s picWidth,
+        Ipp32s picHeight,
+        Ipp32s* pOffsetEo,
+        Ipp8u* pOffsetBo,
+        Ipp8u* pClipTable,
+        Ipp32u CUPelX,
+        Ipp32u CUPelY,
+        bool* pbBorderAvail);
+
+    // [PTR.IntraPredict]
+    typedef void (* PTR_PredictIntra_Ang_8u)(
+        Ipp32s mode,
+        Ipp8u* PredPel,
+        Ipp8u* pels,
+        Ipp32s pitch,
+        Ipp32s width);
+
+
+    /* ******************************************************** */
+    /*                    Interface Wrapper                     */
+    /* ******************************************************** */
+#if defined(MFX_TARGET_OPTIMIZATION_AUTO)
+    #define HEVCPP_API(type_ptr, type_ret, name, arg) type_ptr name
+#else
+    #define HEVCPP_API(type_ptr, type_ret, name, arg) type_ret name arg
+#endif
+
+
+    /* ******************************************************** */
+    /*            Dispatcher Context (Interfaces)               */
+    /* ******************************************************** */
+
+#if defined(MFX_TARGET_OPTIMIZATION_AUTO)
+    struct Dispatcher
+    {
+//#endif
+        // [SAD.special]
+        PTR_SAD_MxN_8u  h265_SAD_4x4_8u;
+        PTR_SAD_MxN_8u  h265_SAD_4x8_8u;
+        PTR_SAD_MxN_8u  h265_SAD_4x16_8u;
+
+        PTR_SAD_MxN_8u  h265_SAD_8x4_8u;
+        PTR_SAD_MxN_8u  h265_SAD_8x8_8u;
+        PTR_SAD_MxN_8u  h265_SAD_8x16_8u;
+        PTR_SAD_MxN_8u  h265_SAD_8x32_8u;
+
+        PTR_SAD_MxN_8u  h265_SAD_12x16_8u;
+
+        PTR_SAD_MxN_8u  h265_SAD_16x4_8u;
+        PTR_SAD_MxN_8u  h265_SAD_16x8_8u;
+        PTR_SAD_MxN_8u  h265_SAD_16x12_8u;
+        PTR_SAD_MxN_8u  h265_SAD_16x16_8u;
+        PTR_SAD_MxN_8u  h265_SAD_16x32_8u;
+        PTR_SAD_MxN_8u  h265_SAD_16x64_8u;
+
+        PTR_SAD_MxN_8u  h265_SAD_24x32_8u;
+
+        PTR_SAD_MxN_8u  h265_SAD_32x8_8u;
+        PTR_SAD_MxN_8u  h265_SAD_32x16_8u;
+        PTR_SAD_MxN_8u  h265_SAD_32x24_8u;
+        PTR_SAD_MxN_8u  h265_SAD_32x32_8u;
+        PTR_SAD_MxN_8u  h265_SAD_32x64_8u;
+
+        PTR_SAD_MxN_8u  h265_SAD_48x64_8u;
+
+        PTR_SAD_MxN_8u  h265_SAD_64x16_8u;
+        PTR_SAD_MxN_8u  h265_SAD_64x32_8u;
+        PTR_SAD_MxN_8u  h265_SAD_64x48_8u;
+        PTR_SAD_MxN_8u  h265_SAD_64x64_8u;
+
+        // [SAD.general]
+        PTR_SAD_MxN_General_8u  h265_SAD_4x4_general_8u;
+        PTR_SAD_MxN_General_8u  h265_SAD_4x8_general_8u;
+        PTR_SAD_MxN_General_8u  h265_SAD_4x16_general_8u;
+
+        PTR_SAD_MxN_General_8u  h265_SAD_8x4_general_8u;
+        PTR_SAD_MxN_General_8u  h265_SAD_8x8_general_8u;
+        PTR_SAD_MxN_General_8u  h265_SAD_8x16_general_8u;
+        PTR_SAD_MxN_General_8u  h265_SAD_8x32_general_8u;
+
+        PTR_SAD_MxN_General_8u  h265_SAD_12x16_general_8u;
+
+        PTR_SAD_MxN_General_8u  h265_SAD_16x4_general_8u;
+        PTR_SAD_MxN_General_8u  h265_SAD_16x8_general_8u;
+        PTR_SAD_MxN_General_8u  h265_SAD_16x12_general_8u;
+        PTR_SAD_MxN_General_8u  h265_SAD_16x16_general_8u;
+        PTR_SAD_MxN_General_8u  h265_SAD_16x32_general_8u;
+        PTR_SAD_MxN_General_8u  h265_SAD_16x64_general_8u;
+
+        PTR_SAD_MxN_General_8u  h265_SAD_24x32_general_8u;
+
+        PTR_SAD_MxN_General_8u  h265_SAD_32x8_general_8u;
+        PTR_SAD_MxN_General_8u  h265_SAD_32x16_general_8u;
+        PTR_SAD_MxN_General_8u  h265_SAD_32x24_general_8u;
+        PTR_SAD_MxN_General_8u  h265_SAD_32x32_general_8u;
+        PTR_SAD_MxN_General_8u  h265_SAD_32x64_general_8u;
+
+        PTR_SAD_MxN_General_8u  h265_SAD_48x64_general_8u;
+
+        PTR_SAD_MxN_General_8u  h265_SAD_64x16_general_8u;
+        PTR_SAD_MxN_General_8u  h265_SAD_64x32_general_8u;
+        PTR_SAD_MxN_General_8u  h265_SAD_64x48_general_8u;
+        PTR_SAD_MxN_General_8u  h265_SAD_64x64_general_8u;
+#endif
+
+        // [Transform Inv]
+        HEVCPP_API( PTR_TransformInv_16sT, void, h265_DST4x4Inv_16sT, (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize) );
+        HEVCPP_API( PTR_TransformInv_16sT, void, h265_DCT4x4Inv_16sT, (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize) );
+        HEVCPP_API( PTR_TransformInv_16sT, void, h265_DCT8x8Inv_16sT, (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize) );
+        HEVCPP_API( PTR_TransformInv_16sT, void, h265_DCT16x16Inv_16sT, (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize) );
+        HEVCPP_API( PTR_TransformInv_16sT, void, h265_DCT32x32Inv_16sT, (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize) );
+        
+        // [transform.forward]
+        HEVCPP_API( PTR_TransformFwd_16s, void H265_FASTCALL, h265_DST4x4Fwd_16s, (const short *H265_RESTRICT src, short *H265_RESTRICT dst) );
+        HEVCPP_API( PTR_TransformFwd_16s, void H265_FASTCALL, h265_DCT4x4Fwd_16s, (const short *H265_RESTRICT src, short *H265_RESTRICT dst) );
+        HEVCPP_API( PTR_TransformFwd_16s, void H265_FASTCALL, h265_DCT8x8Fwd_16s, (const short *H265_RESTRICT src, short *H265_RESTRICT dst) );
+        HEVCPP_API( PTR_TransformFwd_16s, void H265_FASTCALL, h265_DCT16x16Fwd_16s, (const short *H265_RESTRICT src, short *H265_RESTRICT dst) );
+        HEVCPP_API( PTR_TransformFwd_16s, void H265_FASTCALL, h265_DCT32x32Fwd_16s, (const short *H265_RESTRICT src, short *H265_RESTRICT dst) );
+        
+        // [deblocking]
+        HEVCPP_API( PTR_FilterEdgeLuma_8u_I, Ipp32s, h265_FilterEdgeLuma_8u_I, (H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir) );
+
+        // [SAO]
+        HEVCPP_API( PTR_ProcessSaoCuOrg_Luma_8u, void, h265_ProcessSaoCuOrg_Luma_8u, 
+            (Ipp8u* pRec,
+            Ipp32s stride,
+            Ipp32s saoType, 
+            Ipp8u* tmpL,
+            Ipp8u* tmpU,
+            Ipp32u maxCUWidth,
+            Ipp32u maxCUHeight,
+            Ipp32s picWidth,
+            Ipp32s picHeight,
+            Ipp32s* pOffsetEo,
+            Ipp8u* pOffsetBo,
+            Ipp8u* pClipTable,
+            Ipp32u CUPelX,
+            Ipp32u CUPelY));
+
+        HEVCPP_API( PTR_ProcessSaoCu_Luma_8u, void, h265_ProcessSaoCu_Luma_8u,
+            (Ipp8u* pRec,
+            Ipp32s stride,
+            Ipp32s saoType, 
+            Ipp8u* tmpL,
+            Ipp8u* tmpU,
+            Ipp32u maxCUWidth,
+            Ipp32u maxCUHeight,
+            Ipp32s picWidth,
+            Ipp32s picHeight,
+            Ipp32s* pOffsetEo,
+            Ipp8u* pOffsetBo,
+            Ipp8u* pClipTable,
+            Ipp32u CUPelX,
+            Ipp32u CUPelY,
+            bool* pbBorderAvail));
+
+        // [INTRA Predict]
+        HEVCPP_API( PTR_PredictIntra_Ang_8u, void, h265_PredictIntra_Ang_8u,
+            (Ipp32s mode,
+            Ipp8u* PredPel,
+            Ipp8u* pels,
+            Ipp32s pitch,
+            Ipp32s width));
+
+#if defined(MFX_TARGET_OPTIMIZATION_AUTO)
+        bool           isInited;
+
+    };
+    extern Dispatcher g_dispatcher;
+#endif
+
+    int h265_SAD_MxN_special_8u(const unsigned char *image,  const unsigned char *ref, int stride, int SizeX, int SizeY);
+    int h265_SAD_MxN_general_8u(const unsigned char *image,  int stride_img, const unsigned char *ref, int stride_ref, int SizeX, int SizeY);
+
+    // LIST OF NON-OPTIMIZED (and NON-DISPATCHERED) FUNCTIONS:
+    void h265_FilterEdgeChroma_Plane_8u_I(
+        H265EdgeData *edge, 
+        Ipp8u *srcDst, 
+        Ipp32s srcDstStride,         
+        Ipp32s dir, 
+        Ipp32s chromaQp);
+
+    void h265_FilterEdgeChroma_Interleaved_8u_I(
+        H265EdgeData *edge, 
+        Ipp8u *srcDst, 
+        Ipp32s srcDstStride,
+        Ipp32s dir,
+        Ipp32s chromaQpCb,
+        Ipp32s chromaQpCr);
+
+    /* Quantization Fwd */
+    void h265_QuantFwd_16s(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift);
+    Ipp32s h265_QuantFwd_SBH_16s(const Ipp16s* pSrc, Ipp16s* pDst, Ipp32s*  pDelta, int len, int scale, int offset, int shift);
+
+    /* Inverse Quantization */
+    void h265_QuantInv_16s(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift);
+    void h265_QuantInv_ScaleList_LShift_16s(const Ipp16s* pSrc, const Ipp16s* pScaleList, Ipp16s* pDst, int len, int shift);
+    void h265_QuantInv_ScaleList_RShift_16s(const Ipp16s* pSrc, const Ipp16s* pScaleList, Ipp16s* pDst, int len, int offset, int shift);
+
+    /* Intra prediction (aya: encoder version, decoder under redesign yet) Luma is OK, Chroma - plane/interleave for encoder/decoder accordingly */
+    void h265_PredictIntra_Ver_8u(
+        Ipp8u* PredPel,
+        Ipp8u* pels,
+        Ipp32s pitch,
+        Ipp32s width,
+        Ipp32s bit_depth,
+        Ipp32s isLuma);
+
+    void h265_PredictIntra_Hor_8u(
+        Ipp8u* PredPel,
+        Ipp8u* pels,
+        Ipp32s pitch,
+        Ipp32s width,
+        Ipp32s bit_depth,
+        Ipp32s isLuma);
+
+    void h265_PredictIntra_DC_8u(
+        Ipp8u* PredPel,
+        Ipp8u* pels,
+        Ipp32s pitch,
+        Ipp32s width,
+        Ipp32s isLuma);
+
+    /*void h265_PredictIntra_Ang_8u(
+        Ipp32s mode,
+        Ipp8u* PredPel,
+        Ipp8u* pels,
+        Ipp32s pitch,
+        Ipp32s width);*/
+
+    void h265_PredictIntra_Planar_8u(
+        Ipp8u* PredPel,
+        Ipp8u* pels,
+        Ipp32s pitch,
+        Ipp32s width);
+
+    /* Pre-Filtering for INTRA prediction */
+    void h265_FilterPredictPels_8u(Ipp8u* PredPel, Ipp32s width);
+    void h265_FilterPredictPels_Bilinear_8u(Ipp8u* pSrcDst, int width, int topLeft, int bottomLeft, int topRight);
+
+    /* Predict Pels */
+    void h265_GetPredictPels_8u(
+        Ipp32u log2_min_transform_block_size,
+        Ipp8u* src,
+        Ipp8u* PredPel,
+        bool* neighborFlags,
+        Ipp32s numIntraNeighbor,
+        Ipp32s width,
+        Ipp32s srcPitch,
+        Ipp32s isLuma,
+        Ipp32s UnitSize);
 
     /* interpolation, version from Jon/Ken */
     void Interp_S8_NoAvg(
@@ -182,152 +470,25 @@ namespace MFX_HEVC_COMMON
         int dir, 
         int plane);
 
-    /* Deblocking, "_I" means Implace operation */
-    Ipp32s h265_FilterEdgeLuma_8u_I(
-        H265EdgeData *edge, 
-        Ipp8u *srcDst, 
-        Ipp32s srcDstStride, 
-        Ipp32s dir);
+    /* ******************************************************** */
+    /*                    MAKE_NAME                             */
+    /* ******************************************************** */
+#if defined(MFX_TARGET_OPTIMIZATION_AUTO)
+    #define NAME(func) g_dispatcher. ## func
+#else
+    #define NAME(func) func
+#endif
 
-    void h265_FilterEdgeChroma_Plane_8u_I(
-        H265EdgeData *edge, 
-        Ipp8u *srcDst, 
-        Ipp32s srcDstStride,         
-        Ipp32s dir, 
-        Ipp32s chromaQp);
+    IppStatus InitDispatcher( void );
 
-    void h265_FilterEdgeChroma_Interleaved_8u_I(
-        H265EdgeData *edge, 
-        Ipp8u *srcDst, 
-        Ipp32s srcDstStride,
-        Ipp32s dir,
-        Ipp32s chromaQpCb,
-        Ipp32s chromaQpCr);
+    /* ******************************************************** */
+    /*                    INTERPOLATION TEMPLATE                */
+    /* ******************************************************** */
 
-    /* Inverse Quantization */
-    void h265_QuantInv_16s(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift);
-    void h265_QuantInv_ScaleList_LShift_16s(const Ipp16s* pSrc, const Ipp16s* pScaleList, Ipp16s* pDst, int len, int shift);
-    void h265_QuantInv_ScaleList_RShift_16s(const Ipp16s* pSrc, const Ipp16s* pScaleList, Ipp16s* pDst, int len, int offset, int shift);
-
-    /* Intra prediction (aya: encoder version, decoder under redesign yet) Luma is OK, Chroma - plane/interleave for encoder/decoder accordingly */
-    void h265_PredictIntra_Ver_8u(
-        Ipp8u* PredPel,
-        Ipp8u* pels,
-        Ipp32s pitch,
-        Ipp32s width,
-        Ipp32s bit_depth,
-        Ipp32s isLuma);
-
-    void h265_PredictIntra_Hor_8u(
-        Ipp8u* PredPel,
-        Ipp8u* pels,
-        Ipp32s pitch,
-        Ipp32s width,
-        Ipp32s bit_depth,
-        Ipp32s isLuma);
-
-    void h265_PredictIntra_DC_8u(
-        Ipp8u* PredPel,
-        Ipp8u* pels,
-        Ipp32s pitch,
-        Ipp32s width,
-        Ipp32s isLuma);
-
-    void h265_PredictIntra_Ang_8u(
-        Ipp32s mode,
-        Ipp8u* PredPel,
-        Ipp8u* pels,
-        Ipp32s pitch,
-        Ipp32s width);
-
-    void h265_PredictIntra_Planar_8u(
-        Ipp8u* PredPel,
-        Ipp8u* pels,
-        Ipp32s pitch,
-        Ipp32s width);
-
-    /* Pre-Filtering for INTRA prediction */
-    void h265_FilterPredictPels_8u(Ipp8u* PredPel, Ipp32s width);
-    void h265_FilterPredictPels_Bilinear_8u(Ipp8u* pSrcDst, int width, int topLeft, int bottomLeft, int topRight);
-
-    /* Predict Pels */
-    void h265_GetPredictPels_8u(
-        Ipp32u log2_min_transform_block_size,
-        Ipp8u* src,
-        Ipp8u* PredPel,
-        bool* neighborFlags,
-        Ipp32s numIntraNeighbor,
-        Ipp32s width,
-        Ipp32s srcPitch,
-        Ipp32s isLuma,
-        Ipp32s UnitSize);
-
-    /* SAO Processing: may be structure instead of 14 params is better. need to check */
-    void h265_ProcessSaoCuOrg_Luma_8u(
-        Ipp8u* pRec,
-        Ipp32s stride,
-        Ipp32s saoType, 
-        Ipp8u* tmpL,
-        Ipp8u* tmpU,
-        Ipp32u maxCUWidth,
-        Ipp32u maxCUHeight,
-        Ipp32s picWidth,
-        Ipp32s picHeight,
-        Ipp32s* pOffsetEo,
-        Ipp8u* pOffsetBo,
-        Ipp8u* pClipTable,
-        Ipp32u CUPelX,
-        Ipp32u CUPelY);
-
-    void h265_ProcessSaoCu_Luma_8u(
-        Ipp8u* pRec,
-        Ipp32s stride,
-        Ipp32s saoType, 
-        Ipp8u* tmpL,
-        Ipp8u* tmpU,
-        Ipp32u maxCUWidth,
-        Ipp32u maxCUHeight,
-        Ipp32s picWidth,
-        Ipp32s picHeight,
-        Ipp32s* pOffsetEo,
-        Ipp8u* pOffsetBo,
-        Ipp8u* pClipTable,
-        Ipp32u CUPelX,
-        Ipp32u CUPelY,
-        bool* pbBorderAvail);
-};
-
-namespace MFX_HEVC_ENCODER
-{
-    /* transform Fwd */
-    void H265_FASTCALL h265_DST4x4Fwd_16s  (const short *H265_RESTRICT src, short *H265_RESTRICT dst);
-    void H265_FASTCALL h265_DCT4x4Fwd_16s  (const short *H265_RESTRICT src, short *H265_RESTRICT dst);
-    void H265_FASTCALL h265_DCT8x8Fwd_16s  (const short *H265_RESTRICT src, short *H265_RESTRICT dst);
-    void H265_FASTCALL h265_DCT16x16Fwd_16s(const short *H265_RESTRICT src, short *H265_RESTRICT dst);
-    void H265_FASTCALL h265_DCT32x32Fwd_16s(const short *H265_RESTRICT src, short *H265_RESTRICT dst);
-
-    /* SAD */
-    int h265_SAD_MxN_special_8u(const unsigned char *image,  const unsigned char *ref, int stride, int SizeX, int SizeY);
-    int h265_SAD_MxN_general_8u(const unsigned char *image,  int stride_img, const unsigned char *ref, int stride_ref, int SizeX, int SizeY);
-
-    /* Quantization Fwd */
-    void h265_QuantFwd_16s(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift);
-    Ipp32s h265_QuantFwd_SBH_16s(const Ipp16s* pSrc, Ipp16s* pDst, Ipp32s*  pDelta, int len, int scale, int offset, int shift);
-
-};
-
-namespace MFX_HEVC_DECODER
-{
-};
-
-//=================================================================================================
-
-namespace MFX_HEVC_COMMON
-{
-
+    //=================================================================================================    
     template < UMC_HEVC_DECODER::EnumTextType plane_type, typename t_src, typename t_dst >
     void H265_FORCEINLINE Interpolate( 
-        MFX_HEVC_COMMON::EnumInterpType interp_type,
+        MFX_HEVC_PP::EnumInterpType interp_type,
         const t_src* in_pSrc,
         Ipp32u in_SrcPitch, // in samples
         t_dst* H265_RESTRICT in_pDst,
@@ -337,7 +498,7 @@ namespace MFX_HEVC_COMMON
         Ipp32s height,
         Ipp32s shift,
         Ipp16s offset,
-        MFX_HEVC_COMMON::EnumAddAverageType eAddAverage = MFX_HEVC_COMMON::AVERAGE_NO,
+        MFX_HEVC_PP::EnumAddAverageType eAddAverage = MFX_HEVC_PP::AVERAGE_NO,
         const void* in_pSrc2 = NULL,
         int   in_Src2Pitch = 0 ); // in samples
 
@@ -364,7 +525,7 @@ namespace MFX_HEVC_COMMON
             int    accum_pitch,
             int    shift,
             int    offset,
-            MFX_HEVC_COMMON::EnumAddAverageType eAddAverage = MFX_HEVC_COMMON::AVERAGE_NO,
+            MFX_HEVC_PP::EnumAddAverageType eAddAverage = MFX_HEVC_PP::AVERAGE_NO,
             const void* in_pSrc2 = NULL,
             int   in_Src2Pitch = 0 // in samples
             );
@@ -383,7 +544,7 @@ namespace MFX_HEVC_COMMON
         int    accum_pitch,
         int    shift,
         int    offset,
-        MFX_HEVC_COMMON::EnumAddAverageType eAddAverage,
+        MFX_HEVC_PP::EnumAddAverageType eAddAverage,
         const void* in_pSrc2,
         int   in_Src2Pitch // in samples
         )
@@ -408,7 +569,7 @@ namespace MFX_HEVC_COMMON
 
     template < UMC_HEVC_DECODER::EnumTextType plane_type, typename t_src, typename t_dst >
     void H265_FORCEINLINE Interpolate(
-        MFX_HEVC_COMMON::EnumInterpType interp_type,
+        MFX_HEVC_PP::EnumInterpType interp_type,
         const t_src* in_pSrc,
         Ipp32u in_SrcPitch, // in samples
         t_dst* H265_RESTRICT in_pDst,
@@ -418,11 +579,11 @@ namespace MFX_HEVC_COMMON
         Ipp32s height,
         Ipp32s shift,
         Ipp16s offset,
-        MFX_HEVC_COMMON::EnumAddAverageType eAddAverage,
+        MFX_HEVC_PP::EnumAddAverageType eAddAverage,
         const void* in_pSrc2,
         int    in_Src2Pitch ) // in samples
     {
-        Ipp32s accum_pitch = ((interp_type == MFX_HEVC_COMMON::INTERP_HOR) ? (plane_type == UMC_HEVC_DECODER::TEXT_CHROMA ? 2 : 1) : in_SrcPitch);
+        Ipp32s accum_pitch = ((interp_type == MFX_HEVC_PP::INTERP_HOR) ? (plane_type == UMC_HEVC_DECODER::TEXT_CHROMA ? 2 : 1) : in_SrcPitch);
 
         const t_src* pSrc = in_pSrc - (((( plane_type == UMC_HEVC_DECODER::TEXT_LUMA) ? 8 : 4) >> 1) - 1) * accum_pitch;
 
@@ -470,9 +631,7 @@ namespace MFX_HEVC_COMMON
 
     }
 
-} // namespace MFX_HEVC_COMMON
-
-//=================================================================================================
+} // namespace MFX_HEVC_PP
 
 #endif // __MFX_H265_OPTIMIZATION_H__
 #endif // defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined(MFX_ENABLE_H265_VIDEO_DECODE)

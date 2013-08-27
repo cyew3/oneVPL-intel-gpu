@@ -15,7 +15,7 @@
 
 #include "mfx_h265_optimization.h"
 
-#if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM)
+#if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 
 // ML: OPT: significant overhead if not inlined (ICC does not honor implied 'inline' with -Qipo)
 // ML: OPT: TODO: Make sure compiler recognizes saturation idiom for vectorization when used
@@ -30,7 +30,7 @@
 typedef Ipp8u PixType;
 typedef Ipp8u H265PlaneUVCommon;
 
-namespace MFX_HEVC_COMMON
+namespace MFX_HEVC_PP
 {
     enum FilterType
     {
@@ -175,8 +175,13 @@ namespace MFX_HEVC_COMMON
 
     //} // void h265_FilterEdgeLuma_8u_I(...)
 
+#if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 #if defined(MFX_TARGET_OPTIMIZATION_PX)
     Ipp32s h265_FilterEdgeLuma_8u_I(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir)
+#else
+    Ipp32s h265_FilterEdgeLuma_8u_I_px(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir)
+#endif
+
     {
         Ipp32s tcIdx, bIdx, tc, beta, sideThreshhold;
         Ipp32s i;
@@ -528,7 +533,7 @@ namespace MFX_HEVC_COMMON
     }
 }
 
-}; // namespace MFX_HEVC_COMMON
+}; // namespace MFX_HEVC_PP
 
 #endif // #if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2)
 #endif // #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined(MFX_ENABLE_H265_VIDEO_DECODE)

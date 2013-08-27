@@ -15,7 +15,7 @@
 
 #include "mfx_h265_optimization.h"
 
-#if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM)
+#if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO) 
 
 
 #define Saturate(min_val, max_val, val) MAX((min_val), MIN((max_val), (val)))
@@ -26,7 +26,7 @@
 
 typedef Ipp8u PixType;
 
-namespace MFX_HEVC_COMMON
+namespace MFX_HEVC_PP
 {
 
     static const Ipp8u h265_log2table[] =
@@ -431,8 +431,12 @@ namespace MFX_HEVC_COMMON
     } // void h265_PredictIntra_DC_8u(
 
 
+#if defined(MFX_TARGET_OPTIMIZATION_PX)  || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 #if defined(MFX_TARGET_OPTIMIZATION_PX)
     void h265_PredictIntra_Ang_8u(
+#elif defined(MFX_TARGET_OPTIMIZATION_AUTO)
+    void h265_PredictIntra_Ang_8u_px(
+#endif
         Ipp32s mode,
         PixType* PredPel,
         PixType* pels,
@@ -526,7 +530,8 @@ namespace MFX_HEVC_COMMON
 
     } // void h265_PredictIntra_Ang_8u(...)
 
-#endif // #if defined(MFX_TARGET_OPTIMIZATION_PX)
+#endif // #if defined(MFX_TARGET_OPTIMIZATION_PX)  || defined(MFX_TARGET_OPTIMIZATION_AUTO)
+
 
     void h265_PredictIntra_Planar_8u(
         PixType* PredPel,
@@ -573,7 +578,7 @@ namespace MFX_HEVC_COMMON
 
     } // void h265_PredictIntra_Planar_8u(...)
 
-}; // namespace MFX_HEVC_COMMON
+}; // namespace MFX_HEVC_PP
 
 #endif // #if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2)
 #endif // #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined(MFX_ENABLE_H265_VIDEO_DECODE)

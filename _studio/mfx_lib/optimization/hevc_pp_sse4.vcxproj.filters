@@ -26,55 +26,19 @@
     <ClCompile Include="h265\src\mfx_h265_interpolation_sse.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="h265\src\mfx_h265_interp_tmpl_avx2.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="h265\src\mfx_h265_interp_tmpl_sse.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="h265\src\mfx_h265_sad_ipp.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="h265\src\mfx_h265_quantization_px.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="h265\src\mfx_h265_deblocking_px.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="h265\src\mfx_h265_transform_px.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="h265\src\mfx_h265_intrapred_px.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="h265\src\mfx_h265_sad_general_sse.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="h265\src\mfx_h265_sao_px.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="h265\src\mfx_h265_sao_sse.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="h265\src\mfx_h265_sad_avx2.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="h265\src\mfx_h265_sad_general_avx2.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="h265\src\mfx_h265_deblocking_sse.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="h265\src\mfx_h265_intrapred_sse.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="h265\src\mfx_h265_reordering_avx2.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="h265\src\mfx_h265_transform_inv_32x32_avx2.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="h265\src\mfx_h265_transform_inv_avx2.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

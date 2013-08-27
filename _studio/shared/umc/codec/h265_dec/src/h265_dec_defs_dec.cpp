@@ -870,7 +870,7 @@ void H265SampleAdaptiveOffset::processSaoLine(SAOLCUParam* saoLCUParam, SAOLCUPa
             H265CodingUnit *pTmpCu = m_Frame->getCU(addr);
             if (!m_UseNIF)
             {
-                MFX_HEVC_COMMON::h265_ProcessSaoCuOrg_Luma_8u(
+                MFX_HEVC_PP::NAME(h265_ProcessSaoCuOrg_Luma_8u)(
                     m_Frame->GetLumaAddr(addr),
                     m_Frame->pitch_luma(),
                     typeIdx,
@@ -888,7 +888,7 @@ void H265SampleAdaptiveOffset::processSaoLine(SAOLCUParam* saoLCUParam, SAOLCUPa
             }
             else
             {
-                MFX_HEVC_COMMON::h265_ProcessSaoCu_Luma_8u(
+                MFX_HEVC_PP::NAME(h265_ProcessSaoCu_Luma_8u)(
                     m_Frame->GetLumaAddr(addr),
                     m_Frame->pitch_luma(),
                     typeIdx,

@@ -15,13 +15,13 @@
 
 #include "mfx_h265_optimization.h"
 
-#if defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM)
+#if defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO) 
 
 #include <immintrin.h>
 
 typedef Ipp8u PixType;
 
-namespace MFX_HEVC_COMMON
+namespace MFX_HEVC_PP
 {
 
     static const Ipp32s intraPredAngleTable[] = {
@@ -257,8 +257,11 @@ namespace MFX_HEVC_COMMON
         }
     }
 
-
+#ifndef MFX_TARGET_OPTIMIZATION_AUTO 
     void h265_PredictIntra_Ang_8u(
+#else 
+    void h265_PredictIntra_Ang_8u_sse(
+#endif
         Ipp32s mode,
         PixType* PredPel,
         PixType* pels,

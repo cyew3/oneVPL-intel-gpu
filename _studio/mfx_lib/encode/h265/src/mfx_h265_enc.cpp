@@ -13,6 +13,7 @@
 #include "mfx_h265_defs.h"
 #include "mfx_h265_ctb.h"
 #include "ipp.h"
+#include "mfx_h265_optimization.h"
 
 #include "vm_interlocked.h"
 #include "vm_sys_info.h"
@@ -575,6 +576,7 @@ mfxStatus H265Encoder::Init(mfxVideoH265InternalParam *param, mfxExtCodingOption
     ippsZero_8u((Ipp8u *)cu, sizeof(H265CU) * m_videoParam.num_threads);
     ippsZero_8u((Ipp8u*)data_temp, sizeof(H265CUData) * data_temp_size * m_videoParam.num_threads);
 
+    MFX_HEVC_PP::InitDispatcher();
     return sts;
 }
 

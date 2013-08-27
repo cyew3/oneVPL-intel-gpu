@@ -264,12 +264,12 @@ void h265_quant_inv(const CoeffsType *qcoeffs,
 
         if (shift > qp6)
         {
-            MFX_HEVC_COMMON::h265_QuantInv_ScaleList_RShift_16s(qcoeffs, scaling_list, coeffs, len, add, (shift -  qp6));
+            MFX_HEVC_PP::h265_QuantInv_ScaleList_RShift_16s(qcoeffs, scaling_list, coeffs, len, add, (shift -  qp6));
         }
         else
         {
 
-            MFX_HEVC_COMMON::h265_QuantInv_ScaleList_LShift_16s(qcoeffs, scaling_list, coeffs, len, (qp6 - shift));
+            MFX_HEVC_PP::h265_QuantInv_ScaleList_LShift_16s(qcoeffs, scaling_list, coeffs, len, (qp6 - shift));
         }
     }
     else
@@ -277,7 +277,7 @@ void h265_quant_inv(const CoeffsType *qcoeffs,
         add = 1 << (shift - 1);
         Ipp32s scale = h265_quant_table_inv[qp_rem] << qp6;
         
-        MFX_HEVC_COMMON::h265_QuantInv_16s(qcoeffs, coeffs, len, scale, add, shift);
+        MFX_HEVC_PP::h265_QuantInv_16s(qcoeffs, coeffs, len, scale, add, shift);
     }
 }
 
@@ -310,11 +310,11 @@ void h265_quant_fwd_base(
 
     if( delta )
     {
-        abs_sum = (Ipp32u)MFX_HEVC_ENCODER::h265_QuantFwd_SBH_16s(coeffs, qcoeffs, delta, len, scaleLevel, scaleOffset, scale);
+        abs_sum = (Ipp32u)MFX_HEVC_PP::h265_QuantFwd_SBH_16s(coeffs, qcoeffs, delta, len, scaleLevel, scaleOffset, scale);
     }
     else
     {
-        MFX_HEVC_ENCODER::h265_QuantFwd_16s(coeffs, qcoeffs, len, scaleLevel, scaleOffset, scale);
+        MFX_HEVC_PP::h265_QuantFwd_16s(coeffs, qcoeffs, len, scaleLevel, scaleOffset, scale);
     }
 
 } // void h265_quant_fwd_base(...)

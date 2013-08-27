@@ -20,7 +20,7 @@
 
 #include "mfx_h265_optimization.h"
 
-#if defined (MFX_TARGET_OPTIMIZATION_AVX2)
+#if defined (MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 
 #include "mfx_h265_defs.h"
 
@@ -84,7 +84,7 @@ struct sad_pars
 
 #endif
 
-namespace MFX_HEVC_ENCODER
+namespace MFX_HEVC_PP
 {
 
 // the 128-bit SSE2 cant be full loaded with 4 bytes rows...
@@ -1750,17 +1750,18 @@ int SAD_CALLING_CONVENTION SAD_64x16_avx2(SAD_PARAMETERS_LIST) //OK
 
 
 
-int getSAD_avx2(const unsigned char *image,  const unsigned char *ref, int stride, int Size)
-{
-    if (Size == 4)
-        return SAD_4x4_avx2(image,  ref, stride);
-    else if (Size == 8)
-        return SAD_8x8_avx2(image,  ref, stride);
-    else if (Size == 16)
-        return SAD_16x16_avx2(image,  ref, stride);
-    return SAD_32x32_avx2(image,  ref, stride);
-}
+//int getSAD_avx2(const unsigned char *image,  const unsigned char *ref, int stride, int Size)
+//{
+//    if (Size == 4)
+//        return SAD_4x4_avx2(image,  ref, stride);
+//    else if (Size == 8)
+//        return SAD_8x8_avx2(image,  ref, stride);
+//    else if (Size == 16)
+//        return SAD_16x16_avx2(image,  ref, stride);
+//    return SAD_32x32_avx2(image,  ref, stride);
+//}
 
+#ifndef MFX_TARGET_OPTIMIZATION_AUTO
 
     int h265_SAD_MxN_special_8u(const unsigned char *image,  const unsigned char *ref, int stride, int SizeX, int SizeY)
 {
@@ -1815,9 +1816,10 @@ int getSAD_avx2(const unsigned char *image,  const unsigned char *ref, int strid
     }
     else return -1;
 }
+#endif // #ifndef MFX_TARGET_OPTIMIZATION_AUTO
 
-} // end namespace MFX_HEVC_ENCODER
+} // end namespace MFX_HEVC_PP
 
-#endif // #if defined(MFX_TARGET_OPTIMIZATION_AVX2)
+#endif // #if defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_AUTO) 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE
 /* EOF */

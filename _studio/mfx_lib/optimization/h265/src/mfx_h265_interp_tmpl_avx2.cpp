@@ -22,7 +22,7 @@
 
 using namespace UMC_HEVC_DECODER;
 
-namespace MFX_HEVC_COMMON
+namespace MFX_HEVC_PP
 {
 #ifdef __INTEL_COMPILER
 
@@ -165,7 +165,7 @@ namespace MFX_HEVC_COMMON
             int    accum_pitch,
             int    shift,
             int    offset,
-            MFX_HEVC_COMMON::EnumAddAverageType eAddAverage,
+            MFX_HEVC_PP::EnumAddAverageType eAddAverage,
             const void* in_pSrc2,
             int   in_Src2Pitch // in samples
             )
@@ -173,7 +173,7 @@ namespace MFX_HEVC_COMMON
             const int c_tap = (c_plane_type == TEXT_LUMA) ? 8 : 4;
 
             t_vec v_offset = _mm256_broadcastd_epi32( _mm_cvtsi32_si128( sizeof(t_src)==2 ? offset : (offset << 16) | offset ) );
-            in_Src2Pitch *= (eAddAverage == MFX_HEVC_COMMON::AVERAGE_FROM_BUF ? 2 : 1);
+            in_Src2Pitch *= (eAddAverage == MFX_HEVC_PP::AVERAGE_FROM_BUF ? 2 : 1);
 
             for (int i, j = 0; j < height; ++j) 
             {
@@ -248,9 +248,9 @@ namespace MFX_HEVC_COMMON
                         v_acc = _mm256_packs_epi32( v_acc, v_acc2 );
                     }
 
-                    if ( eAddAverage != MFX_HEVC_COMMON::AVERAGE_NO )
+                    if ( eAddAverage != MFX_HEVC_PP::AVERAGE_NO )
                     {
-                        if ( eAddAverage == MFX_HEVC_COMMON::AVERAGE_FROM_PIC ) {
+                        if ( eAddAverage == MFX_HEVC_PP::AVERAGE_FROM_PIC ) {
                             v_acc2 = _mm256_cvtepu8_epi16( _mm_loadu_si128( (const __m128i *)pSrc2 ) ); 
                             pSrc2 += 16;
                             v_acc2 = _mm256_slli_epi16( v_acc2, 6 );
@@ -453,7 +453,7 @@ namespace MFX_HEVC_COMMON
 
 #endif // __INTEL_COMPILER
 
-} // end namespace MFX_HEVC_COMMON
+} // end namespace MFX_HEVC_PP
 
 #endif //#ifndef OPT_INTERP_PMUL
 #endif // #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined (MFX_ENABLE_H265_VIDEO_DECODE)

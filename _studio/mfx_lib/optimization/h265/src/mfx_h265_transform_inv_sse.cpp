@@ -19,13 +19,13 @@
 
 #include "mfx_h265_optimization.h"
 
-#if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_ATOM)
+#if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO) 
 
 #include <immintrin.h>
 
 #pragma warning (disable : 4310 ) /* disable cast truncates constant value */
 
-namespace MFX_HEVC_COMMON
+namespace MFX_HEVC_PP
 {
 
 #define SHIFT_INV_1ST          7 // Shift after first inverse transform stage
@@ -115,7 +115,11 @@ namespace MFX_HEVC_COMMON
 #undef coef_stride
 #define coef_stride 4
 
+#ifndef MFX_TARGET_OPTIMIZATION_AUTO
     void h265_DCT4x4Inv_16sT(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+#else
+    void h265_DCT4x4Inv_16sT_sse(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+#endif
     {
         __m128i s0, s1, s2, s3, s02L, s13L, O0L, O1L, E0L, E1L, H01L, H23L;
         __m128i R0, R1, R2, R3;
@@ -222,7 +226,11 @@ namespace MFX_HEVC_COMMON
         }
     }
 
+#ifndef MFX_TARGET_OPTIMIZATION_AUTO
     void h265_DST4x4Inv_16sT(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+#else
+    void h265_DST4x4Inv_16sT_sse(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+#endif
     {
         __m128i s0, s1, s2, s3, s01L, s23L, H01L, H23L;
         __m128i R0, R1, R2, R3;
@@ -341,7 +349,11 @@ namespace MFX_HEVC_COMMON
 #undef coef_stride
 #define coef_stride 8
 
+#ifndef MFX_TARGET_OPTIMIZATION_AUTO
     void h265_DCT8x8Inv_16sT(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+#else
+    void h265_DCT8x8Inv_16sT_sse(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+#endif
     {
         ALIGN_DECL(16) short tmp[8 * 8];
 
@@ -634,7 +646,11 @@ namespace MFX_HEVC_COMMON
         }
     }
 
+#ifndef MFX_TARGET_OPTIMIZATION_AUTO
     void h265_DCT16x16Inv_16sT(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+#else
+    void h265_DCT16x16Inv_16sT_sse(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+#endif
     {
         __m128i s0, s2, s4, s6, s8, s1, s3, s5, s7, s9, s11, s13, s15;
         __m128i O0L, O1L, O2L, O3L, O4L, O5L, O6L, O7L;
@@ -907,7 +923,11 @@ namespace MFX_HEVC_COMMON
 
     // 9200 CPU clocks. 
     // 43 * _mm_madd_epi16 = 344
+#ifndef MFX_TARGET_OPTIMIZATION_AUTO
     void h265_DCT32x32Inv_16sT(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+#else
+    void h265_DCT32x32Inv_16sT_sse(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+#endif
     {
         int i;
         signed short * dest;
@@ -1982,7 +2002,7 @@ namespace MFX_HEVC_COMMON
 #undef  dest_stride
         }
 #endif    /* UPDATE_070513 */
-    } // end namespace MFX_HEVC_COMMON
+    } // end namespace MFX_HEVC_PP
 
 #endif //#if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2)
 #endif // #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined (MFX_ENABLE_H265_VIDEO_DECODE)

@@ -35,33 +35,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="h265\include\mfx_h265_optimization.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="h265\src\mfx_h265_deblocking_px.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_deblocking_sse.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_interpolation_sse.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_interp_tmpl_avx2.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_interp_tmpl_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_intrapred_px.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_intrapred_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_quantization_px.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_reordering_avx2.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_sad_avx2.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_sad_general_avx2.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_sad_general_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sad_ipp.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_sad_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sao_px.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_sao_sse.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_transform_fwd_sse.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_transform_inv_32x32_avx2.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_transform_inv_avx2.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_transform_inv_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_transform_px.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}</ProjectGuid>
+    <ProjectGuid>{3B7A183A-C728-494F-A56E-6A993150D277}</ProjectGuid>
     <RootNamespace>encode</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>

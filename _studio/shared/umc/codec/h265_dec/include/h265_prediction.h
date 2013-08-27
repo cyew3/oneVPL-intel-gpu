@@ -46,7 +46,7 @@ protected:
 
     // motion compensation functions
     template <EnumTextType c_plane_type, bool bi>
-    void H265_FORCEINLINE PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicList RefPicList, H265DecYUVBufferPadded *YUVPred, MFX_HEVC_COMMON::EnumAddAverageType eAddAverage = MFX_HEVC_COMMON::AVERAGE_NO);
+    void H265_FORCEINLINE PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicList RefPicList, H265DecYUVBufferPadded *YUVPred, MFX_HEVC_PP::EnumAddAverageType eAddAverage = MFX_HEVC_PP::AVERAGE_NO);
 
     bool CheckIdenticalMotion(H265CodingUnit* pCU, H265PUInfo &MVi);    
 

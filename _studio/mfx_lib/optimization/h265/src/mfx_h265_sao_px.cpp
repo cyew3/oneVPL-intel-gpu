@@ -17,7 +17,7 @@
 
 #if defined(MFX_TARGET_OPTIMIZATION_PX) 
 
-namespace MFX_HEVC_COMMON
+namespace MFX_HEVC_PP
 {
     enum SAOType
     {
@@ -559,7 +559,7 @@ namespace MFX_HEVC_COMMON
 
     } // void h265_ProcessSaoCu_Luma_8u(...)
 
-}; // namespace MFX_HEVC_COMMON
+}; // namespace MFX_HEVC_PP
 
 #endif // #if defined(MFX_TARGET_OPTIMIZATION_PX) 
 #endif // #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined(MFX_ENABLE_H265_VIDEO_DECODE)

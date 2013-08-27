@@ -294,7 +294,7 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU,
 
             if (edge->strength > 0)
             {
-                MFX_HEVC_COMMON::h265_FilterEdgeLuma_8u_I(edge, baseSrcDst + 4 * (i - 1) * srcDstStride, srcDstStride, VERT_FILT);
+                MFX_HEVC_PP::NAME(h265_FilterEdgeLuma_8u_I)(edge, baseSrcDst + 4 * (i - 1) * srcDstStride, srcDstStride, VERT_FILT);
             }
         }
     }
@@ -325,7 +325,7 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU,
 
             if (edge->strength > 0)
             {
-                MFX_HEVC_COMMON::h265_FilterEdgeLuma_8u_I(edge, baseSrcDst + 4 * (i - 1), srcDstStride, HOR_FILT);
+                MFX_HEVC_PP::NAME(h265_FilterEdgeLuma_8u_I)(edge, baseSrcDst + 4 * (i - 1), srcDstStride, HOR_FILT);
             }
         }
     }
@@ -398,7 +398,7 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU,
 
             if (edge->strength > 1)
             {
-                MFX_HEVC_COMMON::h265_FilterEdgeChroma_Interleaved_8u_I(
+                MFX_HEVC_PP::h265_FilterEdgeChroma_Interleaved_8u_I(
                     edge, 
                     baseSrcDst + 4 * (i - 1) * srcDstStride,
                     srcDstStride,
@@ -435,7 +435,7 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU,
 
             if (edge->strength > 1)
             {
-                MFX_HEVC_COMMON::h265_FilterEdgeChroma_Interleaved_8u_I(
+                MFX_HEVC_PP::h265_FilterEdgeChroma_Interleaved_8u_I(
                     edge, 
                     baseSrcDst + 4 * (i - 1) * 2,
                     srcDstStride,

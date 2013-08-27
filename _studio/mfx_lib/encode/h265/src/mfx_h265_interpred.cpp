@@ -13,7 +13,7 @@
 #include "mfx_h265_defs.h"
 #include "mfx_h265_optimization.h"
 
-using namespace MFX_HEVC_COMMON;
+using namespace MFX_HEVC_PP;
 
 //========================================================
 void InterpolateHor(
