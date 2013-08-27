@@ -102,14 +102,14 @@ enum
 {
     MAX_TEMPORAL_LAYER  = 8,
 
+    MAX_VPS_NUM_LAYER_SETS  = 1024,
+    MAX_NUH_LAYER_ID        = 1,           // currently max nuh_layer_id value is 1
+
     MAX_CU_DEPTH = 6,
     MAX_CU_SIZE = (1 << MAX_CU_DEPTH), // maximum allowable size of CU
     MIN_PU_SIZE = 4,
     MAX_NUM_PU_IN_ROW = (MAX_CU_SIZE/MIN_PU_SIZE)
 };
-
-#define MAX_VPS_NUM_HRD_PARAMETERS_ALLOWED_PLUS1  1024
-#define MAX_VPS_NUH_RESERVED_ZERO_LAYER_ID_PLUS1  1
 
 #define SAO_BO_BITS                    5
 #define LUMA_GROUP_NUM                (1 << SAO_BO_BITS)
@@ -541,10 +541,10 @@ struct H265ProfileTierLevel
 
 struct H265HrdSubLayerInfo
 {
-    bool        fixed_pic_rate_general_flag;
-    bool        fixed_pic_rate_within_cvs_flag;
+    Ipp8u       fixed_pic_rate_general_flag;
+    Ipp8u       fixed_pic_rate_within_cvs_flag;
     Ipp32u      elemental_duration_in_tc;
-    bool        low_delay_hrd_flag;
+    Ipp8u       low_delay_hrd_flag;
     Ipp32u      cpb_cnt;
 
     // sub layer hrd params
@@ -552,19 +552,19 @@ struct H265HrdSubLayerInfo
     Ipp32u      cpb_size_value[MAX_CPB_CNT][2];
     Ipp32u      cpb_size_du_value[MAX_CPB_CNT][2];
     Ipp32u      bit_rate_du_value[MAX_CPB_CNT][2];
-    Ipp32u      cbr_flag[MAX_CPB_CNT][2];
+    Ipp8u       cbr_flag[MAX_CPB_CNT][2];
 };
 
 struct H265HRD
 {
-    bool        nal_hrd_parameters_present_flag;
-    bool        vcl_hrd_parameters_present_flag;
-    bool        sub_pic_hrd_params_present_flag;
+    Ipp8u       nal_hrd_parameters_present_flag;
+    Ipp8u       vcl_hrd_parameters_present_flag;
+    Ipp8u       sub_pic_hrd_params_present_flag;
 
     // sub_pic_hrd_params_present_flag
     Ipp32u      tick_divisor;
     Ipp32u      du_cpb_removal_delay_increment_length;
-    bool        sub_pic_cpb_params_in_pic_timing_sei_flag;
+    Ipp8u       sub_pic_cpb_params_in_pic_timing_sei_flag;
     Ipp32u      dpb_output_delay_du_length;
 
     Ipp32u      bit_rate_scale;
@@ -585,16 +585,16 @@ struct H265HRD
 
 struct H265TimingInfo
 {
-    bool    vps_timing_info_present_flag;
+    Ipp8u   vps_timing_info_present_flag;
     Ipp32u  vps_num_units_in_tick;
     Ipp32u  vps_time_scale;
-    bool    vps_poc_proportional_to_timing_flag;
+    Ipp8u   vps_poc_proportional_to_timing_flag;
     Ipp32s  vps_num_ticks_poc_diff_one;
 
 public:
     H265TimingInfo()
         : vps_timing_info_present_flag(false)
-        , vps_num_units_in_tick(1001)
+        , vps_num_units_in_tick(1000)
         , vps_time_scale(60000)
         , vps_poc_proportional_to_timing_flag(false)
         , vps_num_ticks_poc_diff_one(0)
@@ -620,7 +620,7 @@ public:
 
     Ipp32u      vps_max_layer_id;
     Ipp32u      vps_num_layer_sets;
-    bool        layer_id_included_flag[MAX_VPS_NUM_HRD_PARAMETERS_ALLOWED_PLUS1][MAX_VPS_NUH_RESERVED_ZERO_LAYER_ID_PLUS1];
+    Ipp8u       layer_id_included_flag[MAX_VPS_NUM_LAYER_SETS][MAX_NUH_LAYER_ID];
 
     // vps timing info
     H265TimingInfo          m_timingInfo;
@@ -628,7 +628,7 @@ public:
     // hrd parameters
     Ipp32u    vps_num_hrd_parameters;
     Ipp32u*   hrd_layer_set_idx;
-    bool*     cprms_present_flag;
+    Ipp8u*    cprms_present_flag;
     H265HRD*  m_hrdParameters;
 
 public:
@@ -650,14 +650,14 @@ public:
 
     void createHrdParamBuffer()
     {
-        delete m_hrdParameters;
+        delete[] m_hrdParameters;
         m_hrdParameters = new H265HRD[vps_num_hrd_parameters];
 
-        delete hrd_layer_set_idx;
+        delete[] hrd_layer_set_idx;
         hrd_layer_set_idx = new unsigned[vps_num_hrd_parameters];
 
-        delete cprms_present_flag;
-        cprms_present_flag = new bool[vps_num_hrd_parameters];
+        delete[] cprms_present_flag;
+        cprms_present_flag = new Ipp8u[vps_num_hrd_parameters];
     }
 
     void Reset()
@@ -771,14 +771,14 @@ struct H265SeqParamSetBase
     // bitstream params
     Ipp32s  sps_video_parameter_set_id;
     Ipp32u  sps_max_sub_layers;
-    bool    sps_temporal_id_nesting_flag;
+    Ipp8u   sps_temporal_id_nesting_flag;
 
     H265ProfileTierLevel     m_pcPTL;
 
     Ipp8u   sps_seq_parameter_set_id;
     Ipp8u   chroma_format_idc;
 
-    Ipp32s  separate_colour_plane_flag;
+    Ipp8u   separate_colour_plane_flag;
 
     Ipp32u  pic_width_in_luma_samples;
     Ipp32u  pic_height_in_luma_samples;
@@ -794,7 +794,7 @@ struct H265SeqParamSetBase
     Ipp32u  bit_depth_chroma;
 
     Ipp32u  log2_max_pic_order_cnt_lsb;
-    bool    sps_sub_layer_ordering_info_present_flag;
+    Ipp8u   sps_sub_layer_ordering_info_present_flag;
 
     Ipp32u  sps_max_dec_pic_buffering[MAX_TEMPORAL_LAYER];
     Ipp32u  sps_max_num_reorder_pics[MAX_TEMPORAL_LAYER];

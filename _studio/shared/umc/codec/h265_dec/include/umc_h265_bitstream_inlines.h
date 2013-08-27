@@ -500,13 +500,12 @@ Ipp32s H265BaseBitstream::GetVLCElement(bool bIsSigned)
 
 }
 
-inline
-Ipp32u H265BaseBitstream::Get1Bit()
+inline Ipp8u H265BaseBitstream::Get1Bit()
 {
     Ipp32u w;
 
     ippiGetBits1(m_pbs, m_bitOffset, w);
-    return(w);
+    return (Ipp8u)w;
 
 } // H265Bitstream::Get1Bit()
 

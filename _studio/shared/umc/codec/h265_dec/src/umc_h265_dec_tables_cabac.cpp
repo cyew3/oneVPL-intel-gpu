@@ -12,7 +12,6 @@
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
 #include "umc_h265_dec_init_tables_cabac.h"
-#include "umc_h265_dec_internal_cabac.h"
 
 namespace UMC_HEVC_DECODER
 {

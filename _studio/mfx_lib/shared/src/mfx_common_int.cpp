@@ -426,7 +426,9 @@ mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam* par)
     static const mfxU32 g_decoderSupportedExtBuffersAVC[] = {MFX_EXTBUFF_PAVP_OPTION, MFX_EXTBUFF_MVC_SEQ_DESC,
         MFX_EXTBUFF_MVC_TARGET_VIEWS, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, MFX_EXTBUFF_SVC_SEQ_DESC, MFX_EXTBUFF_SVC_TARGET_LAYER};
 
-   static const mfxU32 g_decoderSupportedExtBuffersVC1[] = {MFX_EXTBUFF_PAVP_OPTION, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION};
+    static const mfxU32 g_decoderSupportedExtBuffersHEVC[] = {MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION};
+
+    static const mfxU32 g_decoderSupportedExtBuffersVC1[] = {MFX_EXTBUFF_PAVP_OPTION, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION};
     static const mfxU32 g_decoderSupportedExtBuffersMJPEG[] = {MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, MFX_EXTBUFF_JPEG_HUFFMAN, MFX_EXTBUFF_JPEG_QT};
 
     const mfxU32 *supported_buffers = 0;
@@ -437,11 +439,14 @@ mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam* par)
         supported_buffers = g_decoderSupportedExtBuffersAVC;
         numberOfSupported = sizeof(g_decoderSupportedExtBuffersAVC) / sizeof(g_decoderSupportedExtBuffersAVC[0]);
     }
-    else if ((par->mfx.CodecId == MFX_CODEC_VC1) ||
-        (par->mfx.CodecId == MFX_CODEC_MPEG2))
+    else if (par->mfx.CodecId == MFX_CODEC_VC1 || par->mfx.CodecId == MFX_CODEC_MPEG2)
     {
         supported_buffers = g_decoderSupportedExtBuffersVC1;
         numberOfSupported = sizeof(g_decoderSupportedExtBuffersVC1) / sizeof(g_decoderSupportedExtBuffersVC1[0]);
+    }else if (par->mfx.CodecId == MFX_CODEC_HEVC)
+    {
+        supported_buffers = g_decoderSupportedExtBuffersHEVC;
+        numberOfSupported = sizeof(g_decoderSupportedExtBuffersHEVC) / sizeof(g_decoderSupportedExtBuffersHEVC[0]);
     }
 
     if (par->mfx.CodecId == MFX_CODEC_JPEG)

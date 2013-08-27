@@ -54,7 +54,7 @@ public:
     Ipp32s GetVLCElement(bool bIsSigned);
 
     // Reads one bit from the buffer.
-    Ipp32u Get1Bit();
+    Ipp8u Get1Bit();
 
     // Move pointer to nearest byte
     void ReadToByteAlignment();
@@ -125,7 +125,7 @@ public:
     UMC::Status GetSliceHeaderFull(H265Slice *, const H265SeqParamSet *, const H265PicParamSet *);
 
     void parseScalingList(H265ScalingList *);
-    bool xMoreRbspData();
+    bool MoreRbspData();
 
     UMC::Status GetVideoParamSet(H265VideoParamSet *vps);
 
@@ -149,7 +149,7 @@ protected:
 
     void xParsePredWeightTable(H265Slice* pcSlice);
     void xDecodeScalingList(H265ScalingList *scalingList, unsigned sizeId, unsigned listId);
-    void parseHrdParameters(H265HRD *hrd, bool commonInfPresentFlag, unsigned maxNumSubLayersMinus1);
+    void parseHrdParameters(H265HRD *hrd, Ipp8u commonInfPresentFlag, Ipp32u vps_max_sub_layers);
 
     void  parsePTL            ( H265ProfileTierLevel *rpcPTL, int maxNumSubLayersMinus1);
     void  parseProfileTier    (H265PTL *ptl);
@@ -173,16 +173,9 @@ public:
     H265Bitstream(Ipp8u * const pb, const Ipp32u maxsize);
     virtual ~H265Bitstream(void);
 
-    // Find next start code
-    UMC::Status AdvanceToNextSCP(void);
-
-    Ipp32s GetSCP();
-
     // Get type of current NAL
     UMC::Status GetNALUnitType(NalUnitType &nal_unit_type, Ipp32u &nuh_temporal_id);
     UMC::Status GetAccessUnitDelimiter(Ipp32u &PicCodType);
-
-    void RollbackCurrentNALU();
 
     // Parse SEI message
     Ipp32s ParseSEI(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps, H265SEIPayLoad *spl);
@@ -272,27 +265,11 @@ protected:
     Ipp32s sei_payload(const HeaderSet<H265SeqParamSet> & sps,Ipp32s current_sps,H265SEIPayLoad *spl);
     Ipp32s buffering_period(const HeaderSet<H265SeqParamSet> & sps,Ipp32s current_sps,H265SEIPayLoad *spl);
     Ipp32s pic_timing(const HeaderSet<H265SeqParamSet> & sps,Ipp32s current_sps,H265SEIPayLoad *spl);
-    Ipp32s pan_scan_rect(const HeaderSet<H265SeqParamSet> & sps,Ipp32s current_sps,H265SEIPayLoad *spl);
-    Ipp32s filler_payload(const HeaderSet<H265SeqParamSet> & sps,Ipp32s current_sps,H265SEIPayLoad *spl);
     Ipp32s user_data_registered_itu_t_t35(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps,H265SEIPayLoad *spl);
     Ipp32s user_data_unregistered(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps,H265SEIPayLoad *spl);
     Ipp32s recovery_point(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps,H265SEIPayLoad *spl);
-    Ipp32s spare_pic(const HeaderSet<H265SeqParamSet> & sps,Ipp32s current_sps,H265SEIPayLoad *spl);
-    Ipp32s scene_info(const HeaderSet<H265SeqParamSet> & sps,Ipp32s current_sps,H265SEIPayLoad *spl);
-    Ipp32s sub_seq_info(const HeaderSet<H265SeqParamSet> & sps,Ipp32s current_sps,H265SEIPayLoad *spl);
-    Ipp32s sub_seq_layer_characteristics(const HeaderSet<H265SeqParamSet> & sps,Ipp32s current_sps,H265SEIPayLoad *spl);
-    Ipp32s sub_seq_characteristics(const HeaderSet<H265SeqParamSet> & sps,Ipp32s current_sps,H265SEIPayLoad *spl);
-    Ipp32s full_frame_freeze(const HeaderSet<H265SeqParamSet> & sps,Ipp32s current_sps,H265SEIPayLoad *spl);
-    Ipp32s full_frame_freeze_release(const HeaderSet<H265SeqParamSet> & sps,Ipp32s current_sps,H265SEIPayLoad *spl);
-    Ipp32s full_frame_snapshot(const HeaderSet<H265SeqParamSet> & sps,Ipp32s current_sps,H265SEIPayLoad *spl);
-    Ipp32s progressive_refinement_segment_start(const HeaderSet<H265SeqParamSet> & sps,Ipp32s current_sps,H265SEIPayLoad *spl);
-    Ipp32s progressive_refinement_segment_end(const HeaderSet<H265SeqParamSet> & sps,Ipp32s current_sps,H265SEIPayLoad *spl);
-    Ipp32s motion_constrained_slice_group_set(const HeaderSet<H265SeqParamSet> & sps,Ipp32s current_sps,H265SEIPayLoad *spl);
-    Ipp32s reserved_sei_message(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps, H265SEIPayLoad *spl);
-    Ipp32s unparsed_sei_message(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps, H265SEIPayLoad *spl);
-    void scalability_info(H265SEIPayLoad *spl);
 
-    friend class TableInitializer;
+    Ipp32s reserved_sei_message(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps, H265SEIPayLoad *spl);
 };
 
 } // namespace UMC_HEVC_DECODER
