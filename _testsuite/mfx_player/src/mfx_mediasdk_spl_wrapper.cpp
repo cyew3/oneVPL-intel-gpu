@@ -15,6 +15,8 @@ File Name: .h
 #include "mfx_frame_constructor.h"
 #include "mfxvp8.h"
 
+mfxU32 TIME_STAMP_FREQUENCY = 90000;
+
 MediaSDKSplWrapper::MediaSDKSplWrapper(vm_char *extractedAudioFile)
     : m_pConstructor()
     , m_extractedAudioFile(NULL)
@@ -173,14 +175,20 @@ mfxStatus MediaSDKSplWrapper::SeekTime(mfxF64 fSeekTo)
 {
     MFX_CHECK_POINTER(m_mfxSplitter);
 
-    return MFXSplitter_Seek(m_mfxSplitter, fSeekTo);
+    if (fSeekTo < 0)
+        return MFX_ERR_UNKNOWN;
+
+    return MFXSplitter_Seek(m_mfxSplitter,  (mfxU64)(fSeekTo * TIME_STAMP_FREQUENCY));
 }
 
 mfxStatus MediaSDKSplWrapper::SeekPercent(mfxF64 fSeekTo)
 {
     MFX_CHECK_POINTER(m_mfxSplitter);
 
-    return MFXSplitter_Seek(m_mfxSplitter, (mfxF64) m_streamParams.Duration * fSeekTo * 1.e-8); // / 100, / AV_TIME_BASE
+    if (fSeekTo < 0 || fSeekTo > 100)
+        return MFX_ERR_UNKNOWN;
+
+    return MFXSplitter_Seek(m_mfxSplitter, (mfxF64) m_streamParams.Duration * 0.01f * fSeekTo);
 }
 
 mfxStatus MediaSDKSplWrapper::SeekFrameOffset(mfxU32 /*nFrameOffset*/, mfxFrameInfo & /*in_info*/)
