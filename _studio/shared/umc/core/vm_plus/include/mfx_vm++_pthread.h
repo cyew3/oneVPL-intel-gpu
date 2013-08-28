@@ -25,7 +25,7 @@ class MfxMutex
 {
 public:
     MfxMutex(void);
-    ~MfxMutex(void);
+    virtual ~MfxMutex(void);
 
     mfxStatus Lock(void);
     mfxStatus Unlock(void);
@@ -45,7 +45,7 @@ class MfxAutoMutex
 {
 public:
     MfxAutoMutex(MfxMutex& mutex);
-    ~MfxAutoMutex(void);
+    virtual ~MfxAutoMutex(void);
 
     mfxStatus Lock(void);
     mfxStatus Unlock(void);
