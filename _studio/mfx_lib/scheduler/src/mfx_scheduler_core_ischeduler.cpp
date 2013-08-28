@@ -18,6 +18,12 @@
 #include <umc_automatic_mutex.h>
 #include <mfx_trace.h>
 
+#if defined  (MFX_VA)
+#if defined  (MFX_D3D11_ENABLED)
+#include "mfx_scheduler_dx11_event.h"
+#endif
+#endif 
+
 #if defined(MFX_SCHEDULER_LOG)
 #if defined(WIN32) || defined(WIN64)
 #include <windows.h>
@@ -619,6 +625,22 @@ mfxStatus mfxSchedulerCore::AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoi
     MFX_LTRACE_1(MFX_TRACE_LEVEL_SCHED, "^Enqueue^", "%d", task.nTaskId);
 #endif
     Ipp32u numThreads;
+
+#if defined  (MFX_VA)
+#if defined  (MFX_D3D11_ENABLED)
+    if (!m_pdx11event && !m_hwTaskDone.handle)
+    {
+        m_pdx11event = new DX11GlobalEvent(m_param.pCore);
+        m_hwTaskDone.handle = m_pdx11event->CreateBatchBufferEvent();
+
+        //back original sleep
+        if (m_hwTaskDone.handle)
+            m_zero_thread_wait = 15;
+
+        StartWakeUpThread();
+    }
+#endif
+#endif
 
     // check error(s)
     if (0 == m_param.numberOfThreads)

@@ -69,6 +69,12 @@ mfxSchedulerCore::mfxSchedulerCore(void) :
     m_timer_hw_event = MFX_THREAD_TIME_TO_WAIT; 
     m_zero_thread_wait = 1; 
 
+#if defined  (MFX_VA)
+#if defined  (MFX_D3D11_ENABLED)
+    m_pdx11event = 0;
+#endif
+#endif
+
 #if defined(MFX_SCHEDULER_LOG)
     m_hLog = 0;
 #endif // defined(MFX_SCHEDULER_LOG)
@@ -302,7 +308,6 @@ mfxU32 mfxSchedulerCore::GetLowResCurrentTime(void)
     return vm_time_get_current_time();
 
 } // mfxU32 mfxSchedulerCore::GetCurrentTime(void)
-
 mfxStatus mfxSchedulerCore::AllocateEmptyTask(void)
 {
     //

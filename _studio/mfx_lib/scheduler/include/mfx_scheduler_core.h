@@ -56,6 +56,11 @@ struct TASK_STAT
 void GetNumTasks(MFX_SCHEDULER_TASK * const (ppTasks[MFX_PRIORITY_NUMBER][MFX_TYPE_NUMBER]), TASK_STAT &stat);
 #endif // defined(MFX_SCHEDULER_LOG)
 
+#if defined  (MFX_VA)
+#if defined  (MFX_D3D11_ENABLED)
+class DX11GlobalEvent;
+#endif
+#endif
 enum
 {
     // thread statistic is gathered within the following period of time (in msec).
@@ -395,7 +400,11 @@ protected:
     mfxU32 m_timer_hw_event;
     mfxU32 m_zero_thread_wait;
 
-
+#if defined  (MFX_VA)
+#if defined  (MFX_D3D11_ENABLED)
+    DX11GlobalEvent* m_pdx11event;
+#endif
+#endif
 
 private:
     // declare a assignment operator to avoid warnings

@@ -540,6 +540,7 @@ mfxStatus _mfxSession::Init(mfxIMPL implInterface, mfxVersion *ver)
     memset(&schedParam, 0, sizeof(schedParam));
     schedParam.flags = MFX_SCHEDULER_DEFAULT;
     schedParam.numberOfThreads = maxNumThreads;
+    schedParam.pCore = m_pCORE.get();
     mfxRes = m_pScheduler->Initialize(&schedParam);
     if (MFX_ERR_NONE != mfxRes)
     {

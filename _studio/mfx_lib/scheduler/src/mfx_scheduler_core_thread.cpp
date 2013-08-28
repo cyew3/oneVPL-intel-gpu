@@ -10,6 +10,7 @@
 
 #include <mfx_scheduler_core.h>
 #include <mfx_scheduler_core_task.h>
+#include "mfx_scheduler_dx11_event.h"
 
 #include <mfx_trace.h>
 #include <stdio.h>
@@ -23,7 +24,8 @@ mfxStatus mfxSchedulerCore::StartWakeUpThread(void)
 {
     // stop the thread before creating it again
     // don't try to check thread status, it might lead to interesting effects.
-    StopWakeUpThread();
+    if (m_hwWakeUpThread.handle)
+        StopWakeUpThread();
     
     m_timer_hw_event = MFX_THREAD_TIME_TO_WAIT; //!!!!!! 
     // wa for case if it will be outside of coming 15.31 Beta
@@ -34,7 +36,6 @@ mfxStatus mfxSchedulerCore::StartWakeUpThread(void)
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
-    //Metro supports only CreateEventExW;
     m_hwTaskDone.handle = CreateEventExW(NULL, 
                                         _T("Global\\IGFXKMDNotifyBatchBuffersComplete"), 
                                         CREATE_EVENT_MANUAL_RESET, 
@@ -71,7 +72,21 @@ mfxStatus mfxSchedulerCore::StopWakeUpThread(void)
     // close hardware listening tools
     vm_thread_wait(&m_hwWakeUpThread); 
     vm_thread_close(&m_hwWakeUpThread);
-    vm_event_destroy(&m_hwTaskDone);
+    //no specific path to obtain event
+    // let close handle
+#if defined  (MFX_VA)
+#if defined  (MFX_D3D11_ENABLED)
+    if (!m_pdx11event)
+    {
+        vm_event_destroy(&m_hwTaskDone);
+    }
+    else
+    {
+        delete m_pdx11event;
+        m_hwTaskDone.handle = 0; // handle has been obtained by UMD
+    }
+#endif
+#endif
 
     m_bQuitWakeUpThread = false;
     vm_event_set_invalid(&m_hwTaskDone);
