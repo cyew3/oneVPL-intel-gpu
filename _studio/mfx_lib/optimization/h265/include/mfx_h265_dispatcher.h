@@ -176,6 +176,12 @@ namespace MFX_HEVC_PP
     void H265_FASTCALL h265_DCT32x32Fwd_16s_sse(const short *H265_RESTRICT src, short *H265_RESTRICT dest);
 
     // [transform.inv]
+    void h265_DST4x4Inv_16sT_px  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
+    void h265_DCT4x4Inv_16sT_px  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
+    void h265_DCT8x8Inv_16sT_px  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
+    void h265_DCT16x16Inv_16sT_px(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
+    void h265_DCT32x32Inv_16sT_px(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
+
     void h265_DST4x4Inv_16sT_sse  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
     void h265_DCT4x4Inv_16sT_sse  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
     void h265_DCT8x8Inv_16sT_sse  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
