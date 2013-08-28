@@ -1429,7 +1429,7 @@ Status MPEG2VideoDecoderBase::PostProcessFrame(int display_index, int task_num)
                 bool slice_split = false;
                 Ipp32s sz = 0, sz_align = 0;
 
-                memcpy(&s_info,&pack_w.pSliceInfo[-1],sizeof(DXVA_SliceInfo));
+                memcpy_s(&s_info,sizeof(DXVA_SliceInfo),&pack_w.pSliceInfo[-1],sizeof(DXVA_SliceInfo));
 
                 pack_w.pSliceInfo--;
 
@@ -1510,7 +1510,7 @@ Status MPEG2VideoDecoderBase::PostProcessFrame(int display_index, int task_num)
                 VASliceParameterBufferMPEG2  s_info;
                 bool slice_split = false;
                 Ipp32s sz = 0, sz_align = 0;
-                memcpy(&s_info, &pack_w.pSliceInfo[-1], sizeof(VASliceParameterBufferMPEG2));
+                memcpy_s(&s_info, sizeof(VASliceParameterBufferMPEG2), &pack_w.pSliceInfo[-1], sizeof(VASliceParameterBufferMPEG2));
                 pack_w.pSliceInfo--;
                 int size_bs = GET_END_PTR(Video[task_num][0]->bs) - GET_START_PTR(Video[task_num][0]->bs)+4;   // ao: I copied from BeginVAFrame. Is it ok? or == bs_size
                 int size_sl = m_ClipInfo.clip_info.width*m_ClipInfo.clip_info.height/256;      // ao: I copied from BeginVAFrame. Is it ok?
@@ -1559,7 +1559,7 @@ mm:
 #    if defined(UMC_VA_DXVA)   // part 2
                 pack_w.InitBuffers(0, 0);
 
-                memcpy(&pack_w.pSliceInfo[0], &s_info, sizeof(s_info));
+                memcpy_s(&pack_w.pSliceInfo[0], sizeof(s_info), &s_info, sizeof(s_info));
 
                 pack_w.pSliceStart += pack_w.pSliceInfo[0].dwSliceDataLocation;
                 pack_w.pSliceInfo[0].dwSliceDataLocation = 0;
@@ -1599,7 +1599,7 @@ mm:
 
                 pack_w.InitBuffers(size_bs, size_sl);
 
-                memcpy(&pack_w.pSliceInfo[0], &s_info, sizeof(s_info));
+                memcpy_s(&pack_w.pSliceInfo[0], sizeof(s_info), &s_info, sizeof(s_info));
 
                 pack_w.pSliceStart += pack_w.pSliceInfo[0].slice_data_offset;
                 pack_w.pSliceInfo[0].slice_data_offset = 0;
@@ -1906,7 +1906,7 @@ Status MPEG2VideoDecoderBase::GetInfo(BaseCodecParams* info)
 
 Status MPEG2VideoDecoderBase::GetSequenceHeaderMemoryMask(Ipp8u *buffer, Ipp16u &size)
 {
-    memcpy(buffer, shMask.memMask, shMask.memSize);
+    memcpy_s(buffer, shMask.memSize, shMask.memMask, shMask.memSize);
     size = shMask.memSize;
 
     return UMC_OK;

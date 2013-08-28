@@ -532,7 +532,7 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(IppVideoContext* video, int t
 #endif
         memset(shMask.memMask, 0, shMask.memSize);
 
-        memcpy(shMask.memMask, video->bs_start_ptr, shMask.memSize);
+        memcpy_s(shMask.memMask, shMask.memSize, video->bs_start_ptr, shMask.memSize);
     }
 
     if(m_ClipInfo.stream_type == MPEG1_VIDEO) {

@@ -282,7 +282,8 @@ PackVA::SaveVLDParameters(
                     {
                         extensionInput.EncryptProtocolHeader.guidEncryptProtocol = m_va->GetProtectedVA()->GetEncryptionGUID();
                         extensionInput.dwBufferSize = bs_size;
-                        memcpy(extensionInput.dwAesCounter, &curr_bs_encryptedData->CipherCounter, sizeof(curr_bs_encryptedData->CipherCounter));
+                        memcpy_s(extensionInput.dwAesCounter, sizeof(curr_bs_encryptedData->CipherCounter),
+                            &curr_bs_encryptedData->CipherCounter, sizeof(curr_bs_encryptedData->CipherCounter));
                     }
                     else
                     {

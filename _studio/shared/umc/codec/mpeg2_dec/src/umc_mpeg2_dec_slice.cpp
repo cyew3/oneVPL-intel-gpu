@@ -295,7 +295,7 @@ Status MPEG2VideoDecoderBase::DecodeSliceHeader(IppVideoContext *video, int task
                     DXVA_SliceInfo s_info;
                     Ipp32s sz = 0, sz_align = 0;
 
-                    memcpy(&s_info,&pack_w.pSliceInfo[-1],sizeof(DXVA_SliceInfo));
+                    memcpy_s(&s_info,sizeof(DXVA_SliceInfo),&pack_w.pSliceInfo[-1],sizeof(DXVA_SliceInfo));
 
                     pack_w.bs_size -= dsize;
                     pack_w.overlap -= overlap;
@@ -417,7 +417,7 @@ Status MPEG2VideoDecoderBase::DecodeSliceHeader(IppVideoContext *video, int task
 
                     pack_w.InitBuffers(0, 0);
 
-                    memcpy(&pack_w.pSliceInfo[0],&s_info,sizeof(DXVA_SliceInfo));
+                    memcpy_s(&pack_w.pSliceInfo[0],sizeof(DXVA_SliceInfo),&s_info,sizeof(DXVA_SliceInfo));
                     pack_w.pSliceStart += pack_w.pSliceInfo[0].dwSliceDataLocation;
                     pack_w.pSliceInfo[0].dwSliceDataLocation = 0;
                     if(!pack_w.IsProtectedBS)

@@ -512,7 +512,7 @@ mfxStatus VideoDECODEMPEG2::Init(mfxVideoParam *par)
             return MFX_ERR_INVALID_VIDEO_PARAM;
 
         if (pavpOpt)
-            memcpy(&m_pavpOpt, pavpOpt, sizeof(mfxExtPAVPOption));
+            memcpy_s(&m_pavpOpt, sizeof(mfxExtPAVPOption), pavpOpt, sizeof(mfxExtPAVPOption));
     }
 
     // frames allocation
@@ -969,7 +969,7 @@ mfxStatus VideoDECODEMPEG2::GetUserData(mfxU8 *ud, mfxU32 *sz, mfxU64 *ts, mfxU1
         // we store pts in float
         mfxF64 pts;
 
-        memcpy(&pts, ts, sizeof(mfxF64));
+        memcpy_s(&pts, sizeof(mfxF64), ts, sizeof(mfxF64));
 
         *ts = GetMfxTimeStamp(pts);
 
@@ -1220,7 +1220,7 @@ mfxStatus VideoDECODEMPEG2::DecodeHeader(VideoCORE *core, mfxBitstream* bs, mfxV
                     size += 9;
             }
 
-            memcpy(spspps->SPSBuffer, pShStart, size);
+            memcpy_s(spspps->SPSBuffer, size, pShStart, size);
             spspps->SPSBufSize = size;
         }
 
@@ -1504,7 +1504,7 @@ mfxStatus VideoDECODEMPEG2::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
 
         mfxExtBuffer **pExtBuffer = out->ExtParam;
         mfxU16 numDistBuf = out->NumExtParam;
-        memcpy(out, in, sizeof(mfxVideoParam));
+        memcpy_s(out, sizeof(mfxVideoParam), in, sizeof(mfxVideoParam));
 
         out->ExtParam = pExtBuffer;
         out->NumExtParam = numDistBuf;
@@ -1649,7 +1649,7 @@ mfxStatus VideoDECODEMPEG2::QueryIOSurfInternal(VideoCORE *core, mfxVideoParam *
         }
     }
 
-    memcpy(&(request->Info), &(par->mfx.FrameInfo), sizeof(mfxFrameInfo));
+    memcpy_s(&(request->Info), sizeof(mfxFrameInfo), &(par->mfx.FrameInfo), sizeof(mfxFrameInfo));
     
     // output color format is NV12
     request->Info.FourCC = MFX_FOURCC_NV12;
@@ -1741,7 +1741,7 @@ mfxStatus VideoDECODEMPEG2::GetVideoParam(mfxVideoParam *par)
         if (!IS_PROTECTION_PAVP_ANY(m_vPar.Protected))
             return MFX_ERR_INVALID_VIDEO_PARAM;
 
-        memcpy(buffer, &m_pavpOpt, sizeof(mfxExtPAVPOption));
+        memcpy_s(buffer, sizeof(mfxExtPAVPOption), &m_pavpOpt, sizeof(mfxExtPAVPOption));
     }
 
     // get sps/pps buffer
@@ -1763,7 +1763,7 @@ mfxStatus VideoDECODEMPEG2::GetVideoParam(mfxVideoParam *par)
     {
         m_implUmc.GetSignalInfoInformation(signal_info);
     }
-    memcpy(par->reserved,m_vPar.reserved,sizeof(m_vPar.reserved));
+    memcpy_s(par->reserved,sizeof(m_vPar.reserved),m_vPar.reserved,sizeof(m_vPar.reserved));
     par->reserved2 = m_vPar.reserved2;
 
     if(!m_isInitialized)
@@ -2490,7 +2490,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
         if (0 < m_last_bytes[3])
         {
             Ipp8u *pData = m_frame[m_frame_free].Data + m_frame[m_frame_free].DataOffset + m_frame[m_frame_free].DataLength;
-            memcpy(pData, m_last_bytes, m_last_bytes[3]);
+            memcpy_s(pData, m_last_bytes[3], m_last_bytes, m_last_bytes[3]);
 
             m_frame[m_frame_free].DataLength += m_last_bytes[3];
             memset(m_last_bytes, 0, NUM_REST_BYTES);
@@ -3292,7 +3292,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
             m_task_param[m_task_num].m_pGuard = &m_guard;
             m_task_param[m_task_num].task_num = m_task_num;
 
-            memcpy(&(m_task_param[m_task_num].m_vPar.mfx.FrameInfo),&m_vPar.mfx.FrameInfo,sizeof(mfxFrameInfo));
+            memcpy_s(&(m_task_param[m_task_num].m_vPar.mfx.FrameInfo),sizeof(mfxFrameInfo),&m_vPar.mfx.FrameInfo,sizeof(mfxFrameInfo));
 
 #ifdef _threading_deb
             {
@@ -3393,7 +3393,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
                     m_task_param[m_task_num].m_pGuard = &m_guard;
                     m_task_param[m_task_num].task_num = m_task_num;
 
-                    memcpy(&(m_task_param[m_task_num].m_vPar.mfx.FrameInfo), &m_vPar.mfx.FrameInfo, sizeof(mfxFrameInfo));
+                    memcpy_s(&(m_task_param[m_task_num].m_vPar.mfx.FrameInfo), sizeof(mfxFrameInfo), &m_vPar.mfx.FrameInfo, sizeof(mfxFrameInfo));
 
                     pEntryPoint->pParam = (void *)(&(m_task_param[m_task_num]));
 
@@ -4092,7 +4092,7 @@ mfxStatus VideoDECODEMPEG2::InternalReset(mfxVideoParam* par)
         if (!pavpOpt)
             return MFX_ERR_INVALID_VIDEO_PARAM;
 
-        memcpy(&m_pavpOpt, pavpOpt, sizeof(mfxExtPAVPOption));
+        memcpy_s(&m_pavpOpt, sizeof(mfxExtPAVPOption), pavpOpt, sizeof(mfxExtPAVPOption));
 
 #if defined (MFX_VA_WIN)
         if (IS_PROTECTION_PAVP_ANY(par->Protected))
