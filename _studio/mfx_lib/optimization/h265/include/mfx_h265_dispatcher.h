@@ -261,9 +261,26 @@ namespace MFX_HEVC_PP
     void h265_DCT32x32Inv_16sT_avx2(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
 
     // [deblocking]
+    Ipp32s h265_FilterEdgeLuma_8u_I_px(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir);
     Ipp32s h265_FilterEdgeLuma_8u_I_sse(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir);
 
     // [SAO]
+    void h265_ProcessSaoCuOrg_Luma_8u_px(
+        Ipp8u* pRec,
+        Ipp32s stride,
+        Ipp32s saoType, 
+        Ipp8u* tmpL,
+        Ipp8u* tmpU,
+        Ipp32u maxCUWidth,
+        Ipp32u maxCUHeight,
+        Ipp32s picWidth,
+        Ipp32s picHeight,
+        Ipp32s* pOffsetEo,
+        Ipp8u* pOffsetBo,
+        Ipp8u* pClipTable,
+        Ipp32u CUPelX,
+        Ipp32u CUPelY);
+
     void h265_ProcessSaoCuOrg_Luma_8u_sse(
         Ipp8u* pRec,
         Ipp32s stride,
@@ -279,6 +296,23 @@ namespace MFX_HEVC_PP
         Ipp8u* pClipTable,
         Ipp32u CUPelX,
         Ipp32u CUPelY);
+
+    void h265_ProcessSaoCu_Luma_8u_px(
+        Ipp8u* pRec,
+        Ipp32s stride,
+        Ipp32s saoType, 
+        Ipp8u* tmpL,
+        Ipp8u* tmpU,
+        Ipp32u maxCUWidth,
+        Ipp32u maxCUHeight,
+        Ipp32s picWidth,
+        Ipp32s picHeight,
+        Ipp32s* pOffsetEo,
+        Ipp8u* pOffsetBo,
+        Ipp8u* pClipTable,
+        Ipp32u CUPelX,
+        Ipp32u CUPelY,
+        bool* pbBorderAvail);
 
     void h265_ProcessSaoCu_Luma_8u_sse(
         Ipp8u* pRec,
@@ -296,6 +330,13 @@ namespace MFX_HEVC_PP
         Ipp32u CUPelX,
         Ipp32u CUPelY,
         bool* pbBorderAvail);
+
+    void h265_PredictIntra_Ang_8u_px(
+        Ipp32s mode,
+        Ipp8u* PredPel,
+        Ipp8u* pels,
+        Ipp32s pitch,
+        Ipp32s width);
 
     void h265_PredictIntra_Ang_8u_sse(
         Ipp32s mode,
