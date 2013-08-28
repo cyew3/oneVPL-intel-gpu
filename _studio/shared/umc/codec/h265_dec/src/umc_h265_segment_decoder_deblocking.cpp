@@ -36,23 +36,6 @@ static Ipp32s betaTable[] = {
 
 #define   QpUV(iQpY)  ( ((iQpY) < 0) ? (iQpY) : (((iQpY) > 57) ? ((iQpY)-6) : g_ChromaScale[(iQpY)]) )
 
-void H265SegmentDecoder::DeblockFrame(H265Task & task)
-{
-    Ipp32s i;
-
-    for (i = task.m_iFirstMB; i < task.m_iFirstMB + task.m_iMBToProcess; i++)
-    {
-        H265CodingUnit* curLCU = m_pCurrentFrame->getCU(i);
-        H265Slice* pSlice = m_pCurrentFrame->GetAU()->GetSliceByNumber(curLCU->m_SliceIdx);
-
-        if (NULL == pSlice)
-            continue;
-
-        DeblockOneLCU(i, 1);
-    }
-
-} // void H265SegmentDecoder::DeblockFrame(Ipp32s uFirstMB, Ipp32s uNumMBs)
-
 void H265SegmentDecoder::DeblockSegment(H265Task & task)
 {
 
@@ -65,7 +48,7 @@ void H265SegmentDecoder::DeblockSegment(H265Task & task)
 
     for (i = task.m_iFirstMB; i < task.m_iFirstMB + task.m_iMBToProcess; i++)
     {
-        DeblockOneLCU(i, 0);
+        DeblockOneLCU(i);
     }
 } // void H265SegmentDecoder::DeblockSegment(Ipp32s iFirstMB, Ipp32s iNumMBs)
 
@@ -99,8 +82,7 @@ void H265SegmentDecoder::CleanTopEdges(bool topAvailable, H265EdgeData *ctb_star
     }
 }
 
-void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr,
-                                       Ipp32s cross)
+void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr)
 {
     H265CodingUnit* curLCU = m_pCurrentFrame->getCU(curLCUAddr);
     Ipp32s maxCUSize = m_pSeqParamSet->MaxCUSize;
@@ -190,35 +172,35 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr,
         }
 
 #ifdef _DEBUG
-        SetEdges(curLCU, width, height, cross, 0);
+        SetEdges(curLCU, width, height, 0);
 #endif
 
         /* Deblock Other LCU */
 
         for (i = 0; i < width; i += 8)
-            DeblockOneCrossLuma(curLCU, i, 0, 1, 0, cross);
+            DeblockOneCrossLuma(curLCU, i, 0, 1, 0);
 
         for (j = 0; j < height; j += 8)
-            DeblockOneCrossLuma(curLCU, 0, j, 0, 1, cross);
+            DeblockOneCrossLuma(curLCU, 0, j, 0, 1);
 
         for (i = 0; i < width; i += 16)
-            DeblockOneCrossChroma(curLCU, i, 0, 1, 0, cross);
+            DeblockOneCrossChroma(curLCU, i, 0, 1, 0);
 
         for (j = 0; j < height; j += 16)
-            DeblockOneCrossChroma(curLCU, 0, j, 0, 1, cross);
+            DeblockOneCrossChroma(curLCU, 0, j, 0, 1);
 
         return;
     }
 
 #ifdef _DEBUG
-    SetEdges(curLCU, width, height, cross, 1);
+    SetEdges(curLCU, width, height, 1);
 #endif
 
     for (j = 0; j < height; j += 8)
     {
         for (i = 0; i < width; i += 8)
         {
-            DeblockOneCrossLuma(curLCU, i, j, 0, 0, cross);
+            DeblockOneCrossLuma(curLCU, i, j, 0, 0);
         }
     }
 
@@ -226,7 +208,7 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr,
     {
         for (i = 0; i < width; i += 16)
         {
-            DeblockOneCrossChroma(curLCU, i, j, 0, 0, cross);
+            DeblockOneCrossChroma(curLCU, i, j, 0, 0);
         }
     }
 }
@@ -235,8 +217,7 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU,
                                              Ipp32s curPixelColumn,
                                              Ipp32s curPixelRow,
                                              Ipp32s onlyOneUp,
-                                             Ipp32s onlyOneLeft,
-                                             Ipp32s cross)
+                                             Ipp32s onlyOneLeft)
 {
     Ipp32s frameWidthInSamples = m_pSeqParamSet->pic_width_in_luma_samples;
     Ipp32s frameHeightInSamples = m_pSeqParamSet->pic_height_in_luma_samples;
@@ -247,7 +228,7 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU,
     H265EdgeData *ctb_start_edge, *edge;
     Ipp32s i, start, end;
 
-    if (onlyOneUp && !cross)
+    if (onlyOneUp)
     {
         return;
     }
@@ -267,20 +248,8 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU,
         }
         else
         {
-            if (cross)
-            {
-                start = 0;
-                end = 2;
-                if ((Ipp32s)curLCU->m_CUPelY + curPixelRow >= frameHeightInSamples - 8)
-                {
-                    end = 3;
-                }
-            }
-            else
-            {
-                start = 1;
-                end = 3;
-            }
+            start = 1;
+            end = 3;
         }
 
         for (i = start; i < end; i++)
@@ -335,8 +304,7 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU,
                                                Ipp32s curPixelColumn,
                                                Ipp32s curPixelRow,
                                                Ipp32s onlyOneUp,
-                                               Ipp32s onlyOneLeft,
-                                               Ipp32s cross)
+                                               Ipp32s onlyOneLeft)
 {
     Ipp32s frameWidthInSamples = m_pSeqParamSet->pic_width_in_luma_samples;
     Ipp32s frameHeightInSamples = m_pSeqParamSet->pic_height_in_luma_samples;
@@ -348,7 +316,7 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU,
     H265EdgeData *ctb_start_edge, *edge;
     Ipp32s i, start, end;
 
-    if (onlyOneUp && !cross)
+    if (onlyOneUp)
     {
         return;
     }
@@ -371,20 +339,8 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU,
         }
         else
         {
-            if (cross)
-            {
-                start = 0;
-                end = 2;
-                if ((Ipp32s)curLCU->m_CUPelY + curPixelRow >= frameHeightInSamples - 16)
-                {
-                    end = 3;
-                }
-            }
-            else
-            {
-                start = 1;
-                end = 3;
-            }
+            start = 1;
+            end = 3;
         }
 
         for (i = start; i < end; i++)
@@ -968,7 +924,6 @@ void H265SegmentDecoder::GetEdgeStrength(H265CodingUnit* pcCUQ,
 void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
                                   Ipp32s width,
                                   Ipp32s height,
-                                  Ipp32s cross,
                                   Ipp32s calculateCurLCU)
 {
     H265CodingUnit *leftLCU, *aboveLCU;
@@ -982,7 +937,7 @@ void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
     H265EdgeData *ctb_start_edge = m_pCurrentFrame->m_CodingData->m_edge +
         m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth * (curLCU->m_CUPelY >> 3) + (curLCU->m_CUPelX >> 3) * 4;
 
-    if (cross)
+    if (0)
     {
         aboveLCU = curLCU->getPUAbove(uiPartP, 0, 0, false, 0);
 
@@ -1035,7 +990,7 @@ void H265SegmentDecoder::SetEdges(H265CodingUnit* curLCU,
         }
     }
 
-    if ((curLCU->CUAddr == curLCU->m_SliceHeader->slice_segment_address) || (cross))
+    if ((curLCU->CUAddr == curLCU->m_SliceHeader->slice_segment_address))
     {
         leftLCU = curLCU->getPULeft(uiPartP, 0, 0, 0);
 

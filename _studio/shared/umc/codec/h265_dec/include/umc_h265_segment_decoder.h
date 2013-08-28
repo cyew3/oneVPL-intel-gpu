@@ -211,17 +211,17 @@ public:
 
     void H265SegmentDecoder::CleanLeftEdges(bool leftAvailable, H265EdgeData *ctb_start_edge, Ipp32s height);
     void H265SegmentDecoder::CleanTopEdges(bool leftAvailable, H265EdgeData *ctb_start_edge, Ipp32s width);
-    void DeblockOneLCU(Ipp32s curLCUAddr, Ipp32s cross);
+    void DeblockOneLCU(Ipp32s curLCUAddr);
     void DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curPixelColumn, Ipp32s curPixelRow,
-                             Ipp32s onlyOneUp, Ipp32s onlyOneLeft, Ipp32s cross);
+                             Ipp32s onlyOneUp, Ipp32s onlyOneLeft);
     void DeblockOneCrossChroma(H265CodingUnit* curLCU, Ipp32s curPixelColumn, Ipp32s curPixelRow,
-                               Ipp32s onlyOneUp, Ipp32s onlyOneLeft, Ipp32s cross);
+                               Ipp32s onlyOneUp, Ipp32s onlyOneLeft);
 
     template< Ipp32s dir>
     void GetEdgeStrength(H265CodingUnit* pcCUQ, H265EdgeData *edge, Ipp32s curColumn, Ipp32s curRow,
                          Ipp32s crossSliceBoundaryFlag, Ipp32s crossTileBoundaryFlag, Ipp32s tcOffset,
                          Ipp32s betaOffset);
-    void SetEdges(H265CodingUnit* curLCU, Ipp32s width, Ipp32s height, Ipp32s cross, Ipp32s calculateCurLCU);
+    void SetEdges(H265CodingUnit* curLCU, Ipp32s width, Ipp32s height, Ipp32s calculateCurLCU);
 
     void GetCTBEdgeStrengths(void);
     template<Ipp32s tusize> inline void GetCTBEdgeStrengths(void);
@@ -272,8 +272,6 @@ public:
 //protected:
     // Release object
     void Release(void);
-
-    void DeblockFrame(H265Task & task);
 
     // Function to de-block partition of macro block row
     virtual void DeblockSegment(H265Task & task);
