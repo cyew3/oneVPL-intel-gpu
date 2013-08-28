@@ -12,7 +12,7 @@
 
 #include "mfx_h265_optimization.h"
 
-#if defined (MFX_TARGET_OPTIMIZATION_PX)
+#if defined (MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 
 #include "ippvc.h"
 #include "mfx_h265_defs.h"
@@ -645,6 +645,7 @@ namespace MFX_HEVC_PP
         return SAD_8u[SizeX >> 2][SizeY >> 2](image, stride, ref, 64, sad, 0);
     }*/
 
+#if defined( MFX_TARGET_OPTIMIZATION_PX )
     int h265_SAD_MxN_special_8u(const unsigned char *image,  const unsigned char *ref, int stride, int SizeX, int SizeY)
     {
         return h265_SAD_MxN_general_8u(image, stride, ref, 64, SizeX, SizeY);
@@ -709,6 +710,110 @@ namespace MFX_HEVC_PP
 
         return sad;
     }
+#else
+
+//=========================================================
+// [special case]
+#define block_stride 64
+
+#define SAD_CALLING_CONVENTION H265_FASTCALL
+#define SAD_PARAMETERS_LIST const unsigned char *image,  const unsigned char *block, int img_stride
+
+#define MAKE_SAD_SPECIAL(width, height) \
+    int SAD_CALLING_CONVENTION SAD_ ## width ## x ## height ## _px(SAD_PARAMETERS_LIST)   \
+{                                                            \
+    int cost = 0;                                            \
+    h265_SAD_reference_8u32s_C1R(image, img_stride, block, block_stride, &cost, width, height); \
+                                                             \
+    return cost;                                             \
+}                                                            \
+
+// [general case]
+#define SAD_PARAMETERS_LIST_GENERAL_OWN const unsigned char *image,  const unsigned char *block, int img_stride, int block_stride_general
+
+#define MAKE_SAD_GENERAL(width, height) \
+    int SAD_CALLING_CONVENTION SAD_ ## width ## x ## height ## _general_px(SAD_PARAMETERS_LIST_GENERAL_OWN)   \
+{                                                            \
+    int cost = 0;                                            \
+    h265_SAD_reference_8u32s_C1R(image, img_stride, block, block_stride_general, &cost, width, height); \
+                                                             \
+    return cost;                                             \
+}
+//=========================================================
+
+// functions generation: SPECIAL CASE
+// [sizeX = 4]
+MAKE_SAD_SPECIAL(4, 4)
+MAKE_SAD_SPECIAL(4, 8)
+MAKE_SAD_SPECIAL(4, 16)
+// [sizeX = 8]
+MAKE_SAD_SPECIAL(8, 4)
+MAKE_SAD_SPECIAL(8, 8)
+MAKE_SAD_SPECIAL(8, 16)
+MAKE_SAD_SPECIAL(8, 32)
+// [sizeX = 12]
+MAKE_SAD_SPECIAL(12, 16)
+// [sizeX = 16]
+MAKE_SAD_SPECIAL(16, 4)
+MAKE_SAD_SPECIAL(16, 8)
+MAKE_SAD_SPECIAL(16, 12)
+MAKE_SAD_SPECIAL(16, 16)
+MAKE_SAD_SPECIAL(16, 32)
+MAKE_SAD_SPECIAL(16, 64)
+// [sizeX = 24]
+MAKE_SAD_SPECIAL(24, 32)
+// [sizeX = 32]
+MAKE_SAD_SPECIAL(32, 8)
+MAKE_SAD_SPECIAL(32, 16)
+MAKE_SAD_SPECIAL(32, 24)
+MAKE_SAD_SPECIAL(32, 32)
+MAKE_SAD_SPECIAL(32, 64)
+// [sizeX = 48]
+MAKE_SAD_SPECIAL(48, 64)
+// [sizeX = 64]
+MAKE_SAD_SPECIAL(64, 16)
+MAKE_SAD_SPECIAL(64, 32)
+MAKE_SAD_SPECIAL(64, 48)
+MAKE_SAD_SPECIAL(64, 64)
+
+//+++++++++++++++++++++++++++
+// functions generation: SPECIAL CASE
+// [sizeX = 4]
+MAKE_SAD_GENERAL(4, 4)
+MAKE_SAD_GENERAL(4, 8)
+MAKE_SAD_GENERAL(4, 16)
+// [sizeX = 8]
+MAKE_SAD_GENERAL(8, 4)
+MAKE_SAD_GENERAL(8, 8)
+MAKE_SAD_GENERAL(8, 16)
+MAKE_SAD_GENERAL(8, 32)
+// [sizeX = 12]
+MAKE_SAD_GENERAL(12, 16)
+// [sizeX = 16]
+MAKE_SAD_GENERAL(16, 4)
+MAKE_SAD_GENERAL(16, 8)
+MAKE_SAD_GENERAL(16, 12)
+MAKE_SAD_GENERAL(16, 16)
+MAKE_SAD_GENERAL(16, 32)
+MAKE_SAD_GENERAL(16, 64)
+// [sizeX = 24]
+MAKE_SAD_GENERAL(24, 32)
+// [sizeX = 32]
+MAKE_SAD_GENERAL(32, 8)
+MAKE_SAD_GENERAL(32, 16)
+MAKE_SAD_GENERAL(32, 24)
+MAKE_SAD_GENERAL(32, 32)
+MAKE_SAD_GENERAL(32, 64)
+// [sizeX = 48]
+MAKE_SAD_GENERAL(48, 64)
+// [sizeX = 64]
+MAKE_SAD_GENERAL(64, 16)
+MAKE_SAD_GENERAL(64, 32)
+MAKE_SAD_GENERAL(64, 48)
+MAKE_SAD_GENERAL(64, 64)
+
+
+#endif
 
 } // end namespace MFX_HEVC_PP
 
