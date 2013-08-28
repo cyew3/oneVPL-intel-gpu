@@ -300,6 +300,7 @@ mfxStatus H265Encoder::SetSPS()
     sps->max_transform_hierarchy_depth_inter = (Ipp8u)pars->QuadtreeTUMaxDepthInter;
 
     sps->amp_enabled_flag = pars->AMPFlag;
+    sps->strong_intra_smoothing_enabled_flag = 1;
 
     InitShortTermRefPicSet();
 

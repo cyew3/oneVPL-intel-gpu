@@ -15,39 +15,6 @@
 
 static Ipp32s FilteredModes[] = {10, 7, 1, 0, 10};
 
-void h265_filter_pred_pels(
-    PixType* PredPel,
-    Ipp32s width)
-{
-    PixType *tmpPtr;
-    PixType x0, x1, x2, xSaved;
-    Ipp32s i, j;
-
-    xSaved = (PredPel[1] + 2 * PredPel[0] + PredPel[2*width+1] + 2) >> 2;
-
-    tmpPtr = PredPel+1;
-
-    for (j = 0; j < 2; j++)
-    {
-        x0 = PredPel[0];
-        x1 = tmpPtr[0];
-
-        for (i = 0; i < 2*width-1; i++)
-        {
-            x2 = tmpPtr[1];
-            tmpPtr[0] = (x0 + 2*x1 + x2 + 2) >> 2;
-            x0 = x1; x1 = x2;
-            tmpPtr++;
-        }
-
-        tmpPtr = PredPel+2*width+1;
-    }
-
-    PredPel[0] = xSaved;
-
-} // void h265_filter_pred_pels(...)
-
-
 static
 void IsAboveLeftAvailable(H265CU *pCU,
                           Ipp32s blockZScanIdx,
@@ -437,6 +404,8 @@ void GetPredPels(H265VideoParam *par,
                     PredPel[2*width+1+j*minTUSize+i] = tmpSrcPtr[0];
                     tmpSrcPtr += srcPitch;
                 }
+            } else {
+                tmpSrcPtr += srcPitch * minTUSize;
             }
             pbNeighborFlags --;
         }
@@ -565,9 +534,30 @@ void H265CU::IntraPredTU(Ipp32s blockZScanIdx, Ipp32s width, Ipp32s pred_mode, I
             GetPredPels(par, pRec, PredPel, outNeighborFlags, width,
                 pitch_rec_luma, 1);
 
-            if (isFilterNeeded)
+            if (par->csps->strong_intra_smoothing_enabled_flag && isFilterNeeded)
             {
-                h265_filter_pred_pels(PredPel, width);
+                Ipp32s threshold = 1 << (BIT_DEPTH_LUMA - 5);        
+
+                Ipp32s topLeft = PredPel[0];
+                Ipp32s topRight = PredPel[2*width];
+                Ipp32s midHor = PredPel[width];
+
+                Ipp32s bottomLeft = PredPel[4*width];
+                Ipp32s midVer = PredPel[3*width];
+
+                bool bilinearLeft = abs(topLeft + topRight - 2*midHor) < threshold; 
+                bool bilinearAbove = abs(topLeft + bottomLeft - 2*midVer) < threshold;
+
+                if (width == 32 && (bilinearLeft && bilinearAbove))
+                {
+                    h265_FilterPredictPels_Bilinear_8u(PredPel, width, topLeft, bottomLeft, topRight);
+                }
+                else
+                {
+                    h265_FilterPredictPels_8u(PredPel, width);
+                }
+            } else if (isFilterNeeded) {
+                h265_FilterPredictPels_8u(PredPel, width);
             }
         }
         else
