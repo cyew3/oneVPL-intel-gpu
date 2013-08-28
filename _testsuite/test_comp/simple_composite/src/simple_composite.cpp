@@ -36,11 +36,12 @@
 #include <locale>
 #include <stdexcept>
 
-#include <fcntl.h>
-#include <va/va.h>
-#include <va/va_drm.h>
-#include "mfxlinux.h"
-
+#if ! defined(_WIN32) && ! defined(_WIN64)
+  #include <fcntl.h>
+  #include <va/va.h>
+  #include <va/va_drm.h>
+  #include "mfxlinux.h"
+#endif
 
 
 using namespace std;
