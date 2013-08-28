@@ -163,10 +163,11 @@ mfxStatus mfxSchedulerCore::Initialize(const MFX_SCHEDULER_PARAM *pParam)
         // 02.2012 vcherepa: DON'T set CPU affinity for particular internal
         // threads. it leads to unpredictable stops and hangings up to 60ms.
         // set CPU mask for every thread
-#if !defined(MFX_VA)
-        SetThreadsAffinityMask();
-#endif // !defined(MFX_VA)
-
+        // need to care about internal threading another way
+//#if !defined(MFX_VA)
+//        SetThreadsAffinityMask();
+//#endif // !defined(MFX_VA)
+//
     }
     catch(...)
     {
