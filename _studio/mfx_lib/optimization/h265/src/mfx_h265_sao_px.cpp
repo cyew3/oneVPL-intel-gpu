@@ -15,7 +15,7 @@
 
 #include "mfx_h265_optimization.h"
 
-#if defined(MFX_TARGET_OPTIMIZATION_PX) 
+#if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_AUTO) 
 
 namespace MFX_HEVC_PP
 {
@@ -50,7 +50,13 @@ namespace MFX_HEVC_PP
         return ((x >> 31) | ((Ipp32s)( (((Ipp32u) -x)) >> 31)));
     }
 
-    void h265_ProcessSaoCuOrg_Luma_8u(
+#if defined(MFX_TARGET_OPTIMIZATION_AUTO)
+    #define MAKE_NAME( func ) func ## _px
+#else
+    #define MAKE_NAME( func ) func
+#endif
+
+    void MAKE_NAME(h265_ProcessSaoCuOrg_Luma_8u)(
         Ipp8u* pRec,
         Ipp32s stride,
         Ipp32s saoType, 
@@ -254,7 +260,7 @@ namespace MFX_HEVC_PP
     } // void h265_processSaoCuOrg_Luma_8u(...)
 
 
-    void h265_ProcessSaoCu_Luma_8u(
+    void MAKE_NAME(h265_ProcessSaoCu_Luma_8u)(
         Ipp8u* pRec,
         Ipp32s stride,
         Ipp32s saoType, 
@@ -291,7 +297,7 @@ namespace MFX_HEVC_PP
         Ipp32s endX;
         Ipp32s endY;
         Ipp32s x, y;
-        H265PlanePtrYCommon startPtr;
+        Ipp8u*  startPtr;
         Ipp32s startStride;
 
         picWidthTmp  = picWidth;

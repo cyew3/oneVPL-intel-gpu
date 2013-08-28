@@ -82,11 +82,15 @@ namespace MFX_HEVC_PP
         }
     }
 
-#ifndef MFX_TARGET_OPTIMIZATION_AUTO
-    void h265_ProcessSaoCuOrg_Luma_8u(
+#if defined(MFX_TARGET_OPTIMIZATION_AUTO)
+    #define MAKE_NAME( func ) func ## _sse
 #else
-    void h265_ProcessSaoCuOrg_Luma_8u_sse(
+    #define MAKE_NAME( func ) func
 #endif
+
+
+    void MAKE_NAME(h265_ProcessSaoCuOrg_Luma_8u)(
+
         Ipp8u* pRec,
         Ipp32s stride,
         Ipp32s saoType, 
@@ -554,12 +558,9 @@ namespace MFX_HEVC_PP
 
     } //  void h265_processSaoCuOrg_Luma_8u(...)
 
+
     //aya: FIXME!!! must be replaced by intrinsic version 
-#ifndef MFX_TARGET_OPTIMIZATION_AUTO
-    void h265_ProcessSaoCu_Luma_8u(
-#else
-    void h265_ProcessSaoCu_Luma_8u_sse(
-#endif
+    void MAKE_NAME(h265_ProcessSaoCu_Luma_8u)(
         Ipp8u* pRec,
         Ipp32s stride,
         Ipp32s saoType, 
