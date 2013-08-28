@@ -664,7 +664,13 @@ void mfxVideoParamWrapper::CopyVideoParam(const mfxVideoParam & par)
                 mfxExtMVCSeqDesc * points = m_buffers.GetBufferById<mfxExtMVCSeqDesc>(MFX_EXTBUFF_MVC_SEQ_DESC);
 
                 size_t size = mvcPoints->NumView * sizeof(mfxMVCViewDependency) + mvcPoints->NumOP * sizeof(mfxMVCOperationPoint) + mvcPoints->NumViewId * sizeof(mfxU16);
-                m_mvcSequenceBuffer = new mfxU8[size];
+                if (!m_mvcSequenceBuffer)
+                    m_mvcSequenceBuffer = new mfxU8[size];
+                else
+                {
+                    delete[] m_mvcSequenceBuffer;
+                    m_mvcSequenceBuffer = new mfxU8[size];
+                }
 
                 mfxU8 * ptr = m_mvcSequenceBuffer;
 
