@@ -218,7 +218,7 @@ mfxStatus D3D9VideoCORE::IsGuidSupported(const GUID guid, mfxVideoParam *par, bo
     DXVA2_ConfigPictureDecode config;
     mfxStatus sts = GetIntelDataPrivateReport(guid, config);
 
-    if (sts < MFX_ERR_NONE)
+    if (sts != MFX_ERR_NONE)
         return MFX_WRN_PARTIAL_ACCELERATION;
 
     if (sts == MFX_ERR_NONE)
