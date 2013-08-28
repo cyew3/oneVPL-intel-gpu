@@ -628,7 +628,16 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
-    <ProjectReference Include="optimization\hevc_pp.vcxproj">
+    <ProjectReference Include="optimization\hevc_pp_avx2.vcxproj">
+      <Project>{6ebb14f6-dca0-485a-89f7-fe803b75d0b9}</Project>
+    </ProjectReference>
+    <ProjectReference Include="optimization\hevc_pp_dispatch.vcxproj">
+      <Project>{c37d7375-76cd-400b-a030-4624b1012e08}</Project>
+    </ProjectReference>
+    <ProjectReference Include="optimization\hevc_pp_px.vcxproj">
+      <Project>{3b7a183a-c728-494f-a56e-6a993150d277}</Project>
+    </ProjectReference>
+    <ProjectReference Include="optimization\hevc_pp_sse4.vcxproj">
       <Project>{a67aee55-e7e2-43da-9bdb-548ace4c595a}</Project>
     </ProjectReference>
     <ProjectReference Include="pak\pak.vcxproj">
