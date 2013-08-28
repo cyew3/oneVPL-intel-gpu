@@ -23,6 +23,7 @@
 #include "umc_mpeg2_dec_tbl.h"
 
 #include "mfx_trace.h"
+#include "mfx_common_int.h"
 
 //#ifdef OTLAD
 //FILE *otl = NULL;

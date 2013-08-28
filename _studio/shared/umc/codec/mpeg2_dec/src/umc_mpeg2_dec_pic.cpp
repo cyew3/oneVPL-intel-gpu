@@ -21,7 +21,7 @@
 #endif
 
 #include "mfx_trace.h"
-
+#include "mfx_common_int.h"
 
 #pragma warning(disable: 4244)
 

@@ -314,7 +314,7 @@ mfxStatus MFXVC1DecCommon::ParseSeqHeader(mfxBitstream *bs,
     mfxI32 SHLen = 0; //in bits
     mfxU32 tempData = GetDWord_s(bs->Data);
 
-    mfxBitstream bs_out = {0};
+    mfxBitstream bs_out = {};
 
     bool NeedToMapFR = false;
     mfxU32 frCode = 0;
@@ -353,7 +353,7 @@ mfxStatus MFXVC1DecCommon::ParseSeqHeader(mfxBitstream *bs,
         par->mfx.CodecProfile = MFX_PROFILE_VC1_ADVANCED;
     }
     par->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
-    mfxExtVideoSignalInfo  videoSignal = {0};
+    mfxExtVideoSignalInfo  videoSignal = {};
     videoSignal.ColourPrimaries = 1;
     videoSignal.TransferCharacteristics = 1;
     videoSignal.MatrixCoefficients = 6;

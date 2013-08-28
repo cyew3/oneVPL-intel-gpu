@@ -14,6 +14,8 @@
 #define __MFX_H265_CTB_H__
 
 #include "mfx_h265_optimization.h"
+#include "mfx_h265_dispatcher.h"
+
 using namespace MFX_HEVC_PP;
 
 struct H265CUData

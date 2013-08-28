@@ -209,8 +209,8 @@ public:
         Ipp32u Size,
         Ipp32s PicStride);
 
-    void H265SegmentDecoder::CleanLeftEdges(bool leftAvailable, H265EdgeData *ctb_start_edge, Ipp32s height);
-    void H265SegmentDecoder::CleanTopEdges(bool leftAvailable, H265EdgeData *ctb_start_edge, Ipp32s width);
+    void CleanLeftEdges(bool leftAvailable, H265EdgeData *ctb_start_edge, Ipp32s height);
+    void CleanTopEdges(bool leftAvailable, H265EdgeData *ctb_start_edge, Ipp32s width);
     void DeblockOneLCU(Ipp32s curLCUAddr);
     void DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curPixelColumn, Ipp32s curPixelRow,
                              Ipp32s onlyOneUp, Ipp32s onlyOneLeft);

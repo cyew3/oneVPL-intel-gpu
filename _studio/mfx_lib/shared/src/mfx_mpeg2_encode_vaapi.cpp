@@ -161,6 +161,7 @@ namespace
             level = 8;
             break;
         case MFX_LEVEL_MPEG2_HIGH:
+        case MFX_LEVEL_MPEG2_HIGH1440:
             level = 4;
             break;
         default:
@@ -414,8 +415,6 @@ VAAPIEncoder::VAAPIEncoder(VideoCORE* core)
     std::fill(m_sliceParamBufferId, m_sliceParamBufferId + MAX_SLICES, VA_INVALID_ID);
     Zero(m_allocResponseMB);
     Zero(m_allocResponseBS);
-    memset(&m_recFrames, 0, sizeof(mfxRecFrames));
-    memset(&m_rawFrames, 0, sizeof(mfxRawFrames));
 
     m_pMiscParamsFps = (VAEncMiscParameterBuffer*)new mfxU8[sizeof(VAEncMiscParameterFrameRate) + sizeof(VAEncMiscParameterBuffer)];
     Zero((VAEncMiscParameterFrameRate &)m_pMiscParamsFps->data);

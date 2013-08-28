@@ -240,6 +240,11 @@ namespace MFX_HEVC_PP
 
 }; // namespace MFX_HEVC_PP
 
+#else// #if defined (MFX_TARGET_OPTIMIZATION_AUTO)
+
+namespace MFX_HEVC_PP
+{}
+
 #endif // #if defined (MFX_TARGET_OPTIMIZATION_AUTO)
 #endif // #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined (MFX_ENABLE_H265_VIDEO_DECODE)
 /* EOF */
