@@ -163,6 +163,12 @@ namespace MFX_HEVC_PP
     int H265_FASTCALL SAD_64x64_general_avx2(SAD_PARAMETERS_LIST_GENERAL);
 
     // [transform.forward]
+    void H265_FASTCALL h265_DST4x4Fwd_16s_px(const short *H265_RESTRICT src, short *H265_RESTRICT dst);
+    void H265_FASTCALL h265_DCT4x4Fwd_16s_px(const short *H265_RESTRICT src, short *H265_RESTRICT dst);
+    void H265_FASTCALL h265_DCT8x8Fwd_16s_px(const short *H265_RESTRICT src, short *H265_RESTRICT dst);
+    void H265_FASTCALL h265_DCT16x16Fwd_16s_px(const short *H265_RESTRICT src, short *H265_RESTRICT dst);
+    void H265_FASTCALL h265_DCT32x32Fwd_16s_px(const short *H265_RESTRICT src, short *H265_RESTRICT dest);
+
     void H265_FASTCALL h265_DST4x4Fwd_16s_sse(const short *H265_RESTRICT src, short *H265_RESTRICT dst);
     void H265_FASTCALL h265_DCT4x4Fwd_16s_sse(const short *H265_RESTRICT src, short *H265_RESTRICT dst);
     void H265_FASTCALL h265_DCT8x8Fwd_16s_sse(const short *H265_RESTRICT src, short *H265_RESTRICT dst);
