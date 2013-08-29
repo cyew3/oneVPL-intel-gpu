@@ -281,6 +281,11 @@ mfxStatus FullEncode::Close(void)
         delete m_pExtTasks;
         m_pExtTasks = 0;
     }
+    if(m_pBRC)
+    {
+        m_pBRC->Close();
+        delete m_pBRC;
+    }
     m_UDBuff.Close();
 
     return MFX_ERR_NONE;

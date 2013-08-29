@@ -1998,7 +1998,7 @@ namespace MPEG2EncoderHW
     {
         if (m_pBRC)
         {
-            delete m_pBRC;        
+            UMC::DeleteBRC(&m_pBRC);
         }
         m_pBRC = 0;
 
