@@ -1085,6 +1085,7 @@ mfxStatus MFXVideoENCODEH265::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocReque
     }
     request->NumFrameMin = nFrames;
     request->NumFrameSuggested = IPP_MAX(nFrames,par->AsyncDepth);
+    request->Info = par->mfx.FrameInfo;
 
     if (par->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY){
         request->Type = MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_DXVA2_DECODER_TARGET;
