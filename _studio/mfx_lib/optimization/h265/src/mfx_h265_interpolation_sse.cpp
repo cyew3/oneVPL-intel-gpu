@@ -50,7 +50,7 @@ namespace MFX_HEVC_PP
 #if defined(MFX_TARGET_OPTIMIZATION_AUTO)
     #define MAKE_NAME( func ) func ## _sse
 #else
-    define MAKE_NAME( func ) func
+    #define MAKE_NAME( func ) func
 #endif
     enum EnumPlane
     {

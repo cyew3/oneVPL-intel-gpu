@@ -412,7 +412,7 @@ using namespace MFX_HEVC_PP;
     } // IppStatus InitDispatcher( void )
 #endif
     // COMMON CASE
-    static enum EnumPlane
+    enum EnumPlane
     {
         TEXT_LUMA = 0,
         TEXT_CHROMA,
