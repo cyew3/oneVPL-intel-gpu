@@ -50,6 +50,7 @@ public:
     vm_tick decode_time;
     vm_tick reconstruction_time;
     vm_tick deblocking_time;
+    vm_tick sao_time;
 
     vm_tick m_compensative_const;
 };

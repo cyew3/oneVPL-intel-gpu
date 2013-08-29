@@ -46,7 +46,6 @@
     <ClCompile Include="src\umc_h265_dec_bitstream.cpp" />
     <ClCompile Include="src\umc_h265_dec_bitstream_cabac.cpp" />
     <ClCompile Include="src\umc_h265_dec_debug.cpp" />
-    <ClCompile Include="src\umc_h265_dec_decode_pic.cpp" />
     <ClCompile Include="src\umc_h265_dec_defs_yuv.cpp" />
     <ClCompile Include="src\umc_h265_dec_ipplevel.cpp" />
     <ClCompile Include="src\umc_h265_dec_mfx.cpp" />

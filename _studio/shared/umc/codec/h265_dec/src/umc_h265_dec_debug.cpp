@@ -12,6 +12,7 @@
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
 #include "umc_h265_dec_debug.h"
+#include "umc_h265_timing.h"
 #include <cstdarg>
 
 namespace UMC_HEVC_DECODER
@@ -20,6 +21,10 @@ namespace UMC_HEVC_DECODER
 #ifdef __EXCEPTION_HANDLER_
 ExceptionHandlerInitializer exceptionHandler;
 #endif // __EXCEPTION_HANDLER_
+
+#ifdef USE_DETAILED_H265_TIMING
+    TimingInfo* clsTimingInfo;
+#endif
 
 void Trace(vm_char * format, ...)
 {
