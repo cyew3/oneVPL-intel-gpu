@@ -137,6 +137,17 @@ namespace
             return 0; // already equal
     }
 
+    bool CheckMbAlignment(mfxU32 & opt)
+    {
+        if (opt & 0x0f)
+        {
+            opt = opt & 0xfffffff0;
+            return false;
+        }
+
+        return true;
+    }
+
     bool IsValidCodingLevel(mfxU16 level)
     {
         return
@@ -1191,7 +1202,8 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(mfxU32 id)
         id == MFX_EXTBUFF_AVC_REFLIST_CTRL   ||
         id == MFX_EXTBUFF_ENCODED_FRAME_INFO ||
         id == MFX_EXTBUFF_PICTURE_TIMING_SEI ||
-        id == MFX_EXTBUFF_CODING_OPTION2;
+        id == MFX_EXTBUFF_CODING_OPTION2     ||
+        id == MFX_EXTBUFF_ENCODER_ROI;
 }
 
 bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
@@ -1212,7 +1224,8 @@ bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
         id == MFX_EXTBUFF_SVC_RATE_CONTROL          ||
         id == MFX_EXTBUFF_ENCODER_RESET_OPTION      ||
         id == MFX_EXTBUFF_ENCODER_CAPABILITY        ||
-        id == MFX_EXTBUFF_ENCODER_WIDI_USAGE;
+        id == MFX_EXTBUFF_ENCODER_WIDI_USAGE        ||
+        id == MFX_EXTBUFF_ENCODER_ROI;
 }
 
 mfxStatus MfxHwH264Encode::CheckExtBufferId(mfxVideoParam const & par)
@@ -1469,6 +1482,54 @@ private:
     bool m_val;
 };
 
+mfxStatus MfxHwH264Encode::CheckAndFixRoiQueryLike(
+    MfxVideoParam const & par,
+    mfxRoiDesc *          roi)
+{
+    mfxStatus checkSts = MFX_ERR_NONE;
+
+    // check that ROI is aligned to MB, correct it if not
+    if (!CheckMbAlignment(roi->Left))   checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    if (!CheckMbAlignment(roi->Right))  checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    if (!CheckMbAlignment(roi->Top))    checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    if (!CheckMbAlignment(roi->Bottom)) checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+
+    if (par.mfx.FrameInfo.Width)
+    {
+        // check that ROI dimensions don't conflict with each other and don't exceed frame size
+        if(!CheckRangeDflt(roi->Left, mfxU32(0), mfxU32(par.mfx.FrameInfo.Width -16), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
+        if(!CheckRangeDflt(roi->Right, mfxU32(roi->Left + 16), mfxU32(par.mfx.FrameInfo.Width), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
+    }
+    else if(roi->Right && roi->Right < (roi->Left + 16))
+        {
+            checkSts = MFX_ERR_UNSUPPORTED;
+            roi->Right = 0;
+        }
+
+    if (par.mfx.FrameInfo.Height)
+    {
+        if(!CheckRangeDflt(roi->Top, mfxU32(0), mfxU32(par.mfx.FrameInfo.Height -16), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
+        if(!CheckRangeDflt(roi->Bottom, mfxU32(roi->Top + 16), mfxU32(par.mfx.FrameInfo.Height), mfxU32(0))) checkSts = MFX_ERR_UNSUPPORTED;
+    }
+    else if(roi->Bottom && roi->Bottom < (roi->Top + 16))
+        {
+            checkSts = MFX_ERR_UNSUPPORTED;
+            roi->Bottom = 0;
+        }
+
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+    {
+        if (!CheckRangeDflt(roi->Priority, -51, 51, 0))
+            checkSts = MFX_ERR_UNSUPPORTED;
+    } else if (par.mfx.RateControlMethod)
+    {
+        if (!CheckRangeDflt(roi->Priority, -3, 3, 0))
+            checkSts = MFX_ERR_UNSUPPORTED;
+    }
+
+        return checkSts;
+}
+
 //typedef bool Bool;
 
 mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
@@ -1493,6 +1554,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     mfxExtAvcTemporalLayers *  extTemp = GetExtBuffer(par);
     mfxExtSVCSeqDesc *         extSvc  = GetExtBuffer(par);
     mfxExtCodingOption2 *      extOpt2 = GetExtBuffer(par);
+    mfxExtEncoderROI *         extRoi  = GetExtBuffer(par);
 
     // check hw capabilities
     if (par.mfx.FrameInfo.Width  > hwCaps.MaxPicWidth ||
@@ -2709,6 +2771,30 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
                 par.mfx.NumRefFrame = nrfMinForTemporal;
             }
         }
+    }
+
+    if (extRoi->NumROI)
+    {
+        mfxU16 const MaxNumOfROI = 0; // TODO: change to caps->MaxNumOfROI after it will be added to DDI
+
+        if (extRoi->NumROI > MaxNumOfROI)
+        {
+            if (MaxNumOfROI == 0)
+                unsupported = true;
+            else
+                changed = true;
+
+            extRoi->NumROI = MaxNumOfROI;
+        }
+    }
+
+    for (mfxU16 i = 0; i < extRoi->NumROI; i++)
+    {
+        mfxStatus sts = CheckAndFixRoiQueryLike(par, (mfxRoiDesc*)(&(extRoi->ROI[i])));
+        if (sts < MFX_ERR_NONE)
+            unsupported = true;
+        else if (sts != MFX_ERR_NONE)
+            changed = true;
     }
 
     return unsupported
@@ -3998,12 +4084,12 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
         }
     }
 
-    mfxExtAVCRefListCtrl * extRefListCtrl = GetExtBuffer(*ctrl);
+    mfxExtAVCRefListCtrl const * extRefListCtrl = GetExtBuffer(*ctrl);
     if (extRefListCtrl && video.calcParam.numTemporalLayer > 0 && video.calcParam.lyncMode == 0)
         checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
 
     // check timestamp from mfxExtPictureTimingSEI
-    mfxExtPictureTimingSEI * extPt   = GetExtBuffer(*ctrl);
+    mfxExtPictureTimingSEI const * extPt   = GetExtBuffer(*ctrl);
     
     if (extPt)
     {
@@ -4025,6 +4111,40 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
                 extPt->TimeStamp[i].MinutesFlag        == 0xffff ||
                 extPt->TimeStamp[i].HoursFlag          == 0xffff)
                 checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        }
+    }
+
+    // check ROI
+    mfxExtEncoderROI const * extRoi = GetExtBuffer(*ctrl);
+
+    if (extRoi) {
+        mfxU16 const MaxNumOfROI = 0; // TODO: change to caps->MaxNumOfROI after it will be added to DDI
+        mfxU16 actualNumRoi = extRoi->NumROI;
+        if (extRoi->NumROI)
+        {
+            if (extRoi->NumROI > MaxNumOfROI)
+            {
+                checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+                actualNumRoi = MaxNumOfROI;
+            }
+        }
+
+        for (mfxU16 i = 0; i < actualNumRoi; i++)
+        {
+            // check that ROI is aligned to MB
+            if ((extRoi->ROI[i].Left & 0x0f) || (extRoi->ROI[i].Right & 0x0f) ||
+                (extRoi->ROI[i].Top & 0x0f) || (extRoi->ROI[i].Bottom & 0x0f))
+                checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+
+            // check that ROI dimensions don't conflict with each other and don't exceed frame size
+            if(extRoi->ROI[i].Left > mfxU32(video.mfx.FrameInfo.Width -16) ||
+               extRoi->ROI[i].Right < mfxU32(extRoi->ROI[i].Left + 16) ||
+               extRoi->ROI[i].Right >  video.mfx.FrameInfo.Width)
+               checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            if(extRoi->ROI[i].Top > mfxU32(video.mfx.FrameInfo.Height -16) ||
+               extRoi->ROI[i].Bottom < mfxU32(extRoi->ROI[i].Top + 16) ||
+               extRoi->ROI[i].Bottom >  video.mfx.FrameInfo.Height)
+               checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         }
     }
 
@@ -4724,6 +4844,7 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     InitExtBufHeader(m_extPps);
     InitExtBufHeader(m_extOpt2);
     InitExtBufHeader(m_extEncResetOpt);
+    InitExtBufHeader(m_extEncRoi);
 
     if (mfxExtCodingOption * opts = GetExtBuffer(par))
         m_extOpt = *opts;
@@ -4773,6 +4894,9 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     if (mfxExtEncoderResetOption * opts = GetExtBuffer(par))
         m_extEncResetOpt = *opts;
 
+    if (mfxExtEncoderROI * opts = GetExtBuffer(par))
+        m_extEncRoi = *opts;
+
     m_extParam[0]  = &m_extOpt.Header;
     m_extParam[1]  = &m_extOptSpsPps.Header;
     m_extParam[2]  = &m_extOptPavp.Header;
@@ -4789,10 +4913,11 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     m_extParam[13] = &m_extPps.Header;
     m_extParam[14] = &m_extOpt2.Header;
     m_extParam[15] = &m_extEncResetOpt.Header;
+    m_extParam[16] = &m_extEncRoi.Header;
 
     ExtParam = m_extParam;
     NumExtParam = mfxU16(sizeof m_extParam / sizeof m_extParam[0]);
-    assert(NumExtParam == 16);
+    assert(NumExtParam == 17);
 }
 
 void MfxVideoParam::ConstructMvcSeqDesc(

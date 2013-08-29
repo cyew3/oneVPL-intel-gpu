@@ -178,6 +178,7 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtEncoderResetOption,   MFX_EXTBUFF_ENCODER_RESET_OPTION     );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtEncoderCapability,    MFX_EXTBUFF_ENCODER_CAPABILITY       );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtAVCEncoderWiDiUsage,  MFX_EXTBUFF_ENCODER_WIDI_USAGE       );
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtEncoderROI,           MFX_EXTBUFF_ENCODER_ROI              );
 #undef BIND_EXTBUF_TYPE_TO_ID
 
     template <class T> inline void InitExtBufHeader(T & extBuf)
@@ -458,6 +459,15 @@ namespace MfxHwH264Encode
         bool    picScalingListPresentFlag[12];
     };
 
+    struct mfxRoiDesc{
+        mfxU32  Left;
+        mfxU32  Top;
+        mfxU32  Right;
+        mfxU32  Bottom;
+
+        mfxI16  Priority;
+    };
+
     class MfxVideoParam : public mfxVideoParam
     {
     public:
@@ -480,7 +490,7 @@ namespace MfxHwH264Encode
         void ConstructMvcSeqDesc(mfxExtMVCSeqDesc const & desc);
 
     private:
-        mfxExtBuffer *              m_extParam[16];
+        mfxExtBuffer *              m_extParam[17];
 
         // external, documented
         mfxExtCodingOption          m_extOpt;
@@ -495,6 +505,7 @@ namespace MfxHwH264Encode
         mfxExtSVCSeqDesc            m_extSvcSeqDescr;
         mfxExtSVCRateControl        m_extSvcRateCtrl;
         mfxExtEncoderResetOption    m_extEncResetOpt;
+        mfxExtEncoderROI            m_extEncRoi;
 
         // internal, not documented
         mfxExtCodingOptionDDI       m_extOptDdi;
@@ -621,6 +632,10 @@ namespace MfxHwH264Encode
 
     mfxStatus CheckForAllowedH264SpecViolations(
         MfxVideoParam const & par);
+
+    mfxStatus CheckAndFixRoiQueryLike(
+        MfxVideoParam const & par,
+        mfxRoiDesc *          roi);
 
     mfxStatus CheckVideoParam(
         MfxVideoParam &     par,

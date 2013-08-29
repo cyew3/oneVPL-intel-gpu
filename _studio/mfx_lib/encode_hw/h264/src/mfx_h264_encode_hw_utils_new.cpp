@@ -1435,6 +1435,8 @@ void MfxHwH264Encode::ConfigureTask(
     mfxExtSpsHeader const *         extSps         = GetExtBuffer(video);
     mfxExtAvcTemporalLayers const * extTemp        = GetExtBuffer(video);
     mfxExtPAVPOption const *        extPavp        = GetExtBuffer(video);
+    mfxExtEncoderROI const *        extRoi         = GetExtBuffer(video);
+    mfxExtEncoderROI const *        extRoiRuntime  = GetExtBuffer(task.m_ctrl);
 
     mfxU32 const FRAME_NUM_MAX = 1 << (extSps->log2MaxFrameNumMinus4 + 4);
     
@@ -1501,6 +1503,33 @@ void MfxHwH264Encode::ConfigureTask(
 
     task.m_trellis[ffid] = GetPefFrameTrellisFlag(*extOpt2, task.m_type[ffid]);
     task.m_trellis[sfid] = GetPefFrameTrellisFlag(*extOpt2, task.m_type[sfid]);
+
+// process roi
+    mfxExtEncoderROI const * pRoi = extRoi;
+    if (extRoiRuntime)
+    {
+        pRoi = extRoiRuntime;
+    }
+
+    if (pRoi && pRoi->NumROI)
+    {
+        mfxU16 numRoi = pRoi->NumROI <= task.m_roi.Size() ? pRoi->NumROI : (mfxU16)task.m_roi.Size();
+
+        task.m_numRoi = 0;
+        for (mfxU16 i = 0; i < numRoi; i ++)
+        {
+            task.m_roi[task.m_numRoi] = *((mfxRoiDesc*)&(pRoi->ROI[i]));
+            if (extRoiRuntime)
+            {
+                // check runtime ROI
+                mfxStatus sts = CheckAndFixRoiQueryLike(video, &(task.m_roi[task.m_numRoi]));
+                if (sts != MFX_ERR_UNSUPPORTED)
+                    task.m_numRoi ++;
+            }
+            else
+                task.m_numRoi ++;
+        }
+    }
 
     task.m_maxFrameSize = extOpt2Runtime ? extOpt2Runtime->MaxFrameSize : extOpt2->MaxFrameSize;
 

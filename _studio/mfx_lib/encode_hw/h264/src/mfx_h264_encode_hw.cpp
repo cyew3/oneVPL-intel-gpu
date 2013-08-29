@@ -332,6 +332,16 @@ mfxStatus ImplementationAvc::Query(
         {
             resetOpt->StartNewSequence = 1;
         }
+
+        if (mfxExtEncoderROI * extRoi = GetExtBuffer(*out))
+        {
+            extRoi->NumROI          = 1;
+            extRoi->ROI[0].Left     = 1;
+            extRoi->ROI[0].Right    = 1;
+            extRoi->ROI[0].Top      = 1;
+            extRoi->ROI[0].Bottom   = 1;
+            extRoi->ROI[0].Priority = 1;
+        }
     }
     else if (queryMode == 2)  // see MSDK spec for details related to Query mode 2
     {
@@ -1738,6 +1748,9 @@ mfxStatus ImplementationAvc::EncodeFrameCheckNormalWay(
         m_free.front().m_frameOrder  = surface->Data.FrameOrder;
         m_free.front().m_timeStamp   = surface->Data.TimeStamp;
         m_core->IncreaseReference(&surface->Data);
+
+        mfxU16 const MaxNumOfROI = 0;
+        m_free.front().m_roi.Resize(MaxNumOfROI);
 
         m_stat.NumCachedFrame++;
         m_incoming.splice(m_incoming.end(), m_free, m_free.begin());
