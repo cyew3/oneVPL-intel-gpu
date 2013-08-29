@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2006-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2006-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -385,7 +385,7 @@ Status ParamList::getValue(const vm_char* name, Ipp32s* val, Ipp32s vnum)
   argstr = rec->getValue(vnum);
   if(argstr == 0)
     return UMC_ERR_NO_ARG;
-  if(1 == vm_string_sscanf(argstr, VM_STRING("%d"), val) &&
+  if(1 == vm_string_sscanf(argstr, VM_STRING("%d"), (int*)val) &&
      (rec->m_info == 0 || rec->m_info->argType == argInt))
   {
     return UMC_OK;
@@ -535,10 +535,10 @@ Status ParamList::addOptionInfo(const vm_char* group_name, const OptionInfo* des
       }
       if(argInt == rec->argType) {
         Ipp32s imin, imax;
-        if(1 != vm_string_sscanf(rec->limits, VM_STRING("%d"), &imin))
+        if(1 != vm_string_sscanf(rec->limits, VM_STRING("%d"), (int*)&imin))
           return UMC_ERR_INVALID_STREAM;
         if(rec->checkType == checkMinMax) {
-          if (1 != vm_string_sscanf(ptr, VM_STRING("%d"), &imax) || imin > imax)
+          if (1 != vm_string_sscanf(ptr, VM_STRING("%d"), (int*)&imax) || imin > imax)
             return UMC_ERR_INVALID_STREAM;
         }
       } else if(argFlt == rec->argType) {
@@ -558,7 +558,7 @@ Status ParamList::addOptionInfo(const vm_char* group_name, const OptionInfo* des
       do {
         if(argInt == rec->argType) {
           Ipp32s ival;
-          if(1 != vm_string_sscanf(ptr,VM_STRING("%d"),&ival))
+          if(1 != vm_string_sscanf(ptr,VM_STRING("%d"),(int*)&ival))
             return UMC_ERR_INVALID_STREAM;
         } else if(argFlt == rec->argType) {
           Ipp64f dval;
@@ -810,19 +810,19 @@ Status ParamList::Parameter::checkValue(const vm_char* value)
             {
               Ipp32s ival, imin, imax;
               //ival = vm_string_atoi(value);
-              res = vm_string_sscanf(value, VM_STRING("%d"), &ival);
+              res = vm_string_sscanf(value, VM_STRING("%d"), (int*)&ival);
               if(res != 1) {
                 goto check_error;
               }
               if(m_info->checkType != checkMax) {
-                vm_string_sscanf(limmin, VM_STRING("%d"), &imin);
+                vm_string_sscanf(limmin, VM_STRING("%d"), (int*)&imin);
                 if(imin>ival) {
                   //*value = limmin;
                   goto check_error;
                 }
               }
               if(m_info->checkType != checkMin) {
-                vm_string_sscanf(limmax, VM_STRING("%d"), &imax);
+                vm_string_sscanf(limmax, VM_STRING("%d"), (int*)&imax);
                 if(imax<ival) {
                   //*value = limmax;
                   goto check_error;
@@ -865,11 +865,11 @@ Status ParamList::Parameter::checkValue(const vm_char* value)
           case argInt:
             {
               Ipp32s ival; // = vm_string_atoi(value);
-              if(1 != vm_string_sscanf(value, VM_STRING("%d"), &ival))
+              if(1 != vm_string_sscanf(value, VM_STRING("%d"), (int*)&ival))
                 break;
               for(; *wrd != 0; ) {
                 Ipp32s ichk; // = vm_string_atoi(wrd);
-                vm_string_sscanf(wrd, VM_STRING("%d"), &ichk);
+                vm_string_sscanf(wrd, VM_STRING("%d"), (int*)&ichk);
                 if(ichk == ival)
                   break;
                 wrd += vm_string_strcspn(wrd, DELIMITER);
