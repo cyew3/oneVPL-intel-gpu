@@ -24,7 +24,10 @@
 #include "mfx_mpeg2_encode_utils_hw.h"
 
 //#define BRC_WA
-//#define RAW_FRAMES_WA
+
+#if defined(LINUX32) || defined(LINUX64)
+#define RAW_FRAMES_WA
+#endif
 
 
 namespace MPEG2EncoderHW
