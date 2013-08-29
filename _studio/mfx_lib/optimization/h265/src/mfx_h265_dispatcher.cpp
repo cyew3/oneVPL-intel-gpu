@@ -50,7 +50,7 @@ using namespace MFX_HEVC_PP;
         /*if ( featuresMask & (Ipp64u)(ippCPUID_AVX2) )
         {
             SetTargetAVX2();
-        }
+        }*/
         if (featuresMask & (Ipp64u)(ippCPUID_SSE42))
         {        
             SetTargetSSE4();
