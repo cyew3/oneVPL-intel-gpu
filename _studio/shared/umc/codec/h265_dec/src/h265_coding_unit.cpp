@@ -42,7 +42,6 @@ H265CodingUnit::H265CodingUnit()
     m_lumaIntraDir = 0;
     m_chromaIntraDir = 0;
     m_TrIdxArray = 0;
-    m_TrStartArray = 0;
     // ML: FIXED: changed the last 3 into 2
     m_transformSkip[0] = m_transformSkip[1] = m_transformSkip[2] = 0;
     m_cbf[0] = 0;
@@ -57,8 +56,6 @@ H265CodingUnit::H265CodingUnit()
     m_IPCMSampleCb = 0;
     m_IPCMSampleCr = 0;
 
-    m_CUAbove = 0;
-    m_CULeft = 0;
     m_intraNeighbors[0] = 0;
     m_intraNeighbors[1] = 0;
 }
@@ -75,7 +72,7 @@ void H265CodingUnit::create (H265FrameCodingData * frameCD)
 
     Ipp32s widthOnHeight = frameCD->m_MaxCUWidth * frameCD->m_MaxCUWidth;
 
-    m_cumulativeMemoryPtr = CumulativeArraysAllocation(26, 32, &m_qpArray, sizeof(Ipp8u) * m_NumPartition,
+    m_cumulativeMemoryPtr = CumulativeArraysAllocation(25, 32, &m_qpArray, sizeof(Ipp8u) * m_NumPartition,
                                 &m_depthArray, sizeof(Ipp8u) * m_NumPartition,
                                 &m_widthArray, sizeof(Ipp8u) * m_NumPartition,
                                 &m_heightArray, sizeof(Ipp8u) * m_NumPartition,
@@ -88,7 +85,6 @@ void H265CodingUnit::create (H265FrameCodingData * frameCD)
                                 &m_chromaIntraDir, sizeof(Ipp8u) * m_NumPartition,
 
                                 &m_TrIdxArray, sizeof(Ipp8u) * m_NumPartition,
-                                &m_TrStartArray, sizeof(Ipp8u) * m_NumPartition,
                                 &m_transformSkip[0], sizeof(Ipp8u) * m_NumPartition,
                                 &m_transformSkip[1], sizeof(Ipp8u) * m_NumPartition,
                                 &m_transformSkip[2], sizeof(Ipp8u) * m_NumPartition,
@@ -110,9 +106,6 @@ void H265CodingUnit::create (H265FrameCodingData * frameCD)
                                 &m_intraNeighbors[1], sizeof(IntraNeighbors) * m_NumPartition
                                 );
 
-    m_CUAbove          = NULL;
-    m_CULeft           = NULL;
-
     m_rasterToPelX = frameCD->m_partitionInfo.m_rasterToPelX;
     m_rasterToPelY = frameCD->m_partitionInfo.m_rasterToPelY;
 
@@ -130,9 +123,6 @@ void H265CodingUnit::destroy()
         CumulativeFree(m_cumulativeMemoryPtr);
         m_cumulativeMemoryPtr = 0;
     }
-
-    m_CUAbove = NULL;
-    m_CULeft = NULL;
 }
 
 
@@ -163,21 +153,6 @@ void H265CodingUnit::initCU(H265SegmentDecoderMultiThreaded* sd, Ipp32u iCUAddr)
     memset( m_CUTransquantBypass, 0, m_NumPartition * sizeof( *m_CUTransquantBypass ) );
     for (Ipp32s i = 0; i < 3; i++)
         memset (m_transformSkip[i], 0, m_NumPartition * sizeof( *m_transformSkip[i] ) );
-
-    // Setting neighbor CU
-    m_CULeft = NULL;
-    m_CUAbove = NULL;
-
-    Ipp32u WidthInCU = sps->WidthInCU;
-    if (CUAddr % WidthInCU)
-    {
-        m_CULeft = Pic->getCU(CUAddr - 1);
-    }
-
-    if (CUAddr / WidthInCU)
-    {
-        m_CUAbove = Pic->getCU(CUAddr - WidthInCU);
-    }
 }
 
 void H265CodingUnit::setOutsideCUPart(Ipp32u AbsPartIdx, Ipp32u Depth)
@@ -190,78 +165,6 @@ void H265CodingUnit::setOutsideCUPart(Ipp32u AbsPartIdx, Ipp32u Depth)
     memset(m_widthArray + AbsPartIdx, Width,  SizeInUchar);
     memset(m_heightArray + AbsPartIdx, Width, SizeInUchar);
     memset(m_predModeArray + AbsPartIdx, MODE_NONE, SizeInUchar);
-}
-
-// Other public functions ----------------------------------------------------------------------------------------------------------
-H265CodingUnit* H265CodingUnit::getPULeft(Ipp32u& LPartUnitIdx, Ipp32u CurrPartUnitIdx,
-                                          bool EnforceSliceRestriction, bool EnforceTileRestriction)
-{
-    Ipp32u AbsPartIdx = m_zscanToRaster[CurrPartUnitIdx];
-    Ipp32u AbsZorderCUIdx = m_zscanToRaster[m_AbsIdxInLCU];
-    Ipp32u NumPartInCUWidth = m_Frame->m_CodingData->m_NumPartInWidth;
-
-    if (!RasterAddress::isZeroCol(AbsPartIdx, NumPartInCUWidth))
-    {
-        LPartUnitIdx = m_rasterToZscan[AbsPartIdx - 1];
-        if (RasterAddress::isEqualCol(AbsPartIdx, AbsZorderCUIdx, NumPartInCUWidth))
-        {
-            return m_Frame->getCU(CUAddr);
-        }
-        else
-        {
-            LPartUnitIdx -= m_AbsIdxInLCU;
-            return this;
-        }
-    }
-
-    LPartUnitIdx = m_rasterToZscan[AbsPartIdx + NumPartInCUWidth - 1];
-
-    if (
-        (EnforceSliceRestriction && (m_CULeft == NULL || m_CULeft->m_SliceHeader == NULL || m_CULeft->getSCUAddr() + LPartUnitIdx < m_Frame->getCU(CUAddr)->m_SliceHeader->SliceCurStartCUAddr))
-        ||
-        (EnforceTileRestriction && (m_CULeft == NULL || m_CULeft->m_SliceHeader == NULL || m_Frame->m_CodingData->getTileIdxMap(m_CULeft->CUAddr) != m_Frame->m_CodingData->getTileIdxMap(CUAddr))))
-    {
-        return NULL;
-    }
-    return m_CULeft;
-}
-
-H265CodingUnit* H265CodingUnit::getPUAbove(Ipp32u& APartUnitIdx, Ipp32u CurrPartUnitIdx, bool EnforceSliceRestriction,
-                                           bool planarAtLCUBoundary, bool EnforceTileRestriction)
-{
-    Ipp32u AbsPartIdx = m_zscanToRaster[CurrPartUnitIdx];
-    Ipp32u AbsZorderCUIdx = m_zscanToRaster[m_AbsIdxInLCU];
-    Ipp32u NumPartInCUWidth = m_Frame->m_CodingData->m_NumPartInWidth;
-
-    if (!RasterAddress::isZeroRow(AbsPartIdx, NumPartInCUWidth))
-    {
-        APartUnitIdx = m_rasterToZscan[AbsPartIdx - NumPartInCUWidth];
-        if (RasterAddress::isEqualRow(AbsPartIdx, AbsZorderCUIdx, NumPartInCUWidth))
-        {
-            return m_Frame->getCU(CUAddr);
-        }
-        else
-        {
-            APartUnitIdx -= m_AbsIdxInLCU;
-            return this;
-        }
-    }
-
-    if (planarAtLCUBoundary)
-    {
-        return NULL;
-    }
-
-    APartUnitIdx = m_rasterToZscan[AbsPartIdx + m_Frame->getCD()->getNumPartInCU() - NumPartInCUWidth];
-
-    if (
-        (EnforceSliceRestriction && (m_CUAbove == NULL || m_CUAbove->m_SliceHeader == NULL || m_CUAbove->getSCUAddr() + APartUnitIdx < m_Frame->getCU(CUAddr)->m_SliceHeader->SliceCurStartCUAddr))
-        ||
-        (EnforceTileRestriction && (m_CUAbove == NULL || m_CUAbove->m_SliceHeader == NULL || m_Frame->m_CodingData->getTileIdxMap(m_CUAbove->CUAddr) != m_Frame->m_CodingData->getTileIdxMap(CUAddr))))
-    {
-        return NULL;
-    }
-     return m_CUAbove;
 }
 
 /** Get left QpMinCu
@@ -624,13 +527,6 @@ void H265CodingUnit::setTrIdxSubParts(Ipp32u uTrIdx, Ipp32u AbsPartIdx, Ipp32u D
     Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
 
     memset(m_TrIdxArray + AbsPartIdx, uTrIdx, sizeof(Ipp8u) * CurrPartNumb);
-}
-
-void H265CodingUnit::setTrStartSubParts(Ipp32u AbsPartIdx, Ipp32u Depth)
-{
-    Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
-
-    memset(m_TrStartArray + AbsPartIdx, AbsPartIdx, sizeof(Ipp8u) * CurrPartNumb);
 }
 
 void H265CodingUnit::setSizeSubParts(Ipp32u Width, Ipp32u Height, Ipp32u AbsPartIdx, Ipp32u Depth)

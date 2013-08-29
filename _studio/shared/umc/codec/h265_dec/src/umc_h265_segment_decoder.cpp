@@ -767,8 +767,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
 
         UpdatePUInfo(pCU, PartX, PartY, Size, Size, MVi);
 
-        pCU->setCbfSubParts( 0, 0, 0, AbsPartIdx, Depth);
-        pCU->setTrStartSubParts(AbsPartIdx, Depth);
+        pCU->setCbfSubParts(0, 0, 0, AbsPartIdx, Depth);
         if (pCU->m_SliceHeader->m_PicParamSet->cu_qp_delta_enabled_flag)
             pCU->setQPSubParts(m_DecodeDQPFlag ? pCU->getRefQP(AbsPartIdx) : pCU->m_CodedQP, AbsPartIdx, Depth); // set QP to default QP
 
@@ -788,7 +787,6 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
         if (SIZE_2Nx2N == pCU->GetPartitionSize(AbsPartIdx))
         {
             DecodeIPCMInfoCABAC(pCU, AbsPartIdx, Depth);
-            pCU->setTrStartSubParts(AbsPartIdx, Depth);
 
             if (pCU->GetIPCMFlag(AbsPartIdx))
             {
@@ -1612,9 +1610,8 @@ void H265SegmentDecoder::DecodeCoeff(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp
         }
         if (!QtRootCbf)
         {
-            pCU->setCbfSubParts( 0, 0, 0, AbsPartIdx, Depth);
-            pCU->setTrIdxSubParts( 0 , AbsPartIdx, Depth);
-            pCU->setTrStartSubParts(AbsPartIdx, Depth);
+            pCU->setCbfSubParts(0, 0, 0, AbsPartIdx, Depth);
+            pCU->setTrIdxSubParts(0 , AbsPartIdx, Depth);
             UpdateNeighborBuffers(pCU, AbsPartIdx, Depth, AbsPartIdx, false, pCU->m_CUTransquantBypass[AbsPartIdx], false, false);
             return;
         }
@@ -1732,7 +1729,6 @@ void H265SegmentDecoder::DecodeTransform(H265CodingUnit* pCU, Ipp32u offsetLuma,
     {
         VM_ASSERT(Depth >= pCU->GetDepth(AbsPartIdx));
         pCU->setTrIdxSubParts(TrDepth, AbsPartIdx, Depth);
-        pCU->setTrStartSubParts(AbsPartIdx, Depth);
 
         pCU->setCbfSubParts(0, TEXT_LUMA, AbsPartIdx, Depth);
         if (pCU->GetPredictionMode(AbsPartIdx) != MODE_INTRA && Depth == pCU->GetDepth(AbsPartIdx) && !pCU->GetCbf(AbsPartIdx, TEXT_CHROMA_U, 0) && !pCU->GetCbf(AbsPartIdx, TEXT_CHROMA_V, 0))

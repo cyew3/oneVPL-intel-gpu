@@ -58,7 +58,6 @@ public:
     //CU data ----------------------------------------------------------------------------------------
     bool*                     m_CUTransquantBypass; // array of cu_transquant_bypass flags
     Ipp8u*                    m_TrIdxArray;     // array of transform indices
-    Ipp8u*                    m_TrStartArray;
     H265CoeffsPtrCommon        m_TrCoeffY;       // transformed coefficient buffer (Y)
     H265CoeffsPtrCommon        m_TrCoeffCb;      // transformed coefficient buffer (Cb)
     H265CoeffsPtrCommon        m_TrCoeffCr;      // transformed coefficient buffer (Cr)
@@ -139,10 +138,6 @@ public:
     H265PlanePtrUVCommon       m_IPCMSampleCb;    // PCM sample buffer (Cb)
     H265PlanePtrUVCommon       m_IPCMSampleCr;    // PCM sample buffer (Cr)
 
-    //neighbour access variables -------------------------------------------------------------------------
-    H265CodingUnit*            m_CUAbove;         // pointer of above CU
-    H265CodingUnit*            m_CULeft;          // pointer of left CU
-
     // misc. variables -------------------------------------------------------------------------------------
     Ipp8s                   m_CodedQP;
 
@@ -192,7 +187,6 @@ public:
     void setQPSubParts (Ipp32u QP, Ipp32u AbsPartIdx, Ipp32u Depth);
     Ipp8u getLastCodedQP (Ipp32u AbsPartIdx);
     void setTrIdxSubParts (Ipp32u TrIdx, Ipp32u AbsPartIdx, Ipp32u Depth);
-    void setTrStartSubParts (Ipp32u AbsPartIdx, Ipp32u Depth);
 
     Ipp32u getQuadtreeTULog2MinSizeInCU (Ipp32u Idx);
 
@@ -231,10 +225,6 @@ public:
 
     void fillMVPCand (Ipp32u PartIdx, Ipp32u PartAddr, EnumRefPicList RefPicList, Ipp32s RefIdx, AMVPInfo* pInfo);
     bool isDiffMER(Ipp32s xN, Ipp32s yN, Ipp32s xP, Ipp32s yP);
-
-    // utility functions for neighbouring information - (only functions with declaration here. simple get/set are removed)
-    H265CodingUnit* getPULeft        (Ipp32u& LPartUnitIdx , Ipp32u CurrPartUnitIdx, bool EnforceSliceRestriction = true, bool bEnforceTileRestriction = true);
-    H265CodingUnit* getPUAbove       (Ipp32u& APartUnitIdx , Ipp32u CurrPartUnitIdx, bool EnforceSliceRestriction = true, bool planarAtLCUBoundary = false, bool EnforceTileRestriction = true);
 
     H265CodingUnit* getQPMinCULeft (Ipp32u& LPartUnitIdx, Ipp32u CurrAbsIdxInLCU);
     H265CodingUnit* getQPMinCUAbove(Ipp32u& aPartUnitIdx, Ipp32u currAbsIdxInLCU);
