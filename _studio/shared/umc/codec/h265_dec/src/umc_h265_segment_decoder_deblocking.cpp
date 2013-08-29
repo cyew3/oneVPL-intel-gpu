@@ -422,6 +422,7 @@ template<Ipp32s tusize> void H265SegmentDecoder::GetCTBEdgeStrengths(void)
     H265EdgeData *ctb_start_edge = m_pCurrentFrame->m_CodingData->m_edge +
         m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth * (m_curCU->m_CUPelY >> 3) + (m_curCU->m_CUPelX >> 3) * 4;
     Ipp32s maxCUSize = m_pSeqParamSet->MaxCUSize;
+    Ipp32s xPel, yPel;
 
     Ipp32s height = m_pSeqParamSet->pic_height_in_luma_samples - m_curCU->m_CUPelY;
     if (height > maxCUSize)
@@ -433,7 +434,7 @@ template<Ipp32s tusize> void H265SegmentDecoder::GetCTBEdgeStrengths(void)
 
     Ipp32s curTULine = 0;
     H265EdgeData *edgeLine = ctb_start_edge + (1) * m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth;
-    for (Ipp32s yPel = 0; yPel < height; yPel += 8)
+    for (yPel = 0; yPel < height; yPel += 8)
     {
         H265EdgeData *edge = edgeLine;
         curTULine = m_context->m_CurrCTBStride * (yPel >> tusize);
@@ -443,7 +444,7 @@ template<Ipp32s tusize> void H265SegmentDecoder::GetCTBEdgeStrengths(void)
             edge[2].strength = edge[3].strength = 0;
         }
 
-        for (Ipp32s xPel = 0; xPel < width; xPel += 8)
+        for (xPel = 0; xPel < width; xPel += 8)
         {
             Ipp32s curTU = curTULine + (xPel >> tusize);
             Ipp32s leftTU = curTU - 1;
@@ -464,6 +465,25 @@ template<Ipp32s tusize> void H265SegmentDecoder::GetCTBEdgeStrengths(void)
                 GetEdgeStrength<tusize, HOR_FILT>(curTU + 1, upTU + 1, edge + 3, xPel + 4, yPel);
             else if (tusize == 3)
                 edge[3] = edge[2];
+        }
+
+        for (; xPel < maxCUSize; xPel += 8)
+        {
+            edge += 4;
+            edge[0].strength = edge[1].strength = edge[2].strength = edge[3].strength = 0;
+        }
+
+        edgeLine += m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth;
+    }
+
+    for (; yPel < maxCUSize; yPel += 8)
+    {
+        H265EdgeData *edge = edgeLine;
+
+        for (xPel = 0; xPel < maxCUSize; xPel += 8)
+        {
+            edge += 4;
+            edge[0].strength = edge[1].strength = edge[2].strength = edge[3].strength = 0;
         }
 
         edgeLine += m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth;
