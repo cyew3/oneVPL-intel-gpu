@@ -17,16 +17,18 @@
 
 #if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 
+#define Saturate(min_val, max_val, val) IPP_MAX((min_val), IPP_MIN((max_val), (val)))
+
 //=========================================================
 // AYA TMP SOLUTIONS
-#include <intrin.h> // aya for WriteP.B/N only
-
-/* workaround for compiler bug (see h265_tr_quant_opt.cpp) */
-#ifdef NDEBUG 
-#define MM_LOAD_EPI64(x) (*(__m128i*)(x))
-#else
-#define MM_LOAD_EPI64(x) _mm_loadl_epi64( (__m128i*)(x))
-#endif
+//#include <intrin.h> // aya for WriteP.B/N only
+//
+///* workaround for compiler bug (see h265_tr_quant_opt.cpp) */
+//#ifdef NDEBUG 
+//#define MM_LOAD_EPI64(x) (*(__m128i*)(x))
+//#else
+//#define MM_LOAD_EPI64(x) _mm_loadl_epi64( (__m128i*)(x))
+//#endif
 //=========================================================
 
 namespace MFX_HEVC_PP
@@ -199,156 +201,197 @@ namespace MFX_HEVC_PP
     */
     void MAKE_NAME(h265_AverageModeN)(INTERP_AVG_NONE_PARAMETERS_LIST)
     {
-        int col;
-        short *pSrcRef = pSrc;
-        unsigned char *pDstRef = pDst;
-        __m128i xmm0;
+        //int col;
+        //short *pSrcRef = pSrc;
+        //unsigned char *pDstRef = pDst;
+        //__m128i xmm0;
 
-        do {
-            pSrc = pSrcRef;
-            pDst = pDstRef;
-            col = width;
+        //do {
+        //    pSrc = pSrcRef;
+        //    pDst = pDstRef;
+        //    col = width;
 
-            while (col > 0) {
-                /* load 8 16-bit pixels, clip to 8-bit */
-                xmm0 = _mm_loadu_si128((__m128i *)pSrc);
-                xmm0 = _mm_packus_epi16(xmm0, xmm0);
+        //    while (col > 0) {
+        //        /* load 8 16-bit pixels, clip to 8-bit */
+        //        xmm0 = _mm_loadu_si128((__m128i *)pSrc);
+        //        xmm0 = _mm_packus_epi16(xmm0, xmm0);
 
-                /* store 8 pixels */
-                if (col >= 8) {
-                    _mm_storel_epi64((__m128i*)pDst, xmm0);
-                    pSrc += 8;
-                    pDst += 8;
-                    col -= 8;
-                    continue;
-                }
+        //        /* store 8 pixels */
+        //        if (col >= 8) {
+        //            _mm_storel_epi64((__m128i*)pDst, xmm0);
+        //            pSrc += 8;
+        //            pDst += 8;
+        //            col -= 8;
+        //            continue;
+        //        }
 
-                /* store 2, 4, or 6 pixels - should compile to single compare with jg, je, jl */
-                if (col > 4) {
-                    *(int   *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
-                    *(short *)(pDst+4) = (short)_mm_extract_epi16(xmm0, 2);
-                } else if (col == 4) {
-                    *(int   *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
-                } else {
-                    *(short *)(pDst+0) = (short)_mm_extract_epi16(xmm0, 0);
-                }
-                break;
+        //        /* store 2, 4, or 6 pixels - should compile to single compare with jg, je, jl */
+        //        if (col > 4) {
+        //            *(int   *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
+        //            *(short *)(pDst+4) = (short)_mm_extract_epi16(xmm0, 2);
+        //        } else if (col == 4) {
+        //            *(int   *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
+        //        } else {
+        //            *(short *)(pDst+0) = (short)_mm_extract_epi16(xmm0, 0);
+        //        }
+        //        break;
+        //    }
+
+        //    pSrcRef += srcPitch;
+        //    pDstRef += dstPitch;
+        //} while (--height);
+
+        for( int y = 0; y < height; y++  )
+        {
+            for(int x = 0; x < width; x++)
+            {
+                pDst[y*dstPitch + x] = (Ipp8u)Saturate(0, 255, pSrc[y*srcPitch + x]);
             }
-
-            pSrcRef += srcPitch;
-            pDstRef += dstPitch;
-        } while (--height);
+        }
     }
 
     /* mode: AVERAGE_FROM_PIC, load 8-bit pixels, extend to 16-bit, add to current output, clip/pack 16-bit to 8-bit */
     void MAKE_NAME(h265_AverageModeP)(INTERP_AVG_PIC_PARAMETERS_LIST)
     {
-        int col;
-        short *pSrcRef = pSrc;
-        unsigned char *pDstRef = pDst, *pAvgRef = pAvg;
-        __m128i xmm0, xmm1, xmm7;
+        //int height_i = height;
+        //int col;
+        //short *pSrcRef = pSrc;
+        //unsigned char *pDstRef = pDst, *pAvgRef = pAvg;
+        //__m128i xmm0, xmm1, xmm7;
 
-        xmm7 = _mm_set1_epi16(1 << 6);
-        do {
-            pSrc = pSrcRef;
-            pDst = pDstRef;
-            pAvg = pAvgRef;
-            col = width;
+        //Ipp16s *pSrc_own = pSrc;
+        //Ipp8u *pDst_own = pDst;
+        //Ipp8u* pAvg_own = pAvg;
 
-            while (col > 0) {
-                /* load 8 16-bit pixels from source */
-                xmm0 = _mm_loadu_si128((__m128i *)pSrc);
+        //xmm7 = _mm_set1_epi16(1 << 6);
+        //do {
+        //    pSrc = pSrcRef;
+        //    pDst = pDstRef;
+        //    pAvg = pAvgRef;
+        //    col = width;
 
-                /* load 8 8-bit pixels from avg buffer, zero extend to 16-bit, normalize fraction bits */
-                xmm1 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(pAvg));    
-                xmm1 = _mm_slli_epi16(xmm1, 6);
+        //    while (col > 0) {
+        //        /* load 8 16-bit pixels from source */
+        //        xmm0 = _mm_loadu_si128((__m128i *)pSrc);
 
-                /* add, round, clip back to 8 bits */
-                xmm1 = _mm_adds_epi16(xmm1, xmm7);
-                xmm0 = _mm_adds_epi16(xmm0, xmm1);
-                xmm0 = _mm_srai_epi16(xmm0, 7);
-                xmm0 = _mm_packus_epi16(xmm0, xmm0);
+        //        /* load 8 8-bit pixels from avg buffer, zero extend to 16-bit, normalize fraction bits */
+        //        xmm1 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(pAvg));    
+        //        xmm1 = _mm_slli_epi16(xmm1, 6);
 
-                /* store 8 pixels */
-                if (col >= 8) {
-                    _mm_storel_epi64((__m128i*)pDst, xmm0);
-                    pSrc += 8;
-                    pDst += 8;
-                    pAvg += 8;
-                    col -= 8;
-                    continue;
-                }
+        //        /* add, round, clip back to 8 bits */
+        //        xmm1 = _mm_adds_epi16(xmm1, xmm7);
+        //        xmm0 = _mm_adds_epi16(xmm0, xmm1);
+        //        xmm0 = _mm_srai_epi16(xmm0, 7);
+        //        xmm0 = _mm_packus_epi16(xmm0, xmm0);
 
-                /* store 2, 4, or 6 pixels - should compile to single compare with jg, je, jl */
-                if (col > 4) {
-                    *(int   *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
-                    *(short *)(pDst+4) = (short)_mm_extract_epi16(xmm0, 2);
-                } else if (col == 4) {
-                    *(int   *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
-                } else {
-                    *(short *)(pDst+0) = (short)_mm_extract_epi16(xmm0, 0);
-                }
-                break;
+        //        /* store 8 pixels */
+        //        if (col >= 8) {
+        //            _mm_storel_epi64((__m128i*)pDst, xmm0);
+        //            pSrc += 8;
+        //            pDst += 8;
+        //            pAvg += 8;
+        //            col -= 8;
+        //            continue;
+        //        }
+
+        //        /* store 2, 4, or 6 pixels - should compile to single compare with jg, je, jl */
+        //        if (col > 4) {
+        //            *(int   *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
+        //            *(short *)(pDst+4) = (short)_mm_extract_epi16(xmm0, 2);
+        //        } else if (col == 4) {
+        //            *(int   *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
+        //        } else {
+        //            *(short *)(pDst+0) = (short)_mm_extract_epi16(xmm0, 0);
+        //        }
+        //        break;
+        //    }
+
+        //    pSrcRef += srcPitch;
+        //    pDstRef += dstPitch;
+        //    pAvgRef += avgPitch;
+        //} while (--height);
+
+        for( int y = 0; y < height; y++  )
+        {
+            for(int x = 0; x < width; x++)
+            {
+                int add1 = pSrc[y*srcPitch + x];
+                int add2 = (int)pAvg[y*avgPitch + x];
+                add2 <<= 6;
+                int add3 = 1 << 6;
+
+                int sum_total = (add1 + add2 + add3) >> 7;
+         
+                pDst[y*dstPitch + x] = (Ipp8u)Saturate(0, 255, sum_total);
             }
-
-            pSrcRef += srcPitch;
-            pDstRef += dstPitch;
-            pAvgRef += avgPitch;
-        } while (--height);
+        }
     }
 
     /* mode: AVERAGE_FROM_BUF, load 16-bit pixels, add to current output, clip/pack 16-bit to 8-bit */
     void MAKE_NAME(h265_AverageModeB)(INTERP_AVG_BUF_PARAMETERS_LIST)
     {
-        int col;
-        short *pSrcRef = pSrc, *pAvgRef = pAvg;
-        unsigned char *pDstRef = pDst;
-        __m128i xmm0, xmm1, xmm7;
+        //int col;
+        //short *pSrcRef = pSrc, *pAvgRef = pAvg;
+        //unsigned char *pDstRef = pDst;
+        //__m128i xmm0, xmm1, xmm7;
 
-        xmm7 = _mm_set1_epi16(1 << 6);
-        do {
-            pSrc = pSrcRef;
-            pDst = pDstRef;
-            pAvg = pAvgRef;
-            col = width;
+        //xmm7 = _mm_set1_epi16(1 << 6);
+        //do {
+        //    pSrc = pSrcRef;
+        //    pDst = pDstRef;
+        //    pAvg = pAvgRef;
+        //    col = width;
 
-            while (col > 0) {
-                /* load 8 16-bit pixels from source and from avg */
-                xmm0 = _mm_loadu_si128((__m128i *)pSrc);
-                xmm1 = _mm_loadu_si128((__m128i *)pAvg);
+        //    while (col > 0) {
+        //        /* load 8 16-bit pixels from source and from avg */
+        //        xmm0 = _mm_loadu_si128((__m128i *)pSrc);
+        //        xmm1 = _mm_loadu_si128((__m128i *)pAvg);
 
-                /* add, round, clip back to 8 bits */
-                xmm1 = _mm_adds_epi16(xmm1, xmm7);
-                xmm0 = _mm_adds_epi16(xmm0, xmm1);
-                xmm0 = _mm_srai_epi16(xmm0, 7);
-                xmm0 = _mm_packus_epi16(xmm0, xmm0);
+        //        /* add, round, clip back to 8 bits */
+        //        xmm1 = _mm_adds_epi16(xmm1, xmm7);
+        //        xmm0 = _mm_adds_epi16(xmm0, xmm1);
+        //        xmm0 = _mm_srai_epi16(xmm0, 7);
+        //        xmm0 = _mm_packus_epi16(xmm0, xmm0);
 
-                /* store 8 pixels */
-                if (col >= 8) {
-                    _mm_storel_epi64((__m128i*)pDst, xmm0);
-                    pSrc += 8;
-                    pDst += 8;
-                    pAvg += 8;
-                    col -= 8;
-                    continue;
-                }
+        //        /* store 8 pixels */
+        //        if (col >= 8) {
+        //            _mm_storel_epi64((__m128i*)pDst, xmm0);
+        //            pSrc += 8;
+        //            pDst += 8;
+        //            pAvg += 8;
+        //            col -= 8;
+        //            continue;
+        //        }
 
-                /* store 2, 4, or 6 pixels - should compile to single compare with jg, je, jl */
-                if (col > 4) {
-                    *(int   *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
-                    *(short *)(pDst+4) = (short)_mm_extract_epi16(xmm0, 2);
-                } else if (col == 4) {
-                    *(int   *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
-                } else {
-                    *(short *)(pDst+0) = (short)_mm_extract_epi16(xmm0, 0);
-                }
-                break;
+        //        /* store 2, 4, or 6 pixels - should compile to single compare with jg, je, jl */
+        //        if (col > 4) {
+        //            *(int   *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
+        //            *(short *)(pDst+4) = (short)_mm_extract_epi16(xmm0, 2);
+        //        } else if (col == 4) {
+        //            *(int   *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
+        //        } else {
+        //            *(short *)(pDst+0) = (short)_mm_extract_epi16(xmm0, 0);
+        //        }
+        //        break;
+        //    }
+
+        //    pSrcRef += srcPitch;
+        //    pDstRef += dstPitch;
+        //    pAvgRef += avgPitch;
+        //} while (--height);
+
+        for( int y = 0; y < height; y++  )
+        {
+            for(int x = 0; x < width; x++)
+            {
+                Ipp8u dst_tmp = (Ipp8u)Saturate(0, 255, (pSrc[y*srcPitch + x] + (pAvg[y*avgPitch + x] + (1<<6))) >> 7);
+                /*if( dst_tmp != pDst_own[y*dstPitch + x])
+                {
+                    printf("\n stop!!! \n");
+                }*/
+                pDst[y*dstPitch + x] = dst_tmp;//(Ipp8u)Saturate(0, 255, (pSrc[y*srcPitch + x] + (Ipp16s)pAvg[y*avgPitch + x] + 1) >> 7);
             }
-
-            pSrcRef += srcPitch;
-            pDstRef += dstPitch;
-            pAvgRef += avgPitch;
-        } while (--height);
+        }
     }
 
 } // end namespace MFX_HEVC_PP

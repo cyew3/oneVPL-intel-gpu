@@ -51,14 +51,14 @@ using namespace MFX_HEVC_PP;
         {
             SetTargetAVX2();
         }
-        else if (featuresMask & (Ipp64u)(ippCPUID_SSE42))*/
+        if (featuresMask & (Ipp64u)(ippCPUID_SSE42))
         {        
             SetTargetSSE4();
         }
-        /*else 
+        else 
         {
             SetTargetPX();
-        }*/
+        }
         
         g_dispatcher.isInited = true;
 
@@ -399,6 +399,111 @@ using namespace MFX_HEVC_PP;
 
     void SetTargetPX(void)
     {
+        // [Sad.special]===================================
+        g_dispatcher. h265_SAD_4x4_8u =  &MFX_HEVC_PP::SAD_4x4_px;
+        g_dispatcher. h265_SAD_4x8_8u =  &MFX_HEVC_PP::SAD_4x8_px;
+        g_dispatcher. h265_SAD_4x16_8u =  &MFX_HEVC_PP::SAD_4x16_px;
+
+        g_dispatcher. h265_SAD_8x4_8u =  &MFX_HEVC_PP::SAD_8x4_px;
+        g_dispatcher. h265_SAD_8x8_8u =  &MFX_HEVC_PP::SAD_8x8_px;
+        g_dispatcher. h265_SAD_8x16_8u =  &MFX_HEVC_PP::SAD_8x16_px;
+        g_dispatcher. h265_SAD_8x32_8u =  &MFX_HEVC_PP::SAD_8x32_px;
+
+        g_dispatcher. h265_SAD_12x16_8u =  &MFX_HEVC_PP::SAD_12x16_px;
+
+        g_dispatcher. h265_SAD_16x4_8u =  &MFX_HEVC_PP::SAD_16x4_px;
+        g_dispatcher. h265_SAD_16x8_8u =  &MFX_HEVC_PP::SAD_16x8_px;
+        g_dispatcher. h265_SAD_16x12_8u =  &MFX_HEVC_PP::SAD_16x12_px;
+        g_dispatcher. h265_SAD_16x16_8u =  &MFX_HEVC_PP::SAD_16x16_px;
+        g_dispatcher. h265_SAD_16x32_8u =  &MFX_HEVC_PP::SAD_16x32_px;
+        g_dispatcher. h265_SAD_16x64_8u =  &MFX_HEVC_PP::SAD_16x64_px;
+
+        g_dispatcher. h265_SAD_24x32_8u =  &MFX_HEVC_PP::SAD_24x32_px;
+
+        g_dispatcher. h265_SAD_32x8_8u =  &MFX_HEVC_PP::SAD_32x8_px;
+        g_dispatcher. h265_SAD_32x16_8u =  &MFX_HEVC_PP::SAD_32x16_px;
+        g_dispatcher. h265_SAD_32x24_8u =  &MFX_HEVC_PP::SAD_32x24_px;
+        g_dispatcher. h265_SAD_32x32_8u =  &MFX_HEVC_PP::SAD_32x32_px;
+        g_dispatcher. h265_SAD_32x64_8u =  &MFX_HEVC_PP::SAD_32x64_px;
+
+        g_dispatcher. h265_SAD_48x64_8u =  &MFX_HEVC_PP::SAD_48x64_px;
+
+        g_dispatcher. h265_SAD_64x16_8u =  &MFX_HEVC_PP::SAD_64x16_px;
+        g_dispatcher. h265_SAD_64x32_8u =  &MFX_HEVC_PP::SAD_64x32_px;
+        g_dispatcher. h265_SAD_64x48_8u =  &MFX_HEVC_PP::SAD_64x48_px;
+        g_dispatcher. h265_SAD_64x64_8u =  &MFX_HEVC_PP::SAD_64x64_px;
+
+        // [Sad.general]===================================
+        g_dispatcher. h265_SAD_4x4_general_8u =  &MFX_HEVC_PP::SAD_4x4_general_px;
+        g_dispatcher. h265_SAD_4x8_general_8u =  &MFX_HEVC_PP::SAD_4x8_general_px;
+        g_dispatcher. h265_SAD_4x16_general_8u =  &MFX_HEVC_PP::SAD_4x16_general_px;
+
+        g_dispatcher. h265_SAD_8x4_general_8u =  &MFX_HEVC_PP::SAD_8x4_general_px;
+        g_dispatcher. h265_SAD_8x8_general_8u =  &MFX_HEVC_PP::SAD_8x8_general_px;
+        g_dispatcher. h265_SAD_8x16_general_8u =  &MFX_HEVC_PP::SAD_8x16_general_px;
+        g_dispatcher. h265_SAD_8x32_general_8u =  &MFX_HEVC_PP::SAD_8x32_general_px;
+
+        g_dispatcher. h265_SAD_12x16_general_8u =  &MFX_HEVC_PP::SAD_12x16_general_px;
+
+        g_dispatcher. h265_SAD_16x4_general_8u =  &MFX_HEVC_PP::SAD_16x4_general_px;
+        g_dispatcher. h265_SAD_16x8_general_8u =  &MFX_HEVC_PP::SAD_16x8_general_px;
+        g_dispatcher. h265_SAD_16x12_general_8u =  &MFX_HEVC_PP::SAD_16x12_general_px;
+        g_dispatcher. h265_SAD_16x16_general_8u =  &MFX_HEVC_PP::SAD_16x16_general_px;
+        g_dispatcher. h265_SAD_16x32_general_8u =  &MFX_HEVC_PP::SAD_16x32_general_px;
+        g_dispatcher. h265_SAD_16x64_general_8u =  &MFX_HEVC_PP::SAD_16x64_general_px;
+
+        g_dispatcher. h265_SAD_24x32_general_8u =  &MFX_HEVC_PP::SAD_24x32_general_px;
+
+        g_dispatcher. h265_SAD_32x8_general_8u =  &MFX_HEVC_PP::SAD_32x8_general_px;
+        g_dispatcher. h265_SAD_32x16_general_8u =  &MFX_HEVC_PP::SAD_32x16_general_px;
+        g_dispatcher. h265_SAD_32x24_general_8u =  &MFX_HEVC_PP::SAD_32x24_general_px;
+        g_dispatcher. h265_SAD_32x32_general_8u =  &MFX_HEVC_PP::SAD_32x32_general_px;
+        g_dispatcher. h265_SAD_32x64_general_8u =  &MFX_HEVC_PP::SAD_32x64_general_px;
+
+        g_dispatcher. h265_SAD_48x64_general_8u =  &MFX_HEVC_PP::SAD_48x64_general_px;
+
+        g_dispatcher. h265_SAD_64x16_general_8u =  &MFX_HEVC_PP::SAD_64x16_general_px;
+        g_dispatcher. h265_SAD_64x32_general_8u =  &MFX_HEVC_PP::SAD_64x32_general_px;
+        g_dispatcher. h265_SAD_64x48_general_8u =  &MFX_HEVC_PP::SAD_64x48_general_px;
+        g_dispatcher. h265_SAD_64x64_general_8u =  &MFX_HEVC_PP::SAD_64x64_general_px;
+
+        //[transform.inv]==================================
+        g_dispatcher. h265_DST4x4Inv_16sT = &MFX_HEVC_PP::h265_DST4x4Inv_16sT_px;
+        g_dispatcher. h265_DCT4x4Inv_16sT = &MFX_HEVC_PP::h265_DCT4x4Inv_16sT_px;
+        g_dispatcher. h265_DCT8x8Inv_16sT = &MFX_HEVC_PP::h265_DCT8x8Inv_16sT_px;
+        g_dispatcher. h265_DCT16x16Inv_16sT = &MFX_HEVC_PP::h265_DCT16x16Inv_16sT_px;
+        g_dispatcher. h265_DCT32x32Inv_16sT = &MFX_HEVC_PP::h265_DCT32x32Inv_16sT_px;
+
+        //[transform.fwd]==================================
+        g_dispatcher. h265_DST4x4Fwd_16s = &MFX_HEVC_PP::h265_DST4x4Fwd_16s_px;
+        g_dispatcher. h265_DCT4x4Fwd_16s = &MFX_HEVC_PP::h265_DCT4x4Fwd_16s_px;
+        g_dispatcher. h265_DCT8x8Fwd_16s = &MFX_HEVC_PP::h265_DCT8x8Fwd_16s_px;
+        g_dispatcher. h265_DCT16x16Fwd_16s = &MFX_HEVC_PP::h265_DCT16x16Fwd_16s_px;
+        g_dispatcher. h265_DCT32x32Fwd_16s = &MFX_HEVC_PP::h265_DCT32x32Fwd_16s_px;
+
+        //[deblocking]=====================================
+        g_dispatcher. h265_FilterEdgeLuma_8u_I = &MFX_HEVC_PP::h265_FilterEdgeLuma_8u_I_px;
+
+        //[SAO]============================================
+        g_dispatcher. h265_ProcessSaoCuOrg_Luma_8u = &MFX_HEVC_PP::h265_ProcessSaoCuOrg_Luma_8u_px;
+        g_dispatcher. h265_ProcessSaoCu_Luma_8u = &MFX_HEVC_PP::h265_ProcessSaoCu_Luma_8u_px;
+
+        //[Interpoaltion]==================================
+        // average
+        g_dispatcher.h265_AverageModeB = &MFX_HEVC_PP::h265_AverageModeB_px;
+        g_dispatcher.h265_AverageModeP = &MFX_HEVC_PP::h265_AverageModeP_px;
+        g_dispatcher.h265_AverageModeN = &MFX_HEVC_PP::h265_AverageModeN_px;
+        
+        // algo
+        g_dispatcher.h265_InterpLuma_s8_d16_H = &MFX_HEVC_PP::h265_InterpLuma_s8_d16_H_px;
+        g_dispatcher.h265_InterpChroma_s8_d16_H = &MFX_HEVC_PP::h265_InterpChroma_s8_d16_H_px;
+        g_dispatcher.h265_InterpLuma_s8_d16_V = &MFX_HEVC_PP::h265_InterpLuma_s8_d16_V_px;
+        g_dispatcher.h265_InterpChroma_s8_d16_V = &MFX_HEVC_PP::h265_InterpChroma_s8_d16_V_px;
+        g_dispatcher.h265_InterpLuma_s16_d16_V = &MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_px;
+        g_dispatcher.h265_InterpChroma_s16_d16_V = &MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_px;
+
+        // [INTRA prediction]
+        g_dispatcher.h265_PredictIntra_Ang_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_8u_px;
 
     } // void SetTargetPX(void)
 
@@ -412,7 +517,7 @@ using namespace MFX_HEVC_PP;
     } // IppStatus InitDispatcher( void )
 #endif
     // COMMON CASE
-    enum EnumPlane
+    static enum EnumPlane
     {
         TEXT_LUMA = 0,
         TEXT_CHROMA,
