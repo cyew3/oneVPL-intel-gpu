@@ -1196,6 +1196,13 @@ mfxStatus MfxHwH264Encode::CorrectCropping(MfxVideoParam& par)
     return sts;
 }
 
+bool MfxHwH264Encode::IsRunTimeOnlyExtBuffer(mfxU32 id)
+{
+    return
+        id == MFX_EXTBUFF_AVC_REFLIST_CTRL   ||
+        id == MFX_EXTBUFF_ENCODED_FRAME_INFO;
+}
+
 bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(mfxU32 id)
 {
     return

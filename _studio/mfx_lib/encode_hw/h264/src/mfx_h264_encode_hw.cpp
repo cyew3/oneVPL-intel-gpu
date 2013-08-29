@@ -391,7 +391,7 @@ mfxStatus ImplementationAvc::Query(
             {
                 if (in->ExtParam[i])
                 {
-                    if (IsRunTimeExtBufferIdSupported(in->ExtParam[i]->BufferId))
+                    if (IsRunTimeOnlyExtBuffer(in->ExtParam[i]->BufferId))
                         continue; // it's runtime only ext buffer. Nothing to check or correct, just move on.
 
                     if (in->ExtParam[i]->BufferId == MFX_EXTBUFF_ENCODER_WIDI_USAGE)

@@ -612,6 +612,9 @@ namespace MfxHwH264Encode
     mfxStatus CorrectCropping(
         MfxVideoParam & par);
 
+    bool IsRunTimeOnlyExtBuffer(
+        mfxU32 id);
+
     bool IsRunTimeExtBufferIdSupported(
         mfxU32 id);
 
