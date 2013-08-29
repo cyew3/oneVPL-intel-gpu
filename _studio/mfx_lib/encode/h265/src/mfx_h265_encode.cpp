@@ -165,8 +165,7 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
     H265ENC_UNREFERENCED_PARAMETER(pInternalParams);
     MFX_CHECK(bs->MaxLength > (bs->DataOffset + bs->DataLength),MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    Ipp32u minBufferSize = m_mfxVideoParam.mfx.FrameInfo.Width * m_mfxVideoParam.mfx.FrameInfo.Height * 3 / 2;
-    if( bs->MaxLength - bs->DataOffset - bs->DataLength < minBufferSize)
+    if( bs->MaxLength - bs->DataOffset - bs->DataLength < m_mfxVideoParam.mfx.BufferSizeInKB)
         return MFX_ERR_NOT_ENOUGH_BUFFER;
 
     if (surface)
@@ -472,7 +471,10 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     if (!m_mfxVideoParam.mfx.BufferSizeInKB)
-        m_mfxVideoParam.mfx.BufferSizeInKB = par->mfx.FrameInfo.Width * par->mfx.FrameInfo.Height * 3 / 2000 + 1; //temp
+        if (m_mfxVideoParam.mfx.TargetKbps)
+            m_mfxVideoParam.mfx.BufferSizeInKB = m_mfxVideoParam.mfx.TargetKbps * 2 / 8; // 2 seconds, like in AVC
+        else
+            m_mfxVideoParam.mfx.BufferSizeInKB = par->mfx.FrameInfo.Width * par->mfx.FrameInfo.Height * 3 / 2000 + 1; // uncompressed
 
     if (!m_mfxVideoParam.mfx.NumSlice) m_mfxVideoParam.mfx.NumSlice = 1;
     if (!m_mfxVideoParam.mfx.NumRefFrame) m_mfxVideoParam.mfx.NumRefFrame = 1; // for now
