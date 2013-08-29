@@ -27,5 +27,8 @@
     <ClCompile Include="h265\src\mfx_h265_transform_px.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_interpolation_px.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

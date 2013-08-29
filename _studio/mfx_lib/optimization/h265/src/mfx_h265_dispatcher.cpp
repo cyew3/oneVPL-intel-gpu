@@ -281,7 +281,18 @@ using namespace MFX_HEVC_PP;
         g_dispatcher. h265_ProcessSaoCu_Luma_8u = &MFX_HEVC_PP::h265_ProcessSaoCu_Luma_8u_sse;
 
         //[Interpoaltion]==================================
-        // NIY
+        // average
+        g_dispatcher.h265_AverageModeB = &MFX_HEVC_PP::h265_AverageModeB_sse;
+        g_dispatcher.h265_AverageModeP = &MFX_HEVC_PP::h265_AverageModeP_sse;
+        g_dispatcher.h265_AverageModeN = &MFX_HEVC_PP::h265_AverageModeN_sse;        
+        
+        // algo
+        g_dispatcher.h265_InterpLuma_s8_d16_H = &MFX_HEVC_PP::h265_InterpLuma_s8_d16_H_sse;
+        g_dispatcher.h265_InterpChroma_s8_d16_H = &MFX_HEVC_PP::h265_InterpChroma_s8_d16_H_sse;
+        g_dispatcher.h265_InterpLuma_s8_d16_V = &MFX_HEVC_PP::h265_InterpLuma_s8_d16_V_sse;
+        g_dispatcher.h265_InterpChroma_s8_d16_V = &MFX_HEVC_PP::h265_InterpChroma_s8_d16_V_sse;
+        g_dispatcher.h265_InterpLuma_s16_d16_V = &MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_sse;
+        g_dispatcher.h265_InterpChroma_s16_d16_V = &MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_sse;
 
         // [INTRA prediction]
         g_dispatcher.h265_PredictIntra_Ang_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_8u_sse;
@@ -391,7 +402,7 @@ using namespace MFX_HEVC_PP;
 
     } // void SetTargetPX(void)
 
-#else
+#else // PREDEFINED_TARGET_OPTIMIZATION (PX/SSE4/AVX2)
     IppStatus MFX_HEVC_PP::InitDispatcher( void )
     {
         // Nothing 
@@ -400,6 +411,159 @@ using namespace MFX_HEVC_PP;
 
     } // IppStatus InitDispatcher( void )
 #endif
+    // COMMON CASE
+    static enum EnumPlane
+    {
+        TEXT_LUMA = 0,
+        TEXT_CHROMA,
+        TEXT_CHROMA_U,
+        TEXT_CHROMA_V,
+    };
+
+    /* ******************************************************** */
+    /*       Interfaces for Interpoaltion primitives            */
+    /* ******************************************************** */
+
+    /* this is the most heavily used path (~50% of total pixels) and most highly optimized 
+    * read in 8-bit pixels and apply H or V filter, save output to 16-bit buffer (for second filtering pass or for averaging with reference)
+    */
+    void MFX_HEVC_PP::Interp_S8_NoAvg(
+        const unsigned char* pSrc, 
+        unsigned int srcPitch, 
+        short *pDst, 
+        unsigned int dstPitch, 
+        int tab_index, 
+        int width, 
+        int height, 
+        int shift, 
+        short offset, 
+        int dir, 
+        int plane)
+    {
+        VM_ASSERT( ( (plane == TEXT_LUMA) && ((width & 0x3) == 0) ) || ( (plane != TEXT_LUMA) && ((width & 0x1) == 0) ) );
+
+        if (plane == TEXT_LUMA) {
+            if (dir == INTERP_HOR)
+                NAME(h265_InterpLuma_s8_d16_H)(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset);
+            else
+                NAME(h265_InterpLuma_s8_d16_V)(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset);
+        } else {
+            if (dir == INTERP_HOR)
+                NAME(h265_InterpChroma_s8_d16_H)(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset, plane);
+            else
+                NAME(h265_InterpChroma_s8_d16_V)(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset);
+        }
+    }
+
+    /* typically used for ~15% of total pixels, does vertical filter pass only */
+    void MFX_HEVC_PP::Interp_S16_NoAvg(
+        const short* pSrc, 
+        unsigned int srcPitch, 
+        short *pDst, 
+        unsigned int dstPitch, 
+        int tab_index, 
+        int width, 
+        int height, 
+        int shift, 
+        short offset, 
+        int dir, 
+        int plane)
+    {
+        VM_ASSERT( ( (plane == TEXT_LUMA) && ((width & 0x3) == 0) ) || ( (plane != TEXT_LUMA) && ((width & 0x1) == 0) ) );
+
+        /* only V is supported/needed */
+        if (dir != INTERP_VER)
+            return;
+
+        if (plane == TEXT_LUMA)
+            NAME(h265_InterpLuma_s16_d16_V)(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset);
+        else
+            NAME(h265_InterpChroma_s16_d16_V)(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset);
+    }
+
+    /* NOTE: average functions assume maximum block size of 64x64, including 7 extra output rows for H pass */
+
+    /* typically used for ~15% of total pixels, does first-pass horizontal or vertical filter, optionally with average against reference */
+    void MFX_HEVC_PP::Interp_S8_WithAvg(
+        const unsigned char* pSrc, 
+        unsigned int srcPitch, 
+        unsigned char *pDst, 
+        unsigned int dstPitch, 
+        void *pvAvg, 
+        unsigned int avgPitch, 
+        int avgMode, 
+        int tab_index, 
+        int width, 
+        int height, 
+        int shift, 
+        short offset, 
+        int dir, 
+        int plane)
+    {
+        /* pretty big stack buffer, probably want to pass this in (allocate on heap) */
+        ALIGN_DECL(16) short tmpBuf[(64+8)*(64)];
+
+        VM_ASSERT( ( (plane == TEXT_LUMA) && ((width & 0x3) == 0) ) || ( (plane != TEXT_LUMA) && ((width & 0x1) == 0) ) );
+
+        if (plane == TEXT_LUMA) {
+            if (dir == INTERP_HOR)
+                NAME(h265_InterpLuma_s8_d16_H)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+            else
+                NAME(h265_InterpLuma_s8_d16_V)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+        } else {
+            if (dir == INTERP_HOR)
+                NAME(h265_InterpChroma_s8_d16_H)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset, plane);
+            else
+                NAME(h265_InterpChroma_s8_d16_V)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+        }
+
+        if (avgMode == AVERAGE_NO)
+            NAME(h265_AverageModeN)(tmpBuf, 64, pDst, dstPitch, width, height);
+        else if (avgMode == AVERAGE_FROM_PIC)
+            NAME(h265_AverageModeP)(tmpBuf, 64, (unsigned char *)pvAvg, avgPitch, pDst, dstPitch, width, height);
+        else if (avgMode == AVERAGE_FROM_BUF)
+            NAME(h265_AverageModeB)(tmpBuf, 64, (short *)pvAvg, avgPitch, pDst, dstPitch, width, height);
+    }
+
+
+    /* typically used for ~20% of total pixels, does second-pass vertical filter only, optionally with average against reference */
+    void MFX_HEVC_PP::Interp_S16_WithAvg(
+        const short* pSrc, 
+        unsigned int srcPitch, 
+        unsigned char *pDst, 
+        unsigned int dstPitch, 
+        void *pvAvg, 
+        unsigned int avgPitch, 
+        int avgMode, 
+        int tab_index, 
+        int width, 
+        int height, 
+        int shift, 
+        short offset, 
+        int dir, 
+        int plane)
+    {
+        /* pretty big stack buffer, probably want to pass this in (allocate on heap) */
+        ALIGN_DECL(16) short tmpBuf[(64+8)*(64)];
+
+        /* only V is supported/needed */
+        if (dir != INTERP_VER)
+            return;
+
+        VM_ASSERT( ( (plane == TEXT_LUMA) && ((width & 0x3) == 0) ) || ( (plane != TEXT_LUMA) && ((width & 0x1) == 0) ) );
+
+        if (plane == TEXT_LUMA)
+            NAME(h265_InterpLuma_s16_d16_V)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+        else
+            NAME(h265_InterpChroma_s16_d16_V)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+
+        if (avgMode == AVERAGE_NO)
+            NAME(h265_AverageModeN)(tmpBuf, 64, pDst, dstPitch, width, height);
+        else if (avgMode == AVERAGE_FROM_PIC)
+            NAME(h265_AverageModeP)(tmpBuf, 64, (unsigned char *)pvAvg, avgPitch, pDst, dstPitch, width, height);
+        else if (avgMode == AVERAGE_FROM_BUF)
+            NAME(h265_AverageModeB)(tmpBuf, 64, (short *)pvAvg, avgPitch, pDst, dstPitch, width, height);
+    }
 
 //} // namespace MFX_HEVC_PP
 

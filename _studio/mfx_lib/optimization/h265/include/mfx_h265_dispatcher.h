@@ -265,72 +265,13 @@ namespace MFX_HEVC_PP
     Ipp32s h265_FilterEdgeLuma_8u_I_sse(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir);
 
     // [SAO]
-    void h265_ProcessSaoCuOrg_Luma_8u_px(
-        Ipp8u* pRec,
-        Ipp32s stride,
-        Ipp32s saoType, 
-        Ipp8u* tmpL,
-        Ipp8u* tmpU,
-        Ipp32u maxCUWidth,
-        Ipp32u maxCUHeight,
-        Ipp32s picWidth,
-        Ipp32s picHeight,
-        Ipp32s* pOffsetEo,
-        Ipp8u* pOffsetBo,
-        Ipp8u* pClipTable,
-        Ipp32u CUPelX,
-        Ipp32u CUPelY);
+    void h265_ProcessSaoCuOrg_Luma_8u_px( SAOCU_ORG_PARAMETERS_LIST );
+    void h265_ProcessSaoCuOrg_Luma_8u_sse( SAOCU_ORG_PARAMETERS_LIST );
 
-    void h265_ProcessSaoCuOrg_Luma_8u_sse(
-        Ipp8u* pRec,
-        Ipp32s stride,
-        Ipp32s saoType, 
-        Ipp8u* tmpL,
-        Ipp8u* tmpU,
-        Ipp32u maxCUWidth,
-        Ipp32u maxCUHeight,
-        Ipp32s picWidth,
-        Ipp32s picHeight,
-        Ipp32s* pOffsetEo,
-        Ipp8u* pOffsetBo,
-        Ipp8u* pClipTable,
-        Ipp32u CUPelX,
-        Ipp32u CUPelY);
+    void h265_ProcessSaoCu_Luma_8u_px(SAOCU_PARAMETERS_LIST);
+    void h265_ProcessSaoCu_Luma_8u_sse(SAOCU_PARAMETERS_LIST);
 
-    void h265_ProcessSaoCu_Luma_8u_px(
-        Ipp8u* pRec,
-        Ipp32s stride,
-        Ipp32s saoType, 
-        Ipp8u* tmpL,
-        Ipp8u* tmpU,
-        Ipp32u maxCUWidth,
-        Ipp32u maxCUHeight,
-        Ipp32s picWidth,
-        Ipp32s picHeight,
-        Ipp32s* pOffsetEo,
-        Ipp8u* pOffsetBo,
-        Ipp8u* pClipTable,
-        Ipp32u CUPelX,
-        Ipp32u CUPelY,
-        bool* pbBorderAvail);
-
-    void h265_ProcessSaoCu_Luma_8u_sse(
-        Ipp8u* pRec,
-        Ipp32s stride,
-        Ipp32s saoType, 
-        Ipp8u* tmpL,
-        Ipp8u* tmpU,
-        Ipp32u maxCUWidth,
-        Ipp32u maxCUHeight,
-        Ipp32s picWidth,
-        Ipp32s picHeight,
-        Ipp32s* pOffsetEo,
-        Ipp8u* pOffsetBo,
-        Ipp8u* pClipTable,
-        Ipp32u CUPelX,
-        Ipp32u CUPelY,
-        bool* pbBorderAvail);
-
+    // [INTRA predict]
     void h265_PredictIntra_Ang_8u_px(
         Ipp32s mode,
         Ipp8u* PredPel,
@@ -344,6 +285,35 @@ namespace MFX_HEVC_PP
         Ipp8u* pels,
         Ipp32s pitch,
         Ipp32s width);
+
+    // Interpolation
+    void h265_InterpLuma_s8_d16_H_px(INTERP_S8_D16_PARAMETERS_LIST);
+    void h265_InterpLuma_s8_d16_H_sse(INTERP_S8_D16_PARAMETERS_LIST);
+
+    void h265_InterpChroma_s8_d16_H_px(INTERP_S8_D16_PARAMETERS_LIST, int plane);
+    void h265_InterpChroma_s8_d16_H_sse(INTERP_S8_D16_PARAMETERS_LIST, int plane);
+
+    void h265_InterpLuma_s8_d16_V_px(INTERP_S8_D16_PARAMETERS_LIST);
+    void h265_InterpLuma_s8_d16_V_sse(INTERP_S8_D16_PARAMETERS_LIST);
+
+    void h265_InterpChroma_s8_d16_V_px(INTERP_S8_D16_PARAMETERS_LIST);
+    void h265_InterpChroma_s8_d16_V_sse(INTERP_S8_D16_PARAMETERS_LIST);
+
+    void h265_InterpLuma_s16_d16_V_px(INTERP_S16_D16_PARAMETERS_LIST);
+    void h265_InterpLuma_s16_d16_V_sse(INTERP_S16_D16_PARAMETERS_LIST);
+
+    void h265_InterpChroma_s16_d16_V_px(INTERP_S16_D16_PARAMETERS_LIST);
+    void h265_InterpChroma_s16_d16_V_sse(INTERP_S16_D16_PARAMETERS_LIST);
+
+    // average
+    void h265_AverageModeN_px(INTERP_AVG_NONE_PARAMETERS_LIST);
+    void h265_AverageModeN_sse(INTERP_AVG_NONE_PARAMETERS_LIST);
+
+    void h265_AverageModeP_px(INTERP_AVG_PIC_PARAMETERS_LIST);
+    void h265_AverageModeP_sse(INTERP_AVG_PIC_PARAMETERS_LIST);
+
+    void h265_AverageModeB_px(INTERP_AVG_BUF_PARAMETERS_LIST);
+    void h265_AverageModeB_sse(INTERP_AVG_BUF_PARAMETERS_LIST);
 
 }; // namespace MFX_HEVC_PP
 
