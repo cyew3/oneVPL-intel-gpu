@@ -833,9 +833,9 @@ Status MJPEGVideoEncoder::PostProcessing(MediaData* out)
                 size_t offset = m_frame.get()->m_pics[i]->m_scans[j]->m_pieceOffset[k];
                 size_t size = m_frame.get()->m_pics[i]->m_scans[j]->m_pieceSize[k];
 
-                memcpy((Ipp8u *)out->GetBufferPointer() + out->GetDataSize(),
-                       (Ipp8u *)m_pBitstreamBuffer[location]->GetBufferPointer() + offset,
-                       size);
+                ippsCopy_8u((Ipp8u *)m_pBitstreamBuffer[location]->GetBufferPointer() + offset,
+                            (Ipp8u *)out->GetBufferPointer() + out->GetDataSize(),
+                            (Ipp32u)size);
 
                 if(k != m_frame.get()->m_pics[i]->m_scans[j]->GetNumPieces() - 1)
                 {

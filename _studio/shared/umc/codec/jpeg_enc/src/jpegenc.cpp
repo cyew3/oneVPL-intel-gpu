@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//    Copyright (c) 2001-2012 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2001-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -870,8 +870,8 @@ JERRCODE CJPEGEncoder::FillACTable(int numTable, Ipp8u* pBits, Ipp8u* pValues)
     const Ipp8u* bits = m_actbl[numTable].m_bits;
     const Ipp8u* values = m_actbl[numTable].m_vals;
 
-    memcpy(pBits, bits, 16);
-    memcpy(pValues, values, 162);
+    ippsCopy_8u(bits, pBits, 16);
+    ippsCopy_8u(values, pValues, 162);
 
     return JPEG_OK;
 } // CJPEGEncoder::FillACTable(int numTable, Ipp8u* pBits, Ipp8u* pValues)
@@ -894,8 +894,8 @@ JERRCODE CJPEGEncoder::FillDCTable(int numTable, Ipp8u* pBits, Ipp8u* pValues)
     const Ipp8u* bits = m_dctbl[numTable].m_bits;
     const Ipp8u* values = m_dctbl[numTable].m_vals;
 
-    memcpy(pBits, bits, 16);
-    memcpy(pValues, values, 12);
+    ippsCopy_8u(bits, pBits, 16);
+    ippsCopy_8u(values, pValues, 12);
 
     return JPEG_OK;
 } // CJPEGEncoder::FillDCTable(int numTable, Ipp8u* pBits, Ipp8u* pValues)

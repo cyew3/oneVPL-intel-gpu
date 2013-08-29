@@ -12,6 +12,7 @@ Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 
 #if defined (MFX_ENABLE_VPP)
 #if defined (MFX_VA)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE)
 
 #ifndef __MFX_VPP_JPEG_D3D9_H
 #define __MFX_VPP_JPEG_D3D9_H
@@ -59,5 +60,7 @@ protected:
 
 
 #endif // __MFX_VPP_JPEG_D3D9_H
+
+#endif // MFX_ENABLE_MJPEG_VIDEO_DECODE
 #endif // MFX_VA
 #endif // MFX_ENABLE_VPP

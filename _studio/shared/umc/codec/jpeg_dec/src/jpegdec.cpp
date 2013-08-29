@@ -6650,8 +6650,8 @@ JERRCODE CJPEGDecoder::FillACTable(int numTable, Ipp8u* pBits, Ipp8u* pValues)
     const Ipp8u* bits = m_actbl[numTable].GetBits();
     const Ipp8u* values = m_actbl[numTable].GetValues();
 
-    memcpy(pBits, bits, 16);
-    memcpy(pValues, values, 162);
+    ippsCopy_8u(bits, pBits, 16);
+    ippsCopy_8u(values, pValues, 162);
 
     return JPEG_OK;
 }
@@ -6672,8 +6672,8 @@ JERRCODE CJPEGDecoder::FillDCTable(int numTable, Ipp8u* pBits, Ipp8u* pValues)
     const Ipp8u* bits = m_dctbl[numTable].GetBits();
     const Ipp8u* values = m_dctbl[numTable].GetValues();
 
-    memcpy(pBits, bits, 16);
-    memcpy(pValues, values, 12);
+    ippsCopy_8u(bits, pBits, 16);
+    ippsCopy_8u(values, pValues, 12);
 
     return JPEG_OK;
 }

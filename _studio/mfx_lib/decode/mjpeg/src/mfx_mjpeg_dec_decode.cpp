@@ -558,7 +558,7 @@ mfxStatus VideoDECODEMJPEG::GetVideoParam(mfxVideoParam *par)
     mfxExtJPEGQuantTables* jpegQT = (mfxExtJPEGQuantTables*) GetExtBuffer( par->ExtParam, par->NumExtParam, MFX_EXTBUFF_JPEG_QT );
     mfxExtJPEGHuffmanTables*  jpegHT = (mfxExtJPEGHuffmanTables*) GetExtBuffer( par->ExtParam, par->NumExtParam, MFX_EXTBUFF_JPEG_HUFFMAN );
 
-    memcpy(&par->mfx, &m_vPar.mfx, sizeof(mfxInfoMFX));
+    memcpy_s(&par->mfx, sizeof(mfxInfoMFX), &m_vPar.mfx, sizeof(mfxInfoMFX));
 
     par->Protected = m_vPar.Protected;
     par->IOPattern = m_vPar.IOPattern;
@@ -688,7 +688,7 @@ mfxStatus VideoDECODEMJPEG::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxV
     decoder.Close();
     tempAllocator.Close();
 
-    memcpy(&(par->mfx.FrameInfo), &temp.mfx.FrameInfo, sizeof(temp.mfx.FrameInfo));
+    memcpy_s(&(par->mfx.FrameInfo), sizeof(mfxFrameInfo), &temp.mfx.FrameInfo, sizeof(mfxFrameInfo));
 
     par->mfx.JPEGChromaFormat = temp.mfx.JPEGChromaFormat;
     par->mfx.JPEGColorFormat = temp.mfx.JPEGColorFormat;
@@ -718,7 +718,7 @@ mfxStatus VideoDECODEMJPEG::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfx
     }
 
     mfxVideoParam params;
-    memcpy(&params, par, sizeof(mfxVideoParam));
+    memcpy_s(&params, sizeof(mfxVideoParam), par, sizeof(mfxVideoParam));
     bool isNeedChangeVideoParamWarning = IsNeedChangeVideoParam(&params);
 
     if (!(par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && !(par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) && !(par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
@@ -788,7 +788,7 @@ mfxStatus VideoDECODEMJPEG::QueryIOSurfInternal(VideoCORE *core, mfxVideoParam *
 {
     eMFXPlatform platform = MFX_JPEG_Utility::GetPlatform(core, par);
 
-    memcpy(&request->Info, &par->mfx.FrameInfo, sizeof(mfxFrameInfo));
+    memcpy_s(&request->Info, sizeof(mfxFrameInfo), &par->mfx.FrameInfo, sizeof(mfxFrameInfo));
 
     mfxU32 asyncDepth = (par->AsyncDepth ? par->AsyncDepth : core->GetAutoAsyncDepth());
 
@@ -856,7 +856,7 @@ mfxStatus VideoDECODEMJPEG::GetDecodeStat(mfxDecodeStat *stat)
     m_stat.NumCachedFrame = 0;
     m_stat.NumError = 0;
 
-    memcpy(stat, &m_stat, sizeof(m_stat));
+    memcpy_s(stat, sizeof(mfxDecodeStat), &m_stat, sizeof(mfxDecodeStat));
     return MFX_ERR_NONE;
 }
 
@@ -1743,7 +1743,7 @@ eMFXPlatform MFX_JPEG_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par
 
         mfxFrameAllocRequest request;
         memset(&request, 0, sizeof(request));
-        memcpy(&request.Info, &par->mfx.FrameInfo, sizeof(mfxFrameInfo));
+        memcpy_s(&request.Info, sizeof(mfxFrameInfo), &par->mfx.FrameInfo, sizeof(mfxFrameInfo));
 
         MFX_JPEG_Utility::AdjustFourCC(&request.Info, &par->mfx, core->GetHWType(), core->GetVAType(), &needVpp);
 
@@ -2218,7 +2218,7 @@ mfxStatus MFX_JPEG_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
     if (in == out)
     {
         mfxVideoParam in1;
-        memcpy(&in1, in, sizeof(mfxVideoParam));
+        memcpy_s(&in1, sizeof(mfxVideoParam), in, sizeof(mfxVideoParam));
         return Query(core, &in1, out, type);
     }
 
@@ -2385,27 +2385,6 @@ mfxStatus MFX_JPEG_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
         if (in->Protected)
         {
             sts = MFX_ERR_UNSUPPORTED;
-        }
-
-        mfxExtOpaqueSurfaceAlloc * opaqueIn = (mfxExtOpaqueSurfaceAlloc *)GetExtBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-        mfxExtOpaqueSurfaceAlloc * opaqueOut = (mfxExtOpaqueSurfaceAlloc *)GetExtBuffer(out->ExtParam, out->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-
-        if (opaqueIn && opaqueOut)
-        {
-            opaqueOut->In.Type = opaqueIn->In.Type;
-            opaqueOut->In.NumSurface = opaqueIn->In.NumSurface;
-            memcpy(opaqueOut->In.Surfaces, opaqueIn->In.Surfaces, opaqueIn->In.NumSurface);
-
-            opaqueOut->Out.Type = opaqueIn->Out.Type;
-            opaqueOut->Out.NumSurface = opaqueIn->Out.NumSurface;
-            memcpy(opaqueOut->Out.Surfaces, opaqueIn->Out.Surfaces, opaqueIn->Out.NumSurface);
-        }
-        else
-        {
-            if (opaqueOut || opaqueIn)
-            {
-                sts = MFX_ERR_UNDEFINED_BEHAVIOR;
-            }
         }
 
         if (GetPlatform(core, out) != core->GetPlatformType() && sts == MFX_ERR_NONE)
