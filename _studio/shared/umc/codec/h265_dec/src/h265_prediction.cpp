@@ -801,9 +801,9 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
     IppVCInterpolateBlock_8u interpolateSrc;
     PrepareInterpSrc< c_plane_type >( pCU, PUi, RefPicList, interpolateSrc, m_temp_interpolarion_buffer );
     const H265PlaneYCommon * in_pSrc = interpolateSrc.pSrc[0];
-    Ipp32s in_SrcPitch = interpolateSrc.srcStep, in_SrcPic2Pitch;
+    Ipp32s in_SrcPitch = interpolateSrc.srcStep, in_SrcPic2Pitch = 0;
 
-    const H265PlaneYCommon * in_pSrcPic2;
+    const H265PlaneYCommon *in_pSrcPic2 = NULL;
     if ( eAddAverage == MFX_HEVC_PP::AVERAGE_FROM_PIC )
     {
         PrepareInterpSrc< c_plane_type >( pCU, PUi, (EnumRefPicList)(RefPicList ^ 1), interpolateSrc, m_temp_interpolarion_buffer + (128*128) );

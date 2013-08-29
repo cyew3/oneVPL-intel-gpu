@@ -69,9 +69,9 @@ public:
     Ipp32u m_MinCUWidth;
 
     Ipp8u m_MaxCUDepth;                        // max. depth
-    Ipp32u m_NumPartitions;
-    Ipp32u m_NumPartInWidth;
-    Ipp32u m_NumCUsInFrame;
+    Ipp32s m_NumPartitions;
+    Ipp32s m_NumPartInWidth;
+    Ipp32s m_NumCUsInFrame;
 
     H265CodingUnit **m_CUData;                // array of CU data
 
@@ -147,12 +147,12 @@ public:
         return m_NumPartitions;
     }
 
-    Ipp32s getCUOrderMap(Ipp32u encCUOrder)
+    Ipp32s getCUOrderMap(Ipp32s encCUOrder)
     {
         return *(m_CUOrderMap + (encCUOrder >= m_NumCUsInFrame ? m_NumCUsInFrame : encCUOrder));
     }
     Ipp32u getTileIdxMap(Ipp32s i)                              { return *(m_TileIdxMap + i); }
-    Ipp32s GetInverseCUOrderMap(Ipp32u cuAddr)                  {return *(m_InverseCUOrderMap + (cuAddr >= m_NumCUsInFrame ? m_NumCUsInFrame : cuAddr));}
+    Ipp32s GetInverseCUOrderMap(Ipp32s cuAddr)                  {return *(m_InverseCUOrderMap + (cuAddr >= m_NumCUsInFrame ? m_NumCUsInFrame : cuAddr));}
 };
 
 } // end namespace UMC_HEVC_DECODER

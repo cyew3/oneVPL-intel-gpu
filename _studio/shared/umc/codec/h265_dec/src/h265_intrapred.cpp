@@ -50,7 +50,7 @@ void H265SegmentDecoder::FillReferenceSamplesChroma(Ipp32s bitDepth,
                                                     H265PlanePtrUVCommon pAdiTemp,
                                                     bool* NeighborFlags,
                                                     Ipp32s NumIntraNeighbor,
-                                                    Ipp32u UnitSize,
+                                                    Ipp32s UnitSize,
                                                     Ipp32s NumUnitsInCU,
                                                     Ipp32s TotalUnits,
                                                     Ipp32u CUSize,
@@ -58,8 +58,8 @@ void H265SegmentDecoder::FillReferenceSamplesChroma(Ipp32s bitDepth,
                                                     Ipp32s PicStride)
 {
     H265PlanePtrUVCommon pRoiTemp;
-    Ipp32u i, j;
-    Ipp32s DCValue = 1 << (bitDepth - 1);
+    Ipp32s i, j;
+    H265PlaneUVCommon DCValue = 1 << (bitDepth - 1);
     Ipp32s Width = Size << 1;
     Ipp32s Height = Size;
     Ipp32s CUWidth = CUSize << 1;
@@ -119,8 +119,8 @@ void H265SegmentDecoder::FillReferenceSamplesChroma(Ipp32s bitDepth,
     }
     else // reference samples are partially available
     {
-        Ipp32u NumUnits2 = NumUnitsInCU << 1;
-        Ipp32u TotalSamples = TotalUnits * UnitSize;
+        Ipp32s NumUnits2 = NumUnitsInCU << 1;
+        Ipp32s TotalSamples = TotalUnits * UnitSize;
         H265PlaneUVCommon pAdiLine[5 * MAX_CU_SIZE];
         H265PlanePtrUVCommon pAdiLineTemp;
         bool *pNeighborFlags;

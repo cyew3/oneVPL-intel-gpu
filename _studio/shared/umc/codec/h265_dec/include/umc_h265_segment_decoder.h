@@ -99,7 +99,6 @@ protected:
 class H265SegmentDecoder : public Context
 {
 public:
-    //h265 functions
     //create internal buffers
     void create(H265SeqParamSet* pSPS);
     //destroy internal buffers
@@ -130,7 +129,7 @@ public:
 
     bool DecodeSkipFlagCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     bool DecodeCUTransquantBypassFlag(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
-    void DecodeMVPIdxPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartAddr, Ipp32u Depth, Ipp32u PartIdx, EnumRefPicList RefList, H265MVInfo &MVi, Ipp8u InterDir);
+    void DecodeMVPIdxPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartAddr, Ipp32u PartIdx, EnumRefPicList RefList, H265MVInfo &MVi, Ipp8u InterDir);
     Ipp32s DecodePredModeCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void DecodePartSizeCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void DecodeIPCMInfoCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
@@ -140,7 +139,7 @@ public:
     bool DecodePUWiseCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     bool DecodeMergeFlagCABAC(void);
     Ipp8u DecodeInterDirPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx);
-    RefIndexType DecodeRefFrmIdxPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u PartIdx, EnumRefPicList RefList, Ipp8u InterDir);
+    RefIndexType DecodeRefFrmIdxPUCABAC(EnumRefPicList RefList, Ipp8u InterDir);
     void DecodeMVdPUCABAC(EnumRefPicList RefList, H265MotionVector &MVd, Ipp8u InterDir);
     void ParseTransformSubdivFlagCABAC(Ipp32u& SubdivFlag, Ipp32u Log2TransformBlockSize);
     void ReadEpExGolombCABAC(Ipp32u& Value, Ipp32u Count);
@@ -160,7 +159,7 @@ public:
 
     Ipp32u ParseLastSignificantXYCABAC(Ipp32u &PosLastX, Ipp32u &PosLastY, Ipp32u L2Width, bool IsLuma, Ipp32u ScanIdx);
 
-    void ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCommon pCoef, Ipp32u AbsPartIdx, Ipp32u Width, Ipp32u Height, Ipp32u Depth, EnumTextType Type);
+    void ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCommon pCoef, Ipp32u AbsPartIdx, Ipp32u Size, Ipp32u Depth, EnumTextType Type);
 
     void ParseTransformSkipFlags(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, EnumTextType Type);
 
@@ -202,7 +201,7 @@ public:
         H265PlanePtrUVCommon pAdiTemp,
         bool* NeighborFlags,
         Ipp32s NumIntraNeighbor,
-        Ipp32u UnitSize,
+        Ipp32s UnitSize,
         Ipp32s NumUnitsInCU,
         Ipp32s TotalUnits,
         Ipp32u CUSize,
@@ -217,20 +216,12 @@ public:
     void DeblockOneCrossChroma(H265CodingUnit* curLCU, Ipp32s curPixelColumn, Ipp32s curPixelRow,
                                Ipp32s onlyOneUp, Ipp32s onlyOneLeft);
 
-    template< Ipp32s dir>
-    void GetEdgeStrength(H265CodingUnit* pcCUQ, H265EdgeData *edge, Ipp32s curColumn, Ipp32s curRow,
-                         Ipp32s crossSliceBoundaryFlag, Ipp32s crossTileBoundaryFlag, Ipp32s tcOffset,
-                         Ipp32s betaOffset);
-    void SetEdges(H265CodingUnit* curLCU, Ipp32s width, Ipp32s height, Ipp32s calculateCurLCU);
-
     void GetCTBEdgeStrengths(void);
     template<Ipp32s tusize> inline void GetCTBEdgeStrengths(void);
     template<Ipp32s tusize, Ipp32s dir> inline void GetEdgeStrength(Ipp32s tuQ, Ipp32s tuP, H265EdgeData *edge, Ipp32s xQ, Ipp32s yQ);
     template<Ipp32s dir> inline void GetEdgeStrengthDelayed(Ipp32s x, Ipp32s y, H265EdgeData *edge);
     template<Ipp32s tusize, Ipp32s dir> inline void GetEdgeStrengthDelayed(Ipp32s x, Ipp32s y, H265EdgeData *edge);
     inline void GetEdgeStrengthInter(H265MVInfo *mvinfoQ, H265MVInfo *mvinfoP, H265EdgeData *edge);
-
-    //h265 members
 
     H265CodingUnit* m_curCU;
     bool m_DecodeDQPFlag;
@@ -249,7 +240,7 @@ public:
 
     void UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u TrStart, bool isSkipped, bool isTranquantBypass, bool isIPCM, bool isTrCbfY);
     void UpdateNeighborDecodedQP(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
-    void UpdatePUInfo(H265CodingUnit *pCU, Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight, H265MVInfo &mvInfo);
+    void UpdatePUInfo(Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight, H265MVInfo &mvInfo);
 
     Ipp32s m_iNumber;                                           // (Ipp32s) ordinal number of decoder
     H265Slice *m_pSlice;                                        // (H265Slice *) current slice pointer

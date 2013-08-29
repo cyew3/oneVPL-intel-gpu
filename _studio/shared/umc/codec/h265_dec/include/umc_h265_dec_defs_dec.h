@@ -1205,8 +1205,8 @@ struct H265SliceHeader
     
     Ipp32s SliceQP;
 
-    Ipp32u SliceCurStartCUAddr;
-    Ipp32u SliceCurEndCUAddr;
+    Ipp32s SliceCurStartCUAddr;
+    Ipp32s SliceCurEndCUAddr;
     
     
     bool m_CheckLDC;

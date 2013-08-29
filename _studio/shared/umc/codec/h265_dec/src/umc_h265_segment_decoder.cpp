@@ -194,7 +194,7 @@ void H265SegmentDecoder::SaveCTBContext(H265CodingUnit* pCU)
     Ipp32s CUY = pCU->m_CUPelY >> m_pSeqParamSet->log2_min_transform_block_size;
     H265MVInfo *colInfo = m_pCurrentFrame->m_CodingData->m_colocatedInfo + CUY * m_pSeqParamSet->NumPartitionsInFrameWidth + CUX;
 
-    for (Ipp32s y = 0; y < m_pSeqParamSet->NumPartitionsInCUSize; y++)
+    for (Ipp32u y = 0; y < m_pSeqParamSet->NumPartitionsInCUSize; y++)
         memcpy(colInfo + y * m_pSeqParamSet->NumPartitionsInFrameWidth,
         m_context->m_CurrCTB + y * m_context->m_CurrCTBStride, sizeof(H265MVInfo) * m_pSeqParamSet->NumPartitionsInCUSize);
 }
@@ -765,7 +765,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
         Ipp32s PartY = TPelY >> m_pSeqParamSet->log2_min_transform_block_size;
         Size >>= m_pSeqParamSet->log2_min_transform_block_size;
 
-        UpdatePUInfo(pCU, PartX, PartY, Size, Size, MVi);
+        UpdatePUInfo(PartX, PartY, Size, Size, MVi);
 
         pCU->setCbfSubParts(0, 0, 0, AbsPartIdx, Depth);
         if (pCU->m_SliceHeader->m_PicParamSet->cu_qp_delta_enabled_flag)
@@ -1035,7 +1035,7 @@ Ipp32u H265SegmentDecoder::DecodeMergeIndexCABAC(void)
     return UnaryIdx;
 }
 
-void H265SegmentDecoder::DecodeMVPIdxPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartAddr, Ipp32u Depth, Ipp32u PartIdx, EnumRefPicList RefList, H265MVInfo &MVi, Ipp8u InterDir)
+void H265SegmentDecoder::DecodeMVPIdxPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartAddr, Ipp32u PartIdx, EnumRefPicList RefList, H265MVInfo &MVi, Ipp8u InterDir)
 {
     Ipp32u MVPIdx = 0;
     AMVPInfo AMVPInfo;
@@ -1411,9 +1411,9 @@ bool H265SegmentDecoder::DecodePUWiseCABAC(H265CodingUnit* pCU, Ipp32u AbsPartId
             {
                 if (pCU->m_SliceHeader->m_numRefIdx[RefListIdx] > 0)
                 {
-                    MVi.m_refIdx[RefListIdx] = DecodeRefFrmIdxPUCABAC(pCU, SubPartIdx, Depth, PartIdx, EnumRefPicList(RefListIdx), InterDir);
+                    MVi.m_refIdx[RefListIdx] = DecodeRefFrmIdxPUCABAC(EnumRefPicList(RefListIdx), InterDir);
                     DecodeMVdPUCABAC(EnumRefPicList(RefListIdx), MVi.m_mv[RefListIdx], InterDir);
-                    DecodeMVPIdxPUCABAC(pCU, SubPartIdx, Depth, PartIdx, EnumRefPicList(RefListIdx), MVi, InterDir);
+                    DecodeMVPIdxPUCABAC(pCU, SubPartIdx, PartIdx, EnumRefPicList(RefListIdx), MVi, InterDir);
                 }
             }
         }
@@ -1421,7 +1421,7 @@ bool H265SegmentDecoder::DecodePUWiseCABAC(H265CodingUnit* pCU, Ipp32u AbsPartId
         if ((InterDir == 3) && pCU->isBipredRestriction(AbsPartIdx, PartIdx))
             MVi.m_refIdx[REF_PIC_LIST_1] = -1;
 
-        UpdatePUInfo(pCU, PartX, PartY, PartWidth, PartHeight, MVi);
+        UpdatePUInfo(PartX, PartY, PartWidth, PartHeight, MVi);
     }
 
     return isFirstMerge;
@@ -1463,13 +1463,13 @@ Ipp8u H265SegmentDecoder::DecodeInterDirPUCABAC(H265CodingUnit* pCU, Ipp32u AbsP
         }
 
         uVal++;
-        InterDir = uVal;
+        InterDir = Ipp8u(uVal);
     }
 
     return InterDir;
 }
 
-RefIndexType H265SegmentDecoder::DecodeRefFrmIdxPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u PartIdx, EnumRefPicList RefList, Ipp8u InterDir)
+RefIndexType H265SegmentDecoder::DecodeRefFrmIdxPUCABAC(EnumRefPicList RefList, Ipp8u InterDir)
 {
     RefIndexType RefFrmIdx;
     Ipp32s ParseRefFrmIdx = InterDir & (1 << RefList);
@@ -1497,7 +1497,7 @@ RefIndexType H265SegmentDecoder::DecodeRefFrmIdxPUCABAC(H265CodingUnit* pCU, Ipp
             }
             uVal = i + 1;
         }
-        RefFrmIdx = uVal;
+        RefFrmIdx = RefIndexType(uVal);
     }
     else if (!ParseRefFrmIdx)
         RefFrmIdx = NOT_VALID;
@@ -1766,26 +1766,24 @@ void H265SegmentDecoder::DecodeTransform(H265CodingUnit* pCU, Ipp32u offsetLuma,
             }
         }
 
-        UpdateNeighborBuffers(pCU, AbsPartIdx, Depth, AbsPartIdx, false, pCU->m_CUTransquantBypass[AbsPartIdx], false, cbfY);
+        UpdateNeighborBuffers(pCU, AbsPartIdx, Depth, AbsPartIdx, false, pCU->m_CUTransquantBypass[AbsPartIdx], false, cbfY != 0);
 
         if (cbfY)
         {
             Ipp32s trWidth = width;
-            Ipp32s trHeight = height;
-            ParseCoeffNxNCABAC(pCU, (pCU->m_TrCoeffY + offsetLuma), AbsPartIdx, trWidth, trHeight, Depth, TEXT_LUMA);
+            ParseCoeffNxNCABAC(pCU, (pCU->m_TrCoeffY + offsetLuma), AbsPartIdx, trWidth, Depth, TEXT_LUMA);
         }
         if (Log2TrafoSize > 2)
         {
             Ipp32s trWidth = width >> 1;
-            Ipp32s trHeight = height >> 1;
 
             if (cbfU)
             {
-                ParseCoeffNxNCABAC(pCU, (pCU->m_TrCoeffCb + offsetChroma), AbsPartIdx, trWidth, trHeight, Depth, TEXT_CHROMA_U);
+                ParseCoeffNxNCABAC(pCU, (pCU->m_TrCoeffCb + offsetChroma), AbsPartIdx, trWidth, Depth, TEXT_CHROMA_U);
             }
             if (cbfV)
             {
-                ParseCoeffNxNCABAC(pCU, (pCU->m_TrCoeffCr + offsetChroma), AbsPartIdx, trWidth, trHeight, Depth, TEXT_CHROMA_V);
+                ParseCoeffNxNCABAC(pCU, (pCU->m_TrCoeffCr + offsetChroma), AbsPartIdx, trWidth, Depth, TEXT_CHROMA_V);
             }
         }
         else
@@ -1794,15 +1792,14 @@ void H265SegmentDecoder::DecodeTransform(H265CodingUnit* pCU, Ipp32u offsetLuma,
             if ((AbsPartIdx % partNum) == (partNum - 1))
             {
                 Ipp32s trWidth = width;
-                Ipp32s trHeight = height;
 
                 if (cbfU)
                 {
-                    ParseCoeffNxNCABAC(pCU, (pCU->m_TrCoeffCb + m_BakChromaOffset), m_BakAbsPartIdx, trWidth, trHeight, Depth, TEXT_CHROMA_U);
+                    ParseCoeffNxNCABAC(pCU, (pCU->m_TrCoeffCb + m_BakChromaOffset), m_BakAbsPartIdx, trWidth, Depth, TEXT_CHROMA_U);
                 }
                 if (cbfV)
                 {
-                    ParseCoeffNxNCABAC(pCU, (pCU->m_TrCoeffCr + m_BakChromaOffset), m_BakAbsPartIdx, trWidth, trHeight, Depth, TEXT_CHROMA_V);
+                    ParseCoeffNxNCABAC(pCU, (pCU->m_TrCoeffCr + m_BakChromaOffset), m_BakAbsPartIdx, trWidth, Depth, TEXT_CHROMA_V);
                 }
             }
         }
@@ -2001,9 +1998,9 @@ H265_FORCEINLINE Ipp8u Rst2ZS(const Ipp8u x, const Ipp8u y, const Ipp8u l2w)
     return (diagId < w) ? (diagOffs[diagId] + x) : ((1<<(l2w<<1)) - diagOffs[((w<<1)-1)-diagId] + (w-y-1));
 }
 
-void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCommon pCoef, Ipp32u AbsPartIdx, Ipp32u Width, Ipp32u Height, Ipp32u Depth, EnumTextType Type)
+void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCommon pCoef, Ipp32u AbsPartIdx, Ipp32u Size, Ipp32u Depth, EnumTextType Type)
 {
-    const Ipp32u Log2BlockSize = g_ConvertToBit[Width] + 2;
+    const Ipp32u Log2BlockSize = g_ConvertToBit[Size] + 2;
     const Ipp32u L2Width       = Log2BlockSize-2;
 
     const bool   IsLuma  = (Type==TEXT_LUMA);
@@ -2060,7 +2057,7 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
         Ipp32u CGBlkPos;
         Ipp32u GoRiceParam = 0;
         bool   SigCoeffGroup;
-        Ipp8s  numNonZero = 0, lPosNZ, fPosNZ;
+        Ipp8s  numNonZero = 0, lPosNZ = -1, fPosNZ;
 
         if (SubSet == LastScanSet) {
             lPosNZ = fPosNZ = -1;
@@ -2078,7 +2075,7 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
         if (SubSet == LastScanSet || SubSet == 0) {
             SigCoeffGroup = 1;
         } else {
-            SigCoeffGroup = m_pBitStream->DecodeSingleBin_CABAC(baseCoeffGroupCtxIdx + (patternSigCtx!=0));
+            SigCoeffGroup = m_pBitStream->DecodeSingleBin_CABAC(baseCoeffGroupCtxIdx + (patternSigCtx != 0)) != 0;
         }
 
         Ipp32u BlkPos, PosY, PosX, Sig, CtxSig, xyOffs = LastPinCG<<1;
@@ -2827,7 +2824,7 @@ void H265SegmentDecoder::IntraRecChromaBlk(H265CodingUnit* pCU,
     }
 }
 
-void H265SegmentDecoder::UpdatePUInfo(H265CodingUnit *pCU, Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight, H265MVInfo &MVi)
+void H265SegmentDecoder::UpdatePUInfo(Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight, H265MVInfo &MVi)
 {
     VM_ASSERT(MVi.m_refIdx[REF_PIC_LIST_0] >= 0 || MVi.m_refIdx[REF_PIC_LIST_1] >= 0);
 
@@ -2838,7 +2835,7 @@ void H265SegmentDecoder::UpdatePUInfo(H265CodingUnit *pCU, Ipp32u PartX, Ipp32u 
             H265DecoderRefPicList::ReferenceInformation &refInfo = m_pRefPicList[RefListIdx][MVi.m_refIdx[RefListIdx]];
             Ipp16s POCDelta = Ipp16s(m_pCurrentFrame->m_PicOrderCnt - refInfo.refFrame->m_PicOrderCnt);
             MVi.m_pocDelta[RefListIdx] = POCDelta;
-            MVi.m_flags[RefListIdx] = refInfo.isLongReference ? COL_TU_LT_INTER : COL_TU_ST_INTER;
+            MVi.m_flags[RefListIdx] = Ipp8u(refInfo.isLongReference ? COL_TU_LT_INTER : COL_TU_ST_INTER);
 
             if (MVi.m_mv[RefListIdx].Vertical > m_context->m_mvsDistortion)
                 m_context->m_mvsDistortion = MVi.m_mv[RefListIdx].Vertical;
@@ -2905,7 +2902,8 @@ void H265SegmentDecoder::UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPa
     info.members.IsTransquantBypass = isTranquantBypass;
     info.members.IsIPCM = isIPCM;
     info.members.qp = pCU->GetQP(AbsPartIdx);
-    info.members.TrStart = TrStart;
+    VM_ASSERT(TrStart < 256);
+    info.members.TrStart = Ipp8u(TrStart);
     info.members.IsTrCbfY = isTrCbfY;
 
     if (!m_pSliceHeader->slice_deblocking_filter_disabled_flag || info.members.IsIntra)
