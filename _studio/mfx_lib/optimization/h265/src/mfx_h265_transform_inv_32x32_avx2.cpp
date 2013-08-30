@@ -39,8 +39,6 @@ namespace MFX_HEVC_PP
     int b_use_reordering_avx2 = 0;
 #endif
 
-#define H265_RESTRICT __restrict
-
 #ifdef NDEBUG
 #define MM_LOAD_EPI128(x) (*(__m128i*)x)
 #else
@@ -156,12 +154,16 @@ namespace MFX_HEVC_PP
 
     extern void reordering(signed short * __restrict dest, const signed short * __restrict src);
 
-#ifndef MFX_TARGET_OPTIMIZATION_AUTO
-    void h265_DCT32x32Inv_16sT(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+// CREATE NAME FOR <HEVCPP_API> FUNCTIONS
+#if defined(MFX_TARGET_OPTIMIZATION_AUTO)
+    #define MAKE_NAME(func) func ## _avx2
 #else
-    void h265_DCT32x32Inv_16sT_avx2(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+    #define MAKE_NAME(func) func
 #endif
-    {
+
+
+void MAKE_NAME(h265_DCT32x32Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+{
         __m128i __declspec(align(16)) buffr[32*32];
         signed short __declspec(align(16)) temp[32*32];
         __m128i sdata, sdata2, s0, s1, s2, s3, s4, s5, s6, s7, s8;
@@ -630,6 +632,6 @@ namespace MFX_HEVC_PP
 
 } // end namespace MFX_HEVC_PP
 
-#endif //#if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2)
+#endif //#if defined (MFX_TARGET_OPTIMIZATION_AUTO) || defined(MFX_TARGET_OPTIMIZATION_AVX2)
 #endif // #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined (MFX_ENABLE_H265_VIDEO_DECODE)
 /* EOF */

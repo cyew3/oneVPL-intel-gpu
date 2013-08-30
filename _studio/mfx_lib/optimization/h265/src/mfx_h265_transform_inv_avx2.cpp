@@ -55,8 +55,8 @@ typedef signed short        int16_t;
 typedef signed long         int32_t;
 typedef unsigned long       uint32_t;
 
-#define ALIGNED_SSE2 __declspec(align(16))
-#define FASTCALL     __fastcall
+#define ALIGNED_SSE2 ALIGN_DECL(16)
+//#define FASTCALL     __fastcall
 
 #define M128I_WC(x, v) const static __m128i x = {\
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)((v)&0xFF), (char)(((v)>>8)&0xFF), \
@@ -260,15 +260,18 @@ M256I_2x8SHORT( t_16_f0123_67,  25,  9, -70,-25,  90, 43, -80,-57);
 M256I_2x8SHORT( t_16_f4567_67,  43, 70,   9,-80, -57, 87,  87,-90);
 M256I_DC (round2y, 1<<(SHIFT_INV_2ND-1));
 
-
 #undef coef_stride
 #define coef_stride 4
 
-#ifndef MFX_TARGET_OPTIMIZATION_AUTO
-    void h265_DCT4x4Inv_16sT(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+// CREATE NAME FOR <HEVCPP_API> FUNCTIONS
+#if defined(MFX_TARGET_OPTIMIZATION_AUTO)
+    #define MAKE_NAME(func) func ## _avx2
 #else
-    void h265_DCT4x4Inv_16sT_avx2(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+    #define MAKE_NAME(func) func
 #endif
+
+
+void MAKE_NAME(h265_DCT4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
 {
    M256I_2xW2x4C(t_4dct_02_01,  64, 83,   64,-36);
    M256I_2xW2x4C(t_4dct_02_23,  64, 36,  -64, 83);
@@ -327,7 +330,9 @@ M256I_DC (round2y, 1<<(SHIFT_INV_2ND-1));
     if (destSize == 1) {
       __m128i tmp0;
       /* load 4 bytes from row 0 and row 1, expand to 16 bits, add temp values, clip/pack to 8 bytes */
-      tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 0*destStride), 0);    /* load row 0 (bytes) */
+      //tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 0*destStride), 0);    /* load row 0 (bytes) */
+      tmp0 = _mm_insert_epi32( _mm_undefined_si128(), *(int *)(destByte + 0*destStride), 0);      /* load row 0 (bytes) */ 
+
       tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 1*destStride), 1);    /* load row 1 (bytes) */
       tmp0 = _mm_cvtepu8_epi16(tmp0);                                        /* expand to 16 bytes */
       tmp0 = _mm_add_epi16(tmp0, _mm256_castsi256_si128(xmm0123));           /* add to dst */
@@ -336,7 +341,8 @@ M256I_DC (round2y, 1<<(SHIFT_INV_2ND-1));
       *(int *)(destByte + 1*destStride) = _mm_extract_epi32(tmp0, 1);         /* store row 1 (bytes) */
 
       /* repeat for rows 2 and 3 */
-      tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 2*destStride), 0);    /* load row 0 (bytes) */
+      tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 2*destStride), 0);    /* load row 0 (bytes) */      
+
       tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 3*destStride), 1);    /* load row 1 (bytes) */
       tmp0 = _mm_cvtepu8_epi16(tmp0);                                        /* expand to 16 bytes */
       tmp0 = _mm_add_epi16(tmp0, _mm256_extracti128_si256(xmm0123, 1));      /* add to dst */
@@ -352,11 +358,8 @@ M256I_DC (round2y, 1<<(SHIFT_INV_2ND-1));
 }
 
 
-#ifndef MFX_TARGET_OPTIMIZATION_AUTO
-    void h265_DST4x4Inv_16sT(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
-#else
-    void h265_DST4x4Inv_16sT_avx2(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
-#endif
+
+ void MAKE_NAME(h265_DST4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
 {
 //    dst[i + 0*4] = (short)Clip3( -32768, 32767, ( 29*s0 + 74*s1 + 84*s2 + 55*s3 + rnd_factor ) >> SHIFT_INV_1ST );
 //    dst[i + 1*4] = (short)Clip3( -32768, 32767, ( 55*s0 + 74*s1 - 29*s2 - 84*s3 + rnd_factor ) >> SHIFT_INV_1ST );
@@ -419,7 +422,9 @@ M256I_DC (round2y, 1<<(SHIFT_INV_2ND-1));
    if (destSize == 1) {
       __m128i tmp0;
       /* load 4 bytes from row 0 and row 1, expand to 16 bits, add temp values, clip/pack to 8 bytes */
-      tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 0*destStride), 0);    /* load row 0 (bytes) */
+      //tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 0*destStride), 0);    /* load row 0 (bytes) */
+      tmp0 = _mm_insert_epi32( _mm_undefined_si128(), *(int *)(destByte + 0*destStride), 0);      /* load row 0 (bytes) */ 
+
       tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 1*destStride), 1);    /* load row 1 (bytes) */
       tmp0 = _mm_cvtepu8_epi16(tmp0);                                        /* expand to 16 bytes */
       tmp0 = _mm_add_epi16(tmp0, _mm256_castsi256_si128(xmm0123));           /* add to dst */
@@ -428,7 +433,8 @@ M256I_DC (round2y, 1<<(SHIFT_INV_2ND-1));
       *(int *)(destByte + 1*destStride) = _mm_extract_epi32(tmp0, 1);         /* store row 1 (bytes) */
 
       /* repeat for rows 2 and 3 */
-      tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 2*destStride), 0);    /* load row 0 (bytes) */
+      tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 2*destStride), 0);    /* load row 0 (bytes) */    
+
       tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 3*destStride), 1);    /* load row 1 (bytes) */
       tmp0 = _mm_cvtepu8_epi16(tmp0);                                        /* expand to 16 bytes */
       tmp0 = _mm_add_epi16(tmp0, _mm256_extracti128_si256(xmm0123, 1));      /* add to dst */
@@ -444,16 +450,11 @@ M256I_DC (round2y, 1<<(SHIFT_INV_2ND-1));
 }
 
 
-
-
 #undef coef_stride
 #define coef_stride 8
 
-#ifndef MFX_TARGET_OPTIMIZATION_AUTO
-    void h265_DCT8x8Inv_16sT(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
-#else
-    void h265_DCT8x8Inv_16sT_avx2(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
-#endif
+
+void MAKE_NAME(h265_DCT8x8Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
 {
    __declspec(align(32)) short tmp[8 * 8];
 
@@ -610,7 +611,7 @@ M256I_DC (round2y, 1<<(SHIFT_INV_2ND-1));
 #undef coef_stride
 #define coef_stride 16
 
-static __forceinline void DCTInverse16x16_h_2nd_avx2(const short *__restrict coeff, void *__restrict destPtr, int dstStride, int destSize)
+static H265_FORCEINLINE void DCTInverse16x16_h_2nd_avx2(const short * H265_RESTRICT coeff, void * H265_RESTRICT destPtr, int dstStride, int destSize)
 {
    unsigned char* __restrict destByte;
    short* __restrict destWord;
@@ -729,11 +730,8 @@ static __forceinline void DCTInverse16x16_h_2nd_avx2(const short *__restrict coe
    *(__m128i *)(p_tmp + a*16) = _mm256_castsi256_si128(y); \
    *(__m128i *)(p_tmp + b*16) = _mm256_extracti128_si256(y, 1);
 
-#ifndef MFX_TARGET_OPTIMIZATION_AUTO
-    void h265_DCT16x16Inv_16sT(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
-#else
-    void h265_DCT16x16Inv_16sT_avx2(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
-#endif
+
+void MAKE_NAME(h265_DCT16x16Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
 {
    __declspec(align(16)) short tmp[16 * 16];
    short *__restrict p_tmp = tmp;
@@ -849,6 +847,6 @@ static __forceinline void DCTInverse16x16_h_2nd_avx2(const short *__restrict coe
 
 } // end namespace MFX_HEVC_PP
 
-#endif //#if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2)
+#endif //#if defined (MFX_TARGET_OPTIMIZATION_AUTO) || defined(MFX_TARGET_OPTIMIZATION_AVX2)
 #endif // #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined (MFX_ENABLE_H265_VIDEO_DECODE)
 /* EOF */

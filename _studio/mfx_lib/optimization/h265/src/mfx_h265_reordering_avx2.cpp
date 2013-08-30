@@ -12,7 +12,7 @@
 // Service function for inverse Transform 32x32 AVX2
 
 //aya: comment from Nablet guys:
-// This is part of function DCTInverse32x32_avx2(). Unfortunately, because of some 
+// This is part of function DCTInverse32x32<_avx2>(). Unfortunately, because of some 
 // bug in Intel Compiler (probably) it can not be included in the same source file. 
 // Even with turned off interprocedural optimization.
 
@@ -120,7 +120,7 @@ namespace MFX_HEVC_PP
       out[(a4+1)*8 + 1] = _mm256_extracti128_si256(y5, 1);
 
 
-void reordering(signed short* __restrict dest, const signed short* __restrict src)
+void reordering(signed short* H265_RESTRICT dest, const signed short* H265_RESTRICT src)
 {
    __m256i y0, y1, y2, y3, y4, y5, y6, y7, y8, y9;
    __m128i * out = (__m128i *)dest;
