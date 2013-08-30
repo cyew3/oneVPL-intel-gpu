@@ -357,7 +357,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
                                               m_denoiseCaps.range.min_value,
                                               m_denoiseCaps.range.max_value,
                                               pParams->denoiseFactor);
-            vaSts = vaCreateBuffer(m_vaDisplay,
+            vaSts = vaCreateBuffer((void*)m_vaDisplay,
                           m_vaContextVPP,
                           VAProcFilterParameterBufferType,
                           sizeof(denoise), 1,
@@ -368,19 +368,27 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         }
     }
 
+    /* pParams->refCount is total number of processing surfaces:
+     * in case of composition this is primary + sub streams*/
+
     // mfxU32 SampleCount = pParams->refCount;
     // WA:
     mfxU32 SampleCount = 1;
+    mfxU32 refIdx = 0;
 
-    m_pipelineParam.resize(SampleCount);
-    m_pipelineParamID.resize(SampleCount);
+    //m_pipelineParam.resize(SampleCount);
+    //m_pipelineParam.clear();
+    m_pipelineParam.resize(pParams->refCount);
+    //m_pipelineParamID.resize(SampleCount);
+    //m_pipelineParamID.clear();
+    m_pipelineParamID.resize(pParams->refCount);
 
     std::vector<VARectangle> input_region;
-    input_region.resize(SampleCount);
+    input_region.resize(pParams->refCount);
     std::vector<VARectangle> output_region;
-    output_region.resize(SampleCount);
+    output_region.resize(pParams->refCount);
 
-    for( mfxU32 refIdx = 0; refIdx < SampleCount; refIdx++ )
+    for( refIdx = 0; refIdx < SampleCount; refIdx++ )
     {
         mfxDrvSurface* pRefSurf = &(pParams->pRefSurfaces[refIdx]);
 
@@ -445,7 +453,10 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         }
 
         m_pipelineParam[refIdx].filters  = m_filterBufs;
-        m_pipelineParam[refIdx].num_filters  = m_numFilterBufs;
+        //m_pipelineParam[refIdx].num_filters  = m_numFilterBufs;
+        m_pipelineParam[refIdx].num_filters  = 0;
+        m_pipelineParam[refIdx].pipeline_flags |= VA_PROC_PIPELINE_FAST;
+        m_pipelineParam[refIdx].filter_flags    |= VA_FILTER_SCALING_FAST;
 
         vaSts = vaCreateBuffer(m_vaDisplay,
                             m_vaContextVPP,
@@ -467,12 +478,64 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     }
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaRenderPicture");
-        for( mfxU32 refIdx = 0; refIdx < SampleCount; refIdx++ )
+        for( refIdx = 0; refIdx < SampleCount; refIdx++ )
         {
             vaSts = vaRenderPicture(m_vaDisplay, m_vaContextVPP, &m_pipelineParamID[refIdx], 1);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         }
     }
+
+    /* Special case for Composition */
+    if (pParams->bComposite)
+    {
+        /* pParams->fwdRefCount actually is number of sub stream*/
+        for( refIdx = 1; refIdx <= (pParams->fwdRefCount); refIdx++ )
+        {
+            m_pipelineParam[refIdx] = m_pipelineParam[0];
+            mfxDrvSurface* pRefSurf = &(pParams->pRefSurfaces[refIdx]);
+
+            VASurfaceID* srf = (VASurfaceID*)(pRefSurf->hdl.first);
+            m_pipelineParam[refIdx].surface = *srf;
+
+            /* to process input parameters of sub stream:
+             * crop info and original size*/
+            mfxFrameInfo *inInfo = &(pRefSurf->frameInfo);
+            input_region[refIdx].y   = inInfo->CropY;
+            input_region[refIdx].x   = inInfo->CropX;
+            input_region[refIdx].height = inInfo->CropH;
+            input_region[refIdx].width  = inInfo->CropW;
+            m_pipelineParam[refIdx].surface_region = &input_region[refIdx];
+
+            /* to process output parameters of sub stream:
+             *  position and destination size */
+            output_region[refIdx].y  = pParams->dstRects[refIdx].DstX;
+            output_region[refIdx].x   = pParams->dstRects[refIdx].DstY;
+            output_region[refIdx].height= pParams->dstRects[refIdx].DstH;
+            output_region[refIdx].width  = pParams->dstRects[refIdx].DstW;
+            m_pipelineParam[refIdx].output_region = &output_region[refIdx];
+
+            //m_pipelineParam[refIdx].pipeline_flags = ?? //VA_PROC_PIPELINE_FAST or VA_PROC_PIPELINE_SUBPICTURES
+            m_pipelineParam[refIdx].pipeline_flags  |= VA_PROC_PIPELINE_FAST;
+            m_pipelineParam[refIdx].filter_flags    |= VA_FILTER_SCALING_FAST;
+
+            m_pipelineParam[refIdx].filters  = m_filterBufs;
+            m_pipelineParam[refIdx].num_filters  = 0;
+
+            vaSts = vaCreateBuffer(m_vaDisplay,
+                                m_vaContextVPP,
+                                VAProcPipelineParameterBufferType,
+                                sizeof(VAProcPipelineParameterBuffer),
+                                1,
+                                &m_pipelineParam[refIdx],
+                                &m_pipelineParamID[refIdx]);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaRenderPicture");
+            vaSts = vaRenderPicture(m_vaDisplay, m_vaContextVPP, &m_pipelineParamID[refIdx], 1);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        }
+    }
+
 
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaEndPicture");
@@ -480,13 +543,26 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
 
-    for( mfxU32 refIdx = 0; refIdx < SampleCount; refIdx++ )
+    for( refIdx = 0; refIdx < SampleCount; refIdx++ )
     {
         if ( m_pipelineParamID[refIdx] != VA_INVALID_ID)
         {
             vaDestroyBuffer(m_vaDisplay, m_pipelineParamID[refIdx]);
             m_pipelineParamID[refIdx] = VA_INVALID_ID;
         }
+    }
+
+    if (pParams->bComposite)
+    {
+        for( refIdx = 1; refIdx <= (pParams->fwdRefCount); refIdx++ )
+        {
+            if ( m_pipelineParamID[refIdx] != VA_INVALID_ID)
+            {
+                vaDestroyBuffer(m_vaDisplay, m_pipelineParamID[refIdx]);
+                m_pipelineParamID[refIdx] = VA_INVALID_ID;
+            }
+        }
+
     }
 
     // (3) info needed for sync operation

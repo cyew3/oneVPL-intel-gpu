@@ -374,7 +374,8 @@ mfxStatus ResMngr::Init(
     }
 
     if( (config.m_extConfig.mode & FRC_INTERPOLATION) ||
-        (config.m_extConfig.mode & VARIANCE_REPORT) )
+        (config.m_extConfig.mode & VARIANCE_REPORT) ||
+        (config.m_extConfig.mode & COMPOSITE) )
     {
         mfxU32 totalInputFramesCount = config.m_extConfig.customRateData.bkwdRefCount + 
                                        1 + 
@@ -1001,7 +1002,7 @@ mfxStatus TaskManager::AssignTask(
     //--------------------------------------------------------
     mfxStatus sts = MFX_ERR_NONE;
 
-    bool isAdvGfxMode = (FRC_INTERPOLATION & m_extMode) || (VARIANCE_REPORT & m_extMode) ? true : false;
+    bool isAdvGfxMode = (COMPOSITE & m_extMode) || (FRC_INTERPOLATION & m_extMode) || (VARIANCE_REPORT & m_extMode) ? true : false;
 
     if( isAdvGfxMode )
     {
@@ -1157,7 +1158,7 @@ mfxStatus TaskManager::FillTask(
     pTask->input.endTimeStamp  = CURRENT_TIME_STAMP + (m_actualNumber + 1) * FRAME_INTERVAL;    
     pTask->output.timeStamp    = pTask->input.timeStamp;
 
-    pTask->bAdvGfxEnable     = (FRC_INTERPOLATION & m_extMode) || (VARIANCE_REPORT & m_extMode) ? true : false;
+    pTask->bAdvGfxEnable     = (COMPOSITE & m_extMode) || (FRC_INTERPOLATION & m_extMode) || (VARIANCE_REPORT & m_extMode) ? true : false;
 
     pTask->pAuxData = aux;
 
@@ -1168,7 +1169,7 @@ mfxStatus TaskManager::FillTask(
             pInSurface,
             pOutSurface);
     }
-    else if(FRC_INTERPOLATION & m_extMode || VARIANCE_REPORT & m_extMode)
+    else if(pTask->bAdvGfxEnable)
     {
         FillTask_AdvGfxMode(
             pTask,
@@ -2391,6 +2392,42 @@ mfxStatus ConfigureExecuteParams(
                 break;
             }
 
+            case MFX_EXTBUFF_VPP_COMPOSITE:
+            {
+                mfxU32 StreamCount = 0;
+                for (mfxU32 i = 0; i < videoParam.NumExtParam; i++)
+                {
+                    if (videoParam.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_COMPOSITE)
+                    {
+                        mfxExtVPPComposite* extComp = (mfxExtVPPComposite*) videoParam.ExtParam[i];
+                        StreamCount = extComp->NumInputStream;
+                        for (mfxU32 cnt = 0; cnt < StreamCount; ++cnt)
+                        {
+                            DstRect rec = {0};
+                            rec.DstX = extComp->InputStream[cnt].DstX;
+                            rec.DstY = extComp->InputStream[cnt].DstY;
+                            rec.DstW = extComp->InputStream[cnt].DstW;
+                            rec.DstH = extComp->InputStream[cnt].DstH;
+                            executeParams.dstRects.push_back( rec );
+                        }
+                        break;
+                    }
+                }
+
+                config.m_surfCount[VPP_IN]  = (mfxU16)IPP_MAX(StreamCount, config.m_surfCount[VPP_IN]);
+                config.m_surfCount[VPP_OUT] = (mfxU16)IPP_MAX(1, config.m_surfCount[VPP_OUT]);
+
+                config.m_extConfig.mode = COMPOSITE;
+                config.m_extConfig.customRateData.bkwdRefCount = 0;
+                config.m_extConfig.customRateData.fwdRefCount  = StreamCount-1; // count only secondary streams
+                config.m_extConfig.customRateData.inputFramesOrFieldPerCycle= StreamCount;
+                config.m_extConfig.customRateData.outputIndexCountPerCycle  = 1;
+
+                executeParams.bComposite = true;
+                    
+                break;
+            }
+
             default:
             {
                 // there is no such capabilities
@@ -2435,7 +2472,7 @@ mfxStatus ConfigureExecuteParams(
         }
     }
 
-    if (inDNRatio == outDNRatio && !executeParams.bVarianceEnable)
+    if (inDNRatio == outDNRatio && !executeParams.bVarianceEnable && !executeParams.bComposite)
     {
         // work around
         config.m_extConfig.mode  = FRC_DISABLED;

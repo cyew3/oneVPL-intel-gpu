@@ -37,11 +37,16 @@ namespace MfxHwVideoProcessing
         FRC_ENABLED  = 0x01,
         FRC_STANDARD = 0x02,
         FRC_DISTRIBUTED_TIMESTAMP = 0x04,
-        FRC_INTERPOLATION = 0x08,
-
-        // aya: quick fix
-        VARIANCE_REPORT  = 16
+        FRC_INTERPOLATION = 0x08
     };
+
+    enum AdvGfxMode
+    {
+        VARIANCE_REPORT = 0x10,
+        IS_REFERENCES   = 0x20,
+        COMPOSITE       = 0x40
+    };
+
 
     //-----------------------------------------------------
     // Utills from HW H264 Encoder (c)

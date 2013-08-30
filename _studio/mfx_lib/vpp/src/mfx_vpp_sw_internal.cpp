@@ -945,6 +945,14 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
                 outputFramesCount[filterIndex] = 1;
                 break;
             }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_COMPOSITE:
+            {
+                // FIXME: fake for 1st version
+                inputFramesCount[filterIndex]  = 2;
+                outputFramesCount[filterIndex] = 1;
+                break;
+            }
             default:
             {
                 return MFX_ERR_INVALID_VIDEO_PARAM;

@@ -44,6 +44,7 @@ const mfxU32 g_TABLE_DO_USE [] =
     MFX_EXTBUFF_VPP_DETAIL,
     MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION,
     MFX_EXTBUFF_VPP_IMAGE_STABILIZATION,
+    MFX_EXTBUFF_VPP_COMPOSITE,
     MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION,
     MFX_EXTBUFF_VPP_VARIANCE_REPORT
 };
@@ -56,7 +57,8 @@ const mfxU32 g_TABLE_CONFIG [] =
     MFX_EXTBUFF_VPP_PROCAMP,
     MFX_EXTBUFF_VPP_DETAIL,
     MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION,
-    MFX_EXTBUFF_VPP_IMAGE_STABILIZATION
+    MFX_EXTBUFF_VPP_IMAGE_STABILIZATION,
+    MFX_EXTBUFF_VPP_COMPOSITE
 };
 
 
@@ -74,7 +76,8 @@ const mfxU32 g_TABLE_EXT_PARAM [] =
     MFX_EXTBUFF_VPP_PROCAMP,
     MFX_EXTBUFF_VPP_DETAIL,    
     MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION,
-    MFX_EXTBUFF_VPP_IMAGE_STABILIZATION
+    MFX_EXTBUFF_VPP_IMAGE_STABILIZATION,
+    MFX_EXTBUFF_VPP_COMPOSITE
 };
 
 // in according with spec rev. 22583 VPP uses new PicStruct processing
@@ -758,6 +761,7 @@ bool IsRoiDifferent(mfxFrameSurface1 *input, mfxFrameSurface1 *output)
 
 void ShowPipeline( std::vector<mfxU32> pipelineList )
 {
+#ifdef _DEBUG
 #if defined (_WIN32) || defined(_WIN64)
     mfxU32 filterIndx;
     char cStr[256];
@@ -862,6 +866,13 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
                 break;
             }
 
+            case (mfxU32)MFX_EXTBUFF_VPP_COMPOSITE:
+            {
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "COMPOSITE");
+                OutputDebugStringA(cStr);
+                break;
+            }
+
             default:
             {
             }
@@ -873,6 +884,7 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
     OutputDebugStringA(cStr);
 
 #endif // #if defined(_WIN32) || defined(_WIN64)
+#endif
     return;
 
 } // void ShowPipeline( std::vector<mfxU32> pipelineList )
@@ -979,9 +991,16 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
         newList[index] = MFX_EXTBUFF_VPP_SCENE_ANALYSIS;
         index++;
     }
+
     if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_CSC_OUT_RGB4 ) )
     {
         newList[index] = MFX_EXTBUFF_VPP_CSC_OUT_RGB4;
+        index++;
+    }
+
+    if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_COMPOSITE ) )
+    {
+        newList[index] = MFX_EXTBUFF_VPP_COMPOSITE;
         index++;
     }
 

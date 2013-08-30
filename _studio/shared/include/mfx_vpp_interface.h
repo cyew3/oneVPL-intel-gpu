@@ -78,6 +78,15 @@ namespace MfxHwVideoProcessing
         std::vector<CustomRateData> customRateData;
     };
 
+    struct DstRect
+    {
+        mfxU32 DstX;
+        mfxU32 DstY;
+        mfxU32 DstW;
+        mfxU32 DstH;
+    };
+
+
     typedef struct _mfxVppCaps
     {
         mfxU32 uAdvancedDI;
@@ -157,6 +166,9 @@ namespace MfxHwVideoProcessing
 
         bool           bFRCEnable;
         CustomRateData customRateData;
+
+        bool           bComposite;
+        std::vector<DstRect> dstRects;
 
         mfxU32         statusReportID;
 

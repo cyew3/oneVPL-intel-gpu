@@ -598,8 +598,11 @@ mfxStatus VideoVPPSW::VppFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out,
         sts = CheckInputPicStruct( in->Info.PicStruct );
         MFX_CHECK_STS(sts);
 
-        sts = CompareFrameInfo( &(in->Info), &(m_errPrtctState.In));
-        MFX_CHECK_STS(sts);
+        /* we have special case for composition:
+         * if composition enabled sub stream's picture (WxH)
+         * can be less than primary stream (WxH)  */
+        //sts = CompareFrameInfo( &(in->Info), &(m_errPrtctState.In));
+        //MFX_CHECK_STS(sts);
 
         sts = CheckCropParam( &(in->Info) );
         MFX_CHECK_STS( sts );
