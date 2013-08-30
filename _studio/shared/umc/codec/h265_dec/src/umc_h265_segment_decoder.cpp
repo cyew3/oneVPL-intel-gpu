@@ -1961,7 +1961,7 @@ static const Ipp32u ctxIndMap[16] =
 
 static const Ipp32u lCtx[4] = {0x00010516, 0x06060606, 0x000055AA, 0xAAAAAAAA};
 
-H265_FORCEINLINE Ipp32u getSigCtxInc(Ipp32s patternSigCtx,
+static H265_FORCEINLINE Ipp32u getSigCtxInc(Ipp32s patternSigCtx,
                                  Ipp32u scanIdx,
                                  const Ipp32u PosX,
                                  const Ipp32u PosY,
@@ -1990,7 +1990,7 @@ static const Ipp8u diagOffs[8] = {0, 1, 3, 6, 10, 15, 21, 28};
 static const Ipp32u stXoffs[3] = { 0xFB9E4910, 0xE4E4E4E4, 0xFFAA5500 };
 static const Ipp32u stYoffs[3] = { 0xEDB1B184, 0xFFAA5500, 0xE4E4E4E4 };
 
-H265_FORCEINLINE Ipp8u Rst2ZS(const Ipp8u x, const Ipp8u y, const Ipp8u l2w)
+static H265_FORCEINLINE Ipp8u Rst2ZS(const Ipp8u x, const Ipp8u y, const Ipp8u l2w)
 {
     const Ipp8u diagId = x + y;
     const Ipp8u w = 1<<l2w;

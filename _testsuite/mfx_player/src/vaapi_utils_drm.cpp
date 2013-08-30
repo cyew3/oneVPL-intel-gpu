@@ -13,6 +13,7 @@ Copyright(c) 2012-2013 Intel Corporation. All Rights Reserved.
 #include "vaapi_utils_drm.h"
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include <fcntl.h>
 
 DRMLibVA::DRMLibVA(void):
