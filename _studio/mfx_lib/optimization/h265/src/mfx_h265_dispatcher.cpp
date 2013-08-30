@@ -44,10 +44,8 @@ using namespace MFX_HEVC_PP;
         IppStatus sts = ippGetCpuFeatures( &featuresMask, cpuIdInfoRegs);
         if(ippStsNoErr != sts)    return sts;
         
-        //aya: AVX2 has issues, wait response from opt guys, PX not completed. 
-        // so, SSE4 only is worked
-        // will be fixed ASAP
-        /*if ( featuresMask & (Ipp64u)(ippCPUID_AVX2) )
+        //aya: AVX2 kernels have issues, wait response from opt guys should be fixed before Gold???
+        /*if ( featuresMask & (Ipp64u)(ippCPUID_AVX2) ) // means AVX2 + BMI_I + BMI_II
         {
             SetTargetAVX2();
         }*/
