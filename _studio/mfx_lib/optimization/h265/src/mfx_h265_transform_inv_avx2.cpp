@@ -733,7 +733,7 @@ static H265_FORCEINLINE void DCTInverse16x16_h_2nd_avx2(const short * H265_RESTR
 
 void MAKE_NAME(h265_DCT16x16Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
 {
-   __declspec(align(16)) short tmp[16 * 16];
+   __declspec(align(32)) short tmp[16 * 16];
    short *__restrict p_tmp = tmp;
    __m256i y0, y13L, y57L, y9BL, yDFL, y26L, yAEL, y4CL, y08L;
 

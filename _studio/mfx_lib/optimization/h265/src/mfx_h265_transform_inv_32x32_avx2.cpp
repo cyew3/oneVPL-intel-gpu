@@ -164,8 +164,8 @@ namespace MFX_HEVC_PP
 
 void MAKE_NAME(h265_DCT32x32Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
 {
-        __m128i __declspec(align(16)) buffr[32*32];
-        signed short __declspec(align(16)) temp[32*32];
+        __m128i __declspec(align(32)) buffr[32*32];
+        signed short __declspec(align(32)) temp[32*32];
         __m128i sdata, sdata2, s0, s1, s2, s3, s4, s5, s6, s7, s8;
         __m256i ydata1, ydata2, ydata3, ydata4, ydata5, ydata6, ydata7, ydata8, y0, y1, y2, y3, y4, y5, y6, y7, y8, y9, ya;
         _mm256_zeroall();
