@@ -308,9 +308,11 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
 #ifndef MFX_VA_ANDROID
             //deint.algorithm              = pParams->iDeinterlacingAlgorithm == 1 ? VAProcDeinterlacingBob : VAProcDeinterlacingMotionAdaptive;
             /*
-             * Per agreement used "VAProcDeinterlacingBob" DI type as default value
+             * Per agreement with VPG in 16.3 release
+             * default de-interlacing type should be
+             * "VAProcDeinterlacingMotionAdaptive".
              * */
-            deint.algorithm              = VAProcDeinterlacingBob;
+            deint.algorithm              = VAProcDeinterlacingMotionAdaptive;
             mfxDrvSurface* pRefSurf_frameInfo = &(pParams->pRefSurfaces[0]);
             switch (pRefSurf_frameInfo->frameInfo.PicStruct)
             {
