@@ -46,6 +46,7 @@ EXPORTS
     MFXCloneSession
     MFXSetPriority
     MFXGetPriority
+    MFXGetLogMessage
 
     MFXVideoUSER_Register
     MFXVideoUSER_Unregister

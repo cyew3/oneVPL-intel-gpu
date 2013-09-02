@@ -385,6 +385,15 @@ mfxStatus MFXGetPriority(mfxSession session, mfxPriority *priority) {
     return sts;
 }
 
+mfxStatus MFXGetLogMessage(mfxSession session, char *msg, mfxU32 size) {
+    mfxStatus sts=MFX_CALL(MFXGetLogMessage,(((AnalyzerSession *)session)->session, msg, size));
+
+    RECORD_CONFIGURATION({
+        dump_mfxStatus(fd, level, TEXT("MFXGetLogMessage"),sts);
+    });
+    return sts;
+}
+
 
 #pragma warning(disable: 4100)
 
