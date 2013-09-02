@@ -516,6 +516,7 @@ void H265CU::InitCU(H265VideoParam *_par, H265CUData *_data, H265CUData *_data_t
   v_rec = _v + ((ctb_pelx + ctb_pely * pitch_rec_chroma) >> 1);
   y_src = _y_src + ctb_pelx + ctb_pely * pitch_src;
   uv_src = _uv_src + ctb_pelx + (ctb_pely * pitch_src >> 1);
+  depth_min = MAX_TOTAL_DEPTH;
 
   if (initialize_data_flag) {
       rd_opt_flag = 1;
@@ -872,6 +873,8 @@ void H265CU::ModeDecision(Ipp32u abs_part_idx, Ipp32u offset, Ipp8u depth, CostT
     }
 
     if (split_mode != SPLIT_MUST) {
+        if (depth_min == MAX_TOTAL_DEPTH)
+            depth_min = depth;
         data = data_temp + (depth << par->Log2NumPartInCU);
 
         for (tr_depth = 0; tr_depth < intra_split + 1; tr_depth++) {
@@ -1883,7 +1886,7 @@ void H265CU::ME_PU(H265MEInfo* me_info)
             }
         }
         // add from top level
-        if(me_info->depth>0) {
+        if(me_info->depth>0 && me_info->depth > depth_min) {
             H265CUData* topdata = data_best + ((me_info->depth -1) << par->Log2NumPartInCU);           
             if( topdata[me_info->abs_part_idx].pred_mode == MODE_INTER ) { // TODO also check same ref
                 MVtried[num_tried++] = topdata[me_info->abs_part_idx].mv[ME_dir];

@@ -1291,6 +1291,7 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
             // work is possible so thread goes away waiting for maybe another parallel region
             if (thread_number > th->m_taskParams.num_threads)
             {
+                vm_interlocked_dec32(reinterpret_cast<volatile Ipp32u *>(&th->m_taskParams.thread_number));
                 vm_mutex_unlock(&th->m_taskParams.parallel_region_end_lock);
                 return MFX_TASK_BUSY;
             }

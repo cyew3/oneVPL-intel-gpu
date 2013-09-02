@@ -142,6 +142,7 @@ public:
     Ipp64f rd_lambda;
     Ipp64f rd_lambda_inter;
     H265Slice *cslice;
+    Ipp8u depth_min;
 
     inline bool  isIntra(Ipp32u part_idx)
     { return data[part_idx].pred_mode == MODE_INTRA; }
