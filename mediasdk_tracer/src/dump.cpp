@@ -96,6 +96,8 @@ StringCodeItem tbl_rate_ctrl[] = {
     CODE_STRING(MFX_RATECONTROL_, CQP),
     CODE_STRING(MFX_RATECONTROL_, AVBR),
     CODE_STRING(MFX_RATECONTROL_, LA),
+    CODE_STRING(MFX_RATECONTROL_, CRF),
+    CODE_STRING(MFX_RATECONTROL_, VCM),
 };
 
 StringCodeItem tbl_frc_algm[] = {
@@ -294,6 +296,11 @@ void dump_mfxInfoMFX(FILE *fd, int level, TCHAR *prefix, TCHAR *prefix2, Compone
             {
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".Accuracy="),TEXT("%d"), im->Accuracy);
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".Convergence="),TEXT("%d"), im->Convergence);
+                break;
+            }
+            case MFX_RATECONTROL_CRF:
+            {
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".CRFQuality="),TEXT("%d"), im->CRFQuality);
                 break;
             }
         }
@@ -660,6 +667,8 @@ void dump_ExtBuffers(FILE *fd, int level, TCHAR *prefix, TCHAR* prefix2, int cod
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtAVCEncodedFrameInfo.FrameOrder="),TEXT("%d"), efi->FrameOrder);
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtAVCEncodedFrameInfo.PicStruct="),TEXT("%d"), efi->PicStruct);
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtAVCEncodedFrameInfo.LongTermIdx="),TEXT("%d"), efi->LongTermIdx);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtAVCEncodedFrameInfo.MAD="),TEXT("%d"), efi->MAD);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".mfxExtAVCEncodedFrameInfo.BRCPanicMode="),TEXT("%d"), efi->BRCPanicMode);
 
                 for (int j = 0; j < sizeof(efi->UsedRefListL0) / sizeof(efi->UsedRefListL0[0]); j++)
                 {
