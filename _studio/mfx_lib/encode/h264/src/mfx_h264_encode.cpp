@@ -4153,7 +4153,7 @@ mfxStatus MFXVideoENCODEH264::Reset(mfxVideoParam *par_in)
         m_base.m_mfxVideoParam.mfx.GopRefDist < (videoParams.B_frame_rate + 1) ||
         par->mfx.NumSlice != 0 && enc->m_info.num_slices != par->mfx.NumSlice ||
         m_base.m_mfxVideoParam.mfx.NumRefFrame < videoParams.num_ref_frames ||
-        m_base.m_mfxVideoParam.mfx.CodecProfile != par->mfx.CodecProfile ||
+        (m_base.m_mfxVideoParam.mfx.CodecProfile & 0xFF) != (par->mfx.CodecProfile & 0xFF) ||
         par->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE && enc->m_info.coding_type == 0 )
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
