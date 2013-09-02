@@ -190,7 +190,7 @@
                 sExtTask2 *pTask = &m_pTasks[(m_currTask + m_numTasks)% m_maxTasks];
                 if (pParams)
                 {
-                    memcpy(&pTask->m_inputInternalParams,pParams,sizeof(mfxEncodeInternalParams));
+                    memcpy_s(&pTask->m_inputInternalParams, sizeof(pTask->m_inputInternalParams), pParams, sizeof(mfxEncodeInternalParams));
                 }
                 pTask->m_pInput_surface = input_surface;
                 pTask->m_pBs = bs;

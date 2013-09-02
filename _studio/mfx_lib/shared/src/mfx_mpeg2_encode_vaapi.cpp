@@ -752,7 +752,6 @@ mfxStatus VAAPIEncoder::RegisterRefFrames (const mfxFrameAllocResponse* pRespons
     m_recFrames.resize(pResponse->NumFrameActual);
 
     mfxStatus sts;
-    VAStatus vaSts;
     ExtVASurface extSurf;
     VASurfaceID *pSurface = NULL;
     
@@ -1007,7 +1006,6 @@ mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, 
     const mfxU32    NumCompBuffer = 10;
 
     VAStatus vaSts;
-    mfxU32 i;
     //VAEncPackedHeaderParameterBuffer packed_header_param_buffer;
 
     std::vector<VABufferID> configBuffers(NumCompBuffer, VA_INVALID_ID);
@@ -1238,8 +1236,6 @@ mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU8 *pUserDat
 
 mfxStatus VAAPIEncoder::Close()
 {
-    mfxStatus sts = MFX_ERR_NONE;
-
     delete [] (mfxU8 *)m_pMiscParamsFps;
     m_pMiscParamsFps = 0;
     delete [] (mfxU8 *)m_pMiscParamsPrivate;
