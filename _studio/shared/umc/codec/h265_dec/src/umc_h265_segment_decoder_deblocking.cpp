@@ -321,12 +321,24 @@ static bool H265_FORCEINLINE MVIsnotEq(H265MotionVector mv0,
 
 void H265SegmentDecoder::GetCTBEdgeStrengths(void)
 {
-    if (m_pSeqParamSet->log2_min_transform_block_size == 2)
-        GetCTBEdgeStrengths<2>();
-    else if (m_pSeqParamSet->log2_min_transform_block_size == 3)
-        GetCTBEdgeStrengths<3>();
+    if (m_pCurrentFrame->m_pSlicesInfo->GetSliceCount() == 1 && !m_pPicParamSet->tiles_enabled_flag)
+    {
+        if (m_pSeqParamSet->log2_min_transform_block_size == 2)
+            GetCTBEdgeStrengthsSimple<2>();
+        else if (m_pSeqParamSet->log2_min_transform_block_size == 3)
+            GetCTBEdgeStrengthsSimple<3>();
+        else
+            VM_ASSERT(0);
+    }
     else
-        VM_ASSERT(0);
+    {
+        if (m_pSeqParamSet->log2_min_transform_block_size == 2)
+            GetCTBEdgeStrengths<2>();
+        else if (m_pSeqParamSet->log2_min_transform_block_size == 3)
+            GetCTBEdgeStrengths<3>();
+        else
+            VM_ASSERT(0);
+    }
 }
 
 template<Ipp32s tusize> void H265SegmentDecoder::GetCTBEdgeStrengths(void)
@@ -641,6 +653,141 @@ void H265SegmentDecoder::GetEdgeStrengthInter(H265MVInfo *mvinfoQ, H265MVInfo *m
         edge->strength = 1;
         return;
     }
+}
+
+template<Ipp32s tusize> void H265SegmentDecoder::GetCTBEdgeStrengthsSimple(void)
+{
+    H265EdgeData *ctb_start_edge = m_pCurrentFrame->m_CodingData->m_edge +
+        m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth * (m_curCU->m_CUPelY >> 3) + (m_curCU->m_CUPelX >> 3) * 4;
+    Ipp32s maxCUSize = m_pSeqParamSet->MaxCUSize;
+    Ipp32s xPel, yPel;
+
+    Ipp32s height = m_pSeqParamSet->pic_height_in_luma_samples - m_curCU->m_CUPelY;
+    if (height > maxCUSize)
+        height = maxCUSize;
+
+    Ipp32s width = m_pSeqParamSet->pic_width_in_luma_samples - m_curCU->m_CUPelX;
+    if (width > maxCUSize)
+        width = maxCUSize;
+
+    Ipp32s curTULine = 0;
+    H265EdgeData *edgeLine = ctb_start_edge;
+    for (yPel = 0; yPel < height; yPel += 8)
+    {
+        H265EdgeData *edge = edgeLine;
+        curTULine = m_context->m_CurrCTBStride * (yPel >> tusize);
+
+        if (m_curCU->m_CUPelX == 0)
+        {
+            edge[2].strength = edge[3].strength = 0;
+        }
+
+        for (xPel = 0; xPel < width; xPel += 8)
+        {
+            Ipp32s curTU = curTULine + (xPel >> tusize);
+            Ipp32s leftTU = curTU - 1;
+            Ipp32s upTU = curTU - m_context->m_CurrCTBStride;
+
+            edge += 4;
+
+            // Vertical edge
+            bool anotherCU = (xPel == 0);
+            GetEdgeStrengthSimple(curTU, leftTU, edge, anotherCU);
+            if (tusize < 3)
+                GetEdgeStrengthSimple(curTU + m_context->m_CurrCTBStride, leftTU + m_context->m_CurrCTBStride, edge + 1, anotherCU);
+            else if (tusize == 3)
+                edge[1] = edge[0];
+
+            // Horizontal edge
+            anotherCU = (yPel == 0);
+            GetEdgeStrengthSimple(curTU, upTU, edge + 2, anotherCU);
+            if (tusize < 3)
+                GetEdgeStrengthSimple(curTU + 1, upTU + 1, edge + 3, anotherCU);
+            else if (tusize == 3)
+                edge[3] = edge[2];
+        }
+
+        for (; xPel < maxCUSize; xPel += 8)
+        {
+            edge += 4;
+            edge[0].strength = edge[1].strength = edge[2].strength = edge[3].strength = 0;
+        }
+
+        edgeLine += m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth;
+    }
+
+    for (; yPel < maxCUSize; yPel += 8)
+    {
+        H265EdgeData *edge = edgeLine;
+
+        for (xPel = 0; xPel < maxCUSize; xPel += 8)
+        {
+            edge += 4;
+            edge[0].strength = edge[1].strength = edge[2].strength = edge[3].strength = 0;
+        }
+
+        edgeLine += m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth;
+    }
+}
+
+void H265SegmentDecoder::GetEdgeStrengthSimple(Ipp32s tuQ, Ipp32s tuP, H265EdgeData *edge, bool anotherCU)
+{
+    H265FrameHLDNeighborsInfo infoQ = m_context->m_CurrCTBFlags[tuQ];
+    H265FrameHLDNeighborsInfo infoP = m_context->m_CurrCTBFlags[tuP];
+
+    edge->tcOffset = (Ipp8s)m_pSliceHeader->slice_tc_offset;
+    edge->betaOffset = (Ipp8s)m_pSliceHeader->slice_beta_offset;
+
+    edge->deblockQ = infoQ.members.IsTransquantBypass ? false : true;
+    if (m_pSeqParamSet->pcm_loop_filter_disabled_flag)
+    {
+        if (infoQ.members.IsIPCM)
+            edge->deblockQ = 0;
+    }
+    edge->deblockP = infoP.members.IsTransquantBypass ? false : true;
+    if (m_pSeqParamSet->pcm_loop_filter_disabled_flag)
+    {
+        if (infoP.members.IsIPCM)
+            edge->deblockP = 0;
+    }
+
+    if (!infoP.members.IsAvailable)
+    {
+        // Another slice or tile case. May need a delayed strength calculation
+        VM_ASSERT(anotherCU);
+        edge->strength = 0;
+        return;
+    }
+
+    edge->qp = (infoQ.members.qp + infoP.members.qp + 1) >> 1;
+
+    // Intra
+    if (anotherCU || infoQ.members.TrStart != infoP.members.TrStart)
+    {
+        if (infoQ.members.IsIntra || infoP.members.IsIntra)
+        {
+            edge->strength = 2;
+            return;
+        }
+
+        if (infoQ.members.IsTrCbfY || infoP.members.IsTrCbfY)
+        {
+            edge->strength = 1;
+            return;
+        }
+    }
+    else
+    {
+        if (infoQ.members.IsIntra || infoP.members.IsIntra)
+        {
+            edge->strength = 0;
+            return;
+        }
+    }
+
+    H265MVInfo *mvinfoQ = m_context->m_CurrCTB + tuQ;
+    H265MVInfo *mvinfoP = m_context->m_CurrCTB + tuP;
+    GetEdgeStrengthInter(mvinfoQ, mvinfoP, edge);
 }
 
 } // namespace UMC_HEVC_DECODER
