@@ -68,8 +68,8 @@ mfxStatus H265Frame::CopyFrame(mfxFrameSurface1 *surface)
     PixType *uv0 = uv;
     mfxU8 *ysrc = surface->Data.Y;
     mfxU8 *uvsrc = surface->Data.UV;
-    Ipp32s input_width =  surface->Info.CropW ? surface->Info.CropW : surface->Info.Width;
-    Ipp32s input_height = surface->Info.CropH ? surface->Info.CropH : surface->Info.Height;
+    Ipp32s input_width =  surface->Info.Width;
+    Ipp32s input_height = surface->Info.Height;
     if (input_width > width || input_height > height) VM_ASSERT(0);
 
     memset(y0 - (pitch_luma + 1) * padding, 128, (pitch_luma + 1) * padding);
@@ -153,8 +153,8 @@ void H265Frame::Dump(H265VideoParam *par, H265FrameList *dpb, Ipp32s frame_num)
 //    mfxU8 buf[2048];
     FILE *f;
     mfxU8* fbuf = NULL;
-    Ipp32s W = par->Width - par->CropRight;
-    Ipp32s H = par->Height - par->CropBottom;
+    Ipp32s W = par->Width;
+    Ipp32s H = par->Height;
 //    mfxU8* fbuf = 0;
 //    sprintf(fname, "rec%dx%d_l%d_q%d.yuv", W, H, core_enc->m_svc_layer.svc_ext.dependency_id, core_enc->m_svc_layer.svc_ext.quality_id);
 

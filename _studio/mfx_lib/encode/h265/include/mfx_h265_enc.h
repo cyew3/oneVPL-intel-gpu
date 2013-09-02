@@ -54,9 +54,10 @@ struct H265VideoParam {
 // derived
     Ipp32u Width;
     Ipp32u Height;
+    Ipp32u CropLeft;
+    Ipp32u CropTop;
     Ipp32u CropRight;
     Ipp32u CropBottom;
-
     Ipp32s AddCUDepth;
     Ipp32u MaxCUSize;
     Ipp32u MinCUSize;

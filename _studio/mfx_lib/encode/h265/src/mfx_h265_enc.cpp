@@ -79,8 +79,8 @@ static Ipp64f h265_calc_split_threshold(Ipp32s tu_flag, Ipp32s log2width, Ipp32s
 mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxExtCodingOptionHEVC *opts_hevc)
 {
     H265VideoParam *pars = &m_videoParam;
-    Ipp32u width = param->mfx.FrameInfo.CropW ? param->mfx.FrameInfo.CropW : param->mfx.FrameInfo.Width;
-    Ipp32u height = param->mfx.FrameInfo.CropH ? param->mfx.FrameInfo.CropH : param->mfx.FrameInfo.Height;
+    Ipp32u width = param->mfx.FrameInfo.Width;
+    Ipp32u height = param->mfx.FrameInfo.Height;
 
 // preset
     pars->SourceWidth = width;
@@ -183,19 +183,24 @@ mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxE
     if (pars->MinTUSize != 1u << pars->QuadtreeTULog2MinSize)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    pars->CropRight = pars->CropBottom = 0;
-    if (width % pars->MinCUSize)
-    {
-        pars->CropRight  = (width / pars->MinCUSize + 1) * pars->MinCUSize - width;
-        width  += pars->CropRight;
-    }
-    if (height % pars->MinCUSize)
-    {
-        pars->CropBottom = (height / pars->MinCUSize + 1) * pars->MinCUSize - height;
-        height += pars->CropBottom;
-    }
-    if ((pars->CropRight | pars->CropBottom) & 1)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+    pars->CropLeft = param->mfx.FrameInfo.CropX;
+    pars->CropTop = param->mfx.FrameInfo.CropY;
+    pars->CropRight = param->mfx.FrameInfo.CropW ? param->mfx.FrameInfo.Width - param->mfx.FrameInfo.CropW - param->mfx.FrameInfo.CropX : 0;
+    pars->CropBottom = param->mfx.FrameInfo.CropH ? param->mfx.FrameInfo.Height - param->mfx.FrameInfo.CropH - param->mfx.FrameInfo.CropY : 0;
+
+    //pars->CropRight = pars->CropBottom = 0;
+    //if (width % pars->MinCUSize)
+    //{
+    //    pars->CropRight  = (width / pars->MinCUSize + 1) * pars->MinCUSize - width;
+    //    width  += pars->CropRight;
+    //}
+    //if (height % pars->MinCUSize)
+    //{
+    //    pars->CropBottom = (height / pars->MinCUSize + 1) * pars->MinCUSize - height;
+    //    height += pars->CropBottom;
+    //}
+    //if ((pars->CropRight | pars->CropBottom) & 1)
+    //    return MFX_ERR_INVALID_VIDEO_PARAM;
 
     pars->Width = width;
     pars->Height = height;
@@ -284,8 +289,10 @@ mfxStatus H265Encoder::SetSPS()
     sps->bit_depth_luma = BIT_DEPTH_LUMA;
     sps->bit_depth_chroma = BIT_DEPTH_CHROMA;
 
-    if (pars->CropRight | pars->CropBottom) {
+    if (pars->CropLeft | pars->CropTop | pars->CropRight | pars->CropBottom) {
         sps->conformance_window_flag = 1;
+        sps->conf_win_left_offset = pars->CropLeft / 2;
+        sps->conf_win_top_offset = pars->CropTop / 2;
         sps->conf_win_right_offset = pars->CropRight / 2;
         sps->conf_win_bottom_offset = pars->CropBottom / 2;
     }

@@ -235,6 +235,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     mfxExtBuffer *ptr_checked_ext[2] = {0};
     mfxU16 ext_counter = 0;
     memset(&m_mfxVideoParam,0,sizeof(mfxVideoParam));
+    memset(&m_mfxHEVCOpts,0,sizeof(m_mfxHEVCOpts));
 
     if (opts_hevc) {
         m_mfxHEVCOpts.Header.BufferId = MFX_EXTBUFF_HEVCENC;
@@ -368,12 +369,40 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 
 
 
-    // then fill not provided params with defaults or from targret usage
+    mfxExtCodingOptionHEVC* opts_tu = &hevc_tu_tab[m_mfxVideoParam.mfx.TargetUsage];
 
+    // check if size is aligned with CU depth
+    int maxCUsize = m_mfxHEVCOpts.Log2MaxCUSize ? m_mfxHEVCOpts.Log2MaxCUSize : opts_tu->Log2MaxCUSize;
+    int maxCUdepth = m_mfxHEVCOpts.MaxCUDepth ? m_mfxHEVCOpts.MaxCUDepth : opts_tu->MaxCUDepth;
+    int minTUsize = m_mfxHEVCOpts.QuadtreeTULog2MinSize ? m_mfxHEVCOpts.QuadtreeTULog2MinSize : opts_tu->QuadtreeTULog2MinSize;
+
+    int MinCUSize = 1 << (maxCUsize - maxCUdepth + 1);
+    int tail = (m_mfxVideoParam.mfx.FrameInfo.Width | m_mfxVideoParam.mfx.FrameInfo.Height) & (MinCUSize-1);
+    if (tail) { // size not aligned to minCU
+        int logtail;
+        for(logtail = 0; !(tail & (1<<logtail)); logtail++) ;
+        if (logtail < 3) // min CU size is 8
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        if (logtail < minTUsize) { // size aligned to TU size
+            if (m_mfxHEVCOpts.QuadtreeTULog2MinSize)
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+            minTUsize = m_mfxHEVCOpts.QuadtreeTULog2MinSize = (mfxU16)logtail;
+        }
+        if (m_mfxHEVCOpts.Log2MaxCUSize && m_mfxHEVCOpts.MaxCUDepth)
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        if (!m_mfxHEVCOpts.MaxCUDepth)
+            maxCUdepth = m_mfxHEVCOpts.MaxCUDepth = (mfxU16)(maxCUsize + 1 - logtail);
+        else // !m_mfxHEVCOpts.Log2MaxCUSize
+            maxCUsize = m_mfxHEVCOpts.Log2MaxCUSize = (mfxU16)(maxCUdepth - 1 + logtail);
+    }
+
+    // then fill not provided params with defaults or from targret usage
     if (!opts_hevc) {
         m_mfxHEVCOpts = hevc_tu_tab[m_mfxVideoParam.mfx.TargetUsage];
+        m_mfxHEVCOpts.QuadtreeTULog2MinSize = (mfxU16)minTUsize;
+        m_mfxHEVCOpts.MaxCUDepth = (mfxU16)maxCUdepth;
+        m_mfxHEVCOpts.Log2MaxCUSize = (mfxU16)maxCUsize;
     } else { // complete unspecified params
-        mfxExtCodingOptionHEVC* opts_tu = &hevc_tu_tab[m_mfxVideoParam.mfx.TargetUsage];
 
         if(!m_mfxHEVCOpts.Log2MaxCUSize)
             m_mfxHEVCOpts.Log2MaxCUSize = opts_tu->Log2MaxCUSize;
@@ -905,33 +934,6 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
             out->mfx.Convergence = in->mfx.Convergence;
         }
 
-        // KL seems to be incorrect - checked has original values and they overwrite coorected ones
-        ////mfxVideoH265InternalParam checked = *out;
-        ////if (out->mfx.CodecProfile != MFX_PROFILE_UNKNOWN && out->mfx.CodecProfile != checked.mfx.CodecProfile) {
-        ////    out->mfx.CodecProfile = checked.mfx.CodecProfile;
-        ////    isCorrected ++;
-        ////}
-        ////if (out->mfx.CodecLevel != MFX_LEVEL_UNKNOWN && out->mfx.CodecLevel != checked.mfx.CodecLevel) {
-        ////    out->mfx.CodecLevel = checked.mfx.CodecLevel;
-        ////    isCorrected ++;
-        ////}
-        ////if (out->calcParam.TargetKbps != 0 && out->calcParam.TargetKbps != checked.calcParam.TargetKbps) {
-        ////    out->calcParam.TargetKbps = checked.calcParam.TargetKbps;
-        ////    isCorrected ++;
-        ////}
-        ////if (out->calcParam.MaxKbps != 0 && out->calcParam.MaxKbps != checked.calcParam.MaxKbps) {
-        ////    out->calcParam.MaxKbps = checked.calcParam.MaxKbps;
-        ////    isCorrected ++;
-        ////}
-        ////if (out->calcParam.BufferSizeInKB != 0 && out->calcParam.BufferSizeInKB != checked.calcParam.BufferSizeInKB) {
-        ////    out->calcParam.BufferSizeInKB = checked.calcParam.BufferSizeInKB;
-        ////    isCorrected ++;
-        ////}
-        ////if (out->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_UNKNOWN && out->mfx.FrameInfo.PicStruct != checked.mfx.FrameInfo.PicStruct) {
-        ////    out->mfx.FrameInfo.PicStruct = checked.mfx.FrameInfo.PicStruct;
-        ////    isCorrected ++;
-        ////}
-
         *par_out = *out;
         if (out->mfx.RateControlMethod != MFX_RATECONTROL_CQP)
             out->GetCalcParams(par_out);
@@ -950,6 +952,14 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
                 isInvalid ++;
             } else opts_out->MaxCUDepth = opts_in->MaxCUDepth;
 
+            if (opts_out->Log2MaxCUSize && opts_out->MaxCUDepth) {
+                int MinCUSize = 1 << (opts_out->Log2MaxCUSize - opts_out->MaxCUDepth + 1);
+                if ((out->mfx.FrameInfo.Width | out->mfx.FrameInfo.Height) & (MinCUSize-1)) {
+                    opts_out->MaxCUDepth = 0;
+                    isInvalid ++;
+                }
+            }
+
             if ( (opts_in->QuadtreeTULog2MaxSize > 5) ||
                  (opts_out->Log2MaxCUSize!=0 && opts_in->QuadtreeTULog2MaxSize > opts_out->Log2MaxCUSize) ) {
                 opts_out->QuadtreeTULog2MaxSize = 0;
@@ -961,6 +971,12 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
                 opts_out->QuadtreeTULog2MinSize = 0;
                 isInvalid ++;
             } else opts_out->QuadtreeTULog2MinSize = opts_in->QuadtreeTULog2MinSize;
+
+            if (opts_out->QuadtreeTULog2MinSize)
+                if ((out->mfx.FrameInfo.Width | out->mfx.FrameInfo.Height) & ((1<<opts_out->QuadtreeTULog2MinSize)-1)) {
+                    opts_out->QuadtreeTULog2MinSize = 0;
+                    isInvalid ++;
+                }
 
             if ( (opts_in->QuadtreeTUMaxDepthIntra > 5) ||
                  (opts_out->Log2MaxCUSize!=0 && opts_in->QuadtreeTUMaxDepthIntra + 1 > opts_out->Log2MaxCUSize) ) {
