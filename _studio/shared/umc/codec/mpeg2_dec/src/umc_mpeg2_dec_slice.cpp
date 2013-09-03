@@ -506,7 +506,11 @@ Status MPEG2VideoDecoderBase::DecodeSliceHeader(IppVideoContext *video, int task
         video->slice_vertical_position += code << 7;
     }
     if( video->slice_vertical_position > PictureHeader[task_num].max_slice_vert_pos)
-      return UMC_ERR_INVALID_STREAM;
+    {
+        video->slice_vertical_position = PictureHeader[task_num].max_slice_vert_pos;
+        isCorrupted = true;
+//        return UMC_ERR_INVALID_STREAM;
+    }
 
     if((sequenceHeader.extension_start_code_ID[task_num] == SEQUENCE_SCALABLE_EXTENSION_ID) &&
         (sequenceHeader.scalable_mode[task_num] == DATA_PARTITIONING))
