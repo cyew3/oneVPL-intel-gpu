@@ -503,11 +503,19 @@ mfxStatus VAAPIEncoder::Init(ENCODE_FUNC func, ExecuteBuffers* pExecuteBuffers)
 {
     mfxStatus   sts    = MFX_ERR_NONE;    
 
-    //m_initFrameWidth   = 16 * ((pExecuteBuffers->m_sps.FrameWidth + 15) >> 4);
-    //m_initFrameHeight  = 16 * ((pExecuteBuffers->m_sps.FrameHeight + 15) >> 4);
+    m_initFrameWidth   = 16 * ((pExecuteBuffers->m_sps.FrameWidth + 15) >> 4);
+    if (m_vaSpsBuf.sequence_extension.bits.progressive_sequence)
+    {
+        m_initFrameHeight  = 16 * ((pExecuteBuffers->m_sps.FrameHeight + 15) >> 4);        
+    }
+    else
+    {
+        m_initFrameHeight  = 32 * ((pExecuteBuffers->m_sps.FrameHeight + 31) >> 5);
+    }
+    
 
-    m_initFrameWidth   = pExecuteBuffers->m_sps.FrameWidth;
-    m_initFrameHeight  = pExecuteBuffers->m_sps.FrameHeight;
+    //m_initFrameWidth   = pExecuteBuffers->m_sps.FrameWidth;
+    //m_initFrameHeight  = pExecuteBuffers->m_sps.FrameHeight;
 
     memset (&m_rawFrames, 0, sizeof(mfxRawFrames));
 
