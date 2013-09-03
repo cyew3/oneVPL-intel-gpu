@@ -151,7 +151,7 @@ default:
     {
         params.m_pData = new UMC::MediaData();
         params.m_pData->SetBufferPointer(&(par->mfx.AACHeaderData[0]),par->mfx.AACHeaderDataSize);
-
+        params.m_pData->SetDataSize(par->mfx.AACHeaderDataSize);
         // Check header type
         sAdif_header audio_adif_data;
         sAdts_fixed_header audio_adts_fixed_data;
@@ -179,7 +179,7 @@ default:
         }
     }
 
-    UMC::Status sts = m_pAACAudioDecoder->Init(&params);
+     UMC::Status sts = m_pAACAudioDecoder->Init(&params);
     if(sts != UMC::UMC_OK)
     {
         delete params.m_pData;
