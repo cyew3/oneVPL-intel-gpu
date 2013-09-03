@@ -254,6 +254,8 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     // return status for Init differs in these cases
     if (stsQuery == MFX_ERR_UNSUPPORTED &&
          ( (par_in->mfx.NumSlice > 0 && m_mfxVideoParam.mfx.NumSlice == 0) ||
+           (par_in->IOPattern != 0 && m_mfxVideoParam.IOPattern == 0) ||
+           (par_in->mfx.FrameInfo.PicStruct != 0 && m_mfxVideoParam.mfx.FrameInfo.PicStruct == 0) ||
            (par_in->mfx.FrameInfo.FrameRateExtN != 0 && m_mfxVideoParam.mfx.FrameInfo.FrameRateExtN == 0) ||
            (par_in->mfx.FrameInfo.FrameRateExtD != 0 && m_mfxVideoParam.mfx.FrameInfo.FrameRateExtD == 0) ||
            (par_in->mfx.FrameInfo.FourCC != 0 && m_mfxVideoParam.mfx.FrameInfo.FourCC == 0) ||
@@ -425,7 +427,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
         if (m_mfxHEVCOpts.AnalyzeChroma == MFX_CODINGOPTION_UNKNOWN)
             m_mfxHEVCOpts.AnalyzeChroma = opts_tu->AnalyzeChroma;
 
-        // doesn't work together now
+        // doesn't work together now, no sense
         if (m_mfxHEVCOpts.RDOQuant == MFX_CODINGOPTION_ON)
            m_mfxHEVCOpts.SignBitHiding = MFX_CODINGOPTION_OFF;
         if (m_mfxHEVCOpts.SignBitHiding == MFX_CODINGOPTION_ON)
@@ -434,6 +436,8 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxHEVCOpts.RDOQuant = opts_tu->RDOQuant;
         if (m_mfxHEVCOpts.SignBitHiding == MFX_CODINGOPTION_UNKNOWN)
             m_mfxHEVCOpts.SignBitHiding = opts_tu->SignBitHiding;
+// sign bit hiding doesn't work now properly
+m_mfxHEVCOpts.SignBitHiding = MFX_CODINGOPTION_OFF;
 
         if (m_mfxHEVCOpts.WPP == MFX_CODINGOPTION_UNKNOWN)
             m_mfxHEVCOpts.WPP = opts_tu->WPP;
@@ -718,6 +722,12 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
             out->mfx.FrameInfo.ChromaFormat = in->mfx.FrameInfo.ChromaFormat;
         }
 
+        if (in->Protected != 0)
+            return MFX_ERR_UNSUPPORTED;
+        out->Protected = 0;
+
+        out->AsyncDepth = in->AsyncDepth;
+
         if ( (in->mfx.FrameInfo.Width & 15) || in->mfx.FrameInfo.Width > 3840 ) {
             out->mfx.FrameInfo.Width = 0;
             isInvalid ++;
@@ -823,8 +833,10 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
 
         if (in->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE &&
             in->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_UNKNOWN ) {
-            out->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-            isCorrected ++;
+            //out->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+            //isCorrected ++;
+            out->mfx.FrameInfo.PicStruct = 0;
+            isInvalid ++;
         } else out->mfx.FrameInfo.PicStruct = in->mfx.FrameInfo.PicStruct;
 
         out->mfx.BRCParamMultiplier = in->mfx.BRCParamMultiplier;
@@ -994,7 +1006,7 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
             CHECK_OPTION(opts_in->SignBitHiding, opts_out->SignBitHiding, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->RDOQuant, opts_out->RDOQuant, isInvalid);            /* tri-state option */
 
-            if (opts_out->SignBitHiding == MFX_CODINGOPTION_ON && opts_out->RDOQuant == MFX_CODINGOPTION_ON) { // doesn't work together now
+            if (opts_out->SignBitHiding == MFX_CODINGOPTION_ON && opts_out->RDOQuant == MFX_CODINGOPTION_ON) { // doesn't work together
                 opts_out->SignBitHiding = MFX_CODINGOPTION_OFF;
                 isCorrected++;
             }
@@ -1214,7 +1226,7 @@ mfxStatus MFXVideoENCODEH265::GetVideoParam(mfxVideoParam *par)
     MFX_CHECK_NULL_PTR1(par)
 
     par->mfx = m_mfxVideoParam.mfx;
-    par->Protected = m_mfxVideoParam.Protected;
+    par->Protected = 0;
     par->AsyncDepth = m_mfxVideoParam.AsyncDepth;
     par->IOPattern = m_mfxVideoParam.IOPattern;
 
