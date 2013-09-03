@@ -42,10 +42,21 @@ public:
     HANDLE CreateBatchBufferEvent()
     {
         HRESULT hres = 0;
-
-        ComPtrCore<ID3D11VideoDecoder>* pVideoDecoder = QueryCoreInterface<ComPtrCore<ID3D11VideoDecoder>>(m_pCore, MFXID3D11DECODER_GUID); 
-        if (!pVideoDecoder)
-            return NULL;
+        ID3D11VideoDecoder* pVideoDecoder;
+        ComPtrCore<ID3D11VideoDecoder>* pWrpVideoDecoder = QueryCoreInterface<ComPtrCore<ID3D11VideoDecoder>>(m_pCore, MFXID3D11DECODER_GUID); 
+        if (!pWrpVideoDecoder)
+        {
+            // Get D3D11 Video decoder after MSDK decoder's creation
+            m_pCore->GetVA((mfxHDL*)&pVideoDecoder, MFX_MEMTYPE_FROM_DECODE);
+            if (!pVideoDecoder)
+                return NULL;
+        }
+        else
+        {
+            // Get D3D11 Video decoder after MSDK encoder's creation
+            // any of them can be used to get global event handle
+            pVideoDecoder = pWrpVideoDecoder->get();
+        }
 
         D3D11Interface* pD3d11 = QueryCoreInterface<D3D11Interface>(m_pCore);
         if (!pD3d11)
@@ -68,7 +79,7 @@ public:
             dec_ext.ppResourceList = 0;
 
 
-            hres = pD3D11Context->DecoderExtension(pVideoDecoder->get(), &dec_ext);
+            hres = pD3D11Context->DecoderExtension(pVideoDecoder, &dec_ext);
             
 
             if (FAILED(hres))

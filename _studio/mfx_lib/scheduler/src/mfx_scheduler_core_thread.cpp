@@ -83,6 +83,7 @@ mfxStatus mfxSchedulerCore::StopWakeUpThread(void)
     else
     {
         delete m_pdx11event;
+        m_pdx11event = 0;
         m_hwTaskDone.handle = 0; // handle has been obtained by UMD
     }
 #endif
