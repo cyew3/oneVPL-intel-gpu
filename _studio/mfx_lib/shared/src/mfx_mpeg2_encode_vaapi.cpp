@@ -503,8 +503,12 @@ mfxStatus VAAPIEncoder::Init(ENCODE_FUNC func, ExecuteBuffers* pExecuteBuffers)
 {
     mfxStatus   sts    = MFX_ERR_NONE;    
 
+    //m_initFrameWidth   = 16 * ((pExecuteBuffers->m_sps.FrameWidth + 15) >> 4);
+    //m_initFrameHeight  = 16 * ((pExecuteBuffers->m_sps.FrameHeight + 15) >> 4);
+
     m_initFrameWidth   = pExecuteBuffers->m_sps.FrameWidth;
     m_initFrameHeight  = pExecuteBuffers->m_sps.FrameHeight;
+
     memset (&m_rawFrames, 0, sizeof(mfxRawFrames));
 
     ExtVASurface cleanSurf = {VA_INVALID_ID, 0, 0};
@@ -924,7 +928,17 @@ mfxStatus VAAPIEncoder::FillSlices(ExecuteBuffers* pExecuteBuffers)
     assert(m_vaPpsBuf.picture_coding_extension.bits.q_scale_type == 0);
 
     width_in_mbs = (m_vaSpsBuf.picture_width + 15) >> 4;
-    height_in_mbs = (m_vaSpsBuf.picture_height + 15) >> 4;
+    if (m_vaSpsBuf.sequence_extension.bits.progressive_sequence)
+    {
+        height_in_mbs = (m_vaSpsBuf.picture_height + 15) >> 4;
+    }
+    else
+    {
+        height_in_mbs = ((m_vaSpsBuf.picture_height + 31) >> 5) * 2;
+    }
+    m_numSliceGroups = 1;
+
+    MFX_CHECK_WITH_ASSERT(height_in_mbs == pExecuteBuffers->m_pps.NumSlice, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
     m_numSliceGroups = 1;
 
 #if 1                   //multiple slice
