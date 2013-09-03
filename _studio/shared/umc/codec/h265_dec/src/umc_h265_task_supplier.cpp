@@ -850,8 +850,6 @@ void TaskSupplier_H265::AfterErrorRestore()
 
 UMC::Status TaskSupplier_H265::GetInfo(UMC::VideoDecoderParams *lpInfo)
 {
-    ViewItem_H265 &view = *GetView();
-
     H265SeqParamSet *sps = m_Headers.m_SeqParams.GetCurrentHeader();
     if (!sps)
     {
