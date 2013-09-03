@@ -1777,16 +1777,20 @@ mfxStatus MFXVideoENCODEMVC::EncodeFrameCtrlCheck(mfxEncodeCtrl *ctrl, mfxFrameS
     else
         return MFX_ERR_INVALID_HANDLE;
 
-    if (surface->Info.ChromaFormat != checked_view->m_mfxVideoParam.mfx.FrameInfo.ChromaFormat)
+    if (surface->Info.Width < checked_view->enc->m_info.info.clip_info.width ||
+        surface->Info.Height < checked_view->enc->m_info.info.clip_info.height ||
+        //surface->Info.CropW > 0 && surface->Info.CropW != cur_enc->m_info.info.clip_info.width ||
+        //surface->Info.CropH > 0 && surface->Info.CropH != cur_enc->m_info.info.clip_info.height ||
+        surface->Info.ChromaFormat != checked_view->m_mfxVideoParam.mfx.FrameInfo.ChromaFormat)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     // check PicStruct in surface
     st = AnalyzePicStruct(checked_view, surface->Info.PicStruct, &internalPicStruct);
     if (st < MFX_ERR_NONE) return st;
 
-    if (surface->Info.Width != checked_view->enc->m_info.info.clip_info.width ||
+    /*if (surface->Info.Width != checked_view->enc->m_info.info.clip_info.width ||
         surface->Info.Height != checked_view->enc->m_info.info.clip_info.height)
-        st = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        st = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;*/
 
     isFieldEncoding = (checked_view->enc->m_info.coding_type == CODINGTYPE_PICAFF || checked_view->enc->m_info.coding_type == CODINGTYPE_INTERLACE) && !(internalPicStruct & MFX_PICSTRUCT_PROGRESSIVE);
 
@@ -2730,13 +2734,6 @@ mfxStatus MFXVideoENCODEMVC::Init(mfxVideoParam* par_in)
             m_views[i].enc->m_info.m_viewOutput = false;
     }
 
-    if(!m_views[0].enc->m_info.m_viewOutput && m_sps_views[0].vui_parameters.nal_hrd_parameters_present_flag) {
-        for(mfxU32 i=1; i<m_num_sps-1; i++) {
-            m_sps_views[i].vui_parameters.hrd_params.bit_rate_value_minus1[0] += m_sps_views[0].vui_parameters.hrd_params.bit_rate_value_minus1[0]+1;
-            m_sps_views[i].vui_parameters.hrd_params.cpb_size_value_minus1[0] += m_sps_views[0].vui_parameters.hrd_params.cpb_size_value_minus1[0]+1;
-        }
-    }
-
     st = InitAllocMVCExtension();
     if (st != MFX_ERR_NONE) return st;
 
@@ -3012,6 +3009,8 @@ mfxStatus MFXVideoENCODEMVC::Reset(mfxVideoParam * par_in)
     checked.ExtParam = ptr_checked_ext;
     checked.NumExtParam = ext_counter;
 
+    SetDefaultParamForReset(checked, m_views[0].m_mfxVideoParam);
+
     mfxVideoInternalParam inInt = *par_in;
 
     if (par_in->mfx.RateControlMethod != MFX_RATECONTROL_CQP)
@@ -3032,7 +3031,7 @@ mfxStatus MFXVideoENCODEMVC::Reset(mfxVideoParam * par_in)
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     }
 
-    st = Query(par_in, &checked);
+    st = Query(&checked, &checked);
 
     if (st != MFX_ERR_NONE && st != MFX_WRN_INCOMPATIBLE_VIDEO_PARAM && st != MFX_WRN_PARTIAL_ACCELERATION)
         if (st == MFX_ERR_UNSUPPORTED && optsSP == 0) // SPS/PPS header isn't attached. Error is in mfxVideoParam. Return MFX_ERR_INVALID_VIDEO_PARAM
@@ -3413,12 +3412,6 @@ mfxStatus MFXVideoENCODEMVC::Reset(mfxVideoParam * par_in)
 #endif // H264_HRD_CPB_MODEL
     }
 
-    if(!m_views[0].enc->m_info.m_viewOutput && m_sps_views[0].vui_parameters.nal_hrd_parameters_present_flag) {
-        for(mfxU32 i=1; i<m_num_sps-1; i++) {
-            m_sps_views[i].vui_parameters.hrd_params.bit_rate_value_minus1[0] += m_sps_views[0].vui_parameters.hrd_params.bit_rate_value_minus1[0]+1;
-            m_sps_views[i].vui_parameters.hrd_params.cpb_size_value_minus1[0] += m_sps_views[0].vui_parameters.hrd_params.cpb_size_value_minus1[0]+1;
-        }
-    }
 
 #ifdef H264_NEW_THREADING
     m_taskParams.single_thread_selected = 0;

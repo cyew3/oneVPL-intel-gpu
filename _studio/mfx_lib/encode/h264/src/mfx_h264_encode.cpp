@@ -3874,36 +3874,6 @@ mfxStatus MFXVideoENCODEH264::Reset(mfxVideoParam *par_in)
     if (opts) {
         checked_ext = *opts;
         ptr_checked_ext[ext_counter++] = &checked_ext.Header;
-
-        if (!checked_ext.RateDistortionOpt) checked_ext.RateDistortionOpt   = m_base.m_extOption.RateDistortionOpt;
-        if (!checked_ext.MECostType)        checked_ext.MECostType          = m_base.m_extOption.MECostType;
-        if (!checked_ext.MESearchType)      checked_ext.MESearchType        = m_base.m_extOption.MESearchType;
-        if (!checked_ext.MVSearchWindow.x)  checked_ext.MVSearchWindow.x    = m_base.m_extOption.MVSearchWindow.x;
-        if (!checked_ext.MVSearchWindow.y)  checked_ext.MVSearchWindow.y    = m_base.m_extOption.MVSearchWindow.y;
-        if (!checked_ext.EndOfSequence)     checked_ext.EndOfSequence       = m_base.m_extOption.EndOfSequence;
-        if (!checked_ext.FramePicture)      checked_ext.FramePicture        = m_base.m_extOption.FramePicture;
-
-        if (!checked_ext.CAVLC)               checked_ext.CAVLC               = m_base.m_extOption.CAVLC;
-        if (!checked_ext.RecoveryPointSEI)    checked_ext.RecoveryPointSEI    = m_base.m_extOption.RecoveryPointSEI;
-        if (!checked_ext.ViewOutput)          checked_ext.ViewOutput          = m_base.m_extOption.ViewOutput;
-        if (!checked_ext.NalHrdConformance)   checked_ext.NalHrdConformance   = m_base.m_extOption.NalHrdConformance;
-        if (!checked_ext.SingleSeiNalUnit)    checked_ext.SingleSeiNalUnit    = m_base.m_extOption.SingleSeiNalUnit;
-        if (!checked_ext.VuiVclHrdParameters) checked_ext.VuiVclHrdParameters = m_base.m_extOption.VuiVclHrdParameters;
-
-        if (!checked_ext.RefPicListReordering) checked_ext.RefPicListReordering = m_base.m_extOption.RefPicListReordering;
-        if (!checked_ext.ResetRefList)         checked_ext.ResetRefList         = m_base.m_extOption.ResetRefList;
-        if (!checked_ext.RefPicMarkRep)        checked_ext.RefPicMarkRep        = m_base.m_extOption.RefPicMarkRep;
-        if (!checked_ext.FieldOutput)          checked_ext.FieldOutput          = m_base.m_extOption.FieldOutput;
-
-        if (!checked_ext.IntraPredBlockSize)   checked_ext.IntraPredBlockSize   = m_base.m_extOption.IntraPredBlockSize;
-        if (!checked_ext.InterPredBlockSize)   checked_ext.InterPredBlockSize   = m_base.m_extOption.InterPredBlockSize;
-        if (!checked_ext.MVPrecision)          checked_ext.MVPrecision          = m_base.m_extOption.MVPrecision;
-        if (!checked_ext.MaxDecFrameBuffering) checked_ext.MaxDecFrameBuffering = m_base.m_extOption.MaxDecFrameBuffering;
-
-        if (!checked_ext.AUDelimiter)         checked_ext.AUDelimiter       = m_base.m_extOption.AUDelimiter;
-        if (!checked_ext.EndOfStream)         checked_ext.EndOfStream       = m_base.m_extOption.EndOfStream;
-        if (!checked_ext.PicTimingSEI)        checked_ext.PicTimingSEI      = m_base.m_extOption.PicTimingSEI;
-        if (!checked_ext.VuiNalHrdParameters) checked_ext.VuiNalHrdParameters = m_base.m_extOption.VuiNalHrdParameters;
     } else {
         checked_ext = m_base.m_extOption;
         ptr_checked_ext[ext_counter++] = &checked_ext.Header;
@@ -3947,54 +3917,8 @@ mfxStatus MFXVideoENCODEH264::Reset(mfxVideoParam *par_in)
 
     checked.ExtParam = ptr_checked_ext;
     checked.NumExtParam = ext_counter;
-
-    //set unspecified parameters
-    if (!checked.AsyncDepth)             checked.AsyncDepth           = m_base.m_mfxVideoParam.AsyncDepth;
-    if (!checked.IOPattern)              checked.IOPattern            = m_base.m_mfxVideoParam.IOPattern;
-    if (!checked.mfx.FrameInfo.FourCC)   checked.mfx.FrameInfo.FourCC = m_base.m_mfxVideoParam.mfx.FrameInfo.FourCC;
-    if (!checked.mfx.FrameInfo.FrameRateExtN) checked.mfx.FrameInfo.FrameRateExtN = m_base.m_mfxVideoParam.mfx.FrameInfo.FrameRateExtN;
-    if (!checked.mfx.FrameInfo.FrameRateExtD) checked.mfx.FrameInfo.FrameRateExtD = m_base.m_mfxVideoParam.mfx.FrameInfo.FrameRateExtD;
-    if (!checked.mfx.FrameInfo.AspectRatioW)  checked.mfx.FrameInfo.AspectRatioW  = m_base.m_mfxVideoParam.mfx.FrameInfo.AspectRatioW;
-    if (!checked.mfx.FrameInfo.AspectRatioH)  checked.mfx.FrameInfo.AspectRatioH  = m_base.m_mfxVideoParam.mfx.FrameInfo.AspectRatioH;
-    if (!checked.mfx.FrameInfo.PicStruct)     checked.mfx.FrameInfo.PicStruct     = m_base.m_mfxVideoParam.mfx.FrameInfo.PicStruct;
-    //if (!checked.mfx.FrameInfo.ChromaFormat) checked.mfx.FrameInfo.ChromaFormat = m_base.m_mfxVideoParam.mfx.FrameInfo.ChromaFormat;
-    if (!checked.mfx.CodecProfile)       checked.mfx.CodecProfile      = m_base.m_mfxVideoParam.mfx.CodecProfile;
-    if (!checked.mfx.CodecLevel)         checked.mfx.CodecLevel        = m_base.m_mfxVideoParam.mfx.CodecLevel;
-    if (!checked.mfx.NumThread)          checked.mfx.NumThread         = m_base.m_mfxVideoParam.mfx.NumThread;
-    if (!checked.mfx.TargetUsage)        checked.mfx.TargetUsage       = m_base.m_mfxVideoParam.mfx.TargetUsage;
-    if (!pSvcLayers && !rc) { // except SVC layers params
-        mfxU16 old_multiplier = IPP_MAX(m_base.m_mfxVideoParam.mfx.BRCParamMultiplier, 1);
-        mfxU16 new_multiplier = IPP_MAX(checked.mfx.BRCParamMultiplier, 1);
-        if (!checked.mfx.FrameInfo.Width)    checked.mfx.FrameInfo.Width  = m_base.m_mfxVideoParam.mfx.FrameInfo.Width;
-        if (!checked.mfx.FrameInfo.Height)   checked.mfx.FrameInfo.Height = m_base.m_mfxVideoParam.mfx.FrameInfo.Height;
-        //if (!checked.mfx.FrameInfo.CropX)    checked.mfx.FrameInfo.CropX  = m_base.m_mfxVideoParam.mfx.FrameInfo.CropX;
-        //if (!checked.mfx.FrameInfo.CropY)    checked.mfx.FrameInfo.CropY  = m_base.m_mfxVideoParam.mfx.FrameInfo.CropY;
-        if (!checked.mfx.FrameInfo.CropW)    checked.mfx.FrameInfo.CropW  = m_base.m_mfxVideoParam.mfx.FrameInfo.CropW;
-        if (!checked.mfx.FrameInfo.CropH)    checked.mfx.FrameInfo.CropH  = m_base.m_mfxVideoParam.mfx.FrameInfo.CropH;
-        if (!checked.mfx.GopRefDist)         checked.mfx.GopRefDist        = m_base.m_mfxVideoParam.mfx.GopRefDist;
-        if (!checked.mfx.GopOptFlag)         checked.mfx.GopOptFlag        = m_base.m_mfxVideoParam.mfx.GopOptFlag;
-        if (!checked.mfx.RateControlMethod)  checked.mfx.RateControlMethod = m_base.m_mfxVideoParam.mfx.RateControlMethod;
-        if (old_multiplier > new_multiplier) {
-            checked.mfx.BufferSizeInKB = (mfxU16)((mfxU64)checked.mfx.BufferSizeInKB*new_multiplier/old_multiplier);
-            if (checked.mfx.RateControlMethod == MFX_RATECONTROL_CBR || checked.mfx.RateControlMethod == MFX_RATECONTROL_VBR) {
-                checked.mfx.InitialDelayInKB = (mfxU16)((mfxU64)checked.mfx.InitialDelayInKB*new_multiplier/old_multiplier);
-                checked.mfx.TargetKbps       = (mfxU16)((mfxU64)checked.mfx.TargetKbps      *new_multiplier/old_multiplier);
-                checked.mfx.MaxKbps          = (mfxU16)((mfxU64)checked.mfx.MaxKbps         *new_multiplier/old_multiplier);
-            }
-            new_multiplier = old_multiplier;
-            checked.mfx.BRCParamMultiplier = new_multiplier;
-        }
-        if (!checked.mfx.BufferSizeInKB) checked.mfx.BufferSizeInKB = (mfxU16)((mfxU64)m_base.m_mfxVideoParam.mfx.BufferSizeInKB*old_multiplier/new_multiplier);
-        if (checked.mfx.RateControlMethod == m_base.m_mfxVideoParam.mfx.RateControlMethod) {
-            if (checked.mfx.RateControlMethod > MFX_RATECONTROL_VBR)
-                old_multiplier = new_multiplier = 1;
-            if (!checked.mfx.InitialDelayInKB) checked.mfx.InitialDelayInKB = (mfxU16)((mfxU64)m_base.m_mfxVideoParam.mfx.InitialDelayInKB*old_multiplier/new_multiplier);
-            if (!checked.mfx.TargetKbps)       checked.mfx.TargetKbps       = (mfxU16)((mfxU64)m_base.m_mfxVideoParam.mfx.TargetKbps      *old_multiplier/new_multiplier);
-            if (!checked.mfx.MaxKbps)          checked.mfx.MaxKbps          = (mfxU16)((mfxU64)m_base.m_mfxVideoParam.mfx.MaxKbps         *old_multiplier/new_multiplier);
-        }
-    }
-    if (!checked.mfx.NumSlice)       checked.mfx.NumSlice       = m_base.m_mfxVideoParam.mfx.NumSlice;
-    if (!checked.mfx.NumRefFrame)    checked.mfx.NumRefFrame    = m_base.m_mfxVideoParam.mfx.NumRefFrame;
+    
+    SetDefaultParamForReset(checked, m_base.m_mfxVideoParam);
 
     st = Query(&checked, &checked);
 

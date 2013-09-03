@@ -3151,5 +3151,97 @@ mfxStatus MultiFrameLocker::Unlock(mfxU32 label)
     return sts;
 }
 
+void SetDefaultParamForReset(mfxVideoParam& parNew, const mfxVideoParam& parOld){
+    mfxExtCodingOption* optsOld = GetExtCodingOptions( parOld.ExtParam, parOld.NumExtParam );
+    mfxExtCodingOption* optsNew = GetExtCodingOptions( parNew.ExtParam, parNew.NumExtParam );
+    mfxExtSVCSeqDesc* pSvcLayers = (mfxExtSVCSeqDesc*)GetExtBuffer( parOld.ExtParam, parOld.NumExtParam, MFX_EXTBUFF_SVC_SEQ_DESC );
+    mfxExtSVCRateControl *rc = (mfxExtSVCRateControl*)GetExtBuffer( parOld.ExtParam, parOld.NumExtParam, MFX_EXTBUFF_SVC_RATE_CONTROL );
+
+    //set unspecified parameters
+    if (!parNew.AsyncDepth)             parNew.AsyncDepth           = parOld.AsyncDepth;
+    if (!parNew.IOPattern)              parNew.IOPattern            = parOld.IOPattern;
+    if (!parNew.mfx.FrameInfo.FourCC)   parNew.mfx.FrameInfo.FourCC = parOld.mfx.FrameInfo.FourCC;
+    if (!parNew.mfx.FrameInfo.FrameRateExtN) parNew.mfx.FrameInfo.FrameRateExtN = parOld.mfx.FrameInfo.FrameRateExtN;
+    if (!parNew.mfx.FrameInfo.FrameRateExtD) parNew.mfx.FrameInfo.FrameRateExtD = parOld.mfx.FrameInfo.FrameRateExtD;
+    if (!parNew.mfx.FrameInfo.AspectRatioW)  parNew.mfx.FrameInfo.AspectRatioW  = parOld.mfx.FrameInfo.AspectRatioW;
+    if (!parNew.mfx.FrameInfo.AspectRatioH)  parNew.mfx.FrameInfo.AspectRatioH  = parOld.mfx.FrameInfo.AspectRatioH;
+    if (!parNew.mfx.FrameInfo.PicStruct)     parNew.mfx.FrameInfo.PicStruct     = parOld.mfx.FrameInfo.PicStruct;
+    //if (!parNew.mfx.FrameInfo.ChromaFormat) parNew.mfx.FrameInfo.ChromaFormat = parOld.mfx.FrameInfo.ChromaFormat;
+    if (!parNew.mfx.CodecProfile)       parNew.mfx.CodecProfile      = parOld.mfx.CodecProfile;
+    if (!parNew.mfx.CodecLevel)         parNew.mfx.CodecLevel        = parOld.mfx.CodecLevel;
+    if (!parNew.mfx.NumThread)          parNew.mfx.NumThread         = parOld.mfx.NumThread;
+    if (!parNew.mfx.TargetUsage)        parNew.mfx.TargetUsage       = parOld.mfx.TargetUsage;
+    if (!pSvcLayers && !rc) { // except SVC layers params
+        if (!parNew.mfx.FrameInfo.Width)    parNew.mfx.FrameInfo.Width  = parOld.mfx.FrameInfo.Width;
+        if (!parNew.mfx.FrameInfo.Height)   parNew.mfx.FrameInfo.Height = parOld.mfx.FrameInfo.Height;
+        //if (!parNew.mfx.FrameInfo.CropX)    parNew.mfx.FrameInfo.CropX  = parOld.mfx.FrameInfo.CropX;
+        //if (!parNew.mfx.FrameInfo.CropY)    parNew.mfx.FrameInfo.CropY  = parOld.mfx.FrameInfo.CropY;
+        if (!parNew.mfx.FrameInfo.CropW)    parNew.mfx.FrameInfo.CropW  = parOld.mfx.FrameInfo.CropW;
+        if (!parNew.mfx.FrameInfo.CropH)    parNew.mfx.FrameInfo.CropH  = parOld.mfx.FrameInfo.CropH;
+        if (!parNew.mfx.GopRefDist)         parNew.mfx.GopRefDist        = parOld.mfx.GopRefDist;
+        if (!parNew.mfx.GopOptFlag)         parNew.mfx.GopOptFlag        = parOld.mfx.GopOptFlag;
+        if (!parNew.mfx.RateControlMethod)  parNew.mfx.RateControlMethod = parOld.mfx.RateControlMethod;
+
+        if(    parNew.mfx.CodecProfile != MFX_PROFILE_AVC_STEREO_HIGH
+            && parNew.mfx.CodecProfile != MFX_PROFILE_AVC_MULTIVIEW_HIGH){
+            mfxU16 old_multiplier = IPP_MAX(parOld.mfx.BRCParamMultiplier, 1);
+            mfxU16 new_multiplier = IPP_MAX(parNew.mfx.BRCParamMultiplier, 1);
+
+            if (old_multiplier > new_multiplier) {
+                parNew.mfx.BufferSizeInKB = (mfxU16)((mfxU64)parNew.mfx.BufferSizeInKB*new_multiplier/old_multiplier);
+                if (parNew.mfx.RateControlMethod == MFX_RATECONTROL_CBR || parNew.mfx.RateControlMethod == MFX_RATECONTROL_VBR) {
+                    parNew.mfx.InitialDelayInKB = (mfxU16)((mfxU64)parNew.mfx.InitialDelayInKB*new_multiplier/old_multiplier);
+                    parNew.mfx.TargetKbps       = (mfxU16)((mfxU64)parNew.mfx.TargetKbps      *new_multiplier/old_multiplier);
+                    parNew.mfx.MaxKbps          = (mfxU16)((mfxU64)parNew.mfx.MaxKbps         *new_multiplier/old_multiplier);
+                }
+                new_multiplier = old_multiplier;
+                parNew.mfx.BRCParamMultiplier = new_multiplier;
+            }
+            if (!parNew.mfx.BufferSizeInKB) parNew.mfx.BufferSizeInKB = (mfxU16)((mfxU64)parOld.mfx.BufferSizeInKB*old_multiplier/new_multiplier);
+            if (parNew.mfx.RateControlMethod == parOld.mfx.RateControlMethod) {
+                if (parNew.mfx.RateControlMethod > MFX_RATECONTROL_VBR)
+                    old_multiplier = new_multiplier = 1;
+                if (!parNew.mfx.InitialDelayInKB) parNew.mfx.InitialDelayInKB = (mfxU16)((mfxU64)parOld.mfx.InitialDelayInKB*old_multiplier/new_multiplier);
+                if (!parNew.mfx.TargetKbps)       parNew.mfx.TargetKbps       = (mfxU16)((mfxU64)parOld.mfx.TargetKbps      *old_multiplier/new_multiplier);
+                if (!parNew.mfx.MaxKbps)          parNew.mfx.MaxKbps          = (mfxU16)((mfxU64)parOld.mfx.MaxKbps         *old_multiplier/new_multiplier);
+            }
+        }
+    }
+    if (!parNew.mfx.NumSlice)       parNew.mfx.NumSlice       = parOld.mfx.NumSlice;
+    if (!parNew.mfx.NumRefFrame)    parNew.mfx.NumRefFrame    = parOld.mfx.NumRefFrame;
+
+    if(optsOld && optsNew){
+        if (!optsOld->RateDistortionOpt) optsOld->RateDistortionOpt   = optsNew->RateDistortionOpt;
+        if (!optsOld->MECostType)        optsOld->MECostType          = optsNew->MECostType;
+        if (!optsOld->MESearchType)      optsOld->MESearchType        = optsNew->MESearchType;
+        if (!optsOld->MVSearchWindow.x)  optsOld->MVSearchWindow.x    = optsNew->MVSearchWindow.x;
+        if (!optsOld->MVSearchWindow.y)  optsOld->MVSearchWindow.y    = optsNew->MVSearchWindow.y;
+        if (!optsOld->EndOfSequence)     optsOld->EndOfSequence       = optsNew->EndOfSequence;
+        if (!optsOld->FramePicture)      optsOld->FramePicture        = optsNew->FramePicture;
+
+        if (!optsOld->CAVLC)               optsOld->CAVLC               = optsNew->CAVLC;
+        if (!optsOld->RecoveryPointSEI)    optsOld->RecoveryPointSEI    = optsNew->RecoveryPointSEI;
+        if (!optsOld->ViewOutput)          optsOld->ViewOutput          = optsNew->ViewOutput;
+        if (!optsOld->NalHrdConformance)   optsOld->NalHrdConformance   = optsNew->NalHrdConformance;
+        if (!optsOld->SingleSeiNalUnit)    optsOld->SingleSeiNalUnit    = optsNew->SingleSeiNalUnit;
+        if (!optsOld->VuiVclHrdParameters) optsOld->VuiVclHrdParameters = optsNew->VuiVclHrdParameters;
+
+        if (!optsOld->RefPicListReordering) optsOld->RefPicListReordering = optsNew->RefPicListReordering;
+        if (!optsOld->ResetRefList)         optsOld->ResetRefList         = optsNew->ResetRefList;
+        if (!optsOld->RefPicMarkRep)        optsOld->RefPicMarkRep        = optsNew->RefPicMarkRep;
+        if (!optsOld->FieldOutput)          optsOld->FieldOutput          = optsNew->FieldOutput;
+
+        if (!optsOld->IntraPredBlockSize)   optsOld->IntraPredBlockSize   = optsNew->IntraPredBlockSize;
+        if (!optsOld->InterPredBlockSize)   optsOld->InterPredBlockSize   = optsNew->InterPredBlockSize;
+        if (!optsOld->MVPrecision)          optsOld->MVPrecision          = optsNew->MVPrecision;
+        if (!optsOld->MaxDecFrameBuffering) optsOld->MaxDecFrameBuffering = optsNew->MaxDecFrameBuffering;
+
+        if (!optsOld->AUDelimiter)         optsOld->AUDelimiter         = optsNew->AUDelimiter;
+        if (!optsOld->EndOfStream)         optsOld->EndOfStream         = optsNew->EndOfStream;
+        if (!optsOld->PicTimingSEI)        optsOld->PicTimingSEI        = optsNew->PicTimingSEI;
+        if (!optsOld->VuiNalHrdParameters) optsOld->VuiNalHrdParameters = optsNew->VuiNalHrdParameters;
+    }
+}
+
 #endif // defined(MFX_ENABLE_H264_VIDEO_ENCODER_COMMON)
 

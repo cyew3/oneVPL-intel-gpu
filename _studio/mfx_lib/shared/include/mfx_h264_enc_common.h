@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008 - 2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008 - 2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          H264 encoder common
@@ -93,6 +93,7 @@ void SetPlanePointers(mfxU32 fourCC, const mfxFrameData& data, H264EncoderFrame_
 mfxStatus LoadSPSPPS(const mfxVideoParam* in, H264SeqParamSet& seq_parms, H264PicParamSet& pic_parms);
 Status H264CoreEncoder_PrepareRefPicMarking(H264CoreEncoder_8u16s* core_enc, mfxEncodeCtrl *ctrl, EnumPicClass& ePic_Class, AVCTemporalLayers *tempLayers);
 mfxI64 CalculateDTSFromPTS_H264enc(mfxFrameInfo info, mfxU16 dpb_output_delay, mfxU64 TimeStamp);
+void SetDefaultParamForReset(mfxVideoParam& parNew, const mfxVideoParam& parOld);
 
 Status H264CoreEncoder_ReorderRefPicList( 
     EncoderRefPicListStruct_8u16s       *pRefListIn,
