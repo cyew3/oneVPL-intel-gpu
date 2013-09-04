@@ -455,10 +455,16 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         }
 
         m_pipelineParam[refIdx].filters  = m_filterBufs;
-        //m_pipelineParam[refIdx].num_filters  = m_numFilterBufs;
-        m_pipelineParam[refIdx].num_filters  = 0;
-        m_pipelineParam[refIdx].pipeline_flags |= VA_PROC_PIPELINE_FAST;
-        m_pipelineParam[refIdx].filter_flags    |= VA_FILTER_SCALING_FAST;
+        m_pipelineParam[refIdx].num_filters  = m_numFilterBufs;
+        /* Special case for composition:
+         * as primary surface processed as sub-stream
+         * pipeline and filter properties should be *_FAST */
+        if (pParams->bComposite)
+        {
+            m_pipelineParam[refIdx].num_filters  = 0;
+            m_pipelineParam[refIdx].pipeline_flags |= VA_PROC_PIPELINE_FAST;
+            m_pipelineParam[refIdx].filter_flags    |= VA_FILTER_SCALING_FAST;
+        }
 
         vaSts = vaCreateBuffer(m_vaDisplay,
                             m_vaContextVPP,
