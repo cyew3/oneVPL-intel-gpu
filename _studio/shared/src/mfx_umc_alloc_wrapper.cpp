@@ -462,31 +462,32 @@ const UMC::FrameData* mfx_UMC_FrameAllocator::Lock(UMC::FrameMemID mid)
 
     FrameInformation * frameMID = &m_frameData[index].second;
     UMC::FrameData* frameData = &frameMID->m_frame;
+    mfxU32 pitch = data->PitchLow + ((mfxU32)data->PitchHigh << 16);
 
     switch (frameData->GetInfo()->GetColorFormat())
     {
     case UMC::NV12:
-        frameData->SetPlanePointer(data->Y, 0, data->Pitch);
-        frameData->SetPlanePointer(data->U, 1, data->Pitch);
+        frameData->SetPlanePointer(data->Y, 0, pitch);
+        frameData->SetPlanePointer(data->U, 1, pitch);
         break;
     case UMC::YUV420:
-        frameData->SetPlanePointer(data->Y, 0, data->Pitch);
-        frameData->SetPlanePointer(data->U, 1, data->Pitch >> 1);
-        frameData->SetPlanePointer(data->V, 2, data->Pitch >> 1);
+        frameData->SetPlanePointer(data->Y, 0, pitch);
+        frameData->SetPlanePointer(data->U, 1, pitch >> 1);
+        frameData->SetPlanePointer(data->V, 2, pitch >> 1);
         break;
     case UMC::IMC3:
-        frameData->SetPlanePointer(data->Y, 0, data->Pitch);
-        frameData->SetPlanePointer(data->U, 1, data->Pitch);
-        frameData->SetPlanePointer(data->V, 2, data->Pitch);
+        frameData->SetPlanePointer(data->Y, 0, pitch);
+        frameData->SetPlanePointer(data->U, 1, pitch);
+        frameData->SetPlanePointer(data->V, 2, pitch);
         break;
     case UMC::RGB32:
         {
-            frameData->SetPlanePointer(data->B, 0, data->Pitch);
+            frameData->SetPlanePointer(data->B, 0, pitch);
         }
         break;
     case UMC::YUY2:
         {
-            frameData->SetPlanePointer(data->Y, 0, data->Pitch);
+            frameData->SetPlanePointer(data->Y, 0, pitch);
         }
         break;
     default:
@@ -844,21 +845,24 @@ mfxStatus mfx_UMC_FrameAllocator::PrepareToOutput(mfxFrameSurface1 *surface_work
     case UMC::NV12:
         m_surface.Data.Y = frame->GetPlaneMemoryInfo(0)->m_planePtr;
         m_surface.Data.UV = frame->GetPlaneMemoryInfo(1)->m_planePtr;
-        m_surface.Data.Pitch = (mfxU16) frame->GetPlaneMemoryInfo(0)->m_pitch;
+        m_surface.Data.PitchHigh = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch / (1 << 16));
+        m_surface.Data.PitchLow  = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch % (1 << 16));
         break;
 
     case UMC::YUV420:
         m_surface.Data.Y = frame->GetPlaneMemoryInfo(0)->m_planePtr;
         m_surface.Data.U = frame->GetPlaneMemoryInfo(1)->m_planePtr;
         m_surface.Data.V = frame->GetPlaneMemoryInfo(2)->m_planePtr;
-        m_surface.Data.Pitch = (mfxU16) frame->GetPlaneMemoryInfo(0)->m_pitch;
+        m_surface.Data.PitchHigh = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch / (1 << 16));
+        m_surface.Data.PitchLow  = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch % (1 << 16));
         break;
 
     case UMC::IMC3:
         m_surface.Data.Y = frame->GetPlaneMemoryInfo(0)->m_planePtr;
         m_surface.Data.U = frame->GetPlaneMemoryInfo(1)->m_planePtr;
         m_surface.Data.V = frame->GetPlaneMemoryInfo(2)->m_planePtr;
-        m_surface.Data.Pitch = (mfxU16) frame->GetPlaneMemoryInfo(0)->m_pitch;
+        m_surface.Data.PitchHigh = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch / (1 << 16));
+        m_surface.Data.PitchLow  = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch % (1 << 16));
         break;
 
     case UMC::RGB32:
@@ -866,14 +870,16 @@ mfxStatus mfx_UMC_FrameAllocator::PrepareToOutput(mfxFrameSurface1 *surface_work
         m_surface.Data.G = m_surface.Data.B + 1;
         m_surface.Data.R = m_surface.Data.B + 2;
         m_surface.Data.A = m_surface.Data.B + 3;
-        m_surface.Data.Pitch = (mfxU16) frame->GetPlaneMemoryInfo(0)->m_pitch;
+        m_surface.Data.PitchHigh = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch / (1 << 16));
+        m_surface.Data.PitchLow  = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch % (1 << 16));
         break;
         
     case UMC::YUY2:
         m_surface.Data.Y = frame->GetPlaneMemoryInfo(0)->m_planePtr;
         m_surface.Data.U = m_surface.Data.Y + 1;
         m_surface.Data.V = m_surface.Data.Y + 3;
-        m_surface.Data.Pitch = (mfxU16) frame->GetPlaneMemoryInfo(0)->m_pitch;
+        m_surface.Data.PitchHigh = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch / (1 << 16));
+        m_surface.Data.PitchLow  = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch % (1 << 16));
         break;
 
     default:
@@ -999,8 +1005,8 @@ mfxStatus mfx_UMC_FrameAllocator_NV12::ConvertToNV12(const UMC::FrameData * fd, 
 
     Ipp8u *(pDst[2]) = {data->Y,
                         data->U};
-    Ipp32s pDstStep[2] = {data->Pitch,
-                        data->Pitch};
+    Ipp32s pDstStep[2] = {data->PitchLow + ((mfxU32)data->PitchHigh << 16),
+                          data->PitchLow + ((mfxU32)data->PitchHigh << 16)};
 
     IppiSize srcSize = {videoInfo.Width, videoInfo.Height};
     IppStatus sts = ippiYCbCr420_8u_P3P2R(pYVU, pYVUStep, pDst[0], pDstStep[0], pDst[1], pDstStep[1], srcSize);

@@ -607,59 +607,61 @@ mfxStatus MFXEncodeWRAPPER::ZeroBottomStripe(mfxFrameSurface1 * psrf)
         //only nv12 zeroing so far
         MFX_CHECK(MFX_FOURCC_NV12 == psrf->Info.FourCC);
         MFX_CHECK_STS(LockFrame(psrf));
+
+        mfxU32 pitch = psrf->Data.PitchLow + ((mfxU32)psrf->Data.PitchHigh << 16);
         
         //zeroing bottom stripe
         if (psrf->Info.CropY + psrf->Info.CropH != psrf->Info.Height)
         {
             mfxU32 offsetY   = (psrf->Info.CropY + psrf->Info.CropH);
-            mfxU32 planesize = psrf->Info.Height * psrf->Data.Pitch;
+            mfxU32 planesize = psrf->Info.Height * pitch;
 
-            void *pdata    = psrf->Data.Y + offsetY * psrf->Data.Pitch;
+            void *pdata    = psrf->Data.Y + offsetY * pitch;
 
-            memset(pdata, 0, planesize - offsetY * psrf->Data.Pitch);
+            memset(pdata, 0, planesize - offsetY * pitch);
 
             offsetY >>= 1;
-            planesize = (psrf->Info.Height >> 1)* psrf->Data.Pitch;
-            pdata     = psrf->Data.U + offsetY  * psrf->Data.Pitch;
+            planesize = (psrf->Info.Height >> 1)* pitch;
+            pdata     = psrf->Data.U + offsetY  * pitch;
 
-            memset(pdata, 0, planesize - offsetY * psrf->Data.Pitch);
+            memset(pdata, 0, planesize - offsetY * pitch);
         }
 
         //zeroing top stripe
         if (psrf->Info.CropY != 0)
         {
-            memset(psrf->Data.Y, 0, psrf->Data.Pitch * psrf->Info.CropY);
-            memset(psrf->Data.U, 0, psrf->Data.Pitch * (psrf->Info.CropY >> 1));
+            memset(psrf->Data.Y, 0, pitch * psrf->Info.CropY);
+            memset(psrf->Data.U, 0, pitch * (psrf->Info.CropY >> 1));
         }
         
         //zeroing right stripe
         if (psrf->Info.CropX + psrf->Info.CropW != psrf->Info.Width)
         {
-            void *pdata  = psrf->Data.Y + psrf->Info.CropX + psrf->Info.CropW + psrf->Info.CropY * psrf->Data.Pitch;
+            void *pdata  = psrf->Data.Y + psrf->Info.CropX + psrf->Info.CropW + psrf->Info.CropY * pitch;
 
             IppiSize roi = {psrf->Info.Width - (psrf->Info.CropX + psrf->Info.CropW), psrf->Info.CropH};
 
-            ippiSet_8u_C1R(0, (Ipp8u*)pdata, psrf->Data.Pitch, roi);
+            ippiSet_8u_C1R(0, (Ipp8u*)pdata, pitch, roi);
 
-            pdata        = psrf->Data.U + psrf->Info.CropX + psrf->Info.CropW + (psrf->Info.CropY >> 1) * psrf->Data.Pitch;
+            pdata        = psrf->Data.U + psrf->Info.CropX + psrf->Info.CropW + (psrf->Info.CropY >> 1) * pitch;
             roi.height >>=1;
 
-            ippiSet_8u_C1R(0, (Ipp8u*)pdata, psrf->Data.Pitch, roi);
+            ippiSet_8u_C1R(0, (Ipp8u*)pdata, pitch, roi);
         }
 
         //zeroing left stripe
         if (psrf->Info.CropX != 0)
         {
-            void *pdata  = psrf->Data.Y + psrf->Info.CropY * psrf->Data.Pitch;
+            void *pdata  = psrf->Data.Y + psrf->Info.CropY * pitch;
 
             IppiSize roi = {psrf->Info.CropX, psrf->Info.CropH};
 
-            ippiSet_8u_C1R(0, (Ipp8u*)pdata, psrf->Data.Pitch, roi);
+            ippiSet_8u_C1R(0, (Ipp8u*)pdata, pitch, roi);
 
-            pdata       = psrf->Data.U + (psrf->Info.CropY >> 1) * psrf->Data.Pitch;
+            pdata       = psrf->Data.U + (psrf->Info.CropY >> 1) * pitch;
             roi.height>>=1;
 
-            ippiSet_8u_C1R(0, (Ipp8u*)pdata, psrf->Data.Pitch, roi);
+            ippiSet_8u_C1R(0, (Ipp8u*)pdata, pitch, roi);
         }
 
         MFX_CHECK_STS(UnlockFrame(psrf));

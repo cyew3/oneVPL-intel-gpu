@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
 
 File Name: libmfx_allocator.cpp
 
@@ -273,13 +273,15 @@ mfxStatus mfxDefaultAllocator::LockFrame(mfxHDL pthis, mfxHDL mid, mfxFrameData 
     mfxU8 *sptr = (mfxU8 *)fs+ALIGN32(sizeof(FrameStruct));
     switch (fs->info.FourCC) {
     case MFX_FOURCC_NV12:
-        ptr->Pitch=(mfxU16)ALIGN32(fs->info.Width);
+        ptr->PitchHigh=0;
+        ptr->PitchLow=(mfxU16)ALIGN32(fs->info.Width);
         ptr->Y = sptr;
         ptr->U = ptr->Y + ptr->Pitch*Height2;
         ptr->V = ptr->U + 1;
         break;
     case MFX_FOURCC_YV12:
-        ptr->Pitch=(mfxU16)ALIGN32(fs->info.Width);
+        ptr->PitchHigh=0;
+        ptr->PitchLow=(mfxU16)ALIGN32(fs->info.Width);
         ptr->Y = sptr;
         ptr->V = ptr->Y + ptr->Pitch*Height2;
         ptr->U = ptr->V + (ptr->Pitch>>1)*(Height2>>1);
@@ -288,20 +290,23 @@ mfxStatus mfxDefaultAllocator::LockFrame(mfxHDL pthis, mfxHDL mid, mfxFrameData 
         ptr->Y = sptr;
         ptr->U = ptr->Y + 1;
         ptr->V = ptr->Y + 3;
-        ptr->Pitch = (mfxU16)(2*ALIGN32(fs->info.Width));
+        ptr->PitchHigh = (mfxU16)((2*ALIGN32(fs->info.Width)) / (1 << 16));
+        ptr->PitchLow  = (mfxU16)((2*ALIGN32(fs->info.Width)) % (1 << 16));
         break;
     case MFX_FOURCC_RGB3:
         ptr->B = sptr;
         ptr->G = ptr->B + 1;
         ptr->R = ptr->B + 2;
-        ptr->Pitch = (mfxU16)(3*ALIGN32(fs->info.Width));
+        ptr->PitchHigh = (mfxU16)((3*ALIGN32(fs->info.Width)) / (1 << 16));
+        ptr->PitchLow  = (mfxU16)((3*ALIGN32(fs->info.Width)) % (1 << 16));
         break;
     case MFX_FOURCC_RGB4:
         ptr->B = sptr;
         ptr->G = ptr->B + 1;
         ptr->R = ptr->B + 2;
         ptr->A = ptr->B + 3;
-        ptr->Pitch = (mfxU16)(4*ALIGN32(fs->info.Width));
+        ptr->PitchHigh = (mfxU16)((4*ALIGN32(fs->info.Width)) / (1 << 16));
+        ptr->PitchLow  = (mfxU16)((4*ALIGN32(fs->info.Width)) % (1 << 16));
         break;
     /*case MFX_FOURCC_IMC3:
         ptr->Pitch = (mfxU16)ALIGN32(fs->info.Width);
@@ -310,7 +315,8 @@ mfxStatus mfxDefaultAllocator::LockFrame(mfxHDL pthis, mfxHDL mid, mfxFrameData 
         ptr->V = ptr->U + (ptr->Pitch)*(Height2>>1);
         break;*/
     case MFX_FOURCC_P8:
-        ptr->Pitch=(mfxU16)ALIGN32(fs->info.Width);
+        ptr->PitchHigh=0;
+        ptr->PitchLow=(mfxU16)ALIGN32(fs->info.Width);
         ptr->Y = sptr;
         ptr->U = 0;
         ptr->V = 0;
@@ -341,7 +347,8 @@ mfxStatus mfxDefaultAllocator::UnlockFrame(mfxHDL pthis, mfxHDL mid, mfxFrameDat
     mfxStatus sts = (pSelf->wbufferAllocator.bufferAllocator.Unlock)(pSelf->wbufferAllocator.bufferAllocator.pthis, mid);
     if (ERROR_STATUS(sts)) return sts;
     if (ptr) {
-        ptr->Pitch=0;
+        ptr->PitchHigh=0;
+        ptr->PitchLow=0;
         ptr->U=ptr->V=ptr->Y=0;
         ptr->A=ptr->R=ptr->G=ptr->B=0;
     }

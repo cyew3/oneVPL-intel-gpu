@@ -484,17 +484,19 @@ mfxStatus mfxSWFrameAllocator::LockFrame(mfxHDL mid, mfxFrameData *ptr)
         UnlockBuffer(0, mid);
         return MFX_ERR_INVALID_HANDLE;
     }
-    ptr->Pitch=(mfxU16)ALIGN32(fs->info.Width);
+    mfxU32 pitch = ALIGN32(fs->info.Width);
+    ptr->PitchHigh = (mfxU16)(pitch / (1 << 16));
+    ptr->PitchLow  = (mfxU16)(pitch % (1 << 16));
     mfxU32 Height2=ALIGN32(fs->info.Height);
     ptr->Y=(mfxU8 *)fs+ALIGN32(sizeof(FrameStruct));
     switch (fs->info.FourCC) {
     case MFX_FOURCC_NV12:
-        ptr->U=ptr->Y+ptr->Pitch*Height2;
+        ptr->U=ptr->Y+pitch*Height2;
         ptr->V=ptr->U+1;
         break;
     case MFX_FOURCC_YV12:
-        ptr->V=ptr->Y+ptr->Pitch*Height2;
-        ptr->U=ptr->V+(ptr->Pitch>>1)*(Height2>>1);
+        ptr->V=ptr->Y+pitch*Height2;
+        ptr->U=ptr->V+(pitch>>1)*(Height2>>1);
         break;
     }
     return sts;
@@ -506,7 +508,8 @@ mfxStatus mfxSWFrameAllocator::UnlockFrame( mfxHDL mid, mfxFrameData *ptr)
     if (sts!=MFX_ERR_NONE) 
         return sts;
     if (ptr) {
-        ptr->Pitch=0;
+        ptr->PitchHigh=0;
+        ptr->PitchLow=0;
         ptr->U=ptr->V=ptr->Y=0;
     }
     return sts;

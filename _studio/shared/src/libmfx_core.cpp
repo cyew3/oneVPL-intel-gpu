@@ -1178,8 +1178,8 @@ mfxStatus CommonCORE::DoFastCopy(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
             return MFX_ERR_NULL_PTR;
         }
 
-        srcPitch = src->Data.Pitch;
-        dstPitch = dst->Data.Pitch;
+        srcPitch = src->Data.PitchLow + ((mfxU32)src->Data.PitchHigh << 16);
+        dstPitch = dst->Data.PitchLow + ((mfxU32)dst->Data.PitchHigh << 16);
 
         switch (dst->Info.FourCC)
         {
@@ -1262,9 +1262,9 @@ mfxStatus CommonCORE::DoFastCopy(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
         {
             return MFX_ERR_NULL_PTR;
         }
-
-        srcPitch = src->Data.Pitch;
-        dstPitch = dst->Data.Pitch;
+        
+        srcPitch = src->Data.PitchLow + ((mfxU32)src->Data.PitchHigh << 16);
+        dstPitch = dst->Data.PitchLow + ((mfxU32)dst->Data.PitchHigh << 16);
 
         switch (dst->Info.FourCC)
         {
@@ -1379,8 +1379,8 @@ mfxStatus CommonCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
-    Ipp32u srcPitch = pSrc->Data.Pitch;
-    Ipp32u dstPitch = pDst->Data.Pitch;
+    Ipp32u srcPitch = pSrc->Data.PitchLow + ((mfxU32)pSrc->Data.PitchHigh << 16);
+    Ipp32u dstPitch = pDst->Data.PitchLow + ((mfxU32)pDst->Data.PitchHigh << 16);
 
     FastCopy *pFastCopy = m_pFastCopy.get();
 
@@ -1492,7 +1492,7 @@ mfxStatus CommonCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface
         sts = LockExternalFrame(pDst->Data.MemId, &pDst->Data);
         MFX_CHECK_STS(sts);
 
-        dstPitch = pDst->Data.Pitch;
+        dstPitch = pDst->Data.PitchLow + ((mfxU32)pDst->Data.PitchHigh << 16);
 
         switch (pDst->Info.FourCC)
         {
@@ -1600,7 +1600,7 @@ mfxStatus CommonCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface
         sts = LockExternalFrame(pSrc->Data.MemId, &pSrc->Data);
         MFX_CHECK_STS(sts);
 
-        srcPitch = pSrc->Data.Pitch;
+        srcPitch = pSrc->Data.PitchLow + ((mfxU32)pSrc->Data.PitchHigh << 16);
 
         switch (pDst->Info.FourCC)
         {
@@ -1728,8 +1728,8 @@ mfxStatus CommonCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface
         sts = LockExternalFrame(pDst->Data.MemId, &pDst->Data);
         MFX_CHECK_STS(sts);
 
-        srcPitch = pSrc->Data.Pitch;
-        dstPitch = pDst->Data.Pitch;
+        srcPitch = pSrc->Data.PitchLow + ((mfxU32)pSrc->Data.PitchHigh << 16);
+        dstPitch = pDst->Data.PitchLow + ((mfxU32)pDst->Data.PitchHigh << 16);
 
         switch (pDst->Info.FourCC)
         {

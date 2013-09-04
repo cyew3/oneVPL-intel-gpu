@@ -415,7 +415,8 @@ mfxStatus CheckFrameData(const mfxFrameSurface1 *surface)
         default:
             break;
         }
-        if (surface->Data.Pitch > 0x7FFF && surface->Info.FourCC != MFX_FOURCC_RGB4 && surface->Info.FourCC != MFX_FOURCC_YUY2)
+        mfxU32 pitch = surface->Data.PitchLow + ((mfxU32)surface->Data.PitchHigh << 16);
+        if (pitch > 0x7FFF && surface->Info.FourCC != MFX_FOURCC_RGB4 && surface->Info.FourCC != MFX_FOURCC_YUY2)
             return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
     return MFX_ERR_NONE;

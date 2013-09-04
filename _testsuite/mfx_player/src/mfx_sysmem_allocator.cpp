@@ -95,28 +95,33 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
     case MFX_FOURCC_NV12:
         ptr->U = ptr->Y + Width2 * Height2;
         ptr->V = ptr->U + 1;
-        ptr->Pitch = Width2;
+        ptr->PitchHigh = 0;
+        ptr->PitchLow = Width2;
         break;
     case MFX_FOURCC_YV12:
         ptr->V = ptr->Y + Width2 * Height2;
         ptr->U = ptr->V + (Width2 >> 1) * (Height2 >> 1);
-        ptr->Pitch = Width2;
+        ptr->PitchHigh = 0;
+        ptr->PitchLow = Width2;
         break;
     case MFX_FOURCC_YUY2:
         ptr->U = ptr->Y + 1;
         ptr->V = ptr->Y + 3;
-        ptr->Pitch = 2 * Width2;
+        ptr->PitchHigh = (mfxU16)((2 * (mfxU32)Width2) / (1 << 16));
+        ptr->PitchLow  = (mfxU16)((2 * (mfxU32)Width2) % (1 << 16));
         break;    
     case MFX_FOURCC_RGB3:        
         ptr->G = ptr->B + 1;
         ptr->R = ptr->B + 2;
-        ptr->Pitch = 3 * Width2;
+        ptr->PitchHigh = (mfxU16)((3 * (mfxU32)Width2) / (1 << 16));
+        ptr->PitchLow  = (mfxU16)((3 * (mfxU32)Width2) % (1 << 16));
         break;
     case MFX_FOURCC_RGB4:        
         ptr->G = ptr->B + 1;
         ptr->R = ptr->B + 2;
         ptr->A = ptr->B + 3;
-        ptr->Pitch = 4 * Width2;
+        ptr->PitchHigh = (mfxU16)((4 * (mfxU32)Width2) / (1 << 16));
+        ptr->PitchLow  = (mfxU16)((4 * (mfxU32)Width2) % (1 << 16));
         break; 
     default:
         return MFX_ERR_UNSUPPORTED;    
@@ -137,7 +142,8 @@ mfxStatus SysMemFrameAllocator::UnlockFrame(mfxMemId mid, mfxFrameData *ptr)
 
     if (NULL != ptr)
     {
-        ptr->Pitch = 0;
+        ptr->PitchHigh = 0;
+        ptr->PitchLow = 0;
         ptr->Y     = 0;
         ptr->U     = 0;
         ptr->V     = 0;

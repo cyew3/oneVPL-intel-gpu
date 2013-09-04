@@ -153,51 +153,52 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
         }
 
         UMC::VideoData* pDataIn = p->m_sourceData.get();
+        mfxU32 pitch = surface->Data.PitchLow + ((mfxU32)surface->Data.PitchHigh << 16);
 
         // color image
         if(MFX_CHROMAFORMAT_YUV400 != surface->Info.ChromaFormat)
         {
             if(surface->Info.FourCC == MFX_FOURCC_NV12)
             {
-                fieldOffset = surface->Data.Pitch * isBottom;
+                fieldOffset = pitch * isBottom;
                 pDataIn->Init(alignedWidth, alignedHeight, UMC::NV12, 8);
                 pDataIn->SetImageSize(width, height);
 
                 pDataIn->SetPlanePointer(surface->Data.Y + frameInfo->CropX + fieldOffset, 0);
-                pDataIn->SetPlanePitch(surface->Data.Pitch * numFields, 0);
+                pDataIn->SetPlanePitch(pitch * numFields, 0);
                 pDataIn->SetPlanePointer(surface->Data.UV + ((frameInfo->CropX >> 1) << 1) + fieldOffset, 1);
-                pDataIn->SetPlanePitch(surface->Data.Pitch * numFields, 1);
+                pDataIn->SetPlanePitch(pitch * numFields, 1);
             }
             else if(surface->Info.FourCC == MFX_FOURCC_YV12)
             {
-                fieldOffset = surface->Data.Pitch * isBottom;
+                fieldOffset = pitch * isBottom;
                 pDataIn->Init(alignedWidth, alignedHeight, UMC::YV12, 8);
                 pDataIn->SetImageSize(width, height);
 
                 pDataIn->SetPlanePointer(surface->Data.Y + frameInfo->CropX + fieldOffset, 0);
-                pDataIn->SetPlanePitch(surface->Data.Pitch * numFields, 0);
+                pDataIn->SetPlanePitch(pitch * numFields, 0);
                 pDataIn->SetPlanePointer(surface->Data.U + (frameInfo->CropX >> 1) + (fieldOffset >> 1), 1);
-                pDataIn->SetPlanePitch((surface->Data.Pitch >> 1) * numFields, 1);
+                pDataIn->SetPlanePitch((pitch >> 1) * numFields, 1);
                 pDataIn->SetPlanePointer(surface->Data.V + (frameInfo->CropX >> 1) + (fieldOffset >> 1), 2);
-                pDataIn->SetPlanePitch((surface->Data.Pitch >> 1) * numFields, 2);
+                pDataIn->SetPlanePitch((pitch >> 1) * numFields, 2);
             }
             else if(surface->Info.FourCC == MFX_FOURCC_YUY2)
             {
-                fieldOffset = surface->Data.Pitch * isBottom;
+                fieldOffset = pitch * isBottom;
                 pDataIn->Init(alignedWidth, alignedHeight, UMC::YUY2, 8);
                 pDataIn->SetImageSize(width, height);
 
                 pDataIn->SetPlanePointer(surface->Data.Y + ((frameInfo->CropX >> 1) << 2) + fieldOffset, 0);
-                pDataIn->SetPlanePitch(surface->Data.Pitch * numFields, 0);
+                pDataIn->SetPlanePitch(pitch * numFields, 0);
             }
             else if(surface->Info.FourCC == MFX_FOURCC_RGB4)
             {
-                fieldOffset = surface->Data.Pitch * isBottom;
+                fieldOffset = pitch * isBottom;
                 pDataIn->Init(alignedWidth, alignedHeight, UMC::RGB32, 8);
                 pDataIn->SetImageSize(width, height);
 
                 pDataIn->SetPlanePointer(surface->Data.B + frameInfo->CropX * 4 + fieldOffset, 0);
-                pDataIn->SetPlanePitch(surface->Data.Pitch * numFields, 0);
+                pDataIn->SetPlanePitch(pitch * numFields, 0);
             }
             else
             {
@@ -253,21 +254,21 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
         {
             if(surface->Info.FourCC == MFX_FOURCC_NV12)
             {
-                fieldOffset = surface->Data.Pitch * isBottom;
+                fieldOffset = pitch * isBottom;
                 pDataIn->Init(alignedWidth, alignedHeight, UMC::GRAY, 8);
                 pDataIn->SetImageSize(width, height);
 
                 pDataIn->SetPlanePointer(surface->Data.Y + frameInfo->CropX + fieldOffset, 0);
-                pDataIn->SetPlanePitch(surface->Data.Pitch * numFields, 0);
+                pDataIn->SetPlanePitch(pitch * numFields, 0);
             }
             else if(surface->Info.FourCC == MFX_FOURCC_YV12)
             {
-                fieldOffset = surface->Data.Pitch * isBottom;
+                fieldOffset = pitch * isBottom;
                 pDataIn->Init(alignedWidth, alignedHeight, UMC::GRAY, 8);
                 pDataIn->SetImageSize(width, height);
 
                 pDataIn->SetPlanePointer(surface->Data.Y + frameInfo->CropX + fieldOffset, 0);
-                pDataIn->SetPlanePitch(surface->Data.Pitch * numFields, 0);
+                pDataIn->SetPlanePitch(pitch * numFields, 0);
             }
             else if(surface->Info.FourCC == MFX_FOURCC_YUY2)
             {
@@ -284,7 +285,7 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
                 }
 
                 Ipp8u* src = surface->Data.Y;
-                Ipp32u srcPitch = surface->Data.Pitch;
+                Ipp32u srcPitch = pitch;
                 Ipp8u* dst = (Ipp8u*)cvt->GetPlanePointer(0);
                 if (!dst) 
                 {
@@ -1590,8 +1591,9 @@ mfxStatus MFXVideoENCODEMJPEG::RunThread(MJPEGEncodeTask &task, mfxU32 threadNum
                 {
                     return MFX_ERR_UNDEFINED_BEHAVIOR;
                 }
-
-                if (surface->Data.Pitch >= 0x8000 || !surface->Data.Pitch)
+                
+                mfxU32 pitch = surface->Data.PitchLow + ((mfxU32)surface->Data.PitchHigh << 16);
+                if (pitch >= 0x8000 || !pitch)
                 {
                     return MFX_ERR_UNDEFINED_BEHAVIOR;
                 }
@@ -1886,8 +1888,9 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
             {
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             }
-
-            if (surface->Data.Pitch >= 0x8000 || !surface->Data.Pitch)
+            
+            mfxU32 pitch = surface->Data.PitchLow + ((mfxU32)surface->Data.PitchHigh << 16);
+            if (pitch >= 0x8000 || !pitch)
             {
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             }

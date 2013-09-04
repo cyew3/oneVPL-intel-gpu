@@ -391,6 +391,7 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
     
     Ipp32s crop_x = pInfo->CropX;
     Ipp32s crop_y = pInfo->CropY;
+    mfxU32 pitch = pData->PitchLow + ((mfxU32)pData->PitchHigh << 16);
 
     switch (m_nFourCC)
     {
@@ -402,7 +403,7 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             for (i = 0; i < pInfo->CropH; i++)
             {
                 m_Current.m_pixY = i;
-                WRITE(pData->Y + (crop_y * pData->Pitch + crop_x) + i*pData->Pitch, pInfo->CropW);
+                WRITE(pData->Y + (crop_y * pitch + crop_x) + i*pitch, pInfo->CropW);
             }
 
             crop_x >>= 1;
@@ -412,13 +413,13 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             for (i = 0; i < ((pInfo->CropH + 1) >> 1); i++)
             {
                 m_Current.m_pixY = i;
-                WRITE(pData->U + (crop_y * pData->Pitch/2 + crop_x) + i*pData->Pitch/2, (pInfo->CropW + 1) >> 1);
+                WRITE(pData->U + (crop_y * pitch/2 + crop_x) + i*pitch/2, (pInfo->CropW + 1) >> 1);
             }
             m_Current.m_comp = VM_STRING('V');
             for (i = 0; i < ((pInfo->CropH + 1) >> 1); i++)
             {
                 m_Current.m_pixY = i;
-                WRITE(pData->V + (crop_y * pData->Pitch/2 + crop_x) + i*pData->Pitch/2, (pInfo->CropW + 1) >> 1);
+                WRITE(pData->V + (crop_y * pitch/2 + crop_x) + i*pitch/2, (pInfo->CropW + 1) >> 1);
             }
             break;
         }
@@ -429,13 +430,13 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             for (i = 0; i < pInfo->CropH; i++)
             {
                 m_Current.m_pixY = i;
-                WRITE(pData->Y + (pInfo->CropY * pData->Pitch + pInfo->CropX)+ i * pData->Pitch, pInfo->CropW);
+                WRITE(pData->Y + (pInfo->CropY * pitch + pInfo->CropX)+ i * pitch, pInfo->CropW);
             }
             m_Current.m_comp = VM_STRING('U');
             for (i = 0; i < pInfo->CropH / 2; i++)
             {
                 m_Current.m_pixY = i;
-                WRITE(pData->UV + (pInfo->CropY * pData->Pitch / 2 + pInfo->CropX) + i * pData->Pitch, pInfo->CropW);
+                WRITE(pData->UV + (pInfo->CropY * pitch / 2 + pInfo->CropX) + i * pitch, pInfo->CropW);
             }
             break;
         }
@@ -449,7 +450,7 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             {
                 m_Current.m_pixY = i;
                 MFX_CHECK_STS(PutData(plane, pInfo->CropW * 4));
-                plane += pData->Pitch;
+                plane += pitch;
             }
             break;
         }
@@ -464,7 +465,7 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             {
                 m_Current.m_pixY = i;
                 MFX_CHECK_STS(PutData(plane, pInfo->CropW * 4));
-                plane += pData->Pitch;
+                plane += pitch;
             }
             break;
         }
@@ -473,14 +474,14 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
         {
             m_Current.m_comp = VM_STRING('Y');
             m_Current.m_pixX = 0;
-            mfxU8* plane = pData->Y + pInfo->CropY * pData->Pitch + pInfo->CropX * 2;
+            mfxU8* plane = pData->Y + pInfo->CropY * pitch + pInfo->CropX * 2;
 
 
             for (i = 0; i <pInfo->CropH; i++)
             {
                 m_Current.m_pixY = i;
                 MFX_CHECK_STS(PutData(plane, pInfo->CropW * 2));
-                plane += pData->Pitch;
+                plane += pitch;
             }
             break;
         }
@@ -594,13 +595,14 @@ mfxStatus MFXBMPRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
 
     m_Current.m_comp = VM_STRING('R');
     m_Current.m_pixX = 0;
-    mfxU8* plane = pData->B + (pInfo->CropY * pData->Pitch + pInfo->CropX * 4) + (pInfo->CropH - 1) * pData->Pitch;
+    mfxU32 pitch = pData->PitchLow + ((mfxU32)pData->PitchHigh << 16);
+    mfxU8* plane = pData->B + (pInfo->CropY * pitch + pInfo->CropX * 4) + (pInfo->CropH - 1) * pitch;
 
     for (i = pInfo->CropH; i > 0; i--)
     {
         m_Current.m_pixY = i;
         MFX_CHECK_STS(PutData(plane, pInfo->CropW * 4));
-        plane -= pData->Pitch;
+        plane -= pitch;
     }
     return MFX_ERR_NONE;
 }
@@ -1107,6 +1109,9 @@ mfxStatus ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1* pSurfac
     //nothing to convert
     if (!pSurfaceIn || !pSurfaceOut)
         return MFX_ERR_NONE;
+    
+    mfxU32 pitchIn = pSurfaceIn->Data.PitchLow + ((mfxU32)pSurfaceIn->Data.PitchHigh << 16);
+    mfxU32 pitchOut = pSurfaceOut->Data.PitchLow + ((mfxU32)pSurfaceOut->Data.PitchHigh << 16);
 
     if ((pSurfaceIn->Data.Corrupted & MFX_CORRUPTION_ABSENT_TOP_FIELD) || (pSurfaceIn->Data.Corrupted & MFX_CORRUPTION_ABSENT_BOTTOM_FIELD))
     {
@@ -1117,20 +1122,20 @@ mfxStatus ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1* pSurfac
         };
 
         mfxU32 isBottom = (pSurfaceIn->Data.Corrupted & MFX_CORRUPTION_ABSENT_BOTTOM_FIELD) ? 1 : 0;
-        ippiSet_8u_C1R(128, pSurfaceIn->Data.Y + isBottom*pSurfaceIn->Data.Pitch, (pSurfaceIn->Data.Pitch << 1), srcSize);
+        ippiSet_8u_C1R(128, pSurfaceIn->Data.Y + isBottom*pitchIn, (pitchIn << 1), srcSize);
 
         if (pSurfaceIn->Info.FourCC == MFX_FOURCC_NV12)
         {
             srcSize.height >>= 1;
-            ippiSet_8u_C1R(128, pSurfaceIn->Data.U + isBottom*pSurfaceIn->Data.Pitch, (pSurfaceIn->Data.Pitch << 1), srcSize);
+            ippiSet_8u_C1R(128, pSurfaceIn->Data.U + isBottom*pitchIn, (pitchIn << 1), srcSize);
         }
         else
         {
             srcSize.width >>= 1;
             srcSize.height >>= 1;
 
-            ippiSet_8u_C1R(128, pSurfaceIn->Data.U + isBottom*(pSurfaceIn->Data.Pitch >> 1), pSurfaceIn->Data.Pitch, srcSize);
-            ippiSet_8u_C1R(128, pSurfaceIn->Data.V + isBottom*(pSurfaceIn->Data.Pitch >> 1), pSurfaceIn->Data.Pitch, srcSize);
+            ippiSet_8u_C1R(128, pSurfaceIn->Data.U + isBottom*(pitchIn >> 1), pitchIn, srcSize);
+            ippiSet_8u_C1R(128, pSurfaceIn->Data.V + isBottom*(pitchIn >> 1), pitchIn, srcSize);
         }
     }
 
@@ -1141,15 +1146,15 @@ mfxStatus ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1* pSurfac
         if (pSurfaceIn->Info.FourCC == MFX_FOURCC_NV12)
         {
             srcSize.height >>= 1;
-            ippiSet_8u_C1R(128, pSurfaceIn->Data.UV, pSurfaceIn->Data.Pitch, srcSize);
+            ippiSet_8u_C1R(128, pSurfaceIn->Data.UV, pitchIn, srcSize);
         }
         else
         {
             srcSize.width >>= 1;
             srcSize.height >>= 1;
 
-            ippiSet_8u_C1R(128, pSurfaceIn->Data.U, pSurfaceIn->Data.Pitch, srcSize);
-            ippiSet_8u_C1R(128, pSurfaceIn->Data.V, pSurfaceIn->Data.Pitch, srcSize);
+            ippiSet_8u_C1R(128, pSurfaceIn->Data.U, pitchIn, srcSize);
+            ippiSet_8u_C1R(128, pSurfaceIn->Data.V, pitchIn, srcSize);
         }
     }
 
@@ -1192,9 +1197,9 @@ mfxStatus ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1* pSurfac
 
     Ipp32s pDstStep[3] = 
     {
-        pSurfaceOut->Data.Pitch,
-        pSurfaceOut->Data.Pitch >> 1,
-        pSurfaceOut->Data.Pitch >> 1
+        pitchOut,
+        pitchOut >> 1,
+        pitchOut >> 1
     };
 
     if (pSurfaceIn->Info.FourCC == MFX_FOURCC_NV12)
@@ -1207,8 +1212,8 @@ mfxStatus ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1* pSurfac
 
         Ipp32s pSrcStep[2] = 
         {
-            pSurfaceIn->Data.Pitch, 
-            pSurfaceIn->Data.Pitch
+            pitchIn, 
+            pitchIn
         };
 
         IppiSize srcSize = 
@@ -1235,9 +1240,9 @@ mfxStatus ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1* pSurfac
 
         Ipp32s pSrcStep[3] = 
         {
-            pSurfaceIn->Data.Pitch, 
-            pSurfaceIn->Data.Pitch,
-            pSurfaceIn->Data.Pitch
+            pitchIn, 
+            pitchIn,
+            pitchIn
         };
 
         IppiSize srcSize[3] = 
@@ -1273,9 +1278,9 @@ mfxStatus       AllocSurface(mfxFrameInfo *pTargetInfo, mfxFrameSurface1* pSurfa
 
     MFX_CHECK_STS(InitMfxFrameSurface(pSurfaceOut, pTargetInfo, &frameSize, false));
     
-    pSurfaceOut->Data.Pitch = pTargetInfo->Width;
+    pSurfaceOut->Data.PitchLow = pTargetInfo->Width;
 
-    mfxU8 * pBuffer = new mfxU8[pSurfaceOut->Info.Height * pSurfaceOut->Data.Pitch * 3 / 2];
+    mfxU8 * pBuffer = new mfxU8[pSurfaceOut->Info.Height * pSurfaceOut->Data.PitchLow * 3 / 2];
     MFX_CHECK_WITH_ERR(NULL != pBuffer, MFX_ERR_MEMORY_ALLOC);
 
     pSurfaceOut->Data.Y = pBuffer;
@@ -1284,14 +1289,14 @@ mfxStatus       AllocSurface(mfxFrameInfo *pTargetInfo, mfxFrameSurface1* pSurfa
     {
         case MFX_FOURCC_NV12: 
         {
-            pSurfaceOut->Data.U = pBuffer + pSurfaceOut->Data.Pitch * pSurfaceOut->Info.Height;
+            pSurfaceOut->Data.U = pBuffer + pSurfaceOut->Data.PitchLow * pSurfaceOut->Info.Height;
             pSurfaceOut->Data.V = pSurfaceOut->Data.U + 1;
             break;
         }
         case MFX_FOURCC_YV12: 
         {
-            pSurfaceOut->Data.U = pBuffer + pSurfaceOut->Data.Pitch * pSurfaceOut->Info.Height;
-            pSurfaceOut->Data.V = pSurfaceOut->Data.U + ((pSurfaceOut->Data.Pitch * pSurfaceOut->Info.Height) >> 2);
+            pSurfaceOut->Data.U = pBuffer + pSurfaceOut->Data.PitchLow * pSurfaceOut->Info.Height;
+            pSurfaceOut->Data.V = pSurfaceOut->Data.U + ((pSurfaceOut->Data.PitchLow * pSurfaceOut->Info.Height) >> 2);
             break;
         }
     }

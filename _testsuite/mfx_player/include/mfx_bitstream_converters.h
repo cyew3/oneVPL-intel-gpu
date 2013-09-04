@@ -70,8 +70,8 @@ public:
         w = info.CropW;
         h = info.CropH;
 
-        pitch = data.Pitch;
-        ptr   = data.Y + info.CropX + info.CropY*data.Pitch;
+        pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
+        ptr   = data.Y + info.CropX + info.CropY*pitch;
 
         if(pitch == w) 
         {
@@ -136,7 +136,7 @@ public:
 
         w = info.CropW;
         h = info.CropH >> 1;
-        pitch = data.Pitch;
+        pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
         ptr = data.UV + info.CropX + (info.CropY >> 1) * pitch;
 
         // load UV
@@ -187,7 +187,7 @@ public:
         w = info.CropW >> 1;
         h = info.CropH >> 1;
 
-        pitch = data.Pitch >> 1;
+        pitch = (data.PitchLow + ((mfxU32)data.PitchHigh << 16)) >> 1;
 
         ptr = data.U + (info.CropX >> 1) + (info.CropY >> 1) * pitch;
         ptr2 = data.V + (info.CropX >> 1) + (info.CropY >> 1) * pitch;
@@ -238,8 +238,8 @@ public:
         w = info.CropW >> 1;
         h = info.CropH >> 1;
 
-        pitch = data.Pitch;
-        ptr   = data.Y + info.CropX + info.CropY*data.Pitch;
+        pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
+        ptr   = data.Y + info.CropX + info.CropY*pitch;
 
         m_chroma_line.resize(w);
         
@@ -281,7 +281,7 @@ class BSConvert<MFX_FOURCC_RGB3, MFX_FOURCC_RGB4>
 public:
     virtual mfxStatus Transform(mfxBitstream * bs, mfxFrameSurface1 *surface)
     {
-        mfxU32 w, h, i, j;
+        mfxU32 w, h, i, j, pitch;
         mfxU8  *ptr, *ptr2;
 
         mfxFrameData &data = surface->Data;
@@ -290,9 +290,11 @@ public:
         w = info.CropW;
         h = info.CropH;
 
-        ptr = data.B + info.CropX * 4 + info.CropY * data.Pitch;
+        pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
+
+        ptr = data.B + info.CropX * 4 + info.CropY * pitch;
         
-        for (i = 0; i < h; i++, ptr += data.Pitch)
+        for (i = 0; i < h; i++, ptr += pitch)
         {
             ptr2 = ptr;
             for (j =0; j < w; j++)
@@ -319,7 +321,7 @@ public:
     }
     virtual mfxStatus Transform(mfxBitstream * bs, mfxFrameSurface1 *surface)
     {
-        mfxU32 w, h, i;
+        mfxU32 w, h, i, pitch;
         mfxU8  *ptr;
 
         mfxFrameData &data = surface->Data;
@@ -328,9 +330,11 @@ public:
         w = info.CropW;
         h = info.CropH;
 
+        pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
+
         ptr = start_pointer(surface);
 
-        if (data.Pitch == w)
+        if (pitch == w)
         {
             //copy data directly
             MFX_CHECK_WITH_ERR(w * h * m_sample_size == BSUtil::MoveNBytes(ptr, bs, w * h * m_sample_size), MFX_ERR_MORE_DATA);
@@ -340,7 +344,7 @@ public:
             for (i = 0; i < h; i++)
             {
                 MFX_CHECK_WITH_ERR(w * m_sample_size == BSUtil::MoveNBytes(ptr, bs, w * m_sample_size), MFX_ERR_MORE_DATA);
-                ptr += data.Pitch;
+                ptr += pitch;
             }
         }
 
@@ -353,7 +357,9 @@ protected:
         mfxFrameData &data = surface->Data;
         mfxFrameInfo &info = surface->Info;
 
-        return data.B + info.CropX * m_sample_size + info.CropY * data.Pitch;
+        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
+
+        return data.B + info.CropX * m_sample_size + info.CropY * pitch;
     }
 
     mfxU8 m_sample_size;
@@ -399,7 +405,9 @@ protected:
     {
         mfxFrameData &data = surface->Data;
         mfxFrameInfo &info = surface->Info;
+        
+        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
 
-        return data.Y + info.CropX * m_sample_size + info.CropY * data.Pitch;
+        return data.Y + info.CropX * m_sample_size + info.CropY * pitch;
     }
 };

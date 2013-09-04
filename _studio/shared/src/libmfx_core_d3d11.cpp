@@ -663,8 +663,8 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
     D3D11_TEXTURE2D_DESC sSurfDesc = {0};
     D3D11_MAPPED_SUBRESOURCE sLockRect = {0};
 
-    mfxU16 srcPitch = pSrc->Data.Pitch;
-    mfxU16 dstPitch = pDst->Data.Pitch;
+    mfxU32 srcPitch = pSrc->Data.PitchLow + ((mfxU32)pSrc->Data.PitchHigh << 16);
+    mfxU32 dstPitch = pDst->Data.PitchLow + ((mfxU32)pDst->Data.PitchHigh << 16);
 
     FastCopy *pFastCopy = m_pFastCopy.get();
 

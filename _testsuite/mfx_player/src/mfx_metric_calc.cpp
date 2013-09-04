@@ -101,12 +101,15 @@ mfxStatus MFXPsnrCalc::Compare( mfxFrameSurface1 * pIn1
 
     TIME_START();
 
-    mfxU8* data1 = pIn1->Data.Y + pIn1->Info.CropY * pIn1->Data.Pitch + pIn1->Info.CropX;
-    mfxU8* data2 = pIn2->Data.Y + pIn2->Info.CropY * pIn2->Data.Pitch + pIn2->Info.CropX;
+    mfxU32 pitch1 = pIn1->Data.PitchLow + ((mfxU32)pIn1->Data.PitchHigh << 16);
+    mfxU32 pitch2 = pIn2->Data.PitchLow + ((mfxU32)pIn2->Data.PitchHigh << 16);
+
+    mfxU8* data1 = pIn1->Data.Y + pIn1->Info.CropY * pitch1 + pIn1->Info.CropX;
+    mfxU8* data2 = pIn2->Data.Y + pIn2->Info.CropY * pitch2 + pIn2->Info.CropX;
 
     IppiSize     roi   = {pIn1->Info.CropW, pIn1->Info.CropH};
 
-    ippiNormDiff_L2_8u_C1R(data1, pIn1->Data.Pitch, data2, pIn2->Data.Pitch, roi, &m_fLastResults[0]);
+    ippiNormDiff_L2_8u_C1R(data1, pitch1, data2, pitch2, roi, &m_fLastResults[0]);
     m_fLastResults[0] *= m_fLastResults[0];
 
     switch (pIn1->Info.FourCC)
@@ -117,23 +120,23 @@ mfxStatus MFXPsnrCalc::Compare( mfxFrameSurface1 * pIn1
             m_fLastResults[1] = 0.0;
             roi.width  = 1;
             roi.height = pIn1->Info.CropW >> 1;
-            data1 = pIn1->Data.UV + (pIn1->Info.CropY >> 1) * pIn1->Data.Pitch + pIn1->Info.CropX;
-            data2 = pIn2->Data.UV + (pIn2->Info.CropY >> 1) * pIn2->Data.Pitch + pIn2->Info.CropX;
+            data1 = pIn1->Data.UV + (pIn1->Info.CropY >> 1) * pitch1 + pIn1->Info.CropX;
+            data2 = pIn2->Data.UV + (pIn2->Info.CropY >> 1) * pitch2 + pIn2->Info.CropX;
 
             for (int i = 0; i < pIn1->Info.CropH >> 1; i++)
             {
-                ippiNormDiff_L2_8u_C1R( data1 + i * pIn1->Data.Pitch, 2, data2 + i * pIn2->Data.Pitch, 2, roi, &psnr);
+                ippiNormDiff_L2_8u_C1R( data1 + i * pitch1, 2, data2 + i * pitch2, 2, roi, &psnr);
                 m_fLastResults[1] += psnr * psnr;
             }
 
             m_fLastResults[2] = 0.0;
 
-            data1 = 1 + pIn1->Data.UV + (pIn1->Info.CropY >> 1) * pIn1->Data.Pitch + pIn1->Info.CropX;
-            data2 = 1 + pIn2->Data.UV + (pIn2->Info.CropY >> 1) * pIn2->Data.Pitch + pIn2->Info.CropX;
+            data1 = 1 + pIn1->Data.UV + (pIn1->Info.CropY >> 1) * pitch1 + pIn1->Info.CropX;
+            data2 = 1 + pIn2->Data.UV + (pIn2->Info.CropY >> 1) * pitch2 + pIn2->Info.CropX;
 
             for (int i = 0; i < pIn1->Info.CropH >> 1; i++)
             {
-                ippiNormDiff_L2_8u_C1R( data1 + i * pIn1->Data.Pitch, 2, data2 + i * pIn2->Data.Pitch, 2, roi, &psnr);
+                ippiNormDiff_L2_8u_C1R( data1 + i * pitch1, 2, data2 + i * pitch2, 2, roi, &psnr);
                 m_fLastResults[2] += psnr * psnr;
             }
 
@@ -344,14 +347,17 @@ mfxStatus MFXSSIMCalc::Compare(mfxFrameSurface1 * pIn1, mfxFrameSurface1 * pIn2)
 
     TIME_START();
 
-    data1[0] = pIn1->Data.Y + pIn1->Info.CropY * pIn1->Data.Pitch + pIn1->Info.CropX;
-    data2[0] = pIn2->Data.Y + pIn2->Info.CropY * pIn2->Data.Pitch + pIn2->Info.CropX;
-    data1[1] = pIn1->Data.U + (pIn1->Info.CropY >> 1) * pIn1->Data.Pitch + pIn1->Info.CropX;
-    data2[1] = pIn2->Data.U + (pIn2->Info.CropY >> 1) * pIn2->Data.Pitch + pIn2->Info.CropX;
-    data1[2] = pIn1->Data.V + (pIn1->Info.CropY >> 1) * pIn1->Data.Pitch + pIn1->Info.CropX;
-    data2[2] = pIn2->Data.V + (pIn2->Info.CropY >> 1) * pIn2->Data.Pitch + pIn2->Info.CropX;
-    step1[0] = step1[1] = step1[2] = pIn1->Data.Pitch;
-    step2[0] = step2[1] = step2[2] = pIn2->Data.Pitch;
+    mfxU32 pitch1 = pIn1->Data.PitchLow + ((mfxU32)pIn1->Data.PitchHigh << 16);
+    mfxU32 pitch2 = pIn2->Data.PitchLow + ((mfxU32)pIn2->Data.PitchHigh << 16);
+
+    data1[0] = pIn1->Data.Y + pIn1->Info.CropY * pitch1 + pIn1->Info.CropX;
+    data2[0] = pIn2->Data.Y + pIn2->Info.CropY * pitch2 + pIn2->Info.CropX;
+    data1[1] = pIn1->Data.U + (pIn1->Info.CropY >> 1) * pitch1 + pIn1->Info.CropX;
+    data2[1] = pIn2->Data.U + (pIn2->Info.CropY >> 1) * pitch2 + pIn2->Info.CropX;
+    data1[2] = pIn1->Data.V + (pIn1->Info.CropY >> 1) * pitch1 + pIn1->Info.CropX;
+    data2[2] = pIn2->Data.V + (pIn2->Info.CropY >> 1) * pitch2 + pIn2->Info.CropX;
+    step1[0] = step1[1] = step1[2] = pitch1;
+    step2[0] = step2[1] = step2[2] = pitch2;
 
     IppiSize     roi   = {pIn1->Info.CropW, pIn1->Info.CropH};
 
@@ -384,19 +390,19 @@ mfxStatus MFXSSIMCalc::Compare(mfxFrameSurface1 * pIn1, mfxFrameSurface1 * pIn2)
         }
     }
 
-    m_fLastResults[0] = ssim(data1[0], pIn1->Data.Pitch, data2[0], pIn2->Data.Pitch, roi, 0);
+    m_fLastResults[0] = ssim(data1[0], pitch1, data2[0], pitch2, roi, 0);
  
     switch (pIn1->Info.FourCC)
     {
         case MFX_FOURCC_NV12:
         {
             //convert to YV12 
-            ippiYCbCr420ToYCrCb420_8u_P2P3R(data1[0], pIn1->Data.Pitch,
-                pIn1->Data.UV + (pIn1->Info.CropY >> 1) * pIn1->Data.Pitch + pIn1->Info.CropX, pIn1->Data.Pitch,
+            ippiYCbCr420ToYCrCb420_8u_P2P3R(data1[0], pitch1,
+                pIn1->Data.UV + (pIn1->Info.CropY >> 1) * pitch1 + pIn1->Info.CropX, pitch1,
                 m_dataNV12_1, step1, roi);
             
-            ippiYCbCr420ToYCrCb420_8u_P2P3R(data2[0], pIn2->Data.Pitch,
-                pIn2->Data.UV + (pIn2->Info.CropY >> 1) * pIn2->Data.Pitch + pIn2->Info.CropX, pIn2->Data.Pitch,
+            ippiYCbCr420ToYCrCb420_8u_P2P3R(data2[0], pitch2,
+                pIn2->Data.UV + (pIn2->Info.CropY >> 1) * pitch2 + pIn2->Info.CropX, pitch2,
                 m_dataNV12_2, step2, roi);
             //fprintf(stderr,"cy=%d cx=%d p=%d s=%d\n", pIn2->Info.CropY , pIn2->Info.CropX, pIn2->Data.Pitch, step2[1] );
 

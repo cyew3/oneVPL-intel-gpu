@@ -158,38 +158,44 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
     switch ((DWORD)desc.Format)
     {
     case D3DFMT_NV12:
-        ptr->Pitch = (mfxU16)locked.Pitch;
+        ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
+        ptr->PitchLow  = (mfxU16)(locked.Pitch % (1 << 16));
         ptr->Y = (mfxU8 *)locked.pBits;
         ptr->U = (mfxU8 *)locked.pBits + desc.Height * locked.Pitch;
         ptr->V = ptr->U + 1;
         break;
     case D3DFMT_YV12:
-        ptr->Pitch = (mfxU16)locked.Pitch;
+        ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
+        ptr->PitchLow  = (mfxU16)(locked.Pitch % (1 << 16));
         ptr->Y = (mfxU8 *)locked.pBits;
         ptr->V = ptr->Y + desc.Height * locked.Pitch;
         ptr->U = ptr->V + (desc.Height * locked.Pitch) / 4;
         break;
     case D3DFMT_YUY2:
-        ptr->Pitch = (mfxU16)locked.Pitch;
+        ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
+        ptr->PitchLow  = (mfxU16)(locked.Pitch % (1 << 16));
         ptr->Y = (mfxU8 *)locked.pBits;
         ptr->U = ptr->Y + 1;
         ptr->V = ptr->Y + 3;
         break;
     case D3DFMT_R8G8B8:
-        ptr->Pitch = (mfxU16)locked.Pitch;
+        ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
+        ptr->PitchLow  = (mfxU16)(locked.Pitch % (1 << 16));
         ptr->B = (mfxU8 *)locked.pBits;
         ptr->G = ptr->B + 1;
         ptr->R = ptr->B + 2;
         break;
     case D3DFMT_A8R8G8B8:
-        ptr->Pitch = (mfxU16)locked.Pitch;
+        ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
+        ptr->PitchLow  = (mfxU16)(locked.Pitch % (1 << 16));
         ptr->B = (mfxU8 *)locked.pBits;
         ptr->G = ptr->B + 1;
         ptr->R = ptr->B + 2;
         ptr->A = ptr->B + 3;
         break;
     case D3DFMT_P8:
-        ptr->Pitch = (mfxU16)locked.Pitch;
+        ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
+        ptr->PitchLow  = (mfxU16)(locked.Pitch % (1 << 16));
         ptr->Y = (mfxU8 *)locked.pBits;
         ptr->U = 0;
         ptr->V = 0;
@@ -209,7 +215,8 @@ mfxStatus D3DFrameAllocator::UnlockFrame(mfxMemId mid, mfxFrameData *ptr)
     
     if (NULL != ptr)
     {
-        ptr->Pitch = 0;
+        ptr->PitchHigh = 0;
+        ptr->PitchLow  = 0;
         ptr->Y     = 0;
         ptr->U     = 0;
         ptr->V     = 0;

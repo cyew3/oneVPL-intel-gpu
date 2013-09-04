@@ -320,8 +320,8 @@ mfxStatus CopyFrame(mfxFrameData *pIn, mfxFrameData *pOut, mfxFrameInfo *pInfoIn
         mfxU8* p_out = pOut ->Y;
         mfxU32 h     = pInfoIn->Height;
         mfxU32 w     = pInfoIn->Width;
-        mfxU32 s_in  = pIn->Pitch;
-        mfxU32 s_out = pOut->Pitch;
+        mfxU32 s_in  = pIn->PitchLow + ((mfxU32)pIn->PitchHigh << 16);
+        mfxU32 s_out = pOut->PitchLow + ((mfxU32)pOut->PitchHigh << 16);
 
         for (mfxU32 i = 0 ; i < h; i++)
         {
@@ -363,8 +363,8 @@ mfxStatus CopyFrame(mfxFrameData *pIn, mfxFrameData *pOut, mfxFrameInfo *pInfoIn
         mfxU8* p_out = pOut ->Y;
         mfxU32 h     = pInfoIn->Height;
         mfxU32 w     = pInfoIn->Width;
-        mfxU32 s_in  = pIn->Pitch;
-        mfxU32 s_out = pOut->Pitch;
+        mfxU32 s_in  = pIn->PitchLow + ((mfxU32)pIn->PitchHigh << 16);
+        mfxU32 s_out = pOut->PitchLow + ((mfxU32)pOut->PitchHigh << 16);
 
         for (mfxU32 i = 0 ; i < h; i++)
         {

@@ -1711,7 +1711,7 @@ namespace MPEG2EncoderHW
 
             if (surface->Data.Y)
             {
-                MFX_CHECK(surface->Data.Pitch < 0x8000, MFX_ERR_UNDEFINED_BEHAVIOR);
+                MFX_CHECK(surface->Data.PitchLow + ((mfxU32)surface->Data.PitchHigh << 16) < 0x8000, MFX_ERR_UNDEFINED_BEHAVIOR);
                 CHECK_VERSION(surface->Version);
             }
             sts = m_pCore->IncreaseReference(&surface->Data);

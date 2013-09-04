@@ -296,19 +296,22 @@ mfxStatus mfxDefaultAllocatorD3D11::LockFrameHW(mfxHDL pthis, mfxMemId mid, mfxF
     switch (Desc.Format)
     {
     case DXGI_FORMAT_NV12:
-        ptr->Pitch = (mfxU16)LockedRect.RowPitch;
+        ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
+        ptr->PitchLow  = (mfxU16)(LockedRect.RowPitch % (1 << 16));
         ptr->Y = (mfxU8 *)LockedRect.pData;
-        ptr->U = (mfxU8 *)LockedRect.pData+ Desc.Height * LockedRect.RowPitch;
+        ptr->U = (mfxU8 *)LockedRect.pData + Desc.Height * LockedRect.RowPitch;
         ptr->V = ptr->U + 1;
         break;
     case  DXGI_FORMAT_420_OPAQUE: // YV12 ????
-        ptr->Pitch = (mfxU16)LockedRect.RowPitch;
+        ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
+        ptr->PitchLow  = (mfxU16)(LockedRect.RowPitch % (1 << 16));
         ptr->Y = (mfxU8 *)LockedRect.pData;
         ptr->V = ptr->Y + Desc.Height * LockedRect.RowPitch;
         ptr->U = ptr->V + (Desc.Height * LockedRect.RowPitch) / 4;
         break;
     case DXGI_FORMAT_YUY2:
-        ptr->Pitch = (mfxU16)LockedRect.RowPitch;
+        ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
+        ptr->PitchLow  = (mfxU16)(LockedRect.RowPitch % (1 << 16));
         ptr->Y = (mfxU8 *)LockedRect.pData;
         ptr->U = ptr->Y + 1;
         ptr->V = ptr->Y + 3;
@@ -326,21 +329,24 @@ mfxStatus mfxDefaultAllocatorD3D11::LockFrameHW(mfxHDL pthis, mfxMemId mid, mfxF
     //    ptr->R = ptr->B + 2;
     //    break;
     case DXGI_FORMAT_B8G8R8A8_UNORM :
-        ptr->Pitch = (mfxU16)LockedRect.RowPitch;
+        ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
+        ptr->PitchLow  = (mfxU16)(LockedRect.RowPitch % (1 << 16));
         ptr->B = (mfxU8 *)LockedRect.pData;
         ptr->G = ptr->B + 1;
         ptr->R = ptr->B + 2;
         ptr->A = ptr->B + 3;
         break;
     case DXGI_FORMAT_AYUV :
-        ptr->Pitch = (mfxU16)LockedRect.RowPitch;
+        ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
+        ptr->PitchLow  = (mfxU16)(LockedRect.RowPitch % (1 << 16));
         ptr->B = (mfxU8 *)LockedRect.pData;
         ptr->G = ptr->B + 1;
         ptr->R = ptr->B + 2;
         ptr->A = ptr->B + 3;
         break;
     case DXGI_FORMAT_P8 :
-        ptr->Pitch = (mfxU16)LockedRect.RowPitch;
+        ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
+        ptr->PitchLow  = (mfxU16)(LockedRect.RowPitch % (1 << 16));
         ptr->Y = (mfxU8 *)LockedRect.pData;
         ptr->U = 0;
         ptr->V = 0;
@@ -403,7 +409,8 @@ mfxStatus mfxDefaultAllocatorD3D11::UnlockFrameHW(mfxHDL pthis, mfxMemId mid, mf
 
     if (ptr) 
     {
-        ptr->Pitch=0;
+        ptr->PitchHigh=0;
+        ptr->PitchLow=0;
         ptr->U=ptr->V=ptr->Y=0;
         ptr->A=ptr->R=ptr->G=ptr->B=0;
     }

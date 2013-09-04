@@ -2285,10 +2285,7 @@ mfxStatus MFX_JPEG_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
                                          (in->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) ? 0x10 : 0x20);
         else
             sts = MFX_ERR_UNSUPPORTED;
-
-        if(fourCC == MFX_FOURCC_RGB4 && in->mfx.FrameInfo.Width == 16384)
-            sts = MFX_ERR_UNSUPPORTED;
-
+        
         if (in->mfx.FrameInfo.CropX <= out->mfx.FrameInfo.Width)
             out->mfx.FrameInfo.CropX = in->mfx.FrameInfo.CropX;
 
@@ -2458,9 +2455,6 @@ bool MFX_JPEG_Utility::CheckVideoParam(mfxVideoParam *in, eMFXHWType )
         return false;
 
     if (in->mfx.FrameInfo.Height > 16384 || (in->mfx.FrameInfo.Height % 16))
-        return false;
-
-    if(in->mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4 && in->mfx.FrameInfo.Width == 16384)
         return false;
 
 #if 0

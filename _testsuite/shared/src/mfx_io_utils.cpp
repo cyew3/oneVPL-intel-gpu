@@ -120,8 +120,8 @@ mfxStatus CYUVReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInfo)
         h = pInfo->Height;
     }
 
-    pitch = pData->Pitch;
-    ptr = pData->Y + pInfo->CropX + pInfo->CropY*pData->Pitch;
+    pitch = pData->PitchLow + ((mfxU32)pData->PitchHigh << 16);
+    ptr = pData->Y + pInfo->CropX + pInfo->CropY*pitch;
     if(pitch == w) {
         planeSize = w*h;
         nBytesRead = RawRead(ptr, planeSize);

@@ -606,7 +606,7 @@ mfxStatus InitMFXFrameSurfaceDec(mfxFrameSurface1* pSurface, mfxVideoParam* pPar
 
         pSurface->Data.A = 0;  // no alpha is used        
 
-        pSurface->Data.Pitch = pSurface->Info.Width;
+        pSurface->Data.PitchLow = pSurface->Info.Width;
     }
 
     return MFX_ERR_NONE;
@@ -759,7 +759,8 @@ mfxStatus InitMfxFrameData(mfxFrameData*** pData, mfxFrameInfo* pParams, mfxU8**
         //sts = GetFramePointers(pParams->FourCC,pParams->Width,pParams->Height, pBuffer[i], p[i].Ch);
         //CHECK_NOT_EQUAL(sts, MFX_ERR_NONE, sts);
         p[i]->Y = pBuffer[i];
-        p[i]->Pitch = pParams->Width;
+        p[i]->PitchHigh = 0;
+        p[i]->PitchLow = pParams->Width;
         switch(pParams->FourCC)
         {
         case MFX_FOURCC_YV12:
@@ -770,7 +771,8 @@ mfxStatus InitMfxFrameData(mfxFrameData*** pData, mfxFrameInfo* pParams, mfxU8**
             p[i]->R = pBuffer[i] + 0;
             p[i]->G = pBuffer[i] + 1;
             p[i]->B = pBuffer[i] + 2;
-            p[i]->Pitch = pParams->Width * 3;
+            p[i]->PitchHigh = (mfxU16)(((mfxU32)pParams->Width * 3) / (1 << 16));
+            p[i]->PitchLow = (mfxU16)(((mfxU32)pParams->Width * 3) % (1 << 16));
             break;
         case MFX_FOURCC_NV12:
             p[i]->U = pBuffer[i] + pParams->Width*pParams->Height;
@@ -778,7 +780,7 @@ mfxStatus InitMfxFrameData(mfxFrameData*** pData, mfxFrameInfo* pParams, mfxU8**
             break;
         default:
             p[i]->Y = 0; // restore 0
-            p[i]->Pitch = 0;
+            p[i]->PitchLow = 0;
             return MFX_ERR_UNSUPPORTED;
         }
 
@@ -849,7 +851,8 @@ mfxStatus InitMfxFrameSurfaces(mfxFrameSurface1** ppSurfaces, mfxFrameInfo* pPar
     //sts = GetFramePointers(pParams->FourCC,pParams->Width,pParams->Height, pBuffer[i], p[i].Ch);
     //CHECK_NOT_EQUAL(sts, MFX_ERR_NONE, sts);
     p->Y = pBuffer[i];
-    p->Pitch = pParams->Width;
+    p->PitchHigh = 0;
+    p->PitchLow = pParams->Width;
     switch(pParams->FourCC)
     {
     case MFX_FOURCC_YV12:
@@ -860,7 +863,8 @@ mfxStatus InitMfxFrameSurfaces(mfxFrameSurface1** ppSurfaces, mfxFrameInfo* pPar
       p->R = pBuffer[i] + 0;
       p->G = pBuffer[i] + 1;
       p->B = pBuffer[i] + 2;
-      p->Pitch = pParams->Width * 3;
+      p->PitchHigh = (mfxU16)(((mfxU32)pParams->Width * 3) / (1 << 16));
+      p->PitchLow = (mfxU16)(((mfxU32)pParams->Width * 3) % (1 << 16));
       break;
     case MFX_FOURCC_NV12:
       p->U = pBuffer[i] + pParams->Width*pParams->Height;
@@ -868,7 +872,7 @@ mfxStatus InitMfxFrameSurfaces(mfxFrameSurface1** ppSurfaces, mfxFrameInfo* pPar
       break;
     default:
       p->Y = 0; // restore 0
-      p->Pitch = 0;
+      p->PitchLow = 0;
       return MFX_ERR_UNSUPPORTED;
     }
 
@@ -1212,7 +1216,7 @@ mfxStatus InitMfxDataPlanes(sMFXPlanes ** pPlanes, mfxFrameData** pData, mfxFram
     if (pNPlanes >= 4)
         return MFX_ERR_UNSUPPORTED;
 
-    sts = GetPitch(pVideoParams->mfx.FrameInfo.FourCC, pParams->Width, &pData[0]->Pitch);
+    sts = GetPitch(pVideoParams->mfx.FrameInfo.FourCC, pParams->Width, &pData[0]->PitchLow);
     CHECK_NOT_EQUAL(sts, MFX_ERR_NONE, sts);
 
     mfxU32  h = (pVideoParams->mfx.FrameInfo.CropH) ? pVideoParams->mfx.FrameInfo.CropH : pVideoParams->mfx.FrameInfo.Height;
@@ -1220,6 +1224,7 @@ mfxStatus InitMfxDataPlanes(sMFXPlanes ** pPlanes, mfxFrameData** pData, mfxFram
 
     mfxU16 step   = 1;
     mfxU32 scaleX = 1;
+    mfxU32 pitch = 0;
 
     if (pVideoParams->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12)
     {
@@ -1235,18 +1240,20 @@ mfxStatus InitMfxDataPlanes(sMFXPlanes ** pPlanes, mfxFrameData** pData, mfxFram
         p[i].pPlane[pFrameNum[1]] = pData[i]->U;
         p[i].pPlane[pFrameNum[2]] = pData[i]->V;
 
+        pitch = pData[i]->PitchLow + ((mfxU32)pData[i]->PitchHigh << 16);
+
         for ( mfxU32 j = 0; j<pNPlanes; j++)
         {
             if (pFrameNum[j] == 0)
             {
-                p[i].pPitch[j]  = pData[i]->Pitch;
+                p[i].pPitch[j]  = pitch;
                 p[i].pHeight[j] = h;
                 p[i].pWidth[j]  = w;
-                p[i].pPlane[j] += GetSubPicOfset(pVideoParams->mfx.FrameInfo.CropX,pVideoParams->mfx.FrameInfo.CropY, pData[i]->Pitch, 1);
+                p[i].pPlane[j] += GetSubPicOfset(pVideoParams->mfx.FrameInfo.CropX,pVideoParams->mfx.FrameInfo.CropY, (mfxU16)pitch, 1);
             }
             else
             {
-                p[i].pPitch[j]  = pData[i]->Pitch>>scaleX;
+                p[i].pPitch[j]  = pitch>>scaleX;
                 p[i].pHeight[j] = h >> 1;
                 p[i].pWidth[j]  =(w >>1) * step ;
                 p[i].pPlane[j] += GetSubPicOfset((mfxI16)(pVideoParams->mfx.FrameInfo.CropX>>scaleX),

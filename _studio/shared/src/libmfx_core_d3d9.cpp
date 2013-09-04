@@ -936,8 +936,8 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
     D3DSURFACE_DESC sSurfDesc; 
     D3DLOCKED_RECT  sLockRect;
 
-    mfxU16 srcPitch = pSrc->Data.Pitch;
-    mfxU16 dstPitch = pDst->Data.Pitch;
+    mfxU32 srcPitch = pSrc->Data.PitchLow + ((mfxU32)pSrc->Data.PitchHigh << 16);
+    mfxU32 dstPitch = pDst->Data.PitchLow + ((mfxU32)pDst->Data.PitchHigh << 16);
 
     FastCopy *pFastCopy = m_pFastCopy.get();
 
