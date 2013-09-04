@@ -24,6 +24,13 @@
 namespace MFX_HEVC_PP
 {
 
+/* workaround for compiler bug (see h265_tr_quant_opt.cpp) */
+#ifdef NDEBUG 
+  #define MM_LOAD_EPI64(x) (*(__m128i*)(x))
+#else
+  #define MM_LOAD_EPI64(x) _mm_loadl_epi64( (__m128i*)(x))
+#endif
+
 enum FilterType
 {
     VERT_FILT = 0,
@@ -49,6 +56,7 @@ static const Ipp32s betaTable[52] = {
 ALIGN_DECL(16) static const signed char shufTabH[16] = {1, 3, 5, 7, 0, 2, 4, 6, 8, 10, 12, 14, 9, 11, 13, 15};
 ALIGN_DECL(16) static const signed char shufTabV[16] = {1, 0, 8, 9, 3, 2, 10, 11, 5, 4, 12, 13, 7, 6, 14, 15};
 ALIGN_DECL(16) static const signed char shufTabP[16] = {3, 2, 1, 0, 7, 6, 5, 4, 11, 10, 9, 8, 15, 14, 13, 12};
+ALIGN_DECL(16) static const signed char shufTabC[16] = {0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15};
 
 ALIGN_DECL(16) static const signed short add8[8] = {8, 8, 8, 8, 8, 8, 8, 8};
 ALIGN_DECL(16) static const signed short add4[8] = {4, 4, 4, 4, 4, 4, 4, 4};
@@ -548,6 +556,231 @@ Ipp32s h265_FilterEdgeLuma_8u_I_sse(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s sr
     }
 
     return strongFiltering;
+}
+
+/* chroma deblocking kernel - interleaved UV
+ * optimized with SSE to process all 4 pixels in single pass
+ * operates in-place on a single 4-pixel edge (vertical or horizontal) within a 4x4 block
+ * assumes 8-bit data
+ * in standalone unit test (IVB) appx. 3.2x speedup vs. C reference (H edges), 2.9x speedup (V edges)
+ */
+void h265_FilterEdgeChroma_Interleaved_8u_I_sse(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQpCb, Ipp32s chromaQpCr)
+{
+    Ipp32s tcIdxCb, tcIdxCr, tcCb, tcCr;
+
+    /* algorithms designed to fit in 8 xmm registers - check compiler output to ensure it's allocating well */
+    __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
+
+    tcIdxCb = Clip3(0, 53, chromaQpCb + 2 * (edge->strength - 1) + edge->tcOffset);
+    tcIdxCr = Clip3(0, 53, chromaQpCr + 2 * (edge->strength - 1) + edge->tcOffset);
+    tcCb =  tcTable[tcIdxCb];
+    tcCr =  tcTable[tcIdxCr];
+
+    if (!edge->deblockP && !edge->deblockQ)
+        return;
+
+    /* set constants for offset, clipping */
+    xmm4 = _mm_set1_epi16(4);
+    xmm5 = _mm_set1_epi32( ((+tcCr) << 16) | ((+tcCb) & 0x0000ffff) );
+    xmm6 = _mm_set1_epi32( ((-tcCr) << 16) | ((-tcCb) & 0x0000ffff) );
+
+    if (dir == VERT_FILT) {
+        xmm0 = _mm_loadl_epi64((__m128i*)(srcDst + 0*srcDstStride - 4));    /* p1Cb_0 p1Cr_0 p0Cb_0 p0Cr_0 q0Cb_0 q0Cr_0 q1Cb_0 q1Cr_0 --- */
+        xmm2 = _mm_loadl_epi64((__m128i*)(srcDst + 1*srcDstStride - 4));    /* p1Cb_1 p1Cr_1 p0Cb_1 p0Cr_1 q0Cb_1 q0Cr_1 q1Cb_1 q1Cr_1 --- */
+        xmm7 = _mm_loadl_epi64((__m128i*)(srcDst + 2*srcDstStride - 4));    /* p1Cb_2 p1Cr_2 p0Cb_2 p0Cr_2 q0Cb_2 q0Cr_2 q1Cb_2 q1Cr_2 --- */
+        xmm3 = _mm_loadl_epi64((__m128i*)(srcDst + 3*srcDstStride - 4));    /* p1Cb_3 p1Cr_3 p0Cb_3 p0Cr_3 q0Cb_3 q0Cr_3 q1Cb_3 q1Cr_3 --- */
+
+        xmm0 = _mm_unpacklo_epi16(xmm0, xmm2);    /* p1Cb_0 p1Cr_0  p1Cb_1 p1Cr_1  p0Cb_0 p0Cr_0  p0Cb_1 p0Cr_1  q0Cb_0 q0Cr_0  q0Cb_1 q0Cr_1  q1Cb_0 q1Cr_0  q1Cb_1 q1Cr_1 */
+        xmm7 = _mm_unpacklo_epi16(xmm7, xmm3);    /* p1Cb_2 p1Cr_2  p1Cb_3 p1Cr_3  p0Cb_2 p0Cr_2  p0Cb_3 p0Cr_3  q0Cb_2 q0Cr_2  q0Cb_3 q0Cr_3  q1Cb_2 q1Cr_2  q1Cb_3 q1Cr_3 */
+        xmm2 = xmm0;
+
+        xmm0 = _mm_unpacklo_epi32(xmm0, xmm7);    /* row0-3 p1Cb/Cr   row0-3 p0Cb/Cr */
+        xmm1 = _mm_shuffle_epi32(xmm0, 0xee);     /* row0-3 p0Cb/Cr   --- */
+        xmm2 = _mm_unpackhi_epi32(xmm2, xmm7);    /* row0-3 q0Cb/Cr   row0-3 q1Cb/Cr */
+        xmm3 = _mm_shuffle_epi32(xmm2, 0xee);     /* row0-3 q1Cb/Cr   --- */
+        
+        /* expand 8 to 16 bits */
+        xmm0 = _mm_cvtepu8_epi16(xmm0);           /* p1 */
+        xmm1 = _mm_cvtepu8_epi16(xmm1);           /* p0 */
+        xmm2 = _mm_cvtepu8_epi16(xmm2);           /* q0 */
+        xmm3 = _mm_cvtepu8_epi16(xmm3);           /* q1 */
+
+        xmm7 = xmm2;
+        xmm7 = _mm_sub_epi16(xmm7, xmm1);         /* q0 - p0 */
+        xmm7 = _mm_slli_epi16(xmm7, 2);           /* (q0 - p0) << 2 */
+        xmm7 = _mm_add_epi16(xmm7, xmm0);         /* ((q0 - p0) << 2) + p1 */
+        xmm7 = _mm_sub_epi16(xmm7, xmm3);         /* ((q0 - p0) << 2) + p1 - q1 */
+        xmm7 = _mm_add_epi16(xmm7, xmm4);         /* ((q0 - p0) << 2) + p1 - q1 + 4 */
+        xmm7 = _mm_srai_epi16(xmm7, 3);           /* (((q0 - p0) << 2) + p1 - q1 + 4) >> 3 */
+
+        xmm7 = _mm_min_epi16(xmm7, xmm5);         /* min(+tcCb/Cr) */
+        xmm7 = _mm_max_epi16(xmm7, xmm6);         /* max(-tcCb/Cr) */
+
+        if (edge->deblockP)
+            xmm1 = _mm_add_epi16(xmm1, xmm7);     /* p0Cb/Cr + deltaCbCr */
+
+        if (edge->deblockQ)
+            xmm2 = _mm_sub_epi16(xmm2, xmm7);     /* q0Cb/Cr - deltaCbCr */
+
+        /* clip to 8-bit */
+        xmm1 = _mm_packus_epi16(xmm1, xmm1);
+        xmm2 = _mm_packus_epi16(xmm2, xmm2);
+
+        /* put in order: row0 [-1 0], row1 [-1 0], ... */
+        xmm1 = _mm_unpacklo_epi16(xmm1, xmm2);
+        xmm2 = _mm_shuffle_epi32(xmm1, 0x01);
+        xmm3 = _mm_shuffle_epi32(xmm1, 0x02);
+        xmm4 = _mm_shuffle_epi32(xmm1, 0x03);
+
+        /* always write 4 pixels per row (p0Cb p0Cr q0Cb q0Cr) - deblockP/Q flags already accounted for */
+        *(int *)(srcDst - 2 + 0*srcDstStride) = _mm_cvtsi128_si32(xmm1);
+        *(int *)(srcDst - 2 + 1*srcDstStride) = _mm_cvtsi128_si32(xmm2);
+        *(int *)(srcDst - 2 + 2*srcDstStride) = _mm_cvtsi128_si32(xmm3);
+        *(int *)(srcDst - 2 + 3*srcDstStride) = _mm_cvtsi128_si32(xmm4);
+    } else {
+        xmm0 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(srcDst - 2*srcDstStride));   /* p1Cb/Cr, col 0-3 */
+        xmm1 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(srcDst - 1*srcDstStride));   /* p0Cb/Cr, col 0-3 */
+        xmm2 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(srcDst + 0*srcDstStride));   /* q0Cb/Cr, col 0-3 */
+        xmm3 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(srcDst + 1*srcDstStride));   /* q1Cb/Cr, col 0-3 */
+
+        xmm7 = xmm2;
+        xmm7 = _mm_sub_epi16(xmm7, xmm1);         /* q0 - p0 */
+        xmm7 = _mm_slli_epi16(xmm7, 2);           /* (q0 - p0) << 2 */
+        xmm7 = _mm_add_epi16(xmm7, xmm0);         /* ((q0 - p0) << 2) + p1 */
+        xmm7 = _mm_sub_epi16(xmm7, xmm3);         /* ((q0 - p0) << 2) + p1 - q1 */
+        xmm7 = _mm_add_epi16(xmm7, xmm4);         /* ((q0 - p0) << 2) + p1 - q1 + 4 */
+        xmm7 = _mm_srai_epi16(xmm7, 3);           /* (((q0 - p0) << 2) + p1 - q1 + 4) >> 3 */
+
+        xmm7 = _mm_min_epi16(xmm7, xmm5);         /* min(+tcCb/Cr) */
+        xmm7 = _mm_max_epi16(xmm7, xmm6);         /* max(-tcCb/Cr) */
+
+        xmm1 = _mm_add_epi16(xmm1, xmm7);         /* p0Cb/Cr + deltaCbCr */
+        xmm2 = _mm_sub_epi16(xmm2, xmm7);         /* q0Cb/Cr - deltaCbCr */
+
+        /* clip to 8-bit */
+        xmm1 = _mm_packus_epi16(xmm1, xmm1);
+        xmm2 = _mm_packus_epi16(xmm2, xmm2);
+
+        /* write 8 interleaved pixels in rows [-1, 0] */
+        if (edge->deblockP)
+            _mm_storel_epi64((__m128i *)(srcDst - 1*srcDstStride), xmm1);
+
+        if (edge->deblockQ)
+            _mm_storel_epi64((__m128i *)(srcDst + 0*srcDstStride), xmm2);
+    }
+}
+
+/* chroma deblocking kernel - single U or V plane
+ * optimized with SSE to process all 4 pixels in single pass
+ * operates in-place on a single 4-pixel edge (vertical or horizontal) within a 4x4 block
+ * assumes 8-bit data
+ * in standalone unit test (IVB) appx. 1.4x speedup vs. C reference (H edges), 1.8x speedup (V edges)
+ */
+void h265_FilterEdgeChroma_Plane_8u_I_sse(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQp)
+{
+    Ipp32s tcIdx, tc;
+
+    /* algorithms designed to fit in 8 xmm registers - check compiler output to ensure it's allocating well */
+    __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
+
+    tcIdx = Clip3(0, 53, chromaQp + 2 * (edge->strength - 1) + edge->tcOffset);
+    tc =  tcTable[tcIdx];
+
+    if (!edge->deblockP && !edge->deblockQ)
+        return;
+
+    /* set constants for offset, clipping */
+    xmm4 = _mm_set1_epi16(4);
+    xmm5 = _mm_set1_epi16((short)(+tc));
+    xmm6 = _mm_set1_epi16((short)(-tc));
+
+    if (dir == VERT_FILT) {
+        /* load 4x4 8-bit pixels into one register, do single byte shuffle to transpose rows/columns */
+        xmm0 = _mm_cvtsi32_si128(*(int *)(srcDst + 0*srcDstStride - 2));           /* row0: p1 p0 q0 q1 */
+        xmm0 = _mm_insert_epi32(xmm0, *(int *)(srcDst + 1*srcDstStride - 2), 1);   /* row1: p1 p0 q0 q1 */
+        xmm0 = _mm_insert_epi32(xmm0, *(int *)(srcDst + 2*srcDstStride - 2), 2);   /* row2: p1 p0 q0 q1 */
+        xmm0 = _mm_insert_epi32(xmm0, *(int *)(srcDst + 3*srcDstStride - 2), 3);   /* row3: p1 p0 q0 q1 */
+        xmm0 = _mm_shuffle_epi8(xmm0, *(__m128i *)shufTabC);
+
+        xmm1 = _mm_shuffle_epi32(xmm0, 0x01);
+        xmm2 = _mm_shuffle_epi32(xmm0, 0x02);
+        xmm3 = _mm_shuffle_epi32(xmm0, 0x03);
+
+        /* expand 8 to 16 bits */
+        xmm0 = _mm_cvtepu8_epi16(xmm0);           /* p1 */
+        xmm1 = _mm_cvtepu8_epi16(xmm1);           /* p0 */
+        xmm2 = _mm_cvtepu8_epi16(xmm2);           /* q0 */
+        xmm3 = _mm_cvtepu8_epi16(xmm3);           /* q1 */
+
+        xmm7 = xmm2;
+        xmm7 = _mm_sub_epi16(xmm7, xmm1);         /* q0 - p0 */
+        xmm7 = _mm_slli_epi16(xmm7, 2);           /* (q0 - p0) << 2 */
+        xmm7 = _mm_add_epi16(xmm7, xmm0);         /* ((q0 - p0) << 2) + p1 */
+        xmm7 = _mm_sub_epi16(xmm7, xmm3);         /* ((q0 - p0) << 2) + p1 - q1 */
+        xmm7 = _mm_add_epi16(xmm7, xmm4);         /* ((q0 - p0) << 2) + p1 - q1 + 4 */
+        xmm7 = _mm_srai_epi16(xmm7, 3);           /* (((q0 - p0) << 2) + p1 - q1 + 4) >> 3 */
+
+        xmm7 = _mm_min_epi16(xmm7, xmm5);         /* min(+tc) */
+        xmm7 = _mm_max_epi16(xmm7, xmm6);         /* max(-tc) */
+
+        if (edge->deblockP)
+            xmm1 = _mm_add_epi16(xmm1, xmm7);     /* p0 + delta */
+
+        if (edge->deblockQ)
+            xmm2 = _mm_sub_epi16(xmm2, xmm7);     /* q0 - delta */
+
+        /* clip to 8-bit */
+        xmm1 = _mm_packus_epi16(xmm1, xmm1);      /* 8-bit: p0 (rows 0-3) */
+        xmm2 = _mm_packus_epi16(xmm2, xmm2);      /* 8-bit: q0 (rows 0-3) */
+
+        /* put in order: row0 [-1 0], row1 [-1 0], ... */
+        xmm1 = _mm_unpacklo_epi8(xmm1, xmm2);
+        xmm2 = _mm_shufflelo_epi16(xmm1, 0x01);
+        xmm3 = _mm_shufflelo_epi16(xmm1, 0x02);
+        xmm4 = _mm_shufflelo_epi16(xmm1, 0x03);
+
+        /* always write 2 pixels per row (p0 q0) - deblockP/Q flags already accounted for */
+        *(short *)(srcDst - 1 + 0*srcDstStride) = (short)_mm_cvtsi128_si32(xmm1);
+        *(short *)(srcDst - 1 + 1*srcDstStride) = (short)_mm_cvtsi128_si32(xmm2);
+        *(short *)(srcDst - 1 + 2*srcDstStride) = (short)_mm_cvtsi128_si32(xmm3);
+        *(short *)(srcDst - 1 + 3*srcDstStride) = (short)_mm_cvtsi128_si32(xmm4);
+    } else {
+        xmm0 = _mm_cvtsi32_si128(*(int *)(srcDst - 2*srcDstStride));   /* p1, col 0-3 */
+        xmm1 = _mm_cvtsi32_si128(*(int *)(srcDst - 1*srcDstStride));   /* p0, col 0-3 */
+        xmm2 = _mm_cvtsi32_si128(*(int *)(srcDst + 0*srcDstStride));   /* q0, col 0-3 */
+        xmm3 = _mm_cvtsi32_si128(*(int *)(srcDst + 1*srcDstStride));   /* q1, col 0-3 */
+
+        /* expand 8 to 16 bits */
+        xmm0 = _mm_cvtepu8_epi16(xmm0);           /* p1 */
+        xmm1 = _mm_cvtepu8_epi16(xmm1);           /* p0 */
+        xmm2 = _mm_cvtepu8_epi16(xmm2);           /* q0 */
+        xmm3 = _mm_cvtepu8_epi16(xmm3);           /* q1 */
+
+        xmm7 = xmm2;
+        xmm7 = _mm_sub_epi16(xmm7, xmm1);         /* q0 - p0 */
+        xmm7 = _mm_slli_epi16(xmm7, 2);           /* (q0 - p0) << 2 */
+        xmm7 = _mm_add_epi16(xmm7, xmm0);         /* ((q0 - p0) << 2) + p1 */
+        xmm7 = _mm_sub_epi16(xmm7, xmm3);         /* ((q0 - p0) << 2) + p1 - q1 */
+        xmm7 = _mm_add_epi16(xmm7, xmm4);         /* ((q0 - p0) << 2) + p1 - q1 + 4 */
+        xmm7 = _mm_srai_epi16(xmm7, 3);           /* (((q0 - p0) << 2) + p1 - q1 + 4) >> 3 */
+
+        xmm7 = _mm_min_epi16(xmm7, xmm5);         /* min(+tc) */
+        xmm7 = _mm_max_epi16(xmm7, xmm6);         /* max(-tc) */
+
+        xmm1 = _mm_add_epi16(xmm1, xmm7);         /* p0 + delta */
+        xmm2 = _mm_sub_epi16(xmm2, xmm7);         /* q0 - delta */
+
+        /* clip to 8-bit */
+        xmm1 = _mm_packus_epi16(xmm1, xmm1);
+        xmm2 = _mm_packus_epi16(xmm2, xmm2);
+
+        /* write 4 pixels in rows [-1, 0] */
+        if (edge->deblockP)
+            *(int *)(srcDst - 1*srcDstStride) = _mm_cvtsi128_si32(xmm1);
+
+        if (edge->deblockQ)
+            *(int *)(srcDst + 0*srcDstStride) = _mm_cvtsi128_si32(xmm2);
+    }
 }
 
 }; // namespace MFX_HEVC_PP
