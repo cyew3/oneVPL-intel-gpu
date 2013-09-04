@@ -24,6 +24,7 @@ foreach( variant sw drm x11 )
         umc_core_merged
         ippcore_l
         dl
+        pthread
     )
     make_executable( test_vpp ${variant} static )
   endif( )

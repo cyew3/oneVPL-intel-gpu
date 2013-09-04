@@ -17,6 +17,7 @@ foreach( variant x11 drm )
         mfx
         ippcore_l
         dl
+        pthread
     )
     make_executable( shortname ${variant} )
   endif()

@@ -33,6 +33,7 @@ foreach( variant sw x11 drm )
       bs_parser
       dl
       sample_common_${variant}
+      pthread
     )
 
     make_executable( msdk_ts ${variant} )

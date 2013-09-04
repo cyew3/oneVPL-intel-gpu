@@ -91,6 +91,12 @@ else( )
   set(CMAKE_CXX_FLAGS_DEBUG   "-O0 -Wall ${no_warnings} -g -D_DEBUG" CACHE STRING "" FORCE)
   set(CMAKE_CXX_FLAGS_RELEASE "-O2 -D_FORTIFY_SOURCE=2 -fstack-protector -Wall ${no_warnings} -DNDEBUG"    CACHE STRING "" FORCE)
 
+  if (DEFINED CMAKE_FIND_ROOT_PATH)
+#    append("--sysroot=${CMAKE_FIND_ROOT_PATH} " CMAKE_C_FLAGS)
+#    append("--sysroot=${CMAKE_FIND_ROOT_PATH} " CMAKE_CXX_FLAGS)
+    append("--sysroot=${CMAKE_FIND_ROOT_PATH} " LINK_FLAGS)
+  endif (CMAKE_DEFINED CMAKE_FIND_ROOT_PATH)
+
   # SW HEVC decoder & encoder require SSE4.2
   if (CMAKE_C_COMPILER MATCHES icc)
     append("-xSSE4.2 -static-intel" CMAKE_C_FLAGS)
