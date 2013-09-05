@@ -98,11 +98,11 @@ public:
     }
 
     // Initialize with specified parameter(s)
-    mfxStatus Init(mfxVideoParam *init);
-
+    mfxStatus Init(mfxVideoParam *init, mfxI32 enableRecode = 1);
+  
     mfxStatus Close();
 
-    mfxStatus Reset(mfxVideoParam *init);
+    mfxStatus Reset(mfxVideoParam *init, mfxI32 enableRecode = 1);
     mfxStatus SetParams(mfxVideoParam *init);
     mfxStatus GetParams(mfxVideoParam *init);
 
@@ -132,6 +132,7 @@ protected:
     mfxI32  mQuantI, mQuantP, mQuantB, mQuantMax, mQuantPrev, mQuantOffset, mQPprev;
     mfxI32  mRCfap, mRCqap, mRCbap, mRCq;
     mfxF64  mRCqa, mRCfa, mRCqa0;
+    mfxF64  mRCfa_short;
 
     mfxF64  mRCqa1, mRCfa1;
     mfxI32  mRCfap1, mRCqap1, mRCbap1;
@@ -139,10 +140,11 @@ protected:
     mfxI32  mQuantIprev, mQuantPprev, mQuantBprev;
     mfxI32  mBitsEncoded;
     mfxU16  mPictureFlags, mPictureFlagsPrev;
-    mfxI32 mRecodeInternal;
+  
+    mfxI32 mRecode;
     mfxI32 GetInitQP();
     mfxBRCStatus UpdateQuant(mfxI32 bEncoded, mfxI32 totalPicBits);
-    mfxBRCStatus UpdateQuant_ScCh(mfxI32 bEncoded, mfxI32 totalPicBits);
+//    mfxBRCStatus UpdateQuant_ScCh(mfxI32 bEncoded, mfxI32 totalPicBits);
     mfxBRCStatus UpdateQuantHRD(mfxI32 bEncoded, mfxBRCStatus sts, mfxI32 overheadBits = 0);
     mfxBRCStatus UpdateAndCheckHRD(mfxI32 frameBits, mfxF64 inputBitsPerFrame, mfxI32 recode);
     mfxBRC_HRDState mHRD;
@@ -154,8 +156,8 @@ protected:
     mfxU32 mMaxBitrate;
     mfxI64 mBF, mBFsaved;
     mfxF64 mRCfsize;
-    mfxI32 mScChFrameCnt;
-    mfxI32 mScChLength;
+//    mfxI32 mScChFrameCnt;
+//    mfxI32 mScChLength;
 };
 
 
