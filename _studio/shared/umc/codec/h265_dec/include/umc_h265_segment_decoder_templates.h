@@ -217,19 +217,51 @@ public:
     {
         UMC::Status umcRes = UMC::UMC_OK;
         Ipp32s rsCUAddr = sd->m_pCurrentFrame->m_CodingData->getCUOrderMap(curCUAddr);
+
+        sd->m_curCU = sd->m_pCurrentFrame->getCU(rsCUAddr);
+
+        if (curCUAddr == sd->m_curCU->m_SliceHeader->SliceCurStartCUAddr / sd->m_pCurrentFrame->m_CodingData->m_NumPartitions)
+            sd->m_context->ResetRecRowBuffer();
+
         for (;;)
         {
-            sd->m_curCU = sd->m_pCurrentFrame->getCU(rsCUAddr);
-
             START_TICK1;
             sd->ReconstructCU(sd->m_curCU, 0, 0);
             END_TICK1(reconstruction_time);
 
-            ++curCUAddr;
-            if (curCUAddr >= nBorder)
-                break;
+            Ipp32s newCUAddr = curCUAddr + 1;
+            Ipp32s newRSCUAddr = sd->m_pCurrentFrame->m_CodingData->getCUOrderMap(newCUAddr);
 
-            rsCUAddr = sd->m_pCurrentFrame->m_CodingData->getCUOrderMap(curCUAddr);
+            if (newCUAddr >= nBorder)
+            {
+                if (newRSCUAddr < sd->m_pCurrentFrame->m_CodingData->m_NumCUsInFrame)
+                {
+                    if (sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(rsCUAddr) !=
+                        sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(newRSCUAddr))
+                    {
+                        sd->m_context->ResetRecRowBuffer();
+                    }
+                    else
+                    {
+                        sd->m_context->UpdateRecCurrCUContext(rsCUAddr, newRSCUAddr);
+                    }
+                }
+                break;
+            }
+
+            if (sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(rsCUAddr) !=
+                sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(newRSCUAddr))
+            {
+                sd->m_context->ResetRecRowBuffer();
+            }
+            else
+            {
+                sd->m_context->UpdateRecCurrCUContext(rsCUAddr, newRSCUAddr);
+            }
+
+            curCUAddr = newCUAddr;
+            rsCUAddr = newRSCUAddr;
+            sd->m_curCU = sd->m_pCurrentFrame->getCU(rsCUAddr);
         }
 
         return umcRes;
@@ -242,7 +274,10 @@ public:
         Ipp32s rsCUAddr = sd->m_pCurrentFrame->m_CodingData->getCUOrderMap(curCUAddr);
 
         if (!sd->m_pSliceHeader->dependent_slice_segment_flag)
+        {
             sd->m_context->ResetRowBuffer();
+            sd->m_context->ResetRecRowBuffer();
+        }
 
         for (;;)
         {
@@ -284,6 +319,7 @@ public:
                 sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(newRSCUAddr))
             {
                 sd->m_context->ResetRowBuffer();
+                sd->m_context->ResetRecRowBuffer();
                 sd->m_pBitStream->DecodeTerminatingBit_CABAC();
 
                 // reset CABAC engine
@@ -329,6 +365,7 @@ public:
                     }
                 }
                 sd->m_context->UpdateCurrCUContext(rsCUAddr, newRSCUAddr);
+                sd->m_context->UpdateRecCurrCUContext(rsCUAddr, newRSCUAddr);
             }
 
             curCUAddr = newCUAddr;

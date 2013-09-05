@@ -55,9 +55,6 @@ H265CodingUnit::H265CodingUnit()
     m_IPCMSampleY = 0;
     m_IPCMSampleCb = 0;
     m_IPCMSampleCr = 0;
-
-    m_intraNeighbors[0] = 0;
-    m_intraNeighbors[1] = 0;
 }
 
 H265CodingUnit::~H265CodingUnit()
@@ -72,7 +69,7 @@ void H265CodingUnit::create (H265FrameCodingData * frameCD)
 
     Ipp32s widthOnHeight = frameCD->m_MaxCUWidth * frameCD->m_MaxCUWidth;
 
-    m_cumulativeMemoryPtr = CumulativeArraysAllocation(25, 32, &m_qpArray, sizeof(Ipp8u) * m_NumPartition,
+    m_cumulativeMemoryPtr = CumulativeArraysAllocation(23, 32, &m_qpArray, sizeof(Ipp8u) * m_NumPartition,
                                 &m_depthArray, sizeof(Ipp8u) * m_NumPartition,
                                 &m_widthArray, sizeof(Ipp8u) * m_NumPartition,
                                 &m_heightArray, sizeof(Ipp8u) * m_NumPartition,
@@ -100,10 +97,7 @@ void H265CodingUnit::create (H265FrameCodingData * frameCD)
                                 &m_IPCMFlag, sizeof(bool) * m_NumPartition,
                                 &m_IPCMSampleY, sizeof(H265PlaneYCommon) * widthOnHeight,
                                 &m_IPCMSampleCb, sizeof(H265PlaneYCommon) * widthOnHeight / 4,
-                                &m_IPCMSampleCr, sizeof(H265PlaneYCommon) * widthOnHeight / 4,
-
-                                &m_intraNeighbors[0], sizeof(IntraNeighbors) * m_NumPartition,
-                                &m_intraNeighbors[1], sizeof(IntraNeighbors) * m_NumPartition
+                                &m_IPCMSampleCr, sizeof(H265PlaneYCommon) * widthOnHeight / 4
                                 );
 
     m_rasterToPelX = frameCD->m_partitionInfo.m_rasterToPelX;

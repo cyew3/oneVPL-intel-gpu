@@ -385,10 +385,12 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(H265Task & )
             }
             VM_ASSERT(slice->m_iMaxMB - 1);
             m_context->UpdateCurrCUContext(m_pCurrentFrame->m_CodingData->getCUOrderMap(slice->m_iMaxMB - 1), CUAddr);
+            m_context->UpdateRecCurrCUContext(m_pCurrentFrame->m_CodingData->getCUOrderMap(slice->m_iMaxMB - 1), CUAddr);
         }
         else
         {
             m_context->ResetRowBuffer();
+            m_context->ResetRecRowBuffer();
         }
     }
 

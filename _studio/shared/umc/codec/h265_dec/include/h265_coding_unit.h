@@ -62,14 +62,6 @@ public:
     H265CoeffsPtrCommon        m_TrCoeffCb;      // transformed coefficient buffer (Cb)
     H265CoeffsPtrCommon        m_TrCoeffCr;      // transformed coefficient buffer (Cr)
 
-    typedef struct
-    {
-        bool neighborAvailable[65];
-        Ipp32s numIntraNeighbors;
-    } IntraNeighbors;
-
-    IntraNeighbors           * m_intraNeighbors[2];
-
 protected:
     Ipp8u *                    m_widthArray;     // array of widths
     Ipp8u *                    m_heightArray;    // array of heights
@@ -260,6 +252,17 @@ struct H265FrameHLDNeighborsInfo
             Ipp8u TrStart;
         } members;
         Ipp32u data;
+    };
+};
+
+struct H265FrameRecNeighborsInfo
+{
+    union {
+        struct {
+            Ipp8u IsAvailable : 1;
+            Ipp8u IsIntra     : 1;
+        } members;
+        Ipp8u data;
     };
 };
 

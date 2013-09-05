@@ -30,6 +30,7 @@ namespace UMC_HEVC_DECODER
 
 struct H265SliceHeader;
 struct H265FrameHLDNeighborsInfo;
+struct H265FrameRecNeighborsInfo;
 struct H265MotionVector;
 struct H265MVInfo;
 struct SAOParams;
@@ -84,6 +85,10 @@ public:
     H265MVInfo *m_CurrCTB;
     Ipp32s m_CurrCTBStride;
 
+    // Local context for reconstructing Intra
+    std::vector<H265FrameRecNeighborsInfo> m_RecTopNgbrsHolder, m_CurrRecFlagsHolder;
+    H265FrameRecNeighborsInfo *m_RecTopNgbrs, *m_CurrRecFlags;
+
     // mt params
     bool m_needToSplitDecAndRec;
     Ipp32s m_mvsDistortion; // max y component of all mvs in slice
@@ -91,7 +96,9 @@ public:
     void Init(H265Slice *slice);
     void UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr);
     void ResetRowBuffer();
-
+    void UpdateRecCurrCUContext(Ipp32s lastCUAddr, Ipp32s newCUAddr);
+    void ResetRecRowBuffer();
+    
 protected:
 
 };
@@ -124,8 +131,8 @@ public:
     void DecodeSplitFlagCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     Ipp32u DecodeMergeIndexCABAC(void);
 
-    void DecodeIntraNeighborsRec(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
-    void DecodeIntraNeighbors(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
+    Ipp32s CountIntraNeighborsLuma(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u TrDepth, bool *neighborAvailable);
+    Ipp32s CountIntraNeighborsChroma(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u TrDepth, bool *neighborAvailable);
 
     bool DecodeSkipFlagCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     bool DecodeCUTransquantBypassFlag(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
@@ -193,7 +200,8 @@ public:
         H265PlanePtrUVCommon pAdiBuf,
         Ipp32u OrgBufStride,
         Ipp32u OrgBufHeight,
-        H265CodingUnit::IntraNeighbors *intraNeighbor);
+        bool *neighborAvailable,
+        Ipp32s numIntraNeighbors);
 
     void FillReferenceSamplesChroma(
         Ipp32s bitDepth,
@@ -241,6 +249,7 @@ public:
     void UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u TrStart, bool isSkipped, bool isTranquantBypass, bool isIPCM, bool isTrCbfY);
     void UpdateNeighborDecodedQP(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void UpdatePUInfo(Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight, H265MVInfo &mvInfo);
+    void UpdateRecNeighboursBuffers(Ipp32s PartX, Ipp32s PartY, Ipp32s PartSize, bool IsIntra);
 
     Ipp32s m_iNumber;                                           // (Ipp32s) ordinal number of decoder
     H265Slice *m_pSlice;                                        // (H265Slice *) current slice pointer
@@ -280,12 +289,12 @@ private:
     bool GetColMVP(EnumRefPicList refPicListIdx, Ipp32u PartX, Ipp32u PartY, H265MotionVector& rcMV, Ipp32s RefIdx);
     bool hasEqualMotion(Ipp32s dir1, Ipp32s dir2);
 
-    /// constrained intra prediction
-    Ipp32s isIntraAboveAvailable(Ipp32s TUPartNumberInCTB, Ipp32s NumUnitsInCU, bool *ValidFlags);
-    Ipp32s isIntraLeftAvailable(Ipp32s TUPartNumberInCTB, Ipp32s NumUnitsInCU, bool *ValidFlags);
-    Ipp32s isIntraAboveRightAvailable(Ipp32s TUPartNumberInCTB, Ipp32s PartX, Ipp32s XInc, Ipp32s NumUnitsInCU, bool *ValidFlags);
-    Ipp32s isIntraAboveRightAvailableOtherCTB(Ipp32s PartX, Ipp32s NumUnitsInCU, bool *ValidFlags);
-    Ipp32s isIntraBelowLeftAvailable(Ipp32s TUPartNumberInCTB, Ipp32s PartY, Ipp32s YInc, Ipp32s NumUnitsInCU, bool *ValidFlags);
+    // constrained intra prediction in reconstruct
+    Ipp32s isRecIntraAboveAvailable(Ipp32s TUPartNumberInCTB, Ipp32s NumUnitsInCU, bool *ValidFlags);
+    Ipp32s isRecIntraLeftAvailable(Ipp32s TUPartNumberInCTB, Ipp32s NumUnitsInCU, bool *ValidFlags);
+    Ipp32s isRecIntraAboveRightAvailable(Ipp32s TUPartNumberInCTB, Ipp32s PartX, Ipp32s XInc, Ipp32s NumUnitsInCU, bool *ValidFlags);
+    Ipp32s isRecIntraAboveRightAvailableOtherCTB(Ipp32s PartX, Ipp32s NumUnitsInCU, bool *ValidFlags);
+    Ipp32s isRecIntraBelowLeftAvailable(Ipp32s TUPartNumberInCTB, Ipp32s PartY, Ipp32s YInc, Ipp32s NumUnitsInCU, bool *ValidFlags);
 
     // we lock the assignment operator to avoid any
     // accasional assignments
