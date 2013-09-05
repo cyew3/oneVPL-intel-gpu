@@ -161,12 +161,6 @@ mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxE
     }
 // derived
 
-    pars->QPIChroma = h265_QPtoChromaQP[pars->QPI];
-    pars->QPPChroma = h265_QPtoChromaQP[pars->QPP];
-    pars->QPBChroma = h265_QPtoChromaQP[pars->QPB];
-    pars->QP = pars->QPI;
-    pars->QPChroma = pars->QPIChroma;
-
     pars->MaxTrSize = 1 << pars->QuadtreeTULog2MaxSize;
     pars->MaxCUSize = 1 << pars->Log2MaxCUSize;
 
@@ -231,16 +225,6 @@ mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxE
     pars->NumMinTUInMaxCU = pars->MaxCUSize >> pars->QuadtreeTULog2MinSize;
     pars->Log2MinTUSize = pars->QuadtreeTULog2MinSize;
     pars->MaxTotalDepth = pars->Log2MaxCUSize - pars->Log2MinTUSize;
-
-    for (Ipp32s i = 0; i < pars->MaxTotalDepth; i++) {
-        pars->cu_split_threshold_cu[i] = h265_calc_split_threshold(0, pars->Log2MaxCUSize - i,
-            pars->SplitThresholdStrengthCU, pars->QPI);
-        pars->cu_split_threshold_tu[i] = h265_calc_split_threshold(1, pars->Log2MaxCUSize - i,
-            pars->SplitThresholdStrengthTU, pars->QPI);
-    }
-    for (Ipp32s i = pars->MaxTotalDepth; i < MAX_TOTAL_DEPTH; i++) {
-        pars->cu_split_threshold_cu[i] = pars->cu_split_threshold_tu[i] = 0;
-    }
 
     return MFX_ERR_NONE;
 }
@@ -555,7 +539,26 @@ mfxStatus H265Encoder::Init(mfxVideoH265InternalParam *param, mfxExtCodingOption
         mfxStatus sts = m_brc->Init(param);
         if (MFX_ERR_NONE != sts)
             return sts;
+        m_videoParam.QP = (Ipp8s)m_brc->GetQP(MFX_FRAMETYPE_I);
+        m_videoParam.QPChroma = h265_QPtoChromaQP[m_videoParam.QP];
+    } else {
+        m_videoParam.QPIChroma = h265_QPtoChromaQP[m_videoParam.QPI];
+        m_videoParam.QPPChroma = h265_QPtoChromaQP[m_videoParam.QPP];
+        m_videoParam.QPBChroma = h265_QPtoChromaQP[m_videoParam.QPB];
+        m_videoParam.QP = m_videoParam.QPI;
+        m_videoParam.QPChroma = m_videoParam.QPIChroma;
     }
+
+    for (Ipp32s i = 0; i < m_videoParam.MaxTotalDepth; i++) {
+        m_videoParam.cu_split_threshold_cu[i] = h265_calc_split_threshold(0, m_videoParam.Log2MaxCUSize - i,
+            m_videoParam.SplitThresholdStrengthCU, m_videoParam.QP);
+        m_videoParam.cu_split_threshold_tu[i] = h265_calc_split_threshold(1, m_videoParam.Log2MaxCUSize - i,
+            m_videoParam.SplitThresholdStrengthTU, m_videoParam.QP);
+    }
+    for (Ipp32s i = m_videoParam.MaxTotalDepth; i < MAX_TOTAL_DEPTH; i++) {
+        m_videoParam.cu_split_threshold_cu[i] = m_videoParam.cu_split_threshold_tu[i] = 0;
+    }
+
 
     SetProfileLevel();
     SetVPS();
