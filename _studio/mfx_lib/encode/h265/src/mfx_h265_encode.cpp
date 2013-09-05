@@ -504,7 +504,8 @@ m_mfxHEVCOpts.SignBitHiding = MFX_CODINGOPTION_OFF;
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     if (!m_mfxVideoParam.mfx.BufferSizeInKB)
-        if (m_mfxVideoParam.mfx.TargetKbps)
+        if ((m_mfxVideoParam.mfx.RateControlMethod == MFX_RATECONTROL_CBR || m_mfxVideoParam.mfx.RateControlMethod == MFX_RATECONTROL_VBR) &&
+            m_mfxVideoParam.mfx.TargetKbps)
             m_mfxVideoParam.mfx.BufferSizeInKB = m_mfxVideoParam.mfx.TargetKbps * 2 / 8; // 2 seconds, like in AVC
         else
             m_mfxVideoParam.mfx.BufferSizeInKB = par->mfx.FrameInfo.Width * par->mfx.FrameInfo.Height * 3 / 2000 + 1; // uncompressed
