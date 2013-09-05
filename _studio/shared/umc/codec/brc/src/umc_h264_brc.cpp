@@ -695,7 +695,7 @@ BRCStatus H264BRC::PostPackFrame(FrameType picType, Ipp32s totalFrameBits, Ipp32
           qpnew++;
         BRC_CLIP(qpnew, 1, mQuantMax);
         mRCq = mQuantI = mQuantP = qpnew; 
-        if (mFrameType == B_PICTURE)
+        if (picType == B_PICTURE)
             mQuantB = qpnew;
         else
             SetQuantB();
@@ -791,10 +791,11 @@ BRCStatus H264BRC::PostPackFrame(FrameType picType, Ipp32s totalFrameBits, Ipp32
         else
             mRCqa += (1. / qp - mRCqa) / mRCqap;
 
-        if (mRecode)
+        if (mRecode) {
             BRC_CLIP(mRCqa, 1./mQuantMax , 1./1.);
-        else
+        } else {
             BRC_CLIP(mRCqa, 1./mQuantMax , 1./mQuantMin);
+        }
 
         if (repack != BRC_RECODE_PANIC && repack != BRC_RECODE_EXT_PANIC && !oldScene) {
 
