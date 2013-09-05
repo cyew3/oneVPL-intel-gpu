@@ -218,6 +218,7 @@ public:
 
     void CleanLeftEdges(bool leftAvailable, H265EdgeData *ctb_start_edge, Ipp32s height);
     void CleanTopEdges(bool leftAvailable, H265EdgeData *ctb_start_edge, Ipp32s width);
+    void CleanRightHorEdges(void);
     void DeblockOneLCU(Ipp32s curLCUAddr);
     void DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curPixelColumn, Ipp32s curPixelRow);
     void DeblockOneCrossChroma(H265CodingUnit* curLCU, Ipp32s curPixelColumn, Ipp32s curPixelRow);

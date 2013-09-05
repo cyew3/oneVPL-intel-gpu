@@ -82,6 +82,18 @@ void H265SegmentDecoder::CleanTopEdges(bool topAvailable, H265EdgeData *ctb_star
     }
 }
 
+void H265SegmentDecoder::CleanRightHorEdges(void)
+{
+    H265EdgeData *ctb_start_edge = m_pCurrentFrame->m_CodingData->m_edge +
+        m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth * (m_curCU->m_CUPelY >> 3) + (m_curCU->m_CUPelX >> 3) * 4;
+
+    for (Ipp32s j = 0; j < (m_pSeqParamSet->MaxCUSize >> 3); j++)
+    {
+        ctb_start_edge[j * m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth + (m_pSeqParamSet->MaxCUSize >> 1) + 2].strength = 0;
+        ctb_start_edge[j * m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth + (m_pSeqParamSet->MaxCUSize >> 1) + 3].strength = 0;
+    }
+}
+
 void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr)
 {
     H265CodingUnit* curLCU = m_pCurrentFrame->getCU(curLCUAddr);
