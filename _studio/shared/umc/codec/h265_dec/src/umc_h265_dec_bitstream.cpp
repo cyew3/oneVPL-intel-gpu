@@ -296,7 +296,7 @@ UMC::Status H265HeadersBitstream::GetVideoParamSet(H265VideoParamSet *pcVPS)
     }
 
     pcVPS->vps_max_layer_id = GetBits(6);
-    if (pcVPS->vps_max_layer_id > MAX_NUH_LAYER_ID)
+    if (pcVPS->vps_max_layer_id >= MAX_NUH_LAYER_ID)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
     pcVPS->vps_num_layer_sets = (Ipp32u)GetVLCElement(false) + 1;
