@@ -2275,16 +2275,10 @@ mfxStatus MFX_JPEG_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
             sts = MFX_ERR_UNSUPPORTED;
         }
 
-        if (in->mfx.FrameInfo.Width <= 16384)
-            out->mfx.FrameInfo.Width = UMC::align_value<mfxU16>(in->mfx.FrameInfo.Width, 0x10);
-        else
-            sts = MFX_ERR_UNSUPPORTED;
+        out->mfx.FrameInfo.Width = UMC::align_value<mfxU16>(in->mfx.FrameInfo.Width, 0x10);
 
-        if (in->mfx.FrameInfo.Height <= 16384)
-            out->mfx.FrameInfo.Height = UMC::align_value<mfxU16>(in->mfx.FrameInfo.Height, 
-                                         (in->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) ? 0x10 : 0x20);
-        else
-            sts = MFX_ERR_UNSUPPORTED;
+        out->mfx.FrameInfo.Height = UMC::align_value<mfxU16>(in->mfx.FrameInfo.Height, 
+            (in->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) ? 0x10 : 0x20);
         
         if (in->mfx.FrameInfo.CropX <= out->mfx.FrameInfo.Width)
             out->mfx.FrameInfo.CropX = in->mfx.FrameInfo.CropX;
@@ -2451,10 +2445,10 @@ bool MFX_JPEG_Utility::CheckVideoParam(mfxVideoParam *in, eMFXHWType )
     if (MFX_CODEC_JPEG != in->mfx.CodecId)
         return false;
 
-    if (in->mfx.FrameInfo.Width > 16384 || (in->mfx.FrameInfo.Width % 16))
+    if (in->mfx.FrameInfo.Width % 16)
         return false;
 
-    if (in->mfx.FrameInfo.Height > 16384 || (in->mfx.FrameInfo.Height % 16))
+    if (in->mfx.FrameInfo.Height % 16)
         return false;
 
 #if 0

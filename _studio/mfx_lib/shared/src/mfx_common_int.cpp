@@ -46,10 +46,10 @@ mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 /* codecId */)
     if (!info)
         return MFX_ERR_NULL_PTR;
 
-    if (info->Width > 0x7FFF || (info->Width % 16) || !info->Width)
+    if ((info->Width % 16) || !info->Width)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    if (info->Height > 0x7FFF || (info->Height % 16) || !info->Height)
+    if ((info->Height % 16) || !info->Height)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     switch (info->FourCC)
@@ -387,37 +387,51 @@ mfxStatus CheckFrameData(const mfxFrameSurface1 *surface)
 
     if (!surface->Data.MemId)
     {
+        mfxU32 pitch = surface->Data.PitchLow + ((mfxU32)surface->Data.PitchHigh << 16);
+
         switch (surface->Info.FourCC)
         {
         case MFX_FOURCC_NV12:
             if (!surface->Data.Y || !surface->Data.UV)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
+            if (pitch > 0xFFFF)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
             break;
         case MFX_FOURCC_YV12:
+            if (!surface->Data.Y || !surface->Data.U || !surface->Data.V)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            if (pitch > 0xFFFF)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            break;
         case MFX_FOURCC_YUY2:
             if (!surface->Data.Y || !surface->Data.U || !surface->Data.V)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            if (pitch > 0x1FFFF)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             break;
         case MFX_FOURCC_RGB3:
             if (!surface->Data.R || !surface->Data.G || !surface->Data.B)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
+            if (pitch > 0x2FFFF)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
             break;
         case MFX_FOURCC_RGB4:
             if (!surface->Data.A || !surface->Data.R || !surface->Data.G || !surface->Data.B)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            if (pitch > 0x3FFFF)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             break;
 #if defined(_WIN32) || defined(_WIN64) 
         case DXGI_FORMAT_AYUV:
             if (!surface->Data.A || !surface->Data.R || !surface->Data.G || !surface->Data.B)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
+            if (pitch > 0x3FFFF)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
             break;
 #endif
         default:
             break;
         }
-        mfxU32 pitch = surface->Data.PitchLow + ((mfxU32)surface->Data.PitchHigh << 16);
-        if (pitch > 0x7FFF && surface->Info.FourCC != MFX_FOURCC_RGB4 && surface->Info.FourCC != MFX_FOURCC_YUY2)
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
     return MFX_ERR_NONE;
 }
