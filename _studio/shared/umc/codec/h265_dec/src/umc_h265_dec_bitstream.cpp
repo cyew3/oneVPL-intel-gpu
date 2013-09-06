@@ -1088,18 +1088,18 @@ UMC::Status H265HeadersBitstream::GetSliceHeaderPart1(H265SliceHeader * sliceHdr
 {
     unsigned uiCode;
 
-    sliceHdr->IdrPicFlag = (sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_IDR || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_IDR_N_LP) ? 1 : 0;
+    sliceHdr->IdrPicFlag = (sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_IDR_W_RADL || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_IDR_N_LP) ? 1 : 0;
 
     unsigned firstSliceSegmentInPic;
     PARSE_FLAG( firstSliceSegmentInPic, "first_slice_in_pic_flag" );
     
     sliceHdr->first_slice_segment_in_pic_flag = firstSliceSegmentInPic;
 
-    if ( sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_IDR
+    if ( sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_IDR_W_RADL
       || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_IDR_N_LP
       || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLA_N_LP
-      || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLANT
-      || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLA
+      || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_RADL
+      || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_LP
       || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_CRA )
     {
         PARSE_FLAG( uiCode, "no_output_of_prior_pics_flag" );  //ignored
@@ -1211,7 +1211,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
                 PicOrderCntMsb = prevPicOrderCntMsb;
             }
 
-            if (sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLA || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLANT ||
+            if (sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_LP || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_RADL ||
                 sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLA_N_LP)
             { // For BLA picture types, POCmsb is set to 0.
    
@@ -1334,8 +1334,8 @@ void H265HeadersBitstream::decodeSlice(H265Slice *rpcSlice, const H265SeqParamSe
                 offset += rps->getNumberOfLongtermPictures();
                 rps->num_pics = offset;
             }
-            if ( sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLA
-                || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLANT
+            if ( sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_LP
+                || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_RADL
                 || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLA_N_LP )
             {
                 rps = rpcSlice->getLocalRPS();
@@ -1756,10 +1756,10 @@ UMC::Status H265Bitstream::GetNALUnitType(NalUnitType &nal_unit_type, Ipp32u &nu
 
     if (nuh_temporal_id)
     {
-        VM_ASSERT( nal_unit_type != NAL_UT_CODED_SLICE_BLA
-            && nal_unit_type != NAL_UT_CODED_SLICE_BLANT
+        VM_ASSERT( nal_unit_type != NAL_UT_CODED_SLICE_BLA_W_LP
+            && nal_unit_type != NAL_UT_CODED_SLICE_BLA_W_RADL
             && nal_unit_type != NAL_UT_CODED_SLICE_BLA_N_LP
-            && nal_unit_type != NAL_UT_CODED_SLICE_IDR
+            && nal_unit_type != NAL_UT_CODED_SLICE_IDR_W_RADL
             && nal_unit_type != NAL_UT_CODED_SLICE_IDR_N_LP
             && nal_unit_type != NAL_UT_CODED_SLICE_CRA
             && nal_unit_type != NAL_UT_VPS
@@ -1769,7 +1769,7 @@ UMC::Status H265Bitstream::GetNALUnitType(NalUnitType &nal_unit_type, Ipp32u &nu
     }
     else
     {
-        VM_ASSERT( nal_unit_type != NAL_UT_CODED_SLICE_TLA
+        VM_ASSERT( nal_unit_type != NAL_UT_CODED_SLICE_TLA_R
             && nal_unit_type != NAL_UT_CODED_SLICE_TSA_N
             && nal_unit_type != NAL_UT_CODED_SLICE_STSA_R
             && nal_unit_type != NAL_UT_CODED_SLICE_STSA_N );

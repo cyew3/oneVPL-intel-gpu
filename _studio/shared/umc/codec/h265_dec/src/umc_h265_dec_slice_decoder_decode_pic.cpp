@@ -164,8 +164,6 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
         }
     }
 
-    // For generalized B
-    // note: maybe not existed case (always L0 is copied to L1 if L1 is empty)
     if (GetSliceHeader()->slice_type == B_SLICE && getNumRefIdx(REF_PIC_LIST_1) == 0)
     {
         Ipp32s iNumRefIdx = getNumRefIdx(REF_PIC_LIST_0);

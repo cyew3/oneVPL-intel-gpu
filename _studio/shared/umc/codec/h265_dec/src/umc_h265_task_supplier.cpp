@@ -759,6 +759,11 @@ void TaskSupplier_H265::Close()
     m_frameOrder               = 0;
 
     m_WaitForIDR        = true;
+
+    m_RA_POC = INT_MAX;
+    m_IRAPType = NAL_UT_INVALID;
+    m_CRA_POC = 0;
+
     m_isUseDelayDPBValues = true;
 
     m_pLastDisplayed = 0;
@@ -817,6 +822,10 @@ void TaskSupplier_H265::Reset()
     m_frameOrder               = 0;
 
     m_WaitForIDR        = true;
+
+    m_RA_POC = INT_MAX;
+    m_IRAPType = NAL_UT_INVALID;
+    m_CRA_POC = 0;
 
     m_isUseDelayDPBValues = true;
     m_pLastDisplayed = 0;
@@ -1548,18 +1557,18 @@ UMC::Status TaskSupplier_H265::ProcessNalUnit(UMC::MediaDataEx *nalUnit)
     {
     case NAL_UT_CODED_SLICE_TRAIL_R:
     case NAL_UT_CODED_SLICE_TRAIL_N:
-    case NAL_UT_CODED_SLICE_TLA:
+    case NAL_UT_CODED_SLICE_TLA_R:
     case NAL_UT_CODED_SLICE_TSA_N:
     case NAL_UT_CODED_SLICE_STSA_R:
     case NAL_UT_CODED_SLICE_STSA_N:
-    case NAL_UT_CODED_SLICE_BLA:
-    case NAL_UT_CODED_SLICE_BLANT:
+    case NAL_UT_CODED_SLICE_BLA_W_LP:
+    case NAL_UT_CODED_SLICE_BLA_W_RADL:
     case NAL_UT_CODED_SLICE_BLA_N_LP:
-    case NAL_UT_CODED_SLICE_IDR:
+    case NAL_UT_CODED_SLICE_IDR_W_RADL:
     case NAL_UT_CODED_SLICE_IDR_N_LP:
     case NAL_UT_CODED_SLICE_CRA:
-    case NAL_UT_CODED_SLICE_DLP:
-    case NAL_UT_CODED_SLICE_TFD:
+    case NAL_UT_CODED_SLICE_RADL_R:
+    case NAL_UT_CODED_SLICE_RASL_R:
         if (H265Slice * pSlice = DecodeSliceHeader(nalUnit))
             umcRes = AddSlice(pSlice, false);
         break;
@@ -1606,18 +1615,18 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource, UMC::MediaD
             case NAL_UT_CODED_SLICE_RADL_N:
             case NAL_UT_CODED_SLICE_TRAIL_R:
             case NAL_UT_CODED_SLICE_TRAIL_N:
-            case NAL_UT_CODED_SLICE_TLA:
+            case NAL_UT_CODED_SLICE_TLA_R:
             case NAL_UT_CODED_SLICE_TSA_N:
             case NAL_UT_CODED_SLICE_STSA_R:
             case NAL_UT_CODED_SLICE_STSA_N:
-            case NAL_UT_CODED_SLICE_BLA:
-            case NAL_UT_CODED_SLICE_BLANT:
+            case NAL_UT_CODED_SLICE_BLA_W_LP:
+            case NAL_UT_CODED_SLICE_BLA_W_RADL:
             case NAL_UT_CODED_SLICE_BLA_N_LP:
-            case NAL_UT_CODED_SLICE_IDR:
+            case NAL_UT_CODED_SLICE_IDR_W_RADL:
             case NAL_UT_CODED_SLICE_IDR_N_LP:
             case NAL_UT_CODED_SLICE_CRA:
-            case NAL_UT_CODED_SLICE_DLP:
-            case NAL_UT_CODED_SLICE_TFD:
+            case NAL_UT_CODED_SLICE_RADL_R:
+            case NAL_UT_CODED_SLICE_RASL_R:
 
             case NAL_UT_SEI:
                 return UMC::UMC_OK;
@@ -1653,18 +1662,18 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource, UMC::MediaD
                 case NAL_UT_CODED_SLICE_RADL_N:
                 case NAL_UT_CODED_SLICE_TRAIL_R:
                 case NAL_UT_CODED_SLICE_TRAIL_N:
-                case NAL_UT_CODED_SLICE_TLA:
+                case NAL_UT_CODED_SLICE_TLA_R:
                 case NAL_UT_CODED_SLICE_TSA_N:
                 case NAL_UT_CODED_SLICE_STSA_R:
                 case NAL_UT_CODED_SLICE_STSA_N:
-                case NAL_UT_CODED_SLICE_BLA:
-                case NAL_UT_CODED_SLICE_BLANT:
+                case NAL_UT_CODED_SLICE_BLA_W_LP:
+                case NAL_UT_CODED_SLICE_BLA_W_RADL:
                 case NAL_UT_CODED_SLICE_BLA_N_LP:
-                case NAL_UT_CODED_SLICE_IDR:
+                case NAL_UT_CODED_SLICE_IDR_W_RADL:
                 case NAL_UT_CODED_SLICE_IDR_N_LP:
                 case NAL_UT_CODED_SLICE_CRA:
-                case NAL_UT_CODED_SLICE_DLP:
-                case NAL_UT_CODED_SLICE_TFD:
+                case NAL_UT_CODED_SLICE_RADL_R:
+                case NAL_UT_CODED_SLICE_RASL_R:
 
                 case NAL_UT_SEI:
                     if (is_header_readed)
@@ -1679,18 +1688,18 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource, UMC::MediaD
             case NAL_UT_CODED_SLICE_RADL_N:
             case NAL_UT_CODED_SLICE_TRAIL_R:
             case NAL_UT_CODED_SLICE_TRAIL_N:
-            case NAL_UT_CODED_SLICE_TLA:
+            case NAL_UT_CODED_SLICE_TLA_R:
             case NAL_UT_CODED_SLICE_TSA_N:
             case NAL_UT_CODED_SLICE_STSA_R:
             case NAL_UT_CODED_SLICE_STSA_N:
-            case NAL_UT_CODED_SLICE_BLA:
-            case NAL_UT_CODED_SLICE_BLANT:
+            case NAL_UT_CODED_SLICE_BLA_W_LP:
+            case NAL_UT_CODED_SLICE_BLA_W_RADL:
             case NAL_UT_CODED_SLICE_BLA_N_LP:
-            case NAL_UT_CODED_SLICE_IDR:
+            case NAL_UT_CODED_SLICE_IDR_W_RADL:
             case NAL_UT_CODED_SLICE_IDR_N_LP:
             case NAL_UT_CODED_SLICE_CRA:
-            case NAL_UT_CODED_SLICE_DLP:
-            case NAL_UT_CODED_SLICE_TFD:
+            case NAL_UT_CODED_SLICE_RADL_R:
+            case NAL_UT_CODED_SLICE_RASL_R:
                 if(H265Slice *pSlice = DecodeSliceHeader(nalUnit))
                 {
                     UMC::Status sts = AddSlice(pSlice, !pSource);
@@ -1816,8 +1825,6 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
     m_Headers.m_SeqParams.SetCurrentID(pSlice->GetPicParam()->pps_seq_parameter_set_id);
     m_Headers.m_PicParams.SetCurrentID(pSlice->GetPicParam()->pps_pic_parameter_set_id);
 
-    ActivateHeaders(const_cast<H265SeqParamSet *>(pSlice->GetSeqParam()), const_cast<H265PicParamSet *>(pSlice->GetPicParam()));
-
     pSlice->m_pCurrentFrame = NULL;
 
     memory_leak_preventing.ClearNotification();
@@ -1834,6 +1841,9 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
     if (pSlice->GetSliceHeader()->nuh_temporal_id == 0)
         m_prevPOC = pSlice->GetSliceHeader()->slice_pic_order_cnt_lsb;
 
+    if (IsSkipForCRAorBLA(pSlice))
+        return 0;
+
     if (m_WaitForIDR)
     {
         if (pSlice->GetSliceHeader()->slice_type != I_SLICE)
@@ -1841,6 +1851,8 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
             return 0;
         }
     }
+
+    ActivateHeaders(const_cast<H265SeqParamSet *>(pSlice->GetSeqParam()), const_cast<H265PicParamSet *>(pSlice->GetPicParam()));
 
     H265SliceHeader * sliceHdr = pSlice->GetSliceHeader();
     Ipp32u currOffset = sliceHdr->m_HeaderBitstreamOffset;
@@ -1896,6 +1908,40 @@ void TaskSupplier_H265::ActivateHeaders(H265SeqParamSet *sps, H265PicParamSet *p
     {
         sps->m_AMPAcc[i] = 0;
     }
+}
+
+bool TaskSupplier_H265::IsSkipForCRAorBLA(H265Slice *pSlice)
+{
+    if (m_RA_POC == INT_MAX)
+    {
+        if (pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_CRA
+            || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_LP
+            || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_BLA_N_LP
+            || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_RADL)
+        {
+            m_RA_POC = pSlice->m_SliceHeader.slice_pic_order_cnt_lsb;
+        }
+        else if (pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_IDR_W_RADL || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_IDR_N_LP)
+        {
+            m_RA_POC = -INT_MIN;
+        }
+    }
+    else if (pSlice->m_SliceHeader.slice_pic_order_cnt_lsb < m_RA_POC &&
+        (pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_RASL_R || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_RASL_N))
+    {
+        return true;
+    }
+
+    if ((m_IRAPType == NAL_UT_CODED_SLICE_BLA_N_LP
+        || m_IRAPType == NAL_UT_CODED_SLICE_BLA_W_LP
+        || m_IRAPType == NAL_UT_CODED_SLICE_BLA_W_RADL)
+        && pSlice->m_SliceHeader.nal_unit_type < m_CRA_POC
+        && (pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_RASL_R || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_RASL_N))
+    {
+        return true;
+    }
+
+    return false;
 }
 
 UMC::Status TaskSupplier_H265::AddSlice(H265Slice * pSlice, bool )
@@ -1980,12 +2026,22 @@ UMC::Status TaskSupplier_H265::AddSlice(H265Slice * pSlice, bool )
             AddFakeReferenceFrame(pSlice);
     }
 
-    //if (!pSlice->GetSliceHeader()->dependent_slice_segment_flag)
+    if (!pSlice->GetSliceHeader()->dependent_slice_segment_flag)
     {
-        // pSlice->checkCRA(pSlice->getRPS(), m_pocCRA, m_prevRAPisBLA, m_cListPic);
-        // Set reference list
-        pSlice->UpdateReferenceList(GetView()->pDPB.get());
+        if (pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_IDR_W_RADL
+            || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_IDR_N_LP
+            || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_CRA
+            || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_LP
+            || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_RADL
+            || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_BLA_N_LP)
+        {
+            m_CRA_POC = pSlice->m_SliceHeader.slice_pic_order_cnt_lsb;
+            m_IRAPType = pSlice->m_SliceHeader.nal_unit_type;
+        }
     }
+
+    // Set reference list
+    pSlice->UpdateReferenceList(GetView()->pDPB.get());
 
     pSlice->setRefPOCList();
 

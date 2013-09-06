@@ -155,21 +155,21 @@ enum NalUnitType
   NAL_UT_CODED_SLICE_TRAIL_R    = 1,
 
   NAL_UT_CODED_SLICE_TSA_N      = 2,
-  NAL_UT_CODED_SLICE_TLA        = 3,       // 3   // Current name in the spec: TSA_R
+  NAL_UT_CODED_SLICE_TLA_R      = 3,
 
   NAL_UT_CODED_SLICE_STSA_N     = 4,
   NAL_UT_CODED_SLICE_STSA_R     = 5,
 
   NAL_UT_CODED_SLICE_RADL_N     = 6, 
-  NAL_UT_CODED_SLICE_DLP        = 7,       // 7 // Current name in the spec: RADL_R
+  NAL_UT_CODED_SLICE_RADL_R     = 7,
 
   NAL_UT_CODED_SLICE_RASL_N     = 8, 
-  NAL_UT_CODED_SLICE_TFD        = 9,       // 9 // Current name in the spec: RASL_R
+  NAL_UT_CODED_SLICE_RASL_R     = 9,
 
-  NAL_UT_CODED_SLICE_BLA        = 16,      // 16   // Current name in the spec: BLA_W_LP
-  NAL_UT_CODED_SLICE_BLANT      = 17,      // 17   // Current name in the spec: BLA_W_DLP
+  NAL_UT_CODED_SLICE_BLA_W_LP   = 16,
+  NAL_UT_CODED_SLICE_BLA_W_RADL = 17,
   NAL_UT_CODED_SLICE_BLA_N_LP   = 18,
-  NAL_UT_CODED_SLICE_IDR        = 19,      // 19  // Current name in the spec: IDR_W_DLP
+  NAL_UT_CODED_SLICE_IDR_W_RADL = 19,
   NAL_UT_CODED_SLICE_IDR_N_LP   = 20,
   NAL_UT_CODED_SLICE_CRA        = 21,
 

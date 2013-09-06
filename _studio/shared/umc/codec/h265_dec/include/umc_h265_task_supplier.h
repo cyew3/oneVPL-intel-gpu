@@ -336,6 +336,8 @@ protected:
 
     void ActivateHeaders(H265SeqParamSet *sps, H265PicParamSet *pps);
 
+    bool IsSkipForCRAorBLA(H265Slice *pSlice);
+
     // Allocate a new frame and initialize it with slice parameters
     virtual H265DecoderFrame *AllocateNewFrame(const H265Slice *pSlice);
     // Initialize just allocated frame with slice parameters
@@ -388,6 +390,9 @@ protected:
 
     // Keep track of which parameter set is in use.
     bool              m_WaitForIDR;
+
+    Ipp32s m_RA_POC, m_CRA_POC;
+    NalUnitType m_IRAPType;
 
     Ipp32u            m_DPBSizeEx;
     Ipp32s            m_frameOrder;

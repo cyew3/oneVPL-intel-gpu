@@ -585,18 +585,18 @@ UMC::Status HeadersAnalyzer::ProcessNalUnit(UMC::MediaData * data)
         {
             case NAL_UT_CODED_SLICE_TRAIL_R:
             case NAL_UT_CODED_SLICE_TRAIL_N:
-            case NAL_UT_CODED_SLICE_TLA:
+            case NAL_UT_CODED_SLICE_TLA_R:
             case NAL_UT_CODED_SLICE_TSA_N:
             case NAL_UT_CODED_SLICE_STSA_R:
             case NAL_UT_CODED_SLICE_STSA_N:
-            case NAL_UT_CODED_SLICE_BLA:
-            case NAL_UT_CODED_SLICE_BLANT:
+            case NAL_UT_CODED_SLICE_BLA_W_LP:
+            case NAL_UT_CODED_SLICE_BLA_W_RADL:
             case NAL_UT_CODED_SLICE_BLA_N_LP:
-            case NAL_UT_CODED_SLICE_IDR:
+            case NAL_UT_CODED_SLICE_IDR_W_RADL:
             case NAL_UT_CODED_SLICE_IDR_N_LP:
             case NAL_UT_CODED_SLICE_CRA:
-            case NAL_UT_CODED_SLICE_DLP:
-            case NAL_UT_CODED_SLICE_TFD:
+            case NAL_UT_CODED_SLICE_RADL_R:
+            case NAL_UT_CODED_SLICE_RASL_R:
             {
                 if (IsEnough())
                 {
