@@ -149,7 +149,7 @@ void H265CU::DeblockOneCrossChroma(Ipp32s curPixelColumn,
 
             if (edge->strength > 1)
             {
-                MFX_HEVC_PP::h265_FilterEdgeChroma_Plane_8u_I(
+                MFX_HEVC_PP::NAME(h265_FilterEdgeChroma_Plane_8u_I)(
                     edge, 
                     baseSrcDst + 4 * (i - 1) * srcDstStride,
                     srcDstStride, 
@@ -170,7 +170,7 @@ void H265CU::DeblockOneCrossChroma(Ipp32s curPixelColumn,
 
             if (edge->strength > 1)
             {
-                MFX_HEVC_PP::h265_FilterEdgeChroma_Plane_8u_I(
+                MFX_HEVC_PP::NAME(h265_FilterEdgeChroma_Plane_8u_I)(
                     edge, 
                     baseSrcDst + 4 * (i - 1),
                     srcDstStride, 

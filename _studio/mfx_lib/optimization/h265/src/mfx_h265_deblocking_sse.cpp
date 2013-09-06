@@ -564,7 +564,11 @@ Ipp32s h265_FilterEdgeLuma_8u_I_sse(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s sr
  * assumes 8-bit data
  * in standalone unit test (IVB) appx. 3.2x speedup vs. C reference (H edges), 2.9x speedup (V edges)
  */
+#ifndef MFX_TARGET_OPTIMIZATION_AUTO
+void h265_FilterEdgeChroma_Interleaved_8u_I(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQpCb, Ipp32s chromaQpCr)
+#else
 void h265_FilterEdgeChroma_Interleaved_8u_I_sse(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQpCb, Ipp32s chromaQpCr)
+#endif
 {
     Ipp32s tcIdxCb, tcIdxCr, tcCb, tcCr;
 
@@ -676,7 +680,11 @@ void h265_FilterEdgeChroma_Interleaved_8u_I_sse(H265EdgeData *edge, Ipp8u *srcDs
  * assumes 8-bit data
  * in standalone unit test (IVB) appx. 1.4x speedup vs. C reference (H edges), 1.8x speedup (V edges)
  */
+#ifndef MFX_TARGET_OPTIMIZATION_AUTO
+void h265_FilterEdgeChroma_Plane_8u_I(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQp)
+#else
 void h265_FilterEdgeChroma_Plane_8u_I_sse(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQp)
+#endif
 {
     Ipp32s tcIdx, tc;
 

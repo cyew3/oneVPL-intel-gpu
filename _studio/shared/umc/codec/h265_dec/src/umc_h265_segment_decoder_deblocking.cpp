@@ -278,7 +278,7 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU, Ipp32s cu
 
         if (edge->strength > 1)
         {
-            MFX_HEVC_PP::h265_FilterEdgeChroma_Interleaved_8u_I(
+            MFX_HEVC_PP::NAME(h265_FilterEdgeChroma_Interleaved_8u_I)(
                 edge, 
                 baseSrcDst + 4 * i * srcDstStride,
                 srcDstStride,
@@ -305,7 +305,7 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU, Ipp32s cu
 
         if (edge->strength > 1)
         {
-            MFX_HEVC_PP::h265_FilterEdgeChroma_Interleaved_8u_I(
+            MFX_HEVC_PP::NAME(h265_FilterEdgeChroma_Interleaved_8u_I)(
                 edge, 
                 baseSrcDst + 4 * (i - 1) * 2,
                 srcDstStride,

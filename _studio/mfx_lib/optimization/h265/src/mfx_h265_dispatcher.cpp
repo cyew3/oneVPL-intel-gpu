@@ -273,6 +273,8 @@ using namespace MFX_HEVC_PP;
 
         //[deblocking]=====================================
         g_dispatcher. h265_FilterEdgeLuma_8u_I = &MFX_HEVC_PP::h265_FilterEdgeLuma_8u_I_sse;
+        g_dispatcher. h265_FilterEdgeChroma_Interleaved_8u_I = &MFX_HEVC_PP::h265_FilterEdgeChroma_Interleaved_8u_I_sse;
+        g_dispatcher. h265_FilterEdgeChroma_Plane_8u_I = &MFX_HEVC_PP::h265_FilterEdgeChroma_Plane_8u_I_sse;
 
         //[SAO]============================================
         g_dispatcher. h265_ProcessSaoCuOrg_Luma_8u = &MFX_HEVC_PP::h265_ProcessSaoCuOrg_Luma_8u_sse;
@@ -384,6 +386,8 @@ using namespace MFX_HEVC_PP;
 
         //[deblocking]=====================================
         g_dispatcher. h265_FilterEdgeLuma_8u_I = &MFX_HEVC_PP::h265_FilterEdgeLuma_8u_I_sse;
+        g_dispatcher. h265_FilterEdgeChroma_Interleaved_8u_I = &MFX_HEVC_PP::h265_FilterEdgeChroma_Interleaved_8u_I_sse;
+        g_dispatcher. h265_FilterEdgeChroma_Plane_8u_I = &MFX_HEVC_PP::h265_FilterEdgeChroma_Plane_8u_I_sse;
 
         //[SAO]============================================
         g_dispatcher. h265_ProcessSaoCuOrg_Luma_8u = &MFX_HEVC_PP::h265_ProcessSaoCuOrg_Luma_8u_sse;
@@ -481,6 +485,8 @@ using namespace MFX_HEVC_PP;
 
         //[deblocking]=====================================
         g_dispatcher. h265_FilterEdgeLuma_8u_I = &MFX_HEVC_PP::h265_FilterEdgeLuma_8u_I_px;
+        g_dispatcher. h265_FilterEdgeChroma_Interleaved_8u_I = &MFX_HEVC_PP::h265_FilterEdgeChroma_Interleaved_8u_I_px;
+        g_dispatcher. h265_FilterEdgeChroma_Plane_8u_I = &MFX_HEVC_PP::h265_FilterEdgeChroma_Plane_8u_I_px;
 
         //[SAO]============================================
         g_dispatcher. h265_ProcessSaoCuOrg_Luma_8u = &MFX_HEVC_PP::h265_ProcessSaoCuOrg_Luma_8u_px;

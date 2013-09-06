@@ -264,6 +264,12 @@ namespace MFX_HEVC_PP
     Ipp32s h265_FilterEdgeLuma_8u_I_px(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir);
     Ipp32s h265_FilterEdgeLuma_8u_I_sse(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir);
 
+    void h265_FilterEdgeChroma_Interleaved_8u_I_px(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQpCb, Ipp32s chromaQpCr);
+    void h265_FilterEdgeChroma_Interleaved_8u_I_sse(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQpCb, Ipp32s chromaQpCr);
+
+    void h265_FilterEdgeChroma_Plane_8u_I_px(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQp);
+    void h265_FilterEdgeChroma_Plane_8u_I_sse(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQp);
+
     // [SAO]
     void h265_ProcessSaoCuOrg_Luma_8u_px( SAOCU_ORG_PARAMETERS_LIST );
     void h265_ProcessSaoCuOrg_Luma_8u_sse( SAOCU_ORG_PARAMETERS_LIST );

@@ -133,6 +133,8 @@ namespace MFX_HEVC_PP
 
     // [PTR.deblocking]
     typedef Ipp32s (* PTR_FilterEdgeLuma_8u_I)(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir);
+    typedef void (* PTR_FilterEdgeChromaInterleaved_8u_I)(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQpCb, Ipp32s chromaQpCr);
+    typedef void (* PTR_FilterEdgeChromaPlane_8u_I)(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQp);
 
     // [PTR.SAO]
     #define SAOCU_ORG_PARAMETERS_LIST Ipp8u* pRec, Ipp32s stride, Ipp32s saoType, Ipp8u* tmpL, Ipp8u* tmpU, Ipp32u maxCUWidth, Ipp32u maxCUHeight, \
@@ -279,6 +281,8 @@ namespace MFX_HEVC_PP
         
         // [deblocking]
         HEVCPP_API( PTR_FilterEdgeLuma_8u_I, Ipp32s, h265_FilterEdgeLuma_8u_I, (H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir) );
+        HEVCPP_API( PTR_FilterEdgeChromaInterleaved_8u_I, void, h265_FilterEdgeChroma_Interleaved_8u_I, (H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQpCb, Ipp32s chromaQpCr) );
+        HEVCPP_API( PTR_FilterEdgeChromaPlane_8u_I, void, h265_FilterEdgeChroma_Plane_8u_I, (H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQp) );
 
         // [SAO]
         HEVCPP_API( PTR_ProcessSaoCuOrg_Luma_8u, void, h265_ProcessSaoCuOrg_Luma_8u, (SAOCU_ORG_PARAMETERS_LIST));
@@ -315,20 +319,6 @@ namespace MFX_HEVC_PP
     int h265_SAD_MxN_general_8u(const unsigned char *image,  int stride_img, const unsigned char *ref, int stride_ref, int SizeX, int SizeY);
 
     // LIST OF NON-OPTIMIZED (and NON-DISPATCHERED) FUNCTIONS:
-    void h265_FilterEdgeChroma_Plane_8u_I(
-        H265EdgeData *edge, 
-        Ipp8u *srcDst, 
-        Ipp32s srcDstStride,         
-        Ipp32s dir, 
-        Ipp32s chromaQp);
-
-    void h265_FilterEdgeChroma_Interleaved_8u_I(
-        H265EdgeData *edge, 
-        Ipp8u *srcDst, 
-        Ipp32s srcDstStride,
-        Ipp32s dir,
-        Ipp32s chromaQpCb,
-        Ipp32s chromaQpCr);
 
     /* Quantization Fwd */
     void h265_QuantFwd_16s(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift);

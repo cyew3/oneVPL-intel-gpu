@@ -421,7 +421,12 @@ namespace MFX_HEVC_PP
     } // Ipp32s h265_FilterEdgeLuma_8u_I_C(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir)
 #endif
 
+#if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
+#if defined(MFX_TARGET_OPTIMIZATION_PX)
     void h265_FilterEdgeChroma_Plane_8u_I(H265EdgeData *edge, PixType *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQp)
+#else
+    void h265_FilterEdgeChroma_Plane_8u_I_px(H265EdgeData *edge, PixType *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQp)
+#endif
     {
         Ipp32s bitDepthChroma = 8;
         //Ipp32s qp = GetChromaQP(edge->qp, 0, 8);
@@ -466,8 +471,10 @@ namespace MFX_HEVC_PP
         }
 
     } // void h265_FilterEdgeChroma_Plane_8u_I(H265EdgeData *edge, PixType *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQp)
+#endif
 
-
+#if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
+#if defined(MFX_TARGET_OPTIMIZATION_PX)
    void h265_FilterEdgeChroma_Interleaved_8u_I(
         H265EdgeData *edge, 
         Ipp8u *srcDst, 
@@ -475,6 +482,15 @@ namespace MFX_HEVC_PP
         Ipp32s dir,
         Ipp32s chromaQpCb,
         Ipp32s chromaQpCr)
+#else
+   void h265_FilterEdgeChroma_Interleaved_8u_I_px(
+        H265EdgeData *edge, 
+        Ipp8u *srcDst, 
+        Ipp32s srcDstStride,
+        Ipp32s dir,
+        Ipp32s chromaQpCb,
+        Ipp32s chromaQpCr)
+#endif
 {
     Ipp32s bitDepthChroma = 8;
     //Ipp32s qpCb = QpUV(edge->qp + chromaCbQpOffset);
@@ -532,6 +548,7 @@ namespace MFX_HEVC_PP
         srcDst += strDstStep;
     }
 }
+#endif
 
 }; // namespace MFX_HEVC_PP
 
