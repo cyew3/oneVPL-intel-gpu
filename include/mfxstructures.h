@@ -449,6 +449,19 @@ typedef struct {
     mfxU16      VuiNalHrdParameters;    /* tri-state option */
 } mfxExtCodingOption;
 
+enum {
+    MFX_B_REF_UNKNOWN = 0,
+    MFX_B_REF_OFF     = 1,
+    MFX_B_REF_PYRAMID = 2
+};
+
+enum {
+    MFX_LOOKAHEAD_DS_UNKNOWN = 0,
+    MFX_LOOKAHEAD_DS_OFF     = 1,
+    MFX_LOOKAHEAD_DS_2x      = 2,
+    MFX_LOOKAHEAD_DS_4x      = 3
+};
+
 typedef struct {
     mfxExtBuffer Header;
 
@@ -464,8 +477,12 @@ typedef struct {
     mfxU16      ExtBRC;                 /* tri-state option */
     mfxU16      LookAheadDepth;
     mfxU16      Trellis;
-    mfxU16      RepeatPPS;
-    mfxU16      reserved2[15];
+    mfxU16      RepeatPPS;              /* tri-state option */
+    mfxU16      BRefType;
+    mfxU16      AdaptiveI;              /* tri-state option */
+    mfxU16      AdaptiveB;              /* tri-state option */
+    mfxU16      LookAheadDS;
+    mfxU16      reserved2[11];
 } mfxExtCodingOption2;
 
 /* IntraPredBlockSize/InterPredBlockSize */
