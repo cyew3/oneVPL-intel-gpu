@@ -140,6 +140,8 @@ mfxStatus CheckExtBuffers_H265enc(mfxExtBuffer** ebuffers, mfxU32 nbuffers)
 MFXVideoENCODEH265::MFXVideoENCODEH265(VideoCORE *core, mfxStatus *stat)
 : VideoENCODE(),
   m_core(core),
+  m_totalBits(0),
+  m_encodedFrames(0),
   m_isInitialized(false),
   m_useSysOpaq(false),
   m_useVideoOpaq(false),
@@ -1133,6 +1135,9 @@ mfxStatus MFXVideoENCODEH265::GetEncodeStat(mfxEncodeStat *stat)
 
     MFX_CHECK_NULL_PTR1(stat)
     memset(stat, 0, sizeof(mfxEncodeStat));
+    stat->NumCachedFrame = m_frameCountBufferedSync; //(mfxU32)m_inFrames.size();
+    stat->NumBit = m_totalBits;
+    stat->NumFrame = m_encodedFrames;
     return MFX_ERR_NONE;
 }
 
@@ -1141,7 +1146,7 @@ mfxStatus MFXVideoENCODEH265::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
     mfxStatus st;
     mfxStatus mfxRes = MFX_ERR_NONE;
     mfxBitstream *bitstream = 0;
-    mfxU8* dataPtr;
+    //mfxU8* dataPtr;
     mfxU32 initialDataLength = 0;
     mfxFrameSurface1 *surface = inputSurface;
 
@@ -1161,7 +1166,7 @@ mfxStatus MFXVideoENCODEH265::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
     // bs could be NULL if input frame is buffered
     if (bs) {
         bitstream = bs;
-        dataPtr = bitstream->Data + bitstream->DataOffset + bitstream->DataLength;
+        //dataPtr = bitstream->Data + bitstream->DataOffset + bitstream->DataLength;
         initialDataLength = bitstream->DataLength;
     }
 
@@ -1213,6 +1218,13 @@ mfxStatus MFXVideoENCODEH265::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
     } else {
         mfxRes = m_enc->EncodeFrame(NULL, bitstream);
         //        res = Encode(cur_enc, 0, &m_data_out, p_data_out_ext, 0, 0, 0);
+    }
+
+    // bs could be NULL if input frame is buffered
+    if (bs) {
+        if (bitstream->DataLength != initialDataLength )
+            m_encodedFrames++;
+        m_totalBits += (bitstream->DataLength - initialDataLength) * 8;
     }
 
     if (mfxRes == MFX_ERR_MORE_DATA)

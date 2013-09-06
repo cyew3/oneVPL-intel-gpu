@@ -106,7 +106,7 @@ protected:
     mfxU32                 m_frameCountBufferedSync;
     mfxU32                 m_frameCountBuffered;
 
-//    mfxU32  m_totalBits;
+    mfxU32  m_totalBits;
     mfxU32  m_encodedFrames;
     bool    m_isInitialized;
 
