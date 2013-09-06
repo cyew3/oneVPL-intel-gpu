@@ -95,7 +95,7 @@ else( )
 #    append("--sysroot=${CMAKE_FIND_ROOT_PATH} " CMAKE_C_FLAGS)
 #    append("--sysroot=${CMAKE_FIND_ROOT_PATH} " CMAKE_CXX_FLAGS)
     append("--sysroot=${CMAKE_FIND_ROOT_PATH} " LINK_FLAGS)
-  endif (CMAKE_DEFINED CMAKE_FIND_ROOT_PATH)
+  endif (DEFINED CMAKE_FIND_ROOT_PATH)
 
   # SW HEVC decoder & encoder require SSE4.2
   if (CMAKE_C_COMPILER MATCHES icc)
