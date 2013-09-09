@@ -855,9 +855,16 @@ typedef struct {
     } UsedRefListL0[32], UsedRefListL1[32];
 } mfxExtAVCEncodedFrameInfo;
 
+typedef struct mfxVPPCompInputStream {
+        mfxU32  DstX;
+        mfxU32  DstY;
+        mfxU32  DstW;
+        mfxU32  DstH;
+        mfxU16  reserved2[24];
+} mfxVPPCompInputStream;     
+
 typedef struct {
     mfxExtBuffer    Header;
-    mfxU16      NumInputStream;
 
     /* background color*/
     union {
@@ -875,13 +882,8 @@ typedef struct {
 
     mfxU16      reserved1[24];
 
-    struct mfxVPPCompInputStream {
-        mfxU32  DstX;
-        mfxU32  DstY;
-        mfxU32  DstW;
-        mfxU32  DstH;
-        mfxU16  reserved2[48];
-    } InputStream[128];     
+    mfxU16      NumInputStream;
+    mfxVPPCompInputStream *InputStream;     
 } mfxExtVPPComposite;
 
 /* TransferMatrix */
