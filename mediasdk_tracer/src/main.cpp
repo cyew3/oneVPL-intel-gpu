@@ -385,6 +385,7 @@ mfxStatus MFXGetPriority(mfxSession session, mfxPriority *priority) {
     return sts;
 }
 
+#if 0
 mfxStatus MFXGetLogMessage(mfxSession session, char *msg, mfxU32 size) {
     mfxStatus sts=MFX_CALL(MFXGetLogMessage,(((AnalyzerSession *)session)->session, msg, size));
 
@@ -393,7 +394,7 @@ mfxStatus MFXGetLogMessage(mfxSession session, char *msg, mfxU32 size) {
     });
     return sts;
 }
-
+#endif
 
 #pragma warning(disable: 4100)
 

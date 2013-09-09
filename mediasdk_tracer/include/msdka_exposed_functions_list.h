@@ -24,4 +24,6 @@ FUNCTION(mfxStatus, MFXQueryVersion, (mfxSession session, mfxVersion *version), 
 FUNCTION(mfxStatus, MFXDisjoinSession, (mfxSession session), (session))
 FUNCTION(mfxStatus, MFXSetPriority, (mfxSession session, mfxPriority priority), (session, priority))
 FUNCTION(mfxStatus, MFXGetPriority, (mfxSession session, mfxPriority *priority), (session, priority))
+#if 0
 FUNCTION(mfxStatus, MFXGetLogMessage, (mfxSession session, char *msg, mfxU32 size), (session, msg, size))
+#endif

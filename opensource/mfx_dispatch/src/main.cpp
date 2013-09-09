@@ -440,7 +440,6 @@ FUNCTION(mfxStatus, MFXQueryVersion, (mfxSession session, mfxVersion *version), 
 FUNCTION(mfxStatus, MFXDisjoinSession, (mfxSession session), (session))
 FUNCTION(mfxStatus, MFXSetPriority, (mfxSession session, mfxPriority priority), (session, priority))
 FUNCTION(mfxStatus, MFXGetPriority, (mfxSession session, mfxPriority *priority), (session, priority))
-FUNCTION(mfxStatus, MFXGetLogMessage, (mfxSession session, char *msg, mfxU32 size), (session, msg, size))
 
 #undef FUNCTION
 #define FUNCTION(return_value, func_name, formal_param_list, actual_param_list) \

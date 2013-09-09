@@ -51,7 +51,6 @@ FUNCTION_DESCRIPTION APIFunc[eVideoFuncTotal] =
     {"MFXDisjoinSession", {{1, 1}}, {{0, 1}}},
     {"MFXSetPriority", {{2, 1}}, {{0, 1}}},
     {"MFXGetPriority", {{2, 1}}, {{0, 1}}},
-    {"MFXGetLogMessage", {{8, 1}}, {{7, 1}}},
 
 #include "mfx_exposed_functions_list.h"
 };
@@ -72,7 +71,6 @@ FUNCTION_DESCRIPTION APIAudioFunc[eAudioFuncTotal] =
     {"MFXDisjoinSession", {{8, 1}}, {{0, 0}}},
     {"MFXSetPriority", {{8, 1}}, {{0, 0}}},
     {"MFXGetPriority", {{8, 1}}, {{0, 0}}},
-    {"MFXGetLogMessage", {{8, 1}}, {{0, 0}}},
 
 #include "mfxaudio_exposed_functions_list.h"
 };
