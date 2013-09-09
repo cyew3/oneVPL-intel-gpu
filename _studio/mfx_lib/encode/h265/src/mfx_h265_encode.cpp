@@ -1205,6 +1205,10 @@ mfxStatus MFXVideoENCODEH265::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
             }
         }
 
+        if (!surface->Data.Y || !surface->Data.UV || surface->Data.Pitch > 0x7fff ||
+            surface->Data.Pitch < m_mfxVideoParam.mfx.FrameInfo.Width )
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+
         mfxRes = m_enc->EncodeFrame(surface, bitstream);
         m_core->DecreaseReference(&(surface->Data));
 
