@@ -24,7 +24,6 @@ class OperatorCORE
 public:
     OperatorCORE(VideoCORE* pCore):m_refCounter(1)
     {
-        UMC::AutomaticUMCMutex guard(m_guard);
         m_Cores.push_back(pCore);
         pCore->SetCoreId(0);
     };
@@ -147,7 +146,6 @@ public:
     virtual
     void Release(void)
     {
-        UMC::AutomaticUMCMutex guard(m_guard);
         m_refCounter--;
 
         if (0 == m_refCounter)
@@ -166,7 +164,6 @@ private:
 
     virtual ~OperatorCORE()
     {
-        UMC::AutomaticUMCMutex guard(m_guard);
         m_Cores.clear();
     };
     // self and child cores
