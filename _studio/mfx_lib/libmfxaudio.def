@@ -9,7 +9,6 @@ EXPORTS
     MFXCloneSession
     MFXSetPriority
     MFXGetPriority
-    MFXGetLogMessage
 
     MFXAudioCORE_SyncOperation
     MFXAudioENCODE_Query
