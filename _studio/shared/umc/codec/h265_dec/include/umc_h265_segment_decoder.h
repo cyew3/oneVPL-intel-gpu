@@ -226,11 +226,10 @@ public:
     void GetCTBEdgeStrengths(void);
     template<Ipp32s tusize> inline void GetCTBEdgeStrengths(void);
     template<Ipp32s tusize, Ipp32s dir> inline void GetEdgeStrength(Ipp32s tuQ, Ipp32s tuP, H265EdgeData *edge, Ipp32s xQ, Ipp32s yQ);
-    template<Ipp32s dir> inline void GetEdgeStrengthDelayed(Ipp32s x, Ipp32s y, H265EdgeData *edge);
-    template<Ipp32s tusize, Ipp32s dir> inline void GetEdgeStrengthDelayed(Ipp32s x, Ipp32s y, H265EdgeData *edge);
+    template<Ipp32s dir> inline void GetEdgeStrengthDelayed(Ipp32s tusize, Ipp32s x, Ipp32s y, H265EdgeData *edge);
     inline void GetEdgeStrengthInter(H265MVInfo *mvinfoQ, H265MVInfo *mvinfoP, H265EdgeData *edge);
     template<Ipp32s tusize> void GetCTBEdgeStrengthsSimple(void);
-    void GetEdgeStrengthSimple(Ipp32s tuQ, Ipp32s tuP, H265EdgeData *edge, bool anotherCU);
+    template<Ipp32s tusize> void GetEdgeStrengthSimple(Ipp32s tuQ, Ipp32s tuP, H265EdgeData *edge, bool anotherCU);
 
     H265CodingUnit* m_curCU;
     bool m_DecodeDQPFlag;

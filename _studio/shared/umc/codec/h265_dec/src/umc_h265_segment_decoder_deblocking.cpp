@@ -216,7 +216,8 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curP
         VM_ASSERT(edge->strength < 4);
 
         if (edge->strength == 3)
-            GetEdgeStrengthDelayed<VERT_FILT>(curLCU->m_CUPelX + curPixelColumn, curLCU->m_CUPelY + curPixelRow + 4 * i, edge);
+            GetEdgeStrengthDelayed<VERT_FILT>(m_pSeqParamSet->log2_min_transform_block_size,
+            curLCU->m_CUPelX + curPixelColumn, curLCU->m_CUPelY + curPixelRow + 4 * i, edge);
 
         if (edge->strength > 0)
         {
@@ -238,7 +239,8 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curP
         VM_ASSERT(edge->strength < 4);
 
         if (edge->strength == 3)
-            GetEdgeStrengthDelayed<HOR_FILT>(curLCU->m_CUPelX + curPixelColumn + 4 * (i - 1), curLCU->m_CUPelY + curPixelRow, edge);
+            GetEdgeStrengthDelayed<HOR_FILT>(m_pSeqParamSet->log2_min_transform_block_size,
+            curLCU->m_CUPelX + curPixelColumn + 4 * (i - 1), curLCU->m_CUPelY + curPixelRow, edge);
 
         if (edge->strength > 0)
         {
@@ -274,7 +276,8 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU, Ipp32s cu
         VM_ASSERT(edge->strength < 4);
 
         if (edge->strength == 3)
-            GetEdgeStrengthDelayed<VERT_FILT>(curLCU->m_CUPelX + curPixelColumn, curLCU->m_CUPelY + curPixelRow + 4 * i, edge);
+            GetEdgeStrengthDelayed<VERT_FILT>(m_pSeqParamSet->log2_min_transform_block_size,
+            curLCU->m_CUPelX + curPixelColumn, curLCU->m_CUPelY + curPixelRow + 4 * i, edge);
 
         if (edge->strength > 1)
         {
@@ -301,7 +304,8 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU, Ipp32s cu
         VM_ASSERT(edge->strength < 4);
 
         if (edge->strength == 3)
-            GetEdgeStrengthDelayed<HOR_FILT>(curLCU->m_CUPelX + curPixelColumn + 4 * (i - 1), curLCU->m_CUPelY + curPixelRow, edge);
+            GetEdgeStrengthDelayed<HOR_FILT>(m_pSeqParamSet->log2_min_transform_block_size,
+            curLCU->m_CUPelX + curPixelColumn + 4 * (i - 1), curLCU->m_CUPelY + curPixelRow, edge);
 
         if (edge->strength > 1)
         {
@@ -339,8 +343,10 @@ void H265SegmentDecoder::GetCTBEdgeStrengths(void)
             GetCTBEdgeStrengthsSimple<2>();
         else if (m_pSeqParamSet->log2_min_transform_block_size == 3)
             GetCTBEdgeStrengthsSimple<3>();
-        else
-            VM_ASSERT(0);
+        else if (m_pSeqParamSet->log2_min_transform_block_size == 4)
+            GetCTBEdgeStrengthsSimple<4>();
+        else if (m_pSeqParamSet->log2_min_transform_block_size == 5)
+            GetCTBEdgeStrengthsSimple<5>();
     }
     else
     {
@@ -348,8 +354,10 @@ void H265SegmentDecoder::GetCTBEdgeStrengths(void)
             GetCTBEdgeStrengths<2>();
         else if (m_pSeqParamSet->log2_min_transform_block_size == 3)
             GetCTBEdgeStrengths<3>();
-        else
-            VM_ASSERT(0);
+        else if (m_pSeqParamSet->log2_min_transform_block_size == 4)
+            GetCTBEdgeStrengths<4>();
+        else if (m_pSeqParamSet->log2_min_transform_block_size == 5)
+            GetCTBEdgeStrengths<5>();
     }
 }
 
@@ -383,8 +391,23 @@ template<Ipp32s tusize> void H265SegmentDecoder::GetCTBEdgeStrengths(void)
         for (xPel = 0; xPel < width; xPel += 8)
         {
             Ipp32s curTU = curTULine + (xPel >> tusize);
-            Ipp32s leftTU = curTU - 1;
-            Ipp32s upTU = curTU - m_context->m_CurrCTBStride;
+            Ipp32s leftTU, upTU;
+
+            if (tusize <= 3)
+            {
+                leftTU = curTU - 1;
+                upTU = curTU - m_context->m_CurrCTBStride;
+            }
+            else if (tusize == 4)
+            {
+                leftTU = curTU - ((xPel & 8) ? 0 : 1);
+                upTU = curTU - ((yPel & 8) ? 0 : m_context->m_CurrCTBStride);
+            }
+            else
+            {
+                leftTU = curTU - ((xPel & 24) ? 0 : 1);
+                upTU = curTU - ((yPel & 24) ? 0 : m_context->m_CurrCTBStride);
+            }
 
             edge += 4;
 
@@ -392,14 +415,14 @@ template<Ipp32s tusize> void H265SegmentDecoder::GetCTBEdgeStrengths(void)
             GetEdgeStrength<tusize, VERT_FILT>(curTU, leftTU, edge, xPel, yPel);
             if (tusize < 3)
                 GetEdgeStrength<tusize, VERT_FILT>(curTU + m_context->m_CurrCTBStride, leftTU + m_context->m_CurrCTBStride, edge + 1, xPel, yPel + 4);
-            else if (tusize == 3)
+            else
                 edge[1] = edge[0];
 
             // Horizontal edge
             GetEdgeStrength<tusize, HOR_FILT>(curTU, upTU, edge + 2, xPel, yPel);
             if (tusize < 3)
                 GetEdgeStrength<tusize, HOR_FILT>(curTU + 1, upTU + 1, edge + 3, xPel + 4, yPel);
-            else if (tusize == 3)
+            else
                 edge[3] = edge[2];
         }
 
@@ -462,7 +485,7 @@ template<Ipp32s tusize, Ipp32s dir> void H265SegmentDecoder::GetEdgeStrength(Ipp
         else
             save = m_context->m_CurrCTBFlags[tuQ + m_context->m_CurrCTBStride];
     }
-    else if (tusize == 3)
+    else
         save = m_context->m_CurrCTBFlags[tuQ];
 
     next_edge->isIntraP = save.members.IsIntra;
@@ -470,34 +493,67 @@ template<Ipp32s tusize, Ipp32s dir> void H265SegmentDecoder::GetEdgeStrength(Ipp
     next_edge->deblockP = edge->deblockQ;
     next_edge->qpP = save.members.qp;
 
-    if (!infoP.members.IsAvailable)
+    if (tusize == 2 || tusize == 3)
     {
-        // Another slice or tile case. May need a delayed strength calculation
-        VM_ASSERT(anotherCU);
-
-        if (dir == VERT_FILT)
+        if (!infoP.members.IsAvailable)
         {
-            if (m_curCU->m_CUPelX + xQ == 0)
-            {
-                edge->strength = 0;
-                return;
-            }
-        }
-        else
-        {
-            if (m_curCU->m_CUPelY + yQ == 0)
-            {
-                edge->strength = 0;
-                return;
-            }
-        }
+            // Another slice or tile case. May need a delayed strength calculation
+            VM_ASSERT(anotherCU);
 
-        // delayed calculation
-        edge->qp = infoQ.members.qp;
-        edge->isIntraQ = infoQ.members.IsIntra;
-        edge->isTrCbfYQ = infoQ.members.IsTrCbfY;
-        edge->strength = 3;
-        return;
+            if (dir == VERT_FILT)
+            {
+                if (m_curCU->m_CUPelX + xQ == 0)
+                {
+                    edge->strength = 0;
+                    return;
+                }
+            }
+            else
+            {
+                if (m_curCU->m_CUPelY + yQ == 0)
+                {
+                    edge->strength = 0;
+                    return;
+                }
+            }
+
+            // delayed calculation
+            edge->qp = infoQ.members.qp;
+            edge->isIntraQ = infoQ.members.IsIntra;
+            edge->isTrCbfYQ = infoQ.members.IsTrCbfY;
+            edge->strength = 3;
+            return;
+        }
+    }
+    else
+    {
+        if (!infoP.members.IsAvailable && anotherCU)
+        {
+            // Another slice or tile case. May need a delayed strength calculation
+            if (dir == VERT_FILT)
+            {
+                if (m_curCU->m_CUPelX + xQ == 0)
+                {
+                    edge->strength = 0;
+                    return;
+                }
+            }
+            else
+            {
+                if (m_curCU->m_CUPelY + yQ == 0)
+                {
+                    edge->strength = 0;
+                    return;
+                }
+            }
+
+            // delayed calculation
+            edge->qp = infoQ.members.qp;
+            edge->isIntraQ = infoQ.members.IsIntra;
+            edge->isTrCbfYQ = infoQ.members.IsTrCbfY;
+            edge->strength = 3;
+            return;
+        }
     }
 
     edge->qp = (infoQ.members.qp + edge->qpP + 1) >> 1;
@@ -531,17 +587,7 @@ template<Ipp32s tusize, Ipp32s dir> void H265SegmentDecoder::GetEdgeStrength(Ipp
     GetEdgeStrengthInter(mvinfoQ, mvinfoP, edge);
 }
 
-template<Ipp32s dir> void H265SegmentDecoder::GetEdgeStrengthDelayed(Ipp32s x, Ipp32s y, H265EdgeData *edge)
-{
-    if (m_pSeqParamSet->log2_min_transform_block_size == 2)
-        GetEdgeStrengthDelayed<2, dir>(x, y, edge);
-    else if (m_pSeqParamSet->log2_min_transform_block_size == 3)
-        GetEdgeStrengthDelayed<3, dir>(x, y, edge);
-    else
-        VM_ASSERT(0);
-}
-
-template<Ipp32s tusize, Ipp32s dir> void H265SegmentDecoder::GetEdgeStrengthDelayed(Ipp32s x, Ipp32s y, H265EdgeData *edge)
+template<Ipp32s dir> void H265SegmentDecoder::GetEdgeStrengthDelayed(Ipp32s tusize, Ipp32s x, Ipp32s y, H265EdgeData *edge)
 {
     edge->qp = (edge->qp + edge->qpP + 1) >> 1;
 
@@ -697,25 +743,40 @@ template<Ipp32s tusize> void H265SegmentDecoder::GetCTBEdgeStrengthsSimple(void)
         for (xPel = 0; xPel < width; xPel += 8)
         {
             Ipp32s curTU = curTULine + (xPel >> tusize);
-            Ipp32s leftTU = curTU - 1;
-            Ipp32s upTU = curTU - m_context->m_CurrCTBStride;
+            Ipp32s leftTU, upTU;
+
+            if (tusize <= 3)
+            {
+                leftTU = curTU - 1;
+                upTU = curTU - m_context->m_CurrCTBStride;
+            }
+            else if (tusize == 4)
+            {
+                leftTU = curTU - ((xPel & 8) ? 0 : 1);
+                upTU = curTU - ((yPel & 8) ? 0 : m_context->m_CurrCTBStride);
+            }
+            else
+            {
+                leftTU = curTU - ((xPel & 24) ? 0 : 1);
+                upTU = curTU - ((yPel & 24) ? 0 : m_context->m_CurrCTBStride);
+            }
 
             edge += 4;
 
             // Vertical edge
             bool anotherCU = (xPel == 0);
-            GetEdgeStrengthSimple(curTU, leftTU, edge, anotherCU);
+            GetEdgeStrengthSimple<tusize>(curTU, leftTU, edge, anotherCU);
             if (tusize < 3)
-                GetEdgeStrengthSimple(curTU + m_context->m_CurrCTBStride, leftTU + m_context->m_CurrCTBStride, edge + 1, anotherCU);
-            else if (tusize == 3)
+                GetEdgeStrengthSimple<tusize>(curTU + m_context->m_CurrCTBStride, leftTU + m_context->m_CurrCTBStride, edge + 1, anotherCU);
+            else
                 edge[1] = edge[0];
 
             // Horizontal edge
             anotherCU = (yPel == 0);
-            GetEdgeStrengthSimple(curTU, upTU, edge + 2, anotherCU);
+            GetEdgeStrengthSimple<tusize>(curTU, upTU, edge + 2, anotherCU);
             if (tusize < 3)
-                GetEdgeStrengthSimple(curTU + 1, upTU + 1, edge + 3, anotherCU);
-            else if (tusize == 3)
+                GetEdgeStrengthSimple<tusize>(curTU + 1, upTU + 1, edge + 3, anotherCU);
+            else
                 edge[3] = edge[2];
         }
 
@@ -742,7 +803,7 @@ template<Ipp32s tusize> void H265SegmentDecoder::GetCTBEdgeStrengthsSimple(void)
     }
 }
 
-void H265SegmentDecoder::GetEdgeStrengthSimple(Ipp32s tuQ, Ipp32s tuP, H265EdgeData *edge, bool anotherCU)
+template<Ipp32s tusize> void H265SegmentDecoder::GetEdgeStrengthSimple(Ipp32s tuQ, Ipp32s tuP, H265EdgeData *edge, bool anotherCU)
 {
     H265FrameHLDNeighborsInfo infoQ = m_context->m_CurrCTBFlags[tuQ];
     H265FrameHLDNeighborsInfo infoP = m_context->m_CurrCTBFlags[tuP];
@@ -763,12 +824,24 @@ void H265SegmentDecoder::GetEdgeStrengthSimple(Ipp32s tuQ, Ipp32s tuP, H265EdgeD
             edge->deblockP = 0;
     }
 
-    if (!infoP.members.IsAvailable)
+    if (tusize == 2 || tusize == 3)
     {
-        // Another slice or tile case. May need a delayed strength calculation
-        VM_ASSERT(anotherCU);
-        edge->strength = 0;
-        return;
+        if (!infoP.members.IsAvailable)
+        {
+            // Left or top edge of frame
+            VM_ASSERT(anotherCU);
+            edge->strength = 0;
+            return;
+        }
+    }
+    else
+    {
+        if (!infoP.members.IsAvailable && anotherCU)
+        {
+            // Left or top edge of frame
+            edge->strength = 0;
+            return;
+        }
     }
 
     edge->qp = (infoQ.members.qp + infoP.members.qp + 1) >> 1;
