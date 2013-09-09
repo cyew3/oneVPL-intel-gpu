@@ -14,6 +14,8 @@
 
 #include "memory"
 
+#include "limits.h" // for INT_MIN, INT_MAX on Linux
+
 #include "umc_h265_task_supplier.h"
 #include "umc_h265_frame_list.h"
 #include "umc_automatic_mutex.h"
