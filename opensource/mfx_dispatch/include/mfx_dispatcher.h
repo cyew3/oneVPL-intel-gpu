@@ -76,14 +76,13 @@ enum eFunc
     eMFXDisjoinSession,
     eMFXSetPriority,
     eMFXGetPriority,
-    eMFXGetLogMessage,
 #include "mfx_exposed_functions_list.h"
     eVideoFuncTotal
 };
 
 enum eAudioFunc
 {
-    eFakeAudioEnum = eMFXGetLogMessage,
+    eFakeAudioEnum = eMFXGetPriority,
 #include "mfxaudio_exposed_functions_list.h"
     eAudioFuncTotal
 };
