@@ -24,7 +24,7 @@
 //#define DUMP_VIDEO_BF_BIN
 //#define DUMP_AUDIO_BIN
 
-static const Ipp32s VIDEO_BUFFER_SIZE =  8 * 1024 * 1024;
+static const Ipp32s VIDEO_BUFFER_SIZE =  32 * 1024 * 1024;  // WA: fixed issue with large JPEG images
 static const Ipp32s AUDIO_BUFFER_SIZE =  1 * 1024 * 1024;
 
 #define DEM_CHECK_INIT CHECK_OBJ_INIT(m_pParser)

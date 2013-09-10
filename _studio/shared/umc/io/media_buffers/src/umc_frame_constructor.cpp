@@ -3560,6 +3560,26 @@ Status MJPEGFrameConstructor::GetFrame(SplMediaData *frame)
     {
         Ipp16u shortCode = *(Ipp16u*)pData ;
 
+        if(m_lNumBytesToSkip)
+        {
+            m_lNumBytesToSkip--;
+            continue;
+        }
+
+        if((JPEG_APP1 == shortCode || JPEG_APP13 == shortCode) && m_state == StateWaitEoi)
+        {
+            m_state = StateWaitMarkerLength;
+            m_lNumBytesToSkip = 1;
+            continue;
+        }
+
+        if(m_state == StateWaitMarkerLength)
+        {
+            m_lNumBytesToSkip = SWAP_SHORT(shortCode) - 1;
+            m_state = StateWaitEoi;
+            continue;
+        }
+
         if (JPEG_SOI == shortCode)
         {
             m_lCurPos = (Ipp32s)(pData - m_pBuf);
@@ -3595,6 +3615,7 @@ Status MJPEGFrameConstructor::GetFrame(SplMediaData *frame)
     switch(m_state)
     {
         case StateWaitSoi : break;
+        case StateWaitMarkerLength:
         case StateWaitEoi : {
             m_lParserStartPos = (Ipp32s)(pData - pDataStart);
             break;
@@ -3606,7 +3627,8 @@ Status MJPEGFrameConstructor::GetFrame(SplMediaData *frame)
 }
 MJPEGFrameConstructor :: MJPEGFrameConstructor()
     : m_state (StateWaitSoi)
-    , m_lParserStartPos() {
+    , m_lParserStartPos()
+    , m_lNumBytesToSkip() {
 }
 Status MJPEGFrameConstructor::Init(MediaReceiverParams *pInit) 
 {

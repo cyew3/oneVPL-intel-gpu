@@ -703,13 +703,17 @@ namespace UMC
 
         enum {
             JPEG_SOI = SWAP_SHORT(0xFFD8),
-            JPEG_EOI = SWAP_SHORT(0xFFD9)
+            JPEG_EOI = SWAP_SHORT(0xFFD9),
+            JPEG_APP1 = SWAP_SHORT(0xFFE1),
+            JPEG_APP13 = SWAP_SHORT(0xFFED)
         };
         enum {
             StateWaitSoi,
             StateWaitEoi,
+            StateWaitMarkerLength,
         } m_state;
         Ipp32s m_lParserStartPos;
+        Ipp32s m_lNumBytesToSkip;
     public:
         MJPEGFrameConstructor();
         virtual Status Init(MediaReceiverParams *pInit);
