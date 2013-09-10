@@ -3697,7 +3697,7 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
           int    dstStep;
           Ipp8u* pSrc;
           Ipp8u* pDst;
-          Ipp32u srcWidth;
+          Ipp32u srcWidth, intervalSize, tileSize, pixelToProcess;
 
           need_upsampling = 0;
 
@@ -3710,13 +3710,28 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
           // set the pointer to destination buffer
           pDst = curr_comp->GetCCBufferPtr<Ipp8u> (0) + 8 * colMCU * curr_comp->m_h_factor;
 
+          intervalSize = m_curr_scan->jpeg_restart_interval ? 
+                         m_curr_scan->jpeg_restart_interval * 8 * curr_comp->m_scan_hsampling : 
+                         srcWidth / m_dd_factor;
+
+          tileSize =  (m_curr_scan->jpeg_restart_interval && !colMCU) ? 
+                      (m_curr_scan->jpeg_restart_interval - (m_curr_scan->numxMCU * rowMCU) % m_curr_scan->jpeg_restart_interval)* 8 * curr_comp->m_scan_hsampling :
+                      intervalSize;
+
           for(i = 0; i < m_mcuHeight / m_dd_factor; i++)
           {
-              status = ippiSampleUpRowH2V1_Triangle_JPEG_8u_C1(pSrc, srcWidth / m_dd_factor , pDst);
-              if(ippStsNoErr != status)
+              j = 0;
+              pixelToProcess = IPP_MIN(tileSize, srcWidth / m_dd_factor);
+              while(j < (int) srcWidth / m_dd_factor)
               {
-                LOG0("Error: ippiSampleUpRowH2V1_Triangle_JPEG_8u_C1() failed!");
-                return JPEG_ERR_INTERNAL;
+                  status = ippiSampleUpRowH2V1_Triangle_JPEG_8u_C1(pSrc + j, pixelToProcess , pDst + j * 2);
+                  if(ippStsNoErr != status)
+                  {
+                    LOG0("Error: ippiSampleUpRowH2V1_Triangle_JPEG_8u_C1() failed!");
+                    return JPEG_ERR_INTERNAL;
+                  }
+                  j += pixelToProcess;
+                  pixelToProcess = IPP_MIN(intervalSize, srcWidth / m_dd_factor - j);
               }
 
               pSrc += srcStep;
@@ -3773,7 +3788,7 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
           int    dstStep;
           Ipp8u* pSrc;
           Ipp8u* pDst;
-          Ipp32u srcWidth;
+          Ipp32u srcWidth, intervalSize, tileSize, pixelToProcess;
 
           need_upsampling = 0;
 
@@ -3786,12 +3801,27 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
           // set the pointer to destination buffer
           pDst = curr_comp->GetCCBufferPtr<Ipp8u> (0) + 8 * colMCU * curr_comp->m_h_factor;
 
+          intervalSize = m_curr_scan->jpeg_restart_interval ? 
+                         m_curr_scan->jpeg_restart_interval * 8 * curr_comp->m_scan_hsampling : 
+                         srcWidth / m_dd_factor;
+
+          tileSize =  (m_curr_scan->jpeg_restart_interval && !colMCU) ? 
+                      (m_curr_scan->jpeg_restart_interval - (m_curr_scan->numxMCU * rowMCU) % m_curr_scan->jpeg_restart_interval)* 8 * curr_comp->m_scan_hsampling :
+                      intervalSize;
+
           // filling the zero row
-          status = ippiSampleUpRowH2V2_Triangle_JPEG_8u_C1(pSrc, pSrc, srcWidth / m_dd_factor, pDst);
-          if(ippStsNoErr != status)
+          j = 0;
+          pixelToProcess = IPP_MIN(tileSize, srcWidth / m_dd_factor);
+          while(j < (int) srcWidth / m_dd_factor)
           {
-            LOG0("Error: ippiSampleUpRowH2V2_Triangle_JPEG_8u_C1() failed!");
-            return JPEG_ERR_INTERNAL;
+              status = ippiSampleUpRowH2V2_Triangle_JPEG_8u_C1(pSrc + j, pSrc + j, pixelToProcess, pDst + j * 2);    
+              if(ippStsNoErr != status)
+              {
+                LOG0("Error: ippiSampleUpRowH2V2_Triangle_JPEG_8u_C1() failed!");
+                return JPEG_ERR_INTERNAL;
+              }
+              j += pixelToProcess;
+              pixelToProcess = IPP_MIN(intervalSize, srcWidth / m_dd_factor - j);
           }
           pDst += dstStep;
 
@@ -3799,33 +3829,53 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
           for(i = 0; i < (m_mcuHeight >> ddShift) - 1; i++)
           {
               // filling odd rows
-              status = ippiSampleUpRowH2V2_Triangle_JPEG_8u_C1(pSrc, pSrc + srcStep, srcWidth / m_dd_factor, pDst);
-              if(ippStsNoErr != status)
+              j = 0;
+              pixelToProcess = IPP_MIN(tileSize, srcWidth / m_dd_factor);
+              while(j < (int) srcWidth / m_dd_factor)
               {
-                LOG0("Error: ippiSampleUpRowH2V2_Triangle_JPEG_8u_C1() failed!");
-                return JPEG_ERR_INTERNAL;
+                  status = ippiSampleUpRowH2V2_Triangle_JPEG_8u_C1(pSrc + j, pSrc + srcStep + j, pixelToProcess, pDst + j * 2);    
+                  if(ippStsNoErr != status)
+                  {
+                    LOG0("Error: ippiSampleUpRowH2V2_Triangle_JPEG_8u_C1() failed!");
+                    return JPEG_ERR_INTERNAL;
+                  }
+                  j += pixelToProcess;
+                  pixelToProcess = IPP_MIN(intervalSize, srcWidth / m_dd_factor - j);
               }
               pDst += dstStep;
 
               // filling even rows
-              status = ippiSampleUpRowH2V2_Triangle_JPEG_8u_C1(pSrc + srcStep, pSrc, srcWidth / m_dd_factor, pDst);
-              if(ippStsNoErr != status)
+              j = 0;
+              pixelToProcess = IPP_MIN(tileSize, srcWidth / m_dd_factor);
+              while(j < (int) srcWidth / m_dd_factor)
               {
-                LOG0("Error: ippiSampleUpRowH2V2_Triangle_JPEG_8u_C1() failed!");
-                return JPEG_ERR_INTERNAL;
+                  status = ippiSampleUpRowH2V2_Triangle_JPEG_8u_C1(pSrc + srcStep + j, pSrc + j, pixelToProcess, pDst + j * 2);    
+                  if(ippStsNoErr != status)
+                  {
+                    LOG0("Error: ippiSampleUpRowH2V2_Triangle_JPEG_8u_C1() failed!");
+                    return JPEG_ERR_INTERNAL;
+                  }
+                  j += pixelToProcess;
+                  pixelToProcess = IPP_MIN(intervalSize, srcWidth / m_dd_factor - j);
               }
               pDst += dstStep;
               pSrc += srcStep;
           }
 
           // filling the last row
-          status = ippiSampleUpRowH2V2_Triangle_JPEG_8u_C1(pSrc, pSrc, srcWidth / m_dd_factor, pDst);
-          if(ippStsNoErr != status)
+          j = 0;
+          pixelToProcess = IPP_MIN(tileSize, srcWidth / m_dd_factor);
+          while(j < (int) srcWidth / m_dd_factor)
           {
-            LOG0("Error: ippiSampleUpRowH2V2_Triangle_JPEG_8u_C1() failed!");
-            return JPEG_ERR_INTERNAL;
+              status = ippiSampleUpRowH2V2_Triangle_JPEG_8u_C1(pSrc + j, pSrc + j, pixelToProcess, pDst + j * 2);    
+              if(ippStsNoErr != status)
+              {
+                LOG0("Error: ippiSampleUpRowH2V2_Triangle_JPEG_8u_C1() failed!");
+                return JPEG_ERR_INTERNAL;
+              }
+              j += pixelToProcess;
+              pixelToProcess = IPP_MIN(intervalSize, srcWidth / m_dd_factor - j);
           }
-
         } // 420
 
         // sampling 411
@@ -3836,7 +3886,7 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
           Ipp8u* pSrc;
           Ipp8u* pTmp;
           Ipp8u* pDst;
-          Ipp32u srcWidth;
+          Ipp32u srcWidth, intervalSize, tileSize, pixelToProcess;
 
           need_upsampling = 0;
 
@@ -3850,21 +3900,43 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
           pTmp = (Ipp8u*) ippMalloc(2 * srcWidth / m_dd_factor);
           // set the pointer to destination buffer
           pDst = curr_comp->GetCCBufferPtr<Ipp8u> (0) + 8 * colMCU * curr_comp->m_h_factor;
+         
+          intervalSize = m_curr_scan->jpeg_restart_interval ? 
+                         m_curr_scan->jpeg_restart_interval * 8 * curr_comp->m_scan_hsampling : 
+                         srcWidth / m_dd_factor;
+
+          tileSize =  (m_curr_scan->jpeg_restart_interval && !colMCU) ? 
+                      (m_curr_scan->jpeg_restart_interval - (m_curr_scan->numxMCU * rowMCU) % m_curr_scan->jpeg_restart_interval)* 8 * curr_comp->m_scan_hsampling :
+                      intervalSize;
 
           for(i = 0; i < m_mcuHeight / m_dd_factor; i++)
           {
-              status = ippiSampleUpRowH2V1_Triangle_JPEG_8u_C1(pSrc, srcWidth / m_dd_factor , pTmp);
-              if(ippStsNoErr != status)
+              j = 0;
+              pixelToProcess = IPP_MIN(tileSize, srcWidth / m_dd_factor);
+              while(j < (int) srcWidth / m_dd_factor)
               {
-                LOG0("Error: ippiSampleUpRowH2V1_Triangle_JPEG_8u_C1() failed!");
-                return JPEG_ERR_INTERNAL;
+                  status = ippiSampleUpRowH2V1_Triangle_JPEG_8u_C1(pSrc + j, pixelToProcess, pTmp + j * 2);
+                  if(ippStsNoErr != status)
+                  {
+                    LOG0("Error: ippiSampleUpRowH2V1_Triangle_JPEG_8u_C1() failed!");
+                    return JPEG_ERR_INTERNAL;
+                  }
+                  j += pixelToProcess;
+                  pixelToProcess = IPP_MIN(intervalSize, srcWidth / m_dd_factor - j);
               }
-
-              status = ippiSampleUpRowH2V1_Triangle_JPEG_8u_C1(pTmp, srcWidth * 2 / m_dd_factor , pDst);
-              if(ippStsNoErr != status)
+              
+              j = 0;
+              pixelToProcess = IPP_MIN(2 * tileSize, 2 * srcWidth / m_dd_factor);
+              while(j < 2 * (int) srcWidth / m_dd_factor)
               {
-                LOG0("Error: ippiSampleUpRowH2V1_Triangle_JPEG_8u_C1() failed!");
-                return JPEG_ERR_INTERNAL;
+                  status = ippiSampleUpRowH2V1_Triangle_JPEG_8u_C1(pTmp + j, pixelToProcess, pDst + j * 2);
+                  if(ippStsNoErr != status)
+                  {
+                    LOG0("Error: ippiSampleUpRowH2V1_Triangle_JPEG_8u_C1() failed!");
+                    return JPEG_ERR_INTERNAL;
+                  }
+                  j += pixelToProcess;
+                  pixelToProcess = IPP_MIN(2 * intervalSize, 2 * srcWidth / m_dd_factor - j);
               }
 
               pSrc += srcStep;
@@ -5484,7 +5556,7 @@ JERRCODE CJPEGDecoder::DecodeScanBaseline(void)
                 m_mcu_to_decode -= (maxMCU - colMCU);
                 if (0 == m_mcu_to_decode)
                 {
-                    return JPEG_ERR_BUFF;
+                    return JPEG_OK;
                 }
                 maxMCU = (numxMCU < m_mcu_to_decode) ?
                          (numxMCU) :
