@@ -94,6 +94,7 @@ mfxStatus MFX_DISP_HANDLE::LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImpl
                                            mfxIMPL impl, mfxIMPL implInterface)
 {
     mfxStatus mfxRes = MFX_ERR_NONE;
+    bool isFunctionMissed = false;
 
     // check error(s)
     if ((MFX_LIB_SOFTWARE != implType) &&
@@ -168,6 +169,7 @@ mfxStatus MFX_DISP_HANDLE::LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImpl
                     {
                         // The library doesn't contain the function.
                         // Reduce the minimal workable API version.
+                        isFunctionMissed = true;
                         minAPIVersion = APIAudioFunc[i].apiPrevVersion;
                         DISPATCHER_LOG_WRN((("Can't find API function \"%s\", minAPIVersion lowered=%u.%u\n"), APIAudioFunc[i].pName,minAPIVersion.Major, minAPIVersion.Minor));
                     }
@@ -199,6 +201,7 @@ mfxStatus MFX_DISP_HANDLE::LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImpl
                     {
                         // The library doesn't contain the function.
                         // Reduce the minimal workable API version.
+                        isFunctionMissed = true;
                         minAPIVersion = APIFunc[i].apiPrevVersion;
                         DISPATCHER_LOG_WRN((("Can't find API function \"%s\", minAPIVersion lowered=%u.%u\n"), APIFunc[i].pName,minAPIVersion.Major, minAPIVersion.Minor));
                     }
@@ -219,7 +222,7 @@ mfxStatus MFX_DISP_HANDLE::LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImpl
             // the library must be unloaded.
             if ((0 == minAPIVersion.Version) ||
                 (minAPIVersion.Major != apiVersion.Major) ||
-                (minAPIVersion.Minor < apiVersion.Minor))
+                ((minAPIVersion.Minor < apiVersion.Minor) && isFunctionMissed))
             {
                 DISPATCHER_LOG_WRN((("library version check failed: actual library version is %u.%u\n"),
                                minAPIVersion.Major, minAPIVersion.Minor))
