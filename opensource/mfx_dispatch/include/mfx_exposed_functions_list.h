@@ -98,7 +98,8 @@ FUNCTION(mfxStatus, MFXVideoVPP_RunFrameVPPAsync, (mfxSession session, mfxFrameS
 // Use the defines to set the current API version, until new functions are added.
 // When new functions are added, API_VERSION must be fixed with the previous
 // VERSION values and new section with functions declarations must be started.
-#define API_VERSION {{1, 1}}
+
+#define API_VERSION {{MFX_VERSION_MINOR, MFX_VERSION_MAJOR}}
 #define API_VERSION_PREV {{0, 1}}
 
 FUNCTION(mfxStatus, MFXVideoUSER_Register, (mfxSession session, mfxU32 type, const mfxPlugin *par), (session, type, par))
