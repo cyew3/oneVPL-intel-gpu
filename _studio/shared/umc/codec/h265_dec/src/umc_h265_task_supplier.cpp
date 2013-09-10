@@ -1937,7 +1937,7 @@ bool TaskSupplier_H265::IsSkipForCRAorBLA(H265Slice *pSlice)
     if ((m_IRAPType == NAL_UT_CODED_SLICE_BLA_N_LP
         || m_IRAPType == NAL_UT_CODED_SLICE_BLA_W_LP
         || m_IRAPType == NAL_UT_CODED_SLICE_BLA_W_RADL)
-        && pSlice->m_SliceHeader.nal_unit_type < m_CRA_POC
+        && pSlice->m_SliceHeader.slice_pic_order_cnt_lsb < m_CRA_POC
         && (pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_RASL_R || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_RASL_N))
     {
         return true;
