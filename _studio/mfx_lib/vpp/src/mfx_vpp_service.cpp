@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008 - 2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008 - 2013 Intel Corporation. All Rights Reserved.
 //
 //
 //               dynamic frames pool with >=1 surfaces
@@ -63,6 +63,7 @@ mfxStatus DynamicFramesPool::Init( VideoCORE *core, mfxFrameAllocRequest* pReque
 
         for( frame = 0; frame < m_numFrames; frame++ )
         {
+            memset(&(m_pSurface[frame].Data),0,sizeof(mfxFrameData));
             m_pSurface[frame].Data.MemId = response.mids[frame];
             m_pSurface[frame].Info       = pRequest->Info;
         }
