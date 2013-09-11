@@ -307,7 +307,7 @@ mfxStatus AudioDECODEAAC::DecodeHeader(AudioCORE *core, mfxBitstream *bs, mfxAud
                 {
                     int copyHeaderSize = bs->DataLength < MAXIMUM_HEADER_LENGTH ? bs->DataLength : MAXIMUM_HEADER_LENGTH;
                     ippsCopy_8u(bs->Data + bs->DataOffset, par->mfx.AACHeaderData, copyHeaderSize);
-                    par->mfx.AACHeaderDataSize = (mfxU16)bs->DataLength;
+                    par->mfx.AACHeaderDataSize = (mfxU16)copyHeaderSize;
                     return FillAudioParamADTSFixed(&audio_adts_fixed_data, par);
                 }
                 else
