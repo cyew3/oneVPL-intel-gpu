@@ -227,8 +227,8 @@ Ipp32u H265CodingUnit::getQuadtreeTULog2MinSizeInCU(Ipp32u Idx)
     EnumPartSize partSize = GetPartitionSize(Idx);
     const H265SeqParamSet *SPS = m_SliceHeader->m_SeqParamSet;
     Ipp32u QuadtreeTUMaxDepth = GetPredictionMode(Idx) == MODE_INTRA ? SPS->max_transform_hierarchy_depth_intra : SPS->max_transform_hierarchy_depth_inter;
-    Ipp32s IntraSplitFlag = GetPredictionMode(Idx) == MODE_INTRA && partSize == SIZE_NxN;
-    Ipp32s InterSplitFlag = ((QuadtreeTUMaxDepth == 1) && (GetPredictionMode(Idx) == MODE_INTER) && (partSize != SIZE_2Nx2N));
+    Ipp32s IntraSplitFlag = GetPredictionMode(Idx) == MODE_INTRA && partSize == PART_SIZE_NxN;
+    Ipp32s InterSplitFlag = ((QuadtreeTUMaxDepth == 1) && (GetPredictionMode(Idx) == MODE_INTER) && (partSize != PART_SIZE_2Nx2N));
 
     Ipp32u Log2MinTUSizeInCU = 0;
 
@@ -319,20 +319,20 @@ void H265CodingUnit::setSubPart(T Parameter, T* pBaseLCU, Ipp32u uCUAddr, Ipp32u
     Ipp32u CurrPartNumQ = (m_Frame->getCD()->getNumPartInCU() >> (2 * uCUDepth)) >> 2;
     switch (GetPartitionSize(uCUAddr))
     {
-        case SIZE_2Nx2N:
+        case PART_SIZE_2Nx2N:
             memset(pBaseLCU + uCUAddr, Parameter, 4 * CurrPartNumQ);
             break;
-        case SIZE_2NxN:
+        case PART_SIZE_2NxN:
             memset(pBaseLCU + uCUAddr, Parameter, 2 * CurrPartNumQ);
             break;
-        case SIZE_Nx2N:
+        case PART_SIZE_Nx2N:
             memset(pBaseLCU + uCUAddr, Parameter, CurrPartNumQ);
             memset(pBaseLCU + uCUAddr + 2 * CurrPartNumQ, Parameter, CurrPartNumQ);
             break;
-        case SIZE_NxN:
+        case PART_SIZE_NxN:
             memset(pBaseLCU + uCUAddr, Parameter, CurrPartNumQ);
             break;
-        case SIZE_2NxnU:
+        case PART_SIZE_2NxnU:
             if (uPUIdx == 0)
             {
                 memset(pBaseLCU + uCUAddr, Parameter, (CurrPartNumQ >> 1));
@@ -348,7 +348,7 @@ void H265CodingUnit::setSubPart(T Parameter, T* pBaseLCU, Ipp32u uCUAddr, Ipp32u
                 VM_ASSERT(0);
             }
             break;
-        case SIZE_2NxnD:
+        case PART_SIZE_2NxnD:
             if (uPUIdx == 0)
             {
                 memset(pBaseLCU + uCUAddr, Parameter, ((CurrPartNumQ << 1) + (CurrPartNumQ >> 1)));
@@ -364,7 +364,7 @@ void H265CodingUnit::setSubPart(T Parameter, T* pBaseLCU, Ipp32u uCUAddr, Ipp32u
                 VM_ASSERT(0);
             }
             break;
-        case SIZE_nLx2N:
+        case PART_SIZE_nLx2N:
             if (uPUIdx == 0)
             {
                 memset(pBaseLCU + uCUAddr, Parameter, (CurrPartNumQ >> 2));
@@ -384,7 +384,7 @@ void H265CodingUnit::setSubPart(T Parameter, T* pBaseLCU, Ipp32u uCUAddr, Ipp32u
                 VM_ASSERT(0);
             }
             break;
-        case SIZE_nRx2N:
+        case PART_SIZE_nRx2N:
             if (uPUIdx == 0)
             {
                 memset(pBaseLCU + uCUAddr, Parameter, (CurrPartNumQ + (CurrPartNumQ >> 2)));
@@ -438,28 +438,28 @@ Ipp8u H265CodingUnit::getNumPartInter(Ipp32u AbsPartIdx)
     // ML: OPT: TODO: Change switch to table lookup instead
     switch (GetPartitionSize(AbsPartIdx))
     {
-        case SIZE_2Nx2N:
+        case PART_SIZE_2Nx2N:
             iNumPart = 1;
             break;
-        case SIZE_2NxN:
+        case PART_SIZE_2NxN:
             iNumPart = 2;
             break;
-        case SIZE_Nx2N:
+        case PART_SIZE_Nx2N:
             iNumPart = 2;
             break;
-        case SIZE_NxN:
+        case PART_SIZE_NxN:
             iNumPart = 4;
             break;
-        case SIZE_2NxnU:
+        case PART_SIZE_2NxnU:
             iNumPart = 2;
             break;
-        case SIZE_2NxnD:
+        case PART_SIZE_2NxnD:
             iNumPart = 2;
             break;
-        case SIZE_nLx2N:
+        case PART_SIZE_nLx2N:
             iNumPart = 2;
             break;
-        case SIZE_nRx2N:
+        case PART_SIZE_nRx2N:
             iNumPart = 2;
             break;
         default:
@@ -476,43 +476,43 @@ void H265CodingUnit::getPartIndexAndSize(Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u
 
     switch (GetPartitionSize(AbsPartIdx))
     {
-        case SIZE_2NxN:
+        case PART_SIZE_2NxN:
             Width = GetWidth(AbsPartIdx);
             Height = GetHeight(AbsPartIdx) >> 1;
             PartAddr = (uPartIdx == 0) ? 0 : NumPartition >> 1;
             break;
-        case SIZE_Nx2N:
+        case PART_SIZE_Nx2N:
             Width = GetWidth(AbsPartIdx) >> 1;
             Height = GetHeight(AbsPartIdx);
             PartAddr = (uPartIdx == 0) ? 0 : NumPartition >> 2;
             break;
-        case SIZE_NxN:
+        case PART_SIZE_NxN:
             Width = GetWidth(AbsPartIdx) >> 1;
             Height = GetHeight(AbsPartIdx) >> 1;
             PartAddr = (NumPartition >> 2) * uPartIdx;
             break;
-        case SIZE_2NxnU:
+        case PART_SIZE_2NxnU:
             Width    = GetWidth(AbsPartIdx);
             Height   = (uPartIdx == 0) ? GetHeight(AbsPartIdx) >> 2 : (GetHeight(AbsPartIdx) >> 2) + (GetHeight(AbsPartIdx) >> 1);
             PartAddr = (uPartIdx == 0) ? 0 : NumPartition >> 3;
             break;
-        case SIZE_2NxnD:
+        case PART_SIZE_2NxnD:
             Width    = GetWidth(AbsPartIdx);
             Height   = (uPartIdx == 0) ?  (GetHeight(AbsPartIdx) >> 2) + (GetHeight(AbsPartIdx)>> 1) : GetHeight(AbsPartIdx) >> 2;
             PartAddr = (uPartIdx == 0) ? 0 : (NumPartition >> 1) + (NumPartition >> 3);
             break;
-        case SIZE_nLx2N:
+        case PART_SIZE_nLx2N:
             Width    = (uPartIdx == 0) ? GetWidth(AbsPartIdx) >> 2 : (GetWidth(AbsPartIdx) >> 2) + (GetWidth(AbsPartIdx) >> 1);
             Height   = GetHeight(AbsPartIdx);
             PartAddr = (uPartIdx == 0) ? 0 : NumPartition >> 4;
             break;
-        case SIZE_nRx2N:
+        case PART_SIZE_nRx2N:
             Width    = (uPartIdx == 0) ? (GetWidth(AbsPartIdx) >> 2) + (GetWidth(AbsPartIdx) >> 1) : GetWidth(AbsPartIdx) >> 2;
             Height   = GetHeight(AbsPartIdx);
             PartAddr = (uPartIdx == 0) ? 0 : (NumPartition >> 2) + (NumPartition >> 4);
             break;
         default:
-            VM_ASSERT(GetPartitionSize(AbsPartIdx) == SIZE_2Nx2N);
+            VM_ASSERT(GetPartitionSize(AbsPartIdx) == PART_SIZE_2Nx2N);
             Width = GetWidth(AbsPartIdx);
             Height = GetHeight(AbsPartIdx);
             PartAddr = 0;
@@ -524,36 +524,36 @@ void H265CodingUnit::getPartSize(Ipp32u AbsPartIdx, Ipp32u partIdx, Ipp32s &nPSW
 {
     switch (GetPartitionSize(AbsPartIdx))
     {
-    case SIZE_2NxN:
+    case PART_SIZE_2NxN:
         nPSW = GetWidth(AbsPartIdx);
         nPSH = GetHeight(AbsPartIdx) >> 1;
         break;
-    case SIZE_Nx2N:
+    case PART_SIZE_Nx2N:
         nPSW = GetWidth(AbsPartIdx) >> 1;
         nPSH = GetHeight(AbsPartIdx);
         break;
-    case SIZE_NxN:
+    case PART_SIZE_NxN:
         nPSW = GetWidth(AbsPartIdx) >> 1;
         nPSH = GetHeight(AbsPartIdx) >> 1;
         break;
-    case SIZE_2NxnU:
+    case PART_SIZE_2NxnU:
         nPSW = GetWidth(AbsPartIdx);
         nPSH = (partIdx == 0) ? GetHeight(AbsPartIdx) >> 2 : (GetHeight(AbsPartIdx) >> 2) + (GetHeight(AbsPartIdx) >> 1);
         break;
-    case SIZE_2NxnD:
+    case PART_SIZE_2NxnD:
         nPSW = GetWidth(AbsPartIdx);
         nPSH = (partIdx == 0) ?  (GetHeight(AbsPartIdx) >> 2) + (GetHeight(AbsPartIdx) >> 1) : GetHeight(AbsPartIdx) >> 2;
         break;
-    case SIZE_nLx2N:
+    case PART_SIZE_nLx2N:
         nPSW = (partIdx == 0) ? GetWidth(AbsPartIdx) >> 2 : (GetWidth(AbsPartIdx) >> 2) + (GetWidth(AbsPartIdx) >> 1);
         nPSH = GetHeight(AbsPartIdx);
         break;
-    case SIZE_nRx2N:
+    case PART_SIZE_nRx2N:
         nPSW = (partIdx == 0) ? (GetWidth(AbsPartIdx) >> 2) + (GetWidth(AbsPartIdx) >> 1) : GetWidth(AbsPartIdx) >> 2;
         nPSH = GetHeight(AbsPartIdx);
         break;
     default:
-        VM_ASSERT(GetPartitionSize(AbsPartIdx) == SIZE_2Nx2N);
+        VM_ASSERT(GetPartitionSize(AbsPartIdx) == PART_SIZE_2Nx2N);
         nPSW = GetWidth(AbsPartIdx);
         nPSH = GetHeight(AbsPartIdx);
         break;

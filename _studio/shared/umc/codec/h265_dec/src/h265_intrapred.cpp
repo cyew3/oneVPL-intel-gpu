@@ -254,7 +254,7 @@ void H265SegmentDecoder::FillReferenceSamplesChroma(Ipp32s bitDepth,
 
 void H265SegmentDecoder::ReconIntraQT(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    Ipp32u InitTrDepth = (pCU->GetPartitionSize(AbsPartIdx) == SIZE_2Nx2N ? 0 : 1);
+    Ipp32u InitTrDepth = (pCU->GetPartitionSize(AbsPartIdx) == PART_SIZE_2Nx2N ? 0 : 1);
     Ipp32u NumPart = pCU->getNumPartInter(AbsPartIdx);
     Ipp32u NumQParts = pCU->m_NumPartition >> (Depth << 1); // Number of partitions on this depth
     NumQParts >>= 2;
