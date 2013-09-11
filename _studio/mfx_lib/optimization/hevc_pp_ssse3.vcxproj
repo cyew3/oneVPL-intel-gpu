@@ -37,6 +37,7 @@
   <ItemGroup>
     <ClInclude Include="h265\include\mfx_h265_optimization.h" />
     <ClInclude Include="h265\include\mfx_h265_transform_consts.h" />
+    <ClInclude Include="h265\include\mfx_ssse3_emulation.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="h265\src\mfx_h265_deblocking_sse.cpp" />
@@ -46,12 +47,11 @@
     <ClCompile Include="h265\src\mfx_h265_sad_general_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sad_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sao_sse.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_transform_consts.cpp" />
     <ClCompile Include="h265\src\mfx_h265_transform_fwd_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_transform_inv_sse.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{A67AEE55-E7E2-43DA-9BDB-548ACE4C595A}</ProjectGuid>
+    <ProjectGuid>{87CF2689-ABE2-463F-AD5E-9E4CE4B8B5CD}</ProjectGuid>
     <RootNamespace>encode</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
@@ -144,7 +144,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\optimization\h265\include;include;..\encode\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MFX_MAKENAME_SSE4;WIN32;_DEBUG;_LIB;VM_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>MFX_MAKENAME_SSSE3;MFX_EMULATE_SSSE3;WIN32;_DEBUG;_LIB;VM_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -163,7 +163,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\encode\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MFX_MAKENAME_SSE4;WIN32;_DEBUG;_LIB;VM_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>MFX_MAKENAME_SSSE3;MFX_EMULATE_SSSE3;WIN32;_DEBUG;_LIB;VM_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -226,7 +226,7 @@
     <ClCompile>
       <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\optimization\h265\include;..\encode\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MFX_MAKENAME_SSE4;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>MFX_MAKENAME_SSSE3;MFX_EMULATE_SSSE3;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader />
@@ -244,7 +244,7 @@
     <ClCompile>
       <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\optimization\h265\include;..\encode\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MFX_MAKENAME_SSE4;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>MFX_MAKENAME_SSSE3;MFX_EMULATE_SSSE3;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -254,6 +254,8 @@
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>false</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <GenerateAlternateCodePaths>SSSE3</GenerateAlternateCodePaths>
+      <UseProcessorExtensions>SSSE3</UseProcessorExtensions>
     </ClCompile>
     <Lib />
     <Bscmake>

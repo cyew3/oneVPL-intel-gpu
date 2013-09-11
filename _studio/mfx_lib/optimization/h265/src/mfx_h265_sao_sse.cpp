@@ -15,9 +15,12 @@
 
 #include "mfx_h265_optimization.h"
 
-#if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
+#if (defined(MFX_TARGET_OPTIMIZATION_SSSE3) && defined (MFX_EMULATE_SSSE3)) || defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 
 #include <immintrin.h>
+#ifdef MFX_EMULATE_SSSE3
+#include "mfx_ssse3_emulation.h"
+#endif
 
 namespace MFX_HEVC_PP
 {
@@ -81,13 +84,6 @@ namespace MFX_HEVC_PP
             *(Ipp8u *)ptr = (Ipp8u)_mm_extract_epi8(xmm, 0);
         }
     }
-
-#if defined(MFX_TARGET_OPTIMIZATION_AUTO)
-    #define MAKE_NAME( func ) func ## _sse
-#else
-    #define MAKE_NAME( func ) func
-#endif
-
 
     void MAKE_NAME(h265_ProcessSaoCuOrg_Luma_8u)(SAOCU_ORG_PARAMETERS_LIST)
     {

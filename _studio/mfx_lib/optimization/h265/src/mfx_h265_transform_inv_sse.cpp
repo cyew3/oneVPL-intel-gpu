@@ -18,10 +18,14 @@
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined (MFX_ENABLE_H265_VIDEO_DECODE)
 
 #include "mfx_h265_optimization.h"
+#include "mfx_h265_transform_consts.h"
 
-#if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO) 
+#if (defined(MFX_TARGET_OPTIMIZATION_SSSE3) && defined (MFX_EMULATE_SSSE3)) || defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO) 
 
 #include <immintrin.h>
+#ifdef MFX_EMULATE_SSSE3
+#include "mfx_ssse3_emulation.h"
+#endif
 
 #pragma warning (disable : 4310 ) /* disable cast truncates constant value */
 
@@ -115,11 +119,7 @@ namespace MFX_HEVC_PP
 #undef coef_stride
 #define coef_stride 4
 
-#ifndef MFX_TARGET_OPTIMIZATION_AUTO
-    void h265_DCT4x4Inv_16sT(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
-#else
-    void h265_DCT4x4Inv_16sT_sse(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
-#endif
+    void MAKE_NAME(h265_DCT4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
     {
         __m128i s0, s1, s2, s3, s02L, s13L, O0L, O1L, E0L, E1L, H01L, H23L;
         __m128i R0, R1, R2, R3;
@@ -226,11 +226,7 @@ namespace MFX_HEVC_PP
         }
     }
 
-#ifndef MFX_TARGET_OPTIMIZATION_AUTO
-    void h265_DST4x4Inv_16sT(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
-#else
-    void h265_DST4x4Inv_16sT_sse(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
-#endif
+    void MAKE_NAME(h265_DST4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
     {
         __m128i s0, s1, s2, s3, s01L, s23L, H01L, H23L;
         __m128i R0, R1, R2, R3;
@@ -349,11 +345,7 @@ namespace MFX_HEVC_PP
 #undef coef_stride
 #define coef_stride 8
 
-#ifndef MFX_TARGET_OPTIMIZATION_AUTO
-    void h265_DCT8x8Inv_16sT(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
-#else
-    void h265_DCT8x8Inv_16sT_sse(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
-#endif
+    void MAKE_NAME(h265_DCT8x8Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
     {
         ALIGN_DECL(16) short tmp[8 * 8];
 
@@ -646,11 +638,7 @@ namespace MFX_HEVC_PP
         }
     }
 
-#ifndef MFX_TARGET_OPTIMIZATION_AUTO
-    void h265_DCT16x16Inv_16sT(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
-#else
-    void h265_DCT16x16Inv_16sT_sse(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
-#endif
+    void MAKE_NAME(h265_DCT16x16Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
     {
         __m128i s0, s2, s4, s6, s8, s1, s3, s5, s7, s9, s11, s13, s15;
         __m128i O0L, O1L, O2L, O3L, O4L, O5L, O6L, O7L;
@@ -864,70 +852,11 @@ namespace MFX_HEVC_PP
 #define _mm_loadh_epi64(A, p)  _mm_castpd_si128(_mm_loadh_pd(_mm_castsi128_pd(A), (double *)(p)))
 #define _mm_storeh_epi64(p, A) _mm_storeh_pd((double *)(p), _mm_castsi128_pd(A))
 
-    // 32-bits constants
-    signed int rounder_64[]   = {64, 64, 0, 0};
-    signed int rounder_2048[] = {2048, 2048, 0, 0};
-
-    // 16-bits constants
-    signed short koef0000[]  = {64, 64,  64,-64,  83, 36,  36,-83};
-    signed short koef0001[]  = {89, 75,  75,-18,  50,-89,  18,-50};
-    signed short koef0002[]  = {50, 18, -89,-50,  18, 75,  75,-89};
-    signed short koef0003[]  = {90, 87,  87, 57,  80,  9,  70,-43};
-    signed short koef0004[]  = {57,-80,  43,-90,  25,-70,   9,-25};
-    signed short koef0005[]  = {80, 70,   9,-43, -70,-87, -87,  9};
-    signed short koef0006[]  ={-25, 90,  57, 25,  90,-80,  43,-57};
-    signed short koef0007[]  = {57, 43, -80,-90, -25, 57,  90, 25};
-    signed short koef0008[]  = {-9,-87, -87, 70,  43,  9,  70,-80};
-    signed short koef0009[]  = {25,  9, -70,-25,  90, 43, -80,-57};
-    signed short koef0010[]  = {43, 70,   9,-80, -57, 87,  87,-90};
-    signed short koef00010[] = {90, 90,  90, 82,  88, 67,  85, 46};
-    signed short koef02030[] = {88, 85,  67, 46,  31,-13, -13,-67};
-    signed short koef04050[] = {82, 78,  22, -4, -54,-82, -90,-73};
-    signed short koef06070[] = {73, 67, -31,-54, -90,-78, -22, 38};
-    signed short koef08090[] = {61, 54, -73,-85, -46, -4,  82, 88};
-    signed short koef10110[] = {46, 38, -90,-88,  38, 73,  54, -4};
-    signed short koef12130[] = {31, 22, -78,-61,  90, 85, -61,-90};
-    signed short koef14150[] = {13,  4, -38,-13,  61, 22, -78,-31};
-    signed short koef00011[] = {82, 22,  78, -4,  73,-31,  67,-54};
-    signed short koef02031[] ={-54,-90, -82,-73, -90,-22, -78, 38};
-    signed short koef04051[] ={-61, 13,  13, 85,  78, 67,  85,-22};
-    signed short koef06071[] = {78, 85,  67,-22, -38,-90, -90,  4};
-    signed short koef08091[] = {31,-46, -88,-61, -13, 82,  90, 13};
-    signed short koef10111[] ={-90,-67,  31, 90,  61,-46, -88,-31};
-    signed short koef12131[] = { 4, 73,  54,-38, -88, -4,  82, 46};
-    signed short koef14151[] = {88, 38, -90,-46,  85, 54, -73,-61};
-    signed short koef00012[] = {61,-73,  54,-85,  46,-90,  38,-88};
-    signed short koef00013[] = {31,-78,  22,-61,  13,-38,   4,-13};
-    signed short koef02032[] ={-46, 82,  -4, 88,  38, 54,  73, -4};
-    signed short koef02033[] = {90,-61,  85,-90,  61,-78,  22,-31};
-    signed short koef04052[] = {31,-88, -46,-61, -90, 31, -67, 90};
-    signed short koef04053[] = { 4, 54,  73,-38,  88,-90,  38,-46};
-    signed short koef06072[] ={-13, 90,  82, 13,  61,-88, -46,-31};
-    signed short koef06073[] ={-88, 82,  -4, 46,  85,-73,  54,-61};
-    signed short koef08092[] = {-4,-90, -90, 38,  22, 67,  85,-78};
-    signed short koef08093[] ={-38,-22, -78, 90,  54,-31,  67,-73};
-    signed short koef10112[] = {22, 85,  67,-78, -85, 13,  13, 61};
-    signed short koef10113[] = {73,-90, -82, 54,   4, 22,  78,-82};
-    signed short koef12132[] ={-38,-78, -22, 90,  73,-82, -90, 54}; 
-    signed short koef12133[] = {67,-13, -13,-31, -46, 67,  85,-88};
-    signed short koef14152[] = {54, 67, -31,-73,   4, 78,  22,-82};
-    signed short koef14153[] ={-46, 85,  67,-88, -82, 90,  90,-90};
-
-    unsigned int repos[32] = 
-    {0, 16,  8, 17, 4, 18,  9, 19, 
-    2, 20, 10, 21, 5, 22, 11, 23, 
-    1, 24, 12, 25, 6, 26, 13, 27,
-    3, 28, 14, 29, 7, 30, 15, 31};
-
 #define src_stride 32  // strade for temp[]
 
     // 9200 CPU clocks. 
     // 43 * _mm_madd_epi16 = 344
-#ifndef MFX_TARGET_OPTIMIZATION_AUTO
-    void h265_DCT32x32Inv_16sT(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
-#else
-    void h265_DCT32x32Inv_16sT_sse(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
-#endif
+    void MAKE_NAME(h265_DCT32x32Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
     {
         int i;
         signed short * dest;

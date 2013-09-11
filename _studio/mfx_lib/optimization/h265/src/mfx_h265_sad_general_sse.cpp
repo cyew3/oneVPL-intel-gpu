@@ -20,7 +20,7 @@
 
 #include "mfx_h265_optimization.h"
 
-#if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
+#if (defined(MFX_TARGET_OPTIMIZATION_SSSE3) && defined (MFX_EMULATE_SSSE3)) || defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 
 #include "mfx_h265_defs.h"
 
@@ -33,7 +33,9 @@
 //#include <wmmintrin.h> // AES and PCLMULQDQ
 //#include <immintrin.h> // AVX
 //#include <ammintrin.h> // AMD extention SSE5 ? FMA4
-
+#ifdef MFX_EMULATE_SSSE3
+#include "mfx_ssse3_emulation.h"
+#endif
 
 #define ALIGNED_SSE2 ALIGN_DECL(16)
 
@@ -63,7 +65,7 @@ namespace MFX_HEVC_PP
     // defined, for 4x4 whole buffer can be readed at once, and the implementation with two _mm_sad_epu8()
     // will be, probably the fastest.
 
-    int SAD_CALLING_CONVENTION SAD_4x4_general_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_4x4_general)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -98,7 +100,7 @@ namespace MFX_HEVC_PP
 
 
 
-    int SAD_CALLING_CONVENTION SAD_4x8_general_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_4x8_general)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -140,7 +142,7 @@ namespace MFX_HEVC_PP
     }
 
 
-    int SAD_CALLING_CONVENTION SAD_4x16_general_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_4x16_general)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -221,7 +223,7 @@ namespace MFX_HEVC_PP
     }
 
 
-    int SAD_CALLING_CONVENTION SAD_8x4_general_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_8x4_general)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -253,7 +255,7 @@ namespace MFX_HEVC_PP
     }
 
 
-    int SAD_CALLING_CONVENTION SAD_8x8_general_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_8x8_general)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -308,7 +310,7 @@ namespace MFX_HEVC_PP
     }
 
 
-    int SAD_CALLING_CONVENTION SAD_8x16_general_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_8x16_general)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -412,7 +414,7 @@ namespace MFX_HEVC_PP
 
     //no difference, use no loop version
 #if 1
-    int SAD_CALLING_CONVENTION SAD_8x32_general_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_8x32_general)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -607,7 +609,7 @@ namespace MFX_HEVC_PP
         return _mm_cvtsi128_si32( s2);
     }
 #else
-    int SAD_CALLING_CONVENTION SAD_8x32_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_8x32)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -669,7 +671,7 @@ namespace MFX_HEVC_PP
 #define load_12_bytes(a) _mm_loadh_epi64(_mm_cvtsi32_si128( *(const int *) ((const char*)(a) + 8)), a)
 
 
-    int SAD_CALLING_CONVENTION SAD_12x16_general_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_12x16_general)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -765,7 +767,7 @@ namespace MFX_HEVC_PP
     }
 
 
-    int SAD_CALLING_CONVENTION SAD_16x4_general_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_16x4_general)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -794,7 +796,7 @@ namespace MFX_HEVC_PP
     }
 
 
-    int SAD_CALLING_CONVENTION SAD_16x8_general_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_16x8_general)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -844,7 +846,7 @@ namespace MFX_HEVC_PP
     }
 
 
-    int SAD_CALLING_CONVENTION SAD_16x12_general_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_16x12_general)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -916,7 +918,7 @@ namespace MFX_HEVC_PP
     }
 
 
-    int SAD_CALLING_CONVENTION SAD_16x16_general_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_16x16_general)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -1012,7 +1014,7 @@ namespace MFX_HEVC_PP
 
 
 
-    int SAD_CALLING_CONVENTION SAD_16x32_general_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_16x32_general)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -1068,7 +1070,7 @@ namespace MFX_HEVC_PP
 
 
 #if 1
-    int SAD_CALLING_CONVENTION SAD_16x64_general_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_16x64_general)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -1122,7 +1124,7 @@ namespace MFX_HEVC_PP
         return _mm_cvtsi128_si32( s2);
     }
 #else
-    int SAD_CALLING_CONVENTION SAD_16x64_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_16x64)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -1155,7 +1157,7 @@ namespace MFX_HEVC_PP
 
 
 
-    int SAD_CALLING_CONVENTION SAD_24x32_general_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_24x32_general)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -1238,7 +1240,7 @@ namespace MFX_HEVC_PP
 
 
 #if 1
-    int SAD_CALLING_CONVENTION SAD_32x8_general_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_32x8_general)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -1319,7 +1321,7 @@ namespace MFX_HEVC_PP
         return _mm_cvtsi128_si32( s2);
     }
 #else
-    int SAD_CALLING_CONVENTION SAD_32x8_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_32x8)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -1369,7 +1371,7 @@ namespace MFX_HEVC_PP
 
 
 #if 0
-    int SAD_CALLING_CONVENTION SAD_32x16_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_32x16)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -1453,7 +1455,7 @@ namespace MFX_HEVC_PP
         return _mm_cvtsi128_si32( s2);
     }
 #else
-    int SAD_CALLING_CONVENTION SAD_32x16_general_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_32x16_general)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -1503,7 +1505,7 @@ namespace MFX_HEVC_PP
 
 
 #if 0
-    int SAD_CALLING_CONVENTION SAD_32x24_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_32x24)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -1587,7 +1589,7 @@ namespace MFX_HEVC_PP
         return _mm_cvtsi128_si32( s2);
     }
 #else
-    int SAD_CALLING_CONVENTION SAD_32x24_general_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_32x24_general)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -1637,7 +1639,7 @@ namespace MFX_HEVC_PP
 
 
 #if 0
-    int SAD_CALLING_CONVENTION SAD_32x32_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_32x32)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -1722,7 +1724,7 @@ namespace MFX_HEVC_PP
         return _mm_cvtsi128_si32( s2);
     }
 #else
-    int SAD_CALLING_CONVENTION SAD_32x32_general_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_32x32_general)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -1773,7 +1775,7 @@ namespace MFX_HEVC_PP
 
 #if 0
     // is is strange, but more instruction in the loop makes the code running slower
-    int SAD_CALLING_CONVENTION SAD_32x64_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_32x64)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -1856,7 +1858,7 @@ namespace MFX_HEVC_PP
         return _mm_cvtsi128_si32( s2);
     }
 #else
-    int SAD_CALLING_CONVENTION SAD_32x64_general_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_32x64_general)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -1906,7 +1908,7 @@ namespace MFX_HEVC_PP
 
 
 
-    int SAD_CALLING_CONVENTION SAD_64x64_general_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_64x64_general)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -1989,7 +1991,7 @@ namespace MFX_HEVC_PP
     }
 
 
-    int SAD_CALLING_CONVENTION SAD_48x64_general_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_48x64_general)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -2055,7 +2057,7 @@ namespace MFX_HEVC_PP
     }
 
 
-    int SAD_CALLING_CONVENTION SAD_64x48_general_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_64x48_general)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -2138,7 +2140,7 @@ namespace MFX_HEVC_PP
     }
 
 
-    int SAD_CALLING_CONVENTION SAD_64x32_general_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_64x32_general)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -2221,7 +2223,7 @@ namespace MFX_HEVC_PP
     }
 
 
-    int SAD_CALLING_CONVENTION SAD_64x16_general_sse(SAD_PARAMETERS_LIST)
+    int SAD_CALLING_CONVENTION MAKE_NAME(SAD_64x16_general)(SAD_PARAMETERS_LIST)
     {
         SAD_PARAMETERS_LOAD;
 
@@ -2363,52 +2365,52 @@ namespace MFX_HEVC_PP
         int cost; 
         if (SizeX == 4)
         {
-            if(SizeY == 4) { return SAD_4x4_general_sse(image,  ref, stride_img, stride_ref); }
-            else if(SizeY == 8) { return SAD_4x8_general_sse(image,  ref, stride_img, stride_ref); }
-            else           { return SAD_4x16_general_sse(image,  ref, stride_img, stride_ref); }
+            if(SizeY == 4) { return MAKE_NAME(SAD_4x4_general)(image,  ref, stride_img, stride_ref); }
+            else if(SizeY == 8) { return MAKE_NAME(SAD_4x8_general)(image,  ref, stride_img, stride_ref); }
+            else           { return MAKE_NAME(SAD_4x16_general)(image,  ref, stride_img, stride_ref); }
         }
         else if (SizeX == 8)
         {
-            if(SizeY ==  4) { return SAD_8x4_general_sse(image,  ref, stride_img, stride_ref); }
-            else if(SizeY ==  8) { return SAD_8x8_general_sse(image,  ref, stride_img, stride_ref); }
-            else if(SizeY == 16) { return SAD_8x16_general_sse(image,  ref, stride_img, stride_ref); }
-            else             { return SAD_8x32_general_sse(image,  ref, stride_img, stride_ref); }
+            if(SizeY ==  4) { return MAKE_NAME(SAD_8x4_general)(image,  ref, stride_img, stride_ref); }
+            else if(SizeY ==  8) { return MAKE_NAME(SAD_8x8_general)(image,  ref, stride_img, stride_ref); }
+            else if(SizeY == 16) { return MAKE_NAME(SAD_8x16_general)(image,  ref, stride_img, stride_ref); }
+            else             { return MAKE_NAME(SAD_8x32_general)(image,  ref, stride_img, stride_ref); }
         }
         else if (SizeX == 12)
         {
-            return SAD_12x16_general_sse(image,  ref, stride_img, stride_ref);
+            return MAKE_NAME(SAD_12x16_general)(image,  ref, stride_img, stride_ref);
         }
         else if (SizeX == 16)
         {
-            if(SizeY ==  4) { return SAD_16x4_general_sse(image,  ref, stride_img, stride_ref); }
-            else if(SizeY ==  8) { return SAD_16x8_general_sse(image,  ref, stride_img, stride_ref); }
-            else if(SizeY == 12) { return SAD_16x12_general_sse(image,  ref, stride_img, stride_ref); }
-            else if(SizeY == 16) { return SAD_16x16_general_sse(image,  ref, stride_img, stride_ref); }
-            else if(SizeY == 32) { return SAD_16x32_general_sse(image,  ref, stride_img, stride_ref); }
-            else            { return SAD_16x64_general_sse(image,  ref, stride_img, stride_ref); }
+            if(SizeY ==  4) { return MAKE_NAME(SAD_16x4_general)(image,  ref, stride_img, stride_ref); }
+            else if(SizeY ==  8) { return MAKE_NAME(SAD_16x8_general)(image,  ref, stride_img, stride_ref); }
+            else if(SizeY == 12) { return MAKE_NAME(SAD_16x12_general)(image,  ref, stride_img, stride_ref); }
+            else if(SizeY == 16) { return MAKE_NAME(SAD_16x16_general)(image,  ref, stride_img, stride_ref); }
+            else if(SizeY == 32) { return MAKE_NAME(SAD_16x32_general)(image,  ref, stride_img, stride_ref); }
+            else            { return MAKE_NAME(SAD_16x64_general)(image,  ref, stride_img, stride_ref); }
         }
         else if (SizeX == 24)
         {
-            return SAD_24x32_general_sse(image,  ref, stride_img, stride_ref);
+            return MAKE_NAME(SAD_24x32_general)(image,  ref, stride_img, stride_ref);
         }
         else if (SizeX == 32)
         {
-            if(SizeY ==  8) { return SAD_32x8_general_sse(image,  ref, stride_img, stride_ref);}
-            else if(SizeY == 16) { return SAD_32x16_general_sse(image,  ref, stride_img, stride_ref); }
-            else if(SizeY == 24) { return SAD_32x24_general_sse(image,  ref, stride_img, stride_ref); }
-            else if(SizeY == 32) { return SAD_32x32_general_sse(image,  ref, stride_img, stride_ref);}
-            else            { return SAD_32x64_general_sse(image,  ref, stride_img, stride_ref);}
+            if(SizeY ==  8) { return MAKE_NAME(SAD_32x8_general)(image,  ref, stride_img, stride_ref);}
+            else if(SizeY == 16) { return MAKE_NAME(SAD_32x16_general)(image,  ref, stride_img, stride_ref); }
+            else if(SizeY == 24) { return MAKE_NAME(SAD_32x24_general)(image,  ref, stride_img, stride_ref); }
+            else if(SizeY == 32) { return MAKE_NAME(SAD_32x32_general)(image,  ref, stride_img, stride_ref);}
+            else            { return MAKE_NAME(SAD_32x64_general)(image,  ref, stride_img, stride_ref);}
         }
         else if (SizeX == 48)
         {
-            return SAD_48x64_general_sse(image,  ref, stride_img, stride_ref);
+            return MAKE_NAME(SAD_48x64_general)(image,  ref, stride_img, stride_ref);
         }
         else if (SizeX == 64)
         {
-            if(SizeY == 16) { return SAD_64x16_general_sse(image,  ref, stride_img, stride_ref);}
-            else if(SizeY == 32) { return SAD_64x32_general_sse(image,  ref, stride_img, stride_ref);}
-            else if(SizeY == 48) { return SAD_64x48_general_sse(image,  ref, stride_img, stride_ref);}
-            else            { return SAD_64x64_general_sse(image,  ref, stride_img, stride_ref); }
+            if(SizeY == 16) { return MAKE_NAME(SAD_64x16_general)(image,  ref, stride_img, stride_ref);}
+            else if(SizeY == 32) { return MAKE_NAME(SAD_64x32_general)(image,  ref, stride_img, stride_ref);}
+            else if(SizeY == 48) { return MAKE_NAME(SAD_64x48_general)(image,  ref, stride_img, stride_ref);}
+            else            { return MAKE_NAME(SAD_64x64_general)(image,  ref, stride_img, stride_ref); }
         }
         
         else return -1;

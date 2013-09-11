@@ -18,6 +18,10 @@
 
 #include "mfx_h265_optimization.h"
 
+#ifdef MFX_EMULATE_SSSE3
+#include "mfx_ssse3_emulation.h"
+#endif
+
 #ifndef OPT_INTERP_PMUL
 
 using namespace UMC_HEVC_DECODER;

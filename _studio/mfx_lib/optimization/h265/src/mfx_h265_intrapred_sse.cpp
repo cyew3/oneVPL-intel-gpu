@@ -15,9 +15,12 @@
 
 #include "mfx_h265_optimization.h"
 
-#if defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO) 
+#if (defined(MFX_TARGET_OPTIMIZATION_SSSE3) && defined (MFX_EMULATE_SSSE3)) || defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO) 
 
 #include <immintrin.h>
+#ifdef MFX_EMULATE_SSSE3
+#include "mfx_ssse3_emulation.h"
+#endif
 
 typedef Ipp8u PixType;
 
@@ -257,11 +260,7 @@ namespace MFX_HEVC_PP
         }
     }
 
-#ifndef MFX_TARGET_OPTIMIZATION_AUTO 
-    void h265_PredictIntra_Ang_8u(
-#else 
-    void h265_PredictIntra_Ang_8u_sse(
-#endif
+    void MAKE_NAME(h265_PredictIntra_Ang_8u) (
         Ipp32s mode,
         PixType* PredPel,
         PixType* pels,

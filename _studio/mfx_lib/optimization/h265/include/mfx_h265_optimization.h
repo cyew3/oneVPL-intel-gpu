@@ -27,7 +27,6 @@
   #define ALIGN_DECL(X) __attribute__ ((aligned(X)))
 #endif
 
-
 #ifdef __INTEL_COMPILER
 # define H265_RESTRICT __restrict
 #elif defined _MSC_VER
@@ -48,6 +47,7 @@
 #if defined(ANDROID) || defined(LINUX32) || defined(LINUX64)
     #define MFX_TARGET_OPTIMIZATION_ATOM
 #else
+    //#define MFX_TARGET_OPTIMIZATION_SSSE3
     //#define MFX_TARGET_OPTIMIZATION_SSE4
     //#define MFX_TARGET_OPTIMIZATION_AVX2
     //#define MFX_TARGET_OPTIMIZATION_PX // ref C or IPP based
@@ -181,6 +181,20 @@ namespace MFX_HEVC_PP
     /* ******************************************************** */
     /*                    Interface Wrapper                     */
     /* ******************************************************** */
+#if defined(MFX_TARGET_OPTIMIZATION_AUTO)
+    #if defined(MFX_MAKENAME_PX)
+        #define MAKE_NAME( func ) func ## _px
+    #elif defined (MFX_MAKENAME_SSE4)
+        #define MAKE_NAME( func ) func ## _sse
+    #elif defined (MFX_MAKENAME_SSSE3)
+        #define MAKE_NAME( func ) func ## _ssse3
+    #elif defined (MFX_MAKENAME_AVX2)
+        #define MAKE_NAME( func ) func ## _avx2
+    #endif
+#else
+    #define MAKE_NAME( func ) func
+#endif
+
 #if defined(MFX_TARGET_OPTIMIZATION_AUTO)
     #define HEVCPP_API(type_ptr, type_ret, name, arg) type_ptr name
 #else
