@@ -49,6 +49,7 @@
     <ClCompile Include="h265\src\mfx_h265_sao_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_transform_fwd_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_transform_inv_sse.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_weighted_pred_sse.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{87CF2689-ABE2-463F-AD5E-9E4CE4B8B5CD}</ProjectGuid>
