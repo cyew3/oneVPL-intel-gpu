@@ -36,6 +36,8 @@ mfxStatus mfxDefaultAllocator::AllocBuffer(mfxHDL pthis, mfxU32 nbytes, mfxU16 t
     if (!buffer_ptr)
         return MFX_ERR_MEMORY_ALLOC;
 
+    memset(buffer_ptr, 0, header_size + nbytes);
+
     BufferStruct *bs=(BufferStruct *)buffer_ptr;
     bs->allocator = pthis;
     bs->id = ID_BUFFER;
@@ -379,6 +381,8 @@ mfxStatus mfxDefaultAllocator::FreeFrames(mfxHDL pthis, mfxFrameAllocResponse *r
 
 mfxWideBufferAllocator::mfxWideBufferAllocator()
 {
+    memset(bufferAllocator.reserved, 0, sizeof(bufferAllocator.reserved));
+
     bufferAllocator.Alloc = &mfxDefaultAllocator::AllocBuffer;
     bufferAllocator.Lock =  &mfxDefaultAllocator::LockBuffer;
     bufferAllocator.Unlock = &mfxDefaultAllocator::UnlockBuffer;
