@@ -980,39 +980,12 @@ void H265Prediction::CopyWeighted_S16U8(H265DecoderFrame* frame, H265DecYUVBuffe
     H265CoeffsPtrCommon pSrc = (H265CoeffsPtrCommon)src->m_pYPlane + GetAddrOffset(PartIdx, src->lumaSize().width);
     H265CoeffsPtrCommon pSrcUV = (H265CoeffsPtrCommon)src->m_pUVPlane + GetAddrOffset(PartIdx, src->chromaSize().width);
 
-    Ipp32u SrcStride = src->pitch_luma();
     Ipp32u DstStride = frame->pitch_luma();
 
     H265PlanePtrYCommon pDst = frame->GetLumaAddr(CUAddr) + GetAddrOffset(PartIdx, DstStride);
     H265PlanePtrUVCommon pDstUV = frame->GetCbCrAddr(CUAddr) + GetAddrOffset(PartIdx, DstStride >> 1);
 
-    for (Ipp32u y = 0; y < Height; y++)
-    {
-        // ML: OPT: TODO: make sure it is vectorized with PACK
-        for (Ipp32u x = 0; x < Width; x++)
-        {
-            pDst[x] = (H265PlaneYCommon)ClipY(((w[0] * pSrc[x] + round[0]) >> logWD[0]) + o[0]);
-        }
-        pSrc += SrcStride;
-        pDst += DstStride;
-    }
-
-    SrcStride = src->pitch_chroma();
-    DstStride = frame->pitch_chroma();
-    Width >>= 1;
-    Height >>= 1;
-
-    for (Ipp32u y = 0; y < Height; y++)
-    {
-        // ML: OPT: TODO: make sure it is vectorized with PACK
-        for (Ipp32u x = 0; x < Width * 2; x += 2)
-        {
-            pDstUV[x] = (H265PlaneUVCommon)ClipC(((w[1] * pSrcUV[x] + round[1]) >> logWD[1]) + o[1]);
-            pDstUV[x + 1] = (H265PlaneUVCommon)ClipC(((w[2] * pSrcUV[x + 1] + round[2]) >> logWD[2]) + o[2]);
-        }
-        pSrcUV += SrcStride;
-        pDstUV += DstStride;
-    }
+    MFX_HEVC_PP::NAME(h265_CopyWeighted_S16U8)(pSrc, pSrcUV, pDst, pDstUV, src->pitch_luma(), frame->pitch_luma(), src->pitch_chroma(), frame->pitch_chroma(), Width, Height, w, o, logWD, round);
 }
 
 void H265Prediction::CopyWeightedBidi_S16U8(H265DecoderFrame* frame, H265DecYUVBufferPadded* src0, H265DecYUVBufferPadded* src1, Ipp32u CUAddr, Ipp32u PartIdx, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round)
@@ -1023,43 +996,12 @@ void H265Prediction::CopyWeightedBidi_S16U8(H265DecoderFrame* frame, H265DecYUVB
     H265CoeffsPtrCommon pSrc1 = (H265CoeffsPtrCommon)src1->m_pYPlane + GetAddrOffset(PartIdx, src1->lumaSize().width);
     H265CoeffsPtrCommon pSrcUV1 = (H265CoeffsPtrCommon)src1->m_pUVPlane + GetAddrOffset(PartIdx, src1->chromaSize().width);
 
-    Ipp32u SrcStride0 = src0->pitch_luma();
-    Ipp32u SrcStride1 = src1->pitch_luma();
     Ipp32u DstStride = frame->pitch_luma();
 
     H265PlanePtrYCommon pDst = frame->GetLumaAddr(CUAddr) + GetAddrOffset(PartIdx, DstStride);
     H265PlanePtrUVCommon pDstUV = frame->GetCbCrAddr(CUAddr) + GetAddrOffset(PartIdx, DstStride >> 1);
 
-    for (Ipp32u y = 0; y < Height; y++)
-    {
-        // ML: OPT: TODO: make sure it is vectorized with PACK
-        for (Ipp32u x = 0; x < Width; x++)
-        {
-            pDst[x] = (H265PlaneYCommon)ClipY((w0[0] * pSrc0[x] + w1[0] * pSrc1[x] + round[0]) >> logWD[0]);
-        }
-        pSrc0 += SrcStride0;
-        pSrc1 += SrcStride1;
-        pDst += DstStride;
-    }
-
-    SrcStride0 = src0->pitch_chroma();
-    SrcStride1 = src1->pitch_chroma();
-    DstStride = frame->pitch_chroma();
-    Width >>= 1;
-    Height >>= 1;
-
-    for (Ipp32u y = 0; y < Height; y++)
-    {
-        // ML: OPT: TODO: make sure it is vectorized with PACK
-        for (Ipp32u x = 0; x < Width * 2; x += 2)
-        {
-            pDstUV[x] = (H265PlaneUVCommon)ClipC((w0[1] * pSrcUV0[x] + w1[1] * pSrcUV1[x] + round[1]) >> logWD[1]);
-            pDstUV[x + 1] = (H265PlaneUVCommon)ClipC((w0[2] * pSrcUV0[x + 1] + w1[2] * pSrcUV1[x + 1] + round[2]) >> logWD[2]);
-        }
-        pSrcUV0 += SrcStride0;
-        pSrcUV1 += SrcStride1;
-        pDstUV += DstStride;
-    }
+    MFX_HEVC_PP::NAME(h265_CopyWeightedBidi_S16U8)(pSrc0, pSrcUV0, pSrc1, pSrcUV1, pDst, pDstUV, src0->pitch_luma(), src1->pitch_luma(), frame->pitch_luma(), src0->pitch_chroma(), src1->pitch_chroma(), frame->pitch_chroma(), Width, Height, w0, w1, logWD, round);
 }
 
 Ipp32s H265Prediction::GetAddrOffset(Ipp32u PartUnitIdx, Ipp32u width)
