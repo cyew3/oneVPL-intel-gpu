@@ -438,8 +438,6 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxHEVCOpts.RDOQuant = opts_tu->RDOQuant;
         if (m_mfxHEVCOpts.SignBitHiding == MFX_CODINGOPTION_UNKNOWN)
             m_mfxHEVCOpts.SignBitHiding = opts_tu->SignBitHiding;
-// sign bit hiding doesn't work now properly
-m_mfxHEVCOpts.SignBitHiding = MFX_CODINGOPTION_OFF;
 
         if (m_mfxHEVCOpts.WPP == MFX_CODINGOPTION_UNKNOWN)
             m_mfxHEVCOpts.WPP = opts_tu->WPP;
@@ -474,6 +472,9 @@ m_mfxHEVCOpts.SignBitHiding = MFX_CODINGOPTION_OFF;
         }
 
     }
+
+    // sign bit hiding doesn't work now properly
+    m_mfxHEVCOpts.SignBitHiding = MFX_CODINGOPTION_OFF;
 
     // check FrameInfo
 
