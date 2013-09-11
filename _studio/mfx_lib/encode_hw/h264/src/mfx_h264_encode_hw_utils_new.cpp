@@ -1237,7 +1237,7 @@ namespace
 };
 
 
-DdiTaskIter MfxHwH264Encode::FindFrameToEncode(
+DdiTaskIter MfxHwH264Encode::ReorderFrame(
     ArrayDpbFrame const & dpb,
     DdiTaskIter           begin,
     DdiTaskIter           end)
@@ -1269,14 +1269,14 @@ DdiTaskIter MfxHwH264Encode::FindFrameToEncode(
 }
 
 
-DdiTaskIter MfxHwH264Encode::FindFrameToEncode(
+DdiTaskIter MfxHwH264Encode::ReorderFrame(
     ArrayDpbFrame const & dpb,
     DdiTaskIter           begin,
     DdiTaskIter           end,
     bool                  gopStrict,
     bool                  flush)
 {
-    DdiTaskIter top = FindFrameToEncode(dpb, begin, end);
+    DdiTaskIter top = ReorderFrame(dpb, begin, end);
 
     if (flush && top == end && begin != end)
     {
@@ -1291,7 +1291,7 @@ DdiTaskIter MfxHwH264Encode::FindFrameToEncode(
             assert(top->GetFrameType() & MFX_FRAMETYPE_B);
             top->m_type[0] = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
             top->m_type[1] = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
-            top = FindFrameToEncode(dpb, begin, end);
+            top = ReorderFrame(dpb, begin, end);
             assert(top != end || begin == end);
         }
     }
@@ -1354,6 +1354,44 @@ IntraRefreshState MfxHwH264Encode::GetIntraRefreshState(
         state.IntRefQPDelta = extOpt2Runtime->IntRefQPDelta;
 
     return state;
+}
+
+
+DdiTaskIter MfxHwH264Encode::FindFrameToStartEncode(
+    MfxVideoParam const & video,
+    DdiTaskIter           begin,
+    DdiTaskIter           end)
+{
+    if (/*video.mfx.RateControlMethod != MFX_RATECONTROL_LA &&*/
+        video.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+        return begin;
+
+    // in case of CQP optmization is applied
+    // dependency between ENC and PAK is removed by encoding reference P frame earlier
+    DdiTaskIter first = begin;
+    DdiTaskIter second = ++begin;
+    if (first == end || second == end)
+        return first;
+    if ((first ->GetFrameType() & MFX_FRAMETYPE_B) &&
+        (second->GetFrameType() & MFX_FRAMETYPE_P) &&
+        (second->m_frameNum == first->m_frameNum))
+        return second;
+    return first;
+}
+
+
+DdiTaskIter MfxHwH264Encode::FindFrameToWaitEncode(
+    DdiTaskIter begin,
+    DdiTaskIter end)
+{
+    if (begin == end)
+        return begin;
+
+    DdiTaskIter oldest = begin;
+    for (++begin; begin != end; ++begin)
+        if (oldest->m_encOrder > begin->m_encOrder)
+            oldest = begin;
+    return oldest;
 }
 
 
@@ -1804,20 +1842,64 @@ void MfxHwH264Encode::AnalyzeVmeData(DdiTaskIter begin, DdiTaskIter end, mfxU32 
 }
 
 
+AsyncRoutineEmulator::AsyncRoutineEmulator()
+{
+    std::fill(Begin(m_stageGreediness), End(m_stageGreediness), 1);
+    Zero(m_queueFullness);
+    Zero(m_queueFlush);
+}
+
+AsyncRoutineEmulator::AsyncRoutineEmulator(MfxVideoParam const & video)
+{
+    Init(video);
+}
+
 void AsyncRoutineEmulator::Init(MfxVideoParam const & video)
 {
     mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(video);
 
-    m_stageGreediness[STG_ACCEPT_FRAME] = 1;
-    m_stageGreediness[STG_START_LA    ] = video.mfx.EncodedOrder ? 1 : video.mfx.GopRefDist;
-    m_stageGreediness[STG_WAIT_LA     ] = 1 + (extOpt2->LookAheadDepth > 0 && video.AsyncDepth > 1);
-    m_stageGreediness[STG_START_ENCODE] = IPP_MAX(1, extOpt2->LookAheadDepth);
-    m_stageGreediness[STG_WAIT_ENCODE ] = video.AsyncDepth;
+    switch (video.mfx.RateControlMethod)
+    {
+    case MFX_RATECONTROL_CQP:
+        m_stageGreediness[STG_ACCEPT_FRAME] = 1;
+        m_stageGreediness[STG_START_LA    ] = video.mfx.EncodedOrder ? 1 : video.mfx.GopRefDist;
+        m_stageGreediness[STG_WAIT_LA     ] = 1;
+        m_stageGreediness[STG_START_ENCODE] = 1 + !!(video.mfx.GopRefDist > 1);
+        m_stageGreediness[STG_WAIT_ENCODE ] = video.AsyncDepth + !!(video.mfx.GopRefDist > 1);
+        break;
+    case MFX_RATECONTROL_LA:
+        m_stageGreediness[STG_ACCEPT_FRAME] = 1;
+        m_stageGreediness[STG_START_LA    ] = video.mfx.EncodedOrder ? 1 : video.mfx.GopRefDist;
+        m_stageGreediness[STG_WAIT_LA     ] = 1 + !!(video.AsyncDepth > 1);
+        m_stageGreediness[STG_START_ENCODE] = extOpt2->LookAheadDepth;
+        m_stageGreediness[STG_WAIT_ENCODE ] = 1 + !!(video.AsyncDepth > 1);
+        break;
+    default:
+        m_stageGreediness[STG_ACCEPT_FRAME] = 1;
+        m_stageGreediness[STG_START_LA    ] = video.mfx.EncodedOrder ? 1 : video.mfx.GopRefDist;
+        m_stageGreediness[STG_WAIT_LA     ] = 1;
+        m_stageGreediness[STG_START_ENCODE] = 1;
+        m_stageGreediness[STG_WAIT_ENCODE ] = 1 + !!(video.AsyncDepth > 1);
+        break;
+    }
 
     Zero(m_queueFullness);
     Zero(m_queueFlush);
 }
 
+
+mfxU32 AsyncRoutineEmulator::GetTotalGreediness() const
+{
+    mfxU32 greediness = 0;
+    for (mfxU32 i = 0; i < STG_COUNT; i++)
+        greediness += m_stageGreediness[i] - 1;
+    return greediness + 1;
+}
+
+mfxU32 AsyncRoutineEmulator::GetStageGreediness(mfxU32 stage) const
+{
+    return (stage < STG_COUNT) ? m_stageGreediness[stage] : 0;
+}
 
 mfxU32 AsyncRoutineEmulator::CheckStageOutput(mfxU32 stage)
 {
@@ -1845,11 +1927,11 @@ mfxU32 AsyncRoutineEmulator::Go(bool hasInput)
         m_queueFlush[QU_INCOMING] = 1;
 
     mfxU32 stages = 0;
-    for (mfxU32 i = 0; i < NUM_STAGES; i++)
+    for (mfxU32 i = 0; i < STG_COUNT; i++)
         stages += CheckStageOutput(i) << i;
 
-    if (!hasInput && stages != 0 && (stages & STAGE_WAIT_ENCODE) == 0)
-        stages += STAGE_RESTART;
+    if (!hasInput && stages != 0 && (stages & STG_BIT_WAIT_ENCODE) == 0)
+        stages += STG_BIT_RESTART;
 
     return stages;
 }

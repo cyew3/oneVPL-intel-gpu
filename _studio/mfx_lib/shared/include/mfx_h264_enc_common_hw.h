@@ -551,8 +551,6 @@ namespace MfxHwH264Encode
         } calcParam;
     };
 
-    mfxU16 GetBufferingDepth(MfxVideoParam const & video);
-
     mfxU16 GetNumSurfInput(MfxVideoParam const & video);
 
     mfxU8 GetNumReorderFrames(MfxVideoParam const & video);

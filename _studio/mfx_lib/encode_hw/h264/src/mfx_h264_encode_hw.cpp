@@ -582,7 +582,7 @@ mfxStatus ImplementationAvc::QueryIOSurf(
         request->Type |= (inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
             ? MFX_MEMTYPE_OPAQUE_FRAME
             : MFX_MEMTYPE_EXTERNAL_FRAME;
-        request->NumFrameMin = GetBufferingDepth(tmp);
+        request->NumFrameMin = (mfxU16) AsyncRoutineEmulator(tmp).GetTotalGreediness() + tmp.AsyncDepth - 1;
         request->NumFrameSuggested = request->NumFrameMin;
     }
 
@@ -682,6 +682,9 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     mfxFrameAllocRequest request = { { 0 } };
     request.Info = m_video.mfx.FrameInfo;
 
+    m_emulatorForSyncPart.Init(m_video);
+    m_emulatorForAsyncPart = m_emulatorForSyncPart;
+
     mfxExtOpaqueSurfaceAlloc * extOpaq = GetExtBuffer(m_video);
 
     // Allocate raw surfaces.
@@ -719,7 +722,8 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     // ENC+PAK always needs separate chain for reconstructions produced by PAK.
     request.Type        = m_video.Protected ? MFX_MEMTYPE_D3D_SERPENT_INT : MFX_MEMTYPE_D3D_INT;
-    request.NumFrameMin = mfxU16(CalcNumSurfRecon(m_video));
+    request.NumFrameMin = mfxU16(m_video.mfx.NumRefFrame +
+        m_emulatorForSyncPart.GetStageGreediness(AsyncRoutineEmulator::STG_WAIT_ENCODE));
     sts = m_rec.Alloc(m_core, request);
     MFX_CHECK_STS(sts);
 
@@ -730,11 +734,11 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     // Allocate surfaces for bitstreams.
     // Need at least one such surface and more for async-mode.
-    request.Type = MFX_MEMTYPE_D3D_INT;
-    request.NumFrameMin = mfxU16(CalcNumSurfBitstream(m_video));
-
     sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_BITSTREAMDATA, request);
     MFX_CHECK_STS(sts);
+
+    request.Type = MFX_MEMTYPE_D3D_INT;
+    request.NumFrameMin = (mfxU16) m_emulatorForSyncPart.GetStageGreediness(AsyncRoutineEmulator::STG_WAIT_ENCODE);
     // driver may suggest too small buffer for bitstream
     request.Info.Width  = IPP_MAX(request.Info.Width,  m_video.mfx.FrameInfo.Width);
     request.Info.Height = IPP_MAX(request.Info.Height, m_video.mfx.FrameInfo.Height * 3 / 2);
@@ -752,7 +756,9 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         request.Info.Height = m_video.calcParam.heightLa;
 
         mfxU32 numMb = request.Info.Width * request.Info.Height / 256;
-        m_vmeDataStorage.resize(extOpt2->LookAheadDepth + m_video.AsyncDepth);
+        m_vmeDataStorage.resize(
+            m_emulatorForSyncPart.GetStageGreediness(AsyncRoutineEmulator::STG_WAIT_LA) +
+            m_emulatorForSyncPart.GetStageGreediness(AsyncRoutineEmulator::STG_START_ENCODE) - 1);
         for (size_t i = 0; i < m_vmeDataStorage.size(); i++)
             m_vmeDataStorage[i].mb.resize(numMb);
         m_tmpVmeData.reserve(extOpt2->LookAheadDepth);
@@ -790,10 +796,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     sts = m_ddi->Register(m_bit, D3DDDIFMT_INTELENCODE_BITSTREAMDATA);
     MFX_CHECK_STS(sts);
 
-    m_emulatorForSyncPart.Init(m_video);
-    m_emulatorForAsyncPart = m_emulatorForSyncPart;
-
-    m_free.resize(GetBufferingDepth(m_video) + m_video.AsyncDepth - 1);
+    m_free.resize(m_emulatorForSyncPart.GetTotalGreediness() + m_video.AsyncDepth - 1);
     m_incoming.clear();
     m_reordering.clear();
     m_lookaheadStarted.clear();
@@ -803,7 +806,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     m_fieldCounter   = 0;
     m_1stFieldStatus = MFX_ERR_NONE;
     m_frameOrder     = 0;
-    m_stagesToGo     = AsyncRoutineEmulator::STAGE_CALL_EMULATOR;
+    m_stagesToGo     = AsyncRoutineEmulator::STG_BIT_CALL_EMULATOR;
     m_failedStatus   = MFX_ERR_NONE;
     m_frameOrderIdrInDisplayOrder = 0;
     m_frameOrderStartLyncStructure = 0;
@@ -955,8 +958,8 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
         for (mfxU32 f = 0; f <= i->m_fieldPicFlag; f++)
             while ((sts = QueryStatus(*i, i->m_fid[f])) == MFX_TASK_BUSY)
                 vm_time_sleep(1);
-    for (size_t size = m_encoding.size(); size-->0;)
-        OnEncodingQueried();
+    while (!m_encoding.empty())
+        OnEncodingQueried(m_encoding.begin());
 
     m_emulatorForSyncPart.Init(newPar);
     m_emulatorForAsyncPart = m_emulatorForSyncPart;
@@ -966,7 +969,7 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
 
     m_1stFieldStatus = MFX_ERR_NONE;
     m_fieldCounter   = 0;
-    m_stagesToGo     = AsyncRoutineEmulator::STAGE_CALL_EMULATOR;
+    m_stagesToGo     = AsyncRoutineEmulator::STG_BIT_CALL_EMULATOR;
 
     mfxExtEncoderResetOption const * extResetOpt = GetExtBuffer(newPar);
 
@@ -1123,7 +1126,7 @@ struct CompareByMidRaw
 
 void ImplementationAvc::OnNewFrame()
 {
-    m_stagesToGo &= ~AsyncRoutineEmulator::STAGE_ACCEPT_FRAME;
+    m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_ACCEPT_FRAME;
 
     UMC::AutomaticUMCMutex guard(m_listMutex);
     m_reordering.splice(m_reordering.end(), m_incoming, m_incoming.begin());
@@ -1132,7 +1135,7 @@ void ImplementationAvc::OnNewFrame()
 
 void ImplementationAvc::OnLookaheadSubmitted(DdiTaskIter task)
 {
-    m_stagesToGo &= ~AsyncRoutineEmulator::STAGE_START_LA;
+    m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_START_LA;
 
     if (m_inputFrameType == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
         m_core->DecreaseReference(&task->m_yuv->Data);
@@ -1142,7 +1145,7 @@ void ImplementationAvc::OnLookaheadSubmitted(DdiTaskIter task)
 
 void ImplementationAvc::OnLookaheadQueried()
 {
-    m_stagesToGo &= ~AsyncRoutineEmulator::STAGE_WAIT_LA;
+    m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_WAIT_LA;
 
     DdiTask & task = m_lookaheadStarted.front();
 
@@ -1183,35 +1186,33 @@ void ImplementationAvc::OnLookaheadQueried()
 
 void ImplementationAvc::OnEncodingSubmitted(DdiTaskIter task)
 {
-    m_stagesToGo &= ~AsyncRoutineEmulator::STAGE_START_ENCODE;
+    m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_START_ENCODE;
 
     m_encoding.splice(m_encoding.end(), m_lookaheadFinished, task);
 }
 
 
-void ImplementationAvc::OnEncodingQueried()
+void ImplementationAvc::OnEncodingQueried(DdiTaskIter task)
 {
-    m_stagesToGo &= ~AsyncRoutineEmulator::STAGE_WAIT_ENCODE;
-
-    DdiTask & task = m_encoding.front();
+    m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_WAIT_ENCODE;
 
     if (m_inputFrameType == MFX_IOPATTERN_IN_VIDEO_MEMORY)
-        m_core->DecreaseReference(&task.m_yuv->Data);
+        m_core->DecreaseReference(&task->m_yuv->Data);
 
-    ArrayDpbFrame const & iniDpb = task.m_dpb[task.m_fid[0]];
-    ArrayDpbFrame const & finDpb = task.m_dpbPostEncoding;
+    ArrayDpbFrame const & iniDpb = task->m_dpb[task->m_fid[0]];
+    ArrayDpbFrame const & finDpb = task->m_dpbPostEncoding;
     for (mfxU32 i = 0; i < iniDpb.Size(); i++)
         if (std::find_if(finDpb.Begin(), finDpb.End(), CompareByMidRec(iniDpb[i].m_midRec)) == finDpb.End())
             ReleaseResource(m_rec, iniDpb[i].m_midRec);
 
-    ReleaseResource(m_raw, task.m_midRaw);
-    ReleaseResource(m_bit, task.m_midBit[0]);
-    ReleaseResource(m_bit, task.m_midBit[1]);
-    if ((task.m_reference[0] + task.m_reference[1]) == 0)
-        ReleaseResource(m_rec, task.m_midRec);
+    ReleaseResource(m_raw, task->m_midRaw);
+    ReleaseResource(m_bit, task->m_midBit[0]);
+    ReleaseResource(m_bit, task->m_midBit[1]);
+    if ((task->m_reference[0] + task->m_reference[1]) == 0)
+        ReleaseResource(m_rec, task->m_midRec);
 
-    mfxU32 numBits = 8 * (task.m_bsDataLength[0] + task.m_bsDataLength[1]);
-    task = DdiTask();
+    mfxU32 numBits = 8 * (task->m_bsDataLength[0] + task->m_bsDataLength[1]);
+    *task = DdiTask();
 
     UMC::AutomaticUMCMutex guard(m_listMutex);
 
@@ -1219,7 +1220,7 @@ void ImplementationAvc::OnEncodingQueried()
     m_stat.NumCachedFrame--;
     m_stat.NumFrame++;
 
-    m_free.splice(m_free.end(), m_encoding, m_encoding.begin());
+    m_free.splice(m_free.end(), m_encoding, task);
 }
 
 
@@ -1264,8 +1265,15 @@ namespace
 void ImplementationAvc::BrcPreEnc(
     DdiTask const & task)
 {
-    m_tmpVmeData.resize(m_lookaheadFinished.size());
+    mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(m_video);
+
     DdiTaskIter j = m_lookaheadFinished.begin();
+    mfxU32 numLaFrames = (mfxU32)m_lookaheadFinished.size();
+    while (j->m_encOrder != task.m_encOrder)
+        ++j, --numLaFrames;
+    numLaFrames = IPP_MIN(extOpt2->LookAheadDepth, numLaFrames);
+
+    m_tmpVmeData.resize(numLaFrames);
     for (size_t i = 0; i < m_tmpVmeData.size(); ++i, ++j)
         m_tmpVmeData[i] = j->m_vmeData;
 
@@ -1284,7 +1292,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         m_stagesToGo = m_emulatorForAsyncPart.Go(!m_incoming.empty());
     }
 
-    if (m_stagesToGo & AsyncRoutineEmulator::STAGE_ACCEPT_FRAME)
+    if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_ACCEPT_FRAME)
     {
         DdiTask & newTask = m_incoming.front();
 
@@ -1343,16 +1351,17 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         }
 
         // move task to reordering queue
+        //printf("\rACCEPTED      do=%4d eo=%4d type=%d\n", newTask.m_frameOrder, newTask.m_encOrder, newTask.m_type[0]); fflush(stdout);
         OnNewFrame();
     }
 
-    if (m_stagesToGo & AsyncRoutineEmulator::STAGE_START_LA)
+    if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_START_LA)
     {
         bool gopStrict = !!(m_video.mfx.GopOptFlag & MFX_GOP_STRICT);
 
         DdiTaskIter task = (m_video.mfx.EncodedOrder)
             ? m_reordering.begin()
-            : FindFrameToEncode(m_lastTask.m_dpbPostEncoding,
+            : ReorderFrame(m_lastTask.m_dpbPostEncoding,
                 m_reordering.begin(), m_reordering.end(),
                 gopStrict, m_reordering.size() < m_video.mfx.GopRefDist);
         if (task == m_reordering.end())
@@ -1416,16 +1425,18 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             SubmitLookahead(*task);
         }
 
+        //printf("\rLA_SUBMITTED  do=%4d eo=%4d type=%d\n", task->m_frameOrder, task->m_encOrder, task->m_type[0]); fflush(stdout);
         OnLookaheadSubmitted(task);
     }
 
 
-    if (m_stagesToGo & AsyncRoutineEmulator::STAGE_WAIT_LA)
+    if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_WAIT_LA)
     {
         if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA)
             if (!QueryLookahead(m_lookaheadStarted.front()))
                 return MFX_TASK_BUSY;
 
+        //printf("\rLA_SYNCED     do=%4d eo=%4d type=%d\n", m_lookaheadStarted.front().m_frameOrder, m_lookaheadStarted.front().m_encOrder, m_lookaheadStarted.front().m_type[0]); fflush(stdout);
         OnLookaheadQueried();
 
         if (extDdi->LookAheadDep > 0 && m_lookaheadFinished.size() >= extDdi->LookAheadDep)
@@ -1439,9 +1450,10 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
     }
 
 
-    if (m_stagesToGo & AsyncRoutineEmulator::STAGE_START_ENCODE)
+    if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_START_ENCODE)
     {
-        DdiTaskIter task = m_lookaheadFinished.begin();
+        DdiTaskIter task = FindFrameToStartEncode(m_video, m_lookaheadFinished.begin(), m_lookaheadFinished.end());
+        assert(task != m_lookaheadFinished.end());
 
         Hrd hrd = m_hrd; // tmp copy
 
@@ -1520,39 +1532,40 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 return Error(sts);
         }
 
+        //printf("\rENC_SUBMITTED do=%4d eo=%4d type=%d\n", task->m_frameOrder, task->m_encOrder, task->m_type[0]); fflush(stdout);
         OnEncodingSubmitted(task);
     }
 
 
-    if (m_stagesToGo & AsyncRoutineEmulator::STAGE_WAIT_ENCODE)
+    if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_WAIT_ENCODE)
     {
         mfxExtCodingOption const * extOpt = GetExtBuffer(m_video);
 
-        DdiTask & task = m_encoding.front();
+        DdiTaskIter task = FindFrameToWaitEncode(m_encoding.begin(), m_encoding.end());
 
         mfxStatus sts = MFX_ERR_NONE;
         if (IsOff(extOpt->FieldOutput))
         {
-            mfxU32 ffid = task.m_fid[0];
-            mfxU32 sfid = task.m_fid[1];
+            mfxU32 ffid = task->m_fid[0];
+            mfxU32 sfid = task->m_fid[1];
 
-            for (;; ++task.m_repack)
+            for (;; ++task->m_repack)
             {
-                if ((sts = QueryStatus(task, sfid)) != MFX_ERR_NONE)
+                if ((sts = QueryStatus(*task, sfid)) != MFX_ERR_NONE)
                     return sts;
 
-                if (task.m_fieldPicFlag)
-                    if ((sts = QueryStatus(task, ffid)) != MFX_ERR_NONE)
+                if (task->m_fieldPicFlag)
+                    if ((sts = QueryStatus(*task, ffid)) != MFX_ERR_NONE)
                         return Error(sts);
 
                 if (m_enabledSwBrc)
                 {
-                    mfxU32 res = m_brc.Report(task.m_type[0], task.m_bsDataLength[0], 0, !!task.m_repack, task.m_frameOrder);
+                    mfxU32 res = m_brc.Report(task->m_type[0], task->m_bsDataLength[0], 0, !!task->m_repack, task->m_frameOrder);
                     if (res == 1) // ERR_BIG_FRAME
                     {
-                        task.m_bsDataLength[0] = task.m_bsDataLength[1] = 0;
-                        task.m_cqpValue[0] = task.m_cqpValue[1] = m_brc.GetQp(task.m_type[task.m_fid[0]], task.m_picStruct[ENC]);
-                        sts = m_ddi->Execute(task.m_handleRaw.first, task, task.m_fid[0], m_sei);
+                        task->m_bsDataLength[0] = task->m_bsDataLength[1] = 0;
+                        task->m_cqpValue[0] = task->m_cqpValue[1] = m_brc.GetQp(task->m_type[task->m_fid[0]], task->m_picStruct[ENC]);
+                        sts = m_ddi->Execute(task->m_handleRaw.first, *task, task->m_fid[0], m_sei);
                         if (sts != MFX_ERR_NONE)
                             return Error(sts);
                         continue;
@@ -1561,28 +1574,29 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
                 break;
             }
-            task.m_bs = bs;
-            for (mfxU32 f = 0; f <= task.m_fieldPicFlag; f++)
-                if ((sts = UpdateBitstream(task, task.m_fid[f])) != MFX_ERR_NONE)
+            task->m_bs = bs;
+            for (mfxU32 f = 0; f <= task->m_fieldPicFlag; f++)
+                if ((sts = UpdateBitstream(*task, task->m_fid[f])) != MFX_ERR_NONE)
                     return Error(sts);
 
-            OnEncodingQueried();
+            //printf("\rENC_SYNCED    do=%4d eo=%4d type=%d qp=%d size=%d\n", task->m_frameOrder, task->m_encOrder, task->m_type[0], task->m_cqpValue[0], task->m_bsDataLength[0]); fflush(stdout);
+            OnEncodingQueried(task);
         }
         else
         {
             std::pair<mfxBitstream *, mfxU32> * stupidPair = reinterpret_cast<std::pair<mfxBitstream *, mfxU32> *>(bs);
             assert(stupidPair->second < 2);
-            task.m_bs = stupidPair->first;
-            mfxU32 fid = task.m_fid[stupidPair->second & 1];
+            task->m_bs = stupidPair->first;
+            mfxU32 fid = task->m_fid[stupidPair->second & 1];
 
-            if ((sts = QueryStatus(task, fid)) != MFX_ERR_NONE)
+            if ((sts = QueryStatus(*task, fid)) != MFX_ERR_NONE)
                 return sts;
-            if ((sts = UpdateBitstream(task, fid)) != MFX_ERR_NONE)
+            if ((sts = UpdateBitstream(*task, fid)) != MFX_ERR_NONE)
                 return Error(sts);
 
-            if (task.m_fieldCounter == 2)
+            if (task->m_fieldCounter == 2)
             {
-                OnEncodingQueried();
+                OnEncodingQueried(task);
                 UMC::AutomaticUMCMutex guard(m_listMutex);
                 m_listOfPairsForStupidFieldOutputMode.pop_front();
                 m_listOfPairsForStupidFieldOutputMode.pop_front();
@@ -1590,9 +1604,9 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         }
     }
 
-    if (m_stagesToGo & AsyncRoutineEmulator::STAGE_RESTART)
+    if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_RESTART)
     {
-        m_stagesToGo = AsyncRoutineEmulator::STAGE_CALL_EMULATOR;
+        m_stagesToGo = AsyncRoutineEmulator::STG_BIT_CALL_EMULATOR;
         return MFX_TASK_BUSY;
     }
 
@@ -1720,13 +1734,13 @@ mfxStatus ImplementationAvc::EncodeFrameCheckNormalWay(
 
     mfxU32 stagesToGo = m_emulatorForSyncPart.Go(!!surface);
 
-    while (stagesToGo & AsyncRoutineEmulator::STAGE_RESTART)
+    while (stagesToGo & AsyncRoutineEmulator::STG_BIT_RESTART)
         stagesToGo = m_emulatorForSyncPart.Go(!!surface);
 
-    if (stagesToGo == AsyncRoutineEmulator::STAGE_CALL_EMULATOR)
+    if (stagesToGo == AsyncRoutineEmulator::STG_BIT_CALL_EMULATOR)
         return MFX_ERR_MORE_DATA; // end of encoding session
 
-    if ((stagesToGo & AsyncRoutineEmulator::STAGE_WAIT_ENCODE) == 0)
+    if ((stagesToGo & AsyncRoutineEmulator::STG_BIT_WAIT_ENCODE) == 0)
     {
         status = mfxStatus(MFX_ERR_MORE_DATA_RUN_TASK);
         bs = 0; // no output will be generated

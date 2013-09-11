@@ -1363,7 +1363,34 @@ namespace MfxHwH264Encode
     class AsyncRoutineEmulator
     {
     public:
+        enum {
+            STG_ACCEPT_FRAME,
+            STG_START_LA,
+            STG_WAIT_LA,
+            STG_START_ENCODE,
+            STG_WAIT_ENCODE,
+            STG_COUNT
+        };
+
+        enum {
+            STG_BIT_CALL_EMULATOR = 0,
+            STG_BIT_ACCEPT_FRAME  = 1 << STG_ACCEPT_FRAME,
+            STG_BIT_START_LA      = 1 << STG_START_LA,
+            STG_BIT_WAIT_LA       = 1 << STG_WAIT_LA,
+            STG_BIT_START_ENCODE  = 1 << STG_START_ENCODE,
+            STG_BIT_WAIT_ENCODE   = 1 << STG_WAIT_ENCODE,
+            STG_BIT_RESTART       = 1 << STG_COUNT
+        };
+
+        AsyncRoutineEmulator();
+
+        AsyncRoutineEmulator(MfxVideoParam const & video);
+
         void Init(MfxVideoParam const & video);
+
+        mfxU32 GetTotalGreediness() const;
+
+        mfxU32 GetStageGreediness(mfxU32 i) const;
 
         mfxU32 Go(bool hasInput);
 
@@ -1372,22 +1399,10 @@ namespace MfxHwH264Encode
 
     private:
         enum { QU_INCOMING, QU_REORDERING, QU_LA_STARTED, QU_LA_FINISHED, QA_ENCODING, QA_FREE };
-        enum { STG_ACCEPT_FRAME, STG_START_LA, STG_WAIT_LA, STG_START_ENCODE, STG_WAIT_ENCODE, NUM_STAGES };
 
-        mfxU32 m_stageGreediness[NUM_STAGES];
-        mfxU32 m_queueFullness[NUM_STAGES + 1];
-        mfxU32 m_queueFlush[NUM_STAGES + 1];
-
-    public:
-        enum {
-            STAGE_CALL_EMULATOR = 0,
-            STAGE_ACCEPT_FRAME  = 1 << STG_ACCEPT_FRAME,
-            STAGE_START_LA      = 1 << STG_START_LA,
-            STAGE_WAIT_LA       = 1 << STG_WAIT_LA,
-            STAGE_START_ENCODE  = 1 << STG_START_ENCODE,
-            STAGE_WAIT_ENCODE   = 1 << STG_WAIT_ENCODE,
-            STAGE_RESTART       = 1 << NUM_STAGES
-        };
+        mfxU32 m_stageGreediness[STG_COUNT];
+        mfxU32 m_queueFullness[STG_COUNT + 1];
+        mfxU32 m_queueFlush[STG_COUNT + 1];
     };
 
     struct SVCPAKObject;
@@ -1528,7 +1543,7 @@ namespace MfxHwH264Encode
 
         void OnEncodingSubmitted(DdiTaskIter task);
 
-        void OnEncodingQueried();
+        void OnEncodingQueried(DdiTaskIter task);
 
         void BrcPreEnc(DdiTask const & task);
 
@@ -2508,17 +2523,26 @@ namespace MfxHwH264Encode
         ArrayDpbFrame const & dpb,
         mfxU8                 ref);
 
-    DdiTaskIter FindFrameToEncode(
+    DdiTaskIter ReorderFrame(
         ArrayDpbFrame const & dpb,
         DdiTaskIter           begin,
         DdiTaskIter           end);
 
-    DdiTaskIter FindFrameToEncode(
+    DdiTaskIter ReorderFrame(
         ArrayDpbFrame const & dpb,
         DdiTaskIter           begin,
         DdiTaskIter           end,
         bool                  gopStrict,
         bool                  flush);
+
+    DdiTaskIter FindFrameToStartEncode(
+        MfxVideoParam const & video,
+        DdiTaskIter           begin,
+        DdiTaskIter           end);
+
+    DdiTaskIter FindFrameToWaitEncode(
+        DdiTaskIter begin,
+        DdiTaskIter end);
 
     PairU8 GetFrameType(
         MfxVideoParam const & video,

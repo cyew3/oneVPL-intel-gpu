@@ -907,29 +907,6 @@ mfxU32 MfxHwH264Encode::CalcNumSurfBitstream(MfxVideoParam const & video)
     return (IsFieldCodingPossible(video) ? video.AsyncDepth * 2 : video.AsyncDepth);
 }
 
-mfxU16 MfxHwH264Encode::GetBufferingDepth(MfxVideoParam const & video)
-{
-    mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(video);
-
-    mfxU32 depth = video.mfx.GopRefDist;
-
-    if (video.mfx.RateControlMethod == MFX_RATECONTROL_LA)
-        depth += extOpt2->LookAheadDepth - 1;
-
-    depth += (video.mfx.GopOptFlag & 4) ? (video.mfx.GopRefDist + 10) : 0;
-
-    // more surfaces for async mode
-    depth += video.AsyncDepth - 1;
-
-    // one additional surface for async mode if lookahead is enabled
-    if (video.AsyncDepth > 1 && video.mfx.RateControlMethod == MFX_RATECONTROL_LA)
-        depth += !!extOpt2->LookAheadDepth;
-
-    assert(depth <= 128);
-
-    return mfxU16(depth);
-}
-
 mfxU8 MfxHwH264Encode::GetNumReorderFrames(MfxVideoParam const & video)
 {
     mfxExtCodingOptionDDI * extDdi = GetExtBuffer(video);
