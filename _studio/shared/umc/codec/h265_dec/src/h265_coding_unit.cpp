@@ -161,71 +161,6 @@ void H265CodingUnit::setOutsideCUPart(Ipp32u AbsPartIdx, Ipp32u Depth)
     memset(m_predModeArray + AbsPartIdx, MODE_NONE, SizeInUchar);
 }
 
-/** Get left QpMinCu
-*\param   uiLPartUnitIdx
-*\param   uiCurrAbsIdxInLCU
-*\param   bEnforceSliceRestriction
-*\param   bEnforceDependentSliceRestriction
-*\returns H265CodingUnit*   point of H265CodingUnit of left QpMinCu
-*/
-H265CodingUnit* H265CodingUnit::getQPMinCULeft(Ipp32u& LPartUnitIdx, Ipp32u CurrAbsIdxInLCU)
-{
-    Ipp32u NumPartInCUWidth = m_Frame->getNumPartInWidth();
-    Ipp32u absZorderQpMinCUIdx = (CurrAbsIdxInLCU >> ((m_Frame->getCD()->m_MaxCUDepth - m_SliceHeader->m_PicParamSet->diff_cu_qp_delta_depth) << 1)) <<
-        ((m_Frame->getCD()->m_MaxCUDepth - m_SliceHeader->m_PicParamSet->diff_cu_qp_delta_depth) << 1);
-    Ipp32u AbsRorderQpMinCUIdx = m_zscanToRaster[absZorderQpMinCUIdx];
-
-    // check for left LCU boundary
-    if (RasterAddress::isZeroCol(AbsRorderQpMinCUIdx, NumPartInCUWidth))
-    {
-        return NULL;
-    }
-
-    // get index of left-CU relative to top-left corner of current quantization group
-    LPartUnitIdx = m_rasterToZscan[AbsRorderQpMinCUIdx - 1];
-
-    return m_Frame->getCU(CUAddr);
-}
-
-/** Get Above QpMinCu
-*\param   aPartUnitIdx
-*\param   currAbsIdxInLCU
-*\param   enforceSliceRestriction
-*\param   enforceDependentSliceRestriction
-*\returns TComDataCU*   point of TComDataCU of above QpMinCu
-*/
-H265CodingUnit* H265CodingUnit::getQPMinCUAbove(Ipp32u& aPartUnitIdx, Ipp32u CurrAbsIdxInLCU)
-{
-    Ipp32u numPartInCUWidth = m_Frame->getNumPartInWidth();
-    Ipp32u absZorderQpMinCUIdx = (CurrAbsIdxInLCU >> ((m_Frame->getCD()->m_MaxCUDepth - m_SliceHeader->m_PicParamSet->diff_cu_qp_delta_depth) << 1)) <<
-        ((m_Frame->getCD()->m_MaxCUDepth - m_SliceHeader->m_PicParamSet->diff_cu_qp_delta_depth) << 1);
-    Ipp32u AbsRorderQpMinCUIdx = m_zscanToRaster[absZorderQpMinCUIdx];
-
-    // check for top LCU boundary
-    if (RasterAddress::isZeroRow(AbsRorderQpMinCUIdx, numPartInCUWidth))
-    {
-        return NULL;
-    }
-
-    // get index of top-CU relative to top-left corner of current quantization group
-    aPartUnitIdx = m_rasterToZscan[AbsRorderQpMinCUIdx - numPartInCUWidth];
-
-    // return pointer to current LCU
-    return m_Frame->getCU(CUAddr);
-}
-
-/** Get reference QP from left QpMinCu or latest coded QP
-*\param   uiCurrAbsIdxInLCU
-*\returns Ipp8u   reference QP value
-*/
-Ipp8u H265CodingUnit::getRefQP(Ipp32u CurrAbsIdxInLCU)
-{
-    Ipp32u lPartIdx = 0, aPartIdx = 0;
-    H265CodingUnit* cULeft  = getQPMinCULeft (lPartIdx, m_AbsIdxInLCU + CurrAbsIdxInLCU);
-    H265CodingUnit* cUAbove = getQPMinCUAbove(aPartIdx, m_AbsIdxInLCU + CurrAbsIdxInLCU);
-    return (((cULeft ? cULeft->GetQP(lPartIdx): getLastCodedQP(CurrAbsIdxInLCU)) + (cUAbove ? cUAbove->GetQP(aPartIdx) : getLastCodedQP(CurrAbsIdxInLCU)) + 1) >> 1);
-}
-
 Ipp32s H265CodingUnit::getLastValidPartIdx(Ipp32s AbsPartIdx)
 {
     Ipp32s LastValidPartIdx = AbsPartIdx - 1;
@@ -236,41 +171,6 @@ Ipp32s H265CodingUnit::getLastValidPartIdx(Ipp32s AbsPartIdx)
         LastValidPartIdx -= m_NumPartition >> (Depth << 1);
     }
     return LastValidPartIdx;
-}
-
-Ipp8u H265CodingUnit::getLastCodedQP(Ipp32u AbsPartIdx)
-{
-    Ipp32u QUPartIdxMask = ~((1 << ((m_Frame->getCD()->m_MaxCUDepth - m_SliceHeader->m_PicParamSet->diff_cu_qp_delta_depth) << 1)) - 1);
-    Ipp32s LastValidPartIdx = getLastValidPartIdx(AbsPartIdx & QUPartIdxMask);
-    if (AbsPartIdx < m_NumPartition
-        && (getSCUAddr() + LastValidPartIdx < m_SliceHeader->SliceCurStartCUAddr))
-    {
-        return (Ipp8u)m_SliceHeader->SliceQP;
-    }
-    else
-    if (LastValidPartIdx >= 0)
-    {
-        return GetQP(LastValidPartIdx);
-    }
-    else
-    {
-        // FIXME: Should just remember last valid coded QP for last valid part idx instead of all of the following code
-        if (m_AbsIdxInLCU > 0)
-        {
-            return m_Frame->getCU(CUAddr)->getLastCodedQP(m_AbsIdxInLCU);
-        }
-        else if (m_Frame->m_CodingData->GetInverseCUOrderMap(CUAddr) > 0
-            && m_Frame->m_CodingData->getTileIdxMap(CUAddr) ==
-                m_Frame->m_CodingData->getTileIdxMap(m_Frame->m_CodingData->getCUOrderMap(m_Frame->m_CodingData->GetInverseCUOrderMap(CUAddr) - 1))
-            && !(m_SliceHeader->m_PicParamSet->entropy_coding_sync_enabled_flag && CUAddr % m_Frame->m_CodingData->m_WidthInCU == 0))
-        {
-            return m_Frame->getCU(m_Frame->m_CodingData->getCUOrderMap(m_Frame->m_CodingData->GetInverseCUOrderMap(CUAddr) - 1))->getLastCodedQP(m_Frame->getCD()->getNumPartInCU());
-        }
-        else
-        {
-            return (Ipp8u)m_SliceHeader->SliceQP;
-        }
-    }
 }
 
 /** Check whether the CU is coded in lossless coding mode

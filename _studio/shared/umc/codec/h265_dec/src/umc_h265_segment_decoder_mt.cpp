@@ -370,6 +370,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(H265Task & )
                 // In case previous slice ended on the end of the row and WPP is enabled, CABAC state has to be corrected
                 if (CUAddr % m_pSeqParamSet->WidthInCU == 0)
                 {
+                    m_context->m_LastValidQP = m_pSliceHeader->SliceQP;
                     // CABAC state is already reset, should only restore contexts
                     if (m_pSeqParamSet->WidthInCU > 1 &&
                         m_pCurrentFrame->m_CodingData->GetInverseCUOrderMap(CUAddr + 1 - m_pSeqParamSet->WidthInCU) >= m_pSliceHeader->SliceCurStartCUAddr / m_pCurrentFrame->m_CodingData->m_NumPartitions)
@@ -390,6 +391,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(H265Task & )
         else
         {
             m_context->ResetRowBuffer();
+            m_context->m_LastValidQP = m_pSliceHeader->SliceQP;
             m_context->ResetRecRowBuffer();
         }
     }

@@ -142,8 +142,6 @@ protected:
     // compute scaling factor from POC difference
     Ipp32s GetDistScaleFactor(Ipp32s DiffPocB, Ipp32s DiffPocD);
 
-    Ipp32s getLastValidPartIdx (Ipp32s AbsPartIdx);
-
 public:
 
     H265CodingUnit();
@@ -177,7 +175,6 @@ public:
     void setPredModeSubParts (EnumPredMode Mode, Ipp32u AbsPartIdx, Ipp32u Depth);
     void setSizeSubParts (Ipp32u Width, Ipp32u Height, Ipp32u AbsPartIdx, Ipp32u Depth);
     void setQPSubParts (Ipp32u QP, Ipp32u AbsPartIdx, Ipp32u Depth);
-    Ipp8u getLastCodedQP (Ipp32u AbsPartIdx);
     void setTrIdxSubParts (Ipp32u TrIdx, Ipp32u AbsPartIdx, Ipp32u Depth);
 
     Ipp32u getQuadtreeTULog2MinSizeInCU (Ipp32u Idx);
@@ -218,10 +215,6 @@ public:
     void fillMVPCand (Ipp32u PartIdx, Ipp32u PartAddr, EnumRefPicList RefPicList, Ipp32s RefIdx, AMVPInfo* pInfo);
     bool isDiffMER(Ipp32s xN, Ipp32s yN, Ipp32s xP, Ipp32s yP);
 
-    H265CodingUnit* getQPMinCULeft (Ipp32u& LPartUnitIdx, Ipp32u CurrAbsIdxInLCU);
-    H265CodingUnit* getQPMinCUAbove(Ipp32u& aPartUnitIdx, Ipp32u currAbsIdxInLCU);
-    Ipp8u getRefQP (Ipp32u CurrAbsIdxInLCU);
-
     // member functions for modes ---------------------- (only functions with declaration here. simple get/set are removed)
     bool isBipredRestriction(Ipp32u AbsPartIdx, Ipp32u PartIdx);
 
@@ -234,6 +227,7 @@ public:
     Ipp32u getCoefScanIdx(Ipp32u AbsPartIdx, Ipp32u L2Width, bool IsLuma, bool IsIntra);
 
     void setNDBFilterBlockBorderAvailability(bool independentTileBoundaryEnabled);
+    Ipp32s getLastValidPartIdx(Ipp32s AbsPartIdx);
 };
 
 struct H265FrameHLDNeighborsInfo
@@ -273,90 +267,6 @@ struct H265PUInfo
     Ipp32u PartAddr;
     Ipp32u Width, Height;
 };
-
-namespace RasterAddress
-{
-  /** Check whether 2 addresses point to the same column
-   * \param addrA          First address in raster scan order
-   * \param addrB          Second address in raters scan order
-   * \param numUnitsPerRow Number of units in a row
-   * \return Result of test
-   */
-  static inline bool isEqualCol (Ipp32s addrA, Ipp32s addrB, Ipp32s numUnitsPerRow)
-  {
-    // addrA % numUnitsPerRow == addrB % numUnitsPerRow
-    return ((addrA ^ addrB) & (numUnitsPerRow - 1)) == 0;
-  }
-
-  /** Check whether 2 addresses point to the same row
-   * \param addrA          First address in raster scan order
-   * \param addrB          Second address in raters scan order
-   * \param numUnitsPerRow Number of units in a row
-   * \return Result of test
-   */
-  static inline bool isEqualRow (Ipp32s addrA, Ipp32s addrB, Ipp32s numUnitsPerRow)
-  {
-    // addrA / numUnitsPerRow == addrB / numUnitsPerRow
-    return ((addrA ^ addrB) &~ (numUnitsPerRow - 1)) == 0;
-  }
-
-  /** Check whether 2 addresses point to the same row or column
-   * \param addrA          First address in raster scan order
-   * \param addrB          Second address in raters scan order
-   * \param numUnitsPerRow Number of units in a row
-   * \return Result of test
-   */
-  static inline bool isEqualRowOrCol (Ipp32s addrA, Ipp32s addrB, Ipp32s numUnitsPerRow)
-  {
-    return isEqualCol(addrA, addrB, numUnitsPerRow) | isEqualRow(addrA, addrB, numUnitsPerRow);
-  }
-
-  /** Check whether one address points to the first column
-   * \param addr           Address in raster scan order
-   * \param numUnitsPerRow Number of units in a row
-   * \return Result of test
-   */
-  static inline bool isZeroCol (Ipp32s addr, Ipp32s numUnitsPerRow)
-  {
-    // addr % numUnitsPerRow == 0
-    return (addr & (numUnitsPerRow - 1)) == 0;
-  }
-
-  /** Check whether one address points to the first row
-   * \param addr           Address in raster scan order
-   * \param numUnitsPerRow Number of units in a row
-   * \return Result of test
-   */
-  static inline bool isZeroRow (Ipp32s addr, Ipp32s numUnitsPerRow)
-  {
-    // addr / numUnitsPerRow == 0
-    return (addr &~ (numUnitsPerRow - 1)) == 0;
-  }
-
-  /** Check whether one address points to a column whose index is smaller than a given value
-   * \param addr           Address in raster scan order
-   * \param val            Given column index value
-   * \param numUnitsPerRow Number of units in a row
-   * \return Result of test
-   */
-  static inline bool lessThanCol (Ipp32s addr, Ipp32s val, Ipp32s numUnitsPerRow)
-  {
-    // addr % numUnitsPerRow < val
-    return (addr & (numUnitsPerRow - 1)) < val;
-  }
-
-  /** Check whether one address points to a row whose index is smaller than a given value
-   * \param addr           Address in raster scan order
-   * \param val            Given row index value
-   * \param numUnitsPerRow Number of units in a row
-   * \return Result of test
-   */
-  static inline bool lessThanRow (Ipp32s addr, Ipp32s val, Ipp32s numUnitsPerRow)
-  {
-    // addr / numUnitsPerRow < val
-    return addr < val * numUnitsPerRow;
-  }
-}
 
 } // end namespace UMC_HEVC_DECODER
 

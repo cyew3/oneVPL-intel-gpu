@@ -76,7 +76,10 @@ void DecodingContext::Init(H265Slice *slice)
     m_refPicList[1] = m_frame->GetRefPicList(sliceNum, REF_PIC_LIST_1)->m_refPicList;
 
     if (m_needToSplitDecAndRec && !slice->GetSliceHeader()->dependent_slice_segment_flag)
+    {
         ResetRowBuffer();
+        m_LastValidQP = slice->m_SliceHeader.SliceQP;
+    }
 
     m_mvsDistortion = 0;
 }
@@ -791,7 +794,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
         if ((m_pSeqParamSet->MaxCUSize >> Depth) == m_pPicParamSet->MinCUDQPSize && m_pPicParamSet->cu_qp_delta_enabled_flag)
         {
             m_DecodeDQPFlag = true;
-            pCU->setQPSubParts( pCU->getRefQP(AbsPartIdx), AbsPartIdx, Depth ); // set QP to default QP
+            pCU->setQPSubParts(getRefQP(pCU, AbsPartIdx), AbsPartIdx, Depth);
         }
 
         for ( Ipp32u PartUnitIdx = 0; PartUnitIdx < 4; PartUnitIdx++ )
@@ -823,7 +826,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
         {
             if (m_DecodeDQPFlag)
             {
-                pCU->setQPSubParts(pCU->getRefQP(AbsPartIdx), AbsPartIdx, Depth); // set QP to default QP
+                pCU->setQPSubParts(getRefQP(pCU, AbsPartIdx), AbsPartIdx, Depth);
             }
         }
         return;
@@ -831,7 +834,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
     if ((m_pSeqParamSet->MaxCUSize >> Depth) >= m_pPicParamSet->MinCUDQPSize && m_pPicParamSet->cu_qp_delta_enabled_flag)
     {
         m_DecodeDQPFlag = true;
-        pCU->setQPSubParts(pCU->getRefQP(AbsPartIdx), AbsPartIdx, Depth ); // set QP to default QP
+        pCU->setQPSubParts(getRefQP(pCU, AbsPartIdx), AbsPartIdx, Depth);
     }
 
     bool transquant_bypass = false;
@@ -871,7 +874,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
 
         pCU->setCbfSubParts(0, 0, 0, AbsPartIdx, Depth);
         if (pCU->m_SliceHeader->m_PicParamSet->cu_qp_delta_enabled_flag)
-            pCU->setQPSubParts(m_DecodeDQPFlag ? pCU->getRefQP(AbsPartIdx) : pCU->m_CodedQP, AbsPartIdx, Depth); // set QP to default QP
+            pCU->setQPSubParts(m_DecodeDQPFlag ? getRefQP(pCU, AbsPartIdx) : pCU->m_CodedQP, AbsPartIdx, Depth);
 
         FinishDecodeCU(pCU, AbsPartIdx, Depth, IsLast);
         UpdateNeighborBuffers(pCU, AbsPartIdx, Depth, AbsPartIdx, true, transquant_bypass, false, false);
@@ -893,7 +896,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
             if (pCU->GetIPCMFlag(AbsPartIdx))
             {
                 if (pCU->m_SliceHeader->m_PicParamSet->cu_qp_delta_enabled_flag)
-                    pCU->setQPSubParts(m_DecodeDQPFlag ? pCU->getRefQP(AbsPartIdx) : pCU->m_CodedQP, AbsPartIdx, Depth); // set QP to default QP
+                    pCU->setQPSubParts(m_DecodeDQPFlag ? getRefQP(pCU, AbsPartIdx) : pCU->m_CodedQP, AbsPartIdx, Depth);
 
                 FinishDecodeCU(pCU, AbsPartIdx, Depth, IsLast);
                 UpdateNeighborBuffers(pCU, AbsPartIdx, Depth, AbsPartIdx, false, transquant_bypass, true, false);
@@ -916,7 +919,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
     Ipp32u CurrHeight = pCU->GetHeight(AbsPartIdx);
 
     if (pCU->m_SliceHeader->m_PicParamSet->cu_qp_delta_enabled_flag)
-        pCU->setQPSubParts(m_DecodeDQPFlag ? pCU->getRefQP(AbsPartIdx) : pCU->m_CodedQP, AbsPartIdx, Depth); // set QP to default QP
+        pCU->setQPSubParts(m_DecodeDQPFlag ? getRefQP(pCU, AbsPartIdx) : pCU->m_CodedQP, AbsPartIdx, Depth);
 
     // Coefficient decoding
     DecodeCoeff(pCU, AbsPartIdx, Depth, CurrWidth, CurrHeight, m_DecodeDQPFlag, isFirstPartMerge);
@@ -1824,12 +1827,12 @@ void H265SegmentDecoder::ParseDeltaQPCABAC(H265CodingUnit* pCU, Ipp32u AbsPartId
         if (Sign)
             iDQp = -iDQp;
 
-        qp = (((Ipp32s)pCU->getRefQP(AbsPartIdx) + iDQp + 52 + 2 * QPBdOffsetY) % (52 + QPBdOffsetY)) - QPBdOffsetY;
+        qp = (((Ipp32s)getRefQP(pCU, AbsPartIdx) + iDQp + 52 + 2 * QPBdOffsetY) % (52 + QPBdOffsetY)) - QPBdOffsetY;
     }
     else
     {
         iDQp=0;
-        qp = pCU->getRefQP(AbsPartIdx);
+        qp = getRefQP(pCU, AbsPartIdx);
     }
 
     pCU->setQPSubParts(qp, AbsPartIdx, Depth);
@@ -2608,17 +2611,16 @@ void H265SegmentDecoder::UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPa
 
 void H265SegmentDecoder::UpdateNeighborDecodedQP(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    if (!m_pSliceHeader->slice_deblocking_filter_disabled_flag)
-    {
-        Ipp32s XInc = pCU->m_rasterToPelX[AbsPartIdx] >> m_pSeqParamSet->log2_min_transform_block_size;
-        Ipp32s YInc = pCU->m_rasterToPelY[AbsPartIdx] >> m_pSeqParamSet->log2_min_transform_block_size;
-        Ipp32s PartSize = m_pSeqParamSet->NumPartitionsInCUSize >> Depth;
-        Ipp8u qp = pCU->GetQP(AbsPartIdx);
+    Ipp32s XInc = pCU->m_rasterToPelX[AbsPartIdx] >> m_pSeqParamSet->log2_min_transform_block_size;
+    Ipp32s YInc = pCU->m_rasterToPelY[AbsPartIdx] >> m_pSeqParamSet->log2_min_transform_block_size;
+    Ipp32s PartSize = m_pSeqParamSet->NumPartitionsInCUSize >> Depth;
+    Ipp8u qp = pCU->GetQP(AbsPartIdx);
 
-        for (Ipp32s y = YInc; y < YInc + PartSize; y++)
-            for (Ipp32s x = XInc; x < XInc + PartSize; x++)
-                m_context->m_CurrCTBFlags[m_context->m_CurrCTBStride * y + x].members.qp = qp;
-    }
+    m_context->m_LastValidQP = qp;
+
+    for (Ipp32s y = YInc; y < YInc + PartSize; y++)
+        for (Ipp32s x = XInc; x < XInc + PartSize; x++)
+            m_context->m_CurrCTBFlags[m_context->m_CurrCTBStride * y + x].members.qp = qp;
 }
 
 void H265SegmentDecoder::UpdateRecNeighboursBuffers(Ipp32s PartX, Ipp32s PartY, Ipp32s PartSize, bool IsIntra)
@@ -2756,6 +2758,37 @@ void H265SegmentDecoder::getIntraDirLumaPredictor(H265CodingUnit *pCU, Ipp32u Ab
             IntraDirPred[2] = (LeftIntraDir + AboveIntraDir) < 2 ? INTRA_LUMA_VER_IDX : INTRA_LUMA_DC_IDX;
         }
     }
+}
+
+Ipp8u H265SegmentDecoder::getRefQP(H265CodingUnit *pCU, Ipp32s AbsPartIdx)
+{
+    Ipp32s shift = (m_pSeqParamSet->MaxCUDepth - m_pPicParamSet->diff_cu_qp_delta_depth) << 1;
+    Ipp32u AbsQpMinCUIdx = (AbsPartIdx >> shift) << shift;
+    Ipp32s QPXInc = pCU->m_rasterToPelX[AbsQpMinCUIdx] >> m_pSeqParamSet->log2_min_transform_block_size;
+    Ipp32s QPYInc = pCU->m_rasterToPelY[AbsQpMinCUIdx] >> m_pSeqParamSet->log2_min_transform_block_size;
+    Ipp8u qpL, qpA, lastValidQP;
+
+    if (QPXInc == 0 || QPYInc == 0)
+    {
+        Ipp32s lastValidPartIdx = pCU->getLastValidPartIdx(AbsQpMinCUIdx);
+        if (lastValidPartIdx >= 0)
+            lastValidQP = pCU->GetQP(lastValidPartIdx);
+        else
+            return m_context->m_LastValidQP;
+    }
+
+    if (QPXInc != 0)
+        qpL = m_context->m_CurrCTBFlags[QPYInc * m_context->m_CurrCTBStride + QPXInc - 1].members.qp;
+    else
+        qpL = lastValidQP;
+
+    if (QPYInc != 0)
+        qpA = m_context->m_CurrCTBFlags[(QPYInc - 1) * m_context->m_CurrCTBStride + QPXInc].members.qp;
+    else
+        qpA = lastValidQP;
+
+    m_context->m_LastValidQP = (qpL + qpA + 1) >> 1;
+    return m_context->m_LastValidQP;
 }
 
 static bool inline isDiffMER(Ipp32u plevel, Ipp32s xN, Ipp32s yN, Ipp32s xP, Ipp32s yP)

@@ -84,6 +84,7 @@ public:
     H265FrameHLDNeighborsInfo *m_CurrCTBFlags;
     H265MVInfo *m_CurrCTB;
     Ipp32s m_CurrCTBStride;
+    Ipp8u m_LastValidQP;
 
     // Local context for reconstructing Intra
     std::vector<H265FrameRecNeighborsInfo> m_RecTopNgbrsHolder, m_CurrRecFlagsHolder;
@@ -157,6 +158,7 @@ public:
     void ParseQtCbfCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, EnumTextType Type, Ipp32u TrDepth, Ipp32u Depth);
     void ParseQtRootCbfCABAC(Ipp32u& QtRootCbf);
     void DecodeQP(H265CodingUnit* pCU, Ipp32u AbsPartIdx);
+    Ipp8u getRefQP (H265CodingUnit *pCU, Ipp32s AbsPartIdx);
     void ParseDeltaQPCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void ReadUnarySymbolCABAC(Ipp32u& Value, Ipp32s ctxIdx, Ipp32s Offset);
     void FinishDecodeCU(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& IsLast);
