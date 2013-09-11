@@ -148,6 +148,10 @@ mfxStatus MFXVideoUSER_Register(mfxSession session, mfxU32 type,
         {
             mfxRes = MFX_ERR_NULL_PTR;
         }
+        else if (type > MFX_PLUGINTYPE_VIDEO_ENCODE)
+        {
+            mfxRes = MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
     }
 
     return mfxRes;
@@ -180,6 +184,10 @@ mfxStatus MFXVideoUSER_Unregister(mfxSession session, mfxU32 type)
         if (0 == session)
         {
             mfxRes = MFX_ERR_INVALID_HANDLE;
+        }
+        else if (type > MFX_PLUGINTYPE_VIDEO_ENCODE)
+        {
+            mfxRes = MFX_ERR_UNDEFINED_BEHAVIOR;
         }
     }
 
