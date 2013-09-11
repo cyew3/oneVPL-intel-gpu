@@ -3493,6 +3493,10 @@ void MfxHwH264Encode::SetDefaults(
         (extDdi->LaScaleFactor != 4))
         extDdi->LaScaleFactor = 1;
 
+    if (extDdi->LaScaleFactor == 1) // use LA 2X for TU3-7 by default
+        if (par.mfx.TargetUsage > 2)
+            extDdi->LaScaleFactor = 2;
+    
     if (extDdi->QpUpdateRange == 0)
         extDdi->QpUpdateRange = 10;
 
