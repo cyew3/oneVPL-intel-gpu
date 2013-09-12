@@ -57,7 +57,7 @@ public:
 
     virtual mfxStatus Query(mfxAudioParam *in, mfxAudioParam *out) { return MFXAudioDECODE_Query(m_session, in, out); }
     virtual mfxStatus DecodeHeader(mfxBitstream *bs, mfxAudioParam *par) { return MFXAudioDECODE_DecodeHeader(m_session, bs, par); }
-    virtual mfxStatus QueryIOsize(mfxAudioParam *par, mfxAudioAllocRequest *request) { return MFXAudioDECODE_QueryIOSize(m_session, par, request); }
+    virtual mfxStatus QueryIOSize(mfxAudioParam *par, mfxAudioAllocRequest *request) { return MFXAudioDECODE_QueryIOSize(m_session, par, request); }
     virtual mfxStatus Init(mfxAudioParam *par) { return MFXAudioDECODE_Init(m_session, par); }
     virtual mfxStatus Reset(mfxAudioParam *par) { return MFXAudioDECODE_Reset(m_session, par); }
     virtual mfxStatus Close(void) { return MFXAudioDECODE_Close(m_session); }
