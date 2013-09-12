@@ -32,6 +32,12 @@
 
 #define CLIPVAL(MINVAL, MAXVAL, VAL) (IPP_MAX(MINVAL, IPP_MIN(MAXVAL, VAL)))
 
+#if USE_AGOP
+#define MAX_B_FRAMES 10
+#define MAX_GOP_SEQUENCE 255
+#define MAX_SEQUENCE_COST (0x7FFFFFFF>>1)
+#endif
+
 namespace MfxHwH264Encode
 {
     struct VmeData;
@@ -846,6 +852,9 @@ namespace MfxHwH264Encode
             , m_fieldPicFlag(0)
             , m_fieldCounter(0)
             , m_timeStamp(0)
+#if USE_AGOP
+            , m_cmEventAGOP(0)
+#endif
         {
             Zero(m_ctrl);
             Zero(m_internalListCtrl);
@@ -941,6 +950,12 @@ namespace MfxHwH264Encode
         Pair<mfxMemId>  m_midBit;       // output bitstream
         mfxHDLPair      m_handleRaw;    // native handle to raw surface (self-allocated or given by app)
 
+#if USE_AGOP
+        CmSurface2D *   m_cmRaw4X;      // down-sized input surface for AGOP
+        CmBufferUP *    m_cmMbAGOP;         // macroblock data, VME kernel output
+        CmEvent*        m_cmEventAGOP;
+        void *          m_cmMbSysAGOP;      // pointer to associated system memory buffer
+#endif
         CmSurface2D *   m_cmRaw;        // CM surface made of m_handleRaw
         CmSurface2D *   m_cmRawLa;      // down-sized input surface for Lookahead
         CmBufferUP *    m_cmMb;         // macroblock data, VME kernel output
@@ -1365,6 +1380,9 @@ namespace MfxHwH264Encode
     public:
         enum {
             STG_ACCEPT_FRAME,
+#if USE_AGOP
+            STG_AGOP,
+#endif
             STG_START_LA,
             STG_WAIT_LA,
             STG_START_ENCODE,
@@ -1375,6 +1393,9 @@ namespace MfxHwH264Encode
         enum {
             STG_BIT_CALL_EMULATOR = 0,
             STG_BIT_ACCEPT_FRAME  = 1 << STG_ACCEPT_FRAME,
+#if USE_AGOP
+            STG_BIT_AGOP          = 1 << STG_AGOP,
+#endif
             STG_BIT_START_LA      = 1 << STG_START_LA,
             STG_BIT_WAIT_LA       = 1 << STG_WAIT_LA,
             STG_BIT_START_ENCODE  = 1 << STG_START_ENCODE,
@@ -1537,6 +1558,12 @@ namespace MfxHwH264Encode
 
         void OnNewFrame();
 
+#if USE_AGOP
+        void SubmitAdaptiveGOP();
+
+        void OnAdaptiveGOPSubmitted();
+#endif
+
         void OnLookaheadSubmitted(DdiTaskIter task);
 
         void OnLookaheadQueried();
@@ -1567,11 +1594,13 @@ namespace MfxHwH264Encode
             DdiTask & task,
             mfxU32    ffid);
 
-        mfxU32 RunPreMeCost(
-            FrameTypeAdapt* p0,
-            FrameTypeAdapt* b,
-            FrameTypeAdapt* p1
+#if USE_AGOP
+        mfxU32 RunPreMeAGOP(
+            DdiTask* p0,
+            DdiTask* b,
+            DdiTask* p1
             );
+#endif
 
         mfxStatus AdaptiveGOP(
             mfxEncodeCtrl**           ctrl,
@@ -1628,6 +1657,11 @@ namespace MfxHwH264Encode
 
         std::vector<mfxU32>     m_recFrameOrder; // !!! HACK !!!
 
+#if USE_AGOP
+        MfxFrameAllocResponse   m_raw4X;
+        MfxFrameAllocResponse   m_mbAGOP;
+#endif
+
         MfxFrameAllocResponse   m_raw;
         MfxFrameAllocResponse   m_rawLa;
         MfxFrameAllocResponse   m_mb;
@@ -1653,10 +1687,12 @@ namespace MfxHwH264Encode
         std::vector<VmeData>        m_vmeDataStorage;
         std::vector<VmeData *>      m_tmpVmeData;
 
-        //Adaptive GOP
-        std::vector<FrameTypeAdapt*>    m_bufferedInFrames;
-        std::vector<FrameTypeAdapt*>    m_readyInFrames;
-        FrameTypeGenerator              m_frameTypeGenAdaptiveGOP;
+#if USE_AGOP
+        std::list<DdiTask>  m_adaptiveGOPBuffered;
+        std::list<DdiTask>  m_adaptiveGOPReady;
+        mfxU8 m_bestGOPSequence[MAX_B_FRAMES][MAX_GOP_SEQUENCE+1];
+        mfxU32 m_bestGOPCost[MAX_B_FRAMES];
+#endif
         std::vector<SVCPAKObject>       m_mbData;
     };
 

@@ -30,7 +30,10 @@
 #include "mfx_h264_encode_cm.h"
 #include "mfx_h264_encode_cm_defs.h"
 
+#if USE_AGOP
 #define DEBUG_ADAPT 0
+const char frameType[] = {'U','I','P','U','B'};
+#endif
 
 using namespace MfxHwH264Encode;
 
@@ -793,6 +796,39 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         MFX_CHECK_STS(sts);
     }
 
+#if USE_AGOP
+    if (m_video.mfx.GopOptFlag & 16)//AGOP
+    {
+        if(!m_cmCtx.get() && !m_cmDevice)
+        {
+            m_cmDevice.Reset(CreateCmDevicePtr(m_core));
+            m_cmCtx.reset(new CmContext(m_video, m_cmDevice));
+        }
+
+        mfxU16 widthAGOP = AlignValue<mfxU16>((m_video.mfx.FrameInfo.Width / 4), 16);
+        mfxU16 heightAGOP = AlignValue<mfxU16>((m_video.mfx.FrameInfo.Height / 4), 16);
+
+        request.Info.FourCC = MFX_FOURCC_NV12;
+        request.Type        = MFX_MEMTYPE_D3D_INT;
+        request.NumFrameMin = mfxU16(m_video.mfx.NumRefFrame + m_video.AsyncDepth);
+        request.Info.Width  = widthAGOP;
+        request.Info.Height = heightAGOP;
+
+        sts = m_raw4X.AllocCmSurfaces(m_cmDevice, request);
+        MFX_CHECK_STS(sts);
+
+        //mbdata
+        request.Info.Width  = widthAGOP  / 16 * sizeof(SVCPAKObject);
+        request.Info.Height = heightAGOP / 16;
+        request.Info.FourCC = MFX_FOURCC_P8;
+        request.Type        = MFX_MEMTYPE_D3D_INT;
+        request.NumFrameMin = mfxU16(m_video.mfx.NumRefFrame + m_video.AsyncDepth);
+
+        sts = m_mbAGOP.AllocCmBuffersUp(m_cmDevice, request);
+        MFX_CHECK_STS(sts);
+    }
+#endif
+
     sts = m_ddi->Register(m_bit, D3DDDIFMT_INTELENCODE_BITSTREAMDATA);
     MFX_CHECK_STS(sts);
 
@@ -838,12 +874,12 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     const size_t MAX_FILLER_SIZE = m_video.mfx.FrameInfo.Width * m_video.mfx.FrameInfo.Height;
     m_sei.Alloc(mfxU32(MAX_SEI_SIZE + MAX_FILLER_SIZE));
 
-    m_bufferedInFrames.clear();
-    m_bufferedInFrames.reserve(m_video.mfx.GopRefDist+1); //check mem alloc for surfaces
-    m_readyInFrames.clear();
-    m_readyInFrames.reserve(m_video.mfx.GopRefDist+1); //check mem alloc for surfaces
-    //Init frame type generator for adaptive GOP
-    m_frameTypeGenAdaptiveGOP.Init(m_video);
+#if USE_AGOP
+    for(int i = 0; i<MAX_B_FRAMES; i++)
+    {
+        m_bestGOPCost[i] = MAX_SEQUENCE_COST;
+    }
+#endif
 
     m_videoInit = m_video;
 
@@ -1132,6 +1168,212 @@ void ImplementationAvc::OnNewFrame()
     m_reordering.splice(m_reordering.end(), m_incoming, m_incoming.begin());
 }
 
+#if USE_AGOP
+//submit tasks to estimate possible combinations
+void ImplementationAvc::SubmitAdaptiveGOP()
+{
+    mfxU8 bestForLen[10][100];
+    mfxU32 bestCost[10];
+
+    //should be enough frames to analyse
+    assert(m_adaptiveGOPBuffered.size() > 0);
+//    if(m_adaptiveGOPBuffered.size() == unsigned int(m_video.mfx.GopRefDist + 1) /*||
+//        (m_bufferedInFrames.size()>0 && task->m_yuv == 0)*/)
+    if(m_adaptiveGOPBuffered.size() > 1)
+    {
+        //for random access
+        std::vector<DdiTask*> gopBuffer; //just vector of task ptrs, it is better to work with vector
+        std::list<DdiTask>::iterator it = m_adaptiveGOPBuffered.begin();
+        for(; it != m_adaptiveGOPBuffered.end(); it++)
+            gopBuffer.push_back( &(*it) );
+
+        //check each lens for best cost
+#if 0
+        int maxLen = IPP_MIN(m_adaptiveGOPBuffered.size()-1, m_video.mfx.GopRefDist);
+        for(int len=0; len < maxLen; len++)
+        {
+
+        }
+#endif
+
+        //detect frame type of first frame
+        //first frame will not affect best frame path of future frames on next iter beacause of limited number of B frames 
+        //for this purpose check best pathes for next frames
+        //number of combinations to check 
+        //no B - no combinations
+        //1 B - P BP
+        //2 B - P BP BBP
+
+        //find in a sequence optimal solutions for len 1,2,3,4...GopRefDist
+        //optimum for 1 is P
+        //optimum for 2 is PP or BP
+        //optimum for 3 is PPP, BBP, PBP, BPP (get optimum for len=2 and add one more)
+        //optimum for 4 is PPPP, BBBP, PBBP, PBPP, PPBP, BPBP, BPPP
+
+        int maxLen = IPP_MIN(m_video.mfx.GopRefDist,m_adaptiveGOPBuffered.size()-1);
+        int shiftOffset=1; //how many frames shift to ready query
+        //scan for next I frame 
+        int i;
+        for(i=1; i<maxLen; i++)
+            if(gopBuffer[i]->m_type[0] & MFX_FRAMETYPE_I) break;
+        maxLen = i;
+
+        if(maxLen > 1) //no need to check for only P frames
+        {
+            bestForLen[0][0] = MFX_FRAMETYPE_P;
+            bestForLen[1][0] = MFX_FRAMETYPE_P; //idx==len
+            bestCost[0] = MAX_SEQUENCE_COST;
+            for(int i=1; i<maxLen; i++) //check all possible lengths 
+            {
+                int idx=0;
+                bestCost[i] = MAX_SEQUENCE_COST;
+                mfxU8 bestSequence[2][MAX_B_FRAMES];
+                for(int k=0; k<=i; k++) //try different len of B frames
+                {
+                    //all previous best cases + P frame
+                    //and all B  BB..BP pattern                    
+                    memcpy(&bestSequence[idx][0], &bestForLen[i-k][0], (i-k)*sizeof(mfxU16));
+                    //Set B
+                    for(int l=i-k; l<i; l++) bestSequence[idx][l] = MFX_FRAMETYPE_B;
+                    bestSequence[idx][i] = MFX_FRAMETYPE_P;
+                    //get cost for this path
+            
+                    //calc pash cost
+                    int prevP = 0;
+                    int nextP = 0;
+                    mfxU32 cost = 0;
+                    //find nextP
+                    if(nextP != i )
+                    {
+                        while(bestSequence[idx][nextP] != (mfxU16)MFX_FRAMETYPE_P) nextP++;
+                        nextP++;
+                    }
+#if DEBUG_ADAPT
+                    fprintf(stderr,"path: %d pP:%d %d ", cost, prevP, nextP);
+                    for(int m=0; m<i+1; m++)
+                    {
+                        switch(bestSequence[idx][m])
+                        {
+                        case MFX_FRAMETYPE_I:
+                            fprintf(stderr,"I");
+                            break;
+                        case MFX_FRAMETYPE_B:
+                            fprintf(stderr,"B");
+                            break;
+                        case MFX_FRAMETYPE_P:
+                            fprintf(stderr,"P");
+                            break;
+                        }
+                    }
+                    fprintf(stderr,"\n");
+#endif
+
+                    cost += RunPreMeAGOP(gopBuffer[prevP],
+                        gopBuffer[nextP],
+                        gopBuffer[nextP]);
+                    for(int m=0; m<i+1; m++)
+                    {
+//                        fprintf(stderr,"cost1=%d\n",cost);
+                        if(bestSequence[idx][m] == MFX_FRAMETYPE_B)
+                        {
+                            cost += mfxU32(0.84*RunPreMeAGOP(gopBuffer[prevP],
+                                gopBuffer[m+1],
+                                gopBuffer[nextP]));
+                        }else if(bestSequence[idx][m] == MFX_FRAMETYPE_P)
+                        {
+                            //find nextP
+                            if( m != i) //if not last
+                            {
+                                prevP = m+1;
+                                nextP = prevP;
+                                while(bestSequence[idx][nextP] != (mfxU16)MFX_FRAMETYPE_P) nextP++;
+                                nextP++;
+                                cost += RunPreMeAGOP(gopBuffer[prevP],
+                                    gopBuffer[nextP],
+                                    gopBuffer[nextP]);
+                            }
+                        }
+//                        fprintf(stderr,"cost2=%d\n",cost);
+                    }
+#if DEBUG_ADAPT
+                    fprintf(stderr,"path cost: %d\n", cost);
+#endif
+                    if( cost < bestCost[i] )
+                    {
+                        bestCost[i] = cost;
+                        idx = (++idx)&1;
+                    }
+                }
+                //copy best path
+                idx = (++idx)&1;
+                for(int l=0; l<=i; l++) bestForLen[i+1][l] = bestSequence[idx][l];
+#if DEBUG_ADAPT
+                    fprintf(stderr,"best path: %d %d ", i, bestCost[i]);
+                    for(int m=0; m<i+1; m++)
+                    {
+                        switch(bestSequence[idx][m])
+                        {
+                        case MFX_FRAMETYPE_I:
+                            fprintf(stderr,"I");
+                            break;
+                        case MFX_FRAMETYPE_B:
+                            fprintf(stderr,"B");
+                            break;
+                        case MFX_FRAMETYPE_P:
+                            fprintf(stderr,"P");
+                            break;
+                        }
+                    }
+                    fprintf(stderr,"\n\n");
+#endif
+
+            }
+            //find first P 
+            for(int l=0; l<maxLen; l++)
+            {
+                //gopBuffer[l+1]->m_type[0] = bestForLen[maxLen][l];
+                if(bestForLen[maxLen][l] == MFX_FRAMETYPE_P){ shiftOffset = l+1; break; }  
+            }
+        }
+
+        //move to ready queue std::advance(it,3);
+        std::list<DdiTask>::iterator last = m_adaptiveGOPBuffered.begin();
+        std::advance(last, shiftOffset);
+        m_adaptiveGOPReady.splice(m_adaptiveGOPReady.end(), m_adaptiveGOPBuffered, m_adaptiveGOPBuffered.begin(), last);
+    }
+}
+
+void ImplementationAvc::OnAdaptiveGOPSubmitted()
+{
+    UMC::AutomaticUMCMutex guard(m_listMutex);
+    //if (m_inputFrameType == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+    //    m_core->DecreaseReference(&task->m_yuv->Data);
+    //move one ready frame to reordering queue, if any
+    //check if we have surface for new task
+    if(m_adaptiveGOPReady.size() > 0)
+    {
+        m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_AGOP;
+
+        DdiTask& task = m_adaptiveGOPReady.front();
+        mfxU8 requiredFrameType =  task.m_type[0];
+        if((requiredFrameType & MFX_FRAMETYPE_IPB) == MFX_FRAMETYPE_P )
+            requiredFrameType |= MFX_FRAMETYPE_REF;
+        task.m_type[0] = requiredFrameType;
+        //if (m_inputFrameType == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+            m_core->DecreaseReference(&task.m_yuv->Data);
+        m_reordering.splice(m_reordering.end(), m_adaptiveGOPReady, m_adaptiveGOPReady.begin());
+
+        //Clean up
+        ReleaseResource(m_raw4X, task.m_cmRaw4X);
+        ReleaseResource(m_mbAGOP,    task.m_cmMbAGOP);
+        if (m_cmDevice){
+            m_cmDevice->DestroySurface(task.m_cmRaw);
+            task.m_cmRaw = NULL;
+        }
+        fprintf(stderr,"frame: %c %d\n", frameType[requiredFrameType&MFX_FRAMETYPE_IPB], !!(requiredFrameType&MFX_FRAMETYPE_REF));
+    }
+}
+#endif
 
 void ImplementationAvc::OnLookaheadSubmitted(DdiTaskIter task)
 {
@@ -1158,8 +1400,10 @@ void ImplementationAvc::OnLookaheadQueried()
         {
             ReleaseResource(m_rawLa, iniDpb[i].m_cmRawLa);
             ReleaseResource(m_mb,    iniDpb[i].m_cmMb);
-            if (m_cmDevice)
+            if (m_cmDevice){
                 m_cmDevice->DestroySurface(iniDpb[i].m_cmRaw);
+                iniDpb[i].m_cmRaw = NULL;
+            }
         }
     }
 
@@ -1176,8 +1420,10 @@ void ImplementationAvc::OnLookaheadQueried()
     {
         ReleaseResource(m_rawLa, task.m_cmRawLa);
         ReleaseResource(m_mb,    task.m_cmMb);
-        if (m_cmDevice)
+        if (m_cmDevice){
             m_cmDevice->DestroySurface(task.m_cmRaw);
+            task.m_cmRaw = NULL;
+        }
     }
 
     m_lookaheadFinished.splice(m_lookaheadFinished.end(), m_lookaheadStarted, m_lookaheadStarted.begin());
@@ -1286,11 +1532,29 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
     mfxExtCodingOption    const * extOpt = GetExtBuffer(m_video);
     mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
 
+#if USE_AGOP
+    static int numCall = 0;
+    numCall++;
+#endif
+
     if (m_stagesToGo == 0)
     {
         UMC::AutomaticUMCMutex guard(m_listMutex);
         m_stagesToGo = m_emulatorForAsyncPart.Go(!m_incoming.empty());
     }
+
+#if USE_AGOP
+    fprintf(stderr,"num_calls: %d ", numCall);
+    if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_CALL_EMULATOR) fprintf(stderr, "EMUL ");
+    if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_ACCEPT_FRAME) fprintf(stderr, "ACCEPT ");
+    if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_AGOP) fprintf(stderr, "AGOP ");
+    if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_START_LA) fprintf(stderr, "START_LA ");
+    if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_WAIT_LA) fprintf(stderr, "WAIT_LA ");
+    if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_START_ENCODE) fprintf(stderr, "START_ENCODE ");
+    if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_WAIT_ENCODE) fprintf(stderr, "WAIT_ENCODE ");
+    if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_RESTART) fprintf(stderr, "RESTART ");
+    fprintf(stderr," | ");
+#endif
 
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_ACCEPT_FRAME)
     {
@@ -1352,8 +1616,74 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
         // move task to reordering queue
         //printf("\rACCEPTED      do=%4d eo=%4d type=%d\n", newTask.m_frameOrder, newTask.m_encOrder, newTask.m_type[0]); fflush(stdout);
-        OnNewFrame();
+#if USE_AGOP
+        if(m_video.mfx.GopOptFlag & 16)  //adaptive GOP do reordering by itself, accept new frame
+        {
+            if( newTask.m_yuv != NULL) //not empty task
+            {
+                //copy input surface to video memory
+                newTask.m_idx    = FindFreeResourceIndex(m_raw);
+                newTask.m_midRaw = AcquireResource(m_raw, newTask.m_idx);
+
+                mfxStatus sts = GetNativeHandleToRawSurface(*m_core, m_video, newTask, newTask.m_handleRaw);
+                if (sts != MFX_ERR_NONE)
+                    return Error(sts);
+
+                sts = CopyRawSurfaceToVideoMemory(*m_core, m_video, newTask);
+                if (sts != MFX_ERR_NONE)
+                    return Error(sts);
+
+                //downsample 4X
+                newTask.m_cmRaw = CreateSurface(m_cmDevice, newTask.m_handleRaw.first, m_currentVaType);
+                newTask.m_cmRaw4X = (CmSurface2D *)AcquireResource(m_raw4X);
+                m_cmCtx->DownSample4X(newTask.m_cmRaw, newTask.m_cmRaw4X);
+                //Adding MB data
+                mfxHDLPair cmMb = AcquireResourceUp(m_mbAGOP);
+                newTask.m_cmMbAGOP    = (CmBufferUP *)cmMb.first;
+                newTask.m_cmMbSysAGOP = (void *)cmMb.second;
+                //shift task to buffered adaptive GOP queue
+                {
+                    UMC::AutomaticUMCMutex guard(m_listMutex);
+                    //Lock surface
+                    m_core->IncreaseReference(&newTask.m_yuv->Data);
+                    m_adaptiveGOPBuffered.splice(m_adaptiveGOPBuffered.end(), m_incoming, m_incoming.begin());
+                    m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_ACCEPT_FRAME;
+                }
+            }
+        }else{
+#endif
+            // move task to reordering queue
+            OnNewFrame();
+#if USE_AGOP
+        }
+#endif
     }
+
+#if USE_AGOP
+    if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_AGOP)
+    {
+        if(m_video.mfx.GopOptFlag & 16)
+        {
+            SubmitAdaptiveGOP();
+            OnAdaptiveGOPSubmitted(); //check submitted results, and move to reordering queue
+#if 0
+            UMC::AutomaticUMCMutex guard(m_listMutex);
+//          m_adaptiveGOPBuffered.splice(m_adaptiveGOPBuffered.end(), m_incoming, m_incoming.begin());
+            DdiTask& task = m_adaptiveGOPBuffered.front();
+            m_core->DecreaseReference(&task.m_yuv->Data);
+            ReleaseResource(m_raw4X, task.m_cmRaw4X);
+            ReleaseResource(m_mbAGOP,    task.m_cmMbAGOP);
+            if (m_cmDevice){
+                m_cmDevice->DestroySurface(task.m_cmRaw);
+                task.m_cmRaw = NULL;
+            }
+
+            m_reordering.splice(m_reordering.end(), m_adaptiveGOPBuffered, m_adaptiveGOPBuffered.begin());
+#endif
+        }
+        m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_AGOP;
+    }
+#endif
 
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_START_LA)
     {
@@ -1366,7 +1696,10 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 gopStrict, m_reordering.size() < m_video.mfx.GopRefDist);
         if (task == m_reordering.end())
             return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
-
+#if USE_AGOP
+        if( !task->m_handleRaw.first ) //already done somewhere
+        {
+#endif
         task->m_idx    = FindFreeResourceIndex(m_raw);
         task->m_midRaw = AcquireResource(m_raw, task->m_idx);
 
@@ -1377,7 +1710,9 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         sts = CopyRawSurfaceToVideoMemory(*m_core, m_video, *task);
         if (sts != MFX_ERR_NONE)
             return Error(sts);
-
+#if USE_AGOP
+        }
+#endif
         if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA)
         {
             mfxHDLPair cmMb = AcquireResourceUp(m_mb);
@@ -1388,8 +1723,10 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             task->m_vmeData = FindUnusedVmeData(m_vmeDataStorage);
             if ((!task->m_cmRawLa && extDdi->LaScaleFactor > 1) || !task->m_cmMb || !task->m_cmCurbe || !task->m_vmeData)
                 return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
-
-            task->m_cmRaw = CreateSurface(m_cmDevice, task->m_handleRaw.first, m_currentVaType);
+#if USE_AGOP
+            if(!(task->m_cmRaw)) 
+#endif
+                task->m_cmRaw = CreateSurface(m_cmDevice, task->m_handleRaw.first, m_currentVaType);
         }
 
         ConfigureTask(*task, m_lastTask, m_video);
@@ -1833,12 +2170,12 @@ mfxStatus ImplementationAvc::QueryStatus(
     return MFX_ERR_NONE;
 }
 
-
+#if USE_AGOP
 //Estimate cost of input frames p0 b p1, if b==p1 => only p frame
-mfxU32 ImplementationAvc::RunPreMeCost(
-    FrameTypeAdapt* p0,
-    FrameTypeAdapt* b,
-    FrameTypeAdapt* p1
+mfxU32 ImplementationAvc::RunPreMeAGOP(
+    DdiTask* p0,
+    DdiTask* b,
+    DdiTask* p1
     )
 {
     mfxU16 ftype = MFX_FRAMETYPE_B;
@@ -1854,84 +2191,38 @@ mfxU32 ImplementationAvc::RunPreMeCost(
         }
     }
 #endif
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RunPreMeCost");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RunPreMeAGOP");
 
     //calc biweight
     mfxU32 biWeight = 0;
     if(ftype == MFX_FRAMETYPE_B)
     {
-        mfxU32 td = (p1->m_frameNum - p0->m_frameNum);
+        mfxU32 td = (p1->m_frameOrder - p0->m_frameOrder);
         mfxU32 tx = (16384+td)/td;
-        mfxU32 tb = (b->m_frameNum - p0->m_frameNum);
+        mfxU32 tb = (b->m_frameOrder - p0->m_frameOrder);
         biWeight = (tb*tx+128)>>8;
         //fprintf(stderr,"biW: %d  %d\n", tb*tx+32, biWeight);
     }
 
-/*
-    m_cmCtx->RunVme(q,
-        (IDirect3DSurface9 *)ConvertMidToNativeHandle(*m_core, b->m_surface->Data.MemId),
-        b == p0 ? 0 : (IDirect3DSurface9 *)ConvertMidToNativeHandle(*m_core, p0->m_surface->Data.MemId),
-        b == p1 ? 0 : (IDirect3DSurface9 *)ConvertMidToNativeHandle(*m_core, p1->m_surface->Data.MemId),
-        Begin(m_mbData),
+    b->m_cmEventAGOP = m_cmCtx->RunVmeAGOP(q,
+        b->m_cmRaw4X,
+        b == p0 ? 0 : p0->m_cmRaw4X,
+        b == p1 ? 0 : p1->m_cmRaw4X,
         biWeight,
-        b->m_surface4X,
-        p0->m_surface4X,
-        p1->m_surface4X
-*/
+        b->m_cmMbAGOP
+        );
 
-    b->intraCost = 0;
-    b->interCost = 0;
-    b->totalDist = 0;
-    b->intraDist = 0;
-    b->interDist = 0;
-    b->numIntraMb = 0;
-    b->mb.resize(m_mbData.size());
+    //sync, FIXME move to async
+    CM_STATUS status;
+    do {
+        int res = b->m_cmEventAGOP->GetStatus(status);
+        if (res != CM_SUCCESS)
+            throw CmRuntimeError();
+    } while (status != CM_STATUS_FINISHED);
 
-    mfxU32 fullCost = 0;
-    mfxU32 fullSkip = 0;
-    mfxU32 fullDist = 0;
-    //mfxU32 intraCost = 0;
-    for (size_t i = 0; i < m_mbData.size(); i++)
-    {
-        if( m_mbData[i].IntraMbFlag )
-        {
-            //if(ftype != MFX_FRAMETYPE_B)
-            fullCost += m_mbData[i].intraCost;
-        }else if(!m_mbData[i].SkipMbFlag)
-        {
-            fullCost += m_mbData[i].interCost;
-        }
-        fullDist += m_mbData[i].dist;
-//        fullCost += m_mb[i].dist;
+    mfxU32 cost = 0;
+    m_cmCtx->QueryVmeAGOP(*b, b->m_cmEventAGOP, cost);
 
-        if(m_mbData[i].SkipMbFlag) fullSkip++;
-
-        b->mb[i].intraCost     = m_mbData[i].intraCost;
-        b->mb[i].interCost     = IPP_MIN(m_mbData[i].intraCost, m_mbData[i].interCost);  //?
-        b->mb[i].intraMbFlag   = m_mbData[i].IntraMbFlag;
-        b->mb[i].skipMbFlag    = m_mbData[i].SkipMbFlag;
-        b->mb[i].mbType        = m_mbData[i].MbType5Bits;
-        b->mb[i].subMbShape    = m_mbData[i].SubMbShape;
-        b->mb[i].subMbPredMode = m_mbData[i].SubMbPredMode;
-        b->mb[i].w1            = 32;//mfxU8(extPps->weightedBipredIdc == 2 ? CalcBiWeight(task, 0, 0) : 32);
-        b->mb[i].w0            = 32;//mfxU8(64 - cur->mb[i].w1);
-        b->mb[i].dist          = m_mbData[i].dist;
-        b->mb[i].costCenter0.x = m_mbData[i].costCenter0X;
-        b->mb[i].costCenter0.y = m_mbData[i].costCenter0Y;
-        b->mb[i].costCenter1.x = m_mbData[i].costCenter1X;
-        b->mb[i].costCenter1.y = m_mbData[i].costCenter1Y;
-
-        Copy(b->mb[i].lumaCoeffSum, m_mbData[i].lumaCoeffSum);
-        Copy(b->mb[i].lumaCoeffCnt, m_mbData[i].lumaCoeffCnt);
-        Copy(b->mb[i].mv, m_mbData[i].mv);
-
-        b->intraCost += b->mb[i].intraCost;
-        b->interCost += b->mb[i].interCost;
-        b->numIntraMb += b->mb[i].intraMbFlag;
-    }
-
-    //b->totalDist = b->interDist + b->intraDist;
-    //fprintf(stderr,"inter: %d  intra:%d\n", b->interCost, b->intraCost);
 #if DEBUG_ADAPT
     char* ft="B";
     if(b == p1)
@@ -1945,10 +2236,9 @@ mfxU32 ImplementationAvc::RunPreMeCost(
         p0->m_frameNum, p0->m_frameType, b->m_frameNum, b->m_frameType, p1->m_frameNum, p1->m_frameType);
 #endif
 
-    return fullCost;
-//    return fullDist;
+    return cost;
 }
-
+#endif
 
 mfxStatus ImplementationAvc::UpdateBitstream(
     DdiTask & task,

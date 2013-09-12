@@ -975,15 +975,15 @@ bool CmContext::QueryVme(
     return true;
 }
 
-#if 0
-void CmContext::DownSample(const SurfaceIndex& surf, const SurfaceIndex& surf4X)
+#ifdef USE_DOWN_SAMPLE_KERNELS
+void CmContext::DownSample2X(CmSurface2D* surfOrig, CmSurface2D* surf2X)
 {
-    mfxU32 numMbCols = m_video.mfx.FrameInfo.Width >> 4;
-    mfxU32 numMbRows = m_video.mfx.FrameInfo.Height >> 4;
+    mfxU32 numMbCols = m_video.mfx.FrameInfo.Width >> 2;
+    mfxU32 numMbRows = m_video.mfx.FrameInfo.Height >> 2;
 
     // DownSample source
-    SetKernelArg(m_kernelDownSample, surf, surf4X);
-    CmEvent * e = EnqueueKernel(m_kernelDownSample, numMbCols, numMbRows, CM_NONE_DEPENDENCY);
+    SetKernelArg(m_kernelDownSample4X, GetIndex(surfOrig), GetIndex(surf2X));
+    CmEvent * e = EnqueueKernel(m_kernelDownSample4X, numMbCols, numMbRows, CM_NONE_DEPENDENCY);
     //e->WaitForTaskFinished();
     CM_STATUS status;
     do {
@@ -993,21 +993,36 @@ void CmContext::DownSample(const SurfaceIndex& surf, const SurfaceIndex& surf4X)
     } while (status != CM_STATUS_FINISHED);
 }
 
-void CmContext::RunVme(
-    mfxU32              qp,
-    IDirect3DSurface9 * cur,
-    IDirect3DSurface9 * fwd, //0 for I frame
-    IDirect3DSurface9 * bwd, //0 for P/I frame
-    SVCPAKObject *      mb,  //transfer L0 data
-    mfxU32 biWeight,
-    CmSurface&  cur4X,
-    CmSurface&  fwd4X,
-    CmSurface&  bwd4X
-    )  //transfer L0 data
+void CmContext::DownSample4X(CmSurface2D* surfOrig, CmSurface2D* surf4X)
 {
     mfxU32 numMbCols = m_video.mfx.FrameInfo.Width >> 4;
     mfxU32 numMbRows = m_video.mfx.FrameInfo.Height >> 4;
-    mfxU32 numMb = numMbCols*numMbRows;
+
+    // DownSample source
+    SetKernelArg(m_kernelDownSample4X, GetIndex(surfOrig), GetIndex(surf4X));
+    CmEvent * e = EnqueueKernel(m_kernelDownSample4X, numMbCols, numMbRows, CM_NONE_DEPENDENCY);
+    //e->WaitForTaskFinished();
+    CM_STATUS status;
+    do {
+        int res = e->GetStatus(status);
+        if (res != CM_SUCCESS)
+            throw CmRuntimeError();
+    } while (status != CM_STATUS_FINISHED);
+}
+#endif
+
+#if USE_AGOP
+CmEvent* CmContext::RunVmeAGOP(
+    mfxU32              qp,
+    CmSurface2D* cur,
+    CmSurface2D* fwd, //0 for I frame
+    CmSurface2D* bwd, //0 for P/I frame
+    mfxU32 biWeight,
+    CmBufferUP* mb  //output data
+    ) 
+{
+    mfxU32 numMbCols = m_video.mfx.FrameInfo.Width >> 6;  //work with 4X
+    mfxU32 numMbRows = m_video.mfx.FrameInfo.Height >> 6; //work with 4X
     mfxU16 frameType = MFX_FRAMETYPE_B;
 
     if(!bwd)
@@ -1021,112 +1036,57 @@ void CmContext::RunVme(
     SetCurbeData(curbeData, frameType, qp, biWeight);
     m_curbeData.Write(&curbeData);
 
-    if (curbeData.UseHMEPredictor && (frameType & MFX_FRAMETYPE_PB))
-    {
-        //fprintf(stderr,"frametype=%d\n", frameType);
-            CmKernel * kernelHme = SelectKernelHme(frameType);
-
-            CmSurface2D * fwdRefsArr4X[1] = { (CmSurface2D*)fwd4X  };
-            CmSurface2D * bwdRefsArr4X[1] = { (CmSurface2D*)bwd4X };
-            CmSurface2D ** fwdRefs4X = fwd ? fwdRefsArr4X : 0;
-            CmSurface2D ** bwdRefs4X = bwd ? bwdRefsArr4X : 0;
-            
-            CmSurfaceVme75 refs4X(m_device, CreateVmeSurfaceG75(m_device, cur4X, fwdRefs4X, bwdRefs4X, !!fwd, !!bwd));
-
-            SetKernelArg(kernelHme,
-                m_curbeData.GetIndex(), refs4X, m_hme.GetIndex());
-
-            /*CmEvent * e = */EnqueueKernel(kernelHme, numMbCols >> 2, numMbRows >> 2, CM_NONE_DEPENDENCY);
-            //e->WaitForTaskFinished();
-/* // No need to wait here because all kernels runs in queue sequentially, just wait last kernel
-            CM_STATUS status;
-            do {
-                int res = e->GetStatus(status);
-                if (res != CM_SUCCESS)
-                    throw CmRuntimeError();
-            } while (status != CM_STATUS_FINISHED);
-*/
-#if 0
-            /* print HME vectors */
-            {
-                FILE* fvec = fopen("fvec.txt","a+b");
-                mfxI16Pair *mv4X = new mfxI16Pair[numMbCols * numMbRows * 2];
-                m_hme.Read(mv4X);
-                fprintf(fvec, "HME: frame %i type %i\n", 0, frameType);
-                for (size_t i = 0; i < numMbRows; i++)
-                {
-                    for (size_t j = 0; j < numMbCols; j++)
-                    {
-                        fprintf(fvec, "[%3i,%3i:%3i,%3i]",
-                            mv4X[i*(numMbCols*2)+2*j].x, mv4X[i*(numMbCols*2)+2*j].y, 
-                            mv4X[i*(numMbCols*2)+2*j+1].x, mv4X[i*(numMbCols*2)+2*j+1].y);
-                    }
-                    fprintf(fvec,"\n");
-                }
-                delete[] mv4X;
-                fclose(fvec);
-            }
-#endif
-
-    }
-
-    CmSurface source(m_device, cur);
-    CmSurface forward(m_device, fwd);
-    CmSurface backward(m_device, bwd);
-
-    CmSurface2D * fwdRefsArr[1] = { forward  };
-    CmSurface2D * bwdRefsArr[1] = { backward };
+    CmSurface2D * fwdRefsArr[1] = { fwd };
+    CmSurface2D * bwdRefsArr[1] = { bwd };
     CmSurface2D ** fwdRefs = fwd ? fwdRefsArr : 0;
     CmSurface2D ** bwdRefs = bwd ? bwdRefsArr : 0;
 
-    CmSurfaceVme75 refs(m_device, CreateVmeSurfaceG75(m_device, source, fwdRefs, bwdRefs, !!fwd, !!bwd));
+    CmSurfaceVme75 refs(m_device, CreateVmeSurfaceG75(m_device, cur, fwdRefs, bwdRefs, !!fwd, !!bwd));
 
-    CmKernel * kernel = SelectKernel(frameType);
+    CmKernel * kernel = SelectKernelPreMe(frameType);
 #if 0
     ArrayDpbFrame const & dpb = task.m_dpb[0];
     ArrayU8x33    const & l0  = task.m_list0[0];
     RefMbData * fwdMb = l0.Size() > 0 ? FindByPoc(m_mbData, dpb[l0[0] & 127].m_poc[0]) : 0;
 #endif
-    RefMbData curMb;
-    curMb.mb.Reset(m_device, numMb * sizeof(SVCPAKObject));
 
     SetKernelArg(kernel,
-        m_curbeData.GetIndex(), source.GetIndex(), refs,
-        curMb.mb.GetIndex(), m_hme.GetIndex(),
-        m_nullBuf.GetIndex()//(fwdMb ? fwdMb->mb : m_nullBuf).GetIndex(),
+        m_curbeData.GetIndex(), GetIndex(m_nullBuf)/*orig*/, GetIndex(cur)/*ds surf*/, refs,
+        GetIndex(mb), m_nullBuf.GetIndex()//(fwdMb ? fwdMb->mb : m_nullBuf).GetIndex(),
     );
 
+    return EnqueueKernel(kernel, numMbCols, numMbRows, CM_WAVEFRONT26);
+}
 
-    {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "EnqueueKernel and GetStatus");
-    CmEvent * e = EnqueueKernel(kernel, numMbCols, numMbRows, CM_WAVEFRONT26);
+//query set of tasks and calc stat
+bool CmContext::QueryVmeAGOP(
+    DdiTask const & task,
+    CmEvent *       e,
+    mfxU32& cost)
+{
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "QueryVme");
+    mfxU32 numMbCols = m_video.mfx.FrameInfo.Width >> 6;  //work with 4X
+    mfxU32 numMbRows = m_video.mfx.FrameInfo.Height >> 6; //work with 4X //round?
+    mfxU32 numMb = numMbCols*numMbRows;
 
-    //e->WaitForTaskFinished();
-    CM_STATUS status;
-    do {
-        int res = e->GetStatus(status);
-        if (res != CM_SUCCESS)
-            throw CmRuntimeError();
-    } while (status != CM_STATUS_FINISHED);
+    CM_STATUS status = CM_STATUS_QUEUED;
+    if (e->GetStatus(status) != CM_SUCCESS)
+        throw CmRuntimeError();
+    if (status != CM_STATUS_FINISHED)
+        return false;
 
-    UINT64 time;
-    e->GetExecutionTime(time);
-    }
-
-    //printf("\rstatus %d time %.2f ms\n", status, mfxF64(time / 1000.));
-
-    {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "ReadSurface");
-    curMb.mb.Read(mb);
-    }
+    cost=0;
+    SVCPAKObject * mb = (SVCPAKObject *)task.m_cmMbSysAGOP;
+    mfxVMEUNIIn const & costs = SelectCosts(task.m_type[0]);
 
     for (size_t i = 0; i < numMb; i++)
     {
         if (mb[i].IntraMbFlag)
         {
-            mfxU16 bitCostLambda = mfxU16(Map44LutValueBack(curbeData.ModeCost_1));
+            mfxU16 bitCostLambda = mfxU16(Map44LutValueBack(costs.ModeCost[LUTMODE_INTRA_16x16]));
             assert(mb[i].intraCost >= bitCostLambda);
             mb[i].dist = mb[i].intraCost - bitCostLambda;
+            cost += mb[i].intraCost;
         }
         else
         {
@@ -1136,19 +1096,36 @@ void CmContext::RunVme(
                 mb[i].MbType5Bits != MBTYPE_B_Bi_16x16)
                 assert(0);
 #endif
-            mfxU32 modeCostLambda = Map44LutValueBack(curbeData.ModeCost_8);
-            mfxU32 mvCostLambda   = (frameType & MFX_FRAMETYPE_P)
+            mfxU32 modeCostLambda = Map44LutValueBack(costs.ModeCost[LUTMODE_INTER_16x16]);
+            mfxU32 mvCostLambda   = (task.m_type[0] & MFX_FRAMETYPE_P)
                 ? GetVmeMvCostP(m_lutMvP, mb[i]) : GetVmeMvCostB(m_lutMvB, mb[i]);
             mfxU16 bitCostLambda = mfxU16(IPP_MIN(mb[i].interCost, modeCostLambda + mvCostLambda));
+
             mb[i].dist = mb[i].interCost - bitCostLambda;
+            if(!mb[i].SkipMbFlag)
+                cost += mb[i].interCost;
         }
     }
 
-
-//    Update(m_mbData, task);
-}
-
+    //b->totalDist = b->interDist + b->intraDist;
+    //fprintf(stderr,"inter: %d  intra:%d\n", b->interCost, b->intraCost);
+#if DEBUG_ADAPT
+    char* ft="B";
+    if(b == p1)
+    {
+        ft="P";
+        if(b == p0) ft="I";
+    }
+    fprintf(stderr,"%s:%d fullCost=%d fullDist=%d intraMb:%d  w:%d skip:%d   %d:%d  %d:%d  %d:%d\n",
+        ft, b->m_frameNum, fullCost, fullDist, b->numIntraMb,
+        biWeight, fullSkip,
+        p0->m_frameNum, p0->m_frameType, b->m_frameNum, b->m_frameType, p1->m_frameNum, p1->m_frameType);
 #endif
+
+    return true; 
+}
+#endif
+
 CmKernel * CmContext::SelectKernelPreMe(mfxU32 frameType)
 {
     switch (frameType & MFX_FRAMETYPE_IPB)

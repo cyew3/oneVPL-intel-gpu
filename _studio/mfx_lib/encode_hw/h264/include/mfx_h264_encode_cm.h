@@ -16,6 +16,8 @@
 #include <vector>
 #include <assert.h>
 
+#define USE_AGOP 0
+
 #include "cmrt_cross_platform.h"
 
 class CmDevice;
@@ -30,7 +32,9 @@ class SurfaceIndex;
 class CmThreadSpace;
 class CmTask;
 
-//#define USE_DOWN_SAMPLE_KERNELS
+#if USE_AGOP
+#define USE_DOWN_SAMPLE_KERNELS
+#endif
 
 namespace MfxHwH264Encode
 {
@@ -295,6 +299,28 @@ public:
     bool QueryVme(
         DdiTask const & task,
         CmEvent *       e);
+
+#if USE_AGOP
+    CmEvent*  RunVmeAGOP(
+        mfxU32       qp,
+        CmSurface2D* cur,
+        CmSurface2D* fwd, //0 for I frame
+        CmSurface2D* bwd, //0 for P/I frame
+        mfxU32 biWeight,
+        CmBufferUP* mb  //result output is here
+    );
+
+    bool QueryVmeAGOP(
+        DdiTask const & task,
+        CmEvent *       e,
+        mfxU32&   cost);
+#endif
+
+#ifdef USE_DOWN_SAMPLE_KERNELS
+    void DownSample2X(CmSurface2D* surfOrig, CmSurface2D* surf2X);
+
+    void DownSample4X(CmSurface2D* surfOrig, CmSurface2D* surf4X);
+#endif
 
     int DestroyEvent( CmEvent*& e ){ if(m_queue) return m_queue->DestroyEvent(e); else return 0; } 
 

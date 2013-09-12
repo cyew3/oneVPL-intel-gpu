@@ -1862,6 +1862,9 @@ void AsyncRoutineEmulator::Init(MfxVideoParam const & video)
     {
     case MFX_RATECONTROL_CQP:
         m_stageGreediness[STG_ACCEPT_FRAME] = 1;
+#if USE_AGOP
+        m_stageGreediness[STG_AGOP]         = video.mfx.GopOptFlag & 16 ? video.mfx.GopRefDist+1 : 1; 
+#endif
         m_stageGreediness[STG_START_LA    ] = video.mfx.EncodedOrder ? 1 : video.mfx.GopRefDist;
         m_stageGreediness[STG_WAIT_LA     ] = 1;
         m_stageGreediness[STG_START_ENCODE] = 1 + !!(video.mfx.GopRefDist > 1);
@@ -1869,6 +1872,9 @@ void AsyncRoutineEmulator::Init(MfxVideoParam const & video)
         break;
     case MFX_RATECONTROL_LA:
         m_stageGreediness[STG_ACCEPT_FRAME] = 1;
+#if USE_AGOP
+        m_stageGreediness[STG_AGOP]         = video.mfx.GopOptFlag & 16 ? video.mfx.GopRefDist+1 : 1; 
+#endif
         m_stageGreediness[STG_START_LA    ] = video.mfx.EncodedOrder ? 1 : video.mfx.GopRefDist;
         m_stageGreediness[STG_WAIT_LA     ] = 1 + !!(video.AsyncDepth > 1);
         m_stageGreediness[STG_START_ENCODE] = extOpt2->LookAheadDepth;
@@ -1876,6 +1882,9 @@ void AsyncRoutineEmulator::Init(MfxVideoParam const & video)
         break;
     default:
         m_stageGreediness[STG_ACCEPT_FRAME] = 1;
+#if USE_AGOP
+        m_stageGreediness[STG_AGOP]         = video.mfx.GopOptFlag & 16 ? video.mfx.GopRefDist+1 : 1; 
+#endif
         m_stageGreediness[STG_START_LA    ] = video.mfx.EncodedOrder ? 1 : video.mfx.GopRefDist;
         m_stageGreediness[STG_WAIT_LA     ] = 1;
         m_stageGreediness[STG_START_ENCODE] = 1;
