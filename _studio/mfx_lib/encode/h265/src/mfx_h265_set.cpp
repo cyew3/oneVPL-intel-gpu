@@ -147,6 +147,8 @@ void H265Encoder::PutProfileLevel(H265BsReal *_bs, Ipp8u profile_present_flag, I
     }
 }
 
+#define PUTBITS_32(code) { H265Bs_PutBits(bs, ((Ipp32u)(code)>>16), 16); H265Bs_PutBits(bs, ((code)&0xffff), 16);}
+
 mfxStatus H265Encoder::PutVPS(H265BsReal *_bs)
 {
     Ipp32s i, j;
@@ -181,7 +183,16 @@ mfxStatus H265Encoder::PutVPS(H265BsReal *_bs)
 
     H265Bs_PutBit(bs, vps->vps_timing_info_present_flag);
     if (vps->vps_timing_info_present_flag) {
-        VM_ASSERT(0);
+        PUTBITS_32(vps->vps_num_units_in_tick);
+        PUTBITS_32(vps->vps_time_scale);
+        H265Bs_PutBit(bs, vps->vps_poc_proportional_to_timing_flag);
+        if (vps->vps_poc_proportional_to_timing_flag) {
+            VM_ASSERT(0);
+        }
+        H265Bs_PutVLCCode(bs, vps->vps_num_hrd_parameters);
+        if (vps->vps_num_hrd_parameters) {
+            VM_ASSERT(0);
+        }
     }
     H265Bs_PutBit(bs, vps->vps_extension_flag);
     if (vps->vps_extension_flag) {

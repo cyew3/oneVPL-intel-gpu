@@ -86,6 +86,11 @@ struct H265VideoParam {
     Ipp8s QP;
     Ipp8s QPChroma;
 
+    Ipp32u  FrameRateExtN;
+    Ipp32u  FrameRateExtD;
+    Ipp32u  AspectRatioW;
+    Ipp32u  AspectRatioH;
+
     H265SeqParameterSet *csps;
     H265PicParameterSet *cpps;
     EncoderRefPicList *m_pRefPicList;

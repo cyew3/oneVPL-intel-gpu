@@ -33,6 +33,10 @@ typedef struct sH265VidParameterSet {
     Ipp8u vps_max_layer_id;
     Ipp8u vps_num_layer_sets;
     Ipp8u vps_timing_info_present_flag;
+        Ipp32u  vps_num_units_in_tick;
+        Ipp32u  vps_time_scale;
+        Ipp8u   vps_poc_proportional_to_timing_flag;
+        Ipp32u  vps_num_hrd_parameters;
 } H265VidParameterSet;
 
 typedef struct sH265ProfileLevelSet{

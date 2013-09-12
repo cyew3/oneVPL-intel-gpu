@@ -178,7 +178,10 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
 
         if (surface->Data.Y)
         {
+            MFX_CHECK (surface->Data.UV, MFX_ERR_UNDEFINED_BEHAVIOR);
             MFX_CHECK (surface->Data.Pitch < 0x8000 && surface->Data.Pitch!=0, MFX_ERR_UNDEFINED_BEHAVIOR);
+        } else {
+            MFX_CHECK (!surface->Data.UV, MFX_ERR_UNDEFINED_BEHAVIOR);
         }
     }
 
@@ -192,8 +195,8 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
             return MFX_ERR_INVALID_VIDEO_PARAM;
         }
         m_frameCountSync++;
-        if (surface)
-            m_core->IncreaseReference(&(surface->Data));
+        //if (surface)
+        //    m_core->IncreaseReference(&(surface->Data));
 
         mfxU32 noahead = 1;
 
@@ -590,10 +593,45 @@ mfxStatus MFXVideoENCODEH265::Close()
 
 mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
 {
-//    mfxStatus sts;
+    mfxStatus sts;
 
     MFX_CHECK_NULL_PTR1(par_in);
     MFX_CHECK(m_isInitialized, MFX_ERR_NOT_INITIALIZED);
+
+    sts = CheckExtBuffers_H265enc( par_in->ExtParam, par_in->NumExtParam );
+    if (sts != MFX_ERR_NONE)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    mfxExtCodingOptionHEVC* opts_hevc = (mfxExtCodingOptionHEVC*)GetExtBuffer( par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_HEVCENC );
+    mfxExtOpaqueSurfaceAlloc* opaqAllocReq = (mfxExtOpaqueSurfaceAlloc*)GetExtBuffer( par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION );
+
+    mfxVideoH265InternalParam inInt = *par_in;
+    //mfxVideoH265InternalParam *par = &inInt;
+
+    mfxVideoParam checked_videoParam = *par_in;
+    mfxExtCodingOptionHEVC checked_codingOptionHEVC = *opts_hevc;
+    mfxExtOpaqueSurfaceAlloc checked_opaqAllocReq;
+
+    mfxExtBuffer *ptr_checked_ext[2] = {0};
+    mfxU16 ext_counter = 0;
+
+
+    if (opts_hevc) {
+        checked_codingOptionHEVC = *opts_hevc;
+        ptr_checked_ext[ext_counter++] = &checked_codingOptionHEVC.Header;
+    }
+    if (opaqAllocReq) {
+        checked_opaqAllocReq = *opaqAllocReq;
+        ptr_checked_ext[ext_counter++] = &checked_opaqAllocReq.Header;
+    }
+    m_mfxVideoParam.ExtParam = ptr_checked_ext;
+    m_mfxVideoParam.NumExtParam = ext_counter;
+
+    sts/*Query*/ = Query(par_in, &checked_videoParam); // [has to] copy all provided params
+
+    MFX_CHECK_STS(sts);
+
+    // Not finished implementation
 
     m_frameCountSync = 0;
     m_frameCount = 0;
@@ -1278,6 +1316,10 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
 
     if (MFX_ERR_NONE == status || MFX_ERR_MORE_DATA_RUN_TASK == status || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == status || MFX_ERR_MORE_BITSTREAM == status)
     {
+        // lock surface. If input surface is opaque core will lock both opaque and associated realSurface
+        if (realSurface) {
+            m_core->IncreaseReference(&(realSurface->Data));
+        }
         H265EncodeTaskInputParams *m_pTaskInputParams = (H265EncodeTaskInputParams*)H265_Malloc(sizeof(H265EncodeTaskInputParams));
         // MFX_ERR_MORE_DATA_RUN_TASK means that frame will be buffered and will be encoded later. Output bitstream isn't required for this task
         m_pTaskInputParams->bs = (status == MFX_ERR_MORE_DATA_RUN_TASK) ? 0 : bs;

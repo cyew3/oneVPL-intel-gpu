@@ -226,6 +226,11 @@ mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxE
     pars->Log2MinTUSize = pars->QuadtreeTULog2MinSize;
     pars->MaxTotalDepth = pars->Log2MaxCUSize - pars->Log2MinTUSize;
 
+    pars->FrameRateExtN = param->mfx.FrameInfo.FrameRateExtN;
+    pars->FrameRateExtD = param->mfx.FrameInfo.FrameRateExtD;
+    pars->AspectRatioW  = param->mfx.FrameInfo.AspectRatioW ;
+    pars->AspectRatioH  = param->mfx.FrameInfo.AspectRatioH ;
+
     return MFX_ERR_NONE;
 }
 
@@ -242,6 +247,14 @@ mfxStatus H265Encoder::SetVPS()
     vps->vps_max_num_reorder_pics[0] = (Ipp8u)(m_videoParam.GopRefDist - 1);
     vps->vps_max_latency_increase[0] = 0;
     vps->vps_num_layer_sets = 1;
+
+    if (m_videoParam.FrameRateExtD && m_videoParam.FrameRateExtN) {
+        vps->vps_timing_info_present_flag = 1;
+        vps->vps_num_units_in_tick = m_videoParam.FrameRateExtD / 1;
+        vps->vps_time_scale = m_videoParam.FrameRateExtN;
+        vps->vps_poc_proportional_to_timing_flag = 0;
+        vps->vps_num_hrd_parameters = 0;
+    }
 
     return MFX_ERR_NONE;
 }
