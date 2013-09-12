@@ -68,7 +68,8 @@ File Name: .h
 
 #define HANDLE_EXT_OPTION(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptions, member, OPT_TYPE, description)
 #define HANDLE_EXT_OPTION2(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptions2, member, OPT_TYPE, description)
-#define HANDLE_DDI_OPTION(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptionsDDI, member, OPT_TYPE, "[INTERNAL DDI]: "##VM_STRING(description))
+#define HANDLE_DDI_OPTION(member, OPT_TYPE, description)\
+    {VM_STRING("-")VM_STRING(#member), OPT_TYPE, {&m_extCodingOptionsDDI->member}, VM_STRING("[INTERNAL DDI]: ")VM_STRING(description), NULL}
 #define HANDLE_VSIG_OPTION(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extVideoSignalInfo, member, OPT_TYPE, description)
 #define HANDLE_CAP_OPTION(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extEncoderCapability, member, OPT_TYPE, description)
 #define HANDLE_HEVC_OPTION(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptionsHEVC, member, OPT_TYPE, description)
