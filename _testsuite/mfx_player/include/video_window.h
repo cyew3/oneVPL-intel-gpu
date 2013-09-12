@@ -21,16 +21,6 @@ File Name: .h
 #include <strsafe.h>
 
 
-//
-// Debug Macro
-//
-#if defined(DBG) || defined(DEBUG) || defined(_DEBUG)
-VOID DbgPrint(PCTSTR format, ...);
-#define DBGMSG(x)  {DbgPrint(TEXT("%s :%u : "), TEXT(__FILE__), __LINE__); DbgPrint x;}
-#else   // DBG || DEBUG || _DEBUG
-#define DBGMSG(x)
-#endif  // DBG || DEBUG || _DEBUG
-
 /////////////////////////////////////////////////////////////////////////
 
 class VideoWindow

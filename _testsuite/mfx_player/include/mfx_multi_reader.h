@@ -67,4 +67,11 @@ public:
     {
         return MFX_ERR_NONE;
     }
+    virtual bool isFrameModeEnabled() {
+        IBitstreamReader *current = ItemFromIdx(CurrentItemIdx(&MultiReader::ReadNextFrame));
+        if (current) {
+            return current->isFrameModeEnabled();
+        }
+        return false;
+    }
  };

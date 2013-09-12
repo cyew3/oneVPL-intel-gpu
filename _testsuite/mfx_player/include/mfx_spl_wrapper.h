@@ -59,6 +59,9 @@ public:
     virtual mfxStatus SeekTime(mfxF64 fSeekTo);
     virtual mfxStatus SeekPercent(mfxF64 fSeekTo);
     virtual mfxStatus SeekFrameOffset(mfxU32 nFrameOffset, mfxFrameInfo &in_info);
+    virtual bool isFrameModeEnabled() {
+        return true;
+    }
 protected:
     virtual mfxStatus GetCurrentTimeFromSpl();
     virtual mfxStatus SelectDataReader(const vm_char *strFileName);

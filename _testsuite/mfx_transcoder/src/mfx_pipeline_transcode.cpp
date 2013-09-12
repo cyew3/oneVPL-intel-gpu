@@ -68,7 +68,7 @@ File Name: .h
 
 #define HANDLE_EXT_OPTION(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptions, member, OPT_TYPE, description)
 #define HANDLE_EXT_OPTION2(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptions2, member, OPT_TYPE, description)
-#define HANDLE_DDI_OPTION(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptionsDDI, member, OPT_TYPE, description)
+#define HANDLE_DDI_OPTION(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptionsDDI, member, OPT_TYPE, "[INTERNAL DDI]: "##VM_STRING(description))
 #define HANDLE_VSIG_OPTION(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extVideoSignalInfo, member, OPT_TYPE, description)
 #define HANDLE_CAP_OPTION(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extEncoderCapability, member, OPT_TYPE, description)
 #define HANDLE_HEVC_OPTION(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptionsHEVC, member, OPT_TYPE, description)
@@ -228,9 +228,9 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION2(RepeatPPS,              OPT_TRI_STATE,  ""),
 
         // mfxExtCodingOptionDDI
-        HANDLE_DDI_OPTION(IntraPredCostType,       OPT_UINT_16,    "from DDI: 1=SAD, 2=SSD, 4=SATD_HADAMARD, 8=SATD_HARR"),
-        HANDLE_DDI_OPTION(MEInterpolationMethod,   OPT_UINT_16,    "from DDI: 1=VME4TAP, 2=BILINEAR, 4=WMV4TAP, 8=AVC6TAP"),
-        HANDLE_DDI_OPTION(MEFractionalSearchType,  OPT_UINT_16,    "from DDI: 1=FULL, 2=HALF, 4=SQUARE, 8=HQ, 16=DIAMOND"),
+        HANDLE_DDI_OPTION(IntraPredCostType,       OPT_UINT_16,    "1=SAD, 2=SSD, 4=SATD_HADAMARD, 8=SATD_HARR"),
+        HANDLE_DDI_OPTION(MEInterpolationMethod,   OPT_UINT_16,    "1=VME4TAP, 2=BILINEAR, 4=WMV4TAP, 8=AVC6TAP"),
+        HANDLE_DDI_OPTION(MEFractionalSearchType,  OPT_UINT_16,    "1=FULL, 2=HALF, 4=SQUARE, 8=HQ, 16=DIAMOND"),
         HANDLE_DDI_OPTION(MaxMVs,                  OPT_UINT_16,    ""),
         HANDLE_DDI_OPTION(SkipCheck,               OPT_TRI_STATE,  ""),
         HANDLE_DDI_OPTION(DirectCheck,             OPT_TRI_STATE,  ""),
@@ -241,8 +241,8 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_DDI_OPTION(ChromaInME,              OPT_TRI_STATE,  ""),
         HANDLE_DDI_OPTION(WeightedPrediction,      OPT_TRI_STATE,  ""),
         HANDLE_DDI_OPTION(MVPrediction,            OPT_TRI_STATE,  ""),
-        HANDLE_DDI_OPTION(DDI.IntraPredBlockSize,  OPT_UINT_16,    "from DDI, mask of 1=4x4, 2=8x8, 4=16x16, 8=PCM"),
-        HANDLE_DDI_OPTION(DDI.InterPredBlockSize,  OPT_UINT_16,    "from DDI, mask of 1=16x16, 2=16x8, 4=8x16, 8=8x8, 16=8x4, 32=4x8, 64=4x4"),
+        HANDLE_DDI_OPTION(DDI.IntraPredBlockSize,  OPT_UINT_16,    "mask of 1=4x4, 2=8x8, 4=16x16, 8=PCM"),
+        HANDLE_DDI_OPTION(DDI.InterPredBlockSize,  OPT_UINT_16,    "mask of 1=16x16, 2=16x8, 4=8x16, 8=8x8, 16=8x4, 32=4x8, 64=4x4"),
         HANDLE_DDI_OPTION(BRCPrecision,            OPT_UINT_16,    "0=default=normal, 1=lowest, 2=normal, 3=highest"),
         HANDLE_DDI_OPTION(GlobalSearch,            OPT_UINT_16,    "0=default, 1=long, 2=medium, 3=short"),
         HANDLE_DDI_OPTION(LocalSearch,             OPT_UINT_16,    "0=default, 1=type, 2=small, 3=square, 4=diamond, 5=large diamond, 6=exhaustive, 7=heavy horizontal, 8=heavy vertical"),
@@ -760,7 +760,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             m_bResetParamsStart   = false;
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-ref_list"), VM_STRING("reference list selection for givven frames interval"), OPT_SPECIAL
-            , VM_STRING("start_frame end_frame NumRefFrameL0 NumRefFrameL1 ApplyLongTermIdx <preferredArray Lenght> <rejectedArray Lenght> <longTermdArray Lenght> [array:PreferredRefList:{FrameOrder}] [array:RejectedRefList:{FrameOrder}] [array:LongTermRefLis:{<FrameOrder>[ <space> <LongTermIdx>} ]]")))
+            , VM_STRING("start_frame end_frame NumRefFrameL0 NumRefFrameL1 ApplyLongTermIdx <preferredArray Lenght> <rejectedArray Lenght> <longTermdArray Lenght> [array:PreferredRefList:{FrameOrder}] [array:RejectedRefList:{FrameOrder}] [array:LongTermRefList:{<FrameOrder>[ <space> <LongTermIdx>} ]]")))
         {
             MFX_CHECK(3 + argv < argvEnd);
             mfxU32 nStartFrame, nFinishFrame;
@@ -1585,7 +1585,7 @@ std::auto_ptr<IVideoEncode> MFXTranscodingPipeline::CreateEncoder()
 
     if (m_inParams.bCreateEncFrameInfo )
     {
-        pEncoder.reset(new RefListControlEncode(pEncoder));
+        pEncoder.reset(new EncodedFrameInfoEncoder(pEncoder));
     }
 
     if (m_inParams.EncodedOrder)

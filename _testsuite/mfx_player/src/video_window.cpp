@@ -17,26 +17,6 @@ File Name: .h
 
 static const vm_char CLASS_NAME[] = TEXT("Window Class");
 
-#if defined(DBG) || defined(DEBUG) || defined(_DEBUG)
-VOID DbgPrint(PCTSTR format, ...)
-{
-    va_list args;
-    va_start(args, format);
-
-    vm_char string[MAX_PATH];
-
-    if (SUCCEEDED(StringCbVPrintf(string, sizeof(string), format, args)))
-    {
-        OutputDebugString(string);
-        vm_string_printf(string);
-    }
-    else
-    {
-        DebugBreak();
-    }
-}
-#endif
-
 VideoWindow::VideoWindow()
     : m_nMonitorCurrent()
     , m_nMonitorRequired()
@@ -85,7 +65,7 @@ BOOL VideoWindow::Initialize(const InitParams &refInit)
 
     if (!RegisterClass(&wc))
     {
-        DBGMSG((TEXT("RegisterClass failed with error %d.\n"), GetLastError()));
+        MFX_TRACE_ERR(VM_STRING("RegisterClass failed with error ") << GetLastError());
         return FALSE;
     }
     
@@ -134,7 +114,7 @@ BOOL VideoWindow::Initialize(const InitParams &refInit)
 
     if (!m_Hwnd)
     {
-        DBGMSG((TEXT("CreateWindow failed with error %d.\n"), GetLastError()));
+        MFX_TRACE_ERR(VM_STRING("CreateWindow failed with error ") << GetLastError());
         return FALSE;
     }
 
@@ -178,13 +158,13 @@ BOOL VideoWindow::ChangeFullscreenMode(BOOL bFullscreen)
         //
         if (!GetWindowRect(m_Hwnd, &m_RectWindow))
         {
-            DBGMSG((TEXT("GetWindowRect failed with error %d.\n"), GetLastError()));
+            MFX_TRACE_ERR(VM_STRING("GetWindowRect failed with error ") << GetLastError());
             return FALSE;
         }
 
         if (!SetWindowLongPtr(m_Hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE))
         {
-            DBGMSG((TEXT("SetWindowLongPtr failed with error %d.\n"), GetLastError()));
+            MFX_TRACE_ERR(VM_STRING("SetWindowLongPtr failed with error ") << GetLastError());
             return FALSE;
         }
 
@@ -196,7 +176,7 @@ BOOL VideoWindow::ChangeFullscreenMode(BOOL bFullscreen)
                           GetSystemMetrics(SM_CYSCREEN),
                           SWP_FRAMECHANGED))
         {
-            DBGMSG((TEXT("SetWindowPos failed with error %d.\n"), GetLastError()));
+            MFX_TRACE_ERR(VM_STRING("SetWindowPos failed with error ") << GetLastError());
             return FALSE;
         }
     }
@@ -204,7 +184,7 @@ BOOL VideoWindow::ChangeFullscreenMode(BOOL bFullscreen)
     {
         if (!SetWindowLongPtr(m_Hwnd, GWL_STYLE, WS_OVERLAPPEDWINDOW | WS_VISIBLE))
         {
-            DBGMSG((TEXT("SetWindowLongPtr failed with error %d.\n"), GetLastError()));
+            MFX_TRACE_ERR(VM_STRING("SetWindowLongPtr failed with error ") << GetLastError());
             return FALSE;
         }
 
@@ -219,7 +199,7 @@ BOOL VideoWindow::ChangeFullscreenMode(BOOL bFullscreen)
                           m_RectWindow.bottom - m_RectWindow.top,
                           SWP_FRAMECHANGED))
         {
-            DBGMSG((TEXT("SetWindowPos failed with error %d.\n"), GetLastError()));
+            MFX_TRACE_ERR(VM_STRING("SetWindowPos failed with error ") << GetLastError());
             return FALSE;
         }
     }

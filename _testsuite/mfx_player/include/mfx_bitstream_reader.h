@@ -93,6 +93,10 @@ public:
 
         return m_CbsReader.SetFilePos(nFileOffset, VM_FILE_SEEK_SET);
     }
+    virtual bool isFrameModeEnabled() {
+        return false;
+    }
+
 
 protected:
     //vm_file*         m_fSource;

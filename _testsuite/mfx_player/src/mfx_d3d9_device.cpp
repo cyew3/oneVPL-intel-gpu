@@ -38,7 +38,7 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
 
     if (!m_pD3D9)
     {
-        PipelineTrace((VM_STRING("Direct3DCreate9 failed.\n")));
+        MFX_TRACE_ERR(VM_STRING("Direct3DCreate9 failed"));
         return MFX_ERR_UNKNOWN;
     }
 
@@ -94,7 +94,7 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
 
         if (FAILED(hr))
         {
-            PipelineTrace((VM_STRING("CreateDevice(HAL) failed with error 0x%x.\n"), hr));
+            MFX_TRACE_INFO(VM_STRING("CreateDevice(HAL) failed with error 0x") << std::hex<<hr);
         }
     }
 
@@ -114,7 +114,7 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
 
         if (FAILED(hr))
         {
-            PipelineTrace((VM_STRING("CreateDevice(SW) failed with error 0x%x.\n"), hr));
+            MFX_TRACE_INFO(VM_STRING("CreateDevice(SW) failed with error 0x") << std::hex<<hr);
         }
     }
 
@@ -129,14 +129,14 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
     hr = myDXVA2CreateDirect3DDeviceManager9(&ResetToken, &m_pDeviceManager, pDXVA2libname);
     if (FAILED(hr) || !m_pDeviceManager) 
     {
-        PipelineTrace((VM_STRING("DXVA2CreateDirect3DDeviceManager9 failed with error 0x%x.\n"), hr));
+        MFX_TRACE_ERR(VM_STRING("DXVA2CreateDirect3DDeviceManager9 failed with error 0x") << std::hex<<hr);
         return MFX_ERR_UNKNOWN;
     }
 
     hr = m_pDeviceManager->ResetDevice(m_pD3DD9, ResetToken);
     if (FAILED(hr))
     {
-        PipelineTrace((VM_STRING("ResetDevice failed with error 0x%x.\n"), hr));
+        MFX_TRACE_ERR(VM_STRING("ResetDevice failed with error 0x") << std::hex<<hr);
         return MFX_ERR_UNKNOWN;
     }
 
@@ -173,7 +173,7 @@ mfxStatus MFXD3D9Device::Reset(WindowHandle hWindow,
 
     if (FAILED(hr))
     {
-        PipelineTrace((VM_STRING("Reset failed with error 0x%x.\n"), hr));
+        MFX_TRACE_ERR(VM_STRING("Reset failed with error 0x") << std::hex<<hr);
         return MFX_ERR_UNKNOWN;
     }
 
@@ -203,14 +203,14 @@ IDirect3D9* MFXD3D9Device::myDirect3DCreate9(UINT SDKVersion)
     m_pLibD3D9 = LoadLibrary(_T("d3d9.dll"));
     if (NULL == m_pLibD3D9) 
     { 
-        PipelineTrace((VM_STRING("LoadLibrary(\"d3d9.dll\")) failed with error 0x%x.\n"), GetLastError()));
+        MFX_TRACE_ERR(VM_STRING("LoadLibrary(\"d3d9.dll\")) failed with error ") << GetLastError());
         return NULL;
     }
 
     FUNC1 pFunc = (FUNC1)GetProcAddress(m_pLibD3D9, "Direct3DCreate9"); 
     if (NULL == pFunc) 
     { 
-        PipelineTrace((VM_STRING("GetProcAddress(\"Direct3DCreate9\")  failed with error 0x%x.\n"), GetLastError()));
+        MFX_TRACE_ERR(VM_STRING("GetProcAddress(\"Direct3DCreate9\")  failed with error ")<< GetLastError());
         return NULL;
     }
 
@@ -229,14 +229,14 @@ HRESULT MFXD3D9Device::myDXVA2CreateDirect3DDeviceManager9(UINT* pResetToken,
     m_pLibDXVA2 = LoadLibrary(pDXVA2LibName);
     if (NULL == m_pLibDXVA2) 
     { 
-        PipelineTrace((VM_STRING("LoadLibrary(\"%s\")) failed with error %d.\n"), pDXVA2LibName, GetLastError()));
+        MFX_TRACE_ERR(VM_STRING("LoadLibrary(\"") << pDXVA2LibName <<VM_STRING("\") failed with error ") << GetLastError());
         return NULL;
     }
 
     FUNC2 pFunc = (FUNC2)GetProcAddress(m_pLibDXVA2, "DXVA2CreateDirect3DDeviceManager9");
     if (NULL == pFunc) 
     { 
-        PipelineTrace((VM_STRING("GetProcAddress(\"DXVA2CreateDirect3DDeviceManager9\")  failed with error 0x%x.\n"), GetLastError()));
+        MFX_TRACE_ERR(VM_STRING("GetProcAddress(\"DXVA2CreateDirect3DDeviceManager9\")  failed with error ")<< GetLastError());
         return NULL;
     }
 
@@ -285,13 +285,13 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
 
         case D3DERR_DEVICELOST :
         {
-            PipelineTrace((VM_STRING("TestCooperativeLevel returned D3DERR_DEVICELOST.\n")));
+            MFX_TRACE_ERR(VM_STRING("TestCooperativeLevel returned D3DERR_DEVICELOST"));
             return MFX_ERR_DEVICE_LOST;
         }
 
         case D3DERR_DEVICENOTRESET :
         {
-            PipelineTrace((VM_STRING("TestCooperativeLevel returned D3DERR_DEVICENOTRESET.\n")));
+            MFX_TRACE_ERR(VM_STRING("TestCooperativeLevel returned D3DERR_DEVICENOTRESET"));
             //if (!ResetDevice())
             {
                 return MFX_ERR_UNKNOWN;
@@ -301,7 +301,7 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
 
         default :
         {
-            PipelineTrace((VM_STRING("TestCooperativeLevel failed with error 0x%x.\n"), hr));
+            MFX_TRACE_ERR(VM_STRING("TestCooperativeLevel failed with error 0x") << std::hex<<hr);
             return MFX_ERR_UNKNOWN;
         }
     }
@@ -363,7 +363,7 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
         hr = m_pD3DD9->StretchRect((IDirect3DSurface9*)pSurface->Data.MemId, &source, pBackBuffer, &dest, D3DTEXF_LINEAR);
         if (FAILED(hr))
         {
-            PipelineTrace((VM_STRING("StretchRect failed with error 0x%x.\n"), hr));
+            MFX_TRACE_ERR(VM_STRING("StretchRect failed with error 0x") << std::hex<<hr);
             return MFX_ERR_UNKNOWN;
         }
     }
@@ -375,7 +375,7 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
 
         if (FAILED(hr))
         {
-            PipelineTrace((VM_STRING("Present failed with error 0x%x.\n"), hr));
+            MFX_TRACE_ERR(VM_STRING("Present failed with error 0x") << std::hex<<hr);
             return MFX_ERR_UNKNOWN;
         }
     }

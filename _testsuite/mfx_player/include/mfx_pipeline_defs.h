@@ -308,13 +308,13 @@ if (0 == (expr))\
 
 #define MFX_TRACE_ERR(stream) { \
     tstringstream s;\
-    s<< stream <<std::endl;\
+    s << stream;\
     PipelineSetLastErr(LAST_ERR_OR_UNK(), s.str().c_str(), __TFILE__,__LINE__); \
 }
 
 #define MFX_TRACE_INFO(stream) { \
     tstringstream s;\
-    s<< stream <<std::endl;\
+    s << stream;\
     PipelineTrace((VM_STRING("%s"), s.str().c_str()));\
 }
 

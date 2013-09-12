@@ -191,7 +191,7 @@ BOOL ScreenRender::RegisterSoftwareRasterizer()
 
     if (FAILED(hr))
     {
-        DBGMSG((TEXT("RegisterSoftwareDevice failed with error 0x%x.\n"), hr));
+        MFX_TRACE_ERR(VM_STRING("RegisterSoftwareDevice failed with error 0x") << std::hex<<hr);
         return FALSE;
     }
 
@@ -205,7 +205,7 @@ BOOL ScreenRender::InitializeDevice()
     // Init D3D device manager
     if (MFX_ERR_NONE != m_initParams.pDevice->Reset(m_Hwnd, TRUE == m_pWindow->isWindowed()))
     {
-        DBGMSG((TEXT("MFXD3DDevice::Reset failed\n")));
+        MFX_TRACE_ERR(VM_STRING("MFXD3DDevice::Reset failed\n"));
         return FALSE;
     }
     //if (MFX_ERR_NONE != m_initParams.pDevice->Init(m_nAdapter, m_Hwnd, TRUE == m_pWindow->isWindowed(), VIDEO_RENDER_TARGET_FORMAT, 1, NULL))
@@ -253,7 +253,7 @@ BOOL ScreenRender::EnableDwmQueuing()
 
     if (FAILED(hr))
     {
-        DBGMSG((TEXT("DwmIsCompositionEnabled failed with error 0x%x.\n"), hr));
+        MFX_TRACE_ERR(VM_STRING("DwmIsCompositionEnabled failed with error 0x") << std::hex<<hr);
         return FALSE;
     }
 
@@ -266,7 +266,7 @@ BOOL ScreenRender::EnableDwmQueuing()
         if (FAILED(hr))
         {
             if (!m_bDwmQueuingDisabledPrinted) {
-                DBGMSG((TEXT("DwmEnableComposition failed with error 0x%x.\n"), hr));
+                MFX_TRACE_ERR(VM_STRING("DwmEnableComposition failed with error 0x") << std::hex<<hr);
             }
         }
         hr = ((PFNDWMISCOMPOSITIONENABLED) m_pfnDwmIsCompositionEnabled)(&bDWM);
@@ -305,7 +305,7 @@ BOOL ScreenRender::EnableDwmQueuing()
 
     if (FAILED(hr))
     {
-        DBGMSG((TEXT("DwmGetCompositionTimingInfo failed with error 0x%x.\n"), hr));
+        MFX_TRACE_ERR(VM_STRING("DwmGetCompositionTimingInfo failed with error 0x") << std::hex<<hr);
         return FALSE;
     }
 
@@ -328,7 +328,7 @@ BOOL ScreenRender::EnableDwmQueuing()
 
     if (FAILED(hr))
     {
-        DBGMSG((TEXT("DwmSetPresentParameters failed with error 0x%x.\n"), hr));
+        MFX_TRACE_ERR(VM_STRING("DwmSetPresentParameters failed with error 0x") << std::hex<<hr);
         return FALSE;
     }
 
@@ -461,7 +461,7 @@ LONGLONG ScreenRender::GetTimestamp()
     {
         if (m_bDspFrameDrop)
         {
-            DBGMSG((TEXT("Frame dropped %u frame(s).\n"), delta - 1));
+            MFX_TRACE_INFO(VM_STRING("Frame(s) dropped ") << delta - 1);
         }
     }
 
@@ -618,7 +618,7 @@ BOOL ScreenRender::InitializeTimer()
 
     if (!m_hTimer)
     {
-        DBGMSG((TEXT("CreateWaitableTimer failed with error %d.\n"), GetLastError()));
+        MFX_TRACE_ERR(VM_STRING("CreateWaitableTimer failed with error ") << GetLastError());
         return FALSE;
     }
 
@@ -634,7 +634,7 @@ BOOL ScreenRender::InitializeTimer()
                           NULL,
                           FALSE))
     {
-        DBGMSG((TEXT("SetWaitableTimer failed with error %d.\n"), GetLastError()));
+        MFX_TRACE_ERR(VM_STRING("SetWaitableTimer failed with error ") << GetLastError());
         return FALSE;
     }
 
@@ -710,7 +710,7 @@ BOOL ScreenRender::InitializeModule()
 
     if (!m_hRgb9rastDLL)
     {
-        DBGMSG((TEXT("LoadLibrary(rgb9rast.dll) failed with error %d.\n"), GetLastError()));
+        MFX_TRACE_ERR(VM_STRING("LoadLibrary(rgb9rast.dll) failed with error ") << GetLastError());
         goto SKIP_RGB9RAST;
     }
 
@@ -718,7 +718,7 @@ BOOL ScreenRender::InitializeModule()
 
     if (!m_pfnD3D9GetSWInfo)
     {
-        DBGMSG((TEXT("GetProcAddress(D3D9GetSWInfo) failed with error %d.\n"), GetLastError()));
+        MFX_TRACE_ERR(VM_STRING("GetProcAddress(D3D9GetSWInfo) failed with error ") << GetLastError());
         return FALSE;
     }
 
@@ -728,7 +728,7 @@ SKIP_RGB9RAST:
 
     if (!m_hDwmApiDLL)
     {
-        DBGMSG((TEXT("LoadLibrary(dwmapi.dll) failed with error %d.\n"), GetLastError()));
+        MFX_TRACE_ERR(VM_STRING("LoadLibrary(dwmapi.dll) failed with error ") << GetLastError());
         goto SKIP_DWMAPI;
     }
 
@@ -736,7 +736,7 @@ SKIP_RGB9RAST:
 
     if (!m_pfnDwmIsCompositionEnabled)
     {
-        DBGMSG((TEXT("GetProcAddress(DwmIsCompositionEnabled) failed with error %d.\n"), GetLastError()));
+        MFX_TRACE_ERR(VM_STRING("GetProcAddress(DwmIsCompositionEnabled) failed with error ") << GetLastError());
         return FALSE;
     }
 
@@ -744,7 +744,7 @@ SKIP_RGB9RAST:
 
     if (!m_pfnDwmEnableComposition)
     {
-        DBGMSG((TEXT("GetProcAddress(DwmEnableComposition) failed with error %d.\n"), GetLastError()));
+        MFX_TRACE_ERR(VM_STRING("GetProcAddress(DwmEnableComposition) failed with error ") << GetLastError());
         return FALSE;
     }
 
@@ -752,7 +752,7 @@ SKIP_RGB9RAST:
 
     if (!m_pfnDwmGetCompositionTimingInfo)
     {
-        DBGMSG((TEXT("GetProcAddress(DwmGetCompositionTimingInfo) failed with error %d.\n"), GetLastError()));
+        MFX_TRACE_ERR(VM_STRING("GetProcAddress(DwmGetCompositionTimingInfo) failed with error ") << GetLastError());
         return FALSE;
     }
 
@@ -760,7 +760,7 @@ SKIP_RGB9RAST:
 
     if (!m_pfnDwmSetPresentParameters)
     {
-        DBGMSG((TEXT("GetProcAddress(DwmSetPresentParameters) failed with error %d.\n"), GetLastError()));
+        MFX_TRACE_ERR(VM_STRING("GetProcAddress(DwmSetPresentParameters) failed with error ") << GetLastError());
         return FALSE;
     }
 

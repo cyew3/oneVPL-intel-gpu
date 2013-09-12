@@ -220,7 +220,8 @@ mfxStatus BufferedBitstreamReader::ReadNextFrame(mfxBitstream2 &bs)
             m_BufferedFrames[m_CurrFrame].DataLength - m_CurrFrameOffset : 0);
 
         //if there already frame offset means we didnt read whole frame on previous call
-        if (0 == m_CurrFrameOffset && nShouldCopy && nShouldCopy < m_BufferedFrames[m_CurrFrame].DataLength)
+        //dont trace warning if not in frame mode
+        if (m_pTarget->isFrameModeEnabled() && 0 == m_CurrFrameOffset && nShouldCopy && nShouldCopy < m_BufferedFrames[m_CurrFrame].DataLength)
         {
             PipelineTraceForce((VM_STRING("WARNING: [BufferedBitstreamReader]: cannot copy whole frame, frame_size=%u, buffer_size=%u\n")
                 , m_BufferedFrames[m_CurrFrame].DataLength

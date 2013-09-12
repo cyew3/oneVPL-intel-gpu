@@ -40,6 +40,8 @@ public:
     virtual mfxStatus SeekPercent(mfxF64 fSeekTo) = 0;
     //reposition to specific frames number offset in  input stream
     virtual mfxStatus SeekFrameOffset(mfxU32 nFrameOffset, mfxFrameInfo &in_info) = 0;
+    //for splitters that returns 1
+    virtual bool isFrameModeEnabled() = 0;
 };
 
 template <>
@@ -78,5 +80,8 @@ public:
     virtual mfxStatus SeekFrameOffset(mfxU32 nFrameOffset, mfxFrameInfo &in_info)
     {
         return m_pTarget->SeekFrameOffset(nFrameOffset, in_info);
+    }
+    virtual bool isFrameModeEnabled() {
+        return m_pTarget->isFrameModeEnabled();
     }
 };
