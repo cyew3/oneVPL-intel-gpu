@@ -2760,8 +2760,6 @@ namespace
 
 void LookAheadBrc2::Init(MfxVideoParam const & video)
 {
-    assert(video.mfx.RateControlMethod == MFX_RATECONTROL_LA);
-
     mfxExtCodingOptionDDI const * extDdi  = GetExtBuffer(video);
     mfxExtCodingOption2 const *   extOpt2 = GetExtBuffer(video);
     m_lookAhead     = extOpt2->LookAheadDepth - extDdi->LookAheadDep;
@@ -2999,6 +2997,98 @@ mfxU32 LookAheadBrc2::Report(mfxU32 /*frameType*/, mfxU32 dataLength, mfxU32 /*u
 
 mfxU32 LookAheadBrc2::GetMinFrameSize()
 {
+    return 0;
+}
+
+
+void LookAheadCrfBrc::Init(MfxVideoParam const & video)
+{
+    LookAheadBrc2::Init(video);
+    m_curBaseQp = video.mfx.CRFQuality;
+}
+
+mfxU8 LookAheadCrfBrc::GetQp(mfxU32 frameType, mfxU32 /*picStruct*/)
+{
+    brcprintf("\r%4d: do=%4d type=%c Rt=%7.3f-%7.3f curc=%4d numc=%2d ", m_laData[0].encOrder, m_laData[0].poc/2,
+        GetFrameTypeLetter(frameType), m_targetRateMin, m_targetRateMax, m_laData[0].interCost / m_totNumMb, mfxU32(m_laData.size()));
+
+    mfxF64 totalEstRate[52] = { 0.0 };
+
+    for (mfxU32 qp = 0; qp < 52; qp++)
+    {
+        mfxF64 rateCoeff = m_rateCoeffHistory[qp].GetCoeff();
+        for (mfxU32 i = 0; i < m_laData.size(); i++)
+        {
+            m_laData[i].estRateTotal[qp] = IPP_MAX(MIN_EST_RATE, rateCoeff * m_laData[i].estRate[qp]);
+            totalEstRate[qp] += m_laData[i].estRateTotal[qp];
+        }
+    }
+
+    //mfxF64 targetRate = totalEstRate[m_curBaseQp];
+
+    mfxI32 maxDeltaQp = INT_MIN;
+    if (m_lookAheadDep > 0)
+    {
+        mfxF64 strength = 0.03 * m_curBaseQp + .75;
+        for (mfxU32 i = 0; i < m_laData.size(); i++)
+        {
+            mfxU32 intraCost    = m_laData[i].intraCost;
+            mfxU32 interCost    = m_laData[i].interCost;
+            mfxU32 propCost     = m_laData[i].propCost;
+            mfxF64 ratio        = 1.0;//mfxF64(interCost) / intraCost;
+            mfxF64 deltaQp      = log((intraCost + propCost * ratio) / intraCost) / log(2.0);
+            m_laData[i].deltaQp = (interCost >= intraCost * 0.9)
+                ? -mfxI32(deltaQp * 2 * strength + 0.5)
+                : -mfxI32(deltaQp * 1 * strength + 0.5);
+            maxDeltaQp = IPP_MAX(maxDeltaQp, m_laData[i].deltaQp);
+        }
+    }
+    else
+    {
+        for (mfxU32 i = 0; i < m_laData.size(); i++)
+        {
+            mfxU32 intraCost    = m_laData[i].intraCost;
+            mfxU32 interCost    = m_laData[i].interCost;
+            m_laData[i].deltaQp = (interCost >= intraCost * 0.9) ? -5 : m_laData[i].bframe ? 0 : -2;
+            maxDeltaQp = IPP_MAX(maxDeltaQp, m_laData[i].deltaQp);
+        }
+    }
+
+    for (mfxU32 i = 0; i < m_laData.size(); i++)
+        m_laData[i].deltaQp -= maxDeltaQp;
+
+    //mfxI32 qp = SelectQp(m_laData, targetRate);
+
+    m_curQp = CLIPVAL(1, 51, m_curBaseQp + m_laData[0].deltaQp); // driver doesn't support qp=0
+
+    brcprintf("bqp=%2d qp=%2d dqp=%2d erate=%7.3f ", m_curBaseQp, m_curQp, m_laData[0].deltaQp, m_laData[0].estRateTotal[m_curQp]); 
+
+    return mfxU8(m_curQp);
+}
+
+mfxU32 LookAheadCrfBrc::Report(mfxU32 /*frameType*/, mfxU32 dataLength, mfxU32 /*userDataLength*/, mfxU32 /*repack*/, mfxU32 /*picOrder*/)
+{
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "LookAheadBrc2::Report");
+    mfxF64 realRatePerMb = 8 * dataLength / mfxF64(m_totNumMb);
+
+    mfxF64 oldCoeff = m_rateCoeffHistory[m_curQp].GetCoeff();
+    mfxF64 y = IPP_MAX(0.0, realRatePerMb);
+    mfxF64 x = m_laData[0].estRate[m_curQp];
+    mfxF64 minY = NORM_EST_RATE * INIT_RATE_COEFF[m_curQp] * MIN_RATE_COEFF_CHANGE;
+    mfxF64 maxY = NORM_EST_RATE * INIT_RATE_COEFF[m_curQp] * MAX_RATE_COEFF_CHANGE;
+    y = CLIPVAL(minY, maxY, y / x * NORM_EST_RATE); 
+    m_rateCoeffHistory[m_curQp].Add(NORM_EST_RATE, y);
+    mfxF64 ratio = m_rateCoeffHistory[m_curQp].GetCoeff() / oldCoeff;
+    for (mfxI32 i = -m_qpUpdateRange; i <= m_qpUpdateRange; i++)
+        if (i != 0 && m_curQp + i >= 0 && m_curQp + i < 52)
+        {
+            mfxF64 r = ((ratio - 1.0) * (1.0 - abs(i)/(m_qpUpdateRange + 1)) + 1.0);
+            m_rateCoeffHistory[m_curQp + i].Add(NORM_EST_RATE,
+                NORM_EST_RATE * m_rateCoeffHistory[m_curQp + i].GetCoeff() * r);
+        }
+
+    brcprintf("rrate=%6.3f newCoeff=%5.3f\n", realRatePerMb, m_rateCoeffHistory[m_curQp].GetCoeff());
+
     return 0;
 }
 
@@ -5367,7 +5457,15 @@ mfxU32 MfxHwH264Encode::CalcBiWeight(
         : biWeight;
 }
 
-
+BrcIface * MfxHwH264Encode::CreateBrc(MfxVideoParam const & video)
+{
+    switch (video.mfx.RateControlMethod)
+    {
+    case MFX_RATECONTROL_LA: return new LookAheadBrc2;
+    case MFX_RATECONTROL_CRF: return new LookAheadCrfBrc;
+    default: return new UmcBrc;
+    }
+}
 
 
 #endif // MFX_ENABLE_H264_VIDEO_ENCODE_HW

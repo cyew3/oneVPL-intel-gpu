@@ -1147,6 +1147,8 @@ namespace MfxHwH264Encode
         virtual mfxU32 GetMinFrameSize() = 0;
     };
 
+    BrcIface * CreateBrc(MfxVideoParam const & video);
+    
     class Brc : public BrcIface
     {
     public:
@@ -1258,7 +1260,7 @@ namespace MfxHwH264Encode
             mfxU32  bframe;
         };
 
-    private:
+    protected:
         mfxU32  m_lookAhead;
         mfxU32  m_lookAheadDep;
         mfxU16  m_LaScaleFactor;
@@ -1275,6 +1277,14 @@ namespace MfxHwH264Encode
 
         std::vector<LaFrameData>    m_laData;
         Regression<20>              m_rateCoeffHistory[52];
+    };
+
+    class LookAheadCrfBrc : public LookAheadBrc2 // for now Crf Brc is derived directly from LookaheadBrc2
+    {
+    public:
+        void Init(MfxVideoParam const & video);
+        mfxU8 GetQp(mfxU32 frameType, mfxU32 picStruct);
+        mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder);
     };
 
     class Hrd

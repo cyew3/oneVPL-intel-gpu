@@ -131,6 +131,8 @@ protected:
     mfxU16                          m_OldAccuracy;
     mfxU16                          m_OldConvergence;
 
+    mfxU16                          m_CRFQuality;
+
     //////////////////////////////////////////////////////////////////////////
     mfxI32                          m_BitRate;
     mfxI32                          m_MaxBitrate;

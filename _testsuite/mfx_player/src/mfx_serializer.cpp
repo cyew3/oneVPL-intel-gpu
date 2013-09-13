@@ -354,6 +354,11 @@ void MFXStructureRef <mfxInfoMFX>::ConstructValues () const
             SERIALIZE_INT(TargetKbps);
             SERIALIZE_INT(Convergence);
         }
+        else if (MFX_RATECONTROL_CRF == m_pStruct->RateControlMethod)
+        {
+            SERIALIZE_INT(BufferSizeInKB);
+            SERIALIZE_INT(CRFQuality);
+        }
         else
         {
             SERIALIZE_INT(InitialDelayInKB);
