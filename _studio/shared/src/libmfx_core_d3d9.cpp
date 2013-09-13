@@ -618,7 +618,7 @@ mfxStatus D3D9VideoCORE::GetD3DService(mfxU16 , mfxU16 , IDirectXVideoDecoderSer
     if (sts != MFX_ERR_NONE)
         return sts;
 
-    D3D9VideoCORE::InitializeService(isTemporal);
+    sts = D3D9VideoCORE::InitializeService(isTemporal);
     if (sts != MFX_ERR_NONE)
         return sts;
 

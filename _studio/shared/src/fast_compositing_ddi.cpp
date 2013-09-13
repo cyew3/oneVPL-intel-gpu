@@ -184,10 +184,11 @@ mfxStatus FastCompositingDDI::CreateDevice(VideoCORE * core, mfxVideoParam* par,
     MFX_CHECK_NULL_PTR1( hwCore );
 
     IDirectXVideoDecoderService *pVideoService = NULL;
-    
-    hwCore->m_pAdapter.get()->GetD3DService(1920, 1080, &pVideoService, isTemporal);
 
-    mfxStatus sts = Initialize(hwCore->m_pAdapter.get()->GetD3D9DeviceManager(), pVideoService);
+    mfxStatus sts = hwCore->m_pAdapter.get()->GetD3DService(1920, 1080, &pVideoService, isTemporal);
+    MFX_CHECK_STS(sts);
+
+    sts = Initialize(hwCore->m_pAdapter.get()->GetD3D9DeviceManager(), pVideoService);
 
     return sts;
 
