@@ -220,8 +220,9 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(AnalyzeChroma);
     SERIALIZE_INT(SignBitHiding);
     SERIALIZE_INT(RDOQuant);
-    SERIALIZE_INT(SplitThresholdStrengthCU);
-    SERIALIZE_INT(SplitThresholdStrengthTU);
+    SERIALIZE_INT(SplitThresholdStrengthCUIntra);
+    SERIALIZE_INT(SplitThresholdStrengthTUIntra);
+    SERIALIZE_INT(SplitThresholdStrengthCUInter);
     SERIALIZE_INT(IntraNumCand1_2);
     SERIALIZE_INT(IntraNumCand1_3);
     SERIALIZE_INT(IntraNumCand1_4);

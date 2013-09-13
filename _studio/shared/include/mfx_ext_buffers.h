@@ -167,8 +167,9 @@ typedef struct {
     mfxU16      AnalyzeChroma;              /* tri-state option */
     mfxU16      SignBitHiding;
     mfxU16      RDOQuant;
-    mfxU16      SplitThresholdStrengthCU;
-    mfxU16      SplitThresholdStrengthTU;
+    mfxU16      SplitThresholdStrengthCUIntra;
+    mfxU16      SplitThresholdStrengthTUIntra;
+    mfxU16      SplitThresholdStrengthCUInter;
     mfxU16      IntraNumCand1_2;
     mfxU16      IntraNumCand1_3;
     mfxU16      IntraNumCand1_4;

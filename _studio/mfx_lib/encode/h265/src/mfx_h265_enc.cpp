@@ -116,8 +116,9 @@ mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxE
     if (opts_hevc->AnalyzeChroma == MFX_CODINGOPTION_ON)
         pars->AnalyseFlags |= HEVC_ANALYSE_CHROMA;
 
-    pars->SplitThresholdStrengthCU = (Ipp8u)opts_hevc->SplitThresholdStrengthCU;
-    pars->SplitThresholdStrengthTU = (Ipp8u)opts_hevc->SplitThresholdStrengthTU;
+    pars->SplitThresholdStrengthCUIntra = (Ipp8u)opts_hevc->SplitThresholdStrengthCUIntra;
+    pars->SplitThresholdStrengthTUIntra = (Ipp8u)opts_hevc->SplitThresholdStrengthTUIntra;
+    pars->SplitThresholdStrengthCUInter = (Ipp8u)opts_hevc->SplitThresholdStrengthCUInter;
 
     pars->SBHFlag  = (opts_hevc->SignBitHiding == MFX_CODINGOPTION_ON);
     pars->RDOQFlag = (opts_hevc->RDOQuant == MFX_CODINGOPTION_ON);
@@ -563,13 +564,16 @@ mfxStatus H265Encoder::Init(mfxVideoH265InternalParam *param, mfxExtCodingOption
     }
 
     for (Ipp32s i = 0; i < m_videoParam.MaxTotalDepth; i++) {
-        m_videoParam.cu_split_threshold_cu[i] = h265_calc_split_threshold(0, m_videoParam.Log2MaxCUSize - i,
-            m_videoParam.SplitThresholdStrengthCU, m_videoParam.QP);
-        m_videoParam.cu_split_threshold_tu[i] = h265_calc_split_threshold(1, m_videoParam.Log2MaxCUSize - i,
-            m_videoParam.SplitThresholdStrengthTU, m_videoParam.QP);
+        m_videoParam.cu_split_threshold_cu_intra[i] = h265_calc_split_threshold(0, m_videoParam.Log2MaxCUSize - i,
+            m_videoParam.SplitThresholdStrengthCUIntra, m_videoParam.QP);
+        m_videoParam.cu_split_threshold_tu_intra[i] = h265_calc_split_threshold(1, m_videoParam.Log2MaxCUSize - i,
+            m_videoParam.SplitThresholdStrengthTUIntra, m_videoParam.QP);
+        m_videoParam.cu_split_threshold_cu_inter[i] = h265_calc_split_threshold(0, m_videoParam.Log2MaxCUSize - i,
+            m_videoParam.SplitThresholdStrengthCUInter, m_videoParam.QP);
     }
     for (Ipp32s i = m_videoParam.MaxTotalDepth; i < MAX_TOTAL_DEPTH; i++) {
-        m_videoParam.cu_split_threshold_cu[i] = m_videoParam.cu_split_threshold_tu[i] = 0;
+        m_videoParam.cu_split_threshold_cu_intra[i] = m_videoParam.cu_split_threshold_tu_intra[i] =
+            m_videoParam.cu_split_threshold_cu_inter[i] = 0;
     }
 
 

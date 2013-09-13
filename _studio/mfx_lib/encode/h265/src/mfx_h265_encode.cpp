@@ -46,15 +46,15 @@
 
 #define CHECK_EXTBUF_SIZE(ebuf, errcounter) if ((ebuf).Header.BufferSz != sizeof(ebuf)) {(errcounter) = (errcounter) + 1;}
 
-mfxExtCodingOptionHEVC hevc_tu_tab[8] = {               // CUS CUD 2TUS 2TUD  AnalyzeChroma         SignBitHiding          RDOQuant              thrCU,TU 5numCand1  5numCand2  WPP
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF, 1, 1,    6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN }, // tu default (==4)
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 6,  4, 5,2, 5,5,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,  0, 0,    8,8,4,4,4, 4,4,2,2,2, MFX_CODINGOPTION_UNKNOWN }, // tu 1
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF, 1, 1,    6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN }, // tu 2  (==4)
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF, 1, 1,    6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN }, // tu 3  (==4)
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF, 1, 1,    6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN }, // tu 4
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF, 1, 1,    6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN }, // tu 5  (==4)
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF, 1, 1,    6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN }, // tu 6  (==4)
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  2, 4,2, 2,2,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_OFF, 2, 2,    4,4,2,2,2, 2,2,1,1,1, MFX_CODINGOPTION_UNKNOWN }  // tu 7
+mfxExtCodingOptionHEVC hevc_tu_tab[8] = {               // CUS CUD 2TUS 2TUD  AnalyzeChroma         SignBitHiding          RDOQuant              thrCU,TU,CUInter 5numCand1  5numCand2  WPP
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF, 1, 1, 1,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN }, // tu default (==4)
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 6,  4, 5,2, 5,5,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,  0, 0, 0,         8,8,4,4,4, 4,4,2,2,2, MFX_CODINGOPTION_UNKNOWN }, // tu 1
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF, 1, 1, 1,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN }, // tu 2  (==4)
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF, 1, 1, 1,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN }, // tu 3  (==4)
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF, 1, 1, 1,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN }, // tu 4
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF, 1, 1, 1,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN }, // tu 5  (==4)
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF, 1, 1, 1,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN }, // tu 6  (==4)
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  2, 4,2, 2,2,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_OFF, 2, 2, 2,         4,4,2,2,2, 2,2,1,1,1, MFX_CODINGOPTION_UNKNOWN }  // tu 7
 };
 
 #define H265_MAXREFDIST 1
@@ -718,8 +718,9 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
             optsHEVC->AnalyzeChroma = 1;              /* tri-state option */
             optsHEVC->SignBitHiding = 1;
             optsHEVC->RDOQuant = 1;
-            optsHEVC->SplitThresholdStrengthCU = 1;
-            optsHEVC->SplitThresholdStrengthTU = 1;
+            optsHEVC->SplitThresholdStrengthCUIntra = 1;
+            optsHEVC->SplitThresholdStrengthTUIntra = 1;
+            optsHEVC->SplitThresholdStrengthCUInter = 1;
             optsHEVC->IntraNumCand1_2 = 1;
             optsHEVC->IntraNumCand1_3 = 1;
             optsHEVC->IntraNumCand1_4 = 1;
@@ -1074,15 +1075,20 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
                 isCorrected++;
             }
 
-            if (opts_in->SplitThresholdStrengthCU > 3) {
-                opts_out->SplitThresholdStrengthCU = 0;
+            if (opts_in->SplitThresholdStrengthCUIntra > 3) {
+                opts_out->SplitThresholdStrengthCUIntra = 0;
                 isInvalid ++;
-            } else opts_out->SplitThresholdStrengthCU = opts_in->SplitThresholdStrengthCU;
+            } else opts_out->SplitThresholdStrengthCUIntra = opts_in->SplitThresholdStrengthCUIntra;
 
-            if (opts_in->SplitThresholdStrengthTU > 3) {
-                opts_out->SplitThresholdStrengthTU = 0;
+            if (opts_in->SplitThresholdStrengthTUIntra > 3) {
+                opts_out->SplitThresholdStrengthTUIntra = 0;
                 isInvalid ++;
-            } else opts_out->SplitThresholdStrengthTU = opts_in->SplitThresholdStrengthTU;
+            } else opts_out->SplitThresholdStrengthTUIntra = opts_in->SplitThresholdStrengthTUIntra;
+
+            if (opts_in->SplitThresholdStrengthCUInter > 3) {
+                opts_out->SplitThresholdStrengthCUInter = 0;
+                isInvalid ++;
+            } else opts_out->SplitThresholdStrengthCUInter = opts_in->SplitThresholdStrengthCUInter;
 
 #define CHECK_NUMCAND(field)                 \
     if (opts_in->field > maxnum) {           \

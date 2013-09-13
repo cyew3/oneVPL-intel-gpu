@@ -528,7 +528,7 @@ void H265CU::InitCU(H265VideoParam *_par, H265CUData *_data, H265CUData *_data_t
               rd_lambda *= 0.46;
               break;
           case B_SLICE:
-              rd_lambda *= MAX(2,MIN(4,(par->QP - 12)/6));
+              rd_lambda *= 0.46 * MAX(2,MIN(4,(par->QP - 12)/6));
               break;
           case I_SLICE:
           default:
@@ -1139,7 +1139,8 @@ void H265CU::ModeDecision(Ipp32u abs_part_idx, Ipp32u offset, Ipp8u depth, CostT
         }
     }
 
-    if (cost_best >= par->cu_split_threshold_cu[depth] && split_mode != SPLIT_NONE) {
+    CostType cu_split_threshold_cu = cslice->slice_type == I_SLICE ? par->cu_split_threshold_cu_intra[depth] : par->cu_split_threshold_cu_inter[depth];
+    if (cost_best >= cu_split_threshold_cu && split_mode != SPLIT_NONE) {
         // restore ctx
         if (rd_opt_flag)
             bsf->CtxRestore(ctx_save[0], 0, NUM_CABAC_CONTEXT);
@@ -1261,7 +1262,7 @@ void H265CU::CalcCostLuma(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u depth,
         }
     }
 
-    if (cost_best >= par->cu_split_threshold_tu[depth+tr_depth] && split_mode != SPLIT_NONE) {
+    if (cost_best >= par->cu_split_threshold_tu_intra[depth+tr_depth] && split_mode != SPLIT_NONE) {
         // restore ctx
         if (rd_opt_flag)
             bsf->CtxRestore(ctx_save[0], h265_ctxIdxOffset[QT_CBF_HEVC], NUM_CTX_TU);
