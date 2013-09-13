@@ -260,6 +260,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     if (stsQuery == MFX_ERR_UNSUPPORTED &&
          ( (par_in->mfx.NumSlice > 0 && m_mfxVideoParam.mfx.NumSlice == 0) ||
            (par_in->IOPattern != 0 && m_mfxVideoParam.IOPattern == 0) ||
+           (par_in->mfx.RateControlMethod != 0 && m_mfxVideoParam.mfx.RateControlMethod == 0) ||
            (par_in->mfx.FrameInfo.PicStruct != 0 && m_mfxVideoParam.mfx.FrameInfo.PicStruct == 0) ||
            (par_in->mfx.FrameInfo.FrameRateExtN != 0 && m_mfxVideoParam.mfx.FrameInfo.FrameRateExtN == 0) ||
            (par_in->mfx.FrameInfo.FrameRateExtD != 0 && m_mfxVideoParam.mfx.FrameInfo.FrameRateExtD == 0) ||
@@ -933,9 +934,9 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
         // RC
 
         if (in->mfx.RateControlMethod != 0 &&
-            in->mfx.RateControlMethod != MFX_RATECONTROL_CBR && in->mfx.RateControlMethod != MFX_RATECONTROL_VBR && in->mfx.RateControlMethod != MFX_RATECONTROL_CQP && in->mfx.RateControlMethod != MFX_RATECONTROL_AVBR) {
-            out->mfx.RateControlMethod = MFX_RATECONTROL_VBR;
-            isCorrected ++;
+            in->mfx.RateControlMethod != MFX_RATECONTROL_CBR && in->mfx.RateControlMethod != MFX_RATECONTROL_VBR && in->mfx.RateControlMethod != MFX_RATECONTROL_CQP) {
+            out->mfx.RateControlMethod = 0;
+            isInvalid ++;
         } else out->mfx.RateControlMethod = in->mfx.RateControlMethod;
 
         out->calcParam.BufferSizeInKB = in->calcParam.BufferSizeInKB;
