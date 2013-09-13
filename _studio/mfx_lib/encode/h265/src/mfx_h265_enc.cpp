@@ -1404,7 +1404,7 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
                 end_of_slice_flag) {
 #ifdef DEBUG_CABAC
                 int d = DEBUG_CABAC_PRINT;
-                DEBUG_CABAC_PRINT = 0;
+                DEBUG_CABAC_PRINT = 1;
 #endif
                 if (!end_of_slice_flag)
                     bs[ithread].EncodeSingleBin_CABAC(CTX(&bs[ithread],END_OF_SLICE_FLAG_HEVC), 1);

@@ -331,6 +331,7 @@ public:
     void CalcCostLuma(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u depth,
                           Ipp8u tr_depth, CostOpt cost_opt,
                           Ipp8u part_size, Ipp8u luma_dir, CostType *cost);
+    CostType CalcCostSkip(Ipp32u abs_part_idx, Ipp8u depth);
 
     CostType ME_CU(Ipp32u abs_part_idx, Ipp8u depth, Ipp32s offset);
     void ME_PU(H265MEInfo* me_info);
