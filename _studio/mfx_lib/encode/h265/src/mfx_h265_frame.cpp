@@ -11,6 +11,7 @@
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #include "mfx_h265_defs.h"
+#include "vm_file.h"
 
 #define ALIGN_VALUE 16
 // template to align a pointer
@@ -145,18 +146,16 @@ void H265Frame::doPadding()
     doPaddingPlane(v, pitch_chroma, width>>1, height>>1, padding>>1, padding>>1);*/
 }
 
-void H265Frame::Dump(H265VideoParam *par, H265FrameList *dpb, Ipp32s frame_num)
+void H265Frame::Dump(const vm_char* fname, H265VideoParam *par, H265FrameList *dpb, Ipp32s frame_num)
 {
-#ifdef DUMP_RECON
-//    char fname[128];
-    char *fname = "rec.yuv";
-//    mfxU8 buf[2048];
-    FILE *f;
+
+    vm_file *f;
     mfxU8* fbuf = NULL;
     Ipp32s W = par->Width;
     Ipp32s H = par->Height;
-//    mfxU8* fbuf = 0;
-//    sprintf(fname, "rec%dx%d_l%d_q%d.yuv", W, H, core_enc->m_svc_layer.svc_ext.dependency_id, core_enc->m_svc_layer.svc_ext.quality_id);
+
+    if (!fname || !fname[0])
+        return;
 
     Ipp32s numlater = 0; // number of dumped frames with later POC
     if (m_PicCodType == MFX_FRAMETYPE_B) {
@@ -167,48 +166,41 @@ void H265Frame::Dump(H265VideoParam *par, H265FrameList *dpb, Ipp32s frame_num)
         }
     }
     if ( numlater ) { // simple reorder for B: read last ref, replacing with B, write ref
+        f = vm_file_fopen(fname,VM_STRING("r+b"));
+        if (!f) return;
         fbuf = new mfxU8[numlater*W*H*3/2];
-        f = fopen(fname,"r+b");
-        fseek(f, -numlater*W*H*3/2, SEEK_END);
-        fread(fbuf, 1, numlater*W*H*3/2, f);
-        //fclose(f);
-        //f = fopen(fname,"r+b");
-        fseek(f, -numlater*W*H*3/2, SEEK_END);
+        vm_file_fseek(f, -numlater*W*H*3/2, VM_FILE_SEEK_END);
+        vm_file_fread(fbuf, 1, numlater*W*H*3/2, f);
+        vm_file_fseek(f, -numlater*W*H*3/2, VM_FILE_SEEK_END);
     } else {
-        f = fopen(fname, frame_num ? "a+b" : "wb");
+        f = vm_file_fopen(fname, frame_num ? VM_STRING("a+b") : VM_STRING("wb"));
+        if (!f) return;
     }
 
     if (f == NULL)
         return;
 
-    int i;//,j;
+    int i;
     mfxU8 *p = y;
     for (i = 0; i < H; i++) {
-        fwrite(p, 1, W, f);
+        vm_file_fwrite(p, 1, W, f);
         p += pitch_luma;
     }
     p = u;
     for (i = 0; i < H >> 1; i++) {
-/*        for (j = 0; j < W >> 1; j++) {
-            buf[j] = p[j];
-        }*/
-        fwrite(p, 1, W >> 1, f);
+        vm_file_fwrite(p, 1, W >> 1, f);
         p += pitch_chroma;
     }
     p = v;
     for (i = 0; i < H >> 1; i++) {
-/*        for (j = 0; j < W >> 1; j++) {
-            buf[j] = p[j];
-        }*/
-        fwrite(p, 1, W >> 1, f);
+        vm_file_fwrite(p, 1, W >> 1, f);
         p += pitch_chroma;
     }
     if (fbuf) {
-        fwrite(fbuf, 1, numlater*W*H*3/2, f);
+        vm_file_fwrite(fbuf, 1, numlater*W*H*3/2, f);
         delete[] fbuf;
     }
-    fclose(f);
-#endif
+    vm_file_fclose(f);
 }
 
 void H265Frame::Destroy()

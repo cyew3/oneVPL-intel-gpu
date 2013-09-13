@@ -172,7 +172,7 @@ public:
     void doPadding();
 
     void Destroy();
-    void Dump(H265VideoParam *par, H265FrameList *dpb, Ipp32s frame_num);
+    void Dump(const vm_char* filename, H265VideoParam *par, H265FrameList *dpb, Ipp32s frame_num);
 };
 
 class H265FrameList

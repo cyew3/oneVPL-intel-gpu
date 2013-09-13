@@ -160,6 +160,8 @@ public:
 
     H265BRC *m_brc;
 
+    const vm_char *m_recon_dump_file_name;
+
     H265Encoder() {
         memBuf = NULL; bs = NULL; bsf = NULL;
         data_temp = NULL;
@@ -171,6 +173,7 @@ public:
         m_pRefPicList = NULL;
         m_brc = NULL;
         m_context_array_wpp = NULL;
+        m_recon_dump_file_name = NULL;
     }
     ~H265Encoder() {};
 ///////////////

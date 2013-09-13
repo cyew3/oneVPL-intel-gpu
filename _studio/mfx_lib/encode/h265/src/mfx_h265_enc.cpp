@@ -1760,7 +1760,7 @@ recode:
 
     m_pCurrentFrame->swapData(m_pReconstructFrame);
     m_pCurrentFrame->setWasEncoded();
-    m_pCurrentFrame->Dump(&m_videoParam, &m_dpb, m_frameCountEncoded);
+    m_pCurrentFrame->Dump(m_recon_dump_file_name, &m_videoParam, &m_dpb, m_frameCountEncoded);
 //    mfxBS->TimeStamp = m_pCurrentFrame->TimeStamp;
 
     CleanDPB();

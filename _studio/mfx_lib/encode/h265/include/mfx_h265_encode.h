@@ -99,6 +99,7 @@ protected:
     VideoCORE *m_core;
     mfxVideoH265InternalParam            m_mfxVideoParam;
     mfxExtCodingOptionHEVC               m_mfxHEVCOpts;
+    mfxExtDumpFiles                      m_mfxDumpFiles;
     H265Encoder *m_enc;
 
     mfxU32                 m_frameCountSync; // counter for sync. part

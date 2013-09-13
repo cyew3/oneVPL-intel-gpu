@@ -115,7 +115,7 @@ inline Ipp32u h265enc_ConvertBitrate(mfxU16 TargetKbps)
 mfxStatus CheckExtBuffers_H265enc(mfxExtBuffer** ebuffers, mfxU32 nbuffers)
 {
 
-    mfxU32 ID_list[] = { MFX_EXTBUFF_HEVCENC, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION };
+    mfxU32 ID_list[] = { MFX_EXTBUFF_HEVCENC, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, MFX_EXTBUFF_DUMP };
 
     mfxU32 ID_found[sizeof(ID_list)/sizeof(ID_list[0])] = {0,};
     if (!ebuffers) return MFX_ERR_NONE;
@@ -232,15 +232,17 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 
     mfxExtCodingOptionHEVC* opts_hevc = (mfxExtCodingOptionHEVC*)GetExtBuffer( par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_HEVCENC );
     mfxExtOpaqueSurfaceAlloc* opaqAllocReq = (mfxExtOpaqueSurfaceAlloc*)GetExtBuffer( par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION );
+    mfxExtDumpFiles* opts_Dump = (mfxExtDumpFiles*)GetExtBuffer( par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_DUMP );
 
     mfxVideoH265InternalParam inInt = *par_in;
     mfxVideoH265InternalParam *par = &inInt;
 
     mfxExtOpaqueSurfaceAlloc checked_opaqAllocReq;
-    mfxExtBuffer *ptr_checked_ext[2] = {0};
+    mfxExtBuffer *ptr_checked_ext[3] = {0};
     mfxU16 ext_counter = 0;
     memset(&m_mfxVideoParam,0,sizeof(mfxVideoParam));
     memset(&m_mfxHEVCOpts,0,sizeof(m_mfxHEVCOpts));
+    memset(&m_mfxDumpFiles,0,sizeof(m_mfxDumpFiles));
 
     if (opts_hevc) {
         m_mfxHEVCOpts.Header.BufferId = MFX_EXTBUFF_HEVCENC;
@@ -250,6 +252,11 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     if (opaqAllocReq) {
         checked_opaqAllocReq = *opaqAllocReq;
         ptr_checked_ext[ext_counter++] = &checked_opaqAllocReq.Header;
+    }
+    if (opts_Dump) {
+        m_mfxDumpFiles.Header.BufferId = MFX_EXTBUFF_DUMP;
+        m_mfxDumpFiles.Header.BufferSz = sizeof(m_mfxDumpFiles);
+        ptr_checked_ext[ext_counter++] = &m_mfxDumpFiles.Header;
     }
     m_mfxVideoParam.ExtParam = ptr_checked_ext;
     m_mfxVideoParam.NumExtParam = ext_counter;
@@ -555,6 +562,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     m_enc->mfx_video_encode_h265_ptr = this;
     sts =  m_enc->Init(&m_mfxVideoParam, &m_mfxHEVCOpts);
     MFX_CHECK_STS(sts);
+    m_enc->m_recon_dump_file_name = m_mfxDumpFiles.ReconFilename[0] ? m_mfxDumpFiles.ReconFilename : NULL;
 
     m_isInitialized = true;
 
@@ -725,6 +733,13 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
             optsHEVC->WPP = 1;
         }
 
+        mfxExtDumpFiles* optsDump = (mfxExtDumpFiles*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_DUMP );
+        if (optsDump != 0) {
+            mfxExtBuffer HeaderCopy = optsDump->Header;
+            memset( optsDump, 0, sizeof( mfxExtDumpFiles ));
+            optsDump->Header = HeaderCopy;
+            optsDump->ReconFilename[0] = 1;
+        }
         // ignore all reserved
     } else { //Check options for correctness
         mfxVideoH265InternalParam inInt = *par_in;
@@ -742,13 +757,18 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
 
         const mfxExtCodingOptionHEVC* opts_in  = (mfxExtCodingOptionHEVC*)GetExtBuffer(  in->ExtParam,  in->NumExtParam, MFX_EXTBUFF_HEVCENC );
         mfxExtCodingOptionHEVC*       opts_out = (mfxExtCodingOptionHEVC*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_HEVCENC );
+        const mfxExtDumpFiles* optsDump_in = (mfxExtDumpFiles*)GetExtBuffer( in->ExtParam, in->NumExtParam, MFX_EXTBUFF_DUMP );
+        mfxExtDumpFiles* optsDump_out = (mfxExtDumpFiles*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_DUMP );
 
         if (opts_in           ) CHECK_EXTBUF_SIZE( *opts_in,            isInvalid)
         if (opts_out          ) CHECK_EXTBUF_SIZE( *opts_out,           isInvalid)
+        if (optsDump_in       ) CHECK_EXTBUF_SIZE( *optsDump_in,        isInvalid)
+        if (optsDump_out      ) CHECK_EXTBUF_SIZE( *optsDump_out,       isInvalid)
         if (isInvalid)
             return MFX_ERR_UNSUPPORTED;
 
-        if ((opts_in==0) != (opts_out==0))
+        if ((opts_in==0) != (opts_out==0) ||
+            (optsDump_in==0) != (optsDump_out==0))
             return MFX_ERR_UNDEFINED_BEHAVIOR;
 
         //if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 && in->mfx.FrameInfo.ChromaFormat == 0) { // because 0 == monochrome
@@ -1101,6 +1121,9 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
 
         } // EO mfxExtCodingOptionHEVC
 
+        if (optsDump_in) {
+            vm_string_strcpy_s(optsDump_out->ReconFilename, sizeof(optsDump_out->ReconFilename), optsDump_in->ReconFilename);
+        }
 
         // reserved for any case
         ////// Assume 420 checking vertical crop to be even for progressive PicStruct
