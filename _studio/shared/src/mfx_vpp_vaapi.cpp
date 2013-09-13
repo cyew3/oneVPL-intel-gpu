@@ -493,12 +493,53 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         }
     }
 
-    /* Special case for Composition */
-    if (pParams->bComposite)
+    /* Final End Picture call... if there is no composition case ! */
+    if (!pParams->bComposite)
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaEndPicture");
+        vaSts = vaEndPicture(m_vaDisplay, m_vaContextVPP);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+    }
+    else /* Special case for Composition */
+    {
+        unsigned int uBeginPictureCounter = 0;
+        std::vector<VAProcPipelineParameterBuffer> m_pipelineParamComp;
+        std::vector<VABufferID> m_pipelineParamCompID;
+        /* for new buffers for Begin Picture*/
+        m_pipelineParamComp.resize(pParams->fwdRefCount/7);
+        m_pipelineParamCompID.resize(pParams->fwdRefCount/7);
+
         /* pParams->fwdRefCount actually is number of sub stream*/
         for( refIdx = 1; refIdx <= (pParams->fwdRefCount); refIdx++ )
         {
+            /*for frames 8, 15, 22, 29,... */
+            if ((refIdx != 1) && ((refIdx %7) == 1) )
+            {
+                m_pipelineParam[refIdx].output_background_color = 0xff000000;
+                vaSts = vaBeginPicture(m_vaDisplay,
+                                    m_vaContextVPP,
+                                    *outputSurface);
+                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+                /*to copy initial properties of primary surface... */
+                m_pipelineParamComp[uBeginPictureCounter] = m_pipelineParam[0];
+                /* ... and to In-place output*/
+                m_pipelineParamComp[uBeginPictureCounter].surface = *outputSurface;
+                //m_pipelineParam[0].surface = *outputSurface;
+
+                vaSts = vaCreateBuffer(m_vaDisplay,
+                                    m_vaContextVPP,
+                                    VAProcPipelineParameterBufferType,
+                                    sizeof(VAProcPipelineParameterBuffer),
+                                    1,
+                                    &m_pipelineParamComp[uBeginPictureCounter],
+                                    &m_pipelineParamCompID[uBeginPictureCounter]);
+                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaBeginPicture");
+                vaSts = vaRenderPicture(m_vaDisplay, m_vaContextVPP, &m_pipelineParamCompID[uBeginPictureCounter], 1);
+                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+            }
+
             m_pipelineParam[refIdx] = m_pipelineParam[0];
             mfxDrvSurface* pRefSurf = &(pParams->pRefSurfaces[refIdx]);
 
@@ -541,36 +582,35 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaRenderPicture");
             vaSts = vaRenderPicture(m_vaDisplay, m_vaContextVPP, &m_pipelineParamID[refIdx], 1);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+            /*for frames 7, 14, 21, ...
+             * or for the last frame*/
+            if ( ((refIdx % 7) ==0) || ((pParams->fwdRefCount) == refIdx) )
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaEndPicture");
+                vaSts = vaEndPicture(m_vaDisplay, m_vaContextVPP);
+                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+            }
+
+        } /* for( refIdx = 1; refIdx <= (pParams->fwdRefCount); refIdx++ )*/
+
+        for( refIdx = 0; refIdx < uBeginPictureCounter; refIdx++ )
+        {
+            if ( m_pipelineParamID[refIdx] != VA_INVALID_ID)
+            {
+                vaDestroyBuffer(m_vaDisplay, m_pipelineParamCompID[refIdx]);
+                m_pipelineParamCompID[refIdx] = VA_INVALID_ID;
+            }
         }
-    }
+    } /* if (!pParams->bComposite) */
 
-
-    {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaEndPicture");
-        vaSts = vaEndPicture(m_vaDisplay, m_vaContextVPP);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-    }
-
-    for( refIdx = 0; refIdx < SampleCount; refIdx++ )
+    for( refIdx = 0; refIdx < m_pipelineParamID.size(); refIdx++ )
     {
         if ( m_pipelineParamID[refIdx] != VA_INVALID_ID)
         {
             vaDestroyBuffer(m_vaDisplay, m_pipelineParamID[refIdx]);
             m_pipelineParamID[refIdx] = VA_INVALID_ID;
         }
-    }
-
-    if (pParams->bComposite)
-    {
-        for( refIdx = 1; refIdx <= (pParams->fwdRefCount); refIdx++ )
-        {
-            if ( m_pipelineParamID[refIdx] != VA_INVALID_ID)
-            {
-                vaDestroyBuffer(m_vaDisplay, m_pipelineParamID[refIdx]);
-                m_pipelineParamID[refIdx] = VA_INVALID_ID;
-            }
-        }
-
     }
 
     // (3) info needed for sync operation
