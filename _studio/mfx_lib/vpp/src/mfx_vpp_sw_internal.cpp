@@ -948,8 +948,23 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
 
             case (mfxU32)MFX_EXTBUFF_VPP_COMPOSITE:
             {
-                // FIXME: fake for 1st version
-                inputFramesCount[filterIndex]  = 2;
+                for (mfxU32 i = 0; i < pParam->NumExtParam; i++)
+                {
+                    if (pParam->ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_COMPOSITE)
+                    {
+                        mfxExtVPPComposite* extComp = (mfxExtVPPComposite*) pParam->ExtParam[i];
+                        if (extComp->NumInputStream > 64)
+                        {
+                            return MFX_ERR_INVALID_VIDEO_PARAM;
+                        }
+                        else
+                        {
+                            inputFramesCount[filterIndex] = extComp->NumInputStream;
+                        }
+                    }
+                } /*for (mfxU32 i = 0; i < pParam->NumExtParam; i++)*/
+
+                /* for output always one */
                 outputFramesCount[filterIndex] = 1;
                 break;
             }
