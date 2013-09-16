@@ -38,7 +38,7 @@ public:
     virtual mfxStatus SetPriority( mfxPriority priority) { return MFXSetPriority(m_session, priority);}
     virtual mfxStatus GetPriority( mfxPriority *priority) { return MFXGetPriority(m_session, priority);}
 
-//    virtual mfxStatus SyncOperation(mfxSyncPoint syncp, mfxU32 wait) { return MFXVideoCORE_SyncOperation(m_session, syncp, wait); }
+    virtual mfxStatus SyncOperation(mfxSyncPoint syncp, mfxU32 wait) { return MFXAudioCORE_SyncOperation(m_session, syncp, wait); }
 
     virtual operator mfxSession (void) { return m_session; }
 
