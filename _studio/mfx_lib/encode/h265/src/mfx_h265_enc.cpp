@@ -76,6 +76,22 @@ static Ipp64f h265_calc_split_threshold(Ipp32s tu_flag, Ipp32s log2width, Ipp32s
     return a * exp(b * QP);
 }
 
+static const mfxU16 tab_AspectRatio265[17][2] =
+{
+    { 1,  1},  // unspecified
+    { 1,  1}, {12, 11}, {10, 11}, {16, 11}, {40, 33}, {24, 11}, {20, 11}, {32, 11},
+    {80, 33}, {18, 11}, {15, 11}, {64, 33}, {160,99}, { 4,  3}, { 3,  2}, { 2,  1}
+};
+
+static mfxU32 ConvertSARtoIDC_H265enc(mfxU32 sarw, mfxU32 sarh)
+{
+    mfxU32 i;
+    for (i=1; i<sizeof(tab_AspectRatio265)/sizeof(tab_AspectRatio265[0]); i++)
+        if (sarw * tab_AspectRatio265[i][1] == sarh * tab_AspectRatio265[i][0])
+            return i;
+    return 0;
+}
+
 mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxExtCodingOptionHEVC *opts_hevc)
 {
     H265VideoParam *pars = &m_videoParam;
@@ -328,6 +344,20 @@ mfxStatus H265Encoder::SetSPS()
     sps->sps_num_reorder_pics[0] = vps->vps_max_num_reorder_pics[0];
     sps->sps_max_dec_pic_buffering[0] = vps->vps_max_dec_pic_buffering[0];
     sps->sps_max_latency_increase[0] = vps->vps_max_latency_increase[0];
+
+    //VUI
+    if (pars->AspectRatioW && pars->AspectRatioH) {
+        sps->aspect_ratio_idc = (Ipp8u)ConvertSARtoIDC_H265enc(pars->AspectRatioW, pars->AspectRatioH);
+        if (sps->aspect_ratio_idc == 0) {
+            sps->aspect_ratio_idc = 255; //Extended SAR
+            sps->sar_width = pars->AspectRatioW;
+            sps->sar_height = pars->AspectRatioH;
+        }
+        sps->aspect_ratio_info_present_flag = 1;
+    }
+    if (sps->aspect_ratio_info_present_flag)
+        sps->vui_parameters_present_flag = 1;
+
 
     return MFX_ERR_NONE;
 }

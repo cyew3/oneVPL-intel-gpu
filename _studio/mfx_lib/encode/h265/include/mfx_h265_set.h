@@ -102,6 +102,23 @@ typedef struct sH265SeqParameterSet {
     Ipp8u sps_temporal_mvp_enable_flag;
     Ipp8u strong_intra_smoothing_enabled_flag;
     Ipp8u vui_parameters_present_flag;
+
+    Ipp8u   aspect_ratio_info_present_flag;
+    Ipp8u   aspect_ratio_idc;
+    Ipp16u  sar_width;
+    Ipp16u  sar_height;
+
+    Ipp8u   overscan_info_present_flag;
+    Ipp8u   video_signal_type_present_flag;
+    Ipp8u   chroma_loc_info_present_flag;
+    Ipp8u   neutral_chroma_indication_flag;
+    Ipp8u   field_seq_flag;
+    Ipp8u   frame_field_info_present_flag;
+    Ipp8u   default_display_window_flag;
+    Ipp8u   sps_timing_info_present_flag; // use vps*
+    Ipp8u   bitstream_restriction_flag;
+
+
     Ipp8u sps_extension_flag;
 ///////////// vars part
 

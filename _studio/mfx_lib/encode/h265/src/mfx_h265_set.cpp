@@ -281,8 +281,37 @@ mfxStatus H265Encoder::PutSPS(H265BsReal *_bs)
 
     H265Bs_PutBit(bs, sps->vui_parameters_present_flag);
     if (sps->vui_parameters_present_flag) {
-        VM_ASSERT(0);
-    }
+        H265Bs_PutBit(bs, sps->aspect_ratio_info_present_flag);
+        if (sps->aspect_ratio_info_present_flag) {
+            H265Bs_PutBits(bs, sps->aspect_ratio_idc, 8);
+            if (sps->aspect_ratio_idc == 255) {
+                H265Bs_PutBits(bs, sps->sar_width, 16);
+                H265Bs_PutBits(bs, sps->sar_height, 16);
+            }
+        }
+        if (sps->overscan_info_present_flag ||
+            sps->video_signal_type_present_flag ||
+            sps->chroma_loc_info_present_flag ||
+            sps->neutral_chroma_indication_flag ||
+            sps->field_seq_flag ||
+            sps->frame_field_info_present_flag ||
+            sps->default_display_window_flag ||
+            sps->sps_timing_info_present_flag || // use vps*
+            sps->bitstream_restriction_flag)
+        {
+            VM_ASSERT(0);
+        }
+        H265Bs_PutBit(bs, sps->overscan_info_present_flag);
+        H265Bs_PutBit(bs, sps->video_signal_type_present_flag);
+        H265Bs_PutBit(bs, sps->chroma_loc_info_present_flag);
+        H265Bs_PutBit(bs, sps->neutral_chroma_indication_flag);
+        H265Bs_PutBit(bs, sps->field_seq_flag);
+        H265Bs_PutBit(bs, sps->frame_field_info_present_flag);
+        H265Bs_PutBit(bs, sps->default_display_window_flag);
+        H265Bs_PutBit(bs, sps->sps_timing_info_present_flag); // use vps*
+        H265Bs_PutBit(bs, sps->bitstream_restriction_flag);
+    } // EO VUI
+
     for (i = 0; i < m_videoParam.MaxCUDepth; i++) {
         H265Bs_PutBit(bs, 1);
     }
