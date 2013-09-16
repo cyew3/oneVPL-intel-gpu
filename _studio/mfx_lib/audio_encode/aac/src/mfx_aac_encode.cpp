@@ -339,8 +339,6 @@ mfxStatus AudioENCODEAAC::AACECODERoutine(void *pState, void *pParam,
         obj.mInData.SetBufferPointer((Ipp8u *)obj.m_frame.Data + obj.m_frame.DataOffset,obj.m_frame.DataLength);
         obj.mInData.SetDataSize(obj.m_frame.DataLength);
         obj.mOutData.SetBufferPointer( static_cast<Ipp8u *>(pTask->out->Data +pTask->out->DataOffset), pTask->out->MaxLength /*- (pTask->out->DataOffset + pTask->out->DataLength)*/);
-        obj.mOutData.MoveDataPointer(0);
-        obj.mOutData.SetDataSize(0);
 
         UMC::Status sts = obj.m_pAACAudioEncoder.get()->GetFrame(&obj.mInData, &obj.mOutData);
         if(sts == UMC::UMC_OK)
