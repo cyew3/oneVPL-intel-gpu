@@ -742,6 +742,8 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     request.Type = MFX_MEMTYPE_D3D_INT;
     request.NumFrameMin = (mfxU16) m_emulatorForSyncPart.GetStageGreediness(AsyncRoutineEmulator::STG_WAIT_ENCODE);
+    if (IsFieldCodingPossible(m_video))
+        request.NumFrameMin *= 2; // 2 bitstream surfaces per frame
     // driver may suggest too small buffer for bitstream
     request.Info.Width  = IPP_MAX(request.Info.Width,  m_video.mfx.FrameInfo.Width);
     request.Info.Height = IPP_MAX(request.Info.Height, m_video.mfx.FrameInfo.Height * 3 / 2);
