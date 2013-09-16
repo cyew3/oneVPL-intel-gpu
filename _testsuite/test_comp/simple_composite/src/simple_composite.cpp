@@ -54,7 +54,9 @@ typedef struct {
 } InputSubstream;
 
 
-#define MAX_INPUT_STREAMS 16
+/* total number streams for vpp composition is 64 now!
+ * This is means 1 primary and 63 sub-streams */
+#define MAX_INPUT_STREAMS 64
 
 // Get free raw frame surface
 int GetFreeSurfaceIndex(mfxFrameSurface1** pSurfacesPool, mfxU16 nPoolSize)
@@ -70,6 +72,7 @@ enum ColorFormat
 {
     kYV12 = 0,
     kNV12 = 1,
+    kRGB4 = 2
 };
 
 class ColorMap
@@ -81,6 +84,7 @@ public:
     {
         map_.insert(make_pair("YV12", kYV12));
         map_.insert(make_pair("NV12", kNV12));
+        map_.insert(make_pair("RGB4", kRGB4));
     }
 public:
     ColorFormat Get(const string &str) const
@@ -100,8 +104,10 @@ struct ProgramArguments
     // Output file
     string output;
   
-    // color format
-    ColorFormat color_format;
+    // src color format
+    ColorFormat scc;
+    // dest color format
+    ColorFormat dcc;
 };
 
 bool from_string(const std::string& str, ColorFormat &obj)
@@ -166,9 +172,10 @@ ProgramArguments ParseInputString(const vector<string> &args)
         throw std::runtime_error("Par file is not specified or invalid (-par)");
     if (!ParseValue(args, "-o", pa.output))
         throw std::runtime_error("output file not specified or invalid (-o)");
-    if (!ParseValueWithDefault(args, "-cf", pa.color_format, kNV12))
-        throw std::runtime_error("-cf value invalid");
-
+    if (!ParseValueWithDefault(args, "-scc", pa.scc, kNV12))
+        throw std::runtime_error("-scc value invalid");
+    if (!ParseValueWithDefault(args, "-dcc", pa.dcc, kNV12))
+        throw std::runtime_error("-dcc value invalid");
 
     return pa;
 }
@@ -179,8 +186,8 @@ void PrintHelp(ostream &out)
     out << "Mandatory args: " << endl;
     out << "-par <filename> path to the parameters file" << endl;
     out << "-o <filename>" << endl;
-    out << "-cf <NV12 | YV12> (default: NV12)" << endl;
-
+    out << "-scc <NV12 | YV12 | RGB4> (default: NV12 - source color format)" << endl;
+    out << "-dcc <NV12 | RGB4> (default: NV12 - dest color format)" << endl;
 }
 
 // trim from start
@@ -224,18 +231,18 @@ int main(int argc, char *argv[])
 {  
     mfxStatus sts = MFX_ERR_NONE;
 
-    //if (17 < NUM_INPUT_STREAMS ) // 1 primary stream + max 16 substreams
-    //    sts = MFX_ERR_UNSUPPORTED;
-    //MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-    
-    mfxFrameInfo streams[MAX_INPUT_STREAMS] = {};
+    /* Again:
+     * total number streams for vpp composition is 64 now!
+     * This is means 1 primary and 63 sub-streams */
+
+    mfxFrameInfo streams[MAX_INPUT_STREAMS -1] = {};
     
     mfxFrameInfo pr_stream;
 
     auto args = ConvertInputString(argc, argv);
     ProgramArguments pa;
     map<string, string> primaryparams;
-    map<string, string> subparams[16];
+    map<string, string> subparams[MAX_INPUT_STREAMS -1];
 
 
     try {
@@ -247,6 +254,8 @@ int main(int argc, char *argv[])
 
     int i = 0;
     int StreamCount = 0;
+    unsigned int framesToProcess = 0;
+
     // Read parameterd from par file
     try {
         ifstream par(pa.par);
@@ -261,12 +270,25 @@ int main(int argc, char *argv[])
             trim(value);
             if ( key.compare("primarystream") == 0 ){
                 primaryparams = ParsePar(par, value);
-                pr_stream.FourCC         = MFX_FOURCC_NV12;
-                pr_stream.ChromaFormat   = MFX_CHROMAFORMAT_YUV420;
+                if (pa.scc == kNV12)
+                {
+                    pr_stream.FourCC         = MFX_FOURCC_NV12;
+                    pr_stream.ChromaFormat   = MFX_CHROMAFORMAT_YUV420;
+                }
+                else if (pa.scc == kYV12)
+                {
+                    pr_stream.FourCC         = MFX_FOURCC_YV12;
+                    pr_stream.ChromaFormat   = MFX_CHROMAFORMAT_YUV420;
+                }
+                else
+                {
+                    pr_stream.FourCC         = MFX_FOURCC_RGB4;
+                }
                 pr_stream.CropX          = atoi(primaryparams["x"].c_str());
                 pr_stream.CropY          = atoi(primaryparams["y"].c_str());
                 pr_stream.CropW          = atoi(primaryparams["w"].c_str());
                 pr_stream.CropH          = atoi(primaryparams["h"].c_str());
+                framesToProcess = atoi(primaryparams["frames"].c_str());
                 pr_stream.PicStruct      = MFX_PICSTRUCT_PROGRESSIVE;
                 pr_stream.FrameRateExtN  = 30;
                 pr_stream.FrameRateExtD  = 1;
@@ -278,8 +300,20 @@ int main(int argc, char *argv[])
             } else if ( key.compare("stream") == 0 ){
                 map<string, string> params = ParsePar(par, value);
                 subparams[StreamCount] = params;
-                streams[StreamCount].FourCC         = MFX_FOURCC_NV12;
-                streams[StreamCount].ChromaFormat   = MFX_CHROMAFORMAT_YUV420;
+                if (pa.scc == kNV12)
+                {
+                    streams[StreamCount].FourCC         = MFX_FOURCC_NV12;
+                    streams[StreamCount].ChromaFormat   = MFX_CHROMAFORMAT_YUV420;
+                }
+                else if (pa.scc == kYV12)
+                {
+                    streams[StreamCount].FourCC         = MFX_FOURCC_YV12;
+                    streams[StreamCount].ChromaFormat   = MFX_CHROMAFORMAT_YUV420;
+                }
+                else
+                {
+                    streams[StreamCount].FourCC         = MFX_FOURCC_RGB4;
+                }
                 streams[StreamCount].CropX          = 0;
                 streams[StreamCount].CropY          = 0;
                 streams[StreamCount].CropW          = atoi(params["w"].c_str());
@@ -293,7 +327,7 @@ int main(int argc, char *argv[])
                 streams[StreamCount].Height = (MFX_PICSTRUCT_PROGRESSIVE == streams[StreamCount].PicStruct)?
                                      MSDK_ALIGN16(streams[StreamCount].CropH) : MSDK_ALIGN32(streams[StreamCount].CropH);
                 ++StreamCount;
-                if ( StreamCount == MAX_INPUT_STREAMS + 1)
+                if ( StreamCount == (MAX_INPUT_STREAMS - 1) )
                 {
                     throw std::runtime_error("Maximum number of input streams exceeded.");
                 }
@@ -305,7 +339,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    FILE* fSource[MAX_INPUT_STREAMS + 1];
+    FILE* fSource[MAX_INPUT_STREAMS];
     cout << "Open file " << primaryparams["stream"] << endl;
     fopen_s(&fSource[0], primaryparams["stream"].c_str(), "rb");
     MSDK_CHECK_POINTER(fSource[0], MFX_ERR_NULL_PTR);
@@ -381,8 +415,21 @@ int main(int argc, char *argv[])
     mfxVideoParam VPPParams;
     memset(&VPPParams, 0, sizeof(VPPParams));
     // Input data (primary stream)
-    VPPParams.vpp.In.FourCC         = MFX_FOURCC_NV12;
-    VPPParams.vpp.In.ChromaFormat   = MFX_CHROMAFORMAT_YUV420;
+    if (pa.scc == kNV12)
+    {
+        VPPParams.vpp.In.FourCC         = MFX_FOURCC_NV12;
+        VPPParams.vpp.In.ChromaFormat   = MFX_CHROMAFORMAT_YUV420;
+    }
+    else if (pa.scc == kYV12)
+    {
+        VPPParams.vpp.In.FourCC         = MFX_FOURCC_YV12;
+        VPPParams.vpp.In.ChromaFormat   = MFX_CHROMAFORMAT_YUV420;
+    }
+    else
+    {
+        VPPParams.vpp.In.FourCC         = MFX_FOURCC_RGB4;
+    }
+
     VPPParams.vpp.In.CropX          = 0;
     VPPParams.vpp.In.CropY          = 0;
     VPPParams.vpp.In.CropW          = atoi(primaryparams["w"].c_str());
@@ -396,8 +443,16 @@ int main(int argc, char *argv[])
     VPPParams.vpp.In.Height = atoi(primaryparams["h"].c_str());;
 
     // Output data
-    VPPParams.vpp.Out.FourCC        = MFX_FOURCC_NV12;
-    VPPParams.vpp.Out.ChromaFormat  = MFX_CHROMAFORMAT_YUV420;
+
+    if (pa.dcc == kNV12)
+    {
+        VPPParams.vpp.Out.FourCC         = MFX_FOURCC_NV12;
+        VPPParams.vpp.Out.ChromaFormat   = MFX_CHROMAFORMAT_YUV420;
+    }
+    else /*RGB case*/
+    {
+        VPPParams.vpp.Out.FourCC         = MFX_FOURCC_RGB4;
+    }
     VPPParams.vpp.Out.CropX         = 0;
     VPPParams.vpp.Out.CropY         = 0; 
     VPPParams.vpp.Out.CropW         = atoi(primaryparams["w"].c_str());;
@@ -422,6 +477,7 @@ int main(int argc, char *argv[])
     comp.Header.BufferId = MFX_EXTBUFF_VPP_COMPOSITE;
     comp.Header.BufferSz = sizeof(mfxExtVPPComposite);
     comp.NumInputStream = StreamCount + 1;
+    comp.InputStream = (mfxVPPCompInputStream *)malloc( sizeof(mfxVPPCompInputStream)* comp.NumInputStream);
 
     // primary stream
     comp.InputStream[0].DstX = 0;
@@ -469,7 +525,7 @@ int main(int argc, char *argv[])
     mfxFrameSurface1** pVPPSurfacesIn = new mfxFrameSurface1*[nVPPSurfNumIn];
     MSDK_CHECK_POINTER(pVPPSurfacesIn, MFX_ERR_MEMORY_ALLOC);
 
-    mfxU8* surfaceBuffersIn[17] = {0}; // 1 primary stream + max 16 substreams
+    mfxU8* surfaceBuffersIn[MAX_INPUT_STREAMS] = {0}; // 1 primary stream + max 63 substreams
     mfxU8  bitsPerPixel = 12;  // NV12 format is a 12 bits per pixel format
 
     for (i = 0; i < nVPPSurfNumIn; i++)
@@ -623,6 +679,9 @@ int main(int argc, char *argv[])
         MSDK_BREAK_ON_ERROR(sts);
 
         printf("Frame number: %d\r", nFrame);
+
+        if (nFrame >= framesToProcess)
+            break;
 #endif
     }
 
@@ -654,7 +713,11 @@ int main(int argc, char *argv[])
 
         printf("Frame number: %d\r", nFrame);
 #endif
-    }    
+    }
+
+    printf("\n");
+    printf("Frames processed %d\n", nFrame);
+
 
     // MFX_ERR_MORE_DATA indicates that there are no more buffered frames, exit in case of other errors
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
@@ -671,6 +734,7 @@ int main(int argc, char *argv[])
     //  - It is recommended to close Media SDK components first, before releasing allocated surfaces, since
     //    some surfaces may still be locked by internal Media SDK resources.
     
+    free(comp.InputStream);
     mfxVPP.Close();
     // mfxSession closed automatically on destruction
 
