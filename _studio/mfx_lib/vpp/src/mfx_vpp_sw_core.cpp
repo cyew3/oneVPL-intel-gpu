@@ -305,6 +305,16 @@ mfxStatus VideoVPPSW::Init(mfxVideoParam *par)
     m_errPrtctState.IOPattern  = par->IOPattern;
     m_errPrtctState.AsyncDepth = par->AsyncDepth;
 
+    sts = GetCompositionEnabledStatus(par);
+    if (sts == MFX_ERR_NONE)
+        m_errPrtctState.isCompositionModeEnabled = true;
+    else
+        m_errPrtctState.isCompositionModeEnabled = false;
+
+    /* to reset status */
+    sts = MFX_ERR_NONE;
+
+
     m_stat.NumCachedFrame = 0;
     m_stat.NumFrame       = 0;
 
@@ -600,9 +610,13 @@ mfxStatus VideoVPPSW::VppFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out,
 
         /* we have special case for composition:
          * if composition enabled sub stream's picture (WxH)
-         * can be less than primary stream (WxH)  */
-        //sts = CompareFrameInfo( &(in->Info), &(m_errPrtctState.In));
-        //MFX_CHECK_STS(sts);
+         * can be less than primary stream (WxH)
+         * So, do check frame info only if composition is not enabled */
+        if (m_errPrtctState.isCompositionModeEnabled == false)
+        {
+            sts = CompareFrameInfo( &(in->Info), &(m_errPrtctState.In));
+            MFX_CHECK_STS(sts);
+        }
 
         sts = CheckCropParam( &(in->Info) );
         MFX_CHECK_STS( sts );

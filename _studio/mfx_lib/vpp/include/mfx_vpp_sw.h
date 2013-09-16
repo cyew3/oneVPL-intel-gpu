@@ -91,6 +91,7 @@ protected:
 
     bool            isInited;
     bool            isFirstFrameProcessed;
+    bool            isCompositionModeEnabled;
 
   } sErrPrtctState;
 

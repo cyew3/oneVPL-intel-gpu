@@ -62,6 +62,9 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
                                  mfxU16 framesCountMin[2],
                                  mfxU16 framesCountSuggested[2]);
 
+// utility to Check is composition enabled in current pipeline or not
+mfxStatus GetCompositionEnabledStatus(mfxVideoParam* pParam );
+
 // select configuration parameters for required filter
 mfxStatus GetFilterParam(mfxVideoParam* par, mfxU32 filterName, mfxExtBuffer** ppHint);
 

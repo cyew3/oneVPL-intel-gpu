@@ -1003,6 +1003,25 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
 
 } // mfxStatus GetExternalFramesCount(...)
 
+// all check must be done before call
+mfxStatus GetCompositionEnabledStatus(mfxVideoParam* pParam )
+{
+    mfxU32 bufferIndex;
+
+    mfxExtBuffer *pExtBuffer = *pParam->ExtParam;
+
+    for( bufferIndex = 0; bufferIndex < pParam->NumExtParam; bufferIndex++ )
+    {
+        if (pExtBuffer[bufferIndex].BufferId == (mfxU32)MFX_EXTBUFF_VPP_COMPOSITE)
+            return MFX_ERR_NONE;
+    }
+
+    /* default case */
+    return MFX_ERR_NOT_FOUND;
+
+} // mfxStatus GetCompositionEnabledStatus(mfxVideoParam* pParam,
+
+
 
 mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint)
 {
