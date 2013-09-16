@@ -312,7 +312,7 @@ mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxBitstream *bs,
         ThreadAudioTaskInfo * info = new ThreadAudioTaskInfo();
         info->out = buffer_out;
 
-        pEntryPoint->pRoutine = &AACECODERoutine;
+        pEntryPoint->pRoutine = &AACENCODERoutine;
         pEntryPoint->pCompleteProc = &AACCompleteProc;
         pEntryPoint->pState = this;
         pEntryPoint->requiredNumThreads = 1; // need only one thread
@@ -322,7 +322,7 @@ mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxBitstream *bs,
     return mfxSts;
 }
 
-mfxStatus AudioENCODEAAC::AACECODERoutine(void *pState, void *pParam,
+mfxStatus AudioENCODEAAC::AACENCODERoutine(void *pState, void *pParam,
                                           mfxU32 threadNumber, mfxU32 callNumber)
 {
     callNumber;
@@ -344,6 +344,9 @@ mfxStatus AudioENCODEAAC::AACECODERoutine(void *pState, void *pParam,
         if(sts == UMC::UMC_OK)
         {
             // set data size 0 to the input buffer 
+            obj.m_frame.DataLength = 0;
+            obj.m_frame.DataOffset = 0;
+
             // set out buffer size;
             //if(pTask->out->MaxLength)  AR need to implement a check of output buffer size
             pTask->out->DataOffset = 0;
