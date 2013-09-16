@@ -618,7 +618,7 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
     //mfxVideoH265InternalParam *par = &inInt;
 
     mfxVideoParam checked_videoParam = *par_in;
-    mfxExtCodingOptionHEVC checked_codingOptionHEVC = *opts_hevc;
+    mfxExtCodingOptionHEVC checked_codingOptionHEVC = m_mfxHEVCOpts;
     mfxExtOpaqueSurfaceAlloc checked_opaqAllocReq;
 
     mfxExtBuffer *ptr_checked_ext[2] = {0};
