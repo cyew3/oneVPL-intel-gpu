@@ -3,7 +3,7 @@ LOCAL_PATH:= $(call my-dir)
 include $(MFX_HOME)/android/mfx_env.mk
 
 # Setting subdirectories to march thru
-MFX_DIRS = \
+MFX_LOCAL_DIRS = \
     asf_spl \
     avi_spl \
     brc \
@@ -21,7 +21,7 @@ MFX_DIRS = \
     jpeg_enc \
     jpeg_common
 
-MFX_DIRS_IMPL = \
+MFX_LOCAL_DIRS_IMPL = \
     color_space_converter \
     mpeg2_dec \
     h265_dec \
@@ -29,17 +29,27 @@ MFX_DIRS_IMPL = \
     vc1_dec \
     jpeg_dec
 
+MFX_LOCAL_SRC_FILES = \
+  $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_LOCAL_DIRS), $(wildcard $(LOCAL_PATH)/$(dir)/src/*.c))) \
+  $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_LOCAL_DIRS), $(wildcard $(LOCAL_PATH)/$(dir)/src/*.cpp)))
+
+MFX_LOCAL_SRC_FILES_IMPL = \
+  $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_LOCAL_DIRS_IMPL), $(wildcard $(LOCAL_PATH)/$(dir)/src/*.c))) \
+  $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_LOCAL_DIRS_IMPL), $(wildcard $(LOCAL_PATH)/$(dir)/src/*.cpp)))
+
+MFX_LOCAL_C_INCLUDES = \
+  $(foreach dir, $(MFX_LOCAL_DIRS) $(MFX_LOCAL_DIRS_IMPL), $(wildcard $(LOCAL_PATH)/$(dir)/include))
+
 # =============================================================================
 
 include $(CLEAR_VARS)
+include $(MFX_HOME)/android/mfx_defs.mk
 
-include $(MFX_HOME)/android/mfx_stl.mk
-include $(MFX_HOME)/android/mfx_defs_internal.mk
+LOCAL_SRC_FILES := $(MFX_LOCAL_SRC_FILES)
+LOCAL_C_INCLUDES += $(MFX_LOCAL_C_INCLUDES)
 
-LOCAL_SRC_FILES := $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_DIRS), $(wildcard $(LOCAL_PATH)/$(dir)/src/*.c))) \
-                   $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_DIRS), $(wildcard $(LOCAL_PATH)/$(dir)/src/*.cpp)))
-
-LOCAL_C_INCLUDES += $(foreach dir, $(MFX_DIRS) $(MFX_DIRS_IMPL), $(wildcard $(LOCAL_PATH)/$(dir)/include))
+LOCAL_C_INCLUDES += $(MFX_C_INCLUDES_INTERNAL)
+LOCAL_CFLAGS += $(MFX_CFLAGS_INTERNAL)
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libumc_codecs_merged
@@ -48,16 +58,36 @@ include $(BUILD_STATIC_LIBRARY)
 
 # =============================================================================
 
-include $(CLEAR_VARS)
+ifeq ($(MFX_IMPL_HW), true)
+  include $(CLEAR_VARS)
+  include $(MFX_HOME)/android/mfx_defs.mk
 
-include $(MFX_HOME)/android/mfx_stl.mk
-include $(MFX_HOME)/android/mfx_defs_internal.mk
+  LOCAL_SRC_FILES := $(MFX_LOCAL_SRC_FILES_IMPL)
+  LOCAL_C_INCLUDES += $(MFX_LOCAL_C_INCLUDES)
 
-LOCAL_SRC_FILES := $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_DIRS_IMPL), $(wildcard $(LOCAL_PATH)/$(dir)/src/*.cpp)))
+  LOCAL_C_INCLUDES += $(MFX_C_INCLUDES_INTERNAL_HW)
+  LOCAL_CFLAGS += $(MFX_CFLAGS_INTERNAL_HW)
 
-LOCAL_C_INCLUDES += $(foreach dir, $(MFX_DIRS) $(MFX_DIRS_IMPL), $(wildcard $(LOCAL_PATH)/$(dir)/include))
+  LOCAL_MODULE_TAGS := optional
+  LOCAL_MODULE := libumc_codecs_merged_hw
 
-LOCAL_MODULE_TAGS := optional
-LOCAL_MODULE := libumc_codecs_merged_$(MFX_IMPL)
+  include $(BUILD_STATIC_LIBRARY)
+endif # ifeq ($(MFX_IMPL_HW), true)
 
-include $(BUILD_STATIC_LIBRARY)
+# =============================================================================
+
+ifeq ($(MFX_IMPL_SW), true)
+  include $(CLEAR_VARS)
+  include $(MFX_HOME)/android/mfx_defs.mk
+
+  LOCAL_SRC_FILES := $(MFX_LOCAL_SRC_FILES_IMPL)
+  LOCAL_C_INCLUDES += $(MFX_LOCAL_C_INCLUDES)
+
+  LOCAL_C_INCLUDES += $(MFX_C_INCLUDES_INTERNAL)
+  LOCAL_CFLAGS += $(MFX_CFLAGS_INTERNAL)
+
+  LOCAL_MODULE_TAGS := optional
+  LOCAL_MODULE := libumc_codecs_merged_sw
+
+  include $(BUILD_STATIC_LIBRARY)
+endif # ifeq ($(MFX_IMPL_SW), true)

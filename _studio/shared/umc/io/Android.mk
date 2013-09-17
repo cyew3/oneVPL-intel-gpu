@@ -3,27 +3,60 @@ LOCAL_PATH:= $(call my-dir)
 include $(MFX_HOME)/android/mfx_env.mk
 
 # Setting subdirectories to march thru
-MFX_DIRS_IMPL = \
+MFX_LOCAL_DIRS_IMPL = \
     media_buffers \
     umc_io
 
-MFX_DIRS_HW = \
+MFX_LOCAL_DIRS_HW = \
     umc_va
 
+MFX_LOCAL_SRC_FILES_IMPL = \
+  $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_LOCAL_DIRS_IMPL), $(wildcard $(LOCAL_PATH)/$(dir)/src/*.cpp)))
+
+MFX_LOCAL_SRC_FILES_HW = \
+  $(MFX_LOCAL_SRC_FILES_IMPL) \
+  $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_LOCAL_DIRS_HW), $(wildcard $(LOCAL_PATH)/$(dir)/src/*.cpp)))
+
+MFX_LOCAL_C_INCLUDES = \
+  $(foreach dir, $(MFX_LOCAL_DIRS_IMPL), $(wildcard $(LOCAL_PATH)/$(dir)/include))
+
+MFX_LOCAL_C_INCLUDES_HW = \
+  $(MFX_LOCAL_C_INCLUDES) \
+  $(foreach dir, $(MFX_LOCAL_DIRS_HW), $(wildcard $(LOCAL_PATH)/$(dir)/include))
+
+# =============================================================================
+
+ifeq ($(MFX_IMPL_HW), true)
+  include $(CLEAR_VARS)
+  include $(MFX_HOME)/android/mfx_defs.mk
+
+  LOCAL_SRC_FILES := $(MFX_LOCAL_SRC_FILES_HW)
+  LOCAL_C_INCLUDES += $(MFX_LOCAL_C_INCLUDES_HW)
+
+  LOCAL_C_INCLUDES += $(MFX_C_INCLUDES_INTERNAL_HW)
+  LOCAL_CFLAGS += $(MFX_CFLAGS_INTERNAL_HW)
+
+  LOCAL_MODULE_TAGS := optional
+  LOCAL_MODULE := libumc_io_merged_hw
+
+  include $(BUILD_STATIC_LIBRARY)
+endif # ifeq ($(MFX_IMPL_HW), true)
+
+# =============================================================================
+
+# This target actually should not be called *_sw, but that's simplifies
+# calling of this lib. So, we should not cover this by MFX_IMPL_SW==true protection.
+
 include $(CLEAR_VARS)
+include $(MFX_HOME)/android/mfx_defs.mk
 
-include $(MFX_HOME)/android/mfx_stl.mk
-include $(MFX_HOME)/android/mfx_defs_internal.mk
+LOCAL_SRC_FILES := $(MFX_LOCAL_SRC_FILES_IMPL)
+LOCAL_C_INCLUDES += $(MFX_LOCAL_C_INCLUDES)
 
-ifeq ($(MFX_IMPL), hw)
-    MFX_DIRS_IMPL += $(MFX_DIRS_HW)
-endif
-
-LOCAL_SRC_FILES := $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_DIRS_IMPL), $(wildcard $(LOCAL_PATH)/$(dir)/src/*.cpp)))
-
-LOCAL_C_INCLUDES += $(foreach dir, $(MFX_DIRS) $(MFX_DIRS_IMPL), $(wildcard $(LOCAL_PATH)/$(dir)/include))
+LOCAL_C_INCLUDES += $(MFX_C_INCLUDES_INTERNAL)
+LOCAL_CFLAGS += $(MFX_CFLAGS_INTERNAL)
 
 LOCAL_MODULE_TAGS := optional
-LOCAL_MODULE := libumc_io_merged_$(MFX_IMPL)
+LOCAL_MODULE := libumc_io_merged_sw
 
 include $(BUILD_STATIC_LIBRARY)
