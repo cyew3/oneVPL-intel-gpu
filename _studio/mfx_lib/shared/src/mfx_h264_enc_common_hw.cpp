@@ -3487,8 +3487,10 @@ void MfxHwH264Encode::SetDefaults(
         if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA || par.mfx.RateControlMethod == MFX_RATECONTROL_CRF)
             extOpt2->LookAheadDepth = IPP_MAX(40, 2 * par.mfx.GopRefDist);
 
-    if (extDdi->LookAheadDep == 0)
-        extDdi->LookAheadDep = IPP_MIN(10, extOpt2->LookAheadDepth / 2);
+    if (extDdi->LookAheadDependency == 0)
+        extDdi->LookAheadDependency = (par.mfx.RateControlMethod == MFX_RATECONTROL_LA)
+            ? IPP_MIN(10, extOpt2->LookAheadDepth / 2)
+            : extOpt2->LookAheadDepth;
 
     if ((extDdi->LaScaleFactor != 2) &&
         (extDdi->LaScaleFactor != 4))

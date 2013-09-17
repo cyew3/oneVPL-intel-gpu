@@ -84,7 +84,7 @@ typedef struct {
     mfxU16 NumActiveRefBL1;         //
     mfxU16 QpUpdateRange;           // 
     mfxU16 RegressionWindow;        //
-    mfxU16 LookAheadDep;            // LookAheadDep < LookAhead
+    mfxU16 LookAheadDependency;     // LookAheadDependency < LookAhead
     mfxU16 Hme;                     // tri-state
 
 } mfxExtCodingOptionDDI;

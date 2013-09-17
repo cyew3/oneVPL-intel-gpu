@@ -1232,19 +1232,19 @@ namespace MfxHwH264Encode
 
         void Init(MfxVideoParam const & video);
 
-        void Close();
+        void Close() {}
 
         mfxU8 GetQp(mfxU32 frameType, mfxU32 picStruct);
 
-        mfxF32 GetFractionalQp(mfxU32 frameType, mfxU32 picStruct);
+        mfxF32 GetFractionalQp(mfxU32 /*frameType*/, mfxU32 /*picStruct*/) { assert(0); return 26.0f; }
 
-        void SetQp(mfxU32 qp, mfxU32 frameType);
+        void SetQp(mfxU32 /*qp*/, mfxU32 /*frameType*/) { assert(0); }
 
         void PreEnc(mfxU32 frameType, std::vector<VmeData *> const & vmeData, mfxU32 encOrder);
 
         mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder);
 
-        mfxU32 GetMinFrameSize();
+        mfxU32 GetMinFrameSize() { return 0; }
 
     public:
         struct LaFrameData
@@ -1279,12 +1279,35 @@ namespace MfxHwH264Encode
         Regression<20>              m_rateCoeffHistory[52];
     };
 
-    class LookAheadCrfBrc : public LookAheadBrc2 // for now Crf Brc is derived directly from LookaheadBrc2
+    class LookAheadCrfBrc : public BrcIface
     {
     public:
+        ~LookAheadCrfBrc() { Close(); }
+
         void Init(MfxVideoParam const & video);
+
+        void Close() {}
+
         mfxU8 GetQp(mfxU32 frameType, mfxU32 picStruct);
+
+        mfxF32 GetFractionalQp(mfxU32 /*frameType*/, mfxU32 /*picStruct*/) { assert(0); return 26.0f; }
+
+        void SetQp(mfxU32 /*qp*/, mfxU32 /*frameType*/) { assert(0); }
+
+        void PreEnc(mfxU32 frameType, std::vector<VmeData *> const & vmeData, mfxU32 encOrder);
+
         mfxU32 Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder);
+
+        mfxU32 GetMinFrameSize() { return 0; }
+
+    protected:
+        mfxU32  m_lookAhead;
+        mfxI32  m_crfQuality;
+        mfxI32  m_curQp;
+        mfxU32  m_totNumMb;
+        mfxU32  m_intraCost;
+        mfxU32  m_interCost;
+        mfxU32  m_propCost;
     };
 
     class Hrd

@@ -261,7 +261,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_DDI_OPTION(NumActiveRefBL1,         OPT_UINT_16,    "0=default, max 16/32 for frames/fields"),
         HANDLE_DDI_OPTION(QpUpdateRange,           OPT_UINT_16,    ""),
         HANDLE_DDI_OPTION(RegressionWindow,        OPT_UINT_16,    ""),
-        HANDLE_DDI_OPTION(LookAheadDep,            OPT_UINT_16,    "LookAheadDep < LookAhead"),
+        HANDLE_DDI_OPTION(LookAheadDependency,     OPT_UINT_16,    "LookAheadDependency < LookAhead"),
         HANDLE_DDI_OPTION(Hme,                     OPT_TRI_STATE,  "Hme on/off"),
         HANDLE_DDI_OPTION(DisablePSubMBPartition,  OPT_TRI_STATE,  "on=disabled 4x4 4x8 8x4 for P frames, off=enabled 4x4 4x8 8x4 for P frames"),
         HANDLE_DDI_OPTION(DisableBSubMBPartition,  OPT_TRI_STATE,  "on=disabled 4x4 4x8 8x4 for B frames, off=enabled 4x4 4x8 8x4 for B frames"),

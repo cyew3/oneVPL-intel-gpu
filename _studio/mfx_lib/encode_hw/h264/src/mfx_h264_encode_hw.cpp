@@ -1778,11 +1778,11 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         //printf("\rLA_SYNCED     do=%4d eo=%4d type=%d\n", m_lookaheadStarted.front().m_frameOrder, m_lookaheadStarted.front().m_encOrder, m_lookaheadStarted.front().m_type[0]); fflush(stdout);
         OnLookaheadQueried();
 
-        if (extDdi->LookAheadDep > 0 && m_lookaheadFinished.size() >= extDdi->LookAheadDep)
+        if (extDdi->LookAheadDependency > 0 && m_lookaheadFinished.size() >= extDdi->LookAheadDependency)
         {
             DdiTaskIter end = m_lookaheadFinished.end();
             DdiTaskIter beg = end;
-            std::advance(beg, -extDdi->LookAheadDep);
+            std::advance(beg, -extDdi->LookAheadDependency);
 
             AnalyzeVmeData(beg, end, m_video.calcParam.widthLa, m_video.calcParam.heightLa);
         }
