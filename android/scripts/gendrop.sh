@@ -4,65 +4,74 @@
 
 mkdir $2
 
-cp -rd $1/Android.mk $2/
+DIRS_TO_COPY=" \
+  include \
+  cxx \
+  opensource \
+  android \
+  _studio/mfx_lib \
+  _studio/shared/include \
+  _studio/shared/src \
+  _studio/shared/mfx_trace \
+  _studio/shared/umc/core \
+  _studio/shared/umc/codec \
+  _studio/shared/umc/io \
+  _studio/shared/umc/test_suite/spy_test_component \
+  _testsuite/mfx_player \
+  _testsuite/mfx_transcoder \
+  _testsuite/shared \
+  samples/sample_common \
+  samples/sample_decode \
+  samples/sample_encode \
+  samples/sample_user_modules/plugin_api \
+  "
 
-cp -rd $1/include $2/
-cp -rd $1/cxx $2/
-cp -rd $1/opensource $2/
+FILES_TO_COPY=" \
+  Android.mk \
+  _studio/Android.mk \
+  _studio/shared/Android.mk \
+  _studio/shared/umc/Android.mk
+  _testsuite/Android.mk \
+  samples/Android.mk \
+  "
 
-cp -rd $1/android $2/
-rm -rf $2/android/install.sh
-rm -rf $2/android/scripts
-rm -rf $2/android/patches
-rm -rf $2/android/droid_tree
+PATHS_TO_REMOVE=" \
+  android/install.sh \
+  android/scripts \
+  android/patches \
+  android/droid_tree \
+  _studio/mfx_lib/audio_decode \
+  _studio/mfx_lib/audio_encode \
+  _studio/mfx_lib/genx/h264_encode/src/embed_isa.c \
+  _studio/mfx_lib/genx/h264_encode/src/genx_hsw_simple_me.cpp \
+  _studio/mfx_lib/genx/h264_encode/src/genx_hsw_simple_me_proto.cpp \
+  _studio/mfx_lib/vpp/include/videovme*.h \
+  _studio/mfx_lib/vpp/include/meforgen7_5.h \
+  _studio/mfx_lib/vpp/src/vme \
+  _studio/shared/umc/test_suite/spy_test_component/outline.* \
+  _testsuite/mfx_player/scripts \
+  _testsuite/mfx_player/props \
+  "
 
-mkdir $2/_studio
-cp -rd $1/_studio/Android.mk $2/_studio/
-cp -rd $1/_studio/mfx_lib $2/_studio/
-rm -rf $2/_studio/mfx_lib/vpp/include/videovme*.h
-rm -rf $2/_studio/mfx_lib/vpp/include/meforgen7_5.h
-rm -rf $2/_studio/mfx_lib/vpp/src/vme
+for i in $DIRS_TO_COPY
+do
+  mkdir -p $2/$i
+  cp -rd $1/$i/* $2/$i/
+done
 
-mkdir $2/_studio/shared
-cp -rd $1/_studio/shared/Android.mk $2/_studio/shared/
-cp -rd $1/_studio/shared/include $2/_studio/shared/
-cp -rd $1/_studio/shared/src $2/_studio/shared/
-cp -rd $1/_studio/shared/mfx_trace $2/_studio/shared/
+for i in $FILES_TO_COPY
+do
+  cp $1/$i $2/$i
+done
 
-mkdir $2/_studio/shared/umc
-cp -rd $1/_studio/shared/umc/Android.mk $2/_studio/shared/umc/
-cp -rd $1/_studio/shared/umc/core $2/_studio/shared/umc/
-cp -rd $1/_studio/shared/umc/codec $2/_studio/shared/umc/
-cp -rd $1/_studio/shared/umc/io $2/_studio/shared/umc/
-
-mkdir $2/_studio/shared/umc/test_suite
-#cp -rd $1/_studio/shared/umc/test_suite/Android.mk $2/_studio/shared/umc/test_suite/
-cp -rd $1/_studio/shared/umc/test_suite/spy_test_component $2/_studio/shared/umc/test_suite/
-rm -rf $2/_studio/shared/umc/test_suite/spy_test_component/outline.*
-
-mkdir $2/_testsuite
-cp -rd $1/_testsuite/Android.mk $2/_testsuite/
-cp -rd $1/_testsuite/mfx_player $2/_testsuite/
-rm -rf $2/_testsuite/mfx_player/scripts
-rm -rf $2/_testsuite/mfx_player/props
-cp -rd $1/_testsuite/mfx_transcoder $2/_testsuite/
-cp -rd $1/_testsuite/shared $2/_testsuite/
-
-mkdir $2/samples
-cp -rd $1/samples/Android.mk $2/samples/
-cp -rd $1/samples/sample_common $2/samples/
-cp -rd $1/samples/sample_decode $2/samples/
-cp -rd $1/samples/sample_encode $2/samples/
-cp -rd $1/samples/sample_openmax_plugins $2/samples/
-rm -rf $2/samples/sample_openmax_plugins/omx_stagefright
-
-mkdir $2/samples/sample_user_modules
-#cp -rd $1/samples/sample_user_modules/Android.mk $2/samples/sample_user_modules/
-cp -rd $1/samples/sample_user_modules/plugin_api $2/samples/sample_user_modules/
+for i in $PATHS_TO_REMOVE
+do
+  rm -rf $2/$i
+done
 
 cd $2
 find . -name ".svn" | xargs rm -rf
-# windows build system files
+# Windows build system files
 find . -name "*.vcproj*" | xargs rm -rf
 find . -name "*.vcxproj*" | xargs rm -rf
 find . -name "*.sln" | xargs rm -rf
@@ -79,6 +88,9 @@ find . -name "*.html" | xargs rm -rf
 find . -name "*.rc" | xargs rm -rf
 find . -name "*.props" | xargs rm -rf
 find . -name ".bdsignore" | xargs rm -rf
+find . -name "*.kate-swp" | xargs rm -rf
+find . -name "*.rej" | xargs rm -rf
+find . -name "*.orig" | xargs rm -rf
 find . -name "*~" | xargs rm -rf
 
 find . -name "*.h" | xargs dos2unix
