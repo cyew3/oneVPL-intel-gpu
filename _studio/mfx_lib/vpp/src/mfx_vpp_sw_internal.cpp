@@ -1008,12 +1008,15 @@ mfxStatus GetCompositionEnabledStatus(mfxVideoParam* pParam )
 {
     mfxU32 bufferIndex;
 
-    mfxExtBuffer *pExtBuffer = *pParam->ExtParam;
-
-    for( bufferIndex = 0; bufferIndex < pParam->NumExtParam; bufferIndex++ )
+    if( pParam->ExtParam && pParam->NumExtParam > 0 )
     {
-        if (pExtBuffer[bufferIndex].BufferId == (mfxU32)MFX_EXTBUFF_VPP_COMPOSITE)
-            return MFX_ERR_NONE;
+        mfxExtBuffer *pExtBuffer = *pParam->ExtParam;
+
+        for( bufferIndex = 0; bufferIndex < pParam->NumExtParam; bufferIndex++ )
+        {
+            if (pExtBuffer[bufferIndex].BufferId == (mfxU32)MFX_EXTBUFF_VPP_COMPOSITE)
+                return MFX_ERR_NONE;
+        }
     }
 
     /* default case */
