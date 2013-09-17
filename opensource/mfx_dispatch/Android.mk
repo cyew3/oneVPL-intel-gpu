@@ -5,8 +5,6 @@ include $(MFX_HOME)/android/mfx_env.mk
 # =============================================================================
 
 include $(CLEAR_VARS)
-
-include $(MFX_HOME)/android/mfx_stl.mk
 include $(MFX_HOME)/android/mfx_defs.mk
 
 LOCAL_SRC_FILES := $(addprefix src/, \
@@ -22,6 +20,13 @@ LOCAL_SRC_FILES := $(addprefix src/, \
     mfx_win_reg_key.cpp \
     mfx_dxva2_device.cpp)
 
+LOCAL_C_INCLUDES += \
+    $(MFX_C_INCLUDES) \
+    $(MFX_C_INCLUDES_STL)
+LOCAL_CFLAGS += \
+    $(MFX_CFLAGS) \
+    $(MFX_CFLAGS_STL)
+
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libmfx
 
@@ -30,8 +35,6 @@ include $(BUILD_STATIC_LIBRARY)
 # =============================================================================
 
 include $(CLEAR_VARS)
-
-include $(MFX_HOME)/android/mfx_stl.mk
 include $(MFX_HOME)/android/mfx_defs.mk
 
 LOCAL_SRC_FILES := $(addprefix src/, \
@@ -48,7 +51,13 @@ LOCAL_SRC_FILES := $(addprefix src/, \
     mfx_win_reg_key.cpp \
     mfx_dxva2_device.cpp)
 
-LOCAL_CFLAGS += -DMFX_DISPATCHER -DMFX_DISPATCHER_LOG -DDXVA2DEVICE_LOG
+LOCAL_C_INCLUDES += \
+    $(MFX_C_INCLUDES) \
+    $(MFX_C_INCLUDES_STL)
+LOCAL_CFLAGS += \
+    $(MFX_CFLAGS) \
+    $(MFX_CFLAGS_STL) \
+    -DMFX_DISPATCHER -DMFX_DISPATCHER_LOG -DDXVA2DEVICE_LOG
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libdispatch_trace
