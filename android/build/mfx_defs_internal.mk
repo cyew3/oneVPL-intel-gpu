@@ -1,47 +1,59 @@
-# Defines include paths, compilation flags, etc. to build Media SDK
+# Purpose:
+#   Defines include paths, compilation flags, etc. to build Media SDK
 # internal targets (libraries, test applications, etc.).
+#
+# Defined variables:
+#   MFX_CFLAGS_INTERNAL - all flags needed to build MFX SW targets
+#   MFX_CFLAGS_INTERNAL_HW - all flags needed to build MFX HW targets
+#   MFX_C_INCLUDES_INTERNAL - all include paths needed to build MFX SW targets
+#   MFX_C_INCLUDES_INTERNAL_HW - all include paths needed to build MFX HW targets
+#   MFX_LDFLAGS_INTERNAL - all link flags needed to build MFX SW targets
+#   MFX_LDFLAGS_INTERNAL_HW - all link flags needed to build MFX HW targets
+#   MFX_CFLAGS_LUCAS - flags needed to build MFX Lucas targets
 
-include $(MFX_HOME)/android/mfx_defs.mk
-
-ifeq ($(MFX_IMPL), hw)
-    MFX_ACCEL = -DMFX_VA
-endif
-
-LOCAL_CFLAGS += \
-    -msse4.1 -DLINUX32 $(MFX_ACCEL)
+MFX_CFLAGS_INTERNAL := \
+    $(MFX_CFLAGS) \
+    $(MFX_CFLAGS_STL) \
+    -msse4.1 -DLINUX32
 
 IPP_ROOT := $(MEDIASDK_ROOT)/ipp/linux/ia32
 
 # See http://software.intel.com/en-us/articles/intel-integrated-performance-primitives-intel-ipp-understanding-cpu-optimized-code-used-in-intel-ipp
 ifneq ($(filter $(MFX_IPP), px),) # C optimized for all IA-32 processors; i386+
 # no include file for that case
-#    LOCAL_CFLAGS += -include $(IPP_ROOT)/tools/staticlib/ipp_px.h
+#    MFX_CFLAGS_INTERNAL += -include $(IPP_ROOT)/tools/staticlib/ipp_px.h
 endif
 ifneq ($(filter $(MFX_IPP), a6),) # SSE; Pentium III
 # no include file for that case
-#    LOCAL_CFLAGS += -include $(IPP_ROOT)/tools/staticlib/ipp_a6.h
+#    MFX_CFLAGS_INTERNAL += -include $(IPP_ROOT)/tools/staticlib/ipp_a6.h
 endif
 ifneq ($(filter $(MFX_IPP), w7),) # SSE2; P4, Xeon, Centrino
-    LOCAL_CFLAGS += -include $(IPP_ROOT)/tools/staticlib/ipp_w7.h
+    MFX_CFLAGS_INTERNAL += -include $(IPP_ROOT)/tools/staticlib/ipp_w7.h
 endif
 ifneq ($(filter $(MFX_IPP), t7),) # SSE3; Prescott, Yonah
 # no include file for that case
-#    LOCAL_CFLAGS += -include $(IPP_ROOT)/tools/staticlib/ipp_t7.h
+#    MFX_CFLAGS_INTERNAL += -include $(IPP_ROOT)/tools/staticlib/ipp_t7.h
 endif
 ifneq ($(filter $(MFX_IPP), v8),) # Supplemental SSE3; Core 2, Xeon 5100, Atom
-    LOCAL_CFLAGS += -include $(IPP_ROOT)/tools/staticlib/ipp_v8.h
+    MFX_CFLAGS_INTERNAL += -include $(IPP_ROOT)/tools/staticlib/ipp_v8.h
 endif
 ifneq ($(filter $(MFX_IPP), s8),) # Supplemental SSE3 (compiled for Atom); Atom
-    LOCAL_CFLAGS += -include $(IPP_ROOT)/tools/staticlib/ipp_s8.h
+    MFX_CFLAGS_INTERNAL += -include $(IPP_ROOT)/tools/staticlib/ipp_s8.h
 endif
 ifneq ($(filter $(MFX_IPP), p8),) # SSE4.1, SSE4.2, AES-NI; Penryn Nehalem, Westmere
-    LOCAL_CFLAGS += -include $(IPP_ROOT)/tools/staticlib/ipp_p8.h
+    MFX_CFLAGS_INTERNAL += -include $(IPP_ROOT)/tools/staticlib/ipp_p8.h
 endif
-ifneq ($(filter $(MFX_IPP), g9 snb ivb),) # AVX; Sandy Bridge
-    LOCAL_CFLAGS += -include $(IPP_ROOT)/tools/staticlib/ipp_g9.h
+ifneq ($(filter $(MFX_IPP), g9),) # AVX; Sandy Bridge
+    MFX_CFLAGS_INTERNAL += -include $(IPP_ROOT)/tools/staticlib/ipp_g9.h
 endif
 
-LOCAL_C_INCLUDES +=  \
+MFX_CFLAGS_INTERNAL_HW := $(MFX_CFLAGS_INTERNAL) -DMFX_VA
+
+MFX_CFLAGS_LUCAS := -DLUCAS_DLL
+
+MFX_C_INCLUDES_INTERNAL :=  \
+    $(MFX_C_INCLUDES) \
+    $(MFX_C_INCLUDES_STL) \
     $(MFX_HOME)/_studio/shared/include \
     $(MFX_HOME)/_studio/shared/umc/core/umc/include \
     $(MFX_HOME)/_studio/shared/umc/core/vm/include \
@@ -52,5 +64,12 @@ LOCAL_C_INCLUDES +=  \
     $(MFX_HOME)/_studio/mfx_lib/shared/include \
     $(IPP_ROOT)/include
 
-LOCAL_LDFLAGS += \
+MFX_C_INCLUDES_INTERNAL_HW := \
+    $(MFX_C_INCLUDES_INTERNAL) \
+    $(MFX_C_INCLUDES_LIBVA)
+
+MFX_LDFLAGS_INTERNAL := \
+    $(MFX_LDFLAGS) \
     -L$(IPP_ROOT)/lib
+
+MFX_LDFLAGS_INTERNAL_HW := $(MFX_LDFLAGS_INTERNAL)

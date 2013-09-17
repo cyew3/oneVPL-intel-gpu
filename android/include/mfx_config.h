@@ -12,8 +12,8 @@ Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 #define __MFX_CONFIG_H__
 
 /* Versions of Android inside Intel */
-#define MFX_OTC     0x000
-#define MFX_MCG     0x100
+#define MFX_OTC     0x100
+#define MFX_MCG     0x200
 
 /* Google versions of Android */
 #define MFX_JB      0x1
