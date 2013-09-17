@@ -855,8 +855,52 @@ mfxStatus VideoVPPSW::GetVideoParam(mfxVideoParam *par)
         return MFX_ERR_NONE;
     }
 
-    bool bCorrectionEnable = true;
-    CheckPlatformLimitations(m_core, *par, bCorrectionEnable);
+    for( mfxU32 i = 0; i < par->NumExtParam; i++ )
+    {
+        if( MFX_EXTBUFF_VPP_DOUSE == par->ExtParam[i]->BufferId )
+        {
+            mfxExtVPPDoUse* pVPPHint = (mfxExtVPPDoUse*)(par->ExtParam[i]);
+            mfxU32 numUsedFilters = 0;
+
+            for( mfxU32 filterIndex = 0; filterIndex < GetNumUsedFilters(); filterIndex++ )
+            {
+                switch ( m_pipelineList[filterIndex] )
+                {
+                    case MFX_EXTBUFF_VPP_CSC:
+                    case MFX_EXTBUFF_VPP_RESIZE:
+                    case MFX_EXTBUFF_VPP_DI:
+                    case MFX_EXTBUFF_VPP_DI_30i60p:
+                    case MFX_EXTBUFF_VPP_ITC:
+                    case MFX_EXTBUFF_VPP_CSC_OUT_RGB4:
+                    {
+                        continue;
+                    }
+
+                    case MFX_EXTBUFF_VPP_DENOISE:
+                    case MFX_EXTBUFF_VPP_SCENE_ANALYSIS:
+                    case MFX_EXTBUFF_VPP_PROCAMP:
+                    case MFX_EXTBUFF_VPP_DETAIL:
+                    case MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION:
+                    case MFX_EXTBUFF_VPP_IMAGE_STABILIZATION:
+                    case MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION:
+                    case MFX_EXTBUFF_VPP_COMPOSITE:
+                    {
+                        if(numUsedFilters + 1 > pVPPHint->NumAlg)
+                            return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+                        pVPPHint->AlgList[numUsedFilters] = m_pipelineList[filterIndex];
+                        numUsedFilters++;
+                        break;
+                    }
+                    default:
+                        return MFX_ERR_UNDEFINED_BEHAVIOR;
+                }
+
+            }
+        }
+
+        // Todo: filling of other extbuffers if required
+    }
 
     return MFX_ERR_NONE;
 
