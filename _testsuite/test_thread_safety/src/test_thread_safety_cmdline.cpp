@@ -20,7 +20,7 @@ const vm_char CommandLine::CodecJpeg[] = VM_STRING("-jpeg");
 const vm_char CommandLine::CodecH264[] = VM_STRING("-h264");
 const vm_char CommandLine::CodecMpeg2[] = VM_STRING("-m2");
 const vm_char CommandLine::CodecVc1[] = VM_STRING("-vc1");
-const vm_char CommandLine::CodecHevc[] = VM_STRING("-hevc");
+const vm_char CommandLine::CodecHevc[] = VM_STRING("-h265");
 const mfxU32 MAX_NUM_THREAD = 100;
 
 #define MAKE_PAIR(name)\
@@ -41,6 +41,7 @@ mfxU32 String2TestType(const vm_char* s)
         MAKE_PAIR(MVCDECODE),
         MAKE_PAIR(SVCDECODE),
         MAKE_PAIR(HEVCDECODE),
+        MAKE_PAIR(HEVCENCODE),
         MAKE_PAIR(VC1DECODE),
         MAKE_PAIR(JPEGENCODE),
         MAKE_PAIR(H264ENCODE),
