@@ -364,8 +364,27 @@ enum {
     MFX_LEVEL_VC1_3                         =(0x03+1),
     MFX_LEVEL_VC1_4                         =(0x04+1),
 
-    /* HEVC Profiles */
-    MFX_PROFILE_HEVC_MAIN                   = 1,
+    /* HEVC Profiles & Levels & Tiers */
+    MFX_PROFILE_HEVC_MAIN             =1,
+    MFX_PROFILE_HEVC_MAIN10           =2,
+    MFX_PROFILE_HEVC_MAINSP           =3,
+
+    MFX_LEVEL_HEVC_1   = 10,
+    MFX_LEVEL_HEVC_2   = 20,
+    MFX_LEVEL_HEVC_21  = 21,
+    MFX_LEVEL_HEVC_3   = 30,
+    MFX_LEVEL_HEVC_31  = 31,
+    MFX_LEVEL_HEVC_4   = 40,
+    MFX_LEVEL_HEVC_41  = 41,
+    MFX_LEVEL_HEVC_5   = 50,
+    MFX_LEVEL_HEVC_51  = 51,
+    MFX_LEVEL_HEVC_52  = 52,
+    MFX_LEVEL_HEVC_6   = 60,
+    MFX_LEVEL_HEVC_61  = 61,
+    MFX_LEVEL_HEVC_62  = 62,
+
+    MFX_TIER_HEVC_MAIN  = 0,
+    MFX_TIER_HEVC_HIGH  = 0x100,
 };
 
 /* GopOptFlag */
