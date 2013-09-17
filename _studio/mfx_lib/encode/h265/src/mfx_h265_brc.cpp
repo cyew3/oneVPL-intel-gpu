@@ -100,15 +100,16 @@ mfxStatus H265BRC::SetParams(mfxVideoParam *params)
     if (!params)
         return MFX_ERR_NULL_PTR;
 
+    mfxU16 brcParamMultiplier = params->mfx.BRCParamMultiplier ? params->mfx.BRCParamMultiplier : 1;
     mParams.BRCMode = params->mfx.RateControlMethod;
-    mParams.targetBitrate =  params->mfx.TargetKbps * 1000;
+    mParams.targetBitrate =  params->mfx.TargetKbps * brcParamMultiplier * 1000;
     if (!mParams.targetBitrate)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    mParams.HRDBufferSizeBytes = params->mfx.BufferSizeInKB * 1000;
-    mParams.HRDInitialDelayBytes = params->mfx.InitialDelayInKB * 1000;
+    mParams.HRDBufferSizeBytes = params->mfx.BufferSizeInKB * brcParamMultiplier * 1000;
+    mParams.HRDInitialDelayBytes = params->mfx.InitialDelayInKB * brcParamMultiplier * 1000;
 
-    mParams.maxBitrate = params->mfx.MaxKbps * 1000;
+    mParams.maxBitrate = params->mfx.MaxKbps * brcParamMultiplier * 1000;
 
     mParams.frameRateExtN = params->mfx.FrameInfo.FrameRateExtN;
     mParams.frameRateExtD = params->mfx.FrameInfo.FrameRateExtD;
@@ -121,7 +122,7 @@ mfxStatus H265BRC::SetParams(mfxVideoParam *params)
     mParams.chromaFormat = params->mfx.FrameInfo.ChromaFormat;
 
 /*
-    mFramerate = mParams.frameRateExtN / mParams.frameRateExtD;
+    mFramerate = (mfxF64)mParams.frameRateExtN / mParams.frameRateExtD;
     mBitrate = params->mfx.TargetKbps * 1000;
     if (!mBitrate)
         return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -143,7 +144,7 @@ mfxStatus H265BRC::Init(mfxVideoParam *params, mfxI32 enableRecode)
 
     mRecode = enableRecode ? 1 : 0;
 
-    mFramerate = mParams.frameRateExtN / mParams.frameRateExtD;
+    mFramerate = (mfxF64)mParams.frameRateExtN / mParams.frameRateExtD;
     mBitrate = mParams.targetBitrate;
     mRCMode = (mfxU16)mParams.BRCMode;
 
@@ -236,7 +237,8 @@ mfxStatus H265BRC::Reset(mfxVideoParam *params, mfxI32 enableRecode)
 {
     mfxStatus status;
 
-    mfxI32 bufSize_new = (params->mfx.BufferSizeInKB * 8000 >> (4 + MFX_H265_CPBSIZE_SCALE)) << (4 + MFX_H265_CPBSIZE_SCALE);
+    mfxU16 brcParamMultiplier = params->mfx.BRCParamMultiplier ? params->mfx.BRCParamMultiplier : 1;
+    mfxI32 bufSize_new = (params->mfx.BufferSizeInKB * brcParamMultiplier * 8000 >> (4 + MFX_H265_CPBSIZE_SCALE)) << (4 + MFX_H265_CPBSIZE_SCALE);
     mfxU16 rcmode_new = params->mfx.RateControlMethod;
     bool sizeNotChanged = (mParams.width == params->mfx.FrameInfo.Width &&
                            mParams.height == params->mfx.FrameInfo.Height &&
@@ -261,7 +263,7 @@ mfxStatus H265BRC::Reset(mfxVideoParam *params, mfxI32 enableRecode)
         if (status != MFX_ERR_NONE)
             return status;
         mBitrate = mParams.targetBitrate;
-        mFramerate = mParams.frameRateExtN / mParams.frameRateExtD;
+        mFramerate = (mfxF64)mParams.frameRateExtN / mParams.frameRateExtD;
         if (mBitrate <= 0 || mFramerate <= 0)
             return MFX_ERR_INVALID_VIDEO_PARAM;
         mBitsDesiredFrame = (mfxI32)(mBitrate / mFramerate);
@@ -270,9 +272,8 @@ mfxStatus H265BRC::Reset(mfxVideoParam *params, mfxI32 enableRecode)
     } else if (mParams.HRDBufferSizeBytes == 0 && bufSize_new > 0)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-
-    mfxI32 maxBitrate_new = (params->mfx.MaxKbps * 1000 >> (6 + MFX_H265_BITRATE_SCALE)) << (6 + MFX_H265_BITRATE_SCALE);
-    mfxI32 targetBitrate_new = params->mfx.TargetKbps * 1000;
+    mfxI32 maxBitrate_new = (params->mfx.MaxKbps * brcParamMultiplier * 1000 >> (6 + MFX_H265_BITRATE_SCALE)) << (6 + MFX_H265_BITRATE_SCALE);
+    mfxI32 targetBitrate_new = params->mfx.TargetKbps * brcParamMultiplier * 1000;
     mfxI32 targetBitrate_new_r = (targetBitrate_new >> (6 + MFX_H265_BITRATE_SCALE)) << (6 + MFX_H265_BITRATE_SCALE);
 
     // framerate change not allowed in case of HRD
