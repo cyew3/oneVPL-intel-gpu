@@ -522,6 +522,12 @@ mfxStatus MFX_AAC_Encoder_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfx
 
     if (in)
     {
+        // save bitrate from input params
+        out->mfx.StreamInfo.Bitrate = in->mfx.StreamInfo.Bitrate;
+        
+        // save sample frequency from input params
+        out->mfx.StreamInfo.SampleFrequency = in->mfx.StreamInfo.SampleFrequency;
+
         if (in->mfx.CodecId == MFX_CODEC_AAC)
             out->mfx.CodecId = in->mfx.CodecId;
 
