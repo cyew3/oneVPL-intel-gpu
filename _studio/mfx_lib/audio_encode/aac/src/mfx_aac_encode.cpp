@@ -284,7 +284,7 @@ mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffe
             return sts;
         }
 
-        if (0 == buffer_out->DataLength) {
+        if (0 == buffer_out->MaxLength) {
             return sts;
         }
 
