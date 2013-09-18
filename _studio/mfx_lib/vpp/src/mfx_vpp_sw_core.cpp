@@ -1682,7 +1682,8 @@ mfxStatus VideoVPPSW::CheckPlatformLimitations(
     //}
 
     std::vector<mfxU32> pipelineList;
-    mfxStatus sts = GetPipelineList( &param, pipelineList);
+    bool bExtendedSupport = true;
+    mfxStatus sts = GetPipelineList( &param, pipelineList, bExtendedSupport );
     MFX_CHECK_STS(sts);
 
     std::vector<mfxU32> supportedList;

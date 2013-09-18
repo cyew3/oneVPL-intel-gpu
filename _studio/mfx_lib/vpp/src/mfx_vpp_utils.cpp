@@ -1084,8 +1084,6 @@ mfxStatus GetPipelineList(
     //mfxU32* pLen,
     bool    bExtended)
 {
-    bExtended;
-
     mfxInfoVPP*   par = NULL;
     mfxFrameInfo* srcFrameInfo = NULL;
     mfxFrameInfo* dstFrameInfo = NULL;
@@ -1101,30 +1099,31 @@ mfxStatus GetPipelineList(
     srcFrameInfo = &(par->In);
     dstFrameInfo = &(par->Out);
     /* ************************************************************************** */
-    /* aya: hack                                                                  */
-    /* [0] RGB32->RGB32 (resize only) is supported to meet MSDK 3.0 requirements  */
+    /* [1] the filter chain first based on input and output mismatch formats only */
     /* ************************************************************************** */
-    if( (MFX_FOURCC_RGB4 == par->In.FourCC) && (MFX_FOURCC_RGB4 == par->Out.FourCC) )
+    if( (MFX_FOURCC_RGB4 != par->In.FourCC) || (MFX_FOURCC_RGB4 != par->Out.FourCC) )
     {
+        /* [RGB4 output format support] */
+        if( MFX_FOURCC_RGB4 == par->Out.FourCC )
+        {
+            pipelineList.push_back(MFX_EXTBUFF_VPP_CSC_OUT_RGB4);
+        }
+
+        /* [Color Space Conversion] FILTER */
+        if( MFX_FOURCC_NV12 != par->In.FourCC)
+        {
+            pipelineList.push_back(MFX_EXTBUFF_VPP_CSC);
+        }
+    }
+    else if (!bExtended)
+    {
+        /* ********************************************************************** */
+        /* aya: hack                                                              */
+        /* RGB32->RGB32 (resize only) is supported to meet MSDK 3.0 requirements  */
+        /* ********************************************************************** */
         pipelineList.push_back(MFX_EXTBUFF_VPP_RESIZE);
 
         return MFX_ERR_NONE;
-    }
-
-    /* ************************************************************************** */
-    /* [1] the filter chain first based on input and output mismatch formats only */
-    /* ************************************************************************** */
-
-    /* [RGB4 output format support] */
-    if( MFX_FOURCC_RGB4 == par->Out.FourCC )
-    {
-        pipelineList.push_back(MFX_EXTBUFF_VPP_CSC_OUT_RGB4);
-    }
-
-    /* [Color Space Conversion] FILTER */
-    if( MFX_FOURCC_NV12 != par->In.FourCC)
-    {
-        pipelineList.push_back(MFX_EXTBUFF_VPP_CSC);
     }
 
     /* [Resize] FILTER */
