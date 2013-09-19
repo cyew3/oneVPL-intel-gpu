@@ -1428,13 +1428,12 @@ void VideoDECODEH264::FillOutputSurface(mfxFrameSurface1 **surf_out, mfxFrameSur
     case UMC::DPS_TOP_BOTTOM_TOP:
     case UMC::DPS_BOTTOM_TOP_BOTTOM:
         {
-            mfxU32 fieldFlag = (pFrame->m_displayPictureStruct == UMC::DPS_TOP_BOTTOM_TOP) ? MFX_PICSTRUCT_FIELD_TFF : MFX_PICSTRUCT_FIELD_BFF;
-            surface_out->Info.PicStruct = (mfxU16)((pFrame->m_PictureStructureForDec == UMC::FRM_STRUCTURE) ? MFX_PICSTRUCT_PROGRESSIVE : fieldFlag);
+            surface_out->Info.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 
             if (m_vPar.mfx.ExtendedPicStruct)
             {
                 surface_out->Info.PicStruct |= MFX_PICSTRUCT_FIELD_REPEATED;
-                surface_out->Info.PicStruct |= fieldFlag;
+                surface_out->Info.PicStruct |= (pFrame->m_displayPictureStruct == UMC::DPS_TOP_BOTTOM_TOP) ? MFX_PICSTRUCT_FIELD_TFF : MFX_PICSTRUCT_FIELD_BFF;
             }
         }
         break;
