@@ -18,6 +18,11 @@ File Name: mfxaudio.h
 #define MFX_AUDIO_VERSION_MAJOR 1
 #define MFX_AUDIO_VERSION_MINOR 8
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 /* AudioCORE */
 mfxStatus MFX_CDECL MFXAudioCORE_SyncOperation(mfxSession session, mfxSyncPoint syncp, mfxU32 wait);
 
@@ -39,5 +44,9 @@ mfxStatus MFX_CDECL MFXAudioDECODE_Close(mfxSession session);
 mfxStatus MFX_CDECL MFXAudioDECODE_QueryIOSize(mfxSession session, mfxAudioParam *par, mfxAudioAllocRequest *request);
 mfxStatus MFX_CDECL MFXAudioDECODE_GetAudioParam(mfxSession session, mfxAudioParam *par);
 mfxStatus MFX_CDECL MFXAudioDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *in, mfxBitstream *out, mfxSyncPoint *syncp);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif
