@@ -155,8 +155,7 @@ mfxStatus MediaSDKSplWrapper::GetStreamInfo(sStreamInfo * pParams)
 
             pParams->CodecProfile = m_streamParams.TrackInfo[i]->VideoParam.CodecProfile;
 
-            if (m_streamParams.SystemType == MFX_MP4_ATOM_STREAM && pParams->videoType == MFX_CODEC_AVC ||
-                m_streamParams.SystemType == MFX_ASF_STREAM && pParams->videoType == MFX_CODEC_VC1)
+            if (m_streamParams.SystemType == MFX_ASF_STREAM && pParams->videoType == MFX_CODEC_VC1)
             {
                 pParams->isDefaultFC = false;
             }else
