@@ -1,3 +1,9 @@
+list( APPEND adirs
+  aac_common
+  aac_dec
+  aac_enc
+  )
+
 list( APPEND dirs
   asf_spl
   avi_spl
@@ -30,9 +36,19 @@ list( APPEND dirs_impl
 
 mfx_include_dirs( )
 
-foreach( dir ${dirs} ${dirs_impl} )
+foreach( dir ${adirs} ${dirs} ${dirs_impl} )
   include_directories( ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/codec/${dir}/include )
 endforeach( )
+
+# =============================================================================
+
+set( sources "" )
+foreach( dir ${adirs} )
+  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
+  list( APPEND sources ${srcs})
+endforeach()
+
+make_library( umc_acodecs_merged none static )
 
 # =============================================================================
 

@@ -1,0 +1,33 @@
+LIBMFXAUDIO_1.8 {
+  global:
+    MFXInit;
+    MFXClose;
+    MFXQueryIMPL;
+    MFXQueryVersion;
+
+    MFXJoinSession;
+    MFXDisjoinSession;
+    MFXCloneSession;
+    MFXSetPriority;
+    MFXGetPriority;
+
+    MFXAudioCORE_SyncOperation;
+    MFXAudioENCODE_Query;
+    MFXAudioENCODE_QueryIOSize;
+    MFXAudioENCODE_Init;
+    MFXAudioENCODE_Reset;
+    MFXAudioENCODE_Close;
+    MFXAudioENCODE_GetAudioParam;
+    MFXAudioENCODE_EncodeFrameAsync;
+
+    MFXAudioDECODE_Query;
+    MFXAudioDECODE_DecodeHeader;
+    MFXAudioDECODE_Init;
+    MFXAudioDECODE_Reset;
+    MFXAudioDECODE_Close;
+    MFXAudioDECODE_QueryIOSize;
+    MFXAudioDECODE_GetAudioParam;
+    MFXAudioDECODE_DecodeFrameAsync;
+  local:
+    *;
+};

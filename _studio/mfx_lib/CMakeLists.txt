@@ -1,37 +1,67 @@
-list( APPEND decoders
+set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
+
+# =============================================================================
+
+list( APPEND adecs
+  aac mp3
+  )
+
+list( APPEND aencs
+  aac
+  )
+
+foreach( dec ${adecs} )
+  list( APPEND adirs
+    audio_decode/${dec}
+    )
+endforeach( )
+
+foreach( enc ${aencs} )
+  list( APPEND adirs 
+    audio_encode/${enc}
+    )
+endforeach( )
+
+# =============================================================================
+
+list( APPEND vdecs
   h265 h264 mpeg2 vc1 mjpeg vp8
   )
 
-list( APPEND encoders
+list( APPEND vencs
   h265 h264 mpeg2 vc1 mjpeg mvc svc
   )
 
-foreach( dec ${decoders} )
-  list( APPEND dirs
+foreach( dec ${vdecs} )
+  list( APPEND vdirs
     brc/${dec} bsd/${dec} dec/${dec}
     )
 
-  list( APPEND dirs_impl
+  list( APPEND vdirs_impl
     decode/${dec}
     )
 endforeach( )
 
-foreach( enc ${encoders} )
-  list( APPEND dirs 
+foreach( enc ${vencs} )
+  list( APPEND vdirs 
     enc/${enc} encode/${enc} pak/${enc}          
     )
 
-  list( APPEND dirs_hw
+  list( APPEND vdirs_hw
     enc_hw/${enc} encode_hw/${enc}
     )
 endforeach( )
 
-list( APPEND optimization_dirs optimization/h265 )
+list( APPEND vdirs_optimization optimization/h265 )
 
-list( APPEND dirs scheduler )
-list( APPEND dirs_impl vpp genx/h264_encode cmrt_cross_platform )
+list( APPEND vdirs scheduler )
+list( APPEND vdirs_impl vpp genx/h264_encode cmrt_cross_platform )
+
+# =============================================================================
 
 list( APPEND umc_dirs
+  common
+  aac_common aac_dec aac_enc mp3_common mp3_dec
   mpeg2_enc h264_enc jpeg_enc
   h265_dec h264_dec mpeg2_dec vc1_dec jpeg_dec
   vc1_common vc1_spl jpeg_common
@@ -46,7 +76,7 @@ foreach( dir ${umc_dirs} )
   include_directories( ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/codec/${dir}/include )
 endforeach( )
 
-foreach( dir ${dirs} ${dirs_impl} ${dirs_hw} ${optimization_dirs} )
+foreach( dir ${adirs} ${vdirs} ${vdirs_impl} ${vdirs_hw} ${vdirs_optimization} )
   include_directories( ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/${dir}/include )
 endforeach( )
 
@@ -55,7 +85,7 @@ endforeach( )
 set( sources "" )
 set( sources.plus "" )
 
-foreach( dir ${optimization_dirs} )
+foreach( dir ${vdirs_optimization} )
 file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
   list( APPEND sources ${srcs})
 endforeach()
@@ -66,18 +96,29 @@ make_library( mfx_optimization none static )
 
 set( sources "" )
 set( sources.plus "" )
-foreach( dir ${dirs} )
+foreach( dir ${adirs} )
   file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
   list( APPEND sources ${srcs})
 endforeach()
 
-make_library( mfx_lib_merged none static )
+make_library( mfx_alib_merged none static )
 
 # =============================================================================
 
 set( sources "" )
 set( sources.plus "" )
-foreach( dir ${dirs_impl} )
+foreach( dir ${vdirs} )
+  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
+  list( APPEND sources ${srcs})
+endforeach()
+
+make_library( mfx_vlib_merged none static )
+
+# =============================================================================
+
+set( sources "" )
+set( sources.plus "" )
+foreach( dir ${vdirs_impl} )
   file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
   list( APPEND sources ${srcs}) 
 endforeach()
@@ -94,9 +135,9 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
     )
 endforeach()
 
-make_library( mfx_lib_merged sw static )
+make_library( mfx_vlib_merged sw static )
 
-foreach( dir ${dirs_hw} )
+foreach( dir ${vdirs_hw} )
   file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
   list( APPEND sources.plus ${srcs})  
 endforeach()
@@ -112,7 +153,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
     )
 endforeach()
 
-make_library( mfx_lib_merged hw static )
+make_library( mfx_vlib_merged hw static )
 
 # =============================================================================
  
@@ -154,7 +195,7 @@ foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/src )
 endforeach()
 
 set( USE_STRICT_NAME TRUE )
-set(MFX_LDFLAGS "${MFX_LDFLAGS} -Wl,--version-script=${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/libmfx.map" )
+set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/libmfx.map" )
     
 foreach( variant sw hw )
   if( __ARCH MATCHES intel64 )
@@ -168,8 +209,8 @@ foreach( variant sw hw )
 
   set( LIBS "" )
   list( APPEND LIBS
-    mfx_lib_merged
-    mfx_lib_merged_${variant}
+    mfx_vlib_merged
+    mfx_vlib_merged_${variant}
     umc_codecs_merged_${variant}
     umc_codecs_merged
     mfx_optimization
@@ -183,4 +224,63 @@ foreach( variant sw hw )
 
   make_library( ${mfxlibname} ${variant} shared)
   make_library( mfx${variant}_static ${variant} static)
+endforeach()
+
+# =============================================================================
+ 
+set( sources "" )
+set( sources.plus "" )
+foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
+  list( APPEND sources
+    ${prefix}/libmfxsw.cpp
+    ${prefix}/libmfxsw_async.cpp
+    ${prefix}/libmfxsw_audio_decode.cpp
+    ${prefix}/libmfxsw_audio_encode.cpp
+    ${prefix}/libmfxsw_ext.cpp
+    ${prefix}/libmfxsw_session.cpp
+    ${prefix}/mfx_session.cpp
+  )
+endforeach()
+foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/src )
+  list( APPEND sources
+    ${prefix}/fast_copy.cpp
+    ${prefix}/libmfx_allocator.cpp
+    ${prefix}/libmfx_core.cpp
+    ${prefix}/libmfx_core_factory.cpp
+    ${prefix}/mfx_umc_alloc_wrapper.cpp
+    ${prefix}/mfx_search_dll.cpp
+    ${prefix}/mfx_timing.cpp
+  )
+endforeach()
+
+set( USE_STRICT_NAME TRUE )
+set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/libmfxaudio.map" )
+    
+foreach( variant sw )
+  if( __ARCH MATCHES intel64 )
+    set( mfxlibname mfxaudio${variant}64 )
+  else()
+    set( mfxlibname mfxaudio${variant}32 )
+  endif()
+  if( __CONFIG MATCHES debug )
+    set( mfxlibname ${mfxlibname}_d )
+  endif()
+
+  set( LIBS "" )
+  list( APPEND LIBS
+    mfx_vlib_merged
+    mfx_vlib_merged_${variant}
+    mfx_alib_merged
+    umc_acodecs_merged
+    umc_codecs_merged
+    umc_io_merged_${variant}
+    umc_core_merged 
+    ${ITT_LIBS}
+    ippcc_l ippdc_l ippac_l ippi_l ipps_l ippcore_l
+    pthread
+    dl
+    )
+
+  make_library( ${mfxlibname} ${variant} shared)
+  #make_library( mfxaudio${variant}_static ${variant} static)
 endforeach()
