@@ -22,21 +22,6 @@ File Name: libmfxsw_ext.cpp
 #include <tchar.h>
 #endif
 
-#if !defined(_WIN32) && !defined(_WIN64)
-/* These string constants set Media SDK version information for Linux, Android, OSX. */
-#ifndef MFX_FILE_VERSION
-    #define MFX_FILE_VERSION "0.0.0.0"
-#endif
-#ifndef MFX_PRODUCT_VERSION
-    #define MFX_PRODUCT_VERSION "0.0.000.0000"
-#endif
-
-const char* g_MfxProductName = "mediasdk_product_name: Intel(r) Media SDK";
-const char* g_MfxCopyright = "mediasdk_copyright: Copyright(c) 2007-2013 Intel Corporation";
-const char* g_MfxFileVersion = "mediasdk_file_version: " MFX_FILE_VERSION;
-const char* g_MfxProductVersion = "mediasdk_product_version: " MFX_PRODUCT_VERSION;
-#endif
-
 // put here all of the functions that have the same api as video, but different implementation
 mfxStatus MFXQueryIMPL(mfxSession session, mfxIMPL *impl)
 {

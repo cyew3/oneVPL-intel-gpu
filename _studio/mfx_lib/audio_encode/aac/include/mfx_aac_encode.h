@@ -67,7 +67,7 @@ protected:
     mfxStatus CopyBitstream(mfxBitstream& bs, const mfxU8* ptr, mfxU32 bytes);
     void MoveBitstreamData(mfxBitstream& bs, mfxU32 offset);
 
-    mfxStatus AudioENCODEAAC::ConstructFrame(mfxBitstream *in, mfxBitstream *out);
+    mfxStatus ConstructFrame(mfxBitstream *in, mfxBitstream *out);
 
    // UMC encoder 
     std::auto_ptr<UMC::AACEncoder>  m_pAACAudioEncoder;
