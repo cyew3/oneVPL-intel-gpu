@@ -115,7 +115,8 @@ typedef enum
     MFX_ERR_UNDEFINED_BEHAVIOR          = -16,  /* undefined behavior */
     MFX_ERR_DEVICE_FAILED               = -17,  /* device operation failure */
     MFX_ERR_MORE_BITSTREAM              = -18,  /* expect more bitstream buffers at output */
-    MFX_ERR_INVALID_AUDIO_PARAM         = -19,  /* invalid audio parameters */
+    MFX_ERR_INCOMPATIBLE_AUDIO_PARAM    = -19,  /* incompatible audio parameters */
+    MFX_ERR_INVALID_AUDIO_PARAM         = -20,  /* invalid audio parameters */
 
     /* warnings >0 */
     MFX_WRN_IN_EXECUTION                = 1,    /* the previous asynchrous operation is in execution */
@@ -126,6 +127,7 @@ typedef enum
     MFX_WRN_VALUE_NOT_CHANGED           = 6,      /* the value is saturated based on its valid range */
     MFX_WRN_OUT_OF_RANGE                = 7,      /* the value is out of valid range */
     MFX_WRN_FILTER_SKIPPED              = 10,     /* one of requested filters has been skipped */
+    MFX_WRN_INCOMPATIBLE_AUDIO_PARAM    = 11,    /* incompatible audio parameters */
 
     /* threading statuses */
     MFX_TASK_DONE = MFX_ERR_NONE, /* task has been completed */
