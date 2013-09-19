@@ -602,7 +602,7 @@ mfxStatus MFXVideoENCODEH265::Close()
 
 mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
 {
-    mfxStatus sts;
+    mfxStatus sts, stsQuery;
 
     MFX_CHECK_NULL_PTR1(par_in);
     MFX_CHECK(m_isInitialized, MFX_ERR_NOT_INITIALIZED);
@@ -613,44 +613,152 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
 
     mfxExtCodingOptionHEVC* opts_hevc = (mfxExtCodingOptionHEVC*)GetExtBuffer( par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_HEVCENC );
     mfxExtOpaqueSurfaceAlloc* opaqAllocReq = (mfxExtOpaqueSurfaceAlloc*)GetExtBuffer( par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION );
+    mfxExtDumpFiles* opts_Dump = (mfxExtDumpFiles*)GetExtBuffer( par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_DUMP );
 
-    mfxVideoH265InternalParam inInt = *par_in;
-    //mfxVideoH265InternalParam *par = &inInt;
+    mfxVideoParam parNew = *par_in;
+    mfxVideoParam& parOld = m_mfxVideoParam;
 
-    mfxVideoParam checked_videoParam = *par_in;
+        //set unspecified parameters
+    if (!parNew.AsyncDepth)             parNew.AsyncDepth           = parOld.AsyncDepth;
+    if (!parNew.IOPattern)              parNew.IOPattern            = parOld.IOPattern;
+    if (!parNew.mfx.FrameInfo.FourCC)   parNew.mfx.FrameInfo.FourCC = parOld.mfx.FrameInfo.FourCC;
+    if (!parNew.mfx.FrameInfo.FrameRateExtN) parNew.mfx.FrameInfo.FrameRateExtN = parOld.mfx.FrameInfo.FrameRateExtN;
+    if (!parNew.mfx.FrameInfo.FrameRateExtD) parNew.mfx.FrameInfo.FrameRateExtD = parOld.mfx.FrameInfo.FrameRateExtD;
+    if (!parNew.mfx.FrameInfo.AspectRatioW)  parNew.mfx.FrameInfo.AspectRatioW  = parOld.mfx.FrameInfo.AspectRatioW;
+    if (!parNew.mfx.FrameInfo.AspectRatioH)  parNew.mfx.FrameInfo.AspectRatioH  = parOld.mfx.FrameInfo.AspectRatioH;
+    if (!parNew.mfx.FrameInfo.PicStruct)     parNew.mfx.FrameInfo.PicStruct     = parOld.mfx.FrameInfo.PicStruct;
+    //if (!parNew.mfx.FrameInfo.ChromaFormat) parNew.mfx.FrameInfo.ChromaFormat = parOld.mfx.FrameInfo.ChromaFormat;
+    if (!parNew.mfx.CodecProfile)       parNew.mfx.CodecProfile      = parOld.mfx.CodecProfile;
+    if (!parNew.mfx.CodecLevel)         parNew.mfx.CodecLevel        = parOld.mfx.CodecLevel;
+    if (!parNew.mfx.NumThread)          parNew.mfx.NumThread         = parOld.mfx.NumThread;
+    if (!parNew.mfx.TargetUsage)        parNew.mfx.TargetUsage       = parOld.mfx.TargetUsage;
+
+    if (!parNew.mfx.FrameInfo.Width)    parNew.mfx.FrameInfo.Width  = parOld.mfx.FrameInfo.Width;
+    if (!parNew.mfx.FrameInfo.Height)   parNew.mfx.FrameInfo.Height = parOld.mfx.FrameInfo.Height;
+    //if (!parNew.mfx.FrameInfo.CropX)    parNew.mfx.FrameInfo.CropX  = parOld.mfx.FrameInfo.CropX;
+    //if (!parNew.mfx.FrameInfo.CropY)    parNew.mfx.FrameInfo.CropY  = parOld.mfx.FrameInfo.CropY;
+    //if (!parNew.mfx.FrameInfo.CropW)    parNew.mfx.FrameInfo.CropW  = parOld.mfx.FrameInfo.CropW;
+    //if (!parNew.mfx.FrameInfo.CropH)    parNew.mfx.FrameInfo.CropH  = parOld.mfx.FrameInfo.CropH;
+    if (!parNew.mfx.GopRefDist)         parNew.mfx.GopRefDist        = parOld.mfx.GopRefDist;
+    if (!parNew.mfx.GopOptFlag)         parNew.mfx.GopOptFlag        = parOld.mfx.GopOptFlag;
+    if (!parNew.mfx.RateControlMethod)  parNew.mfx.RateControlMethod = parOld.mfx.RateControlMethod;
+    if (!parNew.mfx.NumSlice)           parNew.mfx.NumSlice          = parOld.mfx.NumSlice;
+    if (!parNew.mfx.NumRefFrame)        parNew.mfx.NumRefFrame       = parOld.mfx.NumRefFrame;
+
+    /*if(    parNew.mfx.CodecProfile != MFX_PROFILE_AVC_STEREO_HIGH
+        && parNew.mfx.CodecProfile != MFX_PROFILE_AVC_MULTIVIEW_HIGH)*/{
+        mfxU16 old_multiplier = IPP_MAX(parOld.mfx.BRCParamMultiplier, 1);
+        mfxU16 new_multiplier = IPP_MAX(parNew.mfx.BRCParamMultiplier, 1);
+
+        if (old_multiplier > new_multiplier) {
+            parNew.mfx.BufferSizeInKB = (mfxU16)((mfxU64)parNew.mfx.BufferSizeInKB*new_multiplier/old_multiplier);
+            if (parNew.mfx.RateControlMethod == MFX_RATECONTROL_CBR || parNew.mfx.RateControlMethod == MFX_RATECONTROL_VBR) {
+                parNew.mfx.InitialDelayInKB = (mfxU16)((mfxU64)parNew.mfx.InitialDelayInKB*new_multiplier/old_multiplier);
+                parNew.mfx.TargetKbps       = (mfxU16)((mfxU64)parNew.mfx.TargetKbps      *new_multiplier/old_multiplier);
+                parNew.mfx.MaxKbps          = (mfxU16)((mfxU64)parNew.mfx.MaxKbps         *new_multiplier/old_multiplier);
+            }
+            new_multiplier = old_multiplier;
+            parNew.mfx.BRCParamMultiplier = new_multiplier;
+        }
+        if (!parNew.mfx.BufferSizeInKB) parNew.mfx.BufferSizeInKB = (mfxU16)((mfxU64)parOld.mfx.BufferSizeInKB*old_multiplier/new_multiplier);
+        if (parNew.mfx.RateControlMethod == parOld.mfx.RateControlMethod) {
+            if (parNew.mfx.RateControlMethod > MFX_RATECONTROL_VBR)
+                old_multiplier = new_multiplier = 1;
+            if (!parNew.mfx.InitialDelayInKB) parNew.mfx.InitialDelayInKB = (mfxU16)((mfxU64)parOld.mfx.InitialDelayInKB*old_multiplier/new_multiplier);
+            if (!parNew.mfx.TargetKbps)       parNew.mfx.TargetKbps       = (mfxU16)((mfxU64)parOld.mfx.TargetKbps      *old_multiplier/new_multiplier);
+            if (!parNew.mfx.MaxKbps)          parNew.mfx.MaxKbps          = (mfxU16)((mfxU64)parOld.mfx.MaxKbps         *old_multiplier/new_multiplier);
+        }
+    }
+
+    mfxExtCodingOptionHEVC optsNew;
+    if (opts_hevc) {
+        mfxExtCodingOptionHEVC& optsOld = m_mfxHEVCOpts;
+        optsNew = *opts_hevc;
+        if (!optsNew.Log2MaxCUSize                ) optsNew.Log2MaxCUSize                 = optsOld.Log2MaxCUSize;
+        if (!optsNew.MaxCUDepth                   ) optsNew.MaxCUDepth                    = optsOld.MaxCUDepth;
+        if (!optsNew.QuadtreeTULog2MaxSize        ) optsNew.QuadtreeTULog2MaxSize         = optsOld.QuadtreeTULog2MaxSize        ;
+        if (!optsNew.QuadtreeTULog2MinSize        ) optsNew.QuadtreeTULog2MinSize         = optsOld.QuadtreeTULog2MinSize        ;
+        if (!optsNew.QuadtreeTUMaxDepthIntra      ) optsNew.QuadtreeTUMaxDepthIntra       = optsOld.QuadtreeTUMaxDepthIntra      ;
+        if (!optsNew.QuadtreeTUMaxDepthInter      ) optsNew.QuadtreeTUMaxDepthInter       = optsOld.QuadtreeTUMaxDepthInter      ;
+        if (!optsNew.AnalyzeChroma                ) optsNew.AnalyzeChroma                 = optsOld.AnalyzeChroma                ;
+        if (!optsNew.SignBitHiding                ) optsNew.SignBitHiding                 = optsOld.SignBitHiding                ;
+        if (!optsNew.RDOQuant                     ) optsNew.RDOQuant                      = optsOld.RDOQuant                     ;
+        if (!optsNew.SplitThresholdStrengthCUIntra) optsNew.SplitThresholdStrengthCUIntra = optsOld.SplitThresholdStrengthCUIntra;
+        if (!optsNew.SplitThresholdStrengthTUIntra) optsNew.SplitThresholdStrengthTUIntra = optsOld.SplitThresholdStrengthTUIntra;
+        if (!optsNew.SplitThresholdStrengthCUInter) optsNew.SplitThresholdStrengthCUInter = optsOld.SplitThresholdStrengthCUInter;
+        if (!optsNew.IntraNumCand1_2              ) optsNew.IntraNumCand1_2               = optsOld.IntraNumCand1_2              ;
+        if (!optsNew.IntraNumCand1_3              ) optsNew.IntraNumCand1_3               = optsOld.IntraNumCand1_3              ;
+        if (!optsNew.IntraNumCand1_4              ) optsNew.IntraNumCand1_4               = optsOld.IntraNumCand1_4              ;
+        if (!optsNew.IntraNumCand1_5              ) optsNew.IntraNumCand1_5               = optsOld.IntraNumCand1_5              ;
+        if (!optsNew.IntraNumCand1_6              ) optsNew.IntraNumCand1_6               = optsOld.IntraNumCand1_6              ;
+        if (!optsNew.IntraNumCand2_2              ) optsNew.IntraNumCand2_2               = optsOld.IntraNumCand2_2              ;
+        if (!optsNew.IntraNumCand2_3              ) optsNew.IntraNumCand2_3               = optsOld.IntraNumCand2_3              ;
+        if (!optsNew.IntraNumCand2_4              ) optsNew.IntraNumCand2_4               = optsOld.IntraNumCand2_4              ;
+        if (!optsNew.IntraNumCand2_5              ) optsNew.IntraNumCand2_5               = optsOld.IntraNumCand2_5              ;
+        if (!optsNew.IntraNumCand2_6              ) optsNew.IntraNumCand2_6               = optsOld.IntraNumCand2_6              ;
+        if (!optsNew.WPP                          ) optsNew.WPP                           = optsOld.WPP                          ;
+    }
+
+    // check that new params don't require allocation of additional memory
+    if (parNew.mfx.FrameInfo.Width > m_mfxVideoParam.mfx.FrameInfo.Width ||
+        parNew.mfx.FrameInfo.Height > m_mfxVideoParam.mfx.FrameInfo.Height ||
+        parNew.mfx.GopRefDist <  m_mfxVideoParam.mfx.GopRefDist ||
+        parNew.mfx.NumSlice != m_mfxVideoParam.mfx.NumSlice ||
+        parNew.mfx.NumRefFrame < m_mfxVideoParam.mfx.NumRefFrame ||
+        (parNew.mfx.CodecProfile & 0xFF) != (m_mfxVideoParam.mfx.CodecProfile & 0xFF)  )
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+
+    mfxVideoParam checked_videoParam = parNew;
     mfxExtCodingOptionHEVC checked_codingOptionHEVC = m_mfxHEVCOpts;
     mfxExtOpaqueSurfaceAlloc checked_opaqAllocReq;
+    mfxExtDumpFiles checked_DumpFiles = m_mfxDumpFiles;
 
-    mfxExtBuffer *ptr_checked_ext[2] = {0};
+    mfxExtBuffer *ptr_input_ext[3] = {0};
+    mfxExtBuffer *ptr_checked_ext[3] = {0};
     mfxU16 ext_counter = 0;
 
-
     if (opts_hevc) {
-        checked_codingOptionHEVC = *opts_hevc;
+        ptr_input_ext  [ext_counter  ] = &optsNew.Header;
         ptr_checked_ext[ext_counter++] = &checked_codingOptionHEVC.Header;
     }
     if (opaqAllocReq) {
         checked_opaqAllocReq = *opaqAllocReq;
+        ptr_input_ext  [ext_counter  ] = &opaqAllocReq->Header;
         ptr_checked_ext[ext_counter++] = &checked_opaqAllocReq.Header;
     }
-    m_mfxVideoParam.ExtParam = ptr_checked_ext;
-    m_mfxVideoParam.NumExtParam = ext_counter;
+    if (opts_Dump) {
+        ptr_input_ext  [ext_counter  ] = &opts_Dump->Header;
+        ptr_checked_ext[ext_counter++] = &checked_DumpFiles.Header;
+    }
+    parNew.ExtParam = ptr_input_ext;
+    parNew.NumExtParam = ext_counter;
+    checked_videoParam.ExtParam = ptr_checked_ext;
+    checked_videoParam.NumExtParam = ext_counter;
 
-    sts/*Query*/ = Query(par_in, &checked_videoParam); // [has to] copy all provided params
+    stsQuery = Query(&parNew, &checked_videoParam); // [has to] copy all provided params
 
-    MFX_CHECK_STS(sts);
+    if (stsQuery != MFX_ERR_NONE && stsQuery != MFX_WRN_INCOMPATIBLE_VIDEO_PARAM) {
+        if (stsQuery == MFX_ERR_UNSUPPORTED)
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        else
+            return stsQuery;
+    }
+
+    // Now use simple reset
+    Close();
+    sts = Init(&checked_videoParam);
 
     // Not finished implementation
 
-    m_frameCountSync = 0;
-    m_frameCount = 0;
-    m_frameCountBufferedSync = 0;
-    m_frameCountBuffered = 0;
+    //m_frameCountSync = 0;
+    //m_frameCount = 0;
+    //m_frameCountBufferedSync = 0;
+    //m_frameCountBuffered = 0;
 
 //    sts = m_enc->Reset();
 //    MFX_CHECK_STS(sts);
 
-    return MFX_ERR_NONE;
+    return sts;
 }
 
 mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_out)
