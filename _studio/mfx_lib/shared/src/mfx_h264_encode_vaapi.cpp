@@ -550,6 +550,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         m_caps.NoInterlacedField = VaEncCaps.EncLimits.bits.NoInterlacedField;
         m_caps.MaxNum_Reference = VaEncCaps.MaxNum_ReferenceL0;
         m_caps.MaxNum_Reference1 = VaEncCaps.MaxNum_ReferenceL1;
+        m_caps.RollingIntraRefresh = 1; // TODO: Force Intra Refresh till driver will report its support.
     }
     else
     {
