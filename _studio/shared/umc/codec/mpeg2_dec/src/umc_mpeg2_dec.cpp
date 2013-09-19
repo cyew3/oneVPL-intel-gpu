@@ -1780,6 +1780,8 @@ MPEG2VideoDecoderBase::MPEG2VideoDecoderBase()
 
     shMask.memMask = NULL;
     shMask.memSize = 0;
+
+    m_InitClipInfo = {};
 }
 
 MPEG2VideoDecoderBase::~MPEG2VideoDecoderBase()

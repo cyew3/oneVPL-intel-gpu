@@ -343,10 +343,14 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(IppVideoContext* video, int t
         m_ClipInfo.clip_info.height    = (code >> 8) & ((1 << 12) - 1);
         m_ClipInfo.clip_info.width     = (code >> 20) & ((1 << 12) - 1);
 
-        if(m_InitClipInfo.clip_info.height<m_ClipInfo.clip_info.height)
-            return UMC_ERR_INVALID_PARAMS;
-        if(m_InitClipInfo.clip_info.width<m_ClipInfo.clip_info.width)
-            return UMC_ERR_INVALID_PARAMS;
+        // this workaround for initialization (m_InitClipInfo not yet filled)
+        if((!m_InitClipInfo.clip_info.height) && (!m_InitClipInfo.clip_info.width))
+        {
+            if(m_InitClipInfo.clip_info.height < m_ClipInfo.clip_info.height)
+                return UMC_ERR_INVALID_PARAMS;
+            if(m_InitClipInfo.clip_info.width < m_ClipInfo.clip_info.width)
+                return UMC_ERR_INVALID_PARAMS;
+        }
 
         dar_code = (code >> 4) & ((1 << 4) - 1);
 
