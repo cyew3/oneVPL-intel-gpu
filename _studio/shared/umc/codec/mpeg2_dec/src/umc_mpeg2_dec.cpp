@@ -1733,6 +1733,7 @@ Status MPEG2VideoDecoderBase::Close()
 
 
 MPEG2VideoDecoderBase::MPEG2VideoDecoderBase()
+    : m_InitClipInfo()
 {
     for (int i = 0; i < 2*DPB_SIZE; i++)
     {
@@ -1780,8 +1781,6 @@ MPEG2VideoDecoderBase::MPEG2VideoDecoderBase()
 
     shMask.memMask = NULL;
     shMask.memSize = 0;
-
-    m_InitClipInfo = {};
 }
 
 MPEG2VideoDecoderBase::~MPEG2VideoDecoderBase()
