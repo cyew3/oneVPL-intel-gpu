@@ -38,6 +38,9 @@ UMC::Status FillVideoParam(const H265SeqParamSet * seq, mfxVideoParam *par, bool
 
         par->mfx.FrameInfo.CropW = (mfxU16)(par->mfx.FrameInfo.Width - SubWidthC[seq->chroma_format_idc] *
             (seq->conf_win_left_offset + seq->conf_win_right_offset + seq->def_disp_win_left_offset + seq->def_disp_win_right_offset));
+
+        par->mfx.FrameInfo.CropH -= (mfxU16)(par->mfx.FrameInfo.Height - seq->pic_height_in_luma_samples);
+        par->mfx.FrameInfo.CropW -= (mfxU16)(par->mfx.FrameInfo.Width - seq->pic_width_in_luma_samples);
     }
 
     par->mfx.FrameInfo.PicStruct = (mfxU8) (seq->field_seq_flag  ? MFX_PICSTRUCT_UNKNOWN : MFX_PICSTRUCT_PROGRESSIVE);

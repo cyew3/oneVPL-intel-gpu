@@ -642,9 +642,9 @@ mfxStatus VideoDECODEH264::GetVideoParam(mfxVideoParam *par)
 
     MFX_CHECK_NULL_PTR1(par);
 
-    par->mfx = m_vFirstPar.mfx;
-
     FillVideoParam(&m_vPar, true);
+
+    par->mfx = m_vPar.mfx;
 
     par->Protected = m_vPar.Protected;
     par->IOPattern = m_vPar.IOPattern;
@@ -736,6 +736,9 @@ mfxStatus VideoDECODEH264::GetVideoParam(mfxVideoParam *par)
         mfx_memcpy(spsPps->PPSBuffer, spsPps->PPSBufSize, spsPpsInternal->PPSBuffer, spsPps->PPSBufSize);
     }
 
+    par->mfx.FrameInfo.FrameRateExtN = m_vFirstPar.mfx.FrameInfo.FrameRateExtN;
+    par->mfx.FrameInfo.FrameRateExtD = m_vFirstPar.mfx.FrameInfo.FrameRateExtD;
+
     if (!par->mfx.FrameInfo.FrameRateExtD && !par->mfx.FrameInfo.FrameRateExtN)
     {
         par->mfx.FrameInfo.FrameRateExtD = m_vPar.mfx.FrameInfo.FrameRateExtD;
@@ -748,6 +751,9 @@ mfxStatus VideoDECODEH264::GetVideoParam(mfxVideoParam *par)
         }
     }
 
+    par->mfx.FrameInfo.AspectRatioW = m_vFirstPar.mfx.FrameInfo.AspectRatioW;
+    par->mfx.FrameInfo.AspectRatioH = m_vFirstPar.mfx.FrameInfo.AspectRatioH;
+
     if (!par->mfx.FrameInfo.AspectRatioH && !par->mfx.FrameInfo.AspectRatioW)
     {
         par->mfx.FrameInfo.AspectRatioH = m_vPar.mfx.FrameInfo.AspectRatioH;
@@ -759,6 +765,7 @@ mfxStatus VideoDECODEH264::GetVideoParam(mfxVideoParam *par)
             par->mfx.FrameInfo.AspectRatioW = 1;
         }
     }
+
     return MFX_ERR_NONE;
 }
 
