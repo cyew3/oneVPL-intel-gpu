@@ -409,20 +409,6 @@ VAAPIEncoder::VAAPIEncoder(VideoCORE* core)
     , m_initFrameWidth(0)
     , m_initFrameHeight(0)
 {
-    Zero(m_vaSpsBuf);
-    Zero(m_vaPpsBuf);
-    Zero(m_sliceParam, MAX_SLICES);
-    std::fill(m_sliceParamBufferId, m_sliceParamBufferId + MAX_SLICES, VA_INVALID_ID);
-    Zero(m_allocResponseMB);
-    Zero(m_allocResponseBS);
-
-    m_pMiscParamsFps = (VAEncMiscParameterBuffer*)new mfxU8[sizeof(VAEncMiscParameterFrameRate) + sizeof(VAEncMiscParameterBuffer)];
-    Zero((VAEncMiscParameterFrameRate &)m_pMiscParamsFps->data);
-    m_pMiscParamsFps->type = VAEncMiscParameterTypeFrameRate;
-    
-    m_pMiscParamsPrivate = (VAEncMiscParameterBuffer*)new mfxU8[sizeof(VAEncMiscParameterPrivate) + sizeof(VAEncMiscParameterBuffer)];
-    Zero((VAEncMiscParameterPrivate &)m_pMiscParamsPrivate->data);
-    m_pMiscParamsPrivate->type = (VAEncMiscParameterType)VAEncMiscParameterTypePrivate;
 }
 
 VAAPIEncoder::~VAAPIEncoder()
@@ -489,7 +475,22 @@ mfxStatus VAAPIEncoder::Init(ExecuteBuffers* pExecuteBuffers, mfxU32 numRefFrame
 {
     mfxStatus sts = MFX_ERR_UNSUPPORTED; 
     assert(ENCODE_ENC_PAK_ID == funcId);
-    
+
+    Zero(m_vaSpsBuf);
+    Zero(m_vaPpsBuf);
+    Zero(m_sliceParam, MAX_SLICES);
+    std::fill(m_sliceParamBufferId, m_sliceParamBufferId + MAX_SLICES, VA_INVALID_ID);
+    Zero(m_allocResponseMB);
+    Zero(m_allocResponseBS);
+
+    m_pMiscParamsFps = (VAEncMiscParameterBuffer*)new mfxU8[sizeof(VAEncMiscParameterFrameRate) + sizeof(VAEncMiscParameterBuffer)];
+    Zero((VAEncMiscParameterFrameRate &)m_pMiscParamsFps->data);
+    m_pMiscParamsFps->type = VAEncMiscParameterTypeFrameRate;
+
+    m_pMiscParamsPrivate = (VAEncMiscParameterBuffer*)new mfxU8[sizeof(VAEncMiscParameterPrivate) + sizeof(VAEncMiscParameterBuffer)];
+    Zero((VAEncMiscParameterPrivate &)m_pMiscParamsPrivate->data);
+    m_pMiscParamsPrivate->type = (VAEncMiscParameterType)VAEncMiscParameterTypePrivate;
+
     sts = Init(ENCODE_ENC_PAK, pExecuteBuffers);
     MFX_CHECK_STS(sts);
 
@@ -517,7 +518,7 @@ mfxStatus VAAPIEncoder::Init(ENCODE_FUNC func, ExecuteBuffers* pExecuteBuffers)
     //m_initFrameWidth   = pExecuteBuffers->m_sps.FrameWidth;
     //m_initFrameHeight  = pExecuteBuffers->m_sps.FrameHeight;
 
-    memset (&m_rawFrames, 0, sizeof(mfxRawFrames));
+    //memset (&m_rawFrames, 0, sizeof(mfxRawFrames));
 
     ExtVASurface cleanSurf = {VA_INVALID_ID, 0, 0};
     std::fill(m_feedback.begin(), m_feedback.end(), cleanSurf);
@@ -807,6 +808,7 @@ mfxI32 VAAPIEncoder::GetRecFrameIndex (mfxMemId memID)
 
 mfxI32 VAAPIEncoder::GetRawFrameIndex (mfxMemId memID, bool bAddFrames)
 {
+    assert(0);
     mfxStatus sts;
     ExtVASurface extSurf;
     VASurfaceID *pSurface = NULL;
@@ -1320,7 +1322,13 @@ mfxStatus VAAPIEncoder::Close()
     {
         m_core->FreeFrames(&m_allocResponseBS);
         Zero(m_allocResponseBS);
-    }        
+    }
+
+    m_compBufInfo.clear();
+    m_uncompBufInfo.clear();
+    m_bsQueue.clear();
+    m_reconQueue.clear();
+
     return MFX_ERR_NONE;
 } // mfxStatus VAAPIEncoder::Close()
 
@@ -1528,6 +1536,8 @@ mfxStatus VAAPIEncoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBits
     Frame.MemId = m_allocResponseBS.mids[nBitstream];
     sts = m_core->LockFrame(Frame.MemId, &Frame);
     MFX_CHECK_STS(sts);
+    if (!Frame.Y)
+        return MFX_ERR_NULL_PTR;
 
 
 #ifdef PAVP_SUPPORT
