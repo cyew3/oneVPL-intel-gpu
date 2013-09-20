@@ -491,8 +491,8 @@ mfxStatus AudioDECODEAAC::AACDECODERoutine(void *pState, void *pParam,
         // set data size 0 to the input buffer 
         // set out buffer size;
         memmove(obj.m_frame.Data + obj.m_frame.DataOffset, obj.mInData.GetDataPointer(), obj.mInData.GetDataSize());
-        obj.m_frame.DataLength = obj.mInData.GetDataSize();
-        pTask->out->DataLength += (mfxU32)obj.mOutData.GetDataSize();
+        obj.m_frame.DataLength = (mfxU32) obj.mInData.GetDataSize();
+        pTask->out->DataLength += (mfxU32) obj.mOutData.GetDataSize();
     }
     else
     {
