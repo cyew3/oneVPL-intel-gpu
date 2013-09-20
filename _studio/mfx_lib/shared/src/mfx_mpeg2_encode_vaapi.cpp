@@ -461,7 +461,7 @@ mfxStatus VAAPIEncoder::QueryEncodeCaps(ENCODE_CAPS & caps)
         VAEncQueryCapabilities VaEncCaps;
         memset(&VaEncCaps, 0, sizeof(VaEncCaps));
         VaEncCaps.size = sizeof(VAEncQueryCapabilities);
-        vaSts = pfnVaExtQueryCaps(m_vaDisplay, VAProfileH264Baseline, &VaEncCaps);
+        vaSts = pfnVaExtQueryCaps(m_vaDisplay, VAProfileMPEG2Main, &VaEncCaps);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
         caps.MaxPicWidth  = VaEncCaps.MaxPicWidth;
@@ -933,7 +933,7 @@ mfxStatus VAAPIEncoder::FillSlices(ExecuteBuffers* pExecuteBuffers)
     VAStatus vaSts;
     int i, width_in_mbs, height_in_mbs;
 
-    assert(m_vaPpsBuf.picture_coding_extension.bits.q_scale_type == 0);
+//    assert(m_vaPpsBuf.picture_coding_extension.bits.q_scale_type == 0);
 
     width_in_mbs = (m_vaSpsBuf.picture_width + 15) >> 4;
     if (m_vaSpsBuf.sequence_extension.bits.progressive_sequence)
