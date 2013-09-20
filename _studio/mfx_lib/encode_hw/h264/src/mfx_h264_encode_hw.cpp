@@ -799,8 +799,9 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     }
 
 #if USE_AGOP
-    if (m_video.mfx.GopOptFlag & 16)//AGOP
+    if (extOpt2->AdaptiveB)//AGOP
     {
+        const int agopLength = 10;
         if(!m_cmCtx.get() && !m_cmDevice)
         {
             m_cmDevice.Reset(CreateCmDevicePtr(m_core));
@@ -812,7 +813,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
         request.Info.FourCC = MFX_FOURCC_NV12;
         request.Type        = MFX_MEMTYPE_D3D_INT;
-        request.NumFrameMin = mfxU16(m_video.mfx.NumRefFrame + m_video.AsyncDepth);
+        request.NumFrameMin = mfxU16(m_video.mfx.NumRefFrame + m_video.AsyncDepth + agopLength); //FTODO
         request.Info.Width  = widthAGOP;
         request.Info.Height = heightAGOP;
 
@@ -824,7 +825,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         request.Info.Height = heightAGOP / 16;
         request.Info.FourCC = MFX_FOURCC_P8;
         request.Type        = MFX_MEMTYPE_D3D_INT;
-        request.NumFrameMin = mfxU16(m_video.mfx.NumRefFrame + m_video.AsyncDepth);
+        request.NumFrameMin = mfxU16(m_video.mfx.NumRefFrame + m_video.AsyncDepth + agopLength);
 
         sts = m_mbAGOP.AllocCmBuffersUp(m_cmDevice, request);
         MFX_CHECK_STS(sts);
@@ -877,6 +878,8 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     m_sei.Alloc(mfxU32(MAX_SEI_SIZE + MAX_FILLER_SIZE));
 
 #if USE_AGOP
+    m_agopCurrentLen = 0;
+    m_agopDeps = 10;
     for(int i = 0; i<MAX_B_FRAMES; i++)
     {
         m_bestGOPCost[i] = MAX_SEQUENCE_COST;
@@ -1173,15 +1176,35 @@ void ImplementationAvc::OnNewFrame()
 #if USE_AGOP
 //submit tasks to estimate possible combinations
 void ImplementationAvc::SubmitAdaptiveGOP()
-{
-    mfxU8 bestForLen[10][100];
-    mfxU32 bestCost[10];
+{   
+    //detect frame type of first frame
+    //first frame will not affect best frame path of future frames on next iter beacause of limited number of B frames 
+    //for this purpose check best pathes for next frames
+    //number of combinations to check 
+    //no B - no combinations
+    //1 B - P BP
+    //2 B - P BP BBP
+
+    //find in a sequence optimal solutions for len 1,2,3,4...GopRefDist
+    //optimum for 1 is P
+    //optimum for 2 is PP or BP
+    //optimum for 3 is PPP, BBP, PBP, BPP (get optimum for len=2 and add one more)
+    //optimum for 4 is PPPP, BBBP, PBBP, PBPP, PPBP, BPBP, BPPP
 
     //should be enough frames to analyse
     assert(m_adaptiveGOPBuffered.size() > 0);
+    const mfxU32 maxDepB = m_video.mfx.GopRefDist + 1; //maximum size cycle buffer for best sequences and best costs
 //    if(m_adaptiveGOPBuffered.size() == unsigned int(m_video.mfx.GopRefDist + 1) /*||
 //        (m_bufferedInFrames.size()>0 && task->m_yuv == 0)*/)
-    if(m_adaptiveGOPBuffered.size() > 1)
+    if(m_adaptiveGOPBuffered.size() == 1 && m_agopCurrentLen==0)
+    {
+        //add initial frame type
+        mfxU8 frameType = m_adaptiveGOPBuffered.front().GetFrameType();
+        m_bestGOPSequence[0][0] = frameType; //TODO: check frametype
+        m_bestGOPCost[0] = 0; //reset GOP cost for initial frame
+        m_agopCurrentLen++;
+        m_agopBestIdx = 0;
+    }else if(m_adaptiveGOPBuffered.size() > 1 && (m_adaptiveGOPBuffered.back().GetFrameType() & MFX_FRAMETYPE_PB)) //if last added frame I skip estimation and drop frames 
     {
         //for random access
         std::vector<DdiTask*> gopBuffer; //just vector of task ptrs, it is better to work with vector
@@ -1190,28 +1213,75 @@ void ImplementationAvc::SubmitAdaptiveGOP()
             gopBuffer.push_back( &(*it) );
 
         //check each lens for best cost
-#if 0
         int maxLen = IPP_MIN(m_adaptiveGOPBuffered.size()-1, m_video.mfx.GopRefDist);
+        mfxI32 bestLen=0;
+        mfxU32 bestLenCost = MAX_SEQUENCE_COST;
         for(int len=0; len < maxLen; len++)
         {
+            //check cost for each possible len (sequence) and get the best for current lentgh
+            int idx = (m_agopCurrentLen-len-1+maxDepB)%maxDepB;
+            mfxU32 cost = m_bestGOPCost[idx];
+            int prevP = m_agopCurrentLen - len - 1;
+            int nextP = m_agopCurrentLen;
+            //cost B
+            for(int j=0; j<len; j++)
+            {
+                //TODO: Bref
+                cost += mfxU32(0.84*RunPreMeAGOP(gopBuffer[prevP],
+                    gopBuffer[prevP+1+j],
+                    gopBuffer[nextP]));
+            }
+            //cost P
+            cost += RunPreMeAGOP(gopBuffer[prevP],
+                gopBuffer[nextP],
+                gopBuffer[nextP]);
 
+            if(cost < bestLenCost)
+            {
+                bestLen = len;
+                bestLenCost = cost;
+            }
         }
-#endif
+        //Make best len to current
+        int idx_in = (m_agopCurrentLen-bestLen-1+maxDepB)%maxDepB;
+        int idx_out = m_agopCurrentLen%maxDepB;
+        memcpy(&m_bestGOPSequence[idx_out][0], &m_bestGOPSequence[idx_in][0], m_agopCurrentLen);
+        //add P and B frames
+        m_bestGOPCost[idx_out] = bestLenCost;
+        m_bestGOPSequence[idx_out][m_agopCurrentLen] = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
+        for(int j=0; j<bestLen; j++)
+        {
+            m_bestGOPSequence[idx_out][m_agopCurrentLen-j-1] = MFX_FRAMETYPE_B;
+        }
+        m_agopCurrentLen++; //TODO: use size of buffered frames?
+        m_agopBestIdx = idx_out;
+    }
 
-        //detect frame type of first frame
-        //first frame will not affect best frame path of future frames on next iter beacause of limited number of B frames 
-        //for this purpose check best pathes for next frames
-        //number of combinations to check 
-        //no B - no combinations
-        //1 B - P BP
-        //2 B - P BP BBP
+    //shift to ready frames
+    //max len == 10?  m_agopDeps should = max dep MIN(10, len to next I)
+    if(m_agopCurrentLen >= m_agopDeps || (m_adaptiveGOPBuffered.back().GetFrameType() & MFX_FRAMETYPE_I)) //shift all frames to ready queue and reset agop, the same if last frame I
+    {
+        //set frametypes
+        std::list<DdiTask>::iterator it = m_adaptiveGOPBuffered.begin();
+        std::list<DdiTask>::iterator last = --m_adaptiveGOPBuffered.end();
+        int i=0;
+        while( it != last)
+        {
+            DdiTask& task = *it;
+            task.m_type[0] = task.m_type[1] = m_bestGOPSequence[m_agopBestIdx][i];
+            i++;
+            it++;
+        }
+        //we should rest one frame as P to start next sequence (for reference)
+        m_adaptiveGOPReady.splice(m_adaptiveGOPReady.end(), m_adaptiveGOPBuffered, m_adaptiveGOPBuffered.begin(), --(m_adaptiveGOPBuffered.end()));
+        m_bestGOPCost[0] = 0; //no cost for ref frame
+        for(int i=1; i<m_agopCurrentLen; i++) m_bestGOPCost[i] = MAX_SEQUENCE_COST;
+        m_agopCurrentLen = 1;
+        m_agopBestIdx = 0;
+        m_bestGOPSequence[0][0] = m_adaptiveGOPBuffered.front().GetFrameType(); //keep frame type of last frame
+    }
 
-        //find in a sequence optimal solutions for len 1,2,3,4...GopRefDist
-        //optimum for 1 is P
-        //optimum for 2 is PP or BP
-        //optimum for 3 is PPP, BBP, PBP, BPP (get optimum for len=2 and add one more)
-        //optimum for 4 is PPPP, BBBP, PBBP, PBPP, PPBP, BPBP, BPPP
-
+#if 0
         int maxLen = IPP_MIN(m_video.mfx.GopRefDist,m_adaptiveGOPBuffered.size()-1);
         int shiftOffset=1; //how many frames shift to ready query
         //scan for next I frame 
@@ -1342,7 +1412,9 @@ void ImplementationAvc::SubmitAdaptiveGOP()
         std::list<DdiTask>::iterator last = m_adaptiveGOPBuffered.begin();
         std::advance(last, shiftOffset);
         m_adaptiveGOPReady.splice(m_adaptiveGOPReady.end(), m_adaptiveGOPBuffered, m_adaptiveGOPBuffered.begin(), last);
-    }
+        }
+#endif
+    
 }
 
 void ImplementationAvc::OnAdaptiveGOPSubmitted()
@@ -1352,9 +1424,28 @@ void ImplementationAvc::OnAdaptiveGOPSubmitted()
     //    m_core->DecreaseReference(&task->m_yuv->Data);
     //move one ready frame to reordering queue, if any
     //check if we have surface for new task
+    if(m_adaptiveGOPReady.size() == 0 && m_adaptiveGOPBuffered.size() > 0)
+    {
+        //drop all frames to ready with best len
+        //set frametypes
+        std::list<DdiTask>::iterator it = m_adaptiveGOPBuffered.begin();
+        int i=0;
+        while( it != m_adaptiveGOPBuffered.end())
+        {
+            DdiTask& task = *it;
+            task.m_type[0] = task.m_type[1] = m_bestGOPSequence[m_agopBestIdx][i];
+            i++;
+            it++;
+        }
+        for(int i=0; i<m_agopCurrentLen; i++) m_bestGOPCost[i] = MAX_SEQUENCE_COST;
+        m_agopCurrentLen = 0;
+        m_agopBestIdx = 0;
+        m_adaptiveGOPReady.splice(m_adaptiveGOPReady.end(), m_adaptiveGOPBuffered);
+    }
+
     if(m_adaptiveGOPReady.size() > 0)
     {
-        m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_AGOP;
+//        m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_AGOP;
 
         DdiTask& task = m_adaptiveGOPReady.front();
         mfxU8 requiredFrameType =  task.m_type[0];
@@ -1535,6 +1626,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
     mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
 
 #if USE_AGOP
+    mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(m_video);
     static int numCall = 0;
     numCall++;
 #endif
@@ -1549,7 +1641,8 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
     fprintf(stderr,"num_calls: %d ", numCall);
     if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_CALL_EMULATOR) fprintf(stderr, "EMUL ");
     if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_ACCEPT_FRAME) fprintf(stderr, "ACCEPT ");
-    if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_AGOP) fprintf(stderr, "AGOP ");
+    if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_START_AGOP) fprintf(stderr, "START_AGOP ");
+    if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_WAIT_AGOP) fprintf(stderr, "WAIT_AGOP ");
     if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_START_LA) fprintf(stderr, "START_LA ");
     if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_WAIT_LA) fprintf(stderr, "WAIT_LA ");
     if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_START_ENCODE) fprintf(stderr, "START_ENCODE ");
@@ -1619,7 +1712,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         // move task to reordering queue
         //printf("\rACCEPTED      do=%4d eo=%4d type=%d\n", newTask.m_frameOrder, newTask.m_encOrder, newTask.m_type[0]); fflush(stdout);
 #if USE_AGOP
-        if(m_video.mfx.GopOptFlag & 16)  //adaptive GOP do reordering by itself, accept new frame
+        if(extOpt2->AdaptiveB)  //adaptive GOP do reordering by itself, accept new frame
         {
             if( newTask.m_yuv != NULL) //not empty task
             {
@@ -1635,12 +1728,15 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 if (sts != MFX_ERR_NONE)
                     return Error(sts);
 
+                fprintf(stderr,"new_Frame=%d\n", newTask.m_frameOrder);
                 //downsample 4X
                 newTask.m_cmRaw = CreateSurface(m_cmDevice, newTask.m_handleRaw.first, m_currentVaType);
                 newTask.m_cmRaw4X = (CmSurface2D *)AcquireResource(m_raw4X);
+                assert(newTask.m_cmRaw != NULL || newTask.m_cmRaw4X != NULL);
                 m_cmCtx->DownSample4X(newTask.m_cmRaw, newTask.m_cmRaw4X);
                 //Adding MB data
                 mfxHDLPair cmMb = AcquireResourceUp(m_mbAGOP);
+                assert(cmMb.first != NULL);
                 newTask.m_cmMbAGOP    = (CmBufferUP *)cmMb.first;
                 newTask.m_cmMbSysAGOP = (void *)cmMb.second;
                 //shift task to buffered adaptive GOP queue
@@ -1662,13 +1758,15 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
     }
 
 #if USE_AGOP
-    if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_AGOP)
+    if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_START_AGOP)
     {
-        if(m_video.mfx.GopOptFlag & 16)
+        
+        if(extOpt2->AdaptiveB)
         {
+#if 1
             SubmitAdaptiveGOP();
-            OnAdaptiveGOPSubmitted(); //check submitted results, and move to reordering queue
-#if 0
+//            OnAdaptiveGOPSubmitted(); //check submitted results, and move to reordering queue
+#else
             UMC::AutomaticUMCMutex guard(m_listMutex);
 //          m_adaptiveGOPBuffered.splice(m_adaptiveGOPBuffered.end(), m_incoming, m_incoming.begin());
             DdiTask& task = m_adaptiveGOPBuffered.front();
@@ -1683,7 +1781,16 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             m_reordering.splice(m_reordering.end(), m_adaptiveGOPBuffered, m_adaptiveGOPBuffered.begin());
 #endif
         }
-        m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_AGOP;
+        m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_START_AGOP;
+    }
+
+    if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_WAIT_AGOP)
+    {
+        if(extOpt2->AdaptiveB)
+        {
+            OnAdaptiveGOPSubmitted(); //check submitted results, and move to reordering queue
+        }
+        m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_WAIT_AGOP;
     }
 #endif
 

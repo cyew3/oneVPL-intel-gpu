@@ -1084,8 +1084,8 @@ bool CmContext::QueryVmeAGOP(
         if (mb[i].IntraMbFlag)
         {
             mfxU16 bitCostLambda = mfxU16(Map44LutValueBack(costs.ModeCost[LUTMODE_INTRA_16x16]));
-            assert(mb[i].intraCost >= bitCostLambda);
-            mb[i].dist = mb[i].intraCost - bitCostLambda;
+            //assert(mb[i].intraCost >= bitCostLambda);
+            mb[i].dist = IPP_MAX(0, mb[i].intraCost - bitCostLambda);
             cost += mb[i].intraCost;
         }
         else

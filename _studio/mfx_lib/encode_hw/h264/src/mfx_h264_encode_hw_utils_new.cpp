@@ -1863,7 +1863,8 @@ void AsyncRoutineEmulator::Init(MfxVideoParam const & video)
     case MFX_RATECONTROL_CQP:
         m_stageGreediness[STG_ACCEPT_FRAME] = 1;
 #if USE_AGOP
-        m_stageGreediness[STG_AGOP]         = video.mfx.GopOptFlag & 16 ? video.mfx.GopRefDist+1 : 1; 
+        m_stageGreediness[STG_START_AGOP]         = 1; //extOpt2->AdaptiveB ? video.mfx.GopRefDist+1 : 1; 
+        m_stageGreediness[STG_WAIT_AGOP]         = 10; //extOpt2->AdaptiveB ? video.mfx.GopRefDist+1 : 1; 
 #endif
         m_stageGreediness[STG_START_LA    ] = video.mfx.EncodedOrder ? 1 : video.mfx.GopRefDist;
         m_stageGreediness[STG_WAIT_LA     ] = 1;
@@ -1874,7 +1875,8 @@ void AsyncRoutineEmulator::Init(MfxVideoParam const & video)
     case MFX_RATECONTROL_CRF:
         m_stageGreediness[STG_ACCEPT_FRAME] = 1;
 #if USE_AGOP
-        m_stageGreediness[STG_AGOP]         = video.mfx.GopOptFlag & 16 ? video.mfx.GopRefDist+1 : 1; 
+        m_stageGreediness[STG_START_AGOP]         = 1; //extOpt2->AdaptiveB ? video.mfx.GopRefDist+1 : 1; 
+        m_stageGreediness[STG_WAIT_AGOP]         = 1; //extOpt2->AdaptiveB ? video.mfx.GopRefDist+1 : 1; 
 #endif
         m_stageGreediness[STG_START_LA    ] = video.mfx.EncodedOrder ? 1 : video.mfx.GopRefDist;
         m_stageGreediness[STG_WAIT_LA     ] = 1 + !!(video.AsyncDepth > 1);
@@ -1884,7 +1886,8 @@ void AsyncRoutineEmulator::Init(MfxVideoParam const & video)
     default:
         m_stageGreediness[STG_ACCEPT_FRAME] = 1;
 #if USE_AGOP
-        m_stageGreediness[STG_AGOP]         = video.mfx.GopOptFlag & 16 ? video.mfx.GopRefDist+1 : 1; 
+        m_stageGreediness[STG_START_AGOP]         = 1; //extOpt2->AdaptiveB ? video.mfx.GopRefDist+1 : 1; 
+        m_stageGreediness[STG_WAIT_AGOP]         = 10; //extOpt2->AdaptiveB ? video.mfx.GopRefDist+1 : 1;  //agop deps
 #endif
         m_stageGreediness[STG_START_LA    ] = video.mfx.EncodedOrder ? 1 : video.mfx.GopRefDist;
         m_stageGreediness[STG_WAIT_LA     ] = 1;
@@ -1932,9 +1935,9 @@ mfxU32 AsyncRoutineEmulator::CheckStageOutput(mfxU32 stage)
 mfxU32 AsyncRoutineEmulator::Go(bool hasInput)
 {
     if (hasInput)
-        ++m_queueFullness[QU_INCOMING];
+        ++m_queueFullness[STG_ACCEPT_FRAME];
     else
-        m_queueFlush[QU_INCOMING] = 1;
+        m_queueFlush[STG_ACCEPT_FRAME] = 1;
 
     mfxU32 stages = 0;
     for (mfxU32 i = 0; i < STG_COUNT; i++)

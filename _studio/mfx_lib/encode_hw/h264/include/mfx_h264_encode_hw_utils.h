@@ -1414,7 +1414,8 @@ namespace MfxHwH264Encode
         enum {
             STG_ACCEPT_FRAME,
 #if USE_AGOP
-            STG_AGOP,
+            STG_START_AGOP,
+            STG_WAIT_AGOP,
 #endif
             STG_START_LA,
             STG_WAIT_LA,
@@ -1427,7 +1428,8 @@ namespace MfxHwH264Encode
             STG_BIT_CALL_EMULATOR = 0,
             STG_BIT_ACCEPT_FRAME  = 1 << STG_ACCEPT_FRAME,
 #if USE_AGOP
-            STG_BIT_AGOP          = 1 << STG_AGOP,
+            STG_BIT_START_AGOP          = 1 << STG_START_AGOP,
+            STG_BIT_WAIT_AGOP          = 1 << STG_WAIT_AGOP,
 #endif
             STG_BIT_START_LA      = 1 << STG_START_LA,
             STG_BIT_WAIT_LA       = 1 << STG_WAIT_LA,
@@ -1452,8 +1454,6 @@ namespace MfxHwH264Encode
         mfxU32 CheckStageOutput(mfxU32 stage);
 
     private:
-        enum { QU_INCOMING, QU_REORDERING, QU_LA_STARTED, QU_LA_FINISHED, QA_ENCODING, QA_FREE };
-
         mfxU32 m_stageGreediness[STG_COUNT];
         mfxU32 m_queueFullness[STG_COUNT + 1];
         mfxU32 m_queueFlush[STG_COUNT + 1];
@@ -1721,6 +1721,9 @@ namespace MfxHwH264Encode
         std::vector<VmeData *>      m_tmpVmeData;
 
 #if USE_AGOP
+        mfxI32        m_agopBestIdx;
+        mfxI32        m_agopCurrentLen;
+        mfxI32        m_agopDeps;
         std::list<DdiTask>  m_adaptiveGOPBuffered;
         std::list<DdiTask>  m_adaptiveGOPReady;
         mfxU8 m_bestGOPSequence[MAX_B_FRAMES][MAX_GOP_SEQUENCE+1];
