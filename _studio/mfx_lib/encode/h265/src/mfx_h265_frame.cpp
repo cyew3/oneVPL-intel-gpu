@@ -13,7 +13,7 @@
 #include "mfx_h265_defs.h"
 #include "vm_file.h"
 
-#define ALIGN_VALUE 16
+#define ALIGN_VALUE 32
 // template to align a pointer
 template<class T> inline
 T align_pointer(void *pv, size_t lAlignValue = UMC::DEFAULT_ALIGN_VALUE)

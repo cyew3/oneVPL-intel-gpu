@@ -1363,15 +1363,15 @@ Ipp32s H265CU::MVCost( H265MV MV[2], T_RefIdx curRefIdx[2], MVPInfo pInfo[2], MV
 }
 
 // abs_part_idx - for minimal TU
-Ipp32s H265CU::MatchingMetric_PU(H265MEInfo* me_info, H265MV* MV, H265Frame *PicYUVRef) const
+Ipp32s H265CU::MatchingMetric_PU(PixType *pSrc, H265MEInfo* me_info, H265MV* MV, H265Frame *PicYUVRef) const
 {
     Ipp32s cost = 0;
-    Ipp32s ctbOffset = me_info->posx + me_info->posy * pitch_src;
+    //Ipp32s ctbOffset = me_info->posx + me_info->posy * pitch_src;
+    //PixType *pSrc = y_src + ctbOffset;
     Ipp32s refOffset = ctb_pelx + me_info->posx + (MV->mvx >> 2) + (ctb_pely + me_info->posy + (MV->mvy >> 2)) * PicYUVRef->pitch_luma;
-    PixType *pSrc = y_src + ctbOffset;
     PixType *pRec = PicYUVRef->y + refOffset;
     Ipp32s recPitch = PicYUVRef->pitch_luma;
-    ALIGN_DECL(16) PixType pred_buf_y[MAX_CU_SIZE*MAX_CU_SIZE];
+    ALIGN_DECL(32) PixType pred_buf_y[MAX_CU_SIZE*MAX_CU_SIZE];
 
     if ((MV->mvx | MV->mvy) & 3)
     {
@@ -1389,13 +1389,13 @@ Ipp32s H265CU::MatchingMetric_PU(H265MEInfo* me_info, H265MV* MV, H265Frame *Pic
     return cost;
 }
 
-Ipp32s H265CU::MatchingMetricBipred_PU(H265MEInfo* me_info, PixType *y_fwd, Ipp32u pitch_fwd, PixType *y_bwd, Ipp32u pitch_bwd, H265MV MV[2]) const
+Ipp32s H265CU::MatchingMetricBipred_PU(PixType *pSrc, H265MEInfo* me_info, PixType *y_fwd, Ipp32u pitch_fwd, PixType *y_bwd, Ipp32u pitch_bwd, H265MV MV[2]) const
 {
     Ipp32s cost;
     Ipp32s width = me_info->width;
     Ipp32s height = me_info->height;
-    Ipp32s ctbOffset = me_info->posx + me_info->posy * pitch_src;
-    PixType *pSrc = y_src + ctbOffset;
+    //Ipp32s ctbOffset = me_info->posx + me_info->posy * pitch_src;
+    //PixType *pSrc = y_src + ctbOffset;
     Ipp32s x, y;
 
     Ipp16s pred_buf_y[2][MAX_CU_SIZE*MAX_CU_SIZE];
@@ -1882,6 +1882,8 @@ void H265CU::ME_PU(H265MEInfo* me_info)
 
     GetPUMVPredictorInfo(blockIdx, partAddr, me_info->split_mode, curPUidx, pInfo, mergeInfo);
 
+    PixType *pSrc = y_src + me_info->posx + me_info->posy * pitch_src;
+
     H265MV MV_best[2];
     H265MV MV_cur(0, 0);
     H265MV MV_pred(0, 0); // predicted MV, now use zero MV
@@ -1932,7 +1934,7 @@ void H265CU::ME_PU(H265MEInfo* me_info)
         }
 
         for (i=0; i<num_tried; i++) {
-            cost_temp = MatchingMetric_PU( me_info, &MVtried[i], PicYUVRef) + i; // approx MVcost
+            cost_temp = MatchingMetric_PU( pSrc, me_info, &MVtried[i], PicYUVRef) + i; // approx MVcost
             if (cost_best[ME_dir] > cost_temp) {
                 MV_best[ME_dir] = MVtried[i];
                 cost_best[ME_dir] = cost_temp;
@@ -1941,7 +1943,7 @@ void H265CU::ME_PU(H265MEInfo* me_info)
         cost_best[ME_dir] = INT_MAX; // to be properly updated
         MV_cur.mvx = (MV_best[ME_dir].mvx + 1) & ~3;
         MV_cur.mvy = (MV_best[ME_dir].mvy + 1) & ~3;
-        cost_best[ME_dir] = MatchingMetric_PU( me_info, &MV_cur, PicYUVRef);
+        cost_best[ME_dir] = MatchingMetric_PU( pSrc, me_info, &MV_cur, PicYUVRef);
         MV_best[ME_dir] = MV_cur;
         ME_step_best = 4;
 
@@ -1956,7 +1958,7 @@ void H265CU::ME_PU(H265MEInfo* me_info)
 //                 MV[ME_dir].mvx = x * 8;
 //                 MV[ME_dir].mvy = y * 8;
 //                 clipMV(MV[ME_dir]);
-//                 cost_temp = MatchingMetric_PU( me_info, &MV[ME_dir], PicYUVRef) + //MV_pred.qdiff(MV, par->QP);
+//                 cost_temp = MatchingMetric_PU( pSrc, me_info, &MV[ME_dir], PicYUVRef) + //MV_pred.qdiff(MV, par->QP);
 //                     MVCost( MV, curRefIdx, pInfo, mergeInfo);
 //                 if (cost_best[ME_dir] > cost_temp) {
 //                     MV_best[ME_dir] = MV[ME_dir];
@@ -1971,7 +1973,7 @@ void H265CU::ME_PU(H265MEInfo* me_info)
                 MV[ME_dir].mvx = MV_cur.mvx + ME_Cpattern[ME_pos][0] * ME_step * 1;
                 MV[ME_dir].mvy = MV_cur.mvy + ME_Cpattern[ME_pos][1] * ME_step * 1;
                 clipMV(MV[ME_dir]);
-                cost_temp = MatchingMetric_PU( me_info, &MV[ME_dir], PicYUVRef) + //MV_pred.qdiff(MV, par->QP);
+                cost_temp = MatchingMetric_PU( pSrc, me_info, &MV[ME_dir], PicYUVRef) + //MV_pred.qdiff(MV, par->QP);
                     MVCost( MV, curRefIdx, pInfo, mergeInfo);
                 if (cost_best[ME_dir] > cost_temp) {
                     MV_best[ME_dir] = MV[ME_dir];
@@ -1995,7 +1997,7 @@ void H265CU::ME_PU(H265MEInfo* me_info)
             //    MV[ME_dir].mvx = MV_cur.mvx + ME_pattern[ME_pos][0] * ME_step * 1;
             //    MV[ME_dir].mvy = MV_cur.mvy + ME_pattern[ME_pos][1] * ME_step * 1;
             //    ////clipMV(MV[ME_dir]);
-            //    cost_temp = MatchingMetric_PU( me_info, &MV[ME_dir], PicYUVRef) + //MV_pred.qdiff(MV, par->QP);
+            //    cost_temp = MatchingMetric_PU( pSrc, me_info, &MV[ME_dir], PicYUVRef) + //MV_pred.qdiff(MV, par->QP);
             //        MVCost( MV, curRefIdx, pInfo, mergeInfo);
             //    if (cost_best[ME_dir] > cost_temp) {
             //        MV_best[ME_dir] = MV[ME_dir];
@@ -2009,7 +2011,7 @@ void H265CU::ME_PU(H265MEInfo* me_info)
                 MV[ME_dir].mvy = MV_cur.mvy + ME_Cpattern[ME_pos][1] * ME_step * 1;
                 H265MV MVorig( MV[ME_dir].mvx, MV[ME_dir].mvy);
                 clipMV(MV[ME_dir]);
-                cost_temp = MatchingMetric_PU( me_info, &MV[ME_dir], PicYUVRef) + //MV_pred.qdiff(MV, par->QP);
+                cost_temp = MatchingMetric_PU( pSrc, me_info, &MV[ME_dir], PicYUVRef) + //MV_pred.qdiff(MV, par->QP);
                     MVCost( MV, curRefIdx, pInfo, mergeInfo);
                 if (cost_best[ME_dir] > cost_temp) {
                     MV_best[ME_dir] = MV[ME_dir];
@@ -2031,7 +2033,7 @@ void H265CU::ME_PU(H265MEInfo* me_info)
 
         } while (ME_step);
         me_info->cost_1dir[ME_dir] = cost_best[ME_dir];
-//        me_info->cost_1dir[ME_dir] =  MatchingMetric_PU( me_info, &MV_best[ME_dir], PicYUVRef); // without MV cost
+//        me_info->cost_1dir[ME_dir] =  MatchingMetric_PU( pSrc, me_info, &MV_best[ME_dir], PicYUVRef); // without MV cost
         me_info->MV[ME_dir] = MV_best[ME_dir];
     }
 
@@ -2041,7 +2043,7 @@ void H265CU::ME_PU(H265MEInfo* me_info)
         H265Frame *PicYUVRefB = pList[1]->m_RefPicList[0];
         T_RefIdx curRefIdx[2] = {0, 0};
         if(PicYUVRefF && PicYUVRefB) {
-            me_info->cost_bidir = MatchingMetricBipred_PU(me_info, PicYUVRefF->y, PicYUVRefF->pitch_luma, PicYUVRefB->y, PicYUVRefB->pitch_luma, me_info->MV) +
+            me_info->cost_bidir = MatchingMetricBipred_PU(pSrc, me_info, PicYUVRefF->y, PicYUVRefF->pitch_luma, PicYUVRefB->y, PicYUVRefB->pitch_luma, me_info->MV) +
                 MVCost( me_info->MV, curRefIdx, pInfo, mergeInfo);
             if (cost_best[0] <= cost_best[1] && me_info->cost_1dir[0] <= me_info->cost_bidir) {
                 me_info->inter_dir = INTER_DIR_PRED_L0;
@@ -3753,6 +3755,8 @@ CostType H265CU::CalcCostSkip(Ipp32u abs_part_idx, Ipp8u depth)
 
     GetInterMergeCandidates(abs_part_idx, PART_SIZE_2Nx2N, 0, CUSizeInMinTU, &mergeInfo);
 
+    PixType *pSrc = y_src + me_info.posx + me_info.posy * pitch_src;
+
     if (mergeInfo.numCand > 0) {
         for (Ipp32s i = 0; i < mergeInfo.numCand; i++) {
             T_RefIdx *ref_idx = &(mergeInfo.refIdx[2*i]);
@@ -3784,11 +3788,11 @@ CostType H265CU::CalcCostSkip(Ipp32u abs_part_idx, Ipp8u depth)
             if (inter_dir == (INTER_DIR_PRED_L0 | INTER_DIR_PRED_L1)) {
                 H265Frame *PicYUVRefF = cslice->GetRefFrame(REF_PIC_LIST_0, ref_idx[0]);
                 H265Frame *PicYUVRefB = cslice->GetRefFrame(REF_PIC_LIST_1, ref_idx[1]);
-                cost_temp = MatchingMetricBipred_PU(&me_info, PicYUVRefF->y, PicYUVRefF->pitch_luma, PicYUVRefB->y, PicYUVRefB->pitch_luma, mv);
+                cost_temp = MatchingMetricBipred_PU(pSrc, &me_info, PicYUVRefF->y, PicYUVRefF->pitch_luma, PicYUVRefB->y, PicYUVRefB->pitch_luma, mv);
             } else {
                 EnumRefPicList dir = inter_dir == INTER_DIR_PRED_L0 ? REF_PIC_LIST_0 : REF_PIC_LIST_1;
                 H265Frame *PicYUVRef = cslice->GetRefFrame(dir, ref_idx[dir]);
-                cost_temp = MatchingMetric_PU( &me_info, mv+dir, PicYUVRef); // approx MVcost
+                cost_temp = MatchingMetric_PU(pSrc, &me_info, mv+dir, PicYUVRef); // approx MVcost
             }
             
             if (cost_best > cost_temp) {
