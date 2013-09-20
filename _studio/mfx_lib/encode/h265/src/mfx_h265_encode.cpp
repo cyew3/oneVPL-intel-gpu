@@ -1365,7 +1365,7 @@ mfxStatus MFXVideoENCODEH265::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
                                            MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET);
             MFX_CHECK_STS(st);
 
-//            m_core->DecreaseReference(&(surface->Data)); // not here to keep related mfxEncodeCtrl
+            m_core->DecreaseReference(&(surface->Data)); // do it here
 
             m_auxInput.Data.FrameOrder = surface->Data.FrameOrder;
             m_auxInput.Data.TimeStamp = surface->Data.TimeStamp;
