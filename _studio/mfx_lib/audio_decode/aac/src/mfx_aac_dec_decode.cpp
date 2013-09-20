@@ -453,7 +453,7 @@ mfxStatus AudioDECODEAAC::DecodeFrameCheck(mfxBitstream *bs,
         ThreadAudioTaskInfo * info = new ThreadAudioTaskInfo();
         info->out = buffer_out;
 
-        pEntryPoint->pRoutine = &AACECODERoutine;
+        pEntryPoint->pRoutine = &AACDECODERoutine;
         pEntryPoint->pCompleteProc = &AACCompleteProc;
         pEntryPoint->pState = this;
         pEntryPoint->requiredNumThreads = 1; // need only one thread
@@ -464,7 +464,7 @@ mfxStatus AudioDECODEAAC::DecodeFrameCheck(mfxBitstream *bs,
     return mfxSts;
 }
 
-mfxStatus AudioDECODEAAC::AACECODERoutine(void *pState, void *pParam,
+mfxStatus AudioDECODEAAC::AACDECODERoutine(void *pState, void *pParam,
                                           mfxU32 threadNumber, mfxU32 callNumber)
 {
     callNumber;
@@ -478,10 +478,10 @@ mfxStatus AudioDECODEAAC::AACECODERoutine(void *pState, void *pParam,
     {
         ThreadAudioTaskInfo *pTask = (ThreadAudioTaskInfo *) pParam;
 
-        obj.mInData.SetBufferPointer((Ipp8u *)obj.m_frame.Data + obj.m_frame.DataOffset,obj.m_frame.DataLength);
+        obj.mInData.SetBufferPointer((Ipp8u *)obj.m_frame.Data + obj.m_frame.DataOffset, obj.m_frame.DataLength);
         obj.mInData.SetDataSize(obj.m_frame.DataLength);
 
-        obj.mOutData.SetBufferPointer( static_cast<Ipp8u *>(pTask->out->Data +pTask->out->DataOffset), pTask->out->MaxLength);
+        obj.mOutData.SetBufferPointer( static_cast<Ipp8u *>(pTask->out->Data +pTask->out->DataOffset), pTask->out->MaxLength - (pTask->out->DataOffset + pTask->out->DataLength));
         obj.mOutData.MoveDataPointer(0);
         obj.mOutData.SetDataSize(0);
 
@@ -490,9 +490,9 @@ mfxStatus AudioDECODEAAC::AACECODERoutine(void *pState, void *pParam,
 
         // set data size 0 to the input buffer 
         // set out buffer size;
-        //if(pTask->out->MaxLength)  AR need to implement a check of output buffer size
-        pTask->out->DataOffset = 0;
-        pTask->out->DataLength = (mfxU32)obj.mOutData.GetDataSize();
+        memmove(obj.m_frame.Data + obj.m_frame.DataOffset, obj.mInData.GetDataPointer(), obj.mInData.GetDataSize());
+        obj.m_frame.DataLength = obj.mInData.GetDataSize();
+        pTask->out->DataLength += (mfxU32)obj.mOutData.GetDataSize();
     }
     else
     {
@@ -545,6 +545,10 @@ mfxStatus AudioDECODEAAC::DecodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffe
         {
             return sts;
         }
+        if (bs) {
+           // buffer_out->TimeStamp = bs->TimeStamp;
+          //  buffer_out->DecodeTimeStamp = bs->TimeStamp;
+        }
     }
 
     return sts;
@@ -592,9 +596,8 @@ mfxStatus AudioDECODEAAC::CopyBitstream(mfxBitstream& bs, const mfxU8* ptr, mfxU
 {
     if (bs.DataOffset + bs.DataLength + bytes > bs.MaxLength)
         return MFX_ERR_NOT_ENOUGH_BUFFER;
-    ippsCopy_8u(ptr, bs.Data, bytes);
-    bs.DataLength = bytes;
-    bs.DataOffset = 0;
+    ippsCopy_8u(ptr, bs.Data + bs.DataOffset + bs.DataLength, bytes);
+    bs.DataLength += bytes;
     return MFX_ERR_NONE;
 }
 
@@ -667,6 +670,7 @@ mfxStatus AudioDECODEAAC::ConstructFrame(mfxBitstream *in, mfxBitstream *out)
 
     /* AppendBitstream(*out, in->Data + in->DataOffset, in->DataLength);
     MoveBitstreamData(*in, (mfxU32)(in->DataLength)); */
+
     return MFX_ERR_NONE;
 
 }

@@ -78,7 +78,7 @@ protected:
      static mfxStatus FillAudioParamADTSFixed(sAdts_fixed_header* config, mfxAudioParam *out);
      
 
-     static mfxStatus AACECODERoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber);
+     static mfxStatus AACDECODERoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber);
      static mfxStatus AACCompleteProc(void *pState, void *pParam, mfxStatus taskRes);
 
      mfxStatus CopyBitstream(mfxBitstream& bs, const mfxU8* ptr, mfxU32 bytes);

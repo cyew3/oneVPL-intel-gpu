@@ -338,7 +338,7 @@ mfxStatus AudioENCODEAAC::AACENCODERoutine(void *pState, void *pParam,
 
         obj.mInData.SetBufferPointer((Ipp8u *)obj.m_frame.Data + obj.m_frame.DataOffset,obj.m_frame.DataLength);
         obj.mInData.SetDataSize(obj.m_frame.DataLength);
-        obj.mOutData.SetBufferPointer( static_cast<Ipp8u *>(pTask->out->Data +pTask->out->DataOffset), pTask->out->MaxLength /*- (pTask->out->DataOffset + pTask->out->DataLength)*/);
+        obj.mOutData.SetBufferPointer( static_cast<Ipp8u *>(pTask->out->Data +pTask->out->DataOffset + pTask->out->DataLength), pTask->out->MaxLength - (pTask->out->DataOffset + pTask->out->DataLength));
         obj.mOutData.MoveDataPointer(0);
         obj.mOutData.SetDataSize(0);
 
@@ -347,16 +347,12 @@ mfxStatus AudioENCODEAAC::AACENCODERoutine(void *pState, void *pParam,
         {
             // set data size 0 to the input buffer 
             obj.m_frame.DataLength = 0;
-            obj.m_frame.DataOffset = 0;
+            obj.m_frame.DataOffset += obj.m_frame.DataLength;
 
             // set out buffer size;
             //if(pTask->out->MaxLength)  AR need to implement a check of output buffer size
-            pTask->out->DataOffset = 0;
-            pTask->out->DataLength = (mfxU32)obj.mOutData.GetDataSize();
-
-
-
-
+            //pTask->out->DataOffset = 0;
+            pTask->out->DataLength += (mfxU32)obj.mOutData.GetDataSize();
         }
         else
         {
@@ -576,28 +572,35 @@ mfxStatus MFX_AAC_Encoder_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfx
             stereoMode == MFX_AUDIO_AAC_JOINT_STEREO 
             )
         {
-            out->mfx.StereoMode = in->mfx.StereoMode;
-            if (stereoMode == MFX_AUDIO_AAC_MONO)
+            //num channels not specified
+            switch (in->mfx.StreamInfo.Channels)
             {
-                out->mfx.StreamInfo.Channels = 1;
-            }
-            else
-            {
-                out->mfx.StreamInfo.Channels = 2;
-            }
-
+                case 0 : {
+                    if (stereoMode == MFX_AUDIO_AAC_MONO) {
+                        out->mfx.StreamInfo.Channels = 1;
+                    }
+                    else {
+                        out->mfx.StreamInfo.Channels = 2;
+                    }
+                    break ;
+                }
+                case 1: {
+                    out->mfx.StreamInfo.Channels = 1;
+                    out->mfx.StereoMode = MFX_AUDIO_AAC_MONO;
+                    break;
+                }
+                case 2: {
+                    out->mfx.StreamInfo.Channels = 2;
+                    //TODO: looks query shouldn't do this, setting default strereo mode
+                    if (stereoMode == MFX_AUDIO_AAC_MONO) {
+                        out->mfx.StereoMode = MFX_AUDIO_AAC_JOINT_STEREO;
+                    }
+                }
+            } 
         }
         else
         {
-            if(stereoMode == 0)
-            {
-                out->mfx.StereoMode = MFX_AUDIO_AAC_MONO;
-                out->mfx.StreamInfo.Channels = 1;
-            }
-            else
-            {
-                sts = MFX_ERR_UNSUPPORTED;
-            }
+            sts = MFX_ERR_UNSUPPORTED;
         }
 
         mfxU32 noiseShapingModel = in->mfx.NoiseShapingModel;
@@ -617,6 +620,11 @@ mfxStatus MFX_AAC_Encoder_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfx
             {
                 sts = MFX_ERR_UNSUPPORTED;
             }
+        }
+        if (in->mfx.StreamInfo.BitPerSample != 16) {
+            sts = MFX_ERR_UNSUPPORTED;
+        } else {
+            out->mfx.StreamInfo.BitPerSample = 16;
         }
     }
     else
