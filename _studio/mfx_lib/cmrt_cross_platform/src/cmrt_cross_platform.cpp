@@ -130,6 +130,8 @@ public:
         CmLinux::CmDevice *     m_linux;
     };
 
+    ~CmDeviceImpl(){}
+
     INT GetDevice(AbstractDeviceHandle & pDevice)
     {
         switch (m_platform) {
