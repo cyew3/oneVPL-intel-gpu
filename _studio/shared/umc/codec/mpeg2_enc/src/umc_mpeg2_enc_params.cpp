@@ -181,6 +181,9 @@ MPEG2EncoderParams::~MPEG2EncoderParams()
 
 Status MPEG2EncoderParams::ReadQMatrices(vm_char* IntraQMatrixFName, vm_char* NonIntraQMatrixFName)
 {
+  IntraQMatrixFName;
+  NonIntraQMatrixFName;
+#if 0
   Ipp32s i, temp;
   vm_file *InputFile;
 
@@ -247,6 +250,9 @@ Status MPEG2EncoderParams::ReadQMatrices(vm_char* IntraQMatrixFName, vm_char* No
   }
 
   return UMC_OK;
+#else
+  return UMC_ERR_FAILED;
+#endif
 }
 
 Status MPEG2EncoderParams::Profile_and_Level_Checks()
@@ -447,6 +453,8 @@ Status MPEG2EncoderParams::RelationChecks()
 
 Status MPEG2EncoderParams::ReadOldParamFile(const vm_char *ParFileName)
 {
+  ParFileName;
+#if 0
   Ipp32s i, j;
   vm_file *InputFile;
   vm_char line[PAR_STRLEN];
@@ -580,10 +588,15 @@ Status MPEG2EncoderParams::ReadOldParamFile(const vm_char *ParFileName)
   if (ret2 != UMC_OK) ret = ret2;
 
   return ret;
+#else 
+  return UMC_ERR_FAILED;
+#endif
 }
 
 Status MPEG2EncoderParams::ReadParamFile(const vm_char *ParFileName)
 {
+  ParFileName;
+#if 0
   Ipp32s i, j;
   Ipp32s h, m, s, f;
   vm_file *InputFile;
@@ -775,6 +788,9 @@ Status MPEG2EncoderParams::ReadParamFile(const vm_char *ParFileName)
   if (ret2 != UMC_OK) ret = ret2;
 
   return ret;
+#else
+  return UMC_ERR_FAILED;
+#endif
 }
 
 Status UMC::ReadParamList(MPEG2EncoderParams* par, ParamList* lst)
