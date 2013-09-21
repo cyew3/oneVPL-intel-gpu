@@ -1462,67 +1462,170 @@ namespace MFX_HEVC_PP
         }
     }
 
-    template <int width>
-    static void PredictIntra_Ang_All(Ipp8u* PredPel, Ipp8u* pels)
+    static void PredictIntra_Ang_All_4x4(PixType* PredPel, PixType* FiltPel, PixType* pels)
     {
-        Ipp8u *PredPel2 = PredPel + 2 * width;
+        ALIGN_DECL(16) Ipp8u ref1[16];  // input for mode < 18
+        ALIGN_DECL(16) Ipp8u ref2[16];  // input for mode > 18
 
-        // output as buf[mode-2][width*width]
-        Ipp8u (*buf)[width*width] = (Ipp8u(*)[width*width])pels;
+        Ipp8u *PredPel2 = PredPel + 2 * 4;
+        Ipp8u *FiltPel2 = FiltPel + 2 * 4;
+        Ipp8u (*buf)[4*4] = (Ipp8u(*)[4*4])pels;
 
+        // unfiltered
+        CopyLine<4>(PredPel, PredPel2, ref1, ref2);
+        PredAngle2<4>(ref1, ref2, buf[2-2], buf[34-2]);
+        PredAngle<4,3>(ref1, ref2, buf[3-2], buf[33-2]);
+        PredAngle<4,4>(ref1, ref2, buf[4-2], buf[32-2]);
+        PredAngle<4,5>(ref1, ref2, buf[5-2], buf[31-2]);
+        PredAngle<4,6>(ref1, ref2, buf[6-2], buf[30-2]);
+        PredAngle<4,7>(ref1, ref2, buf[7-2], buf[29-2]);
+        PredAngle<4,8>(ref1, ref2, buf[8-2], buf[28-2]);
+        PredAngle<4,9>(ref1, ref2, buf[9-2], buf[27-2]);
+        PredAngle10<4>(ref1, ref2, buf[10-2], buf[26-2]);
+
+        ProjLine<4,11>(PredPel, PredPel2, ref1, ref2);
+        PredAngle<4,11>(ref1, ref2, buf[11-2], buf[36-11-2]);
+        ProjLine<4,12>(PredPel, PredPel2, ref1, ref2);
+        PredAngle<4,12>(ref1, ref2, buf[12-2], buf[36-12-2]);
+        ProjLine<4,13>(PredPel, PredPel2, ref1, ref2);
+        PredAngle<4,13>(ref1, ref2, buf[13-2], buf[36-13-2]);
+        ProjLine<4,14>(PredPel, PredPel2, ref1, ref2);
+        PredAngle<4,14>(ref1, ref2, buf[14-2], buf[36-14-2]);
+        ProjLine<4,15>(PredPel, PredPel2, ref1, ref2);
+        PredAngle<4,15>(ref1, ref2, buf[15-2], buf[36-15-2]);
+        ProjLine<4,16>(PredPel, PredPel2, ref1, ref2);
+        PredAngle<4,16>(ref1, ref2, buf[16-2], buf[36-16-2]);
+        ProjLine<4,17>(PredPel, PredPel2, ref1, ref2);
+        PredAngle<4,17>(ref1, ref2, buf[17-2], buf[36-17-2]);
+        PredAngle18<4>(PredPel, PredPel2, buf[18-2]);
+    }
+
+    static void PredictIntra_Ang_All_8x8(PixType* PredPel, PixType* FiltPel, PixType* pels)
+    {
+        ALIGN_DECL(16) Ipp8u ref1[16];  // input for mode < 18
+        ALIGN_DECL(16) Ipp8u ref2[16];  // input for mode > 18
+
+        Ipp8u *PredPel2 = PredPel + 2 * 8;
+        Ipp8u *FiltPel2 = FiltPel + 2 * 8;
+        Ipp8u (*buf)[8*8] = (Ipp8u(*)[8*8])pels;
+
+        // filtered
+        CopyLine<8>(FiltPel, FiltPel2, ref1, ref2);
+        PredAngle2<8>(ref1, ref2, buf[2-2], buf[34-2]);
+
+        // unfiltered
+        CopyLine<8>(PredPel, PredPel2, ref1, ref2);
+        PredAngle<8,3>(ref1, ref2, buf[3-2], buf[33-2]);
+        PredAngle<8,4>(ref1, ref2, buf[4-2], buf[32-2]);
+        PredAngle<8,5>(ref1, ref2, buf[5-2], buf[31-2]);
+        PredAngle<8,6>(ref1, ref2, buf[6-2], buf[30-2]);
+        PredAngle<8,7>(ref1, ref2, buf[7-2], buf[29-2]);
+        PredAngle<8,8>(ref1, ref2, buf[8-2], buf[28-2]);
+        PredAngle<8,9>(ref1, ref2, buf[9-2], buf[27-2]);
+        PredAngle10<8>(ref1, ref2, buf[10-2], buf[26-2]);
+
+        ProjLine<8,11>(PredPel, PredPel2, ref1, ref2);
+        PredAngle<8,11>(ref1, ref2, buf[11-2], buf[36-11-2]);
+        ProjLine<8,12>(PredPel, PredPel2, ref1, ref2);
+        PredAngle<8,12>(ref1, ref2, buf[12-2], buf[36-12-2]);
+        ProjLine<8,13>(PredPel, PredPel2, ref1, ref2);
+        PredAngle<8,13>(ref1, ref2, buf[13-2], buf[36-13-2]);
+        ProjLine<8,14>(PredPel, PredPel2, ref1, ref2);
+        PredAngle<8,14>(ref1, ref2, buf[14-2], buf[36-14-2]);
+        ProjLine<8,15>(PredPel, PredPel2, ref1, ref2);
+        PredAngle<8,15>(ref1, ref2, buf[15-2], buf[36-15-2]);
+        ProjLine<8,16>(PredPel, PredPel2, ref1, ref2);
+        PredAngle<8,16>(ref1, ref2, buf[16-2], buf[36-16-2]);
+        ProjLine<8,17>(PredPel, PredPel2, ref1, ref2);
+        PredAngle<8,17>(ref1, ref2, buf[17-2], buf[36-17-2]);
+
+        // filtered
+        PredAngle18<8>(FiltPel, FiltPel2, buf[18-2]);
+    }
+
+    static void PredictIntra_Ang_All_16x16(PixType* PredPel, PixType* FiltPel, PixType* pels)
+    {
+        ALIGN_DECL(16) Ipp8u ref1[32];  // input for mode < 18
+        ALIGN_DECL(16) Ipp8u ref2[32];  // input for mode > 18
+
+        Ipp8u *PredPel2 = PredPel + 2 * 16;
+        Ipp8u *FiltPel2 = FiltPel + 2 * 16;
+        Ipp8u (*buf)[16*16] = (Ipp8u(*)[16*16])pels;
+
+        // filtered
+        CopyLine<16>(FiltPel, FiltPel2, ref1, ref2);
+        PredAngle2<16>(ref1, ref2, buf[2-2], buf[34-2]);
+        PredAngle<16,3>(ref1, ref2, buf[3-2], buf[33-2]);
+        PredAngle<16,4>(ref1, ref2, buf[4-2], buf[32-2]);
+        PredAngle<16,5>(ref1, ref2, buf[5-2], buf[31-2]);
+        PredAngle<16,6>(ref1, ref2, buf[6-2], buf[30-2]);
+        PredAngle<16,7>(ref1, ref2, buf[7-2], buf[29-2]);
+        PredAngle<16,8>(ref1, ref2, buf[8-2], buf[28-2]);
+
+        // unfiltered
+        CopyLine<16>(PredPel, PredPel2, ref1, ref2);
+        PredAngle<16,9>(ref1, ref2, buf[9-2], buf[27-2]);
+        PredAngle10<16>(ref1, ref2, buf[10-2], buf[26-2]);
+
+        ProjLine<16,11>(PredPel, PredPel2, ref1, ref2);
+        PredAngle<16,11>(ref1, ref2, buf[11-2], buf[36-11-2]);
+
+        // filtered
+        ProjLine<16,12>(FiltPel, FiltPel2, ref1, ref2);
+        PredAngle<16,12>(ref1, ref2, buf[12-2], buf[36-12-2]);
+        ProjLine<16,13>(FiltPel, FiltPel2, ref1, ref2);
+        PredAngle<16,13>(ref1, ref2, buf[13-2], buf[36-13-2]);
+        ProjLine<16,14>(FiltPel, FiltPel2, ref1, ref2);
+        PredAngle<16,14>(ref1, ref2, buf[14-2], buf[36-14-2]);
+        ProjLine<16,15>(FiltPel, FiltPel2, ref1, ref2);
+        PredAngle<16,15>(ref1, ref2, buf[15-2], buf[36-15-2]);
+        ProjLine<16,16>(FiltPel, FiltPel2, ref1, ref2);
+        PredAngle<16,16>(ref1, ref2, buf[16-2], buf[36-16-2]);
+        ProjLine<16,17>(FiltPel, FiltPel2, ref1, ref2);
+        PredAngle<16,17>(ref1, ref2, buf[17-2], buf[36-17-2]);
+        PredAngle18<16>(FiltPel, FiltPel2, buf[18-2]);
+    }
+
+    static void PredictIntra_Ang_All_32x32(PixType* PredPel, PixType* FiltPel, PixType* pels)
+    {
         ALIGN_DECL(16) Ipp8u ref1[64];  // input for mode < 18
         ALIGN_DECL(16) Ipp8u ref2[64];  // input for mode > 18
 
-        //
-        // aligned input buffers
-        //
-        CopyLine<width>(PredPel, PredPel2, ref1, ref2);
+        Ipp8u *PredPel2 = PredPel + 2 * 32;
+        Ipp8u *FiltPel2 = FiltPel + 2 * 32;
+        Ipp8u (*buf)[32*32] = (Ipp8u(*)[32*32])pels;
 
-        //
-        // mode = 2,34
-        //
-        PredAngle2<width>(ref1, ref2, buf[2-2], buf[34-2]);
+        // filtered
+        CopyLine<32>(FiltPel, FiltPel2, ref1, ref2);
+        PredAngle2<32>(ref1, ref2, buf[2-2], buf[34-2]);
+        PredAngle<32,3>(ref1, ref2, buf[3-2], buf[33-2]);
+        PredAngle<32,4>(ref1, ref2, buf[4-2], buf[32-2]);
+        PredAngle<32,5>(ref1, ref2, buf[5-2], buf[31-2]);
+        PredAngle<32,6>(ref1, ref2, buf[6-2], buf[30-2]);
+        PredAngle<32,7>(ref1, ref2, buf[7-2], buf[29-2]);
+        PredAngle<32,8>(ref1, ref2, buf[8-2], buf[28-2]);
+        PredAngle<32,9>(ref1, ref2, buf[9-2], buf[27-2]);
 
-        //
-        // mode 3..9
-        // mode 27..33
-        //
-        PredAngle<width,3>(ref1, ref2, buf[3-2], buf[33-2]);
-        PredAngle<width,4>(ref1, ref2, buf[4-2], buf[32-2]);
-        PredAngle<width,5>(ref1, ref2, buf[5-2], buf[31-2]);
-        PredAngle<width,6>(ref1, ref2, buf[6-2], buf[30-2]);
-        PredAngle<width,7>(ref1, ref2, buf[7-2], buf[29-2]);
-        PredAngle<width,8>(ref1, ref2, buf[8-2], buf[28-2]);
-        PredAngle<width,9>(ref1, ref2, buf[9-2], buf[27-2]);
+        // unfiltered
+        CopyLine<32>(PredPel, PredPel2, ref1, ref2);
+        PredAngle10<32>(ref1, ref2, buf[10-2], buf[26-2]);
 
-        //
-        // mode 10,26
-        //
-        PredAngle10<width>(ref1, ref2, buf[10-2], buf[26-2]);
-
-        //
-        // mode 11..17
-        // mode 19..25
-        //
-        ProjLine<width,11>(PredPel, PredPel2, ref1, ref2);
-        PredAngle<width,11>(ref1, ref2, buf[11-2], buf[36-11-2]);
-        ProjLine<width,12>(PredPel, PredPel2, ref1, ref2);
-        PredAngle<width,12>(ref1, ref2, buf[12-2], buf[36-12-2]);
-        ProjLine<width,13>(PredPel, PredPel2, ref1, ref2);
-        PredAngle<width,13>(ref1, ref2, buf[13-2], buf[36-13-2]);
-        ProjLine<width,14>(PredPel, PredPel2, ref1, ref2);
-        PredAngle<width,14>(ref1, ref2, buf[14-2], buf[36-14-2]);
-        ProjLine<width,15>(PredPel, PredPel2, ref1, ref2);
-        PredAngle<width,15>(ref1, ref2, buf[15-2], buf[36-15-2]);
-        ProjLine<width,16>(PredPel, PredPel2, ref1, ref2);
-        PredAngle<width,16>(ref1, ref2, buf[16-2], buf[36-16-2]);
-        ProjLine<width,17>(PredPel, PredPel2, ref1, ref2);
-        PredAngle<width,17>(ref1, ref2, buf[17-2], buf[36-17-2]);
-
-        //
-        // mode 18
-        //
-        PredAngle18<width>(PredPel, PredPel2, buf[18-2]);
+        // filtered
+        ProjLine<32,11>(FiltPel, FiltPel2, ref1, ref2);
+        PredAngle<32,11>(ref1, ref2, buf[11-2], buf[36-11-2]);
+        ProjLine<32,12>(FiltPel, FiltPel2, ref1, ref2);
+        PredAngle<32,12>(ref1, ref2, buf[12-2], buf[36-12-2]);
+        ProjLine<32,13>(FiltPel, FiltPel2, ref1, ref2);
+        PredAngle<32,13>(ref1, ref2, buf[13-2], buf[36-13-2]);
+        ProjLine<32,14>(FiltPel, FiltPel2, ref1, ref2);
+        PredAngle<32,14>(ref1, ref2, buf[14-2], buf[36-14-2]);
+        ProjLine<32,15>(FiltPel, FiltPel2, ref1, ref2);
+        PredAngle<32,15>(ref1, ref2, buf[15-2], buf[36-15-2]);
+        ProjLine<32,16>(FiltPel, FiltPel2, ref1, ref2);
+        PredAngle<32,16>(ref1, ref2, buf[16-2], buf[36-16-2]);
+        ProjLine<32,17>(FiltPel, FiltPel2, ref1, ref2);
+        PredAngle<32,17>(ref1, ref2, buf[17-2], buf[36-17-2]);
+        PredAngle18<32>(FiltPel, FiltPel2, buf[18-2]);
     }
 
     //
@@ -1530,21 +1633,22 @@ namespace MFX_HEVC_PP
     //
     void MAKE_NAME(h265_PredictIntra_Ang_All_8u) (
         PixType* PredPel,
+        PixType* FiltPel,
         PixType* pels,
         Ipp32s width)
     {
         switch (width) {
         case 4:
-            PredictIntra_Ang_All<4>(PredPel, pels);
+            PredictIntra_Ang_All_4x4(PredPel, FiltPel, pels);
             break;
         case 8:
-            PredictIntra_Ang_All<8>(PredPel, pels);
+            PredictIntra_Ang_All_8x8(PredPel, FiltPel, pels);
             break;
         case 16:
-            PredictIntra_Ang_All<16>(PredPel, pels);
+            PredictIntra_Ang_All_16x16(PredPel, FiltPel, pels);
             break;
         case 32:
-            PredictIntra_Ang_All<32>(PredPel, pels);
+            PredictIntra_Ang_All_32x32(PredPel, FiltPel, pels);
             break;
         }
     }
