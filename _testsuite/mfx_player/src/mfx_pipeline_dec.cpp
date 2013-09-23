@@ -107,27 +107,6 @@ using namespace std;
 #define MFX_HANDLE_TIMING_TAL       ((mfxHandleType)1004)
 #endif
 
-#ifdef PAVP_BUILD
-bool loadFromFile(FILE *f, void **buf, mfxU32 *bufSize)
-{
-    *buf = NULL;
-    *bufSize = 0;
-
-    fseek(f, 0, SEEK_END);
-    size_t s = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    if (0 != s)
-    {
-        *buf = new char[s];
-        if (NULL == buf)
-            return false;
-        fread(*buf, 1, s, f);
-        *bufSize = s;
-    }
-    return true;
-}
-#endif //PAVP_BUILD
-
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -145,11 +124,6 @@ MFXDecPipeline::MFXDecPipeline(IMFXPipelineFactory *pFactory)
     , m_bResetAfterIncompatParams()
     , m_bErrIncompat()
     , m_bErrIncompatValid(true)
-    #ifdef PAVP_BUILD
-    , m_encPavpInfoOut(NULL)
-    , m_encPavpControl(NULL)
-    , m_encPavpKey(NULL)
-    #endif //PAVP_BUILD
     , m_externalsync()
     , m_pFactory(pFactory)
 {
@@ -472,44 +446,7 @@ mfxStatus MFXDecPipeline::BuildPipeline()
     MFX_CHECK_STS(InitInputBs(bExtended));
     PrintInfo(VM_STRING("CompleteFrame Mode"), m_inParams.bCompleteFrame ? VM_STRING("on") : VM_STRING("off"));
     TIME_PRINT(VM_STRING("AllocInputBS"));
-#ifdef PAVP_BUILD
-    if (NULL != m_inParams.encodeExtraParams.encPavpInfoOut)
-    {
-        MFX_CHECK_FOPEN(m_encPavpInfoOut, m_inParams.encodeExtraParams.encPavpInfoOut, VM_STRING("wb"));
-    }
-    else
-        m_encPavpInfoOut = NULL;
 
-    if (NULL != m_inParams.encodeExtraParams.encPavpControl)
-    {
-        FILE *f = NULL;
-        MFX_CHECK_FOPEN(f, m_inParams.encodeExtraParams.encPavpControl, VM_STRING("rb"));
-        loadFromFile(f, (void**)&m_encPavpControl, &m_inParams.encodeExtraParams.m_encPavpControlCount);
-        fclose(f);
-        m_inParams.encodeExtraParams.m_encPavpControlCount /= sizeof (m_encPavpControl[0]);
-        m_inParams.encodeExtraParams.m_encPavpControlPos = 0;
-    }
-    else
-        m_encPavpControl = NULL;
-
-    if (NULL != m_inParams.encodeExtraParams.encPavpKey)
-    {
-        FILE *f = NULL;
-        MFX_CHECK_FOPEN(f, m_inParams.encodeExtraParams.encPavpKey, VM_STRING("rb"));
-        loadFromFile(f, (void**)&m_encPavpKey, &m_inParams.encodeExtraParams.m_encPavpKeyCount);
-        fclose(f);
-        m_inParams.encodeExtraParams.m_encPavpKeyCount /= sizeof (m_encPavpKey[0]);
-        m_inParams.encodeExtraParams.m_encPavpKeyPos = 0;
-    }
-    else
-        m_encPavpKey = NULL;
-
-    m_inParams.encodeExtraParams.m_encPavpInfoOut = m_encPavpInfoOut;
-    m_inParams.encodeExtraParams.m_encPavpControl = m_encPavpControl;
-    m_inParams.encodeExtraParams.m_encPavpKey = m_encPavpKey;
-
-    m_inParams.encodeExtraParams.m_pavp = &m_pavp;
-#endif //PAVP_BUILD
     MFX_CHECK_STS_SET_ERR(CreateCore(), PE_INIT_CORE);
     TIME_PRINT(VM_STRING("CreateCore"));
 
@@ -642,7 +579,8 @@ mfxStatus MFXDecPipeline::ReleasePipeline()
     }
 
     MFX_DELETE_ARRAY(m_inBSFrame.Data);
-    MFX_ZERO_MEM(m_inBSFrame);
+    //MFX_ZERO_MEM(m_inBSFrame);
+    mfxBitstream2_ZERO_MEM(m_inBSFrame);
     m_bitstreamBuf.Close();
 
     m_fLastTime  =  0;
@@ -668,24 +606,6 @@ mfxStatus MFXDecPipeline::ReleasePipeline()
     m_components[eREN].m_params.AsyncDepth = ad;
     m_components[eREN].m_params.mfx.FrameInfo.ChromaFormat = info.ChromaFormat;
     m_components[eREN].m_params.mfx.FrameInfo.FourCC = info.FourCC;
-
-#ifdef PAVP_BUILD
-    if (NULL != m_encPavpInfoOut)
-    {
-        fclose(m_encPavpInfoOut);
-        m_encPavpInfoOut = NULL;
-    }
-    if (NULL != m_encPavpControl)
-    {
-        delete[] m_encPavpControl;
-        m_encPavpControl = NULL;
-    }
-    if (NULL != m_encPavpKey)
-    {
-        delete[] m_encPavpKey;
-        m_encPavpKey = NULL;
-    }
-#endif //PAVP_BUILD
 
     MFX_CHECK_STS(release_sts);
 
@@ -2099,23 +2019,6 @@ mfxStatus MFXDecPipeline::CreateDeviceManager()
 #endif
     }
 
-#ifdef PAVP_BUILD
-    if (m_inParams.encodeExtraParams.bEncPavp)
-    {
-        MFX_CHECK_STS(m_pavp.Init(m_d3dDeviceManager, PAVP));
-        if (NULL != m_inParams.encodeExtraParams.m_encPavpKey)
-        {
-            PavpEpidStatus psts = m_inParams.encodeExtraParams.m_pavp->m_pavpDevice.SetNewEncodeKey(
-                (const StreamKey (*const ))(void*)m_inParams.encodeExtraParams.m_encPavpKey[m_inParams.encodeExtraParams.m_encPavpKeyPos].key);
-            MFX_CHECK_WITH_FNC_NAME(PAVP_STATUS_SUCCESS == psts, "SetNewEncodeKey");
-        }
-        m_components[eREN].m_params.Protected = MFX_PROTECTION_PAVP |
-            (m_inParams.encodeExtraParams.encEncryptionType << 4) |
-            (m_inParams.encodeExtraParams.encCounterType << 8);
-    }
-#endif //PAVP_BUILD
-
-
     return MFX_ERR_NONE;
 }
 
@@ -2380,7 +2283,7 @@ mfxStatus MFXDecPipeline::Play()
             }else
             {
                 if (!m_inParams.bVerbose)
-                    PipelineTraceSplFrame();
+                PipelineTraceSplFrame();
             }
         }
 
@@ -3932,57 +3835,6 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             else HANDLE_BOOL_OPTION(m_inParams.bDxgiDebug, VM_STRING("-dxgidebug"), VM_STRING("inject dxgidebug.dll to report live objects(dxgilevel memory leaks)"));
             else HANDLE_FILENAME_OPTION(m_inParams.strDecPlugin, VM_STRING("-decode_plugin"), VM_STRING("MediaSDK Decoder plugin filename"))
 
-#ifdef PAVP_BUILD
-        else if (m_OptProc.Check(argv[0], VM_STRING("-epavp"), VM_STRING("enable PAVP for encoder"), OPT_INT_32))
-        {
-            m_inParams.encodeExtraParams.bEncPavp = true;
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-epavp_decrypt"), VM_STRING("decrypt PAVP encoder output"), OPT_INT_32))
-        {
-            m_inParams.encodeExtraParams.bEncPavp = true;
-            m_inParams.encodeExtraParams.bEncPavpDecrypt = true;
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-epavp:encr_type"), VM_STRING("set PAVP encryption type for encoder (default is 2 stands for PAVP_ENCRYPTION_AES128_CTR)"), OPT_INT_32))
-        {
-            m_inParams.encodeExtraParams.bEncPavp = true;
-
-            MFX_CHECK(1 + argv != argvEnd);
-            MFX_PARSE_INT(m_inParams.encodeExtraParams.encEncryptionType, argv[1]);
-            argv++;
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-epavp:cntr_type"), VM_STRING("set PAVP counter type for encoder (default is 1 stands for PAVP_COUNTER_TYPE_A)"), OPT_INT_32))
-        {
-            m_inParams.encodeExtraParams.bEncPavp = true;
-
-            MFX_CHECK(1 + argv != argvEnd);
-            MFX_PARSE_INT(m_inParams.encodeExtraParams.encCounterType, argv[1]);
-            argv++;
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-epavp:out_info"), VM_STRING("set file name to output PAVP information for every frame"), OPT_INT_32))
-        {
-            m_inParams.encodeExtraParams.bEncPavp = true;
-
-            MFX_CHECK(1 + argv != argvEnd);
-            m_inParams.encodeExtraParams.encPavpInfoOut = argv[1];
-            argv++;
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-epavp:control"), VM_STRING("set file name to input PAVP encryption control (an array of D3DAES_CTR_IV(128), index advances every frame)"), OPT_INT_32))
-        {
-            m_inParams.encodeExtraParams.bEncPavp = true;
-
-            MFX_CHECK(1 + argv != argvEnd);
-            m_inParams.encodeExtraParams.encPavpControl = argv[1];
-            argv++;
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-epavp:key"), VM_STRING("set file name to input PAVP encryption keys (an array of 16 byte values, index advances every frame)"), OPT_INT_32))
-        {
-            m_inParams.encodeExtraParams.bEncPavp = true;
-
-            MFX_CHECK(1 + argv != argvEnd);
-            m_inParams.encodeExtraParams.encPavpKey = argv[1];
-            argv++;
-        }
-#endif //PAVP
             else
             {
                 MFX_TRACE_AT_EXIT_IF( MFX_ERR_UNSUPPORTED

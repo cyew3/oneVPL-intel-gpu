@@ -27,3 +27,5 @@ EXPORTS
 	CreateCPAVPVideo_D3D11
 	CreateCPAVPVideo_CryptoSession9
 	CreateCPAVPVideo_Auxiliary9
+
+	mfxPAVPDestroy

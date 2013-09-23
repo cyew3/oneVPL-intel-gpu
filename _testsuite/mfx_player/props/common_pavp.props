@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <WindowsSdk8Path Condition="Exists('$(MINIDDK_ROOT)')">$(MINIDDK_ROOT)</WindowsSdk8Path>
+    <WindowsSdk8Path Condition="!Exists('$(MINIDDK_ROOT)')">$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v8.1@InstallationFolder)</WindowsSdk8Path>
+    <IncludePath>$(WindowsSdk8Path)\Include\um;$(WindowsSdk8Path)\Include\shared;$(IncludePath)</IncludePath>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <OutDir>
+    </OutDir>
+    <IntDir>
+    </IntDir>
+  </PropertyGroup>
+  <Target Name="Win8SdkCheck" BeforeTargets="Build">
+    <Error Text=" Unable to find Windows SDK 8.1 by both MINIDDK_ROOT and registry lookup. Please check if it installed correctly or reinstall it from http://msdn.microsoft.com/en-us/windows/desktop/hh852363.aspx." Condition="!Exists('$(WindowsSdk8Path)')" />
+  </Target>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\_studio\shared\umc\core\umc\include;$(SolutionDir)..\..\_studio\shared\umc\core\vm\include;$(SolutionDir)..\..\_studio\shared\umc\core\vm_plus\include;$(SolutionDir)..\..\_studio\shared\umc\io\umc_io\include;$(SolutionDir)..\..\_studio\shared\include;$(SolutionDir)..\..\include;$(SolutionDir)../../samples/sample_protected/include;$(SolutionDir)../../pavp/include;$(SolutionDir)../../pavp/samples/pavp_sample_common;$(SolutionDir)../../pavp/samples/pavp_video/pavp_video_lib;$(SolutionDir)../../pavp/samples/win8ui_video/win8ui_video_lib;$(SolutionDir)..\mfx_pavp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>MFX_VA;_CONSOLE;PSAPI_VERSION=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <WarningLevel>Level4</WarningLevel>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>winmm.lib; psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\pavp\_build\$(PlatformName)\$(ConfigurationName)\lib;..\..\samples\_build\$(PlatformName)\$(ConfigurationName)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

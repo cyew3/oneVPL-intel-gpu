@@ -37,11 +37,12 @@ public:
     virtual mfxStatus Close();
     virtual mfxStatus WaitTasks(mfxU32 nMilisecconds);
     virtual mfxStatus SetExtraParams(EncodeExtraParams *pExtraParams);
-
+    
 protected:
     //forces creation particular number of output bitstreams
     virtual mfxStatus SetOutBitstreamsNum(mfxU16 nBitstreamsOut);
     virtual mfxStatus ZeroBottomStripe(mfxFrameSurface1 * psrf);
+    virtual mfxStatus InitBitstream(mfxBitstream *bs);
 
     //link to out params
     ComponentParams&    m_refParams;
@@ -64,9 +65,6 @@ protected:
         mfxBitstream  * m_pBitstream;
         mfxEncodeCtrl * m_pCtrl;
         bool            m_bCtrlAllocated;
-#ifdef PAVP_BUILD
-        mfxEncryptedData     m_encryptedData[2];
-#endif
     }*                  m_pSyncPoints;
     mfxU16              m_nSyncPoints;
 
@@ -76,5 +74,34 @@ protected:
     //asignments are not used
     void operator = (const MFXEncodeWRAPPER & /*other*/){}
 };
+
+#ifdef PAVP_BUILD
+#include "pavp_video_lib.h"
+class MFXProtectedEncodeWRAPPER: public MFXEncodeWRAPPER
+{
+public:
+    MFXProtectedEncodeWRAPPER(
+                    CPAVPVideo  *pavpVideo
+                    , ComponentParams &refParams
+                    , mfxStatus *status
+                    , std::auto_ptr<IVideoEncode> &pTargetEncode)
+        :MFXEncodeWRAPPER(refParams, status, pTargetEncode)
+        ,m_pavpVideo(pavpVideo)
+    {}
+    virtual mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out)
+    {
+        if (NULL != in && NULL != out)
+            memcpy(out, in, sizeof(*out)); // workaround for MPEG2 encoder. Queery always fail for protected due to counter type checking switch-case logic
+        else
+            return MFXEncodeWRAPPER::Query(in, out);
+        return MFX_ERR_NONE;
+    }
+protected:
+    virtual mfxStatus InitBitstream(mfxBitstream *bs);
+    virtual mfxStatus PutBsData(mfxBitstream* pData);
+    
+    CPAVPVideo  *m_pavpVideo;
+};
+#endif /PAVP_BUILD
 
 #endif//__MFX_ENCODE_WRAPPER_H

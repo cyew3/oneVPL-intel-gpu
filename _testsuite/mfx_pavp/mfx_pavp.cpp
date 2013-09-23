@@ -148,7 +148,7 @@ extern "C" CPAVPVideo* CreateCPAVPVideo_Auxiliary9(
 }
 
 
-void mfxPAVPDestroy(void * ptr)
+extern "C" void mfxPAVPDestroy(void * ptr)
 {
     SAFE_DELETE(ptr);
-}
+}   

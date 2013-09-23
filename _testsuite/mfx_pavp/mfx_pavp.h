@@ -45,14 +45,4 @@ extern "C" CPAVPVideo* CreateCPAVPVideo_CryptoSession9(
     CPAVPSession *session, 
     const PAVP_ENCRYPTION_MODE *decryptorMode);
 
-
-// This class is exported from the mfx_pavp.dll
-class MFX_PAVP_API Cmfx_pavp {
-public:
-    Cmfx_pavp(void);
-    // TODO: add your methods here.
-};
-
-extern MFX_PAVP_API int nmfx_pavp;
-
-MFX_PAVP_API int fnmfx_pavp(void);
+extern "C" void mfxPAVPDestroy(void * ptr);

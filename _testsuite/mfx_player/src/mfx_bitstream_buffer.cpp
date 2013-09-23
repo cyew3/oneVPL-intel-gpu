@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2009-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -13,6 +13,7 @@ File Name: .h
 #include "mfx_pipeline_defs.h"
 #include "mfx_bitsream_buffer.h"
 #include "umc_automatic_mutex.h"
+#include "mfxpcp.h"
 
 using namespace UMC;
 
@@ -103,7 +104,7 @@ mfxStatus MFXBistreamBuffer::Close()
     if (m_bDonotUseLinear)
     {
         MFX_DELETE_ARRAY(m_inputBS.Data);
-        MFX_ZERO_MEM(m_inputBS);
+        mfxBitstream2_ZERO_MEM(m_inputBS);
     }
     
     return MFX_ERR_NONE;
@@ -138,16 +139,32 @@ mfxStatus MFXBistreamBuffer::MoveBsExtended(mfxBitstream2 *dest, mfxBitstream2 *
     MFX_CHECK_STS(CopyBsExtended(dest, src));
     
     if (NULL != src)
+    {
         src->DataLength = 0;
+        mfxEncryptedData *cur = src->EncryptedData;
+        while (NULL != cur)
+        {
+            cur->DataLength = 0;
+            cur = cur->Next;
+        }
+    }
     
     return MFX_ERR_NONE;
 }
 
 mfxStatus MFXBistreamBuffer::CopyBsExtended(mfxBitstream2 *dest, mfxBitstream2 *src)
 {
-    if (NULL == dest || NULL == src)
+    if (NULL == dest || NULL == src) 
     {
         return MFX_ERR_NONE;
+    }
+
+    if (NULL != dest->EncryptedData) 
+    {
+        // mfxBitstream::EncryptedData do not support mutli frame combinating. 
+        // Not sure if it is safe to extend it so just exit with error.
+        if (0 != dest->DataLength)
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
     
     //extending destination if necessary
@@ -172,6 +189,38 @@ mfxStatus MFXBistreamBuffer::CopyBsExtended(mfxBitstream2 *dest, mfxBitstream2 *
     memcpy(dest->Data + dest->DataLength + dest->DataOffset, src->Data + src->DataOffset, src->DataLength);
     dest->DataLength += src->DataLength; 
     
+    if (NULL != src->EncryptedData)
+    {
+        mfxU32 size = 0;
+        mfxU32 count = 0;
+        mfxEncryptedData* cur = src->EncryptedData;
+        while (NULL != cur)
+        {
+            size += cur->MaxLength; // asomsiko todo: we should be smart to understand slices comes in continuous buffers (one per field).
+            count++;
+            cur = cur->Next;
+        }
+
+        dest->m_enryptedData.resize(count);
+        dest->m_enryptedDataBuffer.resize(size);
+
+        mfxU8 *buf = &dest->m_enryptedDataBuffer[0];
+        count = 0;
+        cur = src->EncryptedData;
+        mfxEncryptedData** curDest = &(dest->EncryptedData);
+        while (NULL != cur)
+        {
+            *curDest = &(dest->m_enryptedData[count++]);
+            **curDest = *cur;
+            (*curDest)->Data = buf;
+            buf += cur->MaxLength;
+            memcpy((*curDest)->Data, cur->Data, cur->MaxLength);
+            cur = cur->Next;
+            curDest = &((*curDest)->Next);
+            *curDest = NULL;
+        }
+    }
+
     return MFX_ERR_NONE;
 }
 

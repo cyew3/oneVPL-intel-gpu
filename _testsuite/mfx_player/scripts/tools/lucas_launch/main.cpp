@@ -59,7 +59,7 @@ int main(int argc, char **argv)
     }
     LucasMain lm = (LucasMain)fnc;
     //invoking lucas_main
-    wchar_t param1[] = {L"param1"};
+    wchar_t param1[] = {L"-protected"};
     wchar_t *param[] = {param1};
 
     lucas::TFMWrapperCtx lucas_ctx;

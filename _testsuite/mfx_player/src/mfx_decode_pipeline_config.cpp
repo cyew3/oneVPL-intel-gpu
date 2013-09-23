@@ -24,5 +24,12 @@ MFXPipelineConfigDecode::MFXPipelineConfigDecode(int argc, vm_char ** argv)
 }
 IMFXPipeline * MFXPipelineConfigDecode::CreatePipeline()
 {
+#ifdef PAVP_BUILD
+    const vm_char *strProtected = VM_STRING("-protected");
+
+    for (int i = 0; i < GetArgc(); i++)
+        if (0 == vm_string_strncmp(GetArgv()[i], strProtected, vm_string_strlen(strProtected)))
+            return new MFXProtectedDecPipeline(new MFXPipelineFactory());
+#endif//PAVP_BUILD
     return new MFXDecPipeline(new MFXPipelineFactory());
 }

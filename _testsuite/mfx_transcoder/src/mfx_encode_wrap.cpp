@@ -236,6 +236,18 @@ mfxStatus MFXEncodeWRAPPER::WaitTasks(mfxU32 nMilisecconds)
     return MFXFileWriteRender::WaitTasks(nMilisecconds);
 }
 
+mfxStatus MFXEncodeWRAPPER::InitBitstream(mfxBitstream *bs)
+{
+    memset(bs, 0, sizeof(mfxBitstream));   // zero memory
+
+    //prepare buffer
+    mfxU64 nBufferSize = (mfxU64 )m_VideoParams.mfx.BufferSizeInKB * 1000 * 
+        (0 == m_VideoParams.mfx.BRCParamMultiplier ? 1 : m_VideoParams.mfx.BRCParamMultiplier);
+    MFX_CHECK_WITH_ERR(bs->Data = new mfxU8[nBufferSize], MFX_ERR_MEMORY_ALLOC);
+    bs->MaxLength = nBufferSize;
+    return MFX_ERR_NONE;
+}
+
 mfxStatus MFXEncodeWRAPPER::RenderFrame(mfxFrameSurface1 *pSurf, mfxEncodeCtrl * pCtrl)
 {
     mfxStatus sts  = MFX_ERR_NONE;
@@ -445,13 +457,7 @@ mfxStatus MFXEncodeWRAPPER::RenderFrame(mfxFrameSurface1 *pSurf, mfxEncodeCtrl *
                 std::auto_ptr<mfxBitstream> pNewBitstream;
                 MFX_CHECK_WITH_ERR((pNewBitstream.reset(new mfxBitstream), NULL != pNewBitstream.get()), MFX_ERR_MEMORY_ALLOC);
 
-                memset(pNewBitstream.get(), 0, sizeof(mfxBitstream));   // zero memory
-
-                //prepare buffer
-                mfxU64 nBufferSize = (mfxU64 )m_VideoParams.mfx.BufferSizeInKB * 1000 * 
-                    (0 == m_VideoParams.mfx.BRCParamMultiplier ? 1 : m_VideoParams.mfx.BRCParamMultiplier);
-                MFX_CHECK_WITH_ERR(pNewBitstream->Data = new mfxU8[nBufferSize], MFX_ERR_MEMORY_ALLOC);
-                pNewBitstream->MaxLength = nBufferSize;
+                MFX_CHECK_STS(InitBitstream(pNewBitstream.get()));
 
                 m_pSyncPoints[i].m_pBitstream = pNewBitstream.release();
             }else
@@ -475,64 +481,6 @@ mfxStatus MFXEncodeWRAPPER::RenderFrame(mfxFrameSurface1 *pSurf, mfxEncodeCtrl *
                 MPA_TRACE("Sleep(nDelayOnMSDKCalls)");
                 vm_time_sleep(m_ExtraParams.nDelayOnMSDKCalls);
             }
-#ifdef PAVP_BUILD
-            if (m_ExtraParams.bEncPavp)
-            {
-                memset(m_pSyncPoints[i].m_encryptedData, 0, sizeof(m_pSyncPoints[i].m_encryptedData[0]) * 2);
-
-                mfxU32 offset = m_pSyncPoints[i].m_pBitstream->DataOffset + m_pSyncPoints[i].m_pBitstream->DataLength;
-                mfxU32 size = m_pSyncPoints[i].m_pBitstream->MaxLength - offset;
-
-                m_pSyncPoints[i].m_pBitstream->EncryptedData = &(m_pSyncPoints[i].m_encryptedData[0]);
-                m_pSyncPoints[i].m_pBitstream->EncryptedData->Data = m_pSyncPoints[i].m_pBitstream->Data + offset;
-                m_pSyncPoints[i].m_pBitstream->EncryptedData->MaxLength = size;//size/2;
-
-                m_pSyncPoints[i].m_pBitstream->EncryptedData->Next = &(m_pSyncPoints[i].m_encryptedData[1]);
-                m_pSyncPoints[i].m_pBitstream->EncryptedData->Next->Data = m_pSyncPoints[i].m_pBitstream->Data + offset + 
-                    m_pSyncPoints[i].m_pBitstream->EncryptedData->MaxLength;
-                m_pSyncPoints[i].m_pBitstream->EncryptedData->Next->MaxLength = size - 
-                    m_pSyncPoints[i].m_pBitstream->EncryptedData->MaxLength;
-                                
-                if (NULL != m_ExtraParams.m_encPavpControl)
-                {
-                    memcpy(&m_pSyncPoints[i].m_pBitstream->EncryptedData->CipherCounter, &m_ExtraParams.m_encPavpControl[m_ExtraParams.m_encPavpControlPos].cipherCounter, 
-                        sizeof(mfxAES128CipherCounter));
-                    memcpy(&m_pSyncPoints[i].m_pBitstream->EncryptedData->Next->CipherCounter, &m_ExtraParams.m_encPavpControl[m_ExtraParams.m_encPavpControlPos].cipherCounter, 
-                        sizeof(mfxAES128CipherCounter));
-
-                    m_ExtraParams.m_encPavpControlPos = (m_ExtraParams.m_encPavpControlPos + 1) % m_ExtraParams.m_encPavpControlCount;
-                }
-                else
-                {
-                    mfxU64 tmp;
-                    tmp = m_ExtraParams.pavpCounter;
-                    m_ExtraParams.pavpCounter += 
-                        m_VideoParams.mfx.FrameInfo.Width * m_VideoParams.mfx.FrameInfo.Height * 
-                        3/*bpp*/ + 128; // some better prediction need if used for production
-                    CPavpDevice::CounterEndianSwap((DWORD*)&tmp, m_ExtraParams.encCounterType);
-                    m_pSyncPoints[i].m_pBitstream->EncryptedData->CipherCounter.Count = tmp;
-
-                    tmp = m_ExtraParams.pavpCounter;
-                    m_ExtraParams.pavpCounter += 
-                        m_VideoParams.mfx.FrameInfo.Width * m_VideoParams.mfx.FrameInfo.Height * 
-                        3/*bpp*/ + 128; // some better prediction need if used for production
-                    CPavpDevice::CounterEndianSwap((DWORD*)&tmp, m_ExtraParams.encCounterType);
-                    m_pSyncPoints[i].m_pBitstream->EncryptedData->Next->CipherCounter.Count = tmp;
-
-                }
-                
-/*
-                if (NULL != m_ExtraParams.m_encPavpKey)
-                {
-                    PavpEpidStatus psts = m_ExtraParams.m_pavp->m_pavpDevice.SetNewEncodeKey(
-                        (const StreamKey (*const ))(void*)m_ExtraParams.m_encPavpKey[m_ExtraParams.m_encPavpKeyPos].key);
-                    MFX_CHECK_WITH_FNC_NAME(PAVP_STATUS_SUCCESS == psts, "SetNewEncodeKey");
-
-                    m_ExtraParams.m_encPavpKeyPos = (m_ExtraParams.m_encPavpKeyPos + 1) % m_ExtraParams.m_encPavpKeyCount;
-                }
-*/
-            }
-#endif //PAVP_BUILD
 
             //timer valid value only for async 1 mode
             m_encTime.Start();
@@ -694,58 +642,6 @@ mfxStatus MFXEncodeWRAPPER::SetExtraParams(EncodeExtraParams *pExtraParams)
 
 mfxStatus MFXEncodeWRAPPER::PutBsData(mfxBitstream* pData)
 {
-#ifdef PAVP_BUILD
-    mfxStatus sts = MFX_ERR_NONE;
-    if (m_ExtraParams.bEncPavp)
-    {
-        if (NULL == pData->EncryptedData)
-            return MFX_ERR_UNKNOWN;
-        
-        mfxEncryptedData *head = pData->EncryptedData;
-        mfxEncryptedData *cur = head;
-        while(NULL != cur)
-        {
-            if (0 != cur->DataLength)
-            {
-                if (NULL != m_ExtraParams.m_encPavpInfoOut)
-                {
-                    EncPavpInfoOut info;
-                    memset(&info, 0, sizeof(EncPavpInfoOut));
-
-                    memcpy(&info.cipherCounter, &cur->CipherCounter, sizeof(info.cipherCounter));
-                    unsigned int keySize = 16;
-                    m_ExtraParams.m_pavp->m_pavpDevice.GetKey(CPavpDevice::keyIdEncode, info.key, keySize);
-                    info.size = cur->DataLength;
-                    fwrite(&info, sizeof (info), 1, m_ExtraParams.m_encPavpInfoOut);
-                    fflush(m_ExtraParams.m_encPavpInfoOut);
-                }
-                
-                if (m_ExtraParams.bEncPavpDecrypt)
-                {
-                    m_ExtraParams.m_pavp->m_pavpDevice.DecryptContent(
-                        cur->Data + cur->DataOffset,
-                        (cur->DataLength + 15)&(~0xf),
-                        cur->Data + cur->DataOffset,
-                        (cur->DataLength + 15)&(~0xf), 
-                        (DWORD*)&cur->CipherCounter/*,
-                        m_ExtraParams.encCounterType*/); // todo: ask brian to add CounterType here - counter wrap support
-                    sts = PutData(cur->Data + cur->DataOffset, cur->DataLength);
-                    MFX_CHECK(sts == MFX_ERR_NONE);
-                }
-                else
-                {
-                    sts = PutData(cur->Data + cur->DataOffset, (cur->DataLength + 15)&(~0xf));
-                    MFX_CHECK(sts == MFX_ERR_NONE);
-                }
-            }
-            cur = cur->Next;
-        }
-    }
-    else
-        sts = PutData(pData->Data + pData->DataOffset, pData->DataLength);
-    return sts;
-#else //PAVP_BUILD
-
     MFX_CHECK_STS(MFXFileWriteRender::PutBsData(pData));
     if (NULL == pData)
         return MFX_ERR_NONE;
@@ -773,6 +669,83 @@ mfxStatus MFXEncodeWRAPPER::PutBsData(mfxBitstream* pData)
     }
 
     return MFX_ERR_NONE;
-#endif //PAVP_BUILD
 };
 
+#ifdef PAVP_BUILD
+mfxStatus MFXProtectedEncodeWRAPPER::InitBitstream(mfxBitstream *bs)
+{
+    MFX_CHECK_STS(MFXEncodeWRAPPER::InitBitstream(bs));
+    
+    if (0 != m_refParams.m_params.Protected)
+    {
+        mfxU64 nBufferSize = bs->MaxLength;
+
+        // align unprotected buffer. We will use it for store decrypted data.
+        nBufferSize = (nBufferSize+15)&~(0xf); 
+        // encrypted buffer must be aligned to cipher block size. 
+        mfxU64 encrypedDataMaxLength = (nBufferSize+15)&~(0xf); 
+        // allocate for unprotected and two protected buffers in case we have 
+        mfxU64 allocationSize = nBufferSize + 2 * (sizeof(mfxEncryptedData) + encrypedDataMaxLength);
+
+        mfxU8 *p = NULL;
+        MFX_CHECK_WITH_ERR(p = new mfxU8[allocationSize], MFX_ERR_MEMORY_ALLOC);
+        
+        memcpy(p, bs->Data, bs->MaxLength);
+        bs->Data = p;
+        p += nBufferSize;
+        bs->MaxLength = nBufferSize;
+
+        bs->EncryptedData = (mfxEncryptedData*)p;
+        p += sizeof(mfxEncryptedData);
+        memset(bs->EncryptedData, 0, sizeof(mfxEncryptedData));
+
+        bs->EncryptedData->Data = p;
+        p += encrypedDataMaxLength;
+        bs->EncryptedData->MaxLength = encrypedDataMaxLength;
+
+        bs->EncryptedData->Next = (mfxEncryptedData*)p;
+        p += sizeof(mfxEncryptedData);
+        memset(bs->EncryptedData->Next, 0, sizeof(mfxEncryptedData));
+        
+        bs->EncryptedData->Next->Data = (mfxU8*)p;
+        p += encrypedDataMaxLength;
+        bs->EncryptedData->Next->MaxLength = encrypedDataMaxLength;
+    }
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MFXProtectedEncodeWRAPPER::PutBsData(mfxBitstream* pData)
+{
+    if (0 != m_refParams.m_params.Protected && NULL != pData)
+    {
+        // for protected encoding data returned though encrypted data buffers
+        if (NULL == pData->EncryptedData
+            || 0 != pData->DataLength)
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        mfxEncryptedData *cur = pData->EncryptedData;
+        // offset from pData->Data pointer to write decrypted data
+        mfxU32 offset = 0;
+        while(NULL != cur && 0 != cur->DataLength)
+        {
+            // cur->DataLength is size after decryption but buffer required to do decryption must be aligned 16
+            mfxU16 alignedSize = (cur->DataLength + 15)&(~0xf);
+            // if assumption on buffer size required was wrong
+            if (cur->MaxLength - offset < alignedSize)
+                return MFX_ERR_UNKNOWN;
+            // decrypt from EncryptedData buffers into regular bitstream buffer
+            m_pavpVideo->Decrypt(
+                cur->Data, 
+                pData->Data + offset, 
+                alignedSize,
+                &cur->CipherCounter,
+                sizeof(cur->CipherCounter));
+            offset += cur->DataLength;
+            cur->DataLength = 0;
+            cur = cur->Next;
+        }
+        pData->DataLength = offset;
+    }
+
+    return MFXEncodeWRAPPER::PutBsData(pData);
+}
+#endif//PAVP_BUILD

@@ -55,6 +55,7 @@ protected:
             void      *  pTarget;
             mfxI32    *  pTargetInt32;
             mfxU32    *  pTargetUInt32;
+            mfxU32    *  pTargetUInt64;
             mfxU16    *  pTargetUInt16;
             mfxI16    *  pTargetInt16;
             mfxF64    *  pTargetF64;
@@ -150,6 +151,7 @@ protected:
     mfxU16                          m_Quality;
     mfxU16                          m_RestartInterval;
 
+    virtual mfxStatus  CreateEncodeWRAPPER(std::auto_ptr<IVideoEncode> &pEncoder, MFXEncodeWRAPPER ** ppEncoderWrp);
     //overrides from decoding pipeline
     virtual mfxStatus  CheckParams();
     virtual mfxStatus  CreateRender();
@@ -185,4 +187,19 @@ protected:
     IVideoEncode *m_pEncoder ;
 };
 
+#ifdef PAVP_BUILD
+#include "mfx_pipeline_protected.h"
 
+
+class MFXProtectedTranscodingPipeline: public MFXProtectedPipeline<MFXTranscodingPipeline>
+{
+public:
+    MFXProtectedTranscodingPipeline(IMFXPipelineFactory *pFactory)
+        :MFXProtectedPipeline<MFXTranscodingPipeline>(pFactory)
+    {
+    };
+protected:
+    virtual mfxStatus CreateEncodeWRAPPER(std::auto_ptr<IVideoEncode> &pEncoder, MFXEncodeWRAPPER ** ppEncoderWrp);
+    virtual mfxU32 getOutputCodecId() {return m_EncParams.mfx.CodecId;};
+};
+#endif //PAVP_BUILD

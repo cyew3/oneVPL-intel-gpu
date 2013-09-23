@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -41,12 +41,12 @@ public:
 private:
     HMODULE                     m_pLibD3D9;
     HMODULE                     m_pLibDXVA2;
-    IDirect3D9*                 m_pD3D9;
-    IDirect3DDevice9*           m_pD3DD9;
+    IDirect3D9Ex*               m_pD3D9Ex;
+    IDirect3DDevice9Ex*         m_pD3DD9Ex;
     IDirect3DDeviceManager9*    m_pDeviceManager;
     D3DPRESENT_PARAMETERS       m_D3DPP;
 
-    IDirect3D9* myDirect3DCreate9(UINT SDKVersion);
+    HRESULT myDirect3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex**d);
     HRESULT myDXVA2CreateDirect3DDeviceManager9(UINT* pResetToken,
                                                 IDirect3DDeviceManager9** ppDeviceManager,
                                                 const vm_char *pDXVA2LIBNAME = NULL);

@@ -34,6 +34,9 @@ File Name: .h
 #include "mfx_commands_initializer.h"
 #include "mfx_ifactory.h"
 #include "mfx_bitstream2.h"
+#ifdef PAVP_BUILD
+#include "mfx_bitstream_reader_encryptor.h"
+#endif
 #include "mfx_ibitstream_reader.h"
 #include "mfx_shared_ptr.h"
 
@@ -151,9 +154,29 @@ struct sCommandlineParams
   //svc target layer
   mfxExtSvcTargetLayer svc_layer;
 
+#ifdef PAVP_BUILD
+  // protected
+  mfxU16 Protected; //Protected in mfxVideoParam
+  vm_char strPAVPLibPath[MAX_FILE_PATH];
+
+  mfxU16 ctr_dec_type; //CounterType in mfxExtPAVPOption
+  bool startctr_dec_set;
+  mfxU64 startctr_dec;
+
+  mfxU16 ctr_enc_type; //CounterType in mfxExtPAVPOption
+  bool startctr_enc_set;
+  mfxU64 startctr_enc;
+
+  BitstreamReaderEncryptor::params BitstreamReaderEncryptor_params;
+  mfxU16 encType; //EncryptionType in mfxExtPAVPOption
+  mfxExtPAVPOption extEncPavpOption;
+  mfxExtPAVPOption extDecPavpOption;
+#endif//PAVP_BUILD
   sCommandlineParams()
   {
       MFX_ZERO_MEM(*this);
+
+      vm_string_strcpy_s(strPAVPLibPath, MFX_ARRAY_SIZE(strPAVPLibPath), VM_STRING("mfx_pavp"));
 
       //default parameters for sCommandLine
       isDefaultFC       =  true;
@@ -175,15 +198,6 @@ struct sCommandlineParams
       m_ProcAmp.Contrast   = 1.0f;
       m_ProcAmp.Hue        = 0.0f;
       m_ProcAmp.Saturation = 1.0f;
-
-#ifdef PAVP_BUILD
-      encodeExtraParams.bEncPavp = false;
-      encodeExtraParams.bEncPavpDecrypt = false;
-      encodeExtraParams.encEncryptionType = PAVP_ENCRYPTION_AES128_CTR;
-      encodeExtraParams.encCounterType = PAVP_COUNTER_TYPE_A;
-      encodeExtraParams.encPavpInfoOut = NULL;
-      encodeExtraParams.pavpCounter = 0;
-#endif //PAVP_BUILD
   }
 };
 
@@ -270,13 +284,6 @@ protected:
     std::auto_ptr<IUnknown> m_dxvaSpy;
 #endif
 
-#ifdef PAVP_BUILD
-    FILE *m_encPavpInfoOut;
-    EncPavpControl *m_encPavpControl;
-    EncPavpKey *m_encPavpKey;
-    PAVP_Wrapper m_pavp;
-
-#endif //PAVP_BUILD
     //execution time counters
     mfxU32                   m_nDecFrames;
     mfxU32                   m_nVppFrames;
@@ -384,5 +391,21 @@ protected:
     mfx_shared_ptr<IRandom> m_pRandom;
 
 };
+
+#ifdef PAVP_BUILD
+#include "mfx_pipeline_protected.h"
+
+class MFXProtectedDecPipeline: public MFXProtectedPipeline<MFXDecPipeline>
+{
+public:
+    MFXProtectedDecPipeline(IMFXPipelineFactory *pFactory)
+        :MFXProtectedPipeline<MFXDecPipeline>(pFactory)
+    {
+    };
+protected:
+    virtual mfxU32 getOutputCodecId() {return 0;};
+
+};
+#endif//PAVP_BUILD
 
 #endif//__MFX_PIPELINE_DEC_H

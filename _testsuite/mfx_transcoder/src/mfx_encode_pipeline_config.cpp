@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2013 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -21,6 +21,13 @@ MFXPipelineConfigEncode::MFXPipelineConfigEncode(int argc, vm_char ** argv)
 }
 IMFXPipeline * MFXPipelineConfigEncode::CreatePipeline()
 {
+#ifdef PAVP_BUILD
+    const vm_char *strProtected = VM_STRING("-protected");
+
+    for (int i = 0; i < GetArgc(); i++)
+        if (0 == vm_string_strncmp(GetArgv()[i], strProtected, vm_string_strlen(strProtected)))
+            return new MFXProtectedTranscodingPipeline(CreateFactory());
+#endif//PAVP_BUILD
     return new MFXTranscodingPipeline(CreateFactory());
 }
 IMFXPipelineFactory * MFXPipelineConfigEncode::CreateFactory()

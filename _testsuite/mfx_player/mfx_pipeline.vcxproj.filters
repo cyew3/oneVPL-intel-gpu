@@ -197,6 +197,12 @@
     <ClCompile Include="src\mfx_mediasdk_spl_wrapper.cpp">
       <Filter>readers</Filter>
     </ClCompile>
+    <ClCompile Include="src\mfx_bitstream_reader_encryptor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_pipeline_protected.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\mfx_adapters.h">
@@ -666,6 +672,12 @@
     </ClInclude>
     <ClInclude Include="include\mfx_mediasdk_spl_wrapper.h">
       <Filter>readers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_bitstream_reader_encryptor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_pipeline_protected.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

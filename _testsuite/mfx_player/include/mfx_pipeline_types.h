@@ -171,28 +171,6 @@ struct mfxExtBufferIdCompare
     }
 };
 
-
-#ifdef PAVP_BUILD
-#include "intel_pavp_api.h"
-#include "pavp.h"
-using namespace ProtectedLibrary;
-#endif//PAVP_BUILD
-
-
-#ifdef PAVP_BUILD
-struct EncPavpInfoOut {
-    mfxU64 size;
-    D3DAES_CTR_IV cipherCounter;
-    unsigned char key[16];        
-};
-struct EncPavpControl {
-    D3DAES_CTR_IV cipherCounter;
-};
-struct EncPavpKey {
-    unsigned char key[16];
-};
-#endif//PAVP_BUILD
-
 typedef struct
 {
     const vm_char *pRefFile;
@@ -201,27 +179,6 @@ typedef struct
     bool        bZeroBottomStripe;
     mfxU32      nDelayOnMSDKCalls; //pipeline will call Sleep after MSDK async calls
     mfxU16      nBufferSizeInKB;
-
-#ifdef PAVP_BUILD
-    bool bEncPavp;
-    bool bEncPavpDecrypt;
-    PAVP_ENCRYPTION_TYPE encEncryptionType;
-    PAVP_COUNTER_TYPE encCounterType;
-    vm_char *encPavpInfoOut;
-    vm_char *encPavpControl;
-    vm_char *encPavpKey;
-
-    mfxU64 pavpCounter;
-
-    FILE *m_encPavpInfoOut;
-    EncPavpControl *m_encPavpControl;
-    mfxU32 m_encPavpControlCount;
-    mfxU32 m_encPavpControlPos;
-    EncPavpKey *m_encPavpKey;
-    mfxU32 m_encPavpKeyCount;
-    mfxU32 m_encPavpKeyPos;
-    PAVP_Wrapper *m_pavp;
-#endif //PAVP_BUILD
 } EncodeExtraParams;
 
 

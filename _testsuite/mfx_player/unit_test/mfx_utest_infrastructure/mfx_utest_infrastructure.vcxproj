@@ -125,6 +125,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\..\_studio\shared\umc\codec\mpeg4_spl\include\umc_mp4_parser.h" />
     <ClInclude Include="clean_setup.h" />
     <ClInclude Include="mfx_test_features.h" />
     <ClInclude Include="mfx_test_utils.h" />

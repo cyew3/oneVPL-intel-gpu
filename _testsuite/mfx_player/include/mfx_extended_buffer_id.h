@@ -99,6 +99,8 @@ DECL_BUFFER_TYPE(mfxExtSVCRateControl, MFX_EXTBUFF_SVC_RATE_CONTROL);
 DECL_BUFFER_TYPE(mfxExtSVCSeqDesc, MFX_EXTBUFF_SVC_SEQ_DESC);
 DECL_BUFFER_TYPE(mfxExtSvcTargetLayer, MFX_EXTBUFF_SVC_TARGET_LAYER);
 
+DECL_BUFFER_TYPE(mfxExtPAVPOption, MFX_EXTBUFF_PAVP_OPTION);
+    
 //init helper
 template <class T>
 T& mfx_init_ext_buffer(T & buffer)

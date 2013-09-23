@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -18,8 +18,8 @@ MFXD3D9Device::MFXD3D9Device()
     : m_D3DPP()
     , m_pLibD3D9()
     , m_pLibDXVA2()
-    , m_pD3D9()
-    , m_pD3DD9()
+    , m_pD3D9Ex()
+    , m_pD3DD9Ex()
     , m_pDeviceManager()
 {
 }
@@ -34,9 +34,13 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
 {
     HRESULT hr;
 
-    m_pD3D9 = myDirect3DCreate9(D3D_SDK_VERSION);
+    hr = myDirect3DCreate9Ex(D3D_SDK_VERSION, &m_pD3D9Ex);
+    if (FAILED(hr))
+    {
+        PipelineTrace((VM_STRING("myDirect3DCreate9Ex failed with error 0x%x.\n"), hr));
+    }
 
-    if (!m_pD3D9)
+    if (!m_pD3D9Ex)
     {
         MFX_TRACE_ERR(VM_STRING("Direct3DCreate9 failed"));
         return MFX_ERR_UNKNOWN;
@@ -64,7 +68,7 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
     m_D3DPP.SwapEffect                 = D3DSWAPEFFECT_DISCARD;
     m_D3DPP.hDeviceWindow              = (HWND)hWindow;
     m_D3DPP.Windowed                   = bIsWindowed;
-    m_D3DPP.Flags                      = D3DPRESENTFLAG_VIDEO;
+    m_D3DPP.Flags                      = D3DPRESENTFLAG_VIDEO | D3DPRESENTFLAG_RESTRICTED_CONTENT | D3DPRESENTFLAG_RESTRICT_SHARED_RESOURCE_DRIVER;
     m_D3DPP.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
     m_D3DPP.PresentationInterval       = D3DPRESENT_INTERVAL_IMMEDIATE;
 
@@ -83,14 +87,15 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
     //
     //if (true) //m_bD3D9HW
     {
-        hr = m_pD3D9->CreateDevice(nAdapter,
+        hr = m_pD3D9Ex->CreateDeviceEx(nAdapter,
             D3DDEVTYPE_HAL,
             (HWND)hWindow,
             D3DCREATE_SOFTWARE_VERTEXPROCESSING |
             D3DCREATE_FPU_PRESERVE | 
             D3DCREATE_MULTITHREADED,
             &m_D3DPP,
-            &m_pD3DD9);
+            NULL,
+            &m_pD3DD9Ex);
 
         if (FAILED(hr))
         {
@@ -101,16 +106,17 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
     //
     // Next try to create a software D3D9 device.
     //
-    if (!m_pD3DD9)
+    if (!m_pD3DD9Ex)
     {
         //RegisterSoftwareRasterizer();
 
-        hr = m_pD3D9->CreateDevice(nAdapter,
+        hr = m_pD3D9Ex->CreateDeviceEx(nAdapter,
             D3DDEVTYPE_SW,
             (HWND)hWindow,
             D3DCREATE_SOFTWARE_VERTEXPROCESSING,
             &m_D3DPP,
-            &m_pD3DD9);
+            NULL,
+            &m_pD3DD9Ex);
 
         if (FAILED(hr))
         {
@@ -119,7 +125,7 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
     }
 
     // Note: DXVA2 emulators may work without D3D device
-    if (!m_pD3DD9 && (NULL == pDXVA2libname || 0 == vm_string_strlen(pDXVA2libname)))
+    if (!m_pD3DD9Ex && (NULL == pDXVA2libname || 0 == vm_string_strlen(pDXVA2libname)))
     {
         return MFX_ERR_UNKNOWN;
     }
@@ -133,7 +139,7 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
         return MFX_ERR_UNKNOWN;
     }
 
-    hr = m_pDeviceManager->ResetDevice(m_pD3DD9, ResetToken);
+    hr = m_pDeviceManager->ResetDevice(m_pD3DD9Ex, ResetToken);
     if (FAILED(hr))
     {
         MFX_TRACE_ERR(VM_STRING("ResetDevice failed with error 0x") << std::hex<<hr);
@@ -148,7 +154,7 @@ mfxStatus MFXD3D9Device::Reset(WindowHandle hWindow,
 {
     HRESULT hr;
 
-    if (m_pD3DD9)
+    if (m_pD3DD9Ex)
     {
         m_D3DPP.Windowed = bWindowed;
         if (m_D3DPP.Windowed)
@@ -169,7 +175,7 @@ mfxStatus MFXD3D9Device::Reset(WindowHandle hWindow,
     //
     D3DPRESENT_PARAMETERS d3dpp = m_D3DPP;
 
-    hr = m_pD3DD9->Reset(&d3dpp);
+    hr = m_pD3DD9Ex->Reset(&d3dpp);
 
     if (FAILED(hr))
     {
@@ -183,8 +189,8 @@ mfxStatus MFXD3D9Device::Reset(WindowHandle hWindow,
 void MFXD3D9Device::Close()
 {
     MFX_SAFE_RELEASE(m_pDeviceManager);
-    MFX_SAFE_RELEASE(m_pD3DD9);
-    MFX_SAFE_RELEASE(m_pD3D9);
+    MFX_SAFE_RELEASE(m_pD3DD9Ex);
+    MFX_SAFE_RELEASE(m_pD3D9Ex);
 }
 
 MFXD3D9Device::~MFXD3D9Device()
@@ -194,11 +200,11 @@ MFXD3D9Device::~MFXD3D9Device()
     //FreeLibrary(m_pLibDXVA2);
 }
 
-typedef IDirect3D9* (STDAPICALLTYPE *FUNC1)(UINT SDKVersion);
+typedef HRESULT (STDAPICALLTYPE *FUNC1)(UINT SDKVersion, IDirect3D9Ex**d);
 typedef HRESULT (STDAPICALLTYPE *FUNC2)(__out UINT* pResetToken,
     __deref_out IDirect3DDeviceManager9** ppDeviceManager);
 
-IDirect3D9* MFXD3D9Device::myDirect3DCreate9(UINT SDKVersion)
+HRESULT MFXD3D9Device::myDirect3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex**d)
 {
     m_pLibD3D9 = LoadLibrary(_T("d3d9.dll"));
     if (NULL == m_pLibD3D9) 
@@ -207,14 +213,14 @@ IDirect3D9* MFXD3D9Device::myDirect3DCreate9(UINT SDKVersion)
         return NULL;
     }
 
-    FUNC1 pFunc = (FUNC1)GetProcAddress(m_pLibD3D9, "Direct3DCreate9"); 
+    FUNC1 pFunc = (FUNC1)GetProcAddress(m_pLibD3D9, "Direct3DCreate9Ex"); 
     if (NULL == pFunc) 
     { 
         MFX_TRACE_ERR(VM_STRING("GetProcAddress(\"Direct3DCreate9\")  failed with error ")<< GetLastError());
         return NULL;
     }
 
-    return pFunc(SDKVersion);
+    return pFunc(SDKVersion, d);
 }
 
 HRESULT MFXD3D9Device::myDXVA2CreateDirect3DDeviceManager9(UINT* pResetToken,
@@ -276,7 +282,7 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
     //
     // Check the current status of D3D9 device.
     //
-    HRESULT hr = m_pD3DD9->TestCooperativeLevel();
+    HRESULT hr = m_pD3DD9Ex->TestCooperativeLevel();
 
     switch (hr)
     {
@@ -330,7 +336,7 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
                   , pSurface->Info.CropY + pSurface->Info.CropH};
     
     CComPtr<IDirect3DSurface9> pBackBuffer;
-    hr = m_pD3DD9->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
+    hr = m_pD3DD9Ex->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
     
     D3DSURFACE_DESC dsc ;
     pBackBuffer->GetDesc(&dsc);
@@ -360,7 +366,7 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
 
     {
         MPA_TRACE("D3DRender::StretchRect");
-        hr = m_pD3DD9->StretchRect((IDirect3DSurface9*)pSurface->Data.MemId, &source, pBackBuffer, &dest, D3DTEXF_LINEAR);
+        hr = m_pD3DD9Ex->StretchRect((IDirect3DSurface9*)pSurface->Data.MemId, &source, pBackBuffer, &dest, D3DTEXF_LINEAR);
         if (FAILED(hr))
         {
             MFX_TRACE_ERR(VM_STRING("StretchRect failed with error 0x") << std::hex<<hr);
@@ -371,7 +377,7 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
     {
         MPA_TRACE("D3DRender::Present");
 
-        hr = m_pD3DD9->Present(NULL, NULL, NULL, NULL);
+        hr = m_pD3DD9Ex->Present(NULL, NULL, NULL, NULL);
 
         if (FAILED(hr))
         {

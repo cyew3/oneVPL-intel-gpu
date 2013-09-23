@@ -227,7 +227,11 @@ mfxStatus ComponentParams::AllocFrames( RWAllocatorFactory::root* pFactory
 
             D3DAllocatorParams *pd3dAllocParams;
             MFX_CHECK_WITH_ERR(pd3dAllocParams = new D3DAllocatorParams, MFX_ERR_MEMORY_ALLOC);
-            
+#ifdef PAVP_BUILD
+            if (0 != m_params.Protected)
+                pd3dAllocParams->surfaceUsage = D3DUSAGE_RESTRICTED_CONTENT;
+#endif//PAVP_BUILD
+
             IDirect3DDeviceManager9 * pMgr;
 
             MFX_CHECK_STS(hwDevice->GetHandle(MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9, (mfxHDL*) &pMgr));
@@ -278,6 +282,10 @@ mfxStatus ComponentParams::AllocFrames( RWAllocatorFactory::root* pFactory
             D3D11AllocatorParams *pd3d11AllocParams;
             MFX_CHECK_WITH_ERR(pd3d11AllocParams = new D3D11AllocatorParams, MFX_ERR_MEMORY_ALLOC);
             pd3d11AllocParams->bUseSingleTexture = m_bD3D11SingeTexture;
+#ifdef PAVP_BUILD
+            if (0 != m_params.Protected)
+                pd3d11AllocParams->uncompressedResourceMiscFlags = D3D11_RESOURCE_MISC_RESTRICTED_CONTENT;
+#endif//PAVP_BUILD
 
             ID3D11Device *pDevice;
             MFX_CHECK_STS(hwDevice->GetHandle(MFX_HANDLE_D3D11_DEVICE, (mfxHDL*)&pDevice));

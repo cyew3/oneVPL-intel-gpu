@@ -982,6 +982,11 @@ mfxStatus MFXTranscodingPipeline::ProcessOption(vm_char **&argv, vm_char **argve
                 {
                     switch (pOption->nType)
                     {
+                        case OPT_UINT_64:
+                        {
+                            lexical_cast(argv[1], *pOption->pTargetUInt64);
+                            break;
+                        }
                         case OPT_UINT_32:
                         {
                             lexical_cast(argv[1], *pOption->pTargetUInt32);
@@ -1632,16 +1637,30 @@ mfxStatus MFXTranscodingPipeline::CreateRender()
         return MFX_ERR_NONE;
     }
 
-    mfxStatus sts;
     std::auto_ptr<IVideoEncode> pEncoder = CreateEncoder();
-    MFXEncodeWRAPPER * pEncoderWrp;
 
+    MFXEncodeWRAPPER * pEncoderWrp = NULL;
+    MFX_CHECK_STS(CreateEncodeWRAPPER(pEncoder, &pEncoderWrp));
+    m_pRender = pEncoderWrp;
+
+    m_inParams.encodeExtraParams.pRefFile = m_inParams.refFile;
+    m_inParams.encodeExtraParams.bVerbose = m_inParams.bVerbose;
+
+    MFX_CHECK_STS(pEncoderWrp->SetExtraParams(&m_inParams.encodeExtraParams));
+
+    //adds decorators filters
+    return DecorateRender();
+}
+
+mfxStatus MFXTranscodingPipeline::CreateEncodeWRAPPER(std::auto_ptr<IVideoEncode> &pEncoder, MFXEncodeWRAPPER ** ppEncoderWrp)
+{
+    mfxStatus sts = MFX_ERR_NONE;
     //////////////////////////////////////////////////////////////////////////
     //create render
     if (m_RenderType == MFX_METRIC_CHECK_RENDER)
     {
         EncodeDecodeQuality * pEncoderQlty;
-        MFX_CHECK_WITH_ERR(m_pRender = pEncoderWrp = pEncoderQlty = new EncodeDecodeQuality(m_components[eREN], &sts, pEncoder)
+        MFX_CHECK_WITH_ERR(*ppEncoderWrp = pEncoderQlty = new EncodeDecodeQuality(m_components[eREN], &sts, pEncoder)
             , MFX_ERR_MEMORY_ALLOC);
 
         if (m_bYuvDumpMode)
@@ -1657,16 +1676,11 @@ mfxStatus MFXTranscodingPipeline::CreateRender()
         MFX_CHECK_STS(pEncoderQlty->SetOutputPerfFile(m_inParams.perfFile));
     }else
     {
-        MFX_CHECK_WITH_ERR(m_pRender = pEncoderWrp = new MFXEncodeWRAPPER(m_components[eREN], &sts, pEncoder), MFX_ERR_MEMORY_ALLOC);
+        MFX_CHECK_WITH_ERR(*ppEncoderWrp = new MFXEncodeWRAPPER(m_components[eREN], &sts, pEncoder), MFX_ERR_MEMORY_ALLOC);
     }
 
-    m_inParams.encodeExtraParams.pRefFile = m_inParams.refFile;
-    m_inParams.encodeExtraParams.bVerbose = m_inParams.bVerbose;
 
-    MFX_CHECK_STS(pEncoderWrp->SetExtraParams(&m_inParams.encodeExtraParams));
-
-    //adds decorators filters
-    return DecorateRender();
+    return MFX_ERR_NONE;
 }
 
 mfxStatus MFXTranscodingPipeline::ReleasePipeline()
@@ -1675,6 +1689,16 @@ mfxStatus MFXTranscodingPipeline::ReleasePipeline()
 
     return MFX_ERR_NONE;
 }
+
+
+#ifdef PAVP_BUILD
+mfxStatus MFXProtectedTranscodingPipeline::CreateEncodeWRAPPER(std::auto_ptr<IVideoEncode> &pEncoder, MFXEncodeWRAPPER ** ppEncoderWrp)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    MFX_CHECK_WITH_ERR(*ppEncoderWrp = new MFXProtectedEncodeWRAPPER(dynamic_cast<CPAVPVideo*>(m_pavpVideo), m_components[eREN], &sts, pEncoder), MFX_ERR_MEMORY_ALLOC);
+    return MFX_ERR_NONE;
+}
+#endif//PAVP_BUILD
 
 void      MFXTranscodingPipeline::PrintCommonHelp()
 {

@@ -10,7 +10,7 @@
       <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
 </Project>

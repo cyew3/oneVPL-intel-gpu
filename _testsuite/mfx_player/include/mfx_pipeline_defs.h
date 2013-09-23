@@ -64,17 +64,7 @@ File Name: .h
 #include "mfx_conditional_linking.h"
 
 //////////////////////////////////////////////////////////////////////////
-//#define PAVP_BUILD
-
-#ifdef PAVP_BUILD
-    #pragma comment(lib, "CryptoDataGen.lib")
-    #pragma comment(lib, "epid.lib")
-    #pragma comment(lib, "ippcppxl.lib")
-    #pragma comment(lib, "serialization.lib")
-    #pragma comment(lib, "sample_protected.lib")
-    #pragma comment(lib, "dxva2.lib")
-#endif //PAVP_BUILD
-
+#define PAVP_BUILD
 
 //////////////////////////////////////////////////////////////////////////
 //custom error codes - to separate errors from MFX components from errors in pipeline level

@@ -21,6 +21,7 @@ enum OptParamType
     OPT_UINT_8,
     OPT_UINT_16,
     OPT_UINT_32,
+    OPT_UINT_64,
     OPT_BOOL,
     OPT_64F,
     OPT_STR,
@@ -53,6 +54,12 @@ template<>
 struct OptParamTypeTrait <mfxU32>
 {
     static const OptParamType type = OPT_UINT_32;
+};
+
+template<>
+struct OptParamTypeTrait <mfxU64>
+{
+    static const OptParamType type = OPT_UINT_64;
 };
 
 template<>
