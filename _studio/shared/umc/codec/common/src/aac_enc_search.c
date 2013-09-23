@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright (c) 2003-2008 Intel Corporation. All Rights Reserved.
+//          Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 //     Intel Integrated Performance Primitives AAC Encode Sample for Windows*
 //
@@ -105,14 +105,17 @@ Ipp32s best_codebooks_search(sEnc_individual_channel_stream* pStream,
 
       predPresent = 0;
       p_sfb_cb[pStream->max_sfb - 1] = (Ipp16s)index;
-      pred_flag[pStream->max_sfb - 1] = isPred[pStream->max_sfb - 1][index];
-      predPresent |= pred_flag[pStream->max_sfb - 1];
+      if (pred_flag)
+      {
+          pred_flag[pStream->max_sfb - 1] = isPred[pStream->max_sfb - 1][index];
+          predPresent |= pred_flag[pStream->max_sfb - 1];
 
-      for (sfb = pStream->max_sfb - 2; sfb >= 0; sfb--) {
-        index = cb_trace[sfb][index];
-        p_sfb_cb[sfb] = (Ipp16s)index;
-        pred_flag[sfb] = isPred[sfb][index];
-        predPresent |= pred_flag[sfb];
+          for (sfb = pStream->max_sfb - 2; sfb >= 0; sfb--) {
+            index = cb_trace[sfb][index];
+            p_sfb_cb[sfb] = (Ipp16s)index;
+            pred_flag[sfb] = isPred[sfb][index];
+            predPresent |= pred_flag[sfb];
+        }
       }
 
       if (predPresent == 0) {

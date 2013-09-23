@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2008 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 //     Intel(R) Integrated Performance Primitives AAC Decode Sample for Windows*
 //
@@ -422,11 +422,11 @@ Ipp32s dec_ltp_data(s_SE_Individual_channel_stream *pData,
       }
 
     } else {
-      for (i = 0; i < pred_max_sfb; i++) {
+      for (i = 0; i < pred_max_sfb && i < 51; i++) {
         GET_BITS(pBS, pData->ltp_long_used[i], 1, Ipp32s)
       }
 
-      for (i = pred_max_sfb; i < pData->max_sfb; i++) {
+      for (i = pred_max_sfb; i < pData->max_sfb && i < 51; i++) {
         pData->ltp_long_used[i] = 0;
       }
     }

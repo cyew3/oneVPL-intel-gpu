@@ -414,11 +414,11 @@ Ipp32s dec_ltp_data(s_SE_Individual_channel_stream *pData,
         if(pData->max_sfb > MAX_SFB)
             pData->max_sfb = MAX_SFB;
 
-      for (i = 0; i < pred_max_sfb; i++) {
+      for (i = 0; i < pred_max_sfb && i < 51; i++) {
         GET_BITS(pBS, pData->ltp_long_used[i], 1, Ipp32s)
       }
 
-      for (i = pred_max_sfb; i < pData->max_sfb; i++) {
+      for (i = pred_max_sfb; i < pData->max_sfb && i < 51; i++) {
         pData->ltp_long_used[i] = 0;
       }
     }

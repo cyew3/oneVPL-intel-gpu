@@ -95,7 +95,7 @@ Ipp32s chmap_create_by_pce(sProgram_config_element* p_pce,
   **********************************************************/
   i = 0;
   ch = CH_SIDE_LEFT;
-  for (;i < p_pce->num_side_channel_elements; i ++) {
+  for (;i < p_pce->num_side_channel_elements && i < MAX_CHANNELS_ELEMENTS; i ++) {
     if (numElem >= CH_MAX) return -1;
     tag = p_pce->side_element_tag_select[i];
     id = p_pce->side_element_is_cpe[i];
@@ -110,7 +110,7 @@ Ipp32s chmap_create_by_pce(sProgram_config_element* p_pce,
   **********************************************************/
   i = 0;
   ch = CH_LOW_FREQUENCY;
-  for (;i < p_pce->num_lfe_channel_elements; i ++) {
+  for (;i < p_pce->num_lfe_channel_elements && i < MAX_CHANNELS_ELEMENTS; i ++) {
     if (numElem >= CH_MAX) return -1;
     tag = p_pce->lfe_element_tag_select[i];
     chmap[numElem].id  = (Ipp16s)ID_LFE;

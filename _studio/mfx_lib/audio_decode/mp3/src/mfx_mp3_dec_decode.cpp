@@ -237,13 +237,13 @@ mfxStatus AudioDECODEMP3::FillAudioParamMP3(MP3Dec_com* res, mfxAudioParam *out)
     {
         switch (res->header.layer) {
         case 1:
-            out->mfx.CodecLevel = MFX_MPEG1_LAYER1_AUDIO;
+            out->mfx.CodecLevel = MFX_AUDIO_MPEG1_LAYER1;
             break;
         case 2:
-            out->mfx.CodecLevel = MFX_MPEG1_LAYER2_AUDIO;
+            out->mfx.CodecLevel = MFX_AUDIO_MPEG1_LAYER2;
             break;
         case 3:
-            out->mfx.CodecLevel = MFX_MPEG1_LAYER3_AUDIO;
+            out->mfx.CodecLevel = MFX_AUDIO_MPEG1_LAYER3;
             break;
         }
     }
@@ -253,13 +253,13 @@ mfxStatus AudioDECODEMP3::FillAudioParamMP3(MP3Dec_com* res, mfxAudioParam *out)
         {
             switch (res->header.layer) {
         case 1:
-            out->mfx.CodecLevel = MFX_MPEG2_LAYER1_AUDIO;
+            out->mfx.CodecLevel = MFX_AUDIO_MPEG2_LAYER1;
             break;
         case 2:
-            out->mfx.CodecLevel = MFX_MPEG2_LAYER2_AUDIO;
+            out->mfx.CodecLevel = MFX_AUDIO_MPEG2_LAYER2;
             break;
         case 3:
-            out->mfx.CodecLevel = MFX_MPEG2_LAYER3_AUDIO;
+            out->mfx.CodecLevel = MFX_AUDIO_MPEG2_LAYER3;
             break;
             }
         }
@@ -540,12 +540,12 @@ mfxStatus MFX_MP3_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfxAudioPar
 
         switch(in->mfx.Layer)
         {
-        case MFX_MPEG1_LAYER1_AUDIO :
-        case MFX_MPEG1_LAYER2_AUDIO :
-        case MFX_MPEG1_LAYER3_AUDIO :
-        case MFX_MPEG2_LAYER1_AUDIO :
-        case MFX_MPEG2_LAYER2_AUDIO :
-        case MFX_MPEG2_LAYER3_AUDIO :
+        case MFX_AUDIO_MPEG1_LAYER1 :
+        case MFX_AUDIO_MPEG1_LAYER2 :
+        case MFX_AUDIO_MPEG1_LAYER3 :
+        case MFX_AUDIO_MPEG2_LAYER1 :
+        case MFX_AUDIO_MPEG2_LAYER2 :
+        case MFX_AUDIO_MPEG2_LAYER3 :
             out->mfx.Layer = in->mfx.Layer;
             break;
         default:

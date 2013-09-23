@@ -126,7 +126,7 @@ static Ipp32s sbrCalcMasterFreq1(Ipp32s k0, Ipp32s k2, Ipp32s bs_alter_scale, Ip
     k = numBands - 1;
   }
 
-  while (k2Diff != 0 && k < 100) {
+  while (k2Diff != 0 && k < 100 && k >= 0) {
     vDk[k] -= incr;
     k += incr;
     k2Diff += incr;
@@ -290,7 +290,7 @@ Ipp32s sbrCalcMasterFreqBoundary(Ipp32s bs_start_freq, Ipp32s bs_stop_freq,
   startMin = SBR_TABLE_START_MIN[ sbrFreqIndx ];
   stopMin  = SBR_TABLE_STOP_MIN[ sbrFreqIndx ];
 
-  *k0 = startMin + SBR_TABLE_OFFSET[ sbrFreqIndx ][bs_start_freq];
+  *k0 = startMin + SBR_TABLE_OFFSET[ (sbrFreqIndx < 9)?sbrFreqIndx:0 ][bs_start_freq];
 
   if ((bs_stop_freq >= 0) && (bs_stop_freq < 14)) {
     *k2 = IPP_MIN(64, stopMin + SBR_TABLE_STOP_DK[sbrFreqIndx][bs_stop_freq] );
