@@ -187,7 +187,7 @@ void PrintHelp(ostream &out)
     out << "-par <filename> path to the parameters file" << endl;
     out << "-o <filename>" << endl;
     out << "-scc <NV12 | YV12 | RGB4> (default: NV12 - source color format)" << endl;
-    out << "-dcc <NV12 | RGB4> (default: NV12 - dest color format)" << endl;
+    out << "-dcc <NV12 | YV12 | RGB4> (default: NV12 - dest color format)" << endl;
 }
 
 // trim from start
@@ -212,7 +212,7 @@ map<string, string> ParsePar(ifstream &stream, string stream_name) {
     map<string, string> params;
 
     string line;
-    int counter = 6;
+    int counter = 7;
 
     params["stream"] = stream_name;
     while (counter--) {

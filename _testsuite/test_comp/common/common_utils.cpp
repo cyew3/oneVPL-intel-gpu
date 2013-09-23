@@ -62,19 +62,33 @@ mfxStatus LoadRawFrame(mfxFrameSurface1* pSurface, FILE* fSource, bool bSim)
             return MFX_ERR_MORE_DATA;
     }
 
-    mfxU8 buf[2048]; // maximum supported chroma width for nv12
-    w /= 2;
-    h /= 2;            
     ptr = pData->UV + pInfo->CropX + (pInfo->CropY / 2) * pitch;
-    if (w > 2048)
-        return MFX_ERR_UNSUPPORTED;
+    if (pInfo->FourCC == MFX_FOURCC_YV12)
+    {
+        mfxU8 buf[2048]; // maximum supported chroma width for nv12
+        w /= 2;
+        h /= 2;
+        if (w > 2048)
+            return MFX_ERR_UNSUPPORTED;
 
-    // load U
-    sts = ReadPlaneData(w, h, buf, ptr, pitch, 0, fSource);
-    if(MFX_ERR_NONE != sts) return sts;
-    // load V
-    ReadPlaneData(w, h, buf, ptr, pitch, 1, fSource);
-    if(MFX_ERR_NONE != sts) return sts;
+        // load U
+        sts = ReadPlaneData(w, h, buf, ptr, pitch, 0, fSource);
+        if(MFX_ERR_NONE != sts)
+            return sts;
+        // load V
+        ReadPlaneData(w, h, buf, ptr, pitch, 1, fSource);
+        if(MFX_ERR_NONE != sts)
+            return sts;
+    }
+    else if (pInfo->FourCC == MFX_FOURCC_NV12)
+    {
+        for(i = 0; i < h/2; i++)
+        {
+            nBytesRead = (mfxU32)fread(ptr + i * pitch, 1, w, fSource);
+            if (w != nBytesRead)
+                return MFX_ERR_MORE_DATA;
+        }
+    }
 
     return MFX_ERR_NONE;   
 }
@@ -158,12 +172,37 @@ mfxStatus WriteRawFrame(mfxFrameSurface1 *pSurface, FILE* fSink)
 
     h = pInfo->CropH / 2;
     w = pInfo->CropW;
-    for (i = 0; i < h; i++)
-        for (j = 0; j < w; j += 2)
-            sts = WriteSection(pData->UV, 2, 1, pInfo, pData, i, j, fSink);
-    for (i = 0; i < h; i++)
-        for (j = 1; j < w; j += 2)
-            sts = WriteSection(pData->UV, 2, 1, pInfo, pData, i, j, fSink);
+    if (pInfo->FourCC == MFX_FOURCC_YV12)
+    {
+        for (i = 0; i < h; i++)
+        {
+            for (j = 0; j < w; j += 2)
+            {
+                sts = WriteSection(pData->UV, 2, 1, pInfo, pData, i, j, fSink);
+                if(MFX_ERR_NONE != sts)
+                    return sts;
+            }
+        }
+        for (i = 0; i < h; i++)
+        {
+            for (j = 1; j < w; j += 2)
+            {
+                sts = WriteSection(pData->UV, 2, 1, pInfo, pData, i, j, fSink);
+                if(MFX_ERR_NONE != sts)
+                    return sts;
+            }
+        }
+    }
+    else if (pInfo->FourCC == MFX_FOURCC_NV12)
+    {
+        for (i = 0; i < pInfo->CropH/2; i++)
+        {
+            sts = WriteSection(pData->UV, 1, pInfo->CropW, pInfo, pData, i, 0, fSink);
+            if(MFX_ERR_NONE != sts)
+                return sts;
+        }
+    }
+
 
     return sts;
 }
