@@ -3788,7 +3788,10 @@ CostType H265CU::CalcCostSkip(Ipp32u abs_part_idx, Ipp8u depth)
             if (inter_dir == (INTER_DIR_PRED_L0 | INTER_DIR_PRED_L1)) {
                 H265Frame *PicYUVRefF = cslice->GetRefFrame(REF_PIC_LIST_0, ref_idx[0]);
                 H265Frame *PicYUVRefB = cslice->GetRefFrame(REF_PIC_LIST_1, ref_idx[1]);
-                cost_temp = MatchingMetricBipred_PU(pSrc, &me_info, PicYUVRefF->y, PicYUVRefF->pitch_luma, PicYUVRefB->y, PicYUVRefB->pitch_luma, mv);
+                if (PicYUVRefF && PicYUVRefB)
+                    cost_temp = MatchingMetricBipred_PU(pSrc, &me_info, PicYUVRefF->y, PicYUVRefF->pitch_luma, PicYUVRefB->y, PicYUVRefB->pitch_luma, mv);
+                else
+                    cost_temp = COST_MAX;
             } else {
                 EnumRefPicList dir = inter_dir == INTER_DIR_PRED_L0 ? REF_PIC_LIST_0 : REF_PIC_LIST_1;
                 H265Frame *PicYUVRef = cslice->GetRefFrame(dir, ref_idx[dir]);
