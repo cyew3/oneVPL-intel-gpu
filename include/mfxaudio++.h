@@ -62,7 +62,7 @@ public:
     virtual mfxStatus Reset(mfxAudioParam *par) { return MFXAudioDECODE_Reset(m_session, par); }
     virtual mfxStatus Close(void) { return MFXAudioDECODE_Close(m_session); }
     virtual mfxStatus GetAudioParam(mfxAudioParam *par) { return MFXAudioDECODE_GetAudioParam(m_session, par); }
-    virtual mfxStatus DecodeFrameAsync(mfxBitstream *bs, mfxBitstream *buffer_out, mfxSyncPoint *syncp) { return MFXAudioDECODE_DecodeFrameAsync(m_session, bs, buffer_out, syncp); }
+    virtual mfxStatus DecodeFrameAsync(mfxBitstream *bs, mfxAudioFrame *frame, mfxSyncPoint *syncp) { return MFXAudioDECODE_DecodeFrameAsync(m_session, bs, frame, syncp); }
 
 
 protected:
@@ -84,7 +84,7 @@ public:
     virtual mfxStatus Reset(mfxAudioParam *par) { return MFXAudioENCODE_Reset(m_session, par); }
     virtual mfxStatus Close(void) { return MFXAudioENCODE_Close(m_session); }
     virtual mfxStatus GetAudioParam(mfxAudioParam *par) { return MFXAudioENCODE_GetAudioParam(m_session, par); }
-    virtual mfxStatus EncodeFrameAsync(mfxBitstream *bs, mfxBitstream *buffer_out, mfxSyncPoint *syncp) { return MFXAudioENCODE_EncodeFrameAsync(m_session, bs, buffer_out, syncp); }
+    virtual mfxStatus EncodeFrameAsync(mfxAudioFrame *frame, mfxBitstream *buffer_out, mfxSyncPoint *syncp) { return MFXAudioENCODE_EncodeFrameAsync(m_session, frame, buffer_out, syncp); }
 
 protected:
 
