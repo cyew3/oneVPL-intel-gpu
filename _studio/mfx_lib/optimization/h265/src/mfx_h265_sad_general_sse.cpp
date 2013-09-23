@@ -2361,8 +2361,6 @@ namespace MFX_HEVC_PP
 #ifndef MFX_TARGET_OPTIMIZATION_AUTO
     int h265_SAD_MxN_general_8u(const unsigned char *image,  int stride_img, const unsigned char *ref, int stride_ref, int SizeX, int SizeY)
     {
-        int index = 0;
-        int cost; 
         if (SizeX == 4)
         {
             if(SizeY == 4) { return MAKE_NAME(SAD_4x4_general)(image,  ref, stride_img, stride_ref); }
