@@ -2,6 +2,7 @@
 //prefix "b_" for each block
 #include "stdafx.h"
 #include "test_common.h"
+#include <cassert>
 
 #define TRACE_FUNCN(n, name, p1, p2, p3, p4, p5, p6)\
     if(var_def<bool>("trace", false)){\
@@ -908,7 +909,8 @@ msdk_ts_BLOCK(b_MFXAudioENCODE_EncodeFrameAsync){
     mfxSyncPoint*&      pSyncp      = var_def<mfxSyncPoint*>    ("p_syncp",     &syncp);
 
     TRACE_FUNC4(MFXAudioENCODE_EncodeFrameAsync, session, pBsIn, pBsOut, pSyncp);
-    mfxRes = MFXAudioENCODE_EncodeFrameAsync(session, pBsIn, pBsOut, pSyncp);
+    assert(!"Need to update beh test!!");
+    //mfxRes = MFXAudioENCODE_EncodeFrameAsync(session, pBsIn, pBsOut, pSyncp);
     TRACE_PAR(mfxRes);
     TRACE_PAR(pBsIn);
     TRACE_PAR(pBsOut);
@@ -1016,7 +1018,8 @@ msdk_ts_BLOCK(b_MFXAudioDECODE_DecodeFrameAsync){
     mfxSyncPoint*&      pSyncp      = var_def<mfxSyncPoint*>    ("p_syncp",     &syncp);
 
     TRACE_FUNC4(MFXAudioDECODE_DecodeFrameAsync, session, pBsIn, pBsOut, pSyncp);
-    mfxRes = MFXAudioDECODE_DecodeFrameAsync(session, pBsIn, pBsOut, pSyncp);
+    assert(!"Need to update beh test!!");
+    //mfxRes = MFXAudioDECODE_DecodeFrameAsync(session, pBsIn, pBsOut, pSyncp);
     TRACE_PAR(mfxRes);
     TRACE_PAR(pBsIn);
     TRACE_PAR(pBsOut);
