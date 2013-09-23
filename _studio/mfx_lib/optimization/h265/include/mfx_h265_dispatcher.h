@@ -388,27 +388,29 @@ namespace MFX_HEVC_PP
     void h265_InterpLuma_s8_d16_H_px(INTERP_S8_D16_PARAMETERS_LIST);
     void h265_InterpLuma_s8_d16_H_sse(INTERP_S8_D16_PARAMETERS_LIST);
     void h265_InterpLuma_s8_d16_H_ssse3(INTERP_S8_D16_PARAMETERS_LIST);
+    void h265_InterpLuma_s8_d16_H_atom(INTERP_S8_D16_PARAMETERS_LIST);
 
     void h265_InterpChroma_s8_d16_H_px(INTERP_S8_D16_PARAMETERS_LIST, int plane);
     void h265_InterpChroma_s8_d16_H_sse(INTERP_S8_D16_PARAMETERS_LIST, int plane);
     void h265_InterpChroma_s8_d16_H_ssse3(INTERP_S8_D16_PARAMETERS_LIST, int plane);
+    void h265_InterpChroma_s8_d16_H_atom(INTERP_S8_D16_PARAMETERS_LIST, int plane);
 
     void h265_InterpLuma_s8_d16_V_px(INTERP_S8_D16_PARAMETERS_LIST);
     void h265_InterpLuma_s8_d16_V_sse(INTERP_S8_D16_PARAMETERS_LIST);
-    void h265_InterpLuma_s8_d16_V_ssse3(INTERP_S8_D16_PARAMETERS_LIST);
+    void h265_InterpLuma_s8_d16_V_ssse3(INTERP_S8_D16_PARAMETERS_LIST);    
 
     void h265_InterpChroma_s8_d16_V_px(INTERP_S8_D16_PARAMETERS_LIST);
     void h265_InterpChroma_s8_d16_V_sse(INTERP_S8_D16_PARAMETERS_LIST);
     void h265_InterpChroma_s8_d16_V_ssse3(INTERP_S8_D16_PARAMETERS_LIST);
-
+    
     void h265_InterpLuma_s16_d16_V_px(INTERP_S16_D16_PARAMETERS_LIST);
     void h265_InterpLuma_s16_d16_V_sse(INTERP_S16_D16_PARAMETERS_LIST);
     void h265_InterpLuma_s16_d16_V_ssse3(INTERP_S16_D16_PARAMETERS_LIST);
-
+    
     void h265_InterpChroma_s16_d16_V_px(INTERP_S16_D16_PARAMETERS_LIST);
     void h265_InterpChroma_s16_d16_V_sse(INTERP_S16_D16_PARAMETERS_LIST);
     void h265_InterpChroma_s16_d16_V_ssse3(INTERP_S16_D16_PARAMETERS_LIST);
-
+    
     // average
     void h265_AverageModeN_px(INTERP_AVG_NONE_PARAMETERS_LIST);
     void h265_AverageModeN_sse(INTERP_AVG_NONE_PARAMETERS_LIST);

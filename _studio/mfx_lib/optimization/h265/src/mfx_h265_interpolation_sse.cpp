@@ -34,7 +34,8 @@
 #include <immintrin.h>
 #include <assert.h>
 
-#if defined(MFX_TARGET_OPTIMIZATION_ATOM)
+
+#if defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_MAKENAME_ATOM)
 #define ALT_NO_PSHUFB
 #endif
 

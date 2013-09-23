@@ -45,12 +45,17 @@ using namespace MFX_HEVC_PP;
         IppStatus sts = ippGetCpuFeatures( &featuresMask, cpuIdInfoRegs);
         if(ippStsNoErr != sts)    return sts;
         
+        //aya: AVX2 code disabled because not tested yet. 
         //if ( featuresMask & (Ipp64u)(ippCPUID_AVX2) ) // means AVX2 + BMI_I + BMI_II to prevent issues with BMI
         //{
         //    SetTargetAVX2();
         //}
-        //else 
-        if (featuresMask & (Ipp64u)(ippCPUID_SSE42))
+        // else
+        if( (featuresMask & (Ipp64u)(ippCPUID_MOVBE)) && (featuresMask & (Ipp64u)(ippCPUID_SSE42)) && !(featuresMask & (Ipp64u)(ippCPUID_AVX)) )
+        {
+            SetTargetSSE4_ATOM();
+        }
+        else if (featuresMask & (Ipp64u)(ippCPUID_SSE42))
         {        
             SetTargetSSE4();
         }
@@ -190,6 +195,17 @@ using namespace MFX_HEVC_PP;
     /* ************************************************* */
     /*       Set Target Platform                         */
     /* ************************************************* */
+    void SetTargetSSE4_ATOM(void)
+    {
+        SetTargetSSE4();
+
+        // for the Atom few _interpolation_ functions needs to be replaced (PSHUFB issue)
+        g_dispatcher.h265_InterpLuma_s8_d16_H = &MFX_HEVC_PP::h265_InterpLuma_s8_d16_H_atom;
+        g_dispatcher.h265_InterpChroma_s8_d16_H = &MFX_HEVC_PP::h265_InterpChroma_s8_d16_H_atom;
+
+    } // void SetTargetSSE4_ATOM(void)
+
+
     void SetTargetSSE4(void)
     {
         // [Sad.special]===================================
@@ -306,6 +322,7 @@ using namespace MFX_HEVC_PP;
 
     } // void SetTargetSSE4(void)
 
+
     void SetTargetSSSE3(void)
     {
         // [Sad.special]===================================
@@ -421,6 +438,7 @@ using namespace MFX_HEVC_PP;
         g_dispatcher.h265_CopyWeightedBidi_S16U8 = &MFX_HEVC_PP::h265_CopyWeightedBidi_S16U8_sse;
 
     } // void SetTargetSSSE3(void)
+
 
     void SetTargetAVX2(void)
     {

@@ -51,7 +51,7 @@
     //#define MFX_TARGET_OPTIMIZATION_SSE4
     //#define MFX_TARGET_OPTIMIZATION_AVX2
     //#define MFX_TARGET_OPTIMIZATION_PX // ref C or IPP based
-    //#define MFX_TARGET_OPTIMIZATION_ATOM // BYT
+    //#define MFX_TARGET_OPTIMIZATION_ATOM // BYT = ATOM + SSE4.2
     #define MFX_TARGET_OPTIMIZATION_AUTO // work via dispatcher. decoder/encoder must call InitDispatcher() firstly
 #endif
 
@@ -194,6 +194,8 @@ namespace MFX_HEVC_PP
         #define MAKE_NAME( func ) func ## _ssse3
     #elif defined (MFX_MAKENAME_AVX2)
         #define MAKE_NAME( func ) func ## _avx2
+    #elif defined (MFX_MAKENAME_ATOM)
+        #define MAKE_NAME( func ) func ## _atom
     #endif
 #else
     #define MAKE_NAME( func ) func
