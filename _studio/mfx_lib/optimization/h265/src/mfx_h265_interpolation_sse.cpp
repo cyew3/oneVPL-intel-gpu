@@ -172,6 +172,11 @@ namespace MFX_HEVC_PP
         __m128i xmm_offset, xmm_shift;
 #ifdef ALT_NO_PSHUFB
         __m128i xmm4, xmm5;
+
+        /* avoid Klocwork warnings */
+        xmm1 = _mm_setzero_si128();
+        xmm2 = _mm_setzero_si128();
+        xmm3 = _mm_setzero_si128();
 #endif
 
         coeffs = filtTabLuma_S8[4 * (tab_index-1)];
@@ -274,6 +279,12 @@ namespace MFX_HEVC_PP
         const signed char* shufTab;
         __m128i xmm0, xmm1, xmm2, xmm3;        /* should compile without stack spills */
         __m128i xmm_offset, xmm_shift;
+#ifdef ALT_NO_PSHUFB
+        /* avoid Klocwork warnings */
+        xmm1 = _mm_setzero_si128();
+        xmm2 = _mm_setzero_si128();
+        xmm3 = _mm_setzero_si128();
+#endif
 
         coeffs = filtTabChroma_S8[2 * (tab_index-1)];
         if (plane == TEXT_CHROMA)
