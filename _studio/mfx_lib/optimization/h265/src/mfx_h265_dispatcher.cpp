@@ -45,11 +45,11 @@ using namespace MFX_HEVC_PP;
         IppStatus sts = ippGetCpuFeatures( &featuresMask, cpuIdInfoRegs);
         if(ippStsNoErr != sts)    return sts;
         
-        //aya: AVX2 kernels have issues, wait response from opt guys should be fixed before Gold???
-        /*if ( featuresMask & (Ipp64u)(ippCPUID_AVX2) ) // means AVX2 + BMI_I + BMI_II
-        {
-            SetTargetAVX2();
-        }*/
+        //if ( featuresMask & (Ipp64u)(ippCPUID_AVX2) ) // means AVX2 + BMI_I + BMI_II to prevent issues with BMI
+        //{
+        //    SetTargetAVX2();
+        //}
+        //else 
         if (featuresMask & (Ipp64u)(ippCPUID_SSE42))
         {        
             SetTargetSSE4();
@@ -132,8 +132,6 @@ using namespace MFX_HEVC_PP;
     // [sad.general - dispatcher]
     int MFX_HEVC_PP::h265_SAD_MxN_general_8u(const unsigned char *image,  int stride_img, const unsigned char *ref, int stride_ref, int SizeX, int SizeY)
     {
-        int index = 0;
-        int cost; 
         if (SizeX == 4)
         {
             if(SizeY == 4) { return g_dispatcher. h265_SAD_4x4_general_8u(image,  ref, stride_img, stride_ref); }
@@ -518,7 +516,21 @@ using namespace MFX_HEVC_PP;
         g_dispatcher. h265_ProcessSaoCu_Luma_8u = &MFX_HEVC_PP::h265_ProcessSaoCu_Luma_8u_sse;
 
         //[Interpoaltion]==================================
-        // NIY
+        // average
+        g_dispatcher.h265_AverageModeB = &MFX_HEVC_PP::h265_AverageModeB_sse;
+        g_dispatcher.h265_AverageModeP = &MFX_HEVC_PP::h265_AverageModeP_sse;
+        g_dispatcher.h265_AverageModeN = &MFX_HEVC_PP::h265_AverageModeN_sse;        
+        
+        // algo
+        g_dispatcher.h265_InterpLuma_s8_d16_H = &MFX_HEVC_PP::h265_InterpLuma_s8_d16_H_sse;
+        g_dispatcher.h265_InterpChroma_s8_d16_H = &MFX_HEVC_PP::h265_InterpChroma_s8_d16_H_sse;
+        g_dispatcher.h265_InterpLuma_s8_d16_V = &MFX_HEVC_PP::h265_InterpLuma_s8_d16_V_sse;
+        g_dispatcher.h265_InterpChroma_s8_d16_V = &MFX_HEVC_PP::h265_InterpChroma_s8_d16_V_sse;
+        g_dispatcher.h265_InterpLuma_s16_d16_V = &MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_sse;
+        g_dispatcher.h265_InterpChroma_s16_d16_V = &MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_sse;
+
+        // [INTRA prediction]
+        g_dispatcher.h265_PredictIntra_Ang_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_8u_sse;
 
         // [WeightedPred]
         g_dispatcher.h265_CopyWeighted_S16U8 = &MFX_HEVC_PP::h265_CopyWeighted_S16U8_sse;
