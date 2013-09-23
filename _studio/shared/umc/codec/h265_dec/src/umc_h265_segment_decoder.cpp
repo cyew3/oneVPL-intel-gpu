@@ -2635,8 +2635,7 @@ void H265SegmentDecoder::UpdateRecNeighboursBuffers(Ipp32s PartX, Ipp32s PartY, 
 {
     H265FrameRecNeighborsInfo info, *pInfo;
     info.data = 0;
-    info.members.IsAvailable = 1;
-    info.members.IsIntra = IsIntra ? 1 : 0;
+    info.members.IsAvailable = (m_pPicParamSet->constrained_intra_pred_flag) ? (IsIntra ? 1 : 0) : 1;
 
     if (IsIntra)
     {

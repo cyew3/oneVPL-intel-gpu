@@ -254,7 +254,6 @@ struct H265FrameRecNeighborsInfo
     union {
         struct {
             Ipp8u IsAvailable : 1;
-            Ipp8u IsIntra     : 1;
         } members;
         Ipp8u data;
     };

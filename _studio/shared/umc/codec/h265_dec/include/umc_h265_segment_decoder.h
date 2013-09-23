@@ -132,8 +132,7 @@ public:
     void DecodeSplitFlagCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     Ipp32u DecodeMergeIndexCABAC(void);
 
-    Ipp32s CountIntraNeighborsLuma(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u TrDepth, bool *neighborAvailable);
-    Ipp32s CountIntraNeighborsChroma(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u TrDepth, bool *neighborAvailable);
+    Ipp32s CountIntraNeighbors(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u TrDepth, bool *neighborAvailable);
 
     bool DecodeSkipFlagCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     bool DecodeCUTransquantBypassFlag(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
@@ -180,20 +179,20 @@ public:
     void ReconPCM(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void FillPCMBuffer(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void DecodeInterTexture(H265CodingUnit* pCU, Ipp32u AbsPartIdx);
-    void IntraLumaRecQT(H265CodingUnit* pCU,
-                         Ipp32u TrDepth,
-                         Ipp32u AbsPartIdx);
-    void IntraChromaRecQT(H265CodingUnit* pCU,
-                         Ipp32u TrDepth,
-                         Ipp32u AbsPartIdx,
-                         Ipp32u ChromaPredMode);
+
+    void IntraRecQT(H265CodingUnit* pCU, Ipp32u TrDepth, Ipp32u AbsPartIdx, Ipp32u ChromaPredMode);
+
     void IntraRecLumaBlk(H265CodingUnit* pCU,
                          Ipp32u TrDepth,
-                         Ipp32u AbsPartIdx);
+                         Ipp32u AbsPartIdx,
+                         Ipp32s numIntraNeighbors,
+                         bool* neighborAvailable);
     void IntraRecChromaBlk(H265CodingUnit* pCU,
                            Ipp32u TrDepth,
                            Ipp32u AbsPartIdx,
-                           Ipp32u ChromaPredMode);
+                           Ipp32u ChromaPredMode,
+                           Ipp32s numIntraNeighbors,
+                           bool* neighborAvailable);
 
     void InitNeighbourPatternChroma(
         H265CodingUnit* pCU,
