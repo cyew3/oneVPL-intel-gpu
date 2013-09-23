@@ -49,7 +49,9 @@ public:
     inline void AlignPointerRight(void);
 
     inline Ipp32u GetBits(Ipp32u nbits);
+#if defined( __INTEL_COMPILER )
     inline Ipp32u GetBits_BMI(Ipp32u nbits);
+#endif
 
     // Read one VLC Ipp32s or Ipp32u value from bitstream
     Ipp32s GetVLCElement(bool bIsSigned);

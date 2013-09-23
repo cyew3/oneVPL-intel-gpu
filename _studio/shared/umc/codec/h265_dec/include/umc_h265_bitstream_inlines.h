@@ -197,6 +197,8 @@ const Ipp32u c_RenormTable[32] =
   1,  1,  1,  1
 };
 
+#if defined( __INTEL_COMPILER )
+
 H265_FORCEINLINE
 Ipp32u H265BaseBitstream::GetBits_BMI(Ipp32u nbits)
 {
@@ -207,8 +209,6 @@ Ipp32u H265BaseBitstream::GetBits_BMI(Ipp32u nbits)
 
     m_bitOffset -= nbits;
     Ipp32u shift = m_bitOffset + 1;
-
-#if !defined(LINUX32) && !defined(LINUX64)
 
     if (m_bitOffset >=0 )
         bits = _shrx_u32( m_pbs[0], shift );
@@ -224,13 +224,10 @@ Ipp32u H265BaseBitstream::GetBits_BMI(Ipp32u nbits)
     bits = _bzhi_u32( bits, nbits );
 
     VM_ASSERT(m_bitOffset >= 0 && m_bitOffset <= 31);
-#else
-    VM_ASSERT(!"No _bzhi_u32 and _shrx_u32 in GCC");
-#endif
+
     return ( bits );
 }
 
-#if defined( __INTEL_COMPILER )
 #define _cmovz_intrin( _M_flag, _M_dest, _M_src ) __asm__ ( "test %["#_M_flag"], %["#_M_flag"] \n\t cmovz %["#_M_src"], %["#_M_dest"]" : [_M_dest] "+r" (_M_dest) : [_M_flag] "r" (_M_flag), [_M_src] "rm" (_M_src) )
 #define _cmovnz_intrin( _M_flag, _M_dest, _M_src ) __asm__ ( "test %["#_M_flag"], %["#_M_flag"] \n\t cmovnz %["#_M_src"], %["#_M_dest"]" : [_M_dest] "+r" (_M_dest) : [_M_flag] "r" (_M_flag), [_M_src] "rm" (_M_src) )
 #else
