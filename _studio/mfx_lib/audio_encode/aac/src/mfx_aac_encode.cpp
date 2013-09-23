@@ -621,7 +621,7 @@ mfxStatus MFX_AAC_Encoder_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfx
                 sts = MFX_ERR_UNSUPPORTED;
             }
         }
-        if (in->mfx.StreamInfo.BitPerSample != 16) {
+        if (in->mfx.StreamInfo.BitPerSample != 16 && in->mfx.StreamInfo.BitPerSample != 0) {
             sts = MFX_ERR_UNSUPPORTED;
         } else {
             out->mfx.StreamInfo.BitPerSample = 16;
