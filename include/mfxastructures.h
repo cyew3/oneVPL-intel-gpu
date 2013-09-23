@@ -130,7 +130,7 @@ enum
 typedef struct  
 {
     mfxU32                Bitrate;
-    mfxU16                NumChannel;
+    mfxU16                NumChannels;
     mfxU32                SampleFrequency;
     mfxU16                BitPerSample;
     mfxU16                reserved[10]; 
@@ -186,7 +186,7 @@ typedef struct {
 typedef struct {
     mfxU64  TimeStamp; /* 1/90KHz */
     mfxU16  Locked;
-    mfxU16  NumChannel;
+    mfxU16  NumChannels;
     mfxU32  SampleFrequency;
     mfxU16  BitPerSample;
     mfxU16  reserved1[7]; 
