@@ -9,6 +9,7 @@
 //
 //
 */
+#ifdef PAVP_BUILD
 
 #include "mfx_pipeline_defs.h"
 #include  "mfx_bitstream_reader_encryptor.h"
@@ -175,3 +176,4 @@ mfxStatus BitstreamReaderEncryptor::ReadNextFrame(mfxBitstream2 &pBS)
     return sts;
 }
 
+#endif//PAVP_BUILD

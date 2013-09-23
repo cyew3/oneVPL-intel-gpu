@@ -395,7 +395,7 @@ protected:
                 (uint32*)&seed, sizeof(seed)));
             if (NULL == m_pavpSession)
             {
-                vm_string_printf(VM_STRING("Failed to open SIGMA session (sts=0x%08x)\n"), PavpStatus);
+                vm_string_printf(VM_STRING("Failed to open SIGMA session\n"));
                 return MFX_ERR_DEVICE_FAILED;
             }
 
