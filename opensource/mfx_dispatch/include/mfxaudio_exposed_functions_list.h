@@ -54,7 +54,7 @@ FUNCTION(mfxStatus, MFXAudioENCODE_Init, (mfxSession session, mfxAudioParam *par
 FUNCTION(mfxStatus, MFXAudioENCODE_Reset, (mfxSession session, mfxAudioParam *par), (session, par))
 FUNCTION(mfxStatus, MFXAudioENCODE_Close, (mfxSession session), (session))
 FUNCTION(mfxStatus, MFXAudioENCODE_GetAudioParam, (mfxSession session, mfxAudioParam *par), (session, par))
-FUNCTION(mfxStatus, MFXAudioENCODE_EncodeFrameAsync, (mfxSession session, mfxBitstream *bs, mfxBitstream *buffer_out, mfxSyncPoint *syncp), (session, bs, buffer_out, syncp))
+FUNCTION(mfxStatus, MFXAudioENCODE_EncodeFrameAsync, (mfxSession session, mfxAudioFrame *frame, mfxBitstream *buffer_out, mfxSyncPoint *syncp), (session, frame, buffer_out, syncp))
 
 // DECODE interface functions
 FUNCTION(mfxStatus, MFXAudioDECODE_Query, (mfxSession session, mfxAudioParam *in, mfxAudioParam *out), (session, in, out))
@@ -64,7 +64,7 @@ FUNCTION(mfxStatus, MFXAudioDECODE_Reset, (mfxSession session, mfxAudioParam *pa
 FUNCTION(mfxStatus, MFXAudioDECODE_Close, (mfxSession session), (session))
 FUNCTION(mfxStatus, MFXAudioDECODE_QueryIOSize, (mfxSession session, mfxAudioParam *par, mfxAudioAllocRequest *request), (session, par, request))
 FUNCTION(mfxStatus, MFXAudioDECODE_GetAudioParam, (mfxSession session, mfxAudioParam *par), (session, par))
-FUNCTION(mfxStatus, MFXAudioDECODE_DecodeFrameAsync, (mfxSession session, mfxBitstream *bs, mfxBitstream *buffer_out, mfxSyncPoint *syncp), (session, bs, buffer_out, syncp))
+FUNCTION(mfxStatus, MFXAudioDECODE_DecodeFrameAsync, (mfxSession session, mfxBitstream *bs, mfxAudioFrame *frame_out, mfxSyncPoint *syncp), (session, bs, frame_out, syncp))
 
 #undef API_VERSION
 #undef API_VERSION_PREV
