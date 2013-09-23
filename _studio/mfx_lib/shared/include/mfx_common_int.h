@@ -28,6 +28,7 @@ mfxStatus CheckAudioParamCommon(mfxAudioParam *in);
 mfxStatus CheckAudioParamDecoders(mfxAudioParam *in);
 
 mfxStatus CheckBitstream(const mfxBitstream *bs);
+mfxStatus CheckAudioFrame(const mfxAudioFrame *aFrame);
 mfxStatus CheckEncryptedBitstream(const mfxBitstream *bs);
 mfxStatus CheckFrameData(const mfxFrameSurface1 *surface);
 

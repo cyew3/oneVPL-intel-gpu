@@ -148,11 +148,11 @@ public:
     virtual
     mfxStatus GetAudioParam(mfxAudioParam *par) = 0;
     virtual
-    mfxStatus EncodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffer_out) = 0;
+    mfxStatus EncodeFrameCheck(mfxAudioFrame *aFrame, mfxBitstream *buffer_out) = 0;
     virtual
-    mfxStatus EncodeFrame(mfxBitstream *bs, mfxBitstream *buffer_out) = 0;
+    mfxStatus EncodeFrame(mfxAudioFrame *bs, mfxBitstream *buffer_out) = 0;
 
-    virtual mfxStatus EncodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffer_out,
+    virtual mfxStatus EncodeFrameCheck(mfxAudioFrame *aFrame, mfxBitstream *buffer_out,
         MFX_ENTRY_POINT *pEntryPoint)  = 0;
   
 };

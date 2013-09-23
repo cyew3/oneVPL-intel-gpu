@@ -220,7 +220,7 @@ mfxStatus MFXAudioENCODE_Close(mfxSession session)
 } // mfxStatus MFXAudioENCODE_Close(mfxSession session)
 
 
-mfxStatus MFXAudioENCODE_EncodeFrameAsync(mfxSession session, mfxBitstream *bs, mfxBitstream *buffer_out, mfxSyncPoint *syncp)
+mfxStatus MFXAudioENCODE_EncodeFrameAsync(mfxSession session, mfxAudioFrame *bs, mfxBitstream *buffer_out, mfxSyncPoint *syncp)
 {
     mfxStatus mfxRes;
 

@@ -418,7 +418,7 @@ mfxStatus AudioDECODEAAC::FillAudioParamADTSFixed(sAdts_fixed_header* config, mf
     if ((config->sampling_frequency_index < 0) || (config->sampling_frequency_index > 12))
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     out->mfx.StreamInfo.SampleFrequency = (mfxU16)aac_sampling_frequency_table[config->sampling_frequency_index];;
-    out->mfx.StreamInfo.NumChannel = (mfxU16)config->channel_configuration;
+    out->mfx.StreamInfo.NumChannels = (mfxU16)config->channel_configuration;
 
     out->mfx.CodecId = MFX_CODEC_AAC;
     out->mfx.CodecProfile = (mfxU16)get_audio_object_type_by_adts_header(config);;
@@ -697,7 +697,7 @@ mfxStatus MFX_AAC_Utility::FillAudioParamByUMC(UMC::AACDecoderParams *in, mfxAud
 {
     out->mfx.StreamInfo.BitPerSample = (mfxU16)in->m_info.bitPerSample;
     out->mfx.StreamInfo.Bitrate = (mfxU16)in->m_info.bitrate;
-    out->mfx.StreamInfo.NumChannel = (mfxU16)in->m_info.channels;
+    out->mfx.StreamInfo.NumChannels = (mfxU16)in->m_info.channels;
     out->mfx.StreamInfo.SampleFrequency = (mfxU16)in->m_info.sample_frequency;
     return MFX_ERR_NONE;
 }

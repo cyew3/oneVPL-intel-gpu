@@ -53,10 +53,9 @@ public:
 
     virtual mfxStatus GetAudioParam(mfxAudioParam *par);
 
-    virtual mfxStatus EncodeFrame(mfxBitstream *bs, mfxBitstream *buffer_out);
-    virtual mfxStatus EncodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffer_out);
-    virtual mfxStatus EncodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffer_out,
-        MFX_ENTRY_POINT *pEntryPoint);
+    virtual mfxStatus EncodeFrame(mfxAudioFrame *bs, mfxBitstream *buffer_out);
+    virtual mfxStatus EncodeFrameCheck(mfxAudioFrame *bs, mfxBitstream *buffer_out);
+    virtual mfxStatus EncodeFrameCheck(mfxAudioFrame *bs, mfxBitstream *buffer_out, MFX_ENTRY_POINT *pEntryPoint);
  
 
 protected:
@@ -64,10 +63,10 @@ protected:
     static mfxStatus AACENCODERoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber);
     static mfxStatus AACCompleteProc(void *pState, void *pParam, mfxStatus taskRes);
 
-    mfxStatus CopyBitstream(mfxBitstream& bs, const mfxU8* ptr, mfxU32 bytes);
-    void MoveBitstreamData(mfxBitstream& bs, mfxU32 offset);
+    mfxStatus CopyBitstream(mfxAudioFrame& bs, const mfxU8* ptr, mfxU32 bytes);
+    void MoveBitstreamData(mfxAudioFrame& bs, mfxU32 offset);
 
-    mfxStatus ConstructFrame(mfxBitstream *in, mfxBitstream *out);
+    mfxStatus ConstructFrame(mfxAudioFrame *in, mfxAudioFrame *out);
 
    // UMC encoder 
     std::auto_ptr<UMC::AACEncoder>  m_pAACAudioEncoder;
@@ -75,7 +74,7 @@ protected:
     UMC::MediaData        mOutData;
     // end UMC encoder
 
-    mfxBitstream m_frame;
+    mfxAudioFrame m_frame;
     mfxU16 m_inputFormat;
 
     mfxAudioParam m_vPar; // internal params storage

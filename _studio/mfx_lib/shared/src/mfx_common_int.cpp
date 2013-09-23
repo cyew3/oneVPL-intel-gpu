@@ -317,6 +317,18 @@ mfxStatus CheckVideoParamEncoders(mfxVideoParam *in, bool IsExternalFrameAllocat
     return MFX_ERR_NONE;
 }
 
+mfxStatus CheckAudioFrame(const mfxAudioFrame *aFrame)
+{
+    if (!aFrame || !aFrame->Data)
+        return MFX_ERR_NULL_PTR;
+
+    if (aFrame->DataLength > aFrame->MaxLength)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    return MFX_ERR_NONE;
+}
+
+
 mfxStatus CheckBitstream(const mfxBitstream *bs)
 {
     if (!bs || !bs->Data)

@@ -70,13 +70,11 @@ mfxStatus AudioENCODEAAC::Init(mfxAudioParam *par)
     }
     // allocate memory
     //
-    Ipp32u MaxLength = par->mfx.StreamInfo.NumChannel*sizeof(Ipp16s)*1024* 2; // 
+    Ipp32u MaxLength = par->mfx.StreamInfo.NumChannels*sizeof(Ipp16s)*1024* 2; // 
 
-    memset(&m_frame, 0, sizeof(mfxBitstream));
+    MFX_ZERO_MEM(m_frame);
     m_frame.MaxLength = MaxLength;
     m_frame.Data = new mfxU8[MaxLength];
-    m_frame.DataLength = 0;
-    m_frame.DataOffset = 0;
 
     UMC::AACEncoderParams params;
 
@@ -149,7 +147,7 @@ mfxStatus AudioENCODEAAC::Init(mfxAudioParam *par)
     mOutData.SetDataSize(0);
 
     params.m_info.sample_frequency = par->mfx.StreamInfo.SampleFrequency;
-    if (par->mfx.StreamInfo.NumChannel == 1) {
+    if (par->mfx.StreamInfo.NumChannels == 1) {
         params.stereo_mode = UMC_AAC_MONO;
         params.m_info.channels = 1;
     } 
@@ -250,14 +248,14 @@ mfxStatus AudioENCODEAAC::QueryIOSize(AudioCORE *core, mfxAudioParam *par, mfxAu
 
     int upsample = 1;
     if(par->mfx.CodecProfile == MFX_PROFILE_AAC_HE) upsample = 2;
-    request->SuggestedInputSize  = par->mfx.StreamInfo.NumChannel * sizeof(Ipp16s)*1024* upsample;
-    request->SuggestedOutputSize = ((768*par->mfx.StreamInfo.NumChannel+9/* ADTS_HEADER */)*sizeof(Ipp8u)+3)&(~3);
+    request->SuggestedInputSize  = par->mfx.StreamInfo.NumChannels * sizeof(Ipp16s)*1024* upsample;
+    request->SuggestedOutputSize = ((768*par->mfx.StreamInfo.NumChannels+9/* ADTS_HEADER */)*sizeof(Ipp8u)+3)&(~3);
 
     return MFX_ERR_NONE;
 }
 
 
-mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffer_out)
+mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxAudioFrame *aFrame, mfxBitstream *buffer_out)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
     buffer_out;
@@ -266,18 +264,18 @@ mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffe
     if (!m_isInit)
         return MFX_ERR_NOT_INITIALIZED;
 
-    sts = bs ? CheckBitstream(bs) : MFX_ERR_NONE;
+    sts = aFrame ? CheckAudioFrame(aFrame) : MFX_ERR_NONE;
     if (sts != MFX_ERR_NONE)
         return sts;
 
 //    UMC::Status umcRes = UMC::UMC_OK;
 
-    if (NULL != bs)
+    if (NULL != aFrame)
     {
-        sts = CheckBitstream(bs);
-        MFX_CHECK_STS(sts);
+        //sts = CheckAudioFrame(bs);
+        //MFX_CHECK_STS(sts);
 
-        sts = ConstructFrame(bs, &m_frame);
+        sts = ConstructFrame(aFrame, &m_frame);
 
         if (MFX_ERR_NONE != sts)
         {
@@ -301,11 +299,11 @@ mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffe
 }
 
 
-mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxBitstream *bs,
+mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxAudioFrame *aFrame,
                                            mfxBitstream *buffer_out,
                                            MFX_ENTRY_POINT *pEntryPoint)
 {
-    mfxStatus mfxSts = EncodeFrameCheck(bs, buffer_out);
+    mfxStatus mfxSts = EncodeFrameCheck(aFrame, buffer_out);
 
     if (MFX_ERR_NONE == mfxSts) // It can be useful to run threads right after first frame receive
     {
@@ -336,7 +334,7 @@ mfxStatus AudioENCODEAAC::AACENCODERoutine(void *pState, void *pParam,
     {
         ThreadAudioTaskInfo *pTask = (ThreadAudioTaskInfo *) pParam;
 
-        obj.mInData.SetBufferPointer((Ipp8u *)obj.m_frame.Data + obj.m_frame.DataOffset,obj.m_frame.DataLength);
+        obj.mInData.SetBufferPointer((Ipp8u *)obj.m_frame.Data, obj.m_frame.DataLength);
         obj.mInData.SetDataSize(obj.m_frame.DataLength);
         obj.mOutData.SetBufferPointer( static_cast<Ipp8u *>(pTask->out->Data +pTask->out->DataOffset + pTask->out->DataLength), pTask->out->MaxLength - (pTask->out->DataOffset + pTask->out->DataLength));
         obj.mOutData.MoveDataPointer(0);
@@ -347,7 +345,6 @@ mfxStatus AudioENCODEAAC::AACENCODERoutine(void *pState, void *pParam,
         {
             // set data size 0 to the input buffer 
             obj.m_frame.DataLength = 0;
-            obj.m_frame.DataOffset += obj.m_frame.DataLength;
 
             // set out buffer size;
             //if(pTask->out->MaxLength)  AR need to implement a check of output buffer size
@@ -389,7 +386,7 @@ mfxStatus AudioENCODEAAC::AACCompleteProc(void *pState, void *pParam,
 }
 
 
-mfxStatus AudioENCODEAAC::EncodeFrame(mfxBitstream *bs, mfxBitstream *buffer_out)
+mfxStatus AudioENCODEAAC::EncodeFrame(mfxAudioFrame *aFrame, mfxBitstream *buffer_out)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
     buffer_out;
@@ -397,9 +394,9 @@ mfxStatus AudioENCODEAAC::EncodeFrame(mfxBitstream *bs, mfxBitstream *buffer_out
 
     if (!m_isInit)
         return MFX_ERR_NOT_INITIALIZED;
-    if(bs)
+    if(aFrame)
     {
-        sts = bs ? CheckBitstream(bs) : MFX_ERR_NONE;
+        sts = CheckAudioFrame(aFrame);
         if (sts != MFX_ERR_NONE)
             return sts;
     }
@@ -410,41 +407,32 @@ mfxStatus AudioENCODEAAC::EncodeFrame(mfxBitstream *bs, mfxBitstream *buffer_out
 //    UMC::Status umcRes = UMC::UMC_OK;
 
 
-    if (NULL != bs)
+    sts = ConstructFrame(aFrame, &m_frame);
+
+    if (MFX_ERR_NONE != sts)
     {
-        sts = CheckBitstream(bs);
-        MFX_CHECK_STS(sts);
-
-        sts = ConstructFrame(bs, &m_frame);
-
-        if (MFX_ERR_NONE != sts)
-        {
-            return sts;
-        }
+        return sts;
     }
 
     return sts;
 }
 
 // protected methods
-mfxStatus AudioENCODEAAC::CopyBitstream(mfxBitstream& bs, const mfxU8* ptr, mfxU32 bytes)
+mfxStatus AudioENCODEAAC::CopyBitstream(mfxAudioFrame& bs, const mfxU8* ptr, mfxU32 bytes)
 {
-    if (bs.DataOffset + bs.DataLength + bytes > bs.MaxLength)
+    if (bs.DataLength + bytes > bs.MaxLength)
         return MFX_ERR_NOT_ENOUGH_BUFFER;
     ippsCopy_8u(ptr, bs.Data, bytes);
     bs.DataLength = bytes;
-    bs.DataOffset = 0;
     return MFX_ERR_NONE;
 }
 
-void AudioENCODEAAC::MoveBitstreamData(mfxBitstream& bs, mfxU32 offset)
+void AudioENCODEAAC::MoveBitstreamData(mfxAudioFrame& bs, mfxU32 offset)
 {
-    VM_ASSERT(offset <= bs.DataLength);
-    bs.DataOffset += offset;
     bs.DataLength -= offset;
 } 
 
-mfxStatus AudioENCODEAAC::ConstructFrame(mfxBitstream *in, mfxBitstream *out)
+mfxStatus AudioENCODEAAC::ConstructFrame(mfxAudioFrame *in, mfxAudioFrame *out)
 {
     mfxStatus sts = MFX_ERR_NONE;
    
@@ -455,7 +443,7 @@ mfxStatus AudioENCODEAAC::ConstructFrame(mfxBitstream *in, mfxBitstream *out)
 
     int upSample = 1;
     if(m_vPar.mfx.CodecProfile == MFX_PROFILE_AAC_HE) upSample = 2;
-    Ipp32s FrameSize  = m_vPar.mfx.StreamInfo.NumChannel * sizeof(Ipp16s)*1024* upSample;
+    Ipp32s FrameSize  = m_vPar.mfx.StreamInfo.NumChannels * sizeof(Ipp16s)*1024* upSample;
 
     if(FrameSize > (Ipp32s)in->DataLength) 
     {
@@ -463,7 +451,7 @@ mfxStatus AudioENCODEAAC::ConstructFrame(mfxBitstream *in, mfxBitstream *out)
     }
     else
     {
-        sts = CopyBitstream(*out, in->Data + in->DataOffset, FrameSize);
+        sts = CopyBitstream(*out, in->Data, FrameSize);
         if(sts != MFX_ERR_NONE) 
         {
             return MFX_ERR_NOT_ENOUGH_BUFFER;
@@ -497,7 +485,7 @@ mfxStatus MFX_AAC_Encoder_Utility::FillAudioParamByUMC(UMC::AACEncoderParams *in
 {
     out->mfx.StreamInfo.BitPerSample = (mfxU16)in->m_info.bitPerSample;
     out->mfx.StreamInfo.Bitrate = (mfxU16)in->m_info.bitrate;
-    out->mfx.StreamInfo.NumChannel = (mfxU16)in->m_info.channels;
+    out->mfx.StreamInfo.NumChannels = (mfxU16)in->m_info.channels;
     out->mfx.StreamInfo.SampleFrequency = (mfxU16)in->m_info.sample_frequency;
     return MFX_ERR_NONE;
 }
@@ -573,24 +561,24 @@ mfxStatus MFX_AAC_Encoder_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfx
             )
         {
             //num channels not specified
-            switch (in->mfx.StreamInfo.NumChannel)
+            switch (in->mfx.StreamInfo.NumChannels)
             {
                 case 0 : {
                     if (stereoMode == MFX_AUDIO_AAC_MONO) {
-                        out->mfx.StreamInfo.NumChannel = 1;
+                        out->mfx.StreamInfo.NumChannels = 1;
                     }
                     else {
-                        out->mfx.StreamInfo.NumChannel = 2;
+                        out->mfx.StreamInfo.NumChannels = 2;
                     }
                     break ;
                 }
                 case 1: {
-                    out->mfx.StreamInfo.NumChannel = 1;
+                    out->mfx.StreamInfo.NumChannels = 1;
                     out->mfx.StereoMode = MFX_AUDIO_AAC_MONO;
                     break;
                 }
                 case 2: {
-                    out->mfx.StreamInfo.NumChannel = 2;
+                    out->mfx.StreamInfo.NumChannels = 2;
                     //TODO: looks query shouldn't do this, setting default strereo mode
                     if (stereoMode == MFX_AUDIO_AAC_MONO) {
                         out->mfx.StereoMode = MFX_AUDIO_AAC_JOINT_STEREO;
