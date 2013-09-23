@@ -51,7 +51,7 @@ enum {
     MFX_PROFILE_AAC_MAIN        =1,
     MFX_PROFILE_AAC_SSR         =3,
     MFX_PROFILE_AAC_HE          =5,
-    MFX_PROFILE_AAC_ALS         =0x00000020,
+    MFX_PROFILE_AAC_ALS         =0x20,
     MFX_PROFILE_AAC_BSAC        =22,
     MFX_PROFILE_AAC_PS          =29,
 
@@ -130,7 +130,7 @@ enum
 typedef struct  
 {
     mfxU32                Bitrate;
-    mfxU16                Channels;
+    mfxU16                NumChannel;
     mfxU32                SampleFrequency;
     mfxU16                BitPerSample;
     mfxU16                reserved[10]; 
@@ -182,6 +182,23 @@ typedef struct {
     mfxU32  SuggestedOutputSize;
     mfxU32  reserved[6];
 } mfxAudioAllocRequest;
+
+typedef struct {
+    mfxU64  TimeStamp; /* 1/90KHz */
+    mfxU16  Locked;
+    mfxU16  NumChannel;
+    mfxU32  SampleFrequency;
+    mfxU16  BitPerSample;
+    mfxU16  reserved1[7]; 
+
+    mfxU8*  Data;
+    mfxU32  reserved2;
+    mfxU32  DataLength;
+    mfxU32  MaxLength;
+
+    mfxU32  NumExtParam;
+    mfxExtBuffer **ExtParam;
+} mfxAudioFrame;
 
 #ifdef __cplusplus
 }
