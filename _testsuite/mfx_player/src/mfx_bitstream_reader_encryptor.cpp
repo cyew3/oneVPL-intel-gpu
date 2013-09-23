@@ -9,9 +9,11 @@
 //
 //
 */
-#ifdef PAVP_BUILD
 
 #include "mfx_pipeline_defs.h"
+
+#ifdef PAVP_BUILD
+
 #include  "mfx_bitstream_reader_encryptor.h"
 #include "shared_utils.h"
 

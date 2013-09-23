@@ -2,11 +2,15 @@
 
 INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
-agreement with Intel Corporation and may not be copied or disclosed except in
+agreement with Intel Corporation    and may not be copied or disclosed except in
 accordance with the terms of that agreement
 Copyright(c) 2013 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
+
+#include "mfx_pipeline_defs.h"
+
+#ifdef PAVP_BUILD
 
 #include "mfx_pipeline_protected.h"
 
@@ -108,3 +112,5 @@ const char* pavp_functions[] = {
 };
 
 const mfxU32 pavp_functions_count = sizeof(pavp_functions)/sizeof(pavp_functions[0]);
+
+#endif//PAVP_BUILD

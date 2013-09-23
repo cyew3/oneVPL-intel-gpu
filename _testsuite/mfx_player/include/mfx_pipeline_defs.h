@@ -64,7 +64,9 @@ File Name: .h
 #include "mfx_conditional_linking.h"
 
 //////////////////////////////////////////////////////////////////////////
+#if defined(WIN32) || defined(WIN64)
 #define PAVP_BUILD
+#endif // defined(WIN32) || defined(WIN64) 
 
 //////////////////////////////////////////////////////////////////////////
 //custom error codes - to separate errors from MFX components from errors in pipeline level

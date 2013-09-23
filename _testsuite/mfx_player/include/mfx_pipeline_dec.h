@@ -176,7 +176,9 @@ struct sCommandlineParams
   {
       MFX_ZERO_MEM(*this);
 
+#ifdef PAVP_BUILD
       vm_string_strcpy_s(strPAVPLibPath, MFX_ARRAY_SIZE(strPAVPLibPath), VM_STRING("mfx_pavp"));
+#endif//PAVP_BUILD
 
       //default parameters for sCommandLine
       isDefaultFC       =  true;
