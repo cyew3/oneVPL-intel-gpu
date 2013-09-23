@@ -717,6 +717,9 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
+    <ProjectReference Include="optimization\hevc_pp_atom.vcxproj">
+      <Project>{77807a28-2170-4a4c-95e5-73cb0657aa47}</Project>
+    </ProjectReference>
     <ProjectReference Include="optimization\hevc_pp_avx2.vcxproj">
       <Project>{6ebb14f6-dca0-485a-89f7-fe803b75d0b9}</Project>
     </ProjectReference>
