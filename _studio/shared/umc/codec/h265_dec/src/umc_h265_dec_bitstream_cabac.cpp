@@ -134,5 +134,114 @@ void H265Bitstream::ResetBac_CABAC()
 #endif // (CABAC_MAGIC_BITS > 0)
 }
 
+
+#if defined( __INTEL_COMPILER ) && (defined( __x86_64__ ) || defined ( _WIN64 ))
+
+Ipp32u H265Bitstream::DecodeSingleBin_CABAC_cmov(Ipp32u ctxIdx)
+{
+    Ipp32u pState = context_hevc[ctxIdx];
+    Ipp32u codIRangeLPS = rangeTabLPSH265[pState][(m_lcodIRange >> 6) - 4];
+    m_lcodIRange -= codIRangeLPS;
+
+    Ipp32u binVal      = pState & 1;
+    Ipp32u transState  = (pState < 124) ? pState + 2 : pState;       // transIdxMPSH265[pState];
+    Ipp32u scaledRange = m_lcodIRange << 7;
+    Ipp32u lcodIOffset = m_lcodIOffset;
+    Ipp32u numBits     = (scaledRange < g_scaled256) ? 1 : 0;
+
+    __asm__ (
+        "\n    xorl     %%edx, %%edx"
+        "\n    subl     %[scaledRange],   %[lcodIOffset]"                // if ( (lcodIOffset -= scaledRange ) >= 0 ) {
+        "\n    cmovnbl  %[lcodIOffset],   %[m_lcodIOffset]"              //    m_lcodIOffset = lcodIOffset;
+        "\n    cmovnbl  %[codIRangeLPS],  %[m_lcodIRange]"               //    m_lcodIRange = codIRangeLPS;
+        "\n    cmovnbl  %[numBitsL],      %[numBits]"                    //    numBits = numBitsL;
+        "\n    cmovnbl  %[transLPSState], %[transState]"                 //    transState = transIdxLPSH265[pState];
+        "\n    setnb    %%dl"                                            //    binVal = binVal ^ 1;
+        "\n    xorl     %%edx,            %[binVal]"                     // }
+        "\n    shll     %%cl, %[m_lcodIOffset]"                          // m_lcodIOffset <<= numBits;
+        "\n    shll     %%cl, %[m_lcodIRange]"                           // m_lcodIRange <<= numBits;
+        : [numBits]        "+c" (numBits)
+        , [lcodIOffset]    "+r" (lcodIOffset)
+        , [transState]     "+r" (transState)
+        , [binVal]         "+a" (binVal)
+        , [m_lcodIOffset]  "+r" (m_lcodIOffset)
+        , [m_lcodIRange]   "+r" (m_lcodIRange)
+        : [scaledRange]    "rm" (scaledRange)
+        , [transLPSState]   "m" (transIdxLPSH265[pState])
+        , [numBitsL]        "m" (c_RenormTable[codIRangeLPS >> 3])
+        , [codIRangeLPS]    "r" (codIRangeLPS)
+        : "%edx"
+    );
+
+    context_hevc[ctxIdx] = (Ipp8u)transState;
+
+    m_bitsNeeded += numBits;
+    if (m_bitsNeeded >= 0 )
+    {
+        m_LastByte = GetBits(8);
+        m_lcodIOffset += (m_LastByte << m_bitsNeeded);
+        m_bitsNeeded -= 8;
+    }
+
+    return binVal;
+}
+
+Ipp32u H265Bitstream::DecodeSingleBin_CABAC_cmov_BMI(Ipp32u ctxIdx)
+{
+    Ipp32u pState = context_hevc[ctxIdx];
+    Ipp32u codIRangeLPS = rangeTabLPSH265[pState][(m_lcodIRange >> 6) - 4];
+    m_lcodIRange -= codIRangeLPS;
+
+    Ipp32u binVal      = pState & 1;
+    Ipp32u transState  = (pState < 124) ? pState + 2 : pState;       // transIdxMPSH265[pState];
+    Ipp32u scaledRange = m_lcodIRange << 7;
+    Ipp32u lcodIOffset = m_lcodIOffset;
+    Ipp32u numBits     = (scaledRange < g_scaled256) ? 1 : 0;
+    Ipp32u numBitsL    = _lzcnt_u32( codIRangeLPS ) - (32 - 6 - 3);    //  = c_RenormTable[codIRangeLPS >> 3];
+
+    __asm__ (
+        "\n    xorl     %%edx, %%edx"
+        "\n    subl     %[scaledRange],   %[lcodIOffset]"                // if ( (lcodIOffset -= scaledRange ) >= 0 ) {
+        "\n    cmovnbl  %[lcodIOffset],   %[m_lcodIOffset]"              //    m_lcodIOffset = lcodIOffset;
+        "\n    cmovnbl  %[codIRangeLPS],  %[m_lcodIRange]"               //    m_lcodIRange = codIRangeLPS;
+        "\n    cmovnbl  %[numBitsL],      %[numBits]"                    //    numBits = numBitsL;
+        "\n    cmovnbl  %[transLPSState], %[transState]"                 //    transState = transIdxLPSH265[pState];
+        "\n    setnb    %%dl"                                            //    binVal = binVal ^ 1;
+        "\n    xorl     %%edx,            %[binVal]"                     // }
+        "\n    shlx     %[numBits], %[m_lcodIOffset], %[m_lcodIOffset]"  // m_lcodIOffset <<= numBits;
+        "\n    shlx     %[numBits], %[m_lcodIRange], %[m_lcodIRange]"    // m_lcodIRange <<= numBits;
+        : [numBits]        "+r" (numBits)
+        , [lcodIOffset]    "+r" (lcodIOffset)
+        , [transState]     "+r" (transState)
+        , [binVal]         "+a" (binVal)
+        , [m_lcodIOffset]  "+r" (m_lcodIOffset)
+        , [m_lcodIRange]   "+r" (m_lcodIRange)
+        : [scaledRange]    "rm" (scaledRange)
+        , [transLPSState]   "m" (transIdxLPSH265[pState])
+        , [numBitsL]        "m" (c_RenormTable[codIRangeLPS >> 3])
+        , [codIRangeLPS]    "r" (codIRangeLPS)
+        : "%edx"
+    );
+
+    context_hevc[ctxIdx] = (Ipp8u)transState;
+
+    m_bitsNeeded += numBits;
+    if (m_bitsNeeded >= 0 )
+    {
+        m_LastByte = GetBits_BMI(8);
+        m_lcodIOffset += _shlx_u32( m_LastByte, m_bitsNeeded );
+        m_bitsNeeded -= 8;
+    }
+
+    return binVal;
+}
+
+t_DecodeSingleBin_CABAC s_pDecodeSingleBin_CABAC_dispatched = 
+    _may_i_use_cpu_feature( _FEATURE_BMI | _FEATURE_LZCNT ) ? 
+        &H265Bitstream::DecodeSingleBin_CABAC_cmov_BMI : 
+        &H265Bitstream::DecodeSingleBin_CABAC_cmov;
+
+#endif // defined( __INTEL_COMPILER ) && (defined( __x86_64__ ) || defined ( _WIN64 ))
+
 } // namespace UMC_HEVC_DECODER
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

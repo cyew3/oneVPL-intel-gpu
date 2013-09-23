@@ -2019,7 +2019,8 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
         Ipp32u CGBlkPos;
         Ipp32u GoRiceParam = 0;
         bool   SigCoeffGroup;
-        Ipp8s  numNonZero = 0, lPosNZ = -1, fPosNZ;
+        Ipp32u numNonZero = 0;
+        Ipp32s lPosNZ = -1, fPosNZ;
 
         if (SubSet == LastScanSet) {
             lPosNZ = fPosNZ = -1;
@@ -2063,7 +2064,13 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
                     Sig = 1;
                 }
 
-                pCoef[BlkPos] = (Ipp16s) Sig;
+                pCoef[BlkPos] = (Ipp16s)Sig;
+                pos[numNonZero] = BlkPos;
+                _cmovnz_intrin( Sig, lPosNZ, cPos );
+                _cmovz_intrin( numNonZero, fPosNZ, lPosNZ );
+                numNonZero += Sig;
+
+/* ML: original code
                 if (Sig)
                 {
                     if(numNonZero==0) fPosNZ = cPos;
@@ -2072,6 +2079,7 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
                     pos[numNonZero] = BlkPos;
                     numNonZero++;
                 }
+*/
             }
         } else {
             SCGroupFlagRightMask &= ~(1 << CGPosY);

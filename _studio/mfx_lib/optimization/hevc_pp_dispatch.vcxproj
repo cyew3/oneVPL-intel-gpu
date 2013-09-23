@@ -58,6 +58,7 @@
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
+    <InterproceduralOptimization>false</InterproceduralOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -68,6 +69,7 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
+    <InterproceduralOptimization>false</InterproceduralOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -80,6 +82,7 @@
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
+    <InterproceduralOptimization>false</InterproceduralOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -90,6 +93,7 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
+    <InterproceduralOptimization>false</InterproceduralOptimization>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -241,9 +245,13 @@
       </PrecompiledHeader>
       <AssemblerOutput>
       </AssemblerOutput>
-      <WarningLevel>Level4</WarningLevel>
+      <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>false</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -280,9 +288,13 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <WarningLevel>Level4</WarningLevel>
+      <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>false</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
     </ClCompile>
     <Lib />
     <Bscmake>

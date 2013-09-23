@@ -16,6 +16,7 @@
 namespace UMC_HEVC_DECODER
 {
 
+#if 0
 const
 Ipp8u rangeTabLPSH265[128][4]=
 {
@@ -178,6 +179,7 @@ Ipp8u transIdxLPSH265[] =
     DECL(36), DECL(36), DECL(37), DECL(37), DECL(37), DECL(38), DECL(38), DECL(63)
 };
 
+#endif
 } // namespace UMC_HEVC_DECODER
 
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

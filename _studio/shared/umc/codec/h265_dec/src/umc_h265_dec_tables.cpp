@@ -19,6 +19,7 @@ namespace UMC_HEVC_DECODER
 //////////////////////////////////////////////////////////
 // scan matrices, for Run Length Decoding
 
+#if 0
 const
 Ipp32s mp_scan4x4[2][16] =
 {
@@ -109,6 +110,7 @@ const Ipp32u bits_data[] =
     (((Ipp32u)0x01 << (31)) - 1),
     ((Ipp32u)0xFFFFFFFF),
 };
+#endif
 
 } // namespace UMC_HEVC_DECODER
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

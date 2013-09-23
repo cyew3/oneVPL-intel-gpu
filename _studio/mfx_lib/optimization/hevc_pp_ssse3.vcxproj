@@ -250,13 +250,16 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <AssemblerOutput>
-      </AssemblerOutput>
-      <WarningLevel>Level4</WarningLevel>
+      <AssemblerOutput>AssemblyCode</AssemblerOutput>
+      <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>false</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <GenerateAlternateCodePaths>SSSE3</GenerateAlternateCodePaths>
       <UseProcessorExtensions>SSSE3</UseProcessorExtensions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -293,9 +296,14 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <WarningLevel>Level4</WarningLevel>
+      <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>false</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AssemblerOutput>AssemblyCode</AssemblerOutput>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
     </ClCompile>
     <Lib />
     <Bscmake>

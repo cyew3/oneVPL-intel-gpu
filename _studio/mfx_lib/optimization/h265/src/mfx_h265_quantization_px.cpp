@@ -77,17 +77,29 @@ namespace MFX_HEVC_PP
 {
     void h265_QuantInv_16s(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift)
     {
-        // ML: OPT: verify vectorization
 #ifdef __INTEL_COMPILER
+        if (0 == (scale >> 16)) // ML: fast path for 16-bit scale
+        {
+            Ipp16s scale_16s = (Ipp16s)scale;
+#pragma ivdep
+#pragma vector always
+            for (Ipp32s n = 0; n < len; n++)
+            {
+                // clipped when decoded
+                Ipp32s coeffQ = (pSrc[n] * scale_16s + offset) >> shift;
+                pDst[n] = (Ipp16s)Saturate(-32768, 32767, coeffQ);
+            }
+        }
+        else
 #pragma ivdep
 #pragma vector always
 #endif
-        for (Ipp32s n = 0; n < len; n++)
-        {
-            // clipped when decoded
-            Ipp32s coeffQ = (pSrc[n] * scale + offset) >> shift;
-            pDst[n] = (Ipp16s)Saturate(-32768, 32767, coeffQ);
-        }
+            for (Ipp32s n = 0; n < len; n++)
+            {
+                // clipped when decoded
+                Ipp32s coeffQ = (pSrc[n] * scale + offset) >> shift;
+                pDst[n] = (Ipp16s)Saturate(-32768, 32767, coeffQ);
+            }
 
     } // void h265_QuantInv_16s(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift)
 

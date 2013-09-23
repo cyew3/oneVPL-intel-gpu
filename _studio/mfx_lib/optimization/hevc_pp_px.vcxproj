@@ -62,6 +62,7 @@
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
+    <InterproceduralOptimization>false</InterproceduralOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -72,6 +73,7 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
+    <InterproceduralOptimization>false</InterproceduralOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -84,6 +86,7 @@
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
+    <InterproceduralOptimization>false</InterproceduralOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -94,6 +97,7 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
+    <InterproceduralOptimization>false</InterproceduralOptimization>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -236,18 +240,22 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">
     <ClCompile>
-      <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>$(CPPFLAGS) /QaxSSE4.2,CORE_AVX2 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\optimization\h265\include;..\encode\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>MFX_MAKENAME_PX;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <AssemblerOutput>
-      </AssemblerOutput>
-      <WarningLevel>Level4</WarningLevel>
+      <AssemblerOutput>AssemblyCode</AssemblerOutput>
+      <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>false</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <UseProcessorExtensions>SSSE3</UseProcessorExtensions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -278,15 +286,21 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>$(CPPFLAGS) /QaxSSE4.2,CORE_AVX2 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\optimization\h265\include;..\encode\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>MFX_MAKENAME_PX;WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <WarningLevel>Level4</WarningLevel>
+      <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>false</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <UseProcessorExtensions>SSSE3</UseProcessorExtensions>
+      <AssemblerOutput>AssemblyCode</AssemblerOutput>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
     </ClCompile>
     <Lib />
     <Bscmake>

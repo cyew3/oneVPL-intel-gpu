@@ -183,16 +183,78 @@ inline void H265BaseBitstream::AlignPointerRight(void)
     ippiAlignBSPointerRight(m_pbs, m_bitOffset);
 
 } // void H265BaseBitstream::AlignPointerRight(void)
+
+//hevc CABAC from HM50
+const Ipp32u c_RenormTable[32] =
+{
+  6,  5,  4,  4,
+  3,  3,  3,  3,
+  2,  2,  2,  2,
+  2,  2,  2,  2,
+  1,  1,  1,  1,
+  1,  1,  1,  1,
+  1,  1,  1,  1,
+  1,  1,  1,  1
+};
+
 H265_FORCEINLINE
+Ipp32u H265BaseBitstream::GetBits_BMI(Ipp32u nbits)
+{
+    VM_ASSERT(nbits > 0 && nbits <= 32);
+    VM_ASSERT(m_bitOffset >= 0 && m_bitOffset <= 31);
+
+    Ipp32u bits;
+
+    m_bitOffset -= nbits;
+    Ipp32u shift = m_bitOffset + 1;
+
+    if (m_bitOffset >=0 )
+        bits = _shrx_u32( m_pbs[0], shift );
+    else
+    {
+        bits = _shrx_u32( m_pbs[1], m_bitOffset);
+        m_bitOffset += 32;
+        bits >>= 1;
+        bits |= _shlx_u32( m_pbs[0], 0 - shift );
+        ++m_pbs;
+    }
+
+    bits = _bzhi_u32( bits, nbits );
+
+    VM_ASSERT(m_bitOffset >= 0 && m_bitOffset <= 31);
+
+    return ( bits );
+}
+
+#if defined( __INTEL_COMPILER )
+#define _cmovz_intrin( _M_flag, _M_dest, _M_src ) __asm__ ( "test %["#_M_flag"], %["#_M_flag"] \n\t cmovz %["#_M_src"], %["#_M_dest"]" : [_M_dest] "+r" (_M_dest) : [_M_flag] "r" (_M_flag), [_M_src] "rm" (_M_src) )
+#define _cmovnz_intrin( _M_flag, _M_dest, _M_src ) __asm__ ( "test %["#_M_flag"], %["#_M_flag"] \n\t cmovnz %["#_M_src"], %["#_M_dest"]" : [_M_dest] "+r" (_M_dest) : [_M_flag] "r" (_M_flag), [_M_src] "rm" (_M_src) )
+#else
+#define _cmovz_intrin( _M_flag, _M_dest, _M_src ) _M_dest = (_M_flag == 0) ? (_M_src) : (_M_dest)
+#define _cmovnz_intrin( _M_flag, _M_dest, _M_src ) _M_dest = (_M_flag) ? (_M_src) : (_M_dest)
+#endif
+
+#if defined( __INTEL_COMPILER ) && (defined( __x86_64__ ) || defined ( _WIN64 ))
+
+typedef Ipp32u (H265Bitstream::* t_DecodeSingleBin_CABAC)(Ipp32u ctxIdx);
+extern t_DecodeSingleBin_CABAC s_pDecodeSingleBin_CABAC_dispatched;
+
+H265_FORCEINLINE
+Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
+{
+    return (this->*s_pDecodeSingleBin_CABAC_dispatched)( ctxIdx );
+}
+
+#else // defined( __INTEL_COMPILER ) && (defined( __x86_64__ ) || defined ( _WIN64 ))
+
+inline
 Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
 {
     Ipp32u codIRangeLPS;
 
-// ML: OPT: TODO: slow table lookup
     Ipp32u pState = context_hevc[ctxIdx];
     Ipp32u binVal;
 
-// ML: OPT: TODO: slow table lookup
     codIRangeLPS = rangeTabLPSH265[pState][(m_lcodIRange >> (6 + CABAC_MAGIC_BITS)) - 4];
     m_lcodIRange -= codIRangeLPS << CABAC_MAGIC_BITS;
 #if (CABAC_MAGIC_BITS > 0)
@@ -262,6 +324,8 @@ Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
     return binVal;
 
 } //Ipp32s H265Bitstream::DecodeSingleBin_CABAC(Ipp32s ctxIdx)
+
+#endif // defined( __INTEL_COMPILER ) && (defined( __x86_64__ ) || defined ( _WIN64 ))
 
 H265_FORCEINLINE
 Ipp32u H265Bitstream::DecodeSymbolEnd_CABAC(void)

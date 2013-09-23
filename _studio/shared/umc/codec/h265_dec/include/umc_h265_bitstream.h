@@ -48,7 +48,8 @@ public:
 
     inline void AlignPointerRight(void);
 
-    Ipp32u GetBits(const Ipp32u nbits);
+    inline Ipp32u GetBits(Ipp32u nbits);
+    inline Ipp32u GetBits_BMI(Ipp32u nbits);
 
     // Read one VLC Ipp32s or Ipp32u value from bitstream
     Ipp32s GetVLCElement(bool bIsSigned);
@@ -215,6 +216,11 @@ public:
     // Decode single bin from stream
     inline
     Ipp32u DecodeSingleBin_CABAC(Ipp32u ctxIdx);
+
+#if defined( __INTEL_COMPILER ) && (defined( __x86_64__ ) || defined ( _WIN64 ))
+    Ipp32u DecodeSingleBin_CABAC_cmov(Ipp32u ctxIdx);
+    Ipp32u DecodeSingleBin_CABAC_cmov_BMI(Ipp32u ctxIdx);
+#endif
 
     // Decode single bin using bypass decoding
     //inline
