@@ -2006,7 +2006,11 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
                 if (m_enabledSwBrc)
                 {
-                    mfxU32 res = m_brc.Report(task->m_type[0], task->m_bsDataLength[0], 0, !!task->m_repack, task->m_frameOrder);
+                    mfxU32 bsDataLength = task->m_bsDataLength[0];
+                    if(task->m_fieldPicFlag)
+                        bsDataLength += task->m_bsDataLength[1];
+
+                    mfxU32 res = m_brc.Report(task->m_type[0], bsDataLength, 0, !!task->m_repack, task->m_frameOrder);
                     if (res == 1) // ERR_BIG_FRAME
                     {
                         task->m_bsDataLength[0] = task->m_bsDataLength[1] = 0;

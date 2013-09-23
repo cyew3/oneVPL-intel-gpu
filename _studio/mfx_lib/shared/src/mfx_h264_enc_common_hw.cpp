@@ -964,7 +964,8 @@ bool MfxHwH264Encode::IsLookAheadSupported(
     MfxVideoParam const & video,
     eMFXHWType            platform)
 {
-    return ((platform >= MFX_HW_HSW) && (platform != MFX_HW_VLV) && (video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE));
+    //  LA for interlaced streams is implemented but disabled here
+    return ((platform >= MFX_HW_HSW) && (platform != MFX_HW_VLV) && (false || video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE));
 }
 
 // determine and return mode of Query operation (valid modes are 1, 2, 3, 4 - see MSDK spec for details)
