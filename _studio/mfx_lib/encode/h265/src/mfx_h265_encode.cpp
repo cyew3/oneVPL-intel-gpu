@@ -746,6 +746,7 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
 
     // Now use simple reset
     Close();
+    m_isInitialized = false;
     sts = Init(&checked_videoParam);
 
     // Not finished implementation
