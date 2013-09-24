@@ -609,7 +609,10 @@ Status MPEG2VideoDecoderBase::DecodeSliceHeader(IppVideoContext *video, int task
 
     video->m_bNewSlice = true;
 
-    frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].isCorrupted = isCorrupted;
+    if (!frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].isCorrupted)
+    {
+        frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].isCorrupted = isCorrupted;
+    }
 
     return UMC_OK;
 }

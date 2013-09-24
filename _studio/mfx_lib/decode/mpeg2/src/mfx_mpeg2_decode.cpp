@@ -2164,7 +2164,7 @@ mfxStatus VideoDECODEMPEG2::CompleteTasks(void *pState, void *pParam, mfxStatus 
 
             if (IsStatusReportEnable(parameters->pCore))
             {
-                parameters->surface_out->Data.Corrupted = 0;
+                //parameters->surface_out->Data.Corrupted = 0;
 
                 // request status report structures and wait until frame is not ready
                 mfxStatus sts = lpOwner->GetStatusReport(parameters->surface_out);
@@ -2836,6 +2836,13 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
                 m_task_param[m_task_num].prev_index = prev_index;
                 m_task_param[m_task_num].next_index = next_index;
                 m_task_param[m_task_num].surface_out = GetOriginalSurface(*surface_disp);
+
+                // set corruption flag
+                if (m_implUmc.GetCorruptionFlag(m_task_num))
+                {
+                    m_task_param[m_task_num].surface_out->Data.Corrupted = MFX_CORRUPTION_REFERENCE_FRAME;
+                }
+
                 m_task_param[m_task_num].surface_work = surface_work;
                 m_task_param[m_task_num].display_index = display_index;
                 m_task_param[m_task_num].m_FrameAllocator = m_FrameAllocator;

@@ -224,7 +224,7 @@ LinuxVideoAccelerator::LinuxVideoAccelerator(void)
     //vm_mutex_init(&m_SyncMutex);
 
     m_bIsExtSurfaces    = false;
-    m_isUseStatuReport  = false;
+    m_isUseStatuReport  = true;
     m_bH264MVCSupport   = false;
     memset(&m_guidDecoder, 0 , sizeof(GUID));
 }
