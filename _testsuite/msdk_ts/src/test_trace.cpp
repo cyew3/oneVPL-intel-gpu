@@ -773,7 +773,7 @@ DEF_STRUCT_TRACE(mfxEncryptedData){
 DEF_STRUCT_TRACE(mfxAudioStreamInfo){
     os  << "{\n"
         << PUT_PAR(Bitrate)
-        << PUT_PAR(NumChannel)
+        << PUT_PAR(NumChannels)
         << PUT_PAR(SampleFrequency)
         << PUT_PAR(BitPerSample)
         << PUT_ARR(reserved, 5)
