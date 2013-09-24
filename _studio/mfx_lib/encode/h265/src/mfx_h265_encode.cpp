@@ -484,8 +484,8 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 
     }
 
-    // sign bit hiding doesn't work now properly
-    m_mfxHEVCOpts.SignBitHiding = MFX_CODINGOPTION_OFF;
+    // uncomment here if sign bit hiding doesn't work properly
+    //m_mfxHEVCOpts.SignBitHiding = MFX_CODINGOPTION_OFF;
 
     // check FrameInfo
 

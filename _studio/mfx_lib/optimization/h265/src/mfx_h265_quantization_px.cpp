@@ -57,13 +57,12 @@ namespace MFX_HEVC_PP
 
             aval = abs((Ipp32s)pSrc[i]);        // remove sign
             qval = (aval * scale + offset) >> shift;
-            qval = (qval ^ sign) - sign;        // restore sign
-
-            pDst[i] = (Ipp16s)Saturate(-32768, 32767, qval);
 
             pDelta[i] = (Ipp32s)( ((Ipp64s)abs(pSrc[i]) * scale - (qval<<shift) )>> (shift-8) );
-
             abs_sum += qval;
+
+            qval = (qval ^ sign) - sign;        // restore sign
+            pDst[i] = (Ipp16s)Saturate(-32768, 32767, qval);
         }
 
         return abs_sum;
