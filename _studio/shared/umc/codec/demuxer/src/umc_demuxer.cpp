@@ -733,7 +733,10 @@ Status Demuxer::CreateFrameConstructor(Ipp32s iTrack)
 
     umcRes = pFC->Init((MediaReceiverParams *)&fcParams);
     if (UMC_OK != umcRes)
+    {
+        delete pFC;
         return umcRes;
+    }
 
     if (!m_pPrevData[iTrack])
         m_pPrevData[iTrack] = new MediaData;
