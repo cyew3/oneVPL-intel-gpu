@@ -25,6 +25,7 @@
 #include "mfx_image_stabilization_vpp.h"
 #include "videovme7_5io.h"
 #include "videovme.h"
+#include "mfx_common_int.h"
 
 // aya: reason is VME. we prefer doesn't modify one
 #pragma warning( disable : 4244 )
