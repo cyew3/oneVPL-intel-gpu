@@ -34,6 +34,7 @@ public:
         
         return ret_params.ret_val;
     }
+    virtual bool isFrameModeEnabled() {return true;}
     virtual mfxStatus GetStreamInfo(sStreamInfo * pParams) {pParams;return MFX_ERR_NONE;}
     virtual mfxStatus SeekTime(mfxF64 fSeekTo) {fSeekTo;return MFX_ERR_NONE;}
     virtual mfxStatus SeekPercent(mfxF64 fSeekTo) {fSeekTo;return MFX_ERR_NONE;}

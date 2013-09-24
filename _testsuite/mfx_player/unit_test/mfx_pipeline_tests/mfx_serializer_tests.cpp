@@ -805,5 +805,26 @@ SUITE(MFXSerializer)
         }
     }
 
+    TEST(mfxExtAvcTemporalLayers_deserial)
+    {
+        MFXStructure<mfxExtAvcTemporalLayers> temporalLayer;
+        int nPos = 0;
+
+        //apply ltr index
+        CHECK_EQUAL(true, temporalLayer.DeSerialize(VM_STRING("13 1 2 3 4 5 6 7 8"), &nPos));
+        mfxExtAvcTemporalLayers & layer = temporalLayer.operator mfxExtAvcTemporalLayers&() ;
+        CHECK_EQUAL(13u, layer.BaseLayerPID);
+        CHECK_EQUAL(1u, layer.Layer[0].Scale);
+        CHECK_EQUAL(2u, layer.Layer[1].Scale);
+        CHECK_EQUAL(3u, layer.Layer[2].Scale);
+        CHECK_EQUAL(4u, layer.Layer[3].Scale);
+        CHECK_EQUAL(5u, layer.Layer[4].Scale);
+        CHECK_EQUAL(6u, layer.Layer[5].Scale);
+        CHECK_EQUAL(7u, layer.Layer[6].Scale);
+        CHECK_EQUAL(8u, layer.Layer[7].Scale);
+        CHECK_EQUAL(18, nPos);
+    }
+
+
 
 }

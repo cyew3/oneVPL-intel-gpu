@@ -79,7 +79,7 @@ void MFXStructureRef <mfxExtMVCSeqDesc>::ConstructValues () const
 bool      MFXStructureRef <mfxMVCViewDependency>::DeSerialize(const tstring & refStr, int *nPosition)
 {
     tstringstream input_strm;
-    input_strm.str(refStr);
+    input_strm.str(refStr + VM_STRING(' '));
 
     //clearing attached structure firstly
     MFX_ZERO_MEM(*m_pStruct);
@@ -564,7 +564,7 @@ void MFXStructureRef <mfxExtCodingOptionSPSPPS>::ConstructValues () const
 bool MFXStructureRef <mfxExtAvcTemporalLayers>::DeSerialize(const tstring & refStr, int *nPosition)
 {
     tstringstream input_strm;
-    input_strm.str(refStr);
+    input_strm.str(refStr + VM_STRING(' '));
 
     //clearing attached structure firstly
     MFXExtBufferPtr<mfxExtAvcTemporalLayers> initHeader(m_pStruct);
@@ -594,7 +594,7 @@ void MFXStructureRef <mfxExtAvcTemporalLayers>::ConstructValues () const
 bool MFXStructureRef <IppiRect>::DeSerialize(const tstring & refStr, int *nPosition)
 {
     tstringstream input_strm;
-    input_strm.str(refStr);
+    input_strm.str(refStr + VM_STRING(' '));
 
     DESERIALIZE_INT(x);
     DESERIALIZE_INT(y);
@@ -619,7 +619,7 @@ void MFXStructureRef <IppiRect>::ConstructValues () const
 bool MFXStructureRef <mfxExtSvcTargetLayer>::DeSerialize(const tstring & refStr, int *nPosition)
 {
     tstringstream input_strm;
-    input_strm.str(refStr);
+    input_strm.str(refStr + VM_STRING(' '));
 
     //clearing attached structure firstly
     MFXExtBufferPtr<mfxExtSvcTargetLayer> initHeader(m_pStruct);
