@@ -39,10 +39,27 @@
 #define _mm_movehl_epi64(A, B) _mm_castps_si128(_mm_movehl_ps(_mm_castsi128_ps(A), _mm_castsi128_ps(B)))
 #define _mm_loadh_epi64(A, p)  _mm_castpd_si128(_mm_loadh_pd(_mm_castsi128_pd(A), (const double *)(p)))
 
-#ifdef _INCLUDED_PMM
-#define load_unaligned(x) _mm_lddqu_si128(x)
+
+
+//#define load128_unaligned(x)    _mm_lddqu_si128( (const __m128i *)( x ))
+//#define load256_unaligned(x) _mm256_lddqu_si256( (const __m256i *)( x ))
+#define load128_unaligned(x)    _mm_loadu_si128( (const __m128i *)( x ))
+#define load256_unaligned(x) _mm256_loadu_si256( (const __m256i *)( x ))
+#if 0// 32
+// alignement 32 for "original" data block (typically cached in linear space)
+    #define load256_block_data( p)  *(const __m256i *)( p )
+    #define load128_block_data( p)  *(const __m128i *)( p )
+    #define load256_block_data2( p) *(const __m256i *)( p )
+#elif 16
+// alignement 16 for "original" data block (typically cached in linear space)
+    #define load128_block_data( p)  *(const __m128i *)( p )
+    #define load256_block_data( p)  _mm256_loadu_si256( (const __m256i *)( p ))
+    #define load256_block_data2( p) *(const __m256i *)( p )
 #else
-#define load_unaligned(x) _mm_loadu_si128(x)
+// original block is not aligned at all
+    #define load128_block_data( p)  _mm_loadu_si128( (const __m128i *)( p ))
+    #define load256_block_data( p)  _mm256_loadu_si256( (const __m256i *)( p ))
+    #define load256_block_data2( p) _mm256_loadu_si256( (const __m256i *)( p ))
 #endif
 
 #define SAD_CALLING_CONVENTION H265_FASTCALL
@@ -770,18 +787,18 @@ int SAD_CALLING_CONVENTION SAD_16x4_general_avx2(SAD_PARAMETERS_LIST)
 {
     SAD_PARAMETERS_LOAD;
 
-    __m128i s1 = load_unaligned( (const __m128i *) (blk1));
-    __m128i s2 = load_unaligned( (const __m128i *) (blk1+lx1));
-    s1 = _mm_sad_epu8( s1, *( (const __m128i *) (blk2)));
-    s2 = _mm_sad_epu8( s2, *( (const __m128i *) (blk2+block_stride)));
+    __m128i s1 = load128_unaligned( blk1);
+    __m128i s2 = load128_unaligned( blk1 + lx1);
+    s1 = _mm_sad_epu8( s1, load128_block_data( blk2));
+    s2 = _mm_sad_epu8( s2, load128_block_data( blk2 + block_stride));
 
     blk1 += 2*lx1;
 
     {
-        __m128i tmp1 = load_unaligned( (const __m128i *) (blk1));
-        __m128i tmp2 = load_unaligned( (const __m128i *) (blk1+lx1));
-        tmp1 = _mm_sad_epu8( tmp1, *(const __m128i *) (blk2 + 2*block_stride));
-        tmp2 = _mm_sad_epu8( tmp2, *(const __m128i *) (blk2 + 3*block_stride));
+        __m128i tmp1 = load128_unaligned( blk1);
+        __m128i tmp2 = load128_unaligned( blk1 + lx1);
+        tmp1 = _mm_sad_epu8( tmp1, load128_block_data( blk2 + 2*block_stride));
+        tmp2 = _mm_sad_epu8( tmp2, load128_block_data( blk2 + 3*block_stride));
         s1 = _mm_add_epi32( s1, tmp1);
         s2 = _mm_add_epi32( s2, tmp2);
     }
@@ -799,18 +816,18 @@ int SAD_CALLING_CONVENTION SAD_16x8_general_avx2(SAD_PARAMETERS_LIST)
 {
     SAD_PARAMETERS_LOAD;
 
-    __m128i s1 = load_unaligned( (const __m128i *) (blk1));
-    __m128i s2 = load_unaligned( (const __m128i *) (blk1+lx1));
-    s1 = _mm_sad_epu8( s1, *( (const __m128i *) (blk2)));
-    s2 = _mm_sad_epu8( s2, *( (const __m128i *) (blk2+block_stride)));
+    __m128i s1 = load128_unaligned( blk1);
+    __m128i s2 = load128_unaligned( blk1+lx1);
+    s1 = _mm_sad_epu8( s1, load128_block_data( blk2));
+    s2 = _mm_sad_epu8( s2, load128_block_data( blk2+block_stride));
 
     blk1 += 2*lx1;
 
     {
-        __m128i tmp1 = load_unaligned( (const __m128i *) (blk1));
-        __m128i tmp2 = load_unaligned( (const __m128i *) (blk1+lx1));
-        tmp1 = _mm_sad_epu8( tmp1, *(const __m128i *) (blk2 + 2*block_stride));
-        tmp2 = _mm_sad_epu8( tmp2, *(const __m128i *) (blk2 + 3*block_stride));
+        __m128i tmp1 = load128_unaligned( blk1);
+        __m128i tmp2 = load128_unaligned( blk1 + lx1);
+        tmp1 = _mm_sad_epu8( tmp1, load128_block_data( blk2 + 2*block_stride));
+        tmp2 = _mm_sad_epu8( tmp2, load128_block_data( blk2 + 3*block_stride));
         s1 = _mm_add_epi32( s1, tmp1);
         s2 = _mm_add_epi32( s2, tmp2);
     }
@@ -818,10 +835,10 @@ int SAD_CALLING_CONVENTION SAD_16x8_general_avx2(SAD_PARAMETERS_LIST)
     blk1 += 2*lx1;
 
     {
-        __m128i tmp1 = load_unaligned( (const __m128i *) (blk1));
-        __m128i tmp2 = load_unaligned( (const __m128i *) (blk1+lx1));
-        tmp1 = _mm_sad_epu8( tmp1, *(const __m128i *) (blk2 + 4*block_stride));
-        tmp2 = _mm_sad_epu8( tmp2, *(const __m128i *) (blk2 + 5*block_stride));
+        __m128i tmp1 = load128_unaligned( blk1);
+        __m128i tmp2 = load128_unaligned( blk1 + lx1);
+        tmp1 = _mm_sad_epu8( tmp1, load128_block_data( blk2 + 4*block_stride));
+        tmp2 = _mm_sad_epu8( tmp2, load128_block_data( blk2 + 5*block_stride));
         s1 = _mm_add_epi32( s1, tmp1);
         s2 = _mm_add_epi32( s2, tmp2);
     }
@@ -829,10 +846,10 @@ int SAD_CALLING_CONVENTION SAD_16x8_general_avx2(SAD_PARAMETERS_LIST)
     blk1 += 2*lx1;
 
     {
-        __m128i tmp1 = load_unaligned( (const __m128i *) (blk1));
-        __m128i tmp2 = load_unaligned( (const __m128i *) (blk1+lx1));
-        tmp1 = _mm_sad_epu8( tmp1, *(const __m128i *) (blk2 + 6*block_stride));
-        tmp2 = _mm_sad_epu8( tmp2, *(const __m128i *) (blk2 + 7*block_stride));
+        __m128i tmp1 = load128_unaligned( blk1);
+        __m128i tmp2 = load128_unaligned( blk1 + lx1);
+        tmp1 = _mm_sad_epu8( tmp1, load128_block_data( blk2 + 6*block_stride));
+        tmp2 = _mm_sad_epu8( tmp2, load128_block_data( blk2 + 7*block_stride));
         s1 = _mm_add_epi32( s1, tmp1);
         s2 = _mm_add_epi32( s2, tmp2);
     }
@@ -849,18 +866,18 @@ int SAD_CALLING_CONVENTION SAD_16x12_general_avx2(SAD_PARAMETERS_LIST)
 {
     SAD_PARAMETERS_LOAD;
 
-    __m128i s1 = load_unaligned( (const __m128i *) (blk1));
-    __m128i s2 = load_unaligned( (const __m128i *) (blk1+lx1));
-    s1 = _mm_sad_epu8( s1, *( (const __m128i *) (blk2)));
-    s2 = _mm_sad_epu8( s2, *( (const __m128i *) (blk2+block_stride)));
+    __m128i s1 = load128_unaligned( blk1);
+    __m128i s2 = load128_unaligned( blk1 + lx1);
+    s1 = _mm_sad_epu8( s1, load128_block_data( blk2));
+    s2 = _mm_sad_epu8( s2, load128_block_data( blk2 + block_stride));
 
     blk1 += 2*lx1;
 
     {
-        __m128i tmp1 = load_unaligned( (const __m128i *) (blk1));
-        __m128i tmp2 = load_unaligned( (const __m128i *) (blk1+lx1));
-        tmp1 = _mm_sad_epu8( tmp1, *(const __m128i *) (blk2 + 2*block_stride));
-        tmp2 = _mm_sad_epu8( tmp2, *(const __m128i *) (blk2 + 3*block_stride));
+        __m128i tmp1 = load128_unaligned( blk1);
+        __m128i tmp2 = load128_unaligned( blk1 + lx1);
+        tmp1 = _mm_sad_epu8( tmp1, load128_block_data( blk2 + 2*block_stride));
+        tmp2 = _mm_sad_epu8( tmp2, load128_block_data( blk2 + 3*block_stride));
         s1 = _mm_add_epi32( s1, tmp1);
         s2 = _mm_add_epi32( s2, tmp2);
     }
@@ -868,10 +885,10 @@ int SAD_CALLING_CONVENTION SAD_16x12_general_avx2(SAD_PARAMETERS_LIST)
     blk1 += 2*lx1;
 
     {
-        __m128i tmp1 = load_unaligned( (const __m128i *) (blk1));
-        __m128i tmp2 = load_unaligned( (const __m128i *) (blk1+lx1));
-        tmp1 = _mm_sad_epu8( tmp1, *(const __m128i *) (blk2 + 4*block_stride));
-        tmp2 = _mm_sad_epu8( tmp2, *(const __m128i *) (blk2 + 5*block_stride));
+        __m128i tmp1 = load128_unaligned( blk1);
+        __m128i tmp2 = load128_unaligned( blk1 + lx1);
+        tmp1 = _mm_sad_epu8( tmp1, load128_block_data( blk2 + 4*block_stride));
+        tmp2 = _mm_sad_epu8( tmp2, load128_block_data( blk2 + 5*block_stride));
         s1 = _mm_add_epi32( s1, tmp1);
         s2 = _mm_add_epi32( s2, tmp2);
     }
@@ -879,10 +896,10 @@ int SAD_CALLING_CONVENTION SAD_16x12_general_avx2(SAD_PARAMETERS_LIST)
     blk1 += 2*lx1;
 
     {
-        __m128i tmp1 = load_unaligned( (const __m128i *) (blk1));
-        __m128i tmp2 = load_unaligned( (const __m128i *) (blk1+lx1));
-        tmp1 = _mm_sad_epu8( tmp1, *(const __m128i *) (blk2 + 6*block_stride));
-        tmp2 = _mm_sad_epu8( tmp2, *(const __m128i *) (blk2 + 7*block_stride));
+        __m128i tmp1 = load128_unaligned( blk1);
+        __m128i tmp2 = load128_unaligned( blk1 + lx1);
+        tmp1 = _mm_sad_epu8( tmp1, load128_block_data( blk2 + 6*block_stride));
+        tmp2 = _mm_sad_epu8( tmp2, load128_block_data( blk2 + 7*block_stride));
         s1 = _mm_add_epi32( s1, tmp1);
         s2 = _mm_add_epi32( s2, tmp2);
     }
@@ -890,10 +907,10 @@ int SAD_CALLING_CONVENTION SAD_16x12_general_avx2(SAD_PARAMETERS_LIST)
     blk1 += 2*lx1;
 
     {
-        __m128i tmp1 = load_unaligned( (const __m128i *) (blk1));
-        __m128i tmp2 = load_unaligned( (const __m128i *) (blk1+lx1));
-        tmp1 = _mm_sad_epu8( tmp1, *(const __m128i *) (blk2 + 8*block_stride));
-        tmp2 = _mm_sad_epu8( tmp2, *(const __m128i *) (blk2 + 9*block_stride));
+        __m128i tmp1 = load128_unaligned( blk1);
+        __m128i tmp2 = load128_unaligned( blk1 + lx1);
+        tmp1 = _mm_sad_epu8( tmp1, load128_block_data( blk2 + 8*block_stride));
+        tmp2 = _mm_sad_epu8( tmp2, load128_block_data( blk2 + 9*block_stride));
         s1 = _mm_add_epi32( s1, tmp1);
         s2 = _mm_add_epi32( s2, tmp2);
     }
@@ -901,10 +918,10 @@ int SAD_CALLING_CONVENTION SAD_16x12_general_avx2(SAD_PARAMETERS_LIST)
     blk1 += 2*lx1;
 
     {
-        __m128i tmp1 = load_unaligned( (const __m128i *) (blk1));
-        __m128i tmp2 = load_unaligned( (const __m128i *) (blk1+lx1));
-        tmp1 = _mm_sad_epu8( tmp1, *(const __m128i *) (blk2 + 10*block_stride));
-        tmp2 = _mm_sad_epu8( tmp2, *(const __m128i *) (blk2 + 11*block_stride));
+        __m128i tmp1 = load128_unaligned( blk1);
+        __m128i tmp2 = load128_unaligned( blk1 + lx1);
+        tmp1 = _mm_sad_epu8( tmp1, load128_block_data( blk2 + 10*block_stride));
+        tmp2 = _mm_sad_epu8( tmp2, load128_block_data( blk2 + 11*block_stride));
         s1 = _mm_add_epi32( s1, tmp1);
         s2 = _mm_add_epi32( s2, tmp2);
     }
@@ -921,18 +938,18 @@ int SAD_CALLING_CONVENTION SAD_16x16_general_avx2(SAD_PARAMETERS_LIST)
 {
     SAD_PARAMETERS_LOAD;
 
-    __m128i s1 = load_unaligned( (const __m128i *) (blk1));
-    __m128i s2 = load_unaligned( (const __m128i *) (blk1+lx1));
-    s1 = _mm_sad_epu8( s1, *( (const __m128i *) (blk2)));
-    s2 = _mm_sad_epu8( s2, *( (const __m128i *) (blk2+block_stride)));
+    __m128i s1 = load128_unaligned( blk1);
+    __m128i s2 = load128_unaligned( blk1 + lx1);
+    s1 = _mm_sad_epu8( s1, load128_block_data( blk2));
+    s2 = _mm_sad_epu8( s2, load128_block_data( blk2 + block_stride));
 
     blk1 += 2*lx1;
 
     {
-        __m128i tmp1 = load_unaligned( (const __m128i *) (blk1));
-        __m128i tmp2 = load_unaligned( (const __m128i *) (blk1+lx1));
-        tmp1 = _mm_sad_epu8( tmp1, *(const __m128i *) (blk2 + 2*block_stride));
-        tmp2 = _mm_sad_epu8( tmp2, *(const __m128i *) (blk2 + 3*block_stride));
+        __m128i tmp1 = load128_unaligned( blk1);
+        __m128i tmp2 = load128_unaligned( blk1 + lx1);
+        tmp1 = _mm_sad_epu8( tmp1, load128_block_data( blk2 + 2*block_stride));
+        tmp2 = _mm_sad_epu8( tmp2, load128_block_data( blk2 + 3*block_stride));
         s1 = _mm_add_epi32( s1, tmp1);
         s2 = _mm_add_epi32( s2, tmp2);
     }
@@ -940,10 +957,10 @@ int SAD_CALLING_CONVENTION SAD_16x16_general_avx2(SAD_PARAMETERS_LIST)
     blk1 += 2*lx1;
 
     {
-        __m128i tmp1 = load_unaligned( (const __m128i *) (blk1));
-        __m128i tmp2 = load_unaligned( (const __m128i *) (blk1+lx1));
-        tmp1 = _mm_sad_epu8( tmp1, *(const __m128i *) (blk2 + 4*block_stride));
-        tmp2 = _mm_sad_epu8( tmp2, *(const __m128i *) (blk2 + 5*block_stride));
+        __m128i tmp1 = load128_unaligned( blk1);
+        __m128i tmp2 = load128_unaligned( blk1 + lx1);
+        tmp1 = _mm_sad_epu8( tmp1, load128_block_data( blk2 + 4*block_stride));
+        tmp2 = _mm_sad_epu8( tmp2, load128_block_data( blk2 + 5*block_stride));
         s1 = _mm_add_epi32( s1, tmp1);
         s2 = _mm_add_epi32( s2, tmp2);
     }
@@ -951,10 +968,10 @@ int SAD_CALLING_CONVENTION SAD_16x16_general_avx2(SAD_PARAMETERS_LIST)
     blk1 += 2*lx1;
 
     {
-        __m128i tmp1 = load_unaligned( (const __m128i *) (blk1));
-        __m128i tmp2 = load_unaligned( (const __m128i *) (blk1+lx1));
-        tmp1 = _mm_sad_epu8( tmp1, *(const __m128i *) (blk2 + 6*block_stride));
-        tmp2 = _mm_sad_epu8( tmp2, *(const __m128i *) (blk2 + 7*block_stride));
+        __m128i tmp1 = load128_unaligned( blk1);
+        __m128i tmp2 = load128_unaligned( blk1 + lx1);
+        tmp1 = _mm_sad_epu8( tmp1, load128_block_data( blk2 + 6*block_stride));
+        tmp2 = _mm_sad_epu8( tmp2, load128_block_data( blk2 + 7*block_stride));
         s1 = _mm_add_epi32( s1, tmp1);
         s2 = _mm_add_epi32( s2, tmp2);
     }
@@ -962,10 +979,10 @@ int SAD_CALLING_CONVENTION SAD_16x16_general_avx2(SAD_PARAMETERS_LIST)
     blk1 += 2*lx1;
 
     {
-        __m128i tmp1 = load_unaligned( (const __m128i *) (blk1));
-        __m128i tmp2 = load_unaligned( (const __m128i *) (blk1+lx1));
-        tmp1 = _mm_sad_epu8( tmp1, *(const __m128i *) (blk2 + 8*block_stride));
-        tmp2 = _mm_sad_epu8( tmp2, *(const __m128i *) (blk2 + 9*block_stride));
+        __m128i tmp1 = load128_unaligned( blk1);
+        __m128i tmp2 = load128_unaligned( blk1 + lx1);
+        tmp1 = _mm_sad_epu8( tmp1, load128_block_data( blk2 + 8*block_stride));
+        tmp2 = _mm_sad_epu8( tmp2, load128_block_data( blk2 + 9*block_stride));
         s1 = _mm_add_epi32( s1, tmp1);
         s2 = _mm_add_epi32( s2, tmp2);
     }
@@ -973,10 +990,10 @@ int SAD_CALLING_CONVENTION SAD_16x16_general_avx2(SAD_PARAMETERS_LIST)
     blk1 += 2*lx1;
 
     {
-        __m128i tmp1 = load_unaligned( (const __m128i *) (blk1));
-        __m128i tmp2 = load_unaligned( (const __m128i *) (blk1+lx1));
-        tmp1 = _mm_sad_epu8( tmp1, *(const __m128i *) (blk2 + 10*block_stride));
-        tmp2 = _mm_sad_epu8( tmp2, *(const __m128i *) (blk2 + 11*block_stride));
+        __m128i tmp1 = load128_unaligned( blk1);
+        __m128i tmp2 = load128_unaligned( blk1 + lx1);
+        tmp1 = _mm_sad_epu8( tmp1, load128_block_data( blk2 + 10*block_stride));
+        tmp2 = _mm_sad_epu8( tmp2, load128_block_data( blk2 + 11*block_stride));
         s1 = _mm_add_epi32( s1, tmp1);
         s2 = _mm_add_epi32( s2, tmp2);
     }
@@ -984,10 +1001,10 @@ int SAD_CALLING_CONVENTION SAD_16x16_general_avx2(SAD_PARAMETERS_LIST)
     blk1 += 2*lx1;
 
     {
-        __m128i tmp1 = load_unaligned( (const __m128i *) (blk1));
-        __m128i tmp2 = load_unaligned( (const __m128i *) (blk1+lx1));
-        tmp1 = _mm_sad_epu8( tmp1, *(const __m128i *) (blk2 + 12*block_stride));
-        tmp2 = _mm_sad_epu8( tmp2, *(const __m128i *) (blk2 + 13*block_stride));
+        __m128i tmp1 = load128_unaligned( blk1);
+        __m128i tmp2 = load128_unaligned( blk1 + lx1);
+        tmp1 = _mm_sad_epu8( tmp1, load128_block_data( blk2 + 12*block_stride));
+        tmp2 = _mm_sad_epu8( tmp2, load128_block_data( blk2 + 13*block_stride));
         s1 = _mm_add_epi32( s1, tmp1);
         s2 = _mm_add_epi32( s2, tmp2);
     }
@@ -996,10 +1013,10 @@ int SAD_CALLING_CONVENTION SAD_16x16_general_avx2(SAD_PARAMETERS_LIST)
     blk1 += 2*lx1;
 
     {
-        __m128i tmp1 = load_unaligned( (const __m128i *) (blk1));
-        __m128i tmp2 = load_unaligned( (const __m128i *) (blk1+lx1));
-        tmp1 = _mm_sad_epu8( tmp1, *(const __m128i *) (blk2 + 14*block_stride));
-        tmp2 = _mm_sad_epu8( tmp2, *(const __m128i *) (blk2 + 15*block_stride));
+        __m128i tmp1 = load128_unaligned( blk1);
+        __m128i tmp2 = load128_unaligned( blk1 + lx1);
+        tmp1 = _mm_sad_epu8( tmp1, load128_block_data( blk2 + 14*block_stride));
+        tmp2 = _mm_sad_epu8( tmp2, load128_block_data( blk2 + 15*block_stride));
         s1 = _mm_add_epi32( s1, tmp1);
         s2 = _mm_add_epi32( s2, tmp2);
     }
@@ -1017,20 +1034,20 @@ int SAD_CALLING_CONVENTION SAD_16x32_general_avx2(SAD_PARAMETERS_LIST)
 {
     SAD_PARAMETERS_LOAD;
 
-    __m128i s1 = load_unaligned( (const __m128i *) (blk1));
-    __m128i s2 = load_unaligned( (const __m128i *) (blk1 + lx1));
-    s1 = _mm_sad_epu8( s1, *( (const __m128i *) (blk2)));
-    s2 = _mm_sad_epu8( s2, *( (const __m128i *) (blk2 + block_stride)));
+    __m128i s1 = load128_unaligned( blk1);
+    __m128i s2 = load128_unaligned( blk1 + lx1);
+    s1 = _mm_sad_epu8( s1, load128_block_data( blk2));
+    s2 = _mm_sad_epu8( s2, load128_block_data( blk2 + block_stride));
 
     for(int i = 2; i < 30; i += 4)
     {
         blk1 += 2*lx1;    
         blk2 += 2*block_stride;
         {
-            __m128i tmp1 = load_unaligned( (const __m128i *) (blk1));
-            __m128i tmp2 = load_unaligned( (const __m128i *) (blk1 + lx1));
-            tmp1 = _mm_sad_epu8( tmp1, *(const __m128i *) (blk2));
-            tmp2 = _mm_sad_epu8( tmp2, *(const __m128i *) (blk2 + block_stride));
+            __m128i tmp1 = load128_unaligned( blk1);
+            __m128i tmp2 = load128_unaligned( blk1 + lx1);
+            tmp1 = _mm_sad_epu8( tmp1, load128_block_data( blk2));
+            tmp2 = _mm_sad_epu8( tmp2, load128_block_data( blk2 + block_stride));
             s1 = _mm_add_epi32( s1, tmp1);
             s2 = _mm_add_epi32( s2, tmp2);
         }
@@ -1039,10 +1056,10 @@ int SAD_CALLING_CONVENTION SAD_16x32_general_avx2(SAD_PARAMETERS_LIST)
         blk2 += 2*block_stride;
 
         {
-            __m128i tmp1 = load_unaligned( (const __m128i *) (blk1));
-            __m128i tmp2 = load_unaligned( (const __m128i *) (blk1 + lx1));
-            tmp1 = _mm_sad_epu8( tmp1, *(const __m128i *) (blk2));
-            tmp2 = _mm_sad_epu8( tmp2, *(const __m128i *) (blk2 + block_stride));
+            __m128i tmp1 = load128_unaligned( blk1);
+            __m128i tmp2 = load128_unaligned( blk1 + lx1);
+            tmp1 = _mm_sad_epu8( tmp1, load128_block_data( blk2));
+            tmp2 = _mm_sad_epu8( tmp2, load128_block_data( blk2 + block_stride));
             s1 = _mm_add_epi32( s1, tmp1);
             s2 = _mm_add_epi32( s2, tmp2);
         }
@@ -1052,10 +1069,10 @@ int SAD_CALLING_CONVENTION SAD_16x32_general_avx2(SAD_PARAMETERS_LIST)
     blk2 += 2*block_stride;
 
     {
-        __m128i tmp1 = load_unaligned( (const __m128i *) (blk1));
-        __m128i tmp2 = load_unaligned( (const __m128i *) (blk1 + lx1));
-        tmp1 = _mm_sad_epu8( tmp1, *(const __m128i *) (blk2));
-        tmp2 = _mm_sad_epu8( tmp2, *(const __m128i *) (blk2 + block_stride));
+        __m128i tmp1 = load128_unaligned( blk1);
+        __m128i tmp2 = load128_unaligned( blk1 + lx1);
+        tmp1 = _mm_sad_epu8( tmp1, load128_block_data( blk2));
+        tmp2 = _mm_sad_epu8( tmp2, load128_block_data( blk2 + block_stride));
         s1 = _mm_add_epi32( s1, tmp1);
         s2 = _mm_add_epi32( s2, tmp2);
     }
@@ -1072,10 +1089,10 @@ int SAD_CALLING_CONVENTION SAD_16x64_general_avx2(SAD_PARAMETERS_LIST)
 {
     SAD_PARAMETERS_LOAD;
 
-    __m128i s1 = load_unaligned( (const __m128i *) (blk1));
-    __m128i s2 = load_unaligned( (const __m128i *) (blk1 + lx1));
-    s1 = _mm_sad_epu8( s1, *( (const __m128i *) (blk2)));
-    s2 = _mm_sad_epu8( s2, *( (const __m128i *) (blk2 + block_stride)));
+    __m128i s1 = load128_unaligned( blk1);
+    __m128i s2 = load128_unaligned( blk1 + lx1);
+    s1 = _mm_sad_epu8( s1, load128_block_data( blk2));
+    s2 = _mm_sad_epu8( s2, load128_block_data( blk2 + block_stride));
 
     blk1 += 2*lx1;    
     blk2 += 2*block_stride;
@@ -1083,10 +1100,10 @@ int SAD_CALLING_CONVENTION SAD_16x64_general_avx2(SAD_PARAMETERS_LIST)
     for(int i = 2; i < 62; i += 4)
     {
         {
-            __m128i tmp1 = load_unaligned( (const __m128i *) (blk1));
-            __m128i tmp2 = load_unaligned( (const __m128i *) (blk1 + lx1));
-            __m128i tmp3 = _mm_sad_epu8( tmp1, *(const __m128i *) (blk2));
-            __m128i tmp4 = _mm_sad_epu8( tmp2, *(const __m128i *) (blk2 + block_stride));
+            __m128i tmp1 = load128_unaligned( blk1);
+            __m128i tmp2 = load128_unaligned( blk1 + lx1);
+            __m128i tmp3 = _mm_sad_epu8( tmp1, load128_block_data( blk2));
+            __m128i tmp4 = _mm_sad_epu8( tmp2, load128_block_data( blk2 + block_stride));
             s1 = _mm_add_epi32( s1, tmp3);
             s2 = _mm_add_epi32( s2, tmp4);
         }
@@ -1095,10 +1112,10 @@ int SAD_CALLING_CONVENTION SAD_16x64_general_avx2(SAD_PARAMETERS_LIST)
         blk2 += 2*block_stride;
 
         {
-            __m128i tmp1 = load_unaligned( (const __m128i *) (blk1));
-            __m128i tmp2 = load_unaligned( (const __m128i *) (blk1 + lx1));
-            __m128i tmp3 = _mm_sad_epu8( tmp1, *(const __m128i *) (blk2));
-            __m128i tmp4 = _mm_sad_epu8( tmp2, *(const __m128i *) (blk2 + block_stride));
+            __m128i tmp1 = load128_unaligned( blk1);
+            __m128i tmp2 = load128_unaligned( blk1 + lx1);
+            __m128i tmp3 = _mm_sad_epu8( tmp1, load128_block_data( blk2));
+            __m128i tmp4 = _mm_sad_epu8( tmp2, load128_block_data( blk2 + block_stride));
             s1 = _mm_add_epi32( s1, tmp3);
             s2 = _mm_add_epi32( s2, tmp4);
         }
@@ -1108,10 +1125,10 @@ int SAD_CALLING_CONVENTION SAD_16x64_general_avx2(SAD_PARAMETERS_LIST)
     }
 
     {
-        __m128i tmp1 = load_unaligned( (const __m128i *) (blk1));
-        __m128i tmp2 = load_unaligned( (const __m128i *) (blk1 + lx1));
-        __m128i tmp3 = _mm_sad_epu8( tmp1, *(const __m128i *) (blk2));
-        __m128i tmp4 = _mm_sad_epu8( tmp2, *(const __m128i *) (blk2 + block_stride));
+        __m128i tmp1 = load128_unaligned( blk1);
+        __m128i tmp2 = load128_unaligned( blk1 + lx1);
+        __m128i tmp3 = _mm_sad_epu8( tmp1, load128_block_data( blk2));
+        __m128i tmp4 = _mm_sad_epu8( tmp2, load128_block_data( blk2 + block_stride));
         s1 = _mm_add_epi32( s1, tmp3);
         s2 = _mm_add_epi32( s2, tmp4);
     }
@@ -1135,10 +1152,10 @@ int SAD_CALLING_CONVENTION SAD_24x32_general_avx2(SAD_PARAMETERS_LIST)
 
         __m128i s3 = _mm_loadh_epi64( _mm_loadl_epi64( (const __m128i *) (blk1)), (const __m128i *) (blk1 + lx1));
         s3 = _mm_sad_epu8( s3, _mm_loadh_epi64( _mm_loadl_epi64( (const __m128i *) (blk2)), (const __m128i *) (blk2 + block_stride)));
-        __m128i s1 = load_unaligned( (const __m128i *) (blk1 + 8));
-        __m128i s2 = load_unaligned( (const __m128i *) (blk1 + lx1 + 8));
-        s1 = _mm_sad_epu8( s1, *( (const __m128i *) (blk2 + 8)));
-        s2 = _mm_sad_epu8( s2, *( (const __m128i *) (blk2 + block_stride + 8)));
+        __m128i s1 = load128_unaligned( blk1 + 8);
+        __m128i s2 = load128_unaligned( blk1 + lx1 + 8);
+        s1 = _mm_sad_epu8( s1, load128_block_data( blk2 + 8));
+        s2 = _mm_sad_epu8( s2, load128_block_data( blk2 + block_stride + 8));
 
         for(int i = 2; i < 32; i += 2)
         {
@@ -1150,10 +1167,10 @@ int SAD_CALLING_CONVENTION SAD_24x32_general_avx2(SAD_PARAMETERS_LIST)
                 s3 = _mm_add_epi32( s3, _mm_sad_epu8( tmp3, tmp4));
             }
             {
-                __m128i tmp1 = load_unaligned( (const __m128i *) (blk1 + 8));
-                __m128i tmp2 = load_unaligned( (const __m128i *) (blk1 + lx1 + 8));
-                tmp1 = _mm_sad_epu8( tmp1, *(const __m128i *) (blk2 + 8));
-                tmp2 = _mm_sad_epu8( tmp2, *(const __m128i *) (blk2 + block_stride + 8));
+                __m128i tmp1 = load128_unaligned( blk1 + 8);
+                __m128i tmp2 = load128_unaligned( blk1 + lx1 + 8);
+                tmp1 = _mm_sad_epu8( tmp1, load128_block_data( blk2 + 8));
+                tmp2 = _mm_sad_epu8( tmp2, load128_block_data( blk2 + block_stride + 8));
                 s1 = _mm_add_epi32( s1, tmp1);
                 s2 = _mm_add_epi32( s2, tmp2);
             }
@@ -1170,10 +1187,10 @@ int SAD_CALLING_CONVENTION SAD_24x32_general_avx2(SAD_PARAMETERS_LIST)
     {
         // 16-bytes aligned
 
-        __m128i s1 = load_unaligned( (const __m128i *) (blk1));
-        __m128i s2 = load_unaligned( (const __m128i *) (blk1 + lx1));
-        s1 = _mm_sad_epu8( s1, *( (const __m128i *) (blk2)));
-        s2 = _mm_sad_epu8( s2, *( (const __m128i *) (blk2 + block_stride)));
+        __m128i s1 = load128_unaligned( blk1);
+        __m128i s2 = load128_unaligned( blk1 + lx1);
+        s1 = _mm_sad_epu8( s1, load128_block_data( blk2));
+        s2 = _mm_sad_epu8( s2, load128_block_data( blk2 + block_stride));
         __m128i s3 = _mm_loadh_epi64( _mm_loadl_epi64( (const __m128i *) (blk1 + 16)), (const __m128i *) (blk1 + lx1 + 16));
         s3 = _mm_sad_epu8( s3, _mm_loadh_epi64( _mm_loadl_epi64( (const __m128i *) (blk2 + 16)), (const __m128i *) (blk2 + block_stride + 16)));
 
@@ -1182,10 +1199,10 @@ int SAD_CALLING_CONVENTION SAD_24x32_general_avx2(SAD_PARAMETERS_LIST)
             blk1 += 2*lx1;    
             blk2 += 2*block_stride;
             {
-                __m128i tmp1 = load_unaligned( (const __m128i *) (blk1));
-                __m128i tmp2 = load_unaligned( (const __m128i *) (blk1 + lx1));
-                tmp1 = _mm_sad_epu8( tmp1, *(const __m128i *) (blk2));
-                tmp2 = _mm_sad_epu8( tmp2, *(const __m128i *) (blk2 + block_stride));
+                __m128i tmp1 = load128_unaligned( blk1);
+                __m128i tmp2 = load128_unaligned( blk1 + lx1);
+                tmp1 = _mm_sad_epu8( tmp1, load128_block_data( blk2));
+                tmp2 = _mm_sad_epu8( tmp2, load128_block_data( blk2 + block_stride));
                 s1 = _mm_add_epi32( s1, tmp1);
                 s2 = _mm_add_epi32( s2, tmp2);
             }
@@ -1213,19 +1230,19 @@ int SAD_CALLING_CONVENTION SAD_32x8_general_avx2(SAD_PARAMETERS_LIST) //OK
 {
     SAD_PARAMETERS_LOAD;
 
-    __m256i s1 = _mm256_lddqu_si256( (const __m256i *) (blk1));
-    __m256i s2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + lx1));
+    __m256i s1 = load256_unaligned( (const __m256i *) (blk1));
+    __m256i s2 = load256_unaligned( (const __m256i *) (blk1 + lx1));
 
-    s1 = _mm256_sad_epu8( s1, *( (const __m256i *) (blk2)));
-    s2 = _mm256_sad_epu8( s2, *( (const __m256i *) (blk2 + block_stride)));
+    s1 = _mm256_sad_epu8( s1, load256_block_data( blk2));
+    s2 = _mm256_sad_epu8( s2, load256_block_data( blk2 + block_stride));
 
     blk1 += 2*lx1;    
     blk2 += 2*block_stride;
     {
-        __m256i tmp1 = _mm256_lddqu_si256( (const __m256i *) (blk1));
-        __m256i tmp2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + lx1));
-        tmp1 = _mm256_sad_epu8( tmp1, *( (const __m256i *) (blk2)));
-        tmp2 = _mm256_sad_epu8( tmp2, *( (const __m256i *) (blk2 + block_stride)));
+        __m256i tmp1 = load256_unaligned( (const __m256i *) (blk1));
+        __m256i tmp2 = load256_unaligned( (const __m256i *) (blk1 + lx1));
+        tmp1 = _mm256_sad_epu8( tmp1, load256_block_data( blk2));
+        tmp2 = _mm256_sad_epu8( tmp2, load256_block_data( blk2 + block_stride));
         s1 = _mm256_add_epi32( s1, tmp1);
         s2 = _mm256_add_epi32( s2, tmp2);
     }
@@ -1244,10 +1261,10 @@ int SAD_CALLING_CONVENTION SAD_32x8_general_avx2(SAD_PARAMETERS_LIST) //OK
     blk1 += 2*lx1;    
     blk2 += 2*block_stride;
     {
-        __m256i tmp1 = _mm256_lddqu_si256( (const __m256i *) (blk1));
-        __m256i tmp2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + lx1));
-        tmp1 = _mm256_sad_epu8( tmp1, *( (const __m256i *) (blk2)));
-        tmp2 = _mm256_sad_epu8( tmp2, *( (const __m256i *) (blk2 + block_stride)));
+        __m256i tmp1 = load256_unaligned( (const __m256i *) (blk1));
+        __m256i tmp2 = load256_unaligned( (const __m256i *) (blk1 + lx1));
+        tmp1 = _mm256_sad_epu8( tmp1, load256_block_data( blk2));
+        tmp2 = _mm256_sad_epu8( tmp2, load256_block_data( blk2 + block_stride));
         s1 = _mm256_add_epi32( s1, tmp1);
         s2 = _mm256_add_epi32( s2, tmp2);
     }
@@ -1268,21 +1285,21 @@ int SAD_CALLING_CONVENTION SAD_32x16_general_avx2(SAD_PARAMETERS_LIST) //OK
 {
     SAD_PARAMETERS_LOAD;
 
-    __m256i s1 = _mm256_lddqu_si256( (const __m256i *) (blk1));
-    __m256i s2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + lx1));
+    __m256i s1 = load256_unaligned( (const __m256i *) (blk1));
+    __m256i s2 = load256_unaligned( (const __m256i *) (blk1 + lx1));
 
-    s1 = _mm256_sad_epu8( s1, *( (const __m256i *) (blk2)));
-    s2 = _mm256_sad_epu8( s2, *( (const __m256i *) (blk2 + block_stride)));
+    s1 = _mm256_sad_epu8( s1, load256_block_data( blk2));
+    s2 = _mm256_sad_epu8( s2, load256_block_data( blk2 + block_stride));
 
     for(int i = 0; i < 7; ++i)
     {
         blk1 += 2*lx1;    
         blk2 += 2*block_stride;
         {
-            __m256i tmp1 = _mm256_lddqu_si256( (const __m256i *) (blk1));
-            __m256i tmp2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + lx1));
-            tmp1 = _mm256_sad_epu8( tmp1, *( (const __m256i *) (blk2)));
-            tmp2 = _mm256_sad_epu8( tmp2, *( (const __m256i *) (blk2 + block_stride)));
+            __m256i tmp1 = load256_unaligned( (const __m256i *) (blk1));
+            __m256i tmp2 = load256_unaligned( (const __m256i *) (blk1 + lx1));
+            tmp1 = _mm256_sad_epu8( tmp1, load256_block_data( blk2));
+            tmp2 = _mm256_sad_epu8( tmp2, load256_block_data( blk2 + block_stride));
             s1 = _mm256_add_epi32( s1, tmp1);
             s2 = _mm256_add_epi32( s2, tmp2);
         }
@@ -1304,21 +1321,21 @@ int SAD_CALLING_CONVENTION SAD_32x24_general_avx2(SAD_PARAMETERS_LIST) //OK
 {
     SAD_PARAMETERS_LOAD;
 
-    __m256i s1 = _mm256_lddqu_si256( (const __m256i *) (blk1));
-    __m256i s2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + lx1));
+    __m256i s1 = load256_unaligned( (const __m256i *) (blk1));
+    __m256i s2 = load256_unaligned( (const __m256i *) (blk1 + lx1));
 
-    s1 = _mm256_sad_epu8( s1, *( (const __m256i *) (blk2)));
-    s2 = _mm256_sad_epu8( s2, *( (const __m256i *) (blk2 + block_stride)));
+    s1 = _mm256_sad_epu8( s1, load256_block_data( blk2));
+    s2 = _mm256_sad_epu8( s2, load256_block_data( blk2 + block_stride));
 
     for(int i = 0; i < 11; ++i)
     {
         blk1 += 2*lx1;    
         blk2 += 2*block_stride;
         {
-            __m256i tmp1 = _mm256_lddqu_si256( (const __m256i *) (blk1));
-            __m256i tmp2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + lx1));
-            tmp1 = _mm256_sad_epu8( tmp1, *( (const __m256i *) (blk2)));
-            tmp2 = _mm256_sad_epu8( tmp2, *( (const __m256i *) (blk2 + block_stride)));
+            __m256i tmp1 = load256_unaligned( (const __m256i *) (blk1));
+            __m256i tmp2 = load256_unaligned( (const __m256i *) (blk1 + lx1));
+            tmp1 = _mm256_sad_epu8( tmp1, load256_block_data( blk2));
+            tmp2 = _mm256_sad_epu8( tmp2, load256_block_data( blk2 + block_stride));
             s1 = _mm256_add_epi32( s1, tmp1);
             s2 = _mm256_add_epi32( s2, tmp2);
         }
@@ -1340,21 +1357,21 @@ int SAD_CALLING_CONVENTION SAD_32x32_general_avx2(SAD_PARAMETERS_LIST) //OK
 {
     SAD_PARAMETERS_LOAD;
 
-    __m256i s1 = _mm256_lddqu_si256( (const __m256i *) (blk1));
-    __m256i s2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + lx1));
+    __m256i s1 = load256_unaligned( (const __m256i *) (blk1));
+    __m256i s2 = load256_unaligned( (const __m256i *) (blk1 + lx1));
 
-    s1 = _mm256_sad_epu8( s1, *( (const __m256i *) (blk2)));
-    s2 = _mm256_sad_epu8( s2, *( (const __m256i *) (blk2 + block_stride)));
+    s1 = _mm256_sad_epu8( s1, load256_block_data( blk2));
+    s2 = _mm256_sad_epu8( s2, load256_block_data( blk2 + block_stride));
 
     for(int i = 0; i < 15; ++i)
     {
         blk1 += 2*lx1;    
         blk2 += 2*block_stride;
         {
-            __m256i tmp1 = _mm256_lddqu_si256( (const __m256i *) (blk1));
-            __m256i tmp2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + lx1));
-            tmp1 = _mm256_sad_epu8( tmp1, *( (const __m256i *) (blk2)));
-            tmp2 = _mm256_sad_epu8( tmp2, *( (const __m256i *) (blk2 + block_stride)));
+            __m256i tmp1 = load256_unaligned( (const __m256i *) (blk1));
+            __m256i tmp2 = load256_unaligned( (const __m256i *) (blk1 + lx1));
+            tmp1 = _mm256_sad_epu8( tmp1, load256_block_data( blk2));
+            tmp2 = _mm256_sad_epu8( tmp2, load256_block_data( blk2 + block_stride));
             s1 = _mm256_add_epi32( s1, tmp1);
             s2 = _mm256_add_epi32( s2, tmp2);
         }
@@ -1376,21 +1393,21 @@ int SAD_CALLING_CONVENTION SAD_32x64_general_avx2(SAD_PARAMETERS_LIST) //OK
 {
     SAD_PARAMETERS_LOAD;
 
-    __m256i s1 = _mm256_lddqu_si256( (const __m256i *) (blk1));
-    __m256i s2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + lx1));
+    __m256i s1 = load256_unaligned( (const __m256i *) (blk1));
+    __m256i s2 = load256_unaligned( (const __m256i *) (blk1 + lx1));
 
-    s1 = _mm256_sad_epu8( s1, *( (const __m256i *) (blk2)));
-    s2 = _mm256_sad_epu8( s2, *( (const __m256i *) (blk2 + block_stride)));
+    s1 = _mm256_sad_epu8( s1, load256_block_data( blk2));
+    s2 = _mm256_sad_epu8( s2, load256_block_data( blk2 + block_stride));
 
     for(int i = 0; i < 31; ++i)
     {
         blk1 += 2*lx1;    
         blk2 += 2*block_stride;
         {
-            __m256i tmp1 = _mm256_lddqu_si256( (const __m256i *) (blk1));
-            __m256i tmp2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + lx1));
-            tmp1 = _mm256_sad_epu8( tmp1, *( (const __m256i *) (blk2)));
-            tmp2 = _mm256_sad_epu8( tmp2, *( (const __m256i *) (blk2 + block_stride)));
+            __m256i tmp1 = load256_unaligned( (const __m256i *) (blk1));
+            __m256i tmp2 = load256_unaligned( (const __m256i *) (blk1 + lx1));
+            tmp1 = _mm256_sad_epu8( tmp1, load256_block_data( blk2));
+            tmp2 = _mm256_sad_epu8( tmp2, load256_block_data( blk2 + block_stride));
             s1 = _mm256_add_epi32( s1, tmp1);
             s2 = _mm256_add_epi32( s2, tmp2);
         }
@@ -1412,17 +1429,17 @@ int SAD_CALLING_CONVENTION SAD_64x64_general_avx2(SAD_PARAMETERS_LIST) //OK
 {
     SAD_PARAMETERS_LOAD;
 
-    __m256i s1 = _mm256_lddqu_si256( (const __m256i *) (blk1));
-    __m256i s2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + lx1));
+    __m256i s1 = load256_unaligned( (const __m256i *) (blk1));
+    __m256i s2 = load256_unaligned( (const __m256i *) (blk1 + lx1));
 
-    s1 = _mm256_sad_epu8( s1, *( (const __m256i *) (blk2)));
-    s2 = _mm256_sad_epu8( s2, *( (const __m256i *) (blk2 + block_stride)));
+    s1 = _mm256_sad_epu8( s1, load256_block_data( blk2));
+    s2 = _mm256_sad_epu8( s2, load256_block_data( blk2 + block_stride));
 
     {
-        __m256i tmp1 = _mm256_lddqu_si256( (const __m256i *) (blk1 + 32));
-        __m256i tmp2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + 32 + lx1));
-        tmp1 = _mm256_sad_epu8( tmp1, *( (const __m256i *) (blk2 + 32)));
-        tmp2 = _mm256_sad_epu8( tmp2, *( (const __m256i *) (blk2 + 32 + block_stride)));
+        __m256i tmp1 = load256_unaligned( (const __m256i *) (blk1 + 32));
+        __m256i tmp2 = load256_unaligned( (const __m256i *) (blk1 + 32 + lx1));
+        tmp1 = _mm256_sad_epu8( tmp1, load256_block_data( blk2 + 32));
+        tmp2 = _mm256_sad_epu8( tmp2, load256_block_data( blk2 + 32 + block_stride));
         s1 = _mm256_add_epi32( s1, tmp1);
         s2 = _mm256_add_epi32( s2, tmp2);
     }
@@ -1433,18 +1450,18 @@ int SAD_CALLING_CONVENTION SAD_64x64_general_avx2(SAD_PARAMETERS_LIST) //OK
         blk2 += 2*block_stride;
 
         {
-            __m256i tmp1 = _mm256_lddqu_si256( (const __m256i *) (blk1));
-            __m256i tmp2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + lx1));
-            tmp1 = _mm256_sad_epu8( tmp1, *( (const __m256i *) (blk2)));
-            tmp2 = _mm256_sad_epu8( tmp2, *( (const __m256i *) (blk2 + block_stride)));
+            __m256i tmp1 = load256_unaligned( (const __m256i *) (blk1));
+            __m256i tmp2 = load256_unaligned( (const __m256i *) (blk1 + lx1));
+            tmp1 = _mm256_sad_epu8( tmp1, load256_block_data( blk2));
+            tmp2 = _mm256_sad_epu8( tmp2, load256_block_data( blk2 + block_stride));
             s1 = _mm256_add_epi32( s1, tmp1);
             s2 = _mm256_add_epi32( s2, tmp2);
         }
         {
-            __m256i tmp1 = _mm256_lddqu_si256( (const __m256i *) (blk1 + 32));
-            __m256i tmp2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + 32 + lx1));
-            tmp1 = _mm256_sad_epu8( tmp1, *( (const __m256i *) (blk2 + 32)));
-            tmp2 = _mm256_sad_epu8( tmp2, *( (const __m256i *) (blk2 + 32 + block_stride)));
+            __m256i tmp1 = load256_unaligned( (const __m256i *) (blk1 + 32));
+            __m256i tmp2 = load256_unaligned( (const __m256i *) (blk1 + 32 + lx1));
+            tmp1 = _mm256_sad_epu8( tmp1, load256_block_data(blk2 + 32));
+            tmp2 = _mm256_sad_epu8( tmp2, load256_block_data(blk2 + 32 + block_stride));
             s1 = _mm256_add_epi32( s1, tmp1);
             s2 = _mm256_add_epi32( s2, tmp2);
         }
@@ -1469,15 +1486,15 @@ int SAD_CALLING_CONVENTION SAD_48x64_general_avx2(SAD_PARAMETERS_LIST) //OK
 
     if( (blk2 - (Ipp8u *)0) & 31 )
     {
-        __m256i s1 = _mm256_lddqu_si256( (const __m256i *) (blk1 + 16));
-        __m256i s2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + 16 + lx1));
+        __m256i s1 = load256_unaligned( (const __m256i *) (blk1 + 16));
+        __m256i s2 = load256_unaligned( (const __m256i *) (blk1 + 16 + lx1));
 
-        s1 = _mm256_sad_epu8( s1, *( (const __m256i *) (blk2 + 16)));
-        s2 = _mm256_sad_epu8( s2, *( (const __m256i *) (blk2 + 16 + block_stride)));
+        s1 = _mm256_sad_epu8( s1, load256_block_data2(blk2 + 16));
+        s2 = _mm256_sad_epu8( s2, load256_block_data2(blk2 + 16 + block_stride));
 
         {
-            __m256i tmp1 = _mm256_set_m128i( _mm_lddqu_si128( (const __m128i *) (blk1)), _mm_lddqu_si128( (const __m128i *) (blk1 + lx1)));
-            __m256i tmp2 = _mm256_set_m128i( *( (const __m128i *) (blk2)), *( (const __m128i *) (blk2 + block_stride)));
+            __m256i tmp1 = _mm256_set_m128i( load128_unaligned( blk1), load128_unaligned( blk1 + lx1));
+            __m256i tmp2 = _mm256_set_m128i( load128_block_data( blk2), load128_block_data( blk2 + block_stride));
             s1 = _mm256_add_epi32( s1, _mm256_sad_epu8( tmp1, tmp2));
         }
 
@@ -1487,16 +1504,16 @@ int SAD_CALLING_CONVENTION SAD_48x64_general_avx2(SAD_PARAMETERS_LIST) //OK
             blk2 += 2*block_stride;
 
             {
-                __m256i tmp1 = _mm256_lddqu_si256( (const __m256i *) (blk1 + 16));
-                __m256i tmp2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + 16 + lx1));
-                tmp1 = _mm256_sad_epu8( tmp1, *( (const __m256i *) (blk2 + 16)));
-                tmp2 = _mm256_sad_epu8( tmp2, *( (const __m256i *) (blk2 + 16 + block_stride)));
+                __m256i tmp1 = load256_unaligned( (const __m256i *) (blk1 + 16));
+                __m256i tmp2 = load256_unaligned( (const __m256i *) (blk1 + 16 + lx1));
+                tmp1 = _mm256_sad_epu8( tmp1, load256_block_data2(blk2 + 16));
+                tmp2 = _mm256_sad_epu8( tmp2, load256_block_data2(blk2 + 16 + block_stride));
                 s1 = _mm256_add_epi32( s1, tmp1);
                 s2 = _mm256_add_epi32( s2, tmp2);
             }
             {
-                __m256i tmp1 = _mm256_set_m128i( _mm_lddqu_si128( (const __m128i *) (blk1)), _mm_lddqu_si128( (const __m128i *) (blk1 + lx1)));
-                __m256i tmp2 = _mm256_set_m128i( *( (const __m128i *) (blk2)), *( (const __m128i *) (blk2 + block_stride)));
+                __m256i tmp1 = _mm256_set_m128i( load128_unaligned( blk1), load128_unaligned( blk1 + lx1));
+                __m256i tmp2 = _mm256_set_m128i( load128_block_data( blk2), load128_block_data( blk2 + block_stride));
                 s1 = _mm256_add_epi32( s1, _mm256_sad_epu8( tmp1, tmp2));
             }
         }
@@ -1512,15 +1529,15 @@ int SAD_CALLING_CONVENTION SAD_48x64_general_avx2(SAD_PARAMETERS_LIST) //OK
     }
     else
     {
-        __m256i s1 = _mm256_lddqu_si256( (const __m256i *) (blk1));
-        __m256i s2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + lx1));
+        __m256i s1 = load256_unaligned( (const __m256i *) (blk1));
+        __m256i s2 = load256_unaligned( (const __m256i *) (blk1 + lx1));
 
-        s1 = _mm256_sad_epu8( s1, *( (const __m256i *) (blk2)));
-        s2 = _mm256_sad_epu8( s2, *( (const __m256i *) (blk2 + block_stride)));
+        s1 = _mm256_sad_epu8( s1, load256_block_data2(blk2));
+        s2 = _mm256_sad_epu8( s2, load256_block_data2(blk2 + block_stride));
 
         {
-            __m256i tmp1 = _mm256_set_m128i( _mm_lddqu_si128( (const __m128i *) (blk1 + 32)), _mm_lddqu_si128( (const __m128i *) (blk1 + 32 + lx1)));
-            __m256i tmp2 = _mm256_set_m128i( *( (const __m128i *) (blk2 + 32)), *( (const __m128i *) (blk2 + 32 + block_stride)));
+            __m256i tmp1 = _mm256_set_m128i( load128_unaligned( blk1 + 32), load128_unaligned( blk1 + 32 + lx1));
+            __m256i tmp2 = _mm256_set_m128i( load128_block_data( blk2 + 32), load128_block_data( blk2 + 32 + block_stride));
             s1 = _mm256_add_epi32( s1, _mm256_sad_epu8( tmp1, tmp2));
         }
 
@@ -1530,16 +1547,16 @@ int SAD_CALLING_CONVENTION SAD_48x64_general_avx2(SAD_PARAMETERS_LIST) //OK
             blk2 += 2*block_stride;
 
             {
-                __m256i tmp1 = _mm256_lddqu_si256( (const __m256i *) (blk1));
-                __m256i tmp2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + lx1));
-                tmp1 = _mm256_sad_epu8( tmp1, *( (const __m256i *) (blk2)));
-                tmp2 = _mm256_sad_epu8( tmp2, *( (const __m256i *) (blk2 + block_stride)));
+                __m256i tmp1 = load256_unaligned( (const __m256i *) (blk1));
+                __m256i tmp2 = load256_unaligned( (const __m256i *) (blk1 + lx1));
+                tmp1 = _mm256_sad_epu8( tmp1, load256_block_data2(blk2));
+                tmp2 = _mm256_sad_epu8( tmp2, load256_block_data2(blk2 + block_stride));
                 s1 = _mm256_add_epi32( s1, tmp1);
                 s2 = _mm256_add_epi32( s2, tmp2);
             }
             {
-                __m256i tmp1 = _mm256_set_m128i( _mm_lddqu_si128( (const __m128i *) (blk1 + 32)), _mm_lddqu_si128( (const __m128i *) (blk1 + 32 + lx1)));
-                __m256i tmp2 = _mm256_set_m128i( *( (const __m128i *) (blk2 + 32)), *( (const __m128i *) (blk2 + 32 + block_stride)));
+                __m256i tmp1 = _mm256_set_m128i( load128_unaligned( blk1 + 32), load128_unaligned( blk1 + 32 + lx1));
+                __m256i tmp2 = _mm256_set_m128i( load128_block_data( blk2 + 32), load128_block_data( blk2 + 32 + block_stride));
                 s1 = _mm256_add_epi32( s1, _mm256_sad_epu8( tmp1, tmp2));
             }
         }
@@ -1561,17 +1578,17 @@ int SAD_CALLING_CONVENTION SAD_64x48_general_avx2(SAD_PARAMETERS_LIST) //OK
 {
     SAD_PARAMETERS_LOAD;
 
-    __m256i s1 = _mm256_lddqu_si256( (const __m256i *) (blk1));
-    __m256i s2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + lx1));
+    __m256i s1 = load256_unaligned( (const __m256i *) (blk1));
+    __m256i s2 = load256_unaligned( (const __m256i *) (blk1 + lx1));
 
-    s1 = _mm256_sad_epu8( s1, *( (const __m256i *) (blk2)));
-    s2 = _mm256_sad_epu8( s2, *( (const __m256i *) (blk2 + block_stride)));
+    s1 = _mm256_sad_epu8( s1, load256_block_data(blk2));
+    s2 = _mm256_sad_epu8( s2, load256_block_data(blk2 + block_stride));
 
     {
-        __m256i tmp1 = _mm256_lddqu_si256( (const __m256i *) (blk1 + 32));
-        __m256i tmp2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + 32 + lx1));
-        tmp1 = _mm256_sad_epu8( tmp1, *( (const __m256i *) (blk2 + 32)));
-        tmp2 = _mm256_sad_epu8( tmp2, *( (const __m256i *) (blk2 + 32 + block_stride)));
+        __m256i tmp1 = load256_unaligned( (const __m256i *) (blk1 + 32));
+        __m256i tmp2 = load256_unaligned( (const __m256i *) (blk1 + 32 + lx1));
+        tmp1 = _mm256_sad_epu8( tmp1, load256_block_data(blk2 + 32));
+        tmp2 = _mm256_sad_epu8( tmp2, load256_block_data(blk2 + 32 + block_stride));
         s1 = _mm256_add_epi32( s1, tmp1);
         s2 = _mm256_add_epi32( s2, tmp2);
     }
@@ -1582,18 +1599,18 @@ int SAD_CALLING_CONVENTION SAD_64x48_general_avx2(SAD_PARAMETERS_LIST) //OK
         blk2 += 2*block_stride;
 
         {
-            __m256i tmp1 = _mm256_lddqu_si256( (const __m256i *) (blk1));
-            __m256i tmp2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + lx1));
-            tmp1 = _mm256_sad_epu8( tmp1, *( (const __m256i *) (blk2)));
-            tmp2 = _mm256_sad_epu8( tmp2, *( (const __m256i *) (blk2 + block_stride)));
+            __m256i tmp1 = load256_unaligned( (const __m256i *) (blk1));
+            __m256i tmp2 = load256_unaligned( (const __m256i *) (blk1 + lx1));
+            tmp1 = _mm256_sad_epu8( tmp1, load256_block_data(blk2));
+            tmp2 = _mm256_sad_epu8( tmp2, load256_block_data(blk2 + block_stride));
             s1 = _mm256_add_epi32( s1, tmp1);
             s2 = _mm256_add_epi32( s2, tmp2);
         }
         {
-            __m256i tmp1 = _mm256_lddqu_si256( (const __m256i *) (blk1 + 32));
-            __m256i tmp2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + 32 + lx1));
-            tmp1 = _mm256_sad_epu8( tmp1, *( (const __m256i *) (blk2 + 32)));
-            tmp2 = _mm256_sad_epu8( tmp2, *( (const __m256i *) (blk2 + 32 + block_stride)));
+            __m256i tmp1 = load256_unaligned( (const __m256i *) (blk1 + 32));
+            __m256i tmp2 = load256_unaligned( (const __m256i *) (blk1 + 32 + lx1));
+            tmp1 = _mm256_sad_epu8( tmp1, load256_block_data(blk2 + 32));
+            tmp2 = _mm256_sad_epu8( tmp2, load256_block_data(blk2 + 32 + block_stride));
             s1 = _mm256_add_epi32( s1, tmp1);
             s2 = _mm256_add_epi32( s2, tmp2);
         }
@@ -1616,17 +1633,17 @@ int SAD_CALLING_CONVENTION SAD_64x32_general_avx2(SAD_PARAMETERS_LIST) //OK
 {
     SAD_PARAMETERS_LOAD;
 
-    __m256i s1 = _mm256_lddqu_si256( (const __m256i *) (blk1));
-    __m256i s2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + lx1));
+    __m256i s1 = load256_unaligned( (const __m256i *) (blk1));
+    __m256i s2 = load256_unaligned( (const __m256i *) (blk1 + lx1));
 
-    s1 = _mm256_sad_epu8( s1, *( (const __m256i *) (blk2)));
-    s2 = _mm256_sad_epu8( s2, *( (const __m256i *) (blk2 + block_stride)));
+    s1 = _mm256_sad_epu8( s1, load256_block_data(blk2));
+    s2 = _mm256_sad_epu8( s2, load256_block_data(blk2 + block_stride));
 
     {
-        __m256i tmp1 = _mm256_lddqu_si256( (const __m256i *) (blk1 + 32));
-        __m256i tmp2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + 32 + lx1));
-        tmp1 = _mm256_sad_epu8( tmp1, *( (const __m256i *) (blk2 + 32)));
-        tmp2 = _mm256_sad_epu8( tmp2, *( (const __m256i *) (blk2 + 32 + block_stride)));
+        __m256i tmp1 = load256_unaligned( (const __m256i *) (blk1 + 32));
+        __m256i tmp2 = load256_unaligned( (const __m256i *) (blk1 + 32 + lx1));
+        tmp1 = _mm256_sad_epu8( tmp1, load256_block_data(blk2 + 32));
+        tmp2 = _mm256_sad_epu8( tmp2, load256_block_data(blk2 + 32 + block_stride));
         s1 = _mm256_add_epi32( s1, tmp1);
         s2 = _mm256_add_epi32( s2, tmp2);
     }
@@ -1637,18 +1654,18 @@ int SAD_CALLING_CONVENTION SAD_64x32_general_avx2(SAD_PARAMETERS_LIST) //OK
         blk2 += 2*block_stride;
 
         {
-            __m256i tmp1 = _mm256_lddqu_si256( (const __m256i *) (blk1));
-            __m256i tmp2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + lx1));
-            tmp1 = _mm256_sad_epu8( tmp1, *( (const __m256i *) (blk2)));
-            tmp2 = _mm256_sad_epu8( tmp2, *( (const __m256i *) (blk2 + block_stride)));
+            __m256i tmp1 = load256_unaligned( (const __m256i *) (blk1));
+            __m256i tmp2 = load256_unaligned( (const __m256i *) (blk1 + lx1));
+            tmp1 = _mm256_sad_epu8( tmp1, load256_block_data(blk2));
+            tmp2 = _mm256_sad_epu8( tmp2, load256_block_data(blk2 + block_stride));
             s1 = _mm256_add_epi32( s1, tmp1);
             s2 = _mm256_add_epi32( s2, tmp2);
         }
         {
-            __m256i tmp1 = _mm256_lddqu_si256( (const __m256i *) (blk1 + 32));
-            __m256i tmp2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + 32 + lx1));
-            tmp1 = _mm256_sad_epu8( tmp1, *( (const __m256i *) (blk2 + 32)));
-            tmp2 = _mm256_sad_epu8( tmp2, *( (const __m256i *) (blk2 + 32 + block_stride)));
+            __m256i tmp1 = load256_unaligned( (const __m256i *) (blk1 + 32));
+            __m256i tmp2 = load256_unaligned( (const __m256i *) (blk1 + 32 + lx1));
+            tmp1 = _mm256_sad_epu8( tmp1, load256_block_data(blk2 + 32));
+            tmp2 = _mm256_sad_epu8( tmp2, load256_block_data(blk2 + 32 + block_stride));
             s1 = _mm256_add_epi32( s1, tmp1);
             s2 = _mm256_add_epi32( s2, tmp2);
         }
@@ -1671,17 +1688,17 @@ int SAD_CALLING_CONVENTION SAD_64x16_general_avx2(SAD_PARAMETERS_LIST) //OK
 {
     SAD_PARAMETERS_LOAD;
 
-    __m256i s1 = _mm256_lddqu_si256( (const __m256i *) (blk1));
-    __m256i s2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + lx1));
+    __m256i s1 = load256_unaligned( (const __m256i *) (blk1));
+    __m256i s2 = load256_unaligned( (const __m256i *) (blk1 + lx1));
 
-    s1 = _mm256_sad_epu8( s1, *( (const __m256i *) (blk2)));
-    s2 = _mm256_sad_epu8( s2, *( (const __m256i *) (blk2 + block_stride)));
+    s1 = _mm256_sad_epu8( s1, load256_block_data(blk2));
+    s2 = _mm256_sad_epu8( s2, load256_block_data(blk2 + block_stride));
 
     {
-        __m256i tmp1 = _mm256_lddqu_si256( (const __m256i *) (blk1 + 32));
-        __m256i tmp2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + 32 + lx1));
-        tmp1 = _mm256_sad_epu8( tmp1, *( (const __m256i *) (blk2 + 32)));
-        tmp2 = _mm256_sad_epu8( tmp2, *( (const __m256i *) (blk2 + 32 + block_stride)));
+        __m256i tmp1 = load256_unaligned( (const __m256i *) (blk1 + 32));
+        __m256i tmp2 = load256_unaligned( (const __m256i *) (blk1 + 32 + lx1));
+        tmp1 = _mm256_sad_epu8( tmp1, load256_block_data(blk2 + 32));
+        tmp2 = _mm256_sad_epu8( tmp2, load256_block_data(blk2 + 32 + block_stride));
         s1 = _mm256_add_epi32( s1, tmp1);
         s2 = _mm256_add_epi32( s2, tmp2);
     }
@@ -1692,18 +1709,18 @@ int SAD_CALLING_CONVENTION SAD_64x16_general_avx2(SAD_PARAMETERS_LIST) //OK
         blk2 += 2*block_stride;
 
         {
-            __m256i tmp1 = _mm256_lddqu_si256( (const __m256i *) (blk1));
-            __m256i tmp2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + lx1));
-            tmp1 = _mm256_sad_epu8( tmp1, *( (const __m256i *) (blk2)));
-            tmp2 = _mm256_sad_epu8( tmp2, *( (const __m256i *) (blk2 + block_stride)));
+            __m256i tmp1 = load256_unaligned( (const __m256i *) (blk1));
+            __m256i tmp2 = load256_unaligned( (const __m256i *) (blk1 + lx1));
+            tmp1 = _mm256_sad_epu8( tmp1, load256_block_data(blk2));
+            tmp2 = _mm256_sad_epu8( tmp2, load256_block_data(blk2 + block_stride));
             s1 = _mm256_add_epi32( s1, tmp1);
             s2 = _mm256_add_epi32( s2, tmp2);
         }
         {
-            __m256i tmp1 = _mm256_lddqu_si256( (const __m256i *) (blk1 + 32));
-            __m256i tmp2 = _mm256_lddqu_si256( (const __m256i *) (blk1 + 32 + lx1));
-            tmp1 = _mm256_sad_epu8( tmp1, *( (const __m256i *) (blk2 + 32)));
-            tmp2 = _mm256_sad_epu8( tmp2, *( (const __m256i *) (blk2 + 32 + block_stride)));
+            __m256i tmp1 = load256_unaligned( (const __m256i *) (blk1 + 32));
+            __m256i tmp2 = load256_unaligned( (const __m256i *) (blk1 + 32 + lx1));
+            tmp1 = _mm256_sad_epu8( tmp1, load256_block_data(blk2 + 32));
+            tmp2 = _mm256_sad_epu8( tmp2, load256_block_data(blk2 + 32 + block_stride));
             s1 = _mm256_add_epi32( s1, tmp1);
             s2 = _mm256_add_epi32( s2, tmp2);
         }
