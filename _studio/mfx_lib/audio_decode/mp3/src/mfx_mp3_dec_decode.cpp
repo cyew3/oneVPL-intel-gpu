@@ -27,7 +27,7 @@ public:
 
 struct ThreadAudioTaskInfo
 {
-    mfxBitstream           *out;
+    mfxAudioFrame         *out;
     mfxU32                 taskID; // for task ordering
 };
 
@@ -280,15 +280,15 @@ mfxStatus AudioDECODEMP3::QueryIOSize(AudioCORE *core, mfxAudioParam *par, mfxAu
 
 
 mfxStatus AudioDECODEMP3::DecodeFrameCheck(mfxBitstream *bs,
-                                           mfxBitstream *buffer_out,
+                                           mfxAudioFrame *aFrame,
                                            MFX_ENTRY_POINT *pEntryPoint)
 {
-    mfxStatus mfxSts = DecodeFrameCheck(bs, buffer_out);
+    mfxStatus mfxSts = DecodeFrameCheck(bs, aFrame);
 
     if (MFX_ERR_NONE == mfxSts) // It can be useful to run threads right after first frame receive
     {
         ThreadAudioTaskInfo * info = new ThreadAudioTaskInfo();
-        info->out = buffer_out;
+        info->out = aFrame;
 
         pEntryPoint->pRoutine = &MP3ECODERoutine;
         pEntryPoint->pCompleteProc = &MP3CompleteProc;
@@ -318,7 +318,7 @@ mfxStatus AudioDECODEMP3::MP3ECODERoutine(void *pState, void *pParam,
         obj.mInData.SetBufferPointer((Ipp8u *)obj.m_frame.Data + obj.m_frame.DataOffset,obj.m_frame.DataLength);
         obj.mInData.SetDataSize(obj.m_frame.DataLength);
 
-        obj.mOutData.SetBufferPointer( static_cast<Ipp8u *>(pTask->out->Data +pTask->out->DataOffset), pTask->out->MaxLength - (pTask->out->DataOffset + pTask->out->DataLength));
+        obj.mOutData.SetBufferPointer( static_cast<Ipp8u *>(pTask->out->Data), pTask->out->MaxLength - pTask->out->DataLength);
         obj.mOutData.MoveDataPointer(0);
         obj.mOutData.SetDataSize(0);
 
@@ -357,9 +357,9 @@ mfxStatus AudioDECODEMP3::MP3CompleteProc(void *pState, void *pParam,
     }
 }
 
-mfxStatus AudioDECODEMP3::DecodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffer_out)
+mfxStatus AudioDECODEMP3::DecodeFrameCheck(mfxBitstream *bs, mfxAudioFrame *aFrame)
 {
-    buffer_out;
+    aFrame;
     UMC::AutomaticUMCMutex guard(m_mGuard);
     mfxStatus sts;
 
@@ -380,16 +380,16 @@ mfxStatus AudioDECODEMP3::DecodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffe
         MFX_CHECK_STS(sts);
 
         //check that buffer_out.MaxLength < RawFrameSize
-        if (buffer_out->MaxLength < RawFrameSize) {
+        if (aFrame->MaxLength < RawFrameSize) {
             sts = MFX_ERR_NOT_ENOUGH_BUFFER;
         }
     }
     return sts;
 }
 
-mfxStatus AudioDECODEMP3::DecodeFrame(mfxBitstream *bs, mfxBitstream *buffer_out)
+mfxStatus AudioDECODEMP3::DecodeFrame(mfxBitstream *bs, mfxAudioFrame *aFrame)
 {
-    buffer_out;
+    aFrame;
     UMC::AutomaticUMCMutex guard(m_mGuard);
     mfxStatus sts;
 
@@ -410,9 +410,6 @@ mfxStatus AudioDECODEMP3::DecodeFrame(mfxBitstream *bs, mfxBitstream *buffer_out
 
     if (NULL != bs)
     {
-        sts = CheckBitstream(bs);
-        MFX_CHECK_STS(sts);
-        
         unsigned int RawFrameSize;
         sts = ConstructFrame(bs, &m_frame,  &RawFrameSize);
 

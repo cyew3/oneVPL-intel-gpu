@@ -280,7 +280,7 @@ mfxStatus MFXAudioDECODE_Close(mfxSession session)
 
 } // mfxStatus MFXAudioDECODE_Close(mfxSession session)
 
-mfxStatus MFXAudioDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs ,mfxBitstream *buffer_out, mfxSyncPoint *syncp)
+mfxStatus MFXAudioDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs ,mfxAudioFrame *aFrame, mfxSyncPoint *syncp)
 {
     mfxStatus mfxRes;
 
@@ -292,7 +292,7 @@ mfxStatus MFXAudioDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs ,
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     MFX_CHECK(session->m_pAudioDECODE.get(), MFX_ERR_NOT_INITIALIZED);
     MFX_CHECK(bs, MFX_ERR_MORE_DATA);
-    MFX_CHECK(buffer_out, MFX_ERR_NULL_PTR);
+    MFX_CHECK(aFrame, MFX_ERR_NULL_PTR);
     MFX_CHECK(syncp, MFX_ERR_NULL_PTR);
    
     try
@@ -314,7 +314,7 @@ mfxStatus MFXAudioDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs ,
         }
 
         memset(&task, 0, sizeof(MFX_TASK));
-        mfxRes = session->m_pAudioDECODE->DecodeFrameCheck(bs, buffer_out, &task.entryPoint);
+        mfxRes = session->m_pAudioDECODE->DecodeFrameCheck(bs, aFrame, &task.entryPoint);
         // source data is OK, go forward
         if (task.entryPoint.pRoutine)
         {
@@ -324,7 +324,7 @@ mfxStatus MFXAudioDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs ,
             task.priority = session->m_priority;
             task.threadingPolicy = session->m_pAudioDECODE->GetThreadingPolicy();
             // fill dependencies
-            task.pDst[0] = buffer_out;
+            task.pDst[0] = aFrame;
 
 #ifdef MFX_TRACE_ENABLE
             task.nParentId = MFX_AUTO_TRACE_GETID();

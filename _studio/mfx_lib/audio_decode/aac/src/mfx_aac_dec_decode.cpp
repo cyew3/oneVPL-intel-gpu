@@ -31,7 +31,7 @@ public:
 
 struct ThreadAudioTaskInfo
 {
-    mfxBitstream           *out;
+    mfxAudioFrame         *out;
     mfxU32                 taskID; // for task ordering
 };
 
@@ -443,15 +443,15 @@ mfxStatus AudioDECODEAAC::QueryIOSize(AudioCORE *core, mfxAudioParam *par, mfxAu
 
 
 mfxStatus AudioDECODEAAC::DecodeFrameCheck(mfxBitstream *bs,
-                                           mfxBitstream *buffer_out,
+                                           mfxAudioFrame *aFrame,
                                            MFX_ENTRY_POINT *pEntryPoint)
 {
-    mfxStatus mfxSts = DecodeFrameCheck(bs, buffer_out);
+    mfxStatus mfxSts = DecodeFrameCheck(bs, aFrame);
 
     if (MFX_ERR_NONE == mfxSts) // It can be useful to run threads right after first frame receive
     {
         ThreadAudioTaskInfo * info = new ThreadAudioTaskInfo();
-        info->out = buffer_out;
+        info->out = aFrame;
 
         pEntryPoint->pRoutine = &AACDECODERoutine;
         pEntryPoint->pCompleteProc = &AACCompleteProc;
@@ -481,7 +481,7 @@ mfxStatus AudioDECODEAAC::AACDECODERoutine(void *pState, void *pParam,
         obj.mInData.SetBufferPointer((Ipp8u *)obj.m_frame.Data + obj.m_frame.DataOffset, obj.m_frame.DataLength);
         obj.mInData.SetDataSize(obj.m_frame.DataLength);
 
-        obj.mOutData.SetBufferPointer( static_cast<Ipp8u *>(pTask->out->Data +pTask->out->DataOffset), pTask->out->MaxLength - (pTask->out->DataOffset + pTask->out->DataLength));
+        obj.mOutData.SetBufferPointer( static_cast<Ipp8u *>(pTask->out->Data), pTask->out->MaxLength - pTask->out->DataLength);
         obj.mOutData.MoveDataPointer(0);
         obj.mOutData.SetDataSize(0);
 
@@ -520,10 +520,10 @@ mfxStatus AudioDECODEAAC::AACCompleteProc(void *pState, void *pParam,
     }
 }
 
-mfxStatus AudioDECODEAAC::DecodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffer_out)
+mfxStatus AudioDECODEAAC::DecodeFrameCheck(mfxBitstream *bs, mfxAudioFrame *aFrame)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
-    buffer_out;
+    aFrame;
     mfxStatus sts;
 
     if (!m_isInit)
@@ -555,10 +555,10 @@ mfxStatus AudioDECODEAAC::DecodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffe
 }
 
 
-mfxStatus AudioDECODEAAC::DecodeFrame(mfxBitstream *bs, mfxBitstream *buffer_out)
+mfxStatus AudioDECODEAAC::DecodeFrame(mfxBitstream *bs, mfxAudioFrame *aFrame)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
-    buffer_out;
+    aFrame;
     mfxStatus sts;
 
     if (!m_isInit)
@@ -577,9 +577,6 @@ mfxStatus AudioDECODEAAC::DecodeFrame(mfxBitstream *bs, mfxBitstream *buffer_out
 
     if (NULL != bs)
     {
-        sts = CheckBitstream(bs);
-        MFX_CHECK_STS(sts);
-
         sts = ConstructFrame(bs, &m_frame);
 
         if (MFX_ERR_NONE != sts)

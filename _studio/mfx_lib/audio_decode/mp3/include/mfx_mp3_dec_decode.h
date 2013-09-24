@@ -59,10 +59,10 @@ public:
     virtual mfxStatus Close(void);
 
     virtual mfxStatus GetAudioParam(mfxAudioParam *par);
-    virtual mfxStatus DecodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffer_out);
-    virtual mfxStatus DecodeFrameCheck(mfxBitstream *bs, mfxBitstream *buffer_out,
+    virtual mfxStatus DecodeFrameCheck(mfxBitstream *bs, mfxAudioFrame *buffer_out);
+    virtual mfxStatus DecodeFrameCheck(mfxBitstream *bs, mfxAudioFrame *buffer_out,
         MFX_ENTRY_POINT *pEntryPoint);
-    virtual mfxStatus DecodeFrame(mfxBitstream *bs, mfxBitstream *buffer_out);
+    virtual mfxStatus DecodeFrame(mfxBitstream *bs, mfxAudioFrame *buffer_out);
 
 protected:
     virtual mfxStatus ConstructFrame(mfxBitstream *in, mfxBitstream *out, unsigned int *p_RawFrameSize);
