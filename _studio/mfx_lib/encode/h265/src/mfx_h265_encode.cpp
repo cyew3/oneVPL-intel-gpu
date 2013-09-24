@@ -620,7 +620,7 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
 
         //set unspecified parameters
     if (!parNew.AsyncDepth)             parNew.AsyncDepth           = parOld.AsyncDepth;
-    if (!parNew.IOPattern)              parNew.IOPattern            = parOld.IOPattern;
+    //if (!parNew.IOPattern)              parNew.IOPattern            = parOld.IOPattern;
     if (!parNew.mfx.FrameInfo.FourCC)   parNew.mfx.FrameInfo.FourCC = parOld.mfx.FrameInfo.FourCC;
     if (!parNew.mfx.FrameInfo.FrameRateExtN) parNew.mfx.FrameInfo.FrameRateExtN = parOld.mfx.FrameInfo.FrameRateExtN;
     if (!parNew.mfx.FrameInfo.FrameRateExtD) parNew.mfx.FrameInfo.FrameRateExtD = parOld.mfx.FrameInfo.FrameRateExtD;
@@ -699,14 +699,15 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
         if (!optsNew.WPP                          ) optsNew.WPP                           = optsOld.WPP                          ;
     }
 
-    // check that new params don't require allocation of additional memory
-    if (parNew.mfx.FrameInfo.Width > m_mfxVideoParam.mfx.FrameInfo.Width ||
-        parNew.mfx.FrameInfo.Height > m_mfxVideoParam.mfx.FrameInfo.Height ||
-        parNew.mfx.GopRefDist <  m_mfxVideoParam.mfx.GopRefDist ||
-        parNew.mfx.NumSlice != m_mfxVideoParam.mfx.NumSlice ||
-        parNew.mfx.NumRefFrame < m_mfxVideoParam.mfx.NumRefFrame ||
-        (parNew.mfx.CodecProfile & 0xFF) != (m_mfxVideoParam.mfx.CodecProfile & 0xFF)  )
-        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+    if ((parNew.IOPattern & 0xffc8) || (parNew.IOPattern == 0)) // 0 is possible after Query
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    if (!m_core->IsExternalFrameAllocator() && (parNew.IOPattern & (MFX_IOPATTERN_OUT_VIDEO_MEMORY | MFX_IOPATTERN_IN_VIDEO_MEMORY)))
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+
+    sts = CheckVideoParamEncoders(&parNew, m_core->IsExternalFrameAllocator(), MFX_HW_UNKNOWN);
+    MFX_CHECK_STS(sts);
 
     mfxVideoParam checked_videoParam = parNew;
     mfxExtCodingOptionHEVC checked_codingOptionHEVC = m_mfxHEVCOpts;
@@ -743,6 +744,17 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
         else
             return stsQuery;
     }
+
+    // check that new params don't require allocation of additional memory
+    if (checked_videoParam.mfx.FrameInfo.Width > m_mfxVideoParam.mfx.FrameInfo.Width ||
+        checked_videoParam.mfx.FrameInfo.Height > m_mfxVideoParam.mfx.FrameInfo.Height ||
+        checked_videoParam.mfx.GopRefDist <  m_mfxVideoParam.mfx.GopRefDist ||
+        checked_videoParam.mfx.NumSlice != m_mfxVideoParam.mfx.NumSlice ||
+        checked_videoParam.mfx.NumRefFrame < m_mfxVideoParam.mfx.NumRefFrame ||
+        checked_videoParam.AsyncDepth != m_mfxVideoParam.AsyncDepth ||
+        checked_videoParam.IOPattern != m_mfxVideoParam.IOPattern ||
+        (checked_videoParam.mfx.CodecProfile & 0xFF) != (m_mfxVideoParam.mfx.CodecProfile & 0xFF)  )
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
     // Now use simple reset
     Close();
