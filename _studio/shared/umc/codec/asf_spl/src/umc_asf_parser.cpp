@@ -122,55 +122,65 @@ Status ASFSplitter::ReadDataPacket()
         pECData->errCorrFlags = value8u;
         if (value8u & 0xF) { /*** should be set to 0x2 ***/
             umcRes = m_pDataReader->Get8u(&pECData->firstBType);
-            UMC_CHECK_STATUS(umcRes)
+            if (umcRes != UMC_OK) {
+                delete pECData;
+                UMC_RET_STATUS(umcRes)
+            }
             umcRes = m_pDataReader->Get8u(&pECData->secBCycle);
-            UMC_CHECK_STATUS(umcRes)
+            if (umcRes != UMC_OK) {
+                delete pECData;
+                UMC_RET_STATUS(umcRes)
+            }
             infoSize += 2;
         }
+
+        delete pECData;
 
         if (((value8u >> 4) & 0x1) != 0) {
             return UMC_ERR_FAILED;  /*** opaque data should be here ***/
         }
 
         umcRes = m_pDataReader->Get8u(&value8u);
+
         UMC_CHECK_STATUS(umcRes)
+
         infoSize++;
     }
 
-    asf_PayloadParseInfo *pPldParseInfo = new asf_PayloadParseInfo;
+    asf_PayloadParseInfo payloadParseInfo;
 
-    pPldParseInfo->mulPld = value8u & 0x1;
-    pPldParseInfo->seqType = (value8u >> 1) & 0x3;
-    pPldParseInfo->paddLenType = (value8u >> 3) & 0x3;
-    pPldParseInfo->packLenType = (value8u >> 5) & 0x3;
-    pPldParseInfo->errCorr = (value8u >> 7);
+    payloadParseInfo.mulPld = value8u & 0x1;
+    payloadParseInfo.seqType = (value8u >> 1) & 0x3;
+    payloadParseInfo.paddLenType = (value8u >> 3) & 0x3;
+    payloadParseInfo.packLenType = (value8u >> 5) & 0x3;
+    payloadParseInfo.errCorr = (value8u >> 7);
 
     umcRes = m_pDataReader->Get8u(&value8u);
     UMC_CHECK_STATUS(umcRes)
     infoSize++;
 
-    pPldParseInfo->replDataLenType = value8u & 0x3;
-    pPldParseInfo->offIntoMediaObjLenType = (value8u >> 2) & 0x3;
-    pPldParseInfo->mediaObjNumLenType = (value8u >> 4) & 0x3;
-    pPldParseInfo->streamNumLenType = (value8u >> 6) & 0x3; /*** should be 0x01 always ***/
+    payloadParseInfo.replDataLenType = value8u & 0x3;
+    payloadParseInfo.offIntoMediaObjLenType = (value8u >> 2) & 0x3;
+    payloadParseInfo.mediaObjNumLenType = (value8u >> 4) & 0x3;
+    payloadParseInfo.streamNumLenType = (value8u >> 6) & 0x3; /*** should be 0x01 always ***/
 
-    umcRes = ReadDataFromType(pPldParseInfo->packLenType, pPldParseInfo->packLen, infoSize);
+    umcRes = ReadDataFromType(payloadParseInfo.packLenType, payloadParseInfo.packLen, infoSize);
     UMC_CHECK_STATUS(umcRes)
-    if (pPldParseInfo->packLen == 0)
-        pPldParseInfo->packLen = m_pHeaderObject->pFPropObject->minDataPackSize;
-    umcRes = ReadDataFromType(pPldParseInfo->seqType, pPldParseInfo->sequence, infoSize);
+    if (payloadParseInfo.packLen == 0)
+        payloadParseInfo.packLen = m_pHeaderObject->pFPropObject->minDataPackSize;
+    umcRes = ReadDataFromType(payloadParseInfo.seqType, payloadParseInfo.sequence, infoSize);
     UMC_CHECK_STATUS(umcRes)
-    umcRes = ReadDataFromType(pPldParseInfo->paddLenType, pPldParseInfo->paddLen, infoSize);
+    umcRes = ReadDataFromType(payloadParseInfo.paddLenType, payloadParseInfo.paddLen, infoSize);
     UMC_CHECK_STATUS(umcRes)
 
-    umcRes = m_pDataReader->Get32uNoSwap(&pPldParseInfo->sendTime);
+    umcRes = m_pDataReader->Get32uNoSwap(&payloadParseInfo.sendTime);
     UMC_CHECK_STATUS(umcRes)
     infoSize += 4;
-    umcRes = m_pDataReader->Get16uNoSwap(&pPldParseInfo->duration); /*** in milliseconds ***/
+    umcRes = m_pDataReader->Get16uNoSwap(&payloadParseInfo.duration); /*** in milliseconds ***/
     UMC_CHECK_STATUS(umcRes)
     infoSize += 2;
 
-    if (pPldParseInfo->mulPld) {  /*** multiple payloads ***/
+    if (payloadParseInfo.mulPld) {  /*** multiple payloads ***/
         umcRes = m_pDataReader->Get8u(&value8u);
         UMC_CHECK_STATUS(umcRes)
         infoSize++;
@@ -187,43 +197,43 @@ Status ASFSplitter::ReadDataPacket()
             Ipp32u frameSize = 0;
             Ipp32u framePTS = 0;
             Ipp32u stc_len = 0;
-            asf_Payload *pMultiplePld = new asf_Payload;
+            asf_Payload multiplePld;
 
             umcRes = m_pDataReader->Get8u(&value8u);
             UMC_CHECK_STATUS(umcRes)
             infoSize++;
 
-            pMultiplePld->streamNumber = value8u &0x7F;
-            pMultiplePld->keyFrame = value8u >> 7;
+            multiplePld.streamNumber = value8u &0x7F;
+            multiplePld.keyFrame = value8u >> 7;
 
-            umcRes = ReadDataFromType(pPldParseInfo->mediaObjNumLenType, pMultiplePld->mediaObjNum, infoSize);
+            umcRes = ReadDataFromType(payloadParseInfo.mediaObjNumLenType, multiplePld.mediaObjNum, infoSize);
             UMC_CHECK_STATUS(umcRes)
-            umcRes = ReadDataFromType(pPldParseInfo->offIntoMediaObjLenType, pMultiplePld->offIntoMediaObj, infoSize);
+            umcRes = ReadDataFromType(payloadParseInfo.offIntoMediaObjLenType, multiplePld.offIntoMediaObj, infoSize);
             UMC_CHECK_STATUS(umcRes)
-            umcRes = ReadDataFromType(pPldParseInfo->replDataLenType, pMultiplePld->replDataLen, infoSize);
+            umcRes = ReadDataFromType(payloadParseInfo.replDataLenType, multiplePld.replDataLen, infoSize);
             UMC_CHECK_STATUS(umcRes)
 
-            if (pMultiplePld->replDataLen == 1) {   /*** compressed payload ***/
+            if (multiplePld.replDataLen == 1) {   /*** compressed payload ***/
                 Ipp32u iES = 0;
                 Ipp8u PTSdelta = 0;
                 /*** PTS of the 1-st sub-payload ***/
-                framePTS = pMultiplePld->offIntoMediaObj;
+                framePTS = multiplePld.offIntoMediaObj;
                 UMC_CHECK_STATUS(umcRes)
                 umcRes = m_pDataReader->Get8u(&PTSdelta);
                 UMC_CHECK_STATUS(umcRes)
                 infoSize++;
-                umcRes = ReadDataFromType(pldLenType, pMultiplePld->pldLen, infoSize);
+                umcRes = ReadDataFromType(pldLenType, multiplePld.pldLen, infoSize);
                 UMC_CHECK_STATUS(umcRes)
-                umcRes = GetESFromPID(iES, pMultiplePld->streamNumber);
+                umcRes = GetESFromPID(iES, multiplePld.streamNumber);
         //            UMC_CHECK_STATUS(umcRes)
                 if ((umcRes != UMC_OK) || (!m_pInfo->m_ppTrackInfo[iES]->m_isSelected))
                 {   // wrong payload
-                    m_pDataReader->MovePosition(pMultiplePld->pldLen);
-                    infoSize += pMultiplePld->pldLen;
+                    m_pDataReader->MovePosition(multiplePld.pldLen);
+                    infoSize += multiplePld.pldLen;
                 } else
                 {
                     Ipp32u subPldDataLen = 0;
-                    while(subPldDataLen < pMultiplePld->pldLen)
+                    while(subPldDataLen < multiplePld.pldLen)
                     {
                         umcRes = m_pDataReader->Get8u(&value8u);
                         UMC_CHECK_STATUS(umcRes)
@@ -236,6 +246,7 @@ Status ASFSplitter::ReadDataPacket()
                         while (umcRes == UMC_ERR_NOT_ENOUGH_BUFFER)
                         {
                             if (m_bFlagStop) {
+                                delete pIn;
                                 return UMC_OK;
                             }
                             vm_time_sleep(TIME_TO_SLEEP);
@@ -243,18 +254,22 @@ Status ASFSplitter::ReadDataPacket()
                         }
 
                         umcRes = m_pDataReader->ReadData((Ipp8u *)pIn->GetDataPointer() + stc_len, &frameSize);
-                        UMC_CHECK_STATUS(umcRes)
+                        if (umcRes != UMC_OK) {
+                            delete pIn;            
+                            UMC_RET_STATUS(umcRes)
+                        }
                         subPldDataLen += frameSize;
                         umcRes = pIn->SetDataSize(frameSize + stc_len);
                         umcRes = pIn->SetTime((Ipp64f)framePTS * 0.001);
                         umcRes = m_ppFBuffer[iES]->UnLockInputBuffer(pIn, UMC_OK);
+                        delete pIn;
                         UMC_CHECK_STATUS(umcRes)
 
                         framePTS += PTSdelta;
                     }
                     infoSize += subPldDataLen;
                 }
-            } else if (pMultiplePld->replDataLen >= 8) {
+            } else if (multiplePld.replDataLen >= 8) {
 
                 umcRes = m_pDataReader->Get32uNoSwap(&frameSize);    /*** size of pld's MediaObject  ***/
                 UMC_CHECK_STATUS(umcRes)
@@ -262,59 +277,65 @@ Status ASFSplitter::ReadDataPacket()
                 UMC_CHECK_STATUS(umcRes)
                 infoSize += 8;
                 /*~~~ can be more data here ~~~*/
-                if (pMultiplePld->replDataLen > 8) {
-                    umcRes = m_pDataReader->MovePosition(pMultiplePld->replDataLen - 8);    /*** optional extension data  ***/
+                if (multiplePld.replDataLen > 8) {
+                    umcRes = m_pDataReader->MovePosition(multiplePld.replDataLen - 8);    /*** optional extension data  ***/
                     UMC_CHECK_STATUS(umcRes)
-                    infoSize += pMultiplePld->replDataLen - 8;
+                    infoSize += multiplePld.replDataLen - 8;
                 }
-                umcRes = ReadDataFromType(pldLenType, pMultiplePld->pldLen, infoSize);
+                umcRes = ReadDataFromType(pldLenType, multiplePld.pldLen, infoSize);
                 UMC_CHECK_STATUS(umcRes)
 
                 MediaData *pIn = new MediaData;
                 Ipp32u iES = 0;
-                umcRes = GetESFromPID(iES, pMultiplePld->streamNumber);
+                umcRes = GetESFromPID(iES, multiplePld.streamNumber);
     //            UMC_CHECK_STATUS(umcRes)
                 if ((umcRes != UMC_OK) || (!m_pInfo->m_ppTrackInfo[iES]->m_isSelected))
                 {   // wrong payload
-                    m_pDataReader->MovePosition(pMultiplePld->pldLen);
-                    infoSize += pMultiplePld->pldLen;
+                    m_pDataReader->MovePosition(multiplePld.pldLen);
+                    infoSize += multiplePld.pldLen;
                 } else
                 {
                     umcRes = m_ppFBuffer[iES]->LockInputBuffer(pIn);
                     while (umcRes == UMC_ERR_NOT_ENOUGH_BUFFER)
                     {
                         if (m_bFlagStop) {
+                            delete pIn;
                             return UMC_OK;
                         }
                         vm_time_sleep(TIME_TO_SLEEP);
                         umcRes = m_ppFBuffer[iES]->LockInputBuffer(pIn);
                     }
 
-                    umcRes = m_pDataReader->ReadData((Ipp8u *)pIn->GetDataPointer() + stc_len, &pMultiplePld->pldLen);
-                    UMC_CHECK_STATUS(umcRes)
-                    infoSize += pMultiplePld->pldLen;
-                    umcRes = pIn->SetDataSize(pMultiplePld->pldLen + stc_len);
+                    umcRes = m_pDataReader->ReadData((Ipp8u *)pIn->GetDataPointer() + stc_len, &multiplePld.pldLen);
+                    if (umcRes != UMC_OK) {
+                        delete pIn;            
+                        UMC_RET_STATUS(umcRes)
+                    }
+
+                    infoSize += multiplePld.pldLen;
+                    umcRes = pIn->SetDataSize(multiplePld.pldLen + stc_len);
                     umcRes = pIn->SetTime((Ipp64f)framePTS * 0.001);
-                    if (pMultiplePld->offIntoMediaObj + pMultiplePld->pldLen < frameSize)
+                    if (multiplePld.offIntoMediaObj + multiplePld.pldLen < frameSize)
                     {   // frame continuation
                         umcRes = m_ppFBuffer[iES]->UnLockInputBuffer(pIn, UMC_ERR_NOT_ENOUGH_DATA);
                     } else
                     {   // frame is finished
                         umcRes = m_ppFBuffer[iES]->UnLockInputBuffer(pIn, UMC_OK);
                     }
+                    delete pIn;            
                     UMC_CHECK_STATUS(umcRes)
                 }
-            } else if (pMultiplePld->replDataLen != 0) {
+            } else if (multiplePld.replDataLen != 0) {
                 return UMC_ERR_FAILED;
             }
 
         }
 
-        if (pPldParseInfo->paddLen) {
+        if (payloadParseInfo.paddLen) {
 // read real padding data (should be set to 0)
-            umcRes = m_pDataReader->MovePosition(pPldParseInfo->paddLen);
+            umcRes = m_pDataReader->MovePosition(payloadParseInfo.paddLen);
             UMC_CHECK_STATUS(umcRes)
-            infoSize += pPldParseInfo->paddLen;
+            infoSize += payloadParseInfo.paddLen;
         }
 
         if (infoSize < m_pHeaderObject->pFPropObject->minDataPackSize) {
@@ -328,79 +349,89 @@ Status ASFSplitter::ReadDataPacket()
         Ipp32u framePTS = 0;
 //        Ipp32u pldDataLen = 0;
         Ipp32u stc_len = 0;
-        asf_Payload *pSinglePld = new asf_Payload;
+        asf_Payload singlePayload;
 
         umcRes = m_pDataReader->Get8u(&value8u);
         UMC_CHECK_STATUS(umcRes)
         infoSize++;
 
-        pSinglePld->streamNumber = value8u &0x7F;
-        pSinglePld->keyFrame = value8u >> 7;
+        singlePayload.streamNumber = value8u &0x7F;
+        singlePayload.keyFrame = value8u >> 7;
 
-        umcRes = ReadDataFromType(pPldParseInfo->mediaObjNumLenType, pSinglePld->mediaObjNum, infoSize);
+        umcRes = ReadDataFromType(payloadParseInfo.mediaObjNumLenType, singlePayload.mediaObjNum, infoSize);
         UMC_CHECK_STATUS(umcRes)
-        umcRes = ReadDataFromType(pPldParseInfo->offIntoMediaObjLenType, pSinglePld->offIntoMediaObj, infoSize);
+        umcRes = ReadDataFromType(payloadParseInfo.offIntoMediaObjLenType, singlePayload.offIntoMediaObj, infoSize);
         UMC_CHECK_STATUS(umcRes)
-        umcRes = ReadDataFromType(pPldParseInfo->replDataLenType, pSinglePld->replDataLen, infoSize);
+        umcRes = ReadDataFromType(payloadParseInfo.replDataLenType, singlePayload.replDataLen, infoSize);
         UMC_CHECK_STATUS(umcRes)
 
-        if (pSinglePld->replDataLen == 1) {   /*** compressed payload ***/
+        if (singlePayload.replDataLen == 1) {   /*** compressed payload ***/
             return UMC_ERR_NOT_IMPLEMENTED;
-        } else if (pSinglePld->replDataLen >= 8) {
+        } else if (singlePayload.replDataLen >= 8) {
             umcRes = m_pDataReader->Get32uNoSwap(&frameSize);    /*** size of pld's MediaObject  ***/
             UMC_CHECK_STATUS(umcRes)
             umcRes = m_pDataReader->Get32uNoSwap(&framePTS);    /*** in millisec ***/
             UMC_CHECK_STATUS(umcRes)
             infoSize += 8;
             /*~~~ can be more data here ~~~*/
-            if (pSinglePld->replDataLen > 8) {
-                umcRes = m_pDataReader->MovePosition(pSinglePld->replDataLen - 8);    /*** optional extension data  ***/
+            if (singlePayload.replDataLen > 8) {
+                umcRes = m_pDataReader->MovePosition(singlePayload.replDataLen - 8);    /*** optional extension data  ***/
                 UMC_CHECK_STATUS(umcRes)
-                infoSize += pSinglePld->replDataLen - 8;
+                infoSize += singlePayload.replDataLen - 8;
             }
-        } else if (pSinglePld->replDataLen != 0) {
+        } else if (singlePayload.replDataLen != 0) {
             return UMC_ERR_FAILED;
         }
 
-        pSinglePld->pldLen = pPldParseInfo->packLen - infoSize - pPldParseInfo->paddLen;
+        singlePayload.pldLen = payloadParseInfo.packLen - infoSize - payloadParseInfo.paddLen;
 
         MediaData *pIn = new MediaData;
         Ipp32u iES = 0;
-        umcRes = GetESFromPID(iES, pSinglePld->streamNumber);
+        umcRes = GetESFromPID(iES, singlePayload.streamNumber);
         if ((umcRes != UMC_OK) || (!m_pInfo->m_ppTrackInfo[iES]->m_isSelected))
         {   // wrong payload
-            umcRes = m_pDataReader->MovePosition(pSinglePld->pldLen);
-            UMC_CHECK_STATUS(umcRes)
+            umcRes = m_pDataReader->MovePosition(singlePayload.pldLen);
+            if (umcRes != UMC_OK) {
+                delete pIn;
+                UMC_RET_STATUS(umcRes)
+            }
         } else
         {
             umcRes = m_ppFBuffer[iES]->LockInputBuffer(pIn);
             while (umcRes == UMC_ERR_NOT_ENOUGH_BUFFER)
             {
                 if (m_bFlagStop) {
+                    delete pIn;
                     return UMC_OK;
                 }
                 vm_time_sleep(TIME_TO_SLEEP);
                 umcRes = m_ppFBuffer[iES]->LockInputBuffer(pIn);
             }
 
-            umcRes = m_pDataReader->ReadData((Ipp8u *)pIn->GetDataPointer() + stc_len, &pSinglePld->pldLen);
-            UMC_CHECK_STATUS(umcRes)
-            umcRes = pIn->SetDataSize(pSinglePld->pldLen + stc_len);
+            umcRes = m_pDataReader->ReadData((Ipp8u *)pIn->GetDataPointer() + stc_len, &singlePayload.pldLen);
+            if (umcRes != UMC_OK) {
+                delete pIn;
+                UMC_RET_STATUS(umcRes)
+            }
+            umcRes = pIn->SetDataSize(singlePayload.pldLen + stc_len);
             umcRes = pIn->SetTime((Ipp64f)framePTS * 0.001);
 
-            if (pSinglePld->offIntoMediaObj + pSinglePld->pldLen < frameSize)
+            if (singlePayload.offIntoMediaObj + singlePayload.pldLen < frameSize)
             {   // frame continuation
                 umcRes = m_ppFBuffer[iES]->UnLockInputBuffer(pIn, UMC_ERR_NOT_ENOUGH_DATA);
             } else
             {   // frame is finished
                 umcRes = m_ppFBuffer[iES]->UnLockInputBuffer(pIn, UMC_OK);
             }
-            UMC_CHECK_STATUS(umcRes)
-
+            if (umcRes != UMC_OK) {
+                delete pIn;
+                UMC_RET_STATUS(umcRes)
+            }
         }
 
-        if (pPldParseInfo->paddLen) {
-            umcRes = m_pDataReader->MovePosition(pPldParseInfo->paddLen);
+        delete pIn;
+        if (payloadParseInfo.paddLen) {
+            umcRes = m_pDataReader->MovePosition(payloadParseInfo.paddLen);
             UMC_CHECK_STATUS(umcRes)
         }
 

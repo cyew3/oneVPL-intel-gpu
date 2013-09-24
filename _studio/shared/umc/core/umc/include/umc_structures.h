@@ -65,6 +65,11 @@
   } \
 }
 
+#define UMC_RET_STATUS(umcRes) { \
+    vm_debug_trace1(VM_DEBUG_ERROR, VM_STRING("Result (UMC::Status) = %d\n"), (int)umcRes); \
+    return umcRes; \
+}
+
 #define UMC_CHECK(EXPRESSION, ERR_CODE) { \
   if (!(EXPRESSION)) { \
     vm_debug_trace2(VM_DEBUG_ERROR, VM_STRING("[%s] FAILED (%s)"), VM_STRING(#ERR_CODE), VM_STRING(#EXPRESSION)); \
