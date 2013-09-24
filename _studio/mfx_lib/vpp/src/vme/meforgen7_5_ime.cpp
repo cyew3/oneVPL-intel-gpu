@@ -3023,7 +3023,7 @@ int MEforGen75::GetCostXY(int x, int y, int isb)
             x = LutXY[x>>shift];
         }
         else {
-            int p = x>>shift ; 
+            //int p = x>>shift ; 
             //printf("MEforGen75_IME::GetCostXY >> Error :: Incorrect(negative) index to LutXY[].\n", p);
             return (-1);
         }
@@ -3042,7 +3042,7 @@ int MEforGen75::GetCostXY(int x, int y, int isb)
             y = LutXY[y>>shift];
         }
         else {
-            int p = y>>shift ; 
+            //int p = y>>shift ; 
             //printf("MEforGen75_IME::GetCostXY >> Error :: Incorrect(negative) index to LutXY[].\n", p);
             return (-1);
         }
