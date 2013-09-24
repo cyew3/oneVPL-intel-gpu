@@ -3755,7 +3755,6 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             else HANDLE_INT_OPTION(m_inParams.m_WallH,VM_STRING("-wall_h"), VM_STRING("height of video wall (several windows without overlapping"))
             else HANDLE_INT_OPTION(m_inParams.m_WallN,VM_STRING("-wall_n"), VM_STRING("number of current window in video wall (several windows without overlapping"))
             else HANDLE_SPECIAL_OPTION(m_inParams.m_directRect, VM_STRING("-window"), VM_STRING("specify direct target windop position "), OPT_SPECIAL, VM_STRING("LEFT TOP WIDTH HEIGHT"))
-            else HANDLE_INT_OPTION(m_inParams.m_WallN,VM_STRING("-wall_n"), VM_STRING("number of current window in video wall (several windows without overlapping"))
             else HANDLE_BOOL_OPTION(m_inParams.m_bNowWidowHeader,  VM_STRING("-no_window_title"), VM_STRING("creates rendering window without title bar"));
             else HANDLE_INT_OPTION(m_inParams.m_nMonitor, VM_STRING("-monitor"), VM_STRING("monitor identificator on which to create rendering window"))
             else HANDLE_INT_OPTION(m_inParams.nRotation, VM_STRING("-rotation"), VM_STRING("rotate picture clockwise. only for jpeg decoder"))
