@@ -61,36 +61,24 @@ H265_DXVA_SegmentDecoder::~H265_DXVA_SegmentDecoder()
 
 UMC::Status H265_DXVA_SegmentDecoder::Init(Ipp32s iNumber)
 {
-    if (!iNumber)
-    {
-        // DEBUG : m_pSliceStore->SetSwapMode(true);
-    }
-
     return H265SegmentDecoderMultiThreaded::Init(iNumber);
 }
-
-/*static void logTime(const char *label)
-{
-    SYSTEMTIME tm;
-    GetSystemTime(&tm);
-
-    printf("*** %s>> %02d:%02d:%02d.%03d\n", label, tm.wHour, tm.wMinute, tm.wSecond, tm.wMilliseconds);
-}*/
 
 void H265_DXVA_SegmentDecoder::PackAllHeaders(H265DecoderFrame * pFrame)
 {
     H265DecoderFrameInfo * sliceInfo = pFrame->m_pSlicesInfo;
     int sliceCount = sliceInfo->GetSliceCount();
 
-    static int frameCounter = 0;
-    frameCounter++;
-    //printf("\n=== DXVA Frame%d/%d ==== %d ==================\n", pFrame->m_index, frameCounter, sliceCount);
-    //logTime("start");
     if(sliceCount)
     {
 #ifdef UMC_VA_DXVA
         if (!m_Packer.get())
-            m_Packer.reset(new PackerDXVA2(m_va));
+        {
+            if ((m_va->m_Profile & UMC::VA_PROFILE) == UMC::VA_PROFILE_INTEL) // intel MVC profile
+                m_Packer.reset(new PackerDXVA2(m_va));
+            else
+                m_Packer.reset(new MSPackerDXVA2(m_va));
+        }
 #endif
 
         H265Slice *pSlice = sliceInfo->GetSlice(0);
@@ -98,13 +86,10 @@ void H265_DXVA_SegmentDecoder::PackAllHeaders(H265DecoderFrame * pFrame)
         H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
 
         m_Packer->BeginFrame();
-        //logTime("BeginFrame");
         m_Packer->PackPicParams(pCurrentFrame, sliceInfo, m_pTaskSupplier);
-        //logTime("PackPicParams");
-        if(pSeqParamSet->scaling_list_enabled_flag)
+        if (pSeqParamSet->scaling_list_enabled_flag)
         {
-            m_Packer->PackQmatrix(pSlice/*->GetPicParam(), pSeqParamSet->sps_scaling_list_data_present_flag*/);
-            //logTime("PackQmatrix");
+            m_Packer->PackQmatrix(pSlice);
         }
 
         bool isLongFormat = false;//m_va->IsLongSliceControl();
@@ -123,16 +108,13 @@ void H265_DXVA_SegmentDecoder::PackAllHeaders(H265DecoderFrame * pFrame)
         }
 #endif
 
-        for (int n=0;n < sliceCount;n++)
+        for (Ipp32s n = 0; n < sliceCount; n++)
         {
             m_Packer->PackSliceParams(sliceInfo->GetSlice(n), isLongFormat, n == sliceCount - 1);
-            //logTime("PackSliceParams");
         }
 
         m_Packer->ExecuteBuffers();
-        //logTime("ExecuteBuffers");
         m_Packer->EndFrame();
-        //logTime("EndFrame");
     }
 }
 

@@ -454,12 +454,13 @@ eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par
     }
 
 #if defined (MFX_VA)
-    GUID name = DXVA_ModeHEVC_VLD_MainProfile;
-
-    if (MFX_ERR_NONE != core->IsGuidSupported(name, par) &&
-        platform != MFX_PLATFORM_SOFTWARE)
+    if (platform != MFX_PLATFORM_SOFTWARE)
     {
-        return MFX_PLATFORM_SOFTWARE;
+        if (MFX_ERR_NONE != core->IsGuidSupported(DXVA_Intel_ModeHEVC_VLD_MainProfile, par) &&
+            MFX_ERR_NONE != core->IsGuidSupported(DXVA_ModeHEVC_VLD_Main, par))
+        {
+            return MFX_PLATFORM_SOFTWARE;
+        }
     }
 #endif
 

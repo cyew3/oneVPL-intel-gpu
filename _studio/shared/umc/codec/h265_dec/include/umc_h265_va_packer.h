@@ -86,7 +86,7 @@ public:
 
     void ExecuteBuffers();
 
-private:
+protected:
     void AddReferenceFrame(DXVA_Intel_PicParams_HEVC * pPicParams_H264, Ipp32s &pos,
         H265DecoderFrame * pFrame, Ipp32s reference);
 
@@ -101,6 +101,20 @@ private:
     Ipp32u              m_statusReportFeedbackCounter;
     DXVA_Intel_PicEntry_HEVC  m_refFrameListCache[16];
     int                 m_refFrameListCacheSize;
+};
+
+class MSPackerDXVA2 : public PackerDXVA2
+{
+public:
+    MSPackerDXVA2(UMC::VideoAccelerator * va);
+
+    virtual void PackQmatrix(const H265Slice *pSlice);
+
+    virtual void PackPicParams(const H265DecoderFrame *pCurrentFrame,
+                        H265DecoderFrameInfo * pSliceInfo,
+                        TaskSupplier_H265 * supplier);
+
+    virtual void PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSlice);
 };
 
 #endif // UMC_VA_DXVA

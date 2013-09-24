@@ -136,6 +136,7 @@ enum VideoAccelerationProfile
     VA_PROFILE_MVC_MV           = 0x5000,
     VA_PROFILE_MVC_STEREO       = 0x6000,
     VA_PROFILE_MVC_STEREO_PROG  = 0x7000,
+    VA_PROFILE_INTEL            = 0x8000,
 
     // configurations
     VA_CONFIGURATION    = 0x00ff0000,
@@ -152,6 +153,7 @@ enum VideoAccelerationProfile
     VC1_VLD         = VA_VC1 | VA_VLD,
     JPEG_VLD        = VA_JPEG | VA_VLD,
     VP8_VLD         = VA_VP8 | VA_VLD,
+    HEVC_VLD        = VA_H265 | VA_VLD,
 
     H264_VLD_MVC            = VA_H264 | VA_VLD | VA_PROFILE_MVC,
     H264_VLD_SVC_BASELINE   = VA_H264 | VA_VLD | VA_PROFILE_SVC_BASELINE,

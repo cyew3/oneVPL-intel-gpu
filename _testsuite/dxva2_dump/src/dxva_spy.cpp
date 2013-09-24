@@ -57,18 +57,6 @@ void SkipDXVAExecute(bool bSkipExecute)
 }
 
 ///////////////////////////////////////////////////////////////////////
-void dumpJPEGBuffer(int BufferType, void *buffer);
-
-void dumpH264PictureParameters(void *pPictureParameters);
-void dumpH264SliceParameter(void * sliceParam, bool isLong);
-void dumpH264SliceParameters(void * sliceParam, size_t bufSize, bool isLong);
-
-void dumpH264PictureParameters_MS_MVC(void *pPictureParameters);
-void dumpH264MVCPictureParameters(void *pPictureParameters);
-
-void dumpH264SVCPictureParameters(void *pPictureParameters);
-void dumpH264SVCSliceParameters(void * sliceParam, size_t bufSize, bool isLong);
-
 void dumpMPEG2PictureParameters(void *pPictureParameters);
 void dumpMPEG4PictureParameters(void *pPictureParameters);
 void dumpVC1PictureParametersExt(void *pPictureParameters);
@@ -157,6 +145,10 @@ UMC::VideoAccelerationProfile GetProfile(REFGUID Guid)
     {
         profile = JPEG_VLD;
     }
+    else if (Guid == DXVA_Intel_ModeHEVC_VLD_MainProfile || Guid == DXVA_ModeHEVC_VLD_Main)
+    {
+        profile = HEVC_VLD;
+    }
 
     return profile;
 }
@@ -173,6 +165,774 @@ DWORD GetBufferType<D3D11_VIDEO_DECODER_BUFFER_DESC>(const D3D11_VIDEO_DECODER_B
 {
     return buffer->BufferType;
 }
+
+class BufferDumper
+{
+public:
+    virtual void dumpBuffer(int BufferType, void *buffer, size_t bufferSize)
+    {
+    }
+
+    GUID m_guid;
+    bool m_isLongFormat;
+    char * fname;
+    FILE * f;
+};
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// JPEGBufferDumper
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+class JPEGBufferDumper : public BufferDumper
+{
+public:
+    enum
+    {
+        BUFFER_D3DDDIFMT_INTEL_JPEGDECODE_PPSDATA       = (D3DDDIFMT_INTEL_JPEGDECODE_PPSDATA - 1),
+        BUFFER_D3DDDIFMT_INTEL_JPEGDECODE_QUANTDATA     = (D3DDDIFMT_INTEL_JPEGDECODE_QUANTDATA - 1),
+        BUFFER_D3DDDIFMT_INTEL_JPEGDECODE_HUFFTBLDATA   = (D3DDDIFMT_INTEL_JPEGDECODE_HUFFTBLDATA - 1),
+        BUFFER_D3DDDIFMT_INTEL_JPEGDECODE_SCANDATA      = (D3DDDIFMT_INTEL_JPEGDECODE_SCANDATA - 1),
+        BUFFER_D3DDDIFMT_BITSTREAMDATA                  = (D3DDDIFMT_BITSTREAMDATA - 1)
+    };
+
+    virtual void dumpBuffer(int BufferType, void *buffer, size_t bufferSize)
+    {
+        switch(BufferType)
+        {
+        case BUFFER_D3DDDIFMT_INTEL_JPEGDECODE_PPSDATA: 
+        case BUFFER_D3DDDIFMT_INTEL_JPEGDECODE_HUFFTBLDATA: 
+        case BUFFER_D3DDDIFMT_INTEL_JPEGDECODE_QUANTDATA: 
+        case BUFFER_D3DDDIFMT_INTEL_JPEGDECODE_SCANDATA:
+            break;
+        default:
+            return;
+        };
+
+        f = fopen(fname, "a");
+
+        switch(BufferType)
+        {
+        case BUFFER_D3DDDIFMT_INTEL_JPEGDECODE_PPSDATA: 
+            {
+            JPEG_DECODE_PICTURE_PARAMETERS * ptr = (JPEG_DECODE_PICTURE_PARAMETERS *)buffer;
+            logi(ptr->FrameWidth);
+            logi(ptr->FrameHeight);
+            logi(ptr->NumCompInFrame);
+
+            for (int i = 0; i < 4; i++)
+            {
+                logi(ptr->ComponentIdentifier[i]);
+            }
+
+            for (int i = 0; i < 4; i++)
+            {
+                logi(ptr->QuantTableSelector[i]);
+            }
+
+            logi(ptr->ChromaType);
+            logi(ptr->Rotation);
+            logi(ptr->TotalScans);
+            }
+            break;
+        case BUFFER_D3DDDIFMT_INTEL_JPEGDECODE_HUFFTBLDATA: 
+            {
+                JPEG_DECODE_HUFFMAN_TABLE * ptr = (JPEG_DECODE_HUFFMAN_TABLE *)buffer;
+                logi(ptr->TableClass);
+                logi(ptr->TableIndex);
+
+                for (int i = 0; i < sizeof(ptr->BITS); i++)
+                {
+                    logi(ptr->BITS[i]);
+                }
+
+                for (int i = 0; i < sizeof(ptr->HUFFVAL); i++)
+                {
+                    logi(ptr->HUFFVAL[i]);
+                }
+            }
+            break;
+
+        case BUFFER_D3DDDIFMT_INTEL_JPEGDECODE_QUANTDATA: 
+            {
+                JPEG_DECODE_QM_TABLE * ptr = (JPEG_DECODE_QM_TABLE*)buffer;
+                logi(ptr->TableIndex);
+                logi(ptr->Precision);
+
+                for (int i = 0; i < sizeof(ptr->Qm); i++)
+                {
+                    logi(ptr->Qm[i]);
+                }
+            }
+            break;
+
+        case BUFFER_D3DDDIFMT_INTEL_JPEGDECODE_SCANDATA:
+            {
+            JPEG_DECODE_SCAN_PARAMETER * ptr = (JPEG_DECODE_SCAN_PARAMETER *)buffer;
+            logi(ptr->NumComponents);
+
+            for (int i = 0; i < 4; i++)
+            {
+                logi(ptr->ComponentSelector[i]);
+            }
+
+            for (int i = 0; i < 4; i++)
+            {
+                logi(ptr->DcHuffTblSelector[i]);
+            }
+
+            for (int i = 0; i < 4; i++)
+            {
+                logi(ptr->AcHuffTblSelector[i]);
+            }
+
+            logi(ptr->RestartInterval);
+            logi(ptr->MCUCount);
+            logi(ptr->ScanHoriPosition);
+            logi(ptr->ScanVertPosition);
+            logi(ptr->DataOffset);
+            logi(ptr->DataLength);
+            }
+            break;
+        };
+
+        fclose(f);
+    }
+};
+
+class AVCBufferDumper : public BufferDumper
+{
+public:
+    
+    virtual void dumpBuffer(int BufferType, void *buffer, size_t bufferSize)
+    {
+        switch(BufferType)
+        {
+        case DXVA_PICTURE_DECODE_BUFFER_SVC:
+        case DXVA_SLICE_CONTROL_BUFFER_SVC:
+        case DXVA2_PictureParametersBufferType:
+        case DXVA_MVCPictureParametersExtBufferType - 1:
+        case DXVA2_SliceControlBufferType:
+            break;
+        default:
+            return;
+        }; // switch
+
+        f = fopen(fname, "wt");
+
+        switch(BufferType)
+        {
+        /*case DXVA_PICTURE_DECODE_BUFFER_SVC:
+            dumpH264SVCPictureParameters(m_pBuffers[BufferType]);
+            break;
+
+        case DXVA_SLICE_CONTROL_BUFFER_SVC:
+            break;*/
+
+        case DXVA2_PictureParametersBufferType:
+            if (m_guid == sDXVA_ModeH264_VLD_Multiview_NoFGT || m_guid == sDXVA_ModeH264_VLD_Stereo_NoFGT ||
+                m_guid == sDXVA_ModeH264_VLD_Stereo_Progressive_NoFGT ||
+
+                bufferSize == sizeof(DXVA_PicParams_H264_MVC))
+            {
+                dumpH264PictureParameters_MS_MVC(buffer);
+            }
+            else if (m_guid == sDXVA_ModeH264_VLD_SVC_Scalable_High || m_guid == sDXVA_ModeH264_VLD_SVC_Scalable_Baseline ||
+                m_guid == sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_Baseline ||
+                m_guid == sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_High ||
+                bufferSize == sizeof(DXVA_PicParams_H264_SVC))
+            {
+                dumpH264SVCPictureParameters(buffer);
+            }
+            else
+            {
+                dumpH264PictureParameters(buffer);
+            }
+            break;
+
+        case DXVA_MVCPictureParametersExtBufferType - 1:
+            dumpH264MVCPictureParameters(buffer);
+            break;
+
+        case DXVA2_SliceControlBufferType:
+            bool isSVCBufSize = m_isLongFormat ? (bufferSize == sizeof(DXVA_Slice_H264_SVC_Long)) : (bufferSize == sizeof(DXVA_Slice_H264_SVC_Short));
+
+            if (m_guid == sDXVA_ModeH264_VLD_SVC_Scalable_High || m_guid == sDXVA_ModeH264_VLD_SVC_Scalable_Baseline ||
+                m_guid == sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_High ||
+                m_guid == sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_Baseline ||
+                isSVCBufSize)
+            {
+                dumpH264SVCSliceParameters(buffer, bufferSize, m_isLongFormat);
+            }
+            else
+            {
+                dumpH264SliceParameters(buffer, bufferSize, m_isLongFormat);
+            }
+            break;
+        }; // switch
+
+        fclose(f);
+    }
+
+protected:
+
+    void dumpH264MVCPictureParameters(void *pPictureParameters)
+    {
+        DXVA_Intel_PicParams_MVC *pParams = (DXVA_Intel_PicParams_MVC*)pPictureParameters;
+
+        logi(pParams->CurrViewID);
+        logi(pParams->anchor_pic_flag);
+
+        logi(pParams->inter_view_flag);
+        logi(pParams->NumInterViewRefsL0);
+        logi(pParams->NumInterViewRefsL1);
+
+        logi(pParams->bPicFlags);
+        logi(pParams->SwitchToAVC);
+        logi(pParams->Reserved7Bits);
+
+        logi(pParams->Reserved8Bits);
+
+        for (int i = 0; i < 16; i++)
+        {
+            logi(pParams->ViewIDList[i]);
+        }
+
+        for (int i = 0; i < 16; i++)
+        {
+            logi(pParams->InterViewRefList[0][i]);
+            logi(pParams->InterViewRefList[1][i]);
+        }
+    }
+
+    void dumpH264SVCPictureParameters(void *pPictureParameters)
+    {
+        DXVA_PicParams_H264_SVC *pParams = (DXVA_PicParams_H264_SVC*)pPictureParameters;
+
+        for (int i = 0; i < 16; i++)
+        {
+            logi(pParams->RefBasePicFlag[i]);
+        }
+
+        logi(pParams->inter_layer_deblocking_filter_control_present_flag);
+        logi(pParams->chroma_phase_x_plus_flag);
+        logi(pParams->seq_ref_layer_chroma_phase_x_plus1_flag);
+        logi(pParams->adaptive_tcoeff_level_prediction_flag);
+        logi(pParams->slice_header_restriction_flag);
+        logi(pParams->store_ref_base_pic_flag);
+        logi(pParams->ShiftXY16Flag);
+        logi(pParams->constrained_intra_resampling_flag);
+        logi(pParams->ref_layer_chroma_phase_x_plus1_flag);
+        logi(pParams->tcoeff_level_prediction_flag);
+        logi(pParams->IdrPicFlag);
+        logi(pParams->NextLayerSpatialResolutionChangeFlag);
+        logi(pParams->NextLayerMaxTXoeffLevelPredFlag);
+
+        logi(pParams->extended_spatial_scalability_idc);
+        logi(pParams->chroma_phase_y_plus1);
+        logi(pParams->seq_ref_layer_chroma_phase_y_plus1);
+
+        logi(pParams->seq_scaled_ref_layer_left_offset);
+        logi(pParams->seq_scaled_ref_layer_top_offset);
+        logi(pParams->seq_scaled_ref_layer_right_offset);
+        logi(pParams->seq_scaled_ref_layer_bottom_offset);
+
+        logi(pParams->seq_ref_layer_chroma_phase_y_plus1);
+
+        logi(pParams->LayerType);
+        logi(pParams->dependency_id);
+        logi(pParams->quality_id);
+
+        logi(pParams->ref_layer_dq_id);
+
+        logi(pParams->disable_inter_layer_deblocking_filter_idc);
+        logi(pParams->inter_layer_slice_alpha_c0_offset_div2);
+        logi(pParams->inter_layer_slice_beta_offset_div2);
+        logi(pParams->ref_layer_chroma_phase_y_plus1);
+
+        logi(pParams->NextLayerScaledRefLayerLeftOffset);
+        logi(pParams->NextLayerScaledRefLayerRightOffset);
+        logi(pParams->NextLayerScaledRefLayerTopOffset);
+        logi(pParams->NextLayerScaledRefLayerBottomOffset);
+        logi(pParams->NextLayerPicWidthInMbs);
+        logi(pParams->NextLayerPicHeightInMbs);
+        logi(pParams->NextLayerDisableInterLayerDeblockingFilterIdc);
+        logi(pParams->NextLayerInterLayerSliceAlphaC0OffsetDiv2);
+        logi(pParams->NextLayerInterLayerSliceBetaOffsetDiv2);
+
+        logi(pParams->DeblockingFilterMode);
+
+        dumpH264PictureParameters(pParams);
+    }
+
+    void dumpH264SVCSliceParameters(void * sliceParam, size_t bufSize, bool isLong)
+    {
+        if (isLong)
+        {
+            DXVA_Slice_H264_SVC_Long *pSlice = (DXVA_Slice_H264_SVC_Long*)sliceParam;
+            for (int i = 0; i < bufSize/sizeof(DXVA_Slice_H264_SVC_Long); i++)
+            {
+                logi(i);
+                logi(pSlice[i].no_inter_layer_pred_flag);
+                logi(pSlice[i].base_pred_weight_table_flag);
+                logi(pSlice[i].slice_skip_flag);
+                logi(pSlice[i].adaptive_base_mode_flag);
+                logi(pSlice[i].default_base_mode_flag);
+                logi(pSlice[i].adaptive_motion_prediction_flag);
+                logi(pSlice[i].default_motion_prediction_flag);
+                logi(pSlice[i].adaptive_residual_prediction_flag);
+                logi(pSlice[i].default_residual_prediction_flag);
+
+                logi(pSlice[i].num_mbs_in_slice_minus1);
+                logi(pSlice[i].scan_idx_start);
+                logi(pSlice[i].scan_idx_end);
+
+                dumpH264SliceParameter(&pSlice[i], isLong);
+            }
+        }
+        else
+        {
+            DXVA_Slice_H264_SVC_Short *pSlice = (DXVA_Slice_H264_SVC_Short*)sliceParam;
+            for (int i = 0; i < bufSize/sizeof(DXVA_Slice_H264_SVC_Short); i++)
+            {
+                logi(i);
+                logi(pSlice[i].no_inter_layer_pred_flag);
+
+                dumpH264SliceParameter(&pSlice[i], isLong);
+            }
+        }
+    }
+
+    void dumpH264PictureParameters_MS_MVC(void *pPictureParameters)
+    {
+        DXVA_PicParams_H264_MVC *pParams = (DXVA_PicParams_H264_MVC*)pPictureParameters;
+
+        dumpH264PictureParameters(pPictureParameters);
+
+        logs("\nMVC picture params\n");
+
+        logi(pParams->num_views_minus1);
+
+        logi(pParams->curr_view_id);
+        logi(pParams->anchor_pic_flag);
+        logi(pParams->inter_view_flag);
+ 
+        for (int i = 0; i < 16; i++)
+        {
+            logi(pParams->view_id[i]);
+        }
+
+        for (int i = 0; i < 16; i++)
+        {
+            logi(pParams->ViewIDList[i]);
+        }
+
+        for (int i = 0; i < 16; i++)
+        {
+            logi(pParams->num_anchor_refs_l0[i]);
+        }
+
+        for (int i = 0; i < 16; i++)
+        {
+            logi(i);
+            for (int j = 0; j < 16; j++)
+                logi(pParams->anchor_ref_l0[i][j]);
+        }
+
+
+        for (int i = 0; i < 16; i++)
+        {
+            logi(pParams->num_anchor_refs_l1[i]);
+        }
+
+        for (int i = 0; i < 16; i++)
+        {
+            logi(i);
+            for (int j = 0; j < 16; j++)
+                logi(pParams->anchor_ref_l1[i][j]);
+        }
+
+
+        for (int i = 0; i < 16; i++)
+        {
+            logi(pParams->num_non_anchor_refs_l0[i]);
+        }
+
+        for (int i = 0; i < 16; i++)
+        {
+            logi(i);
+            for (int j = 0; j < 16; j++)
+                logi(pParams->non_anchor_ref_l0[i][j]);
+        }
+
+        for (int i = 0; i < 16; i++)
+        {
+            logi(pParams->num_non_anchor_refs_l1[i]);
+        }
+
+        for (int i = 0; i < 16; i++)
+        {
+            logi(i);
+            for (int j = 0; j < 16; j++)
+                logi(pParams->non_anchor_ref_l1[i][j]);
+        }
+    }
+
+    void dumpH264PictureParameters(void *pPictureParameters)
+    {
+        DXVA_PicParams_H264 *pParams = (DXVA_PicParams_H264*)pPictureParameters;
+        logi(pParams->wFrameWidthInMbsMinus1);
+        logi(pParams->wFrameHeightInMbsMinus1);
+        logi(pParams->CurrPic.Index7Bits);
+        logi(pParams->CurrPic.AssociatedFlag);
+        logi(pParams->num_ref_frames);
+
+        //logi(pParams->wBitFields);
+        logi(pParams->field_pic_flag);
+        logi(pParams->MbaffFrameFlag);
+        logi(pParams->residual_colour_transform_flag);
+        logi(pParams->sp_for_switch_flag);
+        logi(pParams->chroma_format_idc);
+        logi(pParams->RefPicFlag);
+        logi(pParams->constrained_intra_pred_flag);
+        logi(pParams->weighted_pred_flag);
+        logi(pParams->weighted_bipred_idc);
+        logi(pParams->MbsConsecutiveFlag);
+        logi(pParams->frame_mbs_only_flag);
+        logi(pParams->transform_8x8_mode_flag);
+        logi(pParams->MinLumaBipredSize8x8Flag);
+        logi(pParams->IntraPicFlag);
+
+        logi(pParams->bit_depth_luma_minus8);
+        logi(pParams->bit_depth_chroma_minus8);
+        logi(pParams->Reserved16Bits);
+        logui(pParams->StatusReportFeedbackNumber);
+        logi(pParams->CurrFieldOrderCnt[0]);
+        logi(pParams->CurrFieldOrderCnt[1]);
+        logi(pParams->pic_init_qs_minus26);
+        logi(pParams->chroma_qp_index_offset);
+        logi(pParams->second_chroma_qp_index_offset);
+        logi(pParams->ContinuationFlag);
+        logi(pParams->pic_init_qp_minus26);
+        logi(pParams->num_ref_idx_l0_active_minus1);
+        logi(pParams->num_ref_idx_l1_active_minus1);
+        logi(pParams->Reserved8BitsA);
+        logi(pParams->UsedForReferenceFlags);
+        logi(pParams->NonExistingFrameFlags);
+        logi(pParams->frame_num);
+        logi(pParams->log2_max_frame_num_minus4);
+        logi(pParams->pic_order_cnt_type);
+        logi(pParams->log2_max_pic_order_cnt_lsb_minus4);
+        logi(pParams->delta_pic_order_always_zero_flag);
+        logi(pParams->direct_8x8_inference_flag);
+        logi(pParams->entropy_coding_mode_flag);
+        logi(pParams->pic_order_present_flag);
+        logi(pParams->num_slice_groups_minus1);
+        logi(pParams->slice_group_map_type);
+        logi(pParams->deblocking_filter_control_present_flag);
+        logi(pParams->redundant_pic_cnt_present_flag);
+        logi(pParams->Reserved8BitsB);
+        logi(pParams->slice_group_change_rate_minus1);
+        int i;
+        for (i = 0; i < 16; i++)
+        {
+            logi(i);
+            logi(pParams->RefFrameList[i].Index7Bits);
+            logi(pParams->RefFrameList[i].AssociatedFlag);
+            logi(pParams->FieldOrderCntList[i][0]);
+            logi(pParams->FieldOrderCntList[i][1]);
+            logi(pParams->FrameNumList[i]);
+        }
+        //logi(pParams->SliceGroupMap[810]; /* 4b/sgmu, Size BT.601 */
+    }
+
+    void dumpH264SliceParameter(void * sliceParam, bool isLong)
+    {
+        if (isLong)
+        {
+            DXVA_Slice_H264_Long *pSlice = (DXVA_Slice_H264_Long*)sliceParam;
+            logi(pSlice->BSNALunitDataLocation);
+            logi(pSlice->SliceBytesInBuffer);
+            logi(pSlice->wBadSliceChopping);
+            logi(pSlice->first_mb_in_slice);
+            logi(pSlice->NumMbsForSlice);
+            logi(pSlice->BitOffsetToSliceData);
+            logi(pSlice->slice_type);
+            logi(pSlice->luma_log2_weight_denom);
+            logi(pSlice->chroma_log2_weight_denom);
+            logi(pSlice->num_ref_idx_l0_active_minus1);
+            logi(pSlice->num_ref_idx_l1_active_minus1);
+            logi(pSlice->slice_alpha_c0_offset_div2);
+            logi(pSlice->slice_beta_offset_div2);
+            logi(pSlice->Reserved8Bits);
+            logi(pSlice->slice_qs_delta);
+            logi(pSlice->slice_qp_delta);
+            logi(pSlice->redundant_pic_cnt);
+            logi(pSlice->direct_spatial_mv_pred_flag);
+            logi(pSlice->cabac_init_idc);
+            logi(pSlice->disable_deblocking_filter_idc);
+            logi(pSlice->slice_id);
+            for (int j = 0; j < 32; j++)
+            {
+                logi(j);
+                logi(pSlice->RefPicList[0][j].bPicEntry);
+                logi(pSlice->RefPicList[1][j].bPicEntry);
+                logi(pSlice->Weights[0][j][0][0]);
+                logi(pSlice->Weights[0][j][0][1]);
+                logi(pSlice->Weights[0][j][1][0]);
+                logi(pSlice->Weights[0][j][1][1]);
+                logi(pSlice->Weights[0][j][2][0]);
+                logi(pSlice->Weights[0][j][2][1]);
+                logi(pSlice->Weights[1][j][0][0]);
+                logi(pSlice->Weights[1][j][0][1]);
+                logi(pSlice->Weights[1][j][1][0]);
+                logi(pSlice->Weights[1][j][1][1]);
+                logi(pSlice->Weights[1][j][2][0]);
+                logi(pSlice->Weights[1][j][2][1]);
+            }
+        }
+        else
+        {
+            DXVA_Slice_H264_Short *pSlice = (DXVA_Slice_H264_Short*)sliceParam;
+            logi(pSlice->BSNALunitDataLocation);
+            logi(pSlice->SliceBytesInBuffer);
+            logi(pSlice->wBadSliceChopping);
+        }
+    }
+
+    void dumpH264SliceParameters(void * sliceParam, size_t bufSize, bool isLong)
+    {
+        if (isLong)
+        {
+            DXVA_Slice_H264_Long *pSlice = (DXVA_Slice_H264_Long*)sliceParam;
+            for (int i = 0; i < bufSize/sizeof(DXVA_Slice_H264_Long); i++)
+            {
+                logi(i);
+                dumpH264SliceParameter(&pSlice[i], isLong);
+            }
+        }
+        else
+        {
+            DXVA_Slice_H264_Short *pSlice = (DXVA_Slice_H264_Short*)sliceParam;
+            for (int i = 0; i < bufSize/sizeof(DXVA_Slice_H264_Short); i++)
+            {
+                logi(i);
+                dumpH264SliceParameter(&pSlice[i], isLong);
+            }
+        }
+    }
+};
+
+class HEVCBufferDumper : public BufferDumper
+{
+public:
+    virtual void dumpBuffer(int BufferType, void *buffer, size_t bufferSize)
+    {
+        switch (BufferType)
+        {
+        case DXVA2_PictureParametersBufferType:
+        case DXVA2_InverseQuantizationMatrixBufferType:
+        case DXVA2_SliceControlBufferType:
+            break;
+        default:
+            return;
+        }
+
+        bool isMS = (m_guid == DXVA_ModeHEVC_VLD_Main);
+
+        if (!isMS)
+            return;
+
+        f = fopen(fname, "wt");
+
+        switch (BufferType)
+        {
+        case DXVA2_PictureParametersBufferType:
+            dumpHEVC_PPS_MS(buffer);
+            break;
+        case DXVA2_InverseQuantizationMatrixBufferType:
+            dumpHEVC_QMatrix_MS(buffer);
+            break;
+        case DXVA2_SliceControlBufferType:
+            dumpHEVCSliceParameters_MS(buffer, bufferSize);
+            break;
+        }
+
+        fclose(f);
+    }
+
+private:
+
+    void dumpHEVC_PPS_MS(void *buffer)
+    {
+        DXVA_PicParams_HEVC* picParam = (DXVA_PicParams_HEVC*)buffer;
+
+        logi(picParam->PicWidthInMinCbsY);
+        logi(picParam->PicHeightInMinCbsY);
+
+        logi(picParam->chroma_format_idc);
+        logi(picParam->separate_colour_plane_flag);
+        logi(picParam->bit_depth_luma_minus8);
+        logi(picParam->bit_depth_chroma_minus8);
+        logi(picParam->log2_max_pic_order_cnt_lsb_minus4);
+
+        logi(picParam->NoPicReorderingFlag);
+        logi(picParam->NoBiPredFlag);
+        logi(picParam->ReservedBits1);
+
+        logi(picParam->CurrPic.Index7Bits);
+        logi(picParam->CurrPic.AssociatedFlag);
+
+        logi(picParam->sps_max_dec_pic_buffering_minus1);
+        logi(picParam->log2_min_luma_coding_block_size_minus3);
+        logi(picParam->log2_diff_max_min_luma_coding_block_size);
+        logi(picParam->log2_min_transform_block_size_minus2);
+        logi(picParam->log2_diff_max_min_transform_block_size);
+        logi(picParam->max_transform_hierarchy_depth_inter);
+        logi(picParam->max_transform_hierarchy_depth_intra);
+
+        logi(picParam->num_short_term_ref_pic_sets);
+        logi(picParam->num_long_term_ref_pics_sps);
+        logi(picParam->num_ref_idx_l0_default_active_minus1);
+        logi(picParam->num_ref_idx_l1_default_active_minus1);
+        logi(picParam->init_qp_minus26);
+        logi(picParam->ucNumDeltaPocsOfRefRpsIdx);
+        logi(picParam->wNumBitsForShortTermRPSInSlice);
+        logi(picParam->ReservedBits2);
+
+        logi(picParam->scaling_list_enabled_flag);
+        logi(picParam->amp_enabled_flag);        
+        logi(picParam->sample_adaptive_offset_enabled_flag);
+        logi(picParam->pcm_enabled_flag);        
+        logi(picParam->pcm_sample_bit_depth_luma_minus1);
+        logi(picParam->pcm_sample_bit_depth_chroma_minus1);        
+        logi(picParam->log2_min_pcm_luma_coding_block_size_minus3);
+        logi(picParam->log2_diff_max_min_pcm_luma_coding_block_size);        
+
+        logi(picParam->pcm_loop_filter_disabled_flag);
+        logi(picParam->long_term_ref_pics_present_flag);        
+        logi(picParam->sps_temporal_mvp_enabled_flag);
+        logi(picParam->strong_intra_smoothing_enabled_flag);        
+        logi(picParam->dependent_slice_segments_enabled_flag);
+        logi(picParam->output_flag_present_flag);        
+        logi(picParam->num_extra_slice_header_bits);
+        logi(picParam->sign_data_hiding_enabled_flag);
+        logi(picParam->cabac_init_present_flag);
+        logi(picParam->ReservedBits3);
+
+        logi(picParam->constrained_intra_pred_flag);
+        logi(picParam->transform_skip_enabled_flag);        
+        logi(picParam->cu_qp_delta_enabled_flag);
+        logi(picParam->pps_slice_chroma_qp_offsets_present_flag);        
+        logi(picParam->weighted_pred_flag);
+        logi(picParam->weighted_bipred_flag);        
+        logi(picParam->transquant_bypass_enabled_flag);
+        logi(picParam->tiles_enabled_flag);
+        logi(picParam->entropy_coding_sync_enabled_flag);
+        logi(picParam->uniform_spacing_flag);
+
+        logi(picParam->loop_filter_across_tiles_enabled_flag);
+        logi(picParam->pps_loop_filter_across_slices_enabled_flag);        
+        logi(picParam->deblocking_filter_override_enabled_flag);
+        logi(picParam->pps_deblocking_filter_disabled_flag);        
+        logi(picParam->lists_modification_present_flag);
+        logi(picParam->slice_segment_header_extension_present_flag);        
+        logi(picParam->IrapPicFlag);
+        logi(picParam->IdrPicFlag);
+        logi(picParam->IntraPicFlag);
+        logi(picParam->ReservedBits4);
+        
+        logi(picParam->pps_cb_qp_offset);
+        logi(picParam->pps_cr_qp_offset);        
+        logi(picParam->num_tile_columns_minus1);
+        logi(picParam->num_tile_rows_minus1);
+
+        for (int i = 0; i <= picParam->num_tile_columns_minus1; i++)
+        {
+            logi(picParam->column_width_minus1[i]);
+        }
+
+        for (int i = 0; i <= picParam->num_tile_rows_minus1; i++)
+        {
+            logi(picParam->row_height_minus1[i]);
+        }
+
+        logi(picParam->diff_cu_qp_delta_depth);
+        logi(picParam->pps_beta_offset_div2);        
+        logi(picParam->pps_tc_offset_div2);
+        logi(picParam->log2_parallel_merge_level_minus2);
+        logi(picParam->CurrPicOrderCntVal);
+
+        for (int i = 0; i < 15; i++)
+        {
+            logi(picParam->RefPicList[i].Index7Bits);
+            logi(picParam->RefPicList[i].AssociatedFlag);
+            logi(picParam->PicOrderCntValList[i]);
+        }
+
+        for (int i = 0; i < 8; i++)
+        {
+            logi(picParam->RefPicSetStCurrBefore[i]);
+        }
+
+        for (int i = 0; i < 8; i++)
+        {
+            logi(picParam->RefPicSetStCurrAfter[i]);
+        }
+
+        for (int i = 0; i < 8; i++)
+        {
+            logi(picParam->RefPicSetLtCurr[i]);
+        }
+
+        logi(picParam->StatusReportFeedbackNumber);
+    }
+
+    void dumpHEVCSliceParameters_MS(void * sliceParam, size_t bufSize)
+    {
+        DXVA_Slice_HEVC_Short *slice = (DXVA_Slice_HEVC_Short*)sliceParam;
+        for (int i = 0; i < bufSize/sizeof(DXVA_Slice_HEVC_Short); i++)
+        {
+            logi(i);
+            logi(slice[i].BSNALunitDataLocation);
+            logi(slice[i].SliceBytesInBuffer);
+            logi(slice[i].wBadSliceChopping);
+        }
+    }
+
+    void dumpHEVC_QMatrix_MS(void * buffer)
+    {
+        DXVA_Qmatrix_HEVC * matrix = (DXVA_Qmatrix_HEVC *) buffer;
+
+        for (int i = 0; i < 6; i++)
+        {
+            for (int j = 0; j < 16; j++)
+                logi(matrix->ucScalingLists0[i][j]);
+        }
+
+        for (int i = 0; i < 6; i++)
+        {
+            for (int j = 0; j < 64; j++)
+                logi(matrix->ucScalingLists1[i][j]);
+        }
+
+        for (int i = 0; i < 6; i++)
+        {
+            for (int j = 0; j < 64; j++)
+                logi(matrix->ucScalingLists2[i][j]);
+        }
+
+        for (int i = 0; i < 2; i++)
+        {
+            for (int j = 0; j < 64; j++)
+                logi(matrix->ucScalingLists3[i][j]);
+        }
+
+        for (int i = 0; i < 6; i++)
+            logi(matrix->ucScalingListDCCoefSizeID2[i]);
+
+        for (int i = 0; i < 2; i++)
+            logi(matrix->ucScalingListDCCoefSizeID3[i]);
+    }
+};
 
 template<typename ExecuteParams, typename ConfigPictureDecodeType, typename SurfaceType>
 class Dumper
@@ -192,6 +952,27 @@ public:
         m_guid = Guid;
         m_Config = *config;
         m_Profile = GetProfile(Guid);
+
+        bool isLongFormat = m_Config.ConfigBitstreamRaw == 1 || m_Config.ConfigBitstreamRaw == 3 || m_Config.ConfigBitstreamRaw == 5;
+
+        switch(m_Profile)
+        {
+        case JPEG_VLD:
+            m_bufferDumper.reset(new JPEGBufferDumper);
+            break;
+        case H264_VLD:
+            m_bufferDumper.reset(new AVCBufferDumper);
+            m_bufferDumper->m_isLongFormat = isLongFormat;
+            break;
+        case HEVC_VLD:
+            m_bufferDumper.reset(new HEVCBufferDumper);
+            break;
+        default:
+            m_bufferDumper.reset(new BufferDumper);
+            break;
+        }
+
+        m_bufferDumper->m_guid = m_guid;
     }
 
     virtual bool GetSkipExecute()
@@ -267,237 +1048,103 @@ public:
         if (MaxFrames && m_cFrameNumber >= MaxFrames)
             return;
 
+        char fname[1024];
+        sprintf(fname, "%s\\frame%d_buffer_params.log", pDir, m_cFrameNumber, NumCompBuffers);
+        fclose(f);
+        f = fopen(fname, m_Profile == JPEG_VLD ? "a": "wt");
+
+        for (int i = NumCompBuffers - 1; i >= 0; i--)
         {
-#if 0
-            if (params->pCompressedBuffers == 0)
+            int BufferType = GetBufferType(&pCompressedBuffers[i]);
+            logs("-----------------------------");
+            logi(BufferType);
+            logi(pCompressedBuffers[i].BufferIndex);
+            logi(pCompressedBuffers[i].DataOffset);
+            logi(pCompressedBuffers[i].DataSize);
+            logi(pCompressedBuffers[i].FirstMBaddress);
+            logi(pCompressedBuffers[i].NumMBsInBuffer);
+            logi(pCompressedBuffers[i].Width);
+            logi(pCompressedBuffers[i].Height);
+            logi(pCompressedBuffers[i].Stride);
+            logi(m_cBuffersSize[BufferType]);
+            logi(pCompressedBuffers[i].DataSize);
+        }
+        fclose(f);
+        f = NULL;
+
+        for (int i = 0; i < NumCompBuffers; i++)
+        {
+            int BufferType = GetBufferType(&pCompressedBuffers[i]);
+            m_cBuffersSize[BufferType] = pCompressedBuffers[i].DataSize;
+
+            char fname[1024];
+            sprintf(fname, "%s\\frame%d_buffer%d.bin", pDir, m_cFrameNumber, BufferType);
+            f = fopen(fname, "wb");
+            fwrite(m_pBuffers[BufferType], m_cBuffersSize[BufferType], 1, f);
+            if (f)
             {
-                if (params->pExtensionData->Function == ENCODE_ENC_ID ||
-                    params->pExtensionData->Function == ENCODE_PAK_ID ||
-                    params->pExtensionData->Function == ENCODE_ENC_PAK_ID)
-                {
-                    ENCODE_EXECUTE_PARAMS* encodeExec = (ENCODE_EXECUTE_PARAMS *)params->pExtensionData->pPrivateInputData;
-                    char fname[1024];
-                    BYTE *pMBData = NULL;
-                    BYTE *pMVData = NULL;
-                    int numMB = 0;
-
-                    for (UINT i = 0; i < encodeExec->NumCompBuffers; i++)
-                    {
-                        ENCODE_COMPBUFFERDESC& buffer = encodeExec->pCompressedBuffers[i];
-                        sprintf(fname, "%s\\frame%d_buffer%d.log", pDir, m_cFrameNumber, buffer.CompressedBufferType);
-
-                        if (buffer.CompressedBufferType == D3DDDIFMT_INTELENCODE_SPSDATA)
-                        {
-                            f = fopen(fname, "wt");
-                            ENCODE_SET_SEQUENCE_PARAMETERS_H264 *pSPS = (ENCODE_SET_SEQUENCE_PARAMETERS_H264 *)((BYTE *)buffer.pCompBuffer + buffer.DataOffset);
-                            ddiDumpH264SPS(f, pSPS);
-                            numMB = ((pSPS->FrameWidth + 15)/16) * ((pSPS->FrameHeight + 15)/16);
-                        }
-                        else if (buffer.CompressedBufferType == D3DDDIFMT_INTELENCODE_PPSDATA)
-                        {
-                            f = fopen(fname, "wt");
-                            ddiDumpH264PPS(f, (ENCODE_SET_PICTURE_PARAMETERS_H264 *)((BYTE *)buffer.pCompBuffer + buffer.DataOffset));
-                        }
-                        else if (buffer.CompressedBufferType == D3DDDIFMT_INTELENCODE_SLICEDATA)
-                        {
-                            f = fopen(fname, "wt");
-                            ddiDumpH264SliceHeader(f, (ENCODE_SET_SLICE_HEADER_H264 *)((BYTE *)buffer.pCompBuffer + buffer.DataOffset), buffer.DataSize / sizeof(ENCODE_SET_SLICE_HEADER_H264));
-                        }
-                        else if (buffer.CompressedBufferType == D3DDDIFMT_INTELENCODE_BITSTREAMDATA)
-                        {
-                            DWORD bitsteamSurfaceIdx = *((DWORD *)((BYTE *)buffer.pCompBuffer + buffer.DataOffset));
-                            f = fopen(fname, "wt");
-                            logi_flush(bitsteamSurfaceIdx);
-                        }
-                        else if (buffer.CompressedBufferType == D3DDDIFMT_INTELENCODE_MBDATA)
-                        {
-                            DWORD MBSurfaceIdx = *((DWORD *)((BYTE *)buffer.pCompBuffer + buffer.DataOffset));
-                            f = fopen(fname, "wt");
-                            logi_flush(MBSurfaceIdx);
-                            // TODO: lock surface here
-                        }
-
-                        if (f)
-                        {
-                            fclose(f);
-                            f = 0;
-                        }
-                    }
-                    /*if (pMBData && pMVData)
-                    {
-                        sprintf(fname, "%s\\frame%d_mbdata.log", pDir, m_cFrameNumber);
-                        f = fopen(fname, "wt");
-                        ddiDumpH264MBData(f, 0, 0, 0, 0, 0, numMB, pMBData, pMVData);
-                    }*/
-                    LLLVDEC; // workaround
-                }
-            }
-            else
-#endif
-            {
-                char fname[1024];
-                sprintf(fname, "%s\\frame%d_buffer_params.log", pDir, m_cFrameNumber, NumCompBuffers);
-                fclose(f);
-                f = fopen(fname, m_Profile == JPEG_VLD ? "a": "wt");
-
-                int i;
-                for (i = NumCompBuffers - 1; i >= 0; i--)
-                {
-                    int BufferType = GetBufferType(&pCompressedBuffers[i]);
-                    logs("-----------------------------");
-                    logi(BufferType);
-                    logi(pCompressedBuffers[i].BufferIndex);
-                    logi(pCompressedBuffers[i].DataOffset);
-                    logi(pCompressedBuffers[i].DataSize);
-                    logi(pCompressedBuffers[i].FirstMBaddress);
-                    logi(pCompressedBuffers[i].NumMBsInBuffer);
-                    logi(pCompressedBuffers[i].Width);
-                    logi(pCompressedBuffers[i].Height);
-                    logi(pCompressedBuffers[i].Stride);
-                    logi(m_cBuffersSize[BufferType]);
-                    logi(pCompressedBuffers[i].DataSize);
-                }
                 fclose(f);
                 f = NULL;
+            }
 
-                for (i = 0; i < NumCompBuffers; i++)
+            sprintf(fname, "%s\\frame%d_buffer%d.log", pDir, m_cFrameNumber, BufferType);
+
+            if (m_Profile == H264_VLD || m_Profile == HEVC_VLD || m_Profile == JPEG_VLD)
+            {
+                m_bufferDumper->fname = fname;
+                m_bufferDumper->dumpBuffer(BufferType, m_pBuffers[BufferType], m_cBuffersSize[BufferType]);
+            }
+
+            if (m_Profile == MPEG2_VLD || m_Profile == VC1_VLD)
+            {
+                if (BufferType == DXVA2_PictureParametersBufferType)
                 {
-                    int BufferType = GetBufferType(&pCompressedBuffers[i]);
-                    m_cBuffersSize[BufferType] = pCompressedBuffers[i].DataSize;
-
-                    char fname[1024];
-                    sprintf(fname, "%s\\frame%d_buffer%d.bin", pDir, m_cFrameNumber, BufferType);
-                    f = fopen(fname, "wb");
-                    fwrite(m_pBuffers[BufferType], m_cBuffersSize[BufferType], 1, f);
-                    if (f)
-                    {
-                        fclose(f);
-                        f = NULL;
-                    }
-
-                    sprintf(fname, "%s\\frame%d_buffer%d.log", pDir, m_cFrameNumber, BufferType);
-
-                    if (m_Profile == JPEG_VLD)
-                    {
-                        f = fopen(fname, "a");
-                        dumpJPEGBuffer(BufferType, m_pBuffers[BufferType]);
-                    }
-
-                    if (m_Profile == MPEG2_VLD || m_Profile == VC1_VLD)
-                    {
-                        if (BufferType == DXVA2_PictureParametersBufferType)
-                        {
-                            f = fopen(fname, "wt");
-                            dumpMPEG2PictureParameters(m_pBuffers[BufferType]);
-                        }
-                    }
-                    if (m_Profile == VC1_VLD)
-                    {
-                        if (BufferType == DXVA2_VC1PictureParametersExtBufferType)
-                        {
-                            f = fopen(fname, "wt");
-                            dumpVC1PictureParametersExt(m_pBuffers[BufferType]);
-                        }
-                    }
-                    if (m_Profile == MPEG4_VLD)
-                    {
-                        if (BufferType == DXVA2_PictureParametersBufferType)
-                        {
-                            f = fopen(fname, "wt");
-                            dumpMPEG4PictureParameters(m_pBuffers[BufferType]);
-                        }
-                    }
-                    if ((m_Profile == MPEG2_VLD || m_Profile == MPEG4_VLD) &&
-                        BufferType == DXVA2_SliceControlBufferType)
-                    {
-                        f = fopen(fname, "wt");
-                        DXVA_SliceInfo *pSlice = (DXVA_SliceInfo*)m_pBuffers[BufferType];
-                        int i;
-                        for (i = 0; i < m_cBuffersSize[BufferType]/sizeof(DXVA_SliceInfo); i++)
-                        {
-                            logi(i);
-                            logi(pSlice[i].wHorizontalPosition);
-                            logi(pSlice[i].wVerticalPosition);
-                            logi(pSlice[i].dwSliceBitsInBuffer);
-                            logi(pSlice[i].dwSliceDataLocation);
-                            logi(pSlice[i].bStartCodeBitOffset);
-                            logi(pSlice[i].bReservedBits);
-                            logi(pSlice[i].wMBbitOffset);
-                            logi(pSlice[i].wNumberMBsInSlice);
-                            logi(pSlice[i].wQuantizerScaleCode);
-                            logi(pSlice[i].wBadSliceChopping);
-                        }
-                    }
-
-                    if (m_Profile == H264_VLD)
-                    {
-                        switch(BufferType)
-                        {
-                        /*case DXVA_PICTURE_DECODE_BUFFER_SVC:
-                            f = fopen(fname, "wt");
-                            dumpH264SVCPictureParameters(m_pBuffers[BufferType]);
-                            break;
-
-                        case DXVA_SLICE_CONTROL_BUFFER_SVC:
-                            f = fopen(fname, "wt");
-                            break;*/
-
-                        case DXVA2_PictureParametersBufferType:
-                            f = fopen(fname, "wt");
-                            if (m_guid == sDXVA_ModeH264_VLD_Multiview_NoFGT || m_guid == sDXVA_ModeH264_VLD_Stereo_NoFGT ||
-                                m_guid == sDXVA_ModeH264_VLD_Stereo_Progressive_NoFGT ||
-
-                                m_cBuffersSize[BufferType] == sizeof(DXVA_PicParams_H264_MVC))
-                            {
-                                dumpH264PictureParameters_MS_MVC(m_pBuffers[BufferType]);
-                            }
-                            else if (m_guid == sDXVA_ModeH264_VLD_SVC_Scalable_High || m_guid == sDXVA_ModeH264_VLD_SVC_Scalable_Baseline ||
-                                m_guid == sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_Baseline ||
-                                m_guid == sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_High ||
-                                m_cBuffersSize[BufferType] == sizeof(DXVA_PicParams_H264_SVC))
-                            {
-                                dumpH264SVCPictureParameters(m_pBuffers[BufferType]);
-                            }
-                            else
-                            {
-                                dumpH264PictureParameters(m_pBuffers[BufferType]);
-                            }
-                            break;
-
-                        case DXVA_MVCPictureParametersExtBufferType - 1:
-                            f = fopen(fname, "wt");
-                            dumpH264MVCPictureParameters(m_pBuffers[BufferType]);
-                            break;
-
-                        case DXVA2_SliceControlBufferType:
-                            f = fopen(fname, "wt");
-                            bool isLong = m_Config.ConfigBitstreamRaw == 1 || m_Config.ConfigBitstreamRaw == 3 || m_Config.ConfigBitstreamRaw == 5;
-
-                            bool isSVCBufSize = isLong ? (m_cBuffersSize[BufferType] == sizeof(DXVA_Slice_H264_SVC_Long)) : 
-                                (m_cBuffersSize[BufferType] == sizeof(DXVA_Slice_H264_SVC_Short));
-
-                            if (m_guid == sDXVA_ModeH264_VLD_SVC_Scalable_High || m_guid == sDXVA_ModeH264_VLD_SVC_Scalable_Baseline ||
-                                m_guid == sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_High ||
-                                m_guid == sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_Baseline ||
-                                isSVCBufSize)
-                            {
-                                dumpH264SVCSliceParameters(m_pBuffers[BufferType], m_cBuffersSize[BufferType], isLong);
-                            }
-                            else
-                            {
-                                dumpH264SliceParameters(m_pBuffers[BufferType], m_cBuffersSize[BufferType], isLong);
-                            }
-                            break;
-
-                        }; // switch
-                    } // if (m_Profile == H264_VLD)
-
-                    if (f)
-                    {
-                        fclose(f);
-                        f = NULL;
-                    }
+                    f = fopen(fname, "wt");
+                    dumpMPEG2PictureParameters(m_pBuffers[BufferType]);
                 }
+            }
+            if (m_Profile == VC1_VLD)
+            {
+                if (BufferType == DXVA2_VC1PictureParametersExtBufferType)
+                {
+                    f = fopen(fname, "wt");
+                    dumpVC1PictureParametersExt(m_pBuffers[BufferType]);
+                }
+            }
+            if (m_Profile == MPEG4_VLD)
+            {
+                if (BufferType == DXVA2_PictureParametersBufferType)
+                {
+                    f = fopen(fname, "wt");
+                    dumpMPEG4PictureParameters(m_pBuffers[BufferType]);
+                }
+            }
+            if ((m_Profile == MPEG2_VLD || m_Profile == MPEG4_VLD) &&
+                BufferType == DXVA2_SliceControlBufferType)
+            {
+                f = fopen(fname, "wt");
+                DXVA_SliceInfo *pSlice = (DXVA_SliceInfo*)m_pBuffers[BufferType];
+                int i;
+                for (i = 0; i < m_cBuffersSize[BufferType]/sizeof(DXVA_SliceInfo); i++)
+                {
+                    logi(i);
+                    logi(pSlice[i].wHorizontalPosition);
+                    logi(pSlice[i].wVerticalPosition);
+                    logi(pSlice[i].dwSliceBitsInBuffer);
+                    logi(pSlice[i].dwSliceDataLocation);
+                    logi(pSlice[i].bStartCodeBitOffset);
+                    logi(pSlice[i].bReservedBits);
+                    logi(pSlice[i].wMBbitOffset);
+                    logi(pSlice[i].wNumberMBsInSlice);
+                    logi(pSlice[i].wQuantizerScaleCode);
+                    logi(pSlice[i].wBadSliceChopping);
+                }
+            }
+
+            if (f)
+            {
+                fclose(f);
+                f = NULL;
             }
         }
     }
@@ -511,6 +1158,8 @@ private:
     SurfaceType          *m_surface;
     UMC::VideoAccelerationProfile    m_Profile;
     int     m_cFrameNumber;
+
+    std::auto_ptr<BufferDumper>  m_bufferDumper;
 };
 
 Dumper<DXVA2_DecodeBufferDesc, DXVA2_ConfigPictureDecode, IDirect3DSurface9> dumpDx9;
@@ -544,7 +1193,8 @@ static GUID g_guids[] =
     DXVA2_Intel_Auxiliary_Device,
     DXVADDI_Intel_Decode_PrivateData_Report,
 
-    DXVA_ModeHEVC_VLD_MainProfile
+    DXVA_ModeHEVC_VLD_Main,
+    DXVA_Intel_ModeHEVC_VLD_MainProfile
 };
 
 static DXVA2_ConfigPictureDecode configs[]=
@@ -555,6 +1205,9 @@ static DXVA2_ConfigPictureDecode configs[]=
     {sDXVA2_ModeH264_VLD_NoFGT, DXVA_NoEncrypt, DXVA_NoEncrypt, 2, 5000, 5000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     {sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_High, DXVA_NoEncrypt, DXVA_NoEncrypt, 2, 5000, 5000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     {sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_Baseline, DXVA_NoEncrypt, DXVA_NoEncrypt, 2, 5000, 5000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+
+    {DXVA_ModeHEVC_VLD_Main, DXVA_NoEncrypt, DXVA_NoEncrypt, 2, 5000, 5000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {DXVA_Intel_ModeHEVC_VLD_MainProfile, DXVA_NoEncrypt, DXVA_NoEncrypt, 2, 5000, 5000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 };
 
 char pDir[256] = ".\\dxva2_log";
@@ -1312,447 +1965,6 @@ HRESULT STDMETHODCALLTYPE CSpyVideoDecoder::Execute(
     if (pExecuteParams->NumCompBuffers)
         logi_flush(hr);
     return hr;
-}
-
-
-#define BUFFER_D3DDDIFMT_INTEL_JPEGDECODE_PPSDATA       (D3DDDIFMT_INTEL_JPEGDECODE_PPSDATA - 1)
-#define BUFFER_D3DDDIFMT_INTEL_JPEGDECODE_QUANTDATA     (D3DDDIFMT_INTEL_JPEGDECODE_QUANTDATA - 1)
-#define BUFFER_D3DDDIFMT_INTEL_JPEGDECODE_HUFFTBLDATA   (D3DDDIFMT_INTEL_JPEGDECODE_HUFFTBLDATA - 1)
-#define BUFFER_D3DDDIFMT_INTEL_JPEGDECODE_SCANDATA      (D3DDDIFMT_INTEL_JPEGDECODE_SCANDATA - 1)     
-#define BUFFER_D3DDDIFMT_BITSTREAMDATA                  (D3DDDIFMT_BITSTREAMDATA - 1)
-
-void dumpJPEGBuffer(int BufferType, void *buffer)
-{
-    switch(BufferType)
-    {
-    case BUFFER_D3DDDIFMT_INTEL_JPEGDECODE_PPSDATA: 
-        {
-        JPEG_DECODE_PICTURE_PARAMETERS * ptr = (JPEG_DECODE_PICTURE_PARAMETERS *)buffer;
-        logi(ptr->FrameWidth);
-        logi(ptr->FrameHeight);
-        logi(ptr->NumCompInFrame);
-
-        for (int i = 0; i < 4; i++)
-        {
-            logi(ptr->ComponentIdentifier[i]);
-        }
-
-        for (int i = 0; i < 4; i++)
-        {
-            logi(ptr->QuantTableSelector[i]);
-        }
-
-        logi(ptr->ChromaType);
-        logi(ptr->Rotation);
-        logi(ptr->TotalScans);
-        }
-        break;
-    case BUFFER_D3DDDIFMT_INTEL_JPEGDECODE_HUFFTBLDATA: 
-        {
-            JPEG_DECODE_HUFFMAN_TABLE * ptr = (JPEG_DECODE_HUFFMAN_TABLE *)buffer;
-            logi(ptr->TableClass);
-            logi(ptr->TableIndex);
-
-            for (int i = 0; i < sizeof(ptr->BITS); i++)
-            {
-                logi(ptr->BITS[i]);
-            }
-
-            for (int i = 0; i < sizeof(ptr->HUFFVAL); i++)
-            {
-                logi(ptr->HUFFVAL[i]);
-            }
-        }
-        break;
-
-    case BUFFER_D3DDDIFMT_INTEL_JPEGDECODE_QUANTDATA: 
-        {
-            JPEG_DECODE_QM_TABLE * ptr = (JPEG_DECODE_QM_TABLE*)buffer;
-            logi(ptr->TableIndex);
-            logi(ptr->Precision);
-
-            for (int i = 0; i < sizeof(ptr->Qm); i++)
-            {
-                logi(ptr->Qm[i]);
-            }
-        }
-        break;
-
-    case BUFFER_D3DDDIFMT_INTEL_JPEGDECODE_SCANDATA:
-        {
-        JPEG_DECODE_SCAN_PARAMETER * ptr = (JPEG_DECODE_SCAN_PARAMETER *)buffer;
-        logi(ptr->NumComponents);
-
-        for (int i = 0; i < 4; i++)
-        {
-            logi(ptr->ComponentSelector[i]);
-        }
-
-        for (int i = 0; i < 4; i++)
-        {
-            logi(ptr->DcHuffTblSelector[i]);
-        }
-
-        for (int i = 0; i < 4; i++)
-        {
-            logi(ptr->AcHuffTblSelector[i]);
-        }
-
-        logi(ptr->RestartInterval);
-        logi(ptr->MCUCount);
-        logi(ptr->ScanHoriPosition);
-        logi(ptr->ScanVertPosition);
-        logi(ptr->DataOffset);
-        logi(ptr->DataLength);
-        }
-        break;
-    };
-}
-
-void dumpH264MVCPictureParameters(void *pPictureParameters)
-{
-    DXVA_Intel_PicParams_MVC *pParams = (DXVA_Intel_PicParams_MVC*)pPictureParameters;
-
-    logi(pParams->CurrViewID);
-    logi(pParams->anchor_pic_flag);
-
-    logi(pParams->inter_view_flag);
-    logi(pParams->NumInterViewRefsL0);
-    logi(pParams->NumInterViewRefsL1);
-
-    logi(pParams->bPicFlags);
-    logi(pParams->SwitchToAVC);
-    logi(pParams->Reserved7Bits);
-
-    logi(pParams->Reserved8Bits);
-
-    for (int i = 0; i < 16; i++)
-    {
-        logi(pParams->ViewIDList[i]);
-    }
-
-    for (int i = 0; i < 16; i++)
-    {
-        logi(pParams->InterViewRefList[0][i]);
-        logi(pParams->InterViewRefList[1][i]);
-    }
-}
-
-void dumpH264SVCPictureParameters(void *pPictureParameters)
-{
-    DXVA_PicParams_H264_SVC *pParams = (DXVA_PicParams_H264_SVC*)pPictureParameters;
-
-    for (int i = 0; i < 16; i++)
-    {
-        logi(pParams->RefBasePicFlag[i]);
-    }
-
-    logi(pParams->inter_layer_deblocking_filter_control_present_flag);
-    logi(pParams->chroma_phase_x_plus_flag);
-    logi(pParams->seq_ref_layer_chroma_phase_x_plus1_flag);
-    logi(pParams->adaptive_tcoeff_level_prediction_flag);
-    logi(pParams->slice_header_restriction_flag);
-    logi(pParams->store_ref_base_pic_flag);
-    logi(pParams->ShiftXY16Flag);
-    logi(pParams->constrained_intra_resampling_flag);
-    logi(pParams->ref_layer_chroma_phase_x_plus1_flag);
-    logi(pParams->tcoeff_level_prediction_flag);
-    logi(pParams->IdrPicFlag);
-    logi(pParams->NextLayerSpatialResolutionChangeFlag);
-    logi(pParams->NextLayerMaxTXoeffLevelPredFlag);
-
-    logi(pParams->extended_spatial_scalability_idc);
-    logi(pParams->chroma_phase_y_plus1);
-    logi(pParams->seq_ref_layer_chroma_phase_y_plus1);
-
-    logi(pParams->seq_scaled_ref_layer_left_offset);
-    logi(pParams->seq_scaled_ref_layer_top_offset);
-    logi(pParams->seq_scaled_ref_layer_right_offset);
-    logi(pParams->seq_scaled_ref_layer_bottom_offset);
-
-    logi(pParams->seq_ref_layer_chroma_phase_y_plus1);
-
-    logi(pParams->LayerType);
-    logi(pParams->dependency_id);
-    logi(pParams->quality_id);
-
-    logi(pParams->ref_layer_dq_id);
-
-    logi(pParams->disable_inter_layer_deblocking_filter_idc);
-    logi(pParams->inter_layer_slice_alpha_c0_offset_div2);
-    logi(pParams->inter_layer_slice_beta_offset_div2);
-    logi(pParams->ref_layer_chroma_phase_y_plus1);
-
-    logi(pParams->NextLayerScaledRefLayerLeftOffset);
-    logi(pParams->NextLayerScaledRefLayerRightOffset);
-    logi(pParams->NextLayerScaledRefLayerTopOffset);
-    logi(pParams->NextLayerScaledRefLayerBottomOffset);
-    logi(pParams->NextLayerPicWidthInMbs);
-    logi(pParams->NextLayerPicHeightInMbs);
-    logi(pParams->NextLayerDisableInterLayerDeblockingFilterIdc);
-    logi(pParams->NextLayerInterLayerSliceAlphaC0OffsetDiv2);
-    logi(pParams->NextLayerInterLayerSliceBetaOffsetDiv2);
-
-    logi(pParams->DeblockingFilterMode);
-
-    dumpH264PictureParameters(pParams);
-}
-
-void dumpH264SVCSliceParameters(void * sliceParam, size_t bufSize, bool isLong)
-{
-    if (isLong)
-    {
-        DXVA_Slice_H264_SVC_Long *pSlice = (DXVA_Slice_H264_SVC_Long*)sliceParam;
-        for (int i = 0; i < bufSize/sizeof(DXVA_Slice_H264_SVC_Long); i++)
-        {
-            logi(i);
-            logi(pSlice[i].no_inter_layer_pred_flag);
-            logi(pSlice[i].base_pred_weight_table_flag);
-            logi(pSlice[i].slice_skip_flag);
-            logi(pSlice[i].adaptive_base_mode_flag);
-            logi(pSlice[i].default_base_mode_flag);
-            logi(pSlice[i].adaptive_motion_prediction_flag);
-            logi(pSlice[i].default_motion_prediction_flag);
-            logi(pSlice[i].adaptive_residual_prediction_flag);
-            logi(pSlice[i].default_residual_prediction_flag);
-
-            logi(pSlice[i].num_mbs_in_slice_minus1);
-            logi(pSlice[i].scan_idx_start);
-            logi(pSlice[i].scan_idx_end);
-
-            dumpH264SliceParameter(&pSlice[i], isLong);
-        }
-    }
-    else
-    {
-        DXVA_Slice_H264_SVC_Short *pSlice = (DXVA_Slice_H264_SVC_Short*)sliceParam;
-        for (int i = 0; i < bufSize/sizeof(DXVA_Slice_H264_SVC_Short); i++)
-        {
-            logi(i);
-            logi(pSlice[i].no_inter_layer_pred_flag);
-
-            dumpH264SliceParameter(&pSlice[i], isLong);
-        }
-    }
-}
-
-void dumpH264PictureParameters_MS_MVC(void *pPictureParameters)
-{
-    DXVA_PicParams_H264_MVC *pParams = (DXVA_PicParams_H264_MVC*)pPictureParameters;
-
-    dumpH264PictureParameters(pPictureParameters);
-
-    logs("\nMVC picture params\n");
-
-    logi(pParams->num_views_minus1);
-
-    logi(pParams->curr_view_id);
-    logi(pParams->anchor_pic_flag);
-    logi(pParams->inter_view_flag);
- 
-    for (int i = 0; i < 16; i++)
-    {
-        logi(pParams->view_id[i]);
-    }
-
-    for (int i = 0; i < 16; i++)
-    {
-        logi(pParams->ViewIDList[i]);
-    }
-
-    for (int i = 0; i < 16; i++)
-    {
-        logi(pParams->num_anchor_refs_l0[i]);
-    }
-
-    for (int i = 0; i < 16; i++)
-    {
-        logi(i);
-        for (int j = 0; j < 16; j++)
-            logi(pParams->anchor_ref_l0[i][j]);
-    }
-
-
-    for (int i = 0; i < 16; i++)
-    {
-        logi(pParams->num_anchor_refs_l1[i]);
-    }
-
-    for (int i = 0; i < 16; i++)
-    {
-        logi(i);
-        for (int j = 0; j < 16; j++)
-            logi(pParams->anchor_ref_l1[i][j]);
-    }
-
-
-    for (int i = 0; i < 16; i++)
-    {
-        logi(pParams->num_non_anchor_refs_l0[i]);
-    }
-
-    for (int i = 0; i < 16; i++)
-    {
-        logi(i);
-        for (int j = 0; j < 16; j++)
-            logi(pParams->non_anchor_ref_l0[i][j]);
-    }
-
-    for (int i = 0; i < 16; i++)
-    {
-        logi(pParams->num_non_anchor_refs_l1[i]);
-    }
-
-    for (int i = 0; i < 16; i++)
-    {
-        logi(i);
-        for (int j = 0; j < 16; j++)
-            logi(pParams->non_anchor_ref_l1[i][j]);
-    }
-}
-
-void dumpH264PictureParameters(void *pPictureParameters)
-{
-    DXVA_PicParams_H264 *pParams = (DXVA_PicParams_H264*)pPictureParameters;
-    logi(pParams->wFrameWidthInMbsMinus1);
-    logi(pParams->wFrameHeightInMbsMinus1);
-    logi(pParams->CurrPic.Index7Bits);
-    logi(pParams->CurrPic.AssociatedFlag);
-    logi(pParams->num_ref_frames);
-
-    //logi(pParams->wBitFields);
-    logi(pParams->field_pic_flag);
-    logi(pParams->MbaffFrameFlag);
-    logi(pParams->residual_colour_transform_flag);
-    logi(pParams->sp_for_switch_flag);
-    logi(pParams->chroma_format_idc);
-    logi(pParams->RefPicFlag);
-    logi(pParams->constrained_intra_pred_flag);
-    logi(pParams->weighted_pred_flag);
-    logi(pParams->weighted_bipred_idc);
-    logi(pParams->MbsConsecutiveFlag);
-    logi(pParams->frame_mbs_only_flag);
-    logi(pParams->transform_8x8_mode_flag);
-    logi(pParams->MinLumaBipredSize8x8Flag);
-    logi(pParams->IntraPicFlag);
-
-    logi(pParams->bit_depth_luma_minus8);
-    logi(pParams->bit_depth_chroma_minus8);
-    logi(pParams->Reserved16Bits);
-    logui(pParams->StatusReportFeedbackNumber);
-    logi(pParams->CurrFieldOrderCnt[0]);
-    logi(pParams->CurrFieldOrderCnt[1]);
-    logi(pParams->pic_init_qs_minus26);
-    logi(pParams->chroma_qp_index_offset);
-    logi(pParams->second_chroma_qp_index_offset);
-    logi(pParams->ContinuationFlag);
-    logi(pParams->pic_init_qp_minus26);
-    logi(pParams->num_ref_idx_l0_active_minus1);
-    logi(pParams->num_ref_idx_l1_active_minus1);
-    logi(pParams->Reserved8BitsA);
-    logi(pParams->UsedForReferenceFlags);
-    logi(pParams->NonExistingFrameFlags);
-    logi(pParams->frame_num);
-    logi(pParams->log2_max_frame_num_minus4);
-    logi(pParams->pic_order_cnt_type);
-    logi(pParams->log2_max_pic_order_cnt_lsb_minus4);
-    logi(pParams->delta_pic_order_always_zero_flag);
-    logi(pParams->direct_8x8_inference_flag);
-    logi(pParams->entropy_coding_mode_flag);
-    logi(pParams->pic_order_present_flag);
-    logi(pParams->num_slice_groups_minus1);
-    logi(pParams->slice_group_map_type);
-    logi(pParams->deblocking_filter_control_present_flag);
-    logi(pParams->redundant_pic_cnt_present_flag);
-    logi(pParams->Reserved8BitsB);
-    logi(pParams->slice_group_change_rate_minus1);
-    int i;
-    for (i = 0; i < 16; i++)
-    {
-        logi(i);
-        logi(pParams->RefFrameList[i].Index7Bits);
-        logi(pParams->RefFrameList[i].AssociatedFlag);
-        logi(pParams->FieldOrderCntList[i][0]);
-        logi(pParams->FieldOrderCntList[i][1]);
-        logi(pParams->FrameNumList[i]);
-    }
-    //logi(pParams->SliceGroupMap[810]; /* 4b/sgmu, Size BT.601 */
-}
-
-void dumpH264SliceParameter(void * sliceParam, bool isLong)
-{
-    if (isLong)
-    {
-        DXVA_Slice_H264_Long *pSlice = (DXVA_Slice_H264_Long*)sliceParam;
-        logi(pSlice->BSNALunitDataLocation);
-        logi(pSlice->SliceBytesInBuffer);
-        logi(pSlice->wBadSliceChopping);
-        logi(pSlice->first_mb_in_slice);
-        logi(pSlice->NumMbsForSlice);
-        logi(pSlice->BitOffsetToSliceData);
-        logi(pSlice->slice_type);
-        logi(pSlice->luma_log2_weight_denom);
-        logi(pSlice->chroma_log2_weight_denom);
-        logi(pSlice->num_ref_idx_l0_active_minus1);
-        logi(pSlice->num_ref_idx_l1_active_minus1);
-        logi(pSlice->slice_alpha_c0_offset_div2);
-        logi(pSlice->slice_beta_offset_div2);
-        logi(pSlice->Reserved8Bits);
-        logi(pSlice->slice_qs_delta);
-        logi(pSlice->slice_qp_delta);
-        logi(pSlice->redundant_pic_cnt);
-        logi(pSlice->direct_spatial_mv_pred_flag);
-        logi(pSlice->cabac_init_idc);
-        logi(pSlice->disable_deblocking_filter_idc);
-        logi(pSlice->slice_id);
-        for (int j = 0; j < 32; j++)
-        {
-            logi(j);
-            logi(pSlice->RefPicList[0][j].bPicEntry);
-            logi(pSlice->RefPicList[1][j].bPicEntry);
-            logi(pSlice->Weights[0][j][0][0]);
-            logi(pSlice->Weights[0][j][0][1]);
-            logi(pSlice->Weights[0][j][1][0]);
-            logi(pSlice->Weights[0][j][1][1]);
-            logi(pSlice->Weights[0][j][2][0]);
-            logi(pSlice->Weights[0][j][2][1]);
-            logi(pSlice->Weights[1][j][0][0]);
-            logi(pSlice->Weights[1][j][0][1]);
-            logi(pSlice->Weights[1][j][1][0]);
-            logi(pSlice->Weights[1][j][1][1]);
-            logi(pSlice->Weights[1][j][2][0]);
-            logi(pSlice->Weights[1][j][2][1]);
-        }
-    }
-    else
-    {
-        DXVA_Slice_H264_Short *pSlice = (DXVA_Slice_H264_Short*)sliceParam;
-        logi(pSlice->BSNALunitDataLocation);
-        logi(pSlice->SliceBytesInBuffer);
-        logi(pSlice->wBadSliceChopping);
-    }
-}
-
-void dumpH264SliceParameters(void * sliceParam, size_t bufSize, bool isLong)
-{
-    if (isLong)
-    {
-        DXVA_Slice_H264_Long *pSlice = (DXVA_Slice_H264_Long*)sliceParam;
-        for (int i = 0; i < bufSize/sizeof(DXVA_Slice_H264_Long); i++)
-        {
-            logi(i);
-            dumpH264SliceParameter(&pSlice[i], isLong);
-        }
-    }
-    else
-    {
-        DXVA_Slice_H264_Short *pSlice = (DXVA_Slice_H264_Short*)sliceParam;
-        for (int i = 0; i < bufSize/sizeof(DXVA_Slice_H264_Short); i++)
-        {
-            logi(i);
-            dumpH264SliceParameter(&pSlice[i], isLong);
-        }
-    }
 }
 
 void dumpMPEG2PictureParameters(void *pPictureParameters)
