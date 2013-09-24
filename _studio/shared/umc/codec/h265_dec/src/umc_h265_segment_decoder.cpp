@@ -1598,7 +1598,8 @@ void H265SegmentDecoder::DecodeTransform(H265CodingUnit* pCU, Ipp32u offsetLuma,
     if (Log2TrafoSize == 2)
     {
         Ipp32u partNum = pCU->m_Frame->getCD()->getNumPartInCU() >> ((Depth - 1) << 1);
-        if ((AbsPartIdx % partNum) == 0)
+        Ipp32u partMask = partNum - 1;
+        if ((AbsPartIdx & partMask) == 0) /* if ((AbsPartIdx % partNum) == 0) */
         {
             m_BakAbsPartIdx   = AbsPartIdx;
             m_BakChromaOffset = offsetChroma;
@@ -1708,7 +1709,8 @@ void H265SegmentDecoder::DecodeTransform(H265CodingUnit* pCU, Ipp32u offsetLuma,
         if (Log2TrafoSize == 2)
         {
             Ipp32u partNum = pCU->m_Frame->getCD()->getNumPartInCU() >> ((Depth - 1) << 1);
-            if ((AbsPartIdx % partNum) == (partNum - 1))
+            Ipp32s partMask = partNum - 1;
+            if ( (AbsPartIdx & partMask) == partMask ) /* if ((AbsPartIdx % partNum) == (partNum - 1)) */
             {
                 cbfU = pCU->GetCbf(m_BakAbsPartIdx, TEXT_CHROMA_U, TrIdx);
                 cbfV = pCU->GetCbf(m_BakAbsPartIdx, TEXT_CHROMA_V, TrIdx);
@@ -1751,7 +1753,8 @@ void H265SegmentDecoder::DecodeTransform(H265CodingUnit* pCU, Ipp32u offsetLuma,
         else
         {
             Ipp32u partNum = pCU->m_Frame->getCD()->getNumPartInCU() >> ((Depth - 1) << 1);
-            if ((AbsPartIdx % partNum) == (partNum - 1))
+            Ipp32s partMask = partNum - 1;
+            if ( (AbsPartIdx & partMask) == partMask )   /* if ((AbsPartIdx % partNum) == (partNum - 1)) */
             {
                 Ipp32s trWidth = width;
 
