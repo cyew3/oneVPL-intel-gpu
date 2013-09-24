@@ -1957,6 +1957,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     if( !(m_executeParams.targetSurface.frameInfo.PicStruct & (MFX_PICSTRUCT_PROGRESSIVE)) )
     {
         m_executeParams.iTargetInterlacingMode = DEINTERLACE_DISABLE;
+        m_executeParams.iDeinterlacingAlgorithm = 0;
     }
 
 
