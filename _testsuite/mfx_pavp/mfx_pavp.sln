@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_pavp", "mfx_pavp.vcxproj", "{C5F7A679-A980-4059-B6A1-C8C0D0F169FB}"
 	ProjectSection(ProjectDependencies) = postProject
 		{DB71B91D-16D8-4339-9621-D81798E46E8F} = {DB71B91D-16D8-4339-9621-D81798E46E8F}
