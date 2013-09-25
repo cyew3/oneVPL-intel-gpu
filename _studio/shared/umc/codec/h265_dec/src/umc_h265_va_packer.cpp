@@ -605,10 +605,10 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     {
         pPicParam->num_tile_columns_minus1                          = (UCHAR)pPicParamSet->num_tile_columns - 1;
         pPicParam->num_tile_rows_minus1                             = (UCHAR)pPicParamSet->num_tile_rows - 1;
-        for (Ipp32s i = 0; i < pPicParamSet->num_tile_columns; i++)
+        for (Ipp32u i = 0; i < pPicParamSet->num_tile_columns; i++)
             pPicParam->column_width_minus1[i] = (Ipp16u)(pPicParamSet->column_width[i] - 1);
 
-        for (Ipp32s i = 0; i < pPicParamSet->num_tile_rows; i++)
+        for (Ipp32u i = 0; i < pPicParamSet->num_tile_rows; i++)
             pPicParam->row_height_minus1[i] = (Ipp16u)(pPicParamSet->row_height[i] - 1);
     }
     pPicParam->diff_cu_qp_delta_depth                               = (UCHAR)(pPicParamSet->diff_cu_qp_delta_depth);
@@ -1189,6 +1189,7 @@ void MSPackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
 {
     UMCVACompBuffer *compBuf;
     DXVA_PicParams_HEVC* pPicParam = (DXVA_PicParams_HEVC*)m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &compBuf);
+    memset(pPicParam, 0, sizeof(DXVA_PicParams_HEVC));
 
     compBuf->SetDataSize(sizeof(DXVA_PicParams_HEVC));
 
@@ -1228,8 +1229,11 @@ void MSPackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->num_ref_idx_l1_default_active_minus1         = (UCHAR)(pPicParamSet->num_ref_idx_l1_default_active - 1);
     pPicParam->init_qp_minus26                              = (CHAR)pPicParamSet->init_qp - 26;
 
-    pPicParam->ucNumDeltaPocsOfRefRpsIdx                    = (UCHAR)pPicParam->wNumBitsForShortTermRPSInSlice;
-    pPicParam->wNumBitsForShortTermRPSInSlice               = (USHORT)pSlice->getNumBitsForShortTermRPSInSlice();
+    if (!pSlice->GetSliceHeader()->short_term_ref_pic_set_sps_flag)
+    {
+        pPicParam->ucNumDeltaPocsOfRefRpsIdx                    = (UCHAR)pSeqParamSet->getRPSList()->getNumberOfReferencePictureSets();
+        pPicParam->wNumBitsForShortTermRPSInSlice               = (USHORT)pSlice->getNumBitsForShortTermRPSInSlice();
+    }
     
     // dwCodingParamToolFlags
     //
@@ -1277,10 +1281,10 @@ void MSPackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     {
         pPicParam->num_tile_columns_minus1                          = (UCHAR)pPicParamSet->num_tile_columns - 1;
         pPicParam->num_tile_rows_minus1                             = (UCHAR)pPicParamSet->num_tile_rows - 1;
-        for (Ipp32s i = 0; i < pPicParamSet->num_tile_columns; i++)
+        for (Ipp32u i = 0; i < pPicParamSet->num_tile_columns; i++)
             pPicParam->column_width_minus1[i] = (Ipp16u)(pPicParamSet->column_width[i] - 1);
 
-        for (Ipp32s i = 0; i < pPicParamSet->num_tile_rows; i++)
+        for (Ipp32u i = 0; i < pPicParamSet->num_tile_rows; i++)
             pPicParam->row_height_minus1[i] = (Ipp16u)(pPicParamSet->row_height[i] - 1);
     }
 
@@ -1350,10 +1354,10 @@ void MSPackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     for(int n=count;n < sizeof(pPicParam->RefPicList)/sizeof(pPicParam->RefPicList[0]);n++)
     {
         pPicParam->RefPicList[n].bPicEntry = (UCHAR)0xff;
-        pPicParam->PicOrderCntValList[count] = -1;
+        pPicParam->PicOrderCntValList[n] = -1;
     }
 
-    for(Ipp32u i = 0;i < 8; i++)
+    for(Ipp32s i = 0;i < 8; i++)
     {
         if (i >= cntRefPicSetStCurrBefore)
             pPicParam->RefPicSetStCurrBefore[i] = 0xff;
@@ -1386,7 +1390,7 @@ void MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, bool , bool )
     dxvaSlice->SliceBytesInBuffer = rawDataSize + sizeof(start_code_prefix);
     dxvaSlice->wBadSliceChopping = 0;
 
-    if (dxvaSlice->SliceBytesInBuffer >= dataVABffr->GetBufferSize() - dataVABffr->GetDataSize())
+    if ((Ipp32s)dxvaSlice->SliceBytesInBuffer >= dataVABffr->GetBufferSize() - dataVABffr->GetDataSize())
         return;
 
     memcpy(dataBffr, start_code_prefix, sizeof(start_code_prefix));

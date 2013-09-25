@@ -1221,6 +1221,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
 
             ReferencePictureSet* rps;
             PARSE_FLAG( uiCode, "short_term_ref_pic_set_sps_flag" );
+            sliceHdr->short_term_ref_pic_set_sps_flag = uiCode;
             if(uiCode == 0) // short term ref pic is signalled
             {
                 int bitsDecoded = BitsDecoded();

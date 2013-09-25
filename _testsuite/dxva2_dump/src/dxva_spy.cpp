@@ -27,6 +27,7 @@
 #include "umc_jpeg_ddi.h"
 #include "umc_mvc_ddi.h"
 #include "umc_svc_ddi.h"
+#include "umc_hevc_ddi.h"
 
 #include <sdkddkver.h>
 #if (NTDDI_VERSION >= NTDDI_VERSION_FROM_WIN32_WINNT2(0x0602)) // >= _WIN32_WINNT_WIN8
@@ -737,22 +738,23 @@ public:
         }
 
         bool isMS = (m_guid == DXVA_ModeHEVC_VLD_Main);
-
-        if (!isMS)
-            return;
-
         f = fopen(fname, "wt");
 
         switch (BufferType)
         {
         case DXVA2_PictureParametersBufferType:
-            dumpHEVC_PPS_MS(buffer);
+            if (isMS)
+                dumpHEVC_PPS_MS(buffer);
+            else
+                dumpHEVC_PPS_Intel(buffer);
             break;
         case DXVA2_InverseQuantizationMatrixBufferType:
-            dumpHEVC_QMatrix_MS(buffer);
+            if (isMS)
+                dumpHEVC_QMatrix_MS(buffer);
             break;
         case DXVA2_SliceControlBufferType:
-            dumpHEVCSliceParameters_MS(buffer, bufferSize);
+            if (isMS)
+                dumpHEVCSliceParameters_MS(buffer, bufferSize);
             break;
         }
 
@@ -760,6 +762,11 @@ public:
     }
 
 private:
+
+    void dumpHEVC_PPS_Intel(void *buffer)
+    {
+        DXVA_Intel_PicParams_HEVC* picParam = (DXVA_Intel_PicParams_HEVC*)buffer;
+    }
 
     void dumpHEVC_PPS_MS(void *buffer)
     {

@@ -1152,6 +1152,7 @@ struct H265SliceHeader
     Ipp32u      colour_plane_id; // if separate_colour_plane_flag = = 1 only
 
     Ipp32s      slice_pic_order_cnt_lsb;                    // picture order count (mod MaxPicOrderCntLsb)
+    Ipp8u       short_term_ref_pic_set_sps_flag;
 
     bool        slice_enable_temporal_mvp_flag;
 
