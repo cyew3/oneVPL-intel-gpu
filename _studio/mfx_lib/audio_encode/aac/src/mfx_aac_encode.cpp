@@ -429,6 +429,7 @@ mfxStatus AudioENCODEAAC::CopyBitstream(mfxAudioFrame& bs, const mfxU8* ptr, mfx
 
 void AudioENCODEAAC::MoveBitstreamData(mfxAudioFrame& bs, mfxU32 offset)
 {
+    ippsMove_8u(bs.Data + offset, bs.Data, bs.DataLength - offset);
     bs.DataLength -= offset;
 } 
 
