@@ -233,6 +233,13 @@ enum CostOpt
     COST_REC_TR_MAX
 };
 
+enum IntraPredOpt
+{
+    INTRA_PRED_CALC,
+    INTRA_PRED_IN_REC,
+    INTRA_PRED_IN_BUF,
+};
+
 enum EnumPicClass
 {
     DISPOSABLE_PIC = 0, // No references to this picture from others, need not be decoded
@@ -364,6 +371,8 @@ inline Ipp32s H265_CeilLog2(Ipp32s a) {
 }
 
 void InitializeContextVariablesHEVC_CABAC(CABAC_CONTEXT_H265 *context_hevc, Ipp32s initializationType, Ipp32s SliceQPy);
+Ipp32s h265_tu_had(PixType *src, PixType *rec,
+                   Ipp32s pitch_src, Ipp32s pitch_rec, Ipp32s width, Ipp32s height);
 
 #endif // __MFX_H265_DEFS_H__
 

@@ -430,13 +430,7 @@ namespace MFX_HEVC_PP
 
     } // void h265_PredictIntra_DC_8u(
 
-
-#if defined(MFX_TARGET_OPTIMIZATION_PX)  || defined(MFX_TARGET_OPTIMIZATION_AUTO)
-#if defined(MFX_TARGET_OPTIMIZATION_PX)
-    void h265_PredictIntra_Ang_8u(
-#elif defined(MFX_TARGET_OPTIMIZATION_AUTO)
-    void h265_PredictIntra_Ang_8u_px(
-#endif
+    static void h265_PredictIntra_Ang_8u_px_no_transp(
         Ipp32s mode,
         PixType* PredPel,
         PixType* pels,
@@ -514,6 +508,23 @@ namespace MFX_HEVC_PP
                 }
             }
         }
+    } // void h265_PredictIntra_Ang_8u_px_no_transp(...)
+
+#if defined(MFX_TARGET_OPTIMIZATION_PX)  || defined(MFX_TARGET_OPTIMIZATION_AUTO)
+#if defined(MFX_TARGET_OPTIMIZATION_PX)
+    void h265_PredictIntra_Ang_8u(
+#elif defined(MFX_TARGET_OPTIMIZATION_AUTO)
+    void h265_PredictIntra_Ang_8u_px(
+#endif
+        Ipp32s mode,
+        PixType* PredPel,
+        PixType* pels,
+        Ipp32s pitch,
+        Ipp32s width)
+    {
+        Ipp32s i, j;
+
+        h265_PredictIntra_Ang_8u_px_no_transp(mode, PredPel, pels, pitch, width);
 
         if (mode < 18)
         {
@@ -577,6 +588,40 @@ namespace MFX_HEVC_PP
         }
 
     } // void h265_PredictIntra_Planar_8u(...)
+
+
+#define INTRA_VER                26
+#define INTRA_HOR                10
+
+static Ipp32s FilteredModes[] = {10, 7, 1, 0, 10};
+
+#if defined(MFX_TARGET_OPTIMIZATION_PX)  || defined(MFX_TARGET_OPTIMIZATION_AUTO)
+#if defined(MFX_TARGET_OPTIMIZATION_PX)
+    void h265_PredictIntra_Ang_All_8u(
+#elif defined(MFX_TARGET_OPTIMIZATION_AUTO)
+    void h265_PredictIntra_Ang_All_8u_px(
+#endif
+        PixType* PredPel,
+        PixType* FiltPel,
+        PixType* pels,
+        Ipp32s width)
+    {
+        for (int mode = 2; mode < 35; mode++)
+        {
+            Ipp32s diff = MIN(abs(mode - INTRA_HOR), abs(mode - INTRA_VER));
+
+            if (diff <= FilteredModes[h265_log2table[width - 4] - 2])
+            {
+                h265_PredictIntra_Ang_8u_px_no_transp(mode, PredPel, pels, width, width);
+            }
+            else
+            {
+                h265_PredictIntra_Ang_8u_px_no_transp(mode, FiltPel, pels, width, width);
+            }
+            pels += width * width;  // next buffer
+        }
+    }
+#endif // #if defined(MFX_TARGET_OPTIMIZATION_PX)  || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 
 }; // namespace MFX_HEVC_PP
 

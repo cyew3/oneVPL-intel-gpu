@@ -102,6 +102,10 @@ public:
     __ALIGN16 CoeffsType      residuals_y[MAX_CU_SIZE*MAX_CU_SIZE];
     __ALIGN16 CoeffsType      residuals_u[MAX_CU_SIZE*MAX_CU_SIZE/4];
     __ALIGN16 CoeffsType      residuals_v[MAX_CU_SIZE*MAX_CU_SIZE/4];
+    __ALIGN16 PixType pred_intra_all[35*32*32];
+    __ALIGN16 PixType tu_src_transposed[32*32];
+    CostType intra_cost[35];
+    Ipp32s pred_intra_all_width;
     Ipp8u           inNeighborFlags[4*MAX_CU_SIZE+1];
     Ipp8u           outNeighborFlags[4*MAX_CU_SIZE+1];
     H265CUData*   p_above;          ///< pointer of above CU
@@ -282,7 +286,9 @@ public:
 
     void InterPredCU(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u is_luma);
     void IntraPred(Ipp32u abs_part_idx, Ipp8u depth);
-    void IntraPredTU(Ipp32s blockZScanIdx, Ipp32s width, Ipp32s pred_mode, Ipp8u is_luma);
+    void IntraPredTU(Ipp32s abs_part_idx, Ipp32s width, Ipp32s pred_mode, Ipp8u is_luma);
+    void IntraPredTULumaAllHAD(Ipp32s abs_part_idx, Ipp32s width);
+    Ipp8u GetTRSplitMode(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u tr_depth, Ipp8u part_size, Ipp8u is_luma);
     void TransformInv(Ipp32s offset, Ipp32s width, Ipp8u is_luma, Ipp8u is_intra);
     void TransformFwd(Ipp32s offset, Ipp32s width, Ipp8u is_luma, Ipp8u is_intra);
 
@@ -291,7 +297,7 @@ public:
     void EncAndRecLuma(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u depth, Ipp8u *nz, CostType *cost);
     void EncAndRecChroma(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u depth, Ipp8u *nz, CostType *cost);
     void EncAndRecLumaTU(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, Ipp8u *nz, CostType *cost,
-        Ipp8u cost_pred_flag = 0, Ipp8u skip_pred_flag = 0);
+        Ipp8u cost_pred_flag, IntraPredOpt pred_opt);
     void EncAndRecChromaTU(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, Ipp8u *nz, CostType *cost);
     void QuantInvTU(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, Ipp32s is_luma);
     void QuantFwdTU(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, Ipp32s is_luma);

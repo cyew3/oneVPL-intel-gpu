@@ -593,6 +593,119 @@ void H265CU::IntraPredTU(Ipp32s blockZScanIdx, Ipp32s width, Ipp32s pred_mode, I
     }
 }
 
+void H265CU::IntraPredTULumaAllHAD(Ipp32s abs_part_idx, Ipp32s width)
+{
+    __ALIGN16 PixType PredPel[4*64+1];
+    __ALIGN16 PixType PredPelFilt[4*64+1];
+    Ipp32s maxDepth = par->Log2MaxCUSize - par->Log2MinTUSize;
+    Ipp32s numMinTUInLCU = 1 << maxDepth;
+    Ipp32s PURasterIdx = h265_scan_z2r[maxDepth][abs_part_idx];
+    Ipp32s PUStartRow = PURasterIdx >> maxDepth;
+    Ipp32s PUStartColumn = PURasterIdx & (numMinTUInLCU - 1);
+
+    PixType *pSrc = y_src + ((PUStartRow * pitch_src + PUStartColumn) << par->Log2MinTUSize);
+    PixType *pRec = y_rec + ((PUStartRow * pitch_rec_luma + PUStartColumn) << par->Log2MinTUSize);
+
+    GetAvailablity(this, abs_part_idx, width, par->cpps->constrained_intra_pred_flag,
+        inNeighborFlags, outNeighborFlags);
+    GetPredPels(par, pRec, PredPel, outNeighborFlags, width,
+        pitch_rec_luma, 1);
+
+    memcpy(PredPelFilt, PredPel, 4*width+1);
+
+    if (par->csps->strong_intra_smoothing_enabled_flag && width == 32)
+    {
+        Ipp32s threshold = 1 << (BIT_DEPTH_LUMA - 5);        
+
+        Ipp32s topLeft = PredPel[0];
+        Ipp32s topRight = PredPel[2*width];
+        Ipp32s midHor = PredPel[width];
+
+        Ipp32s bottomLeft = PredPel[4*width];
+        Ipp32s midVer = PredPel[3*width];
+
+        bool bilinearLeft = abs(topLeft + topRight - 2*midHor) < threshold; 
+        bool bilinearAbove = abs(topLeft + bottomLeft - 2*midVer) < threshold;
+
+        if (bilinearLeft && bilinearAbove)
+        {
+            h265_FilterPredictPels_Bilinear_8u(PredPelFilt, width, topLeft, bottomLeft, topRight);
+        }
+        else
+        {
+            h265_FilterPredictPels_8u(PredPelFilt, width);
+        }
+    } else {
+        h265_FilterPredictPels_8u(PredPelFilt, width);
+    }
+
+    IppiSize size = {width, width};
+    ippiTranspose_8u_C1R(pSrc, pitch_src, tu_src_transposed, width, size);
+
+    PixType *pred_ptr = pred_intra_all;
+
+    MFX_HEVC_PP::h265_PredictIntra_Planar_8u(INTRA_HOR <= FilteredModes[h265_log2table[width - 4] - 2] ? PredPel : PredPelFilt, pred_ptr, width, width);
+    intra_cost[0] = h265_tu_had(pSrc, pred_ptr, pitch_src, width, width, width);
+    pred_ptr += width * width;
+
+    MFX_HEVC_PP::h265_PredictIntra_DC_8u(PredPel, pred_ptr, width, width, 1);
+    intra_cost[1] = h265_tu_had(pSrc, pred_ptr, pitch_src, width, width, width);
+    pred_ptr += width * width;
+
+    MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_All_8u)(PredPel, PredPelFilt, pred_ptr, width);
+    // hor and ver modes require additional filtering
+    if (width <= 16)
+    {
+        PixType *pels = pred_ptr + (INTRA_HOR - 2) * width * width;
+        for (Ipp32s i = 0; i < width; i++)
+        {
+            pels[i*width] = (PixType)Saturate(0, (1 << BIT_DEPTH_LUMA) - 1,
+                pels[i*width] + ((PredPel[1+i] - PredPel[0]) >> 1));
+        }
+        pels = pred_ptr + (INTRA_VER - 2) * width * width;
+        for (Ipp32s j = 0; j < width; j++)
+        {
+            pels[j*width] = (PixType)Saturate(0, (1 << BIT_DEPTH_LUMA) - 1,
+                pels[j*width] + ((PredPel[2*width+1+j] - PredPel[0]) >> 1));
+        }
+    }
+
+    for (Ipp8u mode = 2; mode < 35; mode++) {
+        if (mode < 18) {
+            intra_cost[mode] = h265_tu_had(tu_src_transposed, pred_ptr, width, width, width, width);
+        } else {
+            intra_cost[mode] = h265_tu_had(pSrc, pred_ptr, pitch_src, width, width, width);
+        }
+        pred_ptr += width * width;
+    }
+}
+
+Ipp8u H265CU::GetTRSplitMode(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u tr_depth, Ipp8u part_size, Ipp8u is_luma)
+{
+    Ipp32s width = par->MaxCUSize >> (depth + tr_depth);
+    Ipp8u split_mode = SPLIT_NONE;
+
+    if (width > 32) {
+        split_mode = SPLIT_MUST;
+    } else if ((par->MaxCUSize >> (depth + tr_depth)) > 4 &&
+            (par->Log2MaxCUSize - depth - tr_depth >
+                getQuadtreeTULog2MinSizeInCU(abs_part_idx, par->MaxCUSize >> depth, part_size, MODE_INTRA)))
+    {
+                Ipp32u lpel_x   = ctb_pelx +
+                    ((h265_scan_z2r[par->MaxCUDepth][abs_part_idx] & (par->NumMinTUInMaxCU - 1)) << par->QuadtreeTULog2MinSize);
+                Ipp32u tpel_y   = ctb_pely +
+                    ((h265_scan_z2r[par->MaxCUDepth][abs_part_idx] >> par->MaxCUDepth) << par->QuadtreeTULog2MinSize);
+
+                if (par->Log2MaxCUSize - depth - tr_depth > par->QuadtreeTULog2MaxSize ||
+                    lpel_x + width >= par->Width || tpel_y + width >= par->Height) {
+                    split_mode = SPLIT_MUST;
+                } else {
+                    split_mode = SPLIT_TRY;
+                }
+    }
+    return split_mode;
+}
+
 void H265CU::IntraPred(Ipp32u abs_part_idx, Ipp8u depth) {
     Ipp32s depth_max = data[abs_part_idx].depth + data[abs_part_idx].tr_idx;
     Ipp32u num_parts = ( par->NumPartInCU >> (depth<<1) )>>2;

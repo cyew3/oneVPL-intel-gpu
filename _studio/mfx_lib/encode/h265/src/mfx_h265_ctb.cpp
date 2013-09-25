@@ -918,10 +918,36 @@ void H265CU::ModeDecision(Ipp32u abs_part_idx, Ipp32u offset, Ipp8u depth, CostT
                 if (rd_opt_flag) {
                     bsf->CtxSave(ctx_save[1], 0, NUM_CABAC_CONTEXT);
                 }
+
+                Ipp8u tr_split_mode = GetTRSplitMode(abs_part_idx + (num_parts >> 2) * i, depth, tr_depth, part_size, 1);
+
+                pred_intra_all_width = 0;
+                if (tr_split_mode != SPLIT_MUST) {
+                    Ipp32s abs_part_idx_tu = abs_part_idx + (num_parts >> 2) * i;
+                    Ipp32u lpel_x   = ctb_pelx +
+                        ((h265_scan_z2r[par->MaxCUDepth][abs_part_idx_tu] & (par->NumMinTUInMaxCU - 1)) << par->QuadtreeTULog2MinSize);
+                    Ipp32u tpel_y   = ctb_pely +
+                        ((h265_scan_z2r[par->MaxCUDepth][abs_part_idx_tu] >> par->MaxCUDepth) << par->QuadtreeTULog2MinSize);
+
+                    if (lpel_x >= par->Width || tpel_y >= par->Height) {
+//                        memset(intra_cost, 0, 35 * sizeof(CostType));
+                        continue;
+                    } else {
+                        IntraPredTULumaAllHAD(abs_part_idx + (num_parts >> 2) * i, width);
+                        pred_intra_all_width = width;
+                    }
+                }
+
                 for (Ipp8u luma_dir = 0; luma_dir <= 34; luma_dir++)
                 {
-                    CalcCostLuma(abs_part_idx + (num_parts >> 2) * i, offset + subsize * i, depth, tr_depth,
-                        COST_PRED_TR_0, part_size, luma_dir, &cost_temp);
+                    if (pred_intra_all_width == width) {
+                        data = data_save;
+                        FillSubPart(abs_part_idx + (num_parts >> 2) * i, depth, tr_depth, part_size, luma_dir, par->QP);
+                        cost_temp = intra_cost[luma_dir];
+                    } else  {
+                        CalcCostLuma(abs_part_idx + (num_parts >> 2) * i, offset + subsize * i, depth, tr_depth,
+                            COST_PRED_TR_0, part_size, luma_dir, &cost_temp);
+                    }
 
                     if (rd_opt_flag && luma_dir)
                         bsf->CtxRestore(ctx_save[1], h265_ctxIdxOffset[INTRA_LUMA_PRED_MODE_HEVC], h265_ctxIdxSize[INTRA_LUMA_PRED_MODE_HEVC]);
@@ -1210,28 +1236,13 @@ void H265CU::CalcCostLuma(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u depth,
 
     Ipp8u tr_depth_zero_only = cost_opt == COST_PRED_TR_0 || cost_opt == COST_REC_TR_0;
     Ipp8u cost_pred_flag = cost_opt == COST_PRED_TR_0;
+    IntraPredOpt intra_pred_opt;
 
-    if (width > 32) {
-        split_mode = SPLIT_MUST;
-    } else if ((par->MaxCUSize >> (depth + tr_depth)) > 4 &&
-            (par->Log2MaxCUSize - depth - tr_depth >
-                getQuadtreeTULog2MinSizeInCU(abs_part_idx, par->MaxCUSize >> depth, part_size, MODE_INTRA)))
-    {
-                Ipp32u lpel_x   = ctb_pelx +
-                    ((h265_scan_z2r[par->MaxCUDepth][abs_part_idx] & (par->NumMinTUInMaxCU - 1)) << par->QuadtreeTULog2MinSize);
-                Ipp32u tpel_y   = ctb_pely +
-                    ((h265_scan_z2r[par->MaxCUDepth][abs_part_idx] >> par->MaxCUDepth) << par->QuadtreeTULog2MinSize);
+    split_mode = GetTRSplitMode(abs_part_idx, depth, tr_depth, part_size, 1);
 
-                if (par->Log2MaxCUSize - depth - tr_depth > par->QuadtreeTULog2MaxSize ||
-                    lpel_x + width >= par->Width || tpel_y + width >= par->Height) {
-                    split_mode = SPLIT_MUST;
-                } else {
-                    split_mode = SPLIT_TRY;
-                }
-    }
-    if (tr_depth_zero_only && split_mode != SPLIT_MUST)
+    if (tr_depth_zero_only && split_mode != SPLIT_MUST) {
         split_mode = SPLIT_NONE;
-    else if (cost_opt == COST_REC_TR_MAX) {
+    } else if (cost_opt == COST_REC_TR_MAX) {
         if (/*pred_mode == MODE_INTRA && */
             (width == 32 || (width < 32 && tr_depth == 0))) {
             data = data_t;
@@ -1239,6 +1250,14 @@ void H265CU::CalcCostLuma(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u depth,
         }
         if (split_mode != SPLIT_NONE)
             split_mode = SPLIT_MUST;
+    }
+
+    if (cost_opt == COST_REC_TR_MAX) {
+        intra_pred_opt = INTRA_PRED_IN_REC;
+    } else if (pred_intra_all_width == width) {
+        intra_pred_opt = INTRA_PRED_IN_BUF;
+    } else {
+        intra_pred_opt = INTRA_PRED_CALC;
     }
 
     // save ctx
@@ -1254,7 +1273,7 @@ void H265CU::CalcCostLuma(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u depth,
             CopySubPartTo(data_save, abs_part_idx, depth, tr_depth);
             data = data_save;
         }
-        EncAndRecLumaTU(abs_part_idx, offset, width, NULL, &cost_best, cost_pred_flag, cost_opt == COST_REC_TR_MAX);
+        EncAndRecLumaTU(abs_part_idx, offset, width, NULL, &cost_best, cost_pred_flag, intra_pred_opt);
         if (split_mode == SPLIT_TRY) {
             if (rd_opt_flag)
                 bsf->CtxSave(ctx_save[1], h265_ctxIdxOffset[QT_CBF_HEVC], NUM_CTX_TU);
@@ -1674,7 +1693,7 @@ void H265CU::TU_GetSplitInter(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u tr_idx, 
 
     for (i = 0; i < num_parts; i++)
         data[abs_part_idx + i].tr_idx = tr_idx;
-    EncAndRecLumaTU(abs_part_idx, offset, width, &nzt, &cost_best);
+    EncAndRecLumaTU(abs_part_idx, offset, width, &nzt, &cost_best, 0, INTRA_PRED_CALC);
     if (nz) *nz = nzt;
 
 //     if (nz && *nz) {
@@ -2086,7 +2105,8 @@ void H265CU::EncAndRecLuma(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u depth, Ipp8
             width,
             nz,
             cost,
-            0);
+            0,
+            INTRA_PRED_CALC);
 
         if (nz && *nz)
         {
@@ -2192,6 +2212,21 @@ static void tu_add_clip(PixType *dst, PixType *src1, CoeffsType *src2,
     }
 }
 
+static void tu_add_clip_transp(PixType *dst, PixType *src1, CoeffsType *src2,
+                     Ipp32s pitch_dst, Ipp32s pitch_src1, Ipp32s pitch_src2, Ipp32s size/*, Ipp32s maxval*/)
+{
+    Ipp32s i, j;
+    Ipp32s maxval = 255;
+    for (j = 0; j < size; j++) {
+        for (i = 0; i < size; i++) {
+            dst[i] = (PixType)Saturate(0, maxval, src1[pitch_src1*i] + src2[i]);
+        }
+        dst += pitch_dst;
+        src1 ++;
+        src2 += pitch_src2;
+    }
+}
+
 static void tu_diff(CoeffsType *residual, PixType *src, PixType *pred,
                      Ipp32s pitch_dst, Ipp32s pitch_src, Ipp32s pitch_pred, Ipp32s size)
 {
@@ -2203,6 +2238,20 @@ static void tu_diff(CoeffsType *residual, PixType *src, PixType *pred,
         residual += pitch_dst;
         src += pitch_src;
         pred += pitch_pred;
+    }
+}
+
+static void tu_diff_transp(CoeffsType *residual, PixType *src, PixType *pred,
+                     Ipp32s pitch_dst, Ipp32s pitch_src, Ipp32s pitch_pred, Ipp32s size)
+{
+    Ipp32s i, j;
+    for (j = 0; j < size; j++) {
+        for (i = 0; i < size; i++) {
+            residual[i] = (CoeffsType)src[i] - pred[pitch_pred*i];
+        }
+        residual += pitch_dst;
+        src += pitch_src;
+        pred ++;
     }
 }
 
@@ -2236,8 +2285,8 @@ static Ipp32s tu_sse(PixType *src, PixType *rec,
     return s;
 }
 
-static Ipp32s tu_had(PixType *src, PixType *rec,
-                     Ipp32s pitch_src, Ipp32s pitch_rec, Ipp32s width, Ipp32s height)
+Ipp32s h265_tu_had(PixType *src, PixType *rec,
+                   Ipp32s pitch_src, Ipp32s pitch_rec, Ipp32s width, Ipp32s height)
 {
   Ipp32u s = 0;
   Ipp32s i, j;
@@ -2326,7 +2375,7 @@ static Ipp32s tu_sse_nv12(PixType *src, PixType *rec,
 }
 
 void H265CU::EncAndRecLumaTU(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, Ipp8u *nz, CostType *cost,
-                             Ipp8u cost_pred_flag, Ipp8u skip_pred_flag)
+                             Ipp8u cost_pred_flag, IntraPredOpt pred_opt)
 {
     CostType cost_pred, cost_rdoq;
     Ipp32u lpel_x   = ctb_pelx +
@@ -2350,18 +2399,28 @@ void H265CU::EncAndRecLumaTU(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, I
     PixType *pRec = y_rec + ((PUStartRow * pitch_rec_luma + PUStartColumn) << par->Log2MinTUSize);
     PixType *pSrc = y_src + ((PUStartRow * pitch_src + PUStartColumn) << par->Log2MinTUSize);
 
-    if (data[abs_part_idx].pred_mode == MODE_INTRA && !skip_pred_flag) {
+    if (data[abs_part_idx].pred_mode == MODE_INTRA && pred_opt == INTRA_PRED_CALC) {
         IntraPredTU(abs_part_idx, width, data[abs_part_idx].intra_luma_dir, 1);
     }
 
     if (cost && cost_pred_flag) {
-        cost_pred = tu_had(pSrc, pRec, pitch_src, pitch_rec_luma, width, width);
+        cost_pred = h265_tu_had(pSrc, pRec, pitch_src, pitch_rec_luma, width, width);
         *cost = cost_pred;
         return;
     }
 
     if (!data[abs_part_idx].flags.skipped_flag) {
-        tu_diff(residuals_y + offset, pSrc, pRec, width, pitch_src, pitch_rec_luma, width);
+        PixType *pred_ptr = NULL;
+        if (pred_opt == INTRA_PRED_IN_BUF) {
+            pred_ptr = pred_intra_all + data[abs_part_idx].intra_luma_dir * width * width;
+            if (data[abs_part_idx].intra_luma_dir >= 2 && data[abs_part_idx].intra_luma_dir < 18) {
+                tu_diff_transp(residuals_y + offset, pSrc, pred_ptr, width, pitch_src, width, width);
+            } else {
+                tu_diff(residuals_y + offset, pSrc, pred_ptr, width, pitch_src, width, width);
+            }
+        } else {
+            tu_diff(residuals_y + offset, pSrc, pRec, width, pitch_src, pitch_rec_luma, width);
+        }
 
         TransformFwd(offset, width, 1, data[abs_part_idx].pred_mode == MODE_INTRA);
         QuantFwdTU(abs_part_idx, offset, width, 1);
@@ -2369,8 +2428,18 @@ void H265CU::EncAndRecLumaTU(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, I
         QuantInvTU(abs_part_idx, offset, width, 1);
         TransformInv(offset, width, 1, data[abs_part_idx].pred_mode == MODE_INTRA);
 
-        tu_add_clip(pRec, pRec, residuals_y + offset, pitch_rec_luma, pitch_rec_luma, width,
-            width/*, (1 << BIT_DEPTH_LUMA) - 1*/);
+        if (pred_opt == INTRA_PRED_IN_BUF) {
+            if (data[abs_part_idx].intra_luma_dir >= 2 && data[abs_part_idx].intra_luma_dir < 18) {
+                tu_add_clip_transp(pRec, pred_ptr, residuals_y + offset, pitch_rec_luma, width, width,
+                    width/*, (1 << BIT_DEPTH_LUMA) - 1*/);
+            } else {
+                tu_add_clip(pRec, pred_ptr, residuals_y + offset, pitch_rec_luma, width, width,
+                    width/*, (1 << BIT_DEPTH_LUMA) - 1*/);
+            }
+        } else {
+            tu_add_clip(pRec, pRec, residuals_y + offset, pitch_rec_luma, pitch_rec_luma, width,
+                width/*, (1 << BIT_DEPTH_LUMA) - 1*/);
+        }
     } else {
         memset(tr_coeff_y + offset, 0, sizeof(CoeffsType) * width * width);
     }

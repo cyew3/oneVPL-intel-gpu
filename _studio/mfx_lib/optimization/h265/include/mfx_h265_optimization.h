@@ -155,6 +155,12 @@ namespace MFX_HEVC_PP
         Ipp32s pitch,
         Ipp32s width);
 
+    typedef void (* PTR_PredictIntra_Ang_All_8u)(
+        Ipp8u* PredPel,
+        Ipp8u* FiltPel,
+        Ipp8u* pels,
+        Ipp32s width);
+
     //-----------------------------------------------------
     // aya: approach from Ken/Jon
     // [PTR.Interpolation]
@@ -314,6 +320,11 @@ namespace MFX_HEVC_PP
             Ipp8u* PredPel,
             Ipp8u* pels,
             Ipp32s pitch,
+            Ipp32s width));
+        HEVCPP_API( PTR_PredictIntra_Ang_All_8u, void, h265_PredictIntra_Ang_All_8u,
+            (Ipp8u* PredPel,
+            Ipp8u* FiltPel,
+            Ipp8u* pels,
             Ipp32s width));
 
         // [Interpolation]

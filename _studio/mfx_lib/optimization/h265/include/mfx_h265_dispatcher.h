@@ -383,6 +383,24 @@ namespace MFX_HEVC_PP
         Ipp8u* pels,
         Ipp32s pitch,
         Ipp32s width);
+    
+    void h265_PredictIntra_Ang_All_8u_px(
+        Ipp8u* PredPel,
+        Ipp8u* FiltPel,
+        Ipp8u* pels,
+        Ipp32s width);
+
+    void h265_PredictIntra_Ang_All_8u_sse(
+        Ipp8u* PredPel,
+        Ipp8u* FiltPel,
+        Ipp8u* pels,
+        Ipp32s width);
+
+    void h265_PredictIntra_Ang_All_8u_ssse3(
+        Ipp8u* PredPel,
+        Ipp8u* FiltPel,
+        Ipp8u* pels,
+        Ipp32s width);
 
     // Interpolation
     void h265_InterpLuma_s8_d16_H_px(INTERP_S8_D16_PARAMETERS_LIST);
