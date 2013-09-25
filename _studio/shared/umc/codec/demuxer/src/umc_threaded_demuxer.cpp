@@ -334,7 +334,7 @@ Status ThreadedDemuxer::AnalyzeParams(SplitterParams *pParams)
     if (pParams->m_lFlags & FLAG_VSPL_PRESET_MASK)
     {
         Ipp32s iPreset = (pParams->m_lFlags & FLAG_VSPL_PRESET_MASK) - 1;
-        if (iPreset < sizeof(SplInitPresets) / sizeof(SplInitPresets[0]))
+        if ((iPreset>=0) && (iPreset<(Ipp32s)(sizeof(SplInitPresets)/sizeof(SplInitPresets[0]))))
         {
             pRules = SplInitPresets[iPreset].pRules;
             m_pRulesState->m_uiRules = SplInitPresets[iPreset].uiRules;

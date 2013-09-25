@@ -140,7 +140,7 @@ VAProfile get_next_va_profile(Ipp32u umc_codec, Ipp32u profile)
 typedef struct _CodeStringTable
 {
     Ipp32s   code;
-    vm_char* string;
+    const vm_char* string;
 } CodeStringTable;
 
 CodeStringTable g_BuffersNames[] =
@@ -286,7 +286,7 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
     }
     if (UMC_OK == umcRes)
     {
-        Ipp32u i,j;
+        Ipp32s i,j;
         int va_max_num_profiles      = vaMaxNumProfiles   (m_dpy);
         int va_max_num_entrypoints   = vaMaxNumEntrypoints(m_dpy);
         int va_num_profiles          = 0;

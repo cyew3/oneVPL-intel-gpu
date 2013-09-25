@@ -180,6 +180,9 @@ namespace UMC
         Ipp8u *pEsInfo;
         // ES Descriptors from program_info, NULL if absent
         ESDescriptor *pESDSs;
+    private:
+        Mpeg2Es(const Mpeg2Es &);
+        void operator=(Mpeg2Es &);
     };
 
     struct Mpeg2TsPmt

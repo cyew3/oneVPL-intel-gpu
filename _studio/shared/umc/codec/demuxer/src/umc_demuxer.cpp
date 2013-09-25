@@ -1292,8 +1292,8 @@ void Segmentator::AdditionalJump(Ipp32s iJumpSize)
     if ((Ipp64u)iJumpSize >= m_uiSegEnd)
         m_bEndOfStream = true;
 
-    m_uiSegEnd -= IPP_MIN(iJumpSize, m_uiSegEnd);
-    m_uiSegStart -= IPP_MIN(iJumpSize, m_uiSegStart);
+    m_uiSegEnd -= IPP_MIN((Ipp32u)iJumpSize, m_uiSegEnd);
+    m_uiSegStart -= IPP_MIN((Ipp32u)iJumpSize, m_uiSegStart);
 }
 
 Status Segmentator::PullSegment(SplMediaData *pData)
