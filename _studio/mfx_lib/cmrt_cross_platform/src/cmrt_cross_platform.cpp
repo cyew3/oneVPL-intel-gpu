@@ -130,7 +130,7 @@ public:
         CmLinux::CmDevice *     m_linux;
     };
 
-    ~CmDeviceImpl(){}
+    virtual ~CmDeviceImpl(){}
 
     INT GetDevice(AbstractDeviceHandle & pDevice)
     {
