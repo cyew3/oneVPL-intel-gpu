@@ -214,8 +214,6 @@ public:
     bool m_bDeblocked;                                          // (bool) "slice has been deblocked" flag
     bool m_bSAOed;
 
-    int m_wNumBitsForShortTermRPSInSlice;  // used in h/w decoder
-
     // memory management tools
     UMC::MemoryAllocator *m_pMemoryAllocator;                        // (MemoryAllocator *) pointer to memory allocation tool
 
@@ -246,12 +244,7 @@ public:
     }
 
     void allocSubstreamSizes(unsigned);
-
     void setRefPOCList();
-
-    int getNumBitsForShortTermRPSInSlice() const    { return m_wNumBitsForShortTermRPSInSlice; }
-    void setNumBitsForShortTermRPSInSlice(int val)  { m_wNumBitsForShortTermRPSInSlice = val; }
-
     void CopyFromBaseSlice(const H265Slice * slice);
 };
 

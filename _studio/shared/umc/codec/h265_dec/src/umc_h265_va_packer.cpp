@@ -553,7 +553,7 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->num_ref_idx_l1_default_active_minus1         = (UCHAR)(pPicParamSet->num_ref_idx_l1_default_active - 1);
     pPicParam->init_qp_minus26                              = (CHAR)pPicParamSet->init_qp - 26;
     
-    pPicParam->wNumBitsForShortTermRPSInSlice               = (USHORT)pSlice->getNumBitsForShortTermRPSInSlice();
+    pPicParam->wNumBitsForShortTermRPSInSlice               = (USHORT)pSlice->GetSliceHeader()->wNumBitsForShortTermRPSInSlice;
     pPicParam->ucNumDeltaPocsOfRefRpsIdx                    = (UCHAR)pPicParam->wNumBitsForShortTermRPSInSlice;
 
     // dwCodingParamToolFlags
@@ -1232,7 +1232,7 @@ void MSPackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     if (!pSlice->GetSliceHeader()->short_term_ref_pic_set_sps_flag)
     {
         pPicParam->ucNumDeltaPocsOfRefRpsIdx                    = (UCHAR)pSeqParamSet->getRPSList()->getNumberOfReferencePictureSets();
-        pPicParam->wNumBitsForShortTermRPSInSlice               = (USHORT)pSlice->getNumBitsForShortTermRPSInSlice();
+        pPicParam->wNumBitsForShortTermRPSInSlice               = (USHORT)pSlice->GetSliceHeader()->wNumBitsForShortTermRPSInSlice;
     }
     
     // dwCodingParamToolFlags

@@ -1230,7 +1230,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
                 parseShortTermRefPicSet(sps, rps, sps->getRPSList()->getNumberOfReferencePictureSets());
                 pSlice->setRPS(rps);
 
-                pSlice->setNumBitsForShortTermRPSInSlice(BitsDecoded() - bitsDecoded);  // used in HW
+                sliceHdr->wNumBitsForShortTermRPSInSlice = BitsDecoded() - bitsDecoded;
             }
             else // reference to ST ref pic set in PPS
             {
@@ -1251,7 +1251,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
                 pSlice->setRPS(sps->getRPSList()->getReferencePictureSet(uiCode));
 
                 rps = pSlice->getRPS();
-                pSlice->setNumBitsForShortTermRPSInSlice(0);    // used in HW
+                sliceHdr->wNumBitsForShortTermRPSInSlice = 0;
             }
 
             if (sps->long_term_ref_pics_present_flag)
