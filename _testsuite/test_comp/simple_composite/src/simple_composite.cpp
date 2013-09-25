@@ -212,7 +212,7 @@ map<string, string> ParsePar(ifstream &stream, string stream_name) {
     map<string, string> params;
 
     string line;
-    int counter = 7;
+    int counter = 13;
 
     params["stream"] = stream_name;
     while (counter--) {
@@ -277,26 +277,26 @@ int main(int argc, char *argv[])
                 }
                 else if (pa.scc == kYV12)
                 {
-                    pr_stream.FourCC         = MFX_FOURCC_YV12;
+                    pr_stream.FourCC         = MFX_FOURCC_NV12;
                     pr_stream.ChromaFormat   = MFX_CHROMAFORMAT_YUV420;
                 }
                 else
                 {
                     pr_stream.FourCC         = MFX_FOURCC_RGB4;
                 }
-                pr_stream.CropX          = atoi(primaryparams["x"].c_str());
-                pr_stream.CropY          = atoi(primaryparams["y"].c_str());
-                pr_stream.CropW          = atoi(primaryparams["w"].c_str());
-                pr_stream.CropH          = atoi(primaryparams["h"].c_str());
+                pr_stream.CropX          = atoi(primaryparams["cropx"].c_str());
+                pr_stream.CropY          = atoi(primaryparams["cropy"].c_str());
+                pr_stream.CropW          = atoi(primaryparams["cropw"].c_str());
+                pr_stream.CropH          = atoi(primaryparams["croph"].c_str());
                 framesToProcess = atoi(primaryparams["frames"].c_str());
                 pr_stream.PicStruct      = MFX_PICSTRUCT_PROGRESSIVE;
                 pr_stream.FrameRateExtN  = 30;
                 pr_stream.FrameRateExtD  = 1;
                 // width must be a multiple of 16 
                 // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture
-                pr_stream.Width  = MSDK_ALIGN16(pr_stream.CropW);
+                pr_stream.Width  = MSDK_ALIGN16(atoi(primaryparams["width"].c_str()));
                 pr_stream.Height = (MFX_PICSTRUCT_PROGRESSIVE == pr_stream.PicStruct)?
-                                     MSDK_ALIGN16(pr_stream.CropH) : MSDK_ALIGN32(pr_stream.CropH);
+                                     MSDK_ALIGN16(atoi(primaryparams["height"].c_str())) : MSDK_ALIGN32(atoi(primaryparams["height"].c_str()));
             } else if ( key.compare("stream") == 0 ){
                 map<string, string> params = ParsePar(par, value);
                 subparams[StreamCount] = params;
@@ -314,18 +314,19 @@ int main(int argc, char *argv[])
                 {
                     streams[StreamCount].FourCC         = MFX_FOURCC_RGB4;
                 }
-                streams[StreamCount].CropX          = 0;
-                streams[StreamCount].CropY          = 0;
-                streams[StreamCount].CropW          = atoi(params["w"].c_str());
-                streams[StreamCount].CropH          = atoi(params["h"].c_str());
+                streams[StreamCount].CropX          = atoi(params["cropx"].c_str());
+                streams[StreamCount].CropY          = atoi(params["cropy"].c_str());
+                streams[StreamCount].CropW          = atoi(params["cropw"].c_str());
+                streams[StreamCount].CropH          = atoi(params["croph"].c_str());
                 streams[StreamCount].PicStruct      = MFX_PICSTRUCT_PROGRESSIVE;
                 streams[StreamCount].FrameRateExtN  = 30;
                 streams[StreamCount].FrameRateExtD  = 1;
                 // width must be a multiple of 16 
                 // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture
-                streams[StreamCount].Width  = MSDK_ALIGN16(streams[StreamCount].CropW);
+                streams[StreamCount].Width  = MSDK_ALIGN16(atoi(params["width"].c_str()));
                 streams[StreamCount].Height = (MFX_PICSTRUCT_PROGRESSIVE == streams[StreamCount].PicStruct)?
-                                     MSDK_ALIGN16(streams[StreamCount].CropH) : MSDK_ALIGN32(streams[StreamCount].CropH);
+                                     MSDK_ALIGN16(atoi(params["height"].c_str())) : MSDK_ALIGN32(atoi(params["height"].c_str()));
+
                 ++StreamCount;
                 if ( StreamCount == (MAX_INPUT_STREAMS - 1) )
                 {
@@ -430,17 +431,17 @@ int main(int argc, char *argv[])
         VPPParams.vpp.In.FourCC         = MFX_FOURCC_RGB4;
     }
 
-    VPPParams.vpp.In.CropX          = 0;
-    VPPParams.vpp.In.CropY          = 0;
-    VPPParams.vpp.In.CropW          = atoi(primaryparams["w"].c_str());
-    VPPParams.vpp.In.CropH          = atoi(primaryparams["h"].c_str());
+    VPPParams.vpp.In.CropX          = atoi(primaryparams["cropx"].c_str());
+    VPPParams.vpp.In.CropY          = atoi(primaryparams["cropy"].c_str());
+    VPPParams.vpp.In.CropW          = atoi(primaryparams["cropw"].c_str());
+    VPPParams.vpp.In.CropH          = atoi(primaryparams["croph"].c_str());
     VPPParams.vpp.In.PicStruct      = MFX_PICSTRUCT_PROGRESSIVE;
     VPPParams.vpp.In.FrameRateExtN  = 30;
     VPPParams.vpp.In.FrameRateExtD  = 1;
     // width must be a multiple of 16 
     // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture  
-    VPPParams.vpp.In.Width  = atoi(primaryparams["w"].c_str());;
-    VPPParams.vpp.In.Height = atoi(primaryparams["h"].c_str());;
+    VPPParams.vpp.In.Width  = atoi(primaryparams["width"].c_str());;
+    VPPParams.vpp.In.Height = atoi(primaryparams["height"].c_str());;
 
     // Output data
 
@@ -453,18 +454,18 @@ int main(int argc, char *argv[])
     {
         VPPParams.vpp.Out.FourCC         = MFX_FOURCC_RGB4;
     }
-    VPPParams.vpp.Out.CropX         = 0;
-    VPPParams.vpp.Out.CropY         = 0; 
-    VPPParams.vpp.Out.CropW         = atoi(primaryparams["w"].c_str());;
-    VPPParams.vpp.Out.CropH         = atoi(primaryparams["h"].c_str());;
+    VPPParams.vpp.Out.CropX         = atoi(primaryparams["cropx"].c_str());
+    VPPParams.vpp.Out.CropY         = atoi(primaryparams["cropy"].c_str()); 
+    VPPParams.vpp.Out.CropW         = atoi(primaryparams["cropw"].c_str());;
+    VPPParams.vpp.Out.CropH         = atoi(primaryparams["croph"].c_str());;
     VPPParams.vpp.Out.PicStruct     = MFX_PICSTRUCT_PROGRESSIVE;
     VPPParams.vpp.Out.FrameRateExtN = 30;
     VPPParams.vpp.Out.FrameRateExtD = 1;
     // width must be a multiple of 16 
     // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture  
-    VPPParams.vpp.Out.Width  = MSDK_ALIGN16(VPPParams.vpp.Out.CropW); 
+    VPPParams.vpp.Out.Width  = MSDK_ALIGN16(atoi(primaryparams["width"].c_str())); 
     VPPParams.vpp.Out.Height = (MFX_PICSTRUCT_PROGRESSIVE == VPPParams.vpp.Out.PicStruct)?
-                                    MSDK_ALIGN16(VPPParams.vpp.Out.CropH) : MSDK_ALIGN32(VPPParams.vpp.Out.CropH);
+                                    MSDK_ALIGN16(atoi(primaryparams["height"].c_str())) : MSDK_ALIGN32(atoi(primaryparams["height"].c_str()));
 
     VPPParams.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
     VPPParams.AsyncDepth = 1;
@@ -480,18 +481,18 @@ int main(int argc, char *argv[])
     comp.InputStream = (mfxVPPCompInputStream *)malloc( sizeof(mfxVPPCompInputStream)* comp.NumInputStream);
 
     // primary stream
-    comp.InputStream[0].DstX = 0;
-    comp.InputStream[0].DstY = 0;
-    comp.InputStream[0].DstW = atoi(primaryparams["w"].c_str());
-    comp.InputStream[0].DstH = atoi(primaryparams["h"].c_str());
+    comp.InputStream[0].DstX = atoi(primaryparams["dstx"].c_str());
+    comp.InputStream[0].DstY = atoi(primaryparams["dsty"].c_str());
+    comp.InputStream[0].DstW = atoi(primaryparams["dstw"].c_str());
+    comp.InputStream[0].DstH = atoi(primaryparams["dsth"].c_str());
 
     // sub streams
     for (i = 1; i <= StreamCount; ++i)
     {
-        comp.InputStream[i].DstX = atoi(subparams[i-1]["x"].c_str());
-        comp.InputStream[i].DstY = atoi(subparams[i-1]["y"].c_str());
-        comp.InputStream[i].DstW = atoi(subparams[i-1]["w"].c_str());
-        comp.InputStream[i].DstH = atoi(subparams[i-1]["h"].c_str());
+        comp.InputStream[i].DstX = atoi(subparams[i-1]["dstx"].c_str());
+        comp.InputStream[i].DstY = atoi(subparams[i-1]["dsty"].c_str());
+        comp.InputStream[i].DstW = atoi(subparams[i-1]["dstw"].c_str());
+        comp.InputStream[i].DstH = atoi(subparams[i-1]["dsth"].c_str());
         cout << "Set " << i << "->" << comp.InputStream[i].DstX << ":" << comp.InputStream[i].DstY << ":" << comp.InputStream[i].DstW  << ":" << comp.InputStream[i].DstH << ":" << endl;
     }
 
@@ -534,12 +535,12 @@ int main(int argc, char *argv[])
         mfxU16 height;// = (mfxU16)MSDK_ALIGN32(atoi(subparams[i]["h"].c_str()));
         
         if ( i == 0 ) {
-            width = (mfxU16)MSDK_ALIGN32(atoi(primaryparams["w"].c_str()));
-            height = (mfxU16)MSDK_ALIGN32(atoi(primaryparams["h"].c_str()));
+            width = (mfxU16)MSDK_ALIGN32(atoi(primaryparams["width"].c_str()));
+            height = (mfxU16)MSDK_ALIGN32(atoi(primaryparams["height"].c_str()));
         }
         else {
-            width = (mfxU16)MSDK_ALIGN32(atoi(subparams[i-1]["w"].c_str()));
-            height = (mfxU16)MSDK_ALIGN32(atoi(subparams[i-1]["h"].c_str()));
+            width = (mfxU16)MSDK_ALIGN32(atoi(subparams[i-1]["width"].c_str()));
+            height = (mfxU16)MSDK_ALIGN32(atoi(subparams[i-1]["height"].c_str()));
         }
         mfxU32 surfaceSize = width * height * bitsPerPixel / 8;
 
