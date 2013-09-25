@@ -142,7 +142,7 @@ CmDevice * TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * version)
         if (res != MFX_ERR_NONE || !display)
             return 0;
 
-        if (result = ::CreateCmDevice(device, *version, display) != CM_SUCCESS)
+        if ((result = ::CreateCmDevice(device, *version, display)) != CM_SUCCESS)
             return 0;
 #endif
     }
