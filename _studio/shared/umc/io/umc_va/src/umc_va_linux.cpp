@@ -524,7 +524,7 @@ Status LinuxVideoAccelerator::AllocCompBuffers(void)
         }
         else
         {
-            Ipp32u uiNewCompBuffersNum = 0, i = 0;
+            Ipp32u uiNewCompBuffersNum = 0;
             VACompBuffer** pNewCompBuffers = NULL;
 
             uiNewCompBuffersNum = m_uiCompBuffersNum + UMC_VA_NUM_OF_COMP_BUFFERS;
