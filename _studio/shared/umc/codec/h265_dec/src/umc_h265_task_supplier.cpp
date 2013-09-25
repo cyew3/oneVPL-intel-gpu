@@ -1885,7 +1885,15 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
                     break;
             }
 
-            sliceHdr->m_TileByteLocation[tile] = sliceHdr->m_TileByteLocation[tile] - removed_bytes;
+            // 1st tile start offset is length of slice header, it should not be corrected because it is
+            // not specified in slice header, it is calculated by parsing a modified bitstream instead
+            if (0 == tile)
+            {
+                offsets -= removed_bytes;
+                removed_bytes = 0;
+            }
+            else
+                sliceHdr->m_TileByteLocation[tile] = sliceHdr->m_TileByteLocation[tile] - removed_bytes;
         }
     }
 
