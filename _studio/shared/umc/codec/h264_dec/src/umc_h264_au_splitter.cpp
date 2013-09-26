@@ -32,7 +32,7 @@ SeiPayloadArray::SeiPayloadArray(const SeiPayloadArray & payloads)
     size_t count = payloads.GetPayloadCount();
     for (size_t i = 0; i < count; i++)
     {
-        payloads.GetPayload(i)->IncrementReference();
+        AddPayload(payloads.GetPayload(i));
     }
 }
 

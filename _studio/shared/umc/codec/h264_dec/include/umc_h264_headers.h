@@ -116,7 +116,8 @@ public:
         {
             for (Ipp32u i = 0; i < m_Header.size(); i++)
             {
-                m_pObjHeap->FreeObject(m_Header[i]);
+                if (m_Header[i])
+                    m_Header[i]->DecrementReference();
             }
 
             m_Header.clear();

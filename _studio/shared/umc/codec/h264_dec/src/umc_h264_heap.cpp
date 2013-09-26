@@ -73,20 +73,23 @@ void H264CoeffsBuffer::Close(void)
 
 Status H264CoeffsBuffer::Init(Ipp32s numberOfItems, Ipp32s sizeOfItem)
 {
-    Ipp32s lAllocate, lMaxSampleSize;
+    Ipp32s lMaxSampleSize = sizeOfItem + COEFFS_BUFFER_ALIGN_VALUE + (Ipp32s)sizeof(BufferInfo);
+    Ipp32s lAllocate = lMaxSampleSize * numberOfItems;
 
-    Close();
+    if ((Ipp32s)m_lBufferSize < lAllocate)
+    {
+        Close();
 
-    // allocate buffer
-    lMaxSampleSize = sizeOfItem + COEFFS_BUFFER_ALIGN_VALUE + (Ipp32s)sizeof(BufferInfo);
-    lAllocate = lMaxSampleSize * numberOfItems;
-    m_pbAllocatedBuffer = h264_new_array_throw<Ipp8u>(lAllocate + COEFFS_BUFFER_ALIGN_VALUE);
-    m_lAllocatedBufferSize = lAllocate + COEFFS_BUFFER_ALIGN_VALUE;
+        // allocate buffer
+        m_pbAllocatedBuffer = h264_new_array_throw<Ipp8u>(lAllocate + COEFFS_BUFFER_ALIGN_VALUE);
+        m_lBufferSize = lAllocate;
 
-    // align buffer
-    m_pbBuffer = align_pointer<Ipp8u *> (m_pbAllocatedBuffer, COEFFS_BUFFER_ALIGN_VALUE);
-    m_lBufferSize = lAllocate;
+        m_lAllocatedBufferSize = lAllocate + COEFFS_BUFFER_ALIGN_VALUE;
 
+        // align buffer
+        m_pbBuffer = align_pointer<Ipp8u *> (m_pbAllocatedBuffer, COEFFS_BUFFER_ALIGN_VALUE);
+    }
+    
     m_pbFree = m_pbBuffer;
     m_lFreeSize = m_lBufferSize;
 
@@ -326,7 +329,6 @@ void H264CoeffsBuffer::Reset()
 
 void H264CoeffsBuffer::Free()
 {
-    Close();
     HeapObject::Free();
 }
 
