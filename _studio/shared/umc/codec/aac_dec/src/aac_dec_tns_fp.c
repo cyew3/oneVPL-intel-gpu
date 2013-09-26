@@ -210,7 +210,7 @@ static void tns_decode_coef(Ipp32s order,
 
  /* Conversion to LPC coefficients */
   a[0] = 1;
-  order = MIN(order, sizeof(a)/sizeof(a[0]));
+  //order = MIN(order, sizeof(a)/sizeof(a[0]));
   for (m = 1; m <= order; m++) {
     Ipp32f tmp = tmp2[m - 1];
     a[m] = tmp;
