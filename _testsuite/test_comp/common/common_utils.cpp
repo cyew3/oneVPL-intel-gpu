@@ -51,6 +51,21 @@ mfxStatus LoadRawFrame(mfxFrameSurface1* pSurface, FILE* fSource, bool bSim)
         h = pInfo->Height;
     }
 
+    /* IF we have RGB4 input*/
+    if (pInfo->FourCC == MFX_FOURCC_RGB4)
+    {
+        ptr = TESTCOMP_MIN( TESTCOMP_MIN(pSurface->Data.R, pSurface->Data.G), pSurface->Data.B );
+        ptr = ptr + pInfo->CropX + pInfo->CropY * pData->Pitch;
+        for(i = 0; i < h; i++)
+        {
+            nBytesRead = (mfxU32)fread(ptr + i * pSurface->Data.Pitch, 1, w*4, fSource);
+            if (w*4 != nBytesRead)
+                return MFX_ERR_MORE_DATA;
+        }
+        return MFX_ERR_NONE;
+    }
+
+    /* ELSE we have NV12 or YV12 format*/
     pitch = pData->Pitch;
     ptr = pData->Y + pInfo->CropX + pInfo->CropY * pData->Pitch;
 
@@ -167,6 +182,31 @@ mfxStatus WriteRawFrame(mfxFrameSurface1 *pSurface, FILE* fSink)
     mfxU32 i, j, h, w;
     mfxStatus sts = MFX_ERR_NONE;
 
+    /* IF we have RGB4 output*/
+    if (pInfo->FourCC == MFX_FOURCC_RGB4)
+    {
+        h = pInfo->CropH;
+        w = pInfo->CropW;
+
+        for(i = 0; i < h; i++)
+        {
+            size_t nBytesWrite;
+            //if (w*4 != nBytesRead)
+            //    return MFX_ERR_MORE_DATA;
+            mfxU8* ptr = TESTCOMP_MIN( TESTCOMP_MIN(pData->R, pData->G), pData->B );
+            ptr = ptr + pInfo->CropX + pInfo->CropY * pData->Pitch;
+
+            for(i = 0; i < h; i++)
+            {
+                nBytesWrite = fwrite(ptr + i * pData->Pitch, 1, 4*w, fSink);
+                if (w*4 != nBytesWrite)
+                    return MFX_ERR_UNDEFINED_BEHAVIOR;
+            }
+        }
+        return MFX_ERR_NONE;
+    }
+
+    /* ELSE we have NV12 or YV12 ouput*/
     for (i = 0; i < pInfo->CropH; i++)
         sts = WriteSection(pData->Y, 1, pInfo->CropW, pInfo, pData, i, 0, fSink);
 

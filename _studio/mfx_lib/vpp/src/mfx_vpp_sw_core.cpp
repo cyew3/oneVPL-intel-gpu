@@ -216,7 +216,7 @@ mfxStatus VideoVPPSW::Init(mfxVideoParam *par)
     MFX_CHECK_STS(sts);
 
     /* step [1]: building stage of VPP pipeline */
-    sts = GetPipelineList( par, m_pipelineList);
+    sts = GetPipelineList( par, m_pipelineList, true);
     MFX_CHECK_STS(sts);
 
 
@@ -752,7 +752,7 @@ mfxStatus VideoVPPSW::QueryIOSurf(VideoCORE* core, mfxVideoParam *par, mfxFrameA
     std::vector<mfxU32> pipelineList;
     //mfxU32 lenList;
 
-    mfxSts = GetPipelineList( par, pipelineList );
+    mfxSts = GetPipelineList( par, pipelineList, true );
     MFX_CHECK_STS( mfxSts );
 
 

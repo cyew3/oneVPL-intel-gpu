@@ -2103,7 +2103,7 @@ mfxStatus ConfigureExecuteParams(
 {
     //----------------------------------------------
     std::vector<mfxU32> pipelineList;
-    mfxStatus sts = GetPipelineList( &videoParam, pipelineList );
+    mfxStatus sts = GetPipelineList( &videoParam, pipelineList, true );
     MFX_CHECK_STS(sts);
 
     mfxF64 inDNRatio = 0, outDNRatio = 0;

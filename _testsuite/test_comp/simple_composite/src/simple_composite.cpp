@@ -529,6 +529,10 @@ int main(int argc, char *argv[])
     mfxU8* surfaceBuffersIn[MAX_INPUT_STREAMS] = {0}; // 1 primary stream + max 63 substreams
     mfxU8  bitsPerPixel = 12;  // NV12 format is a 12 bits per pixel format
 
+    /* IF RGB4 case */
+    if ((pa.scc == kRGB4) || (pa.dcc == kRGB4))
+        bitsPerPixel = 32;
+
     for (i = 0; i < nVPPSurfNumIn; i++)
     {       
         mfxU16 width; //= (mfxU16)MSDK_ALIGN32(atoi(subparams[i]["w"].c_str()));
@@ -558,9 +562,18 @@ int main(int argc, char *argv[])
             memcpy(&(pVPPSurfacesIn[i]->Info), &streams[i-1], sizeof(mfxFrameInfo));
         }
         pVPPSurfacesIn[i]->Data.Y = surfaceBuffersIn[i];
-        pVPPSurfacesIn[i]->Data.U = pVPPSurfacesIn[i]->Data.Y + width*height;
-        pVPPSurfacesIn[i]->Data.V = pVPPSurfacesIn[i]->Data.U + 1;
-        pVPPSurfacesIn[i]->Data.Pitch = width;
+        if (pa.scc == kNV12)
+        {
+            pVPPSurfacesIn[i]->Data.U = pVPPSurfacesIn[i]->Data.Y + width*height;
+            pVPPSurfacesIn[i]->Data.V = pVPPSurfacesIn[i]->Data.U + 1;
+            pVPPSurfacesIn[i]->Data.Pitch = width;
+        }
+        else /* IF RGB4 case */
+        {
+            pVPPSurfacesIn[i]->Data.U = pVPPSurfacesIn[i]->Data.Y + width*height;
+            pVPPSurfacesIn[i]->Data.V = pVPPSurfacesIn[i]->Data.Y + 2*width*height;
+            pVPPSurfacesIn[i]->Data.Pitch = 4*width;
+        }
 
 #ifndef ENABLE_INPUT
         // In case simulating direct access to frames we initialize the allocated surfaces with default pattern
@@ -611,9 +624,18 @@ int main(int argc, char *argv[])
         memset(pVPPSurfacesOut[i], 0, sizeof(mfxFrameSurface1));
         memcpy(&(pVPPSurfacesOut[i]->Info), &(VPPParams.vpp.Out), sizeof(mfxFrameInfo));
         pVPPSurfacesOut[i]->Data.Y = &surfaceBuffersOut[surfaceSize * i];
-        pVPPSurfacesOut[i]->Data.U = pVPPSurfacesOut[i]->Data.Y + width * height;
-        pVPPSurfacesOut[i]->Data.V = pVPPSurfacesOut[i]->Data.U + 1;
-        pVPPSurfacesOut[i]->Data.Pitch = width;
+        if (pa.scc == kNV12)
+        {
+            pVPPSurfacesOut[i]->Data.U = pVPPSurfacesOut[i]->Data.Y + width * height;
+            pVPPSurfacesOut[i]->Data.V = pVPPSurfacesOut[i]->Data.U + 1;
+            pVPPSurfacesOut[i]->Data.Pitch = width;
+        }
+        else /* IF RGB4 case */
+        {
+            pVPPSurfacesOut[i]->Data.U = pVPPSurfacesOut[i]->Data.Y + width * height;
+            pVPPSurfacesOut[i]->Data.V = pVPPSurfacesOut[i]->Data.Y + 2*width * height;
+            pVPPSurfacesOut[i]->Data.Pitch = 4*width;
+        }
     }
 
 

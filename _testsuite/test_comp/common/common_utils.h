@@ -18,6 +18,9 @@
 
 #include "mfxvideo++.h"
 
+#define TESTCOMP_MAX( a, b ) ( ((a) > (b)) ? (a) : (b) )
+#define TESTCOMP_MIN( a, b ) ( ((a) < (b)) ? (a) : (b) )
+
 #define MSDK_PRINT_RET_MSG(ERR)         {printf("\nReturn on error: error code %d,\t%s\t%d\n\n", ERR, __FILE__, __LINE__);}
 #define MSDK_CHECK_RESULT(P, X, ERR)    {if ((X) > (P)) {MSDK_PRINT_RET_MSG(ERR); return ERR;}}
 #define MSDK_CHECK_POINTER(P, ERR)      {if (!(P)) {MSDK_PRINT_RET_MSG(ERR); return ERR;}}
