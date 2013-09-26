@@ -953,8 +953,10 @@ namespace MfxHwH264Encode
 #if USE_AGOP
         CmSurface2D *   m_cmRaw4X;      // down-sized input surface for AGOP
         CmBufferUP *    m_cmMbAGOP;         // macroblock data, VME kernel output
+        CmBuffer *      m_cmCurbeAGOP;      // control structure for ME & HME kernels
         CmEvent*        m_cmEventAGOP;
         void *          m_cmMbSysAGOP;      // pointer to associated system memory buffer
+        mfxU32          m_costCache[MAX_B_FRAMES][MAX_B_FRAMES]; //if != MAX_COST => already checked
 #endif
         CmSurface2D *   m_cmRaw;        // CM surface made of m_handleRaw
         CmSurface2D *   m_cmRawLa;      // down-sized input surface for Lookahead
@@ -1693,6 +1695,7 @@ namespace MfxHwH264Encode
 #if USE_AGOP
         MfxFrameAllocResponse   m_raw4X;
         MfxFrameAllocResponse   m_mbAGOP;
+        MfxFrameAllocResponse   m_curbeAGOP;
 #endif
 
         MfxFrameAllocResponse   m_raw;

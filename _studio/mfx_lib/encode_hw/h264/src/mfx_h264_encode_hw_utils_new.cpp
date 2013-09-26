@@ -1863,8 +1863,8 @@ void AsyncRoutineEmulator::Init(MfxVideoParam const & video)
     case MFX_RATECONTROL_CQP:
         m_stageGreediness[STG_ACCEPT_FRAME] = 1;
 #if USE_AGOP
-        m_stageGreediness[STG_START_AGOP]         = 1; //extOpt2->AdaptiveB ? video.mfx.GopRefDist+1 : 1; 
-        m_stageGreediness[STG_WAIT_AGOP]         = 10; //extOpt2->AdaptiveB ? video.mfx.GopRefDist+1 : 1; 
+        m_stageGreediness[STG_START_AGOP]         = 1; 
+        m_stageGreediness[STG_WAIT_AGOP]         = (extOpt2->AdaptiveB & MFX_CODINGOPTION_ON) ? 10 : 1; 
 #endif
         m_stageGreediness[STG_START_LA    ] = video.mfx.EncodedOrder ? 1 : video.mfx.GopRefDist;
         m_stageGreediness[STG_WAIT_LA     ] = 1;
@@ -1875,8 +1875,8 @@ void AsyncRoutineEmulator::Init(MfxVideoParam const & video)
     case MFX_RATECONTROL_CRF:
         m_stageGreediness[STG_ACCEPT_FRAME] = 1;
 #if USE_AGOP
-        m_stageGreediness[STG_START_AGOP]         = 1; //extOpt2->AdaptiveB ? video.mfx.GopRefDist+1 : 1; 
-        m_stageGreediness[STG_WAIT_AGOP]         = 1; //extOpt2->AdaptiveB ? video.mfx.GopRefDist+1 : 1; 
+        m_stageGreediness[STG_START_AGOP]         = 1; 
+        m_stageGreediness[STG_WAIT_AGOP]         = (extOpt2->AdaptiveB & MFX_CODINGOPTION_ON) ? 10 : 1; 
 #endif
         m_stageGreediness[STG_START_LA    ] = video.mfx.EncodedOrder ? 1 : video.mfx.GopRefDist;
         m_stageGreediness[STG_WAIT_LA     ] = 1 + !!(video.AsyncDepth > 1);
@@ -1886,8 +1886,8 @@ void AsyncRoutineEmulator::Init(MfxVideoParam const & video)
     default:
         m_stageGreediness[STG_ACCEPT_FRAME] = 1;
 #if USE_AGOP
-        m_stageGreediness[STG_START_AGOP]         = 1; //extOpt2->AdaptiveB ? video.mfx.GopRefDist+1 : 1; 
-        m_stageGreediness[STG_WAIT_AGOP]         = 10; //extOpt2->AdaptiveB ? video.mfx.GopRefDist+1 : 1;  //agop deps
+        m_stageGreediness[STG_START_AGOP]         = 1; 
+        m_stageGreediness[STG_WAIT_AGOP]         = (extOpt2->AdaptiveB & MFX_CODINGOPTION_ON) ? 10 : 1; 
 #endif
         m_stageGreediness[STG_START_LA    ] = video.mfx.EncodedOrder ? 1 : video.mfx.GopRefDist;
         m_stageGreediness[STG_WAIT_LA     ] = 1;

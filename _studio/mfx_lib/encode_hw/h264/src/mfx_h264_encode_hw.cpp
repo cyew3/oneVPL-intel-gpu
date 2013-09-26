@@ -799,14 +799,14 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     }
 
 #if USE_AGOP
-    if (extOpt2->AdaptiveB)//AGOP
+    if (extOpt2->AdaptiveB & MFX_CODINGOPTION_ON)//AGOP
     {
         const int agopLength = 10;
-        if(!m_cmCtx.get() && !m_cmDevice)
-        {
+        if(!m_cmDevice)
             m_cmDevice.Reset(CreateCmDevicePtr(m_core));
+
+        if(!m_cmCtx.get())
             m_cmCtx.reset(new CmContext(m_video, m_cmDevice));
-        }
 
         mfxU16 widthAGOP = AlignValue<mfxU16>((m_video.mfx.FrameInfo.Width / 4), 16);
         mfxU16 heightAGOP = AlignValue<mfxU16>((m_video.mfx.FrameInfo.Height / 4), 16);
@@ -828,6 +828,16 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         request.NumFrameMin = mfxU16(m_video.mfx.NumRefFrame + m_video.AsyncDepth + agopLength);
 
         sts = m_mbAGOP.AllocCmBuffersUp(m_cmDevice, request);
+        MFX_CHECK_STS(sts);
+
+        //curbedata
+        request.Info.Width  = sizeof(SVCEncCURBEData);
+        request.Info.Height = 1;
+        request.Info.FourCC = MFX_FOURCC_P8;
+        request.Type        = MFX_MEMTYPE_D3D_INT;
+        request.NumFrameMin = mfxU16(m_video.mfx.NumRefFrame + m_video.AsyncDepth + agopLength);
+
+        sts = m_curbeAGOP.AllocCmBuffers(m_cmDevice, request);
         MFX_CHECK_STS(sts);
     }
 #endif
@@ -1206,6 +1216,9 @@ void ImplementationAvc::SubmitAdaptiveGOP()
         m_agopBestIdx = 0;
     }else if(m_adaptiveGOPBuffered.size() > 1 && (m_adaptiveGOPBuffered.back().GetFrameType() & MFX_FRAMETYPE_PB)) //if last added frame I skip estimation and drop frames 
     {
+        mfxI32 bestLen=0;
+        mfxU32 bestLenCost = MAX_SEQUENCE_COST;
+
         //for random access
         std::vector<DdiTask*> gopBuffer; //just vector of task ptrs, it is better to work with vector
         std::list<DdiTask>::iterator it = m_adaptiveGOPBuffered.begin();
@@ -1214,8 +1227,7 @@ void ImplementationAvc::SubmitAdaptiveGOP()
 
         //check each lens for best cost
         int maxLen = IPP_MIN(m_adaptiveGOPBuffered.size()-1, m_video.mfx.GopRefDist);
-        mfxI32 bestLen=0;
-        mfxU32 bestLenCost = MAX_SEQUENCE_COST;
+
         for(int len=0; len < maxLen; len++)
         {
             //check cost for each possible len (sequence) and get the best for current lentgh
@@ -1242,6 +1254,7 @@ void ImplementationAvc::SubmitAdaptiveGOP()
                 bestLenCost = cost;
             }
         }
+
         //Make best len to current
         int idx_in = (m_agopCurrentLen-bestLen-1+maxDepB)%maxDepB;
         int idx_out = m_agopCurrentLen%maxDepB;
@@ -1445,20 +1458,21 @@ void ImplementationAvc::OnAdaptiveGOPSubmitted()
 
     if(m_adaptiveGOPReady.size() > 0)
     {
-//        m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_AGOP;
-
         DdiTask& task = m_adaptiveGOPReady.front();
         mfxU8 requiredFrameType =  task.m_type[0];
         if((requiredFrameType & MFX_FRAMETYPE_IPB) == MFX_FRAMETYPE_P )
             requiredFrameType |= MFX_FRAMETYPE_REF;
         task.m_type[0] = requiredFrameType;
-        //if (m_inputFrameType == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+        if (m_inputFrameType == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
             m_core->DecreaseReference(&task.m_yuv->Data);
         m_reordering.splice(m_reordering.end(), m_adaptiveGOPReady, m_adaptiveGOPReady.begin());
 
         //Clean up
+        ReleaseResource(m_raw, task.m_midRaw);
+        task.m_handleRaw.first = NULL;
         ReleaseResource(m_raw4X, task.m_cmRaw4X);
         ReleaseResource(m_mbAGOP,    task.m_cmMbAGOP);
+        ReleaseResource(m_curbeAGOP, task.m_cmCurbeAGOP);
         if (m_cmDevice){
             m_cmDevice->DestroySurface(task.m_cmRaw);
             task.m_cmRaw = NULL;
@@ -1712,10 +1726,18 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         // move task to reordering queue
         //printf("\rACCEPTED      do=%4d eo=%4d type=%d\n", newTask.m_frameOrder, newTask.m_encOrder, newTask.m_type[0]); fflush(stdout);
 #if USE_AGOP
-        if(extOpt2->AdaptiveB)  //adaptive GOP do reordering by itself, accept new frame
+        if(extOpt2->AdaptiveB & MFX_CODINGOPTION_ON)  //adaptive GOP do reordering by itself, accept new frame
         {
             if( newTask.m_yuv != NULL) //not empty task
             {
+#if 1
+                //reset cost cache
+                for(int i=0; i<MAX_B_FRAMES; i++)
+                    for(int j=0; j<MAX_B_FRAMES; j++)
+                    {
+                        newTask.m_costCache[i][j] = MAX_SEQUENCE_COST;
+                    }
+    
                 //copy input surface to video memory
                 newTask.m_idx    = FindFreeResourceIndex(m_raw);
                 newTask.m_midRaw = AcquireResource(m_raw, newTask.m_idx);
@@ -1739,11 +1761,14 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 assert(cmMb.first != NULL);
                 newTask.m_cmMbAGOP    = (CmBufferUP *)cmMb.first;
                 newTask.m_cmMbSysAGOP = (void *)cmMb.second;
+                newTask.m_cmCurbeAGOP = (CmBuffer *)AcquireResource(m_curbeAGOP);
+#endif
                 //shift task to buffered adaptive GOP queue
                 {
                     UMC::AutomaticUMCMutex guard(m_listMutex);
                     //Lock surface
-                    m_core->IncreaseReference(&newTask.m_yuv->Data);
+                    if (m_inputFrameType == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+                        m_core->IncreaseReference(&newTask.m_yuv->Data);
                     m_adaptiveGOPBuffered.splice(m_adaptiveGOPBuffered.end(), m_incoming, m_incoming.begin());
                     m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_ACCEPT_FRAME;
                 }
@@ -1761,24 +1786,28 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_START_AGOP)
     {
         
-        if(extOpt2->AdaptiveB)
+        if(extOpt2->AdaptiveB & MFX_CODINGOPTION_ON)
         {
 #if 1
             SubmitAdaptiveGOP();
 //            OnAdaptiveGOPSubmitted(); //check submitted results, and move to reordering queue
 #else
+#if 0
             UMC::AutomaticUMCMutex guard(m_listMutex);
 //          m_adaptiveGOPBuffered.splice(m_adaptiveGOPBuffered.end(), m_incoming, m_incoming.begin());
             DdiTask& task = m_adaptiveGOPBuffered.front();
-            m_core->DecreaseReference(&task.m_yuv->Data);
+            if (m_inputFrameType == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+                m_core->DecreaseReference(&task.m_yuv->Data);
+#if 1
             ReleaseResource(m_raw4X, task.m_cmRaw4X);
             ReleaseResource(m_mbAGOP,    task.m_cmMbAGOP);
             if (m_cmDevice){
                 m_cmDevice->DestroySurface(task.m_cmRaw);
                 task.m_cmRaw = NULL;
             }
-
+#endif
             m_reordering.splice(m_reordering.end(), m_adaptiveGOPBuffered, m_adaptiveGOPBuffered.begin());
+#endif
 #endif
         }
         m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_START_AGOP;
@@ -1786,7 +1815,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_WAIT_AGOP)
     {
-        if(extOpt2->AdaptiveB)
+        if(extOpt2->AdaptiveB & MFX_CODINGOPTION_ON)
         {
             OnAdaptiveGOPSubmitted(); //check submitted results, and move to reordering queue
         }
@@ -2293,6 +2322,14 @@ mfxU32 ImplementationAvc::RunPreMeAGOP(
 {
     mfxU16 ftype = MFX_FRAMETYPE_B;
     int q=26;
+    int pOffset = b->m_frameOrder - p0->m_frameOrder;
+    int bOffset = p1->m_frameOrder - b->m_frameOrder;
+
+    //fprintf(stderr,"cframe: %d %d\n", pOffset, bOffset);
+    if( b->m_costCache[pOffset][bOffset] != MAX_SEQUENCE_COST){
+        //fprintf(stderr,"************* cached values!!!!!!!!!!!\n");
+        return b->m_costCache[pOffset][bOffset];
+    }
 #if 1
     if(b == p1)
     {
@@ -2317,15 +2354,18 @@ mfxU32 ImplementationAvc::RunPreMeAGOP(
         //fprintf(stderr,"biW: %d  %d\n", tb*tx+32, biWeight);
     }
 
+    mfxU32 cost = 0;
     b->m_cmEventAGOP = m_cmCtx->RunVmeAGOP(q,
         b->m_cmRaw4X,
         b == p0 ? 0 : p0->m_cmRaw4X,
         b == p1 ? 0 : p1->m_cmRaw4X,
         biWeight,
+        b->m_cmCurbeAGOP,
         b->m_cmMbAGOP
         );
 
     //sync, FIXME move to async
+
     CM_STATUS status;
     do {
         int res = b->m_cmEventAGOP->GetStatus(status);
@@ -2333,8 +2373,8 @@ mfxU32 ImplementationAvc::RunPreMeAGOP(
             throw CmRuntimeError();
     } while (status != CM_STATUS_FINISHED);
 
-    mfxU32 cost = 0;
     m_cmCtx->QueryVmeAGOP(*b, b->m_cmEventAGOP, cost);
+
 
 #if DEBUG_ADAPT
     char* ft="B";
@@ -2348,6 +2388,7 @@ mfxU32 ImplementationAvc::RunPreMeAGOP(
         biWeight, fullSkip,
         p0->m_frameNum, p0->m_frameType, b->m_frameNum, b->m_frameType, p1->m_frameNum, p1->m_frameType);
 #endif
+    b->m_costCache[pOffset][bOffset] = cost;
 
     return cost;
 }

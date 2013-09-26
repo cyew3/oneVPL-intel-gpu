@@ -307,6 +307,7 @@ public:
         CmSurface2D* fwd, //0 for I frame
         CmSurface2D* bwd, //0 for P/I frame
         mfxU32 biWeight,
+        CmBuffer *  curbe, //store for curbe data
         CmBufferUP* mb  //result output is here
     );
 
@@ -326,6 +327,9 @@ public:
 
 protected:
     CmKernel * SelectKernelPreMe(mfxU32 frameType);
+#if USE_AGOP
+    CmKernel * SelectKernelPreMeAGOP(mfxU32 frameType);
+#endif
     CmKernel * SelectKernelDownSample(mfxU16 LaScaleFactor);
     mfxVMEUNIIn & SelectCosts(mfxU32 frameType);
 
@@ -338,6 +342,8 @@ protected:
         SVCEncCURBEData & curbeData,
         mfxU16            frameType,
         mfxU32            qp,
+        mfxI32 width,
+        mfxI32 height,
         mfxU32 biWeight);
 
 private:
@@ -349,7 +355,13 @@ private:
     CmKernel *  m_kernelI;
     CmKernel *  m_kernelP;
     CmKernel *  m_kernelB;
-    CmBuf       m_curbeData;
+
+#if USE_AGOP
+    CmKernel *  m_kernelIAGOP;
+    CmKernel *  m_kernelPAGOP;
+    CmKernel *  m_kernelBAGOP;
+#endif
+
     CmBuf       m_nullBuf;
     mfxU32      m_lutMvP[65];
     mfxU32      m_lutMvB[65];
