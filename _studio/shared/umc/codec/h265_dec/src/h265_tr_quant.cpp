@@ -35,18 +35,17 @@ H265TrQuant::H265TrQuant()
     m_UseScalingList = false;
     initScalingList();
 
-    m_residualsBuffer = new H265CoeffsCommon[MAX_CU_SIZE * MAX_CU_SIZE];
-    m_residualsBuffer1 = new H265CoeffsCommon[MAX_CU_SIZE * MAX_CU_SIZE];
-    m_tempTransformBuffer = new H265CoeffsCommon[MAX_CU_SIZE * MAX_CU_SIZE];
+    m_residualsBuffer = (H265CoeffsCommon*)ippMalloc(MAX_CU_SIZE * MAX_CU_SIZE * 3);//aligned 64 bytes
+    m_residualsBuffer1 = m_residualsBuffer + MAX_CU_SIZE * MAX_CU_SIZE;
+    m_tempTransformBuffer = m_residualsBuffer + 2 * MAX_CU_SIZE * MAX_CU_SIZE;
+
 }
 
 H265TrQuant::~H265TrQuant()
 {
     destroyScalingList();
 
-    delete[] m_residualsBuffer;
-    delete[] m_residualsBuffer1;
-    delete[] m_tempTransformBuffer;
+    ippFree(m_residualsBuffer);    
 }
 
 
