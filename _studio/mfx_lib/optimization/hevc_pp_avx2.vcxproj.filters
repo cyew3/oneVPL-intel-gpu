@@ -19,6 +19,9 @@
     <ClCompile Include="h265\src\mfx_h265_reordering_avx2.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_interpolation_avx2.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
