@@ -54,8 +54,12 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
 
     if (bIsWindowed)
     {
-        m_D3DPP.BackBufferWidth  = 0;
-        m_D3DPP.BackBufferHeight = 0;
+        RECT r;
+        GetClientRect((HWND)hWindow, &r);
+        int x = GetSystemMetrics(SM_CXSCREEN);
+        int y = GetSystemMetrics(SM_CYSCREEN);
+        m_D3DPP.BackBufferWidth  = min(r.right - r.left, x);
+        m_D3DPP.BackBufferHeight = min(r.bottom - r.top, y);
     }
     else
     {
@@ -68,7 +72,7 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
     m_D3DPP.SwapEffect                 = D3DSWAPEFFECT_DISCARD;
     m_D3DPP.hDeviceWindow              = (HWND)hWindow;
     m_D3DPP.Windowed                   = bIsWindowed;
-    m_D3DPP.Flags                      = D3DPRESENTFLAG_VIDEO | D3DPRESENTFLAG_RESTRICTED_CONTENT | D3DPRESENTFLAG_RESTRICT_SHARED_RESOURCE_DRIVER;
+    m_D3DPP.Flags                      = D3DPRESENTFLAG_VIDEO;
     m_D3DPP.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
     m_D3DPP.PresentationInterval       = D3DPRESENT_INTERVAL_IMMEDIATE;
 
@@ -82,6 +86,7 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
         m_D3DPP.Flags |= D3DPRESENTFLAG_LOCKABLE_BACKBUFFER;
     }
 
+    AdjustD3DPP(&m_D3DPP);
     //
     // First try to create a hardware D3D9 device.
     //
@@ -159,8 +164,12 @@ mfxStatus MFXD3D9Device::Reset(WindowHandle hWindow,
         m_D3DPP.Windowed = bWindowed;
         if (m_D3DPP.Windowed)
         {
-            m_D3DPP.BackBufferWidth  = 0;
-            m_D3DPP.BackBufferHeight = 0;
+            RECT r;
+            GetClientRect((HWND)hWindow, &r);
+            int x = GetSystemMetrics(SM_CXSCREEN);
+            int y = GetSystemMetrics(SM_CYSCREEN);
+            m_D3DPP.BackBufferWidth  = min(r.right - r.left, x);
+            m_D3DPP.BackBufferHeight = min(r.bottom - r.top, y);
         }
         else
         {
@@ -169,6 +178,8 @@ mfxStatus MFXD3D9Device::Reset(WindowHandle hWindow,
         }
         m_D3DPP.hDeviceWindow              = (HWND)hWindow;
     }
+
+    AdjustD3DPP(&m_D3DPP);
 
     //
     // Reset will change the parameters, so use a copy instead.
@@ -363,6 +374,8 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
         dest.left = (dsc.Width - width) / 2;
         dest.right = dest.left + width;
     }
+    RECT targetRect = {0};
+    GetClientRect(m_D3DPP.hDeviceWindow, &targetRect);
 
     {
         MPA_TRACE("D3DRender::StretchRect");
@@ -377,7 +390,8 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
     {
         MPA_TRACE("D3DRender::Present");
 
-        hr = m_pD3DD9Ex->Present(NULL, NULL, NULL, NULL);
+
+        hr = m_pD3DD9Ex->Present(&targetRect, &targetRect, NULL, NULL);
 
         if (FAILED(hr))
         {

@@ -239,7 +239,10 @@ protected:
                         pD3D11Device,
                         profile, 
                         (PAVP_ENCRYPTION_TYPE)m_inParams.encType,
-                        D3D11_CONTENT_PROTECTION_CAPS_SOFTWARE | D3D11_CONTENT_PROTECTION_CAPS_HARDWARE,
+                        ((cpImplSW == m_inParams.cpImpl || 
+                            cpImplUnknown == m_inParams.cpImpl) ? D3D11_CONTENT_PROTECTION_CAPS_SOFTWARE : 0) |
+                        ((cpImplHW == m_inParams.cpImpl || 
+                            cpImplUnknown == m_inParams.cpImpl) ? D3D11_CONTENT_PROTECTION_CAPS_HARDWARE : 0),
                         &m_cpDevice,
                         &cryptoType));
                     if (FAILED(hr))
@@ -324,7 +327,10 @@ protected:
                         deviceEx,
                         profile, 
                         (PAVP_ENCRYPTION_TYPE)m_inParams.encType,
-                        D3DCPCAPS_SOFTWARE | D3DCPCAPS_HARDWARE,
+                        ((cpImplSW == m_inParams.cpImpl || 
+                            cpImplUnknown == m_inParams.cpImpl) ? D3DCPCAPS_SOFTWARE : 0) |
+                        ((cpImplHW == m_inParams.cpImpl || 
+                            cpImplUnknown == m_inParams.cpImpl) ? D3DCPCAPS_HARDWARE : 0),
                         &(m_cpDevice),
                         &cs9Handle,
                         &cryptoType));
@@ -361,7 +367,10 @@ protected:
                     hr = SO_CALL(CCPDeviceAuxiliary9_create, m_pavpdll, E_FAIL, (
                         deviceEx,//pd3d9DeviceEx,
                         PAVP_SESSION_TYPE_TRANSCODE,
-                        PAVP_MEMORY_PROTECTION_LITE | PAVP_MEMORY_PROTECTION_DYNAMIC,
+                        ((cpImplSW == m_inParams.cpImpl || 
+                            cpImplUnknown == m_inParams.cpImpl) ? PAVP_MEMORY_PROTECTION_LITE : 0) |
+                        ((cpImplHW == m_inParams.cpImpl || 
+                            cpImplUnknown == m_inParams.cpImpl) ? PAVP_MEMORY_PROTECTION_DYNAMIC : 0),
                         &(m_cpDevice)));
                     if (FAILED(hr))
                     {
@@ -717,6 +726,15 @@ protected:
                 }
                 m_inParams.bCompleteFrame = true;
             }
+            else if (0 != (nPattern = m_OptProc.Check(argv[0], VM_STRING("-protection(:sw|:hw)")
+                , VM_STRING("Choose SOFTWARE or HARDWARE protection."))))
+            {
+                switch(nPattern)
+                {
+                    case 1 : m_inParams.cpImpl = cpImplSW; break;
+                    case 2 : m_inParams.cpImpl = cpImplHW; break;
+                }
+            }
             else if (m_OptProc.Check(argv[0], VM_STRING("-pavplibpath")
                 , VM_STRING("Path to pavp library. Default is mfx_pavp.dll"), OPT_FILENAME))
             {
@@ -800,10 +818,16 @@ protected:
 
         if (0 != m_inParams.Protected)
         {
+            vm_char str[MAX_PATH+1024];
+            _stprintf_p(str, sizeof(str)/sizeof(str[0]), VM_STRING("Loading mfx_pavp DLL as \"%s\""), m_inParams.strPAVPLibPath);
+            OutputDebugString(str);
+
             if (!m_pavpdll.load(m_inParams.strPAVPLibPath, pavp_functions, pavp_functions_count))
             {
-                vm_string_printf(VM_STRING("Failed to load \"%s\"\n"), m_inParams.strPAVPLibPath);
-                PRINT_RET_MSG(MFX_ERR_UNSUPPORTED);
+                MFX_TRACE_AT_EXIT_IF(MFX_ERR_UNSUPPORTED,
+                    0,
+                    PE_CHECK_PARAMS,
+                    (VM_STRING("Failed to load \"%s\"\n"), m_inParams.strPAVPLibPath));
             }
         }
 

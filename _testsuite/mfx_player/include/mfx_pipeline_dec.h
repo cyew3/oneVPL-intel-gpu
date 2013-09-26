@@ -40,6 +40,15 @@ File Name: .h
 #include "mfx_ibitstream_reader.h"
 #include "mfx_shared_ptr.h"
 
+#ifdef PAVP_BUILD
+typedef enum CPImpl
+{
+    cpImplUnknown = 0,
+    cpImplSW = 1,
+    cpImplHW = 2
+} CPImpl;
+#endif//PAVP_BUILD
+
 //parameters that are set directly from cmd line
 struct sCommandlineParams
 {
@@ -148,6 +157,8 @@ struct sCommandlineParams
   mfxU32        m_bNowWidowHeader;
   mfxU16        m_nMonitor;//monitor id on which to create rendering window
 
+  bool          bUseOverlay;
+
   // future mark notifications
   mfxU32         nTestId;
 
@@ -158,6 +169,8 @@ struct sCommandlineParams
   // protected
   mfxU16 Protected; //Protected in mfxVideoParam
   vm_char strPAVPLibPath[MAX_FILE_PATH];
+
+  CPImpl cpImpl;
 
   mfxU16 ctr_dec_type; //CounterType in mfxExtPAVPOption
   bool startctr_dec_set;
@@ -178,6 +191,7 @@ struct sCommandlineParams
 
 #ifdef PAVP_BUILD
       vm_string_strcpy_s(strPAVPLibPath, MFX_ARRAY_SIZE(strPAVPLibPath), VM_STRING("mfx_pavp"));
+      cpImpl = cpImplUnknown;
 #endif//PAVP_BUILD
 
       //default parameters for sCommandLine

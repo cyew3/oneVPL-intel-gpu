@@ -1916,6 +1916,30 @@ mfxStatus MFXDecPipeline::InitYUVSource()
     return sts;
 }
 
+#ifdef D3D_SURFACES_SUPPORT
+struct GetMonitorRect_data{
+    int current;
+    int required;
+    RECT requiredRect;
+};
+BOOL CALLBACK GetMonitorRect_MonitorEnumProc(HMONITOR /*hMonitor*/,
+                                           HDC /*hdcMonitor*/,
+                                           LPRECT lprcMonitor,
+                                           LPARAM dwData)
+{
+    GetMonitorRect_data *data = reinterpret_cast<GetMonitorRect_data *>(dwData);
+    RECT r = {0};
+    if (NULL == lprcMonitor)
+        lprcMonitor = &r;
+
+    if (data->current ==data->required)
+       data->requiredRect = *lprcMonitor;
+    data->current++;
+
+    return TRUE;
+}
+#endif //D3D_SURFACES_SUPPORT
+
 mfxStatus MFXDecPipeline::CreateDeviceManager()
 {
 #ifdef LIBVA_SUPPORT
@@ -1958,12 +1982,33 @@ mfxStatus MFXDecPipeline::CreateDeviceManager()
         // Create own D3D device manager using helper d3ddevice class
         if (NULL == m_pHWDevice.get())
         {
-            POINT point  = {0, 0};
+            GetMonitorRect_data monitor = {0};
+            monitor.required = m_inParams.m_nMonitor;
+            EnumDisplayMonitors(NULL, NULL, &GetMonitorRect_MonitorEnumProc, (LPARAM)&monitor);
+
+            POINT point  = {monitor.requiredRect.left, monitor.requiredRect.top};
             HWND  hWindow = WindowFromPoint(point);
 
             //adapter ID will be selected to match library implementation
             ComponentParams &cparams = m_components[eDEC].m_bufType == MFX_BUF_HW ? m_components[eDEC] : m_components[eREN];
-            m_pHWDevice.reset(new MFXD3D9Device());
+
+            bool use_D3DPP_over = false;
+            D3DPRESENT_PARAMETERS D3DPP_over = {0};
+            if (m_inParams.bUseOverlay)
+            {
+                use_D3DPP_over = true;
+                D3DPP_over.SwapEffect = D3DSWAPEFFECT_OVERLAY;
+            }
+            if (0 != m_inParams.Protected)
+            {
+                use_D3DPP_over = true;
+                D3DPP_over.Flags = D3DPRESENTFLAG_VIDEO | D3DPRESENTFLAG_RESTRICTED_CONTENT | D3DPRESENTFLAG_RESTRICT_SHARED_RESOURCE_DRIVER;
+            }
+
+            if (use_D3DPP_over)
+                m_pHWDevice.reset(new MFXD3D9DeviceEx(D3DPP_over));
+            else
+                m_pHWDevice.reset(new MFXD3D9Device());
 
             MFX_CHECK_STS(m_pHWDevice->Init(cparams.GetAdapter(), hWindow, !m_inParams.bFullscreen, D3DFMT_X8R8G8B8, 1, m_inParams.dxva2DllName));
         }
@@ -3833,6 +3878,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             else HANDLE_INT_OPTION(m_inParams.nSVCDownSampling, VM_STRING("-downsampling"), VM_STRING("use downsampling algorithm 1-best quality, 2-best speed"))
             else HANDLE_BOOL_OPTION(m_inParams.bDxgiDebug, VM_STRING("-dxgidebug"), VM_STRING("inject dxgidebug.dll to report live objects(dxgilevel memory leaks)"));
             else HANDLE_FILENAME_OPTION(m_inParams.strDecPlugin, VM_STRING("-decode_plugin"), VM_STRING("MediaSDK Decoder plugin filename"))
+            else HANDLE_BOOL_OPTION(m_inParams.bUseOverlay, VM_STRING("-overlay"), VM_STRING("Use overlay for rendering"));
 
             else
             {

@@ -24,7 +24,7 @@ class MFXD3D9Device : public IHWDevice
 {
 public:
     MFXD3D9Device();
-    ~MFXD3D9Device();
+    virtual ~MFXD3D9Device();
 
     virtual mfxStatus Init( mfxU32 nAdapter
                           , WindowHandle hDeviceWindow
@@ -37,7 +37,8 @@ public:
     virtual mfxStatus GetHandle(mfxHandleType type, mfxHDL *pHdl);
     virtual mfxStatus RenderFrame(mfxFrameSurface1 * pSrf, mfxFrameAllocator *Palloc);
     virtual void Close() ;
-    
+protected:
+    virtual void AdjustD3DPP(D3DPRESENT_PARAMETERS *) {};
 private:
     HMODULE                     m_pLibD3D9;
     HMODULE                     m_pLibDXVA2;
@@ -50,6 +51,41 @@ private:
     HRESULT myDXVA2CreateDirect3DDeviceManager9(UINT* pResetToken,
                                                 IDirect3DDeviceManager9** ppDeviceManager,
                                                 const vm_char *pDXVA2LIBNAME = NULL);
+};
+
+
+#define ASSIGN_IF_NOT_ZERO(a, b) {if((b)) (a)=(b);}
+
+class MFXD3D9DeviceEx : public MFXD3D9Device
+{
+public:
+    MFXD3D9DeviceEx(const D3DPRESENT_PARAMETERS &D3DPP_over) :
+        MFXD3D9Device()
+        ,m_D3DPP_over(D3DPP_over)
+    { };
+protected:
+        virtual void AdjustD3DPP(D3DPRESENT_PARAMETERS *pD3DPP) 
+        {
+            ASSIGN_IF_NOT_ZERO(pD3DPP->BackBufferWidth,            m_D3DPP_over.BackBufferWidth);
+            ASSIGN_IF_NOT_ZERO(pD3DPP->BackBufferHeight,           m_D3DPP_over.BackBufferHeight);
+            ASSIGN_IF_NOT_ZERO(pD3DPP->BackBufferFormat,           m_D3DPP_over.BackBufferFormat);
+            ASSIGN_IF_NOT_ZERO(pD3DPP->BackBufferCount,            m_D3DPP_over.BackBufferCount);
+            
+            ASSIGN_IF_NOT_ZERO(pD3DPP->MultiSampleType,            m_D3DPP_over.MultiSampleType);
+            ASSIGN_IF_NOT_ZERO(pD3DPP->MultiSampleQuality,         m_D3DPP_over.MultiSampleQuality);
+            
+            ASSIGN_IF_NOT_ZERO(pD3DPP->SwapEffect,                 m_D3DPP_over.SwapEffect);
+            ASSIGN_IF_NOT_ZERO(pD3DPP->hDeviceWindow,              m_D3DPP_over.hDeviceWindow);
+            ASSIGN_IF_NOT_ZERO(pD3DPP->Windowed,                   m_D3DPP_over.Windowed);
+            ASSIGN_IF_NOT_ZERO(pD3DPP->EnableAutoDepthStencil,     m_D3DPP_over.EnableAutoDepthStencil);
+            ASSIGN_IF_NOT_ZERO(pD3DPP->AutoDepthStencilFormat,     m_D3DPP_over.AutoDepthStencilFormat);
+            ASSIGN_IF_NOT_ZERO(pD3DPP->Flags,                      m_D3DPP_over.Flags);
+            
+            ASSIGN_IF_NOT_ZERO(pD3DPP->FullScreen_RefreshRateInHz, m_D3DPP_over.FullScreen_RefreshRateInHz);
+            ASSIGN_IF_NOT_ZERO(pD3DPP->PresentationInterval,       m_D3DPP_over.PresentationInterval);
+        };
+private:
+    D3DPRESENT_PARAMETERS m_D3DPP_over;
 };
 
 #endif // #if defined(_WIN32) || defined(_WIN64)
