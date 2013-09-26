@@ -88,7 +88,6 @@ public:
         MFX_CHECK_POINTER(m_pFD);
 
         vm_char *pChar = vm_file_fgets(p, size, m_pFD);
-        MFX_CHECK_POINTER(pChar);
         
         return MFX_ERR_NONE;
     }
