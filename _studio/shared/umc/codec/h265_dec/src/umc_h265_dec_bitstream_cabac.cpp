@@ -218,7 +218,7 @@ Ipp32u H265Bitstream::DecodeSingleBin_CABAC_cmov_BMI(Ipp32u ctxIdx)
         , [m_lcodIRange]   "+r" (m_lcodIRange)
         : [scaledRange]    "rm" (scaledRange)
         , [transLPSState]   "m" (transIdxLPSH265[pState])
-        , [numBitsL]        "m" (c_RenormTable[codIRangeLPS >> 3])
+        , [numBitsL]        "r" (numBitsL)
         , [codIRangeLPS]    "r" (codIRangeLPS)
         : "%edx"
     );
