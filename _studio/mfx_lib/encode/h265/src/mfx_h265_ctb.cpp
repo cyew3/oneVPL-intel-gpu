@@ -1402,7 +1402,7 @@ Ipp32s H265CU::MatchingMetric_PU(PixType *pSrc, H265MEInfo* me_info, H265MV* MV,
     }
     else
     {
-        cost = MFX_HEVC_PP::h265_SAD_MxN_general_8u(pRec,  recPitch, pSrc, pitch_src, me_info->width, me_info->height);        
+        cost = MFX_HEVC_PP::h265_SAD_MxN_general_8u(pRec, recPitch, pSrc, pitch_src, me_info->width, me_info->height);        
     }
 
     return cost;

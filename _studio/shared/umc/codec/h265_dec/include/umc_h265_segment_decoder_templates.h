@@ -249,7 +249,7 @@ public:
                     }
                     else
                     {
-                        sd->m_context->UpdateRecCurrCUContext(rsCUAddr, newRSCUAddr);
+                        sd->m_context->UpdateRecCurrCTBContext(rsCUAddr, newRSCUAddr);
                     }
                 }
                 break;
@@ -262,7 +262,7 @@ public:
             }
             else
             {
-                sd->m_context->UpdateRecCurrCUContext(rsCUAddr, newRSCUAddr);
+                sd->m_context->UpdateRecCurrCTBContext(rsCUAddr, newRSCUAddr);
             }
 
             curCUAddr = newCUAddr;
@@ -376,7 +376,7 @@ public:
                     }
                 }
                 sd->m_context->UpdateCurrCUContext(rsCUAddr, newRSCUAddr);
-                sd->m_context->UpdateRecCurrCUContext(rsCUAddr, newRSCUAddr);
+                sd->m_context->UpdateRecCurrCTBContext(rsCUAddr, newRSCUAddr);
             }
 
             curCUAddr = newCUAddr;

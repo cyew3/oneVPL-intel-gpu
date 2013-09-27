@@ -52,24 +52,26 @@ void DecodingContext::Init(H265Slice *slice)
         // Zero element is left-top diagonal from zero CTB
         m_TopNgbrsHolder.resize(m_sps->NumPartitionsInFrameWidth + 2);
         m_TopMVInfoHolder.resize(m_sps->NumPartitionsInFrameWidth + 2);
-        m_RecTopNgbrsHolder.resize(m_sps->NumPartitionsInFrameWidth + 2);
     }
 
     m_TopNgbrs = &m_TopNgbrsHolder[1];
     m_TopMVInfo = &m_TopMVInfoHolder[1];
-    m_RecTopNgbrs = &m_RecTopNgbrsHolder[1];
+
+    VM_ASSERT(m_sps->pic_width_in_luma_samples <= 8192); // Top Intra flags placeholder can store up to 8192 / 4 / 32 flags
+    m_RecTpIntraFlags    = m_RecIntraFlagsHolder;
+    m_RecLfIntraFlags    = m_RecIntraFlagsHolder + 17;
+    m_RecTLIntraFlags    = m_RecIntraFlagsHolder + 34;
+    m_RecTpIntraRowFlags = (Ipp16u*)(m_RecIntraFlagsHolder + 35) + 1;
 
     m_CurrCTBStride = (m_sps->NumPartitionsInCUSize + 2);
     if (m_CurrCTBHolder.size() < (Ipp32u)(m_CurrCTBStride * m_CurrCTBStride))
     {
         m_CurrCTBHolder.resize(m_CurrCTBStride * m_CurrCTBStride);
         m_CurrCTBFlagsHolder.resize(m_CurrCTBStride * m_CurrCTBStride);
-        m_CurrRecFlagsHolder.resize(m_CurrCTBStride * m_CurrCTBStride);
     }
 
     m_CurrCTB = &m_CurrCTBHolder[m_CurrCTBStride + 1];
     m_CurrCTBFlags = &m_CurrCTBFlagsHolder[m_CurrCTBStride + 1];
-    m_CurrRecFlags = &m_CurrRecFlagsHolder[m_CurrCTBStride + 1];
 
     Ipp32s sliceNum = slice->GetSliceNum();
     m_refPicList[0] = m_frame->GetRefPicList(sliceNum, REF_PIC_LIST_0)->m_refPicList;
@@ -182,94 +184,44 @@ void DecodingContext::UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr)
             CurrCTBFlags[i * m_CurrCTBStride + j].data = 0;
 }
 
-// Identical to UpdateCurrCUContext but doesn't copy motion info
-void DecodingContext::UpdateRecCurrCUContext(Ipp32s lastCUAddr, Ipp32s newCUAddr)
+void DecodingContext::UpdateRecCurrCTBContext(Ipp32s lastCUAddr, Ipp32s newCUAddr)
 {
-    // Set local pointers to real array start positions
-    H265FrameRecNeighborsInfo *CurrCTBFlags = &m_CurrRecFlagsHolder[0];
-    H265FrameRecNeighborsInfo *TopNgbrs = &m_RecTopNgbrsHolder[0];
+    Ipp32u maxCUSzIn4x4 = m_sps->MaxCUSize >> 2;
+    Ipp32s lCTBXx4 = lastCUAddr % m_sps->WidthInCU;
+    Ipp32s nCTBXx4 = newCUAddr % m_sps->WidthInCU;
+    bool   isSameY = ((lastCUAddr-lCTBXx4) == (newCUAddr-nCTBXx4));
 
-    VM_ASSERT(CurrCTBFlags[m_CurrCTBStride * (m_CurrCTBStride - 1)].data == 0);
+    lCTBXx4 <<= (m_sps->log2_max_luma_coding_block_size - 2);
+    nCTBXx4 <<= (m_sps->log2_max_luma_coding_block_size - 2);
 
-    Ipp32s lastCUX = (lastCUAddr % m_sps->WidthInCU) * m_sps->NumPartitionsInCUSize;
-    Ipp32s lastCUY = (lastCUAddr / m_sps->WidthInCU) * m_sps->NumPartitionsInCUSize;
-    Ipp32s newCUX = (newCUAddr % m_sps->WidthInCU) * m_sps->NumPartitionsInCUSize;
-    Ipp32s newCUY = (newCUAddr / m_sps->WidthInCU) * m_sps->NumPartitionsInCUSize;
-
-    Ipp32s bottom_row_offset = m_CurrCTBStride * (m_CurrCTBStride - 2);
-    if (newCUY > 0)
-    {
-        if (newCUX > lastCUX)
-        {
-            // Init top margin from previous row
-            for (Ipp32s i = 0; i < m_CurrCTBStride; i++)
-            {
-                CurrCTBFlags[i] = TopNgbrs[newCUX + i];
-            }
-            // Store bottom margin for next row if next CTB is to the right. This is necessary for left-top diagonal
-            for (Ipp32s i = 1; i < m_CurrCTBStride - 1; i++)
-            {
-                TopNgbrs[lastCUX + i] = CurrCTBFlags[bottom_row_offset + i];
-            }
-        }
-        else if (newCUX < lastCUX)
-        {
-            // Store bottom margin for next row if next CTB is to the left-below. This is necessary for right-top diagonal
-            for (Ipp32s i = 1; i < m_CurrCTBStride - 1; i++)
-            {
-                TopNgbrs[lastCUX + i] = CurrCTBFlags[bottom_row_offset + i];
-            }
-            // Init top margin from previous row
-            for (Ipp32s i = 0; i < m_CurrCTBStride; i++)
-            {
-                CurrCTBFlags[i] = TopNgbrs[newCUX + i];
-            }
-        }
-        else // New CTB right under previous CTB
-        {
-            // Copy data from bottom row
-            for (Ipp32s i = 0; i < m_CurrCTBStride; i++)
-            {
-                TopNgbrs[lastCUX + i] = CurrCTBFlags[i] = CurrCTBFlags[bottom_row_offset + i];
-            }
-        }
-    }
-    else
-    {
-        // Should be reset from the beginning and not filled up until 2nd row
-        for (Ipp32s i = 0; i < m_CurrCTBStride; i++)
-            VM_ASSERT(CurrCTBFlags[i].data == 0);
+    if(nCTBXx4 && isSameY) {
+        m_RecLfIntraFlags[0] = m_RecLfIntraFlags[maxCUSzIn4x4];
+        memset(m_RecLfIntraFlags+1, 0, maxCUSzIn4x4*sizeof(Ipp32u));
+    } else {
+        memset(m_RecLfIntraFlags, 0, (maxCUSzIn4x4+1)*sizeof(Ipp32u));
     }
 
-    if (newCUX != lastCUX)
-    {
-        // Store bottom margin for next row if next CTB is not underneath. This is necessary for left-top diagonal
-        for (Ipp32s i = 1; i < m_CurrCTBStride - 1; i++)
-        {
-            TopNgbrs[lastCUX + i].data = CurrCTBFlags[bottom_row_offset + i].data;
-        }
+    Ipp32u tDiag, diagIds;
+        
+    tDiag = (((Ipp32u)(m_RecTpIntraRowFlags[(nCTBXx4>>4)-1])) | ((Ipp32u)(m_RecTpIntraRowFlags[(nCTBXx4>>4)]) << 16)) >> 15;
+    tDiag = (tDiag >> ((nCTBXx4 & 0xF))) & 0x1;
+
+    Ipp32u mask = ((0x1 << maxCUSzIn4x4) - 1) << (lCTBXx4 & 0xF) & 0x0000FFFF;
+    m_RecTpIntraRowFlags[lCTBXx4>>4] &= ~mask;
+    m_RecTpIntraRowFlags[lCTBXx4>>4] |= ((m_RecTpIntraFlags[maxCUSzIn4x4] << (lCTBXx4 & 0xF)) & 0x0000FFFF);
+
+    memset(m_RecTpIntraFlags, 0, (maxCUSzIn4x4+1)*sizeof(Ipp32u));
+    m_RecTpIntraFlags[0] =  ((Ipp32u)(m_RecTpIntraRowFlags[nCTBXx4>>4])) | ((Ipp32u)(m_RecTpIntraRowFlags[(nCTBXx4>>4)+1]) << 16);
+    m_RecTpIntraFlags[0] >>= (nCTBXx4 & 0xF);
+
+    diagIds  = (m_RecTpIntraFlags[0] << 1) | tDiag;
+    tDiag    = m_RecLfIntraFlags[0];
+
+    for(Ipp32s i=0; i<maxCUSzIn4x4-1; i++) {
+        diagIds <<= 1; diagIds |= (tDiag & 0x1); tDiag >>= 1;
     }
 
-    if (lastCUY == newCUY)
-    {
-        // Copy left margin from right
-        for (Ipp32s i = 1; i < m_CurrCTBStride - 1; i++)
-        {
-            CurrCTBFlags[i * m_CurrCTBStride] = CurrCTBFlags[i * m_CurrCTBStride + m_CurrCTBStride - 2];
-        }
-    }
-    else
-    {
-        for (Ipp32s i = 1; i < m_CurrCTBStride; i++)
-            CurrCTBFlags[i * m_CurrCTBStride].data = 0;
-    }
-
-    VM_ASSERT(CurrCTBFlags[m_CurrCTBStride * (m_CurrCTBStride - 1)].data == 0);
-
-    // Clean inside of CU context
-    for (Ipp32s i = 1; i < m_CurrCTBStride; i++)
-        for (Ipp32s j = 1; j < m_CurrCTBStride; j++)
-            CurrCTBFlags[i * m_CurrCTBStride + j].data = 0;
+    *m_RecTLIntraFlags = diagIds;
 }
 
 void DecodingContext::ResetRowBuffer()
@@ -286,11 +238,7 @@ void DecodingContext::ResetRowBuffer()
 
 void DecodingContext::ResetRecRowBuffer()
 {
-    H265FrameRecNeighborsInfo *TopRecNgbrs = &m_RecTopNgbrsHolder[0];
-    H265FrameRecNeighborsInfo *CurrRecFlags = &m_CurrRecFlagsHolder[0];
-
-    memset(TopRecNgbrs, 0, m_sps->NumPartitionsInFrameWidth + 2);
-    memset(CurrRecFlags, 0, m_CurrCTBStride * m_CurrCTBStride);
+    memset(m_RecIntraFlagsHolder, 0, sizeof(m_RecIntraFlagsHolder));
 }
 
 void H265SegmentDecoder::SaveCTBContext(H265CodingUnit* pCU)
@@ -2362,10 +2310,9 @@ void H265SegmentDecoder::ReconstructCU(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
     {
         case MODE_INTER:
             ReconInter(pCU, AbsPartIdx, Depth);
-            UpdateRecNeighboursBuffers(PartX, PartY, PartSize, false);
+            UpdateRecNeighboursBuffersN(XInc, YInc, Size, pCU->m_CUPelX, false);
             break;
         case MODE_INTRA:
-            UpdateRecNeighboursBuffers(PartX, PartY, PartSize, true);
             ReconIntraQT(pCU, AbsPartIdx, Depth);
             break;
         default:
@@ -2630,34 +2577,76 @@ void H265SegmentDecoder::UpdateNeighborDecodedQP(H265CodingUnit* pCU, Ipp32u Abs
             m_context->m_CurrCTBFlags[m_context->m_CurrCTBStride * y + x].members.qp = qp;
 }
 
-void H265SegmentDecoder::UpdateRecNeighboursBuffers(Ipp32s PartX, Ipp32s PartY, Ipp32s PartSize, bool IsIntra)
+void H265SegmentDecoder::UpdateRecNeighboursBuffersN(Ipp32s PartX, Ipp32s PartY, Ipp32s PartSize, Ipp32u xCTB, bool IsIntra)
 {
-    H265FrameRecNeighborsInfo info, *pInfo;
-    info.data = 0;
-    info.members.IsAvailable = (m_pPicParamSet->constrained_intra_pred_flag) ? (IsIntra ? 1 : 0) : 1;
+    Ipp32u maskL, maskT, maskTL;
+    bool   isIntra = (m_pPicParamSet->constrained_intra_pred_flag) ? (IsIntra ? 1 : 0) : 1;
 
-    if (IsIntra)
-    {
-        for (Ipp32s y = 0; y < PartSize; y++)
-        {
-            pInfo = m_context->m_CurrRecFlags + (PartY + y) * m_context->m_CurrCTBStride + PartX;
-            for (Ipp32s x = 0; x < PartSize; x++)
-                *pInfo++ = info;
+    PartX >>= 2; PartY >>=2; PartSize >>= 2;
+
+    Ipp32u maxCUSzIn4x4 = m_pSeqParamSet->MaxCUSize >> 2;
+    Ipp32s diagId = (PartX+(maxCUSzIn4x4-PartY)-PartSize);
+
+    maskTL = ((0x1<<((PartSize<<1)-1))-1) << diagId;
+    maskL = (0x1<<PartSize) - 1;
+    maskT = maskL << PartX;
+    maskL = maskL << PartY;
+
+    if(isIntra) {
+        *m_context->m_RecTLIntraFlags |= maskTL;
+        switch (PartSize) {
+        case 16:
+            m_context->m_RecLfIntraFlags[++PartX] |= maskL; m_context->m_RecLfIntraFlags[++PartX] |= maskL;
+            m_context->m_RecLfIntraFlags[++PartX] |= maskL; m_context->m_RecLfIntraFlags[++PartX] |= maskL;
+            m_context->m_RecLfIntraFlags[++PartX] |= maskL; m_context->m_RecLfIntraFlags[++PartX] |= maskL;
+            m_context->m_RecLfIntraFlags[++PartX] |= maskL; m_context->m_RecLfIntraFlags[++PartX] |= maskL;
+
+            m_context->m_RecTpIntraFlags[++PartY] |= maskT; m_context->m_RecTpIntraFlags[++PartY] |= maskT;
+            m_context->m_RecTpIntraFlags[++PartY] |= maskT; m_context->m_RecTpIntraFlags[++PartY] |= maskT;
+            m_context->m_RecTpIntraFlags[++PartY] |= maskT; m_context->m_RecTpIntraFlags[++PartY] |= maskT;
+            m_context->m_RecTpIntraFlags[++PartY] |= maskT; m_context->m_RecTpIntraFlags[++PartY] |= maskT;
+        case 8:
+            m_context->m_RecLfIntraFlags[++PartX] |= maskL; m_context->m_RecLfIntraFlags[++PartX] |= maskL;
+            m_context->m_RecLfIntraFlags[++PartX] |= maskL; m_context->m_RecLfIntraFlags[++PartX] |= maskL;
+            m_context->m_RecTpIntraFlags[++PartY] |= maskT; m_context->m_RecTpIntraFlags[++PartY] |= maskT;
+            m_context->m_RecTpIntraFlags[++PartY] |= maskT; m_context->m_RecTpIntraFlags[++PartY] |= maskT;
+        case 4:
+            m_context->m_RecLfIntraFlags[++PartX] |= maskL; m_context->m_RecLfIntraFlags[++PartX] |= maskL;
+            m_context->m_RecTpIntraFlags[++PartY] |= maskT; m_context->m_RecTpIntraFlags[++PartY] |= maskT;
+        case 2:
+            m_context->m_RecLfIntraFlags[++PartX] |= maskL; m_context->m_RecTpIntraFlags[++PartY] |= maskT;
+        case 1:
+        default:
+            m_context->m_RecLfIntraFlags[++PartX] |= maskL; m_context->m_RecTpIntraFlags[++PartY] |= maskT;
         }
-    }
-    else
-    {
-        // Bottom row
-        pInfo = m_context->m_CurrRecFlags + (PartY + PartSize - 1) * m_context->m_CurrCTBStride + PartX;
-        for (Ipp32s x = 0; x < PartSize; x++)
-            *pInfo++ = info;
+    } else {
+        maskT = ~maskT; maskL = ~maskL;
 
-        // Right column
-        pInfo = m_context->m_CurrRecFlags + PartY * m_context->m_CurrCTBStride + (PartX + PartSize - 1);
-        for (Ipp32s y = 0; y < PartSize; y++)
-        {
-            *pInfo = info;
-            pInfo += m_context->m_CurrCTBStride;
+        *m_context->m_RecTLIntraFlags &= ~maskTL;
+        switch (PartSize) {
+        case 16:
+            m_context->m_RecLfIntraFlags[++PartX] &= maskL; m_context->m_RecLfIntraFlags[++PartX] &= maskL;
+            m_context->m_RecLfIntraFlags[++PartX] &= maskL; m_context->m_RecLfIntraFlags[++PartX] &= maskL;
+            m_context->m_RecLfIntraFlags[++PartX] &= maskL; m_context->m_RecLfIntraFlags[++PartX] &= maskL;
+            m_context->m_RecLfIntraFlags[++PartX] &= maskL; m_context->m_RecLfIntraFlags[++PartX] &= maskL;
+
+            m_context->m_RecTpIntraFlags[++PartY] &= maskT; m_context->m_RecTpIntraFlags[++PartY] &= maskT;
+            m_context->m_RecTpIntraFlags[++PartY] &= maskT; m_context->m_RecTpIntraFlags[++PartY] &= maskT;
+            m_context->m_RecTpIntraFlags[++PartY] &= maskT; m_context->m_RecTpIntraFlags[++PartY] &= maskT;
+            m_context->m_RecTpIntraFlags[++PartY] &= maskT; m_context->m_RecTpIntraFlags[++PartY] &= maskT;
+        case 8:
+            m_context->m_RecLfIntraFlags[++PartX] &= maskL; m_context->m_RecLfIntraFlags[++PartX] &= maskL;
+            m_context->m_RecLfIntraFlags[++PartX] &= maskL; m_context->m_RecLfIntraFlags[++PartX] &= maskL;
+            m_context->m_RecTpIntraFlags[++PartY] &= maskT; m_context->m_RecTpIntraFlags[++PartY] &= maskT;
+            m_context->m_RecTpIntraFlags[++PartY] &= maskT; m_context->m_RecTpIntraFlags[++PartY] &= maskT;
+        case 4:
+            m_context->m_RecLfIntraFlags[++PartX] &= maskL; m_context->m_RecLfIntraFlags[++PartX] &= maskL;
+            m_context->m_RecTpIntraFlags[++PartY] &= maskT; m_context->m_RecTpIntraFlags[++PartY] &= maskT;
+        case 2:
+            m_context->m_RecLfIntraFlags[++PartX] &= maskL; m_context->m_RecTpIntraFlags[++PartY] &= maskT;
+        case 1:
+        default:
+            m_context->m_RecLfIntraFlags[++PartX] &= maskL; m_context->m_RecTpIntraFlags[++PartY] &= maskT;
         }
     }
 }

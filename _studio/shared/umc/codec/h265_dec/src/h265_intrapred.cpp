@@ -262,6 +262,11 @@ void H265SegmentDecoder::ReconIntraQT(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ip
     if (pCU->GetIPCMFlag(AbsPartIdx))
     {
         ReconPCM(pCU, AbsPartIdx, Depth);
+
+        Ipp32s Size = m_pSeqParamSet->MaxCUSize >> Depth;
+        Ipp32s XInc = pCU->m_rasterToPelX[AbsPartIdx];
+        Ipp32s YInc = pCU->m_rasterToPelY[AbsPartIdx];
+        UpdateRecNeighboursBuffersN(XInc, YInc, Size, pCU->m_CUPelX, true);
         return;
     }
 
@@ -289,7 +294,7 @@ void H265SegmentDecoder::IntraRecQT(H265CodingUnit* pCU,
         bool neighborAvailable[65];
         Ipp32s numIntraNeighbors;
 
-        numIntraNeighbors = CountIntraNeighbors(pCU, AbsPartIdx, TrDepth, neighborAvailable);
+        numIntraNeighbors = CountIntraNeighborsN(pCU, AbsPartIdx, TrDepth, neighborAvailable);
         IntraRecLumaBlk(pCU, TrDepth, AbsPartIdx, numIntraNeighbors, neighborAvailable);
 
         Ipp32u FullDepth  = pCU->GetDepth(AbsPartIdx) + TrDepth;
@@ -298,12 +303,16 @@ void H265SegmentDecoder::IntraRecQT(H265CodingUnit* pCU,
             TrDepth--;
             if ((AbsPartIdx & 0x03) == 0)
             {
-                numIntraNeighbors = CountIntraNeighbors(pCU, AbsPartIdx, TrDepth, neighborAvailable);
+                numIntraNeighbors = CountIntraNeighborsN(pCU, AbsPartIdx, TrDepth, neighborAvailable);
                 IntraRecChromaBlk(pCU, TrDepth, AbsPartIdx, ChromaPredMode, numIntraNeighbors, neighborAvailable);
             }
         } else {
             IntraRecChromaBlk(pCU, TrDepth, AbsPartIdx, ChromaPredMode, numIntraNeighbors, neighborAvailable);
         }
+        Ipp32s Size = m_pSeqParamSet->MaxCUSize >> FullDepth;
+        Ipp32s XInc = pCU->m_rasterToPelX[AbsPartIdx];
+        Ipp32s YInc = pCU->m_rasterToPelY[AbsPartIdx];
+        UpdateRecNeighboursBuffersN(XInc, YInc, Size, pCU->m_CUPelX, true);
     }
     else
     {
@@ -517,246 +526,41 @@ void H265SegmentDecoder::IntraRecChromaBlk(H265CodingUnit* pCU,
     }
 }
 
-Ipp32s H265SegmentDecoder::CountIntraNeighbors(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u TrDepth, bool *neighborAvailable)
+Ipp32s H265SegmentDecoder::CountIntraNeighborsN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u TrDepth, bool *neighborAvailable)
 {
+    Ipp32u maxCUSzIn4x4 = m_pSeqParamSet->MaxCUSize >> 2;
     Ipp32u Size = pCU->GetWidth(AbsPartIdx) >> TrDepth;
-
-    // compute the location of the current PU
-    Ipp32s XInc = pCU->m_rasterToPelX[AbsPartIdx];
-    Ipp32s YInc = pCU->m_rasterToPelY[AbsPartIdx];
-    Ipp32s LPelX = pCU->m_CUPelX + XInc;
-    Ipp32s TPelY = pCU->m_CUPelY + YInc;
-    XInc >>= m_pSeqParamSet->log2_min_transform_block_size;
-    YInc >>= m_pSeqParamSet->log2_min_transform_block_size;
-    Ipp32s PartX = LPelX >> m_pSeqParamSet->log2_min_transform_block_size;
-    Ipp32s PartY = TPelY >> m_pSeqParamSet->log2_min_transform_block_size;
-    Ipp32s TUPartNumberInCTB = m_context->m_CurrCTBStride * YInc + XInc;
-    Ipp32s NumUnitsInCU = Size >> m_pSeqParamSet->log2_min_transform_block_size;
-
+    Ipp32s XInc = pCU->m_rasterToPelX[AbsPartIdx] >> 2;
+    Ipp32s YInc = pCU->m_rasterToPelY[AbsPartIdx] >> 2;
+    Ipp32s NumUnitsInCUx2 = Size >> (m_pSeqParamSet->log2_min_transform_block_size-1);
+    Ipp32s lShiftStep = 0x1 << (m_pSeqParamSet->log2_min_transform_block_size-2);
+    Ipp32s lShift = lShiftStep * (NumUnitsInCUx2 - 1);
+    Ipp32s diagId = (XInc + maxCUSzIn4x4 - YInc - 1);
     Ipp32s numIntraNeighbors = 0;
 
-    // below left
-    if (XInc > 0 && pCU->m_rasterToZscan[pCU->m_zscanToRaster[AbsPartIdx] - 1 + NumUnitsInCU * m_pSeqParamSet->NumPartitionsInCUSize] > AbsPartIdx)
-    {
-        for (Ipp32s i = 0; i < NumUnitsInCU; i++)
-            neighborAvailable[i] = false;
-    }
-    else
-    {
-        isRecIntraBelowLeftAvailable(TUPartNumberInCTB - 1 + NumUnitsInCU * m_context->m_CurrCTBStride, PartY, YInc, NumUnitsInCU, neighborAvailable + NumUnitsInCU - 1);
+    Ipp32u intraFlags, isAvilable;
+
+    intraFlags = m_context->m_RecLfIntraFlags[XInc] >> (YInc);
+    for(Ipp32s i = 0; i < NumUnitsInCUx2; i++) {
+        isAvilable = (intraFlags >> lShift) & 0x01;
+        *neighborAvailable++ = isAvilable;
+        lShift -= lShiftStep;
+        numIntraNeighbors += isAvilable;
     }
 
-    // left
-    {
-        bool *ValidFlags = neighborAvailable + NumUnitsInCU;
-        Ipp32s flagIdx = TUPartNumberInCTB-1 + (m_context->m_CurrCTBStride)*(NumUnitsInCU-1);
+    isAvilable = (*m_context->m_RecTLIntraFlags >> diagId) & 0x1;
+    *neighborAvailable++ = isAvilable;
+    numIntraNeighbors += isAvilable;
 
-        switch (NumUnitsInCU) {
-        case 16:
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx].members.IsAvailable; flagIdx-=m_context->m_CurrCTBStride;
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx].members.IsAvailable; flagIdx-=m_context->m_CurrCTBStride;
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx].members.IsAvailable; flagIdx-=m_context->m_CurrCTBStride;
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx].members.IsAvailable; flagIdx-=m_context->m_CurrCTBStride;
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx].members.IsAvailable; flagIdx-=m_context->m_CurrCTBStride;
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx].members.IsAvailable; flagIdx-=m_context->m_CurrCTBStride;
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx].members.IsAvailable; flagIdx-=m_context->m_CurrCTBStride;
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx].members.IsAvailable; flagIdx-=m_context->m_CurrCTBStride;
-        case 8:
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx].members.IsAvailable; flagIdx-=m_context->m_CurrCTBStride;
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx].members.IsAvailable; flagIdx-=m_context->m_CurrCTBStride;
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx].members.IsAvailable; flagIdx-=m_context->m_CurrCTBStride;
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx].members.IsAvailable; flagIdx-=m_context->m_CurrCTBStride;
-        case 4:
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx].members.IsAvailable; flagIdx-=m_context->m_CurrCTBStride;
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx].members.IsAvailable; flagIdx-=m_context->m_CurrCTBStride;
-        case 2:
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx].members.IsAvailable; flagIdx-=m_context->m_CurrCTBStride;
-        case 1:
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx].members.IsAvailable; flagIdx-=m_context->m_CurrCTBStride;
-        default:
-            break;
-        }
-
-        flagIdx = TUPartNumberInCTB - 1 - m_context->m_CurrCTBStride;
-        switch (NumUnitsInCU) {
-        case 16:
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx++].members.IsAvailable;
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx++].members.IsAvailable;
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx++].members.IsAvailable;
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx++].members.IsAvailable;
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx++].members.IsAvailable;
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx++].members.IsAvailable;
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx++].members.IsAvailable;
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx++].members.IsAvailable;
-        case 8:
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx++].members.IsAvailable;
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx++].members.IsAvailable;
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx++].members.IsAvailable;
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx++].members.IsAvailable;
-        case 4:
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx++].members.IsAvailable;
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx++].members.IsAvailable;
-        case 2:
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx++].members.IsAvailable;
-        case 1:
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx++].members.IsAvailable;
-            *ValidFlags++ = m_context->m_CurrRecFlags[flagIdx++].members.IsAvailable;
-        default:
-            break;
-        }
+    intraFlags = m_context->m_RecTpIntraFlags[YInc] >> (XInc);
+    for(Ipp32s i = 0; i < NumUnitsInCUx2; i++) {
+        isAvilable = intraFlags & 0x01;
+        *neighborAvailable++ = isAvilable;
+        numIntraNeighbors += isAvilable;
+        intraFlags >>= lShiftStep;
     }
-    
-    // above right
-    if (YInc > 0 && pCU->m_rasterToZscan[pCU->m_zscanToRaster[AbsPartIdx] + NumUnitsInCU - m_pSeqParamSet->NumPartitionsInCUSize] > AbsPartIdx)
-    {
-        for (Ipp32s i = 0; i < NumUnitsInCU; i++)
-            neighborAvailable[NumUnitsInCU * 3 + 1 + i] = false;
-    }
-    else
-    {
-        if (YInc == 0)
-            isRecIntraAboveRightAvailableOtherCTB(PartX, NumUnitsInCU, neighborAvailable + (NumUnitsInCU * 3) + 1);
-        else
-            isRecIntraAboveRightAvailable(TUPartNumberInCTB + NumUnitsInCU - m_context->m_CurrCTBStride, PartX, XInc, NumUnitsInCU, neighborAvailable + (NumUnitsInCU * 3) + 1);
-    }
-
-    numIntraNeighbors = 0;
-    for(Ipp32s i=0; i<((NumUnitsInCU<<2)+1); i++)
-        numIntraNeighbors += (Ipp32s)neighborAvailable[i];
 
     return numIntraNeighbors;
-}
-
-Ipp32s H265SegmentDecoder::isRecIntraAboveAvailable(Ipp32s TUPartNumberInCTB, Ipp32s NumUnitsInCU, bool *ValidFlags)
-{
-    Ipp32s NumIntra = 0;
-
-    for (Ipp32s i = 0; i < NumUnitsInCU; i++)
-    {
-        if (m_context->m_CurrRecFlags[TUPartNumberInCTB].members.IsAvailable)
-        {
-            NumIntra++;
-            *ValidFlags = true;
-        }
-        else
-        {
-            *ValidFlags = false;
-        }
-
-        ValidFlags++; //opposite direction
-        TUPartNumberInCTB++;
-    }
-
-    return NumIntra;
-}
-
-Ipp32s H265SegmentDecoder::isRecIntraLeftAvailable(Ipp32s TUPartNumberInCTB, Ipp32s NumUnitsInCU, bool *ValidFlags)
-{
-    Ipp32s NumIntra = 0;
-
-    for (Ipp32s i = 0; i < NumUnitsInCU; i++)
-    {
-        if (m_context->m_CurrRecFlags[TUPartNumberInCTB].members.IsAvailable)
-        {
-            NumIntra++;
-            *ValidFlags = true;
-        }
-        else
-        {
-            *ValidFlags = false;
-        }
-
-        ValidFlags--; //opposite direction
-        TUPartNumberInCTB += m_context->m_CurrCTBStride;
-    }
-
-    return NumIntra;
-}
-
-Ipp32s H265SegmentDecoder::isRecIntraAboveRightAvailableOtherCTB(Ipp32s PartX, Ipp32s NumUnitsInCU, bool *ValidFlags)
-{
-    Ipp32s NumIntra = 0;
-
-    PartX += NumUnitsInCU;
-
-    for (Ipp32s i = 0; i < NumUnitsInCU; i++)
-    {
-        if ((PartX << m_pSeqParamSet->log2_min_transform_block_size) < m_pSeqParamSet->pic_width_in_luma_samples &&
-            m_context->m_RecTopNgbrs[PartX].members.IsAvailable)
-        {
-            NumIntra++;
-            *ValidFlags = true;
-        }
-        else
-        {
-            *ValidFlags = false;
-        }
-
-        ValidFlags++; //opposite direction
-        PartX++;
-    }
-
-    return NumIntra;
-}
-
-Ipp32s H265SegmentDecoder::isRecIntraAboveRightAvailable(Ipp32s TUPartNumberInCTB, Ipp32s PartX, Ipp32s XInc, Ipp32s NumUnitsInCU, bool *ValidFlags)
-{
-    Ipp32s NumIntra = 0;
-
-    PartX += NumUnitsInCU;
-    XInc += NumUnitsInCU;
-
-    for (Ipp32s i = 0; i < NumUnitsInCU; i++)
-    {
-        if ((PartX << m_pSeqParamSet->log2_min_transform_block_size) < m_pSeqParamSet->pic_width_in_luma_samples &&
-            XInc < m_pCurrentFrame->getNumPartInCUSize() &&
-            m_context->m_CurrRecFlags[TUPartNumberInCTB].members.IsAvailable)
-        {
-            NumIntra++;
-            *ValidFlags = true;
-        }
-        else
-        {
-            *ValidFlags = false;
-        }
-
-        ValidFlags++; //opposite direction
-        TUPartNumberInCTB++;
-        XInc++;
-        PartX++;
-    }
-
-    return NumIntra;
-}
-
-Ipp32s H265SegmentDecoder::isRecIntraBelowLeftAvailable(Ipp32s TUPartNumberInCTB, Ipp32s PartY, Ipp32s YInc, Ipp32s NumUnitsInCU, bool *ValidFlags)
-{
-    Ipp32s NumIntra = 0;
-
-    PartY += NumUnitsInCU;
-    YInc += NumUnitsInCU;
-
-    for (Ipp32s i = 0; i < NumUnitsInCU; i++)
-    {
-        if ((PartY << m_pSeqParamSet->log2_min_transform_block_size) < m_pSeqParamSet->pic_height_in_luma_samples &&
-            YInc < m_pCurrentFrame->getNumPartInCUSize() &&
-            m_context->m_CurrRecFlags[TUPartNumberInCTB].members.IsAvailable)
-        {
-            NumIntra++;
-            *ValidFlags = true;
-        }
-        else
-        {
-            *ValidFlags = false;
-        }
-
-        ValidFlags--; //opposite direction
-        TUPartNumberInCTB += m_context->m_CurrCTBStride;
-        YInc++;
-        PartY++;
-    }
-
-    return NumIntra;
 }
 
 } // end namespace UMC_HEVC_DECODER

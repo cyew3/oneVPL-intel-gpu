@@ -104,7 +104,6 @@ void H265CodingUnit::create (H265FrameCodingData * frameCD)
     m_rasterToPelY = frameCD->m_partitionInfo.m_rasterToPelY;
 
     m_zscanToRaster = frameCD->m_partitionInfo.m_zscanToRaster;
-    m_rasterToZscan = frameCD->m_partitionInfo.m_rasterToZscan;
 }
 
 void H265CodingUnit::destroy()

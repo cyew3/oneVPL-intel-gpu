@@ -87,8 +87,11 @@ public:
     Ipp8u m_LastValidQP;
 
     // Local context for reconstructing Intra
-    std::vector<H265FrameRecNeighborsInfo> m_RecTopNgbrsHolder, m_CurrRecFlagsHolder;
-    H265FrameRecNeighborsInfo *m_RecTopNgbrs, *m_CurrRecFlags;
+    Ipp32u m_RecIntraFlagsHolder[100]; // Placeholder for Intra availability flags needed during reconstruction
+    Ipp32u *m_RecTpIntraFlags;         // 17 x32 flags for top intra blocks for current CTB
+    Ipp32u *m_RecLfIntraFlags;         // 17 x32 flags for left intra blocks for current CTB
+    Ipp32u *m_RecTLIntraFlags;         // 1 x32 flags for top-left intra blocks for current CTB
+    Ipp16u *m_RecTpIntraRowFlags;      // 128 + 2 x16 flags for top line of intra blocks for the frame of 8192 pixels wide
 
     // mt params
     bool m_needToSplitDecAndRec;
@@ -97,7 +100,8 @@ public:
     void Init(H265Slice *slice);
     void UpdateCurrCUContext(Ipp32u lastCUAddr, Ipp32u newCUAddr);
     void ResetRowBuffer();
-    void UpdateRecCurrCUContext(Ipp32s lastCUAddr, Ipp32s newCUAddr);
+
+    void UpdateRecCurrCTBContext(Ipp32s lastCUAddr, Ipp32s newCUAddr);
     void ResetRecRowBuffer();
     
 protected:
@@ -132,7 +136,7 @@ public:
     bool DecodeSplitFlagCABAC(H265CodingUnit* pCU, Ipp32s PartX, Ipp32s PartY, Ipp32u Depth);
     Ipp32u DecodeMergeIndexCABAC(void);
 
-    Ipp32s CountIntraNeighbors(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u TrDepth, bool *neighborAvailable);
+    Ipp32s CountIntraNeighborsN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u TrDepth, bool *neighborAvailable);
 
     bool DecodeSkipFlagCABAC(H265CodingUnit* pCU, Ipp32s PartX, Ipp32s PartY, Ipp32u Depth);
     bool DecodeCUTransquantBypassFlag(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
@@ -250,7 +254,7 @@ public:
     void UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u TrStart, bool isSkipped, bool isTranquantBypass, bool isIPCM, bool isTrCbfY);
     void UpdateNeighborDecodedQP(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void UpdatePUInfo(Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight, H265MVInfo &mvInfo);
-    void UpdateRecNeighboursBuffers(Ipp32s PartX, Ipp32s PartY, Ipp32s PartSize, bool IsIntra);
+    void UpdateRecNeighboursBuffersN(Ipp32s PartX, Ipp32s PartY, Ipp32s PartSize, Ipp32u xCTB, bool IsIntra);
 
     Ipp32s m_iNumber;                                           // (Ipp32s) ordinal number of decoder
     H265Slice *m_pSlice;                                        // (H265Slice *) current slice pointer

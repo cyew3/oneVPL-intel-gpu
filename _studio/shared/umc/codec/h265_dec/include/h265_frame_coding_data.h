@@ -38,11 +38,9 @@ public:
 
     // flexible conversion from relative to absolute index
     Ipp32u m_zscanToRaster[MAX_NUM_PU_IN_ROW * MAX_NUM_PU_IN_ROW];
-    Ipp32u m_rasterToZscan[MAX_NUM_PU_IN_ROW * MAX_NUM_PU_IN_ROW];
 
 private:
     void InitZscanToRaster(Ipp32s MaxDepth, Ipp32s Depth, Ipp32u StartVal, Ipp32u*& CurrIdx);
-    void InitRasterToZscan(const H265SeqParamSet* sps);
     void InitRasterToPelXY(const H265SeqParamSet* sps);
 
     Ipp32u m_MaxCUDepth;

@@ -43,7 +43,6 @@ public:
     Ipp32u *m_rasterToPelY;
 
     Ipp32u *m_zscanToRaster;
-    Ipp32u *m_rasterToZscan;
 
     Ipp32s                   m_SliceIdx;
     bool                     m_AvailBorder[8];
