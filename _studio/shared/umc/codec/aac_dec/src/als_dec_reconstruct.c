@@ -346,7 +346,7 @@ static void MulMtxVec(Ipp64s *P,
   Ipp64s *ptr;
   Ipp64s imax, htemp1, ttemp1;
   Ipp32s i, j, pscale, nscale;
-  Ipp32s size_yi = sizeof(yi)/sizeof(yi[0]);
+  Ipp32s size_yi = 256;
 
   *vscale = 0;
   imax = 0;
@@ -402,7 +402,7 @@ static Ipp64s MulVecVec(Ipp32s *x,
 {
   Ipp32s i;
   Ipp64s z, zh, temp;
-  Ipp32s size_y = sizeof(y)/sizeof(y[0]);
+  Ipp32s size_y = 256;
 
   *scale = 0;
   zh = 0;
