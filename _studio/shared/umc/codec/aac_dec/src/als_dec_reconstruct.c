@@ -346,8 +346,7 @@ static void MulMtxVec(Ipp64s *P,
   Ipp64s *ptr;
   Ipp64s imax, htemp1, ttemp1;
   Ipp32s i, j, pscale, nscale;
-  Ipp32s size_yi = 256;
-
+  
   *vscale = 0;
   imax = 0;
   htemp1 = 0;
@@ -378,14 +377,14 @@ static void MulMtxVec(Ipp64s *P,
   nscale = alsFastBitcount(ttemp1);
   if (nscale > 28) {
     nscale -= 28;
-    for (i = 0; (i < M) && ( i < size_yi ); i++) {
+    for (i = 0; i < M; i++) {
       ya[i] >>= nscale;
       yi[i] = (Ipp32s)ya[i];
     }
     *vscale = nscale-pscale;
   } else {
     nscale -=28;
-    for (i = 0; (i < M) && ( i < size_yi ); i++) {
+    for (i = 0; i < M; i++) {
       yi[i] = (Ipp32s)ya[i];
     }
     *vscale = -pscale;
@@ -402,11 +401,10 @@ static Ipp64s MulVecVec(Ipp32s *x,
 {
   Ipp32s i;
   Ipp64s z, zh, temp;
-  Ipp32s size_y = 256;
-
+  
   *scale = 0;
   zh = 0;
-  for (i = 0; (i < M) && (i < size_y); i++) {
+  for (i = 0; i < M; i++) {
     zh += (Ipp64s)y[i] * x[i];
   }
 
@@ -450,6 +448,9 @@ static void alsUpdateRLSFilter(Ipp32s *x,
     return;
 
   e = (*x-y);
+
+  if (order > sizeof(vl)/sizeof(vl[0]))
+     return;
 
   MulMtxVec(P, bufl, order, vl, &vscale);
   wtemp = MulVecVec(bufl, vl, order, &dscale);
