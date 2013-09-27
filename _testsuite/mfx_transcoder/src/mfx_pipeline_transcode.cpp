@@ -229,6 +229,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION2(MBBRC,                  OPT_TRI_STATE,   ""),
         HANDLE_EXT_OPTION2(ExtBRC,                 OPT_TRI_STATE,   ""),
         HANDLE_EXT_OPTION2(LookAheadDepth,         OPT_INT_16,      "how many frames ahead encoder analyze to choose quantization parameter"),
+        HANDLE_EXT_OPTION2(AdaptiveB,              OPT_TRI_STATE,   "Adaptive B frames on/off"),
         HANDLE_EXT_OPTION2(Trellis,                OPT_INT_16,      "bitfield: 0=default, 1=off, 2=on for I frames, 4=on for P frames, 8=on for B frames"),
         HANDLE_EXT_OPTION2(RepeatPPS,              OPT_TRI_STATE,  ""),
 
