@@ -92,6 +92,9 @@ struct H265VideoParam {
     Ipp32u  FrameRateExtD;
     Ipp16u  AspectRatioW;
     Ipp16u  AspectRatioH;
+    Ipp16u  Profile;
+    Ipp16u  Tier;
+    Ipp16u  Level;
 
     H265SeqParameterSet *csps;
     H265PicParameterSet *cpps;

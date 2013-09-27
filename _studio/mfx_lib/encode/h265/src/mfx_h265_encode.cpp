@@ -59,8 +59,116 @@ mfxExtCodingOptionHEVC hevc_tu_tab[8] = {               // CUS CUD 2TUS 2TUD  An
 
 #define H265_MAXREFDIST 1
 
+static const struct _hevc_level_tab {
+    // General limits
+    mfxI32 level_id;
+    mfxI32 MaxLumaPs;
+    mfxI32 MaxCPB[2]; // low/high tier, in 1000 bits
+    mfxI32 MaxSliceSegmentsPerPicture;
+    mfxI32 MaxTileRows;
+    mfxI32 MaxTileCols;
+    // Main profiles limits
+    mfxI64 MaxLumaSr;
+    mfxI32 MaxBR[2]; // low/high tier, in 1000 bits
+    mfxI32 MinCr;
+} hevc_level_tab[] = {
+    {MFX_LEVEL_HEVC_1 ,    36864, {   350,      0},  16,  1,  1,     552960, {   128,      0}, 2},
+    {MFX_LEVEL_HEVC_2 ,   122880, {  1500,      0},  16,  1,  1,    3686400, {  1500,      0}, 2},
+    {MFX_LEVEL_HEVC_21,   245760, {  3000,      0},  20,  1,  1,    7372800, {  3000,      0}, 2},
+    {MFX_LEVEL_HEVC_3 ,   552960, {  6000,      0},  30,  2,  2,   16588800, {  6000,      0}, 2},
+    {MFX_LEVEL_HEVC_31,   983040, {  1000,      0},  40,  3,  3,   33177600, { 10000,      0}, 2},
+    {MFX_LEVEL_HEVC_4 ,  2228224, { 12000,  30000},  75,  5,  5,   66846720, { 12000,  30000}, 4},
+    {MFX_LEVEL_HEVC_41,  2228224, { 20000,  50000},  75,  5,  5,  133693440, { 20000,  50000}, 4},
+    {MFX_LEVEL_HEVC_5 ,  8912896, { 25000, 100000}, 200, 11, 10,  267386880, { 25000, 100000}, 6},
+    {MFX_LEVEL_HEVC_51,  8912896, { 40000, 160000}, 200, 11, 10,  534773760, { 40000, 160000}, 8},
+    {MFX_LEVEL_HEVC_52,  8912896, { 60000, 240000}, 200, 11, 10, 1069547520, { 60000, 240000}, 8},
+    {MFX_LEVEL_HEVC_6 , 35651584, { 60000, 240000}, 600, 22, 20, 1069547520, { 60000, 240000}, 8},
+    {MFX_LEVEL_HEVC_61, 35651584, {120000, 480000}, 600, 22, 20, 2139095040, {120000, 480000}, 8},
+    {MFX_LEVEL_HEVC_62, 35651584, {240000, 800000}, 600, 22, 20, 4278190080, {240000, 800000}, 6}
+};
+
+static const int NUM_265_LEVELS = sizeof(hevc_level_tab) / sizeof(hevc_level_tab[0]);
 
 //////////////////////////////////////////////////////////////////////////
+
+static mfxI32 Compute265Level(mfxVideoParam *parMFX)
+{
+    mfxI32 level, tier;
+    for(level = 0; level < NUM_265_LEVELS; level++) {
+        mfxI32 LumaPs = parMFX->mfx.FrameInfo.Width * parMFX->mfx.FrameInfo.Height;
+        mfxI32 BR = parMFX->mfx.BRCParamMultiplier ? parMFX->mfx.BRCParamMultiplier * parMFX->mfx.TargetKbps : parMFX->mfx.TargetKbps;
+        mfxI64 LumaSr = parMFX->mfx.FrameInfo.FrameRateExtD ? (mfxI64)LumaPs * parMFX->mfx.FrameInfo.FrameRateExtN / parMFX->mfx.FrameInfo.FrameRateExtD : 0;
+        if (LumaPs > hevc_level_tab[level].MaxLumaPs)
+            continue;
+        if (parMFX->mfx.FrameInfo.Width * parMFX->mfx.FrameInfo.Width > 8 * hevc_level_tab[level].MaxLumaPs)
+            continue;
+        if (parMFX->mfx.FrameInfo.Height * parMFX->mfx.FrameInfo.Height > 8 * hevc_level_tab[level].MaxLumaPs)
+            continue;
+        if (parMFX->mfx.NumSlice > hevc_level_tab[level].MaxSliceSegmentsPerPicture)
+            continue;
+        if (parMFX->mfx.FrameInfo.FrameRateExtD && LumaSr > hevc_level_tab[level].MaxLumaSr)
+            continue;
+        if (BR > hevc_level_tab[level].MaxBR[1]) // try high tier
+            continue;
+        if (BR && LumaSr * 3 / 2 * 1000 / BR < hevc_level_tab[level].MinCr)
+            continue; // it hardly can change the case
+
+        tier = (BR > hevc_level_tab[level].MaxBR[0]) ? MFX_TIER_HEVC_HIGH : MFX_TIER_HEVC_MAIN;
+        return hevc_level_tab[level].level_id | tier;
+    }
+    return MFX_LEVEL_UNKNOWN;
+
+}
+
+static mfxI32 Check265Level(mfxI32 inleveltier, mfxVideoParam *parMFX)
+{
+    mfxI32 level, tier;
+    mfxI32 inlevel = inleveltier &~ MFX_TIER_HEVC_HIGH;
+    mfxI32 intier = inleveltier & MFX_TIER_HEVC_HIGH;
+    for(level = 0; level < NUM_265_LEVELS; level++)
+        if (hevc_level_tab[level].level_id == inlevel)
+            break;
+
+    if (level >= NUM_265_LEVELS) {
+        if (inleveltier != MFX_LEVEL_UNKNOWN)
+            return MFX_LEVEL_UNKNOWN;
+        inleveltier = inlevel = MFX_LEVEL_UNKNOWN;
+        intier = 0;
+        level = 0;
+    }
+
+    if (!parMFX) // just chaeck for valid level value
+        return inleveltier;
+
+    for( ; level < NUM_265_LEVELS; level++) {
+        mfxI32 LumaPs = parMFX->mfx.FrameInfo.Width * parMFX->mfx.FrameInfo.Height;
+        mfxI32 BR = parMFX->mfx.BRCParamMultiplier ? parMFX->mfx.BRCParamMultiplier * parMFX->mfx.TargetKbps : parMFX->mfx.TargetKbps;
+        mfxI64 LumaSr = parMFX->mfx.FrameInfo.FrameRateExtD ? (mfxI64)LumaPs * parMFX->mfx.FrameInfo.FrameRateExtN / parMFX->mfx.FrameInfo.FrameRateExtD : 0;
+        if (LumaPs > hevc_level_tab[level].MaxLumaPs)
+            continue;
+        if (parMFX->mfx.FrameInfo.Width * parMFX->mfx.FrameInfo.Width > 8 * hevc_level_tab[level].MaxLumaPs)
+            continue;
+        if (parMFX->mfx.FrameInfo.Height * parMFX->mfx.FrameInfo.Height > 8 * hevc_level_tab[level].MaxLumaPs)
+            continue;
+        if (parMFX->mfx.NumSlice > hevc_level_tab[level].MaxSliceSegmentsPerPicture)
+            continue;
+        if (parMFX->mfx.FrameInfo.FrameRateExtD && LumaSr > hevc_level_tab[level].MaxLumaSr)
+            continue;
+        if (BR > hevc_level_tab[level].MaxBR[1]) // try high tier
+            continue;
+        if (BR && LumaSr * 3 / 2 * 1000 / BR < hevc_level_tab[level].MinCr)
+            continue; // it hardly can change the case
+
+        tier = (BR > hevc_level_tab[level].MaxBR[0]) ? MFX_TIER_HEVC_HIGH : MFX_TIER_HEVC_MAIN;
+
+        if (inlevel == hevc_level_tab[level].level_id && tier <= intier)
+            return inleveltier;
+        if (inlevel <= hevc_level_tab[level].level_id)
+            return hevc_level_tab[level].level_id | tier;
+    }
+    return MFX_LEVEL_UNKNOWN;
+
+}
 
 void mfxVideoH265InternalParam::SetCalcParams( mfxVideoParam *parMFX) {
 
@@ -502,7 +610,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     if (!m_mfxVideoParam.mfx.FrameInfo.PicStruct) m_mfxVideoParam.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
     m_mfxVideoParam.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
 
-    // CodecId - only HEVC;  CodecProfile CodecLevel - ignore
+    // CodecId - only HEVC;  CodecProfile CodecLevel - in the end
     // NumThread - set inside, >1 only if WPP
     // TargetUsage - nothing to do
 
@@ -527,6 +635,13 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     if (!m_mfxVideoParam.mfx.NumSlice) m_mfxVideoParam.mfx.NumSlice = 1;
     if (!m_mfxVideoParam.mfx.NumRefFrame) m_mfxVideoParam.mfx.NumRefFrame = 1; // for now
 
+    m_mfxVideoParam.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
+    mfxI32 complevel = Check265Level(m_mfxVideoParam.mfx.CodecLevel, &m_mfxVideoParam);
+    if (complevel != m_mfxVideoParam.mfx.CodecLevel) {
+        if (m_mfxVideoParam.mfx.CodecLevel != MFX_LEVEL_UNKNOWN)
+            stsQuery = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        m_mfxVideoParam.mfx.CodecLevel = (mfxU16)complevel;
+    }
 
     // what is still needed?
     //m_mfxVideoParam.mfx = par->mfx;
@@ -1032,9 +1147,16 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
             out->mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
         } else out->mfx.CodecProfile = in->mfx.CodecProfile;
         if (in->mfx.CodecLevel != MFX_LEVEL_UNKNOWN) {
-            isCorrected ++;
+            mfxI32 complevel = Check265Level(in->mfx.CodecLevel, in);
+            if (complevel != in->mfx.CodecLevel) {
+                if (complevel == MFX_LEVEL_UNKNOWN)
+                    isInvalid ++;
+                else
+                    isCorrected ++;
+            }
+            out->mfx.CodecLevel = (mfxU16)complevel;
         }
-        out->mfx.CodecLevel = MFX_LEVEL_UNKNOWN;
+        else out->mfx.CodecLevel = MFX_LEVEL_UNKNOWN;
 
         out->mfx.NumThread = in->mfx.NumThread;
 

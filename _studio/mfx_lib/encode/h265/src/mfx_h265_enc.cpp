@@ -248,6 +248,10 @@ mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxE
     pars->AspectRatioW  = param->mfx.FrameInfo.AspectRatioW ;
     pars->AspectRatioH  = param->mfx.FrameInfo.AspectRatioH ;
 
+    pars->Profile = param->mfx.CodecProfile;
+    pars->Tier = (param->mfx.CodecLevel & MFX_TIER_HEVC_HIGH) ? 1 : 0;
+    pars->Level = (param->mfx.CodecLevel &~ MFX_TIER_HEVC_HIGH) * 1; // mult 3 it SetProfileLevel
+
     return MFX_ERR_NONE;
 }
 
@@ -279,7 +283,9 @@ mfxStatus H265Encoder::SetVPS()
 mfxStatus H265Encoder::SetProfileLevel()
 {
     memset(&m_profile_level, 0, sizeof(H265ProfileLevelSet));
-    m_profile_level.general_profile_idc = MFX_PROFILE_HEVC_MAIN;
+    m_profile_level.general_profile_idc = (mfxU8) m_videoParam.Profile; //MFX_PROFILE_HEVC_MAIN;
+    m_profile_level.general_tier_flag = (mfxU8) m_videoParam.Tier;
+    m_profile_level.general_level_idc = (mfxU8) (m_videoParam.Level * 3);
     return MFX_ERR_NONE;
 }
 
