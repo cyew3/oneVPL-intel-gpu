@@ -1278,6 +1278,8 @@ mfxStatus VAAPIEncoder::Destroy()
     for( mfxU32 i = 0; i < m_slice.size(); i++ )
     {
         MFX_DESTROY_VABUFFER(m_sliceBufferId[i], m_vaDisplay);
+        MFX_DESTROY_VABUFFER(m_packeSliceHeaderBufferId[i], m_vaDisplay);
+        MFX_DESTROY_VABUFFER(m_packedSliceBufferId[i], m_vaDisplay);
     }
     MFX_DESTROY_VABUFFER(m_packedAudHeaderBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_packedAudBufferId, m_vaDisplay);
