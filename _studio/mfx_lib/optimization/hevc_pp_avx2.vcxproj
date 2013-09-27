@@ -173,6 +173,7 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <TreatWarningAsError>false</TreatWarningAsError>
+      <AdditionalOptions>$(CPPFLAGS)   /QxCORE-AVX2 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -216,6 +217,7 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <TreatWarningAsError>false</TreatWarningAsError>
+      <AdditionalOptions>$(CPPFLAGS)   /QxCORE-AVX2 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Lib />
     <Bscmake>
