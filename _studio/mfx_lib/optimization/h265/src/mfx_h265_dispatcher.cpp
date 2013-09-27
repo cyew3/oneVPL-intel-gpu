@@ -44,13 +44,12 @@ using namespace MFX_HEVC_PP;
         Ipp64u featuresMask;
         IppStatus sts = ippGetCpuFeatures( &featuresMask, cpuIdInfoRegs);
         if(ippStsNoErr != sts)    return sts;
-        
-        //aya: AVX2 code disabled because not tested yet. 
-        //if ( featuresMask & (Ipp64u)(ippCPUID_AVX2) ) // means AVX2 + BMI_I + BMI_II to prevent issues with BMI
-        //{
-        //    SetTargetAVX2();
-        //}
-        // else
+                
+        if ( featuresMask & (Ipp64u)(ippCPUID_AVX2) ) // means AVX2 + BMI_I + BMI_II to prevent issues with BMI
+        {
+            SetTargetAVX2();
+        }
+        else
         if( (featuresMask & (Ipp64u)(ippCPUID_MOVBE)) && (featuresMask & (Ipp64u)(ippCPUID_SSE42)) && !(featuresMask & (Ipp64u)(ippCPUID_AVX)) )
         {
             SetTargetSSE4_ATOM();
