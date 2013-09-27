@@ -228,6 +228,7 @@
     <ClInclude Include="..\shared\include\mfx_timing.h" />
     <ClInclude Include="..\shared\include\mfx_umc_alloc_wrapper.h" />
     <ClInclude Include="..\shared\include\mfx_utils.h" />
+    <ClInclude Include="resource1.h" />
     <ClInclude Include="scheduler\include\mfx_dependency_item.h" />
     <ClInclude Include="scheduler\include\mfx_scheduler_core.h" />
     <ClInclude Include="scheduler\include\mfx_scheduler_core_handle.h" />
