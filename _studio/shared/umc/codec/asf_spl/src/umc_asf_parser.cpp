@@ -293,6 +293,7 @@ Status ASFSplitter::ReadDataPacket()
                 {   // wrong payload
                     m_pDataReader->MovePosition(multiplePld.pldLen);
                     infoSize += multiplePld.pldLen;
+                    delete pIn;  
                 } else
                 {
                     umcRes = m_ppFBuffer[iES]->LockInputBuffer(pIn);
