@@ -15,7 +15,7 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
+#if defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined (MFX_ENABLE_H265_VIDEO_DECODE)
 
 #include "mfx_h265_optimization.h"
 
