@@ -394,6 +394,7 @@ CmBufferUP * CreateBuffer(CmDevice * device, mfxU32 size, void * mem)
     return buffer;
 }
 
+
 CmSurface2D * CreateSurface(CmDevice * device, IDirect3DSurface9 * d3dSurface)
 {
     int result = CM_SUCCESS;
@@ -425,6 +426,16 @@ CmSurface2D * CreateSurface2DSubresource(CmDevice * device, ID3D11Texture2D * d3
 }
 
 
+CmSurface2D * CreateSurface(CmDevice * device, AbstractSurfaceHandle vaSurface)
+{
+    int result = CM_SUCCESS;
+    CmSurface2D * cmSurface = 0;
+    if (device && (vaSurface) && (result = device->CreateSurface2D(vaSurface, cmSurface)) != CM_SUCCESS)
+        throw CmRuntimeError();
+    return cmSurface;
+}
+
+
 CmSurface2D * CreateSurface(CmDevice * device, mfxHDL nativeSurface, eMFXVAType vatype)
 {
     switch (vatype)
@@ -433,6 +444,8 @@ CmSurface2D * CreateSurface(CmDevice * device, mfxHDL nativeSurface, eMFXVAType 
         return CreateSurface(device, (IDirect3DSurface9 *)nativeSurface);
     case MFX_HW_D3D11:
         return CreateSurface2DSubresource(device, (ID3D11Texture2D *)nativeSurface);
+    case MFX_HW_VAAPI:
+        return CreateSurface(device, nativeSurface);
     default:
         throw CmRuntimeError();
     }
