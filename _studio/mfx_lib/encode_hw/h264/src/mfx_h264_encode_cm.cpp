@@ -898,11 +898,6 @@ CmEvent * CmContext::RunVme(
 
     } else
     {
-        fprintf(stderr,"%d %d  %d  %d\n",  
-            GetIndex(task.m_cmCurbe).get_data(), 
-            GetIndex(m_nullBuf).get_data(), 
-            GetIndex(task.m_cmRaw).get_data(), 
-            GetIndex(task.m_cmMb).get_data());
         SetKernelArg(kernelPreMe,
             GetIndex(task.m_cmCurbe), GetIndex(m_nullBuf), GetIndex(task.m_cmRaw), *task.m_cmRefs,
             GetIndex(task.m_cmMb), task.m_cmRefMb ? GetIndex(task.m_cmRefMb) : GetIndex(m_nullBuf));
