@@ -931,6 +931,9 @@ void H265CU::ModeDecision(Ipp32u abs_part_idx, Ipp32u offset, Ipp8u depth, CostT
 
                     if (lpel_x >= par->Width || tpel_y >= par->Height) {
 //                        memset(intra_cost, 0, 35 * sizeof(CostType));
+                        data = data_best + ((depth + tr_depth) << par->Log2NumPartInCU);
+                        FillSubPart(abs_part_idx + (num_parts >> 2) * i, depth, tr_depth, part_size, 0, par->QP);
+                        CopySubPartTo(data_save, abs_part_idx + (num_parts >> 2) * i, depth, tr_depth);
                         continue;
                     } else {
                         IntraPredTULumaAllHAD(abs_part_idx + (num_parts >> 2) * i, width);
