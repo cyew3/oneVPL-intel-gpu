@@ -343,7 +343,7 @@ namespace detail
             m_mfxAPI.Submit = _Submit;
         }
         MFXPluginAdapterInternal(const MFXPluginAdapterInternal & that )
-            : MFXPluginAdapterBase(that) {
+            : MFXPluginAdapterBase<MFXGenericPlugin>(that) {
             m_mfxAPI.Submit = that._Submit;
         }
         MFXPluginAdapterInternal<MFXGenericPlugin>& operator = (const MFXPluginAdapterInternal<MFXGenericPlugin> & that) {
