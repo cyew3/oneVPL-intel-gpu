@@ -409,6 +409,7 @@ VAAPIEncoder::VAAPIEncoder(VideoCORE* core)
     , m_initFrameWidth(0)
     , m_initFrameHeight(0)
 {
+    std::fill_n(m_sliceParamBufferId, sizeof(m_sliceParamBufferId)/sizeof(m_sliceParamBufferId[0]), VA_INVALID_ID);
 }
 
 VAAPIEncoder::~VAAPIEncoder()
