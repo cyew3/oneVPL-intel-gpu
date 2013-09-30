@@ -87,8 +87,11 @@ public:
     {
         MFX_CHECK_POINTER(m_pFD);
 
-        vm_char *pChar = vm_file_fgets(p, size, m_pFD);
-        
+        if (NULL == vm_file_fgets(p, size, m_pFD))
+        {
+            return MFX_ERR_NULL_PTR;
+        }
+
         return MFX_ERR_NONE;
     }
     mfxStatus Write(mfxU8* p, mfxU32 size)
