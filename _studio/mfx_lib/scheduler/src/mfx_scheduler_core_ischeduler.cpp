@@ -22,7 +22,7 @@
 #if defined  (MFX_D3D11_ENABLED)
 #include "mfx_scheduler_dx11_event.h"
 #endif
-#endif 
+#endif
 
 #if defined(MFX_SCHEDULER_LOG)
 #if defined(WIN32) || defined(WIN64)
@@ -109,15 +109,11 @@ mfxStatus mfxSchedulerCore::Initialize(const MFX_SCHEDULER_PARAM *pParam)
     }
 
     // decide the number of threads
-#ifdef ANDROID
-    numThreads = 1;
-#else
     numThreads = vm_sys_info_get_cpu_num();
     if (m_param.numberOfThreads)
     {
         numThreads = UMC::get_min(numThreads, m_param.numberOfThreads);
     }
-#endif
     m_param.numberOfThreads = numThreads;
 
     try
@@ -667,7 +663,7 @@ mfxStatus mfxSchedulerCore::AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoi
         int type;
 
         // Make sure that there is an empty task object
-        
+
         mfxRes = AllocateEmptyTask();
         if (MFX_ERR_NONE != mfxRes)
         {

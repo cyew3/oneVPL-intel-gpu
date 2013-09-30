@@ -24,6 +24,8 @@ DIRS_TO_COPY=" \
   samples/sample_decode \
   samples/sample_encode \
   samples/sample_user_modules/plugin_api \
+  samples/sample_spl_mux/api \
+  samples/sample_spl_mux/dispatcher \
   "
 
 FILES_TO_COPY=" \
@@ -33,6 +35,7 @@ FILES_TO_COPY=" \
   _studio/shared/umc/Android.mk
   _testsuite/Android.mk \
   samples/Android.mk \
+  samples/sample_spl_mux/Android.mk \
   "
 
 PATHS_TO_REMOVE=" \
@@ -51,6 +54,7 @@ PATHS_TO_REMOVE=" \
   _studio/shared/umc/test_suite/spy_test_component/outline.* \
   _testsuite/mfx_player/scripts \
   _testsuite/mfx_player/props \
+  samples/sample_common/props \
   "
 
 for i in $DIRS_TO_COPY

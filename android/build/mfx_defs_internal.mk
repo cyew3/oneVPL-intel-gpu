@@ -14,7 +14,7 @@
 MFX_CFLAGS_INTERNAL := \
     $(MFX_CFLAGS) \
     $(MFX_CFLAGS_STL) \
-    -msse4.1 -DLINUX32
+    -msse4.2 -DLINUX32
 
 IPP_ROOT := $(MEDIASDK_ROOT)/ipp/linux/ia32
 
@@ -62,6 +62,7 @@ MFX_C_INCLUDES_INTERNAL :=  \
     $(MFX_HOME)/_studio/shared/umc/io/umc_io/include \
     $(MFX_HOME)/_studio/shared/umc/io/umc_va/include \
     $(MFX_HOME)/_studio/mfx_lib/shared/include \
+    $(MFX_HOME)/_studio/mfx_lib/optimization/h265/include \
     $(IPP_ROOT)/include
 
 MFX_C_INCLUDES_INTERNAL_HW := \

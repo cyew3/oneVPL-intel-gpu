@@ -26,7 +26,8 @@ protected:
     void *m_display;
 
 private:
-    DISALLOW_COPY_AND_ASSIGN(AndroidLibVA);
+    AndroidLibVA(const AndroidLibVA&);
+    void operator=(const AndroidLibVA&);
 };
 
 #endif // #if defined(LIBVA_ANDROID_SUPPORT)

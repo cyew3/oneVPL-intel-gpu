@@ -5,7 +5,7 @@ include $(MFX_HOME)/android/mfx_env.mk
 # =============================================================================
 
 MFX_LOCAL_DECODERS = h265 h264 mpeg2 vc1 mjpeg vp8
-MFX_LOCAL_ENCODERS = h264 mpeg2 vc1 mjpeg mvc svc
+MFX_LOCAL_ENCODERS = h265 h264 mpeg2 vc1 mjpeg mvc svc
 
 # Setting subdirectories to march thru
 MFX_LOCAL_DIRS = \

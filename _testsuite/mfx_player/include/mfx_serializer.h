@@ -24,12 +24,12 @@ File Name: mfxstructures.h
 
 //base serializeble routines
 //TODO : create an archive from this
-class MFXStructureSerializer 
+class MFXStructureSerializer
 {
 protected:
     //union selection flags
     int m_flags;
-    //mutable to use in serialization function that actually const but doesn't 
+    //mutable to use in serialization function that actually const but doesn't
     // change target structure, so it works as postconstrruction by flag
     mutable hash_array<tstring,tstring> m_values_map;
 public:
@@ -37,6 +37,8 @@ public:
         : m_flags(flags)
     {
     }
+    virtual ~MFXStructureSerializer() {}
+
     template <class _Formater>
     tstring         Serialize(_Formater fmt ) const 
     {

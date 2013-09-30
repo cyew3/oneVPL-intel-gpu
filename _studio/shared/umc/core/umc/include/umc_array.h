@@ -16,6 +16,7 @@
 #include <memory.h>
 #include <new>
 #include <stdexcept>
+#include <string> /* for std::out_of_range(const char*) on Android */
 
 namespace UMC
 {

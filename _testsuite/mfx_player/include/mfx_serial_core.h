@@ -45,11 +45,11 @@ public:
     {
     }
     template <class Serializer>
-    void Serialize(const Serializer & nonConstantSerializer) 
+    void Serialize(const Serializer & nonConstantSerializer)
     {
         _Serialize(&const_cast<Serializer&>(nonConstantSerializer), VM_STRING(""));
     }
-    
+
     //return NodeThat accepts arguments
     bool IsDeserialPossible(const tstring & key, int &nParamsRequired, SerialNode *&pNode)
     {
@@ -62,7 +62,7 @@ public:
 
     //virtual version
     virtual void _Serialize(Formaters2::ISerializer * pSerial, const tstring & prefix) = 0;
-    
+
     //true if value could be partially deserialized using provided string
     //i.e. in serialisation of this node there could be string like input one
     //if possible returns also number of additional parameters required for deserialization, default is 1
@@ -137,8 +137,8 @@ public:
         tstring streamstr = sstream.str();
         tstring skey      = key;
 
-        transform(streamstr.begin(), streamstr.end(), streamstr.begin(), ::_totlower);
-        transform(skey.begin(), skey.end(), skey.begin(), ::_totlower);
+        std::transform(streamstr.begin(), streamstr.end(), streamstr.begin(), ::_totlower);
+        std::transform(skey.begin(), skey.end(), skey.begin(), ::_totlower);
 
         if (skey == streamstr)
         {

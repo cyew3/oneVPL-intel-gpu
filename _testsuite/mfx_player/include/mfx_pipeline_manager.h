@@ -17,6 +17,7 @@ File Name: .h
 class IMFXPipelineManager
 {
 public:
+    virtual ~IMFXPipelineManager() {}
     //builds and executes pipeline
     virtual int Execute(IMFXPipelineConfig * pConfig)throw() = 0;
 };

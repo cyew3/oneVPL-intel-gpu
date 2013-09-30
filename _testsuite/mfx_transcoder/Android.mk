@@ -13,7 +13,7 @@ MFX_TRANSODER_INCLUDES += \
     $(MFX_C_INCLUDES_LIBVA) \
     $(MFX_HOME)/_testsuite/mfx_player/include \
     $(MFX_HOME)/_testsuite/shared/include \
-    $(MFX_HOME)/samples/sample_common/include
+    $(MFX_HOME)/samples/samples_spl_mux/api
 
 # =============================================================================
 
@@ -69,8 +69,8 @@ LOCAL_STATIC_LIBRARIES += \
     libmfx_trans_pipeline \
     libmfx_pipeline \
     libshared_utils \
-    libsample_common \
     libdispatch_trace \
+    libsample_spl_mux_dispatcher \
     libumc_codecs_merged \
     libumc_io_merged_sw \
     libumc_core_merged
@@ -104,8 +104,8 @@ LOCAL_STATIC_LIBRARIES += \
     libmfx_trans_pipeline_lucas \
     libmfx_pipeline_lucas \
     libshared_utils_lucas \
-    libsample_common \
     libdispatch_trace \
+    libsample_spl_mux_dispatcher \
     libumc_codecs_merged \
     libumc_io_merged_sw \
     libumc_core_merged

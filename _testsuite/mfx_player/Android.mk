@@ -11,11 +11,11 @@ MFX_PIPELINE_INCLUDES := \
     $(MFX_HOME)/_studio/shared/umc/codec/demuxer/include \
     $(MFX_HOME)/_studio/shared/umc/test_suite/spy_test_component/include \
     $(MFX_HOME)/_testsuite/shared/include \
-    $(MFX_HOME)/samples/sample_common/include
+    $(MFX_HOME)/samples/sample_spl_mux/api
 
 MFX_PLAYER_INCLUDES := \
     $(MFX_HOME)/_testsuite/shared/include \
-    $(MFX_HOME)/samples/sample_common/include
+    $(MFX_HOME)/samples/sample_spl_mux/api
 
 # =============================================================================
 
@@ -87,8 +87,8 @@ LOCAL_STATIC_LIBRARIES += \
     libmfx \
     libmfx_pipeline \
     libshared_utils \
-    libsample_common \
     libdispatch_trace \
+    libsample_spl_mux_dispatcher \
     libumc_codecs_merged \
     libumc_io_merged_sw \
     libumc_core_merged
@@ -125,8 +125,8 @@ LOCAL_STATIC_LIBRARIES += \
     libmfx \
     libmfx_pipeline_lucas \
     libshared_utils_lucas \
-    libsample_common \
     libdispatch_trace \
+    libsample_spl_mux_dispatcher \
     libumc_codecs_merged \
     libumc_io_merged_sw \
     libumc_core_merged

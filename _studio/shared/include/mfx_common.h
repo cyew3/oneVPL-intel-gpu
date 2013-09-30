@@ -74,6 +74,7 @@
 #ifndef MFX_ENABLE_C2CPP_DEBUG
 #include "umc_structures.h"
 
+#if !defined(ANDROID)
 
 // h264
 #define MFX_ENABLE_H264_VIDEO_DECODE
@@ -200,10 +201,9 @@
     #endif // #if defined (MFX_VA)
 #endif // #if defined(LINUX32) || defined(LINUX64)
 
-// additional corrections for Android
-#if defined(ANDROID)
-    #undef MFX_ENABLE_IMAGE_STABILIZATION_VPP
-#endif // #if defined(ANDROID)
+#else // #if !defined(ANDROID)
+    #include "mfx_android_defs.h"
+#endif // #if !defined(ANDROID)
 
 #define MFX_BIT_IN_KB 8*1000
 #endif

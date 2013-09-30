@@ -16,6 +16,10 @@
 #include "mfx_common.h"
 #include "mfxaudio.h"
 
+#if defined(ANDROID)
+typedef int error_t;
+#endif
+
 mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 codecId);
 mfxStatus CheckFrameInfoEncoders(mfxFrameInfo  *info);
 mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId = MFX_CODEC_AVC);
@@ -141,7 +145,7 @@ mfxU32 memcpy_s(T1* pDst, T2* pSrc)
 
 #if !defined(_WIN32) && !defined(_WIN64)
 #if defined(__GNUC__)
-inline 
+inline
 #else
 __attribute__((always_inline))
 #endif
