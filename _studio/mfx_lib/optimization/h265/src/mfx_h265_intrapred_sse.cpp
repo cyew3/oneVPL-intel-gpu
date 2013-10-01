@@ -1098,9 +1098,25 @@ namespace MFX_HEVC_PP
         }
     }
 
+    ALIGN_DECL(16) static const Ipp8s tab_bfilt8x8[16] =
+        {  8, 8, 8, 8, 8, 8, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+    // compute USAT8(a + ((b - c) >> 1))
+    static inline __m128i BoundaryFilter(__m128i a, __m128i b, __m128i c)
+    {
+        c = _mm_xor_si128(c, _mm_set1_epi8(0xff));
+        b = _mm_avg_epu8(b, c);
+        b = _mm_sub_epi8(b, _mm_set1_epi8(0x80));   // pavgb(b,~c)-0x80 = (b-c)>>1
+
+        a = _mm_sub_epi8(a, _mm_set1_epi8(0x80));   // convert to signed
+        a = _mm_adds_epi8(a, b);                    // signed saturate
+        a = _mm_add_epi8(a, _mm_set1_epi8(0x80));   // convert to unsigned
+        return a;
+    }
+
     //
     // mode 10,26 (copy)
-    //
+    // Src is unaligned, Dst is aligned
     template <int width>
     static inline void PredAngle10(Ipp8u *pSrc1, Ipp8u *pSrc2, Ipp8u *pDst1, Ipp8u *pDst2)
     {
@@ -1108,56 +1124,136 @@ namespace MFX_HEVC_PP
         {
         case 4:
             {
-                __m128i r0 = _mm_load_si128((__m128i *)&pSrc1[0]);  // load as [src2 src1]
+                __m128i r0 = _mm_loadu_si128((__m128i *)&pSrc1[1]); // load as [src2 src1]
                 __m128i s0;
+
+                __m128i t0 = _mm_shuffle_epi8(r0, _mm_load_si128((__m128i *)tab_bfilt8x8));
+                __m128i u0 = _mm_set1_epi8(pSrc1[0]);
+
+                t0 = BoundaryFilter(t0, r0, u0);
 
                 s0 = _mm_shuffle_epi32(r0, _MM_SHUFFLE(2,2,2,2));
                 r0 = _mm_shuffle_epi32(r0, _MM_SHUFFLE(0,0,0,0));
 
-                _mm_store_si128((__m128i *)&pDst1[0], r0);
-                _mm_store_si128((__m128i *)&pDst2[0], s0);
+                _mm_store_si128((__m128i *)&pDst1[0], s0);
+                _mm_store_si128((__m128i *)&pDst2[0], r0);
+
+                pDst1[0*4] = _mm_extract_epi8(t0, 0);
+                pDst1[1*4] = _mm_extract_epi8(t0, 1);
+                pDst1[2*4] = _mm_extract_epi8(t0, 2);
+                pDst1[3*4] = _mm_extract_epi8(t0, 3);
+
+                pDst2[0*4] = _mm_extract_epi8(t0, 8);
+                pDst2[1*4] = _mm_extract_epi8(t0, 9);
+                pDst2[2*4] = _mm_extract_epi8(t0, 10);
+                pDst2[3*4] = _mm_extract_epi8(t0, 11);
             }
             break;
         case 8:
             {
-                __m128i r0 = _mm_load_si128((__m128i *)&pSrc1[0]);
-                __m128i s0 = _mm_load_si128((__m128i *)&pSrc2[0]);
+                __m128i r0 = _mm_loadu_si128((__m128i *)&pSrc1[1]);
+                __m128i s0 = _mm_loadu_si128((__m128i *)&pSrc2[1]);
+
+                __m128i rs = _mm_unpacklo_epi64(r0, s0);
+                __m128i t0 = _mm_shuffle_epi8(rs, _mm_load_si128((__m128i *)tab_bfilt8x8));
+                __m128i u0 = _mm_set1_epi8(pSrc1[0]);
+
+                t0 = BoundaryFilter(t0, rs, u0);
 
                 r0 = _mm_unpacklo_epi64(r0, r0);
                 s0 = _mm_unpacklo_epi64(s0, s0);
 
                 for (int i = 0; i < 4; i++)
                 {
-                    _mm_store_si128((__m128i *)&pDst1[i*16], r0);
-                    _mm_store_si128((__m128i *)&pDst2[i*16], s0);
+                    _mm_store_si128((__m128i *)&pDst1[i*16], s0);
+                    _mm_store_si128((__m128i *)&pDst2[i*16], r0);
                 }
+
+                pDst1[0*8] = _mm_extract_epi8(t0, 0);
+                pDst1[1*8] = _mm_extract_epi8(t0, 1);
+                pDst1[2*8] = _mm_extract_epi8(t0, 2);
+                pDst1[3*8] = _mm_extract_epi8(t0, 3);
+                pDst1[4*8] = _mm_extract_epi8(t0, 4);
+                pDst1[5*8] = _mm_extract_epi8(t0, 5);
+                pDst1[6*8] = _mm_extract_epi8(t0, 6);
+                pDst1[7*8] = _mm_extract_epi8(t0, 7);
+
+                pDst2[0*8] = _mm_extract_epi8(t0, 8);
+                pDst2[1*8] = _mm_extract_epi8(t0, 9);
+                pDst2[2*8] = _mm_extract_epi8(t0, 10);
+                pDst2[3*8] = _mm_extract_epi8(t0, 11);
+                pDst2[4*8] = _mm_extract_epi8(t0, 12);
+                pDst2[5*8] = _mm_extract_epi8(t0, 13);
+                pDst2[6*8] = _mm_extract_epi8(t0, 14);
+                pDst2[7*8] = _mm_extract_epi8(t0, 15);
             }
             break;
         case 16:
             {
-                __m128i r0 = _mm_load_si128((__m128i *)&pSrc1[0]);
-                __m128i s0 = _mm_load_si128((__m128i *)&pSrc2[0]);
+                __m128i r0 = _mm_loadu_si128((__m128i *)&pSrc1[1]);
+                __m128i s0 = _mm_loadu_si128((__m128i *)&pSrc2[1]);
+
+                __m128i t0 = _mm_shuffle_epi8(s0, _mm_setzero_si128());
+                __m128i t1 = _mm_shuffle_epi8(r0, _mm_setzero_si128());
+                __m128i u0 = _mm_set1_epi8(pSrc1[0]);
+
+                t0 = BoundaryFilter(t0, r0, u0);
+                t1 = BoundaryFilter(t1, s0, u0);
 
                 for (int i = 0; i < 16; i++)
                 {
-                    _mm_store_si128((__m128i *)&pDst1[i*16], r0);
-                    _mm_store_si128((__m128i *)&pDst2[i*16], s0);
+                    _mm_store_si128((__m128i *)&pDst1[i*16], s0);
+                    _mm_store_si128((__m128i *)&pDst2[i*16], r0);
                 }
+
+                pDst1[0*16] = _mm_extract_epi8(t0, 0);
+                pDst1[1*16] = _mm_extract_epi8(t0, 1);
+                pDst1[2*16] = _mm_extract_epi8(t0, 2);
+                pDst1[3*16] = _mm_extract_epi8(t0, 3);
+                pDst1[4*16] = _mm_extract_epi8(t0, 4);
+                pDst1[5*16] = _mm_extract_epi8(t0, 5);
+                pDst1[6*16] = _mm_extract_epi8(t0, 6);
+                pDst1[7*16] = _mm_extract_epi8(t0, 7);
+                pDst1[8*16] = _mm_extract_epi8(t0, 8);
+                pDst1[9*16] = _mm_extract_epi8(t0, 9);
+                pDst1[10*16] = _mm_extract_epi8(t0, 10);
+                pDst1[11*16] = _mm_extract_epi8(t0, 11);
+                pDst1[12*16] = _mm_extract_epi8(t0, 12);
+                pDst1[13*16] = _mm_extract_epi8(t0, 13);
+                pDst1[14*16] = _mm_extract_epi8(t0, 14);
+                pDst1[15*16] = _mm_extract_epi8(t0, 15);
+
+                pDst2[0*16] = _mm_extract_epi8(t1, 0);
+                pDst2[1*16] = _mm_extract_epi8(t1, 1);
+                pDst2[2*16] = _mm_extract_epi8(t1, 2);
+                pDst2[3*16] = _mm_extract_epi8(t1, 3);
+                pDst2[4*16] = _mm_extract_epi8(t1, 4);
+                pDst2[5*16] = _mm_extract_epi8(t1, 5);
+                pDst2[6*16] = _mm_extract_epi8(t1, 6);
+                pDst2[7*16] = _mm_extract_epi8(t1, 7);
+                pDst2[8*16] = _mm_extract_epi8(t1, 8);
+                pDst2[9*16] = _mm_extract_epi8(t1, 9);
+                pDst2[10*16] = _mm_extract_epi8(t1, 10);
+                pDst2[11*16] = _mm_extract_epi8(t1, 11);
+                pDst2[12*16] = _mm_extract_epi8(t1, 12);
+                pDst2[13*16] = _mm_extract_epi8(t1, 13);
+                pDst2[14*16] = _mm_extract_epi8(t1, 14);
+                pDst2[15*16] = _mm_extract_epi8(t1, 15);
             }
             break;
         case 32:
             {
-                __m128i r0 = _mm_load_si128((__m128i *)&pSrc1[ 0]);
-                __m128i s0 = _mm_load_si128((__m128i *)&pSrc2[ 0]);
-                __m128i r1 = _mm_load_si128((__m128i *)&pSrc1[16]);
-                __m128i s1 = _mm_load_si128((__m128i *)&pSrc2[16]);
+                __m128i r0 = _mm_loadu_si128((__m128i *)&pSrc1[ 1]);
+                __m128i r1 = _mm_loadu_si128((__m128i *)&pSrc1[17]);
+                __m128i s0 = _mm_loadu_si128((__m128i *)&pSrc2[ 1]);
+                __m128i s1 = _mm_loadu_si128((__m128i *)&pSrc2[17]);
 
                 for (int i = 0; i < 32; i++)
                 {
-                    _mm_store_si128((__m128i *)&pDst1[i*32+ 0], r0);
-                    _mm_store_si128((__m128i *)&pDst2[i*32+ 0], s0);
-                    _mm_store_si128((__m128i *)&pDst1[i*32+16], r1);
-                    _mm_store_si128((__m128i *)&pDst2[i*32+16], s1);
+                    _mm_store_si128((__m128i *)&pDst1[i*32+ 0], s0);
+                    _mm_store_si128((__m128i *)&pDst1[i*32+16], s1);
+                    _mm_store_si128((__m128i *)&pDst2[i*32+ 0], r0);
+                    _mm_store_si128((__m128i *)&pDst2[i*32+16], r1);
                 }
             }
             break;
@@ -1481,7 +1577,8 @@ namespace MFX_HEVC_PP
         PredAngle<4,7>(ref1, ref2, buf[7-2], buf[29-2]);
         PredAngle<4,8>(ref1, ref2, buf[8-2], buf[28-2]);
         PredAngle<4,9>(ref1, ref2, buf[9-2], buf[27-2]);
-        PredAngle10<4>(ref1, ref2, buf[10-2], buf[26-2]);
+
+        PredAngle10<4>(PredPel, PredPel2, buf[10-2], buf[26-2]);
 
         ProjLine<4,11>(PredPel, PredPel2, ref1, ref2);
         PredAngle<4,11>(ref1, ref2, buf[11-2], buf[36-11-2]);
@@ -1522,7 +1619,8 @@ namespace MFX_HEVC_PP
         PredAngle<8,7>(ref1, ref2, buf[7-2], buf[29-2]);
         PredAngle<8,8>(ref1, ref2, buf[8-2], buf[28-2]);
         PredAngle<8,9>(ref1, ref2, buf[9-2], buf[27-2]);
-        PredAngle10<8>(ref1, ref2, buf[10-2], buf[26-2]);
+
+        PredAngle10<8>(PredPel, PredPel2, buf[10-2], buf[26-2]);
 
         ProjLine<8,11>(PredPel, PredPel2, ref1, ref2);
         PredAngle<8,11>(ref1, ref2, buf[11-2], buf[36-11-2]);
@@ -1565,7 +1663,8 @@ namespace MFX_HEVC_PP
         // unfiltered
         CopyLine<16>(PredPel, PredPel2, ref1, ref2);
         PredAngle<16,9>(ref1, ref2, buf[9-2], buf[27-2]);
-        PredAngle10<16>(ref1, ref2, buf[10-2], buf[26-2]);
+
+        PredAngle10<16>(PredPel, PredPel2, buf[10-2], buf[26-2]);
 
         ProjLine<16,11>(PredPel, PredPel2, ref1, ref2);
         PredAngle<16,11>(ref1, ref2, buf[11-2], buf[36-11-2]);
@@ -1607,8 +1706,7 @@ namespace MFX_HEVC_PP
         PredAngle<32,9>(ref1, ref2, buf[9-2], buf[27-2]);
 
         // unfiltered
-        CopyLine<32>(PredPel, PredPel2, ref1, ref2);
-        PredAngle10<32>(ref1, ref2, buf[10-2], buf[26-2]);
+        PredAngle10<32>(PredPel, PredPel2, buf[10-2], buf[26-2]);
 
         // filtered
         ProjLine<32,11>(FiltPel, FiltPel2, ref1, ref2);

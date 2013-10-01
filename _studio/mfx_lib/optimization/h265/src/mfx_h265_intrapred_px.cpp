@@ -606,6 +606,9 @@ static Ipp32s FilteredModes[] = {10, 7, 1, 0, 10};
         PixType* pels,
         Ipp32s width)
     {
+        PixType *pred_ptr = pels;
+        const int BIT_DEPTH_LUMA = 8;
+
         for (int mode = 2; mode < 35; mode++)
         {
             Ipp32s diff = MIN(abs(mode - INTRA_HOR), abs(mode - INTRA_VER));
@@ -619,6 +622,23 @@ static Ipp32s FilteredModes[] = {10, 7, 1, 0, 10};
                 h265_PredictIntra_Ang_8u_px_no_transp(mode, FiltPel, pels, width, width);
             }
             pels += width * width;  // next buffer
+        }
+
+        // hor and ver modes require additional filtering
+        if (width <= 16)
+        {
+            pels = pred_ptr + (INTRA_HOR - 2) * width * width;
+            for (Ipp32s i = 0; i < width; i++)
+            {
+                pels[i*width] = (PixType)Saturate(0, (1 << BIT_DEPTH_LUMA) - 1,
+                    pels[i*width] + ((PredPel[1+i] - PredPel[0]) >> 1));
+            }
+            pels = pred_ptr + (INTRA_VER - 2) * width * width;
+            for (Ipp32s j = 0; j < width; j++)
+            {
+                pels[j*width] = (PixType)Saturate(0, (1 << BIT_DEPTH_LUMA) - 1,
+                    pels[j*width] + ((PredPel[2*width+1+j] - PredPel[0]) >> 1));
+            }
         }
     }
 #endif // #if defined(MFX_TARGET_OPTIMIZATION_PX)  || defined(MFX_TARGET_OPTIMIZATION_AUTO)
