@@ -80,7 +80,7 @@ AACStatus aacdecReset(AACDec *state)
   }
 
   if (SBR_UNDEF == state->com.m_flag_SBR_support_lev) {
-    state->com.m_flag_SBR_support_lev   = SBR_ENABLE;
+    //state->com.m_flag_SBR_support_lev   = SBR_ENABLE;
   }
   //------------------------------------------------------------
 
@@ -110,6 +110,12 @@ AACStatus aacdecReset(AACDec *state)
     }
   }
 
+ 
+    for (i = 0; i < CH_MAX; i++) {
+      sbrdecReset(&(state->sbrBlock[i]));
+      state->sbrBlock[i].comState.sbrHeaderFlagPresent= 0;
+    }
+  
   return AAC_OK;
 }
 
@@ -1180,8 +1186,8 @@ AACStatus aacdecGetFrame(Ipp8u  *inPointer,
 
     for (ch = 0; ch < ncch; ch++) {
       if (state_com->m_cdata[ch].ind_sw_cce_flag) {
-      coupling_spectrum(state, &(state_com->m_cdata[ch]),
-                        state->m_spectrum_data[CH_MAX + ch],
+      coupling_samples(state, &(state_com->m_cdata[ch]),
+                        state->m_curr_samples[CH_MAX + ch],
                         state->cc_gain[ch]);
       }
     }
@@ -1245,8 +1251,11 @@ AACStatus aacdecGetFrame(Ipp8u  *inPointer,
       if( state->com.m_channel_number == 1 ){ // m_channel_number must be mono every call this function
         state->sbrBlock[0].pPSDecState = &(state->psState);
         state->com.m_channel_number = 2;
-        state->m_ordered_samples[1] = state->m_curr_samples[1];
-      } else {
+        if ( state->com.m_flag_SBR_support_lev == SBR_UNDEF ) {
+            state->m_ordered_samples[1] = state->m_curr_samples[0];
+        } else {
+            state->m_ordered_samples[1] = state->m_curr_samples[1];
+        }
 //        vm_debug_trace(VM_DEBUG_ALL, VM_STRING("Err PS: ch > 1 !\n"));
         state->com.m_flag_PS_support_lev = PS_DISABLE;
       }
