@@ -353,7 +353,7 @@ void MFXVC1VideoDecoder::GetDecodeStat(mfxDecodeStat *stat)
 }
 void MFXVC1VideoDecoder::SetFrameOrder(mfx_UMC_FrameAllocator* pFrameAlloc, mfxVideoParam* par, bool isLast, VC1TSDescriptor tsd, bool isSamePolar)
 {
-    mfxFrameSurface1 surface = {0};
+    mfxFrameSurface1 surface = {};
     mfxFrameSurface1 *pSurface;
     UMC::VC1FrameDescriptor *pCurrDescriptor = 0;
     mfxI32 idx;
@@ -993,13 +993,13 @@ mfxStatus MFXVideoDECODEVC1::Close(void)
         delete m_frame_constructor;
         m_frame_constructor = 0;
     }
-    if (m_RBufID != -1)
+    if ((int)m_RBufID != -1)
     {
         m_MemoryAllocator.Unlock(m_RBufID);
         m_MemoryAllocator.Free(m_RBufID);
         m_RBufID = (UMC::MemID)-1;
     }
-    if (m_stCodesID != -1)
+    if ((int)m_stCodesID != -1)
     {
         m_MemoryAllocator.Unlock(m_stCodesID);
         m_MemoryAllocator.Free(m_stCodesID);
@@ -1553,7 +1553,7 @@ mfxStatus MFXVideoDECODEVC1::SelfDecodeFrame(mfxFrameSurface1 *surface_work, mfx
     }
 
     if (bs &&
-        (IntUMCStatus == UMC::UMC_ERR_NOT_ENOUGH_DATA )&&
+        (IntUMCStatus == UMC::UMC_ERR_NOT_ENOUGH_DATA)&&
         (m_InternMediaDataOut.GetFrameType() == NONE_PICTURE)) // SH, EH processing
     {
         PrepareMediaIn();
@@ -1977,12 +1977,10 @@ mfxStatus MFXVideoDECODEVC1::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfx
     par->mfx.CodecProfile = temp.mfx.CodecProfile;
     par->mfx.CodecLevel = temp.mfx.CodecLevel;
 
-
-    //if (!IsHWSupported(core, par))
-    //    MFXSts = MFX_WRN_PARTIAL_ACCELERATION;
-
-
-
+/* No check for HW acceleration in DecodeHeader
+    if (!IsHWSupported(core, par))
+        MFXSts = core->GetSWFallbackPolicy();
+*/
     return MFXSts;
 
 }
@@ -2738,13 +2736,16 @@ mfxStatus MFXVideoDECODEVC1::IsDisplayFrameReady(mfxBitstream *bs, mfxFrameSurfa
 bool MFXVideoDECODEVC1::IsBufferMode(VideoCORE *pCore, mfxVideoParam *par)
 {
     pCore; par;
-    //if ((IsHWSupported(pCore, par) && 
-    //    (MFX_PLATFORM_HARDWARE == pCore->GetPlatformType())&&
-    //    (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)&&
-    //    !par->mfx.DecodedOrder &&
-    //    1 != par->AsyncDepth))
-    //    return true;
-    //else
+#if defined(MFX_VA_LINUX)
+// TODO: still need it for Linux/Android due to issue in UMD. Comment it (return true) when fix is ready.
+    if ((IsHWSupported(pCore, par) && 
+        (MFX_PLATFORM_HARDWARE == pCore->GetPlatformType())&&
+        (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)&&
+        !par->mfx.DecodedOrder &&
+        1 != par->AsyncDepth))
+        return true;
+    else
+#endif          
         return false;
 }
 mfxStatus MFXVideoDECODEVC1::RunThread(mfxFrameSurface1 *surface_work, 
@@ -2862,7 +2863,7 @@ mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs,
 
     mfxStatus mfxSts = DecodeFrameCheck(bs, surface_work, surface_out);
     if (MFX_ERR_NONE == mfxSts ||
-        MFX_ERR_MORE_DATA_RUN_TASK == mfxSts) // It can be useful to run threads right after first frame receive
+        MFX_ERR_MORE_DATA_RUN_TASK == (mfxInternalErrors)mfxSts) // It can be useful to run threads right after first frame receive
     {
         AsyncSurface *pAsyncSurface = new AsyncSurface;
         pAsyncSurface->surface_work = GetOriginalSurface(surface_work);
@@ -2875,7 +2876,7 @@ mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs,
         pEntryPoint->pState = this;
         pEntryPoint->requiredNumThreads = m_par.mfx.NumThread;
         pEntryPoint->pParam = pAsyncSurface;
-        pEntryPoint->pRoutineName = "DecodeVC1";
+        pEntryPoint->pRoutineName = (char *)"DecodeVC1";
 
         if (MFX_ERR_NONE == mfxSts)
         {

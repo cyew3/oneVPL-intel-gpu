@@ -207,7 +207,7 @@ protected:
     bool                NeedToGetStatus(UMC::VC1FrameDescriptor *pCurrDescriptor);
 #endif
 
-    static const        mfxU16 disp_queue_size = 10; 
+    static const        mfxU16 disp_queue_size = 2; // looks enough for Linux now and disable on Windows.
 
 
     UMC::BaseCodecParams*      m_VideoParams;
