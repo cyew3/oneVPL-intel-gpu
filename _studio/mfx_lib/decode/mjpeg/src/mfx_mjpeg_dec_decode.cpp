@@ -1328,11 +1328,18 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
             {
                 if(umcRes == UMC::UMC_ERR_NOT_ENOUGH_DATA)
                 {
+#if defined (MFX_VA_WIN)
+                    if(m_numPic == 0)
+                    {
+                        delete[] m_dst;
+                    }
+#endif
                     return MFX_ERR_MORE_DATA;
                 }
                 else
                 {
 #if defined (MFX_VA_WIN)
+                    delete[] m_dst;
                     m_numPic = 0;
 #endif
                     if(!m_freeTasks.empty())
@@ -1351,11 +1358,18 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
             {
                 if(umcRes == UMC::UMC_ERR_NOT_ENOUGH_DATA)
                 {
+#if defined (MFX_VA_WIN)
+                    if(m_numPic == 0)
+                    {
+                        delete[] m_dst;
+                    }
+#endif
                     return MFX_ERR_MORE_DATA;
                 }
                 else
                 {
 #if defined (MFX_VA_WIN)
+                    delete[] m_dst;
                     m_numPic = 0;
 #endif
                     if(!m_freeTasks.empty())
@@ -1371,6 +1385,7 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
                 m_vPar.mfx.FrameInfo.CropH != temp.mfx.FrameInfo.CropH)
             {
 #if defined (MFX_VA_WIN)
+                delete[] m_dst;
                 m_numPic = 0;
 #endif
                 if(!m_freeTasks.empty())
@@ -1407,6 +1422,12 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
         src.Save(bs);
         if (NULL == pSrcData)
         {
+#if defined (MFX_VA_WIN)
+            if(m_numPic == 0)
+            {
+                delete[] m_dst;
+            }
+#endif
             return MFX_ERR_MORE_DATA;
         }
 
@@ -1461,6 +1482,9 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
 
             if (umcRes != UMC::UMC_OK)
             {
+#if defined (MFX_VA_WIN)
+                delete[] m_dst;
+#endif
                 return ConvertUMCStatusToMfx(umcRes);
             }
 
@@ -1471,13 +1495,22 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
             // convert status
             if (umcRes == UMC::UMC_ERR_NOT_ENOUGH_DATA || umcRes == UMC::UMC_ERR_SYNC)
             {
+#if defined (MFX_VA_WIN)
+                if(m_numPic == 0)
+                {
+                    delete[] m_dst;
+                }
+#endif
                 sts = MFX_ERR_MORE_DATA;
             }
             else
             {
                 if (umcRes != UMC::UMC_OK)
                 {
-                    return ConvertUMCStatusToMfx(umcRes);
+#if defined (MFX_VA_WIN)
+                    delete[] m_dst;
+#endif
+                    sts = ConvertUMCStatusToMfx(umcRes);
                 }
             }
 
@@ -1513,6 +1546,7 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
 
         // it is time to skip a frame
 #if defined (MFX_VA_WIN)
+        delete[] m_dst;
         m_numPic = 0;
 #endif
         if(!m_freeTasks.empty())
