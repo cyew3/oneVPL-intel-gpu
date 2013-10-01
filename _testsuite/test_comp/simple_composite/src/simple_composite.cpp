@@ -13,14 +13,14 @@
 #else
 
 #define fopen_s(FH,FNAME,FMODE) *(FH) = fopen((FNAME),(FMODE));
-#endif 
+#endif
 
 
 
 #include <string>
 #include <vector>
 #include <algorithm>
-#include <functional> 
+#include <functional>
 #include <cctype>
 #include <locale>
 #include <map>
@@ -31,7 +31,7 @@
 #include "common_utils.h"
 #include <string>
 #include <algorithm>
-#include <functional> 
+#include <functional>
 #include <cctype>
 #include <locale>
 #include <stdexcept>
@@ -60,7 +60,7 @@ typedef struct {
 
 // Get free raw frame surface
 int GetFreeSurfaceIndex(mfxFrameSurface1** pSurfacesPool, mfxU16 nPoolSize)
-{    
+{
     if (pSurfacesPool)
         for (mfxU16 i = 0; i < nPoolSize; i++)
             if (0 == pSurfacesPool[i]->Data.Locked)
@@ -103,7 +103,7 @@ struct ProgramArguments
     string par;
     // Output file
     string output;
-  
+
     // src color format
     ColorFormat scc;
     // dest color format
@@ -228,7 +228,7 @@ map<string, string> ParsePar(ifstream &stream, string stream_name) {
 }
 
 int main(int argc, char *argv[])
-{  
+{
     mfxStatus sts = MFX_ERR_NONE;
 
     /* Again:
@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
      * This is means 1 primary and 63 sub-streams */
 
     mfxFrameInfo streams[MAX_INPUT_STREAMS -1] = {};
-    
+
     mfxFrameInfo pr_stream;
 
     auto args = ConvertInputString(argc, argv);
@@ -292,7 +292,7 @@ int main(int argc, char *argv[])
                 pr_stream.PicStruct      = MFX_PICSTRUCT_PROGRESSIVE;
                 pr_stream.FrameRateExtN  = 30;
                 pr_stream.FrameRateExtD  = 1;
-                // width must be a multiple of 16 
+                // width must be a multiple of 16
                 // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture
                 pr_stream.Width  = MSDK_ALIGN16(atoi(primaryparams["width"].c_str()));
                 pr_stream.Height = (MFX_PICSTRUCT_PROGRESSIVE == pr_stream.PicStruct)?
@@ -321,14 +321,14 @@ int main(int argc, char *argv[])
                 streams[StreamCount].PicStruct      = MFX_PICSTRUCT_PROGRESSIVE;
                 streams[StreamCount].FrameRateExtN  = 30;
                 streams[StreamCount].FrameRateExtD  = 1;
-                // width must be a multiple of 16 
+                // width must be a multiple of 16
                 // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture
                 streams[StreamCount].Width  = MSDK_ALIGN16(atoi(params["width"].c_str()));
                 streams[StreamCount].Height = (MFX_PICSTRUCT_PROGRESSIVE == streams[StreamCount].PicStruct)?
                                      MSDK_ALIGN16(atoi(params["height"].c_str())) : MSDK_ALIGN32(atoi(params["height"].c_str()));
 
                 ++StreamCount;
-                if ( StreamCount == (MAX_INPUT_STREAMS - 1) )
+                if ( StreamCount > (MAX_INPUT_STREAMS - 1) )
                 {
                     throw std::runtime_error("Maximum number of input streams exceeded.");
                 }
@@ -409,7 +409,7 @@ int main(int argc, char *argv[])
 #endif
 
 
-    
+
     // Initialize VPP parameters
     // - For simplistic memory management, system memory surfaces are used to store the raw frames
     //   (Note that when using HW acceleration D3D surfaces are prefered, for better performance)
@@ -438,8 +438,8 @@ int main(int argc, char *argv[])
     VPPParams.vpp.In.PicStruct      = MFX_PICSTRUCT_PROGRESSIVE;
     VPPParams.vpp.In.FrameRateExtN  = 30;
     VPPParams.vpp.In.FrameRateExtD  = 1;
-    // width must be a multiple of 16 
-    // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture  
+    // width must be a multiple of 16
+    // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture
     VPPParams.vpp.In.Width  = atoi(primaryparams["width"].c_str());;
     VPPParams.vpp.In.Height = atoi(primaryparams["height"].c_str());;
 
@@ -455,15 +455,15 @@ int main(int argc, char *argv[])
         VPPParams.vpp.Out.FourCC         = MFX_FOURCC_RGB4;
     }
     VPPParams.vpp.Out.CropX         = atoi(primaryparams["cropx"].c_str());
-    VPPParams.vpp.Out.CropY         = atoi(primaryparams["cropy"].c_str()); 
+    VPPParams.vpp.Out.CropY         = atoi(primaryparams["cropy"].c_str());
     VPPParams.vpp.Out.CropW         = atoi(primaryparams["cropw"].c_str());;
     VPPParams.vpp.Out.CropH         = atoi(primaryparams["croph"].c_str());;
     VPPParams.vpp.Out.PicStruct     = MFX_PICSTRUCT_PROGRESSIVE;
     VPPParams.vpp.Out.FrameRateExtN = 30;
     VPPParams.vpp.Out.FrameRateExtD = 1;
-    // width must be a multiple of 16 
-    // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture  
-    VPPParams.vpp.Out.Width  = MSDK_ALIGN16(atoi(primaryparams["width"].c_str())); 
+    // width must be a multiple of 16
+    // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture
+    VPPParams.vpp.Out.Width  = MSDK_ALIGN16(atoi(primaryparams["width"].c_str()));
     VPPParams.vpp.Out.Height = (MFX_PICSTRUCT_PROGRESSIVE == VPPParams.vpp.Out.PicStruct)?
                                     MSDK_ALIGN16(atoi(primaryparams["height"].c_str())) : MSDK_ALIGN32(atoi(primaryparams["height"].c_str()));
 
@@ -534,10 +534,10 @@ int main(int argc, char *argv[])
         bitsPerPixel = 32;
 
     for (i = 0; i < nVPPSurfNumIn; i++)
-    {       
+    {
         mfxU16 width; //= (mfxU16)MSDK_ALIGN32(atoi(subparams[i]["w"].c_str()));
         mfxU16 height;// = (mfxU16)MSDK_ALIGN32(atoi(subparams[i]["h"].c_str()));
-        
+
         if ( i == 0 ) {
             width = (mfxU16)MSDK_ALIGN32(atoi(primaryparams["width"].c_str()));
             height = (mfxU16)MSDK_ALIGN32(atoi(primaryparams["height"].c_str()));
@@ -578,7 +578,7 @@ int main(int argc, char *argv[])
 #ifndef ENABLE_INPUT
         // In case simulating direct access to frames we initialize the allocated surfaces with default pattern
         memset(pVPPSurfacesIn[i]->Data.Y, 0, width * height);  // Y plane
-        memset(pVPPSurfacesIn[i]->Data.U, 0, (width * height)/2); 
+        memset(pVPPSurfacesIn[i]->Data.U, 0, (width * height)/2);
         memset(pVPPSurfacesIn[i]->Data.V, 0, (width * height)/2);// UV plane
 #endif
     }
@@ -590,11 +590,11 @@ int main(int argc, char *argv[])
     mfxU8  bitsPerPixel = 12;  // NV12 format is a 12 bits per pixel format
     mfxU32 surfaceSize = width * height * bitsPerPixel / 8;
     mfxU8* surfaceBuffersIn = (mfxU8 *)new mfxU8[surfaceSize * nVPPSurfNumIn];
- 
+
     mfxFrameSurface1** pVPPSurfacesIn = new mfxFrameSurface1*[nVPPSurfNumIn];
     MSDK_CHECK_POINTER(pVPPSurfacesIn, MFX_ERR_MEMORY_ALLOC);
     for (int i = 0; i < nVPPSurfNumIn; i++)
-    {       
+    {
         pVPPSurfacesIn[i] = new mfxFrameSurface1;
         memset(pVPPSurfacesIn[i], 0, sizeof(mfxFrameSurface1));
         memcpy(&(pVPPSurfacesIn[i]->Info), &(VPPParams.vpp.In), sizeof(mfxFrameInfo));
@@ -619,7 +619,7 @@ int main(int argc, char *argv[])
     mfxFrameSurface1** pVPPSurfacesOut = new mfxFrameSurface1*[nVPPSurfNumOut];
     MSDK_CHECK_POINTER(pVPPSurfacesOut, MFX_ERR_MEMORY_ALLOC);
     for (i = 0; i < nVPPSurfNumOut; i++)
-    {       
+    {
         pVPPSurfacesOut[i] = new mfxFrameSurface1;
         memset(pVPPSurfacesOut[i], 0, sizeof(mfxFrameSurface1));
         memcpy(&(pVPPSurfacesOut[i]->Info), &(VPPParams.vpp.Out), sizeof(mfxFrameInfo));
@@ -642,7 +642,7 @@ int main(int argc, char *argv[])
     // ===================================
     // Start processing the frames
     //
- 
+
 #ifdef ENABLE_BENCHMARK
     LARGE_INTEGER tStart, tEnd;
     QueryPerformanceFrequency(&tStart);
@@ -711,12 +711,12 @@ int main(int argc, char *argv[])
     // MFX_ERR_MORE_DATA means that the input file has ended, need to go to buffering loop, exit in case of other errors
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-    
+
     //
     // Stage 2: Retrieve the buffered VPP frames
     //
     while (MFX_ERR_NONE <= sts)
-    {       
+    {
         nSurfIdxOut = GetFreeSurfaceIndex(pVPPSurfacesOut, nVPPSurfNumOut); // Find free frame surface
         if (MFX_ERR_NOT_FOUND == nSurfIdxOut)
             return MFX_ERR_MEMORY_ALLOC;
@@ -725,7 +725,7 @@ int main(int argc, char *argv[])
         sts = mfxVPP.RunFrameVPPAsync(NULL, pVPPSurfacesOut[nSurfIdxOut], NULL, &syncp);
         MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_SURFACE);
         MSDK_BREAK_ON_ERROR(sts);
-        
+
         sts = mfxSession.SyncOperation(syncp, 60000); // Synchronize. Wait until frame processing is ready
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -756,7 +756,7 @@ int main(int argc, char *argv[])
     // Clean up resources
     //  - It is recommended to close Media SDK components first, before releasing allocated surfaces, since
     //    some surfaces may still be locked by internal Media SDK resources.
-    
+
     free(comp.InputStream);
     mfxVPP.Close();
     // mfxSession closed automatically on destruction
