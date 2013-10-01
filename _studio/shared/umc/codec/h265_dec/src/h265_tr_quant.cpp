@@ -161,8 +161,6 @@ void H265TrQuant::DeQuant(H265CoeffsPtrCommon pSrc, Ipp32u Width, Ipp32u Height,
 void H265TrQuant::Init(Ipp32u MaxTrSize)
 {
     m_MaxTrSize = MaxTrSize;
-    m_EncFlag = false;
-    m_UseRDOQ = false;
 }
 
 template <typename DstCoeffsType>

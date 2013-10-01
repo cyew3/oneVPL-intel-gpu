@@ -113,11 +113,6 @@ public:
         m_QPParam.SetQPParam(qpScaled);
     }
 
-    void SetLambda(Ipp64f Lambda)
-    {
-        m_Lambda = Lambda;
-    }
-
     bool m_UseScalingList;
 
     void setScalingListDec(H265ScalingList *scalingList);
@@ -127,11 +122,7 @@ protected:
     __inline void processScalingListDec(Ipp32s *coeff, Ipp16s *dequantcoeff, Ipp32s invQuantScales, Ipp32u height, Ipp32u width, Ipp32u ratio, Ipp32u sizuNum, Ipp32u dc);
 
     QPParam m_QPParam;
-    Ipp64f m_Lambda;
-    Ipp32u m_RDOQOffset;
     Ipp32u m_MaxTrSize;
-    bool m_EncFlag;
-    bool m_UseRDOQ;
 
     // ML: OPT: TODO: Check if we really need 32-bit here
     Ipp16s* m_dequantCoef[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM][SCALING_LIST_REM_NUM]; ///< array of dequantization matrix coefficient 4x4
