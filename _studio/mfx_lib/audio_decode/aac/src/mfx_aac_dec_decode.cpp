@@ -546,8 +546,7 @@ mfxStatus AudioDECODEAAC::DecodeFrameCheck(mfxBitstream *bs, mfxAudioFrame *aFra
             return sts;
         }
         if (bs) {
-           // buffer_out->TimeStamp = bs->TimeStamp;
-          //  buffer_out->DecodeTimeStamp = bs->TimeStamp;
+            aFrame->TimeStamp = bs->TimeStamp;
         }
     }
 

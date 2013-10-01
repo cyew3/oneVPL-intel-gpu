@@ -383,6 +383,10 @@ mfxStatus AudioDECODEMP3::DecodeFrameCheck(mfxBitstream *bs, mfxAudioFrame *aFra
         if (aFrame->MaxLength < RawFrameSize) {
             sts = MFX_ERR_NOT_ENOUGH_BUFFER;
         }
+
+        if (bs) {
+            aFrame->TimeStamp = bs->TimeStamp;
+        }
     }
     return sts;
 }

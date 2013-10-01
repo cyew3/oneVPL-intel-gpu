@@ -292,7 +292,11 @@ mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxAudioFrame *aFrame, mfxBitstream *
 
         if (buffer_out->MaxLength < audioAllocRequest.SuggestedOutputSize) {
             sts = MFX_ERR_NOT_ENOUGH_BUFFER;
+        } else {
+            buffer_out->TimeStamp = aFrame->TimeStamp;
+            buffer_out->DecodeTimeStamp = aFrame->TimeStamp;
         }
+
     }
 
     return sts;
@@ -458,7 +462,6 @@ mfxStatus AudioENCODEAAC::ConstructFrame(mfxAudioFrame *in, mfxAudioFrame *out)
             return MFX_ERR_NOT_ENOUGH_BUFFER;
         }
         MoveBitstreamData(*in, (mfxU32)(FrameSize));
-       
     }
 
     return MFX_ERR_NONE;
