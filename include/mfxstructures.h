@@ -719,7 +719,7 @@ typedef enum {
     MFX_HANDLE_D3D9_DEVICE_MANAGER              = MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9,
     MFX_HANDLE_RESERVED1                        = 2,
     MFX_HANDLE_D3D11_DEVICE                     = 3,
-    MFX_HANDLE_RESERVED2                        = 4,  /* MFX_HANDLE_VA_DISPLAY */
+    MFX_HANDLE_VA_DISPLAY                       = 4,
     MFX_HANDLE_RESERVED3                        = 5,
     MFX_HANDLE_ENCODE_CONTEXT                   = 6
 } mfxHandleType;
