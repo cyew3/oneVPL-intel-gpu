@@ -474,7 +474,7 @@ void coupling_gain_calculation(sCoupling_channel_element *pElement,
 
       for (g = 0; g < pElement->stream.num_window_groups; g++) {
         for (sfb = 0; sfb < pElement->stream.max_sfb; sfb++) {
-          if (pElement->stream.sfb_cb[g][sfb] != ZERO_HCB) {
+          if ((pElement->stream.sfb_cb[g][sfb] != ZERO_HCB)||(pData->ind_sw_cce_flag)) {
             cc_gain[ch][g][sfb] = scale;
           } else {
             cc_gain[ch][g][sfb] = 0;
@@ -485,7 +485,7 @@ void coupling_gain_calculation(sCoupling_channel_element *pElement,
       if (pData->gain_element_sign) {
         for (g = 0; g < pElement->stream.num_window_groups; g++) {
           for (sfb = 0; sfb < pElement->stream.max_sfb; sfb++) {
-            if (pElement->stream.sfb_cb[g][sfb] != ZERO_HCB) {
+            if ((pElement->stream.sfb_cb[g][sfb] != ZERO_HCB) || (pData->ind_sw_cce_flag)) {
               Ipp32s   sign = pElement->cc_fact[c][g][sfb] & 1;
               Ipp32s   fac = -(pElement->cc_fact[c][g][sfb] >> 1);
               Ipp32s   ifac = fac >> shift;
@@ -502,7 +502,7 @@ void coupling_gain_calculation(sCoupling_channel_element *pElement,
       } else {
         for (g = 0; g < pElement->stream.num_window_groups; g++) {
           for (sfb = 0; sfb < pElement->stream.max_sfb; sfb++) {
-            if (pElement->stream.sfb_cb[g][sfb] != ZERO_HCB) {
+            if ((pElement->stream.sfb_cb[g][sfb] != ZERO_HCB)|| (pData->ind_sw_cce_flag)) {
               Ipp32s   fac = -(pElement->cc_fact[c][g][sfb]);
               Ipp32s   ifac = fac >> shift;
               Ipp32s   x = ((127 + ifac) << 23);
