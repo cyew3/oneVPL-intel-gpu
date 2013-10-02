@@ -10,7 +10,6 @@
 #include "test_usage_models_utils.h"
 
 #if (defined(LINUX32) || defined(LINUX64))
-#include "mfxlinux.h"
 #if defined(LIBVA_SUPPORT)
 #include <va/va.h>
 

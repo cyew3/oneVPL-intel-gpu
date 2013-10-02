@@ -80,7 +80,6 @@ private:
 };
 
 #if defined(LINUX32) || defined (LINUX64)
-#include "mfxlinux.h"
 #if defined(LIBVA_SUPPORT)
 #include <va/va.h>
 #if defined(LIBVA_X11_SUPPORT)

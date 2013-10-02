@@ -35,7 +35,6 @@
 #ifdef LIBVA_SUPPORT
 #include "vaapi_utils.h"
 #include "vaapi_allocator.h"
-#include "mfxlinux.h"
 #endif
 
 #include <map>

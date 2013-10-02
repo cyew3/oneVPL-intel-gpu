@@ -15,7 +15,6 @@
 
 #include "mfxvideo.h"
 #include "mfxvideo++int.h"
-#include "mfxlinux.h"
 #include "ippdefs.h"
 #include "mfx_utils.h"
 #include <stdio.h>

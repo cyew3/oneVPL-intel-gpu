@@ -13,7 +13,6 @@ File Name: .h
 #include "mfx_pipeline_defs.h"
 #include "mfx_pipeline_utils.h"
 #include "mfx_dispatcher.h"
-#include "mfxlinux.h"
 #include "mfxjpeg.h"
 #include "vm_interlocked.h"
 #include "vm_file.h"

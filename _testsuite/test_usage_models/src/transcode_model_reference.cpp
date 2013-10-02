@@ -8,9 +8,6 @@
 
 #include "transcode_model_reference.h"
 #include "vm/time_defs.h"
-#if (defined(LINUX32) || defined(LINUX64))
-#include "mfxlinux.h"
-#endif
 
 /* ******************************************************************** */
 /*             prototypes of service functions                          */

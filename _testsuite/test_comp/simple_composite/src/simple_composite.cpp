@@ -41,7 +41,6 @@
   #include <va/va.h>
   #include <va/va_drm.h>
   #include <unistd.h>
-  #include "mfxlinux.h"
 #endif
 
 
