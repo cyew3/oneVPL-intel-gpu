@@ -39,7 +39,6 @@ File Name: mfx_library_iterator_linux.cpp
 #include <string.h>
 #include <unistd.h>
 
-#include <mfxlinux.h>
 #include <mfx_library_iterator.h>
 
 #include <mfx_dispatcher.h>
