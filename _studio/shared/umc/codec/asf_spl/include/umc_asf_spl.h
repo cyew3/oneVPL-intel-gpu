@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -94,19 +94,23 @@ protected:
     bool                 m_bFlagStop;
 
     struct asf_LockedFrame {
-        asf_LockedFrame()
-        {
+         asf_LockedFrame()
+         {
             m_pLockedFrame = new MediaData;
             m_IsLockedFlag = false;
-        }
-        ~asf_LockedFrame()
-        {
-            delete m_pLockedFrame;
-        }
+         }
+         ~asf_LockedFrame()
+         {
+             delete m_pLockedFrame;
+         }
 
-        MediaData    *m_pLockedFrame;
-        bool          m_IsLockedFlag;
-    };
+         MediaData    *m_pLockedFrame;
+         bool          m_IsLockedFlag;
+
+       private:
+         asf_LockedFrame(const asf_LockedFrame &);
+         void operator=(asf_LockedFrame &);
+     };
 
     asf_LockedFrame     **m_ppLockedFrame;
     vm_thread           *m_pReadDataPacketThread;

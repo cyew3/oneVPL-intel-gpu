@@ -207,7 +207,7 @@ Ipp32u IndexSplitter::ReadESThreadCallback(void* ptr)
   ReadESThreadParam* m_pParam = (ReadESThreadParam*)ptr;
 
   m_pParam->pThis->ReadES(m_pParam->uiPin);
-  delete ptr;
+  delete m_pParam;
   return 0;
 }
 
@@ -246,7 +246,7 @@ Status IndexSplitter::GetNextData(MediaData* data, Ipp32u nTrack)
 {
     Status umcRes;
 
-    if ((nTrack < 0) || (nTrack > m_pInfo->m_nOfTracks))
+    if (nTrack > m_pInfo->m_nOfTracks)
         return UMC_ERR_FAILED;
 
     if (!m_ppMediaBuffer[nTrack] || !m_pInfo->m_ppTrackInfo[nTrack]->m_isSelected)
@@ -271,7 +271,7 @@ Status IndexSplitter::CheckNextData(MediaData* data, Ipp32u nTrack)
 {
     Status umcRes = UMC_OK;
 
-    if ((nTrack < 0) || (nTrack > m_pInfo->m_nOfTracks))
+    if (nTrack > m_pInfo->m_nOfTracks)
         return UMC_ERR_FAILED;
 
     if (!m_ppMediaBuffer[nTrack] || !m_pInfo->m_ppTrackInfo[nTrack]->m_isSelected)
@@ -373,7 +373,7 @@ Status IndexSplitter::EnableTrack(Ipp32u nTrack, Ipp32s iState)
 {
   Status umcRes;
 
-  if ((nTrack < 0) || (nTrack > m_pInfo->m_nOfTracks))
+  if (nTrack > m_pInfo->m_nOfTracks)
     return UMC_ERR_FAILED;
 
   if (!(m_pInfo->m_ppTrackInfo[nTrack]->m_Type & TRACK_ANY_VIDEO) &&

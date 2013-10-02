@@ -357,7 +357,7 @@ Status ASFSplitter::GetNextData(MediaData* data, Ipp32u nTrack)
 {
     Status umcRes = UMC_OK;
 
-    if ((nTrack < 0) || (nTrack > m_pInfo->m_nOfTracks))
+    if (nTrack > m_pInfo->m_nOfTracks)
         return UMC_ERR_FAILED;
 
     if (!m_ppFBuffer[nTrack] || !m_pInfo->m_ppTrackInfo[nTrack]->m_isSelected)
@@ -384,7 +384,7 @@ Status ASFSplitter::CheckNextData(MediaData* data, Ipp32u nTrack)
 {
     Status umcRes = UMC_OK;
 
-    if ((nTrack < 0) || (nTrack > m_pInfo->m_nOfTracks))
+    if (nTrack > m_pInfo->m_nOfTracks)
         return UMC_ERR_FAILED;
 
     if (!m_ppFBuffer[nTrack] || !m_pInfo->m_ppTrackInfo[nTrack]->m_isSelected)
