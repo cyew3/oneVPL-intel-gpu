@@ -752,14 +752,14 @@ mfxStatus TranscodeModelReference::SetAllocatorMFXSessions( mfxU16 IOPattern )
         MSDK_IGNORE_MFX_STS(sts, MFX_ERR_UNDEFINED_BEHAVIOR); //(workaround if session called twice) 
 #elif defined (LIBVA_SUPPORT)
         // allocator need for Decode
-        sts = m_pSessionDecode->SetHandle(static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), static_cast<mfxHDL>(m_allocator.va_display));
+        sts = m_pSessionDecode->SetHandle(MFX_HANDLE_VA_DISPLAY, static_cast<mfxHDL>(m_allocator.va_display));
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         sts = m_pSessionDecode->SetFrameAllocator( m_allocator.pMfxAllocator ); 
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         // as well as for VPP        
-        sts = m_pSessionVPP->SetHandle(static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), static_cast<mfxHDL>(m_allocator.va_display));
+        sts = m_pSessionVPP->SetHandle(MFX_HANDLE_VA_DISPLAY, static_cast<mfxHDL>(m_allocator.va_display));
         MSDK_IGNORE_MFX_STS(sts, MFX_ERR_UNDEFINED_BEHAVIOR); //(workaround if session called twice) 
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -792,7 +792,7 @@ mfxStatus TranscodeModelReference::SetAllocatorMFXSessions( mfxU16 IOPattern )
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 #elif defined (LIBVA_SUPPORT)
         // allocator need for VPP
-        sts = m_pSessionVPP->SetHandle(static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), static_cast<mfxHDL>(m_allocator.va_display));
+        sts = m_pSessionVPP->SetHandle(MFX_HANDLE_VA_DISPLAY, static_cast<mfxHDL>(m_allocator.va_display));
         MSDK_IGNORE_MFX_STS(sts, MFX_ERR_UNDEFINED_BEHAVIOR); //(workaround if session called twice) 
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -801,7 +801,7 @@ mfxStatus TranscodeModelReference::SetAllocatorMFXSessions( mfxU16 IOPattern )
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         // as well as for Encode
-        sts = m_pSessionEncode->SetHandle(static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), static_cast<mfxHDL>(m_allocator.va_display));
+        sts = m_pSessionEncode->SetHandle(MFX_HANDLE_VA_DISPLAY, static_cast<mfxHDL>(m_allocator.va_display));
         MSDK_IGNORE_MFX_STS(sts, MFX_ERR_UNDEFINED_BEHAVIOR); //(workaround if session called twice) 
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 

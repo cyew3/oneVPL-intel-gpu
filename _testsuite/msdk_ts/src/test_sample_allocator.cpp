@@ -48,7 +48,7 @@ frame_allocator::frame_allocator(AllocatorType _allocator_type, AllocMode _alloc
             vaapiFrameAllocator, 
             CVAAPIDevice, 
             vaapiAllocatorParams,
-            (mfxHandleType)MFX_HANDLE_VA_DISPLAY,
+            MFX_HANDLE_VA_DISPLAY,
             m_dpy = (reinterpret_cast<VADisplay>(hdl))
         );
 

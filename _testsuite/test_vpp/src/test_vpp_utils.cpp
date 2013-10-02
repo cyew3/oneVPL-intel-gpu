@@ -724,7 +724,7 @@ mfxStatus InitMemoryAllocator(
         p_vaapiAllocParams->m_dpy = pAllocator->libvaKeeper->GetVADisplay();
         pAllocator->pAllocatorParams = p_vaapiAllocParams;
 
-        sts = pProcessor->mfxSession.SetHandle(static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), (mfxHDL)pAllocator->libvaKeeper->GetVADisplay());
+        sts = pProcessor->mfxSession.SetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL)pAllocator->libvaKeeper->GetVADisplay());
         CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         /* In case of video memory we must provide mediasdk with external allocator 

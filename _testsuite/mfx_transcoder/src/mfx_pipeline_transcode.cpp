@@ -1499,8 +1499,8 @@ mfxStatus  MFXTranscodingPipeline::CreateFileSink(std::auto_ptr<IFile> &pSink)
 #ifdef LIBVA_SUPPORT
             MFX_CHECK_STS(CreateDeviceManager());
             VADisplay va_dpy = NULL;
-            MFX_CHECK_STS(m_pHWDevice->GetHandle(static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), (mfxHDL*) &va_dpy));
-            MFX_CHECK_STS(MFXVideoCORE_SetHandle(decCtx.session, static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), (mfxHDL)va_dpy));
+            MFX_CHECK_STS(m_pHWDevice->GetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL*) &va_dpy));
+            MFX_CHECK_STS(MFXVideoCORE_SetHandle(decCtx.session, MFX_HANDLE_VA_DISPLAY, (mfxHDL)va_dpy));
 
             if (decCtx.request.Info.FourCC == MFX_FOURCC_RGB4)
                 decCtx.request.Type = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET;

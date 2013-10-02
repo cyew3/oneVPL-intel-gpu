@@ -253,7 +253,7 @@ mfxStatus ComponentParams::AllocFrames( RWAllocatorFactory::root* pFactory
             MFX_CHECK_WITH_ERR(p_vaapiAllocParams = new vaapiAllocatorParams, MFX_ERR_MEMORY_ALLOC);
             VADisplay va_dpy;
 
-            MFX_CHECK_STS(hwDevice->GetHandle(static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY), (mfxHDL*) &va_dpy));
+            MFX_CHECK_STS(hwDevice->GetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL*) &va_dpy));
             p_vaapiAllocParams->m_dpy = va_dpy;
             pAllocatorParams.reset(p_vaapiAllocParams);
 #endif
