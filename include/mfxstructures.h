@@ -421,7 +421,8 @@ enum {
     MFX_RATECONTROL_RESERVED4 =7,
     MFX_RATECONTROL_LA        =8,
     MFX_RATECONTROL_CRF       =9,
-    MFX_RATECONTROL_VCM       =10
+    MFX_RATECONTROL_VCM       =10,
+    MFX_RATECONTROL_LA_CRF    =11
 };
 
 /* Trellis control*/
