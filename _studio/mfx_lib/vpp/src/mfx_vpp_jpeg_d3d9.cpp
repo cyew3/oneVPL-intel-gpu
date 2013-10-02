@@ -173,7 +173,7 @@ mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfac
         {
             return MFX_ERR_MEMORY_ALLOC;
         }
-        m_pCore->IncreasePureReference(&m_surfaces[index].Data);
+        m_pCore->IncreasePureReference(m_surfaces[index].Data.Locked);
         MFX_SAFE_CALL(m_pCore->GetFrameHDL(m_surfaces[index].Data.MemId, (mfxHDL *)&hdl));
 
         {
@@ -258,7 +258,7 @@ mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfac
         {
             return MFX_ERR_MEMORY_ALLOC;
         }
-        m_pCore->IncreasePureReference(&m_surfaces[index].Data);
+        m_pCore->IncreasePureReference(m_surfaces[index].Data.Locked);
         MFX_SAFE_CALL(m_pCore->GetFrameHDL(m_surfaces[index].Data.MemId, (mfxHDL *)&hdl));
 
         {
@@ -375,7 +375,7 @@ mfxStatus VideoVppJpegD3D9::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurface,
 
     if(m_isD3DToSys)
     {
-        m_pCore->DecreasePureReference(&m_surfaces[index].Data);
+        m_pCore->DecreasePureReference(m_surfaces[index].Data.Locked);
     }
 
     return MFX_ERR_NONE;
@@ -439,7 +439,7 @@ mfxStatus VideoVppJpegD3D9::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurfaceT
 
     if(m_isD3DToSys)
     {
-        m_pCore->DecreasePureReference(&m_surfaces[index].Data);
+        m_pCore->DecreasePureReference(m_surfaces[index].Data.Locked);
     }
 
     return MFX_ERR_NONE;
