@@ -319,8 +319,6 @@ mfxStatus AudioDECODEMP3::MP3ECODERoutine(void *pState, void *pParam,
         obj.mInData.SetDataSize(obj.m_frame.DataLength);
 
         obj.mOutData.SetBufferPointer( static_cast<Ipp8u *>(pTask->out->Data), pTask->out->MaxLength - pTask->out->DataLength);
-        obj.mOutData.MoveDataPointer(0);
-        obj.mOutData.SetDataSize(0);
 
         UMC::Status sts = obj.m_pMP3AudioDecoder.get()->GetFrame(&obj.mInData, &obj.mOutData);
         MFX_CHECK_UMC_STS(sts);
@@ -329,7 +327,7 @@ mfxStatus AudioDECODEMP3::MP3ECODERoutine(void *pState, void *pParam,
         // set out buffer size;
         memmove(obj.m_frame.Data + obj.m_frame.DataOffset, obj.mInData.GetDataPointer(), obj.mInData.GetDataSize());
         obj.m_frame.DataLength = (mfxU32) obj.mInData.GetDataSize();
-        pTask->out->DataLength += (mfxU32) obj.mOutData.GetDataSize();
+        //pTask->out->DataLength += (mfxU32) obj.mOutData.GetDataSize();
     }
     else
     {
@@ -382,10 +380,12 @@ mfxStatus AudioDECODEMP3::DecodeFrameCheck(mfxBitstream *bs, mfxAudioFrame *aFra
         //check that buffer_out.MaxLength < RawFrameSize
         if (aFrame->MaxLength < RawFrameSize) {
             sts = MFX_ERR_NOT_ENOUGH_BUFFER;
-        }
+        } else {
 
-        if (bs) {
-            aFrame->TimeStamp = bs->TimeStamp;
+            if (bs) {
+                aFrame->TimeStamp = bs->TimeStamp;
+            }
+            aFrame->DataLength = RawFrameSize;;
         }
     }
     return sts;

@@ -37,6 +37,7 @@ namespace UMC
     class AACEncoderParams; 
 } // namespace UMC
 
+class CommonCORE;
 
 class AudioENCODEAAC : public AudioENCODE {
 public:
@@ -44,7 +45,7 @@ public:
     static mfxStatus Query(AudioCORE *core, mfxAudioParam *in, mfxAudioParam *out);
     static mfxStatus QueryIOSize(AudioCORE *core, mfxAudioParam *par, mfxAudioAllocRequest *request);
 
-    AudioENCODEAAC(AudioCORE *core, mfxStatus *status);
+    AudioENCODEAAC(CommonCORE *core, mfxStatus *status);
     virtual ~AudioENCODEAAC();
     virtual mfxStatus Init(mfxAudioParam *par);
 
@@ -66,7 +67,7 @@ protected:
     mfxStatus CopyBitstream(mfxAudioFrame& bs, const mfxU8* ptr, mfxU32 bytes);
     void MoveBitstreamData(mfxAudioFrame& bs, mfxU32 offset);
 
-    mfxStatus ConstructFrame(mfxAudioFrame *in, mfxAudioFrame *out);
+    mfxStatus CheckUncompressedFrameSize(mfxAudioFrame *in);
 
    // UMC encoder 
     std::auto_ptr<UMC::AACEncoder>  m_pAACAudioEncoder;
@@ -74,12 +75,13 @@ protected:
     UMC::MediaData        mOutData;
     // end UMC encoder
 
-    mfxAudioFrame m_frame;
+    //mfxAudioFrame m_frame;
     mfxU16 m_inputFormat;
 
     mfxAudioParam m_vPar; // internal params storage
 
     AudioCORE * m_core;
+    CommonCORE * m_CommonCore;
 
     eMFXPlatform m_platform;
     bool    m_isInit;

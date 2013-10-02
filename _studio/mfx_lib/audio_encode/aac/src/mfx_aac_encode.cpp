@@ -13,6 +13,7 @@
 #include <math.h>
 #include "mfx_common_int.h"
 #include "mfx_thread_task.h"
+#include "libmfx_core.h"
 
 class MFX_AAC_Encoder_Utility
 {
@@ -23,17 +24,18 @@ public:
 };
 struct ThreadAudioTaskInfo
 {
+    mfxAudioFrame          *in;
     mfxBitstream           *out;
     mfxU32                 taskID; // for task ordering
 };
 
-AudioENCODEAAC::AudioENCODEAAC(AudioCORE *core, mfxStatus * sts)
+AudioENCODEAAC::AudioENCODEAAC(CommonCORE *core, mfxStatus * sts)
 : AudioENCODE()
-, m_core(core)
+, m_core()
+, m_CommonCore(core)
 , m_platform(MFX_PLATFORM_SOFTWARE)
 , m_isInit(false)
 {
-    m_frame.Data = NULL;
     if (sts)
     {
         *sts = MFX_ERR_NONE;
@@ -68,13 +70,6 @@ mfxStatus AudioENCODEAAC::Init(mfxAudioParam *par)
     {
         return MFX_ERR_UNSUPPORTED;
     }
-    // allocate memory
-    //
-    Ipp32u MaxLength = par->mfx.StreamInfo.NumChannel*sizeof(Ipp16s)*1024* 2; // 
-
-    MFX_ZERO_MEM(m_frame);
-    m_frame.MaxLength = MaxLength;
-    m_frame.Data = new mfxU8[MaxLength];
 
     UMC::AACEncoderParams params;
 
@@ -275,7 +270,7 @@ mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxAudioFrame *aFrame, mfxBitstream *
         //sts = CheckAudioFrame(bs);
         //MFX_CHECK_STS(sts);
 
-        sts = ConstructFrame(aFrame, &m_frame);
+        sts = CheckUncompressedFrameSize(aFrame);
 
         if (MFX_ERR_NONE != sts)
         {
@@ -295,6 +290,8 @@ mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxAudioFrame *aFrame, mfxBitstream *
         } else {
             buffer_out->TimeStamp = aFrame->TimeStamp;
             buffer_out->DecodeTimeStamp = aFrame->TimeStamp;
+            //finally queue task
+            m_CommonCore->IncreasePureReference(aFrame->Locked);
         }
 
     }
@@ -313,6 +310,7 @@ mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxAudioFrame *aFrame,
     {
         ThreadAudioTaskInfo * info = new ThreadAudioTaskInfo();
         info->out = buffer_out;
+        info->in = aFrame;
 
         pEntryPoint->pRoutine = &AACENCODERoutine;
         pEntryPoint->pCompleteProc = &AACCompleteProc;
@@ -338,22 +336,23 @@ mfxStatus AudioENCODEAAC::AACENCODERoutine(void *pState, void *pParam,
     {
         ThreadAudioTaskInfo *pTask = (ThreadAudioTaskInfo *) pParam;
 
-        obj.mInData.SetBufferPointer((Ipp8u *)obj.m_frame.Data, obj.m_frame.DataLength);
-        obj.mInData.SetDataSize(obj.m_frame.DataLength);
+        obj.mInData.SetBufferPointer((Ipp8u *)pTask->in->Data, pTask->in->DataLength);
+        obj.mInData.SetDataSize(obj.mInData.GetBufferSize());
+        
         obj.mOutData.SetBufferPointer( static_cast<Ipp8u *>(pTask->out->Data +pTask->out->DataOffset + pTask->out->DataLength), pTask->out->MaxLength - (pTask->out->DataOffset + pTask->out->DataLength));
-        obj.mOutData.MoveDataPointer(0);
-        obj.mOutData.SetDataSize(0);
 
         UMC::Status sts = obj.m_pAACAudioEncoder.get()->GetFrame(&obj.mInData, &obj.mOutData);
         if(sts == UMC::UMC_OK)
         {
             // set data size 0 to the input buffer 
-            obj.m_frame.DataLength = 0;
+            pTask->in->DataLength  = 0;
 
             // set out buffer size;
             //if(pTask->out->MaxLength)  AR need to implement a check of output buffer size
             //pTask->out->DataOffset = 0;
             pTask->out->DataLength += (mfxU32)obj.mOutData.GetDataSize();
+            
+            obj.m_CommonCore->DecreasePureReference(pTask->in->Locked);
         }
         else
         {
@@ -408,10 +407,8 @@ mfxStatus AudioENCODEAAC::EncodeFrame(mfxAudioFrame *aFrame, mfxBitstream *buffe
     {
         return MFX_ERR_MORE_DATA;
     }
-//    UMC::Status umcRes = UMC::UMC_OK;
 
-
-    sts = ConstructFrame(aFrame, &m_frame);
+    sts = CheckUncompressedFrameSize(aFrame);
 
     if (MFX_ERR_NONE != sts)
     {
@@ -437,13 +434,12 @@ void AudioENCODEAAC::MoveBitstreamData(mfxAudioFrame& bs, mfxU32 offset)
     bs.DataLength -= offset;
 } 
 
-mfxStatus AudioENCODEAAC::ConstructFrame(mfxAudioFrame *in, mfxAudioFrame *out)
+mfxStatus AudioENCODEAAC::CheckUncompressedFrameSize(mfxAudioFrame *in)
 {
-    mfxStatus sts = MFX_ERR_NONE;
+//    mfxStatus sts = MFX_ERR_NONE;
    
-    MFX_CHECK_NULL_PTR2(in, out);
-
-    MFX_CHECK_NULL_PTR2(in->Data, out->Data);
+    MFX_CHECK_NULL_PTR1(in);
+    MFX_CHECK_NULL_PTR1(in->Data);
 
 
     int upSample = 1;
@@ -454,15 +450,15 @@ mfxStatus AudioENCODEAAC::ConstructFrame(mfxAudioFrame *in, mfxAudioFrame *out)
     {
         return MFX_ERR_MORE_DATA;
     }
-    else
+    /*else
     {
-        sts = CopyBitstream(*out, in->Data, FrameSize);
-        if(sts != MFX_ERR_NONE) 
-        {
-            return MFX_ERR_NOT_ENOUGH_BUFFER;
-        }
-        MoveBitstreamData(*in, (mfxU32)(FrameSize));
+    sts = CopyBitstream(*out, in->Data, FrameSize);
+    if(sts != MFX_ERR_NONE) 
+    {
+    return MFX_ERR_NOT_ENOUGH_BUFFER;
     }
+    MoveBitstreamData(*in, (mfxU32)(FrameSize));
+    }*/
 
     return MFX_ERR_NONE;
 }

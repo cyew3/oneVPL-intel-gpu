@@ -26,7 +26,7 @@ File Name: libmfxsw_audio_encode.cpp
 #endif
 
 
-AudioENCODE *CreateAudioENCODESpecificClass(mfxU32 CodecId, AudioCORE *core, mfxSession session)
+AudioENCODE *CreateAudioENCODESpecificClass(mfxU32 CodecId, CommonCORE *core, mfxSession session)
 {
     AudioENCODE *pENCODE = (AudioENCODE *) 0;
     mfxStatus mfxRes = MFX_ERR_MEMORY_ALLOC;
@@ -147,7 +147,7 @@ mfxStatus MFXAudioENCODE_Init(mfxSession session, mfxAudioParam *par)
         {
             // create a new instance
             session->m_bIsHWENCSupport = true;
-            tmp = CreateAudioENCODESpecificClass(par->mfx.CodecId, session->m_pAudioCORE.get(), session);
+            tmp = CreateAudioENCODESpecificClass(par->mfx.CodecId, dynamic_cast<CommonCORE*>(session->m_pCORE.get()), session);
             session->m_pAudioENCODE.reset(tmp);
         }
 

@@ -386,9 +386,26 @@ Status MP3Decoder::FrameConstruct(MediaData *in, Ipp32s *outFrameSize, Ipp32s *o
     mp3dec_ReceiveBuffer(&(state.m_StreamData), inPointer, inDataSize);
 
     MP3Status stsMP3 = mp3dec_GetSynch(&state);
+    //TODO: prevent code copy
+    {
+        IppMP3FrameHeader *header;
+        Ipp32s fs[2][4] = {
+            { 0, 384, 1152,  576 },
+            { 0, 384, 1152, 1152 }
+        };
 
-    Ipp32s channels = state.stereo + state.mc_channel + state.mc_header.lfe;
-    *p_RawFrameSize = 1152 * (channels + 1) * sizeof(Ipp16s);
+        //if (state.m_bInit)
+        //    header = &(state.header_good);
+        //else
+        
+        Ipp32s channels = state.stereo + state.mc_channel + state.mc_header.lfe;
+
+        header = &(state.header);
+        //*p_RawFrameSize = 1152 * (channels + 1) * sizeof(Ipp16s);
+
+        *p_RawFrameSize = fs[header->id][header->layer] * channels * sizeof(Ipp16s);
+    }    
+
     *outFrameSize += state.decodedBytes;
 
     return StatusMP3_2_UMC(stsMP3);

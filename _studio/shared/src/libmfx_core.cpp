@@ -881,33 +881,33 @@ mfxStatus CommonCORE::SetFrameAllocator(mfxFrameAllocator *allocator)
 }
 
 // no care about surface, opaq and all round. Just increasing reference
-mfxStatus CommonCORE::IncreasePureReference(mfxFrameData *ptr)
+mfxStatus CommonCORE::IncreasePureReference(mfxU16& Locked)
 {
-    MFX_CHECK_NULL_PTR1(ptr);
+    //MFX_CHECK_NULL_PTR1(ptr);
     UMC::AutomaticUMCMutex guard(m_guard);
-    if (ptr->Locked > 65534)
+    if (Locked > 65534)
     {
         return MFX_ERR_LOCK_MEMORY;
     }
     else
     {
-        vm_interlocked_inc16((volatile Ipp16u*)&ptr->Locked);
+        vm_interlocked_inc16((volatile Ipp16u*)&Locked);
         return MFX_ERR_NONE;
     }
 }// CommonCORE::IncreasePureReference(mfxFrameData *ptr)
 
 // no care about surface, opaq and all round. Just increasing reference
-mfxStatus CommonCORE::DecreasePureReference(mfxFrameData *ptr)
+mfxStatus CommonCORE::DecreasePureReference(mfxU16& Locked)
 {
-    MFX_CHECK_NULL_PTR1(ptr);
+    //MFX_CHECK_NULL_PTR1(ptr);
     UMC::AutomaticUMCMutex guard(m_guard);
-    if (ptr->Locked < 1)
+    if (Locked < 1)
     {
         return MFX_ERR_LOCK_MEMORY;
     }
     else
     {
-        vm_interlocked_dec16((volatile Ipp16u*)&ptr->Locked);
+        vm_interlocked_dec16((volatile Ipp16u*)&Locked);
         return MFX_ERR_NONE;
     }
 }// CommonCORE::IncreasePureReference(mfxFrameData *ptr)
@@ -944,7 +944,7 @@ mfxStatus CommonCORE::IncreaseReference(mfxFrameData *ptr, bool ExtendedSearch)
         {
             // makes sence to remove ans tay only error return
            if (MFX_ERR_NONE != m_session->m_pOperatorCore->DoCoreOperation(&VideoCORE::IncreaseReference, ptr))
-               return IncreasePureReference(ptr);
+               return IncreasePureReference(ptr->Locked);
            else
                return MFX_ERR_NONE;
 
@@ -987,7 +987,7 @@ mfxStatus CommonCORE::DecreaseReference(mfxFrameData *ptr, bool ExtendedSearch)
         {
             // makes sence to remove ans tay only error return
             if (MFX_ERR_NONE != m_session->m_pOperatorCore->DoCoreOperation(&VideoCORE::DecreaseReference, ptr))
-                return DecreasePureReference(ptr);
+                return DecreasePureReference(ptr->Locked);
             else
                 return MFX_ERR_NONE;
         }

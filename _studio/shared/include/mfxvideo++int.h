@@ -224,9 +224,9 @@ public:
     virtual mfxStatus  DecreaseReference(mfxFrameData *ptr, bool ExtendedSearch = true) = 0;
 
         // no care about surface, opaq and all round. Just increasing reference
-    virtual mfxStatus IncreasePureReference(mfxFrameData *ptr) = 0;
+    virtual mfxStatus IncreasePureReference(mfxU16 &) = 0;
     // no care about surface, opaq and all round. Just decreasing reference
-    virtual mfxStatus DecreasePureReference(mfxFrameData *ptr) = 0;
+    virtual mfxStatus DecreasePureReference(mfxU16 &) = 0;
 
     // Check HW property
     virtual void  GetVA(mfxHDL* phdl, mfxU16 type) = 0;

@@ -384,7 +384,7 @@ UMC::Status mfx_UMC_FrameAllocator::Alloc(UMC::FrameMemID *pNewMemID, const UMC:
             return UMC::UMC_ERR_UNSUPPORTED;
     }
 
-    sts = m_pCore->IncreasePureReference(&m_frameData[index].first.Data);
+    sts = m_pCore->IncreasePureReference(m_frameData[index].first.Data.Locked);
     if (sts < MFX_ERR_NONE)
         return UMC::UMC_ERR_FAILED;
 
@@ -580,7 +580,7 @@ UMC::Status mfx_UMC_FrameAllocator::Free(UMC::FrameMemID mid)
     if (index >= m_frameData.size())
         return UMC::UMC_ERR_FAILED;
 
-    sts = m_pCore->DecreasePureReference(&m_frameData[index].first.Data);
+    sts = m_pCore->DecreasePureReference(m_frameData[index].first.Data.Locked);
     if (sts < MFX_ERR_NONE)
         return UMC::UMC_ERR_FAILED;
 

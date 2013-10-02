@@ -44,6 +44,7 @@ namespace UMC
 
 
 class AudioDECODE;
+class CommonCORE;
 class AudioDECODEMP3 : public AudioDECODE
 {
 public:
@@ -85,6 +86,7 @@ protected:
     mfxAudioParam m_vPar;
 
     AudioCORE * m_core;
+    CommonCORE *m_CommonCore;
     eMFXPlatform m_platform;
     bool    m_isInit;
 

@@ -92,9 +92,9 @@ public:
     virtual mfxStatus  DecreaseReference(mfxFrameData *ptr, bool ExtendedSearch = true);
 
     // no care about surface, opaq and all round. Just increasing reference
-    virtual mfxStatus IncreasePureReference(mfxFrameData *ptr);
+    virtual mfxStatus IncreasePureReference(mfxU16 &Locked);
     // no care about surface, opaq and all round. Just decreasing reference
-    virtual mfxStatus DecreasePureReference(mfxFrameData *ptr);
+    virtual mfxStatus DecreasePureReference(mfxU16 &Locked);
 
     // Get Video Accelerator.
     virtual void  GetVA(mfxHDL* phdl, mfxU16 type) {type=type;*phdl = 0;}
