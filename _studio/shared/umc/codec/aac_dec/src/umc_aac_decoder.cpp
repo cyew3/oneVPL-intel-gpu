@@ -181,12 +181,16 @@ Status AACDecoder::Init(BaseCodecParams * init)
             }
 
             /* WE SUPPORT "PS-TOOL" only for (MPEG4 + MONO + SBR/PS) */
-#if !defined(ANDROID)
-            if( !audio_config_data.sbrPresentFlag ){
-#else
+//#if !defined(ANDROID)
+//            if( !audio_config_data.sbrPresentFlag ){
+//#else
             if( audio_config_data.sbrPresentFlag == -1 ){
-#endif
+//#endif
                 state->com.m_flag_PS_support_lev = PS_DISABLE;
+            }
+            else if ( audio_config_data.sbrPresentFlag == 0)
+            {
+             state->com.m_flag_SBR_support_lev = SBR_UNDEF;
             }
             /* END SET_PARAM OF HEAAC FROM MP4 HEADER */
 
