@@ -514,7 +514,15 @@ void H265CU::InitCU(H265VideoParam *_par, H265CUData *_data, H265CUData *_data_t
   y_rec = _y + ctb_pelx + ctb_pely * pitch_rec_luma;
   u_rec = _u + ((ctb_pelx + ctb_pely * pitch_rec_chroma) >> 1);
   v_rec = _v + ((ctb_pelx + ctb_pely * pitch_rec_chroma) >> 1);
+
   y_src = _y_src + ctb_pelx + ctb_pely * pitch_src;
+
+  // to provide performance gain for SAD calculation
+  {      
+      IppiSize blkSize = {par->MaxCUSize, par->MaxCUSize};
+      ippiCopy_8u_C1R(_y_src + ctb_pelx + ctb_pely * pitch_src, pitch_src, m_src_aligned_block, MAX_CU_SIZE, blkSize);
+  }
+
   uv_src = _uv_src + ctb_pelx + (ctb_pely * pitch_src >> 1);
   depth_min = MAX_TOTAL_DEPTH;
 
@@ -1387,9 +1395,7 @@ Ipp32s H265CU::MVCost( H265MV MV[2], T_RefIdx curRefIdx[2], MVPInfo pInfo[2], MV
 // abs_part_idx - for minimal TU
 Ipp32s H265CU::MatchingMetric_PU(PixType *pSrc, H265MEInfo* me_info, H265MV* MV, H265Frame *PicYUVRef) const
 {
-    Ipp32s cost = 0;
-    //Ipp32s ctbOffset = me_info->posx + me_info->posy * pitch_src;
-    //PixType *pSrc = y_src + ctbOffset;
+    Ipp32s cost = 0;    
     Ipp32s refOffset = ctb_pelx + me_info->posx + (MV->mvx >> 2) + (ctb_pely + me_info->posy + (MV->mvy >> 2)) * PicYUVRef->pitch_luma;
     PixType *pRec = PicYUVRef->y + refOffset;
     Ipp32s recPitch = PicYUVRef->pitch_luma;
@@ -1405,7 +1411,9 @@ Ipp32s H265CU::MatchingMetric_PU(PixType *pSrc, H265MEInfo* me_info, H265MV* MV,
     }
     else
     {
-        cost = MFX_HEVC_PP::h265_SAD_MxN_general_8u(pRec, recPitch, pSrc, pitch_src, me_info->width, me_info->height);        
+        //cost = MFX_HEVC_PP::h265_SAD_MxN_general_8u(pRec, recPitch, pSrc, pitch_src, me_info->width, me_info->height);        
+        Ipp8u* pSrcAligned = (Ipp8u*)m_src_aligned_block + me_info->posx + me_info->posy * MAX_CU_SIZE;        
+        cost = MFX_HEVC_PP::h265_SAD_MxN_special_8u(pRec, pSrcAligned, recPitch, me_info->width, me_info->height);      
     }
 
     return cost;

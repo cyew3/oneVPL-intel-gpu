@@ -16,12 +16,15 @@
 #pragma warning(disable: 4100; disable: 4505; disable: 4127; disable: 4324)
 
 #if (defined(__INTEL_COMPILER) || defined(_MSC_VER)) && !defined(_WIN32_WCE)
+#define __ALIGN32 __declspec (align(32))
 #define __ALIGN16 __declspec (align(16))
 #define __ALIGN8 __declspec (align(8))
 #elif defined(__GNUC__)
+#define __ALIGN32 __attribute__ ((aligned (32)))
 #define __ALIGN16 __attribute__ ((aligned (16)))
 #define __ALIGN8 __attribute__ ((aligned (8)))
 #else
+#define __ALIGN32
 #define __ALIGN16
 #define __ALIGN8
 #endif

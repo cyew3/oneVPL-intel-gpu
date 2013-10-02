@@ -15,44 +15,6 @@
 
 using namespace MFX_HEVC_PP;
 
-//========================================================
-void InterpolateHor(
-    EnumTextType plane_type,
-    const PixType *in_pSrc,
-    Ipp32u in_SrcPitch, // in samples
-    Ipp16s* in_pDst,
-    Ipp32u in_DstPitch, // in samples
-    Ipp32s tab_index,
-    Ipp32s width,
-    Ipp32s height,
-    Ipp32s shift,
-    Ipp32s offset);
-
-void InterpolateVert(
-    EnumTextType plane_type,
-    const Ipp16s *in_pSrc,
-    Ipp32u in_SrcPitch, // in samples
-    Ipp16s* in_pDst,
-    Ipp32u in_DstPitch, // in samples
-    Ipp32s tab_index,
-    Ipp32s width,
-    Ipp32s height,
-    Ipp32s shift,
-    Ipp32s offset);
-
-void InterpolateVert0(
-    EnumTextType plane_type,
-    const PixType *in_pSrc,
-    Ipp32u in_SrcPitch, // in samples
-    Ipp16s* in_pDst,
-    Ipp32u in_DstPitch, // in samples
-    Ipp32s tab_index,
-    Ipp32s width,
-    Ipp32s height,
-    Ipp32s shift,
-    Ipp32s offset);
-
-//=========================================================
 
 bool H265CU::CheckIdenticalMotion(Ipp32u abs_part_idx)
 {
@@ -112,153 +74,6 @@ const Ipp16s g_chromaInterpolateFilter[8][4] =
     { -2, 16, 54, -4 },
     { -2, 10, 58, -2 }
 };
-
-void InterpolateHor(
-    EnumTextType plane_type,
-    const PixType *in_pSrc,
-    Ipp32u in_SrcPitch, // in samples
-    Ipp16s* in_pDst,
-    Ipp32u in_DstPitch, // in samples
-    Ipp32s tab_index,
-    Ipp32s width,
-    Ipp32s height,
-    Ipp32s shift,
-    Ipp32s offset)
-{
-    const PixType *pSrc = in_pSrc;
-    Ipp16s *pDst = in_pDst;
-    const Ipp16s *coeffs;
-    Ipp32s i, j, k, tap;
-
-    if (plane_type == TEXT_LUMA)
-    {
-        tap = 8;
-        coeffs = &g_lumaInterpolateFilter[tab_index][0];
-    }
-    else
-    {
-        tap = 4;
-        coeffs = &g_chromaInterpolateFilter[tab_index][0];
-    }
-
-    pSrc -= ((tap >> 1) - 1);
-
-    for (j = 0; j < height; j++)
-    {
-        for (i = 0; i < width; i++)
-        {
-            Ipp32s tmp = 0;
-
-            for (k = 0; k < tap; k++)
-            {
-                tmp += ((Ipp32s)pSrc[i+k]) * coeffs[k];
-
-            }
-            pDst[i] = (Ipp16s)((tmp + offset) >> shift);
-        }
-
-        pSrc += in_SrcPitch;
-        pDst += in_DstPitch;
-    }
-}
-
-void InterpolateVert(
-    EnumTextType plane_type,
-    const Ipp16s *in_pSrc,
-    Ipp32u in_SrcPitch, // in samples
-    Ipp16s* in_pDst,
-    Ipp32u in_DstPitch, // in samples
-    Ipp32s tab_index,
-    Ipp32s width,
-    Ipp32s height,
-    Ipp32s shift,
-    Ipp32s offset)
-{
-    const Ipp16s *pSrc = in_pSrc;
-    Ipp16s *pDst = in_pDst;
-    const Ipp16s *coeffs;
-    Ipp32s i, j, k, tap;
-
-    if (plane_type == TEXT_LUMA)
-    {
-        tap = 8;
-        coeffs = &g_lumaInterpolateFilter[tab_index][0];
-    }
-    else
-    {
-        tap = 4;
-        coeffs = &g_chromaInterpolateFilter[tab_index][0];
-    }
-
-    pSrc -= ((tap >> 1) - 1) * in_SrcPitch;
-
-    for (j = 0; j < height; j++)
-    {
-        for (i = 0; i < width; i++)
-        {
-            Ipp32s tmp = 0;
-
-            for (k = 0; k < tap; k++)
-            {
-                tmp += ((Ipp32s)pSrc[i+k*in_SrcPitch]) * coeffs[k];
-
-            }
-            pDst[i] = (Ipp16s)((tmp + offset) >> shift);
-        }
-
-        pSrc += in_SrcPitch;
-        pDst += in_DstPitch;
-    }
-}
-
-void InterpolateVert0(
-    EnumTextType plane_type,
-    const PixType *in_pSrc,
-    Ipp32u in_SrcPitch, // in samples
-    Ipp16s* in_pDst,
-    Ipp32u in_DstPitch, // in samples
-    Ipp32s tab_index,
-    Ipp32s width,
-    Ipp32s height,
-    Ipp32s shift,
-    Ipp32s offset)
-{
-    const PixType *pSrc = (Ipp8u*)in_pSrc;
-    Ipp16s *pDst = in_pDst;
-    const Ipp16s *coeffs;
-    Ipp32s i, j, k, tap;
-
-    if (plane_type == TEXT_LUMA)
-    {
-        tap = 8;
-        coeffs = &g_lumaInterpolateFilter[tab_index][0];
-    }
-    else
-    {
-        tap = 4;
-        coeffs = &g_chromaInterpolateFilter[tab_index][0];
-    }
-
-    pSrc -= ((tap >> 1) - 1) * in_SrcPitch;
-
-    for (j = 0; j < height; j++)
-    {
-        for (i = 0; i < width; i++)
-        {
-            Ipp32s tmp = 0;
-
-            for (k = 0; k < tap; k++)
-            {
-                tmp += ((Ipp32s)pSrc[i+k*in_SrcPitch]) * coeffs[k];
-
-            }
-            pDst[i] = (Ipp16s)((tmp + offset) >> shift);
-        }
-
-        pSrc += in_SrcPitch;
-        pDst += in_DstPitch;
-    }
-}
 
 static void CopyPU(const PixType *in_pSrc,
                           Ipp32u in_SrcPitch, // in samples
@@ -347,34 +162,10 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height,
         }
         else if (in_dy == 0)
         {
-            /*InterpolateHor_opt(
-                TEXT_LUMA,
-                in_pSrc,
-                in_SrcPitch,
-                in_pDst,
-                in_DstPitch,
-                in_dx,
-                Width,
-                Height,
-                shift,
-                offset);*/
-
             Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dx, Width, Height, shift, (Ipp16s)offset);
         }
         else if (in_dx == 0)
         {
-            /*InterpolateVert0_opt(
-                TEXT_LUMA,
-                in_pSrc,
-                in_SrcPitch,
-                in_pDst,
-                in_DstPitch,
-                in_dy,
-                Width,
-                Height,
-                shift,
-                offset);*/
-
             Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dy, Width, Height, shift, (Ipp16s)offset);
         }
         else
@@ -389,33 +180,9 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height,
             {
                 shift = 6;
                 offset = 0;
-            }
+            }            
 
-            /*InterpolateHor_opt(
-                TEXT_LUMA,
-                in_pSrc - ((tap >> 1) - 1) * in_SrcPitch,
-                in_SrcPitch,
-                tmpBuf,
-                80,
-                in_dx,
-                Width,
-                Height + tap,
-                bitDepth - 8,
-                0);*/
-
-            Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, 80, in_dx, Width, Height + tap, bitDepth - 8, (Ipp16s)0);
-
-            /*InterpolateVert_opt(
-                TEXT_LUMA,
-                tmpBuf + ((tap >> 1) - 1) * 80,
-                80,
-                in_pDst,
-                in_DstPitch,
-                in_dy,
-                Width,
-                Height,
-                shift,
-                offset);*/
+            Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, 80, in_dx, Width, Height + tap, bitDepth - 8, (Ipp16s)0);                       
 
             Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER, tmpBuf + ((tap >> 1) - 1) * 80, 80, in_pDst, in_DstPitch, in_dy, Width, Height, shift, (Ipp16s)offset);
         }
@@ -458,18 +225,12 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height,
         }
         else if (in_dy == 0)
         {
-            /*InterpolateHor_opt(TEXT_CHROMA, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch,
-                           in_dx, Width, Height, shift, offset);*/
 
             Interpolate<UMC_HEVC_DECODER::TEXT_CHROMA_U>( INTERP_HOR, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dx, Width, Height, shift, (Ipp16s)offset);
         }
         else if (in_dx == 0)
         {
-            /*InterpolateVert0_opt(TEXT_CHROMA, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dy,
-                             Width, Height, shift, offset);*/
-
-            Interpolate<UMC_HEVC_DECODER::TEXT_CHROMA_U>( INTERP_VER, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dy, Width, Height, shift, (Ipp16s)offset);
-            
+            Interpolate<UMC_HEVC_DECODER::TEXT_CHROMA_U>( INTERP_VER, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dy, Width, Height, shift, (Ipp16s)offset);            
         }
         else
         {
@@ -782,34 +543,11 @@ void H265CU::ME_Interpolate_old(H265MEInfo* me_info, H265MV* MV, PixType *in_pSr
         CopyPU(in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, width, height, shift);
     }
     else if (in_dy == 0)
-    {
-        /*InterpolateHor_opt(
-            TEXT_LUMA,
-            in_pSrc,
-            in_SrcPitch,
-            in_pDst,
-            in_DstPitch,
-            in_dx,
-            width,
-            height,
-            shift,
-            offset);*/
+    {        
         Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dx, width, height, shift, (Ipp16s)offset);
     }
     else if (in_dx == 0)
-    {
-        /*InterpolateVert0_opt(
-            TEXT_LUMA,
-            in_pSrc,
-            in_SrcPitch,
-            in_pDst,
-            in_DstPitch,
-            in_dy,
-            width,
-            height,
-            shift,
-            offset);*/
-
+    {    
         Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER, in_pSrc, in_SrcPitch, in_pDst, in_DstPitch, in_dy, width, height, shift, (Ipp16s)offset);
     }
     else
@@ -818,39 +556,9 @@ void H265CU::ME_Interpolate_old(H265MEInfo* me_info, H265MV* MV, PixType *in_pSr
         Ipp16s *tmpBuf = tmp + 80 * 8 + 8;
 
         shift = 20 - bitDepth;
-        offset = 1 << (19 - bitDepth);
+        offset = 1 << (19 - bitDepth);        
 
-        //    if (bi)
-        //    {
-        //        shift = 6;
-        //        offset = 0;
-        //    }
-
-        /*InterpolateHor_opt(
-            TEXT_LUMA,
-            in_pSrc - ((tap >> 1) - 1) * in_SrcPitch,
-            in_SrcPitch,
-            tmpBuf,
-            80,
-            in_dx,
-            width,
-            height + tap,
-            bitDepth - 8,
-            0);*/
-
-        Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, 80, in_dx, width, height + tap, bitDepth - 8, 0);
-
-        /*InterpolateVert_opt(
-            TEXT_LUMA,
-            tmpBuf + ((tap >> 1) - 1) * 80,
-            80,
-            in_pDst,
-            in_DstPitch,
-            in_dy,
-            width,
-            height,
-            shift,
-            offset);*/
+        Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, in_pSrc - ((tap >> 1) - 1) * in_SrcPitch, in_SrcPitch, tmpBuf, 80, in_dx, width, height + tap, bitDepth - 8, 0);        
 
         Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER, tmpBuf + ((tap >> 1) - 1) * 80, 80, in_pDst, in_DstPitch, in_dy, width, height, shift, (Ipp16s)offset);
     }

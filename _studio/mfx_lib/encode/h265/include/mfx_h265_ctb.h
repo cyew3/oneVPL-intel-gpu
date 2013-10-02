@@ -124,6 +124,9 @@ public:
     Ipp32u bak_abs_part_idxCU;
     Ipp32u bak_abs_part_idx;
     Ipp32u bak_chroma_offset;
+
+    __ALIGN32 Ipp8u m_src_aligned_block[MAX_CU_SIZE*MAX_CU_SIZE];
+
     Ipp8u *y_src;
     Ipp8u *uv_src;
     Ipp32s pitch_src;
