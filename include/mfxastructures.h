@@ -130,7 +130,7 @@ enum
 typedef struct  
 {
     mfxU32                Bitrate;
-    mfxU16                NumChannels;
+    mfxU16                NumChannel;
     mfxU32                SampleFrequency;
     mfxU16                BitPerSample;
     mfxU16                reserved[10]; 
