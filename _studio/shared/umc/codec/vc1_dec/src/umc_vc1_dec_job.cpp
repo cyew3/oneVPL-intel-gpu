@@ -624,22 +624,12 @@ VC1Status VC1TaskProcessorUMC::VC1ProcessDiff (VC1Context* pContext, VC1Task* pT
 VC1Status VC1TaskProcessorUMC::VC1MotionCompensation(VC1Context* pContext,VC1Task* pTask)
 {
     STATISTICS_START_TIME(m_timeStatistics->interpolation_StartTime);
-    //if(pContext->m_picLayerHeader->FCM != VC1_FieldInterlace)
-    {
-        pContext->interp_params_luma.srcStep   = pContext->m_pSingleMB->currYPitch;
-        pContext->interp_params_chroma.srcStep = pContext->m_pSingleMB->currUPitch;
-        pContext->interp_params_luma.dstStep   = pContext->m_pSingleMB->currYPitch;
-        pContext->interp_params_chroma.dstStep = pContext->m_pSingleMB->currUPitch;
 
-    }
-    //else
-    //{
-    //    pContext->interp_params_luma.srcStep   = 2*pContext->m_pSingleMB->currYPitch;
-    //    pContext->interp_params_chroma.srcStep = 2*pContext->m_pSingleMB->currUPitch;
-    //    pContext->interp_params_luma.dstStep   = 2*pContext->m_pSingleMB->currYPitch;
-    //    pContext->interp_params_chroma.dstStep = 2*pContext->m_pSingleMB->currUPitch;
-    //}
-
+    pContext->interp_params_luma.srcStep   = pContext->m_pSingleMB->currYPitch;
+    pContext->interp_params_chroma.srcStep = pContext->m_pSingleMB->currUPitch;
+    pContext->interp_params_luma.dstStep   = pContext->m_pSingleMB->currYPitch;
+    pContext->interp_params_chroma.dstStep = pContext->m_pSingleMB->currUPitch;
+    
     pContext->interp_params_luma.roundControl   = pContext->m_picLayerHeader->RNDCTRL;
     pContext->interp_params_chroma.roundControl = pContext->m_picLayerHeader->RNDCTRL;
 
@@ -981,7 +971,6 @@ VC1Status VC1TaskProcessorUMC::VC1PrepPlane(VC1Context* pContext,VC1Task* pTask)
 
             ++pContext->m_pSingleMB->m_currMBXpos;
             pContext->m_pBlock += 8*8*6;
-            //pContext->m_pPredBlock += 8*8*6;
             ++pContext->m_pCurrMB;
         }
 
@@ -1094,7 +1083,7 @@ void VC1TaskProcessorUMC::InitContextForNextTask(VC1Task* pTask)
     m_pContext->m_pSingleMB->EscInfo = pTask->m_pSlice->EscInfo;
 
     if ((m_pContext->m_picLayerHeader->CurrField)&&(m_pContext->m_pSingleMB->slice_currMBYpos))
-        m_pContext->m_pSingleMB->slice_currMBYpos -= m_pContext->m_seqLayerHeader.heightMB/2;
+        m_pContext->m_pSingleMB->slice_currMBYpos -= (m_pContext->m_seqLayerHeader.heightMB+1)/2;
     m_pContext->m_pBlock = pTask->m_pBlock;
     //m_pContext->m_pPredBlock = pTask->m_pPredBlock;
 }
@@ -1154,12 +1143,14 @@ Status VC1TaskProcessorUMC::process()
 
 
             if ((m_pContext->m_picLayerHeader->CurrField)&&(m_pContext->m_pSingleMB->slice_currMBYpos))
-                m_pContext->m_pSingleMB->slice_currMBYpos -= m_pContext->m_seqLayerHeader.heightMB/2;
+                m_pContext->m_pSingleMB->slice_currMBYpos -= (m_pContext->m_seqLayerHeader.heightMB+1)/2;
 
+            if(m_pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
+                m_pContext->m_pSingleMB->heightMB = m_pContext->m_seqLayerHeader.heightMB + (m_pContext->m_seqLayerHeader.heightMB & 1);
+            else
+                 m_pContext->m_pSingleMB->heightMB = m_pContext->m_seqLayerHeader.heightMB;
 
             m_pContext->m_pBlock = task->m_pBlock;
-            //m_pContext->m_pPredBlock = task->m_pPredBlock;
-
 
             m_pContext->m_bitstream.pBitstream = task->m_pSlice->m_pstart;
             m_pContext->m_bitstream.bitOffset = task->m_pSlice->m_bitOffset;

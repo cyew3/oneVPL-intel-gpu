@@ -2837,11 +2837,11 @@ namespace UMC
             f = fopen("Bitplane.txt", "wb");
 #endif
 
-            bitplane_size = pContext->m_seqLayerHeader.heightMB*(pContext->m_seqLayerHeader.widthMB)/2; //need to update for fields
+            bitplane_size = (pContext->m_seqLayerHeader.heightMB +1)*(pContext->m_seqLayerHeader.widthMB)/2; //need to update for fields
             if (pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
             {
                 bitplane_size /= 2;
-                h = pContext->m_seqLayerHeader.heightMB/2;
+                h = (pContext->m_seqLayerHeader.heightMB+1)/2;
             }
 
             for (i = 0; i < 3; i++)
@@ -3882,11 +3882,11 @@ namespace UMC
             f = fopen("Bitplane.txt", "wb");
 #endif
 
-            bitplane_size = pContext->m_seqLayerHeader.heightMB*(pContext->m_seqLayerHeader.widthMB)/2; //need to update for fields
+            bitplane_size = (pContext->m_seqLayerHeader.heightMB+1)*(pContext->m_seqLayerHeader.widthMB)/2; //need to update for fields
             if (pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
             {
                 bitplane_size /= 2;
-                h = pContext->m_seqLayerHeader.heightMB/2;
+                h = (pContext->m_seqLayerHeader.heightMB+1)/2;
             }
 
             for (i = 0; i < 3; i++)

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, I picture layer for advanced profile
@@ -30,10 +30,6 @@ VC1Status DecodePictHeaderParams_ProgressiveIpicture_Adv(VC1Context* pContext)
     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,
                     VC1_BFRAMES,VM_STRING("I frame type  \n"));
 #endif
-
-    //if (picLayerHeader->PTYPE == VC1_I_FRAME)
-    //    if (!picLayerHeader->is_slice)
-    //        memset(pContext->savedMV,VC1_MVINTRA,sizeof(Ipp16s)*seqLayerHeader->heightMB*seqLayerHeader->widthMB*4);
 
 
     //AC Prediction
@@ -109,11 +105,6 @@ VC1Status DecodePictHeaderParams_InterlaceIpicture_Adv(VC1Context* pContext)
     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_BFRAMES,
                                             VM_STRING("I frame type  \n"));
 #endif
-
-    //if (picLayerHeader->PTYPE == VC1_I_FRAME)
-    //    if (!pContext->m_picLayerHeader->is_slice)
-    //        memset(pContext->savedMV,VC1_MVINTRA,
-    //        sizeof(Ipp16s)*seqLayerHeader->heightMB*seqLayerHeader->widthMB*4);
 
      //field transform flag
     DecodeBitplane(pContext, &picLayerHeader->FIELDTX,
@@ -211,28 +202,14 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldIpicture_Adv(VC1Context* pContex
           VC1_GET_BITS(2,tempValue);        //POSTPROC
     }
 
- //if (!picLayerHeader->is_slice)
- //   {
- //       if (picLayerHeader->PTYPE == VC1_I_FRAME)
- //       {
-
- //           if (!picLayerHeader->CurrField)
- //               memset(pContext->savedMV,0X7F,
- //               sizeof(Ipp16s)*seqLayerHeader->heightMB*seqLayerHeader->widthMB*2);
- //           else
- //               memset(pContext->savedMV + seqLayerHeader->heightMB*seqLayerHeader->widthMB*2,
- //               0X7F, sizeof(Ipp16s)*seqLayerHeader->heightMB*seqLayerHeader->widthMB*2);
- //       }
- //   }
-
     //AC Prediction
     if (picLayerHeader->CurrField == 0)
     DecodeBitplane(pContext, &picLayerHeader->ACPRED,
-                   seqLayerHeader->widthMB, seqLayerHeader->heightMB/2,0);
+                   seqLayerHeader->widthMB, (seqLayerHeader->heightMB + 1)/2,0);
     else
     DecodeBitplane(pContext, &picLayerHeader->ACPRED,  seqLayerHeader->widthMB,
-                   seqLayerHeader->heightMB/2,
-                   seqLayerHeader->widthMB * seqLayerHeader->heightMB/2);
+                   (seqLayerHeader->heightMB+1)/2,
+                   seqLayerHeader->widthMB * (seqLayerHeader->heightMB+1)/2);
 
 
     if( (seqLayerHeader->OVERLAP==1) && (picLayerHeader->PQUANT<=8) )
@@ -255,11 +232,11 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldIpicture_Adv(VC1Context* pContex
 
                 if (picLayerHeader->CurrField == 0)
                     DecodeBitplane(pContext, &picLayerHeader->OVERFLAGS,
-                    seqLayerHeader->widthMB, seqLayerHeader->heightMB/2,0);
+                    seqLayerHeader->widthMB, (seqLayerHeader->heightMB + 1)/2,0);
                 else
                     DecodeBitplane(pContext, &picLayerHeader->OVERFLAGS,
-                    seqLayerHeader->widthMB, seqLayerHeader->heightMB/2,
-                    seqLayerHeader->widthMB*seqLayerHeader->heightMB/2);
+                    seqLayerHeader->widthMB, (seqLayerHeader->heightMB + 1)/2,
+                    seqLayerHeader->widthMB*(seqLayerHeader->heightMB + 1)/2);
             }
         }
         else

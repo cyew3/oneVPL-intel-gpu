@@ -20,24 +20,6 @@
 #include "umc_vc1_dec_debug.h"
 #include "umc_vc1_common_mvdiff_tbl.h"
 
-//void save_MV(VC1Context* pContext)
-//{
-//    Ipp32s blk_num = 0;
-//    VC1MB* pCurrMB = pContext->m_pCurrMB;
-//    VC1SingletonMB* sMB = pContext->m_pSingleMB;
-//
-//    for (blk_num = 0; blk_num < 4;blk_num++)
-//    {
-//        if(pCurrMB->m_pBlocks[blk_num].blkType & VC1_BLK_INTRA)
-//        {
-//            continue;
-//        }
-//        pContext->savedMV[(sMB->widthMB * sMB->m_currMBYpos + sMB->m_currMBXpos)*4*2 +blk_num]
-//                                    = pCurrMB->m_pBlocks[blk_num].mv[0][0];
-//        pContext->savedMV[(sMB->widthMB * sMB->m_currMBYpos + sMB->m_currMBXpos)*4*2 +blk_num+4]
-//                                    = pCurrMB->m_pBlocks[blk_num].mv[0][1];
-//    }
-//}
 void PackDirectMVProgressive(VC1MB* pCurrMB, Ipp16s* pSavedMV)
 {
     if (VC1_GET_MBTYPE(pCurrMB->mbType) == VC1_MB_1MV_INTER)

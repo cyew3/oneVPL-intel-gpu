@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 decoder, P picture layer for simple\main profiles
@@ -37,11 +37,6 @@ VC1Status DecodePictureLayer_ProgressivePpicture(VC1Context* pContext)
 
     pContext->interp_params_luma.roundControl = pContext->m_picLayerHeader->RNDCTRL;
     pContext->interp_params_chroma.roundControl = pContext->m_picLayerHeader->RNDCTRL;
-
-
-    //memset(pContext->savedMV,0X7F,sizeof(Ipp16s)*pContext->m_seqLayerHeader.heightMB*pContext->m_seqLayerHeader.widthMB*4*2);
-
-
 
     //PQINDEX is a 5-bit field that signals the quantizer scale index
     //for the entire frame. It is present in all picture types.  If the

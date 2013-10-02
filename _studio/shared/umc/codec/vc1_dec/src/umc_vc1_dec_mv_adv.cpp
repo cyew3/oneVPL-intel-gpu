@@ -20,43 +20,7 @@
 #include "umc_vc1_dec_debug.h"
 #include "umc_vc1_common_mvdiff_tbl.h"
 
-//void save_MV_InterlaceField(VC1Context* pContext)
-//{
-//    Ipp32s blk_num = 0;
-//    VC1MB* pCurrMB = pContext->m_pCurrMB;
-//    VC1SingletonMB* sMB = pContext->m_pSingleMB;
-//
-//    for (blk_num = 0; blk_num < 4;blk_num++)
-//    {
-//
-//      pContext->savedMV[(sMB->widthMB * sMB->m_currMBYpos + sMB->m_currMBXpos)*4*2*2 +blk_num]
-//                                                            = pCurrMB->m_pBlocks[blk_num].mv[0][0];
-//      pContext->savedMV[(sMB->widthMB * sMB->m_currMBYpos + sMB->m_currMBXpos)*4*2*2 + blk_num + 4]
-//                                                            = pCurrMB->m_pBlocks[blk_num].mv[0][1];
-//      pContext->savedMVSamePolarity[(sMB->widthMB * sMB->m_currMBYpos + sMB->m_currMBXpos)*4 +blk_num]
-//                                                            = pCurrMB->m_pBlocks[blk_num].mv_s_polarity[0];
-//    }
-//}
-//
-//void save_MV_InterlaceFrame(VC1Context* pContext)
-//{
-//    Ipp32s blk_num = 0;
-//    VC1SingletonMB* sMB = pContext->m_pSingleMB;
-//    VC1MB* pCurrMB = pContext->m_pCurrMB;
-//
-//    for (blk_num = 0; blk_num < 4;blk_num++)
-//    {
-//
-//        pContext->savedMV[(sMB->widthMB * sMB->m_currMBYpos + sMB->m_currMBXpos)*4*2*2 +blk_num]
-//                                                                = pCurrMB->m_pBlocks[blk_num].mv[0][0];
-//        pContext->savedMV[(sMB->widthMB * sMB->m_currMBYpos + sMB->m_currMBXpos)*4*2*2 +blk_num+4]
-//                                                                = pCurrMB->m_pBlocks[blk_num].mv[0][1];
-//        pContext->savedMV[(sMB->widthMB * sMB->m_currMBYpos + sMB->m_currMBXpos)*4*2*2 +blk_num+8]
-//                                                                = pCurrMB->m_pBlocks[blk_num].mv_bottom[0][0];
-//        pContext->savedMV[(sMB->widthMB * sMB->m_currMBYpos + sMB->m_currMBXpos)*4*2*2 +blk_num+12]
-//                                                                = pCurrMB->m_pBlocks[blk_num].mv_bottom[0][1];
-//    }
-//}
+
 void ApplyMVPredictionCalculate( VC1Context* pContext,
                                 Ipp16s* pMVx,
                                 Ipp16s* pMVy,
@@ -276,7 +240,7 @@ void CropLumaPullBackField_Adv(VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV)
 
 
     if (pContext->m_picLayerHeader->CurrField)
-        IY  -= (pContext->m_seqLayerHeader.heightMB >> 1);
+        IY  -= (pContext->m_pSingleMB->heightMB >> 1);
 
     IY = IY << 1;
     Y  = Y << 1;
@@ -346,13 +310,13 @@ void CropChromaPullBack_Adv(VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV)
         X -= ((XPos-Width) << 2);
     }
 
-    if (YPos < -8)
+    if (YPos < MinY)
     {
-        Y -= 8*(YPos+8);
+        Y -= 8*(YPos - MinY);
     }
-    else if (YPos > Height)
+    else if (YPos > MaxY)
     {
-        Y -= ((YPos-Height) << 3);
+        Y -= ((YPos-MaxY) << 3);
     }
 
     if (pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)

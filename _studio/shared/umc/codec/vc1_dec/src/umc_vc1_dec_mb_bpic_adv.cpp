@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, MB layer in B picture for advanced profile
@@ -1704,7 +1704,7 @@ VC1Status MBLayer_Field_InterlacedBpicture (VC1Context* pContext)
 
 
     if (picLayerHeader->CurrField)
-        currFieldMBYpos -= sMB->heightMB/2;
+        currFieldMBYpos -= (sMB->heightMB+1)/2;
 
     //Y
     pCurrMB->currYPitch = sMB->currYPitch;

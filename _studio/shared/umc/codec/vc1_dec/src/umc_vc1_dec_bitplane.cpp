@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, BitPlane decoding
@@ -298,6 +298,8 @@ void DecodeBitplane(VC1Context* pContext, VC1Bitplane* pBitplane, Ipp32s width, 
         pContext->bp_round_count = 0;
 
     Ipp32u HeightMB = pContext->m_seqLayerHeader.heightMB;
+    if(pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
+        HeightMB = HeightMB + (HeightMB & 1);
     
     if (pContext->bp_round_count >= 0)
         pBitplane->m_databits = pContext->m_pBitplane.m_databits +

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, MB Layer common for simple\main profiles
@@ -1187,7 +1187,11 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureLuma1MV_P_NewInterpolatio
     else
         SetLumaTblPrev(pContext, &pContext->interp_params_luma.pLUTTop, &pContext->interp_params_luma.pLUTBottom, pContext->m_frmBuff.m_iCurrIndex);
 
-
+    if ((pPicHeader->REFFIELD == 1) && (pPicHeader->INTCOMFIELD != VC1_INTCOMP_BOTH_FIELD))
+    {
+        if (/*(pPicHeader->BottomField && pPicHeader->TFF) || */(!pPicHeader->BottomField && (!pPicHeader->TFF)))
+            SetLumaTblCurr(pContext, &pContext->interp_params_luma.pLUTTop, &pContext->interp_params_luma.pLUTBottom, pContext->m_frmBuff.m_iCurrIndex);
+    }
 
     f = CalcMVInterpolateFieldLuma(pContext, pMB->m_pBlocks[0].mv_s_polarity[0], &xMV, &yMV);
 
@@ -1374,6 +1378,12 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureLuma4MV_NewInterpolation(
         SetLumaTblCurr(pContext, &pContext->interp_params_luma.pLUTTop, &pContext->interp_params_luma.pLUTBottom, index);
     }
 
+    if (VC1_P_FRAME == pContext->m_picLayerHeader->PTYPE && (pPicHeader->REFFIELD == 1)&& (pPicHeader->INTCOMFIELD != VC1_INTCOMP_BOTH_FIELD))
+    {
+        if (/*(pPicHeader->BottomField && pPicHeader->TFF) ||*/ (!pPicHeader->BottomField && (!pPicHeader->TFF)))
+            SetLumaTblCurr(pContext, &pContext->interp_params_luma.pLUTTop, &pContext->interp_params_luma.pLUTBottom, pContext->m_frmBuff.m_iCurrIndex);
+    }
+
     pRefData = pContext->m_frmBuff.m_pFrames[index].m_pY;
     refPitch = pContext->m_frmBuff.m_pFrames[index].m_iYPitch;
 
@@ -1473,6 +1483,11 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureChroma1MV_NewInterpolatio
         SetChromaTblCurr(pContext, &pContext->interp_params_chroma.pLUTTop, &pContext->interp_params_chroma.pLUTBottom, index);
     }
 
+    if (VC1_P_FRAME == pContext->m_picLayerHeader->PTYPE && (pPicHeader->REFFIELD == 1) && (pPicHeader->INTCOMFIELD != VC1_INTCOMP_BOTH_FIELD))
+    {
+        if (/*(pPicHeader->BottomField && pPicHeader->TFF) ||*/ (!pPicHeader->BottomField && (!pPicHeader->TFF)))
+            SetChromaTblCurr(pContext, &pContext->interp_params_chroma.pLUTTop, &pContext->interp_params_chroma.pLUTBottom, pContext->m_frmBuff.m_iCurrIndex);
+    }
 
     //1MV
     xMV = pMB->m_pBlocks[0].mv[back][0];
@@ -1666,6 +1681,13 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureChroma4MV_NewInterpolatio
     {
         SetChromaTblCurr(pContext, &pContext->interp_params_chroma.pLUTTop, &pContext->interp_params_chroma.pLUTBottom, index);
     }
+
+    if (VC1_P_FRAME == pContext->m_picLayerHeader->PTYPE && (pPicHeader->REFFIELD == 1)&& (pPicHeader->INTCOMFIELD != VC1_INTCOMP_BOTH_FIELD))
+    {
+        if (/*(pPicHeader->BottomField && pPicHeader->TFF) ||*/ (!pPicHeader->BottomField && (!pPicHeader->TFF)))
+            SetChromaTblCurr(pContext, &pContext->interp_params_chroma.pLUTTop, &pContext->interp_params_chroma.pLUTBottom, pContext->m_frmBuff.m_iCurrIndex);
+    }
+
     refPitch  = pContext->m_frmBuff.m_pFrames[index].m_iUPitch;
     pRefData  = pContext->m_frmBuff.m_pFrames[index].m_pU;
 

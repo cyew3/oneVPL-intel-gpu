@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, MB Layer common for simple\main profiles
@@ -882,8 +882,9 @@ IppStatus ippiPXInterpolatePXICBicubicBlock_VC1_8u_C1R(const IppVCInterpolateBlo
     IppVCInterpolate_8u inter_struct;
     Ipp32u isPredBottom;
     Ipp32s frameHeightShifted;
+    Ipp32s OutOfBoundaryFlag = 0; //all block out of boundary flag
 
-    //IPP_BAD_PTR1_RET(interpolateInfo);
+    //IPP_BAD_PTR1_RET(interpolateInfo);k
     //IPP_BAD_PTR2_RET(interpolateInfo->pSrc, interpolateInfo->pDst);
 
     shift = (interpolateInfo->fieldPrediction)? 1:0;
@@ -968,6 +969,7 @@ IppStatus ippiPXInterpolatePXICBicubicBlock_VC1_8u_C1R(const IppVCInterpolateBlo
         }
         if (tmpBlkSize.width <= 0)
         {
+                tmpBlkSize.width = 0;
             Ipp32s FieldPOffset[2] = {0,0};
             Ipp32s posy;
 
@@ -1009,19 +1011,41 @@ IppStatus ippiPXInterpolatePXICBicubicBlock_VC1_8u_C1R(const IppVCInterpolateBlo
                         for (i = nfield; i < interpolateInfo->sizeBlock.height + 3; i+=2)
                         {
                             posy = position.y + i - 1;
+
+                            if((posy < 0) && (paddingTop != 0) && interpolateInfo->oppositePadding
+                                && interpolateInfo->fieldPrediction&&interpolateInfo->isPredBottom)
+                                OutOfBoundaryFlag = 1; 
+                            else
+                                OutOfBoundaryFlag = 0;
+
+                            if((posy > frameHeightShifted) && (paddingBottom != 0) && interpolateInfo->oppositePadding
+                                && interpolateInfo->fieldPrediction&&(!interpolateInfo->isPredBottom))
+                                OutOfBoundaryFlag = -1; 
+
                             GetEdgeValue(frameHeightShifted,FieldPOffset[nfield],&posy);
 
                             tmpBlk[i*tmpBlkStep + interpolateInfo->sizeBlock.width + 3] = 
-                                pLUT [nfield][interpolateInfo->pSrc[RefBlockStep * posy]];
+                                pLUT [nfield][interpolateInfo->pSrc[RefBlockStep * posy- interpolateInfo->srcStep*OutOfBoundaryFlag]];
                         }
                     } else {
                         for (i = nfield; i < interpolateInfo->sizeBlock.height + 3; i+=2)
                         {
                             posy = position.y + i - 1;
+
+                            if((posy < 0) && (paddingTop != 0) && interpolateInfo->oppositePadding
+                                && interpolateInfo->fieldPrediction&&interpolateInfo->isPredBottom)
+                                OutOfBoundaryFlag = 1; 
+                            else
+                                OutOfBoundaryFlag = 0;
+
+                            if((posy > frameHeightShifted) && (paddingBottom != 0) && interpolateInfo->oppositePadding
+                                && interpolateInfo->fieldPrediction&&(!interpolateInfo->isPredBottom))
+                                OutOfBoundaryFlag = -1; 
+
                             GetEdgeValue(frameHeightShifted,FieldPOffset[nfield],&posy);
 
                             tmpBlk[i*tmpBlkStep + interpolateInfo->sizeBlock.width + 3] = 
-                                interpolateInfo->pSrc[RefBlockStep * posy];
+                                interpolateInfo->pSrc[RefBlockStep * posy- interpolateInfo->srcStep*OutOfBoundaryFlag];
                         }
                     }
                 }
@@ -1036,19 +1060,39 @@ IppStatus ippiPXInterpolatePXICBicubicBlock_VC1_8u_C1R(const IppVCInterpolateBlo
                         for (i = nfield; i < interpolateInfo->sizeBlock.height + 3; i+=2)
                         {
                             posy = position.y + i - 1;
+                            if((posy < 0) && (paddingTop != 0) && interpolateInfo->oppositePadding
+                                && interpolateInfo->fieldPrediction&&interpolateInfo->isPredBottom)
+                                OutOfBoundaryFlag = 1; 
+                            else
+                                OutOfBoundaryFlag = 0;
+
+                            if((posy > frameHeightShifted) && (paddingBottom != 0) && interpolateInfo->oppositePadding
+                                && interpolateInfo->fieldPrediction&&(!interpolateInfo->isPredBottom))
+                                OutOfBoundaryFlag = -1; 
+
                             GetEdgeValue(frameHeightShifted,FieldPOffset[nfield],&posy);
 
                             tmpBlk[i*tmpBlkStep] = 
-                                pLUT [nfield][interpolateInfo->pSrc[RefBlockStep*posy + interpolateInfo->sizeFrame.width - 1]];
+                                pLUT [nfield][interpolateInfo->pSrc[RefBlockStep*posy + interpolateInfo->sizeFrame.width - 1 - interpolateInfo->srcStep*OutOfBoundaryFlag]];
                         }
                     } else {
                         for (i = nfield; i < interpolateInfo->sizeBlock.height + 3; i+=2)
                         {
                             posy = position.y + i - 1;
+                            if((posy < 0) && (paddingTop != 0) && interpolateInfo->oppositePadding
+                                && interpolateInfo->fieldPrediction&&interpolateInfo->isPredBottom)
+                                OutOfBoundaryFlag = 1; 
+                            else
+                                OutOfBoundaryFlag = 0;
+
+                            if((posy > frameHeightShifted) && (paddingBottom != 0) && interpolateInfo->oppositePadding
+                                && interpolateInfo->fieldPrediction&&(!interpolateInfo->isPredBottom))
+                                OutOfBoundaryFlag = -1; 
+
                             GetEdgeValue(frameHeightShifted,FieldPOffset[nfield],&posy);
 
                             tmpBlk[i*tmpBlkStep] = 
-                                interpolateInfo->pSrc[RefBlockStep*posy + interpolateInfo->sizeFrame.width - 1];
+                                interpolateInfo->pSrc[RefBlockStep*posy + interpolateInfo->sizeFrame.width - 1 - interpolateInfo->srcStep*OutOfBoundaryFlag];
                         }
                     }
                 }
@@ -1278,6 +1322,7 @@ IppStatus ippiPXInterpolatePXICBilinearBlock_VC1_8u_C1R(const IppVCInterpolateBl
     IppVCInterpolate_8u inter_struct;
     Ipp32u isPredBottom;
     Ipp32s frameHeightShifted;
+    Ipp32s OutOfBoundaryFlag = 0; //all block out of boundary flag
 
     //IPP_BAD_PTR1_RET(interpolateInfo);
     //IPP_BAD_PTR2_RET(interpolateInfo->pSrc, interpolateInfo->pDst);
@@ -1366,6 +1411,7 @@ IppStatus ippiPXInterpolatePXICBilinearBlock_VC1_8u_C1R(const IppVCInterpolateBl
         {
             Ipp32s FieldPOffset[2] = {0,0};
             Ipp32s posy;
+            tmpBlkSize.width = 0;
 
             if ((interpolateInfo->oppositePadding)&&(!interpolateInfo->fieldPrediction))
             {
@@ -1399,25 +1445,47 @@ IppStatus ippiPXInterpolatePXICBilinearBlock_VC1_8u_C1R(const IppVCInterpolateBl
             // Compare with paddingRight case !!!!
             if (paddingLeft)
             {
-                for (nfield = 0; nfield < 2; nfield ++)
+                 for (nfield = 0; nfield < 2; nfield ++)
                 {
                     if(pLUT [nfield]) {
                         for (i = nfield; i < interpolateInfo->sizeBlock.height + 3; i+=2)
                         {
                             posy = position.y + i - 1;
+
+                            if((posy < 0) && (paddingTop != 0) && interpolateInfo->oppositePadding
+                                && interpolateInfo->fieldPrediction&&interpolateInfo->isPredBottom)
+                                OutOfBoundaryFlag = 1; 
+                            else
+                                OutOfBoundaryFlag = 0;
+
+                            if((posy > frameHeightShifted) && (paddingBottom != 0) && interpolateInfo->oppositePadding
+                                && interpolateInfo->fieldPrediction&&(!interpolateInfo->isPredBottom))
+                                OutOfBoundaryFlag = -1; 
+
                             GetEdgeValue(frameHeightShifted,FieldPOffset[nfield],&posy);
 
                             tmpBlk[i*tmpBlkStep + interpolateInfo->sizeBlock.width + 3] = 
-                                pLUT [nfield][interpolateInfo->pSrc[RefBlockStep * posy]];
+                                pLUT [nfield][interpolateInfo->pSrc[RefBlockStep * posy- interpolateInfo->srcStep*OutOfBoundaryFlag]];
                         }
                     } else {
                         for (i = nfield; i < interpolateInfo->sizeBlock.height + 3; i+=2)
                         {
                             posy = position.y + i - 1;
+                            
+                            if((posy < 0) && (paddingTop != 0) && interpolateInfo->oppositePadding
+                                && interpolateInfo->fieldPrediction&&interpolateInfo->isPredBottom)
+                                OutOfBoundaryFlag = 1; 
+                            else
+                                OutOfBoundaryFlag = 0;
+
+                            if((posy > frameHeightShifted) && (paddingBottom != 0) && interpolateInfo->oppositePadding
+                                && interpolateInfo->fieldPrediction&&(!interpolateInfo->isPredBottom))
+                                OutOfBoundaryFlag = -1; 
+
                             GetEdgeValue(frameHeightShifted,FieldPOffset[nfield],&posy);
 
                             tmpBlk[i*tmpBlkStep + interpolateInfo->sizeBlock.width + 3] = 
-                                interpolateInfo->pSrc[RefBlockStep * posy];
+                                interpolateInfo->pSrc[RefBlockStep * posy- interpolateInfo->srcStep*OutOfBoundaryFlag];
                         }
                     }
                 }
@@ -1426,25 +1494,46 @@ IppStatus ippiPXInterpolatePXICBilinearBlock_VC1_8u_C1R(const IppVCInterpolateBl
 
             if (paddingRight)
             {
+                
                 for (nfield = 0; nfield < 2; nfield ++)
                 {
                     if(pLUT [nfield]) {
                         for (i = nfield; i < interpolateInfo->sizeBlock.height + 3; i+=2)
                         {
                             posy = position.y + i - 1;
+                            if((posy < 0) && (paddingTop != 0) && interpolateInfo->oppositePadding
+                                && interpolateInfo->fieldPrediction&&interpolateInfo->isPredBottom)
+                                OutOfBoundaryFlag = 1; 
+                            else
+                                OutOfBoundaryFlag = 0;
+
+                            if((posy > frameHeightShifted) && (paddingBottom != 0) && interpolateInfo->oppositePadding
+                                && interpolateInfo->fieldPrediction&&(!interpolateInfo->isPredBottom))
+                                OutOfBoundaryFlag = -1; 
+
                             GetEdgeValue(frameHeightShifted,FieldPOffset[nfield],&posy);
 
                             tmpBlk[i*tmpBlkStep] = 
-                                pLUT [nfield][interpolateInfo->pSrc[RefBlockStep*posy + interpolateInfo->sizeFrame.width - 1]];
+                                pLUT [nfield][interpolateInfo->pSrc[RefBlockStep*posy + interpolateInfo->sizeFrame.width - 1- interpolateInfo->srcStep*OutOfBoundaryFlag]];
                         }
                     } else {
                         for (i = nfield; i < interpolateInfo->sizeBlock.height + 3; i+=2)
                         {
                             posy = position.y + i - 1;
+                            if((posy < 0) && (paddingTop != 0) && interpolateInfo->oppositePadding
+                                && interpolateInfo->fieldPrediction&&interpolateInfo->isPredBottom)
+                                OutOfBoundaryFlag = 1; 
+                            else
+                                OutOfBoundaryFlag = 0;
+
+                            if((posy > frameHeightShifted) && (paddingBottom != 0) && interpolateInfo->oppositePadding
+                                && interpolateInfo->fieldPrediction&&(!interpolateInfo->isPredBottom))
+                                OutOfBoundaryFlag = -1; 
+
                             GetEdgeValue(frameHeightShifted,FieldPOffset[nfield],&posy);
 
                             tmpBlk[i*tmpBlkStep] = 
-                                interpolateInfo->pSrc[RefBlockStep*posy + interpolateInfo->sizeFrame.width - 1];
+                                interpolateInfo->pSrc[RefBlockStep*posy + interpolateInfo->sizeFrame.width - 1- interpolateInfo->srcStep*OutOfBoundaryFlag];
                         }
                     }
                 }

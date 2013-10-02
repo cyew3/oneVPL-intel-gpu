@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 decoder, P picture layer for advanced profile
@@ -46,9 +46,7 @@ VC1Status DecodePictHeaderParams_ProgressivePpicture_Adv    (VC1Context* pContex
     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_BFRAMES,
         VM_STRING("P frame type  \n"));
 #endif
-    //if (!pContext->m_picLayerHeader->is_slice)
-    //    memset(pContext->savedMV,0X7F,sizeof(Ipp16s)*seqLayerHeader->heightMB*seqLayerHeader->widthMB*4*2);
-
+    
     //extended MV range flag
     MVRangeDecode(pContext);
 
@@ -278,8 +276,6 @@ VC1Status DecodePictHeaderParams_InterlacePpicture_Adv    (VC1Context* pContext)
     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_BFRAMES,
         VM_STRING("P frame type  \n"));
 #endif
-    //if (!picLayerHeader->is_slice)
-    //    memset(pContext->savedMV,0X7F,sizeof(Ipp16s)*seqLayerHeader->heightMB*seqLayerHeader->widthMB*4*2*2);
 
     //extended MV range flag
     MVRangeDecode(pContext);
@@ -428,15 +424,6 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldPpicture_Adv (VC1Context* pConte
     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_BFRAMES,
                                             VM_STRING("P frame type  \n"));
 #endif
-
-    //if (!picLayerHeader->is_slice)
-    //{
-    //    if (!pContext->m_picLayerHeader->CurrField)
-    //        memset(pContext->savedMV,0X7F,sizeof(Ipp16s)*seqLayerHeader->heightMB*seqLayerHeader->widthMB*4*2);
-    //    else
-    //        memset(pContext->savedMV + seqLayerHeader->heightMB*seqLayerHeader->widthMB*4*2,0X7F,
-    //                            sizeof(Ipp16s)*seqLayerHeader->heightMB*seqLayerHeader->widthMB*4*2);
-    //}
 
     picLayerHeader->INTCOMFIELD = 0;
 
@@ -729,34 +716,6 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldPpicture_Adv (VC1Context* pConte
                     }
 
                     pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].ICFieldMask |= picLayerHeader->INTCOMFIELD << (2*(1 - picLayerHeader->CurrField));
-                    //pContext->m_frmBuff.m_pFrames[index_top].m_bIsExpanded = 0;
-
-                    //if (is_top)
-                    //{
-                    //    if (index_top == pContext->m_frmBuff.m_iCurrIndex || pContext->typeOfPreviousFrame == VC1_FieldInterlace)
-                    //        ExpandFrame_Field(pContext, &pContext->m_frmBuff.m_pFrames[index_top],0);
-                    //    else
-                    //    {
-                    //        if ((pContext->typeOfPreviousFrame != VC1_FieldInterlace))
-                    //            ExpandIntens_table[pContext->typeOfPreviousFrame](pContext, &pContext->m_frmBuff.m_pFrames[index_top]);
-                    //        else
-                    //            ExpandFrame_Field(pContext, &pContext->m_frmBuff.m_pFrames[index_top],0);
-                    //    }
-                    //}
-                    //pContext->m_frmBuff.m_pFrames[index_bottom].m_bIsExpanded = 0;
-
-                    //if (is_bottom)
-                    //{
-                    //    if (index_bottom == pContext->m_frmBuff.m_iCurrIndex || pContext->typeOfPreviousFrame == VC1_FieldInterlace)
-                    //        ExpandFrame_Field(pContext, &pContext->m_frmBuff.m_pFrames[index_bottom],1);
-                    //    else
-                    //    {
-                    //        if ((pContext->typeOfPreviousFrame != VC1_FieldInterlace))
-                    //            ExpandIntens_table[pContext->typeOfPreviousFrame](pContext, &pContext->m_frmBuff.m_pFrames[index_bottom]);
-                    //        else
-                    //            ExpandFrame_Field(pContext, &pContext->m_frmBuff.m_pFrames[index_bottom],1);
-                    //    }
-                    //}
 
             //#ifdef DXVA_SIM
                 picLayerHeader->MVMODE2 = picLayerHeader->MVMODE;

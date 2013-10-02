@@ -379,9 +379,6 @@ Status VC1VideoDecoder::Init(BaseCodecParams *pInit)
         m_pContext->m_seqLayerHeader.MAX_CODED_HEIGHT = init->info.clip_info.height/2 - 1;
         m_pContext->m_seqLayerHeader.MAX_CODED_WIDTH = init->info.clip_info.width/2 - 1;
 
-        //m_pContext->m_seqLayerHeader.widthMB = (Ipp16u)((init->info.clip_info.width+15)/VC1_PIXEL_IN_LUMA);
-        //m_pContext->m_seqLayerHeader.heightMB = (Ipp16u)((init->info.clip_info.height+15)/VC1_PIXEL_IN_LUMA);
-
         m_pContext->m_seqLayerHeader.widthMB = (Ipp16u)(init->info.clip_info.width/VC1_PIXEL_IN_LUMA);
         m_pContext->m_seqLayerHeader.heightMB  = (Ipp16u)(init->info.clip_info.height/VC1_PIXEL_IN_LUMA);
 
@@ -2301,7 +2298,7 @@ Status VC1VideoDecoder::ProcessPerformedDS(MediaData* in, VideoData* out_data)
                     {
                         ippsCopy_8u(pCurrDescriptor->m_pContext->savedMVSamePolarity,
                             m_pContext->savedMVSamePolarity_Curr,
-                            m_pContext->m_seqLayerHeader.heightMB*m_pContext->m_seqLayerHeader.widthMB);
+                            m_pContext->m_pSingleMB->heightMB*m_pContext->m_seqLayerHeader.widthMB);
                     }
 
                 }

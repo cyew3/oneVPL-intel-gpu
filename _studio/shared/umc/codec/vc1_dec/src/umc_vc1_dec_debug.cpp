@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -160,7 +160,7 @@ void VM_Debug::_print_macroblocks(VC1Context* pContext)
     }
 
     if (pContext->m_picLayerHeader->CurrField)
-        currMBYpos -= pContext->m_seqLayerHeader.heightMB/2;
+        currMBYpos -= (pContext->m_seqLayerHeader.heightMB+1)/2;
 
     vm_debug_frame(-1,VC1_SMOOTHINT,(vm_char *)"maroblock-%d,%d\n",pContext->m_pSingleMB->m_currMBXpos,pContext->m_pSingleMB->m_currMBYpos);
     if (currMBXpos>0&&currMBYpos>0)

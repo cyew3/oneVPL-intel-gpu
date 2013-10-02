@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1)Smoothing advanced profile
@@ -49,9 +49,6 @@ void Smoothing_I_Adv(VC1Context* pContext, Ipp32s Height)
 
 
         Ipp32s i, j;
-        //Ipp16s* UpYrow;
-        //Ipp16s* UpUrow;
-        //Ipp16s* UpVrow;
 
        for (j = 0; j< Height; j++)
        {
@@ -231,10 +228,6 @@ void Smoothing_I_Adv(VC1Context* pContext, Ipp32s Height)
                     CurrOverlap    = pCurrMB->Overlap;
                     LeftOverlap    = (pCurrMB - 1)->Overlap;
 
-                    //UpYrow = pContext->SmoothingInfo->SmoothUpperYRows[i-1];
-                    //UpUrow = pContext->SmoothingInfo->SmoothUpperURows[i-1];
-                    //UpVrow = pContext->SmoothingInfo->SmoothUpperVRows[i-1];
-
                     //LUMA
 
                     if(CurrOverlap)
@@ -277,19 +270,7 @@ void Smoothing_I_Adv(VC1Context* pContext, Ipp32s Height)
                                                                         EdgeDisabledFlag);
                         }
                    }
-
-
-                    //copy last two srings of Left macroblock to SmoothUpperRows
-                    //ippsCopy_16s(CurrBlock - 64*2 - 32, pContext->SmoothingInfo->SmoothUpperYRows[i - 1], 32);
-                    //ippsCopy_16s(CurrBlock - 64 - 16, pContext->SmoothingInfo->SmoothUpperURows[i - 1], 16);
-                    //ippsCopy_16s(CurrBlock - 16,  pContext->SmoothingInfo->SmoothUpperVRows[i -1], 16);
                 }
-
-                //RIGHT MB
-                //UpYrow = pContext->SmoothingInfo->SmoothUpperYRows[Width - 1];
-                //UpUrow = pContext->SmoothingInfo->SmoothUpperURows[Width - 1];
-                //UpVrow = pContext->SmoothingInfo->SmoothUpperVRows[Width - 1];
-
 
                 if(CurrOverlap && (pContext->m_picLayerHeader->FCM != VC1_FrameInterlace))
                 {
@@ -299,11 +280,6 @@ void Smoothing_I_Adv(VC1Context* pContext, Ipp32s Height)
                                                                 YPlane + 8*YPitch,       YPitch,
                                                                 EdgeDisabledFlag);
                 }
-
-                //copy last two srings of Left macroblock to SmoothUpperRows
-                //ippsCopy_16s(CurrBlock + 64*4 - 32, pContext->SmoothingInfo->SmoothUpperYRows[Width - 1], 32);
-                //ippsCopy_16s(CurrBlock + 64*5 - 16, pContext->SmoothingInfo->SmoothUpperURows[Width - 1], 16);
-                //ippsCopy_16s(CurrBlock + 64*6 - 16, pContext->SmoothingInfo->SmoothUpperVRows[Width - 1], 16);
 
                 if (j< (Height-1))
                 {
@@ -317,9 +293,7 @@ void Smoothing_I_Adv(VC1Context* pContext, Ipp32s Height)
                     CurrOverlap    = pCurrMB->Overlap;
                     LeftOverlap    = (pCurrMB - 1)->Overlap;
                 }
-                //TopLeftOverlap = (pCurrMB - Width - 1)->Overlap;
-                //TopOverlap     = (pCurrMB - Width)->Overlap;
-            }
+             }
         }
     }
 }

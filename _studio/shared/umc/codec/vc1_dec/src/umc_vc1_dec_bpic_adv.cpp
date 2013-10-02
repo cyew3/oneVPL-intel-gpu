@@ -354,11 +354,11 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldBpicture_Adv (VC1Context* pConte
     //FORWARDMB
     if (picLayerHeader->CurrField == 0)
     DecodeBitplane(pContext, &picLayerHeader->FORWARDMB,
-                   seqLayerHeader->widthMB, seqLayerHeader->heightMB/2,0);
+                   seqLayerHeader->widthMB, (seqLayerHeader->heightMB+1)/2,0);
     else
     DecodeBitplane(pContext, &picLayerHeader->FORWARDMB,
-                   seqLayerHeader->widthMB, seqLayerHeader->heightMB/2,
-                   seqLayerHeader->widthMB * seqLayerHeader->heightMB/2);
+                   seqLayerHeader->widthMB, (seqLayerHeader->heightMB+1)/2,
+                   seqLayerHeader->widthMB * (seqLayerHeader->heightMB+1)/2);
 
     //motion vector table
     VC1_GET_BITS(3, picLayerHeader->MBMODETAB);       //MBMODETAB
@@ -427,7 +427,7 @@ VC1Status Decode_InterlaceFieldBpicture_Adv (VC1Context* pContext)
 
     for(i = 0; i < sMB->widthMB;i++)
     {
-        for(j = 0; j < sMB->heightMB/2; j++)
+        for(j = 0; j < (sMB->heightMB+1)/2; j++)
         {
             vc1Res = MBLayer_Field_InterlacedBpicture(pContext);
             if(vc1Res != VC1_OK)

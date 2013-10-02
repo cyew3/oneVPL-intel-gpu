@@ -42,17 +42,21 @@ bool VC1FrameDescriptor::Init(Ipp32u         DescriporID,
 {
     VC1SequenceLayerHeader* seqLayerHeader = &pContext->m_seqLayerHeader;
     m_bIsReorder = IsReorder;
+    Ipp32u HeightMB = seqLayerHeader->heightMB;
+
+    if(seqLayerHeader->INTERLACE)
+        HeightMB = HeightMB + (HeightMB & 1); //in case of field with odd height
 
     if (!m_pContext)
     {
         Ipp8u* ptr = NULL;
         ptr += align_value<Ipp32u>(sizeof(VC1Context));
-        ptr += align_value<Ipp32u>(sizeof(VC1MB)*(pContext->m_seqLayerHeader.heightMB*pContext->m_seqLayerHeader.widthMB));
+        ptr += align_value<Ipp32u>(sizeof(VC1MB)*(HeightMB*pContext->m_seqLayerHeader.widthMB));
         ptr += align_value<Ipp32u>(sizeof(VC1PictureLayerHeader)*VC1_MAX_SLICE_NUM);
-        ptr += align_value<Ipp32u>(sizeof(VC1DCMBParam)*seqLayerHeader->heightMB*seqLayerHeader->widthMB);
-        ptr += align_value<Ipp32u>(sizeof(Ipp16s)*seqLayerHeader->heightMB*seqLayerHeader->widthMB*2*2);
-        ptr += align_value<Ipp32u>(sizeof(Ipp8u)*seqLayerHeader->heightMB*seqLayerHeader->widthMB);
-        ptr += align_value<Ipp32u>((seqLayerHeader->heightMB*seqLayerHeader->widthMB*VC1_MAX_BITPANE_CHUNCKS));
+        ptr += align_value<Ipp32u>(sizeof(VC1DCMBParam)*HeightMB*seqLayerHeader->widthMB);
+        ptr += align_value<Ipp32u>(sizeof(Ipp16s)*HeightMB*seqLayerHeader->widthMB*2*2);
+        ptr += align_value<Ipp32u>(sizeof(Ipp8u)*HeightMB*seqLayerHeader->widthMB);
+        ptr += align_value<Ipp32u>((HeightMB*seqLayerHeader->widthMB*VC1_MAX_BITPANE_CHUNCKS));
 
         // Need to replace with MFX allocator
         if (m_pMemoryAllocator->Alloc(&m_iMemContextID,
@@ -69,7 +73,7 @@ bool VC1FrameDescriptor::Init(Ipp32u         DescriporID,
         ptr += align_value<Ipp32u>(sizeof(VC1Context));
         m_pContext->m_MBs = (VC1MB*)ptr;
 
-        ptr +=  align_value<Ipp32u>(sizeof(VC1MB)*(pContext->m_seqLayerHeader.heightMB*pContext->m_seqLayerHeader.widthMB));
+        ptr +=  align_value<Ipp32u>(sizeof(VC1MB)*(HeightMB*pContext->m_seqLayerHeader.widthMB));
         m_pContext->m_picLayerHeader = (VC1PictureLayerHeader*)ptr;
         m_pContext->m_InitPicLayer = m_pContext->m_picLayerHeader;
 
@@ -77,17 +81,17 @@ bool VC1FrameDescriptor::Init(Ipp32u         DescriporID,
         m_pContext->DCACParams = (VC1DCMBParam*)ptr;
 
 
-        ptr += align_value<Ipp32u>(sizeof(VC1DCMBParam)*seqLayerHeader->heightMB*seqLayerHeader->widthMB);
+        ptr += align_value<Ipp32u>(sizeof(VC1DCMBParam)*HeightMB*seqLayerHeader->widthMB);
         m_pContext->savedMV = (Ipp16s*)(ptr);
 
-        ptr += align_value<Ipp32u>(sizeof(Ipp16s)*seqLayerHeader->heightMB*seqLayerHeader->widthMB*2*2);
+        ptr += align_value<Ipp32u>(sizeof(Ipp16s)*HeightMB*seqLayerHeader->widthMB*2*2);
         m_pContext->savedMVSamePolarity  = ptr;
 
-        ptr += align_value<Ipp32u>(sizeof(Ipp8u)*seqLayerHeader->heightMB*seqLayerHeader->widthMB);
+        ptr += align_value<Ipp32u>(sizeof(Ipp8u)*HeightMB*seqLayerHeader->widthMB);
         m_pContext->m_pBitplane.m_databits = ptr;
 
     }
-    Ipp32u buffSize =  2*(seqLayerHeader->heightMB*VC1_PIXEL_IN_LUMA)*(seqLayerHeader->widthMB*VC1_PIXEL_IN_LUMA);
+    Ipp32u buffSize =  2*(HeightMB*VC1_PIXEL_IN_LUMA)*(seqLayerHeader->widthMB*VC1_PIXEL_IN_LUMA);
 
     //buf size should be divisible by 4
     if(buffSize & 0x00000003)
@@ -109,7 +113,7 @@ bool VC1FrameDescriptor::Init(Ipp32u         DescriporID,
         if (!pResidBuf)
         {
             if(m_pMemoryAllocator->Alloc(&m_iDiffMemID,
-                                         sizeof(Ipp16s)*seqLayerHeader->widthMB*seqLayerHeader->heightMB*8*8*6,
+                                         sizeof(Ipp16s)*seqLayerHeader->widthMB*HeightMB*8*8*6,
                                          UMC_ALLOC_PERSISTENT, 16) != UMC_OK )
             {
                 return false;
@@ -212,14 +216,13 @@ void VC1FrameDescriptor::processFrame(Ipp32u*  pOffsets,
     Ipp32s bitoffset = 31;
 
     Ipp16u heightMB = m_pContext->m_seqLayerHeader.heightMB;
-
-    
+    Ipp32u IsField = 0;    
 
     bool isSecondField = false;
     slparams.MBStartRow = 0;
     slparams.is_continue = 1;
     slparams.MBEndRow = heightMB;
-
+    
     if (m_pContext->m_picLayerHeader->PTYPE == VC1_SKIPPED_FRAME)
     {
         m_bIsSkippedFrame = true;
@@ -283,7 +286,8 @@ void VC1FrameDescriptor::processFrame(Ipp32u*  pOffsets,
          slparams.m_picLayerHeader->CurrField = 0;
          slparams.m_picLayerHeader->PTYPE = m_pContext->m_picLayerHeader->PTypeField1;
          slparams.m_picLayerHeader->BottomField = (Ipp8u)(1 - m_pContext->m_picLayerHeader->TFF);
-         slparams.MBEndRow = heightMB/2;
+         slparams.MBEndRow = (heightMB + 1)/2;
+         IsField = 1;
     }
 
 
@@ -309,6 +313,7 @@ void VC1FrameDescriptor::processFrame(Ipp32u*  pOffsets,
         if (*(pValues) == 0x0C010000)
         {
             isSecondField = true;
+            IsField = 1;
             task.m_isFirstInSecondSlice = true;
             m_pContext->m_bitstream.pBitstream = reinterpret_cast<Ipp32u*>(m_pContext->m_pBufferStart + *pOffsets);
             m_pContext->m_bitstream.pBitstream += 1; // skip start code
@@ -328,7 +333,7 @@ void VC1FrameDescriptor::processFrame(Ipp32u*  pOffsets,
 
             //VC1BitstreamParser::GetNBits(m_pContext->m_pbs,m_pContext->m_bitOffset,32, temp_value);
 
-            slparams.MBStartRow = heightMB/2;
+            slparams.MBStartRow = (heightMB + 1)/2;
             
             //skip user data
             while(*(pValues+1) == 0x1B010000 || *(pValues+1) == 0x1D010000 || *(pValues+1) == 0x1C010000)
@@ -343,8 +348,16 @@ void VC1FrameDescriptor::processFrame(Ipp32u*  pOffsets,
                 VC1BitstreamParser::GetNBits(bitstream,bitoffset,32, temp_value);
                 bitoffset = 31;
                 VC1BitstreamParser::GetNBits(bitstream,bitoffset,9, slparams.MBEndRow);
-            } else
-                slparams.MBEndRow = heightMB;
+            } 
+            else
+            {
+                if(!IsField)
+                    slparams.MBEndRow = heightMB;
+                else
+                {
+                    slparams.MBEndRow = heightMB + (heightMB & 1);
+                }
+            }
 
             slparams.m_picLayerHeader = m_pContext->m_picLayerHeader;
             slparams.m_vlcTbl = m_pContext->m_vlcTbl;
@@ -400,9 +413,14 @@ void VC1FrameDescriptor::processFrame(Ipp32u*  pOffsets,
 
             }
             else if(*(pValues+1) == 0x0C010000)
-                slparams.MBEndRow = heightMB/2;
+                slparams.MBEndRow = (heightMB+1)/2;
             else
-                slparams.MBEndRow = heightMB;
+             if(!IsField)
+                    slparams.MBEndRow = heightMB;
+                else
+                {
+                    slparams.MBEndRow = heightMB + (heightMB & 1);
+                }
 
             slparams.m_picLayerHeader = m_pContext->m_picLayerHeader;
             slparams.m_vlcTbl = m_pContext->m_vlcTbl;

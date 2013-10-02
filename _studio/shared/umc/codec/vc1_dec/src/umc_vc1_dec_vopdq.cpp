@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, VOPDEQUANT
@@ -25,7 +25,9 @@ VC1Status VOPDQuant(VC1Context* pContext)
     Ipp32u tempValue;
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
     Ipp32u DQUANT  = pContext->m_seqLayerHeader.DQUANT;
-
+    picLayerHeader->m_DQuantFRM = 0;
+    picLayerHeader->DQSBEdge    = 0;
+    picLayerHeader->m_DQBILevel = 0;
 
     //pContext->m_picLayerHeader->bVopdquantCoded = 1;
     if(DQUANT == 1)
@@ -204,7 +206,7 @@ VC1Status CalculatePQuant(VC1Context* pContext)
 
 VC1Status Set_MQuant(VC1Context* pContext)
 {
-    Ipp32s heightMB = pContext->m_seqLayerHeader.heightMB;
+    Ipp32s heightMB = pContext->m_pSingleMB->heightMB;
     Ipp8u X;
     Ipp32s MQUANT = pContext->m_picLayerHeader->PQUANT;
     Ipp32s HALFQP = pContext->m_picLayerHeader->HALFQP;
@@ -277,7 +279,7 @@ VC1Status Set_Alt_MQUANT(VC1Context* pContext)
 
 VC1Status Set_MQuant_Field(VC1Context* pContext)
 {
-    Ipp32s heightMB = pContext->m_seqLayerHeader.heightMB;
+    Ipp32s heightMB = pContext->m_pSingleMB->heightMB;
     Ipp8u X;
     Ipp32s MQUANT = pContext->m_picLayerHeader->PQUANT;
     Ipp32s HALFQP = pContext->m_picLayerHeader->HALFQP;

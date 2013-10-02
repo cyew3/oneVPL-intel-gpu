@@ -1025,7 +1025,7 @@ namespace UMC
             }
             else if(*(pValues+1) == 0x0C010000)
             {
-                slparams.MBEndRow = m_pContext->m_seqLayerHeader.heightMB/2;
+                slparams.MBEndRow = (m_pContext->m_seqLayerHeader.heightMB+1)/2;
             }
 
 
@@ -1188,7 +1188,7 @@ namespace UMC
 
                     m_pContext->m_picLayerHeader->is_slice = 0;
                     DecodePicHeader(m_pContext);
-                    slparams.MBStartRow = m_pContext->m_seqLayerHeader.heightMB/2;
+                    slparams.MBStartRow = (m_pContext->m_seqLayerHeader.heightMB+1)/2;
 
                     if (*(pOffsets+1) && *(pValues+1) == 0x0B010000)
                     {
@@ -1327,7 +1327,7 @@ namespace UMC
                         VC1BitstreamParser::GetNBits(bitstream,bitoffset,9, slparams.MBEndRow);
                     }
                     else if(*(pValues+1) == 0x0C010000)
-                        slparams.MBEndRow = m_pContext->m_seqLayerHeader.heightMB/2;
+                        slparams.MBEndRow = (m_pContext->m_seqLayerHeader.heightMB+1)/2;
                     else
                         slparams.MBEndRow = m_pContext->m_seqLayerHeader.heightMB;
 
@@ -1337,7 +1337,7 @@ namespace UMC
                     Offset = (Ipp32u) (sizeof(Ipp32u)*(m_pContext->m_bitstream.pBitstream - pPictHeader)); // offset in words
 
                     if (isSecondField)
-                        slparams.MBStartRow -= m_pContext->m_seqLayerHeader.heightMB/2;
+                        slparams.MBStartRow -= (m_pContext->m_seqLayerHeader.heightMB+1)/2;
 
                     if (*(pOffsets+1))
                         SliceSize = *(pOriginalOffsets+1) - *pOriginalOffsets;
@@ -1767,7 +1767,7 @@ namespace UMC
             else if(*p_NextValues == 0x0C010000)
             {
                 //field
-                slparams.MBEndRow = this->m_pContext->m_seqLayerHeader.heightMB/2;
+                slparams.MBEndRow = (this->m_pContext->m_seqLayerHeader.heightMB+1)/2;
             }
 
             VM_ASSERT(SliceSize<0x0FFFFFFF);
@@ -1845,7 +1845,7 @@ namespace UMC
                     PicHeaderSize = (Ipp32u)this->m_pPacker.VC1GetPicHeaderSize(p_CurOriginalData + 4 + *p_CurOriginalOffsets,
                         (Ipp32u)((size_t)sizeof(Ipp32u)*(this->m_pContext->m_bitstream.pBitstream - pPictHeader)), Flag_03);
 
-                    slparams.MBStartRow = this->m_pContext->m_seqLayerHeader.heightMB/2;
+                    slparams.MBStartRow = (this->m_pContext->m_seqLayerHeader.heightMB+1)/2;
 
                     if (*(p_CurOffsets+1))
                         SliceSize = *(p_CurOriginalOffsets + 1) - *p_CurOriginalOffsets - 4 - PicHeaderSize;
@@ -1946,7 +1946,7 @@ namespace UMC
                         VC1BitstreamParser::GetNBits(bitstream,bitoffset,9, slparams.MBEndRow);
                     }
                     else if(*p_NextValues == 0x0C010000)
-                        slparams.MBEndRow = this->m_pContext->m_seqLayerHeader.heightMB/2;
+                        slparams.MBEndRow = (this->m_pContext->m_seqLayerHeader.heightMB+1)/2;
                     else
                         slparams.MBEndRow = this->m_pContext->m_seqLayerHeader.heightMB;
 
@@ -1955,7 +1955,7 @@ namespace UMC
                     Offset = PicHeaderSize + 4;
 
                     if (isSecondField)
-                        slparams.MBStartRow -= this->m_pContext->m_seqLayerHeader.heightMB/2;
+                        slparams.MBStartRow -= (this->m_pContext->m_seqLayerHeader.heightMB+1)/2;
 
                     if (*(p_CurOffsets+1))
                         SliceSize = *(p_CurOriginalOffsets+1) - *p_CurOriginalOffsets - Offset;
@@ -2211,7 +2211,7 @@ namespace UMC
             else if(*p_NextValues == 0x0C010000)
             {
                 //field
-                slparams.MBEndRow = m_pContext->m_seqLayerHeader.heightMB/2;
+                slparams.MBEndRow = (m_pContext->m_seqLayerHeader.heightMB+1)/2;
             }
 
             VM_ASSERT(SliceSize<0x0FFFFFFF);
@@ -2360,7 +2360,7 @@ namespace UMC
                     PicHeaderSize = (Ipp32u)m_pPacker.VC1GetPicHeaderSize(p_CurOriginalData + 4 + *p_CurOriginalOffsets,
                         (Ipp32u)((size_t)sizeof(Ipp32u)*(m_pContext->m_bitstream.pBitstream - pPictHeader)), Flag_03);
 
-                    slparams.MBStartRow = m_pContext->m_seqLayerHeader.heightMB/2;
+                    slparams.MBStartRow = (m_pContext->m_seqLayerHeader.heightMB+1)/2;
 
                     if (*(p_CurOffsets+1))
                         SliceSize = *(p_CurOriginalOffsets + 1) - *p_CurOriginalOffsets - 4 - PicHeaderSize;
@@ -2512,7 +2512,7 @@ namespace UMC
                         VC1BitstreamParser::GetNBits(bitstream,bitoffset,9, slparams.MBEndRow);
                     }
                     else if(*p_NextValues == 0x0C010000)
-                        slparams.MBEndRow = m_pContext->m_seqLayerHeader.heightMB/2;
+                        slparams.MBEndRow = (m_pContext->m_seqLayerHeader.heightMB+1)/2;
                     else
                         slparams.MBEndRow = m_pContext->m_seqLayerHeader.heightMB;
 
@@ -2521,7 +2521,7 @@ namespace UMC
                     Offset = PicHeaderSize + 4;
 
                     if (isSecondField)
-                        slparams.MBStartRow -= m_pContext->m_seqLayerHeader.heightMB/2;
+                        slparams.MBStartRow -= (m_pContext->m_seqLayerHeader.heightMB+1)/2;
 
                     if (*(p_CurOffsets+1))
                         SliceSize = *(p_CurOriginalOffsets+1) - *p_CurOriginalOffsets - Offset;
@@ -2844,7 +2844,7 @@ namespace UMC
             else if(*(pValues+1) == 0x0C010000)
             {
                 //field
-                slparams.MBEndRow = m_pContext->m_seqLayerHeader.heightMB/2;
+                slparams.MBEndRow = (m_pContext->m_seqLayerHeader.heightMB+1)/2;
             }
 
             slparams.MBRowsToDecode = slparams.MBEndRow-slparams.MBStartRow;
@@ -3033,7 +3033,7 @@ namespace UMC
                     PicHeaderSize = (Ipp32u)m_pPacker.VC1GetPicHeaderSize(pOriginalData + 4 + *pOriginalOffsets,
                         (Ipp32u)((size_t)sizeof(Ipp32u)*(m_pContext->m_bitstream.pBitstream - pPictHeader)), Flag_03);
 
-                    slparams.MBStartRow = m_pContext->m_seqLayerHeader.heightMB/2;
+                    slparams.MBStartRow = (m_pContext->m_seqLayerHeader.heightMB+1)/2;
 
                     if (*(pOffsets+1))
                         SliceSize = *(pOriginalOffsets+1) - *pOriginalOffsets - 4 - PicHeaderSize;
@@ -3164,7 +3164,7 @@ namespace UMC
                         VC1BitstreamParser::GetNBits(bitstream,bitoffset,9, slparams.MBEndRow);
                     }
                     else if(*(pValues+1) == 0x0C010000)
-                        slparams.MBEndRow = m_pContext->m_seqLayerHeader.heightMB/2;
+                        slparams.MBEndRow = (m_pContext->m_seqLayerHeader.heightMB+1)/2;
                     else
                         slparams.MBEndRow = m_pContext->m_seqLayerHeader.heightMB;
 
@@ -3173,7 +3173,7 @@ namespace UMC
                     Offset = PicHeaderSize + 4;
 
                     if (isSecondField)
-                        slparams.MBStartRow -= m_pContext->m_seqLayerHeader.heightMB/2;
+                        slparams.MBStartRow -= (m_pContext->m_seqLayerHeader.heightMB+1)/2;
 
                     if (*(pOffsets+1))
                         SliceSize = *(pOriginalOffsets+1) - *pOriginalOffsets - Offset;
@@ -3561,7 +3561,7 @@ namespace UMC
             else if(*(pValues+1) == 0x0C010000)
             {
                 //field
-                slparams.MBEndRow = m_pContext->m_seqLayerHeader.heightMB/2;
+                slparams.MBEndRow = (m_pContext->m_seqLayerHeader.heightMB+1)/2;
             }
 
             slparams.MBRowsToDecode = slparams.MBEndRow-slparams.MBStartRow;
@@ -3736,7 +3736,7 @@ namespace UMC
 
                     m_pContext->m_picLayerHeader->INTCOMFIELD = IntCompField;
 
-                    slparams.MBStartRow = m_pContext->m_seqLayerHeader.heightMB/2;
+                    slparams.MBStartRow = (m_pContext->m_seqLayerHeader.heightMB+1)/2;
 
 
                     if (*(pOffsets+1) && *(pValues+1) == 0x0B010000)
@@ -3868,7 +3868,7 @@ namespace UMC
                         VC1BitstreamParser::GetNBits(bitstream,bitoffset,9, slparams.MBEndRow);
                     }
                     else if(*(pValues+1) == 0x0C010000)
-                        slparams.MBEndRow = m_pContext->m_seqLayerHeader.heightMB/2;
+                        slparams.MBEndRow = (m_pContext->m_seqLayerHeader.heightMB+1)/2;
                     else
                         slparams.MBEndRow = m_pContext->m_seqLayerHeader.heightMB;
 
@@ -3877,7 +3877,7 @@ namespace UMC
                     //Offset = PicHeaderSize + 4;
 
                     if (isSecondField)
-                        slparams.MBStartRow -= m_pContext->m_seqLayerHeader.heightMB/2;
+                        slparams.MBStartRow -= (m_pContext->m_seqLayerHeader.heightMB+1)/2;
 
 
                     {
