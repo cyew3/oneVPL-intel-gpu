@@ -1326,26 +1326,25 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
             umcRes = pMJPEGVideoDecoder->FindStartOfImage(&src);
             if (umcRes != UMC::UMC_OK)
             {
-                if(umcRes == UMC::UMC_ERR_NOT_ENOUGH_DATA)
+                if (MFX_PLATFORM_SOFTWARE == m_platform)
                 {
-#if defined (MFX_VA_WIN)
-                    if(m_numPic == 0)
+                    if(umcRes != UMC::UMC_ERR_NOT_ENOUGH_DATA)
                     {
-                        delete[] m_dst;
+                        if(!m_freeTasks.empty())
+                            m_freeTasks.front()->Reset();                        
                     }
-#endif
-                    return MFX_ERR_MORE_DATA;
                 }
                 else
                 {
 #if defined (MFX_VA_WIN)
-                    delete[] m_dst;
-                    m_numPic = 0;
+                    if(umcRes != UMC::UMC_ERR_NOT_ENOUGH_DATA || m_numPic == 0)
+                    {
+                        delete[] m_dst;
+                        m_numPic = 0;
+                    }
 #endif
-                    if(!m_freeTasks.empty())
-                        m_freeTasks.front()->Reset();
-                    return ConvertUMCStatusToMfx(umcRes);
                 }
+                return (umcRes == UMC::UMC_ERR_NOT_ENOUGH_DATA) ? MFX_ERR_MORE_DATA : ConvertUMCStatusToMfx(umcRes);
             }
             src.Save(bs);
             m_isHeaderFound = true;
@@ -1356,26 +1355,25 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
             umcRes = pMJPEGVideoDecoder->_GetFrameInfo((Ipp8u*)src.GetDataPointer(), src.GetDataSize());
             if (umcRes != UMC::UMC_OK)
             {
-                if(umcRes == UMC::UMC_ERR_NOT_ENOUGH_DATA)
+                if (MFX_PLATFORM_SOFTWARE == m_platform)
                 {
-#if defined (MFX_VA_WIN)
-                    if(m_numPic == 0)
+                    if(umcRes != UMC::UMC_ERR_NOT_ENOUGH_DATA)
                     {
-                        delete[] m_dst;
+                        if(!m_freeTasks.empty())
+                            m_freeTasks.front()->Reset();                        
                     }
-#endif
-                    return MFX_ERR_MORE_DATA;
                 }
                 else
                 {
 #if defined (MFX_VA_WIN)
-                    delete[] m_dst;
-                    m_numPic = 0;
+                    if(umcRes != UMC::UMC_ERR_NOT_ENOUGH_DATA || m_numPic == 0)
+                    {
+                        delete[] m_dst;
+                        m_numPic = 0;
+                    }
 #endif
-                    if(!m_freeTasks.empty())
-                        m_freeTasks.front()->Reset();
-                    return ConvertUMCStatusToMfx(umcRes);
                 }
+                return (umcRes == UMC::UMC_ERR_NOT_ENOUGH_DATA) ? MFX_ERR_MORE_DATA : ConvertUMCStatusToMfx(umcRes);
             }
 
             mfxVideoParam temp;
@@ -1384,12 +1382,18 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
             if(m_vPar.mfx.FrameInfo.CropW != temp.mfx.FrameInfo.CropW ||
                 m_vPar.mfx.FrameInfo.CropH != temp.mfx.FrameInfo.CropH)
             {
+                if (MFX_PLATFORM_SOFTWARE == m_platform)
+                {
+                    if(!m_freeTasks.empty())
+                        m_freeTasks.front()->Reset();
+                }
+                else
+                {
 #if defined (MFX_VA_WIN)
-                delete[] m_dst;
-                m_numPic = 0;
+                    delete[] m_dst;
+                    m_numPic = 0;
 #endif
-                if(!m_freeTasks.empty())
-                    m_freeTasks.front()->Reset();
+                }                
                 return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
             }
             m_isHeaderParsed = true;
@@ -1423,9 +1427,12 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
         if (NULL == pSrcData)
         {
 #if defined (MFX_VA_WIN)
-            if(m_numPic == 0)
+            if (MFX_PLATFORM_SOFTWARE != m_platform)
             {
-                delete[] m_dst;
+                if(m_numPic == 0)
+                {
+                    delete[] m_dst;
+                }
             }
 #endif
             return MFX_ERR_MORE_DATA;
@@ -1482,9 +1489,7 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
 
             if (umcRes != UMC::UMC_OK)
             {
-#if defined (MFX_VA_WIN)
                 delete[] m_dst;
-#endif
                 return ConvertUMCStatusToMfx(umcRes);
             }
 
@@ -1495,21 +1500,18 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
             // convert status
             if (umcRes == UMC::UMC_ERR_NOT_ENOUGH_DATA || umcRes == UMC::UMC_ERR_SYNC)
             {
-#if defined (MFX_VA_WIN)
                 if(m_numPic == 0)
                 {
                     delete[] m_dst;
                 }
-#endif
+
                 sts = MFX_ERR_MORE_DATA;
             }
             else
             {
                 if (umcRes != UMC::UMC_OK)
                 {
-#if defined (MFX_VA_WIN)
                     delete[] m_dst;
-#endif
                     sts = ConvertUMCStatusToMfx(umcRes);
                 }
             }
@@ -1528,10 +1530,8 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
 #if defined (MFX_VA_WIN)
     if (MFX_PLATFORM_SOFTWARE != m_platform)
     {
-        {
-            UMC::AutomaticUMCMutex guard(m_guard);
-            m_dsts.push_back(m_dst);
-        }
+        UMC::AutomaticUMCMutex guard(m_guard);
+        m_dsts.push_back(m_dst);
         m_numPic = 0;
     }
 #endif
@@ -1546,8 +1546,11 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
 
         // it is time to skip a frame
 #if defined (MFX_VA_WIN)
-        delete[] m_dst;
-        m_numPic = 0;
+        if (MFX_PLATFORM_SOFTWARE != m_platform)
+        {
+            delete[] m_dst;
+            m_numPic = 0;
+        }
 #endif
         if(!m_freeTasks.empty())
             m_freeTasks.front()->Reset();
