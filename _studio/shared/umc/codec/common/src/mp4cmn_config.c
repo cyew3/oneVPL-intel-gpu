@@ -4,34 +4,17 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2008 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
 #include "umc_defs.h"
-
-#ifdef UMC_MP4_CONFIG
-#undef UMC_MP4_CONFIG
-#endif
-
-#if defined UMC_ENABLE_AAC_AUDIO_DECODER
-#define UMC_MP4_CONFIG
-#elif defined UMC_ENABLE_AAC_INT_AUDIO_DECODER
-#define UMC_MP4_CONFIG
-//#elif defined UMC_ENABLE_AAC_AUDIO_ENCODER
-//#define UMC_MP4_CONFIG
-//#elif defined UMC_ENABLE_AAC_INT_AUDIO_ENCODER
-//#define UMC_MP4_CONFIG
-#elif defined UMC_ENABLE_MP4_SPLITTER
-#define UMC_MP4_CONFIG
-#endif
-
-#ifdef UMC_MP4_CONFIG
+#if defined (UMC_ENABLE_AAC_AUDIO_DECODER) || defined (UMC_ENABLE_MP4_SPLITTER)
 
 #include "bstream.h"
 #include "mp4cmn_config.h"
 #include "mp4cmn_pce.h"
-#include <string.h> /* for memset() */
+#include <string.h>
 
 static Ipp32s
 getAudioObjectType(sBitsreamBuffer * p_bs)

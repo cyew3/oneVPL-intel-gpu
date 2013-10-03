@@ -19,6 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\common\src\mp4cmn_config.c" />
+    <ClCompile Include="..\common\src\mp4cmn_const.c" />
+    <ClCompile Include="..\common\src\mp4cmn_pce.c" />
     <ClCompile Include="src\aaccmn_adif.c" />
     <ClCompile Include="src\aaccmn_adts.c" />
     <ClCompile Include="src\aaccmn_chmap.c" />
@@ -31,9 +34,6 @@
     <ClCompile Include="src\aac_filterbank_fp.c" />
     <ClCompile Include="src\aac_sfb_tables.c" />
     <ClCompile Include="src\aac_win_tables_fp.c" />
-    <ClCompile Include="src\mp4cmn_config.c" />
-    <ClCompile Include="src\mp4cmn_const.c" />
-    <ClCompile Include="src\mp4cmn_pce.c" />
     <ClCompile Include="src\ps_dec_parser.c" />
     <ClCompile Include="src\ps_huff_tabs.c" />
     <ClCompile Include="src\sbr_dec_env_decoding.c" />
@@ -57,7 +57,6 @@
     <ClInclude Include="include\aac_sfb_tables.h" />
     <ClInclude Include="include\aac_status.h" />
     <ClInclude Include="include\aac_wnd_tables_fp.h" />
-    <ClInclude Include="include\mp4cmn_const.h" />
     <ClInclude Include="include\ps_dec_parser.h" />
     <ClInclude Include="include\ps_dec_settings.h" />
     <ClInclude Include="include\ps_dec_struct.h" />

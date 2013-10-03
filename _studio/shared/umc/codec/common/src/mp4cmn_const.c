@@ -4,29 +4,12 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright (c) 2003-2008 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
 #include "umc_defs.h"
-
-#ifdef UMC_MP4_CONST
-#undef UMC_MP4_CONST
-#endif
-
-#if defined UMC_ENABLE_AAC_AUDIO_DECODER
-#define UMC_MP4_CONST
-#elif defined UMC_ENABLE_AAC_INT_AUDIO_DECODER
-#define UMC_MP4_CONST
-//#elif defined UMC_ENABLE_AAC_AUDIO_ENCODER
-//#define UMC_MP4_CONST
-//#elif defined UMC_ENABLE_AAC_INT_AUDIO_ENCODER
-//#define UMC_MP4_CONST
-#elif defined UMC_ENABLE_MP4_SPLITTER
-#define UMC_MP4_CONST
-#endif
-
-#ifdef UMC_MP4_CONST
+#if defined (UMC_ENABLE_AAC_AUDIO_DECODER) || defined (UMC_ENABLE_MP4_SPLITTER)
 
 #include "mp4cmn_const.h"
 
