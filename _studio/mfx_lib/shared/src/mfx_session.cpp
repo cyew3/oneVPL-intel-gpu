@@ -396,6 +396,7 @@ void _mfxSession::Clear(void)
 
     m_priority = MFX_PRIORITY_NORMAL;
     m_bIsHWENCSupport = false;
+    m_coreInt.InternalSurfaceAllocator = 0;
 
 } // void _mfxSession::Clear(void)
 
