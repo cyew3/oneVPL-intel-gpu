@@ -121,9 +121,9 @@ public:
     virtual mfxStatus  DecreaseReference(mfxFrameData *ptr, bool ExtendedSearch = true) = 0;
 
     // no care about surface, opaq and all round. Just increasing reference
-    virtual mfxStatus IncreasePureReference(mfxFrameData *ptr) = 0;
+    virtual mfxStatus IncreasePureReference(mfxU16 &) = 0;
     // no care about surface, opaq and all round. Just decreasing reference
-    virtual mfxStatus DecreasePureReference(mfxFrameData *ptr) = 0;
+    virtual mfxStatus DecreasePureReference(mfxU16 &) = 0;
     virtual void* QueryCoreInterface(const MFX_GUID &guid) = 0;
     virtual mfxSession GetSession() = 0;
 };     
@@ -247,5 +247,18 @@ public:
 };
 
    */
+
+struct ThreadAudioDecodeTaskInfo
+{
+    mfxAudioFrame         *out;
+    mfxU32                 taskID; // for task ordering
+};
+
+struct ThreadAudioEncodeTaskInfo
+{
+    mfxAudioFrame          *in;
+    mfxBitstream           *out;
+    mfxU32                 taskID; // for task ordering
+};
 
 #endif // __MFXAUDIOPLUSPLUS_INTERNAL_H
