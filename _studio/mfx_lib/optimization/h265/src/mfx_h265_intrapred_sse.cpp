@@ -576,6 +576,36 @@ namespace MFX_HEVC_PP
         _mm_store_si128((__m128i *)pDst2, s2);
     }
 
+    #define PRED8(j) { \
+        STEP(angle); \
+        MUX8(r0, t, iIdx); \
+        MUX8(s0, u, iIdx); \
+        f0 = _mm_load_si128((__m128i *)tab_frac[iFact]); \
+         \
+        STEP(angle); \
+        MUX8(r1, t, iIdx); \
+        MUX8(s1, u, iIdx); \
+        f1 = _mm_load_si128((__m128i *)tab_frac[iFact]); \
+         \
+        r0 = _mm_maddubs_epi16(r0, f0); \
+        r1 = _mm_maddubs_epi16(r1, f1); \
+        r0 = _mm_add_epi16(r0, _mm_set1_epi16(16)); \
+        r1 = _mm_add_epi16(r1, _mm_set1_epi16(16)); \
+        r0 = _mm_srai_epi16(r0, 5); \
+        r1 = _mm_srai_epi16(r1, 5); \
+        r0 = _mm_packus_epi16(r0, r1); \
+        _mm_store_si128((__m128i *)&pDst1[j*16], r0); \
+         \
+        s0 = _mm_maddubs_epi16(s0, f0); \
+        s1 = _mm_maddubs_epi16(s1, f1); \
+        s0 = _mm_add_epi16(s0, _mm_set1_epi16(16)); \
+        s1 = _mm_add_epi16(s1, _mm_set1_epi16(16)); \
+        s0 = _mm_srai_epi16(s0, 5); \
+        s1 = _mm_srai_epi16(s1, 5); \
+        s0 = _mm_packus_epi16(s0, s1); \
+        _mm_store_si128((__m128i *)&pDst2[j*16], s0); \
+    }
+
     template <int mode>
     static inline void PredAngle_8x8(Ipp8u *pSrc1, Ipp8u *pSrc2, Ipp8u *pDst1, Ipp8u *pDst2)
     {
@@ -609,129 +639,46 @@ namespace MFX_HEVC_PP
         u6 = _mm_shuffle_epi8(_mm_srli_si128(s0, 6), _mm_load_si128((__m128i *)tab_shuf8x8));
         u7 = _mm_shuffle_epi8(_mm_srli_si128(s0, 7), _mm_load_si128((__m128i *)tab_shuf8x8));
 
-        //
-        // rows 0,1
-        //
-        STEP(angle);
-        MUX8(r0, t, iIdx);
-        MUX8(s0, u, iIdx);
-        f0 = _mm_load_si128((__m128i *)tab_frac[iFact]);
+        PRED8(0);
+        PRED8(1);
+        PRED8(2);
+        PRED8(3);
+    }
 
-        STEP(angle);
-        MUX8(r1, t, iIdx);
-        MUX8(s1, u, iIdx);
-        f1 = _mm_load_si128((__m128i *)tab_frac[iFact]);
-
-        r0 = _mm_maddubs_epi16(r0, f0);
-        r1 = _mm_maddubs_epi16(r1, f1);
-        r0 = _mm_add_epi16(r0, _mm_set1_epi16(16));
-        r1 = _mm_add_epi16(r1, _mm_set1_epi16(16));
-        r0 = _mm_srai_epi16(r0, 5);
-        r1 = _mm_srai_epi16(r1, 5);
-        r0 = _mm_packus_epi16(r0, r1);
-        _mm_store_si128((__m128i *)&pDst1[0*16], r0);
-
-        s0 = _mm_maddubs_epi16(s0, f0);
-        s1 = _mm_maddubs_epi16(s1, f1);
-        s0 = _mm_add_epi16(s0, _mm_set1_epi16(16));
-        s1 = _mm_add_epi16(s1, _mm_set1_epi16(16));
-        s0 = _mm_srai_epi16(s0, 5);
-        s1 = _mm_srai_epi16(s1, 5);
-        s0 = _mm_packus_epi16(s0, s1);
-        _mm_store_si128((__m128i *)&pDst2[0*16], s0);
-
-        //
-        // rows 2,3
-        //
-        STEP(angle);
-        MUX8(r0, t, iIdx);
-        MUX8(s0, u, iIdx);
-        f0 = _mm_load_si128((__m128i *)tab_frac[iFact]);
-
-        STEP(angle);
-        MUX8(r1, t, iIdx);
-        MUX8(s1, u, iIdx);
-        f1 = _mm_load_si128((__m128i *)tab_frac[iFact]);
-
-        r0 = _mm_maddubs_epi16(r0, f0);
-        r1 = _mm_maddubs_epi16(r1, f1);
-        r0 = _mm_add_epi16(r0, _mm_set1_epi16(16));
-        r1 = _mm_add_epi16(r1, _mm_set1_epi16(16));
-        r0 = _mm_srai_epi16(r0, 5);
-        r1 = _mm_srai_epi16(r1, 5);
-        r0 = _mm_packus_epi16(r0, r1);
-        _mm_store_si128((__m128i *)&pDst1[1*16], r0);
-
-        s0 = _mm_maddubs_epi16(s0, f0);
-        s1 = _mm_maddubs_epi16(s1, f1);
-        s0 = _mm_add_epi16(s0, _mm_set1_epi16(16));
-        s1 = _mm_add_epi16(s1, _mm_set1_epi16(16));
-        s0 = _mm_srai_epi16(s0, 5);
-        s1 = _mm_srai_epi16(s1, 5);
-        s0 = _mm_packus_epi16(s0, s1);
-        _mm_store_si128((__m128i *)&pDst2[1*16], s0);
-
-        //
-        // rows 4,5
-        //
-        STEP(angle);
-        MUX8(r0, t, iIdx);
-        MUX8(s0, u, iIdx);
-        f0 = _mm_load_si128((__m128i *)tab_frac[iFact]);
-
-        STEP(angle);
-        MUX8(r1, t, iIdx);
-        MUX8(s1, u, iIdx);
-        f1 = _mm_load_si128((__m128i *)tab_frac[iFact]);
-
-        r0 = _mm_maddubs_epi16(r0, f0);
-        r1 = _mm_maddubs_epi16(r1, f1);
-        r0 = _mm_add_epi16(r0, _mm_set1_epi16(16));
-        r1 = _mm_add_epi16(r1, _mm_set1_epi16(16));
-        r0 = _mm_srai_epi16(r0, 5);
-        r1 = _mm_srai_epi16(r1, 5);
-        r0 = _mm_packus_epi16(r0, r1);
-        _mm_store_si128((__m128i *)&pDst1[2*16], r0);
-
-        s0 = _mm_maddubs_epi16(s0, f0);
-        s1 = _mm_maddubs_epi16(s1, f1);
-        s0 = _mm_add_epi16(s0, _mm_set1_epi16(16));
-        s1 = _mm_add_epi16(s1, _mm_set1_epi16(16));
-        s0 = _mm_srai_epi16(s0, 5);
-        s1 = _mm_srai_epi16(s1, 5);
-        s0 = _mm_packus_epi16(s0, s1);
-        _mm_store_si128((__m128i *)&pDst2[2*16], s0);
-
-        //
-        // rows 6,7
-        //
-        STEP(angle);
-        MUX8(r0, t, iIdx);
-        MUX8(s0, u, iIdx);
-        f0 = _mm_load_si128((__m128i *)tab_frac[iFact]);
-
-        STEP(angle);
-        MUX8(r1, t, iIdx);
-        MUX8(s1, u, iIdx);
-        f1 = _mm_load_si128((__m128i *)tab_frac[iFact]);
-
-        r0 = _mm_maddubs_epi16(r0, f0);
-        r1 = _mm_maddubs_epi16(r1, f1);
-        r0 = _mm_add_epi16(r0, _mm_set1_epi16(16));
-        r1 = _mm_add_epi16(r1, _mm_set1_epi16(16));
-        r0 = _mm_srai_epi16(r0, 5);
-        r1 = _mm_srai_epi16(r1, 5);
-        r0 = _mm_packus_epi16(r0, r1);
-        _mm_store_si128((__m128i *)&pDst1[3*16], r0);
-
-        s0 = _mm_maddubs_epi16(s0, f0);
-        s1 = _mm_maddubs_epi16(s1, f1);
-        s0 = _mm_add_epi16(s0, _mm_set1_epi16(16));
-        s1 = _mm_add_epi16(s1, _mm_set1_epi16(16));
-        s0 = _mm_srai_epi16(s0, 5);
-        s1 = _mm_srai_epi16(s1, 5);
-        s0 = _mm_packus_epi16(s0, s1);
-        _mm_store_si128((__m128i *)&pDst2[3*16], s0);
+    #define PRED16(j) { \
+        pos += angle; \
+        iIdx = pos >> 5; \
+        iFact = pos & 31; \
+        iIdx = ((iIdx+16) % 16); \
+        f0 = _mm_load_si128((__m128i *)tab_frac[iFact]); \
+            \
+        t0 = _mm_loadu_si128((__m128i *)&pSrc1[iIdx+0]); \
+        r1 = _mm_loadu_si128((__m128i *)&pSrc1[iIdx+1]); \
+        r0 = _mm_unpacklo_epi8(t0, r1); \
+        r1 = _mm_unpackhi_epi8(t0, r1); \
+            \
+        r0 = _mm_maddubs_epi16(r0, f0); \
+        r1 = _mm_maddubs_epi16(r1, f0); \
+        r0 = _mm_add_epi16(r0, _mm_set1_epi16(16)); \
+        r1 = _mm_add_epi16(r1, _mm_set1_epi16(16)); \
+        r0 = _mm_srai_epi16(r0, 5); \
+        r1 = _mm_srai_epi16(r1, 5); \
+        r0 = _mm_packus_epi16(r0, r1); \
+        _mm_store_si128((__m128i *)&pDst1[j*16], r0); \
+        \
+        t0 = _mm_loadu_si128((__m128i *)&pSrc2[iIdx+0]); \
+        s1 = _mm_loadu_si128((__m128i *)&pSrc2[iIdx+1]); \
+        s0 = _mm_unpacklo_epi8(t0, s1); \
+        s1 = _mm_unpackhi_epi8(t0, s1); \
+            \
+        s0 = _mm_maddubs_epi16(s0, f0); \
+        s1 = _mm_maddubs_epi16(s1, f0); \
+        s0 = _mm_add_epi16(s0, _mm_set1_epi16(16)); \
+        s1 = _mm_add_epi16(s1, _mm_set1_epi16(16)); \
+        s0 = _mm_srai_epi16(s0, 5); \
+        s1 = _mm_srai_epi16(s1, 5); \
+        s0 = _mm_packus_epi16(s0, s1); \
+        _mm_store_si128((__m128i *)&pDst2[j*16], s0); \
     }
 
     template <int mode>
@@ -745,47 +692,86 @@ namespace MFX_HEVC_PP
         __m128i r0, r1, s0, s1;
         __m128i t0, f0;
 
-    #ifdef __INTEL_COMPILER
-    #pragma unroll(16)
-    #endif
-        for (int j = 0; j < 16; j++)
-        {
-            pos += angle;
-            iIdx = pos >> 5;
-            iFact = pos & 31;
-            iIdx = ((iIdx+16) % 16);    // map -idx to +idx
-            f0 = _mm_load_si128((__m128i *)tab_frac[iFact]);
+        PRED16(0);
+        PRED16(1);
+        PRED16(2);
+        PRED16(3);
+        PRED16(4);
+        PRED16(5);
+        PRED16(6);
+        PRED16(7);
+        PRED16(8);
+        PRED16(9);
+        PRED16(10);
+        PRED16(11);
+        PRED16(12);
+        PRED16(13);
+        PRED16(14);
+        PRED16(15);
+    }
 
-            r0 = _mm_loadu_si128((__m128i *)&pSrc1[iIdx+0]);
-            r1 = _mm_loadu_si128((__m128i *)&pSrc1[iIdx+1]);
-            t0 = r0;
-            r0 = _mm_unpacklo_epi8(t0, r1);
-            r1 = _mm_unpackhi_epi8(t0, r1);
-
-            r0 = _mm_maddubs_epi16(r0, f0);
-            r1 = _mm_maddubs_epi16(r1, f0);
-            r0 = _mm_add_epi16(r0, _mm_set1_epi16(16));
-            r1 = _mm_add_epi16(r1, _mm_set1_epi16(16));
-            r0 = _mm_srai_epi16(r0, 5);
-            r1 = _mm_srai_epi16(r1, 5);
-            r0 = _mm_packus_epi16(r0, r1);
-            _mm_store_si128((__m128i *)&pDst1[j*16], r0);
-
-            s0 = _mm_loadu_si128((__m128i *)&pSrc2[iIdx+0]);
-            s1 = _mm_loadu_si128((__m128i *)&pSrc2[iIdx+1]);
-            t0 = s0;
-            s0 = _mm_unpacklo_epi8(t0, s1);
-            s1 = _mm_unpackhi_epi8(t0, s1);
-
-            s0 = _mm_maddubs_epi16(s0, f0);
-            s1 = _mm_maddubs_epi16(s1, f0);
-            s0 = _mm_add_epi16(s0, _mm_set1_epi16(16));
-            s1 = _mm_add_epi16(s1, _mm_set1_epi16(16));
-            s0 = _mm_srai_epi16(s0, 5);
-            s1 = _mm_srai_epi16(s1, 5);
-            s0 = _mm_packus_epi16(s0, s1);
-            _mm_store_si128((__m128i *)&pDst2[j*16], s0);
-        }
+    #define PRED32(j) { \
+        pos += angle; \
+        iIdx = pos >> 5; \
+        iFact = pos & 31; \
+        iIdx = ((iIdx+32) % 32); \
+        f0 = _mm_load_si128((__m128i *)tab_frac[iFact]); \
+         \
+        t0 = _mm_loadu_si128((__m128i *)&pSrc1[iIdx+0]); \
+        r1 = _mm_loadu_si128((__m128i *)&pSrc1[iIdx+1]); \
+        r0 = _mm_unpacklo_epi8(t0, r1); \
+        r1 = _mm_unpackhi_epi8(t0, r1); \
+         \
+        r0 = _mm_maddubs_epi16(r0, f0); \
+        r1 = _mm_maddubs_epi16(r1, f0); \
+        r0 = _mm_add_epi16(r0, _mm_set1_epi16(16)); \
+        r1 = _mm_add_epi16(r1, _mm_set1_epi16(16)); \
+        r0 = _mm_srai_epi16(r0, 5); \
+        r1 = _mm_srai_epi16(r1, 5); \
+        r0 = _mm_packus_epi16(r0, r1); \
+        _mm_store_si128((__m128i *)&pDst1[j*32+0], r0); \
+         \
+        t0 = _mm_loadu_si128((__m128i *)&pSrc1[iIdx+0+16]); \
+        r1 = _mm_loadu_si128((__m128i *)&pSrc1[iIdx+1+16]); \
+        r0 = _mm_unpacklo_epi8(t0, r1); \
+        r1 = _mm_unpackhi_epi8(t0, r1); \
+         \
+        r0 = _mm_maddubs_epi16(r0, f0); \
+        r1 = _mm_maddubs_epi16(r1, f0); \
+        r0 = _mm_add_epi16(r0, _mm_set1_epi16(16)); \
+        r1 = _mm_add_epi16(r1, _mm_set1_epi16(16)); \
+        r0 = _mm_srai_epi16(r0, 5); \
+        r1 = _mm_srai_epi16(r1, 5); \
+        r0 = _mm_packus_epi16(r0, r1); \
+        _mm_store_si128((__m128i *)&pDst1[j*32+16], r0); \
+         \
+        t0 = _mm_loadu_si128((__m128i *)&pSrc2[iIdx+0]); \
+        s1 = _mm_loadu_si128((__m128i *)&pSrc2[iIdx+1]); \
+        s0 = _mm_unpacklo_epi8(t0, s1); \
+        s1 = _mm_unpackhi_epi8(t0, s1); \
+         \
+        s0 = _mm_maddubs_epi16(s0, f0); \
+        s1 = _mm_maddubs_epi16(s1, f0); \
+        s0 = _mm_add_epi16(s0, _mm_set1_epi16(16)); \
+        s1 = _mm_add_epi16(s1, _mm_set1_epi16(16)); \
+        s0 = _mm_srai_epi16(s0, 5); \
+        s1 = _mm_srai_epi16(s1, 5); \
+        s0 = _mm_packus_epi16(s0, s1); \
+        _mm_store_si128((__m128i *)&pDst2[j*32+0], s0); \
+         \
+        t0 = _mm_loadu_si128((__m128i *)&pSrc2[iIdx+0+16]); \
+        s1 = _mm_loadu_si128((__m128i *)&pSrc2[iIdx+1+16]); \
+        s0 = _mm_unpacklo_epi8(t0, s1); \
+        s1 = _mm_unpackhi_epi8(t0, s1); \
+         \
+        s0 = _mm_maddubs_epi16(s0, f0); \
+        s1 = _mm_maddubs_epi16(s1, f0); \
+        s0 = _mm_add_epi16(s0, _mm_set1_epi16(16)); \
+        s1 = _mm_add_epi16(s1, _mm_set1_epi16(16)); \
+        s0 = _mm_srai_epi16(s0, 5); \
+        s1 = _mm_srai_epi16(s1, 5); \
+        s0 = _mm_packus_epi16(s0, s1); \
+        _mm_store_si128((__m128i *)&pDst2[j*32+16], s0); \
     }
 
     template <int mode>
@@ -799,50 +785,38 @@ namespace MFX_HEVC_PP
         __m128i r0, r1, s0, s1;
         __m128i t0, f0;
 
-    #ifdef __INTEL_COMPILER
-    #pragma unroll(16)
-    #endif
-        for (int j = 0; j < 32; j++)
-        {
-            pos += angle;
-            iIdx = pos >> 5;
-            iFact = pos & 31;
-            iIdx = ((iIdx+32) % 32);    // map -idx to +idx
-            f0 = _mm_load_si128((__m128i *)tab_frac[iFact]);
-
-            for (int i = 0; i < 32; i += 16)
-            {
-                r0 = _mm_loadu_si128((__m128i *)&pSrc1[iIdx+0+i]);
-                r1 = _mm_loadu_si128((__m128i *)&pSrc1[iIdx+1+i]);
-                t0 = r0;
-                r0 = _mm_unpacklo_epi8(t0, r1);
-                r1 = _mm_unpackhi_epi8(t0, r1);
-
-                r0 = _mm_maddubs_epi16(r0, f0);
-                r1 = _mm_maddubs_epi16(r1, f0);
-                r0 = _mm_add_epi16(r0, _mm_set1_epi16(16));
-                r1 = _mm_add_epi16(r1, _mm_set1_epi16(16));
-                r0 = _mm_srai_epi16(r0, 5);
-                r1 = _mm_srai_epi16(r1, 5);
-                r0 = _mm_packus_epi16(r0, r1);
-                _mm_store_si128((__m128i *)&pDst1[j*32+i], r0);
-
-                s0 = _mm_loadu_si128((__m128i *)&pSrc2[iIdx+0+i]);
-                s1 = _mm_loadu_si128((__m128i *)&pSrc2[iIdx+1+i]);
-                t0 = s0;
-                s0 = _mm_unpacklo_epi8(t0, s1);
-                s1 = _mm_unpackhi_epi8(t0, s1);
-
-                s0 = _mm_maddubs_epi16(s0, f0);
-                s1 = _mm_maddubs_epi16(s1, f0);
-                s0 = _mm_add_epi16(s0, _mm_set1_epi16(16));
-                s1 = _mm_add_epi16(s1, _mm_set1_epi16(16));
-                s0 = _mm_srai_epi16(s0, 5);
-                s1 = _mm_srai_epi16(s1, 5);
-                s0 = _mm_packus_epi16(s0, s1);
-                _mm_store_si128((__m128i *)&pDst2[j*32+i], s0);
-            }
-        }
+        PRED32(0);
+        PRED32(1);
+        PRED32(2);
+        PRED32(3);
+        PRED32(4);
+        PRED32(5);
+        PRED32(6);
+        PRED32(7);
+        PRED32(8);
+        PRED32(9);
+        PRED32(10);
+        PRED32(11);
+        PRED32(12);
+        PRED32(13);
+        PRED32(14);
+        PRED32(15);
+        PRED32(16);
+        PRED32(17);
+        PRED32(18);
+        PRED32(19);
+        PRED32(20);
+        PRED32(21);
+        PRED32(22);
+        PRED32(23);
+        PRED32(24);
+        PRED32(25);
+        PRED32(26);
+        PRED32(27);
+        PRED32(28);
+        PRED32(29);
+        PRED32(30);
+        PRED32(31);
     }
 
     template <int width, int mode>
