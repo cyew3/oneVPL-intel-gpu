@@ -254,6 +254,9 @@ void dump_mfxInfoMFX(FILE *fd, int level, TCHAR *prefix, TCHAR *prefix2, Compone
     case MFX_CODEC_AVC:
         dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".CodecId=AVC"),TEXT(""));
         break;
+    case MFX_CODEC_HEVC:
+        dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".CodecId=HEVC"),TEXT(""));
+        break;
     case MFX_CODEC_MPEG2:
         dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".CodecId=MPEG2"),TEXT(""));
         break;
