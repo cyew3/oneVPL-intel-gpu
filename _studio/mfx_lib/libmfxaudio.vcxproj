@@ -221,6 +221,7 @@
     <ClInclude Include="..\shared\include\libmfx_core.h" />
     <ClInclude Include="..\shared\include\libmfx_core_factory.h" />
     <ClInclude Include="..\shared\include\libmfx_core_operation.h" />
+    <ClInclude Include="..\shared\include\mfxaudio++int.h" />
     <ClInclude Include="..\shared\include\mfxstructurespro.h" />
     <ClInclude Include="..\shared\include\mfxvideo++int.h" />
     <ClInclude Include="..\shared\include\mfxvideopro.h" />
