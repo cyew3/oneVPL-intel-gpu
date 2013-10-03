@@ -67,7 +67,7 @@ typedef struct mfxCoreInterface {
     mfxHDL pthis;
 
     mfxHDL reserved1[1];
-    mfxFrameAllocator InternalSurfaceAllocator; //frame allocator for internal surfaces, it may be mapped on internal or external allocator by mfx core
+    mfxFrameAllocator* InternalSurfaceAllocator; //frame allocator for internal surfaces, it may be mapped on internal or external allocator by mfx core
     mfxFrameAllocator FrameAllocator; //frame allocator for external surfaces
     mfxBufferAllocator reserved3;
 
