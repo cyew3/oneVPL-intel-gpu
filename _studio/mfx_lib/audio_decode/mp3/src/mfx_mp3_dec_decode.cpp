@@ -25,12 +25,6 @@ public:
     static mfxStatus FillAudioParamByUMC(UMC::MP3DecoderParams *in, mfxAudioParam *out);
 };
 
-struct ThreadAudioTaskInfo
-{
-    mfxAudioFrame         *out;
-    mfxU32                 taskID; // for task ordering
-};
-
 AudioDECODEMP3::AudioDECODEMP3(AudioCORE *core, mfxStatus * sts)
 : AudioDECODE()
 , m_core(core)
@@ -287,7 +281,7 @@ mfxStatus AudioDECODEMP3::DecodeFrameCheck(mfxBitstream *bs,
 
     if (MFX_ERR_NONE == mfxSts) // It can be useful to run threads right after first frame receive
     {
-        ThreadAudioTaskInfo * info = new ThreadAudioTaskInfo();
+        ThreadAudioDecodeTaskInfo * info = new ThreadAudioDecodeTaskInfo();
         info->out = aFrame;
 
         pEntryPoint->pRoutine = &MP3ECODERoutine;
@@ -313,12 +307,13 @@ mfxStatus AudioDECODEMP3::MP3ECODERoutine(void *pState, void *pParam,
 
     if (MFX_PLATFORM_SOFTWARE == obj.m_platform)
     {
-        ThreadAudioTaskInfo *pTask = (ThreadAudioTaskInfo *) pParam;
+        ThreadAudioDecodeTaskInfo *pTask = (ThreadAudioDecodeTaskInfo *) pParam;
 
-        obj.mInData.SetBufferPointer((Ipp8u *)obj.m_frame.Data + obj.m_frame.DataOffset,obj.m_frame.DataLength);
+        obj.mInData.SetBufferPointer((Ipp8u *)obj.m_frame.Data + obj.m_frame.DataOffset, obj.m_frame.DataLength);
         obj.mInData.SetDataSize(obj.m_frame.DataLength);
 
-        obj.mOutData.SetBufferPointer( static_cast<Ipp8u *>(pTask->out->Data), pTask->out->MaxLength - pTask->out->DataLength);
+        //datalen computed in syncpart should equal to decoded datalen
+        obj.mOutData.SetBufferPointer( static_cast<Ipp8u *>(pTask->out->Data), pTask->out->DataLength);
 
         UMC::Status sts = obj.m_pMP3AudioDecoder.get()->GetFrame(&obj.mInData, &obj.mOutData);
         MFX_CHECK_UMC_STS(sts);

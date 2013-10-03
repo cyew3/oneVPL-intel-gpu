@@ -29,11 +29,6 @@ public:
     static mfxStatus FillAudioParamByUMC(UMC::AACDecoderParams *in, mfxAudioParam *out);
 };
 
-struct ThreadAudioTaskInfo
-{
-    mfxAudioFrame         *out;
-    mfxU32                 taskID; // for task ordering
-};
 
 AudioDECODEAAC::AudioDECODEAAC(AudioCORE *core, mfxStatus * sts)
 : AudioDECODE()
@@ -450,7 +445,7 @@ mfxStatus AudioDECODEAAC::DecodeFrameCheck(mfxBitstream *bs,
 
     if (MFX_ERR_NONE == mfxSts) // It can be useful to run threads right after first frame receive
     {
-        ThreadAudioTaskInfo * info = new ThreadAudioTaskInfo();
+        ThreadAudioDecodeTaskInfo * info = new ThreadAudioDecodeTaskInfo();
         info->out = aFrame;
 
         pEntryPoint->pRoutine = &AACDECODERoutine;
@@ -476,14 +471,12 @@ mfxStatus AudioDECODEAAC::AACDECODERoutine(void *pState, void *pParam,
 
     if (MFX_PLATFORM_SOFTWARE == obj.m_platform)
     {
-        ThreadAudioTaskInfo *pTask = (ThreadAudioTaskInfo *) pParam;
+        ThreadAudioDecodeTaskInfo *pTask = (ThreadAudioDecodeTaskInfo *) pParam;
 
         obj.mInData.SetBufferPointer((Ipp8u *)obj.m_frame.Data + obj.m_frame.DataOffset, obj.m_frame.DataLength);
         obj.mInData.SetDataSize(obj.m_frame.DataLength);
 
-        obj.mOutData.SetBufferPointer( static_cast<Ipp8u *>(pTask->out->Data), pTask->out->MaxLength - pTask->out->DataLength);
-        obj.mOutData.MoveDataPointer(0);
-        obj.mOutData.SetDataSize(0);
+        obj.mOutData.SetBufferPointer( static_cast<Ipp8u *>(pTask->out->Data), pTask->out->MaxLength);
 
         UMC::Status sts = obj.m_pAACAudioDecoder.get()->GetFrame(&obj.mInData, &obj.mOutData);
         MFX_CHECK_UMC_STS(sts);
@@ -492,7 +485,7 @@ mfxStatus AudioDECODEAAC::AACDECODERoutine(void *pState, void *pParam,
         // set out buffer size;
         memmove(obj.m_frame.Data + obj.m_frame.DataOffset, obj.mInData.GetDataPointer(), obj.mInData.GetDataSize());
         obj.m_frame.DataLength = (mfxU32) obj.mInData.GetDataSize();
-        pTask->out->DataLength += (mfxU32) obj.mOutData.GetDataSize();
+        //pTask->out->DataLength += (mfxU32) obj.mOutData.GetDataSize();
     }
     else
     {

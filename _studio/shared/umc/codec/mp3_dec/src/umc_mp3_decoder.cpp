@@ -386,22 +386,42 @@ Status MP3Decoder::FrameConstruct(MediaData *in, Ipp32s *outFrameSize, Ipp32s *o
     mp3dec_ReceiveBuffer(&(state.m_StreamData), inPointer, inDataSize);
 
     MP3Status stsMP3 = mp3dec_GetSynch(&state);
+
+
     //TODO: prevent code copy
-    {
-        IppMP3FrameHeader *header;
+    {   
+        Ipp32s channels = 0;
+        IppMP3FrameHeader *header = &(state.header);
+
+        //TODO: layer 3 only supported
+        switch (header->layer) {
+            case 2: {
+                if (mp3dec_audio_data_LayerII(&state)) {
+                    //MP3_NOT_FIND_SYNCWORD
+                    return UMC_ERR_SYNC;
+                }
+                Ipp32s bits = (Ipp32s)(((state.m_StreamData.pCurrent_dword -
+                    state.start_ptr) << 5) +
+                    state.start_offset -
+                    state.m_StreamData.nBit_offset);
+                bits = (state.MP3nSlots << 3) - bits;
+
+                if (bits >= 35) {
+                    mp3dec_mc_header(&state);
+                    mp3dec_mc_params(&state);
+                }
+                channels = state.stereo + state.mc_channel + state.mc_header.lfe;
+                break;
+            }
+            default: {
+                return UMC_ERR_UNSUPPORTED;
+            }
+        }
+
         Ipp32s fs[2][4] = {
             { 0, 384, 1152,  576 },
             { 0, 384, 1152, 1152 }
         };
-
-        //if (state.m_bInit)
-        //    header = &(state.header_good);
-        //else
-        
-        Ipp32s channels = state.stereo + state.mc_channel + state.mc_header.lfe;
-
-        header = &(state.header);
-        //*p_RawFrameSize = 1152 * (channels + 1) * sizeof(Ipp16s);
 
         *p_RawFrameSize = fs[header->id][header->layer] * channels * sizeof(Ipp16s);
     }    

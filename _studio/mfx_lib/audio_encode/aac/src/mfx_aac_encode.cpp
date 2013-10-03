@@ -22,12 +22,7 @@ public:
     static mfxStatus FillAudioParam( mfxAudioParam *in, mfxAudioParam *out);
     static mfxStatus FillAudioParamByUMC(UMC::AACEncoderParams *in, mfxAudioParam *out);
 };
-struct ThreadAudioTaskInfo
-{
-    mfxAudioFrame          *in;
-    mfxBitstream           *out;
-    mfxU32                 taskID; // for task ordering
-};
+
 
 AudioENCODEAAC::AudioENCODEAAC(CommonCORE *core, mfxStatus * sts)
 : AudioENCODE()
@@ -308,7 +303,7 @@ mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxAudioFrame *aFrame,
 
     if (MFX_ERR_NONE == mfxSts) // It can be useful to run threads right after first frame receive
     {
-        ThreadAudioTaskInfo * info = new ThreadAudioTaskInfo();
+        ThreadAudioEncodeTaskInfo * info = new ThreadAudioEncodeTaskInfo();
         info->out = buffer_out;
         info->in = aFrame;
 
@@ -334,7 +329,7 @@ mfxStatus AudioENCODEAAC::AACENCODERoutine(void *pState, void *pParam,
 
     if (MFX_PLATFORM_SOFTWARE == obj.m_platform)
     {
-        ThreadAudioTaskInfo *pTask = (ThreadAudioTaskInfo *) pParam;
+        ThreadAudioEncodeTaskInfo *pTask = (ThreadAudioEncodeTaskInfo *) pParam;
 
         obj.mInData.SetBufferPointer((Ipp8u *)pTask->in->Data, pTask->in->DataLength);
         obj.mInData.SetDataSize(obj.mInData.GetBufferSize());
