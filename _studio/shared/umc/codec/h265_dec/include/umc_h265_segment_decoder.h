@@ -136,7 +136,7 @@ public:
     bool DecodeSplitFlagCABAC(H265CodingUnit* pCU, Ipp32s PartX, Ipp32s PartY, Ipp32u Depth);
     Ipp32u DecodeMergeIndexCABAC(void);
 
-    Ipp32s CountIntraNeighborsN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u TrDepth, bool *neighborAvailable);
+    void GetIntraNgbrMask(H265CodingUnit* pCU, Ipp32s XInc, Ipp32s YInc, Ipp32u *tpIf, Ipp32u *lfIf, Ipp32u* tlIf);
 
     bool DecodeSkipFlagCABAC(H265CodingUnit* pCU, Ipp32s PartX, Ipp32s PartY, Ipp32u Depth);
     bool DecodeCUTransquantBypassFlag(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
@@ -189,14 +189,12 @@ public:
     void IntraRecLumaBlk(H265CodingUnit* pCU,
                          Ipp32u TrDepth,
                          Ipp32u AbsPartIdx,
-                         Ipp32s numIntraNeighbors,
-                         bool* neighborAvailable);
+                         Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf);
     void IntraRecChromaBlk(H265CodingUnit* pCU,
                            Ipp32u TrDepth,
                            Ipp32u AbsPartIdx,
                            Ipp32u ChromaPredMode,
-                           Ipp32s numIntraNeighbors,
-                           bool* neighborAvailable);
+                           Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf);
 
     void InitNeighbourPatternChroma(
         H265CodingUnit* pCU,

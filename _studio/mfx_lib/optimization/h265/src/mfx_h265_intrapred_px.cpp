@@ -59,7 +59,6 @@ namespace MFX_HEVC_PP
         669,   655,   643,   630,   618,   607,   596,   585,
         575,   565,   555,   546,   537,   529,   520,   512
     };
-    
 
     void h265_FilterPredictPels_8u(
         Ipp8u* PredPel,
@@ -112,6 +111,262 @@ namespace MFX_HEVC_PP
 
     } // void h265_FilterPredictPels_Bilinear_8u(...)
 
+    void h265_GetPredPelsLuma_8u(Ipp8u* pSrc, Ipp8u* pPredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf)
+    {
+        Ipp8u* tmpSrcPtr;
+        Ipp32s num4x4InCU   = blkSize >> 2;
+        Ipp32u blkSize2     = blkSize << 1;
+        Ipp32s TotalPixels  = (blkSize << 2) + 1;
+        Ipp32s i, j;
+
+        Ipp32u avlMask  = (((Ipp32u)(1<<((num4x4InCU)<<1)))-1);
+
+        tpIf &= avlMask; lfIf &= avlMask;
+
+        Ipp32u isAnyNBR = (tpIf | lfIf | tlIf);
+        Ipp32u isAllNBR = (tpIf & lfIf & (tlIf | 0xFFFFFFFE));
+
+        if (!(isAnyNBR)) {
+            // No neighbors available
+            memset(pPredPel, 128, TotalPixels);
+        } else if (isAllNBR == avlMask) {
+            // All neighbors available
+            memcpy(pPredPel, pSrc - srcPitch - 1, blkSize2 + 1);
+
+            tmpSrcPtr = pSrc - 1;
+            for (i = blkSize2 + 1; i < TotalPixels; i++) {
+                pPredPel[i] = tmpSrcPtr[0];
+                tmpSrcPtr += srcPitch;
+            }
+        } else {
+            // Some of the neighbors available, padding required
+            Ipp32u  tIF, itIF;
+            PixType availableRef = 0;
+            Ipp8u*  tPredPel;
+
+            if (tlIf & 0x1) {
+                // top-left value is available
+                availableRef = *(pSrc - srcPitch - 1);
+            } else {
+                // search for top-left padded value
+                tIF = lfIf;
+                if(tIF) {
+                    // padding from the last of left values
+                    tmpSrcPtr = pSrc - 1;
+                    while((tIF & 0x1)==0) { tIF >>= 1; tmpSrcPtr += (srcPitch << 2); }
+                    availableRef = *tmpSrcPtr;
+                } else {
+                    // padding from the first of top values
+                    VM_ASSERT(tpIf != 0);
+                    tmpSrcPtr = pSrc - srcPitch; tIF = tpIf;
+                    while((tIF & 0x1)==0) { tIF >>= 1; tmpSrcPtr += 4; }
+                    availableRef = *tmpSrcPtr;
+                }
+            }
+
+            *pPredPel = availableRef; tIF = tpIf;
+            // Fill top line with correct padding
+            if(tIF) {
+                tPredPel = pPredPel + 1; tmpSrcPtr = pSrc - srcPitch;
+                for (j = 0; j < (num4x4InCU<<1); j++)
+                {
+                    if (tIF & 0x1) {
+                        *tPredPel++ = *tmpSrcPtr++;
+                        *tPredPel++ = *tmpSrcPtr++;
+                        *tPredPel++ = *tmpSrcPtr++;
+                        availableRef = *tmpSrcPtr++;
+                        *tPredPel++ = availableRef;
+                    } else {
+                        *tPredPel++ = availableRef;
+                        *tPredPel++ = availableRef;
+                        *tPredPel++ = availableRef;
+                        *tPredPel++ = availableRef;
+                        tmpSrcPtr += 4;
+                    }
+                    tIF >>= 1;
+                }
+                availableRef = *pPredPel;
+            } else {
+                memset(pPredPel + 1, availableRef, blkSize2);
+            }
+            tIF = lfIf;
+            // Fill left line with correct padding
+            if(tIF) {
+                tPredPel  = pPredPel + blkSize2 + 1;
+                tmpSrcPtr = pSrc - 1;
+                itIF = 0;
+                // Copy pixel values with holes, find last valid value, invert avialability mask
+                for (j = 0; j < (num4x4InCU<<1); j++)
+                {
+                    itIF <<= 1;
+                    if (tIF & 0x1) {
+                        *tPredPel++ = *tmpSrcPtr; tmpSrcPtr += srcPitch;
+                        *tPredPel++ = *tmpSrcPtr; tmpSrcPtr += srcPitch;
+                        *tPredPel++ = *tmpSrcPtr; tmpSrcPtr += srcPitch;
+                        availableRef = *tmpSrcPtr; tmpSrcPtr += srcPitch;
+                        *tPredPel++ = availableRef;
+                        itIF |= 0x1;
+                    } else {
+                        tmpSrcPtr += (srcPitch << 2);
+                        tPredPel += 4;
+                    }
+                    tIF >>= 1;
+                }
+                // Back-sweep filling holes
+                tPredPel  = pPredPel + (blkSize2 << 1);
+                for (j = 0; j < (num4x4InCU<<1); j++)
+                {
+                    if (itIF & 0x1) {
+                        tPredPel -= 4; availableRef = tPredPel[1];
+                    } else {
+                        *tPredPel-- = availableRef;
+                        *tPredPel-- = availableRef;
+                        *tPredPel-- = availableRef;
+                        *tPredPel-- = availableRef;
+                    }
+                    itIF >>= 1;
+                }
+            } else {
+                memset(pPredPel + blkSize2 + 1, availableRef, blkSize2);
+            }
+        }
+    }
+
+    void h265_GetPredPelsChromaNV12_8u(Ipp8u* pSrc, Ipp8u* pPredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf)
+    {
+        Ipp8u* tmpSrcPtr;
+        Ipp32s num4x4InCU   = blkSize >> 2;
+        Ipp32u blkSize2     = blkSize << 1;
+        Ipp32s TotalPixels  = (blkSize << 2) + 2;
+        Ipp32s i, j;
+
+        Ipp32u avlMask  = (((Ipp32u)(1<<((num4x4InCU)<<1)))-1);
+
+        tpIf &= avlMask; lfIf &= avlMask;
+
+        Ipp32u isAnyNBR = (tpIf | lfIf | tlIf);
+        Ipp32u isAllNBR = (tpIf & lfIf & (tlIf | 0xFFFFFFFE));
+
+        if (!(isAnyNBR)) {
+            // No neighbors available
+            memset(pPredPel, 128, TotalPixels);
+        } else if (isAllNBR == avlMask) {
+            // All neighbors available
+            memcpy(pPredPel, pSrc - srcPitch - 2, blkSize2 + 2);
+
+            tmpSrcPtr = pSrc - 2;
+            for (i = blkSize2 + 2; i < TotalPixels; i+=2) {
+                pPredPel[i]   = tmpSrcPtr[0];
+                pPredPel[i+1] = tmpSrcPtr[1];
+                tmpSrcPtr += srcPitch;
+            }
+        } else {
+            // Some of the neighbors available, padding required
+            Ipp32u  tIF, itIF;
+            PixType RefU = 0, RefV = 0;
+            Ipp8u*  tPredPel;
+
+            if (tlIf & 0x1) {
+                // top-left value is available
+                RefU = *(pSrc - srcPitch - 1);
+                RefV = *(pSrc - srcPitch - 2);
+            } else {
+                // search for top-left padded value
+                tIF = lfIf;
+                if(tIF) {
+                    // padding from the last of left values
+                    tmpSrcPtr = pSrc - 2;
+                    while((tIF & 0x1)==0) { tIF >>= 2; tmpSrcPtr += (srcPitch << 2); }
+                    RefV = *(tmpSrcPtr);
+                    RefU = *(tmpSrcPtr+1);
+                } else {
+                    // padding from the first of top values
+                    VM_ASSERT(tpIf != 0);
+                    tmpSrcPtr = pSrc - srcPitch; tIF = tpIf;
+                    while((tIF & 0x1)==0) { tIF >>= 2; tmpSrcPtr += 8; }
+                    RefV = *(tmpSrcPtr);
+                    RefU = *(tmpSrcPtr+1);
+                }
+            }
+
+            *pPredPel = RefV; *(pPredPel+1) = RefU; tIF = tpIf;
+            
+            // Fill top line with correct padding
+            if(tIF) {
+                tPredPel = pPredPel + 2; tmpSrcPtr = pSrc - srcPitch;
+                for (j = 0; j < num4x4InCU; j++)
+                {
+                    if (tIF & 0x1) {
+                        *tPredPel++ = *tmpSrcPtr++; *tPredPel++ = *tmpSrcPtr++;
+                        *tPredPel++ = *tmpSrcPtr++; *tPredPel++ = *tmpSrcPtr++;
+                        *tPredPel++ = *tmpSrcPtr++; *tPredPel++ = *tmpSrcPtr++;
+                        RefV = *tmpSrcPtr++; *tPredPel++ = RefV;
+                        RefU = *tmpSrcPtr++; *tPredPel++ = RefU;
+                    } else {
+                        *tPredPel++ = RefV; *tPredPel++ = RefU;
+                        *tPredPel++ = RefV; *tPredPel++ = RefU;
+                        *tPredPel++ = RefV; *tPredPel++ = RefU;
+                        *tPredPel++ = RefV; *tPredPel++ = RefU;
+                        tmpSrcPtr += 8;
+                    }
+                    tIF >>= 2;
+                }
+                RefV = *pPredPel; RefU = *(pPredPel+1);
+            } else {
+                Ipp16u *pDst16 = (Ipp16u*)pPredPel + 1;
+                Ipp16u  refVal = (RefU<<8)+RefV;
+                for(j = 0; j < blkSize2>>1; j++)
+                    *pDst16++ = refVal;
+            }
+            
+            tIF = lfIf;
+            // Fill left line with correct padding
+            if(tIF) {
+                tPredPel  = pPredPel + blkSize2 + 2;
+                tmpSrcPtr = pSrc - 2;
+                itIF = 0;
+                // Copy pixel values with holes, find last valid value, invert avialability mask
+                for (j = 0; j < num4x4InCU; j++)
+                {
+                    itIF <<= 1;
+                    if (tIF & 0x1) {
+                        *tPredPel++ = *tmpSrcPtr; *tPredPel++ = *(tmpSrcPtr+1); tmpSrcPtr += srcPitch;
+                        *tPredPel++ = *tmpSrcPtr; *tPredPel++ = *(tmpSrcPtr+1); tmpSrcPtr += srcPitch;
+                        *tPredPel++ = *tmpSrcPtr; *tPredPel++ = *(tmpSrcPtr+1); tmpSrcPtr += srcPitch;
+                        RefV = *tmpSrcPtr; *tPredPel++ = RefV;
+                        RefU = *(tmpSrcPtr+1); *tPredPel++ = RefU;
+                        tmpSrcPtr += srcPitch;
+                        itIF |= 0x1;
+                    } else {
+                        tmpSrcPtr += (srcPitch << 2);
+                        tPredPel += 8;
+                    }
+                    tIF >>= 2;
+                }
+                // Back-sweep filling holes
+                tPredPel--;
+                for (j = 0; j < num4x4InCU; j++)
+                {
+                    if (itIF & 0x1) {
+                        tPredPel -= 8; 
+                        RefV = tPredPel[1];
+                        RefU = tPredPel[2];
+                    } else {
+                        *tPredPel-- = RefU; *tPredPel-- = RefV;
+                        *tPredPel-- = RefU; *tPredPel-- = RefV;
+                        *tPredPel-- = RefU; *tPredPel-- = RefV;
+                        *tPredPel-- = RefU; *tPredPel-- = RefV;
+                    }
+                    itIF >>= 1;
+                }
+            } else {
+                Ipp16u *pDst16 = (Ipp16u*)(pPredPel + blkSize2 + 2);
+                Ipp16u  refVal = (RefU<<8)+RefV;
+                for(j = 0; j < blkSize2>>1; j++)
+                    *pDst16++ = refVal;
+            }
+        }
+    }
 
     void h265_GetPredictPels_8u(
         Ipp32u log2_min_transform_block_size,
@@ -180,7 +435,6 @@ namespace MFX_HEVC_PP
         else // reference samples are partially available
         {
             int Size = (width << 1) + 1;
-            Ipp8u pAdiTemp[65*65];
             Ipp32u NumUnits2 = numUnitsInCU << 1;
             Ipp32u TotalSamples = TotalUnits * UnitSize;
             const int MAX_CU_SIZE = 64;
@@ -586,14 +840,224 @@ namespace MFX_HEVC_PP
                 pels[j*pitch+i] = (PixType)((horPred + topRow[i]) >> (shift+1));
             }
         }
-
     } // void h265_PredictIntra_Planar_8u(...)
 
+    void h265_PredictIntra_Planar_ChromaNV12_8u(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize)
+    {
+        Ipp32s bottomLeft, topRight;
+        Ipp32s bottomLeft1, topRight1;
+        Ipp32s horPred;
+        Ipp32s horPred1;
+        Ipp32s leftColumn[64], topRow[64], bottomRow[64], rightColumn[64];
+        Ipp32s shift = h265_log2table[blkSize - 4];
+        Ipp32s i, j;
+
+        // Get left and above reference column and row
+        for (i = 0; i < 2*blkSize; i++)
+        {
+            topRow[i] = PredPel[2+i];
+            leftColumn[i] = PredPel[4*blkSize+2+i];
+        }
+
+        // Prepare intermediate variables used in interpolation
+        bottomLeft  = PredPel[2+6*blkSize];
+        bottomLeft1 = PredPel[2+6*blkSize+1];
+        topRight  = PredPel[2+2*blkSize];
+        topRight1 = PredPel[2+2*blkSize+1];
+
+        for (i = 0; i < 2*blkSize; i+=2)
+        {
+            bottomRow[i]   = bottomLeft - topRow[i];
+            rightColumn[i] = topRight   - leftColumn[i];
+            topRow[i]      <<= shift;
+            leftColumn[i]  <<= shift;
+
+            bottomRow[i+1]   = bottomLeft1 - topRow[i+1];
+            rightColumn[i+1] = topRight1   - leftColumn[i+1];
+            topRow[i+1]      <<= shift;
+            leftColumn[i+1]  <<= shift;
+        }
+
+        // Generate blkSize signal
+        for (j = 0; j < blkSize; j++)
+        {
+            horPred  = leftColumn[2*j] + blkSize;
+            horPred1 = leftColumn[2*j+1] + blkSize;
+            for (i = 0; i < 2*blkSize; i+=2)
+            {
+                horPred += rightColumn[2*j];
+                topRow[i] += bottomRow[i];
+                pDst[j*dstStride+i] = (PixType)((horPred + topRow[i]) >> (shift+1));
+
+                horPred1 += rightColumn[2*j+1];
+                topRow[i+1] += bottomRow[i+1];
+                pDst[j*dstStride+i+1] = (PixType)((horPred1 + topRow[i+1]) >> (shift+1));
+            }
+        }
+    }
+
+    void h265_PredictIntra_DC_ChromaNV12_8u(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize)
+    {
+        Ipp32s k;
+        Ipp32s l;
+
+        Ipp32s dc1, dc2;
+        Ipp32s Sum1 = 0, Sum2 = 0;
+
+        for (Ipp32s Ind = 2; Ind < blkSize * 2 + 2; Ind += 2)
+        {
+            Sum1 += PredPel[Ind];
+            Sum2 += PredPel[Ind+1];
+        }
+        for (Ipp32s Ind = blkSize * 4 + 2; Ind < blkSize * 6 + 2; Ind += 2)
+        {
+            Sum1 += PredPel[Ind];
+            Sum2 += PredPel[Ind+1];
+        }
+
+        dc1 = (Ipp32s)((Sum1 + blkSize) / (blkSize << 1));
+        dc2 = (Ipp32s)((Sum2 + blkSize) / (blkSize << 1));
+
+        for (k = 0; k < blkSize; k++)
+        {
+            for (l = 0; l < blkSize * 2; l += 2)
+            {
+                pDst[k * dstStride + l] = dc1;
+                pDst[k * dstStride + l + 1] = dc2;
+            }
+        }
+    }
+
+    void h265_PredictIntra_Hor_ChromaNV12_8u(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize)
+    {
+        Ipp32s k;
+        Ipp32s l;
+
+        for (k = 0; k < blkSize; k++)
+        {
+            for (l = 0; l < blkSize * 2; l+=2)
+            {
+                pDst[k*dstStride+l] = PredPel[4*blkSize+2+2*k];
+                pDst[k*dstStride+l+1] = PredPel[4*blkSize+2+2*k+1];
+            }
+        }
+    }
+
+    void h265_PredictIntra_Ver_ChromaNV12_8u(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize)
+    {
+        Ipp32s k;
+        Ipp32s l;
+
+        for (k = 0; k < blkSize; k++)
+        {
+            for (l = 0; l < blkSize * 2; l++)
+            {
+                pDst[k*dstStride+l] = PredPel[2+l];
+            }
+        }
+    }
+
+    void h265_PredictIntra_Ang_ChromaNV12_8u(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize, Ipp32u dirMode)
+    {
+        Ipp32s intraPredAngle = intraPredAngleTable[dirMode];
+        PixType refMainBuf[4*64+2];
+        PixType *refMain = refMainBuf + 128;
+        PixType *PredPel1, *PredPel2;
+        Ipp32s invAngle = invAngleTable[dirMode];
+        Ipp32s invAngleSum;
+        Ipp32s pos;
+        Ipp32s i, j;
+
+        if (dirMode >= 18)
+        {
+            PredPel1 = PredPel;
+            PredPel2 = PredPel + 4 * blkSize + 2;
+        }
+        else
+        {
+            PredPel1 = PredPel + 4 * blkSize;
+            PredPel2 = PredPel + 2;
+        }
+
+        refMain[0] = PredPel[0];
+        refMain[1] = PredPel[1];
+
+        if (intraPredAngle < 0)
+        {
+            for (i = 1; i <= blkSize; i++)
+            {
+                refMain[2*i] = PredPel1[2*i];
+                refMain[2*i+1] = PredPel1[2*i+1];
+            }
+
+            invAngleSum = 128;
+            for (i = -1; i > ((blkSize * intraPredAngle) >> 5); i--)
+            {
+                invAngleSum += invAngle;
+                refMain[2*i] = PredPel2[2*((invAngleSum >> 8) - 1)];
+                refMain[2*i+1] = PredPel2[2*((invAngleSum >> 8) - 1)+1];
+            }
+        }
+        else
+        {
+            for (i = 1; i <= 2*blkSize; i++)
+            {
+                refMain[2*i] = PredPel1[2*i];
+                refMain[2*i+1] = PredPel1[2*i+1];
+            }
+        }
+
+        pos = 0;
+
+        for (j = 0; j < blkSize; j++)
+        {
+            Ipp32s iIdx;
+            Ipp32s iFact;
+
+            pos += intraPredAngle;
+            iIdx = pos >> 5;
+            iFact = pos & 31;
+
+            if (iFact)
+            {
+                for (i = 0; i < blkSize; i++)
+                {
+                    pDst[j*dstStride+2*i] = (PixType)(((32 - iFact) * refMain[2*(i+iIdx+1)] + iFact * refMain[2*(i+iIdx+2)] + 16) >> 5);
+                    pDst[j*dstStride+2*i+1] = (PixType)(((32 - iFact) * refMain[2*(i+iIdx+1)+1] + iFact * refMain[2*(i+iIdx+2)+1] + 16) >> 5);
+                }
+            }
+            else
+            {
+                for (i = 0; i < blkSize; i++)
+                {
+                    pDst[j*dstStride+2*i] = refMain[2*(i+iIdx+1)];
+                    pDst[j*dstStride+2*i+1] = refMain[2*(i+iIdx+1)+1];
+                }
+            }
+        }
+
+        if (dirMode < 18)
+        {
+            PixType tmp;
+            for (j = 0; j < blkSize - 1; j++)
+            {
+                for (i = j + 1; i < blkSize; i++)
+                {
+                    tmp = pDst[j*dstStride+2*i];
+                    pDst[j*dstStride+2*i]= pDst[i*dstStride+2*j];
+                    pDst[i*dstStride+2*j] = tmp;
+                    tmp = pDst[j*dstStride+2*i+1];
+                    pDst[j*dstStride+2*i+1]= pDst[i*dstStride+2*j+1];
+                    pDst[i*dstStride+2*j+1] = tmp;
+                }
+            }
+        }
+    }
 
 #define INTRA_VER                26
 #define INTRA_HOR                10
 
-static Ipp32s FilteredModes[] = {10, 7, 1, 0, 10};
+    static Ipp32s FilteredModes[] = {10, 7, 1, 0, 10};
 
 #if defined(MFX_TARGET_OPTIMIZATION_PX)  || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 #if defined(MFX_TARGET_OPTIMIZATION_PX)
@@ -641,6 +1105,7 @@ static Ipp32s FilteredModes[] = {10, 7, 1, 0, 10};
             }
         }
     }
+
 #endif // #if defined(MFX_TARGET_OPTIMIZATION_PX)  || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 
 }; // namespace MFX_HEVC_PP

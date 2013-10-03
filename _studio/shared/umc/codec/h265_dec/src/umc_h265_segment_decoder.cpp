@@ -2310,7 +2310,7 @@ void H265SegmentDecoder::ReconstructCU(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
     {
         case MODE_INTER:
             ReconInter(pCU, AbsPartIdx, Depth);
-            UpdateRecNeighboursBuffersN(XInc, YInc, Size, pCU->m_CUPelX, false);
+            UpdateRecNeighboursBuffersN(XInc >> 2, YInc >> 2, Size, pCU->m_CUPelX, false);
             break;
         case MODE_INTRA:
             ReconIntraQT(pCU, AbsPartIdx, Depth);
@@ -2582,7 +2582,7 @@ void H265SegmentDecoder::UpdateRecNeighboursBuffersN(Ipp32s PartX, Ipp32s PartY,
     Ipp32u maskL, maskT, maskTL;
     bool   isIntra = (m_pPicParamSet->constrained_intra_pred_flag) ? (IsIntra ? 1 : 0) : 1;
 
-    PartX >>= 2; PartY >>=2; PartSize >>= 2;
+    PartSize >>= 2;
 
     Ipp32u maxCUSzIn4x4 = m_pSeqParamSet->MaxCUSize >> 2;
     Ipp32s diagId = (PartX+(maxCUSzIn4x4-PartY)-PartSize);
