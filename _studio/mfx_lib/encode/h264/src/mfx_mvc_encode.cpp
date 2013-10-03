@@ -2856,6 +2856,12 @@ mfxStatus MFXVideoENCODEMVC::Close()
 
     vm_event_destroy(&m_taskParams.parallel_region_done);
     m_mvcjobs.clear();
+    
+    if (m_taskParams.threads_data)
+    {
+        H264_Free(m_taskParams.threads_data);
+        m_taskParams.threads_data = 0;
+    }
 
     if(m_bf_data) {
         H264_Free(m_bf_data);
