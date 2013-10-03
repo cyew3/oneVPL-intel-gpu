@@ -1136,9 +1136,11 @@ mfxStatus MFXTranscodingPipeline::ApplyBitrateParams()
         pMFXParams->mfx.Convergence = m_Convergence;
     }
 
-    if (m_CRFQuality || pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_CRF)
+    if (m_CRFQuality || pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_CRF || pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_LA_CRF)
     {
-        pMFXParams->mfx.RateControlMethod = MFX_RATECONTROL_CRF;
+        if (pMFXParams->mfx.RateControlMethod != MFX_RATECONTROL_CRF &&
+            pMFXParams->mfx.RateControlMethod != MFX_RATECONTROL_LA_CRF)
+            pMFXParams->mfx.RateControlMethod = MFX_RATECONTROL_CRF;
         pMFXParams->mfx.CRFQuality = m_CRFQuality;
     }
 

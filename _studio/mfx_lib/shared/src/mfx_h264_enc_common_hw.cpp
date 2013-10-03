@@ -1417,7 +1417,10 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
         ((par.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY) || (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY) ||(par.Protected == 0)),
         MFX_ERR_INVALID_VIDEO_PARAM);
 
-    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP && !IsSvcProfile(par.mfx.CodecProfile))
+    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
+        par.mfx.RateControlMethod != MFX_RATECONTROL_CRF &&
+        par.mfx.RateControlMethod != MFX_RATECONTROL_LA_CRF &&
+        !IsSvcProfile(par.mfx.CodecProfile))
         MFX_CHECK(par.calcParam.targetKbps > 0, MFX_ERR_INVALID_VIDEO_PARAM);
 
     SetDefaults(par, hwCaps, setExtAlloc, platform, vaType);
@@ -1677,8 +1680,9 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_AVBR &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_WIDI_VBR &&
+        par.mfx.RateControlMethod != MFX_RATECONTROL_CRF &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_LA &&
-        par.mfx.RateControlMethod != MFX_RATECONTROL_CRF)
+        par.mfx.RateControlMethod != MFX_RATECONTROL_LA_CRF)
     {
         changed = true;
         par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
@@ -1698,7 +1702,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             extOpt2->LookAheadDepth = MAX_LOOKAHEAD_DEPTH;
         }
 
-        if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA && par.mfx.RateControlMethod != MFX_RATECONTROL_CRF)
+        if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA && par.mfx.RateControlMethod != MFX_RATECONTROL_LA_CRF)
         {
             changed = true;
             extOpt2->LookAheadDepth = 0;
@@ -2150,8 +2154,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         extDdi->CabacInitIdcPlus1 = 0;
     }
 
-    if ((par.mfx.RateControlMethod == MFX_RATECONTROL_LA || par.mfx.RateControlMethod == MFX_RATECONTROL_CRF) &&
-        false == IsLookAheadSupported(par, platform))
+    if ((par.mfx.RateControlMethod == MFX_RATECONTROL_LA || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_CRF) &&
+        !IsLookAheadSupported(par, platform))
     {
         unsupported = true;
         par.mfx.RateControlMethod = 0;
@@ -2310,7 +2314,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         }
     }
 
-    if (par.calcParam.bufferSizeInKB != 0 && (par.mfx.RateControlMethod == MFX_RATECONTROL_LA || par.mfx.RateControlMethod == MFX_RATECONTROL_CRF))
+    if (par.calcParam.bufferSizeInKB != 0 && (par.mfx.RateControlMethod == MFX_RATECONTROL_LA || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_CRF))
     {
         changed = true;
         par.calcParam.bufferSizeInKB = (par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height * 3 / 2 / 1000);
@@ -2462,6 +2466,12 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         if (!CheckRange(par.mfx.QPI, 0, 51)) changed = true;
         if (!CheckRange(par.mfx.QPP, 0, 51)) changed = true;
         if (!CheckRange(par.mfx.QPB, 0, 51)) changed = true;
+    }
+
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CRF ||
+        par.mfx.RateControlMethod == MFX_RATECONTROL_LA_CRF)
+    {
+        if (!CheckRange(par.mfx.CRFQuality, 0, 51)) changed = true;
     }
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
@@ -3179,6 +3189,11 @@ void MfxHwH264Encode::InheritDefaultValues(
         InheritOption(parInit.mfx.Convergence, parReset.mfx.Convergence);
     }
 
+    if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_CRF && parReset.mfx.RateControlMethod == MFX_RATECONTROL_LA_CRF)
+    {
+        InheritOption(parInit.mfx.CRFQuality, parReset.mfx.CRFQuality);
+    }
+
     InheritOption(parInit.mfx.FrameInfo.FourCC,         parReset.mfx.FrameInfo.FourCC);
     InheritOption(parInit.mfx.FrameInfo.FourCC,         parReset.mfx.FrameInfo.FourCC);
     InheritOption(parInit.mfx.FrameInfo.Width,          parReset.mfx.FrameInfo.Width);
@@ -3302,6 +3317,12 @@ void MfxHwH264Encode::SetDefaults(
 
         if (par.mfx.Convergence == 0)
             par.mfx.Convergence = AVBR_CONVERGENCE_MAX;
+    }
+
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CRF || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_CRF)
+    {
+        if (par.mfx.CRFQuality == 0)
+            par.mfx.CRFQuality = 26;
     }
 
     if (par.mfx.GopRefDist == 0)
@@ -3487,7 +3508,7 @@ void MfxHwH264Encode::SetDefaults(
     {
         if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA)
             extOpt2->LookAheadDepth = IPP_MAX(40, 2 * par.mfx.GopRefDist);
-        else if (par.mfx.RateControlMethod == MFX_RATECONTROL_CRF)
+        else if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA_CRF)
             extOpt2->LookAheadDepth = IPP_MAX(10, 2 * par.mfx.GopRefDist);
     }
 
@@ -3632,7 +3653,7 @@ void MfxHwH264Encode::SetDefaults(
 
     if (par.calcParam.bufferSizeInKB == 0)
     {
-        if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA || par.mfx.RateControlMethod == MFX_RATECONTROL_CRF)
+        if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_CRF)
         {
             par.calcParam.bufferSizeInKB = (par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height * 3 / 2 / 1000);
         }
@@ -3792,6 +3813,7 @@ void MfxHwH264Encode::SetDefaults(
             extRc->Layer[0].Avbr.Accuracy    = par.mfx.Accuracy;
             break;
         case MFX_RATECONTROL_CRF:
+        case MFX_RATECONTROL_LA_CRF:
             break;
         default:
             assert(0);

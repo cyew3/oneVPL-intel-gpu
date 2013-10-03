@@ -657,7 +657,9 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     // CQP enabled
     mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(m_video);
-    m_enabledSwBrc = IsOn(extOpt2->ExtBRC) || m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA || m_video.mfx.RateControlMethod == MFX_RATECONTROL_CRF;
+    m_enabledSwBrc = IsOn(extOpt2->ExtBRC) ||
+        m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA ||
+        m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_CRF;
 
     // need it for both ENCODE and ENC
     m_hrd.Setup(m_video);
@@ -752,7 +754,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     sts = m_bit.Alloc(m_core, request);
     MFX_CHECK_STS(sts);
 
-    if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA || m_video.mfx.RateControlMethod == MFX_RATECONTROL_CRF)
+    if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA || m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_CRF)
     {
         m_cmDevice.Reset(CreateCmDevicePtr(m_core));
         m_cmCtx.reset(new CmContext(m_video, m_cmDevice));
@@ -1851,7 +1853,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 #if USE_AGOP
         }
 #endif
-        if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA || m_video.mfx.RateControlMethod == MFX_RATECONTROL_CRF)
+        if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA || m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_CRF)
         {
             mfxHDLPair cmMb = AcquireResourceUp(m_mb);
             task->m_cmMb    = (CmBufferUP *)cmMb.first;
@@ -1870,7 +1872,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         ConfigureTask(*task, m_lastTask, m_video);
         m_lastTask = *task;
 
-        if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA || m_video.mfx.RateControlMethod == MFX_RATECONTROL_CRF)
+        if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA || m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_CRF)
         {
             ArrayDpbFrame const & dpb = task->m_dpb[0];
             ArrayU8x33 const &    l0  = task->m_list0[0];
@@ -1907,7 +1909,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_WAIT_LA)
     {
-        if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA || m_video.mfx.RateControlMethod == MFX_RATECONTROL_CRF)
+        if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA || m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_CRF)
             if (!QueryLookahead(m_lookaheadStarted.front()))
                 return MFX_TASK_BUSY;
 
@@ -1989,7 +1991,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
         if (m_enabledSwBrc)
         {
-            if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA || m_video.mfx.RateControlMethod == MFX_RATECONTROL_CRF)
+            if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA || m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_CRF)
                 BrcPreEnc(*task);
             task->m_cqpValue[0] = task->m_cqpValue[1] = m_brc.GetQp(task->m_type[task->m_fid[0]], task->m_picStruct[ENC]);
         }
