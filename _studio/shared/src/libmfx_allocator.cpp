@@ -28,7 +28,7 @@ File Name: libmfx_allocator.cpp
 mfxStatus mfxDefaultAllocator::AllocBuffer(mfxHDL pthis, mfxU32 nbytes, mfxU16 type, mfxHDL *mid)
 {
     mfxU32 header_size = ALIGN32(sizeof(BufferStruct));
-    mfxU8 *buffer_ptr=(mfxU8 *)ippMalloc(header_size + nbytes);
+    mfxU8 *buffer_ptr=(mfxU8 *)ippMalloc(header_size + nbytes + 32);
 
     if (!pthis)
         return MFX_ERR_INVALID_HANDLE;
@@ -83,7 +83,7 @@ mfxStatus mfxDefaultAllocator::LockBuffer(mfxHDL pthis, mfxHDL mid, mfxU8 **ptr)
         return MFX_ERR_INVALID_HANDLE;
     }
 
-    if (ptr) *ptr=(mfxU8 *)bs+ALIGN32(sizeof(BufferStruct));
+    if (ptr) *ptr=(mfxU8*)((size_t)((mfxU8 *)bs+ALIGN32(sizeof(BufferStruct))+31)&(~((size_t)31)));
     return MFX_ERR_NONE;
 }
 mfxStatus mfxDefaultAllocator::UnlockBuffer(mfxHDL pthis, mfxHDL mid)
