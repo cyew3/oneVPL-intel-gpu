@@ -99,11 +99,11 @@ public:
     CoeffsType      tr_coeff_y[MAX_CU_SIZE*MAX_CU_SIZE];
     CoeffsType      tr_coeff_u[MAX_CU_SIZE*MAX_CU_SIZE/4];
     CoeffsType      tr_coeff_v[MAX_CU_SIZE*MAX_CU_SIZE/4];
-    __ALIGN16 CoeffsType      residuals_y[MAX_CU_SIZE*MAX_CU_SIZE];
-    __ALIGN16 CoeffsType      residuals_u[MAX_CU_SIZE*MAX_CU_SIZE/4];
-    __ALIGN16 CoeffsType      residuals_v[MAX_CU_SIZE*MAX_CU_SIZE/4];
-    __ALIGN16 PixType pred_intra_all[35*32*32];
-    __ALIGN16 PixType tu_src_transposed[32*32];
+    __ALIGN32 CoeffsType      residuals_y[MAX_CU_SIZE*MAX_CU_SIZE];
+    __ALIGN32 CoeffsType      residuals_u[MAX_CU_SIZE*MAX_CU_SIZE/4];
+    __ALIGN32 CoeffsType      residuals_v[MAX_CU_SIZE*MAX_CU_SIZE/4];
+    __ALIGN32 PixType pred_intra_all[35*32*32];
+    __ALIGN32 PixType tu_src_transposed[32*32];
     CostType intra_cost[35];
     Ipp32s pred_intra_all_width;
     Ipp8u           inNeighborFlags[4*MAX_CU_SIZE+1];

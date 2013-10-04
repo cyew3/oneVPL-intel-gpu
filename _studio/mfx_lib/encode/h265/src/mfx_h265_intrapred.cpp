@@ -595,8 +595,8 @@ void H265CU::IntraPredTU(Ipp32s blockZScanIdx, Ipp32s width, Ipp32s pred_mode, I
 
 void H265CU::IntraPredTULumaAllHAD(Ipp32s abs_part_idx, Ipp32s width)
 {
-    __ALIGN16 PixType PredPel[4*64+1];
-    __ALIGN16 PixType PredPelFilt[4*64+1];
+    __ALIGN32 PixType PredPel[4*64+1];
+    __ALIGN32 PixType PredPelFilt[4*64+1];
     Ipp32s maxDepth = par->Log2MaxCUSize - par->Log2MinTUSize;
     Ipp32s numMinTUInLCU = 1 << maxDepth;
     Ipp32s PURasterIdx = h265_scan_z2r[maxDepth][abs_part_idx];
