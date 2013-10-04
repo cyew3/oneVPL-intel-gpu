@@ -29,9 +29,41 @@
 #define __ALIGN8
 #endif
 
-
+#include "ipp.h"
 #define H265_Malloc  ippMalloc
 #define H265_Free    ippFree
+
+#if defined(_WIN32) || defined(_WIN64)
+  #define H265_FORCEINLINE __forceinline
+  #define H265_NONLINE __declspec(noinline)
+#else
+  #define H265_FORCEINLINE __attribute__((always_inline))
+  #define H265_NONLINE __attribute__((noinline))
+#endif
+
+static void H265_FORCEINLINE small_memcpy( void* dst, const void* src, int len )
+{
+#if defined( __INTEL_COMPILER ) // || defined( __GNUC__ )  // TODO: check with GCC
+    // 128-bit loads/stores first with then REP MOVSB, aligning dst on 16-bit to avoid costly store splits
+    int peel = (0xf & (-(size_t)dst));
+    __asm__ ( "cld" );
+    if (peel) {
+        if (peel > len)
+            peel = len;
+        len -= peel;
+        __asm__ ( "rep movsb" : "+c" (peel), "+S" (src), "+D" (dst) :: "memory" );
+    }
+    while (len > 15) {
+        __m128i v_tmp;
+        __asm__ ( "movdqu (%[src_]), %%xmm0; movdqu %%xmm0, (%[dst_])" : : [src_] "S" (src), [dst_] "D" (dst) : "%xmm0", "memory" );
+        src = 16 + (const Ipp8u*)src; dst = 16 + (Ipp8u*)dst; len -= 16;
+    }
+    if (len > 0)
+        __asm__ ( "rep movsb" : "+c" (len), "+S" (src), "+D" (dst) :: "memory" );
+#else
+    ippsCopy_8u((const Ipp8u*)src, (Ipp8u*)dst, len);
+#endif
+}
 
 //#define DEBUG_CABAC
 

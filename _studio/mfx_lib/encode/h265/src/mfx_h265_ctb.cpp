@@ -564,7 +564,7 @@ void H265CU::InitCU(H265VideoParam *_par, H265CUData *_data, H265CUData *_data_t
           data->cbf[0] = data->cbf[1] = data->cbf[2] = 0;
 
           for (Ipp32u i = 1; i < num_partition; i++)
-              memcpy(data+i,data,sizeof(H265CUData));
+              small_memcpy(data+i,data,sizeof(H265CUData));
       }
   }
 
@@ -849,7 +849,7 @@ void H265CU::FillSubPart(Ipp32s abs_part_idx, Ipp8u depth_cu, Ipp8u tr_depth,
 void H265CU::CopySubPartTo(H265CUData *data_copy, Ipp32s abs_part_idx, Ipp8u depth_cu, Ipp8u tr_depth) {
     Ipp32s depth = depth_cu + tr_depth;
     Ipp32u num_parts = ( par->NumPartInCU >> (depth<<1) );
-    memcpy(data_copy + abs_part_idx, data + abs_part_idx, num_parts * sizeof(H265CUData));
+    small_memcpy(data_copy + abs_part_idx, data + abs_part_idx, num_parts * sizeof(H265CUData));
 }
 
 void H265CU::ModeDecision(Ipp32u abs_part_idx, Ipp32u offset, Ipp8u depth, CostType *cost)
@@ -1041,7 +1041,7 @@ void H265CU::ModeDecision(Ipp32u abs_part_idx, Ipp32u offset, Ipp8u depth, CostT
                                 bsf->CtxSave(ctx_save[3], 0, NUM_CABAC_CONTEXT);
                             ippiCopy_8u_C1R(y_rec + offset_luma, pitch_rec_luma, rec_luma_save_cu[depth+tr_depth], width, roiSize);
                         }
-                        memcpy(data_best + ((depth + tr_depth) << par->Log2NumPartInCU) + abs_part_idx + (num_parts >> 2) * i,
+                        small_memcpy(data_best + ((depth + tr_depth) << par->Log2NumPartInCU) + abs_part_idx + (num_parts >> 2) * i,
                             data_temp + ((depth + tr_depth) << par->Log2NumPartInCU) + abs_part_idx + (num_parts >> 2) * i,
                             sizeof(H265CUData) * (num_parts >> (tr_depth<<1)));
                     }
@@ -1074,7 +1074,7 @@ void H265CU::ModeDecision(Ipp32u abs_part_idx, Ipp32u offset, Ipp8u depth, CostT
                 ippiCopy_8u_C1R(y_rec + offset_luma_cu, pitch_rec_luma, rec_luma_save_cu[depth], width_cu, roiSize_cu);
                 cost_best = cost_best_pu_sum;
                 if (tr_depth == 1) {
-                    memcpy(data_best + ((depth + 0) << par->Log2NumPartInCU) + abs_part_idx,
+                    small_memcpy(data_best + ((depth + 0) << par->Log2NumPartInCU) + abs_part_idx,
                         data_best + ((depth + 1) << par->Log2NumPartInCU) + abs_part_idx,
                         sizeof(H265CUData) * num_parts);
                 }
@@ -1133,7 +1133,7 @@ void H265CU::ModeDecision(Ipp32u abs_part_idx, Ipp32u offset, Ipp8u depth, CostT
             }
 
             if (cost_best > cost_skip) {
-                memcpy(data_best + ((depth + 0) << par->Log2NumPartInCU) + abs_part_idx,
+                small_memcpy(data_best + ((depth + 0) << par->Log2NumPartInCU) + abs_part_idx,
                     data_save + abs_part_idx,
                     num_parts * sizeof(H265CUData));
                 cost_best = cost_skip;
@@ -1158,7 +1158,7 @@ void H265CU::ModeDecision(Ipp32u abs_part_idx, Ipp32u offset, Ipp8u depth, CostT
             cost_inter = ME_CU(abs_part_idx, depth, offset) * 1.;
 
             if (cost_best > cost_inter) {
-                memcpy(data_best + ((depth + 0) << par->Log2NumPartInCU) + abs_part_idx,
+                small_memcpy(data_best + ((depth + 0) << par->Log2NumPartInCU) + abs_part_idx,
                     data_save + abs_part_idx,
                     num_parts * sizeof(H265CUData));
                 cost_best = cost_inter;
@@ -1202,7 +1202,7 @@ void H265CU::ModeDecision(Ipp32u abs_part_idx, Ipp32u offset, Ipp8u depth, CostT
         // add cost of cu split flag to cost_split
         if (cost_best > cost_split) {
             cost_best = cost_split;
-            memcpy(data_best + (depth << par->Log2NumPartInCU) + abs_part_idx,
+            small_memcpy(data_best + (depth << par->Log2NumPartInCU) + abs_part_idx,
                 data_best + ((depth + 1) << par->Log2NumPartInCU) + abs_part_idx,
                 sizeof(H265CUData) * num_parts);
         } else {
@@ -1212,7 +1212,7 @@ void H265CU::ModeDecision(Ipp32u abs_part_idx, Ipp32u offset, Ipp8u depth, CostT
     }
 
     {
-        memcpy(data_save + abs_part_idx,
+        small_memcpy(data_save + abs_part_idx,
             data_best + ((depth) << par->Log2NumPartInCU) + abs_part_idx,
             sizeof(H265CUData) * num_parts);
     }
@@ -1220,7 +1220,7 @@ void H265CU::ModeDecision(Ipp32u abs_part_idx, Ipp32u offset, Ipp8u depth, CostT
     if (cost) *cost = cost_best;
 
     if (depth == 0) {
-        memcpy(data_save, data_best, sizeof(H265CUData) << par->Log2NumPartInCU);
+        small_memcpy(data_save, data_best, sizeof(H265CUData) << par->Log2NumPartInCU);
         data = data_save;
         for (i = abs_part_idx; i < abs_part_idx + num_parts; i++) {
             data[i].cbf[0] = data[i].cbf[1] = data[i].cbf[2] = 0;
@@ -1313,7 +1313,7 @@ void H265CU::CalcCostLuma(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u depth,
 
         if (cost_best > cost_split) {
             cost_best = cost_split;
-            memcpy(data_t + abs_part_idx, data_t + ((size_t)1 << (size_t)(par->Log2NumPartInCU)) + abs_part_idx,
+            small_memcpy(data_t + abs_part_idx, data_t + ((size_t)1 << (size_t)(par->Log2NumPartInCU)) + abs_part_idx,
                 sizeof(H265CUData) * num_parts);
         } else {
     // restore ctx
@@ -1715,7 +1715,7 @@ void H265CU::TU_GetSplitInter(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u tr_idx, 
 
     if (tr_idx  < tr_idx_max && nzt) { // don't try if all zero
         bsf->CtxSave(ctx_save, 0, NUM_CABAC_CONTEXT);
-        memcpy(data_t + abs_part_idx, data + abs_part_idx,
+        small_memcpy(data_t + abs_part_idx, data + abs_part_idx,
             sizeof(H265CUData) * num_parts); // keep not split
 
         for(j=0; j<width; j++)
@@ -1755,7 +1755,7 @@ void H265CU::TU_GetSplitInter(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u tr_idx, 
 //                 }
 //             }
         } else {
-            memcpy(data + abs_part_idx, data_t + abs_part_idx,
+            small_memcpy(data + abs_part_idx, data_t + abs_part_idx,
                 sizeof(H265CUData) * num_parts*4); // restore not split
             bsf->CtxRestore(ctx_save, 0, NUM_CABAC_CONTEXT);
             //if (cost_best > cost_split) // nzt == 0
