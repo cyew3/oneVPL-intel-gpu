@@ -30,6 +30,7 @@ AudioDECODEMP3::AudioDECODEMP3(AudioCORE *core, mfxStatus * sts)
 , m_core(core)
 , m_platform(MFX_PLATFORM_SOFTWARE)
 , m_isInit(false)
+, m_nUncompFrameSize()
 {
     m_frame.Data = NULL;
     if (sts)
@@ -289,6 +290,11 @@ mfxStatus AudioDECODEMP3::DecodeFrameCheck(mfxBitstream *bs,
         pEntryPoint->pState = this;
         pEntryPoint->requiredNumThreads = 1; // need only one thread
         pEntryPoint->pParam = info;
+        //TODO: disable WA for synchronous decoding of first frame
+        if (0 == m_nUncompFrameSize) {
+            mfxSts = AudioDECODEMP3::MP3ECODERoutine(this, info, 0, 0);
+            m_nUncompFrameSize = aFrame->DataLength;
+        }
     }
 
 
@@ -313,16 +319,20 @@ mfxStatus AudioDECODEMP3::MP3ECODERoutine(void *pState, void *pParam,
         obj.mInData.SetDataSize(obj.m_frame.DataLength);
 
         //datalen computed in syncpart should equal to decoded datalen
-        obj.mOutData.SetBufferPointer( static_cast<Ipp8u *>(pTask->out->Data), pTask->out->DataLength);
-
-        UMC::Status sts = obj.m_pMP3AudioDecoder.get()->GetFrame(&obj.mInData, &obj.mOutData);
-        MFX_CHECK_UMC_STS(sts);
+        obj.mOutData.SetBufferPointer( static_cast<Ipp8u *>(pTask->out->Data), pTask->out->DataLength ? pTask->out->DataLength : pTask->out->MaxLength);
+        if (0 != obj.mInData.GetDataSize()) {
+            UMC::Status sts = obj.m_pMP3AudioDecoder.get()->GetFrame(&obj.mInData, &obj.mOutData);
+            MFX_CHECK_UMC_STS(sts);
+            //TODO: disable WA for decoding first frame
+            if (!pTask->out->DataLength) {
+                pTask->out->DataLength = (mfxU32) obj.mOutData.GetDataSize();
+            }
+        }
 
         // set data size 0 to the input buffer 
         // set out buffer size;
         memmove(obj.m_frame.Data + obj.m_frame.DataOffset, obj.mInData.GetDataPointer(), obj.mInData.GetDataSize());
         obj.m_frame.DataLength = (mfxU32) obj.mInData.GetDataSize();
-        //pTask->out->DataLength += (mfxU32) obj.mOutData.GetDataSize();
     }
     else
     {
@@ -465,6 +475,7 @@ mfxStatus AudioDECODEMP3::ConstructFrame(mfxBitstream *in, mfxBitstream *out, un
             }
 
             MoveBitstreamData(*in, (mfxU32)(inBufferSize));
+            *p_RawFrameSize = m_nUncompFrameSize;
         }
         else
         {
@@ -473,13 +484,10 @@ mfxStatus AudioDECODEMP3::ConstructFrame(mfxBitstream *in, mfxBitstream *out, un
         break;
     case UMC::UMC_ERR_NOT_ENOUGH_DATA:
     case UMC::UMC_ERR_SYNC:
-    case UMC::UMC_ERR_UNSUPPORTED:
         MoveBitstreamData(*in, (mfxU32)(inBufferSize));
         return MFX_ERR_MORE_DATA;
-        break;
     default:
         return MFX_ERR_UNKNOWN;
-        break;
     }
 
     return MFX_ERR_NONE;

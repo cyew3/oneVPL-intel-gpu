@@ -70,7 +70,7 @@ public:
     virtual mfxStatus DecodeFrame(mfxBitstream *bs, mfxAudioFrame *buffer_out);
 
 protected:
-     virtual mfxStatus ConstructFrame(mfxBitstream *in, mfxBitstream *out);
+     virtual mfxStatus ConstructFrame(mfxBitstream *in, mfxBitstream *out, unsigned int *pUncompFrameSize);
 
      static mfxStatus FillAudioParamESDS(sAudio_specific_config* config, mfxAudioParam *out);
      static mfxStatus FillAudioParamADIF(sAdif_header* config, mfxAudioParam *out);
@@ -99,6 +99,7 @@ protected:
     bool    m_isInit;
 
     UMC::Mutex m_mGuard;
+    mfxU32 m_nUncompFrameSize;
 };
 
 #endif // _MFX_AAC_DEC_DECODE_H_

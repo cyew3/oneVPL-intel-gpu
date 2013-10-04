@@ -91,7 +91,7 @@ protected:
     bool    m_isInit;
 
     UMC::Mutex m_mGuard;
-
+    mfxU32 m_nUncompFrameSize;
 };
 
 #endif // _MFX_AAC_DEC_DECODE_H_

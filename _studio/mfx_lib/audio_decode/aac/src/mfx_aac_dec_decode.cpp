@@ -31,10 +31,11 @@ public:
 
 
 AudioDECODEAAC::AudioDECODEAAC(AudioCORE *core, mfxStatus * sts)
-: AudioDECODE()
-, m_core(core)
-, m_platform(MFX_PLATFORM_SOFTWARE)
-, m_isInit(false)
+    : AudioDECODE()
+    , m_core(core)
+    , m_platform(MFX_PLATFORM_SOFTWARE)
+    , m_isInit(false)
+    , m_nUncompFrameSize()
 {
     m_frame.Data = NULL;
     if (sts)
@@ -453,6 +454,12 @@ mfxStatus AudioDECODEAAC::DecodeFrameCheck(mfxBitstream *bs,
         pEntryPoint->pState = this;
         pEntryPoint->requiredNumThreads = 1; // need only one thread
         pEntryPoint->pParam = info;
+
+        //TODO: disable WA for synchronous decoding of first frame
+        if (0 == m_nUncompFrameSize) {
+            mfxSts = AudioDECODEAAC::AACDECODERoutine(this, info, 0, 0);
+            m_nUncompFrameSize = aFrame->DataLength;
+        }
     }
 
 
@@ -476,16 +483,20 @@ mfxStatus AudioDECODEAAC::AACDECODERoutine(void *pState, void *pParam,
         obj.mInData.SetBufferPointer((Ipp8u *)obj.m_frame.Data + obj.m_frame.DataOffset, obj.m_frame.DataLength);
         obj.mInData.SetDataSize(obj.m_frame.DataLength);
 
-        obj.mOutData.SetBufferPointer( static_cast<Ipp8u *>(pTask->out->Data), pTask->out->MaxLength);
-
-        UMC::Status sts = obj.m_pAACAudioDecoder.get()->GetFrame(&obj.mInData, &obj.mOutData);
-        MFX_CHECK_UMC_STS(sts);
+        obj.mOutData.SetBufferPointer( static_cast<Ipp8u *>(pTask->out->Data), pTask->out->DataLength ? pTask->out->DataLength : pTask->out->MaxLength);
+        if (0 != obj.mInData.GetDataSize()) {
+            UMC::Status sts = obj.m_pAACAudioDecoder.get()->GetFrame(&obj.mInData, &obj.mOutData);
+            MFX_CHECK_UMC_STS(sts);
+            //TODO: disable WA for decoding first frame
+            if (!pTask->out->DataLength) {
+                pTask->out->DataLength = (mfxU32) obj.mOutData.GetDataSize();
+            }
+        }
 
         // set data size 0 to the input buffer 
         // set out buffer size;
         memmove(obj.m_frame.Data + obj.m_frame.DataOffset, obj.mInData.GetDataPointer(), obj.mInData.GetDataSize());
         obj.m_frame.DataLength = (mfxU32) obj.mInData.GetDataSize();
-        //pTask->out->DataLength += (mfxU32) obj.mOutData.GetDataSize();
     }
     else
     {
@@ -532,7 +543,7 @@ mfxStatus AudioDECODEAAC::DecodeFrameCheck(mfxBitstream *bs, mfxAudioFrame *aFra
         sts = CheckBitstream(bs);
         MFX_CHECK_STS(sts);
 
-        sts = ConstructFrame(bs, &m_frame);
+        sts = ConstructFrame(bs, &m_frame, &aFrame->DataLength);
 
         if (MFX_ERR_NONE != sts)
         {
@@ -569,7 +580,7 @@ mfxStatus AudioDECODEAAC::DecodeFrame(mfxBitstream *bs, mfxAudioFrame *aFrame)
 
     if (NULL != bs)
     {
-        sts = ConstructFrame(bs, &m_frame);
+        sts = ConstructFrame(bs, &m_frame, &aFrame->DataLength);
 
         if (MFX_ERR_NONE != sts)
         {
@@ -597,7 +608,7 @@ void AudioDECODEAAC::MoveBitstreamData(mfxBitstream& bs, mfxU32 offset)
     bs.DataLength -= offset;
 }
 
-mfxStatus AudioDECODEAAC::ConstructFrame(mfxBitstream *in, mfxBitstream *out)
+mfxStatus AudioDECODEAAC::ConstructFrame(mfxBitstream *in, mfxBitstream *out, unsigned int *pUncompFrameSize)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -613,7 +624,7 @@ mfxStatus AudioDECODEAAC::ConstructFrame(mfxBitstream *in, mfxBitstream *out)
     switch (stsUMC)
     {
     case UMC::UMC_OK: 
-
+        
         if (in->DataFlag == MFX_BITSTREAM_COMPLETE_FRAME)
         {
             sts = CopyBitstream(*out, in->Data + in->DataOffset, in->DataLength);
@@ -647,6 +658,11 @@ mfxStatus AudioDECODEAAC::ConstructFrame(mfxBitstream *in, mfxBitstream *out)
             }
 
         }
+        
+        *pUncompFrameSize = 1024 * sizeof(Ipp16s) * (this->m_vPar.mfx.ModeDwnsmplHEAACprofile == MFX_AUDIO_AAC_HE_DWNSMPL_ON ? 1 : 2);
+        
+        //TODO: find number of channels as well
+        *pUncompFrameSize = m_nUncompFrameSize;
         break;
     case UMC::UMC_ERR_NOT_ENOUGH_DATA:
         return MFX_ERR_MORE_DATA;
