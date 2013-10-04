@@ -215,8 +215,8 @@ public:
         }
         return m_core.GetOpaqueSurface(m_core.pthis, surf, op_surf);
     }
-    mfxFrameAllocator & InternalSurfaceAllocator() {
-        return *m_core.InternalSurfaceAllocator;
+    mfxFrameAllocator & ExternalSurfaceAllocator() {
+        return *m_core.ExternalSurfaceAllocator;
     }
     mfxFrameAllocator & FrameAllocator() {
         return m_core.FrameAllocator;
