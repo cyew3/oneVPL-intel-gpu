@@ -43,7 +43,7 @@
 
 static void H265_FORCEINLINE small_memcpy( void* dst, const void* src, int len )
 {
-#if defined( __INTEL_COMPILER ) // || defined( __GNUC__ )  // TODO: check with GCC
+#if 0 // defined( __INTEL_COMPILER ) // || defined( __GNUC__ )  // TODO: check with GCC // AL: temporarely disable optimized path for Beta
     // 128-bit loads/stores first with then REP MOVSB, aligning dst on 16-bit to avoid costly store splits
     int peel = (0xf & (-(size_t)dst));
     __asm__ ( "cld" );
