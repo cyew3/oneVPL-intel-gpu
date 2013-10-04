@@ -233,12 +233,10 @@ public:
 protected:
 
     Ipp32u  m_isDPBErrorFound;
-    Ipp32s   m_frameCount;
+    Ipp32s  m_frameCount;
 
     void ResetError();
 };
-
-class RefInterfaceAdaptor;
 
 /****************************************************************************************************/
 // TaskSupplier_H265
@@ -328,8 +326,6 @@ public:
 
 protected:
 
-    void decodeSlice(H265Bitstream &bs, H265Slice *pSlice, RefInterfaceAdaptor &parameterSetManager);
-
     void InitColorConverter(H265DecoderFrame *source, UMC::VideoData * videoData);
 
     void AddSliceToFrame(H265DecoderFrame *pFrame, H265Slice *pSlice);
@@ -406,6 +402,8 @@ protected:
 
     H265SEIPayLoad m_UserData;
     SEI_Storer_H265 *m_sei_messages;
+
+    PocDecoding m_pocDecoding;
 
     bool m_isInitialized;
     bool m_isUseDelayDPBValues;

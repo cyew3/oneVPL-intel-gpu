@@ -101,7 +101,7 @@ public:
     // Initialize slice
     bool Init(Ipp32s iConsumerNumber);
     // Set slice source data
-    bool Reset(void *pSource, size_t nSourceSize, Ipp32s iConsumerNumber);
+    bool Reset(void *pSource, size_t nSourceSize, PocDecoding * pocDecoding);
     // Set current slice number
     void SetSliceNumber(Ipp32s iSliceNumber);
 
@@ -180,7 +180,7 @@ public:  // DEBUG !!!! should remove dependence
     void Release();
 
     // Decode slice header
-    bool DecodeSliceHeader();
+    bool DecodeSliceHeader(PocDecoding * pocDecoding);
 
     H265SliceHeader m_SliceHeader;                              // (H265SliceHeader) slice header
     H265Bitstream m_BitStream;                                  // (H265Bitstream) slice bit stream

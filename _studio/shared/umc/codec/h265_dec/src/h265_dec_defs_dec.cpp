@@ -181,17 +181,14 @@ ReferencePictureSet::ReferencePictureSet()
 
 void ReferencePictureSet::sortDeltaPOC()
 {
-    Ipp32s temp;
-    Ipp32s deltaPOC;
-    bool Used;
     // sort in increasing order (smallest first)
     for (Ipp32s j = 1; j < num_pics; j++)
     {
-        deltaPOC = m_DeltaPOC[j];
-        Used = used_by_curr_pic_flag[j];
+        Ipp32s deltaPOC = m_DeltaPOC[j];
+        Ipp8u Used = used_by_curr_pic_flag[j];
         for (Ipp32s k = j - 1; k >= 0; k--)
         {
-            temp = m_DeltaPOC[k]; //modify sort
+            Ipp32s temp = m_DeltaPOC[k]; //modify sort
             if (deltaPOC < temp)
             {
                 m_DeltaPOC[k + 1] = temp;
@@ -205,8 +202,8 @@ void ReferencePictureSet::sortDeltaPOC()
     Ipp32s NumNegPics = (Ipp32s) num_negative_pics;
     for (Ipp32s j = 0, k = NumNegPics - 1; j < NumNegPics >> 1; j++, k--)
     {
-        deltaPOC = m_DeltaPOC[j];
-        Used = used_by_curr_pic_flag[j];
+        Ipp32s deltaPOC = m_DeltaPOC[j];
+        Ipp8u Used = used_by_curr_pic_flag[j];
         m_DeltaPOC[j] = m_DeltaPOC[k];
         used_by_curr_pic_flag[j] = used_by_curr_pic_flag[k];
         m_DeltaPOC[k] = deltaPOC;

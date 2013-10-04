@@ -150,7 +150,7 @@ protected:
 
     void parseVUI(H265SeqParamSet *sps);
 
-    void xParsePredWeightTable(H265Slice* pcSlice);
+    void xParsePredWeightTable(H265SliceHeader * sliceHdr);
     void xDecodeScalingList(H265ScalingList *scalingList, unsigned sizeId, unsigned listId);
     void parseHrdParameters(H265HRD *hrd, Ipp8u commonInfPresentFlag, Ipp32u vps_max_sub_layers);
 

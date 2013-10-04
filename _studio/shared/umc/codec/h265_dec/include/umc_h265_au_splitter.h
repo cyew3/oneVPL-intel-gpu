@@ -48,10 +48,9 @@ public:
 
 protected:
 
-    Headers     m_Headers;
+    Headers         m_Headers;
     Heap_Objects   *m_objHeap;
-    Heap      * m_heap;
-    Ipp32s      m_prevPOC;
+    Heap           *m_heap;
 
 protected:
 

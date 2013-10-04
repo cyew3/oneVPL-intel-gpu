@@ -698,24 +698,25 @@ typedef Ipp32u IntraType;
 
 struct ReferencePictureSet
 {
-    bool inter_ref_pic_set_prediction_flag;
+    Ipp8u inter_ref_pic_set_prediction_flag;
 
     Ipp32s num_negative_pics;
     Ipp32s num_positive_pics;
 
     Ipp32s num_pics;
     
-    Ipp32s m_NumberOfLongtermPictures;
+    Ipp32s num_lt_pics;
+
+    Ipp32s num_long_term_pics;
+    Ipp32s num_long_term_sps;
+
     Ipp32s m_DeltaPOC[MAX_NUM_REF_PICS];
     Ipp32s m_POC[MAX_NUM_REF_PICS];
-    bool used_by_curr_pic_flag[MAX_NUM_REF_PICS];
+    Ipp8u used_by_curr_pic_flag[MAX_NUM_REF_PICS];
     
-    Ipp32s m_DeltaRIdxMinus1;
-    Ipp32s m_DeltaRPS;
-    Ipp32s m_NumRefIdc;
-    Ipp32s m_RefIdc[MAX_NUM_REF_PICS + 1];
-    bool m_CheckLTMSB[MAX_NUM_REF_PICS];
-    bool m_bCheckLTMSB[MAX_NUM_REF_PICS];
+    Ipp8u delta_poc_msb_present_flag[MAX_NUM_REF_PICS];
+    Ipp8u delta_poc_msb_cycle_lt[MAX_NUM_REF_PICS];
+    Ipp32s poc_lbs_lt[MAX_NUM_REF_PICS];
 
     ReferencePictureSet();
 
@@ -725,20 +726,16 @@ struct ReferencePictureSet
     Ipp32s getNumberOfPictures() const    { return num_pics; }
     Ipp32s getNumberOfNegativePictures() const    { return num_negative_pics; }
     Ipp32s getNumberOfPositivePictures() const    { return num_positive_pics; }
-    Ipp32s getNumberOfLongtermPictures() const    { return m_NumberOfLongtermPictures; }
-    void setNumberOfLongtermPictures(Ipp32s val)  { m_NumberOfLongtermPictures = val; }
+    Ipp32s getNumberOfLongtermPictures() const    { return num_lt_pics; }
+    void setNumberOfLongtermPictures(Ipp32s val)  { num_lt_pics = val; }
     int getDeltaPOC(int index) const        { return m_DeltaPOC[index]; }
     void setDeltaPOC(int index, int val)    { m_DeltaPOC[index] = val; }
-    bool getUsed(int index) const           { return used_by_curr_pic_flag[index]; }
-
-    void setNumRefIdc(int val)              { m_NumRefIdc = val; }
-    void setRefIdc(int index, int val)      { m_RefIdc[index] = val; }
+    Ipp8u getUsed(int index) const           { return used_by_curr_pic_flag[index]; }
 
     void setPOC(int bufferNum, int POC)     { m_POC[bufferNum] = POC; }
     int getPOC(int index)                   { return m_POC[index]; }
 
-    void setCheckLTMSBPresent(int bufferNum, bool b) { m_bCheckLTMSB[bufferNum] = b; }
-    bool getCheckLTMSBPresent(int bufferNum) { return m_bCheckLTMSB[bufferNum]; }
+    Ipp8u getCheckLTMSBPresent(Ipp32s bufferNum) { return delta_poc_msb_present_flag[bufferNum]; }
 };
 
 struct ReferencePictureSetList
@@ -807,34 +804,34 @@ struct H265SeqParamSetBase
     Ipp32u  max_transform_hierarchy_depth_inter;
     Ipp32u  max_transform_hierarchy_depth_intra;
 
-    bool    scaling_list_enabled_flag;
-    bool    sps_scaling_list_data_present_flag;
+    Ipp8u   scaling_list_enabled_flag;
+    Ipp8u   sps_scaling_list_data_present_flag;
 
-    bool    amp_enabled_flag;
-    bool    sample_adaptive_offset_enabled_flag;
+    Ipp8u   amp_enabled_flag;
+    Ipp8u   sample_adaptive_offset_enabled_flag;
 
-    bool pcm_enabled_flag;
+    Ipp8u   pcm_enabled_flag;
 
     // pcm params
     Ipp32u  pcm_sample_bit_depth_luma;
     Ipp32u  pcm_sample_bit_depth_chroma;
     Ipp32u  log2_min_pcm_luma_coding_block_size;
     Ipp32u  log2_max_pcm_luma_coding_block_size;
-    bool    pcm_loop_filter_disabled_flag;
+    Ipp8u   pcm_loop_filter_disabled_flag;
 
     Ipp32u  num_short_term_ref_pic_sets;
     ReferencePictureSetList m_RPSList;
 
-    bool    long_term_ref_pics_present_flag;
-    Ipp32u  num_long_term_ref_pic_sps;
+    Ipp8u   long_term_ref_pics_present_flag;
+    Ipp32u  num_long_term_ref_pics_sps;
     Ipp32u  lt_ref_pic_poc_lsb_sps[33];
-    bool    used_by_curr_pic_lt_sps_flag[33];
+    Ipp8u   used_by_curr_pic_lt_sps_flag[33];
 
-    bool    sps_temporal_mvp_enabled_flag;
-    bool    sps_strong_intra_smoothing_enabled_flag;
+    Ipp8u   sps_temporal_mvp_enabled_flag;
+    Ipp8u   sps_strong_intra_smoothing_enabled_flag;
 
     // vui part
-    bool    vui_parameters_present_flag;         // Zero indicates default VUI parameters
+    Ipp8u   vui_parameters_present_flag;         // Zero indicates default VUI parameters
 
     bool    aspect_ratio_info_present_flag;
     Ipp32u  aspect_ratio_idc;
@@ -1143,28 +1140,28 @@ struct H265SliceHeader
     Ipp32s      first_slice_segment_in_pic_flag;
     Ipp8u       no_output_of_prior_pics_flag;       // nonzero: remove previously decoded pictures from decoded picture buffer
     Ipp16u      slice_pic_parameter_set_id;
-    bool        dependent_slice_segment_flag;
+    Ipp8u       dependent_slice_segment_flag;
 
     Ipp32u      slice_segment_address;
     SliceType   slice_type;
-    bool        pic_output_flag;
+    Ipp8u       pic_output_flag;
 
     Ipp32u      colour_plane_id; // if separate_colour_plane_flag = = 1 only
 
     Ipp32s      slice_pic_order_cnt_lsb;                    // picture order count (mod MaxPicOrderCntLsb)
     Ipp8u       short_term_ref_pic_set_sps_flag;
 
-    bool        slice_enable_temporal_mvp_flag;
+    Ipp8u       slice_enable_temporal_mvp_flag;
 
-    bool        slice_sao_luma_flag;
-    bool        slice_sao_chroma_flag;
+    Ipp8u       slice_sao_luma_flag;
+    Ipp8u       slice_sao_chroma_flag;
 
     Ipp8u       num_ref_idx_active_override_flag;
     Ipp32s      num_ref_idx_l0_active;
     Ipp32s      num_ref_idx_l1_active;
 
-    bool        mvd_l1_zero_flag;
-    bool        cabac_init_flag;
+    Ipp8u       mvd_l1_zero_flag;
+    Ipp8u       cabac_init_flag;
     Ipp32u      collocated_from_l0_flag;
     Ipp32u      collocated_ref_idx;
 
@@ -1179,11 +1176,11 @@ struct H265SliceHeader
     Ipp32s      slice_cb_qp_offset;
     Ipp32s      slice_cr_qp_offset;
 
-    bool        deblocking_filter_override_flag;
-    bool        slice_deblocking_filter_disabled_flag;
+    Ipp8u       deblocking_filter_override_flag;
+    Ipp8u       slice_deblocking_filter_disabled_flag;
     Ipp32s      slice_beta_offset;
     Ipp32s      slice_tc_offset;
-    bool        slice_loop_filter_across_slices_enabled_flag;
+    Ipp8u       slice_loop_filter_across_slices_enabled_flag;
 
     Ipp32u      num_entry_point_offsets;
 
@@ -1441,6 +1438,25 @@ enum
     CHROMA_FORMAT_420_H265       = 1,
     CHROMA_FORMAT_422_H265       = 2,
     CHROMA_FORMAT_444_H265       = 3
+};
+
+class PocDecoding
+{
+public:
+    Ipp32s prevPocPicOrderCntLsb;
+    Ipp32s prevPicOrderCntMsb;
+
+    PocDecoding()
+        : prevPocPicOrderCntLsb(0)
+        , prevPicOrderCntMsb(0)
+    {
+    }
+
+    void Reset()
+    {
+        prevPocPicOrderCntLsb = 0;
+        prevPicOrderCntMsb = 0;
+    }
 };
 
 class h265_exception

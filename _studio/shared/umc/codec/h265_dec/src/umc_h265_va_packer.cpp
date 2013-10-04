@@ -548,7 +548,7 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->max_transform_hierarchy_depth_intra          = (UCHAR)pSeqParamSet->max_transform_hierarchy_depth_intra - 1;
     pPicParam->max_transform_hierarchy_depth_inter          = (UCHAR)pSeqParamSet->max_transform_hierarchy_depth_inter - 1;
     pPicParam->num_short_term_ref_pic_sets                  = (UCHAR)pSeqParamSet->getRPSList()->getNumberOfReferencePictureSets();
-    pPicParam->num_long_term_ref_pics_sps                   = (UCHAR)pSeqParamSet->num_long_term_ref_pic_sps;
+    pPicParam->num_long_term_ref_pics_sps                   = (UCHAR)pSeqParamSet->num_long_term_ref_pics_sps;
     pPicParam->num_ref_idx_l0_default_active_minus1         = (UCHAR)(pPicParamSet->num_ref_idx_l0_default_active - 1);
     pPicParam->num_ref_idx_l1_default_active_minus1         = (UCHAR)(pPicParamSet->num_ref_idx_l1_default_active - 1);
     pPicParam->init_qp_minus26                              = (CHAR)pPicParamSet->init_qp - 26;
@@ -1224,7 +1224,7 @@ void MSPackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->max_transform_hierarchy_depth_intra          = (UCHAR)pSeqParamSet->max_transform_hierarchy_depth_intra - 1;
     pPicParam->max_transform_hierarchy_depth_inter          = (UCHAR)pSeqParamSet->max_transform_hierarchy_depth_inter - 1;
     pPicParam->num_short_term_ref_pic_sets                  = (UCHAR)pSeqParamSet->getRPSList()->getNumberOfReferencePictureSets();
-    pPicParam->num_long_term_ref_pics_sps                   = (UCHAR)pSeqParamSet->num_long_term_ref_pic_sps;
+    pPicParam->num_long_term_ref_pics_sps                   = (UCHAR)pSeqParamSet->num_long_term_ref_pics_sps;
     pPicParam->num_ref_idx_l0_default_active_minus1         = (UCHAR)(pPicParamSet->num_ref_idx_l0_default_active - 1);
     pPicParam->num_ref_idx_l1_default_active_minus1         = (UCHAR)(pPicParamSet->num_ref_idx_l1_default_active - 1);
     pPicParam->init_qp_minus26                              = (CHAR)pPicParamSet->init_qp - 26;

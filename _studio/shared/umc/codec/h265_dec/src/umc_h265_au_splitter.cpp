@@ -59,7 +59,6 @@ AU_Splitter_H265::AU_Splitter_H265(Heap *heap, Heap_Objects *objectHeap)
     : m_Headers(objectHeap)
     , m_objHeap(objectHeap)
     , m_heap(heap)
-    , m_prevPOC(0)
 {
 }
 
@@ -79,7 +78,6 @@ void AU_Splitter_H265::Init(UMC::VideoDecoderParams *)
 void AU_Splitter_H265::Close()
 {
     m_pNALSplitter.reset(0);
-    m_prevPOC = 0;
 }
 
 void AU_Splitter_H265::Reset()
@@ -88,7 +86,6 @@ void AU_Splitter_H265::Reset()
         m_pNALSplitter->Reset();
 
     m_Headers.Reset();
-    m_prevPOC = 0;
 }
 
 Ipp32s AU_Splitter_H265::CheckNalUnitType(UMC::MediaData * src)

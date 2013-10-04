@@ -113,7 +113,7 @@ UMC::Status DecReferencePictureMarking_H265::UpdateRefPicMarking(ViewItem_H265 &
                 count = rps->getNumberOfPictures();
                 for( ; i < count; i++)
                 {
-                    if (rps->getCheckLTMSBPresent(i) == true)
+                    if (rps->getCheckLTMSBPresent(i))
                     {
                         if (pTmp->m_PicOrderCnt == rps->getPOC(i))
                         {
@@ -757,6 +757,7 @@ void TaskSupplier_H265::Close()
     Skipping_H265::Reset();
     m_ObjHeap.Release();
     m_Heap.Reset();
+    m_pocDecoding.Reset();
 
     m_frameOrder               = 0;
 
@@ -820,6 +821,7 @@ void TaskSupplier_H265::Reset()
     Skipping_H265::Reset();
     m_ObjHeap.Release();
     m_Heap.Reset();
+    m_pocDecoding.Reset();
 
     m_frameOrder               = 0;
 
@@ -1832,16 +1834,16 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
     memory_leak_preventing.ClearNotification();
     pSlice->m_pSource = pMem;
     pSlice->m_dTime = pMem->GetTime();
-    
-    pSlice->GetSliceHeader()->slice_pic_order_cnt_lsb = m_prevPOC;
 
-    if (!pSlice->Reset(pMem->GetPointer(), pMem->GetDataSize(), m_iThreadNum))
+    if (!pSlice->Reset(pMem->GetPointer(), pMem->GetDataSize(), &m_pocDecoding))
     {
         return 0;
     }
 
     if (pSlice->GetSliceHeader()->nuh_temporal_id == 0)
-        m_prevPOC = pSlice->GetSliceHeader()->slice_pic_order_cnt_lsb;
+    {
+        //m_prevPOC = pSlice->GetSliceHeader()->slice_pic_order_cnt_lsb;
+    }
 
     if (IsSkipForCRAorBLA(pSlice))
         return 0;
