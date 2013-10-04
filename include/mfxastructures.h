@@ -72,8 +72,8 @@ enum {
 
 /*AAC HE decoder down sampling*/
 enum {
-    MFX_AUDIO_AAC_HE_DWNSMPL_OFF=0,
-    MFX_AUDIO_AAC_HE_DWNSMPL_ON= 1
+    MFX_AUDIO_AAC_HE_DWNSMPL_OFF=1,
+    MFX_AUDIO_AAC_HE_DWNSMPL_ON= 2
 };
 
 /* AAC decoder support of PS */
