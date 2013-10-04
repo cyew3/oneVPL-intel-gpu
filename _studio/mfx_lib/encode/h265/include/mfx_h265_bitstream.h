@@ -82,11 +82,11 @@ public:
     inline Ipp32u GetNumBits() {
         return m_base.m_bitOffset >> (8 - BIT_COST_SHIFT);
     }
-    inline void CtxSave(CABAC_CONTEXT_H265 *ptr, Ipp32s offset, Ipp32s num) {
-        memcpy(ptr + offset, m_base.context_array + offset, num*sizeof(CABAC_CONTEXT_H265));
+    inline void CtxSave(CABAC_CONTEXT_H265 *ptr, Ipp32s size, Ipp32s offset, Ipp32s num) {
+        memcpy_s(ptr + offset, size - offset, m_base.context_array + offset,  num*sizeof(CABAC_CONTEXT_H265));
     }
-    inline void CtxRestore(CABAC_CONTEXT_H265 *ptr, Ipp32s offset, Ipp32s num) {
-        memcpy(m_base.context_array + offset, ptr + offset, num*sizeof(CABAC_CONTEXT_H265));
+    inline void CtxRestore(CABAC_CONTEXT_H265 *ptr, Ipp32s size, Ipp32s offset, Ipp32s num) {
+        memcpy_s(m_base.context_array + offset, size - offset, ptr + offset, num*sizeof(CABAC_CONTEXT_H265));
     }
 
     int isReal() { return 0; }
@@ -131,12 +131,12 @@ public:
     int isReal() { return 1; }
 
     void CtxSaveWPP(CABAC_CONTEXT_H265 *context_array_wpp) {
-        memcpy(context_array_wpp, m_base.context_array,
-            h265_ctxIdxOffset[END_OF_SLICE_FLAG_HEVC] * sizeof(CABAC_CONTEXT_H265));
+        memcpy_s(context_array_wpp, h265_ctxIdxOffset[END_OF_SLICE_FLAG_HEVC] * sizeof(CABAC_CONTEXT_H265),
+            m_base.context_array,   h265_ctxIdxOffset[END_OF_SLICE_FLAG_HEVC] * sizeof(CABAC_CONTEXT_H265));
     }
     void CtxRestoreWPP(CABAC_CONTEXT_H265 *context_array_wpp) {
-        memcpy(m_base.context_array, context_array_wpp,
-            h265_ctxIdxOffset[END_OF_SLICE_FLAG_HEVC] * sizeof(CABAC_CONTEXT_H265));
+        memcpy_s(m_base.context_array, h265_ctxIdxOffset[END_OF_SLICE_FLAG_HEVC] * sizeof(CABAC_CONTEXT_H265),
+                context_array_wpp,     h265_ctxIdxOffset[END_OF_SLICE_FLAG_HEVC] * sizeof(CABAC_CONTEXT_H265));
         m_base.context_array[h265_ctxIdxOffset[END_OF_SLICE_FLAG_HEVC]] = 63;
     }
 };

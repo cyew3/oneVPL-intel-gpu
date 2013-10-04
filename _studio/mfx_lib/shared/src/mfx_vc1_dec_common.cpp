@@ -347,7 +347,7 @@ mfxStatus MFXVC1DecCommon::ParseSeqHeader(mfxBitstream *bs,
             if (pSPS->SPSBufSize < bs_out.DataLength)
                 return MFX_ERR_NOT_ENOUGH_BUFFER;
             
-            memcpy(pSPS->SPSBuffer, bs_out.Data, bs_out.DataLength);
+            memcpy_s(pSPS->SPSBuffer, pSPS->SPSBufSize, bs_out.Data, bs_out.DataLength);
             pSPS->SPSBufSize = (mfxU16)bs_out.DataLength;
         }
         par->mfx.CodecProfile = MFX_PROFILE_VC1_ADVANCED;
@@ -701,7 +701,7 @@ mfxStatus MFXVC1DecCommon::ParseSeqHeader(mfxBitstream *bs,
             if (pSPS->SPSBufSize < (size + 16))
                 return MFX_ERR_NOT_ENOUGH_BUFFER;
 
-            memcpy(pSPS->SPSBuffer, bs->Data, size + 16);
+            memcpy_s(pSPS->SPSBuffer, pSPS->SPSBufSize, bs->Data, size + 16);
             pSPS->SPSBufSize = (mfxU16)(size + 16);
         }
         //Simple/Main profile
@@ -814,7 +814,7 @@ mfxStatus MFXVC1DecCommon::ParseSeqHeader(mfxBitstream *bs,
 
     if (pVideoSignal)
     {
-        memcpy(pVideoSignal, &videoSignal, sizeof(videoSignal));
+        memcpy_s(pVideoSignal, sizeof(videoSignal), &videoSignal, sizeof(videoSignal));
     }
     return MFXSts;
 

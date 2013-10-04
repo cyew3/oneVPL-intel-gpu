@@ -78,7 +78,7 @@ size_t DString::Replace(const vm_char* pSrc, size_t iSrcSize)
             m_pData = (vm_char*)new vm_char[m_iSize];
         }
         m_iLen = iSrcSize;
-        memcpy(m_pData, pSrc, m_iLen*sizeof(vm_char));
+        memcpy_s(m_pData, m_iSize*sizeof(vm_char), pSrc, m_iLen*sizeof(vm_char));
         m_pData[m_iLen] = VM_STRING('\0');
 
         return iSrcSize;
@@ -96,12 +96,12 @@ size_t DString::Append(const vm_char* pSrc, size_t iSrcSize)
             vm_char *pData = (vm_char*)new vm_char[m_iSize];
             if(m_pData)
             {
-                memcpy(pData, m_pData, m_iLen*sizeof(vm_char));
+                memcpy_s(pData, m_iSize*sizeof(vm_char), m_pData, m_iLen*sizeof(vm_char));
                 delete[] m_pData;
             }
             m_pData = pData;
         }
-        memcpy(&m_pData[m_iLen], pSrc, iSrcSize*sizeof(vm_char));
+        memcpy_s(&m_pData[m_iLen], m_iLen*sizeof(vm_char), pSrc, iSrcSize*sizeof(vm_char));
         m_iLen += iSrcSize;
         m_pData[m_iLen] = VM_STRING('\0');
         return iSrcSize;

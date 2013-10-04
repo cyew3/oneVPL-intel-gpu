@@ -512,7 +512,7 @@ namespace UMC
 
         if(readBufSize > readDataSize)
         {
-            memcpy(currFramePos,readPos - 4, 4);
+            memcpy_s(currFramePos, 4, readPos - 4, 4);
             Info.out->SetDataSize(frameSize + 4);
             Info.in->SetDataSize(0);
 

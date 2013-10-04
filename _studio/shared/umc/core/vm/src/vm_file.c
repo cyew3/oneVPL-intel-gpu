@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2011 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 /*
@@ -35,8 +35,8 @@ void vm_file_getpath(vm_char *filename, vm_char *path, int nchars) {
   len = (Ipp32s) vm_string_strlen(filename);
   while(len && (filename[len--] != SLASH));
   if (len) {
-    memcpy((void *)path, (const void *)filename, (len <= nchars) ? len+1 : nchars);
-    path[len+1] = '\0';
+      memcpy_s((void *)path, nchars, (const void *)filename, (len <= nchars) ? len+1 : nchars);
+      path[(len <= nchars) ? len+1 : nchars] = '\0';
     }
   }
 
@@ -69,7 +69,7 @@ void vm_file_getbasename(vm_char *filename, vm_char *base, int nchars) {
       }
     if (chrs > nchars)
       chrs = nchars-1;
-    memcpy((void *)base, (const void *)q1, chrs);
+    memcpy_s((void *)base, nchars, (const void *)q1, chrs);
     base[chrs] = '\0';
     }
   }
@@ -97,7 +97,7 @@ void vm_file_getsuffix(vm_char *filename, vm_char *suffix, int nchars) {
 
 #define ADDPARM(A)                    \
   if ((Ipp32u)nchars > vm_string_strlen(A)) {   \
-    vm_string_strcat(filename, A);              \
+    vm_string_strcat_s(filename, nchars, A);              \
     offs = (Ipp32u) vm_string_strlen(filename);          \
     nchars -= offs;                   \
     if (nchars)                       \

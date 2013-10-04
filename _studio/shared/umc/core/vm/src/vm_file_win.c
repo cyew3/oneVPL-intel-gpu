@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2012 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -209,7 +209,7 @@ vm_file* tempfile_create_file(vm_char* fname)
 
         if(t[0].path != NULL)
         {
-            vm_string_strcpy(t[0].path, fname);
+            vm_string_strcpy_s(t[0].path, nlen*sizeof(vm_char), fname);
 
             if((t[0].handle = vm_file_fopen(t[0].path, _T("w+"))) != NULL)
             {
@@ -232,7 +232,7 @@ void tempfile_check(void)
   {
 #ifndef _WIN32_WCE
   if (GetTempPath(MAX_PATH, temporary_path) == 0)
-    vm_string_strcpy(temporary_path, _T("C:\\"));
+    vm_string_strcpy_s(temporary_path, MAX_PATH, _T("C:\\"));
 #else
     vm_string_strcpy(temporary_path, _T("\\Windows"));
 #endif
@@ -818,7 +818,7 @@ Ipp32s vm_file_fscanf(vm_file *fd, vm_char *format, ...)
             {
                 return 0;
             }
-            vm_string_strcpy(fpt,format);
+            vm_string_strcpy_s(fpt, vm_string_strlen(format)+16, format);
             va_start( args, format );
 
             while(items--)
@@ -1021,7 +1021,7 @@ Ipp32s vm_dir_read(vm_dir* dd, vm_char* filename,int nchars)
     if (FindNextFile(dd->handle,&fdata/*&dd->ent*/))
     {
       rtv = 1;
-      vm_string_strncpy(filename,fdata.cFileName/*dd->ent.cFileName*/,min(nchars,MAX_PATH));
+      vm_string_strncpy_s(filename, nchars, fdata.cFileName/*dd->ent.cFileName*/, min(nchars,MAX_PATH));
     }
     else
       FindClose(dd->handle);
@@ -1082,15 +1082,17 @@ vm_findptr vm_string_findfirst(vm_char* filespec, vm_finddata_t* fileinfo)
 {
   vm_findptr pv = 0;
   size_t i;
+  size_t tmppath_size;
   vm_char* tmppath;
 
   /* check file path and add wildcard specification if missed */
   i = vm_string_strlen(filespec);
 
   tmppath = (vm_char*)malloc((i+ADDNUM)*sizeof(vm_char));
+  tmppath_size = (i+ADDNUM)*sizeof(vm_char);
   if (tmppath != NULL)
   {
-    vm_string_strcpy(tmppath, filespec);
+    vm_string_strcpy_s(tmppath, tmppath_size, filespec);
 
     if (i > 1)
       --i;
@@ -1098,9 +1100,9 @@ vm_findptr vm_string_findfirst(vm_char* filespec, vm_finddata_t* fileinfo)
     if (tmppath[i] != '*')
     {
       if (tmppath[i] != '\\')
-        vm_string_strcat(tmppath, VM_STRING("\\"));
+        vm_string_strcat_s(tmppath, tmppath_size, VM_STRING("\\"));
 
-      vm_string_strcat(tmppath, VM_STRING("*"));
+      vm_string_strcat_s(tmppath, tmppath_size, VM_STRING("*"));
     }
 
     if ((pv = _tfindfirst(tmppath, fileinfo)) != 0)

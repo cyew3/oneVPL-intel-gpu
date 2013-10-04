@@ -611,7 +611,7 @@ void H265CU::IntraPredTULumaAllHAD(Ipp32s abs_part_idx, Ipp32s width)
     GetPredPels(par, pRec, PredPel, outNeighborFlags, width,
         pitch_rec_luma, 1);
 
-    memcpy(PredPelFilt, PredPel, 4*width+1);
+    memcpy_s(PredPelFilt, 4*64+1, PredPel, 4*width+1);
 
     if (par->csps->strong_intra_smoothing_enabled_flag && width == 32)
     {

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -129,7 +129,7 @@ Status FileReader::CacheData(void *data, Ipp32u *nsize, Ipp32s how_far)
 {
     if (((size_t)(m_pEODPointer - m_pDataPointer)) >= (*nsize + how_far))
     {
-        memcpy(data, m_pDataPointer + how_far, *nsize);
+        memcpy_s(data, *nsize, m_pDataPointer + how_far, *nsize);
         return UMC_OK;
     }
     Ipp64s iSize = *nsize, iMax;
@@ -145,7 +145,7 @@ Status FileReader::CacheData(void *data, Ipp32u *nsize, Ipp32s how_far)
         iSize -= how_far;
         *nsize = (Ipp32u)IPP_MAX(iSize, 0);
         if (iSize)
-            memcpy(data, m_pDataPointer + how_far, *nsize);
+            memcpy_s(data, *nsize, m_pDataPointer + how_far, *nsize);
     }
 
     return umcRes;

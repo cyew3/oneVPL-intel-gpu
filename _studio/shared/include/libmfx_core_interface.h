@@ -101,7 +101,7 @@ public:
         {
             if (encode_guid == m_encode_guid && m_size == array_size)
             {
-                memcpy(hwCaps, m_caps, sizeof(CAPS)*array_size);
+                memcpy_s(hwCaps, sizeof(CAPS)*array_size, m_caps, sizeof(CAPS)*array_size);
                 return MFX_ERR_NONE;
             }
         }
@@ -116,7 +116,7 @@ public:
             m_encode_guid = encode_guid;
             m_size = array_size;
             m_caps = malloc(sizeof(CAPS)*array_size);
-            memcpy(m_caps, hwCaps, sizeof(CAPS)*array_size);
+            memcpy_s(m_caps, sizeof(CAPS)*array_size, hwCaps, sizeof(CAPS)*array_size);
             return MFX_ERR_NONE;
         }
         return MFX_ERR_UNDEFINED_BEHAVIOR;

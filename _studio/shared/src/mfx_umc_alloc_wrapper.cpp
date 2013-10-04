@@ -249,7 +249,7 @@ UMC::Status mfx_UMC_FrameAllocator::InitMfx(UMC::FrameAllocatorParams *,
         {
             m_frameData[i].first.Data.MemId = response->mids[i];
 
-            memcpy(&m_frameData[i].first.Info, &request->Info, sizeof(mfxFrameInfo));
+            memcpy_s(&m_frameData[i].first.Info, sizeof(mfxFrameInfo), &request->Info, sizeof(mfxFrameInfo));
 
             // fill UMC frameData
             FrameInformation * frameMID = &m_frameData[i].second;

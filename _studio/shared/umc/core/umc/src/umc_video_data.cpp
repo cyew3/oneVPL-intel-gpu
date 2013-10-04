@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2011 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -717,7 +717,7 @@ VideoData & VideoData::operator = (const VideoData &par)
 
     MediaData::operator=(par);
 
-    memcpy(PlaneData, par.m_pPlaneData, par.m_iPlanes*sizeof(PlaneInfo));
+    memcpy_s(PlaneData, par.m_iPlanes*sizeof(PlaneInfo), par.m_pPlaneData, par.m_iPlanes*sizeof(PlaneInfo));
 
     m_iPlanes      = par.m_iPlanes;
     m_ippSize      = par.m_ippSize;

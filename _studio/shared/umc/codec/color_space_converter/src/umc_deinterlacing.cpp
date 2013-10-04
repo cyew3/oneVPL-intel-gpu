@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2003-2009 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -134,8 +134,8 @@ static void DeinterlacingEdgeDetect(Ipp8u *psrc,
 
   ippiCopy_8u_C1R(psrc, 2*iSrcPitch, pdst, 2*iDstPitch, roi);
 
-  memcpy(pdst + iDstPitch, psrc + iSrcPitch, iSrcPitch);
-  memcpy(pdst + (h - 1)*iDstPitch, psrc + (h - 2) * iSrcPitch, w);
+  memcpy_s(pdst + iDstPitch, iSrcPitch, psrc + iSrcPitch, iSrcPitch);
+  memcpy_s(pdst + (h - 1)*iDstPitch, w, psrc + (h - 2) * iSrcPitch, w);
 
   psrc += 3*iSrcPitch;
   pdst += 3*iDstPitch;

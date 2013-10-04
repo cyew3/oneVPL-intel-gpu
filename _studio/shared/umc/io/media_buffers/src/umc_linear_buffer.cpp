@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright(c) 2003-2009 Intel Corporation. All Rights Reserved.
+//    Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -420,7 +420,7 @@ Status LinearBuffer::LockOutputBuffer(MediaData* out)
 
         lBytesAtEnd = m_pbBuffer + m_lBufferSize - m_pbUsed - m_lDummySize;
         // copy remain byte(s) before the buffer
-        memcpy(m_pbBuffer - lBytesAtEnd, m_pbUsed, lBytesAtEnd);
+        memcpy_s(m_pbBuffer - lBytesAtEnd, lBytesAtEnd, m_pbUsed, lBytesAtEnd);
         // update variable(s)
         m_pbUsed = m_pbBuffer - lBytesAtEnd;
         m_lFreeSize += lBytesAtEnd + m_lDummySize;

@@ -183,14 +183,14 @@ void vm_sys_info_get_os_name(vm_char *os_name)
         {
             vm_string_sprintf(os_name, VM_STRING("Win95"));
             if (('C' == osvi.szCSDVersion[1]) || ('B' == osvi.szCSDVersion[1]))
-                vm_string_strcat(os_name, VM_STRING("OSR2" ));
+                vm_string_strcat_s(os_name, _MAX_LEN, VM_STRING("OSR2" ));
         }
 
         if ((4 == osvi.dwMajorVersion) && (10 == osvi.dwMinorVersion))
         {
             vm_string_sprintf(os_name, VM_STRING("Win98"));
             if ('A' == osvi.szCSDVersion[1])
-                vm_string_strcat(os_name, VM_STRING("SE"));
+                vm_string_strcat_s(os_name, _MAX_LEN, VM_STRING("SE"));
         }
 
         if ((4 == osvi.dwMajorVersion) && (90 == osvi.dwMinorVersion))
@@ -236,7 +236,7 @@ void vm_sys_info_get_program_name(vm_char *program_name)
 
     GetModuleFileName(NULL, tmp, _MAX_LEN);
     i = (Ipp32s) (vm_string_strrchr(tmp, (vm_char)('\\')) - tmp + 1);
-    vm_string_strncpy(program_name,tmp + i, vm_string_strlen(tmp) - i);
+    vm_string_strncpy_s(program_name, _MAX_LEN, tmp + i, vm_string_strlen(tmp) - i);
 
 } /* void vm_sys_info_get_program_name(vm_char *program_name) */
 
@@ -251,7 +251,7 @@ void vm_sys_info_get_program_path(vm_char *program_path)
 
     GetModuleFileName(NULL, tmp, _MAX_LEN);
     i = (Ipp32s) (vm_string_strrchr(tmp, (vm_char)('\\')) - tmp + 1);
-    vm_string_strncpy(program_path, tmp, i - 1);
+    vm_string_strncpy_s(program_path, _MAX_LEN, tmp, i - 1);
     program_path[i - 1] = 0;
 
 } /* void vm_sys_info_get_program_path(vm_char *program_path) */
@@ -415,7 +415,7 @@ void vm_sys_info_get_cpu_name(vm_char *cpu_name)
         /* error protection */
         data[sizeof(data) / sizeof(data[0]) - 1] = 0;
         while (data[i++] == ' ');
-        vm_string_strcpy(cpu_name, (vm_char *)(data + i - 1));
+        vm_string_strcpy_s(cpu_name, _MAX_LEN, (vm_char *)(data + i - 1));
         RegCloseKey (hKey);
     }
     else

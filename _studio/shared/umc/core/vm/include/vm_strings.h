@@ -47,6 +47,7 @@ typedef char vm_char;
 #define vm_string_strcpy    strcpy
 #define vm_string_strcpy_s(dest, size, src)  (strncpy((dest), (src), (size)),0)
 #define vm_string_strncpy   strncpy
+#define vm_string_strncpy_s strncpy_s
 #define vm_string_strcspn   strcspn
 #define vm_string_strspn    strspn
 
@@ -135,6 +136,7 @@ typedef TCHAR vm_char;
 #define vm_string_stricmp   _tcsicmp
 #define vm_string_strnicmp   _tcsncicmp
 #define vm_string_strncpy   _tcsncpy
+#define vm_string_strncpy_s _tcsncpy_s
 #define vm_string_strrchr   _tcsrchr
 
 #define vm_string_atoi      _ttoi
@@ -173,5 +175,30 @@ Ipp32s vm_string_findnext(vm_findptr handle, vm_finddata_t* fileinfo);
 #endif /* WINDOWS */
 
 #define __VM_STRING(str) VM_STRING(str)
+
+#if !defined(_WIN32) && !defined(_WIN64)
+#if defined(__GNUC__)
+inline 
+#else
+__attribute__((always_inline))
+#endif
+error_t memcpy_s(void* pDst, size_t nDstSize, const void* pSrc, size_t nCount)
+{
+    if (pDst && pSrc && (nDstSize >= nCount))
+    {
+        ippsCopy_8u((Ipp8u*)pSrc, (Ipp8u*)pDst, nCount);
+        return 0;
+    }
+    if (!pDst) return EINVAL;
+    if (!pSrc)
+    {
+        ippsZero_8u((Ipp8u*)pDst, nDstSize);
+        return EINVAL;
+    }
+    // only remainnig option: nDstSize < nCount
+    ippsZero_8u((Ipp8u*)pDst, nDstSize);
+    return ERANGE;
+}
+#endif 
 
 #endif /* __VM_STRINGS_H__ */
