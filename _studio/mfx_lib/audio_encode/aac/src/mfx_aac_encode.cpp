@@ -339,12 +339,12 @@ mfxStatus AudioENCODEAAC::AACENCODERoutine(void *pState, void *pParam,
         UMC::Status sts = obj.m_pAACAudioEncoder.get()->GetFrame(&obj.mInData, &obj.mOutData);
         if(sts == UMC::UMC_OK)
         {
-            // set data size 0 to the input buffer 
-            pTask->in->DataLength  = 0;
+            // set data size to remaining value in mInData
+            // and moving buffer
+            memmove(pTask->in->Data, pTask->in->Data + obj.mInData.GetBufferSize() - obj.mInData.GetDataSize(), obj.mInData.GetDataSize());
+            pTask->in->DataLength = obj.mInData.GetDataSize();
 
             // set out buffer size;
-            //if(pTask->out->MaxLength)  AR need to implement a check of output buffer size
-            //pTask->out->DataOffset = 0;
             pTask->out->DataLength += (mfxU32)obj.mOutData.GetDataSize();
             
             obj.m_CommonCore->DecreasePureReference(pTask->in->Locked);
@@ -359,7 +359,6 @@ mfxStatus AudioENCODEAAC::AACENCODERoutine(void *pState, void *pParam,
     {
         return MFX_ERR_UNSUPPORTED;
     }
-
     return mfxRes;
 
 } // mfxStatus AudioENCODEAAC::AACECODERoutine(void *pState, void *pParam,
