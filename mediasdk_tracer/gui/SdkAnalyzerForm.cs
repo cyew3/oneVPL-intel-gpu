@@ -52,8 +52,8 @@ namespace msdk_analyzer
             t1 = new System.Windows.Forms.Timer();
             t1.Interval = 500;
             t1.Tick += new EventHandler(OnUpdateEtlFileSize);
-            AssemblyName name = Assembly.GetExecutingAssembly().GetName();
-            Text = Text + " v" + name.Version.Major + "." + name.Version.Minor;
+            //AssemblyName name = Assembly.GetExecutingAssembly().GetName();
+            //Text = Text + " v" + name.Version.Major + "." + name.Version.Minor;
         }
 
         void OnUpdateEtlFileSize(object sender, EventArgs e)
