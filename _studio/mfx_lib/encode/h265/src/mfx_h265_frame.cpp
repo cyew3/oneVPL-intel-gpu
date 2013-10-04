@@ -76,7 +76,7 @@ mfxStatus H265Frame::CopyFrame(mfxFrameSurface1 *surface)
     memset(y0 - (pitch_luma + 1) * padding, 128, (pitch_luma + 1) * padding);
 
     for (i = 0; i < input_height; i++) {
-        memcpy_s(y0, input_width, ysrc, input_width);
+        memcpy(y0, ysrc, input_width);
         memset(y0 + input_width, 128, padding * 2 + width - input_width);
         y0 += pitch_luma;
         ysrc += surface->Data.Pitch;
@@ -92,7 +92,7 @@ mfxStatus H265Frame::CopyFrame(mfxFrameSurface1 *surface)
         (pitch_luma * padding >> 1) + padding);
 
     for (i = 0; i < input_height >> 1; i++) {
-        memcpy_s(uv0, input_width, uvsrc, input_width);
+        memcpy(uv0, uvsrc, input_width);
         memset(uv0 + input_width, 128, padding * 2 + width - input_width);
         uv0 += pitch_luma;
         uvsrc += surface->Data.Pitch;

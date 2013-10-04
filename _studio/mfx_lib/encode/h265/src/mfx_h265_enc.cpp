@@ -1406,8 +1406,7 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
                 row_info->offset = offset = H265Bs_GetBsSize(&bs[ithread]);
             }
 
-            memcpy_s(bsf[ithread].m_base.context_array, sizeof(CABAC_CONTEXT_H265) * NUM_CABAC_CONTEXT,
-                bs[ithread].m_base.context_array, sizeof(CABAC_CONTEXT_H265) * NUM_CABAC_CONTEXT);
+            memcpy(bsf[ithread].m_base.context_array, bs[ithread].m_base.context_array, sizeof(CABAC_CONTEXT_H265) * NUM_CABAC_CONTEXT);
             bsf[ithread].Reset();
 
 #ifdef DEBUG_CABAC
@@ -1424,8 +1423,7 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
 
             if( pars->RDOQFlag )
             {
-                memcpy_s(bsf[ithread].m_base.context_array, sizeof(CABAC_CONTEXT_H265) * NUM_CABAC_CONTEXT,
-                    bs[ithread].m_base.context_array, sizeof(CABAC_CONTEXT_H265) * NUM_CABAC_CONTEXT);
+                memcpy(bsf[ithread].m_base.context_array, bs[ithread].m_base.context_array, sizeof(CABAC_CONTEXT_H265) * NUM_CABAC_CONTEXT);
             }
 
 //            m_pReconstructFrame->cu->FillRandom(0, 0);
@@ -1737,12 +1735,12 @@ recode:
         if (m_pps.entropy_coding_sync_enabled_flag) {
             for (Ipp32u row = pSlice->row_first; row <= pSlice->row_last; row++) {
                 Ipp32s ithread = row_info->bs_id;
-                memcpy_s(bs[bs_main_id].m_base.m_pbs, row_info->size, bs[ithread].m_base.m_pbsBase + row_info->offset, row_info->size);
+                memcpy(bs[bs_main_id].m_base.m_pbs, bs[ithread].m_base.m_pbsBase + row_info->offset, row_info->size);
                 bs[bs_main_id].m_base.m_pbs += row_info->size;
                 row_info = m_row_info + row + 1;
             }
         } else {            
-            memcpy_s(bs[bs_main_id].m_base.m_pbs, row_info->size, bs[row_info->bs_id].m_base.m_pbsBase + row_info->offset, row_info->size);
+            memcpy(bs[bs_main_id].m_base.m_pbs, bs[row_info->bs_id].m_base.m_pbsBase + row_info->offset, row_info->size);
             bs[bs_main_id].m_base.m_pbs += row_info->size;
         }
         nal.nal_unit_type = (Ipp8u)(pSlice->IdrPicFlag ? NAL_UT_CODED_SLICE_IDR : NAL_UT_CODED_SLICE_TRAIL_R);
