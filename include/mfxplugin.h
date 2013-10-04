@@ -67,8 +67,8 @@ typedef struct mfxCoreInterface {
     mfxHDL pthis;
 
     mfxHDL reserved1[1];
-    mfxFrameAllocator* ExternalSurfaceAllocator; //frame allocator for internal surfaces, it may be mapped on internal or external allocator by mfx core
-    mfxFrameAllocator FrameAllocator; //frame allocator for external surfaces
+    mfxFrameAllocator* ExternalSurfaceAllocator; //frame allocator for surfaces allocated directly by external allocator
+    mfxFrameAllocator  FrameAllocator;           //frame allocator for default surfaces, it may be mapped on internal or external allocator by mfx core
     mfxBufferAllocator reserved3;
 
     mfxStatus (MFX_CDECL *GetCoreParam)(mfxHDL pthis, mfxCoreParam *par);
