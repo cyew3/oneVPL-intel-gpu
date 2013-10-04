@@ -342,7 +342,7 @@ mfxStatus AudioENCODEAAC::AACENCODERoutine(void *pState, void *pParam,
             // set data size to remaining value in mInData
             // and moving buffer
             memmove(pTask->in->Data, pTask->in->Data + obj.mInData.GetBufferSize() - obj.mInData.GetDataSize(), obj.mInData.GetDataSize());
-            pTask->in->DataLength = obj.mInData.GetDataSize();
+            pTask->in->DataLength = (mfxU32)obj.mInData.GetDataSize();
 
             // set out buffer size;
             pTask->out->DataLength += (mfxU32)obj.mOutData.GetDataSize();
