@@ -94,6 +94,10 @@ static const int NUM_265_LEVELS = sizeof(hevc_level_tab) / sizeof(hevc_level_tab
 static mfxI32 Compute265Level(mfxVideoParam *parMFX)
 {
     mfxI32 level, tier;
+
+    if (!parMFX) return MFX_LEVEL_UNKNOWN;
+    const mfxExtCodingOptionHEVC* opts  = (mfxExtCodingOptionHEVC*)GetExtBuffer(  parMFX->ExtParam,  parMFX->NumExtParam, MFX_EXTBUFF_HEVCENC );
+
     for(level = 0; level < NUM_265_LEVELS; level++) {
         mfxI32 LumaPs = parMFX->mfx.FrameInfo.Width * parMFX->mfx.FrameInfo.Height;
         mfxI32 BR = parMFX->mfx.BRCParamMultiplier ? parMFX->mfx.BRCParamMultiplier * parMFX->mfx.TargetKbps : parMFX->mfx.TargetKbps;
@@ -112,6 +116,9 @@ static mfxI32 Compute265Level(mfxVideoParam *parMFX)
             continue;
         if (BR && LumaSr * 3 / 2 * 1000 / BR < hevc_level_tab[level].MinCr)
             continue; // it hardly can change the case
+
+        if (opts && opts->Log2MaxCUSize > 0 && hevc_level_tab[level].level_id >= MFX_LEVEL_HEVC_5 && opts->Log2MaxCUSize < 5)
+            continue;
 
         tier = (BR > hevc_level_tab[level].MaxBR[0]) ? MFX_TIER_HEVC_HIGH : MFX_TIER_HEVC_MAIN;
         return hevc_level_tab[level].level_id | tier;
@@ -140,6 +147,8 @@ static mfxI32 Check265Level(mfxI32 inleveltier, mfxVideoParam *parMFX)
     if (!parMFX) // just chaeck for valid level value
         return inleveltier;
 
+    const mfxExtCodingOptionHEVC* opts  = (mfxExtCodingOptionHEVC*)GetExtBuffer(  parMFX->ExtParam,  parMFX->NumExtParam, MFX_EXTBUFF_HEVCENC );
+
     for( ; level < NUM_265_LEVELS; level++) {
         mfxI32 LumaPs = parMFX->mfx.FrameInfo.Width * parMFX->mfx.FrameInfo.Height;
         mfxI32 BR = parMFX->mfx.BRCParamMultiplier ? parMFX->mfx.BRCParamMultiplier * parMFX->mfx.TargetKbps : parMFX->mfx.TargetKbps;
@@ -158,6 +167,11 @@ static mfxI32 Check265Level(mfxI32 inleveltier, mfxVideoParam *parMFX)
             continue;
         if (BR && LumaSr * 3 / 2 * 1000 / BR < hevc_level_tab[level].MinCr)
             continue; // it hardly can change the case
+
+        // MaxDpbSIze not checked
+
+        if (opts && opts->Log2MaxCUSize > 0 && hevc_level_tab[level].level_id >= MFX_LEVEL_HEVC_5 && opts->Log2MaxCUSize < 5)
+            continue;
 
         tier = (BR > hevc_level_tab[level].MaxBR[0]) ? MFX_TIER_HEVC_HIGH : MFX_TIER_HEVC_MAIN;
 
