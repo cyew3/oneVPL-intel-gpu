@@ -211,6 +211,12 @@ mfxDefaultAllocatorVAAPI::LockFrameHW(
     else
     {
         va_sts = vaSyncSurface(pSelf->pVADisplay, *(vaapi_mids->m_surface));
+
+        // check if the frame is corrupted and set flag
+        if (VA_STATUS_ERROR_DECODING_ERROR == va_sts)
+        {
+            ptr->Corrupted = MFX_CORRUPTION_MAJOR;
+        }
         mfx_res = VA_TO_MFX_STATUS(va_sts);
 #if 0
         if (MFX_ERR_NONE == mfx_res)

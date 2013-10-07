@@ -84,6 +84,7 @@ public:
     virtual Status Execute();
     virtual Status ExecuteExtensionBuffer(void * buffer);
     virtual Status ExecuteStatusReportBuffer(void * buffer, Ipp32s size);
+    virtual Status QueryTaskStatus(Ipp32s index, void * status) { return UMC_ERR_UNSUPPORTED;}
     virtual Status ReleaseBuffer(Ipp32s type);
     virtual Status EndFrame(void * handle = 0);
     virtual Status DisplayFrame(Ipp32s index, VideoData *pOutputVideoData);

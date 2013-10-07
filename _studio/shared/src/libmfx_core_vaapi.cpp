@@ -736,6 +736,14 @@ VAAPIVideoCORE::DoFastCopyWrapper(
     }
 
     sts = DoFastCopyExtended(&dstTempSurface, &srcTempSurface);
+
+    if (MFX_ERR_DEVICE_FAILED == sts && 0 != dstTempSurface.Data.Corrupted)
+    {
+        // complete task even if frame corrupted
+        pDst->Data.Corrupted = dstTempSurface.Data.Corrupted;
+        sts = MFX_ERR_NONE;
+    }
+
     MFX_CHECK_STS(sts);
 
     if (true == isSrcLocked)
@@ -832,6 +840,15 @@ VAAPIVideoCORE::DoFastCopyExtended(
         void *pBits = NULL;
 
         MFX_CHECK(m_Display,MFX_ERR_NOT_INITIALIZED);
+
+        va_sts = vaSyncSurface(m_Display, *va_surface);
+
+        // check if the frame is corrupted and set flag
+        if (VA_STATUS_ERROR_DECODING_ERROR == va_sts)
+        {
+            pDst->Data.Corrupted = MFX_CORRUPTION_MAJOR;
+        }
+        MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
 
         VASurfaceStatus surface_status;
         va_sts = vaQuerySurfaceStatus(m_Display, *va_surface, &surface_status);

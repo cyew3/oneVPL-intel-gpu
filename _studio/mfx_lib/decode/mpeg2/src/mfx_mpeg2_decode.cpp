@@ -26,6 +26,10 @@ static const mfxI32 MFX_MPEG2_DECODE_ALIGNMENT = 16;
 #include "umc_va_dxva2.h"
 #endif
 
+//#if defined (MFX_VA_LINUX)
+//#include "umc_va_base.h"
+//#endif
+
 #undef ELK_WORKAROUND
 
 //#define _status_report_debug
@@ -42,7 +46,6 @@ enum
 static bool IsStatusReportEnable(VideoCORE * core)
 {
     core; // touch unreferenced parameter
-#if defined MFX_VA_WIN
     UMC::VideoAccelerator *va;
     core->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
     
@@ -53,10 +56,6 @@ static bool IsStatusReportEnable(VideoCORE * core)
     }
 
     return false;
-
-#else
-    return false;
-#endif
 }
 
 
@@ -3563,7 +3562,7 @@ mfxStatus VideoDECODEMPEG2::GetStatusReport(mfxFrameSurface1 *displaySurface)
 
     DXVA_Status_VC1 currentTaskStatus = {};
 
-    #ifdef _status_report_debug
+#ifdef _status_report_debug
     {
         char cStr[256];
         sprintf(cStr, "status report count %d\n", m_pStatusList.size()); 
@@ -3650,6 +3649,24 @@ mfxStatus VideoDECODEMPEG2::GetStatusReport(mfxFrameSurface1 *displaySurface)
     }
 
 #endif
+/*#ifdef UMC_VA_LINUX
+    using namespace UMC;
+
+    VideoAccelerator *va;
+    m_pCore->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
+
+    Status sts = UMC_OK;
+    VASurfaceStatus surfSts = VASurfaceSkipped;
+
+    sts = va->QueryTaskStatus(0, &surfSts);
+    if (sts != UMC_OK)
+        return MFX_ERR_DEVICE_FAILED;
+
+    if (surfSts != VASurfaceReady)
+    {
+        return MFX_TASK_BUSY;
+    }
+#endif*/
 
     return MFX_ERR_NONE;
 }

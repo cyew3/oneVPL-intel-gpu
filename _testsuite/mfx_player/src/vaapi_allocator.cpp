@@ -243,6 +243,13 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
     else   // Image processing
     {
         va_res = vaSyncSurface(m_dpy, *(vaapi_mid->m_surface));
+
+        // check if the frame is corrupted and set flag
+        if (VA_STATUS_ERROR_DECODING_ERROR == va_res)
+        {
+            ptr->Corrupted = MFX_CORRUPTION_MAJOR;
+        }
+
         mfx_res = va_to_mfx_status(va_res);
 
         if (MFX_ERR_NONE == mfx_res)

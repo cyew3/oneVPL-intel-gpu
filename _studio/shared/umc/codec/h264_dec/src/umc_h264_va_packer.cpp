@@ -2487,6 +2487,11 @@ void PackerVA::PackAU(const H264DecoderFrame *pFrame, Ipp32s isTop)
     }
 }
 
+Status PackerVA::QueryTaskStatus(Ipp32s index, void * status)
+{
+    return m_va->QueryTaskStatus(index, status);
+}
+
 #endif // UMC_VA_LINUX
 
 } // namespace UMC

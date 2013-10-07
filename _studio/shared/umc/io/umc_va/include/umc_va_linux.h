@@ -108,6 +108,7 @@ public:
     virtual Status FindConfiguration(UMC::VideoStreamInfo* /*x*/) { return UMC_ERR_UNSUPPORTED;}
     virtual Status ExecuteExtensionBuffer(void* /*x*/) { return UMC_ERR_UNSUPPORTED;}
     virtual Status ExecuteStatusReportBuffer(void* /*x*/, Ipp32s /*y*/)  { return UMC_ERR_UNSUPPORTED;}
+    virtual Status QueryTaskStatus(Ipp32s index, void * status);
     virtual bool IsIntelCustomGUID() const { return false;}
     virtual GUID GetDecoderGuid(){return m_guidDecoder;};
     virtual void GetVideoDecoder(void** /*handle*/) {};

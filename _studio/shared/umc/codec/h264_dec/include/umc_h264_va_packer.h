@@ -45,6 +45,7 @@ public:
     virtual ~Packer();
 
     virtual Status GetStatusReport(void * pStatusReport, size_t size) = 0;
+    virtual Status QueryTaskStatus(Ipp32s index, void * status) = 0;
 
     virtual void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice) = 0;
 
@@ -76,6 +77,7 @@ public:
     PackerDXVA2(VideoAccelerator * va, TaskSupplier * supplier);
 
     virtual Status GetStatusReport(void * pStatusReport, size_t size);
+    virtual Status QueryTaskStatus(Ipp32s index, void * status) { return UMC_ERR_UNSUPPORTED; }
 
     virtual void PackQmatrix(const UMC_H264_DECODER::H264ScalingPicParams * scaling);
 
@@ -154,6 +156,7 @@ public:
     PackerVA(VideoAccelerator * va, TaskSupplier * supplier);
 
     virtual Status GetStatusReport(void * pStatusReport, size_t size);
+    virtual Status QueryTaskStatus(Ipp32s index, void * status);
 
     virtual void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice);
 

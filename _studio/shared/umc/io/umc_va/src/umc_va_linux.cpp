@@ -224,7 +224,7 @@ LinuxVideoAccelerator::LinuxVideoAccelerator(void)
     //vm_mutex_init(&m_SyncMutex);
 
     m_bIsExtSurfaces    = false;
-    m_isUseStatuReport  = false;// true - true breaks h264 dec on Linux
+    m_isUseStatuReport  = true;
     m_bH264MVCSupport   = false;
     memset(&m_guidDecoder, 0 , sizeof(GUID));
 }
@@ -792,6 +792,23 @@ Status LinuxVideoAccelerator::DisplayFrame(Ipp32s index, VideoData *pOutputVideo
 Ipp32s LinuxVideoAccelerator::GetIndex(void)
 {
     return m_iIndex;
+}
+
+Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * status)
+{
+    //TODO: need to add VASurfaceDecodeMBErrors support
+
+    Status   umcRes = UMC_OK;
+    VAStatus va_res = VA_STATUS_SUCCESS;
+
+    if ((UMC_OK == umcRes) && ((FrameBufIndex < 0) || (FrameBufIndex >= m_NumOfFrameBuffers)))
+        umcRes = UMC_ERR_INVALID_PARAMS;
+    if (UMC_OK == umcRes)
+    {
+        va_res = vaQuerySurfaceStatus(m_dpy, m_surfaces[FrameBufIndex], (VASurfaceStatus*)status);
+        umcRes = va_to_umc_res(va_res);
+    }
+    return umcRes;
 }
 
 }; // namespace UMC

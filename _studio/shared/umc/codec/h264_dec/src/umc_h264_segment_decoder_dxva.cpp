@@ -331,6 +331,28 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
     }
 
 #endif
+#ifdef UMC_VA_LINUX
+
+    Status sts = UMC_OK;
+    VASurfaceStatus surfSts = VASurfaceSkipped;
+    for (H264DecoderFrameInfo * au = m_FirstAU; au; au = au->GetNextAU())
+    {
+        sts = dxva_sd->GetPacker()->QueryTaskStatus(au->m_pFrame->m_index, &surfSts);
+        if (sts != UMC_OK)
+            throw h264_exception(sts);
+
+        if (surfSts == VASurfaceReady)
+        {
+            au->SetStatus(H264DecoderFrameInfo::STATUS_COMPLETED);
+            CompleteFrame(au->m_pFrame);
+            break;
+        }
+
+        break;
+    }
+
+    SwitchCurrentAU();
+#endif
 
     return false;
 }
