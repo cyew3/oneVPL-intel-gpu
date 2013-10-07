@@ -2774,10 +2774,10 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
         if (extRoi->NumROI > MaxNumOfROI)
         {
-            if (MaxNumOfROI == 0)
+            //if (MaxNumOfROI == 0)
                 unsupported = true;
-            else
-                changed = true;
+            //else
+            //    changed = true;
 
             extRoi->NumROI = MaxNumOfROI;
         }
