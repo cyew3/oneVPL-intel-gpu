@@ -2837,7 +2837,7 @@ namespace UMC
             f = fopen("Bitplane.txt", "wb");
 #endif
 
-            bitplane_size = (pContext->m_seqLayerHeader.heightMB +1)*(pContext->m_seqLayerHeader.widthMB)/2; //need to update for fields
+            bitplane_size = ((pContext->m_seqLayerHeader.heightMB +1)/2)*(pContext->m_seqLayerHeader.widthMB); //need to update for fields
             if (pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
             {
                 bitplane_size /= 2;

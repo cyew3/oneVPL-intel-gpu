@@ -209,7 +209,7 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldIpicture_Adv(VC1Context* pContex
     else
     DecodeBitplane(pContext, &picLayerHeader->ACPRED,  seqLayerHeader->widthMB,
                    (seqLayerHeader->heightMB+1)/2,
-                   seqLayerHeader->widthMB * (seqLayerHeader->heightMB+1)/2);
+                   seqLayerHeader->widthMB * ((seqLayerHeader->heightMB+1)/2));
 
 
     if( (seqLayerHeader->OVERLAP==1) && (picLayerHeader->PQUANT<=8) )
@@ -236,7 +236,7 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldIpicture_Adv(VC1Context* pContex
                 else
                     DecodeBitplane(pContext, &picLayerHeader->OVERFLAGS,
                     seqLayerHeader->widthMB, (seqLayerHeader->heightMB + 1)/2,
-                    seqLayerHeader->widthMB*(seqLayerHeader->heightMB + 1)/2);
+                    seqLayerHeader->widthMB*((seqLayerHeader->heightMB + 1)/2));
             }
         }
         else

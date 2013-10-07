@@ -358,7 +358,7 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldBpicture_Adv (VC1Context* pConte
     else
     DecodeBitplane(pContext, &picLayerHeader->FORWARDMB,
                    seqLayerHeader->widthMB, (seqLayerHeader->heightMB+1)/2,
-                   seqLayerHeader->widthMB * (seqLayerHeader->heightMB+1)/2);
+                   seqLayerHeader->widthMB * ((seqLayerHeader->heightMB+1)/2));
 
     //motion vector table
     VC1_GET_BITS(3, picLayerHeader->MBMODETAB);       //MBMODETAB
