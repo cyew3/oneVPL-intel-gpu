@@ -14,6 +14,7 @@
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined(MFX_ENABLE_H265_VIDEO_DECODE)
 
 #include "mfx_h265_optimization.h"
+#include "ipps.h"
 
 #if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_SSSE3) || defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO) 
 
@@ -131,7 +132,7 @@ namespace MFX_HEVC_PP
             memset(pPredPel, 128, TotalPixels);
         } else if (isAllNBR == avlMask) {
             // All neighbors available
-            memcpy(pPredPel, pSrc - srcPitch - 1, blkSize2 + 1);
+            ippsCopy_8u(pSrc - srcPitch - 1, pPredPel, blkSize2 + 1);
 
             tmpSrcPtr = pSrc - 1;
             for (i = blkSize2 + 1; i < TotalPixels; i++) {
@@ -252,7 +253,7 @@ namespace MFX_HEVC_PP
             memset(pPredPel, 128, TotalPixels);
         } else if (isAllNBR == avlMask) {
             // All neighbors available
-            memcpy(pPredPel, pSrc - srcPitch - 2, blkSize2 + 2);
+            ippsCopy_8u(pSrc - srcPitch - 2, pPredPel, blkSize2 + 2);
 
             tmpSrcPtr = pSrc - 2;
             for (i = blkSize2 + 2; i < TotalPixels; i+=2) {

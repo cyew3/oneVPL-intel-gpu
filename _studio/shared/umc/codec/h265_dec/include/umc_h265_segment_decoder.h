@@ -155,9 +155,7 @@ public:
     void ParseTransformSubdivFlagCABAC(Ipp32u& SubdivFlag, Ipp32u Log2TransformBlockSize);
     void ReadEpExGolombCABAC(Ipp32u& Value, Ipp32u Count);
     void DecodeCoeff(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u Width, Ipp32u Height, bool& CodeDQP, bool isFirstPartMerge);
-    void DecodeTransform(H265CodingUnit* pCU, Ipp32u offsetLuma,
-                                             Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u  width, Ipp32u height,
-                                             Ipp32u TrIdx, bool& CodeDQP);
+    void DecodeTransform(H265CodingUnit* pCU, Ipp32u offsetLuma, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u  l2width, Ipp32u TrIdx, bool& CodeDQP);
     void ParseQtCbfCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, EnumTextType Type, Ipp32u TrDepth, Ipp32u Depth);
     void ParseQtRootCbfCABAC(Ipp32u& QtRootCbf);
     void DecodeQP(H265CodingUnit* pCU, Ipp32u AbsPartIdx);
@@ -171,7 +169,7 @@ public:
 
     Ipp32u ParseLastSignificantXYCABAC(Ipp32u &PosLastX, Ipp32u &PosLastY, Ipp32u L2Width, bool IsLuma, Ipp32u ScanIdx);
 
-    void ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCommon pCoef, Ipp32u AbsPartIdx, Ipp32u Size, Ipp32u Depth, EnumTextType Type);
+    void ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCommon pCoef, Ipp32u AbsPartIdx, Ipp32u Log2BlockSize, Ipp32u Depth, EnumTextType Type);
 
     void ParseTransformSkipFlags(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, EnumTextType Type);
 
