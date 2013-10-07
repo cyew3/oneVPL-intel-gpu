@@ -664,6 +664,7 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
     }
 
     PARSE_UINT( uiCode, "num_short_term_ref_pic_sets" );
+    pcSPS->num_short_term_ref_pic_sets = uiCode;
     pcSPS->createRPSList(uiCode);
 
     ReferencePictureSetList* rpsList = pcSPS->getRPSList();
@@ -678,10 +679,9 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
     pcSPS->long_term_ref_pics_present_flag = Get1Bit();
     if (pcSPS->long_term_ref_pics_present_flag)
     {
-        PARSE_UINT(uiCode, "num_long_term_ref_pics_sps" );
-        pcSPS->num_long_term_ref_pics_sps = uiCode;
+        pcSPS->num_long_term_ref_pics_sps = (Ipp32u)GetVLCElement(false);
 
-        VM_ASSERT(pcSPS->num_long_term_ref_pics_sps <= pcSPS->sps_max_dec_pic_buffering[pcSPS->sps_max_sub_layers - 1] - 1);
+        VM_ASSERT(pcSPS->num_long_term_ref_pics_sps <= 32);
 
         for (Ipp32u k = 0; k < pcSPS->num_long_term_ref_pics_sps; k++)
         {
@@ -1213,9 +1213,10 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
                 if (short_term_ref_pic_set_idx >= sps->getRPSList()->getNumberOfReferencePictureSets())
                     throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
-                pSlice->setRPS(sps->getRPSList()->getReferencePictureSet(short_term_ref_pic_set_idx));
+                rps = pSlice->getLocalRPS();
+                *rps = *sps->getRPSList()->getReferencePictureSet(short_term_ref_pic_set_idx);
 
-                rps = pSlice->getRPS();
+                pSlice->setRPS(rps);
                 sliceHdr->wNumBitsForShortTermRPSInSlice = 0;
             }
 
@@ -1749,7 +1750,8 @@ void H265Bitstream::parseShortTermRefPicSet(const H265SeqParamSet* sps, Referenc
     PARSE_UINT(code, "abs_delta_rps_minus1");
 
     int deltaRPS = (1 - 2 * bit) * (code + 1);
-    for(int j=0 ; j <= rpsRef->getNumberOfPictures(); j++)
+    Ipp32s num_pics = rpsRef->getNumberOfPictures();
+    for(Ipp32s j = 0 ;j <= num_pics; j++)
     {
       PARSE_CODE(1, bit, "used_by_curr_pic_flag" );
       int refIdc = bit;

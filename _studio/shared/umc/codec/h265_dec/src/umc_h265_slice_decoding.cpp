@@ -459,6 +459,8 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
     // Set the start of real slice, not slice segment
     m_SliceHeader.SliceCurStartCUAddr = slice->SliceCurStartCUAddr;
 
+    m_SliceHeader.m_RefPicListModification = slice->m_RefPicListModification;
+
     m_bDeblocked = GetSliceHeader()->slice_deblocking_filter_disabled_flag;
     m_bSAOed = !(GetSliceHeader()->slice_sao_luma_flag || GetSliceHeader()->slice_sao_chroma_flag);
 

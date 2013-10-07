@@ -380,7 +380,7 @@ UMC::Status MFXTaskSupplier_H265::DecodeSEI(UMC::MediaDataEx *nalUnit)
                 if (m_SEIPayLoads.payLoadType == SEI_RESERVED)
                     continue;
 
-                m_Headers.m_SEIParams.AddHeader(&m_SEIPayLoads);
+                //m_Headers.m_SEIParams.AddHeader(&m_SEIPayLoads);
             }
 
             size_t decoded2 = bitStream.BytesDecoded();

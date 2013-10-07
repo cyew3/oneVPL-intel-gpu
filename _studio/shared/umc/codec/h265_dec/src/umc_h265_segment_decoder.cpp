@@ -3197,7 +3197,8 @@ bool H265SegmentDecoder::AddMVPCand(AMVPInfo* pInfo, EnumRefPicList RefPicList, 
     if (!m_context->m_CurrCTBFlags[NeibAddr].members.IsAvailable || m_context->m_CurrCTBFlags[NeibAddr].members.IsIntra)
         return false;
 
-    if (m_context->m_CurrCTB[NeibAddr].m_refIdx[RefPicList] == RefIdx)
+    Ipp32s candRefIdx = m_context->m_CurrCTB[NeibAddr].m_refIdx[RefPicList];
+    if (candRefIdx >= 0 && m_pRefPicList[RefPicList][RefIdx].refFrame->m_PicOrderCnt == m_pRefPicList[RefPicList][candRefIdx].refFrame->m_PicOrderCnt)
     {
         pInfo->MVCandidate[pInfo->NumbOfCands++] = m_context->m_CurrCTB[NeibAddr].m_mv[RefPicList];
         return true;
