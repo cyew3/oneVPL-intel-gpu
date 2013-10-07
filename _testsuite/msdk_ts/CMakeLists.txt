@@ -32,6 +32,7 @@ foreach( variant sw x11 drm )
       umc_core_merged
       bs_parser
       dl
+      ippvc_l ippcc_l ippi_l ipps_l ippcore_l
       sample_common_${variant}
       pthread
     )
@@ -112,6 +113,7 @@ foreach( variant sw x11 drm)
       bs_parser
       dl
       pthread
+      ippvc_l ippcc_l ippi_l ipps_l ippcore_l
       sample_common_${variant}
       ${PERL_LIBRARY}
     )

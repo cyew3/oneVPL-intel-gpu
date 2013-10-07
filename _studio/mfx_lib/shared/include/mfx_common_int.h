@@ -132,8 +132,14 @@ private:
     mfxVideoParamWrapper(const mfxVideoParamWrapper &);
 };
 
+/*
 #pragma warning(disable: 4127)
 template<typename T1, typename T2>
+#if defined(__GNUC__)
+__attribute__((always_inline))
+#else
+inline
+#endif
 mfxU32 memcpy_s(T1* pDst, T2* pSrc)
 {
     if (sizeof(T1) != sizeof(T2))
@@ -142,31 +148,6 @@ mfxU32 memcpy_s(T1* pDst, T2* pSrc)
     ippsCopy_8u((Ipp8u*)pSrc, (Ipp8u*)pDst, sizeof(T1));
     return sizeof(T1);
 }
-
-#if !defined(_WIN32) && !defined(_WIN64)
-#if defined(__GNUC__)
-inline
-#else
-__attribute__((always_inline))
-#endif
-error_t memcpy_s(void* pDst, size_t nDstSize, const void* pSrc, size_t nCount)
-{
-    if (pDst && pSrc && (nDstSize >= nCount))
-    {
-        ippsCopy_8u((Ipp8u*)pSrc, (Ipp8u*)pDst, nCount);
-        return 0;
-    }
-    if (!pDst) return EINVAL;
-    if (!pSrc)
-    {
-        ippsZero_8u((Ipp8u*)pDst, nDstSize);
-        return EINVAL;
-    }
-    // only remainnig option: nDstSize < nCount
-    ippsZero_8u((Ipp8u*)pDst, nDstSize);
-    return ERANGE;
-}
-
-#endif
+*/
 
 #endif

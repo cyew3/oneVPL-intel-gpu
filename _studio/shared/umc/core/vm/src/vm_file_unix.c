@@ -33,6 +33,7 @@
 #endif /* #if !defined(__ANDROID__) */
 #include <dirent.h>
 #include "vm_file.h"
+#include <ipps.h>
 
 
 /* obtain file info. return 0 if file is not accessible,

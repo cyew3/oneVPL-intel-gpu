@@ -15,7 +15,7 @@ foreach( variant x11 drm )
         umc_core_merged
         sample_common_${variant}
         mfx
-        ippcore_l
+        ipps_l ippcore_l
         dl
         pthread
     )

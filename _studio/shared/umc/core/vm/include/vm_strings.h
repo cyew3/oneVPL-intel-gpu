@@ -23,6 +23,9 @@
 # include <stdarg.h>
 # include <ctype.h>
 # include <dirent.h>
+# include <errno.h>
+# include <ipps.h>
+
 
 typedef char vm_char;
 
@@ -177,10 +180,12 @@ Ipp32s vm_string_findnext(vm_findptr handle, vm_finddata_t* fileinfo);
 #define __VM_STRING(str) VM_STRING(str)
 
 #if !defined(_WIN32) && !defined(_WIN64)
+typedef int error_t;
+
 #if defined(__GNUC__)
-inline 
+static __attribute__((always_inline))
 #else
-__attribute__((always_inline))
+static inline
 #endif
 error_t memcpy_s(void* pDst, size_t nDstSize, const void* pSrc, size_t nCount)
 {
@@ -199,6 +204,7 @@ error_t memcpy_s(void* pDst, size_t nDstSize, const void* pSrc, size_t nCount)
     ippsZero_8u((Ipp8u*)pDst, nDstSize);
     return ERANGE;
 }
+
 #endif 
 
 #endif /* __VM_STRINGS_H__ */
