@@ -98,6 +98,7 @@ StringCodeItem tbl_rate_ctrl[] = {
     CODE_STRING(MFX_RATECONTROL_, LA),
     CODE_STRING(MFX_RATECONTROL_, CRF),
     CODE_STRING(MFX_RATECONTROL_, VCM),
+    CODE_STRING(MFX_RATECONTROL_, LA_CRF),
 };
 
 StringCodeItem tbl_frc_algm[] = {
@@ -302,8 +303,14 @@ void dump_mfxInfoMFX(FILE *fd, int level, TCHAR *prefix, TCHAR *prefix2, Compone
                 break;
             }
             case MFX_RATECONTROL_CRF:
+            case MFX_RATECONTROL_LA_CRF:
             {
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".CRFQuality="),TEXT("%d"), im->CRFQuality);
+                break;
+            }
+            case MFX_RATECONTROL_LA:
+            {
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".TargetKbps="),TEXT("%d"), im->TargetKbps);
                 break;
             }
         }
