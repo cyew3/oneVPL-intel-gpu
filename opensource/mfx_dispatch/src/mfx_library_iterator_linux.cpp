@@ -230,8 +230,16 @@ static mfxU32 mfx_list_libraries(const char* path, bool search_hw, struct mfx_li
 namespace MFX
 {
 
-mfxStatus GetImplementationType(const mfxU32 /*adapterNum*/, mfxIMPL *pImplInterface, mfxU32 */*pVendorID*/, mfxU32 */*pDeviceID*/)
+mfxStatus GetImplementationType(const mfxU32 adapterNum, mfxIMPL *pImplInterface, mfxU32 */*pVendorID*/, mfxU32 */*pDeviceID*/)
 {
+    mfx_disp_adapters* adapters = NULL;
+    int adapters_num = mfx_init_adapters(&adapters);
+    if (adapters_num) free(adapters);
+
+    if (adapterNum >= adapters_num)
+        return MFX_ERR_UNSUPPORTED;
+
+
     *pImplInterface = MFX_IMPL_VIA_VAAPI;
     return MFX_ERR_NONE;
 }
@@ -321,23 +329,26 @@ mfxStatus MFXLibraryIterator::SelectDLLVersion(char *pPath, size_t pathSize,
 {
     if (m_lastLibIndex < 0)
     {
-        mfxU32 i = 0;
-        for (i = 0; i < m_libs_num; ++i)
+        for (int i = m_libs_num - 1; i >= 0; i--)
         {
-            if (m_libs[i].version.Major == minVersion.Major)
+            if (m_libs[i].version.Major == minVersion.Major && m_libs[i].version.Minor >= minVersion.Minor)
             {
-                if ((m_lastLibIndex < 0) || (m_libs[m_lastLibIndex].version.Minor < m_libs[i].version.Minor))
-                {
                     m_lastLibIndex = i;
-                }
+                    break;
             }
         }
     }
-    else --m_lastLibIndex;
+    else
+        m_lastLibIndex--;
 
     if (m_lastLibIndex < 0)
+        return MFX_ERR_NOT_FOUND;
+    
+    if (m_libs[m_lastLibIndex].version.Major != minVersion.Major ||
+        m_libs[m_lastLibIndex].version.Minor < minVersion.Minor)
     {
-      return MFX_ERR_NOT_FOUND;
+        m_lastLibIndex = -1;
+        return MFX_ERR_NOT_FOUND;
     }
 
     snprintf(pPath, pathSize, "%s/%s", m_path, m_libs[m_lastLibIndex].name);

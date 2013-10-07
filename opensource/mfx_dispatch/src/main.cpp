@@ -256,10 +256,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
                 DISPATCHER_LOG_INFO((("loading default library %S\n"), dllName))
 
                 // try to load the selected DLL using default DLL search mechanism
-                if (
-                    MFX_LIB_HARDWARE == implTypes[curImplIdx].implType 
-                    && (!implInterface 
-                        || MFX_IMPL_VIA_ANY == implInterface))
+                if (MFX_LIB_HARDWARE == implTypes[curImplIdx].implType)
                 {
                     if (!implInterface) 
                     {
