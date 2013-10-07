@@ -1061,6 +1061,13 @@ AACStatus aacencGetFrame(Ipp16s *inPointer,
   ics[0].predictor_data_present = 0;
   ics[1].predictor_data_present = 0;
 
+  ics[0].ics_reserved_bit = 0;
+  ics[1].ics_reserved_bit = 0;
+
+  ics[0].global_gain = 0;
+  ics[1].global_gain = 0;
+
+
   sce.p_individual_channel_stream = &ics[0];
 
   cpe.p_individual_channel_stream_0 = &ics[0];
