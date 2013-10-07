@@ -23,6 +23,10 @@
 
 #ifndef UMC_RESTRICTED_CODE_VA
 
+#if defined(_WIN32) || defined(_WIN64)
+#pragma warning( disable : 4100 ) // ignore unreferenced parameters in virtual method declaration
+#endif
+
 namespace UMC_H264_DECODER
 {
     struct H264PicParamSet;
