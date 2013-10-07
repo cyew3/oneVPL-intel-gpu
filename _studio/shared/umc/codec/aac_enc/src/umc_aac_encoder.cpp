@@ -271,6 +271,7 @@ Status AACEncoder::GetFrame(MediaData* in, MediaData* out)
         adts_fixed_header.channel_configuration     = m_channel_number;
         adts_fixed_header.original_copy             = 0;
         adts_fixed_header.Home                      = 0;
+        adts_fixed_header.Emphasis                  = 0; 
         if (m_channel_number == 8)
             adts_fixed_header.channel_configuration = 7;
 
