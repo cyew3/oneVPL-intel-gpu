@@ -1321,7 +1321,7 @@ namespace UMC
         if(check_bitplane)
         {
 
-            bitplane_size = pContext->m_seqLayerHeader.heightMB*(pContext->m_seqLayerHeader.widthMB + 1)/2;
+            bitplane_size = ((pContext->m_seqLayerHeader.heightMB+1)/2)*pContext->m_seqLayerHeader.widthMB;
             if (pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
                 bitplane_size /= 2;
 
