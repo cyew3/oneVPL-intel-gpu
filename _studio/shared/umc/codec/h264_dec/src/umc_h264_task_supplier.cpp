@@ -5158,6 +5158,9 @@ void TaskSupplier::OnFullFrame(H264DecoderFrame * pFrame)
         pFrame->setWasDisplayed();
     }
 
+    if (pFrame->IsSkipped())
+        return;
+
     if (pFrame->m_bIDRFlag && !(pFrame->GetError() & ERROR_FRAME_DPB))
     {
         DecReferencePictureMarking::ResetError();

@@ -1845,9 +1845,6 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
         //m_prevPOC = pSlice->GetSliceHeader()->slice_pic_order_cnt_lsb;
     }
 
-    if (IsSkipForCRAorBLA(pSlice))
-        return 0;
-
     if (m_WaitForIDR)
     {
         if (pSlice->GetSliceHeader()->slice_type != I_SLICE)
@@ -2099,6 +2096,9 @@ void TaskSupplier_H265::OnFullFrame(H265DecoderFrame * pFrame)
 {
     pFrame->SetFullFrame(true);
 
+    if (pFrame->IsSkipped())
+        return;
+
     if (pFrame->GetAU()->GetSlice(0)->GetSliceHeader()->IdrPicFlag && !(pFrame->GetError() & UMC::ERROR_FRAME_DPB))
     {
         DecReferencePictureMarking_H265::ResetError();
@@ -2124,9 +2124,9 @@ void TaskSupplier_H265::CompleteFrame(H265DecoderFrame * pFrame)
 
     // skipping algorithm
     {
-        if (IsShouldSkipFrame(pFrame))
+        if (IsShouldSkipFrame(pFrame) || IsSkipForCRAorBLA(slicesInfo->GetAnySlice()))
         {
-            pFrame->GetAU()->SetStatus(H265DecoderFrameInfo::STATUS_COMPLETED);
+            slicesInfo->SetStatus(H265DecoderFrameInfo::STATUS_COMPLETED);
 
             pFrame->SetisShortTermRef(false);
             pFrame->SetisLongTermRef(false);
