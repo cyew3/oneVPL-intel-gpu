@@ -110,8 +110,24 @@ typedef enum REGISTRATION_OP
     REG_UNREGISTER  = 2
 };
 
+#ifdef NEW_STATUS_REPORTING_DDI_0915
+// new encode query status interface (starting from DDI 0.915)
+typedef struct tagENCODE_QUERY_STATUS_PARAMS_DESCR
+{
+    UINT StatusParamType;
+    UINT SizeOfStatusParamStruct;
+    UINT reserved[2];
+} ENCODE_QUERY_STATUS_PARAMS_DESCR;
 
-// from "Intel DXVA Encoding DDI for Vista rev 0.77"
+// new encode query status interface (starting from DDI 0.915)
+typedef enum tagENCODE_QUERY_STATUS_PARAM_TYPE
+{ 
+    QUERY_STATUS_PARAM_FRAME = 0, // Frame level reporting, the current default.
+    QUERY_STATUS_PARAM_SLICE = 1 // Slice level reporting, not yet supported.
+} ENCODE_QUERY_STATUS_PARAM_TYPE;
+#endif // NEW_STATUS_REPORTING_DDI_0915
+
+// new encode query status interface (starting from DDI 0.915)
 typedef struct tagENCODE_QUERY_STATUS_PARAMS
 {
     UINT    StatusReportFeedbackNumber;
@@ -125,6 +141,20 @@ typedef struct tagENCODE_QUERY_STATUS_PARAMS
     CHAR    SuggestedQpYDelta;
     UCHAR   NumberPasses;
     CHAR    reserved1;
+#ifdef NEW_STATUS_REPORTING_DDI_0915
+    union
+    {
+        struct
+        {
+              UINT PanicMode : 1;
+              UINT           : 31;
+        };
+        UINT QueryStatusFlags;
+    };
+    UINT    MAD;
+    UINT    reserved2[2];
+#endif // NEW_STATUS_REPORTING_DDI_0915
+
 } ENCODE_QUERY_STATUS_PARAMS, *PENCODE_QUERY_STATUS_PARAMS;
 
 // from "Intel DXVA Encoding DDI for Vista rev 0.77"

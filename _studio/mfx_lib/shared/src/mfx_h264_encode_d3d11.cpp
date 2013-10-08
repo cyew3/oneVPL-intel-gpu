@@ -555,6 +555,12 @@ mfxStatus D3D11Encoder::QueryStatus(
     // first check cache.
     const ENCODE_QUERY_STATUS_PARAMS* feedback = m_feedbackCached.Hit(task.m_statusReportNumber[fieldId]);
 
+#ifdef NEW_STATUS_REPORTING_DDI_0915
+    ENCODE_QUERY_STATUS_PARAMS_DESCR feedbackDescr;
+    feedbackDescr.SizeOfStatusParamStruct = sizeof(m_feedbackUpdate[0]);
+    feedbackDescr.StatusParamType = QUERY_STATUS_PARAM_FRAME;
+#endif // NEW_STATUS_REPORTING_DDI_0915
+
     // if task is not in cache then query its status
     if (feedback == 0 || feedback->bStatus != ENCODE_OK)
     {
@@ -570,8 +576,13 @@ mfxStatus D3D11Encoder::QueryStatus(
             D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
 
             decoderExtParams.Function              = ENCODE_QUERY_STATUS_ID;
+#ifdef NEW_STATUS_REPORTING_DDI_0915
+            decoderExtParams.pPrivateInputData     = &feedbackDescr;
+            decoderExtParams.PrivateInputDataSize  = sizeof(feedbackDescr);
+#else // NEW_STATUS_REPORTING_DDI_0915
             decoderExtParams.pPrivateInputData     = 0;
             decoderExtParams.PrivateInputDataSize  = 0;
+#endif // NEW_STATUS_REPORTING_DDI_0915
             decoderExtParams.pPrivateOutputData    = &m_feedbackUpdate[0];
             decoderExtParams.PrivateOutputDataSize = mfxU32(m_feedbackUpdate.size() * sizeof(m_feedbackUpdate[0]));
             decoderExtParams.ResourceCount         = 0;
@@ -1374,6 +1385,12 @@ mfxStatus D3D11SvcEncoder::QueryStatus(
     // first check cache.
     const ENCODE_QUERY_STATUS_PARAMS* feedback = m_feedbackCached.Hit(task.m_statusReportNumber[fieldId]);
 
+#ifdef NEW_STATUS_REPORTING_DDI_0915
+    ENCODE_QUERY_STATUS_PARAMS_DESCR feedbackDescr;
+    feedbackDescr.SizeOfStatusParamStruct = sizeof(m_feedbackUpdate[0]);
+    feedbackDescr.StatusParamType = QUERY_STATUS_PARAM_FRAME;
+#endif // NEW_STATUS_REPORTING_DDI_0915
+
     // if task is not in cache then query its status
     if (feedback == 0 || feedback->bStatus != ENCODE_OK)
     {
@@ -1382,8 +1399,13 @@ mfxStatus D3D11SvcEncoder::QueryStatus(
             D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
 
             decoderExtParams.Function              = ENCODE_QUERY_STATUS_ID;
+#ifdef NEW_STATUS_REPORTING_DDI_0915
+            decoderExtParams.pPrivateInputData     = &feedbackDescr;
+            decoderExtParams.PrivateInputDataSize  = sizeof(feedbackDescr);
+#else // NEW_STATUS_REPORTING_DDI_0915
             decoderExtParams.pPrivateInputData     = 0;
             decoderExtParams.PrivateInputDataSize  = 0;
+#endif // NEW_STATUS_REPORTING_DDI_0915
             decoderExtParams.pPrivateOutputData    = &m_feedbackUpdate[0];
             decoderExtParams.PrivateOutputDataSize = mfxU32(m_feedbackUpdate.size() * sizeof(m_feedbackUpdate[0]));
             decoderExtParams.ResourceCount         = 0;
