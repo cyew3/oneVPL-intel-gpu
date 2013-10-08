@@ -98,10 +98,10 @@ mfxStatus AudioDECODEAAC::Init(mfxAudioParam *par)
 
     switch(par->mfx.ModeDwnsmplHEAACprofile)  {
 case MFX_AUDIO_AAC_HE_DWNSMPL_OFF:
-    params.ModeDwnsmplHEAACprofile = HEAAC_DWNSMPL_ON;
+    params.ModeDwnsmplHEAACprofile = HEAAC_DWNSMPL_OFF;
     break;
 case MFX_AUDIO_AAC_HE_DWNSMPL_ON:
-    params.ModeDwnsmplHEAACprofile = HEAAC_DWNSMPL_OFF;
+    params.ModeDwnsmplHEAACprofile = HEAAC_DWNSMPL_ON;
     break;
 default:
     return MFX_ERR_UNSUPPORTED;
@@ -780,14 +780,7 @@ mfxStatus MFX_AAC_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfxAudioPar
         }
         else
         {
-            if(modeDwnsmplHEAACprofile == 0)
-            {
-                out->mfx.ModeDwnsmplHEAACprofile = MFX_AUDIO_AAC_HE_DWNSMPL_OFF;
-            }
-            else
-            {
-                sts = MFX_ERR_UNSUPPORTED;
-            }
+            sts = MFX_ERR_UNSUPPORTED;
         }
 
         mfxU32 flagPSSupportLev = in->mfx.FlagPSSupportLev;
