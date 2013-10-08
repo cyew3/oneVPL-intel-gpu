@@ -30,7 +30,6 @@ namespace UMC_HEVC_DECODER
 
 struct H265SliceHeader;
 struct H265FrameHLDNeighborsInfo;
-struct H265FrameRecNeighborsInfo;
 struct H265MotionVector;
 struct H265MVInfo;
 struct SAOParams;
@@ -87,7 +86,7 @@ public:
     Ipp8u m_LastValidQP;
 
     // Local context for reconstructing Intra
-    Ipp32u m_RecIntraFlagsHolder[100]; // Placeholder for Intra availability flags needed during reconstruction
+    Ipp32u m_RecIntraFlagsHolder[128]; // Placeholder for Intra availability flags needed during reconstruction
     Ipp32u *m_RecTpIntraFlags;         // 17 x32 flags for top intra blocks for current CTB
     Ipp32u *m_RecLfIntraFlags;         // 17 x32 flags for left intra blocks for current CTB
     Ipp32u *m_RecTLIntraFlags;         // 1 x32 flags for top-left intra blocks for current CTB

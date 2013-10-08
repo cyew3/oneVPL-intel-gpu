@@ -113,7 +113,6 @@ extern Ipp32s g_quantIntraDefault8x8[64];
 extern Ipp32s g_quantInterDefault8x8[64];
 extern Ipp32s g_quantTSDefault4x4[16];
 
-static const Ipp32u g_Table[4] = {0, 3, 1, 2};
 static const Ipp32u g_scalingListSize [4] = {16, 64, 256, 1024};
 static const Ipp32u g_scalingListSizeX[4] = { 4,  8,  16,   32};
 static const Ipp32u g_scalingListNum[SCALING_LIST_SIZE_NUM]={6, 6, 6, 2};

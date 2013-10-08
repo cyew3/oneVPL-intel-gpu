@@ -249,7 +249,7 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
 
     if(TrMode == StopTrMode)
     {
-        Ipp32s scalingListType;
+        Ipp32s scalingListType = (pCU->GetPredictionMode(AbsPartIdx) ? 0 : 3);
         H265CoeffsPtrCommon pCoeff;
 
         Ipp32u NumCoeffInc = (pCU->m_SliceHeader->m_SeqParamSet->MaxCUSize * pCU->m_SliceHeader->m_SeqParamSet->MaxCUSize) >> (pCU->m_SliceHeader->m_SeqParamSet->MaxCUDepth << 1);
@@ -260,7 +260,6 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
             Ipp32u DstStride = pCU->m_Frame->pitch_luma();
             H265PlanePtrYCommon ptrLuma = pCU->m_Frame->GetLumaAddr(pCU->CUAddr, AbsPartIdx);
 
-            scalingListType = (pCU->GetPredictionMode(AbsPartIdx) ? 0 : 3) + g_Table[(Ipp32s)TEXT_LUMA];
             pCoeff = pCU->m_TrCoeffY + coeffsOffset;
             SetQPforQuant(pCU->GetQP(AbsPartIdx), TEXT_LUMA, pCU->m_SliceHeader->m_SeqParamSet->getQpBDOffsetY(), 0);
             InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_LUMA, REG_DCT, ptrLuma, DstStride, pCoeff, Size, Size,
@@ -270,45 +269,36 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
         if (chromaUPresent || chromaVPresent)
         {
             // Chroma
-            Size >>= 1;
+            if (Size == 4) {
+                if((AbsPartIdx & 0x3) != 0) {
+                    return;
+                }
+            } else {
+                Size >>= 1;
+            }
 
             Ipp32u DstStride = pCU->m_Frame->pitch_chroma();
             H265PlanePtrUVCommon ptrChroma = pCU->m_Frame->GetCbCrAddr(pCU->CUAddr, AbsPartIdx);
-
-            Ipp32u Depth = pCU->GetDepth(AbsPartIdx) + TrMode;
-            Ipp32u Log2TrSize = g_ConvertToBit[pCU->m_SliceHeader->m_SeqParamSet->MaxCUSize >> Depth ] + 2;
-            if (Log2TrSize == 2)
-            {
-                Ipp32u QPDiv = pCU->m_Frame->getCD()->getNumPartInCU() >> ((Depth - 1) << 1);
-                if((AbsPartIdx % QPDiv) != 0)
-                {
-                    return;
-                }
-                Size <<= 1;
-            }
-
             H265CoeffsPtrCommon residualsTempBuffer = m_residualsBuffer;
             H265CoeffsPtrCommon residualsTempBuffer1 = m_residualsBuffer1;
             size_t res_pitch = MAX_CU_SIZE;
 
             if (chromaUPresent)
             {
-                scalingListType = (pCU->GetPredictionMode(AbsPartIdx) ? 0 : 3) + g_Table[(Ipp32s)TEXT_CHROMA_U];
                 pCoeff = pCU->m_TrCoeffCb + (coeffsOffset >> 2);
                 Ipp32s curChromaQpOffset = pCU->m_SliceHeader->m_PicParamSet->pps_cb_qp_offset + pCU->m_SliceHeader->slice_cb_qp_offset;
                 SetQPforQuant(pCU->GetQP(AbsPartIdx), TEXT_CHROMA, pCU->m_SliceHeader->m_SeqParamSet->getQpBDOffsetC(), curChromaQpOffset);
                 InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_CHROMA_U, REG_DCT, residualsTempBuffer, res_pitch, pCoeff, Size, Size,
-                    scalingListType, pCU->GetTransformSkip(g_ConvertTxtTypeToIdx[TEXT_CHROMA_U], AbsPartIdx) != 0);
+                    scalingListType+1, pCU->GetTransformSkip(g_ConvertTxtTypeToIdx[TEXT_CHROMA_U], AbsPartIdx) != 0);
             }
 
             if (chromaVPresent)
             {
-                scalingListType = (pCU->GetPredictionMode(AbsPartIdx) ? 0 : 3) + g_Table[(Ipp32s)TEXT_CHROMA_V];
                 pCoeff = pCU->m_TrCoeffCr + (coeffsOffset >> 2);
                 Ipp32s curChromaQpOffset = pCU->m_SliceHeader->m_PicParamSet->pps_cr_qp_offset + pCU->m_SliceHeader->slice_cr_qp_offset;
                 SetQPforQuant(pCU->GetQP(AbsPartIdx), TEXT_CHROMA, pCU->m_SliceHeader->m_SeqParamSet->getQpBDOffsetC(), curChromaQpOffset);
                 InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_CHROMA_V, REG_DCT, residualsTempBuffer1, res_pitch, pCoeff, Size, Size,
-                    scalingListType, pCU->GetTransformSkip(g_ConvertTxtTypeToIdx[TEXT_CHROMA_V], AbsPartIdx) != 0);
+                    scalingListType+2, pCU->GetTransformSkip(g_ConvertTxtTypeToIdx[TEXT_CHROMA_V], AbsPartIdx) != 0);
             }
   
             // ML: OPT: TODO: Vectorize this

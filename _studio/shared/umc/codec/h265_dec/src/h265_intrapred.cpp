@@ -186,7 +186,7 @@ namespace UMC_HEVC_DECODER
 
         m_TrQuant->SetQPforQuant(pCU->GetQP(AbsPartIdx), TEXT_LUMA, m_pSeqParamSet->m_QPBDOffsetY, 0);
 
-        Ipp32s scalingListType = (pCU->GetPredictionMode(AbsPartIdx) ? 0 : 3) + g_Table[(Ipp32s)TEXT_LUMA];
+        Ipp32s scalingListType = (pCU->GetPredictionMode(AbsPartIdx) ? 0 : 3);
         Ipp32u NumCoeffInc = (m_pSeqParamSet->MaxCUSize * m_pSeqParamSet->MaxCUSize) >> (m_pSeqParamSet->MaxCUDepth << 1);
         H265CoeffsPtrCommon pCoeff = pCU->m_TrCoeffY + (NumCoeffInc * AbsPartIdx);
         bool useTransformSkip = pCU->GetTransformSkip(g_ConvertTxtTypeToIdx[TEXT_LUMA], AbsPartIdx) != 0;
@@ -246,7 +246,7 @@ namespace UMC_HEVC_DECODER
         {
             Ipp32s curChromaQpOffset = pCU->m_SliceHeader->m_PicParamSet->pps_cb_qp_offset + pCU->m_SliceHeader->slice_cb_qp_offset;
             m_TrQuant->SetQPforQuant(pCU->GetQP(AbsPartIdx), TEXT_CHROMA_U, pCU->m_SliceHeader->m_SeqParamSet->m_QPBDOffsetC, curChromaQpOffset);
-            Ipp32s scalingListType = (pCU->GetPredictionMode(AbsPartIdx) == MODE_INTRA ? 0 : 3) + g_Table[TEXT_CHROMA_U];
+            Ipp32s scalingListType = (pCU->GetPredictionMode(AbsPartIdx) == MODE_INTRA ? 1 : 4);
             H265CoeffsPtrCommon pCoeff = pCU->m_TrCoeffCb + (NumCoeffInc * AbsPartIdx);
             H265CoeffsPtrCommon pResi = (H265CoeffsPtrCommon)m_ppcYUVResi->m_pUPlane;
             bool useTransformSkip = pCU->GetTransformSkip(g_ConvertTxtTypeToIdx[TEXT_CHROMA_U], AbsPartIdx) != 0;
@@ -259,14 +259,92 @@ namespace UMC_HEVC_DECODER
         {
             Ipp32s curChromaQpOffset = pCU->m_SliceHeader->m_PicParamSet->pps_cr_qp_offset + pCU->m_SliceHeader->slice_cr_qp_offset;
             m_TrQuant->SetQPforQuant(pCU->GetQP(AbsPartIdx), TEXT_CHROMA_V, pCU->m_SliceHeader->m_SeqParamSet->m_QPBDOffsetC, curChromaQpOffset);
-            Ipp32s scalingListType = (pCU->GetPredictionMode(AbsPartIdx) == MODE_INTRA ? 0 : 3) + g_Table[TEXT_CHROMA_V];
+            Ipp32s scalingListType = (pCU->GetPredictionMode(AbsPartIdx) == MODE_INTRA ? 2 : 5);
             H265CoeffsPtrCommon pCoeff = pCU->m_TrCoeffCr + (NumCoeffInc * AbsPartIdx);
             H265CoeffsPtrCommon pResi = (H265CoeffsPtrCommon)m_ppcYUVResi->m_pVPlane;
             bool useTransformSkip = pCU->GetTransformSkip(g_ConvertTxtTypeToIdx[TEXT_CHROMA_V], AbsPartIdx) != 0;
             m_TrQuant->InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_CHROMA_V, REG_DCT,
                 pResi, residualPitch, pCoeff, Size, Size, scalingListType, useTransformSkip);
         }
+/*
+        //===== reconstruction =====
+        {
+            H265CoeffsPtrCommon p_ResiU = (H265CoeffsPtrCommon)m_ppcYUVResi->m_pUPlane;
+            H265CoeffsPtrCommon p_ResiV = (H265CoeffsPtrCommon)m_ppcYUVResi->m_pVPlane;
 
+            switch ((chromaVPresent << 1) | chromaUPresent) {
+
+            case ((0 << 1) | 1):    // U only
+
+                for (Ipp32u y = 0; y < Size; y++)
+                {
+                    for (Ipp32u x = 0; x < Size; x += 4)
+                    {
+                        __m128i ResiU = _mm_loadl_epi64((__m128i *)&p_ResiU[x]);
+                        __m128i ResiV = _mm_setzero_si128();
+                        __m128i IPred = _mm_loadl_epi64((__m128i *)&pRecIPred[2*x]);        
+                
+                        IPred = _mm_cvtepu8_epi16(IPred);
+                        ResiU = _mm_unpacklo_epi16(ResiU, ResiV);
+                        IPred = _mm_add_epi16(IPred, ResiU);
+                        IPred = _mm_packus_epi16(IPred, IPred);
+
+                        _mm_storel_epi64((__m128i *)&pRecIPred[2*x], IPred);
+                    }
+                    p_ResiU += residualPitch;
+                    p_ResiV += residualPitch;
+                    pRecIPred += RecIPredStride;
+                }
+                break;
+
+            case ((1 << 1) | 0):    // V only
+
+                for (Ipp32u y = 0; y < Size; y++)
+                {
+                    for (Ipp32u x = 0; x < Size; x += 4)
+                    {
+                        __m128i ResiU = _mm_setzero_si128();
+                        __m128i ResiV = _mm_loadl_epi64((__m128i *)&p_ResiV[x]);
+                        __m128i IPred = _mm_loadl_epi64((__m128i *)&pRecIPred[2*x]);
+                
+                        IPred = _mm_cvtepu8_epi16(IPred);
+                        ResiU = _mm_unpacklo_epi16(ResiU, ResiV);
+                        IPred = _mm_add_epi16(IPred, ResiU);
+                        IPred = _mm_packus_epi16(IPred, IPred);
+
+                        _mm_storel_epi64((__m128i *)&pRecIPred[2*x], IPred);
+                    }
+                    p_ResiU += residualPitch;
+                    p_ResiV += residualPitch;
+                    pRecIPred += RecIPredStride;
+                }
+                break;
+
+            case ((1 << 1) | 1):    // both U and V
+
+                for (Ipp32u y = 0; y < Size; y++)
+                {
+                    for (Ipp32u x = 0; x < Size; x += 4)
+                    {
+                        __m128i ResiU = _mm_loadl_epi64((__m128i *)&p_ResiU[x]);        // load 4x16
+                        __m128i ResiV = _mm_loadl_epi64((__m128i *)&p_ResiV[x]);        // load 4x16
+                        __m128i IPred = _mm_loadl_epi64((__m128i *)&pRecIPred[2*x]);    // load 8x8           
+                
+                        IPred = _mm_cvtepu8_epi16(IPred);           // zero-extend
+                        ResiU = _mm_unpacklo_epi16(ResiU, ResiV);   // interleave residuals
+                        IPred = _mm_add_epi16(IPred, ResiU);        // add residuals
+                        IPred = _mm_packus_epi16(IPred, IPred);     // ClipC()
+
+                        _mm_storel_epi64((__m128i *)&pRecIPred[2*x], IPred);
+                    }
+                    p_ResiU += residualPitch;
+                    p_ResiV += residualPitch;
+                    pRecIPred += RecIPredStride;
+                }
+                break;
+            }
+        }
+*/
         //===== reconstruction =====
         {
             H265CoeffsPtrCommon p_ResiU = (H265CoeffsPtrCommon)m_ppcYUVResi->m_pUPlane;

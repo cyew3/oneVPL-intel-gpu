@@ -62,9 +62,8 @@ public:
     H265CoeffsPtrCommon        m_TrCoeffCr;      // transformed coefficient buffer (Cr)
 
 protected:
-    Ipp8u *                    m_widthArray;     // array of widths
-    Ipp8u *                    m_heightArray;    // array of heights
-    Ipp8u *                    m_depthArray;     // array of depths
+    Ipp8u*                    m_widthArray;     // array of widths
+    Ipp8u*                    m_depthArray;     // array of depths
 
     Ipp8u*                    m_partSizeArray;  // array of partition sizes
     Ipp8u*                    m_predModeArray;  // array of prediction modes
@@ -113,11 +112,6 @@ public:
     inline Ipp8u GetWidth(Ipp32s partAddr) const
     {
         return m_widthArray[partAddr];
-    }
-
-    inline Ipp8u GetHeight(Ipp32s partAddr) const
-    {
-        return m_heightArray[partAddr];
     }
 
     inline Ipp8u GetDepth(Ipp32s partAddr) const
@@ -172,7 +166,7 @@ public:
     void setPartSizeSubParts (EnumPartSize Mode, Ipp32u AbsPartIdx, Ipp32u Depth);
     void setCUTransquantBypassSubParts(bool flag, Ipp32u AbsPartIdx, Ipp32u Depth);
     void setPredModeSubParts (EnumPredMode Mode, Ipp32u AbsPartIdx, Ipp32u Depth);
-    void setSizeSubParts (Ipp32u Width, Ipp32u Height, Ipp32u AbsPartIdx, Ipp32u Depth);
+    void setSizeSubParts (Ipp32u Width, Ipp32u AbsPartIdx, Ipp32u Depth);
     void setQPSubParts (Ipp32u QP, Ipp32u AbsPartIdx, Ipp32u Depth);
     void setTrIdxSubParts (Ipp32u TrIdx, Ipp32u AbsPartIdx, Ipp32u Depth);
 
@@ -245,16 +239,6 @@ struct H265FrameHLDNeighborsInfo
             Ipp8u TrStart;
         } members;
         Ipp32u data;
-    };
-};
-
-struct H265FrameRecNeighborsInfo
-{
-    union {
-        struct {
-            Ipp8u IsAvailable : 1;
-        } members;
-        Ipp8u data;
     };
 };
 
