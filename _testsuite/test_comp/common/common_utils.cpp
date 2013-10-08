@@ -42,20 +42,21 @@ mfxStatus LoadRawFrame(mfxFrameSurface1* pSurface, FILE* fSource, bool bSim)
     mfxFrameInfo* pInfo = &pSurface->Info;
     mfxFrameData* pData = &pSurface->Data;
 
-    if (pInfo->CropH > 0 && pInfo->CropW > 0) {
-        w = pInfo->CropW;
-        h = pInfo->CropH;
-    } 
-    else {
+    /* Lets DOES NOT DO cropping here */
+    //if (pInfo->CropH > 0 && pInfo->CropW > 0) {
+    //    w = pInfo->CropW;
+    //    h = pInfo->CropH;
+    //}
+    //else {
         w = pInfo->Width;
         h = pInfo->Height;
-    }
+    //}
 
     /* IF we have RGB4 input*/
     if (pInfo->FourCC == MFX_FOURCC_RGB4)
     {
         ptr = TESTCOMP_MIN( TESTCOMP_MIN(pSurface->Data.R, pSurface->Data.G), pSurface->Data.B );
-        ptr = ptr + pInfo->CropX + pInfo->CropY * pData->Pitch;
+        //ptr = ptr + pInfo->CropX + pInfo->CropY * pData->Pitch;
         for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)fread(ptr + i * pSurface->Data.Pitch, 1, w*4, fSource);
@@ -67,7 +68,8 @@ mfxStatus LoadRawFrame(mfxFrameSurface1* pSurface, FILE* fSource, bool bSim)
 
     /* ELSE we have NV12 or YV12 format*/
     pitch = pData->Pitch;
-    ptr = pData->Y + pInfo->CropX + pInfo->CropY * pData->Pitch;
+    //ptr = pData->Y + pInfo->CropX + pInfo->CropY * pData->Pitch;
+    ptr = pData->Y;
 
     // read luminance plane
     for(i = 0; i < h; i++) 
@@ -77,7 +79,8 @@ mfxStatus LoadRawFrame(mfxFrameSurface1* pSurface, FILE* fSource, bool bSim)
             return MFX_ERR_MORE_DATA;
     }
 
-    ptr = pData->UV + pInfo->CropX + (pInfo->CropY / 2) * pitch;
+    //ptr = pData->UV + pInfo->CropX + (pInfo->CropY / 2) * pitch;
+    ptr = pData->UV;
     if (pInfo->FourCC == MFX_FOURCC_YV12)
     {
         mfxU8 buf[2048]; // maximum supported chroma width for nv12
@@ -90,6 +93,7 @@ mfxStatus LoadRawFrame(mfxFrameSurface1* pSurface, FILE* fSource, bool bSim)
         sts = ReadPlaneData(w, h, buf, ptr, pitch, 0, fSource);
         if(MFX_ERR_NONE != sts)
             return sts;
+
         // load V
         ReadPlaneData(w, h, buf, ptr, pitch, 1, fSource);
         if(MFX_ERR_NONE != sts)
@@ -121,14 +125,14 @@ mfxStatus LoadRawRGBFrame(mfxFrameSurface1* pSurface, FILE* fSource, bool bSim)
     mfxU16 w, h; 
     mfxFrameInfo* pInfo = &pSurface->Info;
 
-    if (pInfo->CropH > 0 && pInfo->CropW > 0) {
-        w = pInfo->CropW;
-        h = pInfo->CropH;
-    } 
-    else {
+//    if (pInfo->CropH > 0 && pInfo->CropW > 0) {
+//        w = pInfo->CropW;
+//        h = pInfo->CropH;
+//    }
+//    else {
         w = pInfo->Width;
         h = pInfo->Height;
-    }
+//    }
 
     for(mfxU16 i = 0; i < h; i++) 
     {

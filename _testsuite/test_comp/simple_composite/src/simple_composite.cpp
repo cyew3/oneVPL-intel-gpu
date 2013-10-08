@@ -760,7 +760,7 @@ int main(int argc, char *argv[])
     mfxVPP.Close();
     // mfxSession closed automatically on destruction
 
-    for (int i = 0; i < nVPPSurfNumIn; i++)
+    for (i = 0; i < nVPPSurfNumIn; i++)
     {
         if (pVPPSurfacesIn[i]) delete pVPPSurfacesIn[i];
         if (surfaceBuffersIn[i]) delete surfaceBuffersIn[i];
@@ -771,7 +771,8 @@ int main(int argc, char *argv[])
     MSDK_SAFE_DELETE_ARRAY(pVPPSurfacesOut);
     MSDK_SAFE_DELETE_ARRAY(surfaceBuffersOut);
 
-    for (int cnt = 0; cnt < StreamCount; ++cnt)
+    int cnt = 0;
+    for (cnt = 0; cnt < StreamCount; ++cnt)
     {
         fclose(fSource[cnt]);
     }
