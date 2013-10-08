@@ -136,8 +136,6 @@ public:
     bool DecodeSplitFlagCABAC(H265CodingUnit* pCU, Ipp32s PartX, Ipp32s PartY, Ipp32u Depth);
     Ipp32u DecodeMergeIndexCABAC(void);
 
-    void GetIntraNgbrMask(H265CodingUnit* pCU, Ipp32s XInc, Ipp32s YInc, Ipp32u *tpIf, Ipp32u *lfIf, Ipp32u* tlIf);
-
     bool DecodeSkipFlagCABAC(H265CodingUnit* pCU, Ipp32s PartX, Ipp32s PartY, Ipp32u Depth);
     bool DecodeCUTransquantBypassFlag(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void DecodeMVPIdxPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartAddr, Ipp32u PartIdx, EnumRefPicList RefList, H265MVInfo &MVi, Ipp8u InterDir);
@@ -154,7 +152,7 @@ public:
     void DecodeMVdPUCABAC(EnumRefPicList RefList, H265MotionVector &MVd, Ipp8u InterDir);
     void ParseTransformSubdivFlagCABAC(Ipp32u& SubdivFlag, Ipp32u Log2TransformBlockSize);
     void ReadEpExGolombCABAC(Ipp32u& Value, Ipp32u Count);
-    void DecodeCoeff(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u Width, Ipp32u Height, bool& CodeDQP, bool isFirstPartMerge);
+    void DecodeCoeff(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, bool& CodeDQP, bool isFirstPartMerge);
     void DecodeTransform(H265CodingUnit* pCU, Ipp32u offsetLuma, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u  l2width, Ipp32u TrIdx, bool& CodeDQP);
     void ParseQtCbfCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, EnumTextType Type, Ipp32u TrDepth, Ipp32u Depth);
     void ParseQtRootCbfCABAC(Ipp32u& QtRootCbf);
@@ -250,7 +248,7 @@ public:
     void UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u TrStart, bool isSkipped, bool isTranquantBypass, bool isIPCM, bool isTrCbfY);
     void UpdateNeighborDecodedQP(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void UpdatePUInfo(Ipp32u PartX, Ipp32u PartY, Ipp32u PartWidth, Ipp32u PartHeight, H265MVInfo &mvInfo);
-    void UpdateRecNeighboursBuffersN(Ipp32s PartX, Ipp32s PartY, Ipp32s PartSize, Ipp32u xCTB, bool IsIntra);
+    void UpdateRecNeighboursBuffersN(Ipp32s PartX, Ipp32s PartY, Ipp32s PartSize, bool IsIntra);
 
     Ipp32s m_iNumber;                                           // (Ipp32s) ordinal number of decoder
     H265Slice *m_pSlice;                                        // (H265Slice *) current slice pointer

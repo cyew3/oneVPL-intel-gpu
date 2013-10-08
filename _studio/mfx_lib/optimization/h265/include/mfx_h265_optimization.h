@@ -405,17 +405,6 @@ namespace MFX_HEVC_PP
     void h265_FilterPredictPels_Bilinear_8u(Ipp8u* pSrcDst, int width, int topLeft, int bottomLeft, int topRight);
 
     /* Predict Pels */
-    void h265_GetPredictPels_8u(
-        Ipp32u log2_min_transform_block_size,
-        Ipp8u* src,
-        Ipp8u* PredPel,
-        bool* neighborFlags,
-        Ipp32s numIntraNeighbor,
-        Ipp32s width,
-        Ipp32s srcPitch,
-        Ipp32s isLuma,
-        Ipp32s UnitSize);
-
     void h265_GetPredPelsLuma_8u(Ipp8u* pSrc, Ipp8u* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf);
     void h265_GetPredPelsChromaNV12_8u(Ipp8u* pSrc, Ipp8u* pPredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf);
 

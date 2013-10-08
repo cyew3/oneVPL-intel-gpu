@@ -875,14 +875,11 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
         isFirstPartMerge = DecodePUWiseCABAC(pCU, AbsPartIdx, Depth);
     }
 
-    Ipp32u CurrWidth = pCU->GetWidth(AbsPartIdx);
-    Ipp32u CurrHeight = pCU->GetHeight(AbsPartIdx);
-
     if (pCU->m_SliceHeader->m_PicParamSet->cu_qp_delta_enabled_flag)
         pCU->setQPSubParts(m_DecodeDQPFlag ? getRefQP(pCU, AbsPartIdx) : pCU->m_CodedQP, AbsPartIdx, Depth);
 
     // Coefficient decoding
-    DecodeCoeff(pCU, AbsPartIdx, Depth, CurrWidth, CurrHeight, m_DecodeDQPFlag, isFirstPartMerge);
+    DecodeCoeff(pCU, AbsPartIdx, Depth, m_DecodeDQPFlag, isFirstPartMerge);
     FinishDecodeCU(pCU, AbsPartIdx, Depth, IsLast);
 }
 
@@ -1505,7 +1502,7 @@ void H265SegmentDecoder::ReadEpExGolombCABAC(Ipp32u& Value, Ipp32u Count)
 
 
 // decode coefficients
-void H265SegmentDecoder::DecodeCoeff(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u Width, Ipp32u Height, bool& CodeDQP, bool isFirstPartMerge)
+void H265SegmentDecoder::DecodeCoeff(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, bool& CodeDQP, bool isFirstPartMerge)
 {
     if (MODE_INTRA != pCU->GetPredictionMode(AbsPartIdx))
     {
@@ -2294,7 +2291,7 @@ void H265SegmentDecoder::ReconstructCU(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
     {
         case MODE_INTER:
             ReconInter(pCU, AbsPartIdx, Depth);
-            UpdateRecNeighboursBuffersN(XInc >> 2, YInc >> 2, Size, pCU->m_CUPelX, false);
+            UpdateRecNeighboursBuffersN(XInc >> 2, YInc >> 2, Size, false);
             break;
         case MODE_INTRA:
             ReconIntraQT(pCU, AbsPartIdx, Depth);
@@ -2561,7 +2558,7 @@ void H265SegmentDecoder::UpdateNeighborDecodedQP(H265CodingUnit* pCU, Ipp32u Abs
             m_context->m_CurrCTBFlags[m_context->m_CurrCTBStride * y + x].members.qp = qp;
 }
 
-void H265SegmentDecoder::UpdateRecNeighboursBuffersN(Ipp32s PartX, Ipp32s PartY, Ipp32s PartSize, Ipp32u xCTB, bool IsIntra)
+void H265SegmentDecoder::UpdateRecNeighboursBuffersN(Ipp32s PartX, Ipp32s PartY, Ipp32s PartSize, bool IsIntra)
 {
     Ipp32u maskL, maskT, maskTL;
     bool   isIntra = (m_pPicParamSet->constrained_intra_pred_flag) ? (IsIntra ? 1 : 0) : 1;

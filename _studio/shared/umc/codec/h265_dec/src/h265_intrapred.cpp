@@ -30,7 +30,7 @@ namespace UMC_HEVC_DECODER
             Ipp32s Size = m_pSeqParamSet->MaxCUSize >> Depth;
             Ipp32s XInc = pCU->m_rasterToPelX[AbsPartIdx] >> 2;
             Ipp32s YInc = pCU->m_rasterToPelY[AbsPartIdx] >> 2;
-            UpdateRecNeighboursBuffersN(XInc, YInc, Size, pCU->m_CUPelX, true);
+            UpdateRecNeighboursBuffersN(XInc, YInc, Size, true);
             return;
         }
 
@@ -55,27 +55,24 @@ namespace UMC_HEVC_DECODER
         Ipp32u TrMode = pCU->m_TrIdxArray[AbsPartIdx];
         if (TrMode == TrDepth)
         {
-            Ipp32u tpIf, lfIf, tlIf;
-
+            Ipp32s Size = m_pSeqParamSet->MaxCUSize >> FullDepth;
             Ipp32s XInc = pCU->m_rasterToPelX[AbsPartIdx] >> 2;
             Ipp32s YInc = pCU->m_rasterToPelY[AbsPartIdx] >> 2;
+            Ipp32s diagId = XInc + (m_pSeqParamSet->MaxCUSize >> 2) - YInc - 1;
 
-            GetIntraNgbrMask(pCU, XInc, YInc, &tpIf, &lfIf, &tlIf);
+            Ipp32u lfIf = m_context->m_RecLfIntraFlags[XInc] >> (YInc);
+            Ipp32u tlIf = (*m_context->m_RecTLIntraFlags >> diagId) & 0x1;
+            Ipp32u tpIf = m_context->m_RecTpIntraFlags[YInc] >> (XInc);
+
             IntraRecLumaBlk(pCU, TrDepth, AbsPartIdx, tpIf, lfIf, tlIf);
-
-            Ipp32u FullDepth  = pCU->GetDepth(AbsPartIdx) + TrDepth;
-            Ipp32s Size = m_pSeqParamSet->MaxCUSize >> FullDepth;
-
-            if (Size == 4)
-            {
-                if ((AbsPartIdx & 0x03) == 0)
-                {
+            if (Size == 4) {
+                if ((AbsPartIdx & 0x03) == 0) {
                     IntraRecChromaBlk(pCU, TrDepth-1, AbsPartIdx, ChromaPredMode, tpIf, lfIf, tlIf);
                 }
             } else {
                 IntraRecChromaBlk(pCU, TrDepth, AbsPartIdx, ChromaPredMode, tpIf, lfIf, tlIf);
             }
-            UpdateRecNeighboursBuffersN(XInc, YInc, Size, pCU->m_CUPelX, true);
+            UpdateRecNeighboursBuffersN(XInc, YInc, Size, true);
         }
         else
         {
@@ -290,17 +287,6 @@ namespace UMC_HEVC_DECODER
             }
         }
     }
-
-    void H265SegmentDecoder::GetIntraNgbrMask(H265CodingUnit* pCU, Ipp32s XInc, Ipp32s YInc, Ipp32u *tpIf, Ipp32u *lfIf, Ipp32u* tlIf)
-    {
-        Ipp32u maxCUSzIn4x4 = m_pSeqParamSet->MaxCUSize >> 2;
-        Ipp32s diagId = (XInc + maxCUSzIn4x4 - YInc - 1);        
-
-        *lfIf = m_context->m_RecLfIntraFlags[XInc] >> (YInc);
-        *tlIf = (*m_context->m_RecTLIntraFlags >> diagId) & 0x1;
-        *tpIf = m_context->m_RecTpIntraFlags[YInc] >> (XInc);
-    }
-
 } // end namespace UMC_HEVC_DECODER
 
 #endif // UMC_ENABLE_H264_VIDEO_DECODER
