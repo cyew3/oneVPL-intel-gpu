@@ -586,6 +586,11 @@ mfxStatus ImplementationAvc::QueryIOSurf(
             ? MFX_MEMTYPE_OPAQUE_FRAME
             : MFX_MEMTYPE_EXTERNAL_FRAME;
         request->NumFrameMin = (mfxU16) AsyncRoutineEmulator(tmp).GetTotalGreediness() + tmp.AsyncDepth - 1;
+        // strange thing but for backward compatibility:
+        //   msdk needs to tell how many surfaces application will need for reordering
+        //   even if application does this reordering(!!!)
+        if (tmp.mfx.EncodedOrder)
+            request->NumFrameMin += tmp.mfx.GopRefDist - 1;
         request->NumFrameSuggested = request->NumFrameMin;
     }
 
