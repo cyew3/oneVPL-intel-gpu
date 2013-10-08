@@ -2338,7 +2338,9 @@ void TaskSupplier_H265::InitFrameCounter(H265DecoderFrame * pFrame, const H265Sl
     const H265SliceHeader *sliceHeader = pSlice->GetSliceHeader();
     ViewItem_H265 &view = *GetView();
 
-    if (sliceHeader->IdrPicFlag)
+    if (sliceHeader->IdrPicFlag ||
+        sliceHeader->nal_unit_type == NAL_UT_CODED_SLICE_BLA_N_LP || sliceHeader->nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_RADL ||
+        sliceHeader->nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_LP)
     {
         view.pDPB->IncreaseRefPicListResetCount(pFrame);
     }
