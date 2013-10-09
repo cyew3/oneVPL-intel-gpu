@@ -100,7 +100,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../igfx_s3dcontrol/include;$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\ia32\include;./include;../../include;../../_studio\shared\include;../../_studio/shared/umc/core/vm/include;../bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../igfx_s3dcontrol/include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;./include;../../include;../../_studio\shared\include;../../_studio/shared/umc/core/vm/include;../bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MSDK_TS_DLL_EXPORTS;USE_SAMPLE_ALLOCATOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -128,7 +128,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../igfx_s3dcontrol/include;$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\ia32\include;./include;../../include;../../_studio\shared\include;../../_studio/shared/umc/core/vm/include;../bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../igfx_s3dcontrol/include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;./include;../../include;../../_studio\shared\include;../../_studio/shared/umc/core/vm/include;../bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MSDK_TS_DLL_EXPORTS;USE_SAMPLE_ALLOCATOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -152,7 +152,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../igfx_s3dcontrol/include;$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\ia32\include;./include;../../include;../../_studio\shared\include;../../_studio/shared/umc/core/vm/include;../bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../igfx_s3dcontrol/include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;./include;../../include;../../_studio\shared\include;../../_studio/shared/umc/core/vm/include;../bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;MSDK_TS_DLL_EXPORTS;USE_SAMPLE_ALLOCATOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -179,7 +179,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../igfx_s3dcontrol/include;$(MEDIASDK_ROOT)\ipp\ipp71gold\windows\ia32\include;./include;../../include;../../_studio\shared\include;../../_studio/shared/umc/core/vm/include;../bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../igfx_s3dcontrol/include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;./include;../../include;../../_studio\shared\include;../../_studio/shared/umc/core/vm/include;../bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;MSDK_TS_DLL_EXPORTS;USE_SAMPLE_ALLOCATOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
