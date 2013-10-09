@@ -66,7 +66,7 @@ mfxStatus BitstreamDecoder::Init(mfxVideoParam * /*par*/)
 
     //initializing surfaces
     mfxFrameAllocRequest request;
-    MFX_CHECK_STS(m_Ctx.pSource->QueryIOSurf(&m_Ctx.sInitialParams, &request));
+    MFX_CHECK_STS(base::QueryIOSurf(&m_Ctx.sInitialParams, &request));
 
     request.Type |= m_Ctx.request.Type;
 
