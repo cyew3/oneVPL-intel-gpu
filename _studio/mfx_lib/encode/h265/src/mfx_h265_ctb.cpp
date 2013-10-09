@@ -1901,7 +1901,9 @@ void H265CU::ME_PU(H265MEInfo* me_info)
     data[me_info->abs_part_idx].ref_idx[1] = 0;
     data[me_info->abs_part_idx].size = (Ipp8u)(par->MaxCUSize>>me_info->depth);
     data[me_info->abs_part_idx].flags.skipped_flag = 0;
-    data[me_info->abs_part_idx].inter_dir = INTER_DIR_PRED_L0; // TODO fix with B
+    data[me_info->abs_part_idx].inter_dir = INTER_DIR_PRED_L0;
+    if (cslice->slice_type == B_SLICE)
+        data[me_info->abs_part_idx].inter_dir |= INTER_DIR_PRED_L1;
 
     MVPInfo pInfo[2];
     MVPInfo mergeInfo;
