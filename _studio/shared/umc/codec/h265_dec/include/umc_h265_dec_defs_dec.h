@@ -595,7 +595,7 @@ public:
     H265TimingInfo()
         : vps_timing_info_present_flag(false)
         , vps_num_units_in_tick(1000)
-        , vps_time_scale(60000)
+        , vps_time_scale(30000)
         , vps_poc_proportional_to_timing_flag(false)
         , vps_num_ticks_poc_diff_one(0)
     {}

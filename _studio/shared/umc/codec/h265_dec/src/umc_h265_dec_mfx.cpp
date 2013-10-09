@@ -59,7 +59,7 @@ UMC::Status FillVideoParam(const H265SeqParamSet * seq, mfxVideoParam *par, bool
 
     if (seq->getTimingInfo()->vps_timing_info_present_flag || full)
     {
-        par->mfx.FrameInfo.FrameRateExtD = seq->getTimingInfo()->vps_num_units_in_tick * 2;
+        par->mfx.FrameInfo.FrameRateExtD = seq->getTimingInfo()->vps_num_units_in_tick;
         par->mfx.FrameInfo.FrameRateExtN = seq->getTimingInfo()->vps_time_scale;
     }
     else
