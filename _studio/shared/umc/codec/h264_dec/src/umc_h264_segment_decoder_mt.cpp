@@ -159,6 +159,11 @@ void H264SegmentDecoderMultiThreaded::StartProcessingSegment(H264Task &Task)
         m_uPitchChromaCur *= 2;
     }
 
+    deblocking_IL = 0;
+    deblocking_stage2 = 0;
+    m_spatial_resolution_change = 0;
+    m_use_coeff_prediction = 0;
+
     if (!m_pSlice) // TASK_DEB_FRAME
         return;
 
@@ -182,11 +187,6 @@ void H264SegmentDecoderMultiThreaded::StartProcessingSegment(H264Task &Task)
     m_IsUseConstrainedIntra = (m_pPicParamSet->constrained_intra_pred_flag != 0);
     m_IsUseDirect8x8Inference = (m_pSeqParamSet->direct_8x8_inference_flag != 0);
     m_IsBSlice = (m_pSliceHeader->slice_type == BPREDSLICE);
-
-    deblocking_IL = 0;
-    deblocking_stage2 = 0;
-    m_spatial_resolution_change = 0;
-    m_use_coeff_prediction = 0;
 
     if (m_mbinfo.layerMbs) {
         m_pYResidual = m_mbinfo.layerMbs[m_currentLayer].m_pYResidual;
