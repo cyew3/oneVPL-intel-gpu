@@ -301,6 +301,11 @@ public:
         CmEvent *       e);
 
 #if USE_AGOP
+    mfxU32 CalcCostAGOP(
+        DdiTask const & task,
+        mfxI32 prevP,
+        mfxI32 nextP);
+
     CmEvent*  RunVmeAGOP(
         mfxU32       qp,
         CmSurface2D* cur,
@@ -321,6 +326,7 @@ public:
     void DownSample2X(CmSurface2D* surfOrig, CmSurface2D* surf2X);
 
     void DownSample4X(CmSurface2D* surfOrig, CmSurface2D* surf4X);
+    CmEvent* DownSample4XAsync(CmSurface2D* surfOrig, CmSurface2D* surf4X);
 #endif
 
     int DestroyEvent( CmEvent*& e ){ if(m_queue) return m_queue->DestroyEvent(e); else return 0; } 

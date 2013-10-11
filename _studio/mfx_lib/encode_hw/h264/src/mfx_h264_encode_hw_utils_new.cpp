@@ -1864,9 +1864,11 @@ void AsyncRoutineEmulator::Init(MfxVideoParam const & video)
         m_stageGreediness[STG_ACCEPT_FRAME] = 1;
 #if USE_AGOP
         m_stageGreediness[STG_START_AGOP]         = 1; 
-        m_stageGreediness[STG_WAIT_AGOP]         = (extOpt2->AdaptiveB & MFX_CODINGOPTION_ON) ? 10 : 1; 
-#endif
+        m_stageGreediness[STG_WAIT_AGOP]         = (extOpt2->AdaptiveB & MFX_CODINGOPTION_ON) ? 2 : 1; 
+        m_stageGreediness[STG_START_LA    ] = 10 + (video.mfx.EncodedOrder ? 1 : video.mfx.GopRefDist);
+#else
         m_stageGreediness[STG_START_LA    ] = video.mfx.EncodedOrder ? 1 : video.mfx.GopRefDist;
+#endif
         m_stageGreediness[STG_WAIT_LA     ] = 1;
         m_stageGreediness[STG_START_ENCODE] = 1 + !!(video.mfx.GopRefDist > 1);
         m_stageGreediness[STG_WAIT_ENCODE ] = video.AsyncDepth + !!(video.mfx.GopRefDist > 1);
@@ -1876,9 +1878,11 @@ void AsyncRoutineEmulator::Init(MfxVideoParam const & video)
         m_stageGreediness[STG_ACCEPT_FRAME] = 1;
 #if USE_AGOP
         m_stageGreediness[STG_START_AGOP]         = 1; 
-        m_stageGreediness[STG_WAIT_AGOP]         = (extOpt2->AdaptiveB & MFX_CODINGOPTION_ON) ? 10 : 1; 
-#endif
+        m_stageGreediness[STG_WAIT_AGOP]         = (extOpt2->AdaptiveB & MFX_CODINGOPTION_ON) ? 2 : 1; //wait third frame
+        m_stageGreediness[STG_START_LA    ] = 10 + (video.mfx.EncodedOrder ? 1 : video.mfx.GopRefDist);
+#else
         m_stageGreediness[STG_START_LA    ] = video.mfx.EncodedOrder ? 1 : video.mfx.GopRefDist;
+#endif
         m_stageGreediness[STG_WAIT_LA     ] = 1 + !!(video.AsyncDepth > 1);
         m_stageGreediness[STG_START_ENCODE] = extOpt2->LookAheadDepth;
         m_stageGreediness[STG_WAIT_ENCODE ] = 1 + !!(video.AsyncDepth > 1);
@@ -1887,9 +1891,11 @@ void AsyncRoutineEmulator::Init(MfxVideoParam const & video)
         m_stageGreediness[STG_ACCEPT_FRAME] = 1;
 #if USE_AGOP
         m_stageGreediness[STG_START_AGOP]         = 1; 
-        m_stageGreediness[STG_WAIT_AGOP]         = (extOpt2->AdaptiveB & MFX_CODINGOPTION_ON) ? 10 : 1; 
-#endif
+        m_stageGreediness[STG_WAIT_AGOP]         = (extOpt2->AdaptiveB & MFX_CODINGOPTION_ON) ? 2 : 1; 
+        m_stageGreediness[STG_START_LA    ] = 10 + (video.mfx.EncodedOrder ? 1 : video.mfx.GopRefDist);
+#else
         m_stageGreediness[STG_START_LA    ] = video.mfx.EncodedOrder ? 1 : video.mfx.GopRefDist;
+#endif
         m_stageGreediness[STG_WAIT_LA     ] = 1;
         m_stageGreediness[STG_START_ENCODE] = 1;
         m_stageGreediness[STG_WAIT_ENCODE ] = 1 + !!(video.AsyncDepth > 1);

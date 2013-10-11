@@ -832,7 +832,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         request.Info.Height = heightAGOP / 16;
         request.Info.FourCC = MFX_FOURCC_P8;
         request.Type        = MFX_MEMTYPE_D3D_INT;
-        request.NumFrameMin = mfxU16(m_video.mfx.NumRefFrame + m_video.AsyncDepth + agopLength);
+        request.NumFrameMin = mfxU16((1.0f+(float)(m_video.mfx.GopRefDist-1)/2.0f)*m_video.mfx.GopRefDist)*3;
 
         sts = m_mbAGOP.AllocCmBuffersUp(m_cmDevice, request);
         MFX_CHECK_STS(sts);
@@ -842,7 +842,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         request.Info.Height = 1;
         request.Info.FourCC = MFX_FOURCC_P8;
         request.Type        = MFX_MEMTYPE_D3D_INT;
-        request.NumFrameMin = mfxU16(m_video.mfx.NumRefFrame + m_video.AsyncDepth + agopLength);
+        request.NumFrameMin = mfxU16((1.0f+(float)(m_video.mfx.GopRefDist-1)/2.0f)*m_video.mfx.GopRefDist)*3;
 
         sts = m_curbeAGOP.AllocCmBuffers(m_cmDevice, request);
         MFX_CHECK_STS(sts);
@@ -896,6 +896,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
 #if USE_AGOP
     m_agopCurrentLen = 0;
+    m_agopFinishedLen = 0;
     m_agopDeps = 10;
     for(int i = 0; i<MAX_B_FRAMES; i++)
     {
@@ -1210,50 +1211,177 @@ void ImplementationAvc::SubmitAdaptiveGOP()
 
     //should be enough frames to analyse
     assert(m_adaptiveGOPBuffered.size() > 0);
+    DdiTask& task = m_adaptiveGOPBuffered.front();
+    task.m_cmEventAGOP = NULL; //NULL when we don't run estimation (for I frames)
+
+    //reset ptrs, to be checked
+    for(int i=0; i<MAX_B_FRAMES; i++)
+        for(int j=0; j<MAX_B_FRAMES; j++)
+        {
+            task.m_cmCurbeAGOP[i][j] = NULL;
+            task.m_cmMbAGOP[i][j].first = NULL;
+            task.m_cmMbAGOP[i][j].second = NULL;
+        }
+
+        //reset cost cache
+    for(int i=0; i<MAX_B_FRAMES; i++)
+        for(int j=0; j<MAX_B_FRAMES; j++)
+        {
+            task.m_costCache[i][j] = MAX_SEQUENCE_COST;
+        }
+
+    //copy input surface to video memory
+    task.m_idx    = FindFreeResourceIndex(m_raw);
+    task.m_midRaw = AcquireResource(m_raw, task.m_idx);
+
+    mfxStatus sts = GetNativeHandleToRawSurface(*m_core, m_video, task, task.m_handleRaw);
+    if (sts != MFX_ERR_NONE){
+        Error(sts);
+        return ;
+    }
+
+    sts = CopyRawSurfaceToVideoMemory(*m_core, m_video, task);
+    if (sts != MFX_ERR_NONE){
+        Error(sts);
+        return ;
+    }
+
+    //fprintf(stderr,"new_Frame=%d\n", newTask.m_frameOrder);
+    //downsample 4X
+    task.m_cmRaw = CreateSurface(m_cmDevice, task.m_handleRaw.first, m_currentVaType);
+    task.m_cmRaw4X = (CmSurface2D *)AcquireResource(m_raw4X);
+    assert(task.m_cmRaw != NULL || task.m_cmRaw4X != NULL);
+    task.m_cmEventAGOP = m_cmCtx->DownSample4XAsync(task.m_cmRaw, task.m_cmRaw4X);
+
+    int fullSize = m_adaptiveGOPBuffered.size() +
+        m_adaptiveGOPSubmitted.size() +
+        m_adaptiveGOPFinished.size();
+
+    if(fullSize > 1 && (m_adaptiveGOPBuffered.back().GetFrameType() & MFX_FRAMETYPE_PB)) //if last added frame I skip estimation and drop frames 
+    {
+        //for random access
+        std::vector<DdiTask*> gopBuffer; //just vector of task ptrs, it is better to work with vector
+        std::list<DdiTask>::iterator it = m_adaptiveGOPFinished.begin();
+        for(; it != m_adaptiveGOPFinished.end(); it++)
+            gopBuffer.push_back( &(*it) );
+        it = m_adaptiveGOPSubmitted.begin();
+        for(; it != m_adaptiveGOPSubmitted.end(); it++)
+            gopBuffer.push_back( &(*it) );
+        it = m_adaptiveGOPBuffered.begin();
+        for(; it != m_adaptiveGOPBuffered.end(); it++)
+            gopBuffer.push_back( &(*it) );
+
+        //restrict size to maximum analysing depth
+        if(fullSize > m_agopDeps){
+            gopBuffer.erase(gopBuffer.begin(), gopBuffer.begin()+m_agopDeps-1);
+        }
+        //check each lens for best cost
+        int seqLen = gopBuffer.size();
+        int maxLen = IPP_MIN(seqLen-1, m_video.mfx.GopRefDist);
+
+        for(int len=0; len < maxLen; len++)
+        {
+            //check cost for each possible len (sequence) and get the best for current lentgh
+            int prevP = seqLen - len - 1 - 1;
+            int nextP = seqLen - 1;
+            //cost B
+            for(int j=0; j<len; j++)
+            {
+                //TODO: Bref
+                //Adding MB data
+                DdiTask* task = gopBuffer[prevP+1+j];
+                int pOff = prevP+1+j-prevP;
+                int bOff = nextP-prevP-1-j;
+                task->m_cmMbAGOP[pOff][bOff]    = AcquireResourceUp(m_mbAGOP);
+                assert(task->m_cmMbAGOP[pOff][bOff].first != 0);
+                task->m_cmCurbeAGOP[pOff][bOff] = (CmBuffer *)AcquireResource(m_curbeAGOP);
+                assert(task->m_cmCurbeAGOP[pOff][bOff] != 0);
+
+                RunPreMeAGOP(gopBuffer[prevP],
+                    gopBuffer[prevP+1+j],
+                    gopBuffer[nextP]);
+            }
+            //cost P
+            //Adding MB data
+            DdiTask* task = gopBuffer[nextP];
+            task->m_cmMbAGOP[nextP-prevP][0]    = AcquireResourceUp(m_mbAGOP);
+            assert(task->m_cmMbAGOP[nextP-prevP][0].first != 0);
+            task->m_cmCurbeAGOP[nextP-prevP][0] = (CmBuffer *)AcquireResource(m_curbeAGOP);
+            assert(task->m_cmCurbeAGOP[nextP-prevP][0] != 0);
+            
+            RunPreMeAGOP(gopBuffer[prevP],
+                gopBuffer[nextP],
+                gopBuffer[nextP]);
+        }
+    }
+    //move to submitted
+    //fprintf(stderr," == SUBMIT: locked %d   nonlocked %d\n", m_curbeAGOP.CountLocked(), m_curbeAGOP.CountNonLocked());
+    m_adaptiveGOPSubmitted.splice(m_adaptiveGOPSubmitted.end(), m_adaptiveGOPBuffered, m_adaptiveGOPBuffered.begin());
+}
+
+bool ImplementationAvc::OnAdaptiveGOPSubmitted()
+{
+    //first check submitted task
+    DdiTask& task = m_adaptiveGOPSubmitted.front();
+
+    CM_STATUS status;
+    int res = task.m_cmEventAGOP->GetStatus(status);
+    if(res != CM_SUCCESS || status != CM_STATUS_FINISHED) return false;
+
+    //move to finished
+    m_adaptiveGOPFinished.splice(m_adaptiveGOPFinished.end(), m_adaptiveGOPSubmitted, m_adaptiveGOPSubmitted.begin());
+
+    //analysis
     const mfxU32 maxDepB = m_video.mfx.GopRefDist + 1; //maximum size cycle buffer for best sequences and best costs
-//    if(m_adaptiveGOPBuffered.size() == unsigned int(m_video.mfx.GopRefDist + 1) /*||
-//        (m_bufferedInFrames.size()>0 && task->m_yuv == 0)*/)
-    if(m_adaptiveGOPBuffered.size() == 1 && m_agopCurrentLen==0)
+    //fprintf(stderr," == QUERY1: locked %d   nonlocked %d\n", m_curbeAGOP.CountLocked(), m_curbeAGOP.CountNonLocked());
+
+    if(m_adaptiveGOPFinished.size() == 1 && m_agopFinishedLen==0)
     {
         //add initial frame type
-        mfxU8 frameType = m_adaptiveGOPBuffered.front().GetFrameType();
+        mfxU8 frameType = m_adaptiveGOPFinished.front().GetFrameType();
         m_bestGOPSequence[0][0] = frameType; //TODO: check frametype
         m_bestGOPCost[0] = 0; //reset GOP cost for initial frame
-        m_agopCurrentLen++;
+        m_agopFinishedLen++;
         m_agopBestIdx = 0;
-    }else if(m_adaptiveGOPBuffered.size() > 1 && (m_adaptiveGOPBuffered.back().GetFrameType() & MFX_FRAMETYPE_PB)) //if last added frame I skip estimation and drop frames 
+    }else if(m_adaptiveGOPFinished.size() > 1 && (m_adaptiveGOPFinished.back().GetFrameType() & MFX_FRAMETYPE_PB)) //if last added frame I skip estimation and drop frames 
     {
+        //release resource in the same time
         mfxI32 bestLen=0;
         mfxU32 bestLenCost = MAX_SEQUENCE_COST;
 
         //for random access
         std::vector<DdiTask*> gopBuffer; //just vector of task ptrs, it is better to work with vector
-        std::list<DdiTask>::iterator it = m_adaptiveGOPBuffered.begin();
-        for(; it != m_adaptiveGOPBuffered.end(); it++)
+        std::list<DdiTask>::iterator it = m_adaptiveGOPFinished.begin();
+        for(; it != m_adaptiveGOPFinished.end(); it++)
             gopBuffer.push_back( &(*it) );
 
         //check each lens for best cost
-        int maxLen = IPP_MIN(m_adaptiveGOPBuffered.size()-1, m_video.mfx.GopRefDist);
+        int maxLen = IPP_MIN(m_adaptiveGOPFinished.size()-1, m_video.mfx.GopRefDist);
 
         for(int len=0; len < maxLen; len++)
         {
             //check cost for each possible len (sequence) and get the best for current lentgh
-            int idx = (m_agopCurrentLen-len-1+maxDepB)%maxDepB;
+            int idx = (m_agopFinishedLen-len-1+maxDepB)%maxDepB;
             mfxU32 cost = m_bestGOPCost[idx];
-            int prevP = m_agopCurrentLen - len - 1;
-            int nextP = m_agopCurrentLen;
+            int prevP = m_agopFinishedLen - len - 1;
+            int nextP = m_agopFinishedLen;
             //cost B
             for(int j=0; j<len; j++)
             {
                 //TODO: Bref
-                cost += mfxU32(0.84*RunPreMeAGOP(gopBuffer[prevP],
-                    gopBuffer[prevP+1+j],
-                    gopBuffer[nextP]));
+                DdiTask* task = gopBuffer[prevP+1+j];
+                int pOff = prevP+1+j-prevP;
+                int bOff = nextP-prevP-1-j;
+
+                cost += mfxU32(0.84*CalcCostAGOP(*gopBuffer[prevP+1+j],prevP+1+j-prevP, nextP-prevP-1-j));
+                ReleaseResource(m_curbeAGOP, task->m_cmCurbeAGOP[pOff][bOff]);
+                ReleaseResource(m_mbAGOP,    task->m_cmMbAGOP[pOff][bOff].first);
             }
             //cost P
-            cost += RunPreMeAGOP(gopBuffer[prevP],
-                gopBuffer[nextP],
-                gopBuffer[nextP]);
+            DdiTask* task = gopBuffer[nextP];
+            cost += CalcCostAGOP(*gopBuffer[nextP],nextP-prevP, 0);
+            ReleaseResource(m_curbeAGOP, task->m_cmCurbeAGOP[nextP-prevP][0]);
+            ReleaseResource(m_mbAGOP,    task->m_cmMbAGOP[nextP-prevP][0].first);
 
             if(cost < bestLenCost)
             {
@@ -1263,27 +1391,29 @@ void ImplementationAvc::SubmitAdaptiveGOP()
         }
 
         //Make best len to current
-        int idx_in = (m_agopCurrentLen-bestLen-1+maxDepB)%maxDepB;
-        int idx_out = m_agopCurrentLen%maxDepB;
-        memcpy(&m_bestGOPSequence[idx_out][0], &m_bestGOPSequence[idx_in][0], m_agopCurrentLen);
+        int idx_in = (m_agopFinishedLen-bestLen-1+maxDepB)%maxDepB;
+        int idx_out = m_agopFinishedLen%maxDepB;
+        memcpy(&m_bestGOPSequence[idx_out][0], &m_bestGOPSequence[idx_in][0], m_agopFinishedLen);
         //add P and B frames
         m_bestGOPCost[idx_out] = bestLenCost;
-        m_bestGOPSequence[idx_out][m_agopCurrentLen] = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
+        m_bestGOPSequence[idx_out][m_agopFinishedLen] = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
         for(int j=0; j<bestLen; j++)
         {
-            m_bestGOPSequence[idx_out][m_agopCurrentLen-j-1] = MFX_FRAMETYPE_B;
+            m_bestGOPSequence[idx_out][m_agopFinishedLen-j-1] = MFX_FRAMETYPE_B;
         }
-        m_agopCurrentLen++; //TODO: use size of buffered frames?
+        m_agopFinishedLen++; //TODO: use size of buffered frames?
         m_agopBestIdx = idx_out;
     }
 
+    //fprintf(stderr," == QUERY2: locked %d   nonlocked %d\n\n", m_curbeAGOP.CountLocked(), m_curbeAGOP.CountNonLocked());
+
     //shift to ready frames
     //max len == 10?  m_agopDeps should = max dep MIN(10, len to next I)
-    if(m_agopCurrentLen >= m_agopDeps || (m_adaptiveGOPBuffered.back().GetFrameType() & MFX_FRAMETYPE_I)) //shift all frames to ready queue and reset agop, the same if last frame I
+    if(m_agopFinishedLen >= m_agopDeps || (m_adaptiveGOPFinished.back().GetFrameType() & MFX_FRAMETYPE_I)) //shift all frames to ready queue and reset agop, the same if last frame I
     {
         //set frametypes
-        std::list<DdiTask>::iterator it = m_adaptiveGOPBuffered.begin();
-        std::list<DdiTask>::iterator last = --m_adaptiveGOPBuffered.end();
+        std::list<DdiTask>::iterator it = m_adaptiveGOPFinished.begin();
+        std::list<DdiTask>::iterator last = --m_adaptiveGOPFinished.end();
         int i=0;
         while( it != last)
         {
@@ -1293,164 +1423,27 @@ void ImplementationAvc::SubmitAdaptiveGOP()
             it++;
         }
         //we should rest one frame as P to start next sequence (for reference)
-        m_adaptiveGOPReady.splice(m_adaptiveGOPReady.end(), m_adaptiveGOPBuffered, m_adaptiveGOPBuffered.begin(), --(m_adaptiveGOPBuffered.end()));
+        m_adaptiveGOPReady.splice(m_adaptiveGOPReady.end(), m_adaptiveGOPFinished, m_adaptiveGOPFinished.begin(), --(m_adaptiveGOPFinished.end()));
         m_bestGOPCost[0] = 0; //no cost for ref frame
-        for(int i=1; i<m_agopCurrentLen; i++) m_bestGOPCost[i] = MAX_SEQUENCE_COST;
-        m_agopCurrentLen = 1;
+        for(int i=1; i<m_agopFinishedLen; i++) m_bestGOPCost[i] = MAX_SEQUENCE_COST;
+        m_agopFinishedLen = 1;
         m_agopBestIdx = 0;
-        m_bestGOPSequence[0][0] = m_adaptiveGOPBuffered.front().GetFrameType(); //keep frame type of last frame
+        m_bestGOPSequence[0][0] = m_adaptiveGOPFinished.front().GetFrameType(); //keep frame type of last frame
     }
 
-#if 0
-        int maxLen = IPP_MIN(m_video.mfx.GopRefDist,m_adaptiveGOPBuffered.size()-1);
-        int shiftOffset=1; //how many frames shift to ready query
-        //scan for next I frame 
-        int i;
-        for(i=1; i<maxLen; i++)
-            if(gopBuffer[i]->m_type[0] & MFX_FRAMETYPE_I) break;
-        maxLen = i;
-
-        if(maxLen > 1) //no need to check for only P frames
-        {
-            bestForLen[0][0] = MFX_FRAMETYPE_P;
-            bestForLen[1][0] = MFX_FRAMETYPE_P; //idx==len
-            bestCost[0] = MAX_SEQUENCE_COST;
-            for(int i=1; i<maxLen; i++) //check all possible lengths 
-            {
-                int idx=0;
-                bestCost[i] = MAX_SEQUENCE_COST;
-                mfxU8 bestSequence[2][MAX_B_FRAMES];
-                for(int k=0; k<=i; k++) //try different len of B frames
-                {
-                    //all previous best cases + P frame
-                    //and all B  BB..BP pattern                    
-                    memcpy(&bestSequence[idx][0], &bestForLen[i-k][0], (i-k)*sizeof(mfxU16));
-                    //Set B
-                    for(int l=i-k; l<i; l++) bestSequence[idx][l] = MFX_FRAMETYPE_B;
-                    bestSequence[idx][i] = MFX_FRAMETYPE_P;
-                    //get cost for this path
-            
-                    //calc pash cost
-                    int prevP = 0;
-                    int nextP = 0;
-                    mfxU32 cost = 0;
-                    //find nextP
-                    if(nextP != i )
-                    {
-                        while(bestSequence[idx][nextP] != (mfxU16)MFX_FRAMETYPE_P) nextP++;
-                        nextP++;
-                    }
-#if DEBUG_ADAPT
-                    fprintf(stderr,"path: %d pP:%d %d ", cost, prevP, nextP);
-                    for(int m=0; m<i+1; m++)
-                    {
-                        switch(bestSequence[idx][m])
-                        {
-                        case MFX_FRAMETYPE_I:
-                            fprintf(stderr,"I");
-                            break;
-                        case MFX_FRAMETYPE_B:
-                            fprintf(stderr,"B");
-                            break;
-                        case MFX_FRAMETYPE_P:
-                            fprintf(stderr,"P");
-                            break;
-                        }
-                    }
-                    fprintf(stderr,"\n");
-#endif
-
-                    cost += RunPreMeAGOP(gopBuffer[prevP],
-                        gopBuffer[nextP],
-                        gopBuffer[nextP]);
-                    for(int m=0; m<i+1; m++)
-                    {
-//                        fprintf(stderr,"cost1=%d\n",cost);
-                        if(bestSequence[idx][m] == MFX_FRAMETYPE_B)
-                        {
-                            cost += mfxU32(0.84*RunPreMeAGOP(gopBuffer[prevP],
-                                gopBuffer[m+1],
-                                gopBuffer[nextP]));
-                        }else if(bestSequence[idx][m] == MFX_FRAMETYPE_P)
-                        {
-                            //find nextP
-                            if( m != i) //if not last
-                            {
-                                prevP = m+1;
-                                nextP = prevP;
-                                while(bestSequence[idx][nextP] != (mfxU16)MFX_FRAMETYPE_P) nextP++;
-                                nextP++;
-                                cost += RunPreMeAGOP(gopBuffer[prevP],
-                                    gopBuffer[nextP],
-                                    gopBuffer[nextP]);
-                            }
-                        }
-//                        fprintf(stderr,"cost2=%d\n",cost);
-                    }
-#if DEBUG_ADAPT
-                    fprintf(stderr,"path cost: %d\n", cost);
-#endif
-                    if( cost < bestCost[i] )
-                    {
-                        bestCost[i] = cost;
-                        idx = (++idx)&1;
-                    }
-                }
-                //copy best path
-                idx = (++idx)&1;
-                for(int l=0; l<=i; l++) bestForLen[i+1][l] = bestSequence[idx][l];
-#if DEBUG_ADAPT
-                    fprintf(stderr,"best path: %d %d ", i, bestCost[i]);
-                    for(int m=0; m<i+1; m++)
-                    {
-                        switch(bestSequence[idx][m])
-                        {
-                        case MFX_FRAMETYPE_I:
-                            fprintf(stderr,"I");
-                            break;
-                        case MFX_FRAMETYPE_B:
-                            fprintf(stderr,"B");
-                            break;
-                        case MFX_FRAMETYPE_P:
-                            fprintf(stderr,"P");
-                            break;
-                        }
-                    }
-                    fprintf(stderr,"\n\n");
-#endif
-
-            }
-            //find first P 
-            for(int l=0; l<maxLen; l++)
-            {
-                //gopBuffer[l+1]->m_type[0] = bestForLen[maxLen][l];
-                if(bestForLen[maxLen][l] == MFX_FRAMETYPE_P){ shiftOffset = l+1; break; }  
-            }
-        }
-
-        //move to ready queue std::advance(it,3);
-        std::list<DdiTask>::iterator last = m_adaptiveGOPBuffered.begin();
-        std::advance(last, shiftOffset);
-        m_adaptiveGOPReady.splice(m_adaptiveGOPReady.end(), m_adaptiveGOPBuffered, m_adaptiveGOPBuffered.begin(), last);
-        }
-#endif
-    
-}
-
-void ImplementationAvc::OnAdaptiveGOPSubmitted()
-{
-    UMC::AutomaticUMCMutex guard(m_listMutex);
     //if (m_inputFrameType == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     //    m_core->DecreaseReference(&task->m_yuv->Data);
     //move one ready frame to reordering queue, if any
     //check if we have surface for new task
-    if(m_adaptiveGOPReady.size() == 0 && m_adaptiveGOPBuffered.size() > 0)
+
+    //last frames
+    if(m_adaptiveGOPFinished.size() > 0 && m_adaptiveGOPSubmitted.size() == 0)
     {
         //drop all frames to ready with best len
         //set frametypes
-        std::list<DdiTask>::iterator it = m_adaptiveGOPBuffered.begin();
+        std::list<DdiTask>::iterator it = m_adaptiveGOPFinished.begin();
         int i=0;
-        while( it != m_adaptiveGOPBuffered.end())
+        while( it != m_adaptiveGOPFinished.end())
         {
             DdiTask& task = *it;
             task.m_type[0] = task.m_type[1] = m_bestGOPSequence[m_agopBestIdx][i];
@@ -1458,34 +1451,39 @@ void ImplementationAvc::OnAdaptiveGOPSubmitted()
             it++;
         }
         for(int i=0; i<m_agopCurrentLen; i++) m_bestGOPCost[i] = MAX_SEQUENCE_COST;
-        m_agopCurrentLen = 0;
+        m_agopFinishedLen = 0;
         m_agopBestIdx = 0;
-        m_adaptiveGOPReady.splice(m_adaptiveGOPReady.end(), m_adaptiveGOPBuffered);
+        m_adaptiveGOPReady.splice(m_adaptiveGOPReady.end(), m_adaptiveGOPFinished);
     }
 
-    if(m_adaptiveGOPReady.size() > 0)
+    UMC::AutomaticUMCMutex guard(m_listMutex);
+    if(m_adaptiveGOPReady.size() > 0) //drop all ready to m_reordering
     {
-        DdiTask& task = m_adaptiveGOPReady.front();
-        mfxU8 requiredFrameType =  task.m_type[0];
-        if((requiredFrameType & MFX_FRAMETYPE_IPB) == MFX_FRAMETYPE_P )
-            requiredFrameType |= MFX_FRAMETYPE_REF;
-        task.m_type[0] = requiredFrameType;
-        if (m_inputFrameType == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
-            m_core->DecreaseReference(&task.m_yuv->Data);
-        m_reordering.splice(m_reordering.end(), m_adaptiveGOPReady, m_adaptiveGOPReady.begin());
+        std::list<DdiTask>::iterator it = m_adaptiveGOPReady.begin();
+        while( it != m_adaptiveGOPReady.end())
+        {
+            DdiTask& task = *it;
+            mfxU8 requiredFrameType =  task.m_type[0];
+            if((requiredFrameType & MFX_FRAMETYPE_IPB) == MFX_FRAMETYPE_P )
+                requiredFrameType |= MFX_FRAMETYPE_REF;
+            task.m_type[0] = requiredFrameType;
+            if (m_inputFrameType == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+                m_core->DecreaseReference(&task.m_yuv->Data);
 
-        //Clean up
-        ReleaseResource(m_raw, task.m_midRaw);
-        task.m_handleRaw.first = NULL;
-        ReleaseResource(m_raw4X, task.m_cmRaw4X);
-        ReleaseResource(m_mbAGOP,    task.m_cmMbAGOP);
-        ReleaseResource(m_curbeAGOP, task.m_cmCurbeAGOP);
-        if (m_cmDevice){
-            m_cmDevice->DestroySurface(task.m_cmRaw);
-            task.m_cmRaw = NULL;
+            //Clean up
+            ReleaseResource(m_raw, task.m_midRaw);
+            task.m_handleRaw.first = NULL;
+            ReleaseResource(m_raw4X, task.m_cmRaw4X);
+            if (m_cmDevice){
+                m_cmDevice->DestroySurface(task.m_cmRaw);
+                task.m_cmRaw = NULL;
+            }
+            it++;
         }
-        fprintf(stderr,"frame: %c %d\n", frameType[requiredFrameType&MFX_FRAMETYPE_IPB], !!(requiredFrameType&MFX_FRAMETYPE_REF));
+        m_reordering.splice(m_reordering.end(), m_adaptiveGOPReady);
+        //fprintf(stderr,"frame: %c %d\n", frameType[requiredFrameType&MFX_FRAMETYPE_IPB], !!(requiredFrameType&MFX_FRAMETYPE_REF));
     }
+    return true;
 }
 #endif
 
@@ -1659,6 +1657,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
     }
 
 #if USE_AGOP
+#if 0
     fprintf(stderr,"num_calls: %d ", numCall);
     if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_CALL_EMULATOR) fprintf(stderr, "EMUL ");
     if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_ACCEPT_FRAME) fprintf(stderr, "ACCEPT ");
@@ -1669,7 +1668,8 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
     if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_START_ENCODE) fprintf(stderr, "START_ENCODE ");
     if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_WAIT_ENCODE) fprintf(stderr, "WAIT_ENCODE ");
     if(m_stagesToGo&AsyncRoutineEmulator::STG_BIT_RESTART) fprintf(stderr, "RESTART ");
-    fprintf(stderr," | ");
+    fprintf(stderr,"\n");
+#endif
 #endif
 
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_ACCEPT_FRAME)
@@ -1737,39 +1737,6 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         {
             if( newTask.m_yuv != NULL) //not empty task
             {
-#if 1
-                //reset cost cache
-                for(int i=0; i<MAX_B_FRAMES; i++)
-                    for(int j=0; j<MAX_B_FRAMES; j++)
-                    {
-                        newTask.m_costCache[i][j] = MAX_SEQUENCE_COST;
-                    }
-    
-                //copy input surface to video memory
-                newTask.m_idx    = FindFreeResourceIndex(m_raw);
-                newTask.m_midRaw = AcquireResource(m_raw, newTask.m_idx);
-
-                mfxStatus sts = GetNativeHandleToRawSurface(*m_core, m_video, newTask, newTask.m_handleRaw);
-                if (sts != MFX_ERR_NONE)
-                    return Error(sts);
-
-                sts = CopyRawSurfaceToVideoMemory(*m_core, m_video, newTask);
-                if (sts != MFX_ERR_NONE)
-                    return Error(sts);
-
-                fprintf(stderr,"new_Frame=%d\n", newTask.m_frameOrder);
-                //downsample 4X
-                newTask.m_cmRaw = CreateSurface(m_cmDevice, newTask.m_handleRaw.first, m_currentVaType);
-                newTask.m_cmRaw4X = (CmSurface2D *)AcquireResource(m_raw4X);
-                assert(newTask.m_cmRaw != NULL || newTask.m_cmRaw4X != NULL);
-                m_cmCtx->DownSample4X(newTask.m_cmRaw, newTask.m_cmRaw4X);
-                //Adding MB data
-                mfxHDLPair cmMb = AcquireResourceUp(m_mbAGOP);
-                assert(cmMb.first != NULL);
-                newTask.m_cmMbAGOP    = (CmBufferUP *)cmMb.first;
-                newTask.m_cmMbSysAGOP = (void *)cmMb.second;
-                newTask.m_cmCurbeAGOP = (CmBuffer *)AcquireResource(m_curbeAGOP);
-#endif
                 //shift task to buffered adaptive GOP queue
                 {
                     UMC::AutomaticUMCMutex guard(m_listMutex);
@@ -1824,7 +1791,10 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
     {
         if(extOpt2->AdaptiveB & MFX_CODINGOPTION_ON)
         {
-            OnAdaptiveGOPSubmitted(); //check submitted results, and move to reordering queue
+            if(!OnAdaptiveGOPSubmitted()) //check submitted results, and move to reordering queue
+            {
+                return MFX_TASK_BUSY;
+            }
         }
         m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_WAIT_AGOP;
     }
@@ -2320,24 +2290,28 @@ mfxStatus ImplementationAvc::QueryStatus(
 }
 
 #if USE_AGOP
+//query set of tasks and calc stat
+mfxU32 ImplementationAvc::CalcCostAGOP(
+    DdiTask const & task,
+    mfxI32 prevP,
+    mfxI32 nextP)
+{
+    return m_cmCtx->CalcCostAGOP(task, prevP, nextP);
+}
+
 //Estimate cost of input frames p0 b p1, if b==p1 => only p frame
-mfxU32 ImplementationAvc::RunPreMeAGOP(
+void ImplementationAvc::RunPreMeAGOP(
     DdiTask* p0,
     DdiTask* b,
     DdiTask* p1
     )
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RunPreMeAGOP");
     mfxU16 ftype = MFX_FRAMETYPE_B;
     int q=26;
     int pOffset = b->m_frameOrder - p0->m_frameOrder;
     int bOffset = p1->m_frameOrder - b->m_frameOrder;
 
-    //fprintf(stderr,"cframe: %d %d\n", pOffset, bOffset);
-    if( b->m_costCache[pOffset][bOffset] != MAX_SEQUENCE_COST){
-        //fprintf(stderr,"************* cached values!!!!!!!!!!!\n");
-        return b->m_costCache[pOffset][bOffset];
-    }
-#if 1
     if(b == p1)
     {
         ftype = MFX_FRAMETYPE_P;
@@ -2347,8 +2321,6 @@ mfxU32 ImplementationAvc::RunPreMeAGOP(
             ftype = MFX_FRAMETYPE_I;
         }
     }
-#endif
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RunPreMeAGOP");
 
     //calc biweight
     mfxU32 biWeight = 0;
@@ -2361,43 +2333,14 @@ mfxU32 ImplementationAvc::RunPreMeAGOP(
         //fprintf(stderr,"biW: %d  %d\n", tb*tx+32, biWeight);
     }
 
-    mfxU32 cost = 0;
     b->m_cmEventAGOP = m_cmCtx->RunVmeAGOP(q,
         b->m_cmRaw4X,
         b == p0 ? 0 : p0->m_cmRaw4X,
         b == p1 ? 0 : p1->m_cmRaw4X,
         biWeight,
-        b->m_cmCurbeAGOP,
-        b->m_cmMbAGOP
+        b->m_cmCurbeAGOP[pOffset][bOffset],
+        (CmBufferUP*)(b->m_cmMbAGOP[pOffset][bOffset].first)
         );
-
-    //sync, FIXME move to async
-
-    CM_STATUS status;
-    do {
-        int res = b->m_cmEventAGOP->GetStatus(status);
-        if (res != CM_SUCCESS)
-            throw CmRuntimeError();
-    } while (status != CM_STATUS_FINISHED);
-
-    m_cmCtx->QueryVmeAGOP(*b, b->m_cmEventAGOP, cost);
-
-
-#if DEBUG_ADAPT
-    char* ft="B";
-    if(b == p1)
-    {
-        ft="P";
-        if(b == p0) ft="I";
-    }
-    fprintf(stderr,"%s:%d fullCost=%d fullDist=%d intraMb:%d  w:%d skip:%d   %d:%d  %d:%d  %d:%d\n",
-        ft, b->m_frameNum, fullCost, fullDist, b->numIntraMb,
-        biWeight, fullSkip,
-        p0->m_frameNum, p0->m_frameType, b->m_frameNum, b->m_frameType, p1->m_frameNum, p1->m_frameType);
-#endif
-    b->m_costCache[pOffset][bOffset] = cost;
-
-    return cost;
 }
 #endif
 

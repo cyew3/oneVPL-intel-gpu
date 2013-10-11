@@ -275,6 +275,10 @@ namespace MfxHwH264Encode
         DdiTask const &       task);
 
     // Helper which checks number of allocated frames and auto-free.
+#if USE_AGOP
+    static bool IsZero (mfxU32 i) { return (i == 0); }
+#endif
+
     class MfxFrameAllocResponse : public mfxFrameAllocResponse
     {
     public:
@@ -313,6 +317,10 @@ namespace MfxHwH264Encode
         mfxU32 Unlock(mfxU32 idx);
 
         mfxU32 Locked(mfxU32 idx) const;
+#if USE_AGOP //for debug
+        mfxI32 CountNonLocked(){ return std::count_if(m_locked.begin(), m_locked.end(), IsZero); }
+        mfxI32 CountLocked(){ return m_locked.size() - std::count_if(m_locked.begin(), m_locked.end(), IsZero); }
+#endif
 
     private:
         MfxFrameAllocResponse(MfxFrameAllocResponse const &);
@@ -952,11 +960,10 @@ namespace MfxHwH264Encode
 
 #if USE_AGOP
         CmSurface2D *   m_cmRaw4X;      // down-sized input surface for AGOP
-        CmBufferUP *    m_cmMbAGOP;         // macroblock data, VME kernel output
-        CmBuffer *      m_cmCurbeAGOP;      // control structure for ME & HME kernels
         CmEvent*        m_cmEventAGOP;
-        void *          m_cmMbSysAGOP;      // pointer to associated system memory buffer
         mfxU32          m_costCache[MAX_B_FRAMES][MAX_B_FRAMES]; //if != MAX_COST => already checked
+        CmBuffer*       m_cmCurbeAGOP[MAX_B_FRAMES][MAX_B_FRAMES]; // Curbe Data for each combination
+        mfxHDLPair      m_cmMbAGOP[MAX_B_FRAMES][MAX_B_FRAMES]; // Results of kernel run, buf+sys ptr
 #endif
         CmSurface2D *   m_cmRaw;        // CM surface made of m_handleRaw
         CmSurface2D *   m_cmRawLa;      // down-sized input surface for Lookahead
@@ -1596,7 +1603,7 @@ namespace MfxHwH264Encode
 #if USE_AGOP
         void SubmitAdaptiveGOP();
 
-        void OnAdaptiveGOPSubmitted();
+        bool OnAdaptiveGOPSubmitted();
 #endif
 
         void OnLookaheadSubmitted(DdiTaskIter task);
@@ -1630,7 +1637,12 @@ namespace MfxHwH264Encode
             mfxU32    ffid);
 
 #if USE_AGOP
-        mfxU32 RunPreMeAGOP(
+        mfxU32 CalcCostAGOP(
+            DdiTask const & task,
+            mfxI32 prevP,
+            mfxI32 nextP);
+
+        void RunPreMeAGOP(
             DdiTask* p0,
             DdiTask* b,
             DdiTask* p1
@@ -1726,8 +1738,11 @@ namespace MfxHwH264Encode
 #if USE_AGOP
         mfxI32        m_agopBestIdx;
         mfxI32        m_agopCurrentLen;
+        mfxI32        m_agopFinishedLen;
         mfxI32        m_agopDeps;
         std::list<DdiTask>  m_adaptiveGOPBuffered;
+        std::list<DdiTask>  m_adaptiveGOPSubmitted;
+        std::list<DdiTask>  m_adaptiveGOPFinished;
         std::list<DdiTask>  m_adaptiveGOPReady;
         mfxU8 m_bestGOPSequence[MAX_B_FRAMES][MAX_GOP_SEQUENCE+1];
         mfxU32 m_bestGOPCost[MAX_B_FRAMES];

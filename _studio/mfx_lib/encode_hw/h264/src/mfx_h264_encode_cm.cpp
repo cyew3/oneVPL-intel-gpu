@@ -1027,9 +1027,72 @@ void CmContext::DownSample4X(CmSurface2D* surfOrig, CmSurface2D* surf4X)
             throw CmRuntimeError();
     } while (status != CM_STATUS_FINISHED);
 }
+
+CmEvent* CmContext::DownSample4XAsync(CmSurface2D* surfOrig, CmSurface2D* surf4X)
+{
+    mfxU32 numMbCols = m_video.mfx.FrameInfo.Width >> 4;
+    mfxU32 numMbRows = m_video.mfx.FrameInfo.Height >> 4;
+
+    // DownSample source
+    SetKernelArg(m_kernelDownSample4X, GetIndex(surfOrig), GetIndex(surf4X));
+    return EnqueueKernel(m_kernelDownSample4X, numMbCols, numMbRows, CM_NONE_DEPENDENCY);
+}
 #endif
 
 #if USE_AGOP
+mfxU32 CmContext::CalcCostAGOP(
+    DdiTask const & task,
+    mfxI32 prevP,
+    mfxI32 nextP)
+{
+    mfxHDLPair mbData = task.m_cmMbAGOP[prevP][nextP];
+    SVCPAKObject * mb = (SVCPAKObject *)mbData.second;
+
+    if(!mb) return MAX_SEQUENCE_COST;
+
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "CalcCostAGOP");
+    mfxU32 numMbCols = m_video.mfx.FrameInfo.Width >> 6;  //work with 4X
+    mfxU32 numMbRows = m_video.mfx.FrameInfo.Height >> 6; //work with 4X //round?
+    mfxU32 numMb = numMbCols*numMbRows;
+
+    mfxU16 fType = MFX_FRAMETYPE_B;
+    if(prevP == nextP) fType = MFX_FRAMETYPE_I;
+    else if(nextP == 0) fType = MFX_FRAMETYPE_P;
+
+    mfxU32 cost=0;
+    mfxVMEUNIIn const & costs = SelectCosts(fType);
+
+    for (size_t i = 0; i < numMb; i++)
+    {
+        if (mb[i].IntraMbFlag)
+        {
+            mfxU16 bitCostLambda = mfxU16(Map44LutValueBack(costs.ModeCost[LUTMODE_INTRA_16x16]));
+            //assert(mb[i].intraCost >= bitCostLambda);
+            mb[i].dist = IPP_MAX(0, mb[i].intraCost - bitCostLambda);
+            cost += mb[i].intraCost;
+        }
+        else
+        {
+#if 0
+            if (mb[i].MbType5Bits != MBTYPE_BP_L0_16x16 &&
+                mb[i].MbType5Bits != MBTYPE_B_L1_16x16  &&
+                mb[i].MbType5Bits != MBTYPE_B_Bi_16x16)
+                assert(0);
+#endif
+            mfxU32 modeCostLambda = Map44LutValueBack(costs.ModeCost[LUTMODE_INTER_16x16]);
+            mfxU32 mvCostLambda   = (task.m_type[0] & MFX_FRAMETYPE_P)
+                ? GetVmeMvCostP(m_lutMvP, mb[i]) : GetVmeMvCostB(m_lutMvB, mb[i]);
+            mfxU16 bitCostLambda = mfxU16(IPP_MIN(mb[i].interCost, modeCostLambda + mvCostLambda));
+
+            mb[i].dist = mb[i].interCost - bitCostLambda;
+            if(!mb[i].SkipMbFlag)
+                cost += mb[i].interCost;
+        }
+    }
+
+    return cost; 
+}
+
 CmEvent* CmContext::RunVmeAGOP(
     mfxU32              qp,
     CmSurface2D* cur,
@@ -1086,9 +1149,10 @@ bool CmContext::QueryVmeAGOP(
     if(!e) return true;
 
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "QueryVme");
-    mfxU32 numMbCols = m_video.mfx.FrameInfo.Width >> 6;  //work with 4X
-    mfxU32 numMbRows = m_video.mfx.FrameInfo.Height >> 6; //work with 4X //round?
-    mfxU32 numMb = numMbCols*numMbRows;
+    task;
+    //mfxU32 numMbCols = m_video.mfx.FrameInfo.Width >> 6;  //work with 4X
+    //mfxU32 numMbRows = m_video.mfx.FrameInfo.Height >> 6; //work with 4X //round?
+//    mfxU32 numMb = numMbCols*numMbRows;
 
     CM_STATUS status = CM_STATUS_QUEUED;
     if (e->GetStatus(status) != CM_SUCCESS)
@@ -1097,7 +1161,7 @@ bool CmContext::QueryVmeAGOP(
         return false;
 
     cost=0;
-#if 1
+#if 0
     SVCPAKObject * mb = (SVCPAKObject *)task.m_cmMbSysAGOP;
     mfxVMEUNIIn const & costs = SelectCosts(task.m_type[0]);
 
