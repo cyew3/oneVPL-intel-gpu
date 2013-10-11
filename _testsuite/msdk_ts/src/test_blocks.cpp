@@ -562,6 +562,7 @@ msdk_ts_BLOCK(b_MFXVideoDECODE_DecodeFrameAsync){
 
     TRACE_FUNC5(MFXVideoDECODE_DecodeFrameAsync, session, pBs, pSurf, ppSurfOut, pSyncp);
     mfxRes = MFXVideoDECODE_DecodeFrameAsync(session, pBs, pSurf, ppSurfOut, pSyncp);
+    std::cout << "Data.Corrupted: " << (*ppSurfOut)->Data.Corrupted << "\n";
     TRACE_PAR(mfxRes);
     TRACE_PAR(pBs);
     TRACE_PAR(pSurf);

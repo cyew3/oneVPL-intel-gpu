@@ -215,7 +215,27 @@ mfxDefaultAllocatorVAAPI::LockFrameHW(
         // check if the frame is corrupted and set flag
         if (VA_STATUS_ERROR_DECODING_ERROR == va_sts)
         {
-            ptr->Corrupted = MFX_CORRUPTION_MAJOR;
+            VASurfaceDecodeMBErrors* pVaDecErr = NULL;
+            VAStatus  va_err = vaQuerySurfaceError(pSelf->pVADisplay, *(vaapi_mids->m_surface), VA_STATUS_ERROR_DECODING_ERROR, (void**)&pVaDecErr);
+
+            if (NULL != pVaDecErr)
+            {
+                for (int i = 0; pVaDecErr[i].status != -1; ++i)
+                {
+                    if (VADecodeMBError == pVaDecErr[i].decode_error_type)
+                    {
+                        ptr->Corrupted = MFX_CORRUPTION_MAJOR;
+
+                        // FIXME: wait for fix in driver
+                        va_sts = VA_STATUS_SUCCESS;
+                    }
+                }
+            }
+            else
+            {
+                // false positive due to hardware bug
+                va_sts = VA_STATUS_SUCCESS;
+            }
         }
         mfx_res = VA_TO_MFX_STATUS(va_sts);
 #if 0
