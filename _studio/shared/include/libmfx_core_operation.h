@@ -15,7 +15,6 @@ File Name: libmfx_core_operation.h
 #include <vector>
 #include <vm_interlocked.h>
 #include <umc_mutex.h>
-#include <umc_automatic_mutex.h>
 
 class VideoCORE;
 
@@ -51,7 +50,6 @@ public:
     // functor to run fuction from child cores
     bool  IsOpaqSurfacesAlreadyMapped(mfxFrameSurface1 **pOpaqueSurface, mfxU32 NumOpaqueSurface, mfxFrameAllocResponse *response)
     {
-        UMC::AutomaticUMCMutex guard(m_guard);
         bool sts;
         std::vector<VideoCORE*>::iterator it = m_Cores.begin();
 
@@ -67,7 +65,6 @@ public:
     // functor to run fuction from child cores
     bool CheckOpaqRequest(mfxFrameAllocRequest *request, mfxFrameSurface1 **pOpaqueSurface, mfxU32 NumOpaqueSurface)
     {
-        UMC::AutomaticUMCMutex guard(m_guard);
         bool sts;
         std::vector<VideoCORE*>::iterator it = m_Cores.begin();
 
@@ -84,7 +81,6 @@ public:
     template <typename func, typename arg, typename arg2>
     mfxStatus DoFrameOperation(func functor, arg par, arg2 out)
     {
-        UMC::AutomaticUMCMutex guard(m_guard);
         mfxStatus sts;
         std::vector<VideoCORE*>::iterator it = m_Cores.begin();
 
@@ -102,7 +98,6 @@ public:
     template <typename func, typename arg>
     mfxStatus DoCoreOperation(func functor, arg par)
     {
-        UMC::AutomaticUMCMutex guard(m_guard);
         mfxStatus sts;
         std::vector<VideoCORE*>::iterator it = m_Cores.begin();
 
@@ -120,7 +115,6 @@ public:
     template <typename func, typename arg>
     mfxFrameSurface1* GetSurface(func functor, arg par)
     {
-        UMC::AutomaticUMCMutex guard(m_guard);
         mfxFrameSurface1* pSurf;
         std::vector<VideoCORE*>::iterator it = m_Cores.begin();
         for (;it != m_Cores.end();it++)
@@ -137,8 +131,7 @@ public:
     virtual
     void AddRef(void)
     {
-        UMC::AutomaticUMCMutex guard(m_guard);
-        m_refCounter++;
+        vm_interlocked_inc32(&m_refCounter);
     };
     // Decrement reference counter of the object.
     // If the counter is equal to zero, destructor is called and
@@ -146,7 +139,7 @@ public:
     virtual
     void Release(void)
     {
-        m_refCounter--;
+        vm_interlocked_dec32(&m_refCounter);
 
         if (0 == m_refCounter)
         {
@@ -157,7 +150,6 @@ public:
     virtual
     mfxU32 GetNumRef(void)
     {
-        UMC::AutomaticUMCMutex guard(m_guard);
         return m_refCounter;
     };
 private:
