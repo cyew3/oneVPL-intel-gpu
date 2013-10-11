@@ -1379,7 +1379,7 @@ Ipp32s H265CU::MVCost( H265MV MV[2], T_RefIdx curRefIdx[2], MVPInfo pInfo[2], MV
                 continue;
             for (i=0; i<pInfo[rlist].numCand; i++) {
                 if(curRefIdx[rlist] == pInfo[rlist].refIdx[i]) {
-                    cost = lamb * (2+i)/2 +  lamb * MV->qdiff(pInfo[rlist].mvCand[i])*2;
+                    cost = lamb * (2+i)/2 +  lamb * MV[rlist].qdiff(pInfo[rlist].mvCand[i])*2;
                     if(i==0 || mincost > cost)
                         mincost = cost;
                 }
@@ -1388,7 +1388,8 @@ Ipp32s H265CU::MVCost( H265MV MV[2], T_RefIdx curRefIdx[2], MVPInfo pInfo[2], MV
         return (Ipp32s)mincost;
     } else {
         // B-pred
-        return (Ipp32s)mincost;
+        T_RefIdx refidx[2][2] = {{curRefIdx[0], -1}, {-1, curRefIdx[1]}};
+        return MVCost(MV, refidx[0], pInfo, mergeInfo) + MVCost(MV, refidx[1], pInfo, mergeInfo);
     }
 }
 
@@ -1436,6 +1437,7 @@ Ipp32s H265CU::MatchingMetricBipred_PU(PixType *pSrc, H265MEInfo* me_info, PixTy
     for (y=0; y<height; y++) {
         for (x=0; x<width; x++) {
             Ipp32s var = pred_buf_y[0][x + y*MAX_CU_SIZE] + pred_buf_y[1][x + y*MAX_CU_SIZE] - 2*pSrc[x + y*pitch_src]; // ok for estimation
+            //Ipp32s var = ((pred_buf_y[0][x + y*MAX_CU_SIZE] + pred_buf_y[1][x + y*MAX_CU_SIZE] + 1) >> 1) - pSrc[x + y*pitch_src]; // precise
             cost += abs(var);
             //cost += (var*var >> 2);
         }
