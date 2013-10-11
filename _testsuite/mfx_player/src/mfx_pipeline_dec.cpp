@@ -2547,16 +2547,6 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
                     sts = RunVPP(pDecodedSurface);
                     //always decreasing lock to prevent timeout event happened
                     DecreaseReference(&pDecodedSurface->Data);
-
-#ifdef _DEBUG
-                    // skip corrupted frame
-                    if (0 != pDecodedSurface->Data.Corrupted)
-                    {
-                        printf("corrupted\n");
-                        sts = MFX_ERR_NONE;
-                    }
-#endif                    
-
                     MFX_CHECK_STS_TRACE_EXPR(sts, RunVPP(pDecodedSurface));
                     //check exiting status
                     if (MFX_ERR_NONE != (sts = CheckExitingCondition()))
