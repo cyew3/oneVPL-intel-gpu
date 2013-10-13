@@ -348,7 +348,7 @@ mfxStatus ImplementationAvc::Query(
     }
     else if (queryMode == 2)  // see MSDK spec for details related to Query mode 2
     {
-        ENCODE_CAPS hwCaps = { 0, };
+        ENCODE_CAPS hwCaps = { };
         mfxExtAVCEncoderWiDiUsage * isWiDi = GetExtBuffer(*in);
         
         // let use dedault values if input resolution is 0x0
@@ -603,8 +603,8 @@ mfxStatus ImplementationAvc::QueryIOSurf(
 ImplementationAvc::ImplementationAvc(VideoCORE * core)
 : m_core(core)
 , m_video()
-, m_maxBsSize(0)
 , m_enabledSwBrc(false)
+, m_maxBsSize(0)
 {
 /*
     FEncLog = fopen("EncLog.txt", "wb");

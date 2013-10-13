@@ -585,8 +585,8 @@ PairU8 FrameTypeGenerator::Get() const
 
     if ((m_gopOptFlag & MFX_GOP_STRICT) == 0)
     {
-        if ((m_frameOrder + 1) % m_gopPicSize == 0 && (m_gopOptFlag & MFX_GOP_CLOSED) ||
-            (m_frameOrder + 1) % m_idrDist == 0)
+        if (((m_frameOrder + 1) % m_gopPicSize == 0 && (m_gopOptFlag & MFX_GOP_CLOSED)) ||
+            ((m_frameOrder + 1) % m_idrDist == 0))
         {
             // switch last B frame to P frame
             return ExtendFrameType(MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF | keyPicture);
@@ -857,13 +857,13 @@ bool TaskManager::IsSubmitted(DdiTask const & task) const
 TaskManager::TaskManager()
 : m_frameNum(0)
 , m_frameNumMax(0)
-, m_frameOrderI(0)
 , m_frameOrder(0)
 , m_frameOrderIdr(0)
+, m_frameOrderI(0)
+, m_viewIdx(0)
 , m_cpbRemoval(0)
 , m_cpbRemovalBufferingPeriod(0)
 , m_numReorderFrames(0)
-, m_viewIdx(0)
 , m_pushed(0)
 {
 }
@@ -3736,10 +3736,9 @@ void MfxHwH264Encode::PutSeiMessage(
 // MVC BD }
 
 MfxFrameAllocResponse::MfxFrameAllocResponse()
-    : m_core(0)
-    , m_cmDevice(0)
+    : m_cmDestroy(0)
+    , m_core(0)
     , m_numFrameActualReturnedByAllocFrames(0)
-    , m_cmDestroy(0)
 {
     Zero((mfxFrameAllocResponse &)*this);
 }
@@ -4752,8 +4751,8 @@ void MfxHwH264Encode::PrepareSeiMessageBuffer(
         IsOn(extOpt->PicTimingSEI);
 
     mfxU32 needAtLeastOneSei =
-        task.m_ctrl.Payload && task.m_ctrl.NumPayload > 0 ||
-        fillerSize > 0      ||
+        (task.m_ctrl.Payload && task.m_ctrl.NumPayload > 0) ||
+        (fillerSize > 0)    ||
         needBufferingPeriod ||
         needPicTimingSei    ||
         needMarkingRepetitionSei;
@@ -4909,8 +4908,8 @@ void MfxHwH264Encode::PrepareSeiMessageBufferDepView(
         needMvcNestingSei |= (fillerSize != 0);
 
     mfxU32 needNotNestingSei =
-        task.m_ctrl.Payload && task.m_ctrl.NumPayload > 0 ||
-        fillerSize > 0 && IsOff(extOpt->ViewOutput) ||
+        (task.m_ctrl.Payload && task.m_ctrl.NumPayload > 0) ||
+        (fillerSize > 0 && IsOff(extOpt->ViewOutput)) ||
         needMarkingRepetitionSei;
 
     OutputBitstream writer(sei.Buffer(), sei.Capacity());
@@ -5259,7 +5258,7 @@ mfxU8 * MfxHwH264Encode::PatchBitstream(
             {
                 assert(copy);
                 InputBitstream reader(nalu->begin + nalu->numZero + 1, nalu->end);
-                mfxExtSpsHeader spsHead = { 0 };
+                mfxExtSpsHeader spsHead = { };
                 ReadSpsHeader(reader, spsHead);
 
                 spsHead.gapsInFrameNumValueAllowedFlag = extSps->gapsInFrameNumValueAllowedFlag;
