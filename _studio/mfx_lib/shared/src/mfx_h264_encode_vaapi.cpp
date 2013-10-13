@@ -644,7 +644,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     std::vector<VASurfaceID> reconSurf;
-    for(int i = 0; i < m_reconQueue.size(); i++)
+    for(unsigned int i = 0; i < m_reconQueue.size(); i++)
         reconSurf.push_back(m_reconQueue[i].surface);
 
     // Encoder create
@@ -690,6 +690,8 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
 
 mfxStatus VAAPIEncoder::Reset(MfxVideoParam const & par)
 {
+//    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc Reset");
+
     m_videoParam = par;
 
     FillSps(par, m_sps);
@@ -848,7 +850,7 @@ mfxStatus VAAPIEncoder::Execute(
     }
 
     // find reconstructed surface
-    int idxRecon = task.m_idxRecon;
+    unsigned int idxRecon = task.m_idxRecon;
     if( idxRecon < m_reconQueue.size())
     {
         reconSurface = m_reconQueue[ idxRecon ].surface;
