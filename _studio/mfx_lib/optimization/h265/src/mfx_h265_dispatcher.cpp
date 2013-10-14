@@ -73,7 +73,7 @@ using namespace MFX_HEVC_PP;
 
     } // IppStatus InitDispatcher( void )
 
-
+#if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
     // [sad.special - dispatcher]
     int MFX_HEVC_PP::h265_SAD_MxN_special_8u(const unsigned char *image,  const unsigned char *ref, int stride, int SizeX, int SizeY)
     {
@@ -189,7 +189,7 @@ using namespace MFX_HEVC_PP;
         else return -1;
 
     } // int h265_SAD_MxN_general_8u(const unsigned char *image,  const unsigned char *ref, int stride, int SizeX, int SizeY)
-
+#endif
 
     /* ************************************************* */
     /*       Set Target Platform                         */
@@ -207,6 +207,7 @@ using namespace MFX_HEVC_PP;
 
     void SetTargetSSE4(void)
     {
+#if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
         // [Sad.special]===================================
         g_dispatcher. h265_SAD_4x4_8u =  &MFX_HEVC_PP::SAD_4x4_sse;
         g_dispatcher. h265_SAD_4x8_8u =  &MFX_HEVC_PP::SAD_4x8_sse;
@@ -275,19 +276,19 @@ using namespace MFX_HEVC_PP;
         g_dispatcher. h265_SAD_64x48_general_8u =  &MFX_HEVC_PP::SAD_64x48_general_sse;
         g_dispatcher. h265_SAD_64x64_general_8u =  &MFX_HEVC_PP::SAD_64x64_general_sse;
 
-        //[transform.inv]==================================
-        g_dispatcher. h265_DST4x4Inv_16sT = &MFX_HEVC_PP::h265_DST4x4Inv_16sT_sse;
-        g_dispatcher. h265_DCT4x4Inv_16sT = &MFX_HEVC_PP::h265_DCT4x4Inv_16sT_sse;
-        g_dispatcher. h265_DCT8x8Inv_16sT = &MFX_HEVC_PP::h265_DCT8x8Inv_16sT_sse;
-        g_dispatcher. h265_DCT16x16Inv_16sT = &MFX_HEVC_PP::h265_DCT16x16Inv_16sT_sse;
-        g_dispatcher. h265_DCT32x32Inv_16sT = &MFX_HEVC_PP::h265_DCT32x32Inv_16sT_sse;
-
         //[transform.fwd]==================================
         g_dispatcher. h265_DST4x4Fwd_16s = &MFX_HEVC_PP::h265_DST4x4Fwd_16s_sse;
         g_dispatcher. h265_DCT4x4Fwd_16s = &MFX_HEVC_PP::h265_DCT4x4Fwd_16s_sse;
         g_dispatcher. h265_DCT8x8Fwd_16s = &MFX_HEVC_PP::h265_DCT8x8Fwd_16s_sse;
         g_dispatcher. h265_DCT16x16Fwd_16s = &MFX_HEVC_PP::h265_DCT16x16Fwd_16s_sse;
         g_dispatcher. h265_DCT32x32Fwd_16s = &MFX_HEVC_PP::h265_DCT32x32Fwd_16s_sse;
+#endif
+        //[transform.inv]==================================
+        g_dispatcher. h265_DST4x4Inv_16sT = &MFX_HEVC_PP::h265_DST4x4Inv_16sT_sse;
+        g_dispatcher. h265_DCT4x4Inv_16sT = &MFX_HEVC_PP::h265_DCT4x4Inv_16sT_sse;
+        g_dispatcher. h265_DCT8x8Inv_16sT = &MFX_HEVC_PP::h265_DCT8x8Inv_16sT_sse;
+        g_dispatcher. h265_DCT16x16Inv_16sT = &MFX_HEVC_PP::h265_DCT16x16Inv_16sT_sse;
+        g_dispatcher. h265_DCT32x32Inv_16sT = &MFX_HEVC_PP::h265_DCT32x32Inv_16sT_sse;
 
         //[deblocking]=====================================
         g_dispatcher. h265_FilterEdgeLuma_8u_I = &MFX_HEVC_PP::h265_FilterEdgeLuma_8u_I_sse;
@@ -325,6 +326,7 @@ using namespace MFX_HEVC_PP;
 
     void SetTargetSSSE3(void)
     {
+#if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
         // [Sad.special]===================================
         g_dispatcher. h265_SAD_4x4_8u =  &MFX_HEVC_PP::SAD_4x4_ssse3;
         g_dispatcher. h265_SAD_4x8_8u =  &MFX_HEVC_PP::SAD_4x8_ssse3;
@@ -393,19 +395,19 @@ using namespace MFX_HEVC_PP;
         g_dispatcher. h265_SAD_64x48_general_8u =  &MFX_HEVC_PP::SAD_64x48_general_ssse3;
         g_dispatcher. h265_SAD_64x64_general_8u =  &MFX_HEVC_PP::SAD_64x64_general_ssse3;
 
-        //[transform.inv]==================================
-        g_dispatcher. h265_DST4x4Inv_16sT = &MFX_HEVC_PP::h265_DST4x4Inv_16sT_ssse3;
-        g_dispatcher. h265_DCT4x4Inv_16sT = &MFX_HEVC_PP::h265_DCT4x4Inv_16sT_ssse3;
-        g_dispatcher. h265_DCT8x8Inv_16sT = &MFX_HEVC_PP::h265_DCT8x8Inv_16sT_ssse3;
-        g_dispatcher. h265_DCT16x16Inv_16sT = &MFX_HEVC_PP::h265_DCT16x16Inv_16sT_ssse3;
-        g_dispatcher. h265_DCT32x32Inv_16sT = &MFX_HEVC_PP::h265_DCT32x32Inv_16sT_ssse3;
-
         //[transform.fwd]==================================
         g_dispatcher. h265_DST4x4Fwd_16s = &MFX_HEVC_PP::h265_DST4x4Fwd_16s_ssse3;
         g_dispatcher. h265_DCT4x4Fwd_16s = &MFX_HEVC_PP::h265_DCT4x4Fwd_16s_ssse3;
         g_dispatcher. h265_DCT8x8Fwd_16s = &MFX_HEVC_PP::h265_DCT8x8Fwd_16s_ssse3;
         g_dispatcher. h265_DCT16x16Fwd_16s = &MFX_HEVC_PP::h265_DCT16x16Fwd_16s_ssse3;
         g_dispatcher. h265_DCT32x32Fwd_16s = &MFX_HEVC_PP::h265_DCT32x32Fwd_16s_ssse3;
+#endif
+        //[transform.inv]==================================
+        g_dispatcher. h265_DST4x4Inv_16sT = &MFX_HEVC_PP::h265_DST4x4Inv_16sT_ssse3;
+        g_dispatcher. h265_DCT4x4Inv_16sT = &MFX_HEVC_PP::h265_DCT4x4Inv_16sT_ssse3;
+        g_dispatcher. h265_DCT8x8Inv_16sT = &MFX_HEVC_PP::h265_DCT8x8Inv_16sT_ssse3;
+        g_dispatcher. h265_DCT16x16Inv_16sT = &MFX_HEVC_PP::h265_DCT16x16Inv_16sT_ssse3;
+        g_dispatcher. h265_DCT32x32Inv_16sT = &MFX_HEVC_PP::h265_DCT32x32Inv_16sT_ssse3;
 
         //[deblocking]=====================================
         g_dispatcher. h265_FilterEdgeLuma_8u_I = &MFX_HEVC_PP::h265_FilterEdgeLuma_8u_I_ssse3;
@@ -443,6 +445,7 @@ using namespace MFX_HEVC_PP;
 
     void SetTargetAVX2(void)
     {
+#if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
         // [Sad.special]===================================
         g_dispatcher. h265_SAD_4x4_8u =  &MFX_HEVC_PP::SAD_4x4_avx2;
         g_dispatcher. h265_SAD_4x8_8u =  &MFX_HEVC_PP::SAD_4x8_avx2;
@@ -511,19 +514,19 @@ using namespace MFX_HEVC_PP;
         g_dispatcher. h265_SAD_64x48_general_8u =  &MFX_HEVC_PP::SAD_64x48_general_avx2;
         g_dispatcher. h265_SAD_64x64_general_8u =  &MFX_HEVC_PP::SAD_64x64_general_avx2;
 
-        //[transform.inv]==================================
-        g_dispatcher. h265_DST4x4Inv_16sT = &MFX_HEVC_PP::h265_DST4x4Inv_16sT_avx2;
-        g_dispatcher. h265_DCT4x4Inv_16sT = &MFX_HEVC_PP::h265_DCT4x4Inv_16sT_avx2;
-        g_dispatcher. h265_DCT8x8Inv_16sT = &MFX_HEVC_PP::h265_DCT8x8Inv_16sT_avx2;
-        g_dispatcher. h265_DCT16x16Inv_16sT = &MFX_HEVC_PP::h265_DCT16x16Inv_16sT_avx2;
-        g_dispatcher. h265_DCT32x32Inv_16sT = &MFX_HEVC_PP::h265_DCT32x32Inv_16sT_avx2;
-
         //[transform.fwd]==================================
         g_dispatcher. h265_DST4x4Fwd_16s = &MFX_HEVC_PP::h265_DST4x4Fwd_16s_sse;
         g_dispatcher. h265_DCT4x4Fwd_16s = &MFX_HEVC_PP::h265_DCT4x4Fwd_16s_sse;
         g_dispatcher. h265_DCT8x8Fwd_16s = &MFX_HEVC_PP::h265_DCT8x8Fwd_16s_sse;
         g_dispatcher. h265_DCT16x16Fwd_16s = &MFX_HEVC_PP::h265_DCT16x16Fwd_16s_sse;
         g_dispatcher. h265_DCT32x32Fwd_16s = &MFX_HEVC_PP::h265_DCT32x32Fwd_16s_sse;
+#endif
+        //[transform.inv]==================================
+        g_dispatcher. h265_DST4x4Inv_16sT = &MFX_HEVC_PP::h265_DST4x4Inv_16sT_avx2;
+        g_dispatcher. h265_DCT4x4Inv_16sT = &MFX_HEVC_PP::h265_DCT4x4Inv_16sT_avx2;
+        g_dispatcher. h265_DCT8x8Inv_16sT = &MFX_HEVC_PP::h265_DCT8x8Inv_16sT_avx2;
+        g_dispatcher. h265_DCT16x16Inv_16sT = &MFX_HEVC_PP::h265_DCT16x16Inv_16sT_avx2;
+        g_dispatcher. h265_DCT32x32Inv_16sT = &MFX_HEVC_PP::h265_DCT32x32Inv_16sT_avx2;
 
         //[deblocking]=====================================
         g_dispatcher. h265_FilterEdgeLuma_8u_I = &MFX_HEVC_PP::h265_FilterEdgeLuma_8u_I_sse;
@@ -561,6 +564,7 @@ using namespace MFX_HEVC_PP;
 
     void SetTargetPX(void)
     {
+#if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
         // [Sad.special]===================================
         g_dispatcher. h265_SAD_4x4_8u =  &MFX_HEVC_PP::SAD_4x4_px;
         g_dispatcher. h265_SAD_4x8_8u =  &MFX_HEVC_PP::SAD_4x8_px;
@@ -629,19 +633,19 @@ using namespace MFX_HEVC_PP;
         g_dispatcher. h265_SAD_64x48_general_8u =  &MFX_HEVC_PP::SAD_64x48_general_px;
         g_dispatcher. h265_SAD_64x64_general_8u =  &MFX_HEVC_PP::SAD_64x64_general_px;
 
-        //[transform.inv]==================================
-        g_dispatcher. h265_DST4x4Inv_16sT = &MFX_HEVC_PP::h265_DST4x4Inv_16sT_px;
-        g_dispatcher. h265_DCT4x4Inv_16sT = &MFX_HEVC_PP::h265_DCT4x4Inv_16sT_px;
-        g_dispatcher. h265_DCT8x8Inv_16sT = &MFX_HEVC_PP::h265_DCT8x8Inv_16sT_px;
-        g_dispatcher. h265_DCT16x16Inv_16sT = &MFX_HEVC_PP::h265_DCT16x16Inv_16sT_px;
-        g_dispatcher. h265_DCT32x32Inv_16sT = &MFX_HEVC_PP::h265_DCT32x32Inv_16sT_px;
-
         //[transform.fwd]==================================
         g_dispatcher. h265_DST4x4Fwd_16s = &MFX_HEVC_PP::h265_DST4x4Fwd_16s_px;
         g_dispatcher. h265_DCT4x4Fwd_16s = &MFX_HEVC_PP::h265_DCT4x4Fwd_16s_px;
         g_dispatcher. h265_DCT8x8Fwd_16s = &MFX_HEVC_PP::h265_DCT8x8Fwd_16s_px;
         g_dispatcher. h265_DCT16x16Fwd_16s = &MFX_HEVC_PP::h265_DCT16x16Fwd_16s_px;
         g_dispatcher. h265_DCT32x32Fwd_16s = &MFX_HEVC_PP::h265_DCT32x32Fwd_16s_px;
+#endif
+        //[transform.inv]==================================
+        g_dispatcher. h265_DST4x4Inv_16sT = &MFX_HEVC_PP::h265_DST4x4Inv_16sT_px;
+        g_dispatcher. h265_DCT4x4Inv_16sT = &MFX_HEVC_PP::h265_DCT4x4Inv_16sT_px;
+        g_dispatcher. h265_DCT8x8Inv_16sT = &MFX_HEVC_PP::h265_DCT8x8Inv_16sT_px;
+        g_dispatcher. h265_DCT16x16Inv_16sT = &MFX_HEVC_PP::h265_DCT16x16Inv_16sT_px;
+        g_dispatcher. h265_DCT32x32Inv_16sT = &MFX_HEVC_PP::h265_DCT32x32Inv_16sT_px;
 
         //[deblocking]=====================================
         g_dispatcher. h265_FilterEdgeLuma_8u_I = &MFX_HEVC_PP::h265_FilterEdgeLuma_8u_I_px;
