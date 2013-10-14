@@ -517,11 +517,11 @@ void H265CU::InitCU(H265VideoParam *_par, H265CUData *_data, H265CUData *_data_t
 
   y_src = _y_src + ctb_pelx + ctb_pely * pitch_src;
 
-  // to provide performance gain for SAD calculation
-  {      
+  // aya: may be used to provide performance gain for SAD calculation
+  /*{      
       IppiSize blkSize = {par->MaxCUSize, par->MaxCUSize};
       ippiCopy_8u_C1R(_y_src + ctb_pelx + ctb_pely * pitch_src, pitch_src, m_src_aligned_block, MAX_CU_SIZE, blkSize);
-  }
+  }*/
 
   uv_src = _uv_src + ctb_pelx + (ctb_pely * pitch_src >> 1);
   depth_min = MAX_TOTAL_DEPTH;
