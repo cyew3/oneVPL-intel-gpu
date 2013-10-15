@@ -2079,6 +2079,38 @@ void H265CU::ME_PU(H265MEInfo* me_info)
         if(PicYUVRefF && PicYUVRefB) {
             me_info->cost_bidir = MatchingMetricBipred_PU(pSrc, me_info, PicYUVRefF->y, PicYUVRefF->pitch_luma, PicYUVRefB->y, PicYUVRefB->pitch_luma, me_info->MV) +
                 MVCost( me_info->MV, curRefIdx, pInfo, mergeInfo);
+
+            // refine Bidir
+            if (IPP_MIN(cost_best[0], cost_best[1]) * 9 > 8 * me_info->cost_bidir) {
+                bool changed;
+                H265MV MV2_best[2] = {me_info->MV[0], me_info->MV[1]};
+                Ipp32s cost2_best = me_info->cost_bidir;
+                do {
+                    Ipp32s i;
+                    H265MV MV2_cur[2], MV2_tmp[2];
+                    changed = false;
+                    MV2_cur[0] = MV2_best[0]; MV2_cur[1] = MV2_best[1];
+                    for(i = 0; i < 2*2*2; i++) {
+                        MV2_tmp[0] = MV2_cur[0]; MV2_tmp[1] = MV2_cur[1];
+                        if (i&2)
+                            MV2_tmp[i>>2].mvx += (i&1)?1:-1;
+                        else
+                            MV2_tmp[i>>2].mvy += (i&1)?1:-1;
+
+                        Ipp32s cost_temp = MatchingMetricBipred_PU(pSrc, me_info, PicYUVRefF->y, PicYUVRefF->pitch_luma, PicYUVRefB->y, PicYUVRefB->pitch_luma, MV2_tmp) +
+                            MVCost( MV2_tmp, curRefIdx, pInfo, mergeInfo);
+                        if (cost_temp < cost2_best) {
+                            MV2_best[0] = MV2_tmp[0]; MV2_best[1] = MV2_tmp[1];
+                            cost2_best = cost_temp;
+                            changed = true;
+                        }
+                    }
+                } while (changed);
+                me_info->MV[0] = MV2_best[0]; me_info->MV[1] = MV2_best[1];
+                me_info->cost_bidir = cost2_best;
+            }
+
+
             if (cost_best[0] <= cost_best[1] && me_info->cost_1dir[0] <= me_info->cost_bidir) {
                 me_info->inter_dir = INTER_DIR_PRED_L0;
                 me_info->cost_inter = me_info->cost_1dir[0];
