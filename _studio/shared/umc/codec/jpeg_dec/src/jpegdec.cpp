@@ -3918,6 +3918,7 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
                   status = ippiSampleUpRowH2V1_Triangle_JPEG_8u_C1(pSrc + j, pixelToProcess, pTmp + j * 2);
                   if(ippStsNoErr != status)
                   {
+                    ippFree(pTmp);
                     LOG0("Error: ippiSampleUpRowH2V1_Triangle_JPEG_8u_C1() failed!");
                     return JPEG_ERR_INTERNAL;
                   }
@@ -3932,6 +3933,7 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
                   status = ippiSampleUpRowH2V1_Triangle_JPEG_8u_C1(pTmp + j, pixelToProcess, pDst + j * 2);
                   if(ippStsNoErr != status)
                   {
+                    ippFree(pTmp);
                     LOG0("Error: ippiSampleUpRowH2V1_Triangle_JPEG_8u_C1() failed!");
                     return JPEG_ERR_INTERNAL;
                   }
@@ -4041,6 +4043,7 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
             status = ippiSampleDownH2V2_JPEG_8u_C1R(pSrc, srcStep, srcRoiSize, pTmp, tmpStep, tmpRoiSize);
             if(ippStsNoErr != status)
             {
+                ippFree(pTmp);
                 LOG0("Error: ippiSampleDownH2V2_JPEG_8u_C1R() failed!");
                 return JPEG_ERR_INTERNAL;
             }
@@ -4048,6 +4051,7 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
             status = ippsCopy_8u(pTmp, pDst, tmpStep * m_curr_scan->mcuHeight / 2);
             if(ippStsNoErr != status)
             {
+                ippFree(pTmp);
                 LOG0("Error: ippsCopy_8u() failed!");
                 return JPEG_ERR_INTERNAL;
             }
