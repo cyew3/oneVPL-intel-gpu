@@ -129,7 +129,7 @@ namespace MPEG2EncoderHW
     {
         for(mfxU32 i=0; i<nbuffers; i++) 
         {
-            if((*ebuffers+i)->BufferId == MFX_EXTBUFF_CODING_OPTION_SPSPPS) 
+            if((0 != (*ebuffers+i)) && ((*ebuffers+i)->BufferId == MFX_EXTBUFF_CODING_OPTION_SPSPPS)) 
             {
                 return (mfxExtCodingOptionSPSPPS*)(*ebuffers+i);
             }
