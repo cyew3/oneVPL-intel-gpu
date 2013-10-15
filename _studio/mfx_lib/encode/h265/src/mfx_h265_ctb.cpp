@@ -822,6 +822,177 @@ void H265CU::FillRandom(Ipp32u abs_part_idx, Ipp8u depth)
     }
 }
 
+void H265CU::FillZero(Ipp32u abs_part_idx, Ipp8u depth)
+{
+    Ipp32u num_parts = ( par->NumPartInCU >> (depth<<1) );
+    Ipp32u i;
+  Ipp32u lpel_x   = ctb_pelx +
+      ((h265_scan_z2r[par->MaxCUDepth][abs_part_idx] & (par->NumMinTUInMaxCU - 1)) << par->QuadtreeTULog2MinSize);
+  Ipp32u rpel_x   = lpel_x + (par->MaxCUSize>>depth)  - 1;
+  Ipp32u tpel_y   = ctb_pely +
+      ((h265_scan_z2r[par->MaxCUDepth][abs_part_idx] >> par->MaxCUDepth) << par->QuadtreeTULog2MinSize);
+  Ipp32u bpel_y   = tpel_y + (par->MaxCUSize>>depth) - 1;
+/*
+  if (depth == 0) {
+      for (i = 0; i < MAX_CU_SIZE * MAX_CU_SIZE; i++)
+          tr_coeff_y[i] = (Ipp16s)((myrand() & 31) - 16);
+      for (i = 0; i < MAX_CU_SIZE * MAX_CU_SIZE/4; i++) {
+          tr_coeff_u[i] = (Ipp16s)((myrand() & 31) - 16);
+          tr_coeff_v[i] = (Ipp16s)((myrand() & 31) - 16);
+      }
+  }
+*/
+    if ((depth < par->MaxCUDepth - par->AddCUDepth) &&
+        (((/*myrand() & 1*/0) && (par->Log2MaxCUSize - depth > par->QuadtreeTULog2MinSize)) ||
+        rpel_x >= par->Width  || bpel_y >= par->Height ||
+        par->Log2MaxCUSize - depth -
+            (cslice->slice_type == I_SLICE ? par->QuadtreeTUMaxDepthIntra :
+            MIN(par->QuadtreeTUMaxDepthIntra, par->QuadtreeTUMaxDepthInter)) > par->QuadtreeTULog2MaxSize)) {
+        // split
+        for (i = 0; i < 4; i++)
+            FillRandom(abs_part_idx + (num_parts >> 2) * i, depth+1);
+    } else {
+        Ipp8u pred_mode = MODE_INTRA;
+        if ( cslice->slice_type != I_SLICE && (myrand() & 15)) {
+            pred_mode = MODE_INTER;
+        }
+        Ipp8u size = (Ipp8u)(par->MaxCUSize >> depth);
+        Ipp32u MaxDepth = pred_mode == MODE_INTRA ? par->QuadtreeTUMaxDepthIntra : par->QuadtreeTUMaxDepthInter;
+        Ipp8u part_size;
+        /*
+        if (pred_mode == MODE_INTRA) {
+            part_size = (Ipp8u)
+                (depth == par->MaxCUDepth - par->AddCUDepth &&
+                depth + 1 <= par->MaxCUDepth &&
+                ((par->Log2MaxCUSize - depth - MaxDepth == par->QuadtreeTULog2MaxSize) ||
+                (myrand() & 1)) ? PART_SIZE_NxN : PART_SIZE_2Nx2N);
+        } else {
+            if (depth == par->MaxCUDepth - par->AddCUDepth) {
+                if (size == 8) {
+                    part_size = (Ipp8u)(myrand() % 3);
+                } else {
+                    part_size = (Ipp8u)(myrand() % 4);
+                }
+            } else {
+                if (par->csps->amp_enabled_flag) {
+                    part_size = (Ipp8u)(myrand() % 7);
+                    if (part_size == 3) part_size = 7;
+                } else {
+                    part_size = (Ipp8u)(myrand() % 3);
+                }
+            }
+        }*/
+        part_size = PART_SIZE_2Nx2N;
+
+        Ipp8u intra_split = ((pred_mode == MODE_INTRA && (part_size == PART_SIZE_NxN)) ? 1 : 0);
+        Ipp8u inter_split = ((MaxDepth == 1) && (pred_mode == MODE_INTER) && (part_size != PART_SIZE_2Nx2N) ) ? 1 : 0;
+
+        Ipp8u tr_depth = intra_split + inter_split;
+        while ((par->MaxCUSize >> (depth + tr_depth)) > 32) tr_depth++;
+        while (tr_depth < (MaxDepth - 1 + intra_split + inter_split) &&
+            (par->MaxCUSize >> (depth + tr_depth)) > 4 &&
+            (par->Log2MaxCUSize - depth - tr_depth > par->QuadtreeTULog2MinSize) &&
+            ((0/*myrand() & 1*/) ||
+                (par->Log2MaxCUSize - depth - tr_depth > par->QuadtreeTULog2MaxSize))) tr_depth++;
+
+        for (i = 0; i < num_parts; i++) {
+            data[abs_part_idx + i].cbf[0] = 0;
+            data[abs_part_idx + i].cbf[1] = 0;
+            data[abs_part_idx + i].cbf[2] = 0;
+        }
+
+        if (tr_depth > par->QuadtreeTUMaxDepthIntra) {
+            printf("FillRandom err 1\n"); exit(1);
+        }
+        if (depth + tr_depth > par->MaxCUDepth) {
+            printf("FillRandom err 2\n"); exit(1);
+        }
+        if (par->Log2MaxCUSize - (depth + tr_depth) < par->QuadtreeTULog2MinSize) {
+            printf("FillRandom err 3\n"); exit(1);
+        }
+        if (par->Log2MaxCUSize - (depth + tr_depth) > par->QuadtreeTULog2MaxSize) {
+            printf("FillRandom err 4\n"); exit(1);
+        }
+        if (pred_mode == MODE_INTRA) {
+            Ipp8u luma_dir =/* (p_left && p_above) ? (Ipp8u) (myrand() % 35) : */INTRA_DC;
+            for (i = abs_part_idx; i < abs_part_idx + num_parts; i++) {
+                data[i].pred_mode = pred_mode;
+                data[i].depth = depth;
+                data[i].size = size;
+                data[i].part_size = part_size;
+                data[i].intra_luma_dir = luma_dir;
+                data[i].intra_chroma_dir = INTRA_DM_CHROMA;
+                data[i].qp = par->QP;
+                data[i].tr_idx = tr_depth;
+                data[i].inter_dir = 0;
+            }
+        } else {
+            Ipp16s mvmax = (Ipp16s)(10 + myrand()%100);
+            Ipp16s mvx0 = (Ipp16s)((myrand() % (mvmax*2+1)) - mvmax);
+            Ipp16s mvy0 = (Ipp16s)((myrand() % (mvmax*2+1)) - mvmax);
+            Ipp16s mvx1 = (Ipp16s)((myrand() % (mvmax*2+1)) - mvmax);
+            Ipp16s mvy1 = (Ipp16s)((myrand() % (mvmax*2+1)) - mvmax);
+            T_RefIdx ref_idx0 = 0;//(T_RefIdx)(myrand() % cslice->num_ref_idx_l0_active);
+            Ipp8u inter_dir;
+/*            if (cslice->slice_type == B_SLICE && part_size != PART_SIZE_2Nx2N && size == 8) {
+                inter_dir = (Ipp8u)(1 + myrand()%2);
+            } else if (cslice->slice_type == B_SLICE) {
+                inter_dir = (Ipp8u)(1 + myrand()%3);
+            } else*/ {
+                inter_dir = 1;
+            }
+            T_RefIdx ref_idx1 = (T_RefIdx)((inter_dir & INTER_DIR_PRED_L1) ? (myrand() % cslice->num_ref_idx_l1_active) : -1);
+            for (i = abs_part_idx; i < abs_part_idx + num_parts; i++) {
+                data[i].pred_mode = pred_mode;
+                data[i].depth = depth;
+                data[i].size = size;
+                data[i].part_size = part_size;
+                data[i].intra_luma_dir = 0;//luma_dir;
+                data[i].qp = par->QP;
+                data[i].tr_idx = tr_depth;
+                data[i].inter_dir = inter_dir;
+                data[i].ref_idx[0] = -1;
+                data[i].ref_idx[1] = -1;
+                data[i].mv[0].mvx = 0;
+                data[i].mv[0].mvy = 0;
+                data[i].mv[1].mvx = 0;
+                data[i].mv[1].mvy = 0;
+                if (inter_dir & INTER_DIR_PRED_L0) {
+                    data[i].ref_idx[0] = ref_idx0;
+//                    data[i].mv[0].mvx = mvx0;
+//                    data[i].mv[0].mvy = mvy0;
+                }
+                if (inter_dir & INTER_DIR_PRED_L1) {
+                    data[i].ref_idx[1] = ref_idx1;
+                    data[i].mv[1].mvx = mvx1;
+                    data[i].mv[1].mvy = mvy1;
+                }
+                data[i]._flags = 0;
+                data[i].flags.merge_flag = 0;
+                data[i].mvd[0].mvx = data[i].mvd[0].mvy =
+                    data[i].mvd[1].mvx = data[i].mvd[1].mvy = 0;
+                data[i].mvp_idx[0] = data[i].mvp_idx[1] = 0;
+                data[i].mvp_num[0] = data[i].mvp_num[1] = 0;
+            }
+            for (Ipp32s i = 0; i < getNumPartInter(abs_part_idx); i++)
+            {
+                Ipp32s PartAddr;
+                Ipp32s PartX, PartY, Width, Height;
+                GetPartOffsetAndSize(i, data[abs_part_idx].part_size,
+                    data[abs_part_idx].size, PartX, PartY, Width, Height);
+                GetPartAddr(i, data[abs_part_idx].part_size, num_parts, PartAddr);
+
+                GetPUMVInfo(abs_part_idx, PartAddr, data[abs_part_idx].part_size, i);
+            }
+
+            if ((num_parts < 4 && part_size != PART_SIZE_2Nx2N) ||
+                (num_parts < 16 && part_size > 3)) {
+                printf("FillRandom err 5\n"); exit(1);
+            }
+        }
+    }
+}
+
 void H265CU::FillSubPart(Ipp32s abs_part_idx, Ipp8u depth_cu, Ipp8u tr_depth,
                          Ipp8u part_size, Ipp8u luma_dir, Ipp8u qp) {
     Ipp8u size = (Ipp8u)(par->MaxCUSize >> depth_cu);
@@ -1923,6 +2094,11 @@ void H265CU::ME_PU(H265MEInfo* me_info)
     H265MV MV_pred(0, 0); // predicted MV, now use zero MV
     for (ME_dir = 0; ME_dir <= (cslice->slice_type == B_SLICE ? 1 : 0); ME_dir++) {
         H265Frame *PicYUVRef = pList[ME_dir]->m_RefPicList[0]; //Ipp32s RefIdx = data[PartAddr].ref_idx[RefPicList];
+        if (ME_dir == 1 && PicYUVRef == pList[0]->m_RefPicList[0]) {
+            me_info->cost_1dir[1] = me_info->cost_1dir[0];
+            me_info->MV[1] = me_info->MV[0];
+            break;
+        }
         H265MV MV[2];
         T_RefIdx curRefIdx[2] = {-1, -1};
         curRefIdx[ME_dir] = 0; // single ref in a list for now

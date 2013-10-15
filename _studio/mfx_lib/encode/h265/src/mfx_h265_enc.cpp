@@ -127,6 +127,7 @@ mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxE
     pars->MaxRefIdxL0 = 1;
     pars->MaxRefIdxL1 = 1;
     pars->MaxBRefIdxL0 = 1;
+    pars->GeneralizedBipred = 1;
 
     pars->AnalyseFlags = 0;
     if (opts_hevc->AnalyzeChroma == MFX_CODINGOPTION_ON)
@@ -376,7 +377,7 @@ mfxStatus H265Encoder::SetPPS()
     memset(pps, 0, sizeof(H265PicParameterSet));
 
     pps->pps_seq_parameter_set_id = sps->sps_seq_parameter_set_id;
-    pps->deblocking_filter_control_present_flag = 1;
+    pps->deblocking_filter_control_present_flag = 0;
     pps->deblocking_filter_override_enabled_flag = 0;
     pps->pps_deblocking_filter_disabled_flag = 0;
     pps->pps_tc_offset_div2 = 0;
@@ -426,6 +427,8 @@ mfxStatus H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice)
         default:
             slice->slice_type = I_SLICE; break;
     }
+    if (m_videoParam.GeneralizedBipred && slice->slice_type == P_SLICE)
+        slice->slice_type = B_SLICE;
 
     if (m_pCurrentFrame->m_bIsIDRPic)
     {
@@ -1426,7 +1429,7 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
                 small_memcpy(bsf[ithread].m_base.context_array, bs[ithread].m_base.context_array, sizeof(CABAC_CONTEXT_H265) * NUM_CABAC_CONTEXT);
             }
 
-//            m_pReconstructFrame->cu->FillRandom(0, 0);
+//            cu[ithread].FillRandom(0, 0);
             // inter pred for chroma is now performed in EncAndRecLuma
             cu[ithread].EncAndRecLuma(0, 0, 0, nz, NULL);
             cu[ithread].EncAndRecChroma(0, 0, 0, nz, NULL);

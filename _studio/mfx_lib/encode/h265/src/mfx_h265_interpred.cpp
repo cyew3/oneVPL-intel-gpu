@@ -433,10 +433,10 @@ void H265CU::InterPredCU(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u is_luma)
 
         PartAddr += abs_part_idx;
 
-        if (CheckIdenticalMotion(PartAddr))
+        if (CheckIdenticalMotion(PartAddr)) {
             PredInterUni(PartAddr, Width, Height, REF_PIC_LIST_0, PartIdx, false, is_luma);
-        else
-        {
+            CopySaturate(PartAddr, Width, Height, REF_PIC_LIST_0, is_luma);
+        } else {
             Ipp32s RefIdx[2] = {-1, -1};
             bool bipred = weighted_prediction ||
                 (data[PartAddr].ref_idx[REF_PIC_LIST_0] >= 0 && data[PartAddr].ref_idx[REF_PIC_LIST_1] >= 0);

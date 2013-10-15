@@ -359,6 +359,7 @@ public:
         PixType *_y, PixType *_u, PixType *_v, Ipp32s _pitch_luma, Ipp32s _pitch_chroma,
         PixType *_y_src, PixType *uv_src, Ipp32s _pitch_src, H265BsFake *_bsf, H265Slice *cslice, Ipp8u initialize_data_flag);
     void FillRandom(Ipp32u abs_part_idx, Ipp8u depth);
+    void FillZero(Ipp32u abs_part_idx, Ipp8u depth);
     void ModeDecision(Ipp32u abs_part_idx, Ipp32u offset, Ipp8u depth, CostType *cost);
 
     void SetRDOQ(bool mode ) { m_isRDOQ = mode; }

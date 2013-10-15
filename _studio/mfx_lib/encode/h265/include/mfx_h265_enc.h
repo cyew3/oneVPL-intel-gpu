@@ -40,6 +40,7 @@ struct H265VideoParam {
     Ipp8u MaxRefIdxL0;
     Ipp8u MaxRefIdxL1;
     Ipp8u MaxBRefIdxL0;
+    Ipp8u GeneralizedBipred;
 
     Ipp8u SplitThresholdStrengthCUIntra;
     Ipp8u SplitThresholdStrengthTUIntra;
