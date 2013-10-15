@@ -234,7 +234,7 @@ mfxStatus MFX_DISP_HANDLE::LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImpl
 #if defined(_WIN32) || defined(_WIN64)
             DISPATCHER_LOG_WRN((("can't find DLL: GetLastErr()=0x%x\n"), GetLastError()))
 #else
-            std::cerr << "can't find DLL: dlerror()" << dlerror() << std::endl;
+            DISPATCHER_LOG_WRN((("can't find DLL: dlerror() = \"%s\"\n"), dlerror()));
 #endif
             mfxRes = MFX_ERR_UNSUPPORTED;
         }
