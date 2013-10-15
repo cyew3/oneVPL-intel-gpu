@@ -52,18 +52,6 @@ mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 /* codecId */)
     if ((info->Height % 16) || !info->Height)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    if (info->CropX > info->Width)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
-
-    if (info->CropY > info->Height)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
-
-    if (info->CropX + info->CropW > info->Width)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
-
-    if (info->CropY + info->CropH > info->Height)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
-
     switch (info->FourCC)
     {
     case MFX_FOURCC_NV12:
