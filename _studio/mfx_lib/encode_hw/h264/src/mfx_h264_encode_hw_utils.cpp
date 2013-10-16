@@ -3738,6 +3738,7 @@ void MfxHwH264Encode::PutSeiMessage(
 MfxFrameAllocResponse::MfxFrameAllocResponse()
     : m_cmDestroy(0)
     , m_core(0)
+    , m_cmDevice(0)
     , m_numFrameActualReturnedByAllocFrames(0)
 {
     Zero((mfxFrameAllocResponse &)*this);
