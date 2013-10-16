@@ -881,13 +881,24 @@ mfxStatus D3D9Encoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBitst
     ENCODE_QUERY_STATUS_PARAMS queryStatus = {0};
     //printf("nFeedBack %d\n", nFeedback);
 
+#ifdef NEW_STATUS_REPORTING_DDI_0915
+    ENCODE_QUERY_STATUS_PARAMS_DESCR feedbackDescr;
+    feedbackDescr.SizeOfStatusParamStruct = sizeof(ENCODE_QUERY_STATUS_PARAMS);
+    feedbackDescr.StatusParamType = QUERY_STATUS_PARAM_FRAME;
+#endif // NEW_STATUS_REPORTING_DDI_0915
+
     MFX_CHECK(nBitstream < DWORD(m_allocResponseBS.NumFrameActual),MFX_ERR_NOT_FOUND);  
     
     if (m_feedback.isUpdateNeeded())
     {
         HRESULT hr = m_pDevice->Execute(ENCODE_QUERY_STATUS_ID,
+#ifdef NEW_STATUS_REPORTING_DDI_0915
+                                        (void *)&feedbackDescr,
+                                        sizeof(feedbackDescr),
+#else // NEW_STATUS_REPORTING_DDI_0915
                                         (void *)0,
                                         0,
+#endif // NEW_STATUS_REPORTING_DDI_0915
                                         m_feedback.GetPointer(),
                                         m_feedback.GetSize());
         MFX_CHECK(hr != D3DERR_WASSTILLDRAWING, MFX_WRN_DEVICE_BUSY);
