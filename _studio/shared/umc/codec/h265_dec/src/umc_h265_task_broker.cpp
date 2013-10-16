@@ -323,7 +323,6 @@ bool TaskBroker_H265::GetPreparationTask(H265DecoderFrameInfo * info)
 
         Ipp32s numPartitions = pFrame->m_CodingData->m_NumPartitions;
         sliceHeader->SliceCurStartCUAddr = pFrame->m_CodingData->GetInverseCUOrderMap(sliceHeader->SliceCurStartCUAddr / numPartitions) * numPartitions;
-        sliceHeader->SliceCurEndCUAddr = pFrame->m_CodingData->GetInverseCUOrderMap(sliceHeader->SliceCurEndCUAddr / numPartitions) * numPartitions;
         sliceHeader->m_sliceSegmentCurStartCUAddr = pFrame->m_CodingData->GetInverseCUOrderMap(sliceHeader->m_sliceSegmentCurStartCUAddr / numPartitions) * numPartitions;
         sliceHeader->m_sliceSegmentCurEndCUAddr = pFrame->m_CodingData->GetInverseCUOrderMap(sliceHeader->m_sliceSegmentCurEndCUAddr / numPartitions) * numPartitions;
         

@@ -55,6 +55,7 @@ struct Context
     const H265PicParamSet *m_pPicParamSet;                      // (const H265PicParamSet *) pointer to current picture parameters sets
     const H265SeqParamSet *m_pSeqParamSet;                      // (const H265SeqParamSet *) pointer to current sequence parameters sets
     H265DecoderFrame *m_pCurrentFrame;                          // (H265DecoderFrame *) pointer to frame being decoded
+    bool                m_bIsNeedWADeblocking;
 };
 
 class DecodingContext : public HeapObject

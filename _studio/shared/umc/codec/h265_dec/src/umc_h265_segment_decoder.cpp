@@ -1822,12 +1822,11 @@ bool H265SegmentDecoder::DecodeSliceEnd(H265CodingUnit* pCU, Ipp32u AbsPartIdx, 
     {
         if (pSliceHeader->dependent_slice_segment_flag)
         {
-            pSliceHeader->m_sliceSegmentCurEndCUAddr = pCU->getSCUAddr() + AbsPartIdx + CurNumParts;
+            pSliceHeader->m_sliceSegmentCurEndCUAddr = pCU->getSCUAddr() + AbsPartIdx + CurNumParts - 1;
         }
         else
         {
-            pSliceHeader->SliceCurEndCUAddr = pCU->getSCUAddr() + AbsPartIdx + CurNumParts;
-            pSliceHeader->m_sliceSegmentCurEndCUAddr = pCU->getSCUAddr() + AbsPartIdx + CurNumParts;
+            pSliceHeader->m_sliceSegmentCurEndCUAddr = pCU->getSCUAddr() + AbsPartIdx + CurNumParts - 1;
         }
     }
 
@@ -2264,7 +2263,7 @@ void H265SegmentDecoder::ReconstructCU(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
             {
                 LPelX = pCU->m_CUPelX + pCU->m_rasterToPelX[Idx];
                 TPelY = pCU->m_CUPelY + pCU->m_rasterToPelY[Idx];
-                bool binSlice = (pCU->getSCUAddr() + Idx + QNumParts > pSliceHeader->m_sliceSegmentCurStartCUAddr) && (pCU->getSCUAddr() + Idx < pSliceHeader->m_sliceSegmentCurEndCUAddr);
+                bool binSlice = (pCU->getSCUAddr() + Idx + QNumParts > pSliceHeader->m_sliceSegmentCurStartCUAddr) && (pCU->getSCUAddr() + Idx <= pSliceHeader->m_sliceSegmentCurEndCUAddr);
                 bool insideFrame = binSlice && (LPelX < pSliceHeader->m_SeqParamSet->pic_width_in_luma_samples) && (TPelY < pSliceHeader->m_SeqParamSet->pic_height_in_luma_samples);
                 if (!insideFrame)
                 {
@@ -2495,7 +2494,7 @@ void H265SegmentDecoder::UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPa
     info.members.TrStart = Ipp8u(TrStart);
     info.members.IsTrCbfY = isTrCbfY;
 
-    if (!m_pSliceHeader->slice_deblocking_filter_disabled_flag || info.members.IsIntra)
+    if (m_bIsNeedWADeblocking || !m_pSliceHeader->slice_deblocking_filter_disabled_flag || info.members.IsIntra)
     {
         // Fill up inside of whole CU to predict intra parts inside of it
         pInfo = &m_context->m_CurrCTBFlags[YInc * stride + XInc];

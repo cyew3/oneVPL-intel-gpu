@@ -638,9 +638,10 @@ Ipp32u H265CodingUnit::getSCUAddr()
         Ipp32u          refSA = refCU->m_SliceHeader->SliceCurStartCUAddr;                     \
         Ipp32u          SA = m_SliceHeader->SliceCurStartCUAddr;                               \
                                                                                                \
-        m_AvailBorder[borderIndex] = (refSA == SA) ? (true) : ((refSA > SA) ?                  \
+        Ipp8u borderFlag = (refSA == SA) ? 1 : ((refSA > SA) ?                  \
                                      (refCU->m_SliceHeader->slice_loop_filter_across_slices_enabled_flag) :      \
                                      (m_SliceHeader->slice_loop_filter_across_slices_enabled_flag));             \
+        m_AvailBorder[borderIndex] = borderFlag != 0;                                            \
     }                                                                                          \
 }
 
@@ -655,7 +656,7 @@ void H265CodingUnit::setNDBFilterBlockBorderAvailability(bool independentTileBou
     bool topTileBoundary = false;
     bool bottomTileBoundary= false;
     Ipp32s numLCUInPicWidth = m_Frame->m_CodingData->m_WidthInCU;
-    Ipp32s tileID = m_Frame->m_CodingData->getTileIdxMap(CUAddr);
+    Ipp32u tileID = m_Frame->m_CodingData->getTileIdxMap(CUAddr);
 
     if (independentTileBoundaryEnabled)
     {

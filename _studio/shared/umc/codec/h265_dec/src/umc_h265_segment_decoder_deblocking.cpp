@@ -14,8 +14,12 @@
 #include "umc_h265_segment_decoder.h"
 #include "umc_h265_frame_info.h"
 
-#define VERT_FILT 0
-#define HOR_FILT  1
+
+enum
+{
+    VERT_FILT,
+    HOR_FILT
+};
 
 namespace UMC_HEVC_DECODER
 {
@@ -199,19 +203,15 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curP
     Ipp32s frameWidthInSamples = m_pSeqParamSet->pic_width_in_luma_samples;
     Ipp32s x = curPixelColumn >> 3;
     Ipp32s y = curPixelRow >> 3;
-    H265PlaneYCommon* baseSrcDst;
-    Ipp32s srcDstStride;
-    H265EdgeData *ctb_start_edge, *edge;
-    Ipp32s i, end;
 
-    srcDstStride = m_pCurrentFrame->pitch_luma();
-    baseSrcDst = m_pCurrentFrame->GetLumaAddr(curLCU->CUAddr) +
+    Ipp32s srcDstStride = m_pCurrentFrame->pitch_luma();
+    H265PlaneYCommon* baseSrcDst = m_pCurrentFrame->GetLumaAddr(curLCU->CUAddr) +
                  curPixelRow * srcDstStride + curPixelColumn;
 
-    ctb_start_edge = m_pCurrentFrame->m_CodingData->m_edge + m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth * (curLCU->m_CUPelY >> 3) + (curLCU->m_CUPelX >> 3) * 4;
+    H265EdgeData *ctb_start_edge = m_pCurrentFrame->m_CodingData->m_edge + m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth * (curLCU->m_CUPelY >> 3) + (curLCU->m_CUPelX >> 3) * 4;
 
-    edge = ctb_start_edge + m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth * y + 4 * (x + 1) + 0;
-    for (i = 0; i < 2; i++)
+    H265EdgeData *edge = ctb_start_edge + m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth * y + 4 * (x + 1) + 0;
+    for (Ipp32s i = 0; i < 2; i++)
     {
         VM_ASSERT(edge->strength < 4);
 
@@ -226,13 +226,32 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curP
         edge++;
     }
 
-    end = 2;
+    Ipp32s end = 2;
     if ((Ipp32s)curLCU->m_CUPelX + curPixelColumn >= frameWidthInSamples - 8)
     {
         end = 3;
     }
 
-    for (i = 0; i < end; i++)
+    if (m_bIsNeedWADeblocking)
+    {
+        Ipp32s width = frameWidthInSamples - curLCU->m_CUPelX;
+
+        if (width > m_pSeqParamSet->MaxCUSize)
+        {
+            width = m_pSeqParamSet->MaxCUSize;
+        }
+
+        if (curPixelColumn == width - 8 && curLCU->CUAddr == (curLCU->m_SliceHeader->m_sliceSegmentCurEndCUAddr / m_pCurrentFrame->m_CodingData->m_NumPartitions))
+        {
+            H265Slice * nextSlice = m_pCurrentFrame->GetAU()->GetSliceByNumber(curLCU->m_SliceIdx + 1);
+            if (!nextSlice || nextSlice->m_bDeblocked)
+            {
+                end = 3;
+            }
+        }
+    }
+
+    for (Ipp32s i = 0; i < end; i++)
     {
         edge = ctb_start_edge + m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth * y + 4 * (x + ((i + 1) >> 1)) + (((i + 1) & 1) + 2);
 
@@ -295,6 +314,25 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU, Ipp32s cu
     if ((Ipp32s)curLCU->m_CUPelX + curPixelColumn >= frameWidthInSamples - 16)
     {
         end = 3;
+    }
+
+    if (m_bIsNeedWADeblocking)
+    {
+        Ipp32s width = frameWidthInSamples - curLCU->m_CUPelX;
+
+        if (width > m_pSeqParamSet->MaxCUSize)
+        {
+            width = m_pSeqParamSet->MaxCUSize;
+        }
+
+        if (curPixelColumn == width - 16 && curLCU->CUAddr == (curLCU->m_SliceHeader->m_sliceSegmentCurEndCUAddr / m_pCurrentFrame->m_CodingData->m_NumPartitions))
+        {
+            H265Slice * nextSlice = m_pCurrentFrame->GetAU()->GetSliceByNumber(curLCU->m_SliceIdx + 1);
+            if (!nextSlice || nextSlice->m_bDeblocked)
+            {
+                end = 3;
+            }
+        }
     }
 
     for (i = 0; i < end; i++)

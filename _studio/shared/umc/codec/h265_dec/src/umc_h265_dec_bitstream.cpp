@@ -1142,14 +1142,13 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
     //set uiCode to equal slice start address (or dependent slice start address)
     int startCuAddress = maxParts*sliceSegmentAddress;
     sliceHdr->m_sliceSegmentCurStartCUAddr = startCuAddress;
-    sliceHdr->m_sliceSegmentCurEndCUAddr = numCTUs*maxParts;
+    sliceHdr->m_sliceSegmentCurEndCUAddr = (numCTUs - 1) *maxParts;
     // DO NOT REMOVE THIS LINE !!!!!!!!!!!!!!!!!!!!!!!!!!
     sliceHdr->slice_segment_address = sliceSegmentAddress;
 
     if (!sliceHdr->dependent_slice_segment_flag)
     {
         sliceHdr->SliceCurStartCUAddr = startCuAddress;
-        sliceHdr->SliceCurEndCUAddr = numCTUs*maxParts;
     }
 
     if (!sliceHdr->dependent_slice_segment_flag)
@@ -1498,7 +1497,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
         }
         else
         {
-            sliceHdr->slice_deblocking_filter_disabled_flag = false;
+            sliceHdr->slice_deblocking_filter_disabled_flag = 0;
             sliceHdr->slice_beta_offset = 0;
             sliceHdr->slice_tc_offset = 0;
         }

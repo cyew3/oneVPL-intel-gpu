@@ -70,6 +70,8 @@ public:
         m_isNeedDeblocking = m_isNeedDeblocking || (!sliceHeader.slice_deblocking_filter_disabled_flag);
         m_isNeedSAO = m_isNeedSAO || !pSlice->m_bSAOed;
         m_hasTiles = pSlice->GetPicParam()->getNumTiles() > 1;
+
+        m_WA_diffrent_disable_deblocking = m_WA_diffrent_disable_deblocking || (sliceHeader.slice_deblocking_filter_disabled_flag != m_pSliceQueue[0]->GetSliceHeader()->slice_deblocking_filter_disabled_flag);
     }
 
     Ipp32u GetSliceCount() const
@@ -123,6 +125,7 @@ public:
 
         m_isIntraAU = true;
         m_hasDependentSliceSegments = false;
+        m_WA_diffrent_disable_deblocking = false;
 
         m_NextAU = 0;
         m_PrevAU = 0;
@@ -237,6 +240,11 @@ public:
         return m_hasDependentSliceSegments;
     }
 
+    bool IsNeedWorkAroundForDeblocking() const
+    {
+        return m_WA_diffrent_disable_deblocking;
+    }
+
     H265_FORCEINLINE H265DecoderRefPicList* GetRefPicList(Ipp32u sliceNumber, Ipp32s list)
     {
         VM_ASSERT(list <= REF_PIC_LIST_1 && list >= 0);
@@ -302,6 +310,8 @@ private:
 
     bool m_isIntraAU;
     bool m_hasDependentSliceSegments;
+
+    bool m_WA_diffrent_disable_deblocking;
 
     H265DecoderFrameInfo *m_NextAU;
     H265DecoderFrameInfo *m_PrevAU;

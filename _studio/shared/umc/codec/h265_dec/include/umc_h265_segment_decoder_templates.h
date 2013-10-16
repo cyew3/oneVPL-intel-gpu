@@ -87,6 +87,12 @@ public:
             else if (is_last)
                 sd->CleanRightHorEdges();
 
+            if (sd->m_pSliceHeader->slice_deblocking_filter_disabled_flag && sd->m_bIsNeedWADeblocking)
+            {
+                sd->GetCTBEdgeStrengths();
+                sd->CleanRightHorEdges();
+            }
+
             if (is_last)
             {
                 umcRes = UMC::UMC_ERR_END_OF_STREAM;
@@ -299,7 +305,15 @@ public:
             if (!sd->m_pSliceHeader->slice_deblocking_filter_disabled_flag)
                 sd->GetCTBEdgeStrengths();
             else if (is_last)
+            {
                 sd->CleanRightHorEdges();
+            }
+
+            if (sd->m_pSliceHeader->slice_deblocking_filter_disabled_flag && sd->m_bIsNeedWADeblocking)
+            {
+                sd->GetCTBEdgeStrengths();
+                sd->CleanRightHorEdges();
+            }
 
             START_TICK1;
             sd->ReconstructCU(sd->m_curCU, 0, 0);

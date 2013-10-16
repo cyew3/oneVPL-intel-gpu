@@ -1204,8 +1204,6 @@ struct H265SliceHeader
     Ipp32s SliceQP;
 
     Ipp32s SliceCurStartCUAddr;
-    Ipp32s SliceCurEndCUAddr;
-    
     
     bool m_CheckLDC;
     Ipp32s m_numRefIdx[3]; //  for multiple reference of current slice. IT SEEMS BE SAME AS num_ref_idx_l0_active, l1, lc
