@@ -227,6 +227,7 @@ void vm_sys_info_get_program_path(vm_char *program_path)
     readlink("/proc/self/exe", path, sizeof(path));
     i = vm_string_strrchr(path, (vm_char)('/')) - path + 1;
     vm_string_strncpy(program_path, path, i-1);
+    program_path[i - 1] = 0;
 #else /* for __APPLE__ */
     if ( getcwd( path, PATH_MAX ) != NULL )
       vm_string_strcpy( program_path, path );
