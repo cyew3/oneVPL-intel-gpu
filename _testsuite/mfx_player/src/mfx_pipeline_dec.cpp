@@ -1041,8 +1041,16 @@ mfxStatus MFXDecPipeline::CreateVPP()
     }
 
 
-    m_components[eVPP].m_extParams.merge( m_components[eDEC].m_extParams.begin()
-                                        , m_components[eDEC].m_extParams.end());
+//    m_components[eVPP].m_extParams.merge( m_components[eDEC].m_extParams.begin()
+//                                        , m_components[eDEC].m_extParams.end());
+    // asomsiko: this is workaround for bug in HW library - it is not accepting other protected values.
+    MFXExtBufferVector::iterator it = m_components[eDEC].m_extParams.begin();
+    for(;it != m_components[eDEC].m_extParams.end(); it++ )
+        if (MFX_EXTBUFF_PAVP_OPTION != (**it).BufferId)
+            m_components[eVPP].m_extParams.push_back(**it);
+
+    if (0 != m_components[eVPP].m_params.Protected)
+        m_components[eVPP].m_params.Protected = MFX_PROTECTION_PAVP;
 
     m_components[eVPP].AssignExtBuffers();
 
