@@ -132,7 +132,7 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
         else
         {
             VAContextID context_id = request->reserved[0];
-            int codedbuf_size = (width * height) * 400 / (16 * 16); //from libva spec
+            int codedbuf_size = static_cast<int>((width * height) * 400LL / (16 * 16)); //from libva spec
 
             for (numAllocated = 0; numAllocated < maxNumFrames; numAllocated++)
             {

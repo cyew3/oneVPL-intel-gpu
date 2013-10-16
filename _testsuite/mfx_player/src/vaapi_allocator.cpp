@@ -133,7 +133,8 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
         else
         {
             VAContextID context_id = request->reserved[0];
-            int codedbuf_size = (request->Info.Width * request->Info.Height) * 400 / (16 * 16); //from libva spec
+            int codedbuf_size = static_cast<int>(
+                (request->Info.Width * request->Info.Height) * 400LL / (16 * 16)); //from libva spec
 
             for (numAllocated = 0; numAllocated < surfaces_num; numAllocated++)
             {
