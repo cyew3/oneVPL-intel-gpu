@@ -220,9 +220,11 @@ Ipp8u initVal_for_sao_merge_flag[3][1] =
 static
 Ipp8u initVal_for_sao_type_idx[3][1] =
 {
-    { 160, },
+    //{ 160, },
+    { 200, },
     { 185, },
-    { 200, }
+    { 160, }
+    //{ 200, }
 };
 
 //Trans Subdiv Flag SC Model   INIT_TRANS_SUBDIV_FLAG
