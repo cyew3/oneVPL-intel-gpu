@@ -278,7 +278,9 @@ DEF_STRUCT_TRACE(mfxFrameSurface1){
 };
 std::ostream &operator << (std::ostream &os, mfxFrameData &p){
     os  << "{\n"
-        << PUT_ARR(reserved, 8)
+        << PUT_ARR(reserved, 7)
+        << PUT_PAR(reserved1)
+        << PUT_PAR(PitchHigh)
         << PUT_PAR(TimeStamp)
         << PUT_PAR(FrameOrder)
         << PUT_PAR(Locked)

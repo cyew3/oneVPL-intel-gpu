@@ -250,7 +250,10 @@ mfxStatus frame_allocator::LockFrame(mfxHDL pthis, mfxMemId mid, mfxFrameData *p
     if (0 != (instance->lock_mode & ZERO_LUMA_LOCK))
         ptr->Y = NULL;
     else if (0 != (instance->lock_mode & LARGE_PITCH_LOCK))
+    {
         ptr->Pitch = 0x8000;
+        ptr->PitchHigh = 0xFFFF;
+    }
     else if (0 != (instance->lock_mode & LOCKED_SURF_LOCK))
         ptr->Locked = 1;
 
