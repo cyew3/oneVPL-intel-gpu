@@ -906,8 +906,8 @@ mfxStatus MFXVideoPAKMPEG2::RunGopHeader(mfxFrameCUC *cuc)
   SET_BUFFER(bb, bs);
   MFX_CHECK_NULL_PTR1(bs->Data);
 
-  if(cuc->FrameSurface && cuc->FrameSurface->Data && cuc->FrameSurface->Data[cuc->FrameParam->MPEG2.CurrFrameLabel]) {
-    num = cuc->FrameSurface->Data[cuc->FrameParam->MPEG2.CurrFrameLabel]->FrameOrder;
+  if(cuc->FrameSurface && cuc->FrameSurface->Data && cuc->FrameSurface->Data[cuc->FrameParam->MPEG2.RecFrameLabel]) {
+    num = cuc->FrameSurface->Data[cuc->FrameParam->MPEG2.RecFrameLabel]->FrameOrder;
     m_LastFrameNumber = num;
   } else {
     num = m_LastFrameNumber;

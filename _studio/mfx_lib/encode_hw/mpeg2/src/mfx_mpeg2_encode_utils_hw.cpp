@@ -2714,6 +2714,10 @@ namespace MPEG2EncoderHW
     void EncodeFrameTaskHybrid::FillFrameDataParameters (bool bEnc)
     {
         FramesSet *p = (bEnc)? &m_FrameEnc: &m_FramePak;
+        if (p->m_pRecFrame)
+        {
+            p->m_pRecFrame->Data.FrameOrder = p->m_nFrame;
+        }
 #ifdef __SW_ENC
         p->m_pInputFrame->Data.FrameOrder = p->m_nFrame;
         if (p->m_pRecFrame)
