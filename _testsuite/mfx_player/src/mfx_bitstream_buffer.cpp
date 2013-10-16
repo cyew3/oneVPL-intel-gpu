@@ -220,6 +220,8 @@ mfxStatus MFXBistreamBuffer::CopyBsExtended(mfxBitstream2 *dest, mfxBitstream2 *
             *curDest = NULL;
         }
     }
+    else
+        dest->EncryptedData = NULL;
 
     return MFX_ERR_NONE;
 }
