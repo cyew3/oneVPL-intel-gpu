@@ -927,11 +927,11 @@ void H265CU::FillZero(Ipp32u abs_part_idx, Ipp8u depth)
                 data[i].inter_dir = 0;
             }
         } else {
-            Ipp16s mvmax = (Ipp16s)(10 + myrand()%100);
+/*            Ipp16s mvmax = (Ipp16s)(10 + myrand()%100);
             Ipp16s mvx0 = (Ipp16s)((myrand() % (mvmax*2+1)) - mvmax);
             Ipp16s mvy0 = (Ipp16s)((myrand() % (mvmax*2+1)) - mvmax);
             Ipp16s mvx1 = (Ipp16s)((myrand() % (mvmax*2+1)) - mvmax);
-            Ipp16s mvy1 = (Ipp16s)((myrand() % (mvmax*2+1)) - mvmax);
+            Ipp16s mvy1 = (Ipp16s)((myrand() % (mvmax*2+1)) - mvmax);*/
             T_RefIdx ref_idx0 = 0;//(T_RefIdx)(myrand() % cslice->num_ref_idx_l0_active);
             Ipp8u inter_dir;
 /*            if (cslice->slice_type == B_SLICE && part_size != PART_SIZE_2Nx2N && size == 8) {
@@ -964,8 +964,8 @@ void H265CU::FillZero(Ipp32u abs_part_idx, Ipp8u depth)
                 }
                 if (inter_dir & INTER_DIR_PRED_L1) {
                     data[i].ref_idx[1] = ref_idx1;
-                    data[i].mv[1].mvx = mvx1;
-                    data[i].mv[1].mvy = mvy1;
+//                    data[i].mv[1].mvx = mvx1;
+//                    data[i].mv[1].mvy = mvy1;
                 }
                 data[i]._flags = 0;
                 data[i].flags.merge_flag = 0;
@@ -1856,7 +1856,7 @@ void H265CU::TU_GetSplitInter(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u tr_idx, 
     CostType cost_best;
     CABAC_CONTEXT_H265 ctx_save[NUM_CABAC_CONTEXT];
     PixType pred_save[64*64];
-    PixType *pRec;
+    PixType *pRec = NULL;
 
 
     if (tr_idx  < tr_idx_max) {
