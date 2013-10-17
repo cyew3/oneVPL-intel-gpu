@@ -728,7 +728,7 @@ mfxStatus MFXProtectedEncodeWRAPPER::PutBsData(mfxBitstream* pData)
         while(NULL != cur && 0 != cur->DataLength)
         {
             // cur->DataLength is size after decryption but buffer required to do decryption must be aligned 16
-            mfxU16 alignedSize = (cur->DataLength + 15)&(~0xf);
+            mfxU32 alignedSize = (cur->DataLength + 15)&(~0xf);
             // if assumption on buffer size required was wrong
             if (cur->MaxLength - offset < alignedSize)
                 return MFX_ERR_UNKNOWN;
