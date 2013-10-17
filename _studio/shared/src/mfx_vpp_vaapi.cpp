@@ -678,7 +678,7 @@ mfxStatus VAAPIVideoProcessing::QueryTaskStatus(mfxU32 taskIndex)
 
     return MFX_TASK_DONE;
 
-} // mfxStatus FastCompositingDDI::QueryTaskStatus(mfxU32 taskIndex)
+} // mfxStatus VAAPIVideoProcessing::QueryTaskStatus(mfxU32 taskIndex)
 
 mfxStatus VAAPIVideoProcessing::QueryTaskStatus(FASTCOMP_QUERY_STATUS *pQueryStatus, mfxU32 numStructures)
 {

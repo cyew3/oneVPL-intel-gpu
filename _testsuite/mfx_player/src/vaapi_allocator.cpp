@@ -243,41 +243,9 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
     }
     else   // Image processing
     {
-        va_res = vaSyncSurface(m_dpy, *(vaapi_mid->m_surface));
-
-        // check if the frame is corrupted and set flag
-        if (VA_STATUS_ERROR_DECODING_ERROR == va_res)
-        {
-            VASurfaceDecodeMBErrors* pVaDecErr = NULL;
-            VAStatus  va_err = vaQuerySurfaceError(m_dpy, *(vaapi_mid->m_surface), VA_STATUS_ERROR_DECODING_ERROR, (void**)&pVaDecErr);
-
-            if (NULL != pVaDecErr)
-            {
-                for (int i = 0; pVaDecErr[i].status != -1; ++i)
-                {
-                    if (VADecodeMBError == pVaDecErr[i].decode_error_type)
-                    {
-                        ptr->Corrupted = MFX_CORRUPTION_MAJOR;
-
-                        // FIXME: wait for fix in driver
-                        va_res = VA_STATUS_SUCCESS;
-                    }
-                }
-            }
-            else
-            {
-                // false positive due to hardware bug
-                va_res = VA_STATUS_SUCCESS;
-            }
-        }
-
+        va_res = vaDeriveImage(m_dpy, *(vaapi_mid->m_surface), &(vaapi_mid->m_image));
         mfx_res = va_to_mfx_status(va_res);
 
-        if (MFX_ERR_NONE == mfx_res)
-        {
-            va_res = vaDeriveImage(m_dpy, *(vaapi_mid->m_surface), &(vaapi_mid->m_image));
-            mfx_res = va_to_mfx_status(va_res);
-        }
         if (MFX_ERR_NONE == mfx_res)
         {
             va_res = vaMapBuffer(m_dpy, vaapi_mid->m_image.buf, (void **) &pBuffer);

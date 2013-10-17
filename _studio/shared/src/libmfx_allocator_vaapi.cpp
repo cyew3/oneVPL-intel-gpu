@@ -210,48 +210,9 @@ mfxDefaultAllocatorVAAPI::LockFrameHW(
     }
     else
     {
-        va_sts = vaSyncSurface(pSelf->pVADisplay, *(vaapi_mids->m_surface));
-
-        // check if the frame is corrupted and set flag
-        if (VA_STATUS_ERROR_DECODING_ERROR == va_sts)
-        {
-            VASurfaceDecodeMBErrors* pVaDecErr = NULL;
-            VAStatus  va_err = vaQuerySurfaceError(pSelf->pVADisplay, *(vaapi_mids->m_surface), VA_STATUS_ERROR_DECODING_ERROR, (void**)&pVaDecErr);
-
-            if (NULL != pVaDecErr)
-            {
-                for (int i = 0; pVaDecErr[i].status != -1; ++i)
-                {
-                    if (VADecodeMBError == pVaDecErr[i].decode_error_type)
-                    {
-                        ptr->Corrupted = MFX_CORRUPTION_MAJOR;
-
-                        // FIXME: wait for fix in driver
-                        va_sts = VA_STATUS_SUCCESS;
-                    }
-                }
-            }
-            else
-            {
-                // false positive due to hardware bug
-                va_sts = VA_STATUS_SUCCESS;
-            }
-        }
+        va_sts = vaDeriveImage(pSelf->pVADisplay, *(vaapi_mids->m_surface), &(vaapi_mids->m_image));
         mfx_res = VA_TO_MFX_STATUS(va_sts);
-#if 0
-        if (MFX_ERR_NONE == mfx_res)
-        {
-            VASurfaceStatus srf_sts = VASurfaceReady;
 
-            va_sts = vaQuerySurfaceStatus(pSelf->pVADisplay, *(vaapi_mids->m_surface), &srf_sts);
-            mfx_res = VA_TO_MFX_STATUS(va_sts);
-        }
-#endif
-        if (MFX_ERR_NONE == mfx_res)
-        {
-            va_sts = vaDeriveImage(pSelf->pVADisplay, *(vaapi_mids->m_surface), &(vaapi_mids->m_image));
-            mfx_res = VA_TO_MFX_STATUS(va_sts);
-        }
         if (MFX_ERR_NONE == mfx_res)
         {
             va_sts = vaMapBuffer(pSelf->pVADisplay, vaapi_mids->m_image.buf, (void **) &pBuffer);

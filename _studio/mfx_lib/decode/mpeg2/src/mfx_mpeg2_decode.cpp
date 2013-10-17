@@ -3649,24 +3649,33 @@ mfxStatus VideoDECODEMPEG2::GetStatusReport(mfxFrameSurface1 *displaySurface)
     }
 
 #endif
-/*#ifdef UMC_VA_LINUX
-    using namespace UMC;
 
-    VideoAccelerator *va;
+#ifdef UMC_VA_LINUX
+    UMC::VideoAccelerator *va;
     m_pCore->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
 
-    Status sts = UMC_OK;
+    UMC::Status sts = UMC::UMC_OK;
     VASurfaceStatus surfSts = VASurfaceSkipped;
 
-    sts = va->QueryTaskStatus(0, &surfSts);
-    if (sts != UMC_OK)
+    int index = m_implUmc.pack_w.va_index;
+    sts = va->QueryTaskStatus(index, &surfSts);
+    if (sts != UMC::UMC_OK)
         return MFX_ERR_DEVICE_FAILED;
-
-    if (surfSts != VASurfaceReady)
+/*
+    switch (surfSts)
     {
-        return MFX_TASK_BUSY;
+        case VASurfaceReady:
+            for (i = 0; i < DPB; i++)
+                if(mid[i] >= 0)
+            break;
+        case VASurfaceRendering:
+            break;
+        default:
+            break;
     }
-#endif*/
+*/
+
+#endif
 
     return MFX_ERR_NONE;
 }

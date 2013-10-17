@@ -3050,7 +3050,31 @@ mfxStatus MFXVideoDECODEVC1::GetStatusReport(mfxFrameSurface1 *surface_disp)
         }
     }
 
-#endif 
+#endif
+#ifdef UMC_VA_LINUX
+    VideoAccelerator *va;
+    m_pCore->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
+
+    Status sts = UMC_OK;
+    VASurfaceStatus surfSts = VASurfaceSkipped;
+
+    mfxI32 i = 0;
+
+    UMC::VC1FrameDescriptor *pCurrDescriptor = m_pVC1VideoDecoder->m_pStore->GetFirstDS();
+
+    if (pCurrDescriptor)
+    {
+        sts = va->QueryTaskStatus(pCurrDescriptor->m_pContext->m_frmBuff.m_iCurrIndex, &surfSts);
+        if (sts != UMC_OK)
+            return MFX_ERR_DEVICE_FAILED;
+
+        //if (surfSts != VASurfaceReady)
+        //{
+        //    return MFX_TASK_BUSY;
+        //}
+    }
+#endif
+
     return MFX_ERR_NONE;
 }
 

@@ -841,39 +841,6 @@ VAAPIVideoCORE::DoFastCopyExtended(
 
         MFX_CHECK(m_Display,MFX_ERR_NOT_INITIALIZED);
 
-        va_sts = vaSyncSurface(m_Display, *va_surface);
-
-        // check if the frame is corrupted and set flag
-        if (VA_STATUS_ERROR_DECODING_ERROR == va_sts)
-        {
-            VASurfaceDecodeMBErrors* pVaDecErr = NULL;
-            VAStatus  va_err = vaQuerySurfaceError(m_Display, *va_surface, VA_STATUS_ERROR_DECODING_ERROR, (void**)&pVaDecErr);
-
-            if (NULL != pVaDecErr)
-            {
-                for (int i = 0; pVaDecErr[i].status != -1; ++i)
-                {
-                    if (VADecodeMBError == pVaDecErr[i].decode_error_type)
-                    {
-                        pDst->Data.Corrupted = MFX_CORRUPTION_MAJOR;
-
-                        // FIXME: wait for fix in driver
-                        va_sts = VA_STATUS_SUCCESS;
-                    }
-                }
-            }
-            else
-            {
-                // false positive due to hardware bug
-                va_sts = VA_STATUS_SUCCESS;
-            }
-        }
-        MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
-
-        VASurfaceStatus surface_status;
-        va_sts = vaQuerySurfaceStatus(m_Display, *va_surface, &surface_status);
-        MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
-        
         va_sts = vaDeriveImage(m_Display, *va_surface, &va_image);
         MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
 

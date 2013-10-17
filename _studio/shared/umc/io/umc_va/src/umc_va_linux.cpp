@@ -807,6 +807,25 @@ Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * statu
     {
         va_res = vaQuerySurfaceStatus(m_dpy, m_surfaces[FrameBufIndex], (VASurfaceStatus*)status);
         umcRes = va_to_umc_res(va_res);
+        /*
+        STATUS STS = UMC_OK;
+        VASURFACESTATUS SURFSTS = VASURFACESKIPPED;
+        FOR (H264DECODERFRAMEINFO * AU = M_FIRSTAU; AU; AU = AU->GETNEXTAU())
+        {
+            STS = DXVA_SD->GETPACKER()->QUERYTASKSTATUS(AU->M_PFRAME->M_INDEX, &SURFSTS);
+            IF (STS != UMC_OK)
+                THROW H264_EXCEPTION(STS);
+
+            IF (SURFSTS == VASURFACEREADY)
+            {
+                AU->SETSTATUS(H264DECODERFRAMEINFO::STATUS_COMPLETED);
+                COMPLETEFRAME(AU->M_PFRAME);
+                BREAK;
+            }
+
+            BREAK;
+        }
+        */
     }
     return umcRes;
 }
