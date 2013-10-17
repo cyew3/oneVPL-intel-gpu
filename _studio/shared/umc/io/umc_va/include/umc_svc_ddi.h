@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2006-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2006-2013 Intel Corporation. All Rights Reserved.
 */
 
 #ifndef __UMC_SVC_DDI_H
@@ -111,7 +111,7 @@ typedef struct _DXVA_PicParams_H264_SVC
             USHORT NextLayerMaxTXoeffLevelPredFlag : 1;
         };
 
-        USHORT wBitFields;
+        USHORT wBitFields1;
     };
 
     UCHAR extended_spatial_scalability_idc;

@@ -1938,7 +1938,7 @@ bool TaskSupplier_H265::IsSkipForCRAorBLA(H265Slice *pSlice)
         }
         else if (pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_IDR_W_RADL || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_IDR_N_LP)
         {
-            m_RA_POC = -INT_MIN;
+            m_RA_POC = -1;
         }
     }
     else if (pSlice->m_SliceHeader.slice_pic_order_cnt_lsb < m_RA_POC &&

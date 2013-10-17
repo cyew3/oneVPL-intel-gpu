@@ -251,8 +251,8 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <AssemblerOutput>AssemblyCode</AssemblerOutput>
-      <WarningLevel>Level3</WarningLevel>
-      <TreatWarningAsError>false</TreatWarningAsError>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <GenerateAlternateCodePaths>SSSE3</GenerateAlternateCodePaths>
       <UseProcessorExtensions>SSSE3</UseProcessorExtensions>
@@ -296,8 +296,8 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <TreatWarningAsError>false</TreatWarningAsError>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AssemblerOutput>AssemblyCode</AssemblerOutput>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
