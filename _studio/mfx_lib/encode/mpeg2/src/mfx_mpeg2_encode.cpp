@@ -2228,12 +2228,14 @@ mfxStatus MFXVideoENCODEMPEG2::GetFrame(mfxEncodeInternalParams *pInternalParams
 
   m_codec.mEncodedSize = 0;
 
-  sts = EncodeFrameReordered(pInternalParams);
-  MFX_CHECK_STS(sts);
-
   bs->FrameType = (mfxU16)((m_codec.picture_coding_type == UMC::MPEG2_I_PICTURE)?
                             MFX_FRAMETYPE_I|MFX_FRAMETYPE_IDR|MFX_FRAMETYPE_REF:
                             (m_codec.picture_coding_type == UMC::MPEG2_P_PICTURE)? MFX_FRAMETYPE_P|MFX_FRAMETYPE_REF: MFX_FRAMETYPE_B);
+
+  sts = EncodeFrameReordered(pInternalParams);
+  MFX_CHECK_STS(sts);
+
+
 
 
   bs->DataLength += m_codec.mEncodedSize;
