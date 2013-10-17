@@ -1723,9 +1723,9 @@ mfxStatus MFXVideoENCODEMPEG2::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
 
     if (surface)
     {
-        if ((m_picStruct&0x0f) != MFX_PICSTRUCT_UNKNOWN)
+        if (m_picStruct != MFX_PICSTRUCT_UNKNOWN)
         {
-            if ((surface->Info.PicStruct&0x0f) != (m_picStruct&0x0f) &&
+            if ((surface->Info.PicStruct&0x0f) != (m_picStruct) &&
                 (surface->Info.PicStruct&0x0f) != MFX_PICSTRUCT_UNKNOWN &&
                 (surface->Info.PicStruct&0x0f) != MFX_PICSTRUCT_PROGRESSIVE)
             {
@@ -1847,15 +1847,15 @@ mfxStatus MFXVideoENCODEMPEG2::EncodeFrame(mfxEncodeCtrl* /*ctrl*/, mfxEncodeInt
 
   // can set picture coding params here according to VideoData
 
- mfxU16 curPicStruct = ((surface->Info.PicStruct&0x0f) != MFX_PICSTRUCT_UNKNOWN) ? surface->Info.PicStruct:((m_picStruct & 0x0f)| (surface->Info.PicStruct&0xf0));
+ mfxU16 curPicStruct = (surface->Info.PicStruct != MFX_PICSTRUCT_UNKNOWN) ? surface->Info.PicStruct:(m_picStruct| (surface->Info.PicStruct&0xf0));
 
-  if ((m_picStruct&0x0f) != MFX_PICSTRUCT_UNKNOWN)
+  if (m_picStruct != MFX_PICSTRUCT_UNKNOWN)
   {
-    if ((surface->Info.PicStruct&0x0f) != (m_picStruct&0x0f) &&
-        (surface->Info.PicStruct&0x0f) != MFX_PICSTRUCT_UNKNOWN &&
-        (surface->Info.PicStruct&0x0f) != MFX_PICSTRUCT_PROGRESSIVE)
+    if (surface->Info.PicStruct != (m_picStruct&0x0f) &&
+        surface->Info.PicStruct != MFX_PICSTRUCT_UNKNOWN &&
+        surface->Info.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
     {
-        curPicStruct = (m_picStruct & 0x0f)| (surface->Info.PicStruct&0xf0);
+        curPicStruct = m_picStruct| (surface->Info.PicStruct&0xf0);
     }
   }
 
@@ -1869,9 +1869,9 @@ mfxStatus MFXVideoENCODEMPEG2::EncodeFrame(mfxEncodeCtrl* /*ctrl*/, mfxEncodeInt
     m_codec.picture_structure  = MPEG2_FRAME_PICTURE;
     m_codec.progressive_frame  = true;
 
-    if (!(m_picStruct & MFX_PICSTRUCT_PROGRESSIVE)) /*progressive frame in not progressive sequence*/
+    if (m_picStruct != MFX_PICSTRUCT_PROGRESSIVE) /*progressive frame in not progressive sequence*/
     {
-        m_codec.top_field_first    = (curPicStruct & MFX_PICSTRUCT_FIELD_BFF)? 0:1;
+        m_codec.top_field_first    = (((m_picStruct == MFX_PICSTRUCT_UNKNOWN)? curPicStruct: m_picStruct)& MFX_PICSTRUCT_FIELD_BFF)? 0:1;
         m_codec.repeat_first_field = (curPicStruct & MFX_PICSTRUCT_FIELD_REPEATED)? 1:0;
     }
     else /*progressive frame in progressive sequence*/
