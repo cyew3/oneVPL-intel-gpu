@@ -792,12 +792,12 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H
 
 void H265SampleAdaptiveOffset::SAOProcess(H265DecoderFrame* pFrame, Ipp32s startCU, Ipp32s toProcessCU)
 {
+    if (!pFrame->GetAU()->IsNeedSAO())
+        return;
+
     m_Frame = pFrame;
     H265Slice * slice = pFrame->GetAU()->GetAnySlice();
-    if (slice->GetSliceHeader()->slice_sao_luma_flag || slice->GetSliceHeader()->slice_sao_chroma_flag)
-    {
-        processSaoUnits(startCU, toProcessCU);
-    }
+    processSaoUnits(startCU, toProcessCU);
 }
 
 void H265SampleAdaptiveOffset::processSaoLine(SAOLCUParam* saoLCUParam, SAOLCUParam* saoLCUParamCb, SAOLCUParam* saoLCUParamCr, Ipp32s firstCU, Ipp32s endCU)
@@ -856,7 +856,8 @@ void H265SampleAdaptiveOffset::processSaoLine(SAOLCUParam* saoLCUParam, SAOLCUPa
             }
         }
 
-        if (m_slice_sao_luma_flag && saoLCUParam[addr].m_typeIdx >= 0)
+        H265CodingUnit *pTmpCu = m_Frame->getCU(addr);
+        if (pTmpCu->m_SliceHeader->slice_sao_luma_flag && saoLCUParam[addr].m_typeIdx >= 0)
         {
             Ipp32s typeIdx = saoLCUParam[addr].m_typeIdx;
             if (!saoLCUParam[addr].m_mergeLeftFlag)
@@ -864,7 +865,7 @@ void H265SampleAdaptiveOffset::processSaoLine(SAOLCUParam* saoLCUParam, SAOLCUPa
                 SetOffsetsLuma(saoLCUParam[addr], typeIdx);
             }
 
-            H265CodingUnit *pTmpCu = m_Frame->getCU(addr);
+            
             if (!m_UseNIF)
             {
                 MFX_HEVC_PP::NAME(h265_ProcessSaoCuOrg_Luma_8u)(
@@ -904,7 +905,7 @@ void H265SampleAdaptiveOffset::processSaoLine(SAOLCUParam* saoLCUParam, SAOLCUPa
             }
         }
 
-        if (m_slice_sao_chroma_flag && saoLCUParamCb[addr].m_typeIdx >= 0)
+        if (pTmpCu->m_SliceHeader->slice_sao_chroma_flag && saoLCUParamCb[addr].m_typeIdx >= 0)
         {
             Ipp32s typeIdx = saoLCUParamCb[addr].m_typeIdx;
             VM_ASSERT(saoLCUParamCb[addr].m_typeIdx == saoLCUParamCr[addr].m_typeIdx);

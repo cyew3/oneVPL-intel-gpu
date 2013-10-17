@@ -278,9 +278,9 @@ UMC::Status H265HeadersBitstream::GetVideoParamSet(H265VideoParamSet *pcVPS)
     Ipp32u vps_sub_layer_ordering_info_present_flag = Get1Bit();;
     for(Ipp32u i = 0; i < pcVPS->vps_max_sub_layers; i++)
     {
-        pcVPS->vps_max_dec_pic_buffering[i] = GetVLCElement(false);
+        pcVPS->vps_max_dec_pic_buffering[i] = GetVLCElement(false) + 1;
         pcVPS->vps_num_reorder_pics[i] = GetVLCElement(false);
-        pcVPS->vps_max_latency_increase[i] = GetVLCElement(false);
+        pcVPS->vps_max_latency_increase[i] = GetVLCElement(false) - 1;
 
         if (!vps_sub_layer_ordering_info_present_flag)
         {
