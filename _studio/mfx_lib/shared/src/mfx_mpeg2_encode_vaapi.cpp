@@ -135,7 +135,15 @@ namespace
         sps.intra_period    = pExecuteBuffers->m_GOPPictureSize; // 22??
         sps.ip_period       = pExecuteBuffers->m_GOPRefDist;
         sps.bits_per_second = winSps.bit_rate; // 104857200;
-        sps.vbv_buffer_size = winSps.bit_rate * 45 / 1000;
+        if (winSps.vbv_buffer_size)
+        {
+            sps.vbv_buffer_size = winSps.vbv_buffer_size;
+        }
+        else
+        {
+            sps.vbv_buffer_size = winSps.bit_rate * 45 / 1000;
+        }
+        
         //sps.vbv_buffer_size = 3; // B = 16 * 1024 * vbv_buffer_size
 
         int profile = 4, level = 8;
