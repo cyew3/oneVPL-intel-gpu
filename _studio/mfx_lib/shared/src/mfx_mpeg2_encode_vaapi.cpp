@@ -128,7 +128,8 @@ namespace
         } else
           assert(!"Unknown FrameRateCode appeared.");
 
-        sps.aspect_ratio_information = CalculateAspectRatio(sps.picture_width, sps.picture_height);
+        //sps.aspect_ratio_information = CalculateAspectRatio(sps.picture_width, sps.picture_height);
+        sps.aspect_ratio_information = winSps.AspectRatio;        
         // sps.vbv_buffer_size = winSps.vbv_buffer_size; // B = 16 * 1024 * vbv_buffer_size 
 
         sps.intra_period    = pExecuteBuffers->m_GOPPictureSize; // 22??
