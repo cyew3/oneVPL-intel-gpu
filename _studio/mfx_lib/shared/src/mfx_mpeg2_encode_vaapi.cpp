@@ -1156,8 +1156,8 @@ mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, 
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
         
-        vaSts = vaSyncSurface(m_vaDisplay, *(VASurfaceID*)pExecuteBuffers->m_pSurface);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        //vaSts = vaSyncSurface(m_vaDisplay, *(VASurfaceID*)pExecuteBuffers->m_pSurface);
+        //MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     }
 
