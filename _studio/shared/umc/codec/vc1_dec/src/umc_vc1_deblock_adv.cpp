@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, deblocking
@@ -547,6 +547,7 @@ inline static void VerticalDeblockingBlkInterlaceP(Ipp8u* pUUpBlock,
 void Deblocking_ProgressiveIpicture_Adv(VC1Context* pContext)
 {
     Ipp32s WidthMB =  pContext->m_seqLayerHeader.widthMB;
+    Ipp32s MaxWidthMB = pContext->m_seqLayerHeader.MaxWidthMB;
     Ipp32s curX, curY;
     Ipp32u PQuant = pContext->m_picLayerHeader->PQUANT;
 
@@ -580,6 +581,7 @@ void Deblocking_ProgressiveIpicture_Adv(VC1Context* pContext)
                                               PQuant,VPitch,flag_ver);
             ++m_CurrMB;
         }
+        m_CurrMB += (MaxWidthMB - WidthMB);
     }
     if (pContext->DeblockInfo.is_last_deblock)
     {
@@ -590,11 +592,12 @@ void Deblocking_ProgressiveIpicture_Adv(VC1Context* pContext)
             _own_FilterDeblockingLuma_HorEdge_VC1((m_CurrMB->currYPlane+8*YPitch), PQuant, YPitch,flag_ver);
             ++m_CurrMB;
         }
+        m_CurrMB += (MaxWidthMB - WidthMB);
     } else
         HeightMB -=1;
 
 
-    m_CurrMB   -= WidthMB*HeightMB;
+    m_CurrMB   -= MaxWidthMB*HeightMB;
     /* Deblock vertical edges */
     for (curY=0; curY<HeightMB; curY++)
     {
@@ -616,7 +619,7 @@ void Deblocking_ProgressiveIpicture_Adv(VC1Context* pContext)
         flag_ver =0;
         _own_FilterDeblockingLuma_VerEdge_VC1((m_CurrMB->currYPlane+8), PQuant,YPitch,flag_ver);
         ++m_CurrMB;
-
+        m_CurrMB += (MaxWidthMB - WidthMB);
     }
 }
 void Deblocking_ProgressivePpicture_Adv(VC1Context* pContext)
@@ -624,6 +627,7 @@ void Deblocking_ProgressivePpicture_Adv(VC1Context* pContext)
     Ipp32s WidthMB =  pContext->m_seqLayerHeader.widthMB;
     Ipp32s curX, curY;
     Ipp32s PQuant = pContext->m_picLayerHeader->PQUANT;
+    Ipp32s MaxWidthMB = pContext->m_seqLayerHeader.MaxWidthMB;
 
     Ipp32s HeightMB   = pContext->DeblockInfo.HeightMB;
     //VC1MB* m_CurrMB = pContext->m_pCurrMB - WidthMB*(HeightMB);
@@ -649,24 +653,26 @@ void Deblocking_ProgressivePpicture_Adv(VC1Context* pContext)
                                          PQuant,
                                          YPitch,
                                          m_CurrMB,
-                                         m_CurrMB+WidthMB);
+                                         m_CurrMB+MaxWidthMB);
             /* Horizontal deblock Cb */
             HorizontalDeblockingChromaP((m_CurrMB->currUPlane),
                                          PQuant,
                                          UPitch,
                                          &m_CurrMB->m_pBlocks[4],
-                                         &(m_CurrMB+WidthMB)->m_pBlocks[4]);
+                                         &(m_CurrMB+MaxWidthMB)->m_pBlocks[4]);
             /* Horizontal deblock Cr */
             HorizontalDeblockingChromaP((m_CurrMB->currVPlane),
                                          PQuant,
                                          VPitch,
                                          &m_CurrMB->m_pBlocks[5],
-                                         &(m_CurrMB+WidthMB)->m_pBlocks[5]);
+                                         &(m_CurrMB+MaxWidthMB)->m_pBlocks[5]);
             /*  VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV_BBL,VM_STRING("Number of NZC coeffs in Macroblock =%d\n Block[0].NZC[0]=%d\n Block[0].NZC[1]=%d\n Block[0].NZC[2]=%d\n Block[0].NZC[3]=%d\n"),
             WidthMB*curY+curX,m_CurrMB->m_pBlocks[0].numCoeffs[0],m_CurrMB->m_pBlocks[0].numCoeffs[1], m_CurrMB->m_pBlocks[0].numCoeffs[2],m_CurrMB->m_pBlocks[0].numCoeffs[3]);*/
             ++m_CurrMB;
         }
+        m_CurrMB += (MaxWidthMB - WidthMB);
     }
+
     if (pContext->DeblockInfo.is_last_deblock)
     {
     for (curX=0; curX<WidthMB; curX++)
@@ -695,10 +701,11 @@ void Deblocking_ProgressivePpicture_Adv(VC1Context* pContext)
                                                &m_CurrMB->m_pBlocks[5]);
         ++m_CurrMB;
     }
+    m_CurrMB += (MaxWidthMB - WidthMB);
     } else
         HeightMB -=1;
 
-    m_CurrMB   -= WidthMB*(HeightMB);
+    m_CurrMB   -= MaxWidthMB*(HeightMB);
 
     //printf("Vertical Deblocking \n");
 
@@ -759,6 +766,7 @@ void Deblocking_ProgressivePpicture_Adv(VC1Context* pContext)
                                              PQuant,VPitch,
                                              &m_CurrMB->m_pBlocks[5]);
         ++m_CurrMB;
+        m_CurrMB += (MaxWidthMB - WidthMB);
     }
 }
 
@@ -767,12 +775,11 @@ void Deblocking_ProgressivePpicture_Adv(VC1Context* pContext)
 void Deblocking_InterlaceFieldBpicture_Adv(VC1Context* pContext)
 {
     Ipp32s WidthMB =  pContext->m_seqLayerHeader.widthMB;
-    //Ipp32s HeightMB =  pContext->m_seqLayerHeader.heightMB;
+    Ipp32s MaxWidthMB = pContext->m_seqLayerHeader.MaxWidthMB;
     Ipp32s curX, curY;
     Ipp32s PQuant = pContext->m_picLayerHeader->PQUANT;
 
     Ipp32s HeightMB   = pContext->DeblockInfo.HeightMB;
-    //VC1MB* m_CurrMB = pContext->m_pCurrMB - WidthMB*(HeightMB);
     VC1MB* m_CurrMB = pContext->m_pCurrMB;
 
     Ipp32s YPitch = m_CurrMB->currYPitch;
@@ -816,6 +823,7 @@ void Deblocking_InterlaceFieldBpicture_Adv(VC1Context* pContext)
             WidthMB*curY+curX,m_CurrMB->m_pBlocks[0].numCoeffs[0],m_CurrMB->m_pBlocks[0].numCoeffs[1], m_CurrMB->m_pBlocks[0].numCoeffs[2],m_CurrMB->m_pBlocks[0].numCoeffs[3]);*/
             ++m_CurrMB;
         }
+        m_CurrMB += (MaxWidthMB - WidthMB);
     }
     if (pContext->DeblockInfo.is_last_deblock)
     {
@@ -850,13 +858,13 @@ void Deblocking_InterlaceFieldBpicture_Adv(VC1Context* pContext)
                 &m_CurrMB->m_pBlocks[5]);
             ++m_CurrMB;
         }
-
+        m_CurrMB += (MaxWidthMB - WidthMB);
 
     }
     else
         HeightMB -=1;
 
-    m_CurrMB   -= WidthMB*(HeightMB);
+    m_CurrMB   -= MaxWidthMB*(HeightMB);
 
 
     /* Deblock vertical edges */
@@ -924,6 +932,7 @@ void Deblocking_InterlaceFieldBpicture_Adv(VC1Context* pContext)
             PQuant,VPitch,
             &m_CurrMB->m_pBlocks[5]);
         ++m_CurrMB;
+        m_CurrMB += (MaxWidthMB - WidthMB);
     }
 }
 
@@ -931,14 +940,13 @@ void Deblocking_InterlaceFieldBpicture_Adv(VC1Context* pContext)
 void Deblocking_InterlaceFrameIpicture_Adv(VC1Context* pContext)
 {
     Ipp32s WidthMB =  pContext->m_seqLayerHeader.widthMB;
-    //Ipp32s HeightMB =  pContext->m_seqLayerHeader.heightMB;
     Ipp32s curX, curY;
     Ipp32u PQuant = pContext->m_picLayerHeader->PQUANT;
+    Ipp32s MaxWidthMB = pContext->m_seqLayerHeader.MaxWidthMB;
 
     Ipp32s fieldoffset;
 
     Ipp32s HeightMB   = pContext->DeblockInfo.HeightMB;
-    //VC1MB* m_CurrMB = pContext->m_pCurrMB - WidthMB*(HeightMB);
     VC1MB* m_CurrMB = pContext->m_pCurrMB;
     Ipp32s YPitch = m_CurrMB->currYPitch;
     Ipp32s UPitch = m_CurrMB->currUPitch;
@@ -1008,6 +1016,7 @@ void Deblocking_InterlaceFrameIpicture_Adv(VC1Context* pContext)
                                                  0);
             ++m_CurrMB;
         }
+        m_CurrMB += (MaxWidthMB - WidthMB);
     }
     if (pContext->DeblockInfo.is_last_deblock)
     {
@@ -1028,18 +1037,16 @@ void Deblocking_InterlaceFrameIpicture_Adv(VC1Context* pContext)
 
            ++m_CurrMB;
         }
+        m_CurrMB += (MaxWidthMB - WidthMB);
     }
     else
         HeightMB -=1;
 
-
-
+    
     //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV_BBL,VM_STRING("Vertical Deblock\n"));
-     m_CurrMB -= WidthMB*(HeightMB);
+     m_CurrMB -= MaxWidthMB*(HeightMB);
 
-
-
-
+     
     /* Deblock vertical edges */
     for (curY=0; curY<HeightMB; curY++)
     {
@@ -1132,6 +1139,7 @@ void Deblocking_InterlaceFrameIpicture_Adv(VC1Context* pContext)
                                                  IPPVC_EDGE_HALF_2);
              }
             ++m_CurrMB;
+            m_CurrMB += (MaxWidthMB - WidthMB);
     }
 }
 
@@ -1141,12 +1149,12 @@ void Deblocking_InterlaceFramePpicture_Adv(VC1Context* pContext)
     Ipp32s WidthMB =  pContext->m_seqLayerHeader.widthMB;
     Ipp32s curX, curY;
     Ipp32u PQuant = pContext->m_picLayerHeader->PQUANT;
+    Ipp32s MaxWidthMB = pContext->m_seqLayerHeader.MaxWidthMB;
 
 
     Ipp32s fieldoffset[] = {8,1};
 
     Ipp32s HeightMB   = pContext->DeblockInfo.HeightMB;
-    //VC1MB* m_CurrMB = pContext->m_pCurrMB - WidthMB*(HeightMB);
     VC1MB* m_CurrMB = pContext->m_pCurrMB;
     Ipp32s YPitch = m_CurrMB->currYPitch;
     Ipp32s UPitch = m_CurrMB->currUPitch;
@@ -1209,6 +1217,7 @@ void Deblocking_InterlaceFramePpicture_Adv(VC1Context* pContext)
                                                0,is_intern_deblock);
             ++m_CurrMB;
         }
+        m_CurrMB += (MaxWidthMB - WidthMB);
     }
     if (pContext->DeblockInfo.is_last_deblock)
     {
@@ -1267,7 +1276,7 @@ void Deblocking_InterlaceFramePpicture_Adv(VC1Context* pContext)
                                                 m_CurrMB->FIELDTX);
            ++m_CurrMB;
         }
-
+        m_CurrMB += (MaxWidthMB - WidthMB);
 
     }
     else
@@ -1277,12 +1286,12 @@ void Deblocking_InterlaceFramePpicture_Adv(VC1Context* pContext)
 
 
 
-    m_CurrMB -= WidthMB*(HeightMB);
+    m_CurrMB -= MaxWidthMB*(HeightMB);
 
     if (VC1_IS_NO_TOP_MB(m_CurrMB->LeftTopRightPositionFlag))
     {
 
-        m_CurrMB -= WidthMB*(pContext->iPrevDblkStartPos);
+        m_CurrMB -= MaxWidthMB*(pContext->iPrevDblkStartPos);
 
 
     /* Deblock vertical edges */
@@ -1363,6 +1372,7 @@ void Deblocking_InterlaceFramePpicture_Adv(VC1Context* pContext)
                                                    &m_CurrMB->m_pBlocks[5],
                                                    0);
         ++m_CurrMB;
+        m_CurrMB += (MaxWidthMB - WidthMB);
     }
     }
     if (pContext->DeblockInfo.is_last_deblock)
@@ -1444,6 +1454,7 @@ void Deblocking_InterlaceFramePpicture_Adv(VC1Context* pContext)
                                                    &m_CurrMB->m_pBlocks[5],
                                                    0);
         ++m_CurrMB;
+        m_CurrMB += (MaxWidthMB - WidthMB);
     }
     }
 

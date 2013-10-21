@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, Coded block pattern tables
@@ -454,6 +454,9 @@ typedef struct
     Ipp16u widthMB;
     Ipp16u heightMB;
 
+    Ipp16u MaxWidthMB;    //maximum MB in row (calculated from MAX_CODED_WIDTH
+    Ipp16u MaxHeightMB;   //maximum MB in column (calculated from MAX_CODED_HEIGHT
+
     //entry point
     Ipp32u BROKEN_LINK;
     Ipp32u CLOSED_ENTRY;
@@ -802,6 +805,8 @@ typedef struct
     const Ipp8u** ZigzagTable;
     Ipp32s      widthMB;
     Ipp32s      heightMB;
+    Ipp32s      MaxWidthMB;
+    Ipp32s      MaxHeightMB;
 }VC1SingletonMB;
 
 #ifdef UMC_STREAM_ANALYZER

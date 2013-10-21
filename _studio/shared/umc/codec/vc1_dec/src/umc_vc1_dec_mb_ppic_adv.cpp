@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, MB Layer in P picture for advanced profile
@@ -256,10 +256,10 @@ static VC1Status MBLayer_ProgressivePpicture4MV(VC1Context* pContext)
         }
         if (VC1_IS_NO_TOP_MB(LeftTopRightPositionFlag))
         {
-            a[0] = (Ipp8u)((pCurrMB - sMB->widthMB)->m_pBlocks[2].blkType&VC1_BLK_INTRA);
-            a[1] = (Ipp8u)((pCurrMB - sMB->widthMB)->m_pBlocks[3].blkType&VC1_BLK_INTRA);
-            a[4] = (Ipp8u)((pCurrMB - sMB->widthMB)->m_pBlocks[4].blkType&VC1_BLK_INTRA);
-            a[5] = (Ipp8u)((pCurrMB - sMB->widthMB)->m_pBlocks[5].blkType&VC1_BLK_INTRA);
+            a[0] = (Ipp8u)((pCurrMB - pContext->m_seqLayerHeader.MaxWidthMB)->m_pBlocks[2].blkType&VC1_BLK_INTRA);
+            a[1] = (Ipp8u)((pCurrMB - pContext->m_seqLayerHeader.MaxWidthMB)->m_pBlocks[3].blkType&VC1_BLK_INTRA);
+            a[4] = (Ipp8u)((pCurrMB - pContext->m_seqLayerHeader.MaxWidthMB)->m_pBlocks[4].blkType&VC1_BLK_INTRA);
+            a[5] = (Ipp8u)((pCurrMB - pContext->m_seqLayerHeader.MaxWidthMB)->m_pBlocks[5].blkType&VC1_BLK_INTRA);
         }
         c[1]=(Ipp8u)(pCurrMB->m_pBlocks[0].blkType& VC1_BLK_INTRA);
         c[3]=(Ipp8u)(pCurrMB->m_pBlocks[2].blkType& VC1_BLK_INTRA);
@@ -347,7 +347,6 @@ static VC1Status MBLayer_InterlacePpicture2MV(VC1Context* pContext)
     Ipp16s dmv_y =0;
 
     VC1MB* pCurrMB = pContext->m_pCurrMB;
-    VC1SingletonMB* sMB = pContext->m_pSingleMB;
 
     Ipp16s dmv_x_bottom =0;
     Ipp16s dmv_y_bottom =0;
@@ -377,7 +376,7 @@ static VC1Status MBLayer_InterlacePpicture2MV(VC1Context* pContext)
         dmv_x_bottom = 0;
         dmv_y_bottom = 0;
     }
-    PredictInterlace2MV_Field_Adv(pCurrMB, pMVx,pMVy,0, 0, sMB->widthMB);
+    PredictInterlace2MV_Field_Adv(pCurrMB, pMVx,pMVy,0, 0, pContext->m_seqLayerHeader.MaxWidthMB);
 
 
     ApplyMVPredictionCalculate(pContext,&pMVx[0],&pMVy[0],dmv_x,dmv_y);
@@ -677,7 +676,7 @@ VC1Status MBLayer_ProgressivePpicture_Adv(VC1Context* pContext)
         else
         {
             MVMODEBIT = picLayerHeader->MVTYPEMB.m_databits
-                [sMB->widthMB*sMB->m_currMBYpos + sMB->m_currMBXpos];
+                [pContext->m_seqLayerHeader.MaxWidthMB*sMB->m_currMBYpos + sMB->m_currMBXpos];
         }
 
         if(MVMODEBIT == 1)
@@ -692,7 +691,7 @@ VC1Status MBLayer_ProgressivePpicture_Adv(VC1Context* pContext)
     else
     {
         SKIPMBBIT = picLayerHeader->SKIPMB.m_databits
-            [sMB->widthMB*sMB->m_currMBYpos + sMB->m_currMBXpos];
+            [pContext->m_seqLayerHeader.MaxWidthMB*sMB->m_currMBYpos + sMB->m_currMBXpos];
     }
 
     pCurrMB->SkipAndDirectFlag = (SKIPMBBIT<<1);
@@ -887,7 +886,7 @@ VC1Status MBLayer_Frame_InterlacedPpicture(VC1Context* pContext)
         else
         {
             SKIPMBBIT = picLayerHeader->SKIPMB.m_databits
-                [sMB->widthMB * sMB->m_currMBYpos +  sMB->m_currMBXpos];
+                [pContext->m_seqLayerHeader.MaxWidthMB * sMB->m_currMBYpos +  sMB->m_currMBXpos];
         }
     }
     pCurrMB->SkipAndDirectFlag = (SKIPMBBIT<<1);
@@ -925,7 +924,7 @@ VC1Status MBLayer_Frame_InterlacedPpicture(VC1Context* pContext)
                 else
                 {
                     FIELDTX = picLayerHeader->FIELDTX.m_databits
-                        [sMB->widthMB * sMB->m_currMBYpos + sMB->m_currMBXpos];
+                        [pContext->m_seqLayerHeader.MaxWidthMB * sMB->m_currMBYpos + sMB->m_currMBXpos];
                 }
                 pCurrMB->FIELDTX = FIELDTX;
             }

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, MB Layer in P picture for simple\main profiles
@@ -249,7 +249,7 @@ static VC1Status MBLayer_ProgressivePpicture4MV(VC1Context* pContext)
         Ipp8u c[6] = {0};
         Ipp8u a[6] = {0};
         Ipp32s count = 0;
-        Ipp32u width = pContext->m_seqLayerHeader.widthMB;
+        Ipp32u MaxWidth = pContext->m_seqLayerHeader.MaxWidthMB;
 
         pContext->m_pSingleMB->ACPRED =0;
 
@@ -262,10 +262,10 @@ static VC1Status MBLayer_ProgressivePpicture4MV(VC1Context* pContext)
         }
         if (VC1_IS_NO_TOP_MB(LeftTopRightPositionFlag))
         {
-            a[0] = (Ipp8u)((pCurrMB - width)->m_pBlocks[2].blkType & VC1_BLK_INTRA);
-            a[1] = (Ipp8u)((pCurrMB - width)->m_pBlocks[3].blkType & VC1_BLK_INTRA);
-            a[4] = (Ipp8u)((pCurrMB - width)->m_pBlocks[4].blkType & VC1_BLK_INTRA);
-            a[5] = (Ipp8u)((pCurrMB - width)->m_pBlocks[5].blkType & VC1_BLK_INTRA);
+            a[0] = (Ipp8u)((pCurrMB - MaxWidth)->m_pBlocks[2].blkType & VC1_BLK_INTRA);
+            a[1] = (Ipp8u)((pCurrMB - MaxWidth)->m_pBlocks[3].blkType & VC1_BLK_INTRA);
+            a[4] = (Ipp8u)((pCurrMB - MaxWidth)->m_pBlocks[4].blkType & VC1_BLK_INTRA);
+            a[5] = (Ipp8u)((pCurrMB - MaxWidth)->m_pBlocks[5].blkType & VC1_BLK_INTRA);
         }
         c[1] = (Ipp8u)(pCurrMB->m_pBlocks[0].blkType & VC1_BLK_INTRA);
         c[3] = (Ipp8u)(pCurrMB->m_pBlocks[2].blkType & VC1_BLK_INTRA);
@@ -341,7 +341,7 @@ VC1Status MBLayer_ProgressivePpicture(VC1Context* pContext)
             VC1_GET_BITS(1, MVMODEBIT);
         }
         else
-            MVMODEBIT = picLayerHeader->MVTYPEMB.m_databits[sMB->widthMB * sMB->m_currMBYpos +
+            MVMODEBIT = picLayerHeader->MVTYPEMB.m_databits[pContext->m_seqLayerHeader.MaxWidthMB * sMB->m_currMBYpos +
                                                                             sMB->m_currMBXpos];
 
         if(MVMODEBIT == 1)
@@ -354,7 +354,7 @@ VC1Status MBLayer_ProgressivePpicture(VC1Context* pContext)
         VC1_GET_BITS(1, SKIPMBBIT);
     }
     else
-        SKIPMBBIT = picLayerHeader->SKIPMB.m_databits[sMB->widthMB * sMB->m_currMBYpos +
+        SKIPMBBIT = picLayerHeader->SKIPMB.m_databits[pContext->m_seqLayerHeader.MaxWidthMB * sMB->m_currMBYpos +
                                                                         sMB->m_currMBXpos];
 
     pCurrMB->SkipAndDirectFlag = (SKIPMBBIT<<1);

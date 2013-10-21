@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, MB layer in I picture for simple\main profiles
@@ -51,7 +51,7 @@ VC1Status MBLayer_ProgressiveIpicture(VC1Context* pContext)
                                             sMB->m_currMBXpos, sMB->m_currMBYpos);
 #endif
 
-    memset((pContext->savedMV + (sMB->m_currMBXpos + sMB->m_currMBYpos * sMB->widthMB)*4),VC1_MVINTRA,sizeof(Ipp16s)*4);
+    memset((pContext->savedMV + (sMB->m_currMBXpos + sMB->m_currMBYpos * pContext->m_seqLayerHeader.MaxWidthMB)*4),VC1_MVINTRA,sizeof(Ipp16s)*4);
 
     pCurrMB->mbType = VC1_MB_INTRA;
 
@@ -75,7 +75,7 @@ VC1Status MBLayer_ProgressiveIpicture(VC1Context* pContext)
     pCurrMB->LeftTopRightPositionFlag = CalculateLeftTopRightPositionFlag(sMB);
 
 
-    pCurrMB->m_cbpBits = CalculateCBP(pCurrMB, CBPCY, sMB->widthMB);
+    pCurrMB->m_cbpBits = CalculateCBP(pCurrMB, CBPCY, pContext->m_seqLayerHeader.MaxWidthMB);
 
     //3.2.2.4
     //The ACPRED field is present in all I picture macroblocks and in 1MV

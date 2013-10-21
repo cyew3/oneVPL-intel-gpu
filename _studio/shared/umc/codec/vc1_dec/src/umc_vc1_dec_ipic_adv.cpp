@@ -181,8 +181,7 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldIpicture_Adv(VC1Context* pContex
                                             VM_STRING("I frame type  \n"));
 
     VC1_GET_BITS(5,picLayerHeader->PQINDEX);
-    CalculatePQuant(pContext);
-
+    
     if(picLayerHeader->PQINDEX<=8)
     {
         VC1_GET_BITS(1,picLayerHeader->HALFQP);
@@ -195,6 +194,8 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldIpicture_Adv(VC1Context* pContex
     {
         VC1_GET_BITS(1,picLayerHeader->PQUANTIZER);    //PQUANTIZER
     }
+
+    CalculatePQuant(pContext);
 
     if(seqLayerHeader->POSTPROCFLAG)
     {
@@ -209,7 +210,7 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldIpicture_Adv(VC1Context* pContex
     else
     DecodeBitplane(pContext, &picLayerHeader->ACPRED,  seqLayerHeader->widthMB,
                    (seqLayerHeader->heightMB+1)/2,
-                   seqLayerHeader->widthMB * ((seqLayerHeader->heightMB+1)/2));
+                   seqLayerHeader->MaxWidthMB * ((seqLayerHeader->heightMB+1)/2));
 
 
     if( (seqLayerHeader->OVERLAP==1) && (picLayerHeader->PQUANT<=8) )
@@ -236,7 +237,7 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldIpicture_Adv(VC1Context* pContex
                 else
                     DecodeBitplane(pContext, &picLayerHeader->OVERFLAGS,
                     seqLayerHeader->widthMB, (seqLayerHeader->heightMB + 1)/2,
-                    seqLayerHeader->widthMB*((seqLayerHeader->heightMB + 1)/2));
+                    seqLayerHeader->MaxWidthMB*((seqLayerHeader->heightMB + 1)/2));
             }
         }
         else
@@ -309,6 +310,8 @@ VC1Status Decode_InterlaceFieldIpicture_Adv(VC1Context* pContext)
         sMB->m_currMBXpos = 0;
         sMB->m_currMBYpos++;
         sMB->slice_currMBYpos++;
+        pContext->CurrDC += (sMB->MaxWidthMB - sMB->widthMB);
+        pContext->m_pBlock += (sMB->MaxWidthMB - sMB->widthMB)*8*8*6;
     }
 
     if ((pContext->m_seqLayerHeader.LOOPFILTER))

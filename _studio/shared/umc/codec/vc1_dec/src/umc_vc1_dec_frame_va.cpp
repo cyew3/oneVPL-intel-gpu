@@ -133,19 +133,19 @@ namespace UMC
 #if 1
             if (VC1_FieldInterlace == pContext->m_picLayerHeader->FCM)
             {
-                ptr->wPicHeightInMBminus1 = (WORD)pContext->m_seqLayerHeader.MAX_CODED_HEIGHT;
+                ptr->wPicHeightInMBminus1 = (WORD)pContext->m_seqLayerHeader.CODED_HEIGHT;
             }
             else
             {
-                ptr->wPicHeightInMBminus1 = (WORD)(2*(pContext->m_seqLayerHeader.MAX_CODED_HEIGHT + 1) -1);
+                ptr->wPicHeightInMBminus1 = (WORD)(2*(pContext->m_seqLayerHeader.CODED_HEIGHT + 1) -1);
             }
 #else
 // ATI
-            ptr->wPicHeightInMBminus1 = (WORD)(2*(pContext->m_seqLayerHeader.MAX_CODED_HEIGHT + 1) -1);
+            ptr->wPicHeightInMBminus1 = (WORD)(2*(pContext->m_seqLayerHeader.CODED_HEIGHT + 1) -1);
 #endif
 
 
-            ptr->wPicWidthInMBminus1 = (WORD)(2*(pContext->m_seqLayerHeader.MAX_CODED_WIDTH + 1) - 1);
+            ptr->wPicWidthInMBminus1 = (WORD)(2*(pContext->m_seqLayerHeader.CODED_WIDTH + 1) - 1);
         }
         else
         {

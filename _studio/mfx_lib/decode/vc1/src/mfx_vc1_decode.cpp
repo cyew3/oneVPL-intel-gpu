@@ -290,13 +290,13 @@ Status MFXVC1VideoDecoder::GetAndProcessPerformedDS(MediaData* in, VideoData* ou
                 {
                     ippsCopy_16s(pCurrDescriptor->m_pContext->savedMV,
                         m_pContext->savedMV_Curr,
-                        m_pContext->m_seqLayerHeader.heightMB*m_pContext->m_seqLayerHeader.widthMB*2*2);
+                        m_pContext->m_seqLayerHeader.MaxHeightMB*m_pContext->m_seqLayerHeader.MaxWidthMB*2*2);
 
                     if (pCurrDescriptor->m_pContext->m_InitPicLayer->FCM == VC1_FieldInterlace)
                     {
                         ippsCopy_8u(pCurrDescriptor->m_pContext->savedMVSamePolarity,
                             m_pContext->savedMVSamePolarity_Curr,
-                            m_pContext->m_seqLayerHeader.heightMB*m_pContext->m_seqLayerHeader.widthMB);
+                            m_pContext->m_seqLayerHeader.MaxHeightMB*m_pContext->m_seqLayerHeader.MaxWidthMB);
                     }
 
                 }
@@ -1811,6 +1811,21 @@ mfxStatus MFXVideoDECODEVC1::ReturnLastFrame(mfxFrameSurface1 *surface_work, mfx
         }
         else if (-2 == m_qMemID.back())
             return MFX_ERR_MORE_DATA;
+        else if (0 == m_qMemID.back())
+        {
+            //only one frame in stream
+            mfxU16 Corrupted;
+            memID = m_qMemID.back();
+            m_qSyncMemID.pop_back();
+            mfxStatus MFXSts = GetOutputSurface(surface_disp, surface_work, memID);
+            MFX_CHECK_STS(MFXSts);
+
+
+            m_pVC1VideoDecoder->SetCorrupted(NULL, Corrupted);
+            (*surface_disp)->Data.Corrupted = Corrupted;
+
+            return MFX_ERR_NONE;
+        }
         else
             return MFX_ERR_UNDEFINED_BEHAVIOR;
     }

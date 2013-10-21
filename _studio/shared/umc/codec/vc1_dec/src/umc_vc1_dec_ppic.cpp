@@ -51,9 +51,6 @@ VC1Status DecodePictureLayer_ProgressivePpicture(VC1Context* pContext)
     //stepsize PQUANT as indicated by Table 6.
     VC1_GET_BITS(5, picLayerHeader->PQINDEX);
 
-    CalculatePQuant(pContext);
-    ChooseTTMB_TTBLK_SBP(pContext);
-
    if(picLayerHeader->PQINDEX <= 8)
     {
         //3.2.1.8
@@ -84,6 +81,9 @@ VC1Status DecodePictureLayer_ProgressivePpicture(VC1Context* pContext)
         VC1_GET_BITS(1, picLayerHeader->PQUANTIZER);       //PQUANTIZER
         picLayerHeader->QuantizationType = 1 - picLayerHeader->PQUANTIZER;
     }
+
+    CalculatePQuant(pContext);
+    ChooseTTMB_TTBLK_SBP(pContext);
 
     MVRangeDecode(pContext);
 

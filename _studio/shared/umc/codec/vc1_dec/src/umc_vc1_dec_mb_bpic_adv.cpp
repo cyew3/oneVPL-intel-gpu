@@ -172,7 +172,7 @@ VC1Status MBLayer_ProgressiveBpicture_SKIP_NONDIRECT_AdvPrediction(VC1Context* p
             Ipp32s i;
             Ipp16s Xf,Yf,Xb=0,Yb=0;
             Ipp16s* savedMV = pContext->savedMV_Curr +
-                (sMB->widthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
+                (pContext->m_seqLayerHeader.MaxWidthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
 
             X = savedMV[0];
             Y = savedMV[1];
@@ -202,7 +202,7 @@ VC1Status MBLayer_ProgressiveBpicture_SKIP_NONDIRECT_AdvPrediction(VC1Context* p
             Ipp32s i;
             Ipp16s Xf=0,Yf=0,Xb,Yb;
             Ipp16s* savedMV = pContext->savedMV_Curr +
-                (sMB->widthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
+                (pContext->m_seqLayerHeader.MaxWidthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
 
             X = savedMV[0];
             Y = savedMV[1];
@@ -257,7 +257,7 @@ VC1Status MBLayer_ProgressiveBpicture_SKIP_DIRECT_AdvPrediction(VC1Context* pCon
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
 
-    Ipp16s* savedMV = pContext->savedMV_Curr +  (sMB->widthMB*sMB->m_currMBYpos
+    Ipp16s* savedMV = pContext->savedMV_Curr +  (pContext->m_seqLayerHeader.MaxWidthMB*sMB->m_currMBYpos
         + sMB->m_currMBXpos)*2*2;
 
      X = savedMV[0];
@@ -411,7 +411,7 @@ VC1Status MBLayer_ProgressiveBpicture_NONDIRECT_AdvPrediction(VC1Context* pConte
             Ipp16s Xf,Yf,Xb=0,Yb=0;
 
             Ipp16s* savedMV = pContext->savedMV_Curr +
-                (sMB->widthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
+                (pContext->m_seqLayerHeader.MaxWidthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
 
             X = savedMV[0];
             Y = savedMV[1];
@@ -447,7 +447,7 @@ VC1Status MBLayer_ProgressiveBpicture_NONDIRECT_AdvPrediction(VC1Context* pConte
             Ipp32s i;
             Ipp16s Xf=0,Yf=0,Xb=0,Yb=0;
             Ipp16s* savedMV = pContext->savedMV_Curr +
-                (sMB->widthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
+                (pContext->m_seqLayerHeader.MaxWidthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
 
             X = savedMV[0];
             Y = savedMV[1];
@@ -516,7 +516,7 @@ VC1Status MBLayer_ProgressiveBpicture_DIRECT_AdvPrediction(VC1Context* pContext)
     VC1MB* pCurrMB = pContext->m_pCurrMB;
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     Ipp16s* savedMV = pContext->savedMV_Curr +
-                (sMB->widthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
+                (pContext->m_seqLayerHeader.MaxWidthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
 
     X = savedMV[0];
     Y = savedMV[1];
@@ -584,7 +584,7 @@ VC1Status MBLayer_ProgressiveBpicture_Adv(VC1Context* pContext)
     else
     {
         DIRECTBBIT = picLayerHeader->m_DirectMB.m_databits
-            [sMB->widthMB*sMB->m_currMBYpos + sMB->m_currMBXpos];
+            [pContext->m_seqLayerHeader.MaxWidthMB*sMB->m_currMBYpos + sMB->m_currMBXpos];
 
     }
     // SKIPMBBIT
@@ -595,7 +595,7 @@ VC1Status MBLayer_ProgressiveBpicture_Adv(VC1Context* pContext)
     else
     {
         SKIPMBBIT = picLayerHeader->SKIPMB.m_databits
-            [sMB->widthMB * sMB->m_currMBYpos +  sMB->m_currMBXpos];
+            [pContext->m_seqLayerHeader.MaxWidthMB * sMB->m_currMBYpos +  sMB->m_currMBXpos];
     }
 
     pCurrMB->SkipAndDirectFlag = (DIRECTBBIT+(SKIPMBBIT<<1));
@@ -770,7 +770,7 @@ VC1Status MBLayer_InterlaceFrameBpicture_SKIP_DIRECT_Prediction(VC1Context* pCon
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1MB* pCurrMB = pContext->m_pCurrMB;
     Ipp16s* savedMV = pContext->savedMV_Curr
-                      + (sMB->widthMB * sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
+                      + (pContext->m_seqLayerHeader.MaxWidthMB* sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
 
     Ipp16s Xt,Yt, Xb, Yb;
     Ipp16s Xtopf,Ytopf,Xbottomf,Ybottomf;
@@ -1042,7 +1042,7 @@ VC1Status MBLayer_InterlaceFrameBpicture_NONDIRECT_Prediction(VC1Context* pConte
             if (pCurrMB->MVSW)
             {
                 PredictInterlace2MV_Field_Adv(pCurrMB,
-                                        pMVx,pMVy,0, 1, pContext->m_seqLayerHeader.widthMB);
+                                        pMVx,pMVy,0, 1, pContext->m_seqLayerHeader.MaxWidthMB);
                 ApplyMVPredictionCalculate(pContext,&pMVx[0],&pMVy[0],pCurrMB->dmv_x[0][0],pCurrMB->dmv_y[0][0]);
                 ApplyMVPredictionCalculate(pContext,&pMVx[1],&pMVy[1],pCurrMB->dmv_x[0][1],pCurrMB->dmv_y[0][1]);
                 writeMV(pCurrMB,pMVx[0],pMVy[0],pMVx[0],pMVy[0],0);
@@ -1052,11 +1052,11 @@ VC1Status MBLayer_InterlaceFrameBpicture_NONDIRECT_Prediction(VC1Context* pConte
             else
             {
                 PredictInterlace2MV_Field_Adv(pCurrMB,
-                                        pMVx,pMVy,0, 0, pContext->m_seqLayerHeader.widthMB);
+                                        pMVx,pMVy,0, 0, sMB->MaxWidthMB);
                 ApplyMVPredictionCalculate(pContext,&pMVx[0],&pMVy[0],pCurrMB->dmv_x[0][0],pCurrMB->dmv_y[0][0]);
                 ApplyMVPredictionCalculate(pContext,&pMVx[1],&pMVy[1],pCurrMB->dmv_x[0][1],pCurrMB->dmv_y[0][1]);
                 writeMV(pCurrMB,pMVx[0],pMVy[0],pMVx[1],pMVy[1],0);
-                PredictInterlace2MV_Field_Adv(pCurrMB,  pMVx,pMVy,1, 1, sMB->widthMB);
+                PredictInterlace2MV_Field_Adv(pCurrMB,  pMVx,pMVy,1, 1, sMB->MaxWidthMB);
                 writeMV(pCurrMB,pMVx[0],pMVy[0],pMVx[1],pMVy[1],1);
             }
         }
@@ -1070,7 +1070,7 @@ VC1Status MBLayer_InterlaceFrameBpicture_NONDIRECT_Prediction(VC1Context* pConte
             if (pCurrMB->MVSW)
             {
                 PredictInterlace2MV_Field_Adv(pCurrMB,
-                                        pMVx,pMVy,1, 0, sMB->widthMB);
+                                        pMVx,pMVy,1, 0, pContext->m_seqLayerHeader.MaxWidthMB);
 
                 ApplyMVPredictionCalculate(pContext,&pMVx[0],&pMVy[0],pCurrMB->dmv_x[1][0],pCurrMB->dmv_y[1][0]);
                 ApplyMVPredictionCalculate(pContext,&pMVx[1],&pMVy[1],pCurrMB->dmv_x[1][1],pCurrMB->dmv_y[1][1]);
@@ -1080,13 +1080,13 @@ VC1Status MBLayer_InterlaceFrameBpicture_NONDIRECT_Prediction(VC1Context* pConte
             }
             else
             {
-                PredictInterlace2MV_Field_Adv(pCurrMB, pMVx,pMVy,1, 1, sMB->widthMB);
+                PredictInterlace2MV_Field_Adv(pCurrMB, pMVx,pMVy,1, 1, pContext->m_seqLayerHeader.MaxWidthMB);
 
 
                 ApplyMVPredictionCalculate(pContext,&pMVx[0],&pMVy[0],pCurrMB->dmv_x[1][0],pCurrMB->dmv_y[1][0]);
                 ApplyMVPredictionCalculate(pContext,&pMVx[1],&pMVy[1],pCurrMB->dmv_x[1][1],pCurrMB->dmv_y[1][1]);
                 writeMV(pCurrMB,pMVx[0],pMVy[0],pMVx[1],pMVy[1],1);
-                PredictInterlace2MV_Field_Adv(pCurrMB, pMVx,pMVy,0, 0, sMB->widthMB);
+                PredictInterlace2MV_Field_Adv(pCurrMB, pMVx,pMVy,0, 0, pContext->m_seqLayerHeader.MaxWidthMB);
                 writeMV(pContext->m_pCurrMB,pMVx[0],pMVy[0],pMVx[1],pMVy[1],0);
             }
         }
@@ -1097,12 +1097,12 @@ VC1Status MBLayer_InterlaceFrameBpicture_NONDIRECT_Prediction(VC1Context* pConte
             Ipp16s pMVy[2] = {0,0};
 
             PredictInterlace2MV_Field_Adv(pCurrMB,
-                                    pMVx,pMVy,1, 1, pContext->m_seqLayerHeader.widthMB);
+                                    pMVx,pMVy,1, 1, pContext->m_seqLayerHeader.MaxWidthMB);
             ApplyMVPredictionCalculate(pContext,&pMVx[0],&pMVy[0],pCurrMB->dmv_x[1][0],pCurrMB->dmv_y[1][0]);
             ApplyMVPredictionCalculate(pContext,&pMVx[1],&pMVy[1],pCurrMB->dmv_x[1][1],pCurrMB->dmv_y[1][1]);
             writeMV(pCurrMB,pMVx[0],pMVy[0],pMVx[1],pMVy[1],1);
             PredictInterlace2MV_Field_Adv(pCurrMB,
-                                    pMVx,pMVy,0, 0, pContext->m_seqLayerHeader.widthMB);
+                                    pMVx,pMVy,0, 0, pContext->m_seqLayerHeader.MaxWidthMB);
             ApplyMVPredictionCalculate(pContext,&pMVx[0],&pMVy[0],pCurrMB->dmv_x[0][0],pCurrMB->dmv_y[0][0]);
             ApplyMVPredictionCalculate(pContext,&pMVx[1],&pMVy[1],pCurrMB->dmv_x[0][1],pCurrMB->dmv_y[0][1]);
             writeMV(pCurrMB,pMVx[0],pMVy[0],pMVx[1],pMVy[1],0);
@@ -1144,7 +1144,7 @@ VC1Status MBLayer_InterlaceFrameBpicture_DIRECT_Prediction(VC1Context* pContext)
     VC1MB* pCurrMB = pContext->m_pCurrMB;
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
 
-    Ipp16s* savedMV = pContext->savedMV_Curr + (sMB->widthMB * sMB->m_currMBYpos
+    Ipp16s* savedMV = pContext->savedMV_Curr + (pContext->m_seqLayerHeader.MaxWidthMB * sMB->m_currMBYpos
                                     + sMB->m_currMBXpos)*2*2;
 
     Ipp16s Xt,Yt, Xb, Yb;
@@ -1221,7 +1221,7 @@ VC1Status MBLayer_Frame_InterlacedBpicture(VC1Context* pContext)
         }
         else
         {
-            SKIPMBBIT = picLayerHeader->SKIPMB.m_databits[sMB->widthMB * sMB->m_currMBYpos +  sMB->m_currMBXpos];
+            SKIPMBBIT = picLayerHeader->SKIPMB.m_databits[pContext->m_seqLayerHeader.MaxWidthMB * sMB->m_currMBYpos +  sMB->m_currMBXpos];
         }
     }
 
@@ -1259,7 +1259,7 @@ VC1Status MBLayer_Frame_InterlacedBpicture(VC1Context* pContext)
                 VC1_GET_BITS(1, FIELDTX);
             } else {
                 FIELDTX = picLayerHeader->FIELDTX.m_databits
-                    [sMB->widthMB * sMB->m_currMBYpos + sMB->m_currMBXpos];
+                    [pContext->m_seqLayerHeader.MaxWidthMB * sMB->m_currMBYpos + sMB->m_currMBXpos];
             }
             pCurrMB->FIELDTX = FIELDTX;
         }
@@ -1324,7 +1324,7 @@ VC1Status MBLayer_Frame_InterlacedBpicture(VC1Context* pContext)
         }
         else
         {
-            DIRECTBBIT = picLayerHeader->m_DirectMB.m_databits[sMB->widthMB * sMB->m_currMBYpos + sMB->m_currMBXpos];
+            DIRECTBBIT = picLayerHeader->m_DirectMB.m_databits[pContext->m_seqLayerHeader.MaxWidthMB * sMB->m_currMBYpos + sMB->m_currMBXpos];
         }
         pContext->m_pCurrMB->SkipAndDirectFlag = (DIRECTBBIT+(SKIPMBBIT<<1));
 
@@ -1611,7 +1611,7 @@ VC1Status MBLayer_InterlaceFieldBpicture_DIRECT_Prediction(VC1Context* pContext)
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1MB* pCurrMB = pContext->m_pCurrMB;
     Ipp16s* savedMV = pContext->savedMV_Curr
-        + (sMB->widthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
+        + (pContext->m_seqLayerHeader.MaxWidthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
 
     //Ipp8u* samePolarity = pContext->savedMVSamePolarity_Curr +
     //                     (pContext->m_seqLayerHeader.widthMB*pContext->m_pSingleMB->m_currMBYpos +
@@ -1815,7 +1815,7 @@ VC1Status MBLayer_Field_InterlacedBpicture (VC1Context* pContext)
             }
             else {
                 FORWARDBIT = picLayerHeader->FORWARDMB.m_databits
-                    [sMB->widthMB * sMB->slice_currMBYpos +
+                    [pContext->m_seqLayerHeader.MaxWidthMB * sMB->slice_currMBYpos +
                     sMB->m_currMBXpos];
             }
         }

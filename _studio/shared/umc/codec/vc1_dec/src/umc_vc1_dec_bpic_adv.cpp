@@ -276,10 +276,7 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldBpicture_Adv (VC1Context* pConte
 
 
     VC1_GET_BITS(5,picLayerHeader->PQINDEX);
-    CalculatePQuant(pContext);
-
-    ChooseTTMB_TTBLK_SBP(pContext);
-
+    
     if(picLayerHeader->PQINDEX<=8)
     {
         VC1_GET_BITS(1,picLayerHeader->HALFQP);
@@ -292,6 +289,9 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldBpicture_Adv (VC1Context* pConte
     {
         VC1_GET_BITS(1,picLayerHeader->PQUANTIZER);    //PQUANTIZER
     }
+        
+    CalculatePQuant(pContext);
+    ChooseTTMB_TTBLK_SBP(pContext);
 
     if(seqLayerHeader->POSTPROCFLAG)
     {
@@ -358,7 +358,7 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldBpicture_Adv (VC1Context* pConte
     else
     DecodeBitplane(pContext, &picLayerHeader->FORWARDMB,
                    seqLayerHeader->widthMB, (seqLayerHeader->heightMB+1)/2,
-                   seqLayerHeader->widthMB * ((seqLayerHeader->heightMB+1)/2));
+                   seqLayerHeader->MaxWidthMB * ((seqLayerHeader->heightMB+1)/2));
 
     //motion vector table
     VC1_GET_BITS(3, picLayerHeader->MBMODETAB);       //MBMODETAB
@@ -445,6 +445,8 @@ VC1Status Decode_InterlaceFieldBpicture_Adv (VC1Context* pContext)
         sMB->m_currMBXpos = 0;
         sMB->m_currMBYpos++;
         sMB->slice_currMBYpos++;
+        pContext->CurrDC += (sMB->MaxWidthMB - sMB->widthMB);
+        pContext->m_pBlock += (sMB->MaxWidthMB - sMB->widthMB)*8*8*6;
     }
 
     if ((pContext->m_seqLayerHeader.LOOPFILTER))

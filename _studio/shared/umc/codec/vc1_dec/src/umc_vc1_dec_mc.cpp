@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2010 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 motion compensation
@@ -20,15 +20,6 @@
 #include "umc_vc1_common_defs.h"
 #include "umc_vc1_dec_intens_comp_tbl.h"
 #include "umc_vc1_dec_time_statistics.h"
-
-typedef void (*ExpandIntens)(VC1Context* pContext, Frame* pFrame);
-
-static const ExpandIntens ExpandIntens_table[] =
-             {
-               (ExpandIntens)(ExpandFrame_Adv),
-               (ExpandIntens)(ExpandFrame_Interlace),
-               (ExpandIntens)(ExpandFrame_Interlace)
-             };
 
 VC1Status FillTablesForIntensityCompensation(VC1Context* pContext,
                                              Ipp32u scale,

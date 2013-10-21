@@ -42,7 +42,8 @@ bool VC1FrameDescriptor::Init(Ipp32u         DescriporID,
 {
     VC1SequenceLayerHeader* seqLayerHeader = &pContext->m_seqLayerHeader;
     m_bIsReorder = IsReorder;
-    Ipp32u HeightMB = seqLayerHeader->heightMB;
+    Ipp32u HeightMB = pContext->m_seqLayerHeader.MaxHeightMB;
+    Ipp32u WidthMB = pContext->m_seqLayerHeader.MaxWidthMB;
 
     if(seqLayerHeader->INTERLACE)
         HeightMB = HeightMB + (HeightMB & 1); //in case of field with odd height
@@ -51,12 +52,12 @@ bool VC1FrameDescriptor::Init(Ipp32u         DescriporID,
     {
         Ipp8u* ptr = NULL;
         ptr += align_value<Ipp32u>(sizeof(VC1Context));
-        ptr += align_value<Ipp32u>(sizeof(VC1MB)*(HeightMB*pContext->m_seqLayerHeader.widthMB));
+        ptr += align_value<Ipp32u>(sizeof(VC1MB)*(HeightMB*WidthMB));
         ptr += align_value<Ipp32u>(sizeof(VC1PictureLayerHeader)*VC1_MAX_SLICE_NUM);
-        ptr += align_value<Ipp32u>(sizeof(VC1DCMBParam)*HeightMB*seqLayerHeader->widthMB);
-        ptr += align_value<Ipp32u>(sizeof(Ipp16s)*HeightMB*seqLayerHeader->widthMB*2*2);
-        ptr += align_value<Ipp32u>(sizeof(Ipp8u)*HeightMB*seqLayerHeader->widthMB);
-        ptr += align_value<Ipp32u>((HeightMB*seqLayerHeader->widthMB*VC1_MAX_BITPANE_CHUNCKS));
+        ptr += align_value<Ipp32u>(sizeof(VC1DCMBParam)*HeightMB*WidthMB);
+        ptr += align_value<Ipp32u>(sizeof(Ipp16s)*HeightMB*WidthMB*2*2);
+        ptr += align_value<Ipp32u>(sizeof(Ipp8u)*HeightMB*WidthMB);
+        ptr += align_value<Ipp32u>((HeightMB*seqLayerHeader->MaxWidthMB*VC1_MAX_BITPANE_CHUNCKS));
 
         // Need to replace with MFX allocator
         if (m_pMemoryAllocator->Alloc(&m_iMemContextID,
@@ -73,7 +74,7 @@ bool VC1FrameDescriptor::Init(Ipp32u         DescriporID,
         ptr += align_value<Ipp32u>(sizeof(VC1Context));
         m_pContext->m_MBs = (VC1MB*)ptr;
 
-        ptr +=  align_value<Ipp32u>(sizeof(VC1MB)*(HeightMB*pContext->m_seqLayerHeader.widthMB));
+        ptr +=  align_value<Ipp32u>(sizeof(VC1MB)*(HeightMB*WidthMB));
         m_pContext->m_picLayerHeader = (VC1PictureLayerHeader*)ptr;
         m_pContext->m_InitPicLayer = m_pContext->m_picLayerHeader;
 
@@ -81,17 +82,17 @@ bool VC1FrameDescriptor::Init(Ipp32u         DescriporID,
         m_pContext->DCACParams = (VC1DCMBParam*)ptr;
 
 
-        ptr += align_value<Ipp32u>(sizeof(VC1DCMBParam)*HeightMB*seqLayerHeader->widthMB);
+        ptr += align_value<Ipp32u>(sizeof(VC1DCMBParam)*HeightMB*WidthMB);
         m_pContext->savedMV = (Ipp16s*)(ptr);
 
-        ptr += align_value<Ipp32u>(sizeof(Ipp16s)*HeightMB*seqLayerHeader->widthMB*2*2);
+        ptr += align_value<Ipp32u>(sizeof(Ipp16s)*HeightMB*WidthMB*2*2);
         m_pContext->savedMVSamePolarity  = ptr;
 
-        ptr += align_value<Ipp32u>(sizeof(Ipp8u)*HeightMB*seqLayerHeader->widthMB);
+        ptr += align_value<Ipp32u>(sizeof(Ipp8u)*HeightMB*WidthMB);
         m_pContext->m_pBitplane.m_databits = ptr;
 
     }
-    Ipp32u buffSize =  2*(HeightMB*VC1_PIXEL_IN_LUMA)*(seqLayerHeader->widthMB*VC1_PIXEL_IN_LUMA);
+    Ipp32u buffSize =  2*(HeightMB*VC1_PIXEL_IN_LUMA)*(WidthMB*VC1_PIXEL_IN_LUMA);
 
     //buf size should be divisible by 4
     if(buffSize & 0x00000003)
@@ -113,7 +114,7 @@ bool VC1FrameDescriptor::Init(Ipp32u         DescriporID,
         if (!pResidBuf)
         {
             if(m_pMemoryAllocator->Alloc(&m_iDiffMemID,
-                                         sizeof(Ipp16s)*seqLayerHeader->widthMB*HeightMB*8*8*6,
+                                         sizeof(Ipp16s)*WidthMB*HeightMB*8*8*6,
                                          UMC_ALLOC_PERSISTENT, 16) != UMC_OK )
             {
                 return false;

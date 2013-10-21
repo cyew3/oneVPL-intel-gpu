@@ -12,14 +12,12 @@
 */
 
 #include "umc_defs.h"
-#include "mfx_common_int.h"
 
 #if defined (UMC_ENABLE_VC1_VIDEO_DECODER)
 
 #include "umc_vc1_dec_seq.h"
 #include "umc_vc1_dec_debug.h"
 #include "umc_vc1_common_mvdiff_tbl.h"
-
 
 void ApplyMVPredictionCalculate( VC1Context* pContext,
                                 Ipp16s* pMVx,
@@ -801,7 +799,7 @@ void PredictInterlaceFrame1MV(VC1Context* pContext)
     VC1MB* pCurrMB = pContext->m_pCurrMB;
 
     Ipp32u LeftTopRightPositionFlag = pCurrMB->LeftTopRightPositionFlag;
-    Ipp32s width = pContext->m_pSingleMB->widthMB;
+    Ipp32s width = pContext->m_pSingleMB->MaxWidthMB;
     VC1MB *pA = NULL, *pB = NULL, *pC = NULL;
 
     memset(&MVPred,0,sizeof(VC1MVPredictors));
@@ -879,7 +877,7 @@ void PredictInterlace4MVFrame_Adv(VC1Context* pContext)
     VC1MB* pCurrMB = pContext->m_pCurrMB;
 
     Ipp32u LeftTopRightPositionFlag = pCurrMB->LeftTopRightPositionFlag;
-    Ipp32s width = pContext->m_pSingleMB->widthMB;
+    Ipp32s width = pContext->m_pSingleMB->MaxWidthMB;
     VC1MB *pA = NULL, *pB = NULL, *pC = NULL;
 
     memset(&MVPred,0,sizeof(VC1MVPredictors));
@@ -1023,7 +1021,7 @@ void PredictInterlace4MVField_Adv(VC1Context* pContext)
     VC1MB* pCurrMB = pContext->m_pCurrMB;
 
     Ipp32u LeftTopRightPositionFlag = pCurrMB->LeftTopRightPositionFlag;
-    Ipp32s width = pContext->m_pSingleMB->widthMB;
+    Ipp32s width = pContext->m_pSingleMB->MaxWidthMB;
     VC1MB *pA = NULL, *pB = NULL, *pC = NULL;
 
     memset(&MVPred,0,sizeof(VC1MVPredictors));
@@ -2563,7 +2561,7 @@ void Field1MVPrediction(VC1Context* pContext)
     VC1MB *pA = NULL, *pB = NULL, *pC = NULL;
 
     Ipp32u LeftTopRight = pCurrMB->LeftTopRightPositionFlag;
-    Ipp32s width = pContext->m_pSingleMB->widthMB;
+    Ipp32s width = pContext->m_pSingleMB->MaxWidthMB;
 
     memset(&MVPred,0,sizeof(VC1MVPredictors));
 
@@ -2636,7 +2634,7 @@ void Field4MVPrediction(VC1Context* pContext)
     VC1MB *pA = NULL, *pB0 = NULL,*pB1 = NULL, *pC = NULL;
 
     Ipp32u LeftTopRight = pCurrMB->LeftTopRightPositionFlag;
-    Ipp32s width = pContext->m_pSingleMB->widthMB;
+    Ipp32s width = pContext->m_pSingleMB->MaxWidthMB;
 
     memset(&MVPred,0,sizeof(VC1MVPredictors));
 

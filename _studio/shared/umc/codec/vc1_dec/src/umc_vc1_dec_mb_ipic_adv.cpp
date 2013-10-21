@@ -44,7 +44,7 @@ VC1Status MBLayer_ProgressiveIpicture_Adv(VC1Context* pContext)
     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_POSITION,VM_STRING("\t\t\tX: %d, Y: %d\n"),
         sMB->m_currMBXpos, sMB->m_currMBYpos);
 #endif
-    memset((pContext->savedMV + (sMB->m_currMBXpos + sMB->m_currMBYpos * sMB->widthMB)*4),VC1_MVINTRA,sizeof(Ipp16s)*4);
+    memset((pContext->savedMV + (sMB->m_currMBXpos + sMB->m_currMBYpos * pContext->m_seqLayerHeader.MaxWidthMB)*4),VC1_MVINTRA,sizeof(Ipp16s)*4);
 
     pCurrMB->LeftTopRightPositionFlag = CalculateLeftTopRightPositionFlag(sMB);
 
@@ -60,7 +60,7 @@ VC1Status MBLayer_ProgressiveIpicture_Adv(VC1Context* pContext)
                                         pContext->m_vlcTbl->m_pCBPCY_Ipic);
     VM_ASSERT(ret == ippStsNoErr);
 
-    pCurrMB->m_cbpBits = CalculateCBP(pCurrMB, CBPCY, sMB->widthMB);
+    pCurrMB->m_cbpBits = CalculateCBP(pCurrMB, CBPCY, pContext->m_seqLayerHeader.MaxWidthMB);
 
 
     // Check ACPRED coding mode
@@ -71,13 +71,14 @@ VC1Status MBLayer_ProgressiveIpicture_Adv(VC1Context* pContext)
         }
         else
         {
-            ACPRED = picLayerHeader->ACPRED.m_databits [sMB->widthMB * sMB->m_currMBYpos + sMB->m_currMBXpos];
+            ACPRED = picLayerHeader->ACPRED.m_databits [pContext->m_seqLayerHeader.MaxWidthMB * sMB->m_currMBYpos + sMB->m_currMBXpos];
         }
     }
 
     // Overlap
     //for smoothing
     pCurrMB->Overlap = (Ipp8u)pContext->m_seqLayerHeader.OVERLAP;
+    
     if(pCurrMB->Overlap)
     {
         if(picLayerHeader->PQUANT>=9)
@@ -98,7 +99,7 @@ VC1Status MBLayer_ProgressiveIpicture_Adv(VC1Context* pContext)
             else
             {
                 OverlapVal = picLayerHeader->OVERFLAGS.m_databits
-                    [sMB->widthMB * sMB->m_currMBYpos +  sMB->m_currMBXpos];
+                    [pContext->m_seqLayerHeader.MaxWidthMB * sMB->m_currMBYpos +  sMB->m_currMBXpos];
 
             }
             pCurrMB->Overlap = (Ipp8u)OverlapVal;
@@ -173,7 +174,7 @@ VC1Status MBLayer_Frame_InterlaceIpicture(VC1Context* pContext)
     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_POSITION,VM_STRING("\t\t\tX: %d, Y: %d\n"),
                         sMB->m_currMBXpos, sMB->m_currMBYpos);
 #endif
-    memset((pContext->savedMV + (sMB->m_currMBXpos + sMB->m_currMBYpos * sMB->widthMB)*4),VC1_MVINTRA,sizeof(Ipp16s)*4);
+    memset((pContext->savedMV + (sMB->m_currMBXpos + sMB->m_currMBYpos * pContext->m_seqLayerHeader.MaxWidthMB)*4),VC1_MVINTRA,sizeof(Ipp16s)*4);
     pCurrMB->LeftTopRightPositionFlag = CalculateLeftTopRightPositionFlag(sMB);
 
     Set_MQuant(pContext);
@@ -189,7 +190,7 @@ VC1Status MBLayer_Frame_InterlaceIpicture(VC1Context* pContext)
         }
         else
         {
-            FIELDTX = picLayerHeader->FIELDTX.m_databits[sMB->widthMB * sMB->m_currMBYpos +  sMB->m_currMBXpos];
+            FIELDTX = picLayerHeader->FIELDTX.m_databits[pContext->m_seqLayerHeader.MaxWidthMB * sMB->m_currMBYpos +  sMB->m_currMBXpos];
         }
         pCurrMB->FIELDTX = FIELDTX;
     }
@@ -202,7 +203,7 @@ VC1Status MBLayer_Frame_InterlaceIpicture(VC1Context* pContext)
                                         pContext->m_vlcTbl->m_pCBPCY_Ipic);
     VM_ASSERT(ret == ippStsNoErr);
 
-    pCurrMB->m_cbpBits = CalculateCBP(pCurrMB, CBPCY, sMB->widthMB);
+    pCurrMB->m_cbpBits = CalculateCBP(pCurrMB, CBPCY, pContext->m_seqLayerHeader.MaxWidthMB);
 
     // Check ACPRED coding mode
     {
@@ -213,7 +214,7 @@ VC1Status MBLayer_Frame_InterlaceIpicture(VC1Context* pContext)
         else
         {
             ACPRED = pContext->m_picLayerHeader->ACPRED.m_databits
-                [sMB->widthMB * sMB->m_currMBYpos + sMB->m_currMBXpos];
+                [pContext->m_seqLayerHeader.MaxWidthMB * sMB->m_currMBYpos + sMB->m_currMBXpos];
         }
     }
 
@@ -240,7 +241,7 @@ VC1Status MBLayer_Frame_InterlaceIpicture(VC1Context* pContext)
             else
             {
                 OverlapVal = picLayerHeader->OVERFLAGS.m_databits
-                    [sMB->widthMB * sMB->m_currMBYpos + sMB->m_currMBXpos];
+                    [pContext->m_seqLayerHeader.MaxWidthMB * sMB->m_currMBYpos + sMB->m_currMBXpos];
             }
             pCurrMB->Overlap = (Ipp8u)OverlapVal;
         }
@@ -324,7 +325,7 @@ VC1Status MBLayer_Field_InterlaceIpicture(VC1Context* pContext)
                         sMB->m_currMBXpos,
                         sMB->m_currMBYpos - picLayerHeader->CurrField * sMB->heightMB/2);
 #endif
-    memset((pContext->savedMV + (sMB->m_currMBXpos + sMB->m_currMBYpos * sMB->widthMB)*4),VC1_MVINTRA,sizeof(Ipp16s)*4);
+    memset((pContext->savedMV + (sMB->m_currMBXpos + sMB->m_currMBYpos * pContext->m_seqLayerHeader.MaxWidthMB)*4),VC1_MVINTRA,sizeof(Ipp16s)*4);
 
     pCurrMB->LeftTopRightPositionFlag = CalculateLeftTopRightPositionFlag(sMB);
 
@@ -340,7 +341,7 @@ VC1Status MBLayer_Field_InterlaceIpicture(VC1Context* pContext)
                                         pContext->m_vlcTbl->m_pCBPCY_Ipic);
     VM_ASSERT(ret == ippStsNoErr);
 
-    pCurrMB->m_cbpBits = CalculateCBP(pCurrMB, CBPCY,sMB->widthMB);
+    pCurrMB->m_cbpBits = CalculateCBP(pCurrMB, CBPCY,pContext->m_seqLayerHeader.MaxWidthMB);
 
 
     // Check ACPRED coding mode
@@ -350,7 +351,7 @@ VC1Status MBLayer_Field_InterlaceIpicture(VC1Context* pContext)
             VC1_GET_BITS(1, ACPRED);
         }
         else {
-            ACPRED = picLayerHeader->ACPRED.m_databits[sMB->widthMB * sMB->slice_currMBYpos + sMB->m_currMBXpos];
+            ACPRED = picLayerHeader->ACPRED.m_databits[pContext->m_seqLayerHeader.MaxWidthMB * sMB->slice_currMBYpos + sMB->m_currMBXpos];
         }
     }
 
@@ -378,7 +379,7 @@ VC1Status MBLayer_Field_InterlaceIpicture(VC1Context* pContext)
             else
             {
                OverlapVal = picLayerHeader->OVERFLAGS.m_databits
-                    [sMB->widthMB * sMB->slice_currMBYpos + sMB->m_currMBXpos];
+                    [pContext->m_seqLayerHeader.MaxWidthMB * sMB->slice_currMBYpos + sMB->m_currMBXpos];
             }
             pContext->m_pCurrMB->Overlap = (Ipp8u)OverlapVal;
         }

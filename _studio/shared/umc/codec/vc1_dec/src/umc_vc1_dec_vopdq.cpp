@@ -196,10 +196,11 @@ VC1Status CalculatePQuant(VC1Context* pContext)
         //level (signaled by sequence field QUANTIZER = 01, 10 or 11 see
         //section 3.1.19) then PQINDEX is translated to the picture quantizer
         //stepsize PQUANT as indicated by Table 6.
-        if(seqLayerHeader->QUANTIZER == 2)
+        if((seqLayerHeader->QUANTIZER == 2) || ((picLayerHeader->PQUANTIZER == 0) && (seqLayerHeader->QUANTIZER == 1)))
         {
             picLayerHeader->QuantizationType = VC1_QUANTIZER_NONUNIFORM;
         }
+    
     }
     return VC1_OK;
 }

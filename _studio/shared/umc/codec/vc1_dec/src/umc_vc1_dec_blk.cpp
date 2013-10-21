@@ -12,7 +12,6 @@
 */
 
 #include "umc_defs.h"
-#include "mfx_common_int.h"
 
 #if defined (UMC_ENABLE_VC1_VIDEO_DECODER)
 

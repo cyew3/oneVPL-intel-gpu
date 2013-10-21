@@ -11,7 +11,6 @@
 //
 */
 #include "umc_defs.h"
-#include "mfx_common_int.h"
 
 #if defined (UMC_ENABLE_VC1_VIDEO_DECODER)
 
@@ -43,7 +42,7 @@ void GetIntraScaleDCPredictors(VC1Context* pContext)
     Ipp32s QurrDCStep = CurrDC->DCStepSize;
 
     Ipp32u LeftTopFlag = pContext->m_pCurrMB->LeftTopRightPositionFlag & 0xFF0;
-    Ipp32s width = pContext->m_seqLayerHeader.widthMB;
+    Ipp32s width = pContext->m_seqLayerHeader.MaxWidthMB;
 
     VC1DCMBParam* pA = NULL, *pB = NULL, *pC = NULL;
 
@@ -255,7 +254,7 @@ void GetIntraDCPredictors(VC1Context* pContext)
     VC1DCPredictors DCPred;
 
     Ipp32u LeftTopFlag = pContext->m_pCurrMB->LeftTopRightPositionFlag & 0xFF0;
-    Ipp32s width = pContext->m_seqLayerHeader.widthMB;
+    Ipp32s width = pContext->m_seqLayerHeader.MaxWidthMB;
     Ipp32u QurrQuant = CurrDC->DoubleQuant;
 
     VC1DCMBParam* pA = NULL, *pB = NULL, *pC = NULL;
@@ -432,7 +431,7 @@ void GetPScaleDCPredictors(VC1Context* pContext)
     VC1MB* pCurrMB = pContext->m_pCurrMB;
 
     Ipp32u LeftTopFlag = pCurrMB->LeftTopRightPositionFlag & 0xFF0;
-    Ipp32s width = pContext->m_seqLayerHeader.widthMB;
+    Ipp32s width = pContext->m_seqLayerHeader.MaxWidthMB;
 
     VC1DCMBParam* pA = NULL, *pB = NULL, *pC = NULL;
 
@@ -776,7 +775,7 @@ void GetPDCPredictors(VC1Context* pContext)
     VC1MB* pCurrMB = pContext->m_pCurrMB;
 
     Ipp32u LeftTopFlag = pCurrMB->LeftTopRightPositionFlag & 0xFF0;
-    Ipp32s width = pContext->m_seqLayerHeader.widthMB;
+    Ipp32s width = pContext->m_seqLayerHeader.MaxWidthMB;
     Ipp32u QurrQuant = CurrDC->DoubleQuant;
 
     VC1DCMBParam* pA = NULL, *pB = NULL, *pC = NULL;

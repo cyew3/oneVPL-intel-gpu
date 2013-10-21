@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1)Smoothing main/simple profile
@@ -535,6 +535,7 @@ void Smoothing_I(VC1Context* pContext, Ipp32s Height)
         VC1MB* pCurrMB = pContext->m_pCurrMB;
         Ipp32s notTop = VC1_IS_NO_TOP_MB(pCurrMB->LeftTopRightPositionFlag);
         Ipp32s Width = pContext->m_seqLayerHeader.widthMB;
+        Ipp32s MaxWidth = pContext->m_seqLayerHeader.MaxWidthMB;
         Ipp32u EdgeDisabledFlag = IPPVC_EDGE_HALF_1 | IPPVC_EDGE_HALF_2;
 
         Ipp16s* CurrBlock = pContext->m_pBlock;
@@ -574,10 +575,6 @@ void Smoothing_I(VC1Context* pContext, Ipp32s Height)
                     UPlane = pCurrMB->currUPlane;
                     VPlane = pCurrMB->currVPlane;
 
-                    //UpYrow = pContext->SmoothingInfo->SmoothUpperYRows[i-1];
-                    //UpUrow = pContext->SmoothingInfo->SmoothUpperURows[i-1];
-                    //UpVrow = pContext->SmoothingInfo->SmoothUpperVRows[i-1];
-
                     //LUMA
                     //left boundary vertical smoothing
                     _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R(CurrBlock - 8*8*6+14, VC1_PIXEL_IN_LUMA*2,
@@ -592,7 +589,7 @@ void Smoothing_I(VC1Context* pContext, Ipp32s Height)
 
 
                     //left MB Upper horizontal edge
-                    _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R(CurrBlock - (Width+1)*8*8*6 + 64*2 +6*VC1_PIXEL_IN_LUMA,              VC1_PIXEL_IN_LUMA*2,
+                    _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R(CurrBlock - (MaxWidth+1)*8*8*6 + 64*2 +6*VC1_PIXEL_IN_LUMA,              VC1_PIXEL_IN_LUMA*2,
                                                                  CurrBlock - 8*8*6,   VC1_PIXEL_IN_LUMA*2,
                                                                  YPlane - 16,         YPitch,
                                                                  EdgeDisabledFlag);
@@ -615,30 +612,18 @@ void Smoothing_I(VC1Context* pContext, Ipp32s Height)
                                                                    VPlane,              VPitch);
 
                     //U top horizontal smoothing
-                    _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R(CurrBlock - (Width+1)*8*8*6 + 64*4 +6*VC1_PIXEL_IN_CHROMA,           VC1_PIXEL_IN_CHROMA*2,
+                    _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R(CurrBlock - (MaxWidth+1)*8*8*6 + 64*4 +6*VC1_PIXEL_IN_CHROMA,           VC1_PIXEL_IN_CHROMA*2,
                                                                    CurrBlock - 2*64, VC1_PIXEL_IN_CHROMA*2,
                                                                    UPlane - 8,       UPitch);
 
                     //V top horizontal smoothing
-                    _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R(CurrBlock - (Width+1)*8*8*6 + 64*5 +6*VC1_PIXEL_IN_CHROMA,         VC1_PIXEL_IN_CHROMA*2,
+                    _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R(CurrBlock - (MaxWidth+1)*8*8*6 + 64*5 +6*VC1_PIXEL_IN_CHROMA,         VC1_PIXEL_IN_CHROMA*2,
                                                                    CurrBlock - 64, VC1_PIXEL_IN_CHROMA*2,
                                                                    VPlane - 8,     VPitch);
-
-                    //copy last two srings of Left macroblock to SmoothUpperRows
-                   /* ippsCopy_16s(CurrBlock - 64*2 - 32, pContext->SmoothingInfo->SmoothUpperYRows[i - 1], 32);
-                    ippsCopy_16s(CurrBlock - 64 - 16,   pContext->SmoothingInfo->SmoothUpperURows[i - 1], 16);
-                    ippsCopy_16s(CurrBlock - 16,        pContext->SmoothingInfo->SmoothUpperVRows[i - 1], 16);*/
                 }
 
-                //RIGHT MB
-
-                //LUMA
-                //UpYrow = pContext->SmoothingInfo->SmoothUpperYRows[Width - 1];
-                //UpUrow = pContext->SmoothingInfo->SmoothUpperURows[Width - 1];
-                //UpVrow = pContext->SmoothingInfo->SmoothUpperVRows[Width - 1];
-
-                //MB Upper horizontal edge
-                _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R(CurrBlock - Width*8*8*6 + 64*2 +6*VC1_PIXEL_IN_LUMA,     VC1_PIXEL_IN_LUMA*2,
+                 //MB Upper horizontal edge
+                _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R(CurrBlock - MaxWidth*8*8*6 + 64*2 +6*VC1_PIXEL_IN_LUMA,     VC1_PIXEL_IN_LUMA*2,
                                                              CurrBlock,  VC1_PIXEL_IN_LUMA*2,
                                                              YPlane,     YPitch,
                                                              EdgeDisabledFlag);
@@ -650,23 +635,20 @@ void Smoothing_I(VC1Context* pContext, Ipp32s Height)
                                                              EdgeDisabledFlag);
 
                 //U top horizontal smoothing
-                _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R(CurrBlock - Width*8*8*6 + 64*4 +6*VC1_PIXEL_IN_CHROMA,            VC1_PIXEL_IN_CHROMA*2,
+                _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R(CurrBlock - MaxWidth*8*8*6 + 64*4 +6*VC1_PIXEL_IN_CHROMA,            VC1_PIXEL_IN_CHROMA*2,
                                                                CurrBlock + 4*64,  VC1_PIXEL_IN_CHROMA*2,
                                                                UPlane,            UPitch);
 
                 //V top horizontal smoothing
-                _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R(CurrBlock - Width*8*8*6 + 64*5 +6*VC1_PIXEL_IN_CHROMA,           VC1_PIXEL_IN_CHROMA*2,
+                _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R(CurrBlock - MaxWidth*8*8*6 + 64*5 +6*VC1_PIXEL_IN_CHROMA,           VC1_PIXEL_IN_CHROMA*2,
                                                                CurrBlock + 64*5, VC1_PIXEL_IN_CHROMA*2,
                                                                VPlane,           VPitch);
 
-
-                //copy last two srings of Left macroblock to SmoothUpperRows
-               /* ippsCopy_16s(CurrBlock + 64*4 - 32, pContext->SmoothingInfo->SmoothUpperYRows[Width - 1], 32);
-                ippsCopy_16s(CurrBlock + 64*5 - 16, pContext->SmoothingInfo->SmoothUpperURows[Width - 1], 16);
-                ippsCopy_16s(CurrBlock + 64*6 - 16, pContext->SmoothingInfo->SmoothUpperVRows[Width -1 ], 16);*/
-
                 CurrBlock  += 8*8*6;
                 pCurrMB++;
+
+                CurrBlock += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB)*8*8*6;
+                pCurrMB += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB);
         }
         else
         {
@@ -689,10 +671,6 @@ void Smoothing_I(VC1Context* pContext, Ipp32s Height)
                     YPlane = pCurrMB->currYPlane;
                     UPlane = pCurrMB->currUPlane;
                     VPlane = pCurrMB->currVPlane;
-
-                    //UpYrow = pContext->SmoothingInfo->SmoothUpperYRows[i-1];
-                    //UpUrow = pContext->SmoothingInfo->SmoothUpperURows[i-1];
-                    //UpVrow = pContext->SmoothingInfo->SmoothUpperVRows[i-1];
 
                     //LUMA
                     //left boundary vertical smoothing
@@ -722,31 +700,19 @@ void Smoothing_I(VC1Context* pContext, Ipp32s Height)
                     _own_ippiSmoothingChroma_VerEdge_VC1_16s8u_C1R(CurrBlock - 8*8 + 6, VC1_PIXEL_IN_CHROMA*2,
                                                                    CurrBlock +  8*8*5,  VC1_PIXEL_IN_CHROMA*2,
                                                                     VPlane,             VPitch);
-
-                    //copy last two srings of Left macroblock to SmoothUpperRows
-                    //ippsCopy_16s(CurrBlock - 64*2 - 32, pContext->SmoothingInfo->SmoothUpperYRows[i - 1], 32);
-                    //ippsCopy_16s(CurrBlock - 64 - 16, pContext->SmoothingInfo->SmoothUpperURows[i - 1], 16);
-                    //ippsCopy_16s(CurrBlock - 16,  pContext->SmoothingInfo->SmoothUpperVRows[i -1], 16);
-                }
+                 }
 
                 //RIGHT MB
-                //UpYrow = pContext->SmoothingInfo->SmoothUpperYRows[Width - 1];
-                //UpUrow = pContext->SmoothingInfo->SmoothUpperURows[Width - 1];
-                //UpVrow = pContext->SmoothingInfo->SmoothUpperVRows[Width - 1];
-
-                //MB internal horizontal edge
+                 //MB internal horizontal edge
                 _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R(CurrBlock + 8*8*2 - 32,  VC1_PIXEL_IN_LUMA*2,
                                                              CurrBlock + 8*8*2,       VC1_PIXEL_IN_LUMA*2,
                                                              YPlane + 8*YPitch,       YPitch,
                                                              EdgeDisabledFlag);
-
-                //copy last two srings of Left macroblock to SmoothUpperRows
-               /* ippsCopy_16s(CurrBlock + 64*4 - 32, pContext->SmoothingInfo->SmoothUpperYRows[Width - 1], 32);
-                ippsCopy_16s(CurrBlock + 64*5 - 16, pContext->SmoothingInfo->SmoothUpperURows[Width - 1], 16);
-                ippsCopy_16s(CurrBlock + 64*6 - 16, pContext->SmoothingInfo->SmoothUpperVRows[Width - 1], 16);*/
-
                 CurrBlock  += 8*8*6;
                 pCurrMB++;
+
+                CurrBlock += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB)*8*8*6;
+                pCurrMB += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB);
             }
         }
     }
@@ -761,6 +727,7 @@ void Smoothing_P(VC1Context* pContext, Ipp32s Height)
         VC1MB* pCurrMB = pContext->m_pCurrMB;
         Ipp32s notTop = VC1_IS_NO_TOP_MB(pCurrMB->LeftTopRightPositionFlag);
         Ipp32s Width = pContext->m_seqLayerHeader.widthMB;
+        Ipp32s MaxWidth = pContext->m_seqLayerHeader.MaxWidthMB;
         Ipp32u EdgeDisabledFlag;
         Ipp16s* CurrBlock = pContext->m_pBlock;
         Ipp8u* YPlane = pCurrMB->currYPlane;
@@ -791,7 +758,7 @@ void Smoothing_P(VC1Context* pContext, Ipp32s Height)
                 VPlane = pCurrMB->currVPlane;
 
                 CurrIntra    = (pCurrMB)->IntraFlag*pCurrMB->Overlap;
-                TopIntra     = (pCurrMB - Width)->IntraFlag*(pCurrMB - Width)->Overlap;
+                TopIntra     = (pCurrMB - MaxWidth)->IntraFlag*(pCurrMB - MaxWidth)->Overlap;
 
                 if(CurrIntra)
                 {
@@ -816,14 +783,9 @@ void Smoothing_P(VC1Context* pContext, Ipp32s Height)
                     UPlane = pCurrMB->currUPlane;
                     VPlane = pCurrMB->currVPlane;
 
-
-                    //UpYrow = pContext->SmoothingInfo->SmoothUpperYRows[i-1];
-                    //UpUrow = pContext->SmoothingInfo->SmoothUpperURows[i-1];
-                    //UpVrow = pContext->SmoothingInfo->SmoothUpperVRows[i-1];
-
                     CurrIntra    = (pCurrMB)->IntraFlag*pCurrMB->Overlap;
                     LeftIntra    = (pCurrMB - 1)->IntraFlag*(pCurrMB - 1)->Overlap;
-                    TopLeftIntra = (pCurrMB - Width - 1)->IntraFlag*(pCurrMB - Width - 1)->Overlap;
+                    TopLeftIntra = (pCurrMB - MaxWidth - 1)->IntraFlag*(pCurrMB - MaxWidth - 1)->Overlap;
 
                     if(CurrIntra)
                     {
@@ -860,7 +822,7 @@ void Smoothing_P(VC1Context* pContext, Ipp32s Height)
                             *(IPPVC_EDGE_HALF_1))|
                             (((VC1_EDGE_MB(TopLeftIntra,VC1_BLOCK_3_INTRA)) && (VC1_EDGE_MB(LeftIntra, VC1_BLOCK_1_INTRA)))
                             *(IPPVC_EDGE_HALF_2));
-                        _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R(CurrBlock - (Width+1)*8*8*6 + 64*2 +6*VC1_PIXEL_IN_LUMA,              VC1_PIXEL_IN_LUMA*2,
+                        _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R(CurrBlock - (MaxWidth+1)*8*8*6 + 64*2 +6*VC1_PIXEL_IN_LUMA,              VC1_PIXEL_IN_LUMA*2,
                                                                     CurrBlock - 8*8*6,   VC1_PIXEL_IN_LUMA*2,
                                                                     YPlane - 16,         YPitch,
                                                                     EdgeDisabledFlag);
@@ -891,31 +853,23 @@ void Smoothing_P(VC1Context* pContext, Ipp32s Height)
                         {
                             /////////////////////////////
                             //U top horizontal smoothing
-                            _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R(CurrBlock - (Width+1)*8*8*6 + 64*4 +6*VC1_PIXEL_IN_CHROMA,           VC1_PIXEL_IN_CHROMA*2,
+                            _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R(CurrBlock - (MaxWidth+1)*8*8*6 + 64*4 +6*VC1_PIXEL_IN_CHROMA,           VC1_PIXEL_IN_CHROMA*2,
                                                                         CurrBlock - 2*64, VC1_PIXEL_IN_CHROMA*2,
                                                                         UPlane - 8,       UPitch);
 
                             ////////////////////////////
                             //V top horizontal smoothing
-                            _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R(CurrBlock - (Width+1)*8*8*6 + 64*5 +6*VC1_PIXEL_IN_CHROMA,         VC1_PIXEL_IN_CHROMA*2,
+                            _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R(CurrBlock - (MaxWidth+1)*8*8*6 + 64*5 +6*VC1_PIXEL_IN_CHROMA,         VC1_PIXEL_IN_CHROMA*2,
                                                                         CurrBlock - 64, VC1_PIXEL_IN_CHROMA*2,
                                                                         VPlane - 8,     VPitch);
                         }
 
-                        //copy last two srings of Left macroblock to SmoothUpperRows
-                       /* ippsCopy_16s(CurrBlock - 64*2 - 32, pContext->SmoothingInfo->SmoothUpperYRows[i - 1], 32);
-                        ippsCopy_16s(CurrBlock - 64 - 16,   pContext->SmoothingInfo->SmoothUpperURows[i - 1], 16);
-                        ippsCopy_16s(CurrBlock - 16,        pContext->SmoothingInfo->SmoothUpperVRows[i - 1], 16);*/
-                    }
+                      }
                 }
 
                 //RIGHT MB
                 //LUMA
-                //UpYrow = pContext->SmoothingInfo->SmoothUpperYRows[Width - 1];
-                //UpUrow = pContext->SmoothingInfo->SmoothUpperURows[Width - 1];
-                //UpVrow = pContext->SmoothingInfo->SmoothUpperVRows[Width - 1];
-
-                TopIntra     = (pCurrMB - Width)->IntraFlag*(pCurrMB - Width)->Overlap;
+                TopIntra     = (pCurrMB - MaxWidth)->IntraFlag*(pCurrMB - MaxWidth)->Overlap;
 
                 if(CurrIntra)
                 {
@@ -925,7 +879,7 @@ void Smoothing_P(VC1Context* pContext, Ipp32s Height)
                             *(IPPVC_EDGE_HALF_1))|
                             (((VC1_EDGE_MB(TopIntra,VC1_BLOCK_3_INTRA)) && (VC1_EDGE_MB(CurrIntra, VC1_BLOCK_1_INTRA)))
                             *(IPPVC_EDGE_HALF_2));
-                    _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R(CurrBlock - Width*8*8*6 + 64*2 +6*VC1_PIXEL_IN_LUMA,     VC1_PIXEL_IN_LUMA*2,
+                    _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R(CurrBlock - MaxWidth*8*8*6 + 64*2 +6*VC1_PIXEL_IN_LUMA,     VC1_PIXEL_IN_LUMA*2,
                                                                 CurrBlock,   VC1_PIXEL_IN_LUMA*2,
                                                                 YPlane,      YPitch,
                                                                 EdgeDisabledFlag);
@@ -941,27 +895,27 @@ void Smoothing_P(VC1Context* pContext, Ipp32s Height)
                     {
                         /////////////////////////////
                         //U top horizontal smoothing
-                        _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R(CurrBlock - Width*8*8*6 + 64*4 +6*VC1_PIXEL_IN_CHROMA,            VC1_PIXEL_IN_CHROMA*2,
+                        _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R(CurrBlock - MaxWidth*8*8*6 + 64*4 +6*VC1_PIXEL_IN_CHROMA,            VC1_PIXEL_IN_CHROMA*2,
                                                                     CurrBlock + 4*64,  VC1_PIXEL_IN_CHROMA*2,
                                                                     UPlane,            UPitch);
 
                         /////////////////////////////
                         //V top horizontal smoothing
-                        _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R(CurrBlock - Width*8*8*6 + 64*5 +6*VC1_PIXEL_IN_CHROMA,           VC1_PIXEL_IN_CHROMA*2,
+                        _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R(CurrBlock - MaxWidth*8*8*6 + 64*5 +6*VC1_PIXEL_IN_CHROMA,           VC1_PIXEL_IN_CHROMA*2,
                                                                     CurrBlock + 64*5, VC1_PIXEL_IN_CHROMA*2,
                                                                     VPlane,           VPitch);
                     }
 
                     //copy last two srings of Left macroblock to SmoothUpperRows
-                   /* ippsCopy_16s(CurrBlock + 64*4 - 32, pContext->SmoothingInfo->SmoothUpperYRows[Width - 1], 32);
-                    ippsCopy_16s(CurrBlock + 64*5 - 16, pContext->SmoothingInfo->SmoothUpperURows[Width - 1], 16);
-                    ippsCopy_16s(CurrBlock + 64*6 - 16, pContext->SmoothingInfo->SmoothUpperVRows[Width - 1], 16);*/
-                }
+                 }
 
                 CurrBlock  += 8*8*6;
                 pCurrMB++;
+                CurrBlock += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB)*8*8*6;
+                pCurrMB += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB);
+
                 LeftIntra    = (pCurrMB - 1)->IntraFlag*(pCurrMB - 1)->Overlap;
-                TopLeftIntra = (pCurrMB - Width - 1)->IntraFlag*(pCurrMB - Width - 1)->Overlap;
+                TopLeftIntra = (pCurrMB - MaxWidth - 1)->IntraFlag*(pCurrMB - MaxWidth - 1)->Overlap;
             }
             else
             {
@@ -993,9 +947,6 @@ void Smoothing_P(VC1Context* pContext, Ipp32s Height)
                     UPlane = pCurrMB->currUPlane;
                     VPlane = pCurrMB->currVPlane;
 
-                    //UpYrow = pContext->SmoothingInfo->SmoothUpperYRows[i-1];
-                    //UpUrow = pContext->SmoothingInfo->SmoothUpperURows[i-1];
-                    //UpVrow = pContext->SmoothingInfo->SmoothUpperVRows[i-1];
                     CurrIntra    = (pCurrMB)->IntraFlag*pCurrMB->Overlap;
                     LeftIntra    = (pCurrMB - 1)->IntraFlag*(pCurrMB - 1)->Overlap;
 
@@ -1047,19 +998,11 @@ void Smoothing_P(VC1Context* pContext, Ipp32s Height)
                                                                         CurrBlock + 8*8*5,    VC1_PIXEL_IN_CHROMA*2,
                                                                         VPlane,               VPitch);
                         }
-
-                        //copy last two srings of Left macroblock to SmoothUpperRows
-                        /*ippsCopy_16s(CurrBlock - 64*2 - 32, pContext->SmoothingInfo->SmoothUpperYRows[i - 1], 32);
-                        ippsCopy_16s(CurrBlock - 64 - 16, pContext->SmoothingInfo->SmoothUpperURows[i - 1], 16);
-                        ippsCopy_16s(CurrBlock - 16,  pContext->SmoothingInfo->SmoothUpperVRows[i -1], 16);*/
                     }
                 }
 
                 //RIGHT MB
                 //LUMA
-                //UpYrow = pContext->SmoothingInfo->SmoothUpperYRows[Width - 1];
-                //UpUrow = pContext->SmoothingInfo->SmoothUpperURows[Width - 1];
-                //UpVrow = pContext->SmoothingInfo->SmoothUpperVRows[Width - 1];
 
                 if(CurrIntra)
                 {
@@ -1071,14 +1014,12 @@ void Smoothing_P(VC1Context* pContext, Ipp32s Height)
                                                                 CurrBlock + 8*8*2,      VC1_PIXEL_IN_LUMA*2,
                                                                 YPlane + 8*YPitch, YPitch,
                                                                 EdgeDisabledFlag);
-                    //copy last two srings of Left macroblock to SmoothUpperRows
-                   /* ippsCopy_16s(CurrBlock + 64*4 - 32, pContext->SmoothingInfo->SmoothUpperYRows[Width - 1], 32);
-                    ippsCopy_16s(CurrBlock + 64*5 - 16, pContext->SmoothingInfo->SmoothUpperURows[Width - 1], 16);
-                    ippsCopy_16s(CurrBlock + 64*6 - 16, pContext->SmoothingInfo->SmoothUpperVRows[Width -1 ], 16);*/
                 }
 
                 CurrBlock  += 8*8*6;
                 pCurrMB++;
+                CurrBlock += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB)*8*8*6;
+                pCurrMB += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB);
                 LeftIntra    = (pCurrMB - 1)->IntraFlag*(pCurrMB - 1)->Overlap;
             }
         }

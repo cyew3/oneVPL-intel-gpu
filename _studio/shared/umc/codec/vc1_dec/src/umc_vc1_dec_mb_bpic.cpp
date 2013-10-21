@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, MB layer in B picture for simple\main profiles
@@ -58,7 +58,7 @@ VC1Status MBLayer_ProgressiveBpicture_SKIP_NONDIRECT_Prediction(VC1Context* pCon
             Ipp32s i;
             Ipp16s Xf,Yf,Xb=0,Yb=0;
             Ipp16s* savedMV = pContext->savedMV_Curr
-                              + (sMB->widthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
+                              + (pContext->m_seqLayerHeader.MaxWidthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
 
             //CalculateMV(savedMV, savedMV+4,&X, &Y);
             X = savedMV[0];
@@ -85,7 +85,7 @@ VC1Status MBLayer_ProgressiveBpicture_SKIP_NONDIRECT_Prediction(VC1Context* pCon
         {
             Ipp32s i;
             Ipp16s Xf=0,Yf=0,Xb,Yb;
-            Ipp16s* savedMV = pContext->savedMV_Curr + (sMB->widthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
+            Ipp16s* savedMV = pContext->savedMV_Curr + (pContext->m_seqLayerHeader.MaxWidthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
 
             X = savedMV[0];
             Y = savedMV[1];
@@ -134,7 +134,7 @@ VC1Status MBLayer_ProgressiveBpicture_SKIP_DIRECT_Prediction(VC1Context* pContex
     Ipp16s Xf,Yf,Xb,Yb;
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1MB* pCurrMB = pContext->m_pCurrMB;
-    Ipp16s* savedMV = pContext->savedMV_Curr + (sMB->widthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
+    Ipp16s* savedMV = pContext->savedMV_Curr + (pContext->m_seqLayerHeader.MaxWidthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
     X = savedMV[0];
     Y = savedMV[1];
 
@@ -284,7 +284,7 @@ VC1Status MBLayer_ProgressiveBpicture_NONDIRECT_Prediction(VC1Context* pContext)
             Ipp32s i;
             Ipp16s Xf,Yf,Xb=0,Yb=0;
             Ipp16s* savedMV = pContext->savedMV_Curr +
-                (sMB->widthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
+                (pContext->m_seqLayerHeader.MaxWidthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
 
             X = savedMV[0];
             Y = savedMV[1];
@@ -313,7 +313,7 @@ VC1Status MBLayer_ProgressiveBpicture_NONDIRECT_Prediction(VC1Context* pContext)
             Ipp32s i;
             Ipp16s Xf=0,Yf=0,Xb=0,Yb=0;
             Ipp16s* savedMV = pContext->savedMV_Curr
-                + (sMB->widthMB*sMB->m_currMBYpos+ sMB->m_currMBXpos)*2*2;
+                + (pContext->m_seqLayerHeader.MaxWidthMB*sMB->m_currMBYpos+ sMB->m_currMBXpos)*2*2;
 
             X = savedMV[0];
             Y = savedMV[1];
@@ -350,7 +350,7 @@ VC1Status MBLayer_ProgressiveBpicture_DIRECT_Prediction(VC1Context* pContext)
     Ipp16s X = 0, Y = 0;
     Ipp32u i;
     Ipp16s* savedMV = pContext->savedMV_Curr +
-        (pContext->m_seqLayerHeader.widthMB*pContext->m_pSingleMB->m_currMBYpos
+        (pContext->m_seqLayerHeader.MaxWidthMB*pContext->m_pSingleMB->m_currMBYpos
                 + pContext->m_pSingleMB->m_currMBXpos)*2*2;
 
     X = savedMV[0];
@@ -452,7 +452,7 @@ VC1Status MBLayer_ProgressiveBpicture(VC1Context* pContext)
     else
     {
         DIRECTBBIT = picLayerHeader->m_DirectMB.m_databits
-            [sMB->widthMB*sMB->m_currMBYpos + sMB->m_currMBXpos];
+            [pContext->m_seqLayerHeader.MaxWidthMB*sMB->m_currMBYpos + sMB->m_currMBXpos];
     }
     // SKIPMBBIT
     if(VC1_IS_BITPLANE_RAW_MODE((&picLayerHeader->SKIPMB)))
@@ -462,7 +462,7 @@ VC1Status MBLayer_ProgressiveBpicture(VC1Context* pContext)
     else
     {
         SKIPMBBIT = pContext->m_picLayerHeader->SKIPMB.m_databits
-            [sMB->widthMB*sMB->m_currMBYpos + sMB->m_currMBXpos];
+            [pContext->m_seqLayerHeader.MaxWidthMB*sMB->m_currMBYpos + sMB->m_currMBXpos];
     }
 
     pCurrMB->SkipAndDirectFlag = (DIRECTBBIT+(SKIPMBBIT<<1));

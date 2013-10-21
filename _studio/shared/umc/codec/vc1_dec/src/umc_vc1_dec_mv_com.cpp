@@ -12,7 +12,6 @@
 */
 
 #include "umc_defs.h"
-#include "mfx_common_int.h"
 
 #if defined (UMC_ENABLE_VC1_VIDEO_DECODER)
 
@@ -412,7 +411,7 @@ void CalculateMV_Interlace(Ipp16s x[],Ipp16s y[], Ipp16s x_bottom[],Ipp16s y_bot
 void CalculateMV_InterlaceField(VC1Context* pContext, Ipp16s *X, Ipp16s* Y)
 {
     Ipp8u* samePolarity = pContext->savedMVSamePolarity_Curr +
-                          (pContext->m_seqLayerHeader.widthMB*pContext->m_pSingleMB->m_currMBYpos
+                          (pContext->m_seqLayerHeader.MaxWidthMB*pContext->m_pSingleMB->m_currMBYpos
                            + pContext->m_pSingleMB->m_currMBXpos);
 
     VC1MB* pMB = pContext->m_pCurrMB;
@@ -625,7 +624,7 @@ void Progressive1MVPrediction(VC1Context* pContext)
     VC1MB *pA = NULL, *pB = NULL, *pC = NULL;
 
     Ipp32u LeftTopRight = pCurrMB->LeftTopRightPositionFlag;
-    Ipp32s width = pContext->m_pSingleMB->widthMB;
+    Ipp32s width = pContext->m_seqLayerHeader.MaxWidthMB;
 
     memset(&MVPred,0,sizeof(VC1MVPredictors));
 
@@ -684,7 +683,7 @@ void Progressive4MVPrediction(VC1Context* pContext)
     VC1MB *pA = NULL, *pB0 = NULL,*pB1 = NULL, *pC = NULL;
 
     Ipp32u LeftTopRight = pCurrMB->LeftTopRightPositionFlag;
-    Ipp32s width = pContext->m_pSingleMB->widthMB;
+    Ipp32s width = pContext->m_seqLayerHeader.MaxWidthMB;
 
     memset(&MVPred,0,sizeof(VC1MVPredictors));
 
@@ -765,66 +764,4 @@ void Progressive4MVPrediction(VC1Context* pContext)
     memcpy_s(&pContext->MVPred,sizeof(VC1MVPredictors),&MVPred,sizeof(VC1MVPredictors));
 }
 
-//void ApplyMVPrediction  ( VC1Context* pContext,
-//                                 Ipp32s blk_num,
-//                                 Ipp16s* pMVx, Ipp16s* pMVy,
-//                                 Ipp16s dmv_x, Ipp16s dmv_y,
-//                                 Ipp32s Backwards)
-//{
-//    const VC1MVRange *pMVRange = pContext->m_picLayerHeader->m_pCurrMVRangetbl;
-//    Ipp16u RangeX, RangeY, YBias=0;
-//    Ipp32s Count;
-//    VC1MB *pMB = pContext->m_pCurrMB;
-//    Ipp16s MVx, MVy;
-//    RangeX = pMVRange->r_x;
-//    RangeY = pMVRange->r_y;
-//
-//#ifdef VC1_DEBUG_ON
-//    VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV,VM_STRING("PredictorX = %d, PredictorY = %d\n"),*pMVx,*pMVy);
-//#endif
-//
-//    dmv_x = dmv_x + *pMVx;
-//    dmv_y = dmv_y + *pMVy;
-//
-//#ifdef VC1_DEBUG_ON
-////   VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV,VM_STRING("DMV_X  = %d, DMV_Y  = %d, RangeX = %d, RangeY = %d\n"),
-// //       dmv_x, dmv_y, RangeX,RangeY);
-//#endif
-//
-//    // (dmv_x + predictor_x) smod range_x
-//    //MVx = ((DMV_X + RangeX) & (2 * RangeX - 1)) - RangeX;
-//    MVx = ((dmv_x + RangeX) & ((RangeX << 1) - 1)) - RangeX;
-//
-//    // (dmv_y + predictor_y) smod range_y
-//    //MVy = ((DMV_Y + RangeY - YBias) & (2 * RangeY - 1)) - RangeY + YBias;
-//    MVy = ((dmv_y + RangeY - YBias) & ( (RangeY <<1) - 1)) - RangeY + YBias;
-//
-//    if((pMB->mbType&0x03) == VC1_MB_1MV_INTER)
-//    {
-//        for(Count = 0; Count < 4; Count++)
-//        {
-//            pMB->m_pBlocks[Count].mv[Backwards][0] = (Ipp16s)MVx;
-//            pMB->m_pBlocks[Count].mv[Backwards][1] = (Ipp16s)MVy;
-//        }
-//    }
-//    else if((pMB->mbType&0x03) == VC1_MB_2MV_INTER)
-//    {
-//        for(Count = 0; Count < 2; Count++)
-//        {
-//            pMB->m_pBlocks[Count+blk_num].mv[Backwards][0] = (Ipp16s)MVx;
-//            pMB->m_pBlocks[Count+blk_num].mv[Backwards][1] = (Ipp16s)MVy;
-//        }
-//    }
-//    else    /* 4MV */
-//    {
-//        pMB->m_pBlocks[blk_num].mv[Backwards][0] = (Ipp16s)MVx;
-//        pMB->m_pBlocks[blk_num].mv[Backwards][1] = (Ipp16s)MVy;
-//    }
-//    *pMVx = MVx;
-//    *pMVy = MVy;
-//
-//#ifdef VC1_DEBUG_ON
-//    VM_Debug::GetInstance().vm_debug_frame(-1,VC1_MV,VM_STRING("ApplyPred : MV_X  = %d, MV_Y  = %d\n"),MVx, MVy);
-//#endif
-//}
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER

@@ -884,7 +884,7 @@ IppStatus ippiPXInterpolatePXICBicubicBlock_VC1_8u_C1R(const IppVCInterpolateBlo
     Ipp32s frameHeightShifted;
     Ipp32s OutOfBoundaryFlag = 0; //all block out of boundary flag
 
-    //IPP_BAD_PTR1_RET(interpolateInfo);k
+    //IPP_BAD_PTR1_RET(interpolateInfo);
     //IPP_BAD_PTR2_RET(interpolateInfo->pSrc, interpolateInfo->pDst);
 
     shift = (interpolateInfo->fieldPrediction)? 1:0;

@@ -373,14 +373,16 @@ Status VC1VideoDecoder::Init(BaseCodecParams *pInit)
     else
     {
         //NULL input data, no sequence header
-
-
+        
         // aligned width and height 
         m_pContext->m_seqLayerHeader.MAX_CODED_HEIGHT = init->info.clip_info.height/2 - 1;
         m_pContext->m_seqLayerHeader.MAX_CODED_WIDTH = init->info.clip_info.width/2 - 1;
 
         m_pContext->m_seqLayerHeader.widthMB = (Ipp16u)(init->info.clip_info.width/VC1_PIXEL_IN_LUMA);
         m_pContext->m_seqLayerHeader.heightMB  = (Ipp16u)(init->info.clip_info.height/VC1_PIXEL_IN_LUMA);
+
+        m_pContext->m_seqLayerHeader.MaxWidthMB = m_pContext->m_seqLayerHeader.widthMB;
+        m_pContext->m_seqLayerHeader.MaxHeightMB = m_pContext->m_seqLayerHeader.heightMB;
 
         if(init->info.interlace_type != UMC::PROGRESSIVE)
             m_pContext->m_seqLayerHeader.INTERLACE  = 1;
@@ -621,6 +623,9 @@ Status VC1VideoDecoder::InitSMProfile(VideoDecoderParams *init)
         m_pContext->m_seqLayerHeader.CODED_HEIGHT  = m_pContext->m_seqLayerHeader.MAX_CODED_HEIGHT = height/2 - 1;
         m_pContext->m_seqLayerHeader.CODED_WIDTH = m_pContext->m_seqLayerHeader.MAX_CODED_WIDTH = width/2 - 1;
 
+        m_pContext->m_seqLayerHeader.MaxWidthMB  = (Ipp16u)((width+15)/VC1_PIXEL_IN_LUMA);
+        m_pContext->m_seqLayerHeader.MaxHeightMB = (Ipp16u)((height+15)/VC1_PIXEL_IN_LUMA);
+
         SwapData(m_pContext->m_pBufferStart, m_pContext->m_FrameSize);
 
         m_pContext->m_bitstream.pBitstream = (Ipp32u*)m_pContext->m_pBufferStart + 2; // skip header
@@ -637,6 +642,8 @@ Status VC1VideoDecoder::InitSMProfile(VideoDecoderParams *init)
         m_pContext->m_seqLayerHeader.heightMB
             = (Ipp16u)((init->info.clip_info.height+15)/VC1_PIXEL_IN_LUMA);
 
+        m_pContext->m_seqLayerHeader.MaxWidthMB = m_pContext->m_seqLayerHeader.widthMB;
+        m_pContext->m_seqLayerHeader.MaxHeightMB = m_pContext->m_seqLayerHeader.heightMB;
     }
     sts = SequenceLayer(m_pContext);
     VC1_TO_UMC_CHECK_STS(sts);
@@ -859,6 +866,7 @@ Status VC1VideoDecoder::StartCodesProcessing(Ipp8u*   pBStream,
             break;
         case 0x0E010000:
             umcRes = EntryPointLayer(m_pContext);
+
             if (UMC_OK != umcRes)
                 return UMC_ERR_INVALID_PARAMS;
             if (!m_bIsWMPSplitter)
@@ -2199,8 +2207,8 @@ bool VC1VideoDecoder::InitAlloc(VC1Context* pContext, Ipp32u MaxFrameNum)
     //only if absence external frame allocator
         //frames allocation
         Ipp32s i;
-        Ipp32u h = pContext->m_seqLayerHeader.heightMB * VC1_PIXEL_IN_LUMA;
-        Ipp32u w = (pContext->m_seqLayerHeader.widthMB * VC1_PIXEL_IN_LUMA); // align on 128
+        Ipp32u h = pContext->m_seqLayerHeader.MaxHeightMB * VC1_PIXEL_IN_LUMA;
+        Ipp32u w = (pContext->m_seqLayerHeader.MaxWidthMB * VC1_PIXEL_IN_LUMA); // align on 128
         Ipp32s frame_size = h*w + (h / 2 * w / 2)*2;
         Ipp32s n_references = MaxFrameNum + VC1NUMREFFRAMES; //
 
@@ -2292,13 +2300,13 @@ Status VC1VideoDecoder::ProcessPerformedDS(MediaData* in, VideoData* out_data)
                 {
                     ippsCopy_16s(pCurrDescriptor->m_pContext->savedMV,
                         m_pContext->savedMV_Curr,
-                        m_pContext->m_seqLayerHeader.heightMB*m_pContext->m_seqLayerHeader.widthMB*2*2);
+                        m_pContext->m_seqLayerHeader.heightMB*m_pContext->m_seqLayerHeader.MaxWidthMB*2*2);
 
                     if (pCurrDescriptor->m_pContext->m_InitPicLayer->FCM == VC1_FieldInterlace)
                     {
                         ippsCopy_8u(pCurrDescriptor->m_pContext->savedMVSamePolarity,
                             m_pContext->savedMVSamePolarity_Curr,
-                            m_pContext->m_pSingleMB->heightMB*m_pContext->m_seqLayerHeader.widthMB);
+                            m_pContext->m_seqLayerHeader.heightMB*m_pContext->m_seqLayerHeader.MaxWidthMB);
                     }
 
                 }

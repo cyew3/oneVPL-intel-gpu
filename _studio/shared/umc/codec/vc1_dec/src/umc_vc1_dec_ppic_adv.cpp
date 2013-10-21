@@ -24,15 +24,6 @@ static const Ipp32u bc_lut_2[] = {0,1,2,3};
 static const Ipp32u bc_lut_4[] = {0,1,2};
 static const Ipp32u bc_lut_5[] = {0,0,1};
 
-typedef void (*ExpandIntens)(VC1Context* pContext, Frame* pFrame);
-
-static const ExpandIntens ExpandIntens_table[] =
-             {
-               (ExpandIntens)(ExpandFrame_Adv),
-               (ExpandIntens)(ExpandFrame_Interlace),
-               (ExpandIntens)(ExpandFrame_Interlace)
-             };
-
 VC1Status DecodePictHeaderParams_ProgressivePpicture_Adv    (VC1Context* pContext)
 {
     VC1Status vc1Res = VC1_OK;
@@ -428,9 +419,6 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldPpicture_Adv (VC1Context* pConte
     picLayerHeader->INTCOMFIELD = 0;
 
     VC1_GET_BITS(5,picLayerHeader->PQINDEX);
-    CalculatePQuant(pContext);
-
-    ChooseTTMB_TTBLK_SBP(pContext);
 
     if(picLayerHeader->PQINDEX<=8)
     {
@@ -444,6 +432,9 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldPpicture_Adv (VC1Context* pConte
     {
         VC1_GET_BITS(1,picLayerHeader->PQUANTIZER);    //PQUANTIZER
     }
+
+    CalculatePQuant(pContext);
+    ChooseTTMB_TTBLK_SBP(pContext);
 
     if(seqLayerHeader->POSTPROCFLAG)
     {
@@ -815,6 +806,9 @@ VC1Status Decode_InterlaceFieldPpicture_Adv(VC1Context* pContext)
         sMB->m_currMBXpos = 0;
         sMB->m_currMBYpos++;
         sMB->slice_currMBYpos++;
+        pContext->m_pBlock += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB)*8*8*6;
+        pContext->CurrDC += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB);
+        pContext->m_pCurrMB += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB);
     }
 
     if ((pContext->m_seqLayerHeader.LOOPFILTER))

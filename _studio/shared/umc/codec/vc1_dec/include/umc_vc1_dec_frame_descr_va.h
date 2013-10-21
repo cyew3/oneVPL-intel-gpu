@@ -765,7 +765,7 @@ namespace UMC
 
                     {
                         if(m_pMemoryAllocator->Alloc(&m_iDCACParamsMemID,
-                            sizeof(VC1DCMBParam)*seqLayerHeader->heightMB*seqLayerHeader->widthMB,
+                            sizeof(VC1DCMBParam)*seqLayerHeader->MaxHeightMB*seqLayerHeader->MaxWidthMB,
                             UMC_ALLOC_PERSISTENT, 16) != UMC_OK )
                         {
                             return false;
@@ -778,7 +778,7 @@ namespace UMC
                     //{
                     //    return false;
                     //}
-                    memset(m_pContext->DCACParams,0,sizeof(VC1DCMBParam)*seqLayerHeader->heightMB*seqLayerHeader->widthMB);
+                    memset(m_pContext->DCACParams,0,sizeof(VC1DCMBParam)*seqLayerHeader->MaxHeightMB*seqLayerHeader->MaxWidthMB);
                     return true;
                 }
 #endif

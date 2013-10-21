@@ -30,14 +30,6 @@
 #endif
 
 
-typedef void (*ExpandIntens)(VC1Context* pContext, Frame* pFrame);
-
-static const ExpandIntens ExpandIntens_table[] =
-             {
-               (ExpandIntens)(ExpandFrame_Adv),
-               (ExpandIntens)(ExpandFrame_Interlace),
-               (ExpandIntens)(ExpandFrame_Interlace)
-             };
 static const Ipp32u FrameReadyTable[9] = {0, 0x5,     0x55,     0x555,     0x5555,
                                           0x55555, 0x555555, 0x5555555, 0x55555555};
 
@@ -665,7 +657,7 @@ namespace UMC
 
     bool VC1TaskStore::AddSampleTask(VC1Task* _pTask, Ipp32u qID)
     {
-        Ipp32u widthMB = m_pDescriptorQueue[qID]->m_pContext->m_seqLayerHeader.widthMB;
+        Ipp32u widthMB = m_pDescriptorQueue[qID]->m_pContext->m_seqLayerHeader.MaxWidthMB;
         Ipp16u curMBrow = _pTask->m_pSlice->MBStartRow;
 
         if (0 == curMBrow)

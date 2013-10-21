@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, Coded block pattern tables
@@ -413,7 +413,6 @@ Ipp16u vc1_abs_16s(Ipp16s pSrc)
     S = (Ipp16u) ((pSrc + S)^S);
     return S;
 }
-void ExpandMBRowSM(VC1Context* pContext, Ipp32s StartMBPos, Ipp32s EndMBPos);
 
 void DecodeTransformInfo    (VC1Context* pContext);
 VC1Status GetTTMB           (VC1Context* pContext);
@@ -521,19 +520,6 @@ void CropLumaPullBack                                 (VC1Context* pContext,
 void CropChromaPullBack                               (VC1Context* pContext,
                                                        Ipp16s* xMV, Ipp16s* yMV);
 #define PullBack_BDirect CropChromaPullBack // same algorithm
-
-void ExpandFrame                                      (Frame* pFrame,
-                                                       IppiSize roiSize);
-
-void ExpandFrame_Adv                                  (VC1Context* pContext,
-                                                       Frame* pFrame);
-
-void ExpandFrame_Interlace                            (VC1Context* pContext,
-                                                       Frame* pFrame);
-
-void ExpandFrame_Field                                (VC1Context* pContext,
-                                                       Frame* pFrame,
-                                                       Ipp32u bottom_field);
 
 VC1Status EntryPointLayer                              (VC1Context* m_pContext);
 

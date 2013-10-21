@@ -19,16 +19,6 @@
 #include "umc_vc1_dec_job.h"
 #include "umc_vc1_dec_debug.h"
 
-typedef void (*Expand)(VC1Context* pContext, Frame* pFrame);
-
-static const Expand Expand_table[] =
-             {
-               (Expand)(ExpandFrame_Adv),
-               (Expand)(ExpandFrame_Interlace),
-               (Expand)(ExpandFrame_Interlace)
-             };
-
-
 static const Ipp32s VC1_VA_Bfraction_tbl[7][7] =
 {
     0, 1, 3, 5,  114, 116, 122,
@@ -271,8 +261,7 @@ VC1Status DecodePictureHeader_Adv(VC1Context* pContext)
             }
 
             //picture quantizer index
-            VC1_GET_BITS(5,picLayerHeader->PQINDEX);
-            CalculatePQuant(pContext);
+            VC1_GET_BITS(5,picLayerHeader->PQINDEX);            
 
             if(picLayerHeader->PQINDEX<=8)
             {
@@ -288,6 +277,8 @@ VC1Status DecodePictureHeader_Adv(VC1Context* pContext)
                 //picture quantizer type
                 VC1_GET_BITS(1,pContext->m_picLayerHeader->PQUANTIZER);    //PQUANTIZER
             }
+
+            CalculatePQuant(pContext);
 
             if(seqLayerHeader->POSTPROCFLAG)
             {
@@ -589,10 +580,6 @@ VC1Status Decode_FirstField_Adv(VC1Context* pContext)
         break;
     }
 
-    ExpandFrame_Field(pContext,
-                      &pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex],
-                      picLayerHeader->BottomField);
-
     return vc1Sts;
 }
 
@@ -605,10 +592,6 @@ VC1Status Decode_SecondField_Adv(VC1Context* pContext)
     picLayerHeader->PTYPE = picLayerHeader->PTypeField2;
 
     picLayerHeader->CurrField = 1;
-
-    ExpandFrame_Field(pContext,
-                      &pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex],
-                      picLayerHeader->BottomField);
 
     return vc1Sts;
 

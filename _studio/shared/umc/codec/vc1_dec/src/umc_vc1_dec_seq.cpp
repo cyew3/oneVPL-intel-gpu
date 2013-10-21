@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, Sequence layer
@@ -101,8 +101,10 @@ VC1Status SequenceLayer(VC1Context* pContext)
         VC1_GET_BITS(12, pContext->m_seqLayerHeader.MAX_CODED_WIDTH);
 
         VC1_GET_BITS(12, pContext->m_seqLayerHeader.MAX_CODED_HEIGHT);
-        
 
+        pContext->m_seqLayerHeader.CODED_HEIGHT = pContext->m_seqLayerHeader.MAX_CODED_HEIGHT;
+        pContext->m_seqLayerHeader.CODED_WIDTH  = pContext->m_seqLayerHeader.MAX_CODED_WIDTH;
+        
         VC1_GET_BITS(1, pContext->m_seqLayerHeader.PULLDOWN);
 
         VC1_GET_BITS(1, pContext->m_seqLayerHeader.INTERLACE);
@@ -278,20 +280,29 @@ VC1Status EntryPointLayer(VC1Context* pContext)
     VC1_GET_BITS(1, tempValue);    //CODED_SIZE_FLAG
     if (tempValue == 1)
     {
-        VC1_GET_BITS(12, pContext->m_seqLayerHeader.CODED_WIDTH);
-        VC1_GET_BITS(12, pContext->m_seqLayerHeader.CODED_HEIGHT);
+        VC1_GET_BITS(12, width);
+        VC1_GET_BITS(12, height);
         
         if (pContext->m_seqLayerHeader.CODED_WIDTH > pContext->m_seqLayerHeader.MAX_CODED_WIDTH)
             return VC1_FAIL;
         
         if (pContext->m_seqLayerHeader.CODED_HEIGHT > pContext->m_seqLayerHeader.MAX_CODED_HEIGHT)
             return VC1_FAIL;
-        
-        //VC1_GET_BITS(12, pContext->m_seqLayerHeader.MAX_CODED_WIDTH);
-        //VC1_GET_BITS(12, pContext->m_seqLayerHeader.MAX_CODED_HEIGHT);
-        //Ipp32u width = 2*(pContext->m_seqLayerHeader.MAX_CODED_WIDTH+1);
-        //Ipp32u height = 2*(pContext->m_seqLayerHeader.MAX_CODED_HEIGHT+1);
 
+        if (pContext->m_seqLayerHeader.CODED_WIDTH > width)
+        {
+            pContext->m_seqLayerHeader.CLOSED_ENTRY = 1;
+            pContext->m_seqLayerHeader.BROKEN_LINK  = 1;
+        }
+        
+        if (pContext->m_seqLayerHeader.CODED_HEIGHT > height)
+        {
+            pContext->m_seqLayerHeader.CLOSED_ENTRY = 1;
+            pContext->m_seqLayerHeader.BROKEN_LINK  = 1;
+        }
+        
+        pContext->m_seqLayerHeader.CODED_WIDTH = width;
+        pContext->m_seqLayerHeader.CODED_HEIGHT = height;        
     }
     else
     {
@@ -1156,8 +1167,8 @@ Ipp32u DecodeBegin(VC1Context* pContext, Ipp32u stream_subtype)
 
         SequenceLayer(pContext);
 
-        width  = (pContext->m_seqLayerHeader.MAX_CODED_WIDTH+1)*2;
-        height = (pContext->m_seqLayerHeader.MAX_CODED_HEIGHT+1)*2;
+        width  = (pContext->m_seqLayerHeader.CODED_WIDTH+1)*2;
+        height = (pContext->m_seqLayerHeader.CODED_HEIGHT+1)*2;
 
         pContext->m_seqLayerHeader.widthMB = (Ipp16u)((width+15)/VC1_PIXEL_IN_LUMA);
         pContext->m_seqLayerHeader.heightMB = (Ipp16u)((height+15)/VC1_PIXEL_IN_LUMA);
@@ -1201,6 +1212,8 @@ Ipp32u DecodeBegin(VC1Context* pContext, Ipp32u stream_subtype)
             pContext->m_seqLayerHeader.heightMB = (Ipp16u)((height+15)/VC1_PIXEL_IN_LUMA);
             pContext->m_seqLayerHeader.MAX_CODED_HEIGHT = height/2 - 1;
             pContext->m_seqLayerHeader.MAX_CODED_WIDTH = width/2 - 1;
+            pContext->m_seqLayerHeader.MaxWidthMB = pContext->m_seqLayerHeader.widthMB;
+            pContext->m_seqLayerHeader.MaxHeightMB = pContext->m_seqLayerHeader.heightMB;
         }
         SwapData(pContext->m_pBufferStart, pContext->m_FrameSize);
         SequenceLayer(pContext);

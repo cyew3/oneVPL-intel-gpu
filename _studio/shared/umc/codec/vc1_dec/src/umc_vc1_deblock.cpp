@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, deblocking
@@ -308,6 +308,7 @@ static void VerticalDeblockingChromaP(Ipp8u* pUUpLBlock,
 void Deblocking_ProgressiveIpicture(VC1Context* pContext)
 {
     Ipp32s WidthMB =  pContext->m_seqLayerHeader.widthMB;
+    Ipp32s MaxWidthMB =  pContext->m_seqLayerHeader.MaxWidthMB;
     Ipp32s curX, curY;
     Ipp32u PQuant = pContext->m_picLayerHeader->PQUANT;
 
@@ -344,6 +345,8 @@ void Deblocking_ProgressiveIpicture(VC1Context* pContext)
 
             ++m_CurrMB;
         }
+        
+        m_CurrMB += (MaxWidthMB - WidthMB);
     }
     if (pContext->DeblockInfo.is_last_deblock)
     {
@@ -354,11 +357,12 @@ void Deblocking_ProgressiveIpicture(VC1Context* pContext)
         _own_FilterDeblockingLuma_HorEdge_VC1((m_CurrMB->currYPlane+8*YPitch), PQuant, YPitch,flag_ver);
         ++m_CurrMB;
     }
+    m_CurrMB += (MaxWidthMB - WidthMB);
 
     } else
         HeightMB -= 1;
 
-    m_CurrMB   -= WidthMB*HeightMB;
+    m_CurrMB   -= MaxWidthMB*HeightMB;
 
     /* Deblock vertical edges */
     for (curY=0; curY<HeightMB; curY++)
@@ -380,6 +384,7 @@ void Deblocking_ProgressiveIpicture(VC1Context* pContext)
         flag_ver =0;
         _own_FilterDeblockingLuma_VerEdge_VC1((m_CurrMB->currYPlane+8), PQuant,YPitch,flag_ver);
         ++m_CurrMB;
+        m_CurrMB += (MaxWidthMB - WidthMB);
     }
 
 
@@ -388,6 +393,7 @@ void Deblocking_ProgressiveIpicture(VC1Context* pContext)
 void Deblocking_ProgressivePpicture(VC1Context* pContext)
 {
     Ipp32s WidthMB =  pContext->m_seqLayerHeader.widthMB;
+    Ipp32s MaxWidthMB =  pContext->m_seqLayerHeader.MaxWidthMB;
     Ipp32s HeightMB   = pContext->DeblockInfo.HeightMB;
     Ipp32s curX, curY;
     Ipp32s PQuant = pContext->m_picLayerHeader->PQUANT;
@@ -421,7 +427,7 @@ void Deblocking_ProgressivePpicture(VC1Context* pContext)
 
             HorizontalDeblockingLumaP(m_CurrMB->currYPlane,PQuant,YPitch,m_CurrMB,m_CurrMB,type_current);
 
-            if (((m_CurrMB+WidthMB)->mbType&VC1_MB_4MV_INTER) == VC1_MB_4MV_INTER)
+            if (((m_CurrMB+MaxWidthMB)->mbType&VC1_MB_4MV_INTER) == VC1_MB_4MV_INTER)
                 type_current_next =  LFilterMainPFrame;
 
             HorizontalDeblockingLumaP(m_CurrMB->currYPlane+YPitch*8,PQuant,YPitch,m_CurrMB,m_CurrMB+WidthMB,type_current_next);
@@ -431,20 +437,21 @@ void Deblocking_ProgressivePpicture(VC1Context* pContext)
                                         PQuant,
                                         UPitch,
                                         &m_CurrMB->m_pBlocks[4],
-                                        &(m_CurrMB+WidthMB)->m_pBlocks[4],
+                                        &(m_CurrMB+MaxWidthMB)->m_pBlocks[4],
                                         type_current_next);
 
             HorizontalDeblockingChromaP(m_CurrMB->currVPlane,
                                          PQuant,
                                          VPitch,
                                          &m_CurrMB->m_pBlocks[5],
-                                         &(m_CurrMB+WidthMB)->m_pBlocks[5],
+                                         &(m_CurrMB+MaxWidthMB)->m_pBlocks[5],
                                          type_current_next);
 
             type_current      = type;
             type_current_next = type;
             m_CurrMB++;
         }
+        m_CurrMB += (MaxWidthMB - WidthMB);
     }
     if (pContext->DeblockInfo.is_last_deblock)
     {
@@ -473,11 +480,12 @@ void Deblocking_ProgressivePpicture(VC1Context* pContext)
         type_current_next = type;
         m_CurrMB++;
     }
+        m_CurrMB += (MaxWidthMB - WidthMB);
 
     } else
         HeightMB -=1;
 
-    m_CurrMB -= WidthMB*HeightMB;
+    m_CurrMB -= MaxWidthMB*HeightMB;
 
 
     for (curY=0; curY<HeightMB; curY++)
@@ -555,6 +563,7 @@ void Deblocking_ProgressivePpicture(VC1Context* pContext)
         type_current      = type;
         type_current_next = type;
         ++m_CurrMB;
+        m_CurrMB += (MaxWidthMB - WidthMB);
     }
 
 }

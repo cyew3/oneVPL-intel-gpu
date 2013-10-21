@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, B picture layer for simple\main profiles
@@ -38,9 +38,6 @@ VC1Status DecodePictureLayer_ProgressiveBpicture(VC1Context* pContext)
     //section 3.1.19) then PQINDEX is translated to the picture quantizer
     //stepsize PQUANT as indicated by Table 6.
     VC1_GET_BITS(5, picLayerHeader->PQINDEX);
-    CalculatePQuant(pContext);
-
-    ChooseTTMB_TTBLK_SBP(pContext);
 
     if(picLayerHeader->PQINDEX <= 8)
     {
@@ -69,6 +66,10 @@ VC1Status DecodePictureLayer_ProgressiveBpicture(VC1Context* pContext)
         //quantizer is used.
         VC1_GET_BITS(1, picLayerHeader->PQUANTIZER);       //PQUANTIZER
     }
+
+    CalculatePQuant(pContext);
+    ChooseTTMB_TTBLK_SBP(pContext);
+
     MVRangeDecode(pContext);
 
     //VC-1 Table 47: B Picture MVMODE codetable
