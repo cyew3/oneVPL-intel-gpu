@@ -22,7 +22,7 @@ foreach( variant sw drm x11 )
         sample_common_${variant}
         mfx
         umc_core_merged
-        ippvc_l ippcc_l ippi_l ipps_l ippcore_l
+        ippdc_l ippvc_l ippcc_l ippi_l ipps_l ippcore_l
         dl
         pthread
     )

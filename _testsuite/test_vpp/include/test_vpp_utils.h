@@ -157,6 +157,9 @@ struct sInputParams
 
     vm_char  strPerfFile[MAX_FILELEN];
     bool  isOutYV12;
+
+    vm_char  strCRCFile[MAX_FILELEN];
+    bool  need_crc;
 };
 
 struct sFrameProcessor
@@ -246,22 +249,31 @@ public :
     mfxStatus  Init(
         const vm_char *strFileName, 
         PTSMaker *pPTSMaker, 
-        bool outYV12 = false);
+        bool outYV12  = false,
+        bool need_crc = false);
 
     mfxStatus  PutNextFrame(
         sMemoryAllocator* pAllocator, 
         mfxFrameInfo* pInfo, 
         mfxFrameSurface1* pSurface);
 
+    mfxU32     GetCRC();
+
 private:
     mfxStatus  WriteFrame(
         mfxFrameData* pData, 
         mfxFrameInfo* pInfo);
-    vm_file*      m_fDst;
+    
+    mfxStatus  CRC32(
+        mfxU8 *data, 
+        mfxU32 length);
 
+    vm_file*      m_fDst;
     PTSMaker                              *m_pPTSMaker;
     bool                                   m_outYV12;
     std::auto_ptr<mfxU8>                   m_outSurfYV12;
+    Ipp32u                                 m_crc32c;
+    bool                                   m_need_crc;
 
 };
 
@@ -279,7 +291,10 @@ public :
         const vm_char *strFileName, 
         PTSMaker *pPTSMaker,
         sSVCLayerDescr*  pDesc = NULL,
-        bool outYV12 = false);
+        bool outYV12 = false,
+        bool need_crc = false);
+
+    mfxU32     GetCRC(mfxFrameSurface1* pSurface);
 
     mfxStatus  PutNextFrame(
         sMemoryAllocator* pAllocator, 

@@ -26,7 +26,8 @@ void vppPrintHelp(vm_char *strAppName, vm_char *strErrorMessage)
 
     vm_string_printf(VM_STRING("Options: \n"));
     vm_string_printf(VM_STRING("   [-lib  type]      - type of used library. sw, hw (def: sw)\n"));
-    vm_string_printf(VM_STRING("   [-d3d11]          - force d3d11 interface using (def for HW is d3d9)\n\n"));
+    vm_string_printf(VM_STRING("   [-d3d11]          - force d3d11 interface using (def for HW is d3d9)\n"));
+    vm_string_printf(VM_STRING("   [-crc CrcFile]    - calculate CRC32 and write it to specified file\n\n"));
 
     vm_string_printf(VM_STRING("   [-sw   width]     - width  of src video (def: 352)\n"));
     vm_string_printf(VM_STRING("   [-sh   height]    - height of src video (def: 288)\n"));
@@ -625,6 +626,13 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
                 vm_string_strcpy(pParams->strSrcFile, strInput[i]);
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-crc")))
+            {
+                VAL_CHECK(1 + i == nArgNum);
+                i++;
+                vm_string_strcpy(pParams->strCRCFile, strInput[i]);
+                pParams->need_crc = true;
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-o")))
             {

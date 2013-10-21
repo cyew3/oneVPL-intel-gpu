@@ -143,6 +143,7 @@ void vppDefaultInitParams( sInputParams* pParams )
     pParams->roiCheckParam.srcSeed = 0;
     pParams->roiCheckParam.dstSeed = 0;
     pParams->isOutYV12 = false;
+    pParams->need_crc  = false;
 
     return;
 
@@ -391,7 +392,8 @@ int main(int argc, vm_char *argv[])
         istream, 
         ptsMaker.get(),
         (VPP_FILTER_DISABLED != Params.svcParam.mode) ? Params.svcParam.descr : NULL,
-        Params.isOutYV12);
+        Params.isOutYV12, 
+        Params.need_crc);
     CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, WipeResources(&Resources));
 
 #ifdef LIBVA_SUPPORT
@@ -827,6 +829,18 @@ int main(int argc, vm_char *argv[])
     vm_string_printf(VM_STRING("Frames per second %.3f fps \n"), nFrames / statTimer.OverallTiming());
 
     PutPerformanceToFile(Params, nFrames / statTimer.OverallTiming());
+
+    if ( Params.need_crc ) {
+        mfxU32 crc = yuvWriter.GetCRC(pSurf[VPP_OUT]);
+        vm_file *fcrc;
+        fcrc = vm_file_fopen(Params.strCRCFile, VM_STRING("wb"));
+        if (!fcrc)
+            return 1;
+
+        vm_file_fprintf(fcrc, VM_STRING("0x%X"), crc);
+        vm_file_fclose(fcrc);
+        printf("CRC: 0x%X\n", crc);
+    }
 
     WipeResources(&Resources);
 
