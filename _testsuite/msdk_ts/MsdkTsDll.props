@@ -26,7 +26,9 @@
        Condition ="!Exists('$(WindowsSdk8Path)')" />
   </Target>
   <Target Name="PerlPresenseCheck">
-    <Error Text=" Unable to find installed Perl that is relevant to target bitness (Win32||x64) by registry lookup. Please install bitness corresponding Perl or choose another platform type. For more info please goto http://wiki.intel.com/display/MediaSDK/Debugging+behavior+tests"
+    <Error Text=" Unable to find installed Perl that is relevant to target bitness (Win32||x64) by registry lookup. 
+           Please install bitness corresponding Perl or choose another platform type. 
+           For more info please goto http://wiki.ith.intel.com/display/MediaSDK/Debugging+behavior+tests"
        Condition ="!Exists('$(PerlDir)')" />
   </Target>
   <PropertyGroup Condition="'$(Platform)'=='Win32'">
