@@ -1195,6 +1195,7 @@ mfxStatus D3D11Encoder::FillMBBufferPointer(ExecuteBuffers* pExecuteBuffers)
         src.Data        = Frame;
         src.Data.Y     += m_layout.MB_CODE_offset;
         src.Data.Pitch  = mfxU16(m_layout.MB_CODE_stride);
+        src.Data.PitchHigh = 0;
         src.Info.Width  = mfxU16(sizeof ENCODE_ENC_MB_DATA_MPEG2);
         src.Info.Height = mfxU16(numMB);
         src.Info.FourCC = MFX_FOURCC_P8;
