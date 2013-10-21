@@ -2095,6 +2095,7 @@ void H265CU::ME_PU(H265MEInfo* me_info)
     for (ME_dir = 0; ME_dir <= (cslice->slice_type == B_SLICE ? 1 : 0); ME_dir++) {
         H265Frame *PicYUVRef = pList[ME_dir]->m_RefPicList[0]; //Ipp32s RefIdx = data[PartAddr].ref_idx[RefPicList];
         if (ME_dir == 1 && PicYUVRef == pList[0]->m_RefPicList[0]) {
+            cost_best[1] = cost_best[0];
             me_info->cost_1dir[1] = me_info->cost_1dir[0];
             me_info->MV[1] = me_info->MV[0];
             break;
@@ -2262,11 +2263,12 @@ void H265CU::ME_PU(H265MEInfo* me_info)
                 H265MV MV2_best[2] = {me_info->MV[0], me_info->MV[1]};
                 Ipp32s cost2_best = me_info->cost_bidir;
                 do {
-                    Ipp32s i;
+                    Ipp32s i, count;
                     H265MV MV2_cur[2], MV2_tmp[2];
                     changed = false;
                     MV2_cur[0] = MV2_best[0]; MV2_cur[1] = MV2_best[1];
-                    for(i = 0; i < 2*2*2; i++) {
+                    count = (PicYUVRefF == PicYUVRefB && MV2_best[0] == MV2_best[1]) ? 2*2 : 2*2*2;
+                    for(i = 0; i < count; i++) {
                         MV2_tmp[0] = MV2_cur[0]; MV2_tmp[1] = MV2_cur[1];
                         if (i&2)
                             MV2_tmp[i>>2].mvx += (i&1)?1:-1;
