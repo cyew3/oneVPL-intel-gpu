@@ -78,7 +78,7 @@ Ipp32s TryToGet(void *p)
 namespace UMC_HEVC_DECODER
 {
 
-#if defined ECHO        
+#if defined ECHO
 const vm_char * GetTaskString(H265Task * task)
 {
     const vm_char * taskIdStr;
@@ -118,7 +118,7 @@ inline void PrintTask(H265Task * task, H265DecoderFrameInfo* info = 0)
     const vm_char * taskIdStr = GetTaskString(task);
 
     if (info)
-        DEBUG_PRINT((VM_STRING("(thr - %d) (poc - %d) %s - % 4d to % 4d\n"), task->m_iThreadNumber, info->m_pFrame->m_PicOrderCnt, taskIdStr, task->m_iFirstMB, task->m_iFirstMB + task->m_iMBToProcess));
+        DEBUG_PRINT((VM_STRING("(thr - %d) (poc - %d) (uid - %d) %s - % 4d to % 4d\n"), task->m_iThreadNumber, info->m_pFrame->m_PicOrderCnt, info->m_pFrame->m_UID, taskIdStr, task->m_iFirstMB, task->m_iFirstMB + task->m_iMBToProcess));
     else
         DEBUG_PRINT((VM_STRING("(thr - %d) %s - % 4d to % 4d\n"), task->m_iThreadNumber, taskIdStr, task->m_iFirstMB, task->m_iFirstMB + task->m_iMBToProcess));
 }
@@ -127,8 +127,35 @@ inline void PrintTaskDone(H265Task * task, H265DecoderFrameInfo* info)
 {
     const vm_char * taskIdStr = GetTaskString(task);
 
-    DEBUG_PRINT((VM_STRING("(thr - %d) (poc - %d) %s done % 4d to % 4d - error - %d\n"), task->m_iThreadNumber, info->m_pFrame->m_PicOrderCnt,
+    DEBUG_PRINT((VM_STRING("(thr - %d) (poc - %d) (uid - %d) %s done % 4d to % 4d - error - %d\n"), task->m_iThreadNumber, info->m_pFrame->m_PicOrderCnt, info->m_pFrame->m_UID,
         taskIdStr, task->m_iFirstMB, task->m_iFirstMB + task->m_iMBToProcess, task->m_bError));
+}
+
+inline void PrintTaskDoneAdditional(H265Task * task, H265DecoderFrameInfo* info)
+{
+    const vm_char * taskIdStr = GetTaskString(task);
+
+    Ipp32s readyIndex = DEC_PROCESS_ID;
+    switch(task->m_iTaskID)
+    {
+    case TASK_DEC_H265:
+        readyIndex = DEC_PROCESS_ID;
+        break;
+    case TASK_REC_H265:
+        readyIndex = REC_PROCESS_ID;
+        break;
+    case TASK_DEB_H265:
+        readyIndex = DEB_PROCESS_ID;
+        break;
+    case TASK_SAO_H265:
+        readyIndex = SAO_PROCESS_ID;
+        break;
+    }
+
+    if (task->m_iTaskID == TASK_SAO_H265)
+        DEBUG_PRINT((VM_STRING("(%d) (poc - %d) (uid - %d) %s ready %d\n"), task->m_iThreadNumber, info->m_pFrame->m_PicOrderCnt, info->m_pFrame->m_UID, taskIdStr, info->m_curMBToSAO));
+    else
+        DEBUG_PRINT((VM_STRING("(%d) (poc - %d) (uid - %d) %s ready %d\n"), task->m_iThreadNumber, info->m_pFrame->m_PicOrderCnt, info->m_pFrame->m_UID, taskIdStr, task->m_pSlice->m_curMBToProcess[readyIndex]));
 }
 
 void PrintInfoStatus(H265DecoderFrameInfo * info)
@@ -627,8 +654,6 @@ bool TaskBroker_H265::GetSAOFrameTask(H265DecoderFrameInfo * info, H265Task *pTa
         return false;
 
     H265Slice *pSlice = info->GetSlice(0);
-    H265SliceHeader *sliceHeder = pSlice->GetSliceHeader();
-
     Ipp32s sliceCount = info->GetSliceCount();
 
     bool isNeedSAO = false;
@@ -852,7 +877,9 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
                 pSlice->m_processVacant[DEC_PROCESS_ID] = 1;
             }
 
-            DEBUG_PRINT((VM_STRING("(%d) (%d) dec ready %d\n"), pTask->m_iThreadNumber, info->m_pFrame->m_PicOrderCnt, pSlice->m_iCurMBToDec));
+#if defined(ECHO)
+            PrintTaskDoneAdditional(pTask, info);
+#endif
             }
             break;
 
@@ -903,7 +930,9 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
             {
                 pSlice->m_processVacant[REC_PROCESS_ID] = 1;
             }
-            DEBUG_PRINT((VM_STRING("(%d) (%d) rec ready %d\n"), pTask->m_iThreadNumber, info->m_pFrame->m_PicOrderCnt, pSlice->m_iCurMBToRec));
+#if defined(ECHO)
+            PrintTaskDoneAdditional(pTask, info);
+#endif
             }
             break;
         case TASK_DEC_REC_H265:
@@ -971,8 +1000,9 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
             {
                 pSlice->m_processVacant[DEB_PROCESS_ID] = 1;
             }
-
-            DEBUG_PRINT((VM_STRING("(%d) (%d) after deb ready %d\n"), pTask->m_iThreadNumber, info->m_pFrame->m_PicOrderCnt, pSlice->m_iCurMBToDeb));
+#if defined(ECHO)
+            PrintTaskDoneAdditional(pTask, info);
+#endif
             }
             break;
         case TASK_SAO_H265:
@@ -992,7 +1022,7 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
                 pSlice->m_bError = true;
             }
 
-            for (int i = 0; i < info->GetSliceCount(); i++)
+            for (Ipp32u i = 0; i < info->GetSliceCount(); i++)
             {
                 H265Slice * slice = info->GetSlice(i);
                 if (slice->m_iMaxMB <= info->m_curMBToSAO)
@@ -1004,7 +1034,10 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
             info->m_saoInProcess = 0;
             if (info->m_curMBToSAO >= info->m_pFrame->getCD()->m_NumCUsInFrame)
                 info->m_saoInProcess = 2;
-            DEBUG_PRINT((VM_STRING("(%d) (%d) after sao ready %d\n"), pTask->m_iThreadNumber, info->m_pFrame->m_PicOrderCnt, info->m_curMBToSAO));
+            
+#if defined(ECHO)
+            PrintTaskDoneAdditional(pTask, info);
+#endif
             }
             break;
         default:
@@ -1323,7 +1356,7 @@ bool TaskBrokerTwoThread_H265::GetDecodingTask(H265DecoderFrameInfo * info, H265
 {
     H265DecoderFrameInfo * refAU = info->GetPrevAU();
     bool is_need_check = refAU != 0;
-    Ipp32s readyCount = 0;
+    Ipp32u readyCount = 0;
 
     if (is_need_check)
     {
@@ -1365,7 +1398,7 @@ bool TaskBrokerTwoThread_H265::GetReconstructTask(H265DecoderFrameInfo * info, H
     // this is guarded function, safe to touch any variable
     H265DecoderFrameInfo * refAU = info->GetPrevAU();
     bool is_need_check = refAU != 0;
-    Ipp32s readyCount = 0;
+    Ipp32u readyCount = 0;
 
     if (is_need_check)
     {

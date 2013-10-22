@@ -223,7 +223,11 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curP
         {
             MFX_HEVC_PP::NAME(h265_FilterEdgeLuma_8u_I)(edge, baseSrcDst + 4 * i * srcDstStride, srcDstStride, VERT_FILT);
         }
-        edge++;
+
+        if (m_pSeqParamSet->log2_min_transform_block_size < 3)
+        {
+            edge++;
+        }
     }
 
     Ipp32s end = 2;
@@ -264,6 +268,11 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curP
         if (edge->strength > 0)
         {
             MFX_HEVC_PP::NAME(h265_FilterEdgeLuma_8u_I)(edge, baseSrcDst + 4 * (i - 1), srcDstStride, HOR_FILT);
+        }
+
+        if (m_pSeqParamSet->log2_min_transform_block_size >= 3 && i == 1)
+        {
+            *(edge+1) = *edge;
         }
     }
 }

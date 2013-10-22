@@ -1115,7 +1115,7 @@ void H265SampleAdaptiveOffset::createNonDBFilterInfo()
         {
             H265Slice* slice = m_Frame->GetAU()->GetSlice(i);
 
-            if (slice->GetSliceHeader()->slice_loop_filter_across_slices_enabled_flag == false)
+            if (!slice->GetSliceHeader()->slice_loop_filter_across_slices_enabled_flag)
             {
                 independentSliceBoundaryForNDBFilter = true;
             }
