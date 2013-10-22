@@ -502,7 +502,8 @@ typedef struct {
     mfxU16      AdaptiveI;              /* tri-state option */
     mfxU16      AdaptiveB;              /* tri-state option */
     mfxU16      LookAheadDS;
-    mfxU16      reserved2[11];
+    mfxU16      NumMbPerSlice;
+    mfxU16      reserved2[10];
 } mfxExtCodingOption2;
 
 /* IntraPredBlockSize/InterPredBlockSize */
