@@ -145,6 +145,15 @@ public:
     Ipp16s pred_buf_u[2][MAX_CU_SIZE*MAX_CU_SIZE/4];
     Ipp16s pred_buf_v[2][MAX_CU_SIZE*MAX_CU_SIZE/4];
 
+    // storing predictions for bidir
+#define INTERP_BUF_SZ 8 // must be power of 2
+    struct interp_store {
+        __ALIGN32 Ipp16s pred_buf_y[MAX_CU_SIZE*MAX_CU_SIZE];
+        PixType * pY;
+        H265MV MV;
+    } interp_buf[INTERP_BUF_SZ];
+    Ipp8u interp_idx_first, interp_idx_last;
+
     H265BsFake *bsf;
     Ipp8u rd_opt_flag;
     Ipp64f rd_lambda;
@@ -352,7 +361,7 @@ public:
     void ME_Interpolate(H265MEInfo* me_info, H265MV* MV, PixType *in_pSrc, Ipp32s in_SrcPitch, Ipp8u *buf, Ipp32s buf_pitch) const;
     void ME_Interpolate_new_need_debug(H265MEInfo* me_info, H265MV* MV1, PixType *in_pSrc1, Ipp32s in_SrcPitch1, H265MV* MV2, PixType *in_pSrc2, Ipp32s in_SrcPitch2, Ipp8u *buf, Ipp32s buf_pitch) const;
     Ipp32s MatchingMetric_PU(PixType *pSrc, H265MEInfo* me_info, H265MV* MV, H265Frame *PicYUVRef) const;
-    Ipp32s MatchingMetricBipred_PU(PixType *pSrc, H265MEInfo* me_info, PixType *y_fwd, Ipp32u pitch_fwd, PixType *y_bwd, Ipp32u pitch_bwd, H265MV MV[2]) const;
+    Ipp32s MatchingMetricBipred_PU(PixType *pSrc, H265MEInfo* me_info, PixType *y_fwd, Ipp32u pitch_fwd, PixType *y_bwd, Ipp32u pitch_bwd, H265MV MV[2]);
     Ipp32s MVCost( H265MV MV[2], T_RefIdx ref_idx[2], MVPInfo pInfo[2], MVPInfo& mergeInfo) const;
 
     void InitCU(H265VideoParam *_par, H265CUData *_data, H265CUData *_data_temp, Ipp32s iCUAddr,

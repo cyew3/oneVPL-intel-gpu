@@ -1591,18 +1591,35 @@ Ipp32s H265CU::MatchingMetric_PU(PixType *pSrc, H265MEInfo* me_info, H265MV* MV,
     return cost;
 }
 
-Ipp32s H265CU::MatchingMetricBipred_PU(PixType *pSrc, H265MEInfo* me_info, PixType *y_fwd, Ipp32u pitch_fwd, PixType *y_bwd, Ipp32u pitch_bwd, H265MV MV[2]) const
+Ipp32s H265CU::MatchingMetricBipred_PU(PixType *pSrc, H265MEInfo* me_info, PixType *y_fwd, Ipp32u pitch_fwd, PixType *y_bwd, Ipp32u pitch_bwd, H265MV MV[2])
 {
     Ipp32s cost;
     Ipp32s width = me_info->width;
     Ipp32s height = me_info->height;
-    //Ipp32s ctbOffset = me_info->posx + me_info->posy * pitch_src;
-    //PixType *pSrc = y_src + ctbOffset;
     Ipp32s x, y;
 
-    Ipp16s pred_buf_y[2][MAX_CU_SIZE*MAX_CU_SIZE];
-    ME_Interpolate_old(me_info, &MV[0], y_fwd, pitch_fwd, pred_buf_y[0], MAX_CU_SIZE);
-    ME_Interpolate_old(me_info, &MV[1], y_bwd, pitch_bwd, pred_buf_y[1], MAX_CU_SIZE);
+    Ipp16s* pred_buf_y[2];
+    PixType *pY[2] = {y_fwd, y_bwd};
+    Ipp32u pitch[2] = {pitch_fwd, pitch_bwd};
+    Ipp8u dir, idx;
+    for(dir=0; dir<2; dir++) {
+        for (idx = interp_idx_first; idx !=interp_idx_last; idx = (idx+1)&(INTERP_BUF_SZ-1)) {
+            if(pY[dir] == interp_buf[idx].pY && MV[dir] == interp_buf[idx].MV) {
+                pred_buf_y[dir] = interp_buf[idx].pred_buf_y;
+                break;
+            }
+        }
+        if (idx == interp_idx_last) {
+            pred_buf_y[dir] = interp_buf[idx].pred_buf_y;
+            interp_buf[idx].pY = pY[dir];
+            interp_buf[idx].MV = MV[dir];
+            ME_Interpolate_old(me_info, &MV[dir], pY[dir], pitch[dir], pred_buf_y[dir], MAX_CU_SIZE);
+            interp_idx_last = (interp_idx_last+1)&(INTERP_BUF_SZ-1); // added to end
+            if (interp_idx_first == interp_idx_last) // replaced oldest
+                interp_idx_first = (interp_idx_first+1)&(INTERP_BUF_SZ-1);
+        }
+    }
+
 
     cost = 0;
     for (y=0; y<height; y++) {
@@ -2254,6 +2271,7 @@ void H265CU::ME_PU(H265MEInfo* me_info)
         H265Frame *PicYUVRefB = pList[1]->m_RefPicList[0];
         T_RefIdx curRefIdx[2] = {0, 0};
         if(PicYUVRefF && PicYUVRefB) {
+            interp_idx_first = interp_idx_last = 0; // for MatchingMetricBipred_PU optimization
             me_info->cost_bidir = MatchingMetricBipred_PU(pSrc, me_info, PicYUVRefF->y, PicYUVRefF->pitch_luma, PicYUVRefB->y, PicYUVRefB->pitch_luma, me_info->MV) +
                 MVCost( me_info->MV, curRefIdx, pInfo, mergeInfo);
 
@@ -4050,6 +4068,7 @@ CostType H265CU::CalcCostSkip(Ipp32u abs_part_idx, Ipp8u depth)
     GetInterMergeCandidates(abs_part_idx, PART_SIZE_2Nx2N, 0, CUSizeInMinTU, &mergeInfo);
 
     PixType *pSrc = y_src + me_info.posx + me_info.posy * pitch_src;
+    interp_idx_first = interp_idx_last = 0; // for MatchingMetricBipred_PU optimization
 
     if (mergeInfo.numCand > 0) {
         for (Ipp32s i = 0; i < mergeInfo.numCand; i++) {
