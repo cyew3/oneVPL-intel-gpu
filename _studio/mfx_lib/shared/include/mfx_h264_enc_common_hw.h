@@ -1034,6 +1034,15 @@ namespace MfxHwH264Encode
         static bool Next(SliceDividerState & state);
     };
 
+    struct SliceDividerLync : SliceDivider
+    {
+        SliceDividerLync(
+            mfxU32 sliceSizeInMbs,
+            mfxU32 widthInMbs,
+            mfxU32 heightInMbs);
+
+        static bool Next(SliceDividerState & state);
+    };
 
     SliceDivider MakeSliceDivider(
         mfxU32  sliceHwCaps,

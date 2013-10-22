@@ -1796,6 +1796,23 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         changed = true;
     }
 
+    
+    if (extOpt2->NumMbPerSlice != 0)
+    {
+        bool fieldCoding = (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0;
+        mfxU16 widthInMbs  = par.mfx.FrameInfo.Width / 16;
+        mfxU16 heightInMbs = par.mfx.FrameInfo.Height / 16 / (fieldCoding ? 2 : 1);
+
+        if (   (hwCaps.SliceStructure == 0)
+            || (hwCaps.SliceStructure  < 4 && (extOpt2->NumMbPerSlice % (par.mfx.FrameInfo.Width >> 4)))
+            || (hwCaps.SliceStructure == 1 && ((extOpt2->NumMbPerSlice / widthInMbs) & ((extOpt2->NumMbPerSlice / widthInMbs) - 1)))
+            || (widthInMbs * heightInMbs) < extOpt2->NumMbPerSlice)
+        {
+            extOpt2->NumMbPerSlice = 0;
+            unsupported = true;
+        }
+    }
+
     if (par.mfx.NumSlice         != 0 &&
         par.mfx.FrameInfo.Width  != 0 &&
         par.mfx.FrameInfo.Height != 0)
@@ -1808,11 +1825,16 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
         bool fieldCoding = (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0;
 
-        SliceDivider divider = MakeSliceDivider(
-            hwCaps.SliceStructure,
-            par.mfx.NumSlice,
-            par.mfx.FrameInfo.Width / 16,
-            par.mfx.FrameInfo.Height / 16 / (fieldCoding ? 2 : 1));
+        SliceDivider divider = (extOpt2->NumMbPerSlice != 0) ?
+            SliceDividerLync(
+                extOpt2->NumMbPerSlice,
+                par.mfx.FrameInfo.Width / 16,
+                par.mfx.FrameInfo.Height / 16 / (fieldCoding ? 2 : 1)) :
+            MakeSliceDivider(
+                hwCaps.SliceStructure,
+                par.mfx.NumSlice,
+                par.mfx.FrameInfo.Width / 16,
+                par.mfx.FrameInfo.Height / 16 / (fieldCoding ? 2 : 1));
 
         if (par.mfx.NumSlice != divider.GetNumSlice())
         {
@@ -3305,7 +3327,16 @@ void MfxHwH264Encode::SetDefaults(
         par.mfx.TargetUsage = 4;
 
     if (par.mfx.NumSlice == 0)
-        par.mfx.NumSlice = 1;
+    {
+        if (extOpt2->NumMbPerSlice != 0){
+            par.mfx.NumSlice = (
+                (par.mfx.FrameInfo.Width / 16) * 
+                (par.mfx.FrameInfo.Height / 16 / (fieldCodingPossible ? 2 : 1)) + 
+                extOpt2->NumMbPerSlice - 1) / extOpt2->NumMbPerSlice;
+        }
+        else
+            par.mfx.NumSlice = 1;
+    }
 
     if (par.mfx.RateControlMethod == 0)
         par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
@@ -4557,6 +4588,40 @@ bool SliceDividerHsw::Next(SliceDividerState & state)
     }
 }
 
+SliceDividerLync::SliceDividerLync(
+    mfxU32 sliceSizeInMbs,
+    mfxU32 widthInMbs,
+    mfxU32 heightInMbs)
+{
+    m_pfNext              = &SliceDividerLync::Next;
+    m_numMbInRow          = 1; 
+    m_numMbRow            = heightInMbs*widthInMbs;
+    m_currSliceFirstMbRow = 0;
+    m_leftMbRow           = m_numMbRow;
+    m_numSlice            = (m_numMbRow + sliceSizeInMbs - 1) / sliceSizeInMbs;
+    m_currSliceNumMbRow   = sliceSizeInMbs;
+    m_leftSlice           = m_numSlice;
+}
+
+bool SliceDividerLync::Next(SliceDividerState & state)
+{
+    state.m_leftMbRow -= state.m_currSliceNumMbRow;
+    state.m_leftSlice -= 1;
+
+    if (state.m_leftSlice == 0)
+    {
+        assert(state.m_leftMbRow == 0);
+        return false;
+    }
+    else
+    {
+        state.m_currSliceFirstMbRow += state.m_currSliceNumMbRow;
+        if (state.m_currSliceNumMbRow > state.m_leftMbRow)
+            state.m_currSliceNumMbRow = state.m_leftMbRow;
+        assert(state.m_currSliceNumMbRow != 0);
+        return true;
+    }
+}
 
 SliceDivider MfxHwH264Encode::MakeSliceDivider(
     mfxU32  sliceHwCaps,

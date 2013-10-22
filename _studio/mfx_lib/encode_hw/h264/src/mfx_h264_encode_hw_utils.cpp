@@ -1711,6 +1711,9 @@ mfxStatus TaskManager::AssignTask(
     toEncode->m_insertAud[ ffid] = IsOn(extOpt->AUDelimiter);
     toEncode->m_insertAud[!ffid] = IsOn(extOpt->AUDelimiter);
 
+    mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(m_video);
+    toEncode->m_numMbPerSlice = extOpt2->NumMbPerSlice;
+
     if (m_video.calcParam.lyncMode)
     {
         toEncode->m_insertPps[ ffid] = toEncode->m_insertSps[ ffid];
@@ -1726,7 +1729,6 @@ mfxStatus TaskManager::AssignTask(
     }
     else
     {
-        mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(m_video);
         toEncode->m_insertPps[ ffid] = toEncode->m_insertSps[ ffid] || IsOn(extOpt2->RepeatPPS);
         toEncode->m_insertPps[!ffid] = toEncode->m_insertSps[!ffid] || IsOn(extOpt2->RepeatPPS);
         toEncode->m_nalRefIdc[ ffid] = !!(toEncode->m_type[ ffid] & MFX_FRAMETYPE_REF);

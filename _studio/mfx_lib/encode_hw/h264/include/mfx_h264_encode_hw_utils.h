@@ -866,6 +866,7 @@ namespace MfxHwH264Encode
 #if USE_AGOP
             , m_cmEventAGOP(0)
 #endif
+            , m_numMbPerSlice(0)
         {
             Zero(m_ctrl);
             Zero(m_internalListCtrl);
@@ -935,6 +936,8 @@ namespace MfxHwH264Encode
         PairU32 m_addRepackSize; // w/a for SNB/IVB: size of padding to compensate re-pack of AVC headers to MVC headers
 // MVC BD }
         mfxU32  m_maxFrameSize;
+
+        mfxU16 m_numMbPerSlice;
 
         ArrayRoi m_roi;
         mfxU16   m_numRoi;

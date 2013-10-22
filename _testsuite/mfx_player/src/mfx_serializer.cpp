@@ -165,6 +165,7 @@ void MFXStructureRef <mfxExtCodingOption2>::ConstructValues () const
     SERIALIZE_INT(LookAheadDepth);
     SERIALIZE_INT(Trellis);
     SERIALIZE_INT(RepeatPPS);
+    SERIALIZE_INT(NumMbPerSlice);
 }
 
 void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const

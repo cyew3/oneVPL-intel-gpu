@@ -295,11 +295,16 @@ void MfxHwH264Encode::FillVaringPartOfSliceBuffer(
 {
     mfxU32 numPics = task.GetPicStructForEncode() == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
 
-    SliceDivider divider = MakeSliceDivider(
-        hwCaps.SliceStructure,
-        pps.NumSlice,
-        sps.FrameWidth  / 16,
-        sps.FrameHeight / 16 / numPics);
+    SliceDivider divider = (task.m_numMbPerSlice > 0) ? 
+        SliceDividerLync(
+            task.m_numMbPerSlice,
+            sps.FrameWidth  / 16,
+            sps.FrameHeight / 16 / numPics) :
+        MakeSliceDivider(
+            hwCaps.SliceStructure,
+            pps.NumSlice,
+            sps.FrameWidth  / 16,
+            sps.FrameHeight / 16 / numPics);
 
     for (size_t i = 0; i < slice.size(); ++i, divider.Next())
     {
