@@ -43,6 +43,7 @@
     <ClCompile Include="h265\src\mfx_h265_reordering_avx2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sad_avx2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sad_general_avx2.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_transform_fwd_32x32_avx2_nablet.cpp" />
     <ClCompile Include="h265\src\mfx_h265_transform_fwd_avx2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_transform_inv_32x32_avx2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_transform_inv_avx2.cpp" />

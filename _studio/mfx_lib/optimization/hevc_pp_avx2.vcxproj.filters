@@ -25,6 +25,9 @@
     <ClCompile Include="h265\src\mfx_h265_transform_fwd_avx2.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_transform_fwd_32x32_avx2_nablet.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">

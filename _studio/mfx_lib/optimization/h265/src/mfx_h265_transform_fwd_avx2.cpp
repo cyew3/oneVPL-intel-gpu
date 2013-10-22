@@ -26,6 +26,8 @@
 
 #if defined (MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 
+//#define AVX2_FTR_32x32_V1_ENABLED
+
 namespace MFX_HEVC_PP
 {
 
@@ -801,6 +803,7 @@ static const int DCT32TabVShuf[32] = {
      2,  6, 10, 14, 18, 22, 26, 30,  0,  8, 16, 24,  4, 12, 20, 28,
 };
 
+#if defined(AVX2_FTR_32x32_V1_ENABLED)
 void H265_FASTCALL MAKE_NAME(h265_DCT32x32Fwd_16s)(const short *H265_RESTRICT src, short *H265_RESTRICT dest)
 {
     int i, j, num;
@@ -1117,6 +1120,7 @@ void H265_FASTCALL MAKE_NAME(h265_DCT32x32Fwd_16s)(const short *H265_RESTRICT sr
         tmp += 32;
     }
 }
+#endif // #if defined(AVX2_FTR_32x32_V1_ENABLED)
 
 } // end namespace MFX_HEVC_PP
 
