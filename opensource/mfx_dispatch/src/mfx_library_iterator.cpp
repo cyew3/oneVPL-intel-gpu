@@ -184,10 +184,14 @@ mfxStatus MFXLibraryIterator::Init(eMfxImplType implType, mfxIMPL implInterface,
                     ? implInterface
                     : MFX_IMPL_VIA_ANY;
 
-    mfxStatus mfxRes = MFX::GetImplementationType(adapterNum, &m_implInterface, &m_vendorID, &m_deviceID);
-    if (MFX_ERR_NONE != mfxRes)
+    //deviceID and vendorID are not actual for SW library loading
+    if (m_implInterface != MFX_LIB_SOFTWARE)
     {
-        return mfxRes;
+        mfxStatus mfxRes = MFX::GetImplementationType(adapterNum, &m_implInterface, &m_vendorID, &m_deviceID);
+        if (MFX_ERR_NONE != mfxRes)
+        {
+            return mfxRes;
+        }
     }
 
     DISPATCHER_LOG_INFO((("Inspecting %s\\%S\n"),

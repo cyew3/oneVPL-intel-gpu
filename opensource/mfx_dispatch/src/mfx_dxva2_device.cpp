@@ -104,19 +104,19 @@ void DXDevice::Close(void)
 
 void DXDevice::LoadDLLModule(const wchar_t *pModuleName)
 {
-    UINT prevErrorMode;
+    DWORD prevErrorMode = 0;
 
     // unload the module if it is required
     UnloadDLLModule();
 
     // set the silent error mode
-    prevErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
+    SetThreadErrorMode(SEM_FAILCRITICALERRORS, &prevErrorMode);
 
     // load specified library
     m_hModule = LoadLibraryW(pModuleName);
 
     // set the previous error mode
-    SetErrorMode(prevErrorMode);
+    SetThreadErrorMode(prevErrorMode, NULL);
 
 } // void LoadDLLModule(const wchar_t *pModuleName)
 
