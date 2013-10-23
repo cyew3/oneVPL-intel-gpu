@@ -1825,16 +1825,12 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
         bool fieldCoding = (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0;
 
-        SliceDivider divider = (extOpt2->NumMbPerSlice != 0) ?
-            SliceDividerLync(
-                extOpt2->NumMbPerSlice,
-                par.mfx.FrameInfo.Width / 16,
-                par.mfx.FrameInfo.Height / 16 / (fieldCoding ? 2 : 1)) :
-            MakeSliceDivider(
-                hwCaps.SliceStructure,
-                par.mfx.NumSlice,
-                par.mfx.FrameInfo.Width / 16,
-                par.mfx.FrameInfo.Height / 16 / (fieldCoding ? 2 : 1));
+        SliceDivider divider = MakeSliceDivider(
+            hwCaps.SliceStructure,
+            extOpt2->NumMbPerSlice,
+            par.mfx.NumSlice,
+            par.mfx.FrameInfo.Width / 16,
+            par.mfx.FrameInfo.Height / 16 / (fieldCoding ? 2 : 1));
 
         if (par.mfx.NumSlice != divider.GetNumSlice())
         {
@@ -4625,10 +4621,14 @@ bool SliceDividerLync::Next(SliceDividerState & state)
 
 SliceDivider MfxHwH264Encode::MakeSliceDivider(
     mfxU32  sliceHwCaps,
+    mfxU32  sliceSizeInMbs,
     mfxU32  numSlice,
     mfxU32  widthInMbs,
     mfxU32  heightInMbs)
 {
+    if(sliceHwCaps > 0 && sliceSizeInMbs > 0)
+        return SliceDividerLync(sliceSizeInMbs, widthInMbs, heightInMbs);
+
     switch (sliceHwCaps)
     {
     case 1:  return SliceDividerSnb(numSlice, widthInMbs, heightInMbs);
@@ -6250,6 +6250,7 @@ void HeaderPacker::Init(
     mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(par);
     mfxExtSVCSeqDesc const *      extSvc = GetExtBuffer(par);
     mfxExtSpsHeader const *       extSps = GetExtBuffer(par);
+    mfxExtCodingOption2 const *   extOpt2 = GetExtBuffer(par);
 
     mfxU16 numViews = extSps->profileIdc == MFX_PROFILE_AVC_STEREO_HIGH ? 2 : 1;
     mfxU32 numDep   = par.calcParam.numDependencyLayer;
@@ -6288,6 +6289,8 @@ void HeaderPacker::Init(
 
     m_emulPrev = emulPrev;
     m_isMVC = numViews > 1;
+
+    m_numMbPerSlice = extOpt2->NumMbPerSlice;
 
     PrepareSpsPpsHeaders(par, m_sps, m_subset, m_pps);
 
@@ -6424,6 +6427,7 @@ mfxU32 HeaderPacker::WriteSlice(
 
     SliceDivider divider = MakeSliceDivider(
         m_hwCaps.SliceStructure,
+        m_numMbPerSlice,
         (mfxU32)m_packedSlices.size(),
         sps.picWidthInMbsMinus1 + 1,
         picHeightInMBs);

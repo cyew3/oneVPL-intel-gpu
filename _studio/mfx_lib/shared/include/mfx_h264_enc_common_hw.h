@@ -1046,6 +1046,7 @@ namespace MfxHwH264Encode
 
     SliceDivider MakeSliceDivider(
         mfxU32  sliceHwCaps,
+        mfxU32  sliceSizeInMbs,
         mfxU32  numSlice,
         mfxU32  widthInMbs,
         mfxU32  heightInMbs);
@@ -1207,6 +1208,7 @@ namespace MfxHwH264Encode
         mfxU8                           m_simulcast[8];             // for lookup by did
         mfxU16                          m_cabacInitIdc;             // same for all layers and slices
         mfxU16                          m_directSpatialMvPredFlag;  // same for all layers and slices
+        mfxU16                          m_numMbPerSlice;
         bool                            m_needPrefixNalUnit;
         bool                            m_emulPrev;                 // insert emualtion prevention bytes when possible (sps/pps/sei/aud)
         bool                            m_isMVC;

@@ -1570,6 +1570,7 @@ void MfxHwH264Encode::ConfigureTask(
     }
 
     task.m_maxFrameSize = extOpt2Runtime ? extOpt2Runtime->MaxFrameSize : extOpt2->MaxFrameSize;
+    task.m_numMbPerSlice = extOpt2->NumMbPerSlice;
 
     if (video.calcParam.lyncMode)
     {
