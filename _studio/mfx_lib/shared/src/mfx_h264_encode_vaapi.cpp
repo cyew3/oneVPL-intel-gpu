@@ -401,6 +401,7 @@ void UpdateSlice(
 
     SliceDivider divider = MakeSliceDivider(
         hwCaps.SliceStructure,
+        task.m_numMbPerSlice,
         numSlice,
         sps.picture_width_in_mbs,
         sps.picture_height_in_mbs / numPics);
