@@ -366,26 +366,17 @@
     <ClInclude Include="include\mfx_plugin_module.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="ClassDiagram.cd" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\shared\mfx_trace\mfx_trace.vcxproj">
       <Project>{ff93e15e-6a4a-4cc5-8d13-892fbba5cc5f}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\shared\umc\codec\brc\brc.vcxproj">
-      <Project>{06768873-9792-4471-9a7f-0d0e37e9dc2d}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\codec\color_space_converter\color_space_converter.vcxproj">
       <Project>{57fe8dac-c7c4-4df4-9a36-2fee040dff38}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\shared\umc\codec\h264_dec\h264_dec.vcxproj">
-      <Project>{c7621c21-a2d0-4604-896d-29f1470d9281}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\shared\umc\codec\h264_enc\h264_enc.vcxproj">
-      <Project>{35ebe815-8982-4d93-a7d2-fb9f3cfe2e86}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\codec\h265_dec\h265_dec.vcxproj">
       <Project>{f0afe44d-3a26-45f6-bc3f-6131f91dec80}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\shared\umc\codec\scene_analyzer\scene_analyzer.vcxproj">
-      <Project>{0108c6ed-b93f-4314-b9cd-4592b70c3c05}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\core\umc\base_classes.vcxproj">
       <Project>{31991d83-f6a2-49d9-bdc5-64e85d055a1c}</Project>
@@ -402,23 +393,8 @@
     <ProjectReference Include="..\..\shared\umc\io\umc_io\umc_io.vcxproj">
       <Project>{8ba23c0c-d2d7-4a5a-b8f9-ba5ca19cbab7}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\brc\brc.vcxproj">
-      <Project>{349fb219-e367-4afd-b43b-36c580d4ed3d}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\bsd\bsd.vcxproj">
-      <Project>{34cab135-86fd-4e5d-83b8-f8834dba56eb}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\decode\decode.vcxproj">
       <Project>{bd4d6c31-4c13-44d9-8c6f-9d5aeaf830f3}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\encode\encode.vcxproj">
-      <Project>{694cccd8-004b-4425-a9f6-9b60b6a85eba}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\encode\h265_enc.vcxproj">
-      <Project>{83f019ae-af39-49c6-b17c-5c4c3fca2055}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\enc\enc.vcxproj">
-      <Project>{700137f1-6d63-45ff-a381-a9e7ebe5e84c}</Project>
     </ProjectReference>
     <ProjectReference Include="..\optimization\hevc_pp_atom.vcxproj">
       <Project>{77807a28-2170-4a4c-95e5-73cb0657aa47}</Project>
@@ -438,18 +414,12 @@
     <ProjectReference Include="..\optimization\hevc_pp_ssse3.vcxproj">
       <Project>{87cf2689-abe2-463f-ad5e-9e4ce4b8b5cd}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\pak\pak.vcxproj">
-      <Project>{5ea7d17f-aae3-49c8-b1c6-de3c36d26559}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\shared\mfx_common.vcxproj">
       <Project>{7929e69f-b47f-4a1e-a038-6be3343ce855}</Project>
     </ProjectReference>
     <ProjectReference Include="libmfxsw_plugin_hevcd.vcxproj">
       <Project>{d719372d-ba13-4730-aff6-1994b26eff6c}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
