@@ -743,10 +743,7 @@ void Smoothing_P(VC1Context* pContext, Ipp32s Height)
         Ipp32s CurrIntra = pCurrMB->IntraFlag*pCurrMB->Overlap;
 
         Ipp32s i, j;
-        //Ipp16s* UpYrow;
-        //Ipp16s* UpUrow;
-        //Ipp16s* UpVrow;
-
+ 
         for (j = 0; j< Height; j++)
         {
             notTop = VC1_IS_NO_TOP_MB(pCurrMB->LeftTopRightPositionFlag);

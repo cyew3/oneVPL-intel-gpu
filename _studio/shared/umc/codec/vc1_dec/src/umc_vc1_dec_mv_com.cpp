@@ -672,6 +672,11 @@ void Progressive1MVPrediction(VC1Context* pContext)
 
         MVPred.CMVPred[0] = &pC->m_pBlocks[1];
     }
+    else if (VC1_IS_LEFT_RIGHT_MB(LeftTopRight))
+    {
+        pA = pCurrMB - width;
+        MVPred.AMVPred[0] = &pA->m_pBlocks[2];
+    }
     memcpy_s(&pContext->MVPred,sizeof(VC1MVPredictors),&MVPred,sizeof(VC1MVPredictors));
 }
 

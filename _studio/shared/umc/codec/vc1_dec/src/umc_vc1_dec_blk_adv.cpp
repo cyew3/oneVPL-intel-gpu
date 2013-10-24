@@ -12,7 +12,6 @@
 */
 
 #include "umc_defs.h"
-#include "mfx_common_int.h"
 
 #if defined (UMC_ENABLE_VC1_VIDEO_DECODER)
 
@@ -795,9 +794,7 @@ VC1Status BLKLayer_Intra_Chroma_Adv(VC1Context* pContext, Ipp32s blk_num,Ipp32u 
         VC1_GET_BITS(1, DCSIGN);
 
         DCCOEF = (1 - (DCSIGN<<1))* DCCOEF;
-        //if (DCSIGN == 1)
-        //    DCCOEF = -DCCOEF;
-    }
+     }
 
     CurrBlk->DC = (Ipp16s)DCCOEF;
 

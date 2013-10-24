@@ -200,7 +200,10 @@ Ipp32s CalculateLeftTopRightPositionFlag (VC1SingletonMB* sMB)
     {
         LeftTopRightPositionFlag |= VC1_LEFT_MB;
     }
-    else if (sMB->m_currMBXpos == sMB->widthMB - 1)
+    
+    //Right position
+
+    if (sMB->m_currMBXpos == sMB->widthMB - 1)
     {
         LeftTopRightPositionFlag |= VC1_RIGHT_MB;
     }
