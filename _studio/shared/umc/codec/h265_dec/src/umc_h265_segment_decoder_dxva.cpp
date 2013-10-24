@@ -108,9 +108,11 @@ void H265_DXVA_SegmentDecoder::PackAllHeaders(H265DecoderFrame * pFrame)
     }
 #endif
 
+    Ipp32u sliceNum = 0;
     for (Ipp32s n = 0; n < sliceCount; n++)
     {
-        m_Packer->PackSliceParams(sliceInfo->GetSlice(n), n, isLongFormat, n == sliceCount - 1);
+        m_Packer->PackSliceParams(sliceInfo->GetSlice(n), sliceNum, isLongFormat, n == sliceCount - 1);
+        sliceNum++;
     }
 
     m_Packer->ExecuteBuffers();
