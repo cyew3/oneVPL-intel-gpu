@@ -753,7 +753,7 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
 
 #elif HEVC_SPEC_VER == MK_HEVCVER(0, 85)
 
-void PackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u , bool isLong, bool isLastSlice)
+void PackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLong, bool isLastSlice)
 {
     DXVA_Intel_Slice_HEVC_Long* pDXVASlice = 0;
 
@@ -820,7 +820,7 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u , bool isLong, bool 
         pDXVASlice->LongSliceFlags.fields.slice_temporal_mvp_enabled_flag               = (UINT)pSlice->GetSliceHeader()->slice_enable_temporal_mvp_flag;
         pDXVASlice->LongSliceFlags.fields.slice_deblocking_filter_disabled_flag         = (UINT)pSlice->GetSliceHeader()->slice_deblocking_filter_disabled_flag;
         pDXVASlice->LongSliceFlags.fields.collocated_from_l0_flag                       = (UINT)pSlice->GetSliceHeader()->collocated_from_l0_flag;
-        pDXVASlice->LongSliceFlags.fields.slice_loop_filter_across_slices_enabled_flag  = (UINT)pPicParamSet->pps_loop_filter_across_slices_enabled_flag;
+        pDXVASlice->LongSliceFlags.fields.slice_loop_filter_across_slices_enabled_flag  = (UINT)pSlice->GetSliceHeader()->slice_loop_filter_across_slices_enabled_flag;
 
         
         //
@@ -835,8 +835,8 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u , bool isLong, bool 
         pDXVASlice->slice_cb_qp_offset              = (CHAR)pSlice->GetSliceHeader()->slice_cb_qp_offset;
         //pDXVASlice->slice_cr_qp_offset              = (CHAR)pSlice->getSliceQpDeltaCr();
         pDXVASlice->slice_cr_qp_offset              = (CHAR)pSlice->GetSliceHeader()->slice_cr_qp_offset;
-        pDXVASlice->slice_beta_offset_div2          = (CHAR)(pPicParamSet->pps_beta_offset >> 1);
-        pDXVASlice->slice_tc_offset_div2            = (CHAR)(pPicParamSet->pps_tc_offset >> 1);
+        pDXVASlice->slice_beta_offset_div2          = (CHAR)(pSlice->GetSliceHeader()->slice_beta_offset >> 1);
+        pDXVASlice->slice_tc_offset_div2            = (CHAR)(pSlice->GetSliceHeader()->slice_tc_offset >> 1);
         pDXVASlice->luma_log2_weight_denom          = (UCHAR)pSlice->GetSliceHeader()->luma_log2_weight_denom;
         pDXVASlice->delta_chroma_log2_weight_denom  = (UCHAR)(pSlice->GetSliceHeader()->chroma_log2_weight_denom - pSlice->GetSliceHeader()->luma_log2_weight_denom);
 
@@ -1370,7 +1370,7 @@ void MSPackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
 }
 
-void MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u sliceNum, bool , bool )
+void MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool , bool )
 {
     static Ipp8u start_code_prefix[] = {0, 0, 1};
 
@@ -1378,6 +1378,11 @@ void MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u sliceNum, bool , b
     const void*  rawDataPtr = 0;
 
     H265Bitstream *pBitstream = pSlice->GetBitStream();
+
+    if (pSlice->GetSliceHeader()->dependent_slice_segment_flag)
+    {
+        sliceNum--;
+    }
 
     pBitstream->GetOrg((Ipp32u**)&rawDataPtr, &rawDataSize);
 
@@ -1388,12 +1393,13 @@ void MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u sliceNum, bool , b
     Ipp8u *dataBffr = (Ipp8u *)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &dataVABffr);
 
     dxvaSlice->BSNALunitDataLocation = dataVABffr->GetDataSize();
-    dxvaSlice->SliceBytesInBuffer = rawDataSize + sizeof(start_code_prefix);
+    dxvaSlice->SliceBytesInBuffer += rawDataSize + sizeof(start_code_prefix);
     dxvaSlice->wBadSliceChopping = 0;
 
     if ((Ipp32s)dxvaSlice->SliceBytesInBuffer >= dataVABffr->GetBufferSize() - dataVABffr->GetDataSize())
         return;
 
+    dataBffr += dataVABffr->GetDataSize();
     memcpy(dataBffr, start_code_prefix, sizeof(start_code_prefix));
     memcpy(dataBffr + sizeof(start_code_prefix), rawDataPtr, rawDataSize);
 
@@ -1402,7 +1408,9 @@ void MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u sliceNum, bool , b
       //  alignedSize = alignedSize+(0x10 - (alignedSize & 0xf));
 
     dataVABffr->SetDataSize(alignedSize);
-    headVABffr->SetDataSize(headVABffr->GetDataSize() + sizeof(DXVA_Slice_HEVC_Short));
+
+    if (!pSlice->GetSliceHeader()->dependent_slice_segment_flag)
+        headVABffr->SetDataSize(headVABffr->GetDataSize() + sizeof(DXVA_Slice_HEVC_Short));
 }
 
 #endif // UMC_VA_DXVA
