@@ -582,6 +582,8 @@ Status DXVA2Accelerator::FindConfiguration(VideoStreamInfo *pVideoInfo)
 
                 auto_deleter_stdcall_void<VOID> automatic1(pConfig, &CoTaskMemFree);
 
+                Ipp32u isHEVCGUID = m_Profile & VA_H265;
+                
                 // Find a supported configuration.
                 int idxConfig = -1;
                 for (UINT iConfig = 0; iConfig < cConfigurations; iConfig++)
@@ -598,16 +600,31 @@ Status DXVA2Accelerator::FindConfiguration(VideoStreamInfo *pVideoInfo)
                     if (idxConfig == -1)
                         idxConfig = iConfig;
 
-                    if (2 == pConfig[iConfig].ConfigBitstreamRaw || 4 == pConfig[iConfig].ConfigBitstreamRaw || 6 == pConfig[iConfig].ConfigBitstreamRaw)
-                    { // short mode
-                        idxConfig = iConfig;
+                    if (isHEVCGUID)
+                    {
+                        if (1 == pConfig[iConfig].ConfigBitstreamRaw)
+                        { // short mode
+                            idxConfig = iConfig;
+                        }
+                    }
+                    else
+                    {
+                        if (2 == pConfig[iConfig].ConfigBitstreamRaw || 4 == pConfig[iConfig].ConfigBitstreamRaw || 6 == pConfig[iConfig].ConfigBitstreamRaw)
+                        { // short mode
+                            idxConfig = iConfig;
+                        }
                     }
                 }
 
                 m_bH264MVCSupport = IsVaMvcProfile(m_Profile);
 
                 m_Config = pConfig[idxConfig];
-                m_bH264ShortSlice = (2 == m_Config.ConfigBitstreamRaw || 4 == m_Config.ConfigBitstreamRaw || 6 == m_Config.ConfigBitstreamRaw);
+                
+                if (isHEVCGUID)
+                    m_bH264ShortSlice = 1 == m_Config.ConfigBitstreamRaw;
+                else
+                    m_bH264ShortSlice = (2 == m_Config.ConfigBitstreamRaw || 4 == m_Config.ConfigBitstreamRaw || 6 == m_Config.ConfigBitstreamRaw);
+                    
 
                 if (m_bInitilized)
                 {

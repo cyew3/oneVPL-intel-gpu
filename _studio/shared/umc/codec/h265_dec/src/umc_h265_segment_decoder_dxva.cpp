@@ -93,8 +93,7 @@ void H265_DXVA_SegmentDecoder::PackAllHeaders(H265DecoderFrame * pFrame)
         m_Packer->PackQmatrix(pSlice);
     }
 
-    bool isLongFormat = true;//m_va->IsLongSliceControl();
-    //bool isLongFormat = true;
+    bool isLongFormat = m_va->IsLongSliceControl();
 #if 0
     {
         const char *env = getenv("HEVC_SLICE_FORMAT");

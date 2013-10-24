@@ -1026,9 +1026,7 @@ private:
 
     void dumpHEVCSliceParameters_Intel(void * sliceParam, size_t bufSize)
     {
-        bool isLongSliceMode = true;
-
-        if (!isLongSliceMode)
+        if (!m_isLongFormat)
         {
             DXVA_Slice_HEVC_Short *slice = (DXVA_Slice_HEVC_Short*)sliceParam;
             for (int i = 0; i < bufSize/sizeof(DXVA_Slice_HEVC_Short); i++)
@@ -1211,6 +1209,7 @@ public:
             break;
         case HEVC_VLD:
             m_bufferDumper.reset(new HEVCBufferDumper);
+            m_bufferDumper->m_isLongFormat = m_Config.ConfigBitstreamRaw == 2;
             break;
         default:
             m_bufferDumper.reset(new BufferDumper);
