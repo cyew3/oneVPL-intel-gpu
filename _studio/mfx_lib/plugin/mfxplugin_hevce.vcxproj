@@ -1,0 +1,454 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug_Intel|Win32">
+      <Configuration>Debug_Intel</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug_Intel|x64">
+      <Configuration>Debug_Intel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_Intel|Win32">
+      <Configuration>Release_Intel</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_Intel|x64">
+      <Configuration>Release_Intel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{7D461E6A-B47C-4843-A06A-ECCBB0DEA729}</ProjectGuid>
+    <RootNamespace>mfxplugin_hevce</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="Intel.Mfx.Common.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\Intel.Mfx.Common.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\Intel.Mfx.Common.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40117.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\build\win_$(Platform)\bin\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">..\..\build\win_$(Platform)\bin\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)objs\$(ProjectName)_d\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">$(OutDir)objs\$(ProjectName)_d\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\build\win_$(Platform)\bin</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">..\..\build\win_$(Platform)\bin</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)objs\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">$(OutDir)objs\$(ProjectName)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">false</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">false</LinkIncremental>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'" />
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mfxplugin32_hevce_01_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">mfxplugin32_hevce_01_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mfxplugin64_hevce_01_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">mfxplugin64_hevce_01_d</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(MfxBuildDir)..\..\build\win_$(Platform)\bin\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>mfxplugin64_hevce_01</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">
+    <OutDir>$(MfxBuildDir)..\..\build\win_$(Platform)\bin\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>mfxplugin64_hevce_01</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>mfxplugin32_hevce_01</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">
+    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>mfxplugin32_hevce_01</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(MfxBuildDir)..\..\build\win_$(Platform)\bin\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">
+    <OutDir>$(MfxBuildDir)..\..\build\win_$(Platform)\bin\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <TreatWarningAsError>false</TreatWarningAsError>
+    </ClCompile>
+    <Link>
+      <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>svml_disp.lib;libirc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <TreatWarningAsError>false</TreatWarningAsError>
+    </ClCompile>
+    <Link>
+      <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER14)compiler\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>svml_disp.lib;libirc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER14)compiler\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER14)compiler\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>.\include;$(MfxIppIncludeDir);..\..\..\include;..\..\..\_studio\shared\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm\include;..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER14)compiler\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\mfx_plugin.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\mfx_plugin.h" />
+    <ClInclude Include="include\mfx_plugin_module.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\shared\mfx_trace\mfx_trace.vcxproj">
+      <Project>{ff93e15e-6a4a-4cc5-8d13-892fbba5cc5f}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\shared\umc\codec\brc\brc.vcxproj">
+      <Project>{06768873-9792-4471-9a7f-0d0e37e9dc2d}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\shared\umc\codec\color_space_converter\color_space_converter.vcxproj">
+      <Project>{57fe8dac-c7c4-4df4-9a36-2fee040dff38}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\shared\umc\codec\h264_dec\h264_dec.vcxproj">
+      <Project>{c7621c21-a2d0-4604-896d-29f1470d9281}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\shared\umc\codec\h264_enc\h264_enc.vcxproj">
+      <Project>{35ebe815-8982-4d93-a7d2-fb9f3cfe2e86}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\shared\umc\codec\h265_dec\h265_dec.vcxproj">
+      <Project>{f0afe44d-3a26-45f6-bc3f-6131f91dec80}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\shared\umc\codec\scene_analyzer\scene_analyzer.vcxproj">
+      <Project>{0108c6ed-b93f-4314-b9cd-4592b70c3c05}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\shared\umc\core\umc\base_classes.vcxproj">
+      <Project>{31991d83-f6a2-49d9-bdc5-64e85d055a1c}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\shared\umc\core\vm\vm.vcxproj">
+      <Project>{d41d3178-5c65-4868-bdb1-42c44643274e}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\shared\umc\core\vm_plus\vm_plus.vcxproj">
+      <Project>{04854e7f-2a17-4b40-a14f-4e1d9b1d4785}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\shared\umc\io\media_buffers\media_buffers.vcxproj">
+      <Project>{9befd888-5d4d-49fb-bda0-e5987f4f6fc7}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\shared\umc\io\umc_io\umc_io.vcxproj">
+      <Project>{8ba23c0c-d2d7-4a5a-b8f9-ba5ca19cbab7}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\brc\brc.vcxproj">
+      <Project>{349fb219-e367-4afd-b43b-36c580d4ed3d}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\bsd\bsd.vcxproj">
+      <Project>{34cab135-86fd-4e5d-83b8-f8834dba56eb}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\decode\decode.vcxproj">
+      <Project>{bd4d6c31-4c13-44d9-8c6f-9d5aeaf830f3}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\encode\encode.vcxproj">
+      <Project>{694cccd8-004b-4425-a9f6-9b60b6a85eba}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\encode\h265_enc.vcxproj">
+      <Project>{83f019ae-af39-49c6-b17c-5c4c3fca2055}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\enc\enc.vcxproj">
+      <Project>{700137f1-6d63-45ff-a381-a9e7ebe5e84c}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\optimization\hevc_pp_atom.vcxproj">
+      <Project>{77807a28-2170-4a4c-95e5-73cb0657aa47}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\optimization\hevc_pp_avx2.vcxproj">
+      <Project>{6ebb14f6-dca0-485a-89f7-fe803b75d0b9}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\optimization\hevc_pp_dispatch.vcxproj">
+      <Project>{c37d7375-76cd-400b-a030-4624b1012e08}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\optimization\hevc_pp_px.vcxproj">
+      <Project>{3b7a183a-c728-494f-a56e-6a993150d277}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\optimization\hevc_pp_sse4.vcxproj">
+      <Project>{a67aee55-e7e2-43da-9bdb-548ace4c595a}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\optimization\hevc_pp_ssse3.vcxproj">
+      <Project>{87cf2689-abe2-463f-ad5e-9e4ce4b8b5cd}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\pak\pak.vcxproj">
+      <Project>{5ea7d17f-aae3-49c8-b1c6-de3c36d26559}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\shared\mfx_common.vcxproj">
+      <Project>{7929e69f-b47f-4a1e-a038-6be3343ce855}</Project>
+    </ProjectReference>
+    <ProjectReference Include="libmfxsw_plugin_hevce.vcxproj">
+      <Project>{d719372d-ba13-4730-aff6-1994b26eff6c}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
