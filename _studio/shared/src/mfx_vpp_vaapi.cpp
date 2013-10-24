@@ -653,7 +653,7 @@ mfxStatus VAAPIVideoProcessing::QueryTaskStatus(mfxU32 taskIndex)
                     queryStatus.QueryStatusID = currentFeedback.number;
                     queryStatus.Status = VPREP_GPU_READY;
                     m_cachedReadyTaskIndex.insert(queryStatus.QueryStatusID);
-                    m_feedbackCache.erase(iter);
+                    iter = m_feedbackCache.erase(iter);
                     break;
                 case VASurfaceRendering:
                 case VASurfaceDisplaying:
