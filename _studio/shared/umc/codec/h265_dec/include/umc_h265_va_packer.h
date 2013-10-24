@@ -45,7 +45,7 @@ public:
                         H265DecoderFrameInfo * pSliceInfo,
                         TaskSupplier_H265 * supplier) = 0;
 
-    virtual void PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSlice) = 0;
+    virtual void PackSliceParams(H265Slice *pSlice, Ipp32u sliceNum, bool isLong, bool isLastSlice) = 0;
 
     virtual void PackQmatrix(const H265Slice *pSlice) = 0;
 
@@ -73,7 +73,7 @@ public:
                         H265DecoderFrameInfo * pSliceInfo,
                         TaskSupplier_H265 * supplier);
 
-    virtual void PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSlice);
+    virtual void PackSliceParams(H265Slice *pSlice, Ipp32u sliceNum, bool isLong, bool isLastSlice);
 
     void GetPicParamVABuffer(DXVA_Intel_PicParams_HEVC **ppPicParam, size_t headerSize);
 
@@ -114,7 +114,7 @@ public:
                         H265DecoderFrameInfo * pSliceInfo,
                         TaskSupplier_H265 * supplier);
 
-    virtual void PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSlice);
+    virtual void PackSliceParams(H265Slice *pSlice, Ipp32u sliceNum, bool isLong, bool isLastSlice);
 };
 
 #endif // UMC_VA_DXVA

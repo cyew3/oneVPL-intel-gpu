@@ -751,10 +751,14 @@ public:
         case DXVA2_InverseQuantizationMatrixBufferType:
             if (isMS)
                 dumpHEVC_QMatrix_MS(buffer);
+            else
+                dumpHEVC_QMatrix_Intel(buffer);
             break;
         case DXVA2_SliceControlBufferType:
             if (isMS)
                 dumpHEVCSliceParameters_MS(buffer, bufferSize);
+            else
+                dumpHEVCSliceParameters_Intel(buffer, bufferSize);
             break;
         }
 
@@ -766,6 +770,121 @@ private:
     void dumpHEVC_PPS_Intel(void *buffer)
     {
         DXVA_Intel_PicParams_HEVC* picParam = (DXVA_Intel_PicParams_HEVC*)buffer;
+
+        logi(picParam->PicWidthInMinCbsY);
+        logi(picParam->PicHeightInMinCbsY);
+
+        logi(picParam->PicFlags.fields.chroma_format_idc);
+        logi(picParam->PicFlags.fields.separate_colour_plane_flag);
+        logi(picParam->PicFlags.fields.bit_depth_luma_minus8);
+        logi(picParam->PicFlags.fields.bit_depth_chroma_minus8);
+        logi(picParam->PicFlags.fields.log2_max_pic_order_cnt_lsb_minus4);
+        logi(picParam->PicFlags.fields.NoPicReorderingFlag);
+        logi(picParam->PicFlags.fields.NoBiPredFlag);
+
+        logi(picParam->CurrPic.Index7bits);
+        logi(picParam->CurrPic.long_term_ref_flag);
+
+        logi(picParam->sps_max_dec_pic_buffering_minus1);
+        logi(picParam->log2_min_luma_coding_block_size_minus3);
+        logi(picParam->log2_diff_max_min_luma_coding_block_size);
+        logi(picParam->log2_min_transform_block_size_minus2);
+        logi(picParam->log2_diff_max_min_transform_block_size);
+        logi(picParam->max_transform_hierarchy_depth_inter);
+        logi(picParam->max_transform_hierarchy_depth_intra);
+        logi(picParam->num_short_term_ref_pic_sets);
+        logi(picParam->num_long_term_ref_pics_sps);
+        logi(picParam->num_ref_idx_l0_default_active_minus1);
+        logi(picParam->num_ref_idx_l1_default_active_minus1);
+        logi(picParam->init_qp_minus26);
+        logi(picParam->ucNumDeltaPocsOfRefRpsIdx);
+        logi(picParam->wNumBitsForShortTermRPSInSlice);        
+
+
+        logi(picParam->fields.scaling_list_enabled_flag);
+        logi(picParam->fields.amp_enabled_flag);
+        logi(picParam->fields.sample_adaptive_offset_enabled_flag);
+        logi(picParam->fields.pcm_enabled_flag);
+        logi(picParam->fields.pcm_sample_bit_depth_luma_minus1);
+        logi(picParam->fields.pcm_sample_bit_depth_chroma_minus1);
+        logi(picParam->fields.log2_min_pcm_luma_coding_block_size_minus3);
+        logi(picParam->fields.log2_diff_max_min_pcm_luma_coding_block_size);
+        logi(picParam->fields.pcm_loop_filter_disabled_flag);
+        logi(picParam->fields.long_term_ref_pics_present_flag);
+        logi(picParam->fields.sps_temporal_mvp_enabled_flag);
+        logi(picParam->fields.strong_intra_smoothing_enabled_flag);
+        logi(picParam->fields.dependent_slice_segments_enabled_flag);
+        logi(picParam->fields.output_flag_present_flag);
+        logi(picParam->fields.num_extra_slice_header_bits);
+        logi(picParam->fields.sign_data_hiding_flag);
+        logi(picParam->fields.cabac_init_present_flag);
+
+        logi(picParam->PicShortFormatFlags.fields.constrained_intra_pred_flag);
+        logi(picParam->PicShortFormatFlags.fields.transform_skip_enabled_flag);
+        logi(picParam->PicShortFormatFlags.fields.cu_qp_delta_enabled_flag);
+        logi(picParam->PicShortFormatFlags.fields.pps_slice_chroma_qp_offsets_present_flag);
+        logi(picParam->PicShortFormatFlags.fields.weighted_pred_flag);
+        logi(picParam->PicShortFormatFlags.fields.weighted_bipred_flag);
+        logi(picParam->PicShortFormatFlags.fields.transquant_bypass_enabled_flag);
+        logi(picParam->PicShortFormatFlags.fields.tiles_enabled_flag);
+        logi(picParam->PicShortFormatFlags.fields.entropy_coding_sync_enabled_flag);
+        logi(picParam->PicShortFormatFlags.fields.uniform_spacing_flag);
+        logi(picParam->PicShortFormatFlags.fields.loop_filter_across_tiles_enabled_flag);
+        logi(picParam->PicShortFormatFlags.fields.pps_loop_filter_across_slices_enabled_flag);
+        logi(picParam->PicShortFormatFlags.fields.deblocking_filter_override_enabled_flag);
+        logi(picParam->PicShortFormatFlags.fields.pps_deblocking_filter_disabled_flag);
+        logi(picParam->PicShortFormatFlags.fields.lists_modification_present_flag);
+        logi(picParam->PicShortFormatFlags.fields.slice_segment_header_extension_present_flag);
+        logi(picParam->PicShortFormatFlags.fields.IrapPicFlag);
+        logi(picParam->PicShortFormatFlags.fields.IdrPicFlag);
+        logi(picParam->PicShortFormatFlags.fields.IntraPicFlag);
+
+        logi(picParam->pps_cb_qp_offset);
+        logi(picParam->pps_cr_qp_offset);
+        logi(picParam->num_tile_columns_minus1);
+        logi(picParam->num_tile_rows_minus1);
+
+        for (int i = 0; i <= picParam->num_tile_columns_minus1; i++)
+        {
+            logi(picParam->column_width_minus1[i]);
+        }
+
+        for (int i = 0; i <= picParam->num_tile_rows_minus1; i++)
+        {
+            logi(picParam->row_height_minus1[i]);
+        }
+
+        logi(picParam->diff_cu_qp_delta_depth);
+        logi(picParam->pps_beta_offset_div2);
+        logi(picParam->pps_tc_offset_div2);
+        logi(picParam->log2_parallel_merge_level_minus2);
+        logi(picParam->CurrPicOrderCntVal);
+
+        for (int i = 0; i < 15; i++)
+        {
+            logi(picParam->RefFrameList[i].Index7bits);
+            logi(picParam->RefFrameList[i].long_term_ref_flag);
+            logi(picParam->PicOrderCntValList[i]);
+        }
+
+        for (int i = 0; i < 8; i++)
+        {
+            logi(picParam->RefPicSetStCurrBefore[i]);
+        }
+
+        for (int i = 0; i < 8; i++)
+        {
+            logi(picParam->RefPicSetStCurrAfter[i]);
+        }
+
+        for (int i = 0; i < 8; i++)
+        {
+            logi(picParam->RefPicSetLtCurr[i]);
+        }
+
+        logi(picParam->RefFieldPicFlag);
+        logi(picParam->RefBottomFieldFlag);
+        logi(picParam->StatusReportFeedbackNumber);
     }
 
     void dumpHEVC_PPS_MS(void *buffer)
@@ -905,9 +1024,128 @@ private:
         }
     }
 
+    void dumpHEVCSliceParameters_Intel(void * sliceParam, size_t bufSize)
+    {
+        bool isLongSliceMode = true;
+
+        if (!isLongSliceMode)
+        {
+            DXVA_Slice_HEVC_Short *slice = (DXVA_Slice_HEVC_Short*)sliceParam;
+            for (int i = 0; i < bufSize/sizeof(DXVA_Slice_HEVC_Short); i++)
+            {
+                logi(i);
+                logi(slice[i].BSNALunitDataLocation);
+                logi(slice[i].SliceBytesInBuffer);
+                logi(slice[i].wBadSliceChopping);
+            }
+
+            return;
+        }
+
+        DXVA_Intel_Slice_HEVC_Long *slice = (DXVA_Intel_Slice_HEVC_Long*)sliceParam;
+        for (int i = 0; i < bufSize/sizeof(DXVA_Intel_Slice_HEVC_Long); i++)
+        {
+            logi(i);
+            logi(slice[i].BSNALunitDataLocation);
+            logi(slice[i].SliceBytesInBuffer);
+            logi(slice[i].wBadSliceChopping);
+            logi(slice[i].ByteOffsetToSliceData);
+            logi(slice[i].slice_segment_address);
+            logi(slice[i].wBadSliceChopping);
+
+            for (Ipp32u k = 0; k < 15; k++)
+            {
+                logi(slice[i].RefPicList[0][k].Index7bits);
+                logi(slice[i].RefPicList[0][k].long_term_ref_flag);
+            }
+
+            for (Ipp32u k = 0; k < 15; k++)
+            {
+                logi(slice[i].RefPicList[1][k].Index7bits);
+                logi(slice[i].RefPicList[1][k].long_term_ref_flag);
+            }
+
+            logi(slice[i].LongSliceFlags.fields.LastSliceOfPic);
+            logi(slice[i].LongSliceFlags.fields.dependent_slice_segment_flag);
+            logi(slice[i].LongSliceFlags.fields.slice_type);
+            logi(slice[i].LongSliceFlags.fields.color_plane_id);
+            logi(slice[i].LongSliceFlags.fields.slice_sao_luma_flag);
+            logi(slice[i].LongSliceFlags.fields.slice_sao_chroma_flag);
+            logi(slice[i].LongSliceFlags.fields.mvd_l1_zero_flag);
+            logi(slice[i].LongSliceFlags.fields.cabac_init_flag);
+            logi(slice[i].LongSliceFlags.fields.slice_temporal_mvp_enabled_flag);
+            logi(slice[i].LongSliceFlags.fields.slice_deblocking_filter_disabled_flag);
+            logi(slice[i].LongSliceFlags.fields.collocated_from_l0_flag);
+            logi(slice[i].LongSliceFlags.fields.slice_loop_filter_across_slices_enabled_flag);
+
+            logi(slice[i].collocated_ref_idx);
+            logi(slice[i].num_ref_idx_l0_active_minus1);
+            logi(slice[i].num_ref_idx_l1_active_minus1);
+            logi(slice[i].slice_qp_delta);
+            logi(slice[i].slice_cb_qp_offset);
+            logi(slice[i].slice_cr_qp_offset);
+            logi(slice[i].slice_beta_offset_div2);
+            logi(slice[i].slice_tc_offset_div2);
+            logi(slice[i].luma_log2_weight_denom);
+            logi(slice[i].delta_chroma_log2_weight_denom);
+
+            for (Ipp32u k = 0; k < 15; k++)
+            {
+                logi(slice[i].delta_luma_weight_l0[k]);
+                logi(slice[i].luma_offset_l0[k]);
+                logi(slice[i].delta_chroma_weight_l0[k][0]);
+                logi(slice[i].delta_chroma_weight_l0[k][1]);
+                logi(slice[i].ChromaOffsetL0[k][0]);
+                logi(slice[i].ChromaOffsetL0[k][1]);
+                logi(slice[i].delta_luma_weight_l1[k]);
+                logi(slice[i].delta_chroma_weight_l1[k][0]);
+                logi(slice[i].delta_chroma_weight_l1[k][1]);
+                logi(slice[i].ChromaOffsetL1[k][0]);
+                logi(slice[i].ChromaOffsetL1[k][1]);
+            }
+
+            logi(slice[i].five_minus_max_num_merge_cand);
+        }
+    }
+
     void dumpHEVC_QMatrix_MS(void * buffer)
     {
         DXVA_Qmatrix_HEVC * matrix = (DXVA_Qmatrix_HEVC *) buffer;
+
+        for (int i = 0; i < 6; i++)
+        {
+            for (int j = 0; j < 16; j++)
+                logi(matrix->ucScalingLists0[i][j]);
+        }
+
+        for (int i = 0; i < 6; i++)
+        {
+            for (int j = 0; j < 64; j++)
+                logi(matrix->ucScalingLists1[i][j]);
+        }
+
+        for (int i = 0; i < 6; i++)
+        {
+            for (int j = 0; j < 64; j++)
+                logi(matrix->ucScalingLists2[i][j]);
+        }
+
+        for (int i = 0; i < 2; i++)
+        {
+            for (int j = 0; j < 64; j++)
+                logi(matrix->ucScalingLists3[i][j]);
+        }
+
+        for (int i = 0; i < 6; i++)
+            logi(matrix->ucScalingListDCCoefSizeID2[i]);
+
+        for (int i = 0; i < 2; i++)
+            logi(matrix->ucScalingListDCCoefSizeID3[i]);
+    }
+
+    void dumpHEVC_QMatrix_Intel(void * buffer)
+    {
+        DXVA_Intel_Qmatrix_HEVC * matrix = (DXVA_Intel_Qmatrix_HEVC *) buffer;
 
         for (int i = 0; i < 6; i++)
         {

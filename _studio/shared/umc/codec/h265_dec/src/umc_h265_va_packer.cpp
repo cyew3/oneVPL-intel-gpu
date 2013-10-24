@@ -753,14 +753,14 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
 
 #elif HEVC_SPEC_VER == MK_HEVCVER(0, 85)
 
-void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSlice)
+void PackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u , bool isLong, bool isLastSlice)
 {
     DXVA_Intel_Slice_HEVC_Long* pDXVASlice = 0;
 
     void*   pSliceData = 0;
     Ipp32u  rawDataSize = 0;
     const void*   rawDataPtr = 0;
-    size_t  headerSize = sizeof(DXVA_Intel_Slice_HEVC_Short);
+    size_t  headerSize = sizeof(DXVA_Slice_HEVC_Short);
 
     if(isLong)
         headerSize = sizeof(DXVA_Intel_Slice_HEVC_Long);
@@ -1370,7 +1370,7 @@ void MSPackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
 }
 
-void MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, bool , bool )
+void MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u sliceNum, bool , bool )
 {
     static Ipp8u start_code_prefix[] = {0, 0, 1};
 
@@ -1384,6 +1384,7 @@ void MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, bool , bool )
     UMCVACompBuffer *headVABffr = 0;
     UMCVACompBuffer *dataVABffr = 0;
     DXVA_Slice_HEVC_Short* dxvaSlice = (DXVA_Slice_HEVC_Short*)m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER, &headVABffr);
+    dxvaSlice += sliceNum;
     Ipp8u *dataBffr = (Ipp8u *)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &dataVABffr);
 
     dxvaSlice->BSNALunitDataLocation = dataVABffr->GetDataSize();
@@ -1396,7 +1397,11 @@ void MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, bool , bool )
     memcpy(dataBffr, start_code_prefix, sizeof(start_code_prefix));
     memcpy(dataBffr + sizeof(start_code_prefix), rawDataPtr, rawDataSize);
 
-    dataVABffr->SetDataSize(dataVABffr->GetDataSize() + dxvaSlice->SliceBytesInBuffer);
+    size_t alignedSize = dataVABffr->GetDataSize() + dxvaSlice->SliceBytesInBuffer;
+    //if (alignedSize & 0xf)
+      //  alignedSize = alignedSize+(0x10 - (alignedSize & 0xf));
+
+    dataVABffr->SetDataSize(alignedSize);
     headVABffr->SetDataSize(headVABffr->GetDataSize() + sizeof(DXVA_Slice_HEVC_Short));
 }
 
