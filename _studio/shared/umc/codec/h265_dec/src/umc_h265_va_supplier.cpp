@@ -115,54 +115,6 @@ void VATaskSupplier::Reset()
     MFXTaskSupplier_H265::Reset();
 }
 
-H265DecoderFrame *VATaskSupplier::GetFreeFrame()
-{
-    UMC::AutomaticUMCMutex guard(m_mGuard);
-    ViewItem_H265 &view = *GetView();
-
-    H265DecoderFrame *pFrame = 0;
-
-    // Traverse list for next disposable frame
-    Ipp32u frameCount = view.pDPB->countAllFrames();
-    if (frameCount >= view.dpbSize + m_DPBSizeEx)
-        pFrame = view.pDPB->GetLastDisposable();
-
-    VM_ASSERT(!pFrame || pFrame->GetRefCounter() == 0);
-
-    // Did we find one?
-    if (NULL == pFrame)
-    {
-        if (view.pDPB->countAllFrames() >= view.dpbSize + m_DPBSizeEx)
-        {
-            return 0;
-        }
-
-        // Didn't find one. Let's try to insert a new one
-        pFrame = new H265DecoderFrame(m_pMemoryAllocator, &m_Heap, &m_ObjHeap);
-        if (NULL == pFrame)
-            return 0;
-
-        view.pDPB->append(pFrame);
-
-        //pFrame->m_index = -1;
-    }
-
-    pFrame->Reset();
-
-    // Set current as not displayable (yet) and not outputted. Will be
-    // updated to displayable after successful decode.
-    pFrame->unsetWasOutputted();
-    pFrame->unSetisDisplayable();
-    pFrame->SetSkipped(false);
-    pFrame->SetFrameExistFlag(true);
-    pFrame->IncrementReference();
-
-    m_UIDFrameCounter++;
-    pFrame->m_UID = m_UIDFrameCounter;
-
-    return pFrame;
-}
-
 inline bool isFreeFrame(H265DecoderFrame * pTmp)
 {
     return (!pTmp->m_isShortTermRef &&
@@ -182,13 +134,13 @@ void VATaskSupplier::CompleteFrame(H265DecoderFrame * pFrame)
     if (slicesInfo->GetStatus() > H265DecoderFrameInfo::STATUS_NOT_FILLED)
         return;
 
-    DEBUG_PRINT((VM_STRING("Complete frame POC - (%d) type - %d, field - -, count - %d, m_uid - %d, IDR - %d\n"), pFrame->m_PicOrderCnt, pFrame->m_FrameType, slicesInfo->GetSliceCount(), pFrame->m_UID, slicesInfo->GetAnySlice()->GetSliceHeader()->IdrPicFlag));
+    DEBUG_PRINT((VM_STRING("Complete frame POC - (%d) type - %d, count - %d, m_uid - %d, IDR - %d\n"), pFrame->m_PicOrderCnt, pFrame->m_FrameType, slicesInfo->GetSliceCount(), pFrame->m_UID, slicesInfo->GetAnySlice()->GetSliceHeader()->IdrPicFlag));
 
     // skipping algorithm
     {
-        if (IsShouldSkipFrame(pFrame))
+        if (IsShouldSkipFrame(pFrame) || IsSkipForCRAorBLA(slicesInfo->GetAnySlice()))
         {
-            pFrame->GetAU()->SetStatus(H265DecoderFrameInfo::STATUS_COMPLETED);
+            slicesInfo->SetStatus(H265DecoderFrameInfo::STATUS_COMPLETED);
 
             pFrame->SetisShortTermRef(false);
             pFrame->SetisLongTermRef(false);
@@ -201,51 +153,52 @@ void VATaskSupplier::CompleteFrame(H265DecoderFrame * pFrame)
             if (IsShouldSkipDeblocking(pFrame))
             {
                 pFrame->GetAU()->SkipDeblocking();
+                pFrame->GetAU()->SkipSAO();
             }
         }
     }
 
-        Ipp32s count = slicesInfo->GetSliceCount();
+    Ipp32s count = slicesInfo->GetSliceCount();
 
-        H265Slice * pFirstSlice = 0;
+    H265Slice * pFirstSlice = 0;
+    for (Ipp32s j = 0; j < count; j ++)
+    {
+        H265Slice * pSlice = slicesInfo->GetSlice(j);
+        if (!pFirstSlice || pSlice->m_iFirstMB < pFirstSlice->m_iFirstMB)
+        {
+            pFirstSlice = pSlice;
+        }
+    }
+
+    if (pFirstSlice->m_iFirstMB)
+    {
+        m_pSegmentDecoder[0]->RestoreErrorRect(0, pFirstSlice->m_iFirstMB, pFirstSlice);
+    }
+
+    for (Ipp32s i = 0; i < count; i ++)
+    {
+        H265Slice * pCurSlice = slicesInfo->GetSlice(i);
+
+#define MAX_MB_NUMBER 0x7fffffff
+
+        Ipp32s minFirst = MAX_MB_NUMBER;
         for (Ipp32s j = 0; j < count; j ++)
         {
             H265Slice * pSlice = slicesInfo->GetSlice(j);
-            if (!pFirstSlice || pSlice->m_iFirstMB < pFirstSlice->m_iFirstMB)
+            if (pSlice->m_iFirstMB > pCurSlice->m_iFirstMB && minFirst > pSlice->m_iFirstMB)
             {
-                pFirstSlice = pSlice;
+                minFirst = pSlice->m_iFirstMB;
             }
         }
 
-        if (pFirstSlice->m_iFirstMB)
+        if (minFirst != MAX_MB_NUMBER)
         {
-            m_pSegmentDecoder[0]->RestoreErrorRect(0, pFirstSlice->m_iFirstMB, pFirstSlice);
+            pCurSlice->m_iMaxMB = minFirst;
         }
+    }
 
-        for (Ipp32s i = 0; i < count; i ++)
-        {
-            H265Slice * pCurSlice = slicesInfo->GetSlice(i);
-
-    #define MAX_MB_NUMBER 0x7fffffff
-
-            Ipp32s minFirst = MAX_MB_NUMBER;
-            for (Ipp32s j = 0; j < count; j ++)
-            {
-                H265Slice * pSlice = slicesInfo->GetSlice(j);
-                if (pSlice->m_iFirstMB > pCurSlice->m_iFirstMB && minFirst > pSlice->m_iFirstMB)
-                {
-                    minFirst = pSlice->m_iFirstMB;
-                }
-            }
-
-            if (minFirst != MAX_MB_NUMBER)
-            {
-                pCurSlice->m_iMaxMB = minFirst;
-            }
-        }
-
-        StartDecodingFrame(pFrame);
-        EndDecodingFrame();
+    StartDecodingFrame(pFrame);
+    EndDecodingFrame();
 
     slicesInfo->SetStatus(H265DecoderFrameInfo::STATUS_FILLED);
 }

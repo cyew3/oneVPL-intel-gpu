@@ -53,8 +53,6 @@ protected:
 
     virtual void CompleteFrame(H265DecoderFrame * pFrame);
 
-    virtual H265DecoderFrame * GetFreeFrame();
-
     virtual H265Slice * DecodeSliceHeader(UMC::MediaDataEx *nalUnit);
 
     virtual H265DecoderFrame *GetFrameToDisplayInternal(bool force);
