@@ -1949,8 +1949,6 @@ mfxStatus CheckExtParam(VideoCORE * core, mfxExtBuffer** ppExtParam, mfxU16 coun
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-
-    bool bWarning = false;
     bool bError = false;
   
     // [1] ExtParam
@@ -1973,7 +1971,7 @@ mfxStatus CheckExtParam(VideoCORE * core, mfxExtBuffer** ppExtParam, mfxU16 coun
     GetConfigurableFilterList( &tmpParam, &configList[0], &configCount );
 
     //-----------------------------------------------------
-    mfxStatus sts = MFX_ERR_NONE;
+    mfxStatus sts = MFX_ERR_NONE, sts_wrn = MFX_ERR_NONE;
     mfxU32 fIdx = 0;
     for(fIdx = 0; fIdx < configCount; fIdx++)
     {
@@ -1986,9 +1984,9 @@ mfxStatus CheckExtParam(VideoCORE * core, mfxExtBuffer** ppExtParam, mfxU16 coun
         // AL update: now 4 status, added MFX_WRN_FILTER_SKIPPED
         sts = ExtendedQuery(core, curId, pHint);
 
-        if( MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts )
+        if( MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts || MFX_WRN_FILTER_SKIPPED == sts )
         {
-            bWarning = true;
+            sts_wrn = sts;
             sts = MFX_ERR_NONE;
         }
         else if( MFX_ERR_UNSUPPORTED == sts )
@@ -2032,12 +2030,11 @@ mfxStatus CheckExtParam(VideoCORE * core, mfxExtBuffer** ppExtParam, mfxU16 coun
 
     if( bError )
     {
-        //return MFX_ERR_UNDEFINED_BEHAVIOR;
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
-    else if( bWarning )
+    else if( MFX_ERR_NONE != sts_wrn )
     {
-        return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        return sts_wrn;
     }
     else
     {

@@ -183,8 +183,8 @@ mfxStatus VideoVPPSW::Close(void)
 
 mfxStatus VideoVPPSW::Init(mfxVideoParam *par)
 {
-    mfxStatus  sts  = MFX_ERR_INVALID_VIDEO_PARAM;
-    bool       bWarningIncompatible = false;
+    mfxStatus sts  = MFX_ERR_INVALID_VIDEO_PARAM;
+    mfxStatus sts_wrn = MFX_ERR_NONE;
 
     MFX_CHECK_NULL_PTR1( par );
 
@@ -208,10 +208,10 @@ mfxStatus VideoVPPSW::Init(mfxVideoParam *par)
     m_bDynamicDeinterlace = (DYNAMIC_DI_PICSTRUCT_MODE == picStructMode) ? true : false;
 
     sts = CheckExtParam(m_core, par->ExtParam,  par->NumExtParam);
-    if( MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts )
+    if( MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts || MFX_WRN_FILTER_SKIPPED == sts)
     {
+        sts_wrn = sts;
         sts = MFX_ERR_NONE;
-        bWarningIncompatible = true;
     }
     MFX_CHECK_STS(sts);
 
@@ -344,26 +344,16 @@ mfxStatus VideoVPPSW::Init(mfxVideoParam *par)
         {
             return MFX_WRN_PARTIAL_ACCELERATION;
         }
-        else if( bWarningIncompatible )
+        else if( MFX_ERR_NONE != sts_wrn )
         {
-            return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-        }
-        else
-        {
-            //sts = CheckPlatformLimitations(par, &m_pipelineList[0], m_pipelineList.size(), m_core->GetPlatformType());
-            //return sts;
+            return sts_wrn;
         }
     }
     else
     {
-        if( bWarningIncompatible )
+        if( MFX_ERR_NONE != sts_wrn )
         {
-            return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-        }
-        else
-        {
-            //sts = CheckPlatformLimitations(par, &m_pipelineList[0], m_pipelineList.size(), m_core->GetPlatformType());
-            //return sts;
+            return sts_wrn;
         }
     }
 
