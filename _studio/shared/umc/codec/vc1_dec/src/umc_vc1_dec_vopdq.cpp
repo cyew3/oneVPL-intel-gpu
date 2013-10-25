@@ -107,8 +107,7 @@ VC1Status VOPDQuant(VC1Context* pContext)
     }
     else if (DQUANT == 2)
     {
-        picLayerHeader->m_PQuant_mode = VC1_ALTPQUANT_ALL;
-        //picLayerHeader->m_PQuant_mode = VC1_ALTPQUANT_EDGES;
+        picLayerHeader->m_PQuant_mode = VC1_ALTPQUANT_EDGES;
         picLayerHeader->m_DQuantFRM = 1;
     }
     else
