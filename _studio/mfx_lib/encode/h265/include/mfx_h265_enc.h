@@ -40,7 +40,7 @@ struct H265VideoParam {
     Ipp8u MaxRefIdxL0;
     Ipp8u MaxRefIdxL1;
     Ipp8u MaxBRefIdxL0;
-    Ipp8u GeneralizedBipred;
+    Ipp8u GeneralizedPB;
 
     Ipp8u SplitThresholdStrengthCUIntra;
     Ipp8u SplitThresholdStrengthTUIntra;
@@ -54,6 +54,7 @@ struct H265VideoParam {
     Ipp32u num_threads;
 
 // derived
+    Ipp32s PGopPicSize;
     Ipp32u Width;
     Ipp32u Height;
     Ipp32u CropLeft;
@@ -141,6 +142,7 @@ public:
     Ipp32u m_numShortTermRefPicSets;
     Ipp32s m_PicOrderCnt_Accu; // Accumulator to compensate POC resets on IDR frames.
     Ipp32u m_PicOrderCnt;
+    Ipp32s m_PGOPIndex;
 
     H265FrameList m_cpb;
     H265FrameList m_dpb;

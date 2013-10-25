@@ -150,6 +150,10 @@ typedef Ipp8s T_RefIdx;
 #define CostType Ipp64f
 #define COST_MAX DBL_MAX
 
+
+#define H265_MAXNUMREF  4
+#define PGOP_PIC_SIZE 4
+
 struct H265MV
 {
     Ipp16s  mvx;

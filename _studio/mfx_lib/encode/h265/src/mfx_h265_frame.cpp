@@ -338,26 +338,29 @@ void H265FrameList::RemoveFrame(H265Frame *pFrm)
 
 H265Frame *H265FrameList::findMostDistantShortTermRefs(Ipp32s POC)
 {
-    H265Frame *pCurr = m_pHead;
     H265Frame *pFrm = NULL;
-    Ipp32s maxDeltaPOC = 0x7fffffff;
+    Ipp32s maxDeltaPOC = 0;//0x7fffffff;
 
-    while (pCurr)
-    {
-        if (pCurr->isShortTermRef())
+    for (Ipp32s i = 0; i < 2; i++) {
+        H265Frame *pCurr = m_pHead;
+        while (pCurr)
         {
-            Ipp32s deltaPOC = pCurr->PicOrderCnt() - POC;
-
-            if (deltaPOC < 0)
-                deltaPOC = -deltaPOC;
-
-            if (deltaPOC < maxDeltaPOC)
+            if (pCurr->isShortTermRef() && (i == 0 ? pCurr->m_PGOPIndex : 1))
             {
-                maxDeltaPOC = deltaPOC;
-                pFrm = pCurr;
+                Ipp32s deltaPOC = pCurr->PicOrderCnt() - POC;
+
+                if (deltaPOC < 0)
+                    deltaPOC = -deltaPOC;
+
+                if (deltaPOC > maxDeltaPOC)
+                {
+                    maxDeltaPOC = deltaPOC;
+                    pFrm = pCurr;
+                }
             }
+            pCurr = pCurr->future();
         }
-        pCurr = pCurr->future();
+        if (pFrm) return pFrm;
     }
 
     return pFrm;

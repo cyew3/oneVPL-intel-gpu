@@ -235,6 +235,7 @@ public:
     Ipp32u list_entry_l1[MAX_NUM_REF_FRAMES];
     Ipp8u m_ref_pic_list_modification_flag_l0;
     Ipp8u m_ref_pic_list_modification_flag_l1;
+    Ipp8u pgop_idx;
 
     EncoderRefPicList *m_pRefPicList;
 

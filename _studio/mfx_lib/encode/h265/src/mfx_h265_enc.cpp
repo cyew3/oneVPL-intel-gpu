@@ -124,10 +124,11 @@ mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxE
     pars->NumRefFrames = 6;
     pars->NumRefToStartCodeBSlice = 1;
     pars->TreatBAsReference = 0;
-    pars->MaxRefIdxL0 = 1;
+    pars->MaxRefIdxL0 = pars->GopRefDist > 1 ? 1 : (Ipp8u)param->mfx.NumRefFrame;
     pars->MaxRefIdxL1 = 1;
     pars->MaxBRefIdxL0 = 1;
-    pars->GeneralizedBipred = 1;
+    pars->GeneralizedPB = (opts_hevc->GPB == MFX_CODINGOPTION_ON);
+    pars->PGopPicSize = (pars->GopRefDist > 1 || pars->MaxRefIdxL0 == 1) ? 1 : PGOP_PIC_SIZE;
 
     pars->AnalyseFlags = 0;
     if (opts_hevc->AnalyzeChroma == MFX_CODINGOPTION_ON)
@@ -427,8 +428,6 @@ mfxStatus H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice)
         default:
             slice->slice_type = I_SLICE; break;
     }
-    if (m_videoParam.GeneralizedBipred && slice->slice_type == P_SLICE)
-        slice->slice_type = B_SLICE;
 
     if (m_pCurrentFrame->m_bIsIDRPic)
     {
@@ -450,8 +449,21 @@ mfxStatus H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice)
     slice->num_ref_idx_l0_active = m_pps.num_ref_idx_l0_default_active;
     slice->num_ref_idx_l1_active = m_pps.num_ref_idx_l1_default_active;
 
+    slice->pgop_idx = slice->slice_type == P_SLICE ? m_pCurrentFrame->m_PGOPIndex : 0;
+    if (m_videoParam.GeneralizedPB && slice->slice_type == P_SLICE) {
+        slice->slice_type = B_SLICE;
+        slice->num_ref_idx_l1_active = slice->num_ref_idx_l0_active;
+    }
+
+
     slice->short_term_ref_pic_set_sps_flag = 1;
-    slice->short_term_ref_pic_set_idx = m_pCurrentFrame->m_RPSIndex;
+    if (m_pCurrentFrame->m_RPSIndex > 0) {
+        slice->short_term_ref_pic_set_idx = m_pCurrentFrame->m_RPSIndex;
+        slice->num_ref_idx_l0_active = m_videoParam.MaxBRefIdxL0;
+    } else if (m_pCurrentFrame->m_PGOPIndex == 0)
+        slice->short_term_ref_pic_set_idx = 0;
+    else
+        slice->short_term_ref_pic_set_idx = m_videoParam.GopRefDist - 1 + m_pCurrentFrame->m_PGOPIndex;
 
     slice->slice_num = curr_slice;
     slice->m_pRefPicList = GetRefPicLists(curr_slice);
@@ -476,15 +488,24 @@ void H265Encoder::InitShortTermRefPicSet()
     deltaPoc = m_videoParam.TreatBAsReference ? 1 : m_videoParam.GopRefDist;
 
     m_numShortTermRefPicSets = 0;
-
-    m_ShortRefPicSet[0].inter_ref_pic_set_prediction_flag = 0;
-    m_ShortRefPicSet[0].num_negative_pics = m_videoParam.MaxRefIdxL0;
-    m_ShortRefPicSet[0].num_positive_pics = 0;
-    for (j = 0; j < m_ShortRefPicSet[0].num_negative_pics; j++) {
-        m_ShortRefPicSet[0].delta_poc[j] = deltaPoc;
-        m_ShortRefPicSet[0].used_by_curr_pic_flag[j] = 1;
+    
+    for (i = 0; i < m_videoParam.PGopPicSize; i++)
+    {
+        Ipp32s idx = i == 0 ? 0 : m_videoParam.GopRefDist - 1 + i;
+        m_ShortRefPicSet[idx].inter_ref_pic_set_prediction_flag = 0;
+        m_ShortRefPicSet[idx].num_negative_pics = m_videoParam.MaxRefIdxL0;
+        m_ShortRefPicSet[idx].num_positive_pics = 0;
+        for (j = 0; j < m_ShortRefPicSet[idx].num_negative_pics; j++) {
+            Ipp32s deltaPoc_cur;
+            if (j == 0) deltaPoc_cur = 1;
+            else if (j == 1) deltaPoc_cur = (m_videoParam.PGopPicSize - 1 + i) % m_videoParam.PGopPicSize;
+            else deltaPoc_cur = m_videoParam.PGopPicSize;
+            if (deltaPoc_cur == 0) deltaPoc_cur =  m_videoParam.PGopPicSize;
+            m_ShortRefPicSet[idx].delta_poc[j] = deltaPoc_cur * m_videoParam.GopRefDist;
+            m_ShortRefPicSet[idx].used_by_curr_pic_flag[j] = 1;
+        }
+        m_numShortTermRefPicSets++;
     }
-    m_numShortTermRefPicSets++;
 
     for (i = 1; i < m_videoParam.GopRefDist; i++)
     {
@@ -584,6 +605,7 @@ mfxStatus H265Encoder::Init(mfxVideoH265InternalParam *param, mfxExtCodingOption
     m_l1_cnt_to_start_B = 0;
     m_PicOrderCnt = 0;
     m_PicOrderCnt_Accu = 0;
+    m_PGOPIndex = 0;
     m_frameCountEncoded = 0;
 
     if (param->mfx.RateControlMethod != MFX_RATECONTROL_CQP)
@@ -820,8 +842,10 @@ void H265Encoder::CreateRefPicSet(H265Slice *curr_slice)
         if (curr_slice->slice_type == I_SLICE)
         {
             numRefs = 0;
+        } else {
+            numRefs = (Ipp32s)curr_slice->num_ref_idx_l0_active;
         }
-        else if (curr_slice->slice_type == P_SLICE)
+/*        else if (curr_slice->slice_type == P_SLICE)
         {
             numRefs = m_videoParam.MaxRefIdxL0 + 1;
         }
@@ -835,7 +859,25 @@ void H265Encoder::CreateRefPicSet(H265Slice *curr_slice)
             numRefs = RefPicSet->num_negative_pics;
         }
 
-        for (i = 0; i < numRefs; i++)
+        if (numRefs > (Ipp32s)curr_slice->num_ref_idx_l0_active)
+            numRefs = (Ipp32s)curr_slice->num_ref_idx_l0_active;*/
+
+        Ipp32s used_count = 0;
+        for (i = 0; i < RefPicSet->num_negative_pics; i++) {
+            if (used_count < numRefs && pRefPicList[i]->m_PGOPIndex == 0) {
+                RefPicSet->used_by_curr_pic_flag[i] = 1;
+                used_count++;
+            } else {
+                RefPicSet->used_by_curr_pic_flag[i] = 0;
+            }
+        }
+        for (i = 0; i < RefPicSet->num_negative_pics; i++) {
+            if (used_count < numRefs && RefPicSet->used_by_curr_pic_flag[i] == 0) {
+                RefPicSet->used_by_curr_pic_flag[i] = 1;
+                used_count++;
+            }
+        }
+/*        for (i = 0; i < numRefs; i++)
         {
             RefPicSet->used_by_curr_pic_flag[i] = 1;
         }
@@ -843,7 +885,7 @@ void H265Encoder::CreateRefPicSet(H265Slice *curr_slice)
         for (i = numRefs; i < RefPicSet->num_negative_pics; i++)
         {
             RefPicSet->used_by_curr_pic_flag[i] = 0;
-        }
+        }*/
     }
     else
     {
@@ -1423,13 +1465,13 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
 
             cu[ithread].GetInitAvailablity();
             cu[ithread].ModeDecision(0, 0, 0, NULL);
+//            cu[ithread].FillRandom(0, 0);
 
             if( pars->RDOQFlag )
             {
                 small_memcpy(bsf[ithread].m_base.context_array, bs[ithread].m_base.context_array, sizeof(CABAC_CONTEXT_H265) * NUM_CABAC_CONTEXT);
             }
 
-//            cu[ithread].FillRandom(0, 0);
             // inter pred for chroma is now performed in EncAndRecLuma
             cu[ithread].EncAndRecLuma(0, 0, 0, nz, NULL);
             cu[ithread].EncAndRecChroma(0, 0, 0, nz, NULL);
@@ -1493,6 +1535,14 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
                 m_PicOrderCnt_Accu += m_PicOrderCnt;
                 m_PicOrderCnt = 0;
                 m_bMakeNextFrameIDR = false;
+                m_PGOPIndex = 0;
+            }
+
+            m_pCurrentFrame->m_PGOPIndex = m_PGOPIndex;
+            if (RPSIndex == 0) {
+                m_PGOPIndex++;
+                if (m_PGOPIndex == m_videoParam.PGopPicSize)
+                    m_PGOPIndex = 0;
             }
 
             m_pCurrentFrame->setPicOrderCnt(m_PicOrderCnt);
@@ -1672,12 +1722,12 @@ recode:
     for (Ipp8u curr_slice = 0; curr_slice < m_videoParam.NumSlices; curr_slice++) {
         H265Slice *pSlice = m_slices + curr_slice;
         SetSlice(pSlice, curr_slice);
+        if (CheckCurRefPicSet(pSlice) != MFX_ERR_NONE)
+        {
+            CreateRefPicSet(pSlice);
+        }
+        UpdateRefPicList(pSlice);
         if (pSlice->slice_type != I_SLICE) {
-            if (CheckCurRefPicSet(pSlice) != MFX_ERR_NONE)
-            {
-                CreateRefPicSet(pSlice);
-            }
-            UpdateRefPicList(pSlice);
             pSlice->num_ref_idx[0] = pSlice->num_ref_idx_l0_active;
             pSlice->num_ref_idx[1] = pSlice->num_ref_idx_l1_active;
         } else {

@@ -35,6 +35,7 @@ public:
     Ipp32s   m_PicOrderCnt;
     Ipp32u   m_PicOrderCounterAccumulated;
     Ipp32s   m_RPSIndex;
+    Ipp32s   m_PGOPIndex;
     Ipp8u    m_isShortTermRef;
     Ipp8u    m_isLongTermRef;
     Ipp8u    m_wasEncoded;

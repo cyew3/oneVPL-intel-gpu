@@ -62,6 +62,7 @@ struct H265MEInfo
     Ipp8u posx, posy; // in pix inside LCU
     Ipp8u width, height;
     H265MV MV[2]; // [fwd/bwd]
+    T_RefIdx ref_idx[2];
     Ipp32s cost_1dir[2];
     Ipp32s cost_bidir;
     CostType cost_intra;
@@ -158,6 +159,7 @@ public:
     Ipp8u rd_opt_flag;
     Ipp64f rd_lambda;
     Ipp64f rd_lambda_inter;
+    Ipp64f rd_lambda_inter_mv;
     H265Slice *cslice;
     Ipp8u depth_min;
 
@@ -229,7 +231,7 @@ public:
         Ipp32s partAddr,
         Ipp32s partMode,
         Ipp32s curPUidx,
-        MVPInfo  pInfo[2],
+        MVPInfo  *pInfo,
         MVPInfo& mergeInfo);
     void GetPartOffsetAndSize(Ipp32s idx,
         Ipp32s partMode,
