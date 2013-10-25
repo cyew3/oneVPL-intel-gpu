@@ -1030,7 +1030,15 @@ void PackerDXVA2::PackQmatrix(const H265Slice *pSlice/*const H265PicParamSet *pP
 
 #if HEVC_SPEC_VER == MK_HEVCVER(0, 85)
 
-    if(!pSlice->GetSeqParam()->sps_scaling_list_data_present_flag)
+    if (pSlice->GetPicParam()->pps_scaling_list_data_present_flag)
+    {
+        scalingList = pSlice->GetPicParam()->getScalingList();
+    }
+    else if (pSlice->GetSeqParam()->sps_scaling_list_data_present_flag)
+    {
+        scalingList = pSlice->GetSeqParam()->getScalingList();
+    }
+    else
     {
         // TODO: build default scaling list in target buffer location
         static bool doInit = true;
@@ -1054,12 +1062,10 @@ void PackerDXVA2::PackQmatrix(const H265Slice *pSlice/*const H265PicParamSet *pP
 
         scalingList = &sl;
     }
-    else
-        scalingList = pSlice->GetPicParam()->getScalingList();
 
-    initQMatrix(scalingList, SCALING_LIST_4x4,   pQmatrix->ucScalingLists0);    // 4x4
-    initQMatrix(scalingList, SCALING_LIST_8x8,   pQmatrix->ucScalingLists1);    // 8x8
-    initQMatrix(scalingList, SCALING_LIST_16x16, pQmatrix->ucScalingLists2);    // 16x16
+    initQMatrix<16>(scalingList, SCALING_LIST_4x4,   pQmatrix->ucScalingLists0);    // 4x4
+    initQMatrix<64>(scalingList, SCALING_LIST_8x8,   pQmatrix->ucScalingLists1);    // 8x8
+    initQMatrix<64>(scalingList, SCALING_LIST_16x16, pQmatrix->ucScalingLists2);    // 16x16
     initQMatrix(scalingList, SCALING_LIST_32x32, pQmatrix->ucScalingLists3);    // 32x32
 
     for(int sizeId = SCALING_LIST_16x16; sizeId <= SCALING_LIST_32x32; sizeId++)
@@ -1137,9 +1143,13 @@ void MSPackerDXVA2::PackQmatrix(const H265Slice *pSlice)
 
     const H265ScalingList *scalingList = 0;
 
-    if (pSlice->GetSeqParam()->sps_scaling_list_data_present_flag)
+    if (pSlice->GetPicParam()->pps_scaling_list_data_present_flag)
     {
         scalingList = pSlice->GetPicParam()->getScalingList();
+    }
+    else if (pSlice->GetSeqParam()->sps_scaling_list_data_present_flag)
+    {
+        scalingList = pSlice->GetSeqParam()->getScalingList();
     }
     else
     {
@@ -1166,9 +1176,9 @@ void MSPackerDXVA2::PackQmatrix(const H265Slice *pSlice)
         scalingList = &sl;
     }
 
-    initQMatrix(scalingList, SCALING_LIST_4x4,   pQmatrix->ucScalingLists0);    // 4x4
-    initQMatrix(scalingList, SCALING_LIST_8x8,   pQmatrix->ucScalingLists1);    // 8x8
-    initQMatrix(scalingList, SCALING_LIST_16x16, pQmatrix->ucScalingLists2);    // 16x16
+    initQMatrix<16>(scalingList, SCALING_LIST_4x4,   pQmatrix->ucScalingLists0);    // 4x4
+    initQMatrix<64>(scalingList, SCALING_LIST_8x8,   pQmatrix->ucScalingLists1);    // 8x8
+    initQMatrix<64>(scalingList, SCALING_LIST_16x16, pQmatrix->ucScalingLists2);    // 16x16
     initQMatrix(scalingList, SCALING_LIST_32x32, pQmatrix->ucScalingLists3);    // 32x32
 
     for(Ipp32u sizeId = SCALING_LIST_16x16; sizeId <= SCALING_LIST_32x32; sizeId++)
@@ -1378,12 +1388,6 @@ void MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool , 
     const void*  rawDataPtr = 0;
 
     H265Bitstream *pBitstream = pSlice->GetBitStream();
-
-    if (pSlice->GetSliceHeader()->dependent_slice_segment_flag)
-    {
-        sliceNum--;
-    }
-
     pBitstream->GetOrg((Ipp32u**)&rawDataPtr, &rawDataSize);
 
     UMCVACompBuffer *headVABffr = 0;
@@ -1393,24 +1397,24 @@ void MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool , 
     Ipp8u *dataBffr = (Ipp8u *)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &dataVABffr);
 
     dxvaSlice->BSNALunitDataLocation = dataVABffr->GetDataSize();
-    dxvaSlice->SliceBytesInBuffer += rawDataSize + sizeof(start_code_prefix);
+
+    Ipp32s storedSize = rawDataSize + sizeof(start_code_prefix);
+    dxvaSlice->SliceBytesInBuffer += storedSize;
     dxvaSlice->wBadSliceChopping = 0;
 
-    if ((Ipp32s)dxvaSlice->SliceBytesInBuffer >= dataVABffr->GetBufferSize() - dataVABffr->GetDataSize())
+    if (storedSize >= dataVABffr->GetBufferSize() - dataVABffr->GetDataSize())
         return;
 
     dataBffr += dataVABffr->GetDataSize();
     memcpy(dataBffr, start_code_prefix, sizeof(start_code_prefix));
     memcpy(dataBffr + sizeof(start_code_prefix), rawDataPtr, rawDataSize);
 
-    size_t alignedSize = dataVABffr->GetDataSize() + dxvaSlice->SliceBytesInBuffer;
-    //if (alignedSize & 0xf)
-      //  alignedSize = alignedSize+(0x10 - (alignedSize & 0xf));
+    size_t alignedSize = dataVABffr->GetDataSize() + storedSize;
+    alignedSize = align_value<size_t>(alignedSize, 128);
 
+    memset(dataBffr + storedSize, 0, alignedSize - storedSize);
     dataVABffr->SetDataSize(alignedSize);
-
-    if (!pSlice->GetSliceHeader()->dependent_slice_segment_flag)
-        headVABffr->SetDataSize(headVABffr->GetDataSize() + sizeof(DXVA_Slice_HEVC_Short));
+    headVABffr->SetDataSize(headVABffr->GetDataSize() + sizeof(DXVA_Slice_HEVC_Short));
 }
 
 #endif // UMC_VA_DXVA
