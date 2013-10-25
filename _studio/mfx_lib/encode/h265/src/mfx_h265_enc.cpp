@@ -449,7 +449,7 @@ mfxStatus H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice)
     slice->num_ref_idx_l0_active = m_pps.num_ref_idx_l0_default_active;
     slice->num_ref_idx_l1_active = m_pps.num_ref_idx_l1_default_active;
 
-    slice->pgop_idx = slice->slice_type == P_SLICE ? m_pCurrentFrame->m_PGOPIndex : 0;
+    slice->pgop_idx = slice->slice_type == P_SLICE ? (Ipp8u)m_pCurrentFrame->m_PGOPIndex : 0;
     if (m_videoParam.GeneralizedPB && slice->slice_type == P_SLICE) {
         slice->slice_type = B_SLICE;
         slice->num_ref_idx_l1_active = slice->num_ref_idx_l0_active;
