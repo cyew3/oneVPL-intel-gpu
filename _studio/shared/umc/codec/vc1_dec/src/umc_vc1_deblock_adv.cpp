@@ -565,7 +565,6 @@ void Deblocking_ProgressiveIpicture_Adv(VC1Context* pContext)
     {
         for (curX=0; curX<WidthMB; curX++)
         {
-            flag_ver = 0;
             /* Top luma blocks */
             _own_FilterDeblockingLuma_HorEdge_VC1((m_CurrMB->currYPlane+8*YPitch), PQuant, YPitch,flag_ver);
 
@@ -585,7 +584,6 @@ void Deblocking_ProgressiveIpicture_Adv(VC1Context* pContext)
     }
     if (pContext->DeblockInfo.is_last_deblock)
     {
-        flag_ver =0;
         for (curX=0; curX<WidthMB; curX++)
         {
             /* Top luma blocks */
@@ -603,7 +601,6 @@ void Deblocking_ProgressiveIpicture_Adv(VC1Context* pContext)
     {
         for (curX=0; curX<WidthMB-1; curX++)
         {
-            flag_ver = 0;
             _own_FilterDeblockingLuma_VerEdge_VC1((m_CurrMB->currYPlane+8), PQuant,YPitch,flag_ver);
 
             /* Bottom Luma blocks */
@@ -616,7 +613,7 @@ void Deblocking_ProgressiveIpicture_Adv(VC1Context* pContext)
             _own_FilterDeblockingChroma_VerEdge_VC1(m_CurrMB->currVPlane+8,PQuant,VPitch,flag_ver);
             ++m_CurrMB;
         }
-        flag_ver =0;
+
         _own_FilterDeblockingLuma_VerEdge_VC1((m_CurrMB->currYPlane+8), PQuant,YPitch,flag_ver);
         ++m_CurrMB;
         m_CurrMB += (MaxWidthMB - WidthMB);

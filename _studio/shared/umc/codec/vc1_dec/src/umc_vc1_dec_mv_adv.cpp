@@ -324,10 +324,10 @@ void CropChromaPullBack_Adv(VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV)
     *xMV = (Ipp16s)X;
     *yMV = (Ipp16s)Y;
 
-    pContext->m_pCurrMB->m_pBlocks[4].mv[0][0] = *xMV;
-    pContext->m_pCurrMB->m_pBlocks[4].mv[0][1] = *yMV;
-    pContext->m_pCurrMB->m_pBlocks[5].mv[0][0] = *xMV;
-    pContext->m_pCurrMB->m_pBlocks[5].mv[0][1] = *yMV;
+    //pContext->m_pCurrMB->m_pBlocks[4].mv[0][0] = *xMV;
+    //pContext->m_pCurrMB->m_pBlocks[4].mv[0][1] = *yMV;
+    //pContext->m_pCurrMB->m_pBlocks[5].mv[0][0] = *xMV;
+    //pContext->m_pCurrMB->m_pBlocks[5].mv[0][1] = *yMV;
 }
 
 void CalculateProgressive1MV_B_Adv  (VC1Context* pContext,

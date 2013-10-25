@@ -212,6 +212,12 @@ static Ipp32s CalcMVInterpolateFieldChroma(VC1Context* pContext, Ipp32s polarity
        f = pPicHeader->BottomField;
    }
 
+  //for deblocking vectors should be before crop
+   pContext->m_pCurrMB->m_pBlocks[4].mv[0][0] = *xMV;
+   pContext->m_pCurrMB->m_pBlocks[4].mv[0][1] = *yMV;
+   pContext->m_pCurrMB->m_pBlocks[5].mv[0][0] = *xMV;
+   pContext->m_pCurrMB->m_pBlocks[5].mv[0][1] = *yMV;
+
    CropChromaPullBack_Adv(pContext, xMV, yMV);
 
    *xMV = (Ipp16s)((X << 5) + *xMV);
