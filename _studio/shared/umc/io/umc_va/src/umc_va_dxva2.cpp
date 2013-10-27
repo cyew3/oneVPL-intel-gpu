@@ -582,7 +582,7 @@ Status DXVA2Accelerator::FindConfiguration(VideoStreamInfo *pVideoInfo)
 
                 auto_deleter_stdcall_void<VOID> automatic1(pConfig, &CoTaskMemFree);
 
-                Ipp32u isHEVCGUID = m_Profile & VA_H265;
+                Ipp32u isHEVCGUID = (m_Profile & 0xf) == VA_H265;
                 
                 // Find a supported configuration.
                 int idxConfig = -1;

@@ -195,6 +195,7 @@
       <SubSystem>Console</SubSystem>
       <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|Win32'">
@@ -237,8 +238,8 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;D3d9.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;libcm.lib;igfxcmrt64.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(MEDIASDK_ROOT)\CMRT\compiler\lib\x64;$(MEDIASDK_ROOT)\CMRT\runtime\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;D3d9.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;libcm.lib;igfxcmrt64.lib;libircmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(MEDIASDK_ROOT)\CMRT\compiler\lib\x64;$(MEDIASDK_ROOT)\CMRT\runtime\lib\x64;$(ICPP_COMPILER13)compiler\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ModuleDefinitionFile>libmfx.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
