@@ -157,7 +157,7 @@ mfxStatus ImplementationMvc::Reset(mfxVideoParam *par)
     mfxStatus internalSts = MFX_ERR_NONE;
 
     sts = CheckExtParam(m_core, par->ExtParam,  par->NumExtParam);
-    if( MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts )
+    if( MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts || MFX_WRN_FILTER_SKIPPED == sts )
     {
         internalSts = sts;
         sts = MFX_ERR_NONE;

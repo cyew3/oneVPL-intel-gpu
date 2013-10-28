@@ -1554,6 +1554,10 @@ mfxStatus VideoVPPHW::QueryIOSurf(
         caps,
         executeParams,
         config);
+    if (MFX_WRN_FILTER_SKIPPED == sts )
+    {
+        sts = MFX_ERR_NONE;
+    }
     MFX_CHECK_STS(sts);
 
     request[VPP_IN].NumFrameMin  = request[VPP_IN].NumFrameSuggested  = config.m_surfCount[VPP_IN];
