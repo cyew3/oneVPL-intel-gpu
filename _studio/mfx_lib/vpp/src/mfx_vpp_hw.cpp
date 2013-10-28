@@ -1341,6 +1341,7 @@ mfxStatus  VideoVPPHW::Init(
     bool isTemporal)
 {
     mfxStatus sts = MFX_ERR_NONE;
+    bool bIsFilterSkipped = false;
 
     //-----------------------------------------------------
     // [1] high level check
@@ -1402,8 +1403,13 @@ mfxStatus  VideoVPPHW::Init(
         caps, 
         m_executeParams,
         m_config);
-    MFX_CHECK_STS(sts);
 
+    if( MFX_WRN_FILTER_SKIPPED == sts )
+    {
+        bIsFilterSkipped = true;
+        sts = MFX_ERR_NONE;
+    }
+    MFX_CHECK_STS(sts);
 
     if( m_executeParams.bFRCEnable && 
        (MFX_HW_D3D11 == m_pCore->GetVAType()) && 
@@ -1470,8 +1476,9 @@ mfxStatus  VideoVPPHW::Init(
     // [5] resource and task manager
     //-----------------------------------------------------
     sts = m_taskMngr.Init(m_pCore, m_config);
+    MFX_CHECK_STS(sts);
 
-    return sts;
+    return (bIsFilterSkipped) ? MFX_WRN_FILTER_SKIPPED : MFX_ERR_NONE;
 
 } // mfxStatus VideoVPPHW::Init(mfxVideoParam *par, mfxU32 *tabUsedFiltersID, mfxU32 numOfFilters)
 
@@ -2107,7 +2114,7 @@ mfxStatus ConfigureExecuteParams(
     MFX_CHECK_STS(sts);
 
     mfxF64 inDNRatio = 0, outDNRatio = 0;
-    bool bIsPartialAccel = false;
+    bool bIsFilterSkipped = false;
 
     // default
     config.m_extConfig.frcRational[VPP_IN].FrameRateExtN = videoParam.vpp.In.FrameRateExtN;
@@ -2134,7 +2141,7 @@ mfxStatus ConfigureExecuteParams(
                 else
                 {
                     executeParams.iDeinterlacingAlgorithm = 0;
-                    bIsPartialAccel = true;
+                    bIsFilterSkipped = true;
                 }
 
                 break;
@@ -2152,7 +2159,7 @@ mfxStatus ConfigureExecuteParams(
                 else
                 {
                     executeParams.iDeinterlacingAlgorithm = 0;
-                    bIsPartialAccel = true;
+                    bIsFilterSkipped = true;
                 }
 
                 break;
@@ -2179,7 +2186,7 @@ mfxStatus ConfigureExecuteParams(
                 }
                 else
                 {
-                    bIsPartialAccel = true;
+                    bIsFilterSkipped = true;
                 }
 
                 break;
@@ -2201,7 +2208,7 @@ mfxStatus ConfigureExecuteParams(
                 }
                 else
                 {
-                    bIsPartialAccel = true;
+                    bIsFilterSkipped = true;
                 }
 
                 break;
@@ -2227,7 +2234,7 @@ mfxStatus ConfigureExecuteParams(
                 }
                 else
                 {
-                    bIsPartialAccel = true;
+                    bIsFilterSkipped = true;
                 }
 
                 break;
@@ -2431,13 +2438,10 @@ mfxStatus ConfigureExecuteParams(
             default:
             {
                 // there is no such capabilities
-                bIsPartialAccel = true;
+                bIsFilterSkipped = true;
                 break;
             }
         }//switch(curFilterId)
-
-        if(bIsPartialAccel) break;
-
     } // for (mfxU32 i = 0; i < filtersNum; i += 1)
     //-----------------------------------------------------
 
@@ -2479,7 +2483,7 @@ mfxStatus ConfigureExecuteParams(
         config.m_bPassThroughEnable = false;
     }
 
-    return (bIsPartialAccel) ? MFX_WRN_PARTIAL_ACCELERATION : MFX_ERR_NONE;
+    return (bIsFilterSkipped) ? MFX_WRN_FILTER_SKIPPED : MFX_ERR_NONE;
 
 } // mfxStatus ConfigureExecuteParams(...)
 

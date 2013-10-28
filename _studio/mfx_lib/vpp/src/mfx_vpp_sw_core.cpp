@@ -267,14 +267,18 @@ mfxStatus VideoVPPSW::Init(mfxVideoParam *par)
 
             m_pHWVPP.reset(new VideoVPPHW(mode, m_core));
             sts = m_pHWVPP.get()->Init(par); // OK or ERR only
+            if (MFX_WRN_FILTER_SKIPPED == sts)
+            {
+                // do not break execution, skip filter later
+                sts = MFX_ERR_NONE;
+            }
             if (MFX_ERR_NONE != sts)
             {
                 m_pHWVPP.reset(0);
             }
             if (MFX_WRN_PARTIAL_ACCELERATION == sts)
             {
-                // do not break execution because if filter is optional
-                // we can skip it later
+                // do not break execution, fall back to SW
                 sts = MFX_ERR_NONE;
             }
             MFX_CHECK_STS( sts );
