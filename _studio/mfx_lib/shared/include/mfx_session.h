@@ -30,6 +30,45 @@ File Name: mfx_session.h
 // WARNING: please do not change the type of _mfxSession.
 // It is declared as 'struct' in the main header.h
 
+template <class T>
+class mfx_core_ptr
+{
+public:
+
+    explicit mfx_core_ptr(T* ptr = 0):m_ptr(ptr),
+                                      m_bIsNew(false)
+    {
+    };
+    void reset (T* ptr = 0, bool isNew = true)
+    {
+        if (m_bIsNew)
+            delete m_ptr;
+        
+        m_ptr = ptr;
+        m_bIsNew = isNew;
+    };
+    T* get() const
+    {
+        return m_ptr;
+    };
+    virtual ~mfx_core_ptr()
+    {
+        if (m_bIsNew)
+            delete m_ptr;
+
+        m_ptr = 0;
+    };
+    T* operator->() const
+    {
+        return get();
+    }
+
+protected:
+    mfx_core_ptr<T>& operator=(mfx_core_ptr<T>& ptr);
+    bool m_bIsNew;
+    T*   m_ptr;
+};
+
 
 
 struct _mfxSession
@@ -49,7 +88,7 @@ struct _mfxSession
     mfxStatus RestoreScheduler(void);
 
     // Declare session's components
-    std::auto_ptr<VideoCORE> m_pCORE;
+    mfx_core_ptr<VideoCORE> m_pCORE;
     std::auto_ptr<AudioCORE> m_pAudioCORE;
     std::auto_ptr<VideoENCODE> m_pENCODE;
     std::auto_ptr<VideoDECODE> m_pDECODE;
@@ -283,5 +322,8 @@ check the pointer to avoid extra exceptions */ \
 } \
     return mfxRes; \
 }
+
+mfxStatus MFXInternalPseudoJoinSession(mfxSession session, mfxSession child_session);
+mfxStatus MFXInternalPseudoDisjoinSession(mfxSession session);
 
 #endif // _MFX_SESSION_H

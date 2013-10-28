@@ -11,6 +11,7 @@ File Name: mfx_plugin.h
 \* ****************************************************************************** */
 
 #include "mfx_plugin.h"
+#include "mfx_session.h"
 #include "vm_sys_info.h"
 
 #define MSDK_CHECK_POINTER(P, ...)               {if (!(P)) {return __VA_ARGS__;}}
@@ -66,7 +67,7 @@ mfxStatus MFXLibPlugin::PluginInit(mfxCoreInterface *core)
     if (!core)
         return MFX_ERR_NULL_PTR;
     mfxCoreParam par;
-    mfxStatus mfxRes = MFX_ERR_UNKNOWN;
+    mfxStatus mfxRes = MFX_ERR_NONE;
 
     m_pmfxCore.reset(new MFXCoreInterface(*core));
     m_pCore = core;
@@ -74,64 +75,42 @@ mfxStatus MFXLibPlugin::PluginInit(mfxCoreInterface *core)
     //std::cout << "PLUGIN_WRN: mfxRes = m_pmfxCore->GetCoreParam(&CorePar) = " << mfxRes << "\n";
     if (MFX_ERR_NONE != mfxRes)
         return mfxRes;
-
+    
+    
     mfxRes = MFXInit(par.Impl, &par.Version, &m_session);
+    MFX_CHECK_STS(mfxRes);
+        
+    mfxRes = MFXInternalPseudoJoinSession((mfxSession) m_pCore->pthis, m_session);
+    MFX_CHECK_STS(mfxRes);
+        
 
-    if(0 /*Session join without dispatcher*/)
-    {
-        //m_pCore->pthis is the real parent mfxSession
-        //m_session is the dispather-wrappered plugin session, let's try to get the real plugin session
-#if 0 //W/a for dispatchered session
-        int tableIndex = eMFXJoinSession;
-        mfxFunctionPointer pFunc = 0;
-        MOCK_MFX_DISP_HANDLE* pHandle = 0;
-        pHandle = (MOCK_MFX_DISP_HANDLE*) m_session;
-        pFunc = pHandle->callTable[tableIndex];
-        if(NULL == pFunc)
-            return MFX_ERR_UNKNOWN;
-        mfxRes = (*(mfxStatus (MFX_CDECL *) (mfxSession, mfxSession)) pFunc) ((mfxSession)m_pCore->pthis, pHandle->session);
-#endif
-        mfxRes = MFXJoinSession(m_session, (mfxSession) m_pCore->pthis);
-        m_Externalsession = (mfxSession) m_pCore->pthis;
-        //if(mfxRes)
-        //    std::cout << "PLUGIN_WRN: MFXJoinSession = " << mfxRes << "\n";
-    }
 
-    if (!m_pFrameAllocator)
-    {
-        m_pFrameAllocator = &(m_pmfxCore->FrameAllocator());
-    }
-    if (!m_pExternalSurfaceAllocator)
-    {
-        m_pExternalSurfaceAllocator = &(m_pmfxCore->ExternalSurfaceAllocator());
-    }
-        mfxRes = MFXVideoCORE_SetFrameAllocator(m_session, m_pExternalSurfaceAllocator);
-        //std::cout << "PLUGIN_WRN: MFXVideoCORE_SetFrameAllocator = " << mfxRes << "\n";
+    //if (!m_pFrameAllocator)
+    //{
+    //    m_pFrameAllocator = &(m_pmfxCore->FrameAllocator());
+    //}
+    //if (!m_pExternalSurfaceAllocator)
+    //{
+    //    m_pExternalSurfaceAllocator = &(m_pmfxCore->ExternalSurfaceAllocator());
+    //}
+    //    mfxRes = MFXVideoCORE_SetFrameAllocator(m_session, m_pExternalSurfaceAllocator);
+    //    //std::cout << "PLUGIN_WRN: MFXVideoCORE_SetFrameAllocator = " << mfxRes << "\n";
 
     return mfxRes;
 }
 
 mfxStatus MFXLibPlugin::PluginClose()
 {
-    mfxStatus mfxRes = MFX_ERR_UNKNOWN;
+    mfxStatus mfxRes = MFX_ERR_NONE;
     if (m_session)
     {
         //The application must ensure there is no active task running in the session before calling this (MFXDisjoinSession) function.
         mfxRes = MFXVideoDECODE_Close(m_session);
-        if(0 /*Session join without dispatcher*/)
-        {//Disjoin session
-            //int tableIndex = eMFXDisjoinSession;
-            //mfxFunctionPointer pFunc;
-            //MOCK_MFX_DISP_HANDLE* pHandle;
-            //pHandle = (MOCK_MFX_DISP_HANDLE*) m_session;
-            //pFunc = pHandle->callTable[tableIndex];
-            //mfxRes = (*(mfxStatus (MFX_CDECL *) (mfxSession, mfxSession)) pFunc) ((mfxSession)m_pCore->pthis, pHandle->session);
-
-            mfxRes = MFXDisjoinSession(m_Externalsession);
-            //if(mfxRes)
-            //    std::cout << "PLUGIN_WRN: MFXDISJoinSession = " << mfxRes << "\n";
-        }
+        MFX_CHECK_STS(mfxRes);
+        mfxRes = MFXInternalPseudoDisjoinSession(m_session);
+        MFX_CHECK_STS(mfxRes);
         mfxRes = MFXClose(m_session);
+        MFX_CHECK_STS(mfxRes);
         m_session = 0;
         return mfxRes;
     }
