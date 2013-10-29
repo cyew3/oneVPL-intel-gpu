@@ -341,12 +341,18 @@ INT DestroyCmDevice(CmDevice *& pD)
     if (vm_so_func destroyFunc = vm_so_get_addr(device->m_dll, FUNC_NAME_DESTROY_CM_DEVICE))
     {
         switch (device->GetPlatform()) {
-            case DX9:
+            case DX9:{
                 res = ((DestroyCmDeviceDx9FuncType)destroyFunc)(device->m_dx9);
-            case DX11:
+                break;
+            }
+            case DX11:{
                 res = ((DestroyCmDeviceDx11FuncType)destroyFunc)(device->m_dx11);
-            case VAAPI:
+                break;
+            }
+            case VAAPI:{
                 res = ((DestroyCmDeviceVAAPIFuncType)destroyFunc)(device->m_linux);
+                break;
+            }
         }
     }
 
