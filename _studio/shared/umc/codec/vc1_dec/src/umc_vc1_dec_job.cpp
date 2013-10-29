@@ -1194,11 +1194,13 @@ Status VC1TaskProcessorUMC::process()
             {
                 //printf("changed\n");
                 m_pContext->m_pSingleMB->widthMB = m_pContext->m_seqLayerHeader.widthMB;
+                m_pContext->m_pSingleMB->MaxWidthMB = m_pContext->m_seqLayerHeader.MaxWidthMB;
             }
             if (m_pContext->m_seqLayerHeader.heightMB != m_pContext->m_pSingleMB->heightMB)
             {
                 //printf("changed\n");
                 m_pContext->m_pSingleMB->heightMB = m_pContext->m_seqLayerHeader.heightMB;
+                m_pContext->m_pSingleMB->MaxHeightMB = m_pContext->m_seqLayerHeader.MaxHeightMB;
             }
              
             m_pContext->m_pSingleMB->currYPitch = m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].m_iYPitch;

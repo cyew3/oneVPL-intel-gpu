@@ -72,6 +72,8 @@ VC1Status SequenceLayer(VC1Context* pContext)
 
     pContext->m_seqInit = 0;
     pContext->m_seqLayerHeader.ColourDescriptionPresent = 0;
+    Ipp32u width = 0;
+    Ipp32u height = 0;
 
     VC1_GET_BITS(2, pContext->m_seqLayerHeader.PROFILE);
     if (!VC1_IS_VALID_PROFILE(pContext->m_seqLayerHeader.PROFILE))
@@ -104,7 +106,19 @@ VC1Status SequenceLayer(VC1Context* pContext)
 
         pContext->m_seqLayerHeader.CODED_HEIGHT = pContext->m_seqLayerHeader.MAX_CODED_HEIGHT;
         pContext->m_seqLayerHeader.CODED_WIDTH  = pContext->m_seqLayerHeader.MAX_CODED_WIDTH;
-        
+
+        width = 2*(pContext->m_seqLayerHeader.CODED_WIDTH+1);
+        height = 2*(pContext->m_seqLayerHeader.CODED_HEIGHT+1);
+
+        pContext->m_seqLayerHeader.widthMB  = (Ipp16u)((width+15)/VC1_PIXEL_IN_LUMA);
+        pContext->m_seqLayerHeader.heightMB = (Ipp16u)((height+15)/VC1_PIXEL_IN_LUMA);
+
+        width = 2*(pContext->m_seqLayerHeader.MAX_CODED_WIDTH+1);
+        height = 2*(pContext->m_seqLayerHeader.MAX_CODED_HEIGHT+1);
+
+        pContext->m_seqLayerHeader.MaxWidthMB  = (Ipp16u)((width+15)/VC1_PIXEL_IN_LUMA);
+        pContext->m_seqLayerHeader.MaxHeightMB = (Ipp16u)((height+15)/VC1_PIXEL_IN_LUMA);
+
         VC1_GET_BITS(1, pContext->m_seqLayerHeader.PULLDOWN);
 
         VC1_GET_BITS(1, pContext->m_seqLayerHeader.INTERLACE);
