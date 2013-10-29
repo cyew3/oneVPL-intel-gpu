@@ -3201,16 +3201,16 @@ JERRCODE CJPEGEncoder::ProcessBuffer(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU
           }
           else
           {
-            width = ((maxMCU - colMCU) * m_curr_scan.mcuWidth / curr_comp->m_h_factor) / 2;//8 * curr_comp->m_hsampling;
+            width = ((maxMCU - colMCU) * m_curr_scan.mcuWidth / curr_comp->m_h_factor);//8 * curr_comp->m_hsampling;
             xPadd = (m_curr_scan.xPadding + 1) / 2;
           }
 
           p     = curr_comp->GetSSBufferPtr(0/*thread_id*/) + i*curr_comp->m_ss_step;
-          val   = p[width - 1];
+          val   = p[width - xPadd - 1];
 
           for(j = 0; j < xPadd; j++)
           {
-            p[width + j] = val;
+            p[width - xPadd + j] = val;
           }
         }
         else // 16 bit only 444 sampling
