@@ -93,7 +93,7 @@ public:
 
     H265DecoderFrame *findShortRefPic(Ipp32s picPOC);
 
-    H265DecoderFrame *findLongTermRefPic(H265DecoderFrame *excludeFrame, Ipp32s picPOC, Ipp32u bitsForPOC, bool isUseMask);
+    H265DecoderFrame *findLongTermRefPic(const H265DecoderFrame *excludeFrame, Ipp32s picPOC, Ipp32u bitsForPOC, bool isUseMask);
 
     Ipp32u countAllFrames();
 

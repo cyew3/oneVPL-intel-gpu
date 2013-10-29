@@ -1291,11 +1291,15 @@ void MSPackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     {
         pPicParam->num_tile_columns_minus1                          = (UCHAR)pPicParamSet->num_tile_columns - 1;
         pPicParam->num_tile_rows_minus1                             = (UCHAR)pPicParamSet->num_tile_rows - 1;
-        for (Ipp32u i = 0; i < pPicParamSet->num_tile_columns; i++)
-            pPicParam->column_width_minus1[i] = (Ipp16u)(pPicParamSet->column_width[i] - 1);
 
-        for (Ipp32u i = 0; i < pPicParamSet->num_tile_rows; i++)
-            pPicParam->row_height_minus1[i] = (Ipp16u)(pPicParamSet->row_height[i] - 1);
+        //if (!pPicParamSet->uniform_spacing_flag)
+        {
+            for (Ipp32u i = 0; i < pPicParamSet->num_tile_columns; i++)
+                pPicParam->column_width_minus1[i] = (Ipp16u)(pPicParamSet->column_width[i] - 1);
+
+            for (Ipp32u i = 0; i < pPicParamSet->num_tile_rows; i++)
+                pPicParam->row_height_minus1[i] = (Ipp16u)(pPicParamSet->row_height[i] - 1);
+        }
     }
 
     pPicParam->diff_cu_qp_delta_depth                               = (UCHAR)(pPicParamSet->diff_cu_qp_delta_depth);
@@ -1342,7 +1346,19 @@ void MSPackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
             pocList[numRefPicSetStCurrBefore + numRefPicSetStCurrAfter++] = pPicParam->CurrPicOrderCntVal + rps->getDeltaPOC(index);
     for(; index < rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures() + rps->getNumberOfLongtermPictures(); index++)
         if(rps->getUsed(index))
-            pocList[numRefPicSetStCurrBefore + numRefPicSetStCurrAfter + numRefPicSetLtCurr++] = pPicParam->CurrPicOrderCntVal + rps->getDeltaPOC(index);
+        {
+            Ipp32s poc = rps->getPOC(index);
+            H265DecoderFrame *pFrm = supplier->GetDPBList()->findLongTermRefPic(pCurrentFrame, poc, pSlice->GetSeqParam()->log2_max_pic_order_cnt_lsb, !rps->getCheckLTMSBPresent(index));
+
+            if (pFrm)
+            {
+                pocList[numRefPicSetStCurrBefore + numRefPicSetStCurrAfter + numRefPicSetLtCurr++] = pFrm->PicOrderCnt();
+            }
+            else
+            {
+                pocList[numRefPicSetStCurrBefore + numRefPicSetStCurrAfter + numRefPicSetLtCurr++] = pPicParam->CurrPicOrderCntVal + rps->getDeltaPOC(index);
+            }
+        }
 
     for(Ipp32s n=0 ; n < numRefPicSetStCurrBefore + numRefPicSetStCurrAfter + numRefPicSetLtCurr ; n++)
     {
@@ -1399,7 +1415,7 @@ void MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool , 
     dxvaSlice->BSNALunitDataLocation = dataVABffr->GetDataSize();
 
     Ipp32s storedSize = rawDataSize + sizeof(start_code_prefix);
-    dxvaSlice->SliceBytesInBuffer += storedSize;
+    dxvaSlice->SliceBytesInBuffer = storedSize;
     dxvaSlice->wBadSliceChopping = 0;
 
     if (storedSize >= dataVABffr->GetBufferSize() - dataVABffr->GetDataSize())
