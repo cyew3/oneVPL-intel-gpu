@@ -27,6 +27,11 @@
 #pragma warning(disable:869)    //  parameter was never referenced
 #endif
 
+#if defined(_MSC_VER)
+#pragma warning (disable:4701) //MS compiler issue (due to MACROS WRAPPER): potentially uninitialized local variable 'r1' used
+#pragma warning (disable:4309)
+#endif
+
 typedef Ipp8u PixType;
 
 namespace MFX_HEVC_PP
@@ -514,7 +519,7 @@ namespace MFX_HEVC_PP
     }
 
     template <int mode>
-    static inline void PredAngle_4x4(Ipp8u *pSrc1, Ipp8u *pSrc2, Ipp8u *pDst1, Ipp8u *pDst2)
+    static inline void PredAngle_4x4(Ipp8u *pSrc1, Ipp8u* /*pSrc2*/, Ipp8u *pDst1, Ipp8u *pDst2)
     {
         Ipp32s iIdx;
         Ipp32s iFact;
@@ -1112,15 +1117,15 @@ namespace MFX_HEVC_PP
                 _mm_store_si128((__m128i *)&pDst1[0], s0);
                 _mm_store_si128((__m128i *)&pDst2[0], r0);
 
-                pDst1[0*4] = _mm_extract_epi8(t0, 0);
-                pDst1[1*4] = _mm_extract_epi8(t0, 1);
-                pDst1[2*4] = _mm_extract_epi8(t0, 2);
-                pDst1[3*4] = _mm_extract_epi8(t0, 3);
+                pDst1[0*4] = (Ipp8u)_mm_extract_epi8(t0, 0);
+                pDst1[1*4] = (Ipp8u)_mm_extract_epi8(t0, 1);
+                pDst1[2*4] = (Ipp8u)_mm_extract_epi8(t0, 2);
+                pDst1[3*4] = (Ipp8u)_mm_extract_epi8(t0, 3);
 
-                pDst2[0*4] = _mm_extract_epi8(t0, 8);
-                pDst2[1*4] = _mm_extract_epi8(t0, 9);
-                pDst2[2*4] = _mm_extract_epi8(t0, 10);
-                pDst2[3*4] = _mm_extract_epi8(t0, 11);
+                pDst2[0*4] = (Ipp8u)_mm_extract_epi8(t0, 8);
+                pDst2[1*4] = (Ipp8u)_mm_extract_epi8(t0, 9);
+                pDst2[2*4] = (Ipp8u)_mm_extract_epi8(t0, 10);
+                pDst2[3*4] = (Ipp8u)_mm_extract_epi8(t0, 11);
             }
             break;
         case 8:
@@ -1143,23 +1148,23 @@ namespace MFX_HEVC_PP
                     _mm_store_si128((__m128i *)&pDst2[i*16], r0);
                 }
 
-                pDst1[0*8] = _mm_extract_epi8(t0, 0);
-                pDst1[1*8] = _mm_extract_epi8(t0, 1);
-                pDst1[2*8] = _mm_extract_epi8(t0, 2);
-                pDst1[3*8] = _mm_extract_epi8(t0, 3);
-                pDst1[4*8] = _mm_extract_epi8(t0, 4);
-                pDst1[5*8] = _mm_extract_epi8(t0, 5);
-                pDst1[6*8] = _mm_extract_epi8(t0, 6);
-                pDst1[7*8] = _mm_extract_epi8(t0, 7);
+                pDst1[0*8] = (Ipp8u)_mm_extract_epi8(t0, 0);
+                pDst1[1*8] = (Ipp8u)_mm_extract_epi8(t0, 1);
+                pDst1[2*8] = (Ipp8u)_mm_extract_epi8(t0, 2);
+                pDst1[3*8] = (Ipp8u)_mm_extract_epi8(t0, 3);
+                pDst1[4*8] = (Ipp8u)_mm_extract_epi8(t0, 4);
+                pDst1[5*8] = (Ipp8u)_mm_extract_epi8(t0, 5);
+                pDst1[6*8] = (Ipp8u)_mm_extract_epi8(t0, 6);
+                pDst1[7*8] = (Ipp8u)_mm_extract_epi8(t0, 7);
 
-                pDst2[0*8] = _mm_extract_epi8(t0, 8);
-                pDst2[1*8] = _mm_extract_epi8(t0, 9);
-                pDst2[2*8] = _mm_extract_epi8(t0, 10);
-                pDst2[3*8] = _mm_extract_epi8(t0, 11);
-                pDst2[4*8] = _mm_extract_epi8(t0, 12);
-                pDst2[5*8] = _mm_extract_epi8(t0, 13);
-                pDst2[6*8] = _mm_extract_epi8(t0, 14);
-                pDst2[7*8] = _mm_extract_epi8(t0, 15);
+                pDst2[0*8] = (Ipp8u)_mm_extract_epi8(t0, 8);
+                pDst2[1*8] = (Ipp8u)_mm_extract_epi8(t0, 9);
+                pDst2[2*8] = (Ipp8u)_mm_extract_epi8(t0, 10);
+                pDst2[3*8] = (Ipp8u)_mm_extract_epi8(t0, 11);
+                pDst2[4*8] = (Ipp8u)_mm_extract_epi8(t0, 12);
+                pDst2[5*8] = (Ipp8u)_mm_extract_epi8(t0, 13);
+                pDst2[6*8] = (Ipp8u)_mm_extract_epi8(t0, 14);
+                pDst2[7*8] = (Ipp8u)_mm_extract_epi8(t0, 15);
             }
             break;
         case 16:
@@ -1180,39 +1185,39 @@ namespace MFX_HEVC_PP
                     _mm_store_si128((__m128i *)&pDst2[i*16], r0);
                 }
 
-                pDst1[0*16] = _mm_extract_epi8(t0, 0);
-                pDst1[1*16] = _mm_extract_epi8(t0, 1);
-                pDst1[2*16] = _mm_extract_epi8(t0, 2);
-                pDst1[3*16] = _mm_extract_epi8(t0, 3);
-                pDst1[4*16] = _mm_extract_epi8(t0, 4);
-                pDst1[5*16] = _mm_extract_epi8(t0, 5);
-                pDst1[6*16] = _mm_extract_epi8(t0, 6);
-                pDst1[7*16] = _mm_extract_epi8(t0, 7);
-                pDst1[8*16] = _mm_extract_epi8(t0, 8);
-                pDst1[9*16] = _mm_extract_epi8(t0, 9);
-                pDst1[10*16] = _mm_extract_epi8(t0, 10);
-                pDst1[11*16] = _mm_extract_epi8(t0, 11);
-                pDst1[12*16] = _mm_extract_epi8(t0, 12);
-                pDst1[13*16] = _mm_extract_epi8(t0, 13);
-                pDst1[14*16] = _mm_extract_epi8(t0, 14);
-                pDst1[15*16] = _mm_extract_epi8(t0, 15);
+                pDst1[0*16] = (Ipp8u)_mm_extract_epi8(t0, 0);
+                pDst1[1*16] = (Ipp8u)_mm_extract_epi8(t0, 1);
+                pDst1[2*16] = (Ipp8u)_mm_extract_epi8(t0, 2);
+                pDst1[3*16] = (Ipp8u)_mm_extract_epi8(t0, 3);
+                pDst1[4*16] = (Ipp8u)_mm_extract_epi8(t0, 4);
+                pDst1[5*16] = (Ipp8u)_mm_extract_epi8(t0, 5);
+                pDst1[6*16] = (Ipp8u)_mm_extract_epi8(t0, 6);
+                pDst1[7*16] = (Ipp8u)_mm_extract_epi8(t0, 7);
+                pDst1[8*16] = (Ipp8u)_mm_extract_epi8(t0, 8);
+                pDst1[9*16] = (Ipp8u)_mm_extract_epi8(t0, 9);
+                pDst1[10*16] = (Ipp8u)_mm_extract_epi8(t0, 10);
+                pDst1[11*16] = (Ipp8u)_mm_extract_epi8(t0, 11);
+                pDst1[12*16] = (Ipp8u)_mm_extract_epi8(t0, 12);
+                pDst1[13*16] = (Ipp8u)_mm_extract_epi8(t0, 13);
+                pDst1[14*16] = (Ipp8u)_mm_extract_epi8(t0, 14);
+                pDst1[15*16] = (Ipp8u)_mm_extract_epi8(t0, 15);
 
-                pDst2[0*16] = _mm_extract_epi8(t1, 0);
-                pDst2[1*16] = _mm_extract_epi8(t1, 1);
-                pDst2[2*16] = _mm_extract_epi8(t1, 2);
-                pDst2[3*16] = _mm_extract_epi8(t1, 3);
-                pDst2[4*16] = _mm_extract_epi8(t1, 4);
-                pDst2[5*16] = _mm_extract_epi8(t1, 5);
-                pDst2[6*16] = _mm_extract_epi8(t1, 6);
-                pDst2[7*16] = _mm_extract_epi8(t1, 7);
-                pDst2[8*16] = _mm_extract_epi8(t1, 8);
-                pDst2[9*16] = _mm_extract_epi8(t1, 9);
-                pDst2[10*16] = _mm_extract_epi8(t1, 10);
-                pDst2[11*16] = _mm_extract_epi8(t1, 11);
-                pDst2[12*16] = _mm_extract_epi8(t1, 12);
-                pDst2[13*16] = _mm_extract_epi8(t1, 13);
-                pDst2[14*16] = _mm_extract_epi8(t1, 14);
-                pDst2[15*16] = _mm_extract_epi8(t1, 15);
+                pDst2[0*16] = (Ipp8u)_mm_extract_epi8(t1, 0);
+                pDst2[1*16] = (Ipp8u)_mm_extract_epi8(t1, 1);
+                pDst2[2*16] = (Ipp8u)_mm_extract_epi8(t1, 2);
+                pDst2[3*16] = (Ipp8u)_mm_extract_epi8(t1, 3);
+                pDst2[4*16] = (Ipp8u)_mm_extract_epi8(t1, 4);
+                pDst2[5*16] = (Ipp8u)_mm_extract_epi8(t1, 5);
+                pDst2[6*16] = (Ipp8u)_mm_extract_epi8(t1, 6);
+                pDst2[7*16] = (Ipp8u)_mm_extract_epi8(t1, 7);
+                pDst2[8*16] = (Ipp8u)_mm_extract_epi8(t1, 8);
+                pDst2[9*16] = (Ipp8u)_mm_extract_epi8(t1, 9);
+                pDst2[10*16] = (Ipp8u)_mm_extract_epi8(t1, 10);
+                pDst2[11*16] = (Ipp8u)_mm_extract_epi8(t1, 11);
+                pDst2[12*16] = (Ipp8u)_mm_extract_epi8(t1, 12);
+                pDst2[13*16] = (Ipp8u)_mm_extract_epi8(t1, 13);
+                pDst2[14*16] = (Ipp8u)_mm_extract_epi8(t1, 14);
+                pDst2[15*16] = (Ipp8u)_mm_extract_epi8(t1, 15);
             }
             break;
         case 32:
@@ -1532,13 +1537,13 @@ namespace MFX_HEVC_PP
         }
     }
 
-    static void PredictIntra_Ang_All_4x4(PixType* PredPel, PixType* FiltPel, PixType* pels)
+    static void PredictIntra_Ang_All_4x4(PixType* PredPel, PixType* /*FiltPel*/, PixType* pels)
     {
         ALIGN_DECL(16) Ipp8u ref1[16];  // input for mode < 18
         ALIGN_DECL(16) Ipp8u ref2[16];  // input for mode > 18
 
         Ipp8u *PredPel2 = PredPel + 2 * 4;
-        Ipp8u *FiltPel2 = FiltPel + 2 * 4;
+        //Ipp8u *FiltPel2 = FiltPel + 2 * 4;
         Ipp8u (*buf)[4*4] = (Ipp8u(*)[4*4])pels;
 
         // unfiltered

@@ -17,6 +17,12 @@
 
 #include "ippdefs.h"
 
+// Template magic :) and MSC produce warning. INTEL_COMPILER IS OK
+// warning C4127: conditional expression is constant
+#if defined(_MSC_VER)
+#pragma warning(disable: 4127)
+#endif
+
 namespace MFX_HEVC_PP
 {
 

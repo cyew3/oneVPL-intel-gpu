@@ -51,6 +51,9 @@ namespace MFX_HEVC_PP
 #define mm256_storeh_epi128(p, A)  _mm_store_si128 ( (__m128i *)(p), _mm256_extracti128_si256(A, 1))
 #define mm256_storehu_epi128(p, A) _mm_storeu_si128( (__m128i *)(p), _mm256_extracti128_si256(A, 1))
 
+#if defined(_MSC_VER)
+#pragma warning (disable: 4310) // warning C4310: cast truncates constant value
+#endif
 
 // linux compatibility
 #if defined(_WIN32) || defined(_WIN64)
@@ -224,7 +227,7 @@ namespace MFX_HEVC_PP
 #define tmp_stride  32  // stride in temp[] buffer
 
     // 250 cpu clocks
-    __inline static void transpose1(short *__restrict dst, __m128i *__restrict buff)
+    __inline void transpose1(short *__restrict dst, __m128i *__restrict buff)
     {
         __m256i y0, y1, y2, y3, y4, y5, y6, y7;
         //  _mm256_zeroall();
@@ -315,7 +318,7 @@ namespace MFX_HEVC_PP
         }
     }
 
-    __inline static void transpose2(short *__restrict dst, __m128i *__restrict buff)
+    static __inline void transpose2(short *__restrict dst, __m128i *__restrict buff)
     {
         __m256i y0, y1, y2, y3, y4, y5, y6, y7;
         //  _mm256_zeroall();

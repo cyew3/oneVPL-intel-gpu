@@ -27,8 +27,10 @@ namespace MFX_HEVC_PP
         Ipp32s aval;
         Ipp32s qval;
 
+#ifdef __INTEL_COMPILER
 #pragma ivdep
 #pragma vector always
+#endif
 
         for (Ipp32s i = 0; i < len; i++)
         {

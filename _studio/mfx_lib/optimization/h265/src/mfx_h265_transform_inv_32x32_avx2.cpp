@@ -58,13 +58,13 @@ namespace MFX_HEVC_PP
     _mm_storeu_si128((__m128i *)&addr, _mm256_castsi256_si128(yy));
 
 
-#define M128I_4xDWORD(x, w0,w1,w2,w3) const static __m128i x = {\
+#define M128I_4xDWORD(x, w0,w1,w2,w3) static const  __m128i x = {\
     (char)((w0)&0xFF), (char)(((w0)>>8)&0xFF), (char)(((w0)>>16)&0xFF), (char)(((w0)>>24)&0xFF), \
     (char)((w1)&0xFF), (char)(((w1)>>8)&0xFF), (char)(((w1)>>16)&0xFF), (char)(((w1)>>24)&0xFF), \
     (char)((w2)&0xFF), (char)(((w2)>>8)&0xFF), (char)(((w2)>>16)&0xFF), (char)(((w2)>>24)&0xFF), \
     (char)((w3)&0xFF), (char)(((w3)>>8)&0xFF), (char)(((w3)>>16)&0xFF), (char)(((w3)>>24)&0xFF)}
 
-#define M256I_8xDWORD(x, w0,w1,w2,w3,w4,w5,w6,w7) const static __m256i x = {\
+#define M256I_8xDWORD(x, w0,w1,w2,w3,w4,w5,w6,w7) static const  __m256i x = {\
     (char)((w0)&0xFF), (char)(((w0)>>8)&0xFF), (char)(((w0)>>16)&0xFF), (char)(((w0)>>24)&0xFF), \
     (char)((w1)&0xFF), (char)(((w1)>>8)&0xFF), (char)(((w1)>>16)&0xFF), (char)(((w1)>>24)&0xFF), \
     (char)((w2)&0xFF), (char)(((w2)>>8)&0xFF), (char)(((w2)>>16)&0xFF), (char)(((w2)>>24)&0xFF), \
@@ -74,7 +74,7 @@ namespace MFX_HEVC_PP
     (char)((w6)&0xFF), (char)(((w6)>>8)&0xFF), (char)(((w6)>>16)&0xFF), (char)(((w6)>>24)&0xFF), \
     (char)((w7)&0xFF), (char)(((w7)>>8)&0xFF), (char)(((w7)>>16)&0xFF), (char)(((w7)>>24)&0xFF)}
 
-#define M256I_2x8W(x, w0,w1,w2,w3,w4,w5,w6,w7) const static __m256i x = {\
+#define M256I_2x8W(x, w0,w1,w2,w3,w4,w5,w6,w7) static const __m256i x = {\
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF), \
     (char)((w2)&0xFF),(char)(((w2)>>8)&0xFF), (char)((w3)&0xFF),(char)(((w3)>>8)&0xFF), \
     (char)((w4)&0xFF),(char)(((w4)>>8)&0xFF), (char)((w5)&0xFF),(char)(((w5)>>8)&0xFF), \
@@ -93,11 +93,11 @@ namespace MFX_HEVC_PP
     M128I_4xDWORD(index5,  9*32, 11*32, 13*32, 15*32);
     M128I_4xDWORD(index6, 17*32, 19*32, 21*32, 23*32);
     M128I_4xDWORD(index7, 25*32, 27*32, 29*32, 31*32);
-    const static __m128i reord0 = {0,1,8,9,4,5,12,13,2,3,10,11,6,7,14,15};
-    const static __m256i reorder0 = {0,1,8,9,0,1,8,9, 4,5,12,13,4,5,12,13, 2,3,10,11,2,3,10,11, 6,7,14,15,6,7,14,15};
-    const static __m128i reord1 = {0,1,4,5,8,9,12,13,2,3,6,7,10,11,14,15};
-    const static __m128i reord2 = {0,1,4,5, 0,1,4,5, 2,3,6,7, 2,3,6,7};
-    const static __m128i reord3 = {8,9,12,13, 8,9,12,13, 10,11,14,15, 10,11,14,15};
+    static const  __m128i reord0 = {0,1,8,9,4,5,12,13,2,3,10,11,6,7,14,15};
+    static const  __m256i reorder0 = {0,1,8,9,0,1,8,9, 4,5,12,13,4,5,12,13, 2,3,10,11,2,3,10,11, 6,7,14,15,6,7,14,15};
+    static const  __m128i reord1 = {0,1,4,5,8,9,12,13,2,3,6,7,10,11,14,15};
+    static const  __m128i reord2 = {0,1,4,5, 0,1,4,5, 2,3,6,7, 2,3,6,7};
+    static const  __m128i reord3 = {8,9,12,13, 8,9,12,13, 10,11,14,15, 10,11,14,15};
     M256I_8xDWORD(perm0, 0, 0, 1, 1, 2, 2, 3, 3);
     M256I_8xDWORD(perm1, 0, 0, 0, 0, 1, 1, 1, 1);
     M256I_8xDWORD(perm2, 2, 2, 2, 2, 3, 3, 3, 3);
@@ -166,7 +166,8 @@ void MAKE_NAME(h265_DCT32x32Inv_16sT)(void *destPtr, const short *H265_RESTRICT 
 {
         __m128i __declspec(align(32)) buffr[32*32];
         signed short __declspec(align(32)) temp[32*32];
-        __m128i sdata, sdata2, s0, s1, s2, s3, s4, s5, s6, s7, s8;
+        __m128i sdata, sdata2, s7;
+        //s0, s1, s2, s3, s4, s5, s6, s7, s8;
         __m256i ydata1, ydata2, ydata3, ydata4, ydata5, ydata6, ydata7, ydata8, y0, y1, y2, y3, y4, y5, y6, y7, y8, y9, ya;
         _mm256_zeroall();
 

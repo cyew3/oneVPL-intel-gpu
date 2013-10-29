@@ -103,11 +103,11 @@ namespace MFX_HEVC_PP
     {
         for(int y = 0; y <= 62; y++)
         {
-            pSrcDst[2*width + 1 + y] = ((63-y)*topLeft + (y+1)*bottomLeft + 32) >> 6;
+            pSrcDst[2*width + 1 + y] = (Ipp8u)(((63-y)*topLeft + (y+1)*bottomLeft + 32) >> 6);
         }
         for(int x = 0; x <=62; x++)
         {
-            pSrcDst[1+x] = ((63-x)*topLeft + (x+1)*topRight + 32) >> 6;
+            pSrcDst[1+x] = (Ipp8u)(((63-x)*topLeft + (x+1)*topRight + 32) >> 6);
         }
 
     } // void h265_FilterPredictPels_Bilinear_8u(...)
@@ -316,7 +316,7 @@ namespace MFX_HEVC_PP
             } else {
                 Ipp16u *pDst16 = (Ipp16u*)pPredPel + 1;
                 Ipp16u  refVal = (RefU<<8)+RefV;
-                for(j = 0; j < blkSize2>>1; j++)
+                for(j = 0; j < (Ipp32s)(blkSize2>>1); j++)
                     *pDst16++ = refVal;
             }
             
@@ -363,7 +363,7 @@ namespace MFX_HEVC_PP
             } else {
                 Ipp16u *pDst16 = (Ipp16u*)(pPredPel + blkSize2 + 2);
                 Ipp16u  refVal = (RefU<<8)+RefV;
-                for(j = 0; j < blkSize2>>1; j++)
+                for(j = 0; j < (Ipp32s)(blkSize2>>1); j++)
                     *pDst16++ = refVal;
             }
         }
@@ -725,8 +725,8 @@ namespace MFX_HEVC_PP
         {
             for (l = 0; l < blkSize * 2; l += 2)
             {
-                pDst[k * dstStride + l] = dc1;
-                pDst[k * dstStride + l + 1] = dc2;
+                pDst[k * dstStride + l] = (Ipp8u)dc1;
+                pDst[k * dstStride + l + 1] = (Ipp8u)dc2;
             }
         }
     }

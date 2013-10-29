@@ -81,7 +81,7 @@ Ipp32s MAKE_NAME(h265_FilterEdgeLuma_8u_I)(H265EdgeData *edge, Ipp8u *srcDst, Ip
     Ipp32s d0, d3, dq, dp, d;
     Ipp32s ds0, ds3, dm0, dm3;
     Ipp32s strongFiltering = 2; /* 2 = no filtering, only for tracking statistics */
-    Ipp32u writeMask;
+    Ipp32u writeMask = 0;
 
     /* algorithms designed to fit in 8 xmm registers - check compiler output to ensure it's allocating well */
     __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
