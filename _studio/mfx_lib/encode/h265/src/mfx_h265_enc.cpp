@@ -814,7 +814,7 @@ void H265Encoder::CreateRefPicSet(H265Slice *curr_slice)
                     j++;
 
                 // make room if needed
-                if (pRefPicList[j])
+                if (j < NumFramesInList && pRefPicList[j])
                 {
                     for (k = NumFramesInList; k > j; k--)
                     {
@@ -913,7 +913,7 @@ void H265Encoder::CreateRefPicSet(H265Slice *curr_slice)
                     j++;
 
                 // make room if needed
-                if (pRefPicList[j])
+                if (j < NumFramesInList && pRefPicList[j])
                 {
                     for (k = NumFramesInList; k > j; k--)
                     {

@@ -2169,6 +2169,7 @@ void H265CU::ME_PU(H265MEInfo* me_info)
                     {
                         MVtried[num_tried].mvx = (Ipp16s)Saturate(-32768, 32767, (scale * MV_last.mvx + 127 + (scale * MV_last.mvx < 0)) >> 8);
                         MVtried[num_tried].mvy = (Ipp16s)Saturate(-32768, 32767, (scale * MV_last.mvy + 127 + (scale * MV_last.mvy < 0)) >> 8);
+                        clipMV(MVtried[num_tried]);
                     }
                     num_tried++;
                 }
@@ -2176,6 +2177,8 @@ void H265CU::ME_PU(H265MEInfo* me_info)
 
             for (i=0; i<mergeInfo.numCand; i++) {
                 if(curRefIdx[ME_dir] == mergeInfo.refIdx[2*i+ME_dir]) {
+                    if (curRefIdx[ME_dir] > 0)
+                        clipMV(mergeInfo.mvCand[2*i+ME_dir]);
                     MVtried[num_tried++] = mergeInfo.mvCand[2*i+ME_dir];
                     for(j=0; j<num_tried-1; j++)
                         if (MVtried[j] == mergeInfo.mvCand[2*i+ME_dir]) {
@@ -2186,6 +2189,8 @@ void H265CU::ME_PU(H265MEInfo* me_info)
             }
             for (i=0; i<pInfo[ref_idx*2+ME_dir].numCand; i++) {
                 if(curRefIdx[ME_dir] == pInfo[ref_idx*2+ME_dir].refIdx[i]) {
+                    if (curRefIdx[ME_dir] > 0)
+                        clipMV(pInfo[ref_idx*2+ME_dir].mvCand[i]);
                     MVtried[num_tried++] = pInfo[ref_idx*2+ME_dir].mvCand[i];
                     for(j=0; j<num_tried-1; j++)
                         if (MVtried[j] == pInfo[ref_idx*2+ME_dir].mvCand[i]) {
