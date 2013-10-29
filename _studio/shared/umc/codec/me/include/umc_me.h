@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2007-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          motion estimation
@@ -368,8 +368,8 @@ public:
     void ProcessFeedback(MeParams *pPar);
     void SetInterpPixelType(MeParams *par){};
     //function for copy m_blockDist[][] and m_distIdx[][]
-    void SetBlockDist(void* pSrc, Ipp32u numOfByte) {memcpy(m_blockDist,pSrc,numOfByte);};
-    void SetBlockIdx(void* pSrc, Ipp32u numOfByte) {memcpy(m_distIdx,pSrc,numOfByte);};
+    void SetBlockDist(void* pSrc, Ipp32u numOfByte) {MFX_INTERNAL_CPY(m_blockDist,pSrc,numOfByte);};
+    void SetBlockIdx(void* pSrc, Ipp32u numOfByte) {MFX_INTERNAL_CPY(m_distIdx,pSrc,numOfByte);};
     Ipp32s m_blockDist[2][4];                      // (Ipp32s [][]) block distances, depending on ref index
     Ipp32s m_distIdx[2][4];                        // (Ipp32s [][]) distance indecies of reference pictures
 

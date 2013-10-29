@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2011 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -216,7 +216,7 @@ Status D3DVideoProcessing::GetFrame(MediaData *in, MediaData *out)
 
     if (pOutputSurface->type != DXVA2_SurfaceType_ProcessorRenderTarget)
     { // just copy
-        memcpy(pOutputSurface, pInputSurface, sizeof(D3DSurface));
+        MFX_INTERNAL_CPY(pOutputSurface, pInputSurface, sizeof(D3DSurface));
         return UMC_OK;
     }
 

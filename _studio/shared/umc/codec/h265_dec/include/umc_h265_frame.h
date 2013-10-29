@@ -59,12 +59,12 @@ public:
     H265DecoderRefPicList (const H265DecoderRefPicList& copy)
     {
         m_refPicList = &(m_refPicList1[1]);
-        memcpy(&m_refPicList1, &copy.m_refPicList1, sizeof(m_refPicList1));
+        MFX_INTERNAL_CPY(&m_refPicList1, &copy.m_refPicList1, sizeof(m_refPicList1));
     }
 
     H265DecoderRefPicList& operator=(const H265DecoderRefPicList & copy)
     {
-        memcpy(&m_refPicList1, &copy.m_refPicList1, sizeof(m_refPicList1));
+        MFX_INTERNAL_CPY(&m_refPicList1, &copy.m_refPicList1, sizeof(m_refPicList1));
         return *this;
     }
 

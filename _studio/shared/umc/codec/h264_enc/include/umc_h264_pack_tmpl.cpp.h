@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2013 Intel Corporation. All Rights Reserved.
 //
 
 
@@ -1429,7 +1429,7 @@ static void H264ENC_MAKE_NAME_BS_DEP(H264CoreEncoder_Encode_PCM_MB)(
             // Write sample to BS // What if BitDepthY != 8 ??
             H264ENC_MAKE_NAME_BS(PutBits)(pBitstream, pSrcPlane[col], 8); // PERF BUG: it is byte aligned!!
         }
-        memcpy(pRecPlane, pSrcPlane, 16*sizeof(PIXTYPE));   // Copy row to reconstructed buffer
+        MFX_INTERNAL_CPY(pRecPlane, pSrcPlane, 16*sizeof(PIXTYPE));   // Copy row to reconstructed buffer
         pSrcPlane += pitchPixels;
         pRecPlane += pitchPixels;
     }
@@ -1453,7 +1453,7 @@ static void H264ENC_MAKE_NAME_BS_DEP(H264CoreEncoder_Encode_PCM_MB)(
             // Write sample to BS
             H264ENC_MAKE_NAME_BS(PutBits)(pBitstream, pSrcPlane[col], 8);
         }
-        memcpy(pRecPlane, pSrcPlane, 8*sizeof(PIXTYPE));    // Copy row to reconstructed buffer
+        MFX_INTERNAL_CPY(pRecPlane, pSrcPlane, 8*sizeof(PIXTYPE));    // Copy row to reconstructed buffer
         pSrcPlane += pitchPixels;
         pRecPlane += pitchPixels;
     }
@@ -1471,7 +1471,7 @@ static void H264ENC_MAKE_NAME_BS_DEP(H264CoreEncoder_Encode_PCM_MB)(
             // Write sample to BS
             H264ENC_MAKE_NAME_BS(PutBits)(pBitstream, pSrcPlane[col], 8);
         }
-        memcpy(pRecPlane, pSrcPlane, 8*sizeof(PIXTYPE));    // Copy row to reconstructed buffer
+        MFX_INTERNAL_CPY(pRecPlane, pSrcPlane, 8*sizeof(PIXTYPE));    // Copy row to reconstructed buffer
         pSrcPlane += pitchPixels;
         pRecPlane += pitchPixels;
     }

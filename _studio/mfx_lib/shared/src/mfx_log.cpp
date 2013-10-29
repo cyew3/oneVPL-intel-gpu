@@ -267,7 +267,7 @@ protected:
 
             // copy the string to the buffer
             copySize = (m_bufSize < strLen) ? (m_bufSize) : (strLen);
-            memcpy(m_pCur, pStr, copySize);
+            memcpy_s(m_pCur, copySize, pStr, copySize);
             m_pCur += copySize;
             m_bufSize -= copySize;
             pStr += copySize;

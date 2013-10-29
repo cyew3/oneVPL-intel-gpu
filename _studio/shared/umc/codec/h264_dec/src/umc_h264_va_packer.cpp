@@ -1300,7 +1300,7 @@ void PackerDXVA2::SendPAVPStructure(Ipp32s numSlicesOfPrevField, H264Slice *pSli
         {
             extensionInput.EncryptProtocolHeader.guidEncryptProtocol = m_va->GetProtectedVA()->GetEncryptionGUID();
             extensionInput.dwBufferSize = encryptedBufferSize;
-            memcpy(extensionInput.dwAesCounter, &encryptedData->CipherCounter, sizeof(encryptedData->CipherCounter));
+            MFX_INTERNAL_CPY(extensionInput.dwAesCounter, &encryptedData->CipherCounter, sizeof(encryptedData->CipherCounter));
         }
         else
         {
@@ -1570,7 +1570,7 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
         //location of slice data in buffer
         sliceParams->BSNALunitDataLocation += encryptedData->DataOffset - diff;
 
-        memcpy(m_pBuf, encryptedData->Data, alignedSize);
+        MFX_INTERNAL_CPY(m_pBuf, encryptedData->Data, alignedSize);
 
         //calculate position of next slice
         if(encryptedData->Next && (encrType == PAVP_ENCRYPTION_AES128_CTR))
@@ -1614,13 +1614,13 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
 
         if (sliceParams->wBadSliceChopping < 2)
         {
-            memcpy(pDXVA_BitStreamBuffer, start_code_prefix, sizeof(start_code_prefix));
+            MFX_INTERNAL_CPY(pDXVA_BitStreamBuffer, start_code_prefix, sizeof(start_code_prefix));
             if (NalUnitSize - sizeof(start_code_prefix) > 0)
-                memcpy(pDXVA_BitStreamBuffer + sizeof(start_code_prefix), pNalUnit, NalUnitSize - sizeof(start_code_prefix));
+                MFX_INTERNAL_CPY(pDXVA_BitStreamBuffer + sizeof(start_code_prefix), pNalUnit, NalUnitSize - sizeof(start_code_prefix));
         }
         else
         {
-            memcpy(pDXVA_BitStreamBuffer, pNalUnit, NalUnitSize);
+            MFX_INTERNAL_CPY(pDXVA_BitStreamBuffer, pNalUnit, NalUnitSize);
         }
     }
 
@@ -2224,7 +2224,7 @@ Ipp32s PackerVA::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chop
     VM_ASSERT (CompBuf->GetBufferSize() >= pSlice_H264->slice_data_offset + AlignedNalUnitSize);
 
     pBitStreamBuffer += pSlice_H264->slice_data_offset;
-    memcpy(pBitStreamBuffer, pNalUnit, NalUnitSize);
+    MFX_INTERNAL_CPY(pBitStreamBuffer, pNalUnit, NalUnitSize);
     memset(pBitStreamBuffer + NalUnitSize, 0, AlignedNalUnitSize - NalUnitSize);
 
     Ipp8u *pSliceData; //ptr to slice data

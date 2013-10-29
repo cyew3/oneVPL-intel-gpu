@@ -275,7 +275,7 @@ mfxStatus VideoDECODEVP8_HW::Query(VideoCORE *p_core, mfxVideoParam *p_in, mfxVi
 
 mfxStatus VideoDECODEVP8_HW::QueryIOSurfInternal(eMFXPlatform platform, mfxVideoParam *p_params, mfxFrameAllocRequest *p_request)
 {
-    memcpy(&p_request->Info, &p_params->mfx.FrameInfo, sizeof(mfxFrameInfo));
+    MFX_INTERNAL_CPY(&p_request->Info, &p_params->mfx.FrameInfo, sizeof(mfxFrameInfo));
 
     p_request->NumFrameMin = mfxU16 (4);
 
@@ -308,7 +308,7 @@ mfxStatus VideoDECODEVP8_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_vid
     }
 
     mfxVideoParam p_params;
-    memcpy(&p_params, p_video_param, sizeof(mfxVideoParam));
+    MFX_INTERNAL_CPY(&p_params, p_video_param, sizeof(mfxVideoParam));
     
     if (!(p_params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && !(p_params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
     {
@@ -320,7 +320,7 @@ mfxStatus VideoDECODEVP8_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_vid
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    memcpy(&p_request->Info, &p_video_param->mfx.FrameInfo, sizeof(mfxFrameInfo));
+    MFX_INTERNAL_CPY(&p_request->Info, &p_video_param->mfx.FrameInfo, sizeof(mfxFrameInfo));
 
     p_request->NumFrameMin = mfxU16 (5);
     p_request->NumFrameSuggested = p_request->NumFrameMin;
@@ -436,7 +436,7 @@ mfxStatus VideoDECODEVP8_HW::ConstructFrame(mfxBitstream *p_in, mfxBitstream *p_
 
     p_out->Data = (Ipp8u*)ippMalloc(p_in->DataLength);
 
-    memcpy(p_out->Data, p_bs_start, p_in->DataLength);
+    MFX_INTERNAL_CPY(p_out->Data, p_bs_start, p_in->DataLength);
     p_out->DataLength = p_in->DataLength;
     p_out->DataOffset = 0;
 
@@ -1062,7 +1062,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
 
         data_in += 7;
 
-        memcpy((Ipp8u*)(m_frameProbs.coeff_probs),
+        MFX_INTERNAL_CPY((Ipp8u*)(m_frameProbs.coeff_probs),
                (Ipp8u*)vp8_default_coeff_probs,
                sizeof(vp8_default_coeff_probs)); //???
 
@@ -1084,7 +1084,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
             m_frameProbs.mbModeProbUV[i] = vp8_mb_mode_uv_probs[i];
 
         // restore default MV contexts
-        memcpy(m_frameProbs.mvContexts, vp8_default_mv_contexts, sizeof(vp8_default_mv_contexts));
+        MFX_INTERNAL_CPY(m_frameProbs.mvContexts, vp8_default_mv_contexts, sizeof(vp8_default_mv_contexts));
         
     }
 
@@ -1194,7 +1194,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
     m_refresh_info.refreshProbabilities = (Ipp8u)m_boolDecoder[VP8_FIRST_PARTITION].decode();
 
     if (!m_refresh_info.refreshProbabilities)
-        memcpy(&m_frameProbs_saved, &m_frameProbs, sizeof(m_frameProbs));
+        MFX_INTERNAL_CPY(&m_frameProbs_saved, &m_frameProbs, sizeof(m_frameProbs));
 
     if (m_frame_info.frameType != I_PICTURE)
     {
@@ -1325,7 +1325,7 @@ mfxStatus VideoDECODEVP8_HW::GetVideoParam(mfxVideoParam *pPar)
 
     MFX_CHECK_NULL_PTR1(pPar);
 
-    memcpy(&pPar->mfx, &m_on_init_video_params.mfx, sizeof(mfxInfoMFX));
+    MFX_INTERNAL_CPY(&pPar->mfx, &m_on_init_video_params.mfx, sizeof(mfxInfoMFX));
 
     pPar->Protected = m_on_init_video_params.Protected;
     pPar->IOPattern = m_on_init_video_params.IOPattern;
@@ -1368,7 +1368,7 @@ mfxStatus VideoDECODEVP8_HW::GetDecodeStat(mfxDecodeStat *pStat)
     m_stat.NumSkippedFrame = 0;
     m_stat.NumCachedFrame = 0;
 
-    memcpy(pStat, &m_stat, sizeof(m_stat));
+    MFX_INTERNAL_CPY(pStat, &m_stat, sizeof(m_stat));
     return MFX_ERR_NONE;
 
 }
@@ -1608,14 +1608,14 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
         offset = 3;
     }
     
-    memcpy(bistreamData, pBuffer + offset, size - offset);
+    MFX_INTERNAL_CPY(bistreamData, pBuffer + offset, size - offset);
     compBufBs->SetDataSize((Ipp32s)size - offset);
 
     UMCVACompBuffer* compBufCp;
     Ipp8u (*coeffProbs)[8][3][11] = (Ipp8u (*)[8][3][11])m_p_video_accelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_VP8_COEFFICIENT_PROBABILITIES, &compBufCp);
     
     // [4][8][3][11]
-    memcpy(coeffProbs, m_frameProbs.coeff_probs, sizeof(Ipp8u) * 4 * 8 * 3 * 11);
+    MFX_INTERNAL_CPY(coeffProbs, m_frameProbs.coeff_probs, sizeof(Ipp8u) * 4 * 8 * 3 * 11);
 
     compBufCp->SetDataSize(sizeof(Ipp8u) * 4 * 8 * 3 * 11);
 

@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2013 Intel Corporation. All Rights Reserved.
 //
 
 
@@ -1056,7 +1056,7 @@ IppStatus TransformQuantOptFwd4x4_H264_16s_C1(
     /* Copy CABAC contexts to 0 ctx_id (start ctx) */
     Ipp8u* cabac_sig, *cabac_last;
     //I4x4 contexts for encoding of coeff_abs_level_minus1
-    memcpy( layer_next[0].cabac_states_alevelm1, cbSt->absLevelM1, 10*sizeof(CABAC_CONTEXT));
+    MFX_INTERNAL_CPY( layer_next[0].cabac_states_alevelm1, cbSt->absLevelM1, 10*sizeof(CABAC_CONTEXT));
 
 //Precalculate cost of last and significant
     cabac_sig = cbSt->sig;
@@ -1314,7 +1314,7 @@ IppStatus TransformQuantOptFwd4x4_H264_16s_C1(
         if( cur->cost < best->cost ) best=cur;
     }
     c = best->coeff_id;
-    memcpy( cbSt->absLevelM1, best->cabac_states_alevelm1, 10*sizeof(CABAC_CONTEXT));
+    MFX_INTERNAL_CPY( cbSt->absLevelM1, best->cabac_states_alevelm1, 10*sizeof(CABAC_CONTEXT));
 /*
     Ipp32s best_ctx = 0;
     Ipp64u best_cost = layer_next[0].cost;
@@ -1325,7 +1325,7 @@ IppStatus TransformQuantOptFwd4x4_H264_16s_C1(
         }
     }
     c = layer_next[best_ctx].coeff_id;
-    memcpy( cbSt->absLevelM1, layer_next[best_ctx].cabac_states_alevelm1, 10*sizeof(CABAC_CONTEXT));
+    MFX_INTERNAL_CPY( cbSt->absLevelM1, layer_next[best_ctx].cabac_states_alevelm1, 10*sizeof(CABAC_CONTEXT));
 */
     Ipp32s last = *pLastCoeff;
     *pNumLevels = *pLastCoeff = 0;
@@ -1955,7 +1955,7 @@ void QuantOptLuma8x8_H264_16s_C1_8u16s(
 
     /* Copy CABAC contexts to 0 ctx_id (start ctx) */
     //I8x8 contexts
-    memcpy( layer_next[0].cabac_states_alevelm1, cbSt->absLevelM1, 10*sizeof(CABAC_CONTEXT));
+    MFX_INTERNAL_CPY( layer_next[0].cabac_states_alevelm1, cbSt->absLevelM1, 10*sizeof(CABAC_CONTEXT));
     //Copy contexts for significant and last
 
     Ipp8u cabac_sig[64],cabac_last[64];
@@ -2365,9 +2365,9 @@ void QuantOptLuma8x8_H264_16s_C1_8u16s(
 
 #if 0
     //cbSt->codRange = layer_next[best_ctx].codRange;
-    memcpy( cbSt->absLevelM1, layer_next[best_ctx].cabac_states_alevelm1, 10*sizeof(CABAC_CONTEXT));
-    memcpy( cbSt->sig, cabac_sig, 15*sizeof(CABAC_CONTEXT));
-    memcpy( cbSt->last, cabac_last, 15*sizeof(CABAC_CONTEXT));
+    MFX_INTERNAL_CPY( cbSt->absLevelM1, layer_next[best_ctx].cabac_states_alevelm1, 10*sizeof(CABAC_CONTEXT));
+    MFX_INTERNAL_CPY( cbSt->sig, cabac_sig, 15*sizeof(CABAC_CONTEXT));
+    MFX_INTERNAL_CPY( cbSt->last, cabac_last, 15*sizeof(CABAC_CONTEXT));
 #endif
 
     Ipp32s last = *pLastCoeff;

@@ -4,11 +4,13 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2010 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
+#include "umc_defs.h"
 #include "umc_frame_data.h"
+#include "ipps.h"
 
 namespace UMC
 {
@@ -305,7 +307,7 @@ FrameData::FrameData(const FrameData & fd)
     , m_Info(fd.m_Info)
     , m_locked(false)
 {
-    memcpy(m_PlaneInfo, fd.m_PlaneInfo, sizeof(m_PlaneInfo));
+    MFX_INTERNAL_CPY(m_PlaneInfo, fd.m_PlaneInfo, sizeof(m_PlaneInfo));
     if (m_FrameAlloc)
     {
         m_FrameAlloc->IncreaseReference(m_FrameMID);
@@ -330,7 +332,7 @@ FrameData& FrameData::operator=(const FrameData& fd)
     m_FrameAlloc = fd.m_FrameAlloc;
     m_FrameMID = fd.m_FrameMID;
     m_Info = fd.m_Info;
-    memcpy(m_PlaneInfo, fd.m_PlaneInfo, sizeof(m_PlaneInfo));
+    MFX_INTERNAL_CPY(m_PlaneInfo, fd.m_PlaneInfo, sizeof(m_PlaneInfo));
     m_locked = false;// fd.m_locked;
 
     if (m_FrameAlloc)

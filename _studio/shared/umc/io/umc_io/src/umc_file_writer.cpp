@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2008 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -183,14 +183,14 @@ UMC::Status UMC::FileWriter::PutData(void *data, Ipp32s &nsize)
         if ((m_stPos + tmp_size > m_uiPageSize) || !m_bBufferInit)
         {
             bufsize     = m_uiPageSize - m_stPos;
-            memcpy(m_pbBuffer + m_stPos, data, bufsize);
+            MFX_INTERNAL_CPY(m_pbBuffer + m_stPos, data, bufsize);
             tmp_size -= bufsize;
             ret = MapCSize();
         }
 
         if((UMC_OK == ret) && (tmp_size <= m_uiPageSize))
         {
-            memcpy(m_pbBuffer + m_stPos, (Ipp8u*)data + bufsize, tmp_size);
+            MFX_INTERNAL_CPY(m_pbBuffer + m_stPos, (Ipp8u*)data + bufsize, tmp_size);
             m_stPos += tmp_size;
             break;
         }

@@ -417,7 +417,7 @@ void H265TrQuant::setDefaultScalingList()
     {
         for(Ipp32u listId = 0; listId < g_scalingListNum[sizeId]; listId++)
         {
-            ::memcpy(sl.getScalingListAddress(sizeId, listId),
+            ::MFX_INTERNAL_CPY(sl.getScalingListAddress(sizeId, listId),
                 sl.getScalingListDefaultAddress(sizeId, listId),
                 sizeof(Ipp32s) * IPP_MIN(MAX_MATRIX_COEF_NUM, (Ipp32s)g_scalingListSize[sizeId]));
             sl.setScalingListDC(sizeId, listId, SCALING_LIST_DC);

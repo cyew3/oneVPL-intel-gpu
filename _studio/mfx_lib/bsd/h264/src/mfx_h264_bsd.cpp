@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2009 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 #include "mfx_common.h"
@@ -175,8 +175,8 @@ mfxStatus VideoBSDH264::RunSliceBSD(mfxFrameCUC *cuc)
     MFX_CHECK_NULL_PTR3(cuc, cuc->MbParam, cuc->MbParam->Mb);
     MFX_CHECK_NULL_PTR2(cuc->Bitstream, cuc->SliceParam);
 
-    memcpy(&m_fPar, cuc->FrameParam, sizeof(m_fPar));
-    memcpy(&m_sPar, cuc->SliceParam, sizeof(m_sPar));
+    MFX_INTERNAL_CPY(&m_fPar, cuc->FrameParam, sizeof(m_fPar));
+    MFX_INTERNAL_CPY(&m_sPar, cuc->SliceParam, sizeof(m_sPar));
 
     return MFX_ERR_NONE;
 }
@@ -196,8 +196,8 @@ mfxStatus VideoBSDH264::RunFrameBSD(mfxFrameCUC *cuc)
         m_pH264VideoDecoder->SetCUC(cuc);
         m_pH264VideoDecoder->ParseSource(&m_pInternMediaDataIn);
 
-        memcpy(&m_fPar, cuc->FrameParam, sizeof(m_fPar));
-        memcpy(&m_sPar, cuc->SliceParam, sizeof(m_sPar));
+        MFX_INTERNAL_CPY(&m_fPar, cuc->FrameParam, sizeof(m_fPar));
+        MFX_INTERNAL_CPY(&m_sPar, cuc->SliceParam, sizeof(m_sPar));
 
         ConvertMediaDataToMfxBS(&m_pInternMediaDataIn, cuc->Bitstream);
 
@@ -246,7 +246,7 @@ mfxStatus VideoBSDH264::InternalReset(mfxVideoParam* par)
     m_pH264VideoDecoder->SetMemoryAllocator(&m_MemoryAllocator);
     m_InternMediaDataOut.Init(par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height,UMC::YV12);
 
-    memcpy(&m_vPar, par, sizeof(m_vPar));
+    MFX_INTERNAL_CPY(&m_vPar, par, sizeof(m_vPar));
 
     if (umcRes != UMC::UMC_OK)
     {

@@ -9,6 +9,9 @@
 ** 
 \*********************************************************************************/
 
+#include "umc_defs.h"
+#include "ipps.h"
+
 #include "meforgen7_5.h"
 
 #pragma warning( disable : 4244 )
@@ -109,7 +112,7 @@ int MEforGen75::Intra16x16SearchUnit( )
     if(!(IntraSkipMask&(INTRAMASK16X16<<VER_16))){
         if(Vsta.IntraAvail&INTRA_AVAIL_B){
             for(k=0;k<16;k++){
-                memcpy(ref+(k<<4),top,16);
+                MFX_INTERNAL_CPY(ref+(k<<4),top,16);
             }
 #if (__HAAR_SAD_OPT == 1)
             d = GetSad16x16_dist(SrcMB,ref,dist) + VSICsta.IntraNonDCPenalty16x16;
@@ -373,7 +376,7 @@ int MEforGen75::Intra4x4SearchUnit( )
     pmode = (IsEdgeBlock&4) ? DCP : ((x<y)?x:y);
     IntraPredict4x4(src+12, lft, top+12, IsEdgeBlock&6, pmode, &Intra4x4PredMode[ 5], &d );    dist += d;
     top[15] = lft[3]; src += 64; lft += 4;
-    memcpy(tmptop,top+8,4);
+    MFX_INTERNAL_CPY(tmptop,top+8,4);
     x = ((VSICsta.LeftModes>>4)&15);
     y = Intra4x4PredMode[ 0];
     pmode = (IsEdgeBlock&1) ? DCP : ((x<y)?x:y);
@@ -382,7 +385,7 @@ int MEforGen75::Intra4x4SearchUnit( )
     y = Intra4x4PredMode[ 1];
     pmode = ((x<y)?x:y);
     IntraPredict4x4(src+ 4, lft, top+ 4, 2,                pmode, &Intra4x4PredMode[ 3], &d );    dist += d;
-    memcpy(top+8,tmptop,4);
+    MFX_INTERNAL_CPY(top+8,tmptop,4);
     x = Intra4x4PredMode[ 3];
     y = Intra4x4PredMode[ 4];
     pmode = ((x<y)?x:y);
@@ -409,7 +412,7 @@ int MEforGen75::Intra4x4SearchUnit( )
     pmode = ((x<y)?x:y);
     IntraPredict4x4(src+12, lft, top+12, 2,             pmode, &Intra4x4PredMode[13], &d );    dist += d;
     top[15] = lft[3]; src += 64; lft += 4; 
-    memcpy(tmptop,top+8,4);
+    MFX_INTERNAL_CPY(tmptop,top+8,4);
     x = ((VSICsta.LeftModes>>12)&15);
     y = Intra4x4PredMode[ 8];
     pmode = (IsEdgeBlock&1) ? DCP : ((x<y)?x:y);
@@ -418,7 +421,7 @@ int MEforGen75::Intra4x4SearchUnit( )
     y = Intra4x4PredMode[ 9];
     pmode = ((x<y)?x:y);
     IntraPredict4x4(src+ 4, lft, top+ 4, 2,                pmode, &Intra4x4PredMode[11], &d );    dist += d;
-    memcpy(top+8,tmptop,4);
+    MFX_INTERNAL_CPY(top+8,tmptop,4);
     x = Intra4x4PredMode[11];
     y = Intra4x4PredMode[12];
     pmode = ((x<y)?x:y);
@@ -452,8 +455,8 @@ int MEforGen75::Intra8x8SearchUnit( )
     // shlee
     //lft = Vsta.LeftPels;
     //top = Vsta.TopMinus8Pels+8;
-    memcpy(lft_pixel, VSICsta.LeftPels, 16);
-    memcpy(top_pixel+6, VSICsta.TopMinus2Pels, 26);
+    MFX_INTERNAL_CPY(lft_pixel, VSICsta.LeftPels, 16);
+    MFX_INTERNAL_CPY(top_pixel+6, VSICsta.TopMinus2Pels, 26);
     lft = lft_pixel;
     top = top_pixel + 8;
 
@@ -583,8 +586,8 @@ int MEforGen75::Intra8x8ChromaSearchUnit( )
         {
             for(i=0; i<8; i++)
             {    
-                memcpy(ref+(i<<4),top[0],8);
-                memcpy(ref+(i<<4)+8,top[1],8);
+                MFX_INTERNAL_CPY(ref+(i<<4),top[0],8);
+                MFX_INTERNAL_CPY(ref+(i<<4)+8,top[1],8);
             }
             d = GetSadChroma(SrcUV,ref,128) + LutMode[LUTMODE_INTRA_CHROMA]*1;
             if(d<dist)
@@ -808,10 +811,10 @@ int MEforGen75::IntraPredict8x8(U8   *src, U8   *lft, U8   *top, int edge, U8 pm
 // Vertical Prediction (|) 
     if(!(edge&NO_AVAIL_B)){
         pp = Pblk[VER];
-        memcpy(pp,&tmp[1],8);
-        memcpy(pp+ 8,pp, 8);
-        memcpy(pp+16,pp,16);
-        memcpy(pp+32,pp,32);
+        MFX_INTERNAL_CPY(pp,&tmp[1],8);
+        MFX_INTERNAL_CPY(pp+ 8,pp, 8);
+        MFX_INTERNAL_CPY(pp+16,pp,16);
+        MFX_INTERNAL_CPY(pp+32,pp,32);
         d[VER] = GetSad8x8(src,Pblk[VER]) + VSICsta.IntraNonDCPenalty8x8;
     }
 
@@ -1052,8 +1055,8 @@ int MEforGen75::IntraPredChromaUnit( )
 
     // VERTICAL
     for(k=0;k<16;k++){
-        memcpy(ref+(k<<4),top[0],8);
-        memcpy(ref+(k<<4)+8,top[1],8);
+        MFX_INTERNAL_CPY(ref+(k<<4),top[0],8);
+        MFX_INTERNAL_CPY(ref+(k<<4)+8,top[1],8);
     }
     d = GetSadN(SrcMB,ref,128);
     if(d<dist){ dist = d; m = VER_C8; }

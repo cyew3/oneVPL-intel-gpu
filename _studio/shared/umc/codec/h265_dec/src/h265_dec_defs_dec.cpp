@@ -797,7 +797,7 @@ void H265SampleAdaptiveOffset::SAOProcess(H265DecoderFrame* pFrame, Ipp32s start
 
     m_Frame = pFrame;
     H265Slice * slice = pFrame->GetAU()->GetAnySlice();
-    processSaoUnits(startCU, toProcessCU);
+        processSaoUnits(startCU, toProcessCU);
 }
 
 void H265SampleAdaptiveOffset::processSaoLine(SAOLCUParam* saoLCUParam, SAOLCUParam* saoLCUParamCb, SAOLCUParam* saoLCUParamCr, Ipp32s firstCU, Ipp32s endCU)
@@ -955,8 +955,8 @@ void H265SampleAdaptiveOffset::processSaoUnits(Ipp32s firstCU, Ipp32s toProcessC
     if (!firstCU)// / frameWidthInCU == 0)
     {
         Ipp32s width = picWidthTmp;//(endCU / frameWidthInCU) > 0 ? picWidthTmp - firstCU*LCUHeight : (endCU - firstCU)*LCUHeight;
-        memcpy(m_TmpU[0] + firstCU*LCUHeight, m_Frame->m_pYPlane + firstCU*LCUHeight, sizeof(H265PlaneYCommon) * width);
-        memcpy(m_TmpU[0] + picWidthTmp + firstCU*LCUHeight, m_Frame->m_pUVPlane + firstCU*LCUHeight, sizeof(H265PlaneUVCommon) * width);
+        MFX_INTERNAL_CPY(m_TmpU[0] + firstCU*LCUHeight, m_Frame->m_pYPlane + firstCU*LCUHeight, sizeof(H265PlaneYCommon) * width);
+        MFX_INTERNAL_CPY(m_TmpU[0] + picWidthTmp + firstCU*LCUHeight, m_Frame->m_pUVPlane + firstCU*LCUHeight, sizeof(H265PlaneUVCommon) * width);
     }
 
     bool independentTileBoundaryForNDBFilter = false;
@@ -976,10 +976,10 @@ void H265SampleAdaptiveOffset::processSaoUnits(Ipp32s firstCU, Ipp32s toProcessC
         if ((firstCU % frameWidthInCU) == 0 && (firstCU / frameWidthInCU) != (frameHeightInCU - 1))
         {
             H265PlanePtrYCommon pRec = m_Frame->GetLumaAddr(firstCU) + (LCUHeight - 1)*m_Frame->pitch_luma();
-            memcpy(m_TmpU[1], pRec, sizeof(H265PlaneYCommon) * picWidthTmp);
+            MFX_INTERNAL_CPY(m_TmpU[1], pRec, sizeof(H265PlaneYCommon) * picWidthTmp);
 
             pRec = m_Frame->GetCbCrAddr(firstCU) + ((LCUHeight >> 1)- 1)*m_Frame->pitch_chroma();
-            memcpy(m_TmpU[1] + picWidthTmp, pRec, sizeof(H265PlaneUVCommon) * picWidthTmp);
+            MFX_INTERNAL_CPY(m_TmpU[1] + picWidthTmp, pRec, sizeof(H265PlaneUVCommon) * picWidthTmp);
         }
 
         if (m_UseNIF)

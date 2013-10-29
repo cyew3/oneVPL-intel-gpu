@@ -491,8 +491,8 @@ Status MFXTaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                     RawHeader * hdr = isSPS ? GetSPS() : GetPPS();
                     Ipp32s id = isSPS ? m_Headers.m_SeqParams.GetCurrentID() : m_Headers.m_PicParams.GetCurrentID();
                     hdr->Resize(id, size + sizeof(start_code_prefix));
-                    memcpy(hdr->GetPointer(), start_code_prefix,  sizeof(start_code_prefix));
-                    memcpy(hdr->GetPointer() + sizeof(start_code_prefix), (Ipp8u*)nalUnit->GetDataPointer(), size);
+                    MFX_INTERNAL_CPY(hdr->GetPointer(), start_code_prefix,  sizeof(start_code_prefix));
+                    MFX_INTERNAL_CPY(hdr->GetPointer() + sizeof(start_code_prefix), (Ipp8u*)nalUnit->GetDataPointer(), (Ipp32u)size);
 #ifdef __APPLE__                    
                     hdr->SetRBSPSize(size);
 #endif  
@@ -1210,8 +1210,8 @@ UMC::Status MFX_Utility::DecodeHeader(UMC::TaskSupplier * supplier, UMC::BaseCod
         mfxExtSVCSeqDesc *svcSeqDescInput = (mfxExtSVCSeqDesc *)GetExtendedBuffer(out->ExtParam, out->NumExtParam, MFX_EXTBUFF_SVC_SEQ_DESC);
         if (svcSeqDescInput)
         {
-            memcpy(svcSeqDescInput->DependencyLayer, &headersDecoder.GetSVCSeqDesc()->DependencyLayer, sizeof(headersDecoder.GetSVCSeqDesc()->DependencyLayer));
-            memcpy(svcSeqDescInput->TemporalScale, &headersDecoder.GetSVCSeqDesc()->TemporalScale, sizeof(headersDecoder.GetSVCSeqDesc()->TemporalScale));
+            MFX_INTERNAL_CPY(svcSeqDescInput->DependencyLayer, &headersDecoder.GetSVCSeqDesc()->DependencyLayer, sizeof(headersDecoder.GetSVCSeqDesc()->DependencyLayer));
+            MFX_INTERNAL_CPY(svcSeqDescInput->TemporalScale, &headersDecoder.GetSVCSeqDesc()->TemporalScale, sizeof(headersDecoder.GetSVCSeqDesc()->TemporalScale));
         }
 
         FillVideoParam(supplier, out, false);
@@ -1345,7 +1345,7 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
     if (in == out)
     {
         mfxVideoParam in1;
-        memcpy(&in1, in, sizeof(mfxVideoParam));
+        MFX_INTERNAL_CPY(&in1, in, sizeof(mfxVideoParam));
         return MFX_Utility::Query(core, &in1, out, type);
     }
 
@@ -1632,7 +1632,7 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
                     if (mvcPointsIn->View[i].NumAnchorRefsL0 <= UMC::H264_MAX_NUM_VIEW_REF)
                     {
                         mvcPointsOut->View[i].NumAnchorRefsL0 = mvcPointsIn->View[i].NumAnchorRefsL0;
-                        memcpy(mvcPointsOut->View[i].AnchorRefL0, mvcPointsIn->View[i].AnchorRefL0, sizeof(mvcPointsIn->View[i].AnchorRefL0));
+                        MFX_INTERNAL_CPY(mvcPointsOut->View[i].AnchorRefL0, mvcPointsIn->View[i].AnchorRefL0, sizeof(mvcPointsIn->View[i].AnchorRefL0));
                     }
                     else
                         sts = MFX_ERR_UNSUPPORTED;
@@ -1640,7 +1640,7 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
                     if (mvcPointsIn->View[i].NumAnchorRefsL1 <= UMC::H264_MAX_NUM_VIEW_REF)
                     {
                         mvcPointsOut->View[i].NumAnchorRefsL1 = mvcPointsIn->View[i].NumAnchorRefsL1;
-                        memcpy(mvcPointsOut->View[i].AnchorRefL1, mvcPointsIn->View[i].AnchorRefL1, sizeof(mvcPointsIn->View[i].AnchorRefL1));
+                        MFX_INTERNAL_CPY(mvcPointsOut->View[i].AnchorRefL1, mvcPointsIn->View[i].AnchorRefL1, sizeof(mvcPointsIn->View[i].AnchorRefL1));
                     }
                     else
                         sts = MFX_ERR_UNSUPPORTED;
@@ -1648,7 +1648,7 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
                     if (mvcPointsIn->View[i].NumNonAnchorRefsL0 <= UMC::H264_MAX_NUM_VIEW_REF)
                     {
                         mvcPointsOut->View[i].NumNonAnchorRefsL0 = mvcPointsIn->View[i].NumNonAnchorRefsL0;
-                        memcpy(mvcPointsOut->View[i].NonAnchorRefL0, mvcPointsIn->View[i].NonAnchorRefL0, sizeof(mvcPointsIn->View[i].NonAnchorRefL0));
+                        MFX_INTERNAL_CPY(mvcPointsOut->View[i].NonAnchorRefL0, mvcPointsIn->View[i].NonAnchorRefL0, sizeof(mvcPointsIn->View[i].NonAnchorRefL0));
                     }
                     else
                         sts = MFX_ERR_UNSUPPORTED;
@@ -1656,7 +1656,7 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
                     if (mvcPointsIn->View[i].NumNonAnchorRefsL1 <= UMC::H264_MAX_NUM_VIEW_REF)
                     {
                         mvcPointsOut->View[i].NumNonAnchorRefsL1 = mvcPointsIn->View[i].NumNonAnchorRefsL1;
-                        memcpy(mvcPointsOut->View[i].NonAnchorRefL1, mvcPointsIn->View[i].NonAnchorRefL1, sizeof(mvcPointsIn->View[i].NonAnchorRefL1));
+                        MFX_INTERNAL_CPY(mvcPointsOut->View[i].NonAnchorRefL1, mvcPointsIn->View[i].NonAnchorRefL1, sizeof(mvcPointsIn->View[i].NonAnchorRefL1));
                     }
                     else
                         sts = MFX_ERR_UNSUPPORTED;
@@ -1751,7 +1751,7 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
             else
                 sts = MFX_ERR_UNSUPPORTED;
 
-            memcpy(targetViewsOut->ViewId, targetViewsIn->ViewId, sizeof(targetViewsIn->ViewId));
+            MFX_INTERNAL_CPY(targetViewsOut->ViewId, targetViewsIn->ViewId, sizeof(targetViewsIn->ViewId));
         }
         else
         {
@@ -1766,7 +1766,7 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
 
         if (svcDescIn && svcDescOut)
         {
-            memcpy(svcDescOut, svcDescIn, sizeof(mfxExtSVCSeqDesc));
+            MFX_INTERNAL_CPY(svcDescOut, svcDescIn, sizeof(mfxExtSVCSeqDesc));
 
             for (Ipp32u layer = 0; layer < sizeof(svcDescIn->DependencyLayer)/sizeof(svcDescIn->DependencyLayer[0]); layer++)
             {

@@ -434,7 +434,7 @@ H264Slice * VATaskSupplier::DecodeSliceHeader(MediaDataEx *nalUnit)
     H264MemoryPiece * pMemCopy = m_Heap.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
     notifier1<H264_Heap, H264MemoryPiece*> memory_leak_preventing1(&m_Heap, &H264_Heap::Free, pMemCopy);
 
-    memcpy(pMemCopy->GetPointer(), nalUnit->GetDataPointer(), nalUnit->GetDataSize());
+    MFX_INTERNAL_CPY(pMemCopy->GetPointer(), nalUnit->GetDataPointer(), (Ipp32u)nalUnit->GetDataSize());
     memset(pMemCopy->GetPointer() + nalUnit->GetDataSize(), DEFAULT_NU_TAIL_VALUE, DEFAULT_NU_TAIL_SIZE);
     pMemCopy->SetDataSize(nalUnit->GetDataSize());
     pMemCopy->SetTime(nalUnit->GetTime());

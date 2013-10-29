@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_mpeg2_bsd.cpp
 
@@ -65,7 +65,7 @@ mfxStatus VideoBSDMPEG2::Query(mfxVideoParam *in, mfxVideoParam *out)
     }
     else
     { // checking mode
-        memcpy(out, in, sizeof(mfxVideoParam));
+        MFX_INTERNAL_CPY(out, in, sizeof(mfxVideoParam));
         Mpeg2CheckConfigurableCommon(*out);
     }
 
@@ -349,7 +349,7 @@ mfxStatus VideoBSDMPEG2::ExtractUserData(mfxBitstream *bs, mfxU8 *ud, mfxU32 *sz
         return MFX_ERR_NOT_ENOUGH_BUFFER;
     }
 
-    memcpy(ud, cc.GetDataPointer(), cc.GetDataSize());
+    MFX_INTERNAL_CPY(ud, cc.GetDataPointer(), cc.GetDataSize());
     *sz = (mfxU32)cc.GetDataSize();
     *ts = (mfxU64)(cc.GetTime() * MFX_TIME_STAMP_FACTOR);
     return MFX_ERR_NONE;

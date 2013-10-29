@@ -626,7 +626,7 @@ void Smoothing_P_Adv(VC1Context* pContext, Ipp32s Height)
                                                                 CurrBlock + 8*8*2,      VC1_PIXEL_IN_LUMA*2,
                                                                 YPlane + 8*YPitch, YPitch,
                                                                 EdgeDisabledFlag);
-                 }
+                }
 
                 CurrBlock  += 8*8*6;
                 pCurrMB++;

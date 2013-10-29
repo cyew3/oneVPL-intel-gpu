@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2002-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2002-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -211,9 +211,9 @@ void MPEG2EncDebug::GatherInterBlockData(int k,Ipp16s *pMBlock,int blk,int Count
     if (Count) {
       mb_debug_info[k].Count[blk] = 1;
       Ipp16s pMBlock_tmp[64];
-      memcpy(pMBlock_tmp,pMBlock,sizeof(pMBlock_tmp));
+      MFX_INTERNAL_CPY(pMBlock_tmp,pMBlock,sizeof(pMBlock_tmp));
       ippiQuantInv_MPEG2_16s_C1I(pMBlock_tmp, encoder->quantiser_scale_value, encoder->NonIntraQMatrix);
-      memcpy(mb_debug_info[k].encMbData[blk],pMBlock_tmp,sizeof(pMBlock_tmp));
+      MFX_INTERNAL_CPY(mb_debug_info[k].encMbData[blk],pMBlock_tmp,sizeof(pMBlock_tmp));
     }
     else
     {
@@ -238,7 +238,7 @@ void MPEG2EncDebug::GatherIntraBlockData(int k,Ipp16s *pMBlock,int blk,int Count
 
     mb_debug_info[k].Count[blk] = Count;
     if(Count)
-      memcpy(mb_debug_info[k].encMbData[blk],pMBlock,8*8*sizeof(Ipp16s));
+      MFX_INTERNAL_CPY(mb_debug_info[k].encMbData[blk],pMBlock,8*8*sizeof(Ipp16s));
     //ippiCopy_16s_C1R(pMBlock, 8*sizeof(Ipp16s),pMBInfo[k].encMbData[blk],8*sizeof(Ipp16s),roi8x8);
     else
       mb_debug_info[k].encMbData[blk][0] = pMBlock[0];

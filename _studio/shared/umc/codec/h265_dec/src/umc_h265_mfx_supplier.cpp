@@ -302,8 +302,8 @@ UMC::Status MFXTaskSupplier_H265::DecodeHeaders(UMC::MediaDataEx *nalUnit)
                     RawHeader_H265 * hdr = isSPS ? GetSPS() : GetPPS();
                     Ipp32s id = isSPS ? m_Headers.m_SeqParams.GetCurrentID() : m_Headers.m_PicParams.GetCurrentID();
                     hdr->Resize(id, size + sizeof(start_code_prefix));
-                    memcpy(hdr->GetPointer(), start_code_prefix,  sizeof(start_code_prefix));
-                    memcpy(hdr->GetPointer() + sizeof(start_code_prefix), (Ipp8u*)nalUnit->GetDataPointer(), size);
+                    MFX_INTERNAL_CPY(hdr->GetPointer(), start_code_prefix,  sizeof(start_code_prefix));
+                    MFX_INTERNAL_CPY(hdr->GetPointer() + sizeof(start_code_prefix), (Ipp8u*)nalUnit->GetDataPointer(), size);
                 }
             break;
         }
@@ -719,7 +719,7 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
     if (in == out)
     {
         mfxVideoParam in1;
-        memcpy(&in1, in, sizeof(mfxVideoParam));
+        MFX_INTERNAL_CPY(&in1, in, sizeof(mfxVideoParam));
         return MFX_Utility::Query_H265(core, &in1, out, type);
     }
 

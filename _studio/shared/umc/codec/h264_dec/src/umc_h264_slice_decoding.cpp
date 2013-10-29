@@ -8,8 +8,10 @@
 //
 //
 */
+#include "ipps.h"
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_H264_VIDEO_DECODER)
+
 
 #include "umc_h264_slice_decoding.h"
 #include "umc_h264_segment_decoder_mt.h"
@@ -692,9 +694,9 @@ void H264Slice::StoreBaseLayerFrameInfo()
             size_t nMBCount = m_pCurrentFrame->totalMBs << (m_pCurrentFrame->m_PictureStructureForDec < FRM_STRUCTURE ? 1 : 0);
             m_mbinfo->baseFrameInfo->totalMBs = m_pCurrentFrame->totalMBs;
 
-            memcpy(m_mbinfo->baseFrameInfo->m_mbinfo.MV[0], m_pCurrentFrame->m_mbinfo.MV[0], sizeof(H264DecoderMacroblockMVs) * nMBCount);
-            memcpy(m_mbinfo->baseFrameInfo->m_mbinfo.MV[1], m_pCurrentFrame->m_mbinfo.MV[1], sizeof(H264DecoderMacroblockMVs) * nMBCount);
-            memcpy(m_mbinfo->baseFrameInfo->m_mbinfo.mbs, m_pCurrentFrame->m_mbinfo.mbs, sizeof(H264DecoderMacroblockGlobalInfo) * nMBCount);
+            MFX_INTERNAL_CPY(m_mbinfo->baseFrameInfo->m_mbinfo.MV[0], m_pCurrentFrame->m_mbinfo.MV[0], (Ipp32u)(sizeof(H264DecoderMacroblockMVs) * nMBCount));
+            MFX_INTERNAL_CPY(m_mbinfo->baseFrameInfo->m_mbinfo.MV[1], m_pCurrentFrame->m_mbinfo.MV[1], (Ipp32u)(sizeof(H264DecoderMacroblockMVs) * nMBCount));
+            MFX_INTERNAL_CPY(m_mbinfo->baseFrameInfo->m_mbinfo.mbs, m_pCurrentFrame->m_mbinfo.mbs, (Ipp32u)(sizeof(H264DecoderMacroblockGlobalInfo) * nMBCount));
         }
     }
     {
@@ -705,9 +707,9 @@ void H264Slice::StoreBaseLayerFrameInfo()
             size_t nMBCount = m_pCurrentFrame->m_pLayerFrames[dependencyId]->totalMBs <<
                 (m_pCurrentFrame->m_pLayerFrames[dependencyId]->m_PictureStructureForDec < FRM_STRUCTURE ? 1 : 0);
 
-            memcpy(m_pCurrentFrame->m_mbinfo.MV[0], m_pCurrentFrame->m_pLayerFrames[dependencyId]->m_mbinfo.MV[0], sizeof(H264DecoderMacroblockMVs) * nMBCount);
-            memcpy(m_pCurrentFrame->m_mbinfo.MV[1], m_pCurrentFrame->m_pLayerFrames[dependencyId]->m_mbinfo.MV[1], sizeof(H264DecoderMacroblockMVs) * nMBCount);
-            memcpy(m_pCurrentFrame->m_mbinfo.mbs, m_pCurrentFrame->m_pLayerFrames[dependencyId]->m_mbinfo.mbs, sizeof(H264DecoderMacroblockGlobalInfo) * nMBCount);
+            MFX_INTERNAL_CPY(m_pCurrentFrame->m_mbinfo.MV[0], m_pCurrentFrame->m_pLayerFrames[dependencyId]->m_mbinfo.MV[0], (Ipp32u)(sizeof(H264DecoderMacroblockMVs) * nMBCount));
+            MFX_INTERNAL_CPY(m_pCurrentFrame->m_mbinfo.MV[1], m_pCurrentFrame->m_pLayerFrames[dependencyId]->m_mbinfo.MV[1], (Ipp32u)(sizeof(H264DecoderMacroblockMVs) * nMBCount));
+            MFX_INTERNAL_CPY(m_pCurrentFrame->m_mbinfo.mbs, m_pCurrentFrame->m_pLayerFrames[dependencyId]->m_mbinfo.mbs, (Ipp32u)(sizeof(H264DecoderMacroblockGlobalInfo) * nMBCount));
         }
     }
 }
@@ -722,9 +724,9 @@ void H264Slice::RestoreFrameInfoFromBaseLayerFrameInfo()
             size_t nMBCount = m_pCurrentFrame->totalMBs;
             m_pCurrentFrame->totalMBs = m_mbinfo->baseFrameInfo->totalMBs;
 
-            memcpy(m_pCurrentFrame->m_mbinfo.MV[0], m_mbinfo->baseFrameInfo->m_mbinfo.MV[0], sizeof(H264DecoderMacroblockMVs) * nMBCount);
-            memcpy(m_pCurrentFrame->m_mbinfo.MV[1], m_mbinfo->baseFrameInfo->m_mbinfo.MV[1], sizeof(H264DecoderMacroblockMVs) * nMBCount);
-            memcpy(m_pCurrentFrame->m_mbinfo.mbs, m_mbinfo->baseFrameInfo->m_mbinfo.mbs, sizeof(H264DecoderMacroblockGlobalInfo) * nMBCount);
+            MFX_INTERNAL_CPY(m_pCurrentFrame->m_mbinfo.MV[0], m_mbinfo->baseFrameInfo->m_mbinfo.MV[0], (Ipp32u)(sizeof(H264DecoderMacroblockMVs) * nMBCount));
+            MFX_INTERNAL_CPY(m_pCurrentFrame->m_mbinfo.MV[1], m_mbinfo->baseFrameInfo->m_mbinfo.MV[1], (Ipp32u)(sizeof(H264DecoderMacroblockMVs) * nMBCount));
+            MFX_INTERNAL_CPY(m_pCurrentFrame->m_mbinfo.mbs, m_mbinfo->baseFrameInfo->m_mbinfo.mbs, (Ipp32u)(sizeof(H264DecoderMacroblockGlobalInfo) * nMBCount));
         }
     }
 }

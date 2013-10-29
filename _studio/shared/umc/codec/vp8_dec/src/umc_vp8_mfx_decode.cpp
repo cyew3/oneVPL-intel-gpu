@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -229,7 +229,7 @@ Status VP8VideoDecoderSoftware::DecodeFrameHeader(MediaData *in)
         data_in   += 7;
 
 
-        memcpy((Ipp8u*)(m_frameProbs.coeff_probs),
+        MFX_INTERNAL_CPY((Ipp8u*)(m_frameProbs.coeff_probs),
                (Ipp8u*)vp8_default_coeff_probs,
                sizeof(vp8_default_coeff_probs)); //???
 
@@ -251,7 +251,7 @@ Status VP8VideoDecoderSoftware::DecodeFrameHeader(MediaData *in)
             m_frameProbs.mbModeProbUV[i] = vp8_mb_mode_uv_probs[i];
 
         // restore default MV contexts
-        memcpy(m_frameProbs.mvContexts, vp8_default_mv_contexts, sizeof(vp8_default_mv_contexts));
+        MFX_INTERNAL_CPY(m_frameProbs.mvContexts, vp8_default_mv_contexts, sizeof(vp8_default_mv_contexts));
         
     }
     else if (first_partition_size > in->GetDataSize() - 3)
@@ -373,7 +373,7 @@ Status VP8VideoDecoderSoftware::DecodeFrameHeader(MediaData *in)
     VP8_DECODE_BOOL(pBoolDec, 128, m_refreshInfo.refreshProbabilities);
 
     if (!m_refreshInfo.refreshProbabilities)
-        memcpy(&m_frameProbs_saved, &m_frameProbs, sizeof(m_frameProbs));
+        MFX_INTERNAL_CPY(&m_frameProbs_saved, &m_frameProbs, sizeof(m_frameProbs));
 
     if (m_frameInfo.frameType != I_PICTURE)
     {

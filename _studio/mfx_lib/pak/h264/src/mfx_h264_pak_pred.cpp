@@ -630,7 +630,7 @@ void Filter8x8Pels(
         predPelsFiltered[17 + 7] = (predPels[17 + 6] + 3 * predPels[17 + 7] + 2) >> 2;
     }
 
-    memcpy(predPels, predPelsFiltered, 25);
+    MFX_INTERNAL_CPY(predPels, predPelsFiltered, 25);
 }
 
 static void PlanarPredictLuma(
@@ -729,7 +729,7 @@ static void GetIntra16x16Prediction(
             pAbove = pRef - pitchPixels;
             for (row = 0; row < 16; row++)
             {
-                memcpy(pPredBuf + predPitch * row, pAbove, 16);
+                MFX_INTERNAL_CPY(pPredBuf + predPitch * row, pAbove, 16);
             }
         }
         break;
@@ -936,7 +936,7 @@ static void GetIntraChromaNV12Prediction(
                 pPred += 16;
                 for (i = 0; i < 7; i++)
                 {
-                    memcpy(pPred, pPred0, 8);
+                    MFX_INTERNAL_CPY(pPred, pPred0, 8);
                     pPred += 16;
                 }
             }
@@ -1280,7 +1280,7 @@ static void PredictMbIntra4x4(
             else
             {
                 coeffData.cavlc.lumaAux[block4x4].lastSigCoeff = (mfxU8)iLastCoeff;
-                memcpy(coeffData.cavlc.luma[block4x4].coeffs, transform, 16 * sizeof(mfxI16));
+                MFX_INTERNAL_CPY(coeffData.cavlc.luma[block4x4].coeffs, transform, 16 * sizeof(mfxI16));
             }
 
             ippiTransformQuantInvAddPred4x4_H264_16s_C1IR(
@@ -1491,7 +1491,7 @@ static void PredictMbIntra8x8(
                     }
 
                     coeffData.cavlc.lumaAux[idx].lastSigCoeff = (mfxU8)iLastCoeff;
-                    memcpy(coeffData.cavlc.luma[idx].coeffs, buf4x4[i4x4], 16 * sizeof(mfxI16));
+                    MFX_INTERNAL_CPY(coeffData.cavlc.luma[idx].coeffs, buf4x4[i4x4], 16 * sizeof(mfxI16));
                 }
             }
 
@@ -1584,7 +1584,7 @@ static void PredictMbIntra16x16(
     else
     {
         coeffData.cavlc.dcAux[BLOCK_DC_Y].lastSigCoeff = (mfxU8)iLastCoeff;
-        memcpy(coeffData.cavlc.dc[BLOCK_DC_Y].coeffs, dcDiff, 16 * sizeof(mfxI16));
+        MFX_INTERNAL_CPY(coeffData.cavlc.dc[BLOCK_DC_Y].coeffs, dcDiff, 16 * sizeof(mfxI16));
     }
 
     ippiTransformQuantInvLumaDC4x4_H264_16s_C1I(
@@ -1639,7 +1639,7 @@ static void PredictMbIntra16x16(
             else
             {
                 coeffData.cavlc.lumaAux[block4x4].lastSigCoeff = (mfxU8)iLastCoeff;
-                memcpy(coeffData.cavlc.luma[block4x4].coeffs, transform, 16 * sizeof(mfxI16));
+                MFX_INTERNAL_CPY(coeffData.cavlc.luma[block4x4].coeffs, transform, 16 * sizeof(mfxI16));
             }
         }
 
@@ -1799,7 +1799,7 @@ static mfxU32 PredictMbInter(
                         }
 
                         coeffData.cavlc.lumaAux[idx].lastSigCoeff = (mfxU8)iLastCoeff;
-                        memcpy(coeffData.cavlc.luma[idx].coeffs, buf4x4[i4x4], 16 * sizeof(mfxI16));
+                        MFX_INTERNAL_CPY(coeffData.cavlc.luma[idx].coeffs, buf4x4[i4x4], 16 * sizeof(mfxI16));
                     }
                 }
             }
@@ -1889,7 +1889,7 @@ static mfxU32 PredictMbInter(
                 else
                 {
                     coeffData.cavlc.lumaAux[block4x4].lastSigCoeff = (mfxU8)iLastCoeff;
-                    memcpy(coeffData.cavlc.luma[block4x4].coeffs, transform4x4, 16 * sizeof(mfxI16));
+                    MFX_INTERNAL_CPY(coeffData.cavlc.luma[block4x4].coeffs, transform4x4, 16 * sizeof(mfxI16));
                 }
             }
             else
@@ -2048,7 +2048,7 @@ static void PredictMbChroma(
         else
         {
             coeffData.cavlc.dcAux[BLOCK_DC_U + plane].lastSigCoeff = (mfxU8)iLastCoeff;
-            memcpy(coeffData.cavlc.dc[BLOCK_DC_U + plane].coeffs, dcDiff + 4 * plane, 4 * sizeof(mfxI16));
+            MFX_INTERNAL_CPY(coeffData.cavlc.dc[BLOCK_DC_U + plane].coeffs, dcDiff + 4 * plane, 4 * sizeof(mfxI16));
         }
 
         // Inverse transform and dequantize for chroma DC
@@ -2110,7 +2110,7 @@ static void PredictMbChroma(
                     else
                     {
                         coeffData.cavlc.chromaAux[4 * plane + chromaBlock].lastSigCoeff = (mfxU8)iLastCoeff;
-                        memcpy(coeffData.cavlc.chroma[4 * plane + chromaBlock].coeffs, pTransformResult, 16 * sizeof(mfxI16));
+                        MFX_INTERNAL_CPY(coeffData.cavlc.chroma[4 * plane + chromaBlock].coeffs, pTransformResult, 16 * sizeof(mfxI16));
                     }
                 }
             }

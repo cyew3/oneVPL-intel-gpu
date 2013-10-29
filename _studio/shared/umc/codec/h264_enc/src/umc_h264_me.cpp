@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that aFgreement.
-//        Copyright (c) 2004 - 2011 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2013 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -96,7 +96,7 @@ namespace UMC_H264_ENCODER
     bSAD = cSAD;\
     bMVL0 = curMVL0;\
     bMVL1 = curMVL1;\
-    memcpy(bestRefinedBlockMC,bidirBuff,256*sizeof(PIXTYPE));\
+    MFX_INTERNAL_CPY(bestRefinedBlockMC,bidirBuff,256*sizeof(PIXTYPE));\
     isRefined = 1;\
 }\
 }
@@ -134,7 +134,7 @@ namespace UMC_H264_ENCODER
     bSAD = cSAD;\
     bMVL0 = curMVL0;\
     bMVL1 = curMVL1;\
-    memcpy(bestRefinedBlockMC,bidirBuff,256*sizeof(PIXTYPE));\
+    MFX_INTERNAL_CPY(bestRefinedBlockMC,bidirBuff,256*sizeof(PIXTYPE));\
     isRefined = 1;\
 }\
 }
@@ -175,7 +175,7 @@ namespace UMC_H264_ENCODER
     bSAD = cSAD;\
     bMVL0 = curMVL0;\
     bMVL1 = curMVL1;\
-    memcpy(bestRefinedBlockMC,bidirBuff,256*sizeof(PIXTYPE));\
+    MFX_INTERNAL_CPY(bestRefinedBlockMC,bidirBuff,256*sizeof(PIXTYPE));\
     isRefined = 1;\
     }\
     }\
@@ -184,7 +184,7 @@ namespace UMC_H264_ENCODER
 #define COPY_BLOCK pBestRefinedBlockMC = bestRefinedBlockMC;\
     for (i = 0; i < block.height; i++)\
     {\
-    memcpy(mcCurBuff,pBestRefinedBlockMC,block.width * sizeof(PIXTYPE));\
+    MFX_INTERNAL_CPY(mcCurBuff,pBestRefinedBlockMC,block.width * sizeof(PIXTYPE));\
     pBestRefinedBlockMC += 16;\
     mcCurBuff += 16;\
 }

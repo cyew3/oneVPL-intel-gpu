@@ -2,7 +2,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2013 Intel Corporation. All Rights Reserved.
 //
 
 #if PIXBITS == 8
@@ -310,7 +310,7 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_Encode4x4IntraBlock)(
             Copy4x4(pPredBuf, 16, pReconBuf, 16);
             uCBPLuma &= ~CBP4x4Mask[block];
         } else {
-            memcpy( pTransRes, pTransformResult, 16*sizeof( COEFFSTYPE ));
+            MFX_INTERNAL_CPY( pTransRes, pTransformResult, 16*sizeof( COEFFSTYPE ));
             H264ENC_MAKE_NAME(ippiDequantTransformResidualAndAdd_H264)(
                 pPredBuf,
                 pTransRes,
@@ -380,7 +380,7 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_Encode8x8IntraBlock)(
             Copy8x8(pPredBuf, 16, pReconBuf, 16);
             uCBPLuma &= ~CBP8x8Mask[block];
         } else {
-            memcpy( pTransRes, pTransformResult, 64*sizeof( COEFFSTYPE ));
+            MFX_INTERNAL_CPY( pTransRes, pTransformResult, 64*sizeof( COEFFSTYPE ));
             H264ENC_MAKE_NAME(ippiQuantLuma8x8Inv_H264)(pTransRes, QP_DIV_6[uMBQP], core_enc->m_SeqParamSet->seq_scaling_inv_matrix_8x8[0][QP_MOD_6[uMBQP]]);
             H264ENC_MAKE_NAME(ippiTransformLuma8x8InvAddPred_H264)(pPredBuf, 16, pTransRes, pReconBuf, 16, core_enc->m_PicParamSet->bit_depth_luma);
         }
@@ -2406,7 +2406,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_CEncAndRec4x4IntraMB)(
                                 H264ENC_MAKE_NAME(H264CoreEncoder_GetPrediction8x8)(state, cur_mb.intra_types[uBlock<<2], pred_pels, pred_pels_mask, pred );
                                 PIXTYPE* p = pPredBuf;
                                 for( i=0; i<8; i++){
-                                    memcpy(p, &pred[i*8], 8*sizeof(PIXTYPE));
+                                    MFX_INTERNAL_CPY(p, &pred[i*8], 8*sizeof(PIXTYPE));
                                     p += 16; //pitch = 16
                                 }
                                 Diff8x8(pPredBuf, pSrcPlane + uOffset, pitchPixels, pDiffBuf);
@@ -3163,7 +3163,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_CEncAndRec4x4IntraMBRec)(
                             H264ENC_MAKE_NAME(H264CoreEncoder_GetPrediction8x8)(state, cur_mb.intra_types[uBlock<<2], pred_pels, pred_pels_mask, pred );
                             PIXTYPE* p = pPredBuf;
                             for( i=0; i<8; i++){
-                                memcpy(p, &pred[i*8], 8*sizeof(PIXTYPE));
+                                MFX_INTERNAL_CPY(p, &pred[i*8], 8*sizeof(PIXTYPE));
                                 p += 16; //pitch = 16
                             }
                         }
@@ -3356,7 +3356,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_CEncAndRec16x16IntraMB)(
         /* to do: need to implement function which calculates only 1 predictions instead of 4 */
         H264ENC_MAKE_NAME(PredictIntraLuma16x16)(pReconBuf + uOffset, pitchPixels, uPred, core_enc->m_PicParamSet->bit_depth_luma, leftAvailable, topAvailable, left_above_aval);
         assert(cur_mb.LocalMacroblockInfo->intra_16x16_mode < 4);
-        memcpy(pPredBuf, uPred + 256 * cur_mb.LocalMacroblockInfo->intra_16x16_mode, 256*sizeof(PIXTYPE));
+        MFX_INTERNAL_CPY(pPredBuf, uPred + 256 * cur_mb.LocalMacroblockInfo->intra_16x16_mode, 256*sizeof(PIXTYPE));
     }
 
     // compute the 4x4 luma DC transform coeffs and AC residuals
@@ -3370,7 +3370,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_CEncAndRec16x16IntraMB)(
                 !core_enc->m_info.entropy_coding_mode ){
                 bool CAVLC_overflow;
                 Ipp32s i;
-                memcpy(pTempBuf, pDCBuf, 16 * sizeof(COEFFSTYPE)); // store DC block
+                MFX_INTERNAL_CPY(pTempBuf, pDCBuf, 16 * sizeof(COEFFSTYPE)); // store DC block
                 do{
                     H264ENC_MAKE_NAME(ippiTransformQuantLumaDC_H264)(
                         pDCBuf,
@@ -3388,7 +3388,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_CEncAndRec16x16IntraMB)(
                         cur_mb.LocalMacroblockInfo->QP++;
                         uMBQP = cur_mb.lumaQP = getLumaQP(cur_mb.LocalMacroblockInfo->QP, core_enc->m_PicParamSet->bit_depth_luma);
                         cur_mb.chromaQP = getChromaQP(cur_mb.LocalMacroblockInfo->QP, core_enc->m_PicParamSet->chroma_qp_index_offset, core_enc->m_SeqParamSet->bit_depth_chroma);
-                        memcpy(pDCBuf, pTempBuf, 16 * sizeof(COEFFSTYPE)); // load DC block
+                        MFX_INTERNAL_CPY(pDCBuf, pTempBuf, 16 * sizeof(COEFFSTYPE)); // load DC block
                     }
                 }while(CAVLC_overflow);
             }else
@@ -3638,7 +3638,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_CEncAndRec16x16IntraMB)(
 
     //    for (i = 0; i < 16; i++)
     //    {
-    //        memcpy(pRefLayerPixels, pReconBuf, sizeof(PIXTYPE)*16);
+    //        MFX_INTERNAL_CPY(pRefLayerPixels, pReconBuf, sizeof(PIXTYPE)*16);
     //        pReconBuf += pitchPixels;
     //        pRefLayerPixels += pitchPixels;
     //    }
@@ -3745,7 +3745,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_CEncAndRec16x16IntraMBRec)(
         /* to do: need to implement function which calculates only 1 predictions instead of 4 */
         H264ENC_MAKE_NAME(PredictIntraLuma16x16)(pReconBuf + uOffset, pitchPixels, uPred, core_enc->m_PicParamSet->bit_depth_luma, leftAvailable, topAvailable, left_above_aval);
         assert(cur_mb.LocalMacroblockInfo->intra_16x16_mode < 4);
-        memcpy(pPredBuf, uPred + 256 * cur_mb.LocalMacroblockInfo->intra_16x16_mode, 256*sizeof(PIXTYPE));
+        MFX_INTERNAL_CPY(pPredBuf, uPred + 256 * cur_mb.LocalMacroblockInfo->intra_16x16_mode, 256*sizeof(PIXTYPE));
     }
 /*
     if (core_enc->m_svc_layer.isActive)
@@ -4810,7 +4810,7 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_CEncAndRecMB_SVC)(
                     cur_mb.GlobalMacroblockInfo->mbtype = MBTYPE_INTRA;
                 } else {
                     cur_mb.GlobalMacroblockInfo->mbtype = curr_slice->m_cur_mb.LocalMacroblockInfo->mbtype_ref;
-                    memcpy(curr_slice->m_cur_mb.intra_types, curr_slice->m_cur_mb.intra_types_save, 16*sizeof(T_AIMode));
+                    MFX_INTERNAL_CPY(curr_slice->m_cur_mb.intra_types, curr_slice->m_cur_mb.intra_types_save, 16*sizeof(T_AIMode));
                 }
             }
             else
@@ -4895,12 +4895,12 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_CEncAndRecMB_SVC)(
         if (!curr_slice->doSCoeffsPrediction)
             ippsSet_16s(0, core_enc->m_SavedMacroblockCoeffs + cur_mb.uMB*COEFFICIENTS_BUFFER_SIZE, 256+64*2);
 //        else if (needRecalculate)
-//            memcpy( cur_mb.m_pSCoeffsRef, core_enc->m_SavedMacroblockCoeffs + cur_mb.uMB*COEFFICIENTS_BUFFER_SIZE, 384*sizeof(COEFFSTYPE));
+//            MFX_INTERNAL_CPY( cur_mb.m_pSCoeffsRef, core_enc->m_SavedMacroblockCoeffs + cur_mb.uMB*COEFFICIENTS_BUFFER_SIZE, 384*sizeof(COEFFSTYPE));
 
         if (curr_slice->doTCoeffsPrediction)
         {
             if (needRecalculate)
-                memcpy( cur_mb.m_pTCoeffsRef, core_enc->m_SavedMacroblockTCoeffs + cur_mb.uMB*COEFFICIENTS_BUFFER_SIZE, 384*sizeof(COEFFSTYPE));
+                MFX_INTERNAL_CPY( cur_mb.m_pTCoeffsRef, core_enc->m_SavedMacroblockTCoeffs + cur_mb.uMB*COEFFICIENTS_BUFFER_SIZE, 384*sizeof(COEFFSTYPE));
 
             if (cur_mb.lumaQP != cur_mb.LocalMacroblockInfo->lumaQP_ref) {
                 DoScaleTCoeffs(core_enc->m_SavedMacroblockTCoeffs + cur_mb.uMB*COEFFICIENTS_BUFFER_SIZE,
@@ -4950,9 +4950,9 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_CEncAndRecMB_SVC)(
             cur_mb.chromaQP = cur_mb.LocalMacroblockInfo->chromaQP_ref;
 //            memset(cur_mb.m_pTCoeffsTmp, 0, 384*sizeof(COEFFSTYPE));
 //            if (curr_slice->doSCoeffsPrediction)
-//                memcpy(core_enc->m_SavedMacroblockCoeffs + cur_mb.uMB*COEFFICIENTS_BUFFER_SIZE, cur_mb.m_pSCoeffsRef, 384*sizeof(COEFFSTYPE));
+//                MFX_INTERNAL_CPY(core_enc->m_SavedMacroblockCoeffs + cur_mb.uMB*COEFFICIENTS_BUFFER_SIZE, cur_mb.m_pSCoeffsRef, 384*sizeof(COEFFSTYPE));
             if (curr_slice->doTCoeffsPrediction)
-                memcpy(core_enc->m_SavedMacroblockTCoeffs + cur_mb.uMB*COEFFICIENTS_BUFFER_SIZE, cur_mb.m_pTCoeffsRef, 384*sizeof(COEFFSTYPE));
+                MFX_INTERNAL_CPY(core_enc->m_SavedMacroblockTCoeffs + cur_mb.uMB*COEFFICIENTS_BUFFER_SIZE, cur_mb.m_pTCoeffsRef, 384*sizeof(COEFFSTYPE));
             if (curr_slice->doTCoeffsPrediction &&
                 curr_slice->m_cur_mb.GlobalMacroblockInfo->mbtype == MBTYPE_INTRA_16x16) {
                     H264ENC_MAKE_NAME(H264CoreEncoder_CEncAndRec16x16IntraMBRec)(state, curr_slice);
@@ -5037,9 +5037,9 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_CEncAndRecMB_SVC)(
                 cur_mb.chromaQP = cur_mb.LocalMacroblockInfo->chromaQP_ref;
 //                memset(cur_mb.m_pTCoeffsTmp, 0, 384*sizeof(COEFFSTYPE));
 //                if (curr_slice->doSCoeffsPrediction)
-//                    memcpy(core_enc->m_SavedMacroblockCoeffs + cur_mb.uMB*COEFFICIENTS_BUFFER_SIZE, cur_mb.m_pSCoeffsRef, 384*sizeof(COEFFSTYPE));
+//                    MFX_INTERNAL_CPY(core_enc->m_SavedMacroblockCoeffs + cur_mb.uMB*COEFFICIENTS_BUFFER_SIZE, cur_mb.m_pSCoeffsRef, 384*sizeof(COEFFSTYPE));
                 if (curr_slice->doTCoeffsPrediction)
-                    memcpy(core_enc->m_SavedMacroblockTCoeffs + cur_mb.uMB*COEFFICIENTS_BUFFER_SIZE, cur_mb.m_pTCoeffsRef, 384*sizeof(COEFFSTYPE));
+                    MFX_INTERNAL_CPY(core_enc->m_SavedMacroblockTCoeffs + cur_mb.uMB*COEFFICIENTS_BUFFER_SIZE, cur_mb.m_pTCoeffsRef, 384*sizeof(COEFFSTYPE));
                 H264ENC_MAKE_NAME(H264CoreEncoder_CEncAndRecInterMBRec)(state, curr_slice);
                 if( core_enc->m_PicParamSet->chroma_format_idc != 0 )
                     H264ENC_MAKE_NAME(H264CoreEncoder_EncodeChromaRec)(state, curr_slice);
@@ -5099,7 +5099,7 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_CEncAndRecMB_SVC)(
                     else
                     {
                         memset(y_res, 0, 16*sizeof(COEFFSTYPE));
-                        memcpy( pDst, pSrc, 16*sizeof(PIXTYPE));
+                        MFX_INTERNAL_CPY( pDst, pSrc, 16*sizeof(PIXTYPE));
                     }
                     y_res += core_enc->m_WidthInMBs * 16;
                     pDst += pitchPix;
@@ -5166,14 +5166,14 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_CEncAndRecMB_SVC)(
                     Ipp32s vsize = 8;
                     if( core_enc->m_info.chroma_format_idc == 2 ) vsize = 16;
                     for( i = 0; i < vsize; i++ ){
-                        memcpy( pDst, pSrc, 8*sizeof(PIXTYPE));
+                        MFX_INTERNAL_CPY( pDst, pSrc, 8*sizeof(PIXTYPE));
                         pDst += pitchPix;
                         pSrc += 16;
                     }
                     pDst = core_enc->m_pReconstructFrame->m_pVPlane + core_enc->m_pMBOffsets[cur_mb.uMB].uChromaOffset[core_enc->m_is_cur_pic_afrm][is_cur_mb_field];
                     pSrc = cur_mb.mbChromaInter.prediction+8;
                     for( i = 0; i < vsize; i++ ){
-                        memcpy( pDst, pSrc, 8*sizeof(PIXTYPE));
+                        MFX_INTERNAL_CPY( pDst, pSrc, 8*sizeof(PIXTYPE));
                         pDst += pitchPix;
                         pSrc += 16;
                     }
@@ -5423,7 +5423,7 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_CEncAndRecMB)(
                 H264ENC_MAKE_NAME(H264CoreEncoder_MCOneMBLuma)(state, curr_slice, cur_mb.MVs[LIST_0]->MotionVectors, cur_mb.MVs[LIST_1]->MotionVectors, pSrc);
                 curr_slice->m_cur_mb.GlobalMacroblockInfo->mbtype = MBTYPE_SKIPPED;
                 for( i = 0; i<16; i++ ){
-                    memcpy( pDst, pSrc, 16*sizeof(PIXTYPE));
+                    MFX_INTERNAL_CPY( pDst, pSrc, 16*sizeof(PIXTYPE));
                     pDst += pitchPix;
                     pSrc += 16;
                 }
@@ -5453,14 +5453,14 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_CEncAndRecMB)(
                     Ipp32s vsize = 8;
                     if( core_enc->m_info.chroma_format_idc == 2 ) vsize = 16;
                     for( i = 0; i < vsize; i++ ){
-                        memcpy( pDst, pSrc, 8*sizeof(PIXTYPE));
+                        MFX_INTERNAL_CPY( pDst, pSrc, 8*sizeof(PIXTYPE));
                         pDst += pitchPix;
                         pSrc += 16;
                     }
                     pDst = core_enc->m_pReconstructFrame->m_pVPlane + core_enc->m_pMBOffsets[cur_mb.uMB].uChromaOffset[core_enc->m_is_cur_pic_afrm][is_cur_mb_field];
                     pSrc = cur_mb.mbChromaInter.prediction+8;
                     for( i = 0; i < vsize; i++ ){
-                         memcpy( pDst, pSrc, 8*sizeof(PIXTYPE));
+                         MFX_INTERNAL_CPY( pDst, pSrc, 8*sizeof(PIXTYPE));
                          pDst += pitchPix;
                          pSrc += 16;
                     }

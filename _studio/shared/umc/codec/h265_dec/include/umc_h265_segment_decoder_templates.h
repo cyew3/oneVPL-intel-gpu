@@ -100,7 +100,7 @@ public:
                 if (sd->m_pPicParamSet->entropy_coding_sync_enabled_flag && rsCUAddr % sd->m_pSeqParamSet->WidthInCU == 1)
                 {
                     // Save CABAC context after 2nd CTB
-                    memcpy(sd->m_pBitStream->wpp_saved_cabac_context, sd->m_pBitStream->context_hevc, sizeof(sd->m_pBitStream->context_hevc));
+                    MFX_INTERNAL_CPY(sd->m_pBitStream->wpp_saved_cabac_context, sd->m_pBitStream->context_hevc, sizeof(sd->m_pBitStream->context_hevc));
                 }
                 break;
             }
@@ -127,7 +127,7 @@ public:
                         if (CUX == 1)
                         {
                             // Save CABAC context after 2nd CTB
-                            memcpy(sd->m_pBitStream->wpp_saved_cabac_context, sd->m_pBitStream->context_hevc, sizeof(sd->m_pBitStream->context_hevc));
+                            MFX_INTERNAL_CPY(sd->m_pBitStream->wpp_saved_cabac_context, sd->m_pBitStream->context_hevc, sizeof(sd->m_pBitStream->context_hevc));
                         }
 
                         if (end_of_row)
@@ -141,7 +141,7 @@ public:
                                 sd->m_pCurrentFrame->m_CodingData->GetInverseCUOrderMap(rsCUAddr + 2 - sd->m_pSeqParamSet->WidthInCU) >= sd->m_pSliceHeader->SliceCurStartCUAddr / sd->m_pCurrentFrame->m_CodingData->m_NumPartitions)
                             {
                                 // Restore saved CABAC context
-                                memcpy(sd->m_pBitStream->context_hevc, sd->m_pBitStream->wpp_saved_cabac_context, sizeof(sd->m_pBitStream->context_hevc));
+                                MFX_INTERNAL_CPY(sd->m_pBitStream->context_hevc, sd->m_pBitStream->wpp_saved_cabac_context, sizeof(sd->m_pBitStream->context_hevc));
                             }
                             else
                             {
@@ -192,7 +192,7 @@ public:
                     if (CUX == 1)
                     {
                         // Save CABAC context after 2nd CTB
-                        memcpy(sd->m_pBitStream->wpp_saved_cabac_context, sd->m_pBitStream->context_hevc, sizeof(sd->m_pBitStream->context_hevc));
+                        MFX_INTERNAL_CPY(sd->m_pBitStream->wpp_saved_cabac_context, sd->m_pBitStream->context_hevc, sizeof(sd->m_pBitStream->context_hevc));
                     }
 
                     if (end_of_row)
@@ -206,7 +206,7 @@ public:
                             sd->m_pCurrentFrame->m_CodingData->GetInverseCUOrderMap(rsCUAddr + 2 - sd->m_pSeqParamSet->WidthInCU) >= sd->m_pSliceHeader->SliceCurStartCUAddr / sd->m_pCurrentFrame->m_CodingData->m_NumPartitions)
                         {
                             // Restore saved CABAC context
-                            memcpy(sd->m_pBitStream->context_hevc, sd->m_pBitStream->wpp_saved_cabac_context, sizeof(sd->m_pBitStream->context_hevc));
+                            MFX_INTERNAL_CPY(sd->m_pBitStream->context_hevc, sd->m_pBitStream->wpp_saved_cabac_context, sizeof(sd->m_pBitStream->context_hevc));
                         }
                         else
                         {
@@ -327,7 +327,7 @@ public:
                 if (sd->m_pPicParamSet->entropy_coding_sync_enabled_flag && rsCUAddr % sd->m_pSeqParamSet->WidthInCU == 1)
                 {
                     // Save CABAC context after 2nd CTB
-                    memcpy(sd->m_pBitStream->wpp_saved_cabac_context, sd->m_pBitStream->context_hevc, sizeof(sd->m_pBitStream->context_hevc));
+                    MFX_INTERNAL_CPY(sd->m_pBitStream->wpp_saved_cabac_context, sd->m_pBitStream->context_hevc, sizeof(sd->m_pBitStream->context_hevc));
                 }
                 break;
             }
@@ -366,7 +366,7 @@ public:
                     if (CUX == 1)
                     {
                         // Save CABAC context after 2nd CTB
-                        memcpy(sd->m_pBitStream->wpp_saved_cabac_context, sd->m_pBitStream->context_hevc, sizeof(sd->m_pBitStream->context_hevc));
+                        MFX_INTERNAL_CPY(sd->m_pBitStream->wpp_saved_cabac_context, sd->m_pBitStream->context_hevc, sizeof(sd->m_pBitStream->context_hevc));
                     }
 
                     if (end_of_row)
@@ -380,7 +380,7 @@ public:
                             sd->m_pCurrentFrame->m_CodingData->GetInverseCUOrderMap(rsCUAddr + 2 - sd->m_pSeqParamSet->WidthInCU) >= sd->m_pSliceHeader->SliceCurStartCUAddr / sd->m_pCurrentFrame->m_CodingData->m_NumPartitions)
                         {
                             // Restore saved CABAC context
-                            memcpy(sd->m_pBitStream->context_hevc, sd->m_pBitStream->wpp_saved_cabac_context, sizeof(sd->m_pBitStream->context_hevc));
+                            MFX_INTERNAL_CPY(sd->m_pBitStream->context_hevc, sd->m_pBitStream->wpp_saved_cabac_context, sizeof(sd->m_pBitStream->context_hevc));
                         }
                         else
                         {

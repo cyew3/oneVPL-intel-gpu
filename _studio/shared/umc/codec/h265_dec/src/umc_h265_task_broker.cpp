@@ -667,27 +667,27 @@ bool TaskBroker_H265::GetSAOFrameTask(H265DecoderFrameInfo * info, H265Task *pTa
     if (!isNeedSAO)
         return false;
 
-    for (Ipp32s i = 0; i < sliceCount; i += 1)
-    {
-        H265Slice *pTemp = info->GetSlice(i);
-        if (pTemp->m_bInProcess || !pTemp->m_bDeblocked || !pTemp->m_bDecoded)
-            return false;
-    }
+        for (Ipp32s i = 0; i < sliceCount; i += 1)
+        {
+            H265Slice *pTemp = info->GetSlice(i);
+            if (pTemp->m_bInProcess || !pTemp->m_bDeblocked || !pTemp->m_bDecoded)
+                return false;
+        }
 
-    InitTask(info, pTask, pSlice);
-    pTask->m_iFirstMB = 0;
-    pTask->m_iMBToProcess = pSlice->m_iAvailableMB;
-    pTask->m_iTaskID = TASK_SAO_FRAME_H265;
-    pTask->m_pBuffer = NULL;
-    pTask->pFunction = &H265SegmentDecoderMultiThreaded::SAOFrameTask;
+        InitTask(info, pTask, pSlice);
+        pTask->m_iFirstMB = 0;
+        pTask->m_iMBToProcess = pSlice->m_iAvailableMB;
+        pTask->m_iTaskID = TASK_SAO_FRAME_H265;
+        pTask->m_pBuffer = NULL;
+        pTask->pFunction = &H265SegmentDecoderMultiThreaded::SAOFrameTask;
 
-    for (Ipp32s i = 0; i < sliceCount; i += 1)
-    {
-        H265Slice *pTemp = info->GetSlice(i);
-        pTemp->m_bInProcess = true;
-    }
+        for (Ipp32s i = 0; i < sliceCount; i += 1)
+        {
+            H265Slice *pTemp = info->GetSlice(i);
+            pTemp->m_bInProcess = true;
+        }
 
-    return true;
+        return true;
 }
 
 void TaskBroker_H265::InitTask(H265DecoderFrameInfo * info, H265Task *pTask, H265Slice *pSlice)

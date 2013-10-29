@@ -420,7 +420,7 @@ int* H265ScalingList::getScalingListDefaultAddress(unsigned sizeId, unsigned lis
  */
 void H265ScalingList::processRefMatrix(unsigned sizeId, unsigned listId , unsigned refListId)
 {
-  ::memcpy(
+  ::MFX_INTERNAL_CPY(
       getScalingListAddress(sizeId, listId),
       ((listId == refListId) ? getScalingListDefaultAddress(sizeId, refListId) : getScalingListAddress(sizeId, refListId)),
       sizeof(int)*IPP_MIN(MAX_MATRIX_COEF_NUM, (int)g_scalingListSize[sizeId]));

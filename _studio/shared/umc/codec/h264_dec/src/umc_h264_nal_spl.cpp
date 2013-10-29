@@ -378,7 +378,7 @@ public:
 
     virtual void CopyBitStream(Ipp8u *pDestination, Ipp8u *pSource, size_t &nSrcSize)
     {
-        memcpy(pDestination, pSource, nSrcSize);
+        MFX_INTERNAL_CPY(pDestination, pSource, (Ipp32u)nSrcSize);
     }
 };
 
@@ -505,7 +505,7 @@ size_t BuildNALUnit(MediaDataEx * mediaData, Ipp8u * buf, Ipp32s lengthSize)
     MediaDataEx::_MediaDataEx* pMediaEx = mediaData->GetExData();
 
     //size_t len = NALUnitSplitterMP4::D_START_CODE_LENGHT;
-    //memcpy(write_buf, &start_code_prefix, len);
+    //MFX_INTERNAL_CPY(write_buf, &start_code_prefix, len);
 
     size_t len = GetLenght(lengthSize, buf);
     buf += lengthSize;
@@ -520,7 +520,7 @@ size_t BuildNALUnit(MediaDataEx * mediaData, Ipp8u * buf, Ipp32s lengthSize)
     Ipp8u * write_buf = (Ipp8u*)mediaData->GetDataPointer() + mediaData->GetDataSize();
 
     //write_buf += NALUnitSplitterMP4::D_START_CODE_LENGHT;
-    memcpy(write_buf, buf, len);
+    MFX_INTERNAL_CPY(write_buf, buf, (Ipp32u)len);
 
     pMediaEx->values[pMediaEx->count] = (*write_buf) & NAL_UNITTYPE_BITS;
     pMediaEx->count++;

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2007-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //                     motion estimation
@@ -3019,8 +3019,8 @@ void MeBase::SetMB16x16B(MeMbType mbt, MeMV mvF, MeMV mvB, Ipp32s cost)
     //quantized coefficients, rearrange during copy
     if(m_par->UseTrellisQuantization){
         if(mbt == ME_MbIntra){
-                memcpy(mb->Coeff,m_cur.TrellisCoefficients[4],(6*64)*sizeof(mb->Coeff[0][0]));
-                memcpy(mb->RoundControl,m_cur.RoundControl[4],(6*64)*sizeof(mb->RoundControl[0][0]));
+                MFX_INTERNAL_CPY(mb->Coeff,m_cur.TrellisCoefficients[4],(6*64)*sizeof(mb->Coeff[0][0]));
+                MFX_INTERNAL_CPY(mb->RoundControl,m_cur.RoundControl[4],(6*64)*sizeof(mb->RoundControl[0][0]));
         }else{
             for(Ipp32s blk=0; blk<6; blk++){
                 MeTransformType tr=m_cur.InterTransf[mb->MbType][blk];
@@ -3047,8 +3047,8 @@ void MeBase::SetMB16x16B(MeMbType mbt, MeMV mvF, MeMV mvB, Ipp32s cost)
                         break;
                     case ME_Tranform8x4:
                     case ME_Tranform8x8:
-                        memcpy(mb->Coeff[blk],m_cur.TrellisCoefficients[tr][blk],64*sizeof(mb->Coeff[0][0]));
-                        memcpy(mb->RoundControl[blk],m_cur.RoundControl[tr][blk],64*sizeof(mb->RoundControl[0][0]));
+                        MFX_INTERNAL_CPY(mb->Coeff[blk],m_cur.TrellisCoefficients[tr][blk],64*sizeof(mb->Coeff[0][0]));
+                        MFX_INTERNAL_CPY(mb->RoundControl[blk],m_cur.RoundControl[tr][blk],64*sizeof(mb->RoundControl[0][0]));
                         break;
                 }
             }
@@ -5730,15 +5730,15 @@ MeCostRD MeVC1::GetCostRD(MeDecisionMetrics CostMetric, MeMbPart mt, MeTransform
             //save quantized coefficients for future use
             if(m_par->UseTrellisQuantization)
             {
-                memcpy(m_cur.TrellisCoefficients[transf+(intra?4:0)][m_cur.BlkIdx],buf2,64*sizeof(buf2[0]));
+                MFX_INTERNAL_CPY(m_cur.TrellisCoefficients[transf+(intra?4:0)][m_cur.BlkIdx],buf2,64*sizeof(buf2[0]));
                 if((m_cur.BlkIdx < 4) ||(m_par->UseTrellisQuantizationChroma && m_cur.BlkIdx>3))
                 {
-                    memcpy(m_cur.RoundControl[transf+(intra?4:0)][m_cur.BlkIdx],buf3,64*sizeof(buf3[0]));
+                    MFX_INTERNAL_CPY(m_cur.RoundControl[transf+(intra?4:0)][m_cur.BlkIdx],buf3,64*sizeof(buf3[0]));
                 }
             }
         }else{
             //restore quantized coefficients
-            memcpy(buf2,m_cur.TrellisCoefficients[transf+(intra?4:0)][m_cur.BlkIdx],64*sizeof(buf2[0]));
+            MFX_INTERNAL_CPY(buf2,m_cur.TrellisCoefficients[transf+(intra?4:0)][m_cur.BlkIdx],64*sizeof(buf2[0]));
         }
 
         

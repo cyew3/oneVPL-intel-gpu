@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -293,7 +293,7 @@ void RATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
         if (pSlice->IsReference())
             frame_store.WriteReferences(pFrame);
 
-        memcpy(ptr, &frame_store, extended_size);
+        MFX_INTERNAL_CPY(ptr, &frame_store, extended_size);
         m_pMemoryAllocator->Unlock(pFrame->m_MemID);
     }
 }
@@ -333,7 +333,7 @@ void LoadFrame(H264DecoderFrame * pFrame, Ipp8u * ptr, VideoData &lastDecodedFra
 
     size_t extended_size = sizeof(FrameInformationToStore); // (Ipp8u*)&(pFrame->m_pSlicesInfo) - (Ipp8u*)&(pFrame->m_PictureStructureForRef);
     FrameInformationToStore frame_store;
-    memcpy(&frame_store, ptr + yuv_size, extended_size);
+    MFX_INTERNAL_CPY(&frame_store, ptr + yuv_size, extended_size);
     frame_store.ToFrame(pFrame);
 
     pFrame->SetExternalPointers(dimensions, bpp, chroma_format, ptr);

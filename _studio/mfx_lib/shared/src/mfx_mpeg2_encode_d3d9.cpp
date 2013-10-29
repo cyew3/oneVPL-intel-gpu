@@ -806,7 +806,7 @@ mfxStatus D3D9Encoder::FillMBBufferPointer(ExecuteBuffers* pExecuteBuffers)
         
         for (mfxI32 i = 0; i < numMB; i++)
         {
-            memcpy(
+            MFX_INTERNAL_CPY(
                 pExecuteBuffers->m_pMBs + i,
                 Frame.Y + m_layout.MB_CODE_offset + m_layout.MB_CODE_stride * i,
                 sizeof(ENCODE_ENC_MB_DATA_MPEG2));
@@ -814,7 +814,7 @@ mfxStatus D3D9Encoder::FillMBBufferPointer(ExecuteBuffers* pExecuteBuffers)
 
 
         
-       //memcpy(pExecuteBuffers->m_pMBs, Frame.Y, numMB * sizeof(ENCODE_ENC_MB_DATA_MPEG2));
+       //MFX_INTERNAL_CPY(pExecuteBuffers->m_pMBs, Frame.Y, numMB * sizeof(ENCODE_ENC_MB_DATA_MPEG2));
 #else
 #ifdef MPEG2_ENC_HW_PERF
         if (pExecuteBuffers->m_pps.picture_coding_type == CODING_TYPE_I)
@@ -951,7 +951,7 @@ mfxStatus D3D9Encoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBitst
 
         MFX_CHECK(ret == ippStsNoErr, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-        //memcpy(pBitstream->Data + pBitstream->DataLength + pBitstream->DataOffset, Frame.Y, queryStatus.bitstreamSize);
+        //MFX_INTERNAL_CPY(pBitstream->Data + pBitstream->DataLength + pBitstream->DataOffset, Frame.Y, queryStatus.bitstreamSize);
         pBitstream->DataLength += queryStatus.bitstreamSize;     
     }
 

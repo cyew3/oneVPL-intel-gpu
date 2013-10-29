@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2012-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VP8 encoder common
@@ -616,7 +616,7 @@ static void SetDefaultExCodingParameters(mfxExtCodingOptionVP8*  par, mfxU16 tu,
             if ((pOpaqSrc->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY) && (pOpaqSrc->In.Type & MFX_MEMTYPE_DXVA2_DECODER_TARGET))
                 return MFX_ERR_INVALID_VIDEO_PARAM;
 
-            memcpy(pOpaqDst,pOpaqSrc,sizeof(mfxExtOpaqueSurfaceAlloc));           
+            MFX_INTERNAL_CPY(pOpaqDst,pOpaqSrc,sizeof(mfxExtOpaqueSurfaceAlloc));           
         }
         else if (pOpaqDst)
         {
@@ -628,7 +628,7 @@ static void SetDefaultExCodingParameters(mfxExtCodingOptionVP8*  par, mfxU16 tu,
     /*Check MFX Parameters*/
     {
         mfxStatus temp_sts = MFX_ERR_NONE;
-        memcpy(&parDst->mfx,&parSrc->mfx, sizeof(mfxInfoMFX));
+        MFX_INTERNAL_CPY(&parDst->mfx,&parSrc->mfx, sizeof(mfxInfoMFX));
         temp_sts = CheckMFXParameters(&parDst->mfx);
         if (temp_sts < 0)
             return temp_sts;
@@ -717,7 +717,7 @@ mfxStatus CheckParametersAndSetDefault(mfxVideoParam*           pParamSrc,
                 if ((pOpaqAlloc->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY) && (pOpaqAlloc->In.Type & MFX_MEMTYPE_DXVA2_DECODER_TARGET))
                     return MFX_ERR_INVALID_VIDEO_PARAM;
 
-                memcpy(pOpaqAllocDst,pOpaqAlloc,sizeof(mfxExtOpaqueSurfaceAlloc));  
+                MFX_INTERNAL_CPY(pOpaqAllocDst,pOpaqAlloc,sizeof(mfxExtOpaqueSurfaceAlloc));  
             }
             else if (pOpaqAlloc)
             {
@@ -728,7 +728,7 @@ mfxStatus CheckParametersAndSetDefault(mfxVideoParam*           pParamSrc,
     /*Check MFX Parameters*/
     {
         mfxStatus temp_sts = MFX_ERR_NONE;
-        memcpy(&pParamDst->mfx,&pParamSrc->mfx, sizeof(mfxInfoMFX));
+        MFX_INTERNAL_CPY(&pParamDst->mfx,&pParamSrc->mfx, sizeof(mfxInfoMFX));
         temp_sts = CheckMFXParameters(&pParamDst->mfx);
         if (temp_sts < 0)
             return temp_sts;

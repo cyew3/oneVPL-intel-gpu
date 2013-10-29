@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) encoder
@@ -193,7 +193,7 @@ mfxStatus MFXVideoPakVc1ADV::Init(mfxVideoParam *par)
    ret = m_pVC1EncoderPicture->Init(m_pVC1EncoderSequence,m_pVC1EncoderMBs,m_pVC1EncoderCodedMB);
    UMC_MFX_CHECK_STS(ret)
 
-   memcpy(&m_mfxVideoParam, par, sizeof(m_mfxVideoParam));
+   MFX_INTERNAL_CPY(&m_mfxVideoParam, par, sizeof(m_mfxVideoParam));
 
    //--------------------UMC ME -----------------------------------------------
     memset(&MEParamsInit,0,sizeof(MEParamsInit));
@@ -389,7 +389,7 @@ mfxStatus MFXVideoPakVc1ADV::GetVideoParam(mfxVideoParam *par)
 
     MFX_CHECK_INIT(m_InitFlag);
 
-    memcpy(par, &m_mfxVideoParam, sizeof(mfxVideoParam));
+    MFX_INTERNAL_CPY(par, &m_mfxVideoParam, sizeof(mfxVideoParam));
 
     return MFXSts;
 }
@@ -399,14 +399,14 @@ mfxStatus MFXVideoPakVc1ADV::GetFrameParam(mfxFrameParam *par)
 
     MFX_CHECK_INIT(m_InitFlag);
 
-    memcpy(par, &m_mfxFrameParam, sizeof(mfxFrameParam));
+    MFX_INTERNAL_CPY(par, &m_mfxFrameParam, sizeof(mfxFrameParam));
 
     return MFXSts;
 }
 
 mfxStatus MFXVideoPakVc1ADV::GetSliceParam(mfxSliceParam *par)
 {
-    memcpy(par,&m_mfxSliceParam, sizeof(mfxSliceParam));
+    MFX_INTERNAL_CPY(par,&m_mfxSliceParam, sizeof(mfxSliceParam));
     return MFX_ERR_NONE;
 }
 
@@ -518,7 +518,7 @@ mfxStatus MFXVideoPakVc1ADV::RunSlicePAK(mfxFrameCUC *cuc)
         pFrameParam->Pic4MvAllowed,&UMCtype);
     MFX_CHECK_STS_1(MFXSts);
 
-    memcpy( &m_mfxFrameParam,pFrameParam, sizeof(mfxFrameParam));
+    MFX_INTERNAL_CPY( &m_mfxFrameParam,pFrameParam, sizeof(mfxFrameParam));
 
     vm_char   cLastError[VC1_ENC_STR_LEN];
     UMC::MeParams MEParams;
@@ -1086,7 +1086,7 @@ mfxStatus MFXVideoPakVc1ADV::RunFramePAK(mfxFrameCUC *cuc)
                                pFrameParam->Pic4MvAllowed,&UMCtype);
     MFX_CHECK_STS_1(MFXSts);
 
-    memcpy( &m_mfxFrameParam,pFrameParam, sizeof(mfxFrameParam));
+    MFX_INTERNAL_CPY( &m_mfxFrameParam,pFrameParam, sizeof(mfxFrameParam));
 
     vm_char   cLastError[VC1_ENC_STR_LEN];
     UMC::MeParams MEParams;
@@ -1298,7 +1298,7 @@ mfxStatus MFXVideoPakVc1ADV::RunFramePAK(mfxFrameCUC *cuc)
                 {
                     for (int blk = 0; blk < 6; blk++)
                     {
-                        memcpy(MEParams.pSrc->MBs[i].RoundControl[blk],pRC,sizeof(mfxI8)*64);
+                        MFX_INTERNAL_CPY(MEParams.pSrc->MBs[i].RoundControl[blk],pRC,sizeof(mfxI8)*64);
                         pRC += 64;
                     }
                 }
@@ -1714,7 +1714,7 @@ mfxStatus MFXVideoPakVc1ADV::RunFrameBSP(mfxFrameCUC *cuc)
                                pFrameParam->Pic4MvAllowed,&UMCtype);
     MFX_CHECK_STS_1(MFXSts);
 
-    memcpy( &m_mfxFrameParam,pFrameParam, sizeof(mfxFrameParam));
+    MFX_INTERNAL_CPY( &m_mfxFrameParam,pFrameParam, sizeof(mfxFrameParam));
 
 
     vm_char   cLastError[VC1_ENC_STR_LEN];

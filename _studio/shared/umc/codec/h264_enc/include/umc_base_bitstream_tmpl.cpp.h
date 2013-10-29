@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2011 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2013 Intel Corporation. All Rights Reserved.
 //
 
 #if PIXBITS == 8
@@ -237,7 +237,7 @@ void H264ENC_MAKE_NAME(H264BsReal_SaveCABACState)(
     void* state)
 {
     H264BsRealType* bs = (H264BsRealType *)state;
-    memcpy(&bs->context_array_copy[0], &bs->m_base.context_array[0], CABAC_CONTEXT_ARRAY_LEN * sizeof(CABAC_CONTEXT));
+    MFX_INTERNAL_CPY(&bs->context_array_copy[0], &bs->m_base.context_array[0], CABAC_CONTEXT_ARRAY_LEN * sizeof(CABAC_CONTEXT));
 
     bs->m_pbs_copy = bs->m_base.m_pbs;
     bs->m_bitOffset_copy = bs->m_base.m_bitOffset;
@@ -247,7 +247,7 @@ void H264ENC_MAKE_NAME(H264BsReal_RestoreCABACState)(
     void* state)
 {
     H264BsRealType* bs = (H264BsRealType *)state;
-    memcpy(&bs->m_base.context_array[0], &bs->context_array_copy[0], CABAC_CONTEXT_ARRAY_LEN*sizeof(CABAC_CONTEXT));
+    MFX_INTERNAL_CPY(&bs->m_base.context_array[0], &bs->context_array_copy[0], CABAC_CONTEXT_ARRAY_LEN*sizeof(CABAC_CONTEXT));
     bs->m_base.m_pbs = bs->m_pbs_copy;
     bs->m_base.m_bitOffset =  bs->m_bitOffset_copy;
 }

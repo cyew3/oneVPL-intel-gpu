@@ -112,7 +112,7 @@ namespace MFX_VP8ENC
         std::vector<sMBData>::iterator src = pSrc.begin();
         for ( ;src!= pSrc.end(); src++)
         {
-            memcpy(pDst++,&(src[0]), sizeof(sMBData));
+            MFX_INTERNAL_CPY(pDst++,&(src[0]), sizeof(sMBData));
         }
         return MFX_ERR_NONE;
     }
@@ -122,7 +122,7 @@ namespace MFX_VP8ENC
         std::vector<sMBData>::iterator dst = pDst.begin();
         for ( ;dst!= pDst.end(); dst++)
         {
-            memcpy(&(dst[0]),pSrc++, sizeof(sMBData));
+            MFX_INTERNAL_CPY(&(dst[0]),pSrc++, sizeof(sMBData));
         }
         return MFX_ERR_NONE;
     }

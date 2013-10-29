@@ -634,6 +634,9 @@ VideoDecoder *CreateAsynchronousVideoDecoder(VideoDecoder *pDecoder);
 
 #endif //__cplusplus
 
+#include "ippdefs.h"
+#define MFX_INTERNAL_CPY(dst, src, size) ippsCopy_8u((const Ipp8u *)(src), (Ipp8u *)(dst), size)
+
 /******************************************************************************/
 
 #endif // __UMC_DEFS_H__

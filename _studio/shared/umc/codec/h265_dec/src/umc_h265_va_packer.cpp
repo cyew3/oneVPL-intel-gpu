@@ -748,7 +748,7 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
     }
 
     // copy slice data to slice data buffer
-    memcpy(pSliceData, pSlice->m_BitStream.GetRawDataPtr(), rawDataSize);
+    MFX_INTERNAL_CPY(pSliceData, pSlice->m_BitStream.GetRawDataPtr(), rawDataSize);
 }
 
 #elif HEVC_SPEC_VER == MK_HEVCVER(0, 85)
@@ -888,7 +888,7 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLong, bool
     }
 
     // copy slice data to slice data buffer
-    memcpy(pSliceData, rawDataPtr, rawDataSize);
+    MFX_INTERNAL_CPY(pSliceData, rawDataPtr, rawDataSize);
 }
 
 #endif
@@ -954,7 +954,7 @@ void H265TrQuant::setDefaultScalingList(bool use_ts)
     {
         for(Ipp32u listId = 0; listId < g_scalingListNum[sizeId]; listId++)
         {
-            ::memcpy(sl.getScalingListAddress(sizeId, listId),
+            ::MFX_INTERNAL_CPY(sl.getScalingListAddress(sizeId, listId),
                 sl.getScalingListDefaultAddress(sizeId, listId, use_ts),
                 sizeof(Ipp32s) * min(MAX_MATRIX_COEF_NUM, (Ipp32s)g_scalingListSize[sizeId]));
             sl.setScalingListDC(sizeId, listId, SCALING_LIST_DC);
@@ -1053,7 +1053,7 @@ void PackerDXVA2::PackQmatrix(const H265Slice *pSlice/*const H265PicParamSet *pP
                     const int *src = getDefaultScalingList(sizeId, listId);
                           int *dst = sl.getScalingListAddress(sizeId, listId);
                     int count = min(MAX_MATRIX_COEF_NUM, (Ipp32s)g_scalingListSize[sizeId]);
-                    ::memcpy(dst, src, sizeof(Ipp32s) * count);
+                    ::MFX_INTERNAL_CPY(dst, src, sizeof(Ipp32s) * count);
                     sl.setScalingListDC(sizeId, listId, SCALING_LIST_DC);
                 }
             }
@@ -1096,7 +1096,7 @@ void PackerDXVA2::PackQmatrix(const H265Slice *pSlice/*const H265PicParamSet *pP
                     const int *src = getDefaultScalingList(sizeId, listId);
                           int *dst = sl.getScalingListAddress(sizeId, listId);
                     int count = min(MAX_MATRIX_COEF_NUM, (Ipp32s)g_scalingListSize[sizeId]);
-                    ::memcpy(dst, src, sizeof(Ipp32s) * count);
+                    ::MFX_INTERNAL_CPY(dst, src, sizeof(Ipp32s) * count);
                     sl.setScalingListDC(sizeId, listId, SCALING_LIST_DC);
                 }
             }
@@ -1166,7 +1166,7 @@ void MSPackerDXVA2::PackQmatrix(const H265Slice *pSlice)
                     const int *src = getDefaultScalingList(sizeId, listId);
                           int *dst = sl.getScalingListAddress(sizeId, listId);
                     int count = min(MAX_MATRIX_COEF_NUM, (Ipp32s)g_scalingListSize[sizeId]);
-                    memcpy(dst, src, sizeof(Ipp32s) * count);
+                    MFX_INTERNAL_CPY(dst, src, sizeof(Ipp32s) * count);
                     sl.setScalingListDC(sizeId, listId, SCALING_LIST_DC);
                 }
             }

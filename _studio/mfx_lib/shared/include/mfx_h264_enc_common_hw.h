@@ -34,6 +34,9 @@
 #include "mfxpcp.h"
 #include "mfxmvc.h"
 
+#include "umc_defs.h"
+#include "ipps.h"
+
 #define D3DFMT_NV12 (D3DFORMAT)(MFX_MAKEFOURCC('N', 'V', '1', '2'))
 #define D3DDDIFMT_NV12 (D3DDDIFORMAT)(MFX_MAKEFOURCC('N', 'V', '1', '2'))
 #define D3DDDIFMT_YU12 (D3DDDIFORMAT)(MFX_MAKEFOURCC('Y', 'U', '1', '2'))
@@ -129,7 +132,7 @@ namespace MfxHwH264Encode
     template<class T, class U> inline void Copy(T & dst, U const & src)
     {
         STATIC_ASSERT(sizeof(T) == sizeof(U), copy_objects_of_different_size);
-        memcpy(&dst, &src, sizeof(dst));
+        MFX_INTERNAL_CPY(&dst, &src, sizeof(dst));
     }
 
     template<class T> inline T & RemoveConst(T const & t) { return const_cast<T &>(t); }

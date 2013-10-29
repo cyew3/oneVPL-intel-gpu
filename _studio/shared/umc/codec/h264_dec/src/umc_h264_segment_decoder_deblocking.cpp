@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -507,7 +507,7 @@ void H264SegmentDecoder::DeblockChroma420(Ipp32u dir)
             {
                 if (*((Ipp32u *) (pStrength)))
                 {
-                    memcpy(&m_deblockingParams.deblockInfo.pThresholds[0 + 8], &m_deblockingParams.deblockInfo.pThresholds[0],
+                    MFX_INTERNAL_CPY(&m_deblockingParams.deblockInfo.pThresholds[0 + 8], &m_deblockingParams.deblockInfo.pThresholds[0],
                         4 * sizeof(m_deblockingParams.deblockInfo.pThresholds[0]));
                     m_deblockingParams.deblockInfo.pAlpha[2] = m_deblockingParams.deblockInfo.pAlpha[0];
                     m_deblockingParams.deblockInfo.pBeta[2] = m_deblockingParams.deblockInfo.pBeta[0];
@@ -515,7 +515,7 @@ void H264SegmentDecoder::DeblockChroma420(Ipp32u dir)
 
                 if (*((Ipp32u *) (pStrength + 8)))
                 {
-                    memcpy(&m_deblockingParams.deblockInfo.pThresholds[0 + 12], &m_deblockingParams.deblockInfo.pThresholds[4],
+                    MFX_INTERNAL_CPY(&m_deblockingParams.deblockInfo.pThresholds[0 + 12], &m_deblockingParams.deblockInfo.pThresholds[4],
                         4 * sizeof(m_deblockingParams.deblockInfo.pThresholds[0]));
                     m_deblockingParams.deblockInfo.pAlpha[1 + 2] = m_deblockingParams.deblockInfo.pAlpha[1];
                     m_deblockingParams.deblockInfo.pBeta[1 + 2] = m_deblockingParams.deblockInfo.pBeta[1];

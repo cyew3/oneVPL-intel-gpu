@@ -801,10 +801,10 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectors_CABAC(void)
                 pRIxL0 = pCodRIxL0;
                 pRIxL1 = pCodRIxL1;
 
-                memcpy(pCodRIxL0, pCodTemplate, sizeof(pCodTemplate[0])*16);
-                memcpy(pCodRIxL1, pCodTemplate, sizeof(pCodTemplate[0])*16);
-                memcpy(pCodMVdL0, pCodTemplate, sizeof(pCodTemplate[0])*16);
-                memcpy(pCodMVdL1, pCodTemplate, sizeof(pCodTemplate[0])*16);
+                MFX_INTERNAL_CPY(pCodRIxL0, pCodTemplate, sizeof(pCodTemplate[0])*16);
+                MFX_INTERNAL_CPY(pCodRIxL1, pCodTemplate, sizeof(pCodTemplate[0])*16);
+                MFX_INTERNAL_CPY(pCodMVdL0, pCodTemplate, sizeof(pCodTemplate[0])*16);
+                MFX_INTERNAL_CPY(pCodMVdL1, pCodTemplate, sizeof(pCodTemplate[0])*16);
                 for (Ipp32s i = 0; i < 4; i ++)
                 {
                     Ipp32s j = subblock_block_mapping[i];
@@ -1249,10 +1249,10 @@ void H264SegmentDecoderMultiThreaded::ReconstructMotionVectors(void)
                 break;
             case MBTYPE_INTER_8x8:
             case MBTYPE_INTER_8x8_REF0:
-                memcpy(pCodRIxL0, pCodTemplate, sizeof(pCodTemplate[0])*16);
-                memcpy(pCodRIxL1, pCodTemplate, sizeof(pCodTemplate[0])*16);
-                memcpy(pCodMVdL0, pCodTemplate, sizeof(pCodTemplate[0])*16);
-                memcpy(pCodMVdL1, pCodTemplate, sizeof(pCodTemplate[0])*16);
+                MFX_INTERNAL_CPY(pCodRIxL0, pCodTemplate, sizeof(pCodTemplate[0])*16);
+                MFX_INTERNAL_CPY(pCodRIxL1, pCodTemplate, sizeof(pCodTemplate[0])*16);
+                MFX_INTERNAL_CPY(pCodMVdL0, pCodTemplate, sizeof(pCodTemplate[0])*16);
+                MFX_INTERNAL_CPY(pCodMVdL1, pCodTemplate, sizeof(pCodTemplate[0])*16);
                 {
                 for (i = 0; i < 4; i ++)
                 {
@@ -2074,9 +2074,9 @@ void H264SegmentDecoderMultiThreaded::GetMVD4x4_8x16_CABAC(const Ipp8u *pCodMVd,
             pMVd[k] = mvd;
         } // for k
     }
-    memcpy(&pMVd[4], &pMVd[0], 4*sizeof(H264DecoderMotionVector));
-    memcpy(&pMVd[8], &pMVd[0], 4*sizeof(H264DecoderMotionVector));
-    memcpy(&pMVd[12], &pMVd[0], 4*sizeof(H264DecoderMotionVector));
+    MFX_INTERNAL_CPY(&pMVd[4], &pMVd[0], 4*sizeof(H264DecoderMotionVector));
+    MFX_INTERNAL_CPY(&pMVd[8], &pMVd[0], 4*sizeof(H264DecoderMotionVector));
+    MFX_INTERNAL_CPY(&pMVd[12], &pMVd[0], 4*sizeof(H264DecoderMotionVector));
 
 } // void H264SegmentDecoderMultiThreaded::GetMVD4x4_8x16_CABAC(const Ipp8u *pCodMVd,
 
@@ -2153,9 +2153,9 @@ void H264SegmentDecoderMultiThreaded::ReconstructMotionVectors8x16(const Ipp8u *
             pMV[k] = mv;
         } // for k
     }
-    memcpy(&pMV[4], &pMV[0], 4*sizeof(H264DecoderMotionVector));
-    memcpy(&pMV[8], &pMV[0], 4*sizeof(H264DecoderMotionVector));
-    memcpy(&pMV[12], &pMV[0], 4*sizeof(H264DecoderMotionVector));
+    MFX_INTERNAL_CPY(&pMV[4], &pMV[0], 4*sizeof(H264DecoderMotionVector));
+    MFX_INTERNAL_CPY(&pMV[8], &pMV[0], 4*sizeof(H264DecoderMotionVector));
+    MFX_INTERNAL_CPY(&pMV[12], &pMV[0], 4*sizeof(H264DecoderMotionVector));
 
 } // void Status H264SegmentDecoderMultiThreaded::ReconstructMotionVectors8x16(const Ipp8u* pCodMVd,
 
@@ -3482,7 +3482,7 @@ void H264SegmentDecoderMultiThreaded::LoadMBInfoFromRefLayer()
         if (!m_spatial_resolution_change && !pSlice->GetSliceHeader()->nal_ext.svc.quality_id)
         {
             size_t nMBCount = m_pCurrentFrame->totalMBs;
-            memcpy(m_pCurrentFrame->m_mbinfo.mbs, pRefFrame->m_mbinfo.mbs, sizeof(H264DecoderMacroblockGlobalInfo) * nMBCount); // for mbtype as baseMBType 
+            MFX_INTERNAL_CPY(m_pCurrentFrame->m_mbinfo.mbs, pRefFrame->m_mbinfo.mbs, (Ipp32u)(sizeof(H264DecoderMacroblockGlobalInfo) * nMBCount)); // for mbtype as baseMBType 
         }
 
         VM_ASSERT(refLayer < m_currentLayer);
@@ -3718,8 +3718,8 @@ void H264SegmentDecoderMultiThreaded::StoreLayersMBInfo()
     {
         Ipp32s nMBCount = pFrame->totalMBs << (pFrame->m_PictureStructureForDec < FRM_STRUCTURE ? 1 : 0);
         H264DecoderLayerDescriptor *layerMb = &m_mbinfo.layerMbs[m_currentLayer];
-        memcpy(layerMb->MV[0], m_gmbinfo->MV[0], sizeof(H264DecoderMacroblockMVs) * nMBCount);
-        memcpy(layerMb->MV[1], m_gmbinfo->MV[1], sizeof(H264DecoderMacroblockMVs) * nMBCount);
+        MFX_INTERNAL_CPY(layerMb->MV[0], m_gmbinfo->MV[0], sizeof(H264DecoderMacroblockMVs) * nMBCount);
+        MFX_INTERNAL_CPY(layerMb->MV[1], m_gmbinfo->MV[1], sizeof(H264DecoderMacroblockMVs) * nMBCount);
 
         for (Ipp32s i = 0; i < nMBCount; i++)
         {

@@ -8,6 +8,8 @@
 //
 */
 
+#include "ipps.h"
+
 #include "mfx_common.h"
 
 #ifdef MFX_ENABLE_MVC_VIDEO_ENCODE_HW
@@ -405,7 +407,7 @@ namespace
             avcSliceBegin += reader.NumBitsRead() / 8;
             mvcSliceBegin += writer.GetNumBits() / 8;
 
-            memcpy(mvcSliceBegin, avcSliceBegin, avcSliceEnd - avcSliceBegin);
+            MFX_INTERNAL_CPY(mvcSliceBegin, avcSliceBegin, (Ipp32u)(avcSliceEnd - avcSliceBegin));
             mvcSliceBegin += avcSliceEnd - avcSliceBegin;
         }
         else
@@ -1278,7 +1280,7 @@ mfxStatus ImplementationMvc::GetVideoParam(mfxVideoParam *par)
             else
             {
                 // shallow-copy
-                memcpy(par->ExtParam[i], buf, par->ExtParam[i]->BufferSz);
+                MFX_INTERNAL_CPY(par->ExtParam[i], buf, par->ExtParam[i]->BufferSz);
             }
         }
         else
@@ -2136,7 +2138,7 @@ mfxStatus ImplementationMvc::UpdateBitstream(
 
     if (m_bitsDesc[0].aud.begin)
     {
-        mvcBitsBegin = CheckedMemcpy(
+        mvcBitsBegin = CheckedMFX_INTERNAL_CPY(
             mvcBitsBegin,
             mvcBitsEnd,
             m_bitsDesc[0].aud.begin,
@@ -2146,7 +2148,7 @@ mfxStatus ImplementationMvc::UpdateBitstream(
     if (m_bitsDesc[0].sps.begin)
     {
         // base view has sps
-        mvcBitsBegin = CheckedMemcpy(
+        mvcBitsBegin = CheckedMFX_INTERNAL_CPY(
             mvcBitsBegin,
             mvcBitsEnd,
             m_bitsDesc[0].sps.begin,
@@ -2172,7 +2174,7 @@ mfxStatus ImplementationMvc::UpdateBitstream(
     if (m_bitsDesc[0].pps.begin)
     {
         // base view has pps
-        mvcBitsBegin = CheckedMemcpy(
+        mvcBitsBegin = CheckedMFX_INTERNAL_CPY(
             mvcBitsBegin,
             mvcBitsEnd,
             m_bitsDesc[0].pps.begin,
@@ -2182,7 +2184,7 @@ mfxStatus ImplementationMvc::UpdateBitstream(
         {
             if (m_bitsDesc[viewIdx].pps.begin)
             {
-                mvcBitsBegin = CheckedMemcpy(
+                mvcBitsBegin = CheckedMFX_INTERNAL_CPY(
                     mvcBitsBegin,
                     mvcBitsEnd,
                     m_bitsDesc[viewIdx].pps.begin,
@@ -2199,7 +2201,7 @@ mfxStatus ImplementationMvc::UpdateBitstream(
             // copy base view sei only
             NaluIterator nalu(m_bitsDesc[viewIdx].sei, m_bitsDesc[viewIdx].slice.begin);
             for (; nalu->type == 6; ++nalu)
-                mvcBitsBegin = CheckedMemcpy(mvcBitsBegin, mvcBitsEnd, nalu->begin, nalu->end);
+                mvcBitsBegin = CheckedMFX_INTERNAL_CPY(mvcBitsBegin, mvcBitsEnd, nalu->begin, nalu->end);
         }
     }
 
@@ -2226,7 +2228,7 @@ mfxStatus ImplementationMvc::UpdateBitstream(
                 1); // base view always has inter_view_flag = 1
         }
 
-        mvcBitsBegin = CheckedMemcpy(mvcBitsBegin, mvcBitsEnd, nalu->begin, nalu->end);
+        mvcBitsBegin = CheckedMFX_INTERNAL_CPY(mvcBitsBegin, mvcBitsEnd, nalu->begin, nalu->end);
     }
 
     for (mfxU32 viewIdx = 1; viewIdx < extMvc->NumView; viewIdx++)
@@ -2265,7 +2267,7 @@ mfxStatus ImplementationMvc::UpdateBitstream(
             }
             else
             {
-                mvcBitsBegin = CheckedMemcpy(
+                mvcBitsBegin = CheckedMFX_INTERNAL_CPY(
                     mvcBitsBegin,
                     mvcBitsEnd,
                     nalu->begin + nalu->numZero + 2,
@@ -2329,7 +2331,7 @@ mfxStatus ImplementationMvc::UpdateBitstreamBaseView(
     // copy AUD and SPS for base view
     if (m_bitsDesc[0].aud.begin)
     {
-        mvcBitsBegin = CheckedMemcpy(
+        mvcBitsBegin = CheckedMFX_INTERNAL_CPY(
             mvcBitsBegin,
             mvcBitsEnd,
             m_bitsDesc[0].aud.begin,
@@ -2338,7 +2340,7 @@ mfxStatus ImplementationMvc::UpdateBitstreamBaseView(
 
     if (m_bitsDesc[0].sps.begin)
     {
-        mvcBitsBegin = CheckedMemcpy(
+        mvcBitsBegin = CheckedMFX_INTERNAL_CPY(
             mvcBitsBegin,
             mvcBitsEnd,
             m_bitsDesc[0].sps.begin,
@@ -2348,7 +2350,7 @@ mfxStatus ImplementationMvc::UpdateBitstreamBaseView(
 
     if (m_bitsDesc[0].pps.begin)
     {
-        mvcBitsBegin = CheckedMemcpy(
+        mvcBitsBegin = CheckedMFX_INTERNAL_CPY(
             mvcBitsBegin,
             mvcBitsEnd,
             m_bitsDesc[0].pps.begin,
@@ -2360,14 +2362,14 @@ mfxStatus ImplementationMvc::UpdateBitstreamBaseView(
         // copy base view sei only
         NaluIterator nalu(m_bitsDesc[0].sei, m_bitsDesc[0].slice.begin);
         for (; nalu->type == 6; ++nalu)
-            mvcBitsBegin = CheckedMemcpy(mvcBitsBegin, mvcBitsEnd, nalu->begin, nalu->end);
+            mvcBitsBegin = CheckedMFX_INTERNAL_CPY(mvcBitsBegin, mvcBitsEnd, nalu->begin, nalu->end);
     }
 
     NaluIterator nalu(m_bitsDesc[0].slice, m_bitsDesc[0].end);
     for (bool firstSlice = true; nalu->type == 1 || nalu->type == 5; ++nalu, firstSlice = false)
     {
         assert(nalu->type == m_bitsDesc[0].slice.type && "idr and non-idr slices in one au");
-        mvcBitsBegin = CheckedMemcpy(mvcBitsBegin, mvcBitsEnd, nalu->begin, nalu->end);
+        mvcBitsBegin = CheckedMFX_INTERNAL_CPY(mvcBitsBegin, mvcBitsEnd, nalu->begin, nalu->end);
     }
 
     // update hrd state after encoding of access unit
@@ -2460,7 +2462,7 @@ mfxStatus ImplementationMvc::UpdateBitstreamDepView(
     // no need to repack pps, just copy
     if (m_bitsDesc[task.m_viewIdx].pps.begin)
     {
-        mvcBitsBegin = CheckedMemcpy(
+        mvcBitsBegin = CheckedMFX_INTERNAL_CPY(
             mvcBitsBegin,
             mvcBitsEnd,
             m_bitsDesc[task.m_viewIdx].pps.begin,
@@ -2477,7 +2479,7 @@ mfxStatus ImplementationMvc::UpdateBitstreamDepView(
             mfxU8 *end =  nalu->end;
             nalu++;
             mfxU32 paddingSize = nalu->type == 6 ? 0 : task.m_addRepackSize[fieldId];
-            mvcBitsBegin = CheckedMemcpy(mvcBitsBegin, mvcBitsEnd, begin, end - paddingSize); // don't copy compensative padding
+            mvcBitsBegin = CheckedMFX_INTERNAL_CPY(mvcBitsBegin, mvcBitsEnd, begin, end - paddingSize); // don't copy compensative padding
         }
     }
 
@@ -2512,7 +2514,7 @@ mfxStatus ImplementationMvc::UpdateBitstreamDepView(
         else
 #endif // I_TO_P
         // copy encoded slice
-        mvcBitsBegin = CheckedMemcpy(
+        mvcBitsBegin = CheckedMFX_INTERNAL_CPY(
             mvcBitsBegin,
             mvcBitsEnd,
             nalu->begin + nalu->numZero + 2,
@@ -2534,7 +2536,7 @@ mfxStatus ImplementationMvc::UpdateBitstreamDepView(
     // copy AUD and SPS for base view
     if (m_bitsDesc[task.m_viewIdx].aud.begin)
     {
-        mvcBitsBegin = CheckedMemcpy(
+        mvcBitsBegin = CheckedMFX_INTERNAL_CPY(
             mvcBitsBegin,
             mvcBitsEnd,
             m_bitsDesc[task.m_viewIdx].aud.begin,
@@ -2544,7 +2546,7 @@ mfxStatus ImplementationMvc::UpdateBitstreamDepView(
     if (m_bitsDesc[task.m_viewIdx].sps.begin)
     {
         // base view has sps
-        mvcBitsBegin = CheckedMemcpy(
+        mvcBitsBegin = CheckedMFX_INTERNAL_CPY(
             mvcBitsBegin,
             mvcBitsEnd,
             m_bitsDesc[task.m_viewIdx].sps.begin,
@@ -2554,7 +2556,7 @@ mfxStatus ImplementationMvc::UpdateBitstreamDepView(
 
     if (m_bitsDesc[task.m_viewIdx].pps.begin)
     {
-        mvcBitsBegin = CheckedMemcpy(
+        mvcBitsBegin = CheckedMFX_INTERNAL_CPY(
             mvcBitsBegin,
             mvcBitsEnd,
             m_bitsDesc[task.m_viewIdx].pps.begin,
@@ -2571,7 +2573,7 @@ mfxStatus ImplementationMvc::UpdateBitstreamDepView(
             mfxU8 *end =  nalu->end;
             nalu++;
             mfxU32 paddingSize = nalu->type == 6 ? 0 : task.m_addRepackSize[fieldId];
-            mvcBitsBegin = CheckedMemcpy(mvcBitsBegin, mvcBitsEnd, begin, end - paddingSize); // don't copy compensative padding
+            mvcBitsBegin = CheckedMFX_INTERNAL_CPY(mvcBitsBegin, mvcBitsEnd, begin, end - paddingSize); // don't copy compensative padding
         }
     }
 
@@ -2584,7 +2586,7 @@ mfxStatus ImplementationMvc::UpdateBitstreamDepView(
             mvcBitsBegin = RePackNonIdrSliceToIdr (mvcBitsBegin, mvcBitsEnd, nalu->begin, nalu->end, m_video, task, fieldId);
         else
 #endif // I_TO_P
-        mvcBitsBegin = CheckedMemcpy(mvcBitsBegin, mvcBitsEnd, nalu->begin, nalu->end);
+        mvcBitsBegin = CheckedMFX_INTERNAL_CPY(mvcBitsBegin, mvcBitsEnd, nalu->begin, nalu->end);
     }
 
     mfxU32 dataLenAfterRepack = mfxU32(mvcBitsBegin - bs.Data - bs.DataOffset - bs.DataLength);
@@ -2741,8 +2743,8 @@ void ImplementationMvc::PatchTask(MvcTask const & mvcTask, DdiTask & curTask, mf
 
                     // copy base view reconstruct to dep view recon surface
                     mfxU32 lumaSize = sourceD3DBits.Pitch * m_video.mfx.FrameInfo.Height;
-                    memcpy(distD3DBits.Y, sourceD3DBits.Y, lumaSize);
-                    memcpy(distD3DBits.UV, sourceD3DBits.UV, lumaSize / 2);
+                    MFX_INTERNAL_CPY(distD3DBits.Y, sourceD3DBits.Y, lumaSize);
+                    MFX_INTERNAL_CPY(distD3DBits.UV, sourceD3DBits.UV, lumaSize / 2);
                 }
 
                 // workaround for DX11: copy from D3D surface to D3D surface doesn't work w/o repeated lock/unlock

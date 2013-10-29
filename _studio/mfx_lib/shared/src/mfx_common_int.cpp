@@ -679,8 +679,8 @@ void mfxVideoParamWrapper::CopyVideoParam(const mfxVideoParam & par)
             {
                 void * in = GetExtendedBufferInternal(par.ExtParam, par.NumExtParam, par.ExtParam[i]->BufferId);
                 m_buffers.AddBuffer(par.ExtParam[i]);
-                void * out = m_buffers.GetBufferById<void *>(par.ExtParam[i]->BufferId);
-                memcpy(out, in, par.ExtParam[i]->BufferSz);
+                mfxExtBuffer * out = m_buffers.GetBufferById<mfxExtBuffer >(par.ExtParam[i]->BufferId);
+                memcpy_s((void*)out, out->BufferSz, in, par.ExtParam[i]->BufferSz);
             }
             break;
         case MFX_EXTBUFF_MVC_SEQ_DESC:
@@ -705,17 +705,17 @@ void mfxVideoParamWrapper::CopyVideoParam(const mfxVideoParam & par)
                 {
                     points->NumView = points->NumViewAlloc = mvcPoints->NumView;
                     points->View = (mfxMVCViewDependency * )ptr;
-                    memcpy(points->View, mvcPoints->View, mvcPoints->NumView * sizeof(mfxMVCViewDependency));
+                    memcpy_s(points->View, mvcPoints->NumView * sizeof(mfxMVCViewDependency), mvcPoints->View, mvcPoints->NumView * sizeof(mfxMVCViewDependency));
                     ptr += mvcPoints->NumView * sizeof(mfxMVCViewDependency);
 
                     points->NumView = points->NumViewAlloc = mvcPoints->NumView;
                     points->ViewId = (mfxU16 *)ptr;
-                    memcpy(points->ViewId, mvcPoints->ViewId, mvcPoints->NumViewId * sizeof(mfxU16));
+                    memcpy_s(points->ViewId, mvcPoints->NumViewId * sizeof(mfxU16), mvcPoints->ViewId, mvcPoints->NumViewId * sizeof(mfxU16));
                     ptr += mvcPoints->NumViewId * sizeof(mfxU16);
 
                     points->NumOP = points->NumOPAlloc = mvcPoints->NumOP;
                     points->OP = (mfxMVCOperationPoint *)ptr;
-                    memcpy(points->OP, mvcPoints->OP, mvcPoints->NumOP * sizeof(mfxMVCOperationPoint));
+                    memcpy_s(points->OP, mvcPoints->NumOP * sizeof(mfxMVCOperationPoint), mvcPoints->OP, mvcPoints->NumOP * sizeof(mfxMVCOperationPoint));
 
                     mfxU16 * targetView = points->ViewId;
                     for (mfxU32 i = 0; i < points->NumOP; i++)
@@ -745,8 +745,8 @@ void mfxVideoParamWrapper::CopyVideoParam(const mfxVideoParam & par)
             spsPps->SPSBufSize = spsPpsInternal->SPSBufSize;
             spsPps->PPSBufSize = spsPpsInternal->PPSBufSize;
 
-            memcpy(spsPps->SPSBuffer, spsPpsInternal->SPSBuffer, spsPps->SPSBufSize);
-            memcpy(spsPps->PPSBuffer, spsPpsInternal->PPSBuffer, spsPps->PPSBufSize);*/
+            MFX_INTERNAL_CPY(spsPps->SPSBuffer, spsPpsInternal->SPSBuffer, spsPps->SPSBufSize);
+            MFX_INTERNAL_CPY(spsPps->PPSBuffer, spsPpsInternal->PPSBuffer, spsPps->PPSBufSize);*/
             }
             break;
 

@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2011 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2013 Intel Corporation. All Rights Reserved.
 //
 
 #if PIXBITS == 8
@@ -49,7 +49,7 @@ inline void H264ENC_MAKE_NAME(DirectB_PredictOneMB_Cr)(
     if (!uInterpType)
     {
         for (Ipp32s i = 0, k = 0; i < roiSize.height; i ++, k += pitchPixels)
-            memcpy(pDirB + i * 16, pPrev + k, roiSize.width * sizeof(PIXTYPE));
+            MFX_INTERNAL_CPY(pDirB + i * 16, pPrev + k, roiSize.width * sizeof(PIXTYPE));
     }
     else if (uInterpType == 1)
     {

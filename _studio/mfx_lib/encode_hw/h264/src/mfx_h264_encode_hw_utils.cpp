@@ -26,6 +26,7 @@
 
 #include <assert.h>
 #include "ippi.h"
+#include "ipps.h"
 #include "vm_time.h"
 #include "umc_automatic_mutex.h"
 #include "mfx_brc_common.h"
@@ -3299,7 +3300,7 @@ void OutputBitstream::PutRawBytes(mfxU8 const * begin, mfxU8 const * end)
     if (m_bufEnd - m_ptr < end - begin)
         throw EndOfBuffer();
 
-    memcpy(m_ptr, begin, end - begin);
+    MFX_INTERNAL_CPY(m_ptr, begin, (Ipp32u)(end - begin));
     m_bitOff = 0;
     m_ptr += end - begin;
 
@@ -4399,7 +4400,7 @@ ArrayRefListMod MfxHwH264Encode::CreateRefListMod(
     return refListMod;
 }
 
-mfxU8 * MfxHwH264Encode::CheckedMemcpy(
+mfxU8 * MfxHwH264Encode::CheckedMFX_INTERNAL_CPY(
     mfxU8 *       dbegin,
     mfxU8 *       dend,
     mfxU8 const * sbegin,
@@ -4411,7 +4412,7 @@ mfxU8 * MfxHwH264Encode::CheckedMemcpy(
         throw EndOfBuffer();
     }
 
-    memcpy(dbegin, sbegin, send - sbegin);
+    MFX_INTERNAL_CPY(dbegin, sbegin, (Ipp32u)(send - sbegin));
     return dbegin + (send - sbegin);
 }
 
@@ -4675,7 +4676,7 @@ mfxU8 * MfxHwH264Encode::RePackSlice(
         sbegin += reader.NumBitsRead() / 8;
         dbegin += writer.GetNumBits() / 8;
 
-        memcpy(dbegin, sbegin, send - sbegin);
+        MFX_INTERNAL_CPY(dbegin, sbegin, (Ipp32u)(send - sbegin));
         dbegin += send - sbegin;
     }
     else
@@ -5273,7 +5274,7 @@ mfxU8 * MfxHwH264Encode::PatchBitstream(
             else
             {
                 dbegin = copy
-                    ? CheckedMemcpy(dbegin, dend, nalu->begin, nalu->end)
+                    ? CheckedMFX_INTERNAL_CPY(dbegin, dend, nalu->begin, nalu->end)
                     : nalu->end;
             }
 
@@ -5297,7 +5298,7 @@ mfxU8 * MfxHwH264Encode::PatchBitstream(
             {
                 mfxU8 * ppsBegin = dbegin;
                 dbegin = copy
-                    ? CheckedMemcpy(dbegin, dend, nalu->begin, nalu->end)
+                    ? CheckedMFX_INTERNAL_CPY(dbegin, dend, nalu->begin, nalu->end)
                     : nalu->end;
 
                 // snb and ivb driver doesn't provide controls for nal_ref_idc
@@ -5312,7 +5313,7 @@ mfxU8 * MfxHwH264Encode::PatchBitstream(
             if (!video.calcParam.lyncMode) // mfxExtAvcTemporalLayers buffer is not present, aud to every frame
             {
                 dbegin = copy
-                    ? CheckedMemcpy(dbegin, dend, nalu->begin, nalu->end)
+                    ? CheckedMFX_INTERNAL_CPY(dbegin, dend, nalu->begin, nalu->end)
                     : nalu->end;
             }
         }
@@ -5332,20 +5333,20 @@ mfxU8 * MfxHwH264Encode::PatchBitstream(
             if (slicePatchNeeded)
             {
                 assert(copy || !"slice patching requries intermediate bitstream buffer");
-                dbegin = CheckedMemcpy(dbegin, dend, nalu->begin, nalu->begin + nalu->numZero + 2);
+                dbegin = CheckedMFX_INTERNAL_CPY(dbegin, dend, nalu->begin, nalu->begin + nalu->numZero + 2);
                 dbegin = RePackSlice(dbegin, dend, nalu->begin + nalu->numZero + 2, nalu->end, video, task, fieldId);
             }
             else
             {
                 dbegin = copy
-                    ? CheckedMemcpy(dbegin, dend, nalu->begin, nalu->end)
+                    ? CheckedMFX_INTERNAL_CPY(dbegin, dend, nalu->begin, nalu->end)
                     : nalu->end;
             }
         }
         else
         {
             dbegin = copy
-                ? CheckedMemcpy(dbegin, dend, nalu->begin, nalu->end)
+                ? CheckedMFX_INTERNAL_CPY(dbegin, dend, nalu->begin, nalu->end)
                 : nalu->end;
         }
     }

@@ -226,8 +226,8 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curP
 
         if (m_pSeqParamSet->log2_min_transform_block_size < 3)
         {
-            edge++;
-        }
+        edge++;
+    }
     }
 
     Ipp32s end = 2;
@@ -273,7 +273,7 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curP
         if (m_pSeqParamSet->log2_min_transform_block_size >= 3 && i == 1)
         {
             *(edge+1) = *edge;
-        }
+    }
     }
 }
 

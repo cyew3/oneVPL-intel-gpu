@@ -433,7 +433,7 @@ mfxStatus ImplementationAvc::Query(
                         else
                         {
                             // shallow-copy
-                            memcpy(buf, corrected, corrected->BufferSz);
+                            MFX_INTERNAL_CPY(buf, corrected, corrected->BufferSz);
                         }
                     }
                     else
@@ -1137,7 +1137,7 @@ mfxStatus ImplementationAvc::GetVideoParam(mfxVideoParam *par)
             }
             else
             {
-                memcpy(par->ExtParam[i], buf, par->ExtParam[i]->BufferSz);
+                MFX_INTERNAL_CPY(par->ExtParam[i], buf, par->ExtParam[i]->BufferSz);
             }
         }
         else
@@ -1393,7 +1393,7 @@ bool ImplementationAvc::OnAdaptiveGOPSubmitted()
         //Make best len to current
         int idx_in = (m_agopFinishedLen-bestLen-1+maxDepB)%maxDepB;
         int idx_out = m_agopFinishedLen%maxDepB;
-        memcpy(&m_bestGOPSequence[idx_out][0], &m_bestGOPSequence[idx_in][0], m_agopFinishedLen);
+        MFX_INTERNAL_CPY(&m_bestGOPSequence[idx_out][0], &m_bestGOPSequence[idx_in][0], m_agopFinishedLen);
         //add P and B frames
         m_bestGOPCost[idx_out] = bestLenCost;
         m_bestGOPSequence[idx_out][m_agopFinishedLen] = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
@@ -2908,7 +2908,7 @@ mfxStatus ImplementationAvc::AdaptiveGOP1(
                 {
                     //all previous best cases + P frame
                     //and all B  BB..BP pattern                    
-                    memcpy(&bestSequence[idx][0], &bestForLen[i-k][0], (i-k)*sizeof(mfxU16));
+                    MFX_INTERNAL_CPY(&bestSequence[idx][0], &bestForLen[i-k][0], (i-k)*sizeof(mfxU16));
                     //Set B
                     for(int l=i-k; l<i; l++) bestSequence[idx][l] = MFX_FRAMETYPE_B;
                     bestSequence[idx][i] = MFX_FRAMETYPE_P;
@@ -3128,7 +3128,7 @@ mfxStatus ImplementationAvc::AdaptiveGOP1(
                 {
                     //all previous best cases + P frame
                     //and all B  BB..BP pattern
-                    memcpy(&bestSequence[idx][0], &bestForLen[i-k][0], (i-k)*sizeof(mfxU16));
+                    MFX_INTERNAL_CPY(&bestSequence[idx][0], &bestForLen[i-k][0], (i-k)*sizeof(mfxU16));
                     //Set B
                     for(int l=i-k; l<i; l++) bestSequence[idx][l] = MFX_FRAMETYPE_B;
                     bestSequence[idx][i] = MFX_FRAMETYPE_P;

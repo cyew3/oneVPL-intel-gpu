@@ -794,7 +794,7 @@ VC1Status BLKLayer_Intra_Chroma_Adv(VC1Context* pContext, Ipp32s blk_num,Ipp32u 
         VC1_GET_BITS(1, DCSIGN);
 
         DCCOEF = (1 - (DCSIGN<<1))* DCCOEF;
-     }
+    }
 
     CurrBlk->DC = (Ipp16s)DCCOEF;
 

@@ -386,7 +386,7 @@ public:
 
     virtual void CopyBitStream(Ipp8u *pDestination, Ipp8u *pSource, size_t &nSrcSize)
     {
-        memcpy(pDestination, pSource, nSrcSize);
+        MFX_INTERNAL_CPY(pDestination, pSource, nSrcSize);
     }
 };
 

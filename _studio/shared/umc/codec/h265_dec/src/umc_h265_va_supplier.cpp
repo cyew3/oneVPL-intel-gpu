@@ -158,47 +158,47 @@ void VATaskSupplier::CompleteFrame(H265DecoderFrame * pFrame)
         }
     }
 
-    Ipp32s count = slicesInfo->GetSliceCount();
+        Ipp32s count = slicesInfo->GetSliceCount();
 
-    H265Slice * pFirstSlice = 0;
-    for (Ipp32s j = 0; j < count; j ++)
-    {
-        H265Slice * pSlice = slicesInfo->GetSlice(j);
-        if (!pFirstSlice || pSlice->m_iFirstMB < pFirstSlice->m_iFirstMB)
-        {
-            pFirstSlice = pSlice;
-        }
-    }
-
-    if (pFirstSlice->m_iFirstMB)
-    {
-        m_pSegmentDecoder[0]->RestoreErrorRect(0, pFirstSlice->m_iFirstMB, pFirstSlice);
-    }
-
-    for (Ipp32s i = 0; i < count; i ++)
-    {
-        H265Slice * pCurSlice = slicesInfo->GetSlice(i);
-
-#define MAX_MB_NUMBER 0x7fffffff
-
-        Ipp32s minFirst = MAX_MB_NUMBER;
+        H265Slice * pFirstSlice = 0;
         for (Ipp32s j = 0; j < count; j ++)
         {
             H265Slice * pSlice = slicesInfo->GetSlice(j);
-            if (pSlice->m_iFirstMB > pCurSlice->m_iFirstMB && minFirst > pSlice->m_iFirstMB)
+            if (!pFirstSlice || pSlice->m_iFirstMB < pFirstSlice->m_iFirstMB)
             {
-                minFirst = pSlice->m_iFirstMB;
+                pFirstSlice = pSlice;
             }
         }
 
-        if (minFirst != MAX_MB_NUMBER)
+        if (pFirstSlice->m_iFirstMB)
         {
-            pCurSlice->m_iMaxMB = minFirst;
+            m_pSegmentDecoder[0]->RestoreErrorRect(0, pFirstSlice->m_iFirstMB, pFirstSlice);
         }
-    }
 
-    StartDecodingFrame(pFrame);
-    EndDecodingFrame();
+        for (Ipp32s i = 0; i < count; i ++)
+        {
+            H265Slice * pCurSlice = slicesInfo->GetSlice(i);
+
+#define MAX_MB_NUMBER 0x7fffffff
+
+            Ipp32s minFirst = MAX_MB_NUMBER;
+            for (Ipp32s j = 0; j < count; j ++)
+            {
+                H265Slice * pSlice = slicesInfo->GetSlice(j);
+                if (pSlice->m_iFirstMB > pCurSlice->m_iFirstMB && minFirst > pSlice->m_iFirstMB)
+                {
+                    minFirst = pSlice->m_iFirstMB;
+                }
+            }
+
+            if (minFirst != MAX_MB_NUMBER)
+            {
+                pCurSlice->m_iMaxMB = minFirst;
+            }
+        }
+
+        StartDecodingFrame(pFrame);
+        EndDecodingFrame();
 
     slicesInfo->SetStatus(H265DecoderFrameInfo::STATUS_FILLED);
 }
@@ -246,7 +246,7 @@ H265Slice * VATaskSupplier::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
     MemoryPiece * pMemCopy = m_Heap.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
     notifier1<Heap, MemoryPiece*> memory_leak_preventing1(&m_Heap, &Heap::Free, pMemCopy);
 
-    memcpy(pMemCopy->GetPointer(), nalUnit->GetDataPointer(), nalUnit->GetDataSize());
+    MFX_INTERNAL_CPY(pMemCopy->GetPointer(), nalUnit->GetDataPointer(), nalUnit->GetDataSize());
     memset(pMemCopy->GetPointer() + nalUnit->GetDataSize(), DEFAULT_NU_TAIL_VALUE, DEFAULT_NU_TAIL_SIZE);
     pMemCopy->SetDataSize(nalUnit->GetDataSize());
     pMemCopy->SetTime(nalUnit->GetTime());

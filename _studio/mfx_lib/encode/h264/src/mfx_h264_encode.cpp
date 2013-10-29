@@ -392,7 +392,7 @@ static void PadMB_Luma_8u16s(PIXTYPE *pP, Ipp32s pitchPixels, Ipp32s padFlag, Ip
             s += padSize;
         }
         for (Ipp32s i = 0; i < padSize; i ++) {
-            memcpy(p, pP, s * sizeof(PIXTYPE));
+            MFX_INTERNAL_CPY(p, pP, s * sizeof(PIXTYPE));
             p -= pitchPixels;
         }
         if (padFlag & 1)
@@ -413,7 +413,7 @@ static void PadMB_Luma_8u16s(PIXTYPE *pP, Ipp32s pitchPixels, Ipp32s padFlag, Ip
             s += padSize;
         }
         for (Ipp32s i = 0; i < padSize; i ++) {
-            memcpy(p, pP, s * sizeof(PIXTYPE));
+            MFX_INTERNAL_CPY(p, pP, s * sizeof(PIXTYPE));
             p += pitchPixels;
         }
     }
@@ -461,7 +461,7 @@ static void PadMB_Chroma_8u16s(PIXTYPE *pU, Ipp32s pitchPixels, Ipp32s szX, Ipp3
             s += padSize;
         }
         for (Ipp32s i = 0; i < (padSize >> 1); i ++) {
-            memcpy(pu, pU, s * sizeof(PIXTYPE));
+            MFX_INTERNAL_CPY(pu, pU, s * sizeof(PIXTYPE));
             pu -= pitchPixels;
         }
         if (padFlag & 1) {
@@ -483,7 +483,7 @@ static void PadMB_Chroma_8u16s(PIXTYPE *pU, Ipp32s pitchPixels, Ipp32s szX, Ipp3
             s += padSize;
         }
         for (Ipp32s i = 0; i < (padSize >> 1); i ++) {
-            memcpy(pu, pU, s * sizeof(PIXTYPE));
+            MFX_INTERNAL_CPY(pu, pU, s * sizeof(PIXTYPE));
             pu += pitchPixels;
         }
     }
@@ -544,8 +544,8 @@ static void H264ENC_MAKE_NAME(PadMB_Chroma)(PIXTYPE *pU, PIXTYPE *pV, Ipp32s pit
             s += padSize;
         }
         for (Ipp32s i = 0; i < padSize; i ++) {
-            memcpy(pu, pU, s * sizeof(PIXTYPE));
-            memcpy(pv, pV, s * sizeof(PIXTYPE));
+            MFX_INTERNAL_CPY(pu, pU, s * sizeof(PIXTYPE));
+            MFX_INTERNAL_CPY(pv, pV, s * sizeof(PIXTYPE));
             pu -= pitchPixels;
             pv -= pitchPixels;
         }
@@ -573,8 +573,8 @@ static void H264ENC_MAKE_NAME(PadMB_Chroma)(PIXTYPE *pU, PIXTYPE *pV, Ipp32s pit
             s += padSize;
         }
         for (Ipp32s i = 0; i < padSize; i ++) {
-            memcpy(pu, pU, s * sizeof(PIXTYPE));
-            memcpy(pv, pV, s * sizeof(PIXTYPE));
+            MFX_INTERNAL_CPY(pu, pU, s * sizeof(PIXTYPE));
+            MFX_INTERNAL_CPY(pv, pV, s * sizeof(PIXTYPE));
             pu += pitchPixels;
             pv += pitchPixels;
         }
@@ -1129,7 +1129,7 @@ Status MFXVideoENCODEH264::ThreadCallBackVM_MBT(threadSpecificDataH264 &tsd)
             ////}
 
                         if (core_enc->m_svc_layer.isActive) {
-                            memcpy(cur_s->m_cur_mb.intra_types_save, cur_s->m_cur_mb.intra_types, 16*sizeof(T_AIMode));
+                            MFX_INTERNAL_CPY(cur_s->m_cur_mb.intra_types_save, cur_s->m_cur_mb.intra_types, 16*sizeof(T_AIMode));
                         }
 
                         if (core_enc->m_svc_layer.isActive)
@@ -1386,9 +1386,9 @@ Status MFXVideoENCODEH264::H264CoreEncoder_Compress_Slice_MBT(void* state, H264S
             core_enc->m_Slices_MBT[i].m_TempRefPicList[1][0] = curr_slice->m_TempRefPicList[1][0];
             core_enc->m_Slices_MBT[i].m_TempRefPicList[1][1] = curr_slice->m_TempRefPicList[1][1];
             if (curr_slice->m_slice_type != PREDSLICE) {
-                memcpy(core_enc->m_Slices_MBT[i].MapColMBToList0, curr_slice->MapColMBToList0, sizeof(curr_slice->MapColMBToList0));
-                memcpy(core_enc->m_Slices_MBT[i].DistScaleFactor, curr_slice->DistScaleFactor, sizeof(curr_slice->DistScaleFactor));
-                memcpy(core_enc->m_Slices_MBT[i].DistScaleFactorMV, curr_slice->DistScaleFactorMV, sizeof(curr_slice->DistScaleFactorMV));
+                MFX_INTERNAL_CPY(core_enc->m_Slices_MBT[i].MapColMBToList0, curr_slice->MapColMBToList0, sizeof(curr_slice->MapColMBToList0));
+                MFX_INTERNAL_CPY(core_enc->m_Slices_MBT[i].DistScaleFactor, curr_slice->DistScaleFactor, sizeof(curr_slice->DistScaleFactor));
+                MFX_INTERNAL_CPY(core_enc->m_Slices_MBT[i].DistScaleFactorMV, curr_slice->DistScaleFactorMV, sizeof(curr_slice->DistScaleFactorMV));
             }
         }
         core_enc->m_Slices_MBT[i].m_Intra_MB_Counter = 0;
@@ -4962,9 +4962,9 @@ mfxStatus MFXVideoENCODEH264::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
                 return MFX_ERR_UNSUPPORTED;
 
             if (optsSP_in->SPSBuffer)
-                memcpy(optsSP_out->SPSBuffer, optsSP_in->SPSBuffer, optsSP_in->SPSBufSize);
+                MFX_INTERNAL_CPY(optsSP_out->SPSBuffer, optsSP_in->SPSBuffer, optsSP_in->SPSBufSize);
             if (optsSP_in->PPSBuffer)
-                memcpy(optsSP_out->PPSBuffer, optsSP_in->PPSBuffer, optsSP_in->PPSBufSize);
+                MFX_INTERNAL_CPY(optsSP_out->PPSBuffer, optsSP_in->PPSBuffer, optsSP_in->PPSBufSize);
         }
 
         if (in->mfx.FrameInfo.FourCC != 0 && in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12) {
@@ -6173,7 +6173,7 @@ mfxStatus MFXVideoENCODEH264::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
             bs->FrameType = m_extBitstream.FrameType;
             bs->PicStruct = m_extBitstream.PicStruct;
             bs->TimeStamp = m_extBitstream.TimeStamp;
-            memcpy(dataPtr, m_extBitstream.Data, m_extBitstream.DataLength);
+            MFX_INTERNAL_CPY(dataPtr, m_extBitstream.Data, m_extBitstream.DataLength);
             return MFX_ERR_NONE;
         }
     }
@@ -6433,7 +6433,7 @@ mfxStatus MFXVideoENCODEH264::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
 //    //Throw away all previous data
 //    if( m_userData != NULL ) free( m_userData );
 //    m_userData = (mfxU8*)malloc(len);
-//    memcpy( m_userData, ud, len );
+//    MFX_INTERNAL_CPY( m_userData, ud, len );
 //    m_userDataLen = len;
 //    m_userDataTime = ts;
 //
@@ -7289,7 +7289,7 @@ Status MFXVideoENCODEH264::Encode(
             PIXTYPE *pyD = core_enc->m_pCurrentFrame->m_pYPlane + core_enc->m_pCurrentFrame->uHeight * core_enc->m_pCurrentFrame->m_pitchPixels;
             PIXTYPE *pyS = pyD - core_enc->m_pCurrentFrame->m_pitchPixels;
             for (i = 0; i < padH; i ++) {
-                memcpy(pyD, pyS, core_enc->m_PaddedSize.width * sizeof(PIXTYPE));
+                MFX_INTERNAL_CPY(pyD, pyS, core_enc->m_PaddedSize.width * sizeof(PIXTYPE));
                 //memset(pyD, 0, core_enc->m_PaddedSize.width * sizeof(PIXTYPE));
                 pyD += core_enc->m_pCurrentFrame->m_pitchPixels;
             }
@@ -7304,8 +7304,8 @@ Status MFXVideoENCODEH264::Encode(
                 PIXTYPE *puS = puD - core_enc->m_pCurrentFrame->m_pitchPixels;
                 PIXTYPE *pvS = pvD - core_enc->m_pCurrentFrame->m_pitchPixels;
                 for (i = 0; i < padH; i ++) {
-                    memcpy(puD, puS, (core_enc->m_PaddedSize.width >> 1) * sizeof(PIXTYPE));
-                    memcpy(pvD, pvS, (core_enc->m_PaddedSize.width >> 1) * sizeof(PIXTYPE));
+                    MFX_INTERNAL_CPY(puD, puS, (core_enc->m_PaddedSize.width >> 1) * sizeof(PIXTYPE));
+                    MFX_INTERNAL_CPY(pvD, pvS, (core_enc->m_PaddedSize.width >> 1) * sizeof(PIXTYPE));
                     //memset(puD, 0, (core_enc->m_PaddedSize.width >> 1) * sizeof(PIXTYPE));
                     //memset(pvD, 0, (core_enc->m_PaddedSize.width >> 1) * sizeof(PIXTYPE));
                     puD += core_enc->m_pCurrentFrame->m_pitchPixels;
@@ -7613,19 +7613,19 @@ Status MFXVideoENCODEH264::Encode(
 
         if (core_enc->m_svc_layer.svc_ext.dependency_id == 0 && i == 0 && core_enc->QualityNum > 1) {
             Ipp32s nMBCount =  core_enc->m_pCurrentFrame->totalMBs;
-            memcpy(core_enc->m_mbinfo_saved.MV[0], core_enc->m_pCurrentFrame->m_mbinfo.MV[0], nMBCount*sizeof(H264MacroblockMVs));
-            memcpy(core_enc->m_mbinfo_saved.MV[1], core_enc->m_pCurrentFrame->m_mbinfo.MV[1], nMBCount*sizeof(H264MacroblockMVs));
-            memcpy(core_enc->m_mbinfo_saved.RefIdxs[0], core_enc->m_pCurrentFrame->m_mbinfo.RefIdxs[0], nMBCount*sizeof(H264MacroblockRefIdxs));
-            memcpy(core_enc->m_mbinfo_saved.RefIdxs[1], core_enc->m_pCurrentFrame->m_mbinfo.RefIdxs[1], nMBCount*sizeof(H264MacroblockRefIdxs));
-            memcpy(core_enc->m_mbinfo_saved.mbs, core_enc->m_pCurrentFrame->m_mbinfo.mbs, nMBCount*sizeof(H264MacroblockGlobalInfo));
+            MFX_INTERNAL_CPY(core_enc->m_mbinfo_saved.MV[0], core_enc->m_pCurrentFrame->m_mbinfo.MV[0], nMBCount*sizeof(H264MacroblockMVs));
+            MFX_INTERNAL_CPY(core_enc->m_mbinfo_saved.MV[1], core_enc->m_pCurrentFrame->m_mbinfo.MV[1], nMBCount*sizeof(H264MacroblockMVs));
+            MFX_INTERNAL_CPY(core_enc->m_mbinfo_saved.RefIdxs[0], core_enc->m_pCurrentFrame->m_mbinfo.RefIdxs[0], nMBCount*sizeof(H264MacroblockRefIdxs));
+            MFX_INTERNAL_CPY(core_enc->m_mbinfo_saved.RefIdxs[1], core_enc->m_pCurrentFrame->m_mbinfo.RefIdxs[1], nMBCount*sizeof(H264MacroblockRefIdxs));
+            MFX_INTERNAL_CPY(core_enc->m_mbinfo_saved.mbs, core_enc->m_pCurrentFrame->m_mbinfo.mbs, nMBCount*sizeof(H264MacroblockGlobalInfo));
         }
         if (core_enc->m_svc_layer.svc_ext.dependency_id == m_svc_count - 1 && i == core_enc->QualityNum - 1 && m_svc_layers[0]->enc->QualityNum > 1) {
             Ipp32s nMBCount =  m_svc_layers[0]->enc->m_pCurrentFrame->totalMBs;
-            memcpy(m_svc_layers[0]->enc->m_pCurrentFrame->m_mbinfo.MV[0], m_svc_layers[0]->enc->m_mbinfo_saved.MV[0], nMBCount*sizeof(H264MacroblockMVs));
-            memcpy(m_svc_layers[0]->enc->m_pCurrentFrame->m_mbinfo.MV[1],m_svc_layers[0]->enc->m_mbinfo_saved.MV[1], nMBCount*sizeof(H264MacroblockMVs));
-            memcpy(m_svc_layers[0]->enc->m_pCurrentFrame->m_mbinfo.RefIdxs[0], m_svc_layers[0]->enc->m_mbinfo_saved.RefIdxs[0], nMBCount*sizeof(H264MacroblockRefIdxs));
-            memcpy(m_svc_layers[0]->enc->m_pCurrentFrame->m_mbinfo.RefIdxs[1], m_svc_layers[0]->enc->m_mbinfo_saved.RefIdxs[1], nMBCount*sizeof(H264MacroblockRefIdxs));
-            memcpy(m_svc_layers[0]->enc->m_pCurrentFrame->m_mbinfo.mbs, m_svc_layers[0]->enc->m_mbinfo_saved.mbs, nMBCount*sizeof(H264MacroblockGlobalInfo));
+            MFX_INTERNAL_CPY(m_svc_layers[0]->enc->m_pCurrentFrame->m_mbinfo.MV[0], m_svc_layers[0]->enc->m_mbinfo_saved.MV[0], nMBCount*sizeof(H264MacroblockMVs));
+            MFX_INTERNAL_CPY(m_svc_layers[0]->enc->m_pCurrentFrame->m_mbinfo.MV[1],m_svc_layers[0]->enc->m_mbinfo_saved.MV[1], nMBCount*sizeof(H264MacroblockMVs));
+            MFX_INTERNAL_CPY(m_svc_layers[0]->enc->m_pCurrentFrame->m_mbinfo.RefIdxs[0], m_svc_layers[0]->enc->m_mbinfo_saved.RefIdxs[0], nMBCount*sizeof(H264MacroblockRefIdxs));
+            MFX_INTERNAL_CPY(m_svc_layers[0]->enc->m_pCurrentFrame->m_mbinfo.RefIdxs[1], m_svc_layers[0]->enc->m_mbinfo_saved.RefIdxs[1], nMBCount*sizeof(H264MacroblockRefIdxs));
+            MFX_INTERNAL_CPY(m_svc_layers[0]->enc->m_pCurrentFrame->m_mbinfo.mbs, m_svc_layers[0]->enc->m_mbinfo_saved.mbs, nMBCount*sizeof(H264MacroblockGlobalInfo));
         }
     }
 
@@ -9432,8 +9432,8 @@ re_encode_slice:
                 // save not deblocked surface for future IL-prediction
                 assert(srcframe->m_pitchBytes == dstframe->m_pitchBytes);
                 assert(srcframe->uHeight == dstframe->uHeight);
-                memcpy(dstframe->m_pYPlane, srcframe->m_pYPlane, dstframe->uHeight*dstframe->m_pitchBytes);
-                memcpy(dstframe->m_pUPlane, srcframe->m_pUPlane, dstframe->uHeight/2*dstframe->m_pitchBytes);
+                MFX_INTERNAL_CPY(dstframe->m_pYPlane, srcframe->m_pYPlane, dstframe->uHeight*dstframe->m_pitchBytes);
+                MFX_INTERNAL_CPY(dstframe->m_pUPlane, srcframe->m_pUPlane, dstframe->uHeight/2*dstframe->m_pitchBytes);
             }
 
             core_enc->m_deblocking_IL = 0;
@@ -9778,7 +9778,7 @@ Status MFXVideoENCODEH264::SVC_encodeBufferingPeriodSEI_inScalableNestingSEI(
         }
     }
 
-//     memcpy(core_enc->m_SEIData.m_insertedSEI, need_insert, 36 * sizeof(Ipp8u));
+//     MFX_INTERNAL_CPY(core_enc->m_SEIData.m_insertedSEI, need_insert, 36 * sizeof(Ipp8u));
 
     return ps;
 }
@@ -10355,7 +10355,7 @@ Status MFXVideoENCODEH264::H264CoreEncoder_encodeSEI(
             H264BsReal_EndOfNAL_8u16s( bs, (Ipp8u*)dst->GetDataPointer() + oldsize, 0, NAL_UT_SEI, startPicture, 0));
     }
 
-    memcpy(core_enc->m_SEIData.m_insertedSEI, need_insert, 36 * sizeof(Ipp8u));
+    MFX_INTERNAL_CPY(core_enc->m_SEIData.m_insertedSEI, need_insert, 36 * sizeof(Ipp8u));
 
     return ps;
 }

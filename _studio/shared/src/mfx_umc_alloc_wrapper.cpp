@@ -10,6 +10,7 @@
 //          UMC wrapper for MFX Memory Allocator
 //
 */
+#include "umc_defs.h"
 
 #include "mfx_umc_alloc_wrapper.h"
 #include "mfx_common.h"
@@ -18,6 +19,7 @@
 
 #include "ippi.h"
 #include "ippcc.h"
+#include "ipps.h"
 
 #include "vm_file.h"
 
@@ -886,11 +888,11 @@ mfxStatus mfx_UMC_FrameAllocator::PrepareToOutput(mfxFrameSurface1 *surface_work
         return MFX_ERR_UNSUPPORTED;
     }
 
-    memcpy(&m_surface.Info, &surface_work->Info, sizeof(surface_work->Info));
+    MFX_INTERNAL_CPY(&m_surface.Info, &surface_work->Info, sizeof(surface_work->Info));
 
     mfxFrameSurface1 dstSurface;
-    memcpy(&dstSurface.Info, &surface_work->Info, sizeof(surface_work->Info));
-    memcpy(&dstSurface.Data, &surface_work->Data, sizeof(surface_work->Data));
+    MFX_INTERNAL_CPY(&dstSurface.Info, &surface_work->Info, sizeof(surface_work->Info));
+    MFX_INTERNAL_CPY(&dstSurface.Data, &surface_work->Data, sizeof(surface_work->Data));
 
     sts = m_pCore->DoFastCopyWrapper(surface_work,
                                      MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET,
@@ -1288,7 +1290,7 @@ UMC::Status mfx_UMC_FrameAllocator_D3D_Converter::InitMfx(UMC::FrameAllocatorPar
         {
             m_frameData[i].first.Data.MemId = response->mids[i];
 
-            memcpy(&m_frameData[i].first.Info, &request->Info, sizeof(mfxFrameInfo));
+            MFX_INTERNAL_CPY(&m_frameData[i].first.Info, &request->Info, sizeof(mfxFrameInfo));
 
             // fill UMC frameData
             FrameInformation * frameMID = &m_frameData[i].second;

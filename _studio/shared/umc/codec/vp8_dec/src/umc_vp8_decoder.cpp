@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2011 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2011-2013 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -187,7 +187,7 @@ Status VP8VideoDecoder::GetFrame(MediaData* in, MediaData* out)
   RefreshFrames();
 
   if (!m_RefreshInfo.refreshProbabilities)
-    memcpy(&m_FrameProbs, &m_FrameProbs_saved, sizeof(m_FrameProbs));
+    MFX_INTERNAL_CPY(&m_FrameProbs, &m_FrameProbs_saved, sizeof(m_FrameProbs));
 
   //out->SetFlags(m_FrameInfo.showFrame);
 
@@ -312,7 +312,7 @@ Status VP8VideoDecoder::GetFrame(MediaData* in, FrameData **out)
   RefreshFrames();
 
   if (!m_RefreshInfo.refreshProbabilities)
-    memcpy(&m_FrameProbs, &m_FrameProbs_saved, sizeof(m_FrameProbs));
+    MFX_INTERNAL_CPY(&m_FrameProbs, &m_FrameProbs_saved, sizeof(m_FrameProbs));
 
    VideoDataInfo info;
    info.Init(m_Params.info.clip_info.width, m_Params.info.clip_info.height, NV12, 8);
@@ -522,7 +522,7 @@ Status VP8VideoDecoder::DecodeFrameHeader(MediaData *in)
     data_in   += 7;
 //    data_size -= 7;
 
-    memcpy((Ipp8u*)(m_FrameProbs.coeff_probs),
+    MFX_INTERNAL_CPY((Ipp8u*)(m_FrameProbs.coeff_probs),
            (Ipp8u*)vp8_default_coeff_probs,
            sizeof(vp8_default_coeff_probs)); //???
 
@@ -544,7 +544,7 @@ Status VP8VideoDecoder::DecodeFrameHeader(MediaData *in)
       m_FrameProbs.mbModeProbUV[i] = vp8_mb_mode_uv_probs[i];
 
     // restore default MV contexts
-    memcpy(m_FrameProbs.mvContexts, vp8_default_mv_contexts, sizeof(vp8_default_mv_contexts));
+    MFX_INTERNAL_CPY(m_FrameProbs.mvContexts, vp8_default_mv_contexts, sizeof(vp8_default_mv_contexts));
     
   }
 //  else if (first_partition_size > data_size/* - 3*/)
@@ -667,7 +667,7 @@ Status VP8VideoDecoder::DecodeFrameHeader(MediaData *in)
   VP8_DECODE_BOOL(pBoolDec, 128, m_RefreshInfo.refreshProbabilities);
 
   if (!m_RefreshInfo.refreshProbabilities)
-    memcpy(&m_FrameProbs_saved, &m_FrameProbs, sizeof(m_FrameProbs));
+    MFX_INTERNAL_CPY(&m_FrameProbs_saved, &m_FrameProbs, sizeof(m_FrameProbs));
 
   if (m_FrameInfo.frameType != I_PICTURE)
   {

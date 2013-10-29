@@ -366,7 +366,7 @@ mfxStatus MFXVC1DecCommon::ParseSeqHeader(mfxBitstream *bs,
 
         VC1CheckDataLen(SHLen,32);
         
-        //memcpy(pTemp,bs_out.Data + 4,19);
+        //MFX_INTERNAL_CPY(pTemp,bs_out.Data + 4,19);
         UMC::VC1Common::SwapData(pTemp,19);
 
         pbs = (mfxU32*)pTemp;

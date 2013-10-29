@@ -7,6 +7,7 @@
 //          Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
 //
 */
+#include "ipps.h"
 
 #include "mfx_common.h"
 #ifdef MFX_ENABLE_H264_VIDEO_ENCODE_HW
@@ -735,26 +736,26 @@ namespace
             switch (meMethod)
             {
             case 2:
-                memcpy(&spath.IMESearchPath0to31[0], &SingleSU[0], 32*sizeof(mfxU8));
+                MFX_INTERNAL_CPY(&spath.IMESearchPath0to31[0], &SingleSU[0], 32*sizeof(mfxU8));
                 maxNumSU = 1;
                 break;
             case 3:
-                memcpy(&spath.IMESearchPath0to31[0], &RasterScan_48x40[0], 32*sizeof(mfxU8));
-                memcpy(&spath.IMESearchPath32to55[0], &RasterScan_48x40[32], 24*sizeof(mfxU8));
+                MFX_INTERNAL_CPY(&spath.IMESearchPath0to31[0], &RasterScan_48x40[0], 32*sizeof(mfxU8));
+                MFX_INTERNAL_CPY(&spath.IMESearchPath32to55[0], &RasterScan_48x40[32], 24*sizeof(mfxU8));
                 break;
             case 4:
-                memcpy(&spath.IMESearchPath0to31[0], &FullSpiral_48x40[0], 32*sizeof(mfxU8));
-                memcpy(&spath.IMESearchPath32to55[0], &FullSpiral_48x40[32], 24*sizeof(mfxU8));
+                MFX_INTERNAL_CPY(&spath.IMESearchPath0to31[0], &FullSpiral_48x40[0], 32*sizeof(mfxU8));
+                MFX_INTERNAL_CPY(&spath.IMESearchPath32to55[0], &FullSpiral_48x40[32], 24*sizeof(mfxU8));
                 break;
             case 5:
-                memcpy(&spath.IMESearchPath0to31[0], &FullSpiral_48x40[0], 32*sizeof(mfxU8));
-                memcpy(&spath.IMESearchPath32to55[0], &FullSpiral_48x40[32], 24*sizeof(mfxU8));
+                MFX_INTERNAL_CPY(&spath.IMESearchPath0to31[0], &FullSpiral_48x40[0], 32*sizeof(mfxU8));
+                MFX_INTERNAL_CPY(&spath.IMESearchPath32to55[0], &FullSpiral_48x40[32], 24*sizeof(mfxU8));
                 maxNumSU = 16;
                 break;
             case 6:
             default:
-                memcpy(&spath.IMESearchPath0to31[0], &Diamond[0], 32*sizeof(mfxU8));
-                memcpy(&spath.IMESearchPath32to55[0], &Diamond[32], 24*sizeof(mfxU8));
+                MFX_INTERNAL_CPY(&spath.IMESearchPath0to31[0], &Diamond[0], 32*sizeof(mfxU8));
+                MFX_INTERNAL_CPY(&spath.IMESearchPath32to55[0], &Diamond[32], 24*sizeof(mfxU8));
                 break;
             }
         }
@@ -762,13 +763,13 @@ namespace
         {
             if (meMethod == 6)
             {
-                memcpy(&spath.IMESearchPath0to31[0], &Diamond[0], 32*sizeof(mfxU8));
-                memcpy(&spath.IMESearchPath32to55[0], &Diamond[32], 24*sizeof(mfxU8));
+                MFX_INTERNAL_CPY(&spath.IMESearchPath0to31[0], &Diamond[0], 32*sizeof(mfxU8));
+                MFX_INTERNAL_CPY(&spath.IMESearchPath32to55[0], &Diamond[32], 24*sizeof(mfxU8));
             }
             else
             {
-                memcpy(&spath.IMESearchPath0to31[0], &FullSpiral_48x40[0], 32*sizeof(mfxU8));
-                memcpy(&spath.IMESearchPath32to55[0], &FullSpiral_48x40[32], 24*sizeof(mfxU8));
+                MFX_INTERNAL_CPY(&spath.IMESearchPath0to31[0], &FullSpiral_48x40[0], 32*sizeof(mfxU8));
+                MFX_INTERNAL_CPY(&spath.IMESearchPath32to55[0], &FullSpiral_48x40[32], 24*sizeof(mfxU8));
             }
         }
 

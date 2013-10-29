@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2003-2012 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -1805,8 +1805,8 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice4(Ipp32u dir)
     {
         PrepareStrengthsInternal();
 
-        /*memcpy(temp[0], m_deblockingParams.Strength[0], 16);
-        memcpy(temp[1], m_deblockingParams.Strength[1], 16);
+        /*MFX_INTERNAL_CPY(temp[0], m_deblockingParams.Strength[0], 16);
+        MFX_INTERNAL_CPY(temp[1], m_deblockingParams.Strength[1], 16);
             SetEdgeStrength(m_deblockingParams.Strength[0] + 4, 0);
             SetEdgeStrength(m_deblockingParams.Strength[0] + 8, 0);
             SetEdgeStrength(m_deblockingParams.Strength[0] + 12, 0);

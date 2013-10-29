@@ -442,7 +442,7 @@ SEI_Storer_H265::SEI_Message* SEI_Storer_H265::AddMessage(UMC::MediaDataEx *nalU
     m_payloads[freeSlot].data = &(m_data.front()) + m_offset;
     m_payloads[freeSlot].type = type;
 
-    memcpy(&m_data[m_offset], (Ipp8u*)nalUnit->GetDataPointer(), sz);
+    MFX_INTERNAL_CPY(&m_data[m_offset], (Ipp8u*)nalUnit->GetDataPointer(), sz);
 
     m_offset += sz;
 

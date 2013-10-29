@@ -452,7 +452,7 @@ static void PadMB_Luma_8u16s(PIXTYPE *pP, Ipp32s pitchPixels, Ipp32s padFlag, Ip
             s += padSize;
         }
         for (Ipp32s i = 0; i < padSize; i ++) {
-            memcpy(p, pP, s * sizeof(PIXTYPE));
+            MFX_INTERNAL_CPY(p, pP, s * sizeof(PIXTYPE));
             p -= pitchPixels;
         }
         if (padFlag & 1)
@@ -473,7 +473,7 @@ static void PadMB_Luma_8u16s(PIXTYPE *pP, Ipp32s pitchPixels, Ipp32s padFlag, Ip
             s += padSize;
         }
         for (Ipp32s i = 0; i < padSize; i ++) {
-            memcpy(p, pP, s * sizeof(PIXTYPE));
+            MFX_INTERNAL_CPY(p, pP, s * sizeof(PIXTYPE));
             p += pitchPixels;
         }
     }
@@ -521,7 +521,7 @@ static void PadMB_Chroma_8u16s(PIXTYPE *pU, Ipp32s pitchPixels, Ipp32s szX, Ipp3
             s += padSize;
         }
         for (Ipp32s i = 0; i < (padSize >> 1); i ++) {
-            memcpy(pu, pU, s * sizeof(PIXTYPE));
+            MFX_INTERNAL_CPY(pu, pU, s * sizeof(PIXTYPE));
             pu -= pitchPixels;
         }
         if (padFlag & 1) {
@@ -543,7 +543,7 @@ static void PadMB_Chroma_8u16s(PIXTYPE *pU, Ipp32s pitchPixels, Ipp32s szX, Ipp3
             s += padSize;
         }
         for (Ipp32s i = 0; i < (padSize >> 1); i ++) {
-            memcpy(pu, pU, s * sizeof(PIXTYPE));
+            MFX_INTERNAL_CPY(pu, pU, s * sizeof(PIXTYPE));
             pu += pitchPixels;
         }
     }
@@ -604,8 +604,8 @@ static void H264ENC_MAKE_NAME(PadMB_Chroma)(PIXTYPE *pU, PIXTYPE *pV, Ipp32s pit
             s += padSize;
         }
         for (Ipp32s i = 0; i < padSize; i ++) {
-            memcpy(pu, pU, s * sizeof(PIXTYPE));
-            memcpy(pv, pV, s * sizeof(PIXTYPE));
+            MFX_INTERNAL_CPY(pu, pU, s * sizeof(PIXTYPE));
+            MFX_INTERNAL_CPY(pv, pV, s * sizeof(PIXTYPE));
             pu -= pitchPixels;
             pv -= pitchPixels;
         }
@@ -633,8 +633,8 @@ static void H264ENC_MAKE_NAME(PadMB_Chroma)(PIXTYPE *pU, PIXTYPE *pV, Ipp32s pit
             s += padSize;
         }
         for (Ipp32s i = 0; i < padSize; i ++) {
-            memcpy(pu, pU, s * sizeof(PIXTYPE));
-            memcpy(pv, pV, s * sizeof(PIXTYPE));
+            MFX_INTERNAL_CPY(pu, pU, s * sizeof(PIXTYPE));
+            MFX_INTERNAL_CPY(pv, pV, s * sizeof(PIXTYPE));
             pu += pitchPixels;
             pv += pitchPixels;
         }
@@ -1009,9 +1009,9 @@ Status MFXVideoENCODEMVC::H264CoreEncoder_Compress_Slice_MBT(void* state, H264Sl
             core_enc->m_Slices_MBT[i].m_TempRefPicList[1][0] = curr_slice->m_TempRefPicList[1][0];
             core_enc->m_Slices_MBT[i].m_TempRefPicList[1][1] = curr_slice->m_TempRefPicList[1][1];
             if (curr_slice->m_slice_type != PREDSLICE) {
-                memcpy(core_enc->m_Slices_MBT[i].MapColMBToList0, curr_slice->MapColMBToList0, sizeof(curr_slice->MapColMBToList0));
-                memcpy(core_enc->m_Slices_MBT[i].DistScaleFactor, curr_slice->DistScaleFactor, sizeof(curr_slice->DistScaleFactor));
-                memcpy(core_enc->m_Slices_MBT[i].DistScaleFactorMV, curr_slice->DistScaleFactorMV, sizeof(curr_slice->DistScaleFactorMV));
+                MFX_INTERNAL_CPY(core_enc->m_Slices_MBT[i].MapColMBToList0, curr_slice->MapColMBToList0, sizeof(curr_slice->MapColMBToList0));
+                MFX_INTERNAL_CPY(core_enc->m_Slices_MBT[i].DistScaleFactor, curr_slice->DistScaleFactor, sizeof(curr_slice->DistScaleFactor));
+                MFX_INTERNAL_CPY(core_enc->m_Slices_MBT[i].DistScaleFactorMV, curr_slice->DistScaleFactorMV, sizeof(curr_slice->DistScaleFactorMV));
             }
         }
         core_enc->m_Slices_MBT[i].m_Intra_MB_Counter = 0;
@@ -1041,7 +1041,7 @@ Status MFXVideoENCODEMVC::H264CoreEncoder_Compress_Slice_MBT(void* state, H264Sl
 
     for (i = 0; i < nThreads; i ++) {
         if (core_enc->m_info.entropy_coding_mode)
-            memcpy(core_enc->m_Slices_MBT[i].m_pbitstream->context_array, curr_slice->m_pbitstream->context_array, 460 * sizeof(CABAC_CONTEXT));
+            MFX_INTERNAL_CPY(core_enc->m_Slices_MBT[i].m_pbitstream->context_array, curr_slice->m_pbitstream->context_array, 460 * sizeof(CABAC_CONTEXT));
 #ifdef H264_NEW_THREADING
         m_taskParams.threads_data[i].mbt_data.core_enc = core_enc;
         m_taskParams.threads_data[i].mbt_data.curr_slice = curr_slice;
@@ -2453,7 +2453,7 @@ mfxStatus MFXVideoENCODEMVC::InitAllocMVCSeqDesc(mfxExtMVCSeqDesc *depinfo)
         m_mvcdesc.OP[0].TemporalId = 0;
     } else if(depinfo->ViewId==NULL) {
         // Initialization case 2, NumView + View dependency defined
-        memcpy(m_mvcdesc.View, depinfo->View, m_mvcdesc.NumView * sizeof(mfxMVCViewDependency));
+        MFX_INTERNAL_CPY(m_mvcdesc.View, depinfo->View, m_mvcdesc.NumView * sizeof(mfxMVCViewDependency));
 
         m_mvcdesc.ViewId = new mfxU16[m_mvcdesc.NumView];
         if(m_mvcdesc.ViewId==NULL) return MFX_ERR_MEMORY_ALLOC;
@@ -2470,17 +2470,17 @@ mfxStatus MFXVideoENCODEMVC::InitAllocMVCSeqDesc(mfxExtMVCSeqDesc *depinfo)
         m_mvcdesc.OP[0].TemporalId = 0;
     } else {
         // Initialization case 1, all fields are defined
-        memcpy(m_mvcdesc.View, depinfo->View, m_mvcdesc.NumView * sizeof(mfxMVCViewDependency));
+        MFX_INTERNAL_CPY(m_mvcdesc.View, depinfo->View, m_mvcdesc.NumView * sizeof(mfxMVCViewDependency));
 
         m_mvcdesc.ViewId = new mfxU16[depinfo->NumViewId];
         if(m_mvcdesc.ViewId==NULL) return MFX_ERR_MEMORY_ALLOC;
         m_mvcdesc.NumViewId = m_mvcdesc.NumViewIdAlloc = depinfo->NumViewId;
-        memcpy(m_mvcdesc.ViewId, depinfo->ViewId, depinfo->NumViewId * sizeof(mfxU16));
+        MFX_INTERNAL_CPY(m_mvcdesc.ViewId, depinfo->ViewId, depinfo->NumViewId * sizeof(mfxU16));
 
         m_mvcdesc.OP = new mfxMVCOperationPoint[depinfo->NumOP];
         if(m_mvcdesc.OP==NULL) return MFX_ERR_MEMORY_ALLOC;
         m_mvcdesc.NumOP = m_mvcdesc.NumOPAlloc = depinfo->NumOP;
-        memcpy(m_mvcdesc.OP, depinfo->OP, depinfo->NumOP * sizeof(mfxMVCOperationPoint));
+        MFX_INTERNAL_CPY(m_mvcdesc.OP, depinfo->OP, depinfo->NumOP * sizeof(mfxMVCOperationPoint));
 
         for(i=0; i<m_mvcdesc.NumOP; i++) {
             ptrdiff_t offset = depinfo->OP[i].TargetViewId - depinfo->ViewId;
@@ -3533,7 +3533,7 @@ mfxStatus MFXVideoENCODEMVC::Query(mfxVideoParam *par_in, mfxVideoParam *par_out
             {
                 cnt = MIN(depinfo_out->NumView, MIN(depinfo_out->NumViewAlloc, depinfo_in->NumViewAlloc));
                 for(j=0; j<cnt; j++) {
-                    memcpy(depinfo_out->View + j, depinfo_in->View + j, sizeof(mfxMVCViewDependency));
+                    MFX_INTERNAL_CPY(depinfo_out->View + j, depinfo_in->View + j, sizeof(mfxMVCViewDependency));
                     if(depinfo_out->View[j].ViewId >= 1024) {depinfo_out->View[j].ViewId = 0; isInvalid ++; }
                     if(depinfo_out->View[j].NumAnchorRefsL0 >= 16) {depinfo_out->View[j].NumAnchorRefsL0 = 0; isInvalid ++; }
                     if(depinfo_out->View[j].NumAnchorRefsL1 >= 16) {depinfo_out->View[j].NumAnchorRefsL1 = 0; isInvalid ++; }
@@ -4335,7 +4335,7 @@ mfxStatus MFXVideoENCODEMVC::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternalP
 //    //Throw away all previous data
 //    if( m_userData != NULL ) free( m_userData );
 //    m_userData = (mfxU8*)malloc(len);
-//    memcpy( m_userData, ud, len );
+//    MFX_INTERNAL_CPY( m_userData, ud, len );
 //    m_userDataLen = len;
 //    m_userDataTime = ts;
 //
@@ -4392,7 +4392,7 @@ mfxStatus MFXVideoENCODEMVC::GetVideoParam(mfxVideoParam *par)
         depinfo->NumOP = m_mvcdesc.NumOP;
         if(depinfo->NumView <= depinfo->NumViewAlloc) {
             if(depinfo->View != NULL) {
-                memcpy(depinfo->View, m_mvcdesc.View, m_mvcdesc.NumView*sizeof(mfxMVCViewDependency));
+                MFX_INTERNAL_CPY(depinfo->View, m_mvcdesc.View, m_mvcdesc.NumView*sizeof(mfxMVCViewDependency));
             } else {
                 return MFX_ERR_NULL_PTR;
             }
@@ -4401,7 +4401,7 @@ mfxStatus MFXVideoENCODEMVC::GetVideoParam(mfxVideoParam *par)
         }
         if(depinfo->NumViewId <= depinfo->NumViewIdAlloc) {
             if(depinfo->ViewId != NULL) {
-                memcpy(depinfo->ViewId, m_mvcdesc.ViewId, m_mvcdesc.NumViewId*sizeof(mfxU16));
+                MFX_INTERNAL_CPY(depinfo->ViewId, m_mvcdesc.ViewId, m_mvcdesc.NumViewId*sizeof(mfxU16));
             } else {
                 return MFX_ERR_NULL_PTR;
             }
@@ -4410,7 +4410,7 @@ mfxStatus MFXVideoENCODEMVC::GetVideoParam(mfxVideoParam *par)
         }
         if(depinfo->NumOP <= depinfo->NumOPAlloc) {
             if(depinfo->OP != NULL) {
-                memcpy(depinfo->OP, m_mvcdesc.OP, m_mvcdesc.NumOP*sizeof(mfxMVCOperationPoint));
+                MFX_INTERNAL_CPY(depinfo->OP, m_mvcdesc.OP, m_mvcdesc.NumOP*sizeof(mfxMVCOperationPoint));
                 for(i=0; i<depinfo->NumOP; i++) {
                     ptrdiff_t offset = m_mvcdesc.OP[i].TargetViewId - m_mvcdesc.ViewId;
                     depinfo->OP[i].TargetViewId = depinfo->ViewId + offset;
@@ -4869,7 +4869,7 @@ Status MFXVideoENCODEMVC::Encode(
             PIXTYPE *pyD = core_enc->m_pCurrentFrame->m_pYPlane + core_enc->m_pCurrentFrame->uHeight * core_enc->m_pCurrentFrame->m_pitchPixels;
             PIXTYPE *pyS = pyD - core_enc->m_pCurrentFrame->m_pitchPixels;
             for (i = 0; i < padH; i ++) {
-                memcpy(pyD, pyS, core_enc->m_PaddedSize.width * sizeof(PIXTYPE));
+                MFX_INTERNAL_CPY(pyD, pyS, core_enc->m_PaddedSize.width * sizeof(PIXTYPE));
                 //memset(pyD, 0, core_enc->m_PaddedSize.width * sizeof(PIXTYPE));
                 pyD += core_enc->m_pCurrentFrame->m_pitchPixels;
             }
@@ -4884,8 +4884,8 @@ Status MFXVideoENCODEMVC::Encode(
                 PIXTYPE *puS = puD - core_enc->m_pCurrentFrame->m_pitchPixels;
                 PIXTYPE *pvS = pvD - core_enc->m_pCurrentFrame->m_pitchPixels;
                 for (i = 0; i < padH; i ++) {
-                    memcpy(puD, puS, (core_enc->m_PaddedSize.width >> 1) * sizeof(PIXTYPE));
-                    memcpy(pvD, pvS, (core_enc->m_PaddedSize.width >> 1) * sizeof(PIXTYPE));
+                    MFX_INTERNAL_CPY(puD, puS, (core_enc->m_PaddedSize.width >> 1) * sizeof(PIXTYPE));
+                    MFX_INTERNAL_CPY(pvD, pvS, (core_enc->m_PaddedSize.width >> 1) * sizeof(PIXTYPE));
                     //memset(puD, 0, (core_enc->m_PaddedSize.width >> 1) * sizeof(PIXTYPE));
                     //memset(pvD, 0, (core_enc->m_PaddedSize.width >> 1) * sizeof(PIXTYPE));
                     puD += core_enc->m_pCurrentFrame->m_pitchPixels;
@@ -6756,7 +6756,7 @@ Status MFXVideoENCODEMVC::H264CoreEncoder_encodeSEI(
             H264BsReal_EndOfNAL_8u16s( bs, (Ipp8u*)dst->GetDataPointer() + oldsize, 0, NAL_UT_SEI, startPicture, 0));
     }
 
-    memcpy(core_enc->m_SEIData.m_insertedSEI, need_insert, 36 * sizeof(Ipp8u));
+    MFX_INTERNAL_CPY(core_enc->m_SEIData.m_insertedSEI, need_insert, 36 * sizeof(Ipp8u));
 
 
     return ps;

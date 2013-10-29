@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2002-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2002-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -144,9 +144,9 @@ void MPEG2EncodeDebug_HW::GatherInterRefMBlocksData(int k,void *vector_in,void *
   IppMotionVector2 vector[3][2];
 
 
-  memcpy(mb_debug_info[k].ref_vfield_select,mbinfo->mv_field_sel,sizeof(int[3][2]));
+  MFX_INTERNAL_CPY(mb_debug_info[k].ref_vfield_select,mbinfo->mv_field_sel,sizeof(int[3][2]));
 
-  memcpy(vector,vector_in,sizeof(IppMotionVector2[3][2]));
+  MFX_INTERNAL_CPY(vector,vector_in,sizeof(IppMotionVector2[3][2]));
   IppiSize roi_l = {16,16},
     roi_c = {pPAK->BlkWidth_c,pPAK->BlkHeight_c};
 
@@ -510,7 +510,7 @@ void MPEG2EncodeDebug_HW::GatherBlockData(int k,int blk,int picture_coding_type,
           ippiQuantInv_MPEG2_16s_C1I(pBlock, quantiser_scale_value, quantMatrix);
         }
       }
-      memcpy(mb_debug_info[k].encMbData[blk],pBlock,8*8*sizeof(Ipp16s));
+      MFX_INTERNAL_CPY(mb_debug_info[k].encMbData[blk],pBlock,8*8*sizeof(Ipp16s));
     }
     else if(intra_flag)
     {

@@ -733,7 +733,7 @@ void H264ENC_MAKE_NAME(PredictIntraLuma16x16)(
         Ipp16u *pAbove = pRef - pitchPixels;
         Ipp32s uSum = 0;
         for (int i = 0; i < 16; i ++) {
-            memcpy(pPredBuf + 256 * PRED16x16_VERT + i*16, pAbove, 16*sizeof(Ipp16u));
+            MFX_INTERNAL_CPY(pPredBuf + 256 * PRED16x16_VERT + i*16, pAbove, 16*sizeof(Ipp16u));
             uSum += pAbove[i];
         }
         uSum = (uSum + 8) >> 4;
@@ -755,7 +755,7 @@ void H264ENC_MAKE_NAME(PredictIntraLuma16x16)(
         Ipp16u *pLeft = pRef - 1;
         Ipp32s uSum = 0;
         for (int i = 0; i < 16; i ++) {
-            memcpy(pPredBuf + 256 * PRED16x16_VERT + i*16, pAbove, 16*sizeof(Ipp16u));
+            MFX_INTERNAL_CPY(pPredBuf + 256 * PRED16x16_VERT + i*16, pAbove, 16*sizeof(Ipp16u));
             MemorySet(pPredBuf + 256 * PRED16x16_HORZ + i*16, *pLeft, 16);
             uSum += pAbove[i];
             uSum += *pLeft;
@@ -781,7 +781,7 @@ void H264ENC_MAKE_NAME(PredictIntraLuma16x16)(
         c = (5 * iV + 32) >> 6;
         Ipp32s max_pix_value = (1 << bitDepth) - 1;
         for (int i = 0; i < 16; i ++) {
-            memcpy(pPredBuf + 256 * PRED16x16_VERT + i*16, pAbove, 16*sizeof(Ipp16u));
+            MFX_INTERNAL_CPY(pPredBuf + 256 * PRED16x16_VERT + i*16, pAbove, 16*sizeof(Ipp16u));
             MemorySet(pPredBuf + 256 * PRED16x16_HORZ + i*16, *pLeft, 16);
             uSum += pAbove[i];
             uSum += *pLeft;
@@ -868,7 +868,7 @@ void H264ENC_MAKE_NAME(PredictIntraLuma16x16)(
         Ipp32s i, uSum = 0;
 #ifndef INTRINSIC_OPT
         for (i = 0; i < 16; i ++) {
-            memcpy(pPredBuf + 256 * PRED16x16_VERT + i*16, pAbove, 16*sizeof(Ipp8u));
+            MFX_INTERNAL_CPY(pPredBuf + 256 * PRED16x16_VERT + i*16, pAbove, 16*sizeof(Ipp8u));
             uSum += pAbove[i];
         }
         uSum = (uSum + 8) >> 4;
@@ -950,7 +950,7 @@ void H264ENC_MAKE_NAME(PredictIntraLuma16x16)(
         Ipp8u *pLeft = pRef - 1;
         Ipp32s uSum = 0;
         for (int i = 0; i < 16; i ++) {
-            memcpy(pPredBuf + 256 * PRED16x16_VERT + i*16, pAbove, 16*sizeof(Ipp8u));
+            MFX_INTERNAL_CPY(pPredBuf + 256 * PRED16x16_VERT + i*16, pAbove, 16*sizeof(Ipp8u));
             MemorySet(pPredBuf + 256 * PRED16x16_HORZ + i*16, *pLeft, 16);
             uSum += pAbove[i];
             uSum += *pLeft;
@@ -977,7 +977,7 @@ void H264ENC_MAKE_NAME(PredictIntraLuma16x16)(
 #ifndef INTRINSIC_OPT
         Ipp32s max_pix_value = (1 << bitDepth) - 1;
         for (int i = 0; i < 16; i ++) {
-            memcpy(pPredBuf + 256 * PRED16x16_VERT + i*16, pAbove, 16*sizeof(Ipp8u));
+            MFX_INTERNAL_CPY(pPredBuf + 256 * PRED16x16_VERT + i*16, pAbove, 16*sizeof(Ipp8u));
             MemorySet(pPredBuf + 256 * PRED16x16_HORZ + i*16, *pLeft, 16);
             uSum += pAbove[i];
             uSum += *pLeft;
@@ -1477,7 +1477,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_AIModeSelectOneMB_16x16)(
     {
     if (!leftAvailable && !topAvailable){
         *pMode = PRED16x16_DC;
-        memcpy(pPredBuf, uPred + 256 * PRED16x16_DC, 256*sizeof(PIXTYPE));
+        MFX_INTERNAL_CPY(pPredBuf, uPred + 256 * PRED16x16_DC, 256*sizeof(PIXTYPE));
         Ipp32u curSAD = BITS_COST(3, glob_RDQM[iQP]);
         if (core_enc->m_Analyse & ANALYSE_SAD)
             return curSAD + SAD16x16(pSrc, pitchPixels, uPred + 256 * PRED16x16_DC, 16);
@@ -1526,7 +1526,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_AIModeSelectOneMB_16x16)(
         uSmallestSAD = uSAD[PRED16x16_PLANAR];
         Best16x16Type = PRED16x16_PLANAR;
     }
-    memcpy(pPredBuf, uPred + 256 * Best16x16Type, 256*sizeof(PIXTYPE));
+    MFX_INTERNAL_CPY(pPredBuf, uPred + 256 * Best16x16Type, 256*sizeof(PIXTYPE));
     *pMode = (T_AIMode)Best16x16Type;
     return uSmallestSAD;
 }
@@ -1645,8 +1645,8 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_AIModeSelectChromaMBs_8x8_NV12)(
             b[15] = pR[15];
 
             for (i = 0; i < 8; i++) {
-                memcpy(&uVertPred[0][i*8], b, 8*sizeof(PIXTYPE));
-                memcpy(&uVertPred[1][i*8], b+8, 8*sizeof(PIXTYPE));
+                MFX_INTERNAL_CPY(&uVertPred[0][i*8], b, 8*sizeof(PIXTYPE));
+                MFX_INTERNAL_CPY(&uVertPred[1][i*8], b+8, 8*sizeof(PIXTYPE));
                 uSum[0][i>>2] += b[i];
                 uSum[1][i>>2] += b[i+8];
             }
@@ -1805,20 +1805,20 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_AIModeSelectChromaMBs_8x8_NV12)(
         switch (Best8x8Type) {
         case PRED8x8_VERT:
             for (i = 0; i < 8; i ++) {
-                memcpy(pUPredBuf+i*16, &uVertPred[0][i*8], 8*sizeof(PIXTYPE));
-                memcpy(pVPredBuf+i*16, &uVertPred[1][i*8], 8*sizeof(PIXTYPE));
+                MFX_INTERNAL_CPY(pUPredBuf+i*16, &uVertPred[0][i*8], 8*sizeof(PIXTYPE));
+                MFX_INTERNAL_CPY(pVPredBuf+i*16, &uVertPred[1][i*8], 8*sizeof(PIXTYPE));
             }
             break;
         case PRED8x8_HORZ:
             for (i = 0; i < 8; i ++) {
-                memcpy(pUPredBuf+i*16, &uHorizPred[0][i*8], 8*sizeof(PIXTYPE));
-                memcpy(pVPredBuf+i*16, &uHorizPred[1][i*8], 8*sizeof(PIXTYPE));
+                MFX_INTERNAL_CPY(pUPredBuf+i*16, &uHorizPred[0][i*8], 8*sizeof(PIXTYPE));
+                MFX_INTERNAL_CPY(pVPredBuf+i*16, &uHorizPred[1][i*8], 8*sizeof(PIXTYPE));
             }
             break;
         case PRED8x8_DC:
             for (i = 0; i < 8; i ++) {
-                memcpy(pUPredBuf+i*16, &uDCPred[0][i*8], 8*sizeof(PIXTYPE));
-                memcpy(pVPredBuf+i*16, &uDCPred[1][i*8], 8*sizeof(PIXTYPE));
+                MFX_INTERNAL_CPY(pUPredBuf+i*16, &uDCPred[0][i*8], 8*sizeof(PIXTYPE));
+                MFX_INTERNAL_CPY(pVPredBuf+i*16, &uDCPred[1][i*8], 8*sizeof(PIXTYPE));
             }
             break;
         case PRED8x8_PLANAR:
@@ -1888,8 +1888,8 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_AIModeSelectChromaMBs_8x8)(
             PIXTYPE *pAboveU = pURef - uPitch;
             PIXTYPE *pAboveV = pVRef - uPitch;
             for (i = 0; i < 8; i++) {
-                memcpy(&uVertPred[0][i*8], pAboveU, 8*sizeof(PIXTYPE));
-                memcpy(&uVertPred[1][i*8], pAboveV, 8*sizeof(PIXTYPE));
+                MFX_INTERNAL_CPY(&uVertPred[0][i*8], pAboveU, 8*sizeof(PIXTYPE));
+                MFX_INTERNAL_CPY(&uVertPred[1][i*8], pAboveV, 8*sizeof(PIXTYPE));
                 uSum[0][i>>2] += pAboveU[i];
                 uSum[1][i>>2] += pAboveV[i];
             }
@@ -2048,20 +2048,20 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_AIModeSelectChromaMBs_8x8)(
         switch (Best8x8Type) {
         case PRED8x8_VERT:
             for (i = 0; i < 8; i ++) {
-                memcpy(pUPredBuf+i*16, &uVertPred[0][i*8], 8*sizeof(PIXTYPE));
-                memcpy(pVPredBuf+i*16, &uVertPred[1][i*8], 8*sizeof(PIXTYPE));
+                MFX_INTERNAL_CPY(pUPredBuf+i*16, &uVertPred[0][i*8], 8*sizeof(PIXTYPE));
+                MFX_INTERNAL_CPY(pVPredBuf+i*16, &uVertPred[1][i*8], 8*sizeof(PIXTYPE));
             }
             break;
         case PRED8x8_HORZ:
             for (i = 0; i < 8; i ++) {
-                memcpy(pUPredBuf+i*16, &uHorizPred[0][i*8], 8*sizeof(PIXTYPE));
-                memcpy(pVPredBuf+i*16, &uHorizPred[1][i*8], 8*sizeof(PIXTYPE));
+                MFX_INTERNAL_CPY(pUPredBuf+i*16, &uHorizPred[0][i*8], 8*sizeof(PIXTYPE));
+                MFX_INTERNAL_CPY(pVPredBuf+i*16, &uHorizPred[1][i*8], 8*sizeof(PIXTYPE));
             }
             break;
         case PRED8x8_DC:
             for (i = 0; i < 8; i ++) {
-                memcpy(pUPredBuf+i*16, &uDCPred[0][i*8], 8*sizeof(PIXTYPE));
-                memcpy(pVPredBuf+i*16, &uDCPred[1][i*8], 8*sizeof(PIXTYPE));
+                MFX_INTERNAL_CPY(pUPredBuf+i*16, &uDCPred[0][i*8], 8*sizeof(PIXTYPE));
+                MFX_INTERNAL_CPY(pVPredBuf+i*16, &uDCPred[1][i*8], 8*sizeof(PIXTYPE));
             }
             break;
         case PRED8x8_PLANAR:
@@ -2144,9 +2144,9 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_AIModeSelectChromaMBs_8x8)(
                  uSum[plane][i+4] = uSum[plane][i+8] = uSum[plane][i+12] = uSum[plane][i];
             }
             for (i=0; i < (num_cols>>2); ++i) {
-                memcpy(&uVertPred[plane][i*16+4],&uVertPred[plane][i*16],4*sizeof(PIXTYPE));
-                memcpy(&uVertPred[plane][i*16+8],&uVertPred[plane][i*16],4*sizeof(PIXTYPE));
-                memcpy(&uVertPred[plane][i*16+12],&uVertPred[plane][i*16],4*sizeof(PIXTYPE));
+                MFX_INTERNAL_CPY(&uVertPred[plane][i*16+4],&uVertPred[plane][i*16],4*sizeof(PIXTYPE));
+                MFX_INTERNAL_CPY(&uVertPred[plane][i*16+8],&uVertPred[plane][i*16],4*sizeof(PIXTYPE));
+                MFX_INTERNAL_CPY(&uVertPred[plane][i*16+12],&uVertPred[plane][i*16],4*sizeof(PIXTYPE));
             }
         }
     }
@@ -2798,7 +2798,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_AIModeSelectOneMB_8x8)(
     //Copy prediction
     if( pPredBuf ){
         for( i=0; i<8; i++){
-            memcpy(pPredBuf, &uPred[intra_actual_mode][i*8], 8*sizeof(PIXTYPE));
+            MFX_INTERNAL_CPY(pPredBuf, &uPred[intra_actual_mode][i*8], 8*sizeof(PIXTYPE));
             pPredBuf += 16; //pitch = 16
         }
         //Save the final mode
@@ -2860,7 +2860,7 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_Filter8x8Pels)(
         pred_pels_filtered[17+7] = (pred_pels[17+6]+3*pred_pels[17+7]+2)>>2;
     }
 
-    memcpy( pred_pels, pred_pels_filtered, 25*sizeof(PIXTYPE));
+    MFX_INTERNAL_CPY( pred_pels, pred_pels_filtered, 25*sizeof(PIXTYPE));
 }
 
 void H264ENC_MAKE_NAME(H264CoreEncoder_GetPrediction8x8)(
@@ -3593,7 +3593,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_Intra8x8SelectRD)(
             mode = bestMode[i];
             pPred = pPredBuf;
             for (k = 0; k < 8; k ++) {
-                memcpy(pPred, &uPred[mode][k*8], 8*sizeof(PIXTYPE));
+                MFX_INTERNAL_CPY(pPred, &uPred[mode][k*8], 8*sizeof(PIXTYPE));
                 pPred += 16; //pitch = 16
             }
             cur_mb.m_uIntraCBP8x8 |= CBP8x8Mask[uBlock];
@@ -3657,7 +3657,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_Intra8x8SelectRD)(
         intra_actual_mode = 2;
 
         for( i=0; i<8; i++){
-             memcpy(pPred, &uPred[intra_actual_mode][i*8], 8*sizeof(PIXTYPE));
+             MFX_INTERNAL_CPY(pPred, &uPred[intra_actual_mode][i*8], 8*sizeof(PIXTYPE));
              pPred += 16; //pitch = 16
          }
         cur_mb.m_uIntraCBP8x8 |= CBP8x8Mask[uBlock];
@@ -3707,7 +3707,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_Intra8x8SelectRD)(
                 Ipp32s k;
                 pPred = pPredBuf;
                 for( k=0; k<8; k++){
-                    memcpy(pPred, &uPred[mode][k*8], 8*sizeof(PIXTYPE));
+                    MFX_INTERNAL_CPY(pPred, &uPred[mode][k*8], 8*sizeof(PIXTYPE));
                     pPred += 16; //pitch = 16
                 }
                 cur_mb.m_uIntraCBP8x8 |= CBP8x8Mask[uBlock];
@@ -3760,7 +3760,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_Intra8x8SelectRD)(
     if( pPredBuf ){
         pPred = pPredBuf;
         for( i=0; i<8; i++){
-            memcpy(pPred, &uPred[intra_actual_mode][i*8], 8*sizeof(PIXTYPE));
+            MFX_INTERNAL_CPY(pPred, &uPred[intra_actual_mode][i*8], 8*sizeof(PIXTYPE));
             pPred += 16; //pitch = 16
         }
         if (curr_slice->m_use_transform_for_intra_decision){
@@ -3838,14 +3838,14 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_Intra16x16SelectRD)(
     // Initialize uVertPred with prediction from above
     if (topAvailable){
         pAbove = pRef - pitchPixels;
-        memcpy(uVertPred, pAbove, 16*sizeof(PIXTYPE));
+        MFX_INTERNAL_CPY(uVertPred, pAbove, 16*sizeof(PIXTYPE));
         for(i = 0; i < 16; i++) {
             // Accumulate sum for DC predictor
             uSum += pAbove[i];
         }
 
         //Vertical
-        for (row=0; row<16; row++) memcpy(pPredBuf + row*16, uVertPred, 16*sizeof(PIXTYPE));
+        for (row=0; row<16; row++) MFX_INTERNAL_CPY(pPredBuf + row*16, uVertPred, 16*sizeof(PIXTYPE));
         cur_mb.LocalMacroblockInfo->cbp_luma = 0xffff;
         cur_mb.LocalMacroblockInfo->cbp = cur_mb.LocalMacroblockInfo->cbp_bits = 0;
         H264ENC_MAKE_NAME(H264CoreEncoder_TransQuantIntra16x16_RD)(state,  curr_slice );
@@ -3933,7 +3933,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_Intra16x16SelectRD)(
     switch (Best16x16Type) {
     case PRED16x16_VERT:
         // copy from uVertPred to PredBuf, duplicating for each row of the MB
-        for (row=0; row<16; row++) memcpy(pPredBuf + row*16, uVertPred, 16*sizeof(PIXTYPE));
+        for (row=0; row<16; row++) MFX_INTERNAL_CPY(pPredBuf + row*16, uVertPred, 16*sizeof(PIXTYPE));
         break;
     case PRED16x16_HORZ:
         // copy from uHorizPred to PredBuf
@@ -4059,7 +4059,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_IntraSelectChromaRD)(
         for (plane = 0; plane < 2; plane++) {
             pAbove = plane ? pVRef - uPitch : pURef - uPitch;
             // Get predictors from above and copy into 4x4 blocks for SAD calculations
-            memcpy(uVertPred[plane], pAbove, 8*sizeof(PIXTYPE));
+            MFX_INTERNAL_CPY(uVertPred[plane], pAbove, 8*sizeof(PIXTYPE));
             for (i=0; i<num_cols; i++) {
                 uSum[plane][i>>2] += pAbove[i];     // accumulate to A & B for DC predictor
             }
@@ -4075,8 +4075,8 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_IntraSelectChromaRD)(
 
         //Vertical
         Ipp32s row;
-        for (row=0; row<8; row++) memcpy(pUPredBuf + row*16, uVertPred[0], 8*sizeof(PIXTYPE));
-        for (row=0; row<8; row++) memcpy(pVPredBuf + row*16, uVertPred[1], 8*sizeof(PIXTYPE));
+        for (row=0; row<8; row++) MFX_INTERNAL_CPY(pUPredBuf + row*16, uVertPred[0], 8*sizeof(PIXTYPE));
+        for (row=0; row<8; row++) MFX_INTERNAL_CPY(pVPredBuf + row*16, uVertPred[1], 8*sizeof(PIXTYPE));
         H264ENC_MAKE_NAME(H264CoreEncoder_TransQuantChromaIntra_RD)(state, curr_slice );
 //        uSAD = SSD8x8(core_enc->m_pCurrentFrame->m_pUPlane + uOffset, cur_mb.mbPitchPixels, core_enc->m_pReconstructFrame->m_pUPlane + uOffset, cur_mb.mbPitchPixels);
 //        uSAD += SSD8x8(core_enc->m_pCurrentFrame->m_pVPlane + uOffset, cur_mb.mbPitchPixels, core_enc->m_pReconstructFrame->m_pVPlane + uOffset, cur_mb.mbPitchPixels);
@@ -4245,8 +4245,8 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_IntraSelectChromaRD)(
     // Set MB type for smallest, fill PredBuf with predictors
     switch (Best8x8Type) {
     case PRED8x8_VERT:
-        for (i=0; i<8; i++) memcpy(pUPredBuf + i*16, uVertPred[0], 8*sizeof(PIXTYPE));
-        for (i=0; i<8; i++) memcpy(pVPredBuf + i*16, uVertPred[1], 8*sizeof(PIXTYPE));
+        for (i=0; i<8; i++) MFX_INTERNAL_CPY(pUPredBuf + i*16, uVertPred[0], 8*sizeof(PIXTYPE));
+        for (i=0; i<8; i++) MFX_INTERNAL_CPY(pVPredBuf + i*16, uVertPred[1], 8*sizeof(PIXTYPE));
         break;
     case PRED8x8_HORZ:
         for (i=0; i<num_rows; i++){
@@ -4457,7 +4457,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_IntraSelectChromaRD_NV12)(
         for (plane = 0; plane < 2; plane++) {
             pAbove = plane ? b + 10 : b + 1;
             // Get predictors from above and copy into 4x4 blocks for SAD calculations
-            memcpy(uVertPred[plane], pAbove, 8*sizeof(PIXTYPE));
+            MFX_INTERNAL_CPY(uVertPred[plane], pAbove, 8*sizeof(PIXTYPE));
             for (i=0; i<8; i++) {
                 uSum[plane][i>>2] += pAbove[i];     // accumulate to A & B for DC predictor
             }
@@ -4469,8 +4469,8 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_IntraSelectChromaRD_NV12)(
 
         //Vertical
         Ipp32s row;
-        for (row=0; row<8; row++) memcpy(pUPredBuf + row*16, uVertPred[0], 8*sizeof(PIXTYPE));
-        for (row=0; row<8; row++) memcpy(pVPredBuf + row*16, uVertPred[1], 8*sizeof(PIXTYPE));
+        for (row=0; row<8; row++) MFX_INTERNAL_CPY(pUPredBuf + row*16, uVertPred[0], 8*sizeof(PIXTYPE));
+        for (row=0; row<8; row++) MFX_INTERNAL_CPY(pVPredBuf + row*16, uVertPred[1], 8*sizeof(PIXTYPE));
         H264ENC_MAKE_NAME(H264CoreEncoder_TransQuantChromaIntra_RD_NV12)(state, curr_slice, 1);
         uSAD = SSD8x8(core_enc->m_pCurrentFrame->m_pUPlane + uOffset, cur_mb.mbPitchPixels, cur_mb.mbChromaIntra.reconstruct, 16);
         uSAD += SSD8x8(core_enc->m_pCurrentFrame->m_pUPlane + uOffset + 8, cur_mb.mbPitchPixels, cur_mb.mbChromaIntra.reconstruct+8, 16);
@@ -4634,8 +4634,8 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_IntraSelectChromaRD_NV12)(
     // Set MB type for smallest, fill PredBuf with predictors
     switch (Best8x8Type) {
     case PRED8x8_VERT:
-        for (i=0; i<8; i++) memcpy(pUPredBuf + i*16, uVertPred[0], 8*sizeof(PIXTYPE));
-        for (i=0; i<8; i++) memcpy(pVPredBuf + i*16, uVertPred[1], 8*sizeof(PIXTYPE));
+        for (i=0; i<8; i++) MFX_INTERNAL_CPY(pUPredBuf + i*16, uVertPred[0], 8*sizeof(PIXTYPE));
+        for (i=0; i<8; i++) MFX_INTERNAL_CPY(pVPredBuf + i*16, uVertPred[1], 8*sizeof(PIXTYPE));
         break;
     case PRED8x8_HORZ:
         for (i=0; i<8; i++){

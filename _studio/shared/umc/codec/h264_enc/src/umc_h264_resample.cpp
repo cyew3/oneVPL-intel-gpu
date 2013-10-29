@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2013 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -1433,9 +1433,9 @@ static void CleanResidualsOverIntra (H264CoreEncoder_8u16s *curEnc)
     Ipp32s mbHeight = curEnc->m_SeqParamSet->frame_height_in_mbs;
     Ipp32s resStride = curEnc->m_info.info.clip_info.width;
 
-    memcpy(curEnc->m_pYInputBaseResidual, curEnc->m_pYInputResidual, mbHeight*mbWidth*256*sizeof(COEFFSTYPE));
-    memcpy(curEnc->m_pUInputBaseResidual, curEnc->m_pUInputResidual, mbHeight*mbWidth*64*sizeof(COEFFSTYPE));
-    memcpy(curEnc->m_pVInputBaseResidual, curEnc->m_pVInputResidual, mbHeight*mbWidth*64*sizeof(COEFFSTYPE));
+    MFX_INTERNAL_CPY(curEnc->m_pYInputBaseResidual, curEnc->m_pYInputResidual, mbHeight*mbWidth*256*sizeof(COEFFSTYPE));
+    MFX_INTERNAL_CPY(curEnc->m_pUInputBaseResidual, curEnc->m_pUInputResidual, mbHeight*mbWidth*64*sizeof(COEFFSTYPE));
+    MFX_INTERNAL_CPY(curEnc->m_pVInputBaseResidual, curEnc->m_pVInputResidual, mbHeight*mbWidth*64*sizeof(COEFFSTYPE));
 
     for (curMB_Y = 0; curMB_Y < mbHeight; curMB_Y++) {
         for (curMB_X = 0; curMB_X < mbWidth; curMB_X++) {
@@ -1593,12 +1593,12 @@ void umc_h264_mv_resampling(//H264SegmentDecoderMultiThreaded *sd,
                 RefIdxs[0] = &(gmbinfo->RefIdxs[0][curMbAddr]);
                 RefIdxs[1] = &(gmbinfo->RefIdxs[1][curMbAddr]);
 
-                memcpy(gmbs, &refEnc->m_pCurrentFrame->m_mbinfo.mbs[refMbAddr], sizeof(H264MacroblockGlobalInfo));
-                memcpy(lmbs, &refEnc->m_mbinfo.mbs[refMbAddr], sizeof(H264MacroblockLocalInfo));
-                memcpy(&gmbinfo->RefIdxs[0][curMbAddr], &refEnc->m_pCurrentFrame->m_mbinfo.RefIdxs[0][refMbAddr], sizeof(H264MacroblockRefIdxs));
-                memcpy(&gmbinfo->RefIdxs[1][curMbAddr], &refEnc->m_pCurrentFrame->m_mbinfo.RefIdxs[1][refMbAddr], sizeof(H264MacroblockRefIdxs));
-                memcpy(&gmbinfo->MV[0][curMbAddr], &refEnc->m_pCurrentFrame->m_mbinfo.MV[0][refMbAddr], sizeof(H264MacroblockMVs));
-                memcpy(&gmbinfo->MV[1][curMbAddr], &refEnc->m_pCurrentFrame->m_mbinfo.MV[1][refMbAddr], sizeof(H264MacroblockMVs));
+                MFX_INTERNAL_CPY(gmbs, &refEnc->m_pCurrentFrame->m_mbinfo.mbs[refMbAddr], sizeof(H264MacroblockGlobalInfo));
+                MFX_INTERNAL_CPY(lmbs, &refEnc->m_mbinfo.mbs[refMbAddr], sizeof(H264MacroblockLocalInfo));
+                MFX_INTERNAL_CPY(&gmbinfo->RefIdxs[0][curMbAddr], &refEnc->m_pCurrentFrame->m_mbinfo.RefIdxs[0][refMbAddr], sizeof(H264MacroblockRefIdxs));
+                MFX_INTERNAL_CPY(&gmbinfo->RefIdxs[1][curMbAddr], &refEnc->m_pCurrentFrame->m_mbinfo.RefIdxs[1][refMbAddr], sizeof(H264MacroblockRefIdxs));
+                MFX_INTERNAL_CPY(&gmbinfo->MV[0][curMbAddr], &refEnc->m_pCurrentFrame->m_mbinfo.MV[0][refMbAddr], sizeof(H264MacroblockMVs));
+                MFX_INTERNAL_CPY(&gmbinfo->MV[1][curMbAddr], &refEnc->m_pCurrentFrame->m_mbinfo.MV[1][refMbAddr], sizeof(H264MacroblockMVs));
 
             } else if ((i >= leftOffset) && (i < (Ipp32s)curEnc->m_SeqParamSet->frame_width_in_mbs - rightOffset) &&
                 (j >= topOffset) && (j < (Ipp32s)curEnc->m_SeqParamSet->frame_height_in_mbs - bottomOffset))
@@ -1610,8 +1610,8 @@ void umc_h264_mv_resampling(//H264SegmentDecoderMultiThreaded *sd,
 //                assert(xRef>=0 && xRef<refEnc->m_WidthInMBs);
 //                assert(yRef>=0 && yRef<refEnc->m_HeightInMBs);
 
-//                memcpy(&gmbinfo->RefIdxs[0][curMbAddr], &refEnc->m_pCurrentFrame->m_mbinfo.RefIdxs[0][refMbAddr], sizeof(H264MacroblockRefIdxs));
-//                memcpy(&gmbinfo->RefIdxs[1][curMbAddr], &refEnc->m_pCurrentFrame->m_mbinfo.RefIdxs[1][refMbAddr], sizeof(H264MacroblockRefIdxs));
+//                MFX_INTERNAL_CPY(&gmbinfo->RefIdxs[0][curMbAddr], &refEnc->m_pCurrentFrame->m_mbinfo.RefIdxs[0][refMbAddr], sizeof(H264MacroblockRefIdxs));
+//                MFX_INTERNAL_CPY(&gmbinfo->RefIdxs[1][curMbAddr], &refEnc->m_pCurrentFrame->m_mbinfo.RefIdxs[1][refMbAddr], sizeof(H264MacroblockRefIdxs));
 
                 Ipp8u cropFlag = pGetMBCropFlag(&gmbinfo->mbs[curMbAddr]);
                 memset((void *)&gmbinfo->mbs[curMbAddr], 0, sizeof(H264MacroblockGlobalInfo));
@@ -2416,7 +2416,7 @@ void umc_h264_constrainedIntraUpsampling(//H264Slice *curSlice,
 
         for (i = startY << 4; i < finishY << 4; i++)
         {
-            memcpy(pYPlane + i * refWLuma * pixel_sz,
+            MFX_INTERNAL_CPY(pYPlane + i * refWLuma * pixel_sz,
                 pRefYPlane + i * refLumaStride,
                 refWLuma * pixel_sz);
         }
@@ -2433,14 +2433,14 @@ void umc_h264_constrainedIntraUpsampling(//H264Slice *curSlice,
             //    v[ii] = uvref[2*ii+1];
             //    }
             //} else {
-            //    memcpy(pUPlane + i * refWChroma * pixel_sz,
+            //    MFX_INTERNAL_CPY(pUPlane + i * refWChroma * pixel_sz,
             //        pRefUPlane + i * refChromaStride,
             //        refWChroma * pixel_sz);
-            //    memcpy(pVPlane + i * refWChroma * pixel_sz,
+            //    MFX_INTERNAL_CPY(pVPlane + i * refWChroma * pixel_sz,
             //        pRefVPlane + i * refChromaStride,
             //        refWChroma * pixel_sz);
             //}
-            memcpy(pUPlane + i * refWChroma * pixel_sz,
+            MFX_INTERNAL_CPY(pUPlane + i * refWChroma * pixel_sz,
                 pRefUPlane + i * refChromaStride,
                 refWChroma * pixel_sz << nv12);
         }
@@ -2664,8 +2664,8 @@ void LoadMBInfoFromRefLayer(//H264SegmentDecoderMultiThreaded * sd
         //curlayerMb = &sd->m_mbinfo.layerMbs[pFrame->m_currentLayer];
 
         if (resize_param->m_spatial_resolution_change) {
-            memcpy(curEnc->m_pYDeblockingILPlane, pRefFrame->m_pYPlane, pRefFrame->uHeight*pRefFrame->m_pitchBytes);
-            memcpy(curEnc->m_pUDeblockingILPlane, pRefFrame->m_pUPlane, pRefFrame->uHeight*pRefFrame->m_pitchBytes/2);
+            MFX_INTERNAL_CPY(curEnc->m_pYDeblockingILPlane, pRefFrame->m_pYPlane, pRefFrame->uHeight*pRefFrame->m_pitchBytes);
+            MFX_INTERNAL_CPY(curEnc->m_pUDeblockingILPlane, pRefFrame->m_pUPlane, pRefFrame->uHeight*pRefFrame->m_pitchBytes/2);
             SVCDeblocking(curEnc, refEnc);
         }
 
@@ -2718,8 +2718,8 @@ void LoadMBInfoFromRefLayer(//H264SegmentDecoderMultiThreaded * sd
                     pRefFrame->m_pitchBytes,
                     pRefFrame->m_pitchBytes);
             } else {
-                memcpy(pPredFrame->m_pYPlane, pRefFrame->m_pYPlane, pRefFrame->uHeight*pRefFrame->m_pitchBytes);
-                memcpy(pPredFrame->m_pUPlane, pRefFrame->m_pUPlane, pRefFrame->uHeight*pRefFrame->m_pitchBytes/2);
+                MFX_INTERNAL_CPY(pPredFrame->m_pYPlane, pRefFrame->m_pYPlane, pRefFrame->uHeight*pRefFrame->m_pitchBytes);
+                MFX_INTERNAL_CPY(pPredFrame->m_pUPlane, pRefFrame->m_pUPlane, pRefFrame->uHeight*pRefFrame->m_pitchBytes/2);
             }
         }
 
@@ -2735,23 +2735,23 @@ void LoadMBInfoFromRefLayer(//H264SegmentDecoderMultiThreaded * sd
             Ipp32s mbHeight = curEnc->m_SeqParamSet->frame_height_in_mbs;
             Ipp32s mbNum = mbWidth * mbHeight;
 
-            memcpy(curEnc->m_pYInputBaseResidual, refEnc->m_pYInputResidual, mbNum*256*sizeof(COEFFSTYPE));
-            memcpy(curEnc->m_pUInputBaseResidual, refEnc->m_pUInputResidual, mbNum*64*sizeof(COEFFSTYPE));
-            memcpy(curEnc->m_pVInputBaseResidual, refEnc->m_pVInputResidual, mbNum*64*sizeof(COEFFSTYPE));
-            memcpy(curEnc->m_pYInputResidual, refEnc->m_pYInputResidual, mbNum*256*sizeof(COEFFSTYPE));
-            memcpy(curEnc->m_pUInputResidual, refEnc->m_pUInputResidual, mbNum*64*sizeof(COEFFSTYPE));
-            memcpy(curEnc->m_pVInputResidual, refEnc->m_pVInputResidual, mbNum*64*sizeof(COEFFSTYPE));
-            memcpy(curEnc->m_pYInputRefPlane, refEnc->m_pYInputRefPlane, pRefFrame->uHeight*pRefFrame->m_pitchBytes);
-            memcpy(curEnc->m_pUInputRefPlane, refEnc->m_pUInputRefPlane, pRefFrame->uHeight*pRefFrame->m_pitchBytes/2);
+            MFX_INTERNAL_CPY(curEnc->m_pYInputBaseResidual, refEnc->m_pYInputResidual, mbNum*256*sizeof(COEFFSTYPE));
+            MFX_INTERNAL_CPY(curEnc->m_pUInputBaseResidual, refEnc->m_pUInputResidual, mbNum*64*sizeof(COEFFSTYPE));
+            MFX_INTERNAL_CPY(curEnc->m_pVInputBaseResidual, refEnc->m_pVInputResidual, mbNum*64*sizeof(COEFFSTYPE));
+            MFX_INTERNAL_CPY(curEnc->m_pYInputResidual, refEnc->m_pYInputResidual, mbNum*256*sizeof(COEFFSTYPE));
+            MFX_INTERNAL_CPY(curEnc->m_pUInputResidual, refEnc->m_pUInputResidual, mbNum*64*sizeof(COEFFSTYPE));
+            MFX_INTERNAL_CPY(curEnc->m_pVInputResidual, refEnc->m_pVInputResidual, mbNum*64*sizeof(COEFFSTYPE));
+            MFX_INTERNAL_CPY(curEnc->m_pYInputRefPlane, refEnc->m_pYInputRefPlane, pRefFrame->uHeight*pRefFrame->m_pitchBytes);
+            MFX_INTERNAL_CPY(curEnc->m_pUInputRefPlane, refEnc->m_pUInputRefPlane, pRefFrame->uHeight*pRefFrame->m_pitchBytes/2);
 
 //            curEnc->m_SavedMacroblockCoeffs = refEnc->m_SavedMacroblockCoeffs;
 //            curEnc->m_SavedMacroblockTCoeffs = refEnc->m_SavedMacroblockTCoeffs;
 //            curEnc->m_mbinfo.intra_types = refEnc->m_mbinfo.intra_types;
-            memcpy(curEnc->m_SavedMacroblockCoeffs, refEnc->m_SavedMacroblockCoeffs,
+            MFX_INTERNAL_CPY(curEnc->m_SavedMacroblockCoeffs, refEnc->m_SavedMacroblockCoeffs,
                 mbNum*COEFFICIENTS_BUFFER_SIZE*sizeof(COEFFSTYPE));
-            memcpy(curEnc->m_SavedMacroblockTCoeffs, refEnc->m_SavedMacroblockTCoeffs,
+            MFX_INTERNAL_CPY(curEnc->m_SavedMacroblockTCoeffs, refEnc->m_SavedMacroblockTCoeffs,
                 mbNum*COEFFICIENTS_BUFFER_SIZE*sizeof(COEFFSTYPE));
-            memcpy(curEnc->m_mbinfo.intra_types, refEnc->m_mbinfo.intra_types,
+            MFX_INTERNAL_CPY(curEnc->m_mbinfo.intra_types, refEnc->m_mbinfo.intra_types,
                 mbNum*sizeof(H264MacroblockIntraTypes));
         }
 
@@ -3951,10 +3951,10 @@ static void umc_h264_MB_mv_resampling(//H264SegmentDecoderMultiThreaded *sd,
 //////////        IppiSize lumaSize, chromaSize;
 //////////        Ipp32s i;
 //////////
-//////////        memcpy(layerMb->MV[0], pFrame->m_mbinfo.MV[0], sizeof(H264MacroblockMVs) * nMBCount);
-//////////        memcpy(layerMb->MV[1], pFrame->m_mbinfo.MV[1], sizeof(H264MacroblockMVs) * nMBCount);
-//////////        //            memcpy(layerMb->RefIdxs[0], pFrame->m_mbinfo.RefIdxs[0], sizeof(H264DecoderMacroblockRefIdxs) * nMBCount);
-//////////        //            memcpy(layerMb->RefIdxs[1], pFrame->m_mbinfo.RefIdxs[1], sizeof(H264DecoderMacroblockRefIdxs) * nMBCount);
+//////////        MFX_INTERNAL_CPY(layerMb->MV[0], pFrame->m_mbinfo.MV[0], sizeof(H264MacroblockMVs) * nMBCount);
+//////////        MFX_INTERNAL_CPY(layerMb->MV[1], pFrame->m_mbinfo.MV[1], sizeof(H264MacroblockMVs) * nMBCount);
+//////////        //            MFX_INTERNAL_CPY(layerMb->RefIdxs[0], pFrame->m_mbinfo.RefIdxs[0], sizeof(H264DecoderMacroblockRefIdxs) * nMBCount);
+//////////        //            MFX_INTERNAL_CPY(layerMb->RefIdxs[1], pFrame->m_mbinfo.RefIdxs[1], sizeof(H264DecoderMacroblockRefIdxs) * nMBCount);
 //////////
 //////////        for (i = 0; i < nMBCount; i++)
 //////////        {

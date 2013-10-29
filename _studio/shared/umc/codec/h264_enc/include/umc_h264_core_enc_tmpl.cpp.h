@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2013 Intel Corporation. All Rights Reserved.
 //
 
 #if PIXBITS == 8
@@ -82,7 +82,7 @@ void H264ENC_MAKE_NAME(ExpandPlane_NV12)(
     // section 1 at bottom
     // obtain pointer to start of bottom row of original frame
     for (row=0; row < pels; row++, pDst += pitchPixels) {
-        memcpy(pDst, pSrc, frameWidth*sizeof(PIXTYPE));
+        MFX_INTERNAL_CPY(pDst, pSrc, frameWidth*sizeof(PIXTYPE));
     }
 
     // section 2 on left and right
@@ -111,7 +111,7 @@ void H264ENC_MAKE_NAME(ExpandPlane_NV12)(
     pSrc = StartPtr - 2*pels;
     pDst = pSrc - pitchPixels;
     for (row=0; row<pels; row++, pDst -= pitchPixels) {
-       memcpy(pDst, pSrc, sizeof(PIXTYPE)*(frameWidth + 2*(pels + pels)));
+       MFX_INTERNAL_CPY(pDst, pSrc, sizeof(PIXTYPE)*(frameWidth + 2*(pels + pels)));
     }
 }   // end ExpandPlane
 
@@ -132,7 +132,7 @@ void H264ENC_MAKE_NAME(ExpandPlane)(
     // section 1 at bottom
     // obtain pointer to start of bottom row of original frame
     for (row=0; row < pels; row++, pDst += pitchPixels) {
-        memcpy(pDst, pSrc, frameWidth*sizeof(PIXTYPE));
+        MFX_INTERNAL_CPY(pDst, pSrc, frameWidth*sizeof(PIXTYPE));
     }
 
     // section 2 on left and right
@@ -157,7 +157,7 @@ void H264ENC_MAKE_NAME(ExpandPlane)(
     pSrc = StartPtr - pels;
     pDst = pSrc - pitchPixels;
     for (row=0; row<pels; row++, pDst -= pitchPixels) {
-       memcpy(pDst, pSrc, sizeof(PIXTYPE)*(frameWidth + pels + pels));
+       MFX_INTERNAL_CPY(pDst, pSrc, sizeof(PIXTYPE)*(frameWidth + pels + pels));
     }
 }   // end ExpandPlane
 
@@ -382,9 +382,9 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_MB_Decision)(
                 cur_mb.LocalMacroblockInfo = &sLocalMBinfo;
 
                 for (i = 0; i < 4; i++)
-                    memcpy(&(bmMVs[i]), cur_mb.MVs[i], sizeof(H264MacroblockMVs));
+                    MFX_INTERNAL_CPY(&(bmMVs[i]), cur_mb.MVs[i], sizeof(H264MacroblockMVs));
                 for (i = 0; i < 2; i++)
-                    memcpy(&(bmRefIdxs[i]), cur_mb.RefIdxs[i], sizeof(H264MacroblockRefIdxs));
+                    MFX_INTERNAL_CPY(&(bmRefIdxs[i]), cur_mb.RefIdxs[i], sizeof(H264MacroblockRefIdxs));
                 
                 curr_slice->resPredFlag = 1;
                 best_sad_r = (BPREDSLICE == curr_slice->m_slice_type) ? H264ENC_MAKE_NAME(H264CoreEncoder_ME_B)(state, curr_slice) : H264ENC_MAKE_NAME(H264CoreEncoder_ME_P)(state, curr_slice);
@@ -400,16 +400,16 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_MB_Decision)(
 
                     *cur_mb.LocalMacroblockInfo = sLocalMBinfo;
                     *cur_mb.GlobalMacroblockInfo = sGlobalMBinfo;
-                    memcpy(curr_slice->m_pPred4DirectB8x8, LocalpPred4DirectB8x8, sizeof(LocalpPred4DirectB8x8));
+                    MFX_INTERNAL_CPY(curr_slice->m_pPred4DirectB8x8, LocalpPred4DirectB8x8, sizeof(LocalpPred4DirectB8x8));
                 }
                 else
                 {
                     resPredFlag = 0;
 
                     for (i = 0; i < 4; i++)
-                        memcpy(cur_mb.MVs[i], &(bmMVs[i]), sizeof(H264MacroblockMVs));
+                        MFX_INTERNAL_CPY(cur_mb.MVs[i], &(bmMVs[i]), sizeof(H264MacroblockMVs));
                     for (i = 0; i < 2; i++)
-                        memcpy(cur_mb.RefIdxs[i], &(bmRefIdxs[i]), sizeof(H264MacroblockRefIdxs));
+                        MFX_INTERNAL_CPY(cur_mb.RefIdxs[i], &(bmRefIdxs[i]), sizeof(H264MacroblockRefIdxs));
                 }
             }
 
@@ -516,7 +516,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_MB_Decision)(
                                 pSetMB8x8TSFlag(curr_slice->m_cur_mb.GlobalMacroblockInfo, true);
                                 H264ENC_MAKE_NAME(H264CoreEncoder_AdvancedIntraModeSelectOneMacroblock8x8)(state, curr_slice, uBestIntraSAD, &uAIMBSAD_8x8);
                                 //Save intra_types
-                                memcpy(intra_types_save, curr_slice->m_cur_mb.intra_types, 16 * sizeof(T_AIMode));
+                                MFX_INTERNAL_CPY(intra_types_save, curr_slice->m_cur_mb.intra_types, 16 * sizeof(T_AIMode));
                                 if (uAIMBSAD_8x8 < uBestIntraSAD) {
                                     uBestIntraSAD = uAIMBSAD_8x8;
                                     uBestIntraMBType = MBTYPE_INTRA;
@@ -549,7 +549,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_MB_Decision)(
                                 }
                             }
                             //Save intra_types
-                            memcpy(intra_types_save, curr_slice->m_cur_mb.intra_types, 16 * sizeof(T_AIMode));
+                            MFX_INTERNAL_CPY(intra_types_save, curr_slice->m_cur_mb.intra_types, 16 * sizeof(T_AIMode));
                             if ((core_enc->m_Analyse & ANALYSE_I_8x8) && (uAIMBSAD_4x4 <= (uAIMBSAD_16x16 * 9 >> 3))) {
                                 pSetMB8x8TSFlag(curr_slice->m_cur_mb.GlobalMacroblockInfo, true);
                                 H264ENC_MAKE_NAME(H264CoreEncoder_AdvancedIntraModeSelectOneMacroblock8x8)(state, curr_slice, uBestIntraSAD, &uAIMBSAD_8x8);
@@ -574,11 +574,11 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_MB_Decision)(
                     if (uBestIntraMBType == MBTYPE_INTRA && !bIntra8x8) {
                         cur_mb.LocalMacroblockInfo->cbp_luma = cur_mb.m_uIntraCBP4x4;
                         //Restore intra_types
-//                        memcpy(curr_slice->m_cur_mb.intra_types, intra_types_save, 16*sizeof(T_AIMode));
+//                        MFX_INTERNAL_CPY(curr_slice->m_cur_mb.intra_types, intra_types_save, 16*sizeof(T_AIMode));
                     } else if (uBestIntraMBType == MBTYPE_INTRA && bIntra8x8) {
                         cur_mb.LocalMacroblockInfo->cbp_luma = cur_mb.m_uIntraCBP8x8;
                         //Restore intra_types
-                        memcpy(curr_slice->m_cur_mb.intra_types, intra_types_save, 16*sizeof(T_AIMode));
+                        MFX_INTERNAL_CPY(curr_slice->m_cur_mb.intra_types, intra_types_save, 16*sizeof(T_AIMode));
                     } else
                         cur_mb.LocalMacroblockInfo->cbp_luma = 0xffff;
                     cur_mb.LocalMacroblockInfo->cbp_chroma = 0xffffffff;
@@ -638,7 +638,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_MB_Decision)(
                     pSetMB8x8TSFlag(curr_slice->m_cur_mb.GlobalMacroblockInfo, true);
                     H264ENC_MAKE_NAME(H264CoreEncoder_AdvancedIntraModeSelectOneMacroblock8x8)(state, curr_slice, best_sad, &uAIMBSAD_8x8);
                     //Save intra_types
-                    memcpy( intra_types_save, curr_slice->m_cur_mb.intra_types, 16*sizeof(T_AIMode));
+                    MFX_INTERNAL_CPY( intra_types_save, curr_slice->m_cur_mb.intra_types, 16*sizeof(T_AIMode));
                     if( uAIMBSAD_8x8 < best_sad ){
                         best_sad = uAIMBSAD_8x8;
                         uBestIntraMBType = MBTYPE_INTRA;
@@ -665,7 +665,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_MB_Decision)(
         else if (uBestIntraMBType == MBTYPE_INTRA && bIntra8x8) {
             cur_mb.LocalMacroblockInfo->cbp_luma = cur_mb.m_uIntraCBP8x8;
             //Restore intra_types
-            memcpy(curr_slice->m_cur_mb.intra_types, intra_types_save, 16*sizeof(T_AIMode));
+            MFX_INTERNAL_CPY(curr_slice->m_cur_mb.intra_types, intra_types_save, 16*sizeof(T_AIMode));
         } else
             cur_mb.LocalMacroblockInfo->cbp_luma = 0xffff;
         cur_mb.LocalMacroblockInfo->cbp_chroma = 0xffffffff;
@@ -885,7 +885,7 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_Compress_Slice)(
             //    fflush(stdout);
             //}
             if (core_enc->m_svc_layer.isActive) {
-                memcpy(curr_slice->m_cur_mb.intra_types_save, curr_slice->m_cur_mb.intra_types, 16*sizeof(T_AIMode));
+                MFX_INTERNAL_CPY(curr_slice->m_cur_mb.intra_types_save, curr_slice->m_cur_mb.intra_types, 16*sizeof(T_AIMode));
             }
 
             if (core_enc->m_svc_layer.isActive)

@@ -2276,7 +2276,7 @@ namespace MfxHwH264Encode
         mfxI32                           curPicNum,
         bool                             optimize = true);
 
-    mfxU8 * CheckedMemcpy(
+    mfxU8 * CheckedMFX_INTERNAL_CPY(
         mfxU8 *       dbegin,
         mfxU8 *       dend,
         mfxU8 const * sbegin,

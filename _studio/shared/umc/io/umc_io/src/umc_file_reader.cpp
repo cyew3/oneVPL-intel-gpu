@@ -8,6 +8,7 @@
 //
 */
 
+#include "ipps.h"
 #include "umc_defs.h"
 #include "umc_file_reader.h"
 
@@ -114,7 +115,7 @@ Status FileReader::ReadData(void *data, Ipp32u *nsize)
 {
     if (((size_t)(m_pEODPointer - m_pDataPointer)) >= *nsize)
     {
-        memcpy(data, m_pDataPointer, *nsize);
+        MFX_INTERNAL_CPY(data, m_pDataPointer, *nsize);
         m_pDataPointer += *nsize;
         return UMC_OK;
     }

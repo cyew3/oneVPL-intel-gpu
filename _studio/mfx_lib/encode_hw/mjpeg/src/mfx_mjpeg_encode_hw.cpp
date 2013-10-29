@@ -17,6 +17,8 @@
 #include "mfx_mjpeg_encode_hw.h"
 #include "libmfx_core_d3d9.h"
 #include "mfx_task.h"
+#include "umc_defs.h"
+#include "ipps.h"
 
 using namespace MfxHwMJpegEncode;
 
@@ -114,7 +116,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
 
     m_ddi.reset( CreatePlatformMJpegEncoder( m_pCore ) );
 
-    memcpy(&m_video, par, sizeof(mfxVideoParam));
+    MFX_INTERNAL_CPY(&m_video, par, sizeof(mfxVideoParam));
     mfxStatus sts = m_ddi->CreateAuxilliaryDevice(
         m_pCore,
         DXVA2_Intel_Encode_JPEG,
@@ -195,7 +197,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Reset(mfxVideoParam *par)
     mfxStatus sts = m_ddi->Reset(*par);
     MFX_CHECK_STS(sts);
 
-    memcpy(&m_video, par, sizeof(mfxVideoParam));
+    MFX_INTERNAL_CPY(&m_video, par, sizeof(mfxVideoParam));
 
     return sts;
 }

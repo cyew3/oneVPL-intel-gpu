@@ -307,7 +307,7 @@ void DecodeBitplane(VC1Context* pContext, VC1Bitplane* pBitplane, Ipp32s width, 
 
     memset(pBitplane, 0, sizeof(VC1Bitplane));
 
-    ++pContext->bp_round_count;
+        ++pContext->bp_round_count;
     if (VC1_MAX_BITPANE_CHUNCKS == pContext->bp_round_count)
         pContext->bp_round_count = 0;
 

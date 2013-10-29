@@ -316,7 +316,7 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par)
                             {
                                 m_dqt_list[j].TableID   = j;
                                 m_dqt_list[j].Precision = 0; /* (UINT)pExtQuant->Precision[j];*/
-                                memcpy(m_dqt_list[j].Qm, &pExtQuant->Qm[j], 64 * sizeof(USHORT));
+                                MFX_INTERNAL_CPY(m_dqt_list[j].Qm, &pExtQuant->Qm[j], 64 * sizeof(USHORT));
                             }
                         }
                         else
@@ -337,15 +337,15 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par)
                             {
                                 m_dht_list[j].TableClass = 0;
                                 m_dht_list[j].TableID    = j;
-                                memcpy(m_dht_list[j].BITS, pExtHuffman->DCTables[j].Bits, 16 * sizeof(UCHAR));
-                                memcpy(m_dht_list[j].HUFFVAL, pExtHuffman->DCTables[j].Values, 12 * sizeof(UCHAR));
+                                MFX_INTERNAL_CPY(m_dht_list[j].BITS, pExtHuffman->DCTables[j].Bits, 16 * sizeof(UCHAR));
+                                MFX_INTERNAL_CPY(m_dht_list[j].HUFFVAL, pExtHuffman->DCTables[j].Values, 12 * sizeof(UCHAR));
                             }
                             for (mfxU16 j = 0; j < pExtHuffman->NumACTable; j++)
                             {
                                 m_dht_list[pExtHuffman->NumDCTable + j].TableClass = 1;
                                 m_dht_list[pExtHuffman->NumDCTable + j].TableID    = j;
-                                memcpy(m_dht_list[pExtHuffman->NumDCTable + j].BITS, pExtHuffman->ACTables[j].Bits, 16 * sizeof(UCHAR));
-                                memcpy(m_dht_list[pExtHuffman->NumDCTable + j].HUFFVAL, pExtHuffman->ACTables[j].Values, 162 * sizeof(UCHAR));
+                                MFX_INTERNAL_CPY(m_dht_list[pExtHuffman->NumDCTable + j].BITS, pExtHuffman->ACTables[j].Bits, 16 * sizeof(UCHAR));
+                                MFX_INTERNAL_CPY(m_dht_list[pExtHuffman->NumDCTable + j].HUFFVAL, pExtHuffman->ACTables[j].Values, 162 * sizeof(UCHAR));
                             }
                         }
                         else
@@ -372,7 +372,7 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par)
                             }
                             if (m_payload.data)
                             {
-                                memcpy(m_payload.data, pExtPayload->Data, pExtPayload->NumByte);
+                                MFX_INTERNAL_CPY(m_payload.data, pExtPayload->Data, pExtPayload->NumByte);
                                 m_payload.size = pExtPayload->NumByte;
                                 m_payload_data_present = true;
                             }

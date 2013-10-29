@@ -8,6 +8,7 @@
 //
 */
 
+#include "umc_defs.h"
 #include <ipps.h>
 #include "umc_automatic_mutex.h"
 #include "umc_default_memory_allocator.h"
@@ -1183,7 +1184,7 @@ Status Mpeg2FrameConstructor::GetFrame(SplMediaData *frame)
                     // populate decoder specific info with sequence header with all extensions
                     m_pInfo->m_pDecSpecInfo = new MediaData(seqEnd - m_lCurPos);
                     m_pInfo->m_pDecSpecInfo->SetDataSize(seqEnd - m_lCurPos);
-                    memcpy(
+                    MFX_INTERNAL_CPY(
                         m_pInfo->m_pDecSpecInfo->GetDataPointer(),
                         m_pBuf + m_lCurPos,
                         seqEnd - m_lCurPos);
@@ -3421,7 +3422,7 @@ Status PopulateDecSpecInfoH264(Mpeg2TrackInfo& info, Ipp8u* beg, Ipp8u* end)
     info.m_pDecSpecInfo = new MediaData(size);
     info.m_pDecSpecInfo->SetDataSize(size);
     Ipp8u* pDsi = (Ipp8u *)info.m_pDecSpecInfo->GetDataPointer();
-    memcpy(pDsi, pStart, size);
+    MFX_INTERNAL_CPY(pDsi, pStart, (Ipp32u)size);
     return UMC_OK;
 }
 

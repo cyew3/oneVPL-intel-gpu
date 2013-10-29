@@ -693,13 +693,13 @@ void H264ENC_MAKE_NAME(ExpandPlane_TopBottom)(
     PIXTYPE *pDst = pSrc + pitchPixels;
 
     for (row=0; row < pels; row++, pDst += pitchPixels) {
-        memcpy(pDst, pSrc, sizeof(PIXTYPE)*(frameWidth + pels + pels));
+        MFX_INTERNAL_CPY(pDst, pSrc, sizeof(PIXTYPE)*(frameWidth + pels + pels));
     }
 
     pSrc = StartPtr - pels;
     pDst = pSrc - pitchPixels;
     for (row=0; row<pels; row++, pDst -= pitchPixels) {
-       memcpy(pDst, pSrc, sizeof(PIXTYPE)*(frameWidth + pels + pels));
+       MFX_INTERNAL_CPY(pDst, pSrc, sizeof(PIXTYPE)*(frameWidth + pels + pels));
     }
 }
 

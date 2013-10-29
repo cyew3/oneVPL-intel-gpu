@@ -24,6 +24,8 @@
 #include "mfx_h264_encode_hw_utils.h"
 #include "mfx_svc_encode_simulcast_over_avc.h"
 
+#include "ipps.h"
+
 using namespace MfxHwH264Encode;
 
 TaskManagerSvc::TaskManagerSvc()
@@ -666,7 +668,7 @@ mfxStatus ImplementationSvc::GetVideoParam(mfxVideoParam *par)
             }
             else
             {
-                memcpy(par->ExtParam[i], buf, par->ExtParam[i]->BufferSz);
+                MFX_INTERNAL_CPY(par->ExtParam[i], buf, par->ExtParam[i]->BufferSz);
             }
         }
         else
@@ -961,7 +963,7 @@ mfxStatus ImplementationSvc::UpdateBitstream(
         mfxU8 * dbegin = outBits.Data + outBits.DataOffset + outBits.DataLength;
         mfxU8 * dend   = outBits.Data + outBits.MaxLength;
 
-        outBits.DataLength += mfxU32(CheckedMemcpy(dbegin, dend, Begin(m_scalabilityInfo), End(m_scalabilityInfo)) - dbegin);
+        outBits.DataLength += mfxU32(CheckedMFX_INTERNAL_CPY(dbegin, dend, Begin(m_scalabilityInfo), End(m_scalabilityInfo)) - dbegin);
     }
 
     // Lock d3d surface with compressed picture.

@@ -2030,7 +2030,7 @@ SEI_Storer::SEI_Message* SEI_Storer::AddMessage(UMC::MediaDataEx *nalUnit, SEI_T
     m_payloads[freeSlot].type = type;
     m_payloads[freeSlot].auID = auIndex;
 
-    memcpy(&m_data[m_offset], (Ipp8u*)nalUnit->GetDataPointer(), sz);
+    MFX_INTERNAL_CPY(&m_data[m_offset], (Ipp8u*)nalUnit->GetDataPointer(), (Ipp32u)sz);
 
     m_offset += sz;
 

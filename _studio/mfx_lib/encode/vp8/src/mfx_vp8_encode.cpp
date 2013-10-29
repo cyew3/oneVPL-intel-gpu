@@ -901,7 +901,7 @@ mfxStatus MFXVideoENCODEVP8::EncodeFrame(mfxEncodeCtrl *, mfxEncodeInternalParam
         dataPtr += 12;
 #endif
 
-        memcpy(dataPtr, pkt->data.frame.buf,pkt->data.frame.sz);
+        MFX_INTERNAL_CPY(dataPtr, pkt->data.frame.buf,pkt->data.frame.sz);
         bs->DataLength += (mfxU32)pkt->data.frame.sz;
         m_frameCount++;
         if(bs->DataLength - initialDataLength) 

@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2013 Intel Corporation. All Rights Reserved.
 //
 //
 
@@ -219,7 +219,7 @@ inline void Copy16x16(const Ipp16u* pSrc, const Ipp32s srcPitchPixels, Ipp16u* p
     Ipp32s i;
 
     for (i = 0; i < 16; i ++) {
-        memcpy( pDst, pSrc, 16*sizeof( Ipp16u ));
+        MFX_INTERNAL_CPY( pDst, pSrc, 16*sizeof( Ipp16u ));
         pSrc += srcPitchPixels;
         pDst += dstPitchPixels;
     }
@@ -238,7 +238,7 @@ inline void Copy16x8(const Ipp16u* pSrc, const Ipp32s srcPitchPixels, Ipp16u* pD
     Ipp32s i;
 
     for (i = 0; i < 8; i ++) {
-        memcpy( pDst, pSrc, 16*sizeof( Ipp16u ));
+        MFX_INTERNAL_CPY( pDst, pSrc, 16*sizeof( Ipp16u ));
         pSrc += srcPitchPixels;
         pDst += dstPitchPixels;
     }
@@ -257,7 +257,7 @@ inline void Copy8x16(const Ipp16u* pSrc, const Ipp32s srcPitchPixels, Ipp16u* pD
     Ipp32s i;
 
     for (i = 0; i < 16; i ++) {
-        memcpy( pDst, pSrc, 8*sizeof( Ipp16u ));
+        MFX_INTERNAL_CPY( pDst, pSrc, 8*sizeof( Ipp16u ));
         pSrc += srcPitchPixels;
         pDst += dstPitchPixels;
     }
@@ -305,7 +305,7 @@ inline void Copy8x4(const Ipp16u* pSrc, const Ipp32s srcPitchPixels, Ipp16u* pDs
     Ipp32s i;
 
     for (i = 0; i < 4; i ++) {
-        memcpy( pDst, pSrc, 8*sizeof( Ipp16u ));
+        MFX_INTERNAL_CPY( pDst, pSrc, 8*sizeof( Ipp16u ));
         pSrc += srcPitchPixels;
         pDst += dstPitchPixels;
     }
@@ -331,7 +331,7 @@ inline void Copy4x8(const Ipp16u* pSrc, const Ipp32s srcPitchPixels, Ipp16u* pDs
     Ipp32s i;
 
     for (i = 0; i < 8; i ++) {
-        memcpy( pDst, pSrc, 4*sizeof( Ipp16u ));
+        MFX_INTERNAL_CPY( pDst, pSrc, 4*sizeof( Ipp16u ));
         pSrc += srcPitchPixels;
         pDst += dstPitchPixels;
     }

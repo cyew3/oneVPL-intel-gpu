@@ -9,6 +9,8 @@
 ** 
 \*********************************************************************************/
 
+#include "umc_defs.h"
+#include "ipps.h"
 #include "meforgen7_5.h"
 
 #pragma warning( disable : 4244 )
@@ -993,7 +995,7 @@ int MEforGen75::GetReferenceBlock4Tap(U8 *blk, U8 *ref, short qx, short qy, int 
     }
     switch(m0){
         case 0:
-            for(j=0;j<bh;j++) memcpy(&tmp0[j<<4],&p0[j*width],bw);
+            for(j=0;j<bh;j++) MFX_INTERNAL_CPY(&tmp0[j<<4],&p0[j*width],bw);
             break;
         case 1:
 #if (__HAAR_SAD_OPT == 0)
@@ -1047,7 +1049,7 @@ int MEforGen75::GetReferenceBlock4Tap(U8 *blk, U8 *ref, short qx, short qy, int 
     }
     switch(m1){
         case 0:
-            for(j=0;j<bh;j++) memcpy(&tmp1[j<<4],&p1[j*width],bw);
+            for(j=0;j<bh;j++) MFX_INTERNAL_CPY(&tmp1[j<<4],&p1[j*width],bw);
             break;
         case 1:
 #if (__HAAR_SAD_OPT == 0)
@@ -1079,7 +1081,7 @@ int MEforGen75::GetReferenceBlock4Tap(U8 *blk, U8 *ref, short qx, short qy, int 
             break;
         case 8:
             for(j=0;j<bh;j++){
-                memcpy(&blk[j<<4],&tmp0[j<<4], bw);
+                MFX_INTERNAL_CPY(&blk[j<<4],&tmp0[j<<4], bw);
             }
             return 0;
     }
@@ -1298,7 +1300,7 @@ int MEforGen75::GetReferenceBlockField(U8   *blk, U8   *ref, short qx, short qy,
     }
     switch(m0){
         case 0:
-            for(j=0;j<bh;j++) memcpy(&tmp0[j<<4],&p0[j<<7],bw);
+            for(j=0;j<bh;j++) MFX_INTERNAL_CPY(&tmp0[j<<4],&p0[j<<7],bw);
             break;
         case 1:
             for(j=0;j<bh;j++){
@@ -1335,7 +1337,7 @@ int MEforGen75::GetReferenceBlockField(U8   *blk, U8   *ref, short qx, short qy,
     }
     switch(m1){
         case 0:
-            for(j=0;j<bh;j++) memcpy(&tmp1[j<<4],&p1[j<<7],bw);
+            for(j=0;j<bh;j++) MFX_INTERNAL_CPY(&tmp1[j<<4],&p1[j<<7],bw);
             break;
         case 1:
             for(j=0;j<bh;j++){
@@ -1357,7 +1359,7 @@ int MEforGen75::GetReferenceBlockField(U8   *blk, U8   *ref, short qx, short qy,
             break;
         case 8:
             for(j=0;j<bh;j++){
-                memcpy(&tmp1[j<<4],&tmp0[j<<4], bw);
+                MFX_INTERNAL_CPY(&tmp1[j<<4],&tmp0[j<<4], bw);
             }
             break;
     }

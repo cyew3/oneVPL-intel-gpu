@@ -135,7 +135,7 @@ public:
         decRefPicMarking.original_bottom_field_flag = hdr->bottom_field_flag;
         decRefPicMarking.original_frame_num         = (Ipp8u)hdr->frame_num;
         decRefPicMarking.long_term_reference_flag   = hdr->long_term_reference_flag;
-        memcpy(&decRefPicMarking.adaptiveMarkingInfo, pSlice->GetAdaptiveMarkingInfo(), sizeof(AdaptiveMarkingInfo));
+        MFX_INTERNAL_CPY(&decRefPicMarking.adaptiveMarkingInfo, pSlice->GetAdaptiveMarkingInfo(), sizeof(AdaptiveMarkingInfo));
     }
 
     Ipp32u GetSliceCount() const

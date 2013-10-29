@@ -443,7 +443,7 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
     {
         for ( Ipp32s n = 0; n < MAX_NUM_REF_PICS; n++ )
         {
-            memcpy(m_SliceHeader.pred_weight_table[e][n], slice->pred_weight_table[e][n], sizeof(wpScalingParam)*3);
+            MFX_INTERNAL_CPY(m_SliceHeader.pred_weight_table[e][n], slice->pred_weight_table[e][n], sizeof(wpScalingParam)*3);
         }
     }
     m_SliceHeader.slice_sao_luma_flag = slice->slice_sao_luma_flag;

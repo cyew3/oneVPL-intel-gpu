@@ -9,6 +9,9 @@
 ** 
 \*********************************************************************************/
 
+#include "umc_defs.h"
+#include "ipps.h"
+
 #include "meforgen7_5.h"
 #include "ipp.h"
 
@@ -1686,8 +1689,8 @@ int MEforGen75::SetupSearchPath( )
         LenSP[0] += LenSP[1];
     }
 
-    memcpy(pp,        VIMEsta.IMESearchPath0to31,    32);
-    memcpy(pp+32,    VIMEsta.IMESearchPath32to55,24);
+    MFX_INTERNAL_CPY(pp,        VIMEsta.IMESearchPath0to31,    32);
+    MFX_INTERNAL_CPY(pp+32,    VIMEsta.IMESearchPath32to55,24);
     
     int k = (!(Vsta.VmeModes&2)) ? 1 : ((Vsta.VmeModes&VM_2PATH_ENABLE) ? 7 : 3);  // dual or single records
 
@@ -2821,20 +2824,20 @@ void MEforGen75::LoadSrcMB( )
         w <<= 1;
 
     pix += Vsta.SrcMB.x + Vsta.SrcMB.y*w;
-    memcpy(blk,pix,16);
-    for(j=7;j>0;j--) memcpy((blk+=16),(pix+=w),16);
+    MFX_INTERNAL_CPY(blk,pix,16);
+    for(j=7;j>0;j--) MFX_INTERNAL_CPY((blk+=16),(pix+=w),16);
     if(Vsta.SrcType&1){ pix = SrcMB-16; w = 16; } // for 16x8 and 8x8  
-    for(j=8;j>0;j--) memcpy((blk+=16),(pix+=w),16);
+    for(j=8;j>0;j--) MFX_INTERNAL_CPY((blk+=16),(pix+=w),16);
     if(Vsta.SrcType&2){    // for 8x16 ans 8x8
-        memcpy((blk=SrcMB+8),(pix=SrcMB),8);
-        for(j=15;j>0;j--) memcpy((blk+=16),(pix+=16),8);
+        MFX_INTERNAL_CPY((blk=SrcMB+8),(pix=SrcMB),8);
+        for(j=15;j>0;j--) MFX_INTERNAL_CPY((blk+=16),(pix+=16),8);
     }
     if(Vsta.SrcType&0x0C){ // field search allowed
         blk = SrcMB;
         pix = SrcFieldMB;
         for(j=8;j>0;j--){
-            memcpy(pix,blk,16);
-            memcpy(pix+128,blk+16,16);
+            MFX_INTERNAL_CPY(pix,blk,16);
+            MFX_INTERNAL_CPY(pix+128,blk+16,16);
             blk += 32; pix += 16;
         }
     }
@@ -2922,10 +2925,10 @@ void MEforGen75::LoadReference(U8 *src, U8 *dest, U8 dest_w, U8 dest_h, I16PAIR 
         if(x3) memset(tmp_dest+x0+x2,tmp_dest[x0+x2-1],x3);
         tmp_dest += mem_width; src += pitch;
     }
-    for(j=0;j<y3;j++){ memcpy(tmp_dest,tmp_dest-mem_width,mem_width); tmp_dest += mem_width; }
+    for(j=0;j<y3;j++){ MFX_INTERNAL_CPY(tmp_dest,tmp_dest-mem_width,mem_width); tmp_dest += mem_width; }
     tmp_dest = dest + (y0*mem_width);
     for(j=0;j<y0;j++){ 
-        memcpy(tmp_dest-mem_width,tmp_dest,mem_width); 
+        MFX_INTERNAL_CPY(tmp_dest-mem_width,tmp_dest,mem_width); 
         tmp_dest -= mem_width; 
     }
 }
@@ -2990,10 +2993,10 @@ void MEforGen75::LoadReference2(U8 *src, U8 *dest, U8 dest_w, U8 dest_h, I16PAIR
         if(x3) memset(tmp_dest+x0+x2,tmp_dest[x0+x2-1],x3);
         tmp_dest += mem_width; src += pitch;
     }
-    for(j=0;j<y3;j++){ memcpy(tmp_dest,tmp_dest-mem_width,mem_width); tmp_dest += mem_width; }
+    for(j=0;j<y3;j++){ MFX_INTERNAL_CPY(tmp_dest,tmp_dest-mem_width,mem_width); tmp_dest += mem_width; }
     tmp_dest = dest + (y0*mem_width);
     for(j=0;j<y0;j++){ 
-        memcpy(tmp_dest-mem_width,tmp_dest,mem_width); 
+        MFX_INTERNAL_CPY(tmp_dest-mem_width,tmp_dest,mem_width); 
         tmp_dest -= mem_width; 
     }
 }
@@ -3642,7 +3645,7 @@ U8 MEforGen75::GetValid8x8MVs(I16PAIR *out_ValidMVs, bool bDualRecord)
 
     if(UsePreviousMVFlg)
     {
-        memcpy(&ValidMV[0][0], &PrevMV[0][0], 8*sizeof(I16PAIR));
+        MFX_INTERNAL_CPY(&ValidMV[0][0], &PrevMV[0][0], 8*sizeof(I16PAIR));
         numValidDynMVs = ((Vsta.SrcType&3)==0) ? 4 : (((Vsta.SrcType&3)==1) ? 2 : 1);
         UsePreviousMVFlg = false;
     }

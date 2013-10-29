@@ -10,6 +10,8 @@
 //          common encoders functionality
 //
 */
+#include "umc_defs.h"
+#include "ipps.h"
 
 #include <math.h>
 #include <algorithm>
@@ -325,7 +327,7 @@ mfxStatus CopyFrame(mfxFrameData *pIn, mfxFrameData *pOut, mfxFrameInfo *pInfoIn
 
         for (mfxU32 i = 0 ; i < h; i++)
         {
-            memcpy(p_out,p_in,w);
+            MFX_INTERNAL_CPY(p_out,p_in,w);
             p_in += s_in;
             p_out+= s_out;        
         }
@@ -339,7 +341,7 @@ mfxStatus CopyFrame(mfxFrameData *pIn, mfxFrameData *pOut, mfxFrameInfo *pInfoIn
 
         for (mfxU32 i = 0 ; i < h; i++)
         {
-            memcpy(p_out,p_in,w);
+            MFX_INTERNAL_CPY(p_out,p_in,w);
             p_in += s_in;
             p_out+= s_out;        
         }
@@ -347,7 +349,7 @@ mfxStatus CopyFrame(mfxFrameData *pIn, mfxFrameData *pOut, mfxFrameInfo *pInfoIn
         p_out = pOut->V;
         for (mfxU32 i = 0 ; i < h; i++)
         {
-            memcpy(p_out,p_in,w);
+            MFX_INTERNAL_CPY(p_out,p_in,w);
             p_in += s_in;
             p_out+= s_out;        
         }
@@ -368,7 +370,7 @@ mfxStatus CopyFrame(mfxFrameData *pIn, mfxFrameData *pOut, mfxFrameInfo *pInfoIn
 
         for (mfxU32 i = 0 ; i < h; i++)
         {
-            memcpy(p_out,p_in,w);
+            MFX_INTERNAL_CPY(p_out,p_in,w);
             p_in += s_in;
             p_out+= s_out;        
         }
@@ -377,7 +379,7 @@ mfxStatus CopyFrame(mfxFrameData *pIn, mfxFrameData *pOut, mfxFrameInfo *pInfoIn
         h     >>= 1;
         for (mfxU32 i = 0 ; i < h; i++)
         {
-            memcpy(p_out,p_in,w);
+            MFX_INTERNAL_CPY(p_out,p_in,w);
             p_in += s_in;
             p_out+= s_out;        
         }   
@@ -784,7 +786,7 @@ mfxStatus InputSurfaces::Reset(mfxVideoParam *par, mfxU16 NumFrameMin)
     if (ioPattern & (ioPattern - 1))
         return MFX_ERR_INVALID_VIDEO_PARAM;
     
-    memcpy(&m_Info,&par->mfx.FrameInfo,sizeof(mfxFrameInfo));
+    MFX_INTERNAL_CPY(&m_Info,&par->mfx.FrameInfo,sizeof(mfxFrameInfo));
 
     bool bOpaq = (par->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)!=0;
 

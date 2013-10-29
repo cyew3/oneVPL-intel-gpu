@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -149,7 +149,7 @@ Status DataReader::GetData(void *data, Ipp32u *nsize)
 
     /*if (((size_t)(m_pEODPointer - m_pDataPointer)) >= data_sz)
     {
-        memcpy(data, m_pDataPointer, data_sz);
+        MFX_INTERNAL_CPY(data, m_pDataPointer, data_sz);
         m_pDataPointer += data_sz;
         return UMC_OK;
     }*/
@@ -227,7 +227,7 @@ Status DataReader::CheckData(void *data, Ipp32u *nsize, Ipp32s how_far)
 
     if (((size_t)(m_pEODPointer - m_pDataPointer)) >= data_sz)
     {
-        memcpy(data, m_pDataPointer + how_far, *nsize);
+        MFX_INTERNAL_CPY(data, m_pDataPointer + how_far, *nsize);
         return UMC_OK;
     }*/
 

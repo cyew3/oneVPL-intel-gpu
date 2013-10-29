@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          H264 encoder
@@ -33,7 +33,7 @@ mfxStatus MFXHWVideoENCH264::Query(mfxVideoParam *in, mfxVideoParam *out)
     }
     else
     {
-        memcpy(out, in, sizeof(*out));
+        MFX_INTERNAL_CPY(out, in, sizeof(*out));
     }
 
     return MFX_ERR_NONE;

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2009 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 
 
 \* ****************************************************************************** */
@@ -115,8 +115,8 @@ mfxStatus MFXVideoDECH264::RunFrameFullDEC(mfxFrameCUC *cuc)
         m_pH264VideoDecoder->SetCUC(cuc);
         m_pH264VideoDecoder->RunSliceFullDEC(cuc);
 
-        memcpy(&m_fPar, cuc->FrameParam, sizeof(m_fPar));
-        memcpy(&m_sPar, cuc->SliceParam, sizeof(m_sPar));
+        MFX_INTERNAL_CPY(&m_fPar, cuc->FrameParam, sizeof(m_fPar));
+        MFX_INTERNAL_CPY(&m_sPar, cuc->SliceParam, sizeof(m_sPar));
 
         for (cuc->SliceId = 0; cuc->SliceId < cuc->NumSlice; cuc->SliceId++)
         {
@@ -254,7 +254,7 @@ mfxStatus MFXVideoDECH264::InternalReset(mfxVideoParam* par)
     umcRes = m_pH264VideoDecoder->Init(&init);
     m_InternMediaDataOut.Init(par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height,UMC::YV12);
 
-    memcpy(&m_vPar, par, sizeof(m_vPar));
+    MFX_INTERNAL_CPY(&m_vPar, par, sizeof(m_vPar));
 
     if (umcRes != UMC::UMC_OK)
     {

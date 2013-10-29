@@ -1271,7 +1271,7 @@ public:
         PlanePtrY pCoeffBlocksRead_Y = reinterpret_cast<PlanePtrY> (sd->m_pCoeffBlocksRead);
         // get pointer to raw bytes from m_pCoeffBlocksRead
         for (i = 0; i<16; i++)
-            memcpy(pDstY + i * pitch_luma, pCoeffBlocksRead_Y + i * 16, 16*sizeof(PlaneY));
+            MFX_INTERNAL_CPY(pDstY + i * pitch_luma, pCoeffBlocksRead_Y + i * 16, 16*sizeof(PlaneY));
 
         sd->m_pCoeffBlocksRead = (UMC::CoeffsPtrCommon)((Ipp8u*)sd->m_pCoeffBlocksRead +
                                  256*sizeof(PlaneY));
@@ -1289,12 +1289,12 @@ public:
                 size_t pitch = 8;
                 PlanePtrUV pCoeffBlocksRead_UV = (PlanePtrUV) (sd->m_pCoeffBlocksRead);
                 for (i = 0; i < iHeight; i += 1)
-                    memcpy(pSrcDstUPlane + i * pitch, pCoeffBlocksRead_UV + i * iWidth, iWidth*sizeof(PlaneUV));
+                    MFX_INTERNAL_CPY(pSrcDstUPlane + i * pitch, pCoeffBlocksRead_UV + i * iWidth, iWidth*sizeof(PlaneUV));
 
                 pCoeffBlocksRead_UV += iWidth * iHeight * sizeof(PlaneUV);
 
                 for (i = 0; i < iHeight; i += 1)
-                    memcpy(pSrcDstVPlane + i * pitch, pCoeffBlocksRead_UV + i * iWidth, iWidth*sizeof(PlaneUV));
+                    MFX_INTERNAL_CPY(pSrcDstVPlane + i * pitch, pCoeffBlocksRead_UV + i * iWidth, iWidth*sizeof(PlaneUV));
 
                 sd->m_pCoeffBlocksRead = (UMC::CoeffsPtrCommon)((Ipp8u*)sd->m_pCoeffBlocksRead +
                     2* iWidth * iHeight * sizeof(PlaneUV));
@@ -1306,12 +1306,12 @@ public:
             {
                 PlanePtrUV pCoeffBlocksRead_UV = (PlanePtrUV) (sd->m_pCoeffBlocksRead);
                 for (i = 0; i < iHeight; i += 1)
-                    memcpy(pDstU + i * pitch_chroma, pCoeffBlocksRead_UV + i * iWidth, iWidth*sizeof(PlaneUV));
+                    MFX_INTERNAL_CPY(pDstU + i * pitch_chroma, pCoeffBlocksRead_UV + i * iWidth, iWidth*sizeof(PlaneUV));
 
                 pCoeffBlocksRead_UV += iWidth * iHeight * sizeof(PlaneUV);
 
                 for (i = 0; i < iHeight; i += 1)
-                    memcpy(pDstV + i * pitch_chroma, pCoeffBlocksRead_UV + i * iWidth, iWidth*sizeof(PlaneUV));
+                    MFX_INTERNAL_CPY(pDstV + i * pitch_chroma, pCoeffBlocksRead_UV + i * iWidth, iWidth*sizeof(PlaneUV));
 
                 sd->m_pCoeffBlocksRead = (UMC::CoeffsPtrCommon)((Ipp8u*)sd->m_pCoeffBlocksRead +
                     2* iWidth * iHeight * sizeof(PlaneUV));

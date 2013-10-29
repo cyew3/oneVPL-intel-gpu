@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2011-2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2011-2013 Intel Corporation. All Rights Reserved.
 //
 
 #include "ippdefs.h"
@@ -559,10 +559,10 @@ Ipp32u SVCBaseMode_MB_Decision(
 /*
         else {
           // ??? currently reconstruct and transform are not used - todo for performance!!! ???
-          memcpy(cur_mb.mbBaseMode.reconstruct, cur_mb.mb4x4.reconstruct, 256*sizeof(PIXTYPE));
-          memcpy(cur_mb.mbBaseMode.transform, cur_mb.mb4x4.transform, 256*sizeof(COEFFSTYPE));
-          memcpy(cur_mb.mbChromaBaseMode.reconstruct, cur_mb.mbChromaIntra.reconstruct, 256*sizeof(PIXTYPE));
-          memcpy(cur_mb.mbChromaBaseMode.transform, cur_mb.mbChromaIntra.transform, 256*sizeof(COEFFSTYPE));
+          MFX_INTERNAL_CPY(cur_mb.mbBaseMode.reconstruct, cur_mb.mb4x4.reconstruct, 256*sizeof(PIXTYPE));
+          MFX_INTERNAL_CPY(cur_mb.mbBaseMode.transform, cur_mb.mb4x4.transform, 256*sizeof(COEFFSTYPE));
+          MFX_INTERNAL_CPY(cur_mb.mbChromaBaseMode.reconstruct, cur_mb.mbChromaIntra.reconstruct, 256*sizeof(PIXTYPE));
+          MFX_INTERNAL_CPY(cur_mb.mbChromaBaseMode.transform, cur_mb.mbChromaIntra.transform, 256*sizeof(COEFFSTYPE));
           memset((COEFFSTYPE*)cur_mb.mbChromaBaseMode.transform, 1, 256*sizeof(COEFFSTYPE));
         }
 */
@@ -613,8 +613,8 @@ Ipp32u SVCBaseMode_MB_Decision(
 
           if (d <= (Ipp32s)best_sad) {
             // ??? currently reconstruct and transform are not used - todo for performance!!! ???
-            //              memcpy(cur_mb.mbBaseMode.reconstruct, cur_mb.mb8x8.reconstruct, 256*sizeof(PIXTYPE));
-            //              memcpy(cur_mb.mbBaseMode.transform, cur_mb.mb8x8.transform, 256*sizeof(COEFFSTYPE));
+            //              MFX_INTERNAL_CPY(cur_mb.mbBaseMode.reconstruct, cur_mb.mb8x8.reconstruct, 256*sizeof(PIXTYPE));
+            //              MFX_INTERNAL_CPY(cur_mb.mbBaseMode.transform, cur_mb.mb8x8.transform, 256*sizeof(COEFFSTYPE));
 
             if (ref_intra)
               cur_mb.m_uIntraCBPBaseMode = cur_mb.m_uIntraCBP8x8;
@@ -943,10 +943,10 @@ Ipp32u SVC_MB_Decision(void* state,
         }
 
         if (core_enc->recodeFlag == UMC::BRC_RECODE_NONE) {
-            memcpy(&cur_mb.LocalMacroblockInfo->m_RefLayerMVs[0], cur_mb.MVs[0], sizeof(H264MacroblockMVs));
-            memcpy(&cur_mb.LocalMacroblockInfo->m_RefLayerMVs[1], cur_mb.MVs[1], sizeof(H264MacroblockMVs));
-            memcpy(&cur_mb.LocalMacroblockInfo->m_RefLayerRefIdxs[0], cur_mb.RefIdxs[0], sizeof(H264MacroblockRefIdxs));
-            memcpy(&cur_mb.LocalMacroblockInfo->m_RefLayerRefIdxs[1], cur_mb.RefIdxs[1], sizeof(H264MacroblockRefIdxs));
+            MFX_INTERNAL_CPY(&cur_mb.LocalMacroblockInfo->m_RefLayerMVs[0], cur_mb.MVs[0], sizeof(H264MacroblockMVs));
+            MFX_INTERNAL_CPY(&cur_mb.LocalMacroblockInfo->m_RefLayerMVs[1], cur_mb.MVs[1], sizeof(H264MacroblockMVs));
+            MFX_INTERNAL_CPY(&cur_mb.LocalMacroblockInfo->m_RefLayerRefIdxs[0], cur_mb.RefIdxs[0], sizeof(H264MacroblockRefIdxs));
+            MFX_INTERNAL_CPY(&cur_mb.LocalMacroblockInfo->m_RefLayerRefIdxs[1], cur_mb.RefIdxs[1], sizeof(H264MacroblockRefIdxs));
         }
     } else {
         pSetMBBaseModeFlag(cur_mb.GlobalMacroblockInfo, 0);
@@ -995,9 +995,9 @@ Ipp32u SVC_MB_Decision(void* state,
         pSetMBBaseModeFlag(cur_mb.GlobalMacroblockInfo, 1);
         SVCBaseMode_MB_Decision(state, curr_slice);
         for (i = 0; i < 4; i++)
-            memcpy(&(bmMVs[i]), cur_mb.MVs[i], sizeof(H264MacroblockMVs));
+            MFX_INTERNAL_CPY(&(bmMVs[i]), cur_mb.MVs[i], sizeof(H264MacroblockMVs));
         for (i = 0; i < 2; i++)
-            memcpy(&(bmRefIdxs[i]), cur_mb.RefIdxs[i], sizeof(H264MacroblockRefIdxs));
+            MFX_INTERNAL_CPY(&(bmRefIdxs[i]), cur_mb.RefIdxs[i], sizeof(H264MacroblockRefIdxs));
 
         cur_mb.GlobalMacroblockInfo = pGlobalMBinfo;
         cur_mb.LocalMacroblockInfo = pLocalMBinfo;
@@ -1023,9 +1023,9 @@ Ipp32u SVC_MB_Decision(void* state,
                 *cur_mb.GlobalMacroblockInfo = sGlobalMBinfo;
 
                 for (i = 0; i < 4; i++)
-                    memcpy(cur_mb.MVs[i], &(bmMVs[i]), sizeof(H264MacroblockMVs));
+                    MFX_INTERNAL_CPY(cur_mb.MVs[i], &(bmMVs[i]), sizeof(H264MacroblockMVs));
                 for (i = 0; i < 2; i++)
-                    memcpy(cur_mb.RefIdxs[i], &(bmRefIdxs[i]), sizeof(H264MacroblockRefIdxs));
+                    MFX_INTERNAL_CPY(cur_mb.RefIdxs[i], &(bmRefIdxs[i]), sizeof(H264MacroblockRefIdxs));
             }
         } else {
             pSetMBBaseModeFlag(cur_mb.GlobalMacroblockInfo, 0);
@@ -1044,9 +1044,9 @@ Ipp32u SVC_MB_Decision(void* state,
         cur_mb.mbChromaBaseMode = cur_mb.mbChromaIntra;
         cur_mb.mbChromaIntra = mbTmp;
         /*
-        memcpy( cur_mb.mbChromaIntra.prediction, cur_mb.mbChromaBaseMode.prediction, 256);
-        memcpy( cur_mb.mbChromaIntra.reconstruct, cur_mb.mbChromaBaseMode.reconstruct, 256);
-        memcpy( cur_mb.mbChromaIntra.transform, cur_mb.mbChromaBaseMode.transform, 512);
+        MFX_INTERNAL_CPY( cur_mb.mbChromaIntra.prediction, cur_mb.mbChromaBaseMode.prediction, 256);
+        MFX_INTERNAL_CPY( cur_mb.mbChromaIntra.reconstruct, cur_mb.mbChromaBaseMode.reconstruct, 256);
+        MFX_INTERNAL_CPY( cur_mb.mbChromaIntra.transform, cur_mb.mbChromaBaseMode.transform, 512);
         */
         if (pGetMB8x8TSPackFlag(cur_mb.GlobalMacroblockInfo)) {
             mbTmp = cur_mb.mb8x8;
@@ -1346,7 +1346,7 @@ Ipp32u H264CoreEncoder_TransQuant_RD_BaseMode_8u16s(
 
             /*
             Ipp16s transRes[64];
-            memcpy(transRes, pTransformResult, 16*sizeof( COEFFSTYPE ));
+            MFX_INTERNAL_CPY(transRes, pTransformResult, 16*sizeof( COEFFSTYPE ));
             ippiDequantTransformResidual_H264_16s_C1I(transRes, 8, NULL, ((iaNumCoeffs[uBlock] < -1) || (iaNumCoeffs[uBlock] > 0)), uMBQP);
             */
 
@@ -1365,7 +1365,7 @@ Ipp32u H264CoreEncoder_TransQuant_RD_BaseMode_8u16s(
               pPredBuf += 16;
             }
           } else {
-            memcpy(pTransRes, pTransformResult, 64*sizeof( COEFFSTYPE ));
+            MFX_INTERNAL_CPY(pTransRes, pTransformResult, 64*sizeof( COEFFSTYPE ));
             ippiQuantLuma8x8Inv_H264_8u16s(pTransRes, QP_DIV_6[uMBQP], core_enc->m_SeqParamSet->seq_scaling_inv_matrix_8x8[0][QP_MOD_6[uMBQP]]);
             ippiTransformLuma8x8InvAddPred_H264_8u16s(pPredBuf, 16, pTransRes, pReconBuf, 16, core_enc->m_PicParamSet->bit_depth_luma);
           }
@@ -1550,7 +1550,7 @@ Ipp32u H264CoreEncoder_TransQuant_RD_BaseMode_8u16s(
 
 /*
           Ipp16s transRes[64];
-          memcpy(transRes, pTransformResult, 16*sizeof( COEFFSTYPE ));
+          MFX_INTERNAL_CPY(transRes, pTransformResult, 16*sizeof( COEFFSTYPE ));
           ippiDequantTransformResidual_H264_16s_C1I(transRes, 8, NULL, ((iaNumCoeffs[uBlock] < -1) || (iaNumCoeffs[uBlock] > 0)), uMBQP);
 */
 
@@ -1569,7 +1569,7 @@ Ipp32u H264CoreEncoder_TransQuant_RD_BaseMode_8u16s(
             pPredBuf += 16;
           }
         } else {
-          memcpy(pTransRes, pTransformResult, 16*sizeof( COEFFSTYPE ));
+          MFX_INTERNAL_CPY(pTransRes, pTransformResult, 16*sizeof( COEFFSTYPE ));
           ippiDequantTransformResidualAndAdd_H264_8u16s(
             pPredBuf,
             pTransRes,

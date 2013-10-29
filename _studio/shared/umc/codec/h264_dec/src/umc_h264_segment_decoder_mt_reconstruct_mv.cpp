@@ -80,9 +80,9 @@ void H264SegmentDecoderMultiThreaded::CopyMVs8x16(Ipp32s iListNum)
     __assume_aligned(pMV, 16);
 #endif // __ICL
 
-    memcpy(pMV + 4, pMV + 0, 4 * sizeof(H264DecoderMotionVector));
-    memcpy(pMV + 8, pMV + 0, 4 * sizeof(H264DecoderMotionVector));
-    memcpy(pMV + 12, pMV + 0, 4 * sizeof(H264DecoderMotionVector));
+    MFX_INTERNAL_CPY(pMV + 4, pMV + 0, 4 * sizeof(H264DecoderMotionVector));
+    MFX_INTERNAL_CPY(pMV + 8, pMV + 0, 4 * sizeof(H264DecoderMotionVector));
+    MFX_INTERNAL_CPY(pMV + 12, pMV + 0, 4 * sizeof(H264DecoderMotionVector));
 
 } // void H264SegmentDecoderMultiThreaded::CopyMVs8x16(Ipp32s iListNum)
 

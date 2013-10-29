@@ -15,6 +15,7 @@
 #define __UMC_H265_DEC_DEFS_DEC_H__
 
 #include <vector>
+#include "ipps.h"
 
 #include "umc_memory_allocator.h"
 #include "umc_structures.h"
@@ -1616,7 +1617,7 @@ inline size_t CalculateSuggestedSize(const H265SeqParamSet * sps)
 #endif
 }
 
-static void H265_FORCEINLINE small_memcpy( void* dst, const void* src, int len )
+static void H265_FORCEINLINE  small_memcpy( void* dst, const void* src, int len )
 {
 #if defined( __INTEL_COMPILER ) // || defined( __GNUC__ )  // TODO: check with GCC
     // 128-bit loads/stores first with then REP MOVSB, aligning dst on 16-bit to avoid costly store splits
@@ -1636,7 +1637,7 @@ static void H265_FORCEINLINE small_memcpy( void* dst, const void* src, int len )
     if (len > 0)
         __asm__ ( "rep movsb" : "+c" (len), "+S" (src), "+D" (dst) :: "memory" );
 #else
-    memcpy(dst, src, len);
+    MFX_INTERNAL_CPY(dst, src, len);
 #endif
 }
 

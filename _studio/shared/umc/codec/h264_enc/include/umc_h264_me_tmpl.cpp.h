@@ -420,7 +420,7 @@ static void H264ENC_MAKE_NAME(DirectB_PredictOneMB_Lu)(
 {
     if (!uInterpType) {
         for (Ipp32s i = 0, k = 0; i < roiSize.height; i ++, k += pitchPixels)
-            memcpy(pDirB + i * 16, pPrev + k, roiSize.width * sizeof(PIXTYPE));
+            MFX_INTERNAL_CPY(pDirB + i * 16, pPrev + k, roiSize.width * sizeof(PIXTYPE));
     } else if (uInterpType == 2) {
         for (Ipp32s i = 0, k = 0; i < roiSize.height; i ++, k += pitchPixels)
             for (Ipp32s j = 0; j < roiSize.width; j ++)
@@ -1106,10 +1106,10 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_CDirectBOneMB_Interp)(
 
         if (pFutr == 0){
             for (Ipp32s i = 0, k = 0; i < 8; i ++, k += 16)
-                memcpy(pDirB + sb_offset + k, pInterpBuf1 + sb_offset + k, 8 * sizeof(PIXTYPE));
+                MFX_INTERNAL_CPY(pDirB + sb_offset + k, pInterpBuf1 + sb_offset + k, 8 * sizeof(PIXTYPE));
         }else if (pPrev == 0){
             for (Ipp32s i = 0, k = 0; i < 8; i ++, k += 16)
-                memcpy(pDirB + sb_offset + k, pInterpBuf2 + sb_offset + k, 8 * sizeof(PIXTYPE));
+                MFX_INTERNAL_CPY(pDirB + sb_offset + k, pInterpBuf2 + sb_offset + k, 8 * sizeof(PIXTYPE));
         }else{
             H264ENC_MAKE_NAME(DirectB_PredictOneMB_Lu)(
                 pDirB + sb_offset, pInterpBuf1 + sb_offset,
@@ -1269,10 +1269,10 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_CDirectB8x8_Interp)(
 
     if (pFutr == 0){
         for (Ipp32s i = 0, k = 0; i < 8; i ++, k += 16)
-            memcpy(pDirB + sb_offset + k, pInterpBuf1 + sb_offset + k, 8 * sizeof(PIXTYPE));
+            MFX_INTERNAL_CPY(pDirB + sb_offset + k, pInterpBuf1 + sb_offset + k, 8 * sizeof(PIXTYPE));
     }else if (pPrev == 0){
         for (Ipp32s i = 0, k = 0; i < 8; i ++, k += 16)
-            memcpy(pDirB + sb_offset + k, pInterpBuf2 + sb_offset + k, 8 * sizeof(PIXTYPE));
+            MFX_INTERNAL_CPY(pDirB + sb_offset + k, pInterpBuf2 + sb_offset + k, 8 * sizeof(PIXTYPE));
     }else{
         H264ENC_MAKE_NAME(DirectB_PredictOneMB_Lu)(
             pDirB + sb_offset, pInterpBuf1 + sb_offset,
@@ -7893,7 +7893,7 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_ME_P)(
                             pSetMB8x8TSFlag(curr_slice->m_cur_mb.GlobalMacroblockInfo, true);
                             H264ENC_MAKE_NAME(H264CoreEncoder_AdvancedIntraModeSelectOneMacroblock8x8)(state, curr_slice, BestIntraSAD, &BestIntraSAD8x8);
                             //Save intra_types
-                            memcpy(intra_types_save, curr_slice->m_cur_mb.intra_types, 16 * sizeof(T_AIMode));
+                            MFX_INTERNAL_CPY(intra_types_save, curr_slice->m_cur_mb.intra_types, 16 * sizeof(T_AIMode));
                             if ((Ipp32s)BestIntraSAD8x8 < BestIntraSAD) {
                                 BestIntraSAD = BestIntraSAD8x8;
                                 BestIntraMBType = MBTYPE_INTRA;
@@ -7930,7 +7930,7 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_ME_P)(
                 else if (BestIntraMBType == MBTYPE_INTRA && bIntra8x8) {
                     cur_mb.LocalMacroblockInfo->cbp_luma = cur_mb.m_uIntraCBP8x8;
                     //Restore intra_types
-                    memcpy( curr_slice->m_cur_mb.intra_types, intra_types_save, 16*sizeof(T_AIMode));
+                    MFX_INTERNAL_CPY( curr_slice->m_cur_mb.intra_types, intra_types_save, 16*sizeof(T_AIMode));
                 } else
                     cur_mb.LocalMacroblockInfo->cbp_luma = 0xffff;
                 cur_mb.LocalMacroblockInfo->cbp_chroma = 0xffffffff;
@@ -8780,7 +8780,7 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_ME_B)(
             refsL0[i] = (T_RefIdx)BestRef16x16L0;
             refsL1[i] = (T_RefIdx)BestRef16x16L1;
         }
-        memcpy(curr_slice->m_pPred4BiPred, bidir16x16, 256*sizeof(PIXTYPE)); //copy buffer for mc
+        MFX_INTERNAL_CPY(curr_slice->m_pPred4BiPred, bidir16x16, 256*sizeof(PIXTYPE)); //copy buffer for mc
 #ifdef USE_NV12
         RDCost16x16Bi = H264ENC_MAKE_NAME(H264CoreEncoder_MB_B_RDCost_NV12)(state, curr_slice, RefLater8x8PackFlag, 1, resPredFlag ? resPredBuf : NULL, resPredFlag ? resPredBufC : NULL);
 #else // USE_NV12
@@ -8854,7 +8854,7 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_ME_B)(
                         refsL0[i] = (T_RefIdx)BestRef16x16L0;
                         refsL1[i] = (T_RefIdx)BestRef16x16L1;
                     }
-                    memcpy(curr_slice->m_pPred4BiPred, bidir16x16, 256*sizeof(PIXTYPE)); //copy buffer for mc
+                    MFX_INTERNAL_CPY(curr_slice->m_pPred4BiPred, bidir16x16, 256*sizeof(PIXTYPE)); //copy buffer for mc
                     break;
             }
 #ifdef USE_NV12
@@ -8982,7 +8982,7 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_ME_B)(
                     refsL0[i] = (T_RefIdx)BestRef16x16L0;
                     refsL1[i] = (T_RefIdx)BestRef16x16L1;
                 }
-                memcpy(curr_slice->m_pPred4BiPred, bidir16x16, 256*sizeof(PIXTYPE)); //copy buffer for mc
+                MFX_INTERNAL_CPY(curr_slice->m_pPred4BiPred, bidir16x16, 256*sizeof(PIXTYPE)); //copy buffer for mc
                 break;
         }
         H264ENC_MAKE_NAME(H264CoreEncoder_MCOneMBLuma)(state, curr_slice, mvsL0, mvsL1, mcBlock);
@@ -9433,7 +9433,7 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_ME_B)(
          if (ModeRDOpt /* && (BestSAD8x8S <= (BestSAD16x16 * SB_THRESH_RD))*/ ) {
             //Set MVs and RefIds
             curr_slice->m_cur_mb.GlobalMacroblockInfo->mbtype = MBTYPE_B_8x8;
-            memcpy(curr_slice->m_pPred4BiPred, bidir8x8, 256*sizeof(PIXTYPE)); //copy buffer for mc
+            MFX_INTERNAL_CPY(curr_slice->m_pPred4BiPred, bidir8x8, 256*sizeof(PIXTYPE)); //copy buffer for mc
 #ifdef USE_NV12
             RDCost8x8 = H264ENC_MAKE_NAME(H264CoreEncoder_MB_B_RDCost_NV12)(state, curr_slice, RefLater8x8PackFlag, 1, resPredFlag ? resPredBuf : NULL, resPredFlag ? resPredBufC : NULL);
 #else // USE_NV12
@@ -10708,7 +10708,7 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_ME_B)(
 
             if (ModeRDOpt /* && (BestSAD16x8 <= (BestSAD16x16 * SB_THRESH_RD)) */) {
                 curr_slice->m_cur_mb.GlobalMacroblockInfo->mbtype = Best16x8Type;
-                memcpy(curr_slice->m_pPred4BiPred, bidir16x8, 256*sizeof(PIXTYPE)); //copy buffer for mc
+                MFX_INTERNAL_CPY(curr_slice->m_pPred4BiPred, bidir16x8, 256*sizeof(PIXTYPE)); //copy buffer for mc
 #ifdef USE_NV12
                 RDCost16x8 = H264ENC_MAKE_NAME(H264CoreEncoder_MB_B_RDCost_NV12)(state, curr_slice, RefLater8x8PackFlag, 1, resPredFlag ? resPredBuf : NULL, resPredFlag ? resPredBufC : NULL);
 #else // USE_NV12
@@ -11062,7 +11062,7 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_ME_B)(
 
                 if (ModeRDOpt /* && (BestSAD8x16 <= (BestSAD16x16 * SB_THRESH_RD)) */) {
                     curr_slice->m_cur_mb.GlobalMacroblockInfo->mbtype = Best8x16Type;
-                    memcpy(curr_slice->m_pPred4BiPred, bidir8x16, 256*sizeof(PIXTYPE)); //copy buffer for mc
+                    MFX_INTERNAL_CPY(curr_slice->m_pPred4BiPred, bidir8x16, 256*sizeof(PIXTYPE)); //copy buffer for mc
 #ifdef USE_NV12
                     RDCost8x16 = H264ENC_MAKE_NAME(H264CoreEncoder_MB_B_RDCost_NV12)(state, curr_slice, RefLater8x8PackFlag, 1, resPredFlag ? resPredBuf : NULL, resPredFlag ? resPredBufC : NULL);
 #else // USE_NV12
@@ -11157,7 +11157,7 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_ME_B)(
             }
             if (mpred16x16L0) mpredflagL0 = 0xffff;
             if (mpred16x16L1) mpredflagL1 = 0xffff;
-            memcpy(curr_slice->m_pPred4BiPred, bidir16x16, 256*sizeof(PIXTYPE)); //copy buffer for mc
+            MFX_INTERNAL_CPY(curr_slice->m_pPred4BiPred, bidir16x16, 256*sizeof(PIXTYPE)); //copy buffer for mc
             break;
         case MBTYPE_FWD_FWD_16x8:
         case MBTYPE_BWD_BWD_16x8:
@@ -11177,7 +11177,7 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_ME_B)(
                     refsL1[bOff+i] = BestRef16x8SL1[b];
                 }
             }
-            memcpy(curr_slice->m_pPred4BiPred, bidir16x8, 256*sizeof(PIXTYPE)); //copy buffer for mc
+            MFX_INTERNAL_CPY(curr_slice->m_pPred4BiPred, bidir16x8, 256*sizeof(PIXTYPE)); //copy buffer for mc
             switch( BestMBType ){
                 case MBTYPE_FWD_FWD_16x8:
                     if (mpred16x8L0[0]) mpredflagL0  = 0x00ff;
@@ -11242,9 +11242,9 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_ME_B)(
                     mvsL1[bOff+i*4] = mvsL1[bOff+i*4+1] = BestMV8x16SL1[b];
                     refsL1[bOff+i*4] = refsL1[bOff+i*4+1] = BestRef8x16SL1[b];
                 }
-                //memcpy(curr_slice->m_pPred4BiPred, bidir8x16, 256*sizeof(PIXTYPE)); //copy buffer for mc
+                //MFX_INTERNAL_CPY(curr_slice->m_pPred4BiPred, bidir8x16, 256*sizeof(PIXTYPE)); //copy buffer for mc
             }
-            memcpy(curr_slice->m_pPred4BiPred, bidir8x16, 256*sizeof(PIXTYPE)); //copy buffer for mc
+            MFX_INTERNAL_CPY(curr_slice->m_pPred4BiPred, bidir8x16, 256*sizeof(PIXTYPE)); //copy buffer for mc
             switch( BestMBType ){
                 case MBTYPE_FWD_FWD_8x16:
                     if (mpred8x16L0[0]) mpredflagL0  = 0x3333;
@@ -11362,7 +11362,7 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_ME_B)(
                     }
                 }
             }
-            memcpy(curr_slice->m_pPred4BiPred, bidir8x8, 256*sizeof(PIXTYPE)); //copy buffer for mc
+            MFX_INTERNAL_CPY(curr_slice->m_pPred4BiPred, bidir8x8, 256*sizeof(PIXTYPE)); //copy buffer for mc
             break;
     }
 
@@ -11487,7 +11487,7 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_ME_B)(
                             pSetMB8x8TSFlag(curr_slice->m_cur_mb.GlobalMacroblockInfo, true);
                             H264ENC_MAKE_NAME(H264CoreEncoder_AdvancedIntraModeSelectOneMacroblock8x8)(state, curr_slice, BestIntraSAD, &BestIntraSAD8x8);
                             //Save intra_types
-                            memcpy(intra_types_save, curr_slice->m_cur_mb.intra_types, 16 * sizeof(T_AIMode));
+                            MFX_INTERNAL_CPY(intra_types_save, curr_slice->m_cur_mb.intra_types, 16 * sizeof(T_AIMode));
                             if ((Ipp32s)BestIntraSAD8x8 < BestIntraSAD) {
                                 BestIntraSAD = BestIntraSAD8x8;
                                 BestIntraMBType = MBTYPE_INTRA;
@@ -11522,7 +11522,7 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_ME_B)(
                 else if (BestIntraMBType == MBTYPE_INTRA && bIntra8x8) {
                     cur_mb.LocalMacroblockInfo->cbp_luma = cur_mb.m_uIntraCBP8x8;
                     //Restore intra_types
-                    memcpy( curr_slice->m_cur_mb.intra_types, intra_types_save, 16*sizeof(T_AIMode));
+                    MFX_INTERNAL_CPY( curr_slice->m_cur_mb.intra_types, intra_types_save, 16*sizeof(T_AIMode));
                 } else
                     cur_mb.LocalMacroblockInfo->cbp_luma = 0xffff;
                 cur_mb.LocalMacroblockInfo->cbp_chroma = 0xffffffff;
@@ -11665,9 +11665,9 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_BidirRefine)(
     pInterpolateInfo->sizeFrame.height = core_enc->m_HeightInMBs << 4;
 #endif //NO_PADDING
 
-    memcpy(initialMotionVectorsL0,cur_mb.MVs[LIST_0]->MotionVectors, 16 * sizeof(H264MotionVector));
-    memcpy(initialMotionVectorsL1,cur_mb.MVs[LIST_1]->MotionVectors, 16 * sizeof(H264MotionVector));
-    memcpy(initialMBMC,mcBuff,256 * sizeof(PIXTYPE));
+    MFX_INTERNAL_CPY(initialMotionVectorsL0,cur_mb.MVs[LIST_0]->MotionVectors, 16 * sizeof(H264MotionVector));
+    MFX_INTERNAL_CPY(initialMotionVectorsL1,cur_mb.MVs[LIST_1]->MotionVectors, 16 * sizeof(H264MotionVector));
+    MFX_INTERNAL_CPY(initialMBMC,mcBuff,256 * sizeof(PIXTYPE));
 
     switch (bestMBType)
     {
@@ -11713,9 +11713,9 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_BidirRefine)(
                         prRDCost = H264ENC_MAKE_NAME(H264CoreEncoder_MB_B_RDCost)(core_enc, curr_slice, 0 );
                         if (prRDCost > bInitailMBSAD)
                         {
-                            memcpy(cur_mb.MVs[LIST_0]->MotionVectors, initialMotionVectorsL0, 16 * sizeof(H264MotionVector));
-                            memcpy(cur_mb.MVs[LIST_1]->MotionVectors, initialMotionVectorsL1, 16 * sizeof(H264MotionVector));
-                            memcpy(mcBuff, initialMBMC, 256 * sizeof(PIXTYPE) );
+                            MFX_INTERNAL_CPY(cur_mb.MVs[LIST_0]->MotionVectors, initialMotionVectorsL0, 16 * sizeof(H264MotionVector));
+                            MFX_INTERNAL_CPY(cur_mb.MVs[LIST_1]->MotionVectors, initialMotionVectorsL1, 16 * sizeof(H264MotionVector));
+                            MFX_INTERNAL_CPY(mcBuff, initialMBMC, 256 * sizeof(PIXTYPE) );
                             isRefined = 0;
                         }
                         else
@@ -11774,9 +11774,9 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_BidirRefine)(
                         prRDCost = H264ENC_MAKE_NAME(H264CoreEncoder_MB_B_RDCost)(core_enc, curr_slice, 0 );
                         if (prRDCost > bInitailMBSAD)
                         {
-                            memcpy(cur_mb.MVs[LIST_0]->MotionVectors, initialMotionVectorsL0, 16 * sizeof(H264MotionVector));
-                            memcpy(cur_mb.MVs[LIST_1]->MotionVectors, initialMotionVectorsL1, 16 * sizeof(H264MotionVector));
-                            memcpy(mcBuff, initialMBMC, 256 * sizeof(PIXTYPE) );
+                            MFX_INTERNAL_CPY(cur_mb.MVs[LIST_0]->MotionVectors, initialMotionVectorsL0, 16 * sizeof(H264MotionVector));
+                            MFX_INTERNAL_CPY(cur_mb.MVs[LIST_1]->MotionVectors, initialMotionVectorsL1, 16 * sizeof(H264MotionVector));
+                            MFX_INTERNAL_CPY(mcBuff, initialMBMC, 256 * sizeof(PIXTYPE) );
                             isRefined = 0;
                         }
                         else
@@ -11837,9 +11837,9 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_BidirRefine)(
                         prRDCost = H264ENC_MAKE_NAME(H264CoreEncoder_MB_B_RDCost)(core_enc, curr_slice, 0 );
                         if (prRDCost > bInitailMBSAD)
                         {
-                            memcpy(cur_mb.MVs[LIST_0]->MotionVectors, initialMotionVectorsL0, 16 * sizeof(H264MotionVector));
-                            memcpy(cur_mb.MVs[LIST_1]->MotionVectors, initialMotionVectorsL1, 16 * sizeof(H264MotionVector));
-                            memcpy(mcBuff, initialMBMC, 256 * sizeof(PIXTYPE) );
+                            MFX_INTERNAL_CPY(cur_mb.MVs[LIST_0]->MotionVectors, initialMotionVectorsL0, 16 * sizeof(H264MotionVector));
+                            MFX_INTERNAL_CPY(cur_mb.MVs[LIST_1]->MotionVectors, initialMotionVectorsL1, 16 * sizeof(H264MotionVector));
+                            MFX_INTERNAL_CPY(mcBuff, initialMBMC, 256 * sizeof(PIXTYPE) );
                             isRefined = 0;
                         }
                         else
@@ -11900,9 +11900,9 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_BidirRefine)(
                         prRDCost = H264ENC_MAKE_NAME(H264CoreEncoder_MB_B_RDCost)(core_enc, curr_slice, 0 );
                         if (prRDCost > bInitailMBSAD)
                         {
-                            memcpy(cur_mb.MVs[LIST_0]->MotionVectors, initialMotionVectorsL0, 16 * sizeof(H264MotionVector));
-                            memcpy(cur_mb.MVs[LIST_1]->MotionVectors, initialMotionVectorsL1, 16 * sizeof(H264MotionVector));
-                            memcpy(mcBuff, initialMBMC, 256 * sizeof(PIXTYPE) );
+                            MFX_INTERNAL_CPY(cur_mb.MVs[LIST_0]->MotionVectors, initialMotionVectorsL0, 16 * sizeof(H264MotionVector));
+                            MFX_INTERNAL_CPY(cur_mb.MVs[LIST_1]->MotionVectors, initialMotionVectorsL1, 16 * sizeof(H264MotionVector));
+                            MFX_INTERNAL_CPY(mcBuff, initialMBMC, 256 * sizeof(PIXTYPE) );
                             isRefined = 0;
                         }
                         else
@@ -11966,9 +11966,9 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_BidirRefine)(
                         prRDCost = H264ENC_MAKE_NAME(H264CoreEncoder_MB_B_RDCost)(core_enc, curr_slice, 0 );
                         if (prRDCost > bInitailMBSAD)
                         {
-                            memcpy(cur_mb.MVs[LIST_0]->MotionVectors, initialMotionVectorsL0, 16 * sizeof(H264MotionVector));
-                            memcpy(cur_mb.MVs[LIST_1]->MotionVectors, initialMotionVectorsL1, 16 * sizeof(H264MotionVector));
-                            memcpy(mcBuff, initialMBMC, 256 * sizeof(PIXTYPE) );
+                            MFX_INTERNAL_CPY(cur_mb.MVs[LIST_0]->MotionVectors, initialMotionVectorsL0, 16 * sizeof(H264MotionVector));
+                            MFX_INTERNAL_CPY(cur_mb.MVs[LIST_1]->MotionVectors, initialMotionVectorsL1, 16 * sizeof(H264MotionVector));
+                            MFX_INTERNAL_CPY(mcBuff, initialMBMC, 256 * sizeof(PIXTYPE) );
                             isRefined = 0;
                         }
                         else
@@ -12047,9 +12047,9 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_BidirRefine)(
             prRDCost = H264ENC_MAKE_NAME(H264CoreEncoder_MB_B_RDCost)(core_enc, curr_slice, 0 );
             if (prRDCost > bInitailMBSAD)
             {
-                memcpy(cur_mb.MVs[LIST_0]->MotionVectors, initialMotionVectorsL0, 16 * sizeof(H264MotionVector));
-                memcpy(cur_mb.MVs[LIST_1]->MotionVectors, initialMotionVectorsL1, 16 * sizeof(H264MotionVector));
-                memcpy(mcBuff, initialMBMC, 256 * sizeof(PIXTYPE) );
+                MFX_INTERNAL_CPY(cur_mb.MVs[LIST_0]->MotionVectors, initialMotionVectorsL0, 16 * sizeof(H264MotionVector));
+                MFX_INTERNAL_CPY(cur_mb.MVs[LIST_1]->MotionVectors, initialMotionVectorsL1, 16 * sizeof(H264MotionVector));
+                MFX_INTERNAL_CPY(mcBuff, initialMBMC, 256 * sizeof(PIXTYPE) );
                 isRefined = 0;
             }
             else
@@ -12123,9 +12123,9 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_BidirRefine)(
             prRDCost = H264ENC_MAKE_NAME(H264CoreEncoder_MB_B_RDCost)(core_enc, curr_slice, 0 );
             if (prRDCost > bInitailMBSAD)
             {
-                memcpy(cur_mb.MVs[LIST_0]->MotionVectors, initialMotionVectorsL0, 16 * sizeof(H264MotionVector));
-                memcpy(cur_mb.MVs[LIST_1]->MotionVectors, initialMotionVectorsL1, 16 * sizeof(H264MotionVector));
-                memcpy(mcBuff, initialMBMC, 256 * sizeof(PIXTYPE) );
+                MFX_INTERNAL_CPY(cur_mb.MVs[LIST_0]->MotionVectors, initialMotionVectorsL0, 16 * sizeof(H264MotionVector));
+                MFX_INTERNAL_CPY(cur_mb.MVs[LIST_1]->MotionVectors, initialMotionVectorsL1, 16 * sizeof(H264MotionVector));
+                MFX_INTERNAL_CPY(mcBuff, initialMBMC, 256 * sizeof(PIXTYPE) );
                 isRefined = 0;
             }
             else
@@ -12205,9 +12205,9 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_BidirRefine)(
             prRDCost = H264ENC_MAKE_NAME(H264CoreEncoder_MB_B_RDCost)(core_enc, curr_slice, 0 );
             if (prRDCost > bInitailMBSAD)
             {
-                memcpy(cur_mb.MVs[LIST_0]->MotionVectors, initialMotionVectorsL0, 16 * sizeof(H264MotionVector));
-                memcpy(cur_mb.MVs[LIST_1]->MotionVectors, initialMotionVectorsL1, 16 * sizeof(H264MotionVector));
-                memcpy(mcBuff, initialMBMC, 256 * sizeof(PIXTYPE) );
+                MFX_INTERNAL_CPY(cur_mb.MVs[LIST_0]->MotionVectors, initialMotionVectorsL0, 16 * sizeof(H264MotionVector));
+                MFX_INTERNAL_CPY(cur_mb.MVs[LIST_1]->MotionVectors, initialMotionVectorsL1, 16 * sizeof(H264MotionVector));
+                MFX_INTERNAL_CPY(mcBuff, initialMBMC, 256 * sizeof(PIXTYPE) );
                 isRefined = 0;
             }
             else

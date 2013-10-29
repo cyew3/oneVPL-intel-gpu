@@ -642,10 +642,10 @@ VC1Status VC1TaskProcessorUMC::VC1MotionCompensation(VC1Context* pContext,VC1Tas
 {
     STATISTICS_START_TIME(m_timeStatistics->interpolation_StartTime);
     {
-        pContext->interp_params_luma.srcStep   = pContext->m_pSingleMB->currYPitch;
-        pContext->interp_params_chroma.srcStep = pContext->m_pSingleMB->currUPitch;
-        pContext->interp_params_luma.dstStep   = pContext->m_pSingleMB->currYPitch;
-        pContext->interp_params_chroma.dstStep = pContext->m_pSingleMB->currUPitch;
+    pContext->interp_params_luma.srcStep   = pContext->m_pSingleMB->currYPitch;
+    pContext->interp_params_chroma.srcStep = pContext->m_pSingleMB->currUPitch;
+    pContext->interp_params_luma.dstStep   = pContext->m_pSingleMB->currYPitch;
+    pContext->interp_params_chroma.dstStep = pContext->m_pSingleMB->currUPitch;
     }
 
     pContext->interp_params_luma.roundControl   = pContext->m_picLayerHeader->RNDCTRL;
@@ -829,143 +829,143 @@ VC1Status VC1TaskProcessorUMC::VC1PrepPlane(VC1Context* pContext,VC1Task* pTask)
     else //B Frames
         if(pContext->m_picLayerHeader->PTYPE == VC1_B_FRAME)
         {
-            for (Ipp32s i=0; i < pTask->m_pSlice->MBRowsToDecode;i++)
+        for (Ipp32s i=0; i < pTask->m_pSlice->MBRowsToDecode;i++)
+        {
+            for (Ipp32s j = 0; j < pContext->m_pSingleMB->widthMB; j++)
             {
-                for (Ipp32s j = 0; j < pContext->m_pSingleMB->widthMB; j++)
+                if(!pContext->m_pCurrMB->IntraFlag)
                 {
-                    if(!pContext->m_pCurrMB->IntraFlag)
+                    if(pContext->m_pCurrMB->pInterpolLumaSrc[0] &&
+                        pContext->m_pCurrMB->pInterpolLumaSrc[1])
                     {
-                        if(pContext->m_pCurrMB->pInterpolLumaSrc[0] &&
-                            pContext->m_pCurrMB->pInterpolLumaSrc[1])
-                        {
 
-                            // Skip MB
-                            if (pContext->m_pCurrMB->SkipAndDirectFlag & 2)
-                                ippiAverage16x16_8u_C1R(pContext->m_pCurrMB->pInterpolLumaSrc[0],
-                                pContext->m_pCurrMB->InterpolsrcLumaStep[0],
-                                pContext->m_pCurrMB->pInterpolLumaSrc[1],
-                                pContext->m_pCurrMB->InterpolsrcLumaStep[1],
-                                pContext->m_pCurrMB->currYPlane,
-                                pContext->m_pCurrMB->currYPitch);
-                            else
-                                ippiMC16x16B_8u_C1(pContext->m_pCurrMB->pInterpolLumaSrc[0],
-                                pContext->m_pCurrMB->InterpolsrcLumaStep[0], 0,
-                                pContext->m_pCurrMB->pInterpolLumaSrc[1],
-                                pContext->m_pCurrMB->InterpolsrcLumaStep[1], 0,
-                                pContext->m_pBlock,  VC1_PIXEL_IN_LUMA*2,
-                                pContext->m_pCurrMB->currYPlane,
-                                pContext->m_pCurrMB->currYPitch, 0);
-
-                        }
+                        // Skip MB
+                        if (pContext->m_pCurrMB->SkipAndDirectFlag & 2)
+                            ippiAverage16x16_8u_C1R(pContext->m_pCurrMB->pInterpolLumaSrc[0],
+                            pContext->m_pCurrMB->InterpolsrcLumaStep[0],
+                            pContext->m_pCurrMB->pInterpolLumaSrc[1],
+                            pContext->m_pCurrMB->InterpolsrcLumaStep[1],
+                            pContext->m_pCurrMB->currYPlane,
+                            pContext->m_pCurrMB->currYPitch);
                         else
-                        {
-                            Ipp32u back = (pContext->m_pCurrMB->pInterpolLumaSrc[0])?0:1;
-                            //SkipMB
-                            if (pContext->m_pCurrMB->SkipAndDirectFlag & 2)
-                                ippiCopy_8u_C1R(pContext->m_pCurrMB->pInterpolLumaSrc[back],
-                                pContext->m_pCurrMB->InterpolsrcLumaStep[back],
-                                pContext->m_pCurrMB->currYPlane,
-                                pContext->m_pCurrMB->currYPitch,
-                                roiSize_16);
-                            else
-                                ippiMC16x16_8u_C1(pContext->m_pCurrMB->pInterpolLumaSrc[back],
-                                pContext->m_pCurrMB->InterpolsrcLumaStep[back],
-                                pContext->m_pBlock,
-                                VC1_PIXEL_IN_LUMA*2,
-                                pContext->m_pCurrMB->currYPlane,
-                                pContext->m_pCurrMB->currYPitch, 0, 0);
-                        }
+                            ippiMC16x16B_8u_C1(pContext->m_pCurrMB->pInterpolLumaSrc[0],
+                            pContext->m_pCurrMB->InterpolsrcLumaStep[0], 0,
+                            pContext->m_pCurrMB->pInterpolLumaSrc[1],
+                            pContext->m_pCurrMB->InterpolsrcLumaStep[1], 0,
+                            pContext->m_pBlock,  VC1_PIXEL_IN_LUMA*2,
+                            pContext->m_pCurrMB->currYPlane,
+                            pContext->m_pCurrMB->currYPitch, 0);
 
-                        if(pContext->m_pCurrMB->pInterpolChromaUSrc[0] &&
-                            pContext->m_pCurrMB->pInterpolChromaUSrc[1])
-                        {
-
-                            if (pContext->m_pCurrMB->SkipAndDirectFlag & 2)
-                            {
-                                ippiAverage8x8_8u_C1R(pContext->m_pCurrMB->pInterpolChromaUSrc[0],
-                                    pContext->m_pCurrMB->InterpolsrcChromaUStep[0],
-                                    pContext->m_pCurrMB->pInterpolChromaUSrc[1],
-                                    pContext->m_pCurrMB->InterpolsrcChromaUStep[1],
-                                    pContext->m_pCurrMB->currUPlane,
-                                    pContext->m_pCurrMB->currUPitch);
-
-                                ippiAverage8x8_8u_C1R(pContext->m_pCurrMB->pInterpolChromaVSrc[0],
-                                    pContext->m_pCurrMB->InterpolsrcChromaVStep[0],
-                                    pContext->m_pCurrMB->pInterpolChromaVSrc[1],
-                                    pContext->m_pCurrMB->InterpolsrcChromaVStep[1],
-                                    pContext->m_pCurrMB->currVPlane,
-                                    pContext->m_pCurrMB->currVPitch);
-                            }
-                            else
-                            {
-                                ippiMC8x8B_8u_C1(pContext->m_pCurrMB->pInterpolChromaUSrc[0],
-                                    pContext->m_pCurrMB->InterpolsrcChromaUStep[0], 0,
-                                    pContext->m_pCurrMB->pInterpolChromaUSrc[1],
-                                    pContext->m_pCurrMB->InterpolsrcChromaUStep[1], 0,
-                                    &pContext->m_pBlock[4*64], VC1_PIXEL_IN_CHROMA*2,
-                                    pContext->m_pCurrMB->currUPlane,
-                                    pContext->m_pCurrMB->currUPitch, 0);
-                                ippiMC8x8B_8u_C1(pContext->m_pCurrMB->pInterpolChromaVSrc[0],
-                                    pContext->m_pCurrMB->InterpolsrcChromaVStep[0], 0,
-                                    pContext->m_pCurrMB->pInterpolChromaVSrc[1],
-                                    pContext->m_pCurrMB->InterpolsrcChromaVStep[1], 0,
-                                    &pContext->m_pBlock[5*64], VC1_PIXEL_IN_CHROMA*2,
-                                    pContext->m_pCurrMB->currVPlane,
-                                    pContext->m_pCurrMB->currVPitch, 0);
-                            }
-                        }
+                    }
+                    else
+                    {
+                        Ipp32u back = (pContext->m_pCurrMB->pInterpolLumaSrc[0])?0:1;
+                        //SkipMB
+                        if (pContext->m_pCurrMB->SkipAndDirectFlag & 2)
+                            ippiCopy_8u_C1R(pContext->m_pCurrMB->pInterpolLumaSrc[back],
+                            pContext->m_pCurrMB->InterpolsrcLumaStep[back],
+                            pContext->m_pCurrMB->currYPlane,
+                            pContext->m_pCurrMB->currYPitch,
+                            roiSize_16);
                         else
-                        {
-                            Ipp32u back = (pContext->m_pCurrMB->pInterpolChromaUSrc[0])?0:1;
-
-                            // chroma
-                            if (pContext->m_pCurrMB->SkipAndDirectFlag & 2)
-                            {
-                                ippiCopy_8u_C1R(pContext->m_pCurrMB->pInterpolChromaUSrc[back],
-                                    pContext->m_pCurrMB->InterpolsrcChromaUStep[back],
-                                    pContext->m_pCurrMB->currUPlane,
-                                    pContext->m_pCurrMB->currUPitch,
-                                    roiSize_8);
-                                ippiCopy_8u_C1R(pContext->m_pCurrMB->pInterpolChromaVSrc[back],
-                                    pContext->m_pCurrMB->InterpolsrcChromaVStep[back],
-                                    pContext->m_pCurrMB->currVPlane,
-                                    pContext->m_pCurrMB->currVPitch,
-                                    roiSize_8);
-                            }
-                            else
-                            {
-                                ippiMC8x8_8u_C1(pContext->m_pCurrMB->pInterpolChromaUSrc[back],
-                                    pContext->m_pCurrMB->InterpolsrcChromaUStep[back],
-                                    &pContext->m_pBlock[4*64],
-                                    VC1_PIXEL_IN_CHROMA*2,
-                                    pContext->m_pCurrMB->currUPlane,
-                                    pContext->m_pCurrMB->currUPitch, 0, 0);
-                                ippiMC8x8_8u_C1(pContext->m_pCurrMB->pInterpolChromaVSrc[back],
-                                    pContext->m_pCurrMB->InterpolsrcChromaVStep[back],
-                                    &pContext->m_pBlock[5*64],
-                                    VC1_PIXEL_IN_CHROMA*2,
-                                    pContext->m_pCurrMB->currVPlane,
-                                    pContext->m_pCurrMB->currVPitch, 0, 0);
-                            }
-                        }
+                            ippiMC16x16_8u_C1(pContext->m_pCurrMB->pInterpolLumaSrc[back],
+                            pContext->m_pCurrMB->InterpolsrcLumaStep[back],
+                            pContext->m_pBlock,
+                            VC1_PIXEL_IN_LUMA*2,
+                            pContext->m_pCurrMB->currYPlane,
+                            pContext->m_pCurrMB->currYPitch, 0, 0);
                     }
 
-                    ++pContext->m_pCurrMB;
-                    pContext->m_pBlock += 8*8*6;
-                    pContext->m_pSingleMB->m_currMBXpos++;
+                    if(pContext->m_pCurrMB->pInterpolChromaUSrc[0] &&
+                        pContext->m_pCurrMB->pInterpolChromaUSrc[1])
+                    {
+
+                        if (pContext->m_pCurrMB->SkipAndDirectFlag & 2)
+                        {
+                            ippiAverage8x8_8u_C1R(pContext->m_pCurrMB->pInterpolChromaUSrc[0],
+                                pContext->m_pCurrMB->InterpolsrcChromaUStep[0],
+                                pContext->m_pCurrMB->pInterpolChromaUSrc[1],
+                                pContext->m_pCurrMB->InterpolsrcChromaUStep[1],
+                                pContext->m_pCurrMB->currUPlane,
+                                pContext->m_pCurrMB->currUPitch);
+
+                            ippiAverage8x8_8u_C1R(pContext->m_pCurrMB->pInterpolChromaVSrc[0],
+                                pContext->m_pCurrMB->InterpolsrcChromaVStep[0],
+                                pContext->m_pCurrMB->pInterpolChromaVSrc[1],
+                                pContext->m_pCurrMB->InterpolsrcChromaVStep[1],
+                                pContext->m_pCurrMB->currVPlane,
+                                pContext->m_pCurrMB->currVPitch);
+                        }
+                        else
+                        {
+                            ippiMC8x8B_8u_C1(pContext->m_pCurrMB->pInterpolChromaUSrc[0],
+                                pContext->m_pCurrMB->InterpolsrcChromaUStep[0], 0,
+                                pContext->m_pCurrMB->pInterpolChromaUSrc[1],
+                                pContext->m_pCurrMB->InterpolsrcChromaUStep[1], 0,
+                                &pContext->m_pBlock[4*64], VC1_PIXEL_IN_CHROMA*2,
+                                pContext->m_pCurrMB->currUPlane,
+                                pContext->m_pCurrMB->currUPitch, 0);
+                            ippiMC8x8B_8u_C1(pContext->m_pCurrMB->pInterpolChromaVSrc[0],
+                                pContext->m_pCurrMB->InterpolsrcChromaVStep[0], 0,
+                                pContext->m_pCurrMB->pInterpolChromaVSrc[1],
+                                pContext->m_pCurrMB->InterpolsrcChromaVStep[1], 0,
+                                &pContext->m_pBlock[5*64], VC1_PIXEL_IN_CHROMA*2,
+                                pContext->m_pCurrMB->currVPlane,
+                                pContext->m_pCurrMB->currVPitch, 0);
+                        }
+                    }
+                    else
+                    {
+                        Ipp32u back = (pContext->m_pCurrMB->pInterpolChromaUSrc[0])?0:1;
+
+                        // chroma
+                        if (pContext->m_pCurrMB->SkipAndDirectFlag & 2)
+                        {
+                            ippiCopy_8u_C1R(pContext->m_pCurrMB->pInterpolChromaUSrc[back],
+                                pContext->m_pCurrMB->InterpolsrcChromaUStep[back],
+                                pContext->m_pCurrMB->currUPlane,
+                                pContext->m_pCurrMB->currUPitch,
+                                roiSize_8);
+                            ippiCopy_8u_C1R(pContext->m_pCurrMB->pInterpolChromaVSrc[back],
+                                pContext->m_pCurrMB->InterpolsrcChromaVStep[back],
+                                pContext->m_pCurrMB->currVPlane,
+                                pContext->m_pCurrMB->currVPitch,
+                                roiSize_8);
+                        }
+                        else
+                        {
+                            ippiMC8x8_8u_C1(pContext->m_pCurrMB->pInterpolChromaUSrc[back],
+                                pContext->m_pCurrMB->InterpolsrcChromaUStep[back],
+                                &pContext->m_pBlock[4*64],
+                                VC1_PIXEL_IN_CHROMA*2,
+                                pContext->m_pCurrMB->currUPlane,
+                                pContext->m_pCurrMB->currUPitch, 0, 0);
+                            ippiMC8x8_8u_C1(pContext->m_pCurrMB->pInterpolChromaVSrc[back],
+                                pContext->m_pCurrMB->InterpolsrcChromaVStep[back],
+                                &pContext->m_pBlock[5*64],
+                                VC1_PIXEL_IN_CHROMA*2,
+                                pContext->m_pCurrMB->currVPlane,
+                                pContext->m_pCurrMB->currVPitch, 0, 0);
+                        }
+                    }
                 }
 
-                pContext->m_pSingleMB->m_currMBXpos = 0;
-                ++pContext->m_pSingleMB->m_currMBYpos;
-                ++pContext->m_pSingleMB->slice_currMBYpos;
+                ++pContext->m_pCurrMB;
+                pContext->m_pBlock += 8*8*6;
+                pContext->m_pSingleMB->m_currMBXpos++;
+            }
+
+            pContext->m_pSingleMB->m_currMBXpos = 0;
+            ++pContext->m_pSingleMB->m_currMBYpos;
+            ++pContext->m_pSingleMB->slice_currMBYpos;
             
                 pContext->m_pCurrMB += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB);
                 pContext->m_pBlock += (pContext->m_seqLayerHeader.MaxWidthMB-pContext->m_pSingleMB->widthMB)*8*8*6;
-            }
-        STATISTICS_END_TIME(m_timeStatistics->mc_StartTime,
-                            m_timeStatistics->mc_EndTime,
-                            m_timeStatistics->mc_TotalTime);
         }
+    STATISTICS_END_TIME(m_timeStatistics->mc_StartTime,
+                        m_timeStatistics->mc_EndTime,
+                        m_timeStatistics->mc_TotalTime);
+    }
     }
 
     // Smoothing
@@ -977,7 +977,7 @@ VC1Status VC1TaskProcessorUMC::VC1PrepPlane(VC1Context* pContext,VC1Task* pTask)
 
     if (pContext->m_picLayerHeader->PTYPE !=VC1_B_FRAME)
     {
-      MBSmooth_tbl[pContext->m_seqLayerHeader.PROFILE*4 + pContext->m_picLayerHeader->PTYPE](pContext,pTask->m_pSlice->MBRowsToDecode);
+       MBSmooth_tbl[pContext->m_seqLayerHeader.PROFILE*4 + pContext->m_picLayerHeader->PTYPE](pContext,pTask->m_pSlice->MBRowsToDecode);
     }
     STATISTICS_END_TIME(m_timeStatistics->smoothing_StartTime,
             m_timeStatistics->smoothing_EndTime,

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2010 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -529,7 +529,7 @@ Ipp32s vm_socket_get_client_ip(vm_socket *hd, Ipp8u* buffer, Ipp32s len)
     if (iplen >= len || buffer == NULL)
         return -1;
 
-    memcpy(buffer,inet_ntoa(hd->sal.sin_addr),iplen);
+    MFX_INTERNAL_CPY(buffer,inet_ntoa(hd->sal.sin_addr),iplen);
     buffer[iplen]='\0';
 
     return 0;

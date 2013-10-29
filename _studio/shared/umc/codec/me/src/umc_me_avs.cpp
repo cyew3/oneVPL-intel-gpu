@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //                     motion estimation
@@ -76,8 +76,8 @@ bool MeAVS::EstimateFrame(MeParams *par)
 
     //init auxiliary classes
     m_PredCalc->Init(par, &m_cur);
-    memcpy(m_PredCalc->m_blockDist,m_blockDist,sizeof(m_blockDist)); 
-    memcpy(m_PredCalc->m_distIdx,m_distIdx,sizeof(m_distIdx));
+    MFX_INTERNAL_CPY(m_PredCalc->m_blockDist,m_blockDist,sizeof(m_blockDist)); 
+    MFX_INTERNAL_CPY(m_PredCalc->m_distIdx,m_distIdx,sizeof(m_distIdx));
 
     //estiamte all MB
     for(Ipp32s MbAdr = m_par->FirstMB; MbAdr <= m_par->LastMB; MbAdr++)
@@ -672,7 +672,7 @@ void MeAVS::SetMB16x16B(MeMbType mbt, MeMV mvF, MeMV mvB, Ipp32s cost)
     //quantized coefficients, rearrange during copy
     if(m_par->UseTrellisQuantization){
         if(mbt == ME_MbIntra){
-                memcpy(mb->Coeff,m_cur.TrellisCoefficients[4],(6*64)*sizeof(mb->Coeff[0][0]));
+                MFX_INTERNAL_CPY(mb->Coeff,m_cur.TrellisCoefficients[4],(6*64)*sizeof(mb->Coeff[0][0]));
         }else{
             for(Ipp32s blk=0; blk<6; blk++){
                 MeTransformType tr=m_cur.InterTransf[mb->MbType][blk];
@@ -693,7 +693,7 @@ void MeAVS::SetMB16x16B(MeMbType mbt, MeMV mvF, MeMV mvB, Ipp32s cost)
                         break;
                     case ME_Tranform8x4:
                     case ME_Tranform8x8:
-                        memcpy(mb->Coeff[blk],m_cur.TrellisCoefficients[tr][blk],64*sizeof(mb->Coeff[0][0]));
+                        MFX_INTERNAL_CPY(mb->Coeff[blk],m_cur.TrellisCoefficients[tr][blk],64*sizeof(mb->Coeff[0][0]));
                         break;
                 }
             }
@@ -710,8 +710,8 @@ void MeAVS::SetMB16x16B(MeMbType mbt, MeMV mvF, MeMV mvB, Ipp32s cost)
 //    m_pMeParams = pMeParams;
 //    m_pCur = pCur;
 //    m_pRes = pMeParams->pSrc->MBs;
-//    //memcpy(m_blockDist,m_blockDist,sizeof(m_blockDist)); 
-//    //memcpy(m_distIdx,m_distIdx, sizeof(m_blockDist));
+//    //MFX_INTERNAL_CPY(m_blockDist,m_blockDist,sizeof(m_blockDist)); 
+//    //MFX_INTERNAL_CPY(m_distIdx,m_distIdx, sizeof(m_blockDist));
 //}
 //MeMV MePredictCalculator::GetPrediction( bool isSkipMBlock)
 //{

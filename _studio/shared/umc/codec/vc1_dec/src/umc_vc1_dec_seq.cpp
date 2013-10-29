@@ -293,7 +293,7 @@ VC1Status EntryPointLayer(VC1Context* pContext)
         {
             pContext->m_seqLayerHeader.CLOSED_ENTRY = 1;
             pContext->m_seqLayerHeader.BROKEN_LINK  = 1;
-        }
+    }
         
         if (pContext->m_seqLayerHeader.CODED_HEIGHT > height)
         {

@@ -248,7 +248,7 @@ void H265SegmentDecoder::SaveCTBContext(H265CodingUnit* pCU)
     H265MVInfo *colInfo = m_pCurrentFrame->m_CodingData->m_colocatedInfo + CUY * m_pSeqParamSet->NumPartitionsInFrameWidth + CUX;
 
     for (Ipp32u y = 0; y < m_pSeqParamSet->NumPartitionsInCUSize; y++)
-        memcpy(colInfo + y * m_pSeqParamSet->NumPartitionsInFrameWidth,
+        MFX_INTERNAL_CPY(colInfo + y * m_pSeqParamSet->NumPartitionsInFrameWidth,
         m_context->m_CurrCTB + y * m_context->m_CurrCTBStride, sizeof(H265MVInfo) * m_pSeqParamSet->NumPartitionsInCUSize);
 }
 

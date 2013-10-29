@@ -1165,7 +1165,7 @@ Status H264HeadersBitstream::GetPictureParamSetPart2(H264PicParamSet  *pps)
                 }
             }
 
-            memcpy(&pps->scaling[1], &pps->scaling[0], sizeof(H264ScalingPicParams));
+            MFX_INTERNAL_CPY(&pps->scaling[1], &pps->scaling[0], sizeof(H264ScalingPicParams));
         }
 
         pps->chroma_qp_index_offset[1] = (Ipp8s)GetVLCElement(true);

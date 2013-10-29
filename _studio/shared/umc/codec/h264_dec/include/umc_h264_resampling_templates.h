@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2008-2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008-2013 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -2940,7 +2940,7 @@ public:
 
             for (Ipp32s i = 0; i < refHLuma; i++)
             {
-                memcpy(pYPlane + i * (refWLuma + 32) * pixel_sz,
+                MFX_INTERNAL_CPY(pYPlane + i * (refWLuma + 32) * pixel_sz,
                        pRefYPlane + i * refLumaStride,
                        refWLuma * pixel_sz);
             }
@@ -2957,11 +2957,11 @@ public:
                         v[ii] = uvref[2*ii+1];
                     }
                 } else*/ {
-                    memcpy(pUPlane + i * (refWChroma + 16) * pixel_sz,
+                    MFX_INTERNAL_CPY(pUPlane + i * (refWChroma + 16) * pixel_sz,
                         pRefUPlane + i * refChromaStride,
                         refWChroma * pixel_sz);
 
-                    memcpy(pVPlane + i * (refWChroma + 16) * pixel_sz,
+                    MFX_INTERNAL_CPY(pVPlane + i * (refWChroma + 16) * pixel_sz,
                         pRefVPlane + i * refChromaStride,
                         refWChroma * pixel_sz);
                 }

@@ -932,6 +932,6 @@ void AvcPakMfdVft::DoFTChroma2x2(
         pTBuf[3] = (I16) ((pDiffBuf[0] - pDiffBuf[2]) - (pDiffBuf[1] - pDiffBuf[3]));
     }
 
-      memcpy(out_pTransformResult, pTBuf, sizeof(pTBuf));
+      MFX_INTERNAL_CPY(out_pTransformResult, pTBuf, sizeof(pTBuf));
 }
 */

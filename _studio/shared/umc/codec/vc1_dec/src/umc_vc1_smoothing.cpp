@@ -622,7 +622,7 @@ void Smoothing_I(VC1Context* pContext, Ipp32s Height)
                                                                    VPlane - 8,     VPitch);
                 }
 
-                 //MB Upper horizontal edge
+                //MB Upper horizontal edge
                 _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R(CurrBlock - MaxWidth*8*8*6 + 64*2 +6*VC1_PIXEL_IN_LUMA,     VC1_PIXEL_IN_LUMA*2,
                                                              CurrBlock,  VC1_PIXEL_IN_LUMA*2,
                                                              YPlane,     YPitch,
@@ -700,10 +700,10 @@ void Smoothing_I(VC1Context* pContext, Ipp32s Height)
                     _own_ippiSmoothingChroma_VerEdge_VC1_16s8u_C1R(CurrBlock - 8*8 + 6, VC1_PIXEL_IN_CHROMA*2,
                                                                    CurrBlock +  8*8*5,  VC1_PIXEL_IN_CHROMA*2,
                                                                     VPlane,             VPitch);
-                 }
+                }
 
                 //RIGHT MB
-                 //MB internal horizontal edge
+                //MB internal horizontal edge
                 _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R(CurrBlock + 8*8*2 - 32,  VC1_PIXEL_IN_LUMA*2,
                                                              CurrBlock + 8*8*2,       VC1_PIXEL_IN_LUMA*2,
                                                              YPlane + 8*YPitch,       YPitch,
@@ -861,7 +861,7 @@ void Smoothing_P(VC1Context* pContext, Ipp32s Height)
                                                                         VPlane - 8,     VPitch);
                         }
 
-                      }
+                    }
                 }
 
                 //RIGHT MB
@@ -904,7 +904,7 @@ void Smoothing_P(VC1Context* pContext, Ipp32s Height)
                     }
 
                     //copy last two srings of Left macroblock to SmoothUpperRows
-                 }
+                }
 
                 CurrBlock  += 8*8*6;
                 pCurrMB++;

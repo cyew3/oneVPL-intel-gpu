@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2011-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -241,14 +241,14 @@ Status VP8VideoDecoderHardware::PackHeaders(MediaData* src)
     UMCVACompBuffer* compBufBs;
     Ipp8u *bistreamData = (Ipp8u *)m_pVideoAccelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_BITSTREAM_DATA, &compBufBs);
 
-    memcpy(bistreamData, src->GetDataPointer(), src->GetDataSize());
+    MFX_INTERNAL_CPY(bistreamData, src->GetDataPointer(), src->GetDataSize());
     compBufBs->SetDataSize((Ipp32s)src->GetDataSize());
 
     UMCVACompBuffer* compBufCp;
     Ipp8u (*coeffProbs)[8][3][11] = (Ipp8u (*)[8][3][11])m_pVideoAccelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_VP8_COEFFICIENT_PROBABILITIES, &compBufCp);
 
     //[4][8][3][11]
-    memcpy(coeffProbs, m_frameProbs.coeff_probs, sizeof(Ipp8u) * 4 * 8 * 3 * 11);
+    MFX_INTERNAL_CPY(coeffProbs, m_frameProbs.coeff_probs, sizeof(Ipp8u) * 4 * 8 * 3 * 11);
 
     compBufCp->SetDataSize(sizeof(Ipp8u) * 4 * 8 * 3 * 11);
 

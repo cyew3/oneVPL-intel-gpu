@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2011 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2013 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -1494,15 +1494,15 @@ void H264BsBase_CopyContextCABAC(
     else
     {
         Ipp32u from = isFrame ? 105 : 277;
-        memcpy(&bs->context_array[0],    &bstrm->context_array[0],    105);
-        memcpy(&bs->context_array[227],  &bstrm->context_array[227],   49);
-        memcpy(&bs->context_array[from], &bstrm->context_array[from], 122);
+        MFX_INTERNAL_CPY(&bs->context_array[0],    &bstrm->context_array[0],    105);
+        MFX_INTERNAL_CPY(&bs->context_array[227],  &bstrm->context_array[227],   49);
+        MFX_INTERNAL_CPY(&bs->context_array[from], &bstrm->context_array[from], 122);
 
         if (is8x8)
         {
             Ipp32u from = isFrame ? 402 : 436;
-            memcpy(&bs->context_array[426],  &bstrm->context_array[426],  10);
-            memcpy(&bs->context_array[from], &bstrm->context_array[from], 24);
+            MFX_INTERNAL_CPY(&bs->context_array[426],  &bstrm->context_array[426],  10);
+            MFX_INTERNAL_CPY(&bs->context_array[from], &bstrm->context_array[from], 24);
         }
 
         bs->context_array[276] = bstrm->context_array[276]; //end of slice flag
@@ -1545,21 +1545,21 @@ void H264BsBase_CopyContextCABAC_Chroma(
     }
     else
     {
-        memcpy(&state->context_array[257], &bstrm->context_array[257], 19);
-        memcpy(&state->context_array[97],  &bstrm->context_array[97],   8); //Coded block flag
+        MFX_INTERNAL_CPY(&state->context_array[257], &bstrm->context_array[257], 19);
+        MFX_INTERNAL_CPY(&state->context_array[97],  &bstrm->context_array[97],   8); //Coded block flag
         state->context_array[64] = bstrm->context_array[64]; //Chroma pred mode
         state->context_array[65] = bstrm->context_array[65];
         state->context_array[66] = bstrm->context_array[66];
         state->context_array[67] = bstrm->context_array[67];
         if (isFrame)
         {
-            memcpy( &state->context_array[149], &bstrm->context_array[149], 17);
-            memcpy( &state->context_array[210], &bstrm->context_array[210], 17);
+            MFX_INTERNAL_CPY( &state->context_array[149], &bstrm->context_array[149], 17);
+            MFX_INTERNAL_CPY( &state->context_array[210], &bstrm->context_array[210], 17);
         }
         else
         {
-            memcpy( &state->context_array[321], &bstrm->context_array[321], 17);
-            memcpy( &state->context_array[382], &bstrm->context_array[382], 17);
+            MFX_INTERNAL_CPY( &state->context_array[321], &bstrm->context_array[321], 17);
+            MFX_INTERNAL_CPY( &state->context_array[382], &bstrm->context_array[382], 17);
         }
     }
 }
@@ -1589,19 +1589,19 @@ void H264BsBase_CopyContextCABAC_I4x4(
     }
     else
     {
-        memcpy(&state->context_array[247], &bstrm->context_array[247], 10);
-        memcpy(&state->context_array[93], &bstrm->context_array[93], 4); //Coded block flag
+        MFX_INTERNAL_CPY(&state->context_array[247], &bstrm->context_array[247], 10);
+        MFX_INTERNAL_CPY(&state->context_array[93], &bstrm->context_array[93], 4); //Coded block flag
         state->context_array[68] = bstrm->context_array[68]; //Intra pred & pred mode
         state->context_array[69] = bstrm->context_array[69];
         if (isFrame)
         {
-            memcpy(&state->context_array[134], &bstrm->context_array[134], 15);
-            memcpy(&state->context_array[195], &bstrm->context_array[195], 15);
+            MFX_INTERNAL_CPY(&state->context_array[134], &bstrm->context_array[134], 15);
+            MFX_INTERNAL_CPY(&state->context_array[195], &bstrm->context_array[195], 15);
         }
         else
         {
-            memcpy(&state->context_array[306], &bstrm->context_array[306], 15);
-            memcpy(&state->context_array[367], &bstrm->context_array[367], 15);
+            MFX_INTERNAL_CPY(&state->context_array[306], &bstrm->context_array[306], 15);
+            MFX_INTERNAL_CPY(&state->context_array[367], &bstrm->context_array[367], 15);
         }
     }
 }
@@ -1624,13 +1624,13 @@ void H264BsBase_CopyContextCABAC_I8x8(
     }
     else
     {
-        memcpy(&state->context_array[426], &bstrm->context_array[426], 10);
+        MFX_INTERNAL_CPY(&state->context_array[426], &bstrm->context_array[426], 10);
         state->context_array[68] = bstrm->context_array[68]; //Intra pred & pred mode
         state->context_array[69] = bstrm->context_array[69];
         if (isFrame)
-            memcpy( &state->context_array[402], &bstrm->context_array[402], 24);
+            MFX_INTERNAL_CPY( &state->context_array[402], &bstrm->context_array[402], 24);
         else
-            memcpy( &state->context_array[436], &bstrm->context_array[436], 24);
+            MFX_INTERNAL_CPY( &state->context_array[436], &bstrm->context_array[436], 24);
     }
 }
 
@@ -1662,17 +1662,17 @@ void H264BsBase_CopyContextCABAC_I16x16(
     }
     else
     {
-        memcpy(&state->context_array[0],   &bstrm->context_array[0],   93);
-        memcpy(&state->context_array[227], &bstrm->context_array[227], 20);
+        MFX_INTERNAL_CPY(&state->context_array[0],   &bstrm->context_array[0],   93);
+        MFX_INTERNAL_CPY(&state->context_array[227], &bstrm->context_array[227], 20);
         if (isFrame)
         {
-            memcpy( &state->context_array[105], &bstrm->context_array[105], 29);
-            memcpy( &state->context_array[166], &bstrm->context_array[166], 29);
+            MFX_INTERNAL_CPY( &state->context_array[105], &bstrm->context_array[105], 29);
+            MFX_INTERNAL_CPY( &state->context_array[166], &bstrm->context_array[166], 29);
         }
         else
         {
-            memcpy( &state->context_array[277], &bstrm->context_array[277], 29);
-            memcpy( &state->context_array[388], &bstrm->context_array[388], 29);
+            MFX_INTERNAL_CPY( &state->context_array[277], &bstrm->context_array[277], 29);
+            MFX_INTERNAL_CPY( &state->context_array[388], &bstrm->context_array[388], 29);
         }
 
         state->context_array[276] = bstrm->context_array[276]; //end of slice flag
@@ -1747,41 +1747,41 @@ void H264BsBase_CopyContextCABAC_InterP(
     }
     else
     {
-        memcpy(&state->context_array[11],  &bstrm->context_array[11],  13);
-        memcpy(&state->context_array[40],  &bstrm->context_array[40],  28);
-        memcpy(&state->context_array[70],  &bstrm->context_array[70],  35);
-        memcpy(&state->context_array[257], &bstrm->context_array[257], 19);
+        MFX_INTERNAL_CPY(&state->context_array[11],  &bstrm->context_array[11],  13);
+        MFX_INTERNAL_CPY(&state->context_array[40],  &bstrm->context_array[40],  28);
+        MFX_INTERNAL_CPY(&state->context_array[70],  &bstrm->context_array[70],  35);
+        MFX_INTERNAL_CPY(&state->context_array[257], &bstrm->context_array[257], 19);
         if (isFrame)
         {
-            memcpy(&state->context_array[149], &bstrm->context_array[149], 17);
-            memcpy(&state->context_array[210], &bstrm->context_array[210], 17);
+            MFX_INTERNAL_CPY(&state->context_array[149], &bstrm->context_array[149], 17);
+            MFX_INTERNAL_CPY(&state->context_array[210], &bstrm->context_array[210], 17);
             if (is8x8)
             {
-                memcpy(&state->context_array[426], &bstrm->context_array[426], 10);
-                memcpy(&state->context_array[402], &bstrm->context_array[402], 24);
+                MFX_INTERNAL_CPY(&state->context_array[426], &bstrm->context_array[426], 10);
+                MFX_INTERNAL_CPY(&state->context_array[402], &bstrm->context_array[402], 24);
             }
             else
             {
-                memcpy(&state->context_array[134], &bstrm->context_array[134], 15);
-                memcpy(&state->context_array[195], &bstrm->context_array[195], 15);
-                memcpy(&state->context_array[247], &bstrm->context_array[247], 10);
+                MFX_INTERNAL_CPY(&state->context_array[134], &bstrm->context_array[134], 15);
+                MFX_INTERNAL_CPY(&state->context_array[195], &bstrm->context_array[195], 15);
+                MFX_INTERNAL_CPY(&state->context_array[247], &bstrm->context_array[247], 10);
             }
         }
         else
         {
-            memcpy(&state->context_array[321], &bstrm->context_array[321], 17);
-            memcpy(&state->context_array[382], &bstrm->context_array[382], 17);
+            MFX_INTERNAL_CPY(&state->context_array[321], &bstrm->context_array[321], 17);
+            MFX_INTERNAL_CPY(&state->context_array[382], &bstrm->context_array[382], 17);
             if (is8x8)
             {
-                memcpy(&state->context_array[426], &bstrm->context_array[426], 10);
-                memcpy(&state->context_array[436], &bstrm->context_array[436], 24);
+                MFX_INTERNAL_CPY(&state->context_array[426], &bstrm->context_array[426], 10);
+                MFX_INTERNAL_CPY(&state->context_array[436], &bstrm->context_array[436], 24);
             }
             else
             {
-                memcpy(&state->context_array[306], &bstrm->context_array[306], 15);
-                memcpy(&state->context_array[367], &bstrm->context_array[367], 15);
-                //memcpy(&state->context_array[419], &bstrm->context_array[419], 10);
-                memcpy(&state->context_array[247], &bstrm->context_array[247], 10);
+                MFX_INTERNAL_CPY(&state->context_array[306], &bstrm->context_array[306], 15);
+                MFX_INTERNAL_CPY(&state->context_array[367], &bstrm->context_array[367], 15);
+                //MFX_INTERNAL_CPY(&state->context_array[419], &bstrm->context_array[419], 10);
+                MFX_INTERNAL_CPY(&state->context_array[247], &bstrm->context_array[247], 10);
             }
         }
 
@@ -1857,41 +1857,41 @@ void H264BsBase_CopyContextCABAC_InterB(
     }
     else
     {
-        memcpy(&state->context_array[24], &bstrm->context_array[24], 16);
-        memcpy(&state->context_array[40], &bstrm->context_array[40], 28);
-        memcpy(&state->context_array[70], &bstrm->context_array[70], 35);
-        memcpy(&state->context_array[257], &bstrm->context_array[257], 19);
+        MFX_INTERNAL_CPY(&state->context_array[24], &bstrm->context_array[24], 16);
+        MFX_INTERNAL_CPY(&state->context_array[40], &bstrm->context_array[40], 28);
+        MFX_INTERNAL_CPY(&state->context_array[70], &bstrm->context_array[70], 35);
+        MFX_INTERNAL_CPY(&state->context_array[257], &bstrm->context_array[257], 19);
         if (isFrame)
         {
-            memcpy(&state->context_array[149], &bstrm->context_array[149], 17);
-            memcpy(&state->context_array[210], &bstrm->context_array[210], 17);
+            MFX_INTERNAL_CPY(&state->context_array[149], &bstrm->context_array[149], 17);
+            MFX_INTERNAL_CPY(&state->context_array[210], &bstrm->context_array[210], 17);
             if (is8x8)
             {
-                memcpy(&state->context_array[426], &bstrm->context_array[426], 10);
-                memcpy(&state->context_array[402], &bstrm->context_array[402], 24);
+                MFX_INTERNAL_CPY(&state->context_array[426], &bstrm->context_array[426], 10);
+                MFX_INTERNAL_CPY(&state->context_array[402], &bstrm->context_array[402], 24);
             }
             else
             {
-                memcpy(&state->context_array[134], &bstrm->context_array[134], 15);
-                memcpy(&state->context_array[195], &bstrm->context_array[195], 15);
-                memcpy(&state->context_array[247], &bstrm->context_array[247], 10);
+                MFX_INTERNAL_CPY(&state->context_array[134], &bstrm->context_array[134], 15);
+                MFX_INTERNAL_CPY(&state->context_array[195], &bstrm->context_array[195], 15);
+                MFX_INTERNAL_CPY(&state->context_array[247], &bstrm->context_array[247], 10);
             }
         }
         else
         {
-            memcpy(&state->context_array[321], &bstrm->context_array[321], 17);
-            memcpy(&state->context_array[382], &bstrm->context_array[382], 17);
+            MFX_INTERNAL_CPY(&state->context_array[321], &bstrm->context_array[321], 17);
+            MFX_INTERNAL_CPY(&state->context_array[382], &bstrm->context_array[382], 17);
             if (is8x8)
             {
-                memcpy(&state->context_array[426], &bstrm->context_array[426], 10);
-                memcpy(&state->context_array[436], &bstrm->context_array[436], 24);
+                MFX_INTERNAL_CPY(&state->context_array[426], &bstrm->context_array[426], 10);
+                MFX_INTERNAL_CPY(&state->context_array[436], &bstrm->context_array[436], 24);
             }
             else
             {
-                memcpy(&state->context_array[306], &bstrm->context_array[306], 15);
-                memcpy(&state->context_array[367], &bstrm->context_array[367], 15);
-                //memcpy(&state->context_array[419], &bstrm->context_array[419], 10);
-                memcpy(&state->context_array[247], &bstrm->context_array[247], 10);
+                MFX_INTERNAL_CPY(&state->context_array[306], &bstrm->context_array[306], 15);
+                MFX_INTERNAL_CPY(&state->context_array[367], &bstrm->context_array[367], 15);
+                //MFX_INTERNAL_CPY(&state->context_array[419], &bstrm->context_array[419], 10);
+                MFX_INTERNAL_CPY(&state->context_array[247], &bstrm->context_array[247], 10);
             }
         }
 
@@ -1934,16 +1934,16 @@ void H264BsBase_CopyContextCABAC_Trellis4x4(
     }
     else
     {
-        memcpy(cbSt->absLevelM1, &bstrm->context_array[247], 10);
+        MFX_INTERNAL_CPY(cbSt->absLevelM1, &bstrm->context_array[247], 10);
         if (isFrame)
         {
-            memcpy(cbSt->sig,  &bstrm->context_array[134], 15);
-            memcpy(cbSt->last, &bstrm->context_array[195], 15);
+            MFX_INTERNAL_CPY(cbSt->sig,  &bstrm->context_array[134], 15);
+            MFX_INTERNAL_CPY(cbSt->last, &bstrm->context_array[195], 15);
         }
         else
         {
-            memcpy(cbSt->sig,  &bstrm->context_array[306], 15);
-            memcpy(cbSt->last, &bstrm->context_array[367], 15);
+            MFX_INTERNAL_CPY(cbSt->sig,  &bstrm->context_array[306], 15);
+            MFX_INTERNAL_CPY(cbSt->last, &bstrm->context_array[367], 15);
         }
     }
 }
@@ -1969,16 +1969,16 @@ void H264BsBase_CopyContextCABAC_Trellis8x8(
     }
     else
     {
-        memcpy(cbSt->absLevelM1, &bstrm->context_array[426], 10);
+        MFX_INTERNAL_CPY(cbSt->absLevelM1, &bstrm->context_array[426], 10);
         if (isFrame)
         {
-            memcpy(cbSt->sig,  &bstrm->context_array[402], 15);
-            memcpy(cbSt->last, &bstrm->context_array[417],  9);
+            MFX_INTERNAL_CPY(cbSt->sig,  &bstrm->context_array[402], 15);
+            MFX_INTERNAL_CPY(cbSt->last, &bstrm->context_array[417],  9);
         }
         else
         {
-            memcpy(cbSt->sig,  &bstrm->context_array[436], 15);
-            memcpy(cbSt->last, &bstrm->context_array[451],  9);
+            MFX_INTERNAL_CPY(cbSt->sig,  &bstrm->context_array[436], 15);
+            MFX_INTERNAL_CPY(cbSt->last, &bstrm->context_array[451],  9);
         }
     }
 }
@@ -2004,16 +2004,16 @@ void H264BsBase_CopyContextCABAC_Trellis16x16(
     }
     else
     {
-        memcpy(cbSt->absLevelM1, &bstrm->context_array[237], 10);
+        MFX_INTERNAL_CPY(cbSt->absLevelM1, &bstrm->context_array[237], 10);
         if (isFrame)
         {
-            memcpy(cbSt->sig,  &bstrm->context_array[119], 15);
-            memcpy(cbSt->last, &bstrm->context_array[180], 15);
+            MFX_INTERNAL_CPY(cbSt->sig,  &bstrm->context_array[119], 15);
+            MFX_INTERNAL_CPY(cbSt->last, &bstrm->context_array[180], 15);
         }
         else
         {
-            memcpy(cbSt->sig,  &bstrm->context_array[291], 15);
-            memcpy(cbSt->last, &bstrm->context_array[352], 15);
+            MFX_INTERNAL_CPY(cbSt->sig,  &bstrm->context_array[291], 15);
+            MFX_INTERNAL_CPY(cbSt->last, &bstrm->context_array[352], 15);
         }
     }
 }
@@ -2039,16 +2039,16 @@ void H264BsBase_CopyContextCABAC_TrellisChroma(
     }
     else
     {
-        memcpy(cbSt->absLevelM1, &bstrm->context_array[266], 10);
+        MFX_INTERNAL_CPY(cbSt->absLevelM1, &bstrm->context_array[266], 10);
         if (isFrame)
         {
-            memcpy(cbSt->sig,  &bstrm->context_array[152], 14);
-            memcpy(cbSt->last, &bstrm->context_array[213], 14);
+            MFX_INTERNAL_CPY(cbSt->sig,  &bstrm->context_array[152], 14);
+            MFX_INTERNAL_CPY(cbSt->last, &bstrm->context_array[213], 14);
         }
         else
         {
-            memcpy(cbSt->sig,  &bstrm->context_array[324], 14);
-            memcpy(cbSt->last, &bstrm->context_array[385], 14);
+            MFX_INTERNAL_CPY(cbSt->sig,  &bstrm->context_array[324], 14);
+            MFX_INTERNAL_CPY(cbSt->last, &bstrm->context_array[385], 14);
         }
     }
 }

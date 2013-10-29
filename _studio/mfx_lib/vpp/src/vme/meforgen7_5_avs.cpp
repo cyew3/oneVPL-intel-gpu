@@ -63,7 +63,7 @@ int MEforGen75::IntraAVS8x8SearchUnit( )
     IntraPredictAVS8x8(src,lft,lft+8,top,top+8,IsEdgeBlock ,&Intra8x8PredMode[0], &d );    
     dist = LutMode[LUTMODE_INTRA_8x8] + d;
 
-    if(Vsta.IntraAvail&INTRA_AVAIL_C) memcpy(rt,&top[16],8);
+    if(Vsta.IntraAvail&INTRA_AVAIL_C) MFX_INTERNAL_CPY(rt,&top[16],8);
     else memset(rt,top[15],8);
     memset(lb,lft[7],8);
     IntraPredictAVS8x8(src+8,lft,lb,top+8,rt,(IsEdgeBlock&NO_AVAIL_B), &Intra8x8PredMode[1], &d );    
@@ -121,10 +121,10 @@ int MEforGen75::IntraPredictAVS8x8(U8 *src, U8 *lft, U8 *l_b, U8 *top, U8 *r_t, 
             for(i=0;i<8;i++ ) *(pp++) = ((lmp[j]+tmp[i])>>1);
         }
         pp = Pblk[VER];
-        memcpy(pp,  top, 8);
-        memcpy(pp+ 8,pp, 8);
-        memcpy(pp+16,pp,16);
-        memcpy(pp+32,pp,32);
+        MFX_INTERNAL_CPY(pp,  top, 8);
+        MFX_INTERNAL_CPY(pp+ 8,pp, 8);
+        MFX_INTERNAL_CPY(pp+16,pp,16);
+        MFX_INTERNAL_CPY(pp+32,pp,32);
         pp = Pblk[HOR];
         for(i=0;i<8;i++ ){ memset(pp,lft[i],8); pp += 8; }
         mark = 31;
@@ -166,15 +166,15 @@ int MEforGen75::IntraPredictAVS8x8(U8 *src, U8 *lft, U8 *l_b, U8 *top, U8 *r_t, 
         break;
     case NO_AVAIL_A:
         pp = Pblk[DCP];
-        memcpy(pp,  tmp, 8);
-        memcpy(pp+ 8,pp, 8);
-        memcpy(pp+16,pp,16);
-        memcpy(pp+32,pp,32);
+        MFX_INTERNAL_CPY(pp,  tmp, 8);
+        MFX_INTERNAL_CPY(pp+ 8,pp, 8);
+        MFX_INTERNAL_CPY(pp+16,pp,16);
+        MFX_INTERNAL_CPY(pp+32,pp,32);
         pp = Pblk[VER];
-        memcpy(pp,  top, 8);
-        memcpy(pp+ 8,pp, 8);
-        memcpy(pp+16,pp,16);
-        memcpy(pp+32,pp,32);
+        MFX_INTERNAL_CPY(pp,  top, 8);
+        MFX_INTERNAL_CPY(pp+ 8,pp, 8);
+        MFX_INTERNAL_CPY(pp+16,pp,16);
+        MFX_INTERNAL_CPY(pp+32,pp,32);
         mark = 5;
         break;
     case NO_AVAIL_B:

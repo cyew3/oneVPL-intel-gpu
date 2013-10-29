@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2013 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -378,7 +378,7 @@ static void read_data_through_boundary_left_8u_px(H264InterpolationParams_8u *pP
         {
             memset(pDst, pSrc[0], iIndent);
             for(l=0; l<pParams->dataWidth - iIndent;l++) pDst[l+iIndent] = pSrc[2*l];
-            //memcpy(pDst + iIndent, pSrc, pParams->dataWidth - iIndent);
+            //MFX_INTERNAL_CPY(pDst + iIndent, pSrc, pParams->dataWidth - iIndent);
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
@@ -405,7 +405,7 @@ static void read_data_through_boundary_right_8u_px(H264InterpolationParams_8u *p
         for (i = 0; i < pParams->dataHeight; i += 1)
         {
             for(l=0; l<iIndent;l++) pDst[l] = pSrc[2*l];
-            //memcpy(pDst, pSrc, iIndent);
+            //MFX_INTERNAL_CPY(pDst, pSrc, iIndent);
             memset(pDst + iIndent, pSrc[2*(iIndent - 1)], pParams->dataWidth - iIndent);
 
             pDst += pParams->dstStep;
@@ -440,7 +440,7 @@ static void read_data_through_boundary_top_8u_px(H264InterpolationParams_8u *pPa
         for (i = pParams->yPos; i < 0; i += 1)
         {
             for(l=0; l<pParams->dataWidth;l++) pDst[l] = pSrc[2*l];
-            //memcpy(pDst, pSrc, pParams->dataWidth);
+            //MFX_INTERNAL_CPY(pDst, pSrc, pParams->dataWidth);
 
             pDst += pParams->dstStep;
         }
@@ -448,7 +448,7 @@ static void read_data_through_boundary_top_8u_px(H264InterpolationParams_8u *pPa
         for (i = 0; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
             for(l=0; l<pParams->dataWidth;l++) pDst[l] = pSrc[2*l];
-//            memcpy(pDst, pSrc, pParams->dataWidth);
+//            MFX_INTERNAL_CPY(pDst, pSrc, pParams->dataWidth);
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
@@ -478,7 +478,7 @@ static void read_data_through_boundary_top_left_8u_px(H264InterpolationParams_8u
         /* create upper row */
         memset(pDst, pSrc[0], iIndent);
         for(l=0; l<pParams->dataWidth-iIndent;l++) pDst[l+iIndent] = pSrc[2*l];
-        //memcpy(pDst + iIndent, pSrc, pParams->dataWidth - iIndent);
+        //MFX_INTERNAL_CPY(pDst + iIndent, pSrc, pParams->dataWidth - iIndent);
 
         pDst += pParams->dstStep;
         pSrc += pParams->srcStep;
@@ -486,7 +486,7 @@ static void read_data_through_boundary_top_left_8u_px(H264InterpolationParams_8u
         /* clone upper row */
         for (i = pParams->yPos + 1; i <= 0; i += 1)
         {
-            memcpy(pDst, pTmp, pParams->dataWidth);
+            MFX_INTERNAL_CPY(pDst, pTmp, pParams->dataWidth);
 
             pDst += pParams->dstStep;
         }
@@ -496,7 +496,7 @@ static void read_data_through_boundary_top_left_8u_px(H264InterpolationParams_8u
         {
             memset(pDst, pSrc[0], iIndent);
             for(l=0; l<pParams->dataWidth-iIndent;l++) pDst[l+iIndent] = pSrc[2*l];
-            //memcpy(pDst + iIndent, pSrc, pParams->dataWidth - iIndent);
+            //MFX_INTERNAL_CPY(pDst + iIndent, pSrc, pParams->dataWidth - iIndent);
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
@@ -525,7 +525,7 @@ static void read_data_through_boundary_top_right_8u_px(H264InterpolationParams_8
 
         /* create upper row */
         for(l=0; l<iIndent;l++) pDst[l] = pSrc[2*l];
-        //memcpy(pDst, pSrc, iIndent);
+        //MFX_INTERNAL_CPY(pDst, pSrc, iIndent);
         memset(pDst + iIndent, pSrc[2*(iIndent - 1)], pParams->dataWidth - iIndent);
 
         pDst += pParams->dstStep;
@@ -534,7 +534,7 @@ static void read_data_through_boundary_top_right_8u_px(H264InterpolationParams_8
         /* clone upper row */
         for (i = pParams->yPos + 1; i <= 0; i += 1)
         {
-            memcpy(pDst, pTmp, pParams->dataWidth);
+            MFX_INTERNAL_CPY(pDst, pTmp, pParams->dataWidth);
 
             pDst += pParams->dstStep;
         }
@@ -543,7 +543,7 @@ static void read_data_through_boundary_top_right_8u_px(H264InterpolationParams_8
         for (i = 1; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
             for(l=0; l<iIndent;l++) pDst[l] = pSrc[2*l];
-            //memcpy(pDst, pSrc, iIndent);
+            //MFX_INTERNAL_CPY(pDst, pSrc, iIndent);
             memset(pDst + iIndent, pSrc[2*(iIndent - 1)], pParams->dataWidth - iIndent);
 
             pDst += pParams->dstStep;
@@ -578,7 +578,7 @@ static void read_data_through_boundary_bottom_8u_px(H264InterpolationParams_8u *
         for (i = pParams->yPos; i < pParams->frameSize.height; i += 1)
         {
             for(l=0; l<pParams->dataWidth;l++) pDst[l] = pSrc[2*l];
-            //memcpy(pDst, pSrc, pParams->dataWidth);
+            //MFX_INTERNAL_CPY(pDst, pSrc, pParams->dataWidth);
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
@@ -588,7 +588,7 @@ static void read_data_through_boundary_bottom_8u_px(H264InterpolationParams_8u *
         pSrc = pDst - pParams->dstStep;
         for (i = pParams->frameSize.height; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            memcpy(pDst, pSrc, pParams->dataWidth);
+            MFX_INTERNAL_CPY(pDst, pSrc, pParams->dataWidth);
 
             pDst += pParams->dstStep;
         }
@@ -618,7 +618,7 @@ static void read_data_through_boundary_bottom_left_8u_px(H264InterpolationParams
         {
             memset(pDst, pSrc[0], iIndent);
             for(l=0; l<pParams->dataWidth-iIndent;l++) pDst[l+iIndent] = pSrc[2*l];
-            //memcpy(pDst + iIndent, pSrc, pParams->dataWidth - iIndent);
+            //MFX_INTERNAL_CPY(pDst + iIndent, pSrc, pParams->dataWidth - iIndent);
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
@@ -628,7 +628,7 @@ static void read_data_through_boundary_bottom_left_8u_px(H264InterpolationParams
         pSrc = pDst - pParams->dstStep;
         for (i = pParams->frameSize.height; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            memcpy(pDst, pSrc, pParams->dataWidth);
+            MFX_INTERNAL_CPY(pDst, pSrc, pParams->dataWidth);
 
             pDst += pParams->dstStep;
         }
@@ -657,7 +657,7 @@ static void read_data_through_boundary_bottom_right_8u_px(H264InterpolationParam
         for (i = pParams->yPos; i < pParams->frameSize.height; i += 1)
         {
             for(l=0; l<iIndent;l++) pDst[l] = pSrc[2*l];
-            //memcpy(pDst, pSrc, iIndent);
+            //MFX_INTERNAL_CPY(pDst, pSrc, iIndent);
             memset(pDst + iIndent, pSrc[2*(iIndent - 1)], pParams->dataWidth - iIndent);
 
             pDst += pParams->dstStep;
@@ -668,7 +668,7 @@ static void read_data_through_boundary_bottom_right_8u_px(H264InterpolationParam
         pSrc = pDst - pParams->dstStep;
         for (i = pParams->frameSize.height; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            memcpy(pDst, pSrc, pParams->dataWidth);
+            MFX_INTERNAL_CPY(pDst, pSrc, pParams->dataWidth);
 
             pDst += pParams->dstStep;
         }
@@ -1420,9 +1420,9 @@ static void read_data_through_boundary_left_nv12_8u_px(H264InterpolationParams_8
         for (i = 0; i < pParams->dataHeight; i += 1)
         {
             //memset(pDst, pSrc[0], iIndent);
-            //memcpy(pDst + iIndent, pSrc, pParams->dataWidth - iIndent);
+            //MFX_INTERNAL_CPY(pDst + iIndent, pSrc, pParams->dataWidth - iIndent);
             memset_nv12_8u(pDst, (Ipp8u *) pSrc, iIndent);
-            memcpy(pDst + 2*iIndent, pSrc, 2*(pParams->dataWidth - iIndent));
+            MFX_INTERNAL_CPY(pDst + 2*iIndent, pSrc, 2*(pParams->dataWidth - iIndent));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
@@ -1448,9 +1448,9 @@ static void read_data_through_boundary_right_nv12_8u_px(H264InterpolationParams_
 
         for (i = 0; i < pParams->dataHeight; i += 1)
         {
-            //memcpy(pDst, pSrc, iIndent);
+            //MFX_INTERNAL_CPY(pDst, pSrc, iIndent);
             //memset(pDst + iIndent, pSrc[iIndent - 1], pParams->dataWidth - iIndent);
-            memcpy(pDst, pSrc, 2*iIndent);
+            MFX_INTERNAL_CPY(pDst, pSrc, 2*iIndent);
             memset_nv12_8u(pDst + 2*iIndent, (Ipp8u *)(&pSrc[2*iIndent - 2]), 2*(pParams->dataWidth - iIndent) );
 
             pDst += pParams->dstStep;
@@ -1484,14 +1484,14 @@ static void read_data_through_boundary_top_nv12_8u_px(H264InterpolationParams_8u
         /* clone upper row */
         for (i = pParams->yPos; i < 0; i += 1)
         {
-            memcpy(pDst, pSrc, 2*pParams->dataWidth);
+            MFX_INTERNAL_CPY(pDst, pSrc, 2*pParams->dataWidth);
 
             pDst += pParams->dstStep;
         }
         /* copy remain row(s) */
         for (i = 0; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            memcpy(pDst, pSrc, 2*pParams->dataWidth);
+            MFX_INTERNAL_CPY(pDst, pSrc, 2*pParams->dataWidth);
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
@@ -1520,9 +1520,9 @@ static void read_data_through_boundary_top_left_nv12_8u_px(H264InterpolationPara
 
         /* create upper row */
         //memset(pDst, pSrc[0], iIndent);
-        //memcpy(pDst + iIndent, pSrc, pParams->dataWidth - iIndent);
+        //MFX_INTERNAL_CPY(pDst + iIndent, pSrc, pParams->dataWidth - iIndent);
         memset_nv12_8u(pDst, (Ipp8u*)pSrc, iIndent);
-        memcpy(pDst + 2*iIndent, pSrc, 2*(pParams->dataWidth - iIndent));
+        MFX_INTERNAL_CPY(pDst + 2*iIndent, pSrc, 2*(pParams->dataWidth - iIndent));
 
         pDst += pParams->dstStep;
         pSrc += pParams->srcStep;
@@ -1530,7 +1530,7 @@ static void read_data_through_boundary_top_left_nv12_8u_px(H264InterpolationPara
         /* clone upper row */
         for (i = pParams->yPos + 1; i <= 0; i += 1)
         {
-            memcpy(pDst, pTmp, 2*pParams->dataWidth);
+            MFX_INTERNAL_CPY(pDst, pTmp, 2*pParams->dataWidth);
 
             pDst += pParams->dstStep;
         }
@@ -1539,9 +1539,9 @@ static void read_data_through_boundary_top_left_nv12_8u_px(H264InterpolationPara
         for (i = 1; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
             //memset(pDst, pSrc[0], iIndent);
-            //memcpy(pDst + iIndent, pSrc, pParams->dataWidth - iIndent);
+            //MFX_INTERNAL_CPY(pDst + iIndent, pSrc, pParams->dataWidth - iIndent);
             memset_nv12_8u(pDst, (Ipp8u*)pSrc, iIndent);
-            memcpy(pDst + 2*iIndent, pSrc, 2*(pParams->dataWidth - iIndent));
+            MFX_INTERNAL_CPY(pDst + 2*iIndent, pSrc, 2*(pParams->dataWidth - iIndent));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
@@ -1569,9 +1569,9 @@ static void read_data_through_boundary_top_right_nv12_8u_px(H264InterpolationPar
         iIndent = pParams->frameSize.width - pParams->xPos;
 
         /* create upper row */
-        //memcpy(pDst, pSrc, iIndent);
+        //MFX_INTERNAL_CPY(pDst, pSrc, iIndent);
         //memset(pDst + iIndent, pSrc[iIndent - 1], pParams->dataWidth - iIndent);
-        memcpy(pDst, pSrc, 2*iIndent);
+        MFX_INTERNAL_CPY(pDst, pSrc, 2*iIndent);
         memset_nv12_8u(pDst + 2*iIndent, (Ipp8u*)(&pSrc[2*iIndent - 2]), 2*(pParams->dataWidth - iIndent) );
 
         pDst += pParams->dstStep;
@@ -1580,7 +1580,7 @@ static void read_data_through_boundary_top_right_nv12_8u_px(H264InterpolationPar
         /* clone upper row */
         for (i = pParams->yPos + 1; i <= 0; i += 1)
         {
-            memcpy(pDst, pTmp, 2*pParams->dataWidth);
+            MFX_INTERNAL_CPY(pDst, pTmp, 2*pParams->dataWidth);
 
             pDst += pParams->dstStep;
         }
@@ -1588,9 +1588,9 @@ static void read_data_through_boundary_top_right_nv12_8u_px(H264InterpolationPar
         /* create remain row(s) */
         for (i = 1; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            //memcpy(pDst, pSrc, iIndent);
+            //MFX_INTERNAL_CPY(pDst, pSrc, iIndent);
             //memset(pDst + iIndent, pSrc[iIndent - 1], pParams->dataWidth - iIndent);
-            memcpy(pDst, pSrc, 2*iIndent);
+            MFX_INTERNAL_CPY(pDst, pSrc, 2*iIndent);
             memset_nv12_8u(pDst + 2*iIndent, (Ipp8u*)(&pSrc[2*iIndent - 2]), 2*(pParams->dataWidth - iIndent) );
 
             pDst += pParams->dstStep;
@@ -1624,7 +1624,7 @@ static void read_data_through_boundary_bottom_nv12_8u_px(H264InterpolationParams
         /* copy existing lines */
         for (i = pParams->yPos; i < pParams->frameSize.height; i += 1)
         {
-            memcpy(pDst, pSrc, 2*pParams->dataWidth);
+            MFX_INTERNAL_CPY(pDst, pSrc, 2*pParams->dataWidth);
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
@@ -1634,7 +1634,7 @@ static void read_data_through_boundary_bottom_nv12_8u_px(H264InterpolationParams
         pSrc = pDst - pParams->dstStep;
         for (i = pParams->frameSize.height; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            memcpy(pDst, pSrc, 2*pParams->dataWidth);
+            MFX_INTERNAL_CPY(pDst, pSrc, 2*pParams->dataWidth);
 
             pDst += pParams->dstStep;
         }
@@ -1663,9 +1663,9 @@ static void read_data_through_boundary_bottom_left_nv12_8u_px(H264InterpolationP
         for (i = pParams->yPos; i < pParams->frameSize.height; i += 1)
         {
             //memset(pDst, pSrc[0], iIndent);
-            //memcpy(pDst + iIndent, pSrc, pParams->dataWidth - iIndent);
+            //MFX_INTERNAL_CPY(pDst + iIndent, pSrc, pParams->dataWidth - iIndent);
             memset_nv12_8u(pDst, (Ipp8u*)pSrc, iIndent);
-            memcpy(pDst + 2*iIndent, pSrc, 2*(pParams->dataWidth - iIndent));
+            MFX_INTERNAL_CPY(pDst + 2*iIndent, pSrc, 2*(pParams->dataWidth - iIndent));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
@@ -1675,7 +1675,7 @@ static void read_data_through_boundary_bottom_left_nv12_8u_px(H264InterpolationP
         pSrc = pDst - pParams->dstStep;
         for (i = pParams->frameSize.height; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            memcpy(pDst, pSrc, 2*pParams->dataWidth);
+            MFX_INTERNAL_CPY(pDst, pSrc, 2*pParams->dataWidth);
 
             pDst += pParams->dstStep;
         }
@@ -1703,9 +1703,9 @@ static void read_data_through_boundary_bottom_right_nv12_8u_px(H264Interpolation
         /* create existing lines */
         for (i = pParams->yPos; i < pParams->frameSize.height; i += 1)
         {
-            //memcpy(pDst, pSrc, iIndent);
+            //MFX_INTERNAL_CPY(pDst, pSrc, iIndent);
             //memset(pDst + iIndent, pSrc[iIndent - 1], pParams->dataWidth - iIndent);
-            memcpy(pDst, pSrc, 2*iIndent);
+            MFX_INTERNAL_CPY(pDst, pSrc, 2*iIndent);
             memset_nv12_8u(pDst + 2*iIndent, (Ipp8u*)(&pSrc[2*iIndent - 2]), 2*(pParams->dataWidth - iIndent) );
 
             pDst += pParams->dstStep;
@@ -1716,7 +1716,7 @@ static void read_data_through_boundary_bottom_right_nv12_8u_px(H264Interpolation
         pSrc = pDst - pParams->dstStep;
         for (i = pParams->frameSize.height; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            memcpy(pDst, pSrc, 2*pParams->dataWidth);
+            MFX_INTERNAL_CPY(pDst, pSrc, 2*pParams->dataWidth);
 
             pDst += pParams->dstStep;
         }

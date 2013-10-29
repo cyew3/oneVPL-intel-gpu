@@ -50,14 +50,14 @@ public:
         m_RefPicList = &(m_refPicList1[1]);
         m_Flags = &(m_flags1[1]);
 
-        memcpy(&m_refPicList1, &copy.m_refPicList1, sizeof(m_refPicList1));
-        memcpy(&m_flags1, &copy.m_flags1, sizeof(m_flags1));
+        MFX_INTERNAL_CPY(&m_refPicList1, &copy.m_refPicList1, sizeof(m_refPicList1));
+        MFX_INTERNAL_CPY(&m_flags1, &copy.m_flags1, sizeof(m_flags1));
     }
 
     H264DecoderRefPicList& operator=(const H264DecoderRefPicList & copy)
     {
-        memcpy(&m_refPicList1, &copy.m_refPicList1, sizeof(m_refPicList1));
-        memcpy(&m_flags1, &copy.m_flags1, sizeof(m_flags1));
+        MFX_INTERNAL_CPY(&m_refPicList1, &copy.m_refPicList1, sizeof(m_refPicList1));
+        MFX_INTERNAL_CPY(&m_flags1, &copy.m_flags1, sizeof(m_flags1));
         return *this;
     }
 

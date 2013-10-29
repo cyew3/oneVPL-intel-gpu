@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) encoder
@@ -716,7 +716,7 @@ IppStatus   _own_ippiReplicateBorder_8u_C1R  (  Ipp8u * pSrc,  int srcStep,
     Ipp8u* pBlock = pSrc;
     for (int i = 0; i < topBorderWidth; i++)
     {
-        memcpy(pBlock - srcStep, pBlock, srcRoiSize.width);
+        MFX_INTERNAL_CPY(pBlock - srcStep, pBlock, srcRoiSize.width);
         pBlock -= srcStep;
     }
 
@@ -725,7 +725,7 @@ IppStatus   _own_ippiReplicateBorder_8u_C1R  (  Ipp8u * pSrc,  int srcStep,
 
     for (int i = 0; i < dstRoiSize.height - srcRoiSize.height - topBorderWidth; i++ )
     {
-        memcpy(pBlock + srcStep, pBlock, srcRoiSize.width);
+        MFX_INTERNAL_CPY(pBlock + srcStep, pBlock, srcRoiSize.width);
         pBlock += srcStep;
     }
 
@@ -760,7 +760,7 @@ IppStatus   _own_ippiReplicateBorder_16u_C1R  ( Ipp16u * pSrc,  int srcStep,
     Ipp8u* pBlock = (Ipp8u*) pSrc;
     for (int i = 0; i < topBorderWidth; i++)
     {
-        memcpy(pBlock - srcStep, pBlock, srcRoiSize.width*sizeof(Ipp16u));
+        MFX_INTERNAL_CPY(pBlock - srcStep, pBlock, srcRoiSize.width*sizeof(Ipp16u));
         pBlock -= srcStep;
     }
 
@@ -769,7 +769,7 @@ IppStatus   _own_ippiReplicateBorder_16u_C1R  ( Ipp16u * pSrc,  int srcStep,
 
     for (int i = 0; i < dstRoiSize.height - srcRoiSize.height - topBorderWidth; i++ )
     {
-        memcpy(pBlock + srcStep, pBlock, srcRoiSize.width*sizeof(Ipp16u));
+        MFX_INTERNAL_CPY(pBlock + srcStep, pBlock, srcRoiSize.width*sizeof(Ipp16u));
         pBlock += srcStep;
     }
 

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) encoder, work with planes
@@ -312,7 +312,7 @@ namespace UMC_VC1_ENCODER
            {
                if (m_UDataBuffer!=0 && size < m_UDataBufferSize && size !=0)
                {
-                   memcpy(m_UDataBuffer,pBuf,size);
+                   MFX_INTERNAL_CPY(m_UDataBuffer,pBuf,size);
                    m_UDataSize = size ;
                    return true;
                }

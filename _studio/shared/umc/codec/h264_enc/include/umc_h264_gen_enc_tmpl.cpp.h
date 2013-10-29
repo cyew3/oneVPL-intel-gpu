@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2013 Intel Corporation. All Rights Reserved.
 //
 
 #include <vm_thread.h>
@@ -605,32 +605,32 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_SetSequenceParameters)(
         // 4x4 matrices
         for( i=0; i<6; i++ ) core_enc->m_SeqParamSet->seq_scaling_list_present_flag[i] = true;
         //Copy default
-        memcpy(core_enc->m_SeqParamSet->seq_scaling_list_4x4[0], UMC_H264_ENCODER::FlatScalingList4x4, 16*sizeof(Ipp8u));
-        memcpy(core_enc->m_SeqParamSet->seq_scaling_list_4x4[1], UMC_H264_ENCODER::FlatScalingList4x4, 16*sizeof(Ipp8u));
-        memcpy(core_enc->m_SeqParamSet->seq_scaling_list_4x4[2], UMC_H264_ENCODER::FlatScalingList4x4, 16*sizeof(Ipp8u));
-        memcpy(core_enc->m_SeqParamSet->seq_scaling_list_4x4[3], UMC_H264_ENCODER::FlatScalingList4x4, 16*sizeof(Ipp8u));
-        memcpy(core_enc->m_SeqParamSet->seq_scaling_list_4x4[4], UMC_H264_ENCODER::FlatScalingList4x4, 16*sizeof(Ipp8u));
-        memcpy(core_enc->m_SeqParamSet->seq_scaling_list_4x4[5], UMC_H264_ENCODER::FlatScalingList4x4, 16*sizeof(Ipp8u));
+        MFX_INTERNAL_CPY(core_enc->m_SeqParamSet->seq_scaling_list_4x4[0], UMC_H264_ENCODER::FlatScalingList4x4, 16*sizeof(Ipp8u));
+        MFX_INTERNAL_CPY(core_enc->m_SeqParamSet->seq_scaling_list_4x4[1], UMC_H264_ENCODER::FlatScalingList4x4, 16*sizeof(Ipp8u));
+        MFX_INTERNAL_CPY(core_enc->m_SeqParamSet->seq_scaling_list_4x4[2], UMC_H264_ENCODER::FlatScalingList4x4, 16*sizeof(Ipp8u));
+        MFX_INTERNAL_CPY(core_enc->m_SeqParamSet->seq_scaling_list_4x4[3], UMC_H264_ENCODER::FlatScalingList4x4, 16*sizeof(Ipp8u));
+        MFX_INTERNAL_CPY(core_enc->m_SeqParamSet->seq_scaling_list_4x4[4], UMC_H264_ENCODER::FlatScalingList4x4, 16*sizeof(Ipp8u));
+        MFX_INTERNAL_CPY(core_enc->m_SeqParamSet->seq_scaling_list_4x4[5], UMC_H264_ENCODER::FlatScalingList4x4, 16*sizeof(Ipp8u));
 
         // 8x8 matrices
         core_enc->m_SeqParamSet->seq_scaling_list_present_flag[6] = true;
         core_enc->m_SeqParamSet->seq_scaling_list_present_flag[7] = true;
 
         //Copy default scaling matrices
-        memcpy(core_enc->m_SeqParamSet->seq_scaling_list_8x8[0], UMC_H264_ENCODER::DefaultScalingList8x8[1], 64*sizeof(Ipp8u));
-        memcpy(core_enc->m_SeqParamSet->seq_scaling_list_8x8[1], UMC_H264_ENCODER::DefaultScalingList8x8[1], 64*sizeof(Ipp8u));
+        MFX_INTERNAL_CPY(core_enc->m_SeqParamSet->seq_scaling_list_8x8[0], UMC_H264_ENCODER::DefaultScalingList8x8[1], 64*sizeof(Ipp8u));
+        MFX_INTERNAL_CPY(core_enc->m_SeqParamSet->seq_scaling_list_8x8[1], UMC_H264_ENCODER::DefaultScalingList8x8[1], 64*sizeof(Ipp8u));
     }else{
         core_enc->m_SeqParamSet->seq_scaling_matrix_present_flag = false;
         //Copy default
-/*            memcpy(core_enc->m_SeqParamSet->seq_scaling_list_4x4[0], UMC_H264_ENCODER::FlatScalingList4x4, 16*sizeof(Ipp8u));
-        memcpy(core_enc->m_SeqParamSet->seq_scaling_list_4x4[1], UMC_H264_ENCODER::FlatScalingList4x4, 16*sizeof(Ipp8u));
-        memcpy(core_enc->m_SeqParamSet->seq_scaling_list_4x4[2], UMC_H264_ENCODER::FlatScalingList4x4, 16*sizeof(Ipp8u));
-        memcpy(core_enc->m_SeqParamSet->seq_scaling_list_4x4[3], UMC_H264_ENCODER::FlatScalingList4x4, 16*sizeof(Ipp8u));
-        memcpy(core_enc->m_SeqParamSet->seq_scaling_list_4x4[4], UMC_H264_ENCODER::FlatScalingList4x4, 16*sizeof(Ipp8u));
-        memcpy(core_enc->m_SeqParamSet->seq_scaling_list_4x4[5], UMC_H264_ENCODER::FlatScalingList4x4, 16*sizeof(Ipp8u));
+/*            MFX_INTERNAL_CPY(core_enc->m_SeqParamSet->seq_scaling_list_4x4[0], UMC_H264_ENCODER::FlatScalingList4x4, 16*sizeof(Ipp8u));
+        MFX_INTERNAL_CPY(core_enc->m_SeqParamSet->seq_scaling_list_4x4[1], UMC_H264_ENCODER::FlatScalingList4x4, 16*sizeof(Ipp8u));
+        MFX_INTERNAL_CPY(core_enc->m_SeqParamSet->seq_scaling_list_4x4[2], UMC_H264_ENCODER::FlatScalingList4x4, 16*sizeof(Ipp8u));
+        MFX_INTERNAL_CPY(core_enc->m_SeqParamSet->seq_scaling_list_4x4[3], UMC_H264_ENCODER::FlatScalingList4x4, 16*sizeof(Ipp8u));
+        MFX_INTERNAL_CPY(core_enc->m_SeqParamSet->seq_scaling_list_4x4[4], UMC_H264_ENCODER::FlatScalingList4x4, 16*sizeof(Ipp8u));
+        MFX_INTERNAL_CPY(core_enc->m_SeqParamSet->seq_scaling_list_4x4[5], UMC_H264_ENCODER::FlatScalingList4x4, 16*sizeof(Ipp8u));
 */
-        memcpy(core_enc->m_SeqParamSet->seq_scaling_list_8x8[0], UMC_H264_ENCODER::FlatScalingList8x8, 64*sizeof(Ipp8u));
-        memcpy(core_enc->m_SeqParamSet->seq_scaling_list_8x8[1], UMC_H264_ENCODER::FlatScalingList8x8, 64*sizeof(Ipp8u));
+        MFX_INTERNAL_CPY(core_enc->m_SeqParamSet->seq_scaling_list_8x8[0], UMC_H264_ENCODER::FlatScalingList8x8, 64*sizeof(Ipp8u));
+        MFX_INTERNAL_CPY(core_enc->m_SeqParamSet->seq_scaling_list_8x8[1], UMC_H264_ENCODER::FlatScalingList8x8, 64*sizeof(Ipp8u));
     }
 
     //Generate new scaling matrices for use in transform
@@ -1893,10 +1893,10 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_Init)(
             break;
         case 3:
             //Copy from luma
-            memcpy(&core_enc->m_EncBlockOffsetInc[0][16], &core_enc->m_EncBlockOffsetInc[0][0], 16*sizeof(Ipp32s));
-            memcpy(&core_enc->m_EncBlockOffsetInc[0][32], &core_enc->m_EncBlockOffsetInc[0][0], 16*sizeof(Ipp32s));
-            memcpy(&core_enc->m_EncBlockOffsetInc[1][16], &core_enc->m_EncBlockOffsetInc[1][0], 16*sizeof(Ipp32s));
-            memcpy(&core_enc->m_EncBlockOffsetInc[1][32], &core_enc->m_EncBlockOffsetInc[1][0], 16*sizeof(Ipp32s));
+            MFX_INTERNAL_CPY(&core_enc->m_EncBlockOffsetInc[0][16], &core_enc->m_EncBlockOffsetInc[0][0], 16*sizeof(Ipp32s));
+            MFX_INTERNAL_CPY(&core_enc->m_EncBlockOffsetInc[0][32], &core_enc->m_EncBlockOffsetInc[0][0], 16*sizeof(Ipp32s));
+            MFX_INTERNAL_CPY(&core_enc->m_EncBlockOffsetInc[1][16], &core_enc->m_EncBlockOffsetInc[1][0], 16*sizeof(Ipp32s));
+            MFX_INTERNAL_CPY(&core_enc->m_EncBlockOffsetInc[1][32], &core_enc->m_EncBlockOffsetInc[1][0], 16*sizeof(Ipp32s));
             break;
     }
     core_enc->m_InitialOffsets[0][0] = core_enc->m_InitialOffsets[1][1] = 0;
@@ -2385,10 +2385,10 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_Reset)(
             break;
         case 3:
             //Copy from luma
-            memcpy(&core_enc->m_EncBlockOffsetInc[0][16], &core_enc->m_EncBlockOffsetInc[0][0], 16*sizeof(Ipp32s));
-            memcpy(&core_enc->m_EncBlockOffsetInc[0][32], &core_enc->m_EncBlockOffsetInc[0][0], 16*sizeof(Ipp32s));
-            memcpy(&core_enc->m_EncBlockOffsetInc[1][16], &core_enc->m_EncBlockOffsetInc[1][0], 16*sizeof(Ipp32s));
-            memcpy(&core_enc->m_EncBlockOffsetInc[1][32], &core_enc->m_EncBlockOffsetInc[1][0], 16*sizeof(Ipp32s));
+            MFX_INTERNAL_CPY(&core_enc->m_EncBlockOffsetInc[0][16], &core_enc->m_EncBlockOffsetInc[0][0], 16*sizeof(Ipp32s));
+            MFX_INTERNAL_CPY(&core_enc->m_EncBlockOffsetInc[0][32], &core_enc->m_EncBlockOffsetInc[0][0], 16*sizeof(Ipp32s));
+            MFX_INTERNAL_CPY(&core_enc->m_EncBlockOffsetInc[1][16], &core_enc->m_EncBlockOffsetInc[1][0], 16*sizeof(Ipp32s));
+            MFX_INTERNAL_CPY(&core_enc->m_EncBlockOffsetInc[1][32], &core_enc->m_EncBlockOffsetInc[1][0], 16*sizeof(Ipp32s));
             break;
     }
     core_enc->m_InitialOffsets[0][0] = core_enc->m_InitialOffsets[1][1] = 0;

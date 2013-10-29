@@ -440,7 +440,7 @@ mfxStatus VideoDECODEVP8::GetVideoParam(mfxVideoParam *p_params)
 
     MFX_CHECK_NULL_PTR1(p_params);
 
-    memcpy(&p_params->mfx, &m_on_init_video_params.mfx, sizeof(mfxInfoMFX));
+    MFX_INTERNAL_CPY(&p_params->mfx, &m_on_init_video_params.mfx, sizeof(mfxInfoMFX));
 
     p_params->Protected = m_on_init_video_params.Protected;
     p_params->IOPattern = m_on_init_video_params.IOPattern;
@@ -668,7 +668,7 @@ mfxStatus VideoDECODEVP8::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_params
     }
 
     mfxVideoParam params;
-    memcpy(&params, p_params, sizeof(mfxVideoParam));
+    MFX_INTERNAL_CPY(&params, p_params, sizeof(mfxVideoParam));
     bool isNeedChangeVideoParamWarning = IsNeedChangeVideoParam(&params);
 
     mfxStatus sts = QueryIOSurfInternal(platform, &params, p_request);
@@ -708,7 +708,7 @@ mfxStatus VideoDECODEVP8::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_params
 
 mfxStatus VideoDECODEVP8::QueryIOSurfInternal(eMFXPlatform platform, mfxVideoParam *p_params, mfxFrameAllocRequest *p_request)
 {
-    memcpy(&p_request->Info, &p_params->mfx.FrameInfo, sizeof(mfxFrameInfo));
+    MFX_INTERNAL_CPY(&p_request->Info, &p_params->mfx.FrameInfo, sizeof(mfxFrameInfo));
 
     mfxU32 threads = p_params->mfx.NumThread;
 
@@ -772,7 +772,7 @@ mfxStatus VideoDECODEVP8::GetDecodeStat(mfxDecodeStat *p_stat)
     m_decode_stat.NumSkippedFrame = 0;
     m_decode_stat.NumCachedFrame = 0;
 
-    memcpy(p_stat, &m_decode_stat, sizeof(m_decode_stat));
+    MFX_INTERNAL_CPY(p_stat, &m_decode_stat, sizeof(m_decode_stat));
 
     return MFX_ERR_NONE;
 
@@ -817,7 +817,7 @@ static mfxStatus __CDECL VP8DECODERoutine(void *p_state, void *p_param, mfxU32 /
 
         for (unsigned int j = 0; j < img->d_h; j += 1)
         {
-            memcpy(p_data, buf, img->d_w);
+            MFX_INTERNAL_CPY(p_data, buf, img->d_w);
             p_data += pitch;
             buf += img->stride[0];
         }
@@ -829,7 +829,7 @@ static mfxStatus __CDECL VP8DECODERoutine(void *p_state, void *p_param, mfxU32 /
 
         for (unsigned int j = 0; j < (img->d_h + 1) >> 1; j += 1)
         {
-            memcpy(p_data, buf, (img->d_w + 1) >> 1);
+            MFX_INTERNAL_CPY(p_data, buf, (img->d_w + 1) >> 1);
             p_data += pitch;
             buf += img->stride[1];
         }
@@ -841,7 +841,7 @@ static mfxStatus __CDECL VP8DECODERoutine(void *p_state, void *p_param, mfxU32 /
         
         for (unsigned int j = 0; j < (img->d_h + 1) >> 1; j += 1)
         {
-            memcpy(p_data, buf, (img->d_w + 1) >> 1);
+            MFX_INTERNAL_CPY(p_data, buf, (img->d_w + 1) >> 1);
             p_data += pitch;
             buf += img->stride[2];
         }
@@ -992,7 +992,7 @@ mfxStatus VideoDECODEVP8::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurface1 
 
     p_info->m_p_bitstream = NULL;
     p_info->m_p_bitstream = new mfxU8[m_bs.DataLength];
-    memcpy(p_info->m_p_bitstream, m_bs.Data, m_bs.DataLength);
+    MFX_INTERNAL_CPY(p_info->m_p_bitstream, m_bs.Data, m_bs.DataLength);
 
     p_entry_point->pRoutine = &VP8DECODERoutine;
     p_entry_point->pCompleteProc = &VP8CompleteProc;
@@ -1162,7 +1162,7 @@ mfxStatus MFX_VP8_Utility::Query(VideoCORE *p_core, mfxVideoParam *p_in, mfxVide
     if (p_in == p_out)
     {
         mfxVideoParam in1;
-        memcpy(&in1, p_in, sizeof(mfxVideoParam));
+        MFX_INTERNAL_CPY(&in1, p_in, sizeof(mfxVideoParam));
         return Query(p_core, &in1, p_out, type);
     }
 
@@ -1260,11 +1260,11 @@ mfxStatus MFX_VP8_Utility::Query(VideoCORE *p_core, mfxVideoParam *p_in, mfxVide
         {
             opaque_out->In.Type = opaque_in->In.Type;
             opaque_out->In.NumSurface = opaque_in->In.NumSurface;
-            memcpy(opaque_out->In.Surfaces, opaque_in->In.Surfaces, opaque_in->In.NumSurface);
+            MFX_INTERNAL_CPY(opaque_out->In.Surfaces, opaque_in->In.Surfaces, opaque_in->In.NumSurface);
 
             opaque_out->Out.Type = opaque_in->Out.Type;
             opaque_out->Out.NumSurface = opaque_in->Out.NumSurface;
-            memcpy(opaque_out->Out.Surfaces, opaque_in->Out.Surfaces, opaque_in->Out.NumSurface);
+            MFX_INTERNAL_CPY(opaque_out->Out.Surfaces, opaque_in->Out.Surfaces, opaque_in->Out.NumSurface);
         }
         else
         {
