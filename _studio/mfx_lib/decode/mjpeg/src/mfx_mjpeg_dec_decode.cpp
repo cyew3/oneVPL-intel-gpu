@@ -2014,6 +2014,7 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
         case MFX_CHROMAFORMAT_MONOCHROME:
             if(hwType >= MFX_HW_SCL && 
                vaType == MFX_HW_D3D9 &&
+               info->Rotation == MFX_ROTATION_0 && 
                info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED && 
                requestFrameInfo->FourCC == MFX_FOURCC_RGB4 && 
                requestFrameInfo->Width  >= 128 && 
@@ -2026,6 +2027,7 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
             }
             else if(hwType >= MFX_HW_SCL && 
                     vaType == MFX_HW_D3D11 &&
+                    info->Rotation == MFX_ROTATION_0 && 
                     info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED && 
                     requestFrameInfo->FourCC == DXGI_FORMAT_AYUV && 
                     requestFrameInfo->Width  >= 128 && 
@@ -2061,6 +2063,7 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
             }
             else if(hwType >= MFX_HW_SCL && 
                     vaType == MFX_HW_D3D9 &&
+                    info->Rotation == MFX_ROTATION_0 && 
                     info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED && 
                     requestFrameInfo->FourCC == MFX_FOURCC_RGB4 && 
                     requestFrameInfo->Width  >= 128 && 
@@ -2073,6 +2076,7 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
             }
             else if(hwType >= MFX_HW_SCL && 
                     vaType == MFX_HW_D3D11 &&
+                    info->Rotation == MFX_ROTATION_0 && 
                     info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED && 
                     requestFrameInfo->FourCC == DXGI_FORMAT_AYUV && 
                     requestFrameInfo->Width  >= 128 && 
@@ -2112,7 +2116,7 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
             }
             else if(hwType >= MFX_HW_SCL && 
                     vaType == MFX_HW_D3D9 &&
-                    (info->Rotation == MFX_ROTATION_0 || info->Rotation == MFX_ROTATION_180) && 
+                    info->Rotation == MFX_ROTATION_0 && 
                     info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED && 
                     requestFrameInfo->FourCC == MFX_FOURCC_RGB4 && 
                     requestFrameInfo->Width  >= 128 && 
@@ -2125,7 +2129,7 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
             }
             else if(hwType >= MFX_HW_SCL && 
                     vaType == MFX_HW_D3D11 &&
-                    (info->Rotation == MFX_ROTATION_0 || info->Rotation == MFX_ROTATION_180) && 
+                    info->Rotation == MFX_ROTATION_0 && 
                     info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED && 
                     requestFrameInfo->FourCC == DXGI_FORMAT_AYUV && 
                     requestFrameInfo->Width  >= 128 && 
@@ -2147,39 +2151,13 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
             }
             break;
         case MFX_CHROMAFORMAT_YUV422V:
-            if(hwType >= MFX_HW_BDW && 
-               info->Rotation == MFX_ROTATION_0 && 
-               info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED && 
-               requestFrameInfo->FourCC == MFX_FOURCC_NV12 && 
+            if(hwType >= MFX_HW_BDW &&
+               info->Rotation == MFX_ROTATION_0 &&
+               info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED &&
+               requestFrameInfo->FourCC == MFX_FOURCC_NV12 &&
                !(*needVpp))
             {
                 requestFrameInfo->FourCC = MFX_FOURCC_NV12;
-            }
-            else if(hwType >= MFX_HW_SCL && 
-                    vaType == MFX_HW_D3D9 &&
-                    (info->Rotation == MFX_ROTATION_90 || info->Rotation == MFX_ROTATION_270) && 
-                    info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED && 
-                    requestFrameInfo->FourCC == MFX_FOURCC_RGB4 && 
-                    requestFrameInfo->Width  >= 128 && 
-                    requestFrameInfo->Height >= 128 && 
-                    requestFrameInfo->Width  <= 4096 && 
-                    requestFrameInfo->Height <= 4096 && 
-                    !(*needVpp))
-            {
-                requestFrameInfo->FourCC = MFX_FOURCC_RGB4;
-            }
-            else if(hwType >= MFX_HW_SCL && 
-                    vaType == MFX_HW_D3D11 &&
-                    (info->Rotation == MFX_ROTATION_90 || info->Rotation == MFX_ROTATION_270) && 
-                    info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED && 
-                    requestFrameInfo->FourCC == DXGI_FORMAT_AYUV && 
-                    requestFrameInfo->Width  >= 128 && 
-                    requestFrameInfo->Height >= 128 && 
-                    requestFrameInfo->Width  <= 4096 && 
-                    requestFrameInfo->Height <= 4096 && 
-                    !(*needVpp))
-            {
-                requestFrameInfo->FourCC = DXGI_FORMAT_AYUV;
             }
             else
             {
@@ -2194,6 +2172,7 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
         case MFX_CHROMAFORMAT_YUV444:
             if(hwType >= MFX_HW_SCL && 
                vaType == MFX_HW_D3D9 &&
+               info->Rotation == MFX_ROTATION_0 &&
                info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED && 
                requestFrameInfo->FourCC == MFX_FOURCC_RGB4 && 
                requestFrameInfo->Width  >= 128 && 
@@ -2206,6 +2185,7 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
             }
             else if(hwType >= MFX_HW_SCL && 
                     vaType == MFX_HW_D3D11 &&
+                    info->Rotation == MFX_ROTATION_0 &&
                     info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED && 
                     requestFrameInfo->FourCC == DXGI_FORMAT_AYUV && 
                     requestFrameInfo->Width  >= 128 && 
@@ -2232,8 +2212,37 @@ void MFX_JPEG_Utility::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *
         switch(info->JPEGChromaFormat)
         {
         case MFX_CHROMAFORMAT_YUV444:
-            requestFrameInfo->FourCC = MFX_FOURCC_RGBP;
-            *needVpp = true;
+            if(hwType >= MFX_HW_SCL && 
+               vaType == MFX_HW_D3D9 &&
+               info->Rotation == MFX_ROTATION_0 && 
+               info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED && 
+               requestFrameInfo->FourCC == MFX_FOURCC_RGB4 && 
+               requestFrameInfo->Width  >= 128 && 
+               requestFrameInfo->Height >= 128 && 
+               requestFrameInfo->Width  <= 4096 && 
+               requestFrameInfo->Height <= 4096 && 
+               !(*needVpp))
+            {
+                requestFrameInfo->FourCC = MFX_FOURCC_RGB4;
+            }
+            else if(hwType >= MFX_HW_SCL && 
+                    vaType == MFX_HW_D3D11 &&
+                    info->Rotation == MFX_ROTATION_0 && 
+                    info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED && 
+                    requestFrameInfo->FourCC == DXGI_FORMAT_AYUV && 
+                    requestFrameInfo->Width  >= 128 && 
+                    requestFrameInfo->Height >= 128 && 
+                    requestFrameInfo->Width  <= 4096 && 
+                    requestFrameInfo->Height <= 4096 && 
+                    !(*needVpp))
+            {
+                requestFrameInfo->FourCC = DXGI_FORMAT_AYUV;
+            }
+            else
+            {
+                requestFrameInfo->FourCC = MFX_FOURCC_RGBP;
+                *needVpp = true;
+            }
             break;
         default:
             VM_ASSERT(false);

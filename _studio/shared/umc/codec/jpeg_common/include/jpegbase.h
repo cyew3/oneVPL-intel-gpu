@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//    Copyright (c) 2001-2012 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2001-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -376,7 +376,9 @@ enum ChromaType
     CHROMA_TYPE_YUV411         = 4, // Y: h=4 v=1, Cb/Cr: h=1 v=1
     CHROMA_TYPE_YUV422V_2Y     = 5, // Y: h=1 v=2, Cb/Cr: h=1 v=1
     CHROMA_TYPE_YUV422H_4Y     = 6, // Y: h=2 v=1, Cb/Cr: h=1 v=2
-    CHROMA_TYPE_YUV422V_4Y     = 7  // Y: h=1 v=2, Cb/Cr: h=2 v=1
+    CHROMA_TYPE_YUV422V_4Y     = 7, // Y: h=1 v=2, Cb/Cr: h=2 v=1
+    CHROMA_TYPE_RGB            = 8, // Y: h=1 v=1, Cb/Cr: h=1 v=1
+    CHROMA_TYPE_BGR            = 9  // Y: h=1 v=1, Cb/Cr: h=1 v=1
 };
 
 #endif // UMC_ENABLE_MJPEG_VIDEO_DECODER || UMC_ENABLE_MJPEG_VIDEO_ENCODER
