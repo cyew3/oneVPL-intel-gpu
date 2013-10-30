@@ -230,10 +230,15 @@ static mfxU32 mfx_list_libraries(const char* path, bool search_hw, struct mfx_li
 namespace MFX
 {
 
-mfxStatus GetImplementationType(const mfxU32 adapterNum, mfxIMPL *pImplInterface, mfxU32 */*pVendorID*/, mfxU32 */*pDeviceID*/)
+mfxStatus GetImplementationType(const mfxU32 adapterNum, mfxIMPL *pImplInterface, mfxU32 *pVendorID, mfxU32 *pDeviceID)
 {
     mfx_disp_adapters* adapters = NULL;
     int adapters_num = mfx_init_adapters(&adapters);
+    if (pVendorID && pDeviceID && adapterNum < adapters_num)
+    {
+        *pVendorID = adapters[adapterNum].vendor_id;
+        *pDeviceID = adapters[adapterNum].device_id;
+    }
     if (adapters_num) free(adapters);
 
     if (adapterNum >= adapters_num)

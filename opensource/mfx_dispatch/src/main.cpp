@@ -173,7 +173,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
     {
         MFX::MFXLibraryIterator libIterator;
         int currentStorage = MFX::MFX_STORAGE_ID_FIRST;
-
+        implInterface = implInterfaceOrig;
         do
         {
             // initialize the library iterator
