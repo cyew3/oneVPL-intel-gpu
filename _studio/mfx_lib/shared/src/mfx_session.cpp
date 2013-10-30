@@ -414,15 +414,15 @@ void _mfxSession::Release(void)
     // unregister plugin before closing
     if (m_plgGen.get())
     {
-        m_plgGen->Close();
+        m_plgGen->PluginClose();
     }
     if (m_plgEnc.get())
     {
-        m_plgEnc->Close();
+        m_plgEnc->PluginClose();
     }
     if (m_plgDec.get())
     {
-        m_plgDec->Close();
+        m_plgDec->PluginClose();
     }
     // release the components the excplicit way.
     // do not relay on default deallocation order,

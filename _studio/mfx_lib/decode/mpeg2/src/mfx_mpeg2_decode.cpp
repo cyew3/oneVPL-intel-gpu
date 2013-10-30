@@ -983,7 +983,7 @@ mfxStatus VideoDECODEMPEG2::GetUserData(mfxU8 *ud, mfxU32 *sz, mfxU64 *ts, mfxU1
     return MFX_ERR_UNDEFINED_BEHAVIOR;
 }
 
-mfxStatus VideoDECODEMPEG2::GetPayload(mfxSession session, mfxU64 *ts, mfxPayload *payload)
+mfxStatus VideoDECODEMPEG2::GetPayload( mfxU64 *ts, mfxPayload *payload )
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -992,7 +992,7 @@ mfxStatus VideoDECODEMPEG2::GetPayload(mfxSession session, mfxU64 *ts, mfxPayloa
         return MFX_ERR_NOT_INITIALIZED;
     }
 
-    MFX_CHECK_NULL_PTR3(session, ts, payload);
+    MFX_CHECK_NULL_PTR2( ts, payload);
 
     sts = GetUserData(payload->Data, &payload->NumBit, ts, payload->BufSize);
     MFX_CHECK_STS(sts);

@@ -2046,7 +2046,7 @@ mfxStatus MFXVideoDECODEVC1::SetSkipMode(mfxSkipMode mode)
         return MFX_ERR_NONE;
     }
 }
-mfxStatus MFXVideoDECODEVC1::GetPayload(mfxSession session, mfxU64 *ts, mfxPayload *payload)
+mfxStatus MFXVideoDECODEVC1::GetPayload( mfxU64 *ts, mfxPayload *payload )
 {
     if (!ts || !payload)
         return MFX_ERR_NULL_PTR;

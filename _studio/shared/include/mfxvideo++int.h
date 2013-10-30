@@ -555,8 +555,7 @@ public:
     mfxStatus DecodeFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out) = 0;
     virtual
     mfxStatus SetSkipMode(mfxSkipMode mode) {mode=mode;return MFX_ERR_UNSUPPORTED;};
-    virtual
-    mfxStatus GetPayload(mfxSession session, mfxU64 *ts, mfxPayload *payload) = 0;
+    virtual mfxStatus GetPayload(mfxU64 *ts, mfxPayload *payload) = 0;
 
 };
 
@@ -632,7 +631,7 @@ public:
                    mfxU32 type = MFX_PLUGINTYPE_VIDEO_GENERAL) = 0;
     // Release the user's plugin
     virtual
-    mfxStatus Close(void) = 0;
+    mfxStatus PluginClose(void) = 0;
     // Get the plugin's threading policy
     virtual
     mfxTaskThreadingPolicy GetThreadingPolicy(void) {return MFX_TASK_THREADING_DEFAULT;}

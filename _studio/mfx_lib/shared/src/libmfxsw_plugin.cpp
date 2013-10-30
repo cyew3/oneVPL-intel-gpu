@@ -173,7 +173,7 @@ mfxStatus MFXVideoUSER_Unregister(mfxSession session, mfxU32 type)
         session->m_pScheduler->WaitForTaskCompletion(registeredPlg.get());
 
         // deinitialize the plugin
-        mfxRes = registeredPlg->Close();
+        mfxRes = registeredPlg->PluginClose();
         // delete the plugin's instance
         registeredPlg.reset();
     }

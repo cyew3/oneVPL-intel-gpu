@@ -1578,7 +1578,7 @@ mfxStatus VideoDECODEH264::GetUserData(mfxU8 *ud, mfxU32 *sz, mfxU64 *ts)
     return MFXSts;
 }
 
-mfxStatus VideoDECODEH264::GetPayload(mfxSession , mfxU64 *ts, mfxPayload * payload)
+mfxStatus VideoDECODEH264::GetPayload( mfxU64 *ts, mfxPayload *payload )
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
 

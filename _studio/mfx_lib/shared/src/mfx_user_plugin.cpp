@@ -141,13 +141,14 @@ mfxStatus VideoUSERPlugin::PluginInit(const mfxPlugin *pParam,
 
 } // mfxStatus VideoUSERPlugin::Init(const mfxPlugin *pParam,
 
-mfxStatus VideoUSERPlugin::Close(void)
+mfxStatus VideoUSERPlugin::PluginClose(void)
 {
     Release();
 
     return MFX_ERR_NONE;
 
 } // mfxStatus VideoUSERPlugin::Close(void)
+
 
 mfxTaskThreadingPolicy VideoUSERPlugin::GetThreadingPolicy(void)
 {
@@ -280,12 +281,20 @@ mfxStatus VideoUSERPlugin::Init(mfxVideoParam *par) {
     return m_plugin.Video->Init(m_plugin.pthis, par);
 }
 
-
-#pragma warning (disable: 4100)
-
 mfxStatus VideoUSERPlugin::Reset(mfxVideoParam *par) {
     return m_plugin.Video->Reset(m_plugin.pthis, par);
 }
+
+mfxStatus VideoUSERPlugin::Close(void) {
+    return m_plugin.Video->Close(m_plugin.pthis);
+}
+
+mfxStatus VideoUSERPlugin::GetPayload(mfxU64 *ts, mfxPayload *payload) {
+    return m_plugin.Video->GetPayload(m_plugin.pthis, ts, payload);
+}
+
+#pragma warning (disable: 4100)
+
 mfxStatus VideoUSERPlugin::GetFrameParam(mfxFrameParam *par) {
     return MFX_ERR_NONE;
 }
@@ -300,9 +309,6 @@ mfxStatus VideoUSERPlugin::DecodeFrame(mfxBitstream *bs, mfxFrameSurface1 *surfa
     return MFX_ERR_NONE;
 }
 mfxStatus VideoUSERPlugin::SetSkipMode(mfxSkipMode mode) {
-    return MFX_ERR_NONE;
-}
-mfxStatus VideoUSERPlugin::GetPayload(mfxSession session, mfxU64 *ts, mfxPayload *payload) {
     return MFX_ERR_NONE;
 }
 

@@ -31,7 +31,7 @@ public:
                    mfxCoreInterface *pCore,
                    mfxU32 type = MFX_PLUGINTYPE_VIDEO_GENERAL);
     // Release the user's plugin
-    mfxStatus Close(void);
+    mfxStatus PluginClose(void);
     // Get the plugin's threading policy
     mfxTaskThreadingPolicy GetThreadingPolicy(void);
 
@@ -45,6 +45,7 @@ public:
     mfxStatus DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVideoParam *par);
 
     mfxStatus Init(mfxVideoParam *par) ;
+    mfxStatus Close(void);
     mfxStatus Reset(mfxVideoParam *par) ;
     mfxStatus GetFrameParam(mfxFrameParam *par) ;
     mfxStatus GetVideoParam(mfxVideoParam *par) ;
@@ -53,7 +54,7 @@ public:
     mfxStatus DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, MFX_ENTRY_POINT * ep) ;
     mfxStatus DecodeFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out) ;
     mfxStatus SetSkipMode(mfxSkipMode mode) ;
-    mfxStatus GetPayload(mfxSession session, mfxU64 *ts, mfxPayload *payload) ;
+    mfxStatus GetPayload(mfxU64 *ts, mfxPayload *payload) ;
     
     mfxStatus EncodeFrameCheck(mfxEncodeCtrl *ctrl,
         mfxFrameSurface1 *surface,
@@ -74,12 +75,11 @@ protected:
         VideoUSERPlugin *m_plg;
     public:
         VideoENCDECImpl(VideoUSERPlugin * plg)
-            : m_plg (plg)
-        {
+            : m_plg (plg) {
         }
         mfxStatus Init(mfxVideoParam *par) {return m_plg->Init(par);}
         mfxStatus Reset(mfxVideoParam *par) {return m_plg->Reset(par);}
-        mfxStatus Close() {return m_plg->Close();}
+        mfxStatus Close() {  return m_plg->Close(); }
         mfxTaskThreadingPolicy GetThreadingPolicy(void) {
             return m_plg->GetThreadingPolicy();
         }
@@ -138,7 +138,7 @@ protected:
             return m_plg->DecodeFrame(bs, surface_work, surface_out);
         }
         mfxStatus SetSkipMode(mfxSkipMode mode) {return m_plg->SetSkipMode(mode);} 
-        mfxStatus GetPayload(mfxSession session, mfxU64 *ts, mfxPayload *payload) {return m_plg->GetPayload(session, ts, payload);}
+        mfxStatus GetPayload(mfxU64 *ts, mfxPayload *payload) {return m_plg->GetPayload(ts, payload);}
     };
 
     void Release(void);

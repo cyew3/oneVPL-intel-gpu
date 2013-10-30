@@ -1577,7 +1577,7 @@ mfxStatus VideoDECODEMJPEG::GetUserData(mfxU8 *ud, mfxU32 *sz, mfxU64 *ts)
     return MFX_ERR_UNSUPPORTED;
 }
 
-mfxStatus VideoDECODEMJPEG::GetPayload(mfxSession , mfxU64 *ts, mfxPayload * payload)
+mfxStatus VideoDECODEMJPEG::GetPayload( mfxU64 *ts, mfxPayload *payload )
 {
     if (!m_isInit)
         return MFX_ERR_NOT_INITIALIZED;

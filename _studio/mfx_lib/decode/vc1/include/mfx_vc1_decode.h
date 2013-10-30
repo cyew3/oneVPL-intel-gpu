@@ -121,7 +121,7 @@ public:
 
     virtual mfxStatus DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_disp);
     virtual mfxStatus SetSkipMode(mfxSkipMode mode);
-    virtual mfxStatus GetPayload(mfxSession session, mfxU64 *ts, mfxPayload *payload);
+    virtual mfxStatus GetPayload(mfxU64 *ts, mfxPayload *payload);
     // to satisfy internal API
     virtual mfxStatus DecodeFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out){bs, surface_work, surface_out; return MFX_ERR_UNSUPPORTED;};
 

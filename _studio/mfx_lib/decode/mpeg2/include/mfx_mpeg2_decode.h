@@ -150,7 +150,7 @@ public:
     mfxStatus CheckFrameData(const mfxFrameSurface1 *pSurface);
 
     virtual mfxStatus GetUserData(mfxU8 *ud, mfxU32 *sz, mfxU64 *ts,mfxU16 bufsize);
-    virtual mfxStatus GetPayload(mfxSession session, mfxU64 *ts, mfxPayload *payload);
+    virtual mfxStatus GetPayload(mfxU64 *ts, mfxPayload *payload);
     virtual mfxStatus SetSkipMode(mfxSkipMode mode);
 
 protected:
