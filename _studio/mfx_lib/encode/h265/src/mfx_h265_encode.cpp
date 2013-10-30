@@ -57,7 +57,7 @@ mfxExtCodingOptionHEVC hevc_tu_tab[8] = {               // CUS CUD 2TUS 2TUD  An
     {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  2, 4,2, 2,2,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_OFF, 2, 2, 2,         4,4,2,2,2, 2,2,1,1,1, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF}  // tu 7
 };
 
-#define H265_MAXREFDIST 4
+#define H265_MAXREFDIST 8
 
 static const struct _hevc_level_tab {
     // General limits
@@ -632,9 +632,12 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     // TargetUsage - nothing to do
 
     // can depend on target usage
-    if (!m_mfxVideoParam.mfx.GopPicSize) m_mfxVideoParam.mfx.GopPicSize = (mfxU16)
-       (( m_mfxVideoParam.mfx.FrameInfo.FrameRateExtN + m_mfxVideoParam.mfx.FrameInfo.FrameRateExtD - 1 ) / m_mfxVideoParam.mfx.FrameInfo.FrameRateExtD);
-    if (!m_mfxVideoParam.mfx.GopRefDist) m_mfxVideoParam.mfx.GopRefDist = 1;
+    if (!m_mfxVideoParam.mfx.GopPicSize) {
+        m_mfxVideoParam.mfx.GopPicSize = (mfxU16) (( m_mfxVideoParam.mfx.FrameInfo.FrameRateExtN + m_mfxVideoParam.mfx.FrameInfo.FrameRateExtD - 1 ) / m_mfxVideoParam.mfx.FrameInfo.FrameRateExtD);
+        if (m_mfxVideoParam.mfx.GopRefDist>1)
+            m_mfxVideoParam.mfx.GopPicSize = (mfxU16) ((m_mfxVideoParam.mfx.GopPicSize + m_mfxVideoParam.mfx.GopRefDist - 1) / m_mfxVideoParam.mfx.GopRefDist * m_mfxVideoParam.mfx.GopRefDist);
+    }
+    if (!m_mfxVideoParam.mfx.GopRefDist) m_mfxVideoParam.mfx.GopRefDist = 1; // keep alignment with GopPicSize when changing
     if (!m_mfxVideoParam.mfx.IdrInterval) m_mfxVideoParam.mfx.IdrInterval = m_mfxVideoParam.mfx.GopPicSize * 8;
     // GopOptFlag ignore
 
@@ -1558,9 +1561,13 @@ mfxStatus MFXVideoENCODEH265::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
                 m_core->UnlockExternalFrame(surface->Data.MemId, &(surface->Data));
         }
         m_frameCount ++;
+        if (mfxRes == MFX_ERR_MORE_DATA)
+            m_frameCountBuffered ++;
     } else {
         mfxRes = m_enc->EncodeFrame(NULL, bitstream);
         //        res = Encode(cur_enc, 0, &m_data_out, p_data_out_ext, 0, 0, 0);
+        if (mfxRes == MFX_ERR_NONE)
+            m_frameCountBuffered --;
     }
 
     // bs could be NULL if input frame is buffered
@@ -1568,6 +1575,14 @@ mfxStatus MFXVideoENCODEH265::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
         if (bitstream->DataLength != initialDataLength )
             m_encodedFrames++;
         m_totalBits += (bitstream->DataLength - initialDataLength) * 8;
+
+        if (m_enc->m_pCurrentFrame) {
+            bitstream->TimeStamp = m_enc->m_pCurrentFrame->TimeStamp;
+            mfxI32 dpb_output_delay = (m_enc->m_pCurrentFrame->m_PicCodType == MFX_FRAMETYPE_B) ? 0 : m_frameCountBuffered + (m_mfxVideoParam.mfx.GopRefDist > 1 ? 1 : 0);
+            mfxF64 tcDuration90KHz = (mfxF64)m_mfxVideoParam.mfx.FrameInfo.FrameRateExtD / m_mfxVideoParam.mfx.FrameInfo.FrameRateExtN * 90000; // calculate tick duration
+            bitstream->DecodeTimeStamp = mfxI64(bitstream->TimeStamp - tcDuration90KHz * dpb_output_delay); // calculate DTS from PTS
+        }
+
     }
 
     if (mfxRes == MFX_ERR_MORE_DATA)

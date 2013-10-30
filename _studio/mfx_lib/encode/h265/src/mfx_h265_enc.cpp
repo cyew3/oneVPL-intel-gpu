@@ -92,6 +92,7 @@ static mfxU32 ConvertSARtoIDC_H265enc(mfxU32 sarw, mfxU32 sarh)
     return 0;
 }
 
+
 mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxExtCodingOptionHEVC *opts_hevc)
 {
     H265VideoParam *pars = &m_videoParam;
@@ -1519,9 +1520,20 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
         Ipp32u  ePictureType;
 
         ePictureType = DetermineFrameType();
+        mfxU64 prevTimeStamp = m_pLastFrame ? m_pLastFrame->TimeStamp : MFX_TIMESTAMP_UNKNOWN;
         m_pLastFrame = m_pCurrentFrame = m_cpb.InsertFrame(surface, &m_videoParam);
         if (m_pCurrentFrame)
         {
+            // Set PTS  from previous if isn't given at input
+            if (m_pCurrentFrame->TimeStamp == MFX_TIMESTAMP_UNKNOWN) {
+                if (prevTimeStamp == MFX_TIMESTAMP_UNKNOWN)
+                    m_pCurrentFrame->TimeStamp = 0;
+                else {
+                    mfxF64 tcDuration90KHz = (mfxF64)m_videoParam.FrameRateExtD / m_videoParam.FrameRateExtN * 90000; // calculate tick duration
+                    m_pCurrentFrame->TimeStamp = mfxI64(prevTimeStamp + tcDuration90KHz);
+                }
+            }
+
             m_pCurrentFrame->m_PicCodType = ePictureType;
             m_pCurrentFrame->m_bIsIDRPic = false;
             m_pCurrentFrame->m_RPSIndex = RPSIndex;
@@ -1855,7 +1867,6 @@ recode:
     m_pCurrentFrame->swapData(m_pReconstructFrame);
     m_pCurrentFrame->setWasEncoded();
     m_pCurrentFrame->Dump(m_recon_dump_file_name, &m_videoParam, &m_dpb, m_frameCountEncoded);
-//    mfxBS->TimeStamp = m_pCurrentFrame->TimeStamp;
 
     CleanDPB();
 
