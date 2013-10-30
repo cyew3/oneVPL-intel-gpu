@@ -193,12 +193,18 @@ mfxStatus VideoUSERPlugin::Check(const mfxHDL *in, mfxU32 in_num,
     return MFX_ERR_NONE;
 
 } // mfxStatus VideoUSERPlugin::Check(const mfxHDL *in, mfxU32 in_num,
+#define U32TOFOURCC(mfxu32)\
+(char)(mfxu32 & 0xFF), \
+(char)((mfxu32 >> 8) & 0xFF),\
+(char)((mfxu32 >> 16) & 0xFF),\
+(char)((mfxu32 >> 24) & 0xFF)
 
 mfxStatus VideoUSERPlugin::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
     core;
     if (m_param.CodecId != par->mfx.CodecId)
     {
+        printf("ERROR: VideoUSERPlugin::QueryIOSurf, plugin_codec_id=%c%c%c%c, query_codec_id=%c%c%c%c\n", U32TOFOURCC(m_param.CodecId), U32TOFOURCC(par->mfx.CodecId));
         return MFX_ERR_UNSUPPORTED;
     }
 
@@ -210,6 +216,7 @@ mfxStatus VideoUSERPlugin::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPar
     core;
     if (m_param.CodecId != out->mfx.CodecId)
     {
+        printf("ERROR: VideoUSERPlugin::Query, plugin_codec_id=%c%c%c%c, query_codec_id=%c%c%c%c\n", U32TOFOURCC(m_param.CodecId), U32TOFOURCC(out->mfx.CodecId));
         return MFX_ERR_UNSUPPORTED;
     }
     
@@ -246,6 +253,29 @@ mfxStatus VideoUSERPlugin::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
     return MFX_ERR_NONE;
 }
 
+mfxStatus VideoUSERPlugin::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, MFX_ENTRY_POINT *ep) {
+    mfxStatus mfxRes;
+    mfxThreadTask userParam;
+
+    // check the parameters with user object
+    mfxRes = m_plugin.Video->EncodeFrameSubmit(m_plugin.pthis, ctrl, surface, bs, &userParam);
+    if (MFX_ERR_NONE != mfxRes)
+    {
+        return mfxRes;
+    }
+
+    // fill the 'entry point' structure
+    *ep = m_entryPoint;
+    ep->pParam = userParam;
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoUSERPlugin::GetVideoParam(mfxVideoParam *par) {
+
+    return m_plugin.Video->GetVideoParam(m_plugin.pthis, par);
+}
+
 mfxStatus VideoUSERPlugin::Init(mfxVideoParam *par) {
     return m_plugin.Video->Init(m_plugin.pthis, par);
 }
@@ -254,14 +284,12 @@ mfxStatus VideoUSERPlugin::Init(mfxVideoParam *par) {
 #pragma warning (disable: 4100)
 
 mfxStatus VideoUSERPlugin::Reset(mfxVideoParam *par) {
-    return MFX_ERR_NONE;
+    return m_plugin.Video->Reset(m_plugin.pthis, par);
 }
 mfxStatus VideoUSERPlugin::GetFrameParam(mfxFrameParam *par) {
     return MFX_ERR_NONE;
 }
-mfxStatus VideoUSERPlugin::GetVideoParam(mfxVideoParam *par) {
-    return MFX_ERR_NONE;
-}
+
 mfxStatus VideoUSERPlugin::GetEncodeStat(mfxEncodeStat *stat) {
     return MFX_ERR_NONE;
 }
@@ -277,9 +305,7 @@ mfxStatus VideoUSERPlugin::SetSkipMode(mfxSkipMode mode) {
 mfxStatus VideoUSERPlugin::GetPayload(mfxSession session, mfxU64 *ts, mfxPayload *payload) {
     return MFX_ERR_NONE;
 }
-mfxStatus VideoUSERPlugin::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxFrameSurface1 **reordered_surface, mfxEncodeInternalParams *pInternalParams) {
-    return MFX_ERR_NONE;
-}
+
 mfxStatus VideoUSERPlugin::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternalParams *pInternalParams, mfxFrameSurface1 *surface, mfxBitstream *bs) {
     return MFX_ERR_NONE;
 }

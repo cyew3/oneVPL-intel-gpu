@@ -54,7 +54,14 @@ public:
     mfxStatus DecodeFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out) ;
     mfxStatus SetSkipMode(mfxSkipMode mode) ;
     mfxStatus GetPayload(mfxSession session, mfxU64 *ts, mfxPayload *payload) ;
-    mfxStatus EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxFrameSurface1 **reordered_surface, mfxEncodeInternalParams *pInternalParams) ;
+    
+    mfxStatus EncodeFrameCheck(mfxEncodeCtrl *ctrl,
+        mfxFrameSurface1 *surface,
+        mfxBitstream *bs,
+        /*mfxFrameSurface1 **reordered_surface,
+        mfxEncodeInternalParams *pInternalParams,*/
+        MFX_ENTRY_POINT *pEntryPoint) ;
+
     mfxStatus EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternalParams *pInternalParams, mfxFrameSurface1 *surface, mfxBitstream *bs) ;
     mfxStatus CancelFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternalParams *pInternalParams, mfxFrameSurface1 *surface, mfxBitstream *bs) ;
 
@@ -86,10 +93,26 @@ protected:
         mfxStatus GetEncodeStat(mfxEncodeStat *stat) {
             return m_plg->GetEncodeStat(stat);
         }
-
-        mfxStatus EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxFrameSurface1 **reordered_surface, mfxEncodeInternalParams *pInternalParams) {
-            return m_plg->EncodeFrameCheck(ctrl, surface, bs, reordered_surface, pInternalParams);
+        virtual
+            mfxStatus EncodeFrameCheck(mfxEncodeCtrl *ctrl,
+            mfxFrameSurface1 *surface,
+            mfxBitstream *bs,
+            mfxFrameSurface1 **reordered_surface,
+            mfxEncodeInternalParams *pInternalParams,
+            MFX_ENTRY_POINT *pEntryPoint)
+        {
+            reordered_surface;
+            pInternalParams;
+            return m_plg->EncodeFrameCheck(ctrl, surface, bs, pEntryPoint);
         }
+        virtual mfxStatus EncodeFrameCheck(mfxEncodeCtrl * /*ctrl*/
+            , mfxFrameSurface1 * /*surface*/
+            , mfxBitstream * /*bs*/
+            , mfxFrameSurface1 ** /*reordered_surface*/
+            , mfxEncodeInternalParams * /*pInternalParams*/) {
+            return MFX_ERR_NONE;
+        }
+
         mfxStatus EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternalParams *pInternalParams, mfxFrameSurface1 *surface, mfxBitstream *bs) {
             return m_plg->EncodeFrame(ctrl, pInternalParams, surface, bs);
         }

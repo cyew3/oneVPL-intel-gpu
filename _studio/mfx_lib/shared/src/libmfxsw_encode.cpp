@@ -212,6 +212,15 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
 
     try
     {
+#ifdef MFX_ENABLE_USER_ENCODE
+        mfxRes = MFX_ERR_UNSUPPORTED;
+        if (session->m_plgEnc.get())
+        {
+            mfxRes = session->m_plgEnc->Query(session->m_pCORE.get(), in, out);
+        }
+        // unsupported reserved to codecid != requested codecid
+        if (MFX_ERR_UNSUPPORTED == mfxRes)
+#endif
         switch (out->mfx.CodecId)
         {
 #ifdef MFX_ENABLE_VC1_VIDEO_ENCODE
@@ -336,6 +345,15 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
 
     try
     {
+#ifdef MFX_ENABLE_USER_ENCODE
+        mfxRes = MFX_ERR_UNSUPPORTED;
+        if (session->m_plgEnc.get())
+        {
+            mfxRes = session->m_plgEnc->QueryIOSurf(session->m_pCORE.get(), par, request);
+        }
+        // unsupported reserved to codecid != requested codecid
+        if (MFX_ERR_UNSUPPORTED == mfxRes)
+#endif
         switch (par->mfx.CodecId)
         {
 #ifdef MFX_ENABLE_VC1_VIDEO_ENC
