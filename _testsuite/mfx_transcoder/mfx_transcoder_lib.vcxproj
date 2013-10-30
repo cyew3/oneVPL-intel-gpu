@@ -126,6 +126,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\mfx_encoder_protected.cpp" />
     <ClCompile Include="src\mfx_encode_decode_quality.cpp" />
     <ClCompile Include="src\mfx_encode_pipeline_config.cpp" />
     <ClCompile Include="src\mfx_factory_transcode.cpp" />
@@ -133,9 +134,11 @@
     <ClCompile Include="src\mfx_pipeline_transcode.cpp" />
     <ClCompile Include="src\mfx_encode_wrap.cpp" />
     <ClCompile Include="src\mfx_latency_encode.cpp" />
+    <ClCompile Include="src\mfx_protected_transcoding_pipeline.cpp" />
     <ClCompile Include="src\mfx_ref_list_control_encode.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\mfx_encoder_protected.h" />
     <ClInclude Include="include\mfx_encode_query_mod4.h" />
     <ClInclude Include="include\mfx_encoded_frame_info_encoder.h" />
     <ClInclude Include="include\mfx_encode_decode_quality.h" />
@@ -149,6 +152,7 @@
     <ClInclude Include="include\mfx_ip_field_pair_disable_encoder.h" />
     <ClInclude Include="include\mfx_jpeg_encode_wrap.h" />
     <ClInclude Include="include\mfx_latency_encode.h" />
+    <ClInclude Include="include\mfx_protected_transcoding_pipeline.h" />
     <ClInclude Include="include\mfx_ref_list_control_encode.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

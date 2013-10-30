@@ -1577,8 +1577,23 @@ mfxStatus  MFXTranscodingPipeline::CreateFileSink(std::auto_ptr<IFile> &pSink)
 
 std::auto_ptr<IVideoEncode> MFXTranscodingPipeline::CreateEncoder()
 {
-    //create ivideencode implementation
-    PipelineObjectDesc<IVideoEncode> createParams(m_components[eREN].m_pSession->GetMFXSession(), VM_STRING(""), ENCODER_MFX_NATIVE, NULL);
+    //create ivideoencode implementation
+    PipelineObjectDesc<IVideoEncode> createParams;
+    
+    if (!vm_string_strlen(m_inParams.strEncPlugin)) {
+        createParams = make_wrapper<IVideoEncode>(m_components[eREN].m_pSession->GetMFXSession()
+            , VM_STRING("")
+            , ENCODER_MFX_NATIVE
+            , NULL);
+        
+    } else {
+        createParams = make_wrapper<IVideoEncode>(m_components[eDEC].m_pSession->GetMFXSession()
+            , m_inParams.strEncPlugin
+            , ENCODER_MFX_PLUGIN
+            , NULL);
+
+    }
+    
     std::auto_ptr<IVideoEncode> pEncoder ( m_pFactory->CreateVideoEncode(&createParams));
 
     //wrapper for jpeg encoder handles awkward behavior patterns
@@ -1696,14 +1711,6 @@ mfxStatus MFXTranscodingPipeline::ReleasePipeline()
 }
 
 
-#ifdef PAVP_BUILD
-mfxStatus MFXProtectedTranscodingPipeline::CreateEncodeWRAPPER(std::auto_ptr<IVideoEncode> &pEncoder, MFXEncodeWRAPPER ** ppEncoderWrp)
-{
-    mfxStatus sts = MFX_ERR_NONE;
-    MFX_CHECK_WITH_ERR(*ppEncoderWrp = new MFXProtectedEncodeWRAPPER(dynamic_cast<CPAVPVideo*>(m_pavpVideo), m_components[eREN], &sts, pEncoder), MFX_ERR_MEMORY_ALLOC);
-    return MFX_ERR_NONE;
-}
-#endif//PAVP_BUILD
 
 void      MFXTranscodingPipeline::PrintCommonHelp()
 {

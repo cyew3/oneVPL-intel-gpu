@@ -187,19 +187,3 @@ protected:
     IVideoEncode *m_pEncoder ;
 };
 
-#ifdef PAVP_BUILD
-#include "mfx_pipeline_protected.h"
-
-
-class MFXProtectedTranscodingPipeline: public MFXProtectedPipeline<MFXTranscodingPipeline>
-{
-public:
-    MFXProtectedTranscodingPipeline(IMFXPipelineFactory *pFactory)
-        :MFXProtectedPipeline<MFXTranscodingPipeline>(pFactory)
-    {
-    };
-protected:
-    virtual mfxStatus CreateEncodeWRAPPER(std::auto_ptr<IVideoEncode> &pEncoder, MFXEncodeWRAPPER ** ppEncoderWrp);
-    virtual mfxU32 getOutputCodecId() {return m_EncParams.mfx.CodecId;};
-};
-#endif //PAVP_BUILD

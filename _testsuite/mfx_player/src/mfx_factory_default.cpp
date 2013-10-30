@@ -23,7 +23,7 @@ File Name: .h
 #include "mfx_separate_file.h"
 #include "mfx_crc_writer.h"
 #include "mfx_svc_vpp.h"
-#include "mfx_decoder_plugin.h"
+#include "mfx_codec_plugin.h"
 
 MFXPipelineFactory :: MFXPipelineFactory ()
 {
@@ -56,7 +56,7 @@ IYUVSource      * MFXPipelineFactory ::CreateDecode( const IPipelineObjectDesc &
         }
         case DECODER_MFX_PLUGIN:
         {
-            return new DecoderPlugin(create->splugin, create->session);
+            return new MFXCodecPluginTmpl<MFXDecoder, MFXDecoderPlugin>(create->splugin, create->session);
         }
     default:
         return NULL;
@@ -92,6 +92,11 @@ IVideoEncode   * MFXPipelineFactory :: CreateVideoEncode ( IPipelineObjectDesc *
         {
             return new MFXVideoEncode(create->session);
         }
+        case ENCODER_MFX_PLUGIN:
+        {
+            return new MFXCodecPluginTmpl<MFXVideoEncode, MFXEncoderPlugin>(create->splugin, create->session);
+        }
+
         default:
             return NULL;
     }

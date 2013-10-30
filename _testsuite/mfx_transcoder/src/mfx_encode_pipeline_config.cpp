@@ -13,6 +13,7 @@ File Name: .h
 #include "mfx_pipeline_defs.h"
 #include "mfx_encode_pipeline_config.h"
 #include "mfx_pipeline_transcode.h"
+#include "mfx_protected_transcoding_pipeline.h"
 #include "mfx_factory_default.h"
 
 MFXPipelineConfigEncode::MFXPipelineConfigEncode(int argc, vm_char ** argv)

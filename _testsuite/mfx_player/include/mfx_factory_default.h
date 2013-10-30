@@ -66,6 +66,7 @@ enum /*Render Type*/
 enum /*Render Type*/
 {
     ENCODER_MFX_NATIVE = RENDER_LAST_IDX,
+    ENCODER_MFX_PLUGIN,
     ENCODER_LAST_IDX 
 };
 
@@ -92,7 +93,6 @@ class PipelineObjectDescBase
 {
 public:
     int Type;
-
     PipelineObjectDescBase(int objType = UKNOWN_COMPONENT)
         : Type (objType)
     {
@@ -105,6 +105,7 @@ class PipelineObjectBaseTmpl
     : public PipelineObjectDescBase
 {
 public:
+    PipelineObjectBaseTmpl(){}
     PipelineObjectBaseTmpl(int objType, T *pObj)
         : PipelineObjectDescBase(objType)
         , m_pObject(pObj)
@@ -118,6 +119,7 @@ class PipelineObjectDesc
     : public PipelineObjectBaseTmpl<T>
 {
 public:
+    PipelineObjectDesc(){}
     PipelineObjectDesc(int objType, T *pObj)
         : PipelineObjectBaseTmpl<T>(objType, pObj)
     {
@@ -132,6 +134,7 @@ class MFXPipelineObjectDesc
     : public PipelineObjectBaseTmpl<T>
 {
 public:
+    MFXPipelineObjectDesc(){}
     MFXPipelineObjectDesc(mfxSession ext_session, const tstring &plugin_dll_name, int objType, T *pObj)
         : PipelineObjectBaseTmpl<T>(objType, pObj)
         , session(ext_session)
@@ -148,9 +151,11 @@ public:
 template<> class PipelineObjectDesc<class_type> : public MFXPipelineObjectDesc<class_type>\
 {\
 public:\
+    PipelineObjectDesc(){}\
     PipelineObjectDesc(mfxSession ext_session\
         , const tstring &plugin_dll_name\
-        , int objType, class_type *pObj)\
+        , int objType\
+        , class_type *pObj)\
         : MFXPipelineObjectDesc<class_type>(ext_session, plugin_dll_name, objType, pObj){}\
 };
 
@@ -165,6 +170,14 @@ PipelineObjectDesc<T> make_wrapper(int WrapperId, T * obj)
     PipelineObjectDesc<T> dsc(NULL, VM_STRING(""), WrapperId, obj);
     return dsc;
 }
+
+template <class T>
+PipelineObjectDesc<T> make_wrapper(mfxSession ext_session, const tstring &plugin_dll_name, int WrapperId, T * obj)
+{
+    PipelineObjectDesc<T> dsc(ext_session, plugin_dll_name, WrapperId, obj);
+    return dsc;
+}
+
 
 //rest of pipeline objects - session not required for creation
 template<> 

@@ -63,13 +63,15 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_spl_mux", "..\..\sam
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_spl_mux_dispatcher", "..\..\samples\sample_spl_mux\dispatcher\sample_spl_mux_dispatcher.vcxproj", "{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "plugin", "plugin", "{ADC69B28-C18C-4BCB-A88B-6EC59599F8BC}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "plugins", "plugins", "{ADA1EB99-5503-44AB-B611-92F28006FA0B}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vp8_decoder_plugin", "..\..\samples\sample_user_modules\vp8_decode_plugin\vp8_decoder_plugin.vcxproj", "{1119372D-BA13-4730-AFF6-1994B26EFF6C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "plugin_api", "..\..\samples\sample_user_modules\plugin_api.vcxproj", "{EE55D73B-F537-4B52-8514-50B7FDF5D254}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_common", "..\..\samples\sample_common\sample_common.vcxproj", "{DB71B91D-16D8-4339-9621-D81798E46E8F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vp8_decoder_plugin", "..\..\samples\sample_user_modules\vp8_decode_plugin\vp8_decoder_plugin.vcxproj", "{1119372D-BA13-4730-AFF6-1994B26EFF6C}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mock_encoder_plugin", "..\..\samples\sample_user_modules\mock_encoder_plugin\mock_encoder_plugin.vcxproj", "{CEC17285-C2D9-4007-A423-F3DA8520260A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -653,6 +655,26 @@ Global
 		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Template|Win32.Build.0 = Release|Win32
 		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Template|x64.ActiveCfg = Release|x64
 		{919D48BC-615B-4C72-B5A9-EDB34F1AEF7D}.Template|x64.Build.0 = Release|x64
+		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Debug (Lucas DLL)|Win32.ActiveCfg = Debug|Win32
+		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Debug (Lucas DLL)|Win32.Build.0 = Debug|Win32
+		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Debug (Lucas DLL)|x64.ActiveCfg = Debug|x64
+		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Debug (Lucas DLL)|x64.Build.0 = Debug|x64
+		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Debug|Win32.Build.0 = Debug|Win32
+		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Debug|x64.ActiveCfg = Debug|x64
+		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Debug|x64.Build.0 = Debug|x64
+		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Release (Lucas DLL)|Win32.ActiveCfg = Release|Win32
+		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Release (Lucas DLL)|Win32.Build.0 = Release|Win32
+		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Release (Lucas DLL)|x64.ActiveCfg = Release|x64
+		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Release (Lucas DLL)|x64.Build.0 = Release|x64
+		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Release|Win32.ActiveCfg = Release|Win32
+		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Release|Win32.Build.0 = Release|Win32
+		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Release|x64.ActiveCfg = Release|x64
+		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Release|x64.Build.0 = Release|x64
+		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Template|Win32.ActiveCfg = Release|Win32
+		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Template|Win32.Build.0 = Release|Win32
+		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Template|x64.ActiveCfg = Release|x64
+		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Template|x64.Build.0 = Release|x64
 		{EE55D73B-F537-4B52-8514-50B7FDF5D254}.Debug (Lucas DLL)|Win32.ActiveCfg = Debug|Win32
 		{EE55D73B-F537-4B52-8514-50B7FDF5D254}.Debug (Lucas DLL)|Win32.Build.0 = Debug|Win32
 		{EE55D73B-F537-4B52-8514-50B7FDF5D254}.Debug (Lucas DLL)|x64.ActiveCfg = Debug|x64
@@ -693,33 +715,34 @@ Global
 		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Template|Win32.Build.0 = Release|Win32
 		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Template|x64.ActiveCfg = Release|x64
 		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Template|x64.Build.0 = Release|x64
-		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Debug (Lucas DLL)|Win32.ActiveCfg = Debug|Win32
-		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Debug (Lucas DLL)|Win32.Build.0 = Debug|Win32
-		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Debug (Lucas DLL)|x64.ActiveCfg = Debug|x64
-		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Debug (Lucas DLL)|x64.Build.0 = Debug|x64
-		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Debug|Win32.ActiveCfg = Debug|Win32
-		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Debug|Win32.Build.0 = Debug|Win32
-		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Debug|x64.ActiveCfg = Debug|x64
-		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Debug|x64.Build.0 = Debug|x64
-		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Release (Lucas DLL)|Win32.ActiveCfg = Release|Win32
-		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Release (Lucas DLL)|Win32.Build.0 = Release|Win32
-		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Release (Lucas DLL)|x64.ActiveCfg = Release|x64
-		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Release (Lucas DLL)|x64.Build.0 = Release|x64
-		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Release|Win32.ActiveCfg = Release|Win32
-		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Release|Win32.Build.0 = Release|Win32
-		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Release|x64.ActiveCfg = Release|x64
-		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Release|x64.Build.0 = Release|x64
-		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Template|Win32.ActiveCfg = Release|Win32
-		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Template|Win32.Build.0 = Release|Win32
-		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Template|x64.ActiveCfg = Release|x64
-		{1119372D-BA13-4730-AFF6-1994B26EFF6C}.Template|x64.Build.0 = Release|x64
+		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Debug (Lucas DLL)|Win32.ActiveCfg = Debug|Win32
+		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Debug (Lucas DLL)|Win32.Build.0 = Debug|Win32
+		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Debug (Lucas DLL)|x64.ActiveCfg = Debug|x64
+		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Debug (Lucas DLL)|x64.Build.0 = Debug|x64
+		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Debug|Win32.Build.0 = Debug|Win32
+		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Debug|x64.ActiveCfg = Debug|x64
+		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Debug|x64.Build.0 = Debug|x64
+		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Release (Lucas DLL)|Win32.ActiveCfg = Release|Win32
+		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Release (Lucas DLL)|Win32.Build.0 = Release|Win32
+		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Release (Lucas DLL)|x64.ActiveCfg = Release|x64
+		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Release (Lucas DLL)|x64.Build.0 = Release|x64
+		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Release|Win32.ActiveCfg = Release|Win32
+		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Release|Win32.Build.0 = Release|Win32
+		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Release|x64.ActiveCfg = Release|x64
+		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Release|x64.Build.0 = Release|x64
+		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Template|Win32.ActiveCfg = Release|Win32
+		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Template|Win32.Build.0 = Release|Win32
+		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Template|x64.ActiveCfg = Release|x64
+		{CEC17285-C2D9-4007-A423-F3DA8520260A}.Template|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{EE55D73B-F537-4B52-8514-50B7FDF5D254} = {ADC69B28-C18C-4BCB-A88B-6EC59599F8BC}
-		{DB71B91D-16D8-4339-9621-D81798E46E8F} = {ADC69B28-C18C-4BCB-A88B-6EC59599F8BC}
-		{1119372D-BA13-4730-AFF6-1994B26EFF6C} = {ADC69B28-C18C-4BCB-A88B-6EC59599F8BC}
+		{1119372D-BA13-4730-AFF6-1994B26EFF6C} = {ADA1EB99-5503-44AB-B611-92F28006FA0B}
+		{EE55D73B-F537-4B52-8514-50B7FDF5D254} = {ADA1EB99-5503-44AB-B611-92F28006FA0B}
+		{DB71B91D-16D8-4339-9621-D81798E46E8F} = {ADA1EB99-5503-44AB-B611-92F28006FA0B}
+		{CEC17285-C2D9-4007-A423-F3DA8520260A} = {ADA1EB99-5503-44AB-B611-92F28006FA0B}
 	EndGlobalSection
 EndGlobal

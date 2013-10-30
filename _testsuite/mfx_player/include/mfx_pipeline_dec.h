@@ -117,6 +117,8 @@ struct sCommandlineParams
   vm_char        pPluginParamFile[MAX_FILE_PATH];
   // decoderplugin
   vm_char        strDecPlugin[MAX_FILE_PATH];
+  vm_char        strEncPlugin[MAX_FILE_PATH];
+  
 
   vm_char        pMFXLibraryPath[MAX_FILE_PATH];
 
