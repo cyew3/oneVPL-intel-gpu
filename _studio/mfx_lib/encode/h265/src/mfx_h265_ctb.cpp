@@ -2177,11 +2177,10 @@ void H265CU::ME_PU(H265MEInfo* me_info)
 
             for (i=0; i<mergeInfo.numCand; i++) {
                 if(curRefIdx[ME_dir] == mergeInfo.refIdx[2*i+ME_dir]) {
-                    if (curRefIdx[ME_dir] > 0)
-                        clipMV(mergeInfo.mvCand[2*i+ME_dir]);
                     MVtried[num_tried++] = mergeInfo.mvCand[2*i+ME_dir];
+                    clipMV( MVtried[num_tried-1]);
                     for(j=0; j<num_tried-1; j++)
-                        if (MVtried[j] == mergeInfo.mvCand[2*i+ME_dir]) {
+                        if (MVtried[j] == MVtried[num_tried-1]) {
                             num_tried --;
                             break;
                         }
@@ -2189,11 +2188,10 @@ void H265CU::ME_PU(H265MEInfo* me_info)
             }
             for (i=0; i<pInfo[ref_idx*2+ME_dir].numCand; i++) {
                 if(curRefIdx[ME_dir] == pInfo[ref_idx*2+ME_dir].refIdx[i]) {
-                    if (curRefIdx[ME_dir] > 0)
-                        clipMV(pInfo[ref_idx*2+ME_dir].mvCand[i]);
                     MVtried[num_tried++] = pInfo[ref_idx*2+ME_dir].mvCand[i];
+                    clipMV( MVtried[num_tried-1]);
                     for(j=0; j<num_tried-1; j++)
-                        if (MVtried[j] == pInfo[ref_idx*2+ME_dir].mvCand[i]) {
+                        if (MVtried[j] == MVtried[num_tried-1]) {
                             num_tried --;
                             break;
                         }
@@ -2201,10 +2199,11 @@ void H265CU::ME_PU(H265MEInfo* me_info)
             }
             // add from top level
             if(me_info->depth>0 && me_info->depth > depth_min) {
-                H265CUData* topdata = data_best + ((me_info->depth -1) << par->Log2NumPartInCU);           
+                H265CUData* topdata = data_best + ((me_info->depth -1) << par->Log2NumPartInCU);
                 if(curRefIdx[ME_dir] == topdata[me_info->abs_part_idx].ref_idx[ME_dir] &&
                     topdata[me_info->abs_part_idx].pred_mode == MODE_INTER ) { // TODO also check same ref
                         MVtried[num_tried++] = topdata[me_info->abs_part_idx].mv[ME_dir];
+                        clipMV( MVtried[num_tried-1]);
                         for(j=0; j<num_tried-1; j++)
                             if (MVtried[j] ==  MVtried[num_tried-1]) {
                                 num_tried --;
