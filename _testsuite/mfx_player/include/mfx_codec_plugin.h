@@ -30,7 +30,7 @@ public:
         MFX_CHECK_AND_THROW(m_plg.IsOk());
     }
     virtual ~MFXCodecPluginTmpl() { 
-        Close(); 
-        m_session = NULL;
+        this->Close(); 
+    //    m_session = NULL;
     }
 };

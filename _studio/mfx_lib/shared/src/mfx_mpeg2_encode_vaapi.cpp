@@ -1477,7 +1477,7 @@ mfxStatus VAAPIEncoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBits
     mfxStatus sts = MFX_ERR_NONE;
     mfxFrameData Frame = {};
     
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc QueryStatus");
+    //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc QueryStatus");
     VAStatus vaSts;
 
     //------------------------------------------
