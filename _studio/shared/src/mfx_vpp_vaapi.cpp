@@ -557,8 +557,8 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
 
             /* to process output parameters of sub stream:
              *  position and destination size */
-            output_region[refIdx].y  = pParams->dstRects[refIdx].DstX;
-            output_region[refIdx].x   = pParams->dstRects[refIdx].DstY;
+            output_region[refIdx].y  = pParams->dstRects[refIdx].DstY;
+            output_region[refIdx].x   = pParams->dstRects[refIdx].DstX;
             output_region[refIdx].height= pParams->dstRects[refIdx].DstH;
             output_region[refIdx].width  = pParams->dstRects[refIdx].DstW;
             m_pipelineParam[refIdx].output_region = &output_region[refIdx];
