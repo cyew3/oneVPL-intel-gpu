@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) encoder
@@ -184,7 +184,7 @@ mfxStatus MFXVideoEncVc1::Init(mfxVideoParam *params)
         }
     }
 
-    memcpy(&m_VideoParam, params, sizeof(mfxVideoParam));
+    MFX_INTERNAL_CPY(&m_VideoParam, params, sizeof(mfxVideoParam));
 
     /*init UMC parameters. It's needed for SH initialization. SH is used in FULL ENC profile*/
     {
@@ -3341,7 +3341,7 @@ mfxStatus MFXVideoEncVc1::PutMEIntoCUC(UMC::MeParams* MEParams, mfxFrameCUC *cuc
                 {
                     for (int blk = 0; blk < 6; blk++)
                     {
-                        memcpy(pRC,MEParams->pSrc->MBs[i].RoundControl[blk],sizeof(mfxI8)*64);
+                        MFX_INTERNAL_CPY(pRC,MEParams->pSrc->MBs[i].RoundControl[blk],sizeof(mfxI8)*64);
                         pRC += 64;
                     }
                 }
@@ -3920,7 +3920,7 @@ mfxStatus MFXVideoEncVc1::SetMEParams(mfxFrameCUC *cuc, mfxVideoParam * pPar,UMC
 
     mfxFrameParamVC1* pFrameParam = &cuc->FrameParam->VC1;
 
-    memcpy(&m_FrameParam.VC1, pFrameParam, sizeof(mfxFrameParamVC1));
+    MFX_INTERNAL_CPY(&m_FrameParam.VC1, pFrameParam, sizeof(mfxFrameParamVC1));
 
     // TO DO: add parameter into ME which show VS transform for frame
     // if (pFrameParam->TTMBF) then ME should calculate TS types for each block;
@@ -5688,7 +5688,7 @@ mfxStatus MFXVideoEncVc1::GetVideoParam(mfxVideoParam *par)
 
     MFX_CHECK_INIT(m_InitFlag);
 
-    memcpy(par, &m_VideoParam, sizeof(mfxVideoParam));
+    MFX_INTERNAL_CPY(par, &m_VideoParam, sizeof(mfxVideoParam));
 
     return MFXSts;
 }
@@ -5699,7 +5699,7 @@ mfxStatus MFXVideoEncVc1::GetFrameParam(mfxFrameParam *par)
 
     MFX_CHECK_INIT(m_InitFlag);
 
-    memcpy(par, &m_FrameParam, sizeof(mfxFrameParam));
+    MFX_INTERNAL_CPY(par, &m_FrameParam, sizeof(mfxFrameParam));
 
     return MFXSts;
 }
@@ -5723,7 +5723,7 @@ mfxStatus MFXVideoEncVc1::Query(mfxVideoParam *in, mfxVideoParam *out)
 }
 mfxStatus MFXVideoEncVc1::GetSliceParam(mfxSliceParam *par)
 {
-    memcpy(par,&m_SliceParam, sizeof(mfxSliceParam));
+    MFX_INTERNAL_CPY(par,&m_SliceParam, sizeof(mfxSliceParam));
     return MFX_ERR_NONE;
 }
 
