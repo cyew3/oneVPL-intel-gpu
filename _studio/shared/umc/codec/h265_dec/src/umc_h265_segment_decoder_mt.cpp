@@ -77,23 +77,16 @@ void H265SegmentDecoderMultiThreaded::StartProcessingSegment(H265Task &Task)
     m_pRefPicList[0] = m_pCurrentFrame->GetRefPicList(sliceNum, REF_PIC_LIST_0)->m_refPicList;
     m_pRefPicList[1] = m_pCurrentFrame->GetRefPicList(sliceNum, REF_PIC_LIST_1)->m_refPicList;
 
-    if (m_pSliceHeader->m_SeqParamSet->scaling_list_enabled_flag)
+    if (m_pSeqParamSet->scaling_list_enabled_flag)
     {
-        m_TrQuant->setScalingListDec(const_cast<H265ScalingList *>(m_pSliceHeader->m_SeqParamSet->getScalingList()));
-
-        if (m_pSliceHeader->m_PicParamSet->pps_scaling_list_data_present_flag)
+        if (m_pPicParamSet->pps_scaling_list_data_present_flag || !m_pSeqParamSet->sps_scaling_list_data_present_flag)
         {
-            m_TrQuant->setScalingListDec(const_cast<H265ScalingList *>(m_pSliceHeader->m_PicParamSet->getScalingList()));
+            m_context->m_dequantCoef = &m_pPicParamSet->getScalingList()->m_dequantCoef;
         }
-        if (!m_pSliceHeader->m_PicParamSet->pps_scaling_list_data_present_flag && !m_pSliceHeader->m_SeqParamSet->sps_scaling_list_data_present_flag)
+        else
         {
-            m_TrQuant->setDefaultScalingList();
+            m_context->m_dequantCoef = &m_pSeqParamSet->getScalingList()->m_dequantCoef;
         }
-        m_TrQuant->m_UseScalingList = true;
-    }
-    else
-    {
-        m_TrQuant->m_UseScalingList = false;
     }
 }
 
@@ -372,7 +365,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(H265Task & )
                 // In case previous slice ended on the end of the row and WPP is enabled, CABAC state has to be corrected
                 if (CUAddr % m_pSeqParamSet->WidthInCU == 0)
                 {
-                    m_context->m_LastValidQP = m_pSliceHeader->SliceQP;
+                    m_context->SetNewQP(m_pSliceHeader->SliceQP);
                     // CABAC state is already reset, should only restore contexts
                     if (m_pSeqParamSet->WidthInCU > 1 &&
                         m_pCurrentFrame->m_CodingData->GetInverseCUOrderMap(CUAddr + 1 - m_pSeqParamSet->WidthInCU) >= m_pSliceHeader->SliceCurStartCUAddr / m_pCurrentFrame->m_CodingData->m_NumPartitions)
@@ -394,7 +387,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(H265Task & )
         else
         {
             m_context->ResetRowBuffer();
-            m_context->m_LastValidQP = m_pSliceHeader->SliceQP;
+            m_context->SetNewQP(m_pSliceHeader->SliceQP);
             m_context->ResetRecRowBuffer();
         }
     }

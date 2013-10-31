@@ -1923,6 +1923,33 @@ void TaskSupplier_H265::ActivateHeaders(H265SeqParamSet *sps, H265PicParamSet *p
     {
         sps->m_AMPAcc[i] = 0;
     }
+
+    if (sps->scaling_list_enabled_flag)
+    {
+        if (pps->pps_scaling_list_data_present_flag)
+        {
+            if (!pps->getScalingList()->is_initialized())
+            {
+                pps->getScalingList()->init();
+                pps->getScalingList()->calculateDequantCoef();
+            }
+        }
+        else if (sps->sps_scaling_list_data_present_flag)
+        {
+            if (!sps->getScalingList()->is_initialized())
+            {
+                sps->getScalingList()->init();
+                sps->getScalingList()->calculateDequantCoef();
+            }
+        }
+        else
+        {
+            if (!pps->getScalingList()->is_initialized())
+            {
+                pps->getScalingList()->initFromDefaultScalingList();
+            }
+        }
+    }
 }
 
 bool TaskSupplier_H265::IsSkipForCRAorBLA(H265Slice *pSlice)

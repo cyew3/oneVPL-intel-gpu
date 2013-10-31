@@ -1246,16 +1246,6 @@ void H265SampleAdaptiveOffset::PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u
     }
 }
 
-void H265ScalingList::init()
-{
-    // TODO something w/ this.........
-    //m_scalingListCoef[SCALING_LIST_32x32][3] = &m_scalingListCoef[SCALING_LIST_32x32][1][0]; // copy address for 32x32
-}
-
-void H265ScalingList::destroy()
-{
-}
-
 } // end namespace UMC_HEVC_DECODER
 
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

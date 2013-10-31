@@ -184,15 +184,12 @@ namespace UMC_HEVC_DECODER
         if (!pCU->GetCbf(AbsPartIdx, TEXT_LUMA, TrDepth))
             return;
 
-        m_TrQuant->SetQPforQuant(pCU->GetQP(AbsPartIdx), TEXT_LUMA, m_pSeqParamSet->m_QPBDOffsetY, 0);
-
-        Ipp32s scalingListType = (pCU->GetPredictionMode(AbsPartIdx) ? 0 : 3);
         Ipp32u NumCoeffInc = (m_pSeqParamSet->MaxCUSize * m_pSeqParamSet->MaxCUSize) >> (m_pSeqParamSet->MaxCUDepth << 1);
         H265CoeffsPtrCommon pCoeff = pCU->m_TrCoeffY + (NumCoeffInc * AbsPartIdx);
         bool useTransformSkip = pCU->GetTransformSkip(g_ConvertTxtTypeToIdx[TEXT_LUMA], AbsPartIdx) != 0;
 
         m_TrQuant->InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_LUMA, pCU->GetLumaIntra(AbsPartIdx),
-            pRec, pitch, pCoeff, width, width, scalingListType, useTransformSkip);
+            pRec, pitch, pCoeff, width, width, useTransformSkip);
 
     } // void H265SegmentDecoder::IntraRecLumaBlk(...)
 
@@ -244,27 +241,21 @@ namespace UMC_HEVC_DECODER
         // Cb
         if (chromaUPresent)
         {
-            Ipp32s curChromaQpOffset = pCU->m_SliceHeader->m_PicParamSet->pps_cb_qp_offset + pCU->m_SliceHeader->slice_cb_qp_offset;
-            m_TrQuant->SetQPforQuant(pCU->GetQP(AbsPartIdx), TEXT_CHROMA_U, pCU->m_SliceHeader->m_SeqParamSet->m_QPBDOffsetC, curChromaQpOffset);
-            Ipp32s scalingListType = (pCU->GetPredictionMode(AbsPartIdx) == MODE_INTRA ? 1 : 4);
             H265CoeffsPtrCommon pCoeff = pCU->m_TrCoeffCb + (NumCoeffInc * AbsPartIdx);
             H265CoeffsPtrCommon pResi = (H265CoeffsPtrCommon)m_ppcYUVResi->m_pUPlane;
             bool useTransformSkip = pCU->GetTransformSkip(g_ConvertTxtTypeToIdx[TEXT_CHROMA_U], AbsPartIdx) != 0;
             m_TrQuant->InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_CHROMA_U, REG_DCT,
-                pResi, residualPitch, pCoeff, Size, Size, scalingListType, useTransformSkip);
+                pResi, residualPitch, pCoeff, Size, Size, useTransformSkip);
         }
 
         // Cr
         if (chromaVPresent)
         {
-            Ipp32s curChromaQpOffset = pCU->m_SliceHeader->m_PicParamSet->pps_cr_qp_offset + pCU->m_SliceHeader->slice_cr_qp_offset;
-            m_TrQuant->SetQPforQuant(pCU->GetQP(AbsPartIdx), TEXT_CHROMA_V, pCU->m_SliceHeader->m_SeqParamSet->m_QPBDOffsetC, curChromaQpOffset);
-            Ipp32s scalingListType = (pCU->GetPredictionMode(AbsPartIdx) == MODE_INTRA ? 2 : 5);
             H265CoeffsPtrCommon pCoeff = pCU->m_TrCoeffCr + (NumCoeffInc * AbsPartIdx);
             H265CoeffsPtrCommon pResi = (H265CoeffsPtrCommon)m_ppcYUVResi->m_pVPlane;
             bool useTransformSkip = pCU->GetTransformSkip(g_ConvertTxtTypeToIdx[TEXT_CHROMA_V], AbsPartIdx) != 0;
             m_TrQuant->InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_CHROMA_V, REG_DCT,
-                pResi, residualPitch, pCoeff, Size, Size, scalingListType, useTransformSkip);
+                pResi, residualPitch, pCoeff, Size, Size, useTransformSkip);
         }
 /*
         //===== reconstruction =====
@@ -346,7 +337,7 @@ namespace UMC_HEVC_DECODER
         }
 */
         //===== reconstruction =====
-        {
+          {
             H265CoeffsPtrCommon p_ResiU = (H265CoeffsPtrCommon)m_ppcYUVResi->m_pUPlane;
             H265CoeffsPtrCommon p_ResiV = (H265CoeffsPtrCommon)m_ppcYUVResi->m_pVPlane;
             for (Ipp32u y = 0; y < Size; y++)

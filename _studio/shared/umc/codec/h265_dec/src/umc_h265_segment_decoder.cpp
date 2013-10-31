@@ -18,6 +18,8 @@
 #include "umc_h265_frame_info.h"
 #include "mfx_h265_optimization.h"
 
+#define Saturate(min_val, max_val, val) IPP_MAX((min_val), IPP_MIN((max_val), (val)))
+
 namespace UMC_HEVC_DECODER
 {
 
@@ -31,6 +33,7 @@ DecodingContext::DecodingContext()
     m_CurrCTBFlags = 0;
     m_CurrCTB = 0;
     m_CurrCTBStride = 0;
+    m_LastValidQP = 0;
 
     m_needToSplitDecAndRec = true;
 }
@@ -45,6 +48,7 @@ void DecodingContext::Init(H265Slice *slice)
 {
     m_sps = slice->GetSeqParam();
     m_pps = slice->GetPicParam();
+    m_sh = &slice->m_SliceHeader;
     m_frame = slice->GetCurrentFrame();
 
     if (m_TopNgbrsHolder.size() < m_sps->NumPartitionsInFrameWidth + 2 || m_TopMVInfoHolder.size() < m_sps->NumPartitionsInFrameWidth + 2)
@@ -80,7 +84,8 @@ void DecodingContext::Init(H265Slice *slice)
     if (m_needToSplitDecAndRec && !slice->GetSliceHeader()->dependent_slice_segment_flag)
     {
         ResetRowBuffer();
-        m_LastValidQP = slice->m_SliceHeader.SliceQP;
+        m_LastValidQP = 0; // Force QP recalculation because QP offsets may be different in new slice
+        SetNewQP(slice->m_SliceHeader.SliceQP);
     }
 
     m_mvsDistortion = 0;
@@ -241,6 +246,46 @@ void DecodingContext::ResetRecRowBuffer()
     memset(m_RecIntraFlagsHolder, 0, sizeof(m_RecIntraFlagsHolder));
 }
 
+void DecodingContext::SetNewQP(Ipp8u newQP)
+{
+    if (newQP == m_LastValidQP)
+        return;
+
+    m_LastValidQP = newQP;
+
+    Ipp32s qpScaledY = m_LastValidQP + m_sps->m_QPBDOffsetY;
+    Ipp32s qpOffsetCb = m_pps->pps_cb_qp_offset + m_sh->slice_cb_qp_offset;
+    Ipp32s qpOffsetCr = m_pps->pps_cr_qp_offset + m_sh->slice_cr_qp_offset;
+    Ipp32s qpBdOffsetC = m_sps->m_QPBDOffsetC;
+    Ipp32s qpScaledCb = Clip3(-qpBdOffsetC, 57, m_LastValidQP + qpOffsetCb);
+    Ipp32s qpScaledCr = Clip3(-qpBdOffsetC, 57, m_LastValidQP + qpOffsetCr);
+
+    if (qpScaledCb < 0)
+        qpScaledCb = qpScaledCb + qpBdOffsetC;
+    else
+        qpScaledCb = g_ChromaScale[qpScaledCb] + qpBdOffsetC;
+
+    if (qpScaledCr < 0)
+        qpScaledCr = qpScaledCr + qpBdOffsetC;
+    else
+        qpScaledCr = g_ChromaScale[qpScaledCr] + qpBdOffsetC;
+
+    m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_LUMA]].m_QPRem = qpScaledY % 6;
+    m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_LUMA]].m_QPPer = qpScaledY / 6;
+    m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_LUMA]].m_QPScale =
+        g_invQuantScales[m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_LUMA]].m_QPRem] << m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_LUMA]].m_QPPer;
+
+    m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_CHROMA_U]].m_QPRem = qpScaledCb % 6;
+    m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_CHROMA_U]].m_QPPer = qpScaledCb / 6;
+    m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_CHROMA_U]].m_QPScale =
+        g_invQuantScales[m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_CHROMA_U]].m_QPRem] << m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_CHROMA_U]].m_QPPer;
+
+    m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_CHROMA_V]].m_QPRem = qpScaledCr % 6;
+    m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_CHROMA_V]].m_QPPer = qpScaledCr / 6;
+    m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_CHROMA_V]].m_QPScale =
+        g_invQuantScales[m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_CHROMA_V]].m_QPRem] << m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_CHROMA_V]].m_QPPer;
+}
+
 void H265SegmentDecoder::SaveCTBContext(H265CodingUnit* pCU)
 {
     Ipp32s CUX = pCU->m_CUPelX >> m_pSeqParamSet->log2_min_transform_block_size;
@@ -312,8 +357,6 @@ void H265SegmentDecoder::create(H265SeqParamSet* sps)
 
     if (!m_TrQuant)
         m_TrQuant = new H265TrQuant(); //TRQUANT
-
-    m_TrQuant->Init(m_pSeqParamSet->m_maxTrSize);
 }
 
 void H265SegmentDecoder::destroy()
@@ -754,7 +797,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
         if ((m_pSeqParamSet->MaxCUSize >> Depth) == m_pPicParamSet->MinCUDQPSize && m_pPicParamSet->cu_qp_delta_enabled_flag)
         {
             m_DecodeDQPFlag = true;
-            pCU->setQPSubParts(getRefQP(pCU, AbsPartIdx), AbsPartIdx, Depth);
+            m_context->SetNewQP(getRefQP(pCU, AbsPartIdx));
         }
 
         for ( Ipp32u PartUnitIdx = 0; PartUnitIdx < 4; PartUnitIdx++ )
@@ -785,7 +828,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
         {
             if (m_DecodeDQPFlag)
             {
-                pCU->setQPSubParts(getRefQP(pCU, AbsPartIdx), AbsPartIdx, Depth);
+                m_context->SetNewQP(getRefQP(pCU, AbsPartIdx));
             }
         }
         return;
@@ -794,7 +837,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
     if ((m_pSeqParamSet->MaxCUSize >> Depth) >= m_pPicParamSet->MinCUDQPSize && m_pPicParamSet->cu_qp_delta_enabled_flag)
     {
         m_DecodeDQPFlag = true;
-        pCU->setQPSubParts(getRefQP(pCU, AbsPartIdx), AbsPartIdx, Depth);
+        m_context->SetNewQP(getRefQP(pCU, AbsPartIdx));
     }
 
     bool transquant_bypass = false;
@@ -834,7 +877,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
 
         pCU->setCbfSubParts(0, 0, 0, AbsPartIdx, Depth);
         if (pCU->m_SliceHeader->m_PicParamSet->cu_qp_delta_enabled_flag)
-            pCU->setQPSubParts(m_DecodeDQPFlag ? getRefQP(pCU, AbsPartIdx) : pCU->m_CodedQP, AbsPartIdx, Depth);
+            m_context->SetNewQP(m_DecodeDQPFlag ? getRefQP(pCU, AbsPartIdx) : pCU->m_CodedQP);
 
         FinishDecodeCU(pCU, AbsPartIdx, Depth, IsLast);
         UpdateNeighborBuffers(pCU, AbsPartIdx, Depth, AbsPartIdx, true, transquant_bypass, false, false);
@@ -856,7 +899,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
             if (pCU->GetIPCMFlag(AbsPartIdx))
             {
                 if (pCU->m_SliceHeader->m_PicParamSet->cu_qp_delta_enabled_flag)
-                    pCU->setQPSubParts(m_DecodeDQPFlag ? getRefQP(pCU, AbsPartIdx) : pCU->m_CodedQP, AbsPartIdx, Depth);
+                    m_context->SetNewQP(m_DecodeDQPFlag ? getRefQP(pCU, AbsPartIdx) : pCU->m_CodedQP);
 
                 FinishDecodeCU(pCU, AbsPartIdx, Depth, IsLast);
                 UpdateNeighborBuffers(pCU, AbsPartIdx, Depth, AbsPartIdx, false, transquant_bypass, true, false);
@@ -876,7 +919,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
     }
 
     if (pCU->m_SliceHeader->m_PicParamSet->cu_qp_delta_enabled_flag)
-        pCU->setQPSubParts(m_DecodeDQPFlag ? getRefQP(pCU, AbsPartIdx) : pCU->m_CodedQP, AbsPartIdx, Depth);
+        m_context->SetNewQP(m_DecodeDQPFlag ? getRefQP(pCU, AbsPartIdx) : pCU->m_CodedQP);
 
     // Coefficient decoding
     DecodeCoeff(pCU, AbsPartIdx, Depth, m_DecodeDQPFlag, isFirstPartMerge);
@@ -1757,7 +1800,7 @@ void H265SegmentDecoder::ParseDeltaQPCABAC(H265CodingUnit* pCU, Ipp32u AbsPartId
         qp = getRefQP(pCU, AbsPartIdx);
     }
 
-    pCU->setQPSubParts(qp, AbsPartIdx, Depth);
+    m_context->SetNewQP(qp);
     pCU->m_CodedQP = (Ipp8u)qp;
 }
 
@@ -1933,6 +1976,39 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
     Ipp16s pos[SCAN_SET_SIZE];
 
     const Ipp8u *sGCr = scanGCZr + (1<<(L2Width<<1))*(ScanIdx+2) - LastScanSet - 1;
+
+    Ipp32u c_Log2TrSize = g_ConvertToBit[Size] + 2;
+    Ipp32u TransformShift = MAX_TR_DYNAMIC_RANGE - 8 - c_Log2TrSize;
+    Ipp32s idx = g_ConvertTxtTypeToIdx[Type];
+    Ipp32s QPRem = m_context->m_ScaledQP[idx].m_QPRem;
+    Ipp32s QPPer = m_context->m_ScaledQP[idx].m_QPPer;
+
+    Ipp32s Shift;
+    Ipp16s Add, Scale, *pDequantCoef;
+    bool shift_right = true;
+
+    if (m_pSeqParamSet->scaling_list_enabled_flag)
+    {
+        Shift = QUANT_IQUANT_SHIFT - QUANT_SHIFT - TransformShift + 4;
+        pDequantCoef = m_context->getDequantCoeff(idx + (pCU->GetPredictionMode(AbsPartIdx) == MODE_INTRA ? 0 : 3), QPRem, c_Log2TrSize - 2);
+
+        if (Shift > QPPer)
+        {
+            Shift -= QPPer;
+            Add = 1 << (Shift - 1);
+        }
+        else
+        {
+            Shift = QPPer - Shift;
+            shift_right = false;
+        }
+    }
+    else
+    {
+        Shift = QUANT_IQUANT_SHIFT - QUANT_SHIFT - TransformShift;
+        Add = 1 << (Shift - 1);
+        Scale = m_context->m_ScaledQP[idx].m_QPScale;
+    }
     
     for (Ipp32s SubSet = LastScanSet; SubSet >= 0; SubSet--)
     {
@@ -2091,24 +2167,44 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
             for (Ipp32s idx = 0; idx < numNonZero; idx++)
             {
                 Ipp32s blkPos = pos[idx];
+                H265CoeffsCommon coef;
 
-                pCoef[blkPos] = (H265CoeffsCommon)absCoeff[idx];
+                coef = (H265CoeffsCommon)absCoeff[idx];
                 absSum += absCoeff[idx];
 
                 if (idx == numNonZero - 1 && signHidden && beValid)
                 {
                     if (absSum & 0x1)
-                        pCoef[blkPos] = -pCoef[blkPos];
+                        coef = -coef;
                 }
                 else
                 {
                     Ipp32s sign = static_cast<Ipp32s>(coeffSigns) >> 31;
-                    pCoef[blkPos] = (H265CoeffsCommon)((pCoef[blkPos] ^ sign) - sign);
+                    coef = (H265CoeffsCommon)((coef ^ sign) - sign);
                     coeffSigns <<= 1;
                 }
-                
-                //pCoef[blkPos] = Clip3(H265_COEFF_MIN, H265_COEFF_MAX, pCoef[blkPos]);
 
+                if (pCU->m_CUTransquantBypass[AbsPartIdx])
+                {
+                    pCoef[blkPos] = (H265CoeffsCommon)coef;
+                }
+                else
+                {
+                    Ipp32s coeffQ;
+                    if (m_pSeqParamSet->scaling_list_enabled_flag)
+                    {
+                        if (shift_right)
+                            coeffQ = (coef * pDequantCoef[blkPos] + Add) >> Shift;
+                        else
+                            coeffQ = (coef * pDequantCoef[blkPos]) << Shift;
+                    }
+                    else
+                    {
+                        coeffQ = (coef * Scale + Add) >> Shift;
+                    }
+
+                    pCoef[blkPos] = (H265CoeffsCommon)Saturate(-32768, 32767, coeffQ);
+                }
             }
         }
 
@@ -2489,7 +2585,7 @@ void H265SegmentDecoder::UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPa
     info.members.IntraDir = pCU->GetLumaIntra(AbsPartIdx);
     info.members.IsTransquantBypass = isTranquantBypass;
     info.members.IsIPCM = isIPCM;
-    info.members.qp = pCU->GetQP(AbsPartIdx);
+    info.members.qp = m_context->GetQP();
     VM_ASSERT(TrStart < 256);
     info.members.TrStart = Ipp8u(TrStart);
     info.members.IsTrCbfY = isTrCbfY;
@@ -2542,9 +2638,9 @@ void H265SegmentDecoder::UpdateNeighborDecodedQP(H265CodingUnit* pCU, Ipp32u Abs
     Ipp32s XInc = pCU->m_rasterToPelX[AbsPartIdx] >> m_pSeqParamSet->log2_min_transform_block_size;
     Ipp32s YInc = pCU->m_rasterToPelY[AbsPartIdx] >> m_pSeqParamSet->log2_min_transform_block_size;
     Ipp32s PartSize = m_pSeqParamSet->NumPartitionsInCUSize >> Depth;
-    Ipp8u qp = pCU->GetQP(AbsPartIdx);
+    Ipp8u qp = m_context->GetQP();
 
-    m_context->m_LastValidQP = qp;
+    m_context->SetNewQP(qp);
 
     for (Ipp32s y = YInc; y < YInc + PartSize; y++)
         for (Ipp32s x = XInc; x < XInc + PartSize; x++)
@@ -2735,9 +2831,13 @@ Ipp8u H265SegmentDecoder::getRefQP(H265CodingUnit *pCU, Ipp32s AbsPartIdx)
     {
         Ipp32s lastValidPartIdx = pCU->getLastValidPartIdx(AbsQpMinCUIdx);
         if (lastValidPartIdx >= 0)
-            lastValidQP = pCU->GetQP(lastValidPartIdx);
+        {
+            Ipp32s x = pCU->m_rasterToPelX[lastValidPartIdx] >> m_pSeqParamSet->log2_min_transform_block_size;
+            Ipp32s y = pCU->m_rasterToPelY[lastValidPartIdx] >> m_pSeqParamSet->log2_min_transform_block_size;
+            lastValidQP = m_context->m_CurrCTBFlags[y * m_context->m_CurrCTBStride + x].members.qp;
+        }
         else
-            return m_context->m_LastValidQP;
+            return m_context->GetQP();
     }
 
     if (QPXInc != 0)
@@ -2750,8 +2850,7 @@ Ipp8u H265SegmentDecoder::getRefQP(H265CodingUnit *pCU, Ipp32s AbsPartIdx)
     else
         qpA = lastValidQP;
 
-    m_context->m_LastValidQP = (qpL + qpA + 1) >> 1;
-    return m_context->m_LastValidQP;
+    return (qpL + qpA + 1) >> 1;
 }
 
 static bool inline isDiffMER(Ipp32u plevel, Ipp32s xN, Ipp32s yN, Ipp32s xP, Ipp32s yP)

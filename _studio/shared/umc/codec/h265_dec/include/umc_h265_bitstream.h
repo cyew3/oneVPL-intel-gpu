@@ -91,7 +91,7 @@ protected:
 
 };
 
-struct H265ScalingList;
+class H265ScalingList;
 class H265VideoParamSet;
 struct H265SeqParamSet;
 class H265Slice;

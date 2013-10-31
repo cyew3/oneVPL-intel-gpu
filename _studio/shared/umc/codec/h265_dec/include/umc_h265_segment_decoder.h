@@ -69,6 +69,7 @@ public:
     const H265SeqParamSet *m_sps;
     const H265PicParamSet *m_pps;
     const H265DecoderFrame *m_frame;
+    const H265SliceHeader *m_sh;
 
     H265DecoderRefPicList::ReferenceInformation *m_refPicList[2];
 
@@ -84,7 +85,12 @@ public:
     H265FrameHLDNeighborsInfo *m_CurrCTBFlags;
     H265MVInfo *m_CurrCTB;
     Ipp32s m_CurrCTBStride;
-    Ipp8u m_LastValidQP;
+
+    struct
+    {
+        Ipp32s m_QPRem, m_QPPer;
+        Ipp16s m_QPScale;
+    } m_ScaledQP[3];
 
     // Local context for reconstructing Intra
     Ipp32u m_RecIntraFlagsHolder[128]; // Placeholder for Intra availability flags needed during reconstruction
@@ -104,8 +110,20 @@ public:
     void UpdateRecCurrCTBContext(Ipp32s lastCUAddr, Ipp32s newCUAddr);
     void ResetRecRowBuffer();
     
+    void SetNewQP(Ipp8u newQP);
+    Ipp8u GetQP(void)
+    {
+        return m_LastValidQP;
+    }
+
+    H265_FORCEINLINE Ipp16s *getDequantCoeff(Ipp32u list, Ipp32u qp, Ipp32u size)
+    {
+        return (*m_dequantCoef)[size][list][qp];
+    }
+    Ipp16s *(*m_dequantCoef)[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM][SCALING_LIST_REM_NUM];
 protected:
 
+    Ipp8u m_LastValidQP;
 };
 
 class H265SegmentDecoder : public Context

@@ -382,51 +382,6 @@ void H265HeadersBitstream::xDecodeScalingList(H265ScalingList *scalingList, unsi
   }
 }
 
-/** get default address of quantization matrix
- * \param sizeId size index
- * \param listId list index
- * \returns pointer of quantization matrix
- */
-
-int* H265ScalingList::getScalingListDefaultAddress(unsigned sizeId, unsigned listId)
-{
-    int *src = 0;
-    switch(sizeId)
-    {
-    case SCALING_LIST_4x4:
-        src = g_quantTSDefault4x4;
-        break;
-    case SCALING_LIST_8x8:
-        src = (listId<3) ? g_quantIntraDefault8x8 : g_quantInterDefault8x8;
-        break;
-    case SCALING_LIST_16x16:
-        src = (listId<3) ? g_quantIntraDefault8x8 : g_quantInterDefault8x8;
-        break;
-    case SCALING_LIST_32x32:
-        src = (listId<1) ? g_quantIntraDefault8x8 : g_quantInterDefault8x8;
-        break;
-    default:
-        VM_ASSERT(0);
-        src = NULL;
-        break;
-    }
-    return src;
-}
-
-/** get scaling matrix from RefMatrixID
- * \param sizeId size index
- * \param Index of input matrix
- * \param Index of reference matrix
- */
-void H265ScalingList::processRefMatrix(unsigned sizeId, unsigned listId , unsigned refListId)
-{
-  ::MFX_INTERNAL_CPY(
-      getScalingListAddress(sizeId, listId),
-      ((listId == refListId) ? getScalingListDefaultAddress(sizeId, refListId) : getScalingListAddress(sizeId, refListId)),
-      sizeof(int)*IPP_MIN(MAX_MATRIX_COEF_NUM, (int)g_scalingListSize[sizeId]));
-}
-
-
 void H265HeadersBitstream::parseScalingList(H265ScalingList *scalingList)
 {
     unsigned code, sizeId, listId;

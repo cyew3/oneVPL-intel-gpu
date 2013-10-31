@@ -134,7 +134,7 @@ public:
                         {
                             // Reset CABAC state
                             sd->m_pBitStream->InitializeDecodingEngine_CABAC();
-                            sd->m_context->m_LastValidQP = sd->m_pSliceHeader->SliceQP;
+                            sd->m_context->SetNewQP(sd->m_pSliceHeader->SliceQP);
 
                             // Should load CABAC context from saved buffer
                             if (sd->m_pSeqParamSet->WidthInCU > 1 &&
@@ -155,7 +155,7 @@ public:
                 else
                 {
                     sd->m_context->ResetRowBuffer();
-                    sd->m_context->m_LastValidQP = sd->m_pSliceHeader->SliceQP;
+                    sd->m_context->SetNewQP(sd->m_pSliceHeader->SliceQP);
                     sd->m_pBitStream->DecodeTerminatingBit_CABAC();
 
                     // reset CABAC engine
@@ -169,7 +169,7 @@ public:
                 sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(newRSCUAddr))
             {
                 sd->m_context->ResetRowBuffer();
-                sd->m_context->m_LastValidQP = sd->m_pSliceHeader->SliceQP;
+                sd->m_context->SetNewQP(sd->m_pSliceHeader->SliceQP);
                 sd->m_pBitStream->DecodeTerminatingBit_CABAC();
 
                 // reset CABAC engine
@@ -199,7 +199,7 @@ public:
                     {
                         // Reset CABAC state
                         sd->m_pBitStream->InitializeDecodingEngine_CABAC();
-                        sd->m_context->m_LastValidQP = sd->m_pSliceHeader->SliceQP;
+                        sd->m_context->SetNewQP(sd->m_pSliceHeader->SliceQP);
 
                         // Should load CABAC context from saved buffer
                         if (sd->m_pSeqParamSet->WidthInCU > 1 &&
@@ -288,7 +288,7 @@ public:
         if (!sd->m_pSliceHeader->dependent_slice_segment_flag)
         {
             sd->m_context->ResetRowBuffer();
-            sd->m_context->m_LastValidQP = sd->m_pSliceHeader->SliceQP;
+            sd->m_context->SetNewQP(sd->m_pSliceHeader->SliceQP);
             sd->m_context->ResetRecRowBuffer();
         }
 
@@ -342,7 +342,7 @@ public:
                 sd->m_pCurrentFrame->m_CodingData->getTileIdxMap(newRSCUAddr))
             {
                 sd->m_context->ResetRowBuffer();
-                sd->m_context->m_LastValidQP = sd->m_pSliceHeader->SliceQP;
+                sd->m_context->SetNewQP(sd->m_pSliceHeader->SliceQP);
                 sd->m_context->ResetRecRowBuffer();
                 sd->m_pBitStream->DecodeTerminatingBit_CABAC();
 
@@ -373,7 +373,7 @@ public:
                     {
                         // Reset CABAC state
                         sd->m_pBitStream->InitializeDecodingEngine_CABAC();
-                        sd->m_context->m_LastValidQP = sd->m_pSliceHeader->SliceQP;
+                        sd->m_context->SetNewQP(sd->m_pSliceHeader->SliceQP);
 
                         // Should load CABAC context from saved buffer
                         if (sd->m_pSeqParamSet->WidthInCU > 1 &&

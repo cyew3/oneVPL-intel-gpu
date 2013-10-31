@@ -473,34 +473,45 @@ public:
 
 #pragma pack(16)
 
-struct H265ScalingList
+class H265ScalingList
 {
-    H265ScalingList() { init(); }
-   ~H265ScalingList() { destroy(); }
+public:
+    H265ScalingList() { m_initialized = false; }
+    ~H265ScalingList()
+    {
+        if (m_initialized)
+            destroy();
+    }
 
-  void     setScalingListPresentFlag    (bool b)                               { m_scaling_list_data_present_flag = b;    }
-  bool     getScalingListPresentFlag    ()                                     { return m_scaling_list_data_present_flag; }
+    int*      getScalingListAddress   (unsigned sizeId, unsigned listId)          { return m_scalingListCoef[sizeId][listId]; }
+    const int* getScalingListAddress  (unsigned sizeId, unsigned listId) const    { return m_scalingListCoef[sizeId][listId]; }
+    void     setRefMatrixId           (unsigned sizeId, unsigned listId, unsigned u)   { m_refMatrixId[sizeId][listId] = u; }
+    unsigned getRefMatrixId           (unsigned sizeId, unsigned listId)           { return m_refMatrixId[sizeId][listId]; }
+    void     setScalingListDC         (unsigned sizeId, unsigned listId, unsigned u)   { m_scalingListDC[sizeId][listId] = u; }
+    void     processRefMatrix         (unsigned sizeId, unsigned listId , unsigned refListId);
+    int      getScalingListDC         (unsigned sizeId, unsigned listId) const     { return m_scalingListDC[sizeId][listId]; }
 
-  int*      getScalingListAddress   (unsigned sizeId, unsigned listId)          { return m_scalingListCoef[sizeId][listId]; } //!< get matrix coefficient
-  const int* getScalingListAddress   (unsigned sizeId, unsigned listId) const    { return m_scalingListCoef[sizeId][listId]; } //!< get matrix coefficient
-  bool     checkPredMode                (unsigned sizeId, unsigned listId);
-  void     setRefMatrixId               (unsigned sizeId, unsigned listId, unsigned u)   { m_refMatrixId[sizeId][listId] = u;    }     //!< set reference matrix ID
-  unsigned getRefMatrixId               (unsigned sizeId, unsigned listId)           { return m_refMatrixId[sizeId][listId]; }     //!< get reference matrix ID
-  int*     getScalingListDefaultAddress (unsigned sizeId, unsigned listId);                                                        //!< get default matrix coefficient
-  void     processDefaultMarix          (unsigned sizeId, unsigned listId);
-  void     setScalingListDC             (unsigned sizeId, unsigned listId, unsigned u)   { m_scalingListDC[sizeId][listId] = u; }      //!< set DC value
-  int      getScalingListDC             (unsigned sizeId, unsigned listId) const     { return m_scalingListDC[sizeId][listId]; }   //!< get DC value
-  void     checkDcOfMatrix              ();
-  void     processRefMatrix             (unsigned sizeId, unsigned listId , unsigned refListId );
+    void init();
+    bool is_initialized(void) { return m_initialized; }
+    void initFromDefaultScalingList(void);
+    void calculateDequantCoef(void);
+
+    Ipp16s *m_dequantCoef[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM][SCALING_LIST_REM_NUM];
 
 private:
-    void init();
+    H265_FORCEINLINE Ipp16s* getDequantCoeff(Ipp32u list, Ipp32u qp, Ipp32u size)
+    {
+        return m_dequantCoef[size][list][qp];
+    }
+    __inline void processScalingListDec(Ipp32s *coeff, Ipp16s *dequantcoeff, Ipp32s invQuantScales, Ipp32u height, Ipp32u width, Ipp32u ratio, Ipp32u sizuNum, Ipp32u dc);
+    static int *getScalingListDefaultAddress (unsigned sizeId, unsigned listId);
+
     void destroy();
 
-  int      m_scalingListDC               [SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM]; //!< the DC value of the matrix coefficient for 16x16
-  unsigned m_refMatrixId                 [SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM]; //!< RefMatrixID
-  bool     m_scaling_list_data_present_flag;                                                //!< flag for using default matrix
-  int      m_scalingListCoef             [SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM][MAX_MATRIX_COEF_NUM]; //!< quantization matrix
+    int      m_scalingListDC               [SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM];
+    unsigned m_refMatrixId                 [SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM];
+    int      m_scalingListCoef             [SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM][MAX_MATRIX_COEF_NUM];
+    bool     m_initialized;
 };
 
 struct H265PTL
@@ -969,7 +980,7 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
     }
 
     H265ScalingList* getScalingList()           { return &m_scalingList; }
-    const H265ScalingList* getScalingList() const     { return &m_scalingList; }
+    H265ScalingList* getScalingList() const     { return const_cast<H265ScalingList *>(&m_scalingList); }
     ReferencePictureSetList *getRPSList()       { return &m_RPSList; }
     const ReferencePictureSetList *getRPSList() const       { return &m_RPSList; }
 
@@ -1117,7 +1128,7 @@ struct H265PicParamSet : public HeapObject, public H265PicParamSetBase
 
     Ipp32u getNumTiles() const { return num_tile_rows*num_tile_columns; }
     H265ScalingList* getScalingList()               { return &m_scalingList; }
-    const H265ScalingList* getScalingList() const   { return &m_scalingList; }
+    H265ScalingList* getScalingList() const         { return const_cast<H265ScalingList *>(&m_scalingList); }
 };    // H265PicParamSet
 
 typedef struct {

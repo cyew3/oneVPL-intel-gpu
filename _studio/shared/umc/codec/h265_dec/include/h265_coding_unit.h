@@ -67,7 +67,6 @@ protected:
 
     Ipp8u*                    m_partSizeArray;  // array of partition sizes
     Ipp8u*                    m_predModeArray;  // array of prediction modes
-    Ipp8u*                    m_qpArray;        // array of QP values
 
     Ipp8u*                    m_transformSkip[3];  // array of transform skipping flags
     Ipp8u*                    m_cbf[3];         // array of coded block flags (CBF)
@@ -102,11 +101,6 @@ public:
     inline Ipp8u GetCbf(Ipp32s plane, Ipp32s partAddr) const
     {
         return m_cbf[plane][partAddr];
-    }
-
-    inline Ipp8u GetQP(Ipp32s partAddr) const
-    {
-        return m_qpArray[partAddr];
     }
 
     inline Ipp8u GetWidth(Ipp32s partAddr) const
@@ -167,7 +161,6 @@ public:
     void setCUTransquantBypassSubParts(bool flag, Ipp32u AbsPartIdx, Ipp32u Depth);
     void setPredModeSubParts (EnumPredMode Mode, Ipp32u AbsPartIdx, Ipp32u Depth);
     void setSizeSubParts (Ipp32u Width, Ipp32u AbsPartIdx, Ipp32u Depth);
-    void setQPSubParts (Ipp32u QP, Ipp32u AbsPartIdx, Ipp32u Depth);
     void setTrIdxSubParts (Ipp32u TrIdx, Ipp32u AbsPartIdx, Ipp32u Depth);
 
     Ipp32u getQuadtreeTULog2MinSizeInCU (Ipp32u Idx);

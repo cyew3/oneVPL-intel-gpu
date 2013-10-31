@@ -36,7 +36,6 @@ H265CodingUnit::H265CodingUnit()
     m_predModeArray = 0;
     m_CUTransquantBypass = 0;
     m_widthArray = 0;
-    m_qpArray = 0;
 
     m_lumaIntraDir = 0;
     m_chromaIntraDir = 0;
@@ -68,7 +67,7 @@ void H265CodingUnit::create (H265FrameCodingData * frameCD)
 
     Ipp32s widthOnHeight = frameCD->m_MaxCUWidth * frameCD->m_MaxCUWidth;
 
-    m_cumulativeMemoryPtr = CumulativeArraysAllocation(22, 32, &m_qpArray, sizeof(Ipp8u) * m_NumPartition,
+    m_cumulativeMemoryPtr = CumulativeArraysAllocation(21, 32,
                                 &m_depthArray, sizeof(Ipp8u) * m_NumPartition,
                                 &m_widthArray, sizeof(Ipp8u) * m_NumPartition,
                                 &m_partSizeArray, sizeof(Ipp8u) * m_NumPartition,
@@ -140,7 +139,6 @@ void H265CodingUnit::initCU(H265SegmentDecoderMultiThreaded* sd, Ipp32u iCUAddr)
     m_AbsIdxInLCU = 0;
     m_NumPartition = sps->NumPartitionsInCU;
 
-    memset( m_qpArray, m_SliceHeader->SliceQP, m_NumPartition * sizeof( *m_qpArray ) );
     memset( m_CUTransquantBypass, 0, m_NumPartition * sizeof( *m_CUTransquantBypass ) );
     for (Ipp32s i = 0; i < 3; i++)
         memset (m_transformSkip[i], 0, m_NumPartition * sizeof( *m_transformSkip[i] ) );
@@ -288,16 +286,6 @@ void H265CodingUnit::setTransformSkipSubParts(Ipp32u useTransformSkip, EnumTextT
   Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
 
   memset(m_transformSkip[g_ConvertTxtTypeToIdx[Type]] + AbsPartIdx, useTransformSkip, sizeof(Ipp8u) * CurrPartNumb);
-}
-
-void H265CodingUnit::setQPSubParts(Ipp32u QP, Ipp32u AbsPartIdx, Ipp32u Depth)
-{
-    Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
-
-    for (Ipp32u SCUIdx = AbsPartIdx; SCUIdx < AbsPartIdx + CurrPartNumb; SCUIdx++)
-    {
-        m_qpArray[SCUIdx] = (Ipp8u) QP;
-    }
 }
 
 void H265CodingUnit::setLumaIntraDirSubParts(Ipp32u Dir, Ipp32u AbsPartIdx, Ipp32u Depth)
