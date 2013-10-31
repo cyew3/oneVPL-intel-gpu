@@ -90,6 +90,8 @@ file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
   list( APPEND sources ${srcs})
 endforeach()
 
+add_definitions(-DMFX_MAKENAME_ATOM)
+
 make_library( mfx_optimization none static )
 
 # =============================================================================
