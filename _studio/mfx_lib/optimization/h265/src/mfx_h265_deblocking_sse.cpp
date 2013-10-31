@@ -15,7 +15,11 @@
 
 #include "mfx_h265_optimization.h"
 
-#if (defined(MFX_TARGET_OPTIMIZATION_SSSE3) && defined (MFX_EMULATE_SSSE3)) || defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
+#if defined(MFX_TARGET_OPTIMIZATION_AUTO) || \
+    defined(MFX_MAKENAME_ATOM) && defined(MFX_TARGET_OPTIMIZATION_ATOM) || \
+    defined(MFX_MAKENAME_SSE4) && defined(MFX_TARGET_OPTIMIZATION_SSE4) || \
+    defined(MFX_MAKENAME_SSSE3) && defined(MFX_TARGET_OPTIMIZATION_SSSE3) || \
+    defined(MFX_MAKENAME_SSSE3) && defined(MFX_TARGET_OPTIMIZATION_AVX2)
 
 #ifndef Clip3
 #define Clip3( m_Min, m_Max, m_Value) ( (m_Value) < (m_Min) ? (m_Min) : ( (m_Value) > (m_Max) ? (m_Max) : (m_Value) ) )
@@ -785,6 +789,6 @@ void MAKE_NAME(h265_FilterEdgeChroma_Plane_8u_I)(H265EdgeData *edge, Ipp8u *srcD
 
 }; // namespace MFX_HEVC_PP
 
-#endif // #if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2)
+#endif // #if defined(MFX_TARGET_OPTIMIZATION_AUTO) ...
 #endif // #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined(MFX_ENABLE_H265_VIDEO_DECODE)
 /* EOF */

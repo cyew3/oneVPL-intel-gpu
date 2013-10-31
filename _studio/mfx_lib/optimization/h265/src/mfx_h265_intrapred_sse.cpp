@@ -15,7 +15,11 @@
 
 #include "mfx_h265_optimization.h"
 
-#if (defined(MFX_TARGET_OPTIMIZATION_SSSE3) && defined (MFX_EMULATE_SSSE3)) || defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO) 
+#if defined(MFX_TARGET_OPTIMIZATION_AUTO) || \
+    defined(MFX_MAKENAME_ATOM) && defined(MFX_TARGET_OPTIMIZATION_ATOM) || \
+    defined(MFX_MAKENAME_SSE4) && defined(MFX_TARGET_OPTIMIZATION_SSE4) || \
+    defined(MFX_MAKENAME_SSSE3) && defined(MFX_TARGET_OPTIMIZATION_SSSE3) || \
+    defined(MFX_MAKENAME_SSSE3) && defined(MFX_TARGET_OPTIMIZATION_AVX2)
 
 #include <immintrin.h>
 #ifdef MFX_EMULATE_SSSE3
@@ -1732,6 +1736,6 @@ namespace MFX_HEVC_PP
 
 }; // namespace MFX_HEVC_PP
 
-#endif // #if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2)
+#endif // #if defined(MFX_TARGET_OPTIMIZATION_AUTO) ...
 #endif // #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined(MFX_ENABLE_H265_VIDEO_DECODE)
 /* EOF */
