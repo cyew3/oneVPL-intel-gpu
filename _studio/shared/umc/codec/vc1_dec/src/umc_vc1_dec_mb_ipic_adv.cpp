@@ -397,7 +397,7 @@ VC1Status MBLayer_Field_InterlaceIpicture(VC1Context* pContext)
     currFieldMBXpos = sMB->m_currMBXpos;
 
     if (picLayerHeader->CurrField)
-        currFieldMBYpos -= ((sMB->heightMB+1) >> 1);
+        currFieldMBYpos -= (sMB->heightMB >> 1);
 
     //Y
     pCurrMB->currYPitch = sMB->currYPitch;

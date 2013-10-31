@@ -288,17 +288,18 @@ Status MFXVC1VideoDecoder::GetAndProcessPerformedDS(MediaData* in, VideoData* ou
 
                 if (VC1_IS_REFERENCE(pCurrDescriptor->m_pContext->m_InitPicLayer->PTYPE))
                 {
-                    ippsCopy_16s(pCurrDescriptor->m_pContext->savedMV,
-                        m_pContext->savedMV_Curr,
-                        m_pContext->m_seqLayerHeader.MaxHeightMB*m_pContext->m_seqLayerHeader.MaxWidthMB*2*2);
-
+                    Ipp16u heightMB =  m_pContext->m_seqLayerHeader.MaxHeightMB;
                     if (pCurrDescriptor->m_pContext->m_InitPicLayer->FCM == VC1_FieldInterlace)
                     {
+                        heightMB =  m_pContext->m_seqLayerHeader.MaxHeightMB +  (m_pContext->m_seqLayerHeader.MaxHeightMB & 1);
                         ippsCopy_8u(pCurrDescriptor->m_pContext->savedMVSamePolarity,
                             m_pContext->savedMVSamePolarity_Curr,
-                            m_pContext->m_seqLayerHeader.MaxHeightMB*m_pContext->m_seqLayerHeader.MaxWidthMB);
+                            heightMB*m_pContext->m_seqLayerHeader.MaxWidthMB);
                     }
 
+                    ippsCopy_16s(pCurrDescriptor->m_pContext->savedMV,
+                        m_pContext->savedMV_Curr,
+                        heightMB*m_pContext->m_seqLayerHeader.MaxWidthMB*2*2);
                 }
 
                 if (m_pContext->m_seqLayerHeader.PROFILE == VC1_PROFILE_ADVANCED)

@@ -312,7 +312,8 @@ void DecodeBitplane(VC1Context* pContext, VC1Bitplane* pBitplane, Ipp32s width, 
         pContext->bp_round_count = 0;
 
     Ipp32u HeightMB = pContext->m_seqLayerHeader.heightMB;
-    if(pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
+    //if(pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
+    if(pContext->m_seqLayerHeader.INTERLACE)
         HeightMB = HeightMB + (HeightMB & 1);
     
     if (pContext->bp_round_count >= 0)

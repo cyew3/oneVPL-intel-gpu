@@ -59,11 +59,14 @@ namespace UMC
 
             if (m_va->IsSimulate())
             {
+                Ipp32u HeightMB = pContext->m_seqLayerHeader.MaxHeightMB;
+                if( pContext->m_seqLayerHeader.INTERLACE)
+                    HeightMB = HeightMB + (HeightMB&1);
 
                 { //frames allocation
                     Ipp32s i;
-                    Ipp32u h = pContext->m_seqLayerHeader.heightMB*VC1_PIXEL_IN_LUMA;
-                    Ipp32u w = ((pContext->m_seqLayerHeader.widthMB * VC1_PIXEL_IN_LUMA) & 0xFFFFFF80)+ 0x080; // align on 128
+                    Ipp32u h = HeightMB*VC1_PIXEL_IN_LUMA;
+                    Ipp32u w = ((pContext->m_seqLayerHeader.MaxWidthMB * VC1_PIXEL_IN_LUMA) & 0xFFFFFF80)+ 0x080; // align on 128
                     Ipp32s frame_size = (h + 128)*(w + 128) + ((h / 2 + 64)*(w / 2 + 64))*2;
                     Ipp32s y_vert_pad = 64*(w+128);
                     Ipp32s y_hor_pad = 64;
@@ -99,17 +102,17 @@ namespace UMC
                 }
                 // one method for VC1VideoDecoderVA and VC1VideoDecoderVASim
 
-                pContext->savedMV_Curr=(Ipp16s*)ippsMalloc_8u((Ipp32s)(sizeof(Ipp16s)*pContext->m_seqLayerHeader.MaxHeightMB*pContext->m_seqLayerHeader.MaxWidthMB*4*2*2));
+                pContext->savedMV_Curr=(Ipp16s*)ippsMalloc_8u((Ipp32s)(sizeof(Ipp16s)*HeightMB*pContext->m_seqLayerHeader.MaxWidthMB*4*2*2));
                 if (!pContext->savedMV_Curr)
                     return false;
 
-                memset(pContext->savedMV_Curr, 0, sizeof(Ipp16s)*pContext->m_seqLayerHeader.MaxHeightMB*pContext->m_seqLayerHeader.MaxWidthMB*4*2*2);
+                memset(pContext->savedMV_Curr, 0, sizeof(Ipp16s)*HeightMB*pContext->m_seqLayerHeader.MaxWidthMB*4*2*2);
 
-                pContext->savedMVSamePolarity_Curr = (Ipp8u*)ippsMalloc_8u((Ipp32s)(sizeof(Ipp8u)*pContext->m_seqLayerHeader.MaxHeightMB*pContext->m_seqLayerHeader.MaxWidthMB*4));
+                pContext->savedMVSamePolarity_Curr = (Ipp8u*)ippsMalloc_8u((Ipp32s)(sizeof(Ipp8u)*HeightMB*pContext->m_seqLayerHeader.MaxWidthMB*4));
                 if (!pContext->savedMVSamePolarity_Curr)
                     return false;
 
-                memset(pContext->savedMVSamePolarity_Curr, 0, sizeof(Ipp8u)*pContext->m_seqLayerHeader.MaxHeightMB*pContext->m_seqLayerHeader.MaxWidthMB*4);
+                memset(pContext->savedMVSamePolarity_Curr, 0, sizeof(Ipp8u)*HeightMB*pContext->m_seqLayerHeader.MaxWidthMB*4);
             }
 
             pContext->m_frmBuff.m_iDisplayIndex = -1;
