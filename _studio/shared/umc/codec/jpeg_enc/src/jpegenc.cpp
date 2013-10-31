@@ -4612,7 +4612,11 @@ JERRCODE CJPEGEncoder::EncodeScanBaseline(void)
 #ifdef __TIMING__
         c0 = ippGetCpuClocks();
 #endif
-        TransformMCURowBL(pMCUBuf, colMCU, maxMCU);
+        jerr = TransformMCURowBL(pMCUBuf, colMCU, maxMCU);
+        if(JPEG_OK != jerr)
+        {
+            return jerr;
+        }
 #ifdef __TIMING__
         c1 = ippGetCpuClocks();
         m_clk_dct += c1 - c0;
@@ -4628,7 +4632,11 @@ JERRCODE CJPEGEncoder::EncodeScanBaseline(void)
 #ifdef __TIMING__
         c0 = ippGetCpuClocks();
 #endif
-        EncodeHuffmanMCURowBL(pMCUBuf, colMCU, maxMCU);
+        jerr = EncodeHuffmanMCURowBL(pMCUBuf, colMCU, maxMCU);
+        if(JPEG_OK != jerr)
+        {
+            return jerr;
+        }
 #ifdef __TIMING__
         c1 = ippGetCpuClocks();
         m_clk_huff += (c1 - c0);
@@ -4664,11 +4672,6 @@ JERRCODE CJPEGEncoder::EncodeScanBaseline(void)
   ippFree(locks);
   locks = 0;
 #endif
-
-  if(JPEG_OK != jerr)
-  {
-      return jerr;
-  }
 
   dst    = m_BitStreamOut.GetDataPtr();
   dstLen = m_BitStreamOut.GetDataLen();
