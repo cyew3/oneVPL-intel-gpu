@@ -27,11 +27,11 @@ File Name: libmfx_allocator.cpp
 // Implementation of Internal allocators
 mfxStatus mfxDefaultAllocator::AllocBuffer(mfxHDL pthis, mfxU32 nbytes, mfxU16 type, mfxHDL *mid)
 {
-    mfxU32 header_size = ALIGN32(sizeof(BufferStruct));
-    mfxU8 *buffer_ptr=(mfxU8 *)ippMalloc(header_size + nbytes);
-
     if (!pthis)
         return MFX_ERR_INVALID_HANDLE;
+
+    mfxU32 header_size = ALIGN32(sizeof(BufferStruct));
+    mfxU8 *buffer_ptr=(mfxU8 *)ippMalloc(header_size + nbytes);
 
     if (!buffer_ptr)
         return MFX_ERR_MEMORY_ALLOC;
