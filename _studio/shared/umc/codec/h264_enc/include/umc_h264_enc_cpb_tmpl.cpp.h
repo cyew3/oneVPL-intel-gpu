@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2013 Intel Corporation. All Rights Reserved.
 
 #if PIXBITS == 8
 
@@ -1408,7 +1408,10 @@ H264EncoderFrameType* H264ENC_MAKE_NAME(H264EncoderFrameList_InsertFrame)(
 
         ps = H264ENC_MAKE_NAME(H264EncoderFrame_allocate)(pFrm, padded_size, num_slices);
         if (ps != UMC_OK)
+        {
+            H264_Free(pFrm);
             return NULL;
+        }
 
         H264ENC_MAKE_NAME(H264EncoderFrameList_insertAtCurrent)(state, pFrm);
     }
