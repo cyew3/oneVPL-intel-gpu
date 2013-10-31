@@ -639,7 +639,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxVideoParam.mfx.GopPicSize = (mfxU16) ((m_mfxVideoParam.mfx.GopPicSize + m_mfxVideoParam.mfx.GopRefDist - 1) / m_mfxVideoParam.mfx.GopRefDist * m_mfxVideoParam.mfx.GopRefDist);
     }
     if (!m_mfxVideoParam.mfx.GopRefDist) m_mfxVideoParam.mfx.GopRefDist = 1; // keep alignment with GopPicSize when changing
-    if (!m_mfxVideoParam.mfx.IdrInterval) m_mfxVideoParam.mfx.IdrInterval = m_mfxVideoParam.mfx.GopPicSize * 8;
+    //if (!m_mfxVideoParam.mfx.IdrInterval) m_mfxVideoParam.mfx.IdrInterval = m_mfxVideoParam.mfx.GopPicSize * 8;
     // GopOptFlag ignore
 
     // to be provided:
