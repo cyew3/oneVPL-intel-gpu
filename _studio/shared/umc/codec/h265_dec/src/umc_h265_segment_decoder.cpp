@@ -84,7 +84,7 @@ void DecodingContext::Init(H265Slice *slice)
     if (m_needToSplitDecAndRec && !slice->GetSliceHeader()->dependent_slice_segment_flag)
     {
         ResetRowBuffer();
-        m_LastValidQP = 0; // Force QP recalculation because QP offsets may be different in new slice
+        m_LastValidQP = slice->m_SliceHeader.SliceQP ^ 1; // Force QP recalculation because QP offsets may be different in new slice
         SetNewQP(slice->m_SliceHeader.SliceQP);
     }
 
