@@ -33,6 +33,7 @@
     <ClCompile Include="src\h265_global_rom.cpp" />
     <ClCompile Include="src\h265_intrapred.cpp" />
     <ClCompile Include="src\h265_prediction.cpp" />
+    <ClCompile Include="src\h265_scaling_list.cpp" />
     <ClCompile Include="src\h265_tr_quant.cpp" />
     <ClCompile Include="src\umc_h265_au_splitter.cpp" />
     <ClCompile Include="src\umc_h265_dec_bitstream.cpp" />
