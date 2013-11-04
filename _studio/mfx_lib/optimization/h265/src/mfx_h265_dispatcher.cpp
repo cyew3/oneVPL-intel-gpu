@@ -556,8 +556,8 @@ using namespace MFX_HEVC_PP;
         g_dispatcher.h265_PredictIntra_Ang_All_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_All_8u_sse;
 
         // [WeightedPred]
-        g_dispatcher.h265_CopyWeighted_S16U8 = &MFX_HEVC_PP::h265_CopyWeighted_S16U8_sse;
-        g_dispatcher.h265_CopyWeightedBidi_S16U8 = &MFX_HEVC_PP::h265_CopyWeightedBidi_S16U8_sse;
+        g_dispatcher.h265_CopyWeighted_S16U8 = &MFX_HEVC_PP::h265_CopyWeighted_S16U8_avx2;
+        g_dispatcher.h265_CopyWeightedBidi_S16U8 = &MFX_HEVC_PP::h265_CopyWeightedBidi_S16U8_avx2;
 
     } // void SetTargetAVX2(void)
 
