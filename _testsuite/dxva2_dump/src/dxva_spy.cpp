@@ -1049,7 +1049,6 @@ private:
             logi(slice[i].wBadSliceChopping);
             logi(slice[i].ByteOffsetToSliceData);
             logi(slice[i].slice_segment_address);
-            logi(slice[i].wBadSliceChopping);
 
             for (Ipp32u k = 0; k < 15; k++)
             {
