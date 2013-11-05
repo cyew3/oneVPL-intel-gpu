@@ -273,5 +273,6 @@ void MFX::MFXPluginFactory::Close() {
 void MFX::MFXPluginFactory::DestroyPlugin( FactoryRecord & record)
 {
     mfxStatus sts = MFXVideoUSER_Unregister(mSession, record.plgParams.Type);
+    sts;
     TRACE_PLUGIN_INFO(" MFXVideoUSER_Unregister for Type=%d, returned %d\n", record.plgParams.Type, sts);
 }
