@@ -161,7 +161,7 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
             if(surface->Info.FourCC == MFX_FOURCC_NV12)
             {
                 fieldOffset = pitch * isBottom;
-                pDataIn->Init(pitch, alignedHeight, UMC::NV12, 8);
+                pDataIn->Init(alignedWidth, alignedHeight, UMC::NV12, 8);
                 pDataIn->SetImageSize(width, height);
 
                 pDataIn->SetPlanePointer(surface->Data.Y + frameInfo->CropX + fieldOffset, 0);
@@ -172,7 +172,7 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
             else if(surface->Info.FourCC == MFX_FOURCC_YV12)
             {
                 fieldOffset = pitch * isBottom;
-                pDataIn->Init(pitch, alignedHeight, UMC::YV12, 8);
+                pDataIn->Init(alignedWidth, alignedHeight, UMC::YV12, 8);
                 pDataIn->SetImageSize(width, height);
 
                 pDataIn->SetPlanePointer(surface->Data.Y + frameInfo->CropX + fieldOffset, 0);
@@ -185,7 +185,7 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
             else if(surface->Info.FourCC == MFX_FOURCC_YUY2)
             {
                 fieldOffset = pitch * isBottom;
-                pDataIn->Init(pitch, alignedHeight, UMC::YUY2, 8);
+                pDataIn->Init(alignedWidth, alignedHeight, UMC::YUY2, 8);
                 pDataIn->SetImageSize(width, height);
 
                 pDataIn->SetPlanePointer(surface->Data.Y + ((frameInfo->CropX >> 1) << 2) + fieldOffset, 0);
@@ -194,7 +194,7 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
             else if(surface->Info.FourCC == MFX_FOURCC_RGB4)
             {
                 fieldOffset = pitch * isBottom;
-                pDataIn->Init(pitch, alignedHeight, UMC::RGB32, 8);
+                pDataIn->Init(alignedWidth, alignedHeight, UMC::RGB32, 8);
                 pDataIn->SetImageSize(width, height);
 
                 pDataIn->SetPlanePointer(surface->Data.B + frameInfo->CropX * 4 + fieldOffset, 0);
@@ -255,7 +255,7 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
             if(surface->Info.FourCC == MFX_FOURCC_NV12)
             {
                 fieldOffset = pitch * isBottom;
-                pDataIn->Init(pitch, alignedHeight, UMC::GRAY, 8);
+                pDataIn->Init(alignedWidth, alignedHeight, UMC::GRAY, 8);
                 pDataIn->SetImageSize(width, height);
 
                 pDataIn->SetPlanePointer(surface->Data.Y + frameInfo->CropX + fieldOffset, 0);
@@ -264,7 +264,7 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
             else if(surface->Info.FourCC == MFX_FOURCC_YV12)
             {
                 fieldOffset = pitch * isBottom;
-                pDataIn->Init(pitch, alignedHeight, UMC::GRAY, 8);
+                pDataIn->Init(alignedWidth, alignedHeight, UMC::GRAY, 8);
                 pDataIn->SetImageSize(width, height);
 
                 pDataIn->SetPlanePointer(surface->Data.Y + frameInfo->CropX + fieldOffset, 0);
