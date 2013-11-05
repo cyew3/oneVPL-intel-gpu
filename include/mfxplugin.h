@@ -49,8 +49,25 @@ typedef enum {
     MFX_THREADPOLICY_PARALLEL    = 1
 } mfxThreadPolicy;
 
+typedef struct {
+    mfxU8  Data[ 16 ];
+} mfxPluginUID;
+
+typedef struct  {
+    mfxPluginUID uid;
+    mfxU8   Default;
+    mfxU32  NameAlloc;
+    mfxU32  NameLength; 
+    mfxU8 * Name;
+
+    mfxU32 reserved[8];
+} mfxPluginDescription;
+
+
 typedef struct mfxPluginParam {
-    mfxU32  reserved[13];
+    mfxU32  reserved[8];
+    mfxPluginUID uid;
+    mfxU32  Type;
     mfxU32  CodecId;
     mfxThreadPolicy ThreadPolicy;
     mfxU32  MaxThreadNum;
@@ -129,8 +146,14 @@ typedef struct mfxPlugin{
 
 mfxStatus MFX_CDECL MFXVideoUSER_Register(mfxSession session, mfxU32 type, const mfxPlugin *par);
 mfxStatus MFX_CDECL MFXVideoUSER_Unregister(mfxSession session, mfxU32 type);
-
 mfxStatus MFX_CDECL MFXVideoUSER_ProcessFrameAsync(mfxSession session, const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxSyncPoint *syncp);
+
+#define MFX_CREATE_PLUGIN_FNC "mfxCreatePlugin"
+typedef bool (*mfxPluginCreateCallback)(mfxPluginUID guid, mfxPlugin*);
+
+mfxStatus MFX_CDECL MFXVideoUSER_Enumerate(mfxSession session, mfxU32 type, mfxU32 codec_id, mfxU32 counter, mfxPluginDescription *dsc);
+mfxStatus MFX_CDECL MFXVideoUSER_Load(mfxSession session, mfxU32 type, mfxU32 codec_id, mfxPluginUID uid);
+mfxStatus MFX_CDECL MFXVideoUSER_UnLoad(mfxSession session, mfxPluginUID uid);
 
 #ifdef __cplusplus
 } // extern "C"

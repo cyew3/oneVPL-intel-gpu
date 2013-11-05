@@ -57,13 +57,15 @@ protected:
     mfxSession m_session;    
 };
 
-//adds constructuctor to c structure
+//initialize mfxPlugin struct
 class MFXPluginParam {
     mfxPluginParam m_param;
 
 public:
-    MFXPluginParam(mfxU32 CodecId, mfxThreadPolicy ThreadPolicy = MFX_THREADPOLICY_SERIAL, mfxU32  MaxThreadNum = 1)
+    MFXPluginParam(mfxU32 CodecId, mfxU32  Type, mfxPluginUID uid, mfxThreadPolicy ThreadPolicy = MFX_THREADPOLICY_SERIAL, mfxU32  MaxThreadNum = 1)
         : m_param() {
+        m_param.uid = uid;
+        m_param.Type = Type;
         m_param.CodecId = CodecId;
         m_param.MaxThreadNum = MaxThreadNum;
         m_param.ThreadPolicy = ThreadPolicy;
@@ -74,13 +76,11 @@ public:
     operator mfxPluginParam& () {
         return m_param;
     }
-
 };
 
 //common interface part for every plugin: decoder/encoder and generic
 struct MFXPlugin
 {
-    
     virtual ~MFXPlugin() {};
     //init function always required for any transform or codec plugins, for codec plugins it maps to callback from MediaSDK
     //for generic plugin application should call it
