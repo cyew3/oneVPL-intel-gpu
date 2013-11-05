@@ -32,7 +32,7 @@ File Name: mfx_load_plugin.h
 #include "mfx_load_dll.h"
 #include "mfx_dispatcher_log.h"
 #include <algorithm>
-#include <xfunctional>
+#include <functional>
 
 #define TRACE_PLUGIN_ERROR(str, ...) DISPATCHER_LOG_ERROR((("[PLUGIN]: "str), __VA_ARGS__))
 #define TRACE_PLUGIN_INFO(str, ...) DISPATCHER_LOG_INFO((("[PLUGIN]: "str), __VA_ARGS__))

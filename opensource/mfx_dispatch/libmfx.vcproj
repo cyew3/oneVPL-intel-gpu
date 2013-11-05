@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="libmfx"
 	ProjectGUID="{9E7B3527-11AA-46BA-A82F-C58761F9B56F}"
 	RootNamespace="libmfx"
@@ -448,6 +448,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\mfx_load_plugin.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mfx_plugin_hive.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\mfx_win_reg_key.cpp"
 				>
 			</File>
@@ -461,6 +469,10 @@
 			</File>
 			<File
 				RelativePath=".\include\mfx_dispatcher.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mfx_dispatcher_defs.h"
 				>
 			</File>
 			<File
@@ -481,6 +493,14 @@
 			</File>
 			<File
 				RelativePath=".\include\mfx_load_dll.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mfx_load_plugin.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mfx_plugin_hive.h"
 				>
 			</File>
 			<File

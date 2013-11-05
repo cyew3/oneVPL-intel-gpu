@@ -44,12 +44,22 @@ namespace MFX {
     public:
         PluginModule();
         PluginModule(const msdk_disp_char * path);
+//vs2005 doesn't honor copy ctor semantics
+#if _MSC_VER <= 1400
+        PluginModule(const PluginModule & that) 
+            : mHmodule(that.mHmodule)
+            , mCreatePluginPtr(that.mCreatePluginPtr) {
+                const_cast<PluginModule&>(that).mHmodule = 0;
+                const_cast<PluginModule&>(that).mCreatePluginPtr = 0;
+        }
+#else
         PluginModule(PluginModule & that) 
             : mHmodule(that.mHmodule)
             , mCreatePluginPtr(that.mCreatePluginPtr) {
-            that.mHmodule = 0;
-            that.mCreatePluginPtr = 0;
+                that.mHmodule = 0;
+                that.mCreatePluginPtr = 0;
         }
+#endif
         PluginModule & operator = (PluginModule & that) {
             mHmodule = that.mHmodule;
             mCreatePluginPtr = that.mCreatePluginPtr;
@@ -66,6 +76,9 @@ namespace MFX {
             mfxPluginParam plgParams;
             PluginModule module;
             mfxPlugin plugin;
+#if _MSC_VER <= 1400
+            FactoryRecord () {}
+#endif
             FactoryRecord(const mfxPluginParam &plgParams,
                           PluginModule &module,
                           mfxPlugin plugin) 
