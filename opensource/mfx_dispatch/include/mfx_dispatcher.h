@@ -35,19 +35,8 @@ File Name: mfx_dispatcher.h
 #include <mfxaudio.h>
 #include <mfxplugin.h>
 #include <stddef.h>
-
-#if defined(_WIN32) || defined(_WIN64)
-typedef wchar_t  msdk_disp_char;
-#else
-#define msdk_disp_char char
-#endif
-
-#if !defined (MFX_DISPATCHER_EXPOSED_PREFIX)
-    #define DISPATCHER_EXPOSED_PREFIX(fnc) fnc 
-#else
-    #define DISPATCHER_EXPOSED_PREFIX(fnc) _##fnc 
-#endif
-
+#include "mfx_dispatcher_defs.h"
+#include "mfx_load_plugin.h"
 
 enum
 {
@@ -116,11 +105,6 @@ enum
     MFX_DISPATCHER_VERSION_MINOR = 2
 };
 
-// declare library module's handle
-typedef void * mfxModuleHandle;
-
-typedef void (MFX_CDECL * mfxFunctionPointer)(void);
-
 // declare a dispatcher's handle
 struct MFX_DISP_HANDLE
 {
@@ -158,6 +142,9 @@ struct MFX_DISP_HANDLE
 
     // Library's module handle
     mfxModuleHandle hModule;
+
+    MFX::MFXPluginHive pluginHive;
+    MFX::MFXPluginFactory pluginFactory;
 
     // function call table
     mfxFunctionPointer callTable[eVideoFuncTotal];

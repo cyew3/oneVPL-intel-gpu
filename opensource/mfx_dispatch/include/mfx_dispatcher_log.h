@@ -50,6 +50,34 @@ enum
 #define DL_SINK_PRINTF       1
 #define DL_SINK_IMsgHandler  2
 
+#define MFXFOURCCTYPE() "%c%c%c%c"
+#define ZERO_OR_SPACE(value) ((0==(value)) ? '0' : (value))
+#define MFXU32TOFOURCC(mfxu32)\
+    ZERO_OR_SPACE((char)(mfxu32 & 0xFF)), \
+    ZERO_OR_SPACE((char)((mfxu32 >> 8) & 0xFF)),\
+    ZERO_OR_SPACE((char)((mfxu32 >> 16) & 0xFF)),\
+    ZERO_OR_SPACE((char)((mfxu32 >> 24) & 0xFF))
+
+#define MFXGUIDTYPE() "%X-%X-%X-%X-%X-%X-%X-%X-%X-%X-%X-%X-%X-%X-%X-%X"
+
+#define MFXGUIDTOHEX(guid)\
+    guid.Data[0],\
+    guid.Data[1],\
+    guid.Data[2],\
+    guid.Data[3],\
+    guid.Data[4],\
+    guid.Data[5],\
+    guid.Data[6],\
+    guid.Data[7],\
+    guid.Data[8],\
+    guid.Data[9],\
+    guid.Data[10],\
+    guid.Data[11],\
+    guid.Data[12],\
+    guid.Data[13],\
+    guid.Data[14],\
+    guid.Data[15]
+
 #if defined(MFX_DISPATCHER_LOG)
 
 //---------------------------setup section------------------------

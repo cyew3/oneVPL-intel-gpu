@@ -34,8 +34,7 @@ File Name: mfx_dispatcher.cpp
 
 #include <string.h>
 #if defined(_WIN32) || defined(_WIN64)
-#include <windows.h>
-
+    #include <windows.h>
 #else
 
 #include <dlfcn.h>
@@ -44,7 +43,9 @@ File Name: mfx_dispatcher.cpp
 #endif // defined(_WIN32) || defined(_WIN64)
 
 MFX_DISP_HANDLE::MFX_DISP_HANDLE(const mfxVersion requiredVersion) :
-    apiVersion(requiredVersion)
+    apiVersion(requiredVersion),
+    pluginFactory((mfxSession)this)
+
 {
     implType = MFX_LIB_SOFTWARE;
     impl = MFX_IMPL_SOFTWARE;
@@ -286,6 +287,9 @@ mfxStatus MFX_DISP_HANDLE::LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImpl
 mfxStatus MFX_DISP_HANDLE::UnLoadSelectedDLL(void)
 {
     mfxStatus mfxRes = MFX_ERR_NOT_INITIALIZED;
+
+    //unregistered plugins if any
+    pluginFactory.Close();
 
     // close the loaded DLL
     if (session)

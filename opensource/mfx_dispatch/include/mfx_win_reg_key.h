@@ -34,9 +34,20 @@ File Name: mfx_win_reg_key.h
 #if defined(_WIN32) || defined(_WIN64)
 
 #include <windows.h>
+#include <vector>
+#include "mfxplugin.h"
+#include "mfx_dispatcher_log.h"
 
-namespace MFX
-{
+namespace MFX {
+
+template<class T> struct RegKey{};
+template<> struct RegKey<bool>{enum {type = REG_DWORD};};
+template<> struct RegKey<mfxU32>{enum {type = REG_DWORD};};
+template<> struct RegKey<mfxPluginUID>{enum {type = REG_BINARY};};
+template<> struct RegKey<std::wstring>{enum {type = REG_SZ};};
+template<> struct RegKey<std::string>{enum {type = REG_SZ};};
+//template<> struct RegKey<char*>{enum {type = REG_SZ};};
+
 
 class WinRegKey
 {
@@ -51,7 +62,68 @@ public:
     bool Open(WinRegKey &rootKey, const wchar_t *pSubKey, REGSAM samDesired);
 
     // Query value
+    bool QueryValueSize(const wchar_t *pValueName, DWORD type, LPDWORD pcbData);
     bool Query(const wchar_t *pValueName, DWORD type, LPBYTE pData, LPDWORD pcbData);
+
+    template<class T>
+    bool Query(const wchar_t *pValueName, T &data ) {
+        DWORD size = sizeof(data);
+        return Query(pValueName, RegKey<T>::type, (LPBYTE) &data, &size);
+    }
+
+    template<>
+    bool Query<bool>(const wchar_t *pValueName, bool &data ) {
+        mfxU32 value = 0;
+        bool bRes = Query(pValueName, value);
+        data = (1 == value);
+        return bRes;
+    }
+
+    template<>
+    bool Query<std::wstring>(const wchar_t *pValueName, std::wstring &data) {
+        try {
+            DWORD len = 0;
+            if (!QueryValueSize(pValueName, RegKey<std::wstring>::type, &len)){
+                return false;
+            }
+            std::vector<wchar_t> v(len);
+            if (!Query(pValueName, RegKey<std::wstring>::type, (LPBYTE)&v.front(), &len)){
+                return false;
+            }
+            data.assign(&v.front());
+            return true;
+        }
+        catch (std::exception &e) {
+            e;
+            DISPATCHER_LOG_ERROR((("std::exception %s\n"), e.what()));
+            return false;
+        }
+    }
+    template<>
+    bool Query(const wchar_t *pValueName, std::string &data) {
+        try {
+            DWORD len = 0;
+            if (!QueryValueSize(pValueName, RegKey<std::string>::type, &len)){
+                return false;
+            }
+            std::vector<wchar_t> v(len);
+            if (!Query(pValueName, RegKey<std::string>::type, (LPBYTE)&v.front(), &len)){
+                return false;
+            }
+            
+            for (DWORD i = 0; i < v.size(); i++) {
+                data.insert(data.end(), (char)v[i]);
+            }
+            return true;
+        }
+        catch (std::exception &e) {
+            e;
+            DISPATCHER_LOG_ERROR((("std::exception %s\n"), e.what()));
+            return false;
+        }
+
+    }
+
 
     // Enumerate value names
     bool EnumValue(DWORD index, wchar_t *pValueName, LPDWORD pcchValueName, LPDWORD pType);

@@ -36,6 +36,8 @@ File Name: main.cpp
 
 #include <string.h> /* for memset on Linux */
 #include <memory>
+#include "mfx_load_plugin.h"
+#include "mfx_plugin_hive.h"
 
 // module-local definitions
 namespace
@@ -91,6 +93,7 @@ MFX::mfxCriticalSection dispGuard = 0;
 
 } // namespace
 
+using namespace MFX;
 //
 // Implement DLL exposed functions. MFXInit and MFXClose have to do
 // slightly more than other. They require to be implemented explicitly.
@@ -287,6 +290,15 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
     if ((MFX_ERR_NONE == mfxRes) ||
         (MFX_WRN_PARTIAL_ACCELERATION == mfxRes))
     {
+        try {
+            //setting up plugins records
+            for(int i = MFX::MFX_STORAGE_ID_FIRST;
+                i <= MFX::MFX_STORAGE_ID_LAST; i++) {
+                MFX::MFXPluginHive hive = MFX::MFXPluginHive(i);
+                allocatedHandle->pluginHive.insert(hive.begin(), hive.end());
+            }
+        } catch(...){}
+
         // everything is OK. Save pointers to the output variable
         allocatedHandle.release();
         *((MFX_DISP_HANDLE **) session) = pHandle;
@@ -394,6 +406,109 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXCloneSession)(mfxSession session, mfxSess
     return mfxRes;
 
 } // mfxStatus MFXCloneSession(mfxSession session, mfxSession *clone)
+
+mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Enumerate)(mfxSession session, mfxU32 type, mfxU32 codec_id, mfxU32 index, mfxPluginDescription *dsc){
+    MFX_DISP_HANDLE &pHandle = *(MFX_DISP_HANDLE *) session;
+    if (!&pHandle) {
+        DISPATCHER_LOG_ERROR((("MFXVideoUSER_Enumerate: session=NULL\n")));
+        return MFX_ERR_NULL_PTR;
+    }   
+    if (!dsc) {
+        DISPATCHER_LOG_ERROR((("MFXVideoUSER_Enumerate: desription=NULL\n")));
+        return MFX_ERR_NULL_PTR;
+    }
+    DISPATCHER_LOG_INFO((("MFXVideoUSER_Enumerate: type=%d codec_id="MFXFOURCCTYPE()" index=%d\n")
+        , type
+        , MFXU32TOFOURCC(codec_id)
+        , index))
+    for (MFX::MFXPluginHive::iterator i = pHandle.pluginHive.begin();i != pHandle.pluginHive.end(); i++) {
+        if (type == i->Type && codec_id == i->CodecId) {
+            if (0 == index) {
+                DISPATCHER_LOG_INFO((("MFXVideoUSER_Enumerate: found plugin uid="MFXGUIDTYPE()", name=%s, path=%S, %s\n")
+                    , MFXGUIDTOHEX(i->uid)
+                    , i->Name.c_str()
+                    , i->Path.c_str()
+                    , i->Default ? "default" : ""));
+                //check description size
+                dsc->NameLength = i->Name.size();
+                if (dsc->NameAlloc < i->Name.size()) {
+                    DISPATCHER_LOG_ERROR((("MFXVideoUSER_Enumerate: allocated buffer for description too small, expected=%d, actual=%d\n")
+                        , i->Name.size()
+                        , dsc->NameAlloc));
+                    return MFX_ERR_NOT_ENOUGH_BUFFER;
+                }
+#if _MSC_VER >= 1400
+                strcpy_s((char*)dsc->Name, dsc->NameAlloc, i->Name.c_str());
+#else
+                strcpy((char*)dsc->Name, i->Name.c_str());
+#endif
+                dsc->uid = i->uid;
+                dsc->Default = i->Default;
+                return MFX_ERR_NONE;
+            }
+            index--;
+        }
+    }
+    DISPATCHER_LOG_ERROR((("MFXVideoUSER_Enumerate: no plugins found\n")));
+    return MFX_ERR_NOT_FOUND;
+}
+mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_UnLoad)(mfxSession session, mfxPluginUID uid) {
+    MFX_DISP_HANDLE &rHandle = *(MFX_DISP_HANDLE *) session;
+    if (!&rHandle) {
+        DISPATCHER_LOG_ERROR((("MFXVideoUSER_UnLoad: session=NULL\n")));
+        return MFX_ERR_NULL_PTR;
+    }
+    bool bDestroyed = rHandle.pluginFactory.Destroy(uid);
+    if (bDestroyed) {
+        DISPATCHER_LOG_ERROR((("MFXVideoUSER_UnLoad : plugin with GUID="MFXGUIDTYPE()" unloaded\n"), MFXGUIDTOHEX(uid)));
+    } else {
+        DISPATCHER_LOG_ERROR((("MFXVideoUSER_UnLoad : plugin with GUID="MFXGUIDTYPE()" not found\n"), MFXGUIDTOHEX(uid)));
+    }
+    
+    return bDestroyed ? MFX_ERR_NONE : MFX_ERR_NOT_FOUND;
+}
+
+mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Load)(mfxSession session, mfxU32 type, mfxU32 codec_id, mfxPluginUID uid) {
+    MFX_DISP_HANDLE &pHandle = *(MFX_DISP_HANDLE *) session;
+    if (!&pHandle) {
+        DISPATCHER_LOG_ERROR((("MFXVideoUSER_Load: session=NULL\n")));
+        return MFX_ERR_NULL_PTR;
+    }
+    DISPATCHER_LOG_INFO((("MFXVideoUSER_Load: type=%d codec_id="MFXFOURCCTYPE()" uid="MFXGUIDTYPE()"\n")
+        , type
+        , MFXU32TOFOURCC(codec_id)
+        , MFXGUIDTOHEX(uid)))
+    size_t pluginsChecked = 0;
+    for (MFX::MFXPluginHive::iterator i = pHandle.pluginHive.begin();i != pHandle.pluginHive.end(); i++, pluginsChecked++) {
+        if (i->uid != uid) {
+            continue;
+        }
+        //check rest in records
+        if (i->CodecId != codec_id) {
+            DISPATCHER_LOG_INFO((("MFXVideoUSER_Load: registered \"CodecID\" for GUID="MFXGUIDTYPE()" is "MFXFOURCCTYPE()"\n")
+                , MFXGUIDTOHEX(uid)
+                , MFXU32TOFOURCC(i->CodecId)))
+            return MFX_ERR_NULL_PTR;
+        }
+        if (i->Type != type) {
+            DISPATCHER_LOG_INFO((("MFXVideoUSER_Load: registered \"Type\" for GUID="MFXGUIDTYPE()" is %d\n")
+                , MFXGUIDTOHEX(uid)
+                , i->Type))
+            continue;
+        }
+        try {
+            bool bSts = pHandle.pluginFactory.Create(*i);
+            return bSts ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
+        }catch (std::bad_alloc &) {
+            return MFX_ERR_MEMORY_ALLOC;
+        }
+        catch(...) {
+            return MFX_ERR_UNKNOWN;
+        }
+    }
+    DISPATCHER_LOG_ERROR((("MFXVideoUSER_Load: cannot find registered plugin with requested UID, total plugins available=%d\n"), pHandle.pluginHive.size()));
+    return MFX_ERR_NULL_PTR;
+}
 
 //
 // implement all other calling functions.
