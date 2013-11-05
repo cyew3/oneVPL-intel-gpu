@@ -183,6 +183,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="mfx_dispatcher_with_plugins.cpp" />
     <ClCompile Include="latency_decoder_test.cpp" />
     <ClCompile Include="mediasdk_dedicated_test.cpp" />
     <ClCompile Include="mfx_allocator_factory_test.cpp" />
