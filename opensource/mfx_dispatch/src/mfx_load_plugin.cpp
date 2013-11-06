@@ -37,13 +37,32 @@ File Name: mfx_load_plugin.h
 #define TRACE_PLUGIN_ERROR(str, ...) DISPATCHER_LOG_ERROR((("[PLUGIN]: "str), __VA_ARGS__))
 #define TRACE_PLUGIN_INFO(str, ...) DISPATCHER_LOG_INFO((("[PLUGIN]: "str), __VA_ARGS__))
 
+#define CREATE_PLUGIN_FNC "CreatePlugin"
+
 MFX::PluginModule::PluginModule()
     : mHmodule()
-    , mCreatePluginPtr() {
+    , mCreatePluginPtr() 
+{
+}
+
+MFX::PluginModule::PluginModule(const PluginModule & that) 
+    : mHmodule(mfx_get_dll_handle(that.mPath.c_str()))
+    , mCreatePluginPtr(that.mCreatePluginPtr) 
+    , mPath(that.mPath) 
+{
+}
+
+MFX::PluginModule & MFX::PluginModule::operator = (MFX::PluginModule & that) 
+{
+    mHmodule = mfx_get_dll_handle(that.mPath.c_str());
+    mCreatePluginPtr = that.mCreatePluginPtr;
+    mPath = that.mPath;
+    return *this;
 }
 
 MFX::PluginModule::PluginModule(const msdk_disp_char * path)
-    : mCreatePluginPtr() {
+    : mCreatePluginPtr() 
+{
     mHmodule = mfx_dll_load(path);
     if (NULL == mHmodule) {
         TRACE_PLUGIN_ERROR("Cannot load module: %S\n", path);
@@ -51,25 +70,29 @@ MFX::PluginModule::PluginModule(const msdk_disp_char * path)
     }
     TRACE_PLUGIN_INFO("Plugin loaded at: %S\n", path);
     
-    mCreatePluginPtr = (CreatePlugin)mfx_dll_get_addr(mHmodule, "CreatePlugin");
+    mCreatePluginPtr = (CreatePluginPtr_t)mfx_dll_get_addr(mHmodule, CREATE_PLUGIN_FNC);
     if (NULL == mCreatePluginPtr) {
-        TRACE_PLUGIN_ERROR("Cannot get procedure address: %s\n", "CreatePlugin");
+        TRACE_PLUGIN_ERROR("Cannot get procedure address: %s\n", CREATE_PLUGIN_FNC);
         return ;
     }
     
-    return ;
+    mPath = path;
 }
 
-MFX::PluginModule::~PluginModule(void) {
+MFX::PluginModule::~PluginModule(void) 
+{
     mfx_dll_free(mHmodule);
 }
 
-mfxStatus MFX::PluginModule::Create( mfxPluginUID uid, mfxPlugin& plg) {
-    mfxStatus result = MFX_ERR_NONE;
-    if (mCreatePluginPtr) {
-        result = mCreatePluginPtr(uid, &plg);
+bool MFX::PluginModule::Create( mfxPluginUID uid, mfxPlugin& plg) 
+{
+    bool result = false;
+    if (mCreatePluginPtr) 
+    {
+        mfxStatus mfxResult = mCreatePluginPtr(uid, &plg);
+        result = (MFX_ERR_NONE == mfxResult);
         if (!result) {
-            TRACE_PLUGIN_ERROR("Cannot create plugin, %s returned false\n", "CreatePlugin");
+            TRACE_PLUGIN_ERROR("Cannot create plugin, %s returned %d\n", CREATE_PLUGIN_FNC, result);
         } else {
             TRACE_PLUGIN_INFO("Plugin created\n", 0);
         }
@@ -80,56 +103,67 @@ mfxStatus MFX::PluginModule::Create( mfxPluginUID uid, mfxPlugin& plg) {
 
 bool MFX::MFXPluginFactory::RunVerification( mfxPlugin & plg, PluginDescriptionRecord &dsc, mfxPluginParam &pluginParams)
 {
-    if (plg.PluginInit == 0) {
+    if (plg.PluginInit == 0)
+    {
         TRACE_PLUGIN_ERROR("plg->PluginInit = 0\n", 0);
         return false;
     }
-    if (plg.PluginClose == 0) {
+    if (plg.PluginClose == 0) 
+    {
         TRACE_PLUGIN_ERROR("plg->PluginClose = 0\n", 0);
         return false;
     }
-    if (plg.GetPluginParam == 0) {
+    if (plg.GetPluginParam == 0) 
+    {
         TRACE_PLUGIN_ERROR("plg->GetPluginParam = 0\n", 0);
         return false;
     }
     
-    if (plg.Execute == 0) {
+    if (plg.Execute == 0) 
+    {
         TRACE_PLUGIN_ERROR("plg->Execute = 0\n", 0);
         return false;
     }
-    if (plg.FreeResources == 0) {
+    if (plg.FreeResources == 0) 
+    {
         TRACE_PLUGIN_ERROR("plg->FreeResources = 0\n", 0);
         return false;
     }
 
     mfxStatus sts = plg.GetPluginParam(plg.pthis, &pluginParams);
-    if (sts != MFX_ERR_NONE) {
+    if (sts != MFX_ERR_NONE)
+    {
         TRACE_PLUGIN_ERROR("plg->GetPluginParam() returned %d\n", sts);
         return false;
     }
 
-    if (pluginParams.CodecId != dsc.CodecId) {
+    if (pluginParams.CodecId != dsc.CodecId) 
+    {
         TRACE_PLUGIN_ERROR("plg->GetPluginParam() returned CodecId="MFXFOURCCTYPE()", but registration has CodecId="MFXFOURCCTYPE()"\n"
             , MFXU32TOFOURCC(pluginParams.CodecId), MFXU32TOFOURCC(dsc.CodecId));
         return false;
     }
 
-    if (pluginParams.Type != dsc.Type) {
+    if (pluginParams.Type != dsc.Type) 
+    {
         TRACE_PLUGIN_ERROR("plg->GetPluginParam() returned Type=%d, but registration has Type=%d\n", pluginParams.Type, dsc.Type);
         return false;
     }
 
-    if (pluginParams.PluginUID !=  dsc.uid) {
+    if (pluginParams.PluginUID !=  dsc.uid) 
+    {
         TRACE_PLUGIN_ERROR("plg->GetPluginParam() returned UID="MFXGUIDTYPE()", but registration has UID="MFXGUIDTYPE()"\n"
             , MFXGUIDTOHEX(pluginParams.PluginUID), MFXGUIDTOHEX(dsc.uid));
         return false;
     }
 
-    switch(pluginParams.Type) {
+    switch(pluginParams.Type) 
+    {
         case MFX_PLUGINTYPE_VIDEO_DECODE: 
         case MFX_PLUGINTYPE_VIDEO_ENCODE: {
             TRACE_PLUGIN_INFO("plugin type= %d\n", pluginParams.Type);
-            if (plg.Video == 0) {
+            if (plg.Video == 0) 
+            {
                 TRACE_PLUGIN_ERROR("plg->Video = 0\n", 0);
                 return false;
             }
@@ -139,13 +173,15 @@ bool MFX::MFXPluginFactory::RunVerification( mfxPlugin & plg, PluginDescriptionR
             
             break;
         }
-        default: {
+        default: 
+        {
             TRACE_PLUGIN_ERROR("unsupported plugin type: %d\n", pluginParams.Type);
             return false;
         }
     }
 
-    switch(pluginParams.Type) {
+    switch(pluginParams.Type) 
+    {
         case MFX_PLUGINTYPE_VIDEO_DECODE: 
             return VerifyDecoder(*plg.Video);
         case MFX_PLUGINTYPE_VIDEO_ENCODE: 
@@ -157,7 +193,8 @@ bool MFX::MFXPluginFactory::RunVerification( mfxPlugin & plg, PluginDescriptionR
 
 bool MFX::MFXPluginFactory::VerifyEncoder( mfxVideoCodecPlugin &encoder )
 {
-    if (encoder.EncodeFrameSubmit == 0) {
+    if (encoder.EncodeFrameSubmit == 0)
+    {
         TRACE_PLUGIN_ERROR("plg->Video->EncodeFrameSubmit = 0\n", 0);
         return false;
     }
@@ -167,15 +204,18 @@ bool MFX::MFXPluginFactory::VerifyEncoder( mfxVideoCodecPlugin &encoder )
 
 bool MFX::MFXPluginFactory::VerifyDecoder( mfxVideoCodecPlugin &decoder )
 {
-    if (decoder.DecodeHeader == 0) {
+    if (decoder.DecodeHeader == 0) 
+    {
         TRACE_PLUGIN_ERROR("plg->Video->DecodeHeader = 0\n", 0);
         return false;
     }
-    if (decoder.GetPayload == 0) {
+    if (decoder.GetPayload == 0)
+    {
         TRACE_PLUGIN_ERROR("plg->Video->GetPayload = 0\n", 0);
         return false;
     }
-    if (decoder.DecodeFrameSubmit == 0) {
+    if (decoder.DecodeFrameSubmit == 0)
+    {
         TRACE_PLUGIN_ERROR("plg->Video->DecodeFrameSubmit = 0\n", 0);
         return false;
     }
@@ -183,33 +223,40 @@ bool MFX::MFXPluginFactory::VerifyDecoder( mfxVideoCodecPlugin &decoder )
     return true;
 }
 
-bool MFX::MFXPluginFactory::VerifyCodecCommon( mfxVideoCodecPlugin & videoCodec ) {
-    if (videoCodec.Query == 0) {
+bool MFX::MFXPluginFactory::VerifyCodecCommon( mfxVideoCodecPlugin & videoCodec )
+{
+    if (videoCodec.Query == 0)
+    {
         TRACE_PLUGIN_ERROR("plg->Video->Query = 0\n", 0);
         return false;
     }
-
-    if (videoCodec.Query == 0) {
+    if (videoCodec.Query == 0)
+    {
         TRACE_PLUGIN_ERROR("plg->Video->Query = 0\n", 0);
         return false;
     }
-    if (videoCodec.QueryIOSurf == 0) {
+    if (videoCodec.QueryIOSurf == 0)
+    {
         TRACE_PLUGIN_ERROR("plg->Video->QueryIOSurf = 0\n", 0);
         return false;
     }
-    if (videoCodec.Init == 0) {
+    if (videoCodec.Init == 0)
+    {
         TRACE_PLUGIN_ERROR("plg->Video->Init = 0\n", 0);
         return false;
     }
-    if (videoCodec.Reset == 0) {
+    if (videoCodec.Reset == 0) 
+    {
         TRACE_PLUGIN_ERROR("plg->Video->Reset = 0\n", 0);
         return false;
     }
-    if (videoCodec.Close == 0) {
+    if (videoCodec.Close == 0) 
+    {
         TRACE_PLUGIN_ERROR("plg->Video->Close = 0\n", 0);
         return false;
     }
-    if (videoCodec.GetVideoParam == 0) {
+    if (videoCodec.GetVideoParam == 0)
+    {
         TRACE_PLUGIN_ERROR("plg->Video->GetVideoParam = 0\n", 0);
         return false;
     }
@@ -218,22 +265,26 @@ bool MFX::MFXPluginFactory::VerifyCodecCommon( mfxVideoCodecPlugin & videoCodec 
 }
 
 
-bool MFX::MFXPluginFactory::Create( PluginDescriptionRecord & rec) {
+bool MFX::MFXPluginFactory::Create( PluginDescriptionRecord & rec) 
+{
     PluginModule plgModule(rec.Path.c_str());
     mfxPlugin plg;
     mfxPluginParam plgParams;
     
-    if (!plgModule.Create(rec.uid, plg)) {
+    if (!plgModule.Create(rec.uid, plg)) 
+    {
         return false;
     }
     
-    if (!RunVerification(plg, rec, plgParams)) {
+    if (!RunVerification(plg, rec, plgParams)) 
+    {
         //will do not call plugin close since it is not safe to do that until structure is corrected
         return false;
     }
     
     mfxStatus sts = MFXVideoUSER_Register(mSession, plgParams.Type, &plg);
-    if (MFX_ERR_NONE != sts) {
+    if (MFX_ERR_NONE != sts) 
+    {
         TRACE_PLUGIN_ERROR(" MFXVideoUSER_Register returned %d\n", sts);
         return false;
     }
@@ -243,17 +294,22 @@ bool MFX::MFXPluginFactory::Create( PluginDescriptionRecord & rec) {
     return true;
 }
 
-MFX::MFXPluginFactory::~MFXPluginFactory() {
+MFX::MFXPluginFactory::~MFXPluginFactory() 
+{
     Close();
 }
 
-MFX::MFXPluginFactory::MFXPluginFactory( mfxSession session ) {
+MFX::MFXPluginFactory::MFXPluginFactory( mfxSession session ) 
+{
     mSession = session;
 }
 
-bool MFX::MFXPluginFactory::Destroy( const mfxPluginUID & uidToDestroy) {
-    for (std::list<FactoryRecord >::iterator i = mPlugins.begin(); i!= mPlugins.end(); i++) {
-        if (i->plgParams.PluginUID == uidToDestroy) {
+bool MFX::MFXPluginFactory::Destroy( const mfxPluginUID & uidToDestroy) 
+{
+    for (std::list<FactoryRecord >::iterator i = mPlugins.begin(); i!= mPlugins.end(); i++) 
+    {
+        if (i->plgParams.PluginUID == uidToDestroy) 
+        {
             DestroyPlugin(*i);
             //dll unload should happen here
             mPlugins.erase(i);
@@ -263,8 +319,10 @@ bool MFX::MFXPluginFactory::Destroy( const mfxPluginUID & uidToDestroy) {
     return false;
 }
 
-void MFX::MFXPluginFactory::Close() {
-    for (std::list<FactoryRecord >::iterator i = mPlugins.begin(); i!= mPlugins.end(); i++) {
+void MFX::MFXPluginFactory::Close() 
+{
+    for (std::list<FactoryRecord >::iterator i = mPlugins.begin(); i!= mPlugins.end(); i++) 
+    {
         DestroyPlugin(*i);
     }
     mPlugins.clear();

@@ -36,40 +36,21 @@ File Name: mfx_load_plugin.h
 
 namespace MFX
 {
+    typedef std::basic_string<msdk_disp_char> msdk_disp_string;
+    typedef mfxStatus (MFX_CDECL *CreatePluginPtr_t)(mfxPluginUID uid, mfxPlugin* plugin);
 
     class PluginModule
     {
         mfxModuleHandle mHmodule;
-        CreatePlugin mCreatePluginPtr;
+        CreatePluginPtr_t mCreatePluginPtr;
+        msdk_disp_string mPath;
         
     public:
         PluginModule();
         PluginModule(const msdk_disp_char * path);
-//vs2005 doesn't honor copy ctor semantics
-#if _MSC_VER <= 1400
-        PluginModule(const PluginModule & that) 
-            : mHmodule(that.mHmodule)
-            , mCreatePluginPtr(that.mCreatePluginPtr)
-        {
-            const_cast<PluginModule&>(that).mHmodule = 0;
-            const_cast<PluginModule&>(that).mCreatePluginPtr = 0;
-        }
-#else
-        PluginModule(PluginModule & that) 
-            : mHmodule(that.mHmodule)
-            , mCreatePluginPtr(that.mCreatePluginPtr) {
-                that.mHmodule = 0;
-                that.mCreatePluginPtr = 0;
-        }
-#endif
-        PluginModule & operator = (PluginModule & that) {
-            mHmodule = that.mHmodule;
-            mCreatePluginPtr = that.mCreatePluginPtr;
-            that.mHmodule = 0;
-            that.mCreatePluginPtr = 0;
-            return *this;
-        }
-        mfxStatus Create(mfxPluginUID guid, mfxPlugin&);
+        PluginModule(const PluginModule & that) ;
+        PluginModule & operator = (PluginModule & that);
+        bool Create(mfxPluginUID guid, mfxPlugin&);
         ~PluginModule(void);
     };
 
@@ -78,9 +59,7 @@ namespace MFX
             mfxPluginParam plgParams;
             PluginModule module;
             mfxPlugin plugin;
-#if _MSC_VER <= 1400
             FactoryRecord () {}
-#endif
             FactoryRecord(const mfxPluginParam &plgParams,
                           PluginModule &module,
                           mfxPlugin plugin) 

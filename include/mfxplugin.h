@@ -151,12 +151,6 @@ mfxStatus MFX_CDECL MFXVideoUSER_Enumerate(mfxSession session, mfxU32 type, mfxU
 mfxStatus MFX_CDECL MFXVideoUSER_Load(mfxSession session, mfxU32 type, mfxU32 codec_id, mfxPluginUID uid);
 mfxStatus MFX_CDECL MFXVideoUSER_UnLoad(mfxSession session, mfxPluginUID uid);
 
-
-
-typedef mfxStatus (MFX_CDECL *CreatePlugin)(mfxPluginUID uid, mfxPlugin* plugin);
-
-
-
 #ifdef __cplusplus
 } // extern "C"
 #endif /* __cplusplus */

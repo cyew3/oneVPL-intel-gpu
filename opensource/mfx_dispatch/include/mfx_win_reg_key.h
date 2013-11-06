@@ -46,7 +46,6 @@ template<> struct RegKey<mfxU32>{enum {type = REG_DWORD};};
 template<> struct RegKey<mfxPluginUID>{enum {type = REG_BINARY};};
 template<> struct RegKey<std::wstring>{enum {type = REG_SZ};};
 template<> struct RegKey<std::string>{enum {type = REG_SZ};};
-//template<> struct RegKey<char*>{enum {type = REG_SZ};};
 
 
 class WinRegKey

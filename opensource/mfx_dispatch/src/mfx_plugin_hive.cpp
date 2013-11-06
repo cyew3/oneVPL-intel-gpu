@@ -38,7 +38,8 @@ File Name: mfx_plugin_hive.h
 #define TRACE_HIVE_INFO(str, ...) DISPATCHER_LOG_INFO((("[HIVE]: "str), __VA_ARGS__))
 #define TRACE_HIVE_WRN(str, ...) DISPATCHER_LOG_WRN((("[HIVE]: "str), __VA_ARGS__))
 
-namespace {
+namespace 
+{
     const wchar_t rootPluginPath[] = L"Software\\Intel\\MediaSDK\\Dispatch\\Plugin";
     const wchar_t TypeKeyName[] = L"Type";
     const wchar_t CodecIDKeyName[] = L"CodecID";
@@ -62,7 +63,8 @@ MFX::MFXPluginHive::MFXPluginHive( mfxU32 storageID /*= 0*/ )
             return;
     }
     
-    for(DWORD index = 0; ; index++) {
+    for(DWORD index = 0; ; index++) 
+    {
         WinRegKey subKey;
         wchar_t subKeyName[MFX_MAX_VALUE_NAME];
         DWORD   subKeyNameSize = sizeof(subKeyName) / sizeof(subKeyName[0]);
@@ -84,41 +86,49 @@ MFX::MFXPluginHive::MFXPluginHive( mfxU32 storageID /*= 0*/ )
 
         PluginDescriptionRecord descriptionRecord;
 
-        if (!subKey.Query(TypeKeyName, descriptionRecord.Type)) {
+        if (!subKey.Query(TypeKeyName, descriptionRecord.Type)) 
+        {
             continue;
         }
         TRACE_HIVE_INFO("    %8S : %d\n", TypeKeyName, descriptionRecord.Type);
 
-        if (!subKey.Query(CodecIDKeyName, descriptionRecord.CodecId)) {
+        if (!subKey.Query(CodecIDKeyName, descriptionRecord.CodecId)) 
+        {
             continue;
         }
         TRACE_HIVE_INFO("    %8S : "MFXFOURCCTYPE()" \n", CodecIDKeyName, MFXU32TOFOURCC(descriptionRecord.CodecId));
 
-        if (!subKey.Query(GUIDKeyName, descriptionRecord.uid)) {
+        if (!subKey.Query(GUIDKeyName, descriptionRecord.uid)) 
+        {
             continue;
         }
         TRACE_HIVE_INFO("    %8S : "MFXGUIDTYPE()"\n", GUIDKeyName, MFXGUIDTOHEX(descriptionRecord.uid));
 
-        if (!subKey.Query(PathKeyName, descriptionRecord.Path)) {
+        if (!subKey.Query(PathKeyName, descriptionRecord.Path)) 
+        {
             TRACE_HIVE_WRN("no value for : %S\n", PathKeyName);
             continue;
         }
         TRACE_HIVE_INFO("    %8S : %S\n", PathKeyName, descriptionRecord.Path.c_str());
 
-        if (!subKey.Query(NameKeyName, descriptionRecord.Name)) {
+        if (!subKey.Query(NameKeyName, descriptionRecord.Name)) 
+        {
             continue;
         }
         TRACE_HIVE_INFO("    %8S : %s\n", NameKeyName, descriptionRecord.Name.c_str());
 
-        if (!subKey.Query(DefaultKeyName, descriptionRecord.Default)) {
+        if (!subKey.Query(DefaultKeyName, descriptionRecord.Default)) 
+        {
             continue;
         }
         TRACE_HIVE_INFO("    %8S : %s\n", DefaultKeyName, descriptionRecord.Default ? "true" : "false");
         
-        try {
+        try 
+        {
             mRecords.push_back(descriptionRecord);
         }
-        catch (std::exception &e) {
+        catch (std::exception &e) 
+        {
             e;
             TRACE_HIVE_ERROR("mRecords.push_back() - std::exception: %s\n", e.what());
         }
@@ -128,5 +138,11 @@ MFX::MFXPluginHive::MFXPluginHive( mfxU32 storageID /*= 0*/ )
     }
 
 } 
+
+//avoid static runtime dependency from vs2005
+#if _MSC_VER == 1400 
+    _MRTIMP2_NPURE_NCEEPURE void __CLRCALL_PURE_OR_CDECL std::_String_base::_Xlen() {}
+    _MRTIMP2_NPURE_NCEEPURE void __CLRCALL_PURE_OR_CDECL std::_String_base::_Xran() {}
+#endif
 
 #endif

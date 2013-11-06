@@ -158,6 +158,27 @@ bool mfx_dll_free(mfxModuleHandle handle)
     return !!bRes;
 } // bool mfx_dll_free(mfxModuleHandle handle)
 
+mfxModuleHandle mfx_get_dll_handle(const msdk_disp_char *pFileName)
+{
+    mfxModuleHandle hModule = (mfxModuleHandle) 0;
+
+    // check error(s)
+    if (NULL == pFileName)
+    {
+        return NULL;
+    }
+
+    // set the silent error mode
+    DWORD prevErrorMode = 0;
+    SetThreadErrorMode(SEM_FAILCRITICALERRORS, &prevErrorMode);
+    // load the library's module
+    GetModuleHandleExW(0, pFileName, (HMODULE*) &hModule);
+    // set the previous error mode
+    SetThreadErrorMode(prevErrorMode, NULL);
+
+    return hModule;
+}
+
 
 } // namespace MFX
 

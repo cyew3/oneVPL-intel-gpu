@@ -31,7 +31,6 @@ File Name: mfx_plugin_hive.h
 #pragma once
 #include <list>
 #include <string>
-#include <memory>
 #include <string.h>
 #include "mfx_dispatcher_defs.h"
 #include "mfxplugin.h"
