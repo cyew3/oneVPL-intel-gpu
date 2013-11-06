@@ -30,6 +30,8 @@ File Name: mfxdefs.h
 #ifndef __MFXDEFS_H__
 #define __MFXDEFS_H__
 
+#include <wchar.h>
+
 #ifdef __cplusplus
 extern "C"
 {
