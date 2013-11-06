@@ -30,8 +30,6 @@ File Name: mfxdefs.h
 #ifndef __MFXDEFS_H__
 #define __MFXDEFS_H__
 
-#include <wchar.h>
-
 #ifdef __cplusplus
 extern "C"
 {
@@ -76,7 +74,7 @@ typedef __INT64             mfxI64;
 typedef void*               mfxHDL;
 typedef mfxHDL              mfxMemId;
 typedef void*               mfxThreadTask;
-typedef wchar_t             mfxChar;
+typedef char                mfxChar;
 
 typedef struct {
     mfxI16  x;
