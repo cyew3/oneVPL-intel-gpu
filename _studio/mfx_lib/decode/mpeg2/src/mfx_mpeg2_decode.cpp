@@ -1234,7 +1234,7 @@ mfxStatus VideoDECODEMPEG2::DecodeHeader(VideoCORE *core, mfxBitstream* bs, mfxV
             signalInfo->ColourDescriptionPresent = color_description_present;
         }
 
-        if(!find_seq_d_ext)
+        if(!find_seq_d_ext || W == 0 || H == 0)
         {
             W = (mfxI32) par->mfx.FrameInfo.CropW;
             H = (mfxI32) par->mfx.FrameInfo.CropH;
