@@ -53,7 +53,7 @@ namespace UMC
                                                                   m_pPrefDS(NULL),
                                                                   m_pDSIndicate(NULL),
                                                                   m_pDSIndicateSwap(NULL),
-                                                                  m_bNeedToCompField(false),
+                                                                  //m_bNeedToCompField(false),
                                                                   m_iRangeMapIndex(0),
                                                                   m_bIsNeedToDecode(true),
                                                                   m_eStreamDef(VC1_HD_STREAM),
@@ -1746,10 +1746,10 @@ STATISTICS_END_TIME(m_timeStatistics->AddPerfomed_StartTime,
             pDS->m_bIsReadyToDisplay = true;
         }
 
-        if (pDS->m_pContext->m_bNeedToUseCompBuffer)
-            m_bNeedToCompField = true;
-        else if (VC1_IS_REFERENCE(pDS->m_pContext->m_picLayerHeader->PTYPE))
-            m_bNeedToCompField = false;
+        //if (pDS->m_pContext->m_bNeedToUseCompBuffer)
+        //    m_bNeedToCompField = true;
+        //else if (VC1_IS_REFERENCE(pDS->m_pContext->m_picLayerHeader->PTYPE))
+        //    m_bNeedToCompField = false;
 
         if (isFrameReference)
             ++(*CurrRefDst);

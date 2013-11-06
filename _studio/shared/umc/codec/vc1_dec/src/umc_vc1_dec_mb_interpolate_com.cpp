@@ -1458,7 +1458,7 @@ IppStatus ippiPXInterpolatePXICBilinearBlock_VC1_8u_C1R(const IppVCInterpolateBl
                             else
                                 OutOfBoundaryFlag = 0;
 
-                            if((posy > frameHeightShifted) && (paddingBottom != 0) && interpolateInfo->oppositePadding
+                            if((posy >= frameHeightShifted) && (paddingBottom != 0) && interpolateInfo->oppositePadding
                                 && interpolateInfo->fieldPrediction&&(!interpolateInfo->isPredBottom))
                                 OutOfBoundaryFlag = -1; 
 
@@ -1478,7 +1478,7 @@ IppStatus ippiPXInterpolatePXICBilinearBlock_VC1_8u_C1R(const IppVCInterpolateBl
                             else
                                 OutOfBoundaryFlag = 0;
 
-                            if((posy > frameHeightShifted) && (paddingBottom != 0) && interpolateInfo->oppositePadding
+                            if((posy >= frameHeightShifted) && (paddingBottom != 0) && interpolateInfo->oppositePadding
                                 && interpolateInfo->fieldPrediction&&(!interpolateInfo->isPredBottom))
                                 OutOfBoundaryFlag = -1; 
 
@@ -1507,7 +1507,7 @@ IppStatus ippiPXInterpolatePXICBilinearBlock_VC1_8u_C1R(const IppVCInterpolateBl
                             else
                                 OutOfBoundaryFlag = 0;
 
-                            if((posy > frameHeightShifted) && (paddingBottom != 0) && interpolateInfo->oppositePadding
+                            if((posy >= frameHeightShifted) && (paddingBottom != 0) && interpolateInfo->oppositePadding
                                 && interpolateInfo->fieldPrediction&&(!interpolateInfo->isPredBottom))
                                 OutOfBoundaryFlag = -1; 
 
@@ -1526,7 +1526,7 @@ IppStatus ippiPXInterpolatePXICBilinearBlock_VC1_8u_C1R(const IppVCInterpolateBl
                             else
                                 OutOfBoundaryFlag = 0;
 
-                            if((posy > frameHeightShifted) && (paddingBottom != 0) && interpolateInfo->oppositePadding
+                            if((posy >= frameHeightShifted) && (paddingBottom != 0) && interpolateInfo->oppositePadding
                                 && interpolateInfo->fieldPrediction&&(!interpolateInfo->isPredBottom))
                                 OutOfBoundaryFlag = -1; 
 

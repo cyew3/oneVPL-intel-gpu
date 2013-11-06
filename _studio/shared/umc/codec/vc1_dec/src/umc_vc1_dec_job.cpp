@@ -1199,7 +1199,7 @@ Status VC1TaskProcessorUMC::process()
             if (m_pContext->m_seqLayerHeader.heightMB != m_pContext->m_pSingleMB->heightMB)
             {
                 //printf("changed\n");
-                m_pContext->m_pSingleMB->heightMB = m_pContext->m_seqLayerHeader.heightMB;
+                m_pContext->m_pSingleMB->heightMB    = m_pContext->m_seqLayerHeader.heightMB;
                 m_pContext->m_pSingleMB->MaxHeightMB = m_pContext->m_seqLayerHeader.MaxHeightMB;
             }
              
@@ -1228,7 +1228,10 @@ Status VC1TaskProcessorUMC::process()
                 m_pContext->m_pSingleMB->slice_currMBYpos -= (m_pContext->m_seqLayerHeader.heightMB+1)/2;
 
             if(m_pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
+            {
                 m_pContext->m_pSingleMB->heightMB = m_pContext->m_seqLayerHeader.heightMB + (m_pContext->m_seqLayerHeader.heightMB & 1);
+                m_pContext->m_pSingleMB->MaxHeightMB = m_pContext->m_seqLayerHeader.MaxHeightMB + (m_pContext->m_seqLayerHeader.MaxHeightMB & 1);
+            }
             else
                  m_pContext->m_pSingleMB->heightMB = m_pContext->m_seqLayerHeader.heightMB;
 

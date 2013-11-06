@@ -583,7 +583,7 @@ namespace UMC
         VC1FrameDescriptor* m_pPrefDS;
         Ipp32s* m_pDSIndicate;
         Ipp32s* m_pDSIndicateSwap;
-        bool   m_bNeedToCompField;
+       // bool   m_bNeedToCompField;
         Ipp32s m_iRangeMapIndex;
         bool   m_bIsNeedToDecode;
         VC1_STREAM_DEFINITION m_eStreamDef;
