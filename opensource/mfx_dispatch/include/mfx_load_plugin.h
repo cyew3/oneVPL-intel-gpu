@@ -34,7 +34,8 @@ File Name: mfx_load_plugin.h
 #include "mfx_dispatcher_defs.h"
 #include "mfx_plugin_hive.h"
 
-namespace MFX {
+namespace MFX
+{
 
     class PluginModule
     {
@@ -48,9 +49,10 @@ namespace MFX {
 #if _MSC_VER <= 1400
         PluginModule(const PluginModule & that) 
             : mHmodule(that.mHmodule)
-            , mCreatePluginPtr(that.mCreatePluginPtr) {
-                const_cast<PluginModule&>(that).mHmodule = 0;
-                const_cast<PluginModule&>(that).mCreatePluginPtr = 0;
+            , mCreatePluginPtr(that.mCreatePluginPtr)
+        {
+            const_cast<PluginModule&>(that).mHmodule = 0;
+            const_cast<PluginModule&>(that).mCreatePluginPtr = 0;
         }
 #else
         PluginModule(PluginModule & that) 

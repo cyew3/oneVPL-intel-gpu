@@ -22,6 +22,8 @@ list(APPEND sources
   ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_load_dll_linux.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_win_reg_key.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_dxva2_device.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_plugin_hive_linux.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_load_plugin.cpp  
   )
 
 make_library( mfx none static )

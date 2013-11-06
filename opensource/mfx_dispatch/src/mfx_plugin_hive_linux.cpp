@@ -28,8 +28,12 @@ File Name: mfx_plugin_hive.h
 
 \* ****************************************************************************** */
 
-#if !defined(_WIN32) && !defined(_WIN64)
-    MFX::MFXPluginHive::MFXPluginHive(mfxU32 /*mfxStorageID*/ = 0) {
+#include "mfx_plugin_hive.h"
 
-    }
+#if !defined(_WIN32) && !defined(_WIN64)
+
+MFX::MFXPluginHive::MFXPluginHive(mfxU32)
+{
+}
+
 #endif

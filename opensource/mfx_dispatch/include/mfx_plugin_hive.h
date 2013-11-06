@@ -32,6 +32,7 @@ File Name: mfx_plugin_hive.h
 #include <list>
 #include <string>
 #include <memory>
+#include <string.h>
 #include "mfx_dispatcher_defs.h"
 #include "mfxplugin.h"
 #include "mfx_win_reg_key.h"
@@ -51,7 +52,7 @@ namespace MFX {
         mfxU32  Type;
         mfxU32  CodecId;
         mfxPluginUID uid;
-        std::wstring Path;
+        std::basic_string<msdk_disp_char> Path;
         std::string Name;
         bool Default;
     };
