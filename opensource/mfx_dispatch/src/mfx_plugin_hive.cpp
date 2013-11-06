@@ -139,10 +139,4 @@ MFX::MFXPluginHive::MFXPluginHive( mfxU32 storageID /*= 0*/ )
 
 } 
 
-//avoid static runtime dependency from vs2005
-#if _MSC_VER == 1400 
-    _MRTIMP2_NPURE_NCEEPURE void __CLRCALL_PURE_OR_CDECL std::_String_base::_Xlen() {}
-    _MRTIMP2_NPURE_NCEEPURE void __CLRCALL_PURE_OR_CDECL std::_String_base::_Xran() {}
-#endif
-
 #endif
