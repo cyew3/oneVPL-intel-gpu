@@ -40,7 +40,7 @@ namespace MFX
     class PluginModule
     {
         mfxModuleHandle mHmodule;
-        mfxPluginCreateCallback mCreatePluginPtr;
+        CreatePlugin mCreatePluginPtr;
         
     public:
         PluginModule();
@@ -69,7 +69,7 @@ namespace MFX
             that.mCreatePluginPtr = 0;
             return *this;
         }
-        bool Create(mfxPluginUID guid, mfxPlugin&);
+        mfxStatus Create(mfxPluginUID guid, mfxPlugin&);
         ~PluginModule(void);
     };
 

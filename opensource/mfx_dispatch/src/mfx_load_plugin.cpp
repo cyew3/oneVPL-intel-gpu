@@ -51,9 +51,9 @@ MFX::PluginModule::PluginModule(const msdk_disp_char * path)
     }
     TRACE_PLUGIN_INFO("Plugin loaded at: %S\n", path);
     
-    mCreatePluginPtr = (mfxPluginCreateCallback)mfx_dll_get_addr(mHmodule, MFX_CREATE_PLUGIN_FNC);
+    mCreatePluginPtr = (CreatePlugin)mfx_dll_get_addr(mHmodule, "CreatePlugin");
     if (NULL == mCreatePluginPtr) {
-        TRACE_PLUGIN_ERROR("Cannot get procedure address: %s\n", MFX_CREATE_PLUGIN_FNC);
+        TRACE_PLUGIN_ERROR("Cannot get procedure address: %s\n", "CreatePlugin");
         return ;
     }
     
@@ -64,12 +64,12 @@ MFX::PluginModule::~PluginModule(void) {
     mfx_dll_free(mHmodule);
 }
 
-bool MFX::PluginModule::Create( mfxPluginUID uid, mfxPlugin& plg) {
-    bool result = false;
+mfxStatus MFX::PluginModule::Create( mfxPluginUID uid, mfxPlugin& plg) {
+    mfxStatus result = MFX_ERR_NONE;
     if (mCreatePluginPtr) {
         result = mCreatePluginPtr(uid, &plg);
         if (!result) {
-            TRACE_PLUGIN_ERROR("Cannot create plugin, %s returned false\n", MFX_CREATE_PLUGIN_FNC);
+            TRACE_PLUGIN_ERROR("Cannot create plugin, %s returned false\n", "CreatePlugin");
         } else {
             TRACE_PLUGIN_INFO("Plugin created\n", 0);
         }
@@ -119,9 +119,9 @@ bool MFX::MFXPluginFactory::RunVerification( mfxPlugin & plg, PluginDescriptionR
         return false;
     }
 
-    if (pluginParams.uid !=  dsc.uid) {
+    if (pluginParams.PluginUID !=  dsc.uid) {
         TRACE_PLUGIN_ERROR("plg->GetPluginParam() returned UID="MFXGUIDTYPE()", but registration has UID="MFXGUIDTYPE()"\n"
-            , MFXGUIDTOHEX(pluginParams.uid), MFXGUIDTOHEX(dsc.uid));
+            , MFXGUIDTOHEX(pluginParams.PluginUID), MFXGUIDTOHEX(dsc.uid));
         return false;
     }
 
@@ -253,7 +253,7 @@ MFX::MFXPluginFactory::MFXPluginFactory( mfxSession session ) {
 
 bool MFX::MFXPluginFactory::Destroy( const mfxPluginUID & uidToDestroy) {
     for (std::list<FactoryRecord >::iterator i = mPlugins.begin(); i!= mPlugins.end(); i++) {
-        if (i->plgParams.uid == uidToDestroy) {
+        if (i->plgParams.PluginUID == uidToDestroy) {
             DestroyPlugin(*i);
             //dll unload should happen here
             mPlugins.erase(i);

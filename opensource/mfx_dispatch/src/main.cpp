@@ -442,7 +442,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Enumerate)(mfxSession session, 
 #else
                 strcpy((char*)dsc->Name, i->Name.c_str());
 #endif
-                dsc->uid = i->uid;
+                dsc->PluginUID = i->uid;
                 dsc->Default = i->Default;
                 return MFX_ERR_NONE;
             }

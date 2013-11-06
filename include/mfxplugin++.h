@@ -64,7 +64,7 @@ class MFXPluginParam {
 public:
     MFXPluginParam(mfxU32 CodecId, mfxU32  Type, mfxPluginUID uid, mfxThreadPolicy ThreadPolicy = MFX_THREADPOLICY_SERIAL, mfxU32  MaxThreadNum = 1)
         : m_param() {
-        m_param.uid = uid;
+        m_param.PluginUID = uid;
         m_param.Type = Type;
         m_param.CodecId = CodecId;
         m_param.MaxThreadNum = MaxThreadNum;
@@ -92,7 +92,7 @@ struct MFXPlugin
     virtual mfxStatus GetPluginParam(mfxPluginParam *par) = 0;
     virtual mfxStatus Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a) = 0;
     virtual mfxStatus FreeResources(mfxThreadTask task, mfxStatus sts) = 0;
-    virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request) = 0;
+    virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out) = 0;
     //destroy plugin due to shared module distribution model plugin wont support virtual destructor
     virtual void      Release() = 0;
     //release resources associated with current instance of plugin, but do not release CoreInterface related resource set in pluginInit
@@ -215,9 +215,6 @@ public:
         }
         return m_core.GetOpaqueSurface(m_core.pthis, surf, op_surf);
     }
-    mfxFrameAllocator & ExternalSurfaceAllocator() {
-        return *m_core.ExternalSurfaceAllocator;
-    }
     mfxFrameAllocator & FrameAllocator() {
         return m_core.FrameAllocator;
     }
@@ -313,8 +310,8 @@ namespace detail
         static mfxStatus _Query(mfxHDL pthis, mfxVideoParam *in, mfxVideoParam *out) {
             return reinterpret_cast<T*>(pthis)->Query(in, out);
         }
-        static mfxStatus _QueryIOSurf(mfxHDL pthis, mfxVideoParam *par, mfxFrameAllocRequest *request){
-            return reinterpret_cast<T*>(pthis)->QueryIOSurf(par, request);
+        static mfxStatus _QueryIOSurf(mfxHDL pthis, mfxVideoParam *par, mfxFrameAllocRequest *in,  mfxFrameAllocRequest *out){
+            return reinterpret_cast<T*>(pthis)->QueryIOSurf(par, in, out);
         }
         static mfxStatus _Init(mfxHDL pthis, mfxVideoParam *par){
             return reinterpret_cast<T*>(pthis)->Init(par);
