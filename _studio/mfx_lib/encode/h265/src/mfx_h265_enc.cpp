@@ -1521,7 +1521,7 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
 
         ePictureType = DetermineFrameType();
         mfxU64 prevTimeStamp = m_pLastFrame ? m_pLastFrame->TimeStamp : MFX_TIMESTAMP_UNKNOWN;
-        m_pLastFrame = m_pCurrentFrame = m_cpb.InsertFrame(surface, &m_videoParam);
+        /*m_pLastFrame = */m_pCurrentFrame = m_cpb.InsertFrame(surface, &m_videoParam);
         if (m_pCurrentFrame)
         {
             // Set PTS  from previous if isn't given at input
@@ -1582,7 +1582,9 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
             if (m_pCurrentFrame->m_bIsIDRPic)
             {
                 m_cpb.IncreaseRefPicListResetCount(m_pCurrentFrame);
-                m_l1_cnt_to_start_B = 0;
+//                m_l1_cnt_to_start_B = 0;
+                if (m_pLastFrame && !m_pLastFrame->wasEncoded() && m_pLastFrame->m_PicCodType == MFX_FRAMETYPE_B)
+                    m_pLastFrame->m_PicCodType = MFX_FRAMETYPE_P;
 //                PrepareToEndSequence();
             }
 
@@ -1593,6 +1595,9 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
             m_pLastFrame = m_pCurrentFrame;
             return MFX_ERR_UNKNOWN;
         }
+    } else {
+        if (m_pLastFrame && !m_pLastFrame->wasEncoded() && m_pLastFrame->m_PicCodType == MFX_FRAMETYPE_B)
+            m_pLastFrame->m_PicCodType = MFX_FRAMETYPE_P;
     }
 
     m_pCurrentFrame = m_cpb.findOldestToEncode(&m_dpb, m_l1_cnt_to_start_B,
