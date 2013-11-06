@@ -90,10 +90,6 @@ file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
   list( APPEND sources ${srcs})
 endforeach()
 
-# todo: remove following line after h265 linux-wise correction
-list(REMOVE_ITEM sources "${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/optimization/h265/src/mfx_h265_quantization_sse.cpp")
-list(REMOVE_ITEM sources "${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/optimization/h265/src/mfx_h265_quantization_avx2.cpp")
-
 add_definitions(-DMFX_MAKENAME_ATOM)
 
 make_library( mfx_optimization none static )
