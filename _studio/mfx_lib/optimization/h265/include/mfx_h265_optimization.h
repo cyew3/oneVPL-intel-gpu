@@ -131,6 +131,10 @@ namespace MFX_HEVC_PP
     // [PTR.TransformFwd]
     typedef void (H265_FASTCALL *PTR_TransformFwd_16s)(const short *H265_RESTRICT src, short *H265_RESTRICT dst);
 
+    // [PTR.QuantFwd]
+    typedef void   (H265_FASTCALL *PTR_QuantFwd_16s)    (const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift);
+    typedef Ipp32s (H265_FASTCALL *PTR_QuantFwd_SBH_16s)(const Ipp16s* pSrc, Ipp16s* pDst, Ipp32s*  pDelta, int len, int scale, int offset, int shift);
+
     // [PTR.deblocking]
     typedef Ipp32s (* PTR_FilterEdgeLuma_8u_I)(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir);
     typedef void (* PTR_FilterEdgeChromaInterleaved_8u_I)(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQpCb, Ipp32s chromaQpCr);
@@ -305,6 +309,10 @@ namespace MFX_HEVC_PP
         HEVCPP_API( PTR_TransformFwd_16s, void H265_FASTCALL, h265_DCT16x16Fwd_16s, (const short *H265_RESTRICT src, short *H265_RESTRICT dst) );
         HEVCPP_API( PTR_TransformFwd_16s, void H265_FASTCALL, h265_DCT32x32Fwd_16s, (const short *H265_RESTRICT src, short *H265_RESTRICT dst) );
         
+        // forward quantization
+        HEVCPP_API( PTR_QuantFwd_16s,     void H265_FASTCALL,   h265_QuantFwd_16s,     (const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift) );
+        HEVCPP_API( PTR_QuantFwd_SBH_16s, Ipp32s H265_FASTCALL, h265_QuantFwd_SBH_16s, (const Ipp16s* pSrc, Ipp16s* pDst, Ipp32s*  pDelta, int len, int scale, int offset, int shift) );
+
         // [deblocking]
         HEVCPP_API( PTR_FilterEdgeLuma_8u_I, Ipp32s, h265_FilterEdgeLuma_8u_I, (H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir) );
         HEVCPP_API( PTR_FilterEdgeChromaInterleaved_8u_I, void, h265_FilterEdgeChroma_Interleaved_8u_I, (H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQpCb, Ipp32s chromaQpCr) );
@@ -354,10 +362,6 @@ namespace MFX_HEVC_PP
     int h265_SAD_MxN_general_8u(const unsigned char *image,  int stride_img, const unsigned char *ref, int stride_ref, int SizeX, int SizeY);
 
     // LIST OF NON-OPTIMIZED (and NON-DISPATCHERED) FUNCTIONS:
-
-    /* Quantization Fwd */
-    void h265_QuantFwd_16s(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift);
-    Ipp32s h265_QuantFwd_SBH_16s(const Ipp16s* pSrc, Ipp16s* pDst, Ipp32s*  pDelta, int len, int scale, int offset, int shift);
 
     /* Inverse Quantization */
     void h265_QuantInv_16s(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift);

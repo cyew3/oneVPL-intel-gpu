@@ -18,7 +18,8 @@
 #if defined(MFX_TARGET_OPTIMIZATION_AUTO) || \
     defined(MFX_MAKENAME_ATOM) && defined(MFX_TARGET_OPTIMIZATION_ATOM) || \
     defined(MFX_MAKENAME_SSE4) && defined(MFX_TARGET_OPTIMIZATION_SSE4) || \
-    defined(MFX_MAKENAME_SSSE3) && defined(MFX_TARGET_OPTIMIZATION_SSSE3)
+    defined(MFX_MAKENAME_SSSE3) && defined(MFX_TARGET_OPTIMIZATION_SSSE3) || \
+    defined(MFX_MAKENAME_SSE4) && defined(MFX_TARGET_OPTIMIZATION_AVX2)
 
 #include <immintrin.h>
 #ifdef MFX_EMULATE_SSSE3

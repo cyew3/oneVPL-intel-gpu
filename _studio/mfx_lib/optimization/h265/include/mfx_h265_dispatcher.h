@@ -322,6 +322,15 @@ namespace MFX_HEVC_PP
     void H265_FASTCALL h265_DCT8x8Fwd_16s_avx2(const short *H265_RESTRICT src, short *H265_RESTRICT dst);
     void H265_FASTCALL h265_DCT16x16Fwd_16s_avx2(const short *H265_RESTRICT src, short *H265_RESTRICT dst);
     void H265_FASTCALL h265_DCT32x32Fwd_16s_avx2(const short *H265_RESTRICT src, short *H265_RESTRICT dest);
+
+    // [quantization.forward]
+    void H265_FASTCALL h265_QuantFwd_16s_px(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift);
+    void H265_FASTCALL h265_QuantFwd_16s_sse(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift);
+    void H265_FASTCALL h265_QuantFwd_16s_avx2(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift);
+
+    Ipp32s H265_FASTCALL h265_QuantFwd_SBH_16s_px(const Ipp16s* pSrc, Ipp16s* pDst, Ipp32s*  pDelta, int len, int scale, int offset, int shift);
+    Ipp32s H265_FASTCALL h265_QuantFwd_SBH_16s_sse(const Ipp16s* pSrc, Ipp16s* pDst, Ipp32s*  pDelta, int len, int scale, int offset, int shift);
+    Ipp32s H265_FASTCALL h265_QuantFwd_SBH_16s_avx2(const Ipp16s* pSrc, Ipp16s* pDst, Ipp32s*  pDelta, int len, int scale, int offset, int shift);
 #endif
     // [transform.inv]
     void h265_DST4x4Inv_16sT_px  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);

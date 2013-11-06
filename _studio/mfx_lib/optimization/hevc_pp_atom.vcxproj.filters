@@ -4,6 +4,33 @@
     <ClCompile Include="h265\src\mfx_h265_interpolation_sse.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_sao_sse.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_weighted_pred_sse.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_intrapred_sse.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_deblocking_sse.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_transform_fwd_sse.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_transform_inv_sse.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_sad_general_sse.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_sad_sse.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_quantization_sse.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="h265\include\mfx_h265_optimization.h">

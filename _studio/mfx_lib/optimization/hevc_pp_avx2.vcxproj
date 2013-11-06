@@ -40,6 +40,7 @@
   <ItemGroup>
     <ClCompile Include="h265\src\mfx_h265_interpolation_avx2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_interp_tmpl_avx2.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_quantization_avx2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_reordering_avx2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sad_avx2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sad_general_avx2.cpp" />

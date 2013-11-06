@@ -310,11 +310,11 @@ void h265_quant_fwd_base(
 
     if( delta )
     {
-        abs_sum = (Ipp32u)MFX_HEVC_PP::h265_QuantFwd_SBH_16s(coeffs, qcoeffs, delta, len, scaleLevel, scaleOffset, scale);
+        abs_sum = (Ipp32u)MFX_HEVC_PP::NAME(h265_QuantFwd_SBH_16s)(coeffs, qcoeffs, delta, len, scaleLevel, scaleOffset, scale);
     }
     else
     {
-        MFX_HEVC_PP::h265_QuantFwd_16s(coeffs, qcoeffs, len, scaleLevel, scaleOffset, scale);
+        MFX_HEVC_PP::NAME(h265_QuantFwd_16s)(coeffs, qcoeffs, len, scaleLevel, scaleOffset, scale);
     }
 
 } // void h265_quant_fwd_base(...)

@@ -43,6 +43,7 @@
     <ClCompile Include="h265\src\mfx_h265_interpolation_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_interp_tmpl_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_intrapred_sse.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_quantization_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sad_general_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sad_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sao_sse.cpp" />

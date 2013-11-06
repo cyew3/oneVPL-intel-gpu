@@ -282,6 +282,10 @@ using namespace MFX_HEVC_PP;
         g_dispatcher. h265_DCT8x8Fwd_16s = &MFX_HEVC_PP::h265_DCT8x8Fwd_16s_sse;
         g_dispatcher. h265_DCT16x16Fwd_16s = &MFX_HEVC_PP::h265_DCT16x16Fwd_16s_sse;
         g_dispatcher. h265_DCT32x32Fwd_16s = &MFX_HEVC_PP::h265_DCT32x32Fwd_16s_sse;
+
+        // forward quantization
+        g_dispatcher. h265_QuantFwd_16s = &MFX_HEVC_PP::h265_QuantFwd_16s_sse;
+        g_dispatcher. h265_QuantFwd_SBH_16s = &MFX_HEVC_PP::h265_QuantFwd_SBH_16s_sse;
 #endif
         //[transform.inv]==================================
         g_dispatcher. h265_DST4x4Inv_16sT = &MFX_HEVC_PP::h265_DST4x4Inv_16sT_sse;
@@ -401,6 +405,10 @@ using namespace MFX_HEVC_PP;
         g_dispatcher. h265_DCT8x8Fwd_16s = &MFX_HEVC_PP::h265_DCT8x8Fwd_16s_ssse3;
         g_dispatcher. h265_DCT16x16Fwd_16s = &MFX_HEVC_PP::h265_DCT16x16Fwd_16s_ssse3;
         g_dispatcher. h265_DCT32x32Fwd_16s = &MFX_HEVC_PP::h265_DCT32x32Fwd_16s_ssse3;
+
+        // forward quantization
+        g_dispatcher. h265_QuantFwd_16s = &MFX_HEVC_PP::h265_QuantFwd_16s_px;
+        g_dispatcher. h265_QuantFwd_SBH_16s = &MFX_HEVC_PP::h265_QuantFwd_SBH_16s_px;
 #endif
         //[transform.inv]==================================
         g_dispatcher. h265_DST4x4Inv_16sT = &MFX_HEVC_PP::h265_DST4x4Inv_16sT_ssse3;
@@ -520,6 +528,10 @@ using namespace MFX_HEVC_PP;
         g_dispatcher. h265_DCT8x8Fwd_16s = &MFX_HEVC_PP::h265_DCT8x8Fwd_16s_avx2;
         g_dispatcher. h265_DCT16x16Fwd_16s = &MFX_HEVC_PP::h265_DCT16x16Fwd_16s_avx2;
         g_dispatcher. h265_DCT32x32Fwd_16s = &MFX_HEVC_PP::h265_DCT32x32Fwd_16s_avx2;
+
+        // forward quantization
+        g_dispatcher. h265_QuantFwd_16s = &MFX_HEVC_PP::h265_QuantFwd_16s_avx2;
+        g_dispatcher. h265_QuantFwd_SBH_16s = &MFX_HEVC_PP::h265_QuantFwd_SBH_16s_avx2;
 #endif
         //[transform.inv]==================================
         g_dispatcher. h265_DST4x4Inv_16sT = &MFX_HEVC_PP::h265_DST4x4Inv_16sT_avx2;
@@ -639,6 +651,10 @@ using namespace MFX_HEVC_PP;
         g_dispatcher. h265_DCT8x8Fwd_16s = &MFX_HEVC_PP::h265_DCT8x8Fwd_16s_px;
         g_dispatcher. h265_DCT16x16Fwd_16s = &MFX_HEVC_PP::h265_DCT16x16Fwd_16s_px;
         g_dispatcher. h265_DCT32x32Fwd_16s = &MFX_HEVC_PP::h265_DCT32x32Fwd_16s_px;
+
+        // forward quantization
+        g_dispatcher. h265_QuantFwd_16s = &MFX_HEVC_PP::h265_QuantFwd_16s_px;
+        g_dispatcher. h265_QuantFwd_SBH_16s = &MFX_HEVC_PP::h265_QuantFwd_SBH_16s_px;
 #endif
         //[transform.inv]==================================
         g_dispatcher. h265_DST4x4Inv_16sT = &MFX_HEVC_PP::h265_DST4x4Inv_16sT_px;
