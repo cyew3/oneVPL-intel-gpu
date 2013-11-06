@@ -315,7 +315,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
     m_QPI = m_QPP = m_QPB = 0;
     m_Accuracy = 0;
     m_Convergence =0;
-    m_CRFQuality = 0;
+    m_CQMQuality = 0;
 
     m_Interleaved = 0;
     m_Quality = 0;
@@ -1138,12 +1138,12 @@ mfxStatus MFXTranscodingPipeline::ApplyBitrateParams()
         pMFXParams->mfx.Convergence = m_Convergence;
     }
 
-    if (m_CRFQuality || pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_CQM || pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_LA_CQM)
+    if (m_CQMQuality || pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_CQM || pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_LA_CQM)
     {
         if (pMFXParams->mfx.RateControlMethod != MFX_RATECONTROL_CQM &&
             pMFXParams->mfx.RateControlMethod != MFX_RATECONTROL_LA_CQM)
             pMFXParams->mfx.RateControlMethod = MFX_RATECONTROL_CQM;
-        pMFXParams->mfx.CQMQuality = m_CRFQuality;
+        pMFXParams->mfx.CQMQuality = m_CQMQuality;
     }
 
     if (!pMFXParams->mfx.RateControlMethod)
