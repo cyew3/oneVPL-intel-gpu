@@ -74,6 +74,7 @@ typedef __INT64             mfxI64;
 typedef void*               mfxHDL;
 typedef mfxHDL              mfxMemId;
 typedef void*               mfxThreadTask;
+typedef wchar_t             mfxChar;
 
 typedef struct {
     mfxI16  x;
