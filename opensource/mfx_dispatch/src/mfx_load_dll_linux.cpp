@@ -151,6 +151,10 @@ bool mfx_dll_free(mfxModuleHandle handle)
     return true;
 } // bool mfx_dll_free(mfxModuleHandle handle)
 
+mfxModuleHandle mfx_get_dll_handle(const msdk_disp_char *pFileName) {
+    return mfx_dll_load(pFileName);
+}
+
 } // namespace MFX
 
 #endif // #if !defined(_WIN32) && !defined(_WIN64)
