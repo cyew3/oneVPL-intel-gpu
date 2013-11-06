@@ -302,10 +302,10 @@ void dump_mfxInfoMFX(FILE *fd, int level, TCHAR *prefix, TCHAR *prefix2, Compone
                 dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".Convergence="),TEXT("%d"), im->Convergence);
                 break;
             }
-            case MFX_RATECONTROL_CRF:
-            case MFX_RATECONTROL_LA_CRF:
+            case MFX_RATECONTROL_CQM:
+            case MFX_RATECONTROL_LA_CQM:
             {
-                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".CRFQuality="),TEXT("%d"), im->CRFQuality);
+                dump_format_wprefix(fd,level, 3,prefix,prefix2,TEXT(".CQMQuality="),TEXT("%d"), im->CQMQuality);
                 break;
             }
             case MFX_RATECONTROL_LA:

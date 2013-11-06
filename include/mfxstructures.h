@@ -222,7 +222,7 @@ typedef struct {
             union {
                 mfxU16  TargetKbps;
                 mfxU16  QPP;
-                mfxU16  CRFQuality;
+                mfxU16  CQMQuality;
             };
             union {
                 mfxU16  MaxKbps;
@@ -420,9 +420,9 @@ enum {
     MFX_RATECONTROL_RESERVED3 =100,
     MFX_RATECONTROL_RESERVED4 =7,
     MFX_RATECONTROL_LA        =8,
-    MFX_RATECONTROL_CRF       =9,
+    MFX_RATECONTROL_CQM       =9,
     MFX_RATECONTROL_VCM       =10,
-    MFX_RATECONTROL_LA_CRF    =11
+    MFX_RATECONTROL_LA_CQM    =11
 };
 
 /* Trellis control*/
@@ -723,8 +723,7 @@ typedef enum {
     MFX_HANDLE_RESERVED1                        = 2,
     MFX_HANDLE_D3D11_DEVICE                     = 3,
     MFX_HANDLE_VA_DISPLAY                       = 4,
-    MFX_HANDLE_RESERVED3                        = 5,
-    MFX_HANDLE_ENCODE_CONTEXT                   = 6
+    MFX_HANDLE_RESERVED3                        = 5
 } mfxHandleType;
 
 typedef enum {
