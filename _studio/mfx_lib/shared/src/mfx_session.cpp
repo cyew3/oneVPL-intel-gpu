@@ -333,14 +333,6 @@ void InitCoreInterface(mfxCoreInterface *pCoreInterface,
     // reset the structure
     memset(pCoreInterface, 0, sizeof(mfxCoreInterface));
 
-    // fill default allocator
-    pCoreInterface->ExternalSurfaceAllocator = new mfxFrameAllocator;
-    pCoreInterface->ExternalSurfaceAllocator->pthis = session->m_pCORE.get();
-    pCoreInterface->ExternalSurfaceAllocator->Alloc = &mfxExtAllocFrames;
-    pCoreInterface->ExternalSurfaceAllocator->Lock = &mfxExtLockFrame;
-    pCoreInterface->ExternalSurfaceAllocator->GetHDL = &mfxExtGetHDL;
-    pCoreInterface->ExternalSurfaceAllocator->Unlock = &mfxExtUnlockFrame;
-    pCoreInterface->ExternalSurfaceAllocator->Free = &mfxExtFreeFrames;
 
      // fill external allocator
     pCoreInterface->FrameAllocator.pthis = session->m_pCORE.get();
@@ -396,7 +388,7 @@ void _mfxSession::Clear(void)
 
     m_priority = MFX_PRIORITY_NORMAL;
     m_bIsHWENCSupport = false;
-    m_coreInt.ExternalSurfaceAllocator = 0;
+    //m_coreInt.ExternalSurfaceAllocator = 0;
 
 } // void _mfxSession::Clear(void)
 
@@ -436,7 +428,7 @@ void _mfxSession::Release(void)
     m_pENCODE.reset();
     m_pCORE.reset();
 
-    delete m_coreInt.ExternalSurfaceAllocator;
+    //delete m_coreInt.ExternalSurfaceAllocator;
     Clear();
 
 } // void _mfxSession::Release(void)

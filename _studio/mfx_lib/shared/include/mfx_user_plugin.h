@@ -40,7 +40,7 @@ public:
                     const mfxHDL *out, mfxU32 out_num,
                     MFX_ENTRY_POINT *pEntryPoint);
 
-    mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
+    mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out);
     mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out);
     mfxStatus DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVideoParam *par);
 

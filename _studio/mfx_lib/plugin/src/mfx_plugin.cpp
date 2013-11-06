@@ -45,7 +45,7 @@ void MFXLibPlugin::Init()
     m_pExternalSurfaceAllocator = 0;
     memset(&m_PluginParam, 0, sizeof(mfxPluginParam));
     m_PluginParam.CodecId = MFX_CODEC_HEVC;
-    max_AsyncDepth = vm_sys_info_get_cpu_num();
+    //max_AsyncDepth = vm_sys_info_get_cpu_num();
     m_syncp = 0;
     m_p_surface_out = 0;
     m_device.type = MFX_HANDLE_D3D9_DEVICE_MANAGER;
@@ -189,8 +189,8 @@ mfxStatus MFXLibPlugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             mfxRes = MFXVideoCORE_SetHandle(m_session, m_device.type, m_device.handle);
     }
 
-    if(0 == in->AsyncDepth)
-        in->AsyncDepth = max_AsyncDepth;
+    //if(0 == in->AsyncDepth)
+    //    in->AsyncDepth = max_AsyncDepth;
     mfxRes = MFXVideoDECODE_Query(m_session, in, out);
 
     if (bWarnIsNeeded && (MFX_ERR_NONE == mfxRes))
@@ -199,9 +199,9 @@ mfxStatus MFXLibPlugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         return mfxRes;
 }
 
-mfxStatus MFXLibPlugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request)
+mfxStatus MFXLibPlugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out)
 {
-    if (!par)
+    if (!par || !out)
         return MFX_ERR_NULL_PTR;
     bool bWarnIsNeeded = false;
     mfxStatus mfxRes = MFX_ERR_UNKNOWN;
@@ -221,9 +221,9 @@ mfxStatus MFXLibPlugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *re
         if (MFX_ERR_NONE == mfxRes)
             mfxRes = MFXVideoCORE_SetHandle(m_session, m_device.type, m_device.handle);
     }
-    if(0 == par->AsyncDepth)
-        par->AsyncDepth = max_AsyncDepth;
-    mfxRes = MFXVideoDECODE_QueryIOSurf(m_session, par, request);
+    //if(0 == par->AsyncDepth)
+    //    par->AsyncDepth = max_AsyncDepth;
+    mfxRes = MFXVideoDECODE_QueryIOSurf(m_session, par, out);
 
     if (bWarnIsNeeded && (MFX_ERR_NONE == mfxRes))
         return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
@@ -259,8 +259,8 @@ mfxStatus MFXLibPlugin::Init(mfxVideoParam *par)
             mfxRes = MFXVideoCORE_SetHandle(m_session, m_device.type, m_device.handle);
     }
 
-    if(0 == par->AsyncDepth)
-        par->AsyncDepth = max_AsyncDepth;
+    //if(0 == par->AsyncDepth)
+    //    par->AsyncDepth = max_AsyncDepth;
     mfxRes = MFXVideoDECODE_Init(m_session, par);
 
     if (bWarnIsNeeded && (MFX_ERR_NONE == mfxRes))

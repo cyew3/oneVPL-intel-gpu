@@ -242,7 +242,7 @@ mfxStatus MFXVideoDECODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
         mfxRes = MFX_ERR_UNSUPPORTED;
         if (session->m_plgDec.get())
         {
-            mfxRes = session->m_plgDec->QueryIOSurf(session->m_pCORE.get(), par, request);
+            mfxRes = session->m_plgDec->QueryIOSurf(session->m_pCORE.get(), par, 0, request);
         }
         // unsupported reserved to codecid != requested codecid
         if (MFX_ERR_UNSUPPORTED == mfxRes)

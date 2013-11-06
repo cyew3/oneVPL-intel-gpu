@@ -200,7 +200,7 @@ mfxStatus VideoUSERPlugin::Check(const mfxHDL *in, mfxU32 in_num,
 (char)((mfxu32 >> 16) & 0xFF),\
 (char)((mfxu32 >> 24) & 0xFF)
 
-mfxStatus VideoUSERPlugin::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request)
+mfxStatus VideoUSERPlugin::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out)
 {
     core;
     if (m_param.CodecId != par->mfx.CodecId)
@@ -209,7 +209,7 @@ mfxStatus VideoUSERPlugin::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
         return MFX_ERR_UNSUPPORTED;
     }
 
-    return m_plugin.Video->QueryIOSurf(m_plugin.pthis, par, request);
+    return m_plugin.Video->QueryIOSurf(m_plugin.pthis, par, in, out);
 }
 
 mfxStatus VideoUSERPlugin::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out)

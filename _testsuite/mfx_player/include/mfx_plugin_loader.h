@@ -185,7 +185,7 @@ public:
             MFX_TRACE_ERR(VM_STRING("Failed to register plugin: ") << pluginName.c_str() << VM_STRING("sts=") << sts);
             return;
         }
-        MFX_TRACE_INFO(VM_STRING("Plugin: ") << pluginName.c_str() << VM_STRING(" loaded"));
+        MFX_TRACE_INFO(VM_STRING("Plugin: ") << pluginName.c_str() << VM_STRING(" loaded\n"));
         m_session = session;
     }
 

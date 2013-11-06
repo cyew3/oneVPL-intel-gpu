@@ -650,7 +650,7 @@ class VideoCodecUSER
 public:
     //statically exposed for mediasdk components but are plugin dependent
     virtual mfxStatus Init(mfxVideoParam *par) = 0;
-    virtual mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request) = 0;
+    virtual mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out) = 0;
     virtual mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out) = 0;
     virtual mfxStatus DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVideoParam *par) = 0;
 
