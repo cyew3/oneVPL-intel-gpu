@@ -561,7 +561,8 @@ enum {
     MFX_EXTBUFF_ENCODED_FRAME_INFO         = MFX_MAKEFOURCC('E','N','F','I'),
     MFX_EXTBUFF_VPP_COMPOSITE              = MFX_MAKEFOURCC('V','C','M','P'),
     MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO      = MFX_MAKEFOURCC('V','V','S','I'),
-    MFX_EXTBUFF_ENCODER_ROI                = MFX_MAKEFOURCC('E','R','O','I')
+    MFX_EXTBUFF_ENCODER_ROI                = MFX_MAKEFOURCC('E','R','O','I'),
+    MFX_EXTBUFF_VPP_DEINTERLACING          = MFX_MAKEFOURCC('V','P','D','I')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -639,7 +640,7 @@ typedef struct {
 typedef struct {
     mfxExtBuffer    Header;
     mfxU32  reserved[5];
-    mfxU16  reserved1;
+    mfxU16  SkipFrame;
 
     mfxU16  QP; /* per frame QP */
 
@@ -949,6 +950,17 @@ typedef struct {
         mfxU16  reserved2[7];
     } ROI[256];
 } mfxExtEncoderROI;
+
+enum {
+    MFX_DEINTERLACING_BOB      = 0x0001,
+    MFX_DEINTERLACING_ADVANCED = 0x0002
+};
+
+typedef struct {
+    mfxExtBuffer    Header;
+    mfxU16  Mode;
+    mfxU16  reserved[11];
+} mfxExtVPPDeinterlacing;
 
 #ifdef __cplusplus
 } // extern "C"
