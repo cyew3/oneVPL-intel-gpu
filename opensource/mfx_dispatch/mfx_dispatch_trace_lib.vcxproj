@@ -219,6 +219,7 @@
     <ClInclude Include="include\mfx_dxva2_device.h" />
     <ClInclude Include="include\mfx_exposed_functions_list.h" />
     <ClInclude Include="include\mfx_library_iterator.h" />
+    <ClInclude Include="include\mfx_load_dll.h" />
     <ClInclude Include="include\mfx_load_plugin.h" />
     <ClInclude Include="include\mfx_plugin_hive.h" />
     <ClInclude Include="include\mfx_win_reg_key.h" />
