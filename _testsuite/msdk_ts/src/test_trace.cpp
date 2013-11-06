@@ -702,7 +702,7 @@ DEF_STRUCT_TRACE(mfxEncodeCtrl){
         << PUT_4CC(Header.BufferId)
         << PUT_PAR(Header.BufferSz)
         << PUT_ARR(reserved, 5)
-        << PUT_PAR(reserved1)
+        << PUT_PAR(SkipFrame)
         << PUT_PAR(QP)
         << PUT_PAR(FrameType)
         << PUT_PAR(reserved2)
