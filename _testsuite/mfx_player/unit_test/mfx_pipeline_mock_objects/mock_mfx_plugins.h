@@ -92,11 +92,12 @@ public:
         }
         return params.ret_val;
     }
-    DECLARE_TEST_METHOD2(mfxStatus, QueryIOSurf, mfxVideoParam *, mfxFrameAllocRequest * )
+    DECLARE_TEST_METHOD3(mfxStatus, QueryIOSurf, mfxVideoParam *, mfxFrameAllocRequest *, mfxFrameAllocRequest * )
     {
         TEST_METHOD_TYPE(QueryIOSurf) params;
         params.value0 = _0;
         params.value1 = _1;
+        params.value2 = _2;
         _QueryIOSurf.RegisterEvent(params);
         if (!_QueryIOSurf.GetReturn(params))
         {

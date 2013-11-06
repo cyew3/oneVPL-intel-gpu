@@ -140,12 +140,12 @@ SUITE(SSIMCmpOption)
         testCleanSSIMCalc(ssimCalc);
     }
 
-    TEST_FIXTURE(VideoDataFixture, ssim_algorithm_1)
+    TEST_FIXTURE(VideoDataFixture, SKIPPED_ssim_algorithm_1)
     {
         testSSIMAlgorithm(in1, in2, ssimPerFrame, ssimAverage, ssimMax, ssimMin);
     }
     
-    TEST_FIXTURE(VideoDataFixture, ssim_algorithm_2)
+    TEST_FIXTURE(VideoDataFixture, SKIPPED_ssim_algorithm_2)
     {
         testSSIMAlgorithm(in1, in1, ones9, ones3, ones3, ones3);
     }
