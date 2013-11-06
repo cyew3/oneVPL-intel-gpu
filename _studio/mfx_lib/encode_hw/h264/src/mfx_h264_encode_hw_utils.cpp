@@ -2989,7 +2989,7 @@ void LookAheadCrfBrc::Init(MfxVideoParam const & video)
     mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(video);
 
     m_lookAhead  = extOpt2->LookAheadDepth;
-    m_crfQuality = video.mfx.CRFQuality;
+    m_crfQuality = video.mfx.CQMQuality;
     m_totNumMb   = video.mfx.FrameInfo.Width * video.mfx.FrameInfo.Height / 256;
 
     m_intraCost = 0;
@@ -5400,7 +5400,7 @@ BrcIface * MfxHwH264Encode::CreateBrc(MfxVideoParam const & video)
     switch (video.mfx.RateControlMethod)
     {
     case MFX_RATECONTROL_LA: return new LookAheadBrc2;
-    case MFX_RATECONTROL_LA_CRF: return new LookAheadCrfBrc;
+    case MFX_RATECONTROL_LA_CQM: return new LookAheadCrfBrc;
     default: return new UmcBrc;
     }
 }
