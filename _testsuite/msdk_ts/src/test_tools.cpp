@@ -5,6 +5,7 @@
 #include "test_trace.h"
 #include <string>
 #include "test_sample_allocator.h"
+#include "mfx_plugin_loader.h"
 
 msdk_ts_BLOCK(t_AllocSurfPool){
     mfxFrameAllocRequest& request = var_old<mfxFrameAllocRequest>("request");
@@ -875,3 +876,55 @@ msdk_ts_BLOCK(t_GetVA){
 }
 #endif //defined(LIBVA_SUPPORT)
 #endif //(defined(LINUX32) || defined(LINUX64))
+#ifdef __MFXPLUGIN_H__
+msdk_ts_BLOCK(t_LoadDLLPlugin){
+    mfxU32&     type     = var_def<mfxU32>     ("type", MFX_PLUGINTYPE_VIDEO_DECODE);
+    char*       dll_name = var_old<char*>      ("dll_name");
+    mfxPlugin*& pPlugin  = var_def<mfxPlugin*> ("p_plugin", NULL);
+
+    vm_char* file_name = 0;
+    vm_char* temp_fn = 0;
+    std::cout << "  Library to load: " << dll_name << std::endl;
+
+    if(sizeof(char) == sizeof(vm_char))
+        file_name = reinterpret_cast<vm_char*>( dll_name );
+    else //char to TCHAR conversion
+    {
+        size_t i;
+        temp_fn = new vm_char[strlen(dll_name)+1];
+        for(i = 0; dll_name[i]; i++)
+            temp_fn[i] = dll_name[i];
+        temp_fn[i] = 0;
+        file_name = temp_fn;
+    }
+
+    if(MFX_PLUGINTYPE_VIDEO_GENERAL == type)
+    {
+        PluginLoader<MFXGenericPlugin>& Loader = var_new<PluginLoader<MFXGenericPlugin> >("plugin_loader", new PluginLoader<MFXGenericPlugin>(file_name) );
+        pPlugin = Loader.plugin;
+    } 
+    else if(MFX_PLUGINTYPE_VIDEO_DECODE == type)
+    {
+        PluginLoader<MFXDecoderPlugin>& Loader = var_new<PluginLoader<MFXDecoderPlugin> >("plugin_loader", new PluginLoader<MFXDecoderPlugin>(file_name) );
+        pPlugin = Loader.plugin;
+    } 
+    else if(MFX_PLUGINTYPE_VIDEO_ENCODE == type)
+    {
+        PluginLoader<MFXEncoderPlugin>& Loader = var_new<PluginLoader<MFXEncoderPlugin> >("plugin_loader", new PluginLoader<MFXEncoderPlugin>(file_name) );
+        pPlugin = Loader.plugin;
+    }
+    else
+    {
+        std::cout << "Wrong plugin type" << std::endl;
+        return msdk_ts::resFAIL;
+    }
+    if(temp_fn)
+        delete[] temp_fn;
+    if(NULL == pPlugin)
+    {
+        std::cout << "Failed to load dll" << std::endl;
+        return msdk_ts::resFAIL;
+    }
+    return msdk_ts::resOK;
+}
+#endif //#ifdef __MFXPLUGIN_H__

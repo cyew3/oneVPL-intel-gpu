@@ -6,6 +6,7 @@
 #include "mfxsvc.h"
 #include "mfxmvc.h"
 #include "mfxjpeg.h"
+#include "mfxplugin.h"
 #include "test_trace.h"
 #include "vm_file.h"
 #include "bs_parser++.h"

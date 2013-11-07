@@ -7,6 +7,7 @@
 #include "mfxjpeg.h"
 #include "mfxpcp.h"
 #include "mfxaudio.h"
+#include "mfxplugin.h"
 
 enum print_flags{
     PRINT_OPT_ENC   = 0x00000001,
@@ -76,6 +77,9 @@ DECL_STRUCT_TRACE(mfxEncodeCtrl);
 DECL_STRUCT_TRACE(mfxAES128CipherCounter);
 DECL_STRUCT_TRACE(mfxExtPAVPOption);
 DECL_STRUCT_TRACE(mfxEncryptedData);
+DECL_STRUCT_TRACE(mfxPluginParam);
+DECL_STRUCT_TRACE(mfxCoreParam);
+DECL_STRUCT_TRACE(mfxPluginUID);
 
 #ifdef __MFXAUDIO_H__
 DECL_STRUCT_TRACE(mfxAudioStreamInfo);

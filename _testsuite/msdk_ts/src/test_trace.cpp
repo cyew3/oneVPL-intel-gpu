@@ -771,6 +771,37 @@ DEF_STRUCT_TRACE(mfxEncryptedData){
     return os;
 };
 
+#ifdef __MFXPLUGIN_H__
+DEF_STRUCT_TRACE(mfxPluginParam){
+    os  << "{\n"
+        << PUT_ARR(reserved, 8)
+        << PUT_STRUCT(PluginUID)
+        << PUT_PAR(Type)
+        << PUT_PAR(CodecId)
+        << PUT_PAR(ThreadPolicy)
+        << PUT_PAR(MaxThreadNum)
+        << print_param.padding << '}';
+    return os;
+};
+
+DEF_STRUCT_TRACE(mfxCoreParam){
+    os  << "{\n"
+        << PUT_ARR(reserved, 13)
+        << PUT_PAR(Impl)
+        << PUT_PAR(Version)
+        << PUT_PAR(NumWorkingThread)
+        << print_param.padding << '}';
+    return os;
+};
+
+DEF_STRUCT_TRACE(mfxPluginUID){
+    os  << "{\n"
+        << PUT_ARR(Data, 16)
+        << print_param.padding << '}';
+    return os;
+};
+#endif
+
 #ifdef __MFXAUDIO_H__
 DEF_STRUCT_TRACE(mfxAudioStreamInfo){
     os  << "{\n"

@@ -4,7 +4,7 @@
 #include "test_common.h"
 #include <cassert>
 
-#define TRACE_FUNCN(n, name, p1, p2, p3, p4, p5, p6)\
+#define TRACE_FUNCN(n, name, p1, p2, p3, p4, p5, p6, p7)\
     if(var_def<bool>("trace", false)){\
         INC_PADDING();\
         if((n) > 0) std::cout << print_param.padding << #p1 " = " << p1 << '\n';\
@@ -13,6 +13,7 @@
         if((n) > 3) std::cout << print_param.padding << #p4 " = " << p4 << '\n';\
         if((n) > 4) std::cout << print_param.padding << #p5 " = " << p5 << '\n';\
         if((n) > 5) std::cout << print_param.padding << #p6 " = " << p6 << '\n';\
+        if((n) > 8) std::cout << print_param.padding << #p7 " = " << p6 << '\n';\
         std::cout << print_param.padding << "expectedRes = " << var_def<mfxStatus>("expectedRes", MFX_ERR_NONE) << "\n\n";\
         std::cout << print_param.padding << "mfxRes = " << #name << '(';\
         if((n) > 0) std::cout << #p1;\
@@ -21,15 +22,17 @@
         if((n) > 3) std::cout << ", " << #p4;\
         if((n) > 4) std::cout << ", " << #p5;\
         if((n) > 5) std::cout << ", " << #p6;\
+        if((n) > 6) std::cout << ", " << #p7;\
         std::cout << ");\n";\
         DEC_PADDING();\
     }
-#define TRACE_FUNC5(name, p1, p2, p3, p4, p5) TRACE_FUNCN(5, name, p1, p2, p3, p4, p5, 0)
-#define TRACE_FUNC4(name, p1, p2, p3, p4) TRACE_FUNCN(4, name, p1, p2, p3, p4, 0, 0)
-#define TRACE_FUNC3(name, p1, p2, p3) TRACE_FUNCN(3, name, p1, p2, p3, 0, 0, 0)
-#define TRACE_FUNC2(name, p1, p2) TRACE_FUNCN(2, name, p1, p2, 0, 0, 0, 0)
-#define TRACE_FUNC1(name, p1) TRACE_FUNCN(1, name, p1, 0, 0, 0, 0, 0)
-#define TRACE_FUNC0(name) TRACE_FUNCN(0, name, 0, 0, 0, 0, 0, 0)
+#define TRACE_FUNC6(name, p1, p2, p3, p4, p5, p6) TRACE_FUNCN(6, name, p1, p2, p3, p4, p5, p6, 0)
+#define TRACE_FUNC5(name, p1, p2, p3, p4, p5) TRACE_FUNCN(5, name, p1, p2, p3, p4, p5, 0, 0)
+#define TRACE_FUNC4(name, p1, p2, p3, p4) TRACE_FUNCN(4, name, p1, p2, p3, p4, 0, 0, 0)
+#define TRACE_FUNC3(name, p1, p2, p3) TRACE_FUNCN(3, name, p1, p2, p3, 0, 0, 0, 0)
+#define TRACE_FUNC2(name, p1, p2) TRACE_FUNCN(2, name, p1, p2, 0, 0, 0, 0, 0)
+#define TRACE_FUNC1(name, p1) TRACE_FUNCN(1, name, p1, 0, 0, 0, 0, 0, 0)
+#define TRACE_FUNC0(name) TRACE_FUNCN(0, name, 0, 0, 0, 0, 0, 0, 0)
 
 // Global Functions ///////////////////////////////////////////////////////////
 msdk_ts_BLOCK(b_MFXInit){
@@ -703,6 +706,103 @@ msdk_ts_BLOCK(b_MFXVideoVPP_RunFrameVPPAsync){
 
     return msdk_ts::resOK;
 }
+
+#ifdef __MFXPLUGIN_H__
+msdk_ts_BLOCK(b_MFXVideoUSER_Register){
+    mfxStatus&      mfxRes      = var_def<mfxStatus>    ("mfxRes",      MFX_ERR_NONE);
+    mfxStatus&      expectedRes = var_def<mfxStatus>    ("expectedRes", MFX_ERR_NONE);
+    mfxSession&     session     = var_def<mfxSession>   ("session",     0);
+    mfxU32&         type        = var_def<mfxU32>       ("type",        0);
+    mfxPlugin*&     pPlugin     = var_def<mfxPlugin*>   ("p_plugin",    NULL);
+
+    TRACE_FUNC3(MFXVideoUSER_Register, session, type, pPlugin);
+    mfxRes = MFXVideoUSER_Register(session, type, pPlugin);
+    TRACE_PAR(mfxRes);
+    CHECK_STS(mfxRes, expectedRes);
+
+    return msdk_ts::resOK;
+}
+
+msdk_ts_BLOCK(b_MFXVideoUSER_Unregister){
+    mfxStatus&      mfxRes      = var_def<mfxStatus>    ("mfxRes",      MFX_ERR_NONE);
+    mfxStatus&      expectedRes = var_def<mfxStatus>    ("expectedRes", MFX_ERR_NONE);
+    mfxSession&     session     = var_def<mfxSession>   ("session",     0);
+    mfxU32&         type        = var_def<mfxU32>       ("type",        0);
+
+    TRACE_FUNC2(MFXVideoUSER_Unregister, session, type);
+    mfxRes = MFXVideoUSER_Unregister(session, type);
+    TRACE_PAR(mfxRes);
+    CHECK_STS(mfxRes, expectedRes);
+
+    return msdk_ts::resOK;
+}
+
+msdk_ts_BLOCK(b_MFXVideoUSER_ProcessFrameAsync){
+    mfxStatus&      mfxRes      = var_def<mfxStatus>    ("mfxRes",      MFX_ERR_NONE);
+    mfxStatus&      expectedRes = var_def<mfxStatus>    ("expectedRes", MFX_ERR_NONE);
+    mfxSession&     session     = var_def<mfxSession>   ("session",     0);
+    mfxHDL&         pIn         = var_def<mfxHDL>       ("up_in",    NULL); //up_in stands for "User plugin in"
+    mfxHDL&         pOut        = var_def<mfxHDL>       ("up_out",   NULL);
+    mfxU32&         in_num      = var_def<mfxU32>       ("in_num",      1);
+    mfxU32&         out_num     = var_def<mfxU32>       ("out_num",     1);
+    mfxSyncPoint&   syncp       = var_def<mfxSyncPoint> ("syncp",    NULL);
+    mfxSyncPoint*&  pSyncp      = var_def<mfxSyncPoint*>("p_syncp",&syncp);
+
+    TRACE_FUNC6(MFXVideoUSER_ProcessFrameAsync, session, pIn, in_num, pOut, out_num, pSyncp);
+    mfxRes = MFXVideoUSER_ProcessFrameAsync(session, &pIn, in_num, &pOut, out_num, pSyncp);
+    TRACE_PAR(mfxRes);
+    CHECK_STS(mfxRes, expectedRes);
+
+    return msdk_ts::resOK;
+}
+
+msdk_ts_BLOCK(b_MFXVideoUSER_Enumerate){
+    mfxStatus&             mfxRes      = var_def<mfxStatus>             ("mfxRes",      MFX_ERR_NONE);
+    mfxStatus&             expectedRes = var_def<mfxStatus>             ("expectedRes", MFX_ERR_NONE);
+    mfxSession&            session     = var_def<mfxSession>            ("session",     0);
+    mfxU32&                type        = var_def<mfxU32>                ("type",        0);
+    mfxU32&                codec_id    = var_def<mfxU32>                ("codec_id",    0);
+    mfxU32&                counter     = var_def<mfxU32>                ("counter",     0);
+    mfxPluginDescription*& pPluginDsc  = var_def<mfxPluginDescription*> ("p_plugin_dsc",NULL);
+
+    TRACE_FUNC5(MFXVideoUSER_Enumerate, session, type, codec_id, counter, pPluginDsc);
+    mfxRes = MFXVideoUSER_Enumerate(session, type, codec_id, counter, pPluginDsc);
+    TRACE_PAR(mfxRes);
+    CHECK_STS(mfxRes, expectedRes);
+
+    return msdk_ts::resOK;
+}
+
+msdk_ts_BLOCK(b_MFXVideoUSER_Load){
+    mfxStatus&     mfxRes      = var_def<mfxStatus>    ("mfxRes",       MFX_ERR_NONE);
+    mfxStatus&     expectedRes = var_def<mfxStatus>    ("expectedRes",  MFX_ERR_NONE);
+    mfxSession&    session     = var_def<mfxSession>   ("session",      0);
+    mfxU32&        type        = var_def<mfxU32>       ("type",         0);
+    mfxU32&        codec_id    = var_def<mfxU32>       ("codec_id",     0);
+    mfxPluginUID*& p_uid       = var_def<mfxPluginUID*> ("p_plugin_uid",NULL);
+
+    TRACE_FUNC4(MFXVideoUSER_Load, session, type, codec_id, *p_uid);
+    mfxRes = MFXVideoUSER_Load(session, type, codec_id, *p_uid);
+    TRACE_PAR(mfxRes);
+    CHECK_STS(mfxRes, expectedRes);
+
+    return msdk_ts::resOK;
+}
+
+msdk_ts_BLOCK(b_MFXVideoUSER_UnLoad){
+    mfxStatus&     mfxRes      = var_def<mfxStatus>    ("mfxRes",       MFX_ERR_NONE);
+    mfxStatus&     expectedRes = var_def<mfxStatus>    ("expectedRes",  MFX_ERR_NONE);
+    mfxSession&    session     = var_def<mfxSession>   ("session",      0);
+    mfxPluginUID*& p_uid       = var_def<mfxPluginUID*> ("p_plugin_uid",NULL);
+
+    TRACE_FUNC2(MFXVideoUSER_UnLoad, session, *p_uid);
+    mfxRes = MFXVideoUSER_UnLoad(session, *p_uid);
+    TRACE_PAR(mfxRes);
+    CHECK_STS(mfxRes, expectedRes);
+
+    return msdk_ts::resOK;
+}
+#endif //#ifdef __MFXPLUGIN_H__
 
 #ifdef __MFXAUDIO_H__
 // audio core

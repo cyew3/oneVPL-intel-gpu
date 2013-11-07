@@ -59,6 +59,15 @@ msdk_ts_DECLARE_BLOCK(b_MFXVideoVPP_GetVideoParam);
 msdk_ts_DECLARE_BLOCK(b_MFXVideoVPP_GetVPPStat);
 msdk_ts_DECLARE_BLOCK(b_MFXVideoVPP_RunFrameVPPAsync);
 
+/* VideoUser */
+msdk_ts_DECLARE_BLOCK(b_MFXVideoUSER_Register);
+msdk_ts_DECLARE_BLOCK(b_MFXVideoUSER_Unregister);
+msdk_ts_DECLARE_BLOCK(b_MFXVideoUSER_ProcessFrameAsync);
+msdk_ts_DECLARE_BLOCK(b_MFXVideoUSER_Enumerate);
+msdk_ts_DECLARE_BLOCK(b_MFXVideoUSER_Load);
+msdk_ts_DECLARE_BLOCK(b_MFXVideoUSER_UnLoad);
+
+
 // audio core
 msdk_ts_DECLARE_BLOCK(b_MFXInitAudio);
 msdk_ts_DECLARE_BLOCK(b_MFXCloseAudio);
@@ -127,6 +136,8 @@ msdk_ts_DECLARE_BLOCK(t_Read_mfxBitstream);
 msdk_ts_DECLARE_BLOCK(t_ResetBitstream);
 msdk_ts_DECLARE_BLOCK(t_ProcessEncodeFrameAsyncStatus);
 msdk_ts_DECLARE_BLOCK(t_ProcessDecodeFrameAsyncStatus);
+
+msdk_ts_DECLARE_BLOCK(t_LoadDLLPlugin);
 
 //IN : mfxRes, [eof, expectedRes, break_on_expected, async]
 msdk_ts_DECLARE_BLOCK(t_ProcessRunFrameVPPAsyncStatus); // loop control block
