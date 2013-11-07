@@ -77,8 +77,8 @@ void H265SegmentDecoder::CleanTopEdges(bool topAvailable, H265EdgeData *ctb_star
     {
         for (Ipp32s i = 0; i < (width >> 3); i++)
         {
-            VM_ASSERT(ctb_start_edge[i * 4 + 4 + 2].strength == 3);
-            VM_ASSERT(ctb_start_edge[i * 4 + 4 + 3].strength == 3);
+            VM_ASSERT(ctb_start_edge[i * 4 + 4 + 2].strength == 3 || m_bIsNeedWADeblocking);
+            VM_ASSERT(ctb_start_edge[i * 4 + 4 + 3].strength == 3 || m_bIsNeedWADeblocking);
 
             ctb_start_edge[i * 4 + 4 + 2].strength = 0;
             ctb_start_edge[i * 4 + 4 + 3].strength = 0;
@@ -109,7 +109,7 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr)
     H265EdgeData *ctb_start_edge = m_pCurrentFrame->m_CodingData->m_edge +
         m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth * (curLCU->m_CUPelY >> 3) + (curLCU->m_CUPelX >> 3) * 4;
 
-    VM_ASSERT (!curLCU->m_SliceHeader->slice_deblocking_filter_disabled_flag);
+    VM_ASSERT (!curLCU->m_SliceHeader->slice_deblocking_filter_disabled_flag || m_bIsNeedWADeblocking);
 
     width = frameWidthInSamples - curLCU->m_CUPelX;
 
@@ -273,7 +273,7 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curP
         if (m_pSeqParamSet->log2_min_transform_block_size >= 3 && i == 1)
         {
             *(edge+1) = *edge;
-    }
+        }
     }
 }
 
