@@ -948,7 +948,8 @@ void H265HeadersBitstream::xParsePredWeightTable(H265SliceHeader * sliceHdr)
     if(bChroma)
     {
         PARSE_INT( iDeltaDenom, "delta_chroma_log2_weight_denom" );
-        VM_ASSERT((iDeltaDenom + (int)uLog2WeightDenomLuma) >= 0);
+        if (iDeltaDenom + (int)uLog2WeightDenomLuma < 0)
+            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
         uLog2WeightDenomChroma = (unsigned)(iDeltaDenom + uLog2WeightDenomLuma);
     }
 
@@ -1033,7 +1034,8 @@ void H265HeadersBitstream::xParsePredWeightTable(H265SliceHeader * sliceHdr)
             wp[2].present_flag = false;
         }
     }
-    VM_ASSERT(uTotalSignalledWeightFlags<=24);
+
+    //VM_ASSERT(uTotalSignalledWeightFlags<=24);
 }
 
 
@@ -1411,17 +1413,19 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
         {
             PARSE_INT( iCode, "slice_cb_qp_offset" );
             sliceHdr->slice_cb_qp_offset =  iCode;
-            VM_ASSERT( sliceHdr->slice_cb_qp_offset >= -12 );
-            VM_ASSERT( sliceHdr->slice_cb_qp_offset <=  12 );
-            VM_ASSERT( (pps->pps_cb_qp_offset + sliceHdr->slice_cb_qp_offset) >= -12 );
-            VM_ASSERT( (pps->pps_cb_qp_offset + sliceHdr->slice_cb_qp_offset) <=  12 );
+            if (sliceHdr->slice_cb_qp_offset < -12 || sliceHdr->slice_cb_qp_offset >  12)
+                throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+            if (pps->pps_cb_qp_offset + sliceHdr->slice_cb_qp_offset < -12 || pps->pps_cb_qp_offset + sliceHdr->slice_cb_qp_offset >  12)
+                throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
             PARSE_INT( iCode, "slice_cr_qp_offset" );
             sliceHdr->slice_cr_qp_offset = iCode;
-            VM_ASSERT( sliceHdr->slice_cr_qp_offset >= -12 );
-            VM_ASSERT( sliceHdr->slice_cr_qp_offset <=  12 );
-            VM_ASSERT( (pps->pps_cr_qp_offset + sliceHdr->slice_cr_qp_offset) >= -12 );
-            VM_ASSERT( (pps->pps_cr_qp_offset + sliceHdr->slice_cr_qp_offset) <=  12 );
+            if (sliceHdr->slice_cr_qp_offset < -12 || sliceHdr->slice_cr_qp_offset >  12)
+                throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+            if (pps->pps_cr_qp_offset + sliceHdr->slice_cr_qp_offset < -12 || pps->pps_cr_qp_offset + sliceHdr->slice_cr_qp_offset >  12)
+                throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
         }
 
         if (pps->deblocking_filter_control_present_flag)
@@ -1691,50 +1695,53 @@ void H265Bitstream::parseShortTermRefPicSet(const H265SeqParamSet* sps, Referenc
         else
             code = 0;
 
-    VM_ASSERT(code <= (unsigned)idx - 1); // delta_idx_minus1 shall not be larger than idx-1, otherwise we will predict from a 
+        VM_ASSERT(code <= (unsigned)idx - 1); // delta_idx_minus1 shall not be larger than idx-1, otherwise we will predict from a 
                                 // negative row position that does not exist. When idx equals 0 there is no legal 
                                 // value and interRPSPred must be zero. See J0185-r2
 
-    int rIdx =  idx - 1 - code;
-    VM_ASSERT (rIdx <= idx - 1 && rIdx >= 0);
+        Ipp32s rIdx =  idx - 1 - code;
+    
+        if (rIdx > idx - 1 || rIdx < 0)
+            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
-    ReferencePictureSet*   rpsRef = const_cast<H265SeqParamSet *>(sps)->getRPSList()->getReferencePictureSet(rIdx);
-    int k = 0, k0 = 0, k1 = 0;
-    PARSE_CODE(1, bit, "delta_rps_sign");
-    PARSE_UINT(code, "abs_delta_rps_minus1");
+        ReferencePictureSet*   rpsRef = const_cast<H265SeqParamSet *>(sps)->getRPSList()->getReferencePictureSet(rIdx);
+        int k = 0, k0 = 0, k1 = 0;
+        PARSE_CODE(1, bit, "delta_rps_sign");
+        PARSE_UINT(code, "abs_delta_rps_minus1");
 
-    int deltaRPS = (1 - 2 * bit) * (code + 1);
-    Ipp32s num_pics = rpsRef->getNumberOfPictures();
-    for(Ipp32s j = 0 ;j <= num_pics; j++)
-    {
-      PARSE_CODE(1, bit, "used_by_curr_pic_flag" );
-      int refIdc = bit;
-      if (refIdc == 0)
-      {
-        PARSE_CODE(1, bit, "use_delta_flag" );
-        refIdc = bit << 1;
-      }
-      if (refIdc == 1 || refIdc == 2)
-      {
-        int deltaPOC = deltaRPS + ((j < rpsRef->getNumberOfPictures())? rpsRef->getDeltaPOC(j) : 0);
-        rps->setDeltaPOC(k, deltaPOC);
-        rps->used_by_curr_pic_flag[k] = refIdc == 1;
-
-        if (deltaPOC < 0)
+        int deltaRPS = (1 - 2 * bit) * (code + 1);
+        Ipp32s num_pics = rpsRef->getNumberOfPictures();
+        for(Ipp32s j = 0 ;j <= num_pics; j++)
         {
-          k0++;
+          PARSE_CODE(1, bit, "used_by_curr_pic_flag" );
+          Ipp32s refIdc = bit;
+          if (refIdc == 0)
+          {
+            PARSE_CODE(1, bit, "use_delta_flag" );
+            refIdc = bit << 1;
+          }
+
+          if (refIdc == 1 || refIdc == 2)
+          {
+            int deltaPOC = deltaRPS + ((j < rpsRef->getNumberOfPictures())? rpsRef->getDeltaPOC(j) : 0);
+            rps->setDeltaPOC(k, deltaPOC);
+            rps->used_by_curr_pic_flag[k] = refIdc == 1;
+
+            if (deltaPOC < 0)
+            {
+              k0++;
+            }
+            else
+            {
+              k1++;
+            }
+            k++;
+          }
         }
-        else
-        {
-          k1++;
-        }
-        k++;
-      }
-    }
-    rps->num_pics = k;
-    rps->num_negative_pics = k0;
-    rps->num_positive_pics = k1;
-    rps->sortDeltaPOC();
+        rps->num_pics = k;
+        rps->num_negative_pics = k0;
+        rps->num_positive_pics = k1;
+        rps->sortDeltaPOC();
   }
   else
   {
@@ -1770,9 +1777,7 @@ void H265Bitstream::parseShortTermRefPicSet(const H265SeqParamSet* sps, Referenc
 }
 
 //hevc CABAC from HM50
-const
-Ipp8u H265Bitstream::RenormTable
-[32] =
+const Ipp8u H265Bitstream::RenormTable[32] =
 {
   6,  5,  4,  4,
   3,  3,  3,  3,

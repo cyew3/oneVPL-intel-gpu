@@ -181,15 +181,15 @@ namespace UMC_HEVC_DECODER
         }    
 
         //===== inverse transform =====
-        if (!pCU->GetCbf(AbsPartIdx, TEXT_LUMA, TrDepth))
+        if (!pCU->GetCbf(AbsPartIdx, COMPONENT_LUMA, TrDepth))
             return;
 
         Ipp32u NumCoeffInc = (m_pSeqParamSet->MaxCUSize * m_pSeqParamSet->MaxCUSize) >> (m_pSeqParamSet->MaxCUDepth << 1);
         H265CoeffsPtrCommon pCoeff = pCU->m_TrCoeffY + (NumCoeffInc * AbsPartIdx);
-        bool useTransformSkip = pCU->GetTransformSkip(g_ConvertTxtTypeToIdx[TEXT_LUMA], AbsPartIdx) != 0;
+        bool useTransformSkip = pCU->GetTransformSkip(COMPONENT_LUMA, AbsPartIdx) != 0;
 
         m_TrQuant->InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_LUMA, pCU->GetLumaIntra(AbsPartIdx),
-            pRec, pitch, pCoeff, width, width, useTransformSkip);
+            pRec, pitch, pCoeff, width, useTransformSkip);
 
     } // void H265SegmentDecoder::IntraRecLumaBlk(...)
 
@@ -228,8 +228,8 @@ namespace UMC_HEVC_DECODER
             break;
         }
 
-        bool chromaUPresent = pCU->GetCbf(AbsPartIdx, TEXT_CHROMA_U, TrDepth) != 0;
-        bool chromaVPresent = pCU->GetCbf(AbsPartIdx, TEXT_CHROMA_V, TrDepth) != 0;
+        bool chromaUPresent = pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_U, TrDepth) != 0;
+        bool chromaVPresent = pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_V, TrDepth) != 0;
 
         if (!chromaUPresent && !chromaVPresent)
             return;
@@ -243,9 +243,9 @@ namespace UMC_HEVC_DECODER
         {
             H265CoeffsPtrCommon pCoeff = pCU->m_TrCoeffCb + (NumCoeffInc * AbsPartIdx);
             H265CoeffsPtrCommon pResi = (H265CoeffsPtrCommon)m_ppcYUVResi->m_pUPlane;
-            bool useTransformSkip = pCU->GetTransformSkip(g_ConvertTxtTypeToIdx[TEXT_CHROMA_U], AbsPartIdx) != 0;
+            bool useTransformSkip = pCU->GetTransformSkip(COMPONENT_CHROMA_U, AbsPartIdx) != 0;
             m_TrQuant->InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_CHROMA_U, REG_DCT,
-                pResi, residualPitch, pCoeff, Size, Size, useTransformSkip);
+                pResi, residualPitch, pCoeff, Size, useTransformSkip);
         }
 
         // Cr
@@ -253,9 +253,9 @@ namespace UMC_HEVC_DECODER
         {
             H265CoeffsPtrCommon pCoeff = pCU->m_TrCoeffCr + (NumCoeffInc * AbsPartIdx);
             H265CoeffsPtrCommon pResi = (H265CoeffsPtrCommon)m_ppcYUVResi->m_pVPlane;
-            bool useTransformSkip = pCU->GetTransformSkip(g_ConvertTxtTypeToIdx[TEXT_CHROMA_V], AbsPartIdx) != 0;
+            bool useTransformSkip = pCU->GetTransformSkip(COMPONENT_CHROMA_V, AbsPartIdx) != 0;
             m_TrQuant->InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_CHROMA_V, REG_DCT,
-                pResi, residualPitch, pCoeff, Size, Size, useTransformSkip);
+                pResi, residualPitch, pCoeff, Size, useTransformSkip);
         }
 /*
         //===== reconstruction =====

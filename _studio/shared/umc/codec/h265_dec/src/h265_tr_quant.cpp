@@ -26,10 +26,8 @@ namespace UMC_HEVC_DECODER
 
 H265TrQuant::H265TrQuant()
 {
-    m_residualsBuffer = (H265CoeffsCommon*)ippMalloc(sizeof(H265CoeffsCommon) * MAX_CU_SIZE * MAX_CU_SIZE * 3);//aligned 64 bytes
+    m_residualsBuffer = (H265CoeffsCommon*)ippMalloc(sizeof(H265CoeffsCommon) * MAX_CU_SIZE * MAX_CU_SIZE * 2);//aligned 64 bytes
     m_residualsBuffer1 = m_residualsBuffer + MAX_CU_SIZE * MAX_CU_SIZE;
-    m_tempTransformBuffer = m_residualsBuffer + 2 * MAX_CU_SIZE * MAX_CU_SIZE;
-
 }
 
 H265TrQuant::~H265TrQuant()
@@ -44,15 +42,9 @@ H265TrQuant::~H265TrQuant()
 *  \param iWidth input data (width of transform)
 *  \param iHeight input data (height of transform)
 */
-#define OPT_IDCT
-
 // ML: OPT: Parameterized to allow const 'shift' propogation
 template <Ipp32s bitDepth, typename DstCoeffsType>
-void InverseTransform(H265CoeffsPtrCommon coeff, DstCoeffsType* dst, Ipp32s dstPitch, Ipp32s Size, Ipp32u Mode
-#if !defined(OPT_IDCT)
-                      , H265CoeffsCommon * tempBuffer
-#endif
-)
+void InverseTransform(H265CoeffsPtrCommon coeff, DstCoeffsType* dst, Ipp32s dstPitch, Ipp32s Size, Ipp32u Mode)
 {
     if (Size == 4)
     {
@@ -81,22 +73,22 @@ void InverseTransform(H265CoeffsPtrCommon coeff, DstCoeffsType* dst, Ipp32s dstP
 
 template <typename DstCoeffsType>
 void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, Ipp32u Mode, DstCoeffsType* pResidual,
-                                  Ipp32u Stride, H265CoeffsPtrCommon pCoeff, Ipp32u Width, Ipp32u Height,
+                                  Ipp32u Stride, H265CoeffsPtrCommon pCoeff, Ipp32u Size, 
                                   bool transformSkip)
 {
     if(transQuantBypass)
     {
-        for (Ipp32u k = 0; k < Height; k++)
+        for (Ipp32u k = 0; k < Size; k++)
             // ML: OPT: TODO: verify vectorization
-            for (Ipp32u j = 0; j < Width; j++)
+            for (Ipp32u j = 0; j < Size; j++)
             {
                 if (sizeof(DstCoeffsType) == 1)
                 {
-                    pResidual[k * Stride + j] = (DstCoeffsType)Clip3(0, 255, pResidual[k * Stride + j] + pCoeff[k * Width + j]);
+                    pResidual[k * Stride + j] = (DstCoeffsType)Clip3(0, 255, pResidual[k * Stride + j] + pCoeff[k * Size + j]);
                 }
                 else
                 {
-                    pResidual[k * Stride + j] = (DstCoeffsType)pCoeff[k * Width + j];
+                    pResidual[k * Stride + j] = (DstCoeffsType)pCoeff[k * Size + j];
                 }
             }
 
@@ -108,15 +100,10 @@ void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, I
     if (bitDepth == 8 )
     {
         if (transformSkip)
-            InvTransformSkip< 8 >(pCoeff, pResidual, Stride, Width, Height);
+            InvTransformSkip< 8 >(pCoeff, pResidual, Stride, Size);
         else
         {
-            VM_ASSERT(Width == Height);
-            InverseTransform< 8 >(pCoeff, pResidual, Stride, Width, Mode
-#if !defined(OPT_IDCT)
-                , m_tempTransformBuffer
-#endif
-            );
+            InverseTransform< 8 >(pCoeff, pResidual, Stride, Size, Mode);
         }
     } 
     else
@@ -132,12 +119,12 @@ void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, I
 #if BITS_PER_PLANE == 8
 template void H265TrQuant::InvTransformNxN<Ipp8u>(
     bool transQuantBypass, EnumTextType TxtType, Ipp32u Mode, Ipp8u* pResidual, Ipp32u Stride,
-    H265CoeffsPtrCommon pCoeff,Ipp32u Width, Ipp32u Height, bool transformSkip);
+    H265CoeffsPtrCommon pCoeff,Ipp32u Size, bool transformSkip);
 #endif
 
 template void H265TrQuant::InvTransformNxN<Ipp16s>(
     bool transQuantBypass, EnumTextType TxtType, Ipp32u Mode, Ipp16s* pResidual, Ipp32u Stride,
-    H265CoeffsPtrCommon pCoeff,Ipp32u Width, Ipp32u Height, bool transformSkip);
+    H265CoeffsPtrCommon pCoeff,Ipp32u Size, bool transformSkip);
 
 /* ----------------------------------------------------------------------------*/
 
@@ -145,9 +132,9 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
 {
     VM_ASSERT(pCU->m_AbsIdxInLCU == 0);
 
-    bool lumaPresent = pCU->GetCbf(AbsPartIdx, TEXT_LUMA, TrMode) != 0;
-    bool chromaUPresent = pCU->GetCbf(AbsPartIdx, TEXT_CHROMA_U, TrMode) != 0;
-    bool chromaVPresent = pCU->GetCbf(AbsPartIdx, TEXT_CHROMA_V, TrMode) != 0;
+    bool lumaPresent = pCU->GetCbf(AbsPartIdx, COMPONENT_LUMA, TrMode) != 0;
+    bool chromaUPresent = pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_U, TrMode) != 0;
+    bool chromaVPresent = pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_V, TrMode) != 0;
 
     if (!lumaPresent && !chromaUPresent && !chromaVPresent)
     {
@@ -169,8 +156,8 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
             H265PlanePtrYCommon ptrLuma = pCU->m_Frame->GetLumaAddr(pCU->CUAddr, AbsPartIdx);
 
             pCoeff = pCU->m_TrCoeffY + coeffsOffset;
-            InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_LUMA, REG_DCT, ptrLuma, DstStride, pCoeff, Size, Size,
-                pCU->GetTransformSkip(g_ConvertTxtTypeToIdx[TEXT_LUMA], AbsPartIdx) != 0);
+            InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_LUMA, REG_DCT, ptrLuma, DstStride, pCoeff, Size,
+                pCU->GetTransformSkip(COMPONENT_LUMA, AbsPartIdx) != 0);
         }
 
         if (chromaUPresent || chromaVPresent)
@@ -193,15 +180,15 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
             if (chromaUPresent)
             {
                 pCoeff = pCU->m_TrCoeffCb + (coeffsOffset >> 2);
-                InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_CHROMA_U, REG_DCT, residualsTempBuffer, res_pitch, pCoeff, Size, Size,
-                    pCU->GetTransformSkip(g_ConvertTxtTypeToIdx[TEXT_CHROMA_U], AbsPartIdx) != 0);
+                InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_CHROMA_U, REG_DCT, residualsTempBuffer, res_pitch, pCoeff, Size,
+                    pCU->GetTransformSkip(COMPONENT_CHROMA_U, AbsPartIdx) != 0);
             }
 
             if (chromaVPresent)
             {
                 pCoeff = pCU->m_TrCoeffCr + (coeffsOffset >> 2);
-                InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_CHROMA_V, REG_DCT, residualsTempBuffer1, res_pitch, pCoeff, Size, Size,
-                    pCU->GetTransformSkip(g_ConvertTxtTypeToIdx[TEXT_CHROMA_V], AbsPartIdx) != 0);
+                InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_CHROMA_V, REG_DCT, residualsTempBuffer1, res_pitch, pCoeff, Size,
+                    pCU->GetTransformSkip(COMPONENT_CHROMA_V, AbsPartIdx) != 0);
             }
   
             // ML: OPT: TODO: Vectorize this
@@ -240,10 +227,9 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
 
 // ML: OPT: Parameterized to allow const 'bitDepth' propogation
 template <int bitDepth, typename DstCoeffsType>
-void H265TrQuant::InvTransformSkip(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, Ipp32u Stride, Ipp32u Width, Ipp32u Height)
+void H265TrQuant::InvTransformSkip(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, Ipp32u Stride, Ipp32u Size)
 {
-    VM_ASSERT(Width == Height);
-    Ipp32u Log2TrSize = g_ConvertToBit[Width] + 2;
+    Ipp32u Log2TrSize = g_ConvertToBit[Size] + 2;
     Ipp32s shift = MAX_TR_DYNAMIC_RANGE - bitDepth - Log2TrSize;
     Ipp32u transformSkipShift;
     Ipp32u j, k;
@@ -253,18 +239,18 @@ void H265TrQuant::InvTransformSkip(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pR
         Ipp32s offset;
         transformSkipShift = shift;
         offset = (1 << (transformSkipShift -1));
-        for (j = 0; j < Height; j++)
+        for (j = 0; j < Size; j++)
         {
             // ML: OPT: TODO: verify vectorization
-            for (k = 0; k < Width; k ++)
+            for (k = 0; k < Size; k ++)
             {
                 if (sizeof(DstCoeffsType) == 1)
                 {
-                    pResidual[j * Stride + k] =  (DstCoeffsType) ClipY(((pCoeff[j * Width + k] + offset) >> transformSkipShift) + pResidual[j * Stride + k]);
+                    pResidual[j * Stride + k] =  (DstCoeffsType) ClipY(((pCoeff[j * Size + k] + offset) >> transformSkipShift) + pResidual[j * Stride + k]);
                 }
                 else
                 {
-                    pResidual[j * Stride + k] =  (DstCoeffsType)((pCoeff[j * Width + k] + offset) >> transformSkipShift);
+                    pResidual[j * Stride + k] =  (DstCoeffsType)((pCoeff[j * Size + k] + offset) >> transformSkipShift);
                 }
             }
         }
@@ -273,17 +259,17 @@ void H265TrQuant::InvTransformSkip(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pR
     {
         //The case when uiBitDepth >= 13
         transformSkipShift = - shift;
-        for (j = 0; j < Height; j++)
+        for (j = 0; j < Size; j++)
         {
-            for (k = 0; k < Width; k ++)
+            for (k = 0; k < Size; k ++)
             {
                 if (sizeof(DstCoeffsType) == 1)
                 {
-                    pResidual[j * Stride + k] =  (DstCoeffsType)ClipY((pCoeff[j * Width + k] << transformSkipShift) + pResidual[j * Stride + k]);
+                    pResidual[j * Stride + k] =  (DstCoeffsType)ClipY((pCoeff[j * Size + k] << transformSkipShift) + pResidual[j * Stride + k]);
                 }
                 else
                 {
-                    pResidual[j * Stride + k] =  (DstCoeffsType)(pCoeff[j * Width + k] << transformSkipShift);
+                    pResidual[j * Stride + k] =  (DstCoeffsType)(pCoeff[j * Size + k] << transformSkipShift);
                 }
             }
         }

@@ -98,7 +98,7 @@ public:
         return m_transformSkip[plane][partAddr];
     }
 
-    inline Ipp8u GetCbf(Ipp32s plane, Ipp32s partAddr) const
+    inline Ipp8u GetCbf(ComponentPlane plane, Ipp32s partAddr) const
     {
         return m_cbf[plane][partAddr];
     }
@@ -165,23 +165,23 @@ public:
 
     Ipp32u getQuadtreeTULog2MinSizeInCU (Ipp32u Idx);
 
-    H265_FORCEINLINE Ipp8u* GetCbf (EnumTextType Type) const
+    H265_FORCEINLINE Ipp8u* GetCbf (ComponentPlane plane) const
     {
-        return m_cbf[g_ConvertTxtTypeToIdx[Type]];
+        return m_cbf[plane];
     }
 
-    H265_FORCEINLINE Ipp8u GetCbf(Ipp32u Idx, EnumTextType Type) const
+    H265_FORCEINLINE Ipp8u GetCbf(Ipp32u Idx, ComponentPlane plane) const
     {
-        return m_cbf[g_ConvertTxtTypeToIdx[Type]][Idx];
+        return m_cbf[plane][Idx];
     }
 
-    H265_FORCEINLINE Ipp8u GetCbf(Ipp32u Idx, EnumTextType Type, Ipp32u TrDepth) const
+    H265_FORCEINLINE Ipp8u GetCbf(Ipp32u Idx, ComponentPlane plane, Ipp32u TrDepth) const
     {
-        return (Ipp8u)((GetCbf(Idx, Type) >> TrDepth ) & 0x1);
+        return (Ipp8u)((GetCbf(Idx, plane) >> TrDepth ) & 0x1);
     }
 
     void setCbfSubParts (Ipp32u CbfY, Ipp32u CbfU, Ipp32u CbfV, Ipp32u AbsPartIdx, Ipp32u Depth);
-    void setCbfSubParts (Ipp32u m_Cbf, EnumTextType TType, Ipp32u AbsPartIdx, Ipp32u Depth);
+    void setCbfSubParts (Ipp32u m_Cbf, ComponentPlane plane, Ipp32u AbsPartIdx, Ipp32u Depth);
 
     // member functions for coding tool information (only functions with declaration here. simple get/set are removed)
     template <typename T>
@@ -189,7 +189,7 @@ public:
     void setLumaIntraDirSubParts (Ipp32u Dir, Ipp32u AbsPartIdx, Ipp32u Depth);
     void setChromIntraDirSubParts (Ipp32u Dir, Ipp32u AbsPartIdx, Ipp32u Depth);
 
-    void setTransformSkipSubParts(Ipp32u useTransformSkip, EnumTextType Type, Ipp32u AbsPartIdx, Ipp32u Depth);
+    void setTransformSkipSubParts(Ipp32u useTransformSkip, ComponentPlane plane, Ipp32u AbsPartIdx, Ipp32u Depth);
 
     void setIPCMFlagSubParts (bool IpcmFlag, Ipp32u AbsPartIdx, Ipp32u Depth);
 
@@ -207,7 +207,7 @@ public:
     void getAllowedChromaDir (Ipp32u AbsPartIdx, Ipp32u* ModeList);
 
     // member functions for SBAC context ----------------------------------------------------------------------------------
-    Ipp32u getCtxQtCbf (EnumTextType Type, Ipp32u TrDepth);
+    Ipp32u getCtxQtCbf (ComponentPlane plane, Ipp32u TrDepth);
 
     // member functions for RD cost storage  ------------(only functions with declaration here. simple get/set are removed)
     Ipp32u getCoefScanIdx(Ipp32u AbsPartIdx, Ipp32u L2Width, bool IsLuma, bool IsIntra);

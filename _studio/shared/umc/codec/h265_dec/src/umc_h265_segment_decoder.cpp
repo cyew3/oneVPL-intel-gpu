@@ -270,20 +270,20 @@ void DecodingContext::SetNewQP(Ipp8u newQP)
     else
         qpScaledCr = g_ChromaScale[qpScaledCr] + qpBdOffsetC;
 
-    m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_LUMA]].m_QPRem = qpScaledY % 6;
-    m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_LUMA]].m_QPPer = qpScaledY / 6;
-    m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_LUMA]].m_QPScale =
-        g_invQuantScales[m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_LUMA]].m_QPRem] << m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_LUMA]].m_QPPer;
+    m_ScaledQP[COMPONENT_LUMA].m_QPRem = qpScaledY % 6;
+    m_ScaledQP[COMPONENT_LUMA].m_QPPer = qpScaledY / 6;
+    m_ScaledQP[COMPONENT_LUMA].m_QPScale =
+        g_invQuantScales[m_ScaledQP[COMPONENT_LUMA].m_QPRem] << m_ScaledQP[COMPONENT_LUMA].m_QPPer;
 
-    m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_CHROMA_U]].m_QPRem = qpScaledCb % 6;
-    m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_CHROMA_U]].m_QPPer = qpScaledCb / 6;
-    m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_CHROMA_U]].m_QPScale =
-        g_invQuantScales[m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_CHROMA_U]].m_QPRem] << m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_CHROMA_U]].m_QPPer;
+    m_ScaledQP[COMPONENT_CHROMA_U].m_QPRem = qpScaledCb % 6;
+    m_ScaledQP[COMPONENT_CHROMA_U].m_QPPer = qpScaledCb / 6;
+    m_ScaledQP[COMPONENT_CHROMA_U].m_QPScale =
+        g_invQuantScales[m_ScaledQP[COMPONENT_CHROMA_U].m_QPRem] << m_ScaledQP[COMPONENT_CHROMA_U].m_QPPer;
 
-    m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_CHROMA_V]].m_QPRem = qpScaledCr % 6;
-    m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_CHROMA_V]].m_QPPer = qpScaledCr / 6;
-    m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_CHROMA_V]].m_QPScale =
-        g_invQuantScales[m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_CHROMA_V]].m_QPRem] << m_ScaledQP[g_ConvertTxtTypeToIdx[TEXT_CHROMA_V]].m_QPPer;
+    m_ScaledQP[COMPONENT_CHROMA_V].m_QPRem = qpScaledCr % 6;
+    m_ScaledQP[COMPONENT_CHROMA_V].m_QPPer = qpScaledCr / 6;
+    m_ScaledQP[COMPONENT_CHROMA_V].m_QPScale =
+        g_invQuantScales[m_ScaledQP[COMPONENT_CHROMA_V].m_QPRem] << m_ScaledQP[COMPONENT_CHROMA_V].m_QPPer;
 }
 
 void H265SegmentDecoder::SaveCTBContext(H265CodingUnit* pCU)
@@ -1611,21 +1611,21 @@ void H265SegmentDecoder::DecodeTransform(H265CodingUnit* pCU, Ipp32u offsetLuma,
         const bool FirstCbfOfCUFlag = TrDepth == 0;
         if (FirstCbfOfCUFlag)
         {
-            pCU->setCbfSubParts( 0, TEXT_CHROMA_U, AbsPartIdx, Depth);
-            pCU->setCbfSubParts( 0, TEXT_CHROMA_V, AbsPartIdx, Depth);
+            pCU->setCbfSubParts( 0, COMPONENT_CHROMA_U, AbsPartIdx, Depth);
+            pCU->setCbfSubParts( 0, COMPONENT_CHROMA_V, AbsPartIdx, Depth);
         }
 
         if (FirstCbfOfCUFlag || l2width > 2)
         {
-            if (FirstCbfOfCUFlag || pCU->GetCbf(AbsPartIdx, TEXT_CHROMA_U, TrDepth - 1))
-                ParseQtCbfCABAC(pCU, AbsPartIdx, TEXT_CHROMA_U, TrDepth, Depth);
-            if (FirstCbfOfCUFlag || pCU->GetCbf(AbsPartIdx, TEXT_CHROMA_V, TrDepth - 1))
-                ParseQtCbfCABAC(pCU, AbsPartIdx, TEXT_CHROMA_V, TrDepth, Depth);
+            if (FirstCbfOfCUFlag || pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_U, TrDepth - 1))
+                ParseQtCbfCABAC(pCU, AbsPartIdx, COMPONENT_CHROMA_U, TrDepth, Depth);
+            if (FirstCbfOfCUFlag || pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_V, TrDepth - 1))
+                ParseQtCbfCABAC(pCU, AbsPartIdx, COMPONENT_CHROMA_V, TrDepth, Depth);
         }
         else
         {
-            pCU->setCbfSubParts(pCU->GetCbf(AbsPartIdx, TEXT_CHROMA_U, TrDepth - 1) << TrDepth, TEXT_CHROMA_U, AbsPartIdx, Depth);
-            pCU->setCbfSubParts(pCU->GetCbf(AbsPartIdx, TEXT_CHROMA_V, TrDepth - 1) << TrDepth, TEXT_CHROMA_V, AbsPartIdx, Depth);
+            pCU->setCbfSubParts(pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_U, TrDepth - 1) << TrDepth, COMPONENT_CHROMA_U, AbsPartIdx, Depth);
+            pCU->setCbfSubParts(pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_V, TrDepth - 1) << TrDepth, COMPONENT_CHROMA_V, AbsPartIdx, Depth);
         }
     }
 
@@ -1644,18 +1644,18 @@ void H265SegmentDecoder::DecodeTransform(H265CodingUnit* pCU, Ipp32u offsetLuma,
         {
             DecodeTransform(pCU, offsetLuma, AbsPartIdx, Depth, l2width, TrIdx+1, CodeDQP);
 
-            YCbf |= pCU->GetCbf(AbsPartIdx, TEXT_LUMA, TrDepth + 1);
-            UCbf |= pCU->GetCbf(AbsPartIdx, TEXT_CHROMA_U, TrDepth + 1);
-            VCbf |= pCU->GetCbf(AbsPartIdx, TEXT_CHROMA_V, TrDepth + 1);
+            YCbf |= pCU->GetCbf(AbsPartIdx, COMPONENT_LUMA, TrDepth + 1);
+            UCbf |= pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_U, TrDepth + 1);
+            VCbf |= pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_V, TrDepth + 1);
             AbsPartIdx += QPartNum;
             offsetLuma += size;
         }
 
         for (Ipp32u ui = 0; ui < 4 * QPartNum; ++ui)
         {
-            pCU->GetCbf(TEXT_LUMA)[StartAbsPartIdx + ui] |= YCbf << TrDepth;
-            pCU->GetCbf(TEXT_CHROMA_U)[StartAbsPartIdx + ui] |= UCbf << TrDepth;
-            pCU->GetCbf(TEXT_CHROMA_V)[StartAbsPartIdx + ui] |= VCbf << TrDepth;
+            pCU->GetCbf(COMPONENT_LUMA)[StartAbsPartIdx + ui] |= YCbf << TrDepth;
+            pCU->GetCbf(COMPONENT_CHROMA_U)[StartAbsPartIdx + ui] |= UCbf << TrDepth;
+            pCU->GetCbf(COMPONENT_CHROMA_V)[StartAbsPartIdx + ui] |= VCbf << TrDepth;
         }
     }
     else
@@ -1663,26 +1663,24 @@ void H265SegmentDecoder::DecodeTransform(H265CodingUnit* pCU, Ipp32u offsetLuma,
         VM_ASSERT(Depth >= pCU->GetDepth(AbsPartIdx));
         pCU->setTrIdxSubParts(TrDepth, AbsPartIdx, Depth);
 
-        pCU->setCbfSubParts(0, TEXT_LUMA, AbsPartIdx, Depth);
-        if (pCU->GetPredictionMode(AbsPartIdx) != MODE_INTRA && Depth == pCU->GetDepth(AbsPartIdx) && !pCU->GetCbf(AbsPartIdx, TEXT_CHROMA_U, 0) && !pCU->GetCbf(AbsPartIdx, TEXT_CHROMA_V, 0))
+        pCU->setCbfSubParts(0, COMPONENT_LUMA, AbsPartIdx, Depth);
+        if (pCU->GetPredictionMode(AbsPartIdx) != MODE_INTRA && Depth == pCU->GetDepth(AbsPartIdx) && !pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_U, 0) && !pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_V, 0))
         {
-            pCU->setCbfSubParts( 1 << TrDepth, TEXT_LUMA, AbsPartIdx, Depth);
+            pCU->setCbfSubParts( 1 << TrDepth, COMPONENT_LUMA, AbsPartIdx, Depth);
         }
         else
         {
-            ParseQtCbfCABAC(pCU, AbsPartIdx, TEXT_LUMA, TrDepth, Depth);
+            ParseQtCbfCABAC(pCU, AbsPartIdx, COMPONENT_LUMA, TrDepth, Depth);
         }
         // transform_unit begin
-        Ipp32u cbfY = pCU->GetCbf(AbsPartIdx, TEXT_LUMA    , TrIdx);
-        Ipp32u cbfU = pCU->GetCbf(AbsPartIdx, TEXT_CHROMA_U, TrIdx);
-        Ipp32u cbfV = pCU->GetCbf(AbsPartIdx, TEXT_CHROMA_V, TrIdx);
-        if (l2width == 2)
+        Ipp32u cbfY = pCU->GetCbf(AbsPartIdx, COMPONENT_LUMA    , TrIdx);
+        Ipp32u cbfU = pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_U, TrIdx);
+        Ipp32u cbfV = pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_V, TrIdx);
+
+        if (l2width == 2 && (AbsPartIdx & 0x3) == 0x3 )
         {
-            if ( (AbsPartIdx & 0x3) == 0x3 )
-            {
-                cbfU = pCU->GetCbf(m_BakAbsPartIdx, TEXT_CHROMA_U, TrIdx);
-                cbfV = pCU->GetCbf(m_BakAbsPartIdx, TEXT_CHROMA_V, TrIdx);
-            }
+            cbfU = pCU->GetCbf(m_BakAbsPartIdx, COMPONENT_CHROMA_U, TrIdx);
+            cbfV = pCU->GetCbf(m_BakAbsPartIdx, COMPONENT_CHROMA_V, TrIdx);
         }
 
         if (cbfY || cbfU || cbfV)
@@ -1703,17 +1701,18 @@ void H265SegmentDecoder::DecodeTransform(H265CodingUnit* pCU, Ipp32u offsetLuma,
 
         if (cbfY)
         {
-            ParseCoeffNxNCABAC(pCU, (pCU->m_TrCoeffY + offsetLuma), AbsPartIdx, l2width, Depth, TEXT_LUMA);
+            ParseCoeffNxNCABAC(pCU, (pCU->m_TrCoeffY + offsetLuma), AbsPartIdx, l2width, Depth, COMPONENT_LUMA);
         }
+
         if (l2width > 2)
         {
             if (cbfU)
             {
-                ParseCoeffNxNCABAC(pCU, (pCU->m_TrCoeffCb + offsetChroma), AbsPartIdx, l2width-1, Depth, TEXT_CHROMA_U);
+                ParseCoeffNxNCABAC(pCU, (pCU->m_TrCoeffCb + offsetChroma), AbsPartIdx, l2width-1, Depth, COMPONENT_CHROMA_U);
             }
             if (cbfV)
             {
-                ParseCoeffNxNCABAC(pCU, (pCU->m_TrCoeffCr + offsetChroma), AbsPartIdx, l2width-1, Depth, TEXT_CHROMA_V);
+                ParseCoeffNxNCABAC(pCU, (pCU->m_TrCoeffCr + offsetChroma), AbsPartIdx, l2width-1, Depth, COMPONENT_CHROMA_V);
             }
         }
         else
@@ -1722,11 +1721,11 @@ void H265SegmentDecoder::DecodeTransform(H265CodingUnit* pCU, Ipp32u offsetLuma,
             {
                 if (cbfU)
                 {
-                    ParseCoeffNxNCABAC(pCU, (pCU->m_TrCoeffCb + m_BakChromaOffset), m_BakAbsPartIdx, l2width, Depth, TEXT_CHROMA_U);
+                    ParseCoeffNxNCABAC(pCU, (pCU->m_TrCoeffCb + m_BakChromaOffset), m_BakAbsPartIdx, l2width, Depth, COMPONENT_CHROMA_U);
                 }
                 if (cbfV)
                 {
-                    ParseCoeffNxNCABAC(pCU, (pCU->m_TrCoeffCr + m_BakChromaOffset), m_BakAbsPartIdx, l2width, Depth, TEXT_CHROMA_V);
+                    ParseCoeffNxNCABAC(pCU, (pCU->m_TrCoeffCr + m_BakChromaOffset), m_BakAbsPartIdx, l2width, Depth, COMPONENT_CHROMA_V);
                 }
             }
         }
@@ -1739,15 +1738,14 @@ void H265SegmentDecoder::ParseTransformSubdivFlagCABAC(Ipp32u& SubdivFlag, Ipp32
     SubdivFlag = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffsetHEVC[TRANS_SUBDIV_FLAG_HEVC] + Log2TransformBlockSize);
 }
 
-void H265SegmentDecoder::ParseQtCbfCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, EnumTextType Type, Ipp32u TrDepth, Ipp32u Depth)
+void H265SegmentDecoder::ParseQtCbfCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, ComponentPlane plane, Ipp32u TrDepth, Ipp32u Depth)
 {
     Ipp32u uVal;
-    const Ipp32u Ctx = pCU->getCtxQtCbf(Type, TrDepth);
+    const Ipp32u Ctx = pCU->getCtxQtCbf(plane, TrDepth);
 
-    uVal = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffsetHEVC[QT_CBF_HEVC] + Ctx + NUM_CONTEXT_QT_CBF * (Type ? TEXT_CHROMA : Type));
-    //m_pcTDecBinIf->decodeBin( uiSymbol , m_cCUQtCbfSCModel.get( 0, eType ? eType - 1: eType, uiCtx ) );
+    uVal = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffsetHEVC[QT_CBF_HEVC] + Ctx + NUM_CONTEXT_QT_CBF * (plane ? COMPONENT_CHROMA : plane));
 
-    pCU->setCbfSubParts(uVal << TrDepth, Type, AbsPartIdx, Depth);
+    pCU->setCbfSubParts(uVal << TrDepth, plane, AbsPartIdx, Depth);
 }
 
 void H265SegmentDecoder::ParseQtRootCbfCABAC(Ipp32u& QtRootCbf)
@@ -1924,19 +1922,19 @@ static H265_FORCEINLINE Ipp8u Rst2ZS(const Ipp8u x, const Ipp8u y, const Ipp8u l
     return (diagId < w) ? (diagOffs[diagId] + x) : ((1<<(l2w<<1)) - diagOffs[((w<<1)-1)-diagId] + (w-y-1));
 }
 
-void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCommon pCoef, Ipp32u AbsPartIdx, Ipp32u Log2BlockSize, Ipp32u Depth, EnumTextType Type)
+void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCommon pCoef, Ipp32u AbsPartIdx, Ipp32u Log2BlockSize, Ipp32u Depth, ComponentPlane plane)
 {
     const Ipp32u Size    = 1 << Log2BlockSize;
     const Ipp32u L2Width = Log2BlockSize-2;
 
-    const bool   IsLuma  = (Type==TEXT_LUMA);
-    const bool   beValid = pCU->m_CUTransquantBypass[AbsPartIdx] ? false : pCU->m_SliceHeader->m_PicParamSet->sign_data_hiding_enabled_flag;
+    const bool   IsLuma  = (plane == COMPONENT_LUMA);
+    const bool   beValid = pCU->m_CUTransquantBypass[AbsPartIdx] ? false : m_pPicParamSet->sign_data_hiding_enabled_flag;
 
     const Ipp32u baseCoeffGroupCtxIdx = ctxIdxOffsetHEVC[SIG_COEFF_GROUP_FLAG_HEVC] + (IsLuma ? 0 : NUM_CONTEXT_SIG_COEFF_GROUP_FLAG);
     const Ipp32u baseCtxIdx = ctxIdxOffsetHEVC[SIG_FLAG_HEVC] + ( IsLuma ? 0 : NUM_CONTEXT_SIG_FLAG_LUMA);
 
-    if (pCU->m_SliceHeader->m_PicParamSet->transform_skip_enabled_flag && !L2Width)
-        ParseTransformSkipFlags(pCU, AbsPartIdx, Depth, Type);
+    if (m_pPicParamSet->transform_skip_enabled_flag && !L2Width)
+        ParseTransformSkipFlags(pCU, AbsPartIdx, Depth, plane);
     
     memset(pCoef, 0, sizeof(H265CoeffsCommon) << (Log2BlockSize << 1));
 
@@ -1979,7 +1977,7 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
 
     Ipp32u c_Log2TrSize = g_ConvertToBit[Size] + 2;
     Ipp32u TransformShift = MAX_TR_DYNAMIC_RANGE - 8 - c_Log2TrSize;
-    Ipp32s idx = g_ConvertTxtTypeToIdx[Type];
+    Ipp32s idx = plane;
     Ipp32s QPRem = m_context->m_ScaledQP[idx].m_QPRem;
     Ipp32s QPPer = m_context->m_ScaledQP[idx].m_QPPer;
 
@@ -2212,16 +2210,16 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
     }
 }
 
-void H265SegmentDecoder::ParseTransformSkipFlags(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, EnumTextType Type)
+void H265SegmentDecoder::ParseTransformSkipFlags(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, ComponentPlane plane)
 {
     if (pCU->m_CUTransquantBypass[AbsPartIdx])
         return;
 
     Ipp32u useTransformSkip;
-    Ipp32u CtxIdx = ctxIdxOffsetHEVC[TRANSFORM_SKIP_HEVC] + (Type ? TEXT_CHROMA : TEXT_LUMA) * NUM_CONTEXT_TRANSFORMSKIP_FLAG;
+    Ipp32u CtxIdx = ctxIdxOffsetHEVC[TRANSFORM_SKIP_HEVC] + (plane ? COMPONENT_CHROMA : COMPONENT_LUMA) * NUM_CONTEXT_TRANSFORMSKIP_FLAG;
     useTransformSkip = m_pBitStream->DecodeSingleBin_CABAC(CtxIdx);
 
-    if (Type != TEXT_LUMA)
+    if (plane != COMPONENT_LUMA)
     {
         const Ipp32u Log2TrafoSize = g_ConvertToBit[pCU->m_Frame->m_CodingData->m_MaxCUWidth] + 2 - Depth;
         if(Log2TrafoSize == 2)
@@ -2230,7 +2228,7 @@ void H265SegmentDecoder::ParseTransformSkipFlags(H265CodingUnit* pCU, Ipp32u Abs
         }
     }
 
-    pCU->setTransformSkipSubParts(useTransformSkip, Type, AbsPartIdx, Depth);
+    pCU->setTransformSkipSubParts(useTransformSkip, plane, AbsPartIdx, Depth);
 }
 
 /** Parse (X,Y) position of the last significant coefficient
@@ -2373,9 +2371,6 @@ void H265SegmentDecoder::ReconstructCU(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
         return;
     }
 
-    Ipp32s PartX = XInc >> m_pSeqParamSet->log2_min_transform_block_size;
-    Ipp32s PartY = YInc >> m_pSeqParamSet->log2_min_transform_block_size;
-    Ipp32s PartSize = Size >> m_pSeqParamSet->log2_min_transform_block_size;
     switch (pCU->GetPredictionMode(AbsPartIdx))
     {
         case MODE_INTER:
@@ -2403,7 +2398,7 @@ void H265SegmentDecoder::ReconInter(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp3
     m_Prediction->MotionCompensation(pCU, AbsPartIdx, Depth);
 
     // clip for only non-zero cbp case
-    if ((pCU->GetCbf(AbsPartIdx, TEXT_LUMA)) || (pCU->GetCbf(AbsPartIdx, TEXT_CHROMA_U)) || (pCU->GetCbf(AbsPartIdx, TEXT_CHROMA_V )))
+    if ((pCU->GetCbf(AbsPartIdx, COMPONENT_LUMA)) || (pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_U)) || (pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_V)))
     {
         // inter recon
         DecodeInterTexture(pCU, AbsPartIdx);

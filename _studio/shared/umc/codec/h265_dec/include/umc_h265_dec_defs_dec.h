@@ -60,6 +60,14 @@ enum {
 #define CU_DQP_TU_CMAX 5 //max number bins for truncated unary
 #define CU_DQP_EG_k 0 //expgolomb order
 
+enum ComponentPlane
+{
+    COMPONENT_LUMA = 0,
+    COMPONENT_CHROMA_U,
+    COMPONENT_CHROMA_V,
+    COMPONENT_CHROMA = COMPONENT_CHROMA_U
+};
+
 /// coefficient scanning type used in ACS
 enum COEFF_SCAN_TYPE
 {

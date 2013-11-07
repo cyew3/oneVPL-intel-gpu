@@ -202,9 +202,9 @@ void H265CodingUnit::getAllowedChromaDir(Ipp32u AbsPartIdx, Ipp32u* ModeList)
     }
 }
 
-Ipp32u H265CodingUnit::getCtxQtCbf(EnumTextType Type, Ipp32u TrDepth)
+Ipp32u H265CodingUnit::getCtxQtCbf(ComponentPlane plane, Ipp32u TrDepth)
 {
-    if (Type)
+    if (plane)
     {
         return TrDepth;
     }
@@ -252,10 +252,10 @@ void H265CodingUnit::setCbfSubParts(Ipp32u CbfY, Ipp32u CbfU, Ipp32u CbfV, Ipp32
     memset(m_cbf[2] + AbsPartIdx, CbfV, sizeof(Ipp8u) * CurrPartNumb);
 }
 
-void H265CodingUnit::setCbfSubParts(Ipp32u uCbf, EnumTextType TType, Ipp32u AbsPartIdx, Ipp32u Depth)
+void H265CodingUnit::setCbfSubParts(Ipp32u uCbf, ComponentPlane plane, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
-    memset(m_cbf[g_ConvertTxtTypeToIdx[TType]] + AbsPartIdx, uCbf, sizeof(Ipp8u) * CurrPartNumb);
+    memset(m_cbf[plane] + AbsPartIdx, uCbf, sizeof(Ipp8u) * CurrPartNumb);
 }
 
 void H265CodingUnit::setDepthSubParts(Ipp32u Depth, Ipp32u AbsPartIdx)
@@ -281,11 +281,11 @@ void H265CodingUnit::setPredModeSubParts(EnumPredMode Mode, Ipp32u AbsPartIdx, I
     memset(m_predModeArray + AbsPartIdx, Mode, m_Frame->getCD()->getNumPartInCU() >> (2 * Depth));
 }
 
-void H265CodingUnit::setTransformSkipSubParts(Ipp32u useTransformSkip, EnumTextType Type, Ipp32u AbsPartIdx, Ipp32u Depth)
+void H265CodingUnit::setTransformSkipSubParts(Ipp32u useTransformSkip, ComponentPlane plane, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
   Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
 
-  memset(m_transformSkip[g_ConvertTxtTypeToIdx[Type]] + AbsPartIdx, useTransformSkip, sizeof(Ipp8u) * CurrPartNumb);
+  memset(m_transformSkip[plane] + AbsPartIdx, useTransformSkip, sizeof(Ipp8u) * CurrPartNumb);
 }
 
 void H265CodingUnit::setLumaIntraDirSubParts(Ipp32u Dir, Ipp32u AbsPartIdx, Ipp32u Depth)

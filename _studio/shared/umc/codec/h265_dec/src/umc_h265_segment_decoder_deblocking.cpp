@@ -545,7 +545,8 @@ template<Ipp32s tusize, Ipp32s dir> void H265SegmentDecoder::GetEdgeStrength(Ipp
         if (!infoP.members.IsAvailable)
         {
             // Another slice or tile case. May need a delayed strength calculation
-            VM_ASSERT(anotherCU);
+            if (!anotherCU)
+                throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
             if (dir == VERT_FILT)
             {

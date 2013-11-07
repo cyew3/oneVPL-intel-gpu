@@ -100,9 +100,6 @@ static T H265_FORCEINLINE ClipC(T Value, int c_bitDepth = 8)
     return ( Value );
 }
 
-// Texture type to integer mapping ------------------------------------------------------------------------------------
-static const Ipp8u g_ConvertTxtTypeToIdx[4] = { 0, 1, 1, 2 }; // resolved at compile time to avoid tablelookup
-
 // Mode-Dependent DST Matrices ----------------------------------------------------------------------------------------
 extern const Ipp8u g_DCTDSTMode_Vert[NUM_INTRA_MODE];
 extern const Ipp8u g_DCTDSTMode_Hor[NUM_INTRA_MODE];

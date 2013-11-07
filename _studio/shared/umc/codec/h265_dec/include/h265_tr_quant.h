@@ -35,18 +35,17 @@ public:
     // transform & inverse transform functions
     template <typename DstCoeffsType>
     void InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, Ipp32u Mode, DstCoeffsType* pResidual, Ipp32u Stride,
-        H265CoeffsPtrCommon pCoeff,Ipp32u Width, Ipp32u Height, bool transformSkip);
+        H265CoeffsPtrCommon pCoeff, Ipp32u Size, bool transformSkip);
 
     void InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Size, Ipp32u TrMode);
 
     // ML: OPT: allows to propogate convert const shift
     template <int bitDepth, typename DstCoeffsType>
-    void InvTransformSkip(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, Ipp32u Stride, Ipp32u Width, Ipp32u Height);
+    void InvTransformSkip(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, Ipp32u Stride, Ipp32u Size);
 
 private:
     H265CoeffsPtrCommon m_residualsBuffer;
     H265CoeffsPtrCommon m_residualsBuffer1;
-    H265CoeffsPtrCommon m_tempTransformBuffer;
 
     // forward Transform
     void Transform(Ipp32u Mode, Ipp8u* pResidual, Ipp32u Stride, Ipp32s* pCoeff, Ipp32s Width, Ipp32s Height);
