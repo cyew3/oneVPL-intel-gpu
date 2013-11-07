@@ -430,7 +430,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Enumerate)(mfxSession session, 
                     , i->Path.c_str()
                     , i->Default ? "default" : ""));
                 //check description size
-                dsc->NameLength = i->Name.size();
+                dsc->NameLength = (mfxU32)i->Name.size();
                 if (dsc->NameAlloc < i->Name.size()) {
                     DISPATCHER_LOG_ERROR((("MFXVideoUSER_Enumerate: allocated buffer for description too small, expected=%d, actual=%d\n")
                         , i->Name.size()
