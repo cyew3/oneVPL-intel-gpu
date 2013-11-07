@@ -154,7 +154,7 @@ public:
     bool DecodeSplitFlagCABAC(H265CodingUnit* pCU, Ipp32s PartX, Ipp32s PartY, Ipp32u Depth);
     Ipp32u DecodeMergeIndexCABAC(void);
 
-    bool DecodeSkipFlagCABAC(H265CodingUnit* pCU, Ipp32s PartX, Ipp32s PartY, Ipp32u Depth);
+    bool DecodeSkipFlagCABAC(Ipp32s PartX, Ipp32s PartY);
     bool DecodeCUTransquantBypassFlag(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
     void DecodeMVPIdxPUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartAddr, Ipp32u PartIdx, EnumRefPicList RefList, H265MVInfo &MVi, Ipp8u InterDir);
     Ipp32s DecodePredModeCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
@@ -176,7 +176,7 @@ public:
     void ParseQtRootCbfCABAC(Ipp32u& QtRootCbf);
     void DecodeQP(H265CodingUnit* pCU, Ipp32u AbsPartIdx);
     Ipp8u getRefQP (H265CodingUnit *pCU, Ipp32s AbsPartIdx);
-    void ParseDeltaQPCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
+    void ParseDeltaQPCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx);
     void ReadUnarySymbolCABAC(Ipp32u& Value, Ipp32s ctxIdx, Ipp32s Offset);
     void FinishDecodeCU(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& IsLast);
     void DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& IsLast);

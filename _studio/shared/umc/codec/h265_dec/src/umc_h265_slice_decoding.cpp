@@ -245,7 +245,7 @@ bool H265Slice::DecodeSliceHeader(PocDecoding * pocDecoding)
                     Ipp32s prevDeltaMSB = 0;
                     Ipp32s maxPicOrderCntLSB = 1 << sps->log2_max_pic_order_cnt_lsb;
                     Ipp32s DeltaPocMsbCycleLt = 0;
-                    for(Ipp32u j = offset + rps->getNumberOfLongtermPictures() - 1, k = 0; k < rps->getNumberOfLongtermPictures(); j--, k++)
+                    for(Ipp32s j = offset + rps->getNumberOfLongtermPictures() - 1, k = 0; k < rps->getNumberOfLongtermPictures(); j--, k++)
                     {
                         int pocLsbLt = rps->poc_lbs_lt[j];
                         if (rps->delta_poc_msb_present_flag[j])

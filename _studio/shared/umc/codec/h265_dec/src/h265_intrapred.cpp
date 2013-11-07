@@ -131,15 +131,15 @@ namespace UMC_HEVC_DECODER
         {
             Ipp32s CUSize = pCU->GetWidth(AbsPartIdx) >> TrDepth;
 
-            unsigned blkSize = 32;
-            int threshold = 1 << (g_bitDepthY - 5);        
+            Ipp32s blkSize = 32;
+            Ipp32s threshold = 1 << (g_bitDepthY - 5);        
 
-            int topLeft = PredPel[0];
-            int topRight = PredPel[2*width];
-            int midHor = PredPel[width];
+            Ipp32s topLeft = PredPel[0];
+            Ipp32s topRight = PredPel[2*width];
+            Ipp32s midHor = PredPel[width];
 
-            int bottomLeft = PredPel[4*width];
-            int midVer = PredPel[3*width];
+            Ipp32s bottomLeft = PredPel[4*width];
+            Ipp32s midVer = PredPel[3*width];
 
             bool bilinearLeft = abs(topLeft + topRight - 2*midHor) < threshold; 
             bool bilinearAbove = abs(topLeft + bottomLeft - 2*midVer) < threshold;

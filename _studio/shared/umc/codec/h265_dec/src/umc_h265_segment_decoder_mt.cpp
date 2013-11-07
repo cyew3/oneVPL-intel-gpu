@@ -223,7 +223,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::DecRecSegment(H265Task & task)
     H265Bitstream  bitstream;
     UMC::Status umcRes = UMC::UMC_OK;
 
-    Ipp32s iFirstPartition = IPP_MAX(m_pSliceHeader->SliceCurStartCUAddr, m_pSliceHeader->m_sliceSegmentCurStartCUAddr);
+    Ipp32s iFirstPartition = IPP_MAX(m_pSliceHeader->SliceCurStartCUAddr, (Ipp32s)m_pSliceHeader->m_sliceSegmentCurStartCUAddr);
     Ipp32s iFirstCU = iFirstPartition / m_pCurrentFrame->m_CodingData->m_NumPartitions;
     Ipp32s iMaxCUNumber = m_pCurrentFrame->getNumCUsInFrame();
 
@@ -339,7 +339,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(H265Task & )
     UMC::Status umcRes = UMC::UMC_OK;
 
     // Convert slice beginning and end to encode order
-    Ipp32s iFirstPartition = IPP_MAX(m_pSliceHeader->SliceCurStartCUAddr, m_pSliceHeader->m_sliceSegmentCurStartCUAddr);
+    Ipp32s iFirstPartition = IPP_MAX(m_pSliceHeader->SliceCurStartCUAddr, (Ipp32s)m_pSliceHeader->m_sliceSegmentCurStartCUAddr);
     Ipp32s iFirstCU = iFirstPartition / m_pCurrentFrame->m_CodingData->m_NumPartitions;
     Ipp32s iMaxCUNumber = m_pCurrentFrame->getNumCUsInFrame();
 

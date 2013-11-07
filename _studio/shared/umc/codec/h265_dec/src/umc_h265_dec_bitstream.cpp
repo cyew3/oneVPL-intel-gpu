@@ -1189,7 +1189,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
                 rps->num_long_term_pics = (Ipp32u)GetVLCElement(false);
                 rps->setNumberOfLongtermPictures(rps->num_long_term_sps + rps->num_long_term_pics);
 
-                for(Ipp32u j = offset + rps->getNumberOfLongtermPictures() - 1, k = 0; k < rps->num_long_term_sps + rps->num_long_term_pics; j--, k++)
+                for(Ipp32s j = offset + rps->getNumberOfLongtermPictures() - 1, k = 0; k < rps->num_long_term_sps + rps->num_long_term_pics; j--, k++)
                 {
                     int pocLsbLt;
                     if (k < rps->num_long_term_sps)

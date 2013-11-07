@@ -91,7 +91,7 @@ void H265SegmentDecoder::CleanRightHorEdges(void)
     H265EdgeData *ctb_start_edge = m_pCurrentFrame->m_CodingData->m_edge +
         m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth * (m_curCU->m_CUPelY >> 3) + (m_curCU->m_CUPelX >> 3) * 4;
 
-    for (Ipp32s j = 0; j < (m_pSeqParamSet->MaxCUSize >> 3); j++)
+    for (Ipp32u j = 0; j < (m_pSeqParamSet->MaxCUSize >> 3); j++)
     {
         ctb_start_edge[j * m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth + (m_pSeqParamSet->MaxCUSize >> 1) + 2].strength = 0;
         ctb_start_edge[j * m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth + (m_pSeqParamSet->MaxCUSize >> 1) + 3].strength = 0;
@@ -238,7 +238,7 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curP
 
     if (m_bIsNeedWADeblocking)
     {
-        Ipp32s width = frameWidthInSamples - curLCU->m_CUPelX;
+        Ipp32u width = frameWidthInSamples - curLCU->m_CUPelX;
 
         if (width > m_pSeqParamSet->MaxCUSize)
         {
@@ -327,7 +327,7 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU, Ipp32s cu
 
     if (m_bIsNeedWADeblocking)
     {
-        Ipp32s width = frameWidthInSamples - curLCU->m_CUPelX;
+        Ipp32u width = frameWidthInSamples - curLCU->m_CUPelX;
 
         if (width > m_pSeqParamSet->MaxCUSize)
         {
