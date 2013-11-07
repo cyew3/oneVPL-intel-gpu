@@ -47,6 +47,17 @@ namespace UMC
     }
 }
 
+static void mp2_HuffmanTableFree(mp2_VLCTable *vlc) {
+    if (vlc->table0) {
+        ippsFree(vlc->table0);
+        vlc->table0 = NULL;
+    }
+    if (vlc->table1) {
+        ippsFree(vlc->table1);
+        vlc->table1 = NULL;
+    }
+}
+
 static IppStatus mp2_HuffmanTableInitAlloc(Ipp32s *tbl, Ipp32s bits_table0, mp2_VLCTable *vlc)
 {
   Ipp32s *ptbl;
@@ -238,17 +249,6 @@ static IppStatus mp2_HuffmanTableInitAlloc(Ipp32s *tbl, Ipp32s bits_table0, mp2_
 
   if (buffer) delete[] buffer;
   return ippStsNoErr;
-}
-
-static void mp2_HuffmanTableFree(mp2_VLCTable *vlc) {
-  if (vlc->table0) {
-    ippsFree(vlc->table0);
-    vlc->table0 = NULL;
-  }
-  if (vlc->table1) {
-    ippsFree(vlc->table1);
-    vlc->table1 = NULL;
-  }
 }
 
 #ifdef UMC_VA_DXVA
