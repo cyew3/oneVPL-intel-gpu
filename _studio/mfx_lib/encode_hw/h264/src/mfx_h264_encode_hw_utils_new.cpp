@@ -1619,6 +1619,9 @@ void MfxHwH264Encode::ConfigureTask(
             task.m_aesCounter[sfid] = aesCounter;
         }
     }
+
+    if (task.m_ctrl.SkipFrame != 0)
+        task.m_ctrl.SkipFrame = 1 + IsProtectionPavp(video.Protected);
 }
 
 

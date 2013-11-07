@@ -5405,5 +5405,285 @@ BrcIface * MfxHwH264Encode::CreateBrc(MfxVideoParam const & video)
     }
 }
 
+// Range table
+const Ipp8u rangeTabLPS[128][4]=
+{
+    { 128, 176, 208, 240}, { 128, 167, 197, 227}, { 128, 158, 187, 216}, { 123, 150, 178, 205},
+    { 116, 142, 169, 195}, { 111, 135, 160, 185}, { 105, 128, 152, 175}, { 100, 122, 144, 166},
+    {  95, 116, 137, 158}, {  90, 110, 130, 150}, {  85, 104, 123, 142}, {  81,  99, 117, 135},
+    {  77,  94, 111, 128}, {  73,  89, 105, 122}, {  69,  85, 100, 116}, {  66,  80,  95, 110},
+    {  62,  76,  90, 104}, {  59,  72,  86,  99}, {  56,  69,  81,  94}, {  53,  65,  77,  89},
+    {  51,  62,  73,  85}, {  48,  59,  69,  80}, {  46,  56,  66,  76}, {  43,  53,  63,  72},
+    {  41,  50,  59,  69}, {  39,  48,  56,  65}, {  37,  45,  54,  62}, {  35,  43,  51,  59},
+    {  33,  41,  48,  56}, {  32,  39,  46,  53}, {  30,  37,  43,  50}, {  29,  35,  41,  48},
+    {  27,  33,  39,  45}, {  26,  31,  37,  43}, {  24,  30,  35,  41}, {  23,  28,  33,  39},
+    {  22,  27,  32,  37}, {  21,  26,  30,  35}, {  20,  24,  29,  33}, {  19,  23,  27,  31},
+    {  18,  22,  26,  30}, {  17,  21,  25,  28}, {  16,  20,  23,  27}, {  15,  19,  22,  25},
+    {  14,  18,  21,  24}, {  14,  17,  20,  23}, {  13,  16,  19,  22}, {  12,  15,  18,  21},
+    {  12,  14,  17,  20}, {  11,  14,  16,  19}, {  11,  13,  15,  18}, {  10,  12,  15,  17},
+    {  10,  12,  14,  16}, {   9,  11,  13,  15}, {   9,  11,  12,  14}, {   8,  10,  12,  14},
+    {   8,   9,  11,  13}, {   7,   9,  11,  12}, {   7,   9,  10,  12}, {   7,   8,  10,  11},
+    {   6,   8,   9,  11}, {   6,   7,   9,  10}, {   6,   7,   8,   9}, {   2,   2,   2,   2},
+//The same for valMPS=1
+    { 128, 176, 208, 240}, { 128, 167, 197, 227}, { 128, 158, 187, 216}, { 123, 150, 178, 205},
+    { 116, 142, 169, 195}, { 111, 135, 160, 185}, { 105, 128, 152, 175}, { 100, 122, 144, 166},
+    {  95, 116, 137, 158}, {  90, 110, 130, 150}, {  85, 104, 123, 142}, {  81,  99, 117, 135},
+    {  77,  94, 111, 128}, {  73,  89, 105, 122}, {  69,  85, 100, 116}, {  66,  80,  95, 110},
+    {  62,  76,  90, 104}, {  59,  72,  86,  99}, {  56,  69,  81,  94}, {  53,  65,  77,  89},
+    {  51,  62,  73,  85}, {  48,  59,  69,  80}, {  46,  56,  66,  76}, {  43,  53,  63,  72},
+    {  41,  50,  59,  69}, {  39,  48,  56,  65}, {  37,  45,  54,  62}, {  35,  43,  51,  59},
+    {  33,  41,  48,  56}, {  32,  39,  46,  53}, {  30,  37,  43,  50}, {  29,  35,  41,  48},
+    {  27,  33,  39,  45}, {  26,  31,  37,  43}, {  24,  30,  35,  41}, {  23,  28,  33,  39},
+    {  22,  27,  32,  37}, {  21,  26,  30,  35}, {  20,  24,  29,  33}, {  19,  23,  27,  31},
+    {  18,  22,  26,  30}, {  17,  21,  25,  28}, {  16,  20,  23,  27}, {  15,  19,  22,  25},
+    {  14,  18,  21,  24}, {  14,  17,  20,  23}, {  13,  16,  19,  22}, {  12,  15,  18,  21},
+    {  12,  14,  17,  20}, {  11,  14,  16,  19}, {  11,  13,  15,  18}, {  10,  12,  15,  17},
+    {  10,  12,  14,  16}, {   9,  11,  13,  15}, {   9,  11,  12,  14}, {   8,  10,  12,  14},
+    {   8,   9,  11,  13}, {   7,   9,  11,  12}, {   7,   9,  10,  12}, {   7,   8,  10,  11},
+    {   6,   8,   9,  11}, {   6,   7,   9,  10}, {   6,   7,   8,   9}, {   2,   2,   2,   2}
+};
+
+/* CABAC trans tables: state (MPS and LPS ) + valMPS in 6th bit */
+const Ipp8u transTbl[2][128] = {
+    { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
+     15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
+     27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38,
+     39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
+     51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62,
+     62, 63,  0, 64, 65, 66, 66, 68, 68, 69, 70, 71,
+     72, 73, 73, 75, 75, 76, 77, 77, 79, 79, 80, 80,
+     82, 82, 83, 83, 85, 85, 86, 86, 87, 88, 88, 89,
+     90, 90, 91, 91, 92, 93, 93, 94, 94, 94, 95, 96,
+     96, 97, 97, 97, 98, 98, 99, 99, 99, 100, 100,
+     100, 101, 101, 101, 102, 102, 127
+    },
+    { 64, 0, 1, 2, 2, 4, 4, 5, 6, 7, 8, 9, 9, 11, 11,
+      12, 13, 13, 15, 15, 16, 16, 18, 18, 19, 19, 21,
+      21, 22, 22, 23, 24, 24, 25, 26, 26, 27, 27, 28,
+      29, 29, 30, 30, 30, 31, 32, 32, 33, 33, 33, 34,
+      34, 35, 35, 35, 36, 36, 36, 37, 37, 37, 38, 38,
+      63, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75,
+      76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87,
+      88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99,
+      100, 101, 102, 103, 104, 105, 106, 107, 108, 109,
+      110, 111, 112, 113, 114, 115, 116, 117, 118, 119,
+      120, 121, 122, 123, 124, 125, 126, 126, 127
+     }
+};
+
+const mfxU8 renormTAB[32] = {6,5, 4,4,3,3,3,3, 2,2,2,2,2,2,2,2, 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 };
+
+#define ENC_B_BITS          (10)
+#define ENC_M_BITS          (16)
+#define ENC_M_FULL          (1 << (ENC_B_BITS + ENC_M_BITS))
+#define ENC_M_HALF          (1 << (ENC_B_BITS-1))
+#define ENC_M_QUARTER       (1 << (ENC_B_BITS-2))
+
+CabacPackerLite::CabacPackerLite(mfxU8 * buf, mfxU8 * bufEnd, bool emulationControl)
+: OutputBitstream(buf, bufEnd, emulationControl)
+, m_codIOffset(0)
+, m_codIRange(ENC_M_HALF - 2)
+, m_nReadyBits(ENC_M_BITS + 1)
+, m_nReadyBytes(0)
+, m_nRegister(0)
+, m_nOutstandingChunks(0)
+{
+}
+
+void CabacPackerLite::WriteOneByte(mfxU32 val)
+{
+    if (m_nReadyBytes > 0)
+    {
+        if (m_nReadyBytes <= 4)
+            PutBits(m_nRegister, m_nReadyBytes*8);
+        m_nReadyBytes =  m_nRegister = 0;
+    }
+    PutBits(val, 8);
+}
+
+void CabacPackerLite::WriteTwoBytes(mfxU32 val)
+{
+    if (m_nReadyBytes == 4)
+    {
+        PutBits(m_nRegister, 32);
+    }
+    else if (m_nReadyBytes == 3)
+    {
+        PutBits(m_nRegister, 24);
+    }
+    m_nRegister <<= 16;
+    m_nRegister |= val;
+    m_nReadyBytes++;
+    m_nReadyBytes++;
+}
+
+void CabacPackerLite::TerminateEncode()
+{
+    mfxU32 codIOffset =  m_codIOffset;
+    mfxU32 remBits = ENC_M_BITS -  m_nReadyBits;
+    mfxU8  mask;
+
+    if (remBits <= 5)
+    {
+        mask = (mfxU8)(255 - ((1 << (6 - remBits)) - 1));
+        codIOffset = (codIOffset >> (ENC_B_BITS + 8)) & mask;
+        codIOffset += (1 << (5 - remBits));
+        while (m_nOutstandingChunks > 0)
+        {
+            WriteTwoBytes(0xffff);
+            m_nOutstandingChunks--;
+        }
+
+        WriteOneByte(codIOffset);
+        //put buffer
+    }
+    else if (remBits <= 13)
+    {
+        mfxI32 L = (codIOffset >> (ENC_B_BITS + 8) & 0xff);
+        while (m_nOutstandingChunks > 0)
+        {
+            WriteTwoBytes(0xffff);
+            m_nOutstandingChunks--;
+        }
+
+        WriteOneByte(L);
+        //put buffer
+        if (remBits > 6)
+        {
+            mask = (mfxU8)(255 - ((1 << (14 - remBits)) - 1));
+            codIOffset = (codIOffset >> ENC_B_BITS) & mask;
+            codIOffset += (1 << (13 - remBits));
+            WriteOneByte(codIOffset);
+        }
+        else
+        {
+            WriteOneByte(128);
+        }
+    }
+    else
+    {
+        Ipp32s L = (codIOffset >> (ENC_B_BITS) & ((1 << ENC_M_BITS) - 1));
+        while (m_nOutstandingChunks > 0)
+        {
+            WriteTwoBytes(0xffff);
+            m_nOutstandingChunks--;
+        }
+
+        WriteTwoBytes(L);
+        //put buffer
+        if (remBits > 14)
+        {
+            mask = (mfxU8)(255 - ((1<<(22-remBits))-1));
+            codIOffset = (codIOffset>>(ENC_B_BITS - 8)) & mask;
+            codIOffset += (1<<(21-remBits));
+            WriteOneByte(codIOffset);
+        }
+        else
+        {
+            WriteOneByte(128);
+        }
+    }
+
+    m_nReadyBits = 8;
+    m_codIOffset = codIOffset;
+}
+
+void CabacPackerLite::EncodeBin(
+   mfxU8  * ctx,
+   mfxU8 bin)
+{
+    mfxU8 pStateIdx = *ctx;
+    mfxU8 state;
+
+    mfxU32 codIOffset = m_codIOffset;
+    mfxU32 codIRange = m_codIRange;
+    mfxU32 codIRangeLPS = rangeTabLPS[pStateIdx][((codIRange >> 6) & 0x03)];
+
+    codIRange -= codIRangeLPS;
+
+    state = pStateIdx>>6;
+    pStateIdx = transTbl[bin][pStateIdx];
+    if (bin != state ){
+        mfxU8 Renorm;
+        codIOffset += (codIRange<<m_nReadyBits);
+        codIRange = codIRangeLPS;
+
+        Renorm = renormTAB[(codIRangeLPS>>3)&0x1f];
+        m_nReadyBits -= Renorm;
+        codIRange <<= Renorm;
+        if( codIOffset >= ENC_M_FULL ){ //carry
+            codIOffset -= ENC_M_FULL;
+            m_nRegister++;
+            while( m_nOutstandingChunks > 0 ){
+                WriteTwoBytes(0);
+                m_nOutstandingChunks--;
+            }
+        }
+        if( m_nReadyBits > 0 ){
+            *ctx = pStateIdx;
+            m_codIOffset = codIOffset;
+            m_codIRange = codIRange;
+            return;  //no output
+        }
+    }else{
+        if( codIRange >= ENC_M_QUARTER ){
+            *ctx = pStateIdx;
+            m_codIOffset = codIOffset;
+            m_codIRange = codIRange;
+            return;
+        }
+        codIRange <<= 1;
+        m_nReadyBits--;
+        if( m_nReadyBits > 0 ){
+            *ctx = pStateIdx;
+            m_codIOffset = codIOffset;
+            m_codIRange = codIRange;
+            return;
+        }
+    }
+
+    mfxI32 L = (codIOffset>>ENC_B_BITS)& ((1<<ENC_M_BITS)-1);
+    codIOffset = (codIOffset<<ENC_M_BITS)&(ENC_M_FULL-1);
+    if( L < ((1<<ENC_M_BITS)-1) ){
+        while( m_nOutstandingChunks > 0 ){
+            WriteTwoBytes(0xffff);
+            m_nOutstandingChunks--;
+        }
+        WriteTwoBytes(L);
+    }else{
+        m_nOutstandingChunks++;
+    }
+    m_nReadyBits += ENC_M_BITS;
+
+    *ctx = pStateIdx;
+    m_codIOffset = codIOffset;
+    m_codIRange = codIRange;
+}
+
+mfxU8 * MfxHwH264Encode::AddEmulationPreventionAndCopy(
+    mfxU8 *               sbegin,
+    mfxU8 *               send,
+    mfxU8 *               dbegin,
+    mfxU8 *               dend)
+{
+    mfxU32 zeroCount = 0;
+    mfxU8 * write = dbegin;
+    for (mfxU8 * read = sbegin; read != send; ++read)
+    {
+        if (write > dend)
+        {
+            assert(0);
+            throw EndOfBuffer();
+        }
+        if (zeroCount >= 2 && (*read & 0xfc) == 0)
+        {
+            *(write++) = 0x03;
+            zeroCount = 0; // drop zero count
+        }
+        zeroCount = (*read == 0) ? zeroCount + 1 : 0;
+        *(write++) = *read;
+    }
+    return write;
+}
 
 #endif // MFX_ENABLE_H264_VIDEO_ENCODE_HW

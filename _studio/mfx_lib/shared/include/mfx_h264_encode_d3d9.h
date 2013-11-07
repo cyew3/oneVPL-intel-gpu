@@ -145,6 +145,12 @@ namespace MfxHwH264Encode
         ENCODE_SET_PICTURE_PARAMETERS_SVC const &  pps,
         std::vector<ENCODE_SET_SLICE_HEADER_SVC> & slice);
 
+    mfxU32 AddEmulationPreventionAndCopy(
+        ENCODE_PACKEDHEADER_DATA const & data,
+        mfxU8*                           bsDataStart,
+        mfxU8*                           bsEnd,
+        bool                             bEmulationByteInsertion);
+
     void PackSlice(
         OutputBitstream &                   obs,
         DdiTask const &                     task,
@@ -263,7 +269,9 @@ namespace MfxHwH264Encode
         ENCODE_ENC_CTRL_CAPS m_capsGet;   // from ENCODE_ENC_CTRL_GET_ID
         bool                 m_infoQueried;
 
-        mfxU16                m_forcedCodingFunction;
+        mfxU16               m_forcedCodingFunction;
+        mfxU8                m_numSkipFrames;
+        mfxU32               m_sizeSkipFrames;
     };
 
     class D3D9SvcEncoder : public DriverEncoder

@@ -880,6 +880,16 @@ namespace MfxHwH264Encode
             return m_type[GetFirstField()];
         }
 
+        // 0 - no skip, 1 - normal, 2 - pavp
+        mfxU8 SkipFlag() const 
+        {
+            if (    m_ctrl.SkipFrame == 0 
+                || (m_type.top & MFX_FRAMETYPE_I)
+                || (m_type.bot & MFX_FRAMETYPE_I))
+                return 0;
+            return (mfxU8)m_ctrl.SkipFrame;
+        }
+
         mfxEncodeCtrl   m_ctrl;
         DdiTask *       m_pushed;         // task which was pushed to queue when this task was chosen for encoding
         Pair<mfxU8>     m_type;           // encoding type (one for each field)
@@ -2182,6 +2192,25 @@ namespace MfxHwH264Encode
         bool    m_emulationControl;
     };
 
+    class CabacPackerLite : public OutputBitstream
+    {
+    public:
+        CabacPackerLite(mfxU8 * buf, mfxU8 * bufEnd, bool emulationControl = true);
+        void EncodeBin(mfxU8  * ctx, mfxU8 bin);
+        void TerminateEncode();
+        //mfxU32 GetCodewordSize();
+    private:
+        void WriteOneByte(mfxU32 val);
+        void WriteTwoBytes(mfxU32 val);
+
+        mfxU32  m_codIOffset;  // CABAC engine varible
+        mfxU32  m_codIRange;   // CABAC engine varible
+        mfxI32  m_nReadyBits;
+        mfxI32  m_nReadyBytes;
+        mfxU32  m_nRegister;
+        mfxI32  m_nOutstandingChunks;
+    };
+
     void PutSeiHeader(
         OutputBitstream & bs,
         mfxU32            payloadType,
@@ -2590,6 +2619,12 @@ namespace MfxHwH264Encode
         DdiTask const &       task,
         mfxU32                fieldId,
         mfxU8 *               sbegin, // contents of source buffer may be modified
+        mfxU8 *               send,
+        mfxU8 *               dbegin,
+        mfxU8 *               dend);
+
+    mfxU8 * AddEmulationPreventionAndCopy(
+        mfxU8 *               sbegin,
         mfxU8 *               send,
         mfxU8 *               dbegin,
         mfxU8 *               dend);

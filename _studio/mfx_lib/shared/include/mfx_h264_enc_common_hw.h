@@ -1177,6 +1177,10 @@ namespace MfxHwH264Encode
             DdiTask const & task,
             mfxU32          fieldId);
 
+        ENCODE_PACKEDHEADER_DATA const & PackSkippedSlice(
+            DdiTask const & task,
+            mfxU32          fieldId);
+
         ENCODE_PACKEDHEADER_DATA const & PackAud(
             DdiTask const & task,
             mfxU32          fieldId);

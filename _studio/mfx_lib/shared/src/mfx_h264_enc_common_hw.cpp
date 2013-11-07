@@ -6661,5 +6661,101 @@ mfxU32 HeaderPacker::WriteSlice(
 }
 
 
+
+const mfxU8 M_N[2][3][3][2] = { // [isB][ctxIdx][cabac_init_idc][m, n]
+    {// m and n values for 3 CABAC contexts 11-13 (mb_skip_flag for P frames)
+        {{23, 33}, {22, 25}, {29, 16}},
+        {{23,  2}, {34,  0}, {25,  0}},
+        {{21,  0}, {16,  0}, {14,  0}}
+    }, 
+    {// m and n values for 3 CABAC contexts 24-26 (mb_skip_flag for B frames)
+        {{18, 64}, {26, 34}, {20, 40}},
+        {{ 9, 43}, {19, 22}, {20, 10}},
+        {{29,  0}, {40,  0}, {29,  0}}
+    },
+};
+
+
+#define Clip3(min, max, val) val > max ? max : val < min ? min : val
+
+inline void InitCabacContexts(mfxU32 cabacInitIdc, mfxU32 sliceQP, mfxU8 (&cabacContexts)[3], bool isB)
+{
+    for (mfxU32 i = 0; i < 3; i++)
+    {
+        mfxU8 m = M_N[isB][i][cabacInitIdc][0];
+        mfxU8 n = M_N[isB][i][cabacInitIdc][1];
+        mfxU8 preCtxState = (mfxU8)(Clip3( 1, 126, ( ( m * sliceQP ) >> 4 ) + n));
+        if (preCtxState <= 63)
+            cabacContexts[i] = 63 - preCtxState; // MPS = 0
+        else
+            cabacContexts[i] = (preCtxState - 64) | (1 << 6); // MPS = 1
+    }
+}
+
+
+ENCODE_PACKEDHEADER_DATA const & HeaderPacker::PackSkippedSlice(
+            DdiTask const & task,
+            mfxU32          fieldId)
+{
+    Zero(m_packedSlices);
+
+    mfxU8 * sliceBufferBegin = Begin(m_sliceBuffer);
+    mfxU8 * sliceBufferEnd   = End(m_sliceBuffer);
+
+    mfxU8 * endOfPrefix = m_needPrefixNalUnit && task.m_did == 0 && task.m_qid == 0
+            ? PackPrefixNalUnitSvc(sliceBufferBegin, sliceBufferEnd, true, task, fieldId)
+            : sliceBufferBegin;
+
+    CabacPackerLite packer(endOfPrefix, sliceBufferEnd, m_emulPrev);
+    WriteSlice(packer, task, fieldId, 0);
+
+    mfxExtSpsHeader const & sps = task.m_viewIdx ? m_sps[task.m_viewIdx] : m_sps[m_spsIdx[task.m_did][task.m_qid]];
+    mfxExtPpsHeader const & pps = task.m_viewIdx ? m_pps[task.m_viewIdx] : m_pps[m_ppsIdx[task.m_did][task.m_qid]];
+
+    mfxU32 picHeightMultiplier = (sps.frameMbsOnlyFlag == 0) && (task.GetPicStructForEncode() == MFX_PICSTRUCT_PROGRESSIVE) ? 2 : 1;
+    mfxU32 picHeightInMB       = (sps.picHeightInMapUnitsMinus1 + 1) * picHeightMultiplier;
+    mfxU32 picWidthInMB        = (sps.picWidthInMbsMinus1 + 1);
+    mfxU32 picSizeInMB         = picWidthInMB * picHeightInMB;
+
+    if (pps.entropyCodingModeFlag)
+    {
+        mfxU32 numAlignmentBits = (8 - (packer.GetNumBits() & 0x7)) & 0x7;
+        packer.PutBits(0xff, numAlignmentBits);
+    
+        // encode dummy MB data
+    
+        mfxU8 cabacContexts[3]; // 3 CABAC contexts for mb_skip_flag
+        mfxU32 sliceQP = task.m_cqpValue[fieldId];
+    
+        InitCabacContexts(m_cabacInitIdc, sliceQP, cabacContexts, !!(task.m_type[fieldId] & MFX_FRAMETYPE_B));
+    
+        mfxU8 ctx276 = 63; // ctx for end_of_slice_flag: MPS = 0, pStateIdx = 63 (non-adapting prob state)
+    
+        for (mfxU32 uMB = 0; uMB < picSizeInMB; uMB ++)
+        {
+            packer.EncodeBin(&cabacContexts[0], 1); // encode mb_skip_flag = 1 for every MB.
+            packer.EncodeBin(&ctx276, 0); // encode end_of_slice_flag = 0 for every MB
+        }
+    
+        packer.EncodeBin(&ctx276, 1); // encode end_of_slice_flag = 1 for last MB
+    
+        packer.TerminateEncode();
+    }
+    else
+    {
+        packer.PutUe(picSizeInMB); // write mb_skip_run = picSizeInMBs
+        packer.PutTrailingBits();
+    
+        VM_ASSERT(packer.GetNumBits() % 8 == 0);
+    }
+
+    m_packedSlices[0].pData                  = sliceBufferBegin;
+    m_packedSlices[0].DataLength             = mfxU32((endOfPrefix - sliceBufferBegin) + (packer.GetNumBits() / 8));
+    m_packedSlices[0].BufferSize             = m_packedSlices[0].DataLength;
+    m_packedSlices[0].SkipEmulationByteCount = m_emulPrev ? 0 : (mfxU32(endOfPrefix - sliceBufferBegin) + 3);
+
+    return m_packedSlices[0];
+}
+
 #endif //MFX_ENABLE_H264_VIDEO_..._HW
 

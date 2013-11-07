@@ -61,6 +61,8 @@ D3D11Encoder::D3D11Encoder()
 , m_pDecoder(0)
 , m_infoQueried(false)
 , m_forcedCodingFunction(0)
+, m_numSkipFrames(0)
+, m_sizeSkipFrames(0)
 {
 }
 
@@ -363,6 +365,7 @@ mfxStatus D3D11Encoder::Execute(
     ENCODE_PACKEDHEADER_DATA packedSei = { 0 };
 
     HRESULT hr = S_OK;
+    UCHAR   SkipFlag = task.SkipFlag();
 
     // Execute()
     
@@ -501,36 +504,98 @@ mfxStatus D3D11Encoder::Execute(
         bufCnt++;
     }
 
-    std::vector<ENCODE_PACKEDHEADER_DATA> const & packedSlices = m_headerPacker.PackSlices(task, fieldId);
-    for (mfxU32 i = 0; i < packedSlices.size(); i++)
+    if (SkipFlag != 0)
     {
-        m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDSLICEDATA;
+        m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA;
         m_compBufDesc[bufCnt].DataSize             = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));
-        m_compBufDesc[bufCnt].pCompBuffer          = RemoveConst(&packedSlices[i]);
+        m_compBufDesc[bufCnt].pCompBuffer          = RemoveConst(&m_headerPacker.PackSkippedSlice(task, fieldId));
         bufCnt++;
+        
+        if (SkipFlag == 2)
+        {
+            m_sizeSkipFrames = 0;
+
+            for (UINT i = 0; i < bufCnt; i++)
+            {
+                if (m_compBufDesc[i].CompressedBufferType == (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA)
+                {
+                    ENCODE_PACKEDHEADER_DATA const & data = *(ENCODE_PACKEDHEADER_DATA*)m_compBufDesc[i].pCompBuffer;
+                    m_sizeSkipFrames += data.DataLength;
+                }
+            }
+        }
+    } 
+    else
+    {
+        std::vector<ENCODE_PACKEDHEADER_DATA> const & packedSlices = m_headerPacker.PackSlices(task, fieldId);
+        for (mfxU32 i = 0; i < packedSlices.size(); i++)
+        {
+            m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDSLICEDATA;
+            m_compBufDesc[bufCnt].DataSize             = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));
+            m_compBufDesc[bufCnt].pCompBuffer          = RemoveConst(&packedSlices[i]);
+            bufCnt++;
+        }
     }
 
     assert(bufCnt <= m_compBufDesc.size());
 
-    // [2.4] send to driver
-    D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
-    decoderExtParams.Function              = ENCODE_ENC_PAK_ID;
-    decoderExtParams.pPrivateInputData     = &encodeExecuteParams;
-    decoderExtParams.PrivateInputDataSize  = sizeof(ENCODE_EXECUTE_PARAMS);
-    decoderExtParams.pPrivateOutputData    = 0;
-    decoderExtParams.PrivateOutputDataSize = 0;
-    decoderExtParams.ResourceCount         = resourceCount; 
-    decoderExtParams.ppResourceList        = &resourceList[0];
 
-    //printf("before:\n");
+    if(SkipFlag != 1)
+    {
+#ifdef SKIP_FRAME_DDI_0917
+        m_pps.SkipFlag       = SkipFlag ? SkipFlag : !!m_numSkipFrames;
+        m_pps.NumSkipFrames  = m_numSkipFrames;
+        m_pps.SizeSkipFrames = m_sizeSkipFrames;
+#endif //SKIP_FRAME_DDI_0917
+        m_numSkipFrames  = 0;
+        m_sizeSkipFrames = 0;
 
-    hr = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
-    CHECK_HRES(hr);
+        // [2.4] send to driver
+        D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
+        decoderExtParams.Function              = ENCODE_ENC_PAK_ID;
+        decoderExtParams.pPrivateInputData     = &encodeExecuteParams;
+        decoderExtParams.PrivateInputDataSize  = sizeof(ENCODE_EXECUTE_PARAMS);
+        decoderExtParams.pPrivateOutputData    = 0;
+        decoderExtParams.PrivateOutputDataSize = 0;
+        decoderExtParams.ResourceCount         = resourceCount; 
+        decoderExtParams.ppResourceList        = &resourceList[0];
+
+        //printf("before:\n");
+
+        hr = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
+        CHECK_HRES(hr);
 
 
-    hr = m_pVideoContext->DecoderEndFrame(m_pDecoder);
-    CHECK_HRES(hr);
+        hr = m_pVideoContext->DecoderEndFrame(m_pDecoder);
+        CHECK_HRES(hr);
+    }
+    else
+    {
+        mfxFrameData bs = {0};
+        FrameLocker lock(m_core, bs, task.m_midBit[fieldId]);
+        assert(bs.Y);
 
+        mfxU8 *  bsDataStart = bs.Y;
+        mfxU8 *  bsEnd       = bs.Y + m_sps.FrameWidth * m_sps.FrameHeight;
+        mfxU8 *  bsDataEnd   = bsDataStart;
+        mfxU32   bsDataSize  = 0;
+        ENCODE_QUERY_STATUS_PARAMS feedback = {task.m_statusReportNumber[fieldId], 0,};
+
+        for (UINT i = 0; i < bufCnt; i++)
+        {
+            if (m_compBufDesc[i].CompressedBufferType == (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA)
+            {
+                ENCODE_PACKEDHEADER_DATA const & data = *(ENCODE_PACKEDHEADER_DATA*)m_compBufDesc[i].pCompBuffer;
+                bsDataEnd += AddEmulationPreventionAndCopy(data, bsDataEnd, bsEnd, !!m_pps.bEmulationByteInsertion);
+            }
+        }
+        bsDataSize = mfxU32(bsDataEnd - bsDataStart);
+        feedback.bitstreamSize = bsDataSize;
+        m_feedbackCached.Update( CachedFeedback::FeedbackStorage(1, feedback) );
+
+        m_numSkipFrames ++;
+        m_sizeSkipFrames += bsDataSize;
+    }
 
     m_sps.bResetBRC = false;
 

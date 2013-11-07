@@ -683,6 +683,32 @@ void MfxHwH264Encode::FillVaringPartOfSliceBuffer(
     }
 }
 
+mfxU32 MfxHwH264Encode::AddEmulationPreventionAndCopy(
+    ENCODE_PACKEDHEADER_DATA const & data,
+    mfxU8*                           bsDataStart,
+    mfxU8*                           bsEnd,
+    bool                             bEmulationByteInsertion)
+{
+    mfxU8 * sbegin = data.pData + data.DataOffset;
+    mfxU8 * send   = sbegin + data.DataLength;
+    mfxU32  len    = bEmulationByteInsertion ? data.SkipEmulationByteCount : data.DataLength;
+
+    assert(UINT(bsEnd - bsDataStart) > data.DataLength);
+
+    if (len)
+    {
+        MFX_INTERNAL_CPY(bsDataStart, sbegin, len);
+        bsDataStart += len;
+        sbegin      += len;
+    }
+                
+    mfxU8 * bsDataEnd = AddEmulationPreventionAndCopy(sbegin, send, bsDataStart, bsEnd);
+
+    len += mfxU32(bsDataEnd - bsDataStart);
+
+    return len;
+}
+
 void CachedFeedback::Reset(mfxU32 cacheSize)
 {
     Feedback init;
@@ -752,6 +778,8 @@ D3D9Encoder::D3D9Encoder()
 , m_auxDevice(0)
 , m_infoQueried(false)
 , m_forcedCodingFunction(0)
+, m_numSkipFrames(0)
+, m_sizeSkipFrames(0)
 {
 }
 
@@ -856,8 +884,7 @@ mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
     FillConstPartOfPpsBuffer(par, m_caps, m_pps);
     FillConstPartOfSliceBuffer(par, m_slice);
 
-    if (m_caps.HeaderInsertion == 0)
-        m_headerPacker.Init(par, m_caps);
+    m_headerPacker.Init(par, m_caps);
 
     return MFX_ERR_NONE;
 }
@@ -880,8 +907,7 @@ mfxStatus D3D9Encoder::Reset(
 
     m_slice.resize(par.mfx.NumSlice);
 
-    if (m_caps.HeaderInsertion == 0)
-        m_headerPacker.Init(par, m_caps);
+    m_headerPacker.Init(par, m_caps);
 
     return MFX_ERR_NONE;
 }
@@ -1033,6 +1059,7 @@ mfxStatus D3D9Encoder::Execute(
     encodeExecuteParams.PavpEncryptionMode.eCounterMode    = 0;
     encodeExecuteParams.PavpEncryptionMode.eEncryptionType = PAVP_ENCRYPTION_NONE;
     UINT & bufCnt = encodeExecuteParams.NumCompBuffers;
+    UCHAR  SkipFlag = task.SkipFlag();
 
     // mvc hack
     // base view has separate sps/pps
@@ -1087,7 +1114,7 @@ mfxStatus D3D9Encoder::Execute(
     m_compBufDesc[bufCnt].pCompBuffer = &bitstream;
     bufCnt++;
 
-    if (m_caps.HeaderInsertion == 1)
+    if (m_caps.HeaderInsertion == 1 && SkipFlag == 0)
     {
         if (sei.Size() > 0)
         {
@@ -1177,36 +1204,96 @@ mfxStatus D3D9Encoder::Execute(
             bufCnt++;
         }
 
-        std::vector<ENCODE_PACKEDHEADER_DATA> const & packedSlices = m_headerPacker.PackSlices(task, fieldId);
-        for (size_t i = 0; i < packedSlices.size(); i++)
+        if (SkipFlag != 0)
         {
-            m_compBufDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_PACKEDSLICEDATA;
+            m_compBufDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA;
             m_compBufDesc[bufCnt].DataSize             = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));
-            m_compBufDesc[bufCnt].pCompBuffer          = RemoveConst(&packedSlices[i]);
+            m_compBufDesc[bufCnt].pCompBuffer          = RemoveConst(&m_headerPacker.PackSkippedSlice(task, fieldId));
             bufCnt++;
+
+            if (SkipFlag == 2)
+            {
+                m_sizeSkipFrames = 0;
+
+                for (UINT i = 0; i < bufCnt; i++)
+                {
+                    if (m_compBufDesc[i].CompressedBufferType == D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA)
+                    {
+                        ENCODE_PACKEDHEADER_DATA const & data = *(ENCODE_PACKEDHEADER_DATA*)m_compBufDesc[i].pCompBuffer;
+                        m_sizeSkipFrames += data.DataLength;
+                    }
+                }
+            }
+        } 
+        else
+        {
+            std::vector<ENCODE_PACKEDHEADER_DATA> const & packedSlices = m_headerPacker.PackSlices(task, fieldId);
+            for (size_t i = 0; i < packedSlices.size(); i++)
+            {
+                m_compBufDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_PACKEDSLICEDATA;
+                m_compBufDesc[bufCnt].DataSize             = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));
+                m_compBufDesc[bufCnt].pCompBuffer          = RemoveConst(&packedSlices[i]);
+                bufCnt++;
+            }
         }
     }
 
     assert(bufCnt <= m_compBufDesc.size());
 
-    //DumpRefInfo(task, fieldId);
-
-    try
+    if (SkipFlag != 1)
     {
-        HRESULT hr = m_auxDevice->BeginFrame((IDirect3DSurface9 *)surface, 0);
-        MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+#ifdef SKIP_FRAME_DDI_0917
+        m_pps.SkipFlag       = SkipFlag ? SkipFlag : !!m_numSkipFrames;
+        m_pps.NumSkipFrames  = m_numSkipFrames;
+        m_pps.SizeSkipFrames = m_sizeSkipFrames;
+#endif // SKIP_FRAME_DDI_0917
+        m_numSkipFrames  = 0;
+        m_sizeSkipFrames = 0;
 
-        //DumpExecuteBuffers(encodeExecuteParams, DXVA2_Intel_Encode_AVC);
+        try
+        {
+            HRESULT hr = m_auxDevice->BeginFrame((IDirect3DSurface9 *)surface, 0);
+            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
-        hr = m_auxDevice->Execute(ENCODE_ENC_PAK_ID, encodeExecuteParams, (void *)0);
-        MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+            //DumpExecuteBuffers(encodeExecuteParams, DXVA2_Intel_Encode_AVC);
+
+            hr = m_auxDevice->Execute(ENCODE_ENC_PAK_ID, encodeExecuteParams, (void *)0);
+            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
     
-        HANDLE handle;
-        m_auxDevice->EndFrame(&handle);
-    }
-    catch (...)
+            HANDLE handle;
+            m_auxDevice->EndFrame(&handle);
+        }
+        catch (...)
+        {
+            return MFX_ERR_DEVICE_FAILED;
+        }
+    } 
+    else 
     {
-        return MFX_ERR_DEVICE_FAILED;
+        mfxFrameData bs = {0};
+        FrameLocker lock(m_core, bs, task.m_midBit[fieldId]);
+        assert(bs.Y);
+
+        mfxU8 *  bsDataStart = bs.Y;
+        mfxU8 *  bsEnd       = bs.Y + m_width*m_height;
+        mfxU8 *  bsDataEnd   = bsDataStart;
+        mfxU32   bsDataSize  = 0;
+        ENCODE_QUERY_STATUS_PARAMS feedback = {task.m_statusReportNumber[fieldId], 0,};
+
+        for (UINT i = 0; i < bufCnt; i++)
+        {
+            if (m_compBufDesc[i].CompressedBufferType == D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA)
+            {
+                ENCODE_PACKEDHEADER_DATA const & data = *(ENCODE_PACKEDHEADER_DATA*)m_compBufDesc[i].pCompBuffer;
+                bsDataEnd += AddEmulationPreventionAndCopy(data, bsDataEnd, bsEnd, !!m_pps.bEmulationByteInsertion);
+            }
+        }
+        bsDataSize = mfxU32(bsDataEnd - bsDataStart);
+        feedback.bitstreamSize = bsDataSize;
+        m_feedbackCached.Update( CachedFeedback::FeedbackStorage(1, feedback) );
+
+        m_numSkipFrames ++;
+        m_sizeSkipFrames += bsDataSize;
     }
 
     m_sps.bResetBRC = false;
