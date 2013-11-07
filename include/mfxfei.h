@@ -37,8 +37,8 @@ extern "C"
 #endif /* __cplusplus */
 
 
-//1 PreENC input ********************************************************
-typedef struct { /* VAProcFilterParameterBufferMotionVectorsStatistics */
+//1 PreENC input
+typedef struct { /* VAStatsStatisticsParameter16x16 */
     mfxExtBuffer    Header;  /* MFX_EXTBUFF_FEI_xxx */
     
     mfxU16    Qp;
@@ -49,8 +49,8 @@ typedef struct { /* VAProcFilterParameterBufferMotionVectorsStatistics */
     mfxU16    InterSAD;
     mfxU16    IntraSAD; 
     mfxU16    AdaptiveSearch;
-    mfxU16    MVPredictor;
-    mfxU16    PerMBQp;
+    mfxU16    MVPredictor; /*0 -disable, 1 - past, 2 future, 3 both */
+    mfxU16    MBQp;
     mfxU16    FTEnable;
     mfxU16    RefWidth;
     mfxU16    RefHeight;
@@ -58,31 +58,18 @@ typedef struct { /* VAProcFilterParameterBufferMotionVectorsStatistics */
 
     mfxU16    BkwMVPresent;
     mfxU16    FrwMVPresent;
+
+    mfxU16    DisableMVOutput;    
+    mfxU16    DisableStatisticsOutput;   
 } mfxExtFeiPreEncCtrl;
 
-typedef struct { /* VAEncMVPredictorH264 */
+typedef struct { /* VAMotionVector */
     mfxExtBuffer    Header;
     mfxU32 reserved[13];
     mfxU32  NumMBAlloc; /* size of allocated memory in number of macroblocks */
 
     struct  mfxMB{
-#if 1
-        struct {
-            mfxU8   L0: 4;
-            mfxU8   L1: 4;
-        } RefIdx[4]; /* index is predictor number */
-#else
-        mfxU32   RefIdxL00: 4;
-        mfxU32   RefIdxL10: 4;
-        mfxU32   RefIdxL01: 4;
-        mfxU32   RefIdxL11: 4;
-        mfxU32   RefIdxL02: 4;
-        mfxU32   RefIdxL12: 4;
-        mfxU32   RefIdxL03: 4;
-        mfxU32   RefIdxL13: 4;
-#endif
-        mfxU32      Reserved;
-        mfxI16Pair MV[4][2]; /* first index is predictor number, second is 0 for L0 and 1 for L1 */
+        mfxI16Pair MV[2]; /* 0 for L0 and 1 for L1 */
     } *MB;
 } mfxExtFeiPreEncMVPredictors;
 
@@ -94,7 +81,7 @@ typedef struct {
     mfxU16    *QP;
 } mfxExtFeiPreEncQPs;
 
-//1 PreENC output *************************************************
+//1 PreENC output
 /* Layout is exactly the same as mfxExtFeiEncMVs, this buffer may be removed in future */
 typedef struct {
     mfxExtBuffer    Header;
@@ -130,14 +117,10 @@ typedef struct {
     }* MB;
 } mfxExtFeiPreEncMBStat;
 
-//1  ENC_PAK input ***************************************************
-//2 Frame level ctrl
+//1  ENC_PAK input
 typedef struct {
     mfxExtBuffer    Header;
-    
-    mfxU16    QpY;     
-    mfxU16    QpCb;     
-    mfxU16    QpCr;     
+
     mfxU16    MaxLenSP;     
     mfxU16    LenSP;     
     mfxU16    SubMBPartMask;     
@@ -151,6 +134,7 @@ typedef struct {
     mfxU16    RepartitionCheckEnable;     
     mfxU16    AdaptiveSearch;     
     mfxU16    MVPredictor;     
+    mfxU16    NumMVPredictors;
     mfxU16    PerMBQp;     
     mfxU16    PerMBInput;     
     mfxU16    MBSizeCtrl;
@@ -159,19 +143,19 @@ typedef struct {
     mfxU16    SearchWindow;     
 } mfxExtFeiEncFrameCtrl;
 
-//2 MB level ctrl & MVs
-/* MV predictors. One extended buffer holds two predictors per MB, L0 and L1. 
-Up to four buffers can be used per frame */
-typedef struct {
+typedef struct { /* VAEncMVPredictorH264 */
     mfxExtBuffer    Header;
     mfxU32 reserved[13];
-    mfxU32  NumMBAlloc;
+    mfxU32  NumMBAlloc; /* size of allocated memory in number of macroblocks */
 
-    typedef struct{
-        mfxU32         RefIdx;
-        mfxI16Pair     MV;
-    }  Predictor;
-    Predictor (*MB)[2]; /* 0 - L0, 1 - L1 */
+    struct  mfxMB{
+        struct {
+            mfxU8   L0: 4;
+            mfxU8   L1: 4;
+        } RefIdx[4]; /* index is predictor number */
+        mfxU32      Reserved;
+        mfxI16Pair MV[4][2]; /* first index is predictor number, second is 0 for L0 and 1 for L1 */
+    } *MB;
 } mfxExtFeiEncMVPredictors;
 
 typedef struct {
@@ -191,7 +175,7 @@ typedef struct {
 } mfxExtFeiEncMBCtrl;
 
 
-//1 ENC_PAK output ********************************************************
+//1 ENC_PAK output
 /* Buffer holds 32 MVs per MB. MVs are located in zigzag scan order. 
 Number in diagram below shows location of MV in memory. 
 For example, MV for right top 4x4 sub block is stored in 5-th element of the array.
@@ -303,7 +287,6 @@ typedef struct {
 
 
 
-//1 * *************************************************************************
 //1 functions
 
 typedef struct {  //it is not an ext buffer
