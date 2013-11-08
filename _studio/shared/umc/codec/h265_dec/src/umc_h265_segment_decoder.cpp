@@ -2194,7 +2194,9 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(H265CodingUnit* pCU, H265CoeffsPtrCo
                         if (shift_right)
                             coeffQ = (coef * pDequantCoef[blkPos] + Add) >> Shift;
                         else
-                            coeffQ = (coef * pDequantCoef[blkPos]) << Shift;
+                        {
+                            coeffQ = (Saturate(-32768, 32767, coef * pDequantCoef[blkPos])) << Shift;
+                        }
                     }
                     else
                     {
