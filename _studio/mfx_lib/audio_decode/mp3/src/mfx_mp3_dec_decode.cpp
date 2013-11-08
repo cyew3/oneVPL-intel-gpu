@@ -320,7 +320,9 @@ mfxStatus AudioDECODEMP3::MP3ECODERoutine(void *pState, void *pParam,
 
         //datalen computed in syncpart should equal to decoded datalen
         obj.mOutData.SetBufferPointer( static_cast<Ipp8u *>(pTask->out->Data), pTask->out->DataLength ? pTask->out->DataLength : pTask->out->MaxLength);
-        if (0 != obj.mInData.GetDataSize()) {
+        //obj.mInData.GetDataSize() value may be equivalent only encoded frame size, or, in case free format stream, 3 bytes
+        //because in this case we must save encoded frame size + 3 bytes (syncword - 1) 
+        if (0 != obj.mInData.GetDataSize() && obj.mInData.GetDataSize() != 3) {
             UMC::Status sts = obj.m_pMP3AudioDecoder.get()->GetFrame(&obj.mInData, &obj.mOutData);
             MFX_CHECK_UMC_STS(sts);
             //TODO: disable WA for decoding first frame
@@ -458,17 +460,24 @@ mfxStatus AudioDECODEMP3::ConstructFrame(mfxBitstream *in, mfxBitstream *out, un
     MFX_CHECK_NULL_PTR2(in->Data, out->Data);
     Ipp32s inBufferSize;
     Ipp32s inBufferID3HeaderSize;
+    int bitRate = 0;
 
     mInData.SetBufferPointer((Ipp8u *)in->Data + in->DataOffset, in->DataLength);
     mInData.SetDataSize(in->DataLength);
 
-    UMC::Status stsUMC = m_pMP3AudioDecoder->FrameConstruct(&mInData, &inBufferSize, &inBufferID3HeaderSize, p_RawFrameSize);
+    UMC::Status stsUMC = m_pMP3AudioDecoder->FrameConstruct(&mInData, &inBufferSize, &bitRate, &inBufferID3HeaderSize, p_RawFrameSize);
     switch (stsUMC)
     {
     case UMC::UMC_OK: 
         if (inBufferSize <= (Ipp32s)in->DataLength)
         {
-            sts = CopyBitstream(*out, in->Data + in->DataOffset + inBufferID3HeaderSize, inBufferSize - inBufferID3HeaderSize);
+            if (bitRate != 0)
+                sts = CopyBitstream(*out, in->Data + in->DataOffset + inBufferID3HeaderSize, inBufferSize - inBufferID3HeaderSize);
+            else //if stream has free format
+            //check of case (inBufferSize - inBufferID3HeaderSize + 3) > in->DataLength is not necessary
+            //because we can't decode last frame in free format stream (due umc mp3dec_GetSynch function design)
+                sts = CopyBitstream(*out, in->Data + in->DataOffset + inBufferID3HeaderSize, inBufferSize - inBufferID3HeaderSize + 3);
+                     
             if(sts != MFX_ERR_NONE) 
             {
                 return MFX_ERR_NOT_ENOUGH_BUFFER;

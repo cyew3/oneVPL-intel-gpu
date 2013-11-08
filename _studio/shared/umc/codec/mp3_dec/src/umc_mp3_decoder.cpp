@@ -354,7 +354,7 @@ Status MP3Decoder::MemUnlock()
     return UMC_OK;
 }
 
-Status MP3Decoder::FrameConstruct(MediaData *in, Ipp32s *outFrameSize, Ipp32s *outID3HeaderSize, unsigned int * /*p_RawFrameSize*/)
+Status MP3Decoder::FrameConstruct(MediaData *in, Ipp32s *outFrameSize, int *bitRate, Ipp32s *outID3HeaderSize, unsigned int * /*p_RawFrameSize*/)
 {
     MP3Status res = MP3_OK;
     Ipp8u *inPointer = (Ipp8u *)(in->GetDataPointer());
@@ -387,6 +387,7 @@ Status MP3Decoder::FrameConstruct(MediaData *in, Ipp32s *outFrameSize, Ipp32s *o
 
     MP3Status stsMP3 = mp3dec_GetSynch(&state);
 
+    *bitRate = state.header.bitRate;
 
     //TODO: prevent code copy
     //{   

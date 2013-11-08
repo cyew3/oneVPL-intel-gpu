@@ -66,7 +66,7 @@ public:
 
     virtual Status  GetDuration(Ipp32f* p_duration);
     static Status StatusMP3_2_UMC(MP3Status st);
-    Status FrameConstruct(MediaData *in, Ipp32s *outFrameSize, Ipp32s *outID3HeaderSize, unsigned int *p_RawFrameSize);
+    Status FrameConstruct(MediaData *in, Ipp32s *outFrameSize,  int *bitRate, Ipp32s *outID3HeaderSize, unsigned int *p_RawFrameSize);
 
 protected:
     struct _MP3Dec*   state;
