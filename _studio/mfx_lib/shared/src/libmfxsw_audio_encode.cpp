@@ -280,7 +280,7 @@ mfxStatus MFXAudioENCODE_EncodeFrameAsync(mfxSession session, mfxAudioFrame *bs,
         }
 
         // return pointer to synchronization point
-        if (MFX_ERR_NONE == mfxRes && syncp)
+        if (syncp)
         {
             *syncp = syncPoint;
         }
