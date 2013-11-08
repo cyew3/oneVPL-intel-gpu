@@ -268,7 +268,7 @@ bool MFX::MFXPluginFactory::VerifyCodecCommon( mfxVideoCodecPlugin & videoCodec 
 bool MFX::MFXPluginFactory::Create( PluginDescriptionRecord & rec) 
 {
     PluginModule plgModule(rec.Path.c_str());
-    mfxPlugin plg;
+    mfxPlugin plg = {};
     mfxPluginParam plgParams;
     
     if (!plgModule.Create(rec.uid, plg)) 
