@@ -6706,7 +6706,7 @@ ENCODE_PACKEDHEADER_DATA const & HeaderPacker::PackSkippedSlice(
             ? PackPrefixNalUnitSvc(sliceBufferBegin, sliceBufferEnd, true, task, fieldId)
             : sliceBufferBegin;
 
-    CabacPackerLite packer(endOfPrefix, sliceBufferEnd, m_emulPrev);
+    CabacPackerSimple packer(endOfPrefix, sliceBufferEnd, m_emulPrev);
     WriteSlice(packer, task, fieldId, 0);
 
     mfxExtSpsHeader const & sps = task.m_viewIdx ? m_sps[task.m_viewIdx] : m_sps[m_spsIdx[task.m_did][task.m_qid]];

@@ -2192,23 +2192,21 @@ namespace MfxHwH264Encode
         bool    m_emulationControl;
     };
 
-    class CabacPackerLite : public OutputBitstream
+    class CabacPackerSimple : public OutputBitstream
     {
     public:
-        CabacPackerLite(mfxU8 * buf, mfxU8 * bufEnd, bool emulationControl = true);
+        CabacPackerSimple(mfxU8 * buf, mfxU8 * bufEnd, bool emulationControl = true);
         void EncodeBin(mfxU8  * ctx, mfxU8 bin);
         void TerminateEncode();
-        //mfxU32 GetCodewordSize();
     private:
-        void WriteOneByte(mfxU32 val);
-        void WriteTwoBytes(mfxU32 val);
+        void PutBitC(mfxU32 B);
+        void RenormE();
 
-        mfxU32  m_codIOffset;  // CABAC engine varible
-        mfxU32  m_codIRange;   // CABAC engine varible
-        mfxI32  m_nReadyBits;
-        mfxI32  m_nReadyBytes;
-        mfxU32  m_nRegister;
-        mfxI32  m_nOutstandingChunks;
+        mfxU32 m_codILow; 
+        mfxU32 m_codIRange;
+        mfxU32 m_bitsOutstanding;
+        mfxU32 m_BinCountsInNALunits;
+        bool   m_firstBitFlag;
     };
 
     void PutSeiHeader(
