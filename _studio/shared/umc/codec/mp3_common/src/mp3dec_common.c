@@ -162,7 +162,7 @@ MP3Status  mp3dec_GetSynch(MP3Dec_com *state)
     IppMP3FrameHeader *header = &(state->header);
     IppMP3FrameHeader *header_good = &(state->header_good);
     sBitsreamBuffer *BS = &state->m_StreamData;
-    Ipp8u *ptrStart = (Ipp8u *)BS->pCurrent_dword + ((32 - BS->nBit_offset) >> 3);
+    //Ipp8u *ptrStart = (Ipp8u *)BS->pCurrent_dword + ((32 - BS->nBit_offset) >> 3);
     Ipp32s buflen = BS->nDataLen;
     Ipp32s cont_flag;
 
@@ -246,12 +246,12 @@ MP3Status  mp3dec_GetSynch(MP3Dec_com *state)
         // Fixes decoder fail with MP3_NOT_ENOUGH_DATA error when processing single frame of the stream:
         state->m_bInit = 1;
 
-        if (BS->nDataLen < state->decodedBytes - start_db +
-          ((!state->m_bInit || state->synchro_mode) ? 3 : 0)) {
+        if (BS->nDataLen < (state->decodedBytes - start_db) /*+ 
+          ((!state->m_bInit || state->synchro_mode) ? 3 : 0)*/) {
           state->decodedBytes -= state->MP3nSlots + 4;
           return MP3_NOT_ENOUGH_DATA;
         }
-        if (!state->m_bInit || state->synchro_mode) {
+        /*if (!state->m_bInit || state->synchro_mode) {
             Ipp32s next_header =
               (ptrStart[state->decodedBytes - start_db + 0] << 16) |
               (ptrStart[state->decodedBytes - start_db + 1] << 8) |
@@ -266,7 +266,7 @@ MP3Status  mp3dec_GetSynch(MP3Dec_com *state)
             cont_flag = 1;
             continue;
           }
-        }
+        }*/
         if (header->protectionBit && header->layer != 2) {
           if (mp3dec_SynchCheckCRC(state, MP3Header)) {
             state->decodedBytes -= state->MP3nSlots;
