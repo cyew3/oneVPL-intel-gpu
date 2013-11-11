@@ -17,6 +17,7 @@ File Name: libmfxsw_sessions.cpp
 
 mfxStatus MFXJoinSession(mfxSession session, mfxSession child_session)
 {
+    mfxStatus mfxRes;
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     //MFX_CHECK(session->m_pScheduler, MFX_ERR_NOT_INITIALIZED);
     MFX_CHECK(child_session, MFX_ERR_INVALID_HANDLE);
@@ -32,8 +33,11 @@ mfxStatus MFXJoinSession(mfxSession session, mfxSession child_session)
         }
 
         // release the child scheduler
-        child_session->m_pScheduler->Release();
-        child_session->m_pScheduler = NULL;
+        mfxRes = child_session->ReleaseScheduler();
+        if (MFX_ERR_NONE != mfxRes)
+        {
+            return mfxRes;
+        }
 
         // join the parent scheduler
         child_session->m_pScheduler = QueryInterface<MFXIScheduler> (pInt,

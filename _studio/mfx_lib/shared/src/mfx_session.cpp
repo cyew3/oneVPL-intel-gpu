@@ -550,10 +550,6 @@ mfxStatus _mfxSession::Init(mfxIMPL implInterface, mfxVersion *ver)
 
 mfxStatus _mfxSession::RestoreScheduler(void)
 {
-    if (NULL == m_pSchedulerAllocated)
-    {
-        return MFX_ERR_NOT_INITIALIZED;
-    }
 
     // leave the current scheduler
     if (m_pScheduler)
@@ -570,6 +566,22 @@ mfxStatus _mfxSession::RestoreScheduler(void)
         return MFX_ERR_UNKNOWN;
     }
 
+    return MFX_ERR_NONE;
+
+} // mfxStatus _mfxSession::RestoreScheduler(void)
+
+mfxStatus _mfxSession::ReleaseScheduler(void)
+{
+    if (NULL == m_pSchedulerAllocated || NULL == m_pScheduler)
+    {
+        return MFX_ERR_NOT_INITIALIZED;
+    }
+    
+    m_pScheduler->Release();
+    m_pSchedulerAllocated->Release();
+    m_pScheduler = NULL;
+    m_pSchedulerAllocated = NULL;
+    
     return MFX_ERR_NONE;
 
 } // mfxStatus _mfxSession::RestoreScheduler(void)

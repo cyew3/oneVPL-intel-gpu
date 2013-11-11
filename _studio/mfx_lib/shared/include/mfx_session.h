@@ -86,6 +86,8 @@ struct _mfxSession
 
     // Attach to the original scheduler
     mfxStatus RestoreScheduler(void);
+    // Release current scheduler
+    mfxStatus ReleaseScheduler(void);
 
     // Declare session's components
     mfx_core_ptr<VideoCORE> m_pCORE;
@@ -145,7 +147,7 @@ struct _mfxSession
         // child session has different references to active and allocated
         // scheduler. regular session has 2 references to the scheduler.
         // child session has only 1 reference to it.
-        return (1 == m_pSchedulerAllocated->GetNumRef());
+        return (NULL == m_pSchedulerAllocated);
     }
 
 
