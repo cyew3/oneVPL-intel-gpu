@@ -496,124 +496,104 @@ void H265CU::InitCU(H265VideoParam *_par, H265CUData *_data, H265CUData *_data_t
                     PixType *_y, PixType *_u, PixType *_v, Ipp32s _pitch_luma, Ipp32s _pitch_chroma,
                     PixType *_y_src, PixType *_uv_src, Ipp32s _pitch_src, H265BsFake *_bsf, H265Slice *_cslice,
                     Ipp8u initialize_data_flag) {
-  par = _par;
+    par = _par;
 
-  cslice = _cslice;
-  bsf = _bsf;
-  data_save = data = _data;
-  data_best = _data_temp;
-  data_temp = _data_temp + (MAX_TOTAL_DEPTH << par->Log2NumPartInCU);
-  ctb_addr           = iCUAddr;
-  ctb_pelx           = ( iCUAddr % par->PicWidthInCtbs ) * par->MaxCUSize;
-  ctb_pely           = ( iCUAddr / par->PicWidthInCtbs ) * par->MaxCUSize;
-  m_uiAbsIdxInLCU      = 0;
-  num_partition     = par->NumPartInCU;
-  pitch_rec_luma = _pitch_luma;
-  pitch_rec_chroma = _pitch_chroma;
-  pitch_src = _pitch_src;
-  y_rec = _y + ctb_pelx + ctb_pely * pitch_rec_luma;
-  u_rec = _u + ((ctb_pelx + ctb_pely * pitch_rec_chroma) >> 1);
-  v_rec = _v + ((ctb_pelx + ctb_pely * pitch_rec_chroma) >> 1);
+    cslice = _cslice;
+    bsf = _bsf;
+    data_save = data = _data;
+    data_best = _data_temp;
+    data_temp = _data_temp + (MAX_TOTAL_DEPTH << par->Log2NumPartInCU);
+    ctb_addr           = iCUAddr;
+    ctb_pelx           = ( iCUAddr % par->PicWidthInCtbs ) * par->MaxCUSize;
+    ctb_pely           = ( iCUAddr / par->PicWidthInCtbs ) * par->MaxCUSize;
+    m_uiAbsIdxInLCU      = 0;
+    num_partition     = par->NumPartInCU;
+    pitch_rec_luma = _pitch_luma;
+    pitch_rec_chroma = _pitch_chroma;
+    pitch_src = _pitch_src;
+    y_rec = _y + ctb_pelx + ctb_pely * pitch_rec_luma;
+    u_rec = _u + ((ctb_pelx + ctb_pely * pitch_rec_chroma) >> 1);
+    v_rec = _v + ((ctb_pelx + ctb_pely * pitch_rec_chroma) >> 1);
 
-  y_src = _y_src + ctb_pelx + ctb_pely * pitch_src;
+    y_src = _y_src + ctb_pelx + ctb_pely * pitch_src;
 
-  // aya: may be used to provide performance gain for SAD calculation
-  /*{      
-      IppiSize blkSize = {par->MaxCUSize, par->MaxCUSize};
-      ippiCopy_8u_C1R(_y_src + ctb_pelx + ctb_pely * pitch_src, pitch_src, m_src_aligned_block, MAX_CU_SIZE, blkSize);
-  }*/
+    // aya: may be used to provide performance gain for SAD calculation
+    /*{      
+    IppiSize blkSize = {par->MaxCUSize, par->MaxCUSize};
+    ippiCopy_8u_C1R(_y_src + ctb_pelx + ctb_pely * pitch_src, pitch_src, m_src_aligned_block, MAX_CU_SIZE, blkSize);
+    }*/
 
-  uv_src = _uv_src + ctb_pelx + (ctb_pely * pitch_src >> 1);
-  depth_min = MAX_TOTAL_DEPTH;
+    uv_src = _uv_src + ctb_pelx + (ctb_pely * pitch_src >> 1);
+    depth_min = MAX_TOTAL_DEPTH;
 
-  if (initialize_data_flag) {
-      rd_opt_flag = 1;
-      rd_lambda = 1;
-      if (rd_opt_flag) {
-          rd_lambda = pow(2.0, (par->QP - 12) * (1.0/3.0)) * (1.0 /  256.0);
-          switch (cslice->slice_type) {
-          case P_SLICE:
-              rd_lambda *= 0.46;
-              rd_lambda_inter_mv = rd_lambda;
-              if (cslice->pgop_idx)
-                  rd_lambda *= MAX(2,MIN(4,(par->QP - 12)/6));
-              break;
-          case B_SLICE:
-              rd_lambda *= 0.46;
-              rd_lambda_inter_mv = rd_lambda;
-              rd_lambda *= MAX(2,MIN(4,(par->QP - 12)/6));
-              break;
-          case I_SLICE:
-          default:
-              rd_lambda *= 0.57;
-              if (par->GopRefDist > 1)
-                rd_lambda *= (1 - MIN(0.5,0.05*(par->GopRefDist - 1)));
-          }
-      }
-      rd_lambda_inter = rd_lambda;
+    if (initialize_data_flag) {
+        rd_opt_flag = cslice->rd_opt_flag;
+        rd_lambda = cslice->rd_lambda;
+        rd_lambda_inter = cslice->rd_lambda_inter;
+        rd_lambda_inter_mv = cslice->rd_lambda_inter_mv;
 
-      if ( num_partition > 0 )
-      {
-          memset (data, 0, sizeof(H265CUData));
-          data->part_size = PART_SIZE_NONE;
-          data->pred_mode = MODE_NONE;
-          data->size = (Ipp8u)par->MaxCUSize;
-          data->mvp_idx[0] = -1;
-          data->mvp_idx[1] = -1;
-          data->mvp_num[0] = -1;
-          data->mvp_num[1] = -1;
-          data->qp = par->QP;
-          data->_flags = 0;
-          data->intra_luma_dir = INTRA_DC;
-          data->intra_chroma_dir = INTRA_DM_CHROMA;
-          data->cbf[0] = data->cbf[1] = data->cbf[2] = 0;
+        if ( num_partition > 0 )
+        {
+            memset (data, 0, sizeof(H265CUData));
+            data->part_size = PART_SIZE_NONE;
+            data->pred_mode = MODE_NONE;
+            data->size = (Ipp8u)par->MaxCUSize;
+            data->mvp_idx[0] = -1;
+            data->mvp_idx[1] = -1;
+            data->mvp_num[0] = -1;
+            data->mvp_num[1] = -1;
+            data->qp = par->QP;
+            data->_flags = 0;
+            data->intra_luma_dir = INTRA_DC;
+            data->intra_chroma_dir = INTRA_DM_CHROMA;
+            data->cbf[0] = data->cbf[1] = data->cbf[2] = 0;
 
-          for (Ipp32u i = 1; i < num_partition; i++)
-              small_memcpy(data+i,data,sizeof(H265CUData));
-      }
-  }
+            for (Ipp32u i = 1; i < num_partition; i++)
+                small_memcpy(data+i,data,sizeof(H265CUData));
+        }
+    }
 
-  // Setting neighbor CU
-  p_left        = NULL;
-  p_above       = NULL;
-  p_above_left   = NULL;
-  p_above_right  = NULL;
-  left_addr = - 1;
-  above_addr = -1;
-  above_left_addr = -1;
-  above_right_addr = -1;
+    // Setting neighbor CU
+    p_left        = NULL;
+    p_above       = NULL;
+    p_above_left   = NULL;
+    p_above_right  = NULL;
+    left_addr = - 1;
+    above_addr = -1;
+    above_left_addr = -1;
+    above_right_addr = -1;
 
-  Ipp32u widthInCU = par->PicWidthInCtbs;
-  if ( ctb_addr % widthInCU )
-  {
-    p_left = data - par->NumPartInCU;
-    left_addr = ctb_addr - 1;
-  }
+    Ipp32u widthInCU = par->PicWidthInCtbs;
+    if ( ctb_addr % widthInCU )
+    {
+        p_left = data - par->NumPartInCU;
+        left_addr = ctb_addr - 1;
+    }
 
-  if ( ctb_addr / widthInCU )
-  {
-    p_above = data - (widthInCU << par->Log2NumPartInCU);
-    above_addr = ctb_addr - widthInCU;
-  }
+    if ( ctb_addr / widthInCU )
+    {
+        p_above = data - (widthInCU << par->Log2NumPartInCU);
+        above_addr = ctb_addr - widthInCU;
+    }
 
-  if ( p_left && p_above )
-  {
-    p_above_left = data - (widthInCU << par->Log2NumPartInCU) - par->NumPartInCU;
-    above_left_addr = ctb_addr - widthInCU - 1;
-  }
+    if ( p_left && p_above )
+    {
+        p_above_left = data - (widthInCU << par->Log2NumPartInCU) - par->NumPartInCU;
+        above_left_addr = ctb_addr - widthInCU - 1;
+    }
 
-  if ( p_above && ( (ctb_addr%widthInCU) < (widthInCU-1) )  )
-  {
-    p_above_right = data - (widthInCU << par->Log2NumPartInCU) + par->NumPartInCU;
-    above_right_addr = ctb_addr - widthInCU + 1;
-  }
+    if ( p_above && ( (ctb_addr%widthInCU) < (widthInCU-1) )  )
+    {
+        p_above_right = data - (widthInCU << par->Log2NumPartInCU) + par->NumPartInCU;
+        above_right_addr = ctb_addr - widthInCU + 1;
+    }
 
-  bak_abs_part_idxCU = 0;
-  bak_abs_part_idx = 0;
-  bak_chroma_offset = 0;
-  m_isRDOQ = par->RDOQFlag ? true : false;
-}
-//int myseed = 12345;
+    bak_abs_part_idxCU = 0;
+    bak_abs_part_idx = 0;
+    bak_chroma_offset = 0;
+    m_isRDOQ = par->RDOQFlag ? true : false;
+    }
+    //int myseed = 12345;
 
 static double rand_val = 1.239847855923875843957;
 
@@ -1352,10 +1332,8 @@ void H265CU::ModeDecision(Ipp32u abs_part_idx, Ipp32u offset, Ipp8u depth, CostT
         }
     }
 
-    Ipp8u skipped_flag;
-    if (split_mode == SPLIT_MUST)
-        skipped_flag = 0;
-    else
+    Ipp8u skipped_flag = 0;
+    if (split_mode != SPLIT_MUST)
         skipped_flag = (data_best + ((depth + 0) << par->Log2NumPartInCU))[abs_part_idx].flags.skipped_flag;
 
     CostType cu_split_threshold_cu = cslice->slice_type == I_SLICE ? par->cu_split_threshold_cu_intra[depth] : par->cu_split_threshold_cu_inter[depth];
@@ -1539,7 +1517,6 @@ void H265CU::DetailsXY(H265MEInfo* me_info) const
     me_info->details[1] = dy >> 4;
 
 }
-
 
 Ipp32s H265CU::MVCost( H265MV MV[2], T_RefIdx curRefIdx[2], MVPInfo *pInfo, MVPInfo& mergeInfo) const
 {
@@ -1883,7 +1860,7 @@ void H265CU::TU_GetSplitInter(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u tr_idx, 
 
     H265CUData *data_t = data_temp + ((depth + tr_idx) << par->Log2NumPartInCU);
     CostType cost_best;
-    CABAC_CONTEXT_H265 ctx_save[NUM_CABAC_CONTEXT];
+    CABAC_CONTEXT_H265 ctx_save[2][NUM_CABAC_CONTEXT];
     PixType pred_save[64*64];
     PixType *pRec = NULL;
 
@@ -1906,6 +1883,7 @@ void H265CU::TU_GetSplitInter(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u tr_idx, 
 
     for (i = 0; i < num_parts; i++)
         data[abs_part_idx + i].tr_idx = tr_idx;
+    bsf->CtxSave(ctx_save[0], 0, NUM_CABAC_CONTEXT);
     EncAndRecLumaTU(abs_part_idx, offset, width, &nzt, &cost_best, 0, INTRA_PRED_CALC);
     if (nz) *nz = nzt;
 
@@ -1916,7 +1894,8 @@ void H265CU::TU_GetSplitInter(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u tr_idx, 
 //     }
 
     if (tr_idx  < tr_idx_max && nzt) { // don't try if all zero
-        bsf->CtxSave(ctx_save, 0, NUM_CABAC_CONTEXT);
+        bsf->CtxSave(ctx_save[1], 0, NUM_CABAC_CONTEXT);
+        bsf->CtxRestore(ctx_save[0], 0, NUM_CABAC_CONTEXT);
         small_memcpy(data_t + abs_part_idx, data + abs_part_idx,
             sizeof(H265CUData) * num_parts); // keep not split
 
@@ -1959,7 +1938,7 @@ void H265CU::TU_GetSplitInter(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u tr_idx, 
         } else {
             small_memcpy(data + abs_part_idx, data_t + abs_part_idx,
                 sizeof(H265CUData) * num_parts*4); // restore not split
-            bsf->CtxRestore(ctx_save, 0, NUM_CABAC_CONTEXT);
+            bsf->CtxRestore(ctx_save[1], 0, NUM_CABAC_CONTEXT);
             //if (cost_best > cost_split) // nzt == 0
             //    cost_best = cost_split;
         }

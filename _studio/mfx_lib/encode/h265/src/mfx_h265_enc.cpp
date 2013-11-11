@@ -477,6 +477,33 @@ mfxStatus H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice)
         slice->num_entry_point_offsets = slice->row_last - slice->row_first;
     }
 
+    slice->rd_opt_flag = 1;
+    slice->rd_lambda = 1;
+    if (slice->rd_opt_flag) {
+        slice->rd_lambda = pow(2.0, (m_videoParam.QP - 12) * (1.0/3.0)) * (1.0 /  256.0);
+        switch (slice->slice_type) {
+        case P_SLICE:
+            if (m_videoParam.PGopPicSize == 1 || slice->pgop_idx)
+                slice->rd_lambda *= 0.4624;
+            else 
+                slice->rd_lambda *= 0.578;
+            if (slice->pgop_idx)
+                slice->rd_lambda *= MAX(2,MIN(4,(m_videoParam.QP - 12)/6));
+            break;
+        case B_SLICE:
+            slice->rd_lambda *= 0.4624;
+            slice->rd_lambda *= MAX(2,MIN(4,(m_videoParam.QP - 12)/6));
+            break;
+        case I_SLICE:
+        default:
+            slice->rd_lambda *= 0.57;
+            if (m_videoParam.GopRefDist > 1)
+                slice->rd_lambda *= (1 - MIN(0.5,0.05*(m_videoParam.GopRefDist - 1)));
+        }
+    }
+    slice->rd_lambda_inter = slice->rd_lambda;
+    slice->rd_lambda_inter_mv = slice->rd_lambda_inter;
+
     return MFX_ERR_NONE;
 }
 
@@ -1512,6 +1539,8 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
     return MFX_ERR_NONE;
 }
 
+static Ipp8u h265_pgop_qp_diff[PGOP_PIC_SIZE] = {0, 2, 1, 2};
+
 mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxBS) {
     EnumPicClass    ePic_Class;
 
@@ -1664,8 +1693,10 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
         break;
 
     case MFX_FRAMETYPE_P:
-        m_videoParam.QP = m_videoParam.QPP;
-        m_videoParam.QPChroma = m_videoParam.QPPChroma;
+         m_videoParam.QP = m_videoParam.QPP;
+         if (m_videoParam.PGopPicSize > 1)
+            m_videoParam.QP += h265_pgop_qp_diff[m_pCurrentFrame->m_PGOPIndex];
+        m_videoParam.QPChroma = h265_QPtoChromaQP[m_videoParam.QP];
         ePic_Class = REFERENCE_PIC;
         break;
 

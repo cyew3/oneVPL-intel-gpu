@@ -237,6 +237,11 @@ public:
     Ipp8u m_ref_pic_list_modification_flag_l1;
     Ipp8u pgop_idx;
 
+    Ipp8u rd_opt_flag;
+    Ipp64f rd_lambda;
+    Ipp64f rd_lambda_inter;
+    Ipp64f rd_lambda_inter_mv;
+
     EncoderRefPicList *m_pRefPicList;
 
     H265Frame *GetRefFrame(EnumRefPicList ref_list, T_RefIdx ref_idx) {
