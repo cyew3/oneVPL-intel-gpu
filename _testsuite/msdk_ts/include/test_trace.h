@@ -82,7 +82,6 @@ DECL_STRUCT_TRACE(mfxCoreParam);
 DECL_STRUCT_TRACE(mfxPluginUID);
 
 #ifdef __MFXAUDIO_H__
-DECL_STRUCT_TRACE(mfxAudioStreamInfo);
 DECL_STRUCT_TRACE(mfxAudioInfoMFX);
 DECL_STRUCT_TRACE(mfxAudioParam);
 DECL_STRUCT_TRACE(mfxAudioAllocRequest);

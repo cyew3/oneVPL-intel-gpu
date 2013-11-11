@@ -803,20 +803,12 @@ DEF_STRUCT_TRACE(mfxPluginUID){
 #endif
 
 #ifdef __MFXAUDIO_H__
-DEF_STRUCT_TRACE(mfxAudioStreamInfo){
+DEF_STRUCT_TRACE(mfxAudioInfoMFX){
     os  << "{\n"
         << PUT_PAR(Bitrate)
         << PUT_PAR(NumChannel)
         << PUT_PAR(SampleFrequency)
         << PUT_PAR(BitPerSample)
-        << PUT_ARR(reserved, 5)
-        << print_param.padding << '}';
-    return os;
-};
-
-DEF_STRUCT_TRACE(mfxAudioInfoMFX){
-    os  << "{\n"
-        << PUT_STRUCT(StreamInfo)
         << PUT_PAR(CodecId)
         << PUT_PAR(CodecProfile)
         << PUT_PAR(CodecLevel);
