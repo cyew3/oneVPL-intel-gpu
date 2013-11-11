@@ -127,22 +127,17 @@ enum
     MFX_AUDIO_AAC_NOISE_MODEL_ADVANCED=1 
 };
 
-typedef struct  
-{
-    mfxU32                Bitrate;
-    mfxU16                NumChannel;
-    mfxU32                SampleFrequency;
-    mfxU16                BitPerSample;
-    mfxU16                reserved[10]; 
-} mfxAudioStreamInfo;
-
 typedef struct {
-    mfxAudioStreamInfo    StreamInfo;
-
     mfxU32                CodecId;
     mfxU16                CodecProfile;
     mfxU16                CodecLevel;
-    mfxU16                reserved1[12]; 
+
+    mfxU32  Bitrate;
+    mfxU32  SampleFrequency;
+    mfxU16  NumChannel;
+    mfxU16  BitPerSample;
+
+    mfxU16                reserved1[22]; 
 
     union {    
         struct {   /* AAC Decoding Options */
