@@ -184,12 +184,59 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
             }
             else if(surface->Info.FourCC == MFX_FOURCC_YUY2)
             {
-                fieldOffset = pitch * isBottom;
-                pDataIn->Init(alignedWidth, alignedHeight, UMC::YUY2, 8);
-                pDataIn->SetImageSize(width, height);
+                UMC::VideoData* cvt = new UMC::VideoData();
 
-                pDataIn->SetPlanePointer(surface->Data.Y + ((frameInfo->CropX >> 1) << 2) + fieldOffset, 0);
-                pDataIn->SetPlanePitch(pitch * numFields, 0);
+                cvt->Init(alignedWidth, alignedHeight, UMC::YUV422);
+                cvt->SetImageSize(width, height);
+                cvt->Alloc();
+
+                if(MFX_CHROMAFORMAT_YUV422H == surface->Info.ChromaFormat)
+                {
+                    fieldOffset = pitch * isBottom;
+                    pDataIn->Init(alignedWidth, alignedHeight, UMC::YUY2, 8);
+                    pDataIn->SetImageSize(width, height);
+
+                    pDataIn->SetPlanePointer(surface->Data.Y + ((frameInfo->CropX >> 1) << 2) + fieldOffset, 0);
+                    pDataIn->SetPlanePitch(pitch * numFields, 0);
+                    
+                    UMC::VideoProcessing proc;
+                    proc.GetFrame(pDataIn, cvt);
+                }
+                else if(MFX_CHROMAFORMAT_YUV422V == surface->Info.ChromaFormat)
+                {
+                    fieldOffset = pitch * isBottom;
+                    Ipp8u* src = surface->Data.Y + ((frameInfo->CropX >> 1) << 2) + fieldOffset;
+                    Ipp32u srcPitch = pitch * numFields;
+
+                    Ipp8u* dst[3] = {(Ipp8u*)cvt->GetPlanePointer(0), 
+                                     (Ipp8u*)cvt->GetPlanePointer(1), 
+                                     (Ipp8u*)cvt->GetPlanePointer(2)};
+                    if (!dst) 
+                    {
+                        delete p;
+                        delete cvt;
+                        return MFX_ERR_NULL_PTR;
+                    }
+                    Ipp32u dstPitch[3] = {(Ipp32u)cvt->GetPlanePitch(0), 
+                                          (Ipp32u)cvt->GetPlanePitch(1), 
+                                          (Ipp32u)cvt->GetPlanePitch(2)};
+
+                    for(Ipp32u i=0; i<height; i++)
+                        for(Ipp32u j=0; j<width/2; j++)
+                        {
+                            dst[0][i*dstPitch[0] + 2*j]                   = src[i*srcPitch + (j<<2)];
+                            dst[1][((i/2)*2)*dstPitch[1] + 2*j + (i % 2)] = src[i*srcPitch + (j<<2)+1];
+                            dst[0][i*dstPitch[0] + 2*j + 1]               = src[i*srcPitch + (j<<2)+2];
+                            dst[2][((i/2)*2)*dstPitch[2] + 2*j + (i % 2)] = src[i*srcPitch + (j<<2)+3];
+                        }
+                }
+                else
+                {
+                    return MFX_ERR_UNDEFINED_BEHAVIOR;
+                }
+                
+                p->m_sourceData.reset(cvt);
+                p->m_release_source_data = true;
             }
             else if(surface->Info.FourCC == MFX_FOURCC_RGB4)
             {
@@ -211,20 +258,6 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
                 UMC::VideoData* cvt = new UMC::VideoData();
 
                 cvt->Init(alignedWidth, alignedHeight, UMC::YUV420);
-                cvt->SetImageSize(width, height);
-                cvt->Alloc();
-
-                UMC::VideoProcessing proc;
-                proc.GetFrame(pDataIn, cvt);
-                
-                p->m_sourceData.reset(cvt);
-                p->m_release_source_data = true;
-            }
-            else if(pDataIn->GetColorFormat() == UMC::YUY2)
-            {            
-                UMC::VideoData* cvt = new UMC::VideoData();
-
-                cvt->Init(alignedWidth, alignedHeight, UMC::YUV422);
                 cvt->SetImageSize(width, height);
                 cvt->Alloc();
 
@@ -574,6 +607,10 @@ mfxStatus MJPEGEncodeTask::EncodePiece(const mfxU32 threadNumber)
     }
 
     UMC::Status umc_sts = m_pMJPEGVideoEncoder.get()->EncodePiece(threadNumber, pieceNum);
+    if(UMC::UMC_ERR_INVALID_PARAMS == umc_sts)
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
     if(UMC::UMC_OK != umc_sts)
     {
         return MFX_ERR_UNKNOWN;

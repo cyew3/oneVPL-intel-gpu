@@ -789,7 +789,9 @@ Status MJPEGVideoEncoder::EncodePiece(const mfxU32 threadNumber, const Ipp32u nu
         return UMC_ERR_FAILED;
 
     status = m_enc[threadNumber]->WriteData();
-    if(JPEG_OK != status)
+    if(JPEG_ERR_DHT_DATA == status)
+        return UMC_ERR_INVALID_PARAMS;
+    else if(JPEG_OK != status)
         return UMC_ERR_FAILED;
 
     m_frame.get()->m_pics[numField]->m_scans[numScan]->m_pieceLocation[piecePosInScan] = threadNumber; //m_pOutputBuffer[numPic].get()->m_pieceLocation[numPiece] = threadNumber;

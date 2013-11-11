@@ -313,6 +313,12 @@ JERRCODE CJPEGEncoder::SetSource(
   m_src.lineStep[2] = srcStep[2];
   m_src.lineStep[3] = srcStep[3];
 
+  if(srcSampling == JS_422V)
+  {
+    m_src.lineStep[1] *= 2;
+    m_src.lineStep[2] *= 2;
+  }
+
   m_src.order     = JD_PLANE;
   m_src.width     = srcSize.width;
   m_src.height    = srcSize.height;
@@ -3472,7 +3478,11 @@ JERRCODE CJPEGEncoder::EncodeHuffmanMCURowBL(Ipp16s* pMCUBuf, Ipp32u colMCU, Ipp
 
           m_BitStreamOut.SetCurrPos(currPos);
 
-          if(ippStsNoErr > status)
+          if(ippStsJPEGHuffTableErr == status)
+          {
+            return JPEG_ERR_DHT_DATA;
+          }
+          else if(ippStsNoErr > status)
           {
             LOG1("IPP Error: ippiEncodeHuffman8x8_JPEG_16s1u_C1() failed - ",status);
             return JPEG_ERR_INTERNAL;
