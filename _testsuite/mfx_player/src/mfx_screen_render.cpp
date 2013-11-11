@@ -99,6 +99,7 @@ ScreenRender::ScreenRender(IVideoSession *core
     , m_bSetup()
     , m_mfxFrameInfo()
     , m_bDwmQueuingDisabledPrinted()
+    , m_bSetWindowText(refParams.window.windowsStyle != WS_POPUP)
 {
 }
 
@@ -482,7 +483,7 @@ mfxStatus ScreenRender::RenderFrame(mfxFrameSurface1 *pSurface, mfxEncodeCtrl * 
     LONGLONG CurrentTime = 0;
     GetSystemTimeAsFileTime((FILETIME*)&CurrentTime);
     double time_diff = (double)(CurrentTime - m_LastTime)*1e-7;
-    if (!m_LastTime || time_diff > 1)
+    if ((!m_LastTime || time_diff > 1) && m_bSetWindowText)
     {
         char window_title[MAX_PATH];
         sprintf(window_title, "mfx_player, %.0f fps", (m_FrameCount - m_LastFrameCount)/time_diff);

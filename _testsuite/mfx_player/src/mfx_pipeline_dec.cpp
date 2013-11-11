@@ -3843,8 +3843,14 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 MFXExtBufferPtr<mfxExtMVCSeqDesc> seqDesc(m_InputExtBuffers);
 
                 seqDesc->View.push_back(viewDependency);
+            } else if (m_OptProc.Check(argv[0], VM_STRING("-dec:burst"), VM_STRING("decode several frames at max speed then render it at render speed"), OPT_INT_32))                  \
+            {                                                                                       
+                MFX_CHECK(1 + argv != argvEnd);                                                     
+                MFX_PARSE_INT(m_inParams.nBurstDecodeFrames, argv[1])                                      
+                argv++;                                                                             
+                //set windowtextA doesn't work for some reason if window created in different thread
+                m_inParams.m_bNowWidowHeader = true;
             }
-            else HANDLE_INT_OPTION(m_inParams.nBurstDecodeFrames, VM_STRING("-dec:burst"), VM_STRING("decode several frames at max speed then render it at render speed"))
             else HANDLE_INT_OPTION(m_inParams.targetViewsTemporalId, VM_STRING("-dec:temporalid"), VM_STRING("in case of MVC->AVC and MVC->MVC transcoding,  specifies coresponding field in mfxExtMVCTargetViews structure"))
             else HANDLE_INT_OPTION(m_inParams.nTestId, VM_STRING("-testid"), VM_STRING("testid value used in SendNotifyMessages(WNDBROADCAST,,testid)"))
             else HANDLE_SPECIAL_OPTION(m_inParams.svc_layer, VM_STRING("-svc_layer"), VM_STRING("specify target svc_layer to decode"), OPT_SPECIAL, VM_STRING("temporalId dependencyId qualityId"))

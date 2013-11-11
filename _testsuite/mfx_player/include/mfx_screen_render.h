@@ -106,9 +106,10 @@ protected:
     int         m_LastFrameCount;
     LONGLONG    m_LastTime;
     UINT        m_nAdapter;
-
+    bool        m_bSetWindowText;
 #ifdef BUFFERING_SIZE
     std::list<mfxFrameSurface1 *> frameBuffer;
+    
 #endif
 
     //mfxFrameAllocator   m_VPPFrameAllocator;
