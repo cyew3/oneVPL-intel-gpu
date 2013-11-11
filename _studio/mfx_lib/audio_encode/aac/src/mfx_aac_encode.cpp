@@ -136,13 +136,13 @@ mfxStatus AudioENCODEAAC::Init(mfxAudioParam *par)
     mInData.SetDataSize(0);
     mOutData.SetDataSize(0);
 
-    params.m_info.sample_frequency = par->mfx.StreamInfo.SampleFrequency;
-    if (par->mfx.StreamInfo.NumChannel == 1) {
+    params.m_info.sample_frequency = par->mfx.SampleFrequency;
+    if (par->mfx.NumChannel == 1) {
         params.stereo_mode = UMC_AAC_MONO;
         params.m_info.channels = 1;
     } 
     //params.StreamInfo.channels = par->mfx.StreamInfo.Channels;
-    params.m_info.bitrate = par->mfx.StreamInfo.Bitrate;
+    params.m_info.bitrate = par->mfx.Bitrate;
     params.lpMemoryAllocator = NULL;
   
     UMC::Status sts = m_pAACAudioEncoder->Init(&params);
@@ -238,8 +238,8 @@ mfxStatus AudioENCODEAAC::QueryIOSize(AudioCORE *core, mfxAudioParam *par, mfxAu
 
     int upsample = 1;
     if(par->mfx.CodecProfile == MFX_PROFILE_AAC_HE) upsample = 2;
-    request->SuggestedInputSize  = par->mfx.StreamInfo.NumChannel * sizeof(Ipp16s)*1024* upsample;
-    request->SuggestedOutputSize = ((768*par->mfx.StreamInfo.NumChannel+9/* ADTS_HEADER */)*sizeof(Ipp8u)+3)&(~3);
+    request->SuggestedInputSize  = par->mfx.NumChannel * sizeof(Ipp16s)*1024* upsample;
+    request->SuggestedOutputSize = ((768*par->mfx.NumChannel+9/* ADTS_HEADER */)*sizeof(Ipp8u)+3)&(~3);
 
     return MFX_ERR_NONE;
 }
@@ -438,7 +438,7 @@ mfxStatus AudioENCODEAAC::CheckUncompressedFrameSize(mfxAudioFrame *in)
 
     int upSample = 1;
     if(m_vPar.mfx.CodecProfile == MFX_PROFILE_AAC_HE) upSample = 2;
-    Ipp32s FrameSize  = m_vPar.mfx.StreamInfo.NumChannel * sizeof(Ipp16s)*1024* upSample;
+    Ipp32s FrameSize  = m_vPar.mfx.NumChannel * sizeof(Ipp16s)*1024* upSample;
 
     if(FrameSize > (Ipp32s)in->DataLength) 
     {
@@ -464,9 +464,10 @@ mfxStatus MFX_AAC_Encoder_Utility::FillAudioParam( mfxAudioParam *in, mfxAudioPa
     out->mfx.CodecId = out->mfx.CodecId;
     out->mfx.CodecLevel = in->mfx.CodecLevel;
     out->mfx.CodecProfile = in->mfx.CodecProfile;
-
-    memcpy(&(out->mfx.StreamInfo), &(in->mfx.StreamInfo), sizeof(mfxAudioStreamInfo));
-
+    out->mfx.Bitrate = in->mfx.Bitrate;
+    out->mfx.SampleFrequency = in->mfx.SampleFrequency;
+    out->mfx.NumChannel = in->mfx.NumChannel;
+    out->mfx.BitPerSample = in->mfx.BitPerSample;
     out->mfx.FlagPSSupportLev = in->mfx.FlagPSSupportLev;
     out->mfx.FlagSBRSupportLev = in->mfx.FlagSBRSupportLev;
     out->mfx.Layer = in->mfx.Layer;
@@ -477,10 +478,10 @@ mfxStatus MFX_AAC_Encoder_Utility::FillAudioParam( mfxAudioParam *in, mfxAudioPa
 
 mfxStatus MFX_AAC_Encoder_Utility::FillAudioParamByUMC(UMC::AACEncoderParams *in, mfxAudioParam *out)
 {
-    out->mfx.StreamInfo.BitPerSample = (mfxU16)in->m_info.bitPerSample;
-    out->mfx.StreamInfo.Bitrate = (mfxU16)in->m_info.bitrate;
-    out->mfx.StreamInfo.NumChannel = (mfxU16)in->m_info.channels;
-    out->mfx.StreamInfo.SampleFrequency = (mfxU16)in->m_info.sample_frequency;
+    out->mfx.BitPerSample = (mfxU16)in->m_info.bitPerSample;
+    out->mfx.Bitrate = (mfxU16)in->m_info.bitrate;
+    out->mfx.NumChannel = (mfxU16)in->m_info.channels;
+    out->mfx.SampleFrequency = (mfxU16)in->m_info.sample_frequency;
     return MFX_ERR_NONE;
 }
 
@@ -501,10 +502,10 @@ mfxStatus MFX_AAC_Encoder_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfx
     if (in)
     {
         // save bitrate from input params
-        out->mfx.StreamInfo.Bitrate = in->mfx.StreamInfo.Bitrate;
+        out->mfx.Bitrate = in->mfx.Bitrate;
         
         // save sample frequency from input params
-        out->mfx.StreamInfo.SampleFrequency = in->mfx.StreamInfo.SampleFrequency;
+        out->mfx.SampleFrequency = in->mfx.SampleFrequency;
 
         if (in->mfx.CodecId == MFX_CODEC_AAC)
             out->mfx.CodecId = in->mfx.CodecId;
@@ -555,24 +556,24 @@ mfxStatus MFX_AAC_Encoder_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfx
             )
         {
             //num channels not specified
-            switch (in->mfx.StreamInfo.NumChannel)
+            switch (in->mfx.NumChannel)
             {
                 case 0 : {
                     if (stereoMode == MFX_AUDIO_AAC_MONO) {
-                        out->mfx.StreamInfo.NumChannel = 1;
+                        out->mfx.NumChannel = 1;
                     }
                     else {
-                        out->mfx.StreamInfo.NumChannel = 2;
+                        out->mfx.NumChannel = 2;
                     }
                     break ;
                 }
                 case 1: {
-                    out->mfx.StreamInfo.NumChannel = 1;
+                    out->mfx.NumChannel = 1;
                     out->mfx.StereoMode = MFX_AUDIO_AAC_MONO;
                     break;
                 }
                 case 2: {
-                    out->mfx.StreamInfo.NumChannel = 2;
+                    out->mfx.NumChannel = 2;
                     //TODO: looks query shouldn't do this, setting default strereo mode
                     if (stereoMode == MFX_AUDIO_AAC_MONO) {
                         out->mfx.StereoMode = MFX_AUDIO_AAC_JOINT_STEREO;
@@ -603,10 +604,10 @@ mfxStatus MFX_AAC_Encoder_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfx
                 sts = MFX_ERR_UNSUPPORTED;
             }
         }
-        if (in->mfx.StreamInfo.BitPerSample != 16 && in->mfx.StreamInfo.BitPerSample != 0) {
+        if (in->mfx.BitPerSample != 16 && in->mfx.BitPerSample != 0) {
             sts = MFX_ERR_UNSUPPORTED;
         } else {
-            out->mfx.StreamInfo.BitPerSample = 16;
+            out->mfx.BitPerSample = 16;
         }
     }
     else
