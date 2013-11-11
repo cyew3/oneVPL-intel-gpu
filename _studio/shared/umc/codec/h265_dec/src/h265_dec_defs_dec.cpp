@@ -452,7 +452,7 @@ void H265SampleAdaptiveOffset::processSaoCuOrgChroma(Ipp32s addr, Ipp32s saoType
 void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H265PlanePtrUVCommon tmpL)
 {
     H265CodingUnit *pTmpCu = m_Frame->getCU(addr);
-    bool* pbBorderAvail = pTmpCu->m_AvailBorder;
+    CTBBorders pbBorderAvail = pTmpCu->m_AvailBorder;
     H265PlanePtrUVCommon pRec;
     Ipp32s tmpUpBuff1[66];
     Ipp32s tmpUpBuff2[66];
@@ -505,7 +505,7 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H
     {
     case SAO_EO_0: // dir: -
         {
-            if (pbBorderAvail[SGU_L])
+            if (pbBorderAvail.m_left)
             {
                 startX = 0;
                 startPtr = tmpL;
@@ -518,7 +518,7 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H
                 startStride = stride;
             }
 
-            endX = pbBorderAvail[SGU_R] ? LCUWidth : LCUWidth - 2;
+            endX = pbBorderAvail.m_right ? LCUWidth : LCUWidth - 2;
 
             for (y = 0; y < LCUHeight; y++)
             {
@@ -543,7 +543,7 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H
         }
     case SAO_EO_1: // dir: |
         {
-            if (pbBorderAvail[SGU_T])
+            if (pbBorderAvail.m_top)
             {
                 startY = 0;
                 startPtr = tmpU;
@@ -555,7 +555,7 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H
                 pRec += stride;
             }
 
-            endY = pbBorderAvail[SGU_B] ? LCUHeight : LCUHeight - 1;
+            endY = pbBorderAvail.m_bottom ? LCUHeight : LCUHeight - 1;
 
             for (x = 0; x < LCUWidth; x++)
             {
@@ -586,7 +586,7 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H
             Ipp32s *pUpBufft = tmpUpBuff2;
             Ipp32s *swapPtr;
 
-            if (pbBorderAvail[SGU_L])
+            if (pbBorderAvail.m_left)
             {
                 startX = 0;
                 startPtr = tmpL;
@@ -599,7 +599,7 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H
                 startStride = stride;
             }
 
-            endX = pbBorderAvail[SGU_R] ? LCUWidth : LCUWidth - 2;
+            endX = pbBorderAvail.m_right ? LCUWidth : LCUWidth - 2;
 
             //prepare 2nd line upper sign
             pUpBuff[startX] = getSign(pRec[startX + stride] - startPtr[0]);
@@ -610,7 +610,7 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H
             }
 
             //1st line
-            if (pbBorderAvail[SGU_TL])
+            if (pbBorderAvail.m_top_left)
             {
                 edgeTypeCb = getSign(pRec[0] - tmpU[-2]) - pUpBuff[2] + 2;
                 edgeTypeCr = getSign(pRec[1] - tmpU[-1]) - pUpBuff[3] + 2;
@@ -618,7 +618,7 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H
                 pRec[1] = pClipTbl[pRec[1] + pOffsetEoCr[edgeTypeCr]];
             }
 
-            if (pbBorderAvail[SGU_T])
+            if (pbBorderAvail.m_top)
             {
                 for (x = 2; x < endX; x += 2)
                 {
@@ -658,7 +658,7 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H
             }
 
             //last line
-            if (pbBorderAvail[SGU_B])
+            if (pbBorderAvail.m_bottom)
             {
                 for (x = startX; x < LCUWidth - 2; x += 2)
                 {
@@ -669,7 +669,7 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H
                 }
             }
 
-            if (pbBorderAvail[SGU_BR])
+            if (pbBorderAvail.m_bottom_right)
             {
                 x = LCUWidth - 2;
                 edgeTypeCb = getSign(pRec[x] - pRec[x + stride + 2]) + pUpBuff[x] + 2;
@@ -681,7 +681,7 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H
         }
     case SAO_EO_3: // dir: 45
         {
-            if (pbBorderAvail[SGU_L])
+            if (pbBorderAvail.m_left)
             {
                 startX = 0;
                 startPtr = tmpL;
@@ -694,7 +694,7 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H
                 startStride = stride;
             }
 
-            endX = pbBorderAvail[SGU_R] ? LCUWidth : LCUWidth - 2;
+            endX = pbBorderAvail.m_right ? LCUWidth : LCUWidth - 2;
 
             //prepare 2nd line upper sign
             tmpUpBuff1[startX] = getSign(startPtr[startStride] - pRec[startX]);
@@ -705,7 +705,7 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H
             }
 
             //first line
-            if (pbBorderAvail[SGU_T])
+            if (pbBorderAvail.m_top)
             {
                 for (x = startX; x < LCUWidth - 2; x += 2)
                 {
@@ -716,7 +716,7 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H
                 }
             }
 
-            if (pbBorderAvail[SGU_TR])
+            if (pbBorderAvail.m_top_right)
             {
                 x = LCUWidth - 2;
                 edgeTypeCb = getSign(pRec[x] - tmpU[x + 2]) - tmpUpBuff1[x] + 2;
@@ -752,7 +752,7 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H
             }
 
             //last line
-            if (pbBorderAvail[SGU_BL])
+            if (pbBorderAvail.m_bottom_left)
             {
                 edgeTypeCb = getSign(pRec[0] - pRec[stride - 2]) + tmpUpBuff1[2] + 2;
                 edgeTypeCr = getSign(pRec[1] - pRec[stride - 1]) + tmpUpBuff1[3] + 2;
@@ -760,7 +760,7 @@ void H265SampleAdaptiveOffset::processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H
                 pRec[1] = pClipTbl[pRec[1] + pOffsetEoCr[edgeTypeCr]];
             }
 
-            if (pbBorderAvail[SGU_B])
+            if (pbBorderAvail.m_bottom)
             {
                 for (x = 2; x < endX; x += 2)
                 {
@@ -986,7 +986,6 @@ void H265SampleAdaptiveOffset::processSaoUnits(Ipp32s firstCU, Ipp32s toProcessC
         {
             for (Ipp32s j = firstCU; j < endAddr; j++)
             {
-                //Ipp32u idx = m_Frame->m_CodingData->getCUOrderMap(j);
                 m_Frame->getCU(j)->setNDBFilterBlockBorderAvailability(independentTileBoundaryForNDBFilter);
             }
         }

@@ -16,7 +16,7 @@
 
 #include <vector>
 
-
+#include "mfx_h265_optimization.h"
 #include "umc_h265_dec_defs_dec.h"
 #include "umc_h265_heap.h"
 #include "umc_h265_headers.h"
@@ -45,7 +45,7 @@ public:
     Ipp32u *m_zscanToRaster;
 
     Ipp32s                   m_SliceIdx;
-    bool                     m_AvailBorder[8];
+    MFX_HEVC_PP::CTBBorders  m_AvailBorder;
 
     //CU description --------------------------------------------------------------------------------
     Ipp32u                    CUAddr;         // CU address in a slice

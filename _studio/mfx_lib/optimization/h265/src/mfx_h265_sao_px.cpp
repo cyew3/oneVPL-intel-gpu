@@ -29,19 +29,6 @@ namespace MFX_HEVC_PP
         MAX_NUM_SAO_TYPE
     };
 
-    enum SGUBorderID
-    {
-        SGU_L = 0,
-        SGU_R,
-        SGU_T,
-        SGU_B,
-        SGU_TL,
-        SGU_TR,
-        SGU_BL,
-        SGU_BR,
-        NUM_SGU_BORDER
-    };
-
     /** get the sign of input variable
     * \param   x
     */
@@ -288,7 +275,7 @@ namespace MFX_HEVC_PP
         {
         case SAO_EO_0: // dir: -
             {
-                if (pbBorderAvail[SGU_L])
+                if (pbBorderAvail.m_left)
                 {
                     startX = 0;
                     startPtr = tmpL;
@@ -301,7 +288,7 @@ namespace MFX_HEVC_PP
                     startStride = stride;
                 }
 
-                endX   = (pbBorderAvail[SGU_R]) ? LCUWidth : (LCUWidth - 1);
+                endX   = (pbBorderAvail.m_right) ? LCUWidth : (LCUWidth - 1);
 
                 for (y = 0; y < LCUHeight; y++)
                 {
@@ -321,7 +308,7 @@ namespace MFX_HEVC_PP
             }
         case SAO_EO_1: // dir: |
             {
-                if (pbBorderAvail[SGU_T])
+                if (pbBorderAvail.m_top)
                 {
                     startY = 0;
                     startPtr = tmpU;
@@ -333,7 +320,7 @@ namespace MFX_HEVC_PP
                     pRec += stride;
                 }
 
-                endY = (pbBorderAvail[SGU_B]) ? LCUHeight : LCUHeight - 1;
+                endY = (pbBorderAvail.m_bottom) ? LCUHeight : LCUHeight - 1;
 
                 for (x = 0; x < LCUWidth; x++)
                 {
@@ -360,7 +347,7 @@ namespace MFX_HEVC_PP
                 Ipp32s *pUpBufft = tmpUpBuff2;
                 Ipp32s *swapPtr;
 
-                if (pbBorderAvail[SGU_L])
+                if (pbBorderAvail.m_left)
                 {
                     startX = 0;
                     startPtr = tmpL;
@@ -373,7 +360,7 @@ namespace MFX_HEVC_PP
                     startStride = stride;
                 }
 
-                endX = (pbBorderAvail[SGU_R]) ? LCUWidth : (LCUWidth-1);
+                endX = (pbBorderAvail.m_right) ? LCUWidth : (LCUWidth-1);
 
                 //prepare 2nd line upper sign
                 pUpBuff[startX] = getSign(pRec[startX+stride] - startPtr[0]);
@@ -383,13 +370,13 @@ namespace MFX_HEVC_PP
                 }
 
                 //1st line
-                if (pbBorderAvail[SGU_TL])
+                if (pbBorderAvail.m_top_left)
                 {
                     edgeType = getSign(pRec[0] - tmpU[-1]) - pUpBuff[1] + 2;
                     pRec[0]  = pClipTable[pRec[0] + pOffsetEo[edgeType]];
                 }
 
-                if (pbBorderAvail[SGU_T])
+                if (pbBorderAvail.m_top)
                 {
                     for (x = 1; x < endX; x++)
                     {
@@ -422,7 +409,7 @@ namespace MFX_HEVC_PP
                 }
 
                 //last line
-                if (pbBorderAvail[SGU_B])
+                if (pbBorderAvail.m_bottom)
                 {
                     for (x = startX; x < LCUWidth - 1; x++)
                     {
@@ -431,7 +418,7 @@ namespace MFX_HEVC_PP
                     }
                 }
 
-                if (pbBorderAvail[SGU_BR])
+                if (pbBorderAvail.m_bottom_right)
                 {
                     x = LCUWidth - 1;
                     edgeType = getSign(pRec[x] - pRec[x+stride+1]) + pUpBuff[x] + 2;
@@ -441,7 +428,7 @@ namespace MFX_HEVC_PP
             }
         case SAO_EO_3: // dir: 45
             {
-                if (pbBorderAvail[SGU_L])
+                if (pbBorderAvail.m_left)
                 {
                     startX = 0;
                     startPtr = tmpL;
@@ -454,7 +441,7 @@ namespace MFX_HEVC_PP
                     startStride = stride;
                 }
 
-                endX   = (pbBorderAvail[SGU_R]) ? LCUWidth : (LCUWidth -1);
+                endX   = (pbBorderAvail.m_right) ? LCUWidth : (LCUWidth -1);
 
                 //prepare 2nd line upper sign
                 tmpUpBuff1[startX] = getSign(startPtr[startStride] - pRec[startX]);
@@ -464,7 +451,7 @@ namespace MFX_HEVC_PP
                 }
 
                 //first line
-                if (pbBorderAvail[SGU_T])
+                if (pbBorderAvail.m_top)
                 {
                     for (x = startX; x < LCUWidth - 1; x++)
                     {
@@ -473,7 +460,7 @@ namespace MFX_HEVC_PP
                     }
                 }
 
-                if (pbBorderAvail[SGU_TR])
+                if (pbBorderAvail.m_top_right)
                 {
                     x= LCUWidth - 1;
                     edgeType = getSign(pRec[x] - tmpU[x+1]) - tmpUpBuff1[x] + 2;
@@ -501,14 +488,14 @@ namespace MFX_HEVC_PP
                 }
 
                 //last line
-                if (pbBorderAvail[SGU_BL])
+                if (pbBorderAvail.m_bottom_left)
                 {
                     edgeType = getSign(pRec[0] - pRec[stride-1]) + tmpUpBuff1[1] + 2;
                     pRec[0] = pClipTable[pRec[0] + pOffsetEo[edgeType]];
 
                 }
 
-                if (pbBorderAvail[SGU_B])
+                if (pbBorderAvail.m_bottom)
                 {
                     for (x = 1; x < endX; x++)
                     {

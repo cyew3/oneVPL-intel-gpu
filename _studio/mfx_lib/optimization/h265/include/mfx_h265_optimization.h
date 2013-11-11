@@ -114,6 +114,35 @@ namespace MFX_HEVC_PP
         Ipp8s betaOffset;
     };
 
+    enum SGUBorderID
+    {
+        SGU_L = 0,
+        SGU_T,
+        SGU_R,
+        SGU_B,
+        SGU_TL,
+        SGU_TR,
+        SGU_BL,
+        SGU_BR,
+        NUM_SGU_BORDER
+    };
+
+    union CTBBorders
+    {
+        struct
+        {
+            Ipp8u m_left         : 1;
+            Ipp8u m_top          : 1;
+            Ipp8u m_right        : 1;
+            Ipp8u m_bottom       : 1;
+            Ipp8u m_top_left     : 1;
+            Ipp8u m_top_right    : 1;
+            Ipp8u m_bottom_left  : 1;
+            Ipp8u m_bottom_right : 1;
+        };
+        Ipp8u data;
+    };
+
     /* ******************************************************** */
     /*                    Data Types for Dispatcher             */
     /* ******************************************************** */
@@ -145,7 +174,7 @@ namespace MFX_HEVC_PP
             Ipp32s picWidth, Ipp32s picHeight, Ipp32s* pOffsetEo, Ipp8u* pOffsetBo, Ipp8u* pClipTable, Ipp32u CUPelX, Ipp32u CUPelY 
 
     #define SAOCU_PARAMETERS_LIST Ipp8u* pRec, Ipp32s stride, Ipp32s saoType, Ipp8u* tmpL, Ipp8u* tmpU, Ipp32u maxCUWidth, Ipp32u maxCUHeight, \
-    Ipp32s picWidth, Ipp32s picHeight, Ipp32s* pOffsetEo, Ipp8u* pOffsetBo, Ipp8u* pClipTable, Ipp32u CUPelX, Ipp32u CUPelY, bool* pbBorderAvail
+    Ipp32s picWidth, Ipp32s picHeight, Ipp32s* pOffsetEo, Ipp8u* pOffsetBo, Ipp8u* pClipTable, Ipp32u CUPelX, Ipp32u CUPelY, CTBBorders pbBorderAvail
 
     typedef void (* PTR_ProcessSaoCuOrg_Luma_8u)( SAOCU_ORG_PARAMETERS_LIST );
 

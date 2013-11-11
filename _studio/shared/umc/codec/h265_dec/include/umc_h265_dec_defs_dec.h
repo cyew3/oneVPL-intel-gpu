@@ -268,19 +268,6 @@ enum SAOType
     MAX_NUM_SAO_TYPE
 };
 
-enum SGUBorderID
-{
-    SGU_L = 0,
-    SGU_R,
-    SGU_T,
-    SGU_B,
-    SGU_TL,
-    SGU_TR,
-    SGU_BL,
-    SGU_BR,
-    NUM_SGU_BORDER
-};
-
 struct SAOLCUParam
 {
     bool   m_mergeUpFlag;

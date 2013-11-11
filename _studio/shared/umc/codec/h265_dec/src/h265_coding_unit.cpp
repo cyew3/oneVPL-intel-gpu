@@ -610,94 +610,67 @@ Ipp32u H265CodingUnit::getSCUAddr()
     return m_Frame->m_CodingData->GetInverseCUOrderMap(CUAddr) * (1 << (m_SliceHeader->m_SeqParamSet->MaxCUDepth << 1)) + m_AbsIdxInLCU;
 }
 
-#define SET_BORDER_AVAILABILITY(borderIndex, picBoundary, refCUAddr)                           \
+#define SET_BORDER_AVAILABILITY(borderIndex, noPicBoundary, refCUAddr)                         \
 {                                                                                              \
-    if (picBoundary)                                                                           \
+    if (noPicBoundary)                                                                         \
     {                                                                                          \
-        m_AvailBorder[borderIndex] = false;                                                    \
-    }                                                                                          \
-    else if (m_Frame->GetAU()->GetSliceCount() == 1)                                           \
-    {                                                                                          \
-        m_AvailBorder[borderIndex] = true;                                                     \
-    }                                                                                          \
-    else                                                                                       \
-    {                                                                                          \
-        H265CodingUnit* refCU = m_Frame->getCU(refCUAddr);                                     \
-        Ipp32u          refSA = refCU->m_SliceHeader->SliceCurStartCUAddr;                     \
-        Ipp32u          SA = m_SliceHeader->SliceCurStartCUAddr;                               \
+        if (m_Frame->GetAU()->GetSliceCount() == 1)                                            \
+        {                                                                                      \
+            m_AvailBorder.data |= 1 << borderIndex;                                            \
+        }                                                                                      \
+        else                                                                                   \
+        {                                                                                      \
+            H265CodingUnit* refCU = m_Frame->getCU(refCUAddr);                                 \
+            Ipp32u          refSA = refCU->m_SliceHeader->SliceCurStartCUAddr;                 \
+            Ipp32u          SA = m_SliceHeader->SliceCurStartCUAddr;                           \
                                                                                                \
-        Ipp8u borderFlag = (refSA == SA) ? 1 : ((refSA > SA) ?                  \
-                                     (refCU->m_SliceHeader->slice_loop_filter_across_slices_enabled_flag) :      \
-                                     (m_SliceHeader->slice_loop_filter_across_slices_enabled_flag));             \
-        m_AvailBorder[borderIndex] = borderFlag != 0;                                            \
+            Ipp8u borderFlag = (refSA == SA) ? 1 : ((refSA > SA) ?                             \
+                refCU->m_SliceHeader->slice_loop_filter_across_slices_enabled_flag :           \
+                m_SliceHeader->slice_loop_filter_across_slices_enabled_flag);                  \
+            m_AvailBorder.data |= borderFlag << borderIndex;                                   \
+        }                                                                                      \
     }                                                                                          \
 }
 
 void H265CodingUnit::setNDBFilterBlockBorderAvailability(bool independentTileBoundaryEnabled)
 {
-    bool picLBoundary = ((m_CUPelX == 0) ? true : false);
-    bool picTBoundary = ((m_CUPelY == 0) ? true : false);
-    bool picRBoundary = ((m_CUPelX + m_SliceHeader->m_SeqParamSet->MaxCUSize >= m_SliceHeader->m_SeqParamSet->pic_width_in_luma_samples)   ? true : false);
-    bool picBBoundary = ((m_CUPelY + m_SliceHeader->m_SeqParamSet->MaxCUSize >= m_SliceHeader->m_SeqParamSet->pic_height_in_luma_samples) ? true : false);
-    bool leftTileBoundary= false;
-    bool rightTileBoundary= false;
-    bool topTileBoundary = false;
-    bool bottomTileBoundary= false;
+    bool noPicLBoundary = ((m_CUPelX == 0) ? false : true);
+    bool noPicTBoundary = ((m_CUPelY == 0) ? false : true);
+    bool noPicRBoundary = ((m_CUPelX + m_SliceHeader->m_SeqParamSet->MaxCUSize >= m_SliceHeader->m_SeqParamSet->pic_width_in_luma_samples)  ? false : true);
+    bool noPicBBoundary = ((m_CUPelY + m_SliceHeader->m_SeqParamSet->MaxCUSize >= m_SliceHeader->m_SeqParamSet->pic_height_in_luma_samples) ? false : true);
     Ipp32s numLCUInPicWidth = m_Frame->m_CodingData->m_WidthInCU;
     Ipp32u tileID = m_Frame->m_CodingData->getTileIdxMap(CUAddr);
 
-    if (independentTileBoundaryEnabled)
-    {
-        if (!picLBoundary)
-        {
-            leftTileBoundary = ((m_Frame->m_CodingData->getTileIdxMap(CUAddr - 1) != tileID) ? true : false);
-        }
-
-        if (!picRBoundary)
-        {
-            rightTileBoundary = ((m_Frame->m_CodingData->getTileIdxMap(CUAddr + 1) != tileID) ? true : false);
-        }
-
-        if (!picTBoundary)
-        {
-            topTileBoundary = ((m_Frame->m_CodingData->getTileIdxMap(CUAddr - numLCUInPicWidth) !=  tileID) ? true : false);
-        }
-
-        if (!picBBoundary)
-        {
-            bottomTileBoundary = ((m_Frame->m_CodingData->getTileIdxMap(CUAddr + numLCUInPicWidth) !=  tileID) ? true : false);
-        }
-    }
-
-    SET_BORDER_AVAILABILITY(SGU_L, picLBoundary, CUAddr - 1)
-    SET_BORDER_AVAILABILITY(SGU_R, picRBoundary, CUAddr + 1)
-    SET_BORDER_AVAILABILITY(SGU_T, picTBoundary, CUAddr - numLCUInPicWidth)
-    SET_BORDER_AVAILABILITY(SGU_B, picBBoundary, CUAddr + numLCUInPicWidth)
-    SET_BORDER_AVAILABILITY(SGU_TL, picTBoundary || picLBoundary, CUAddr - numLCUInPicWidth - 1)
-    SET_BORDER_AVAILABILITY(SGU_TR, picTBoundary || picRBoundary, CUAddr - numLCUInPicWidth + 1)
-    SET_BORDER_AVAILABILITY(SGU_BL, picBBoundary || picLBoundary, CUAddr + numLCUInPicWidth - 1)
-    SET_BORDER_AVAILABILITY(SGU_BR, picBBoundary || picRBoundary, CUAddr + numLCUInPicWidth + 1)
+    m_AvailBorder.data = 0;
+    SET_BORDER_AVAILABILITY(SGU_L, noPicLBoundary, CUAddr - 1);
+    SET_BORDER_AVAILABILITY(SGU_R, noPicRBoundary, CUAddr + 1);
+    SET_BORDER_AVAILABILITY(SGU_T, noPicTBoundary, CUAddr - numLCUInPicWidth);
+    SET_BORDER_AVAILABILITY(SGU_B, noPicBBoundary, CUAddr + numLCUInPicWidth);
+    SET_BORDER_AVAILABILITY(SGU_TL, noPicTBoundary && noPicLBoundary, CUAddr - numLCUInPicWidth - 1);
+    SET_BORDER_AVAILABILITY(SGU_TR, noPicTBoundary && noPicRBoundary, CUAddr - numLCUInPicWidth + 1);
+    SET_BORDER_AVAILABILITY(SGU_BL, noPicBBoundary && noPicLBoundary, CUAddr + numLCUInPicWidth - 1);
+    SET_BORDER_AVAILABILITY(SGU_BR, noPicBBoundary && noPicRBoundary, CUAddr + numLCUInPicWidth + 1);
 
     if (independentTileBoundaryEnabled)
     {
-        if (leftTileBoundary)
+        if (noPicLBoundary && m_Frame->m_CodingData->getTileIdxMap(CUAddr - 1) != tileID)
         {
-            m_AvailBorder[SGU_L] = m_AvailBorder[SGU_TL] = m_AvailBorder[SGU_BL] = false;
+            m_AvailBorder.data &= ~((1 << SGU_L) | (1 << SGU_TL) | (1 << SGU_BL));
         }
 
-        if( rightTileBoundary)
+        if (noPicRBoundary && m_Frame->m_CodingData->getTileIdxMap(CUAddr + 1) != tileID)
         {
-            m_AvailBorder[SGU_R] = m_AvailBorder[SGU_TR] = m_AvailBorder[SGU_BR] = false;
+            m_AvailBorder.data &= ~((1 << SGU_R) | (1 << SGU_TR) | (1 << SGU_BR));
         }
 
-        if (topTileBoundary)
+        if (noPicTBoundary && m_Frame->m_CodingData->getTileIdxMap(CUAddr - numLCUInPicWidth) !=  tileID)
         {
-            m_AvailBorder[SGU_T] = m_AvailBorder[SGU_TL] = m_AvailBorder[SGU_TR] = false;
+            m_AvailBorder.data &= ~((1 << SGU_T) | (1 << SGU_TL) | (1 << SGU_TR));
         }
 
-        if (bottomTileBoundary)
+        if (noPicBBoundary && m_Frame->m_CodingData->getTileIdxMap(CUAddr + numLCUInPicWidth) !=  tileID)
         {
-            m_AvailBorder[SGU_B] = m_AvailBorder[SGU_BL] = m_AvailBorder[SGU_BR] = false;
+            m_AvailBorder.data &= ~((1 << SGU_B) | (1 << SGU_BL) | (1 << SGU_BR));
         }
     }
 }

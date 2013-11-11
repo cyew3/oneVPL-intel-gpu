@@ -134,51 +134,51 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr)
         Ipp32u tileID = m_pCurrentFrame->m_CodingData->getTileIdxMap(curLCUAddr);
 
         if (picLBoundary)
-            curLCU->m_AvailBorder[SGU_L] = false;
+            curLCU->m_AvailBorder.m_left = false;
         else
         {
-            curLCU->m_AvailBorder[SGU_L] = m_pCurrentFrame->m_CodingData->getTileIdxMap(curLCUAddr - 1) == tileID ? true : false;
-            CleanLeftEdges(curLCU->m_AvailBorder[SGU_L], ctb_start_edge, height);
+            curLCU->m_AvailBorder.m_left = m_pCurrentFrame->m_CodingData->getTileIdxMap(curLCUAddr - 1) == tileID ? true : false;
+            CleanLeftEdges(curLCU->m_AvailBorder.m_left, ctb_start_edge, height);
         }
 
         if (picTBoundary)
-            curLCU->m_AvailBorder[SGU_T] = false;
+            curLCU->m_AvailBorder.m_top = false;
         else
         {
-            curLCU->m_AvailBorder[SGU_T] = m_pCurrentFrame->m_CodingData->getTileIdxMap(curLCUAddr - numLCUInPicWidth) == tileID ? true : false;
-            CleanTopEdges(curLCU->m_AvailBorder[SGU_T], ctb_start_edge, width);
+            curLCU->m_AvailBorder.m_top = m_pCurrentFrame->m_CodingData->getTileIdxMap(curLCUAddr - numLCUInPicWidth) == tileID ? true : false;
+            CleanTopEdges(curLCU->m_AvailBorder.m_top, ctb_start_edge, width);
         }
     }
     else if (!curLCU->m_SliceHeader->slice_loop_filter_across_slices_enabled_flag)
     {
         if (picLBoundary)
-            curLCU->m_AvailBorder[SGU_L] = false;
+            curLCU->m_AvailBorder.m_left = false;
         else
         {
             H265CodingUnit* refCU = m_pCurrentFrame->getCU(curLCUAddr - 1);
             Ipp32u          refSA = refCU->m_SliceHeader->SliceCurStartCUAddr;
             Ipp32u          SA = curLCU->m_SliceHeader->SliceCurStartCUAddr;
 
-            curLCU->m_AvailBorder[SGU_L] = refSA == SA ? true : false;
-            CleanLeftEdges(curLCU->m_AvailBorder[SGU_L], ctb_start_edge, height);
+            curLCU->m_AvailBorder.m_left = refSA == SA ? true : false;
+            CleanLeftEdges(curLCU->m_AvailBorder.m_left, ctb_start_edge, height);
         }
 
         if (picTBoundary)
-            curLCU->m_AvailBorder[SGU_T] = false;
+            curLCU->m_AvailBorder.m_top = false;
         else
         {
             H265CodingUnit* refCU = m_pCurrentFrame->getCU(curLCUAddr - numLCUInPicWidth);
             Ipp32u          refSA = refCU->m_SliceHeader->SliceCurStartCUAddr;
             Ipp32u          SA = curLCU->m_SliceHeader->SliceCurStartCUAddr;
 
-            curLCU->m_AvailBorder[SGU_T] = refSA == SA ? true : false;
-            CleanTopEdges(curLCU->m_AvailBorder[SGU_T], ctb_start_edge, width);
+            curLCU->m_AvailBorder.m_top = refSA == SA ? true : false;
+            CleanTopEdges(curLCU->m_AvailBorder.m_top, ctb_start_edge, width);
         }
     }
     else
     {
-        curLCU->m_AvailBorder[SGU_L] = !picLBoundary;
-        curLCU->m_AvailBorder[SGU_T] = !picTBoundary;
+        curLCU->m_AvailBorder.m_left = !picLBoundary;
+        curLCU->m_AvailBorder.m_top = !picTBoundary;
     }
 
     for (j = 0; j < height; j += 8)
