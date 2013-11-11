@@ -1184,10 +1184,10 @@ void H265SampleAdaptiveOffset::PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u
 
     if(Text == TEXT_LUMA)
     {
-        H265PlaneYCommon* Pcm;
+        H265PlanePtrYCommon Pcm;
 
         Src = m_Frame->GetLumaAddr(pcCU->CUAddr, AbsZorderIdx);
-        Pcm = pcCU->m_IPCMSampleY + LumaOffset;
+        Pcm = (H265PlanePtrYCommon)(pcCU->m_TrCoeffY + LumaOffset);
         Stride  = m_Frame->pitch_luma();
         Width  = (cd->m_MaxCUWidth >> Depth);
         Height = (cd->m_MaxCUWidth >> Depth);
@@ -1213,11 +1213,11 @@ void H265SampleAdaptiveOffset::PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u
     }
     else
     {
-        H265PlaneUVCommon *PcmCb, *PcmCr;
+        H265PlanePtrUVCommon PcmCb, PcmCr;
 
         Src = m_Frame->GetCbCrAddr(pcCU->CUAddr, AbsZorderIdx);
-        PcmCb = pcCU->m_IPCMSampleCb + ChromaOffset;
-        PcmCr = pcCU->m_IPCMSampleCr + ChromaOffset;
+        PcmCb = (H265PlanePtrUVCommon)(pcCU->m_TrCoeffCb + ChromaOffset);
+        PcmCr = (H265PlanePtrUVCommon)(pcCU->m_TrCoeffCr + ChromaOffset);
 
         Stride = m_Frame->pitch_chroma();
         Width  = ((cd->m_MaxCUWidth >> Depth) / 2);

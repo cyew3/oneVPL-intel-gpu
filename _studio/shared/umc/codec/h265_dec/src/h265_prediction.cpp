@@ -79,7 +79,6 @@ void H265Prediction::InitTempBuff(DecodingContext* context)
 //---------------------------------------------------------
 void H265Prediction::MotionCompensation(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    VM_ASSERT(pCU->m_AbsIdxInLCU == 0);
     bool weighted_prediction = pCU->m_SliceHeader->slice_type == P_SLICE ? m_context->m_pps->weighted_pred_flag :
         m_context->m_pps->weighted_bipred_flag;
 
@@ -312,7 +311,6 @@ static void PrepareInterpSrc( H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicLi
 template <EnumTextType c_plane_type, bool c_bi>
 void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicList RefPicList, H265DecYUVBufferPadded *YUVPred, MFX_HEVC_PP::EnumAddAverageType eAddAverage )
 {
-    VM_ASSERT(pCU->m_AbsIdxInLCU == 0);
     Ipp32u PartAddr = PUi.PartAddr;
     Ipp32s Width = PUi.Width;
     Ipp32s Height = PUi.Height;

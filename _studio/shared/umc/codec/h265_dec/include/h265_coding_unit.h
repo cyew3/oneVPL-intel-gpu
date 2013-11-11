@@ -31,6 +31,29 @@ namespace UMC_HEVC_DECODER
 class H265Pattern;
 class H265SegmentDecoderMultiThreaded;
 
+#pragma pack(1)
+struct H265CodingUnitData
+{
+    struct
+    {
+        Ipp8u cu_transform_bypass : 1;
+        Ipp8u pcm_flag : 1;
+    };
+
+    Ipp8u transform_skip[3];
+
+    Ipp8u width;
+    Ipp8u depth;
+
+    //Ipp8u partSize;
+    Ipp8u predMode;
+
+    Ipp8u trIndex;
+
+    //Ipp8u reserved[5];
+};
+#pragma pack()
+
 class H265CodingUnit
 {
 public:
@@ -49,34 +72,29 @@ public:
 
     //CU description --------------------------------------------------------------------------------
     Ipp32u                    CUAddr;         // CU address in a slice
-    Ipp32u                    m_AbsIdxInLCU;    // absolute address in a CU. It's Z scan order
     Ipp32u                    m_CUPelX;         // CU position in a pixel (X)
     Ipp32u                    m_CUPelY;         // CU position in a pixel (Y)
     Ipp32u                    m_NumPartition;   // total number of minimum partitions in a CU
 
     //CU data ----------------------------------------------------------------------------------------
-    bool*                     m_CUTransquantBypass; // array of cu_transquant_bypass flags
-    Ipp8u*                    m_TrIdxArray;     // array of transform indices
     H265CoeffsPtrCommon        m_TrCoeffY;       // transformed coefficient buffer (Y)
     H265CoeffsPtrCommon        m_TrCoeffCb;      // transformed coefficient buffer (Cb)
     H265CoeffsPtrCommon        m_TrCoeffCr;      // transformed coefficient buffer (Cr)
 
+    H265CodingUnitData         *m_cuData;
+
 protected:
-    Ipp8u*                    m_widthArray;     // array of widths
-    Ipp8u*                    m_depthArray;     // array of depths
-
     Ipp8u*                    m_partSizeArray;  // array of partition sizes
-    Ipp8u*                    m_predModeArray;  // array of prediction modes
-
-    Ipp8u*                    m_transformSkip[3];  // array of transform skipping flags
     Ipp8u*                    m_cbf[3];         // array of coded block flags (CBF)
 
     Ipp8u*                    m_lumaIntraDir;    // array of intra directions (luma)
     Ipp8u*                    m_chromaIntraDir;  // array of intra directions (chroma)
-
-    bool*                    m_IPCMFlag;        // array of intra_pcm flags
-
 public:
+
+    inline Ipp8u GetTrIndex(Ipp32s partAddr) const
+    {
+        return m_cuData[partAddr].trIndex;
+    }
 
     inline Ipp8u GetLumaIntra(Ipp32s partAddr) const
     {
@@ -90,12 +108,12 @@ public:
 
     inline bool GetIPCMFlag(Ipp32s partAddr) const
     {
-        return m_IPCMFlag[partAddr];
+        return m_cuData[partAddr].pcm_flag;
     }
 
     inline Ipp8u GetTransformSkip(Ipp32s plane, Ipp32s partAddr) const
     {
-        return m_transformSkip[plane][partAddr];
+        return m_cuData[partAddr].transform_skip[plane];
     }
 
     inline Ipp8u GetCbf(ComponentPlane plane, Ipp32s partAddr) const
@@ -105,17 +123,18 @@ public:
 
     inline Ipp8u GetWidth(Ipp32s partAddr) const
     {
-        return m_widthArray[partAddr];
+        return m_cuData[partAddr].width;
     }
 
     inline Ipp8u GetDepth(Ipp32s partAddr) const
     {
-        return m_depthArray[partAddr];
+        return m_cuData[partAddr].depth;
     }
 
-    H265PlanePtrYCommon        m_IPCMSampleY;     // PCM sample buffer (Y)
-    H265PlanePtrUVCommon       m_IPCMSampleCb;    // PCM sample buffer (Cb)
-    H265PlanePtrUVCommon       m_IPCMSampleCr;    // PCM sample buffer (Cr)
+    inline bool GetCUTransquantBypass(Ipp32s partAddr) const
+    {
+        return m_cuData[partAddr].cu_transform_bypass;
+    }
 
     // misc. variables -------------------------------------------------------------------------------------
     Ipp8s                   m_CodedQP;
@@ -144,24 +163,25 @@ public:
 
     // member functions for CU description ------- (only functions with declaration here. simple get/set are removed)
     Ipp32u getSCUAddr();
-    void setDepthSubParts (Ipp32u Depth, Ipp32u AbsPartIdx);
+    void setDepth (Ipp32u Depth, Ipp32u AbsPartIdx);
 
     // member functions for CU data ------------- (only functions with declaration here. simple get/set are removed)
     EnumPartSize GetPartitionSize (Ipp32u Idx) const
     {
+        //return static_cast<EnumPartSize>(m_cuData[Idx].partSize);
         return static_cast<EnumPartSize>(m_partSizeArray[Idx]);
     }
 
     EnumPredMode GetPredictionMode (Ipp32u Idx) const
     {
-        return static_cast<EnumPredMode>(m_predModeArray[Idx]);
+        return static_cast<EnumPredMode>(m_cuData[Idx].predMode);
     }
 
     void setPartSizeSubParts (EnumPartSize Mode, Ipp32u AbsPartIdx, Ipp32u Depth);
-    void setCUTransquantBypassSubParts(bool flag, Ipp32u AbsPartIdx, Ipp32u Depth);
-    void setPredModeSubParts (EnumPredMode Mode, Ipp32u AbsPartIdx, Ipp32u Depth);
-    void setSizeSubParts (Ipp32u Width, Ipp32u AbsPartIdx, Ipp32u Depth);
-    void setTrIdxSubParts (Ipp32u TrIdx, Ipp32u AbsPartIdx, Ipp32u Depth);
+    void setCUTransquantBypass(bool flag, Ipp32u AbsPartIdx);
+    void setPredMode (EnumPredMode Mode, Ipp32u AbsPartIdx);
+    void setSize (Ipp32u Width, Ipp32u AbsPartIdx);
+    void setTrIdx (Ipp32u TrIdx, Ipp32u AbsPartIdx);
 
     Ipp32u getQuadtreeTULog2MinSizeInCU (Ipp32u Idx);
 
@@ -180,18 +200,18 @@ public:
         return (Ipp8u)((GetCbf(Idx, plane) >> TrDepth ) & 0x1);
     }
 
+    void SetCUDataSubParts(Ipp32u AbsPartIdx, Ipp32u Depth);
+
     void setCbfSubParts (Ipp32u CbfY, Ipp32u CbfU, Ipp32u CbfV, Ipp32u AbsPartIdx, Ipp32u Depth);
     void setCbfSubParts (Ipp32u m_Cbf, ComponentPlane plane, Ipp32u AbsPartIdx, Ipp32u Depth);
 
     // member functions for coding tool information (only functions with declaration here. simple get/set are removed)
-    template <typename T>
-    void setSubPart (T Parameter, T* pBaseLCU, Ipp32u CUAddr, Ipp32u CUDepth, Ipp32u PUIdx);
     void setLumaIntraDirSubParts (Ipp32u Dir, Ipp32u AbsPartIdx, Ipp32u Depth);
     void setChromIntraDirSubParts (Ipp32u Dir, Ipp32u AbsPartIdx, Ipp32u Depth);
 
-    void setTransformSkipSubParts(Ipp32u useTransformSkip, ComponentPlane plane, Ipp32u AbsPartIdx, Ipp32u Depth);
+    void setTransformSkip(Ipp32u useTransformSkip, ComponentPlane plane, Ipp32u AbsPartIdx);
 
-    void setIPCMFlagSubParts (bool IpcmFlag, Ipp32u AbsPartIdx, Ipp32u Depth);
+    void setIPCMFlag (bool IpcmFlag, Ipp32u AbsPartIdx);
 
     // member functions for accessing partition information -----------------------------------------------------------
     void getPartIndexAndSize (Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u PartIdx, Ipp32u &PartAddr, Ipp32u &Width, Ipp32u &Height);

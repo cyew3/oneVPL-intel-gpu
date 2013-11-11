@@ -61,6 +61,8 @@ void H265SegmentDecoderMultiThreaded::StartProcessingSegment(H265Task &Task)
 
     m_SD = CreateSegmentDecoder();
 
+    m_DecodeDQPFlag = false;
+
     m_context = Task.m_context;
     if (!m_context)
     {

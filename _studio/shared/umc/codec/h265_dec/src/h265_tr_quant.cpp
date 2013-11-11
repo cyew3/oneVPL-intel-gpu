@@ -130,8 +130,6 @@ template void H265TrQuant::InvTransformNxN<Ipp16s>(
 
 void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Size, Ipp32u TrMode)
 {
-    VM_ASSERT(pCU->m_AbsIdxInLCU == 0);
-
     bool lumaPresent = pCU->GetCbf(AbsPartIdx, COMPONENT_LUMA, TrMode) != 0;
     bool chromaUPresent = pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_U, TrMode) != 0;
     bool chromaVPresent = pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_V, TrMode) != 0;
@@ -141,7 +139,7 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
         return;
     }
 
-    const Ipp32u StopTrMode = pCU->m_TrIdxArray[AbsPartIdx];
+    const Ipp32u StopTrMode = pCU->GetTrIndex(AbsPartIdx);
 
     if(TrMode == StopTrMode)
     {
@@ -156,7 +154,7 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
             H265PlanePtrYCommon ptrLuma = pCU->m_Frame->GetLumaAddr(pCU->CUAddr, AbsPartIdx);
 
             pCoeff = pCU->m_TrCoeffY + coeffsOffset;
-            InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_LUMA, REG_DCT, ptrLuma, DstStride, pCoeff, Size,
+            InvTransformNxN(pCU->GetCUTransquantBypass(AbsPartIdx), TEXT_LUMA, REG_DCT, ptrLuma, DstStride, pCoeff, Size,
                 pCU->GetTransformSkip(COMPONENT_LUMA, AbsPartIdx) != 0);
         }
 
@@ -180,14 +178,14 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
             if (chromaUPresent)
             {
                 pCoeff = pCU->m_TrCoeffCb + (coeffsOffset >> 2);
-                InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_CHROMA_U, REG_DCT, residualsTempBuffer, res_pitch, pCoeff, Size,
+                InvTransformNxN(pCU->GetCUTransquantBypass(AbsPartIdx), TEXT_CHROMA_U, REG_DCT, residualsTempBuffer, res_pitch, pCoeff, Size,
                     pCU->GetTransformSkip(COMPONENT_CHROMA_U, AbsPartIdx) != 0);
             }
 
             if (chromaVPresent)
             {
                 pCoeff = pCU->m_TrCoeffCr + (coeffsOffset >> 2);
-                InvTransformNxN(pCU->m_CUTransquantBypass[AbsPartIdx], TEXT_CHROMA_V, REG_DCT, residualsTempBuffer1, res_pitch, pCoeff, Size,
+                InvTransformNxN(pCU->GetCUTransquantBypass(AbsPartIdx), TEXT_CHROMA_V, REG_DCT, residualsTempBuffer1, res_pitch, pCoeff, Size,
                     pCU->GetTransformSkip(COMPONENT_CHROMA_V, AbsPartIdx) != 0);
             }
   

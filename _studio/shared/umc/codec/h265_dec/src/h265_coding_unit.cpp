@@ -30,29 +30,17 @@ H265CodingUnit::H265CodingUnit()
     m_Frame = 0;
     m_SliceHeader = 0;
     m_SliceIdx = -1;
-    m_depthArray = 0;
-
-    m_partSizeArray = 0;
-    m_predModeArray = 0;
-    m_CUTransquantBypass = 0;
-    m_widthArray = 0;
 
     m_lumaIntraDir = 0;
     m_chromaIntraDir = 0;
-    m_TrIdxArray = 0;
     // ML: FIXED: changed the last 3 into 2
-    m_transformSkip[0] = m_transformSkip[1] = m_transformSkip[2] = 0;
+
     m_cbf[0] = 0;
     m_cbf[1] = 0;
     m_cbf[2] = 0;
     m_TrCoeffY = 0;
     m_TrCoeffCb = 0;
     m_TrCoeffCr = 0;
-
-    m_IPCMFlag = 0;
-    m_IPCMSampleY = 0;
-    m_IPCMSampleCb = 0;
-    m_IPCMSampleCr = 0;
 }
 
 H265CodingUnit::~H265CodingUnit()
@@ -67,21 +55,12 @@ void H265CodingUnit::create (H265FrameCodingData * frameCD)
 
     Ipp32s widthOnHeight = frameCD->m_MaxCUWidth * frameCD->m_MaxCUWidth;
 
-    m_cumulativeMemoryPtr = CumulativeArraysAllocation(21, 32,
-                                &m_depthArray, sizeof(Ipp8u) * m_NumPartition,
-                                &m_widthArray, sizeof(Ipp8u) * m_NumPartition,
+    m_cumulativeMemoryPtr = CumulativeArraysAllocation(10, // number of parameters
+                                32, // align
                                 &m_partSizeArray, sizeof(Ipp8u) * m_NumPartition,
-                                &m_predModeArray, sizeof(Ipp8u) * m_NumPartition,
-
-                                &m_CUTransquantBypass, sizeof(bool) * m_NumPartition,
 
                                 &m_lumaIntraDir, sizeof(Ipp8u) * m_NumPartition,
                                 &m_chromaIntraDir, sizeof(Ipp8u) * m_NumPartition,
-
-                                &m_TrIdxArray, sizeof(Ipp8u) * m_NumPartition,
-                                &m_transformSkip[0], sizeof(Ipp8u) * m_NumPartition,
-                                &m_transformSkip[1], sizeof(Ipp8u) * m_NumPartition,
-                                &m_transformSkip[2], sizeof(Ipp8u) * m_NumPartition,
 
                                 &m_TrCoeffY, sizeof(H265CoeffsCommon) * widthOnHeight,
                                 &m_TrCoeffCb, sizeof(H265CoeffsCommon) * widthOnHeight / 4,
@@ -91,10 +70,7 @@ void H265CodingUnit::create (H265FrameCodingData * frameCD)
                                 &m_cbf[1], sizeof(Ipp8u) * m_NumPartition,
                                 &m_cbf[2], sizeof(Ipp8u) * m_NumPartition,
 
-                                &m_IPCMFlag, sizeof(bool) * m_NumPartition,
-                                &m_IPCMSampleY, sizeof(H265PlaneYCommon) * widthOnHeight,
-                                &m_IPCMSampleCb, sizeof(H265PlaneYCommon) * widthOnHeight / 4,
-                                &m_IPCMSampleCr, sizeof(H265PlaneYCommon) * widthOnHeight / 4
+                                &m_cuData, sizeof(H265CodingUnitData) * m_NumPartition
                                 );
 
     m_rasterToPelX = frameCD->m_partitionInfo.m_rasterToPelX;
@@ -136,23 +112,20 @@ void H265CodingUnit::initCU(H265SegmentDecoderMultiThreaded* sd, Ipp32u iCUAddr)
     CUAddr = iCUAddr;
     m_CUPelX = (iCUAddr % sps->WidthInCU) * sps->MaxCUSize;
     m_CUPelY = (iCUAddr / sps->WidthInCU) * sps->MaxCUSize;
-    m_AbsIdxInLCU = 0;
     m_NumPartition = sps->NumPartitionsInCU;
 
-    memset( m_CUTransquantBypass, 0, m_NumPartition * sizeof( *m_CUTransquantBypass ) );
-    for (Ipp32s i = 0; i < 3; i++)
-        memset (m_transformSkip[i], 0, m_NumPartition * sizeof( *m_transformSkip[i] ) );
+    memset(m_cuData, 0, m_NumPartition * sizeof(H265CodingUnitData));
 }
 
 void H265CodingUnit::setOutsideCUPart(Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    Ipp32u numPartition = m_NumPartition >> (Depth << 1);
-    Ipp32u SizeInUchar = sizeof(Ipp8u) * numPartition;
-
     Ipp8u Width = (Ipp8u) (m_Frame->getCD()->m_MaxCUWidth >> Depth);
-    memset(m_depthArray + AbsPartIdx, Depth,  SizeInUchar);
-    memset(m_widthArray + AbsPartIdx, Width,  SizeInUchar);
-    memset(m_predModeArray + AbsPartIdx, MODE_NONE, SizeInUchar);
+
+    m_cuData[AbsPartIdx].depth = (Ipp8u)Depth;
+    m_cuData[AbsPartIdx].width = (Ipp8u)Width;
+    m_cuData[AbsPartIdx].predMode = MODE_NONE;
+    SetCUDataSubParts(AbsPartIdx, Depth);
+
 }
 
 Ipp32s H265CodingUnit::getLastValidPartIdx(Ipp32s AbsPartIdx)
@@ -173,7 +146,7 @@ Ipp32s H265CodingUnit::getLastValidPartIdx(Ipp32s AbsPartIdx)
  */
 bool H265CodingUnit::isLosslessCoded(Ipp32u absPartIdx)
 {
-  return (m_SliceHeader->m_PicParamSet->transquant_bypass_enabled_flag && m_CUTransquantBypass[absPartIdx]);
+  return (m_SliceHeader->m_PicParamSet->transquant_bypass_enabled_flag && GetCUTransquantBypass(absPartIdx));
 }
 
 /** Get allowed chroma intra modes
@@ -258,34 +231,38 @@ void H265CodingUnit::setCbfSubParts(Ipp32u uCbf, ComponentPlane plane, Ipp32u Ab
     memset(m_cbf[plane] + AbsPartIdx, uCbf, sizeof(Ipp8u) * CurrPartNumb);
 }
 
-void H265CodingUnit::setDepthSubParts(Ipp32u Depth, Ipp32u AbsPartIdx)
+void H265CodingUnit::setDepth(Ipp32u Depth, Ipp32u AbsPartIdx)
 {
-    Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
-    memset(m_depthArray + AbsPartIdx, Depth, sizeof(Ipp8u) * CurrPartNumb);
+    m_cuData[AbsPartIdx].depth = Depth;
 }
 
 void H265CodingUnit::setPartSizeSubParts(EnumPartSize Mode, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    VM_ASSERT(sizeof(*m_partSizeArray) == 1);
     memset(m_partSizeArray + AbsPartIdx, Mode, m_Frame->getCD()->getNumPartInCU() >> (2 * Depth));
 }
 
-void H265CodingUnit::setCUTransquantBypassSubParts(bool flag, Ipp32u AbsPartIdx, Ipp32u Depth)
+void H265CodingUnit::setCUTransquantBypass(bool flag, Ipp32u AbsPartIdx)
 {
-    memset(m_CUTransquantBypass + AbsPartIdx, flag, m_Frame->getCD()->getNumPartInCU() >> (2 * Depth));
+    m_cuData[AbsPartIdx].cu_transform_bypass = flag;
 }
 
-void H265CodingUnit::setPredModeSubParts(EnumPredMode Mode, Ipp32u AbsPartIdx, Ipp32u Depth)
+void H265CodingUnit::setPredMode(EnumPredMode Mode, Ipp32u AbsPartIdx)
 {
-    VM_ASSERT(sizeof(*m_partSizeArray) == 1);
-    memset(m_predModeArray + AbsPartIdx, Mode, m_Frame->getCD()->getNumPartInCU() >> (2 * Depth));
+    m_cuData[AbsPartIdx].predMode = (Ipp8u)Mode;
 }
 
-void H265CodingUnit::setTransformSkipSubParts(Ipp32u useTransformSkip, ComponentPlane plane, Ipp32u AbsPartIdx, Ipp32u Depth)
+void H265CodingUnit::SetCUDataSubParts(Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-  Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
+    Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
+    for (Ipp32u i = 1; i < CurrPartNumb; i++)
+    {
+        m_cuData[AbsPartIdx + i] = m_cuData[AbsPartIdx];
+    }
+}
 
-  memset(m_transformSkip[plane] + AbsPartIdx, useTransformSkip, sizeof(Ipp8u) * CurrPartNumb);
+void H265CodingUnit::setTransformSkip(Ipp32u useTransformSkip, ComponentPlane plane, Ipp32u AbsPartIdx)
+{
+    m_cuData[AbsPartIdx].transform_skip[plane] = (Ipp8u)useTransformSkip;
 }
 
 void H265CodingUnit::setLumaIntraDirSubParts(Ipp32u Dir, Ipp32u AbsPartIdx, Ipp32u Depth)
@@ -295,104 +272,6 @@ void H265CodingUnit::setLumaIntraDirSubParts(Ipp32u Dir, Ipp32u AbsPartIdx, Ipp3
     memset(m_lumaIntraDir + AbsPartIdx, Dir, sizeof(Ipp8u) * CurrPartNumb);
 }
 
-template<typename T>
-void H265CodingUnit::setSubPart(T Parameter, T* pBaseLCU, Ipp32u uCUAddr, Ipp32u uCUDepth, Ipp32u uPUIdx)
-{
-    VM_ASSERT(sizeof(T) == 1); // Using memset() works only for types of size 1
-    VM_ASSERT(sizeof(uPUIdx) != 0); //WTF uPUIdx NOT USED IN THIS FUNCTION WTF
-    Ipp32u CurrPartNumQ = (m_Frame->getCD()->getNumPartInCU() >> (2 * uCUDepth)) >> 2;
-    switch (GetPartitionSize(uCUAddr))
-    {
-        case PART_SIZE_2Nx2N:
-            memset(pBaseLCU + uCUAddr, Parameter, 4 * CurrPartNumQ);
-            break;
-        case PART_SIZE_2NxN:
-            memset(pBaseLCU + uCUAddr, Parameter, 2 * CurrPartNumQ);
-            break;
-        case PART_SIZE_Nx2N:
-            memset(pBaseLCU + uCUAddr, Parameter, CurrPartNumQ);
-            memset(pBaseLCU + uCUAddr + 2 * CurrPartNumQ, Parameter, CurrPartNumQ);
-            break;
-        case PART_SIZE_NxN:
-            memset(pBaseLCU + uCUAddr, Parameter, CurrPartNumQ);
-            break;
-        case PART_SIZE_2NxnU:
-            if (uPUIdx == 0)
-            {
-                memset(pBaseLCU + uCUAddr, Parameter, (CurrPartNumQ >> 1));
-                memset(pBaseLCU + uCUAddr + CurrPartNumQ, Parameter, (CurrPartNumQ >> 1));
-            }
-            else if (uPUIdx == 1)
-            {
-                memset(pBaseLCU + uCUAddr, Parameter, (CurrPartNumQ >> 1));
-                memset(pBaseLCU + uCUAddr + CurrPartNumQ, Parameter, ((CurrPartNumQ >> 1) + (CurrPartNumQ << 1)));
-            }
-            else
-            {
-                VM_ASSERT(0);
-            }
-            break;
-        case PART_SIZE_2NxnD:
-            if (uPUIdx == 0)
-            {
-                memset(pBaseLCU + uCUAddr, Parameter, ((CurrPartNumQ << 1) + (CurrPartNumQ >> 1)));
-                memset(pBaseLCU + uCUAddr + (CurrPartNumQ << 1) + CurrPartNumQ, Parameter, (CurrPartNumQ >> 1));
-            }
-            else if (uPUIdx == 1)
-            {
-                memset(pBaseLCU + uCUAddr, Parameter, (CurrPartNumQ >> 1));
-                memset(pBaseLCU + uCUAddr + CurrPartNumQ, Parameter, (CurrPartNumQ >> 1));
-            }
-            else
-            {
-                VM_ASSERT(0);
-            }
-            break;
-        case PART_SIZE_nLx2N:
-            if (uPUIdx == 0)
-            {
-                memset(pBaseLCU + uCUAddr, Parameter, (CurrPartNumQ >> 2));
-                memset(pBaseLCU + uCUAddr + (CurrPartNumQ >> 1), Parameter, (CurrPartNumQ >> 2));
-                memset(pBaseLCU + uCUAddr + (CurrPartNumQ << 1), Parameter, (CurrPartNumQ >> 2));
-                memset(pBaseLCU + uCUAddr + (CurrPartNumQ << 1) + (CurrPartNumQ >> 1), Parameter, (CurrPartNumQ >> 2));
-            }
-            else if (uPUIdx == 1)
-            {
-                memset(pBaseLCU + uCUAddr, Parameter, (CurrPartNumQ >> 2));
-                memset(pBaseLCU + uCUAddr + (CurrPartNumQ >> 1), Parameter, (CurrPartNumQ + (CurrPartNumQ >> 2)));
-                memset(pBaseLCU + uCUAddr + (CurrPartNumQ << 1), Parameter, (CurrPartNumQ >> 2));
-                memset(pBaseLCU + uCUAddr + (CurrPartNumQ << 1) + (CurrPartNumQ >> 1), Parameter, (CurrPartNumQ + (CurrPartNumQ >> 2)));
-            }
-            else
-            {
-                VM_ASSERT(0);
-            }
-            break;
-        case PART_SIZE_nRx2N:
-            if (uPUIdx == 0)
-            {
-                memset(pBaseLCU + uCUAddr, Parameter, (CurrPartNumQ + (CurrPartNumQ >> 2)));
-                memset(pBaseLCU + uCUAddr + CurrPartNumQ + (CurrPartNumQ >> 1), Parameter, (CurrPartNumQ >> 2));
-                memset(pBaseLCU + uCUAddr + (CurrPartNumQ << 1), Parameter, (CurrPartNumQ + (CurrPartNumQ >> 2)));
-                memset(pBaseLCU + uCUAddr + (CurrPartNumQ << 1) + CurrPartNumQ + (CurrPartNumQ >> 1), Parameter, (CurrPartNumQ >> 2));
-            }
-            else if (uPUIdx == 1)
-            {
-                memset(pBaseLCU + uCUAddr, Parameter, (CurrPartNumQ >> 2));
-                memset(pBaseLCU + uCUAddr + (CurrPartNumQ >> 1), Parameter, (CurrPartNumQ >> 2));
-                memset(pBaseLCU + uCUAddr + (CurrPartNumQ << 1), Parameter, (CurrPartNumQ >> 2));
-                memset(pBaseLCU + uCUAddr + (CurrPartNumQ << 1) + (CurrPartNumQ >> 1), Parameter, (CurrPartNumQ >> 2));
-            }
-            else
-            {
-                VM_ASSERT(0);
-            }
-            break;
-        default:
-            VM_ASSERT(0);
-    }
-}
-
 void H265CodingUnit::setChromIntraDirSubParts(Ipp32u uDir, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
     Ipp32u uCurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
@@ -400,18 +279,14 @@ void H265CodingUnit::setChromIntraDirSubParts(Ipp32u uDir, Ipp32u AbsPartIdx, Ip
     memset(m_chromaIntraDir + AbsPartIdx, uDir, sizeof(Ipp8u) * uCurrPartNumb);
 }
 
-void H265CodingUnit::setTrIdxSubParts(Ipp32u uTrIdx, Ipp32u AbsPartIdx, Ipp32u Depth)
+void H265CodingUnit::setTrIdx(Ipp32u uTrIdx, Ipp32u AbsPartIdx)
 {
-    Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
-
-    memset(m_TrIdxArray + AbsPartIdx, uTrIdx, sizeof(Ipp8u) * CurrPartNumb);
+    m_cuData[AbsPartIdx].trIndex = (Ipp8u)uTrIdx;
 }
 
-void H265CodingUnit::setSizeSubParts(Ipp32u Width, Ipp32u AbsPartIdx, Ipp32u Depth)
+void H265CodingUnit::setSize(Ipp32u Width, Ipp32u AbsPartIdx)
 {
-    Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
-
-    memset(m_widthArray + AbsPartIdx, Width,  sizeof(Ipp8u) * CurrPartNumb);
+    m_cuData[AbsPartIdx].width = (Ipp8u)Width;
 }
 
 Ipp8u H265CodingUnit::getNumPartInter(Ipp32u AbsPartIdx)
@@ -552,11 +427,9 @@ void H265CodingUnit::getPartSize(Ipp32u AbsPartIdx, Ipp32u partIdx, Ipp32s &nPSW
  * \param uiDepth CU depth
  * \returns Void
  */
-void H265CodingUnit::setIPCMFlagSubParts (bool IpcmFlag, Ipp32u AbsPartIdx, Ipp32u Depth)
+void H265CodingUnit::setIPCMFlag (bool IpcmFlag, Ipp32u AbsPartIdx)
 {
-    Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
-
-    memset(m_IPCMFlag + AbsPartIdx, IpcmFlag, sizeof(bool) * CurrPartNumb);
+    m_cuData[AbsPartIdx].pcm_flag = IpcmFlag;
 }
 
 bool H265CodingUnit::isBipredRestriction(Ipp32u AbsPartIdx, Ipp32u PartIdx)
@@ -607,7 +480,7 @@ Ipp32u H265CodingUnit::getCoefScanIdx(Ipp32u AbsPartIdx, Ipp32u L2Width, bool Is
 
 Ipp32u H265CodingUnit::getSCUAddr()
 {
-    return m_Frame->m_CodingData->GetInverseCUOrderMap(CUAddr) * (1 << (m_SliceHeader->m_SeqParamSet->MaxCUDepth << 1)) + m_AbsIdxInLCU;
+    return m_Frame->m_CodingData->GetInverseCUOrderMap(CUAddr) * (1 << (m_SliceHeader->m_SeqParamSet->MaxCUDepth << 1));
 }
 
 #define SET_BORDER_AVAILABILITY(borderIndex, noPicBoundary, refCUAddr)                         \

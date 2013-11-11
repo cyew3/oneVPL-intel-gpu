@@ -156,7 +156,7 @@ bool H265Slice::Reset(void *pSource, size_t nSourceSize, PocDecoding * pocDecodi
     // set conditional flags
     m_bDecoded = false;
     m_bPrevDeblocked = false;
-    m_bDeblocked = GetSliceHeader()->slice_deblocking_filter_disabled_flag;
+    m_bDeblocked = GetSliceHeader()->slice_deblocking_filter_disabled_flag != 0;
     m_bSAOed = !(GetSliceHeader()->slice_sao_luma_flag || GetSliceHeader()->slice_sao_chroma_flag);
 
     if (m_bDeblocked)
@@ -461,7 +461,7 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
 
     m_SliceHeader.m_RefPicListModification = slice->m_RefPicListModification;
 
-    m_bDeblocked = GetSliceHeader()->slice_deblocking_filter_disabled_flag;
+    m_bDeblocked = GetSliceHeader()->slice_deblocking_filter_disabled_flag != 0;
     m_bSAOed = !(GetSliceHeader()->slice_sao_luma_flag || GetSliceHeader()->slice_sao_chroma_flag);
 
     if (m_bDeblocked)

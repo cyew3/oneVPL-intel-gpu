@@ -66,6 +66,11 @@ public:
 
     ~UMCTimeCounter()
     {
+        printResults();
+    }
+
+    void printResults()
+    {
         if (description)
         {
             printf("\nnumber of ticks %s : %I64u\n", description, m_ticks);
