@@ -14,20 +14,46 @@ File Name: .h
 #include "mfxsession.h"
 #include "mfxplugin.h"
 #include "winerror.h"
+#include "mock_mfx_plugins.h"
+
+inline bool operator == (const mfxPluginUID &lhs, const mfxPluginUID & rhs) {
+    return !memcmp(lhs.Data, rhs.Data, sizeof(mfxPluginUID));
+}
+
+inline bool operator != (const mfxPluginUID &lhs, const mfxPluginUID & rhs) {
+    return !(lhs == rhs);
+}
+
+inline std::ostream & operator << (std::ostream &os, const mfxPluginUID &lhs) {
+    os<<lhs.Data[0] << "-";
+    os<<lhs.Data[1] << "-";
+    os<<lhs.Data[2] << "-";
+    os<<lhs.Data[3] << "-";
+    os<<lhs.Data[4] << "-";
+    os<<lhs.Data[5] << "-";
+    os<<lhs.Data[6] << "-";
+    os<<lhs.Data[7] << "-";
+    os<<lhs.Data[8] << "-";
+    os<<lhs.Data[9] << "-";
+    os<<lhs.Data[10] << "-";
+    os<<lhs.Data[11] << "-";
+    os<<lhs.Data[12] << "-";
+    os<<lhs.Data[13] << "-";
+    os<<lhs.Data[14] << "-";
+    os<<lhs.Data[15] << "-";
+    return os;
+}
+
+
 
 SUITE(DispatcherWithPlugins) {
+
+
     const char rootPluginPath[] = "Software\\Intel\\MediaSDK\\Dispatch\\Plugin";
     struct WhenRegistryContainsOnePlugin {
-        WhenRegistryContainsOnePlugin() {
-            //default plugin
-            mfxPluginUID guid1 = {1,2,3,4,5,6,7,8,9,0x10,0x11,0x12,0x13,0x14,0x15,0x16};
-            mfxPluginParam plg;
-            plg.CodecId = MFX_CODEC_HEVC;
-            plg.PluginUID = guid1;
-            plg.Type = MFX_PLUGINTYPE_VIDEO_ENCODE;
-            //set path to mock encoder plugin
-            createKey(plg, "N2", "mock_encoder_plugin.dll", true);
-        }
+
+        
+        WhenRegistryContainsOnePlugin();
 
         void createKey(mfxPluginParam &pluginParams, const std::string &name, const std::string &path, int isDefault) {
             HKEY hk1;
@@ -44,11 +70,39 @@ SUITE(DispatcherWithPlugins) {
             RegCloseKey(hk);
             RegCloseKey(hk1);
         }
+
+        DECLARE_MOCK_METHOD2(mfxStatus , Create, mfxPluginUID , mfxPlugin* );
         
         ~WhenRegistryContainsOnePlugin() {
             RegDeleteTreeA(HKEY_LOCAL_MACHINE, rootPluginPath);
         }
     };
+
+    struct MockPluginCreator {
+        
+    };
+    
+    WhenRegistryContainsOnePlugin *g_context;
+
+    EXTERN_C mfxStatus __declspec(dllexport) MFX_CDECL CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin) {
+        return g_context->Create(uid, plugin);
+    }
+
+    WhenRegistryContainsOnePlugin::WhenRegistryContainsOnePlugin() {
+        //default plugin
+        mfxPluginUID guid1 = {1,2,3,4,5,6,7,8,9,0x10,0x11,0x12,0x13,0x14,0x15,0x16};
+        mfxPluginParam plg;
+        plg.CodecId = MFX_CODEC_HEVC;
+        plg.PluginUID = guid1;
+        plg.Type = MFX_PLUGINTYPE_VIDEO_ENCODE;
+        //set path to mock encoder plugin
+        createKey(plg, "N2", "mfx_pipeline_tests_d.exe", true);
+
+        //each test uses blank mock object
+        g_context = this;
+    }
+    //////////////////////////////////////////////////////////////////////////
+
     TEST_FIXTURE(WhenRegistryContainsOnePlugin, testLoad_WrongGuid) {
         mfxSession session;
         mfxPluginUID guid1 = {};
@@ -70,6 +124,24 @@ SUITE(DispatcherWithPlugins) {
         CHECK(MFX_ERR_NONE != MFXVideoUSER_Load(session, MFX_PLUGINTYPE_VIDEO_GENERAL, MFX_CODEC_HEVC, guid1));
         MFXClose(session);
     }
+
+    TEST_FIXTURE(WhenRegistryContainsOnePlugin, PluginInitEqualNullLoadFailure) {
+        mfxSession session;
+        mfxPluginUID guid1 = {1,2,3,4,5,6,7,8,9,0x10,0x11,0x12,0x13,0x14,0x15,0x16};
+        MFXInit(MFX_IMPL_SOFTWARE, 0, &session);
+        CHECK_EQUAL(MFX_ERR_NONE, MFXVideoUSER_Load(session, MFX_PLUGINTYPE_VIDEO_ENCODE, MFX_CODEC_HEVC, guid1));
+        MFXClose(session);
+    }
+
+    TEST_FIXTURE(WhenRegistryContainsOnePlugin, EncodePluginDontHaveEncodeFrameAsyncPtr) {
+        mfxSession session;
+        mfxPluginUID guid1 = {1,2,3,4,5,6,7,8,9,0x10,0x11,0x12,0x13,0x14,0x15,0x16};
+        MFXInit(MFX_IMPL_SOFTWARE, 0, &session);
+        CHECK_EQUAL(MFX_ERR_NONE, MFXVideoUSER_Load(session, MFX_PLUGINTYPE_VIDEO_ENCODE, MFX_CODEC_HEVC, guid1));
+        MFXClose(session);
+    }
+
+
     TEST_FIXTURE(WhenRegistryContainsOnePlugin, LoadSuccess) {
         mfxSession session;
         mfxPluginUID guid1 = {1,2,3,4,5,6,7,8,9,0x10,0x11,0x12,0x13,0x14,0x15,0x16};
@@ -77,6 +149,22 @@ SUITE(DispatcherWithPlugins) {
         CHECK_EQUAL(MFX_ERR_NONE, MFXVideoUSER_Load(session, MFX_PLUGINTYPE_VIDEO_ENCODE, MFX_CODEC_HEVC, guid1));
         MFXClose(session);
     }
+    
+    TEST_FIXTURE(WhenRegistryContainsOnePlugin, Loader_calls_CreatePlugin_with_correct_guid_and_not_null_mfxPlugin) {
+        mfxSession session;
+        mfxPluginUID guid1 = {1,2,3,4,5,6,7,8,9,0x10,0x11,0x12,0x13,0x14,0x15,0x16};
+        MFXInit(MFX_IMPL_SOFTWARE, 0, &session);
+        CHECK_EQUAL(MFX_ERR_NONE, MFXVideoUSER_Load(session, MFX_PLUGINTYPE_VIDEO_ENCODE, MFX_CODEC_HEVC, guid1));
+
+        TEST_METHOD_TYPE(WhenRegistryContainsOnePlugin::Create) params;
+        _Create.WasCalled(&params);
+
+        CHECK_EQUAL(guid1, params.value0);
+        CHECK(NULL != params.value1);
+
+        MFXClose(session);
+    }
+
     TEST_FIXTURE(WhenRegistryContainsOnePlugin, testLoadAndUnload) {
         mfxSession session;
         mfxPluginUID guid1 = {1,2,3,4,5,6,7,8,9,0x10,0x11,0x12,0x13,0x14,0x15,0x16};
@@ -109,6 +197,9 @@ SUITE(DispatcherWithPlugins) {
         while (MFX_ERR_NONE == MFXVideoUSER_Enumerate(session, MFX_PLUGINTYPE_VIDEO_ENCODE, MFX_CODEC_HEVC, oneMorePlugin++, &dsc));
         
         CHECK_EQUAL(2, oneMorePlugin);
+        mfxPluginUID guid1 = {1,2,3,4,5,6,7,8,9,0x10,0x11,0x12,0x13,0x14,0x15,0x16};
+        CHECK_EQUAL(guid1, dsc.PluginUID);
+        CHECK_EQUAL("N2", dsc.Name);
         MFXClose(session);
     }
 }

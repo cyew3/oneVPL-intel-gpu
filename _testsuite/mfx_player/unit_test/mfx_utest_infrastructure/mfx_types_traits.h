@@ -117,3 +117,24 @@ mfxCustomTrait<store_type, value_type, mfxDynamicCastConverter<store_type, value
 //makes template params and use sub macro for COMAs
 #define MAKE_REF_BY_VALUE_TRAIT(value_type)\
     mfxCustomTrait<value_type, value_type &, mfxStaticCastConverter<value_type, value_type &> >
+
+template <class A, class B>
+struct mfxAssign_t {
+public:
+    static void operator()( A & a, const B b) {
+        a = b;
+    }
+};
+
+template <class A, class B>
+struct mfxAssign_t<A*, B> {
+public:
+    static void operator ()( A *& a, const B b) {
+        *a = b;
+    }
+};
+
+template <class A, class B>
+void mfxAssign(A *& a, const B b) {
+    mfxAssign_t<A,B>::operator ()(a,b);
+}
