@@ -62,7 +62,15 @@ public:
     }
     Ipp64u ftell() { return vm_file_ftell(f); };
     Ipp64u fseek(Ipp64s position, VM_FILE_SEEK_MODE mode){return vm_file_fseek(f, position, mode); };
-    bool eof() {return !!vm_file_feof(f);};
+    bool eof()
+    {
+        //eof flag set if only app tried to _read data beyond the file_
+        Ipp8u tempBuf;
+        Ipp32u readData = read(&tempBuf, 1);
+        if(0 != readData)
+            fseek(-1, VM_FILE_SEEK_CUR);
+        return !!vm_file_feof(f);
+    }
     Ipp64u file_size;
     Ipp32u file_attr;
 private:
