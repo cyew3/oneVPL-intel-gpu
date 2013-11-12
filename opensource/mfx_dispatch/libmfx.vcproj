@@ -64,7 +64,7 @@
 			<Tool
 				Name="VCLibrarianTool"
 				LinkLibraryDependencies="true"
-				AdditionalDependencies="libcpmt.lib"
+				AdditionalDependencies="libcpmtd.lib"
 				OutputFile="$(OutDir)\lib\$(ProjectName)_d.lib"
 			/>
 			<Tool
