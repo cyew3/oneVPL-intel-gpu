@@ -17,8 +17,8 @@ File Name: .h
 #include "umc_thread.h"
 #include "umc_mutex.h"
 
-#ifndef WIN32
-    #include <sys/types.h>
+#ifndef _WIN32
+    #include <pthread.h>
 #endif
 
 namespace MFXThread
@@ -65,7 +65,7 @@ namespace MFXThread
         UMC::Mutex mQueAccess;
         std::list<mfx_shared_ptr<Task> > mTaskQueue;
         bool mQuit;
-        mfxU32 mThreadId;
+        mfxU64 mThreadId;
     public:
         ThreadPool () 
             : mQuit()
@@ -97,11 +97,11 @@ namespace MFXThread
             return __GetThreadId() == mThreadId;
         }
     private:
-        mfxU32 __GetThreadId() {
+        mfxU64 __GetThreadId() {
 #ifdef WIN32
-            return GetCurrentThreadId() ;
+            return (mfxU64)GetCurrentThreadId() ;
 #else
-            return gettid();
+            return (mfxU64) pthread_self();
 #endif
         }
         void LocalRunner() {
