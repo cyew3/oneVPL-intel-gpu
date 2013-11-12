@@ -76,7 +76,8 @@ mfxStatus BurstRender::RenderFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl * pC
 
         if (m_bufferedFrames.size() >= (mfxU16)(m_nDecodeResume + m_nBurstLen))
         {
-            PipelineTrace(((L"BurstRender::DecodeSuspend")));
+            MPA_TRACE("BurstRender::DecodeSuspend");
+            PipelineTrace((VM_STRING("BurstRender::DecodeSuspend\n")));
 
             vm_event_reset(&m_shouldStartDecode);
             {
@@ -134,7 +135,8 @@ mfxStatus BurstRender::RenderThread()
                 }
                 else*/
                 {
-                    PipelineTrace(((L"BurstRender::Idle")));
+                    MPA_TRACE("BurstRender::Idle");
+                    PipelineTrace((VM_STRING("BurstRender::Idle\n")));
                     m_pTime->Wait(10);
                 }
                 break;
@@ -146,7 +148,7 @@ mfxStatus BurstRender::RenderThread()
             {
                 if (m_bufferedFrames.empty())
                 {
-                    MPA_TRACE("BurstRender::NoFramesToDisplay");
+                    MPA_TRACE("BurstRender::NoFramesToDisplay\n");
                     PipelineTrace((VM_STRING("WARNING: Rendere queue:empty, sleep(10) invoked\n")));
                     m_pTime->Wait(10);
                     continue;

@@ -12,6 +12,7 @@ File Name: .h
 
 #pragma once
 #include <list>
+#include <stdexcept>
 #include "mfxdefs.h"
 #include "umc_event.h"
 #include "umc_thread.h"
