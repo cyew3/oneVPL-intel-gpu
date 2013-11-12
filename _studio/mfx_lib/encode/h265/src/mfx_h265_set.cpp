@@ -60,12 +60,18 @@ mfxU32 H265BsReal::WriteNAL(mfxBitstream *dst,
                             H265NALUnit *nal)
 {
     H265BsReal *bs = this;
-    Ipp32u size, ExtraBytes;
+    Ipp32u size, ExtraBytes, maxdst;
     Ipp8u* curPtr, *endPtr, *outPtr;
 
+    maxdst = dst->MaxLength - dst->DataOffset - dst->DataLength;
     // get current RBSP compressed size
     size = (Ipp32u)(bs->m_base.m_pbs - bs->m_base.m_pbsRBSPBase);
     ExtraBytes = 0;
+
+    if (maxdst < size + 5) {
+        ExtraBytes = 5;
+        goto overflow;
+    }
 
     // Set Pointers
     endPtr = bs->m_base.m_pbsRBSPBase + size - 1;  // Point at Last byte with data in it.
@@ -79,6 +85,10 @@ mfxU32 H265BsReal::WriteNAL(mfxBitstream *dst,
         nal->nal_unit_type == NAL_UT_VPS ||
         nal->nal_unit_type == NAL_UT_SPS ||
         nal->nal_unit_type == NAL_UT_PPS) {
+        if (maxdst < size + 6) {
+            ExtraBytes = 6;
+            goto overflow;
+        }
         *outPtr++ = 0;
         ExtraBytes = 1;
         startPicture = false;
@@ -104,9 +114,12 @@ mfxU32 H265BsReal::WriteNAL(mfxBitstream *dst,
 
             // Check for start code emulation
             if ((*curPtr++ == 0) && (*curPtr == 0) && (!(*(curPtr+1) & 0xfc))) {
+                ExtraBytes++;
+                if (maxdst < size + ExtraBytes) {
+                    goto overflow;
+                }
                 *outPtr++ = *curPtr++;
                 *outPtr++ = 0x03;   // Emulation Prevention Byte
-                ExtraBytes++;
             }
         }
 
@@ -121,6 +134,11 @@ mfxU32 H265BsReal::WriteNAL(mfxBitstream *dst,
     dst->DataLength += (size+ExtraBytes);
 
     // copy encoded frame to output
+    return (size+ExtraBytes);
+overflow:
+    // stop writing when overflow predicted, but advance counters for brc
+    bs->m_base.m_pbsRBSPBase = bs->m_base.m_pbs;
+    dst->DataLength += (size+ExtraBytes);
     return (size+ExtraBytes);
 }
 
