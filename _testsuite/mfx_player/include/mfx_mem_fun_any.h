@@ -82,7 +82,7 @@ template <class S, class T>
 class mem_fun_void_t 
 {
 public:
-    typedef typename S result_type;
+    typedef S result_type;
     explicit mem_fun_void_t(void (T::*p)())
         : ptr(p)
     {}
@@ -136,7 +136,7 @@ template <class Result, class ClassType, class Arg1, class Arg2, class Arg3, cla
 class mem_fun7_t {
     Result (ClassType::*ptr)(Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7);
 public:
-    typedef typename Result result_type;
+    typedef Result result_type;
     mem_fun7_t(Result (ClassType::*p)(Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7))
         : ptr(p) {
     }
