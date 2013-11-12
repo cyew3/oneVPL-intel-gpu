@@ -41,7 +41,8 @@ extern "C"
 typedef enum {
     MFX_PLUGINTYPE_VIDEO_GENERAL   = 0,
     MFX_PLUGINTYPE_VIDEO_DECODE    = 1,
-    MFX_PLUGINTYPE_VIDEO_ENCODE    = 2
+    MFX_PLUGINTYPE_VIDEO_ENCODE    = 2,
+    MFX_PLUGINTYPE_VIDEO_VPP       = 3
 } mfxPluginType;
 
 typedef enum {
