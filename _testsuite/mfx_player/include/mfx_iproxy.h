@@ -11,6 +11,7 @@ File Name: .h
 \* ****************************************************************************** */
 
 #pragma once
+#include <memory>
 
 //class for automatically proxy generation for particular interface
 //only several mfx_player's custom interfaces supported
