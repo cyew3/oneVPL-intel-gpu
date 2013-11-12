@@ -525,9 +525,9 @@ void ViewItem_H265::Reset(void)
 
 } // void ViewItem_H265::Reset(void)
 
-void ViewItem_H265::SetDPBSize(H265SeqParamSet *pSps, Ipp8u & level_idc)
+void ViewItem_H265::SetDPBSize(H265SeqParamSet *pSps, Ipp32u & level_idc)
 {
-    Ipp8u level = level_idc ? level_idc : pSps->m_pcPTL.GetGeneralPTL()->level_idc;
+    Ipp32u level = level_idc ? level_idc : pSps->m_pcPTL.GetGeneralPTL()->level_idc;
 
     // calculate the new DPB size value
 

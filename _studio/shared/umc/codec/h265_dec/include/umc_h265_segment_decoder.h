@@ -110,8 +110,8 @@ public:
     void UpdateRecCurrCTBContext(Ipp32s lastCUAddr, Ipp32s newCUAddr);
     void ResetRecRowBuffer();
     
-    void SetNewQP(Ipp8u newQP);
-    Ipp8u GetQP(void)
+    void SetNewQP(Ipp32s newQP);
+    Ipp32s GetQP(void)
     {
         return m_LastValidQP;
     }
@@ -123,7 +123,7 @@ public:
     Ipp16s *(*m_dequantCoef)[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM][SCALING_LIST_REM_NUM];
 protected:
 
-    Ipp8u m_LastValidQP;
+    Ipp32s m_LastValidQP;
 };
 
 class H265SegmentDecoder : public Context
@@ -175,7 +175,7 @@ public:
     void ParseQtCbfCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, ComponentPlane plane, Ipp32u TrDepth, Ipp32u Depth);
     void ParseQtRootCbfCABAC(Ipp32u& QtRootCbf);
     void DecodeQP(H265CodingUnit* pCU, Ipp32u AbsPartIdx);
-    Ipp8u getRefQP (H265CodingUnit *pCU, Ipp32s AbsPartIdx);
+    Ipp32s getRefQP (H265CodingUnit *pCU, Ipp32s AbsPartIdx);
     void ParseDeltaQPCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx);
     void ReadUnarySymbolCABAC(Ipp32u& Value, Ipp32s ctxIdx, Ipp32s Offset);
     void FinishDecodeCU(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth, Ipp32u& IsLast);

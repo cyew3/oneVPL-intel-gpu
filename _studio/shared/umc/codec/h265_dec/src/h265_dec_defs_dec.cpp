@@ -796,8 +796,7 @@ void H265SampleAdaptiveOffset::SAOProcess(H265DecoderFrame* pFrame, Ipp32s start
         return;
 
     m_Frame = pFrame;
-    H265Slice * slice = pFrame->GetAU()->GetAnySlice();
-        processSaoUnits(startCU, toProcessCU);
+    processSaoUnits(startCU, toProcessCU);
 }
 
 void H265SampleAdaptiveOffset::processSaoLine(SAOLCUParam* saoLCUParam, SAOLCUParam* saoLCUParamCb, SAOLCUParam* saoLCUParamCr, Ipp32s firstCU, Ipp32s endCU)
@@ -939,8 +938,8 @@ void H265SampleAdaptiveOffset::processSaoUnits(Ipp32s firstCU, Ipp32s toProcessC
     Ipp32s LCUHeight = m_MaxCUSize;
     Ipp32s picWidthTmp = m_PicWidth;
 
-    m_slice_sao_luma_flag = slice->GetSliceHeader()->slice_sao_luma_flag;
-    m_slice_sao_chroma_flag = slice->GetSliceHeader()->slice_sao_chroma_flag;
+    m_slice_sao_luma_flag = slice->GetSliceHeader()->slice_sao_luma_flag != 0;
+    m_slice_sao_chroma_flag = slice->GetSliceHeader()->slice_sao_chroma_flag != 0;
     
     m_needPCMRestoration = (slice->GetSliceHeader()->m_SeqParamSet->pcm_enabled_flag && slice->GetSliceHeader()->m_SeqParamSet->pcm_loop_filter_disabled_flag) ||
         slice->GetSliceHeader()->m_PicParamSet->transquant_bypass_enabled_flag;
@@ -1156,8 +1155,7 @@ void H265SampleAdaptiveOffset::PCMCURestoration(H265CodingUnit* pcCU, Ipp32u Abs
     // restore PCM samples
     if ((pcCU->GetIPCMFlag(AbsZorderIdx) && pcCU->m_SliceHeader->m_SeqParamSet->pcm_loop_filter_disabled_flag) || pcCU->isLosslessCoded(AbsZorderIdx))
     {
-        PCMSampleRestoration(pcCU, AbsZorderIdx, Depth, TEXT_LUMA);
-        PCMSampleRestoration(pcCU, AbsZorderIdx, Depth, TEXT_CHROMA);
+        PCMSampleRestoration(pcCU, AbsZorderIdx, Depth);
     }
 }
 
@@ -1168,12 +1166,8 @@ void H265SampleAdaptiveOffset::PCMCURestoration(H265CodingUnit* pcCU, Ipp32u Abs
 * \param ttText texture component type
 * \returns Void
 */
-void H265SampleAdaptiveOffset::PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth, EnumTextType Text)
+void H265SampleAdaptiveOffset::PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth)
 {
-    H265PlaneYCommon* Src;
-    Ipp32u Stride;
-    Ipp32u Width;
-    Ipp32u Height;
     Ipp32u PcmLeftShiftBit;
     Ipp32u X, Y;
     Ipp32u MinCoeffSize = m_Frame->getMinCUWidth() * m_Frame->getMinCUWidth();
@@ -1182,66 +1176,58 @@ void H265SampleAdaptiveOffset::PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u
 
     H265FrameCodingData * cd = pcCU->m_Frame->getCD();
 
-    if(Text == TEXT_LUMA)
+    H265PlanePtrYCommon Src = m_Frame->GetLumaAddr(pcCU->CUAddr, AbsZorderIdx);
+    H265PlanePtrYCommon Pcm = (H265PlanePtrYCommon)(pcCU->m_TrCoeffY + LumaOffset);
+    Ipp32u Stride  = m_Frame->pitch_luma();
+    Ipp32u Size = (cd->m_MaxCUWidth >> Depth);
+
+    if (pcCU->isLosslessCoded(AbsZorderIdx) && !pcCU->GetIPCMFlag(AbsZorderIdx))
     {
-        H265PlanePtrYCommon Pcm;
-
-        Src = m_Frame->GetLumaAddr(pcCU->CUAddr, AbsZorderIdx);
-        Pcm = (H265PlanePtrYCommon)(pcCU->m_TrCoeffY + LumaOffset);
-        Stride  = m_Frame->pitch_luma();
-        Width  = (cd->m_MaxCUWidth >> Depth);
-        Height = (cd->m_MaxCUWidth >> Depth);
-
-        if (pcCU->isLosslessCoded(AbsZorderIdx) && !pcCU->GetIPCMFlag(AbsZorderIdx))
-        {
-            PcmLeftShiftBit = 0;
-        }
-        else
-        {
-            PcmLeftShiftBit = g_bitDepthY - pcCU->m_SliceHeader->m_SeqParamSet->pcm_sample_bit_depth_luma;
-        }
-
-        for(Y = 0; Y < Height; Y++)
-        {
-            for(X = 0; X < Width; X++)
-            {
-                Src[X] = (Pcm[X] << PcmLeftShiftBit);
-            }
-            Pcm += Width;
-            Src += Stride;
-        }
+        PcmLeftShiftBit = 0;
     }
     else
     {
-        H265PlanePtrUVCommon PcmCb, PcmCr;
+        PcmLeftShiftBit = g_bitDepthY - pcCU->m_SliceHeader->m_SeqParamSet->pcm_sample_bit_depth_luma;
+    }
 
-        Src = m_Frame->GetCbCrAddr(pcCU->CUAddr, AbsZorderIdx);
-        PcmCb = (H265PlanePtrUVCommon)(pcCU->m_TrCoeffCb + ChromaOffset);
-        PcmCr = (H265PlanePtrUVCommon)(pcCU->m_TrCoeffCr + ChromaOffset);
+    for(Y = 0; Y < Size; Y++)
+    {
+        for(X = 0; X < Size; X++)
+        {
+            Src[X] = (Pcm[X] << PcmLeftShiftBit);
+        }
+        Pcm += Size;
+        Src += Stride;
+    }
 
-        Stride = m_Frame->pitch_chroma();
-        Width  = ((cd->m_MaxCUWidth >> Depth) / 2);
-        Height = ((cd->m_MaxCUWidth >> Depth) / 2);
-        if (pcCU->isLosslessCoded(AbsZorderIdx) && !pcCU->GetIPCMFlag(AbsZorderIdx))
-        {
-            PcmLeftShiftBit = 0;
-        }
-        else
-        {
-            PcmLeftShiftBit = g_bitDepthC - pcCU->m_SliceHeader->m_SeqParamSet->pcm_sample_bit_depth_chroma;
-        }
+    H265PlanePtrUVCommon PcmCb, PcmCr;
 
-        for(Y = 0; Y < Height; Y++)
+    Src = m_Frame->GetCbCrAddr(pcCU->CUAddr, AbsZorderIdx);
+    PcmCb = (H265PlanePtrUVCommon)(pcCU->m_TrCoeffCb + ChromaOffset);
+    PcmCr = (H265PlanePtrUVCommon)(pcCU->m_TrCoeffCr + ChromaOffset);
+
+    Stride = m_Frame->pitch_chroma();
+    Size = (cd->m_MaxCUWidth >> Depth) / 2;
+
+    if (pcCU->isLosslessCoded(AbsZorderIdx) && !pcCU->GetIPCMFlag(AbsZorderIdx))
+    {
+        PcmLeftShiftBit = 0;
+    }
+    else
+    {
+        PcmLeftShiftBit = g_bitDepthC - pcCU->m_SliceHeader->m_SeqParamSet->pcm_sample_bit_depth_chroma;
+    }
+
+    for(Y = 0; Y < Size; Y++)
+    {
+        for(X = 0; X < Size; X++)
         {
-            for(X = 0; X < Width; X++)
-            {
-                Src[X * 2] = (PcmCb[X] << PcmLeftShiftBit);
-                Src[X * 2 + 1] = (PcmCr[X] << PcmLeftShiftBit);
-            }
-            PcmCb += Width;
-            PcmCr += Width;
-            Src += Stride;
+            Src[X * 2] = (PcmCb[X] << PcmLeftShiftBit);
+            Src[X * 2 + 1] = (PcmCr[X] << PcmLeftShiftBit);
         }
+        PcmCb += Size;
+        PcmCr += Size;
+        Src += Stride;
     }
 }
 

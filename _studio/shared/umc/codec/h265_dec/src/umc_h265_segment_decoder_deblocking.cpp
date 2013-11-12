@@ -245,7 +245,7 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curP
             width = m_pSeqParamSet->MaxCUSize;
         }
 
-        if (curPixelColumn == width - 8 && curLCU->CUAddr == (curLCU->m_SliceHeader->m_sliceSegmentCurEndCUAddr / m_pCurrentFrame->m_CodingData->m_NumPartitions))
+        if (curPixelColumn == (Ipp32s)width - 8 && curLCU->CUAddr == (curLCU->m_SliceHeader->m_sliceSegmentCurEndCUAddr / m_pCurrentFrame->m_CodingData->m_NumPartitions))
         {
             H265Slice * nextSlice = m_pCurrentFrame->GetAU()->GetSliceByNumber(curLCU->m_SliceIdx + 1);
             if (!nextSlice || nextSlice->m_bDeblocked)
@@ -334,7 +334,7 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU, Ipp32s cu
             width = m_pSeqParamSet->MaxCUSize;
         }
 
-        if (curPixelColumn == width - 16 && curLCU->CUAddr == (curLCU->m_SliceHeader->m_sliceSegmentCurEndCUAddr / m_pCurrentFrame->m_CodingData->m_NumPartitions))
+        if (curPixelColumn == (Ipp32s)width - 16 && curLCU->CUAddr == (curLCU->m_SliceHeader->m_sliceSegmentCurEndCUAddr / m_pCurrentFrame->m_CodingData->m_NumPartitions))
         {
             H265Slice * nextSlice = m_pCurrentFrame->GetAU()->GetSliceByNumber(curLCU->m_SliceIdx + 1);
             if (!nextSlice || nextSlice->m_bDeblocked)

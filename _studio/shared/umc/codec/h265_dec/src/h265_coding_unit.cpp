@@ -219,7 +219,7 @@ Ipp32u H265CodingUnit::getQuadtreeTULog2MinSizeInCU(Ipp32u Idx)
 
 void H265CodingUnit::setCbfSubParts(Ipp32u CbfY, Ipp32u CbfU, Ipp32u CbfV, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
+    Ipp32u CurrPartNumb = m_NumPartition >> (Depth << 1);
     memset(m_cbf[0] + AbsPartIdx, CbfY, sizeof(Ipp8u) * CurrPartNumb);
     memset(m_cbf[1] + AbsPartIdx, CbfU, sizeof(Ipp8u) * CurrPartNumb);
     memset(m_cbf[2] + AbsPartIdx, CbfV, sizeof(Ipp8u) * CurrPartNumb);
@@ -227,18 +227,18 @@ void H265CodingUnit::setCbfSubParts(Ipp32u CbfY, Ipp32u CbfU, Ipp32u CbfV, Ipp32
 
 void H265CodingUnit::setCbfSubParts(Ipp32u uCbf, ComponentPlane plane, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
+    Ipp32u CurrPartNumb = m_NumPartition >> (Depth << 1);
     memset(m_cbf[plane] + AbsPartIdx, uCbf, sizeof(Ipp8u) * CurrPartNumb);
 }
 
 void H265CodingUnit::setDepth(Ipp32u Depth, Ipp32u AbsPartIdx)
 {
-    m_cuData[AbsPartIdx].depth = Depth;
+    m_cuData[AbsPartIdx].depth = (Ipp8u)Depth;
 }
 
 void H265CodingUnit::setPartSizeSubParts(EnumPartSize Mode, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    memset(m_partSizeArray + AbsPartIdx, Mode, m_Frame->getCD()->getNumPartInCU() >> (2 * Depth));
+    memset(m_partSizeArray + AbsPartIdx, Mode, m_NumPartition >> (2 * Depth));
 }
 
 void H265CodingUnit::setCUTransquantBypass(bool flag, Ipp32u AbsPartIdx)
@@ -253,7 +253,7 @@ void H265CodingUnit::setPredMode(EnumPredMode Mode, Ipp32u AbsPartIdx)
 
 void H265CodingUnit::SetCUDataSubParts(Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
+    Ipp32u CurrPartNumb = m_NumPartition >> (Depth << 1);
     for (Ipp32u i = 1; i < CurrPartNumb; i++)
     {
         m_cuData[AbsPartIdx + i] = m_cuData[AbsPartIdx];
@@ -267,14 +267,14 @@ void H265CodingUnit::setTransformSkip(Ipp32u useTransformSkip, ComponentPlane pl
 
 void H265CodingUnit::setLumaIntraDirSubParts(Ipp32u Dir, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    Ipp32u CurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
+    Ipp32u CurrPartNumb = m_NumPartition >> (Depth << 1);
 
     memset(m_lumaIntraDir + AbsPartIdx, Dir, sizeof(Ipp8u) * CurrPartNumb);
 }
 
 void H265CodingUnit::setChromIntraDirSubParts(Ipp32u uDir, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    Ipp32u uCurrPartNumb = m_Frame->getCD()->getNumPartInCU() >> (Depth << 1);
+    Ipp32u uCurrPartNumb = m_NumPartition >> (Depth << 1);
 
     memset(m_chromaIntraDir + AbsPartIdx, uDir, sizeof(Ipp8u) * uCurrPartNumb);
 }
@@ -465,7 +465,7 @@ Ipp32u H265CodingUnit::getCoefScanIdx(Ipp32u AbsPartIdx, Ipp32u L2Width, bool Is
             if (uiDirMode == INTRA_DM_CHROMA_IDX)
             {
                 Ipp32u depth = GetDepth(AbsPartIdx);
-                Ipp32u numParts = m_Frame->getCD()->getNumPartInCU() >> (depth << 1);
+                Ipp32u numParts = m_NumPartition >> (depth << 1);
                 uiDirMode = GetLumaIntra((AbsPartIdx / numParts) * numParts);
             }
             if (L2Width < 3)

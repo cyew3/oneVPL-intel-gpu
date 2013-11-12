@@ -1219,7 +1219,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
                     rps->delta_poc_msb_present_flag[j] = Get1Bit();
                     if (rps->delta_poc_msb_present_flag[j])
                     {
-                        rps->delta_poc_msb_cycle_lt[j] = (Ipp32u)GetVLCElement(false);
+                        rps->delta_poc_msb_cycle_lt[j] = (Ipp8u)GetVLCElement(false);
                     }
                 }
                 offset += rps->getNumberOfLongtermPictures();

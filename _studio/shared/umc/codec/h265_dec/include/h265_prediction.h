@@ -37,8 +37,8 @@ public:
 protected:
     H265PlanePtrYCommon m_temp_interpolarion_buffer;
     H265PlanePtrYCommon m_YUVExt;
-    Ipp32s m_YUVExtStride;
-    Ipp32s m_YUVExtHeight;
+    Ipp32u m_YUVExtStride;
+    Ipp32u m_YUVExtHeight;
 
     DecodingContext* m_context;
 

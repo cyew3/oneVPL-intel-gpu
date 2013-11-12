@@ -173,7 +173,7 @@ struct ViewItem_H265
     void Reset(void);
 
     // Reset the size of DPB for particular view item
-    void SetDPBSize(H265SeqParamSet *pSps, Ipp8u & level_idc);
+    void SetDPBSize(H265SeqParamSet *pSps, Ipp32u & level_idc);
 
     // Pointer to the view's DPB
     mutable std::auto_ptr<H265DBPList> pDPB;
@@ -210,7 +210,7 @@ protected:
     Ipp32u m_priority_id;
     Ipp32u HighestTid;
 
-    Ipp8u  m_level_idc;
+    Ipp32u  m_level_idc;
 
     ViewItem_H265 m_view;
 };

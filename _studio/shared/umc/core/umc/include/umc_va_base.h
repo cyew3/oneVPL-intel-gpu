@@ -79,7 +79,6 @@
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <initguid.h>
-#pragma warning( disable : 4100 ) // ignore unreferenced parameters in virtual method declaration
 #endif
 
 #ifdef UMC_VA_DXVA

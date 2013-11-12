@@ -252,7 +252,7 @@ bool H265Slice::DecodeSliceHeader(PocDecoding * pocDecoding)
                         {
                             bool deltaFlag = false;
                        
-                            if( (j == (unsigned)offset+rps->getNumberOfLongtermPictures() - 1) || (j == (unsigned)(offset + rps->num_long_term_pics - 1)))
+                            if( (j == offset+rps->getNumberOfLongtermPictures() - 1) || (j == (offset + rps->num_long_term_pics - 1)))
                                 deltaFlag = true;
 
                             if(deltaFlag)

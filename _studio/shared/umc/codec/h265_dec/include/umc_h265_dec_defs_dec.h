@@ -305,8 +305,8 @@ protected:
     H265PlaneYCommon   *m_TmpU[2];
     H265PlaneYCommon   *m_TmpL[2];
 
-    Ipp32s              m_PicWidth;
-    Ipp32s              m_PicHeight;
+    Ipp32u              m_PicWidth;
+    Ipp32u              m_PicHeight;
     Ipp32u              m_MaxCUSize;
     Ipp32u              m_SaoBitIncreaseY, m_SaoBitIncreaseC;
     bool                m_UseNIF;
@@ -324,7 +324,7 @@ protected:
 
     void createNonDBFilterInfo();
     void PCMCURestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth);
-    void PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth, EnumTextType Text);
+    void PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth);
 
     void processSaoUnits(Ipp32s first, Ipp32s toProcess);
     void processSaoLine(SAOLCUParam* saoLCUParam, SAOLCUParam* saoLCUParamCb, SAOLCUParam* saoLCUParamCr, Ipp32s firstCU, Ipp32s lastCU);
