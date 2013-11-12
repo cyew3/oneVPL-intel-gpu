@@ -62,6 +62,7 @@ mfxU32 H265BsReal::WriteNAL(mfxBitstream *dst,
     H265BsReal *bs = this;
     Ipp32u size, ExtraBytes, maxdst;
     Ipp8u* curPtr, *endPtr, *outPtr;
+    Ipp16u nal_header;
 
     maxdst = dst->MaxLength - dst->DataOffset - dst->DataLength;
     // get current RBSP compressed size
@@ -102,8 +103,7 @@ mfxU32 H265BsReal::WriteNAL(mfxBitstream *dst,
     ExtraBytes += 3;
 
     //
-    Ipp16u nal_header = (nal->nal_unit_type << 9) | (nal->nuh_layer_id << 3) |
-        (nal->nuh_temporal_id + 1);
+    nal_header = (nal->nal_unit_type << 9) | (nal->nuh_layer_id << 3) | (nal->nuh_temporal_id + 1);
     *outPtr++ = (Ipp8u) (nal_header >> 8);
     *outPtr++ = (Ipp8u) (nal_header & 0xff);
     ExtraBytes += 2;
