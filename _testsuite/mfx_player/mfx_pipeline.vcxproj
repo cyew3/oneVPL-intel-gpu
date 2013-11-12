@@ -340,11 +340,11 @@
     <ClInclude Include="include\mfx_bitstream2.h" />
     <ClInclude Include="include\mfx_bitstream_converters.h" />
     <ClInclude Include="include\mfx_bitstream_reader_encryptor.h" />
+    <ClInclude Include="include\mfx_codec_plugin.h" />
     <ClInclude Include="include\mfx_component_params.h" />
     <ClInclude Include="include\mfx_conditional_linking.h" />
     <ClInclude Include="include\mfx_d3d11_allocator.h" />
     <ClInclude Include="include\mfx_d3d_allocator.h" />
-    <ClInclude Include="include\mfx_decoder_plugin.h" />
     <ClInclude Include="include\mfx_decode_pipeline_config.h" />
     <ClInclude Include="include\mfx_default_pipeline_mgr.h" />
     <ClInclude Include="include\mfx_directory_reader.h" />
@@ -357,9 +357,11 @@
     <ClInclude Include="include\mfx_frame_allocator_rw.h" />
     <ClInclude Include="include\mfx_frame_constructor.h" />
     <ClInclude Include="include\mfx_frames_drop.h" />
+    <ClInclude Include="include\mfx_hw_device_in_thread.h" />
     <ClInclude Include="include\mfx_intrusive_ptr.h" />
     <ClInclude Include="include\mfx_lexical_cast.h" />
     <ClInclude Include="include\mfx_mediasdk_spl_wrapper.h" />
+    <ClInclude Include="include\mfx_mem_fun_any.h" />
     <ClInclude Include="include\mfx_message_notifier.h" />
     <ClInclude Include="include\mfx_mvc_handler.h" />
     <ClInclude Include="include\mfx_perfcounter_time.h" />
@@ -380,6 +382,7 @@
     <ClInclude Include="include\mfx_surfaces_pool.h" />
     <ClInclude Include="include\mfx_svc_vpp.h" />
     <ClInclude Include="include\mfx_sysmem_allocator.h" />
+    <ClInclude Include="include\mfx_thread.h" />
     <ClInclude Include="include\mfx_timeout.h" />
     <ClInclude Include="include\mfx_unified_execute_proxy.h" />
     <ClInclude Include="include\mfx_utility_allocators.h" />

@@ -23,6 +23,7 @@ File Name: .h
 //#include "mfx_d3d_device.h"
 #include "video_window.h"
 #include <list>
+#include "mfx_thread.h"
 
 //#define BUFFERING_SIZE 3
 
@@ -34,20 +35,24 @@ public:
         UINT                     nAdapter;
         VideoWindow::InitParams  window;
         mfx_shared_ptr<IHWDevice> pDevice;
+        MFXThread::ThreadPool *mThreadPool;
         
         InitParams( UINT nAdapter = D3DADAPTER_DEFAULT
                   , const VideoWindow::InitParams &window = VideoWindow::InitParams()
-                  , IHWDevice *pDevice = NULL)
+                  , IHWDevice *pDevice = NULL
+                  , MFXThread::ThreadPool *pool=NULL)
         {
             this->nAdapter = nAdapter;
             this->window   = window;
             this->pDevice.reset(pDevice);
+            this->mThreadPool = pool;
         }
         InitParams(const InitParams& that)
         {
             nAdapter = that.nAdapter;
             window = that.window;
             pDevice = that.pDevice;
+            mThreadPool = that.mThreadPool;
         }
     } m_initParams;
     

@@ -39,6 +39,7 @@ File Name: .h
 #endif
 #include "mfx_ibitstream_reader.h"
 #include "mfx_shared_ptr.h"
+#include "mfx_thread.h"
 
 #ifdef PAVP_BUILD
 typedef enum CPImpl
@@ -407,6 +408,8 @@ protected:
     std::auto_ptr<RWAllocatorFactory::root> m_pAllocFactory;
 
     mfx_shared_ptr<IRandom> m_pRandom;
+
+    std::auto_ptr<MFXThread::ThreadPool> m_threadPool;
 
 };
 

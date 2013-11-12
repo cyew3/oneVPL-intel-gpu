@@ -16,27 +16,28 @@ File Name: .h
 #include "vm_thread.h"
 #include "mfx_itime.h"
 #include "vm_event.h"
+#include "mfx_thread.h"
 
 /*
     feeds actual render with frames at required FPS
     receives frames as burst chunks, and blocks untill chunks is emptied
     uses m_pRender * 2 internal buffer dueto maintaining output fps
 */
-class BurstRender : public InterfaceProxy<IMFXVideoRender>
+class BurstRender : public InterfaceProxy<IMFXVideoRender>, public mfx_no_copy
 {
 public:
-    BurstRender(bool bVerbose, mfxU16 nBurstLen, ITime *pTime, IMFXVideoRender * pDecorated);
+    BurstRender(bool bVerbose, mfxU16 nBurstLen, ITime *pTime, MFXThread::ThreadPool& pool, IMFXVideoRender * pDecorated);
     virtual ~BurstRender();
 
     //init will be called in target thread for simplicity only this function for now
-    virtual mfxStatus GetHandle(mfxHandleType type, mfxHDL *pHdl);
+    virtual mfxStatus GetDevice(IHWDevice **pDevice);
     virtual mfxStatus RenderFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl * pCtrl = NULL);
     virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request);
 
 protected:
     static mfxU32 VM_THREAD_CALLCONVENTION ThreadRoutine(void * pthis);
 
-    virtual void      RenderThread();
+    virtual mfxStatus RenderThread();
     virtual mfxStatus CloseLocal();
 
     enum RenderState
@@ -65,4 +66,6 @@ protected:
     vm_mutex  m_FramesAcess;
     vm_event  m_shouldStartDecode;
     ITime   * m_pTime;
+    MFXThread::ThreadPool &mThreadPool;
+    mfx_shared_ptr<MFXThread::Task> m_ThreadTask;
 };

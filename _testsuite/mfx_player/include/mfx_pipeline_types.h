@@ -6,7 +6,7 @@ agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
 Copyright(c) 2010-2013 Intel Corporation. All Rights Reserved.
 
-File Name: mfxstructures.h
+File Name: 
 
 *******************************************************************************/
 
@@ -581,68 +581,8 @@ public:
     }
 };
 
+#include "mfx_mem_fun_any.h"
 
-template <class S, class T, class A, class B>
-class mem_fun2_t : public std::unary_function<T*, S>
-{
-public:
-    typedef typename std::unary_function<T*, S>::argument_type argument_type;
-    explicit mem_fun2_t(S (T::*p)(A, B), A x, B y)
-        : ptr(p)
-        , default_a(x)
-        , default_b(y)
-    {}
-    S operator()(T* p) const
-    {
-        return (p->*ptr)(default_a, default_b);
-    }
-private:
-    S (T::*ptr)(A, B);
-    A default_a;
-    B default_b;
-};
-
-template <class S, class T, class A, class B>
-mem_fun2_t <S, T, A, B> 
-mem_fun2 (S (T::*p)(A, B), A x, B y)
-{
-    return mem_fun2_t<S, T, A, B>(p, x, y);
-}
-
-//boost functional were taken as a initial
-template <class S, class T, class A, class B>
-class mem_fun2_defA : public std::binary_function<T*, B, S>
-{
-public:
-    explicit mem_fun2_defA(S (T::*p)(A, B), A x )
-        : ptr(p)
-        , default_a(x)
-    {}
-    S operator()(T* p, B y) const
-    {
-        return (p->*ptr)(default_a, y);
-    }
-private:
-    S (T::*ptr)(A, B);
-    A default_a;
-};
-
-template <class S, class T, class A, class B>
-class mem_fun2_defB : public std::binary_function<T*, A, S>
-{
-public:
-    explicit mem_fun2_defB(S (T::*p)(A, B), B y )
-        : ptr(p)
-        , default_b(y)
-    {}
-    S operator()(T* p, A x) const
-    {
-        return (p->*ptr)(x, default_b);
-    }
-private:
-    S (T::*ptr)(A, B);
-    B default_b;
-};
 
 
 template <class Functor, class FunctorBool>
@@ -655,6 +595,7 @@ public:
         , m_fncBool(fncBool)
     {
     }
+
     bool operator ()(typename Functor::argument_type op)
     {
         return m_fncBool(m_fnc(op));

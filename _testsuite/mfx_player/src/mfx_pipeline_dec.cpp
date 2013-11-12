@@ -75,6 +75,7 @@ File Name: .h
 #include "mfx_factory_default.h"
 #include "mfx_verbose_spl.h"
 #include "mfx_dxgidebug_device.h"
+#include "mfx_hw_device_in_thread.h"
 
 #define MFX_DISPATCHER_LOG
 #include "mfx_dispatcher_log.h"
@@ -91,6 +92,7 @@ File Name: .h
 #include <sys/time.h>
 #include <sys/resource.h>
 #endif
+#include "mfx_thread.h"
 
 using namespace std;
 
@@ -224,6 +226,10 @@ mfxStatus MFXDecPipeline::CheckParams()
         else
             SetPriorityClass(GetCurrentProcess(), IDLE_PRIORITY_CLASS);
 #endif // #if defined(_WIN32) || defined(_WIN64)
+    }
+
+    if (m_inParams.nBurstDecodeFrames != 0) {
+        m_threadPool.reset(new MFXThread::ThreadPool());
     }
 
     return MFX_ERR_NONE;
@@ -1541,6 +1547,10 @@ mfxStatus MFXDecPipeline::CreateRender()
                 MFX_TRACE_AND_EXIT(MFX_ERR_UNSUPPORTED, (VM_STRING("On screen rendering not supported with system memory\n")));
             }
 
+            if (m_threadPool.get()) {
+                iParams.mThreadPool = m_threadPool.get();
+            }
+
             m_pRender = new ScreenRender(m_components[eREN].m_pSession, &sts, iParams);
 
             //TODO: move initialisation into constructor may be?
@@ -1690,7 +1700,7 @@ mfxStatus MFXDecPipeline::DecorateRender()
     if (m_inParams.nBurstDecodeFrames != 0)
     {
         MFX_CHECK_WITH_ERR(m_pRender = new BurstRender(m_inParams.bVerbose, m_inParams.nBurstDecodeFrames
-            , &PerfCounterTime::Instance(), m_pRender), MFX_ERR_MEMORY_ALLOC);
+            , &PerfCounterTime::Instance(), *m_threadPool.get(), m_pRender), MFX_ERR_MEMORY_ALLOC);
     }
 
     if (m_inParams.bUseSeparateFileWriter)
@@ -2017,6 +2027,10 @@ mfxStatus MFXDecPipeline::CreateDeviceManager()
                 m_pHWDevice.reset(new MFXD3D9DeviceEx(D3DPP_over));
             else
                 m_pHWDevice.reset(new MFXD3D9Device());
+
+            if (m_threadPool.get()) {
+                m_pHWDevice.reset(new MFXHWDeviceInThread(*m_threadPool.get(), m_pHWDevice.release()));
+            }
 
             MFX_CHECK_STS(m_pHWDevice->Init(cparams.GetAdapter(), hWindow, !m_inParams.bFullscreen, D3DFMT_X8R8G8B8, 1, m_inParams.dxva2DllName));
         }
@@ -3848,8 +3862,6 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 MFX_CHECK(1 + argv != argvEnd);                                                     
                 MFX_PARSE_INT(m_inParams.nBurstDecodeFrames, argv[1])                                      
                 argv++;                                                                             
-                //set windowtextA doesn't work for some reason if window created in different thread
-                m_inParams.m_bNowWidowHeader = true;
             }
             else HANDLE_INT_OPTION(m_inParams.targetViewsTemporalId, VM_STRING("-dec:temporalid"), VM_STRING("in case of MVC->AVC and MVC->MVC transcoding,  specifies coresponding field in mfxExtMVCTargetViews structure"))
             else HANDLE_INT_OPTION(m_inParams.nTestId, VM_STRING("-testid"), VM_STRING("testid value used in SendNotifyMessages(WNDBROADCAST,,testid)"))

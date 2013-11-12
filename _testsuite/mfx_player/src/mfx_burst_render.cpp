@@ -14,8 +14,7 @@ File Name: .h
 #include "mfx_burst_render.h"
 #include "umc_automatic_mutex.h"
 
-BurstRender::BurstRender(bool bVerbose, mfxU16 nBurstLen, ITime * pTime, IMFXVideoRender * pDecorated)
-    : InterfaceProxy<IMFXVideoRender>(pDecorated)
+BurstRender::BurstRender( bool bVerbose, mfxU16 nBurstLen, ITime *pTime, MFXThread::ThreadPool& pool, IMFXVideoRender * pDecorated ) : InterfaceProxy<IMFXVideoRender>(pDecorated)
     , m_pTime(pTime)
     , m_AsyncStatus(MFX_ERR_NONE)
     , m_state()
@@ -23,9 +22,10 @@ BurstRender::BurstRender(bool bVerbose, mfxU16 nBurstLen, ITime * pTime, IMFXVid
     , m_nBurstLen(nBurstLen)
     , m_bVerbose(bVerbose)
     , m_nDecodeResume(5)//todo: configure
+    , mThreadPool(pool)
 {
-    vm_thread_set_invalid(&m_Thread);
-    vm_thread_create(&m_Thread, &BurstRender::ThreadRoutine, this);
+    //vm_thread_set_invalid(&m_Thread);
+    //vm_thread_create(&m_Thread, &BurstRender::ThreadRoutine, this);
 
     vm_mutex_set_invalid(&m_FramesAcess);
     vm_mutex_init(&m_FramesAcess);
@@ -48,7 +48,8 @@ BurstRender::~BurstRender()
 mfxStatus BurstRender::CloseLocal()
 {
     m_bStop = true;
-    vm_thread_wait(&m_Thread);
+    //vm_thread_wait(&m_Thread);
+    m_ThreadTask->Synhronize(MFX_INFINITE);
 
     vm_mutex_destroy(&m_FramesAcess);
     vm_event_destroy(&m_shouldStartDecode);
@@ -58,6 +59,11 @@ mfxStatus BurstRender::CloseLocal()
 
 mfxStatus BurstRender::RenderFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl * pCtrl)
 {
+    if (!m_ThreadTask.get()) {
+        //TODO : think of not fully utilize those thread, but create dedicated tasks
+        m_ThreadTask = mThreadPool.Queue(bind_any(std::mem_fun(&BurstRender::RenderThread), this));
+    }
+
     m_AsyncStatus = MFX_ERR_NONE;
 
     if (NULL != surface)
@@ -65,12 +71,12 @@ mfxStatus BurstRender::RenderFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl * pC
         IncreaseReference(&surface->Data);
         {
             UMC::AutomaticMutex guard(m_FramesAcess);
-            m_bufferedFrames.push_back(std::pair<mfxFrameSurface1*, mfxEncodeCtrl *>(surface, pCtrl));
+            m_bufferedFrames.push_back(std::make_pair(surface, pCtrl));
         }
 
         if (m_bufferedFrames.size() >= (mfxU16)(m_nDecodeResume + m_nBurstLen))
         {
-            MPA_TRACE("BurstRender::DecodeSuspend");
+            PipelineTrace(((L"BurstRender::DecodeSuspend")));
 
             vm_event_reset(&m_shouldStartDecode);
             {
@@ -97,21 +103,15 @@ mfxStatus BurstRender::RenderFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl * pC
     return m_AsyncStatus;
 }
 
-mfxStatus BurstRender::GetHandle(mfxHandleType type, mfxHDL *pHdl)
+mfxStatus BurstRender::GetDevice(IHWDevice **pDevice)
 {
-    m_forGetHandleDispatch.type = type;
-    m_forGetHandleDispatch.pHdl = pHdl;
-    m_state = STATE_DISPATCH_GETHANDLE;
+    MFX_CHECK_STS(mThreadPool.Queue(
+        bind_any(bind1st(std::mem_fun(&InterfaceProxy<IMFXVideoRender>::GetDevice), this), pDevice))->Synhronize(MFX_INFINITE));
 
-    while (m_state != STATE_IDLE)
-    {
-        m_pTime->Wait(10);
-    }
-
-    return m_AsyncStatus;
+    return MFX_ERR_NONE;
 }
 
-void BurstRender::RenderThread()
+mfxStatus BurstRender::RenderThread()
 {
     while (!m_bStop || !m_bufferedFrames.empty())
     {
@@ -134,7 +134,7 @@ void BurstRender::RenderThread()
                 }
                 else*/
                 {
-                    MPA_TRACE("BurstRender::Idle");
+                    PipelineTrace(((L"BurstRender::Idle")));
                     m_pTime->Wait(10);
                 }
                 break;
@@ -203,6 +203,7 @@ void BurstRender::RenderThread()
             DecreaseReference(&m_bufferedFrames.front().first->Data);
         }
     }
+    return MFX_ERR_NONE;
 }
 
 mfxStatus BurstRender::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request)

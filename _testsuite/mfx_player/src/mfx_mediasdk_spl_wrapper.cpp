@@ -106,7 +106,7 @@ mfxStatus MediaSDKSplWrapper::ReadNextFrame(mfxBitstream2 &bs2)
     mfxStatus sts = MFX_ERR_NONE;
     mfxU32 iOutputTrack = 0;
     bool bVideoFrame = false;
-    mfxBitstream bs;
+    mfxBitstream bs = {};
     MFX_CHECK_POINTER(m_mfxSplitter);
     while (!bVideoFrame && sts == MFX_ERR_NONE)
     {
@@ -187,7 +187,7 @@ mfxStatus MediaSDKSplWrapper::SeekPercent(mfxF64 fSeekTo)
     if (fSeekTo < 0 || fSeekTo > 100)
         return MFX_ERR_UNKNOWN;
 
-    return MFXSplitter_Seek(m_mfxSplitter, (mfxF64) m_streamParams.Duration * 0.01f * fSeekTo);
+    return MFXSplitter_Seek(m_mfxSplitter, (mfxU64) (0.01f * fSeekTo * m_streamParams.Duration ));
 }
 
 mfxStatus MediaSDKSplWrapper::SeekFrameOffset(mfxU32 /*nFrameOffset*/, mfxFrameInfo & /*in_info*/)

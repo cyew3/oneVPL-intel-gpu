@@ -530,7 +530,7 @@ mfxStatus ScreenRender::RenderFrame(mfxFrameSurface1 *pSurface, mfxEncodeCtrl * 
     //
     // Re-enable DWM queuing if it is not enabled.
     //
-    EnableDwmQueuing();
+    //EnableDwmQueuing();
     
     MFX_CHECK_STS(m_initParams.pDevice->RenderFrame(pSurface, m_pCore->GetFrameAllocator()));
 
@@ -772,8 +772,13 @@ SKIP_DWMAPI:
 
 mfxStatus ScreenRender::GetDevice(IHWDevice **ppDevice)
 {
-    //need to create since this call looks like the first one to d3d device
-    MFX_CHECK_STS(SetupDevice());
+    if (m_initParams.mThreadPool) {
+        MFX_CHECK_STS(m_initParams.mThreadPool->Queue(
+            bind_any(std::mem_fun(&ScreenRender::SetupDevice), this))->Synhronize(MFX_INFINITE));
+    } else {
+        //need to create since this call looks like the first one to d3d device
+        MFX_CHECK_STS(SetupDevice());
+    }
     MFX_CHECK_POINTER(ppDevice);
     
     *ppDevice = m_initParams.pDevice.get();
