@@ -101,7 +101,7 @@ namespace MFXThread
 #ifdef WIN32
             return GetCurrentThreadId() ;
 #else
-            return getid();
+            return gettid();
 #endif
         }
         void LocalRunner() {
