@@ -64,12 +64,6 @@ enum {
     MFX_AUDIO_MPEG2_LAYER3      =0x00000240
 };
 
-/*AAC HE decoder modes*/
-enum {
-    MFX_AUDIO_AAC_HE_HQ_MODE=    1,
-    MFX_AUDIO_AAC_HE_LP_MODE=    2 
-} ;
-
 /*AAC HE decoder down sampling*/
 enum {
     MFX_AUDIO_AAC_HE_DWNSMPL_OFF=0,
@@ -141,7 +135,6 @@ typedef struct {
 
     union {    
         struct {   /* AAC Decoding Options */
-            mfxU16       ModeDecodeHEAACprofile;
             mfxU16       ModeDwnsmplHEAACprofile;
             mfxU16       FlagSBRSupportLev;
             mfxU16       FlagPSSupportLev;
