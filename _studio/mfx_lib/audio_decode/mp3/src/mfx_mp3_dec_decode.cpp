@@ -79,17 +79,7 @@ mfxStatus AudioDECODEMP3::Init(mfxAudioParam *par)
     UMC::MP3DecoderParams params;
     params.mc_lfe_filter_off = 1;
 
-    switch(par->mfx.SynchroMode)
-    {
-    case MFX_AUDIO_MP3_SYNC_MODE_BASE:
-        params.synchro_mode = 0;
-        break;
-    case MFX_AUDIO_MP3_SYNC_MODE_ADVANCED:
-        params.synchro_mode = 1;
-        break;
-    default:
-        return MFX_ERR_UNSUPPORTED;
-    }
+    params.synchro_mode = 1;
 
     mInData.SetDataSize(0);
     mOutData.SetDataSize(0);
@@ -503,7 +493,6 @@ mfxStatus MFX_MP3_Utility::FillAudioParam( mfxAudioParam *in, mfxAudioParam *out
     out->mfx.SampleFrequency = in->mfx.SampleFrequency;
     out->mfx.NumChannel = in->mfx.NumChannel;
     out->mfx.BitPerSample = in->mfx.BitPerSample;
-    out->mfx.SynchroMode = in->mfx.SynchroMode;
     out->mfx.Layer = in->mfx.Layer;
 
     return MFX_ERR_NONE;
@@ -563,30 +552,10 @@ mfxStatus MFX_MP3_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfxAudioPar
             break;
         }
 
-        mfxU32 localSynchroMode = in->mfx.SynchroMode;
-        if (localSynchroMode  == MFX_AUDIO_MP3_SYNC_MODE_BASE || 
-            localSynchroMode  == MFX_AUDIO_MP3_SYNC_MODE_ADVANCED 
-            )
-        {
-            out->mfx.SynchroMode = in->mfx.SynchroMode;
-        }
-        else
-        {
-            if(localSynchroMode == 0)
-            {
-                out->mfx.SynchroMode = MFX_AUDIO_MP3_SYNC_MODE_BASE;
-            }
-            else
-            {
-                sts = MFX_ERR_UNSUPPORTED;
-            }
-        }
-
     }
     else
     {
         out->mfx.CodecId = MFX_CODEC_MP3;
-        out->mfx.SynchroMode = MFX_AUDIO_MP3_SYNC_MODE_BASE;
         out->mfx.CodecLevel = 0;
         out->AsyncDepth = 1;
     }        

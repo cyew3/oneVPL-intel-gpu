@@ -824,8 +824,6 @@ DEF_STRUCT_TRACE(mfxAudioInfoMFX){
                << PUT_PAR(Layer)
                << PUT_ARR(AACHeaderData, p.AACHeaderDataSize)
                << PUT_PAR(AACHeaderDataSize);
-        } else if(MFX_CODEC_MP3 == p.CodecId){
-            os << PUT_PAR(SynchroMode);
         }
     }else if(MFX_CODEC_AAC == p.CodecId){
         os << PUT_PAR(OutputFormat)
