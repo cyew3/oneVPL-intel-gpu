@@ -85,13 +85,6 @@ enum {
     MFX_AUDIO_AAC_SBR_UNDEF=     2
 };
 
-/*MP3 decoder LFE-channel (Low Frequency Enhancement channel) */
-enum
-{
-    MFX_AUDIO_MP3_LFE_FILTER_OFF= 1,
-    MFX_AUDIO_MP3_LFE_FILTER_ON=  2
-};
-
 enum
 {
     MFX_AUDIO_MP3_SYNC_MODE_BASE     = 1,
@@ -143,7 +136,6 @@ typedef struct {
             mfxU8        AACHeaderData[64];
         };
         struct {   /* MP3 Decoding Options */
-            mfxU16       LFEFilter;
             mfxU16       SynchroMode;
         };
         struct {   /* AAC Encoding Options */
