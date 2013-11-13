@@ -38,19 +38,18 @@ struct H265CodingUnitData
     {
         Ipp8u cu_transform_bypass : 1;
         Ipp8u pcm_flag : 1;
+        Ipp8u transform_skip : 3;
     };
-
-    Ipp8u transform_skip[3];
 
     Ipp8u width;
     Ipp8u depth;
 
-    //Ipp8u partSize;
+    Ipp8u partSize;
     Ipp8u predMode;
 
     Ipp8u trIndex;
 
-    //Ipp8u reserved[5];
+    Ipp8u reserved[2];
 };
 #pragma pack()
 
@@ -84,7 +83,6 @@ public:
     H265CodingUnitData         *m_cuData;
 
 protected:
-    Ipp8u*                    m_partSizeArray;  // array of partition sizes
     Ipp8u*                    m_cbf[3];         // array of coded block flags (CBF)
 
     Ipp8u*                    m_lumaIntraDir;    // array of intra directions (luma)
@@ -113,10 +111,10 @@ public:
 
     inline Ipp8u GetTransformSkip(Ipp32s plane, Ipp32s partAddr) const
     {
-        return m_cuData[partAddr].transform_skip[plane];
+        return (m_cuData[partAddr].transform_skip) & (1 << plane);
     }
 
-    inline Ipp8u GetCbf(ComponentPlane plane, Ipp32s partAddr) const
+    H265_FORCEINLINE Ipp8u GetCbf(ComponentPlane plane, Ipp32s partAddr) const
     {
         return m_cbf[plane][partAddr];
     }
@@ -155,7 +153,7 @@ public:
 
     // create / destroy / init  / copy -----------------------------------------------------------------------------
 
-    void create (H265FrameCodingData * frameCD);
+    void create (H265FrameCodingData * frameCD, Ipp32s cuAddr);
     void destroy ();
 
     void initCU (H265SegmentDecoderMultiThreaded* sd, Ipp32u CUAddr);
@@ -168,8 +166,7 @@ public:
     // member functions for CU data ------------- (only functions with declaration here. simple get/set are removed)
     EnumPartSize GetPartitionSize (Ipp32u Idx) const
     {
-        //return static_cast<EnumPartSize>(m_cuData[Idx].partSize);
-        return static_cast<EnumPartSize>(m_partSizeArray[Idx]);
+        return static_cast<EnumPartSize>(m_cuData[Idx].partSize);
     }
 
     EnumPredMode GetPredictionMode (Ipp32u Idx) const
@@ -177,7 +174,7 @@ public:
         return static_cast<EnumPredMode>(m_cuData[Idx].predMode);
     }
 
-    void setPartSizeSubParts (EnumPartSize Mode, Ipp32u AbsPartIdx, Ipp32u Depth);
+    void setPartSizeSubParts (EnumPartSize Mode, Ipp32u AbsPartIdx);
     void setCUTransquantBypass(bool flag, Ipp32u AbsPartIdx);
     void setPredMode (EnumPredMode Mode, Ipp32u AbsPartIdx);
     void setSize (Ipp32u Width, Ipp32u AbsPartIdx);
@@ -190,14 +187,9 @@ public:
         return m_cbf[plane];
     }
 
-    H265_FORCEINLINE Ipp8u GetCbf(Ipp32u Idx, ComponentPlane plane) const
+    H265_FORCEINLINE Ipp8u GetCbf(ComponentPlane plane, Ipp32u Idx, Ipp32u TrDepth) const
     {
-        return m_cbf[plane][Idx];
-    }
-
-    H265_FORCEINLINE Ipp8u GetCbf(Ipp32u Idx, ComponentPlane plane, Ipp32u TrDepth) const
-    {
-        return (Ipp8u)((GetCbf(Idx, plane) >> TrDepth ) & 0x1);
+        return (Ipp8u)((GetCbf(plane, Idx) >> TrDepth ) & 0x1);
     }
 
     void SetCUDataSubParts(Ipp32u AbsPartIdx, Ipp32u Depth);
@@ -218,7 +210,6 @@ public:
     void getPartSize(Ipp32u AbsPartIdx, Ipp32u partIdx, Ipp32s &nPSW, Ipp32s &nPSH);
     Ipp8u getNumPartInter(Ipp32u AbsPartIdx);
 
-    void fillMVPCand (Ipp32u PartIdx, Ipp32u PartAddr, EnumRefPicList RefPicList, Ipp32s RefIdx, AMVPInfo* pInfo);
     bool isDiffMER(Ipp32s xN, Ipp32s yN, Ipp32s xP, Ipp32s yP);
 
     // member functions for modes ---------------------- (only functions with declaration here. simple get/set are removed)

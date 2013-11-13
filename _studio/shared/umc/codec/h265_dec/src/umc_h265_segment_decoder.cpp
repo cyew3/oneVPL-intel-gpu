@@ -762,7 +762,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
     Ipp32u CurNumParts = m_pCurrentFrame->getCD()->getNumPartInCU() >> (Depth << 1);
     Ipp32u QNumParts = CurNumParts >> 2;
 
-    bool more_depth = false;
+    Ipp32u more_depth = 0;
 
     Ipp32u LPelX = pCU->m_rasterToPelX[AbsPartIdx];
     Ipp32s PartX = LPelX >> m_pSeqParamSet->log2_min_transform_block_size;
@@ -774,20 +774,19 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
     Ipp32u BPelY = TPelY + (m_pCurrentFrame->getCD()->m_MaxCUWidth >> Depth) - 1;
     Ipp32s PartSize = m_pSeqParamSet->MaxCUSize >> (Depth + m_pSeqParamSet->log2_min_transform_block_size);
 
-    bool bStartInCU = pCU->getSCUAddr() + AbsPartIdx + CurNumParts > m_pSliceHeader->m_sliceSegmentCurStartCUAddr && pCU->getSCUAddr() + AbsPartIdx < m_pSliceHeader->m_sliceSegmentCurStartCUAddr;
-    if ((!bStartInCU) && (RPelX < m_pSeqParamSet->pic_width_in_luma_samples) && (BPelY < m_pSeqParamSet->pic_height_in_luma_samples))
+    if (RPelX < m_pSeqParamSet->pic_width_in_luma_samples && BPelY < m_pSeqParamSet->pic_height_in_luma_samples)
     {
         if (Depth == m_pSeqParamSet->MaxCUDepth - m_pSeqParamSet->AddCUDepth)
             pCU->setDepth(Depth, AbsPartIdx);
         else
         {
             more_depth = DecodeSplitFlagCABAC(pCU, PartX, PartY, Depth);
-            pCU->setDepth(Depth + (Ipp32u)more_depth, AbsPartIdx);
+            pCU->setDepth(Depth + more_depth, AbsPartIdx);
         }
     }
     else
     {
-        more_depth = true;
+        more_depth = 1;
     }
 
     if (more_depth)
@@ -804,18 +803,15 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
             LPelX = pCU->m_CUPelX + pCU->m_rasterToPelX[Idx];
             TPelY = pCU->m_CUPelY + pCU->m_rasterToPelY[Idx];
 
-            bool SubInSliceFlag = pCU->getSCUAddr() + Idx + QNumParts > m_pSliceHeader->m_sliceSegmentCurStartCUAddr;
-            if (SubInSliceFlag)
+            if ((LPelX < m_pSeqParamSet->pic_width_in_luma_samples) && (TPelY < m_pSeqParamSet->pic_height_in_luma_samples))
             {
-                if ((LPelX < m_pSeqParamSet->pic_width_in_luma_samples) && (TPelY < m_pSeqParamSet->pic_height_in_luma_samples))
-                {
-                    DecodeCUCABAC(pCU, Idx, Depth + 1, IsLast);
-                }
-                else
-                {
-                    pCU->setOutsideCUPart(Idx, Depth + 1);
-                }
+                DecodeCUCABAC(pCU, Idx, Depth + 1, IsLast);
             }
+            else
+            {
+                pCU->setOutsideCUPart(Idx, Depth + 1);
+            }
+
             if (IsLast)
             {
                 break;
@@ -823,6 +819,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
 
             Idx += QNumParts;
         }
+
         if ((m_pSeqParamSet->MaxCUSize >> Depth) == m_pPicParamSet->MinCUDQPSize && m_pPicParamSet->cu_qp_delta_enabled_flag)
         {
             if (m_DecodeDQPFlag)
@@ -850,7 +847,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
     if (skipped)
     {
         pCU->setPredMode(MODE_INTER, AbsPartIdx);
-        pCU->setPartSizeSubParts(PART_SIZE_2Nx2N, AbsPartIdx, Depth);
+        pCU->setPartSizeSubParts(PART_SIZE_2Nx2N, AbsPartIdx);
         pCU->setSize(m_context->m_sps->MaxCUSize >> Depth, AbsPartIdx);
         pCU->setIPCMFlag(false, AbsPartIdx);
 
@@ -1042,8 +1039,8 @@ void H265SegmentDecoder::DecodePartSizeCABAC(H265CodingUnit* pCU, Ipp32u AbsPart
         if (Depth == m_pSeqParamSet->MaxCUDepth - m_pSeqParamSet->AddCUDepth)
         {
             uVal = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffsetHEVC[PART_SIZE_HEVC]);
-            //m_pcTDecBinIf->decodeBin( uiSymbol, m_cCUPartSizeSCModel.get( 0, 0, 0) );
         }
+
         Mode = uVal ? PART_SIZE_2Nx2N : PART_SIZE_NxN;
         pCU->setSize(m_pSeqParamSet->MaxCUSize >> Depth, AbsPartIdx);
 
@@ -1105,7 +1102,7 @@ void H265SegmentDecoder::DecodePartSizeCABAC(H265CodingUnit* pCU, Ipp32u AbsPart
 
         pCU->setSize(m_pSeqParamSet->MaxCUSize >> Depth, AbsPartIdx);
     }
-    pCU->setPartSizeSubParts(Mode, AbsPartIdx, Depth);
+    pCU->setPartSizeSubParts(Mode, AbsPartIdx);
 }
 
 void H265SegmentDecoder::DecodeIPCMInfoCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
@@ -1128,7 +1125,7 @@ void H265SegmentDecoder::DecodeIPCMInfoCABAC(H265CodingUnit* pCU, Ipp32u AbsPart
 
     DecodePCMAlignBits();
 
-    pCU->setPartSizeSubParts(PART_SIZE_2Nx2N, AbsPartIdx, Depth);
+    pCU->setPartSizeSubParts(PART_SIZE_2Nx2N, AbsPartIdx);
     pCU->setLumaIntraDirSubParts(INTRA_LUMA_DC_IDX, AbsPartIdx, Depth);
     pCU->setSize(m_pSeqParamSet->MaxCUSize >> Depth, AbsPartIdx);
     pCU->setTrIdx(0, AbsPartIdx);
@@ -1323,9 +1320,9 @@ bool H265SegmentDecoder::DecodePUWiseCABAC(H265CodingUnit* pCU, Ipp32u AbsPartId
 
             if ((m_pPicParamSet->log2_parallel_merge_level - 2) > 0 && PartSize != PART_SIZE_2Nx2N && pCU->GetWidth(AbsPartIdx) <= 8)
             {
-                pCU->setPartSizeSubParts(PART_SIZE_2Nx2N, AbsPartIdx, Depth);
+                pCU->setPartSizeSubParts(PART_SIZE_2Nx2N, AbsPartIdx);
                 getInterMergeCandidates(pCU, AbsPartIdx, 0, MvBufferNeighbours, InterDirNeighbours, numValidMergeCand, -1);
-                pCU->setPartSizeSubParts(PartSize, AbsPartIdx, Depth);
+                pCU->setPartSizeSubParts(PartSize, AbsPartIdx);
             }
             else
             {
@@ -1616,15 +1613,15 @@ void H265SegmentDecoder::DecodeTransform(H265CodingUnit* pCU, Ipp32u offsetLuma,
 
         if (FirstCbfOfCUFlag || l2width > 2)
         {
-            if (FirstCbfOfCUFlag || pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_U, TrDepth - 1))
+            if (FirstCbfOfCUFlag || pCU->GetCbf(COMPONENT_CHROMA_U, AbsPartIdx, TrDepth - 1))
                 ParseQtCbfCABAC(pCU, AbsPartIdx, COMPONENT_CHROMA_U, TrDepth, Depth);
-            if (FirstCbfOfCUFlag || pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_V, TrDepth - 1))
+            if (FirstCbfOfCUFlag || pCU->GetCbf(COMPONENT_CHROMA_V, AbsPartIdx, TrDepth - 1))
                 ParseQtCbfCABAC(pCU, AbsPartIdx, COMPONENT_CHROMA_V, TrDepth, Depth);
         }
         else
         {
-            pCU->setCbfSubParts(pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_U, TrDepth - 1) << TrDepth, COMPONENT_CHROMA_U, AbsPartIdx, Depth);
-            pCU->setCbfSubParts(pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_V, TrDepth - 1) << TrDepth, COMPONENT_CHROMA_V, AbsPartIdx, Depth);
+            pCU->setCbfSubParts(pCU->GetCbf(COMPONENT_CHROMA_U, AbsPartIdx, TrDepth - 1) << TrDepth, COMPONENT_CHROMA_U, AbsPartIdx, Depth);
+            pCU->setCbfSubParts(pCU->GetCbf(COMPONENT_CHROMA_V, AbsPartIdx, TrDepth - 1) << TrDepth, COMPONENT_CHROMA_V, AbsPartIdx, Depth);
         }
     }
 
@@ -1643,9 +1640,9 @@ void H265SegmentDecoder::DecodeTransform(H265CodingUnit* pCU, Ipp32u offsetLuma,
         {
             DecodeTransform(pCU, offsetLuma, AbsPartIdx, Depth, l2width, TrIdx+1, CodeDQP);
 
-            YCbf |= pCU->GetCbf(AbsPartIdx, COMPONENT_LUMA, TrDepth + 1);
-            UCbf |= pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_U, TrDepth + 1);
-            VCbf |= pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_V, TrDepth + 1);
+            YCbf |= pCU->GetCbf(COMPONENT_LUMA, AbsPartIdx, TrDepth + 1);
+            UCbf |= pCU->GetCbf(COMPONENT_CHROMA_U, AbsPartIdx, TrDepth + 1);
+            VCbf |= pCU->GetCbf(COMPONENT_CHROMA_V, AbsPartIdx, TrDepth + 1);
             AbsPartIdx += QPartNum;
             offsetLuma += size;
         }
@@ -1663,7 +1660,7 @@ void H265SegmentDecoder::DecodeTransform(H265CodingUnit* pCU, Ipp32u offsetLuma,
         pCU->setTrIdx(TrDepth, AbsPartIdx);
 
         pCU->setCbfSubParts(0, COMPONENT_LUMA, AbsPartIdx, Depth);
-        if (pCU->GetPredictionMode(AbsPartIdx) != MODE_INTRA && Depth == pCU->GetDepth(AbsPartIdx) && !pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_U, 0) && !pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_V, 0))
+        if (pCU->GetPredictionMode(AbsPartIdx) != MODE_INTRA && Depth == pCU->GetDepth(AbsPartIdx) && !pCU->GetCbf(COMPONENT_CHROMA_U, AbsPartIdx) && !pCU->GetCbf(COMPONENT_CHROMA_V, AbsPartIdx))
         {
             pCU->setCbfSubParts( 1 << TrDepth, COMPONENT_LUMA, AbsPartIdx, Depth);
         }
@@ -1671,15 +1668,15 @@ void H265SegmentDecoder::DecodeTransform(H265CodingUnit* pCU, Ipp32u offsetLuma,
         {
             ParseQtCbfCABAC(pCU, AbsPartIdx, COMPONENT_LUMA, TrDepth, Depth);
         }
-        // transform_unit begin
-        Ipp32u cbfY = pCU->GetCbf(AbsPartIdx, COMPONENT_LUMA    , TrIdx);
-        Ipp32u cbfU = pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_U, TrIdx);
-        Ipp32u cbfV = pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_V, TrIdx);
+            // transform_unit begin
+        Ipp32u cbfY = pCU->GetCbf(COMPONENT_LUMA    , AbsPartIdx, TrIdx);
+        Ipp32u cbfU = pCU->GetCbf(COMPONENT_CHROMA_U, AbsPartIdx, TrIdx);
+        Ipp32u cbfV = pCU->GetCbf(COMPONENT_CHROMA_V, AbsPartIdx, TrIdx);
 
         if (l2width == 2 && (AbsPartIdx & 0x3) == 0x3 )
         {
-            cbfU = pCU->GetCbf(m_BakAbsPartIdx, COMPONENT_CHROMA_U, TrIdx);
-            cbfV = pCU->GetCbf(m_BakAbsPartIdx, COMPONENT_CHROMA_V, TrIdx);
+            cbfU = pCU->GetCbf(COMPONENT_CHROMA_U, m_BakAbsPartIdx, TrIdx);
+            cbfV = pCU->GetCbf(COMPONENT_CHROMA_V, m_BakAbsPartIdx, TrIdx);
         }
 
         if (cbfY || cbfU || cbfV)
@@ -1857,7 +1854,6 @@ bool H265SegmentDecoder::DecodeSliceEnd(H265CodingUnit* pCU, Ipp32u AbsPartIdx, 
         && ((PosY + pCU->GetWidth(AbsPartIdx)) % GranularityWidth == 0|| (PosY + pCU->GetWidth(AbsPartIdx) == Height)))
     {
         IsLast = m_pBitStream->DecodeTerminatingBit_CABAC();
-        //m_pcEntropyDecoder->decodeTerminatingBit( uiIsLast );
     }
     else
     {
@@ -2347,21 +2343,15 @@ void H265SegmentDecoder::ReadCoefRemainExGolombCABAC(Ipp32u &Symbol, Ipp32u &Par
 
 void H265SegmentDecoder::ReconstructCU(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    H265DecoderFrame* frame = pCU->m_Frame;
-
     bool BoundaryFlag = false;
     Ipp32s Size = m_pSeqParamSet->MaxCUSize >> Depth;
     Ipp32u XInc = pCU->m_rasterToPelX[AbsPartIdx];
     Ipp32u LPelX = pCU->m_CUPelX + XInc;
-    Ipp32u RPelX = LPelX + Size - 1;
     Ipp32u YInc = pCU->m_rasterToPelY[AbsPartIdx];
     Ipp32u TPelY = pCU->m_CUPelY + YInc;
-    Ipp32u BPelY = TPelY + Size - 1;
 
-    Ipp32s CurNumParts = frame->getCD()->getNumPartInCU() >> (Depth << 1);
     H265SliceHeader* pSliceHeader = pCU->m_SliceHeader;
-    bool bStartInCU = pCU->getSCUAddr() + AbsPartIdx + CurNumParts > pSliceHeader->m_sliceSegmentCurStartCUAddr && pCU->getSCUAddr() + AbsPartIdx < pSliceHeader->m_sliceSegmentCurStartCUAddr;
-    if (bStartInCU || (RPelX >= pSliceHeader->m_SeqParamSet->pic_width_in_luma_samples) || (BPelY >= pSliceHeader->m_SeqParamSet->pic_height_in_luma_samples))
+    if (LPelX + Size > pSliceHeader->m_SeqParamSet->pic_width_in_luma_samples || TPelY + Size > pSliceHeader->m_SeqParamSet->pic_height_in_luma_samples)
     {
         BoundaryFlag = true;
     }
@@ -2377,13 +2367,11 @@ void H265SegmentDecoder::ReconstructCU(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
             {
                 LPelX = pCU->m_CUPelX + pCU->m_rasterToPelX[Idx];
                 TPelY = pCU->m_CUPelY + pCU->m_rasterToPelY[Idx];
-                bool binSlice = (pCU->getSCUAddr() + Idx + QNumParts > pSliceHeader->m_sliceSegmentCurStartCUAddr) && (pCU->getSCUAddr() + Idx <= pSliceHeader->m_sliceSegmentCurEndCUAddr);
-                bool insideFrame = binSlice && (LPelX < pSliceHeader->m_SeqParamSet->pic_width_in_luma_samples) && (TPelY < pSliceHeader->m_SeqParamSet->pic_height_in_luma_samples);
-                if (!insideFrame)
-                {
+                if (LPelX >= pSliceHeader->m_SeqParamSet->pic_width_in_luma_samples ||
+                    TPelY >= pSliceHeader->m_SeqParamSet->pic_height_in_luma_samples)
+                { // !insideFrame
                     continue;
                 }
-
             }
 
             ReconstructCU(pCU, Idx, NextDepth);
@@ -2418,7 +2406,7 @@ void H265SegmentDecoder::ReconInter(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp3
     m_Prediction->MotionCompensation(pCU, AbsPartIdx, Depth);
 
     // clip for only non-zero cbp case
-    if ((pCU->GetCbf(AbsPartIdx, COMPONENT_LUMA)) || (pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_U)) || (pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_V)))
+    if ((pCU->GetCbf(COMPONENT_LUMA, AbsPartIdx)) || (pCU->GetCbf(COMPONENT_CHROMA_U, AbsPartIdx)) || (pCU->GetCbf(COMPONENT_CHROMA_V, AbsPartIdx)))
     {
         // inter recon
         DecodeInterTexture(pCU, AbsPartIdx);

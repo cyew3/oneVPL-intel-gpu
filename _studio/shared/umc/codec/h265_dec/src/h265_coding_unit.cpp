@@ -47,7 +47,7 @@ H265CodingUnit::~H265CodingUnit()
 {
 }
 
-void H265CodingUnit::create (H265FrameCodingData * frameCD)
+void H265CodingUnit::create (H265FrameCodingData * frameCD, Ipp32s cuAddr)
 {
     m_Frame = NULL;
     m_SliceHeader = NULL;
@@ -55,10 +55,8 @@ void H265CodingUnit::create (H265FrameCodingData * frameCD)
 
     Ipp32s widthOnHeight = frameCD->m_MaxCUWidth * frameCD->m_MaxCUWidth;
 
-    m_cumulativeMemoryPtr = CumulativeArraysAllocation(10, // number of parameters
+    m_cumulativeMemoryPtr = CumulativeArraysAllocation(8, // number of parameters
                                 32, // align
-                                &m_partSizeArray, sizeof(Ipp8u) * m_NumPartition,
-
                                 &m_lumaIntraDir, sizeof(Ipp8u) * m_NumPartition,
                                 &m_chromaIntraDir, sizeof(Ipp8u) * m_NumPartition,
 
@@ -68,10 +66,9 @@ void H265CodingUnit::create (H265FrameCodingData * frameCD)
 
                                 &m_cbf[0], sizeof(Ipp8u) * m_NumPartition,
                                 &m_cbf[1], sizeof(Ipp8u) * m_NumPartition,
-                                &m_cbf[2], sizeof(Ipp8u) * m_NumPartition,
+                                &m_cbf[2], sizeof(Ipp8u) * m_NumPartition);
 
-                                &m_cuData, sizeof(H265CodingUnitData) * m_NumPartition
-                                );
+    m_cuData = &frameCD->m_cuData[m_NumPartition*cuAddr];
 
     m_rasterToPelX = frameCD->m_partitionInfo.m_rasterToPelX;
     m_rasterToPelY = frameCD->m_partitionInfo.m_rasterToPelY;
@@ -236,9 +233,9 @@ void H265CodingUnit::setDepth(Ipp32u Depth, Ipp32u AbsPartIdx)
     m_cuData[AbsPartIdx].depth = (Ipp8u)Depth;
 }
 
-void H265CodingUnit::setPartSizeSubParts(EnumPartSize Mode, Ipp32u AbsPartIdx, Ipp32u Depth)
+void H265CodingUnit::setPartSizeSubParts(EnumPartSize Mode, Ipp32u AbsPartIdx)
 {
-    memset(m_partSizeArray + AbsPartIdx, Mode, m_NumPartition >> (2 * Depth));
+    m_cuData[AbsPartIdx].partSize = (Ipp8u)Mode;
 }
 
 void H265CodingUnit::setCUTransquantBypass(bool flag, Ipp32u AbsPartIdx)
@@ -262,7 +259,8 @@ void H265CodingUnit::SetCUDataSubParts(Ipp32u AbsPartIdx, Ipp32u Depth)
 
 void H265CodingUnit::setTransformSkip(Ipp32u useTransformSkip, ComponentPlane plane, Ipp32u AbsPartIdx)
 {
-    m_cuData[AbsPartIdx].transform_skip[plane] = (Ipp8u)useTransformSkip;
+    m_cuData[AbsPartIdx].transform_skip &= ~(1 << plane);
+    m_cuData[AbsPartIdx].transform_skip |= useTransformSkip << plane;
 }
 
 void H265CodingUnit::setLumaIntraDirSubParts(Ipp32u Dir, Ipp32u AbsPartIdx, Ipp32u Depth)

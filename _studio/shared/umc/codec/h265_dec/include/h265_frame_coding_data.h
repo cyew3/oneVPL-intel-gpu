@@ -23,6 +23,7 @@
 namespace UMC_HEVC_DECODER
 {
 class H265CodingUnit;
+struct H265CodingUnitData;
 
 class PartitionInfo
 {
@@ -71,7 +72,8 @@ public:
     Ipp32s m_NumPartInWidth;
     Ipp32s m_NumCUsInFrame;
 
-    H265CodingUnit **m_CUData;                // array of CU data
+    H265CodingUnit **m_CU;
+    std::vector<H265CodingUnitData> m_cuData;
 
     Ipp32u* m_CUOrderMap;                   //the map of LCU raster scan address relative to LCU encoding order
     Ipp32u* m_TileIdxMap;                   //the map of the tile index relative to LCU raster scan address
@@ -121,7 +123,7 @@ public:
         , m_HeightInCU(0)
         , m_MaxCUWidth(0)
         , m_NumCUsInFrame(0)
-        , m_CUData(0)
+        , m_CU(0)
         , m_CUOrderMap(0)
         , m_TileIdxMap(0)
         , m_InverseCUOrderMap(0)
@@ -137,7 +139,7 @@ public:
 
     H265CodingUnit*  getCU(Ipp32u CUAddr)
     {
-        return m_CUData[CUAddr];
+        return m_CU[CUAddr];
     }
 
     Ipp32u getNumPartInCU()

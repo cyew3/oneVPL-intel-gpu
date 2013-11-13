@@ -130,9 +130,9 @@ template void H265TrQuant::InvTransformNxN<Ipp16s>(
 
 void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Size, Ipp32u TrMode)
 {
-    bool lumaPresent = pCU->GetCbf(AbsPartIdx, COMPONENT_LUMA, TrMode) != 0;
-    bool chromaUPresent = pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_U, TrMode) != 0;
-    bool chromaVPresent = pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_V, TrMode) != 0;
+    bool lumaPresent = pCU->GetCbf(COMPONENT_LUMA, AbsPartIdx, TrMode) != 0;
+    bool chromaUPresent = pCU->GetCbf(COMPONENT_CHROMA_U, AbsPartIdx, TrMode) != 0;
+    bool chromaVPresent = pCU->GetCbf(COMPONENT_CHROMA_V, AbsPartIdx, TrMode) != 0;
 
     if (!lumaPresent && !chromaUPresent && !chromaVPresent)
     {

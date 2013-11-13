@@ -179,7 +179,7 @@ namespace UMC_HEVC_DECODER
         }    
 
         //===== inverse transform =====
-        if (!pCU->GetCbf(AbsPartIdx, COMPONENT_LUMA, TrDepth))
+        if (!pCU->GetCbf(COMPONENT_LUMA, AbsPartIdx, TrDepth))
             return;
 
         Ipp32u NumCoeffInc = (m_pSeqParamSet->MaxCUSize * m_pSeqParamSet->MaxCUSize) >> (m_pSeqParamSet->MaxCUDepth << 1);
@@ -224,8 +224,8 @@ namespace UMC_HEVC_DECODER
             break;
         }
 
-        bool chromaUPresent = pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_U, TrDepth) != 0;
-        bool chromaVPresent = pCU->GetCbf(AbsPartIdx, COMPONENT_CHROMA_V, TrDepth) != 0;
+        bool chromaUPresent = pCU->GetCbf(COMPONENT_CHROMA_U, AbsPartIdx, TrDepth) != 0;
+        bool chromaVPresent = pCU->GetCbf(COMPONENT_CHROMA_V, AbsPartIdx, TrDepth) != 0;
 
         if (!chromaUPresent && !chromaVPresent)
             return;
