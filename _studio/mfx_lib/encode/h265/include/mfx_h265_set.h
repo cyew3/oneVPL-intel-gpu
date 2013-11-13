@@ -17,6 +17,7 @@ typedef struct
     Ipp32s offset;
     Ipp32s size;
     volatile Ipp32s mt_current_ctb_col;
+    volatile Ipp32s mt_busy;
 } H265EncoderRowInfo;
 
 typedef struct sH265VidParameterSet {

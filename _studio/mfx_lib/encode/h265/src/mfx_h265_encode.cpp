@@ -579,6 +579,9 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
         if (m_mfxHEVCOpts.GPB == MFX_CODINGOPTION_UNKNOWN)
             m_mfxHEVCOpts.GPB = opts_tu->GPB;
 
+        if (m_mfxHEVCOpts.SAO == MFX_CODINGOPTION_UNKNOWN)
+            m_mfxHEVCOpts.SAO = opts_tu->SAO;
+
         if (!m_mfxHEVCOpts.SplitThresholdStrengthCUIntra)
             m_mfxHEVCOpts.SplitThresholdStrengthCUIntra = opts_tu->SplitThresholdStrengthCUIntra;
         if (!m_mfxHEVCOpts.SplitThresholdStrengthTUIntra)
@@ -1715,9 +1718,12 @@ mfxStatus MFXVideoENCODEH265::TaskRoutine(void *pState, void *pParam, mfxU32 thr
 
             mfxI32 parallel_region_selector = th->m_taskParams.parallel_region_selector;
 
-            if (parallel_region_selector == PARALLEL_REGION_MAIN)
-                th->m_enc->EncodeThread(thread_number);
-            else if (parallel_region_selector == PARALLEL_REGION_DEBLOCKING)
+            if (parallel_region_selector == PARALLEL_REGION_MAIN) {
+                if (th->m_enc->m_videoParam.threading_by_rows)
+                    th->m_enc->EncodeThreadByRow(thread_number);
+                else
+                    th->m_enc->EncodeThread(thread_number);
+            } else if (parallel_region_selector == PARALLEL_REGION_DEBLOCKING)
                 th->m_enc->DeblockThread(thread_number);
 
             vm_interlocked_dec32(reinterpret_cast<volatile Ipp32u *>(&th->m_taskParams.parallel_executing_threads));

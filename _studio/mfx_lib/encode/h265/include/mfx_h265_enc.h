@@ -53,6 +53,8 @@ struct H265VideoParam {
     Ipp8u SAOFlag;  // Sample Adaptive Offset
     Ipp8u WPPFlag; // Wavefront
     Ipp32u num_threads;
+    Ipp32u num_thread_structs;
+    Ipp8u threading_by_rows;
 
 // derived
     Ipp32s PGopPicSize;
@@ -215,6 +217,7 @@ public:
     mfxStatus DeblockThread(Ipp32s ithread);
     mfxStatus ApplySAOThread(Ipp32s ithread);
     mfxStatus EncodeThread(Ipp32s ithread);
+    mfxStatus EncodeThreadByRow(Ipp32s ithread);
     mfxStatus MoveFromCPBToDPB();
     mfxStatus CleanDPB();
 
