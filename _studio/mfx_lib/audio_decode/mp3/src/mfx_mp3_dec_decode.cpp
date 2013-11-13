@@ -77,18 +77,7 @@ mfxStatus AudioDECODEMP3::Init(mfxAudioParam *par)
     m_frame.DataOffset = 0;
 
     UMC::MP3DecoderParams params;
-
-    switch(par->mfx.LFEFilter)
-    {
-    case MFX_AUDIO_MP3_LFE_FILTER_ON:
-        params.mc_lfe_filter_off = 0;
-        break;
-    case MFX_AUDIO_MP3_LFE_FILTER_OFF:
-        params.mc_lfe_filter_off = 1;
-        break;
-    default:
-        return MFX_ERR_UNSUPPORTED;
-    }
+    params.mc_lfe_filter_off = 1;
 
     switch(par->mfx.SynchroMode)
     {
@@ -514,7 +503,6 @@ mfxStatus MFX_MP3_Utility::FillAudioParam( mfxAudioParam *in, mfxAudioParam *out
     out->mfx.SampleFrequency = in->mfx.SampleFrequency;
     out->mfx.NumChannel = in->mfx.NumChannel;
     out->mfx.BitPerSample = in->mfx.BitPerSample;
-    out->mfx.LFEFilter = in->mfx.LFEFilter;
     out->mfx.SynchroMode = in->mfx.SynchroMode;
     out->mfx.Layer = in->mfx.Layer;
 
@@ -575,25 +563,6 @@ mfxStatus MFX_MP3_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfxAudioPar
             break;
         }
 
-        mfxU32 localLFEFilter = in->mfx.LFEFilter;
-        if (localLFEFilter  == MFX_AUDIO_MP3_LFE_FILTER_OFF || 
-            localLFEFilter  == MFX_AUDIO_MP3_LFE_FILTER_ON 
-            )
-        {
-            out->mfx.LFEFilter = in->mfx.LFEFilter;
-        }
-        else
-        {
-            if(localLFEFilter == 0)
-            {
-                out->mfx.LFEFilter = MFX_AUDIO_MP3_LFE_FILTER_OFF;
-            }
-            else
-            {
-                sts = MFX_ERR_UNSUPPORTED;
-            }
-        }
-
         mfxU32 localSynchroMode = in->mfx.SynchroMode;
         if (localSynchroMode  == MFX_AUDIO_MP3_SYNC_MODE_BASE || 
             localSynchroMode  == MFX_AUDIO_MP3_SYNC_MODE_ADVANCED 
@@ -617,7 +586,6 @@ mfxStatus MFX_MP3_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfxAudioPar
     else
     {
         out->mfx.CodecId = MFX_CODEC_MP3;
-        out->mfx.LFEFilter = MFX_AUDIO_MP3_LFE_FILTER_OFF;
         out->mfx.SynchroMode = MFX_AUDIO_MP3_SYNC_MODE_BASE;
         out->mfx.CodecLevel = 0;
         out->AsyncDepth = 1;

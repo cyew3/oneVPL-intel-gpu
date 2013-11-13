@@ -818,16 +818,14 @@ DEF_STRUCT_TRACE(mfxAudioInfoMFX){
 
     if(pflag(PRINT_OPT_DEC)){
         if(MFX_CODEC_AAC == p.CodecId){
-            os << PUT_PAR(ModeDecodeHEAACprofile)
-               << PUT_PAR(ModeDwnsmplHEAACprofile)
+            os << PUT_PAR(ModeDwnsmplHEAACprofile)
                << PUT_PAR(FlagSBRSupportLev)
                << PUT_PAR(FlagPSSupportLev)
                << PUT_PAR(Layer)
                << PUT_ARR(AACHeaderData, p.AACHeaderDataSize)
                << PUT_PAR(AACHeaderDataSize);
         } else if(MFX_CODEC_MP3 == p.CodecId){
-            os << PUT_PAR(LFEFilter)
-               << PUT_PAR(SynchroMode);
+            os << PUT_PAR(SynchroMode);
         }
     }else if(MFX_CODEC_AAC == p.CodecId){
         os << PUT_PAR(OutputFormat)
