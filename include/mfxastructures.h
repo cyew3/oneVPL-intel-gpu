@@ -101,13 +101,6 @@ enum
     MFX_AUDIO_AAC_JOINT_STEREO=    3
 };
 
-/*AAC encoder noise shaping*/
-enum
-{
-    MFX_AUDIO_AAC_NOISE_MODEL_SIMPLE=  0,
-    MFX_AUDIO_AAC_NOISE_MODEL_ADVANCED=1 
-};
-
 typedef struct {
     mfxU32                CodecId;
     mfxU16                CodecProfile;
@@ -132,7 +125,6 @@ typedef struct {
         struct {   /* AAC Encoding Options */
             mfxU16       OutputFormat;
             mfxU16       StereoMode;
-            mfxU16       NoiseShapingModel;
             mfxU16       reserved2[61]; 
         };
     };
