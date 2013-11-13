@@ -205,6 +205,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(AnalyzeChroma,            OPT_TRI_STATE,  ""),
         HANDLE_HEVC_OPTION(SignBitHiding,            OPT_TRI_STATE,  ""),
         HANDLE_HEVC_OPTION(RDOQuant,                 OPT_TRI_STATE,  ""),
+        HANDLE_HEVC_OPTION(SAO,                      OPT_TRI_STATE,  ""),
         HANDLE_HEVC_OPTION(SplitThresholdStrengthCUIntra, OPT_UINT_16,    "0=disabled, 1-3"),
         HANDLE_HEVC_OPTION(SplitThresholdStrengthTUIntra, OPT_UINT_16,    "0=disabled, 1-3"),
         HANDLE_HEVC_OPTION(SplitThresholdStrengthCUInter, OPT_UINT_16,    "0=disabled, 1-3"),

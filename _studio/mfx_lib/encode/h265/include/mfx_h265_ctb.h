@@ -15,6 +15,7 @@
 
 #include "mfx_h265_optimization.h"
 #include "mfx_h265_dispatcher.h"
+#include "mfx_h265_sao_filter.h"
 
 using namespace MFX_HEVC_PP;
 
@@ -162,6 +163,7 @@ public:
     Ipp64f rd_lambda_inter_mv;
     H265Slice *cslice;
     Ipp8u depth_min;
+    SAOFilter m_saoFilter;
 
     inline bool  isIntra(Ipp32u part_idx)
     { return data[part_idx].pred_mode == MODE_INTRA; }
@@ -287,6 +289,16 @@ public:
         Ipp32u width, Ipp32u height, Ipp32u tr_idx, Ipp8u& code_dqp,
         Ipp8u split_flag_only = 0);
     template <class H265Bs>
+    void xEncodeSAO(
+        H265Bs *bs, 
+        Ipp32u abs_part_idx, 
+        Ipp32s depth, 
+        Ipp8u rd_mode, 
+        SaoCtuParam& saoBlkParam, 
+        bool leftMergeAvail, 
+        bool aboveMergeAvail );
+
+    template <class H265Bs>
     void xEncodeCU(H265Bs *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mode = 0 );
     template <class H265Bs>
     void encode_coeff(H265Bs *bs, Ipp32u abs_part_idx, Ipp32u depth, Ipp32u width, Ipp32u height, Ipp8u &code_dqp, Ipp8u split_flag_only = 0 );
@@ -345,6 +357,11 @@ public:
         Ipp32s tcOffset,
         Ipp32s betaOffset,
         Ipp32s dir);
+    // SAO
+    void EstimateCtuSao( 
+        H265BsFake *bs, 
+        SaoCtuParam* saoParam, 
+        SaoCtuParam* saoParam_TotalFrame );
 
     void FillSubPart(Ipp32s abs_part_idx, Ipp8u depth_cu, Ipp8u tr_idx,
         Ipp8u part_size, Ipp8u luma_dir, Ipp8u qp);

@@ -50,6 +50,7 @@ struct H265VideoParam {
 
     Ipp8u SBHFlag;  // Sign Bit Hiding
     Ipp8u RDOQFlag; // RDO Quantization
+    Ipp8u SAOFlag;  // Sample Adaptive Offset
     Ipp8u WPPFlag; // Wavefront
     Ipp32u num_threads;
 
@@ -127,6 +128,8 @@ public:
     Ipp32s m_frameCountEncoded;
     H265CU *cu;
 
+    // SAO!!!
+    std::vector<SaoCtuParam> m_saoParam;
     H265ProfileLevelSet m_profile_level;
     H265VidParameterSet m_vps;
     H265SeqParameterSet m_sps;
@@ -210,6 +213,7 @@ public:
     Ipp32u DetermineFrameType();
     mfxStatus EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *bs);
     mfxStatus DeblockThread(Ipp32s ithread);
+    mfxStatus ApplySAOThread(Ipp32s ithread);
     mfxStatus EncodeThread(Ipp32s ithread);
     mfxStatus MoveFromCPBToDPB();
     mfxStatus CleanDPB();

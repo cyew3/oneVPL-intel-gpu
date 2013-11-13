@@ -14,6 +14,7 @@
 #include "mfx_h265_ctb.h"
 #include "ipp.h"
 #include "mfx_h265_optimization.h"
+#include "mfx_h265_sao_filter.h"
 
 #include "vm_interlocked.h"
 #include "vm_sys_info.h"
@@ -141,6 +142,9 @@ mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxE
 
     pars->SBHFlag  = (opts_hevc->SignBitHiding == MFX_CODINGOPTION_ON);
     pars->RDOQFlag = (opts_hevc->RDOQuant == MFX_CODINGOPTION_ON);
+    // aya ================================================
+    pars->SAOFlag  = (opts_hevc->SAO == MFX_CODINGOPTION_ON);
+    // ====================================================
     pars->WPPFlag  = (opts_hevc->WPP == MFX_CODINGOPTION_ON) || (opts_hevc->WPP == MFX_CODINGOPTION_UNKNOWN && param->mfx.NumThread > 1);
     if (pars->WPPFlag) {
         pars->num_threads = param->mfx.NumThread;
@@ -330,6 +334,7 @@ mfxStatus H265Encoder::SetSPS()
     sps->max_transform_hierarchy_depth_inter = (Ipp8u)pars->QuadtreeTUMaxDepthInter;
 
     sps->amp_enabled_flag = pars->AMPFlag;
+    sps->sample_adaptive_offset_enabled_flag = pars->SAOFlag;
     sps->strong_intra_smoothing_enabled_flag = 1;
 
     InitShortTermRefPicSet();
@@ -694,6 +699,13 @@ mfxStatus H265Encoder::Init(mfxVideoH265InternalParam *param, mfxExtCodingOption
     ippsZero_8u((Ipp8u*)data_temp, sizeof(H265CUData) * data_temp_size * m_videoParam.num_threads);
 
     MFX_HEVC_PP::InitDispatcher();
+    // SAO
+    m_saoParam.resize(m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs);
+
+    for(Ipp32u idx = 0; idx < m_videoParam.num_threads; idx++)
+    {
+        cu[idx].m_saoFilter.Init(m_videoParam.Width, m_videoParam.Height, 1 << m_videoParam.Log2MaxCUSize, m_videoParam.MaxCUDepth);
+    }
     return sts;
 }
 
@@ -1424,6 +1436,57 @@ mfxStatus H265Encoder::DeblockThread(Ipp32s ithread) {
     return MFX_ERR_NONE;
 }
 
+
+mfxStatus H265Encoder::ApplySAOThread(Ipp32s ithread)
+{
+    Ipp8u* tmpBufferY = new Ipp8u[m_videoParam.Height * m_pReconstructFrame->pitch_luma];
+    mfxFrameData srcReconY;
+    srcReconY.Pitch = (mfxU16)m_pReconstructFrame->pitch_luma;
+    srcReconY.Y = tmpBufferY;
+
+    // copy from recon to srcrecon
+    IppiSize roiSize;
+    roiSize.width = m_videoParam.Width;
+    roiSize.height = m_videoParam.Height;
+
+    ippiCopy_8u_C1R(
+        m_pReconstructFrame->y,
+        m_pReconstructFrame->pitch_luma,
+        srcReconY.Y,
+        srcReconY.Pitch,
+        roiSize);
+
+    mfxFrameData dstReconY;
+    dstReconY.Y = m_pReconstructFrame->y;
+    dstReconY.Pitch = (mfxU16)m_pReconstructFrame->pitch_luma;
+
+    SAOFilter saoFilter;
+
+    Ipp8u* p_srcStart = srcReconY.Y;
+    Ipp8u* p_dstStart = dstReconY.Y;
+    int numCTU = m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs;
+
+    saoFilter.Init(m_videoParam.Width, m_videoParam.Height, m_videoParam.MaxCUSize, 0);
+    for(int ctu = 0; ctu < numCTU; ctu++)
+    {
+        // update #1
+        int ctb_pelx           = ( ctu % m_videoParam.PicWidthInCtbs ) * m_videoParam.MaxCUSize;
+        int ctb_pely           = ( ctu / m_videoParam.PicWidthInCtbs ) * m_videoParam.MaxCUSize;
+        // update offset
+        srcReconY.Y = p_srcStart + ctb_pelx + ctb_pely * m_pReconstructFrame->pitch_luma;
+        dstReconY.Y = p_dstStart + ctb_pelx + ctb_pely * m_pReconstructFrame->pitch_luma;            
+
+        saoFilter.ApplyCtuSao(&srcReconY, &dstReconY, m_saoParam[ctu], ctu);
+    }
+
+    saoFilter.Close();
+    delete [] tmpBufferY;
+
+    return MFX_ERR_NONE;
+
+} // mfxStatus H265Encoder::ApplySAOThread(Ipp32s ithread)
+
+
 mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
     Ipp32u ctb_row;
     H265VideoParam *pars = &m_videoParam;
@@ -1504,8 +1567,35 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
             cu[ithread].EncAndRecLuma(0, 0, 0, nz, NULL);
             cu[ithread].EncAndRecChroma(0, 0, 0, nz, NULL);
 
-            if (!(m_slices[curr_slice].slice_deblocking_filter_disabled_flag) && pars->num_threads == 1)
+            if (!(m_slices[curr_slice].slice_deblocking_filter_disabled_flag) && (pars->num_threads == 1 || m_sps.sample_adaptive_offset_enabled_flag))
+            {
                 cu[ithread].Deblock();
+                if(m_sps.sample_adaptive_offset_enabled_flag)
+                {
+                    // RDO
+                    /*Ipp8u* ctx_sao_1 = CTX(&bs[ithread],SAO_MERGE_FLAG_HEVC);
+                    Ipp8u* ctx_sao_2 = CTX(&bs[ithread],SAO_TYPE_IDX_HEVC);
+
+                    Ipp8u* ctx_sao_1_fake = CTX(&bsf[ithread],SAO_MERGE_FLAG_HEVC);
+                    Ipp8u* ctx_sao_2_fake = CTX(&bsf[ithread],SAO_TYPE_IDX_HEVC);
+
+                    VM_ASSERT(ctx_sao_1[0] == ctx_sao_1_fake[0]);
+                    VM_ASSERT(ctx_sao_2[0] == ctx_sao_2_fake[0]);*/
+                    
+                    cu[ithread].EstimateCtuSao( &bsf[ithread], &m_saoParam[ctb_addr], ctb_addr > 0 ? &m_saoParam[0] : NULL );
+                    
+                    bool leftMergeAvail = false;
+                    bool aboveMergeAvail= false;
+
+                    leftMergeAvail  = (ctb_addr % pars->PicWidthInCtbs != 0);
+                    aboveMergeAvail = (ctb_addr >= pars->PicWidthInCtbs );
+
+                    //if( cu[ithread].cslice->slice_sao_luma_flag )
+                    {
+                        cu[ithread].xEncodeSAO(&bs[ithread], 0, 0, 0, m_saoParam[ctb_addr], leftMergeAvail, aboveMergeAvail);
+                    }
+                }
+            }
 
             cu[ithread].xEncodeCU(&bs[ithread], 0, 0, 0);
 
@@ -1801,11 +1891,17 @@ recode:
     if (m_videoParam.num_threads > 1)
         mfx_video_encode_h265_ptr->ParallelRegionEnd();
 
-    if (!m_pps.pps_deblocking_filter_disabled_flag && m_videoParam.num_threads > 1) {
+    if (!m_pps.pps_deblocking_filter_disabled_flag && m_videoParam.num_threads > 1 && !m_sps.sample_adaptive_offset_enabled_flag) {
         m_incRow = 0;
         mfx_video_encode_h265_ptr->ParallelRegionStart(m_videoParam.num_threads - 1, PARALLEL_REGION_DEBLOCKING);
         DeblockThread(0);
         mfx_video_encode_h265_ptr->ParallelRegionEnd();
+    }
+
+    //SAO
+    if( m_sps.sample_adaptive_offset_enabled_flag ) // aya is it enough???    
+    {
+        ApplySAOThread(0);
     }
     
     for (Ipp8u curr_slice = 0; curr_slice < m_videoParam.NumSlices; curr_slice++) {

@@ -917,6 +917,14 @@ void h265_code_sao_uvlc(H265Bs *bs, Ipp32u code)
     bs->EncodeBinsEP_CABAC(code, 5);
 }
 
+
+template <class H265Bs>
+static inline
+void h265_code_sao_uflc(H265Bs *bs, Ipp32u code, Ipp32u length)
+{
+    bs->EncodeBinsEP_CABAC(code, length);
+}
+
 template <class H265Bs>
 static
 void h265_code_sao_merge(H265Bs *bs, Ipp32u code)
@@ -928,7 +936,6 @@ template <class H265Bs>
 static
 void h265_code_sao_type_idx(H265Bs *bs, Ipp32u code)
 {
-    Ipp32u i;
     if (code == 0)
     {
         bs->EncodeSingleBin_CABAC(CTX(bs,SAO_TYPE_IDX_HEVC),0);
@@ -936,13 +943,12 @@ void h265_code_sao_type_idx(H265Bs *bs, Ipp32u code)
     else
     {
         bs->EncodeSingleBin_CABAC(CTX(bs,SAO_TYPE_IDX_HEVC),1);
-        for (i = 0; i < code-1; i++)
         {
-            bs->EncodeSingleBin_CABAC(CTX(bs,SAO_TYPE_IDX_HEVC)+1,1);
-        }
-        bs->EncodeSingleBin_CABAC(CTX(bs,SAO_TYPE_IDX_HEVC)+1,0);
+            bs->EncodeBinEP_CABAC( code == 1 ? 0 : 1 );
+        } 
     }
-}
+
+} // void h265_code_sao_type_idx(H265Bs *bs, Ipp32u code)
 
 
 template <class H265Bs>
@@ -1367,9 +1373,174 @@ void H265CU::xEncodeCU(H265Bs *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_m
     //  finishCU(pCU,abs_part_idx,depth);
 }
 
+// ========================================================
+// SAO
+// ========================================================
+
+template <class H265Bs>
+void h265_code_sao_ctb_offset_param(H265Bs *bs, int compIdx, SaoOffsetParam& ctbParam, bool sliceEnabled)
+{
+    Ipp32u code;
+    if(!sliceEnabled)
+    {
+        // aya!!!
+        //VM_ASSERT(ctbParam.mode_idx == SAO_MODE_OFF);
+        return;
+    }
+
+    //type
+    if(compIdx == SAO_Y || compIdx == SAO_Cb)
+    {
+        if(ctbParam.mode_idx == SAO_MODE_OFF)
+        {
+            code =0;
+        }
+        else if(ctbParam.type_idx == SAO_TYPE_BO) //BO
+        {
+            code = 1;
+        }
+        else
+        {
+            VM_ASSERT(ctbParam.type_idx < SAO_TYPE_START_BO); //EO
+            code = 2;
+        }    
+        h265_code_sao_type_idx(bs, code);
+    }
+
+    if(ctbParam.mode_idx == SAO_MODE_ON)
+    {
+        int numClasses = (ctbParam.type_idx == SAO_TYPE_BO)?4:NUM_SAO_EO_CLASSES; 
+        int offset[4];
+        int k=0;
+        for(int i=0; i< numClasses; i++)
+        {
+            if(ctbParam.type_idx != SAO_TYPE_BO && i == SAO_CLASS_EO_PLAIN)
+            {
+                continue;
+            }
+            int classIdx = (ctbParam.type_idx == SAO_TYPE_BO)?(  (ctbParam.typeAuxInfo+i)% NUM_SAO_BO_CLASSES   ):i;
+            offset[k] = ctbParam.offset[classIdx];
+            k++;
+        }
+
+        for(int i=0; i< 4; i++)
+        {
+
+            code = (Ipp32u)( offset[i] < 0) ? (-offset[i]) : (offset[i]);
+            h265_code_sao_max_uvlc (bs,  code, SAO_MAX_OFFSET_QVAL);
+        }
+
+
+        if(ctbParam.type_idx == SAO_TYPE_BO)
+        {
+            for(int i=0; i< 4; i++)
+            {
+                if(offset[i] != 0)
+                {
+                    h265_code_sao_sign(bs,  (offset[i] < 0) ? 1 : 0);
+                }
+            }
+
+            h265_code_sao_uflc(bs, ctbParam.typeAuxInfo, NUM_SAO_BO_CLASSES_LOG2);
+        }
+        else //EO
+        {
+            if(compIdx == SAO_Y || compIdx == SAO_Cb)
+            {
+                VM_ASSERT(ctbParam.type_idx - SAO_TYPE_START_EO >=0);
+                h265_code_sao_uflc(bs, ctbParam.type_idx - SAO_TYPE_EO_0, NUM_SAO_EO_TYPES_LOG2);
+            }
+        }
+    }
+
+} // Void h265_code_sao_ctb_offset_param(Int compIdx, SaoOffsetParam& ctbParam, Bool sliceEnabled)
+
+
+template <class H265Bs>
+void h265_code_sao_ctb_param(
+    H265Bs *bs,
+    SaoCtuParam& saoBlkParam,
+    bool* sliceEnabled,
+    bool leftMergeAvail,
+    bool aboveMergeAvail,
+    bool onlyEstMergeInfo)
+{
+    bool isLeftMerge = false;
+    bool isAboveMerge= false;
+    Ipp32u code = 0;    
+
+    if(leftMergeAvail)
+    {
+        isLeftMerge = ((saoBlkParam[SAO_Y].mode_idx == SAO_MODE_MERGE) && (saoBlkParam[SAO_Y].type_idx == SAO_MERGE_LEFT));
+        code = isLeftMerge ? 1 : 0;
+        h265_code_sao_merge(bs, code);
+    }
+
+    if( aboveMergeAvail && !isLeftMerge)
+    {
+        isAboveMerge = ((saoBlkParam[SAO_Y].mode_idx == SAO_MODE_MERGE) && (saoBlkParam[SAO_Y].type_idx == SAO_MERGE_ABOVE)); 
+        code = isAboveMerge ? 1 : 0;
+        h265_code_sao_merge(bs, code);
+    }
+
+    if(onlyEstMergeInfo)
+    {
+        return; //only for RDO
+    }
+
+    if(!isLeftMerge && !isAboveMerge) //not merge mode
+    {
+        for(int compIdx=0; compIdx < 1; compIdx++)
+        {
+            h265_code_sao_ctb_offset_param(bs, compIdx, saoBlkParam[compIdx], sliceEnabled[compIdx]);
+        }
+    }
+
+} // void h265_code_sao_ctb_param( ... )
+
+
+template <class H265Bs>
+void H265CU::xEncodeSAO(
+    H265Bs *bs, 
+    Ipp32u abs_part_idx, 
+    Ipp32s depth, 
+    Ipp8u rd_mode, 
+    SaoCtuParam& saoBlkParam, 
+    bool leftMergeAvail, 
+    bool aboveMergeAvail)
+{
+    bool sliceEnabled[NUM_SAO_COMPONENTS] = {false, false, false};
+    bool onlyEstMergeInfo = false;    
+
+    if( cslice->slice_sao_luma_flag )
+    {
+        sliceEnabled[SAO_Y] = true;
+    }
+    if( cslice->slice_sao_chroma_flag )
+    {
+        sliceEnabled[SAO_Cb] = sliceEnabled[SAO_Cr] = true;
+    }
+
+    h265_code_sao_ctb_param(
+        bs,
+        saoBlkParam,
+        sliceEnabled,
+        leftMergeAvail,
+        aboveMergeAvail,
+        onlyEstMergeInfo);
+
+} // template <class H265Bs> void xEncodeSAO( ... )
+
+template
+void H265CU::xEncodeSAO(H265BsReal *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mode, SaoCtuParam& blkParam, bool leftMergeAvail, bool aboveMergeAvail );
+template
+void H265CU::xEncodeSAO(H265BsFake *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mode, SaoCtuParam& blkParam, bool leftMergeAvail, bool aboveMergeAvail );
+
+
 template
 void H265CU::xEncodeCU(H265BsReal *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mode );
 template
 void H265CU::xEncodeCU(H265BsFake *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mode );
 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE
+/* EOF */
