@@ -827,8 +827,7 @@ DEF_STRUCT_TRACE(mfxAudioInfoMFX){
         }
     }else if(MFX_CODEC_AAC == p.CodecId){
         os << PUT_PAR(OutputFormat)
-           << PUT_PAR(StereoMode)
-           << PUT_PAR(NoiseShapingModel);
+           << PUT_PAR(StereoMode);
     }
 
     os  << print_param.padding << '}';

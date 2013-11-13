@@ -105,18 +105,7 @@ mfxStatus AudioENCODEAAC::Init(mfxAudioParam *par)
         return MFX_ERR_UNSUPPORTED;
     }
 
-    switch(par->mfx.NoiseShapingModel)  
-    {
-    case MFX_AUDIO_AAC_NOISE_MODEL_SIMPLE:
-        params.ns_mode = 0;
-        break;
-    case MFX_AUDIO_AAC_NOISE_MODEL_ADVANCED:
-        params.ns_mode = 1;
-        break;
-
-    default:
-        return MFX_ERR_UNSUPPORTED;
-    }
+    params.ns_mode = 1;
 
     switch(par->mfx.CodecProfile)  
     {
@@ -585,24 +574,6 @@ mfxStatus MFX_AAC_Encoder_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfx
             sts = MFX_ERR_UNSUPPORTED;
         }
 
-        mfxU32 noiseShapingModel = in->mfx.NoiseShapingModel;
-        if (noiseShapingModel == MFX_AUDIO_AAC_NOISE_MODEL_SIMPLE || 
-            noiseShapingModel == MFX_AUDIO_AAC_NOISE_MODEL_ADVANCED 
-            )
-        {
-            out->mfx.NoiseShapingModel = in->mfx.NoiseShapingModel;
-        }
-        else
-        {
-            if(noiseShapingModel  == 0)
-            {
-                out->mfx.NoiseShapingModel = MFX_AUDIO_AAC_PS_ENABLE_UR;
-            }
-            else
-            {
-                sts = MFX_ERR_UNSUPPORTED;
-            }
-        }
         if (in->mfx.BitPerSample != 16 && in->mfx.BitPerSample != 0) {
             sts = MFX_ERR_UNSUPPORTED;
         } else {
