@@ -93,6 +93,11 @@ DECL_STRUCT_TRACE(mfxExtEncoderResetOption);
 DECL_STRUCT_TRACE(mfxExtAVCEncodedFrameInfo);
 #endif //#if ((MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 7))
 
+#if ((MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 8))
+DECL_STRUCT_TRACE(mfxExtVPPComposite);
+DECL_STRUCT_TRACE(mfxVPPCompInputStream);
+#endif //#if ((MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 8))
+
 DECL_STRUCT_TRACE(mfxExtAvcTemporalLayers);
 DECL_STRUCT_TRACE(mfxExtCodingOptionSPSPPS);
 DECL_STRUCT_TRACE(mfxExtVideoSignalInfo);

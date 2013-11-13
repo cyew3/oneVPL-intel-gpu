@@ -322,6 +322,9 @@ DEF_STRUCT_TRACE(mfxExtBuffer){
         PRINT_BUF(MFX_EXTBUFF_CODING_OPTION_SPSPPS      , mfxExtCodingOptionSPSPPS      );
         PRINT_BUF(MFX_EXTBUFF_VIDEO_SIGNAL_INFO         , mfxExtVideoSignalInfo         );
 #endif
+#if ((MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 8))
+        PRINT_BUF(MFX_EXTBUFF_VPP_COMPOSITE             , mfxExtVPPComposite            );
+#endif
         PRINT_BUF(MFX_EXTBUFF_AVC_REFLIST_CTRL          , mfxExtAVCRefListCtrl          );
         default: break;
     }
@@ -1003,6 +1006,33 @@ DEF_STRUCT_TRACE(mfxExtVideoSignalInfo){
         << print_param.padding << '}';
     return os;
 }
+#if ((MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 8))
+DEF_STRUCT_TRACE(mfxVPPCompInputStream){
+    os  << "{\n"
+        << PUT_PAR(DstX)
+        << PUT_PAR(DstY)
+        << PUT_PAR(DstW)
+        << PUT_PAR(DstH)
+        << PUT_ARR(reserved2, 24)
+        << print_param.padding << '}';
+    return os;
+}
+
+DEF_STRUCT_TRACE(mfxExtVPPComposite){
+    os  << "{\n"
+        << PUT_4CC(Header.BufferId)
+        << PUT_PAR(Header.BufferSz)
+        << PUT_PAR(Y)
+        << PUT_PAR(U)
+        << PUT_PAR(V)
+        << PUT_ARR(reserved1, 24)
+        << PUT_PAR(NumInputStream);
+    for(mfxU32 i = 0; i < p.NumInputStream; i++)
+        os << PUT_PAR(InputStream[i]);
+    os  << print_param.padding << '}';
+    return os;
+}
+#endif
 
 #if (defined(_WIN32) || defined(_WIN64))
 
