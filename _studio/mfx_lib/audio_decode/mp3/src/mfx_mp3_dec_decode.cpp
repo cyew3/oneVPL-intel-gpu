@@ -79,7 +79,7 @@ mfxStatus AudioDECODEMP3::Init(mfxAudioParam *par)
     UMC::MP3DecoderParams params;
     params.mc_lfe_filter_off = 1;
 
-    params.synchro_mode = 1;
+    params.synchro_mode = 0;
 
     mInData.SetDataSize(0);
     mOutData.SetDataSize(0);
