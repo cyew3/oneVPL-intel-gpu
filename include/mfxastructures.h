@@ -85,12 +85,6 @@ enum {
     MFX_AUDIO_AAC_SBR_UNDEF=     2
 };
 
-enum
-{
-    MFX_AUDIO_MP3_SYNC_MODE_BASE     = 1,
-    MFX_AUDIO_MP3_SYNC_MODE_ADVANCED=  2
-};
-
 /*AAC header type*/
 enum{
     MFX_AUDIO_AAC_ADTS=            1,
@@ -134,9 +128,6 @@ typedef struct {
             mfxU16       Layer;
             mfxU16       AACHeaderDataSize;
             mfxU8        AACHeaderData[64];
-        };
-        struct {   /* MP3 Decoding Options */
-            mfxU16       SynchroMode;
         };
         struct {   /* AAC Encoding Options */
             mfxU16       OutputFormat;
