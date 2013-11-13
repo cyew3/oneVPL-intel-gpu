@@ -825,6 +825,30 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     m_height = height;
     m_caps = caps;
     m_auxDevice = auxDevice;
+
+    // Below is WA for limited SKUs (on which AVC encoding is supported for WiDi only)
+    // On limited platforms driver reports that AVC encoder GUID is supported (IsAccelerationServiceExist() returns OK)
+    // but after it driver fails to create AVC encoding acceleration service.
+    // To check AVC-E support in Query MSDK should try to create AVC acceleration service here
+    // WA start
+    if (isTemporal)
+    {
+        DXVADDI_VIDEODESC desc;
+        Zero(desc);
+        desc.SampleWidth = m_width;
+        desc.SampleHeight = m_height;
+        desc.Format = D3DDDIFMT_NV12;
+
+        ENCODE_CREATEDEVICE encodeCreateDevice;
+        Zero(encodeCreateDevice);
+        encodeCreateDevice.pVideoDesc = &desc;
+        encodeCreateDevice.CodingFunction = m_forcedCodingFunction ? m_forcedCodingFunction : ENCODE_ENC_PAK;
+        encodeCreateDevice.EncryptionMode = DXVA_NoEncrypt;
+
+        hr = m_auxDevice->Execute(AUXDEV_CREATE_ACCEL_SERVICE, m_guid, encodeCreateDevice);
+        MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+    }
+    // WA end
     return MFX_ERR_NONE;
 }
 

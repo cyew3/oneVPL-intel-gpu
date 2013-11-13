@@ -1051,7 +1051,8 @@ mfxStatus ImplementationMvc::Init(mfxVideoParam *par)
 // MVC BD {
     for (mfxU32 i = 0; i < m_numEncs; i++) {
         sts = m_ddi[i]->CreateAccelerationService(m_video);
-        MFX_CHECK_STS(sts);
+        if (sts != MFX_ERR_NONE)
+            return MFX_WRN_PARTIAL_ACCELERATION;
     }
 // MVC BD }
 

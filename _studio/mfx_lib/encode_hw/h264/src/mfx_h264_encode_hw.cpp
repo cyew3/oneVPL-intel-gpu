@@ -680,13 +680,15 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         mfxU16 storedRateControlMethod = m_video.mfx.RateControlMethod;
         m_video.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
         sts = m_ddi->CreateAccelerationService(m_video);
-        MFX_CHECK_STS(sts);
+        if (sts != MFX_ERR_NONE)
+            return MFX_WRN_PARTIAL_ACCELERATION;
         m_video.mfx.RateControlMethod = storedRateControlMethod;
     }
     else
     {
         sts = m_ddi->CreateAccelerationService(m_video);
-        MFX_CHECK_STS(sts);
+        if (sts != MFX_ERR_NONE)
+            return MFX_WRN_PARTIAL_ACCELERATION;
     }
 
     mfxFrameAllocRequest request = { { 0 } };
