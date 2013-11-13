@@ -109,7 +109,7 @@ mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxE
     pars->QuadtreeTULog2MinSize = opts_hevc->QuadtreeTULog2MinSize; // 2;
     pars->QuadtreeTUMaxDepthIntra = opts_hevc->QuadtreeTUMaxDepthIntra; // 4;
     pars->QuadtreeTUMaxDepthInter = opts_hevc->QuadtreeTUMaxDepthInter; // 4;
-    pars->AMPFlag = 1;
+    pars->AMPFlag = opts_hevc->AMP == MFX_CODINGOPTION_ON;
     pars->TMVPFlag = 0;
     pars->QPI = (Ipp8s)param->mfx.QPI;
     pars->QPP = (Ipp8s)param->mfx.QPP;

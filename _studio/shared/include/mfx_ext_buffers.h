@@ -183,6 +183,7 @@ typedef struct {
     mfxU16      IntraNumCand2_6;
     mfxU16      WPP;
     mfxU16      GPB;
+    mfxU16      AMP;
 } mfxExtCodingOptionHEVC;
 
 #endif // __MFX_EXT_BUFFERS_H__

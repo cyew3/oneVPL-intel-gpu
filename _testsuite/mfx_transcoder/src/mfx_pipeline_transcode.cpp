@@ -221,6 +221,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(IntraNumCand2_6,          OPT_UINT_16,    "1-35: 64x14 stage2"),
         HANDLE_HEVC_OPTION(WPP,                      OPT_TRI_STATE,  "Wavefront Parallel Processing"),
         HANDLE_HEVC_OPTION(GPB,                      OPT_TRI_STATE,  "Generalized P B"),
+        HANDLE_HEVC_OPTION(AMP,                      OPT_TRI_STATE,  ""),
 
         // mfxExtCodingOption2
         HANDLE_EXT_OPTION2(IntRefType,             OPT_UINT_16,   ""),
