@@ -319,7 +319,7 @@ Status H264BRC::Init(BaseCodecParams *params, Ipp32s enableRecode)
   if (level_ind < 0)
     return UMC_ERR_INVALID_PARAMS;
 
-  if (level_ind >= H264_LIMIT_TABLE_LEVEL_31 && level_ind <= H264_LIMIT_TABLE_LEVEL_4)
+  if (level_ind >= H264_LIMIT_TABLE_LEVEL_31 && level_ind <= H264_LIMIT_TABLE_LEVEL_42)
     bitsPerMB = 96.; // 384 / minCR; minCR = 4
   else
     bitsPerMB = 192.; // minCR = 2
@@ -531,7 +531,7 @@ Status H264BRC::Reset(BaseCodecParams *params, Ipp32s enableRecode)
 
   Ipp64f bitsPerMB;
   Ipp32s maxMBPS;
-  if (level_ind >= H264_LIMIT_TABLE_LEVEL_31 && level_ind <= H264_LIMIT_TABLE_LEVEL_4)
+  if (level_ind >= H264_LIMIT_TABLE_LEVEL_31 && level_ind <= H264_LIMIT_TABLE_LEVEL_42)
     bitsPerMB = 96.; // 384 / minCR; minCR = 4
   else
     bitsPerMB = 192.; // minCR = 2

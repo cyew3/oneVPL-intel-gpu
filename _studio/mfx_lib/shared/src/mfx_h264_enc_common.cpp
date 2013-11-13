@@ -1415,6 +1415,11 @@ mfxU32 GetRefFrameNum( mfxU32 currFrameNum, mfxU16 numLayers)
     return currFrameNum - pow2;
 }
 
+mfxU8 GetMinCR(mfxU32 level)
+{
+    return level >= 31 && level <= 42 ? 4 : 2; // AVCHD spec requires MinCR = 4 for levels  4.1, 4.2
+}
+
 // Sets only actual parameters
 mfxStatus ConvertVideoParamBack_H264enc(mfxVideoInternalParam *parMFX, const UMC_H264_ENCODER::H264CoreEncoder_8u16s *enc)
 {
@@ -1517,7 +1522,7 @@ mfxStatus ConvertVideoParamBack_H264enc(mfxVideoInternalParam *parMFX, const UMC
 
         if (parMFX->calcParam.BufferSizeInKB == 0) {
             // return BufferSizeInKB depending on MinCR (table A-1)
-            Ipp8u levelMultiplier = parMFX->mfx.CodecLevel > 30 && parMFX->mfx.CodecLevel < 41 ? 1 : 2; // MinCR == 4 for levels 3.1, 3.2, 4.0, MinCR == 2 for other levels
+            Ipp8u levelMultiplier = 4 / GetMinCR(parMFX->mfx.CodecLevel);
             Ipp64u minBufSizeKB = (3 * levelMultiplier * (parMFX->mfx.FrameInfo.Width * parMFX->mfx.FrameInfo.Height >> 3) + 999) / 1000; // width * height * 1.5 / MinCR
             parMFX->calcParam.BufferSizeInKB = (mfxU32)minBufSizeKB;
         }
@@ -2109,7 +2114,7 @@ mfxStatus CorrectProfileLevel_H264enc(mfxVideoInternalParam *parMFX, bool queryM
             parMFX->calcParam.BufferSizeInKB = (parMFX->mfx.FrameInfo.Width * parMFX->mfx.FrameInfo.Height * 4 + 999) / 1000;
         else if (opts && opts->NalHrdConformance == MFX_CODINGOPTION_OFF && parMFX->calcParam.BufferSizeInKB) {
             // return BufferSizeInKB depending on MinCR (table A-1)
-            Ipp8u levelMultiplier = parMFX->mfx.CodecLevel > 30 && parMFX->mfx.CodecLevel < 41 ? 1 : 2; // MinCR == 4 for levels 3.1, 3.2, 4.0, MinCR == 2 for other levels
+            Ipp8u levelMultiplier = 4 / GetMinCR(parMFX->mfx.CodecLevel);
             Ipp64u minBufSizeKB = (3 * levelMultiplier * (parMFX->mfx.FrameInfo.Width * parMFX->mfx.FrameInfo.Height >> 3) + 999) / 1000; // width * height * 1.5 / MinCR
             if (parMFX->calcParam.BufferSizeInKB < minBufSizeKB)
                 parMFX->calcParam.BufferSizeInKB = (mfxU32)minBufSizeKB;
@@ -2386,7 +2391,7 @@ mfxStatus CheckProfileLevelLimits_H264enc(mfxVideoInternalParam *parMFX, bool qu
             parMFX->calcParam.BufferSizeInKB = (parMFX->mfx.FrameInfo.Width * parMFX->mfx.FrameInfo.Height * 4 + 999) / 1000;
         else if (opts && opts->NalHrdConformance == MFX_CODINGOPTION_OFF && parMFX->calcParam.BufferSizeInKB) {
             // return BufferSizeInKB depending on MinCR (table A-1)
-            Ipp8u levelMultiplier = parMFX->mfx.CodecLevel > 30 && parMFX->mfx.CodecLevel < 41 ? 1 : 2; // MinCR == 4 for levels 3.1, 3.2, 4.0, MinCR == 2 for other levels
+            Ipp8u levelMultiplier = 4 / GetMinCR(parMFX->mfx.CodecLevel);
             Ipp64u minBufSizeKB = (3 * levelMultiplier * (parMFX->mfx.FrameInfo.Width * parMFX->mfx.FrameInfo.Height >> 3) + 999) / 1000; // width * height * 1.5 / MinCR
             if (parMFX->calcParam.BufferSizeInKB < minBufSizeKB)
                 parMFX->calcParam.BufferSizeInKB = (mfxU32)minBufSizeKB;

@@ -541,7 +541,7 @@ namespace
 
     mfxU32 GetMinCr(mfxU32 level)
     {
-        return level >= MFX_LEVEL_AVC_31 && level <= MFX_LEVEL_AVC_4 ? 4 : 2;
+        return level >= MFX_LEVEL_AVC_31 && level <= MFX_LEVEL_AVC_42 ? 4 : 2; // AVCHD spec requires MinCR = 4 for levels  4.1, 4.2
     }
 
     mfxU32 GetFirstMaxFrameSize(mfxVideoParam const & par)
