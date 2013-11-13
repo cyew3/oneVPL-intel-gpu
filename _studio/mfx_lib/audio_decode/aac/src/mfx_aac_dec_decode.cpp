@@ -83,18 +83,7 @@ mfxStatus AudioDECODEAAC::Init(mfxAudioParam *par)
     m_frame.DataOffset = 0;
 
     UMC::AACDecoderParams params;
-
-    switch(par->mfx.ModeDecodeHEAACprofile)
-    {
-    case MFX_AUDIO_AAC_HE_HQ_MODE:
-        params.ModeDecodeHEAACprofile = HEAAC_HQ_MODE;
-        break;
-    case MFX_AUDIO_AAC_HE_LP_MODE:
-        params.ModeDecodeHEAACprofile = HEAAC_LP_MODE;
-        break;
-    default:
-        return MFX_ERR_UNSUPPORTED;
-    }
+    params.ModeDecodeHEAACprofile = HEAAC_HQ_MODE;
 
     switch(par->mfx.ModeDwnsmplHEAACprofile)  {
 case MFX_AUDIO_AAC_HE_DWNSMPL_OFF:
@@ -694,7 +683,6 @@ mfxStatus MFX_AAC_Utility::FillAudioParam( mfxAudioParam *in, mfxAudioParam *out
     out->mfx.FlagPSSupportLev = in->mfx.FlagPSSupportLev;
     out->mfx.FlagSBRSupportLev = in->mfx.FlagSBRSupportLev;
     out->mfx.Layer = in->mfx.Layer;
-    out->mfx.ModeDecodeHEAACprofile = in->mfx.ModeDecodeHEAACprofile;
     out->mfx.ModeDwnsmplHEAACprofile = in->mfx.ModeDwnsmplHEAACprofile;
     return MFX_ERR_NONE;
 }
@@ -753,25 +741,6 @@ mfxStatus MFX_AAC_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfxAudioPar
         case MFX_LEVEL_UNKNOWN:
             out->mfx.CodecLevel = in->mfx.CodecLevel;
             break;
-        }
-
-        mfxU32 modeDecodeHEAACprofile = in->mfx.ModeDecodeHEAACprofile;
-        if (modeDecodeHEAACprofile == MFX_AUDIO_AAC_HE_HQ_MODE || 
-            modeDecodeHEAACprofile == MFX_AUDIO_AAC_HE_LP_MODE 
-            )
-        {
-            out->mfx.ModeDecodeHEAACprofile = in->mfx.ModeDecodeHEAACprofile;
-        }
-        else
-        {
-            if(modeDecodeHEAACprofile == 0)
-            {
-                out->mfx.ModeDecodeHEAACprofile = MFX_AUDIO_AAC_HE_HQ_MODE;
-            }
-            else
-            {
-                sts = MFX_ERR_UNSUPPORTED;
-            }
         }
 
         mfxU32 modeDwnsmplHEAACprofile = in->mfx.ModeDwnsmplHEAACprofile;
