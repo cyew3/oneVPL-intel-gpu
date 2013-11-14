@@ -11,6 +11,7 @@
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #include "mfx_h265_defs.h"
+#include "mfx_h265_sao_filter.h"
 
 template <class H265Bs>
 static
@@ -1401,7 +1402,7 @@ void h265_code_sao_ctb_offset_param(H265Bs *bs, int compIdx, SaoOffsetParam& ctb
         }
         else
         {
-            VM_ASSERT(ctbParam.type_idx < SAO_TYPE_START_BO); //EO
+            VM_ASSERT(ctbParam.type_idx < SAO_TYPE_BO); //EO
             code = 2;
         }    
         h265_code_sao_type_idx(bs, code);
@@ -1447,7 +1448,7 @@ void h265_code_sao_ctb_offset_param(H265Bs *bs, int compIdx, SaoOffsetParam& ctb
         {
             if(compIdx == SAO_Y || compIdx == SAO_Cb)
             {
-                VM_ASSERT(ctbParam.type_idx - SAO_TYPE_START_EO >=0);
+                VM_ASSERT(ctbParam.type_idx - SAO_TYPE_EO_0 >=0);
                 h265_code_sao_uflc(bs, ctbParam.type_idx - SAO_TYPE_EO_0, NUM_SAO_EO_TYPES_LOG2);
             }
         }
