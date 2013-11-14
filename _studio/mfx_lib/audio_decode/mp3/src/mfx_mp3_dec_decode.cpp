@@ -308,6 +308,10 @@ mfxStatus AudioDECODEMP3::MP3ECODERoutine(void *pState, void *pParam,
             if (!pTask->out->DataLength) {
                 pTask->out->DataLength = (mfxU32) obj.mOutData.GetDataSize();
             }
+            else
+            {
+                pTask->out->DataLength = (mfxU32) obj.mOutData.GetDataSize();
+            }
         }
 
         // set data size 0 to the input buffer 
