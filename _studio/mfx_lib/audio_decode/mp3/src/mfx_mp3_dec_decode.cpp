@@ -298,7 +298,7 @@ mfxStatus AudioDECODEMP3::MP3ECODERoutine(void *pState, void *pParam,
         obj.mInData.SetDataSize(obj.m_frame.DataLength);
 
         //datalen computed in syncpart should equal to decoded datalen
-        obj.mOutData.SetBufferPointer( static_cast<Ipp8u *>(pTask->out->Data), pTask->out->DataLength ? pTask->out->DataLength : pTask->out->MaxLength);
+        obj.mOutData.SetBufferPointer( static_cast<Ipp8u *>(pTask->out->Data), pTask->out->MaxLength);
         //obj.mInData.GetDataSize() value may be equivalent only encoded frame size, or, in case free format stream, 3 bytes
         //because in this case we must save encoded frame size + 3 bytes (syncword - 1) 
         if (0 != obj.mInData.GetDataSize() && obj.mInData.GetDataSize() != 3) {
