@@ -2136,11 +2136,52 @@ mfxStatus ConfigureExecuteParams(
 
         switch(curFilterId)
         {
+            case MFX_EXTBUFF_VPP_DEINTERLACING:
+            {
+                // see below
+                break;
+            }
+
             case MFX_EXTBUFF_VPP_DI:
             {
-                if(caps.uSimpleDI)
+                mfxI32 deinterlacingMode = 0;
+
+                // look for user defined deinterlacing mode
+                for (mfxU32 i = 0; i < videoParam.NumExtParam; i++)
                 {
-                    executeParams.iDeinterlacingAlgorithm = 1;
+                    if (videoParam.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_DEINTERLACING)
+                    {
+                        mfxExtVPPDeinterlacing* extDI = (mfxExtVPPDeinterlacing*) videoParam.ExtParam[i];
+                        deinterlacingMode = extDI->Mode;
+
+                        if( extDI->Mode != MFX_DEINTERLACING_ADVANCED && extDI->Mode != MFX_DEINTERLACING_BOB )
+                        {
+                            return MFX_ERR_INVALID_VIDEO_PARAM;
+                        }
+                        break;
+                    }
+                }
+
+                if (caps.uAdvancedDI)
+                {
+                    if (0 == deinterlacingMode)
+                    {
+                        deinterlacingMode = MFX_DEINTERLACING_ADVANCED; // default
+                    }
+
+                    executeParams.iDeinterlacingAlgorithm = deinterlacingMode;
+                }
+                else if (caps.uSimpleDI)
+                {
+                    if(MFX_DEINTERLACING_ADVANCED != deinterlacingMode)
+                    {
+                        executeParams.iDeinterlacingAlgorithm = MFX_DEINTERLACING_BOB;
+                    }
+                    else
+                    {
+                        // cannot set MFX_DEINTERLACING_ADVANCED
+                        return MFX_ERR_INVALID_VIDEO_PARAM;
+                    }
                 }
                 else
                 {
@@ -2156,7 +2197,7 @@ mfxStatus ConfigureExecuteParams(
                 if(caps.uSimpleDI || caps.uAdvancedDI)
                 {
                     config.m_bMode30i60pEnable = true;
-                    executeParams.iDeinterlacingAlgorithm = 1;
+                    executeParams.iDeinterlacingAlgorithm = MFX_DEINTERLACING_BOB;
                     config.m_surfCount[VPP_IN]  = IPP_MAX(2, config.m_surfCount[VPP_IN]);
                     config.m_surfCount[VPP_OUT] = IPP_MAX(2, config.m_surfCount[VPP_OUT]);
                 }
@@ -2169,7 +2210,6 @@ mfxStatus ConfigureExecuteParams(
                 break;
             }
 
-        
             case MFX_EXTBUFF_VPP_DENOISE:
             {
                 if (caps.uDenoiseFilter)
@@ -2340,7 +2380,7 @@ mfxStatus ConfigureExecuteParams(
                 inDNRatio  = (mfxF64) videoParam.vpp.In.FrameRateExtD / videoParam.vpp.In.FrameRateExtN;
                 outDNRatio = (mfxF64) videoParam.vpp.Out.FrameRateExtD / videoParam.vpp.Out.FrameRateExtN;
                 
-                executeParams.iDeinterlacingAlgorithm = 1;
+                executeParams.iDeinterlacingAlgorithm = MFX_DEINTERLACING_BOB;
                 config.m_surfCount[VPP_IN]  = IPP_MAX(2, config.m_surfCount[VPP_IN]);
                 config.m_surfCount[VPP_OUT] = IPP_MAX(2, config.m_surfCount[VPP_OUT]);
 

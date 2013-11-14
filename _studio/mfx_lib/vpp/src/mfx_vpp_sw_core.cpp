@@ -866,6 +866,7 @@ mfxStatus VideoVPPSW::GetVideoParam(mfxVideoParam *par)
                     case MFX_EXTBUFF_VPP_DI_30i60p:
                     case MFX_EXTBUFF_VPP_ITC:
                     case MFX_EXTBUFF_VPP_CSC_OUT_RGB4:
+                    case MFX_EXTBUFF_VPP_DEINTERLACING:
                     {
                         continue;
                     }
@@ -982,13 +983,12 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
         }
         else
         {
-        // check for IS and AFRC
-
+            // check for IS and AFRC
             out->vpp.In.FourCC         = MFX_FOURCC_NV12;
             out->vpp.Out.FourCC        = MFX_FOURCC_NV12;
             out->vpp.In.FrameRateExtN  = 30;
             out->vpp.Out.FrameRateExtN = 60;
-        mfxSts = CheckPlatformLimitations(core, *out, true);
+            mfxSts = CheckPlatformLimitations(core, *out, true);
         }
         return mfxSts;
     }
@@ -1595,6 +1595,10 @@ mfxStatus VideoVPPSW::Reset(mfxVideoParam *par)
                     filtParam.vpp.Out.FrameRateExtD = par->vpp.Out.FrameRateExtD;
                     filtParam.vpp.Out.FrameRateExtN = par->vpp.Out.FrameRateExtN;
                     break;
+                }
+            case MFX_EXTBUFF_VPP_DEINTERLACING:
+                {
+                    return MFX_ERR_UNSUPPORTED;
                 }
 
             default: // DN, SA, PA, DTL, GAMUT

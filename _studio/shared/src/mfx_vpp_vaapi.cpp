@@ -303,16 +303,18 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         if (pParams->iDeinterlacingAlgorithm)
         {
             VAProcFilterParameterBufferDeinterlacing deint;
-            deint.type                   = VAProcFilterDeinterlacing;
+            deint.type      = VAProcFilterDeinterlacing;
             //WA for VPG driver. Need to rewrite it with caps usage when driver begins to return a correct list of supported DI algorithms
 #ifndef MFX_VA_ANDROID
-            //deint.algorithm              = pParams->iDeinterlacingAlgorithm == 1 ? VAProcDeinterlacingBob : VAProcDeinterlacingMotionAdaptive;
-            /*
-             * Per agreement with VPG in 16.3 release
-             * default de-interlacing type should be
-             * "VAProcDeinterlacingMotionAdaptive".
-             * */
-            deint.algorithm              = VAProcDeinterlacingMotionAdaptive;
+            if (MFX_DEINTERLACING_BOB == pParams->iDeinterlacingAlgorithm)
+            {
+                deint.algorithm = VAProcDeinterlacingBob;
+            }
+            else
+            {
+                deint.algorithm = VAProcDeinterlacingMotionAdaptive;
+            }
+
             mfxDrvSurface* pRefSurf_frameInfo = &(pParams->pRefSurfaces[0]);
             switch (pRefSurf_frameInfo->frameInfo.PicStruct)
             {
