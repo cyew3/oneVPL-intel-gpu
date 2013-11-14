@@ -105,6 +105,7 @@ struct sInputParams
     sOwnFrameInfo frameInfo[2];// [0] - in, [1] - out
 
     /* Video Enhancement Algorithms */
+    sDIParam      deinterlaceParam;
     sDenoiseParam denoiseParam;
     sDetailParam  detailParam;
     sProcAmpParam procampParam;
@@ -349,6 +350,7 @@ struct sAppResources
     mfxExtVPPDetail     detailConfig;
     mfxExtVPPDenoise    denoiseConfig;
     mfxExtVPPFrameRateConversion    frcConfig;
+    mfxExtVPPDeinterlacing deinterlaceConfig;
 
     // MSDK 3.0
     //  mfxExtVPPGamutMapping gamutConfig;

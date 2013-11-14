@@ -76,7 +76,6 @@ typedef struct
 typedef struct
 {    
     mfxU16  factor;
-
     FilterConfig mode;
 
 } sDenoiseParam;
@@ -84,7 +83,6 @@ typedef struct
 typedef struct
 {    
     mfxU16  factor;
-
     FilterConfig mode;
 
 } sDetailParam;
@@ -92,11 +90,16 @@ typedef struct
 typedef struct
 {
     mfxU32       algorithm;
-
     FilterConfig mode;
 
 } sFrameRateConversionParam;
 
+typedef struct
+{
+    mfxU32 algorithm;
+    FilterConfig mode;
+
+} sDIParam;
 
 //------------------------------------------
 // MSDK 3.0 (re-priority)

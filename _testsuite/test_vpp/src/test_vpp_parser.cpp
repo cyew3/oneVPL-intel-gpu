@@ -58,6 +58,11 @@ void vppPrintHelp(vm_char *strAppName, vm_char *strErrorMessage)
     vm_string_printf(VM_STRING("                        1 - progressive (default)\n\n")); 
 
     vm_string_printf(VM_STRING("   Video Enhancement Algorithms\n"));
+
+    vm_string_printf(VM_STRING("   [-di_mode (mode)] - set type of deinterlace algorithm\n"));
+    vm_string_printf(VM_STRING("                        2 - advanced or motion adaptive (default)\n"));
+    vm_string_printf(VM_STRING("                        1 - simple or BOB\n\n"));
+
     vm_string_printf(VM_STRING("   [-deinterlace (type)] - enable deinterlace algorithm (alternative way: -spic 0 -dpic 1) \n"));
     vm_string_printf(VM_STRING("                         type is tff (default) or bff \n"));
 
@@ -405,6 +410,21 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
                     if(0 == vm_string_strcmp(strInput[i+1], VM_STRING("bff")))
                     {
                         pParams->frameInfo[VPP_OUT].PicStruct = MFX_PICSTRUCT_FIELD_BFF;
+                        i++;
+                    }
+                }
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-di_mode")))
+            {
+                pParams->deinterlaceParam.mode = VPP_FILTER_ENABLED_DEFAULT;
+
+                if( i+1 < nArgNum )
+                {
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    if ( ioStatus > 0 )
+                    {
+                        pParams->deinterlaceParam.algorithm = (mfxU16)readData;
+                        pParams->deinterlaceParam.mode   = VPP_FILTER_ENABLED_CONFIGURED;
                         i++;
                     }
                 }
