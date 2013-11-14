@@ -182,11 +182,7 @@ Ipp32s vm_string_findnext(vm_findptr handle, vm_finddata_t* fileinfo);
 #if !defined(_WIN32) && !defined(_WIN64)
 typedef int error_t;
 
-#if defined(__GNUC__)
-static __attribute__((always_inline))
-#else
 static inline
-#endif
 error_t memcpy_s(void* pDst, size_t nDstSize, const void* pSrc, size_t nCount)
 {
     if (pDst && pSrc && (nDstSize >= nCount))

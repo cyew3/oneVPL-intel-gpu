@@ -339,11 +339,13 @@ Status MFXVC1VideoDecoder::ProcessPrevFrame(VC1FrameDescriptor *pCurrDescriptor,
     }
     return umcRes;
 }
+
 bool MFXVC1VideoDecoder::CanFillOneMoreTask()
 {
     //return (m_pStore->GetProcFramesNumber() < (m_iMaxFramesInProcessing));
     return false;
 }
+
 void MFXVC1VideoDecoder::GetDecodeStat(mfxDecodeStat *stat)
 {
     stat->NumCachedFrame = m_iMaxFramesInProcessing;
@@ -352,16 +354,15 @@ void MFXVC1VideoDecoder::GetDecodeStat(mfxDecodeStat *stat)
     mfxU32 NumShiftFrames = (1 == m_iThreadDecoderNum)?1:m_iThreadDecoderNum-1;
     stat->NumFrame = (mfxU32)((m_lFrameCount > m_iMaxFramesInProcessing)?(m_lFrameCount - NumShiftFrames):m_lFrameCount);
 }
+
 void MFXVC1VideoDecoder::SetFrameOrder(mfx_UMC_FrameAllocator* pFrameAlloc, mfxVideoParam* par, bool isLast, VC1TSDescriptor tsd, bool isSamePolar)
 {
-    mfxFrameSurface1 surface = {0};
+    mfxFrameSurface1 surface = { };
     mfxFrameSurface1 *pSurface;
     UMC::VC1FrameDescriptor *pCurrDescriptor = 0;
     mfxI32 idx;
     pCurrDescriptor = m_pStore->GetLastDS();
-
-    
-
+ 
     if (0xFFFFFFFE == m_frameOrder)
         m_frameOrder = 0;
 
@@ -994,13 +995,13 @@ mfxStatus MFXVideoDECODEVC1::Close(void)
         delete m_frame_constructor;
         m_frame_constructor = 0;
     }
-    if (m_RBufID != -1)
+    if ((int)m_RBufID != -1)
     {
         m_MemoryAllocator.Unlock(m_RBufID);
         m_MemoryAllocator.Free(m_RBufID);
         m_RBufID = (UMC::MemID)-1;
     }
-    if (m_stCodesID != -1)
+    if ((int)m_stCodesID != -1)
     {
         m_MemoryAllocator.Unlock(m_stCodesID);
         m_MemoryAllocator.Free(m_stCodesID);
@@ -2878,7 +2879,7 @@ mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs,
 
     mfxStatus mfxSts = DecodeFrameCheck(bs, surface_work, surface_out);
     if (MFX_ERR_NONE == mfxSts ||
-        MFX_ERR_MORE_DATA_RUN_TASK == mfxSts) // It can be useful to run threads right after first frame receive
+        (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK == mfxSts) // It can be useful to run threads right after first frame receive
     {
         AsyncSurface *pAsyncSurface = new AsyncSurface;
         pAsyncSurface->surface_work = GetOriginalSurface(surface_work);
@@ -2891,7 +2892,7 @@ mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs,
         pEntryPoint->pState = this;
         pEntryPoint->requiredNumThreads = m_par.mfx.NumThread;
         pEntryPoint->pParam = pAsyncSurface;
-        pEntryPoint->pRoutineName = "DecodeVC1";
+        pEntryPoint->pRoutineName = (char *)"DecodeVC1";
 
         if (MFX_ERR_NONE == mfxSts)
         {
