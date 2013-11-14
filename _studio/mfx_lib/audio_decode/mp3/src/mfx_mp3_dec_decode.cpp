@@ -305,13 +305,7 @@ mfxStatus AudioDECODEMP3::MP3ECODERoutine(void *pState, void *pParam,
             UMC::Status sts = obj.m_pMP3AudioDecoder.get()->GetFrame(&obj.mInData, &obj.mOutData);
             MFX_CHECK_UMC_STS(sts);
             //TODO: disable WA for decoding first frame
-            if (!pTask->out->DataLength) {
-                pTask->out->DataLength = (mfxU32) obj.mOutData.GetDataSize();
-            }
-            else
-            {
-                pTask->out->DataLength = (mfxU32) obj.mOutData.GetDataSize();
-            }
+            pTask->out->DataLength = (mfxU32) obj.mOutData.GetDataSize();
         }
 
         // set data size 0 to the input buffer 
