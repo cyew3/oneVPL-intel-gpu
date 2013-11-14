@@ -94,7 +94,8 @@ Status ASFSplitter::FillAudioInfo(Ipp32u nTrack)
     {
       MediaData *pDecSpecInfo = new MediaData(pAudioSpecData->codecSpecDataSize);
       UMC_CHECK_PTR(pDecSpecInfo)
-      memcpy(pDecSpecInfo->GetDataPointer(), pAudioSpecData->pCodecSpecData, pAudioSpecData->codecSpecDataSize);
+      memcpy_s(pDecSpecInfo->GetDataPointer(), pAudioSpecData->codecSpecDataSize,
+               pAudioSpecData->pCodecSpecData, pAudioSpecData->codecSpecDataSize);
       pDecSpecInfo->SetDataSize(pAudioSpecData->codecSpecDataSize);
       pDecSpecInfo->SetTime(0, 0);
       m_pInfo->m_ppTrackInfo[nTrack]->m_pDecSpecInfo = pDecSpecInfo;
@@ -145,7 +146,7 @@ Status ASFSplitter::FillVideoInfo(Ipp32u nTrack)
             shift = 1;
             len -= shift;
         }
-        memcpy(pDecSpecInfo->GetDataPointer(), pVideoSpecData->FormatData.pCodecSpecData + shift, len);
+        memcpy_s(pDecSpecInfo->GetDataPointer(), len, pVideoSpecData->FormatData.pCodecSpecData + shift, len);
         pDecSpecInfo->SetDataSize(len);
         pDecSpecInfo->SetTime(0, 0);
         m_pInfo->m_ppTrackInfo[nTrack]->m_pDecSpecInfo = pDecSpecInfo;
