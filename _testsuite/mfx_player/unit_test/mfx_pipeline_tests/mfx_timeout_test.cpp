@@ -17,7 +17,7 @@ File Name: .h
 #if defined(DEBUG) || defined (_DEBUG)
 #define MAX_SYNC_WAIT      300000u // 5 min
 #else
-#define MAX_SYNC_WAIT      15000u // 15 sec
+#define MAX_SYNC_WAIT      60000u // 60 sec
 #endif
 
 

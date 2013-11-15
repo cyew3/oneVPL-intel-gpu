@@ -59,6 +59,18 @@ File Name: .h
     TestMethod5<ret_type, mfxTypeTrait<arg_type1>::store_type, mfxTypeTrait<arg_type2>::store_type, mfxTypeTrait<arg_type3>::store_type, mfxTypeTrait<arg_type4>::store_type, mfxTypeTrait<arg_type5>::store_type> TEST_METHOD_NAME(method_name);\
     ret_type method_name(mfxTypeTrait<arg_type1>::value_type _0, mfxTypeTrait<arg_type2>::value_type _1, mfxTypeTrait<arg_type3>::value_type _2, mfxTypeTrait<arg_type4>::value_type _3, mfxTypeTrait<arg_type5>::value_type _4)
 
+
+#define DECLARE_MOCK_METHOD0(ret_type, method_name) \
+    DECLARE_TEST_METHOD0(ret_type, method_name){\
+    TEST_METHOD_NAME(method_name).RegisterEvent(TEST_METHOD_TYPE(method_name)(ret_type()));\
+    TEST_METHOD_TYPE(method_name) ret_params;\
+    if (!TEST_METHOD_NAME(method_name).GetReturn(ret_params)){\
+        return ret_type();\
+    }\
+    return ret_params.ret_val;\
+    }
+
+
 #define DECLARE_MOCK_METHOD2(ret_type, method_name, arg_type1, arg_type2) \
     DECLARE_TEST_METHOD2(ret_type, method_name, arg_type1, arg_type2){\
         TEST_METHOD_NAME(method_name).RegisterEvent(TEST_METHOD_TYPE(method_name)(ret_type(), _0, _1));\
@@ -66,7 +78,6 @@ File Name: .h
         if (!TEST_METHOD_NAME(method_name).GetReturn(ret_params)){\
             return ret_type();\
         }\
-        mfxTypeTrait<arg_type1>::assign()
         mfxAssign(_0, ret_params.value0);\
         mfxAssign(_1, ret_params.value1);\
         return ret_params.ret_val;\

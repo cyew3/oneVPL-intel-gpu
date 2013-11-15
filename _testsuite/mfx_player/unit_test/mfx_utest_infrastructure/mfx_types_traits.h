@@ -120,21 +120,26 @@ mfxCustomTrait<store_type, value_type, mfxDynamicCastConverter<store_type, value
 
 template <class A, class B>
 struct mfxAssign_t {
-public:
-    static void operator()( A & a, const B b) {
+    void operator()( A & a, B b) const{
         a = b;
     }
 };
 
 template <class A, class B>
+struct mfxAssign_t<A*, B*> {
+    void operator ()( A *& a, B* b) const{
+        *a = *b;
+    }
+};
+
+template <class A, class B>
 struct mfxAssign_t<A*, B> {
-public:
-    static void operator ()( A *& a, const B b) {
+    void operator ()( A *& a, B b) const{
         *a = b;
     }
 };
 
 template <class A, class B>
-void mfxAssign(A *& a, const B b) {
-    mfxAssign_t<A,B>::operator ()(a,b);
+void mfxAssign(A a, B b) {
+    mfxAssign_t<A,B>().operator()(a,b);
 }

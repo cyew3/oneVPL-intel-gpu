@@ -43,26 +43,21 @@ public:
         }
         return params.ret_val;
     }
-    DECLARE_TEST_METHOD0(mfxStatus, PluginClose)
-    {
-        TEST_METHOD_TYPE(PluginClose) params;
-
-        _PluginClose.RegisterEvent(params);
-        if (!_PluginClose.GetReturn(params))
-        {
-            return MFX_ERR_NONE;
-        }
-        return params.ret_val;
-    }
-    DECLARE_TEST_METHOD1(mfxStatus, GetPluginParam, mfxPluginParam*)
+    DECLARE_MOCK_METHOD0(mfxStatus, PluginClose);
+    DECLARE_TEST_METHOD1(mfxStatus, GetPluginParam, MAKE_DYNAMIC_TRAIT(mfxPluginParam, mfxPluginParam*))
     {
         TEST_METHOD_TYPE(GetPluginParam) params;
 
-        params.value0 = _0;
+        if (_0) {
+            params.value0 = *_0;
+        }
         _GetPluginParam.RegisterEvent(params);
         if (!_GetPluginParam.GetReturn(params))
         {
             return MFX_ERR_NONE;
+        }
+        if (_0) {
+            *_0 = params.value0;
         }
         return params.ret_val;
     }
@@ -110,17 +105,9 @@ public:
         TEST_METHOD_TYPE(Release) params;
         _Release.RegisterEvent(params);
     }
-    DECLARE_TEST_METHOD0(mfxStatus, Close)
-    {
-        TEST_METHOD_TYPE(Close) params;
 
-        _Close.RegisterEvent(params);
-        if (!_Close.GetReturn(params))
-        {
-            return MFX_ERR_NONE;
-        }
-        return params.ret_val;
-    }
+    DECLARE_MOCK_METHOD0(mfxStatus, Close);
+
     DECLARE_TEST_METHOD2(mfxStatus, SetAuxParams, void* , int )
     {
         TEST_METHOD_TYPE(SetAuxParams) params;
