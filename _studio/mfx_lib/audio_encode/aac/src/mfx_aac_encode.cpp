@@ -501,16 +501,16 @@ mfxStatus MFX_AAC_Encoder_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfx
 
 bool AudioENCODEAAC::AudioFramesCollector::UpdateBuffer() {
     mGuard.Lock();
-    int CurrentFrameLength = 0;
+    size_t CurrentFrameLength = 0;
     int nPopFront = 0;
     for (std::list<mfxAudioFrame*>::iterator it = list.begin() ; it != list.end() ; ++it ) {
-        int nFreeBytesInBuffer = (int)buffer.size() - CurrentFrameLength;
+        size_t nFreeBytesInBuffer = buffer.size() - CurrentFrameLength;
         if (!(*it)) {
             //padding for the last frame
             memset(&buffer.front() + CurrentFrameLength, 0, buffer.size() - CurrentFrameLength);
             break;
         }
-        int nFrameSizeWithoutOffset = (*it)->DataLength - offset;
+        size_t nFrameSizeWithoutOffset = (*it)->DataLength - offset;
         if (nFrameSizeWithoutOffset <= nFreeBytesInBuffer) {
             memcpy(&buffer.front() + CurrentFrameLength, (*it)->Data + offset, nFrameSizeWithoutOffset);
             offset = 0;
