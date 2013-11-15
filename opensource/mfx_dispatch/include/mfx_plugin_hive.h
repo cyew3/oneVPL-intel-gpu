@@ -29,15 +29,21 @@ File Name: mfx_plugin_hive.h
 \* ****************************************************************************** */
 
 #pragma once
-#include <list>
-#include <string>
-#include <string.h>
 #include "mfx_dispatcher_defs.h"
 #include "mfxplugin.h"
 #include "mfx_win_reg_key.h"
+#include "mfx_vector.h"
 
 
 namespace MFX {
+
+    enum {
+        MAX_PLUGIN_PATH = 4096
+    };
+    
+    enum {
+        MAX_PLUGIN_NAME = 4096
+    };
 
     inline bool operator == (const mfxPluginUID &lhs, const mfxPluginUID & rhs) {
         return !memcmp(lhs.Data, rhs.Data, sizeof(mfxPluginUID));
@@ -51,23 +57,24 @@ namespace MFX {
         mfxU32  Type;
         mfxU32  CodecId;
         mfxPluginUID uid;
-        std::basic_string<msdk_disp_char> Path;
-        std::string Name;
+        msdk_disp_char sPath[MAX_PLUGIN_PATH];
+        char sName[MAX_PLUGIN_NAME];
         bool Default;
     };
 
     class MFXPluginHive  {
-        std::list<PluginDescriptionRecord> mRecords;
+        MFXVector<PluginDescriptionRecord> mRecords;
     public:
-        typedef std::list<PluginDescriptionRecord>::iterator iterator;
-        iterator begin() {
+        typedef MFXVector<PluginDescriptionRecord>::iterator iterator;
+        
+        iterator begin() const {
             return mRecords.begin();
         }
-        iterator end() {
+        iterator end() const {
             return mRecords.end();
         }
         void insert(iterator beg_iter, iterator end_iter) {
-            mRecords.insert(mRecords.end(), beg_iter, end_iter);
+            mRecords.insert(beg_iter, end_iter);
         }
         size_t size() {
             return mRecords.size();

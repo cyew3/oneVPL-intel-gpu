@@ -29,7 +29,6 @@ File Name: mfx_load_plugin.h
 \* ****************************************************************************** */
 
 #pragma once
-#include <list>
 #include "mfxplugin.h"
 #include "mfx_dispatcher_defs.h"
 #include "mfx_plugin_hive.h"
@@ -49,7 +48,7 @@ namespace MFX
         PluginModule();
         PluginModule(const msdk_disp_char * path);
         PluginModule(const PluginModule & that) ;
-        PluginModule & operator = (PluginModule & that);
+        PluginModule & operator = (const PluginModule & that);
         bool Create(mfxPluginUID guid, mfxPlugin&);
         ~PluginModule(void);
     };
@@ -68,7 +67,8 @@ namespace MFX
                 , plugin(plugin) {
             }
         };
-        std::list<FactoryRecord> mPlugins;
+        MFXVector<FactoryRecord> mPlugins;
+        mfxU32 nPlugins;
         mfxSession mSession;
     public:
         MFXPluginFactory(mfxSession session);

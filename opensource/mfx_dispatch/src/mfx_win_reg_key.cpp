@@ -184,6 +184,19 @@ bool WinRegKey::EnumKey(DWORD index, wchar_t *pValueName, LPDWORD pcchValueName)
 
 } // bool WinRegKey::EnumKey(DWORD index, wchar_t *pValueName, LPDWORD pcchValueName)
 
+bool WinRegKey::QueryInfo(LPDWORD lpcSubkeys)
+{
+    LONG lRes;
+
+    lRes = RegQueryInfoKeyW(m_hKey, NULL, 0, 0, lpcSubkeys, 0, 0, 0, 0, 0, 0, 0);
+    if (ERROR_SUCCESS != lRes) {
+        TRACE_WINREG_ERROR("RegQueryInfoKeyW()==0x%x\n", lRes);
+        return false;
+    }
+    return true;
+
+} //bool QueryInfo(LPDWORD lpcSubkeys);
+
 } // namespace MFX
 
 #endif // #if defined(_WIN32) || defined(_WIN64)

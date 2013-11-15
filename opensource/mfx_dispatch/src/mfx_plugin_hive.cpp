@@ -62,12 +62,24 @@ MFX::MFXPluginHive::MFXPluginHive( mfxU32 storageID /*= 0*/ )
     if (false == bRes) {
             return;
     }
-    
-    for(DWORD index = 0; ; index++) 
+    DWORD index = 0;
+    if (!regKey.QueryInfo(&index)) {
+        return;
+    }
+    try 
     {
+        mRecords.resize(index);
+    }
+    catch (...) {
+        TRACE_HIVE_ERROR("new PluginDescriptionRecord[%d] threw an exception: \n", index);
+        return;
+    }
+    
+    for(index = 0; ; index++) 
+    {
+        wchar_t   subKeyName[MFX_MAX_VALUE_NAME];
+        DWORD     subKeyNameSize = sizeof(subKeyName) / sizeof(subKeyName[0]);
         WinRegKey subKey;
-        wchar_t subKeyName[MFX_MAX_VALUE_NAME];
-        DWORD   subKeyNameSize = sizeof(subKeyName) / sizeof(subKeyName[0]);
 
         // query next value name
         bool enumRes = regKey.EnumKey(index, subKeyName, &subKeyNameSize);
@@ -104,18 +116,24 @@ MFX::MFXPluginHive::MFXPluginHive( mfxU32 storageID /*= 0*/ )
         }
         TRACE_HIVE_INFO("    %8S : "MFXGUIDTYPE()"\n", GUIDKeyName, MFXGUIDTOHEX(descriptionRecord.uid));
 
-        if (!subKey.Query(PathKeyName, descriptionRecord.Path)) 
+        mfxU32 nSize = sizeof(descriptionRecord.sPath)/sizeof(*descriptionRecord.sPath);
+        if (!subKey.Query(PathKeyName, descriptionRecord.sPath, nSize)) 
         {
             TRACE_HIVE_WRN("no value for : %S\n", PathKeyName);
             continue;
         }
-        TRACE_HIVE_INFO("    %8S : %S\n", PathKeyName, descriptionRecord.Path.c_str());
+        TRACE_HIVE_INFO("    %8S : %S\n", PathKeyName, descriptionRecord.sPath);
 
-        if (!subKey.Query(NameKeyName, descriptionRecord.Name)) 
+        msdk_disp_char sNameWchar[MAX_PLUGIN_PATH];
+        if (!subKey.Query(NameKeyName, sNameWchar,  nSize = sizeof(descriptionRecord.sName)/sizeof(*descriptionRecord.sName))) 
         {
             continue;
         }
-        TRACE_HIVE_INFO("    %8S : %s\n", NameKeyName, descriptionRecord.Name.c_str());
+        for (mfxU32 i =0;i<nSize;i++) 
+        {
+            descriptionRecord.sName[i] = (char)sNameWchar[i];
+        }
+        TRACE_HIVE_INFO("    %8S : %s\n", NameKeyName, descriptionRecord.sName);
 
         if (!subKey.Query(DefaultKeyName, descriptionRecord.Default)) 
         {
@@ -125,18 +143,12 @@ MFX::MFXPluginHive::MFXPluginHive( mfxU32 storageID /*= 0*/ )
         
         try 
         {
-            mRecords.push_back(descriptionRecord);
-        }
-        catch (std::exception &e) 
-        {
-            e;
-            TRACE_HIVE_ERROR("mRecords.push_back() - std::exception: %s\n", e.what());
+            mRecords[index] = descriptionRecord;
         }
         catch (...) {
-            TRACE_HIVE_ERROR("mRecords.push_back() - unknown exception: \n", 0);
+            TRACE_HIVE_ERROR("mRecords[%d] = descriptionRecord; - threw exception \n", index);
         }
     }
-
 } 
 
 #endif

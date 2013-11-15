@@ -63,8 +63,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				LinkLibraryDependencies="true"
-				AdditionalDependencies="libcpmtd.lib"
 				OutputFile="$(OutDir)\lib\$(ProjectName)_d.lib"
 			/>
 			<Tool
@@ -130,8 +128,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				LinkLibraryDependencies="true"
-				AdditionalDependencies="libcpmtd.lib"
 				OutputFile="$(OutDir)\lib\$(ProjectName)_d.lib"
 			/>
 			<Tool
@@ -197,9 +193,9 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				LinkLibraryDependencies="true"
-				AdditionalDependencies="libcpmt.lib"
 				OutputFile="$(OutDir)\lib\$(ProjectName).lib"
+				ModuleDefinitionFile=""
+				IgnoreAllDefaultLibraries="false"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -265,9 +261,8 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				LinkLibraryDependencies="true"
-				AdditionalDependencies="libcpmt.lib"
 				OutputFile="$(OutDir)\lib\$(ProjectName).lib"
+				ModuleDefinitionFile=""
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -509,6 +504,10 @@
 			</File>
 			<File
 				RelativePath=".\include\mfx_plugin_hive.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mfx_vector.h"
 				>
 			</File>
 			<File

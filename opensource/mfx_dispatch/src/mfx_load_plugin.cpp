@@ -31,8 +31,6 @@ File Name: mfx_load_plugin.h
 #include "mfx_load_plugin.h"
 #include "mfx_load_dll.h"
 #include "mfx_dispatcher_log.h"
-#include <algorithm>
-#include <functional>
 
 #define TRACE_PLUGIN_ERROR(str, ...) DISPATCHER_LOG_ERROR((("[PLUGIN]: "str), __VA_ARGS__))
 #define TRACE_PLUGIN_INFO(str, ...) DISPATCHER_LOG_INFO((("[PLUGIN]: "str), __VA_ARGS__))
@@ -52,7 +50,7 @@ MFX::PluginModule::PluginModule(const PluginModule & that)
 {
 }
 
-MFX::PluginModule & MFX::PluginModule::operator = (MFX::PluginModule & that) 
+MFX::PluginModule & MFX::PluginModule::operator = (const MFX::PluginModule & that) 
 {
     mHmodule = mfx_get_dll_handle(that.mPath.c_str());
     mCreatePluginPtr = that.mCreatePluginPtr;
@@ -267,7 +265,7 @@ bool MFX::MFXPluginFactory::VerifyCodecCommon( mfxVideoCodecPlugin & videoCodec 
 
 bool MFX::MFXPluginFactory::Create( PluginDescriptionRecord & rec) 
 {
-    PluginModule plgModule(rec.Path.c_str());
+    PluginModule plgModule(rec.sPath);
     mfxPlugin plg = {};
     mfxPluginParam plgParams;
     
@@ -306,7 +304,7 @@ MFX::MFXPluginFactory::MFXPluginFactory( mfxSession session )
 
 bool MFX::MFXPluginFactory::Destroy( const mfxPluginUID & uidToDestroy) 
 {
-    for (std::list<FactoryRecord >::iterator i = mPlugins.begin(); i!= mPlugins.end(); i++) 
+    for (MFXVector<FactoryRecord >::iterator i = mPlugins.begin(); i!= mPlugins.end(); i++) 
     {
         if (i->plgParams.PluginUID == uidToDestroy) 
         {
@@ -321,7 +319,7 @@ bool MFX::MFXPluginFactory::Destroy( const mfxPluginUID & uidToDestroy)
 
 void MFX::MFXPluginFactory::Close() 
 {
-    for (std::list<FactoryRecord >::iterator i = mPlugins.begin(); i!= mPlugins.end(); i++) 
+    for (MFXVector<FactoryRecord>::iterator i = mPlugins.begin(); i!= mPlugins.end(); i++) 
     {
         DestroyPlugin(*i);
     }
