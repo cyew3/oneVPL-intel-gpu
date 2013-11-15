@@ -235,17 +235,50 @@ mfxStatus AudioENCODEAAC::QueryIOSize(AudioCORE *core, mfxAudioParam *par, mfxAu
     return MFX_ERR_NONE;
 }
 
+mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxAudioFrame *aFrame, mfxBitstream *buffer_out)
+{
+    UMC::AutomaticUMCMutex guard(m_mGuard);
+    mfxStatus sts;
+
+    if (!m_isInit)
+        return MFX_ERR_NOT_INITIALIZED;
+
+    sts = aFrame ? CheckAudioFrame(aFrame) : MFX_ERR_NONE;
+    if (sts != MFX_ERR_NONE)
+        return sts;
+
+    if (aFrame)
+    { 
+        mfxAudioAllocRequest audioAllocRequest;
+        sts = QueryIOSize(m_core, &m_vPar, &audioAllocRequest);
+        MFX_CHECK_STS(sts);
+
+        if (buffer_out->MaxLength < audioAllocRequest.SuggestedOutputSize) {
+            sts = MFX_ERR_NOT_ENOUGH_BUFFER;
+        }
+    }
+
+    return sts;
+}
+
 mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxAudioFrame *aFrame,
                                            mfxBitstream *buffer_out,
                                            MFX_ENTRY_POINT *pEntryPoint)
 {    
-    mfxStatus mfxSts = m_divider->PutPair(std::pair<mfxAudioFrame*, mfxBitstream*>(aFrame, buffer_out));
+    mfxStatus mfxSts = EncodeFrameCheck(aFrame, buffer_out);
+    if (mfxSts)
+        return mfxSts;
+
+    mfxSts = m_divider->PutPair(std::pair<mfxAudioFrame*, mfxBitstream*>(aFrame, buffer_out));
 
     if ((MFX_ERR_NONE == mfxSts) || (MFX_ERR_MORE_BITSTREAM == mfxSts)) // It can be useful to run threads right after first frame receive
     {
         ThreadAudioEncodeTaskInfo * info = new ThreadAudioEncodeTaskInfo();
         info->out = buffer_out;
         info->in = aFrame;
+
+        buffer_out->TimeStamp = aFrame->TimeStamp;
+        buffer_out->DecodeTimeStamp = aFrame->TimeStamp;
         //finally queue task
         
         pEntryPoint->pRoutine = &AACENCODERoutine;
@@ -254,7 +287,6 @@ mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxAudioFrame *aFrame,
         pEntryPoint->requiredNumThreads = 1; // need only one thread
         pEntryPoint->pParam = info;
     }
-
     return mfxSts;
 }
 

@@ -58,10 +58,7 @@ public:
     virtual mfxStatus EncodeFrame(mfxAudioFrame *, mfxBitstream *) {
         return MFX_ERR_NONE;
     };
-    virtual mfxStatus EncodeFrameCheck(mfxAudioFrame *bs, mfxBitstream *buffer_out) {
-        bs; buffer_out;
-        return MFX_ERR_NONE;
-    }
+    virtual mfxStatus EncodeFrameCheck(mfxAudioFrame *bs, mfxBitstream *buffer_out);
     virtual mfxStatus EncodeFrameCheck(mfxAudioFrame *bs, mfxBitstream *buffer_out, MFX_ENTRY_POINT *pEntryPoint);
  
 
