@@ -101,6 +101,8 @@ mfxStatus MFXLibPlugin::PluginClose()
     if (m_session)
     {
         mfxRes = MFXVideoENCODE_Close(m_session);
+        if(MFX_ERR_NOT_INITIALIZED == mfxRes || mfxRes > MFX_ERR_NONE)
+            mfxRes = MFX_ERR_NONE;
         MFX_CHECK_STS(mfxRes);
         mfxRes = MFXInternalPseudoDisjoinSession(m_session);
         MFX_CHECK_STS(mfxRes);
