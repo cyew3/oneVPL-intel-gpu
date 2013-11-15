@@ -330,12 +330,19 @@ void GetCtuStatistics_Internal(
     Ipp16s signLineBuf1[64+1];
     Ipp16s signLineBuf2[64+1];
 
-    int x,y, startX, startY, endX, endY, edgeType, firstLineStartX, firstLineEndX;
+    int x, y, startX, startY, endX, endY;
+    int firstLineStartX, firstLineEndX;
+    int edgeType;
     Ipp16s signLeft, signRight, signDown;
     Ipp64s *diff, *count;
-    PixType *recLine, *orgLine;
+    
     int skipLinesR = g_skipLinesR[compIdx];
     int skipLinesB = g_skipLinesB[compIdx];
+
+    PixType *recLine, *orgLine;
+    PixType* recLineAbove;
+    PixType* recLineBelow;
+
 
     for(int typeIdx=0; typeIdx< NUM_SAO_BASE_TYPES; typeIdx++)
     {
@@ -359,10 +366,10 @@ void GetCtuStatistics_Internal(
 
                 for (y=0; y<endY; y++)
                 {
-                    signLeft = (Ipp16s)getSign(recLine[startX] - recLine[startX-1]);
+                    signLeft = getSign(recLine[startX] - recLine[startX-1]);
                     for (x=startX; x<endX; x++)
                     {
-                        signRight =  (Ipp16s)getSign(recLine[x] - recLine[x+1]);
+                        signRight =  getSign(recLine[x] - recLine[x+1]);
                         edgeType  =  signRight + signLeft;
                         signLeft  = -signRight;
 
@@ -379,11 +386,9 @@ void GetCtuStatistics_Internal(
             {
                 diff +=2;
                 count+=2;
-                Ipp16s *signUpLine = signLineBuf1;
-
-                startY = isAboveAvail ? 0 : 1;
                 endX   = width - skipLinesR;
 
+                startY = isAboveAvail ? 0 : 1;
                 endY   = height - skipLinesB;
                 if (!isAboveAvail)
                 {
@@ -391,20 +396,20 @@ void GetCtuStatistics_Internal(
                     orgLine += orgStride;
                 }
 
-                PixType* srcLineAbove = recLine - recStride;
-                for (x=0; x< endX; x++)
+                recLineAbove = recLine - recStride;
+                Ipp16s *signUpLine = signLineBuf1;
+                for (x=0; x< endX; x++) 
                 {
-                    signUpLine[x] = (Ipp16s)getSign(recLine[x] - srcLineAbove[x]);
+                    signUpLine[x] = getSign(recLine[x] - recLineAbove[x]);
                 }
-
-                PixType* srcLineBelow;
+                
                 for (y=startY; y<endY; y++)
                 {
-                    srcLineBelow = recLine + recStride;
+                    recLineBelow = recLine + recStride;
 
                     for (x=0; x<endX; x++)
                     {
-                        signDown  = (Ipp16s)getSign(recLine[x] - srcLineBelow[x]);
+                        signDown  = getSign(recLine[x] - recLineBelow[x]); 
                         edgeType  = signDown + signUpLine[x];
                         signUpLine[x]= -signDown;
 
@@ -421,30 +426,28 @@ void GetCtuStatistics_Internal(
             {
                 diff +=2;
                 count+=2;
-                Ipp16s *signUpLine, *signDownLine, *signTmpLine;
-
-                signUpLine  = signLineBuf1;
-                signDownLine= signLineBuf2;
-
                 startX = isLeftAvail ? 0 : 1 ;
                 endX   = width - skipLinesR;
                 endY   = height - skipLinesB;
 
                 //prepare 2nd line's upper sign
-                PixType* srcLineBelow = recLine + recStride;
+                Ipp16s *signUpLine, *signDownLine, *signTmpLine;
+                signUpLine  = signLineBuf1;
+                signDownLine= signLineBuf2;
+                recLineBelow = recLine + recStride;
                 for (x=startX; x<endX+1; x++)
                 {
-                    signUpLine[x] = (Ipp16s)getSign(srcLineBelow[x] - recLine[x-1]);
+                    signUpLine[x] = getSign(recLineBelow[x] - recLine[x-1]);
                 }
 
                 //1st line
-                PixType* srcLineAbove = recLine - recStride;
+                recLineAbove = recLine - recStride;
                 firstLineStartX = isAboveLeftAvail ? 0    : 1;
                 firstLineEndX   = isAboveAvail     ? endX : 1;
 
                 for(x=firstLineStartX; x<firstLineEndX; x++)
                 {
-                    edgeType = getSign(recLine[x] - srcLineAbove[x-1]) - signUpLine[x+1];
+                    edgeType = getSign(recLine[x] - recLineAbove[x-1]) - signUpLine[x+1];
                     diff [edgeType] += (orgLine[x] - recLine[x]);
                     count[edgeType] ++;
                 }
@@ -455,18 +458,18 @@ void GetCtuStatistics_Internal(
                 //middle lines
                 for (y=1; y<endY; y++)
                 {
-                    srcLineBelow = recLine + recStride;
+                    recLineBelow = recLine + recStride;
 
                     for (x=startX; x<endX; x++)
                     {
-                        signDown = (Ipp16s)getSign(recLine[x] - srcLineBelow[x+1]);
+                        signDown = getSign(recLine[x] - recLineBelow[x+1]);
                         edgeType = signDown + signUpLine[x];
                         diff [edgeType] += (orgLine[x] - recLine[x]);
                         count[edgeType] ++;
 
-                        signDownLine[x+1] = -signDown;
+                        signDownLine[x+1] = -signDown; 
                     }
-                    signDownLine[startX] = (Ipp16s)getSign(srcLineBelow[startX] - recLine[startX-1]);
+                    signDownLine[startX] = getSign(recLineBelow[startX] - recLine[startX-1]);
 
                     signTmpLine  = signUpLine;
                     signUpLine   = signDownLine;
@@ -482,23 +485,21 @@ void GetCtuStatistics_Internal(
             {
                 diff +=2;
                 count+=2;
-                Ipp16s *signUpLine = signLineBuf1+1;
-
-                startX = isLeftAvail ? 0 : 1;
-
-                endX   = width - skipLinesR;
-
                 endY   = height - skipLinesB;
 
+                startX = isLeftAvail ? 0 : 1;
+                endX   = width - skipLinesR;
+
                 //prepare 2nd line upper sign
-                PixType* srcLineBelow = recLine + recStride;
+                recLineBelow = recLine + recStride;
+                Ipp16s *signUpLine = signLineBuf1+1;
                 for (x=startX-1; x<endX; x++)
                 {
-                    signUpLine[x] = (Ipp16s)getSign(srcLineBelow[x] - recLine[x+1]);
+                    signUpLine[x] = getSign(recLineBelow[x] - recLine[x+1]);
                 }
 
                 //first line
-                PixType* recLineAbove = recLine - recStride;
+                recLineAbove = recLine - recStride;
 
                 firstLineStartX = isAboveAvail ? startX : endX;
                 firstLineEndX   = endX;
@@ -516,19 +517,19 @@ void GetCtuStatistics_Internal(
                 //middle lines
                 for (y=1; y<endY; y++)
                 {
-                    srcLineBelow = recLine + recStride;
+                    recLineBelow = recLine + recStride;
 
                     for(x=startX; x<endX; x++)
                     {
-                        signDown = (Ipp16s)getSign(recLine[x] - srcLineBelow[x-1]) ;
+                        signDown = getSign(recLine[x] - recLineBelow[x-1]) ;
                         edgeType = signDown + signUpLine[x];
 
                         diff [edgeType] += (orgLine[x] - recLine[x]);
                         count[edgeType] ++;
 
-                        signUpLine[x-1] = -signDown;
+                        signUpLine[x-1] = -signDown; 
                     }
-                    signUpLine[endX-1] = (Ipp16s)getSign(srcLineBelow[endX-1] - recLine[endX]);
+                    signUpLine[endX-1] = getSign(recLineBelow[endX-1] - recLine[endX]);
                     recLine  += recStride;
                     orgLine  += orgStride;
                 }
@@ -540,11 +541,11 @@ void GetCtuStatistics_Internal(
                 endX = width- skipLinesR;
                 endY = height- skipLinesB;
                 const int shiftBits = 3;
-                for (y=0; y< endY; y++)
+                for (y=0; y<endY; y++)
                 {
-                    for (x=0; x< endX; x++)
+                    for (x=0; x<endX; x++)
                     {
-                        int bandIdx= recLine[x] >> shiftBits;
+                        int bandIdx= recLine[x] >> shiftBits; 
                         diff [bandIdx] += (orgLine[x] - recLine[x]);
                         count[bandIdx]++;
                     }
