@@ -518,7 +518,7 @@ void H265CU::InitCU(H265VideoParam *_par, H265CUData *_data, H265CUData *_data_t
     y_src = _y_src + ctb_pelx + ctb_pely * pitch_src;
 
     // aya: may be used to provide performance gain for SAD calculation
-    /*{      
+    /*{
     IppiSize blkSize = {par->MaxCUSize, par->MaxCUSize};
     ippiCopy_8u_C1R(_y_src + ctb_pelx + ctb_pely * pitch_src, pitch_src, m_src_aligned_block, MAX_CU_SIZE, blkSize);
     }*/
@@ -1556,7 +1556,7 @@ Ipp32s H265CU::MVCost( H265MV MV[2], T_RefIdx curRefIdx[2], MVPInfo *pInfo, MVPI
 // abs_part_idx - for minimal TU
 Ipp32s H265CU::MatchingMetric_PU(PixType *pSrc, H265MEInfo* me_info, H265MV* MV, H265Frame *PicYUVRef) const
 {
-    Ipp32s cost = 0;    
+    Ipp32s cost = 0;
     Ipp32s refOffset = ctb_pelx + me_info->posx + (MV->mvx >> 2) + (ctb_pely + me_info->posy + (MV->mvy >> 2)) * PicYUVRef->pitch_luma;
     PixType *pRec = PicYUVRef->y + refOffset;
     Ipp32s recPitch = PicYUVRef->pitch_luma;
@@ -1567,14 +1567,14 @@ Ipp32s H265CU::MatchingMetric_PU(PixType *pSrc, H265MEInfo* me_info, H265MV* MV,
         ME_Interpolate(me_info, MV, PicYUVRef->y, PicYUVRef->pitch_luma, pred_buf_y, MAX_CU_SIZE);
         pRec = pred_buf_y;
         recPitch = MAX_CU_SIZE;
-        
+
         cost = MFX_HEVC_PP::h265_SAD_MxN_special_8u(pSrc, pRec, pitch_src, me_info->width, me_info->height);
     }
     else
     {
-        cost = MFX_HEVC_PP::h265_SAD_MxN_general_8u(pRec, recPitch, pSrc, pitch_src, me_info->width, me_info->height);        
-        //Ipp8u* pSrcAligned = (Ipp8u*)m_src_aligned_block + me_info->posx + me_info->posy * MAX_CU_SIZE;        
-        //cost = MFX_HEVC_PP::h265_SAD_MxN_special_8u(pRec, pSrcAligned, recPitch, me_info->width, me_info->height);      
+        cost = MFX_HEVC_PP::h265_SAD_MxN_general_8u(pRec, recPitch, pSrc, pitch_src, me_info->width, me_info->height);
+        //Ipp8u* pSrcAligned = (Ipp8u*)m_src_aligned_block + me_info->posx + me_info->posy * MAX_CU_SIZE;
+        //cost = MFX_HEVC_PP::h265_SAD_MxN_special_8u(pRec, pSrcAligned, recPitch, me_info->width, me_info->height);
     }
 
     return cost;
@@ -2314,7 +2314,7 @@ void H265CU::ME_PU(H265MEInfo* me_info)
             interp_idx_first = interp_idx_last = 0; // for MatchingMetricBipred_PU optimization
             me_info->cost_bidir = MatchingMetricBipred_PU(pSrc, me_info, PicYUVRefF->y, PicYUVRefF->pitch_luma, PicYUVRefB->y, PicYUVRefB->pitch_luma, me_info->MV) +
                 MVCost( me_info->MV, me_info->ref_idx, pInfo, mergeInfo);
-            
+
             // refine Bidir
             if (IPP_MIN(me_info->cost_1dir[0], me_info->cost_1dir[1]) * 9 > 8 * me_info->cost_bidir) {
                 bool changed;
@@ -2346,7 +2346,7 @@ void H265CU::ME_PU(H265MEInfo* me_info)
                 me_info->cost_bidir = cost2_best;
             }
 
-            
+
             if (me_info->cost_1dir[0] <= me_info->cost_1dir[1] && me_info->cost_1dir[0] <= me_info->cost_bidir) {
                 me_info->inter_dir = INTER_DIR_PRED_L0;
                 me_info->cost_inter = me_info->cost_1dir[0];
@@ -4083,7 +4083,7 @@ CostType H265CU::CalcCostSkip(Ipp32u abs_part_idx, Ipp8u depth)
     me_info.posx = (Ipp8u)((h265_scan_z2r[par->MaxCUDepth][abs_part_idx] & (par->NumMinTUInMaxCU - 1)) << par->QuadtreeTULog2MinSize);
     me_info.posy = (Ipp8u)((h265_scan_z2r[par->MaxCUDepth][abs_part_idx] >> par->MaxCUDepth) << par->QuadtreeTULog2MinSize);
     me_info.split_mode = PART_SIZE_2Nx2N;
-    
+
     data[abs_part_idx].mvp_num[0] = data[abs_part_idx].mvp_num[1] = 0;
     data[abs_part_idx].flags.skipped_flag = 1;
     data[abs_part_idx].flags.merge_flag = 1;
@@ -4142,7 +4142,7 @@ CostType H265CU::CalcCostSkip(Ipp32u abs_part_idx, Ipp8u depth)
                 H265Frame *PicYUVRef = cslice->GetRefFrame(dir, ref_idx[dir]);
                 cost_temp = MatchingMetric_PU(pSrc, &me_info, mv+dir, PicYUVRef); // approx MVcost
             }
-            
+
             if (cost_best > cost_temp) {
                 cost_best = cost_temp;
                 cand_best = i;
@@ -4162,7 +4162,7 @@ CostType H265CU::CalcCostSkip(Ipp32u abs_part_idx, Ipp8u depth)
     }
 
     if (cost_best < COST_MAX) {
-        for (Ipp32u i = 1; i < num_parts; i++) 
+        for (Ipp32u i = 1; i < num_parts; i++)
             data[abs_part_idx+i] = data[abs_part_idx];
     }
 

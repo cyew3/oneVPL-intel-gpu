@@ -46,7 +46,7 @@
 
 #define CHECK_EXTBUF_SIZE(ebuf, errcounter) if ((ebuf).Header.BufferSz != sizeof(ebuf)) {(errcounter) = (errcounter) + 1;}
 
-mfxExtCodingOptionHEVC hevc_tu_tab[8] = {               // CUS CUD 2TUS 2TUD  AnalyzeChroma         SignBitHiding          RDOQuant               SAO                   thrCU,TU,CUInter    5numCand1  5numCand2  WPP                       GPB                   AMP   
+mfxExtCodingOptionHEVC hevc_tu_tab[8] = {               // CUS CUD 2TUS 2TUD  AnalyzeChroma         SignBitHiding          RDOQuant               SAO                   thrCU,TU,CUInter    5numCand1  5numCand2  WPP                       GPB                   AMP
     {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_OFF,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF }, // tu default (==4)
     {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 6,  4, 5,2, 5,5,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,    1, 1, 1,         8,8,4,4,4, 4,4,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_ON , MFX_CODINGOPTION_ON  }, // tu 1
     {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_OFF,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF }, // tu 2  (==4)
@@ -1775,7 +1775,7 @@ mfxStatus MFXVideoENCODEH265::TaskCompleteProc(void *pState, void *pParam, mfxSt
 
 } // mfxStatus MFXVideoENCODEVP8::TaskCompleteProc(void *pState, void *pParam, mfxStatus taskRes)
 
-void MFXVideoENCODEH265::ParallelRegionStart(Ipp32s num_threads, Ipp32s region_selector) 
+void MFXVideoENCODEH265::ParallelRegionStart(Ipp32s num_threads, Ipp32s region_selector)
 {
     m_taskParams.parallel_region_selector = region_selector;
     m_taskParams.thread_number = 0;
@@ -1786,10 +1786,10 @@ void MFXVideoENCODEH265::ParallelRegionStart(Ipp32s num_threads, Ipp32s region_s
     // Signal scheduler that all busy threads should be unleashed
     m_core->INeedMoreThreadsInside(this);
 
-} // void MFXVideoENCODEVP8::ParallelRegionStart(threads_fun_type threads_fun, int num_threads, void *threads_data, int threads_data_size) 
+} // void MFXVideoENCODEVP8::ParallelRegionStart(threads_fun_type threads_fun, int num_threads, void *threads_data, int threads_data_size)
 
 
-void MFXVideoENCODEH265::ParallelRegionEnd() 
+void MFXVideoENCODEH265::ParallelRegionEnd()
 {
     vm_mutex_lock(&m_taskParams.parallel_region_end_lock);
     // Disable parallel task execution
@@ -1802,7 +1802,7 @@ void MFXVideoENCODEH265::ParallelRegionEnd()
         vm_event_wait(&m_taskParams.parallel_region_done);
     }
 
-} // void MFXVideoENCODEVP8::ParallelRegionEnd() 
+} // void MFXVideoENCODEVP8::ParallelRegionEnd()
 
 mfxFrameSurface1* MFXVideoENCODEH265::GetOriginalSurface(mfxFrameSurface1 *surface)
 {

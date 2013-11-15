@@ -276,7 +276,7 @@ void h265_quant_inv(const CoeffsType *qcoeffs,
     {
         add = 1 << (shift - 1);
         Ipp32s scale = h265_quant_table_inv[qp_rem] << qp6;
-        
+
         MFX_HEVC_PP::h265_QuantInv_16s(qcoeffs, coeffs, len, scale, add, shift);
     }
 }

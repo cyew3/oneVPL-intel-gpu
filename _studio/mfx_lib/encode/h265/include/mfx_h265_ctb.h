@@ -290,12 +290,12 @@ public:
         Ipp8u split_flag_only = 0);
     template <class H265Bs>
     void xEncodeSAO(
-        H265Bs *bs, 
-        Ipp32u abs_part_idx, 
-        Ipp32s depth, 
-        Ipp8u rd_mode, 
-        SaoCtuParam& saoBlkParam, 
-        bool leftMergeAvail, 
+        H265Bs *bs,
+        Ipp32u abs_part_idx,
+        Ipp32s depth,
+        Ipp8u rd_mode,
+        SaoCtuParam& saoBlkParam,
+        bool leftMergeAvail,
         bool aboveMergeAvail );
 
     template <class H265Bs>
@@ -358,9 +358,9 @@ public:
         Ipp32s betaOffset,
         Ipp32s dir);
     // SAO
-    void EstimateCtuSao( 
-        H265BsFake *bs, 
-        SaoCtuParam* saoParam, 
+    void EstimateCtuSao(
+        H265BsFake *bs,
+        SaoCtuParam* saoParam,
         SaoCtuParam* saoParam_TotalFrame );
 
     void FillSubPart(Ipp32s abs_part_idx, Ipp8u depth_cu, Ipp8u tr_idx,

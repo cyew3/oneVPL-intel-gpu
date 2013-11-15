@@ -99,7 +99,7 @@ public:
 
     // Initialize with specified parameter(s)
     mfxStatus Init(mfxVideoParam *init, mfxI32 enableRecode = 1);
-  
+
     mfxStatus Close();
 
     mfxStatus Reset(mfxVideoParam *init, mfxI32 enableRecode = 1);
@@ -113,7 +113,7 @@ public:
 
     mfxStatus GetInitialCPBRemovalDelay(mfxU32 *initial_cpb_removal_delay, mfxI32 recode = 0);
 
-    void GetMinMaxFrameSize(mfxI32 *minFrameSizeInBits, mfxI32 *maxFrameSizeInBits); 
+    void GetMinMaxFrameSize(mfxI32 *minFrameSizeInBits, mfxI32 *maxFrameSizeInBits);
 
 
 protected:
@@ -140,7 +140,7 @@ protected:
     mfxI32  mQuantIprev, mQuantPprev, mQuantBprev;
     mfxI32  mBitsEncoded;
     mfxU16  mPictureFlags, mPictureFlagsPrev;
-  
+
     mfxI32 mRecode;
     mfxI32 GetInitQP();
     mfxBRCStatus UpdateQuant(mfxI32 bEncoded, mfxI32 totalPicBits);

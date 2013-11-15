@@ -498,7 +498,7 @@ mfxBRCStatus H265BRC::PostPackFrame(mfxU16 picType, mfxI32 totalFrameBits, mfxI3
         mfxF64 qstep_prev = QP2Qstep(mQPprev);
         mfxF64 frameFactor = 1.0;
         mfxF64 targetFrameSize = IPP_MAX((mfxF64)mBitsDesiredFrame, mRCfa);
-        if (isField) targetFrameSize *= 0.5; 
+        if (isField) targetFrameSize *= 0.5;
 
         e2pe = bitsEncoded * sqrt(qstep) / (mBitsEncodedPrev * sqrt(qstep_prev));
 
@@ -526,7 +526,7 @@ mfxBRCStatus H265BRC::PostPackFrame(mfxU16 picType, mfxI32 totalFrameBits, mfxI3
             if (qpnew == qp)
               qpnew++;
             BRC_CLIP(qpnew, 1, mQuantMax);
-            mRCq = mQuantI = mQuantP = qpnew; 
+            mRCq = mQuantI = mQuantP = qpnew;
             if (picType == MFX_FRAMETYPE_B)
                 mQuantB = qpnew;
             else
@@ -808,7 +808,7 @@ mfxStatus H265BRC::GetInitialCPBRemovalDelay(mfxU32 *initial_cpb_removal_delay, 
 
 
 
-void  H265BRC::GetMinMaxFrameSize(mfxI32 *minFrameSizeInBits, mfxI32 *maxFrameSizeInBits) 
+void  H265BRC::GetMinMaxFrameSize(mfxI32 *minFrameSizeInBits, mfxI32 *maxFrameSizeInBits)
 {
     if (minFrameSizeInBits)
       *minFrameSizeInBits = mHRD.minFrameSize;

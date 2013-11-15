@@ -34,7 +34,7 @@
 
 #define SAO_MAX_OFFSET_QVAL (7)
 
-enum SaoCabacStateMarkers 
+enum SaoCabacStateMarkers
 {
   SAO_CABACSTATE_BLK_CUR = 0,
   SAO_CABACSTATE_BLK_NEXT,
@@ -55,7 +55,7 @@ enum SaoEOClasses
 };
 
 
-enum SaoModes 
+enum SaoModes
 {
   SAO_MODE_OFF = 0,
   SAO_MODE_ON,
@@ -64,7 +64,7 @@ enum SaoModes
 };
 
 
-enum SaoMergeTypes 
+enum SaoMergeTypes
 {
   SAO_MERGE_LEFT =0,
   SAO_MERGE_ABOVE,
@@ -72,13 +72,13 @@ enum SaoMergeTypes
 };
 
 
-enum SaoBaseTypes 
+enum SaoBaseTypes
 {
   SAO_TYPE_EO_0 = 0,
   SAO_TYPE_EO_90,
   SAO_TYPE_EO_135,
   SAO_TYPE_EO_45,
-  
+
   SAO_TYPE_BO,
 
   NUM_SAO_BASE_TYPES
@@ -156,16 +156,16 @@ public:
      ~SAOFilter();
 
      void Init(
-         int width, 
-         int height, 
-         int maxCUWidth, 
+         int width,
+         int height,
+         int maxCUWidth,
          int maxDepth);
 
      void Close(void);
 
      void EstimateCtuSao(
-         mfxFrameData* orgYuv, 
-         mfxFrameData* recYuv, 
+         mfxFrameData* orgYuv,
+         mfxFrameData* recYuv,
          bool* sliceEnabled,
          SaoCtuParam* saoParam);
 
@@ -181,32 +181,32 @@ private:
         mfxFrameData* recYuv);
 
     void GetBestCtuSaoParam(
-        bool* sliceEnabled, 
-        mfxFrameData* srcYuv, 
+        bool* sliceEnabled,
+        mfxFrameData* srcYuv,
         SaoCtuParam* codedParam);
 
     int getMergeList(
-        int ctu, 
-        SaoCtuParam* blkParams, 
+        int ctu,
+        SaoCtuParam* blkParams,
         std::vector<SaoCtuParam*>& mergeList);
 
     void ModeDecision_Base(
-        std::vector<SaoCtuParam*>& mergeList, 
-        bool* sliceEnabled, 
-        SaoCtuParam& modeParam, 
-        double& modeNormCost, 
+        std::vector<SaoCtuParam*>& mergeList,
+        bool* sliceEnabled,
+        SaoCtuParam& modeParam,
+        double& modeNormCost,
         int inCabacLabel);
 
     void ModeDecision_Merge(
-        std::vector<SaoCtuParam*>& mergeList, 
-        bool* sliceEnabled, 
-        SaoCtuParam& modeParam, 
-        double& modeNormCost, 
+        std::vector<SaoCtuParam*>& mergeList,
+        bool* sliceEnabled,
+        SaoCtuParam& modeParam,
+        double& modeNormCost,
         int inCabacLabel);
 
-    int GetNumWrittenBits( void ) 
-    { 
-        int bits = m_bsf->GetNumBits(); return bits / 256; 
+    int GetNumWrittenBits( void )
+    {
+        int bits = m_bsf->GetNumBits(); return bits / 256;
     }
 
 // SaoState
@@ -216,7 +216,7 @@ private:
 
     Ipp32s   m_numCTU_inWidth;
     Ipp32s   m_numCTU_inHeight;
-    
+
     // work state
     SaoCtuStatistics    m_statData[NUM_SAO_COMPONENTS][NUM_SAO_BASE_TYPES];
     Ipp8u               m_ctxSAO[NUM_SAO_CABACSTATE_MARKERS][NUM_CABAC_CONTEXT];
@@ -249,9 +249,9 @@ void h265_code_sao_ctb_param(
 
 template <class H265Bs>
 void h265_code_sao_ctb_offset_param(
-    H265Bs *bs, 
-    int compIdx, 
-    SaoOffsetParam& ctbParam, 
+    H265Bs *bs,
+    int compIdx,
+    SaoOffsetParam& ctbParam,
     bool sliceEnabled);
 
 #endif // __MFX_H265_SAO_FILTER_H__

@@ -946,7 +946,7 @@ void h265_code_sao_type_idx(H265Bs *bs, Ipp32u code)
         bs->EncodeSingleBin_CABAC(CTX(bs,SAO_TYPE_IDX_HEVC),1);
         {
             bs->EncodeBinEP_CABAC( code == 1 ? 0 : 1 );
-        } 
+        }
     }
 
 } // void h265_code_sao_type_idx(H265Bs *bs, Ipp32u code)
@@ -1404,13 +1404,13 @@ void h265_code_sao_ctb_offset_param(H265Bs *bs, int compIdx, SaoOffsetParam& ctb
         {
             VM_ASSERT(ctbParam.type_idx < SAO_TYPE_BO); //EO
             code = 2;
-        }    
+        }
         h265_code_sao_type_idx(bs, code);
     }
 
     if(ctbParam.mode_idx == SAO_MODE_ON)
     {
-        int numClasses = (ctbParam.type_idx == SAO_TYPE_BO)?4:NUM_SAO_EO_CLASSES; 
+        int numClasses = (ctbParam.type_idx == SAO_TYPE_BO)?4:NUM_SAO_EO_CLASSES;
         int offset[4];
         int k=0;
         for(int i=0; i< numClasses; i++)
@@ -1468,7 +1468,7 @@ void h265_code_sao_ctb_param(
 {
     bool isLeftMerge = false;
     bool isAboveMerge= false;
-    Ipp32u code = 0;    
+    Ipp32u code = 0;
 
     if(leftMergeAvail)
     {
@@ -1479,7 +1479,7 @@ void h265_code_sao_ctb_param(
 
     if( aboveMergeAvail && !isLeftMerge)
     {
-        isAboveMerge = ((saoBlkParam[SAO_Y].mode_idx == SAO_MODE_MERGE) && (saoBlkParam[SAO_Y].type_idx == SAO_MERGE_ABOVE)); 
+        isAboveMerge = ((saoBlkParam[SAO_Y].mode_idx == SAO_MODE_MERGE) && (saoBlkParam[SAO_Y].type_idx == SAO_MERGE_ABOVE));
         code = isAboveMerge ? 1 : 0;
         h265_code_sao_merge(bs, code);
     }
@@ -1502,16 +1502,16 @@ void h265_code_sao_ctb_param(
 
 template <class H265Bs>
 void H265CU::xEncodeSAO(
-    H265Bs *bs, 
-    Ipp32u abs_part_idx, 
-    Ipp32s depth, 
-    Ipp8u rd_mode, 
-    SaoCtuParam& saoBlkParam, 
-    bool leftMergeAvail, 
+    H265Bs *bs,
+    Ipp32u abs_part_idx,
+    Ipp32s depth,
+    Ipp8u rd_mode,
+    SaoCtuParam& saoBlkParam,
+    bool leftMergeAvail,
     bool aboveMergeAvail)
 {
     bool sliceEnabled[NUM_SAO_COMPONENTS] = {false, false, false};
-    bool onlyEstMergeInfo = false;    
+    bool onlyEstMergeInfo = false;
 
     if( cslice->slice_sao_luma_flag )
     {

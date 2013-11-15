@@ -55,13 +55,13 @@ const Ipp8u* g_offsetClip = &(g_offsetClipTable[SAO_MAX_OFFSET_QVAL]);
 //    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 //    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 //    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-//    -1, -1, -1, -1, -1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
-//    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
-//    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
-//    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
-//    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
-//    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
-//    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+//    -1, -1, -1, -1, -1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+//    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+//    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+//    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+//    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+//    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+//    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 //    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 //    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 //
@@ -90,10 +90,10 @@ inline double xRoundIbdi(int bitDepth, double x)
 template <typename T> inline T Clip3( T minVal, T maxVal, T a) { return std::min<T> (std::max<T> (minVal, a) , maxVal); }  ///< general min/max clip
 
 Ipp64s GetDistortion(
-    int compIdx, 
-    int type_idx, 
-    int typeAuxInfo, 
-    int* invQuantOffset, 
+    int compIdx,
+    int type_idx,
+    int typeAuxInfo,
+    int* invQuantOffset,
     SaoCtuStatistics& statData)
 {
     Ipp64s dist=0;
@@ -110,7 +110,7 @@ Ipp64s GetDistortion(
             for (offsetIdx=0; offsetIdx<NUM_SAO_EO_CLASSES; offsetIdx++)
             {
                 dist += estSaoDist( statData.count[offsetIdx], invQuantOffset[offsetIdx], statData.diff[offsetIdx], shift);
-            }        
+            }
         }
         break;
 
@@ -118,7 +118,7 @@ Ipp64s GetDistortion(
         {
             for (offsetIdx=typeAuxInfo; offsetIdx<typeAuxInfo+4; offsetIdx++)
             {
-                int bandIdx = offsetIdx % NUM_SAO_BO_CLASSES ; 
+                int bandIdx = offsetIdx % NUM_SAO_BO_CLASSES ;
                 dist += estSaoDist( statData.count[bandIdx], invQuantOffset[bandIdx], statData.diff[bandIdx], shift);
             }
         }
@@ -137,16 +137,16 @@ Ipp64s GetDistortion(
 
 //aya: should be redesigned ASAP
 inline int EstimateIterOffset(
-    int typeIdx, 
-    int classIdx, 
-    double lambda, 
-    int offsetInput, 
-    Ipp64s count, 
-    Ipp64s diffSum, 
-    int shift, 
-    int bitIncrease, 
-    Ipp64s& bestDist, 
-    double& bestCost, 
+    int typeIdx,
+    int classIdx,
+    double lambda,
+    int offsetInput,
+    Ipp64s count,
+    Ipp64s diffSum,
+    int shift,
+    int bitIncrease,
+    Ipp64s& bestDist,
+    double& bestCost,
     int offsetTh )
 {
     int iterOffset, tempOffset;
@@ -155,15 +155,15 @@ inline int EstimateIterOffset(
     int offsetOutput = 0;
     iterOffset = offsetInput;
 
-    // Assuming sending quantized value 0 results in zero offset and sending the value zero needs 1 bit. 
-    // entropy coder can be used to measure the exact rate here. 
-    tempMinCost = lambda; 
+    // Assuming sending quantized value 0 results in zero offset and sending the value zero needs 1 bit.
+    // entropy coder can be used to measure the exact rate here.
+    tempMinCost = lambda;
     while (iterOffset != 0)
     {
         // Calculate the bits required for signaling the offset
-        tempRate = (typeIdx == SAO_TYPE_BO) ? (abs((int)iterOffset)+2) : (abs((int)iterOffset)+1); 
-        if (abs((int)iterOffset)==offsetTh) //inclusive 
-        {  
+        tempRate = (typeIdx == SAO_TYPE_BO) ? (abs((int)iterOffset)+2) : (abs((int)iterOffset)+1);
+        if (abs((int)iterOffset)==offsetTh) //inclusive
+        {
             tempRate --;
         }
         // Do the dequantization before distortion calculation
@@ -186,9 +186,9 @@ inline int EstimateIterOffset(
 
 
 void GetQuantOffsets(
-    int type_idx, 
-    SaoCtuStatistics& statData, 
-    int* quantOffsets, 
+    int type_idx,
+    SaoCtuStatistics& statData,
+    int* quantOffsets,
     int& typeAuxInfo,
     double lambda)
 {
@@ -198,12 +198,12 @@ void GetQuantOffsets(
 
     memset(quantOffsets, 0, sizeof(int)*MAX_NUM_SAO_CLASSES);
 
-    //derive initial offsets 
+    //derive initial offsets
     int numClasses = (type_idx == SAO_TYPE_BO) ? ((int)NUM_SAO_BO_CLASSES) : ((int)NUM_SAO_EO_CLASSES);
 
     for(int classIdx=0; classIdx < numClasses; classIdx++)
     {
-        if( (type_idx != SAO_TYPE_BO) && (classIdx==SAO_CLASS_EO_PLAIN)  ) 
+        if( (type_idx != SAO_TYPE_BO) && (classIdx==SAO_CLASS_EO_PLAIN)  )
         {
             continue; //offset will be zero
         }
@@ -214,7 +214,7 @@ void GetQuantOffsets(
         }
 
         quantOffsets[classIdx] = (int) xRoundIbdi(
-            bitDepth, 
+            bitDepth,
             (double)( statData.diff[classIdx]<<(bitDepth-8)) / (double)( statData.count[classIdx] ));
 
         quantOffsets[classIdx] = Clip3(-offsetTh, offsetTh, quantOffsets[classIdx]);
@@ -230,8 +230,8 @@ void GetQuantOffsets(
         {
             Ipp64s classDist;
             double classCost;
-            for(int classIdx=0; classIdx<NUM_SAO_EO_CLASSES; classIdx++)  
-            {         
+            for(int classIdx=0; classIdx<NUM_SAO_EO_CLASSES; classIdx++)
+            {
                 if(classIdx==SAO_CLASS_EO_FULL_VALLEY && quantOffsets[classIdx] < 0) quantOffsets[classIdx] =0;
                 if(classIdx==SAO_CLASS_EO_HALF_VALLEY && quantOffsets[classIdx] < 0) quantOffsets[classIdx] =0;
                 if(classIdx==SAO_CLASS_EO_HALF_PEAK   && quantOffsets[classIdx] > 0) quantOffsets[classIdx] =0;
@@ -239,17 +239,17 @@ void GetQuantOffsets(
 
                 if( quantOffsets[classIdx] != 0 ) //iterative adjustment only when derived offset is not zero
                 {
-                    quantOffsets[classIdx] = EstimateIterOffset( 
-                        type_idx, 
-                        classIdx, 
-                        lambda, 
-                        quantOffsets[classIdx], 
-                        statData.count[classIdx], 
-                        statData.diff[classIdx], 
-                        shift, 
-                        0, 
-                        classDist, 
-                        classCost, 
+                    quantOffsets[classIdx] = EstimateIterOffset(
+                        type_idx,
+                        classIdx,
+                        lambda,
+                        quantOffsets[classIdx],
+                        statData.count[classIdx],
+                        statData.diff[classIdx],
+                        shift,
+                        0,
+                        classDist,
+                        classCost,
                         offsetTh );
                 }
             }
@@ -265,7 +265,7 @@ void GetQuantOffsets(
 
             memset(distBOClasses, 0, sizeof(Ipp64s)*NUM_SAO_BO_CLASSES);
             for(int classIdx=0; classIdx< NUM_SAO_BO_CLASSES; classIdx++)
-            {         
+            {
                 costBOClasses[classIdx]= lambda;
                 if( quantOffsets[classIdx] != 0 ) //iterative adjustment only when derived offset is not zero
                 {
@@ -275,7 +275,7 @@ void GetQuantOffsets(
 
             //decide the starting band index
             double minCost = MAX_DOUBLE, cost;
-            for(int band=0; band< NUM_SAO_BO_CLASSES- 4+ 1; band++) 
+            for(int band=0; band< NUM_SAO_BO_CLASSES- 4+ 1; band++)
             {
                 cost  = costBOClasses[band  ];
                 cost += costBOClasses[band+1];
@@ -292,19 +292,19 @@ void GetQuantOffsets(
             int clearQuantOffset[NUM_SAO_BO_CLASSES];
             memset(clearQuantOffset, 0, sizeof(int)*NUM_SAO_BO_CLASSES);
 
-            for(int i=0; i< 4; i++) 
+            for(int i=0; i< 4; i++)
             {
                 int band = (typeAuxInfo+i)%NUM_SAO_BO_CLASSES;
                 clearQuantOffset[band] = quantOffsets[band];
             }
 
-            memcpy(quantOffsets, clearQuantOffset, sizeof(int)*NUM_SAO_BO_CLASSES);        
+            memcpy(quantOffsets, clearQuantOffset, sizeof(int)*NUM_SAO_BO_CLASSES);
         }
         break;
 
         default:
         {
-            VM_ASSERT(!"Not a supported type");         
+            VM_ASSERT(!"Not a supported type");
         }
     }
 
@@ -313,18 +313,18 @@ void GetQuantOffsets(
 
 void GetCtuStatistics_Internal(
     int compIdx,
-    PixType* recBlk, 
+    PixType* recBlk,
     int recStride,
     PixType* orgBlk,
     int orgStride,
 
     SaoCtuStatistics* statsDataTypes,
 
-    int width, 
+    int width,
     int height,
     bool isLeftAvail,
     bool isAboveAvail,
-    bool isAboveLeftAvail, 
+    bool isAboveLeftAvail,
     bool isAboveRightAvail)
 {
     Ipp16s signLineBuf1[64+1];
@@ -392,7 +392,7 @@ void GetCtuStatistics_Internal(
                 }
 
                 PixType* srcLineAbove = recLine - recStride;
-                for (x=0; x< endX; x++) 
+                for (x=0; x< endX; x++)
                 {
                     signUpLine[x] = (Ipp16s)getSign(recLine[x] - srcLineAbove[x]);
                 }
@@ -404,7 +404,7 @@ void GetCtuStatistics_Internal(
 
                     for (x=0; x<endX; x++)
                     {
-                        signDown  = (Ipp16s)getSign(recLine[x] - srcLineBelow[x]); 
+                        signDown  = (Ipp16s)getSign(recLine[x] - srcLineBelow[x]);
                         edgeType  = signDown + signUpLine[x];
                         signUpLine[x]= -signDown;
 
@@ -464,7 +464,7 @@ void GetCtuStatistics_Internal(
                         diff [edgeType] += (orgLine[x] - recLine[x]);
                         count[edgeType] ++;
 
-                        signDownLine[x+1] = -signDown; 
+                        signDownLine[x+1] = -signDown;
                     }
                     signDownLine[startX] = (Ipp16s)getSign(srcLineBelow[startX] - recLine[startX-1]);
 
@@ -526,7 +526,7 @@ void GetCtuStatistics_Internal(
                         diff [edgeType] += (orgLine[x] - recLine[x]);
                         count[edgeType] ++;
 
-                        signUpLine[x-1] = -signDown; 
+                        signUpLine[x-1] = -signDown;
                     }
                     signUpLine[endX-1] = (Ipp16s)getSign(srcLineBelow[endX-1] - recLine[endX]);
                     recLine  += recStride;
@@ -544,7 +544,7 @@ void GetCtuStatistics_Internal(
                 {
                     for (x=0; x< endX; x++)
                     {
-                        int bandIdx= recLine[x] >> shiftBits; 
+                        int bandIdx= recLine[x] >> shiftBits;
                         diff [bandIdx] += (orgLine[x] - recLine[x]);
                         count[bandIdx]++;
                     }
@@ -641,18 +641,18 @@ void ApplyCtuSao_Internal(
     int typeIdx,
     int* offset,
     PixType* srcBlk,
-    PixType* resBlk, 
-    int srcStride, 
-    int resStride,  
-    int width, 
+    PixType* resBlk,
+    int srcStride,
+    int resStride,
+    int width,
     int height,
-    bool isLeftAvail,  
-    bool isRightAvail, 
-    bool isAboveAvail, 
-    bool isBelowAvail, 
-    bool isAboveLeftAvail, 
-    bool isAboveRightAvail, 
-    bool isBelowLeftAvail, 
+    bool isLeftAvail,
+    bool isRightAvail,
+    bool isAboveAvail,
+    bool isBelowAvail,
+    bool isAboveLeftAvail,
+    bool isAboveRightAvail,
+    bool isBelowLeftAvail,
     bool isBelowRightAvail)
 {
     Ipp16s signLineBuf1[64+1];
@@ -677,7 +677,7 @@ void ApplyCtuSao_Internal(
                 signLeft = (Ipp16s)getSign(srcLine[startX] - srcLine[startX-1]);
                 for (x=startX; x< endX; x++)
                 {
-                    signRight = (Ipp16s)getSign(srcLine[x] - srcLine[x+1]); 
+                    signRight = (Ipp16s)getSign(srcLine[x] - srcLine[x+1]);
                     edgeType =  signRight + signLeft;
                     signLeft  = -signRight;
 
@@ -715,7 +715,7 @@ void ApplyCtuSao_Internal(
 
                 for (x=0; x< width; x++)
                 {
-                    signDown  = (Ipp16s)getSign(srcLine[x] - srcLineBelow[x]); 
+                    signDown  = (Ipp16s)getSign(srcLine[x] - srcLineBelow[x]);
                     edgeType = signDown + signUpLine[x];
                     signUpLine[x]= -signDown;
 
@@ -769,7 +769,7 @@ void ApplyCtuSao_Internal(
                     edgeType =  signDown + signUpLine[x];
                     resLine[x] = g_offsetClip[srcLine[x] + offset[edgeType]];
 
-                    signDownLine[x+1] = -signDown; 
+                    signDownLine[x+1] = -signDown;
                 }
                 signDownLine[startX] = (Ipp16s)getSign(srcLineBelow[startX] - srcLine[startX-1]);
 
@@ -834,7 +834,7 @@ void ApplyCtuSao_Internal(
                     signDown =  (int)getSign(srcLine[x] - srcLineBelow[x-1]) ;
                     edgeType =  signDown + signUpLine[x];
                     resLine[x] = g_offsetClip[srcLine[x] + offset[edgeType]];
-                    signUpLine[x-1] = -signDown; 
+                    signUpLine[x-1] = -signDown;
                 }
                 signUpLine[endX-1] = (Ipp16s)getSign(srcLineBelow[endX-1] - srcLine[endX]);
                 srcLine  += srcStride;
@@ -881,7 +881,7 @@ void ApplyCtuSao_Internal(
 // ========================================================
 
 SaoOffsetParam::SaoOffsetParam()
-{ 
+{
     Reset();
 }
 
@@ -980,12 +980,12 @@ void SAOFilter::EstimateCtuSao(mfxFrameData* orgYuv, mfxFrameData* recYuv, bool*
 {
     GetCtuSaoStatistics(orgYuv, recYuv);
 
-    //slice on/off decision algorithm. 
+    //slice on/off decision algorithm.
     // depth - it depends on GOPSize. Need for early alg termination
     sliceEnabled[SAO_Y] = sliceEnabled[SAO_Cb] = sliceEnabled[SAO_Cr] = false;
     int tmpDepth = 0;
-    SliceDecisionAlgorithm(sliceEnabled, tmpDepth);//pPic->getSlice(0)->getDepth()); 
-    
+    SliceDecisionAlgorithm(sliceEnabled, tmpDepth);//pPic->getSlice(0)->getDepth());
+
     GetBestCtuSaoParam(sliceEnabled, recYuv, saoParam);
 
 } // void SAOFilter::EstimateCtuSao()
@@ -995,7 +995,7 @@ void SAOFilter::GetCtuSaoStatistics(mfxFrameData* orgYuv, mfxFrameData* recYuv)
 {
     bool isLeftAvail, isAboveAvail, isAboveLeftAvail,isAboveRightAvail;
 
-    {    
+    {
         int xPos   = m_ctb_pelx;//(ctu / m_numCTU_inWidth)*m_maxCUWidth;
         int yPos   = m_ctb_pely;//(ctu % m_numCTU_inWidth)*m_maxCUWidth;
         int height = (yPos + m_maxCUSize > m_frameSize.height)?(m_frameSize.height- yPos):m_maxCUSize;
@@ -1006,7 +1006,7 @@ void SAOFilter::GetCtuSaoStatistics(mfxFrameData* orgYuv, mfxFrameData* recYuv)
         isAboveAvail = (m_ctb_addr >= m_numCTU_inWidth );
         isAboveLeftAvail = false;//(isAboveAvail && isLeftAvail);
         isAboveRightAvail= false;//(isAboveAvail && isRightAvail);// make sense for WPP = 1 only
-        
+
         // ------------------------------------------------
 
         // aya!!! FIXME!!!
@@ -1031,20 +1031,20 @@ void SAOFilter::GetCtuSaoStatistics(mfxFrameData* orgYuv, mfxFrameData* recYuv)
             PixType* recBlk=  recYuv->Y;
 
             int  orgStride  = isLuma?orgYuv->Pitch:orgYuv->Pitch;
-            PixType* orgBlk = orgYuv->Y;           
+            PixType* orgBlk = orgYuv->Y;
 
             GetCtuStatistics_Internal(
-                compIdx, 
-                recBlk, 
-                recStride, 
+                compIdx,
+                recBlk,
+                recStride,
                 orgBlk,
                 orgStride,
                 m_statData[compIdx],
-                (width  >> formatShift), 
+                (width  >> formatShift),
                 (height >> formatShift),
                 isLeftAvail,
                 isAboveAvail,
-                isAboveLeftAvail, 
+                isAboveLeftAvail,
                 isAboveRightAvail);
         }
     }
@@ -1063,7 +1063,7 @@ void SAOFilter::GetBestCtuSaoParam(
     //get merge list
     std::vector<SaoCtuParam*> mergeList;
     getMergeList(/*pic,*/
-        //ctu, 
+        //ctu,
         m_ctb_addr,// aya!!!!!!!!
         reconParams, mergeList);
 #else
@@ -1071,7 +1071,7 @@ void SAOFilter::GetBestCtuSaoParam(
     mergeList[0] = NULL;
     mergeList[1] = NULL;
 #endif
-    
+
     SaoCtuParam modeParam;
     double minCost = MAX_DOUBLE, modeCost = MAX_DOUBLE;
 
@@ -1088,10 +1088,10 @@ void SAOFilter::GetBestCtuSaoParam(
             case SAO_MODE_ON:
             {
                 ModeDecision_Base(
-                    mergeList, 
-                    sliceEnabled,                             
-                    modeParam, 
-                    modeCost, 
+                    mergeList,
+                    sliceEnabled,
+                    modeParam,
+                    modeCost,
                     SAO_CABACSTATE_BLK_CUR);
             }
             break;
@@ -1122,7 +1122,7 @@ void SAOFilter::GetBestCtuSaoParam(
     } //mode
 
     m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_NEXT], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
-    
+
     ReconstructCtuSaoParam(*codedParam, mergeList);
 
 } // void SAOFilter::GetBestCtuSaoParam(...)
@@ -1217,20 +1217,20 @@ void SAOFilter::ModeDecision_Merge(std::vector<SaoCtuParam*>& mergeList, bool* s
             {
                 //offsets have been reconstructed. Don't call inversed quantization function.
                 normDist += (((double)GetDistortion(
-                    compIdx, 
-                    mergedOffsetParam.type_idx, 
-                    mergedOffsetParam.typeAuxInfo, 
-                    mergedOffsetParam.offset, 
+                    compIdx,
+                    mergedOffsetParam.type_idx,
+                    mergedOffsetParam.typeAuxInfo,
+                    mergedOffsetParam.offset,
                     m_statData[compIdx][mergedOffsetParam.type_idx])) / m_labmda[compIdx]);
             }
 
         }
 
-        m_bsf->CtxRestore(m_ctxSAO[inCabacLabel], 0, NUM_CABAC_CONTEXT);        
+        m_bsf->CtxRestore(m_ctxSAO[inCabacLabel], 0, NUM_CABAC_CONTEXT);
         m_bsf->Reset();
-        
+
         h265_code_sao_ctb_param(m_bsf, testBlkParam, sliceEnabled, (mergeList[SAO_MERGE_LEFT]!= NULL), (mergeList[SAO_MERGE_ABOVE]!= NULL), false);
-        
+
         int rate = GetNumWrittenBits();
 
         cost = normDist + (double)rate;
@@ -1242,17 +1242,17 @@ void SAOFilter::ModeDecision_Merge(std::vector<SaoCtuParam*>& mergeList, bool* s
             m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_TEMP], 0, NUM_CABAC_CONTEXT);
         }
     }
-    
+
     m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_TEMP], 0, NUM_CABAC_CONTEXT);
 
 } // void SAOFilter::ModeDecision_Merge(...)
 
 
 void SAOFilter::ModeDecision_Base(
-    std::vector<SaoCtuParam*>& mergeList, 
+    std::vector<SaoCtuParam*>& mergeList,
     bool* sliceEnabled,
-    SaoCtuParam& modeParam, 
-    double& modeNormCost, 
+    SaoCtuParam& modeParam,
+    double& modeNormCost,
     int inCabacLabel)
 {
     double minCost = 0.0, cost = 0.0;
@@ -1265,7 +1265,7 @@ void SAOFilter::ModeDecision_Base(
     modeDist[SAO_Y]= modeDist[SAO_Cb] = modeDist[SAO_Cr] = 0;
 
     //pre-encode merge flags
-    modeParam[SAO_Y ].mode_idx = SAO_MODE_OFF;  
+    modeParam[SAO_Y ].mode_idx = SAO_MODE_OFF;
 
     m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_CUR], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
     h265_code_sao_ctb_param(m_bsf, modeParam, sliceEnabled, (mergeList[SAO_MERGE_LEFT]!= NULL), (mergeList[SAO_MERGE_ABOVE]!= NULL), true);
@@ -1291,17 +1291,17 @@ void SAOFilter::ModeDecision_Base(
         {
             testOffset[compIdx].mode_idx = SAO_MODE_ON;
             testOffset[compIdx].type_idx = type_idx;
-            
+
             GetQuantOffsets(type_idx, m_statData[compIdx][type_idx], testOffset[compIdx].offset, testOffset[compIdx].typeAuxInfo, m_labmda[compIdx]);
-                        
+
             InvertQuantOffsets(type_idx, testOffset[compIdx].typeAuxInfo, invQuantOffset, testOffset[compIdx].offset);
-            
+
             dist[compIdx] = GetDistortion(compIdx, testOffset[compIdx].type_idx, testOffset[compIdx].typeAuxInfo, invQuantOffset, m_statData[compIdx][type_idx]);
-            
+
             m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_MID], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
             m_bsf->Reset();
             h265_code_sao_ctb_offset_param(m_bsf, compIdx, testOffset[compIdx], sliceEnabled[compIdx]);
-            rate = GetNumWrittenBits(); 
+            rate = GetNumWrittenBits();
 
             cost = (double)dist[compIdx] + m_labmda[compIdx]*((double)rate);
             if(cost < minCost)
@@ -1333,13 +1333,13 @@ void SAOFilter::ModeDecision_Base(
         //double chromaLambda = m_labmda[SAO_Cb];
         //"off" case as initial cost
         //m_pcRDGoOnSbacCoder->resetBits();
-        modeParam[SAO_Cb].mode_idx = SAO_MODE_OFF; 
+        modeParam[SAO_Cb].mode_idx = SAO_MODE_OFF;
         //m_pcRDGoOnSbacCoder->h265_code_sao_ctb_offset_param(SAO_Cb, modeParam[SAO_Cb], sliceEnabled[SAO_Cb]);
-        modeParam[SAO_Cr].mode_idx = SAO_MODE_OFF; 
+        modeParam[SAO_Cr].mode_idx = SAO_MODE_OFF;
         //m_pcRDGoOnSbacCoder->h265_code_sao_ctb_offset_param(SAO_Cr, modeParam[SAO_Cr], sliceEnabled[SAO_Cr]);
         //minRate= m_pcRDGoOnSbacCoder->getNumberOfWrittenBits();
         modeDist[SAO_Cb] = modeDist[SAO_Cr]= 0;
-        minCost= chromaLambda*((double)minRate); 
+        minCost= chromaLambda*((double)minRate);
 
         //doesn't need to store cabac status here since the whole CTU parameters will be re-encoded at the end of this function
 
@@ -1356,7 +1356,7 @@ void SAOFilter::ModeDecision_Base(
                 testOffset[compIdx].mode_idx = SAO_MODE_ON;
                 testOffset[compIdx].type_idx = type_idx;
 
-                
+
                 GetQuantOffsets(type_idx, m_statData[compIdx][type_idx], testOffset[compIdx].offset, testOffset[compIdx].typeAuxInfo, m_labmda[compIdx]);
 
                 InvertQuantOffsets(type_idx, testOffset[compIdx].typeAuxInfo, invQuantOffset, testOffset[compIdx].offset);
@@ -1389,26 +1389,26 @@ void SAOFilter::ModeDecision_Base(
 
     if( isChromaEnabled )
     {
-        modeNormCost += (double)(modeDist[SAO_Cb]+ modeDist[SAO_Cr])/chromaLambda; 
+        modeNormCost += (double)(modeDist[SAO_Cb]+ modeDist[SAO_Cr])/chromaLambda;
     }
 
     m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_CUR], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
     m_bsf->Reset();
     h265_code_sao_ctb_param(m_bsf, modeParam, sliceEnabled, (mergeList[SAO_MERGE_LEFT]!= NULL), (mergeList[SAO_MERGE_ABOVE]!= NULL), false);
-    modeNormCost += (double)GetNumWrittenBits(); 
+    modeNormCost += (double)GetNumWrittenBits();
 
 } // void SAOFilter::ModeDecision_Base(...)
 
 
 void SAOFilter::ApplyCtuSao(
-    mfxFrameData* srcYuv, 
-    mfxFrameData* resYuv, 
+    mfxFrameData* srcYuv,
+    mfxFrameData* resYuv,
     SaoCtuParam& saoblkParam,
     int ctu)
 {
     bool isLeftAvail,isRightAvail,isAboveAvail,isBelowAvail,isAboveLeftAvail,isAboveRightAvail,isBelowLeftAvail,isBelowRightAvail;
 
-    if( 
+    if(
         (saoblkParam[SAO_Y ].mode_idx == SAO_MODE_OFF) &&
         (saoblkParam[SAO_Cb].mode_idx == SAO_MODE_OFF) &&
         (saoblkParam[SAO_Cr].mode_idx == SAO_MODE_OFF)
@@ -1464,12 +1464,12 @@ void SAOFilter::ApplyCtuSao(
             ApplyCtuSao_Internal(
                 ctbOffset.type_idx,
                 ctbOffset.offset,
-                srcBlk, 
-                resBlk, 
-                srcStride, 
-                resStride, 
-                blkWidth, 
-                blkHeight, 
+                srcBlk,
+                resBlk,
+                srcStride,
+                resStride,
+                blkWidth,
+                blkHeight,
                 isLeftAvail, isRightAvail, isAboveAvail, isBelowAvail, isAboveLeftAvail, isAboveRightAvail, isBelowLeftAvail, isBelowRightAvail);
         }
     } //compIdx
@@ -1486,7 +1486,7 @@ void H265CU::EstimateCtuSao( H265BsFake *bs, SaoCtuParam* saoParam, SaoCtuParam*
     m_saoFilter.m_ctb_addr = this->ctb_addr;
     m_saoFilter.m_ctb_pelx = this->ctb_pelx;
     m_saoFilter.m_ctb_pely = this->ctb_pely;
-    
+
     m_saoFilter.m_codedParams_TotalFrame = saoParam_TotalFrame;
     m_saoFilter.m_bsf = bs;
     m_saoFilter.m_labmda[0] = this->rd_lambda*256;

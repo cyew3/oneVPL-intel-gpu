@@ -536,7 +536,7 @@ void H265CU::IntraPredTU(Ipp32s blockZScanIdx, Ipp32s width, Ipp32s pred_mode, I
 
             if (par->csps->strong_intra_smoothing_enabled_flag && isFilterNeeded)
             {
-                Ipp32s threshold = 1 << (BIT_DEPTH_LUMA - 5);        
+                Ipp32s threshold = 1 << (BIT_DEPTH_LUMA - 5);
 
                 Ipp32s topLeft = PredPel[0];
                 Ipp32s topRight = PredPel[2*width];
@@ -545,7 +545,7 @@ void H265CU::IntraPredTU(Ipp32s blockZScanIdx, Ipp32s width, Ipp32s pred_mode, I
                 Ipp32s bottomLeft = PredPel[4*width];
                 Ipp32s midVer = PredPel[3*width];
 
-                bool bilinearLeft = abs(topLeft + topRight - 2*midHor) < threshold; 
+                bool bilinearLeft = abs(topLeft + topRight - 2*midHor) < threshold;
                 bool bilinearAbove = abs(topLeft + bottomLeft - 2*midVer) < threshold;
 
                 if (width == 32 && (bilinearLeft && bilinearAbove))
@@ -615,7 +615,7 @@ void H265CU::IntraPredTULumaAllHAD(Ipp32s abs_part_idx, Ipp32s width)
 
     if (par->csps->strong_intra_smoothing_enabled_flag && width == 32)
     {
-        Ipp32s threshold = 1 << (BIT_DEPTH_LUMA - 5);        
+        Ipp32s threshold = 1 << (BIT_DEPTH_LUMA - 5);
 
         Ipp32s topLeft = PredPel[0];
         Ipp32s topRight = PredPel[2*width];
@@ -624,7 +624,7 @@ void H265CU::IntraPredTULumaAllHAD(Ipp32s abs_part_idx, Ipp32s width)
         Ipp32s bottomLeft = PredPel[4*width];
         Ipp32s midVer = PredPel[3*width];
 
-        bool bilinearLeft = abs(topLeft + topRight - 2*midHor) < threshold; 
+        bool bilinearLeft = abs(topLeft + topRight - 2*midHor) < threshold;
         bool bilinearAbove = abs(topLeft + bottomLeft - 2*midVer) < threshold;
 
         if (bilinearLeft && bilinearAbove)

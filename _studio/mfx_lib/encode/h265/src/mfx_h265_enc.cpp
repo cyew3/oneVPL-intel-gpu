@@ -241,7 +241,7 @@ mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxE
     pars->num_thread_structs = pars->threading_by_rows ? pars->num_threads : pars->PicHeightInCtbs;
 //  if (!pars->threading_by_rows && pars->NumSlices > (Ipp32s)pars->PicHeightInCtbs)
 //      pars->NumSlices = pars->PicHeightInCtbs;
-    
+
     for (Ipp32s i = 0; i < pars->MaxCUDepth; i++ )
     {
         pars->AMPAcc[i] = i < pars->MaxCUDepth-pars->AddCUDepth ? pars->AMPFlag : 0;
@@ -498,7 +498,7 @@ mfxStatus H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice)
         case P_SLICE:
             if (m_videoParam.PGopPicSize == 1 || slice->pgop_idx)
                 slice->rd_lambda *= 0.4624;
-            else 
+            else
                 slice->rd_lambda *= 0.578;
             if (slice->pgop_idx)
                 slice->rd_lambda *= MAX(2,MIN(4,(m_videoParam.QP - 12)/6));
@@ -529,7 +529,7 @@ void H265Encoder::InitShortTermRefPicSet()
     deltaPoc = m_videoParam.TreatBAsReference ? 1 : m_videoParam.GopRefDist;
 
     m_numShortTermRefPicSets = 0;
-    
+
     for (i = 0; i < m_videoParam.PGopPicSize; i++)
     {
         Ipp32s idx = i == 0 ? 0 : m_videoParam.GopRefDist - 1 + i;
@@ -702,7 +702,7 @@ mfxStatus H265Encoder::Init(mfxVideoH265InternalParam *param, mfxExtCodingOption
 
     m_videoParam.m_slice_ids = m_slice_ids;
     m_videoParam.m_pRefPicList = m_pRefPicList;
-    
+
     ippsZero_8u((Ipp8u *)cu, sizeof(H265CU) * m_videoParam.num_threads);
     ippsZero_8u((Ipp8u*)data_temp, sizeof(H265CUData) * data_temp_size * m_videoParam.num_threads);
 
@@ -1430,7 +1430,7 @@ mfxStatus H265Encoder::DeblockThread(Ipp32s ithread) {
             break;
 
         Ipp32u ctb_addr = ctb_row * pars->PicWidthInCtbs;
-                
+
         for (Ipp32u ctb_col = 0; ctb_col < pars->PicWidthInCtbs; ctb_col ++, ctb_addr++) {
             Ipp8u curr_slice = m_slice_ids[ctb_addr];
 
@@ -1481,7 +1481,7 @@ mfxStatus H265Encoder::ApplySAOThread(Ipp32s ithread)
         int ctb_pely           = ( ctu / m_videoParam.PicWidthInCtbs ) * m_videoParam.MaxCUSize;
         // update offset
         srcReconY.Y = p_srcStart + ctb_pelx + ctb_pely * m_pReconstructFrame->pitch_luma;
-        dstReconY.Y = p_dstStart + ctb_pelx + ctb_pely * m_pReconstructFrame->pitch_luma;            
+        dstReconY.Y = p_dstStart + ctb_pelx + ctb_pely * m_pReconstructFrame->pitch_luma;
 
         saoFilter.ApplyCtuSao(&srcReconY, &dstReconY, m_saoParam[ctu], ctu);
     }
@@ -1604,9 +1604,9 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
 
                     VM_ASSERT(ctx_sao_1[0] == ctx_sao_1_fake[0]);
                     VM_ASSERT(ctx_sao_2[0] == ctx_sao_2_fake[0]);*/
-                    
+
                     cu[ithread].EstimateCtuSao( &bsf[ithread], &m_saoParam[ctb_addr], ctb_addr > 0 ? &m_saoParam[0] : NULL );
-                    
+
                     bool leftMergeAvail = false;
                     bool aboveMergeAvail= false;
 
@@ -1627,7 +1627,7 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
             }
             bs[ctb_row].EncodeSingleBin_CABAC(CTX(&bs[ctb_row],END_OF_SLICE_FLAG_HEVC), end_of_slice_flag);
 
-            if ((m_pps.entropy_coding_sync_enabled_flag && ctb_col == pars->PicWidthInCtbs - 1) || 
+            if ((m_pps.entropy_coding_sync_enabled_flag && ctb_col == pars->PicWidthInCtbs - 1) ||
                 end_of_slice_flag) {
 #ifdef DEBUG_CABAC
                 int d = DEBUG_CABAC_PRINT;
@@ -1667,7 +1667,7 @@ mfxStatus H265Encoder::EncodeThreadByRow(Ipp32s ithread) {
             break;
 
         Ipp32u ctb_addr = ctb_row * pars->PicWidthInCtbs;
-                
+
         for (Ipp32u ctb_col = 0; ctb_col < pars->PicWidthInCtbs; ctb_col ++, ctb_addr++) {
             Ipp8u curr_slice = m_slice_ids[ctb_addr];
             Ipp8u end_of_slice_flag = (ctb_addr == m_slices[curr_slice].slice_address_last_ctb);
@@ -1745,9 +1745,9 @@ mfxStatus H265Encoder::EncodeThreadByRow(Ipp32s ithread) {
 
                     VM_ASSERT(ctx_sao_1[0] == ctx_sao_1_fake[0]);
                     VM_ASSERT(ctx_sao_2[0] == ctx_sao_2_fake[0]);*/
-                    
+
                     cu[ithread].EstimateCtuSao( &bsf[ithread], &m_saoParam[ctb_addr], ctb_addr > 0 ? &m_saoParam[0] : NULL );
-                    
+
                     bool leftMergeAvail = false;
                     bool aboveMergeAvail= false;
 
@@ -1768,7 +1768,7 @@ mfxStatus H265Encoder::EncodeThreadByRow(Ipp32s ithread) {
             }
             bs[ithread].EncodeSingleBin_CABAC(CTX(&bs[ithread],END_OF_SLICE_FLAG_HEVC), end_of_slice_flag);
 
-            if ((m_pps.entropy_coding_sync_enabled_flag && ctb_col == pars->PicWidthInCtbs - 1) || 
+            if ((m_pps.entropy_coding_sync_enabled_flag && ctb_col == pars->PicWidthInCtbs - 1) ||
                 end_of_slice_flag) {
 #ifdef DEBUG_CABAC
                 int d = DEBUG_CABAC_PRINT;
@@ -1936,11 +1936,11 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
         } else if (m_pCurrentFrame->m_bIsIDRPic) {
             if (m_frameCountEncoded) {
                 m_dpb.unMarkAll();
-                m_dpb.removeAllUnmarkedRef(); 
+                m_dpb.removeAllUnmarkedRef();
             }
             ePic_Class = IDR_PIC;
             m_l1_cnt_to_start_B = m_videoParam.NumRefToStartCodeBSlice;
-        } 
+        }
         else {
             ePic_Class = REFERENCE_PIC;
         }
@@ -1983,7 +1983,7 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
     mfxU32 initialDatalength = mfxBS->DataLength;
     Ipp32s overheadBytes = 0;
     Ipp32s bs_main_id = m_videoParam.num_thread_structs;
-    
+
     if (m_frameCountEncoded == 0) {
         bs[bs_main_id].Reset();
         PutVPS(&bs[bs_main_id]);
@@ -2067,7 +2067,7 @@ recode:
         mfx_video_encode_h265_ptr->ParallelRegionEnd();
     }
     //SAO
-    if( m_sps.sample_adaptive_offset_enabled_flag ) // aya is it enough???    
+    if( m_sps.sample_adaptive_offset_enabled_flag ) // aya is it enough???
     {
         ApplySAOThread(0);
     }
@@ -2105,7 +2105,7 @@ recode:
                     bs[bs_main_id].m_base.m_pbs += row_info->size;
                     row_info = m_row_info + row + 1;
                 }
-            } else {            
+            } else {
                 small_memcpy(bs[bs_main_id].m_base.m_pbs, bs[row_info->bs_id].m_base.m_pbsBase + row_info->offset, row_info->size);
                 bs[bs_main_id].m_base.m_pbs += row_info->size;
             }
