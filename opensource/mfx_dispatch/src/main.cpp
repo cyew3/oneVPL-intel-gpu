@@ -33,6 +33,9 @@ File Name: main.cpp
 #include "mfx_dispatcher_log.h"
 #include "mfx_library_iterator.h"
 #include "mfx_critical_section.h"
+
+#include <string.h> /* for memset on Linux */
+#include <memory>
 #include "mfx_load_plugin.h"
 #include "mfx_plugin_hive.h"
 
