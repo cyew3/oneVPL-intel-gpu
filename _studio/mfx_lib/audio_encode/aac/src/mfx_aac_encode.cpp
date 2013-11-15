@@ -472,7 +472,7 @@ bool AudioENCODEAAC::AudioFramesCollector::UpdateBuffer() {
     int CurrentFrameLength = 0;
     int nPopFront = 0;
     for (std::list<mfxAudioFrame*>::iterator it = list.begin() ; it != list.end() ; ++it ) {
-        int nFreeBytesInBuffer = buffer.size() - CurrentFrameLength;
+        int nFreeBytesInBuffer = (int)buffer.size() - CurrentFrameLength;
         if (!(*it)) {
             //padding for the last frame
             memset(&buffer.front() + CurrentFrameLength, 0, buffer.size() - CurrentFrameLength);
