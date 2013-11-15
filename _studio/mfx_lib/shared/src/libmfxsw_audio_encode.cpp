@@ -238,7 +238,6 @@ mfxStatus MFXAudioENCODE_EncodeFrameAsync(mfxSession session, mfxAudioFrame *bs,
     try
     {
         mfxSyncPoint syncPoint = NULL;
-        MFX_TASK task;
 
         // Wait for the bit stream
         mfxRes = session->m_pScheduler->WaitForDependencyResolved(bs);
@@ -253,7 +252,7 @@ mfxStatus MFXAudioENCODE_EncodeFrameAsync(mfxSession session, mfxAudioFrame *bs,
             *syncp = NULL;
         }
 
-        memset(&task, 0, sizeof(MFX_TASK));
+        MFX_TASK task = {0};
         mfxRes = session->m_pAudioENCODE->EncodeFrameCheck(bs, buffer_out, &task.entryPoint);
         // source data is OK, go forward
         if (task.entryPoint.pRoutine)
@@ -268,7 +267,7 @@ mfxStatus MFXAudioENCODE_EncodeFrameAsync(mfxSession session, mfxAudioFrame *bs,
 
 #ifdef MFX_TRACE_ENABLE
             task.nParentId = MFX_AUTO_TRACE_GETID();
-            task.nTaskId = MFX::CreateUniqId() + MFX_TRACE_ID_DECODE;
+            task.nTaskId = MFX::CreateUniqId() + MFX_TRACE_ID_ENCODE;
 #endif
 
             // register input and call the task

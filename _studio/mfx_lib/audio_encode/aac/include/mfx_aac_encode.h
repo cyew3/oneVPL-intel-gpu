@@ -26,7 +26,8 @@
 #include "mfx_task.h"
 #include "mfxpcp.h"
 
-#include <queue>
+#include "libmfx_core.h"
+#include <vector>
 #include <list>
 #include <memory>
 
@@ -54,8 +55,13 @@ public:
 
     virtual mfxStatus GetAudioParam(mfxAudioParam *par);
 
-    virtual mfxStatus EncodeFrame(mfxAudioFrame *bs, mfxBitstream *buffer_out);
-    virtual mfxStatus EncodeFrameCheck(mfxAudioFrame *bs, mfxBitstream *buffer_out);
+    virtual mfxStatus EncodeFrame(mfxAudioFrame *, mfxBitstream *) {
+        return MFX_ERR_NONE;
+    };
+    virtual mfxStatus EncodeFrameCheck(mfxAudioFrame *bs, mfxBitstream *buffer_out) {
+        bs; buffer_out;
+        return MFX_ERR_NONE;
+    }
     virtual mfxStatus EncodeFrameCheck(mfxAudioFrame *bs, mfxBitstream *buffer_out, MFX_ENTRY_POINT *pEntryPoint);
  
 
@@ -66,8 +72,6 @@ protected:
 
     mfxStatus CopyBitstream(mfxAudioFrame& bs, const mfxU8* ptr, mfxU32 bytes);
     void MoveBitstreamData(mfxAudioFrame& bs, mfxU32 offset);
-
-    mfxStatus CheckUncompressedFrameSize(mfxAudioFrame *in);
 
    // UMC encoder 
     std::auto_ptr<UMC::AACEncoder>  m_pAACAudioEncoder;
@@ -88,10 +92,116 @@ protected:
 
     UMC::Mutex m_mGuard;
 
+    class AudioFramesCollector {
+        UMC::Mutex mGuard;
+        CommonCORE& mCore;
+        std::list<mfxAudioFrame*> list;
+        std::vector<mfxU8>& buffer;
+        int offset;
+    public:
+        AudioFramesCollector(std::vector<mfxU8>& v, CommonCORE& core)
+            : offset(0)
+            , buffer(v)
+            , mCore(core) {
+        }
+        void push(mfxAudioFrame* t) {
+            mCore.IncreasePureReference(t->Locked);
+            mGuard.Lock();
+            list.push_back(t);
+            mGuard.Unlock();
+        }
+        bool UpdateBuffer();
+            
+    };
+    class StateDataDivider {
+    public:
+        //LockFreeQueue_ts2<mfxBitstream*> m_Bitstreams;
+        std::list<mfxBitstream*> m_Bitstreams;
+        std::auto_ptr<AudioFramesCollector> m_AudioFrames;
+    protected:
+        int m_nRestBytes;
+        mfxU32 m_FrameSize;
+        mfxStatus m_lastStatus;
+        CommonCORE* m_CommonCore;
 
+        int m_nFrames;
 
+        std::vector<mfxU8> m_buffer;
+        UMC::Mutex m_mGuard;
 
+        void QueueBitstream(mfxBitstream * p) {
+            m_mGuard.Lock();
+            m_Bitstreams.push_back(p);
+            m_mGuard.Unlock();
+        }
 
+        void QueueFrame(mfxAudioFrame * p) {
+            m_AudioFrames->push(p);
+            if (p) {
+                m_nFrames   += (m_nRestBytes + p->DataLength) / m_FrameSize;
+                m_nRestBytes = (m_nRestBytes + p->DataLength) % m_FrameSize;
+            }
+        }
+        
+        void QueuePair(std::pair<mfxAudioFrame*, mfxBitstream*> pair) {
+            if (MFX_ERR_MORE_BITSTREAM == m_lastStatus) {
+                if (m_nFrames) {
+                    QueueBitstream(pair.second);
+                }
+            } else if (MFX_ERR_MORE_DATA == m_lastStatus) {
+                QueueFrame(pair.first);
+                QueueBitstream(pair.second);
+            } else if (MFX_ERR_NONE == m_lastStatus) {
+                QueueFrame(pair.first);
+                QueueBitstream(pair.second);
+            }
+        }
+    public:
+        StateDataDivider(int ExpectedFrameSize, CommonCORE* core) 
+            : m_FrameSize(ExpectedFrameSize)
+            , m_nRestBytes(0)
+            , m_lastStatus(MFX_ERR_NONE)
+            , m_nFrames(0)
+            , m_CommonCore(core) {
+                m_buffer.resize(ExpectedFrameSize);
+                m_AudioFrames.reset(new AudioFramesCollector(m_buffer, *m_CommonCore));
+        
+        }
+        mfxStatus PutPair(std::pair<mfxAudioFrame*, mfxBitstream*> pair) {
+            QueuePair(pair);
+
+            if (m_nFrames > 1) {
+                m_nFrames--;
+                return m_lastStatus = MFX_ERR_MORE_BITSTREAM;
+            } else if (m_nFrames == 1) {
+                m_lastStatus = m_nRestBytes ?  MFX_ERR_MORE_BITSTREAM : MFX_ERR_NONE;
+                m_nFrames--;
+                return m_lastStatus;
+            } else {
+                return m_lastStatus = MFX_ERR_MORE_DATA;
+            } 
+        }
+
+        mfxBitstream* GetNextBitstream() {
+            mfxBitstream *bitstream = 0;
+            m_mGuard.Lock();
+            if (!m_Bitstreams.empty()) {
+                bitstream = m_Bitstreams.front();
+                m_Bitstreams.pop_front();
+            }
+            m_mGuard.Unlock();
+            return bitstream;
+        }
+
+        mfxU8* GetBuffer() {
+            mfxU8* pBuffer = m_AudioFrames->UpdateBuffer() ? &m_buffer.front() : 0;
+            return pBuffer;
+        }
+        
+    };
+
+    mfxU32 m_FrameSize;
+    std::auto_ptr<StateDataDivider> m_divider;
 };
 
 #endif // __MFX_AAC_ENCODE_H__

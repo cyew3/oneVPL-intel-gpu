@@ -51,7 +51,6 @@ mfxStatus AudioENCODEAAC::Init(mfxAudioParam *par)
 
     MFX_CHECK_NULL_PTR1(par);
 
-
     if (CheckAudioParamEncoders(par) != MFX_ERR_NONE)
         return MFX_ERR_INVALID_AUDIO_PARAM;
 
@@ -139,9 +138,12 @@ mfxStatus AudioENCODEAAC::Init(mfxAudioParam *par)
     {
         return   MFX_ERR_UNDEFINED_BEHAVIOR;
     }
-       
+    
+    int upSample = m_vPar.mfx.CodecProfile == MFX_PROFILE_AAC_HE ? 2 : 1;
+    m_FrameSize  = m_vPar.mfx.NumChannel * sizeof(Ipp16s)*1024* upSample;
+    m_divider.reset(new StateDataDivider(m_FrameSize, m_CommonCore));
     m_isInit = true;
-     
+    
     return MFX_ERR_NONE;
 }
 
@@ -233,69 +235,19 @@ mfxStatus AudioENCODEAAC::QueryIOSize(AudioCORE *core, mfxAudioParam *par, mfxAu
     return MFX_ERR_NONE;
 }
 
-
-mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxAudioFrame *aFrame, mfxBitstream *buffer_out)
-{
-    UMC::AutomaticUMCMutex guard(m_mGuard);
-    buffer_out;
-    mfxStatus sts;
-
-    if (!m_isInit)
-        return MFX_ERR_NOT_INITIALIZED;
-
-    sts = aFrame ? CheckAudioFrame(aFrame) : MFX_ERR_NONE;
-    if (sts != MFX_ERR_NONE)
-        return sts;
-
-//    UMC::Status umcRes = UMC::UMC_OK;
-
-    if (NULL != aFrame)
-    {
-        //sts = CheckAudioFrame(bs);
-        //MFX_CHECK_STS(sts);
-
-        sts = CheckUncompressedFrameSize(aFrame);
-
-        if (MFX_ERR_NONE != sts)
-        {
-            return sts;
-        }
-
-        if (0 == buffer_out->MaxLength) {
-            return sts;
-        }
-
-        mfxAudioAllocRequest audioAllocRequest;
-        sts = QueryIOSize(m_core, &m_vPar, &audioAllocRequest);
-        MFX_CHECK_STS(sts);
-
-        if (buffer_out->MaxLength < audioAllocRequest.SuggestedOutputSize) {
-            sts = MFX_ERR_NOT_ENOUGH_BUFFER;
-        } else {
-            buffer_out->TimeStamp = aFrame->TimeStamp;
-            buffer_out->DecodeTimeStamp = aFrame->TimeStamp;
-            //finally queue task
-            m_CommonCore->IncreasePureReference(aFrame->Locked);
-        }
-
-    }
-
-    return sts;
-}
-
-
 mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxAudioFrame *aFrame,
                                            mfxBitstream *buffer_out,
                                            MFX_ENTRY_POINT *pEntryPoint)
-{
-    mfxStatus mfxSts = EncodeFrameCheck(aFrame, buffer_out);
+{    
+    mfxStatus mfxSts = m_divider->PutPair(std::pair<mfxAudioFrame*, mfxBitstream*>(aFrame, buffer_out));
 
-    if (MFX_ERR_NONE == mfxSts) // It can be useful to run threads right after first frame receive
+    if ((MFX_ERR_NONE == mfxSts) || (MFX_ERR_MORE_BITSTREAM == mfxSts)) // It can be useful to run threads right after first frame receive
     {
         ThreadAudioEncodeTaskInfo * info = new ThreadAudioEncodeTaskInfo();
         info->out = buffer_out;
         info->in = aFrame;
-
+        //finally queue task
+        
         pEntryPoint->pRoutine = &AACENCODERoutine;
         pEntryPoint->pCompleteProc = &AACCompleteProc;
         pEntryPoint->pState = this;
@@ -309,46 +261,29 @@ mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxAudioFrame *aFrame,
 mfxStatus AudioENCODEAAC::AACENCODERoutine(void *pState, void *pParam,
                                           mfxU32 threadNumber, mfxU32 callNumber)
 {
+    pParam;
     callNumber;
     threadNumber;
+    
     AudioENCODEAAC &obj = *((AudioENCODEAAC *) pState);
-    mfxStatus mfxRes = MFX_ERR_NONE;
 
-    MFX::AutoTimer timer("DecodeFrame");
+    MFX::AutoTimer timer("EncodeFrame");
 
-    if (MFX_PLATFORM_SOFTWARE == obj.m_platform)
-    {
-        ThreadAudioEncodeTaskInfo *pTask = (ThreadAudioEncodeTaskInfo *) pParam;
+    mfxBitstream* bitstream = obj.m_divider->GetNextBitstream();
+    mfxU8* buffer = (mfxU8*)obj.m_divider->GetBuffer();
+    if (!buffer || !bitstream)
+        return MFX_ERR_NONE;
 
-        obj.mInData.SetBufferPointer((Ipp8u *)pTask->in->Data, pTask->in->DataLength);
-        obj.mInData.SetDataSize(obj.mInData.GetBufferSize());
-        
-        obj.mOutData.SetBufferPointer( static_cast<Ipp8u *>(pTask->out->Data +pTask->out->DataOffset + pTask->out->DataLength), pTask->out->MaxLength - (pTask->out->DataOffset + pTask->out->DataLength));
+    obj.mInData.SetBufferPointer(buffer, obj.m_FrameSize);
+    obj.mInData.SetDataSize(obj.mInData.GetBufferSize());
+    obj.mOutData.SetBufferPointer(bitstream->Data + bitstream->DataOffset + bitstream->DataLength, 
+        bitstream->MaxLength - (bitstream->DataOffset + bitstream->DataLength));
+    UMC::Status sts = obj.m_pAACAudioEncoder.get()->GetFrame(&obj.mInData, &obj.mOutData);
+    if (sts)
+        return MFX_ERR_UNKNOWN;
+    bitstream->DataLength += (mfxU32)obj.mOutData.GetDataSize();
 
-        UMC::Status sts = obj.m_pAACAudioEncoder.get()->GetFrame(&obj.mInData, &obj.mOutData);
-        if(sts == UMC::UMC_OK)
-        {
-            // set data size to remaining value in mInData
-            // and moving buffer
-            memmove(pTask->in->Data, pTask->in->Data + obj.mInData.GetBufferSize() - obj.mInData.GetDataSize(), obj.mInData.GetDataSize());
-            pTask->in->DataLength = (mfxU32)obj.mInData.GetDataSize();
-
-            // set out buffer size;
-            pTask->out->DataLength += (mfxU32)obj.mOutData.GetDataSize();
-            
-            obj.m_CommonCore->DecreasePureReference(pTask->in->Locked);
-        }
-        else
-        {
-            return MFX_ERR_UNKNOWN;
-        }
-
-    }
-    else
-    {
-        return MFX_ERR_UNSUPPORTED;
-    }
-    return mfxRes;
+    return MFX_ERR_NONE;
 
 } // mfxStatus AudioENCODEAAC::AACECODERoutine(void *pState, void *pParam,
 
@@ -371,36 +306,6 @@ mfxStatus AudioENCODEAAC::AACCompleteProc(void *pState, void *pParam,
 //    return MFX_ERR_NONE;
 }
 
-
-mfxStatus AudioENCODEAAC::EncodeFrame(mfxAudioFrame *aFrame, mfxBitstream *buffer_out)
-{
-    UMC::AutomaticUMCMutex guard(m_mGuard);
-    buffer_out;
-    mfxStatus sts;
-
-    if (!m_isInit)
-        return MFX_ERR_NOT_INITIALIZED;
-    if(aFrame)
-    {
-        sts = CheckAudioFrame(aFrame);
-        if (sts != MFX_ERR_NONE)
-            return sts;
-    }
-    else
-    {
-        return MFX_ERR_MORE_DATA;
-    }
-
-    sts = CheckUncompressedFrameSize(aFrame);
-
-    if (MFX_ERR_NONE != sts)
-    {
-        return sts;
-    }
-
-    return sts;
-}
-
 // protected methods
 mfxStatus AudioENCODEAAC::CopyBitstream(mfxAudioFrame& bs, const mfxU8* ptr, mfxU32 bytes)
 {
@@ -416,35 +321,6 @@ void AudioENCODEAAC::MoveBitstreamData(mfxAudioFrame& bs, mfxU32 offset)
     ippsMove_8u(bs.Data + offset, bs.Data, bs.DataLength - offset);
     bs.DataLength -= offset;
 } 
-
-mfxStatus AudioENCODEAAC::CheckUncompressedFrameSize(mfxAudioFrame *in)
-{
-//    mfxStatus sts = MFX_ERR_NONE;
-   
-    MFX_CHECK_NULL_PTR1(in);
-    MFX_CHECK_NULL_PTR1(in->Data);
-
-
-    int upSample = 1;
-    if(m_vPar.mfx.CodecProfile == MFX_PROFILE_AAC_HE) upSample = 2;
-    Ipp32s FrameSize  = m_vPar.mfx.NumChannel * sizeof(Ipp16s)*1024* upSample;
-
-    if(FrameSize > (Ipp32s)in->DataLength) 
-    {
-        return MFX_ERR_MORE_DATA;
-    }
-    /*else
-    {
-    sts = CopyBitstream(*out, in->Data, FrameSize);
-    if(sts != MFX_ERR_NONE) 
-    {
-    return MFX_ERR_NOT_ENOUGH_BUFFER;
-    }
-    MoveBitstreamData(*in, (mfxU32)(FrameSize));
-    }*/
-
-    return MFX_ERR_NONE;
-}
 
 mfxStatus MFX_AAC_Encoder_Utility::FillAudioParam( mfxAudioParam *in, mfxAudioParam *out)
 {
@@ -589,6 +465,37 @@ mfxStatus MFX_AAC_Encoder_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfx
     }        
 
     return sts;
+}
+
+bool AudioENCODEAAC::AudioFramesCollector::UpdateBuffer() {
+    mGuard.Lock();
+    int CurrentFrameLength = 0;
+    int nPopFront = 0;
+    for (std::list<mfxAudioFrame*>::iterator it = list.begin() ; it != list.end() ; ++it ) {
+        int nFreeBytesInBuffer = buffer.size() - CurrentFrameLength;
+        if (!(*it)) {
+            //padding for the last frame
+            memset(&buffer.front() + CurrentFrameLength, 0, buffer.size() - CurrentFrameLength);
+            break;
+        }
+        int nFrameSizeWithoutOffset = (*it)->DataLength - offset;
+        if (nFrameSizeWithoutOffset <= nFreeBytesInBuffer) {
+            memcpy(&buffer.front() + CurrentFrameLength, (*it)->Data + offset, nFrameSizeWithoutOffset);
+            offset = 0;
+            CurrentFrameLength += nFrameSizeWithoutOffset % buffer.size();
+            mCore.DecreasePureReference((*it)->Locked);
+            nPopFront++;
+        } else {
+            memcpy(&buffer.front() + CurrentFrameLength, (*it)->Data + offset, nFreeBytesInBuffer);
+            offset += nFreeBytesInBuffer;
+            break;
+        }            
+    }
+    for (int i = 0; i < nPopFront; i++)
+        list.pop_front();
+    mGuard.Unlock();
+    //TODO: errors handling
+    return true;
 }
 
 #endif // MFX_ENABLE_AAC_AUDIO_ENCODE
