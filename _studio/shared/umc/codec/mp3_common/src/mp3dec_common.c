@@ -194,15 +194,15 @@ MP3Status  mp3dec_GetSynch(MP3Dec_com *state)
               (header->layer == header_good->layer) &&
               (header->id == header_good->id) &&
               (state->mpg25 == state->mpg25_good) &&
-              (header->bitRate != 15) &&
-              (header->emphasis != 2)) {
+              (header->bitRate != 15) /*&&
+              (header->emphasis != 2)*/) {
                 break;
               }
           } else {
             if ((header->samplingFreq != 3) &&
               (header->layer != 4) &&
               (header->bitRate != 15) &&
-              (header->emphasis != 2) &&
+              /*(header->emphasis != 2) &&*/
               (((val >> 19) & 3) != 1)) {
                 break;
               }
@@ -246,7 +246,7 @@ MP3Status  mp3dec_GetSynch(MP3Dec_com *state)
         // Fixes decoder fail with MP3_NOT_ENOUGH_DATA error when processing single frame of the stream:
         state->m_bInit = 1;
 
-        if (BS->nDataLen < (state->decodedBytes - start_db) /*+ 
+        if (BS->nDataLen < (state->decodedBytes - start_db)/* + 
           ((!state->m_bInit || state->synchro_mode) ? 3 : 0)*/) {
           state->decodedBytes -= state->MP3nSlots + 4;
           return MP3_NOT_ENOUGH_DATA;
