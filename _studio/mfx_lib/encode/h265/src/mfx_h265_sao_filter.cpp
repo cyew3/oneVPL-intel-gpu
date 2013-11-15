@@ -593,23 +593,26 @@ void InvertQuantOffsets(int type_idx, int typeAuxInfo, int* dstOffsets, int* src
 
 void ReconstructCtuSaoParam(SaoCtuParam& recParam, std::vector<SaoCtuParam*>& mergeList)
 {
-    for(int compIdx=0; compIdx< NUM_SAO_COMPONENTS; compIdx++)
+    //for(int compIdx=0; compIdx< NUM_SAO_COMPONENTS; compIdx++)
+    for(int compIdx=0; compIdx<1; compIdx++)
     {
         SaoOffsetParam& offsetParam = recParam[compIdx];
 
-        if(offsetParam.mode_idx == SAO_MODE_OFF)
-        {
-            continue;
-        }
-
         switch(offsetParam.mode_idx)
         {
-        case SAO_MODE_ON:
+            case SAO_MODE_OFF:
+            {
+                ;//aya: TO DO late
+            }
+            break;
+
+            case SAO_MODE_ON:
             {
                 InvertQuantOffsets(offsetParam.type_idx, offsetParam.typeAuxInfo, offsetParam.offset, offsetParam.offset);
             }
             break;
-        case SAO_MODE_MERGE:
+
+            case SAO_MODE_MERGE:
             {
                 SaoCtuParam* mergeTarget = mergeList[offsetParam.type_idx];
                 VM_ASSERT(mergeTarget != NULL);
@@ -617,7 +620,8 @@ void ReconstructCtuSaoParam(SaoCtuParam& recParam, std::vector<SaoCtuParam*>& me
                 offsetParam = (*mergeTarget)[compIdx];
             }
             break;
-        default:
+
+            default:
             {
                 VM_ASSERT(!"Not a supported mode");
             }
