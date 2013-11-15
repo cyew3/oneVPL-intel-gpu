@@ -35,14 +35,13 @@ File Name: mfx_load_plugin.h
 
 namespace MFX
 {
-    typedef std::basic_string<msdk_disp_char> msdk_disp_string;
     typedef mfxStatus (MFX_CDECL *CreatePluginPtr_t)(mfxPluginUID uid, mfxPlugin* plugin);
 
     class PluginModule
     {
         mfxModuleHandle mHmodule;
         CreatePluginPtr_t mCreatePluginPtr;
-        msdk_disp_string mPath;
+        msdk_disp_char mPath[MAX_PLUGIN_PATH];
         
     public:
         PluginModule();

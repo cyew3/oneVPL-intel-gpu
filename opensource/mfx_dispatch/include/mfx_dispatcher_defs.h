@@ -33,8 +33,10 @@ File Name: mfx_dispatcher_defs.h
 
 #if defined(_WIN32) || defined(_WIN64)
 typedef wchar_t  msdk_disp_char;
+#define msdk_disp_char_cpy_s(to, to_size, from) wcscpy_s(to,to_size, from)
 #else
 #define msdk_disp_char char
+#define msdk_disp_char_cpy_s(to, to_size, from) strcpy(to, from)
 #endif
 
 // declare library module's handle

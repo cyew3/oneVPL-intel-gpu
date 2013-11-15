@@ -44,17 +44,16 @@ MFX::PluginModule::PluginModule()
 }
 
 MFX::PluginModule::PluginModule(const PluginModule & that) 
-    : mHmodule(mfx_get_dll_handle(that.mPath.c_str()))
-    , mCreatePluginPtr(that.mCreatePluginPtr) 
-    , mPath(that.mPath) 
-{
+    : mHmodule(mfx_get_dll_handle(that.mPath))
+    , mCreatePluginPtr(that.mCreatePluginPtr) {
+    msdk_disp_char_cpy_s(mPath, sizeof(mPath) / sizeof(*mPath), that.mPath);
 }
 
 MFX::PluginModule & MFX::PluginModule::operator = (const MFX::PluginModule & that) 
 {
-    mHmodule = mfx_get_dll_handle(that.mPath.c_str());
+    mHmodule = mfx_get_dll_handle(that.mPath);
     mCreatePluginPtr = that.mCreatePluginPtr;
-    mPath = that.mPath;
+    msdk_disp_char_cpy_s(mPath, sizeof(mPath) / sizeof(*mPath), that.mPath);
     return *this;
 }
 
@@ -74,7 +73,7 @@ MFX::PluginModule::PluginModule(const msdk_disp_char * path)
         return ;
     }
     
-    mPath = path;
+    msdk_disp_char_cpy_s(mPath, sizeof(mPath) / sizeof(*mPath), path);
 }
 
 MFX::PluginModule::~PluginModule(void) 
