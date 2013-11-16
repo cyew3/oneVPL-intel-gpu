@@ -94,7 +94,7 @@ protected:
         CommonCORE& mCore;
         std::list<mfxAudioFrame*> list;
         std::vector<mfxU8>& buffer;
-        int offset;
+        size_t offset;
     public:
         AudioFramesCollector(std::vector<mfxU8>& v, CommonCORE& core)
             : offset(0)
