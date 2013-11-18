@@ -300,8 +300,10 @@ public:
 
     template <class H265Bs>
     void xEncodeCU(H265Bs *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mode = 0 );
+
     template <class H265Bs>
     void encode_coeff(H265Bs *bs, Ipp32u abs_part_idx, Ipp32u depth, Ipp32u width, Ipp32u height, Ipp8u &code_dqp, Ipp8u split_flag_only = 0 );
+
     template <class H265Bs>
     void h265_code_intradir_luma_ang(H265Bs *bs, Ipp32u abs_part_idx, Ipp8u multiple);
 
@@ -329,18 +331,7 @@ public:
     void QuantInvTU(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, Ipp32s is_luma);
     void QuantFwdTU(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, Ipp32s is_luma);
 
-    void Deblock();
-
-    //aya: moved to HEVC_PP
-    /*void FilterEdgeLuma(H265EdgeData *edge,
-                            PixType *srcDst,
-                            Ipp32s srcDstStride,
-                            Ipp32s dir);*/
-    /*void FilterEdgeChroma(H265EdgeData *edge,
-                              PixType *srcDst,
-                              Ipp32s srcDstStride,
-                              Ipp32s chromaQpOffset,
-                              Ipp32s dir);*/
+    void Deblock();    
 
     void DeblockOneCrossLuma(Ipp32s curPixelColumn,
                              Ipp32s curPixelRow);
@@ -396,6 +387,22 @@ public:
     private:
         bool m_isRDOQ;
 };
+
+template <class H265Bs>
+void h265_code_sao_ctb_offset_param(
+    H265Bs *bs, 
+    int compIdx, 
+    SaoOffsetParam& ctbParam, 
+    bool sliceEnabled);
+
+template <class H265Bs>
+void h265_code_sao_ctb_param(
+    H265Bs *bs,
+    SaoCtuParam& saoBlkParam,
+    bool* sliceEnabled,
+    bool leftMergeAvail,
+    bool aboveMergeAvail,
+    bool onlyEstMergeInfo);
 
 #endif // __MFX_H265_CTB_H__
 
