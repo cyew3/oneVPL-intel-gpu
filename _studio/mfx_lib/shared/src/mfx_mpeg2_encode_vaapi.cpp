@@ -115,6 +115,7 @@ namespace
     {
         assert(pExecuteBuffers);
         const ENCODE_SET_SEQUENCE_PARAMETERS_MPEG2 & winSps = pExecuteBuffers->m_sps;
+        const ENCODE_SET_PICTURE_PARAMETERS_MPEG2 & winPps = pExecuteBuffers->m_pps;
 
         sps.picture_width   = winSps.FrameWidth;
         sps.picture_height  = winSps.FrameHeight;
@@ -183,10 +184,10 @@ namespace
         sps.sequence_extension.bits.frame_rate_extension_d = winSps.FrameRateExtD;
         sps.sequence_extension.bits.progressive_sequence   = winSps.progressive_sequence; 
         sps.sequence_extension.bits.low_delay              = winSps.low_delay; // FIXME
-
+        sps.new_gop_header = winPps.bNewGop;
         sps.gop_header.bits.time_code = (1 << 12); // bit12: marker_bit
-        sps.gop_header.bits.closed_gop = 0;
-        sps.gop_header.bits.broken_link = 0;  
+        sps.gop_header.bits.closed_gop = (winPps.GopOptFlag & MFX_GOP_CLOSED) ? 1 : 0;
+        sps.gop_header.bits.broken_link = (winPps.GopOptFlag & MFX_GOP_STRICT) ? 1 : 0;
 
     } // void FillSps(...)
 
