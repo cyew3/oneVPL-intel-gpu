@@ -303,7 +303,7 @@ MFX::MFXPluginFactory::MFXPluginFactory( mfxSession session )
 
 bool MFX::MFXPluginFactory::Destroy( const mfxPluginUID & uidToDestroy) 
 {
-    for (MFXVector<FactoryRecord >::iterator i = mPlugins.begin(); i!= mPlugins.end(); i++) 
+    for (MFXVector<FactoryRecord >::iterator_type i = mPlugins.begin(); i!= mPlugins.end(); i++) 
     {
         if (i->plgParams.PluginUID == uidToDestroy) 
         {
@@ -318,7 +318,7 @@ bool MFX::MFXPluginFactory::Destroy( const mfxPluginUID & uidToDestroy)
 
 void MFX::MFXPluginFactory::Close() 
 {
-    for (MFXVector<FactoryRecord>::iterator i = mPlugins.begin(); i!= mPlugins.end(); i++) 
+    for (MFXVector<FactoryRecord>::iterator_type i = mPlugins.begin(); i!= mPlugins.end(); i++) 
     {
         DestroyPlugin(*i);
     }

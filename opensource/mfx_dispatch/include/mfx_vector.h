@@ -94,16 +94,17 @@ namespace MFX
         {
             clear();
         }
-        typedef iterator<T> iterator;
-        iterator begin() const 
+        typedef iterator<T> iterator_type;
+
+        iterator_type begin() const 
         {
-            return iterator(0u, mRecords);
+            return iterator_type(0u, mRecords);
         }
-        iterator end() const 
+        iterator_type end() const 
         {
-            return iterator(mNrecords, mRecords);
+            return iterator_type(mNrecords, mRecords);
         }
-        void insert(iterator beg_iter, iterator end_iter) 
+        void insert(iterator_type beg_iter, iterator_type end_iter) 
         {
             if (beg_iter == end_iter)
             {
@@ -144,7 +145,7 @@ namespace MFX
             mNrecords = i + 1;
             
         }
-        void erase (iterator at) 
+        void erase (iterator_type at) 
         {
             mNrecords--;
             for (mfxU32 i = at.mIndex; i != mNrecords; i++)

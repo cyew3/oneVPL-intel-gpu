@@ -67,7 +67,7 @@ namespace MFX {
     class MFXPluginHive  {
         MFXVector<PluginDescriptionRecord> mRecords;
     public:
-        typedef MFXVector<PluginDescriptionRecord>::iterator iterator;
+        typedef MFXVector<PluginDescriptionRecord>::iterator_type iterator;
         
         iterator begin() const {
             return mRecords.begin();
