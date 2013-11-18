@@ -20,13 +20,13 @@
 #include "vm_thread.h"
 #include "vm_interlocked.h"
 #include "vm_event.h"
+#include "vm_sys_info.h"
 #include "mfx_ext_buffers.h"
 #include <new>
 
 #include "mfx_h265_defs.h"
 #include "umc_structures.h"
 #include "mfx_enc_common.h"
-
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -642,10 +642,11 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 
     // CodecId - only HEVC;  CodecProfile CodecLevel - in the end
     // NumThread - set inside, >1 only if WPP
-    mfxU32 asyncDepth = par->AsyncDepth ? par->AsyncDepth : m_core->GetAutoAsyncDepth();
-    m_mfxVideoParam.mfx.NumThread = (mfxU16)asyncDepth;
+//    mfxU32 asyncDepth = par->AsyncDepth ? par->AsyncDepth : m_core->GetAutoAsyncDepth();
+//    m_mfxVideoParam.mfx.NumThread = (mfxU16)asyncDepth;
 //    if (MFX_PLATFORM_SOFTWARE != MFX_Utility::GetPlatform(m_core, par_in))
 //        m_mfxVideoParam.mfx.NumThread = 1;
+    m_mfxVideoParam.mfx.NumThread = (mfxU16)vm_sys_info_get_cpu_num();
 
     // TargetUsage - nothing to do
 
