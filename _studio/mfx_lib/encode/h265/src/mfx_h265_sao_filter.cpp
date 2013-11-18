@@ -91,36 +91,35 @@ inline Ipp64f xRoundIbdi(int bitDepth, Ipp64f x)
 template <typename T> inline T Clip3( T minVal, T maxVal, T a) { return std::min<T> (std::max<T> (minVal, a) , maxVal); }  ///< general min/max clip
 
 Ipp64s GetDistortion(
-    int compIdx,
-    int type_idx,
+    int typeIdx,
     int typeAuxInfo,
-    int* invQuantOffset,
+    int* quantOffset,
     SaoCtuStatistics& statData)
 {
     Ipp64s dist=0;
     int shift = 0;
-    int offsetIdx=0;
 
-    switch(type_idx)
+    switch(typeIdx)
     {
         case SAO_TYPE_EO_0:
         case SAO_TYPE_EO_90:
         case SAO_TYPE_EO_135:
         case SAO_TYPE_EO_45:
         {
-            for (offsetIdx=0; offsetIdx<NUM_SAO_EO_CLASSES; offsetIdx++)
+            for (int offsetIdx=0; offsetIdx<NUM_SAO_EO_CLASSES; offsetIdx++)
             {
-                dist += EstimateDeltaDist( statData.count[offsetIdx], invQuantOffset[offsetIdx], statData.diff[offsetIdx], shift);
+                dist += EstimateDeltaDist( statData.count[offsetIdx], quantOffset[offsetIdx], statData.diff[offsetIdx], shift);
             }
         }
         break;
 
         case SAO_TYPE_BO:
         {
-            for (offsetIdx=typeAuxInfo; offsetIdx<typeAuxInfo+4; offsetIdx++)
+            int startBand = typeAuxInfo;
+
+            for (int bandIdx=startBand; bandIdx<startBand+4; bandIdx++)
             {
-                int bandIdx = offsetIdx % NUM_SAO_BO_CLASSES ;
-                dist += EstimateDeltaDist( statData.count[bandIdx], invQuantOffset[bandIdx], statData.diff[bandIdx], shift);
+                dist += EstimateDeltaDist( statData.count[bandIdx], quantOffset[bandIdx], statData.diff[bandIdx], shift);
             }
         }
         break;
@@ -1251,7 +1250,6 @@ void SAOFilter::ModeDecision_Merge(std::vector<SaoCtuParam*>& mergeList, bool* s
             {
                 //offsets have been reconstructed. Don't call inversed quantization function.
                 normDist += (((Ipp64f)GetDistortion(
-                    compIdx,
                     mergedOffsetParam.type_idx,
                     mergedOffsetParam.typeAuxInfo,
                     mergedOffsetParam.offset,
@@ -1294,7 +1292,6 @@ void SAOFilter::ModeDecision_Base(
     Ipp64s dist[NUM_SAO_COMPONENTS], modeDist[NUM_SAO_COMPONENTS];
     SaoOffsetParam testOffset[NUM_SAO_COMPONENTS];
     int compIdx;
-    int invQuantOffset[MAX_NUM_SAO_CLASSES];
 
     modeDist[SAO_Y]= modeDist[SAO_Cb] = modeDist[SAO_Cr] = 0;
 
@@ -1326,11 +1323,18 @@ void SAOFilter::ModeDecision_Base(
             testOffset[compIdx].mode_idx = SAO_MODE_ON;
             testOffset[compIdx].type_idx = type_idx;
 
-            GetQuantOffsets(type_idx, m_statData[compIdx][type_idx], testOffset[compIdx].offset, testOffset[compIdx].typeAuxInfo, m_labmda[compIdx]);
+            GetQuantOffsets(
+                type_idx, 
+                m_statData[compIdx][type_idx], 
+                testOffset[compIdx].offset, 
+                testOffset[compIdx].typeAuxInfo, 
+                m_labmda[compIdx]);
 
-            InvertQuantOffsets(type_idx, testOffset[compIdx].typeAuxInfo, invQuantOffset, testOffset[compIdx].offset);
-
-            dist[compIdx] = GetDistortion(compIdx, testOffset[compIdx].type_idx, testOffset[compIdx].typeAuxInfo, invQuantOffset, m_statData[compIdx][type_idx]);
+            dist[compIdx] = GetDistortion(
+                testOffset[compIdx].type_idx, 
+                testOffset[compIdx].typeAuxInfo, 
+                testOffset[compIdx].offset, 
+                m_statData[compIdx][type_idx]);
 
             m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_MID], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
             m_bsf->Reset();
@@ -1393,9 +1397,9 @@ void SAOFilter::ModeDecision_Base(
 
                 GetQuantOffsets(type_idx, m_statData[compIdx][type_idx], testOffset[compIdx].offset, testOffset[compIdx].typeAuxInfo, m_labmda[compIdx]);
 
-                InvertQuantOffsets(type_idx, testOffset[compIdx].typeAuxInfo, invQuantOffset, testOffset[compIdx].offset);
+                //InvertQuantOffsets(type_idx, testOffset[compIdx].typeAuxInfo, invQuantOffset, testOffset[compIdx].offset);
 
-                dist[compIdx]= GetDistortion(compIdx, type_idx, testOffset[compIdx].typeAuxInfo, invQuantOffset, m_statData[compIdx][type_idx]);
+                dist[compIdx]= GetDistortion(type_idx, testOffset[compIdx].typeAuxInfo, testOffset[compIdx].offset, m_statData[compIdx][type_idx]);
             }
 
             //get rate
