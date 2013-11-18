@@ -53,6 +53,7 @@ protected:
 //InterfaceA *proxy = CreateProxy<C>();
 //Then CreateProxy template function can create a correct new InterfaceProxy<InterfaceA>(new B), or new C respectively
 //by using trait : InterfaceProxy<EnableProxyForThis<T>::InterfaceType>(new T)
+
 template <class T>
 struct EnableProxyForThis
 {

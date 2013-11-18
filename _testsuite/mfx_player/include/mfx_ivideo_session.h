@@ -17,7 +17,7 @@ File Name: mfx_ivideo_session.h
 #include "mfx_iproxy.h"
 
 
-class IVideoSession : EnableProxyForThis<IVideoSession>
+class IVideoSession : public EnableProxyForThis<IVideoSession>
 {
 public:
     //different from mediasdk's init

@@ -15,7 +15,7 @@ Copyright(c) 2010-2011 Intel Corporation. All Rights Reserved.
 
 //Generic vpp abstraction
 class  IMFXVideoVPP 
-    : EnableProxyForThis<IMFXVideoVPP>
+    : public EnableProxyForThis<IMFXVideoVPP>
 {
 public:
     virtual mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out) = 0;

@@ -24,7 +24,7 @@ File Name: .h
 
 struct IFile
     : EnableSharedFromThis<IFile>
-    , EnableProxyForThis<IFile>
+    , public EnableProxyForThis<IFile>
     , ICloneable
     , IBitstreamWriter
 {

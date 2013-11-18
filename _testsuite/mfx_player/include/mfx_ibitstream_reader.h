@@ -28,7 +28,7 @@ struct sStreamInfo
 };
 
 //file reader abstraction
-class IBitstreamReader : EnableProxyForThis<IBitstreamReader>
+class IBitstreamReader : public EnableProxyForThis<IBitstreamReader>
 {
 public:
     virtual ~IBitstreamReader(){}

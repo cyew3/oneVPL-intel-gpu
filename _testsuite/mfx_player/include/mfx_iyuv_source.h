@@ -17,7 +17,7 @@ File Name: .h
 #include "mfx_bitstream2.h"
 
 // ABStraction for MFXVideoDECODE and YUV file reader
-class IYUVSource : EnableProxyForThis<IYUVSource>
+class IYUVSource : public EnableProxyForThis<IYUVSource>
 {
 public:
     virtual ~IYUVSource() {}
