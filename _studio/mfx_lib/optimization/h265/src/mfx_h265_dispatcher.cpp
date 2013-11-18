@@ -202,6 +202,14 @@ using namespace MFX_HEVC_PP;
         g_dispatcher.h265_InterpLuma_s8_d16_H = &MFX_HEVC_PP::h265_InterpLuma_s8_d16_H_atom;
         g_dispatcher.h265_InterpChroma_s8_d16_H = &MFX_HEVC_PP::h265_InterpChroma_s8_d16_H_atom;
 
+        g_dispatcher.h265_InterpLuma_s8_d16_V = &MFX_HEVC_PP::h265_InterpLuma_s8_d16_V_atom;
+        g_dispatcher.h265_InterpChroma_s8_d16_V = &MFX_HEVC_PP::h265_InterpChroma_s8_d16_V_atom;
+        g_dispatcher.h265_InterpLuma_s16_d16_V = &MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_atom;
+        g_dispatcher.h265_InterpChroma_s16_d16_V = &MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_atom;
+
+        g_dispatcher.h265_AverageModeB = &MFX_HEVC_PP::h265_AverageModeB_atom;
+        g_dispatcher.h265_AverageModeP = &MFX_HEVC_PP::h265_AverageModeP_atom;
+        g_dispatcher.h265_AverageModeN = &MFX_HEVC_PP::h265_AverageModeN_atom;        
     } // void SetTargetSSE4_ATOM(void)
 
 

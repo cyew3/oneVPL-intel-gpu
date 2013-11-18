@@ -435,37 +435,44 @@ namespace MFX_HEVC_PP
     void h265_InterpLuma_s8_d16_V_px(INTERP_S8_D16_PARAMETERS_LIST);
     void h265_InterpLuma_s8_d16_V_sse(INTERP_S8_D16_PARAMETERS_LIST);
     void h265_InterpLuma_s8_d16_V_ssse3(INTERP_S8_D16_PARAMETERS_LIST);    
+    void h265_InterpLuma_s8_d16_V_atom(INTERP_S8_D16_PARAMETERS_LIST);    
     void h265_InterpLuma_s8_d16_V_avx2(INTERP_S8_D16_PARAMETERS_LIST);    
 
     void h265_InterpChroma_s8_d16_V_px(INTERP_S8_D16_PARAMETERS_LIST);
     void h265_InterpChroma_s8_d16_V_sse(INTERP_S8_D16_PARAMETERS_LIST);
     void h265_InterpChroma_s8_d16_V_ssse3(INTERP_S8_D16_PARAMETERS_LIST);
+    void h265_InterpChroma_s8_d16_V_atom(INTERP_S8_D16_PARAMETERS_LIST);
     void h265_InterpChroma_s8_d16_V_avx2(INTERP_S8_D16_PARAMETERS_LIST);
     
     void h265_InterpLuma_s16_d16_V_px(INTERP_S16_D16_PARAMETERS_LIST);
     void h265_InterpLuma_s16_d16_V_sse(INTERP_S16_D16_PARAMETERS_LIST);
     void h265_InterpLuma_s16_d16_V_ssse3(INTERP_S16_D16_PARAMETERS_LIST);
+    void h265_InterpLuma_s16_d16_V_atom(INTERP_S16_D16_PARAMETERS_LIST);
     void h265_InterpLuma_s16_d16_V_avx2(INTERP_S16_D16_PARAMETERS_LIST);
     
     void h265_InterpChroma_s16_d16_V_px(INTERP_S16_D16_PARAMETERS_LIST);
     void h265_InterpChroma_s16_d16_V_sse(INTERP_S16_D16_PARAMETERS_LIST);
     void h265_InterpChroma_s16_d16_V_ssse3(INTERP_S16_D16_PARAMETERS_LIST);
+    void h265_InterpChroma_s16_d16_V_atom(INTERP_S16_D16_PARAMETERS_LIST);
     void h265_InterpChroma_s16_d16_V_avx2(INTERP_S16_D16_PARAMETERS_LIST);
     
     // average
     void h265_AverageModeN_px(INTERP_AVG_NONE_PARAMETERS_LIST);
     void h265_AverageModeN_sse(INTERP_AVG_NONE_PARAMETERS_LIST);
     void h265_AverageModeN_ssse3(INTERP_AVG_NONE_PARAMETERS_LIST);
+    void h265_AverageModeN_atom(INTERP_AVG_NONE_PARAMETERS_LIST);
     void h265_AverageModeN_avx2(INTERP_AVG_NONE_PARAMETERS_LIST);
 
     void h265_AverageModeP_px(INTERP_AVG_PIC_PARAMETERS_LIST);
     void h265_AverageModeP_sse(INTERP_AVG_PIC_PARAMETERS_LIST);
     void h265_AverageModeP_ssse3(INTERP_AVG_PIC_PARAMETERS_LIST);
+    void h265_AverageModeP_atom(INTERP_AVG_PIC_PARAMETERS_LIST);
     void h265_AverageModeP_avx2(INTERP_AVG_PIC_PARAMETERS_LIST);
 
     void h265_AverageModeB_px(INTERP_AVG_BUF_PARAMETERS_LIST);
     void h265_AverageModeB_sse(INTERP_AVG_BUF_PARAMETERS_LIST);
     void h265_AverageModeB_ssse3(INTERP_AVG_BUF_PARAMETERS_LIST);
+    void h265_AverageModeB_atom(INTERP_AVG_BUF_PARAMETERS_LIST);
     void h265_AverageModeB_avx2(INTERP_AVG_BUF_PARAMETERS_LIST);
 
     // WeightedPred

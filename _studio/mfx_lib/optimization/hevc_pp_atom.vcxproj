@@ -39,7 +39,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="h265\src\mfx_h265_deblocking_sse.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_interpolation_sse.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_interpolation_atom.cpp">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">/Qsfalign %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">/Qsfalign %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">/Qsfalign %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">/Qsfalign %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="h265\src\mfx_h265_intrapred_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_quantization_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sad_general_sse.cpp" />
