@@ -141,7 +141,7 @@ struct _mfxSession
         if(m_pSchedulerAllocated)
             return (2 < m_pSchedulerAllocated->GetNumRef());
         else
-            false;
+            return false;
     }
 
     inline
