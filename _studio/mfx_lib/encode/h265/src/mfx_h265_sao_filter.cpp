@@ -250,7 +250,7 @@ void GetQuantOffsets(
                 if(classIdx==SAO_CLASS_EO_HALF_PEAK   && quantOffsets[classIdx] > 0) quantOffsets[classIdx] =0;
                 if(classIdx==SAO_CLASS_EO_FULL_PEAK   && quantOffsets[classIdx] > 0) quantOffsets[classIdx] =0;
 
-                if( quantOffsets[classIdx] != 0 ) //iterative adjustment only when derived offset is not zero
+                if( quantOffsets[classIdx] != 0 )
                 {
                     quantOffsets[classIdx] = EstimateIterOffset(
                         type_idx,
@@ -278,10 +278,11 @@ void GetQuantOffsets(
             Ipp64f costBOClasses[NUM_SAO_BO_CLASSES];
 
             memset(distBOClasses, 0, sizeof(Ipp64s)*NUM_SAO_BO_CLASSES);
+
             for(int classIdx=0; classIdx< NUM_SAO_BO_CLASSES; classIdx++)
             {
                 costBOClasses[classIdx]= lambda;
-                if( quantOffsets[classIdx] != 0 ) //iterative adjustment only when derived offset is not zero
+                if( quantOffsets[classIdx] != 0 )
                 {
                     quantOffsets[classIdx] = EstimateIterOffset( 
                         type_idx, 
@@ -301,7 +302,8 @@ void GetQuantOffsets(
 
             //decide the starting band index
             Ipp64f minCost = MAX_DOUBLE, cost;
-            for(int band=0; band < (NUM_SAO_BO_CLASSES - 4+ 1); band++)
+            int band, startBand = 0;
+            for(band=0; band < (NUM_SAO_BO_CLASSES - 4 + 1); band++)
             {
                 cost  = costBOClasses[band  ];
                 cost += costBOClasses[band+1];
@@ -311,21 +313,21 @@ void GetQuantOffsets(
                 if(cost < minCost)
                 {
                     minCost = cost;
-                    typeAuxInfo = band;
+                    startBand = band;
                 }
             }
 
-            //clear those unused classes
-            int clearQuantOffset[NUM_SAO_BO_CLASSES];
-            memset(clearQuantOffset, 0, sizeof(int)*NUM_SAO_BO_CLASSES);
-
-            for(int i=0; i< 4; i++)
+            // clear unused bands
+            for(band = 0; band < startBand; band++)
             {
-                int band = (typeAuxInfo+i)%NUM_SAO_BO_CLASSES;
-                clearQuantOffset[band] = quantOffsets[band];
+                quantOffsets[band] = 0;
+            }
+            for(band = startBand + 4; band < NUM_SAO_BO_CLASSES; band++)
+            {
+                quantOffsets[band] = 0;
             }
 
-            memcpy(quantOffsets, clearQuantOffset, sizeof(int)*NUM_SAO_BO_CLASSES);
+            typeAuxInfo = startBand;
         }
         break;
 
