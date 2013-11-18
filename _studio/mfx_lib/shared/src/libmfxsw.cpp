@@ -197,11 +197,7 @@ mfxStatus MFXClose(mfxSession session)
     {
         // parent session can't be closed,
         // because there is no way to let children know about parent's death.
-        if (session->IsParentSession())
-        {
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
-        }
-
+        
         // child session should be uncoupled from the parent before closing.
         if (session->IsChildSession())
         {
@@ -211,7 +207,12 @@ mfxStatus MFXClose(mfxSession session)
                 return mfxRes;
             }
         }
-
+        
+        if (session->IsParentSession())
+        {
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
+        
         // deallocate the object
         delete session;
     }

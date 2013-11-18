@@ -138,7 +138,10 @@ struct _mfxSession
         // parent session has multiple references to its scheduler.
         // regular session has 2 references to the scheduler.
         // child session has only 1 reference to it.
-        return (2 < m_pSchedulerAllocated->GetNumRef());
+        if(m_pSchedulerAllocated)
+            return (2 < m_pSchedulerAllocated->GetNumRef());
+        else
+            false;
     }
 
     inline
