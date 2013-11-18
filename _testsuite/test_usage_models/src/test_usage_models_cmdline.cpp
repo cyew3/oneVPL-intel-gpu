@@ -66,6 +66,7 @@ CommandLine::CommandLine(int argc, msdk_char *argv[])
 ,  m_framesCount(0)
 ,  m_pSrcFileName(0)
 ,  m_pDstFileName(0)
+,  m_NumSlice(0)
 
 //,  m_impLib(MFX_IMPL_HARDWARE)
 
@@ -232,6 +233,14 @@ CommandLine::CommandLine(int argc, msdk_char *argv[])
                 m_IOPattern = String2IOPattern( argv[i] );
             }
         }
+        else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-l")) )
+        {
+            if (++i < argc)
+            {
+                msdk_sscanf(argv[i], MSDK_STRING("%i"), &readVal);
+                m_NumSlice = (mfxU16)readVal;
+            }
+        }
     }    
 
     // validate parameters
@@ -288,6 +297,7 @@ void CommandLine::GetParam( AppParam& param )
         param.pDstFileName   = m_pDstFileName;
         param.impLib         = m_impLib;
         param.IOPattern      = m_IOPattern;
+        param.NumSlice       = m_NumSlice;
     }
 
 } // GetParam( AppParam& param )

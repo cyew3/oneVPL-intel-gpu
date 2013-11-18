@@ -67,6 +67,8 @@ struct AppParam
 
     mfxU32 framesCount;// frames to be encoded
 
+    mfxU16 NumSlice;
+
     msdk_char* pSrcFileName;
     msdk_char* pDstFileName;
 

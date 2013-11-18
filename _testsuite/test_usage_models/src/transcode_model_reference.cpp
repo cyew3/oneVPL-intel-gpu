@@ -1480,6 +1480,8 @@ mfxStatus ConfigEncodeParam( AppParam param, mfxVideoParam vppVideoParam, mfxVid
     encodeVideoParam.IOPattern = param.IOPattern & (MFX_IOPATTERN_OUT_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY);
     encodeVideoParam.IOPattern = InvertIOPattern( encodeVideoParam.IOPattern );
 
+    encodeVideoParam.mfx.NumSlice = param.NumSlice;
+
     // doesn't work with protected content
     encodeVideoParam.Protected = 0;
     

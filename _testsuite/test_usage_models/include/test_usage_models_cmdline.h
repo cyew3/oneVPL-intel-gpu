@@ -40,6 +40,8 @@ private:
 
     mfxU32 m_framesCount;
 
+    mfxU16 m_NumSlice;
+
     msdk_char* m_pSrcFileName;
     msdk_char* m_pDstFileName;
 
