@@ -72,17 +72,18 @@ inline Ipp16s getSign(Ipp32s x)
     return ((x >> 31) | ((Ipp32s)( (((Ipp32u) -x)) >> 31)));
 }
 
-inline Ipp64s estSaoDist(Ipp64s count, Ipp64s offset, Ipp64s diffSum, int shift)
+// see IEEE "Sample Adaptive Offset in the HEVC standard", p1760 Fast Distortion Estimation
+inline Ipp64s EstimateDeltaDist(Ipp64s count, Ipp64s offset, Ipp64s diffSum, int shift)
 {
     return (( count*offset*offset - diffSum*offset*2 ) >> shift);
 }
 
-inline double xRoundIbdi2(int bitDepth, double x)
+inline Ipp64f xRoundIbdi2(int bitDepth, Ipp64f x)
 {
     return (x>0) ? (int)(((int)(x)+(1<<(bitDepth-8-1)))/(1<<(bitDepth-8))) : ((int)(((int)(x)-(1<<(bitDepth-8-1)))/(1<<(bitDepth-8))));
 }
 
-inline double xRoundIbdi(int bitDepth, double x)
+inline Ipp64f xRoundIbdi(int bitDepth, Ipp64f x)
 {
     return (bitDepth > 8 ? xRoundIbdi2(bitDepth, (x)) : ((x)>=0 ? ((int)((x)+0.5)) : ((int)((x)-0.5)))) ;
 }
@@ -109,7 +110,7 @@ Ipp64s GetDistortion(
         {
             for (offsetIdx=0; offsetIdx<NUM_SAO_EO_CLASSES; offsetIdx++)
             {
-                dist += estSaoDist( statData.count[offsetIdx], invQuantOffset[offsetIdx], statData.diff[offsetIdx], shift);
+                dist += EstimateDeltaDist( statData.count[offsetIdx], invQuantOffset[offsetIdx], statData.diff[offsetIdx], shift);
             }
         }
         break;
@@ -119,7 +120,7 @@ Ipp64s GetDistortion(
             for (offsetIdx=typeAuxInfo; offsetIdx<typeAuxInfo+4; offsetIdx++)
             {
                 int bandIdx = offsetIdx % NUM_SAO_BO_CLASSES ;
-                dist += estSaoDist( statData.count[bandIdx], invQuantOffset[bandIdx], statData.diff[bandIdx], shift);
+                dist += EstimateDeltaDist( statData.count[bandIdx], invQuantOffset[bandIdx], statData.diff[bandIdx], shift);
             }
         }
         break;
@@ -139,48 +140,60 @@ Ipp64s GetDistortion(
 inline int EstimateIterOffset(
     int typeIdx,
     int classIdx,
-    double lambda,
-    int offsetInput,
+    Ipp64f lambda,
+
+    int inputOffset,
+
     Ipp64s count,
     Ipp64s diffSum,
+
     int shift,
-    int bitIncrease,
+    
     Ipp64s& bestDist,
-    double& bestCost,
+    Ipp64f& bestCost,
     int offsetTh )
 {
-    int iterOffset, tempOffset;
+    int iterOffset = inputOffset;
+    int outputOffset = 0;
+    int testOffset;
+
     Ipp64s tempDist, tempRate;
-    double tempCost, tempMinCost;
-    int offsetOutput = 0;
-    iterOffset = offsetInput;
+    Ipp64f cost, minCost;
 
     // Assuming sending quantized value 0 results in zero offset and sending the value zero needs 1 bit.
     // entropy coder can be used to measure the exact rate here.
-    tempMinCost = lambda;
+    minCost = lambda;
+
+    const int deltaRate = (typeIdx == SAO_TYPE_BO) ? 2 : 1;
     while (iterOffset != 0)
     {
         // Calculate the bits required for signaling the offset
-        tempRate = (typeIdx == SAO_TYPE_BO) ? (abs((int)iterOffset)+2) : (abs((int)iterOffset)+1);
-        if (abs((int)iterOffset)==offsetTh) //inclusive
+        tempRate = abs(iterOffset) + deltaRate;
+        if (abs(iterOffset) == offsetTh) //inclusive
         {
             tempRate --;
         }
+
         // Do the dequantization before distortion calculation
-        tempOffset  = iterOffset << bitIncrease;
-        tempDist    = estSaoDist( count, tempOffset, diffSum, shift);
-        tempCost    = ((double)tempDist + lambda * (double) tempRate);
-        if(tempCost < tempMinCost)
+        testOffset  = iterOffset;
+
+        tempDist    = EstimateDeltaDist( count, testOffset, diffSum, shift);
+
+        cost    = (Ipp64f)tempDist + lambda * (Ipp64f) tempRate;
+
+        if(cost < minCost)
         {
-            tempMinCost = tempCost;
-            offsetOutput = iterOffset;
+            minCost = cost;
+            outputOffset = iterOffset;
             bestDist = tempDist;
-            bestCost = tempCost;
+            bestCost = cost;
         }
-        iterOffset = (iterOffset > 0) ? (iterOffset-1):(iterOffset+1);
+
+        // offset update
+        iterOffset = (iterOffset > 0) ? (iterOffset-1) : (iterOffset+1);
     }
 
-    return offsetOutput;
+    return outputOffset;
 
 } // int EstimateIterOffset( ... )
 
@@ -190,7 +203,7 @@ void GetQuantOffsets(
     SaoCtuStatistics& statData,
     int* quantOffsets,
     int& typeAuxInfo,
-    double lambda)
+    Ipp64f lambda)
 {
     int bitDepth = 8;
     int shift = 2 * DISTORTION_PRECISION_ADJUSTMENT(bitDepth-8);
@@ -213,9 +226,9 @@ void GetQuantOffsets(
             continue; //offset will be zero
         }
 
-        quantOffsets[classIdx] = (int) xRoundIbdi(
-            bitDepth,
-            (double)( statData.diff[classIdx]<<(bitDepth-8)) / (double)( statData.count[classIdx] ));
+        Ipp64f mean_diff = (Ipp64f)statData.diff[classIdx] / (Ipp64f)statData.count[classIdx];
+
+        quantOffsets[classIdx] = (mean_diff) >=0 ? (int)(mean_diff+0.5) : (int)(mean_diff-0.5);
 
         quantOffsets[classIdx] = Clip3(-offsetTh, offsetTh, quantOffsets[classIdx]);
     }
@@ -229,7 +242,7 @@ void GetQuantOffsets(
         case SAO_TYPE_EO_45:
         {
             Ipp64s classDist;
-            double classCost;
+            Ipp64f classCost;
             for(int classIdx=0; classIdx<NUM_SAO_EO_CLASSES; classIdx++)
             {
                 if(classIdx==SAO_CLASS_EO_FULL_VALLEY && quantOffsets[classIdx] < 0) quantOffsets[classIdx] =0;
@@ -246,8 +259,9 @@ void GetQuantOffsets(
                         quantOffsets[classIdx],
                         statData.count[classIdx],
                         statData.diff[classIdx],
+
                         shift,
-                        0,
+
                         classDist,
                         classCost,
                         offsetTh );
@@ -261,7 +275,7 @@ void GetQuantOffsets(
         case SAO_TYPE_BO:
         {
             Ipp64s  distBOClasses[NUM_SAO_BO_CLASSES];
-            double costBOClasses[NUM_SAO_BO_CLASSES];
+            Ipp64f costBOClasses[NUM_SAO_BO_CLASSES];
 
             memset(distBOClasses, 0, sizeof(Ipp64s)*NUM_SAO_BO_CLASSES);
             for(int classIdx=0; classIdx< NUM_SAO_BO_CLASSES; classIdx++)
@@ -269,13 +283,25 @@ void GetQuantOffsets(
                 costBOClasses[classIdx]= lambda;
                 if( quantOffsets[classIdx] != 0 ) //iterative adjustment only when derived offset is not zero
                 {
-                    quantOffsets[classIdx] = EstimateIterOffset( type_idx, classIdx, lambda, quantOffsets[classIdx], statData.count[classIdx], statData.diff[classIdx], shift, 0, distBOClasses[classIdx], costBOClasses[classIdx], offsetTh );
+                    quantOffsets[classIdx] = EstimateIterOffset( 
+                        type_idx, 
+                        classIdx, 
+                        lambda, 
+                        quantOffsets[classIdx], 
+                        statData.count[classIdx], 
+                        statData.diff[classIdx], 
+
+                        shift,
+
+                        distBOClasses[classIdx], 
+                        costBOClasses[classIdx], 
+                        offsetTh );
                 }
             }
 
             //decide the starting band index
-            double minCost = MAX_DOUBLE, cost;
-            for(int band=0; band< NUM_SAO_BO_CLASSES- 4+ 1; band++)
+            Ipp64f minCost = MAX_DOUBLE, cost;
+            for(int band=0; band < (NUM_SAO_BO_CLASSES - 4+ 1); band++)
             {
                 cost  = costBOClasses[band  ];
                 cost += costBOClasses[band+1];
@@ -288,6 +314,7 @@ void GetQuantOffsets(
                     typeAuxInfo = band;
                 }
             }
+
             //clear those unused classes
             int clearQuantOffset[NUM_SAO_BO_CLASSES];
             memset(clearQuantOffset, 0, sizeof(int)*NUM_SAO_BO_CLASSES);
@@ -1078,7 +1105,7 @@ void SAOFilter::GetBestCtuSaoParam(
 #endif
 
     SaoCtuParam modeParam;
-    double minCost = MAX_DOUBLE, modeCost = MAX_DOUBLE;
+    Ipp64f minCost = MAX_DOUBLE, modeCost = MAX_DOUBLE;
 
     for(int mode=0; mode < NUM_SAO_MODES; mode++)
     {
@@ -1192,12 +1219,12 @@ int SAOFilter::getMergeList(int ctu, SaoCtuParam* blkParams, std::vector<SaoCtuP
 } // int SAOFilter::getMergeList(int ctu, SaoCtuParam* blkParams, std::vector<SaoCtuParam*>& mergeList)
 
 
-void SAOFilter::ModeDecision_Merge(std::vector<SaoCtuParam*>& mergeList, bool* sliceEnabled, SaoCtuParam& modeParam, double& modeNormCost, int inCabacLabel)
+void SAOFilter::ModeDecision_Merge(std::vector<SaoCtuParam*>& mergeList, bool* sliceEnabled, SaoCtuParam& modeParam, Ipp64f& modeNormCost, int inCabacLabel)
 {
     int mergeListSize = (int)mergeList.size();
     modeNormCost = MAX_DOUBLE;
 
-    double cost;
+    Ipp64f cost;
     SaoCtuParam testBlkParam;
 
     for(int mergeType=0; mergeType< mergeListSize; mergeType++)
@@ -1209,7 +1236,7 @@ void SAOFilter::ModeDecision_Merge(std::vector<SaoCtuParam*>& mergeList, bool* s
 
         testBlkParam = *(mergeList[mergeType]);
         //normalized distortion
-        double normDist=0;
+        Ipp64f normDist=0;
         //for(int compIdx=0; compIdx< NUM_SAO_COMPONENTS; compIdx++)
         for(int compIdx=0; compIdx< 1; compIdx++)
         {
@@ -1221,7 +1248,7 @@ void SAOFilter::ModeDecision_Merge(std::vector<SaoCtuParam*>& mergeList, bool* s
             if( mergedOffsetParam.mode_idx != SAO_MODE_OFF)
             {
                 //offsets have been reconstructed. Don't call inversed quantization function.
-                normDist += (((double)GetDistortion(
+                normDist += (((Ipp64f)GetDistortion(
                     compIdx,
                     mergedOffsetParam.type_idx,
                     mergedOffsetParam.typeAuxInfo,
@@ -1238,7 +1265,7 @@ void SAOFilter::ModeDecision_Merge(std::vector<SaoCtuParam*>& mergeList, bool* s
 
         int rate = GetNumWrittenBits();
 
-        cost = normDist + (double)rate;
+        cost = normDist + (Ipp64f)rate;
 
         if(cost < modeNormCost)
         {
@@ -1257,10 +1284,10 @@ void SAOFilter::ModeDecision_Base(
     std::vector<SaoCtuParam*>& mergeList,
     bool* sliceEnabled,
     SaoCtuParam& modeParam,
-    double& modeNormCost,
+    Ipp64f& modeNormCost,
     int inCabacLabel)
 {
-    double minCost = 0.0, cost = 0.0;
+    Ipp64f minCost = 0.0, cost = 0.0;
     int rate = 0, minRate = 0;
     Ipp64s dist[NUM_SAO_COMPONENTS], modeDist[NUM_SAO_COMPONENTS];
     SaoOffsetParam testOffset[NUM_SAO_COMPONENTS];
@@ -1286,7 +1313,7 @@ void SAOFilter::ModeDecision_Base(
     minRate= GetNumWrittenBits();
 
     modeDist[compIdx] = 0;
-    minCost= m_labmda[compIdx]*((double)minRate);
+    minCost= m_labmda[compIdx]*((Ipp64f)minRate);
 
     m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_TEMP], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
 
@@ -1308,7 +1335,7 @@ void SAOFilter::ModeDecision_Base(
             h265_code_sao_ctb_offset_param(m_bsf, compIdx, testOffset[compIdx], sliceEnabled[compIdx]);
             rate = GetNumWrittenBits();
 
-            cost = (double)dist[compIdx] + m_labmda[compIdx]*((double)rate);
+            cost = (Ipp64f)dist[compIdx] + m_labmda[compIdx]*((Ipp64f)rate);
             if(cost < minCost)
             {
                 minCost = cost;
@@ -1326,7 +1353,7 @@ void SAOFilter::ModeDecision_Base(
 
     // aya - temporal solution
     bool isChromaEnabled = false;
-    double chromaLambda = m_labmda[SAO_Cb];
+    Ipp64f chromaLambda = m_labmda[SAO_Cb];
 
     // ======================================================
     // aya potential issue???
@@ -1335,7 +1362,7 @@ void SAOFilter::ModeDecision_Base(
     {
         //------ chroma --------//
         VM_ASSERT(m_labmda[SAO_Cb] == m_labmda[SAO_Cr]);
-        //double chromaLambda = m_labmda[SAO_Cb];
+        //Ipp64f chromaLambda = m_labmda[SAO_Cb];
         //"off" case as initial cost
         //m_pcRDGoOnSbacCoder->resetBits();
         modeParam[SAO_Cb].mode_idx = SAO_MODE_OFF;
@@ -1344,7 +1371,7 @@ void SAOFilter::ModeDecision_Base(
         //m_pcRDGoOnSbacCoder->h265_code_sao_ctb_offset_param(SAO_Cr, modeParam[SAO_Cr], sliceEnabled[SAO_Cr]);
         //minRate= m_pcRDGoOnSbacCoder->getNumberOfWrittenBits();
         modeDist[SAO_Cb] = modeDist[SAO_Cr]= 0;
-        minCost= chromaLambda*((double)minRate);
+        minCost= chromaLambda*((Ipp64f)minRate);
 
         //doesn't need to store cabac status here since the whole CTU parameters will be re-encoded at the end of this function
 
@@ -1376,7 +1403,7 @@ void SAOFilter::ModeDecision_Base(
             m_pcRDGoOnSbacCoder->h265_code_sao_ctb_offset_param(SAO_Cr, testOffset[SAO_Cr], sliceEnabled[SAO_Cr]);
             rate = m_pcRDGoOnSbacCoder->getNumberOfWrittenBits();*/
 
-            cost = (double)(dist[SAO_Cb]+ dist[SAO_Cr]) + chromaLambda*((double)rate);
+            cost = (Ipp64f)(dist[SAO_Cb]+ dist[SAO_Cr]) + chromaLambda*((Ipp64f)rate);
             if(cost < minCost)
             {
                 minCost = cost;
@@ -1390,17 +1417,17 @@ void SAOFilter::ModeDecision_Base(
     } // if( isChromaEnabled )
 
     //----- re-gen rate & normalized cost----//
-    modeNormCost  = (double)modeDist[SAO_Y]/m_labmda[SAO_Y];
+    modeNormCost  = (Ipp64f)modeDist[SAO_Y]/m_labmda[SAO_Y];
 
     if( isChromaEnabled )
     {
-        modeNormCost += (double)(modeDist[SAO_Cb]+ modeDist[SAO_Cr])/chromaLambda;
+        modeNormCost += (Ipp64f)(modeDist[SAO_Cb]+ modeDist[SAO_Cr])/chromaLambda;
     }
 
     m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_CUR], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
     m_bsf->Reset();
     h265_code_sao_ctb_param(m_bsf, modeParam, sliceEnabled, (mergeList[SAO_MERGE_LEFT]!= NULL), (mergeList[SAO_MERGE_ABOVE]!= NULL), false);
-    modeNormCost += (double)GetNumWrittenBits();
+    modeNormCost += (Ipp64f)GetNumWrittenBits();
 
 } // void SAOFilter::ModeDecision_Base(...)
 
