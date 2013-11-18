@@ -142,12 +142,10 @@ protected:
         
         void QueuePair(std::pair<mfxAudioFrame*, mfxBitstream*> pair) {
             if (MFX_ERR_MORE_BITSTREAM == m_lastStatus) {
-                if (m_nFrames) {
-                    QueueBitstream(pair.second);
-                }
+                QueueBitstream(pair.second);
             } else if (MFX_ERR_MORE_DATA == m_lastStatus) {
                 QueueFrame(pair.first);
-                QueueBitstream(pair.second);
+
             } else if (MFX_ERR_NONE == m_lastStatus) {
                 QueueFrame(pair.first);
                 QueueBitstream(pair.second);
