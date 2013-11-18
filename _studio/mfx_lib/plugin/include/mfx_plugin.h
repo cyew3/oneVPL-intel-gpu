@@ -33,10 +33,6 @@ public:
     virtual mfxStatus PluginClose();
     virtual mfxStatus GetPluginParam(mfxPluginParam *par);
     virtual mfxStatus DecodeFrameSubmit(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out,  mfxThreadTask *task);
-    //virtual mfxStatus EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxThreadTask *task)
-    //{
-    //    return MFX_ERR_UNKNOWN;
-    //}
     virtual mfxStatus Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a);
     virtual mfxStatus FreeResources(mfxThreadTask task, mfxStatus sts);
     virtual mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out);
@@ -70,11 +66,10 @@ public:
     {
         return MFX_PLUGINTYPE_VIDEO_DECODE;
     }
-    //mfxStatus Submit(const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxThreadTask *task)
-    //{
-    //    return MFX_ERR_UNKNOWN;
-    //}
-
+    
+    virtual mfxStatus SetAuxParams(void* auxParam, int auxParamSize){
+        return MFX_ERR_UNKNOWN;
+    }
 protected:
     mfxStatus GetHandle();
 
@@ -112,10 +107,6 @@ public:
     virtual mfxStatus PluginInit(mfxCoreInterface *core);
     virtual mfxStatus PluginClose();
     virtual mfxStatus GetPluginParam(mfxPluginParam *par);
-    //virtual mfxStatus DecodeFrameSubmit(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out,  mfxThreadTask *task)
-    //{
-    //    return MFX_ERR_UNKNOWN;
-    //}
     virtual mfxStatus EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxThreadTask *task);
     virtual mfxStatus Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a);
     virtual mfxStatus FreeResources(mfxThreadTask task, mfxStatus sts);
@@ -130,14 +121,6 @@ public:
     {
         return MFXVideoENCODE_GetVideoParam(m_session, par);
     }
-    //virtual mfxStatus DecodeHeader(mfxBitstream *bs, mfxVideoParam *par)
-    //{
-    //    return MFX_ERR_UNKNOWN;
-    //}
-    //virtual mfxStatus GetPayload(mfxU64 *ts, mfxPayload *payload)
-    //{
-    //    return MFX_ERR_UNKNOWN;
-    //}
     virtual void Release() 
     {
         delete this;
@@ -150,10 +133,9 @@ public:
     {
         return MFX_PLUGINTYPE_VIDEO_ENCODE;
     }
-    //mfxStatus Submit(const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxThreadTask *task)
-    //{
-    //    return MFX_ERR_UNKNOWN;
-    //}
+    virtual mfxStatus SetAuxParams(void* auxParam, int auxParamSize){
+        return MFX_ERR_UNKNOWN;
+    }
 
 protected:
     mfxStatus GetHandle();

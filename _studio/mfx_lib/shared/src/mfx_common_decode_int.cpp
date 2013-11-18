@@ -4,12 +4,12 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
 //
 */
 
 #include "mfx_common_decode_int.h"
-#include "mfx_enc_common.h"
+//#include "mfx_enc_common.h"
 #include "umc_va_base.h"
 
 MFXMediaDataAdapter::MFXMediaDataAdapter(mfxBitstream *pBitstream)
@@ -142,8 +142,7 @@ void ConvertMFXParamsToUMC(mfxVideoParam *par, UMC::VideoStreamInfo *umcVideoPar
     umcVideoParams->stream_subtype = UMC::UNDEF_VIDEO_SUBTYPE;
     umcVideoParams->stream_type = UMC::H264_VIDEO;
 
-    umcVideoParams->framerate = CalculateUMCFramerate(par->mfx.FrameInfo.FrameRateExtN,
-        par->mfx.FrameInfo.FrameRateExtD);
+    umcVideoParams->framerate = (par->mfx.FrameInfo.FrameRateExtN && par->mfx.FrameInfo.FrameRateExtD)? (Ipp64f)par->mfx.FrameInfo.FrameRateExtN / par->mfx.FrameInfo.FrameRateExtD: 0;
 
     umcVideoParams->profile = ExtractProfile(par->mfx.CodecProfile);
     umcVideoParams->level = par->mfx.CodecLevel;
