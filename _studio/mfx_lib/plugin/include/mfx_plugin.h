@@ -67,7 +67,8 @@ public:
         return MFX_PLUGINTYPE_VIDEO_DECODE;
     }
     
-    virtual mfxStatus SetAuxParams(void* auxParam, int auxParamSize){
+    virtual mfxStatus SetAuxParams(void* auxParam, int auxParamSize)
+    {
         return MFX_ERR_UNKNOWN;
     }
 protected:
@@ -133,7 +134,8 @@ public:
     {
         return MFX_PLUGINTYPE_VIDEO_ENCODE;
     }
-    virtual mfxStatus SetAuxParams(void* auxParam, int auxParamSize){
+    virtual mfxStatus SetAuxParams(void* auxParam, int auxParamSize)
+    {
         return MFX_ERR_UNKNOWN;
     }
 

@@ -412,14 +412,12 @@
     <ClCompile Include="..\..\shared\src\libmfx_core_factory.cpp" />
     <ClCompile Include="..\shared\src\libmfxsw.cpp" />
     <ClCompile Include="..\shared\src\libmfxsw_async.cpp" />
-    <ClCompile Include="..\shared\src\libmfxsw_brc.cpp" />
-    <ClCompile Include="..\shared\src\libmfxsw_decode.cpp" />
-    <ClCompile Include="..\shared\src\libmfxsw_enc.cpp" />
     <ClCompile Include="..\shared\src\libmfxsw_encode.cpp" />
-    <ClCompile Include="..\shared\src\libmfxsw_pak.cpp" />
     <ClCompile Include="..\shared\src\libmfxsw_query.cpp" />
     <ClCompile Include="..\shared\src\libmfxsw_session.cpp" />
-    <ClCompile Include="..\shared\src\libmfxsw_vpp.cpp" />
+    <ClCompile Include="..\shared\src\mfx_brc_common.cpp" />
+    <ClCompile Include="..\shared\src\mfx_common_int.cpp" />
+    <ClCompile Include="..\shared\src\mfx_enc_common.cpp" />
     <ClCompile Include="..\shared\src\mfx_log.cpp" />
     <ClCompile Include="..\shared\src\mfx_session.cpp" />
     <ClCompile Include="..\..\shared\src\mfx_timing.cpp" />
@@ -440,6 +438,9 @@
     <ClInclude Include="..\..\shared\include\libmfx_core_operation.h" />
     <ClInclude Include="..\..\shared\include\mfx_common.h" />
     <ClInclude Include="..\scheduler\include\mfx_dependency_item.h" />
+    <ClInclude Include="..\shared\include\mfx_brc_common.h" />
+    <ClInclude Include="..\shared\include\mfx_common_int.h" />
+    <ClInclude Include="..\shared\include\mfx_enc_common.h" />
     <ClInclude Include="..\shared\include\mfx_interface.h" />
     <ClInclude Include="..\shared\include\mfx_interface_scheduler.h" />
     <ClInclude Include="..\shared\include\mfx_log.h" />
@@ -524,10 +525,6 @@
     </ProjectReference>
     <ProjectReference Include="..\optimization\hevc_pp_ssse3.vcxproj">
       <Project>{87cf2689-abe2-463f-ad5e-9e4ce4b8b5cd}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\shared\mfx_common.vcxproj">
-      <Project>{7929e69f-b47f-4a1e-a038-6be3343ce855}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
