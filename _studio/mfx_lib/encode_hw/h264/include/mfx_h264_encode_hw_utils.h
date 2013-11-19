@@ -828,7 +828,6 @@ namespace MfxHwH264Encode
             , m_insertSps(0, 0)
             , m_insertPps(0, 0)
             , m_nalRefIdc(0, 0)
-            , m_trellis(0, 0)
             , m_statusReportNumber(0, 0)
 
             , m_pid(0)
@@ -938,7 +937,6 @@ namespace MfxHwH264Encode
         PairU8  m_insertSps;
         PairU8  m_insertPps;
         PairU8  m_nalRefIdc;
-        PairU8  m_trellis;              // 0-default, 1-on, 2-off
         PairU32 m_statusReportNumber;
         mfxU32  m_pid;                  // priority_id
         PairU32 m_fillerSize;

@@ -523,6 +523,16 @@ typedef struct tagENCODE_CAPS
     UCHAR   MaxNum_DQLayer;
     UCHAR   MaxNum_TemporalLayer;
     UCHAR   MBBRCSupport;
+    UCHAR   MaxNumOfROI; // [0..16]
+
+    union {
+        struct {
+            UINT  SkipFrame : 1;
+            UINT            : 31;// For future expansion
+        };
+        UINT      CodingLimits2;
+    };
+
 } ENCODE_CAPS;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -840,9 +850,10 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_H264
             UINT    GlobalSearch                    : 2;
             UINT    LocalSearch                     : 4;
             UINT    EarlySkip                       : 2;
-            UINT    Trellis                         : 2;
+            UINT    Reserved0                       : 2;
             UINT    MBBRC                           : 4;
-            UINT    bReserved                       :16;
+            UINT    Trellis                         : 4;
+            UINT    Reserved1                       :12;
         };
 
         UINT sFlags;
@@ -906,6 +917,16 @@ typedef struct _ENCODE_PICENTRY {
         UCHAR  bPicEntry;
     };
 } ENCODE_PICENTRY;  /* 1 byte */
+
+typedef struct tagENCODE_ROI
+{
+    USHORT Top;                // [0..(FrameHeight+ M-1)/M -1]
+    USHORT Bottom;             // [0..(FrameHeight+ M-1)/M -1]
+    USHORT Left;               // [0..(FrameWidth+15)/16-1]
+    USHORT Right;              // [0..(FrameWidth+15)/16-1]
+    CHAR   PriorityLevelOrDQp; // [-3..3] or [-51..51]
+} ENCODE_ROI;
+
 
 typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
 {
@@ -971,6 +992,15 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
     USHORT          IntraInsertionSize;
     CHAR            QpDeltaForInsertedIntra;
     UINT            SliceSizeInBytes;
+    UCHAR           NumROI;// [0..16]
+    ENCODE_ROI      ROI[16];
+    CHAR            MaxDeltaQp; // [-51..51]
+    CHAR            MinDeltaQp; // [-51..51]
+
+    // Skip Frames
+    UCHAR           SkipFrameFlag;
+    UCHAR           NumSkipFrames;
+    UINT            SizeSkipFrames;
 
 } ENCODE_SET_PICTURE_PARAMETERS_H264;
 
@@ -1370,7 +1400,7 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_SVC
     UCHAR   GopRefDist;
 
     UCHAR   GopOptFlag  : 2;
-    UCHAR   Reserved1   : 6;
+    UCHAR   Reserved2   : 6;
 
     UCHAR   TargetUsage;
     UCHAR     RateControlMethod;
@@ -1386,14 +1416,15 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_SVC
     {
         struct
         {
-        UINT    bResetBRC                       : 1;
-        UINT    bNoAcceleratorSPSInsertion      : 1;    // always 0
-        UINT    GlobalSearch                    : 2;     
-        UINT    LocalSearch                     : 4;     
-        UINT    EarlySkip                       : 2;
-        UINT    Trellis                         : 2;
-        UINT    MBBRC                           : 4;
-        UINT    bReserved                       : 16;
+            UINT    bResetBRC                       : 1;
+            UINT    bNoAcceleratorSPSInsertion      : 1;    // always 0
+            UINT    GlobalSearch                    : 2;
+            UINT    LocalSearch                     : 4;
+            UINT    EarlySkip                       : 2;
+            UINT    Reserved0                       : 2;
+            UINT    MBBRC                           : 4;
+            UINT    Trellis                         : 4;
+            UINT    Reserved1                       :12;
         };
         UINT    sFlags;
     };
@@ -1412,17 +1443,17 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_SVC
     UINT    extended_spatial_scalability_idc                    : 2;
     UINT    chroma_phase_x_plus1_flag                           : 1;
     UINT    chroma_phase_y_plus1                                : 2;
-    UINT    Reserved2                                           : 22;
+    UINT    Reserved3                                           : 22;
 
     USHORT  seq_scaling_list_present_flag                       : 12;
-    USHORT  Reserved3                                           : 6;
+    USHORT  Reserved4                                           : 6;
 
 // HRD parameter related
     UCHAR       fixed_frame_rate_flag                   : 1;
     UCHAR       nalHrdConformanceRequired               : 1;
     UCHAR       vclHrdConformanceRequired               : 1;
     UCHAR       low_delay_hrd_flag                      : 1;
-    UCHAR       Reserved4                               : 4;
+    UCHAR       Reserved5                               : 4;
     UINT        num_units_in_tick;
     UINT        time_scale;
     UCHAR       bit_rate_scale;

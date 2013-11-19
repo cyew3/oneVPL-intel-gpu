@@ -2735,6 +2735,18 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         changed = true;
     }
 
+    if (extOpt2->Trellis && IsSvcProfile(par.mfx.CodecProfile))
+    {
+        extOpt2->Trellis = 0;
+        changed = true;
+    }
+
+    /*if (extOpt2->Trellis && hwCaps.EnhancedEncInput == 0)
+    {
+        extOpt2->Trellis = 0;
+        unsupported = true;
+    }*/
+
     if (extDdi->BiPyramid        != 0 &&
         extDdi->BiPyramid        != 3 &&
         par.mfx.CodecLevel       != 0 &&

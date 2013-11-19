@@ -88,7 +88,7 @@ void MfxHwH264Encode::FillSpsBuffer(
     sps.GlobalSearch                            = extDdi->GlobalSearch;
     sps.LocalSearch                             = extDdi->LocalSearch;
     sps.EarlySkip                               = extDdi->EarlySkip;
-    sps.Trellis                                 = 0;
+    sps.Trellis                                 = extOpt2->Trellis;
     sps.MBBRC                                   = IsOn(extOpt2->MBBRC) ? 1 : IsOff(extOpt2->MBBRC) ? 2 : 0;
 
     sps.UserMaxFrameSize                        = extOpt2->MaxFrameSize;
@@ -1098,7 +1098,6 @@ mfxStatus D3D9Encoder::Execute(
     }
 
     m_sps.bNoAccelerationSPSInsertion = !task.m_insertSps[fieldId];
-    m_sps.Trellis = task.m_trellis[fieldId];
 
     if (m_sps.UserMaxFrameSize != task.m_maxFrameSize)
     {
@@ -1674,9 +1673,10 @@ namespace
         DUMP_STRUCT_MEMBER_NO_OFFSET(sps, GlobalSearch);
         DUMP_STRUCT_MEMBER_NO_OFFSET(sps, LocalSearch);
         DUMP_STRUCT_MEMBER_NO_OFFSET(sps, EarlySkip);
+        DUMP_STRUCT_MEMBER_NO_OFFSET(sps, Reserved0);
         DUMP_STRUCT_MEMBER_NO_OFFSET(sps, Trellis);
         DUMP_STRUCT_MEMBER_NO_OFFSET(sps, MBBRC);
-        DUMP_STRUCT_MEMBER_NO_OFFSET(sps, bReserved);
+        DUMP_STRUCT_MEMBER_NO_OFFSET(sps, Reserved1);
         DUMP_STRUCT_MEMBER_OFFSET(sps, sFlags);
         DUMP_STRUCT_MEMBER_OFFSET(sps, UserMaxFrameSize);
         DUMP_STRUCT_MEMBER_OFFSET(sps, AVBRAccuracy);
@@ -1710,9 +1710,9 @@ namespace
         DUMP_STRUCT_MEMBER_NO_OFFSET(sps, extended_spatial_scalability_idc);
         DUMP_STRUCT_MEMBER_NO_OFFSET(sps, chroma_phase_x_plus1_flag);
         DUMP_STRUCT_MEMBER_NO_OFFSET(sps, chroma_phase_y_plus1);
-        DUMP_STRUCT_MEMBER_NO_OFFSET(sps, Reserved2);
-        DUMP_STRUCT_MEMBER_NO_OFFSET(sps, seq_scaling_list_present_flag);
         DUMP_STRUCT_MEMBER_NO_OFFSET(sps, Reserved3);
+        DUMP_STRUCT_MEMBER_NO_OFFSET(sps, seq_scaling_list_present_flag);
+        DUMP_STRUCT_MEMBER_NO_OFFSET(sps, Reserved4);
         DUMP_STRUCT_MEMBER_OFFSET(sps, num_units_in_tick);
         DUMP_STRUCT_MEMBER_OFFSET(sps, time_scale);
         DUMP_STRUCT_MEMBER_OFFSET(sps, cpb_cnt_minus1);

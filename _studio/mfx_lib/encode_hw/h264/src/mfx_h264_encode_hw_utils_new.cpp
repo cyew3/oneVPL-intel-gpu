@@ -1440,27 +1440,6 @@ BiFrameLocation MfxHwH264Encode::GetBiFrameLocation(
     return loc;
 }
 
-
-namespace
-{
-    mfxU8 GetPefFrameTrellisFlag(mfxExtCodingOption2 const & extOpt2, mfxU32 frameType)
-    {
-        if (extOpt2.Trellis == MFX_TRELLIS_UNKNOWN)
-            return 0; // let driver choose
-
-        if (extOpt2.Trellis & MFX_TRELLIS_OFF)
-            return 2; // off
-
-        if ((frameType & MFX_FRAMETYPE_I) && (extOpt2.Trellis & MFX_TRELLIS_I) ||
-            (frameType & MFX_FRAMETYPE_P) && (extOpt2.Trellis & MFX_TRELLIS_P) ||
-            (frameType & MFX_FRAMETYPE_B) && (extOpt2.Trellis & MFX_TRELLIS_B))
-            return 1; // on
-        else
-            return 2; // off
-    }
-};
-
-
 void MfxHwH264Encode::ConfigureTask(
     DdiTask &             task,
     DdiTask const &       prevTask,
@@ -1538,9 +1517,6 @@ void MfxHwH264Encode::ConfigureTask(
     task.m_insertPps[sfid] = task.m_insertSps[sfid] || IsOn(extOpt2->RepeatPPS);
     task.m_nalRefIdc[ffid] = task.m_reference[ffid];
     task.m_nalRefIdc[sfid] = task.m_reference[sfid];
-
-    task.m_trellis[ffid] = GetPefFrameTrellisFlag(*extOpt2, task.m_type[ffid]);
-    task.m_trellis[sfid] = GetPefFrameTrellisFlag(*extOpt2, task.m_type[sfid]);
 
 // process roi
     mfxExtEncoderROI const * pRoi = extRoi;

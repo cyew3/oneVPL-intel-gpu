@@ -381,8 +381,6 @@ mfxStatus D3D11Encoder::Execute(
         m_pps.seq_parameter_set_id = m_sps.seq_parameter_set_id;
     }
 
-    m_sps.Trellis = task.m_trellis[fieldId];
-
     if (m_sps.UserMaxFrameSize != task.m_maxFrameSize)
     {
         m_sps.UserMaxFrameSize = (UINT)task.m_maxFrameSize;
