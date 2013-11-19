@@ -232,7 +232,10 @@ static IppStatus mp2_HuffmanTableInitAlloc(Ipp32s *tbl, Ipp32s bits_table0, mp2_
   if (bits_table1) { // fill VLC_NEXTTABLE
     if (prefix_code1 == -1) {
       if (buffer) delete[] buffer;
-      mp2_HuffmanTableFree(vlc);
+      if (table0)
+        ippsFree(table0);
+      if (table1)
+        ippsFree(table1);
       return ippStsErr;
     }
     bad_value = (Ipp16s)((bad_value &~ 255) | VLC_NEXTTABLE);
