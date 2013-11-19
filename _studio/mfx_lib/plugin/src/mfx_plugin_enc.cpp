@@ -165,8 +165,6 @@ mfxStatus MFXLibPlugin::FreeResources(mfxThreadTask task, mfxStatus sts)
 
 mfxStatus MFXLibPlugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 {
-    if (!in)
-        return MFX_ERR_NULL_PTR;
     bool bWarnIsNeeded = false;
     mfxStatus mfxRes = MFX_ERR_UNKNOWN;
 
