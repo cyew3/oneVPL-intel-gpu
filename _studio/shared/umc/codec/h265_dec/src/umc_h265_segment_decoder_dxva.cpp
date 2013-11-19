@@ -73,50 +73,37 @@ void H265_DXVA_SegmentDecoder::PackAllHeaders(H265DecoderFrame * pFrame)
         return;
 
 #ifdef UMC_VA_DXVA
-        if (!m_Packer.get())
-        {
+    if (!m_Packer.get())
+    {
         if (m_va->IsIntelCustomGUID()) // intel MVC profile
-                m_Packer.reset(new PackerDXVA2(m_va));
-            else
-                m_Packer.reset(new MSPackerDXVA2(m_va));
-        }
+            m_Packer.reset(new PackerDXVA2(m_va));
+        else
+            m_Packer.reset(new MSPackerDXVA2(m_va));
+    }
 #endif
 
-        H265Slice *pSlice = sliceInfo->GetSlice(0);
-        const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
-        H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
+    H265Slice *pSlice = sliceInfo->GetSlice(0);
+    const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
+    H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
 
-        m_Packer->BeginFrame();
-        m_Packer->PackPicParams(pCurrentFrame, sliceInfo, m_pTaskSupplier);
-        if (pSeqParamSet->scaling_list_enabled_flag)
-        {
-            m_Packer->PackQmatrix(pSlice);
-        }
+    m_Packer->BeginFrame();
+    m_Packer->PackPicParams(pCurrentFrame, sliceInfo, m_pTaskSupplier);
+    if (pSeqParamSet->scaling_list_enabled_flag)
+    {
+        m_Packer->PackQmatrix(pSlice);
+    }
 
     bool isLongFormat = m_va->IsLongSliceControl();
-#if 0
-        {
-            const char *env = getenv("HEVC_SLICE_FORMAT");
-            if(env != 0)
-            {
-                if(strcmp(env, "LONG") == 0)
-                    isLongFormat = true;
-                else if(strcmp(env, "SHORT") == 0)
-                    isLongFormat = false;
-            }
-            isLongFormat = true;
-        }
-#endif
 
     Ipp32u sliceNum = 0;
-        for (Ipp32s n = 0; n < sliceCount; n++)
-        {
+    for (Ipp32s n = 0; n < sliceCount; n++)
+    {
         m_Packer->PackSliceParams(sliceInfo->GetSlice(n), sliceNum, isLongFormat, n == sliceCount - 1);
         sliceNum++;
-        }
+    }
 
-        m_Packer->ExecuteBuffers();
-        m_Packer->EndFrame();
+    m_Packer->ExecuteBuffers();
+    m_Packer->EndFrame();
 }
 
 UMC::Status H265_DXVA_SegmentDecoder::ProcessSegment(void)

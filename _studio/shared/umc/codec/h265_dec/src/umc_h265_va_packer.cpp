@@ -521,8 +521,12 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
             }
         }
     }
+
     for(int n=0 ; n < numRefPicSetStCurrBefore + numRefPicSetStCurrAfter + numRefPicSetLtCurr ; n++)
     {
+        if (!rps->getUsed(n))
+            continue;
+
         for(int k=0;k < count;k++)
         {
             if(pocList[n] == pPicParam->PicOrderCntValList[k])
@@ -1354,9 +1358,6 @@ void MSPackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     
 
     Ipp32s count = 0;
-    Ipp32s cntRefPicSetStCurrBefore = 0,
-        cntRefPicSetStCurrAfter  = 0,
-        cntRefPicSetLtCurr = 0;
     H265DBPList *dpb = supplier->GetDPBList();
     ReferencePictureSet *rps = pSlice->getRPS();
     for(H265DecoderFrame* frame = dpb->head() ; frame && count < sizeof(pPicParam->RefPicList)/sizeof(pPicParam->RefPicList[0]) ; frame = frame->future())
@@ -1404,8 +1405,15 @@ void MSPackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
             }
         }
 
+    Ipp32s cntRefPicSetStCurrBefore = 0,
+        cntRefPicSetStCurrAfter  = 0,
+        cntRefPicSetLtCurr = 0;
+
     for(Ipp32s n=0 ; n < numRefPicSetStCurrBefore + numRefPicSetStCurrAfter + numRefPicSetLtCurr ; n++)
     {
+        if (!rps->getUsed(n))
+            continue;
+
         for(Ipp32s k=0;k < count;k++)
         {
             if(pocList[n] == pPicParam->PicOrderCntValList[k])

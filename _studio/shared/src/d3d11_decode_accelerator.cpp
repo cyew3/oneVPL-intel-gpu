@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 
 File Name: d3d11_decode_accelerator.cpp
 
@@ -66,8 +66,13 @@ mfxStatus MFXD3D11Accelerator::CreateVideoAccelerator(mfxU32 hwProfile, const mf
         return MFX_ERR_DEVICE_FAILED;
 
     m_bH264MVCSupport = IsVaMvcProfile(m_Profile);
-    m_bH264ShortSlice = (2 == video_config.ConfigBitstreamRaw || 4 == video_config.ConfigBitstreamRaw || 6 == video_config.ConfigBitstreamRaw);
     m_isUseStatuReport = true;
+
+    if ((m_Profile & 0xf) == VA_H265)
+        m_bH264ShortSlice = 1 == video_config.ConfigBitstreamRaw;
+    else
+        m_bH264ShortSlice = (2 == video_config.ConfigBitstreamRaw || 4 == video_config.ConfigBitstreamRaw || 6 == video_config.ConfigBitstreamRaw);
+
 
     return MFX_ERR_NONE;
 
@@ -91,6 +96,8 @@ mfxStatus MFXD3D11Accelerator::GetSuitVideoDecoderConfig(const mfxVideoParam    
         if (FAILED(hr)) // guid can be absent. It is ok
             continue;
 
+        Ipp32u isHEVCGUID = (m_Profile & 0xf) == VA_H265;
+
         mfxI32 idxConfig = -1;
         for (mfxU32 i = 0; i < count; i++)
         {
@@ -104,9 +111,19 @@ mfxStatus MFXD3D11Accelerator::GetSuitVideoDecoderConfig(const mfxVideoParam    
             if (idxConfig == -1)
                 idxConfig = i;
 
-            if (2 == pConfig->ConfigBitstreamRaw || 4 == pConfig->ConfigBitstreamRaw || 6 == pConfig->ConfigBitstreamRaw)
-            { // short mode
-                idxConfig = i;
+            if (isHEVCGUID)
+            {
+                if (1 == pConfig->ConfigBitstreamRaw)
+                { // short mode
+                    idxConfig = i;
+                }
+            }
+            else
+            {
+                if (2 == pConfig->ConfigBitstreamRaw || 4 == pConfig->ConfigBitstreamRaw || 6 == pConfig->ConfigBitstreamRaw)
+                { // short mode
+                    idxConfig = i;
+                }
             }
         }
 
