@@ -597,7 +597,7 @@ void InvertQuantOffsets(int type_idx, int typeAuxInfo, int* dstOffsets, int* src
 {
     int codedOffset[MAX_NUM_SAO_CLASSES];
 
-    memcpy(codedOffset, srcOffsets, sizeof(int)*MAX_NUM_SAO_CLASSES);
+    small_memcpy(codedOffset, srcOffsets, sizeof(int)*MAX_NUM_SAO_CLASSES);
     memset(dstOffsets, 0, sizeof(int)*MAX_NUM_SAO_CLASSES);
 
     if(type_idx == SAO_TYPE_BO)
@@ -930,12 +930,13 @@ void SaoOffsetParam::Reset()
     memset(offset, 0, sizeof(int)* MAX_NUM_SAO_CLASSES);
 }
 
-const SaoOffsetParam& SaoOffsetParam::operator= (const SaoOffsetParam& src)
+//const 
+SaoOffsetParam& SaoOffsetParam::operator= (const SaoOffsetParam& src)
 {
     mode_idx = src.mode_idx;
     type_idx = src.type_idx;
     typeAuxInfo = src.typeAuxInfo;
-    memcpy(offset, src.offset, sizeof(int)* MAX_NUM_SAO_CLASSES);
+    small_memcpy(offset, src.offset, sizeof(int)* MAX_NUM_SAO_CLASSES);
 
     return *this;
 }
@@ -962,7 +963,8 @@ void SaoCtuParam::Reset()
     }
 }
 
-const SaoCtuParam& SaoCtuParam::operator= (const SaoCtuParam& src)
+//const
+SaoCtuParam& SaoCtuParam::operator= (const SaoCtuParam& src)
 {
     for(int compIdx=0; compIdx< 3; compIdx++)
     {

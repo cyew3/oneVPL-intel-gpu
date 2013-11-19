@@ -108,10 +108,11 @@ struct SaoCtuStatistics //data structure for SAO statistics
     memset(count, 0, sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
   }
 
-  const SaoCtuStatistics& operator=(const SaoCtuStatistics& src)
+  //const 
+  SaoCtuStatistics& operator=(const SaoCtuStatistics& src)
   {
-    memcpy(diff, src.diff, sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
-    memcpy(count, src.count, sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
+    small_memcpy(diff, src.diff, sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
+    small_memcpy(count, src.count, sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
 
     return *this;
   }
@@ -125,7 +126,8 @@ struct SaoOffsetParam
   ~SaoOffsetParam();
   void Reset();
 
-  const SaoOffsetParam& operator= (const SaoOffsetParam& src);
+  //const 
+  SaoOffsetParam& operator= (const SaoOffsetParam& src);
 
   int mode_idx;     //ON, OFF, MERGE
   int type_idx;     //EO_0, EO_90, EO_135, EO_45, BO. MERGE: left, above
@@ -140,7 +142,10 @@ struct SaoCtuParam
   SaoCtuParam();
   ~SaoCtuParam();
   void Reset();
-  const SaoCtuParam& operator= (const SaoCtuParam& src);
+
+  //const 
+  SaoCtuParam& operator= (const SaoCtuParam& src);
+
   SaoOffsetParam& operator[](int compIdx){ return m_offsetParam[compIdx];}
 
 private:
