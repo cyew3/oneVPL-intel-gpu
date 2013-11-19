@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008 - 2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008 - 2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          ColorSpaceConversion Video Pre\Post Processing
@@ -494,7 +494,7 @@ IppStatus cc_YUY2_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
   VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
   VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
 
-  const mfxU8* pSrc[1] = {(mfxU8*)inData->Y};
+  mfxU8* pSrc[1] = {(mfxU8*)inData->Y};
 
   mfxI32 pSrcStep[1] = {inData->Pitch};
 
@@ -504,7 +504,26 @@ IppStatus cc_YUY2_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
   mfxI32 pDstStep[2] = {outData->Pitch,
                         outData->Pitch >> 0};
 
-  sts = ippiYCbCr422ToYCbCr420_8u_C2P2R(pSrc[0], pSrcStep[0], pDst[0], pDstStep[0], pDst[1], pDstStep[1], roiSize);
+  if(MFX_PICSTRUCT_PROGRESSIVE & inInfo->PicStruct)
+  {
+      sts = ippiYCbCr422ToYCbCr420_8u_C2P2R(pSrc[0], pSrcStep[0], pDst[0], pDstStep[0], pDst[1], pDstStep[1], roiSize);
+  }
+  else
+  {
+      roiSize.height >>= 1;
+
+      pSrcStep[0] = inData->Pitch << 1;
+      pDstStep[0] = outData->Pitch << 1;
+      pDstStep[1] = outData->Pitch << 1;
+
+      sts = ippiYCbCr422ToYCbCr420_8u_C2P2R(pSrc[0], pSrcStep[0], pDst[0], pDstStep[0], pDst[1], pDstStep[1], roiSize);
+
+      pSrc[0] += inData->Pitch;
+      pDst[0] += outData->Pitch;
+      pDst[1] += outData->Pitch;
+
+      sts = ippiYCbCr422ToYCbCr420_8u_C2P2R(pSrc[0], pSrcStep[0], pDst[0], pDstStep[0], pDst[1], pDstStep[1], roiSize);
+  }
 
   return sts;
 
