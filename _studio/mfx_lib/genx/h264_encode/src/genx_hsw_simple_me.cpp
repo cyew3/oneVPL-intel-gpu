@@ -496,52 +496,52 @@ DownSampleMB4X(SurfaceIndex SurfIndex,
     matrix<uint1,32,32> inMb;
     matrix<uint1,32,32> outMb2x;
     matrix<uint1,16,16> outMb4x;
+    matrix<uint2,16,32> sum16x32_16_1;
+    matrix<uint2,16,32> sum16x32_16_2;
 
     read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix +  0, iy +  0, inMb.select<16,1,16,1>(0,0));
     read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 16, iy +  0, inMb.select<16,1,16,1>(0,16));
     read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix +  0, iy + 16, inMb.select<16,1,16,1>(16,0));
     read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 16, iy + 16, inMb.select<16,1,16,1>(16,16));
 
-    matrix<uint2,16,32> sum16x32_16;
-
-    sum16x32_16.select<16,1,32,1>(0,0) = inMb.select<16,2,32,1>(0,0) + inMb.select<16,2,32,1>(1,0);
-    sum16x32_16.select<16,1,16,1>(0,0) = sum16x32_16.select<16,1,16,2>(0,0) + sum16x32_16.select<16,1,16,2>(0,1);
+    sum16x32_16_1.select<16,1,32,1>(0,0) = inMb.select<16,2,32,1>(0,0) + inMb.select<16,2,32,1>(1,0);
+    sum16x32_16_1.select<16,1,16,1>(0,0) = sum16x32_16_1.select<16,1,16,2>(0,0) + sum16x32_16_1.select<16,1,16,2>(0,1);
 
     read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 32, iy +  0, inMb.select<16,1,16,1>(0,0));
     read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 48, iy +  0, inMb.select<16,1,16,1>(0,16));
     read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 32, iy + 16, inMb.select<16,1,16,1>(16,0));
     read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 48, iy + 16, inMb.select<16,1,16,1>(16,16));
 
-    sum16x32_16.select<16,1,32,1>(0,0) = inMb.select<16,2,32,1>(0,0) + inMb.select<16,2,32,1>(1,0);
-    sum16x32_16.select<16,1,16,1>(0,16) = sum16x32_16.select<16,1,16,2>(0,0) + sum16x32_16.select<16,1,16,2>(0,1);
+    sum16x32_16_2.select<16,1,32,1>(0,0) = inMb.select<16,2,32,1>(0,0) + inMb.select<16,2,32,1>(1,0);
+    sum16x32_16_1.select<16,1,16,1>(0,16) = sum16x32_16_2.select<16,1,16,2>(0,0) + sum16x32_16_2.select<16,1,16,2>(0,1);
 
-    sum16x32_16 += 2;
-    outMb2x.select<16,1,32,1>(0,0) = sum16x32_16 >> 2;
+    sum16x32_16_1 += 2;
+    outMb2x.select<16,1,32,1>(0,0) = sum16x32_16_1 >> 2;
 
     read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix +  0, iy + 32, inMb.select<16,1,16,1>(0,0));
     read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 16, iy + 32, inMb.select<16,1,16,1>(0,16));
     read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix +  0, iy + 48, inMb.select<16,1,16,1>(16,0));
     read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 16, iy + 48, inMb.select<16,1,16,1>(16,16));
 
-    sum16x32_16.select<16,1,32,1>(0,0) = inMb.select<16,2,32,1>(0,0) + inMb.select<16,2,32,1>(1,0);
-    sum16x32_16.select<16,1,16,1>(0,0) = sum16x32_16.select<16,1,16,2>(0,0) + sum16x32_16.select<16,1,16,2>(0,1);
+    sum16x32_16_1.select<16,1,32,1>(0,0) = inMb.select<16,2,32,1>(0,0) + inMb.select<16,2,32,1>(1,0);
+    sum16x32_16_1.select<16,1,16,1>(0,0) = sum16x32_16_1.select<16,1,16,2>(0,0) + sum16x32_16_1.select<16,1,16,2>(0,1);
 
     read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 32, iy + 32, inMb.select<16,1,16,1>(0,0));
     read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 48, iy + 32, inMb.select<16,1,16,1>(0,16));
     read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 32, iy + 48, inMb.select<16,1,16,1>(16,0));
     read_plane(SurfIndex, GENX_SURFACE_Y_PLANE, ix + 48, iy + 48, inMb.select<16,1,16,1>(16,16));
 
-    sum16x32_16.select<16,1,32,1>(0,0) = inMb.select<16,2,32,1>(0,0) + inMb.select<16,2,32,1>(1,0);
-    sum16x32_16.select<16,1,16,1>(0,16) = sum16x32_16.select<16,1,16,2>(0,0) + sum16x32_16.select<16,1,16,2>(0,1);
+    sum16x32_16_2.select<16,1,32,1>(0,0) = inMb.select<16,2,32,1>(0,0) + inMb.select<16,2,32,1>(1,0);
+    sum16x32_16_1.select<16,1,16,1>(0,16) = sum16x32_16_2.select<16,1,16,2>(0,0) + sum16x32_16_2.select<16,1,16,2>(0,1);
 
-    sum16x32_16 += 2;
-    outMb2x.select<16,1,32,1>(16,0) = sum16x32_16 >> 2;
+    sum16x32_16_1 += 2;
+    outMb2x.select<16,1,32,1>(16,0) = sum16x32_16_1 >> 2;
 
-    sum16x32_16.select<16,1,32,1>(0,0) = outMb2x.select<16,2,32,1>(0,0) + outMb2x.select<16,2,32,1>(1,0);
-    sum16x32_16.select<16,1,16,1>(0,0) = sum16x32_16.select<16,1,16,2>(0,0) + sum16x32_16.select<16,1,16,2>(0,1);
+    sum16x32_16_1.select<16,1,32,1>(0,0) = outMb2x.select<16,2,32,1>(0,0) + outMb2x.select<16,2,32,1>(1,0);
+    sum16x32_16_1.select<16,1,16,1>(0,0) = sum16x32_16_1.select<16,1,16,2>(0,0) + sum16x32_16_1.select<16,1,16,2>(0,1);
 
-    sum16x32_16.select<16,1,16,1>(0,0) += 2;
-    outMb4x = sum16x32_16.select<16,1,16,1>(0,0) >> 2;
+    sum16x32_16_1.select<16,1,16,1>(0,0) += 2;
+    outMb4x = sum16x32_16_1.select<16,1,16,1>(0,0) >> 2;
 
     write_plane(Surf4XIndex, GENX_SURFACE_Y_PLANE, ox2x, oy2x, outMb4x);
 }
