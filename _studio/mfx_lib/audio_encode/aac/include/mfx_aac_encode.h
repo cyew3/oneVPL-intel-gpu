@@ -102,7 +102,8 @@ protected:
             , mCore(core) {
         }
         void push(mfxAudioFrame* t) {
-            mCore.IncreasePureReference(t->Locked);
+            if (t)
+                mCore.IncreasePureReference(t->Locked);
             mGuard.Lock();
             list.push_back(t);
             mGuard.Unlock();
@@ -140,16 +141,19 @@ protected:
             }
         }
         
-        void QueuePair(std::pair<mfxAudioFrame*, mfxBitstream*> pair) {
+        bool QueuePair(std::pair<mfxAudioFrame*, mfxBitstream*> pair) {
             if (MFX_ERR_MORE_BITSTREAM == m_lastStatus) {
                 QueueBitstream(pair.second);
             } else if (MFX_ERR_MORE_DATA == m_lastStatus) {
                 QueueFrame(pair.first);
+                if (!pair.first)
+                    return true;
 
             } else if (MFX_ERR_NONE == m_lastStatus) {
                 QueueFrame(pair.first);
                 QueueBitstream(pair.second);
             }
+            return false;
         }
     public:
         StateDataDivider(int ExpectedFrameSize, CommonCORE* core) 
@@ -163,9 +167,13 @@ protected:
         
         }
         mfxStatus PutPair(std::pair<mfxAudioFrame*, mfxBitstream*> pair) {
-            QueuePair(pair);
-
-            if (m_nFrames > 1) {
+            bool bNullFrame = QueuePair(pair);
+            if (bNullFrame) {
+                if(!m_nRestBytes)
+                    return MFX_ERR_MORE_DATA;
+                m_nRestBytes = 0;
+                return MFX_ERR_NONE;
+            } else if (m_nFrames > 1) {
                 m_nFrames--;
                 return m_lastStatus = MFX_ERR_MORE_BITSTREAM;
             } else if (m_nFrames == 1) {

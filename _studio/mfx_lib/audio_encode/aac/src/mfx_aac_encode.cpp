@@ -276,9 +276,10 @@ mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxAudioFrame *aFrame,
         ThreadAudioEncodeTaskInfo * info = new ThreadAudioEncodeTaskInfo();
         info->out = buffer_out;
         info->in = aFrame;
-
-        buffer_out->TimeStamp = aFrame->TimeStamp;
-        buffer_out->DecodeTimeStamp = aFrame->TimeStamp;
+        if (aFrame) {
+            buffer_out->TimeStamp = aFrame->TimeStamp;
+            buffer_out->DecodeTimeStamp = aFrame->TimeStamp;
+        }
         //finally queue task
         
         pEntryPoint->pRoutine = &AACENCODERoutine;
