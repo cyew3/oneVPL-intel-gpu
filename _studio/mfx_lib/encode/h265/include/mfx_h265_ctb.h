@@ -348,11 +348,13 @@ public:
         Ipp32s tcOffset,
         Ipp32s betaOffset,
         Ipp32s dir);
+
     // SAO
     void EstimateCtuSao(
         H265BsFake *bs,
         SaoCtuParam* saoParam,
-        SaoCtuParam* saoParam_TotalFrame );
+        SaoCtuParam* saoParam_TotalFrame,
+        const MFX_HEVC_PP::CTBBorders & borders);
 
     void FillSubPart(Ipp32s abs_part_idx, Ipp8u depth_cu, Ipp8u tr_idx,
         Ipp8u part_size, Ipp8u luma_dir, Ipp8u qp);

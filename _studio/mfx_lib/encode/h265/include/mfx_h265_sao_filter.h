@@ -235,6 +235,8 @@ public:
     double   m_labmda[NUM_SAO_COMPONENTS];
     H265BsFake *m_bsf;
 
+    MFX_HEVC_PP::CTBBorders m_borders;
+
     // output
     SaoCtuParam* m_codedParams_TotalFrame;
 };

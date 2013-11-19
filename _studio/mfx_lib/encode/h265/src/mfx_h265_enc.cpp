@@ -1595,23 +1595,19 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
                 cu[ithread].Deblock();
                 if(m_sps.sample_adaptive_offset_enabled_flag)
                 {
-                    // RDO
-                    /*Ipp8u* ctx_sao_1 = CTX(&bs[ithread],SAO_MERGE_FLAG_HEVC);
-                    Ipp8u* ctx_sao_2 = CTX(&bs[ithread],SAO_TYPE_IDX_HEVC);
+                    MFX_HEVC_PP::CTBBorders borders = {0};
+                    
+                    borders.m_left  = (-1 == cu[ithread].left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ cu[ithread].left_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
+                    borders.m_top = (-1 == cu[ithread].above_addr) ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ cu[ithread].above_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
 
-                    Ipp8u* ctx_sao_1_fake = CTX(&bsf[ithread],SAO_MERGE_FLAG_HEVC);
-                    Ipp8u* ctx_sao_2_fake = CTX(&bsf[ithread],SAO_TYPE_IDX_HEVC);
+                    cu[ithread].EstimateCtuSao( &bsf[ithread], &m_saoParam[ctb_addr], ctb_addr > 0 ? &m_saoParam[0] : NULL, borders );
 
-                    VM_ASSERT(ctx_sao_1[0] == ctx_sao_1_fake[0]);
-                    VM_ASSERT(ctx_sao_2[0] == ctx_sao_2_fake[0]);*/
+                    // aya: tiles issues???
+                    borders.m_left  = (-1 == cu[ithread].left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ cu[ithread].left_addr ]) ? 1 : 0;
+                    borders.m_top = (-1 == cu[ithread].above_addr) ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ cu[ithread].above_addr ]) ? 1 : 0;
 
-                    cu[ithread].EstimateCtuSao( &bsf[ithread], &m_saoParam[ctb_addr], ctb_addr > 0 ? &m_saoParam[0] : NULL );
-
-                    bool leftMergeAvail = false;
-                    bool aboveMergeAvail= false;
-
-                    leftMergeAvail  = (ctb_addr % pars->PicWidthInCtbs != 0);
-                    aboveMergeAvail = (ctb_addr >= pars->PicWidthInCtbs );
+                    bool leftMergeAvail = borders.m_left > 0 ? true : false;
+                    bool aboveMergeAvail= borders.m_top > 0 ? true : false;
 
                     //if( cu[ithread].cslice->slice_sao_luma_flag )
                     {
@@ -1668,13 +1664,16 @@ mfxStatus H265Encoder::EncodeThreadByRow(Ipp32s ithread) {
 
         Ipp32u ctb_addr = ctb_row * pars->PicWidthInCtbs;
 
-        for (Ipp32u ctb_col = 0; ctb_col < pars->PicWidthInCtbs; ctb_col ++, ctb_addr++) {
+        for (Ipp32u ctb_col = 0; ctb_col < pars->PicWidthInCtbs; ctb_col ++, ctb_addr++) 
+        {
             Ipp8u curr_slice = m_slice_ids[ctb_addr];
             Ipp8u end_of_slice_flag = (ctb_addr == m_slices[curr_slice].slice_address_last_ctb);
 
-            if (pars->num_threads > 1 && m_pps.entropy_coding_sync_enabled_flag && ctb_row > 0) {
+            if (pars->num_threads > 1 && m_pps.entropy_coding_sync_enabled_flag && ctb_row > 0) 
+            {
                     Ipp32s nsync = ctb_col < pars->PicWidthInCtbs - 1 ? 1 : 0;
-                    if ((Ipp32s)ctb_addr - (Ipp32s)pars->PicWidthInCtbs + nsync >= m_slices[m_slice_ids[ctb_addr]].slice_segment_address) {
+                    if ((Ipp32s)ctb_addr - (Ipp32s)pars->PicWidthInCtbs + nsync >= m_slices[m_slice_ids[ctb_addr]].slice_segment_address) 
+                    {
                         while(m_row_info[ctb_row - 1].mt_current_ctb_col < (Ipp32s)ctb_col + nsync)
                         {
                             x86_pause();
@@ -1684,7 +1683,8 @@ mfxStatus H265Encoder::EncodeThreadByRow(Ipp32s ithread) {
             }
 
             if ((Ipp32s)ctb_addr == m_slices[curr_slice].slice_segment_address ||
-                (m_pps.entropy_coding_sync_enabled_flag && ctb_col == 0)) {
+                (m_pps.entropy_coding_sync_enabled_flag && ctb_col == 0)) 
+            {
 
                 ippiCABACInit_H265(&bs[ithread].cabacState,
                     bs[ithread].m_base.m_pbsBase,
@@ -1736,23 +1736,19 @@ mfxStatus H265Encoder::EncodeThreadByRow(Ipp32s ithread) {
                 cu[ithread].Deblock();
                 if(m_sps.sample_adaptive_offset_enabled_flag)
                 {
-                    // RDO
-                    /*Ipp8u* ctx_sao_1 = CTX(&bs[ithread],SAO_MERGE_FLAG_HEVC);
-                    Ipp8u* ctx_sao_2 = CTX(&bs[ithread],SAO_TYPE_IDX_HEVC);
+                    MFX_HEVC_PP::CTBBorders borders = {0};
+                    
+                    borders.m_left  = (-1 == cu[ithread].left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ cu[ithread].left_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
+                    borders.m_top = (-1 == cu[ithread].above_addr) ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ cu[ithread].above_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
 
-                    Ipp8u* ctx_sao_1_fake = CTX(&bsf[ithread],SAO_MERGE_FLAG_HEVC);
-                    Ipp8u* ctx_sao_2_fake = CTX(&bsf[ithread],SAO_TYPE_IDX_HEVC);
+                    cu[ithread].EstimateCtuSao( &bsf[ithread], &m_saoParam[ctb_addr], ctb_addr > 0 ? &m_saoParam[0] : NULL, borders );
 
-                    VM_ASSERT(ctx_sao_1[0] == ctx_sao_1_fake[0]);
-                    VM_ASSERT(ctx_sao_2[0] == ctx_sao_2_fake[0]);*/
+                    // aya: tiles issues???
+                    borders.m_left  = (-1 == cu[ithread].left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ cu[ithread].left_addr ]) ? 1 : 0;
+                    borders.m_top = (-1 == cu[ithread].above_addr) ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ cu[ithread].above_addr ]) ? 1 : 0;
 
-                    cu[ithread].EstimateCtuSao( &bsf[ithread], &m_saoParam[ctb_addr], ctb_addr > 0 ? &m_saoParam[0] : NULL );
-
-                    bool leftMergeAvail = false;
-                    bool aboveMergeAvail= false;
-
-                    leftMergeAvail  = (ctb_addr % pars->PicWidthInCtbs != 0);
-                    aboveMergeAvail = (ctb_addr >= pars->PicWidthInCtbs );
+                    bool leftMergeAvail = borders.m_left > 0 ? true : false;
+                    bool aboveMergeAvail= borders.m_top > 0 ? true : false;
 
                     //if( cu[ithread].cslice->slice_sao_luma_flag )
                     {

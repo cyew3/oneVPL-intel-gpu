@@ -1011,7 +1011,11 @@ void SAOFilter::Init(int width, int height, int maxCUWidth, int maxDepth)
 } // void SAOFilter::Init(...)
 
 
-void SAOFilter::EstimateCtuSao(mfxFrameData* orgYuv, mfxFrameData* recYuv, bool* sliceEnabled, SaoCtuParam* saoParam)
+void SAOFilter::EstimateCtuSao(
+    mfxFrameData* orgYuv, 
+    mfxFrameData* recYuv, 
+    bool* sliceEnabled, 
+    SaoCtuParam* saoParam)
 {
     GetCtuSaoStatistics(orgYuv, recYuv);
 
@@ -1036,9 +1040,10 @@ void SAOFilter::GetCtuSaoStatistics(mfxFrameData* orgYuv, mfxFrameData* recYuv)
         int height = (yPos + m_maxCUSize > m_frameSize.height)?(m_frameSize.height- yPos):m_maxCUSize;
         int width  = (xPos + m_maxCUSize  > m_frameSize.width )?(m_frameSize.width - xPos):m_maxCUSize;
 
+        // sao::block boundary availability
         // ------------------------------------------------
-        isLeftAvail  = (m_ctb_addr % m_numCTU_inWidth != 0);
-        isAboveAvail = (m_ctb_addr >= m_numCTU_inWidth );
+        isLeftAvail  = m_borders.m_left > 0 ? true : false;
+        isAboveAvail = m_borders.m_top > 0  ? true : false;
         isAboveLeftAvail = false;//(isAboveAvail && isLeftAvail);
         isAboveRightAvail= false;//(isAboveAvail && isRightAvail);// make sense for WPP = 1 only
 
@@ -1457,7 +1462,7 @@ void SAOFilter::ApplyCtuSao(
         return;
     }
 
-    //block boundary availability
+    // sao::block boundary availability
     //-------------------------------------------------------
     // reference code
     //pPic->getPicSym()->deriveLoopFilterBoundaryAvailibility(ctu, isLeftAvail,isRightAvail,isAboveAvail,isBelowAvail,isAboveLeftAvail,isAboveRightAvail,isBelowLeftAvail,isBelowRightAvail);
@@ -1473,6 +1478,10 @@ void SAOFilter::ApplyCtuSao(
     isAboveRightAvail= (isAboveAvail && isRightAvail);
     isBelowLeftAvail = (isBelowAvail && isLeftAvail);
     isBelowRightAvail= (isBelowAvail && isRightAvail);
+    //-------------------------------------------------------
+    //aya: need to take into consediration boundary_cross_flag.
+    // right now it is hard coded "1" so, no issue here.
+    // wiull be fixed soon
     //-------------------------------------------------------
 
     int yPos   = (m_ctb_addr / m_numCTU_inWidth)*m_maxCUSize;
@@ -1521,7 +1530,11 @@ void SAOFilter::ApplyCtuSao(
 //  CTU Caller
 // ========================================================
 
-void H265CU::EstimateCtuSao( H265BsFake *bs, SaoCtuParam* saoParam, SaoCtuParam* saoParam_TotalFrame )
+void H265CU::EstimateCtuSao( 
+    H265BsFake *bs, 
+    SaoCtuParam* saoParam, 
+    SaoCtuParam* saoParam_TotalFrame,
+    const MFX_HEVC_PP::CTBBorders & borders)
 {
     m_saoFilter.m_ctb_addr = this->ctb_addr;
     m_saoFilter.m_ctb_pelx = this->ctb_pelx;
@@ -1530,6 +1543,7 @@ void H265CU::EstimateCtuSao( H265BsFake *bs, SaoCtuParam* saoParam, SaoCtuParam*
     m_saoFilter.m_codedParams_TotalFrame = saoParam_TotalFrame;
     m_saoFilter.m_bsf = bs;
     m_saoFilter.m_labmda[0] = this->rd_lambda*256;
+    m_saoFilter.m_borders = borders;
     // ----------------------------------------------------
 
     // run
