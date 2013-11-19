@@ -878,6 +878,7 @@ mfxStatus CommonCORE::SetFrameAllocator(mfxFrameAllocator *allocator)
     {
         m_FrameAllocator.frameAllocator = *allocator;
         m_bSetExtFrameAlloc = true;
+        m_session->m_coreInt.FrameAllocator = *allocator;
         return MFX_ERR_NONE;
     }
     else
