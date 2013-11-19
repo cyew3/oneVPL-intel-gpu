@@ -884,7 +884,7 @@ msdk_ts_BLOCK(t_LoadDLLPlugin){
 
     vm_char* file_name = 0;
     vm_char* temp_fn = 0;
-    std::cout << "  Library to load: " << dll_name << std::endl;
+    std::cout << "  Library to load (manual loading, without dispatcher): " << dll_name << std::endl;
 
     if(sizeof(char) == sizeof(vm_char))
         file_name = reinterpret_cast<vm_char*>( dll_name );
