@@ -918,7 +918,7 @@ void PrintDllInfo(const vm_char *msg, const vm_char *filename)
     vm_char msg2[1024];
     if (1 == vm_file_getinfo(filename, &filelen, NULL))
     {
-        PrintInfo(msg, VM_STRING("%s"), filename);
+        PrintInfo(msg, VM_STRING("%s "), filename);
                         
         vm_string_sprintf(msg2, VM_STRING("%s size"), msg);
         PrintInfo(msg2, VM_STRING("%I64d"), filelen);
@@ -930,7 +930,7 @@ void PrintDllInfo(const vm_char *msg, const vm_char *filename)
     if (!err)
     {
         vm_string_sprintf(msg2, VM_STRING("%s mtime"), msg);
-        PrintInfo(msg, VM_STRING("%s"), _tctime64(&fileStat.st_mtime));
+        PrintInfo(msg2, VM_STRING("%s"), _tctime64(&fileStat.st_mtime));
     }
 #endif
 }

@@ -123,6 +123,8 @@ mfxStatus ComponentParams::CorrectParams()
     return MFX_ERR_NONE;
 }
 
+#define MFX_IMPL_SW_OR_HW(impl) (impl & 0xFF)
+
 mfxStatus ComponentParams::PrintInfo()
 {
     mfxIMPL impl;
@@ -132,20 +134,20 @@ mfxStatus ComponentParams::PrintInfo()
     mfxVersion version;
     MFX_CHECK_STS(m_pSession->QueryVersion(&version));
 
-    switch (impl)
+    switch (MFX_IMPL_SW_OR_HW(impl))
     {
-        case MFX_IMPL_SOFTWARE: ::PrintInfo(m_Name.c_str(), VM_STRING("Software")); break;
-        case MFX_IMPL_HARDWARE: ::PrintInfo(m_Name.c_str(), VM_STRING("Hardware")); break;
-        default               : ::PrintInfo(m_Name.c_str(), VM_STRING("Unknown"));  break;
+        case MFX_IMPL_SOFTWARE : ::PrintInfo(m_Name.c_str(), VM_STRING("Software")); break;
+        case MFX_IMPL_HARDWARE : ::PrintInfo(m_Name.c_str(), VM_STRING("Hardware")); break;
+        default                : ::PrintInfo(m_Name.c_str(), VM_STRING("Unknown"));  break;
     }
 
     PipelineTrace((SerializeWithKey(VM_STRING("  Surface type"), m_bufType).c_str()));
     PipelineTrace((SerializeWithKey(VM_STRING("  External allocator"), m_bExternalAlloc).c_str()));
-    PipelineTrace((SerializeWithKey(VM_STRING("  MFX version"),version).c_str()));
-    
-    PrintDllInfo(VM_STRING("  MFX path"), m_mfxLibPath.c_str());
+    PipelineTrace((SerializeWithKey(VM_STRING("  MFX API version"),version).c_str()));
     PipelineTrace((SerializeWithKey(VM_STRING("  MFXImpl"), m_RealImpl).c_str()));
 
+    PrintDllInfo(VM_STRING("  MediaSDK "), m_mfxLibPath.c_str());
+    
     return MFX_ERR_NONE;
 }
 
