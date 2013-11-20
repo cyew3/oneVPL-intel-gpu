@@ -28,7 +28,7 @@ namespace UMC_HEVC_DECODER
 // CABAC magic mode switcher.
 // Just put it to 0 to switch fast CABAC decoding off.
 #define CABAC_MAGIC_BITS 0
-#define __CABAC_FILE__ "cabac.tst"
+#define __CABAC_FILE__ "cabac.mfx.log"
 
 template <typename T> class HeaderSet;
 class Headers;
@@ -165,9 +165,9 @@ public:
     static Ipp32u m_c;
     static FILE* cabac_bits;
 
-    inline void PRINT_CABAC_VALUES()
+    inline void PRINT_CABAC_VALUES(Ipp32u val, Ipp32u range)
     {
-        fprintf(cabac_bits, "\nCount: %d \tValue: %d \tRange: %d \t", m_c++, (Ipp32u)(m_lcodIOffset>>CABAC_MAGIC_BITS), (Ipp32u)(m_lcodIRange>>CABAC_MAGIC_BITS));
+        fprintf(cabac_bits, "\nCount: %d \tValue: %d \tRange: %d \t", m_c++, val, range);
         fflush(cabac_bits);
     }
 
@@ -234,10 +234,6 @@ public:
     inline
     Ipp32u DecodeBypassBins_CABAC(Ipp32s numBins);
 
-
-    // Decode end symbol
-    inline
-    Ipp32u DecodeSymbolEnd_CABAC();
 
     inline //from h265
     Ipp32u DecodeTerminatingBit_CABAC(void);

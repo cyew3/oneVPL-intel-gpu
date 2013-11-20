@@ -251,6 +251,10 @@ Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
 inline
 Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
 {
+#if INSTRUMENTED_CABAC
+    Ipp32u range = m_lcodIRange;
+#endif
+
     Ipp32u codIRangeLPS;
 
     Ipp32u pState = context_hevc[ctxIdx];
@@ -274,7 +278,7 @@ Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
         if ( scaledRange >= g_scaled256)
         {
 #if INSTRUMENTED_CABAC
-            PRINT_CABAC_VALUES();
+            PRINT_CABAC_VALUES(binVal, range);
 #endif
             return binVal;
         }
@@ -320,7 +324,7 @@ Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
  
     }
 #if INSTRUMENTED_CABAC
-    PRINT_CABAC_VALUES();
+    PRINT_CABAC_VALUES(binVal, range);
 #endif
     return binVal;
 
@@ -329,58 +333,12 @@ Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
 #endif // defined( __INTEL_COMPILER ) && (defined( __x86_64__ ) || defined ( _WIN64 ))
 
 H265_FORCEINLINE
-Ipp32u H265Bitstream::DecodeSymbolEnd_CABAC(void)
-{
-    Ipp32u binVal = 1;
-#if (CABAC_MAGIC_BITS > 0)
-    Ipp64u 
-#else
-    Ipp32u
-#endif
-    codIOffset = m_lcodIOffset;
-#if (CABAC_MAGIC_BITS > 0)
-    Ipp64u 
-#else
-    Ipp32u
-#endif 
-    codIRange = m_lcodIRange;
-
-    // See subclause 9.3.3.2.4 of H.264 standard
-    if (codIOffset < (codIRange - (2 << CABAC_MAGIC_BITS)))
-    {
-        codIRange -= (2 << CABAC_MAGIC_BITS);
-
-        // Renormalization process
-        // See subclause 9.3.3.2.2 of H.264
-        if (codIRange < (0x100 << (CABAC_MAGIC_BITS)))
-        {
-            codIRange <<= 1;
-            codIOffset <<= 1;
-
-#if (CABAC_MAGIC_BITS > 0)
-            m_iExtendedBits -= 1;
-            if (0 >= m_iExtendedBits)
-                RefreshCABACBits(codIOffset, m_pExtendedBits, m_iExtendedBits);
-#else // !(CABAC_MAGIC_BITS > 0)
-            codIOffset |= GetBits(1);
-#endif // (CABAC_MAGIC_BITS > 0)
-        }
-        binVal = 0;
-        m_lcodIOffset = codIOffset;
-        m_lcodIRange = codIRange;
-
-    }
-#if INSTRUMENTED_CABAC
-    PRINT_CABAC_VALUES();
-#endif
-
-    return binVal;
-
-} //Ipp32u H265Bitstream::DecodeSymbolEnd_CABAC(void)
-
-H265_FORCEINLINE
 Ipp32u H265Bitstream::DecodeTerminatingBit_CABAC(void)
 {
+#if INSTRUMENTED_CABAC
+    Ipp32u range = m_lcodIRange;
+#endif
+
     Ipp32u Bin = 1;
     m_lcodIRange -= (2<<CABAC_MAGIC_BITS);
 #if (CABAC_MAGIC_BITS > 0)
@@ -413,7 +371,7 @@ Ipp32u H265Bitstream::DecodeTerminatingBit_CABAC(void)
         }
     }
 #if INSTRUMENTED_CABAC
-    PRINT_CABAC_VALUES();
+    PRINT_CABAC_VALUES(Bin, range);
 #endif
     return Bin;
 } //Ipp32u H265Bitstream::DecodeTerminatingBit_CABAC(void)
@@ -422,6 +380,10 @@ Ipp32u H265Bitstream::DecodeTerminatingBit_CABAC(void)
 H265_FORCEINLINE
 Ipp32u H265Bitstream::DecodeSingleBinEP_CABAC(void)
 {
+#if INSTRUMENTED_CABAC
+    Ipp32u range = m_lcodIRange;
+#endif
+
     m_lcodIOffset += m_lcodIOffset;
 
 #if (CABAC_MAGIC_BITS > 0)
@@ -451,7 +413,7 @@ Ipp32u H265Bitstream::DecodeSingleBinEP_CABAC(void)
     }
 
 #if INSTRUMENTED_CABAC
-    PRINT_CABAC_VALUES();
+    PRINT_CABAC_VALUES(Bin, range);
 #endif
     return Bin;
 } //Ipp32u H265Bitstream::DecodeSingleBinEP_CABAC(void)
@@ -459,6 +421,10 @@ Ipp32u H265Bitstream::DecodeSingleBinEP_CABAC(void)
 H265_FORCEINLINE
 Ipp32u H265Bitstream::DecodeBypassBins_CABAC(Ipp32s numBins)
 {
+#if INSTRUMENTED_CABAC
+    Ipp32u range = m_lcodIRange;
+#endif
+
     Ipp32u bins = 0;
 
 #if (CABAC_MAGIC_BITS > 0)
@@ -504,6 +470,9 @@ Ipp32u H265Bitstream::DecodeBypassBins_CABAC(Ipp32s numBins)
                 bins++;
                 m_lcodIOffset -= scaledRange;
             }
+#if INSTRUMENTED_CABAC
+            PRINT_CABAC_VALUES(bins & 1, range);
+#endif
         }
         numBins -= 8;
     }
@@ -534,11 +503,11 @@ Ipp32u H265Bitstream::DecodeBypassBins_CABAC(Ipp32s numBins)
             bins++;
             m_lcodIOffset -= scaledRange;
         }
+#if INSTRUMENTED_CABAC
+        PRINT_CABAC_VALUES(bins & 1, range);
+#endif
     }
 
-#if INSTRUMENTED_CABAC
-    PRINT_CABAC_VALUES();
-#endif
     return bins;
 }
 
