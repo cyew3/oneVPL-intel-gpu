@@ -203,8 +203,12 @@ mfxStatus MFXHWVideoENCODEH264::Query(
         if (GetExtBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_SVC_SEQ_DESC))
             in->mfx.CodecProfile = MFX_PROFILE_AVC_SCALABLE_BASELINE;
 
+    /* In Linux MVC and SVC does not supported in 16.3 release */
     if (in && IsMvcProfile(in->mfx.CodecProfile) && !IsHwMvcEncSupported())
-        return MFX_WRN_PARTIAL_ACCELERATION;
+        return MFX_ERR_UNSUPPORTED;
+    if (in && IsSvcProfile(in->mfx.CodecProfile) &&
+        (core->GetVAType() == MFX_HW_VAAPI) )
+        return MFX_ERR_UNSUPPORTED;
 
     if (in == 0)
         return ImplementationAvc::Query(core, in, out);

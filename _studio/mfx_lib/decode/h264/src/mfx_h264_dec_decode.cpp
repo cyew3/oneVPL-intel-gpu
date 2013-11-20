@@ -219,6 +219,16 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     if (!MFX_Utility::CheckVideoParam(par, type))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
+    if (m_core->GetVAType() == MFX_HW_VAAPI)
+    {
+        int codecProfile = par->mfx.CodecProfile & 0xFF;
+        if (    (codecProfile == MFX_PROFILE_AVC_STEREO_HIGH) ||
+                (codecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH) ||
+                (codecProfile == MFX_PROFILE_AVC_SCALABLE_BASELINE) ||
+                (codecProfile == MFX_PROFILE_AVC_SCALABLE_HIGH) )
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+
     m_vInitPar = *par;
     m_vFirstPar = *par;
     m_vFirstPar.mfx.NumThread = 0;

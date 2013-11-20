@@ -1371,6 +1371,16 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
             sts = MFX_ERR_UNSUPPORTED;
         }
 
+        if (core->GetVAType() == MFX_HW_VAAPI)
+        {
+            int codecProfile = in->mfx.CodecProfile & 0xFF;
+            if (    (codecProfile == MFX_PROFILE_AVC_STEREO_HIGH) ||
+                    (codecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH) ||
+                    (codecProfile == MFX_PROFILE_AVC_SCALABLE_BASELINE) ||
+                    (codecProfile == MFX_PROFILE_AVC_SCALABLE_HIGH) )
+                return MFX_ERR_UNSUPPORTED;
+        }
+
         switch (in->mfx.CodecLevel)
         {
         case MFX_LEVEL_UNKNOWN:
