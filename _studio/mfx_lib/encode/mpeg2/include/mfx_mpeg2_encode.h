@@ -20,6 +20,7 @@
 #include "umc_mpeg2_enc.h"
 #include "mfx_frames.h"
 #include "vm_event.h"
+#include "mfx_enc_common.h"
 #include "mfx_mpeg2_enc_common.h"
 
 class MFXVideoENCODEMPEG2;
@@ -164,6 +165,8 @@ private:
 
     void           ConfigPolarSurface();
 
+    InputSurfaces m_InputSurfaces;
+
     mfxFrameSurface1 *GetOriginalSurface(mfxFrameSurface1 *surface)
     {
         return m_InputSurfaces.GetOriginalSurface(surface);
@@ -179,8 +182,6 @@ private:
     mfxFrameAllocRequest m_request;   // for reconsruction frames
     mfxFrameAllocResponse m_response; // for reconstruction frames
     
-    InputSurfaces m_InputSurfaces;
-   
     mfxU32 is_initialized() const {return m_bInitialized;}
 
 #ifdef _NEW_THREADING
