@@ -1466,7 +1466,7 @@ mfxStatus VideoVPPSW::Reset(mfxVideoParam *par)
     }
 
     /* in general, in/out resolution should be <= m_initParam.resolution */
-    if( (par->vpp.In.Width  > m_errPrtctState.In.Width)  || (par->vpp.In.Height  > m_errPrtctState.In.Height) || 
+    if( (par->vpp.In.Width  > m_errPrtctState.In.Width)  || (par->vpp.In.Height  > m_errPrtctState.In.Height) ||
         (par->vpp.Out.Width > m_errPrtctState.Out.Width) || (par->vpp.Out.Height > m_errPrtctState.Out.Height) )
     {
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;

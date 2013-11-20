@@ -2188,7 +2188,7 @@ mfxStatus CheckLimitationsHW(
         }
         else if( !IsFrcInterpolationEnable(param, caps) ) 
         {
-            sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            sts =  MFX_WRN_FILTER_SKIPPED;
             if(bCorrectionEnable)
             {
                 SetMFXFrcMode(param, MFX_FRCALGM_PRESERVE_TIMESTAMP);
