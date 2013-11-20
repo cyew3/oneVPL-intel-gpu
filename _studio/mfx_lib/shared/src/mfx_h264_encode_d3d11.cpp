@@ -540,13 +540,11 @@ mfxStatus D3D11Encoder::Execute(
 
     if(SkipFlag != 1)
     {
-#ifdef SKIP_FRAME_DDI_0917
-        m_pps.SkipFlag       = SkipFlag ? SkipFlag : !!m_numSkipFrames;
+        m_pps.SkipFrameFlag  = SkipFlag ? SkipFlag : !!m_numSkipFrames;
         m_pps.NumSkipFrames  = m_numSkipFrames;
         m_pps.SizeSkipFrames = m_sizeSkipFrames;
-#endif //SKIP_FRAME_DDI_0917
-        m_numSkipFrames  = 0;
-        m_sizeSkipFrames = 0;
+        m_numSkipFrames      = 0;
+        m_sizeSkipFrames     = 0;
 
         // [2.4] send to driver
         D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
