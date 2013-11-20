@@ -9,6 +9,8 @@ include_directories (
 
 pkg_check_modules(PKG_XERCES xerces-c>=3.0)
 
+
+
 if( PKG_XERCES_FOUND )
   link_directories ( ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/test_suite/spy_test_component/xerces/lib )
 
@@ -37,6 +39,11 @@ if( PKG_XERCES_FOUND )
     )
 
   set( defs "-DXERCES_XML" )
+  if(CMAKE_BUILD_TYPE MATCHES release)
+     set(OUTLINE_LIB_NAME outline)
+  else()
+     set(OUTLINE_LIB_NAME outline_d)
+  endif()
 
-  make_library( outline none shared )
+  make_library(${OUTLINE_LIB_NAME} none shared )
 endif()
