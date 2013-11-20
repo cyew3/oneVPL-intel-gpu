@@ -513,6 +513,16 @@ typedef struct tagENCODE_CAPS
     UCHAR   MaxNum_DQLayer;
     UCHAR   MaxNum_TemporalLayer;
     UCHAR   MBBRCSupport;
+    UCHAR   MaxNumOfROI; // [0..16]
+
+    union {
+        struct {
+            UINT  SkipFrame : 1;
+            UINT            : 31;// For future expansion
+        };
+        UINT      CodingLimits2;
+    };
+
 } ENCODE_CAPS;
 
 ////////////////////////////////////////////////////////////////////////////////
