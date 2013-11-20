@@ -232,6 +232,8 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
                 }
                 else
                 {
+                    delete p;
+                    delete cvt;
                     return MFX_ERR_UNDEFINED_BEHAVIOR;
                 }
                 
