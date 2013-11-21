@@ -1376,7 +1376,7 @@ namespace MPEG2EncoderHW
             m_VideoParamsEx.mfxVideoParams.mfx.RateControlMethod != MFX_RATECONTROL_AVBR &&
             m_VideoParamsEx.mfxVideoParams.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
         {
-            bCorrected = true;
+            /*if RateControlMethod was undefined MSDK have to use default one */
             m_VideoParamsEx.mfxVideoParams.mfx.RateControlMethod = MFX_RATECONTROL_VBR;
         }
 
