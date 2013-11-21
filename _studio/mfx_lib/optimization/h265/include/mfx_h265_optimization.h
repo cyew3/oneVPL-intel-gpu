@@ -588,17 +588,17 @@ namespace MFX_HEVC_PP
 #if defined OPT_INTERP_PMUL
     if (sizeof(t_src) == 1) {
         if (sizeof(t_dst) == 1)
-            Interp_S8_WithAvg((unsigned char *)pSrc, in_SrcPitch, (unsigned char *)in_pDst, in_DstPitch, (void *)in_pSrc2, in_Src2Pitch, eAddAverage, tab_index, width, height, shift, offset, interp_type, plane_type);
+            Interp_S8_WithAvg((unsigned char *)pSrc, in_SrcPitch, (unsigned char *)in_pDst, in_DstPitch, (void *)in_pSrc2, in_Src2Pitch, eAddAverage, tab_index, width, height, shift, (Ipp16s)offset, interp_type, plane_type);
         else
-            Interp_S8_NoAvg((unsigned char *)pSrc, in_SrcPitch, (short *)in_pDst, in_DstPitch, tab_index, width, height, shift, offset, interp_type, plane_type);
+            Interp_S8_NoAvg((unsigned char *)pSrc, in_SrcPitch, (short *)in_pDst, in_DstPitch, tab_index, width, height, shift, (Ipp16s)offset, interp_type, plane_type);
     }
 
     /* only used for vertical filter */
     if (sizeof(t_src) == 2) {
         if (sizeof(t_dst) == 1)
-            Interp_S16_WithAvg((short *)pSrc, in_SrcPitch, (unsigned char *)in_pDst, in_DstPitch, (void *)in_pSrc2, in_Src2Pitch, eAddAverage, tab_index, width, height, shift, offset, INTERP_VER, plane_type);
+            Interp_S16_WithAvg((short *)pSrc, in_SrcPitch, (unsigned char *)in_pDst, in_DstPitch, (void *)in_pSrc2, in_Src2Pitch, eAddAverage, tab_index, width, height, shift, (Ipp16s)offset, INTERP_VER, plane_type);
         else
-            Interp_S16_NoAvg((short *)pSrc, in_SrcPitch, (short *)in_pDst, in_DstPitch, tab_index, width, height, shift, offset, INTERP_VER, plane_type);
+            Interp_S16_NoAvg((short *)pSrc, in_SrcPitch, (short *)in_pDst, in_DstPitch, tab_index, width, height, shift, (Ipp16s)offset, INTERP_VER, plane_type);
     }
 #else
         typedef void (*t_disp_func)(
