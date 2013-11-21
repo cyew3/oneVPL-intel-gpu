@@ -2800,16 +2800,14 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
     if (extRoi->NumROI)
     {
-        mfxU16 const MaxNumOfROI = 0; // TODO: change to caps->MaxNumOfROI after it will be added to DDI
-
-        if (extRoi->NumROI > MaxNumOfROI)
+        if (extRoi->NumROI > hwCaps.MaxNumOfROI)
         {
-            //if (MaxNumOfROI == 0)
+            if (hwCaps.MaxNumOfROI == 0)
                 unsupported = true;
-            //else
-            //    changed = true;
+            else
+                changed = true;
 
-            extRoi->NumROI = MaxNumOfROI;
+            extRoi->NumROI = hwCaps.MaxNumOfROI;
         }
     }
 

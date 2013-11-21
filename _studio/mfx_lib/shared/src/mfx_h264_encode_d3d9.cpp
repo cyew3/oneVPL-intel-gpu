@@ -259,6 +259,22 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
         pps.FieldOrderCntList[i][0]   = 0;
         pps.FieldOrderCntList[i][1]   = 0;
     }
+
+    // ROI
+    pps.NumROI = (mfxU8)task.m_numRoi;
+    if (task.m_numRoi)
+    {
+        for (i = 0; i < task.m_numRoi; i ++)
+        {
+            pps.ROI[i].Left = (mfxU16)task.m_roi[i].Left;
+            pps.ROI[i].Top = (mfxU16)task.m_roi[i].Top;
+            pps.ROI[i].Right = (mfxU16)task.m_roi[i].Right;
+            pps.ROI[i].Bottom = (mfxU16)task.m_roi[i].Bottom;
+            pps.ROI[i].PriorityLevelOrDQp = (mfxU8)task.m_roi[i].Priority;
+        }
+        pps.MaxDeltaQp = 51;
+        pps.MinDeltaQp = -51;
+    }
 }
 
 

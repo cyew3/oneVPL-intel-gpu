@@ -1525,11 +1525,12 @@ void MfxHwH264Encode::ConfigureTask(
         pRoi = extRoiRuntime;
     }
 
+    task.m_numRoi = 0;
+
     if (pRoi && pRoi->NumROI)
     {
-        mfxU16 numRoi = pRoi->NumROI <= task.m_roi.Size() ? pRoi->NumROI : (mfxU16)task.m_roi.Size();
+        mfxU16 numRoi = pRoi->NumROI <= task.m_roi.Capacity() ? pRoi->NumROI : (mfxU16)task.m_roi.Capacity();
 
-        task.m_numRoi = 0;
         for (mfxU16 i = 0; i < numRoi; i ++)
         {
             task.m_roi[task.m_numRoi] = *((mfxRoiDesc*)&(pRoi->ROI[i]));
