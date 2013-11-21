@@ -125,7 +125,8 @@ mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxE
 
     pars->NumRefToStartCodeBSlice = 1;
     pars->TreatBAsReference = 0;
-    pars->MaxRefIdxL0 = pars->GopRefDist > 1 ? 1 : (Ipp8u)param->mfx.NumRefFrame;
+//    pars->MaxRefIdxL0 = pars->GopRefDist > 1 ? 1 : (Ipp8u)param->mfx.NumRefFrame;
+    pars->MaxRefIdxL0 = (Ipp8u)param->mfx.NumRefFrame;
     pars->MaxRefIdxL1 = 1;
     pars->MaxBRefIdxL0 = 1;
     pars->GeneralizedPB = (opts_hevc->GPB == MFX_CODINGOPTION_ON);

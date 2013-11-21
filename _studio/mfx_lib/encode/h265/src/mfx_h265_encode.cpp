@@ -47,7 +47,7 @@
 #define CHECK_EXTBUF_SIZE(ebuf, errcounter) if ((ebuf).Header.BufferSz != sizeof(ebuf)) {(errcounter) = (errcounter) + 1;}
 
 mfxExtCodingOptionHEVC hevc_tu_tab[8] = {               // CUS CUD 2TUS 2TUD  AnalyzeChroma         SignBitHiding          RDOQuant               SAO                   thrCU,TU,CUInter    5numCand1  5numCand2  WPP                       GPB                   AMP
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 4,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_OFF,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF }, // tu default (==4)
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 5,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_OFF,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF }, // tu default (==4)
     {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 6,  4, 5,2, 5,5,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,    1, 1, 1,         8,8,4,4,4, 4,4,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_ON , MFX_CODINGOPTION_ON  }, // tu 1
     {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 5,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_OFF,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF }, // tu 2  (==4)
     {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 5,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_OFF,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF }, // tu 3  (==4)
@@ -651,12 +651,17 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     // TargetUsage - nothing to do
 
     // can depend on target usage
+    if (!m_mfxVideoParam.mfx.GopRefDist) {
+        if (m_mfxVideoParam.mfx.TargetUsage < MFX_TARGETUSAGE_BEST_SPEED)
+            m_mfxVideoParam.mfx.GopRefDist = 4; // keep alignment with GopPicSize when changing
+        else
+            m_mfxVideoParam.mfx.GopRefDist = 1; // keep alignment with GopPicSize when changing
+    }
     if (!m_mfxVideoParam.mfx.GopPicSize) {
-        m_mfxVideoParam.mfx.GopPicSize = (mfxU16) (( m_mfxVideoParam.mfx.FrameInfo.FrameRateExtN + m_mfxVideoParam.mfx.FrameInfo.FrameRateExtD - 1 ) / m_mfxVideoParam.mfx.FrameInfo.FrameRateExtD);
+        m_mfxVideoParam.mfx.GopPicSize = 60 * (mfxU16) (( m_mfxVideoParam.mfx.FrameInfo.FrameRateExtN + m_mfxVideoParam.mfx.FrameInfo.FrameRateExtD - 1 ) / m_mfxVideoParam.mfx.FrameInfo.FrameRateExtD);
         if (m_mfxVideoParam.mfx.GopRefDist>1)
             m_mfxVideoParam.mfx.GopPicSize = (mfxU16) ((m_mfxVideoParam.mfx.GopPicSize + m_mfxVideoParam.mfx.GopRefDist - 1) / m_mfxVideoParam.mfx.GopRefDist * m_mfxVideoParam.mfx.GopRefDist);
     }
-    if (!m_mfxVideoParam.mfx.GopRefDist) m_mfxVideoParam.mfx.GopRefDist = 1; // keep alignment with GopPicSize when changing
     //if (!m_mfxVideoParam.mfx.IdrInterval) m_mfxVideoParam.mfx.IdrInterval = m_mfxVideoParam.mfx.GopPicSize * 8;
     // GopOptFlag ignore
 
@@ -672,7 +677,16 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxVideoParam.mfx.BufferSizeInKB = par->mfx.FrameInfo.Width * par->mfx.FrameInfo.Height * 3 / 2000 + 1; // uncompressed
 
     if (!m_mfxVideoParam.mfx.NumSlice) m_mfxVideoParam.mfx.NumSlice = 1;
-    if (!m_mfxVideoParam.mfx.NumRefFrame) m_mfxVideoParam.mfx.NumRefFrame = 1; // for now
+    if (!m_mfxVideoParam.mfx.NumRefFrame) {
+        if (m_mfxVideoParam.mfx.TargetUsage == MFX_TARGETUSAGE_BEST_QUALITY) {
+            if (m_mfxVideoParam.mfx.GopRefDist == 1) 
+                m_mfxVideoParam.mfx.NumRefFrame = 4; // for now
+            else
+                m_mfxVideoParam.mfx.NumRefFrame = 2; // for now
+        } else {
+            m_mfxVideoParam.mfx.NumRefFrame = 1; // for now
+        }
+    }
 
     m_mfxVideoParam.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
     mfxI32 complevel = Check265Level(m_mfxVideoParam.mfx.CodecLevel, &m_mfxVideoParam);
