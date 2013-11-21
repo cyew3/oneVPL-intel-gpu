@@ -56,9 +56,7 @@ MFXLibPlugin::~MFXLibPlugin()
 {
     if (m_session)
     {
-        MFXVideoENCODE_Close(m_session);
-        MFXClose(m_session);
-        m_session = 0;
+        PluginClose();
     }
 }
 
@@ -105,7 +103,7 @@ mfxStatus MFXLibPlugin::PluginClose()
             mfxRes = MFX_ERR_NONE;
         MFX_CHECK_STS(mfxRes);
         mfxRes = MFXInternalPseudoDisjoinSession(m_session);
-        MFX_CHECK_STS(mfxRes);
+        //MFX_CHECK_STS(mfxRes); Plugin should try to free resources anyway
         mfxRes = MFXClose(m_session);
         MFX_CHECK_STS(mfxRes);
         m_session = 0;
@@ -114,6 +112,7 @@ mfxStatus MFXLibPlugin::PluginClose()
     else
         return MFX_ERR_NONE;
 }
+
 mfxStatus MFXLibPlugin::GetPluginParam(mfxPluginParam *par)
 {
     if (!par)
