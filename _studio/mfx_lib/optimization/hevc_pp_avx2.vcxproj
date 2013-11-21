@@ -39,7 +39,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="h265\src\mfx_h265_interpolation_avx2.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_interp_tmpl_avx2.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_interp_tmpl_avx2.cpp">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">MaxSpeedHighLevel</Optimization>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">/Qopt-ra-region-strategy:routine %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="h265\src\mfx_h265_quantization_avx2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_reordering_avx2.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sad_avx2.cpp" />
@@ -177,7 +180,7 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <TreatWarningAsError>false</TreatWarningAsError>
-      <AdditionalOptions>$(CPPFLAGS)   /QxCORE-AVX2 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>$(CPPFLAGS)   /QxCORE-AVX2 /debug:inline-debug-info %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -221,7 +224,7 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <TreatWarningAsError>false</TreatWarningAsError>
-      <AdditionalOptions>$(CPPFLAGS)   /QxCORE-AVX2 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>$(CPPFLAGS)   /QxCORE-AVX2 /debug:inline-debug-info %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -248,7 +251,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">
     <ClCompile>
-      <AdditionalOptions>$(CPPFLAGS)   /QxCORE-AVX2 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>$(CPPFLAGS)   /QxCORE-AVX2 /debug:inline-debug-info %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\optimization\h265\include;..\encode\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_PLUGIN;AS_HEVCD_PLUGIN;MFX_MAKENAME_AVX2;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -256,7 +259,7 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <AssemblerOutput>AssemblyCode</AssemblerOutput>
-      <WarningLevel>Level4</WarningLevel>
+      <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -293,13 +296,13 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalOptions>$(CPPFLAGS)   /QxCORE-AVX2 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>$(CPPFLAGS)   /QxCORE-AVX2 /debug:inline-debug-info %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\optimization\h265\include;..\encode\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_PLUGIN;AS_HEVCD_PLUGIN;MFX_MAKENAME_AVX2;WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <WarningLevel>Level4</WarningLevel>
+      <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>

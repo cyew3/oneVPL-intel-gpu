@@ -247,8 +247,9 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <UseProcessorExtensions>SSSE3</UseProcessorExtensions>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
-      <WarningLevel>Level4</WarningLevel>
+      <WarningLevel>Level3</WarningLevel>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalOptions>/debug:inline-debug-info %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -283,8 +284,9 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <UseProcessorExtensions>SSSE3</UseProcessorExtensions>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
-      <WarningLevel>Level4</WarningLevel>
+      <WarningLevel>Level3</WarningLevel>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalOptions>/debug:inline-debug-info %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -310,6 +312,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalOptions>/debug:inline-debug-info %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -341,6 +344,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalOptions>/debug:inline-debug-info %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Lib />
     <Bscmake>

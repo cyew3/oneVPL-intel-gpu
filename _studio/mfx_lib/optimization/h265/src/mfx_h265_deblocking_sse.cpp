@@ -32,13 +32,6 @@
 namespace MFX_HEVC_PP
 {
 
-/* workaround for compiler bug (see h265_tr_quant_opt.cpp) */
-#ifdef NDEBUG 
-  #define MM_LOAD_EPI64(x) (*(__m128i*)(x))
-#else
-  #define MM_LOAD_EPI64(x) _mm_loadl_epi64( (__m128i*)(x))
-#endif
-
 enum FilterType
 {
     VERT_FILT = 0,

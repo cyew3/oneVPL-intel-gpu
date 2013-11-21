@@ -39,6 +39,16 @@
 # define H265_RESTRICT
 #endif
 
+/* NOTE: In debug mode compiler attempts to load data with MOVNTDQA while data is
++only 8-byte aligned, but PMOVZX does not require 16-byte alignment.
++cannot substitute in SSSE3 emulation mode as PUNPCK used instead of PMOVZX requires alignment
++ICC14 fixed problems with reg-mem forms for PMOVZX/SX with _mm_loadl_epi64() intrinsic and broke old workaround */
+#if (defined( NDEBUG ) && !defined(MFX_EMULATE_SSSE3)) && !(defined( __INTEL_COMPILER ) && (__INTEL_COMPILER >= 1400 ))
+#define MM_LOAD_EPI64(x) (*(const __m128i*)(x))
+#else
+#define MM_LOAD_EPI64(x) _mm_loadl_epi64( (const __m128i*)(x) )
+#endif
+
 //=========================================================
 //   configuration macros
 //=========================================================
@@ -516,22 +526,6 @@ namespace MFX_HEVC_PP
     /* ******************************************************** */
 
     //=================================================================================================    
-    template < UMC_HEVC_DECODER::EnumTextType plane_type, typename t_src, typename t_dst >
-    void H265_FORCEINLINE Interpolate( 
-        MFX_HEVC_PP::EnumInterpType interp_type,
-        const t_src* in_pSrc,
-        Ipp32u in_SrcPitch, // in samples
-        t_dst* H265_RESTRICT in_pDst,
-        Ipp32u in_DstPitch, // in samples
-        Ipp32s tab_index,
-        Ipp32s width,
-        Ipp32s height,
-        Ipp32s shift,
-        Ipp16s offset,
-        MFX_HEVC_PP::EnumAddAverageType eAddAverage = MFX_HEVC_PP::AVERAGE_NO,
-        const void* in_pSrc2 = NULL,
-        int   in_Src2Pitch = 0 ); // in samples
-
 #ifndef OPT_INTERP_PMUL
     // general template for Interpolate kernel
     template
@@ -548,52 +542,23 @@ namespace MFX_HEVC_PP
         static void func(
             t_dst* H265_RESTRICT pDst, 
             const t_src* pSrc, 
-            int    in_SrcPitch, // in samples
-            int    in_DstPitch, // in samples
-            int    width,
-            int    height,
-            int    accum_pitch,
-            int    shift,
-            int    offset,
+            Ipp32u  in_SrcPitch, // in samples
+            Ipp32u  in_DstPitch, // in samples
+            Ipp32u  width,
+            Ipp32u  height,
+            Ipp32u  accum_pitch,
+            Ipp32u  shift,
+            Ipp32u  offset,
             MFX_HEVC_PP::EnumAddAverageType eAddAverage = MFX_HEVC_PP::AVERAGE_NO,
-            const void* in_pSrc2 = NULL,
-            int   in_Src2Pitch = 0 // in samples
+            const  void* in_pSrc2 = NULL,
+            Ipp32u in_Src2Pitch = 0 // in samples
             );
     };
 
-
-    template < typename t_vec, UMC_HEVC_DECODER::EnumTextType plane_type, typename t_src, typename t_dst >
-    void t_InterpKernel_dispatch(
-        t_dst* H265_RESTRICT pDst, 
-        const t_src* pSrc, 
-        int    in_SrcPitch, // in samples
-        int    in_DstPitch, // in samples
-        int    tab_index,
-        int    width,
-        int    height,
-        int    accum_pitch,
-        int    shift,
-        int    offset,
-        MFX_HEVC_PP::EnumAddAverageType eAddAverage,
-        const void* in_pSrc2,
-        int   in_Src2Pitch // in samples
-        )
-    {
-        if ( tab_index == 1 )
-            t_InterpKernel_intrin< t_vec, plane_type, t_src, t_dst, 1 >::func( pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
-        else if ( tab_index == 2 )
-            t_InterpKernel_intrin< t_vec, plane_type, t_src, t_dst, 2 >::func( pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
-        else if ( tab_index == 3 )
-            t_InterpKernel_intrin< t_vec, plane_type, t_src, t_dst, 3 >::func( pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
-        else if ( tab_index == 4 )
-            t_InterpKernel_intrin< t_vec, plane_type, t_src, t_dst, 4 >::func( pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
-        else if ( tab_index == 5 )
-            t_InterpKernel_intrin< t_vec, plane_type, t_src, t_dst, 5 >::func( pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
-        else if ( tab_index == 6 )
-            t_InterpKernel_intrin< t_vec, plane_type, t_src, t_dst, 6 >::func( pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
-        else if ( tab_index == 7 )
-            t_InterpKernel_intrin< t_vec, plane_type, t_src, t_dst, 7 >::func( pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
-    }
+    static Ipp32u s_cpuIdInfoRegs[4];
+    static Ipp64u s_featuresMask;
+    static int s_is_AVX2_available = ( ippGetCpuFeatures( &s_featuresMask, s_cpuIdInfoRegs), ((s_featuresMask & ippCPUID_AVX2) != 0) ); // means AVX2 + BMI_I + BMI_II to prevent issues with BMI
+//    static int s_is_AVX2_available = _may_i_use_cpu_feature( _FEATURE_AVX2 | _FEATURE_BMI | _FEATURE_LZCNT | _FEATURE_MOVBE );
 #endif // #ifndef OPT_INTERP_PMUL
     //=================================================================================================    
 
@@ -604,14 +569,14 @@ namespace MFX_HEVC_PP
         Ipp32u in_SrcPitch, // in samples
         t_dst* H265_RESTRICT in_pDst,
         Ipp32u in_DstPitch, // in samples
-        Ipp32s tab_index,
-        Ipp32s width,
-        Ipp32s height,
-        Ipp32s shift,
-        Ipp16s offset,
-        MFX_HEVC_PP::EnumAddAverageType eAddAverage,
-        const void* in_pSrc2,
-        int    in_Src2Pitch ) // in samples
+        Ipp32u tab_index,
+        Ipp32u width,
+        Ipp32u height,
+        Ipp32u shift,
+        Ipp32u offset,
+        MFX_HEVC_PP::EnumAddAverageType eAddAverage = MFX_HEVC_PP::AVERAGE_NO,
+        const void* in_pSrc2 = NULL,
+        int    in_Src2Pitch = 0) // in samples
     {
         Ipp32s accum_pitch = ((interp_type == MFX_HEVC_PP::INTERP_HOR) ? (plane_type == UMC_HEVC_DECODER::TEXT_CHROMA ? 2 : 1) : in_SrcPitch);
 
@@ -636,14 +601,67 @@ namespace MFX_HEVC_PP
             Interp_S16_NoAvg((short *)pSrc, in_SrcPitch, (short *)in_pDst, in_DstPitch, tab_index, width, height, shift, offset, INTERP_VER, plane_type);
     }
 #else
-#ifdef __INTEL_COMPILER
-        if ( _may_i_use_cpu_feature( _FEATURE_AVX2 ) && (width > 8) )
-            t_InterpKernel_dispatch< __m256i, plane_type >( in_pDst, pSrc, in_SrcPitch, in_DstPitch, tab_index, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
-        else
-#endif // __INTEL_COMPILER
-            t_InterpKernel_dispatch< __m128i, plane_type >( in_pDst, pSrc, in_SrcPitch, in_DstPitch, tab_index, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
-#endif /* OPT_INTERP_PMUL */
+        typedef void (*t_disp_func)(
+            t_dst* H265_RESTRICT pDst, 
+            const t_src* pSrc, 
+            Ipp32u  in_SrcPitch, // in samples
+            Ipp32u  in_DstPitch, // in samples
+            Ipp32u  width,
+            Ipp32u  height,
+            Ipp32u  accum_pitch,
+            Ipp32u  shift,
+            Ipp32u  offset,
+            MFX_HEVC_PP::EnumAddAverageType eAddAverage,
+            const void* in_pSrc2,
+            Ipp32u in_Src2Pitch );
 
+        static t_disp_func s_disp_tbl_luma_m128[ 3 ] = {
+            &t_InterpKernel_intrin< __m128i, UMC_HEVC_DECODER::TEXT_LUMA, t_src, t_dst, 1 >::func,
+            &t_InterpKernel_intrin< __m128i, UMC_HEVC_DECODER::TEXT_LUMA, t_src, t_dst, 2 >::func,
+            &t_InterpKernel_intrin< __m128i, UMC_HEVC_DECODER::TEXT_LUMA, t_src, t_dst, 3 >::func
+        };
+        
+        static t_disp_func s_disp_tbl_luma_m256[ 3 ] = {
+            &t_InterpKernel_intrin< __m256i, UMC_HEVC_DECODER::TEXT_LUMA, t_src, t_dst, 1 >::func,
+            &t_InterpKernel_intrin< __m256i, UMC_HEVC_DECODER::TEXT_LUMA, t_src, t_dst, 2 >::func,
+            &t_InterpKernel_intrin< __m256i, UMC_HEVC_DECODER::TEXT_LUMA, t_src, t_dst, 3 >::func
+        };
+        
+        static t_disp_func s_disp_tbl_chroma_m128[ 7 ] = {
+            &t_InterpKernel_intrin< __m128i, UMC_HEVC_DECODER::TEXT_CHROMA, t_src, t_dst, 1 >::func,
+            &t_InterpKernel_intrin< __m128i, UMC_HEVC_DECODER::TEXT_CHROMA, t_src, t_dst, 2 >::func,
+            &t_InterpKernel_intrin< __m128i, UMC_HEVC_DECODER::TEXT_CHROMA, t_src, t_dst, 3 >::func,
+            &t_InterpKernel_intrin< __m128i, UMC_HEVC_DECODER::TEXT_CHROMA, t_src, t_dst, 4 >::func,
+            &t_InterpKernel_intrin< __m128i, UMC_HEVC_DECODER::TEXT_CHROMA, t_src, t_dst, 5 >::func,
+            &t_InterpKernel_intrin< __m128i, UMC_HEVC_DECODER::TEXT_CHROMA, t_src, t_dst, 6 >::func,
+            &t_InterpKernel_intrin< __m128i, UMC_HEVC_DECODER::TEXT_CHROMA, t_src, t_dst, 7 >::func
+        };
+        
+        static t_disp_func s_disp_tbl_chroma_m256[ 7 ] = {
+            &t_InterpKernel_intrin< __m256i, UMC_HEVC_DECODER::TEXT_CHROMA, t_src, t_dst, 1 >::func,
+            &t_InterpKernel_intrin< __m256i, UMC_HEVC_DECODER::TEXT_CHROMA, t_src, t_dst, 2 >::func,
+            &t_InterpKernel_intrin< __m256i, UMC_HEVC_DECODER::TEXT_CHROMA, t_src, t_dst, 3 >::func,
+            &t_InterpKernel_intrin< __m256i, UMC_HEVC_DECODER::TEXT_CHROMA, t_src, t_dst, 4 >::func,
+            &t_InterpKernel_intrin< __m256i, UMC_HEVC_DECODER::TEXT_CHROMA, t_src, t_dst, 5 >::func,
+            &t_InterpKernel_intrin< __m256i, UMC_HEVC_DECODER::TEXT_CHROMA, t_src, t_dst, 6 >::func,
+            &t_InterpKernel_intrin< __m256i, UMC_HEVC_DECODER::TEXT_CHROMA, t_src, t_dst, 7 >::func
+        };
+
+        if (s_is_AVX2_available && width > 8)
+        {
+            if (plane_type == UMC_HEVC_DECODER::TEXT_LUMA)
+                (s_disp_tbl_luma_m256[tab_index - 1])( in_pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
+            else // TEXT_CHROMA
+                (s_disp_tbl_chroma_m256[tab_index - 1])( in_pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
+        }
+        else
+        {
+            if (plane_type == UMC_HEVC_DECODER::TEXT_LUMA)
+                (s_disp_tbl_luma_m128[tab_index - 1])( in_pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
+            else // TEXT_CHROMA
+                (s_disp_tbl_chroma_m128[tab_index - 1])( in_pDst, pSrc, in_SrcPitch, in_DstPitch, width, height, accum_pitch, shift, offset, eAddAverage, in_pSrc2, in_Src2Pitch );
+        }
+#endif /* OPT_INTERP_PMUL */
     }
 
 } // namespace MFX_HEVC_PP

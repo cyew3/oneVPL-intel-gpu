@@ -38,14 +38,6 @@ namespace MFX_HEVC_PP
 #define SHIFT_INV_2ND         12 // Shift after second inverse transform stage
 #define REG_DCT                  65535
 
-/* NOTE: In debug mode compiler attempts to load data with MOVNTDQA while data is
-only 8-byte aligned, but PMOVZX does not require 16-byte alignment. */
-#ifdef NDEBUG
-  #define MM_LOAD_EPI64(x) (*(__m128i*)x)
-#else
-  #define MM_LOAD_EPI64(x) _mm_loadl_epi64( (__m128i*)x )
-#endif
-
 #ifdef NDEBUG
   #define MM_LOAD_EPI128(x) (*(__m128i*)x)
 #else

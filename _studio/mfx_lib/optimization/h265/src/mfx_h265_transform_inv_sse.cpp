@@ -42,12 +42,6 @@ namespace MFX_HEVC_PP
 //    NOTE: In debug mode compiler attempts to load data with MOVNTDQA while data is
 //    only 8-byte aligned, but PMOVZX does not require 16-byte alignment. 
 
-#ifdef NDEBUG 
-#define MM_LOAD_EPI64(x) (*(__m128i*)x)
-#else
-#define MM_LOAD_EPI64(x) _mm_loadl_epi64( (__m128i*)x )
-#endif
-
 //---------------------------------------------------------
 // aya: should be move in common place (aka: mfx_h265_optimization_defs.h) 
 // but common include file mfx_h265_optimization.h should be free from platform specific defs

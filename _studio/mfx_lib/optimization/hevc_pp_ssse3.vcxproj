@@ -42,7 +42,13 @@
   <ItemGroup>
     <ClCompile Include="h265\src\mfx_h265_deblocking_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_interpolation_sse.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_interp_tmpl_sse.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_interp_tmpl_sse.cpp">
+      <AssemblerOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AssemblyCode</AssemblerOutput>
+      <AssemblerOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AssemblyCode</AssemblerOutput>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">MaxSpeedHighLevel</Optimization>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">$(CPPFLAGS) /debug:inline-debug-info /QxSSSE3_ATOM %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">$(CPPFLAGS) /debug:inline-debug-info /QxSSSE3_ATOM /Qopt-ra-region-strategy:routine %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="h265\src\mfx_h265_intrapred_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sad_general_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sad_sse.cpp" />
@@ -66,9 +72,10 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
+    <InterproceduralOptimization>false</InterproceduralOptimization>
+    <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -88,9 +95,10 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
+    <InterproceduralOptimization>false</InterproceduralOptimization>
+    <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -174,6 +182,7 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <TreatWarningAsError>false</TreatWarningAsError>
+      <AdditionalOptions>$(CPPFLAGS) /debug:inline-debug-info %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -217,6 +226,7 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <TreatWarningAsError>false</TreatWarningAsError>
+      <AdditionalOptions>$(CPPFLAGS) /debug:inline-debug-info %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -243,7 +253,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">
     <ClCompile>
-      <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>$(CPPFLAGS) /debug:inline-debug-info /QxSSSE3_ATOM %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\optimization\h265\include;..\encode\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_PLUGIN;AS_HEVCD_PLUGIN;MFX_MAKENAME_SSSE3;MFX_EMULATE_SSSE3;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -251,11 +261,9 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <AssemblerOutput>AssemblyCode</AssemblerOutput>
-      <WarningLevel>Level4</WarningLevel>
+      <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <GenerateAlternateCodePaths>SSSE3</GenerateAlternateCodePaths>
-      <UseProcessorExtensions>SSSE3</UseProcessorExtensions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -290,13 +298,13 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>$(CPPFLAGS) /debug:inline-debug-info /QxSSSE3_ATOM %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(MfxIppIncludeDir);..\..\..\include;..\shared\include;..\..\shared\include;h265\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\brc\include;..\optimization\h265\include;..\encode\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_PLUGIN;AS_HEVCD_PLUGIN;MFX_MAKENAME_SSSE3;MFX_EMULATE_SSSE3;WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <WarningLevel>Level4</WarningLevel>
+      <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AssemblerOutput>AssemblyCode</AssemblerOutput>

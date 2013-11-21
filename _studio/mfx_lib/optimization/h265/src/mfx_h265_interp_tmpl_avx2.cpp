@@ -24,124 +24,169 @@ using namespace UMC_HEVC_DECODER;
 
 namespace MFX_HEVC_PP
 {
-#ifdef __INTEL_COMPILER
-
     //=================================================================================================
-    // below is a 4-tap and 8-tap filter implemntation using filter constants as template params
-    // general case is to multiply by constant but for some trivial constants specializations are provided
-    // to get the result faster
+    // general multiplication by const forms (used for coeffs without specializations below)
+    template <int c_coeff, typename t_src> class t_interp_mul;
+    template <int c_coeff, typename t_src> class t_interp_addmul;
 
-    static __m256i H265_FORCEINLINE _mm256_interp_load( const Ipp8u* pSrc )  { return _mm256_cvtepu8_epi16( _mm_loadu_si128( (const __m128i *)pSrc ) ); }
-    static __m256i H265_FORCEINLINE _mm256_interp_load( const Ipp16s* pSrc ) { return _mm256_loadu_si256( (const __m256i *)pSrc ); }
+    template <int c_coeff> class t_interp_mul<c_coeff, Ipp8u>
+    { public: static __m256i H265_FORCEINLINE func( const Ipp8u* pSrc, __m256i& v_ret_hi ) 
+        { __m256i v_src = t_interp_mul< 1, Ipp8u >::func( pSrc, v_ret_hi ); 
+          return _mm256_mullo_epi16( v_src, _mm256_set1_epi16( c_coeff ) ); } 
+    };
 
-    template <int c1, int c2, int c3, int c4, typename t_src >
-    static __m256i H265_FORCEINLINE _mm256_interp_4tap_kernel( const t_src* pSrc, Ipp32s accum_pitch, __m256i& )
+    template <int c_coeff> class t_interp_mul<c_coeff, Ipp16s>
     {
-        __m256i v_acc1 = t_interp_mulw< c1 >::func( _mm256_interp_load( pSrc ) );
-        v_acc1 = t_interp_addmulw< c2 >::func( v_acc1, _mm256_interp_load( pSrc + accum_pitch   ) );
-        v_acc1 = t_interp_addmulw< c3 >::func( v_acc1, _mm256_interp_load( pSrc + accum_pitch*2 ) );
-        v_acc1 = t_interp_addmulw< c4 >::func( v_acc1, _mm256_interp_load( pSrc + accum_pitch*3 ) );
-        return ( v_acc1 );
-    }
-
-    template <int c1, int c2, int c3, int c4 >
-    static __m256i H265_FORCEINLINE _mm256_interp_4tap_kernel( const Ipp16s* pSrc, Ipp32s accum_pitch, __m256i& v_ret_acc2 )
-    {
-        __m256i v_acc1_lo = _mm256_setzero_si256(), v_acc1_hi = _mm256_setzero_si256();
-        t_interp_addmuld< c1 >::func( _mm256_interp_load( pSrc                 ), v_acc1_lo, v_acc1_hi );
-        t_interp_addmuld< c2 >::func( _mm256_interp_load( pSrc + accum_pitch   ), v_acc1_lo, v_acc1_hi );
-        t_interp_addmuld< c3 >::func( _mm256_interp_load( pSrc + accum_pitch*2 ), v_acc1_lo, v_acc1_hi );
-        t_interp_addmuld< c4 >::func( _mm256_interp_load( pSrc + accum_pitch*3 ), v_acc1_lo, v_acc1_hi );
-        v_ret_acc2 = v_acc1_hi;
-        return ( v_acc1_lo );
-    }
-
-    template <int c1, int c2, int c3, int c4, int c5, int c6, int c7, int c8 >
-    static __m256i H265_FORCEINLINE _mm256_interp_8tap_kernel( const Ipp16s* pSrc, Ipp32s accum_pitch, __m256i& v_ret_acc2 )
-    {
-        __m256i v_acc1_hi, v_acc1 = _mm256_interp_4tap_kernel<c1, c2, c3, c4 >( pSrc, accum_pitch, v_acc1_hi );
-        __m256i v_acc2_hi, v_acc2 = _mm256_interp_4tap_kernel<c5, c6, c7, c8 >( pSrc + accum_pitch*4, accum_pitch, v_acc2_hi );
-        v_ret_acc2 = _mm256_add_epi32( v_acc1_hi, v_acc2_hi );
-        return ( _mm256_add_epi32( v_acc1, v_acc2 ) );
-    }
-
-    template <int c1, int c2, int c3, int c4, int c5, int c6, int c7, int c8 >
-    static __m256i H265_FORCEINLINE _mm256_interp_8tap_kernel( const Ipp8u* pSrc, Ipp32s accum_pitch, __m256i& )
-    {
-        __m256i v_unused1, v_acc1 = _mm256_interp_4tap_kernel<c1, c2, c3, c4 >( pSrc, accum_pitch, v_unused1 );
-        __m256i v_unused2, v_acc2 = _mm256_interp_4tap_kernel<c5, c6, c7, c8 >( pSrc + accum_pitch*4, accum_pitch, v_unused2 );
-        return ( _mm256_adds_epi16( v_acc1, v_acc2 ) );
-    }
-
-
-
-    //=================================================================================================
-    // general multiplication by const form
-    template <int c_coeff> class t_interp_mulw
-    { public: static __m256i H265_FORCEINLINE func( __m256i v_src ) { return _mm256_mullo_epi16( v_src, _mm256_set1_epi16( c_coeff ) ); } };
-
-    template <int c_coeff> class t_interp_muld
-    { 
     public:
-        static __m256i H265_FORCEINLINE func( __m256i v_src, __m256i& v_ret_hi )
+        static __m256i H265_FORCEINLINE func( const Ipp16s* pSrc, __m256i& v_ret_hi )
         {
+            __m256i v_src = _mm256_loadu_si256( (const __m256i*)pSrc );
             __m256i v_coeff = _mm256_set1_epi16( c_coeff );
 
-            __m256i v_chunk = _mm256_mullo_epi16( v_src, v_coeff );
-            __m256i v_chunk_h = _mm256_mulhi_epi16( v_src, v_coeff );
+            __m256i v_lo = _mm256_mullo_epi16( v_src, v_coeff );
+            __m256i v_hi = _mm256_mulhi_epi16( v_src, v_coeff );
 
-            v_ret_hi = _mm256_unpackhi_epi16( v_chunk, v_chunk_h );
-            return ( _mm256_unpacklo_epi16( v_chunk, v_chunk_h ) );
+            v_ret_hi = _mm256_unpackhi_epi16( v_lo, v_hi );
+            return ( _mm256_unpacklo_epi16( v_lo, v_hi ) );
         }
     };
 
-    template <int c_coeff> class t_interp_addmulw 
-    { public: static __m256i H265_FORCEINLINE func( __m256i v_acc, __m256i v_src ) { return _mm256_adds_epi16( v_acc, t_interp_mulw< c_coeff >::func( v_src ) ); } };
+    template <bool coeff_is_positive, typename t_src> class t_interp_acc;
 
-    template <int c_coeff> class t_interp_addmuld
-    {
-    public:
-        static void H265_FORCEINLINE func( __m256i v_src, __m256i& v_acc1, __m256i& v_acc2 )
-        {
-            __m256i v_hi, v_lo = t_interp_muld< c_coeff >::func( v_src, v_hi );
-            v_acc2 = _mm256_add_epi32( v_acc2, v_hi );
-            v_acc1 = _mm256_add_epi32( v_acc1, v_lo );
+    template <bool coeff_is_positive> class t_interp_acc< coeff_is_positive, Ipp8u >
+    { public: static __m256i H265_FORCEINLINE func_acc( __m256i v_src1, __m256i v_acc1, __m256i v_src2, __m256i& v_acc2 ) 
+        { return _mm256_adds_epi16( v_acc1, v_src1 ); } 
+    };
+    template <bool coeff_is_positive> class t_interp_acc< coeff_is_positive, Ipp16s >
+    { public: static __m256i H265_FORCEINLINE func_acc( __m256i v_src1, __m256i v_acc1, __m256i v_src2, __m256i& v_acc2 ) 
+        { v_acc2 = _mm256_add_epi32( v_acc2, v_src2 ); return ( _mm256_add_epi32( v_acc1, v_src1 ) ); }
+    };
+    template <> class t_interp_acc<false, Ipp8u> // coeff_is_negative
+    { public: static __m256i H265_FORCEINLINE func_acc( __m256i v_src1, __m256i v_acc1, __m256i v_src2, __m256i& v_acc2 ) 
+        { return _mm256_subs_epi16( v_acc1, v_src1 ); } 
+    };
+    template <> class t_interp_acc<false, Ipp16s> // coeff_is_negative
+    { public: static __m256i H265_FORCEINLINE func_acc( __m256i v_src1, __m256i v_acc1, __m256i v_src2, __m256i& v_acc2 ) 
+        { v_acc2 = _mm256_sub_epi32( v_acc2, v_src2 ); return ( _mm256_sub_epi32( v_acc1, v_src1 ) ); };
+    };
+
+    template <int c_coeff, typename t_src> class t_interp_addmul
+    { 
+    public: 
+        static __m256i H265_FORCEINLINE func( const t_src* pSrc, __m256i v_acc, __m256i& v_acc_hi ) 
+        { 
+            const int c_abs_coeff = (c_coeff > 0) ? c_coeff : -c_coeff;
+            __m256i v_src2, v_src1 = t_interp_mul< c_abs_coeff, t_src>::func( pSrc, v_src2 );
+            return t_interp_acc< (c_coeff > 0), t_src >::func_acc( v_src1, v_acc, v_src2, v_acc_hi );
         } 
     };
 
-    //=================================================================================================
-    // specializations for particular constants that are faster to compute without doing multiply - who said metaprogramming is too complex??
+    template <int c1, int c2> class t_interp_addmul2
+    {
+    public:
+        static __m256i H265_FORCEINLINE func( const Ipp8u* p_src1, const Ipp8u* p_src2, __m256i& )
+        {
+            __m256i v_hi, v1 = _mm256_or_si256(
+                            t_interp_mul< 1, Ipp8u >::func( p_src1, v_hi ),
+                            _mm256_slli_epi16( t_interp_mul< 1, Ipp8u >::func( p_src2, v_hi ), 8 ) );
 
+            __m256i v2 = _mm256_setr_epi8( c1, c2, c1, c2, c1, c2, c1, c2,
+                                           c1, c2, c1, c2, c1, c2, c1, c2,
+                                           c1, c2, c1, c2, c1, c2, c1, c2,
+                                           c1, c2, c1, c2, c1, c2, c1, c2 );
+            return ( _mm256_maddubs_epi16( v1, v2 ) );
+        } 
+
+        static __m256i H265_FORCEINLINE func( const Ipp16s* p_src1, const Ipp16s* p_src2, __m256i& v_ret_hi )
+        {
+            __m256i v_src1 = _mm256_loadu_si256( (const __m256i *)p_src1 );
+            __m256i v_src2 = _mm256_loadu_si256( (const __m256i *)p_src2 );
+            __m256i v_hi = _mm256_unpackhi_epi16( v_src1, v_src2 );
+            __m256i v_lo = _mm256_unpacklo_epi16( v_src1, v_src2 );
+            __m256i v_coeff = _mm256_setr_epi16( c1, c2, c1, c2, c1, c2, c1, c2,
+                                                 c1, c2, c1, c2, c1, c2, c1, c2 );
+            v_ret_hi = _mm256_madd_epi16( v_hi, v_coeff );
+            return ( _mm256_madd_epi16( v_lo, v_coeff ) );
+        }
+    };
+
+    //=================================================================================================
+    // specializations for particular constants that are faster to compute without doing a multiply
     // pass-through accumulators for zero 
-    template <> class t_interp_addmulw< 0 > 
-    { public: static __m256i H265_FORCEINLINE func( __m256i v_acc, __m256i v_src ) { return v_acc; } };
-    template <> class t_interp_addmuld< 0 >
-    { public: static void H265_FORCEINLINE func( __m256i v_src, __m256i& v_acc1, __m256i& v_acc2 ) {} };
+    template <typename t_src> class t_interp_addmul< 0, t_src >
+    { public: static __m256i H265_FORCEINLINE func( const t_src*, __m256i v_acc1, __m256i& ) { return ( v_acc1 ); } };
 
-    template <> class t_interp_mulw< 1 >
-    { public: static __m256i H265_FORCEINLINE func( __m256i v_src ) { return v_src; } };
+    template <> class t_interp_mul< 1, Ipp8u >
+    { public: static __m256i H265_FORCEINLINE func( const Ipp8u* pSrc, __m256i& )
+        { return _mm256_cvtepu8_epi16( _mm_loadu_si128( (const __m128i *)pSrc ) ); }
+    };
+    template <> class t_interp_mul< 2, Ipp8u >
+    { public: static __m256i H265_FORCEINLINE func( const Ipp8u* pSrc, __m256i& v_hi )
+        { __m256i v_src = t_interp_mul< 1, Ipp8u >::func( pSrc, v_hi ); return _mm256_adds_epi16( v_src, v_src ); } 
+    };
+    template <> class t_interp_mul< 4, Ipp8u >
+    { public: static __m256i H265_FORCEINLINE func( const Ipp8u* pSrc, __m256i& v_hi ) 
+        { __m256i v_src = t_interp_mul< 1, Ipp8u >::func( pSrc, v_hi ); return _mm256_slli_epi16( v_src, 2 ); } 
+    };
 
-    template <> class t_interp_mulw< -1 >
-    { public: static __m256i H265_FORCEINLINE func( __m256i v_src ) { return _mm256_sub_epi16( _mm256_setzero_si256(), v_src ); } };
-
-    template <> class t_interp_mulw< 2 >
-    { public: static __m256i H265_FORCEINLINE func( __m256i v_src ) { return _mm256_slli_epi16( v_src, 1 ); } };
-
-    template <> class t_interp_mulw< -2 >
-    { public: static __m256i H265_FORCEINLINE func( __m256i v_src ) { return t_interp_mulw< -1 >::func( t_interp_mulw< 2 >::func( v_src ) ); } };
-
-    template <> class t_interp_mulw< 4 >
-    { public: static __m256i H265_FORCEINLINE func( __m256i v_src ) { return _mm256_slli_epi16( v_src, 2 ); } };
-
-    template <> class t_interp_mulw< -4 >
-    { public: static __m256i H265_FORCEINLINE func( __m256i v_src ) { return t_interp_mulw< -1 >::func( t_interp_mulw< 4 >::func( v_src ) ); } };
-
-    template <> class t_interp_mulw< 16 >
-    { public: static __m256i H265_FORCEINLINE func( __m256i v_src ) { return _mm256_slli_epi16( v_src, 4 ); } };
+    template <> class t_interp_mul< 1, Ipp16s >
+    { public: static __m256i H265_FORCEINLINE func( const Ipp16s* pSrc, __m256i& v_ret_hi ) 
+        {
+            __m256i v_src = _mm256_loadu_si256( (const __m256i*)pSrc );
+            v_ret_hi = _mm256_srai_epi32( _mm256_unpackhi_epi16( v_src, v_src ), 16 );
+            return ( _mm256_srai_epi32( _mm256_unpacklo_epi16( v_src, v_src ), 16 ) );
+        }
+    };
+    template <> class t_interp_mul< 2, Ipp16s >
+    { public: static __m256i H265_FORCEINLINE func( const Ipp16s* pSrc, __m256i& v_ret_hi ) 
+        {
+            __m256i v_src = _mm256_loadu_si256( (const __m256i*)pSrc );
+            v_ret_hi = _mm256_srai_epi32( _mm256_unpackhi_epi16( _mm256_setzero_si256(), v_src ), 15 );
+            return ( _mm256_srai_epi32( _mm256_unpacklo_epi16( _mm256_setzero_si256(), v_src ), 15 ) );
+        }
+    };
+    template <> class t_interp_mul< 4, Ipp16s >
+    { public: static __m256i H265_FORCEINLINE func( const Ipp16s* pSrc, __m256i& v_ret_hi ) 
+        {
+            __m256i v_src = _mm256_loadu_si256( (const __m256i*)pSrc );
+            v_ret_hi = _mm256_srai_epi32( _mm256_unpackhi_epi16( _mm256_setzero_si256(), v_src ), 14 );
+            return ( _mm256_srai_epi32( _mm256_unpacklo_epi16( _mm256_setzero_si256(), v_src ), 14 ) );
+        }
+    };
 
 
     //=================================================================================================
-    // partioal specialization for __m256i; TODO: add __m256i version for AVX2 + dispatch
+    // 4-tap and 8-tap filter implemntation using filter constants as template params where general case 
+    // is to multiply by constant but for some trivial constants specializations are provided
+    // to get the result faster
+    template <int c1, int c2, int c3, int c4, typename t_src>
+    static __m256i H265_FORCEINLINE _mm256_interp_4tap_kernel( const t_src* pSrc, Ipp32u accum_pitch, __m256i& v_acc_hi )
+    {
+        __m256i v_acc1 = t_interp_addmul2< c2, c3 >::func( pSrc + accum_pitch*1, pSrc + accum_pitch*2, v_acc_hi );
+        v_acc1 = t_interp_addmul< c1, t_src >::func( pSrc,                 v_acc1, v_acc_hi );
+        v_acc1 = t_interp_addmul< c4, t_src >::func( pSrc + accum_pitch*3, v_acc1, v_acc_hi );
+        return ( v_acc1 );
+    }
+
+    template <int c1, int c2, int c3, int c4, int c5, int c6, int c7, int c8, typename t_src >
+    static __m256i H265_FORCEINLINE _mm256_interp_8tap_kernel( const t_src* pSrc, Ipp32u accum_pitch, __m256i& v_acc_hi )
+    {
+        const t_src *pSrc_ = pSrc + accum_pitch*2;
+        __m256i v_acc1_hi, v_acc1 = t_interp_addmul2< c3, c4 >::func( pSrc_, pSrc_ + accum_pitch, v_acc1_hi ); pSrc_ += accum_pitch*2;
+        v_acc1 = t_interp_addmul< c1, t_src >::func( pSrc,  v_acc1, v_acc1_hi ); pSrc += accum_pitch;
+        v_acc1 = t_interp_addmul< c2, t_src >::func( pSrc,  v_acc1, v_acc1_hi );
+        __m256i v_acc2_hi, v_acc2 = t_interp_addmul2< c5, c6 >::func( pSrc_, pSrc_ + accum_pitch, v_acc2_hi ); pSrc_ += accum_pitch*2;
+        v_acc2 = t_interp_addmul< c7, t_src >::func( pSrc_, v_acc2, v_acc2_hi ); pSrc_ += accum_pitch;
+        v_acc2 = t_interp_addmul< c8, t_src >::func( pSrc_, v_acc2, v_acc2_hi );
+        if ( sizeof( t_src ) == 1 )
+            v_acc1 = _mm256_adds_epi16( v_acc1, v_acc2 );
+        else
+            { v_acc_hi = _mm256_add_epi32( v_acc1_hi, v_acc2_hi ); v_acc1 = _mm256_add_epi32( v_acc1, v_acc2 ); }
+        return ( v_acc1 );
+    }
+
+    //=================================================================================================
+    // partioal specialization for __m256i
     // NOTE: always reads a block with a width extended to a multiple of 8
     template
         < 
@@ -158,33 +203,33 @@ namespace MFX_HEVC_PP
         static void func(
             t_dst* H265_RESTRICT pDst, 
             const t_src* pSrc, 
-            int    in_SrcPitch, // in samples
-            int    in_DstPitch, // in samples
-            int    width,
-            int    height,
-            int    accum_pitch,
-            int    shift,
-            int    offset,
+            Ipp32u  in_SrcPitch, // in samples
+            Ipp32u  in_DstPitch, // in samples
+            Ipp32u  width,
+            Ipp32u  height,
+            Ipp32u  accum_pitch,
+            Ipp32u  shift,
+            Ipp32u  offset,
             MFX_HEVC_PP::EnumAddAverageType eAddAverage,
             const void* in_pSrc2,
-            int   in_Src2Pitch // in samples
+            Ipp32u in_Src2Pitch // in samples
             )
         {
             const int c_tap = (c_plane_type == TEXT_LUMA) ? 8 : 4;
 
             t_vec v_offset = _mm256_broadcastd_epi32( _mm_cvtsi32_si128( sizeof(t_src)==2 ? offset : (offset << 16) | offset ) );
+            t_vec v_shift = _mm256_broadcastd_epi32( _mm_cvtsi32_si128( shift ) );
+
             in_Src2Pitch *= (eAddAverage == MFX_HEVC_PP::AVERAGE_FROM_BUF ? 2 : 1);
 
-            for (int i, j = 0; j < height; ++j) 
+            for (Ipp32u i, j = 0; j < height; ++j) 
             {
                 t_dst* pDst_ = pDst;
                 const Ipp8u* pSrc2 = (const Ipp8u*)in_pSrc2;
                 t_vec  v_acc;
 
                 _mm_prefetch( (const char*)(pSrc + in_SrcPitch), _MM_HINT_NTA );
-                _mm_prefetch( (const char*)(pSrc + in_SrcPitch + accum_pitch), _MM_HINT_NTA );
-                _mm_prefetch( (const char*)(pSrc + in_SrcPitch + accum_pitch*2), _MM_HINT_NTA );
-
+                #pragma loop_count( 32 ) // suggesting compiler this is a short loop to avoid reg spill/fill
                 for (i = 0; i < width; i += 16, pDst_ += 16 )
                 {
                     t_vec v_acc2 = _mm256_setzero_si256(); v_acc = _mm256_setzero_si256();
@@ -219,31 +264,25 @@ namespace MFX_HEVC_PP
 
                     if ( sizeof(t_src) == 1 ) // resolved at compile time
                     {
-                        if ( offset ) // cmp/jmp is nearly free, branch prediction removes 1-instruction from critical dep chain
+                        if ( shift == 6 ) {
                             v_acc = _mm256_adds_epi16( v_acc, v_offset ); 
-
-                        if ( shift == 6 )
                             v_acc = _mm256_srai_epi16( v_acc, 6 );
-                        else
-                            VM_ASSERT(shift == 0);
+                        }
                     }
                     else // 16-bit src, 32-bit accum
                     {
-                        if ( offset ) {
+                        if ( shift ) {
                             v_acc  = _mm256_add_epi32( v_acc,  v_offset );
                             v_acc2 = _mm256_add_epi32( v_acc2, v_offset );
                         }
 
                         if ( shift == 6 ) {
-                            v_acc  = _mm256_srai_epi32( v_acc, 6 );
+                            v_acc  = _mm256_srai_epi32( v_acc,  6 );
                             v_acc2 = _mm256_srai_epi32( v_acc2, 6 );
-                        } 
-                        else if ( shift == 12 ) {
-                            v_acc  = _mm256_srai_epi32( v_acc, 12 );
+                        } else if ( shift == 12 ) {
+                            v_acc  = _mm256_srai_epi32( v_acc,  12 );
                             v_acc2 = _mm256_srai_epi32( v_acc2, 12 );
                         }
-                        else
-                            VM_ASSERT(shift == 0);
 
                         v_acc = _mm256_packs_epi32( v_acc, v_acc2 );
                     }
@@ -314,144 +353,52 @@ namespace MFX_HEVC_PP
         }
     };
 
+    //=====================================================
     // explicit instantiation of used forms, otherwise won't be found at link
+
     // LUMA
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp8u, Ipp8u, 1 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp8u, Ipp8u, 2 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp8u, Ipp8u, 3 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp8u, Ipp8u, 4 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp8u, Ipp8u, 5 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp8u, Ipp8u, 6 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp8u, Ipp8u, 7 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp8u, Ipp8u, 8 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp8u, Ipp16s, 1 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp8u, Ipp16s, 2 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp8u, Ipp16s, 3 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp8u, Ipp16s, 4 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp8u, Ipp16s, 5 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp8u, Ipp16s, 6 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp8u, Ipp16s, 7 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp8u, Ipp16s, 8 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp16s, Ipp16s, 1 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp16s, Ipp16s, 2 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp16s, Ipp16s, 3 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp16s, Ipp16s, 4 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp16s, Ipp16s, 5 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp16s, Ipp16s, 6 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp16s, Ipp16s, 7 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp16s, Ipp16s, 8 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp16s, Ipp8u, 1 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp16s, Ipp8u, 2 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp16s, Ipp8u, 3 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp16s, Ipp8u, 4 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp16s, Ipp8u, 5 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp16s, Ipp8u, 6 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp16s, Ipp8u, 7 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp16s, Ipp8u, 8 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp8u, Ipp8u, 1 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp8u, Ipp8u, 2 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp8u, Ipp8u, 3 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp8u, Ipp16s, 1 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp8u, Ipp16s, 2 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp8u, Ipp16s, 3 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp16s, Ipp16s, 1 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp16s, Ipp16s, 2 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp16s, Ipp16s, 3 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp16s, Ipp8u, 1 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp16s, Ipp8u, 2 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_LUMA, Ipp16s, Ipp8u, 3 >;
 
     // interleaved U/V
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp8u, 1 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp8u, 2 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp8u, 3 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp8u, 4 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp8u, 5 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp8u, 6 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp8u, 7 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp8u, 8 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp16s, 1 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp16s, 2 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp16s, 3 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp16s, 4 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp16s, 5 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp16s, 6 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp16s, 7 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp16s, 8 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp16s, 1 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp16s, 2 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp16s, 3 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp16s, 4 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp16s, 5 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp16s, 6 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp16s, 7 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp16s, 8 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp8u, 1 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp8u, 2 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp8u, 3 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp8u, 4 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp8u, 5 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp8u, 6 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp8u, 7 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp8u, 8 >;
-
-    // plane U
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp8u, Ipp8u, 1 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp8u, Ipp8u, 2 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp8u, Ipp8u, 3 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp8u, Ipp8u, 4 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp8u, Ipp8u, 5 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp8u, Ipp8u, 6 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp8u, Ipp8u, 7 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp8u, Ipp8u, 8 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp8u, Ipp16s, 1 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp8u, Ipp16s, 2 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp8u, Ipp16s, 3 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp8u, Ipp16s, 4 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp8u, Ipp16s, 5 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp8u, Ipp16s, 6 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp8u, Ipp16s, 7 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp8u, Ipp16s, 8 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp16s, Ipp16s, 1 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp16s, Ipp16s, 2 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp16s, Ipp16s, 3 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp16s, Ipp16s, 4 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp16s, Ipp16s, 5 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp16s, Ipp16s, 6 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp16s, Ipp16s, 7 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp16s, Ipp16s, 8 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp16s, Ipp8u, 1 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp16s, Ipp8u, 2 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp16s, Ipp8u, 3 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp16s, Ipp8u, 4 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp16s, Ipp8u, 5 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp16s, Ipp8u, 6 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp16s, Ipp8u, 7 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_U, Ipp16s, Ipp8u, 8 >;
-
-    // plane V
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp8u, Ipp8u, 1 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp8u, Ipp8u, 2 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp8u, Ipp8u, 3 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp8u, Ipp8u, 4 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp8u, Ipp8u, 5 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp8u, Ipp8u, 6 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp8u, Ipp8u, 7 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp8u, Ipp8u, 8 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp8u, Ipp16s, 1 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp8u, Ipp16s, 2 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp8u, Ipp16s, 3 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp8u, Ipp16s, 4 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp8u, Ipp16s, 5 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp8u, Ipp16s, 6 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp8u, Ipp16s, 7 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp8u, Ipp16s, 8 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp16s, Ipp16s, 1 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp16s, Ipp16s, 2 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp16s, Ipp16s, 3 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp16s, Ipp16s, 4 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp16s, Ipp16s, 5 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp16s, Ipp16s, 6 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp16s, Ipp16s, 7 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp16s, Ipp16s, 8 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp16s, Ipp8u, 1 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp16s, Ipp8u, 2 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp16s, Ipp8u, 3 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp16s, Ipp8u, 4 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp16s, Ipp8u, 5 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp16s, Ipp8u, 6 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp16s, Ipp8u, 7 >;
-    template t_InterpKernel_intrin< __m256i, TEXT_CHROMA_V, Ipp16s, Ipp8u, 8 >;
-
-#endif // __INTEL_COMPILER
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp8u, 1 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp8u, 2 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp8u, 3 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp8u, 4 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp8u, 5 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp8u, 6 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp8u, 7 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp16s, 1 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp16s, 2 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp16s, 3 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp16s, 4 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp16s, 5 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp16s, 6 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp8u, Ipp16s, 7 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp16s, 1 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp16s, 2 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp16s, 3 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp16s, 4 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp16s, 5 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp16s, 6 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp16s, 7 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp8u, 1 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp8u, 2 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp8u, 3 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp8u, 4 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp8u, 5 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp8u, 6 >;
+    template class t_InterpKernel_intrin< __m256i, TEXT_CHROMA, Ipp16s, Ipp8u, 7 >;
 
 } // end namespace MFX_HEVC_PP
 

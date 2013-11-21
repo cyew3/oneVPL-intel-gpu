@@ -31,6 +31,9 @@
     <ClCompile Include="h265\src\mfx_h265_interpolation_atom.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="h265\src\mfx_h265_interp_tmpl_sse.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="h265\include\mfx_h265_optimization.h">
