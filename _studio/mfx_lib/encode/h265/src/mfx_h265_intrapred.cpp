@@ -664,7 +664,7 @@ void H265CU::IntraPredTULumaAllHAD(Ipp32s abs_part_idx, Ipp32s width)
     }
 }
 
-Ipp8u H265CU::GetTRSplitMode(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u tr_depth, Ipp8u part_size, Ipp8u is_luma)
+Ipp8u H265CU::GetTRSplitMode(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u tr_depth, Ipp8u part_size, Ipp8u is_luma, Ipp8u strict)
 {
     Ipp32s width = par->MaxCUSize >> (depth + tr_depth);
     Ipp8u split_mode = SPLIT_NONE;
@@ -680,7 +680,7 @@ Ipp8u H265CU::GetTRSplitMode(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u tr_depth, I
                 Ipp32u tpel_y   = ctb_pely +
                     ((h265_scan_z2r[par->MaxCUDepth][abs_part_idx] >> par->MaxCUDepth) << par->QuadtreeTULog2MinSize);
 
-                if (par->Log2MaxCUSize - depth - tr_depth > par->QuadtreeTULog2MaxSize ||
+                if ((strict && par->Log2MaxCUSize - depth - tr_depth > par->QuadtreeTULog2MaxSize) ||
                     lpel_x + width >= par->Width || tpel_y + width >= par->Height) {
                     split_mode = SPLIT_MUST;
                 } else {

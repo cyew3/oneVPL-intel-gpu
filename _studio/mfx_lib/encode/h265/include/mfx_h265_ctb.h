@@ -141,6 +141,7 @@ public:
     H265CUData *data_save;
     H265CUData *data_best;
     H265CUData *data_temp;
+    H265CUData *data_temp2;
     PixType     rec_luma_save_cu[6][MAX_CU_SIZE*MAX_CU_SIZE];
     PixType     rec_luma_save_tu[6][MAX_CU_SIZE*MAX_CU_SIZE];
     Ipp16s pred_buf_y[2][MAX_CU_SIZE*MAX_CU_SIZE];
@@ -317,7 +318,7 @@ public:
     void IntraPred(Ipp32u abs_part_idx, Ipp8u depth);
     void IntraPredTU(Ipp32s abs_part_idx, Ipp32s width, Ipp32s pred_mode, Ipp8u is_luma);
     void IntraPredTULumaAllHAD(Ipp32s abs_part_idx, Ipp32s width);
-    Ipp8u GetTRSplitMode(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u tr_depth, Ipp8u part_size, Ipp8u is_luma);
+    Ipp8u GetTRSplitMode(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u tr_depth, Ipp8u part_size, Ipp8u is_luma, Ipp8u strict = 1);
     void TransformInv(Ipp32s offset, Ipp32s width, Ipp8u is_luma, Ipp8u is_intra);
     void TransformFwd(Ipp32s offset, Ipp32s width, Ipp8u is_luma, Ipp8u is_intra);
 
