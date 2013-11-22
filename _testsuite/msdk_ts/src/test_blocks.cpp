@@ -756,33 +756,15 @@ msdk_ts_BLOCK(b_MFXVideoUSER_ProcessFrameAsync){
     return msdk_ts::resOK;
 }
 
-msdk_ts_BLOCK(b_MFXVideoUSER_Enumerate){
-    mfxStatus&             mfxRes      = var_def<mfxStatus>             ("mfxRes",      MFX_ERR_NONE);
-    mfxStatus&             expectedRes = var_def<mfxStatus>             ("expectedRes", MFX_ERR_NONE);
-    mfxSession&            session     = var_def<mfxSession>            ("session",     0);
-    mfxU32&                type        = var_def<mfxU32>                ("type",        0);
-    mfxU32&                codec_id    = var_def<mfxU32>                ("codec_id",    0);
-    mfxU32&                counter     = var_def<mfxU32>                ("counter",     0);
-    mfxPluginDescription*& pPluginDsc  = var_def<mfxPluginDescription*> ("p_plugin_dsc",NULL);
-
-    TRACE_FUNC5(MFXVideoUSER_Enumerate, session, type, codec_id, counter, pPluginDsc);
-    mfxRes = MFXVideoUSER_Enumerate(session, type, codec_id, counter, pPluginDsc);
-    TRACE_PAR(mfxRes);
-    CHECK_STS(mfxRes, expectedRes);
-
-    return msdk_ts::resOK;
-}
-
 msdk_ts_BLOCK(b_MFXVideoUSER_Load){
     mfxStatus&     mfxRes      = var_def<mfxStatus>    ("mfxRes",       MFX_ERR_NONE);
     mfxStatus&     expectedRes = var_def<mfxStatus>    ("expectedRes",  MFX_ERR_NONE);
     mfxSession&    session     = var_def<mfxSession>   ("session",      0);
-    mfxU32&        type        = var_def<mfxU32>       ("type",         0);
-    mfxU32&        codec_id    = var_def<mfxU32>       ("codec_id",     0);
-    mfxPluginUID*& p_uid       = var_def<mfxPluginUID*> ("p_plugin_uid",NULL);
+    mfxU32&        version     = var_def<mfxU32>       ("version",         0);
+    mfxPluginUID*& p_uid       = var_def<mfxPluginUID*>("p_plugin_uid",NULL);
 
-    TRACE_FUNC4(MFXVideoUSER_Load, session, type, codec_id, *p_uid);
-    mfxRes = MFXVideoUSER_Load(session, type, codec_id, *p_uid);
+    TRACE_FUNC3(MFXVideoUSER_Load, session, p_uid, version);
+    mfxRes = MFXVideoUSER_Load(session, p_uid, version);
     TRACE_PAR(mfxRes);
     CHECK_STS(mfxRes, expectedRes);
 
@@ -795,8 +777,8 @@ msdk_ts_BLOCK(b_MFXVideoUSER_UnLoad){
     mfxSession&    session     = var_def<mfxSession>   ("session",      0);
     mfxPluginUID*& p_uid       = var_def<mfxPluginUID*> ("p_plugin_uid",NULL);
 
-    TRACE_FUNC2(MFXVideoUSER_UnLoad, session, *p_uid);
-    mfxRes = MFXVideoUSER_UnLoad(session, *p_uid);
+    TRACE_FUNC2(MFXVideoUSER_UnLoad, session, p_uid);
+    mfxRes = MFXVideoUSER_UnLoad(session, p_uid);
     TRACE_PAR(mfxRes);
     CHECK_STS(mfxRes, expectedRes);
 
