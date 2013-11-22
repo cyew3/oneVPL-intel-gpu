@@ -244,6 +244,9 @@ mfxStatus GetImplementationType(const mfxU32 adapterNum, mfxIMPL *pImplInterface
     if (adapterNum >= adapters_num)
         return MFX_ERR_UNSUPPORTED;
 
+    if ((*pImplInterface == MFX_IMPL_VIA_D3D9) ||
+        (*pImplInterface == MFX_IMPL_VIA_D3D11) )
+        return MFX_ERR_UNSUPPORTED;
 
     *pImplInterface = MFX_IMPL_VIA_VAAPI;
     return MFX_ERR_NONE;
