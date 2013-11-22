@@ -279,7 +279,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
@@ -301,7 +301,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
@@ -323,7 +323,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
@@ -344,7 +344,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
@@ -359,7 +359,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="include\mfx_plugin.h" />
+    <ClInclude Include="include\mfx_hevc_enc_plugin.h" />
     <ClInclude Include="include\mfx_plugin_module.h" />
   </ItemGroup>
   <ItemGroup>
@@ -413,7 +413,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\mfx_plugin_enc.cpp" />
+    <ClCompile Include="src\mfx_hevc_enc_plugin.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
