@@ -1612,7 +1612,7 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
 
                     //if( cu[ithread].cslice->slice_sao_luma_flag )
                     {
-                        cu[ithread].xEncodeSAO(&bs[ithread], 0, 0, 0, m_saoParam[ctb_addr], leftMergeAvail, aboveMergeAvail);
+                        cu[ithread].xEncodeSAO(&bs[ctb_row], 0, 0, 0, m_saoParam[ctb_addr], leftMergeAvail, aboveMergeAvail);
                     }
                 }
             }
