@@ -170,5 +170,4 @@ namespace MFX
             mNrecords = 0;
         }
     };
-
 }

@@ -148,7 +148,6 @@ mfxStatus MFX_CDECL MFXVideoUSER_Register(mfxSession session, mfxU32 type, const
 mfxStatus MFX_CDECL MFXVideoUSER_Unregister(mfxSession session, mfxU32 type);
 mfxStatus MFX_CDECL MFXVideoUSER_ProcessFrameAsync(mfxSession session, const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxSyncPoint *syncp);
 
-mfxStatus MFX_CDECL MFXVideoUSER_Enumerate(mfxSession session, mfxU32 type, mfxU32 codec_id, mfxU32 counter, mfxPluginDescription *dsc);
 mfxStatus MFX_CDECL MFXVideoUSER_Load(mfxSession session, mfxU32 type, mfxU32 codec_id, mfxPluginUID uid);
 mfxStatus MFX_CDECL MFXVideoUSER_UnLoad(mfxSession session, mfxPluginUID uid);
 

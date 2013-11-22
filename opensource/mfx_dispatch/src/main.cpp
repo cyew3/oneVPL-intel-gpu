@@ -407,75 +407,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXCloneSession)(mfxSession session, mfxSess
 
 } // mfxStatus MFXCloneSession(mfxSession session, mfxSession *clone)
 
-mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Enumerate)(mfxSession session, mfxU32 type, mfxU32 codec_id, mfxU32 index, mfxPluginDescription *dsc)
-{
-    MFX_DISP_HANDLE &pHandle = *(MFX_DISP_HANDLE *) session;
-    if (!&pHandle) {
-        DISPATCHER_LOG_ERROR((("MFXVideoUSER_Enumerate: session=NULL\n")));
-        return MFX_ERR_NULL_PTR;
-    }   
-    if (!dsc) {
-        DISPATCHER_LOG_ERROR((("MFXVideoUSER_Enumerate: desription=NULL\n")));
-        return MFX_ERR_NULL_PTR;
-    }
-    DISPATCHER_LOG_INFO((("MFXVideoUSER_Enumerate: type=%d codec_id="MFXFOURCCTYPE()" index=%d\n")
-        , type
-        , MFXU32TOFOURCC(codec_id)
-        , index))
-    for (MFX::MFXPluginHive::iterator i = pHandle.pluginHive.begin();i != pHandle.pluginHive.end(); i++) 
-    {
-        if (type == i->Type && codec_id == i->CodecId) 
-        {
-            if (0 == index) 
-            {
-                DISPATCHER_LOG_INFO((("MFXVideoUSER_Enumerate: found plugin uid="MFXGUIDTYPE()", name=%s, path=%S, %s\n")
-                    , MFXGUIDTOHEX(i->uid)
-                    , i->sName
-                    , i->sPath
-                    , i->Default ? "default" : ""));
-                //check description size
-                dsc->NameLength = (mfxU32)(1 + strlen(i->sName));
-                if (dsc->NameAlloc < dsc->NameLength) 
-                {
-                    DISPATCHER_LOG_ERROR((("MFXVideoUSER_Enumerate: allocated buffer for description too small, expected=%d, actual=%d\n")
-                        , dsc->NameLength
-                        , dsc->NameAlloc));
-                    return MFX_ERR_NOT_ENOUGH_BUFFER;
-                }
-#if _MSC_VER >= 1400
-                strcpy_s((char*)dsc->Name, dsc->NameAlloc, i->sName);
-#else
-                strcpy((char*)dsc->Name, i->sName);
-#endif
-                dsc->PluginUID = i->uid;
-                dsc->Default = i->Default;
-                return MFX_ERR_NONE;
-            }
-            index--;
-        }
-    }
-    DISPATCHER_LOG_ERROR((("MFXVideoUSER_Enumerate: no plugins found\n")));
-    return MFX_ERR_NOT_FOUND;
-}
-mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_UnLoad)(mfxSession session, mfxPluginUID uid) 
-{
-    MFX_DISP_HANDLE &rHandle = *(MFX_DISP_HANDLE *) session;
-    if (!&rHandle) 
-    {
-        DISPATCHER_LOG_ERROR((("MFXVideoUSER_UnLoad: session=NULL\n")));
-        return MFX_ERR_NULL_PTR;
-    }
-    bool bDestroyed = rHandle.pluginFactory.Destroy(uid);
-    if (bDestroyed) 
-    {
-        DISPATCHER_LOG_ERROR((("MFXVideoUSER_UnLoad : plugin with GUID="MFXGUIDTYPE()" unloaded\n"), MFXGUIDTOHEX(uid)));
-    } else 
-    {
-        DISPATCHER_LOG_ERROR((("MFXVideoUSER_UnLoad : plugin with GUID="MFXGUIDTYPE()" not found\n"), MFXGUIDTOHEX(uid)));
-    }
-    
-    return bDestroyed ? MFX_ERR_NONE : MFX_ERR_NOT_FOUND;
-}
+
 
 mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Load)(mfxSession session, mfxU32 type, mfxU32 codec_id, mfxPluginUID uid) 
 {
@@ -521,6 +453,26 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Load)(mfxSession session, mfxU3
     }
     DISPATCHER_LOG_ERROR((("MFXVideoUSER_Load: cannot find registered plugin with requested UID, total plugins available=%d\n"), pHandle.pluginHive.size()));
     return MFX_ERR_NULL_PTR;
+}
+
+mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_UnLoad)(mfxSession session, mfxPluginUID uid) 
+{
+    MFX_DISP_HANDLE &rHandle = *(MFX_DISP_HANDLE *) session;
+    if (!&rHandle) 
+    {
+        DISPATCHER_LOG_ERROR((("MFXVideoUSER_UnLoad: session=NULL\n")));
+        return MFX_ERR_NULL_PTR;
+    }
+    bool bDestroyed = rHandle.pluginFactory.Destroy(uid);
+    if (bDestroyed) 
+    {
+        DISPATCHER_LOG_ERROR((("MFXVideoUSER_UnLoad : plugin with GUID="MFXGUIDTYPE()" unloaded\n"), MFXGUIDTOHEX(uid)));
+    } else 
+    {
+        DISPATCHER_LOG_ERROR((("MFXVideoUSER_UnLoad : plugin with GUID="MFXGUIDTYPE()" not found\n"), MFXGUIDTOHEX(uid)));
+    }
+    
+    return bDestroyed ? MFX_ERR_NONE : MFX_ERR_NOT_FOUND;
 }
 
 //
