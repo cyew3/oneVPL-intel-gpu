@@ -61,22 +61,22 @@ enum
 #define MFXGUIDTYPE() "%X-%X-%X-%X-%X-%X-%X-%X-%X-%X-%X-%X-%X-%X-%X-%X"
 
 #define MFXGUIDTOHEX(guid)\
-    guid.Data[0],\
-    guid.Data[1],\
-    guid.Data[2],\
-    guid.Data[3],\
-    guid.Data[4],\
-    guid.Data[5],\
-    guid.Data[6],\
-    guid.Data[7],\
-    guid.Data[8],\
-    guid.Data[9],\
-    guid.Data[10],\
-    guid.Data[11],\
-    guid.Data[12],\
-    guid.Data[13],\
-    guid.Data[14],\
-    guid.Data[15]
+    (guid)->Data[0],\
+    (guid)->Data[1],\
+    (guid)->Data[2],\
+    (guid)->Data[3],\
+    (guid)->Data[4],\
+    (guid)->Data[5],\
+    (guid)->Data[6],\
+    (guid)->Data[7],\
+    (guid)->Data[8],\
+    (guid)->Data[9],\
+    (guid)->Data[10],\
+    (guid)->Data[11],\
+    (guid)->Data[12],\
+    (guid)->Data[13],\
+    (guid)->Data[14],\
+    (guid)->Data[15]
 
 #if defined(MFX_DISPATCHER_LOG)
 

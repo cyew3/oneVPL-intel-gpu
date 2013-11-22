@@ -54,19 +54,11 @@ typedef struct {
     mfxU8  Data[16];
 } mfxPluginUID;
 
-typedef struct  {
-    mfxPluginUID PluginUID;
-    mfxU32   Default;
-    mfxU32  NameAlloc;
-    mfxU32  NameLength; 
-    mfxChar *Name;
-
-    mfxU32 reserved[8];
-} mfxPluginDescription;
-
-
 typedef struct mfxPluginParam {
-    mfxU32  reserved[8];
+    mfxU32  reserved[6];
+    mfxU16  reserved1;
+    mfxU16  PluginVersion;
+    mfxVersion   APIVersion;
     mfxPluginUID PluginUID;
     mfxU32  Type;
     mfxU32  CodecId;
@@ -148,8 +140,8 @@ mfxStatus MFX_CDECL MFXVideoUSER_Register(mfxSession session, mfxU32 type, const
 mfxStatus MFX_CDECL MFXVideoUSER_Unregister(mfxSession session, mfxU32 type);
 mfxStatus MFX_CDECL MFXVideoUSER_ProcessFrameAsync(mfxSession session, const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxSyncPoint *syncp);
 
-mfxStatus MFX_CDECL MFXVideoUSER_Load(mfxSession session, mfxU32 type, mfxU32 codec_id, mfxPluginUID uid);
-mfxStatus MFX_CDECL MFXVideoUSER_UnLoad(mfxSession session, mfxPluginUID uid);
+mfxStatus MFX_CDECL MFXVideoUSER_Load(mfxSession session, const mfxPluginUID *uid, mfxU32 version);
+mfxStatus MFX_CDECL MFXVideoUSER_UnLoad(mfxSession session, const mfxPluginUID *uid);
 
 #ifdef __cplusplus
 } // extern "C"

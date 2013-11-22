@@ -59,6 +59,7 @@ namespace MFX {
         mfxU32  Type;
         mfxU32  CodecId;
         mfxPluginUID uid;
+        mfxU32 version;
         msdk_disp_char sPath[MAX_PLUGIN_PATH];
         char sName[MAX_PLUGIN_NAME];
         bool Default;

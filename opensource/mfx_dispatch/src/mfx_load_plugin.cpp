@@ -150,7 +150,7 @@ bool MFX::MFXPluginFactory::RunVerification( mfxPlugin & plg, PluginDescriptionR
     if (pluginParams.PluginUID !=  dsc.uid) 
     {
         TRACE_PLUGIN_ERROR("plg->GetPluginParam() returned UID="MFXGUIDTYPE()", but registration has UID="MFXGUIDTYPE()"\n"
-            , MFXGUIDTOHEX(pluginParams.PluginUID), MFXGUIDTOHEX(dsc.uid));
+            , MFXGUIDTOHEX(&pluginParams.PluginUID), MFXGUIDTOHEX(&dsc.uid));
         return false;
     }
 

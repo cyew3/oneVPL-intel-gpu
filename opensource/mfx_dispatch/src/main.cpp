@@ -409,7 +409,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXCloneSession)(mfxSession session, mfxSess
 
 
 
-mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Load)(mfxSession session, mfxU32 type, mfxU32 codec_id, mfxPluginUID uid) 
+mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Load)(mfxSession session, const mfxPluginUID *uid, mfxU32 version) 
 {
     MFX_DISP_HANDLE &pHandle = *(MFX_DISP_HANDLE *) session;
     if (!&pHandle)
@@ -417,30 +417,27 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Load)(mfxSession session, mfxU3
         DISPATCHER_LOG_ERROR((("MFXVideoUSER_Load: session=NULL\n")));
         return MFX_ERR_NULL_PTR;
     }
-    DISPATCHER_LOG_INFO((("MFXVideoUSER_Load: type=%d codec_id="MFXFOURCCTYPE()" uid="MFXGUIDTYPE()"\n")
-        , type
-        , MFXU32TOFOURCC(codec_id)
-        , MFXGUIDTOHEX(uid)))
+    if (!uid)
+    {
+        DISPATCHER_LOG_ERROR((("MFXVideoUSER_Load: uid=NULL\n")));
+        return MFX_ERR_NULL_PTR;
+    }
+    DISPATCHER_LOG_INFO((("MFXVideoUSER_Load: uid="MFXGUIDTYPE()" version=\n")
+        , MFXGUIDTOHEX(uid)
+        , version))
     size_t pluginsChecked = 0;
     for (MFX::MFXPluginHive::iterator i = pHandle.pluginHive.begin();i != pHandle.pluginHive.end(); i++, pluginsChecked++)
     {
-        if (i->uid != uid)
+        if (i->uid != *uid)
         {
             continue;
         }
         //check rest in records
-        if (i->CodecId != codec_id) 
+        if (i->version < version)
         {
-            DISPATCHER_LOG_INFO((("MFXVideoUSER_Load: registered \"CodecID\" for GUID="MFXGUIDTYPE()" is "MFXFOURCCTYPE()"\n")
+            DISPATCHER_LOG_INFO((("MFXVideoUSER_Load: registered \"Plugin Version\" for GUID="MFXGUIDTYPE()" is %d, that is smaller that requested\n")
                 , MFXGUIDTOHEX(uid)
-                , MFXU32TOFOURCC(i->CodecId)))
-            return MFX_ERR_NULL_PTR;
-        }
-        if (i->Type != type)
-        {
-            DISPATCHER_LOG_INFO((("MFXVideoUSER_Load: registered \"Type\" for GUID="MFXGUIDTYPE()" is %d\n")
-                , MFXGUIDTOHEX(uid)
-                , i->Type))
+                , i->version))
             continue;
         }
         try {
@@ -455,7 +452,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Load)(mfxSession session, mfxU3
     return MFX_ERR_NULL_PTR;
 }
 
-mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_UnLoad)(mfxSession session, mfxPluginUID uid) 
+mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_UnLoad)(mfxSession session, const mfxPluginUID *uid) 
 {
     MFX_DISP_HANDLE &rHandle = *(MFX_DISP_HANDLE *) session;
     if (!&rHandle) 
@@ -463,7 +460,13 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_UnLoad)(mfxSession session, mfx
         DISPATCHER_LOG_ERROR((("MFXVideoUSER_UnLoad: session=NULL\n")));
         return MFX_ERR_NULL_PTR;
     }
-    bool bDestroyed = rHandle.pluginFactory.Destroy(uid);
+    if (!uid)
+    {
+        DISPATCHER_LOG_ERROR((("MFXVideoUSER_Load: uid=NULL\n")));
+        return MFX_ERR_NULL_PTR;
+    }
+
+    bool bDestroyed = rHandle.pluginFactory.Destroy(*uid);
     if (bDestroyed) 
     {
         DISPATCHER_LOG_ERROR((("MFXVideoUSER_UnLoad : plugin with GUID="MFXGUIDTYPE()" unloaded\n"), MFXGUIDTOHEX(uid)));

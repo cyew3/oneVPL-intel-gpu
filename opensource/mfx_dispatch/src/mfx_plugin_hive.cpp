@@ -114,7 +114,7 @@ MFX::MFXPluginHive::MFXPluginHive( mfxU32 storageID /*= 0*/ )
         {
             continue;
         }
-        TRACE_HIVE_INFO("    %8S : "MFXGUIDTYPE()"\n", GUIDKeyName, MFXGUIDTOHEX(descriptionRecord.uid));
+        TRACE_HIVE_INFO("    %8S : "MFXGUIDTYPE()"\n", GUIDKeyName, MFXGUIDTOHEX(&descriptionRecord.uid));
 
         mfxU32 nSize = sizeof(descriptionRecord.sPath)/sizeof(*descriptionRecord.sPath);
         if (!subKey.Query(PathKeyName, descriptionRecord.sPath, nSize)) 
