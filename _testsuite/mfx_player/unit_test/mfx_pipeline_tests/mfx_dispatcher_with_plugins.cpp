@@ -298,31 +298,31 @@ SUITE(DispatcherWithPlugins) {
         MFXClose(session);
     }
 
-    TEST_FIXTURE(WhenRegistryContainsOnePlugin, Enumerate_wrong_type) {
-        mfxSession session;
-        mfxPluginDescription dsc;
-        MFXInit(MFX_IMPL_SOFTWARE, 0, &session);
-        int oneMorePlugin = 0;
-        while (MFX_ERR_NONE == MFXVideoUSER_Enumerate(session, MFX_PLUGINTYPE_VIDEO_DECODE, MFX_CODEC_HEVC, oneMorePlugin++, &dsc));
-        CHECK_EQUAL(1, oneMorePlugin); 
-        MFXClose(session);
-    }
+    //TEST_FIXTURE(WhenRegistryContainsOnePlugin, Enumerate_wrong_type) {
+    //    mfxSession session;
+    //    mfxPluginDescription dsc;
+    //    MFXInit(MFX_IMPL_SOFTWARE, 0, &session);
+    //    int oneMorePlugin = 0;
+    //    while (MFX_ERR_NONE == MFXVideoUSER_Enumerate(session, MFX_PLUGINTYPE_VIDEO_DECODE, MFX_CODEC_HEVC, oneMorePlugin++, &dsc));
+    //    CHECK_EQUAL(1, oneMorePlugin); 
+    //    MFXClose(session);
+    //}
 
-    TEST_FIXTURE(WhenRegistryContainsOnePlugin, testEnumerate) {
-        mfxPluginDescription dsc = {};
-        std::vector<mfxChar> name;
-        MFXInit(MFX_IMPL_SOFTWARE, 0, &session);
-        int oneMorePlugin = 0;
-        while (MFX_ERR_NONE == MFXVideoUSER_Enumerate(session, MFX_PLUGINTYPE_VIDEO_ENCODE, MFX_CODEC_HEVC, oneMorePlugin++, &dsc));
-        dsc.NameAlloc = dsc.NameLength;
-        name.resize(dsc.NameAlloc);
-        dsc.Name = &name.front();
-        oneMorePlugin = 0;
-        while (MFX_ERR_NONE == MFXVideoUSER_Enumerate(session, MFX_PLUGINTYPE_VIDEO_ENCODE, MFX_CODEC_HEVC, oneMorePlugin++, &dsc));
-        
-        CHECK_EQUAL(2, oneMorePlugin);
-        CHECK_EQUAL(guid1, dsc.PluginUID);
-        CHECK_EQUAL("N2", dsc.Name);
-        MFXClose(session);
-    }
+    //TEST_FIXTURE(WhenRegistryContainsOnePlugin, testEnumerate) {
+    //    mfxPluginDescription dsc = {};
+    //    std::vector<mfxChar> name;
+    //    MFXInit(MFX_IMPL_SOFTWARE, 0, &session);
+    //    int oneMorePlugin = 0;
+    //    while (MFX_ERR_NONE == MFXVideoUSER_Enumerate(session, MFX_PLUGINTYPE_VIDEO_ENCODE, MFX_CODEC_HEVC, oneMorePlugin++, &dsc));
+    //    dsc.NameAlloc = dsc.NameLength;
+    //    name.resize(dsc.NameAlloc);
+    //    dsc.Name = &name.front();
+    //    oneMorePlugin = 0;
+    //    while (MFX_ERR_NONE == MFXVideoUSER_Enumerate(session, MFX_PLUGINTYPE_VIDEO_ENCODE, MFX_CODEC_HEVC, oneMorePlugin++, &dsc));
+    //    
+    //    CHECK_EQUAL(2, oneMorePlugin);
+    //    CHECK_EQUAL(guid1, dsc.PluginUID);
+    //    CHECK_EQUAL("N2", dsc.Name);
+    //    MFXClose(session);
+    //}
 }
