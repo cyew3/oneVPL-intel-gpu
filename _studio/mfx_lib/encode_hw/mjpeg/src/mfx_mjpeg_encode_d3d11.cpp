@@ -56,7 +56,6 @@ namespace
 D3D11Encoder::D3D11Encoder()
 : m_core(0)
 , m_pDdiData(0)
-, m_counter(0)
 , m_pVideoDevice(0)
 , m_pVideoContext(0)
 , m_pDecoder(0)
@@ -113,7 +112,6 @@ mfxStatus D3D11Encoder::Reset(mfxVideoParam const & par)
     sts = m_pDdiData->Init(&par);
     MFX_CHECK_STS(sts);
 
-    m_counter = 0;
     return MFX_ERR_NONE;
 }
 
@@ -322,7 +320,6 @@ mfxStatus D3D11Encoder::Execute(DdiTask &task, mfxHDL surface)
 
     UINT & bufCnt = encodeExecuteParams.NumCompBuffers;
 
-    task.m_statusReportNumber = (m_counter++);// << 8;
     pExecuteBuffers->m_pps.StatusReportFeedbackNumber = task.m_statusReportNumber;
 
     encodeCompBufferDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_PPSDATA);

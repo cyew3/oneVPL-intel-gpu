@@ -35,7 +35,6 @@ D3D9Encoder::D3D9Encoder()
 : m_core(0)
 , m_pAuxDevice(0)
 , m_pDdiData(0)
-, m_counter(0)
 , m_infoQueried(false)
 {
 }
@@ -137,7 +136,6 @@ mfxStatus D3D9Encoder::Reset(mfxVideoParam const & par)
     sts = m_pDdiData->Init(&par);
     MFX_CHECK_STS(sts);
 
-    m_counter = 0;
     return MFX_ERR_NONE;
 }
 
@@ -277,7 +275,6 @@ mfxStatus D3D9Encoder::Execute(DdiTask &task, mfxHDL surface)
 
     UINT& bufCnt = encodeExecuteParams.NumCompBuffers;
 
-    task.m_statusReportNumber = (m_counter ++) << 8;
     pExecuteBuffers->m_pps.StatusReportFeedbackNumber = task.m_statusReportNumber;
 
     encodeCompBufferDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTEL_JPEGENCODE_PPSDATA;

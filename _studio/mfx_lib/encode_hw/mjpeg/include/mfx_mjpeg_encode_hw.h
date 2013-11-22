@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          HW MJPEG  encoder
@@ -97,6 +97,7 @@ protected:
 
     mfxFrameAllocResponse m_raw;        // raw surface, for input raw is in system memory case
     mfxFrameAllocResponse m_bitstream;  // bitstream surface
+    mfxU32                m_counter;    // task number (StatusReportFeedbackNumber)
 
     TaskManager           m_TaskManager;
 };

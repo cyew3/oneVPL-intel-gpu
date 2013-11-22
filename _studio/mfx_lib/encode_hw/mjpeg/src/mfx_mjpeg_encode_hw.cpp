@@ -27,6 +27,7 @@ MFXVideoENCODEMJPEG_HW::MFXVideoENCODEMJPEG_HW(VideoCORE *core, mfxStatus *sts)
     m_pCore        = core;
     m_bInitialized = false;
     m_deviceFailed = false;
+    m_counter      = 1;
 
     *sts = (core ? MFX_ERR_NONE : MFX_ERR_NULL_PTR);
 }
@@ -198,6 +199,8 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Reset(mfxVideoParam *par)
     MFX_CHECK_STS(sts);
 
     MFX_INTERNAL_CPY(&m_video, par, sizeof(mfxVideoParam));
+    
+    m_counter = 1;
 
     return sts;
 }
@@ -257,6 +260,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::EncodeFrameCheck(
     MFX_CHECK_STS(checkSts);
     task->surface = surface;
     task->bs      = bs;
+    task->m_statusReportNumber = m_counter++;
 
     // definition tasks for MSDK scheduler
     pEntryPoints[0].pState               = this;
