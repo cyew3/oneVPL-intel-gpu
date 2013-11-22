@@ -10,17 +10,18 @@
 */
 
 /*
-// HEVC interpolation filters, implemented with SSE packed multiply-add 
+// HEVC interpolation filters, implemented with SSE packed multiply-add, optimized for Atom
 // 
 // NOTES:
 // - requires at least SSE4.1 (pextrw, pmovzxbw)
-// - functions assume that width = multiple of 4 (LUMA) or multiple of 2 (CHROMA), height > 0
+// - requires that width = multiple of 4 (LUMA) or multiple of 2 (CHROMA)
+// - requires that height = multiple of 2 for VERTICAL filters (processes 2 rows at a time to reduce shuffles)
+// - horizontal filters can take odd heights, e.g. generating support pixels for vertical pass
 // - input data is read in chunks of 8 or 16 bytes regardless of width, so assume it's safe to read up to 16 bytes beyond right edge of block 
 //     (data not used, just must be allocated memory - pad inbuf as needed)
-// - best intrinsic performance requires up to date Intel compiler (check compiler output to make sure no unnecessary stack spills!)
-// - if compiler register allocates poorly, may need to turn /Qipo OFF for this file
-// - picture/buffer averaging is done as separate pass after filtering to allow simpler filter kernels 
-//     (pays off in performance by reducing branches for the most common modes, also makes code easier to read/change)
+// - might require /Qsfalign option to ensure that ICL keeps 16-byte aligned stack when storing xmm registers
+//     - have observed crashes when compiler (ICL 13) copies data from aligned ROM tables to non-aligned location on stack (compiler bug?)
+// - templates used to reduce branches, so shift/offset values restricted to currently-used scale factors (see asserts below)
 */
 
 #include "mfx_common.h"
@@ -35,838 +36,960 @@
     defined(MFX_MAKENAME_SSSE3) && defined(MFX_TARGET_OPTIMIZATION_AVX2)
 
 #include <immintrin.h>
-#include <assert.h>
 
-
-#if defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_MAKENAME_ATOM)
-#define ALT_NO_PSHUFB
-#endif
-
-#ifdef MFX_EMULATE_SSSE3
-#include "mfx_ssse3_emulation.h"
+#ifdef __INTEL_COMPILER
+/* disable warning: unused function parameter (offset not needed with template implementation) */
+#pragma warning( disable : 869 )
 #endif
 
 namespace MFX_HEVC_PP
 {
-    enum EnumPlane
-    {
-        TEXT_LUMA = 0,
-        TEXT_CHROMA,
-        TEXT_CHROMA_U,
-        TEXT_CHROMA_V,
-    };
 
-    //--------------
-    /* interleaved luma interp coefficients, 8-bit, for offsets 1/4, 2/4, 3/4 */
-    ALIGN_DECL(16) static const signed char filtTabLuma_S8[3*4][16] = {
-        {  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4 },
-        { -10,  58, -10,  58, -10,  58, -10,  58, -10,  58, -10,  58, -10,  58, -10,  58 },
-        {  17,  -5,  17,  -5,  17,  -5,  17,  -5,  17,  -5,  17,  -5,  17,  -5,  17,  -5 },
-        {   1,   0,   1,   0,   1,   0,   1,   0,   1,   0,   1,   0,   1,   0,   1,   0 },
+enum EnumPlane
+{
+    TEXT_LUMA = 0,
+    TEXT_CHROMA,
+    TEXT_CHROMA_U,
+    TEXT_CHROMA_V,
+};
 
-        {  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4 },
-        { -11,  40, -11,  40, -11,  40, -11,  40, -11,  40, -11,  40, -11,  40, -11,  40 },
-        {  40, -11,  40, -11,  40, -11,  40, -11,  40, -11,  40, -11,  40, -11,  40, -11 },
-        {   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1 },
+/* interleaved luma interp coefficients, 8-bit, for offsets 1/4, 2/4, 3/4 */
+ALIGN_DECL(16) static const signed char filtTabLuma_S8[3*4][16] = {
+    {  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4 },
+    { -10,  58, -10,  58, -10,  58, -10,  58, -10,  58, -10,  58, -10,  58, -10,  58 },
+    {  17,  -5,  17,  -5,  17,  -5,  17,  -5,  17,  -5,  17,  -5,  17,  -5,  17,  -5 },
+    {   1,   0,   1,   0,   1,   0,   1,   0,   1,   0,   1,   0,   1,   0,   1,   0 },
 
-        {   0,   1,   0,   1,   0,   1,   0,   1,   0,   1,   0,   1,   0,   1,   0,   1 },
-        {  -5,   17, -5,  17,  -5,  17,  -5,  17,  -5,  17,  -5,  17,  -5,  17,  -5,  17 },
-        {  58,  -10, 58, -10,  58, -10,  58, -10,  58, -10,  58, -10,  58, -10,  58, -10 },
-        {   4,   -1,  4,  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1 },
+    {  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4 },
+    { -11,  40, -11,  40, -11,  40, -11,  40, -11,  40, -11,  40, -11,  40, -11,  40 },
+    {  40, -11,  40, -11,  40, -11,  40, -11,  40, -11,  40, -11,  40, -11,  40, -11 },
+    {   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1 },
 
-    };
+    {   0,   1,   0,   1,   0,   1,   0,   1,   0,   1,   0,   1,   0,   1,   0,   1 },
+    {  -5,   17, -5,  17,  -5,  17,  -5,  17,  -5,  17,  -5,  17,  -5,  17,  -5,  17 },
+    {  58,  -10, 58, -10,  58, -10,  58, -10,  58, -10,  58, -10,  58, -10,  58, -10 },
+    {   4,   -1,  4,  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1,   4,  -1 },
 
-    /* interleaved chroma interp coefficients, 8-bit, for offsets 1/8, 2/8, ... 7/8 */
-    ALIGN_DECL(16) static const signed char filtTabChroma_S8[7*2][16] = {
-        {  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58 },
-        {  10,  -2,  10,  -2,  10,  -2,  10,  -2,  10,  -2,  10,  -2,  10,  -2,  10,  -2 },
+};
 
-        {  -4,  54,  -4,  54,  -4,  54,  -4,  54,  -4,  54,  -4,  54,  -4,  54,  -4,  54 },
-        {  16,  -2,  16,  -2,  16,  -2,  16,  -2,  16,  -2,  16,  -2,  16,  -2,  16,  -2 },
+/* interleaved chroma interp coefficients, 8-bit, for offsets 1/8, 2/8, ... 7/8 */
+ALIGN_DECL(16) static const signed char filtTabChroma_S8[7*2][16] = {
+    {  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58 },
+    {  10,  -2,  10,  -2,  10,  -2,  10,  -2,  10,  -2,  10,  -2,  10,  -2,  10,  -2 },
 
-        {  -6,  46,  -6,  46,  -6,  46,  -6,  46,  -6,  46,  -6,  46,  -6,  46,  -6,  46 },
-        {  28,  -4,  28,  -4,  28,  -4,  28,  -4,  28,  -4,  28,  -4,  28,  -4,  28,  -4 },
+    {  -4,  54,  -4,  54,  -4,  54,  -4,  54,  -4,  54,  -4,  54,  -4,  54,  -4,  54 },
+    {  16,  -2,  16,  -2,  16,  -2,  16,  -2,  16,  -2,  16,  -2,  16,  -2,  16,  -2 },
 
-        {  -4,  36,  -4,  36,  -4,  36,  -4,  36,  -4,  36,  -4,  36,  -4,  36,  -4,  36 },
-        {  36,  -4,  36,  -4,  36,  -4,  36,  -4,  36,  -4,  36,  -4,  36,  -4,  36,  -4 },
+    {  -6,  46,  -6,  46,  -6,  46,  -6,  46,  -6,  46,  -6,  46,  -6,  46,  -6,  46 },
+    {  28,  -4,  28,  -4,  28,  -4,  28,  -4,  28,  -4,  28,  -4,  28,  -4,  28,  -4 },
 
-        {  -4,  28,  -4,  28,  -4,  28,  -4,  28,  -4,  28,  -4,  28,  -4,  28,  -4,  28 }, 
-        {  46,  -6,  46,  -6,  46,  -6,  46,  -6,  46,  -6,  46,  -6,  46,  -6,  46,  -6 },
+    {  -4,  36,  -4,  36,  -4,  36,  -4,  36,  -4,  36,  -4,  36,  -4,  36,  -4,  36 },
+    {  36,  -4,  36,  -4,  36,  -4,  36,  -4,  36,  -4,  36,  -4,  36,  -4,  36,  -4 },
 
-        {  -2,  16,  -2,  16,  -2,  16,  -2,  16,  -2,  16,  -2,  16,  -2,  16,  -2,  16 },
-        {  54,  -4,  54,  -4,  54,  -4,  54,  -4,  54,  -4,  54,  -4,  54,  -4,  54,  -4 },
+    {  -4,  28,  -4,  28,  -4,  28,  -4,  28,  -4,  28,  -4,  28,  -4,  28,  -4,  28 }, 
+    {  46,  -6,  46,  -6,  46,  -6,  46,  -6,  46,  -6,  46,  -6,  46,  -6,  46,  -6 },
 
-        {  -2,  10,  -2,  10,  -2,  10,  -2,  10,  -2,  10,  -2,  10,  -2,  10,  -2,  10 },
-        {  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2 },
-    };
+    {  -2,  16,  -2,  16,  -2,  16,  -2,  16,  -2,  16,  -2,  16,  -2,  16,  -2,  16 },
+    {  54,  -4,  54,  -4,  54,  -4,  54,  -4,  54,  -4,  54,  -4,  54,  -4,  54,  -4 },
 
-    /* interleaved luma interp coefficients, 16-bit, for offsets 1/4, 2/4, 3/4 */
-    ALIGN_DECL(16) static const short filtTabLuma_S16[3*4][8] = {
-        {  -1,   4,  -1,   4,  -1,   4,  -1,   4 },
-        { -10,  58, -10,  58, -10,  58, -10,  58 },
-        {  17,  -5,  17,  -5,  17,  -5,  17,  -5 },
-        {   1,   0,   1,   0,   1,   0,   1,   0 },
+    {  -2,  10,  -2,  10,  -2,  10,  -2,  10,  -2,  10,  -2,  10,  -2,  10,  -2,  10 },
+    {  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2,  58,  -2 },
+};
 
-        {  -1,   4,  -1,   4,  -1,   4,  -1,   4 },
-        { -11,  40, -11,  40, -11,  40, -11,  40 },
-        {  40, -11,  40, -11,  40, -11,  40, -11 },
-        {   4,  -1,   4,  -1,   4,  -1,   4,  -1 },
+/* interleaved luma interp coefficients, 16-bit, for offsets 1/4, 2/4, 3/4 */
+ALIGN_DECL(16) static const short filtTabLuma_S16[3*4][8] = {
+    {  -1,   4,  -1,   4,  -1,   4,  -1,   4 },
+    { -10,  58, -10,  58, -10,  58, -10,  58 },
+    {  17,  -5,  17,  -5,  17,  -5,  17,  -5 },
+    {   1,   0,   1,   0,   1,   0,   1,   0 },
 
-        {   0,   1,   0,   1,   0,   1,   0,   1 },
-        {  -5,   17, -5,  17,  -5,  17,  -5,  17 },
-        {  58,  -10, 58, -10,  58, -10,  58, -10 },
-        {   4,   -1,  4,  -1,   4,  -1,   4,  -1 },
+    {  -1,   4,  -1,   4,  -1,   4,  -1,   4 },
+    { -11,  40, -11,  40, -11,  40, -11,  40 },
+    {  40, -11,  40, -11,  40, -11,  40, -11 },
+    {   4,  -1,   4,  -1,   4,  -1,   4,  -1 },
 
-    };
+    {   0,   1,   0,   1,   0,   1,   0,   1 },
+    {  -5,   17, -5,  17,  -5,  17,  -5,  17 },
+    {  58,  -10, 58, -10,  58, -10,  58, -10 },
+    {   4,   -1,  4,  -1,   4,  -1,   4,  -1 },
 
-    /* interleaved chroma interp coefficients, 16-bit, for offsets 1/8, 2/8, ... 7/8 */
-    ALIGN_DECL(16) static const short filtTabChroma_S16[7*2][8] = {
-        {  -2,  58,  -2,  58,  -2,  58,  -2,  58 },
-        {  10,  -2,  10,  -2,  10,  -2,  10,  -2 },
+};
 
-        {  -4,  54,  -4,  54,  -4,  54,  -4,  54 },
-        {  16,  -2,  16,  -2,  16,  -2,  16,  -2 },
+/* interleaved chroma interp coefficients, 16-bit, for offsets 1/8, 2/8, ... 7/8 */
+ALIGN_DECL(16) static const short filtTabChroma_S16[7*2][8] = {
+    {  -2,  58,  -2,  58,  -2,  58,  -2,  58 },
+    {  10,  -2,  10,  -2,  10,  -2,  10,  -2 },
 
-        {  -6,  46,  -6,  46,  -6,  46,  -6,  46 },
-        {  28,  -4,  28,  -4,  28,  -4,  28,  -4 },
+    {  -4,  54,  -4,  54,  -4,  54,  -4,  54 },
+    {  16,  -2,  16,  -2,  16,  -2,  16,  -2 },
 
-        {  -4,  36,  -4,  36,  -4,  36,  -4,  36 },
-        {  36,  -4,  36,  -4,  36,  -4,  36,  -4 },
+    {  -6,  46,  -6,  46,  -6,  46,  -6,  46 },
+    {  28,  -4,  28,  -4,  28,  -4,  28,  -4 },
 
-        {  -4,  28,  -4,  28,  -4,  28,  -4,  28 }, 
-        {  46,  -6,  46,  -6,  46,  -6,  46,  -6 },
+    {  -4,  36,  -4,  36,  -4,  36,  -4,  36 },
+    {  36,  -4,  36,  -4,  36,  -4,  36,  -4 },
 
-        {  -2,  16,  -2,  16,  -2,  16,  -2,  16 },
-        {  54,  -4,  54,  -4,  54,  -4,  54,  -4 },
+    {  -4,  28,  -4,  28,  -4,  28,  -4,  28 }, 
+    {  46,  -6,  46,  -6,  46,  -6,  46,  -6 },
 
-        {  -2,  10,  -2,  10,  -2,  10,  -2,  10 },
-        {  58,  -2,  58,  -2,  58,  -2,  58,  -2 },
-    };
+    {  -2,  16,  -2,  16,  -2,  16,  -2,  16 },
+    {  54,  -4,  54,  -4,  54,  -4,  54,  -4 },
 
-    /* pshufb table for luma, 8-bit horizontal filtering */
-    ALIGN_DECL(16) static const signed char shufTabPlane[4][16] = {
-        {  0,  1,  1,  2,  2,  3,  3,  4,  4,  5,  5,  6,  6,  7,  7,  8 },
-        {  2,  3,  3,  4,  4,  5,  5,  6,  6,  7,  7,  8,  8,  9,  9, 10 },
-        {  4,  5,  5,  6,  6,  7,  7,  8,  8,  9,  9, 10, 10, 11, 11, 12 },
-        {  6,  7,  7,  8,  8,  9,  9, 10, 10, 11, 11, 12, 12, 13, 13, 14 },
-    };
+    {  -2,  10,  -2,  10,  -2,  10,  -2,  10 },
+    {  58,  -2,  58,  -2,  58,  -2,  58,  -2 },
+};
 
-    /* pshufb table for chroma, 8-bit horizontal filtering */
-    ALIGN_DECL(16) static const signed char shufTabIntUV[2][16] = {
-        {  0,  2,  1,  3,  2,  4,  3,  5,  4,  6,  5,  7,  6,  8,  7,  9 },
-        {  4,  6,  5,  7,  6,  8,  7,  9,  8, 10,  9, 11, 10, 12, 11, 13 },
-    };
+/* pshufb table for luma, 8-bit horizontal filtering */
+ALIGN_DECL(16) static const signed char shufTabPlane[4][16] = {
+    {  0,  1,  1,  2,  2,  3,  3,  4,  4,  5,  5,  6,  6,  7,  7,  8 },
+    {  2,  3,  3,  4,  4,  5,  5,  6,  6,  7,  7,  8,  8,  9,  9, 10 },
+    {  4,  5,  5,  6,  6,  7,  7,  8,  8,  9,  9, 10, 10, 11, 11, 12 },
+    {  6,  7,  7,  8,  8,  9,  9, 10, 10, 11, 11, 12, 12, 13, 13, 14 },
+};
 
-    /* luma, horizontal, 8-bit input, 16-bit output */
-    void MAKE_NAME(h265_InterpLuma_s8_d16_H)(INTERP_S8_D16_PARAMETERS_LIST)
-    {
-        int col;
-        const unsigned char *pSrcRef = pSrc;
-        short *pDstRef = pDst;
-        const signed char* coeffs;
-        __m128i xmm0, xmm1, xmm2, xmm3;        /* should compile without stack spills */
-        __m128i xmm_offset, xmm_shift;
-#ifdef ALT_NO_PSHUFB
-        __m128i xmm4, xmm5;
+/* pshufb table for chroma, 8-bit horizontal filtering */
+ALIGN_DECL(16) static const signed char shufTabIntUV[2][16] = {
+    {  0,  2,  1,  3,  2,  4,  3,  5,  4,  6,  5,  7,  6,  8,  7,  9 },
+    {  4,  6,  5,  7,  6,  8,  7,  9,  8, 10,  9, 11, 10, 12, 11, 13 },
+};
 
-        /* avoid Klocwork warnings */
-        xmm1 = _mm_setzero_si128();
-        xmm2 = _mm_setzero_si128();
-        xmm3 = _mm_setzero_si128();
-#endif
+template<int widthMul, int shift>
+static void t_InterpLuma_s8_d16_H(const unsigned char* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height)
+{
+    int col;
+    const signed char* coeffs;
+    __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5;
 
-        coeffs = filtTabLuma_S8[4 * (tab_index-1)];
+    coeffs = filtTabLuma_S8[4 * (tab_index-1)];
 
-        xmm_offset = _mm_cvtsi32_si128( ((unsigned int)offset << 16) | (unsigned int)(offset) );
-        xmm_offset = _mm_shuffle_epi32(xmm_offset, 0x00);
-        xmm_shift = _mm_cvtsi32_si128(shift);
+    /* calculate 8 outputs per inner loop, working horizontally - use shuffle/interleave instead of pshufb on Atom */
+    do {
+        for (col = 0; col < width; col += widthMul) {
+            /* load 16 8-bit pixels */
+            xmm0 = _mm_loadu_si128((__m128i *)(pSrc + col));
+            xmm1 = xmm0;
+            xmm2 = xmm0;
+            xmm3 = xmm0;
 
-        /* calculate 8 outputs per inner loop, working horizontally */
-        do {
-            pSrc = pSrcRef;
-            pDst = pDstRef;
-            col = width;
+            /* interleave pixels */
+            xmm0 = _mm_shuffle_epi8(xmm0, *(__m128i *)(shufTabPlane[0]));
+            xmm1 = _mm_shuffle_epi8(xmm1, *(__m128i *)(shufTabPlane[1]));
+            xmm2 = _mm_shuffle_epi8(xmm2, *(__m128i *)(shufTabPlane[2]));
+            xmm3 = _mm_shuffle_epi8(xmm3, *(__m128i *)(shufTabPlane[3]));
 
-            while (col > 0) {
-#ifdef ALT_NO_PSHUFB
-                /* load 16 8-bit pixels, make offsets of 1,2,3 bytes */
-                xmm0 = _mm_loadu_si128((__m128i *)pSrc); /* [0,1,2,3...] */
-                xmm1 = _mm_alignr_epi8(xmm1, xmm0, 1);   /* [1,2,3,4...] */
-                xmm2 = _mm_alignr_epi8(xmm2, xmm0, 2);   /* [2,3,4,5...] */
-                xmm3 = _mm_alignr_epi8(xmm3, xmm0, 3);   /* [3,4,5,6...] */
+            /* packed (8*8 + 8*8) -> 16 */
+            xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i *)(coeffs +  0));    /* coefs 0,1 */
+            xmm1 = _mm_maddubs_epi16(xmm1, *(__m128i *)(coeffs + 16));    /* coefs 2,3 */
+            xmm2 = _mm_maddubs_epi16(xmm2, *(__m128i *)(coeffs + 32));    /* coefs 4,5 */
+            xmm3 = _mm_maddubs_epi16(xmm3, *(__m128i *)(coeffs + 48));    /* coefs 6,7 */
 
-                /* save shuffled copies for taps 4-7 */
-                xmm4 = _mm_shuffle_epi32(xmm0, 0xf9);    /* [4,5,6,7...] */
-                xmm5 = _mm_shuffle_epi32(xmm2, 0xf9);    /* [6,7,8,9...] */
+            /* sum intermediate values, add offset, shift off fraction bits */
+            xmm0 = _mm_add_epi16(xmm0, xmm1);
+            xmm0 = _mm_add_epi16(xmm0, xmm2);
+            xmm0 = _mm_add_epi16(xmm0, xmm3);
+            if (shift > 0) {
+                xmm0 = _mm_add_epi16(xmm0, _mm_set1_epi16( (1<<shift)>>1 ));  /* i.e. offset = 1 << (shift-1) (avoid false warning about negative shift) */
+                xmm0 = _mm_srai_epi16(xmm0, shift);
+            }
 
-                /* interleave pixels */
-                xmm0 = _mm_unpacklo_epi16(xmm0, xmm1);   /* [0,1,1,2,2,3...] */
-                xmm2 = _mm_unpacklo_epi16(xmm2, xmm3);   /* [2,3,3,4,4,5...] */
-                xmm1 = _mm_shuffle_epi32(xmm1, 0xf9);    /* [5,6,7,8...] */
-                xmm3 = _mm_shuffle_epi32(xmm3, 0xf9);    /* [7,8,9,10...] */
-                xmm4 = _mm_unpacklo_epi16(xmm4, xmm1);   /* [4,5,5,6,6,7...] */
-                xmm5 = _mm_unpacklo_epi16(xmm5, xmm3);   /* [6,7,7,8,8,9...] */
-
-                /* packed (8*8 + 8*8) -> 16 */
-                xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i *)(coeffs +  0));    /* coefs 0,1 */
-                xmm2 = _mm_maddubs_epi16(xmm2, *(__m128i *)(coeffs + 16));    /* coefs 2,3 */
-                xmm4 = _mm_maddubs_epi16(xmm4, *(__m128i *)(coeffs + 32));    /* coefs 4,5 */
-                xmm5 = _mm_maddubs_epi16(xmm5, *(__m128i *)(coeffs + 48));    /* coefs 6,7 */
-
-                /* sum intermediate values, add offset, shift off fraction bits */
-                xmm0 = _mm_add_epi16(xmm0, xmm2);
-                xmm0 = _mm_add_epi16(xmm0, xmm4);
-                xmm0 = _mm_add_epi16(xmm0, xmm5);
-                xmm0 = _mm_add_epi16(xmm0, xmm_offset);
-                xmm0 = _mm_sra_epi16(xmm0, xmm_shift);
-#else
-                /* load 16 8-bit pixels */
-                xmm0 = _mm_loadu_si128((__m128i *)pSrc);
-                xmm1 = xmm0;
-                xmm2 = xmm0;
-                xmm3 = xmm0;
-
-                /* interleave pixels */
-                xmm0 = _mm_shuffle_epi8(xmm0, *(__m128i *)(shufTabPlane[0]));
-                xmm1 = _mm_shuffle_epi8(xmm1, *(__m128i *)(shufTabPlane[1]));
-                xmm2 = _mm_shuffle_epi8(xmm2, *(__m128i *)(shufTabPlane[2]));
-                xmm3 = _mm_shuffle_epi8(xmm3, *(__m128i *)(shufTabPlane[3]));
-
-                /* packed (8*8 + 8*8) -> 16 */
-                xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i *)(coeffs +  0));    /* coefs 0,1 */
-                xmm1 = _mm_maddubs_epi16(xmm1, *(__m128i *)(coeffs + 16));    /* coefs 2,3 */
-                xmm2 = _mm_maddubs_epi16(xmm2, *(__m128i *)(coeffs + 32));    /* coefs 4,5 */
-                xmm3 = _mm_maddubs_epi16(xmm3, *(__m128i *)(coeffs + 48));    /* coefs 6,7 */
-
-                /* sum intermediate values, add offset, shift off fraction bits */
-                xmm0 = _mm_add_epi16(xmm0, xmm1);
-                xmm0 = _mm_add_epi16(xmm0, xmm2);
-                xmm0 = _mm_add_epi16(xmm0, xmm3);
-                xmm0 = _mm_add_epi16(xmm0, xmm_offset);
-                xmm0 = _mm_sra_epi16(xmm0, xmm_shift);
-#endif
-
+            if (widthMul == 8) {
                 /* store 8 16-bit words */
-                if (col >= 8) {
-                    _mm_storeu_si128((__m128i *)pDst, xmm0);
-                    pSrc += 8;
-                    pDst += 8;
-                    col -= 8;
-                    continue;
-                }
-
+                _mm_storeu_si128((__m128i *)(pDst + col), xmm0);
+            } else if (widthMul == 4) {
                 /* store 4 16-bit words */
-                _mm_storel_epi64((__m128i *)pDst, xmm0);
-                break;
+                _mm_storel_epi64((__m128i *)(pDst + col), xmm0);
+            }
+        }
+        pSrc += srcPitch;
+        pDst += dstPitch;
+    } while (--height);
+}
+
+/* luma, horizontal, 8-bit input, 16-bit output */
+void MAKE_NAME(h265_InterpLuma_s8_d16_H)(INTERP_S8_D16_PARAMETERS_LIST)
+{
+    int rem;
+
+    VM_ASSERT( (shift == 0 && offset == 0) || (shift == 6 && offset == (1 << (shift-1))) );
+    VM_ASSERT( (width & 0x03) == 0 );
+
+    rem = (width & 0x07);
+
+    width -= rem;
+    if (width > 0) {
+        if (shift == 0)
+            t_InterpLuma_s8_d16_H<8,0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);
+        else if (shift == 6)
+            t_InterpLuma_s8_d16_H<8,6>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);
+        pSrc += width;
+        pDst += width;
+    }
+
+    if (rem > 0) {
+        if (shift == 0)
+            t_InterpLuma_s8_d16_H<4,0>(pSrc, srcPitch, pDst, dstPitch, tab_index, rem, height);
+        else if (shift == 6)
+            t_InterpLuma_s8_d16_H<4,6>(pSrc, srcPitch, pDst, dstPitch, tab_index, rem, height);
+    }
+}
+
+template<int widthMul, int shift>
+static void t_InterpChroma_s8_d16_H(const unsigned char* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height, int plane )
+{
+    int col;
+    const signed char* coeffs;
+    const signed char* shufTab;
+    __m128i xmm0, xmm1, xmm2, xmm3;
+
+    coeffs = filtTabChroma_S8[2 * (tab_index-1)];
+    if (plane == TEXT_CHROMA)
+        shufTab = (signed char *)shufTabIntUV;
+    else 
+        shufTab = (signed char *)shufTabPlane;
+
+    xmm2 = _mm_load_si128((__m128i *)(coeffs +  0));
+    xmm3 = _mm_load_si128((__m128i *)(coeffs + 16));
+
+    /* calculate 8 outputs per inner loop, working horizontally - use shuffle/interleave instead of pshufb on Atom */
+    do {
+        /* same version for U/V interleaved or separate planes */
+        for (col = 0; col < width; col += widthMul) {
+            /* load 16 8-bit pixels */
+            xmm0 = _mm_loadu_si128((__m128i *)(pSrc + col));
+            xmm1 = xmm0;
+
+            /* interleave pixels */
+            xmm0 = _mm_shuffle_epi8(xmm0, *(__m128i *)(shufTab +  0));
+            xmm1 = _mm_shuffle_epi8(xmm1, *(__m128i *)(shufTab + 16));
+
+            /* packed (8*8 + 8*8) -> 16 */
+            xmm0 = _mm_maddubs_epi16(xmm0, xmm2);    /* coefs 0,1 */
+            xmm1 = _mm_maddubs_epi16(xmm1, xmm3);    /* coefs 2,3 */
+
+            /* sum intermediate values, add offset, shift off fraction bits */
+            xmm0 = _mm_add_epi16(xmm0, xmm1);
+            if (shift > 0) {
+                xmm0 = _mm_add_epi16(xmm0, _mm_set1_epi16( (1<<shift)>>1 ));
+                xmm0 = _mm_srai_epi16(xmm0, shift);
             }
 
-            pSrcRef += srcPitch;
-            pDstRef += dstPitch;
-        } while (--height);
+            /* store 8 16-bit words */
+            if (widthMul == 8) {
+                _mm_storeu_si128((__m128i *)(pDst + col), xmm0);
+            } else if (widthMul == 6) {
+                *(int *)(pDst+col+0) = _mm_extract_epi32(xmm0, 0);
+                *(int *)(pDst+col+2) = _mm_extract_epi32(xmm0, 1);
+                *(int *)(pDst+col+4) = _mm_extract_epi32(xmm0, 2);
+            } else if (widthMul == 4) {
+                _mm_storel_epi64((__m128i *)(pDst + col), xmm0);
+            } else if (widthMul == 2) {
+                *(int *)(pDst+col+0) = _mm_cvtsi128_si32(xmm0);
+            }
+        }
+        pSrc += srcPitch;
+        pDst += dstPitch;
+    } while (--height);
+}
+
+/* chroma, horizontal, 8-bit input, 16-bit output */
+void MAKE_NAME(h265_InterpChroma_s8_d16_H)(INTERP_S8_D16_PARAMETERS_LIST, int plane)
+{
+    int rem;
+
+    VM_ASSERT( (shift == 0 && offset == 0) || (shift == 6 && offset == (1 << (shift-1))) );
+    VM_ASSERT( (width & 0x01) == 0 );
+
+    rem = (width & 0x07);
+
+    width -= rem;
+    if (width > 0) {
+        if (shift == 0)
+            t_InterpChroma_s8_d16_H<8,0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, plane);
+        else if (shift == 6)
+            t_InterpChroma_s8_d16_H<8,6>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, plane);
+        pSrc += width;
+        pDst += width;
     }
 
-    /* chroma, horizontal, 8-bit input, 16-bit output */
-    void MAKE_NAME(h265_InterpChroma_s8_d16_H) ( INTERP_S8_D16_PARAMETERS_LIST, int plane )
-    {
-        int col;
-        const unsigned char *pSrcRef = pSrc;
-        short *pDstRef = pDst;
-        const signed char* coeffs;
-        const signed char* shufTab;
-        __m128i xmm0, xmm1, xmm2, xmm3;        /* should compile without stack spills */
-        __m128i xmm_offset, xmm_shift;
-#ifdef ALT_NO_PSHUFB
-        /* avoid Klocwork warnings */
-        xmm1 = _mm_setzero_si128();
-        xmm2 = _mm_setzero_si128();
-        xmm3 = _mm_setzero_si128();
-#endif
+    if (rem == 4) {
+        if (shift == 0)
+            t_InterpChroma_s8_d16_H<4,0>(pSrc, srcPitch, pDst, dstPitch, tab_index, rem, height, plane);
+        else if (shift == 6)
+            t_InterpChroma_s8_d16_H<4,6>(pSrc, srcPitch, pDst, dstPitch, tab_index, rem, height, plane);
+    } else if (rem == 2) {
+        if (shift == 0)
+            t_InterpChroma_s8_d16_H<2,0>(pSrc, srcPitch, pDst, dstPitch, tab_index, rem, height, plane);
+        else if (shift == 6)
+            t_InterpChroma_s8_d16_H<2,6>(pSrc, srcPitch, pDst, dstPitch, tab_index, rem, height, plane);
+    } else if (rem == 6) {
+        if (shift == 0)
+            t_InterpChroma_s8_d16_H<6,0>(pSrc, srcPitch, pDst, dstPitch, tab_index, rem, height, plane);
+        else if (shift == 6)
+            t_InterpChroma_s8_d16_H<6,6>(pSrc, srcPitch, pDst, dstPitch, tab_index, rem, height, plane);
+    }
+}
 
-        coeffs = filtTabChroma_S8[2 * (tab_index-1)];
-        if (plane == TEXT_CHROMA)
-            shufTab = (signed char *)shufTabIntUV;
-        else 
-            shufTab = (signed char *)shufTabPlane;
+template<int widthMul, int shift>
+static void t_InterpLuma_s8_d16_V(const unsigned char* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height)
+{
+    int row, col;
+    const unsigned char *pSrcRef = pSrc;
+    short *pDstRef = pDst;
+    const signed char* coeffs;
+    __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
 
-        xmm_offset = _mm_cvtsi32_si128( ((unsigned int)offset << 16) | (unsigned int)(offset) );
-        xmm_offset = _mm_shuffle_epi32(xmm_offset, 0x00);
-        xmm_shift = _mm_cvtsi32_si128(shift);
+    coeffs = filtTabLuma_S8[4 * (tab_index-1)];
 
-        xmm2 = _mm_load_si128((__m128i *)(coeffs +  0));
-        xmm3 = _mm_load_si128((__m128i *)(coeffs + 16));
+    for (col = 0; col < width; col += widthMul) {
+        pSrc = pSrcRef;
+        pDst = pDstRef;
 
-        /* calculate 8 outputs per inner loop, working horizontally */
-        do {
-            pSrc = pSrcRef;
-            pDst = pDstRef;
-            col = width;
+        /* load 8 8-bit pixels from rows 0-5 */
+        xmm0 = _mm_loadl_epi64((__m128i*)(pSrc + 0*srcPitch));
+        xmm4 = _mm_loadl_epi64((__m128i*)(pSrc + 1*srcPitch));
+        xmm1 = _mm_loadl_epi64((__m128i*)(pSrc + 2*srcPitch));
+        xmm5 = _mm_loadl_epi64((__m128i*)(pSrc + 3*srcPitch));
+        xmm2 = _mm_loadl_epi64((__m128i*)(pSrc + 4*srcPitch));
+        xmm6 = _mm_loadl_epi64((__m128i*)(pSrc + 5*srcPitch));
+        
+        xmm0 = _mm_unpacklo_epi8(xmm0, xmm4);    /* interleave 01 */
+        xmm1 = _mm_unpacklo_epi8(xmm1, xmm5);    /* interleave 23 */
+        xmm2 = _mm_unpacklo_epi8(xmm2, xmm6);    /* interleave 45 */
 
-            while (col > 0) {
-#ifdef ALT_NO_PSHUFB
-                /* different versions for U/V interleaved or separate planes - could replicate whole loop if necessary */
-                if (plane == TEXT_CHROMA) {
-                    /* load 16 8-bit pixels, make offsets of 2,4,6 bytes */
-                    xmm0 = _mm_loadu_si128((__m128i *)pSrc); /* [0,1,2,3...] */
-                    xmm1 = _mm_alignr_epi8(xmm1, xmm0, 2);   /* [2,3,4,5...] */
-                    xmm2 = _mm_alignr_epi8(xmm2, xmm0, 4);   /* [4,5,6,7...] */
-                    xmm3 = _mm_alignr_epi8(xmm3, xmm0, 6);   /* [6,7,8,9...] */
+        /* process even rows first (reduce row interleaving) */
+        for (row = 0; row < height; row += 2) {
+            xmm3 = _mm_loadl_epi64((__m128i*)(pSrc + 6*srcPitch));
+            xmm7 = _mm_loadl_epi64((__m128i*)(pSrc + 7*srcPitch));
+            xmm3 = _mm_unpacklo_epi8(xmm3, xmm7);    /* interleave 67 */
 
-                    /* interleave pixels */
-                    xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);    /* [0,2,1,3,2,4,3,5...] = [UUVVUUVV...] */
-                    xmm2 = _mm_unpacklo_epi8(xmm2, xmm3);    /* [4,6,5,7,6,8,7,9...] = [UUVVUUVV...] */
+            xmm4 = xmm1;
+            xmm5 = xmm2;
+            xmm6 = xmm3;
 
-                    /* packed (8*8 + 8*8) -> 16 */
-                    xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i *)(coeffs +  0));    /* coefs 0,1 */
-                    xmm2 = _mm_maddubs_epi16(xmm2, *(__m128i *)(coeffs + 16));    /* coefs 2,3 */
+            /* multiply interleaved rows by interleaved coefs, sum into acc */
+            xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i*)(coeffs +  0));
+            xmm4 = _mm_maddubs_epi16(xmm4, *(__m128i*)(coeffs + 16));
+            xmm0 = _mm_add_epi16(xmm0, xmm4);
+            xmm5 = _mm_maddubs_epi16(xmm5, *(__m128i*)(coeffs + 32));
+            xmm0 = _mm_add_epi16(xmm0, xmm5);
+            xmm6 = _mm_maddubs_epi16(xmm6, *(__m128i*)(coeffs + 48));
+            xmm0 = _mm_add_epi16(xmm0, xmm6);
 
-                    /* sum intermediate values, add offset, shift off fraction bits */
-                    xmm0 = _mm_add_epi16(xmm0, xmm2);
-                    xmm0 = _mm_add_epi16(xmm0, xmm_offset);
-                    xmm0 = _mm_sra_epi16(xmm0, xmm_shift);
-                } else {
-                    /* load 16 8-bit pixels, make offsets of 1,2,3 bytes */
-                    xmm0 = _mm_loadu_si128((__m128i *)pSrc); /* [0,1,2,3...] */
-                    xmm1 = _mm_alignr_epi8(xmm1, xmm0, 1);   /* [1,2,3,4...] */
-                    xmm2 = _mm_alignr_epi8(xmm2, xmm0, 2);   /* [2,3,4,5...] */
-                    xmm3 = _mm_alignr_epi8(xmm3, xmm0, 3);   /* [3,4,5,6...] */
-
-                    /* interleave pixels */
-                    xmm0 = _mm_unpacklo_epi16(xmm0, xmm1);   /* [0,1,1,2,2,3,3,4...] */
-                    xmm2 = _mm_unpacklo_epi16(xmm2, xmm3);   /* [2,3,3,4,4,5,5,6,...] */
-
-                    /* packed (8*8 + 8*8) -> 16 */
-                    xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i *)(coeffs +  0));    /* coefs 0,1 */
-                    xmm2 = _mm_maddubs_epi16(xmm2, *(__m128i *)(coeffs + 16));    /* coefs 2,3 */
-
-                    /* sum intermediate values, add offset, shift off fraction bits */
-                    xmm0 = _mm_add_epi16(xmm0, xmm2);
-                    xmm0 = _mm_add_epi16(xmm0, xmm_offset);
-                    xmm0 = _mm_sra_epi16(xmm0, xmm_shift);
-                }
-#else
-                /* load 16 8-bit pixels */
-                xmm0 = _mm_loadu_si128((__m128i *)pSrc);
-                xmm1 = xmm0;
-
-                /* interleave pixels */
-                xmm0 = _mm_shuffle_epi8(xmm0, *(__m128i *)(shufTab +  0));
-                xmm1 = _mm_shuffle_epi8(xmm1, *(__m128i *)(shufTab + 16));
-
-                /* packed (8*8 + 8*8) -> 16 */
-                xmm0 = _mm_maddubs_epi16(xmm0, xmm2);    /* coefs 0,1 */
-                xmm1 = _mm_maddubs_epi16(xmm1, xmm3);    /* coefs 2,3 */
-
-                /* sum intermediate values, add offset, shift off fraction bits */
-                xmm0 = _mm_add_epi16(xmm0, xmm1);
-                xmm0 = _mm_add_epi16(xmm0, xmm_offset);
-                xmm0 = _mm_sra_epi16(xmm0, xmm_shift);
-#endif
-                /* store 8 16-bit words */
-                if (col >= 8) {
-                    _mm_storeu_si128((__m128i *)pDst, xmm0);
-                    pSrc += 8;
-                    pDst += 8;
-                    col -= 8;
-                    continue;
-                }
-
-                /* store 2, 4, or 6 16-bit words - should compile to single compare with jg, je, jl */
-                if (col > 4) {
-                    _mm_storel_epi64((__m128i *)pDst, xmm0);
-                    *(int *)(pDst+4) = _mm_extract_epi32(xmm0, 2);
-                } else if (col == 4) {
-                    _mm_storel_epi64((__m128i *)pDst, xmm0);
-                } else {
-                    *(int *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
-                }
-                break;
+            /* add offset, shift off fraction bits */
+            if (shift > 0) {
+                xmm0 = _mm_add_epi16(xmm0, _mm_set1_epi16( (1<<shift)>>1 ));
+                xmm0 = _mm_srai_epi16(xmm0, shift);
             }
 
-            pSrcRef += srcPitch;
-            pDstRef += dstPitch;
-        } while (--height);
-    }
-
-    /* luma, vertical, 8-bit input, 16-bit output 
-    * NOTE: ICL seems to spill a couple of xmm registers to stack unnecessarily
-    */
-    void MAKE_NAME(h265_InterpLuma_s8_d16_V)(INTERP_S8_D16_PARAMETERS_LIST)
-    {
-        int row, col;
-        const unsigned char *pSrcRef = pSrc;
-        short *pDstRef = pDst;
-        const signed char* coeffs;
-        __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
-        ALIGN_DECL(16) signed char offsetTab[16], shiftTab[16];
-
-        coeffs = filtTabLuma_S8[4 * (tab_index-1)];
-
-        /* cache offset and shift registers since we will run out of xmm registers */
-        xmm0 = _mm_cvtsi32_si128( ((unsigned int)offset << 16) | (unsigned int)(offset) );
-        xmm0 = _mm_shuffle_epi32(xmm0, 0x00);
-        _mm_storeu_si128((__m128i*)offsetTab, xmm0);
-
-        xmm0 = _mm_cvtsi32_si128(shift);
-        _mm_storeu_si128((__m128i*)shiftTab, xmm0);
-
-        /* calculate 8 outputs per inner loop, working vertically */
-        col = width;
-        do {
-            row = height;
-            pSrc = pSrcRef;
-            pDst = pDstRef;
-
-            /* start by loading 8 8-bit pixels from rows 0-6 */
-            xmm0 = _mm_loadl_epi64((__m128i*)(pSrc + 0*srcPitch));
-            xmm1 = _mm_loadl_epi64((__m128i*)(pSrc + 1*srcPitch));
-            xmm2 = _mm_loadl_epi64((__m128i*)(pSrc + 2*srcPitch));
-            xmm3 = _mm_loadl_epi64((__m128i*)(pSrc + 3*srcPitch));
-            xmm4 = _mm_loadl_epi64((__m128i*)(pSrc + 4*srcPitch));
-            xmm5 = _mm_loadl_epi64((__m128i*)(pSrc + 5*srcPitch));
-            xmm6 = _mm_loadl_epi64((__m128i*)(pSrc + 6*srcPitch));
-
-            do {
-                /* interleave rows 0,1 and multiply by coefs 0,1 */
-                xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);
-                xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i*)(coeffs +  0));
-
-                /* interleave rows 2,3 and multiply by coefs 2,3 */
-                xmm7 = xmm2;
-                xmm7 = _mm_unpacklo_epi8(xmm7, xmm3);
-                xmm7 = _mm_maddubs_epi16(xmm7, *(__m128i*)(coeffs + 16));
-                xmm0 = _mm_add_epi16(xmm0, xmm7);
-
-                /* interleave rows 4,5 and multiply by coefs 4,5 */
-                xmm7 = xmm4;
-                xmm7 = _mm_unpacklo_epi8(xmm7, xmm5);
-                xmm7 = _mm_maddubs_epi16(xmm7, *(__m128i*)(coeffs + 32));
-                xmm0 = _mm_add_epi16(xmm0, xmm7);
-
-                /* interleave rows 6,7 and multiply by coefs 6,7 */
-                xmm7 = _mm_loadl_epi64((__m128i*)(pSrc + 7*srcPitch));    /* load row 7 */
-                xmm6 = _mm_unpacklo_epi8(xmm6, xmm7);
-                xmm6 = _mm_maddubs_epi16(xmm6, *(__m128i*)(coeffs + 48));
-                xmm0 = _mm_add_epi16(xmm0, xmm6);
-                xmm6 = _mm_loadl_epi64((__m128i*)(pSrc + 6*srcPitch));    /* save for next time, not enough registers to avoid reload */
-
-                /* add offset, shift off fraction bits */
-                xmm0 = _mm_add_epi16(xmm0, *(__m128i*)offsetTab);
-                xmm0 = _mm_sra_epi16(xmm0, *(__m128i*)shiftTab);
-
-                /* store 4 or 8 16-bit words */
-                if (col >= 8)
-                    _mm_storeu_si128((__m128i*)pDst, xmm0);
-                else
-                    _mm_storel_epi64((__m128i*)pDst, xmm0);
-
-                /* shift row registers (1->0, 2->1, etc.) */
-                xmm0 = xmm1;
-                xmm1 = xmm2;
-                xmm2 = xmm3;
-                xmm3 = xmm4;
-                xmm4 = xmm5;
-                xmm5 = xmm6;
-                xmm6 = xmm7;
-
-                pSrc += srcPitch;
-                pDst += dstPitch;
-            } while (--row);
-
-            col -= 8;
-            pSrcRef += 8;
-            pDstRef += 8;
-        } while (col > 0);
-    }
-
-    /* luma, vertical, 8-bit input, 16-bit output */
-    void MAKE_NAME(h265_InterpChroma_s8_d16_V)(INTERP_S8_D16_PARAMETERS_LIST)
-    {
-        int row, col;
-        const unsigned char *pSrcRef = pSrc;
-        short *pDstRef = pDst;
-        const signed char* coeffs;
-        __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm7;    /* let compiler decide how to use xmm vs. stack */
-        __m128i xmm_offset, xmm_shift;
-
-        coeffs = filtTabChroma_S8[2 * (tab_index-1)];
-
-        xmm_offset = _mm_cvtsi32_si128( ((unsigned int)offset << 16) | (unsigned int)(offset) );
-        xmm_offset = _mm_shuffle_epi32(xmm_offset, 0x00);
-        xmm_shift = _mm_cvtsi32_si128(shift);
-
-        xmm4 = _mm_load_si128((__m128i *)(coeffs +  0));
-        xmm5 = _mm_load_si128((__m128i *)(coeffs + 16));
-
-        /* calculate 8 outputs per inner loop, working vertically */
-        col = width;
-        do {
-            pSrc = pSrcRef;
-            pDst = pDstRef;
-            row = height;
-
-            /* start by loading 8 8-bit pixels from rows 0-2 */
-            xmm0 = _mm_loadl_epi64((__m128i*)(pSrc + 0*srcPitch));
-            xmm1 = _mm_loadl_epi64((__m128i*)(pSrc + 1*srcPitch));
-            xmm2 = _mm_loadl_epi64((__m128i*)(pSrc + 2*srcPitch));
-
-            do {
-                /* load row 3 */
-                xmm3 = _mm_loadl_epi64((__m128i*)(pSrc + 3*srcPitch));
-
-                /* interleave rows 0,1 and multiply by coefs 0,1 */
-                xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);
-                xmm0 = _mm_maddubs_epi16(xmm0, xmm4);
-
-                /* interleave rows 2,3 and multiply by coefs 2,3 */
-                xmm7 = xmm2;
-                xmm7 = _mm_unpacklo_epi8(xmm7, xmm3);
-                xmm7 = _mm_maddubs_epi16(xmm7, xmm5);
-                xmm0 = _mm_add_epi16(xmm0, xmm7);
-
-                /* add offset, shift off fraction bits */
-                xmm0 = _mm_add_epi16(xmm0, xmm_offset);
-                xmm0 = _mm_sra_epi16(xmm0, xmm_shift);
-
-                /* store 2, 4, 6 or 8 16-bit words */
-                if (col >= 8) {
-                    _mm_storeu_si128((__m128i*)pDst, xmm0);
-                } else if (col == 6) {
-                    _mm_storel_epi64((__m128i *)pDst, xmm0);
-                    *(int *)(pDst+4) = _mm_extract_epi32(xmm0, 2);
-                } else if (col == 4) {
-                    _mm_storel_epi64((__m128i*)pDst, xmm0);
-                } else {
-                    *(int *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
-                }
-
-                /* shift row registers (1->0, 2->1, etc.) */
-                xmm0 = xmm1;
-                xmm1 = xmm2;
-                xmm2 = xmm3;
-
-                pSrc += srcPitch;
-                pDst += dstPitch;
-            } while (--row);
-
-            col -= 8;
-            pSrcRef += 8;
-            pDstRef += 8;
-        } while (col > 0);
-    }
-
-    /* luma, vertical, 16-bit input, 16-bit output */
-    void MAKE_NAME(h265_InterpLuma_s16_d16_V)(INTERP_S16_D16_PARAMETERS_LIST)
-    {
-        int row, col;
-        const short *pSrcRef = pSrc;
-        short *pDstRef = pDst;
-        const signed char* coeffs;
-        __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
-        ALIGN_DECL(16) signed char offsetTab[16], shiftTab[16];
-
-        coeffs = (const signed char *)filtTabLuma_S16[4 * (tab_index-1)];
-
-        xmm0 = _mm_cvtsi32_si128(offset);
-        xmm0 = _mm_shuffle_epi32(xmm0, 0x00);
-        _mm_storeu_si128((__m128i*)offsetTab, xmm0);
-
-        xmm0 = _mm_cvtsi32_si128(shift);
-        _mm_storeu_si128((__m128i*)shiftTab, xmm0);
-
-        /* always calculates 4 outputs per inner loop, working vertically */
-        col = width;
-        do {
-            row = height;
-            pSrc = pSrcRef;
-            pDst = pDstRef;
-
-            /* start by loading 4 16-bit pixels from rows 0-6 */
-            xmm0 = _mm_loadl_epi64((__m128i*)(pSrc + 0*srcPitch));
-            xmm1 = _mm_loadl_epi64((__m128i*)(pSrc + 1*srcPitch));
-            xmm2 = _mm_loadl_epi64((__m128i*)(pSrc + 2*srcPitch));
-            xmm3 = _mm_loadl_epi64((__m128i*)(pSrc + 3*srcPitch));
-            xmm4 = _mm_loadl_epi64((__m128i*)(pSrc + 4*srcPitch));
-            xmm5 = _mm_loadl_epi64((__m128i*)(pSrc + 5*srcPitch));
-            xmm6 = _mm_loadl_epi64((__m128i*)(pSrc + 6*srcPitch));
-
-            do {
-                /* interleave rows 0,1 and multiply by coefs 0,1 */
-                xmm0 = _mm_unpacklo_epi16(xmm0, xmm1);
-                xmm0 = _mm_madd_epi16(xmm0, *(__m128i*)(coeffs +  0));
-
-                /* interleave rows 2,3 and multiply by coefs 2,3 */
-                xmm7 = xmm2;
-                xmm7 = _mm_unpacklo_epi16(xmm7, xmm3);
-                xmm7 = _mm_madd_epi16(xmm7, *(__m128i*)(coeffs + 16));
-                xmm0 = _mm_add_epi32(xmm0, xmm7);
-
-                /* interleave rows 4,5 and multiply by coefs 4,5 */
-                xmm7 = xmm4;
-                xmm7 = _mm_unpacklo_epi16(xmm7, xmm5);
-                xmm7 = _mm_madd_epi16(xmm7, *(__m128i*)(coeffs + 32));
-                xmm0 = _mm_add_epi32(xmm0, xmm7);
-
-                /* interleave rows 6,7 and multiply by coefs 6,7 */
-                xmm7 = _mm_loadl_epi64((__m128i*)(pSrc + 7*srcPitch));    /* load row 7 */
-                xmm6 = _mm_unpacklo_epi16(xmm6, xmm7);
-                xmm6 = _mm_madd_epi16(xmm6, *(__m128i*)(coeffs + 48));
-                xmm0 = _mm_add_epi32(xmm0, xmm6);
-                xmm6 = _mm_loadl_epi64((__m128i*)(pSrc + 6*srcPitch));    /* save for next time, not enough registers to avoid reload */
-
-                /* add offset, shift off fraction bits, clip from 32 to 16 bits */
-                xmm0 = _mm_add_epi32(xmm0, *(__m128i*)offsetTab);
-                xmm0 = _mm_sra_epi32(xmm0, *(__m128i*)shiftTab);
-                xmm0 = _mm_packs_epi32(xmm0, xmm0);
-
-                /* always store 4 16-bit values */
+            /* store 4 or 8 16-bit words */
+            if (widthMul == 8)
+                _mm_storeu_si128((__m128i*)pDst, xmm0);
+            else if (widthMul == 4)
                 _mm_storel_epi64((__m128i*)pDst, xmm0);
 
-                /* shift row registers (1->0, 2->1, etc.) */
-                xmm0 = xmm1;
-                xmm1 = xmm2;
-                xmm2 = xmm3;
-                xmm3 = xmm4;
-                xmm4 = xmm5;
-                xmm5 = xmm6;
-                xmm6 = xmm7;
+            /* shift interleaved row registers (23->01, 45->23, etc.) */
+            xmm0 = xmm1;
+            xmm1 = xmm2;
+            xmm2 = xmm3;
 
-                pSrc += srcPitch;
-                pDst += dstPitch;
-            } while (--row);
+            pSrc += 2*srcPitch;
+            pDst += 2*dstPitch;
+        }
 
-            col -= 4;
-            pSrcRef += 4;
-            pDstRef += 4;
-        } while (col > 0);
-    }
+        /* reset pointers to overall row 1 */
+        pSrc = pSrcRef + srcPitch;
+        pDst = pDstRef + dstPitch;
 
-    /* chroma, vertical, 16-bit input, 16-bit output */
-    void MAKE_NAME(h265_InterpChroma_s16_d16_V)(INTERP_S16_D16_PARAMETERS_LIST)
-    {
-        int row, col;
-        const short *pSrcRef = pSrc;
-        short *pDstRef = pDst;
-        const signed char* coeffs;
-        __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm7;    /* let compiler decide how to use xmm vs. stack */
-        __m128i xmm_offset, xmm_shift;
+        /* load 8 8-bit pixels from rows 0-5 */
+        xmm0 = _mm_loadl_epi64((__m128i*)(pSrc + 0*srcPitch));
+        xmm4 = _mm_loadl_epi64((__m128i*)(pSrc + 1*srcPitch));
+        xmm1 = _mm_loadl_epi64((__m128i*)(pSrc + 2*srcPitch));
+        xmm5 = _mm_loadl_epi64((__m128i*)(pSrc + 3*srcPitch));
+        xmm2 = _mm_loadl_epi64((__m128i*)(pSrc + 4*srcPitch));
+        xmm6 = _mm_loadl_epi64((__m128i*)(pSrc + 5*srcPitch));
+        
+        xmm0 = _mm_unpacklo_epi8(xmm0, xmm4);    /* interleave 01 */
+        xmm1 = _mm_unpacklo_epi8(xmm1, xmm5);    /* interleave 23 */
+        xmm2 = _mm_unpacklo_epi8(xmm2, xmm6);    /* interleave 45 */
 
-        coeffs = (const signed char *)filtTabChroma_S16[2 * (tab_index-1)];
+        /* process odd rows */
+        for (row = 1; row < height; row += 2) {
+            xmm3 = _mm_loadl_epi64((__m128i*)(pSrc + 6*srcPitch));
+            xmm7 = _mm_loadl_epi64((__m128i*)(pSrc + 7*srcPitch));
+            xmm3 = _mm_unpacklo_epi8(xmm3, xmm7);    /* interleave 67 */
 
-        xmm_offset = _mm_cvtsi32_si128(offset);
-        xmm_offset = _mm_shuffle_epi32(xmm_offset, 0x00);
-        xmm_shift = _mm_cvtsi32_si128(shift);
+            xmm4 = xmm1;
+            xmm5 = xmm2;
+            xmm6 = xmm3;
 
-        xmm4 = _mm_load_si128((__m128i *)(coeffs +  0));
-        xmm5 = _mm_load_si128((__m128i *)(coeffs + 16));
+            /* multiply interleaved rows by interleaved coefs, sum into acc */
+            xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i*)(coeffs +  0));
+            xmm4 = _mm_maddubs_epi16(xmm4, *(__m128i*)(coeffs + 16));
+            xmm0 = _mm_add_epi16(xmm0, xmm4);
+            xmm5 = _mm_maddubs_epi16(xmm5, *(__m128i*)(coeffs + 32));
+            xmm0 = _mm_add_epi16(xmm0, xmm5);
+            xmm6 = _mm_maddubs_epi16(xmm6, *(__m128i*)(coeffs + 48));
+            xmm0 = _mm_add_epi16(xmm0, xmm6);
 
-        /* always calculates 4 outputs per inner loop, working vertically */
-        col = width;
-        do {
-            pSrc = pSrcRef;
-            pDst = pDstRef;
-            row = height;
-
-            /* start by loading 8 8-bit pixels from rows 0-2 */
-            xmm0 = _mm_loadl_epi64((__m128i*)(pSrc + 0*srcPitch));
-            xmm1 = _mm_loadl_epi64((__m128i*)(pSrc + 1*srcPitch));
-            xmm2 = _mm_loadl_epi64((__m128i*)(pSrc + 2*srcPitch));
-
-            do {
-                /* load row 3 */
-                xmm3 = _mm_loadl_epi64((__m128i*)(pSrc + 3*srcPitch));
-
-                /* interleave rows 0,1 and multiply by coefs 0,1 */
-                xmm0 = _mm_unpacklo_epi16(xmm0, xmm1);
-                xmm0 = _mm_madd_epi16(xmm0, xmm4);
-
-                /* interleave rows 2,3 and multiply by coefs 2,3 */
-                xmm7 = xmm2;
-                xmm7 = _mm_unpacklo_epi16(xmm7, xmm3);
-                xmm7 = _mm_madd_epi16(xmm7, xmm5);
-                xmm0 = _mm_add_epi32(xmm0, xmm7);
-
-                /* add offset, shift off fraction bits, clip from 32 to 16 bits */
-                xmm0 = _mm_add_epi32(xmm0, xmm_offset);
-                xmm0 = _mm_sra_epi32(xmm0, xmm_shift);
-                xmm0 = _mm_packs_epi32(xmm0, xmm0);
-
-                /* store 2 or 4 16-bit values */
-                if (col >= 4)
-                    _mm_storel_epi64((__m128i*)pDst, xmm0);
-                else
-                    *(int *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
-
-                /* shift row registers (1->0, 2->1, etc.) */
-                xmm0 = xmm1;
-                xmm1 = xmm2;
-                xmm2 = xmm3;
-
-                pSrc += srcPitch;
-                pDst += dstPitch;
-            } while (--row);
-
-            col -= 4;
-            pSrcRef += 4;
-            pDstRef += 4;
-        } while (col > 0);
-    }
-
-    /* mode: AVERAGE_NO, just clip/pack 16-bit output to 8-bit 
-    * NOTE: could be optimized more, but is not used very often in practice
-    */
-    void MAKE_NAME(h265_AverageModeN)(INTERP_AVG_NONE_PARAMETERS_LIST)
-    {
-        int col;
-        short *pSrcRef = pSrc;
-        unsigned char *pDstRef = pDst;
-        __m128i xmm0;
-
-        do {
-            pSrc = pSrcRef;
-            pDst = pDstRef;
-            col = width;
-
-            while (col > 0) {
-                /* load 8 16-bit pixels, clip to 8-bit */
-                xmm0 = _mm_loadu_si128((__m128i *)pSrc);
-                xmm0 = _mm_packus_epi16(xmm0, xmm0);
-
-                /* store 8 pixels */
-                if (col >= 8) {
-                    _mm_storel_epi64((__m128i*)pDst, xmm0);
-                    pSrc += 8;
-                    pDst += 8;
-                    col -= 8;
-                    continue;
-                }
-
-                /* store 2, 4, or 6 pixels - should compile to single compare with jg, je, jl */
-                if (col > 4) {
-                    *(int   *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
-                    *(short *)(pDst+4) = (short)_mm_extract_epi16(xmm0, 2);
-                } else if (col == 4) {
-                    *(int   *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
-                } else {
-                    *(short *)(pDst+0) = (short)_mm_extract_epi16(xmm0, 0);
-                }
-                break;
+            /* add offset, shift off fraction bits */
+            if (shift > 0) {
+                xmm0 = _mm_add_epi16(xmm0, _mm_set1_epi16( (1<<shift)>>1 ));
+                xmm0 = _mm_srai_epi16(xmm0, shift);
             }
 
-            pSrcRef += srcPitch;
-            pDstRef += dstPitch;
-        } while (--height);
+            /* store 4 or 8 16-bit words */
+            if (widthMul == 8)
+                _mm_storeu_si128((__m128i*)pDst, xmm0);
+            else if (widthMul == 4)
+                _mm_storel_epi64((__m128i*)pDst, xmm0);
+
+            /* shift interleaved row registers (23->01, 45->23, etc.) */
+            xmm0 = xmm1;
+            xmm1 = xmm2;
+            xmm2 = xmm3;
+
+            pSrc += 2*srcPitch;
+            pDst += 2*dstPitch;
+        }
+        pSrcRef += widthMul;
+        pDstRef += widthMul;
+    }
+}
+
+/* luma, vertical, 8-bit input, 16-bit output */
+void MAKE_NAME(h265_InterpLuma_s8_d16_V)(INTERP_S8_D16_PARAMETERS_LIST)
+{
+    int rem;
+
+    VM_ASSERT( (shift == 0 && offset == 0) || (shift == 6 && offset == (1 << (shift-1))) );
+    VM_ASSERT( ((width & 0x03) == 0) && ((height & 0x01) == 0) );
+
+    rem = (width & 0x07);
+
+    width -= rem;
+    if (width > 0) {
+        if (shift == 0)
+            t_InterpLuma_s8_d16_V<8,0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);
+        else if (shift == 6)
+            t_InterpLuma_s8_d16_V<8,6>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);
+        pSrc += width;
+        pDst += width;
     }
 
-    /* mode: AVERAGE_FROM_PIC, load 8-bit pixels, extend to 16-bit, add to current output, clip/pack 16-bit to 8-bit */
-    void MAKE_NAME(h265_AverageModeP)(INTERP_AVG_PIC_PARAMETERS_LIST)
-    {
-        int col;
-        short *pSrcRef = pSrc;
-        unsigned char *pDstRef = pDst, *pAvgRef = pAvg;
-        __m128i xmm0, xmm1, xmm7;
+    if (rem > 0) {
+        if (shift == 0)
+            t_InterpLuma_s8_d16_V<4,0>(pSrc, srcPitch, pDst, dstPitch, tab_index, rem, height);
+        else if (shift == 6)
+            t_InterpLuma_s8_d16_V<4,6>(pSrc, srcPitch, pDst, dstPitch, tab_index, rem, height);
+    }
+}
 
-        xmm7 = _mm_set1_epi16(1 << 6);
-        do {
-            pSrc = pSrcRef;
-            pDst = pDstRef;
-            pAvg = pAvgRef;
-            col = width;
+template<int widthMul, int shift>
+static void t_InterpChroma_s8_d16_V(const unsigned char* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height)
+{
+    int row, col;
+    const unsigned char *pSrcRef = pSrc;
+    short *pDstRef = pDst;
+    const signed char* coeffs;
+    __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
 
-            while (col > 0) {
-                /* load 8 16-bit pixels from source */
-                xmm0 = _mm_loadu_si128((__m128i *)pSrc);
+    coeffs = (const signed char *)filtTabChroma_S8[2 * (tab_index-1)];
 
+    xmm6 = _mm_load_si128((__m128i *)(coeffs +  0));
+    xmm7 = _mm_load_si128((__m128i *)(coeffs + 16));
+
+    for (col = 0; col < width; col += widthMul) {
+        pSrc = pSrcRef;
+        pDst = pDstRef;
+
+        /* load 8 8-bit pixels from rows 0-2 */
+        xmm0 = _mm_loadl_epi64((__m128i*)(pSrc + 0*srcPitch));
+        xmm4 = _mm_loadl_epi64((__m128i*)(pSrc + 1*srcPitch));
+        xmm1 = _mm_loadl_epi64((__m128i*)(pSrc + 2*srcPitch));
+
+        xmm0 = _mm_unpacklo_epi8(xmm0, xmm4);    /* interleave 01 */
+        xmm4 = _mm_unpacklo_epi8(xmm4, xmm1);    /* interleave 12 */
+
+        /* enough registers to process two rows at a time (even and odd rows in parallel) */
+        for (row = 0; row < height; row += 2) {
+            xmm5 = _mm_loadl_epi64((__m128i*)(pSrc + 3*srcPitch));
+            xmm2 = _mm_loadl_epi64((__m128i*)(pSrc + 4*srcPitch));
+            xmm1 = _mm_unpacklo_epi8(xmm1, xmm5);    /* interleave 23 */
+            xmm5 = _mm_unpacklo_epi8(xmm5, xmm2);    /* interleave 34 */
+
+            xmm0 = _mm_maddubs_epi16(xmm0, xmm6);
+            xmm4 = _mm_maddubs_epi16(xmm4, xmm6);
+
+            xmm3 = xmm1;
+            xmm3 = _mm_maddubs_epi16(xmm3, xmm7);
+            xmm0 = _mm_add_epi16(xmm0, xmm3);
+
+            xmm3 = xmm5;
+            xmm3 = _mm_maddubs_epi16(xmm3, xmm7);
+            xmm4 = _mm_add_epi16(xmm4, xmm3);
+            
+            /* add offset, shift off fraction bits */
+            if (shift > 0) {
+                xmm0 = _mm_add_epi16(xmm0, _mm_set1_epi16( (1<<shift)>>1 ));
+                xmm4 = _mm_add_epi16(xmm4, _mm_set1_epi16( (1<<shift)>>1 ));
+            }
+            xmm0 = _mm_srai_epi16(xmm0, shift);
+            xmm4 = _mm_srai_epi16(xmm4, shift);
+
+            /* store 2, 4, 6 or 8 16-bit words */
+            if (widthMul == 8) {
+                _mm_storeu_si128((__m128i *)(pDst + 0*dstPitch), xmm0);
+                _mm_storeu_si128((__m128i *)(pDst + 1*dstPitch), xmm4);
+            } else if (widthMul == 6) {
+                *(int *)(pDst+0*dstPitch+0) = _mm_extract_epi32(xmm0, 0);
+                *(int *)(pDst+0*dstPitch+2) = _mm_extract_epi32(xmm0, 1);
+                *(int *)(pDst+0*dstPitch+4) = _mm_extract_epi32(xmm0, 2);
+                
+                *(int *)(pDst+1*dstPitch+0) = _mm_extract_epi32(xmm4, 0);
+                *(int *)(pDst+1*dstPitch+2) = _mm_extract_epi32(xmm4, 1);
+                *(int *)(pDst+1*dstPitch+4) = _mm_extract_epi32(xmm4, 2);
+            } else if (widthMul == 4) {
+                _mm_storel_epi64((__m128i *)(pDst + 0*dstPitch), xmm0);
+                _mm_storel_epi64((__m128i *)(pDst + 1*dstPitch), xmm4);
+            } else if (widthMul == 2) {
+                *(int *)(pDst+0*dstPitch+0) = _mm_cvtsi128_si32(xmm0);
+                *(int *)(pDst+1*dstPitch+0) = _mm_cvtsi128_si32(xmm4);
+            }
+
+            /* shift interleaved row registers */
+            xmm0 = xmm1;
+            xmm4 = xmm5;
+            xmm1 = xmm2;
+
+            pSrc += 2*srcPitch;
+            pDst += 2*dstPitch;
+        }
+        pSrcRef += widthMul;
+        pDstRef += widthMul;
+    }
+}
+
+/* chroma, vertical, 8-bit input, 16-bit output */
+void MAKE_NAME(h265_InterpChroma_s8_d16_V) ( INTERP_S8_D16_PARAMETERS_LIST )
+{
+    int rem;
+
+    VM_ASSERT( (shift == 0 && offset == 0) || (shift == 6 && offset == (1 << (shift-1))) );
+    VM_ASSERT( ((width & 0x01) == 0) && ((height & 0x01) == 0) );
+
+    rem = (width & 0x07);
+
+    width -= rem;
+    if (width > 0) {
+        if (shift == 0)
+            t_InterpChroma_s8_d16_V<8,0>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);
+        else if (shift == 6)
+            t_InterpChroma_s8_d16_V<8,6>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);
+        pSrc += width;
+        pDst += width;
+    }
+
+    if (rem == 4) {
+        if (shift == 0)
+            t_InterpChroma_s8_d16_V<4,0>(pSrc, srcPitch, pDst, dstPitch, tab_index, rem, height);
+        else if (shift == 6)
+            t_InterpChroma_s8_d16_V<4,6>(pSrc, srcPitch, pDst, dstPitch, tab_index, rem, height);
+    } else if (rem == 2) {
+        if (shift == 0)
+            t_InterpChroma_s8_d16_V<2,0>(pSrc, srcPitch, pDst, dstPitch, tab_index, rem, height);
+        else if (shift == 6)
+            t_InterpChroma_s8_d16_V<2,6>(pSrc, srcPitch, pDst, dstPitch, tab_index, rem, height);
+    } else if (rem == 6) {
+        if (shift == 0)
+            t_InterpChroma_s8_d16_V<6,0>(pSrc, srcPitch, pDst, dstPitch, tab_index, rem, height);
+        else if (shift == 6)
+            t_InterpChroma_s8_d16_V<6,6>(pSrc, srcPitch, pDst, dstPitch, tab_index, rem, height);
+    }
+}
+
+template<int shift>
+static void t_InterpLuma_s16_d16_V(const short* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height)
+{
+    int row, col;
+    const short *pSrcRef = pSrc;
+    short *pDstRef = pDst;
+    const signed char* coeffs;
+    __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
+
+    coeffs = (const signed char *)filtTabLuma_S16[4 * (tab_index-1)];
+
+    /* always calculates 4 outputs per inner loop, working vertically */
+    for (col = 0; col < width; col += 4) {
+        pSrc = pSrcRef;
+        pDst = pDstRef;
+
+        /* load 4 16-bit pixels from rows 0-6 */
+        xmm0 = _mm_loadl_epi64((__m128i*)(pSrc + 0*srcPitch));
+        xmm4 = _mm_loadl_epi64((__m128i*)(pSrc + 1*srcPitch));
+        xmm1 = _mm_loadl_epi64((__m128i*)(pSrc + 2*srcPitch));
+        xmm5 = _mm_loadl_epi64((__m128i*)(pSrc + 3*srcPitch));
+        xmm2 = _mm_loadl_epi64((__m128i*)(pSrc + 4*srcPitch));
+        xmm6 = _mm_loadl_epi64((__m128i*)(pSrc + 5*srcPitch));
+        
+        xmm0 = _mm_unpacklo_epi16(xmm0, xmm4);    /* interleave 01 */
+        xmm1 = _mm_unpacklo_epi16(xmm1, xmm5);    /* interleave 23 */
+        xmm2 = _mm_unpacklo_epi16(xmm2, xmm6);    /* interleave 45 */
+
+        /* process even rows first (reduce row interleaving) */
+        for (row = 0; row < height; row += 2) {
+            xmm3 = _mm_loadl_epi64((__m128i*)(pSrc + 6*srcPitch));
+            xmm7 = _mm_loadl_epi64((__m128i*)(pSrc + 7*srcPitch));
+            xmm3 = _mm_unpacklo_epi16(xmm3, xmm7);    /* interleave 67 */
+
+            xmm4 = xmm1;
+            xmm5 = xmm2;
+            xmm6 = xmm3;
+
+            /* multiply interleaved rows by interleaved coefs, sum into acc */
+            xmm0 = _mm_madd_epi16(xmm0, *(__m128i*)(coeffs +  0));
+            xmm4 = _mm_madd_epi16(xmm4, *(__m128i*)(coeffs + 16));
+            xmm0 = _mm_add_epi32(xmm0, xmm4);
+            xmm5 = _mm_madd_epi16(xmm5, *(__m128i*)(coeffs + 32));
+            xmm0 = _mm_add_epi32(xmm0, xmm5);
+            xmm6 = _mm_madd_epi16(xmm6, *(__m128i*)(coeffs + 48));
+            xmm0 = _mm_add_epi32(xmm0, xmm6);
+
+            /* add offset, shift off fraction bits, clip from 32 to 16 bits */
+            if (shift == 12)
+                xmm0 = _mm_add_epi32(xmm0, _mm_set1_epi32(1 << (shift - 1)));
+            xmm0 = _mm_srai_epi32(xmm0, shift);
+            xmm0 = _mm_packs_epi32(xmm0, xmm0);
+
+            /* always store 4 16-bit values */
+            _mm_storel_epi64((__m128i*)pDst, xmm0);
+
+            /* shift interleaved row registers */
+            xmm0 = xmm1;
+            xmm1 = xmm2;
+            xmm2 = xmm3;
+
+            pSrc += 2*srcPitch;
+            pDst += 2*dstPitch;
+        }
+
+        /* reset pointers to overall row 1 */
+        pSrc = pSrcRef + srcPitch;
+        pDst = pDstRef + dstPitch;
+
+        /* load 4 16-bit pixels from rows 0-6 */
+        xmm0 = _mm_loadl_epi64((__m128i*)(pSrc + 0*srcPitch));
+        xmm4 = _mm_loadl_epi64((__m128i*)(pSrc + 1*srcPitch));
+        xmm1 = _mm_loadl_epi64((__m128i*)(pSrc + 2*srcPitch));
+        xmm5 = _mm_loadl_epi64((__m128i*)(pSrc + 3*srcPitch));
+        xmm2 = _mm_loadl_epi64((__m128i*)(pSrc + 4*srcPitch));
+        xmm6 = _mm_loadl_epi64((__m128i*)(pSrc + 5*srcPitch));
+        
+        xmm0 = _mm_unpacklo_epi16(xmm0, xmm4);    /* interleave 01 */
+        xmm1 = _mm_unpacklo_epi16(xmm1, xmm5);    /* interleave 23 */
+        xmm2 = _mm_unpacklo_epi16(xmm2, xmm6);    /* interleave 45 */
+
+        /* process odd rows */
+        for (row = 1; row < height; row += 2) {
+            xmm3 = _mm_loadl_epi64((__m128i*)(pSrc + 6*srcPitch));
+            xmm7 = _mm_loadl_epi64((__m128i*)(pSrc + 7*srcPitch));
+            xmm3 = _mm_unpacklo_epi16(xmm3, xmm7);    /* interleave 67 */
+
+            xmm4 = xmm1;
+            xmm5 = xmm2;
+            xmm6 = xmm3;
+
+            /* multiply interleaved rows by interleaved coefs, sum into acc */
+            xmm0 = _mm_madd_epi16(xmm0, *(__m128i*)(coeffs +  0));
+            xmm4 = _mm_madd_epi16(xmm4, *(__m128i*)(coeffs + 16));
+            xmm0 = _mm_add_epi32(xmm0, xmm4);
+            xmm5 = _mm_madd_epi16(xmm5, *(__m128i*)(coeffs + 32));
+            xmm0 = _mm_add_epi32(xmm0, xmm5);
+            xmm6 = _mm_madd_epi16(xmm6, *(__m128i*)(coeffs + 48));
+            xmm0 = _mm_add_epi32(xmm0, xmm6);
+
+            /* add offset, shift off fraction bits, clip from 32 to 16 bits */
+            if (shift == 12)
+                xmm0 = _mm_add_epi32(xmm0, _mm_set1_epi32(1 << (shift - 1)));
+            xmm0 = _mm_srai_epi32(xmm0, shift);
+            xmm0 = _mm_packs_epi32(xmm0, xmm0);
+
+            /* always store 4 16-bit values */
+            _mm_storel_epi64((__m128i*)pDst, xmm0);
+
+            /* shift interleaved row registers */
+            xmm0 = xmm1;
+            xmm1 = xmm2;
+            xmm2 = xmm3;
+
+            pSrc += 2*srcPitch;
+            pDst += 2*dstPitch;
+        }
+        pSrcRef += 4;
+        pDstRef += 4;
+    }
+}
+
+/* luma, vertical, 16-bit input, 16-bit output */
+void MAKE_NAME(h265_InterpLuma_s16_d16_V)(INTERP_S16_D16_PARAMETERS_LIST)
+{
+    VM_ASSERT( (shift == 6 && offset == 0) || (shift == 12 && offset == (1 << (shift-1))) );
+    VM_ASSERT( ((width & 0x03) == 0) && ((height & 0x01) == 0) );
+
+    if (shift == 6)
+        t_InterpLuma_s16_d16_V< 6>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);
+    else if (shift == 12)
+        t_InterpLuma_s16_d16_V<12>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);
+}
+
+template<int widthMul, int shift>
+static void t_InterpChroma_s16_d16_V(const short* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height)
+{
+    int row, col;
+    const short *pSrcRef = pSrc;
+    short *pDstRef = pDst;
+    const signed char* coeffs;
+    __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
+
+    coeffs = (const signed char *)filtTabChroma_S16[2 * (tab_index-1)];
+
+    xmm6 = _mm_load_si128((__m128i *)(coeffs +  0));
+    xmm7 = _mm_load_si128((__m128i *)(coeffs + 16));
+
+    /* always calculates 4 outputs per inner loop, working vertically */
+    for (col = 0; col < width; col += widthMul) {
+        pSrc = pSrcRef;
+        pDst = pDstRef;
+
+        /* load 8 8-bit pixels from rows 0-2 */
+        xmm0 = _mm_loadl_epi64((__m128i*)(pSrc + 0*srcPitch));
+        xmm4 = _mm_loadl_epi64((__m128i*)(pSrc + 1*srcPitch));
+        xmm1 = _mm_loadl_epi64((__m128i*)(pSrc + 2*srcPitch));
+
+        xmm0 = _mm_unpacklo_epi16(xmm0, xmm4);    /* interleave 01 */
+        xmm4 = _mm_unpacklo_epi16(xmm4, xmm1);    /* interleave 12 */
+
+        /* enough registers to process two rows at a time (even and odd rows in parallel) */
+        for (row = 0; row < height; row += 2) {
+            xmm5 = _mm_loadl_epi64((__m128i*)(pSrc + 3*srcPitch));
+            xmm2 = _mm_loadl_epi64((__m128i*)(pSrc + 4*srcPitch));
+            xmm1 = _mm_unpacklo_epi16(xmm1, xmm5);    /* interleave 23 */
+            xmm5 = _mm_unpacklo_epi16(xmm5, xmm2);    /* interleave 34 */
+
+            xmm0 = _mm_madd_epi16(xmm0, xmm6);
+            xmm4 = _mm_madd_epi16(xmm4, xmm6);
+
+            xmm3 = xmm1;
+            xmm3 = _mm_madd_epi16(xmm3, xmm7);
+            xmm0 = _mm_add_epi32(xmm0, xmm3);
+
+            xmm3 = xmm5;
+            xmm3 = _mm_madd_epi16(xmm3, xmm7);
+            xmm4 = _mm_add_epi32(xmm4, xmm3);
+            
+            /* add offset, shift off fraction bits, clip from 32 to 16 bits */
+            if (shift == 12) {
+                xmm0 = _mm_add_epi32(xmm0, _mm_set1_epi32(1 << (shift - 1)));
+                xmm4 = _mm_add_epi32(xmm4, _mm_set1_epi32(1 << (shift - 1)));
+            }
+            xmm0 = _mm_srai_epi32(xmm0, shift);
+            xmm0 = _mm_packs_epi32(xmm0, xmm0);
+            xmm4 = _mm_srai_epi32(xmm4, shift);
+            xmm4 = _mm_packs_epi32(xmm4, xmm4);
+
+            /* store 2 or 4 16-bit values */
+            if (widthMul == 4) {
+                _mm_storel_epi64((__m128i*)(pDst + 0*dstPitch), xmm0);
+                _mm_storel_epi64((__m128i*)(pDst + 1*dstPitch), xmm4);
+            } else if (widthMul == 2) {
+                *(int *)(pDst + 0*dstPitch) = _mm_cvtsi128_si32(xmm0);
+                *(int *)(pDst + 1*dstPitch) = _mm_cvtsi128_si32(xmm4);
+            }
+
+            /* shift interleaved row registers */
+            xmm0 = xmm1;
+            xmm4 = xmm5;
+            xmm1 = xmm2;
+
+            pSrc += 2*srcPitch;
+            pDst += 2*dstPitch;
+        }
+        pSrcRef += widthMul;
+        pDstRef += widthMul;
+    }
+}
+
+/* chroma, vertical, 16-bit input, 16-bit output */
+void MAKE_NAME(h265_InterpChroma_s16_d16_V)(INTERP_S16_D16_PARAMETERS_LIST)
+{
+    int rem;
+
+    VM_ASSERT( (shift == 6 && offset == 0) || (shift == 12 && offset == (1 << (shift-1))) );
+    VM_ASSERT( ((width & 0x01) == 0) && ((height & 0x01) == 0) );
+
+    rem = (width & 0x03);
+
+    width -= rem;
+    if (width > 0) {
+        if (shift == 6)
+            t_InterpChroma_s16_d16_V<4,  6>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);
+        else if (shift == 12)
+            t_InterpChroma_s16_d16_V<4, 12>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);
+        pSrc += width;
+        pDst += width;
+    }
+
+    if (rem == 2) {
+        if (shift == 6)
+            t_InterpChroma_s16_d16_V<2,  6>(pSrc, srcPitch, pDst, dstPitch, tab_index, rem, height);
+        else if (shift == 12)
+            t_InterpChroma_s16_d16_V<2, 12>(pSrc, srcPitch, pDst, dstPitch, tab_index, rem, height);
+    }
+}
+
+/* single kernel for all 3 averaging modes 
+ * template parameter avgBytes = [0,1,2] determines mode at compile time (no branches in inner loop)
+ */
+template <int widthMul, int avgBytes>
+static void t_AverageMode(short *pSrc, unsigned int srcPitch, void *vpAvg, unsigned int avgPitch, unsigned char *pDst, unsigned int dstPitch, int width, int height)
+{
+    int col;
+    unsigned char *pAvgC;
+    short *pAvgS;
+    __m128i xmm0, xmm1, xmm7;
+
+    if (avgBytes == 1)
+        pAvgC = (unsigned char *)vpAvg;
+    else if (avgBytes == 2)
+        pAvgS = (short *)vpAvg;
+
+    xmm7 = _mm_set1_epi16(1 << 6);
+    do {
+        for (col = 0; col < width; col += widthMul) {
+            /* load 8 16-bit pixels from source */
+            xmm0 = _mm_loadu_si128((__m128i *)(pSrc + col));
+                
+            if (avgBytes == 1) {
                 /* load 8 8-bit pixels from avg buffer, zero extend to 16-bit, normalize fraction bits */
-                xmm1 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(pAvg));    
+                xmm1 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(pAvgC + col));    
                 xmm1 = _mm_slli_epi16(xmm1, 6);
 
-                /* add, round, clip back to 8 bits */
                 xmm1 = _mm_adds_epi16(xmm1, xmm7);
                 xmm0 = _mm_adds_epi16(xmm0, xmm1);
                 xmm0 = _mm_srai_epi16(xmm0, 7);
-                xmm0 = _mm_packus_epi16(xmm0, xmm0);
+            } else if (avgBytes == 2) {
+                /* load 8 16-bit pixels from from avg buffer */
+                xmm1 = _mm_loadu_si128((__m128i *)(pAvgS + col));
 
-                /* store 8 pixels */
-                if (col >= 8) {
-                    _mm_storel_epi64((__m128i*)pDst, xmm0);
-                    pSrc += 8;
-                    pDst += 8;
-                    pAvg += 8;
-                    col -= 8;
-                    continue;
-                }
-
-                /* store 2, 4, or 6 pixels - should compile to single compare with jg, je, jl */
-                if (col > 4) {
-                    *(int   *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
-                    *(short *)(pDst+4) = (short)_mm_extract_epi16(xmm0, 2);
-                } else if (col == 4) {
-                    *(int   *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
-                } else {
-                    *(short *)(pDst+0) = (short)_mm_extract_epi16(xmm0, 0);
-                }
-                break;
-            }
-
-            pSrcRef += srcPitch;
-            pDstRef += dstPitch;
-            pAvgRef += avgPitch;
-        } while (--height);
-    }
-
-    /* mode: AVERAGE_FROM_BUF, load 16-bit pixels, add to current output, clip/pack 16-bit to 8-bit */
-    void MAKE_NAME(h265_AverageModeB)(INTERP_AVG_BUF_PARAMETERS_LIST)
-    {
-        int col;
-        short *pSrcRef = pSrc, *pAvgRef = pAvg;
-        unsigned char *pDstRef = pDst;
-        __m128i xmm0, xmm1, xmm7;
-
-        xmm7 = _mm_set1_epi16(1 << 6);
-        do {
-            pSrc = pSrcRef;
-            pDst = pDstRef;
-            pAvg = pAvgRef;
-            col = width;
-
-            while (col > 0) {
-                /* load 8 16-bit pixels from source and from avg */
-                xmm0 = _mm_loadu_si128((__m128i *)pSrc);
-                xmm1 = _mm_loadu_si128((__m128i *)pAvg);
-
-                /* add, round, clip back to 8 bits */
                 xmm1 = _mm_adds_epi16(xmm1, xmm7);
                 xmm0 = _mm_adds_epi16(xmm0, xmm1);
                 xmm0 = _mm_srai_epi16(xmm0, 7);
-                xmm0 = _mm_packus_epi16(xmm0, xmm0);
-
-                /* store 8 pixels */
-                if (col >= 8) {
-                    _mm_storel_epi64((__m128i*)pDst, xmm0);
-                    pSrc += 8;
-                    pDst += 8;
-                    pAvg += 8;
-                    col -= 8;
-                    continue;
-                }
-
-                /* store 2, 4, or 6 pixels - should compile to single compare with jg, je, jl */
-                if (col > 4) {
-                    *(int   *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
-                    *(short *)(pDst+4) = (short)_mm_extract_epi16(xmm0, 2);
-                } else if (col == 4) {
-                    *(int   *)(pDst+0) = _mm_cvtsi128_si32(xmm0);
-                } else {
-                    *(short *)(pDst+0) = (short)_mm_extract_epi16(xmm0, 0);
-                }
-                break;
             }
 
-            pSrcRef += srcPitch;
-            pDstRef += dstPitch;
-            pAvgRef += avgPitch;
-        } while (--height);
+            xmm0 = _mm_packus_epi16(xmm0, xmm0);
+
+
+            /* store 8 pixels */
+            if (widthMul == 8) {
+                _mm_storel_epi64((__m128i*)(pDst + col), xmm0);
+            } else if (widthMul == 6) {
+                *(short *)(pDst+col+0) = (short)_mm_extract_epi16(xmm0, 0);
+                *(short *)(pDst+col+2) = (short)_mm_extract_epi16(xmm0, 1);
+                *(short *)(pDst+col+4) = (short)_mm_extract_epi16(xmm0, 2);
+            } else if (widthMul == 4) {
+                *(int   *)(pDst+col+0) = _mm_cvtsi128_si32(xmm0);
+            } else if (widthMul == 2) {
+                *(short *)(pDst+col+0) = (short)_mm_extract_epi16(xmm0, 0);
+            }
+        }
+        pSrc += srcPitch;
+        pDst += dstPitch;
+
+        if (avgBytes == 1)
+            pAvgC += avgPitch;
+        else if (avgBytes == 2)
+            pAvgS += avgPitch;
+
+    } while (--height);
+}
+    
+/* mode: AVERAGE_NO, just clip/pack 16-bit output to 8-bit */
+void MAKE_NAME(h265_AverageModeN)(INTERP_AVG_NONE_PARAMETERS_LIST)
+{
+    if ( (width & 0x07) == 0 ) {
+        /* fast path - multiple of 8 */
+        t_AverageMode<8, 0>(pSrc, srcPitch, 0, 0, pDst, dstPitch, width, height);
+        return;
     }
+
+    switch (width) {
+    case  4: 
+        t_AverageMode<4, 0>(pSrc, srcPitch, 0, 0, pDst, dstPitch, 4, height); 
+        return;
+    case 12: 
+        t_AverageMode<8, 0>(pSrc,   srcPitch, 0, 0, pDst,   dstPitch, 8, height); 
+        t_AverageMode<4, 0>(pSrc+8, srcPitch, 0, 0, pDst+8, dstPitch, 4, height); 
+        return;
+    case  2: 
+        t_AverageMode<2, 0>(pSrc, srcPitch, 0, 0, pDst, dstPitch, 2, height); 
+        return;
+    case  6: 
+        t_AverageMode<6, 0>(pSrc, srcPitch, 0, 0, pDst, dstPitch, 6, height); 
+        return;
+    }
+}
+
+/* mode: AVERAGE_FROM_PIC, load 8-bit pixels, extend to 16-bit, add to current output, clip/pack 16-bit to 8-bit */
+void MAKE_NAME(h265_AverageModeP)(INTERP_AVG_PIC_PARAMETERS_LIST)
+{
+    if ( (width & 0x07) == 0 ) {
+        /* fast path - multiple of 8 */
+        t_AverageMode<8, sizeof(unsigned char)>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, width, height);
+        return;
+    }
+
+    switch (width) {
+    case  4: 
+        t_AverageMode<4, sizeof(unsigned char)>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, 4, height); 
+        return;
+    case 12: 
+        t_AverageMode<8, sizeof(unsigned char)>(pSrc,   srcPitch, pAvg,   avgPitch, pDst,   dstPitch, 8, height); 
+        t_AverageMode<4, sizeof(unsigned char)>(pSrc+8, srcPitch, pAvg+8, avgPitch, pDst+8, dstPitch, 4, height); 
+        return;
+    case  2: 
+        t_AverageMode<2, sizeof(unsigned char)>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, 2, height); 
+        return;
+    case  6: 
+        t_AverageMode<6, sizeof(unsigned char)>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, 6, height); 
+        return;
+    }
+}
+
+
+/* mode: AVERAGE_FROM_BUF, load 16-bit pixels, add to current output, clip/pack 16-bit to 8-bit */
+void MAKE_NAME(h265_AverageModeB)(INTERP_AVG_BUF_PARAMETERS_LIST)
+{
+    if ( (width & 0x07) == 0 ) {
+        /* fast path - multiple of 8 */
+        t_AverageMode<8, sizeof(short)>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, width, height);
+        return;
+    }
+
+    switch (width) {
+    case  4: 
+        t_AverageMode<4, sizeof(short)>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, 4, height); 
+        return;
+    case 12: 
+        t_AverageMode<8, sizeof(short)>(pSrc,   srcPitch, pAvg,   avgPitch, pDst,   dstPitch, 8, height); 
+        t_AverageMode<4, sizeof(short)>(pSrc+8, srcPitch, pAvg+8, avgPitch, pDst+8, dstPitch, 4, height); 
+        return;
+    case  2: 
+        t_AverageMode<2, sizeof(short)>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, 2, height); 
+        return;
+    case  6: 
+        t_AverageMode<6, sizeof(short)>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, 6, height); 
+        return;
+    }
+}
 
 } // end namespace MFX_HEVC_PP
 
