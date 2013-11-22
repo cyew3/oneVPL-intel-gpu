@@ -42,6 +42,8 @@ T Clip3(const T& Min, const T& Max, T Value)
     // return ( Value < Min ? Min : (Value > Max) ? Max : Value ); 
 #endif
 
+#pragma pack(1)
+
 //structure vector class
 struct H265MotionVector
 {
@@ -68,24 +70,6 @@ public:
         Horizontal = 0;
         Vertical = 0;
     }
-
-    //get
-    H265_FORCEINLINE Ipp32s getAbsHor() const { return abs(Horizontal); }
-    H265_FORCEINLINE Ipp32s getAbsVer() const { return abs(Vertical);   }
-
-    //const H265MotionVector& operator += (const H265MotionVector& MV)
-    //{
-    //    Horizontal += MV.Horizontal;
-    //    Vertical += MV.Vertical;
-    //    return  *this;
-    //}
-
-    /*const H265MotionVector& operator -= (const H265MotionVector& MV)
-    {
-        Horizontal -= MV.Horizontal;
-        Vertical -= MV.Vertical;
-        return  *this;
-    }*/
 
     const H265MotionVector operator + (const H265MotionVector& MV) const
     {
@@ -129,7 +113,7 @@ struct H265MVInfo
 public:
     H265MotionVector    m_mv[2];
     RefIndexType        m_refIdx[2];
-    Ipp16s              m_pocDelta[2];
+    Ipp32s              m_pocDelta[2];
     Ipp8u               m_flags[2];
 
     void setMVInfo(Ipp32s refList, RefIndexType iRefIdx, H265MotionVector const &cMV)
@@ -138,6 +122,9 @@ public:
         m_mv[refList] = cMV;
     }
 };
+
+#pragma pack()
+
 } // end namespace UMC_HEVC_DECODER
 
 #endif //__H265_MOTION_INFO_H

@@ -1752,6 +1752,16 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource, UMC::MediaD
                     return UMC::UMC_OK;
                 break;
 
+            case NAL_UT_EOS:
+            case NAL_UT_EOB:
+                m_WaitForIDR = true;
+                m_RA_POC = INT_MAX;
+                m_IRAPType = NAL_UT_INVALID;
+                m_CRA_POC = 0;
+                AddSlice(0, !pSource);
+                GetView()->pDPB->IncreaseRefPicListResetCount(0);
+                break;
+
             default:
                 break;
             };
@@ -1913,8 +1923,6 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
 
 void TaskSupplier_H265::ActivateHeaders(H265SeqParamSet *sps, H265PicParamSet *pps)
 {
-    pps->MinCUDQPSize = sps->MaxCUSize >> pps->diff_cu_qp_delta_depth;
-
     for (Ipp32u i = 0; i < sps->MaxCUDepth - sps->AddCUDepth; i++)
     {
         sps->m_AMPAcc[i] = sps->amp_enabled_flag;
@@ -2306,6 +2314,21 @@ H265DecoderFrame * TaskSupplier_H265::AllocateNewFrame(const H265Slice *pSlice)
     }
 
     DPBUpdate(pSlice);
+
+    if (pSlice->GetSliceHeader()->nal_unit_type == NAL_UT_CODED_SLICE_CRA && m_IRAPType == NAL_UT_INVALID)
+    {
+        for (H265DecoderFrame *pCurr = GetView()->pDPB->head(); pCurr; pCurr = pCurr->future())
+        {
+            if ((pCurr->isDisplayable() || (!pCurr->IsDecoded() && pCurr->IsFullFrame())) && !pCurr->wasOutputted())
+            {
+                if (!pCurr->wasOutputted())
+                {
+                    pCurr->setWasDisplayed();
+                    pCurr->setWasOutputted();
+                }
+            }
+        }
+    }
 
     pFrame = GetFreeFrame();
     if (NULL == pFrame)

@@ -100,7 +100,7 @@ public:
         return m_colocatedInfo[partNumber].m_flags[direction];
     }
 
-    Ipp16s & GetTUPOCDelta(EnumRefPicList direction, Ipp32u partNumber)
+    Ipp32s & GetTUPOCDelta(EnumRefPicList direction, Ipp32u partNumber)
     {
         return m_colocatedInfo[partNumber].m_pocDelta[direction];
     }

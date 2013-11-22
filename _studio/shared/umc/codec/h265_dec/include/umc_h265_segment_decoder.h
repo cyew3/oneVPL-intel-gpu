@@ -250,6 +250,7 @@ public:
 
     H265CodingUnit* m_curCU;
     bool m_DecodeDQPFlag;
+    Ipp32s m_minCUDQPSize;
     Ipp32u m_MaxDepth; //max number of depth
     H265DecYUVBufferPadded* m_ppcYUVResi; //array of residual buffer
 

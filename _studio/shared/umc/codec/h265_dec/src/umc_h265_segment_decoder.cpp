@@ -786,7 +786,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
     if (more_depth)
     {
         Ipp32u Idx = AbsPartIdx;
-        if ((m_pSeqParamSet->MaxCUSize >> Depth) == m_pPicParamSet->MinCUDQPSize && m_pPicParamSet->cu_qp_delta_enabled_flag)
+        if ((m_pSeqParamSet->MaxCUSize >> Depth) == m_minCUDQPSize && m_pPicParamSet->cu_qp_delta_enabled_flag)
         {
             m_DecodeDQPFlag = true;
             m_context->SetNewQP(getRefQP(pCU, AbsPartIdx));
@@ -814,7 +814,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
             Idx += QNumParts;
         }
 
-        if ((m_pSeqParamSet->MaxCUSize >> Depth) == m_pPicParamSet->MinCUDQPSize && m_pPicParamSet->cu_qp_delta_enabled_flag)
+        if ((m_pSeqParamSet->MaxCUSize >> Depth) == m_minCUDQPSize && m_pPicParamSet->cu_qp_delta_enabled_flag)
         {
             if (m_DecodeDQPFlag)
             {
@@ -824,7 +824,7 @@ void H265SegmentDecoder::DecodeCUCABAC(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
         return;
     }
 
-    if ((m_pSeqParamSet->MaxCUSize >> Depth) >= m_pPicParamSet->MinCUDQPSize && m_pPicParamSet->cu_qp_delta_enabled_flag)
+    if ((m_pSeqParamSet->MaxCUSize >> Depth) >= m_minCUDQPSize && m_pPicParamSet->cu_qp_delta_enabled_flag)
     {
         m_DecodeDQPFlag = true;
         m_context->SetNewQP(getRefQP(pCU, AbsPartIdx));
@@ -2510,7 +2510,7 @@ void H265SegmentDecoder::UpdatePUInfo(Ipp32u PartX, Ipp32u PartY, Ipp32u PartWid
         if (m_pSliceHeader->m_numRefIdx[RefListIdx] > 0 && MVi.m_refIdx[RefListIdx] >= 0)
         {
             H265DecoderRefPicList::ReferenceInformation &refInfo = m_pRefPicList[RefListIdx][MVi.m_refIdx[RefListIdx]];
-            Ipp16s POCDelta = Ipp16s(m_pCurrentFrame->m_PicOrderCnt - refInfo.refFrame->m_PicOrderCnt);
+            Ipp32s POCDelta = m_pCurrentFrame->m_PicOrderCnt - refInfo.refFrame->m_PicOrderCnt;
             MVi.m_pocDelta[RefListIdx] = POCDelta;
             MVi.m_flags[RefListIdx] = Ipp8u(refInfo.isLongReference ? COL_TU_LT_INTER : COL_TU_ST_INTER);
 

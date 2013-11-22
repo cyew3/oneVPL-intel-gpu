@@ -129,6 +129,10 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr)
     bool picTBoundary = ((curLCU->m_CUPelY == 0) ? true : false);
     Ipp32s numLCUInPicWidth = m_pCurrentFrame->m_CodingData->m_WidthInCU;
 
+    curLCU->m_AvailBorder.m_left = !picLBoundary;
+    curLCU->m_AvailBorder.m_top = !picTBoundary;
+
+
     if (!curLCU->m_SliceHeader->m_PicParamSet->loop_filter_across_tiles_enabled_flag)
     {
         Ipp32u tileID = m_pCurrentFrame->m_CodingData->getTileIdxMap(curLCUAddr);
@@ -149,7 +153,8 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr)
             CleanTopEdges(curLCU->m_AvailBorder.m_top, ctb_start_edge, width);
         }
     }
-    else if (!curLCU->m_SliceHeader->slice_loop_filter_across_slices_enabled_flag)
+
+    if (!curLCU->m_SliceHeader->slice_loop_filter_across_slices_enabled_flag)
     {
         if (picLBoundary)
             curLCU->m_AvailBorder.m_left = false;
@@ -174,11 +179,6 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr)
             curLCU->m_AvailBorder.m_top = refSA == SA ? true : false;
             CleanTopEdges(curLCU->m_AvailBorder.m_top, ctb_start_edge, width);
         }
-    }
-    else
-    {
-        curLCU->m_AvailBorder.m_left = !picLBoundary;
-        curLCU->m_AvailBorder.m_top = !picTBoundary;
     }
 
     for (j = 0; j < height; j += 8)
@@ -226,8 +226,8 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curP
 
         if (m_pSeqParamSet->log2_min_transform_block_size < 3)
         {
-        edge++;
-    }
+            edge++;
+        }
     }
 
     Ipp32s end = 2;
@@ -367,19 +367,9 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU, Ipp32s cu
     }
 }
 
-static bool H265_FORCEINLINE MVIsnotEq(H265MotionVector mv0,
-                      H265MotionVector mv1)
+static bool H265_FORCEINLINE MVIsnotEq(const H265MotionVector &mv0, const H265MotionVector &mv1)
 {
-    H265MotionVector mv = mv0 - mv1;
-
-    if ((mv.getAbsHor() >= 4) || (mv.getAbsVer() >= 4))
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
+    return abs(mv0.Horizontal - mv1.Horizontal) >= 4 || abs(mv0.Vertical - mv1.Vertical) >= 4;
 }
 
 void H265SegmentDecoder::GetCTBEdgeStrengths(void)
@@ -725,34 +715,34 @@ void H265SegmentDecoder::GetEdgeStrengthInter(H265MVInfo *mvinfoQ, H265MVInfo *m
     }
     else
     {
-        Ipp16s POCDeltaQ, POCDeltaP;
-        H265MotionVector MVQ, MVP;
+        Ipp32s POCDeltaQ, POCDeltaP;
+        H265MotionVector *MVQ, *MVP;
         
         if (mvinfoQ->m_refIdx[REF_PIC_LIST_0] >= 0)
         {
             POCDeltaQ = mvinfoQ->m_pocDelta[REF_PIC_LIST_0];
-            MVQ = mvinfoQ->m_mv[REF_PIC_LIST_0];
+            MVQ = &mvinfoQ->m_mv[REF_PIC_LIST_0];
         }
         else
         {
             POCDeltaQ = mvinfoQ->m_pocDelta[REF_PIC_LIST_1];
-            MVQ = mvinfoQ->m_mv[REF_PIC_LIST_1];
+            MVQ = &mvinfoQ->m_mv[REF_PIC_LIST_1];
         }
 
         if (mvinfoP->m_refIdx[REF_PIC_LIST_0] >= 0)
         {
             POCDeltaP = mvinfoP->m_pocDelta[REF_PIC_LIST_0];
-            MVP = mvinfoP->m_mv[REF_PIC_LIST_0];
+            MVP = &mvinfoP->m_mv[REF_PIC_LIST_0];
         }
         else
         {
             POCDeltaP = mvinfoP->m_pocDelta[REF_PIC_LIST_1];
-            MVP = mvinfoP->m_mv[REF_PIC_LIST_1];
+            MVP = &mvinfoP->m_mv[REF_PIC_LIST_1];
         }
 
         if (POCDeltaQ == POCDeltaP)
         {
-            edge->strength = MVIsnotEq(MVP, MVQ) ? 1 : 0;
+            edge->strength = MVIsnotEq(*MVQ, *MVP) ? 1 : 0;
             return;
         }
 

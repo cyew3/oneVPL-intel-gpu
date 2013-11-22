@@ -1051,8 +1051,6 @@ struct H265PicParamSetBase
     // calculated params
     // These fields are calculated from values above.  They are not written to the bitstream
     ///////////////////////////////////////////////////////
-    Ipp32u  MinCUDQPSize;
-
     Ipp32u getColumnWidth(Ipp32u columnIdx) { return *( column_width + columnIdx ); }
     void setColumnWidth(Ipp32u* columnWidth);
     Ipp32u getRowHeight(Ipp32u rowIdx)    { return *( row_height + rowIdx ); }
