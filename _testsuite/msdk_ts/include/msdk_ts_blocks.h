@@ -63,7 +63,6 @@ msdk_ts_DECLARE_BLOCK(b_MFXVideoVPP_RunFrameVPPAsync);
 msdk_ts_DECLARE_BLOCK(b_MFXVideoUSER_Register);
 msdk_ts_DECLARE_BLOCK(b_MFXVideoUSER_Unregister);
 msdk_ts_DECLARE_BLOCK(b_MFXVideoUSER_ProcessFrameAsync);
-msdk_ts_DECLARE_BLOCK(b_MFXVideoUSER_Enumerate);
 msdk_ts_DECLARE_BLOCK(b_MFXVideoUSER_Load);
 msdk_ts_DECLARE_BLOCK(b_MFXVideoUSER_UnLoad);
 
