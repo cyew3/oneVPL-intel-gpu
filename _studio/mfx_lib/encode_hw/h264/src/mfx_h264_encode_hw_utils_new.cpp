@@ -1855,7 +1855,7 @@ void AsyncRoutineEmulator::Init(MfxVideoParam const & video)
         m_stageGreediness[STG_WAIT_ENCODE ] = video.AsyncDepth + !!(video.mfx.GopRefDist > 1);
         break;
     case MFX_RATECONTROL_LA:
-    case MFX_RATECONTROL_LA_CQM:
+    case MFX_RATECONTROL_LA_ICQ:
         m_stageGreediness[STG_ACCEPT_FRAME] = 1;
 #if USE_AGOP
         m_stageGreediness[STG_START_AGOP]         = 1; 

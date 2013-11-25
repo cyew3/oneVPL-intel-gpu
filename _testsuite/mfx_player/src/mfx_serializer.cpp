@@ -356,10 +356,10 @@ void MFXStructureRef <mfxInfoMFX>::ConstructValues () const
             SERIALIZE_INT(TargetKbps);
             SERIALIZE_INT(Convergence);
         }
-        else if (MFX_RATECONTROL_CQM == m_pStruct->RateControlMethod || MFX_RATECONTROL_LA_CQM == m_pStruct->RateControlMethod)
+        else if (MFX_RATECONTROL_ICQ == m_pStruct->RateControlMethod || MFX_RATECONTROL_LA_ICQ == m_pStruct->RateControlMethod)
         {
             SERIALIZE_INT(BufferSizeInKB);
-            SERIALIZE_INT(CQMQuality);
+            SERIALIZE_INT(ICQQuality);
         }
         else
         {

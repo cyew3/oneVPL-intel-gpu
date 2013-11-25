@@ -137,7 +137,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_GLOBAL_OPTION("", m_,QPB,           OPT_UINT_16,    "Constant quantizer for B frames (if RateControlMethod=3)", &m_applyBitrateParams),
 
         //CRF support
-        HANDLE_GLOBAL_OPTION("", m_,CQMQuality,   OPT_UINT_16,    "", &m_applyBitrateParams),
+        HANDLE_GLOBAL_OPTION("", m_,ICQQuality,   OPT_UINT_16,    "", &m_applyBitrateParams),
 
         //AVBR support
         HANDLE_GLOBAL_OPTION("", m_,Accuracy,     OPT_UINT_16,    "In AVBR mode specifies targetbitrate accuracy range", &m_applyBitrateParams),
@@ -1140,12 +1140,12 @@ mfxStatus MFXTranscodingPipeline::ApplyBitrateParams()
         pMFXParams->mfx.Convergence = m_Convergence;
     }
 
-    if (m_CQMQuality || pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_CQM || pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_LA_CQM)
+    if (m_CQMQuality || pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_ICQ || pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
     {
-        if (pMFXParams->mfx.RateControlMethod != MFX_RATECONTROL_CQM &&
-            pMFXParams->mfx.RateControlMethod != MFX_RATECONTROL_LA_CQM)
-            pMFXParams->mfx.RateControlMethod = MFX_RATECONTROL_CQM;
-        pMFXParams->mfx.CQMQuality = m_CQMQuality;
+        if (pMFXParams->mfx.RateControlMethod != MFX_RATECONTROL_ICQ &&
+            pMFXParams->mfx.RateControlMethod != MFX_RATECONTROL_LA_ICQ)
+            pMFXParams->mfx.RateControlMethod = MFX_RATECONTROL_ICQ;
+        pMFXParams->mfx.ICQQuality = m_CQMQuality;
     }
 
     if (!pMFXParams->mfx.RateControlMethod)

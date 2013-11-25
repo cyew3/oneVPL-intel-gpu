@@ -1418,8 +1418,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
         MFX_ERR_INVALID_VIDEO_PARAM);
 
     if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
-        par.mfx.RateControlMethod != MFX_RATECONTROL_CQM &&
-        par.mfx.RateControlMethod != MFX_RATECONTROL_LA_CQM &&
+        par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ &&
+        par.mfx.RateControlMethod != MFX_RATECONTROL_LA_ICQ &&
         !IsSvcProfile(par.mfx.CodecProfile))
         MFX_CHECK(par.calcParam.targetKbps > 0, MFX_ERR_INVALID_VIDEO_PARAM);
 
@@ -1680,9 +1680,9 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_AVBR &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_WIDI_VBR &&
-        par.mfx.RateControlMethod != MFX_RATECONTROL_CQM &&
+        par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_LA &&
-        par.mfx.RateControlMethod != MFX_RATECONTROL_LA_CQM)
+        par.mfx.RateControlMethod != MFX_RATECONTROL_LA_ICQ)
     {
         changed = true;
         par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
@@ -1702,7 +1702,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             extOpt2->LookAheadDepth = MAX_LOOKAHEAD_DEPTH;
         }
 
-        if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA && par.mfx.RateControlMethod != MFX_RATECONTROL_LA_CQM)
+        if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA && par.mfx.RateControlMethod != MFX_RATECONTROL_LA_ICQ)
         {
             changed = true;
             extOpt2->LookAheadDepth = 0;
@@ -2172,7 +2172,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         extDdi->CabacInitIdcPlus1 = 0;
     }
 
-    if ((par.mfx.RateControlMethod == MFX_RATECONTROL_LA || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_CQM) &&
+    if ((par.mfx.RateControlMethod == MFX_RATECONTROL_LA || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ) &&
         !IsLookAheadSupported(par, platform))
     {
         unsupported = true;
@@ -2332,7 +2332,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         }
     }
 
-    if (par.calcParam.bufferSizeInKB != 0 && (par.mfx.RateControlMethod == MFX_RATECONTROL_LA || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_CQM))
+    if (par.calcParam.bufferSizeInKB != 0 && (par.mfx.RateControlMethod == MFX_RATECONTROL_LA || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ))
     {
         changed = true;
         par.calcParam.bufferSizeInKB = (par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height * 3 / 2 / 1000);
@@ -2486,10 +2486,10 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         if (!CheckRange(par.mfx.QPB, 0, 51)) changed = true;
     }
 
-    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQM ||
-        par.mfx.RateControlMethod == MFX_RATECONTROL_LA_CQM)
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ ||
+        par.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
     {
-        if (!CheckRange(par.mfx.CQMQuality, 0, 51)) changed = true;
+        if (!CheckRange(par.mfx.ICQQuality, 0, 51)) changed = true;
     }
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
@@ -3217,9 +3217,9 @@ void MfxHwH264Encode::InheritDefaultValues(
         InheritOption(parInit.mfx.Convergence, parReset.mfx.Convergence);
     }
 
-    if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_CQM && parReset.mfx.RateControlMethod == MFX_RATECONTROL_LA_CQM)
+    if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_ICQ && parReset.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
     {
-        InheritOption(parInit.mfx.CQMQuality, parReset.mfx.CQMQuality);
+        InheritOption(parInit.mfx.ICQQuality, parReset.mfx.ICQQuality);
     }
 
     InheritOption(parInit.mfx.FrameInfo.FourCC,         parReset.mfx.FrameInfo.FourCC);
@@ -3356,10 +3356,10 @@ void MfxHwH264Encode::SetDefaults(
             par.mfx.Convergence = AVBR_CONVERGENCE_MAX;
     }
 
-    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQM || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_CQM)
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
     {
-        if (par.mfx.CQMQuality == 0)
-            par.mfx.CQMQuality = 26;
+        if (par.mfx.ICQQuality == 0)
+            par.mfx.ICQQuality = 26;
     }
 
     if (par.mfx.GopRefDist == 0)
@@ -3545,7 +3545,7 @@ void MfxHwH264Encode::SetDefaults(
     {
         if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA)
             extOpt2->LookAheadDepth = IPP_MAX(40, 2 * par.mfx.GopRefDist);
-        else if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA_CQM)
+        else if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
             extOpt2->LookAheadDepth = IPP_MAX(10, 2 * par.mfx.GopRefDist);
     }
 
@@ -3690,7 +3690,7 @@ void MfxHwH264Encode::SetDefaults(
 
     if (par.calcParam.bufferSizeInKB == 0)
     {
-        if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_CQM)
+        if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
         {
             par.calcParam.bufferSizeInKB = (par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height * 3 / 2 / 1000);
         }
@@ -3849,8 +3849,8 @@ void MfxHwH264Encode::SetDefaults(
             extRc->Layer[0].Avbr.Convergence = par.mfx.Convergence;
             extRc->Layer[0].Avbr.Accuracy    = par.mfx.Accuracy;
             break;
-        case MFX_RATECONTROL_CQM:
-        case MFX_RATECONTROL_LA_CQM:
+        case MFX_RATECONTROL_ICQ:
+        case MFX_RATECONTROL_LA_ICQ:
             break;
         default:
             assert(0);
