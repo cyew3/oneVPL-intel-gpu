@@ -72,15 +72,15 @@ namespace MFX
     public:
         MFXPluginFactory(mfxSession session);
         void Close();
-        bool Create(PluginDescriptionRecord &);
+        mfxStatus Create(const PluginDescriptionRecord &);
         bool Destroy(const mfxPluginUID &);
         
         ~MFXPluginFactory();
     protected:
         void DestroyPlugin( FactoryRecord & );
-        static bool RunVerification( mfxPlugin & plg, PluginDescriptionRecord &dsc, mfxPluginParam &pluginParams );
-        static bool VerifyEncoder( mfxVideoCodecPlugin &videoCodec );
-        static bool VerifyDecoder( mfxVideoCodecPlugin &videoCodec );
-        static bool VerifyCodecCommon( mfxVideoCodecPlugin & Video );
+        static bool RunVerification( const mfxPlugin & plg, const PluginDescriptionRecord &dsc, mfxPluginParam &pluginParams );
+        static bool VerifyEncoder( const mfxVideoCodecPlugin &videoCodec );
+        static bool VerifyDecoder( const mfxVideoCodecPlugin &videoCodec );
+        static bool VerifyCodecCommon( const mfxVideoCodecPlugin & Video );
     };
 }

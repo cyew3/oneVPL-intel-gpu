@@ -43,7 +43,7 @@ template<class T> struct RegKey{};
 template<> struct RegKey<bool>{enum {type = REG_DWORD};};
 template<> struct RegKey<mfxU32>{enum {type = REG_DWORD};};
 template<> struct RegKey<mfxPluginUID>{enum {type = REG_BINARY};};
-
+template<> struct RegKey<mfxVersion>{enum {type = REG_DWORD};};
 template<> struct RegKey<char*>{enum {type = REG_SZ};};
 template<> struct RegKey<wchar_t*>{enum {type = REG_SZ};};
 

@@ -55,11 +55,7 @@ namespace MFX {
         return !(lhs == rhs);
     }
 
-    struct PluginDescriptionRecord {
-        mfxU32  Type;
-        mfxU32  CodecId;
-        mfxPluginUID uid;
-        mfxU32 version;
+    struct PluginDescriptionRecord :  mfxPluginParam {
         msdk_disp_char sPath[MAX_PLUGIN_PATH];
         char sName[MAX_PLUGIN_NAME];
         bool Default;
@@ -83,6 +79,7 @@ namespace MFX {
             return mRecords.size();
         }
 
-        MFXPluginHive(mfxU32 mfxStorageID = 0);
+        MFXPluginHive() {}
+        MFXPluginHive(mfxU32 mfxStorageID, mfxVersion minAPIVersion);
     };
 }

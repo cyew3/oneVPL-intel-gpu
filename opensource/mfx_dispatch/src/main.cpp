@@ -293,8 +293,9 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
         try {
             //setting up plugins records
             for(int i = MFX::MFX_STORAGE_ID_FIRST;
-                i <= MFX::MFX_STORAGE_ID_LAST; i++) {
-                MFX::MFXPluginHive hive = MFX::MFXPluginHive(i);
+                i <= MFX::MFX_STORAGE_ID_LAST; i++) 
+            {
+                MFX::MFXPluginHive hive = MFX::MFXPluginHive(i, pHandle->apiVersion);
                 allocatedHandle->pluginHive.insert(hive.begin(), hive.end());
             }
         } catch(...){}
@@ -428,28 +429,27 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Load)(mfxSession session, const
     size_t pluginsChecked = 0;
     for (MFX::MFXPluginHive::iterator i = pHandle.pluginHive.begin();i != pHandle.pluginHive.end(); i++, pluginsChecked++)
     {
-        if (i->uid != *uid)
+        if (i->PluginUID != *uid)
         {
             continue;
         }
         //check rest in records
-        if (i->version < version)
+        if (i->PluginVersion < version)
         {
             DISPATCHER_LOG_INFO((("MFXVideoUSER_Load: registered \"Plugin Version\" for GUID="MFXGUIDTYPE()" is %d, that is smaller that requested\n")
                 , MFXGUIDTOHEX(uid)
-                , i->version))
+                , i->PluginVersion))
             continue;
         }
         try {
-            bool bSts = pHandle.pluginFactory.Create(*i);
-            return bSts ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
+            return pHandle.pluginFactory.Create(*i);
         }
         catch(...) {
             return MFX_ERR_UNKNOWN;
         }
     }
     DISPATCHER_LOG_ERROR((("MFXVideoUSER_Load: cannot find registered plugin with requested UID, total plugins available=%d\n"), pHandle.pluginHive.size()));
-    return MFX_ERR_NULL_PTR;
+    return MFX_ERR_NOT_FOUND;
 }
 
 mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_UnLoad)(mfxSession session, const mfxPluginUID *uid) 

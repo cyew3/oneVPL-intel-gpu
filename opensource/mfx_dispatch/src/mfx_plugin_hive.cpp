@@ -47,9 +47,11 @@ namespace
     const wchar_t PathKeyName[] = L"Path";
     const wchar_t NameKeyName[] = L"Name";
     const wchar_t DefaultKeyName[] = L"Default";
+    const wchar_t PlgVerKeyName[] = L"PlgVer";
+    const wchar_t APIVerKeyName[] = L"APIVer";
 }
 
-MFX::MFXPluginHive::MFXPluginHive( mfxU32 storageID /*= 0*/ )
+MFX::MFXPluginHive::MFXPluginHive( mfxU32 storageID, mfxVersion minAPIVersion )
 {
     HKEY rootHKey;
     bool bRes;
@@ -110,11 +112,11 @@ MFX::MFXPluginHive::MFXPluginHive( mfxU32 storageID /*= 0*/ )
         }
         TRACE_HIVE_INFO("    %8S : "MFXFOURCCTYPE()" \n", CodecIDKeyName, MFXU32TOFOURCC(descriptionRecord.CodecId));
 
-        if (!subKey.Query(GUIDKeyName, descriptionRecord.uid)) 
+        if (!subKey.Query(GUIDKeyName, descriptionRecord.PluginUID)) 
         {
             continue;
         }
-        TRACE_HIVE_INFO("    %8S : "MFXGUIDTYPE()"\n", GUIDKeyName, MFXGUIDTOHEX(&descriptionRecord.uid));
+        TRACE_HIVE_INFO("    %8S : "MFXGUIDTYPE()"\n", GUIDKeyName, MFXGUIDTOHEX(&descriptionRecord.PluginUID));
 
         mfxU32 nSize = sizeof(descriptionRecord.sPath)/sizeof(*descriptionRecord.sPath);
         if (!subKey.Query(PathKeyName, descriptionRecord.sPath, nSize)) 
@@ -140,6 +142,33 @@ MFX::MFXPluginHive::MFXPluginHive( mfxU32 storageID /*= 0*/ )
             continue;
         }
         TRACE_HIVE_INFO("    %8S : %s\n", DefaultKeyName, descriptionRecord.Default ? "true" : "false");
+
+        mfxU32 version;
+        if (!subKey.Query(PlgVerKeyName, version)) 
+        {
+            continue;
+        }
+        descriptionRecord.PluginVersion = static_cast<mfxU16>(version);
+        TRACE_HIVE_INFO("    %8S : %d\n", PlgVerKeyName, descriptionRecord.PluginVersion);
+
+        
+        if (!subKey.Query(APIVerKeyName, descriptionRecord.APIVersion)) 
+        {
+            continue;
+        }
+
+        if (minAPIVersion.Version < descriptionRecord.APIVersion.Version) 
+        {
+            TRACE_HIVE_ERROR("    %8S : %d.%d, but current MediasSDK version : %d.%d\n"
+                , APIVerKeyName
+                , descriptionRecord.APIVersion.Major
+                , descriptionRecord.APIVersion.Minor
+                , minAPIVersion.Major
+                , minAPIVersion.Minor);
+            continue;
+        }
+
+        TRACE_HIVE_INFO("    %8S : {%d.%d}\n", APIVerKeyName, descriptionRecord.APIVersion.Major, descriptionRecord.APIVersion.Minor);
         
         try 
         {

@@ -45,7 +45,6 @@ File Name: mfx_dispatcher.cpp
 MFX_DISP_HANDLE::MFX_DISP_HANDLE(const mfxVersion requiredVersion) :
     apiVersion(requiredVersion),
     pluginFactory((mfxSession)this)
-
 {
     implType = MFX_LIB_SOFTWARE;
     impl = MFX_IMPL_SOFTWARE;
