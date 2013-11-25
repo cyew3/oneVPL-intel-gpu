@@ -33,6 +33,8 @@ struct H265VideoParam {
     Ipp32s GopPicSize;
     Ipp32s GopRefDist;
     Ipp32s IdrInterval;
+    Ipp8u  GopClosedFlag;
+    Ipp8u  GopStrictFlag;
 
     Ipp32u NumRefFrames;
     Ipp32u NumRefToStartCodeBSlice;
@@ -159,9 +161,9 @@ public:
 
     Ipp32s profile_frequency;
     Ipp32s m_iProfileIndex;
-    Ipp32u *eFrameType;
+    //Ipp32u *eFrameType;
 
-    Ipp8u m_bMakeNextFrameKey;
+    //Ipp8u m_bMakeNextFrameKey;
     Ipp8u m_bMakeNextFrameIDR;
     Ipp32s m_uIntraFrameInterval;
     Ipp32s m_uIDRFrameInterval;
@@ -180,7 +182,7 @@ public:
     H265Encoder() {
         memBuf = NULL; bs = NULL; bsf = NULL;
         data_temp = NULL;
-        eFrameType = NULL;
+        //eFrameType = NULL;
         m_slices = NULL;
         m_slice_ids = NULL;
         m_row_info = NULL;

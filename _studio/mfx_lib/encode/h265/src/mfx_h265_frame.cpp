@@ -564,6 +564,17 @@ H265Frame *H265FrameList::findOldestToEncode(H265FrameList *dpb,
         pCurr = pCurr->future();
         exclude_cur=false;
     }
+
+    if (pOldest && pOldest->m_bIsIDRPic) { // correct POC for leading B w/o L0
+        for (pCurr = m_pHead; pCurr; pCurr = pCurr->future()) {
+            if (!pCurr->wasEncoded() && pCurr->m_PicCodType == MFX_FRAMETYPE_B &&
+                pCurr->m_PicOrderCounterAccumulated < pOldest->m_PicOrderCounterAccumulated) {
+                pCurr->m_PicOrderCnt += pCurr->m_PicOrderCounterAccumulated - pOldest->m_PicOrderCounterAccumulated;
+                pCurr->m_PicOrderCounterAccumulated = pOldest->m_PicOrderCounterAccumulated;
+                pCurr->m_RefPicListResetCount = pOldest->RefPicListResetCount();
+            }
+        }
+    }
     // may be OK if NULL
     return pOldest;
 

@@ -119,8 +119,10 @@ mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxE
     pars->GopPicSize = param->mfx.GopPicSize;
     pars->GopRefDist = param->mfx.GopRefDist;
     pars->IdrInterval = param->mfx.IdrInterval;
+    pars->GopClosedFlag = (param->mfx.GopOptFlag & MFX_GOP_CLOSED) != 0;
+    pars->GopStrictFlag = (param->mfx.GopOptFlag & MFX_GOP_STRICT) != 0;
 
-    if (!pars->GopRefDist || (pars->GopPicSize % pars->GopRefDist))
+    if (!pars->GopRefDist) /*|| (pars->GopPicSize % pars->GopRefDist)*/
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     pars->NumRefToStartCodeBSlice = 1;
@@ -592,7 +594,7 @@ mfxStatus H265Encoder::Init(mfxVideoH265InternalParam *param, mfxExtCodingOption
     memSize += sizeof(H265CUData) * data_temp_size * m_videoParam.num_threads + DATA_ALIGN;
     memSize += numCtbs;
     memSize += sizeof(H265EncoderRowInfo) * m_videoParam.PicHeightInCtbs + DATA_ALIGN;
-    memSize += sizeof(Ipp32u) * profile_frequency + DATA_ALIGN;
+    //memSize += sizeof(Ipp32u) * profile_frequency + DATA_ALIGN;
     memSize += sizeof(H265CU) * m_videoParam.num_threads + DATA_ALIGN;
 
     memBuf = (Ipp8u *)H265_Malloc(memSize);
@@ -633,16 +635,17 @@ mfxStatus H265Encoder::Init(mfxVideoH265InternalParam *param, mfxExtCodingOption
     m_row_info = UMC::align_pointer<H265EncoderRowInfo*>(ptr, DATA_ALIGN);
     ptr += sizeof(H265EncoderRowInfo) * m_videoParam.PicHeightInCtbs + DATA_ALIGN;
 
-    eFrameType = UMC::align_pointer<Ipp32u*>(ptr, DATA_ALIGN);
-    ptr += sizeof(Ipp32u) * profile_frequency + DATA_ALIGN;
+    //eFrameType = UMC::align_pointer<Ipp32u*>(ptr, DATA_ALIGN);
+    //ptr += sizeof(Ipp32u) * profile_frequency + DATA_ALIGN;
 
     cu = UMC::align_pointer<H265CU*>(ptr, DATA_ALIGN);
     ptr += sizeof(H265CU) * m_videoParam.num_threads + DATA_ALIGN;
 
-    m_bMakeNextFrameKey = true; // Ensure that we always start with a key frame.
-    m_bMakeNextFrameIDR = false;
-    m_uIntraFrameInterval = param->mfx.GopPicSize + 1;
-    m_uIDRFrameInterval = param->mfx.IdrInterval + 2;
+    m_iProfileIndex = 0;
+    //m_bMakeNextFrameKey = true; // Ensure that we always start with a key frame.
+    m_bMakeNextFrameIDR = true;
+    m_uIntraFrameInterval = 0;
+    m_uIDRFrameInterval = 0;
     m_isBpyramid = 0;
     m_l1_cnt_to_start_B = 0;
     m_PicOrderCnt = 0;
@@ -694,12 +697,11 @@ mfxStatus H265Encoder::Init(mfxVideoH265InternalParam *param, mfxExtCodingOption
         return MFX_ERR_MEMORY_ALLOC;
     }
 
-    m_iProfileIndex = 0;
-    eFrameType[0] = MFX_FRAMETYPE_P;
-    for (Ipp32s i = 1; i < profile_frequency; i++)
-    {
-        eFrameType[i] = MFX_FRAMETYPE_B;
-    }
+    //eFrameType[0] = MFX_FRAMETYPE_P;
+    //for (Ipp32s i = 1; i < profile_frequency; i++)
+    //{
+    //    eFrameType[i] = MFX_FRAMETYPE_B;
+    //}
 
     m_videoParam.m_slice_ids = m_slice_ids;
     m_videoParam.m_pRefPicList = m_pRefPicList;
@@ -741,45 +743,46 @@ void H265Encoder::Close() {
 
 Ipp32u H265Encoder::DetermineFrameType()
 {
-    Ipp32u ePictureType = eFrameType[m_iProfileIndex];
+    // GOP is considered here as I frame and all following till next I
+    // Display (==input) order
+    Ipp32u ePictureType; //= eFrameType[m_iProfileIndex];
 
-    if (m_frameCountEncoded == 0)
-    {
-        m_iProfileIndex++;
-        if (m_iProfileIndex == profile_frequency)
-            m_iProfileIndex = 0;
+    m_bMakeNextFrameIDR = false;
 
-        m_bMakeNextFrameKey = false;
-        m_bMakeNextFrameIDR = true;
-        return MFX_FRAMETYPE_I;
-    }
-
-    m_uIntraFrameInterval--;
-    if (1 == m_uIntraFrameInterval)
-    {
-        m_bMakeNextFrameKey = true;
-    }
-
-    // change to an I frame
-    if (m_bMakeNextFrameKey)
-    {
-        ePictureType = MFX_FRAMETYPE_I;
-        m_uIntraFrameInterval = m_videoParam.GopPicSize + 1;
+    if (m_frameCountEncoded == 0) {
         m_iProfileIndex = 0;
-        m_bMakeNextFrameKey = false;
-
-        m_uIDRFrameInterval--;
-
-        if (1 == m_uIDRFrameInterval)
-        {
-            m_bMakeNextFrameIDR = true;
-            m_uIDRFrameInterval = m_videoParam.IdrInterval + 2;
-        }
+        m_uIntraFrameInterval = 0;
+        m_uIDRFrameInterval = 0;
+        ePictureType = MFX_FRAMETYPE_I;
+        m_bMakeNextFrameIDR = true;
+        return ePictureType;
     }
 
     m_iProfileIndex++;
-    if (m_iProfileIndex == profile_frequency)
+    if (m_iProfileIndex == profile_frequency) {
         m_iProfileIndex = 0;
+        ePictureType = MFX_FRAMETYPE_P;
+    } else {
+        ePictureType = MFX_FRAMETYPE_B;
+        if (m_uIntraFrameInterval+2 == m_videoParam.GopPicSize &&
+            (m_videoParam.GopClosedFlag || m_uIDRFrameInterval == m_videoParam.IdrInterval) )
+            if (!m_videoParam.GopStrictFlag)
+                ePictureType = MFX_FRAMETYPE_P;
+            // else ?? // B-group will start next GOP using only L1 ref
+    }
+
+    m_uIntraFrameInterval++;
+    if (m_uIntraFrameInterval == m_videoParam.GopPicSize) {
+        ePictureType = MFX_FRAMETYPE_I;
+        m_uIntraFrameInterval = 0;
+        m_iProfileIndex = 0;
+
+        m_uIDRFrameInterval++;
+        if (m_uIDRFrameInterval == m_videoParam.IdrInterval + 1) {
+            m_bMakeNextFrameIDR = true;
+            m_uIDRFrameInterval = 0;
+        }
+    }
 
     return ePictureType;
 }
@@ -1908,7 +1911,7 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
     EnumPicClass    ePic_Class;
 
     if (surface) {
-        Ipp32s RPSIndex = m_iProfileIndex;
+        //Ipp32s RPSIndex = m_iProfileIndex;
         Ipp32u  ePictureType;
 
         ePictureType = DetermineFrameType();
@@ -1927,30 +1930,30 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
             }
 
             m_pCurrentFrame->m_PicCodType = ePictureType;
-            m_pCurrentFrame->m_bIsIDRPic = false;
-            m_pCurrentFrame->m_RPSIndex = RPSIndex;
+            m_pCurrentFrame->m_bIsIDRPic = m_bMakeNextFrameIDR;
+            m_pCurrentFrame->m_RPSIndex = m_iProfileIndex;
 
 // making IDR picture every I frame for SEI HRD_CONF
             if (//((m_info.EnableSEI) && ePictureType == INTRAPIC) ||
-               (/*(!m_info.EnableSEI) && */m_bMakeNextFrameIDR && ePictureType == MFX_FRAMETYPE_I))
+               (/*(!m_info.EnableSEI) && */m_bMakeNextFrameIDR /*&& ePictureType == MFX_FRAMETYPE_I*/))
 
             {
-                m_pCurrentFrame->m_bIsIDRPic = true;
+                //m_pCurrentFrame->m_bIsIDRPic = true;
                 m_PicOrderCnt_Accu += m_PicOrderCnt;
                 m_PicOrderCnt = 0;
-                m_bMakeNextFrameIDR = false;
+                //m_bMakeNextFrameIDR = false;
                 m_PGOPIndex = 0;
             }
 
             m_pCurrentFrame->m_PGOPIndex = m_PGOPIndex;
-            if (RPSIndex == 0) {
+            if (m_iProfileIndex == 0) {
                 m_PGOPIndex++;
                 if (m_PGOPIndex == m_videoParam.PGopPicSize)
                     m_PGOPIndex = 0;
             }
 
             m_pCurrentFrame->setPicOrderCnt(m_PicOrderCnt);
-            m_pCurrentFrame->m_PicOrderCounterAccumulated = (m_PicOrderCnt + m_PicOrderCnt_Accu);
+            m_pCurrentFrame->m_PicOrderCounterAccumulated = m_PicOrderCnt_Accu; //(m_PicOrderCnt + m_PicOrderCnt_Accu);
 
             m_pCurrentFrame->InitRefPicListResetCount();
 
@@ -1976,7 +1979,12 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
                 m_cpb.IncreaseRefPicListResetCount(m_pCurrentFrame);
 //                m_l1_cnt_to_start_B = 0;
                 if (m_pLastFrame && !m_pLastFrame->wasEncoded() && m_pLastFrame->m_PicCodType == MFX_FRAMETYPE_B)
-                    m_pLastFrame->m_PicCodType = MFX_FRAMETYPE_P;
+                    if (!m_videoParam.GopStrictFlag)
+                        m_pLastFrame->m_PicCodType = MFX_FRAMETYPE_P;
+                    else {
+                        // Correct m_PicOrderCnt
+                        // MoveTrailingBtoNextGOP();
+                    }
 //                PrepareToEndSequence();
             }
 
@@ -1988,13 +1996,13 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
             return MFX_ERR_UNKNOWN;
         }
     } else {
-        if (m_pLastFrame && !m_pLastFrame->wasEncoded() && m_pLastFrame->m_PicCodType == MFX_FRAMETYPE_B)
+        if (m_pLastFrame && !m_pLastFrame->wasEncoded() && m_pLastFrame->m_PicCodType == MFX_FRAMETYPE_B && !m_videoParam.GopStrictFlag)
             m_pLastFrame->m_PicCodType = MFX_FRAMETYPE_P;
     }
 
     m_pCurrentFrame = m_cpb.findOldestToEncode(&m_dpb, m_l1_cnt_to_start_B,
                                                0, 0 /*m_isBpyramid, m_Bpyramid_nextNumFrame*/);
-    if (m_l1_cnt_to_start_B == 0 && m_pCurrentFrame && m_pCurrentFrame->m_PicCodType == MFX_FRAMETYPE_B)
+    if (m_l1_cnt_to_start_B == 0 && m_pCurrentFrame && m_pCurrentFrame->m_PicCodType == MFX_FRAMETYPE_B && !m_videoParam.GopStrictFlag)
         m_pCurrentFrame->m_PicCodType = MFX_FRAMETYPE_P;
 
 //        if (!m_isBpyramid)
@@ -2004,10 +2012,14 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
 //                !m_cpb.isEmpty() && !m_pCurrentFrame && !src)
         if (!m_cpb.isEmpty() && !m_pCurrentFrame && !surface) {
             m_pCurrentFrame = m_cpb.findOldestToEncode(&m_dpb, 0, 0, 0/*m_isBpyramid, m_Bpyramid_nextNumFrame*/);
-            if (m_pCurrentFrame && m_pCurrentFrame->m_PicCodType == MFX_FRAMETYPE_B)
+            if (m_pCurrentFrame && m_pCurrentFrame->m_PicCodType == MFX_FRAMETYPE_B && !m_videoParam.GopStrictFlag)
                 m_pCurrentFrame->m_PicCodType = MFX_FRAMETYPE_P;
         }
     }
+
+    if (!mfxBS)
+        return MFX_ERR_NONE;
+
 
     Ipp32u ePictureType;
 
@@ -2029,8 +2041,6 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
         return MFX_ERR_MORE_DATA;
     }
 
-    if (!mfxBS)
-        return MFX_ERR_NULL_PTR;
 
     ePictureType = m_pCurrentFrame->m_PicCodType;
     // Determine the Pic_Class.  Right now this depends on ePictureType, but that could change
