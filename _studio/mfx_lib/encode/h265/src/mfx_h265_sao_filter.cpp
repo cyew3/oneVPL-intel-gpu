@@ -975,30 +975,30 @@ SaoCtuParam& SaoCtuParam::operator= (const SaoCtuParam& src)
 }
 
 // ========================================================
-// SAO FILTER
+// SAO ENCODE FILTER
 // ========================================================
 
-SAOFilter::SAOFilter()
+SaoEncodeFilter::SaoEncodeFilter()
 {
     // TODO
 
-} // SAOFilter::SAOFilter()
+} // SaoEncodeFilter::SaoEncodeFilter()
 
 
-void SAOFilter::Close()
+void SaoEncodeFilter::Close()
 {
 
-} // void SAOFilter::Close()
+} // void SaoEncodeFilter::Close()
 
 
-SAOFilter::~SAOFilter()
+SaoEncodeFilter::~SaoEncodeFilter()
 {
     Close();
 
-} // SAOFilter::~SAOFilter()
+} // SaoEncodeFilter::~SaoEncodeFilter()
 
 
-void SAOFilter::Init(int width, int height, int maxCUWidth, int maxDepth)
+void SaoEncodeFilter::Init(int width, int height, int maxCUWidth, int maxDepth)
 {
     m_frameSize.width = width;
     m_frameSize.height= height;
@@ -1008,10 +1008,10 @@ void SAOFilter::Init(int width, int height, int maxCUWidth, int maxDepth)
     m_numCTU_inWidth = (m_frameSize.width/m_maxCUSize)  + ((m_frameSize.width % m_maxCUSize)?1:0);
     m_numCTU_inHeight= (m_frameSize.height/m_maxCUSize) + ((m_frameSize.height % m_maxCUSize)?1:0);
 
-} // void SAOFilter::Init(...)
+} // void SaoEncodeFilter::Init(...)
 
 
-void SAOFilter::EstimateCtuSao(
+void SaoEncodeFilter::EstimateCtuSao(
     mfxFrameData* orgYuv, 
     mfxFrameData* recYuv, 
     bool* sliceEnabled, 
@@ -1027,10 +1027,10 @@ void SAOFilter::EstimateCtuSao(
 
     GetBestCtuSaoParam(sliceEnabled, recYuv, saoParam);
 
-} // void SAOFilter::EstimateCtuSao()
+} // void SaoEncodeFilter::EstimateCtuSao()
 
 
-void SAOFilter::GetCtuSaoStatistics(mfxFrameData* orgYuv, mfxFrameData* recYuv)
+void SaoEncodeFilter::GetCtuSaoStatistics(mfxFrameData* orgYuv, mfxFrameData* recYuv)
 {
     bool isLeftAvail, isAboveAvail, isAboveLeftAvail,isAboveRightAvail;
 
@@ -1089,10 +1089,10 @@ void SAOFilter::GetCtuSaoStatistics(mfxFrameData* orgYuv, mfxFrameData* recYuv)
         }
     }
 
-} // void SAOFilter::GetCtuSaoStatistics(...)
+} // void SaoEncodeFilter::GetCtuSaoStatistics(...)
 
 
-void SAOFilter::GetBestCtuSaoParam(
+void SaoEncodeFilter::GetBestCtuSaoParam(
     bool* sliceEnabled,
     mfxFrameData* srcYuv,
     SaoCtuParam* codedParam)
@@ -1165,10 +1165,10 @@ void SAOFilter::GetBestCtuSaoParam(
 
     ReconstructCtuSaoParam(*codedParam, mergeList);
 
-} // void SAOFilter::GetBestCtuSaoParam(...)
+} // void SaoEncodeFilter::GetBestCtuSaoParam(...)
 
 
-int SAOFilter::getMergeList(int ctu, SaoCtuParam* blkParams, std::vector<SaoCtuParam*>& mergeList)
+int SaoEncodeFilter::getMergeList(int ctu, SaoCtuParam* blkParams, std::vector<SaoCtuParam*>& mergeList)
 {
     int ctuX = ctu % m_numCTU_inWidth;
     int ctuY = ctu / m_numCTU_inWidth;
@@ -1224,10 +1224,10 @@ int SAOFilter::getMergeList(int ctu, SaoCtuParam* blkParams, std::vector<SaoCtuP
 
     return numValidMergeCandidates;
 
-} // int SAOFilter::getMergeList(int ctu, SaoCtuParam* blkParams, std::vector<SaoCtuParam*>& mergeList)
+} // int SaoEncodeFilter::getMergeList(int ctu, SaoCtuParam* blkParams, std::vector<SaoCtuParam*>& mergeList)
 
 
-void SAOFilter::ModeDecision_Merge(std::vector<SaoCtuParam*>& mergeList, bool* sliceEnabled, SaoCtuParam& modeParam, Ipp64f& modeNormCost, int inCabacLabel)
+void SaoEncodeFilter::ModeDecision_Merge(std::vector<SaoCtuParam*>& mergeList, bool* sliceEnabled, SaoCtuParam& modeParam, Ipp64f& modeNormCost, int inCabacLabel)
 {
     int mergeListSize = (int)mergeList.size();
     modeNormCost = MAX_DOUBLE;
@@ -1284,10 +1284,10 @@ void SAOFilter::ModeDecision_Merge(std::vector<SaoCtuParam*>& mergeList, bool* s
 
     m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_TEMP], 0, NUM_CABAC_CONTEXT);
 
-} // void SAOFilter::ModeDecision_Merge(...)
+} // void SaoEncodeFilter::ModeDecision_Merge(...)
 
 
-void SAOFilter::ModeDecision_Base(
+void SaoEncodeFilter::ModeDecision_Base(
     std::vector<SaoCtuParam*>& mergeList,
     bool* sliceEnabled,
     SaoCtuParam& modeParam,
@@ -1442,10 +1442,10 @@ void SAOFilter::ModeDecision_Base(
     h265_code_sao_ctb_param(m_bsf, modeParam, sliceEnabled, (mergeList[SAO_MERGE_LEFT]!= NULL), (mergeList[SAO_MERGE_ABOVE]!= NULL), false);
     modeNormCost += (Ipp64f)GetNumWrittenBits();
 
-} // void SAOFilter::ModeDecision_Base(...)
+} // void SaoEncodeFilter::ModeDecision_Base(...)
 
 
-void SAOFilter::ApplyCtuSao(
+void SaoEncodeFilter::ApplyCtuSao(
     mfxFrameData* srcYuv,
     mfxFrameData* resYuv,
     SaoCtuParam& saoblkParam,
@@ -1523,8 +1523,209 @@ void SAOFilter::ApplyCtuSao(
         }
     } //compIdx
 
-} // void SAOFilter::ApplyCtuSao(...)
+} // void SaoEncodeFilter::ApplyCtuSao(...)
 
+
+// ========================================================
+// SAO DECODE FILTER
+// ========================================================
+
+SaoDecodeFilter::SaoDecodeFilter()
+{
+    m_OffsetBo  = NULL;
+    m_OffsetBo2 = NULL;
+    m_OffsetBoChroma = NULL;
+    m_OffsetBo2Chroma = NULL;
+    m_ClipTable = NULL;
+    m_ClipTableBase = NULL;
+    m_lumaTableBo = NULL;
+
+    m_TmpU[0] = m_TmpU[1] = NULL;
+    m_TmpL[0] = m_TmpL[1] = NULL;
+
+} // SaoDecodeFilter::SaoDecodeFilter()
+
+
+void SaoDecodeFilter::Close()
+{
+    if(m_OffsetBo)
+    {
+        delete [] m_OffsetBo;
+        m_OffsetBo = NULL;
+    }
+
+    if(m_OffsetBo2)
+    {
+        delete [] m_OffsetBo2;
+        m_OffsetBo2 = NULL;
+    }
+
+    if(m_OffsetBoChroma)
+    {
+        delete [] m_OffsetBoChroma;
+        m_OffsetBoChroma = NULL;
+    }
+
+    if(m_OffsetBo2Chroma)
+    {
+        delete [] m_OffsetBo2Chroma;
+        m_OffsetBo2Chroma = NULL;
+    }
+
+    /*if(m_ClipTable)
+    {
+        delete [] m_ClipTable;
+        m_ClipTable = NULL;
+    }*/
+    m_ClipTable = NULL;
+
+    if(m_ClipTableBase)
+    {
+        delete [] m_ClipTableBase;
+        m_ClipTableBase = NULL;
+    }
+
+    if(m_lumaTableBo)
+    {
+        delete [] m_lumaTableBo;
+        m_lumaTableBo = NULL;
+    }
+
+    if(m_TmpU[0])
+    {
+        delete [] m_TmpU[0];
+        m_TmpU[0] = NULL;
+    }
+    if(m_TmpU[1])
+    {
+        delete [] m_TmpU[1];
+        m_TmpU[1] = NULL;
+    }
+
+    if(m_TmpL[0])
+    {
+        delete [] m_TmpL[0];
+        m_TmpL[0] = NULL;
+    }
+    if(m_TmpL[1])
+    {
+        delete [] m_TmpL[1];
+        m_TmpL[1] = NULL;
+    }
+
+} // void SaoDecodeFilter::Close()
+
+
+SaoDecodeFilter::~SaoDecodeFilter()
+{
+    Close();
+
+} // SaoDecodeFilter::~SaoDecodeFilter()
+
+
+void SaoDecodeFilter::Init(int width, int height, int maxCUWidth, int maxDepth)
+{
+    m_PicWidth  = width;
+    m_PicHeight = height;
+
+    m_MaxCUSize  = maxCUWidth;
+
+    Ipp32u uiPixelRangeY = 1 << g_bitDepthY;
+    Ipp32u uiBoRangeShiftY = g_bitDepthY - SAO_BO_BITS;
+
+    m_lumaTableBo = new PixType[uiPixelRangeY];
+    for (Ipp32u k2 = 0; k2 < uiPixelRangeY; k2++)
+    {
+        m_lumaTableBo[k2] = (PixType)(1 + (k2>>uiBoRangeShiftY));
+    }
+
+    Ipp32u uiMaxY  = (1 << g_bitDepthY) - 1;
+    Ipp32u uiMinY  = 0;
+
+    Ipp32u iCRangeExt = uiMaxY>>1;
+
+    m_ClipTableBase = new PixType[uiMaxY+2*iCRangeExt];
+    m_OffsetBo      = new PixType[uiMaxY+2*iCRangeExt];
+    m_OffsetBo2     = new PixType[uiMaxY+2*iCRangeExt];
+    m_OffsetBoChroma   = new PixType[uiMaxY+2*iCRangeExt];
+    m_OffsetBo2Chroma  = new PixType[uiMaxY+2*iCRangeExt];
+
+    for (Ipp32u i = 0; i < (uiMinY + iCRangeExt);i++)
+    {
+        m_ClipTableBase[i] = (PixType)uiMinY;
+    }
+
+    for (Ipp32u i = uiMinY + iCRangeExt; i < (uiMaxY + iCRangeExt); i++)
+    {
+        m_ClipTableBase[i] = (PixType)(i - iCRangeExt);
+    }
+
+    for (Ipp32u i = uiMaxY + iCRangeExt; i < (uiMaxY + 2 * iCRangeExt); i++)
+    {
+        m_ClipTableBase[i] = (PixType)uiMaxY;
+    }
+
+    m_ClipTable = &(m_ClipTableBase[iCRangeExt]);
+
+    m_TmpU[0] = new PixType [2*m_PicWidth];
+    m_TmpU[1] = new PixType [2*m_PicWidth];
+
+    m_TmpL[0] = new PixType [2*SAO_PRED_SIZE];
+    m_TmpL[1] = new PixType [2*SAO_PRED_SIZE];
+
+    m_SaoBitIncreaseY = IPP_MAX(g_bitDepthY - 10, 0);
+    m_SaoBitIncreaseC = IPP_MAX(g_bitDepthC - 10, 0);
+
+} // void SaoDecodeFilter::Init(...)
+
+
+void SaoDecodeFilter::SetOffsetsLuma(SaoCtuParam  &saoLCUParam, Ipp32s typeIdx)
+{
+    Ipp32s offset[LUMA_GROUP_NUM + 1] = {0};
+    static const Ipp8u EoTable[9] =
+    {
+        1, //0
+        2, //1
+        0, //2
+        3, //3
+        4, //4
+        0, //5
+        0, //6
+        0, //7
+        0
+    };
+
+    if (typeIdx == SAO_TYPE_BO)
+    {
+        for (Ipp32s i = 0; i < NUM_SAO_BO_CLASSES + 1; i++)
+        {
+            offset[i] = 0;
+        }
+        for (Ipp32s i = 0; i < 4; i++)
+        {
+            offset[(saoLCUParam[0].typeAuxInfo + i) % NUM_SAO_BO_CLASSES + 1] = saoLCUParam[0].offset[(saoLCUParam[0].typeAuxInfo + i) % NUM_SAO_BO_CLASSES];//[i];
+        }
+
+        PixType *ppLumaTable = m_lumaTableBo;
+        for (Ipp32s i = 0; i < (1 << g_bitDepthY); i++)
+        {
+            m_OffsetBo[i] = m_ClipTable[i + offset[ppLumaTable[i]]];
+        }
+    }
+    else if (typeIdx == SAO_TYPE_EO_0 || typeIdx == SAO_TYPE_EO_90 || typeIdx == SAO_TYPE_EO_135 || typeIdx == SAO_TYPE_EO_45)
+    {
+    //  offset[0] = 0;
+    //    for (Ipp32s i = 0; i < 4; i++)
+    //    {
+    //        offset[i + 1] = saoLCUParam[0].offset[i];
+    //    }
+        for (Ipp32s edgeType = 0; edgeType < 6; edgeType++)
+       {
+            //m_OffsetEo[edgeType] = offset[ EoTable[edgeType] ];
+            m_OffsetEo[edgeType] = saoLCUParam[0].offset[edgeType];
+        }
+    }
+}
 
 // ========================================================
 //  CTU Caller
@@ -1536,14 +1737,14 @@ void H265CU::EstimateCtuSao(
     SaoCtuParam* saoParam_TotalFrame,
     const MFX_HEVC_PP::CTBBorders & borders)
 {
-    m_saoFilter.m_ctb_addr = this->ctb_addr;
-    m_saoFilter.m_ctb_pelx = this->ctb_pelx;
-    m_saoFilter.m_ctb_pely = this->ctb_pely;
+    m_saoEncodeFilter.m_ctb_addr = this->ctb_addr;
+    m_saoEncodeFilter.m_ctb_pelx = this->ctb_pelx;
+    m_saoEncodeFilter.m_ctb_pely = this->ctb_pely;
 
-    m_saoFilter.m_codedParams_TotalFrame = saoParam_TotalFrame;
-    m_saoFilter.m_bsf = bs;
-    m_saoFilter.m_labmda[0] = this->rd_lambda*256;
-    m_saoFilter.m_borders = borders;
+    m_saoEncodeFilter.m_codedParams_TotalFrame = saoParam_TotalFrame;
+    m_saoEncodeFilter.m_bsf = bs;
+    m_saoEncodeFilter.m_labmda[0] = this->rd_lambda*256;
+    m_saoEncodeFilter.m_borders = borders;
     // ----------------------------------------------------
 
     // run
@@ -1560,7 +1761,7 @@ void H265CU::EstimateCtuSao(
     recYuv.Pitch = (Ipp16s)this->pitch_rec_luma;
 
     bool    sliceEnabled[NUM_SAO_COMPONENTS] = {false, false, false};
-    m_saoFilter.EstimateCtuSao( &orgYuv, &recYuv, sliceEnabled, saoParam);
+    m_saoEncodeFilter.EstimateCtuSao( &orgYuv, &recYuv, sliceEnabled, saoParam);
 
     // set slice param
     if( !this->cslice->slice_sao_luma_flag )

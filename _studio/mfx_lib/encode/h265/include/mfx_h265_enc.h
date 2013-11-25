@@ -132,6 +132,8 @@ public:
 
     // SAO!!!
     std::vector<SaoCtuParam> m_saoParam;
+    SaoDecodeFilter m_saoDecodeFilter;
+
     H265ProfileLevelSet m_profile_level;
     H265VidParameterSet m_vps;
     H265SeqParameterSet m_sps;
@@ -216,6 +218,7 @@ public:
     mfxStatus EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *bs);
     mfxStatus DeblockThread(Ipp32s ithread);
     mfxStatus ApplySAOThread(Ipp32s ithread);
+    mfxStatus ApplySAOThread_old(Ipp32s ithread); //aya: for debug only
     mfxStatus EncodeThread(Ipp32s ithread);
     mfxStatus EncodeThreadByRow(Ipp32s ithread);
     mfxStatus MoveFromCPBToDPB();

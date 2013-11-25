@@ -164,7 +164,7 @@ public:
     Ipp64f rd_lambda_inter_mv;
     H265Slice *cslice;
     Ipp8u depth_min;
-    SAOFilter m_saoFilter;
+    SaoEncodeFilter m_saoEncodeFilter;
 
     inline bool  isIntra(Ipp32u part_idx)
     { return data[part_idx].pred_mode == MODE_INTRA; }

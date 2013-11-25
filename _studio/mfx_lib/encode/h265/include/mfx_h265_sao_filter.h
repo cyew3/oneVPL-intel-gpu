@@ -154,11 +154,11 @@ private:
 };
 
 
-class SAOFilter
+class SaoEncodeFilter
 {
 public:
-     SAOFilter(void);
-     ~SAOFilter();
+     SaoEncodeFilter(void);
+     ~SaoEncodeFilter();
 
      void Init(
          int width,
@@ -241,6 +241,51 @@ public:
     SaoCtuParam* m_codedParams_TotalFrame;
 };
 
+class SaoDecodeFilter
+{
+public:
+     SaoDecodeFilter(void);
+     ~SaoDecodeFilter();
+
+     void Init(
+         int width,
+         int height,
+         int maxCUWidth,
+         int maxDepth);
+
+     void Close(void);
+
+     void SetOffsetsLuma(
+         SaoCtuParam  &saoLCUParam, 
+         Ipp32s typeIdx);
+
+     Ipp8u   *m_TmpU[2];
+     Ipp8u   *m_TmpL[2];
+
+//private:
+    static const int LUMA_GROUP_NUM = 32;
+    static const int SAO_BO_BITS = 5;
+    static const int SAO_PRED_SIZE = 66;
+
+    Ipp32s   m_OffsetEo[LUMA_GROUP_NUM];
+    Ipp32s   m_OffsetEo2[LUMA_GROUP_NUM];
+    Ipp32s   m_OffsetEoChroma[LUMA_GROUP_NUM];
+    Ipp32s   m_OffsetEo2Chroma[LUMA_GROUP_NUM];
+
+    Ipp8u   *m_OffsetBo;
+    Ipp8u   *m_OffsetBo2;
+    Ipp8u   *m_OffsetBoChroma;
+    Ipp8u   *m_OffsetBo2Chroma;
+    Ipp8u   *m_ClipTable;
+    Ipp8u   *m_ClipTableBase;
+    Ipp8u   *m_lumaTableBo;
+
+    Ipp32u   m_PicWidth;
+    Ipp32u   m_PicHeight;
+    Ipp32u   m_MaxCUSize;
+    Ipp32u   m_SaoBitIncreaseY; 
+    Ipp32u   m_SaoBitIncreaseC;
+};
 #endif // __MFX_H265_SAO_FILTER_H__
 #endif // (MFX_ENABLE_H265_VIDEO_ENCODE)
 /* EOF */

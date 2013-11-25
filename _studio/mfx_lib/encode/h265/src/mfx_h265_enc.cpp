@@ -708,13 +708,18 @@ mfxStatus H265Encoder::Init(mfxVideoH265InternalParam *param, mfxExtCodingOption
     ippsZero_8u((Ipp8u*)data_temp, sizeof(H265CUData) * data_temp_size * m_videoParam.num_threads);
 
     MFX_HEVC_PP::InitDispatcher();
+
     // SAO
+    //-----------------------------------------------------
+    m_saoDecodeFilter.Init(m_videoParam.Width, m_videoParam.Height, m_videoParam.MaxCUSize, 0);
     m_saoParam.resize(m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs);
 
     for(Ipp32u idx = 0; idx < m_videoParam.num_threads; idx++)
     {
-        cu[idx].m_saoFilter.Init(m_videoParam.Width, m_videoParam.Height, 1 << m_videoParam.Log2MaxCUSize, m_videoParam.MaxCUDepth);
+        cu[idx].m_saoEncodeFilter.Init(m_videoParam.Width, m_videoParam.Height, 1 << m_videoParam.Log2MaxCUSize, m_videoParam.MaxCUDepth);
     }
+    //-----------------------------------------------------
+    
     return sts;
 }
 
@@ -730,6 +735,8 @@ void H265Encoder::Close() {
         H265_Free(memBuf);
         memBuf = NULL;
     }
+
+    m_saoDecodeFilter.Close();
 }
 
 Ipp32u H265Encoder::DetermineFrameType()
@@ -1445,7 +1452,111 @@ mfxStatus H265Encoder::DeblockThread(Ipp32s ithread) {
     return MFX_ERR_NONE;
 }
 
+
 mfxStatus H265Encoder::ApplySAOThread(Ipp32s ithread)
+{
+    IppiSize roiSize;
+    roiSize.width = m_videoParam.Width;
+    roiSize.height = m_videoParam.Height;
+    
+    int numCTU = m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs;    
+
+    SaoDecodeFilter saoFilter_New;
+    saoFilter_New.Init(m_videoParam.Width, m_videoParam.Height, m_videoParam.MaxCUSize, 0);
+    Ipp8u* pRecY = m_pReconstructFrame->y;
+    int pitch_luma = m_pReconstructFrame->pitch_luma;
+
+    // save boundaries
+    {
+        Ipp32s width = roiSize.width;
+        memcpy(saoFilter_New.m_TmpU[0], pRecY, sizeof(Ipp8u) * width);
+    }
+    // ----------------------------------------------------------------------------------------
+
+    for(int ctu = 0; ctu < numCTU; ctu++)
+    {
+        // update #1
+        int ctb_pelx           = ( ctu % m_videoParam.PicWidthInCtbs ) * m_videoParam.MaxCUSize;
+        int ctb_pely           = ( ctu / m_videoParam.PicWidthInCtbs ) * m_videoParam.MaxCUSize;
+        
+        int offset = ctb_pelx + ctb_pely * pitch_luma;
+
+        if ((ctu % m_videoParam.PicWidthInCtbs) == 0 && (ctu / m_videoParam.PicWidthInCtbs) != (m_videoParam.PicHeightInCtbs - 1))
+        {
+            PixType* pRecTmp = pRecY + offset + (m_videoParam.MaxCUSize - 1)*pitch_luma;
+            memcpy(saoFilter_New.m_TmpU[1], pRecTmp, sizeof(PixType) * roiSize.width);
+        }
+
+        if( (ctu % m_videoParam.PicWidthInCtbs) == 0 )
+        {
+            for (Ipp32u i = 0; i < m_videoParam.MaxCUSize+1; i++)
+            {
+                saoFilter_New.m_TmpL[0][i] = pRecY[offset + i*pitch_luma];
+            }
+        }
+
+        if ((ctu % m_videoParam.PicWidthInCtbs) != (m_videoParam.PicWidthInCtbs - 1))
+        {
+            for (Ipp32u i = 0; i < m_videoParam.MaxCUSize+1; i++)
+            {
+                saoFilter_New.m_TmpL[1][i] = pRecY[offset + i*pitch_luma + m_videoParam.MaxCUSize-1];
+            }
+        }
+
+        /*MFX_HEVC_PP::CTBBorders borders = {0};
+        borders.m_left     = (ctu % m_videoParam.PicWidthInCtbs != 0);
+        borders.m_right    = (ctu % m_videoParam.PicWidthInCtbs != m_videoParam.PicWidthInCtbs-1);
+        borders.m_top      = (ctu >= (int)m_videoParam.PicWidthInCtbs );
+        borders.m_bottom   = (ctu <  numCTU - (int)m_videoParam.PicWidthInCtbs);
+        borders.m_top_left = (borders.m_top && borders.m_left);
+        borders.m_top_right = (borders.m_top && borders.m_right);
+        borders.m_bottom_left = (borders.m_bottom && borders.m_left);
+        borders.m_bottom_right = (borders.m_bottom && borders.m_right);*/
+
+        int typeIdx = m_saoParam[ctu][0].type_idx;
+
+        if(m_saoParam[ctu][SAO_Y ].mode_idx != SAO_MODE_OFF)
+        {
+            saoFilter_New.SetOffsetsLuma(m_saoParam[ctu], m_saoParam[ctu][0].type_idx);
+
+            MFX_HEVC_PP::NAME(h265_ProcessSaoCuOrg_Luma_8u)(
+                pRecY + offset,
+                pitch_luma,
+
+                typeIdx,
+
+                saoFilter_New.m_TmpL[0],
+                &(saoFilter_New.m_TmpU[0][ctb_pelx]),
+
+                m_videoParam.MaxCUSize,
+                m_videoParam.MaxCUSize,
+
+                roiSize.width,
+                roiSize.height,
+
+                saoFilter_New.m_OffsetEo,
+                saoFilter_New.m_OffsetBo,
+                saoFilter_New.m_ClipTable,
+
+                ctb_pelx,
+                ctb_pely/*,
+                        borders*/);
+        }
+
+        std::swap(saoFilter_New.m_TmpL[0], saoFilter_New.m_TmpL[1]);
+
+        if (( (ctu+1) %  m_videoParam.PicWidthInCtbs) == 0)
+        {
+            std::swap(saoFilter_New.m_TmpU[0], saoFilter_New.m_TmpU[1]);
+        }
+    }
+
+    return MFX_ERR_NONE;
+
+} // mfxStatus H265Encoder::ApplySAOThread(Ipp32s ithread)
+
+
+mfxStatus H265Encoder::ApplySAOThread_old(Ipp32s ithread)
 {
     Ipp8u* tmpBufferY = new Ipp8u[m_videoParam.Height * m_pReconstructFrame->pitch_luma];
     mfxFrameData srcReconY;
@@ -1468,7 +1579,7 @@ mfxStatus H265Encoder::ApplySAOThread(Ipp32s ithread)
     dstReconY.Y = m_pReconstructFrame->y;
     dstReconY.Pitch = (mfxU16)m_pReconstructFrame->pitch_luma;
 
-    SAOFilter saoFilter;
+    SaoEncodeFilter saoFilter;
 
     Ipp8u* p_srcStart = srcReconY.Y;
     Ipp8u* p_dstStart = dstReconY.Y;
@@ -1492,7 +1603,8 @@ mfxStatus H265Encoder::ApplySAOThread(Ipp32s ithread)
 
     return MFX_ERR_NONE;
 
-} // mfxStatus H265Encoder::ApplySAOThread(Ipp32s ithread)
+} // mfxStatus H265Encoder::ApplySAOThread_old(Ipp32s ithread)
+
 
 mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
     Ipp32u ctb_row = 0, ctb_col = 0, ctb_addr = 0;
