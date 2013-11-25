@@ -1704,8 +1704,6 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
             cu[ithread].EncAndRecLuma(0, 0, 0, nz, NULL);
             cu[ithread].EncAndRecChroma(0, 0, 0, nz, NULL);
 
-            if (!(m_slices[curr_slice].slice_deblocking_filter_disabled_flag) && pars->num_threads == 1)
-                cu[ithread].Deblock();
             if (!(m_slices[curr_slice].slice_deblocking_filter_disabled_flag) && (pars->num_threads == 1 || m_sps.sample_adaptive_offset_enabled_flag))
             {
                 cu[ithread].Deblock();
@@ -1716,7 +1714,7 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
                     borders.m_left  = (-1 == cu[ithread].left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ cu[ithread].left_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
                     borders.m_top = (-1 == cu[ithread].above_addr) ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ cu[ithread].above_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
 
-                    cu[ithread].EstimateCtuSao( &bsf[ithread], &m_saoParam[ctb_addr], ctb_addr > 0 ? &m_saoParam[0] : NULL, borders );
+                    cu[ithread].EstimateCtuSao( &bsf[ctb_row], &m_saoParam[ctb_addr], ctb_addr > 0 ? &m_saoParam[0] : NULL, borders );
 
                     // aya: tiles issues???
                     borders.m_left  = (-1 == cu[ithread].left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ cu[ithread].left_addr ]) ? 1 : 0;

@@ -1286,6 +1286,9 @@ void H265CU::ModeDecision(Ipp32u abs_part_idx, Ipp32u offset, Ipp8u depth, CostT
             CostType cost_skip;
             data = data_save;
 
+            if (rd_opt_flag)
+                bsf->CtxRestore(ctx_save[0], 0, NUM_CABAC_CONTEXT);
+
             cost_skip = CalcCostSkip(abs_part_idx, depth);
             if (rd_opt_flag) {
                 bsf->Reset();
