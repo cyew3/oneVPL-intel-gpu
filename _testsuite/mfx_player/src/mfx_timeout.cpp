@@ -20,8 +20,10 @@ File Name: .h
     #define MAX_SYNC_WAIT      60000u // 60 sec
 #endif
 
-mfxU32 g_TimeoutGeneric = MAX_SYNC_WAIT;
-mfxU32 g_TimeoutFFS = MAX_SYNC_WAIT;
+namespace {
+    mfxU32 g_TimeoutGeneric = MAX_SYNC_WAIT;
+    mfxU32 g_TimeoutFFS = MAX_SYNC_WAIT;
+}
 
 template<>
 mfxU32 & TimeoutVal<PIPELINE_TIMEOUT_GENERIC>::g_val = g_TimeoutGeneric;
