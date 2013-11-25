@@ -132,7 +132,7 @@ protected:
     mfxU16                          m_OldAccuracy;
     mfxU16                          m_OldConvergence;
 
-    mfxU16                          m_CQMQuality;
+    mfxU16                          m_IQMQuality;
 
     //////////////////////////////////////////////////////////////////////////
     mfxI32                          m_BitRate;
