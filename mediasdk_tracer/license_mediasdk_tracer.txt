@@ -1,7 +1,8 @@
 The following materials are defined as "Developer Tools" and are subject
 to the terms and conditions of the End User License Agreement
 
-<InstallationFolder>\tools\mediasdk_tracer\tracer_core32.dll
-<InstallationFolder>\tools\mediasdk_tracer\tracer_core64.dll
-<InstallationFolder>\tools\mediasdk_tracer\mediasdk_tracer.exe
-<InstallationFolder>\tools\mediasdk_tracer\readme-mediasdk-tracer.rtf
+<InstallationFolder>\mediasdk_tracer.exe
+<InstallationFolder>\tracer_core32.dll
+<InstallationFolder>\tracer_core64.dll
+
+<InstallationFolder>\readme-mediasdk-tracer.rtf
