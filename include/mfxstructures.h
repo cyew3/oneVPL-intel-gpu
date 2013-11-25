@@ -222,7 +222,7 @@ typedef struct {
             union {
                 mfxU16  TargetKbps;
                 mfxU16  QPP;
-                mfxU16  CQMQuality;
+                mfxU16  ICQQuality;
             };
             union {
                 mfxU16  MaxKbps;
@@ -420,9 +420,9 @@ enum {
     MFX_RATECONTROL_RESERVED3 =100,
     MFX_RATECONTROL_RESERVED4 =7,
     MFX_RATECONTROL_LA        =8,
-    MFX_RATECONTROL_CQM       =9,
+    MFX_RATECONTROL_ICQ       =9,
     MFX_RATECONTROL_VCM       =10,
-    MFX_RATECONTROL_LA_CQM    =11
+    MFX_RATECONTROL_LA_ICQ    =11
 };
 
 /* Trellis control*/
