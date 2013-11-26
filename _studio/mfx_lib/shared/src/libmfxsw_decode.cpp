@@ -477,8 +477,11 @@ mfxStatus MFXVideoDECODE_Close(mfxSession session)
         session->m_pScheduler->WaitForTaskCompletion(session->m_pDECODE.get());
 
         mfxRes = session->m_pDECODE->Close();
-        // delete the codec's instance
-        session->m_pDECODE.reset((VideoDECODE *) 0);
+        // delete the codec's instance if not plugin
+        if (!session->m_plgDec.get())
+        {
+            session->m_pDECODE.reset((VideoDECODE *) 0);
+        }
     }
     // handle error(s)
     catch(MFX_CORE_CATCH_TYPE)

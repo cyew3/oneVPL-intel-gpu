@@ -548,8 +548,11 @@ mfxStatus MFXVideoENCODE_Close(mfxSession session)
         session->m_pScheduler->WaitForTaskCompletion(session->m_pENCODE.get());
 
         mfxRes = session->m_pENCODE->Close();
-        // delete the codec's instance
-        session->m_pENCODE.reset((VideoENCODE *) 0);
+        // delete the codec's instance if not plugin
+        if (!session->m_plgEnc.get())
+        {
+            session->m_pENCODE.reset((VideoENCODE *) 0);
+        }
     }
     // handle error(s)
     catch(MFX_CORE_CATCH_TYPE)
