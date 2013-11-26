@@ -137,14 +137,6 @@ public:
             m_pSeqParamSet->IncrementReference();
     }
 
-    const H265VideoParamSet *GetVideoParam(void) const {return m_pVideoParamSet;}
-    void SetVideoParam(const H265VideoParamSet * sps)
-    {
-        m_pVideoParamSet = sps;
-        if (m_pVideoParamSet)
-            m_pVideoParamSet->IncrementReference();
-    }
-
     // Obtain current destination frame
     H265DecoderFrame *GetCurrentFrame(void) const {return m_pCurrentFrame;}
     void SetCurrentFrame(H265DecoderFrame * pFrame){m_pCurrentFrame = pFrame;}
@@ -186,7 +178,6 @@ public:  // DEBUG !!!! should remove dependence
     H265Bitstream m_BitStream;                                  // (H265Bitstream) slice bit stream
 
 private:
-    const H265VideoParamSet *m_pVideoParamSet;
     const H265PicParamSet* m_pPicParamSet;                      // (H265PicParamSet *) pointer to array of picture parameters sets
     const H265SeqParamSet* m_pSeqParamSet;                      // (H265SeqParamSet *) pointer to array of sequence parameters sets
 public:

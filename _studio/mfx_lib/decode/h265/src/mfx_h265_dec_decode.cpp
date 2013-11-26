@@ -1405,29 +1405,6 @@ bool VideoDECODEH265::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * o
             return false;
     }
 
-#if 0
-    // check target views or dependency views
-    mfxExtMVCSeqDesc * newMVCPoints = (mfxExtMVCSeqDesc *)GetExtendedBuffer(newPar->ExtParam, newPar->NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
-    mfxExtMVCSeqDesc * oldMVCPoints = (mfxExtMVCSeqDesc *)GetExtendedBuffer(oldPar->ExtParam, oldPar->NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
-
-    if ((!newMVCPoints && oldMVCPoints) || (newMVCPoints && !oldMVCPoints))
-        return false;
-
-    mfxExtMVCTargetViews * newMVCTargets = (mfxExtMVCTargetViews *)GetExtendedBuffer(newPar->ExtParam, newPar->NumExtParam, MFX_EXTBUFF_MVC_TARGET_VIEWS);
-    mfxExtMVCTargetViews * oldMVCTargets = (mfxExtMVCTargetViews *)GetExtendedBuffer(oldPar->ExtParam, oldPar->NumExtParam, MFX_EXTBUFF_MVC_TARGET_VIEWS);
-
-    if (newMVCTargets && oldMVCTargets)
-    {
-        if (newMVCTargets->NumView != oldMVCTargets->NumView)
-            return false;
-    }
-    else
-    {
-        if ((!newMVCTargets && oldMVCTargets) || (newMVCTargets && !oldMVCTargets))
-            return false;
-    }
-#endif
-
     return true;
 }
 

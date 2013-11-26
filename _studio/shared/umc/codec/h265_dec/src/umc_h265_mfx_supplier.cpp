@@ -517,7 +517,7 @@ HeadersAnalyzer::~HeadersAnalyzer()
 
 bool HeadersAnalyzer::IsEnough() const
 {
-    return m_isVPSFound && m_isSPSFound && m_isPPSFound;
+    return m_isSPSFound && m_isPPSFound;
 }
 
 UMC::Status HeadersAnalyzer::DecodeHeader(UMC::MediaData * data, mfxBitstream *bs, mfxVideoParam *)
@@ -531,7 +531,7 @@ UMC::Status HeadersAnalyzer::DecodeHeader(UMC::MediaData * data, mfxBitstream *b
     for ( ; data->GetDataSize() > 3; )
     {
         m_supplier->GetNalUnitSplitter()->MoveToStartCode(data); // move data pointer to start code
-        if (!m_isVPSFound) // move point to first start code
+        if (!m_isSPSFound) // move point to first start code
         {
             bs->DataOffset = (mfxU32)((mfxU8*)data->GetDataPointer() - (mfxU8*)data->GetBufferPointer());
             bs->DataLength = (mfxU32)data->GetDataSize();

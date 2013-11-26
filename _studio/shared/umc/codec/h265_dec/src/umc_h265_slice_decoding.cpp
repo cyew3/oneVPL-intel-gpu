@@ -47,13 +47,10 @@ void H265Slice::Reset()
 
     if (m_pSeqParamSet)
     {
-        if (m_pVideoParamSet)
-            ((H265VideoParamSet*)m_pVideoParamSet)->DecrementReference();
         if (m_pSeqParamSet)
             ((H265SeqParamSet*)m_pSeqParamSet)->DecrementReference();
         if (m_pPicParamSet)
             ((H265PicParamSet*)m_pPicParamSet)->DecrementReference();
-        m_pVideoParamSet = 0;
         m_pSeqParamSet = 0;
         m_pPicParamSet = 0;
     }

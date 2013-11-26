@@ -151,41 +151,25 @@ UMC::Status DecReferencePictureMarking_H265::UpdateRefPicMarking(ViewItem_H265 &
 /****************************************************************************************************/
 //
 /****************************************************************************************************/
-//static
-//bool IsNeedSPSInvalidate(const H265SeqParamSet *old_sps, const H265SeqParamSet *new_sps)
-//{
-//    if (!old_sps || !new_sps)
-//        return false;
-//
-//    //if (new_sps->no_output_of_prior_pics_flag)
-//      //  return true;
-//
-//    if (old_sps->pic_width != new_sps->pic_width)
-//        return true;
-//
-//    if (old_sps->pic_height != new_sps->pic_height)
-//        return true;
-//
-//    if (old_sps->max_dec_frame_buffering < new_sps->max_dec_frame_buffering)
-//        return true;
-//
-//    /*if (old_sps->frame_cropping_rect_bottom_offset != new_sps->frame_cropping_rect_bottom_offset)
-//        return true;
-//
-//    if (old_sps->frame_cropping_rect_left_offset != new_sps->frame_cropping_rect_left_offset)
-//        return true;
-//
-//    if (old_sps->frame_cropping_rect_right_offset != new_sps->frame_cropping_rect_right_offset)
-//        return true;
-//
-//    if (old_sps->frame_cropping_rect_top_offset != new_sps->frame_cropping_rect_top_offset)
-//        return true;
-//
-//    if (old_sps->aspect_ratio_idc != new_sps->aspect_ratio_idc)
-//        return true; */
-//
-//    return false;
-//}
+bool IsNeedSPSInvalidate(const H265SeqParamSet *old_sps, const H265SeqParamSet *new_sps)
+{
+    if (!old_sps || !new_sps)
+        return false;
+
+    //if (new_sps->no_output_of_prior_pics_flag)
+      //  return true;
+
+    if (old_sps->pic_width_in_luma_samples != new_sps->pic_width_in_luma_samples)
+        return true;
+
+    if (old_sps->pic_height_in_luma_samples != new_sps->pic_height_in_luma_samples)
+        return true;
+
+    //if (old_sps->max_dec_frame_buffering < new_sps->max_dec_frame_buffering)
+      //  return true;
+
+    return false;
+}
 
 /****************************************************************************************************/
 // MVC_Extension_H265 class routine
@@ -1029,44 +1013,52 @@ UMC::Status TaskSupplier_H265::xDecodeSPS(H265Bitstream &bs)
     H265SeqParamSet sps;
     sps.Reset();
 
-    //sps.m_RPSList = &m_RefPicSetList;
     UMC::Status s = bs.GetSequenceParamSet(&sps);
-    if(s == UMC::UMC_OK)
-    {
-        sps.WidthInCU = (sps.pic_width_in_luma_samples % sps.MaxCUSize) ? sps.pic_width_in_luma_samples / sps.MaxCUSize + 1 : sps.pic_width_in_luma_samples / sps.MaxCUSize;
-        sps.HeightInCU = (sps.pic_height_in_luma_samples % sps.MaxCUSize) ? sps.pic_height_in_luma_samples / sps.MaxCUSize  + 1 : sps.pic_height_in_luma_samples / sps.MaxCUSize;
-        sps.NumPartitionsInCUSize = 1 << sps.MaxCUDepth;
-        sps.NumPartitionsInCU = 1 << (sps.MaxCUDepth << 1);
-        sps.NumPartitionsInFrameWidth = sps.WidthInCU * sps.NumPartitionsInCUSize;
-        sps.NumPartitionsInFrameHeight = sps.HeightInCU * sps.NumPartitionsInCUSize;
-
-        Ipp8u newDPBsize = (Ipp8u)CalculateDPBSize(sps.getPTL()->GetGeneralPTL()->level_idc,
-                                   sps.pic_width_in_luma_samples,
-                                   sps.pic_height_in_luma_samples);
-
-        for (Ipp32u i = 0; i <= HighestTid; i++)
-        {
-            if (sps.sps_max_dec_pic_buffering[i] > newDPBsize)
-                sps.sps_max_dec_pic_buffering[i] = newDPBsize;
-        }
-
-        HighestTid = sps.sps_max_sub_layers - 1;
-        sps.sps_max_dec_pic_buffering[0] = sps.sps_max_dec_pic_buffering[HighestTid] ? sps.sps_max_dec_pic_buffering[HighestTid] : newDPBsize;
-
-        if (ViewItem_H265 *view = GetView())
-        {
-            view->SetDPBSize(&sps, m_level_idc);
-            view->sps_max_dec_pic_buffering = sps.sps_max_dec_pic_buffering[HighestTid] ? sps.sps_max_dec_pic_buffering[HighestTid] : view->dpbSize;
-            view->sps_max_num_reorder_pics = sps.sps_max_num_reorder_pics[HighestTid];
-        }
-
-        m_Headers.m_SeqParams.AddHeader(&sps);
-
-        m_pNALSplitter->SetSuggestedSize(CalculateSuggestedSize(&sps));
+    if(s != UMC::UMC_OK)
         return s;
+
+    sps.WidthInCU = (sps.pic_width_in_luma_samples % sps.MaxCUSize) ? sps.pic_width_in_luma_samples / sps.MaxCUSize + 1 : sps.pic_width_in_luma_samples / sps.MaxCUSize;
+    sps.HeightInCU = (sps.pic_height_in_luma_samples % sps.MaxCUSize) ? sps.pic_height_in_luma_samples / sps.MaxCUSize  + 1 : sps.pic_height_in_luma_samples / sps.MaxCUSize;
+    sps.NumPartitionsInCUSize = 1 << sps.MaxCUDepth;
+    sps.NumPartitionsInCU = 1 << (sps.MaxCUDepth << 1);
+    sps.NumPartitionsInFrameWidth = sps.WidthInCU * sps.NumPartitionsInCUSize;
+    sps.NumPartitionsInFrameHeight = sps.HeightInCU * sps.NumPartitionsInCUSize;
+
+    Ipp8u newDPBsize = (Ipp8u)CalculateDPBSize(sps.getPTL()->GetGeneralPTL()->level_idc,
+                                sps.pic_width_in_luma_samples,
+                                sps.pic_height_in_luma_samples);
+
+    for (Ipp32u i = 0; i <= HighestTid; i++)
+    {
+        if (sps.sps_max_dec_pic_buffering[i] > newDPBsize)
+            sps.sps_max_dec_pic_buffering[i] = newDPBsize;
     }
 
-    return UMC::UMC_ERR_INVALID_STREAM;
+    HighestTid = sps.sps_max_sub_layers - 1;
+    sps.sps_max_dec_pic_buffering[0] = sps.sps_max_dec_pic_buffering[HighestTid] ? sps.sps_max_dec_pic_buffering[HighestTid] : newDPBsize;
+
+    if (ViewItem_H265 *view = GetView())
+    {
+        view->SetDPBSize(&sps, m_level_idc);
+        view->sps_max_dec_pic_buffering = sps.sps_max_dec_pic_buffering[HighestTid] ? sps.sps_max_dec_pic_buffering[HighestTid] : view->dpbSize;
+        view->sps_max_num_reorder_pics = sps.sps_max_num_reorder_pics[HighestTid];
+    }
+
+    const H265SeqParamSet * old_sps = m_Headers.m_SeqParams.GetCurrentHeader();
+    bool newResolution = false;
+    if (IsNeedSPSInvalidate(old_sps, &sps))
+    {
+        newResolution = true;
+    }
+
+    m_Headers.m_SeqParams.AddHeader(&sps);
+
+    m_pNALSplitter->SetSuggestedSize(CalculateSuggestedSize(&sps));
+
+    if (newResolution)
+        return UMC::UMC_NTF_NEW_RESOLUTION;
+
+    return UMC::UMC_OK;
 }
 
 UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
@@ -1291,7 +1283,7 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
 UMC::Status TaskSupplier_H265::DecodeHeaders(UMC::MediaDataEx *nalUnit)
 {
     //ViewItem_H265 *view = GetView(BASE_VIEW);
-    //UMC::Status umcRes = UMC::UMC_OK;
+    UMC::Status umcRes = UMC::UMC_OK;
 
     H265Bitstream bitStream;
 
@@ -1317,10 +1309,15 @@ UMC::Status TaskSupplier_H265::DecodeHeaders(UMC::MediaDataEx *nalUnit)
 
         switch(nal_unit_type)
         {
-        case NAL_UT_VPS:  xDecodeVPS(bitStream);      break;
-        case NAL_UT_SPS:  xDecodeSPS(bitStream);      break;
-        case NAL_UT_PPS:  xDecodePPS(bitStream);      break;
-
+        case NAL_UT_VPS:
+            umcRes = xDecodeVPS(bitStream);
+            break;
+        case NAL_UT_SPS:
+            umcRes = xDecodeSPS(bitStream);
+            break;
+        case NAL_UT_PPS:
+            umcRes = xDecodePPS(bitStream);
+            break;
         default:
             break;
         }
@@ -1334,8 +1331,7 @@ UMC::Status TaskSupplier_H265::DecodeHeaders(UMC::MediaDataEx *nalUnit)
         return UMC::UMC_ERR_INVALID_STREAM;
     }
 
-    return UMC::UMC_OK;
-
+    return umcRes;
 }
 
 bool TaskSupplier_H265::IsWantToShowFrame(bool force)
@@ -1836,11 +1832,8 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
         return 0;
     }
 
-    pSlice->SetVideoParam(m_Headers.m_VideoParams.GetHeader(pSlice->GetSeqParam()->sps_video_parameter_set_id));
-    if (!pSlice->GetVideoParam())
-    {
-        return 0;
-    }
+    // do not need vps
+    //H265VideoParamSet * vps = m_Headers.m_VideoParams.GetHeader(pSlice->GetSeqParam()->sps_video_parameter_set_id);
 
     m_Headers.m_SeqParams.SetCurrentID(pSlice->GetPicParam()->pps_seq_parameter_set_id);
     m_Headers.m_PicParams.SetCurrentID(pSlice->GetPicParam()->pps_pic_parameter_set_id);
@@ -2315,7 +2308,7 @@ H265DecoderFrame * TaskSupplier_H265::AllocateNewFrame(const H265Slice *pSlice)
 
     DPBUpdate(pSlice);
 
-    if (pSlice->GetSliceHeader()->nal_unit_type == NAL_UT_CODED_SLICE_CRA && m_IRAPType == NAL_UT_INVALID)
+    /*if (pSlice->GetSliceHeader()->nal_unit_type == NAL_UT_CODED_SLICE_CRA && m_IRAPType == NAL_UT_INVALID)
     {
         for (H265DecoderFrame *pCurr = GetView()->pDPB->head(); pCurr; pCurr = pCurr->future())
         {
@@ -2328,7 +2321,7 @@ H265DecoderFrame * TaskSupplier_H265::AllocateNewFrame(const H265Slice *pSlice)
                 }
             }
         }
-    }
+    }*/
 
     pFrame = GetFreeFrame();
     if (NULL == pFrame)
