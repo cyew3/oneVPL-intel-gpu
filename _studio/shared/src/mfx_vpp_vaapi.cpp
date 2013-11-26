@@ -291,11 +291,8 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     VAStatus vaSts = VA_STATUS_SUCCESS;
 
     MFX_CHECK_NULL_PTR1( pParams );
-
     MFX_CHECK_NULL_PTR1( pParams->targetSurface.hdl.first );
-
     MFX_CHECK_NULL_PTR1( pParams->pRefSurfaces );
-
     MFX_CHECK_NULL_PTR1( pParams->pRefSurfaces[0].hdl.first );
 
     if (VA_INVALID_ID == m_deintFilterID)
@@ -303,7 +300,8 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         if (pParams->iDeinterlacingAlgorithm)
         {
             VAProcFilterParameterBufferDeinterlacing deint;
-            deint.type      = VAProcFilterDeinterlacing;
+            deint.type  = VAProcFilterDeinterlacing;
+            deint.flags = 0;
             //WA for VPG driver. Need to rewrite it with caps usage when driver begins to return a correct list of supported DI algorithms
 #ifndef MFX_VA_ANDROID
             if (MFX_DEINTERLACING_BOB == pParams->iDeinterlacingAlgorithm)
@@ -321,16 +319,10 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
                 case MFX_PICSTRUCT_PROGRESSIVE:
                     deint.flags = VA_DEINTERLACING_ONE_FIELD;
                     break;
-                    /* See comment form va_vpp.h
-                     * */
-                    /**
-                     * \brief Bottom field used in deinterlacing.
-                     * if this is not set then assumes top field is used.
-                     */
 
-                //case MFX_PICSTRUCT_FIELD_TFF:
-                //    deint.flags = VA_DEINTERLACING_ONE_FIELD;
-                //    break;
+                case MFX_PICSTRUCT_FIELD_TFF:
+                    break; // don't set anything, see comment in va_vpp.h
+
                 case MFX_PICSTRUCT_FIELD_BFF:
                     deint.flags = VA_DEINTERLACING_BOTTOM_FIELD;
                     break;
@@ -385,7 +377,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     m_pipelineParam.resize(pParams->refCount);
     //m_pipelineParamID.resize(SampleCount);
     //m_pipelineParamID.clear();
-    m_pipelineParamID.resize(pParams->refCount);
+    m_pipelineParamID.resize(pParams->refCount, VA_INVALID_ID);
 
     std::vector<VARectangle> input_region;
     input_region.resize(pParams->refCount);
@@ -600,7 +592,8 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         {
             if ( m_pipelineParamID[refIdx] != VA_INVALID_ID)
             {
-                vaDestroyBuffer(m_vaDisplay, m_pipelineParamCompID[refIdx]);
+                vaSts = vaDestroyBuffer(m_vaDisplay, m_pipelineParamCompID[refIdx]);
+                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
                 m_pipelineParamCompID[refIdx] = VA_INVALID_ID;
             }
         }
@@ -610,7 +603,8 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     {
         if ( m_pipelineParamID[refIdx] != VA_INVALID_ID)
         {
-            vaDestroyBuffer(m_vaDisplay, m_pipelineParamID[refIdx]);
+            vaSts = vaDestroyBuffer(m_vaDisplay, m_pipelineParamID[refIdx]);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
             m_pipelineParamID[refIdx] = VA_INVALID_ID;
         }
     }
