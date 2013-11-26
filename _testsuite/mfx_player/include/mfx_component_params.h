@@ -31,7 +31,7 @@ typedef Adapter<IAllocatorFactoryTmpl<MFXFrameAllocatorRW>, IAllocatorFactory> R
 class ComponentParams
 {
 public:
-    ComponentParams(const tstring & name , const tstring & short_name, IMFXPipelineFactory *pFactory) 
+    ComponentParams(const tstring & name , const tstring & short_name, IMFXPipelineFactory *pFactory)
         : m_Name(name)
         , m_ShortName(short_name)
         , m_params()
@@ -89,7 +89,7 @@ public:
                                    , IHWDevice *hwDevice
                                    , mfxFrameAllocRequest  * pRequest
                                    , bool bCreateEncCtl);
-      
+
       virtual mfxStatus FindFreeSurface( mfxU32 sourceId
                                        , SrfEncCtl *ppSurface
                                        , IMFXVideoRender *pRender);
@@ -98,7 +98,7 @@ public:
       virtual mfxStatus DestroySurfaces();
 
       struct SurfacesAllocated;
-      
+
       virtual SurfacesAllocated & RegisterAlloc(const mfxFrameAllocRequest &request);
 
 public:
@@ -128,11 +128,11 @@ public:
     IVideoSession                * m_pSession;
     tstring                        m_mfxLibPath;
 
-    //stat params           
+    //stat params
     mfxU32                         m_uiMaxAsyncReached;
     mfxF64                         m_fAverageAsync;
 
-    //vppParams             
+    //vppParams
     mfxF64                         m_zoomx;
     mfxF64                         m_zoomy;
     MFXExtBufferVector             m_extParams;
@@ -167,13 +167,15 @@ public:
     //override concrete fields support
     bool                            m_bOverPS;//override picstruct
     mfxU16                          m_nOverPS;//cmd line version
-    mfxU16                          m_extCO;//extcoding option 
+    mfxU16                          m_extCO;//extcoding option
 
     bool                            m_bCalcLatency;//used in videoconferencing testing
     int                             m_nDropCyle;//component may want no to pass all frames to downstream component
     int                             m_nDropCount;
     bool                            m_bForceMVCDetection;//cause to insert MVCExtended sequence buffer prior calling to dec header
     mfxU32                          m_OutFourcc;
+
+    std::vector<mfxU32>             m_SkippedFrames; // List of frames to be skipped at encoding
 
     SurfacesContainer::iterator GetSurfaceAlloc(mfxU32 w, mfxU32 h);
 protected:

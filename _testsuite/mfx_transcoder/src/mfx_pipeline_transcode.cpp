@@ -51,7 +51,8 @@ File Name: .h
 #include "mfx_lexical_cast.h"
 #include "mfx_encoded_frame_info_encoder.h"
 
-
+#include <iostream>
+#include <iomanip>
 //////////////////////////////////////////////////////////////////////////
 
 #define HANDLE_GLOBAL_OPTION(short_option, pref, member, OPT_TYPE, description, handler)\
@@ -278,7 +279,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         //mfxExtEncoderCapability
         HANDLE_CAP_OPTION(MBPerSec,                OPT_BOOL,       "Query Encoder for Max MB Per Second"),
 
-        //mfxExtEncoderResetOption        
+        //mfxExtEncoderResetOption
         HANDLE_ENCRESET_OPTION(StartNewSequence,   OPT_TRI_STATE,  "Start New Sequence"),
 
         // Quant Matrix parameters
@@ -351,8 +352,8 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
     for (; argv < argvEnd; argv++)
     {
         int nPattern = 0;
-        if ((0 != (nPattern = m_OptProc.Check(argv[0], VM_STRING("(-| )(m2|mpeg2|avc|h264|jpeg|vp8|h265)"), VM_STRING("target format")))) || 
-            m_OptProc.Check(argv[0], VM_STRING("-CodecType"), VM_STRING("target format"),OPT_SPECIAL, VM_STRING("m2|mpeg2|avc|h264|jpeg|vp8|h265")))  
+        if ((0 != (nPattern = m_OptProc.Check(argv[0], VM_STRING("(-| )(m2|mpeg2|avc|h264|jpeg|vp8|h265)"), VM_STRING("target format")))) ||
+            m_OptProc.Check(argv[0], VM_STRING("-CodecType"), VM_STRING("target format"),OPT_SPECIAL, VM_STRING("m2|mpeg2|avc|h264|jpeg|vp8|h265")))
 
         {
             if (!nPattern)
@@ -449,6 +450,29 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             MFX_PARSE_INT(nCavlc, argv[1])
             argv++;
             m_extCodingOptions->CAVLC = (mfxU16)(nCavlc ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF);
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-skip_frames"), VM_STRING("skip specified frames during encoding"), OPT_STR))
+        {
+            MFX_CHECK(argv + 1 != argvEnd);
+            argv++;
+#if defined(UNICODE) && ( defined(_WIN32) || defined(_WIN64) )
+            std::vector<char> buffer;
+            int size = WideCharToMultiByte(CP_UTF8,0,argv[0],-1,NULL,0,NULL,NULL);
+            if ( size > 0 ) {
+                buffer.resize(size);
+                WideCharToMultiByte(CP_UTF8,0,argv[0],-1, (&buffer[0]), (int)buffer.size(),NULL,NULL);
+            }
+            std::string x(&buffer[0]);
+#else
+            std::string x = argv[0];
+#endif
+            std::string s(x.begin(), x.end());
+            std::stringstream ss(s);
+            std::string item;
+            while ( std::getline(ss, item, ',') )
+            {
+                m_components[eREN].m_SkippedFrames.push_back(atoi(item.c_str()));
+            }
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-cabac"), VM_STRING("Turn on CABAC mode")))
         {
@@ -780,7 +804,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
 
             DeSerializeHelper<mfxExtAVCRefListCtrl>  reflist;
             vm_char ** rollback_offset = argv;
-            
+
             MFX_CHECK(reflist.DeSerialize(argv += 3, argvEnd, rollback_offset));
 
             m_pFactories.push_back(new constnumFactory(1
@@ -814,7 +838,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             {
                 pExt = reinterpret_cast<mfxExtAvcTemporalLayers *>(ppExt->get());
             }
-            
+
             MFX_CHECK(DeSerialize(*pExt, ++argv, argvEnd));
 
             if (!ppExt) {
@@ -835,7 +859,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             //expect no throw here
             pCmd->RegisterExtBuffer((mfxExtBuffer&)avc_enc_info);
             pCmd.release();
-            
+
 
             if (argv + 1 <argvEnd ) {
                 try
@@ -846,7 +870,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                     lastFrame = firstFrame + 1;
                     //at least 1 parameter
                     argv ++;
-                
+
                     if (argv + 1 < argvEnd ) {
                         try {
                             lexical_cast<int>(argv[1], lastFrame);
@@ -1266,10 +1290,10 @@ mfxStatus MFXTranscodingPipeline::CreateVPP()
 {
     bool bSvcVpp = !IsMultiReaderEnabled();
 
-    if (bSvcVpp) 
+    if (bSvcVpp)
     {
         bSvcVpp = false;
-        
+
         mfxFrameInfo &info = m_inParams.FrameInfo;
         for (size_t i = 0; i < MFX_ARRAY_SIZE(m_svcSeq->DependencyLayer) && (MFX_CODINGOPTION_ON == m_svcSeq->DependencyLayer[i].Active); i++)
         {
@@ -1285,7 +1309,7 @@ mfxStatus MFXTranscodingPipeline::CreateVPP()
     }
 
     MFX_CHECK_STS(MFXDecPipeline::CreateVPP());
-    
+
     if (bSvcVpp)
     {
         MFX_CHECK_POINTER(m_pVPP = m_pFactory->CreateVPP(make_wrapper(VPP_SVC, m_pVPP)));
@@ -1346,10 +1370,10 @@ mfxStatus MFXTranscodingPipeline::CreateYUVSource()
 mfxStatus    MFXTranscodingPipeline::CreateAllocator()
 {
     //svc mode
-    if (m_svcSeq.get() && MFX_CODINGOPTION_ON == m_svcSeq->DependencyLayer[0].Active) 
+    if (m_svcSeq.get() && MFX_CODINGOPTION_ON == m_svcSeq->DependencyLayer[0].Active)
     {
         size_t i;
-        for (i = 1; i < MFX_ARRAY_SIZE(m_svcSeq->DependencyLayer) 
+        for (i = 1; i < MFX_ARRAY_SIZE(m_svcSeq->DependencyLayer)
             && (MFX_CODINGOPTION_ON == m_svcSeq->DependencyLayer[i].Active); i++);
         i--;
 
@@ -1367,7 +1391,7 @@ mfxStatus    MFXTranscodingPipeline::CreateAllocator()
 
         if (IsMultiReaderEnabled()) {
             //TODO: resolution for queryiosurface still taken from each components parameters, is it OK?
-            m_components[eDEC].m_params.mfx.FrameInfo.Width  = Width; 
+            m_components[eDEC].m_params.mfx.FrameInfo.Width  = Width;
             m_components[eDEC].m_params.mfx.FrameInfo.Height = Height;
             m_components[eDEC].m_params.mfx.FrameInfo.FrameId.DependencyId = (mfxU16)i - 1;
         }
@@ -1581,13 +1605,13 @@ std::auto_ptr<IVideoEncode> MFXTranscodingPipeline::CreateEncoder()
 {
     //create ivideoencode implementation
     PipelineObjectDesc<IVideoEncode> createParams;
-    
+
     if (!vm_string_strlen(m_inParams.strEncPlugin)) {
         createParams = make_wrapper<IVideoEncode>(m_components[eREN].m_pSession->GetMFXSession()
             , VM_STRING("")
             , ENCODER_MFX_NATIVE
             , NULL);
-        
+
     } else {
         createParams = make_wrapper<IVideoEncode>(m_components[eDEC].m_pSession->GetMFXSession()
             , m_inParams.strEncPlugin
@@ -1595,7 +1619,7 @@ std::auto_ptr<IVideoEncode> MFXTranscodingPipeline::CreateEncoder()
             , NULL);
 
     }
-    
+
     std::auto_ptr<IVideoEncode> pEncoder ( m_pFactory->CreateVideoEncode(&createParams));
 
     //wrapper for jpeg encoder handles awkward behavior patterns

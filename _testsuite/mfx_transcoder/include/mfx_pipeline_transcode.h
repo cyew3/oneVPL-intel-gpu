@@ -105,7 +105,7 @@ protected:
 
     // note: this list actually owns the objects it has pointers to
     std::list<MFXExtBufferVector *> m_ExtBufferVectorsContainer;
-    
+
     //user buffer size support
     mfxU16                          m_nBufferSizeInKB;
 
@@ -140,7 +140,7 @@ protected:
     mfxU16                          m_QPI;    // constant quantizer for I frames
     mfxU16                          m_QPP;    // constant quantizer for P frames
     mfxU16                          m_QPB;    // constant quantizer for B frames
-    
+
     mfxU16                          m_OldQPI;    // constant quantizer for I frames
     mfxU16                          m_OldQPP;    // constant quantizer for P frames
     mfxU16                          m_OldQPB;    // constant quantizer for B frames
@@ -179,11 +179,15 @@ protected:
     //params corrections that are not suitable in checkoptions and in checkparams
     virtual mfxStatus ApplyBitrateParams();
     virtual mfxStatus ApplyJpegParams();
-    
+
     template<class T, class T1>  friend class BinderCall_0;
-    
+
     BinderCall_0<mfxStatus, MFXTranscodingPipeline> m_applyBitrateParams;
     BinderCall_0<mfxStatus, MFXTranscodingPipeline> m_applyJpegParams;
     IVideoEncode *m_pEncoder ;
+
+    //AVC skip frame support
+    //////////////////////////////////////////////////////////////////////////
+    tstring m_skippedFrames;
 };
 

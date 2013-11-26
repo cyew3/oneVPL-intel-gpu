@@ -94,6 +94,8 @@ File Name: .h
 #endif
 #include "mfx_thread.h"
 
+#include <iostream>
+
 using namespace std;
 
 #ifndef MFX_HANDLE_TIMING_LOG
@@ -766,10 +768,18 @@ public:
 
 mfxStatus MFXDecPipeline::CreateCore()
 {
+    tstring lib_path;
+    {
+        AutoPipelineSynhro d3dAcess(m_externalsync);
+        {
+            DispatcherLoadedLibrary lib; // not thread-safe
+            lib_path = lib.GetPath();
+        }
+    }
+
     //shared access prevention section
     {
         AutoPipelineSynhro d3dAcess(m_externalsync);
-        DispatcherLoadedLibrary lib; // not thread-safe
 
 #if defined(_WIN32) || defined(_WIN64)
         MFX::DXVA2Device dxva2device;
@@ -792,10 +802,11 @@ mfxStatus MFXDecPipeline::CreateCore()
         }
 #endif
         MFX_CHECK_STS(m_components[eDEC].m_pSession->Init(m_components[eDEC].m_libType, m_components[eDEC].m_pLibVersion, m_inParams.pMFXLibraryPath));
-        m_components[eDEC].m_mfxLibPath = lib.GetPath();
     }
 
     MFX_CHECK_STS(m_components[eDEC].m_pSession->QueryIMPL(&m_components[eDEC].m_RealImpl));
+
+    m_components[eDEC].m_mfxLibPath = lib_path;
 
     //preparation for loading second session
     ComponentParams *pSecondParams = NULL;
@@ -843,7 +854,7 @@ mfxStatus MFXDecPipeline::CreateCore()
         MFX_CHECK_STS(pSecondParams->m_pSession->Init(pSecondParams->m_libType, pSecondParams->m_pLibVersion, m_inParams.pMFXLibraryPath));
         MFX_CHECK_STS(pSecondParams->m_pSession->QueryIMPL(&pSecondParams->m_RealImpl));
 
-        pSecondParams->m_mfxLibPath = m_components[eDEC].m_mfxLibPath;
+        pSecondParams->m_mfxLibPath = lib_path;
 
         //join second session if necessary
 #if (MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 1)
@@ -893,7 +904,7 @@ mfxStatus MFXDecPipeline::CreateVPP()
     ENABLE_VPP(0.0 != m_components[eVPP].m_fFrameRate);
     ENABLE_VPP(m_inParams.bUseVPP_ifdi && enc_info.PicStruct != dec_info.PicStruct);
     ENABLE_VPP(m_inParams.nImageStab);
-    
+
 
     if (m_inParams.bUseVPP)
     {
@@ -941,7 +952,7 @@ mfxStatus MFXDecPipeline::CreateVPP()
     }
     MFX_CHECK_WITH_ERR(m_pVPP, MFX_ERR_MEMORY_ALLOC);
 
-    
+
     //turnoff default filter if they are not present in cmd line
     m_components[eVPP].m_extParams.push_back(new mfxExtVPPDoNotUse());
     MFXExtBufferPtr<mfxExtVPPDoNotUse> pExtDoNotUse(m_components[eVPP].m_extParams);
@@ -1310,7 +1321,7 @@ mfxStatus MFXDecPipeline::CreateSplitter()
             sInfo.isDefaultFC = false;
         }
         pSpl.reset(new BitstreamReader(pSinfo));
-        
+
         //dropping flag if any because bitstream reader provides not a frames
         //want do this let's rely on pipeline builder i.e. user Ex. enc->dec pipeline
         //m_inParams.bCompleteFrame = false;
@@ -1411,7 +1422,7 @@ mfxStatus MFXDecPipeline::CreateFileSink(std::auto_ptr<IFile> &pSink)
     {
         return  MFX_ERR_NONE;
     }
-    
+
 
     //file sink will be decorated or created
     if (NULL == pSink.get())
@@ -1420,7 +1431,7 @@ mfxStatus MFXDecPipeline::CreateFileSink(std::auto_ptr<IFile> &pSink)
         if (m_inParams.bNullFileWriter)
         {
             dsc.Type = FILE_NULL;
-            
+
         }
         else
         {
@@ -1528,7 +1539,7 @@ mfxStatus MFXDecPipeline::CreateRender()
             {
 #if MFX_D3D11_SUPPORT
                 iParams.pDevice = m_pHWDevice;
-                
+
 #else
                 MFX_TRACE_AND_EXIT(MFX_ERR_UNSUPPORTED, (VM_STRING("D3D11 Not supported")));
 #endif
@@ -2055,7 +2066,7 @@ mfxStatus MFXDecPipeline::CreateDeviceManager()
             //adapter ID will be selected to match library implementation
             ComponentParams &cparams = m_components[eDEC].m_bufType == MFX_BUF_HW ? m_components[eDEC] : m_components[eREN];
             m_pHWDevice.reset(
-                m_inParams.bDxgiDebug ? 
+                m_inParams.bDxgiDebug ?
                 new MFXD3D11DxgiDebugDevice() :
                 new MFXD3D11Device());
 
@@ -2742,7 +2753,18 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
 
     if(NULL == m_pVPP || NULL == pSurface)
     {
-        MFX_CHECK_STS(RunRender(pSurface));
+        mfxEncodeCtrl * pControl = new mfxEncodeCtrl;
+        memset(pControl, 0, sizeof(mfxEncodeCtrl));
+        if ( m_components[eREN].m_SkippedFrames.size() > 0 ) {
+            mfxU32 skipFrame = m_components[eREN].m_SkippedFrames.front();
+            if ( (m_nDecFrames) == skipFrame + 1)
+            {
+                PipelineTrace((VM_STRING("\n Skip frame #%d encoding\n"), skipFrame));
+                pControl->SkipFrame = 1;
+                m_components[eREN].m_SkippedFrames.erase(m_components[eREN].m_SkippedFrames.begin());
+            }
+         }
+         MFX_CHECK_STS(RunRender(pSurface, pControl));
     }
 
     return MFX_ERR_NONE;
@@ -3022,7 +3044,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         {
             MFX_CHECK(1 + argv != argvEnd);
             argv++;
-            
+
             m_inParams.bMultiFiles = nPattern1 == 3;///-o:multiple is 3rd case
 
             if (MFX_ERR_NONE != GetMFXFrameInfoFromFOURCCPatternIdx(nPattern - 1, m_inParams.outFrameInfo))
@@ -3849,10 +3871,10 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
 
                 seqDesc->View.push_back(viewDependency);
             } else if (m_OptProc.Check(argv[0], VM_STRING("-dec:burst"), VM_STRING("decode several frames at max speed then render it at render speed"), OPT_INT_32))                  \
-            {                                                                                       
-                MFX_CHECK(1 + argv != argvEnd);                                                     
-                MFX_PARSE_INT(m_inParams.nBurstDecodeFrames, argv[1])                                      
-                argv++;                                                                             
+            {
+                MFX_CHECK(1 + argv != argvEnd);
+                MFX_PARSE_INT(m_inParams.nBurstDecodeFrames, argv[1])
+                argv++;
             }
             else HANDLE_INT_OPTION(m_inParams.targetViewsTemporalId, VM_STRING("-dec:temporalid"), VM_STRING("in case of MVC->AVC and MVC->MVC transcoding,  specifies coresponding field in mfxExtMVCTargetViews structure"))
             else HANDLE_INT_OPTION(m_inParams.nTestId, VM_STRING("-testid"), VM_STRING("testid value used in SendNotifyMessages(WNDBROADCAST,,testid)"))
