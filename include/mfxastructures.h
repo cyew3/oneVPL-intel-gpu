@@ -115,9 +115,6 @@ typedef struct {
 
     union {    
         struct {   /* AAC Decoding Options */
-            mfxU16       ModeDwnsmplHEAACprofile;
-            mfxU16       FlagSBRSupportLev;
-            mfxU16       FlagPSSupportLev;
             mfxU16       Layer;
             mfxU16       AACHeaderDataSize;
             mfxU8        AACHeaderData[64];
