@@ -51,7 +51,7 @@ namespace
     const wchar_t APIVerKeyName[] = L"APIVer";
 }
 
-MFX::MFXPluginHive::MFXPluginHive( mfxU32 storageID, mfxVersion minAPIVersion )
+MFX::MFXPluginHive::MFXPluginHive( mfxU32 storageID, mfxVersion requiredAPIVersion )
 {
     HKEY rootHKey;
     bool bRes;
@@ -157,14 +157,14 @@ MFX::MFXPluginHive::MFXPluginHive( mfxU32 storageID, mfxVersion minAPIVersion )
             continue;
         }
 
-        if (minAPIVersion.Version < descriptionRecord.APIVersion.Version) 
+        if (requiredAPIVersion.Version != descriptionRecord.APIVersion.Version) 
         {
             TRACE_HIVE_ERROR("    %8S : %d.%d, but current MediasSDK version : %d.%d\n"
                 , APIVerKeyName
                 , descriptionRecord.APIVersion.Major
                 , descriptionRecord.APIVersion.Minor
-                , minAPIVersion.Major
-                , minAPIVersion.Minor);
+                , requiredAPIVersion.Major
+                , requiredAPIVersion.Minor);
             continue;
         }
 

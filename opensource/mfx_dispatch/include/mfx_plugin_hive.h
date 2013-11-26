@@ -80,6 +80,6 @@ namespace MFX {
         }
 
         MFXPluginHive() {}
-        MFXPluginHive(mfxU32 mfxStorageID, mfxVersion minAPIVersion);
+        MFXPluginHive(mfxU32 mfxStorageID, mfxVersion requiredAPIVersion);
     };
 }
