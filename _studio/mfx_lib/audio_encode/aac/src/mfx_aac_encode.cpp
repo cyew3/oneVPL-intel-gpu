@@ -366,10 +366,7 @@ mfxStatus MFX_AAC_Encoder_Utility::FillAudioParam( mfxAudioParam *in, mfxAudioPa
     out->mfx.SampleFrequency = in->mfx.SampleFrequency;
     out->mfx.NumChannel = in->mfx.NumChannel;
     out->mfx.BitPerSample = in->mfx.BitPerSample;
-    out->mfx.FlagPSSupportLev = in->mfx.FlagPSSupportLev;
-    out->mfx.FlagSBRSupportLev = in->mfx.FlagSBRSupportLev;
     out->mfx.Layer = in->mfx.Layer;
-    out->mfx.ModeDwnsmplHEAACprofile = in->mfx.ModeDwnsmplHEAACprofile;
     return MFX_ERR_NONE;
 }
 

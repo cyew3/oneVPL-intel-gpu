@@ -85,48 +85,12 @@ mfxStatus AudioDECODEAAC::Init(mfxAudioParam *par)
     UMC::AACDecoderParams params;
     params.ModeDecodeHEAACprofile = HEAAC_HQ_MODE;
 
-    switch(par->mfx.ModeDwnsmplHEAACprofile)  {
-case MFX_AUDIO_AAC_HE_DWNSMPL_OFF:
     params.ModeDwnsmplHEAACprofile = HEAAC_DWNSMPL_OFF;
-    break;
-case MFX_AUDIO_AAC_HE_DWNSMPL_ON:
-    params.ModeDwnsmplHEAACprofile = HEAAC_DWNSMPL_ON;
-    break;
-default:
-    return MFX_ERR_UNSUPPORTED;
-    }
 
-    switch(par->mfx.FlagPSSupportLev)  {
-case MFX_AUDIO_AAC_PS_DISABLE:
-    params.flag_PS_support_lev = PS_DISABLE;
-    break;
-case MFX_AUDIO_AAC_PS_PARSER:
-    params.flag_PS_support_lev = PS_PARSER;
-    break;
-case MFX_AUDIO_AAC_PS_ENABLE_BL:
-    params.flag_PS_support_lev = PS_ENABLE_BL;
-    break;
-case MFX_AUDIO_AAC_PS_ENABLE_UR:
     params.flag_PS_support_lev = PS_ENABLE_UR;
-    break;
-default:
-    return MFX_ERR_UNSUPPORTED;
-    }
 
-    switch(par->mfx.FlagSBRSupportLev)  {
-case MFX_AUDIO_AAC_SBR_DISABLE:
-    params.flag_SBR_support_lev = SBR_DISABLE;
-    break;
-case MFX_AUDIO_AAC_SBR_ENABLE:
     params.flag_SBR_support_lev = SBR_ENABLE;
-    break;
-case MFX_AUDIO_AAC_SBR_UNDEF:
-    params.flag_SBR_support_lev = SBR_UNDEF;
-    break;
-default:
-    return MFX_ERR_UNSUPPORTED;
-    }
-    //    params.flag_SBR_support_lev = SBR_ENABLE;
+
     mInData.SetDataSize(0);
     mOutData.SetDataSize(0);
     params.m_pData = NULL;
@@ -336,30 +300,6 @@ mfxStatus AudioDECODEAAC::FillAudioParamESDS(sAudio_specific_config* config, mfx
 
     out->mfx.CodecId = MFX_CODEC_AAC;
     out->mfx.CodecProfile = (mfxU16)config->audioObjectType;
-    switch(config->sbrPresentFlag)
-    {
-    case 0: 
-        out->mfx.FlagSBRSupportLev = MFX_AUDIO_AAC_SBR_DISABLE;
-        break;
-    case 1:
-        out->mfx.FlagSBRSupportLev = MFX_AUDIO_AAC_SBR_ENABLE;
-        break;
-    case -1:
-        out->mfx.FlagSBRSupportLev = MFX_AUDIO_AAC_SBR_UNDEF;
-        break;
-    default:
-        out->mfx.FlagSBRSupportLev = MFX_AUDIO_AAC_SBR_UNDEF;
-        break;
-    }
-
-    if (config->psPresentFlag == -1)
-    {
-        out->mfx.FlagPSSupportLev = MFX_AUDIO_AAC_PS_DISABLE;
-    }
-    else
-    {
-        out->mfx.FlagPSSupportLev = MFX_AUDIO_AAC_PS_PARSER;
-    }
 
     return sts;
 }
@@ -391,9 +331,6 @@ case 3:
     break;
     }
 
-    out->mfx.FlagSBRSupportLev = MFX_AUDIO_AAC_SBR_UNDEF;
-    out->mfx.FlagPSSupportLev = MFX_AUDIO_AAC_PS_PARSER;
-
     return sts;
 }
 
@@ -407,9 +344,6 @@ mfxStatus AudioDECODEAAC::FillAudioParamADTSFixed(sAdts_fixed_header* config, mf
 
     out->mfx.CodecId = MFX_CODEC_AAC;
     out->mfx.CodecProfile = (mfxU16)get_audio_object_type_by_adts_header(config);;
-
-    out->mfx.FlagSBRSupportLev = MFX_AUDIO_AAC_SBR_UNDEF;
-    out->mfx.FlagPSSupportLev = MFX_AUDIO_AAC_PS_PARSER;
 
     return sts;
 }
@@ -648,7 +582,7 @@ mfxStatus AudioDECODEAAC::ConstructFrame(mfxBitstream *in, mfxBitstream *out, un
 
         }
         
-        *pUncompFrameSize = 1024 * sizeof(Ipp16s) * (this->m_vPar.mfx.ModeDwnsmplHEAACprofile == MFX_AUDIO_AAC_HE_DWNSMPL_ON ? 1 : 2);
+        *pUncompFrameSize = 1024 * sizeof(Ipp16s) * 2;
         
         //TODO: find number of channels as well
         *pUncompFrameSize = m_nUncompFrameSize;
@@ -680,10 +614,7 @@ mfxStatus MFX_AAC_Utility::FillAudioParam( mfxAudioParam *in, mfxAudioParam *out
     out->mfx.SampleFrequency = in->mfx.SampleFrequency;
     out->mfx.NumChannel = in->mfx.NumChannel;
     out->mfx.BitPerSample = in->mfx.BitPerSample;
-    out->mfx.FlagPSSupportLev = in->mfx.FlagPSSupportLev;
-    out->mfx.FlagSBRSupportLev = in->mfx.FlagSBRSupportLev;
     out->mfx.Layer = in->mfx.Layer;
-    out->mfx.ModeDwnsmplHEAACprofile = in->mfx.ModeDwnsmplHEAACprofile;
     return MFX_ERR_NONE;
 }
 
@@ -743,58 +674,6 @@ mfxStatus MFX_AAC_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfxAudioPar
             break;
         }
 
-        mfxU32 modeDwnsmplHEAACprofile = in->mfx.ModeDwnsmplHEAACprofile;
-        if (modeDwnsmplHEAACprofile == MFX_AUDIO_AAC_HE_DWNSMPL_OFF || 
-            modeDwnsmplHEAACprofile == MFX_AUDIO_AAC_HE_DWNSMPL_ON 
-            )
-        {
-            out->mfx.ModeDwnsmplHEAACprofile = in->mfx.ModeDwnsmplHEAACprofile;
-        }
-        else
-        {
-            sts = MFX_ERR_UNSUPPORTED;
-        }
-
-        mfxU32 flagPSSupportLev = in->mfx.FlagPSSupportLev;
-        if (flagPSSupportLev == MFX_AUDIO_AAC_PS_DISABLE || 
-            flagPSSupportLev == MFX_AUDIO_AAC_PS_PARSER ||
-            flagPSSupportLev == MFX_AUDIO_AAC_PS_ENABLE_BL ||
-            flagPSSupportLev == MFX_AUDIO_AAC_PS_ENABLE_UR 
-            )
-        {
-            out->mfx.FlagPSSupportLev = in->mfx.FlagPSSupportLev;
-        }
-        else
-        {
-            if(flagPSSupportLev == 0)
-            {
-                out->mfx.FlagPSSupportLev = MFX_AUDIO_AAC_PS_ENABLE_UR;
-            }
-            else
-            {
-                sts = MFX_ERR_UNSUPPORTED;
-            }
-        }
-
-        mfxU32 flagSBRSupportLev = in->mfx.FlagSBRSupportLev;
-        if (flagSBRSupportLev == MFX_AUDIO_AAC_SBR_DISABLE || 
-            flagSBRSupportLev == MFX_AUDIO_AAC_SBR_ENABLE ||
-            flagSBRSupportLev == MFX_AUDIO_AAC_SBR_UNDEF 
-            )
-        {
-            out->mfx.FlagSBRSupportLev = in->mfx.FlagSBRSupportLev;
-        }
-        else
-        {
-            if(flagSBRSupportLev == 0)
-            {
-                out->mfx.FlagSBRSupportLev = MFX_AUDIO_AAC_SBR_ENABLE;
-            }
-            else
-            {
-                sts = MFX_ERR_UNSUPPORTED;
-            }
-        }
         if(in->mfx.AACHeaderDataSize)
         {
             memcpy(out->mfx.AACHeaderData,in->mfx.AACHeaderData,in->mfx.AACHeaderDataSize);

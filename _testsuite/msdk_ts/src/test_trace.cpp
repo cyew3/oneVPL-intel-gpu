@@ -818,10 +818,7 @@ DEF_STRUCT_TRACE(mfxAudioInfoMFX){
 
     if(pflag(PRINT_OPT_DEC)){
         if(MFX_CODEC_AAC == p.CodecId){
-            os << PUT_PAR(ModeDwnsmplHEAACprofile)
-               << PUT_PAR(FlagSBRSupportLev)
-               << PUT_PAR(FlagPSSupportLev)
-               << PUT_PAR(Layer)
+            os << PUT_PAR(Layer)
                << PUT_ARR(AACHeaderData, p.AACHeaderDataSize)
                << PUT_PAR(AACHeaderDataSize);
         }
