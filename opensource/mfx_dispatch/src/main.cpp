@@ -290,15 +290,30 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
     if ((MFX_ERR_NONE == mfxRes) ||
         (MFX_WRN_PARTIAL_ACCELERATION == mfxRes))
     {
-        try {
-            //setting up plugins records
-            for(int i = MFX::MFX_STORAGE_ID_FIRST;
-                i <= MFX::MFX_STORAGE_ID_LAST; i++) 
+        try 
+        {
+            //pulling up current mediasdk version
+            mfxVersion apiVerActual;
+            mfxStatus stsQueryVersion;
+            stsQueryVersion = MFXQueryVersion((mfxSession)pHandle, &apiVerActual);
+            if (MFX_ERR_NONE !=  stsQueryVersion) 
             {
-                MFX::MFXPluginHive hive = MFX::MFXPluginHive(i, pHandle->apiVersion);
-                allocatedHandle->pluginHive.insert(hive.begin(), hive.end());
+                DISPATCHER_LOG_ERROR((("MFXQueryVersion returned: %d, cannot load plugins\n"), mfxRes))
+            } 
+            else 
+            {
+                //setting up plugins records
+                for(int i = MFX::MFX_STORAGE_ID_FIRST; i <= MFX::MFX_STORAGE_ID_LAST; i++) 
+                {
+                    MFX::MFXPluginHive hive = MFX::MFXPluginHive(i, apiVerActual);
+                    allocatedHandle->pluginHive.insert(hive.begin(), hive.end());
+                }
             }
-        } catch(...){}
+        } 
+        catch(...)
+        {
+            DISPATCHER_LOG_ERROR((("unknown exception while loading plugins\n")))
+        }
 
         // everything is OK. Save pointers to the output variable
         allocatedHandle.release();
