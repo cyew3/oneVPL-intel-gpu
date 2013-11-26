@@ -443,6 +443,11 @@ eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par
 {
     eMFXPlatform platform = core->GetPlatformType();
 
+#if !defined (MFX_VA) && defined (AS_HEVCD_PLUGIN)
+    //we sure that plug-in implementation is SW 
+    return MFX_PLATFORM_SOFTWARE;
+#endif 
+
     eMFXHWType typeHW = MFX_HW_UNKNOWN;
 #if defined (MFX_VA)
     typeHW = core->GetHWType();
