@@ -383,7 +383,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     m_mfxVideoParam.ExtParam = ptr_checked_ext;
     m_mfxVideoParam.NumExtParam = ext_counter;
 
-    stsQuery = Query(par_in, &m_mfxVideoParam); // [has to] copy all provided params
+    stsQuery = Query(NULL, par_in, &m_mfxVideoParam); // [has to] copy all provided params
 
     // return status for Init differs in these cases
     if (stsQuery == MFX_ERR_UNSUPPORTED &&
@@ -734,6 +734,9 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 
     m_isInitialized = true;
 
+    if (MFX_ERR_NONE == stsQuery)
+        (m_core->GetPlatformType() == MFX_PLATFORM_SOFTWARE)?MFX_ERR_NONE:MFX_WRN_PARTIAL_ACCELERATION;
+
     return stsQuery;
 }
 
@@ -907,7 +910,7 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
     checked_videoParam.ExtParam = ptr_checked_ext;
     checked_videoParam.NumExtParam = ext_counter;
 
-    stsQuery = Query(&parNew, &checked_videoParam); // [has to] copy all provided params
+    stsQuery = Query(NULL, &parNew, &checked_videoParam); // [has to] copy all provided params
 
     if (stsQuery != MFX_ERR_NONE && stsQuery != MFX_WRN_INCOMPATIBLE_VIDEO_PARAM) {
         if (stsQuery == MFX_ERR_UNSUPPORTED)
@@ -945,7 +948,7 @@ mfxStatus MFXVideoENCODEH265::Reset(mfxVideoParam *par_in)
     return sts;
 }
 
-mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_out)
+mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxVideoParam *par_out)
 {
     mfxU32 isCorrected = 0;
     mfxU32 isInvalid = 0;
@@ -1472,10 +1475,13 @@ mfxStatus MFXVideoENCODEH265::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
     if (isCorrected)
         return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
 
+    if (core)
+        return (core->GetPlatformType() == MFX_PLATFORM_SOFTWARE)?MFX_ERR_NONE:MFX_WRN_PARTIAL_ACCELERATION;
+
     return MFX_ERR_NONE;
 }
 
-mfxStatus MFXVideoENCODEH265::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request)
+mfxStatus MFXVideoENCODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
     MFX_CHECK_NULL_PTR1(par)
     MFX_CHECK_NULL_PTR1(request)
@@ -1507,7 +1513,7 @@ mfxStatus MFXVideoENCODEH265::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocReque
         request->Type = MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY;
     }
 
-    return (IsHWLib())? MFX_WRN_PARTIAL_ACCELERATION : MFX_ERR_NONE;
+    return (core->GetPlatformType() == MFX_PLATFORM_SOFTWARE)?MFX_ERR_NONE:MFX_WRN_PARTIAL_ACCELERATION;
 }
 
 mfxStatus MFXVideoENCODEH265::GetEncodeStat(mfxEncodeStat *stat)

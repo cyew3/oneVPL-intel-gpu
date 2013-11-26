@@ -306,7 +306,7 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
 
 #ifdef MFX_ENABLE_H265_VIDEO_ENCODE
         case MFX_CODEC_HEVC:
-            mfxRes = MFXVideoENCODEH265::Query(in, out);
+            mfxRes = MFXVideoENCODEH265::Query(session->m_pCORE.get(), in, out);
             break;
 #endif
 
@@ -438,7 +438,7 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
 
 #ifdef MFX_ENABLE_H265_VIDEO_ENCODE
         case MFX_CODEC_HEVC:
-            mfxRes = MFXVideoENCODEH265::QueryIOSurf(par, request);
+            mfxRes = MFXVideoENCODEH265::QueryIOSurf(session->m_pCORE.get(), par, request);
             break;
 #endif // MFX_ENABLE_VC1_VIDEO_ENC
 

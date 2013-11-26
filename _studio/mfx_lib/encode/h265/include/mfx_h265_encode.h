@@ -69,8 +69,8 @@ public:
         return MFX_TASK_THREADING_INTRA;
     }
 
-    static mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out);
-    static mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request);
+    static mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out);
+    static mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
 
     MFXVideoENCODEH265(VideoCORE *core, mfxStatus *status);
     virtual ~MFXVideoENCODEH265();
@@ -123,6 +123,8 @@ protected:
 //  threading
     static mfxStatus TaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber);
     static mfxStatus TaskCompleteProc(void *pState, void *pParam, mfxStatus taskRes);
+
+
 
     struct EncodeFrameTaskParams
     {
