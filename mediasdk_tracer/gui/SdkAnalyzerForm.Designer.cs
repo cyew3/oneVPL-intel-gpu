@@ -33,9 +33,9 @@
             this.checkBox_PerFrame = new System.Windows.Forms.CheckBox();
             this.button_Open = new System.Windows.Forms.Button();
             this.button_Start = new System.Windows.Forms.Button();
-            this.btnDeleteLog = new System.Windows.Forms.Button();
             this.label2 = new System.Windows.Forms.Label();
             this.lblBytesWritten = new System.Windows.Forms.Label();
+            this.checkBox_Append = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // label1
@@ -73,7 +73,7 @@
             // 
             this.button_Open.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.button_Open.DialogResult = System.Windows.Forms.DialogResult.No;
-            this.button_Open.Location = new System.Drawing.Point(364, 109);
+            this.button_Open.Location = new System.Drawing.Point(435, 109);
             this.button_Open.Margin = new System.Windows.Forms.Padding(2);
             this.button_Open.Name = "button_Open";
             this.button_Open.Size = new System.Drawing.Size(56, 28);
@@ -93,19 +93,6 @@
             this.button_Start.UseVisualStyleBackColor = true;
             this.button_Start.Click += new System.EventHandler(this.button_Start_Click);
             // 
-            // btnDeleteLog
-            // 
-            this.btnDeleteLog.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnDeleteLog.DialogResult = System.Windows.Forms.DialogResult.No;
-            this.btnDeleteLog.Location = new System.Drawing.Point(424, 109);
-            this.btnDeleteLog.Margin = new System.Windows.Forms.Padding(2);
-            this.btnDeleteLog.Name = "btnDeleteLog";
-            this.btnDeleteLog.Size = new System.Drawing.Size(65, 28);
-            this.btnDeleteLog.TabIndex = 13;
-            this.btnDeleteLog.Text = "Delete";
-            this.btnDeleteLog.UseVisualStyleBackColor = true;
-            this.btnDeleteLog.Click += new System.EventHandler(this.btnDeleteLog_Click);
-            // 
             // label2
             // 
             this.label2.AutoSize = true;
@@ -123,15 +110,25 @@
             this.lblBytesWritten.TabIndex = 16;
             this.lblBytesWritten.Text = "0";
             // 
+            // checkBox_Append
+            // 
+            this.checkBox_Append.AutoSize = true;
+            this.checkBox_Append.Location = new System.Drawing.Point(196, 116);
+            this.checkBox_Append.Name = "checkBox_Append";
+            this.checkBox_Append.Size = new System.Drawing.Size(129, 17);
+            this.checkBox_Append.TabIndex = 13;
+            this.checkBox_Append.Text = "Append to existing file";
+            this.checkBox_Append.UseVisualStyleBackColor = true;
+            // 
             // SdkAnalyzerForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(501, 148);
+            this.Controls.Add(this.checkBox_Append);
             this.Controls.Add(this.lblBytesWritten);
             this.Controls.Add(this.button_Start);
             this.Controls.Add(this.checkBox_PerFrame);
-            this.Controls.Add(this.btnDeleteLog);
             this.Controls.Add(this.button_Open);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
@@ -151,11 +148,9 @@
 
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TextBox tbxLogOutput;
-        private System.Windows.Forms.CheckBox checkBox_PerFrame;
-        private System.Windows.Forms.Button button_Open;
+        private System.Windows.Forms.CheckBox checkBox_PerFrame;        private System.Windows.Forms.Button button_Open;
         private System.Windows.Forms.Button button_Start;
-        private System.Windows.Forms.Button btnDeleteLog;
-        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.CheckBox checkBox_Append;        private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label lblBytesWritten;
     }
 }

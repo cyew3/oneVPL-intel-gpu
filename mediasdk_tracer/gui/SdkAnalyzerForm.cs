@@ -79,6 +79,17 @@ namespace msdk_analyzer
             }
             else
             {
+                if (checkBox_Append.Checked != true)
+                {
+                    try
+                    {
+                        File.Delete(tbxLogOutput.Text);
+                    }
+                    catch (System.Exception ex)
+                    {
+                        MessageBox.Show(ex.ToString());
+                    }
+                }
                 OnStart();
             }
         }
@@ -87,6 +98,7 @@ namespace msdk_analyzer
         {
             button_Start.Enabled = false;
             checkBox_PerFrame.Enabled = false;
+            checkBox_Append.Enabled = false;
 
             try
             {
@@ -104,6 +116,7 @@ namespace msdk_analyzer
             {
                 MessageBox.Show(ex.ToString());
                 checkBox_PerFrame.Enabled = true;
+                checkBox_Append.Enabled = true;
             }
             button_Start.Enabled = true;
         }
@@ -127,6 +140,7 @@ namespace msdk_analyzer
                 button_Start.Text = "Start";
             }
             checkBox_PerFrame.Enabled = true;
+            checkBox_Append.Enabled = true;
         }
 
         private void button_Open_Click(object sender, EventArgs e)
@@ -184,19 +198,6 @@ namespace msdk_analyzer
             this.Cursor = Cursors.Default;
         }
 
-        private void btnDeleteLog_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                File.Delete(tbxLogOutput.Text);
-            }
-            catch (System.Exception ex)
-            {
-                MessageBox.Show(ex.ToString());
-            }
-            
-        }
-
         private void tbxLogOutput_Leave(object sender, EventArgs e)
         {
             Registry.SetValue(Properties.Resources.target_folder_key
@@ -216,9 +217,5 @@ namespace msdk_analyzer
             key = Registry.CurrentUser.CreateSubKey("Software\\Intel\\MediaSDK\\Debug\\Analyzer");
             key.SetValue("level", checkBox_PerFrame.Checked ? 2 : 1);
         }
-
-        
-
-        
     }
 }
