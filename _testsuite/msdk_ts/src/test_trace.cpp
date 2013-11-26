@@ -324,6 +324,7 @@ DEF_STRUCT_TRACE(mfxExtBuffer){
 #endif
 #if ((MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 8))
         PRINT_BUF(MFX_EXTBUFF_VPP_COMPOSITE             , mfxExtVPPComposite            );
+        PRINT_BUF(MFX_EXTBUFF_VPP_DEINTERLACING         , mfxExtVPPDeinterlacing        );
 #endif
         PRINT_BUF(MFX_EXTBUFF_AVC_REFLIST_CTRL          , mfxExtAVCRefListCtrl          );
         default: break;
@@ -1022,6 +1023,16 @@ DEF_STRUCT_TRACE(mfxExtVPPComposite){
     for(mfxU32 i = 0; i < p.NumInputStream; i++)
         os << PUT_PAR(InputStream[i]);
     os  << print_param.padding << '}';
+    return os;
+}
+
+DEF_STRUCT_TRACE(mfxExtVPPDeinterlacing){
+    os  << "{\n"
+        << PUT_4CC(Header.BufferId)
+        << PUT_PAR(Header.BufferSz)
+        << PUT_PAR(Mode)
+        << PUT_ARR(reserved, 11)
+        << print_param.padding << '}';
     return os;
 }
 #endif

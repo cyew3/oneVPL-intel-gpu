@@ -760,7 +760,7 @@ msdk_ts_BLOCK(b_MFXVideoUSER_Load){
     mfxStatus&     mfxRes      = var_def<mfxStatus>    ("mfxRes",       MFX_ERR_NONE);
     mfxStatus&     expectedRes = var_def<mfxStatus>    ("expectedRes",  MFX_ERR_NONE);
     mfxSession&    session     = var_def<mfxSession>   ("session",      0);
-    mfxU32&        version     = var_def<mfxU32>       ("version",         0);
+    mfxU32&        version     = var_def<mfxU32>       ("version",      0);
     mfxPluginUID*& p_uid       = var_def<mfxPluginUID*>("p_plugin_uid",NULL);
 
     TRACE_FUNC3(MFXVideoUSER_Load, session, p_uid, version);
