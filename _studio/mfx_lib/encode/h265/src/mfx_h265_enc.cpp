@@ -2227,7 +2227,9 @@ recode:
                 small_memcpy(bs[bs_main_id].m_base.m_pbs, bs[row_info->bs_id].m_base.m_pbsBase + row_info->offset, row_info->size);
                 bs[bs_main_id].m_base.m_pbs += row_info->size;
             }
-            nal.nal_unit_type = (Ipp8u)(pSlice->IdrPicFlag ? NAL_UT_CODED_SLICE_IDR : NAL_UT_CODED_SLICE_TRAIL_R);
+            nal.nal_unit_type = (Ipp8u)(pSlice->IdrPicFlag ? NAL_UT_CODED_SLICE_IDR :
+                (m_pCurrentFrame->PicOrderCnt() >= 0 ? NAL_UT_CODED_SLICE_TRAIL_R :
+                    (m_pCurrentFrame->m_isBRef ? NAL_UT_CODED_SLICE_DLP : NAL_UT_CODED_SLICE_RADL_N)));
             bs[bs_main_id].WriteNAL(mfxBS, 0, &nal);
         }
     } else {
@@ -2262,7 +2264,9 @@ recode:
                     bs[bs_main_id].m_base.m_pbs += size;
                 }
             }
-            nal.nal_unit_type = (Ipp8u)(pSlice->IdrPicFlag ? NAL_UT_CODED_SLICE_IDR : NAL_UT_CODED_SLICE_TRAIL_R);
+            nal.nal_unit_type = (Ipp8u)(pSlice->IdrPicFlag ? NAL_UT_CODED_SLICE_IDR :
+                (m_pCurrentFrame->PicOrderCnt() >= 0 ? NAL_UT_CODED_SLICE_TRAIL_R :
+                    (m_pCurrentFrame->m_isBRef ? NAL_UT_CODED_SLICE_DLP : NAL_UT_CODED_SLICE_RADL_N)));
             bs[bs_main_id].WriteNAL(mfxBS, 0, &nal);
         }
     }
