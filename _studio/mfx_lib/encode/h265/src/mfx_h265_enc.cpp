@@ -2177,7 +2177,8 @@ recode:
     if (m_videoParam.num_threads > 1)
         mfx_video_encode_h265_ptr->ParallelRegionEnd();
 
-    if (!m_pps.pps_deblocking_filter_disabled_flag && m_videoParam.num_threads > 1) {
+    if (!m_pps.pps_deblocking_filter_disabled_flag && (m_videoParam.num_threads > 1   && !m_sps.sample_adaptive_offset_enabled_flag) ) 
+    {
         m_incRow = 0;
         mfx_video_encode_h265_ptr->ParallelRegionStart(m_videoParam.num_threads - 1, PARALLEL_REGION_DEBLOCKING);
         DeblockThread(0);
