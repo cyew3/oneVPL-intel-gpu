@@ -866,6 +866,7 @@ namespace MfxHwH264Encode
             , m_cmEventAGOP(0)
 #endif
             , m_numMbPerSlice(0)
+            , m_numRoi(0)
         {
             Zero(m_ctrl);
             Zero(m_internalListCtrl);
