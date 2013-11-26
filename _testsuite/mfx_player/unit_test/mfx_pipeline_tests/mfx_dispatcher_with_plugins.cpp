@@ -167,7 +167,27 @@ SUITE(DispatcherWithPlugins) {
 
     TEST_FIXTURE(WhenRegistryContainsNoPlugin, HIVE_build_error_if_loaded_plugin_API_version_is_higher_than_MFXInit_version) {
 
-        plgParams.APIVersion.Major++;
+        plgParams.APIVersion.Minor++;
+        createKey(plgParams, "N2", "mfx_pipeline_tests_d.exe", true);
+
+        TEST_METHOD_TYPE(Create) createArgs;
+        mfxPlugin plg = mAdapter.operator mfxPlugin();
+        createArgs.ret_val = MFX_ERR_NONE;
+        createArgs.value1  = &plg;
+        this->_Create.WillReturn(createArgs);
+
+        TEST_METHOD_TYPE(MockPlugin::GetPluginParam) getPluginParams;
+        getPluginParams.value0 = plgParams;
+        mockEncoder._GetPluginParam.WillReturn(getPluginParams);
+
+        MFXInit(MFX_IMPL_SOFTWARE, 0, &session);
+        CHECK(MFX_ERR_NONE != MFXVideoUSER_Load(session, &guid1, pluginVer));
+        MFXClose(session);
+    }
+
+    TEST_FIXTURE(WhenRegistryContainsNoPlugin, HIVE_build_error_if_loaded_plugin_API_version_is_lower_than_MFXInit_version) {
+
+        plgParams.APIVersion.Minor--;
         createKey(plgParams, "N2", "mfx_pipeline_tests_d.exe", true);
 
         TEST_METHOD_TYPE(Create) createArgs;
