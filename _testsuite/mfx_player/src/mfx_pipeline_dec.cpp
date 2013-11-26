@@ -768,18 +768,10 @@ public:
 
 mfxStatus MFXDecPipeline::CreateCore()
 {
-    tstring lib_path;
-    {
-        AutoPipelineSynhro d3dAcess(m_externalsync);
-        {
-            DispatcherLoadedLibrary lib; // not thread-safe
-            lib_path = lib.GetPath();
-        }
-    }
-
     //shared access prevention section
     {
         AutoPipelineSynhro d3dAcess(m_externalsync);
+        DispatcherLoadedLibrary lib; // not thread-safe
 
 #if defined(_WIN32) || defined(_WIN64)
         MFX::DXVA2Device dxva2device;
@@ -802,11 +794,10 @@ mfxStatus MFXDecPipeline::CreateCore()
         }
 #endif
         MFX_CHECK_STS(m_components[eDEC].m_pSession->Init(m_components[eDEC].m_libType, m_components[eDEC].m_pLibVersion, m_inParams.pMFXLibraryPath));
+        m_components[eDEC].m_mfxLibPath = lib.GetPath();
     }
 
     MFX_CHECK_STS(m_components[eDEC].m_pSession->QueryIMPL(&m_components[eDEC].m_RealImpl));
-
-    m_components[eDEC].m_mfxLibPath = lib_path;
 
     //preparation for loading second session
     ComponentParams *pSecondParams = NULL;
@@ -854,7 +845,7 @@ mfxStatus MFXDecPipeline::CreateCore()
         MFX_CHECK_STS(pSecondParams->m_pSession->Init(pSecondParams->m_libType, pSecondParams->m_pLibVersion, m_inParams.pMFXLibraryPath));
         MFX_CHECK_STS(pSecondParams->m_pSession->QueryIMPL(&pSecondParams->m_RealImpl));
 
-        pSecondParams->m_mfxLibPath = lib_path;
+        pSecondParams->m_mfxLibPath = m_components[eDEC].m_mfxLibPath;
 
         //join second session if necessary
 #if (MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 1)
