@@ -43,7 +43,7 @@ public:
     }
     virtual mfxStatus ReadNextFrame(mfxBitstream2 &bs)
     {
-        return m_CbsReader.ReadNextFrame(bs.isNull ? NULL : &bs);
+        return m_CbsReader.ReadNextFrame(&bs);
     }
     virtual mfxStatus GetStreamInfo(sStreamInfo * pParams)
     {

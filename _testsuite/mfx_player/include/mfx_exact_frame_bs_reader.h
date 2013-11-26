@@ -30,9 +30,6 @@ public:
     }
     virtual mfxStatus ReadNextFrame(mfxBitstream2 &bs)
     {
-        if (bs.isNull)
-            return base::ReadNextFrame(bs);
-
         if (m_nBytesRead == m_nChunkSize)
         {
             //reset num bytes read

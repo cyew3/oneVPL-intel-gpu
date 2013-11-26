@@ -2443,6 +2443,7 @@ mfxStatus MFXDecPipeline::Play()
         if (MFX_ERR_NONE != sts)
             break;
     }
+    m_inBSFrame.isNull = false;
 
     MFX_CHECK_STS_SKIP(sts, MFX_ERR_MORE_DATA, PIPELINE_ERR_STOPPED);
 
