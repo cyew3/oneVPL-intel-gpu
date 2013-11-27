@@ -2745,18 +2745,7 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
 
     if(NULL == m_pVPP || NULL == pSurface)
     {
-        mfxEncodeCtrl * pControl = new mfxEncodeCtrl;
-        memset(pControl, 0, sizeof(mfxEncodeCtrl));
-        if ( m_components[eREN].m_SkippedFrames.size() > 0 ) {
-            mfxU32 skipFrame = m_components[eREN].m_SkippedFrames.front();
-            if ( (m_nDecFrames) == skipFrame + 1)
-            {
-                PipelineTrace((VM_STRING("\n Skip frame #%d encoding\n"), skipFrame));
-                pControl->SkipFrame = 1;
-                m_components[eREN].m_SkippedFrames.erase(m_components[eREN].m_SkippedFrames.begin());
-            }
-         }
-         MFX_CHECK_STS(RunRender(pSurface, pControl));
+         MFX_CHECK_STS(RunRender(pSurface));
     }
 
     return MFX_ERR_NONE;
@@ -2784,6 +2773,22 @@ mfxStatus MFXDecPipeline::RunRender(mfxFrameSurface1* pSurface, mfxEncodeCtrl *p
 
     if(NULL != m_pRender)
     {
+         if ( m_components[eREN].m_SkippedFrames.size() > 0 ) 
+         {
+            if ( NULL == pControl) 
+            {
+                pControl = new mfxEncodeCtrl;
+                memset(pControl, 0, sizeof(mfxEncodeCtrl));
+            }
+            mfxU32 skipFrame = m_components[eREN].m_SkippedFrames.front();
+            if ( (m_nDecFrames) == skipFrame + 1)
+            {
+                PipelineTrace((VM_STRING("\n Skip frame #%d encoding\n"), skipFrame));
+                pControl->SkipFrame = 1;
+                m_components[eREN].m_SkippedFrames.erase(m_components[eREN].m_SkippedFrames.begin());
+            }
+        }
+
         MFX_CHECK_STS(HandleIncompatParamsCode(m_pRender->RenderFrame(pSurface, pControl), IP_ENCASYNC, NULL == pSurface));
     }
 
