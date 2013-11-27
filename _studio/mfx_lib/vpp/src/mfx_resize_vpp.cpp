@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008 - 2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008 - 2013 Intel Corporation. All Rights Reserved.
 //
 //
 //          Resize for Video Pre\Post Processing
@@ -88,7 +88,7 @@ mfxStatus MFXVideoVPPResize::Reset(mfxVideoParam *par)
   // simple checking wo analysis
   if(m_errPrtctState.In.FourCC != par->vpp.In.FourCC || m_errPrtctState.Out.FourCC != par->vpp.Out.FourCC)
   {
-      return MFX_ERR_INVALID_VIDEO_PARAM;
+      return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
   }
 
   if( m_errPrtctState.Out.Width < par->vpp.Out.Width || m_errPrtctState.Out.Height < par->vpp.Out.Height )
