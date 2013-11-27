@@ -201,7 +201,7 @@ MFX::MFXPluginsInFS::MFXPluginsInFS(mfxVersion requiredAPIVersion)
     {
         lastSlashPos = currSlashPos + 1;
     }
-    mfxU32 executableDirLen = lastSlashPos - currentModuleName;
+    mfxU32 executableDirLen = (mfxU32)(lastSlashPos - currentModuleName);
     if (executableDirLen + pluginDirNameLen + pluginCfgFileNameLen + slashLen >= MAX_PLUGIN_PATH) 
     {
         TRACE_HIVE_ERROR("MAX_PLUGIN_PATH which is %d, not enough lo locate plugin path\n", MAX_PLUGIN_PATH);
@@ -350,7 +350,7 @@ bool MFX::MFXPluginsInFS::ParseKVPair( msdk_disp_char * key, msdk_disp_char* val
         }
         *endQuoteMark = 0;
 
-        mfxU32 currentPathLen = wcslen(descriptionRecord.sPath);
+        mfxU32 currentPathLen = (mfxU32)wcslen(descriptionRecord.sPath);
         if (currentPathLen + wcslen(startQuoteMark) > sizeof(descriptionRecord.sPath) / sizeof(*descriptionRecord.sPath))
         {
             TRACE_HIVE_ERROR("buffer of MAX_PLUGIN_PATH characters which is %d, not enough lo store plugin path: %S%S\n"
