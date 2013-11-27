@@ -391,7 +391,7 @@ mfxStatus MFX_AAC_Encoder_Utility::Query(AudioCORE *core, mfxAudioParam *in, mfx
         return Query(core, &in1, out);
     }
 
-    memset(&out->mfx, 0, sizeof(mfxAudioInfoMFX));
+    memcpy(&out->mfx, &in->mfx, sizeof(mfxAudioInfoMFX));
 
     if (in)
     {
@@ -506,6 +506,7 @@ bool AudioENCODEAAC::AudioFramesCollector::UpdateBuffer() {
         if (!(*it)) {
             //padding for the last frame
             memset(&buffer.front() + CurrentFrameLength, 0, buffer.size() - CurrentFrameLength);
+            nPopFront++;
             break;
         }
         size_t nFrameSizeWithoutOffset = (*it)->DataLength - offset;
