@@ -36,6 +36,7 @@ File Name: mfx_plugin_hive.h
 #include "mfx_vector.h"
 #include <string.h>
 #include <memory>
+#include <stdio.h>
 
 namespace MFX {
 
