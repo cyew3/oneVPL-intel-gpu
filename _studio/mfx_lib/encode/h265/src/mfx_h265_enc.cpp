@@ -1516,17 +1516,21 @@ mfxStatus H265Encoder::ApplySAOThread(Ipp32s ithread)
         borders.m_bottom_left = (borders.m_bottom && borders.m_left);
         borders.m_bottom_right = (borders.m_bottom && borders.m_right);*/
 
-        int typeIdx = m_saoParam[ctu][0].type_idx;
 
         if(m_saoParam[ctu][SAO_Y ].mode_idx != SAO_MODE_OFF)
         {
+            if( m_saoParam[ctu][SAO_Y ].mode_idx == SAO_MODE_MERGE )
+            {
+                // need to restore SAO parameters
+                //reconstructBlkSAOParam(m_saoParam[ctu], mergeList);
+            }
             saoFilter_New.SetOffsetsLuma(m_saoParam[ctu], m_saoParam[ctu][0].type_idx);
 
             MFX_HEVC_PP::NAME(h265_ProcessSaoCuOrg_Luma_8u)(
                 pRecY + offset,
                 pitch_luma,
 
-                typeIdx,
+                m_saoParam[ctu][0].type_idx,
 
                 saoFilter_New.m_TmpL[0],
                 &(saoFilter_New.m_TmpU[0][ctb_pelx]),
@@ -1709,16 +1713,24 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
                 cu[ithread].Deblock();
                 if(m_sps.sample_adaptive_offset_enabled_flag)
                 {
+                    Ipp32s left_addr = cu[ithread].left_addr;
+                    Ipp32s above_addr = cu[ithread].above_addr;
+
                     MFX_HEVC_PP::CTBBorders borders = {0};
                     
-                    borders.m_left  = (-1 == cu[ithread].left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ cu[ithread].left_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
-                    borders.m_top = (-1 == cu[ithread].above_addr) ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ cu[ithread].above_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
+                    borders.m_left  = (-1 == left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ left_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
+                    borders.m_top = (-1 == above_addr) ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ above_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
 
-                    cu[ithread].EstimateCtuSao( &bsf[ctb_row], &m_saoParam[ctb_addr], ctb_addr > 0 ? &m_saoParam[0] : NULL, borders );
+                    cu[ithread].EstimateCtuSao( 
+                        &bsf[ctb_row],
+                        &m_saoParam[ctb_addr],
+                        &m_saoParam[0],
+                        borders,
+                        m_slice_ids);
 
                     // aya: tiles issues???
-                    borders.m_left  = (-1 == cu[ithread].left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ cu[ithread].left_addr ]) ? 1 : 0;
-                    borders.m_top = (-1 == cu[ithread].above_addr) ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ cu[ithread].above_addr ]) ? 1 : 0;
+                    borders.m_left  = (-1 == left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ left_addr ]) ? 1 : 0;
+                    borders.m_top = (-1 == above_addr) ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ above_addr ]) ? 1 : 0;
 
                     bool leftMergeAvail = borders.m_left > 0 ? true : false;
                     bool aboveMergeAvail= borders.m_top > 0 ? true : false;
@@ -1727,6 +1739,8 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
                     {
                         cu[ithread].xEncodeSAO(&bs[ctb_row], 0, 0, 0, m_saoParam[ctb_addr], leftMergeAvail, aboveMergeAvail);
                     }
+
+                    cu[ithread].m_saoEncodeFilter.ReconstructCtuSaoParam(m_saoParam[ctb_addr]);
                 }
             }
 
@@ -1850,16 +1864,23 @@ mfxStatus H265Encoder::EncodeThreadByRow(Ipp32s ithread) {
                 cu[ithread].Deblock();
                 if(m_sps.sample_adaptive_offset_enabled_flag)
                 {
+                    Ipp32s left_addr  = cu[ithread].left_addr;
+                    Ipp32s above_addr = cu[ithread].above_addr;
                     MFX_HEVC_PP::CTBBorders borders = {0};
                     
-                    borders.m_left  = (-1 == cu[ithread].left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ cu[ithread].left_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
-                    borders.m_top = (-1 == cu[ithread].above_addr) ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ cu[ithread].above_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
-
-                    cu[ithread].EstimateCtuSao( &bsf[ithread], &m_saoParam[ctb_addr], ctb_addr > 0 ? &m_saoParam[0] : NULL, borders );
+                    borders.m_left = (-1 == left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ left_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
+                    borders.m_top  = (-1 == above_addr) ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ above_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
+                    
+                    cu[ithread].EstimateCtuSao( 
+                        &bsf[ithread], 
+                        &m_saoParam[ctb_addr], 
+                        ctb_addr > 0 ? &m_saoParam[0] : NULL, 
+                        borders,
+                        m_slice_ids);
 
                     // aya: tiles issues???
-                    borders.m_left  = (-1 == cu[ithread].left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ cu[ithread].left_addr ]) ? 1 : 0;
-                    borders.m_top = (-1 == cu[ithread].above_addr) ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ cu[ithread].above_addr ]) ? 1 : 0;
+                    borders.m_left = (-1 == left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ left_addr ]) ? 1 : 0;
+                    borders.m_top  = (-1 == above_addr) ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ above_addr ]) ? 1 : 0;
 
                     bool leftMergeAvail = borders.m_left > 0 ? true : false;
                     bool aboveMergeAvail= borders.m_top > 0 ? true : false;
@@ -1868,6 +1889,8 @@ mfxStatus H265Encoder::EncodeThreadByRow(Ipp32s ithread) {
                     {
                         cu[ithread].xEncodeSAO(&bs[ithread], 0, 0, 0, m_saoParam[ctb_addr], leftMergeAvail, aboveMergeAvail);
                     }
+
+                    cu[ithread].m_saoEncodeFilter.ReconstructCtuSaoParam(m_saoParam[ctb_addr]);
                 }
             }
 

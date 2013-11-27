@@ -619,8 +619,14 @@ void InvertQuantOffsets(int type_idx, int typeAuxInfo, int* dstOffsets, int* src
 } // void InvertQuantOffsets( ... )
 
 
-void ReconstructCtuSaoParam(SaoCtuParam& recParam, std::vector<SaoCtuParam*>& mergeList)
+void SaoEncodeFilter::ReconstructCtuSaoParam(SaoCtuParam& recParam)
 {
+    std::vector<SaoCtuParam*> mergeList;
+    getMergeList(
+        m_ctb_addr,
+        NULL,//reconParams,
+        mergeList);
+
     //for(int compIdx=0; compIdx< NUM_SAO_COMPONENTS; compIdx++)
     for(int compIdx=0; compIdx<1; compIdx++)
     {
@@ -656,7 +662,7 @@ void ReconstructCtuSaoParam(SaoCtuParam& recParam, std::vector<SaoCtuParam*>& me
         }
     }
 
-} // void ReconstructCtuSaoParam(...)
+} // void SaoEncodeFilter::ReconstructCtuSaoParam(...)
 
 
 void SliceDecisionAlgorithm(bool* sliceEnabled, int picTempLayer)
@@ -1099,18 +1105,18 @@ void SaoEncodeFilter::GetBestCtuSaoParam(
 {
     m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_CUR], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
 
-#if defined(SAO_MODE_MERGE_ENABLED)
+//#if defined(SAO_MODE_MERGE_ENABLED)
     //get merge list
     std::vector<SaoCtuParam*> mergeList;
-    getMergeList(/*pic,*/
-        //ctu,
-        m_ctb_addr,// aya!!!!!!!!
-        reconParams, mergeList);
-#else
-    std::vector<SaoCtuParam*> mergeList(2);
-    mergeList[0] = NULL;
-    mergeList[1] = NULL;
-#endif
+    getMergeList(
+        m_ctb_addr,
+        NULL,//reconParams,
+        mergeList);
+//#else
+//std::vector<SaoCtuParam*> mergeList(2);
+//mergeList[0] = NULL;
+//mergeList[1] = NULL;
+//#endif
 
     SaoCtuParam modeParam;
     Ipp64f minCost = MAX_DOUBLE, modeCost = MAX_DOUBLE;
@@ -1138,12 +1144,15 @@ void SaoEncodeFilter::GetBestCtuSaoParam(
 
             case SAO_MODE_MERGE:
             {
-#if defined(SAO_MODE_MERGE_ENABLED)
+//#if defined(SAO_MODE_MERGE_ENABLED)
                 // AYA!!! FIXME
                 ModeDecision_Merge(
-                    ctu,
-                    mergeList, sliceEnabled, blkStats , modeParam, modeCost, /*m_pppcRDSbacCoder,*/ SAO_CABACSTATE_BLK_CUR);
-#endif
+                    mergeList,
+                    sliceEnabled,
+                    modeParam,
+                    modeCost,
+                    SAO_CABACSTATE_BLK_CUR);
+//#endif
             }
             break;
 
@@ -1163,12 +1172,15 @@ void SaoEncodeFilter::GetBestCtuSaoParam(
 
     m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_NEXT], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
 
-    ReconstructCtuSaoParam(*codedParam, mergeList);
+    //ReconstructCtuSaoParam(*codedParam, mergeList);
 
 } // void SaoEncodeFilter::GetBestCtuSaoParam(...)
 
 
-int SaoEncodeFilter::getMergeList(int ctu, SaoCtuParam* blkParams, std::vector<SaoCtuParam*>& mergeList)
+int SaoEncodeFilter::getMergeList(
+    int ctu, 
+    SaoCtuParam* blkParams, 
+    std::vector<SaoCtuParam*>& mergeList)
 {
     int ctuX = ctu % m_numCTU_inWidth;
     int ctuY = ctu / m_numCTU_inWidth;
@@ -1187,6 +1199,7 @@ int SaoEncodeFilter::getMergeList(int ctu, SaoCtuParam* blkParams, std::vector<S
                 {
                     mergedCTUPos = ctu- m_numCTU_inWidth;
                     //if( pic->getSAOMergeAvailability(ctu, mergedCTUPos) )
+                    if( m_slice_ids[ctu] == m_slice_ids[mergedCTUPos] )
                     {
                         //mergeCandidate = &(blkParams[mergedCTUPos]);
                         mergeCandidate = &(m_codedParams_TotalFrame[mergedCTUPos]);
@@ -1200,6 +1213,7 @@ int SaoEncodeFilter::getMergeList(int ctu, SaoCtuParam* blkParams, std::vector<S
                 {
                     mergedCTUPos = ctu- 1;
                     //if( pic->getSAOMergeAvailability(ctu, mergedCTUPos) )
+                    if( m_slice_ids[ctu] == m_slice_ids[mergedCTUPos] )
                     {
                         //mergeCandidate = &(blkParams[mergedCTUPos]);
                         mergeCandidate = &(m_codedParams_TotalFrame[mergedCTUPos]);
@@ -1227,7 +1241,12 @@ int SaoEncodeFilter::getMergeList(int ctu, SaoCtuParam* blkParams, std::vector<S
 } // int SaoEncodeFilter::getMergeList(int ctu, SaoCtuParam* blkParams, std::vector<SaoCtuParam*>& mergeList)
 
 
-void SaoEncodeFilter::ModeDecision_Merge(std::vector<SaoCtuParam*>& mergeList, bool* sliceEnabled, SaoCtuParam& modeParam, Ipp64f& modeNormCost, int inCabacLabel)
+void SaoEncodeFilter::ModeDecision_Merge(
+    std::vector<SaoCtuParam*>& mergeList, 
+    bool* sliceEnabled, 
+    SaoCtuParam& modeParam, 
+    Ipp64f& modeNormCost, 
+    int inCabacLabel)
 {
     int mergeListSize = (int)mergeList.size();
     modeNormCost = MAX_DOUBLE;
@@ -1265,7 +1284,7 @@ void SaoEncodeFilter::ModeDecision_Merge(std::vector<SaoCtuParam*>& mergeList, b
 
         }
 
-        m_bsf->CtxRestore(m_ctxSAO[inCabacLabel], 0, NUM_CABAC_CONTEXT);
+        m_bsf->CtxRestore(m_ctxSAO[inCabacLabel], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
         m_bsf->Reset();
 
         h265_code_sao_ctb_param(m_bsf, testBlkParam, sliceEnabled, (mergeList[SAO_MERGE_LEFT]!= NULL), (mergeList[SAO_MERGE_ABOVE]!= NULL), false);
@@ -1278,11 +1297,11 @@ void SaoEncodeFilter::ModeDecision_Merge(std::vector<SaoCtuParam*>& mergeList, b
         {
             modeNormCost = cost;
             modeParam    = testBlkParam;
-            m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_TEMP], 0, NUM_CABAC_CONTEXT);
+            m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_TEMP], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
         }
     }
 
-    m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_TEMP], 0, NUM_CABAC_CONTEXT);
+    m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_TEMP], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
 
 } // void SaoEncodeFilter::ModeDecision_Merge(...)
 
@@ -1735,7 +1754,8 @@ void H265CU::EstimateCtuSao(
     H265BsFake *bs, 
     SaoCtuParam* saoParam, 
     SaoCtuParam* saoParam_TotalFrame,
-    const MFX_HEVC_PP::CTBBorders & borders)
+    const MFX_HEVC_PP::CTBBorders & borders,
+    const Ipp8u* slice_ids)
 {
     m_saoEncodeFilter.m_ctb_addr = this->ctb_addr;
     m_saoEncodeFilter.m_ctb_pelx = this->ctb_pelx;
@@ -1745,6 +1765,8 @@ void H265CU::EstimateCtuSao(
     m_saoEncodeFilter.m_bsf = bs;
     m_saoEncodeFilter.m_labmda[0] = this->rd_lambda*256;
     m_saoEncodeFilter.m_borders = borders;
+
+    m_saoEncodeFilter.m_slice_ids = (Ipp8u*)slice_ids;
     // ----------------------------------------------------
 
     // run

@@ -174,6 +174,8 @@ public:
          bool* sliceEnabled,
          SaoCtuParam* saoParam);
 
+     void ReconstructCtuSaoParam(SaoCtuParam& recParam);
+
      void ApplyCtuSao(
         mfxFrameData* srcYuv,
         mfxFrameData* resYuv,
@@ -236,6 +238,8 @@ public:
     H265BsFake *m_bsf;
 
     MFX_HEVC_PP::CTBBorders m_borders;
+
+    Ipp8u* m_slice_ids;
 
     // output
     SaoCtuParam* m_codedParams_TotalFrame;
