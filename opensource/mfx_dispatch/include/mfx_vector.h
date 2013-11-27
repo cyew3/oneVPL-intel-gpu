@@ -34,38 +34,38 @@ File Name: mfx_vector.h
 namespace MFX 
 {
     template <class T>
-    class iterator 
+    class iterator_tmpl 
     {
         template <class U> friend class MFXVector;
         mfxU32 mIndex;
         T* mRecords;
-        iterator(mfxU32 index , T * records) 
+        iterator_tmpl(mfxU32 index , T * records) 
             : mIndex (index)
             , mRecords(records)
         {}
     public:
-        iterator() 
+        iterator_tmpl() 
             : mIndex ()
             , mRecords() 
         {}
-        bool  operator ==(const iterator<T> & that )const 
+        bool  operator ==(const iterator_tmpl<T> & that )const 
         {
             return mIndex == that.mIndex;
         }
-        bool  operator !=(const iterator<T> & that )const 
+        bool  operator !=(const iterator_tmpl<T> & that )const 
         {
             return mIndex != that.mIndex;
         }
-        mfxU32 operator - (const iterator<T> &that) const 
+        mfxU32 operator - (const iterator_tmpl<T> &that) const 
         {
             return mIndex - that.mIndex;
         }
-        iterator<T> & operator ++() 
+        iterator_tmpl<T> & operator ++() 
         {
             mIndex++;
             return * this;
         }
-        iterator<T> & operator ++(int) 
+        iterator_tmpl<T> & operator ++(int) 
         {
             mIndex++;
             return * this;
@@ -94,17 +94,17 @@ namespace MFX
         {
             clear();
         }
-        typedef iterator<T> iterator_type;
+        typedef iterator_tmpl<T> iterator;
 
-        iterator_type begin() const 
+        iterator begin() const 
         {
-            return iterator_type(0u, mRecords);
+            return iterator(0u, mRecords);
         }
-        iterator_type end() const 
+        iterator end() const 
         {
-            return iterator_type(mNrecords, mRecords);
+            return iterator(mNrecords, mRecords);
         }
-        void insert(iterator_type beg_iter, iterator_type end_iter) 
+        void insert(iterator beg_iter, iterator end_iter) 
         {
             if (beg_iter == end_iter)
             {
@@ -145,7 +145,7 @@ namespace MFX
             mNrecords = i + 1;
             
         }
-        void erase (iterator_type at) 
+        void erase (iterator at) 
         {
             mNrecords--;
             for (mfxU32 i = at.mIndex; i != mNrecords; i++)

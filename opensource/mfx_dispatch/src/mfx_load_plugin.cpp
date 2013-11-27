@@ -137,14 +137,14 @@ bool MFX::MFXPluginFactory::RunVerification( const mfxPlugin & plg, const Plugin
         return false;
     }
 
-    if (pluginParams.CodecId != dsc.CodecId) 
+    if (!dsc.onlyVersionRegistered && pluginParams.CodecId != dsc.CodecId) 
     {
         TRACE_PLUGIN_ERROR("plg->GetPluginParam() returned CodecId="MFXFOURCCTYPE()", but registration has CodecId="MFXFOURCCTYPE()"\n"
             , MFXU32TOFOURCC(pluginParams.CodecId), MFXU32TOFOURCC(dsc.CodecId));
         return false;
     }
 
-    if (pluginParams.Type != dsc.Type) 
+    if (!dsc.onlyVersionRegistered && pluginParams.Type != dsc.Type) 
     {
         TRACE_PLUGIN_ERROR("plg->GetPluginParam() returned Type=%d, but registration has Type=%d\n", pluginParams.Type, dsc.Type);
         return false;
@@ -279,7 +279,6 @@ bool MFX::MFXPluginFactory::VerifyCodecCommon( const mfxVideoCodecPlugin & video
     return true;
 }
 
-
 mfxStatus MFX::MFXPluginFactory::Create(const PluginDescriptionRecord & rec)
 {
     PluginModule plgModule(rec.sPath);
@@ -321,7 +320,7 @@ MFX::MFXPluginFactory::MFXPluginFactory( mfxSession session )
 
 bool MFX::MFXPluginFactory::Destroy( const mfxPluginUID & uidToDestroy) 
 {
-    for (MFXVector<FactoryRecord >::iterator_type i = mPlugins.begin(); i!= mPlugins.end(); i++) 
+    for (MFXVector<FactoryRecord >::iterator i = mPlugins.begin(); i!= mPlugins.end(); i++) 
     {
         if (i->plgParams.PluginUID == uidToDestroy) 
         {
@@ -336,7 +335,7 @@ bool MFX::MFXPluginFactory::Destroy( const mfxPluginUID & uidToDestroy)
 
 void MFX::MFXPluginFactory::Close() 
 {
-    for (MFXVector<FactoryRecord>::iterator_type i = mPlugins.begin(); i!= mPlugins.end(); i++) 
+    for (MFXVector<FactoryRecord>::iterator i = mPlugins.begin(); i!= mPlugins.end(); i++) 
     {
         DestroyPlugin(*i);
     }

@@ -305,9 +305,12 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
                 //setting up plugins records
                 for(int i = MFX::MFX_STORAGE_ID_FIRST; i <= MFX::MFX_STORAGE_ID_LAST; i++) 
                 {
-                    MFX::MFXPluginHive hive = MFX::MFXPluginHive(i, apiVerActual);
-                    allocatedHandle->pluginHive.insert(hive.begin(), hive.end());
+                    MFX::MFXPluginsInHive plgsInHive(i, apiVerActual);
+                    allocatedHandle->pluginHive.insert(plgsInHive.begin(), plgsInHive.end());
                 }
+
+                MFX::MFXPluginsInFS plgsInFS(apiVerActual);
+                allocatedHandle->pluginHive.insert(plgsInFS.begin(), plgsInFS.end());
             }
         } 
         catch(...)
@@ -438,11 +441,11 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_Load)(mfxSession session, const
         DISPATCHER_LOG_ERROR((("MFXVideoUSER_Load: uid=NULL\n")));
         return MFX_ERR_NULL_PTR;
     }
-    DISPATCHER_LOG_INFO((("MFXVideoUSER_Load: uid="MFXGUIDTYPE()" version=\n")
+    DISPATCHER_LOG_INFO((("MFXVideoUSER_Load: uid="MFXGUIDTYPE()" version=%d\n")
         , MFXGUIDTOHEX(uid)
         , version))
     size_t pluginsChecked = 0;
-    for (MFX::MFXPluginHive::iterator i = pHandle.pluginHive.begin();i != pHandle.pluginHive.end(); i++, pluginsChecked++)
+    for (MFX::MFXPluginStorage::iterator i = pHandle.pluginHive.begin();i != pHandle.pluginHive.end(); i++, pluginsChecked++)
     {
         if (i->PluginUID != *uid)
         {

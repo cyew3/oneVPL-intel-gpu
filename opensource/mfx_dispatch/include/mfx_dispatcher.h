@@ -143,7 +143,7 @@ struct MFX_DISP_HANDLE
     // Library's module handle
     mfxModuleHandle hModule;
 
-    MFX::MFXPluginHive pluginHive;
+    MFX::MFXPluginStorage pluginHive;
     MFX::MFXPluginFactory pluginFactory;
 
     // function call table

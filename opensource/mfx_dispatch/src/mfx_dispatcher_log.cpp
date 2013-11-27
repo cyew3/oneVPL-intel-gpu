@@ -226,12 +226,12 @@ void   DispatchLog::Write(int level, int opcode, const char * msg, va_list argpt
             
             case DL_SINK_PRINTF:
             {
-                char msg_formated[1024] = {0};
+                char msg_formated[8048] = {0};
 
                 if (NULL != msg && level != DL_LOADED_LIBRARY)
                 {
 #if _MSC_VER >= 1400
-                    vsprintf_s(msg_formated, msg, argptr);
+                    vsprintf_s(msg_formated, sizeof(msg_formated)/sizeof(msg_formated[0]), msg, argptr);
 #else
                     vsnprintf(msg_formated, sizeof(msg_formated)/sizeof(msg_formated[0]), msg, argptr);
 #endif

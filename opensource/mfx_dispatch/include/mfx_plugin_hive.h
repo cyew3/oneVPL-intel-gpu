@@ -39,47 +39,88 @@ File Name: mfx_plugin_hive.h
 
 namespace MFX {
 
-    enum {
+    enum 
+    {
         MAX_PLUGIN_PATH = 4096
     };
     
-    enum {
+    enum
+    {
         MAX_PLUGIN_NAME = 4096
     };
 
-    inline bool operator == (const mfxPluginUID &lhs, const mfxPluginUID & rhs) {
+    inline bool operator == (const mfxPluginUID &lhs, const mfxPluginUID & rhs) 
+    {
         return !memcmp(lhs.Data, rhs.Data, sizeof(mfxPluginUID));
     }
     
-    inline bool operator != (const mfxPluginUID &lhs, const mfxPluginUID & rhs) {
+    inline bool operator != (const mfxPluginUID &lhs, const mfxPluginUID & rhs) 
+    {
         return !(lhs == rhs);
     }
-
-    struct PluginDescriptionRecord :  mfxPluginParam {
+#ifdef _WIN32
+    //warning C4351: new behavior: elements of array 'MFX::PluginDescriptionRecord::sName' will be default initialized
+    #pragma warning (disable: 4351)
+#endif
+    class PluginDescriptionRecord :  public mfxPluginParam 
+    {
+    public:
         msdk_disp_char sPath[MAX_PLUGIN_PATH];
         char sName[MAX_PLUGIN_NAME];
+        //used for FS plugins that has poor description
+        bool onlyVersionRegistered;
         bool Default;
+        PluginDescriptionRecord()
+            : mfxPluginParam()
+            , sPath()
+            , sName()
+            , onlyVersionRegistered()
+            , Default()
+        {
+        }
     };
 
-    class MFXPluginHive  {
+    class MFXPluginStorage  
+    {
+    protected:
         MFXVector<PluginDescriptionRecord> mRecords;
     public:
-        typedef MFXVector<PluginDescriptionRecord>::iterator_type iterator;
+        typedef MFXVector<PluginDescriptionRecord>::iterator iterator;
         
-        iterator begin() const {
+        iterator begin() const 
+        {
             return mRecords.begin();
         }
-        iterator end() const {
+        iterator end() const 
+        {
             return mRecords.end();
         }
-        void insert(iterator beg_iter, iterator end_iter) {
+        void insert(iterator beg_iter, iterator end_iter) 
+        {
             mRecords.insert(beg_iter, end_iter);
         }
-        size_t size() {
+        size_t size() 
+        {
             return mRecords.size();
         }
 
-        MFXPluginHive() {}
-        MFXPluginHive(mfxU32 mfxStorageID, mfxVersion requiredAPIVersion);
+        MFXPluginStorage() {}
+    };
+
+    //populated from registry
+    class MFXPluginsInHive : public MFXPluginStorage 
+    {
+    public:
+        MFXPluginsInHive(mfxU32 mfxStorageID, mfxVersion requiredAPIVersion);
+    };
+
+    //plugins are loaded from FS close to executable
+    class MFXPluginsInFS : public MFXPluginStorage 
+    {
+    public:
+        MFXPluginsInFS(mfxVersion requiredAPIVersion);
+    private:
+        bool ParseFile(FILE * f, PluginDescriptionRecord & des);
+        bool ParseKVPair( msdk_disp_char *key, msdk_disp_char * value, PluginDescriptionRecord & des);
     };
 }
