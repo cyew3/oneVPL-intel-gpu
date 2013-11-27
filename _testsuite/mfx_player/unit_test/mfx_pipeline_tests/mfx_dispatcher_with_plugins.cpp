@@ -15,6 +15,7 @@ File Name: .h
 #include "mfxplugin.h"
 #include "winerror.h"
 #include "mock_mfx_plugins.h"
+#include <iomanip>
 
 inline bool operator == (const mfxPluginUID &lhs, const mfxPluginUID & rhs) {
     return !memcmp(lhs.Data, rhs.Data, sizeof(mfxPluginUID));
@@ -48,6 +49,9 @@ inline std::ostream & operator << (std::ostream &os, const mfxPluginUID &lhs) {
 
 SUITE(DispatcherWithPlugins) {
 
+#define MAKE_HEX( x ) \
+    std::setw(2) << std::setfill('0') << std::hex << (int)( x )
+
     const char rootPluginPath[] = "Software\\Intel\\MediaSDK\\Dispatch\\Plugin";
 
     struct MFXAPIVerFinder {
@@ -75,6 +79,7 @@ SUITE(DispatcherWithPlugins) {
         mfxPlugin mfxPlg ;
         mfxSession session;
         mfxU16 pluginVer;
+        std::vector<std::string> dirsToRemove;
         WhenRegistryContainsNoPlugin() 
             : mockEncoder(*new MockPlugin())
             , mAdapter(&mockEncoder)
@@ -82,7 +87,7 @@ SUITE(DispatcherWithPlugins) {
                 mfxPlg = mAdapter.operator mfxPlugin();
 
                 //default plugin
-                mfxPluginUID guid0 = {1,2,3,4,5,6,7,8,9,0x10,0x11,0x12,0x13,0x14,0x15,0x16};
+                mfxPluginUID guid0 = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
                 guid1 = guid0;
 
                 //each test uses blank mock object
@@ -107,7 +112,7 @@ SUITE(DispatcherWithPlugins) {
             RegSetValueExA(hk, "codecid", 0, REG_DWORD, (BYTE*)&pluginParams.CodecId, sizeof(pluginParams.CodecId));
             RegSetValueExA(hk, "default", 0, REG_DWORD, (BYTE*)&(int)isDefault, sizeof(isDefault));
             RegSetValueExA(hk, "GUID", 0, REG_BINARY, (BYTE*)&pluginParams.PluginUID.Data, sizeof(pluginParams.PluginUID.Data));
-            RegSetValueExA(hk, "Name", 0, REG_SZ, (BYTE*)name.c_str(), name.length());
+            //RegSetValueExA(hk, "Name", 0, REG_SZ, (BYTE*)name.c_str(), name.length());
             RegSetValueExA(hk, "Path", 0, REG_SZ, (BYTE*)path.c_str(), path.length());
             RegSetValueExA(hk, "Type", 0, REG_DWORD, (BYTE*)&pluginParams.Type, sizeof(pluginParams.Type));
             mfxU32 version = pluginParams.PluginVersion;
@@ -117,12 +122,18 @@ SUITE(DispatcherWithPlugins) {
             RegCloseKey(hk1);
         }
 
+       
+
         DECLARE_MOCK_METHOD2(mfxStatus , Create, mfxPluginUID , mfxPlugin* );
 
         TEST_METHOD_TYPE(Create) createArgs;
 
         ~WhenRegistryContainsNoPlugin() {
             RegDeleteTreeA(HKEY_LOCAL_MACHINE, rootPluginPath);
+            for (size_t i = 0; i < dirsToRemove.size(); i++)
+            {
+                system((std::string("rmdir /S /Q ") + dirsToRemove[i].c_str()).c_str());
+            }
         }
     };
 
@@ -141,7 +152,233 @@ SUITE(DispatcherWithPlugins) {
             createKey(plgParams, "N2", "mfx_pipeline_tests_d.exe", true);
         }
     };
+
+    class WhenTestLoadingFileSystemPlugin : public WhenRegistryContainsNoPlugin {
+        HMODULE h;
+    public :
+        WhenTestLoadingFileSystemPlugin() 
+            : h() {
+        }
+        void createPluginInFS(
+            mfxPluginParam &pluginParams
+            , bool bCreateCFG
+            , bool bPopulateCFGWith1Plugin
+            , bool bSameAsFileName
+            , const std::string &dirName
+            , const std::string &dll_postfix
+            , const std::string &name
+            , const std::string &path) 
+        {
+            std::string currentModuleName;
+            std::string currentModuleName2;
+            currentModuleName.resize(512);
+            GetModuleFileNameA(NULL, &currentModuleName.front(), currentModuleName.size());
+            if (GetLastError() != 0) 
+            {
+                return;
+            }
+            size_t pos = currentModuleName.find_last_of("\\");
+            std::string currentModuleName3 = currentModuleName.substr(pos + 1);
+            currentModuleName2 = currentModuleName;
+            currentModuleName.resize(pos+1);
+            std::stringstream ss;
+            for (int i = 0; i < 16; i++)
+            {
+                ss<<MAKE_HEX(pluginParams.PluginUID.Data[i]);
+            }
+            if (dirName.empty()) {
+                currentModuleName.append(ss.str());
+            }
+            else {
+                currentModuleName.append(dirName);
+            }
+            //need to create folder
+            CreateDirectoryA(currentModuleName.c_str(), NULL);
+            dirsToRemove.push_back(currentModuleName);
+
+
+            if (bCreateCFG) {
+                FILE * plgFile = fopen((currentModuleName + "\\plugin.cfg").c_str(), "w");
+                if (plgFile)
+                {
+                    if (bPopulateCFGWith1Plugin) {
+                        fprintf(plgFile, "PlgVer     = %d\n\n\n", pluginParams.PluginVersion);
+                        fprintf(plgFile, "FileName32 = \"%s%s\"\n\n\n\n", currentModuleName3.c_str(), dll_postfix.c_str());
+                        fprintf(plgFile, "FileName64 = \"%s%s\"\n", currentModuleName3.c_str(), dll_postfix.c_str());
+                    }
+                    fclose(plgFile);
+                }
+            }
+            //bSameAsFileName ? dll_postfix : "some_plugin.dll"
+            std::string targetModule = currentModuleName+"\\"+currentModuleName3.c_str() + dll_postfix ;
+            system((std::string("mklink ") + targetModule + " " + currentModuleName2.c_str() ).c_str());
+            /*h = LoadLibraryA(targetModule.c_str());
+            FARPROC proc = GetProcAddress(h, "SetContext");
+            ((void (MFX_CDECL*)(WhenRegistryContainsNoPlugin*))proc)(this);*/
+        }
+        ~WhenTestLoadingFileSystemPlugin()
+        {
+            //FreeLibrary(h);
+        }
+    };
     //////////////////////////////////////////////////////////////////////////
+
+    TEST_FIXTURE(WhenTestLoadingFileSystemPlugin, HIVE_build_SUCESS_with_FS_plugin) {
+
+        createPluginInFS(plgParams, true, true, true, "", "_plugin.dll", "N2", "mfx_pipeline_tests_d.exe");
+
+        TEST_METHOD_TYPE(Create) createArgs;
+        mfxPlugin plg = mAdapter.operator mfxPlugin();
+        createArgs.ret_val = MFX_ERR_NONE;
+        createArgs.value1  = &plg;
+        this->_Create.WillReturn(createArgs);
+
+        TEST_METHOD_TYPE(MockPlugin::GetPluginParam) getPluginParams;
+        getPluginParams.value0 = plgParams;
+        mockEncoder._GetPluginParam.WillReturn(getPluginParams);
+
+        mfxVersion verToRequest = g_MfxApiVersion;
+        verToRequest.Minor--;
+
+        MFXInit(MFX_IMPL_SOFTWARE, &verToRequest, &session);
+        CHECK_EQUAL(MFX_ERR_NONE, MFXVideoUSER_Load(session, &guid1, pluginVer));
+        MFXClose(session);
+    }
+
+
+    TEST_FIXTURE(WhenTestLoadingFileSystemPlugin, HIVE_build_FAILURE_with_FS_plugin_IF_dirname_isnot_valid_hex) {
+
+        createPluginInFS(plgParams, true, true, true, "01020304050607080z10111213141516", "_plugin.dll", "N2", "mfx_pipeline_tests_d.exe");
+
+        TEST_METHOD_TYPE(Create) createArgs;
+        mfxPlugin plg = mAdapter.operator mfxPlugin();
+        createArgs.ret_val = MFX_ERR_NONE;
+        createArgs.value1  = &plg;
+        this->_Create.WillReturn(createArgs);
+
+        TEST_METHOD_TYPE(MockPlugin::GetPluginParam) getPluginParams;
+        getPluginParams.value0 = plgParams;
+        mockEncoder._GetPluginParam.WillReturn(getPluginParams);
+
+        mfxVersion verToRequest = g_MfxApiVersion;
+        verToRequest.Minor--;
+
+        MFXInit(MFX_IMPL_SOFTWARE, &verToRequest, &session);
+        CHECK(MFX_ERR_NONE!=MFXVideoUSER_Load(session, &guid1, pluginVer));
+        MFXClose(session);
+    }
+
+    TEST_FIXTURE(WhenTestLoadingFileSystemPlugin, HIVE_build_FAILURE_with_FS_plugin_IF_NO_PLUGIN_description) {
+
+        createPluginInFS(plgParams, false, false, true, "", "_plugin.dll", "N2", "mfx_pipeline_tests_d.exe");
+
+        TEST_METHOD_TYPE(Create) createArgs;
+        mfxPlugin plg = mAdapter.operator mfxPlugin();
+        createArgs.ret_val = MFX_ERR_NONE;
+        createArgs.value1  = &plg;
+        this->_Create.WillReturn(createArgs);
+
+        TEST_METHOD_TYPE(MockPlugin::GetPluginParam) getPluginParams;
+        getPluginParams.value0 = plgParams;
+        mockEncoder._GetPluginParam.WillReturn(getPluginParams);
+
+        mfxVersion verToRequest = g_MfxApiVersion;
+        verToRequest.Minor--;
+
+        MFXInit(MFX_IMPL_SOFTWARE, &verToRequest, &session);
+        CHECK(MFX_ERR_NONE!=MFXVideoUSER_Load(session, &guid1, pluginVer));
+        MFXClose(session);
+    }
+
+    TEST_FIXTURE(WhenTestLoadingFileSystemPlugin, HIVE_build_FAILURE_with_FS_plugin_IF_NO_PLUGIN_name_too_long) {
+
+        createPluginInFS(plgParams, true, true, false, "",
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+        "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+
+        "11111111111111111111111111111111_plugin.dll"
+        , "N2", "mfx_pipeline_tests_d.exe");
+
+        TEST_METHOD_TYPE(Create) createArgs;
+        mfxPlugin plg = mAdapter.operator mfxPlugin();
+        createArgs.ret_val = MFX_ERR_NONE;
+        createArgs.value1  = &plg;
+        this->_Create.WillReturn(createArgs);
+
+        TEST_METHOD_TYPE(MockPlugin::GetPluginParam) getPluginParams;
+        getPluginParams.value0 = plgParams;
+        mockEncoder._GetPluginParam.WillReturn(getPluginParams);
+
+        mfxVersion verToRequest = g_MfxApiVersion;
+        verToRequest.Minor--;
+
+        MFXInit(MFX_IMPL_SOFTWARE, &verToRequest, &session);
+        CHECK(MFX_ERR_NONE!=MFXVideoUSER_Load(session, &guid1, pluginVer));
+        MFXClose(session);
+    }
+
+    TEST_FIXTURE(WhenTestLoadingFileSystemPlugin, HIVE_build_FAILURE_with_FS_plugin_IF_PLUGIN_description_is_wrong_format) {
+
+        createPluginInFS(plgParams, true, false, true,  "", "_plugin.dll", "N2", "mfx_pipeline_tests_d.exe");
+
+        TEST_METHOD_TYPE(Create) createArgs;
+        mfxPlugin plg = mAdapter.operator mfxPlugin();
+        createArgs.ret_val = MFX_ERR_NONE;
+        createArgs.value1  = &plg;
+        this->_Create.WillReturn(createArgs);
+
+        TEST_METHOD_TYPE(MockPlugin::GetPluginParam) getPluginParams;
+        getPluginParams.value0 = plgParams;
+        mockEncoder._GetPluginParam.WillReturn(getPluginParams);
+
+        mfxVersion verToRequest = g_MfxApiVersion;
+        verToRequest.Minor--;
+
+        MFXInit(MFX_IMPL_SOFTWARE, &verToRequest, &session);
+        CHECK(MFX_ERR_NONE!=MFXVideoUSER_Load(session, &guid1, pluginVer));
+        MFXClose(session);
+    }
 
     TEST_FIXTURE(WhenRegistryContainsNoPlugin, HIVE_build_SUCESS_if_real_lib_higher_than_requested_and_meet_plg_requirement_MFXInit_version) {
 
