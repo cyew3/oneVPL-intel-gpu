@@ -192,6 +192,12 @@ mfxStatus AudioDECODEAAC::Close(void)
     m_pAACAudioDecoder->Close();
 
     m_isInit = false;
+
+    if (m_frame.Data)
+    {
+        delete m_frame.Data;
+        m_frame.Data = NULL;
+    }
     return MFX_ERR_NONE;
 }
 

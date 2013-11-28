@@ -131,6 +131,11 @@ mfxStatus AudioDECODEMP3::Close(void)
     mInData.Close();
     m_pMP3AudioDecoder->Close();
 
+    if (m_frame.Data)
+    {
+        delete m_frame.Data;
+        m_frame.Data = NULL;
+    }
     m_isInit = false;
     return MFX_ERR_NONE;
 }
