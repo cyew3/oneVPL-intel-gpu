@@ -7,15 +7,19 @@
 //          Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 //
 */
-
-#include "mfx_common.h"
-
-#if defined (MFX_VA_LINUX) || defined (MFX_VA_OSX)
-
-#include "mfx_platform_headers.h"
-
 #ifndef __MFX_H264_ENCODE_STRUCT_VAAPI__H
 #define __MFX_H264_ENCODE_STRUCT_VAAPI__H
+
+#if defined (MFX_VA_LINUX) || defined (MFX_VA_OSX)
+#include <va/va.h>
+
+#include "mfx_common.h"
+#include "mfx_platform_headers.h"
+
+/*
+ *  This file was made as copy of correspondance Windows DDI and later tuned for specific libVA
+ *  changes interface 
+ */
 
 #define DDI_086
 
@@ -449,6 +453,7 @@ enum
 
 ////////////////////////////////////////////////////////////////////////////////
 // this structure is used to define the control structure for VME.
+// in Linux this structure is a proxy between MediaSDK and libVA
 ///////////////////////////////////////////////////////////////////////////////
 
 typedef struct tagENCODE_CAPS
@@ -502,6 +507,9 @@ typedef struct tagENCODE_CAPS
         };
         USHORT CodingFunction;
     };
+    VAEncMiscParameterQuantization           TrellisQuantization;
+    VAEncMiscParameterRIR                    RollingIntraRefresh;
+    VAEncMiscParameterBufferMaxFrameSize     BufferMaxFrameSize;
     UINT    MaxPicWidth;
     UINT    MaxPicHeight;
     UCHAR   MaxNum_Reference;
@@ -513,6 +521,8 @@ typedef struct tagENCODE_CAPS
     UCHAR   MaxNum_DQLayer;
     UCHAR   MaxNum_TemporalLayer;
     UCHAR   MBBRCSupport;
+
+    UCHAR   TrelisQuantization;
     UCHAR   MaxNumOfROI; // [0..16]
 
     union {

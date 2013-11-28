@@ -22,6 +22,7 @@
 #include <va/va_enc_h264.h>
 
 #include "mfx_h264_encode_interface.h"
+#include "mfx_h264_encode_hw_utils.h"
 
 #define MFX_DESTROY_VABUFFER(vaBufferId, vaDisplay)    \
 do {                                               \
@@ -126,6 +127,8 @@ namespace MfxHwH264Encode
         VAAPIEncoder(const VAAPIEncoder&); // no implementation
         VAAPIEncoder& operator=(const VAAPIEncoder&); // no implementation
 
+        void FillSps( MfxVideoParam const & par, VAEncSequenceParameterBufferH264 & sps);
+
         VideoCORE*    m_core;
         MfxVideoParam m_videoParam;
 
@@ -144,6 +147,9 @@ namespace MfxHwH264Encode
         VABufferID m_hrdBufferId;
         VABufferID m_rateParamBufferId; // VAEncMiscParameterRateControl
         VABufferID m_frameRateId; // VAEncMiscParameterFrameRate
+        VABufferID m_maxFrameSizeId; // VAEncMiscParameterFrameRate
+        VABufferID m_quantizationId;  // VAEncMiscParameterQuantization
+        VABufferID m_rirId;           // VAEncMiscParameterRIR
         VABufferID m_privateParamsId; // VAEncMiscParameterPrivate
         VABufferID m_ppsBufferId;
         std::vector<VABufferID> m_sliceBufferId;
@@ -159,18 +165,24 @@ namespace MfxHwH264Encode
         std::vector<VABufferID> m_packeSliceHeaderBufferId;
         std::vector<VABufferID> m_packedSliceBufferId;
 
-
-
-
         std::vector<ExtVASurface> m_feedbackCache;
         std::vector<ExtVASurface> m_bsQueue;
         std::vector<ExtVASurface> m_reconQueue;
 
         mfxU32 m_width;
         mfxU32 m_height;
+        mfxU32 m_userMaxFrameSize;  // current MaxFrameSize from user.
         ENCODE_CAPS m_caps;
+/*
+ * Current RollingIntraRefresh state, as it came throught the task state and passing to DDI in PPS
+ * for Windows we keep it here to send update by VAMapBuffer as happend.
+ */
+        IntraRefreshState m_RIRState;
 
-        static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 14;
+        mfxU32            m_curTrellisQuantization;   // mapping in accordance with libva
+        mfxU32            m_newTrellisQuantization;   // will be sent through config.
+
+        static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 17;
 
         UMC::Mutex m_guard;
         HeaderPacker m_headerPacker;

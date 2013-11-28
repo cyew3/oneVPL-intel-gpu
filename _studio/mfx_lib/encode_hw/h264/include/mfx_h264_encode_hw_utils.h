@@ -834,6 +834,8 @@ namespace MfxHwH264Encode
             , m_fillerSize(0, 0)
             , m_addRepackSize(0, 0)
             , m_maxFrameSize(0)
+            , m_numMbPerSlice(0)
+            , m_numRoi(0)
             , m_did(0)
             , m_qid(0)
             , m_storeRefBasePicFlag(0)
@@ -847,6 +849,9 @@ namespace MfxHwH264Encode
             , m_midRaw(MID_INVALID)
             , m_midRec(MID_INVALID)
             , m_midBit(mfxMemId(MID_INVALID))
+#if USE_AGOP
+            , m_cmEventAGOP(0)
+#endif
             , m_cmRaw(0)
             , m_cmRawLa(0)
             , m_cmMb(0)
@@ -862,11 +867,6 @@ namespace MfxHwH264Encode
             , m_fieldPicFlag(0)
             , m_fieldCounter(0)
             , m_timeStamp(0)
-#if USE_AGOP
-            , m_cmEventAGOP(0)
-#endif
-            , m_numMbPerSlice(0)
-            , m_numRoi(0)
         {
             Zero(m_ctrl);
             Zero(m_internalListCtrl);
