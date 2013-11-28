@@ -1472,7 +1472,7 @@ mfxStatus H265Encoder::ApplySAOThread(Ipp32s ithread)
     // save boundaries
     {
         Ipp32s width = roiSize.width;
-        memcpy(saoFilter_New.m_TmpU[0], pRecY, sizeof(Ipp8u) * width);
+        small_memcpy(saoFilter_New.m_TmpU[0], pRecY, sizeof(Ipp8u) * width);
     }
     // ----------------------------------------------------------------------------------------
 
@@ -1487,7 +1487,7 @@ mfxStatus H265Encoder::ApplySAOThread(Ipp32s ithread)
         if ((ctu % m_videoParam.PicWidthInCtbs) == 0 && (ctu / m_videoParam.PicWidthInCtbs) != (m_videoParam.PicHeightInCtbs - 1))
         {
             PixType* pRecTmp = pRecY + offset + (m_videoParam.MaxCUSize - 1)*pitch_luma;
-            memcpy(saoFilter_New.m_TmpU[1], pRecTmp, sizeof(PixType) * roiSize.width);
+            small_memcpy(saoFilter_New.m_TmpU[1], pRecTmp, sizeof(PixType) * roiSize.width);
         }
 
         if( (ctu % m_videoParam.PicWidthInCtbs) == 0 )

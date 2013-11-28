@@ -289,6 +289,12 @@ public:
     Ipp32u   m_MaxCUSize;
     Ipp32u   m_SaoBitIncreaseY; 
     Ipp32u   m_SaoBitIncreaseC;
+
+private:
+    SaoDecodeFilter(const SaoDecodeFilter& ){ /* do not create copies */ }
+    SaoDecodeFilter& operator=(const SaoDecodeFilter&){ return *this;}
+
+
 };
 #endif // __MFX_H265_SAO_FILTER_H__
 #endif // (MFX_ENABLE_H265_VIDEO_ENCODE)
