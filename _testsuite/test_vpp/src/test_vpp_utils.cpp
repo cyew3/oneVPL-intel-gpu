@@ -751,6 +751,7 @@ mfxStatus InitMemoryAllocator(
     // (3) MFXVideoCORE_SetHandle()
     // after (1-3), call of any MSDK function is OK
     sts = pProcessor->pmfxVPP->QueryIOSurf(pParams, request);
+    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
 
     // alloc frames for vpp
     // [IN]
