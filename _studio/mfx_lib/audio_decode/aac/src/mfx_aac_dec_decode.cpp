@@ -417,7 +417,6 @@ mfxStatus AudioDECODEAAC::DecodeFrameCheck(mfxBitstream *bs,
         }
     }
 
-
     return mfxSts;
 }
 
@@ -471,6 +470,9 @@ mfxStatus AudioDECODEAAC::AACCompleteProc(void *pState, void *pParam,
 
     if (MFX_PLATFORM_SOFTWARE == obj.m_platform)
     {
+        ThreadAudioDecodeTaskInfo *pTask = (ThreadAudioDecodeTaskInfo *) pParam;
+        if (pTask)
+            delete pTask;
         return MFX_ERR_NONE;
     }
     else

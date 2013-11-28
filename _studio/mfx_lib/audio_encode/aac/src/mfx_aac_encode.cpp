@@ -329,6 +329,10 @@ mfxStatus AudioENCODEAAC::AACCompleteProc(void *pState, void *pParam,
 
     if (MFX_PLATFORM_SOFTWARE == obj.m_platform)
     {
+        ThreadAudioEncodeTaskInfo *pTask = (ThreadAudioEncodeTaskInfo *) pParam;
+        if (pTask)
+            delete pTask;
+
         return MFX_ERR_NONE;
     }
     else
