@@ -57,6 +57,9 @@ mfxExtCodingOptionHEVC hevc_tu_tab[8] = {               // CUS CUD 2TUS 2TUD  An
     {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  2, 5,2, 2,2,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,    3, 3, 3,         4,4,2,2,2, 2,2,1,1,1, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF }  // tu 7
 };
 
+Ipp8u hevc_tu_tab_GopRefDist [8] = {2, 4, 4, 2, 2, 2, 2, 1};
+Ipp8u hevc_tu_tab_NumRefFrame[8] = {2, 2, 2, 2, 2, 1, 1, 1};
+
 #define H265_MAXREFDIST 8
 
 static const struct _hevc_level_tab {
@@ -652,10 +655,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 
     // can depend on target usage
     if (!m_mfxVideoParam.mfx.GopRefDist) {
-        if (m_mfxVideoParam.mfx.TargetUsage < MFX_TARGETUSAGE_BEST_SPEED)
-            m_mfxVideoParam.mfx.GopRefDist = 4; // keep alignment with GopPicSize when changing
-        else
-            m_mfxVideoParam.mfx.GopRefDist = 1; // keep alignment with GopPicSize when changing
+        m_mfxVideoParam.mfx.GopRefDist = hevc_tu_tab_GopRefDist[m_mfxVideoParam.mfx.TargetUsage];
     }
     if (!m_mfxVideoParam.mfx.GopPicSize) {
         m_mfxVideoParam.mfx.GopPicSize = 60 * (mfxU16) (( m_mfxVideoParam.mfx.FrameInfo.FrameRateExtN + m_mfxVideoParam.mfx.FrameInfo.FrameRateExtD - 1 ) / m_mfxVideoParam.mfx.FrameInfo.FrameRateExtD);
@@ -681,13 +681,10 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
         m_mfxHEVCOpts.SAO = MFX_CODINGOPTION_OFF; // switch off SAO for now, because of inter-slice deblocking
 
     if (!m_mfxVideoParam.mfx.NumRefFrame) {
-        if (m_mfxVideoParam.mfx.TargetUsage == MFX_TARGETUSAGE_BEST_QUALITY) {
-            if (m_mfxVideoParam.mfx.GopRefDist == 1) 
-                m_mfxVideoParam.mfx.NumRefFrame = 4; // for now
-            else
-                m_mfxVideoParam.mfx.NumRefFrame = 2; // for now
+        if (m_mfxVideoParam.mfx.TargetUsage == MFX_TARGETUSAGE_1 && m_mfxVideoParam.mfx.GopRefDist == 1) {
+            m_mfxVideoParam.mfx.NumRefFrame = 4; // Low_Delay
         } else {
-            m_mfxVideoParam.mfx.NumRefFrame = 1; // for now
+            m_mfxVideoParam.mfx.NumRefFrame = hevc_tu_tab_NumRefFrame[m_mfxVideoParam.mfx.TargetUsage];
         }
     }
 
