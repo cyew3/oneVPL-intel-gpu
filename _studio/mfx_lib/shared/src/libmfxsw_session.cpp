@@ -238,6 +238,8 @@ mfxStatus MFXGetLogMessage(mfxSession session, char *msg, mfxU32 size)
 
 mfxStatus MFXInternalPseudoJoinSession(mfxSession session, mfxSession child_session)
 {
+    mfxStatus mfxRes;
+
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     //MFX_CHECK(session->m_pScheduler, MFX_ERR_NOT_INITIALIZED);
     MFX_CHECK(child_session, MFX_ERR_INVALID_HANDLE);
@@ -248,8 +250,11 @@ mfxStatus MFXInternalPseudoJoinSession(mfxSession session, mfxSession child_sess
  
 
         //  release  the child scheduler
-        child_session->m_pScheduler->Release();
-        child_session->m_pScheduler = NULL;
+        mfxRes = child_session->ReleaseScheduler();
+        if (MFX_ERR_NONE != mfxRes)
+        {
+            return mfxRes;
+        }
 
         child_session->m_pScheduler = session->m_pScheduler;
 

@@ -107,6 +107,11 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
 
     mfxU32 asyncDepth = par->AsyncDepth ? par->AsyncDepth : m_core->GetAutoAsyncDepth();
     m_vPar.mfx.NumThread = (mfxU16)asyncDepth;
+
+#if defined (AS_HEVCD_PLUGIN)
+    m_vPar.mfx.NumThread +=1;
+#endif
+
     if (MFX_PLATFORM_SOFTWARE != m_platform)
         m_vPar.mfx.NumThread = 1;
 
@@ -331,6 +336,11 @@ mfxStatus VideoDECODEH265::Reset(mfxVideoParam *par)
     m_vPar.CreateExtendedBuffer(MFX_EXTBUFF_CODING_OPTION_SPSPPS);
 
     m_vPar.mfx.NumThread = (mfxU16)(m_vPar.AsyncDepth ? m_vPar.AsyncDepth : m_core->GetAutoAsyncDepth());
+
+#if defined (AS_HEVCD_PLUGIN)
+    m_vPar.mfx.NumThread +=1;
+#endif
+
     if (MFX_PLATFORM_SOFTWARE != m_platform)
         m_vPar.mfx.NumThread = 1;
 
