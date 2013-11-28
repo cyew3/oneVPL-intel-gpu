@@ -114,7 +114,8 @@ mfxStatus mfxSchedulerCore::Initialize(const MFX_SCHEDULER_PARAM *pParam)
     {
         numThreads = UMC::get_min(numThreads, m_param.numberOfThreads);
     }
-    m_param.numberOfThreads = numThreads;
+    //we have to create threads more than cores to support Intel plug-ins threading 
+    m_param.numberOfThreads = numThreads + 1;
 
     try
     {
