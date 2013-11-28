@@ -42,15 +42,13 @@ static Ipp32s betaTable[] = {
 
 void H265SegmentDecoder::DeblockSegment(H265Task & task)
 {
-
     H265CodingUnit* curLCU = m_pCurrentFrame->getCU(task.m_iFirstMB);
     H265Slice* pSlice = m_pCurrentFrame->GetAU()->GetSliceByNumber(curLCU->m_SliceIdx);
-    Ipp32s i;
 
     if (NULL == pSlice)
         return;
 
-    for (i = task.m_iFirstMB; i < task.m_iFirstMB + task.m_iMBToProcess; i++)
+    for (Ipp32s i = task.m_iFirstMB; i < task.m_iFirstMB + task.m_iMBToProcess; i++)
     {
         DeblockOneLCU(i);
     }
@@ -101,6 +99,11 @@ void H265SegmentDecoder::CleanRightHorEdges(void)
 void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr)
 {
     H265CodingUnit* curLCU = m_pCurrentFrame->getCU(curLCUAddr);
+    /*m_pSliceHeader = curLCU->m_SliceHeader;
+
+    if (curLCU->m_SliceHeader->slice_deblocking_filter_disabled_flag)
+        return;*/
+
     Ipp32s maxCUSize = m_pSeqParamSet->MaxCUSize;
     Ipp32s frameHeightInSamples = m_pSeqParamSet->pic_height_in_luma_samples;
     Ipp32s frameWidthInSamples = m_pSeqParamSet->pic_width_in_luma_samples;
@@ -131,7 +134,6 @@ void H265SegmentDecoder::DeblockOneLCU(Ipp32s curLCUAddr)
 
     curLCU->m_AvailBorder.m_left = !picLBoundary;
     curLCU->m_AvailBorder.m_top = !picTBoundary;
-
 
     if (!curLCU->m_SliceHeader->m_PicParamSet->loop_filter_across_tiles_enabled_flag)
     {
@@ -245,10 +247,10 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curP
             width = m_pSeqParamSet->MaxCUSize;
         }
 
-        if (curPixelColumn == (Ipp32s)width - 8 && curLCU->CUAddr == (curLCU->m_SliceHeader->m_sliceSegmentCurEndCUAddr / m_pCurrentFrame->m_CodingData->m_NumPartitions))
+        if (curPixelColumn == (Ipp32s)width - 8 && m_pCurrentFrame->m_CodingData->GetInverseCUOrderMap(curLCU->CUAddr) == ((Ipp32s)curLCU->m_SliceHeader->m_sliceSegmentCurEndCUAddr / m_pCurrentFrame->m_CodingData->m_NumPartitions))
         {
             H265Slice * nextSlice = m_pCurrentFrame->GetAU()->GetSliceByNumber(curLCU->m_SliceIdx + 1);
-            if (!nextSlice || nextSlice->m_bDeblocked)
+            if (!nextSlice || nextSlice->GetSliceHeader()->slice_deblocking_filter_disabled_flag)
             {
                 end = 3;
             }
@@ -334,10 +336,10 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU, Ipp32s cu
             width = m_pSeqParamSet->MaxCUSize;
         }
 
-        if (curPixelColumn == (Ipp32s)width - 16 && curLCU->CUAddr == (curLCU->m_SliceHeader->m_sliceSegmentCurEndCUAddr / m_pCurrentFrame->m_CodingData->m_NumPartitions))
+        if (curPixelColumn == (Ipp32s)width - 16 && m_pCurrentFrame->m_CodingData->GetInverseCUOrderMap(curLCU->CUAddr) == ((Ipp32s)curLCU->m_SliceHeader->m_sliceSegmentCurEndCUAddr / m_pCurrentFrame->m_CodingData->m_NumPartitions))
         {
             H265Slice * nextSlice = m_pCurrentFrame->GetAU()->GetSliceByNumber(curLCU->m_SliceIdx + 1);
-            if (!nextSlice || nextSlice->m_bDeblocked)
+            if (!nextSlice || nextSlice->GetSliceHeader()->slice_deblocking_filter_disabled_flag)
             {
                 end = 3;
             }

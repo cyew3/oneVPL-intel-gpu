@@ -677,13 +677,6 @@ mfxStatus MFXDecPipeline::HandleIncompatParamsCode( mfxStatus error_code, Incomp
 mfxStatus MFXDecPipeline::LightReset()
 {
     //double reset will goes to long almost infinite run
-    UMC_CHECK(!m_bResetAfterIncompatParams, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-
-    if (isErrIncompatParams())
-    {
-        m_bResetAfterIncompatParams = true;
-    }
-
     MFX_CHECK_STS(ReleaseMFXPart());
     MFX_CHECK_STS(BuildMFXPart());
 
