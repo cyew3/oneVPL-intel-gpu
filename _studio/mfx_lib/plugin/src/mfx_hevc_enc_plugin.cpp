@@ -19,7 +19,8 @@ File Name: mfx_hevc_enc_plugin.h
 PluginModuleTemplate g_PluginModule = {
     NULL,
     MFXHEVCEncoderPlugin::Create,
-    NULL
+    NULL,
+    MFXHEVCEncoderPlugin::CreateByDispatcher
 };
 
 MSDK_PLUGIN_API(MFXEncoderPlugin*) mfxCreateEncoderPlugin() {
@@ -29,7 +30,19 @@ MSDK_PLUGIN_API(MFXEncoderPlugin*) mfxCreateEncoderPlugin() {
     return g_PluginModule.CreateEncoderPlugin();
 }
 
-MFXHEVCEncoderPlugin::MFXHEVCEncoderPlugin()
+MSDK_PLUGIN_API(MFXPlugin*) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin) {
+    if (!g_PluginModule.CreatePlugin) {
+        return 0;
+    }
+    return (MFXPlugin*) g_PluginModule.CreatePlugin(uid, plugin);
+}
+
+const mfxPluginUID MFXHEVCEncoderPlugin::g_HEVCEncoderGuid = {0x2f,0xca,0x99,0x74,0x9f,0xdb,0x49,0xae,0xb1,0x21,0xa5,0xb6,0x3e,0xf5,0x68,0xf7};
+std::auto_ptr<MFXHEVCEncoderPlugin> MFXHEVCEncoderPlugin::g_singlePlg;
+std::auto_ptr<MFXPluginAdapter<MFXEncoderPlugin> > MFXHEVCEncoderPlugin::g_adapter;
+
+
+MFXHEVCEncoderPlugin::MFXHEVCEncoderPlugin(bool CreateByDispatcher)
 {
     m_session = 0;
     m_pmfxCore = 0;
@@ -38,6 +51,12 @@ MFXHEVCEncoderPlugin::MFXHEVCEncoderPlugin()
     m_PluginParam.CodecId = MFX_CODEC_HEVC;
     m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_SERIAL;
     m_PluginParam.MaxThreadNum = 1;
+    m_PluginParam.APIVersion.Major = MFX_VERSION_MAJOR;
+    m_PluginParam.APIVersion.Minor = MFX_VERSION_MINOR;
+    m_PluginParam.PluginUID = g_HEVCEncoderGuid;
+    m_PluginParam.Type = MFX_PLUGINTYPE_VIDEO_ENCODE;
+    m_PluginParam.PluginVersion = 1;
+    m_createdByDispatcher = CreateByDispatcher;
 }
 
 MFXHEVCEncoderPlugin::~MFXHEVCEncoderPlugin()
@@ -90,10 +109,12 @@ mfxStatus MFXHEVCEncoderPlugin::PluginClose()
         if(mfxRes != MFX_ERR_NONE && mfxRes != MFX_ERR_NOT_INITIALIZED && mfxRes2 == MFX_ERR_NONE)
             mfxRes2 = mfxRes;
         m_session = 0;
-        return mfxRes2;
     }
-    else
-        return MFX_ERR_NONE;
+    if (m_createdByDispatcher) {
+        g_singlePlg.reset(0);
+        g_adapter.reset(0);
+    }
+    return mfxRes2;
 }
 
 mfxStatus MFXHEVCEncoderPlugin::GetPluginParam(mfxPluginParam *par)

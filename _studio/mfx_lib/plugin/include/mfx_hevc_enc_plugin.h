@@ -23,8 +23,11 @@ File Name: mfx_hevc_dec_plugin.h
 #if defined( AS_HEVCE_PLUGIN )
 class MFXHEVCEncoderPlugin : public MFXEncoderPlugin
 {
+    static const mfxPluginUID g_HEVCEncoderGuid;
+    static std::auto_ptr<MFXHEVCEncoderPlugin> g_singlePlg;
+    static std::auto_ptr<MFXPluginAdapter<MFXEncoderPlugin> > g_adapter;
 public:
-    MFXHEVCEncoderPlugin();
+    MFXHEVCEncoderPlugin(bool CreateByDispatcher);
     virtual ~MFXHEVCEncoderPlugin();
 
     virtual mfxStatus PluginInit(mfxCoreInterface *core);
@@ -71,7 +74,24 @@ public:
         delete this;
     }
     static MFXEncoderPlugin* Create() {
-        return new MFXHEVCEncoderPlugin();
+        return new MFXHEVCEncoderPlugin(false);
+    }
+    static mfxStatus CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg) {
+
+        if (g_singlePlg.get()) {
+            return MFX_ERR_NOT_FOUND;
+        } 
+        //check that guid match 
+        g_singlePlg.reset(new MFXHEVCEncoderPlugin(true));
+
+        if (memcmp(& guid , &g_HEVCEncoderGuid, sizeof(mfxPluginUID))) {
+            return MFX_ERR_NOT_FOUND;
+        }
+
+        g_adapter.reset(new MFXPluginAdapter<MFXEncoderPlugin> (g_singlePlg.get()));
+        *mfxPlg = g_adapter->operator mfxPlugin();
+
+        return MFX_ERR_NONE;
     }
     virtual mfxU32 GetPluginType()
     {
@@ -88,6 +108,7 @@ protected:
 
     mfxSession          m_session;
     mfxPluginParam      m_PluginParam;
+    bool                m_createdByDispatcher;
 };
 #endif //#if defined( AS_HEVCE_PLUGIN )
 
