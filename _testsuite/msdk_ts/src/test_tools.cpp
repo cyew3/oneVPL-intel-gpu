@@ -192,7 +192,7 @@ msdk_ts_BLOCK(t_ReadRawFrame){
             default: CHECK(0, "unsupported FourCC");
         }
 
-        if(NULL != s->Data.MemId){
+        if(pframe_alloc){
             pframe_alloc->Unlock(pframe_alloc->pthis, s->Data.MemId, &(s->Data));
         }
     }
@@ -231,7 +231,7 @@ msdk_ts_BLOCK(t_WriteRawFrame){
             break;
         default: CHECK(0, "unsupported FourCC");
     }
-    if(NULL != s->Data.MemId){
+    if(pframe_alloc){
         pframe_alloc->Unlock(pframe_alloc->pthis, s->Data.MemId, &(s->Data));
     }
 
