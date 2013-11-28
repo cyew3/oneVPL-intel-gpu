@@ -164,6 +164,7 @@ msdk_ts_BLOCK(t_GetFreeVPPOutSurf){
 msdk_ts_BLOCK(t_ReadRawFrame){
     mfxFrameSurface1*& s = var_old<mfxFrameSurface1*>("p_free_surf");
     VMFileHolder& f  = var_old_or_new<VMFileHolder>("file_reader");
+    mfxFrameAllocator* pframe_alloc = 0;
 
     if(!f.is_open()){
         const char* fname = var_old<const char*>("file_name");
@@ -171,6 +172,11 @@ msdk_ts_BLOCK(t_ReadRawFrame){
     }
     if(!f.eof()){
         CHECK(s, "zero surface");
+
+        if(NULL != s->Data.MemId){
+            pframe_alloc = var_old<mfxFrameAllocator*>("p_frame_allocator");
+            pframe_alloc->Lock(pframe_alloc->pthis, s->Data.MemId, &(s->Data));
+        }
 
         switch(s->Info.FourCC){
             case MFX_FOURCC_NV12:
@@ -185,6 +191,10 @@ msdk_ts_BLOCK(t_ReadRawFrame){
                 break;
             default: CHECK(0, "unsupported FourCC");
         }
+
+        if(NULL != s->Data.MemId){
+            pframe_alloc->Unlock(pframe_alloc->pthis, s->Data.MemId, &(s->Data));
+        }
     }
     if(f.eof()){ 
         s = NULL;
@@ -198,11 +208,16 @@ msdk_ts_BLOCK(t_WriteRawFrame){
     mfxFrameSurface1*& s = var_old<mfxFrameSurface1*>("p_out_surf");
     VMFileHolder& f  = var_old_or_new<VMFileHolder>("file_writer");
     mfxStatus& mfxRes = var_old<mfxStatus> ("mfxRes");
+    mfxFrameAllocator* pframe_alloc = 0;
 
     if(!f.is_open()){
         CHECK(f.open(var_old<const char*>("output_file_name"), VM_STRING("wb")) , "Can't open file");
     }
     CHECK(s, "zero surface");
+    if(NULL != s->Data.MemId){
+        pframe_alloc = var_old<mfxFrameAllocator*>("p_frame_allocator");
+        pframe_alloc->Lock(pframe_alloc->pthis, s->Data.MemId, &(s->Data));
+    }
     switch(s->Info.FourCC){
         case MFX_FOURCC_NV12:
         case MFX_FOURCC_YV12:
@@ -215,6 +230,9 @@ msdk_ts_BLOCK(t_WriteRawFrame){
             f.write(s->Data.B, (s->Info.Width * s->Info.Height * 4));
             break;
         default: CHECK(0, "unsupported FourCC");
+    }
+    if(NULL != s->Data.MemId){
+        pframe_alloc->Unlock(pframe_alloc->pthis, s->Data.MemId, &(s->Data));
     }
 
     return msdk_ts::resOK;
