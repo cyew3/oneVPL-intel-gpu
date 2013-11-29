@@ -130,6 +130,12 @@ struct MFXEncoderPlugin : MFXCodecPlugin
     virtual mfxStatus EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxThreadTask *task) = 0;
 };
 
+//vpp plugins may only support this interface 
+struct MFXVPPPlugin : MFXCodecPlugin
+{
+    virtual mfxStatus VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFrameSurface1 *surface_out, mfxExtVppAuxData *aux, mfxThreadTask *task) = 0;
+};
+
 
 class MFXCoreInterface
 {
@@ -417,6 +423,33 @@ namespace detail
     private:
         static mfxStatus _EncodeFrameSubmit(mfxHDL pthis, mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxThreadTask *task) {
             return reinterpret_cast<MFXEncoderPlugin*>(pthis)->EncodeFrameSubmit(ctrl, surface, bs, task);
+        }
+    };
+
+
+    template<>
+    class MFXPluginAdapterInternal<MFXVPPPlugin> : public MFXCodecPluginAdapterBase<MFXVPPPlugin>
+    {
+    public:
+        MFXPluginAdapterInternal(MFXVPPPlugin *pPlugin)
+            : MFXCodecPluginAdapterBase<MFXVPPPlugin>(pPlugin)
+        {
+            m_codecPlg.VPPFrameSubmit = _VPPFrameSubmit;
+        }
+        MFXPluginAdapterInternal(const MFXPluginAdapterInternal & that)
+            : MFXCodecPluginAdapterBase<MFXVPPPlugin>(that) {
+            m_codecPlg.VPPFrameSubmit = _VPPFrameSubmit;
+        }
+
+        MFXPluginAdapterInternal<MFXVPPPlugin>& operator = (const MFXPluginAdapterInternal<MFXVPPPlugin> & that) {
+            MFXCodecPluginAdapterBase<MFXVPPPlugin>::operator = (that);
+            m_codecPlg.VPPFrameSubmit = _VPPFrameSubmit;
+            return *this;
+        }
+
+    private:
+        static mfxStatus _VPPFrameSubmit(mfxHDL pthis, mfxFrameSurface1 *surface_in, mfxFrameSurface1 *surface_out, mfxExtVppAuxData *aux, mfxThreadTask *task) {
+            return reinterpret_cast<MFXVPPPlugin*>(pthis)->VPPFrameSubmit(surface_in, surface_out, aux, task);
         }
     };
 }
