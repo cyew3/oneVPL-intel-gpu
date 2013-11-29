@@ -20,6 +20,7 @@ PluginModuleTemplate g_PluginModule = {
     NULL,
     MFXHEVCEncoderPlugin::Create,
     NULL,
+    NULL,
     MFXHEVCEncoderPlugin::CreateByDispatcher
 };
 

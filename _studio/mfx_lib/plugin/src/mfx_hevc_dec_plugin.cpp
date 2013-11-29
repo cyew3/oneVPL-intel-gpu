@@ -20,6 +20,7 @@ PluginModuleTemplate g_PluginModule = {
     MFXHEVCDecoderPlugin::Create,
     NULL,
     NULL,
+    NULL,
     MFXHEVCDecoderPlugin::CreateByDispatcher
 };
 
