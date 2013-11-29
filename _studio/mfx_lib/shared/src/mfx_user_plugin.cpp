@@ -107,7 +107,26 @@ mfxStatus VideoUSERPlugin::PluginInit(const mfxPlugin *pParam,
         {
             return MFX_ERR_NULL_PTR;
         }
-
+    }
+    else if(MFX_PLUGINTYPE_VIDEO_VPP == type)
+    {
+        if (!pParam ||
+            (0 == pParam->PluginInit) ||
+            (0 == pParam->PluginClose) ||
+            (0 == pParam->GetPluginParam) ||
+            (0 == pParam->Execute) ||
+            (0 == pParam->FreeResources) ||
+            !(pParam->Video) ||
+            (0 == pParam->Video->Query) ||
+            (0 == pParam->Video->QueryIOSurf) ||
+            (0 == pParam->Video->Init) ||
+            (0 == pParam->Video->Reset) ||
+            (0 == pParam->Video->Close) ||
+            (0 == pParam->Video->GetVideoParam) ||
+            (0 == pParam->Video->VPPFrameSubmit))
+        {
+            return MFX_ERR_NULL_PTR;
+        }
     }
 
     // release the object before initialization
@@ -272,6 +291,10 @@ mfxStatus VideoUSERPlugin::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface
     return MFX_ERR_NONE;
 }
 
+mfxStatus VideoUSERPlugin::VPPFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp){
+    return m_plugin.Video->VPPFrameSubmit(m_plugin.pthis, in, out, aux, (mfxThreadTask*) syncp);
+}
+
 mfxStatus VideoUSERPlugin::GetVideoParam(mfxVideoParam *par) {
 
     return m_plugin.Video->GetVideoParam(m_plugin.pthis, par);
@@ -305,6 +328,9 @@ mfxStatus VideoUSERPlugin::GetEncodeStat(mfxEncodeStat *stat) {
 mfxStatus VideoUSERPlugin::GetDecodeStat(mfxDecodeStat *stat) {
     return MFX_ERR_NONE;
 }
+mfxStatus VideoUSERPlugin::GetVPPStat(mfxVPPStat *stat) {
+    return MFX_ERR_NONE;
+}
 mfxStatus VideoUSERPlugin::DecodeFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out) {
     return MFX_ERR_NONE;
 }
@@ -326,6 +352,11 @@ VideoENCODE* VideoUSERPlugin::GetEncodePtr()
 }
 
 VideoDECODE* VideoUSERPlugin::GetDecodePtr()
+{
+    return new VideoENCDECImpl(this);
+}
+
+VideoVPP* VideoUSERPlugin::GetVPPPtr()
 {
     return new VideoENCDECImpl(this);
 }

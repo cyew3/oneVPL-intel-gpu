@@ -35,8 +35,10 @@ namespace
         std::auto_ptr<VideoCodecUSER> *_ptr;
         bool _isNeedCodec;
         bool _isNeedDeCoder;
+        bool _isNeedVPP;
         mutable std::auto_ptr<VideoDECODE> _stubDecode;
         mutable std::auto_ptr<VideoENCODE> _stubEncode;
+        mutable std::auto_ptr<VideoVPP> _stubVPP;
     public:
         SessionPtr(mfxSession session, mfxU32 type = MFX_PLUGINTYPE_VIDEO_GENERAL)
             : _session(session)
@@ -47,16 +49,25 @@ namespace
                 _ptr = &_session->m_plgDec; 
                 _isNeedCodec = false;
                 _isNeedDeCoder = true;
+                _isNeedVPP = false;
                 break;
             case MFX_PLUGINTYPE_VIDEO_ENCODE:
                 _ptr =&_session->m_plgEnc; 
                 _isNeedCodec = true;
                 _isNeedDeCoder = false;
+                _isNeedVPP = false;
+                break;
+            case MFX_PLUGINTYPE_VIDEO_VPP :
+                _ptr = &_session->m_plgVPP; 
+                _isNeedCodec = false;
+                _isNeedDeCoder = false;
+                _isNeedVPP = true;
                 break;
             case MFX_PLUGINTYPE_VIDEO_GENERAL :
                 _ptr = &_session->m_plgGen; 
                 _isNeedCodec = false;
                 _isNeedDeCoder = false;
+                _isNeedVPP = false;
                 break;
             default : 
                 //unknown plugin type
@@ -81,6 +92,10 @@ namespace
         {
             return _isNeedDeCoder;
         }
+        bool isNeedVPP()const
+        {
+            return _isNeedVPP;
+        }
     };      
 
     template <>
@@ -92,6 +107,11 @@ namespace
     std::auto_ptr<VideoDECODE>& SessionPtr::codec<VideoDECODE>()const
     {
         return _isNeedDeCoder ? _session->m_pDECODE : _stubDecode;
+    }
+    template <>
+    std::auto_ptr<VideoVPP>& SessionPtr::codec<VideoVPP>()const
+    {
+        return _isNeedVPP ? _session->m_pVPP : _stubVPP;
     }
 
 } // namespace
@@ -111,6 +131,7 @@ mfxStatus MFXVideoUSER_Register(mfxSession session, mfxU32 type,
         std::auto_ptr<VideoCodecUSER> & pluginPtr = sessionPtr.plugin();
         std::auto_ptr<VideoENCODE> &encPtr = sessionPtr.codec<VideoENCODE>();
         std::auto_ptr<VideoDECODE> &decPtr = sessionPtr.codec<VideoDECODE>();
+        std::auto_ptr<VideoVPP> &vppPtr = sessionPtr.codec<VideoVPP>();
 
         // the plugin with the same type is already exist
         if (pluginPtr.get() || decPtr.get() || encPtr.get())
@@ -127,6 +148,10 @@ mfxStatus MFXVideoUSER_Register(mfxSession session, mfxU32 type,
 
         if (sessionPtr.isNeedEncoder()) {
             encPtr.reset(pluginPtr->GetEncodePtr());
+        }
+
+        if (sessionPtr.isNeedVPP()) {
+            vppPtr.reset(pluginPtr->GetVPPPtr());
         }
 
         // initialize the plugin

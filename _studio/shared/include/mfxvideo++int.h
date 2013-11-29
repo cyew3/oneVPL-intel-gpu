@@ -653,10 +653,12 @@ public:
     virtual mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out) = 0;
     virtual mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out) = 0;
     virtual mfxStatus DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVideoParam *par) = 0;
+    virtual mfxStatus VPPFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp) = 0;
 
     //expose new encoder/decoder view
     virtual VideoENCODE* GetEncodePtr() = 0;
     virtual VideoDECODE* GetDecodePtr() = 0;
+    virtual VideoVPP* GetVPPPtr() = 0;
 };
 
 #endif // __MFXVIDEOPLUSPLUS_INTERNAL_H

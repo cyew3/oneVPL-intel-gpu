@@ -416,6 +416,10 @@ void _mfxSession::Release(void)
     {
         m_plgDec->PluginClose();
     }
+    if (m_plgVPP.get())
+    {
+        m_plgVPP->PluginClose();
+    }
     // release the components the excplicit way.
     // do not relay on default deallocation order,
     // somebody could change it.

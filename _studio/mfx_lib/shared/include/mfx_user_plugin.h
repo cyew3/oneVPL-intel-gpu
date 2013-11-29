@@ -51,6 +51,7 @@ public:
     mfxStatus GetVideoParam(mfxVideoParam *par) ;
     mfxStatus GetEncodeStat(mfxEncodeStat *stat) ;
     mfxStatus GetDecodeStat(mfxDecodeStat *stat) ;
+    mfxStatus GetVPPStat(mfxVPPStat *stat) ;
     mfxStatus DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, MFX_ENTRY_POINT * ep) ;
     mfxStatus DecodeFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out) ;
     mfxStatus SetSkipMode(mfxSkipMode mode) ;
@@ -63,14 +64,17 @@ public:
         mfxEncodeInternalParams *pInternalParams,*/
         MFX_ENTRY_POINT *pEntryPoint) ;
 
+    mfxStatus VPPFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp) ;
+
     mfxStatus EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternalParams *pInternalParams, mfxFrameSurface1 *surface, mfxBitstream *bs) ;
     mfxStatus CancelFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternalParams *pInternalParams, mfxFrameSurface1 *surface, mfxBitstream *bs) ;
 
     //expose new encoder/decoder view
     VideoENCODE* GetEncodePtr();
     VideoDECODE* GetDecodePtr();
+    VideoVPP* GetVPPPtr();
 protected: 
-    class VideoENCDECImpl : public VideoENCODE, public VideoDECODE
+    class VideoENCDECImpl : public VideoENCODE, public VideoDECODE, public VideoVPP
     {
         VideoUSERPlugin *m_plg;
     public:
@@ -139,6 +143,33 @@ protected:
         }
         mfxStatus SetSkipMode(mfxSkipMode mode) {return m_plg->SetSkipMode(mode);} 
         mfxStatus GetPayload(mfxU64 *ts, mfxPayload *payload) {return m_plg->GetPayload(ts, payload);}
+        //vpp
+        mfxStatus GetVPPStat(mfxVPPStat *stat) {
+            return m_plg->GetVPPStat(stat);
+        }
+        virtual
+            mfxStatus VPPFrameCheck(mfxFrameSurface1 *in,
+            mfxFrameSurface1 *out,
+            mfxExtVppAuxData *aux,
+            mfxSyncPoint *syncp)
+        {
+            return m_plg->VPPFrameCheck(in, out, aux, syncp);
+        }
+        virtual 
+            mfxStatus VppFrameCheck(
+            mfxFrameSurface1 *, 
+            mfxFrameSurface1 *)
+        {
+            return MFX_ERR_UNSUPPORTED;
+        }
+        virtual 
+            mfxStatus RunFrameVPP(
+            mfxFrameSurface1 *, 
+            mfxFrameSurface1 *,
+            mfxExtVppAuxData *)
+        {
+            return MFX_ERR_UNSUPPORTED;
+        }
     };
 
     void Release(void);
