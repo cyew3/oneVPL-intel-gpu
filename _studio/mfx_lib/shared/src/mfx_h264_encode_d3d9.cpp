@@ -52,7 +52,12 @@ void MfxHwH264Encode::FillSpsBuffer(
     sps.GopRefDist                              = mfxU8(par.mfx.GopRefDist);
     sps.GopOptFlag                              = mfxU8(par.mfx.GopOptFlag);
     sps.TargetUsage                             = mfxU8(par.mfx.TargetUsage);
-    sps.RateControlMethod                       = mfxU8(par.mfx.RateControlMethod);
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
+        sps.RateControlMethod                       = 8; // VCM is different in MSDK (=10) API and DDI (=8) 
+    else
+        sps.RateControlMethod                       = mfxU8(par.mfx.RateControlMethod);
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
+        sps.ICQQualityFactor = par.mfx.ICQQuality;
     sps.TargetBitRate                           = mfxU32(par.calcParam.targetKbps);
     sps.MaxBitRate                              = mfxU32(par.calcParam.maxKbps);
     sps.MinBitRate                              = mfxU32(par.calcParam.targetKbps);

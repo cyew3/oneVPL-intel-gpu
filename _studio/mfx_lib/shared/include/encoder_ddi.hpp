@@ -496,7 +496,7 @@ typedef struct tagENCODE_CAPS
             UINT    VCMBitrateControl           : 1;
             UINT    NoESS                       : 1;
             UINT    Color420Only                : 1;
-            UINT    Reserved1                   : 1;
+            UINT    ICQBRCSupport               : 1;
         };
         UINT CodingLimits;
     };
@@ -862,6 +862,7 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_H264
     UINT    UserMaxFrameSize;
     USHORT  AVBRAccuracy;
     USHORT  AVBRConvergence;
+    USHORT  ICQQualityFactor;
 
 } ENCODE_SET_SEQUENCE_PARAMETERS_H264;
 

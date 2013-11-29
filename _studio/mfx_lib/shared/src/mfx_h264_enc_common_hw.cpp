@@ -1680,6 +1680,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_AVBR &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_WIDI_VBR &&
+        par.mfx.RateControlMethod != MFX_RATECONTROL_VCM &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_LA &&
         par.mfx.RateControlMethod != MFX_RATECONTROL_LA_ICQ)
@@ -2031,7 +2032,13 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         extOpt->FieldOutput = MFX_CODINGOPTION_UNKNOWN;
     }
 
-    if (hwCaps.MBBRCSupport == 0 && IsOn(extOpt2->MBBRC))
+    if ((IsMvcProfile(par.mfx.CodecProfile) || IsSvcProfile(par.mfx.CodecProfile)) && par.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
+    {
+        unsupported = true;
+        par.mfx.RateControlMethod = 0;
+    }
+
+    if (hwCaps.MBBRCSupport == 0 && hwCaps.ICQBRCSupport == 0 && IsOn(extOpt2->MBBRC))
     {
         changed = true;
         extOpt2->MBBRC = MFX_CODINGOPTION_OFF;
@@ -2486,6 +2493,29 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         if (!CheckRange(par.mfx.QPB, 0, 51)) changed = true;
     }
 
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ &&
+        hwCaps.ICQBRCSupport == 0)
+    {
+        par.mfx.RateControlMethod = 0;
+        unsupported = true;
+    }
+
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_VCM &&
+        hwCaps.VCMBitrateControl == 0)
+    {
+        par.mfx.RateControlMethod = 0;
+        unsupported = true;
+    }
+
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ &&
+        extOpt2->MBBRC == MFX_CODINGOPTION_OFF)
+    {
+        // for ICQ BRC mode MBBRC is ignored by driver and always treated as ON
+        // need to change extOpt2->MBBRC respectively to notify application about it
+        extOpt2->MBBRC = MFX_CODINGOPTION_ON;
+        changed = true;
+    }
+
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ ||
         par.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
     {
@@ -2621,6 +2651,11 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.GopRefDist = 1;
     }
 
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_VCM && par.mfx.GopRefDist > 1)
+    {
+        changed = true;
+        par.mfx.GopRefDist = 1;
+    }
 
     if (extTemp->BaseLayerPID + par.calcParam.numTemporalLayer > 64)
     {
@@ -3222,6 +3257,13 @@ void MfxHwH264Encode::InheritDefaultValues(
         InheritOption(parInit.mfx.ICQQuality, parReset.mfx.ICQQuality);
     }
 
+    if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_VCM && parReset.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
+    {
+        InheritOption(parInit.mfx.TargetKbps,       parReset.mfx.TargetKbps);
+        InheritOption(parInit.mfx.MaxKbps,          parReset.mfx.MaxKbps);
+    }
+
+
     InheritOption(parInit.mfx.FrameInfo.FourCC,         parReset.mfx.FrameInfo.FourCC);
     InheritOption(parInit.mfx.FrameInfo.FourCC,         parReset.mfx.FrameInfo.FourCC);
     InheritOption(parInit.mfx.FrameInfo.Width,          parReset.mfx.FrameInfo.Width);
@@ -3287,6 +3329,12 @@ namespace
         return (n & (n - 1)) == 0;
     }
 };
+
+bool IsHRDBasedBRCMEthod(mfxU16  RateControlMethod)
+{
+    return RateControlMethod != MFX_RATECONTROL_CQP && RateControlMethod != MFX_RATECONTROL_AVBR &&
+        RateControlMethod != MFX_RATECONTROL_ICQ && RateControlMethod != MFX_RATECONTROL_VCM;
+}
 
 
 void MfxHwH264Encode::SetDefaults(
@@ -3634,8 +3682,17 @@ void MfxHwH264Encode::SetDefaults(
 
     if (extOpt2->MBBRC == MFX_CODINGOPTION_UNKNOWN)
     {
-        // turn off MBBRC by default
-        extOpt2->MBBRC = MFX_CODINGOPTION_OFF;
+        if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
+        {
+            // for ICQ BRC mode MBBRC is ignored by driver and always treated as ON
+            // need to change extOpt2->MBBRC respectively to notify application about it
+            extOpt2->MBBRC = MFX_CODINGOPTION_ON;
+        }
+        else
+        {
+            // turn off MBBRC by default
+            extOpt2->MBBRC = MFX_CODINGOPTION_OFF;
+        }
     }
 
     if (extOpt2->IntRefType && extOpt2->IntRefCycleSize == 0)
@@ -3663,7 +3720,8 @@ void MfxHwH264Encode::SetDefaults(
             par.calcParam.maxKbps = mfxU32(IPP_MIN(maxBps / 1000, UINT_MAX));
             assert(par.calcParam.maxKbps >= par.calcParam.targetKbps);
         }
-        else if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
+        else if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
+            par.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
         {
             par.calcParam.maxKbps = par.calcParam.targetKbps;
         }
@@ -3700,9 +3758,7 @@ void MfxHwH264Encode::SetDefaults(
                 GetMaxBufferSize(par),                           // limit by spec
                 par.calcParam.maxKbps * DEFAULT_CPB_IN_SECONDS); // limit by common sense
 
-            par.calcParam.bufferSizeInKB =
-                (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP) ||
-                (par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
+            par.calcParam.bufferSizeInKB = !IsHRDBasedBRCMEthod(par.mfx.RateControlMethod)
                     ? GetUncompressedSizeInKb(par)
                     : bufferSizeInBits / 8000;
         }
@@ -3714,16 +3770,12 @@ void MfxHwH264Encode::SetDefaults(
             GetMaxPerViewBufferSize(par),                           // limit by spec
             par.calcParam.mvcPerViewPar.maxKbps * DEFAULT_CPB_IN_SECONDS); // limit by common sense
 
-        par.calcParam.mvcPerViewPar.bufferSizeInKB =
-            (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP) ||
-            (par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
+        par.calcParam.mvcPerViewPar.bufferSizeInKB = !IsHRDBasedBRCMEthod(par.mfx.RateControlMethod)
                 ? GetUncompressedSizeInKb(par)
                 : bufferSizeInBits / 8000;
     }
 
-    if (par.calcParam.initialDelayInKB == 0 &&
-        par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
-        par.mfx.RateControlMethod != MFX_RATECONTROL_AVBR)
+    if (par.calcParam.initialDelayInKB == 0 && IsHRDBasedBRCMEthod(par.mfx.RateControlMethod))
     {
         par.calcParam.initialDelayInKB = par.calcParam.bufferSizeInKB / 2;
         par.calcParam.mvcPerViewPar.initialDelayInKB = par.calcParam.mvcPerViewPar.bufferSizeInKB / 2;
@@ -3834,6 +3886,7 @@ void MfxHwH264Encode::SetDefaults(
         case MFX_RATECONTROL_CBR:
         case MFX_RATECONTROL_VBR:
         case MFX_RATECONTROL_LA:
+        case MFX_RATECONTROL_VCM:
             extRc->Layer[0].CbrVbr.TargetKbps       = par.mfx.TargetKbps;
             extRc->Layer[0].CbrVbr.InitialDelayInKB = par.mfx.InitialDelayInKB;
             extRc->Layer[0].CbrVbr.BufferSizeInKB   = par.mfx.BufferSizeInKB;
