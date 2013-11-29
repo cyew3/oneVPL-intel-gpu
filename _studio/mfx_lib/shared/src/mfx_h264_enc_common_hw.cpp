@@ -3602,13 +3602,16 @@ void MfxHwH264Encode::SetDefaults(
             ? IPP_MIN(10, extOpt2->LookAheadDepth / 2)
             : extOpt2->LookAheadDepth;
 
-    if ((extDdi->LaScaleFactor != 2) &&
-        (extDdi->LaScaleFactor != 4))
-        extDdi->LaScaleFactor = 1;
-
-    if (extDdi->LaScaleFactor == 1) // use LA 2X for TU3-7 by default
+    if (extDdi->LaScaleFactor == 0) // default: use LA 2X for TU3-7 and LA 1X for TU1-2
         if (par.mfx.TargetUsage > 2)
             extDdi->LaScaleFactor = 2;
+        else
+            extDdi->LaScaleFactor = 1;
+
+    if ((extDdi->LaScaleFactor != 1) &&
+        (extDdi->LaScaleFactor != 2) &&
+        (extDdi->LaScaleFactor != 4))
+        extDdi->LaScaleFactor = 1;
     
     if (extDdi->QpUpdateRange == 0)
         extDdi->QpUpdateRange = 10;
