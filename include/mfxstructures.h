@@ -867,7 +867,8 @@ typedef struct {
     mfxU16          LongTermIdx;
     mfxU32          MAD;
     mfxU16          BRCPanicMode;
-    mfxU16          reserved[5];
+    mfxU16          QP;
+    mfxU16          reserved[4];
 
     struct {
             mfxU32      FrameOrder;
