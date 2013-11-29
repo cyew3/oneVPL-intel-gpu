@@ -7,13 +7,15 @@
 //          Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
 //
 */
+//#include "mfx_common.h"
 #ifndef __MFX_H264_ENCODE_STRUCT_VAAPI__H
 #define __MFX_H264_ENCODE_STRUCT_VAAPI__H
+
+#include "mfx_common.h"
 
 #if defined (MFX_VA_LINUX) || defined (MFX_VA_OSX)
 #include <va/va.h>
 
-#include "mfx_common.h"
 #include "mfx_platform_headers.h"
 
 /*
@@ -491,7 +493,7 @@ typedef struct tagENCODE_CAPS
             UINT    VCMBitrateControl           : 1;
             UINT    NoESS                       : 1;
             UINT    Color420Only                : 1;
-            UINT    Reserved1                   : 1;
+            UINT    ICQBRCSupport               : 1;
         };
         UINT CodingLimits;
     };
@@ -507,9 +509,9 @@ typedef struct tagENCODE_CAPS
         };
         USHORT CodingFunction;
     };
-    VAEncMiscParameterQuantization           TrellisQuantization;
-    VAEncMiscParameterRIR                    RollingIntraRefresh;
-    VAEncMiscParameterBufferMaxFrameSize     BufferMaxFrameSize;
+    UINT    vaTrellisQuantization;
+    UINT    vaRollingIntraRefresh;
+    UINT    vaBufferMaxFrameSize;
     UINT    MaxPicWidth;
     UINT    MaxPicHeight;
     UCHAR   MaxNum_Reference;

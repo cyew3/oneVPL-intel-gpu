@@ -680,7 +680,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
        
     m_caps.TrelisQuantization  = (attrs[2].value & (~VA_ATTRIB_NOT_SUPPORTED));
-    m_caps.vaTrelisQuantization = attrs[2].value;
+    m_caps.vaTrellisQuantization = attrs[2].value;
     m_caps.RollingIntraRefresh = (attrs[3].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0 ;
     m_caps.vaRollingIntraRefresh = attrs[3].value;
     m_caps.UserMaxFrameSizeSupport = 1; // no request on support for libVA
