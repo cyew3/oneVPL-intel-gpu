@@ -16,11 +16,13 @@ struct PluginModuleTemplate {
     typedef MFXDecoderPlugin* (*fncCreateDecoderPlugin)();
     typedef MFXEncoderPlugin* (*fncCreateEncoderPlugin)();
     typedef MFXGenericPlugin* (*fncCreateGenericPlugin)();
+    typedef MFXVPPPlugin*     (*fncCreateVPPPlugin)();
     typedef mfxStatus (MFX_CDECL *CreatePluginPtr_t)(mfxPluginUID uid, mfxPlugin* plugin);
 
     fncCreateDecoderPlugin CreateDecoderPlugin;
     fncCreateEncoderPlugin CreateEncoderPlugin;
     fncCreateGenericPlugin CreateGenericPlugin;
+    fncCreateVPPPlugin     CreateVPPPlugin;
     CreatePluginPtr_t CreatePlugin;
 };
 
