@@ -165,6 +165,7 @@ void MFXStructureRef <mfxExtCodingOption2>::ConstructValues () const
     SERIALIZE_INT(LookAheadDepth);
     SERIALIZE_INT(Trellis);
     SERIALIZE_INT(RepeatPPS);
+    SERIALIZE_INT(BRefType);
     SERIALIZE_INT(NumMbPerSlice);
 }
 
@@ -206,7 +207,6 @@ void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const
     SERIALIZE_INT(DisableBSubMBPartition);
     SERIALIZE_INT(WeightedBiPredIdc);
     SERIALIZE_INT(DirectSpatialMvPredFlag);
-    SERIALIZE_INT(BiPyramid);
     SERIALIZE_INT(CabacInitIdcPlus1);
 
 }

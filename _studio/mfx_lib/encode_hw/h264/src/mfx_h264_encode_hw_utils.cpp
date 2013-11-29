@@ -523,8 +523,8 @@ void FrameTypeGenerator::Init(MfxVideoParam const & video)
     m_gopRefDist = IPP_MAX(video.mfx.GopRefDist, 1);
     m_idrDist    = m_gopPicSize * (video.mfx.IdrInterval + 1);
 
-    mfxExtCodingOptionDDI * extDdi = GetExtBuffer(video);
-    m_biPyramid = extDdi->BiPyramid == 3 ? 0 : extDdi->BiPyramid;
+    mfxExtCodingOption2 * extOpt2 = GetExtBuffer(video);
+    m_biPyramid = extOpt2->BRefType == MFX_B_REF_OFF ? 0 : extOpt2->BRefType;
 
     m_frameOrder = 0;
 }

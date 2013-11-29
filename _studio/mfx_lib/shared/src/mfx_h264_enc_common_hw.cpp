@@ -909,10 +909,10 @@ mfxU32 MfxHwH264Encode::CalcNumSurfBitstream(MfxVideoParam const & video)
 
 mfxU8 MfxHwH264Encode::GetNumReorderFrames(MfxVideoParam const & video)
 {
-    mfxExtCodingOptionDDI * extDdi = GetExtBuffer(video);
+    mfxExtCodingOption2 * extOpt2 = GetExtBuffer(video);
     mfxU8 numReorderFrames = video.mfx.GopRefDist > 1 ? 1 : 0;
 
-    if (video.mfx.GopRefDist > 2 && extDdi->BiPyramid == 1)
+    if (video.mfx.GopRefDist > 2 && extOpt2->BRefType == MFX_B_REF_PYRAMID)
     {
         numReorderFrames = (mfxU8)IPP_MAX(CeilLog2(video.mfx.GopRefDist - 1), 1);
     }
@@ -2044,17 +2044,17 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         extOpt2->MBBRC = MFX_CODINGOPTION_OFF;
     }
 
-    if (extDdi->BiPyramid > 3)
+    if (extOpt2->BRefType > 2)
     {
         changed = true;
-        extDdi->BiPyramid = 0;
+        extOpt2->BRefType = MFX_B_REF_UNKNOWN;
     }
 
-    if (extDdi->BiPyramid != 3 && extDdi->BiPyramid != 0 &&
+    if (extOpt2->BRefType && extOpt2->BRefType != MFX_B_REF_OFF &&
         par.mfx.GopRefDist != 0 && par.mfx.GopRefDist < 3)
     {
         changed = true;
-        extDdi->BiPyramid = 3;
+        extOpt2->BRefType = MFX_B_REF_OFF;
     }
 
     if (extOpt->IntraPredBlockSize != MFX_BLOCKSIZE_UNKNOWN &&
@@ -2782,8 +2782,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         unsupported = true;
     }*/
 
-    if (extDdi->BiPyramid        != 0 &&
-        extDdi->BiPyramid        != 3 &&
+    if (extOpt2->BRefType        != 0 &&
+        extOpt2->BRefType        != MFX_B_REF_OFF &&
         par.mfx.CodecLevel       != 0 &&
         par.mfx.FrameInfo.Width  != 0 &&
         par.mfx.FrameInfo.Height != 0)
@@ -2795,7 +2795,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         {
             // max dpb size is not enougn for pyramid
             changed = true;
-            extDdi->BiPyramid = 3;
+            extOpt2->BRefType = MFX_B_REF_OFF;
         }
         else
         {
@@ -3422,7 +3422,7 @@ void MfxHwH264Encode::SetDefaults(
         else if (par.calcParam.numTemporalLayer > 1)
         { // svc temporal layers
             par.mfx.GopRefDist = 1;
-            extDdi->BiPyramid = 3;
+            extOpt2->BRefType = MFX_B_REF_OFF;
 
             if (IsDyadic(par.calcParam.scale, par.calcParam.numTemporalLayer) &&
                 par.mfx.GopPicSize % par.calcParam.scale[par.calcParam.numTemporalLayer - 1] == 0)
@@ -3430,12 +3430,12 @@ void MfxHwH264Encode::SetDefaults(
                 if (par.calcParam.numTemporalLayer == 2)
                 {
                     par.mfx.GopRefDist = 2;
-                    extDdi->BiPyramid = 3;
+                    extOpt2->BRefType = MFX_B_REF_OFF;
                 }
                 else
                 {
                     par.mfx.GopRefDist = 4;
-                    extDdi->BiPyramid = 1;
+                    extOpt2->BRefType = MFX_B_REF_PYRAMID;
                 }
             }
         }
@@ -3470,7 +3470,7 @@ void MfxHwH264Encode::SetDefaults(
         par.mfx.GopPicSize = mfxU16((256 + maxScale - 1) / maxScale * maxScale);
     }
 
-    if (extDdi->BiPyramid == 0)
+    if (extOpt2->BRefType == MFX_B_REF_UNKNOWN)
     {
         assert(par.mfx.GopRefDist > 0);
         assert(par.mfx.GopPicSize > 0);
@@ -3481,11 +3481,11 @@ void MfxHwH264Encode::SetDefaults(
             IsPowerOf2(par.mfx.GopRefDist) &&
             par.mfx.GopPicSize % par.mfx.GopRefDist == 0)
         {
-            extDdi->BiPyramid = par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE?1:3;
+            extOpt2->BRefType = mfxU16(par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? MFX_B_REF_PYRAMID : MFX_B_REF_OFF);
         }
         else
         {
-            extDdi->BiPyramid = 3;
+            extOpt2->BRefType = MFX_B_REF_OFF;
         }
     }
 
@@ -3647,7 +3647,7 @@ void MfxHwH264Encode::SetDefaults(
 
         if (par.calcParam.numTemporalLayer > 1)
             par.mfx.NumRefFrame = nrfMinForTemporal;
-        else if (extDdi->BiPyramid != 3)
+        else if (extOpt2->BRefType != MFX_B_REF_OFF)
             par.mfx.NumRefFrame = nrfMinForPyramid;
         else if (extOpt2->IntRefType)
             par.mfx.NumRefFrame = 1;
@@ -3809,7 +3809,7 @@ void MfxHwH264Encode::SetDefaults(
 
     if (extDdi->WeightedBiPredIdc == 0)
     {
-        extDdi->WeightedBiPredIdc = (par.mfx.GopRefDist == 3 && !IsMvcProfile(par.mfx.CodecProfile) && extDdi->BiPyramid == 3)
+        extDdi->WeightedBiPredIdc = (par.mfx.GopRefDist == 3 && !IsMvcProfile(par.mfx.CodecProfile) && extOpt2->BRefType == MFX_B_REF_OFF)
             ? 2  // explicit weighted biprediction (when 2 B frames in a row)
             : 0; // no weighted biprediction
     }

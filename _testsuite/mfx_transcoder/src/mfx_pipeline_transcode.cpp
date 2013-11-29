@@ -236,6 +236,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION2(AdaptiveB,              OPT_TRI_STATE,   "Adaptive B frames on/off"),
         HANDLE_EXT_OPTION2(Trellis,                OPT_INT_16,      "bitfield: 0=default, 1=off, 2=on for I frames, 4=on for P frames, 8=on for B frames"),
         HANDLE_EXT_OPTION2(RepeatPPS,              OPT_TRI_STATE,  ""),
+        HANDLE_EXT_OPTION2(BRefType,               OPT_UINT_16,    ""),
         HANDLE_EXT_OPTION2(NumMbPerSlice,          OPT_UINT_16,    "number of MBs per slice"),
 
         // mfxExtCodingOptionDDI
@@ -273,7 +274,6 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_DDI_OPTION(DisableBSubMBPartition,  OPT_TRI_STATE,  "on=disabled 4x4 4x8 8x4 for B frames, off=enabled 4x4 4x8 8x4 for B frames"),
         HANDLE_DDI_OPTION(WeightedBiPredIdc,       OPT_UINT_16,    "0 - off, 1 - implicit (unsupported), 2 - explicit"),
         HANDLE_DDI_OPTION(DirectSpatialMvPredFlag, OPT_TRI_STATE,  "on=spatial, off=temporal"),
-        HANDLE_DDI_OPTION(BiPyramid,               OPT_UINT_16,    "0=no B-pyramid"),
         HANDLE_DDI_OPTION(CabacInitIdcPlus1,       OPT_UINT_16,    "0-to use default value (depends on Target Usaeg), 1-cabacinitidc=0, 2-cabacinitidc=1,  etc"),
 
         //mfxExtEncoderCapability

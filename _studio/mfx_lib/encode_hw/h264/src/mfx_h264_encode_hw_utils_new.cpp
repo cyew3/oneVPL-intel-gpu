@@ -619,6 +619,7 @@ namespace
         }
 
         mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(video);
+        mfxExtCodingOption2 const * extOpt2  = GetExtBuffer(video);
         mfxU32 numActiveRefL1 = extDdi->NumActiveRefBL1;
         mfxU32 numActiveRefL0 = (task.m_type[fieldId] & MFX_FRAMETYPE_P)
             ? extDdi->NumActiveRefP
@@ -717,7 +718,7 @@ namespace
                     list1.Resize(IPP_MIN(list1.Size(), 1));
                 }
             }
-            else if (extDdi->BiPyramid == 1 && (task.m_type[0] & MFX_FRAMETYPE_P))
+            else if (extOpt2->BRefType == MFX_B_REF_PYRAMID && (task.m_type[0] & MFX_FRAMETYPE_P))
             {
                 std::sort(list0.Begin(), list0.End(), RefPocIsGreater(dpb));
             }
@@ -1419,15 +1420,15 @@ BiFrameLocation MfxHwH264Encode::GetBiFrameLocation(
     MfxVideoParam const & video,
     mfxU32                frameOrder)
 {
-    mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(video);
+    mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(video);
 
     mfxU32 gopPicSize = video.mfx.GopPicSize;
     mfxU32 gopRefDist = video.mfx.GopRefDist;
-    mfxU32 biPyramid  = extDdi->BiPyramid;
+    mfxU32 biPyramid  = extOpt2->BRefType;
 
     BiFrameLocation loc;
 
-    if (biPyramid != 3)
+    if (biPyramid != MFX_B_REF_OFF)
     {
         bool ref = false;
         mfxU32 orderInMiniGop = frameOrder % gopPicSize % gopRefDist - 1;
