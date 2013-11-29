@@ -516,7 +516,7 @@ mfxStatus VideoVPPSW::CreateWorkBuffer( void )
     /* we don't distinction btw re-usable work buffer & buffer for tables */
     if( totalBufSize )
     {
-        sts = m_core->AllocBuffer( totalBufSize, MFX_MEMTYPE_PERSISTENT_MEMORY, &m_memIdWorkBuf );
+        sts = m_core->AllocBuffer( totalBufSize, MFX_MEMTYPE_SYSTEM_MEMORY, &m_memIdWorkBuf );
         MFX_CHECK_STS( sts );
 
         sts = m_core->LockBuffer(m_memIdWorkBuf, &pWorkBuffer );
