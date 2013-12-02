@@ -2045,7 +2045,7 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
     }
 
     if (!mfxBS)
-        return MFX_ERR_NONE;
+        return m_pCurrentFrame ? MFX_ERR_NONE : MFX_ERR_MORE_DATA;
 
 
     Ipp32u ePictureType;
