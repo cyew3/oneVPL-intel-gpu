@@ -24,7 +24,10 @@ File Name: mfx_hevc_dec_plugin.h
 class MFXVPP_Plugin : public MFXVPPPlugin
 {
 public:
-    MFXVPP_Plugin();
+    static const mfxPluginUID g_VPP_PluginGuid;
+    static std::auto_ptr<MFXVPP_Plugin> g_singlePlg;
+    static std::auto_ptr<MFXPluginAdapter<MFXVPPPlugin> > g_adapter;
+    MFXVPP_Plugin(bool CreateByDispatcher);
     virtual ~MFXVPP_Plugin();
 
     virtual mfxStatus PluginInit(mfxCoreInterface *core);
@@ -71,7 +74,24 @@ public:
         delete this;
     }
     static MFXVPPPlugin* Create() {
-        return new MFXVPP_Plugin();
+        return new MFXVPP_Plugin(false);
+    }
+    static mfxStatus CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg) {
+
+        if (g_singlePlg.get()) {
+            return MFX_ERR_NOT_FOUND;
+        } 
+        //check that guid match 
+        g_singlePlg.reset(new MFXVPP_Plugin(true));
+
+        if (memcmp(& guid , &g_VPP_PluginGuid, sizeof(mfxPluginUID))) {
+            return MFX_ERR_NOT_FOUND;
+        }
+
+        g_adapter.reset(new MFXPluginAdapter<MFXVPPPlugin> (g_singlePlg.get()));
+        *mfxPlg = g_adapter->operator mfxPlugin();
+
+        return MFX_ERR_NONE;
     }
     virtual mfxU32 GetPluginType()
     {
@@ -88,6 +108,7 @@ protected:
 
     mfxSession          m_session;
     mfxPluginParam      m_PluginParam;
+    bool                m_createdByDispatcher;
 };
 #endif //#if defined( AS_VPP_PLUGIN )
 

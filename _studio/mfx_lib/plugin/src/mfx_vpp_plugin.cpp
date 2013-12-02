@@ -14,13 +14,13 @@ File Name: mfx_vpp_plugin.h
 #include "mfx_session.h"
 #include "vm_sys_info.h"
 
-//defining module template for decoder plugin
 #include "mfx_plugin_module.h"
 PluginModuleTemplate g_PluginModule = {
     NULL,
     NULL,
     NULL,
-    MFXVPP_Plugin::Create
+    MFXVPP_Plugin::Create,
+    MFXVPP_Plugin::CreateByDispatcher
 };
 
 MSDK_PLUGIN_API(MFXVPPPlugin*) mfxCreateVPPPlugin() {
@@ -30,7 +30,19 @@ MSDK_PLUGIN_API(MFXVPPPlugin*) mfxCreateVPPPlugin() {
     return g_PluginModule.CreateVPPPlugin();
 }
 
-MFXVPP_Plugin::MFXVPP_Plugin()
+MSDK_PLUGIN_API(MFXPlugin*) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin) {
+    if (!g_PluginModule.CreatePlugin) {
+        return 0;
+    }
+    return (MFXPlugin*) g_PluginModule.CreatePlugin(uid, plugin);
+}
+
+const mfxPluginUID MFXVPP_Plugin::g_VPP_PluginGuid = {0x18,0x40,0xbc,0xe0,0xee,0x64,0x4d,0x09,0x8e,0xd6,0x2f,0x91,0xae,0x4b,0x6b,0x61};
+std::auto_ptr<MFXVPP_Plugin> MFXVPP_Plugin::g_singlePlg;
+std::auto_ptr<MFXPluginAdapter<MFXVPPPlugin> > MFXVPP_Plugin::g_adapter;
+
+
+MFXVPP_Plugin::MFXVPP_Plugin(bool CreateByDispatcher)
 {
     m_session = 0;
     m_pmfxCore = 0;
@@ -38,6 +50,12 @@ MFXVPP_Plugin::MFXVPP_Plugin()
 
     m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_SERIAL;
     m_PluginParam.MaxThreadNum = 1;
+    m_PluginParam.APIVersion.Major = MFX_VERSION_MAJOR;
+    m_PluginParam.APIVersion.Minor = MFX_VERSION_MINOR;
+    m_PluginParam.PluginUID = g_VPP_PluginGuid;
+    m_PluginParam.Type = MFX_PLUGINTYPE_VIDEO_VPP;
+    m_PluginParam.PluginVersion = 1;
+    m_createdByDispatcher = CreateByDispatcher;
 }
 
 MFXVPP_Plugin::~MFXVPP_Plugin()
@@ -90,10 +108,12 @@ mfxStatus MFXVPP_Plugin::PluginClose()
         if(mfxRes != MFX_ERR_NONE && mfxRes != MFX_ERR_NOT_INITIALIZED && mfxRes2 == MFX_ERR_NONE)
             mfxRes2 = mfxRes;
         m_session = 0;
-        return mfxRes2;
     }
-    else
-        return MFX_ERR_NONE;
+    if (m_createdByDispatcher) {
+        g_singlePlg.reset(0);
+        g_adapter.reset(0);
+    }
+    return mfxRes2;
 }
 
 mfxStatus MFXVPP_Plugin::GetPluginParam(mfxPluginParam *par)
