@@ -214,6 +214,8 @@ public:
             }
 
             VM_ASSERT(!m_prev.size());
+
+            source += startCodeSize1; //add zeroCounts
             size_t sz = source - (Ipp8u *)pSource->GetDataPointer();
             if (sz >  m_suggestedSize)
             {
@@ -342,8 +344,7 @@ private:
         zeroCount = IPP_MIN(zeroCount, 3);
         pb -= zeroCount;
         size = zeroCount;
-        zeroCount = 0;
-        startCodeSize = 0;
+        startCodeSize = zeroCount;
         return -1;
     }
 };
