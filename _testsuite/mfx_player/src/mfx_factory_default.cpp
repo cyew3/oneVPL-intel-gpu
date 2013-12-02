@@ -54,9 +54,13 @@ IYUVSource      * MFXPipelineFactory ::CreateDecode( const IPipelineObjectDesc &
         {
             return new MFXDecoder(create->session);
         }
-        case DECODER_MFX_PLUGIN:
+        case DECODER_MFX_PLUGIN_FILE:
         {
             return new MFXCodecPluginTmpl<MFXDecoder, MFXDecoderPlugin>(create->splugin, create->session);
+        }
+        case DECODER_MFX_PLUGIN_GUID:
+        {
+            return new MFXCodecPluginTmpl<MFXDecoder, MFXDecoderPlugin>(create->sPluginGuid, 1, create->session);
         }
     default:
         return NULL;
@@ -77,6 +81,14 @@ IMFXVideoVPP    * MFXPipelineFactory ::CreateVPP( const IPipelineObjectDesc & pP
         {
             return new SVCedVpp(create->m_pObject);
         }
+        case VPP_MFX_PLUGIN_FILE:
+        {
+            return new MFXCodecPluginTmpl<MFXVideoVPPImpl, MFXVPPPlugin>(create->splugin, create->session);
+        }
+        case VPP_MFX_PLUGIN_GUID:
+        {
+            return new MFXCodecPluginTmpl<MFXVideoVPPImpl, MFXVPPPlugin>(create->sPluginGuid, 1, create->session);
+        }
     default:
         return NULL;
     }
@@ -92,9 +104,13 @@ IVideoEncode   * MFXPipelineFactory :: CreateVideoEncode ( IPipelineObjectDesc *
         {
             return new MFXVideoEncode(create->session);
         }
-        case ENCODER_MFX_PLUGIN:
+        case ENCODER_MFX_PLUGIN_FILE:
         {
             return new MFXCodecPluginTmpl<MFXVideoEncode, MFXEncoderPlugin>(create->splugin, create->session);
+        }
+        case ENCODER_MFX_PLUGIN_GUID:
+        {
+            return new MFXCodecPluginTmpl<MFXVideoEncode, MFXEncoderPlugin>(create->sPluginGuid, 1, create->session);
         }
 
         default:

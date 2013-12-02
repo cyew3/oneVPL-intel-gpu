@@ -25,6 +25,12 @@ class MsdkSoModule
 protected:
     vm_so_handle m_module;
 public:
+
+    MsdkSoModule() 
+        : m_module() 
+    {
+    }
+
     MsdkSoModule(const tstring & pluginName)
         : m_module()
     {
@@ -92,15 +98,27 @@ inline void intrusive_ptr_release(MFXGenericPlugin * pResource)
     pResource->Release();
 }
 
+/* for plugin API*/
+inline void intrusive_ptr_addref(MFXVPPPlugin *)
+{
+}
+inline void intrusive_ptr_release(MFXVPPPlugin * pResource)
+{
+    //fully destroy plugin resource
+    pResource->Release();
+}
+
 
 struct PluginModuleTemplate {
     typedef MFXDecoderPlugin* (*fncCreateDecoderPlugin)();
     typedef MFXEncoderPlugin* (*fncCreateEncoderPlugin)();
+    typedef MFXVPPPlugin*     (*fncCreateVPPPlugin)();
     typedef MFXGenericPlugin* (*fncCreateGenericPlugin)();
 
     fncCreateDecoderPlugin CreateDecoderPlugin;
     fncCreateEncoderPlugin CreateEncoderPlugin;
     fncCreateGenericPlugin CreateGenericPlugin;
+    fncCreateVPPPlugin     CreateVPPPlugin;
 };
 
 template<class T>
@@ -145,6 +163,23 @@ struct PluginCreateTrait<MFXGenericPlugin>
     typedef PluginModuleTemplate::fncCreateGenericPlugin TCreator;
 };
 
+template<>
+struct PluginCreateTrait<MFXVPPPlugin>
+{
+    static const char* Name(){
+        return "mfxCreateVPPPlugin";
+    }
+    enum PluginType {
+        type=MFX_PLUGINTYPE_VIDEO_VPP
+    };
+    typedef PluginModuleTemplate::fncCreateVPPPlugin TCreator;
+};
+
+
+typedef enum { 
+    MFX_PLUGINLOAD_TYPE_GUID,
+    MFX_PLUGINLOAD_TYPE_FILE
+} MfxPluginLoadType;
 
 /*
 * Rationale: class to load+register any mediasdk plugin decoder/encoder/generic by given name
@@ -153,23 +188,34 @@ template <class T>
 class PluginLoader 
 {
 protected:
-    MsdkSoModule m_PluginModule;
+    /* Variables related to the explicit load mechanism */
+    MsdkSoModule         m_PluginModule;
     mfx_intrusive_ptr<T> m_plugin;
-    mfxSession m_session;
-    MFXPluginAdapter<T> m_adapter;
-    typedef PluginCreateTrait<T> Plugin;
+    MFXPluginAdapter<T>  m_adapter;
+    
+    /* Variables related to the GUID-based load mechanism */
+    mfxU32       m_plugin_version;
+    mfxPluginUID m_uid;
 
+    MfxPluginLoadType plugin_load_type;         
+
+    mfxSession m_session;
+    typedef PluginCreateTrait<T> Plugin;
+    
 public:
     PluginLoader(mfxSession session, const tstring & pluginName)
         : m_PluginModule(pluginName)
         , m_session()
     {
+
+        plugin_load_type = MFX_PLUGINLOAD_TYPE_FILE;
+
         if (!m_PluginModule.IsLoaded())
             return;
+
         typename Plugin::TCreator pCreateFunc = m_PluginModule.GetAddr<typename Plugin::TCreator >(Plugin::Name());
         if(NULL == pCreateFunc)
             return;
-        
         m_plugin.reset(pCreateFunc());
 
         if (NULL == m_plugin.get())
@@ -189,16 +235,74 @@ public:
         m_session = session;
     }
 
+    PluginLoader(mfxSession session, const tstring & uid, mfxU32 version)
+        : m_session()
+    {
+
+        plugin_load_type = MFX_PLUGINLOAD_TYPE_GUID;
+
+        /* Convert UID from string to mfxPluginUID */
+        mfxU32 i   = 0;
+        mfxU32 hex = 0;
+        for(i = 0; i != 16; i++) 
+        {
+            hex = 0;
+#if defined(_WIN32) || defined(_WIN64)
+            if (1 != swscanf_s(uid.c_str() + 2*i, L"%2x", &hex))
+#else
+            if (1 != swscanf((wchar_t *)(uid.c_str() + 2*i), L"%2x", &hex))
+#endif
+            {
+                MFX_TRACE_ERR(VM_STRING("Failed to parse plugin uid: ") << uid.c_str());
+                return;
+            }
+            if (hex == 0 && (const wchar_t *)uid.c_str() + 2*i != wcsstr((const wchar_t *)uid.c_str() + 2*i, L"00"))
+            {
+                 MFX_TRACE_ERR(VM_STRING("Failed to parse plugin uid: ") << uid.c_str());
+                return;
+            }
+            m_uid.Data[i] = (mfxU8)hex;
+        }
+
+        m_plugin_version = version;
+
+        mfxStatus sts = MFXVideoUSER_Load(session, &m_uid, m_plugin_version);
+        if (MFX_ERR_NONE != sts)
+        {
+            MFX_TRACE_ERR(VM_STRING("Failed to load plugin: ") << uid.c_str() << VM_STRING("sts=") << sts);
+            return;
+        }
+        MFX_TRACE_INFO(VM_STRING("Plugin: ") << uid.c_str() << VM_STRING(" loaded\n"));
+        m_session = session;
+    }
+
     ~PluginLoader()
     {
-        if (m_session) {
-            mfxStatus sts = MFXVideoUSER_Unregister(m_session, PluginCreateTrait<T>::type);
-            if (sts != MFX_ERR_NONE) {
-                MFX_TRACE_ERR(VM_STRING("MFXVideoUSER_Unregister(session=0x") << std::hex << m_session<< VM_STRING(", type=") << Plugin::type << VM_STRING(", sts=") << sts);
+        if (m_session) 
+        {
+            mfxStatus sts;
+        
+            if ( MFX_PLUGINLOAD_TYPE_GUID == plugin_load_type ) 
+            {
+                sts = MFXVideoUSER_UnLoad(m_session, &m_uid);
+                if (sts != MFX_ERR_NONE) 
+                {
+                    MFX_TRACE_ERR(VM_STRING("MFXVideoUSER_UnLoad(session=0x") << std::hex << m_session<< VM_STRING(", type=") << Plugin::type << VM_STRING(", sts=") << sts);
+                }
+            } 
+            else 
+            {
+                sts = MFXVideoUSER_Unregister(m_session, PluginCreateTrait<T>::type);
+                if (sts != MFX_ERR_NONE) 
+                {
+                    MFX_TRACE_ERR(VM_STRING("MFXVideoUSER_Unregister(session=0x") << std::hex << m_session<< VM_STRING(", type=") << Plugin::type << VM_STRING(", sts=") << sts);
+                }
             }
+            
             m_session = 0;
         }
     }
+
     bool IsOk() {
         return m_session != 0;
     }

@@ -28,8 +28,8 @@ enum /*Decoder type*/
     DECODER_BUFFERED,
     DECODER_ADVANCE, // decodes frames in advance
     DECODER_YUV_NATIVE,//decodes only yuv files
-    DECODER_MFX_PLUGIN, //create mediasdk decoder plugin based on filename
-
+    DECODER_MFX_PLUGIN_FILE, //create mediasdk decoder plugin based on filename
+    DECODER_MFX_PLUGIN_GUID,
     DECODER_LAST_IDX //end of enum indicator
 };
 
@@ -38,7 +38,8 @@ enum /*Vpp Type*/
     VPP_MFX_NATIVE = DECODER_LAST_IDX,
     VPP_PLUGIN_AS_VPP,
     VPP_SVC,
-
+    VPP_MFX_PLUGIN_FILE, //create mediasdk vpp plugin based on filename
+    VPP_MFX_PLUGIN_GUID,
     VPP_LAST_IDX //end of enum indicator
 };
 
@@ -66,7 +67,8 @@ enum /*Render Type*/
 enum /*Render Type*/
 {
     ENCODER_MFX_NATIVE = RENDER_LAST_IDX,
-    ENCODER_MFX_PLUGIN,
+    ENCODER_MFX_PLUGIN_FILE,
+    ENCODER_MFX_PLUGIN_GUID,
     ENCODER_LAST_IDX 
 };
 
@@ -141,8 +143,21 @@ public:
         , splugin (plugin_dll_name)
     {
     }
+
+    MFXPipelineObjectDesc(mfxSession ext_session, const tstring &plugin_guid, mfxU32 plugin_version, int objType, T *pObj)
+        : PipelineObjectBaseTmpl<T>(objType, pObj)
+        , session(ext_session)
+        , sPluginGuid (plugin_guid)
+        , PluginVersion (plugin_version)
+    {
+    }
     //plugin filename
     tstring splugin;
+
+    //plugin GUID
+    tstring sPluginGuid;
+    mfxU32  PluginVersion;
+
     //
     mfxSession session;
 };
@@ -157,6 +172,12 @@ public:\
         , int objType\
         , class_type *pObj)\
         : MFXPipelineObjectDesc<class_type>(ext_session, plugin_dll_name, objType, pObj){}\
+    PipelineObjectDesc(mfxSession ext_session\
+        , const tstring &uid\
+        , mfxU32 version\
+        , int objType\
+        , class_type *pObj)\
+        : MFXPipelineObjectDesc<class_type>(ext_session, uid, version, objType, pObj){}\
 };
 
 //mediasdk specialization
@@ -178,6 +199,12 @@ PipelineObjectDesc<T> make_wrapper(mfxSession ext_session, const tstring &plugin
     return dsc;
 }
 
+template <class T>
+PipelineObjectDesc<T> make_wrapper(mfxSession ext_session, const tstring &uid, mfxU32 version, int WrapperId, T * obj)
+{
+    PipelineObjectDesc<T> dsc(ext_session, uid, version, WrapperId, obj);
+    return dsc;
+}
 
 //rest of pipeline objects - session not required for creation
 template<> 

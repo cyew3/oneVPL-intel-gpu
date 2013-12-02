@@ -29,6 +29,14 @@ public:
     {
         MFX_CHECK_AND_THROW(m_plg.IsOk());
     }
+
+    MFXCodecPluginTmpl(const tstring & uid, mfxU32 version, mfxSession session)
+        : T(session)
+        , m_plg(session, uid, version)
+    {
+        MFX_CHECK_AND_THROW(m_plg.IsOk());
+    }
+
     virtual ~MFXCodecPluginTmpl() { 
         this->Close(); 
     //    m_session = NULL;

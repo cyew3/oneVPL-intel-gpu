@@ -929,6 +929,10 @@ mfxStatus MFXDecPipeline::CreateVPP()
     {
         //no support any more for plugin as vpp
         return MFX_ERR_UNSUPPORTED;
+    } else if (  vm_string_strlen(m_inParams.strVPPPluginGuid)  ) 
+    {
+         m_pVPP = m_pFactory->CreateVPP(
+            PipelineObjectDesc<IMFXVideoVPP>(m_components[eVPP].m_pSession->GetMFXSession(), m_inParams.strVPPPluginGuid, VPP_MFX_PLUGIN_GUID, NULL));
     } else
     {
         m_pVPP = m_pFactory->CreateVPP(
@@ -1811,12 +1815,21 @@ mfxStatus MFXDecPipeline::CreateYUVSource()
     //however is we will use outline to store viewids sequence viedids should be generated in YUV source
     bool bGenerateViewIds = false;
 
-    if (vm_string_strlen(m_inParams.strDecPlugin))
+    if (vm_string_strlen(m_inParams.strDecPluginGuid))
+    {
+        m_pYUVSource.reset(m_pFactory->CreateDecode(
+            PipelineObjectDesc<IYUVSource>(m_components[eDEC].m_pSession->GetMFXSession()
+                , m_inParams.strDecPluginGuid
+                , 1
+                , DECODER_MFX_PLUGIN_GUID
+                , NULL)));
+    }
+    else if (vm_string_strlen(m_inParams.strDecPlugin))
     {
         m_pYUVSource.reset(m_pFactory->CreateDecode(
             PipelineObjectDesc<IYUVSource>(m_components[eDEC].m_pSession->GetMFXSession()
                 , m_inParams.strDecPlugin
-                , DECODER_MFX_PLUGIN
+                , DECODER_MFX_PLUGIN_FILE
                 , NULL)));
     }
     else if (m_inParams.bYuvReaderMode ||
@@ -3906,8 +3919,11 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             else HANDLE_BOOL_OPTION(m_inParams.bPAFFDetect, VM_STRING("-paff"), VM_STRING("enabled picture structure detection by VPP"));
             else HANDLE_INT_OPTION(m_inParams.nSVCDownSampling, VM_STRING("-downsampling"), VM_STRING("use downsampling algorithm 1-best quality, 2-best speed"))
             else HANDLE_BOOL_OPTION(m_inParams.bDxgiDebug, VM_STRING("-dxgidebug"), VM_STRING("inject dxgidebug.dll to report live objects(dxgilevel memory leaks)"));
-            else HANDLE_FILENAME_OPTION(m_inParams.strDecPlugin, VM_STRING("-decode_plugin"), VM_STRING("MediaSDK Decoder plugin filename"))
-            else HANDLE_FILENAME_OPTION(m_inParams.strEncPlugin, VM_STRING("-encode_plugin"), VM_STRING("MediaSDK Encoder plugin filename"))
+            else HANDLE_FILENAME_OPTION(m_inParams.strDecPlugin,     VM_STRING("-decode_plugin"),      VM_STRING("MediaSDK Decoder plugin filename"))
+            else HANDLE_FILENAME_OPTION(m_inParams.strDecPluginGuid, VM_STRING("-decode_plugin_guid"), VM_STRING("MediaSDK Decoder plugin GUID"))
+            else HANDLE_FILENAME_OPTION(m_inParams.strEncPlugin,     VM_STRING("-encode_plugin"),      VM_STRING("MediaSDK Encoder plugin filename"))
+            else HANDLE_FILENAME_OPTION(m_inParams.strEncPluginGuid, VM_STRING("-encode_plugin_guid"), VM_STRING("MediaSDK Encoder plugin GUID"))
+            else HANDLE_FILENAME_OPTION(m_inParams.strVPPPluginGuid, VM_STRING("-vpp_plugin_guid"),    VM_STRING("MediaSDK VPP plugin GUID"))
             else HANDLE_BOOL_OPTION(m_inParams.bUseOverlay, VM_STRING("-overlay"), VM_STRING("Use overlay for rendering"));
 
             else
