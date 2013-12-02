@@ -78,6 +78,11 @@ mfxStatus AudioDECODEAAC::Init(mfxAudioParam *par)
 
     memset(&m_frame, 0, sizeof(mfxBitstream));
     m_frame.MaxLength = MaxLength;
+    if (m_frame.Data)
+    {
+        delete[] m_frame.Data;
+        m_frame.Data = NULL;
+    }
     m_frame.Data = new mfxU8[MaxLength];
     m_frame.DataLength = 0;
     m_frame.DataOffset = 0;
@@ -195,7 +200,7 @@ mfxStatus AudioDECODEAAC::Close(void)
 
     if (m_frame.Data)
     {
-        delete m_frame.Data;
+        delete[] m_frame.Data;
         m_frame.Data = NULL;
     }
     return MFX_ERR_NONE;
