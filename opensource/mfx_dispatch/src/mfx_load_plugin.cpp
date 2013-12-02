@@ -54,6 +54,7 @@ MFX::PluginModule & MFX::PluginModule::operator = (const MFX::PluginModule & tha
 {
     if (this != &that) {
         mHmodule = mfx_get_dll_handle(that.mPath);
+        //todo: work on counters; free mHmodule
         mCreatePluginPtr = that.mCreatePluginPtr;
         msdk_disp_char_cpy_s(mPath, sizeof(mPath) / sizeof(*mPath), that.mPath);
     }
@@ -245,6 +246,7 @@ bool MFX::MFXPluginFactory::VerifyCodecCommon( const mfxVideoCodecPlugin & video
         TRACE_PLUGIN_ERROR("plg->Video->Query = 0\n", 0);
         return false;
     }
+    //todo: remove
     if (videoCodec.Query == 0)
     {
         TRACE_PLUGIN_ERROR("plg->Video->Query = 0\n", 0);
@@ -326,6 +328,7 @@ bool MFX::MFXPluginFactory::Destroy( const mfxPluginUID & uidToDestroy)
         {
             DestroyPlugin(*i);
             //dll unload should happen here
+            //todo: check that dll_free fail is traced
             mPlugins.erase(i);
             return  true;
         }

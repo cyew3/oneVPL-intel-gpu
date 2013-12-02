@@ -302,6 +302,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
             } 
             else 
             {
+                //todo: new hw plugins location - MediaSDK/Dispatch/DevID/Plugins
                 //setting up plugins records
                 for(int i = MFX::MFX_STORAGE_ID_FIRST; i <= MFX::MFX_STORAGE_ID_LAST; i++) 
                 {

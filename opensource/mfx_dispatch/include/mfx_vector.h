@@ -80,6 +80,7 @@ namespace MFX
         }
     };
 
+    //todo: make non-copyable
     template <class T>
     class MFXVector  
     {
@@ -147,13 +148,13 @@ namespace MFX
         }
         void erase (iterator at) 
         {
-            mNrecords--;
+            mNrecords--; //todo: check if mNrecords positive
             for (mfxU32 i = at.mIndex; i != mNrecords; i++)
             {
                 mRecords[i] = mRecords[i+1];
             }
         }
-        void resize(mfxU32 nSize) 
+        void resize(mfxU32 nSize) //todo: save elements
         {
             delete [] mRecords;
             mRecords = new T[nSize]();

@@ -81,6 +81,7 @@ namespace MFX {
         }
     };
 
+    //todo: refactor class to typedef
     class MFXPluginStorage  
     {
     protected:
