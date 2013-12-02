@@ -1202,9 +1202,10 @@ mfxStatus MFXVideoENCODEMJPEG::Init(mfxVideoParam *par_in)
     {
         bool bOpaqVideoMem = m_isOpaque && !(opaqAllocReq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY);
         bool bNeedAuxInput = (par->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY) || bOpaqVideoMem;
-        //mfxFrameAllocRequest request;
-        //memset(&request, 0, sizeof(request));
-        //request.Info = par->mfx.FrameInfo;
+        
+        mfxFrameAllocRequest request;
+        memset(&request, 0, sizeof(request));
+        request.Info = par->mfx.FrameInfo;
 
         //// try to allocate opaque surfaces in video memory for another component in transcoding chain
         //if (bOpaqVideoMem) 
@@ -1225,17 +1226,19 @@ mfxStatus MFXVideoENCODEMJPEG::Init(mfxVideoParam *par_in)
         //        m_useVideoOpaq = true;
         //}
 
-        //// allocate all we need in system memory
-        //memset(&m_response, 0, sizeof(m_response));
-        //if (bNeedAuxInput) 
-        //{
-        //    // allocate additional surface in system memory for FastCopy from video memory
-        //    request.Type              = MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY;
-        //    request.NumFrameMin       = 1;
-        //    request.NumFrameSuggested = 1;
-        //    st = m_core->AllocFrames(&request, &m_response);
-        //    MFX_CHECK_STS(st);
-        //} 
+        // allocate all we need in system memory
+        memset(&m_response, 0, sizeof(m_response));
+        if (bNeedAuxInput) 
+        {
+            // allocate additional surface in system memory for FastCopy from video memory
+            request.Type              = MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY;
+            request.NumFrameSuggested = request.NumFrameMin = par->AsyncDepth ? par->AsyncDepth : m_core->GetAutoAsyncDepth();
+            st = m_core->AllocFrames(&request, &m_response);
+            MFX_CHECK_STS(st);
+
+            if (m_response.NumFrameActual < request.NumFrameMin)
+                return MFX_ERR_MEMORY_ALLOC;
+        } 
         //else 
         //{
         //    // allocate opaque surfaces in system memory
@@ -1245,9 +1248,6 @@ mfxStatus MFXVideoENCODEMJPEG::Init(mfxVideoParam *par_in)
         //    st = m_core->AllocFrames(&request, &m_response, opaqAllocReq->In.Surfaces, opaqAllocReq->In.NumSurface);
         //    MFX_CHECK_STS(st);
         //}
-
-        //if (m_response.NumFrameActual < request.NumFrameMin)
-        //    return MFX_ERR_MEMORY_ALLOC;
 
         if (bNeedAuxInput) 
         {
@@ -1533,6 +1533,12 @@ mfxStatus MFXVideoENCODEMJPEG::Close(void)
         m_freeTasks.pop();
     }
 
+    if(m_useAuxInput && m_response.NumFrameActual)
+    {
+        m_core->FreeFrames(&m_response);
+        m_response.NumFrameActual = 0;
+    }
+
     return MFXSts;
 }
 
@@ -1613,25 +1619,30 @@ mfxStatus MFXVideoENCODEMJPEG::RunThread(MJPEGEncodeTask &task, mfxU32 threadNum
 
     if(callNumber == 0)
     {
-        bool locked = false;
         mfxFrameSurface1 *surface = task.surface;
 
         if (m_useAuxInput || 
             surface->Data.Y == 0 && surface->Data.U == 0 && surface->Data.V == 0 && surface->Data.A == 0)
         {
-            mfxRes = m_core->LockExternalFrame(surface->Data.MemId, &(surface->Data));
+            mfxRes = m_core->LockFrame(task.auxInput.Data.MemId, &task.auxInput.Data);
             MFX_CHECK_STS(mfxRes);
-            locked = true;
 
-            if (surface->Data.Y)
+            mfxRes = m_core->DoFastCopyWrapper(&task.auxInput,
+                                               MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY,
+                                               surface,
+                                               MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET);
+
+            MFX_CHECK_STS(mfxRes);
+
+            if (task.auxInput.Data.Y)
             {
-                if (surface->Info.FourCC == MFX_FOURCC_YV12 && (!surface->Data.U || !surface->Data.V) ||
-                    surface->Info.FourCC == MFX_FOURCC_NV12 && !surface->Data.UV)
+                if (task.auxInput.Info.FourCC == MFX_FOURCC_YV12 && (!task.auxInput.Data.U || !task.auxInput.Data.V) ||
+                    task.auxInput.Info.FourCC == MFX_FOURCC_NV12 && !task.auxInput.Data.UV)
                 {
                     return MFX_ERR_UNDEFINED_BEHAVIOR;
                 }
                 
-                mfxU32 pitch = surface->Data.PitchLow + ((mfxU32)surface->Data.PitchHigh << 16);
+                mfxU32 pitch = task.auxInput.Data.PitchLow + ((mfxU32)task.auxInput.Data.PitchHigh << 16);
                 if (pitch >= 0x8000 || !pitch)
                 {
                     return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -1639,20 +1650,22 @@ mfxStatus MFXVideoENCODEMJPEG::RunThread(MJPEGEncodeTask &task, mfxU32 threadNum
             }
             else
             {
-                if (surface->Info.FourCC == MFX_FOURCC_YV12 && (surface->Data.U || surface->Data.V) ||
-                    surface->Info.FourCC == MFX_FOURCC_NV12 && surface->Data.UV)
+                if (task.auxInput.Info.FourCC == MFX_FOURCC_YV12 && (task.auxInput.Data.U || task.auxInput.Data.V) ||
+                    task.auxInput.Info.FourCC == MFX_FOURCC_NV12 && task.auxInput.Data.UV)
                 {
                     return MFX_ERR_UNDEFINED_BEHAVIOR;
                 }
             }
-        }
-        
-        mfxRes = task.AddSource(task.surface, &(m_vParam.mfx.FrameInfo), locked);
-        MFX_CHECK_STS(mfxRes);
 
-        if(locked)
+            mfxRes = task.AddSource(&task.auxInput, &(m_vParam.mfx.FrameInfo), false);
+            MFX_CHECK_STS(mfxRes);
+
+            mfxRes = m_core->UnlockFrame(task.auxInput.Data.MemId, &task.auxInput.Data);
+            MFX_CHECK_STS(mfxRes);
+        }
+        else
         {
-            mfxRes = m_core->UnlockExternalFrame(task.surface->Data.MemId, &task.surface->Data);
+            mfxRes = task.AddSource(surface, &(m_vParam.mfx.FrameInfo), false);
             MFX_CHECK_STS(mfxRes);
         }
     }
@@ -1860,7 +1873,6 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
             }
 
             std::auto_ptr<MJPEGEncodeTask> pTask(new MJPEGEncodeTask());
-            m_tasksCount++;
 
             if (NULL == pTask.get())
             {
@@ -1873,6 +1885,15 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
             {
                 return sts;
             }
+
+            if(m_useAuxInput)
+            {
+                memset(&pTask->auxInput, 0, sizeof(pTask->auxInput));
+                pTask->auxInput.Data.MemId = m_response.mids[m_tasksCount];
+                pTask->auxInput.Info = m_vParam.mfx.FrameInfo;
+            }
+
+            m_tasksCount++;
 
             // save the task object into the queue
             {

@@ -51,6 +51,7 @@ public:
     mfxEncodeCtrl    *ctrl;
     mfxFrameSurface1 *surface;
     mfxBitstream     *bs;
+    mfxFrameSurface1 auxInput;
 
     mfxU32           m_initialDataLength;
 
@@ -103,8 +104,7 @@ protected:
     mfxVideoParamWrapper    m_vParam;
     mfxFrameParam           m_mfxFrameParam;
 
-    //mfxFrameSurface1      m_auxInput;
-    //mfxFrameAllocResponse m_response;
+    mfxFrameAllocResponse m_response;
     //mfxFrameAllocResponse m_response_alien;
 
     // Free tasks queue guard (if SW is used)
