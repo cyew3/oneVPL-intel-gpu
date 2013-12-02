@@ -155,11 +155,13 @@ MFX::MFXPluginsInHive::MFXPluginsInHive( mfxU32 mfxStorageID, mfxVersion require
         descriptionRecord.PluginVersion = static_cast<mfxU16>(version);
         TRACE_HIVE_INFO("    %8S : %d\n", PlgVerKeyName, descriptionRecord.PluginVersion);
 
-
-        if (!subKey.Query(APIVerKeyName, descriptionRecord.APIVersion)) 
+        mfxU32 APIVersion;
+        if (!subKey.Query(APIVerKeyName, APIVersion)) 
         {
             continue;
         }
+        descriptionRecord.APIVersion.Minor = static_cast<mfxU16> (APIVersion & 0x0ff);
+        descriptionRecord.APIVersion.Major = static_cast<mfxU16> (APIVersion >> 8);
 
         if (requiredAPIVersion.Version != descriptionRecord.APIVersion.Version) 
         {
