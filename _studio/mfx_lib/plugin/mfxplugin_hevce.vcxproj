@@ -153,30 +153,30 @@
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'" />
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mfxplugin32_hevcesw_d</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">mfxplugin32_hevcesw_d</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mfxplugin64_hevcesw_d</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">mfxplugin64_hevcesw_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mfxplugin32_hevce_sw_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">mfxplugin32_hevce_sw_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mfxplugin64_hevce_sw_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">mfxplugin64_hevce_sw_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>mfxplugin64_hevcesw</TargetName>
+    <TargetName>mfxplugin64_hevce_sw</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>mfxplugin64_hevcesw</TargetName>
+    <TargetName>mfxplugin64_hevce_sw</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>mfxplugin32_hevcesw</TargetName>
+    <TargetName>mfxplugin32_hevce_sw</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>mfxplugin32_hevcesw</TargetName>
+    <TargetName>mfxplugin32_hevce_sw</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\</OutDir>
