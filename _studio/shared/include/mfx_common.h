@@ -69,6 +69,10 @@
 #endif // MFX_VA
 
 
+#if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN)
+//#define MFX_ENABLE_WATERMARK
+#endif
+
 //#define MFX_ENABLE_C2CPP_DEBUG          // debug the C to C++ layer only.
 #ifndef MFX_ENABLE_C2CPP_DEBUG
 #include "umc_structures.h"

@@ -28,6 +28,10 @@
 #include "mfx_task.h"
 #include "mfxpcp.h"
 
+#ifdef MFX_ENABLE_WATERMARK
+#include "watermark.h"
+#endif
+
 namespace UMC
 {
     class VideoData;
@@ -130,6 +134,9 @@ protected:
 
     volatile bool m_globalTask;
     bool m_isFirstRun;
+#ifdef MFX_ENABLE_WATERMARK
+    Watermark *m_watermark;
+#endif
 };
 
 #endif // _MFX_H265_DEC_DECODE_H_

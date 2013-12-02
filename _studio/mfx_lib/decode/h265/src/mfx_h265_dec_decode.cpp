@@ -58,6 +58,9 @@ VideoDECODEH265::VideoDECODEH265(VideoCORE *core, mfxStatus * sts)
     , m_va(0)
     , m_globalTask(false)
     , m_isFirstRun(true)
+#ifdef MFX_ENABLE_WATERMARK
+    , m_watermark(NULL)
+#endif
 {
     memset(&m_stat, 0, sizeof(m_stat));
 
@@ -80,6 +83,12 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     MFX_CHECK_NULL_PTR1(par);
+
+#ifdef MFX_ENABLE_WATERMARK
+    m_watermark = Watermark::CreateFromResource();
+    if (NULL == m_watermark)
+        return MFX_ERR_UNKNOWN;
+#endif
 
     m_platform = MFX_Utility::GetPlatform_H265(m_core, par);
 
@@ -399,6 +408,11 @@ mfxStatus VideoDECODEH265::Close(void)
     m_frameOrder = (mfxU16)MFX_FRAMEORDER_UNKNOWN;
     m_va = 0;
     memset(&m_stat, 0, sizeof(m_stat));
+
+#ifdef MFX_ENABLE_WATERMARK
+    if (m_watermark)
+        m_watermark->Release();
+#endif
     return MFX_ERR_NONE;
 }
 
@@ -1114,6 +1128,10 @@ void VideoDECODEH265::FillOutputSurface(mfxFrameSurface1 **surf_out, mfxFrameSur
     SEI_Storer_H265 * storer = m_pH265VideoDecoder->GetSEIStorer();
     if (storer)
         storer->SetTimestamp(pFrame);
+
+#ifdef MFX_ENABLE_WATERMARK
+    m_watermark->Apply(surface_out->Data.Y, surface_out->Data.UV, surface_out->Data.Pitch, surface_out->Info.Width, surface_out->Info.Height);
+#endif
 }
 
 mfxStatus VideoDECODEH265::DecodeFrame(mfxFrameSurface1 *surface_out, H265DecoderFrame * pFrame)

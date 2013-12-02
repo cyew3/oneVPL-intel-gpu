@@ -1,0 +1,6 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "include\watermark_resource.h"
+
+WATERMARK_INTEL_LOGO BITMAP intel.bmp
+
