@@ -84,18 +84,18 @@
     <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mfxplugin32_vpp_01_d</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mfxplugin64_vpp_01_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mfxplugin32_vppsw_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mfxplugin64_vppsw_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>mfxplugin64_vpp_01</TargetName>
+    <TargetName>mfxplugin64_vppsw</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>mfxplugin32_vpp_01</TargetName>
+    <TargetName>mfxplugin32_vppsw</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\</OutDir>
@@ -123,6 +123,9 @@
       <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>svml_disp.lib;libirc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)1840bce0ee644d098ed62f91ae4b6b61\" /y /i &amp; copy "$(SolutionDir)1840bce0ee644d098ed62f91ae4b6b61\plugin_for_debug.cfg" "$(OutDir)1840bce0ee644d098ed62f91ae4b6b61\plugin.cfg" /y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -142,6 +145,9 @@
       <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)1840bce0ee644d098ed62f91ae4b6b61\" /y /i &amp; copy "$(SolutionDir)1840bce0ee644d098ed62f91ae4b6b61\plugin_for_debug.cfg" "$(OutDir)1840bce0ee644d098ed62f91ae4b6b61\plugin.cfg" /y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -164,6 +170,9 @@
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)1840bce0ee644d098ed62f91ae4b6b61\" /y /i &amp; copy "$(SolutionDir)1840bce0ee644d098ed62f91ae4b6b61\plugin.cfg" "$(OutDir)1840bce0ee644d098ed62f91ae4b6b61\plugin.cfg" /y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -185,6 +194,9 @@
       <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)1840bce0ee644d098ed62f91ae4b6b61\" /y /i &amp; copy "$(SolutionDir)1840bce0ee644d098ed62f91ae4b6b61\plugin.cfg" "$(OutDir)1840bce0ee644d098ed62f91ae4b6b61\plugin.cfg" /y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="include\mfx_vpp_plugin.h" />
