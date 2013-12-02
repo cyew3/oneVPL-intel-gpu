@@ -617,6 +617,21 @@ ImplementationAvc::ImplementationAvc(VideoCORE * core)
 
 ImplementationAvc::~ImplementationAvc()
 {
+    DestroyDanglingCmResources();
+}
+
+void ImplementationAvc::DestroyDanglingCmResources()
+{
+    if (m_cmDevice)
+    {
+        for (DdiTaskIter i = m_lookaheadStarted.begin(), e = m_lookaheadStarted.end(); i != e; ++i)
+        {
+            m_cmDevice->DestroyVmeSurfaceG7_5(i->m_cmRefs);
+            m_cmDevice->DestroyVmeSurfaceG7_5(i->m_cmRefsLa);
+            m_cmCtx->DestroyEvent(i->m_event);
+            m_cmDevice->DestroySurface(i->m_cmRaw);
+        }
+    }
 }
 
 mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
@@ -1025,6 +1040,7 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
                 vm_time_sleep(1);
     while (!m_encoding.empty())
         OnEncodingQueried(m_encoding.begin());
+    DestroyDanglingCmResources();
 
     m_emulatorForSyncPart.Init(newPar);
     m_emulatorForAsyncPart = m_emulatorForSyncPart;

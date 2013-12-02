@@ -1679,6 +1679,8 @@ namespace MfxHwH264Encode
             MfxVideoParam & newPar,
             bool & isIdrRequired);
 
+        void DestroyDanglingCmResources();
+
         VideoCORE *         m_core;
         CmDevicePtr         m_cmDevice;
         MfxVideoParam       m_video;
