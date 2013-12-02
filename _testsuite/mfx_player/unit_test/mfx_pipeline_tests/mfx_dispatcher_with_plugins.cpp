@@ -117,7 +117,8 @@ SUITE(DispatcherWithPlugins) {
             RegSetValueExA(hk, "Type", 0, REG_DWORD, (BYTE*)&pluginParams.Type, sizeof(pluginParams.Type));
             mfxU32 version = pluginParams.PluginVersion;
             RegSetValueExA(hk, "PlgVer", 0, REG_DWORD, (BYTE*)&version, sizeof(version));
-            RegSetValueExA(hk, "APIVer", 0, REG_DWORD, (BYTE*)&pluginParams.APIVersion.Version, sizeof(pluginParams.APIVersion.Version));
+            mfxU32 APIVersion = pluginParams.APIVersion.Major*256 + pluginParams.APIVersion.Minor;
+            RegSetValueExA(hk, "APIVer", 0, REG_DWORD, (BYTE*)&APIVersion, sizeof(APIVersion));
             RegCloseKey(hk);
             RegCloseKey(hk1);
         }
