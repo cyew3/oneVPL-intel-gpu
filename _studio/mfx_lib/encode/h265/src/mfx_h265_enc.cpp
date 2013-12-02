@@ -176,6 +176,12 @@ mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxE
     if (opts_hevc->IntraNumCand2_5) pars->num_cand_2[5] = (Ipp8u)opts_hevc->IntraNumCand2_5;
     if (opts_hevc->IntraNumCand2_6) pars->num_cand_2[6] = (Ipp8u)opts_hevc->IntraNumCand2_6;
 
+    pars->enableCmFlag = (opts_hevc->EnableCm == MFX_CODINGOPTION_ON);
+    pars->cmIntraThreshold = opts_hevc->CmIntraThreshold;
+    pars->tuSplitIntra = opts_hevc->TUSplitIntra;
+    pars->cuSplit = opts_hevc->CUSplit;
+    pars->intraAngModes = opts_hevc->IntraAngModes;
+
     for (Ipp32s i = 0; i <= 6; i++) {
         if (pars->num_cand_1[i] < 1)
             pars->num_cand_1[i] = 1;

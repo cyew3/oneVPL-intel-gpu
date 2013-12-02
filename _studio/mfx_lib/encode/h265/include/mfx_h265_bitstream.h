@@ -89,6 +89,12 @@ public:
     inline void CtxRestore(CABAC_CONTEXT_H265 *ptr, Ipp32s offset, Ipp32s num) {
         small_memcpy(m_base.context_array + offset, ptr + offset, num*sizeof(CABAC_CONTEXT_H265));
     }
+    inline void CtxSave(CABAC_CONTEXT_H265 *ptr, Ipp32s ctxCategory) {
+        CtxSave(ptr, h265_ctxIdxOffset[ctxCategory], h265_ctxIdxSize[ctxCategory]);
+    }
+    inline void CtxRestore(CABAC_CONTEXT_H265 *ptr, Ipp32s ctxCategory) {
+        CtxRestore(ptr, h265_ctxIdxOffset[ctxCategory], h265_ctxIdxSize[ctxCategory]);
+    }
 
     int isReal() { return 0; }
 };

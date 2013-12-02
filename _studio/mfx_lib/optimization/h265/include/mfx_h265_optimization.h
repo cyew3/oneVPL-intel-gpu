@@ -373,6 +373,17 @@ namespace MFX_HEVC_PP
             Ipp8u* FiltPel,
             Ipp8u* pels,
             Ipp32s width));
+        HEVCPP_API( PTR_PredictIntra_Ang_8u, void, h265_PredictIntra_Ang_NoTranspose_8u,
+            (Ipp32s mode,
+            Ipp8u* PredPel,
+            Ipp8u* pels,
+            Ipp32s pitch,
+            Ipp32s width));
+        HEVCPP_API( PTR_PredictIntra_Ang_All_8u, void, h265_PredictIntra_Ang_All_Even_8u,
+            (Ipp8u* PredPel,
+            Ipp8u* FiltPel,
+            Ipp8u* pels,
+            Ipp32s width));
 
         // [Interpolation]
         HEVCPP_API( PTR_Interp_s8_d16, void, h265_InterpLuma_s8_d16_H,   ( INTERP_S8_D16_PARAMETERS_LIST));

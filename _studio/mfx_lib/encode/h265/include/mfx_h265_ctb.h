@@ -106,7 +106,11 @@ public:
     __ALIGN32 CoeffsType      residuals_v[MAX_CU_SIZE*MAX_CU_SIZE/4];
     __ALIGN32 PixType pred_intra_all[35*32*32];
     __ALIGN32 PixType tu_src_transposed[32*32];
-    CostType intra_cost[35];
+
+    CostType intra_best_costs[35];
+    Ipp8u    intra_best_modes[35];
+    Ipp64f   intra_mode_bitcost[35];
+
     Ipp32s pred_intra_all_width;
     Ipp8u           inNeighborFlags[4*MAX_CU_SIZE+1];
     Ipp8u           outNeighborFlags[4*MAX_CU_SIZE+1];
@@ -317,7 +321,8 @@ public:
     void InterPredCU(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u is_luma);
     void IntraPred(Ipp32u abs_part_idx, Ipp8u depth);
     void IntraPredTU(Ipp32s abs_part_idx, Ipp32s width, Ipp32s pred_mode, Ipp8u is_luma);
-    void IntraPredTULumaAllHAD(Ipp32s abs_part_idx, Ipp32s width);
+    void IntraLumaModeDecision(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u depth, Ipp8u tr_depth);
+    void IntraLumaModeDecisionRDO(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u depth, Ipp8u tr_depth, CABAC_CONTEXT_H265 * initCtx);
     Ipp8u GetTRSplitMode(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u tr_depth, Ipp8u part_size, Ipp8u is_luma, Ipp8u strict = 1);
     void TransformInv(Ipp32s offset, Ipp32s width, Ipp8u is_luma, Ipp8u is_intra);
     void TransformFwd(Ipp32s offset, Ipp32s width, Ipp8u is_luma, Ipp8u is_intra);
@@ -360,6 +365,7 @@ public:
 
     void FillSubPart(Ipp32s abs_part_idx, Ipp8u depth_cu, Ipp8u tr_idx,
         Ipp8u part_size, Ipp8u luma_dir, Ipp8u qp);
+    void FillSubPartIntraLumaDir(Ipp32s abs_part_idx, Ipp8u depth_cu, Ipp8u tr_depth, Ipp8u luma_dir);
     void CopySubPartTo(H265CUData *data_copy, Ipp32s abs_part_idx, Ipp8u depth_cu, Ipp8u tr_depth);
     void CalcCostLuma(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u depth,
                           Ipp8u tr_depth, CostOpt cost_opt,
@@ -407,6 +413,8 @@ void h265_code_sao_ctb_param(
     bool leftMergeAvail,
     bool aboveMergeAvail,
     bool onlyEstMergeInfo);
+
+Ipp32s GetLumaOffset(H265VideoParam *par, Ipp32s abs_part_idx, Ipp32s pitch);
 
 #endif // __MFX_H265_CTB_H__
 

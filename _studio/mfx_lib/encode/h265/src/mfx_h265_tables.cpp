@@ -477,5 +477,9 @@ const Ipp8u h265_QPtoChromaQP[58]=
     45, 46, 47, 48, 49, 50, 51
 };
 
+const Ipp32s h265_filteredModes[5] =
+{
+    10, 7, 1, 0, 10
+};
 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE
