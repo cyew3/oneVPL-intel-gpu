@@ -246,6 +246,28 @@ SUITE(DispatcherWithPlugins) {
         MFXClose(session);
     }
 
+    TEST_FIXTURE(WhenTestLoadingFileSystemPlugin, HIVE_build_failure_if_path_contains_slashes) {
+
+        createPluginInFS(plgParams, true, true, true, "", "_plugin_\\/.dll", "N2", "mfx_pipeline_tests_d.exe");
+
+        TEST_METHOD_TYPE(Create) createArgs;
+        mfxPlugin plg = mAdapter.operator mfxPlugin();
+        createArgs.ret_val = MFX_ERR_NONE;
+        createArgs.value1  = &plg;
+        this->_Create.WillReturn(createArgs);
+
+        TEST_METHOD_TYPE(MockPlugin::GetPluginParam) getPluginParams;
+        getPluginParams.value0 = plgParams;
+        mockEncoder._GetPluginParam.WillReturn(getPluginParams);
+
+        mfxVersion verToRequest = g_MfxApiVersion;
+        verToRequest.Minor--;
+
+        MFXInit(MFX_IMPL_SOFTWARE, &verToRequest, &session);
+        CHECK(MFX_ERR_NONE != MFXVideoUSER_Load(session, &guid1, pluginVer));
+        MFXClose(session);
+    }
+
 
     TEST_FIXTURE(WhenTestLoadingFileSystemPlugin, HIVE_build_FAILURE_with_FS_plugin_IF_dirname_isnot_valid_hex) {
 
