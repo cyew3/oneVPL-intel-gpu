@@ -52,12 +52,18 @@ namespace
 
 namespace 
 {
-    const wchar_t pluginFileName32[] = L"FileName32";
-    const wchar_t pluginFileName64[] = L"FileName64";
+#ifdef _WIN64
+    const wchar_t pluginFileName[] = L"FileName64";
+#else
+    const wchar_t pluginFileName[] = L"FileName32";
+#endif // _WIN64
+    //do not allow store plugin in different hierarchy
+    const wchar_t pluginFileNameRestrictedCharacters[] = L"\\/";
     const wchar_t pluginCfgFileName[] = L"plugin.cfg";
     const wchar_t pluginSearchPattern[] = L"????????????????????????????????";
     const mfxU32 pluginCfgFileNameLen = 10;
     const mfxU32 pluginDirNameLen = 32;
+    const mfxU32 charsPermfxU8 = 2;
     const mfxU32 slashLen = 1;
     enum 
     {
@@ -197,19 +203,17 @@ MFX::MFXPluginsInFS::MFXPluginsInFS(mfxVersion requiredAPIVersion)
         TRACE_HIVE_ERROR("GetModuleFileName() reported an error: %d\n", GetLastError());
         return;
     }
-    msdk_disp_char *lastSlashPos = currentModuleName;
-    msdk_disp_char *currSlashPos = 0;
-    while(0 != (currSlashPos = wcsstr(lastSlashPos, L"\\")))
-    {
-        lastSlashPos = currSlashPos + 1;
+    msdk_disp_char *lastSlashPos = wcsrchr(currentModuleName, L'\\');
+    if (!lastSlashPos) {
+        lastSlashPos = currentModuleName;
     }
-    mfxU32 executableDirLen = (mfxU32)(lastSlashPos - currentModuleName);
-    if (executableDirLen + pluginDirNameLen + pluginCfgFileNameLen + slashLen >= MAX_PLUGIN_PATH) 
+    mfxU32 executableDirLen = (mfxU32)(lastSlashPos - currentModuleName) + slashLen;
+    if (executableDirLen + pluginDirNameLen + pluginCfgFileNameLen >= MAX_PLUGIN_PATH) 
     {
         TRACE_HIVE_ERROR("MAX_PLUGIN_PATH which is %d, not enough lo locate plugin path\n", MAX_PLUGIN_PATH);
         return;
     }
-    msdk_disp_char_cpy_s(currentModuleName + executableDirLen
+    msdk_disp_char_cpy_s(lastSlashPos + slashLen
         , MAX_PLUGIN_PATH - executableDirLen, pluginSearchPattern);
 
     HANDLE fileFirst = FindFirstFileW(currentModuleName, &find_data);
@@ -234,22 +238,22 @@ MFX::MFXPluginsInFS::MFXPluginsInFS(mfxVersion requiredAPIVersion)
         descriptionRecord.onlyVersionRegistered = true;
 
         mfxU32 i = 0;
-        for(i = 0; i != 16; i++) 
+        for(i = 0; i != pluginDirNameLen / charsPermfxU8; i++) 
         {
             mfxU32 hexNum = 0;
-            if (1 != swscanf_s(find_data.cFileName + 2*i, L"%2x", &hexNum)) 
+            if (1 != swscanf_s(find_data.cFileName + charsPermfxU8 * i, L"%2x", &hexNum)) 
             {
                 TRACE_HIVE_INFO("folder name \"%S\" is not a valid GUID string\n", find_data.cFileName);
                 break;
             }
-            if (hexNum == 0 && find_data.cFileName + 2*i != wcsstr(find_data.cFileName + 2*i, L"00"))
+            if (hexNum == 0 && find_data.cFileName + charsPermfxU8 * i != wcsstr(find_data.cFileName + 2*i, L"00"))
             {
                 TRACE_HIVE_INFO("folder name \"%S\" is not a valid GUID string\n", find_data.cFileName);
                 break;
             }
             descriptionRecord.PluginUID.Data[i] = (mfxU8)hexNum;
         }
-        if (i != 16) {
+        if (i != pluginDirNameLen / charsPermfxU8) {
             continue;
         }
 
@@ -297,7 +301,7 @@ bool MFX::MFXPluginsInFS::ParseFile(FILE * f, PluginDescriptionRecord & descript
     
     while(NULL != fgetws(line, sizeof(line) / sizeof(*line), f))
     {
-        msdk_disp_char *delimiter = wcsstr(line, L"=");
+        msdk_disp_char *delimiter = wcschr(line, L'=');
         if (0 == delimiter) 
         {
             TRACE_HIVE_INFO("plugin.cfg contains line \"%S\" which is not in K=V format, skipping \n", line);
@@ -332,49 +336,44 @@ bool MFX::MFXPluginsInFS::ParseKVPair( msdk_disp_char * key, msdk_disp_char* val
         TRACE_HIVE_INFO("%S: %S = %d \n", pluginCfgFileName, PlgVerKeyName, descriptionRecord.PluginVersion);
         return true;
     }
-    bool isW32Path = 0!=wcsstr(key, pluginFileName32);
-    bool isW64Path = 0!=wcsstr(key, pluginFileName64);
-    if (isW64Path || isW32Path)
+
+    if (0!=wcsstr(key, pluginFileName))
     {
-        msdk_disp_char *startQuoteMark = wcsstr(value, L"\"");
+        msdk_disp_char *startQuoteMark = wcschr(value, L'\"');
         if (!startQuoteMark)
         {
+            TRACE_HIVE_ERROR("plugin filename not in quotes : %S\n", value);
             return false;
         }
-        msdk_disp_char *prevQuoteMark = startQuoteMark++;
-        msdk_disp_char *endQuoteMark = 0;
-        while (0 != (prevQuoteMark =  wcsstr(prevQuoteMark + 1, L"\""))) {
-            endQuoteMark = prevQuoteMark;
-        }
+        msdk_disp_char *endQuoteMark = wcschr(startQuoteMark + 1, L'\"');
+
         if (!endQuoteMark) 
         {
+            TRACE_HIVE_ERROR("plugin filename not in quotes : %S\n", value);
             return false;
         }
         *endQuoteMark = 0;
 
         mfxU32 currentPathLen = (mfxU32)wcslen(descriptionRecord.sPath);
-        if (currentPathLen + wcslen(startQuoteMark) > sizeof(descriptionRecord.sPath) / sizeof(*descriptionRecord.sPath))
+        if (currentPathLen + wcslen(startQuoteMark + 1) > sizeof(descriptionRecord.sPath) / sizeof(*descriptionRecord.sPath))
         {
             TRACE_HIVE_ERROR("buffer of MAX_PLUGIN_PATH characters which is %d, not enough lo store plugin path: %S%S\n"
-                , MAX_PLUGIN_PATH, descriptionRecord.sPath, startQuoteMark);
+                , MAX_PLUGIN_PATH, descriptionRecord.sPath, startQuoteMark + 1);
             return false;
         }
 
-#ifdef _WIN64
-        if (isW64Path) 
+        size_t restrictedCharIdx = wcscspn(startQuoteMark + 1, pluginFileNameRestrictedCharacters);
+        if (restrictedCharIdx != wcslen(startQuoteMark + 1)) 
         {
-            msdk_disp_char_cpy_s(descriptionRecord.sPath + currentPathLen
-                , sizeof(descriptionRecord.sPath) / sizeof(*descriptionRecord.sPath) - currentPathLen, startQuoteMark);
-            TRACE_HIVE_INFO("%S: %S = \"%S\" \n", pluginCfgFileName, pluginFileName64, startQuoteMark);
+            TRACE_HIVE_ERROR("plugin filename :%S, contains one of restricted characters: %S\n", startQuoteMark + 1, pluginFileNameRestrictedCharacters);
+            return false;
         }
-#else
-        if (isW32Path)
-        {
-            msdk_disp_char_cpy_s(descriptionRecord.sPath + currentPathLen
-                , sizeof(descriptionRecord.sPath) / sizeof(*descriptionRecord.sPath) - currentPathLen, startQuoteMark);
-            TRACE_HIVE_INFO("%S: %S = \"%S\" \n", pluginCfgFileName, pluginFileName32, startQuoteMark);
-        }
-#endif
+
+        msdk_disp_char_cpy_s(descriptionRecord.sPath + currentPathLen
+            , sizeof(descriptionRecord.sPath) / sizeof(*descriptionRecord.sPath) - currentPathLen, startQuoteMark + 1);
+
+        TRACE_HIVE_INFO("%S: %S = \"%S\" \n", pluginCfgFileName, pluginFileName, startQuoteMark + 1);
+     
         return true;
     }
    
