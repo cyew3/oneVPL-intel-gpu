@@ -80,7 +80,10 @@ namespace MFX
         }
     };
 
-    //todo: make non-copyable
+    class MFXVectorRangeError : public std::exception
+    {
+    };
+
     template <class T>
     class MFXVector  
     {
@@ -91,6 +94,21 @@ namespace MFX
             : mNrecords()
             , mRecords()
         {}
+        MFXVector(const MFXVector & rhs)
+            : mNrecords()
+            , mRecords()
+        {
+            insert(end(), rhs.begin(), rhs.end());
+        }
+        MFXVector & operator = (const MFXVector & rhs)
+        {
+            if (this != &rhs) 
+            {
+                clear();
+                insert(end(), rhs.begin(), rhs.end());
+            }
+            return *this;
+        }
         virtual ~MFXVector ()
         {
             clear();
@@ -105,23 +123,38 @@ namespace MFX
         {
             return iterator(mNrecords, mRecords);
         }
-        void insert(iterator beg_iter, iterator end_iter) 
+        void insert(iterator where, iterator beg_iter, iterator end_iter) 
         {
-            if (beg_iter == end_iter)
+            mfxU32 elementsToInsert = (end_iter - beg_iter);
+            if (!elementsToInsert)
             {
                 return;
             }
+            if (where.mIndex > mNrecords)
+            {
+                throw MFXVectorRangeError();
+            }
 
-            T *newRecords = new T[mNrecords + (end_iter - beg_iter)]();
+            T *newRecords = new T[mNrecords + elementsToInsert]();
             mfxU32 i = 0;
-            for (; i <mNrecords; i++) 
+            
+            // save left
+            for (; i < where.mIndex; i++) 
             {
                 newRecords[i] = mRecords[i];
             }
+            // insert
             for (; beg_iter != end_iter; beg_iter++, i++) 
             {
                 newRecords[i] = *beg_iter;
             }
+    
+            //save right
+            for (; i < mNrecords + elementsToInsert; i++) 
+            {
+                newRecords[i] = mRecords[i - elementsToInsert];
+            }
+
             delete [] mRecords;
 
             mRecords = newRecords;
@@ -148,16 +181,28 @@ namespace MFX
         }
         void erase (iterator at) 
         {
-            mNrecords--; //todo: check if mNrecords positive
-            for (mfxU32 i = at.mIndex; i != mNrecords; i++)
+            if (at.mIndex >= mNrecords)
+            {
+                throw MFXVectorRangeError();
+            }
+            mNrecords--; 
+            mfxU32 i = at.mIndex;
+            for (; i != mNrecords; i++)
             {
                 mRecords[i] = mRecords[i+1];
             }
+            //destroy last element
+            (mRecords + i)->~T();
         }
-        void resize(mfxU32 nSize) //todo: save elements
+        void resize(mfxU32 nSize) 
         {
+            T * newRecords = new T[nSize]();
+            for (mfxU32 i = 0; i <mNrecords; i++) 
+            {
+                newRecords[i] = mRecords[i];
+            }
             delete [] mRecords;
-            mRecords = new T[nSize]();
+            mRecords = newRecords;
             mNrecords = nSize;
         }
         mfxU32 size() const 

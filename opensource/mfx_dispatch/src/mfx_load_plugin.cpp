@@ -40,11 +40,12 @@ File Name: mfx_load_plugin.h
 MFX::PluginModule::PluginModule()
     : mHmodule()
     , mCreatePluginPtr() 
+    //intentionally not initialize mPath, since it requires lots of memset, and practically not use case when it is not initialized
 {
 }
 
 MFX::PluginModule::PluginModule(const PluginModule & that) 
-    : mHmodule(mfx_get_dll_handle(that.mPath))
+    : mHmodule(mfx_dll_load(that.mPath))
     , mCreatePluginPtr(that.mCreatePluginPtr) 
 {
     msdk_disp_char_cpy_s(mPath, sizeof(mPath) / sizeof(*mPath), that.mPath);
@@ -52,9 +53,10 @@ MFX::PluginModule::PluginModule(const PluginModule & that)
 
 MFX::PluginModule & MFX::PluginModule::operator = (const MFX::PluginModule & that) 
 {
-    if (this != &that) {
-        mHmodule = mfx_get_dll_handle(that.mPath);
-        //todo: work on counters; free mHmodule
+    if (this != &that) 
+    {
+        Tidy();
+        mHmodule = mfx_dll_load(that.mPath);
         mCreatePluginPtr = that.mCreatePluginPtr;
         msdk_disp_char_cpy_s(mPath, sizeof(mPath) / sizeof(*mPath), that.mPath);
     }
@@ -80,11 +82,6 @@ MFX::PluginModule::PluginModule(const msdk_disp_char * path)
     msdk_disp_char_cpy_s(mPath, sizeof(mPath) / sizeof(*mPath), path);
 }
 
-MFX::PluginModule::~PluginModule(void) 
-{
-    mfx_dll_free(mHmodule);
-}
-
 bool MFX::PluginModule::Create( mfxPluginUID uid, mfxPlugin& plg) 
 {
     bool result = false;
@@ -101,6 +98,16 @@ bool MFX::PluginModule::Create( mfxPluginUID uid, mfxPlugin& plg)
     return result;
 }
 
+void MFX::PluginModule::Tidy()
+{
+    mfx_dll_free(mHmodule);
+    mCreatePluginPtr = NULL;
+}
+
+MFX::PluginModule::~PluginModule(void) 
+{
+    Tidy();
+}
 
 bool MFX::MFXPluginFactory::RunVerification( const mfxPlugin & plg, const PluginDescriptionRecord &dsc, mfxPluginParam &pluginParams)
 {

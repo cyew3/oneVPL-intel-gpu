@@ -307,11 +307,11 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
                 for(int i = MFX::MFX_STORAGE_ID_FIRST; i <= MFX::MFX_STORAGE_ID_LAST; i++) 
                 {
                     MFX::MFXPluginsInHive plgsInHive(i, apiVerActual);
-                    allocatedHandle->pluginHive.insert(plgsInHive.begin(), plgsInHive.end());
+                    allocatedHandle->pluginHive.insert(allocatedHandle->pluginHive.end(), plgsInHive.begin(), plgsInHive.end());
                 }
 
                 MFX::MFXPluginsInFS plgsInFS(apiVerActual);
-                allocatedHandle->pluginHive.insert(plgsInFS.begin(), plgsInFS.end());
+                allocatedHandle->pluginHive.insert(allocatedHandle->pluginHive.end(), plgsInFS.begin(), plgsInFS.end());
             }
         } 
         catch(...)

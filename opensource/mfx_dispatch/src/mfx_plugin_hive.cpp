@@ -91,7 +91,7 @@ MFX::MFXPluginsInHive::MFXPluginsInHive( mfxU32 mfxStorageID, mfxVersion require
     }
     try 
     {
-        mRecords.resize(index);
+        resize(index);
     }
     catch (...) {
         TRACE_HIVE_ERROR("new PluginDescriptionRecord[%d] threw an exception: \n", index);
@@ -184,10 +184,10 @@ MFX::MFXPluginsInHive::MFXPluginsInHive( mfxU32 mfxStorageID, mfxVersion require
 
         try 
         {
-            mRecords[index] = descriptionRecord;
+            operator[](index) = descriptionRecord;
         }
         catch (...) {
-            TRACE_HIVE_ERROR("mRecords[%d] = descriptionRecord; - threw exception \n", index);
+            TRACE_HIVE_ERROR("operator[](%d) = descriptionRecord; - threw exception \n", index);
         }
     }
 }
@@ -283,7 +283,7 @@ MFX::MFXPluginsInFS::MFXPluginsInFS(mfxVersion requiredAPIVersion)
         {
             try 
             {
-                mRecords.push_back(descriptionRecord);
+                push_back(descriptionRecord);
             }
             catch (...) {
                 TRACE_HIVE_ERROR("mRecords.push_back(descriptionRecord); - threw exception \n", 0);

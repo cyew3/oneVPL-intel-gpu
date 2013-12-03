@@ -82,32 +82,7 @@ namespace MFX {
     };
 
     //todo: refactor class to typedef
-    class MFXPluginStorage  
-    {
-    protected:
-        MFXVector<PluginDescriptionRecord> mRecords;
-    public:
-        typedef MFXVector<PluginDescriptionRecord>::iterator iterator;
-        
-        iterator begin() const 
-        {
-            return mRecords.begin();
-        }
-        iterator end() const 
-        {
-            return mRecords.end();
-        }
-        void insert(iterator beg_iter, iterator end_iter) 
-        {
-            mRecords.insert(beg_iter, end_iter);
-        }
-        size_t size() 
-        {
-            return mRecords.size();
-        }
-
-        MFXPluginStorage() {}
-    };
+    typedef MFXVector<PluginDescriptionRecord> MFXPluginStorage;
 
     //populated from registry
     class MFXPluginsInHive : public MFXPluginStorage 
