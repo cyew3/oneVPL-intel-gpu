@@ -94,14 +94,8 @@ Ipp32s H265Bitstream::sei_payload(const HeaderSet<H265SeqParamSet> & sps,Ipp32s 
     Ipp32u payloadType =spl->payLoadType;
     switch( payloadType)
     {
-    case SEI_BUFFERING_PERIOD_TYPE:
-        return buffering_period(sps,current_sps,spl);
     case SEI_PIC_TIMING_TYPE:
         return pic_timing(sps,current_sps,spl);
-    case SEI_USER_DATA_REGISTERED_TYPE:
-        return user_data_registered_itu_t_t35(sps,current_sps,spl);
-    case SEI_USER_DATA_UNREGISTERED_TYPE:
-        return user_data_unregistered(sps,current_sps,spl);
     case SEI_RECOVERY_POINT_TYPE:
         return recovery_point(sps,current_sps,spl);
     }
@@ -109,165 +103,67 @@ Ipp32s H265Bitstream::sei_payload(const HeaderSet<H265SeqParamSet> & sps,Ipp32s 
     return reserved_sei_message(sps,current_sps,spl);
 }
 
-Ipp32s H265Bitstream::buffering_period(const HeaderSet<H265SeqParamSet> & , Ipp32s , H265SEIPayLoad *)
+Ipp32s H265Bitstream::pic_timing(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps, H265SEIPayLoad * spl)
 {
-    Ipp32s seq_parameter_set_id = (Ipp8u) GetVLCElement(false);
-/*
-    const H265SeqParamSet *csps = sps.GetHeader(seq_parameter_set_id);
-    H265SEIPayLoad::SEIMessages::BufferingPeriod &bps = spl->SEI_messages.buffering_period;
-
-    // touch unreferenced parameters
-    if (!csps)
-    {
-        return -1;
-    }
-
-    if (csps->nal_hrd_parameters_present_flag)
-    {
-        for(Ipp32s i=0;i<csps->cpb_cnt;i++)
-        {
-            bps.initial_cbp_removal_delay[0][i] = GetBits(csps->cpb_removal_delay_length);
-            bps.initial_cbp_removal_delay_offset[0][i] = GetBits(csps->cpb_removal_delay_length);
-        }
-
-    }
-    if (csps->vcl_hrd_parameters_present_flag)
-    {
-        for(Ipp32s i=0;i<csps->cpb_cnt;i++)
-        {
-            bps.initial_cbp_removal_delay[1][i] = GetBits(csps->cpb_removal_delay_length);
-            bps.initial_cbp_removal_delay_offset[1][i] = GetBits(csps->cpb_removal_delay_length);
-        }
-
-    }
-
-    AlignPointerRight();
-*/
-    return seq_parameter_set_id;
-}
-
-Ipp32s H265Bitstream::pic_timing(const HeaderSet<H265SeqParamSet> & , Ipp32s current_sps, H265SEIPayLoad *)
-{
-/*
-    const Ipp8u NumClockTS[]={1,1,1,2,2,3,3,2,3};
     const H265SeqParamSet *csps = sps.GetHeader(current_sps);
-    H265SEIPayLoad::SEIMessages::PicTiming &pts = spl->SEI_messages.pic_timing;
 
     if (!csps)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
-    if (csps->nal_hrd_parameters_present_flag || csps->vcl_hrd_parameters_present_flag)
+    if (csps->frame_field_info_present_flag)
     {
-        pts.cbp_removal_delay = GetBits(csps->cpb_removal_delay_length);
-        pts.dpb_output_delay = GetBits(csps->dpb_output_delay_length);
-    }
-    else
-    {
-        pts.cbp_removal_delay = (Ipp32u)INVALID_DPB_DELAY_H265;
-        pts.dpb_output_delay = (Ipp32u)INVALID_DPB_DELAY_H265;
+        spl->SEI_messages.pic_timing.pic_struct = (DisplayPictureStruct_H265)GetBits(4);
+        (Ipp8u)GetBits(2); // source_scan_type
+        (Ipp8u)GetBits(1); // duplicate_flag
     }
 
-    if (csps->pic_struct_present_flag)
+    if (csps->m_hrdParameters.nal_hrd_parameters_present_flag || csps->m_hrdParameters.vcl_hrd_parameters_present_flag)
     {
-        Ipp8u picStruct = (Ipp8u)GetBits(4);
+        GetBits(csps->m_hrdParameters.au_cpb_removal_delay_length); // au_cpb_removal_delay_minus1
+        spl->pic_dpb_output_delay = GetBits(csps->m_hrdParameters.dpb_output_delay_length);
 
-        if (picStruct > 8)
-            return UMC::UMC_ERR_INVALID_STREAM;
-
-        pts.pic_struct = (DisplayPictureStruct_H265)picStruct;
-
-        for (Ipp32s i = 0; i < NumClockTS[pts.pic_struct]; i++)
+        if (csps->m_hrdParameters.sub_pic_hrd_params_present_flag)
         {
-            pts.clock_timestamp_flag[i] = (Ipp8u)Get1Bit();
-            if (pts.clock_timestamp_flag[i])
+            GetBits(csps->m_hrdParameters.dpb_output_delay_du_length); //pic_dpb_output_du_delay
+        }
+
+        if (csps->m_hrdParameters.sub_pic_hrd_params_present_flag && csps->m_hrdParameters.sub_pic_cpb_params_in_pic_timing_sei_flag)
+        {
+            Ipp32u num_decoding_units_minus1 = (Ipp32u)GetVLCElement(false);
+
+            if (num_decoding_units_minus1 > csps->WidthInCU * csps->HeightInCU)
+                throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+            Ipp8u du_common_cpb_removal_delay_flag = (Ipp8u)GetBits(1);
+            if (du_common_cpb_removal_delay_flag)
             {
-                pts.clock_timestamps[i].ct_type = (Ipp8u)GetBits(2);
-                pts.clock_timestamps[i].nunit_field_based_flag = (Ipp8u)Get1Bit();
-                pts.clock_timestamps[i].counting_type = (Ipp8u)GetBits(5);
-                pts.clock_timestamps[i].full_timestamp_flag = (Ipp8u)Get1Bit();
-                pts.clock_timestamps[i].discontinuity_flag = (Ipp8u)Get1Bit();
-                pts.clock_timestamps[i].cnt_dropped_flag = (Ipp8u)Get1Bit();
-                pts.clock_timestamps[i].n_frames = (Ipp8u)GetBits(8);
+                GetBits(csps->m_hrdParameters.du_cpb_removal_delay_increment_length); //du_common_cpb_removal_delay_increment_minus1
+            }
 
-                if (pts.clock_timestamps[i].full_timestamp_flag)
+            for (Ipp32u i = 0; i <= num_decoding_units_minus1; i++)
+            {
+                GetVLCElement(false); // num_nalus_in_du_minus1
+                if (!du_common_cpb_removal_delay_flag && i < num_decoding_units_minus1)
                 {
-                    pts.clock_timestamps[i].seconds_value = (Ipp8u)GetBits(6);
-                    pts.clock_timestamps[i].minutes_value = (Ipp8u)GetBits(6);
-                    pts.clock_timestamps[i].hours_value = (Ipp8u)GetBits(5);
+                    GetBits(csps->m_hrdParameters.du_cpb_removal_delay_increment_length); // du_cpb_removal_delay_increment_minus1
                 }
-                else
-                {
-                    if (Get1Bit())
-                    {
-                        pts.clock_timestamps[i].seconds_value = (Ipp8u)GetBits(6);
-                        if (Get1Bit())
-                        {
-                            pts.clock_timestamps[i].minutes_value = (Ipp8u)GetBits(6);
-                            if (Get1Bit())
-                            {
-                                pts.clock_timestamps[i].hours_value = (Ipp8u)GetBits(5);
-                            }
-                        }
-                    }
-                }
-
-                if(csps->time_offset_length > 0)
-                    pts.clock_timestamps[i].time_offset = (Ipp8u)GetBits(csps->time_offset_length);
             }
         }
     }
 
     AlignPointerRight();
-*/
-    return current_sps;
-    //return unparsed_sei_message(sps, current_sps, spl);
-}
-
-Ipp32s H265Bitstream::user_data_registered_itu_t_t35(const HeaderSet<H265SeqParamSet> & , Ipp32s current_sps, H265SEIPayLoad *spl)
-{
-    H265SEIPayLoad::SEIMessages::UserDataRegistered * user_data = &(spl->SEI_messages.user_data_registered);
-    Ipp32u code;
-    ippiGetBits8(m_pbs, m_bitOffset, code);
-    user_data->itu_t_t35_country_code = (Ipp8u)code;
-
-    Ipp32u i = 1;
-
-    user_data->itu_t_t35_country_code_extension_byte = 0;
-    if (user_data->itu_t_t35_country_code == 0xff)
-    {
-        ippiGetBits8(m_pbs, m_bitOffset, code);
-        user_data->itu_t_t35_country_code_extension_byte = (Ipp8u)code;
-        i++;
-    }
-
-    spl->user_data.resize(spl->payLoadSize + 1);
-
-    for(Ipp32s k = 0; i < spl->payLoadSize; i++, k++)
-    {
-        ippiGetBits8(m_pbs, m_bitOffset, code);
-        spl->user_data[k] = (Ipp8u) code;
-    }
 
     return current_sps;
-}
-
-Ipp32s H265Bitstream::user_data_unregistered(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps, H265SEIPayLoad *spl)
-{
-    return reserved_sei_message(sps, current_sps, spl);
 }
 
 Ipp32s H265Bitstream::recovery_point(const HeaderSet<H265SeqParamSet> & , Ipp32s current_sps, H265SEIPayLoad *spl)
 {
     H265SEIPayLoad::SEIMessages::RecoveryPoint * recPoint = &(spl->SEI_messages.recovery_point);
 
-    recPoint->recovery_frame_cnt = (Ipp8u)GetVLCElement(false);
+    recPoint->recovery_poc_cnt = (Ipp32s)GetVLCElement(true);
 
     recPoint->exact_match_flag = (Ipp8u)Get1Bit();
     recPoint->broken_link_flag = (Ipp8u)Get1Bit();
-    recPoint->changing_slice_group_idc = (Ipp8u)GetBits(2);
-
-    if (recPoint->changing_slice_group_idc > 2)
-        return -1;
 
     return current_sps;
 }

@@ -2367,7 +2367,7 @@ H265DecoderFrame * TaskSupplier_H265::AllocateNewFrame(const H265Slice *pSlice)
 
     if (payload)
     {
-        pFrame->m_dpb_output_delay = payload->SEI_messages.pic_timing.dpb_output_delay;
+        pFrame->m_dpb_output_delay = payload->SEI_messages.pic_timing.pic_dpb_output_delay;
         m_isUseDelayDPBValues = m_isUseDelayDPBValues ? (pFrame->m_dpb_output_delay == 0) : false;
     }
 

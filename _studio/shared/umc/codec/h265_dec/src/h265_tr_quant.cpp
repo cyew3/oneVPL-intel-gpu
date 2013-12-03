@@ -105,7 +105,7 @@ void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, I
         {
             InverseTransform< 8 >(pCoeff, pResidual, Stride, Size, Mode);
         }
-    } 
+    }
     else
         VM_ASSERT( 0 ); // no 10-bit support yet
 }

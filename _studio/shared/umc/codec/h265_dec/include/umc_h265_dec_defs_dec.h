@@ -1232,176 +1232,18 @@ struct H265SEIPayLoadBase
 
     union SEIMessages
     {
-        struct BufferingPeriod
-        {
-            Ipp32u initial_cbp_removal_delay[2][16];
-            Ipp32u initial_cbp_removal_delay_offset[2][16];
-        }buffering_period;
-
         struct PicTiming
         {
-            Ipp32u cbp_removal_delay;
-            Ipp32u dpb_output_delay;
             DisplayPictureStruct_H265 pic_struct;
-            Ipp8u  clock_timestamp_flag[16];
-            struct ClockTimestamps
-            {
-                Ipp8u ct_type;
-                Ipp8u nunit_field_based_flag;
-                Ipp8u counting_type;
-                Ipp8u full_timestamp_flag;
-                Ipp8u discontinuity_flag;
-                Ipp8u cnt_dropped_flag;
-                Ipp8u n_frames;
-                Ipp8u seconds_value;
-                Ipp8u minutes_value;
-                Ipp8u hours_value;
-                Ipp8u time_offset;
-            }clock_timestamps[16];
-        }pic_timing;
-
-        struct PanScanRect
-        {
-            Ipp8u  pan_scan_rect_id;
-            Ipp8u  pan_scan_rect_cancel_flag;
-            Ipp8u  pan_scan_cnt;
-            Ipp32u pan_scan_rect_left_offset[32];
-            Ipp32u pan_scan_rect_right_offset[32];
-            Ipp32u pan_scan_rect_top_offset[32];
-            Ipp32u pan_scan_rect_bottom_offset[32];
-            Ipp8u  pan_scan_rect_repetition_period;
-        }pan_scan_rect;
-
-        struct UserDataRegistered
-        {
-            Ipp8u itu_t_t35_country_code;
-            Ipp8u itu_t_t35_country_code_extension_byte;
-        } user_data_registered;
+            Ipp32u pic_dpb_output_delay;
+        } pic_timing;
 
         struct RecoveryPoint
         {
-            Ipp8u recovery_frame_cnt;
+            Ipp32s recovery_poc_cnt;
             Ipp8u exact_match_flag;
             Ipp8u broken_link_flag;
-            Ipp8u changing_slice_group_idc;
         }recovery_point;
-
-        struct SparePic
-        {
-            Ipp32u target_frame_num;
-            Ipp8u  spare_field_flag;
-            Ipp8u  target_bottom_field_flag;
-            Ipp8u  num_spare_pics;
-            Ipp8u  delta_spare_frame_num[16];
-            Ipp8u  spare_bottom_field_flag[16];
-            Ipp8u  spare_area_idc[16];
-            Ipp8u  *spare_unit_flag[16];
-            Ipp8u  *zero_run_length[16];
-        }spare_pic;
-
-        struct SceneInfo
-        {
-            Ipp8u scene_info_present_flag;
-            Ipp8u scene_id;
-            Ipp8u scene_transition_type;
-            Ipp8u second_scene_id;
-        }scene_info;
-
-        struct SubSeqInfo
-        {
-            Ipp8u sub_seq_layer_num;
-            Ipp8u sub_seq_id;
-            Ipp8u first_ref_pic_flag;
-            Ipp8u leading_non_ref_pic_flag;
-            Ipp8u last_pic_flag;
-            Ipp8u sub_seq_frame_num_flag;
-            Ipp8u sub_seq_frame_num;
-        }sub_seq_info;
-
-        struct SubSeqLayerCharacteristics
-        {
-            Ipp8u  num_sub_seq_layers;
-            Ipp8u  accurate_statistics_flag[16];
-            Ipp16u average_bit_rate[16];
-            Ipp16u average_frame_rate[16];
-        }sub_seq_layer_characteristics;
-
-        struct SubSeqCharacteristics
-        {
-            Ipp8u  sub_seq_layer_num;
-            Ipp8u  sub_seq_id;
-            Ipp8u  duration_flag;
-            Ipp8u  sub_seq_duration;
-            Ipp8u  average_rate_flag;
-            Ipp8u  accurate_statistics_flag;
-            Ipp16u average_bit_rate;
-            Ipp16u average_frame_rate;
-            Ipp8u  num_referenced_subseqs;
-            Ipp8u  ref_sub_seq_layer_num[16];
-            Ipp8u  ref_sub_seq_id[16];
-            Ipp8u  ref_sub_seq_direction[16];
-        }sub_seq_characteristics;
-
-        struct FullFrameFreeze
-        {
-            Ipp32u full_frame_freeze_repetition_period;
-        }full_frame_freeze;
-
-        struct FullFrameSnapshot
-        {
-            Ipp8u snapshot_id;
-        }full_frame_snapshot;
-
-        struct ProgressiveRefinementSegmentStart
-        {
-            Ipp8u progressive_refinement_id;
-            Ipp8u num_refinement_steps;
-        }progressive_refinement_segment_start;
-
-        struct FilmGrainCharacteristics
-        {
-            Ipp8u film_grain_characteristics_cancel_flag;
-            Ipp8u model_id;
-            Ipp8u separate_colour_description_present_flag;
-            Ipp8u film_grain_bit_depth_luma;
-            Ipp8u film_grain_bit_depth_chroma;
-            Ipp8u film_grain_full_range_flag;
-            Ipp8u film_grain_colour_primaries;
-            Ipp8u film_grain_transfer_characteristics;
-            Ipp8u film_grain_matrix_coefficients;
-            Ipp8u blending_mode_id;
-            Ipp8u log2_scale_factor;
-            Ipp8u comp_model_present_flag[3];
-            Ipp8u num_intensity_intervals[3];
-            Ipp8u num_model_values[3];
-            Ipp8u intensity_interval_lower_bound[3][256];
-            Ipp8u intensity_interval_upper_bound[3][256];
-            Ipp8u comp_model_value[3][3][256];
-            Ipp8u film_grain_characteristics_repetition_period;
-        }film_grain_characteristics;
-
-        struct DeblockingFilterDisplayPreference
-        {
-            Ipp8u deblocking_display_preference_cancel_flag;
-            Ipp8u display_prior_to_deblocking_preferred_flag;
-            Ipp8u dec_frame_buffering_constraint_flag;
-            Ipp8u deblocking_display_preference_repetition_period;
-        }deblocking_filter_display_preference;
-
-        struct StereoVideoInfo
-        {
-            Ipp8u field_views_flag;
-            Ipp8u top_field_is_left_view_flag;
-            Ipp8u current_frame_is_left_view_flag;
-            Ipp8u next_frame_is_second_view_flag;
-            Ipp8u left_view_self_contained_flag;
-            Ipp8u right_view_self_contained_flag;
-        }stereo_video_info;
-
-        struct ScalabilityInfo
-        {
-            Ipp32u num_layers;
-        } scalability_info;
 
     }SEI_messages;
 

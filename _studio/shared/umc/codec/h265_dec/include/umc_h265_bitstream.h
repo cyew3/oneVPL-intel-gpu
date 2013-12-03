@@ -267,10 +267,7 @@ protected:
     // Decoding SEI message functions
     Ipp32s sei_message(const HeaderSet<H265SeqParamSet> & sps,Ipp32s current_sps,H265SEIPayLoad *spl);
     Ipp32s sei_payload(const HeaderSet<H265SeqParamSet> & sps,Ipp32s current_sps,H265SEIPayLoad *spl);
-    Ipp32s buffering_period(const HeaderSet<H265SeqParamSet> & sps,Ipp32s current_sps,H265SEIPayLoad *spl);
     Ipp32s pic_timing(const HeaderSet<H265SeqParamSet> & sps,Ipp32s current_sps,H265SEIPayLoad *spl);
-    Ipp32s user_data_registered_itu_t_t35(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps,H265SEIPayLoad *spl);
-    Ipp32s user_data_unregistered(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps,H265SEIPayLoad *spl);
     Ipp32s recovery_point(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps,H265SEIPayLoad *spl);
 
     Ipp32s reserved_sei_message(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps, H265SEIPayLoad *spl);
