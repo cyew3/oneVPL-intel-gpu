@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2010-2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010-2013 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -139,7 +139,6 @@ public:
 
     mfxStatus WriteEndOfSequence(mfxBitstream *bs);
     mfxStatus WriteEndOfStream(mfxBitstream *bs);
-    mfxStatus WriteFillerData(mfxBitstream *bs, mfxI32 num);
 
     //virtual mfxStatus InsertUserData(mfxU8 *ud, mfxU32 len, mfxU64 ts);
     mfxI32 SelectFrameType_forLast(mfxI32 frameNum, bool bNotLast, mfxEncodeCtrl *ctrl);

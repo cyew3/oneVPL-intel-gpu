@@ -5131,24 +5131,6 @@ mfxStatus MFXVideoENCODEMVC::WriteEndOfStream(mfxBitstream *bs)
    return MFX_ERR_NONE;
 }
 
-mfxStatus MFXVideoENCODEMVC::WriteFillerData(mfxBitstream *bs, mfxI32 num)
-{
-   H264BsReal_8u16s rbs;
-   UMC::Status st;
-   Ipp8u* buf = new Ipp8u [num];
-
-   H264BsReal_Create_8u16s(&rbs,buf,num,0,st);
-   memset(buf, 0xff, num-1);
-   buf[num-1] = 0x80;
-   rbs.m_base.m_pbs += num;
-   bool s = false;
-   mfxU8* ptrToWrite = bs->Data + bs->DataOffset + bs->DataLength;
-   bs->DataLength += H264BsReal_EndOfNAL_8u16s( &rbs, ptrToWrite, 0, NAL_UT_FILL, s, 0);
-   H264BsReal_Destroy_8u16s( &rbs );
-   delete[] buf;
-   return MFX_ERR_NONE;
-}
-
 // Fill UMC structures for reordering and cut of ref pic lists. For now in 2 cases:
 // 1) External ref pic list control information provided via mfxEncodeCtrl (only progressive encoding w/0 B-frames is supported)
 // 2) "IP" field pair is being encoded

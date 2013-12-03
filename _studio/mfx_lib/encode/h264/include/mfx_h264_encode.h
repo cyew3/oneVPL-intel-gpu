@@ -214,7 +214,6 @@ public:
 
     mfxStatus WriteEndOfSequence(mfxBitstream *bs);
     mfxStatus WriteEndOfStream(mfxBitstream *bs);
-    mfxStatus WriteFillerData(mfxBitstream *bs, mfxI32 num);
 
     //virtual mfxStatus InsertUserData(mfxU8 *ud, mfxU32 len, mfxU64 ts);
     mfxI32    SelectFrameType_forLast( bool bNotLast, mfxEncodeCtrl *ctrl);
