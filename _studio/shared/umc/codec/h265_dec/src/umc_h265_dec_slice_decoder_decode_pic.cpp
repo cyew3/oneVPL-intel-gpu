@@ -80,8 +80,8 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
         }
     }
 
-    for(Ipp32s i = getRPS()->getNumberOfNegativePictures() + getRPS()->getNumberOfPositivePictures() + getRPS()->getNumberOfLongtermPictures() - 1;
-        i > getRPS()->getNumberOfNegativePictures() + getRPS()->getNumberOfPositivePictures() - 1 ; i--)
+    for(Ipp32s i = getRPS()->getNumberOfNegativePictures() + getRPS()->getNumberOfPositivePictures();
+        i < getRPS()->getNumberOfNegativePictures() + getRPS()->getNumberOfPositivePictures() + getRPS()->getNumberOfLongtermPictures(); i++)
     {
         if(getRPS()->getUsed(i))
         {

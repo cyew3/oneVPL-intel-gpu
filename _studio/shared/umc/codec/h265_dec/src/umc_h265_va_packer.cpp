@@ -497,14 +497,11 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
         numRefPicSetStCurrAfter  = 0,
         numRefPicSetLtCurr       = 0;
     for(index = 0; index < rps->getNumberOfNegativePictures(); index++)
-        //if(rps->getUsed(index))
             pocList[numRefPicSetStCurrBefore++] = pPicParam->CurrPicOrderCntVal + rps->getDeltaPOC(index);
     for(; index < rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures(); index++)
-        //if(rps->getUsed(index))
             pocList[numRefPicSetStCurrBefore + numRefPicSetStCurrAfter++] = pPicParam->CurrPicOrderCntVal + rps->getDeltaPOC(index);
     for(; index < rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures() + rps->getNumberOfLongtermPictures(); index++)
     {
-        //if(rps->getUsed(index))
         {
             //pocList[numRefPicSetStCurrBefore + numRefPicSetStCurrAfter + numRefPicSetLtCurr++] = pPicParam->CurrPicOrderCntVal + rps->getDeltaPOC(index);
 
@@ -1384,13 +1381,10 @@ void MSPackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
         numRefPicSetStCurrAfter  = 0,
         numRefPicSetLtCurr       = 0;
     for(index = 0; index < rps->getNumberOfNegativePictures(); index++)
-        //if(rps->getUsed(index))
             pocList[numRefPicSetStCurrBefore++] = pPicParam->CurrPicOrderCntVal + rps->getDeltaPOC(index);
     for(; index < rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures(); index++)
-        //if(rps->getUsed(index))
             pocList[numRefPicSetStCurrBefore + numRefPicSetStCurrAfter++] = pPicParam->CurrPicOrderCntVal + rps->getDeltaPOC(index);
     for(; index < rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures() + rps->getNumberOfLongtermPictures(); index++)
-        //if(rps->getUsed(index))
         {
             Ipp32s poc = rps->getPOC(index);
             H265DecoderFrame *pFrm = supplier->GetDPBList()->findLongTermRefPic(pCurrentFrame, poc, pSlice->GetSeqParam()->log2_max_pic_order_cnt_lsb, !rps->getCheckLTMSBPresent(index));
