@@ -120,7 +120,7 @@ Ipp32s H265Bitstream::pic_timing(const HeaderSet<H265SeqParamSet> & sps, Ipp32s 
     if (csps->m_hrdParameters.nal_hrd_parameters_present_flag || csps->m_hrdParameters.vcl_hrd_parameters_present_flag)
     {
         GetBits(csps->m_hrdParameters.au_cpb_removal_delay_length); // au_cpb_removal_delay_minus1
-        spl->pic_dpb_output_delay = GetBits(csps->m_hrdParameters.dpb_output_delay_length);
+        spl->SEI_messages.pic_timing.pic_dpb_output_delay = GetBits(csps->m_hrdParameters.dpb_output_delay_length);
 
         if (csps->m_hrdParameters.sub_pic_hrd_params_present_flag)
         {
