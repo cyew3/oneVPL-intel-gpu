@@ -83,7 +83,7 @@ namespace
         std::auto_ptr<T>& codec()const
         {
         }
-
+ 
         bool isNeedEncoder()const
         {
             return _isNeedCodec ;
@@ -97,6 +97,8 @@ namespace
             return _isNeedVPP;
         }
     };      
+
+
 
     template <>
     std::auto_ptr<VideoENCODE>& SessionPtr::codec<VideoENCODE>()const
@@ -113,6 +115,7 @@ namespace
     {
         return _isNeedVPP ? _session->m_pVPP : _stubVPP;
     }
+
 
 } // namespace
 
@@ -190,7 +193,8 @@ mfxStatus MFXVideoUSER_Unregister(mfxSession session, mfxU32 type)
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     try
     {
-        std::auto_ptr<VideoCodecUSER> & registeredPlg = SessionPtr(session, type).plugin();
+        SessionPtr sessionPtr(session, type);
+        std::auto_ptr<VideoCodecUSER> & registeredPlg = sessionPtr.plugin();
         if (NULL == registeredPlg.get())
             return MFX_ERR_NOT_INITIALIZED;
 
@@ -199,8 +203,19 @@ mfxStatus MFXVideoUSER_Unregister(mfxSession session, mfxU32 type)
 
         // deinitialize the plugin
         mfxRes = registeredPlg->PluginClose();
+        
         // delete the plugin's instance
         registeredPlg.reset();
+        //delete corresponding codec instance
+        if (sessionPtr.isNeedDecoder()) {
+            sessionPtr.codec<VideoDECODE>().reset();
+        }
+        if (sessionPtr.isNeedEncoder()) {
+            sessionPtr.codec<VideoENCODE>().reset();
+        }
+        if (sessionPtr.isNeedVPP()) {
+            sessionPtr.codec<VideoVPP>().reset();
+        }
     }
     catch(MFX_CORE_CATCH_TYPE)
     {
