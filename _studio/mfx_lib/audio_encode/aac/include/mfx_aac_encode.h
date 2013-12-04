@@ -86,6 +86,7 @@ protected:
 
     eMFXPlatform m_platform;
     bool    m_isInit;
+    mfxI32  m_dTimestampShift;
 
     UMC::Mutex m_mGuard;
 

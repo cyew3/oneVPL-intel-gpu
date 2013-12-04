@@ -30,6 +30,7 @@ AudioENCODEAAC::AudioENCODEAAC(CommonCORE *core, mfxStatus * sts)
 , m_CommonCore(core)
 , m_platform(MFX_PLATFORM_SOFTWARE)
 , m_isInit(false)
+, m_dTimestampShift(0)
 {
     if (sts)
     {
@@ -277,8 +278,10 @@ mfxStatus AudioENCODEAAC::EncodeFrameCheck(mfxAudioFrame *aFrame,
         info->out = buffer_out;
         info->in = aFrame;
         if (aFrame) {
-            buffer_out->TimeStamp = aFrame->TimeStamp;
-            buffer_out->DecodeTimeStamp = aFrame->TimeStamp;
+            m_dTimestampShift = (mfxI32)(( (float)m_FrameSize - (float)aFrame->DataLength ) 
+                / ((float)m_vPar.mfx.SampleFrequency * (float)m_vPar.mfx.NumChannel * 2.0f) * 90000.0f);
+            buffer_out->TimeStamp = aFrame->TimeStamp + m_dTimestampShift;
+            buffer_out->DecodeTimeStamp = buffer_out->TimeStamp;
         }
         //finally queue task
         
