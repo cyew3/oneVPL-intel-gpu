@@ -591,9 +591,11 @@ static void InterpolateHP_MB_8u16s(PIXTYPE *pY, Ipp32s step, Ipp32s planeSize, I
     PIXTYPE *pB = pY + planeSize;
     PIXTYPE *pH = pB + planeSize;
     PIXTYPE *pJ = pH + planeSize;
-    ippiInterpolateLuma_H264_8u16s(pY, step, pB, step, 2, 0, sz, bitDepth);
-    ippiInterpolateLuma_H264_8u16s(pY, step, pH, step, 0, 2, sz, bitDepth);
-    ippiInterpolateLuma_H264_8u16s(pY, step, pJ, step, 2, 2, sz, bitDepth);
+
+        ippiInterpolateLuma_H264_8u16s(pY, step, pB, step, 2, 0, sz, bitDepth);
+        ippiInterpolateLuma_H264_8u16s(pY, step, pH, step, 0, 2, sz, bitDepth);
+        ippiInterpolateLuma_H264_8u16s(pY, step, pJ, step, 2, 2, sz, bitDepth);
+
 }
 #endif
 #undef PIXBITS
@@ -995,11 +997,7 @@ Status MFXVideoENCODEH264::ThreadCallBackVM_MBT(threadSpecificDataH264 &tsd)
         ch_X = ch_Y = 16;
         ch_P = LUMA_PADDING;
     }
-    Ipp32s pitchPixels = core_enc->m_pReconstructFrame->m_pitchPixels;
-#ifdef FRAME_INTERPOLATION
-    Ipp32s planeSize = core_enc->m_pReconstructFrame->m_PlaneSize;
-    Ipp32s bitDepth = core_enc->m_PicParamSet->bit_depth_luma;
-#endif
+
     {
         Ipp32s tRow, tCol, tNum, nBits;
         Ipp8u *pBuffS=0, *pBuffM;
@@ -1192,6 +1190,9 @@ Status MFXVideoENCODEH264::ThreadCallBackVM_MBT(threadSpecificDataH264 &tsd)
 #ifdef FRAME_INTERPOLATION
                             if (core_enc->m_Analyse & ANALYSE_ME_SUBPEL)
                             {
+                                Ipp32s pitchPixels = core_enc->m_pReconstructFrame->m_pitchPixels;
+                                Ipp32s planeSize = core_enc->m_pReconstructFrame->m_PlaneSize;
+                                Ipp32s bitDepth = core_enc->m_PicParamSet->bit_depth_luma;
                                 if (tRow > 2) {
                                     Ipp32s pRow = tRow - 3;
                                     Ipp32s pCol = tCol;
@@ -1483,11 +1484,7 @@ Status MFXVideoENCODEH264::H264CoreEncoder_Compress_Slice_MBT(void* state, H264S
         ch_X = ch_Y = 16;
         ch_P = LUMA_PADDING;
     }
-    Ipp32s pitchPixels = core_enc->m_pReconstructFrame->m_pitchPixels;
-#ifdef FRAME_INTERPOLATION
-    Ipp32s planeSize = core_enc->m_pReconstructFrame->m_PlaneSize;
-    Ipp32s bitDepth = core_enc->m_PicParamSet->bit_depth_luma;
-#endif
+
     Ipp32s last_slice_row = m_last_mb_in_slice / core_enc->m_WidthInMBs;
     if ((core_enc->m_PicParamSet->entropy_coding_mode == 1) &&
 #ifdef H264_NEW_THREADING
@@ -1561,10 +1558,10 @@ Status MFXVideoENCODEH264::H264CoreEncoder_Compress_Slice_MBT(void* state, H264S
                     padFlag |= 8;
                 Ipp32u pMB = pRow * core_enc->m_WidthInMBs + pCol;
                 if (padFlag) {
-                    PadMB_Luma_8u16s(core_enc->m_pReconstructFrame->m_pYPlane + core_enc->m_pMBOffsets[pMB].uLumaOffset[core_enc->m_is_cur_pic_afrm][cur_s->m_is_cur_mb_field], pitchPixels, padFlag, LUMA_PADDING);
+                    PadMB_Luma_8u16s(core_enc->m_pReconstructFrame->m_pYPlane + core_enc->m_pMBOffsets[pMB].uLumaOffset[core_enc->m_is_cur_pic_afrm][cur_s->m_is_cur_mb_field], core_enc->m_pReconstructFrame->m_pitchPixels, padFlag, LUMA_PADDING);
                     if (core_enc->m_PicParamSet->chroma_format_idc)
 #ifdef USE_NV12
-                        PadMB_Chroma_8u16s(core_enc->m_pReconstructFrame->m_pUPlane + core_enc->m_pMBOffsets[pMB].uChromaOffset[core_enc->m_is_cur_pic_afrm][cur_s->m_is_cur_mb_field], pitchPixels, ch_X, ch_Y, padFlag, ch_P);
+                        PadMB_Chroma_8u16s(core_enc->m_pReconstructFrame->m_pUPlane + core_enc->m_pMBOffsets[pMB].uChromaOffset[core_enc->m_is_cur_pic_afrm][cur_s->m_is_cur_mb_field], core_enc->m_pReconstructFrame->m_pitchPixels, ch_X, ch_Y, padFlag, ch_P);
 #else // USE_NV12
                         H264ENC_MAKE_NAME(PadMB_Chroma)(core_enc->m_pReconstructFrame->m_pUPlane + core_enc->m_pMBOffsets[pMB].uChromaOffset[core_enc->m_is_cur_pic_afrm][cur_s->m_is_cur_mb_field], core_enc->m_pReconstructFrame->m_pVPlane + core_enc->m_pMBOffsets[pMB].uChromaOffset[core_enc->m_is_cur_pic_afrm][cur_s->m_is_cur_mb_field], pitchPixels, ch_X, ch_Y, padFlag, ch_P);
 #endif // USE_NV12
@@ -1574,6 +1571,10 @@ Status MFXVideoENCODEH264::H264CoreEncoder_Compress_Slice_MBT(void* state, H264S
 #ifdef FRAME_INTERPOLATION
         if ((core_enc->m_Analyse & ANALYSE_ME_SUBPEL) && (core_enc->m_info.num_slices - 1 == curr_slice->m_slice_number))
         {
+            Ipp32s pitchPixels = core_enc->m_pReconstructFrame->m_pitchPixels;
+            Ipp32s planeSize = core_enc->m_pReconstructFrame->m_PlaneSize;
+            Ipp32s bitDepth = core_enc->m_PicParamSet->bit_depth_luma;
+
             for (Ipp32s pRow = MAX(first_slice_row, last_slice_row - 3); pRow <= last_slice_row; pRow ++) {
                 for (Ipp32s pCol = 0; pCol < core_enc->m_WidthInMBs; pCol ++) {
                     Ipp32u pMB = pRow * core_enc->m_WidthInMBs + pCol;
@@ -6157,14 +6158,17 @@ mfxStatus MFXVideoENCODEH264::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
 
     // field-based output: just copy encoded 2nd field from internal m_extBitstream
     if (m_fieldOutput) {
-        if (pInternalParams == 0)
+        if (pInternalParams == 0){
             return MFX_ERR_UNKNOWN;
+        }
         mfxU8 fieldOutputState = (pInternalParams->InternalFlags & (FIELD_OUTPUT_FIRST_FIELD | FIELD_OUTPUT_SECOND_FIELD));
-        if (fieldOutputState != FIELD_OUTPUT_SECOND_FIELD && fieldOutputState != FIELD_OUTPUT_FIRST_FIELD)
+        if (fieldOutputState != FIELD_OUTPUT_SECOND_FIELD && fieldOutputState != FIELD_OUTPUT_FIRST_FIELD){
             return MFX_ERR_UNKNOWN;
+        }
         if (fieldOutputState == FIELD_OUTPUT_SECOND_FIELD) {
-            if (bs == 0)
+            if (bs == 0){
                 return MFX_ERR_UNKNOWN;
+            }
             dataPtr = bs->Data + bs->DataOffset + bs->DataLength;
             // check bs for enough buffer size to place real encoded data
             if (bs->MaxLength - (bs->DataOffset + bs->DataLength) < m_extBitstream.DataLength)
@@ -6343,7 +6347,7 @@ mfxStatus MFXVideoENCODEH264::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
             case INTRAPIC: frame_type = MFX_FRAMETYPE_I; break;
             case PREDPIC:  frame_type = MFX_FRAMETYPE_P; break;
             case BPREDPIC: frame_type = MFX_FRAMETYPE_B; break;
-            default: return MFX_ERR_UNKNOWN;
+            default: {return MFX_ERR_UNKNOWN;}
         }
         if (cur_enc->m_pCurrentFrame->m_PictureStructureForDec < FRM_STRUCTURE) { // surface was encoded as 2 fields - set pic type for 2nd field
             if (m_fieldOutput == false) {
@@ -6351,14 +6355,14 @@ mfxStatus MFXVideoENCODEH264::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
                     case INTRAPIC: frame_type |= MFX_FRAMETYPE_xI; break;
                     case PREDPIC:  frame_type |= MFX_FRAMETYPE_xP; break;
                     case BPREDPIC: frame_type |= MFX_FRAMETYPE_xB; break;
-                    default: return MFX_ERR_UNKNOWN;
+                    default: {return MFX_ERR_UNKNOWN;}
                 }
             } else {
                 switch (cur_enc->m_pCurrentFrame->m_PicCodTypeFields[1]) {
                     case INTRAPIC: frame_type_ext = MFX_FRAMETYPE_xI; break;
                     case PREDPIC:  frame_type_ext = MFX_FRAMETYPE_xP; break;
                     case BPREDPIC: frame_type_ext = MFX_FRAMETYPE_xB; break;
-                    default: return MFX_ERR_UNKNOWN;
+                    default: {return MFX_ERR_UNKNOWN;}
                 }
             }
         }
@@ -8731,8 +8735,9 @@ Status MFXVideoENCODEH264::H264CoreEncoder_CompressFrame(
 #endif // ALPHA_BLENDING_H264
         // TODO: check how affects SVC IL predictions, stored in recon. frame
         if (core_enc->m_svc_layer.svc_ext.quality_id == 0)
-            if (!(core_enc->m_Analyse & ANALYSE_RECODE_FRAME))
+            if (!(core_enc->m_Analyse & ANALYSE_RECODE_FRAME)){
                 core_enc->m_pReconstructFrame = core_enc->m_pCurrentFrame;
+            }
 
         /* Fill ext header */
         if (core_enc->m_svc_layer.isActive) {
@@ -11316,7 +11321,7 @@ mfxStatus MFXVideoENCODEH264::InitSVCLayer(const mfxExtSVCRateControl* rc, mfxU1
 
             sts = ippiUpsampleIntraLumaGetSize_SVC_8u_C1R(mbRegionSize, &(rsz->upsampleSVCParamsLuma),
                 &specIntraLumaSize, &bufferSize);
-            if (sts != ippStsNoErr) return MFX_ERR_UNKNOWN;
+            if (sts != ippStsNoErr){return MFX_ERR_UNKNOWN;}
 
             sts = ippiUpsampleIntraChromaGetSize_SVC_8u_C2R(mbRegionSize, &(rsz->upsampleSVCParamsChroma),
                 &specIntraChromaSize, &tmpSize);

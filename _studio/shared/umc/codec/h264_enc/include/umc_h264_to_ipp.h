@@ -279,7 +279,12 @@ inline void ippiInterpolateLuma_H264_8u16s(
     Ipp32s   bit_depth)
 {
     H264ENC_UNREFERENCED_PARAMETER(bit_depth);
+    try{
     ippiInterpolateLuma_H264_8u_C1R(src, src_pitch, dst, dst_pitch, xh, yh, sz);
+    }
+    catch(...){
+        assert(0);
+    }
 }
 
 // can be defined in different files

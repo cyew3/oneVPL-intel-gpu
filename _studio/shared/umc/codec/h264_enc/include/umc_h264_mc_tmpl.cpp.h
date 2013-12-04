@@ -1021,6 +1021,7 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_MCOneMBChroma)(
 #else // NO_PADDING
             Ipp32s n = SubpelChromaMVAdjust(&mv_f, pitchPixels, dpx, dpy, core_enc->m_PicParamSet->chroma_format_idc) + src_block_offset;
 #ifdef USE_NV12
+            try{
             ref_prev = pRefPicList0[block_ref]->m_pUPlane + mb_offset + curr_slice->m_InitialOffset[pFields0[block_ref]];
             H264ENC_MAKE_NAME(ippiInterpolateChroma_H264)(
                 ref_prev + n,
@@ -1032,6 +1033,10 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_MCOneMBChroma)(
                 dpy,
                 size,
                 core_enc->m_SeqParamSet->bit_depth_chroma);
+            }
+            catch(...){
+                assert(0);
+            }
 #else // USE_NV12
             ref_prev = pRefPicList0[block_ref]->m_pUPlane + mb_offset + curr_slice->m_InitialOffset[pFields0[block_ref]];
             H264ENC_MAKE_NAME(ippiInterpolateChroma_H264)(
