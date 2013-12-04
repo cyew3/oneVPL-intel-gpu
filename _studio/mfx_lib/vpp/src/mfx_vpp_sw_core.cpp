@@ -295,7 +295,7 @@ mfxStatus VideoVPPSW::Init(mfxVideoParam *par)
         sts = CreateWorkBuffer();
         MFX_CHECK_STS( sts )
 
-            sts = CreateConnectionFramesPool( );
+        sts = CreateConnectionFramesPool( );
         MFX_CHECK_STS( sts );
 
         // important!!! this function uses OPAQUE information (m_bOpaqMode/m_requestOpaq)
@@ -1238,6 +1238,13 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
                                     mfxSts = MFX_ERR_UNSUPPORTED;
                                     continue; // stop working with ExtParam[i]
                                 }
+
+                                if(MFX_EXTBUFF_VPP_COMPOSITE == extDoUseIn->AlgList[algIdx])
+                                {
+                                    mfxSts = MFX_ERR_INVALID_VIDEO_PARAM;
+                                    continue; // stop working with ExtParam[i]
+                                }
+
                                 extDoUseOut->AlgList[algIdx] = extDoUseIn->AlgList[algIdx];
                             }
                             extDoUseOut->NumAlg = extDoUseIn->NumAlg;

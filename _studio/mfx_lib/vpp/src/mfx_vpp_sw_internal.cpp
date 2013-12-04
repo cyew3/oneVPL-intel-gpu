@@ -1101,6 +1101,17 @@ mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint
             sts = MFX_WRN_FILTER_SKIPPED;
         }
     }
+    else if( MFX_EXTBUFF_VPP_COMPOSITE == filterName )
+    {
+        if (MFX_PLATFORM_SOFTWARE == core->GetPlatformType())
+        {
+            sts = MFX_ERR_UNSUPPORTED;
+        }
+        else
+        {
+            sts = MFX_ERR_NONE;
+        }
+    }
     else // ignore
     {
         sts = MFX_ERR_NONE;
