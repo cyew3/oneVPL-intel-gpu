@@ -522,7 +522,7 @@ Status AACDecoder::FrameConstruct(MediaData *in, Ipp32s *outFrameSize)
         DataSize += 3;
         in->MoveDataPointer((Ipp32s)(in->GetDataSize()-DataSize));
 
-        if (DataSize < 20) {
+        if (DataSize < 9) {
             MemUnlock();
             return UMC_ERR_NOT_ENOUGH_DATA;
         }
