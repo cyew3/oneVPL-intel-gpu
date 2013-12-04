@@ -325,6 +325,7 @@ DEF_STRUCT_TRACE(mfxExtBuffer){
 #if ((MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 8))
         PRINT_BUF(MFX_EXTBUFF_VPP_COMPOSITE             , mfxExtVPPComposite            );
         PRINT_BUF(MFX_EXTBUFF_VPP_DEINTERLACING         , mfxExtVPPDeinterlacing        );
+        PRINT_BUF(MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO     , mfxExtVPPVideoSignalInfo      );
 #endif
         PRINT_BUF(MFX_EXTBUFF_AVC_REFLIST_CTRL          , mfxExtAVCRefListCtrl          );
         default: break;
@@ -1039,6 +1040,21 @@ DEF_STRUCT_TRACE(mfxExtVPPDeinterlacing){
         << PUT_PAR(Header.BufferSz)
         << PUT_PAR(Mode)
         << PUT_ARR(reserved, 11)
+        << print_param.padding << '}';
+    return os;
+}
+
+DEF_STRUCT_TRACE(mfxExtVPPVideoSignalInfo){
+    os  << "{\n"
+        << PUT_4CC(Header.BufferId)
+        << PUT_PAR(Header.BufferSz)
+        << PUT_ARR(reserved1, 4)
+        << PUT_PAR(In.TransferMatrix)
+        << PUT_PAR(In.NominalRange)
+        << PUT_ARR(In.reserved2, 6)
+        << PUT_PAR(Out.TransferMatrix)
+        << PUT_PAR(Out.NominalRange)
+        << PUT_ARR(Out.reserved2, 6)
         << print_param.padding << '}';
     return os;
 }

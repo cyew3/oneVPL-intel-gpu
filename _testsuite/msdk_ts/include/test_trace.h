@@ -97,6 +97,7 @@ DECL_STRUCT_TRACE(mfxExtAVCEncodedFrameInfo);
 DECL_STRUCT_TRACE(mfxExtVPPComposite);
 DECL_STRUCT_TRACE(mfxVPPCompInputStream);
 DECL_STRUCT_TRACE(mfxExtVPPDeinterlacing);
+DECL_STRUCT_TRACE(mfxExtVPPVideoSignalInfo);
 #endif //#if ((MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 8))
 
 DECL_STRUCT_TRACE(mfxExtAvcTemporalLayers);
