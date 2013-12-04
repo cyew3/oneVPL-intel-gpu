@@ -30,6 +30,7 @@ File Name: mfx_vector.h
 
 #pragma once
 #include "mfxstructures.h"
+#include <exception>
 
 namespace MFX 
 {
