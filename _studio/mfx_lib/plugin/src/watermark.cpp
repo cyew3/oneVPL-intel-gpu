@@ -46,7 +46,6 @@ Watermark *Watermark::CreateFromResource(void)
     VM_ASSERT(bmi.bmiHeader.biBitCount == 32);
     mfxI32 m_watermarkWidth = bmi.bmiHeader.biWidth;
     mfxI32 m_watermarkHeight = bmi.bmiHeader.biHeight;
-    VM_ASSERT(m_watermarkWidth == m_watermarkHeight);
 
     // Allocate bitmap data
     mfxU8 *m_watermarkData =
@@ -73,7 +72,27 @@ Watermark *Watermark::CreateFromResource(void)
         m_watermarkData = NULL;
         return NULL;
     }
-
+/*
+    FILE *out = fopen("out.c", "wt");
+    VM_ASSERT(out);
+    fprintf(out, "#define WIDTH %d\n", m_watermarkWidth);
+    fprintf(out, "#define HEIGHT %d\n", m_watermarkHeight);
+    mfxI32 count = 0;
+    for (mfxI32 y = 0; y < m_watermarkHeight; y++)
+    {
+        for (mfxI32 x = 0; x < m_watermarkWidth; x++)
+        {
+            for (mfxI32 c = 0; c < 4; c++)
+            {
+                if (count % 16 == 0)
+                    fprintf(out, "\n   ");
+                fprintf(out, " %02x,", m_watermarkData[count++]);
+            }
+        }
+    }
+    fclose(out);
+    return NULL;
+*/
     // Set transparency
     ipp_status = ippiSet_8u_C4CR(0x7f, m_watermarkData + 3, m_watermarkWidth * 4, roi);
     if (ippStsNoErr != ipp_status)
@@ -83,6 +102,16 @@ Watermark *Watermark::CreateFromResource(void)
         return NULL;
     }
 
+/*
+    // Calculate transparency from inverted Red channel
+    for (mfxI32 y = 0; y < m_watermarkHeight; y++)
+    {
+        for (mfxI32 x = 0; x < m_watermarkWidth; x++)
+        {
+            m_watermarkData[(y * m_watermarkWidth + x) * 4 + 3] = 0xff - m_watermarkData[(y * m_watermarkWidth + x) * 4];
+        }
+    }
+    */
     Watermark *obj = new Watermark;
     if (NULL == obj)
     {
@@ -110,21 +139,21 @@ void Watermark::Apply(mfxU8 *srcY, mfxU8 *srcUV, mfxI32 stride, mfxI32 width, mf
         InitBuffers(size);
     }
 
-    mfxI32 srcOffsetY = (height - size * 2) * stride + width - size * 2;
-    mfxI32 srcOffsetUV = (height / 2 - size) * stride + width - size * 2;
+    mfxI32 srcOffsetY = (height - m_roi.height * 2) * stride + width - m_roi.width * 2;
+    mfxI32 srcOffsetUV = (height / 2 - m_roi.height) * stride + width - m_roi.width * 2;
     IppStatus status;
 
     // NV12 to YUV
     status = ippiYCbCr420_8u_P2P3R(srcY + srcOffsetY, stride, srcUV + srcOffsetUV, stride, m_yuvBuffer, m_yuvSize, m_roi);
     VM_ASSERT(ippStsNoErr == status);
-    // YUV to ABGR
-    status = ippiYCrCb420ToBGR_Filter_8u_P3C4R(const_cast<const Ipp8u **>(m_yuvBuffer), m_yuvSize, m_rgbaBuffer, size * 4, m_roi, 0x7f);
+    // YUV to ARGB
+    status = ippiYCrCb420ToRGB_8u_P3C4R(const_cast<const Ipp8u **>(m_yuvBuffer), m_yuvSize, m_rgbaBuffer, m_roi.width * 4, m_roi, 0x7f);
     VM_ASSERT(ippStsNoErr == status);
     // Blend
-    status = ippiAlphaComp_8u_AC4R(m_bitmapBuffer, size * 4, m_rgbaBuffer, size * 4, m_rgbaBuffer, size * 4, m_roi, ippAlphaPlus);
+    status = ippiAlphaComp_8u_AC4R(m_bitmapBuffer, m_roi.width * 4, m_rgbaBuffer, m_roi.width * 4, m_rgbaBuffer, m_roi.width * 4, m_roi, ippAlphaPlus);
     VM_ASSERT(ippStsNoErr == status);
-    // ABGR to YUV
-    status = ippiBGRToYCrCb420_8u_AC4P3R(m_rgbaBuffer, size * 4, m_yuvBuffer, m_yuvSize, m_roi);
+    // ARGB to YUV
+    status = ippiRGBToYCrCb420_8u_AC4P3R(m_rgbaBuffer, m_roi.width * 4, m_yuvBuffer, m_yuvSize, m_roi);
     VM_ASSERT(ippStsNoErr == status);
     // YUV to NV12
     status = ippiYCbCr420_8u_P3P2R(const_cast<const Ipp8u **>(m_yuvBuffer), m_yuvSize, srcY + srcOffsetY, stride, srcUV + srcOffsetUV, stride, m_roi);
@@ -146,25 +175,42 @@ void Watermark::InitBuffers(mfxI32 size)
 {
     ReleaseBuffers();
 
-    m_roi.width = m_roi.height = size;
-
-    m_yuvBuffer[0] = new mfxU8[size * size * 3 / 2];
+    if (m_watermarkHeight == m_watermarkWidth)
+    {
+        m_roi.width = m_roi.height = size;
+    }
+    else if (m_watermarkHeight < m_watermarkWidth)
+    {
+        m_roi.width = size;
+        m_roi.height = (int)((double)size / m_watermarkWidth * m_watermarkHeight + 0.5);
+        if (m_roi.height & 1)
+            m_roi.height++;
+    }
+    else
+    {
+        m_roi.width = (int)((double)size / m_watermarkHeight * m_watermarkWidth + 0.5);
+        if (m_roi.width & 1)
+            m_roi.width++;
+        m_roi.height = size;
+    }
+   
+    m_yuvBuffer[0] = new mfxU8[m_roi.width * m_roi.height * 3 / 2];
     VM_ASSERT(NULL != m_yuvBuffer);
 
-    m_yuvBuffer[1] = m_yuvBuffer[0] + size * size;
-    m_yuvBuffer[2] = m_yuvBuffer[1] + size * size / 4;
-    m_yuvSize[0] = size;
-    m_yuvSize[1] = m_yuvSize[2] = size / 2;
+    m_yuvBuffer[1] = m_yuvBuffer[0] + m_roi.width * m_roi.height;
+    m_yuvBuffer[2] = m_yuvBuffer[1] + m_roi.width * m_roi.height / 4;
+    m_yuvSize[0] = m_roi.width;
+    m_yuvSize[1] = m_yuvSize[2] = m_roi.width / 2;
 
-    m_rgbaBuffer = new mfxU8[size * size * 4];
+    m_rgbaBuffer = new mfxU8[m_roi.width * m_roi.height * 4];
     VM_ASSERT(NULL != m_rgbaBuffer);
 
-    m_bitmapBuffer = new mfxU8[size * size * 4];
+    m_bitmapBuffer = new mfxU8[m_roi.width * m_roi.height * 4];
     VM_ASSERT(NULL != m_bitmapBuffer);
 
     IppiSize watermarkSize = {m_watermarkWidth, m_watermarkHeight};
     IppiRect srcROI = {0, 0, m_watermarkWidth, m_watermarkHeight};
-    IppiRect dstROI = {0, 0, size, size};
+    IppiRect dstROI = {0, 0, m_roi.width, m_roi.height};
     int bufferSize;
 
     IppStatus status = ippiResizeGetBufSize(srcROI, dstROI, 4, IPPI_INTER_CUBIC, &bufferSize);
@@ -173,8 +219,8 @@ void Watermark::InitBuffers(mfxI32 size)
     Ipp8u *buffer = new Ipp8u[bufferSize];
     VM_ASSERT(NULL != buffer);
 
-    status = ippiResizeSqrPixel_8u_C4R(m_watermarkData, watermarkSize, m_watermarkWidth * 4, srcROI, m_bitmapBuffer, size * 4, dstROI,
-        (double)size / m_watermarkWidth, (double)size / m_watermarkHeight, 0.0, 0.0, IPPI_INTER_CUBIC, buffer);
+    status = ippiResizeSqrPixel_8u_C4R(m_watermarkData, watermarkSize, m_watermarkWidth * 4, srcROI, m_bitmapBuffer, m_roi.width * 4, dstROI,
+        (double)m_roi.width / m_watermarkWidth, (double)m_roi.height / m_watermarkHeight, 0.0, 0.0, IPPI_INTER_CUBIC, buffer);
     VM_ASSERT(ippStsNoErr == status);
 
     delete [] buffer;
