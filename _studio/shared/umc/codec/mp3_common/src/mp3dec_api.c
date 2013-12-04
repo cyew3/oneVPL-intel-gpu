@@ -171,6 +171,12 @@ MP3Status mp3decInit_com(MP3Dec_com *state, void *mem)
 
 MP3Status mp3decReset_com(MP3Dec_com *state)
 {
+    //Reposition support
+    state->IsReset = 1;
+    state->copy_m_MainData_nBit_offset = state->m_MainData.nBit_offset;
+    state->copy_m_MainData_nDataLen = state->m_MainData.nDataLen;
+    state->copy_m_MainData_pCurrent_dword = state->m_MainData.pCurrent_dword;
+    
     state->MAINDATASIZE = MAINDATABUFSIZE;
 
     ippsZero_8u((Ipp8u *)&(state->header), sizeof(IppMP3FrameHeader));

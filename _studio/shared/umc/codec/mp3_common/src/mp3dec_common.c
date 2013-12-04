@@ -417,16 +417,28 @@ Ipp32s mp3dec_ReadMainData(MP3Dec_com *state)
     sBitsreamBuffer *m_StreamData = &state->m_StreamData;
 
     // detect start point
-    if ((Ipp32s)(m_MainData->nDataLen - state->si_main_data_begin) >= 0)
+    if ((Ipp32s)(m_MainData->nDataLen - state->si_main_data_begin) >= 0 && state->IsReset == 0)
     {
         m_MainData->pCurrent_dword =
             m_MainData->pBuffer + (m_MainData->nDataLen - state->si_main_data_begin) / 4;
         m_MainData->dword = BSWAP(m_MainData->pCurrent_dword[0]);
         m_MainData->nBit_offset =
             32 - ((m_MainData->nDataLen - state->si_main_data_begin) % 4) * 8;
-    } else {
+    } 
+    else if (state->IsReset == 1) 
+    {
+        state->copy_m_MainData_pCurrent_dword =
+            m_MainData->pBuffer + (state->copy_m_MainData_nDataLen - state->si_main_data_begin) / 4;
+        m_MainData->dword = BSWAP(state->copy_m_MainData_pCurrent_dword[0]);
+        m_MainData->nBit_offset =
+            32 - ((state->copy_m_MainData_nDataLen - state->si_main_data_begin) % 4) * 8;
+        status = 0;
+    }
+    else
+    {
         status = 1;
     }
+    
 
     // GIBS points to the start point of the undecoded main data in globalBuffer
     GlBS =
@@ -476,7 +488,7 @@ Ipp32s mp3dec_ReadMainData(MP3Dec_com *state)
     MDBS = (Ipp8u *)m_MainData->pBuffer + m_MainData->nDataLen;
     ippsCopy_8u(GlBS, MDBS, nSlots);
     m_MainData->nDataLen += nSlots;
-
+    state->IsReset = 0;
     return status;
 }
 

@@ -40,6 +40,7 @@ typedef struct
 } sHuffmanTable;
 
 typedef struct {
+
     IppMP3FrameHeader header;
     IppMP3FrameHeader header_good;
     Ipp32s mpg25, mpg25_good;
@@ -135,6 +136,15 @@ typedef struct {
     Ipp32u *start_ptr;
     Ipp32s start_offset;
     Ipp32s synchro_mode;
+    
+    //Reposition support
+    Ipp32s IsReset;
+    Ipp32s copy_m_MainData_nBit_offset;
+    Ipp32s copy_m_MainData_nDataLen;
+    Ipp32u* copy_m_MainData_pCurrent_dword;
+
+
+
 } MP3Dec_com;
 
 typedef Ipp32s ssfBandIndex_l[23];
