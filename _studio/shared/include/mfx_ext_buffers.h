@@ -189,7 +189,8 @@ typedef struct {
     mfxU16      CUSplit;            // 0-default 1-always 2-check Skip cost first
     mfxU16      IntraAngModes;      // 0-default 1-all; 2-all even + few odd
     mfxU16      EnableCm;           // tri-state
-    mfxU16      reserved[28];
+    mfxU16      BPyramid;
+    mfxU16      reserved[27];
 } mfxExtCodingOptionHEVC;
 
 #endif // __MFX_EXT_BUFFERS_H__

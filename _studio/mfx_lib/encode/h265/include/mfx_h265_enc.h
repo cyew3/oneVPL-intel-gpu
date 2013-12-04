@@ -39,6 +39,7 @@ struct H265VideoParam {
     Ipp32u NumRefFrames;
     Ipp32u NumRefToStartCodeBSlice;
     Ipp8u  TreatBAsReference;
+    Ipp8u  BPyramid;
     Ipp8u MaxRefIdxL0;
     Ipp8u MaxRefIdxL1;
     Ipp8u MaxBRefIdxL0;
@@ -174,7 +175,12 @@ public:
     Ipp32s m_uIDRFrameInterval;
     Ipp32s m_l1_cnt_to_start_B;
 
-    Ipp8u m_isBpyramid;
+    Ipp8u m_Bpyramid_nextNumFrame;
+    Ipp8u m_Bpyramid_maxNumFrame;
+    Ipp8u m_Bpyramid_currentNumFrame;
+    Ipp8u m_BpyramidTab[129];
+    Ipp8u m_BpyramidTabRight[129];
+    Ipp8u m_BpyramidRefLayers[129];
     H265ShortTermRefPicSet m_ShortRefPicSet[66];
 
     volatile Ipp32u m_incRow;
@@ -222,6 +228,7 @@ public:
 
     void Close();
     Ipp32u DetermineFrameType();
+    void      PrepareToEndSequence();
     mfxStatus EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *bs);
     mfxStatus DeblockThread(Ipp32s ithread);
     mfxStatus ApplySAOThread(Ipp32s ithread);

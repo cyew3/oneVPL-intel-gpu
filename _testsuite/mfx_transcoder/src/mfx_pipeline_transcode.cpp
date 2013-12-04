@@ -228,6 +228,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(CUSplit,                  OPT_UINT_16,    "0-default; 1-check Skip cost first"),
         HANDLE_HEVC_OPTION(IntraAngModes,            OPT_UINT_16,    "0-default; 1-all; 2-all even + few odd"),
         HANDLE_HEVC_OPTION(EnableCm,                 OPT_TRI_STATE,  "on/off CM branch"),
+        HANDLE_HEVC_OPTION(BPyramid,                 OPT_TRI_STATE,  "B-Pyramid"),
 
         // mfxExtCodingOption2
         HANDLE_EXT_OPTION2(IntRefType,             OPT_UINT_16,   ""),

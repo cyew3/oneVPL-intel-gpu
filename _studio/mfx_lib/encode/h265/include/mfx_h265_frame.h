@@ -40,6 +40,7 @@ public:
     Ipp8u    m_isLongTermRef;
     Ipp8u    m_wasEncoded;
     Ipp8u    m_BpyramidNumFrame;
+    Ipp8u    m_BpyramidRefLayers;
     Ipp8u    m_bIsIDRPic;
     Ipp8u    m_isBRef;
     Ipp8u    m_isMarked;

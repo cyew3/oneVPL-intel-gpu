@@ -121,15 +121,21 @@ mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxE
     pars->IdrInterval = param->mfx.IdrInterval;
     pars->GopClosedFlag = (param->mfx.GopOptFlag & MFX_GOP_CLOSED) != 0;
     pars->GopStrictFlag = (param->mfx.GopOptFlag & MFX_GOP_STRICT) != 0;
-
+    pars->BPyramid = pars->GopRefDist > 2 && opts_hevc->BPyramid == MFX_CODINGOPTION_ON;
+ 
     if (!pars->GopRefDist) /*|| (pars->GopPicSize % pars->GopRefDist)*/
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     pars->NumRefToStartCodeBSlice = 1;
     pars->TreatBAsReference = 0;
-//    pars->MaxRefIdxL0 = pars->GopRefDist > 1 ? 1 : (Ipp8u)param->mfx.NumRefFrame;
-    pars->MaxRefIdxL0 = (Ipp8u)param->mfx.NumRefFrame;
-    pars->MaxRefIdxL1 = 1;
+
+    if (pars->BPyramid) {
+        pars->MaxRefIdxL0 = (Ipp8u)param->mfx.NumRefFrame;
+        pars->MaxRefIdxL1 = (Ipp8u)param->mfx.NumRefFrame;
+    } else {
+        pars->MaxRefIdxL0 = (Ipp8u)param->mfx.NumRefFrame;
+        pars->MaxRefIdxL1 = 1;
+    }
     pars->MaxBRefIdxL0 = 1;
     pars->GeneralizedPB = (opts_hevc->GPB == MFX_CODINGOPTION_ON);
     pars->PGopPicSize = (pars->GopRefDist > 1 || pars->MaxRefIdxL0 == 1) ? 1 : PGOP_PIC_SIZE;
@@ -284,8 +290,12 @@ mfxStatus H265Encoder::SetVPS()
     vps->vps_max_layers = 1;
     vps->vps_max_sub_layers = 1;
     vps->vps_temporal_id_nesting_flag = 1;
-    vps->vps_max_dec_pic_buffering[0] = (Ipp8u)(MAX(m_videoParam.MaxRefIdxL0,m_videoParam.MaxBRefIdxL0) +
-        m_videoParam.MaxRefIdxL1);
+    if (m_videoParam.BPyramid)
+        vps->vps_max_dec_pic_buffering[0] = m_videoParam.GopRefDist == 8 ? 4 : 2;
+    else
+        vps->vps_max_dec_pic_buffering[0] = (Ipp8u)(MAX(m_videoParam.MaxRefIdxL0,m_videoParam.MaxBRefIdxL0) +
+            m_videoParam.MaxRefIdxL1);
+
     vps->vps_max_num_reorder_pics[0] = (Ipp8u)(m_videoParam.GopRefDist - 1);
     vps->vps_max_latency_increase[0] = 0;
     vps->vps_num_layer_sets = 1;
@@ -468,9 +478,20 @@ mfxStatus H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice)
 //    slice->deblocking_filter_override_flag = 0;
     slice->slice_cb_qp_offset = m_pps.pps_cb_qp_offset;
     slice->slice_cr_qp_offset = m_pps.pps_cb_qp_offset;
-
-    slice->num_ref_idx_l0_active = m_pps.num_ref_idx_l0_default_active;
-    slice->num_ref_idx_l1_active = m_pps.num_ref_idx_l1_default_active;
+   
+    if (m_videoParam.BPyramid) {
+        Ipp8u num_ref0 = m_videoParam.MaxRefIdxL0;
+        Ipp8u num_ref1 = m_videoParam.MaxRefIdxL1;
+        if (slice->slice_type == B_SLICE) {
+            if (num_ref0 > 1) num_ref0 >>= 1;
+            if (num_ref1 > 1) num_ref1 >>= 1;
+        }
+        slice->num_ref_idx_l0_active = num_ref0;
+        slice->num_ref_idx_l1_active = num_ref1;
+    } else {
+        slice->num_ref_idx_l0_active = m_pps.num_ref_idx_l0_default_active;
+        slice->num_ref_idx_l1_active = m_pps.num_ref_idx_l1_default_active;
+    }
 
     slice->pgop_idx = slice->slice_type == P_SLICE ? (Ipp8u)m_pCurrentFrame->m_PGOPIndex : 0;
     if (m_videoParam.GeneralizedPB && slice->slice_type == P_SLICE) {
@@ -482,7 +503,8 @@ mfxStatus H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice)
     slice->short_term_ref_pic_set_sps_flag = 1;
     if (m_pCurrentFrame->m_RPSIndex > 0) {
         slice->short_term_ref_pic_set_idx = m_pCurrentFrame->m_RPSIndex;
-        slice->num_ref_idx_l0_active = m_videoParam.MaxBRefIdxL0;
+        if (!m_videoParam.BPyramid)
+            slice->num_ref_idx_l0_active = m_videoParam.MaxBRefIdxL0;
     } else if (m_pCurrentFrame->m_PGOPIndex == 0)
         slice->short_term_ref_pic_set_idx = 0;
     else
@@ -529,15 +551,71 @@ mfxStatus H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice)
     return MFX_ERR_NONE;
 }
 
+static Ipp8u dpoc_neg[][8][5] = {
+    //GopRefDist 4
+    {{2, 4, 2},
+    {1, 1},
+    {1, 2},
+    {1, 1}},
+
+    //GopRefDist 8
+    {{4, 8, 2, 2, 4},
+    {1, 1},
+    {2, 2, 2},
+    {2, 1, 2},
+    {2, 4, 2},
+    {2, 1, 4},
+    {3, 2, 2, 2},
+    {3, 1, 2, 4}},
+};
+
+static Ipp8u dpoc_pos[][8][5] = {
+    //GopRefDist 4
+    {{0},
+    {2, 1, 2},
+    {1, 2},
+    {1, 1}},
+
+    //GopRefDist 8
+    {{0,},
+    {3, 1, 2, 4},
+    {2, 2, 4},
+    {2, 1, 4},
+    {1, 4},
+    {2, 1, 2},
+    {1, 2},
+    {1, 1}}
+};
 
 void H265Encoder::InitShortTermRefPicSet()
 {
     Ipp32s i, j;
     Ipp32s deltaPoc;
 
-    deltaPoc = m_videoParam.TreatBAsReference ? 1 : m_videoParam.GopRefDist;
-
     m_numShortTermRefPicSets = 0;
+
+    if (m_videoParam.BPyramid && m_videoParam.GopRefDist > 2) {
+        Ipp8u r = m_videoParam.GopRefDist == 4 ? 0 : 1;
+        for (i = 0; i < 8; i++){
+            m_ShortRefPicSet[i].inter_ref_pic_set_prediction_flag = 0;
+            m_ShortRefPicSet[i].num_negative_pics = dpoc_neg[r][i][0];
+            m_ShortRefPicSet[i].num_positive_pics = dpoc_pos[r][i][0];
+
+            for (j = 0; j < m_ShortRefPicSet[i].num_negative_pics; j++) {
+                m_ShortRefPicSet[i].delta_poc[j] = dpoc_neg[r][i][1+j];
+                m_ShortRefPicSet[i].used_by_curr_pic_flag[j] = 1;
+            }
+            for (j = 0; j < m_ShortRefPicSet[i].num_positive_pics; j++) {
+                m_ShortRefPicSet[i].delta_poc[m_ShortRefPicSet[i].num_negative_pics + j] = dpoc_pos[r][i][1+j];
+                m_ShortRefPicSet[i].used_by_curr_pic_flag[m_ShortRefPicSet[i].num_negative_pics + j] = 1;
+            }
+            m_numShortTermRefPicSets++;
+        }
+        m_sps.num_short_term_ref_pic_sets = (Ipp8u)m_numShortTermRefPicSets;
+        return;
+    }
+
+    deltaPoc = m_videoParam.TreatBAsReference ? 1 : m_videoParam.GopRefDist;
 
     for (i = 0; i < m_videoParam.PGopPicSize; i++)
     {
@@ -557,23 +635,50 @@ void H265Encoder::InitShortTermRefPicSet()
         m_numShortTermRefPicSets++;
     }
 
-    for (i = 1; i < m_videoParam.GopRefDist; i++)
-    {
-        m_ShortRefPicSet[i].inter_ref_pic_set_prediction_flag = 0;
-        m_ShortRefPicSet[i].num_negative_pics = m_videoParam.MaxBRefIdxL0;
-        m_ShortRefPicSet[i].num_positive_pics = 1;
+/*
+    if (m_videoParam.BPyramid) {
+        for (i = 1; i < m_videoParam.GopRefDist; i++)
+        {
+            m_ShortRefPicSet[i].inter_ref_pic_set_prediction_flag = 0;
+            m_ShortRefPicSet[i].num_negative_pics = 1;
+            m_ShortRefPicSet[i].num_positive_pics = 1;
 
-        m_ShortRefPicSet[i].delta_poc[0] = m_videoParam.TreatBAsReference ? 1 : i;
-        m_ShortRefPicSet[i].used_by_curr_pic_flag[0] = 1;
-        for (j = 1; j < m_ShortRefPicSet[i].num_negative_pics; j++) {
-            m_ShortRefPicSet[i].delta_poc[j] = deltaPoc;
-            m_ShortRefPicSet[i].used_by_curr_pic_flag[j] = 1;
+            deltaPoc = 1;
+            while(m_BpyramidRefLayers[i-deltaPoc] >= m_BpyramidRefLayers[i])
+                deltaPoc++;
+
+            m_ShortRefPicSet[i].delta_poc[0] = deltaPoc;
+            m_ShortRefPicSet[i].used_by_curr_pic_flag[0] = 1;
+            for (j = 1; j < m_ShortRefPicSet[i].num_negative_pics; j++) {
+                m_ShortRefPicSet[i].delta_poc[j] = deltaPoc;
+                m_ShortRefPicSet[i].used_by_curr_pic_flag[j] = 1;
+            }
+            for (j = 0; j < m_ShortRefPicSet[i].num_positive_pics; j++) {
+                m_ShortRefPicSet[i].delta_poc[m_ShortRefPicSet[i].num_negative_pics + j] = deltaPoc;
+                m_ShortRefPicSet[i].used_by_curr_pic_flag[m_ShortRefPicSet[i].num_negative_pics + j] = 1;
+            }
+            m_numShortTermRefPicSets++;
         }
-        for (j = 0; j < m_ShortRefPicSet[i].num_positive_pics; j++) {
-            m_ShortRefPicSet[i].delta_poc[m_ShortRefPicSet[i].num_negative_pics + j] = m_videoParam.GopRefDist - i;
-            m_ShortRefPicSet[i].used_by_curr_pic_flag[m_ShortRefPicSet[i].num_negative_pics + j] = 1;
+    } else*/
+    {
+        for (i = 1; i < m_videoParam.GopRefDist; i++)
+        {
+            m_ShortRefPicSet[i].inter_ref_pic_set_prediction_flag = 0;
+            m_ShortRefPicSet[i].num_negative_pics = m_videoParam.MaxBRefIdxL0;
+            m_ShortRefPicSet[i].num_positive_pics = 1;
+
+            m_ShortRefPicSet[i].delta_poc[0] = m_videoParam.TreatBAsReference ? 1 : i;
+            m_ShortRefPicSet[i].used_by_curr_pic_flag[0] = 1;
+            for (j = 1; j < m_ShortRefPicSet[i].num_negative_pics; j++) {
+                m_ShortRefPicSet[i].delta_poc[j] = deltaPoc;
+                m_ShortRefPicSet[i].used_by_curr_pic_flag[j] = 1;
+            }
+            for (j = 0; j < m_ShortRefPicSet[i].num_positive_pics; j++) {
+                m_ShortRefPicSet[i].delta_poc[m_ShortRefPicSet[i].num_negative_pics + j] = m_videoParam.GopRefDist - i;
+                m_ShortRefPicSet[i].used_by_curr_pic_flag[m_ShortRefPicSet[i].num_negative_pics + j] = 1;
+            }
+            m_numShortTermRefPicSets++;
         }
-        m_numShortTermRefPicSets++;
     }
 
     m_sps.num_short_term_ref_pic_sets = (Ipp8u)m_numShortTermRefPicSets;
@@ -652,12 +757,52 @@ mfxStatus H265Encoder::Init(mfxVideoH265InternalParam *param, mfxExtCodingOption
     m_bMakeNextFrameIDR = true;
     m_uIntraFrameInterval = 0;
     m_uIDRFrameInterval = 0;
-    m_isBpyramid = 0;
     m_l1_cnt_to_start_B = 0;
     m_PicOrderCnt = 0;
     m_PicOrderCnt_Accu = 0;
     m_PGOPIndex = 0;
     m_frameCountEncoded = 0;
+
+    m_Bpyramid_currentNumFrame = 0;
+    m_Bpyramid_nextNumFrame = 0;
+    m_Bpyramid_maxNumFrame = 0;
+    
+    if (m_videoParam.BPyramid)
+    {
+        Ipp8u n = 0;
+        Ipp32s GopRefDist = m_videoParam.GopRefDist;
+        Ipp32s i, j, k;
+
+        while (((GopRefDist & 1) == 0) && GopRefDist > 1) {
+            GopRefDist >>= 1;
+            n ++;
+        }
+
+        m_Bpyramid_maxNumFrame = 1 << n;
+        m_BpyramidTab[0] = 0;
+        m_BpyramidTab[(Ipp32u)(1 << n)] = 0;
+        m_BpyramidTabRight[0] = 0;
+        m_BpyramidRefLayers[0] = 0;
+
+        for (i = n - 1, j = 0; i >= 0; i--, j++)
+        {
+            for (k = 0; k < (1 << j); k++)
+            {
+                if ((k & 1) == 0)
+                {
+                    m_BpyramidTab[(1<<i)+(k*(1<<(i+1)))] = m_BpyramidTab[(k+1)*(1<<(i+1))] + 1;
+                }
+                else
+                {
+                    m_BpyramidTab[(1<<i)+(k*(1<<(i+1)))] = m_BpyramidTab[k*(1<<(i+1))] + (1 << (i+1));
+                }
+
+                m_BpyramidTabRight[m_BpyramidTab[(1<<i)+(k*(1<<(i+1)))]] = m_BpyramidTab[(1<<(i+1))+(k*(1<<(i+1)))];
+                m_BpyramidRefLayers[(1<<i)+(k*(1<<(i+1)))] = (Ipp8u)(j + 1);
+            }
+        }
+    }
+    m_BpyramidRefLayers[m_videoParam.GopRefDist] = 0;
 
     if (param->mfx.RateControlMethod != MFX_RATECONTROL_CQP)
     {
@@ -772,7 +917,7 @@ Ipp32u H265Encoder::DetermineFrameType()
         ePictureType = MFX_FRAMETYPE_B;
         if (m_uIntraFrameInterval+2 == m_videoParam.GopPicSize &&
             (m_videoParam.GopClosedFlag || m_uIDRFrameInterval == m_videoParam.IdrInterval) )
-            if (!m_videoParam.GopStrictFlag)
+            if (!m_videoParam.BPyramid && !m_videoParam.GopStrictFlag)
                 ePictureType = MFX_FRAMETYPE_P;
             // else ?? // B-group will start next GOP using only L1 ref
     }
@@ -1934,6 +2079,59 @@ mfxStatus H265Encoder::EncodeThreadByRow(Ipp32s ithread) {
 
 static Ipp8u h265_pgop_qp_diff[PGOP_PIC_SIZE] = {0, 2, 1, 2};
 
+void H265Encoder::PrepareToEndSequence()
+{
+    if (m_pLastFrame && m_pLastFrame->m_PicCodType == MFX_FRAMETYPE_B)
+    {
+        if (m_videoParam.BPyramid)
+        {
+            H265Frame *pCurr = m_cpb.head();
+            Ipp8s tmbBuff[129];
+            Ipp32s i;
+
+            for (i = 0; i < 129; i++)
+            {
+                tmbBuff[i] = -1;
+            }
+
+            while (pCurr)
+            {
+                if (pCurr->m_PicCodType == MFX_FRAMETYPE_B)
+                {
+                    Ipp32u active_L1_refs;
+                    m_dpb.countL1Refs(active_L1_refs, pCurr->PicOrderCnt());
+
+                    if (active_L1_refs == 0)
+                    {
+                        tmbBuff[pCurr->m_BpyramidNumFrame] = 1;
+                    }
+                }
+                pCurr = pCurr->future();
+            }
+
+            pCurr = m_cpb.head();
+
+            while (pCurr)
+            {
+                if (pCurr->m_PicCodType == MFX_FRAMETYPE_B)
+                {
+                    Ipp32u active_L1_refs;
+                    m_dpb.countL1Refs(active_L1_refs, pCurr->PicOrderCnt());
+
+                    if (active_L1_refs == 0)
+                    {
+                        if (tmbBuff[m_BpyramidTabRight[pCurr->m_BpyramidNumFrame]] != 1)
+                        {
+                            pCurr->m_PicCodType = MFX_FRAMETYPE_P;
+                        }
+                    }
+                }
+                pCurr = pCurr->future();
+            }
+        }
+    }
+}
+
 mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxBS) {
     EnumPicClass    ePic_Class;
 
@@ -1985,14 +2183,14 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
             m_pCurrentFrame->InitRefPicListResetCount();
 
             m_PicOrderCnt++;
-/*
-            if (m_isBpyramid)
+
+            if (m_videoParam.BPyramid)
             {
-                if (ePictureType == INTRAPIC)
+                if (ePictureType == MFX_FRAMETYPE_I || ePictureType == MFX_FRAMETYPE_P)
                     m_Bpyramid_currentNumFrame = 0;
 
                 m_pCurrentFrame->m_BpyramidNumFrame = m_BpyramidTab[m_Bpyramid_currentNumFrame];
-                m_pCurrentFrame->m_BpyramidRefLayers = m_BpyramidRefLayers[m_Bpyramid_currentNumFrame];
+//                m_pCurrentFrame->m_BpyramidRefLayers = m_BpyramidRefLayers[m_Bpyramid_currentNumFrame];
                 m_pCurrentFrame->m_isBRef = ((m_Bpyramid_currentNumFrame & 1) == 0) ? 1 : 0;
                 m_Bpyramid_currentNumFrame++;
                 if (m_Bpyramid_currentNumFrame == m_Bpyramid_maxNumFrame)
@@ -2000,19 +2198,22 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
 
                 m_l1_cnt_to_start_B = 1;
             }
-*/
+
             if (m_pCurrentFrame->m_bIsIDRPic)
             {
                 m_cpb.IncreaseRefPicListResetCount(m_pCurrentFrame);
 //                m_l1_cnt_to_start_B = 0;
-                if (m_pLastFrame && !m_pLastFrame->wasEncoded() && m_pLastFrame->m_PicCodType == MFX_FRAMETYPE_B)
-                    if (!m_videoParam.GopStrictFlag)
-                        m_pLastFrame->m_PicCodType = MFX_FRAMETYPE_P;
-                    else {
-                        // Correct m_PicOrderCnt
-                        // MoveTrailingBtoNextGOP();
-                    }
-//                PrepareToEndSequence();
+                if (m_videoParam.BPyramid) {
+                    PrepareToEndSequence();
+                } else {
+                    if (m_pLastFrame && !m_pLastFrame->wasEncoded() && m_pLastFrame->m_PicCodType == MFX_FRAMETYPE_B)
+                        if (!m_videoParam.GopStrictFlag)
+                            m_pLastFrame->m_PicCodType = MFX_FRAMETYPE_P;
+                        else {
+                            // Correct m_PicOrderCnt
+                            // MoveTrailingBtoNextGOP();
+                        }
+                }
             }
 
             m_pLastFrame = m_pCurrentFrame;
@@ -2023,23 +2224,27 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
             return MFX_ERR_UNKNOWN;
         }
     } else {
-        if (m_pLastFrame && !m_pLastFrame->wasEncoded() && m_pLastFrame->m_PicCodType == MFX_FRAMETYPE_B && !m_videoParam.GopStrictFlag)
-            m_pLastFrame->m_PicCodType = MFX_FRAMETYPE_P;
+        if (m_videoParam.BPyramid) {
+            PrepareToEndSequence();
+        } else {
+            if (m_pLastFrame && !m_pLastFrame->wasEncoded() && m_pLastFrame->m_PicCodType == MFX_FRAMETYPE_B && !m_videoParam.GopStrictFlag)
+                m_pLastFrame->m_PicCodType = MFX_FRAMETYPE_P;
+        }
     }
 
     m_pCurrentFrame = m_cpb.findOldestToEncode(&m_dpb, m_l1_cnt_to_start_B,
-                                               0, 0 /*m_isBpyramid, m_Bpyramid_nextNumFrame*/);
+                                               m_videoParam.BPyramid, m_Bpyramid_nextNumFrame);
     if (m_l1_cnt_to_start_B == 0 && m_pCurrentFrame && m_pCurrentFrame->m_PicCodType == MFX_FRAMETYPE_B && !m_videoParam.GopStrictFlag)
         m_pCurrentFrame->m_PicCodType = MFX_FRAMETYPE_P;
 
-//        if (!m_isBpyramid)
+//    if (!m_videoParam.BPyramid)
     {
         // make sure no B pic is left unencoded before program exits
 //            if (((m_info.NumFramesToEncode - m_info.NumEncodedFrames) < m_info.NumRefToStartCodeBSlice) &&
 //                !m_cpb.isEmpty() && !m_pCurrentFrame && !src)
         if (!m_cpb.isEmpty() && !m_pCurrentFrame && !surface) {
             m_pCurrentFrame = m_cpb.findOldestToEncode(&m_dpb, 0, 0, 0/*m_isBpyramid, m_Bpyramid_nextNumFrame*/);
-            if (m_pCurrentFrame && m_pCurrentFrame->m_PicCodType == MFX_FRAMETYPE_B && !m_videoParam.GopStrictFlag)
+            if (!m_videoParam.BPyramid && m_pCurrentFrame && m_pCurrentFrame->m_PicCodType == MFX_FRAMETYPE_B && !m_videoParam.GopStrictFlag)
                 m_pCurrentFrame->m_PicCodType = MFX_FRAMETYPE_P;
         }
     }
@@ -2056,12 +2261,12 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
 
         MoveFromCPBToDPB();
 
-/*        if (m_isBpyramid)
+        if (m_videoParam.BPyramid)
         {
             m_Bpyramid_nextNumFrame = m_pCurrentFrame->m_BpyramidNumFrame + 1;
             if (m_Bpyramid_nextNumFrame == m_Bpyramid_maxNumFrame)
                 m_Bpyramid_nextNumFrame = 0;
-        }*/
+        }
     }
     else
     {
@@ -2102,8 +2307,10 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
 
     case MFX_FRAMETYPE_B:
         m_videoParam.QP = m_videoParam.QPB;
-        m_videoParam.QPChroma = m_videoParam.QPBChroma;
-        if (!m_isBpyramid)
+        if (m_videoParam.BPyramid)
+            m_videoParam.QP += m_BpyramidRefLayers[m_pCurrentFrame->m_PicOrderCnt % m_videoParam.GopRefDist];
+        m_videoParam.QPChroma = h265_QPtoChromaQP[m_videoParam.QP];
+        if (!m_videoParam.BPyramid)
         {
             ePic_Class = m_videoParam.TreatBAsReference ? REFERENCE_PIC : DISPOSABLE_PIC;
         }
