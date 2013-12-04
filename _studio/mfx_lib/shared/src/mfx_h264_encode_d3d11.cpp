@@ -670,6 +670,7 @@ mfxStatus D3D11Encoder::QueryStatus(
     {
     case ENCODE_OK:
         task.m_bsDataLength[fieldId] = feedback->bitstreamSize;
+        task.m_qpY[fieldId] = feedback->QpY;
         m_feedbackCached.Remove(task.m_statusReportNumber[fieldId]);
         return MFX_ERR_NONE;
 

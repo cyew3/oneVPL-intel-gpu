@@ -2524,6 +2524,12 @@ mfxStatus ImplementationAvc::UpdateBitstream(
                 encFrameInfo->FrameOrder = task.m_extFrameTag;
                 encFrameInfo->LongTermIdx = task.m_longTermFrameIdx == NO_INDEX_U8 ? NO_INDEX_U16 : task.m_longTermFrameIdx;
 
+                if (   m_video.mfx.RateControlMethod == MFX_RATECONTROL_CQP
+                    || m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA)
+                    encFrameInfo->QP = task.m_cqpValue[fid];
+                else
+                    encFrameInfo->QP = task.m_qpY[fid];
+
                 // only return of ref list L0 is supported at the moment
                 mfxU8 i = 0;
                 for (i = 0; i < task.m_list0[0].Size(); i ++)
