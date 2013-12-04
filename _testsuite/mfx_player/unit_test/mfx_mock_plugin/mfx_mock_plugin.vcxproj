@@ -31,7 +31,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>mfx_mock_plugin</ProjectName>
-    <ProjectGuid>{F0C05086-E63A-4498-B6D5-50C9C75FE303}</ProjectGuid>
+    <ProjectGuid>{E3310979-4484-48A9-9670-E700A73D10C7}</ProjectGuid>
     <RootNamespace>mfx_utest_infrastructure</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
