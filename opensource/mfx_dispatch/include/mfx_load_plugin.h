@@ -49,7 +49,7 @@ namespace MFX
         PluginModule(const PluginModule & that) ;
         PluginModule & operator = (const PluginModule & that);
         bool Create(mfxPluginUID guid, mfxPlugin&);
-        ~PluginModule(void)
+        ~PluginModule(void);
 
     private:
         void Tidy();
