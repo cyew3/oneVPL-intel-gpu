@@ -50,6 +50,7 @@ enum
     TASK_REC_H265,
     // whole slice is deblocked
     TASK_DEB_SLICE_H265,
+    TASK_DEB_FRAME_H265,
     // piece of slice is deblocked
     TASK_DEB_H265,
     // //whole frame is deblocked (when there is the slice groups)

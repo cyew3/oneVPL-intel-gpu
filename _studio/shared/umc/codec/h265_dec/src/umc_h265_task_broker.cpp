@@ -739,6 +739,48 @@ bool TaskBroker_H265::GetNextSliceToDeblocking(H265DecoderFrameInfo * info, H265
     // this is guarded function, safe to touch any variable
 
     Ipp32s sliceCount = info->GetSliceCount();
+
+    if (info->m_hasTiles)
+    {
+        for (Ipp32s i = 0; i < sliceCount; i += 1)
+        {
+            H265Slice *pSlice = info->GetSlice(i);
+
+            if (pSlice->m_bInProcess || !pSlice->m_bDecoded)
+                return false;
+        }
+
+        bool bNothingToDo = true;
+
+        for (Ipp32s i = 0; i < sliceCount; i += 1)
+        {
+            H265Slice *pSlice = info->GetSlice(i);
+
+            VM_ASSERT(false == pSlice->m_bInProcess);
+
+            if (true == pSlice->m_bDeblocked)
+                continue;
+
+            pSlice->m_bInProcess = true;
+            pSlice->m_processVacant[DEB_PROCESS_ID] = 0;
+            if (false == pSlice->m_bDeblocked)
+                bNothingToDo = false;
+        }
+
+        // we already deblocked
+        if (bNothingToDo)
+            return false;
+
+        H265Slice *pSlice = info->GetSlice(0);
+        InitTask(info, pTask, pSlice);
+        pTask->m_iFirstMB = 0;
+        pTask->m_iMBToProcess = pSlice->m_iAvailableMB;
+        pTask->m_iTaskID = TASK_DEB_FRAME_H265;
+        pTask->m_pBuffer = NULL;
+        pTask->pFunction = &H265SegmentDecoderMultiThreaded::DeblockSegmentTask;
+        return true;
+    }
+
     bool bPrevDeblocked = true;
 
     for (Ipp32s i = 0; i < sliceCount; i += 1)
@@ -809,8 +851,22 @@ void TaskBroker_H265::AddPerformedTask(H265Task *pTask)
     else if (TASK_DEB_SLICE_H265 == pTask->m_iTaskID)
     {
         pSlice->m_processVacant[DEB_PROCESS_ID] = 1;
-        pSlice->m_bDeblocked = 1;
+        pSlice->m_bDeblocked = true;
         pSlice->m_bInProcess = false;
+    }
+    else if (TASK_DEB_FRAME_H265 == pTask->m_iTaskID)
+    {
+        Ipp32s sliceCount = info->GetSliceCount();
+
+        // frame is deblocked
+        for (Ipp32s i = 0; i < sliceCount; i += 1)
+        {
+            H265Slice *pSlice = info->GetSlice(i);
+
+            pSlice->m_processVacant[DEB_PROCESS_ID] = 1;
+            pSlice->m_bDeblocked = true;
+            pSlice->m_bInProcess = false;
+        }
     }
     else if (TASK_SAO_FRAME_H265 == pTask->m_iTaskID)
     {
