@@ -48,8 +48,8 @@ namespace
     const wchar_t GUIDKeyName[] = L"GUID";
     const wchar_t PathKeyName[] = L"Path";
     const wchar_t DefaultKeyName[] = L"Default";
-    const wchar_t PlgVerKeyName[] = L"PlgVer";
-    const wchar_t APIVerKeyName[] = L"APIVer";
+    const wchar_t PlgVerKeyName[] = L"PluginVersion";
+    const wchar_t APIVerKeyName[] = L"APIVersion";
 }
 
 namespace 
