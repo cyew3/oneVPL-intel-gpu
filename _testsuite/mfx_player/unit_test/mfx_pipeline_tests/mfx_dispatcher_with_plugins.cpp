@@ -168,9 +168,9 @@ SUITE(DispatcherWithPlugins) {
             RegSetValueExA(hk, "Path", 0, REG_SZ, (BYTE*)path.c_str(), path.length());
             RegSetValueExA(hk, "Type", 0, REG_DWORD, (BYTE*)&pluginParams.Type, sizeof(pluginParams.Type));
             mfxU32 version = pluginParams.PluginVersion;
-            RegSetValueExA(hk, "PlgVer", 0, REG_DWORD, (BYTE*)&version, sizeof(version));
+            RegSetValueExA(hk, "PluginVersion", 0, REG_DWORD, (BYTE*)&version, sizeof(version));
             mfxU32 APIVersion = pluginParams.APIVersion.Major*256 + pluginParams.APIVersion.Minor;
-            RegSetValueExA(hk, "APIVer", 0, REG_DWORD, (BYTE*)&APIVersion, sizeof(APIVersion));
+            RegSetValueExA(hk, "APIVersion", 0, REG_DWORD, (BYTE*)&APIVersion, sizeof(APIVersion));
             RegCloseKey(hk);
             RegCloseKey(hk1);
             
@@ -280,7 +280,7 @@ SUITE(DispatcherWithPlugins) {
                 if (plgFile)
                 {
                     if (bPopulateCFGWith1Plugin) {
-                        fprintf(plgFile, "PlgVer     = %d\n\n\n", pluginParams.PluginVersion);
+                        fprintf(plgFile, "PluginVersion = %d\n\n\n", pluginParams.PluginVersion);
                         fprintf(plgFile, "FileName32 = \"%s%s\"\n\n\n\n", mockPluginDllName, dll_postfix.c_str());
                         fprintf(plgFile, "FileName64 = \"%s%s\"\n", mockPluginDllName, dll_postfix.c_str());
                     }
