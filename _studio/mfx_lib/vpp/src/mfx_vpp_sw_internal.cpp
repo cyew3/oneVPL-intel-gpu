@@ -1103,7 +1103,7 @@ mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint
     }
     else if( MFX_EXTBUFF_VPP_COMPOSITE == filterName )
     {
-        if (MFX_PLATFORM_SOFTWARE == core->GetPlatformType())
+        if ((NULL != core) && (MFX_PLATFORM_SOFTWARE == core->GetPlatformType()))
         {
             sts = MFX_ERR_UNSUPPORTED;
         }
