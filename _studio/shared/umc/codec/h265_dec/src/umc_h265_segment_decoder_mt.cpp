@@ -58,6 +58,7 @@ void H265SegmentDecoderMultiThreaded::StartProcessingSegment(H265Task &Task)
     m_pSeqParamSet = m_pSlice->GetSeqParam();
     m_pCurrentFrame = m_pSlice->GetCurrentFrame();
     m_bIsNeedWADeblocking = m_pCurrentFrame->GetAU()->IsNeedWorkAroundForDeblocking();
+    m_hasTiles = Task.m_pSlicesInfo->m_hasTiles;
 
     m_SD = CreateSegmentDecoder();
 
