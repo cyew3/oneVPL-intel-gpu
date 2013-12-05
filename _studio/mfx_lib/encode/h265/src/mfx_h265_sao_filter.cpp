@@ -357,13 +357,13 @@ void GetCtuStatistics_RBoundary_Internal(
     const MFX_HEVC_PP::CTBBorders& borders,
     MFX_HEVC_PP::SaoCtuStatistics* statsDataTypes)
 {
-    Ipp16s signLineBuf1[64+1];
-    Ipp16s signLineBuf2[64+1];
+//    Ipp16s signLineBuf1[64+1];
+    //Ipp16s signLineBuf2[64+1];
 
     int x, y, startX, startY, endX, endY;
-    int firstLineStartX, firstLineEndX;
+  //  int firstLineStartX, firstLineEndX;
     int edgeType;
-    Ipp16s signLeft, signRight, signDown;
+    Ipp16s signLeft, signRight;//, signDown;
     Ipp64s *diff, *count;
     
     //const int compIdx = SAO_Y;
