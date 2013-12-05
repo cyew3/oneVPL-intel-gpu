@@ -1621,8 +1621,7 @@ mfxStatus MFXVideoENCODEMJPEG::RunThread(MJPEGEncodeTask &task, mfxU32 threadNum
     {
         mfxFrameSurface1 *surface = task.surface;
 
-        if (m_useAuxInput || 
-            surface->Data.Y == 0 && surface->Data.U == 0 && surface->Data.V == 0 && surface->Data.A == 0)
+        if (m_useAuxInput)
         {
             mfxRes = m_core->LockFrame(task.auxInput.Data.MemId, &task.auxInput.Data);
             MFX_CHECK_STS(mfxRes);
@@ -1661,6 +1660,40 @@ mfxStatus MFXVideoENCODEMJPEG::RunThread(MJPEGEncodeTask &task, mfxU32 threadNum
             MFX_CHECK_STS(mfxRes);
 
             mfxRes = m_core->UnlockFrame(task.auxInput.Data.MemId, &task.auxInput.Data);
+            MFX_CHECK_STS(mfxRes);
+        }
+        else if (surface->Data.Y == 0 && surface->Data.U == 0 && surface->Data.V == 0 && surface->Data.A == 0)
+        {
+            mfxRes = m_core->LockExternalFrame(surface->Data.MemId, &(surface->Data));
+            MFX_CHECK_STS(mfxRes);
+
+            if (surface->Data.Y)
+            {
+                if (surface->Info.FourCC == MFX_FOURCC_YV12 && (!surface->Data.U || !surface->Data.V) ||
+                    surface->Info.FourCC == MFX_FOURCC_NV12 && !surface->Data.UV)
+                {
+                    return MFX_ERR_UNDEFINED_BEHAVIOR;
+                }
+                
+                mfxU32 pitch = surface->Data.PitchLow + ((mfxU32)surface->Data.PitchHigh << 16);
+                if (pitch >= 0x8000 || !pitch)
+                {
+                    return MFX_ERR_UNDEFINED_BEHAVIOR;
+                }
+            }
+            else
+            {
+                if (surface->Info.FourCC == MFX_FOURCC_YV12 && (surface->Data.U || surface->Data.V) ||
+                    surface->Info.FourCC == MFX_FOURCC_NV12 && surface->Data.UV)
+                {
+                    return MFX_ERR_UNDEFINED_BEHAVIOR;
+                }
+            }
+            
+            mfxRes = task.AddSource(task.surface, &(m_vParam.mfx.FrameInfo), true);
+            MFX_CHECK_STS(mfxRes);
+            
+            mfxRes = m_core->UnlockExternalFrame(task.surface->Data.MemId, &task.surface->Data);
             MFX_CHECK_STS(mfxRes);
         }
         else
