@@ -54,9 +54,13 @@ SUITE(DispatcherWithPlugins) {
     std::setw(2) << std::setfill('0') << std::hex << (int)( x )
 
     const char rootPluginPath[] = "Software\\Intel\\MediaSDK\\Dispatch\\Plugin";
+    const char rootDispatchPath[] = "Software\\Intel\\MediaSDK\\Dispatch";
+    const char swLibPrefix[] = "Mocked_LIB_";
 #ifdef DEBUG
+    const char libmfxLibDllName[] = "libmfxsw32_d.dll";
     const char mockPluginDllName[] = "mfx_mock_plugin_d.dll";
 #else
+    const char libmfxLibDllName[] = "libmfxsw32.dll";
     const char mockPluginDllName[] = "mfx_mock_plugin.dll";
 #endif
 
@@ -109,7 +113,7 @@ SUITE(DispatcherWithPlugins) {
                 plgParams.Type = MFX_PLUGINTYPE_VIDEO_ENCODE;
                 plgParams.APIVersion = g_MfxApiVersion;
                 
-                RegDeleteTreeA(HKEY_LOCAL_MACHINE, rootPluginPath);
+                cleanReg();
         }
         
         static mfxStatus MFX_CDECL MockCreatePluginPtr(mfxPluginUID uid, mfxPlugin* plugin) {
@@ -131,9 +135,29 @@ SUITE(DispatcherWithPlugins) {
             FreeLibrary(mHodule);
         }
 
-        void createKey(mfxPluginParam &pluginParams, const std::string &name, const std::string &path, int isDefault) {
+        void createKeyForSWLibrary(const std::string &name, mfxVersion   APIVersion, const std::string &path) {
             HKEY hk1;
-            RegCreateKeyA(HKEY_LOCAL_MACHINE, rootPluginPath, &hk1);
+            RegCreateKeyA(HKEY_LOCAL_MACHINE, rootDispatchPath, &hk1);
+            HKEY hk;
+            RegCreateKeyA(hk1, name.c_str(), &hk);
+            RegSetValueExA(hk, "Path", 0, REG_SZ, (BYTE*)path.c_str(), path.length());
+            mfxU32 merit = 100;
+            RegSetValueExA(hk, "Merit", 0, REG_DWORD, (BYTE*)&merit, sizeof(merit));
+
+            mfxU32 deviceid = 0;
+            RegSetValueExA(hk, "DeviceID", 0, REG_DWORD, (BYTE*)&deviceid, sizeof(deviceid));
+            mfxU32 vendorid = 0;
+            RegSetValueExA(hk, "VendorID", 0, REG_DWORD, (BYTE*)&vendorid, sizeof(vendorid));
+
+            mfxU32 APIVersionInReg = APIVersion.Major*256 + APIVersion.Minor;
+            RegSetValueExA(hk, "APIVersion", 0, REG_DWORD, (BYTE*)&APIVersionInReg, sizeof(APIVersionInReg));
+            RegCloseKey(hk);
+            RegCloseKey(hk1);
+        }
+
+        void createKey(mfxPluginParam &pluginParams, const std::string &registryPath, const std::string &name, const std::string &path, int isDefault, bool bLoadAndSetMock = true) {
+            HKEY hk1;
+            RegCreateKeyA(HKEY_LOCAL_MACHINE, registryPath.c_str(), &hk1);
             HKEY hk;
             RegCreateKeyA(hk1, name.c_str(), &hk);
 
@@ -150,7 +174,9 @@ SUITE(DispatcherWithPlugins) {
             RegCloseKey(hk);
             RegCloseKey(hk1);
             
-            LoadTargetPluginAndSetMock(mockPluginDllName);
+            if (bLoadAndSetMock) {
+                LoadTargetPluginAndSetMock(mockPluginDllName);
+            }
         }
 
         DECLARE_MOCK_METHOD2(mfxStatus , Create, mfxPluginUID , mfxPlugin* );
@@ -158,12 +184,36 @@ SUITE(DispatcherWithPlugins) {
         TEST_METHOD_TYPE(Create) createArgs;
 
         ~WhenRegistryContainsNoPlugin() {
-            RegDeleteTreeA(HKEY_LOCAL_MACHINE, rootPluginPath);
+            cleanReg();
             for (size_t i = 0; i < dirsToRemove.size(); i++)
             {
                 system((std::string("rmdir /S /Q ") + dirsToRemove[i].c_str()).c_str());
             }
             UnloadPlugin();
+        }
+
+        void cleanReg() {
+            RegDeleteTreeA(HKEY_LOCAL_MACHINE, rootPluginPath);
+
+            std::string   subKeyName;
+            subKeyName.resize(100);
+
+            for(int index = 0; ; index++) 
+            {
+
+                DWORD     subKeyNameSize = subKeyName.size();
+
+                // query next value name
+                LONG enumRes = RegEnumKeyA(HKEY_LOCAL_MACHINE, index, &subKeyName.front(), subKeyNameSize);
+                if (ERROR_SUCCESS != enumRes) {
+                    break;
+                }
+                if (std::string::npos == subKeyName.find(swLibPrefix)){
+                    continue;
+                }
+
+                RegDeleteTreeA(HKEY_LOCAL_MACHINE, (std::string(rootPluginPath) + subKeyName.substr(0, strlen(subKeyName.c_str()))).c_str());
+            }
         }
 
        
@@ -178,7 +228,7 @@ SUITE(DispatcherWithPlugins) {
         WhenRegistryContainsOnePlugin ()
         {
             //set path to mock encoder plugin
-            createKey(plgParams, "N2", mockPluginDllName, true);
+            createKey(plgParams, rootPluginPath, "N2", mockPluginDllName, true);
         }
     };
 
@@ -194,7 +244,8 @@ SUITE(DispatcherWithPlugins) {
             , bool bPopulateCFGWith1Plugin
             , bool bSameAsFileName
             , const std::string &dirName
-            , const std::string &dll_postfix) 
+            , const std::string &dll_postfix
+            , bool bSetMock = true) 
         {
             std::string currentModuleName;
             std::string mockPluginModuleName;
@@ -218,6 +269,7 @@ SUITE(DispatcherWithPlugins) {
             else {
                 currentModuleName.append(dirName);
             }
+
             //need to create folder
             CreateDirectoryA(currentModuleName.c_str(), NULL);
             dirsToRemove.push_back(currentModuleName);
@@ -238,10 +290,14 @@ SUITE(DispatcherWithPlugins) {
             //bSameAsFileName ? dll_postfix : "some_plugin.dll"
             std::string targetModule = currentModuleName + "\\" + mockPluginDllName + dll_postfix ;
             system((std::string("copy /Y /B ") + mockPluginModuleName + " " + targetModule  ).c_str());
+
             /*h = LoadLibraryA(targetModule.c_str());
             FARPROC proc = GetProcAddress(h, "SetContext");
             ((void (MFX_CDECL*)(WhenRegistryContainsNoPlugin*))proc)(this);*/
-            LoadTargetPluginAndSetMock(targetModule);
+            if (bSetMock)
+            {
+                LoadTargetPluginAndSetMock(targetModule);
+            }
 
         }
         ~WhenTestLoadingFileSystemPlugin()
@@ -250,18 +306,50 @@ SUITE(DispatcherWithPlugins) {
         }
     };
     //////////////////////////////////////////////////////////////////////////
-    struct mystruct
-    {
-        ~mystruct()
+
+    TEST_FIXTURE(WhenTestLoadingFileSystemPlugin, PluginLoadedFromRegisryFromSameKeyAsLibrary) {
+        const char libmfxCopiedName[] = "libmfx.dll";
+        createPluginInFS(plgParams, true, true, true, "non_plugin_dir", "_plugin.dll", true);
+        mfxVersion api = {8,1};
+        createKeyForSWLibrary(libmfxCopiedName, api, dirsToRemove.back() + "\\" + libmfxCopiedName);
+
+        std::string currentModuleName;
+        std::string mockPluginModuleName;
+        currentModuleName.resize(512);
+        GetModuleFileNameA(NULL, &currentModuleName.front(), currentModuleName.size());
+        if (GetLastError() != 0) 
         {
-            printf("deleted\n");
+            return;
         }
-    };
+        size_t pos = currentModuleName.find_last_of("\\");
+        currentModuleName = currentModuleName.substr(0, pos+1);
+        currentModuleName.append("non_plugin_dir\\");
+        std::string newLibMfxPath = currentModuleName + libmfxCopiedName;
+        //copy lib to same folder as plugin
+        system((std::string("copy /Y /B ") + libmfxLibDllName + " " + newLibMfxPath).c_str());
+
+        //create key in library subkey
+        createKey(plgParams, std::string(rootDispatchPath) + "\\libmfx.dll\\Plugin",  "N2", currentModuleName + mockPluginDllName + "_plugin.dll", true, false);
+
+        TEST_METHOD_TYPE(Create) createArgs;
+        mfxPlugin plg = mAdapter.operator mfxPlugin();
+        createArgs.ret_val = MFX_ERR_NONE;
+        createArgs.value1  = &plg;
+        this->_Create.WillReturn(createArgs);
+
+        TEST_METHOD_TYPE(MockPlugin::GetPluginParam) getPluginParams;
+        getPluginParams.value0 = plgParams;
+        mockEncoder._GetPluginParam.WillReturn(getPluginParams);
+
+        mfxVersion verToRequest = g_MfxApiVersion;
+        verToRequest.Minor--;
+
+        MFXInit(MFX_IMPL_SOFTWARE, &verToRequest, &session);
+        CHECK_EQUAL(MFX_ERR_NONE, MFXVideoUSER_Load(session, &guid1, pluginVer));
+        MFXClose(session);
+    }
+
     TEST_FIXTURE(WhenTestLoadingFileSystemPlugin, HIVE_build_SUCESS_with_FS_plugin) {
-
-        std::vector<mystruct> s(1);
-        s.pop_back();
-
 
         createPluginInFS(plgParams, true, true, true, "", "_plugin.dll");
 
@@ -473,7 +561,7 @@ SUITE(DispatcherWithPlugins) {
 
     TEST_FIXTURE(WhenRegistryContainsNoPlugin, HIVE_build_SUCESS_if_real_lib_higher_than_requested_and_meet_plg_requirement_MFXInit_version) {
 
-        createKey(plgParams, "N2", mockPluginDllName, true);
+        createKey(plgParams, rootPluginPath, "N2", mockPluginDllName, true);
 
         TEST_METHOD_TYPE(Create) createArgs;
         mfxPlugin plg = mAdapter.operator mfxPlugin();
@@ -496,7 +584,7 @@ SUITE(DispatcherWithPlugins) {
     TEST_FIXTURE(WhenRegistryContainsNoPlugin, HIVE_build_error_if_loaded_plugin_API_version_is_higher_than_MFXInit_version) {
 
         plgParams.APIVersion.Minor++;
-        createKey(plgParams, "N2", mockPluginDllName, true);
+        createKey(plgParams, rootPluginPath, "N2", mockPluginDllName, true);
 
         TEST_METHOD_TYPE(Create) createArgs;
         mfxPlugin plg = mAdapter.operator mfxPlugin();
@@ -516,7 +604,7 @@ SUITE(DispatcherWithPlugins) {
     TEST_FIXTURE(WhenRegistryContainsNoPlugin, HIVE_build_error_if_loaded_plugin_API_version_is_lower_than_MFXInit_version) {
 
         plgParams.APIVersion.Minor--;
-        createKey(plgParams, "N2", mockPluginDllName, true);
+        createKey(plgParams, rootPluginPath, "N2", mockPluginDllName, true);
 
         TEST_METHOD_TYPE(Create) createArgs;
         mfxPlugin plg = mAdapter.operator mfxPlugin();
@@ -540,7 +628,7 @@ SUITE(DispatcherWithPlugins) {
         plgParams.PluginUID = guid1;
         plgParams.Type = MFX_PLUGINTYPE_VIDEO_ENCODE;
         //set path to mock encoder plugin
-        createKey(plgParams, "N2", mockPluginDllName, true);
+        createKey(plgParams, rootPluginPath, "N2", mockPluginDllName, true);
 
 
         TEST_METHOD_TYPE(Create) createArgs;
@@ -825,6 +913,30 @@ SUITE(DispatcherWithPlugins) {
 
         CHECK_EQUAL(MFX_ERR_NONE, MFXVideoUSER_UnLoad(session, &guid1));
 
+        //plugin unloaded loaded with dispatcher
+        CHECK_EQUAL((HMODULE)NULL, GetModuleHandleA(mockPluginDllName));
+
+        MFXClose(session);
+    }
+
+    TEST_FIXTURE(WhenRegistryContainsOnePlugin, twice_load_unload) {
+        TEST_METHOD_TYPE(Create) createArgs;
+        mfxPlugin plg = mAdapter.operator mfxPlugin();
+        createArgs.ret_val = MFX_ERR_NONE;
+        createArgs.value1  = &plg;
+        this->_Create.WillDefaultReturn(&createArgs);
+
+        TEST_METHOD_TYPE(MockPlugin::GetPluginParam) getPluginParams;
+        getPluginParams.value0 = plgParams;
+        mockEncoder._GetPluginParam.WillDefaultReturn(&getPluginParams);
+
+        MFXInit(MFX_IMPL_SOFTWARE, 0, &session);
+        CHECK_EQUAL(MFX_ERR_NONE, MFXVideoUSER_Load(session, &guid1, pluginVer));
+        CHECK_EQUAL(MFX_ERR_NONE, MFXVideoUSER_UnLoad(session, &guid1));
+        CHECK_EQUAL(MFX_ERR_NONE, MFXVideoUSER_Load(session, &guid1, pluginVer));
+        CHECK_EQUAL(MFX_ERR_NONE, MFXVideoUSER_UnLoad(session, &guid1));
+
+        UnloadPlugin();
         //plugin unloaded loaded with dispatcher
         CHECK_EQUAL((HMODULE)NULL, GetModuleHandleA(mockPluginDllName));
 
