@@ -117,10 +117,10 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.40117.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(MfxBuildDir)win_$(Platform)\bin\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">$(MfxBuildDir)win_$(Platform)\bin\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(MfxBuildDir)win_$(Platform)\bin\15dd936825ad475ea34e35f3f54217a6\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">$(MfxBuildDir)win_$(Platform)\bin\15dd936825ad475ea34e35f3f54217a6\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\build\win_$(Platform)\bin</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">..\..\build\win_$(Platform)\bin</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)objs\$(ProjectName)\</IntDir>
@@ -159,32 +159,32 @@
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">mfxplugin64_hevcd_sw_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\</OutDir>
-    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\15dd936825ad475ea34e35f3f54217a6\</OutDir>
+    <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetName>mfxplugin64_hevcd_sw</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">
-    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\</OutDir>
-    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\15dd936825ad475ea34e35f3f54217a6\</OutDir>
+    <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetName>mfxplugin64_hevcd_sw</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\</OutDir>
-    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\15dd936825ad475ea34e35f3f54217a6\</OutDir>
+    <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetName>mfxplugin32_hevcd_sw</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">
-    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\</OutDir>
-    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\15dd936825ad475ea34e35f3f54217a6\</OutDir>
+    <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetName>mfxplugin32_hevcd_sw</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\</OutDir>
-    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\15dd936825ad475ea34e35f3f54217a6\</OutDir>
+    <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">
-    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\</OutDir>
-    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\15dd936825ad475ea34e35f3f54217a6\</OutDir>
+    <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -202,14 +202,14 @@
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
     <Link>
-      <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
+      <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>svml_disp.lib;libirc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)15dd936825ad475ea34e35f3f54217a6\" /y /i &amp; copy "$(SolutionDir)15dd936825ad475ea34e35f3f54217a6\plugin_for_debug.cfg" "$(OutDir)15dd936825ad475ea34e35f3f54217a6\plugin.cfg" /y</Command>
+      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)15dd936825ad475ea34e35f3f54217a6\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
       <Message>copy built plugin into its own folder</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -229,14 +229,14 @@
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
     <Link>
-      <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
+      <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER13)compiler\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>svml_disp.lib;libirc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)15dd936825ad475ea34e35f3f54217a6\" /y /i &amp; copy "$(SolutionDir)15dd936825ad475ea34e35f3f54217a6\plugin_for_debug.cfg" "$(OutDir)15dd936825ad475ea34e35f3f54217a6\plugin.cfg" /y</Command>
+      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)15dd936825ad475ea34e35f3f54217a6\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -253,13 +253,13 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
+      <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
       <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)15dd936825ad475ea34e35f3f54217a6\" /y /i &amp; copy "$(SolutionDir)15dd936825ad475ea34e35f3f54217a6\plugin_for_debug.cfg" "$(OutDir)15dd936825ad475ea34e35f3f54217a6\plugin.cfg" /y</Command>
+      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)15dd936825ad475ea34e35f3f54217a6\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">
@@ -276,14 +276,14 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
+      <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
       <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER13)compiler\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)15dd936825ad475ea34e35f3f54217a6\" /y /i &amp; copy "$(SolutionDir)15dd936825ad475ea34e35f3f54217a6\plugin_for_debug.cfg" "$(OutDir)15dd936825ad475ea34e35f3f54217a6\plugin.cfg" /y</Command>
+      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)15dd936825ad475ea34e35f3f54217a6\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -306,9 +306,10 @@
       <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)15dd936825ad475ea34e35f3f54217a6\" /y /i &amp; copy "$(SolutionDir)15dd936825ad475ea34e35f3f54217a6\plugin.cfg" "$(OutDir)15dd936825ad475ea34e35f3f54217a6\plugin.cfg" /y</Command>
+      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)15dd936825ad475ea34e35f3f54217a6\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">
@@ -331,9 +332,10 @@
       <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER13)compiler\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)15dd936825ad475ea34e35f3f54217a6\" /y /i &amp; copy "$(SolutionDir)15dd936825ad475ea34e35f3f54217a6\plugin.cfg" "$(OutDir)15dd936825ad475ea34e35f3f54217a6\plugin.cfg" /y</Command>
+      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)15dd936825ad475ea34e35f3f54217a6\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -355,9 +357,10 @@
       <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)15dd936825ad475ea34e35f3f54217a6\" /y /i &amp; copy "$(SolutionDir)15dd936825ad475ea34e35f3f54217a6\plugin.cfg" "$(OutDir)15dd936825ad475ea34e35f3f54217a6\plugin.cfg" /y</Command>
+      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)15dd936825ad475ea34e35f3f54217a6\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">
@@ -379,9 +382,10 @@
       <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER13)compiler\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)15dd936825ad475ea34e35f3f54217a6\" /y /i &amp; copy "$(SolutionDir)15dd936825ad475ea34e35f3f54217a6\plugin.cfg" "$(OutDir)15dd936825ad475ea34e35f3f54217a6\plugin.cfg" /y</Command>
+      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)15dd936825ad475ea34e35f3f54217a6\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

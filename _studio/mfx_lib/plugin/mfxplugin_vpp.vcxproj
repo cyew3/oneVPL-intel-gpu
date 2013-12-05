@@ -66,8 +66,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.40117.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(MfxBuildDir)win_$(Platform)\bin\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(MfxBuildDir)win_$(Platform)\bin\1840bce0ee644d098ed62f91ae4b6b61\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\build\win_$(Platform)\bin</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)objs\$(ProjectName)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
@@ -88,18 +88,18 @@
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mfxplugin64_vpp_sw_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\</OutDir>
-    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\1840bce0ee644d098ed62f91ae4b6b61\</OutDir>
+    <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetName>mfxplugin64_vpp_sw</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\</OutDir>
-    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\1840bce0ee644d098ed62f91ae4b6b61\</OutDir>
+    <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetName>mfxplugin32_vpp_sw</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\</OutDir>
-    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\1840bce0ee644d098ed62f91ae4b6b61\</OutDir>
+    <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -124,7 +124,7 @@
       <IgnoreSpecificDefaultLibraries>svml_disp.lib;libirc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)1840bce0ee644d098ed62f91ae4b6b61\" /y /i &amp; copy "$(SolutionDir)1840bce0ee644d098ed62f91ae4b6b61\plugin_for_debug.cfg" "$(OutDir)1840bce0ee644d098ed62f91ae4b6b61\plugin.cfg" /y</Command>
+      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)1840bce0ee644d098ed62f91ae4b6b61\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -146,7 +146,7 @@
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)1840bce0ee644d098ed62f91ae4b6b61\" /y /i &amp; copy "$(SolutionDir)1840bce0ee644d098ed62f91ae4b6b61\plugin_for_debug.cfg" "$(OutDir)1840bce0ee644d098ed62f91ae4b6b61\plugin.cfg" /y</Command>
+      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)1840bce0ee644d098ed62f91ae4b6b61\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -171,7 +171,7 @@
       <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)1840bce0ee644d098ed62f91ae4b6b61\" /y /i &amp; copy "$(SolutionDir)1840bce0ee644d098ed62f91ae4b6b61\plugin.cfg" "$(OutDir)1840bce0ee644d098ed62f91ae4b6b61\plugin.cfg" /y</Command>
+      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)1840bce0ee644d098ed62f91ae4b6b61\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -195,7 +195,7 @@
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)1840bce0ee644d098ed62f91ae4b6b61\" /y /i &amp; copy "$(SolutionDir)1840bce0ee644d098ed62f91ae4b6b61\plugin.cfg" "$(OutDir)1840bce0ee644d098ed62f91ae4b6b61\plugin.cfg" /y</Command>
+      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)1840bce0ee644d098ed62f91ae4b6b61\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
