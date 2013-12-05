@@ -1628,99 +1628,110 @@ mfxStatus H265Encoder::ApplySAOThread(Ipp32s ithread)
     roiSize.width = m_videoParam.Width;
     roiSize.height = m_videoParam.Height;
     
-    int numCTU = m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs;    
+    int numCTU = m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs;
 
-    SaoDecodeFilter saoFilter_New;
-    saoFilter_New.Init(m_videoParam.Width, m_videoParam.Height, m_videoParam.MaxCUSize, 0);
-    Ipp8u* pRecY = m_pReconstructFrame->y;
-    int pitch_luma = m_pReconstructFrame->pitch_luma;
+    Ipp8u* pRec[3] = {m_pReconstructFrame->y, m_pReconstructFrame->u, m_pReconstructFrame->v};
+    int pitch[3] = {m_pReconstructFrame->pitch_luma, m_pReconstructFrame->pitch_chroma, m_pReconstructFrame->pitch_chroma};
+    int shift[3] = {0, 1, 1};
 
-    // save boundaries
+    SaoDecodeFilter saoFilter_New[NUM_USED_SAO_COMPONENTS];
+
+    int compId = 0;
+    for( compId = 0; compId < NUM_USED_SAO_COMPONENTS; compId++ )
     {
-        Ipp32s width = roiSize.width;
-        small_memcpy(saoFilter_New.m_TmpU[0], pRecY, sizeof(Ipp8u) * width);
+        saoFilter_New[compId].Init(m_videoParam.Width, m_videoParam.Height, m_videoParam.MaxCUSize, 0);
+
+        // save boundaries
+        {
+            Ipp32s width = roiSize.width >> shift[compId];
+            small_memcpy(saoFilter_New[compId].m_TmpU[0], pRec[compId], sizeof(Ipp8u) * width);
+        }
     }
+    
     // ----------------------------------------------------------------------------------------
 
     for(int ctu = 0; ctu < numCTU; ctu++)
     {
-        // update #1
-        int ctb_pelx           = ( ctu % m_videoParam.PicWidthInCtbs ) * m_videoParam.MaxCUSize;
-        int ctb_pely           = ( ctu / m_videoParam.PicWidthInCtbs ) * m_videoParam.MaxCUSize;
+        for( compId = 0; compId < NUM_USED_SAO_COMPONENTS; compId++ )
+        {
+            // update #1
+            int ctb_pelx           = ( ctu % m_videoParam.PicWidthInCtbs ) * m_videoParam.MaxCUSize;
+            int ctb_pely           = ( ctu / m_videoParam.PicWidthInCtbs ) * m_videoParam.MaxCUSize;
         
-        int offset = ctb_pelx + ctb_pely * pitch_luma;
+            int offset = (ctb_pelx >> shift[compId]) + (ctb_pely >> shift[compId]) * pitch[compId];
 
-        if ((ctu % m_videoParam.PicWidthInCtbs) == 0 && (ctu / m_videoParam.PicWidthInCtbs) != (m_videoParam.PicHeightInCtbs - 1))
-        {
-            PixType* pRecTmp = pRecY + offset + (m_videoParam.MaxCUSize - 1)*pitch_luma;
-            small_memcpy(saoFilter_New.m_TmpU[1], pRecTmp, sizeof(PixType) * roiSize.width);
-        }
-
-        if( (ctu % m_videoParam.PicWidthInCtbs) == 0 )
-        {
-            for (Ipp32u i = 0; i < m_videoParam.MaxCUSize+1; i++)
+            if ((ctu % m_videoParam.PicWidthInCtbs) == 0 && (ctu / m_videoParam.PicWidthInCtbs) != (m_videoParam.PicHeightInCtbs - 1))
             {
-                saoFilter_New.m_TmpL[0][i] = pRecY[offset + i*pitch_luma];
+                PixType* pRecTmp = pRec[compId] + offset + ( (m_videoParam.MaxCUSize >> shift[compId]) - 1)*pitch[compId];
+                small_memcpy(saoFilter_New[compId].m_TmpU[1], pRecTmp, sizeof(PixType) * (roiSize.width >> shift[compId]) );
             }
-        }
 
-        if ((ctu % m_videoParam.PicWidthInCtbs) != (m_videoParam.PicWidthInCtbs - 1))
-        {
-            for (Ipp32u i = 0; i < m_videoParam.MaxCUSize+1; i++)
+            if( (ctu % m_videoParam.PicWidthInCtbs) == 0 )
             {
-                saoFilter_New.m_TmpL[1][i] = pRecY[offset + i*pitch_luma + m_videoParam.MaxCUSize-1];
+                for (Ipp32u i = 0; i < (m_videoParam.MaxCUSize >> shift[compId])+1; i++)
+                {
+                    saoFilter_New[compId].m_TmpL[0][i] = pRec[compId][offset + i*pitch[compId]];
+                }
             }
-        }
 
-        /*MFX_HEVC_PP::CTBBorders borders = {0};
-        borders.m_left     = (ctu % m_videoParam.PicWidthInCtbs != 0);
-        borders.m_right    = (ctu % m_videoParam.PicWidthInCtbs != m_videoParam.PicWidthInCtbs-1);
-        borders.m_top      = (ctu >= (int)m_videoParam.PicWidthInCtbs );
-        borders.m_bottom   = (ctu <  numCTU - (int)m_videoParam.PicWidthInCtbs);
-        borders.m_top_left = (borders.m_top && borders.m_left);
-        borders.m_top_right = (borders.m_top && borders.m_right);
-        borders.m_bottom_left = (borders.m_bottom && borders.m_left);
-        borders.m_bottom_right = (borders.m_bottom && borders.m_right);*/
-
-
-        if(m_saoParam[ctu][SAO_Y ].mode_idx != SAO_MODE_OFF)
-        {
-            if( m_saoParam[ctu][SAO_Y ].mode_idx == SAO_MODE_MERGE )
+            if ((ctu % m_videoParam.PicWidthInCtbs) != (m_videoParam.PicWidthInCtbs - 1))
             {
-                // need to restore SAO parameters
-                //reconstructBlkSAOParam(m_saoParam[ctu], mergeList);
+                for (Ipp32u i = 0; i < (m_videoParam.MaxCUSize >> shift[compId])+1; i++)
+                {
+                    saoFilter_New[compId].m_TmpL[1][i] = pRec[compId][offset + i*pitch[compId] + (m_videoParam.MaxCUSize >> shift[compId])-1];
+                }
             }
-            saoFilter_New.SetOffsetsLuma(m_saoParam[ctu], m_saoParam[ctu][0].type_idx);
 
-            MFX_HEVC_PP::NAME(h265_ProcessSaoCuOrg_Luma_8u)(
-                pRecY + offset,
-                pitch_luma,
+            /*MFX_HEVC_PP::CTBBorders borders = {0};
+            borders.m_left     = (ctu % m_videoParam.PicWidthInCtbs != 0);
+            borders.m_right    = (ctu % m_videoParam.PicWidthInCtbs != m_videoParam.PicWidthInCtbs-1);
+            borders.m_top      = (ctu >= (int)m_videoParam.PicWidthInCtbs );
+            borders.m_bottom   = (ctu <  numCTU - (int)m_videoParam.PicWidthInCtbs);
+            borders.m_top_left = (borders.m_top && borders.m_left);
+            borders.m_top_right = (borders.m_top && borders.m_right);
+            borders.m_bottom_left = (borders.m_bottom && borders.m_left);
+            borders.m_bottom_right = (borders.m_bottom && borders.m_right);*/
 
-                m_saoParam[ctu][0].type_idx,
 
-                saoFilter_New.m_TmpL[0],
-                &(saoFilter_New.m_TmpU[0][ctb_pelx]),
+            if(m_saoParam[ctu][compId].mode_idx != SAO_MODE_OFF)
+            {
+                if( m_saoParam[ctu][compId].mode_idx == SAO_MODE_MERGE )
+                {
+                    // need to restore SAO parameters
+                    //reconstructBlkSAOParam(m_saoParam[ctu], mergeList);
+                }
+                saoFilter_New[compId].SetOffsetsLuma(m_saoParam[ctu][compId], m_saoParam[ctu][compId].type_idx);
 
-                m_videoParam.MaxCUSize,
-                m_videoParam.MaxCUSize,
+                MFX_HEVC_PP::NAME(h265_ProcessSaoCuOrg_Luma_8u)(
+                    pRec[compId] + offset,
+                    pitch[compId],
 
-                roiSize.width,
-                roiSize.height,
+                    m_saoParam[ctu][compId].type_idx,
 
-                saoFilter_New.m_OffsetEo,
-                saoFilter_New.m_OffsetBo,
-                saoFilter_New.m_ClipTable,
+                    saoFilter_New[compId].m_TmpL[0],
+                    &(saoFilter_New[compId].m_TmpU[0][ctb_pelx >> shift[compId]]),
 
-                ctb_pelx,
-                ctb_pely/*,
-                        borders*/);
-        }
+                    m_videoParam.MaxCUSize >> shift[compId],
+                    m_videoParam.MaxCUSize >> shift[compId],
 
-        std::swap(saoFilter_New.m_TmpL[0], saoFilter_New.m_TmpL[1]);
+                    roiSize.width >> shift[compId],
+                    roiSize.height >> shift[compId],
 
-        if (( (ctu+1) %  m_videoParam.PicWidthInCtbs) == 0)
-        {
-            std::swap(saoFilter_New.m_TmpU[0], saoFilter_New.m_TmpU[1]);
+                    saoFilter_New[compId].m_OffsetEo,
+                    saoFilter_New[compId].m_OffsetBo,
+                    saoFilter_New[compId].m_ClipTable,
+
+                    ctb_pelx >> shift[compId],
+                    ctb_pely >> shift[compId]/*,
+                            borders*/);
+            }
+
+            std::swap(saoFilter_New[compId].m_TmpL[0], saoFilter_New[compId].m_TmpL[1]);
+
+            if (( (ctu+1) %  m_videoParam.PicWidthInCtbs) == 0)
+            {
+                std::swap(saoFilter_New[compId].m_TmpU[0], saoFilter_New[compId].m_TmpU[1]);
+            }
         }
     }
 
@@ -1876,6 +1887,19 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
 
             if (!(m_slices[curr_slice].slice_deblocking_filter_disabled_flag) && (pars->num_threads == 1 || m_sps.sample_adaptive_offset_enabled_flag))
             {
+#if defined(MFX_HEVC_SAO_PREDEBLOCKED_ENABLED)
+                if(m_sps.sample_adaptive_offset_enabled_flag)
+                {
+                    Ipp32s left_addr  = cu[ithread].left_addr;
+                    Ipp32s above_addr = cu[ithread].above_addr;
+                    MFX_HEVC_PP::CTBBorders borders = {0};
+                    
+                    borders.m_left = (-1 == left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ left_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
+                    borders.m_top  = (-1 == above_addr) ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ above_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
+
+                    cu[ithread].GetStatisticsCtuSao_Predeblocked( borders );
+                }
+#endif
                 cu[ithread].Deblock();
                 if(m_sps.sample_adaptive_offset_enabled_flag)
                 {
@@ -2027,6 +2051,19 @@ mfxStatus H265Encoder::EncodeThreadByRow(Ipp32s ithread) {
 
             if (!(m_slices[curr_slice].slice_deblocking_filter_disabled_flag) && (pars->num_threads == 1 || m_sps.sample_adaptive_offset_enabled_flag))
             {
+#if defined(MFX_HEVC_SAO_PREDEBLOCKED_ENABLED)
+                if(m_sps.sample_adaptive_offset_enabled_flag)
+                {
+                    Ipp32s left_addr  = cu[ithread].left_addr;
+                    Ipp32s above_addr = cu[ithread].above_addr;
+                    MFX_HEVC_PP::CTBBorders borders = {0};
+                    
+                    borders.m_left = (-1 == left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ left_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
+                    borders.m_top  = (-1 == above_addr) ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ above_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
+
+                    cu[ithread].GetStatisticsCtuSao_Predeblocked( borders );
+                }
+#endif
                 cu[ithread].Deblock();
                 if(m_sps.sample_adaptive_offset_enabled_flag)
                 {
