@@ -86,7 +86,13 @@ Ipp32s DPBOutput::GetDPBOutputDelay(H264SEIPayLoad * payload)
     if (IsUsePicOrderCnt())
         return 0;
 
-    if (IsUseSEIDelayOutputValue() && payload)
+    if (!payload)
+    {
+        m_isUseFlags.use_payload_sei_delay = 0;
+        return INVALID_DPB_OUTPUT_DELAY;
+    }
+
+    if (IsUseSEIDelayOutputValue())
     {
         if (payload->SEI_messages.pic_timing.dpb_output_delay != 0)
             m_isUseFlags.use_payload_sei_delay = 0;
