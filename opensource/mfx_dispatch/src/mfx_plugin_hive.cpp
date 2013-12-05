@@ -74,7 +74,7 @@ namespace
 }
 
 
-MFX::MFXPluginsInHive::MFXPluginsInHive( mfxU32 mfxStorageID, const msdk_disp_char * msdkLibSubKey, mfxVersion requiredAPIVersion )
+MFX::MFXPluginsInHive::MFXPluginsInHive( int mfxStorageID, const msdk_disp_char *msdkLibSubKey, mfxVersion requiredAPIVersion )
 {
     HKEY rootHKey;
     bool bRes;

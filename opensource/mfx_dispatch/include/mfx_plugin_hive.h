@@ -88,7 +88,7 @@ namespace MFX {
     class MFXPluginsInHive : public MFXPluginStorage 
     {
     public:
-        MFXPluginsInHive(mfxU32 mfxStorageID, const msdk_disp_char *subKey, mfxVersion requiredAPIVersion);
+        MFXPluginsInHive(int mfxStorageID, const msdk_disp_char *msdkLibSubKey, mfxVersion requiredAPIVersion);
     };
 
     //plugins are loaded from FS close to executable
