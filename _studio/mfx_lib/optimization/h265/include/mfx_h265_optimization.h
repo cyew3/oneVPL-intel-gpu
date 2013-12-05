@@ -13,6 +13,7 @@
 #ifndef __MFX_H265_OPTIMIZATION_H__
 #define __MFX_H265_OPTIMIZATION_H__
 
+#include "ipps.h"
 #include <immintrin.h>
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -153,6 +154,42 @@ namespace MFX_HEVC_PP
         Ipp8u data;
     };
 
+    struct SaoCtuStatistics //data structure for SAO statistics
+    {
+        static const int MAX_NUM_SAO_CLASSES = 32;
+
+        Ipp64s diff[MAX_NUM_SAO_CLASSES];
+        Ipp64s count[MAX_NUM_SAO_CLASSES];
+
+        SaoCtuStatistics(){}
+        ~SaoCtuStatistics(){}
+
+        void Reset()
+        {
+            memset(diff, 0, sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
+            memset(count, 0, sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
+        }
+
+        //const 
+        SaoCtuStatistics& operator=(const SaoCtuStatistics& src)
+        {
+            ippsCopy_8u((Ipp8u*)src.diff,  (Ipp8u*)diff,  sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
+            ippsCopy_8u((Ipp8u*)src.count, (Ipp8u*)count, sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
+
+            return *this;
+        }
+
+        const SaoCtuStatistics& operator+= (const SaoCtuStatistics& src)
+        {
+            for(int i=0; i< MAX_NUM_SAO_CLASSES; i++)
+            {
+                diff[i] += src.diff[i];
+                count[i] += src.count[i];
+            }
+            return *this;
+        }
+
+    };
     /* ******************************************************** */
     /*                    Data Types for Dispatcher             */
     /* ******************************************************** */
@@ -189,6 +226,12 @@ namespace MFX_HEVC_PP
     typedef void (* PTR_ProcessSaoCuOrg_Luma_8u)( SAOCU_ORG_PARAMETERS_LIST );
 
     typedef void (* PTR_ProcessSaoCu_Luma_8u)( SAOCU_PARAMETERS_LIST );
+
+    // [PTR.SAO :: Encode primitivies]
+    #define SAOCU_ENCODE_PARAMETERS_LIST int compIdx, const Ipp8u* recBlk, int recStride, const Ipp8u* orgBlk, int orgStride, int width, \
+        int height, int shift,  const MFX_HEVC_PP::CTBBorders& borders, MFX_HEVC_PP::SaoCtuStatistics* statsDataTypes
+
+    typedef void(* PTR_GetCtuStatistics_8u)( SAOCU_ENCODE_PARAMETERS_LIST );
 
     // [PTR.IntraPredict]
     typedef void (* PTR_PredictIntra_Ang_8u)(
@@ -361,6 +404,7 @@ namespace MFX_HEVC_PP
         HEVCPP_API( PTR_ProcessSaoCuOrg_Luma_8u, void, h265_ProcessSaoCuOrg_Luma_8u, (SAOCU_ORG_PARAMETERS_LIST));
         HEVCPP_API( PTR_ProcessSaoCu_Luma_8u, void, h265_ProcessSaoCu_Luma_8u, (SAOCU_PARAMETERS_LIST));
 
+        HEVCPP_API( PTR_GetCtuStatistics_8u, void, h265_GetCtuStatistics_8u, (SAOCU_ENCODE_PARAMETERS_LIST));
         // [INTRA Predict]
         HEVCPP_API( PTR_PredictIntra_Ang_8u, void, h265_PredictIntra_Ang_8u,
             (Ipp32s mode,

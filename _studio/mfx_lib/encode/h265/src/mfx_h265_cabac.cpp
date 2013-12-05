@@ -1341,7 +1341,7 @@ void h265_code_sao_ctb_param(
 
     if(!isLeftMerge && !isAboveMerge) //not merge mode
     {
-        for(int compIdx=0; compIdx < 1; compIdx++)
+        for(int compIdx=0; compIdx < NUM_USED_SAO_COMPONENTS; compIdx++)
         {
             h265_code_sao_ctb_offset_param(bs, compIdx, saoBlkParam[compIdx], sliceEnabled[compIdx]);
         }

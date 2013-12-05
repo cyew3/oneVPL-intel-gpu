@@ -339,21 +339,23 @@ void GetQuantOffsets(
 } // void GetQuantOffsets(...)
 
 
-void GetCtuStatistics_Internal(
+
+
+// --------------------------------------------------------
+void GetCtuStatistics_RBoundary_Internal(
     int compIdx,
-    PixType* recBlk,
+    const PixType* recBlk,
     int recStride,
-    PixType* orgBlk,
+    const PixType* orgBlk,
     int orgStride,
 
-    SaoCtuStatistics* statsDataTypes,
-
-    int width,
+    int width, // correct LCU size
     int height,
-    bool isLeftAvail,
-    bool isAboveAvail,
-    bool isAboveLeftAvail,
-    bool isAboveRightAvail)
+
+    int shift,// to switch btw NV12/YV12 Chroma
+
+    const MFX_HEVC_PP::CTBBorders& borders,
+    MFX_HEVC_PP::SaoCtuStatistics* statsDataTypes)
 {
     Ipp16s signLineBuf1[64+1];
     Ipp16s signLineBuf2[64+1];
@@ -364,13 +366,18 @@ void GetCtuStatistics_Internal(
     Ipp16s signLeft, signRight, signDown;
     Ipp64s *diff, *count;
     
+    //const int compIdx = SAO_Y;
     int skipLinesR = g_skipLinesR[compIdx];
     int skipLinesB = g_skipLinesB[compIdx];
 
-    PixType *recLine, *orgLine;
-    PixType* recLineAbove;
-    PixType* recLineBelow;
+    const PixType *recLine, *orgLine;
+    const PixType* recLineAbove;
+    const PixType* recLineBelow;
 
+    //aya!!!
+    //int offset = ;
+    //recBlk = recBlk + offset*recStride;
+    //orgBlk = orgBlk + offset*orgStride;
 
     for(int typeIdx=0; typeIdx< NUM_SAO_BASE_TYPES; typeIdx++)
     {
@@ -389,8 +396,8 @@ void GetCtuStatistics_Internal(
                 count+=2;
                 endY   = height - skipLinesB;
 
-                startX = isLeftAvail ? 0 : 1;
-                endX   = width - skipLinesR;
+                startX = width - skipLinesR + 1;//aya + 1
+                endX   = width -1;
 
                 for (y=0; y<endY; y++)
                 {
@@ -401,7 +408,7 @@ void GetCtuStatistics_Internal(
                         edgeType  =  signRight + signLeft;
                         signLeft  = -signRight;
 
-                        diff [edgeType] += (orgLine[x] - recLine[x]);
+                        diff [edgeType] += (orgLine[x << shift] - recLine[x]);
                         count[edgeType] ++;
                     }
                     recLine  += recStride;
@@ -414,34 +421,28 @@ void GetCtuStatistics_Internal(
             {
                 diff +=2;
                 count+=2;
-                endX   = width - skipLinesR;
 
-                startY = isAboveAvail ? 0 : 1;
+                startX = width - skipLinesR + 1;//aya +1
+                endX   = width;
+
+                startY = borders.m_top ? 0 : 1;
                 endY   = height - skipLinesB;
-                if (!isAboveAvail)
+                if ( 0 == borders.m_top )
                 {
                     recLine += recStride;
                     orgLine += orgStride;
-                }
-
-                recLineAbove = recLine - recStride;
-                Ipp16s *signUpLine = signLineBuf1;
-                for (x=0; x< endX; x++) 
-                {
-                    signUpLine[x] = getSign(recLine[x] - recLineAbove[x]);
-                }
+                }                
                 
                 for (y=startY; y<endY; y++)
                 {
                     recLineBelow = recLine + recStride;
+                    recLineAbove = recLine - recStride;
 
-                    for (x=0; x<endX; x++)
+                    for (x=startX; x<endX; x++)
                     {
-                        signDown  = getSign(recLine[x] - recLineBelow[x]); 
-                        edgeType  = signDown + signUpLine[x];
-                        signUpLine[x]= -signDown;
+                        edgeType = getSign(recLine[x] - recLineBelow[x]) + getSign(recLine[x] - recLineAbove[x]);
 
-                        diff [edgeType] += (orgLine[x] - recLine[x]);
+                        diff [edgeType] += (orgLine[x<<shift] - recLine[x]);
                         count[edgeType] ++;
                     }
                     recLine += recStride;
@@ -454,54 +455,31 @@ void GetCtuStatistics_Internal(
             {
                 diff +=2;
                 count+=2;
-                startX = isLeftAvail ? 0 : 1 ;
-                endX   = width - skipLinesR;
+
+                startX = width - skipLinesR+1;//aya +1
+                endX   = width - 1;
+
+                startY = borders.m_top ? 0 : 1;
                 endY   = height - skipLinesB;
 
-                //prepare 2nd line's upper sign
-                Ipp16s *signUpLine, *signDownLine, *signTmpLine;
-                signUpLine  = signLineBuf1;
-                signDownLine= signLineBuf2;
-                recLineBelow = recLine + recStride;
-                for (x=startX; x<endX+1; x++)
+                if ( 0 == borders.m_top )
                 {
-                    signUpLine[x] = getSign(recLineBelow[x] - recLine[x-1]);
+                    recLine += recStride;
+                    orgLine += orgStride;
                 }
 
-                //1st line
-                recLineAbove = recLine - recStride;
-                firstLineStartX = isAboveLeftAvail ? 0    : 1;
-                firstLineEndX   = isAboveAvail     ? endX : 1;
-
-                for(x=firstLineStartX; x<firstLineEndX; x++)
-                {
-                    edgeType = getSign(recLine[x] - recLineAbove[x-1]) - signUpLine[x+1];
-                    diff [edgeType] += (orgLine[x] - recLine[x]);
-                    count[edgeType] ++;
-                }
-                recLine  += recStride;
-                orgLine  += orgStride;
-
-
-                //middle lines
-                for (y=1; y<endY; y++)
+                //middle lines only, eclude 2 corner points
+                for (y=startY; y<endY; y++)
                 {
                     recLineBelow = recLine + recStride;
+                    recLineAbove = recLine - recStride;
 
                     for (x=startX; x<endX; x++)
                     {
-                        signDown = getSign(recLine[x] - recLineBelow[x+1]);
-                        edgeType = signDown + signUpLine[x];
-                        diff [edgeType] += (orgLine[x] - recLine[x]);
+                        edgeType = getSign(recLine[x] - recLineBelow[x+1]) + getSign(recLine[x] - recLineAbove[x-1]);
+                        diff [edgeType] += (orgLine[x<<shift] - recLine[x]);
                         count[edgeType] ++;
-
-                        signDownLine[x+1] = -signDown; 
                     }
-                    signDownLine[startX] = getSign(recLineBelow[startX] - recLine[startX-1]);
-
-                    signTmpLine  = signUpLine;
-                    signUpLine   = signDownLine;
-                    signDownLine = signTmpLine;
 
                     recLine += recStride;
                     orgLine += orgStride;
@@ -513,68 +491,51 @@ void GetCtuStatistics_Internal(
             {
                 diff +=2;
                 count+=2;
+
+                startX = width - skipLinesR+1;//aya +1
+                endX   = width - 1;
+
+                startY = borders.m_top ? 0 : 1;
                 endY   = height - skipLinesB;
 
-                startX = isLeftAvail ? 0 : 1;
-                endX   = width - skipLinesR;
-
-                //prepare 2nd line upper sign
-                recLineBelow = recLine + recStride;
-                Ipp16s *signUpLine = signLineBuf1+1;
-                for (x=startX-1; x<endX; x++)
+                if ( 0 == borders.m_top )
                 {
-                    signUpLine[x] = getSign(recLineBelow[x] - recLine[x+1]);
+                    recLine += recStride;
+                    orgLine += orgStride;
                 }
 
-                //first line
-                recLineAbove = recLine - recStride;
-
-                firstLineStartX = isAboveAvail ? startX : endX;
-                firstLineEndX   = endX;
-
-                for(x=firstLineStartX; x<firstLineEndX; x++)
-                {
-                    edgeType = getSign(recLine[x] - recLineAbove[x+1]) - signUpLine[x-1];
-                    diff [edgeType] += (orgLine[x] - recLine[x]);
-                    count[edgeType] ++;
-                }
-
-                recLine += recStride;
-                orgLine += orgStride;
-
-                //middle lines
-                for (y=1; y<endY; y++)
+                //middle lines only, eclude 2 corner points
+                for (y=startY; y<endY; y++)
                 {
                     recLineBelow = recLine + recStride;
+                    recLineAbove = recLine - recStride;
 
-                    for(x=startX; x<endX; x++)
+                    for (x=startX; x<endX; x++)
                     {
-                        signDown = getSign(recLine[x] - recLineBelow[x-1]) ;
-                        edgeType = signDown + signUpLine[x];
-
-                        diff [edgeType] += (orgLine[x] - recLine[x]);
+                        edgeType = getSign(recLine[x] - recLineBelow[x-1]) + getSign(recLine[x] - recLineAbove[x+1]);
+                        diff [edgeType] += (orgLine[x<<shift] - recLine[x]);
                         count[edgeType] ++;
-
-                        signUpLine[x-1] = -signDown; 
                     }
-                    signUpLine[endX-1] = getSign(recLineBelow[endX-1] - recLine[endX]);
-                    recLine  += recStride;
-                    orgLine  += orgStride;
+
+                    recLine += recStride;
+                    orgLine += orgStride;
                 }
             }
             break;
 
             case SAO_TYPE_BO:
             {
-                endX = width- skipLinesR;
+                startX = width- skipLinesR + 1;
+                endX = width;
+
                 endY = height- skipLinesB;
                 const int shiftBits = 3;
                 for (y=0; y<endY; y++)
                 {
-                    for (x=0; x<endX; x++)
+                    for (x=startX; x<endX; x++)
                     {
                         int bandIdx= recLine[x] >> shiftBits; 
-                        diff [bandIdx] += (orgLine[x] - recLine[x]);
+                        diff [bandIdx] += (orgLine[x<<shift] - recLine[x]);
                         count[bandIdx]++;
                     }
                     recLine += recStride;
@@ -590,8 +551,473 @@ void GetCtuStatistics_Internal(
         }
     }
 
-} // void GetCtuStatistics_Internal(...)
+} // void GetCtuStatistics_RBoundary_Internal(...)
 
+// --------------------------------------------------------
+
+void GetCtuStatistics_BottomBoundary_Internal(
+    int compIdx,
+    const PixType* recBlk,
+    int recStride,
+    const PixType* orgBlk,
+    int orgStride,
+
+    int width, // correct LCU size
+    int height,
+
+    int shift,// to switch btw NV12/YV12 Chroma
+
+    const MFX_HEVC_PP::CTBBorders& borders,
+    MFX_HEVC_PP::SaoCtuStatistics* statsDataTypes)
+{
+//    Ipp16s signLineBuf1[64+1];
+//    Ipp16s signLineBuf2[64+1];
+
+    int x, y, startX, startY, endX, endY;
+//    int /*firstLineStartX,*/ firstLineEndX;
+    int edgeType;
+    Ipp16s signLeft;
+    Ipp16s signRight;//, signDown;
+    Ipp64s *diff, *count;
+    
+    //const int compIdx = SAO_Y;
+    //int skipLinesR = g_skipLinesR[compIdx];
+    int skipLinesB = g_skipLinesB[compIdx];
+
+    const PixType *recLine, *orgLine;
+    const PixType* recLineAbove;
+    const PixType* recLineBelow;
+
+
+    //aya!!!
+    int offset = (height - skipLinesB);
+    recBlk = recBlk + offset*recStride;
+    orgBlk = orgBlk + offset*orgStride;
+
+    for(int typeIdx=0; typeIdx< NUM_SAO_BASE_TYPES; typeIdx++)
+    {
+        SaoCtuStatistics& statsData= statsDataTypes[typeIdx];
+        statsData.Reset();
+
+        recLine = recBlk;
+        orgLine = orgBlk;
+        diff    = statsData.diff;
+        count   = statsData.count;
+        switch(typeIdx)
+        {
+            case SAO_TYPE_EO_0:
+            {
+                diff +=2;
+                count+=2;
+                endY   = height - skipLinesB;
+
+                startX = borders.m_left ? 0 : 1;
+                endX   = width -1;
+
+                //recLine += endY*recStride;
+                //orgLine += endY*orgStride;
+
+                for (y=0; y<skipLinesB; y++)
+                {
+                    signLeft = getSign(recLine[startX] - recLine[startX-1]);
+                    for (x=startX; x<endX; x++)
+                    {
+                        signRight =  getSign(recLine[x] - recLine[x+1]);
+                        edgeType  =  signRight + signLeft;
+                        signLeft  = -signRight;
+
+                        diff [edgeType] += (orgLine[x << shift] - recLine[x]);
+                        count[edgeType] ++;
+                    }
+                    recLine  += recStride;
+                    orgLine  += orgStride;
+                }
+            }
+            break;
+
+            case SAO_TYPE_EO_90:
+            {
+                diff +=2;
+                count+=2;
+
+                startX = 0;
+                endX   = width;
+
+                startY = 0;
+                endY   = skipLinesB;
+                
+                {
+                    //recLine += (height - skipLinesB)*recStride;
+                    //orgLine += (height - skipLinesB)*orgStride;
+                }
+
+                //recLineAbove = recLine - recStride;
+//                Ipp16s *signUpLine = signLineBuf1;
+                /*for (x=startX; x< endX; x++) 
+                {
+                    signUpLine[x] = getSign(recLine[x] - recLineAbove[x]);
+                }*/
+                
+                for (y=startY; y<endY-1; y++) // aya :: -1 due to real boundaries
+                {
+                    recLineBelow = recLine + recStride;
+                    recLineAbove = recLine - recStride;
+
+                    for (x=startX; x<endX; x++)
+                    {
+                        edgeType  = getSign(recLine[x] - recLineBelow[x]) + getSign(recLine[x] - recLineAbove[x]);                         
+                        
+                        diff [edgeType] += (orgLine[x<<shift] - recLine[x]);
+                        count[edgeType] ++;
+                    }
+                    recLine += recStride;
+                    orgLine += orgStride;
+                }
+            }
+            break;
+
+            case SAO_TYPE_EO_135:
+            {
+                diff +=2;
+                count+=2;
+
+                startX = borders.m_left ? 0 : 1;
+                endX   = width - 1;
+                //endY   = height - skipLinesB;
+
+                //recLine += (height - skipLinesB)*recStride;
+                //orgLine += (height - skipLinesB)*orgStride;
+
+                for (y=0; y<skipLinesB-1; y++)
+                {
+                    recLineBelow = recLine + recStride;
+                    recLineAbove = recLine - recStride;
+
+                    for (x=startX; x<endX; x++)
+                    {
+                        edgeType = getSign(recLine[x] - recLineBelow[x+1]) + getSign(recLine[x] - recLineAbove[x-1]);
+                        diff [edgeType] += (orgLine[x<<shift] - recLine[x]);
+                        count[edgeType] ++;
+                    }
+
+                    recLine += recStride;
+                    orgLine += orgStride;
+                }
+            }
+            break;
+
+            case SAO_TYPE_EO_45:
+            {
+                diff +=2;
+                count+=2;
+
+                startX = borders.m_left ? 0 : 1;
+                endX   = width - 1;
+                //endY   = height - skipLinesB;
+
+                //recLine += (height - skipLinesB)*recStride;
+                //orgLine += (height - skipLinesB)*orgStride;
+
+                for (y=0; y<skipLinesB-1; y++)
+                {
+                    recLineBelow = recLine + recStride;
+                    recLineAbove = recLine - recStride;
+
+                    for (x=startX; x<endX; x++)
+                    {
+                        edgeType = getSign(recLine[x] - recLineBelow[x-1]) + getSign(recLine[x] - recLineAbove[x+1]);
+                        diff [edgeType] += (orgLine[x<<shift] - recLine[x]);
+                        count[edgeType] ++;
+                    }
+
+                    recLine += recStride;
+                    orgLine += orgStride;
+                }
+            }
+            break;
+
+            case SAO_TYPE_BO:
+            {
+                startX = 0;
+                endX = width;
+
+                endY = height- skipLinesB;
+                const int shiftBits = 3;
+
+                //recLine += (height - skipLinesB)*recStride;
+                //orgLine += (height - skipLinesB)*orgStride;
+
+                for (y=0; y<skipLinesB; y++)
+                {
+                    for (x=startX; x<endX; x++)
+                    {
+                        int bandIdx= recLine[x] >> shiftBits; 
+                        diff [bandIdx] += (orgLine[x<<shift] - recLine[x]);
+                        count[bandIdx]++;
+                    }
+                    recLine += recStride;
+                    orgLine += orgStride;
+                }
+            }
+            break;
+
+            default:
+            {
+                VM_ASSERT(!"Not a supported SAO types\n");
+            }
+        }
+    }
+
+} // void GetCtuStatistics_BottomBoundary_Internal(...)
+
+// --------------------------------------------------------
+// aya: here orgBlk - nv12; recBlk - yv12
+//void GetCtuStatistics_Chroma_Internal(
+//    const PixType* recBlk,
+//    int recStride,
+//    const PixType* orgBlk,
+//    int orgStride,
+//    int width,
+//    int height,
+//    const MFX_HEVC_PP::CTBBorders & borders,
+//    SaoCtuStatistics* statsDataTypes)
+//{
+//    Ipp16s signLineBuf1[64+1];
+//    Ipp16s signLineBuf2[64+1];
+//
+//    int x, y, startX, startY, endX, endY;
+//    int firstLineStartX, firstLineEndX;
+//    int edgeType;
+//    Ipp16s signLeft, signRight, signDown;
+//    Ipp64s *diff, *count;
+//    
+//    int skipLinesR = g_skipLinesR[SAO_Cb];
+//    int skipLinesB = g_skipLinesB[SAO_Cb];
+//
+//    const PixType *recLine, *orgLine;
+//    const PixType* recLineAbove;
+//    const PixType* recLineBelow;
+//
+//    for(int typeIdx=0; typeIdx< NUM_SAO_BASE_TYPES; typeIdx++)
+//    {
+//        SaoCtuStatistics& statsData= statsDataTypes[typeIdx];
+//        statsData.Reset();
+//
+//        recLine = recBlk;
+//        orgLine = orgBlk;
+//        diff    = statsData.diff;
+//        count   = statsData.count;
+//        switch(typeIdx)
+//        {
+//            case SAO_TYPE_EO_0:
+//            {
+//                diff +=2;
+//                count+=2;
+//                endY   = height - skipLinesB;
+//
+//                startX = borders.m_left ? 0 : 1;
+//                endX   = width - skipLinesR;
+//
+//                for (y=0; y<endY; y++)
+//                {
+//                    signLeft = getSign(recLine[startX] - recLine[startX-1]);
+//                    for (x=startX; x<endX; x++)
+//                    {
+//                        signRight =  getSign(recLine[x] - recLine[x+1]);
+//                        edgeType  =  signRight + signLeft;
+//                        signLeft  = -signRight;
+//
+//                        diff [edgeType] += (orgLine[2*x] - recLine[x]);
+//                        count[edgeType] ++;
+//                    }
+//                    recLine  += recStride;
+//                    orgLine  += orgStride;
+//                }
+//            }
+//            break;
+//
+//            case SAO_TYPE_EO_90:
+//            {
+//                diff +=2;
+//                count+=2;
+//                endX   = width - skipLinesR;
+//
+//                startY = borders.m_top ? 0 : 1;
+//                endY   = height - skipLinesB;
+//                if ( 0 == borders.m_top )
+//                {
+//                    recLine += recStride;
+//                    orgLine += orgStride;
+//                }
+//
+//                recLineAbove = recLine - recStride;
+//                Ipp16s *signUpLine = signLineBuf1;
+//                for (x=0; x< endX; x++) 
+//                {
+//                    signUpLine[x] = getSign(recLine[x] - recLineAbove[x]);
+//                }
+//                
+//                for (y=startY; y<endY; y++)
+//                {
+//                    recLineBelow = recLine + recStride;
+//
+//                    for (x=0; x<endX; x++)
+//                    {
+//                        signDown  = getSign(recLine[x] - recLineBelow[x]); 
+//                        edgeType  = signDown + signUpLine[x];
+//                        signUpLine[x]= -signDown;
+//
+//                        diff [edgeType] += (orgLine[2*x] - recLine[x]);
+//                        count[edgeType] ++;
+//                    }
+//                    recLine += recStride;
+//                    orgLine += orgStride;
+//                }
+//            }
+//            break;
+//
+//            case SAO_TYPE_EO_135:
+//            {
+//                diff +=2;
+//                count+=2;
+//                startX = borders.m_left ? 0 : 1 ;
+//                endX   = width - skipLinesR;
+//                endY   = height - skipLinesB;
+//
+//                //prepare 2nd line's upper sign
+//                Ipp16s *signUpLine, *signDownLine, *signTmpLine;
+//                signUpLine  = signLineBuf1;
+//                signDownLine= signLineBuf2;
+//                recLineBelow = recLine + recStride;
+//                for (x=startX; x<endX+1; x++)
+//                {
+//                    signUpLine[x] = getSign(recLineBelow[x] - recLine[x-1]);
+//                }
+//
+//                //1st line
+//                recLineAbove = recLine - recStride;
+//                firstLineStartX = borders.m_top_left ? 0    : 1;
+//                firstLineEndX   = borders.m_top      ? endX : 1;
+//
+//                for(x=firstLineStartX; x<firstLineEndX; x++)
+//                {
+//                    edgeType = getSign(recLine[x] - recLineAbove[x-1]) - signUpLine[x+1];
+//                    diff [edgeType] += (orgLine[2*x] - recLine[x]);
+//                    count[edgeType] ++;
+//                }
+//                recLine  += recStride;
+//                orgLine  += orgStride;
+//
+//
+//                //middle lines
+//                for (y=1; y<endY; y++)
+//                {
+//                    recLineBelow = recLine + recStride;
+//
+//                    for (x=startX; x<endX; x++)
+//                    {
+//                        signDown = getSign(recLine[x] - recLineBelow[x+1]);
+//                        edgeType = signDown + signUpLine[x];
+//                        diff [edgeType] += (orgLine[2*x] - recLine[x]);
+//                        count[edgeType] ++;
+//
+//                        signDownLine[x+1] = -signDown; 
+//                    }
+//                    signDownLine[startX] = getSign(recLineBelow[startX] - recLine[startX-1]);
+//
+//                    signTmpLine  = signUpLine;
+//                    signUpLine   = signDownLine;
+//                    signDownLine = signTmpLine;
+//
+//                    recLine += recStride;
+//                    orgLine += orgStride;
+//                }
+//            }
+//            break;
+//
+//            case SAO_TYPE_EO_45:
+//            {
+//                diff +=2;
+//                count+=2;
+//                endY   = height - skipLinesB;
+//
+//                startX = borders.m_left ? 0 : 1;
+//                endX   = width - skipLinesR;
+//
+//                //prepare 2nd line upper sign
+//                recLineBelow = recLine + recStride;
+//                Ipp16s *signUpLine = signLineBuf1+1;
+//                for (x=startX-1; x<endX; x++)
+//                {
+//                    signUpLine[x] = getSign(recLineBelow[x] - recLine[x+1]);
+//                }
+//
+//                //first line
+//                recLineAbove = recLine - recStride;
+//
+//                firstLineStartX = borders.m_top ? startX : endX;
+//                firstLineEndX   = endX;
+//
+//                for(x=firstLineStartX; x<firstLineEndX; x++)
+//                {
+//                    edgeType = getSign(recLine[x] - recLineAbove[x+1]) - signUpLine[x-1];
+//                    diff [edgeType] += (orgLine[2*x] - recLine[x]);
+//                    count[edgeType] ++;
+//                }
+//
+//                recLine += recStride;
+//                orgLine += orgStride;
+//
+//                //middle lines
+//                for (y=1; y<endY; y++)
+//                {
+//                    recLineBelow = recLine + recStride;
+//
+//                    for(x=startX; x<endX; x++)
+//                    {
+//                        signDown = getSign(recLine[x] - recLineBelow[x-1]) ;
+//                        edgeType = signDown + signUpLine[x];
+//
+//                        diff [edgeType] += (orgLine[2*x] - recLine[x]);
+//                        count[edgeType] ++;
+//
+//                        signUpLine[x-1] = -signDown; 
+//                    }
+//                    signUpLine[endX-1] = getSign(recLineBelow[endX-1] - recLine[endX]);
+//                    recLine  += recStride;
+//                    orgLine  += orgStride;
+//                }
+//            }
+//            break;
+//
+//            case SAO_TYPE_BO:
+//            {
+//                endX = width- skipLinesR;
+//                endY = height- skipLinesB;
+//                const int shiftBits = 3;
+//                for (y=0; y<endY; y++)
+//                {
+//                    for (x=0; x<endX; x++)
+//                    {
+//                        int bandIdx= recLine[x] >> shiftBits; 
+//                        diff [bandIdx] += (orgLine[2*x] - recLine[x]);
+//                        count[bandIdx]++;
+//                    }
+//                    recLine += recStride;
+//                    orgLine += orgStride;
+//                }
+//            }
+//            break;
+//
+//            default:
+//            {
+//                VM_ASSERT(!"Not a supported SAO types\n");
+//            }
+//        }
+//    }
+//
+//} // void GetCtuStatistics_Chroma_Internal(...)
+// --------------------------------------------------------
 
 void InvertQuantOffsets(int type_idx, int typeAuxInfo, int* dstOffsets, int* srcOffsets)
 {
@@ -628,7 +1054,7 @@ void SaoEncodeFilter::ReconstructCtuSaoParam(SaoCtuParam& recParam)
         mergeList);
 
     //for(int compIdx=0; compIdx< NUM_SAO_COMPONENTS; compIdx++)
-    for(int compIdx=0; compIdx<1; compIdx++)
+    for(int compIdx=0; compIdx<NUM_USED_SAO_COMPONENTS; compIdx++)
     {
         SaoOffsetParam& offsetParam = recParam[compIdx];
 
@@ -668,7 +1094,7 @@ void SaoEncodeFilter::ReconstructCtuSaoParam(SaoCtuParam& recParam)
 void SliceDecisionAlgorithm(bool* sliceEnabled, int picTempLayer)
 {
     // aya: here should be placed real algorithm to SliceLevelControl On/Off
-    for (int compIdx=0; compIdx<1; compIdx++)
+    for (int compIdx=0; compIdx<NUM_USED_SAO_COMPONENTS; compIdx++)
     {
         sliceEnabled[compIdx] = true;
     }
@@ -1025,6 +1451,12 @@ void SaoEncodeFilter::EstimateCtuSao(
 {
     GetCtuSaoStatistics(orgYuv, recYuv);
 
+#if defined(MFX_HEVC_SAO_PREDEBLOCKED_ENABLED)
+    for(int i = 0; i < NUM_SAO_BASE_TYPES; i++)
+    {
+        m_statData[SAO_Y][i] += m_statData_predeblocked[SAO_Y][i];
+    }
+#endif
     //slice on/off decision algorithm.
     // depth - it depends on GOPSize. Need for early alg termination
     sliceEnabled[SAO_Y] = sliceEnabled[SAO_Cb] = sliceEnabled[SAO_Cr] = false;
@@ -1038,7 +1470,7 @@ void SaoEncodeFilter::EstimateCtuSao(
 
 void SaoEncodeFilter::GetCtuSaoStatistics(mfxFrameData* orgYuv, mfxFrameData* recYuv)
 {
-    bool isLeftAvail, isAboveAvail, isAboveLeftAvail,isAboveRightAvail;
+    //bool isLeftAvail, isAboveAvail, isAboveLeftAvail,isAboveRightAvail;
 
     {
         int xPos   = m_ctb_pelx;//(ctu / m_numCTU_inWidth)*m_maxCUWidth;
@@ -1048,10 +1480,10 @@ void SaoEncodeFilter::GetCtuSaoStatistics(mfxFrameData* orgYuv, mfxFrameData* re
 
         // sao::block boundary availability
         // ------------------------------------------------
-        isLeftAvail  = m_borders.m_left > 0 ? true : false;
-        isAboveAvail = m_borders.m_top > 0  ? true : false;
-        isAboveLeftAvail = false;//(isAboveAvail && isLeftAvail);
-        isAboveRightAvail= false;//(isAboveAvail && isRightAvail);// make sense for WPP = 1 only
+        //isLeftAvail  = m_borders.m_left > 0 ? true : false;
+        //isAboveAvail = m_borders.m_top > 0  ? true : false;
+        //isAboveLeftAvail = false;//(isAboveAvail && isLeftAvail);
+        //isAboveRightAvail= false;//(isAboveAvail && isRightAvail);// make sense for WPP = 1 only
 
         // ------------------------------------------------
 
@@ -1068,30 +1500,57 @@ void SaoEncodeFilter::GetCtuSaoStatistics(mfxFrameData* orgYuv, mfxFrameData* re
         isAboveRightAvail = ((yPos > 0) && (isRightAvail));*/
         // ---------------------------------------------------
 
-        for(int compIdx=0; compIdx< 1; compIdx++)
+        //for(int compIdx=0; compIdx< 3; compIdx++)
+        int compIdx = SAO_Y;
+        int shift   = 0;// YV12/NV12 Chroma dispatcher
         {
-            bool isLuma     = (compIdx == SAO_Y);
-            int  formatShift= isLuma?0:1;
-
-            int  recStride = isLuma?recYuv->Pitch:recYuv->Pitch;
+            int  recStride = recYuv->Pitch;
             PixType* recBlk=  recYuv->Y;
 
-            int  orgStride  = isLuma?orgYuv->Pitch:orgYuv->Pitch;
+            int  orgStride  = orgYuv->Pitch;
             PixType* orgBlk = orgYuv->Y;
 
-            GetCtuStatistics_Internal(
+            MFX_HEVC_PP::NAME(h265_GetCtuStatistics_8u)(
+                compIdx,
+
+                recBlk,
+                recStride,
+                orgBlk,
+                orgStride,
+
+                width,
+                height,
+
+                shift,
+                m_borders,
+                m_statData[compIdx]);
+        }
+
+        for( compIdx = 1; compIdx < NUM_USED_SAO_COMPONENTS; compIdx++ )
+        {
+            int  recStride = recYuv->PitchHigh;//yv12
+            PixType* recBlk=  (compIdx == SAO_Cb) ? recYuv->Cb : recYuv->Cr;
+
+            int  orgStride  = orgYuv->Pitch; //nv12
+            PixType* orgBlk = (compIdx == SAO_Cb) ? orgYuv->CbCr : orgYuv->CbCr + 1;
+
+            shift = 1;
+
+            MFX_HEVC_PP::NAME(h265_GetCtuStatistics_8u)(
                 compIdx,
                 recBlk,
                 recStride,
                 orgBlk,
                 orgStride,
-                m_statData[compIdx],
-                (width  >> formatShift),
-                (height >> formatShift),
-                isLeftAvail,
-                isAboveAvail,
-                isAboveLeftAvail,
-                isAboveRightAvail);
+
+                width >> 1,
+                height >> 1,
+
+                shift,
+
+                m_borders,
+                
+                m_statData[compIdx]);
         }
     }
 
@@ -1144,15 +1603,14 @@ void SaoEncodeFilter::GetBestCtuSaoParam(
 
             case SAO_MODE_MERGE:
             {
-//#if defined(SAO_MODE_MERGE_ENABLED)
-                // AYA!!! FIXME
+#if defined(SAO_MODE_MERGE_ENABLED)
                 ModeDecision_Merge(
                     mergeList,
                     sliceEnabled,
                     modeParam,
                     modeCost,
                     SAO_CABACSTATE_BLK_CUR);
-//#endif
+#endif
             }
             break;
 
@@ -1384,7 +1842,7 @@ void SaoEncodeFilter::ModeDecision_Base(
     m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_MID], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
 
     // aya - temporal solution
-    bool isChromaEnabled = false;
+    bool isChromaEnabled = (NUM_USED_SAO_COMPONENTS > 1) ? true : false;
     Ipp64f chromaLambda = m_labmda[SAO_Cb];
 
     // ======================================================
@@ -1394,14 +1852,23 @@ void SaoEncodeFilter::ModeDecision_Base(
     {
         //------ chroma --------//
         VM_ASSERT(m_labmda[SAO_Cb] == m_labmda[SAO_Cr]);
-        //Ipp64f chromaLambda = m_labmda[SAO_Cb];
+        Ipp64f chromaLambda = m_labmda[SAO_Cb];
+
         //"off" case as initial cost
         //m_pcRDGoOnSbacCoder->resetBits();
+        m_bsf->Reset();
+
         modeParam[SAO_Cb].mode_idx = SAO_MODE_OFF;
         //m_pcRDGoOnSbacCoder->h265_code_sao_ctb_offset_param(SAO_Cb, modeParam[SAO_Cb], sliceEnabled[SAO_Cb]);
+        h265_code_sao_ctb_offset_param(m_bsf, SAO_Cb, modeParam[SAO_Cb], sliceEnabled[SAO_Cb]);
+
         modeParam[SAO_Cr].mode_idx = SAO_MODE_OFF;
         //m_pcRDGoOnSbacCoder->h265_code_sao_ctb_offset_param(SAO_Cr, modeParam[SAO_Cr], sliceEnabled[SAO_Cr]);
+        h265_code_sao_ctb_offset_param(m_bsf, SAO_Cr, modeParam[SAO_Cr], sliceEnabled[SAO_Cr]);
+
         //minRate= m_pcRDGoOnSbacCoder->getNumberOfWrittenBits();
+        minRate = GetNumWrittenBits();
+
         modeDist[SAO_Cb] = modeDist[SAO_Cr]= 0;
         minCost= chromaLambda*((Ipp64f)minRate);
 
@@ -1420,12 +1887,20 @@ void SaoEncodeFilter::ModeDecision_Base(
                 testOffset[compIdx].mode_idx = SAO_MODE_ON;
                 testOffset[compIdx].type_idx = type_idx;
 
-
-                GetQuantOffsets(type_idx, m_statData[compIdx][type_idx], testOffset[compIdx].offset, testOffset[compIdx].typeAuxInfo, m_labmda[compIdx]);
+                GetQuantOffsets(
+                    type_idx, 
+                    m_statData[compIdx][type_idx],
+                    testOffset[compIdx].offset, 
+                    testOffset[compIdx].typeAuxInfo, 
+                    m_labmda[compIdx]);
 
                 //InvertQuantOffsets(type_idx, testOffset[compIdx].typeAuxInfo, invQuantOffset, testOffset[compIdx].offset);
 
-                dist[compIdx]= GetDistortion(type_idx, testOffset[compIdx].typeAuxInfo, testOffset[compIdx].offset, m_statData[compIdx][type_idx]);
+                dist[compIdx]= GetDistortion(
+                    type_idx, 
+                    testOffset[compIdx].typeAuxInfo, 
+                    testOffset[compIdx].offset, 
+                    m_statData[compIdx][type_idx]);
             }
 
             //get rate
@@ -1434,6 +1909,12 @@ void SaoEncodeFilter::ModeDecision_Base(
             m_pcRDGoOnSbacCoder->h265_code_sao_ctb_offset_param(SAO_Cb, testOffset[SAO_Cb], sliceEnabled[SAO_Cb]);
             m_pcRDGoOnSbacCoder->h265_code_sao_ctb_offset_param(SAO_Cr, testOffset[SAO_Cr], sliceEnabled[SAO_Cr]);
             rate = m_pcRDGoOnSbacCoder->getNumberOfWrittenBits();*/
+
+            m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_MID], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
+            m_bsf->Reset();
+            h265_code_sao_ctb_offset_param(m_bsf, SAO_Cb, testOffset[SAO_Cb], sliceEnabled[SAO_Cb]);
+            h265_code_sao_ctb_offset_param(m_bsf, SAO_Cr, testOffset[SAO_Cr], sliceEnabled[SAO_Cr]);
+            rate = GetNumWrittenBits();
 
             cost = (Ipp64f)(dist[SAO_Cb]+ dist[SAO_Cr]) + chromaLambda*((Ipp64f)rate);
             if(cost < minCost)
@@ -1552,9 +2033,9 @@ void SaoEncodeFilter::ApplyCtuSao(
 SaoDecodeFilter::SaoDecodeFilter()
 {
     m_OffsetBo  = NULL;
-    m_OffsetBo2 = NULL;
+    /*m_OffsetBo2 = NULL;
     m_OffsetBoChroma = NULL;
-    m_OffsetBo2Chroma = NULL;
+    m_OffsetBo2Chroma = NULL;*/
     m_ClipTable = NULL;
     m_ClipTableBase = NULL;
     m_lumaTableBo = NULL;
@@ -1573,7 +2054,7 @@ void SaoDecodeFilter::Close()
         m_OffsetBo = NULL;
     }
 
-    if(m_OffsetBo2)
+    /*if(m_OffsetBo2)
     {
         delete [] m_OffsetBo2;
         m_OffsetBo2 = NULL;
@@ -1589,7 +2070,7 @@ void SaoDecodeFilter::Close()
     {
         delete [] m_OffsetBo2Chroma;
         m_OffsetBo2Chroma = NULL;
-    }
+    }*/
 
     /*if(m_ClipTable)
     {
@@ -1665,9 +2146,9 @@ void SaoDecodeFilter::Init(int width, int height, int maxCUWidth, int maxDepth)
 
     m_ClipTableBase = new PixType[uiMaxY+2*iCRangeExt];
     m_OffsetBo      = new PixType[uiMaxY+2*iCRangeExt];
-    m_OffsetBo2     = new PixType[uiMaxY+2*iCRangeExt];
+    /*m_OffsetBo2     = new PixType[uiMaxY+2*iCRangeExt];
     m_OffsetBoChroma   = new PixType[uiMaxY+2*iCRangeExt];
-    m_OffsetBo2Chroma  = new PixType[uiMaxY+2*iCRangeExt];
+    m_OffsetBo2Chroma  = new PixType[uiMaxY+2*iCRangeExt];*/
 
     for (Ipp32u i = 0; i < (uiMinY + iCRangeExt);i++)
     {
@@ -1698,7 +2179,7 @@ void SaoDecodeFilter::Init(int width, int height, int maxCUWidth, int maxDepth)
 } // void SaoDecodeFilter::Init(...)
 
 
-void SaoDecodeFilter::SetOffsetsLuma(SaoCtuParam  &saoLCUParam, Ipp32s typeIdx)
+void SaoDecodeFilter::SetOffsetsLuma(SaoOffsetParam  &saoLCUParam, Ipp32s typeIdx)
 {
     Ipp32s offset[LUMA_GROUP_NUM + 1] = {0};
     static const Ipp8u EoTable[9] =
@@ -1722,7 +2203,7 @@ void SaoDecodeFilter::SetOffsetsLuma(SaoCtuParam  &saoLCUParam, Ipp32s typeIdx)
         }
         for (Ipp32s i = 0; i < 4; i++)
         {
-            offset[(saoLCUParam[0].typeAuxInfo + i) % NUM_SAO_BO_CLASSES + 1] = saoLCUParam[0].offset[(saoLCUParam[0].typeAuxInfo + i) % NUM_SAO_BO_CLASSES];//[i];
+            offset[(saoLCUParam.typeAuxInfo + i) % NUM_SAO_BO_CLASSES + 1] = saoLCUParam.offset[(saoLCUParam.typeAuxInfo + i) % NUM_SAO_BO_CLASSES];//[i];
         }
 
         PixType *ppLumaTable = m_lumaTableBo;
@@ -1741,7 +2222,7 @@ void SaoDecodeFilter::SetOffsetsLuma(SaoCtuParam  &saoLCUParam, Ipp32s typeIdx)
         for (Ipp32s edgeType = 0; edgeType < 6; edgeType++)
        {
             //m_OffsetEo[edgeType] = offset[ EoTable[edgeType] ];
-            m_OffsetEo[edgeType] = saoLCUParam[0].offset[edgeType];
+            m_OffsetEo[edgeType] = saoLCUParam.offset[edgeType];
         }
     }
 }
@@ -1767,6 +2248,8 @@ void H265CU::EstimateCtuSao(
     m_saoEncodeFilter.m_borders = borders;
 
     m_saoEncodeFilter.m_slice_ids = (Ipp8u*)slice_ids;
+    //chroma issues
+    m_saoEncodeFilter.m_labmda[1] = m_saoEncodeFilter.m_labmda[2] = m_saoEncodeFilter.m_labmda[0];
     // ----------------------------------------------------
 
     // run
@@ -1781,6 +2264,7 @@ void H265CU::EstimateCtuSao(
     recYuv.U = this->u_rec;
     recYuv.V = this->v_rec;
     recYuv.Pitch = (Ipp16s)this->pitch_rec_luma;
+    recYuv.PitchHigh = (Ipp16s)this->pitch_rec_chroma;
 
     bool    sliceEnabled[NUM_SAO_COMPONENTS] = {false, false, false};
     m_saoEncodeFilter.EstimateCtuSao( &orgYuv, &recYuv, sliceEnabled, saoParam);
@@ -1792,12 +2276,82 @@ void H265CU::EstimateCtuSao(
     }
     if( !this->cslice->slice_sao_chroma_flag )
     {
-        this->cslice->slice_sao_chroma_flag = 0;
+        this->cslice->slice_sao_chroma_flag = (sliceEnabled[SAO_Cb] || sliceEnabled[SAO_Cr] ) ? 1 : 0;
     }
 
     return;
 
 } // void H265CU::EstimateCtuSao( void )
 
+
+void H265CU::GetStatisticsCtuSao_Predeblocked( const MFX_HEVC_PP::CTBBorders & borders )
+{
+    int maxCUSixe = m_saoEncodeFilter.m_maxCUSize;
+    IppiSize frameSize = m_saoEncodeFilter.m_frameSize;
+
+    int height = ((int)this->ctb_pely + maxCUSixe > frameSize.height)?(frameSize.height- this->ctb_pely):maxCUSixe;
+    int width  = ((int)this->ctb_pelx + maxCUSixe  > frameSize.width )?(frameSize.width - this->ctb_pelx):maxCUSixe;
+
+    // run
+    mfxFrameData orgYuv;
+    mfxFrameData recYuv;
+
+    orgYuv.Y = this->y_src;
+    orgYuv.UV = this->uv_src;
+    orgYuv.Pitch = (Ipp16s)this->pitch_src;
+
+    recYuv.Y = this->y_rec;
+    recYuv.U = this->u_rec;
+    recYuv.V = this->v_rec;
+    recYuv.Pitch = (Ipp16s)this->pitch_rec_luma;
+    recYuv.PitchHigh = (Ipp16s)this->pitch_rec_chroma;
+
+    int compIdx = SAO_Y;
+
+    //MFX_HEVC_PP::CTBBorders borders = {0};
+    MFX_HEVC_PP::SaoCtuStatistics    statData_predeblocked_R[NUM_SAO_COMPONENTS][NUM_SAO_BASE_TYPES];
+    MFX_HEVC_PP::SaoCtuStatistics    statData_predeblocked_B[NUM_SAO_COMPONENTS][NUM_SAO_BASE_TYPES];
+
+    GetCtuStatistics_RBoundary_Internal(
+                compIdx,
+
+                recYuv.Y,
+                recYuv.Pitch,
+
+                orgYuv.Y,
+                orgYuv.Pitch,
+
+                width,
+                height,
+
+                0,
+
+                borders,
+                statData_predeblocked_R[compIdx]);
+
+    GetCtuStatistics_BottomBoundary_Internal(
+                compIdx,
+
+                recYuv.Y,
+                recYuv.Pitch,
+
+                orgYuv.Y,
+                orgYuv.Pitch,
+
+                width,
+                height,
+
+                0,
+
+                borders,
+                statData_predeblocked_B[compIdx]);
+
+    for(int i = 0; i < NUM_SAO_BASE_TYPES; i++)
+    {
+        m_saoEncodeFilter.m_statData_predeblocked[SAO_Y][i] = statData_predeblocked_R[compIdx][i];
+        m_saoEncodeFilter.m_statData_predeblocked[SAO_Y][i] += statData_predeblocked_B[compIdx][i];
+    }
+
+} // void H265CU::GetStatisticsCtuSao_Predeblocked( void )
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE
 /* EOF */

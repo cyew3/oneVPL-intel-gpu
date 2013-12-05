@@ -17,6 +17,8 @@
 #include "mfx_h265_ctb.h"
 #include "mfx_h265_cabac.h"
 
+#include "mfx_h265_optimization.h"
+
 //#define MAX_SAO_TRUNCATED_BITDEPTH     (10)
 
 //#define SAO_ENCODE_ALLOW_USE_PREDEBLOCK (0)
@@ -93,31 +95,42 @@ enum SaoComponentIdx
   NUM_SAO_COMPONENTS
 };
 
+//---------------------------------------------------------
+// configuration of SAO algorithm:
+// how many components are used for SAO analysis: 1 - Y only, 2 - invalid, 3 - YUV
+#define NUM_USED_SAO_COMPONENTS (1)
 
-struct SaoCtuStatistics //data structure for SAO statistics
-{
-  Ipp64s diff[MAX_NUM_SAO_CLASSES];
-  Ipp64s count[MAX_NUM_SAO_CLASSES];
+// enable/disable merge mode of SAO
+//#define SAO_MODE_MERGE_ENABLED  (1)
 
-  SaoCtuStatistics(){}
-  ~SaoCtuStatistics(){}
+// predeblocked statistics
+//#define MFX_HEVC_SAO_PREDEBLOCKED_ENABLED (1)
+//---------------------------------------------------------
 
-  void Reset()
-  {
-    memset(diff, 0, sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
-    memset(count, 0, sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
-  }
-
-  //const 
-  SaoCtuStatistics& operator=(const SaoCtuStatistics& src)
-  {
-    small_memcpy(diff, src.diff, sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
-    small_memcpy(count, src.count, sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
-
-    return *this;
-  }
-
-};
+//struct SaoCtuStatistics //data structure for SAO statistics
+//{
+//  Ipp64s diff[MAX_NUM_SAO_CLASSES];
+//  Ipp64s count[MAX_NUM_SAO_CLASSES];
+//
+//  SaoCtuStatistics(){}
+//  ~SaoCtuStatistics(){}
+//
+//  void Reset()
+//  {
+//    memset(diff, 0, sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
+//    memset(count, 0, sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
+//  }
+//
+//  //const 
+//  SaoCtuStatistics& operator=(const SaoCtuStatistics& src)
+//  {
+//    small_memcpy(diff, src.diff, sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
+//    small_memcpy(count, src.count, sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
+//
+//    return *this;
+//  }
+//
+//};
 
 
 struct SaoOffsetParam
@@ -217,6 +230,7 @@ private:
     }
 
 // SaoState
+public:
     // per stream param
     IppiSize m_frameSize;
     Ipp32s   m_maxCUSize;
@@ -225,8 +239,10 @@ private:
     Ipp32s   m_numCTU_inHeight;
 
     // work state
-    SaoCtuStatistics    m_statData[NUM_SAO_COMPONENTS][NUM_SAO_BASE_TYPES];
+    MFX_HEVC_PP::SaoCtuStatistics    m_statData[NUM_SAO_COMPONENTS][NUM_SAO_BASE_TYPES];
     Ipp8u               m_ctxSAO[NUM_SAO_CABACSTATE_MARKERS][NUM_CABAC_CONTEXT];
+
+    MFX_HEVC_PP::SaoCtuStatistics    m_statData_predeblocked[NUM_SAO_COMPONENTS][NUM_SAO_BASE_TYPES];
 
 public:
     // per CTU param
@@ -260,7 +276,7 @@ public:
      void Close(void);
 
      void SetOffsetsLuma(
-         SaoCtuParam  &saoLCUParam, 
+         SaoOffsetParam  &saoLCUParam,
          Ipp32s typeIdx);
 
      Ipp8u   *m_TmpU[2];
@@ -277,9 +293,9 @@ public:
     Ipp32s   m_OffsetEo2Chroma[LUMA_GROUP_NUM];
 
     Ipp8u   *m_OffsetBo;
-    Ipp8u   *m_OffsetBo2;
+    /*Ipp8u   *m_OffsetBo2;
     Ipp8u   *m_OffsetBoChroma;
-    Ipp8u   *m_OffsetBo2Chroma;
+    Ipp8u   *m_OffsetBo2Chroma;*/
     Ipp8u   *m_ClipTable;
     Ipp8u   *m_ClipTableBase;
     Ipp8u   *m_lumaTableBo;

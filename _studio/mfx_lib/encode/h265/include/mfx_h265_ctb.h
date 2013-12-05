@@ -363,6 +363,7 @@ public:
         const MFX_HEVC_PP::CTBBorders & borders,
         const Ipp8u* slice_ids);
 
+    void GetStatisticsCtuSao_Predeblocked( const MFX_HEVC_PP::CTBBorders & borders );
     void FillSubPart(Ipp32s abs_part_idx, Ipp8u depth_cu, Ipp8u tr_idx,
         Ipp8u part_size, Ipp8u luma_dir, Ipp8u qp);
     void FillSubPartIntraLumaDir(Ipp32s abs_part_idx, Ipp8u depth_cu, Ipp8u tr_depth, Ipp8u luma_dir);

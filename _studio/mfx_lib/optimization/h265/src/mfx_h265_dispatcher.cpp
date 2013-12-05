@@ -310,6 +310,7 @@ using namespace MFX_HEVC_PP;
         //[SAO]============================================
         g_dispatcher. h265_ProcessSaoCuOrg_Luma_8u = &MFX_HEVC_PP::h265_ProcessSaoCuOrg_Luma_8u_sse;
         g_dispatcher. h265_ProcessSaoCu_Luma_8u = &MFX_HEVC_PP::h265_ProcessSaoCu_Luma_8u_sse;
+        g_dispatcher. h265_GetCtuStatistics_8u = &MFX_HEVC_PP::h265_GetCtuStatistics_8u_sse;
 
         //[Interpoaltion]==================================
         // average
@@ -435,6 +436,7 @@ using namespace MFX_HEVC_PP;
         //[SAO]============================================
         g_dispatcher. h265_ProcessSaoCuOrg_Luma_8u = &MFX_HEVC_PP::h265_ProcessSaoCuOrg_Luma_8u_ssse3;
         g_dispatcher. h265_ProcessSaoCu_Luma_8u = &MFX_HEVC_PP::h265_ProcessSaoCu_Luma_8u_ssse3;
+        g_dispatcher. h265_GetCtuStatistics_8u = &MFX_HEVC_PP::h265_GetCtuStatistics_8u_px;// aya!!!
 
         //[Interpoaltion]==================================
         // average
@@ -560,6 +562,7 @@ using namespace MFX_HEVC_PP;
         //[SAO]============================================
         g_dispatcher. h265_ProcessSaoCuOrg_Luma_8u = &MFX_HEVC_PP::h265_ProcessSaoCuOrg_Luma_8u_sse;
         g_dispatcher. h265_ProcessSaoCu_Luma_8u = &MFX_HEVC_PP::h265_ProcessSaoCu_Luma_8u_sse;
+        g_dispatcher. h265_GetCtuStatistics_8u = &MFX_HEVC_PP::h265_GetCtuStatistics_8u_sse;
 
         //[Interpoaltion]==================================
         // average
@@ -685,6 +688,7 @@ using namespace MFX_HEVC_PP;
         //[SAO]============================================
         g_dispatcher. h265_ProcessSaoCuOrg_Luma_8u = &MFX_HEVC_PP::h265_ProcessSaoCuOrg_Luma_8u_px;
         g_dispatcher. h265_ProcessSaoCu_Luma_8u = &MFX_HEVC_PP::h265_ProcessSaoCu_Luma_8u_px;
+        g_dispatcher. h265_GetCtuStatistics_8u = &MFX_HEVC_PP::h265_GetCtuStatistics_8u_px;
 
         //[Interpoaltion]==================================
         // average
