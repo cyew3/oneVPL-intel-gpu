@@ -26,10 +26,6 @@
 
 #include "mfx_umc_alloc_wrapper.h"
 
-#ifdef MFX_ENABLE_WATERMARK
-class Watermark;
-#endif
-
 class H265Encoder;
 struct H265NALUnit;
 
@@ -150,9 +146,6 @@ protected:
         volatile mfxI32 num_threads;
         vm_mutex parallel_region_end_lock;
     } m_taskParams;
-#ifdef MFX_ENABLE_WATERMARK
-    Watermark *m_watermark;
-#endif
 };
 
 #endif // __MFX_H265_ENCODE_H__

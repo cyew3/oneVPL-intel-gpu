@@ -11,6 +11,9 @@
 #ifndef __MFX_H265_ENC_H__
 #define __MFX_H265_ENC_H__
 
+#ifdef MFX_ENABLE_WATERMARK
+class Watermark;
+#endif
 
 struct H265VideoParam {
 // preset
@@ -202,6 +205,9 @@ public:
         m_brc = NULL;
         m_context_array_wpp = NULL;
         m_recon_dump_file_name = NULL;
+#ifdef MFX_ENABLE_WATERMARK
+        m_watermark = NULL;
+#endif
     }
     ~H265Encoder() {};
 ///////////////
@@ -250,6 +256,10 @@ public:
     //////////////////
 
     mfxStatus InitH265VideoParam(mfxVideoH265InternalParam *param, mfxExtCodingOptionHEVC *opts_hevc);
+private:
+#ifdef MFX_ENABLE_WATERMARK
+    Watermark *m_watermark;
+#endif
 };
 
 #endif // __MFX_H265_ENC_H__

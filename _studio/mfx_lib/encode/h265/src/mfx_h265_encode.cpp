@@ -28,10 +28,6 @@
 #include "umc_structures.h"
 #include "mfx_enc_common.h"
 
-#ifdef MFX_ENABLE_WATERMARK
-#include "watermark.h"
-#endif
-
 //////////////////////////////////////////////////////////////////////////
 
 #define H265ENC_UNREFERENCED_PARAMETER(X) X=X
@@ -275,9 +271,6 @@ MFXVideoENCODEH265::MFXVideoENCODEH265(VideoCORE *core, mfxStatus *stat)
   m_useSysOpaq(false),
   m_useVideoOpaq(false),
   m_isOpaque(false)
-#ifdef MFX_ENABLE_WATERMARK
-, m_watermark(NULL)
-#endif
 {
     ippStaticInit();
     *stat = MFX_ERR_NONE;
@@ -354,12 +347,6 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     MFX_CHECK(!m_isInitialized, MFX_ERR_UNDEFINED_BEHAVIOR);
     MFX_CHECK_NULL_PTR1(par_in);
     MFX_CHECK(par_in->Protected == 0,MFX_ERR_INVALID_VIDEO_PARAM);
-
-#ifdef MFX_ENABLE_WATERMARK
-    m_watermark = Watermark::CreateFromResource();
-    if (NULL == m_watermark)
-        return MFX_ERR_UNKNOWN;
-#endif
 
     sts = CheckVideoParamEncoders(par_in, m_core->IsExternalFrameAllocator(), MFX_HW_UNKNOWN);
     MFX_CHECK_STS(sts);
@@ -796,11 +783,6 @@ mfxStatus MFXVideoENCODEH265::Close()
         m_response_alien.NumFrameActual = 0;
         m_useVideoOpaq = false;
     }
-
-#ifdef MFX_ENABLE_WATERMARK
-    if (m_watermark)
-        m_watermark->Release();
-#endif
 
     return MFX_ERR_NONE;
 }
@@ -1654,10 +1636,6 @@ mfxStatus MFXVideoENCODEH265::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
         if (!surface->Data.Y || !surface->Data.UV || surface->Data.Pitch > 0x7fff ||
             surface->Data.Pitch < m_mfxVideoParam.mfx.FrameInfo.Width )
             return MFX_ERR_UNDEFINED_BEHAVIOR;
-
-#ifdef MFX_ENABLE_WATERMARK
-        m_watermark->Apply(surface->Data.Y, surface->Data.UV, surface->Data.Pitch, surface->Info.Width, surface->Info.Height);
-#endif
 
         mfxRes = m_enc->EncodeFrame(surface, bitstream);
         m_core->DecreaseReference(&(surface->Data));

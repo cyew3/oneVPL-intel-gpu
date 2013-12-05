@@ -20,6 +20,10 @@
 #include "vm_sys_info.h"
 #include <immintrin.h>
 
+#ifdef MFX_ENABLE_WATERMARK
+#include "watermark.h"
+#endif
+
 #if defined( _WIN32) || defined(_WIN64)
 #define thread_sleep(nms) Sleep(nms)
 #else
@@ -685,6 +689,12 @@ void H265Encoder::InitShortTermRefPicSet()
 }
 
 mfxStatus H265Encoder::Init(mfxVideoH265InternalParam *param, mfxExtCodingOptionHEVC *opts_hevc) {
+#ifdef MFX_ENABLE_WATERMARK
+    m_watermark = Watermark::CreateFromResource();
+    if (NULL == m_watermark)
+        return MFX_ERR_UNKNOWN;
+#endif
+
     mfxStatus sts = InitH265VideoParam(param, opts_hevc);
     MFX_CHECK_STS(sts);
 
@@ -890,6 +900,11 @@ void H265Encoder::Close() {
     }
 
     m_saoDecodeFilter.Close();
+
+#ifdef MFX_ENABLE_WATERMARK
+    if (m_watermark)
+        m_watermark->Release();
+#endif
 }
 
 Ipp32u H265Encoder::DetermineFrameType()
@@ -2144,6 +2159,10 @@ mfxStatus H265Encoder::EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *mfxB
         /*m_pLastFrame = */m_pCurrentFrame = m_cpb.InsertFrame(surface, &m_videoParam);
         if (m_pCurrentFrame)
         {
+#ifdef MFX_ENABLE_WATERMARK
+            m_watermark->Apply(m_pCurrentFrame->y, m_pCurrentFrame->uv, m_pCurrentFrame->pitch_luma,
+                surface->Info.Width, surface->Info.Height);
+#endif
             // Set PTS  from previous if isn't given at input
             if (m_pCurrentFrame->TimeStamp == MFX_TIMESTAMP_UNKNOWN) {
                 if (prevTimeStamp == MFX_TIMESTAMP_UNKNOWN)
