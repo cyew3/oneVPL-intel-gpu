@@ -40,7 +40,7 @@ File Name: mfx_load_plugin.h
 MFX::PluginModule::PluginModule()
     : mHmodule()
     , mCreatePluginPtr() 
-    //intentionally not initialize mPath, since it requires lots of memset, and practically not use case when it is not initialized
+    , mPath()
 {
 }
 
@@ -102,6 +102,7 @@ void MFX::PluginModule::Tidy()
 {
     mfx_dll_free(mHmodule);
     mCreatePluginPtr = NULL;
+    mHmodule = NULL;
 }
 
 MFX::PluginModule::~PluginModule(void) 

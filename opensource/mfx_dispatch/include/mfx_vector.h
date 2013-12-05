@@ -193,7 +193,7 @@ namespace MFX
                 mRecords[i] = mRecords[i+1];
             }
             //destroy last element
-            (mRecords + i)->~T();
+            mRecords[i] = T();
         }
         void resize(mfxU32 nSize) 
         {
