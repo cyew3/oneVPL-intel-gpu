@@ -92,11 +92,16 @@ public:
     mfxStatus Init(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum, int storageID);
 
     // Get the next library path
-    mfxStatus SelectDLLVersion(msdk_disp_char *pPath, size_t pathSize, eMfxImplType *pImplType, mfxVersion minVersion);
+    mfxStatus SelectDLLVersion(msdk_disp_char *pPath, size_t pathSize, 
+                               eMfxImplType *pImplType, mfxVersion minVersion);
 
     // Return interface type on which Intel adapter was found (if any): D3D9 or D3D11
     mfxIMPL GetImplementationType(); 
 
+    // Retrun registry subkey name on which dll was selected after sucesfull call to selectDllVesion
+    bool GetSubKeyName(const wchar_t *&subKeyName) const;
+
+    int  GetStorageID() const { return m_StorageID; }
 protected:
 
     // Release the iterator
@@ -107,7 +112,10 @@ protected:
 
     mfxU32 m_vendorID;                                          // (mfxU32) property of used graphic card
     mfxU32 m_deviceID;                                          // (mfxU32) property of used graphic card
-
+    bool   m_bIsSubKeyValid;
+    wchar_t m_SubKeyName[MFX_MAX_VALUE_NAME];                   // registry subkey for selected module loaded 
+    int    m_StorageID;
+    
 #if defined(_WIN32) || defined(_WIN64)
     WinRegKey m_baseRegKey;                                     // (WinRegKey) main registry key    
 

@@ -132,6 +132,8 @@ MFXLibraryIterator::MFXLibraryIterator(void)
     m_lastLibIndex = 0;
     m_lastLibMerit = MFX_MAX_MERIT;
 
+    m_bIsSubKeyValid = 0;
+    m_StorageID = 0;
 } // MFXLibraryIterator::MFXLibraryIterator(void)
 
 MFXLibraryIterator::~MFXLibraryIterator(void)
@@ -168,6 +170,7 @@ mfxStatus MFXLibraryIterator::Init(eMfxImplType implType, mfxIMPL implInterface,
     Release();
 
     // open required registry key
+    m_StorageID = storageID;
     rootHKey = (MFX_LOCAL_MACHINE_KEY == storageID) ? (HKEY_LOCAL_MACHINE) : (HKEY_CURRENT_USER);
     bRes = m_baseRegKey.Open(rootHKey, rootDispPath, KEY_READ);
     if (false == bRes)
@@ -202,8 +205,9 @@ mfxStatus MFXLibraryIterator::Init(eMfxImplType implType, mfxIMPL implInterface,
 
 } // mfxStatus MFXLibraryIterator::Init(eMfxImplType implType, const mfxU32 adapterNum, int storageID)
 
-mfxStatus MFXLibraryIterator::SelectDLLVersion(wchar_t *pPath, size_t pathSize,
-                                               eMfxImplType *pImplType, mfxVersion minVersion)
+mfxStatus MFXLibraryIterator::SelectDLLVersion(wchar_t *pPath
+                                             , size_t pathSize
+                                             , eMfxImplType *pImplType, mfxVersion minVersion)
 {
     wchar_t libPath[MFX_MAX_DLL_PATH];
     DWORD libIndex = 0;
@@ -213,33 +217,33 @@ mfxStatus MFXLibraryIterator::SelectDLLVersion(wchar_t *pPath, size_t pathSize,
 
     // main query cycle
     index = 0;
+    m_bIsSubKeyValid = false;
     do
     {
         WinRegKey subKey;
-        wchar_t subKeyName[MFX_MAX_VALUE_NAME];
-        DWORD subKeyNameSize = sizeof(subKeyName) / sizeof(subKeyName[0]);
+        DWORD subKeyNameSize = sizeof(m_SubKeyName) / sizeof(*m_SubKeyName);
 
         // query next value name
-        enumRes = m_baseRegKey.EnumKey(index, subKeyName, &subKeyNameSize);
+        enumRes = m_baseRegKey.EnumKey(index, m_SubKeyName, &subKeyNameSize);
         if (!enumRes)
         {
             DISPATCHER_LOG_WRN((("no more subkeys : RegEnumKeyExA()==0x%x\n"), GetLastError()))
         }
         else
         {
-            DISPATCHER_LOG_INFO((("found subkey: %S\n"), subKeyName))
+            DISPATCHER_LOG_INFO((("found subkey: %S\n"), m_SubKeyName))
 
             bool bRes;
 
             // open the sub key
-            bRes = subKey.Open(m_baseRegKey, subKeyName, KEY_READ);
+            bRes = subKey.Open(m_baseRegKey, m_SubKeyName, KEY_READ);
             if (!bRes)
             {
-                DISPATCHER_LOG_WRN((("error opening key %S :RegOpenKeyExA()==0x%x\n"), subKeyName, GetLastError()));
+                DISPATCHER_LOG_WRN((("error opening key %S :RegOpenKeyExA()==0x%x\n"), m_SubKeyName, GetLastError()));
             }
             else
             {
-                DISPATCHER_LOG_INFO((("opened key: %S\n"), subKeyName));
+                DISPATCHER_LOG_INFO((("opened key: %S\n"), m_SubKeyName));
 
                 mfxU32 vendorID = 0, deviceID = 0, merit = 0, version;
                 DWORD size;
@@ -427,6 +431,7 @@ mfxStatus MFXLibraryIterator::SelectDLLVersion(wchar_t *pPath, size_t pathSize,
 
     m_lastLibIndex = libIndex;
     m_lastLibMerit = libMerit;
+    m_bIsSubKeyValid = true;
 
     return MFX_ERR_NONE;
 
@@ -437,6 +442,11 @@ mfxIMPL MFXLibraryIterator::GetImplementationType()
     return m_implInterface;
 } // mfxIMPL MFXLibraryIterator::GetImplementationType()
 
+bool MFXLibraryIterator::GetSubKeyName( const wchar_t *&subKeyName )const
+{
+    subKeyName = m_SubKeyName;
+    return m_bIsSubKeyValid;
+}
 } // namespace MFX
 #endif // #if defined(_WIN32) || defined(_WIN64)
 

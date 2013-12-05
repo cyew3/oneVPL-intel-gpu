@@ -114,6 +114,8 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
     std::auto_ptr<MFX_DISP_HANDLE> allocatedHandle;
     MFX_DISP_HANDLE *pHandle;
     msdk_disp_char dllName[MFX_MAX_DLL_PATH];
+    MFX::MFXLibraryIterator libIterator;
+
     // there iterators are used only if the caller specified implicit type like AUTO
     mfxU32 curImplIdx, maxImplIdx;
     // particular implementation value
@@ -171,10 +173,10 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
     // main query cycle
     curImplIdx = implTypesRange[implMethod].minIndex;
     maxImplIdx = implTypesRange[implMethod].maxIndex;
+    
 
     do
     {
-        MFX::MFXLibraryIterator libIterator;
         int currentStorage = MFX::MFX_STORAGE_ID_FIRST;
         implInterface = implInterfaceOrig;
         do
@@ -302,16 +304,24 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
             } 
             else 
             {
-                //todo: new hw plugins location - MediaSDK/Dispatch/DevID/Plugins
+                //loaded HW plugins in subkey of library
+                const wchar_t *subkeyName = NULL;
+                if (libIterator.GetSubKeyName(subkeyName))
+                {
+                    MFX::MFXPluginsInHive plgsInHive(libIterator.GetStorageID(), subkeyName, apiVerActual);
+                    allocatedHandle->pluginHive.insert(allocatedHandle->pluginHive.end(), plgsInHive.begin(), plgsInHive.end());
+                }
+
                 //setting up plugins records
                 for(int i = MFX::MFX_STORAGE_ID_FIRST; i <= MFX::MFX_STORAGE_ID_LAST; i++) 
                 {
-                    MFX::MFXPluginsInHive plgsInHive(i, apiVerActual);
+                    MFX::MFXPluginsInHive plgsInHive(i, NULL, apiVerActual);
                     allocatedHandle->pluginHive.insert(allocatedHandle->pluginHive.end(), plgsInHive.begin(), plgsInHive.end());
                 }
 
                 MFX::MFXPluginsInFS plgsInFS(apiVerActual);
                 allocatedHandle->pluginHive.insert(allocatedHandle->pluginHive.end(), plgsInFS.begin(), plgsInFS.end());
+
             }
         } 
         catch(...)
@@ -488,7 +498,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXVideoUSER_UnLoad)(mfxSession session, con
     bool bDestroyed = rHandle.pluginFactory.Destroy(*uid);
     if (bDestroyed) 
     {
-        DISPATCHER_LOG_ERROR((("MFXVideoUSER_UnLoad : plugin with GUID="MFXGUIDTYPE()" unloaded\n"), MFXGUIDTOHEX(uid)));
+        DISPATCHER_LOG_INFO((("MFXVideoUSER_UnLoad : plugin with GUID="MFXGUIDTYPE()" unloaded\n"), MFXGUIDTOHEX(uid)));
     } else 
     {
         DISPATCHER_LOG_ERROR((("MFXVideoUSER_UnLoad : plugin with GUID="MFXGUIDTYPE()" not found\n"), MFXGUIDTOHEX(uid)));

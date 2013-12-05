@@ -41,6 +41,8 @@ File Name: mfx_plugin_hive.h
 namespace 
 {
     const wchar_t rootPluginPath[] = L"Software\\Intel\\MediaSDK\\Dispatch\\Plugin";
+    const wchar_t rootDispatchPath[] = L"Software\\Intel\\MediaSDK\\Dispatch";
+    const wchar_t pluginSubkey[] = L"Plugin";
     const wchar_t TypeKeyName[] = L"Type";
     const wchar_t CodecIDKeyName[] = L"CodecID";
     const wchar_t GUIDKeyName[] = L"GUID";
@@ -72,7 +74,7 @@ namespace
 }
 
 
-MFX::MFXPluginsInHive::MFXPluginsInHive( mfxU32 mfxStorageID, mfxVersion requiredAPIVersion )
+MFX::MFXPluginsInHive::MFXPluginsInHive( mfxU32 mfxStorageID, const msdk_disp_char * msdkLibSubKey, mfxVersion requiredAPIVersion )
 {
     HKEY rootHKey;
     bool bRes;
@@ -80,7 +82,22 @@ MFX::MFXPluginsInHive::MFXPluginsInHive( mfxU32 mfxStorageID, mfxVersion require
 
     // open required registry key
     rootHKey = (MFX_LOCAL_MACHINE_KEY == mfxStorageID) ? (HKEY_LOCAL_MACHINE) : (HKEY_CURRENT_USER);
-    bRes = regKey.Open(rootHKey, rootPluginPath, KEY_READ);
+    if (msdkLibSubKey) {
+        //dispatch/subkey/plugin
+        bRes = regKey.Open(rootHKey, rootDispatchPath, KEY_READ);
+        if (bRes)
+        {
+            bRes = regKey.Open(regKey, msdkLibSubKey, KEY_READ);
+        }
+        if (bRes)
+        {
+            bRes = regKey.Open(regKey, pluginSubkey, KEY_READ);
+        }
+    }
+    else 
+    {
+        bRes = regKey.Open(rootHKey, rootPluginPath, KEY_READ);
+    }
 
     if (false == bRes) {
         return;
@@ -116,8 +133,16 @@ MFX::MFXPluginsInHive::MFXPluginsInHive( mfxU32 mfxStorageID, mfxVersion require
             continue;
         }
 
-        TRACE_HIVE_INFO("Found Plugin: %s\\%S\\%S\n", (MFX_LOCAL_MACHINE_KEY == mfxStorageID) ? ("HKEY_LOCAL_MACHINE") : ("HKEY_CURRENT_USER"),
-            rootPluginPath, subKeyName);
+        if (msdkLibSubKey) 
+        {
+            TRACE_HIVE_INFO("Found Plugin: %s\\%S\\%S\\%S\\%S\n", (MFX_LOCAL_MACHINE_KEY == mfxStorageID) ? ("HKEY_LOCAL_MACHINE") : ("HKEY_CURRENT_USER"),
+                rootDispatchPath, msdkLibSubKey, pluginSubkey, subKeyName);
+        }
+        else 
+        {
+            TRACE_HIVE_INFO("Found Plugin: %s\\%S\\%S\n", (MFX_LOCAL_MACHINE_KEY == mfxStorageID) ? ("HKEY_LOCAL_MACHINE") : ("HKEY_CURRENT_USER"),
+                rootPluginPath, subKeyName);
+        }
 
         PluginDescriptionRecord descriptionRecord;
 
