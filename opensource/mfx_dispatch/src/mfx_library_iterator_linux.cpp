@@ -373,6 +373,11 @@ mfxIMPL MFXLibraryIterator::GetImplementationType()
     return implInterface;
 }
 
+bool MFXLibraryIterator::GetSubKeyName( msdk_disp_char *& /*subKeyName */)
+{
+    return false;
+}
+
 } // namespace MFX
 
 #endif // #if !defined(_WIN32) && !defined(_WIN64)

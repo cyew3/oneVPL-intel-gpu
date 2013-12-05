@@ -32,7 +32,7 @@ File Name: mfx_plugin_hive.h
 
 #if !defined(_WIN32) && !defined(_WIN64)
 
-MFX::MFXPluginsInHive::MFXPluginsInHive(mfxU32, mfxVersion)
+MFX::MFXPluginsInHive::MFXPluginsInHive(mfxU32, const msdk_disp_char*, mfxVersion)
 {
 }
 

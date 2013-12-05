@@ -442,7 +442,7 @@ mfxIMPL MFXLibraryIterator::GetImplementationType()
     return m_implInterface;
 } // mfxIMPL MFXLibraryIterator::GetImplementationType()
 
-bool MFXLibraryIterator::GetSubKeyName( const wchar_t *&subKeyName )const
+bool MFXLibraryIterator::GetSubKeyName( const msdk_disp_char *&subKeyName )const
 {
     subKeyName = m_SubKeyName;
     return m_bIsSubKeyValid;

@@ -305,7 +305,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
             else 
             {
                 //loaded HW plugins in subkey of library
-                const wchar_t *subkeyName = NULL;
+                const msdk_disp_char *subkeyName = NULL;
                 if (libIterator.GetSubKeyName(subkeyName))
                 {
                     MFX::MFXPluginsInHive plgsInHive(libIterator.GetStorageID(), subkeyName, apiVerActual);

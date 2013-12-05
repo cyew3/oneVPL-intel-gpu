@@ -99,7 +99,7 @@ public:
     mfxIMPL GetImplementationType(); 
 
     // Retrun registry subkey name on which dll was selected after sucesfull call to selectDllVesion
-    bool GetSubKeyName(const wchar_t *&subKeyName) const;
+    bool GetSubKeyName(const msdk_disp_char *&subKeyName) const;
 
     int  GetStorageID() const { return m_StorageID; }
 protected:
