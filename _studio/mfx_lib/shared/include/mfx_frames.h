@@ -430,6 +430,8 @@
 
         inline virtual bool AddReferenceFrame(sFrameEx* pFrameEx)
         {
+            if (m_pFrames[0].m_pFrame && m_pFrames[1].m_pFrame ) return false;
+
             if (isIntraFrame(pFrameEx->m_FrameType))
             {
                 if (!m_nGOPs)

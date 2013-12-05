@@ -109,6 +109,38 @@ namespace
         return ret & 0xf;
     }
 
+    /*int mpeg2enc_time_code(VAEncSequenceParameterBufferMPEG2 *seq_param, int num_frames)
+    {
+        int fps = (int)(seq_param->frame_rate + 0.5);
+        int time_code = 0;
+        int time_code_pictures, time_code_seconds, time_code_minutes, time_code_hours;
+        int drop_frame_flag = 0;
+
+        assert(fps <= 60);
+
+        time_code_seconds = num_frames / fps;
+        time_code_pictures = num_frames % fps;
+        time_code |= time_code_pictures;
+
+        time_code_minutes = time_code_seconds / 60;
+        time_code_seconds = time_code_seconds % 60;
+        time_code |= (time_code_seconds << 6);
+
+        time_code_hours = time_code_minutes / 60;
+        time_code_minutes = time_code_minutes % 60;
+
+        time_code |= (1 << 12);     // marker_bit
+        time_code |= (time_code_minutes << 13);
+
+        time_code_hours = time_code_hours % 24;
+        time_code |= (time_code_hours << 19);
+
+        time_code |= (drop_frame_flag << 24);
+
+        return time_code;
+    }*/
+
+
     void FillSps(
         MfxHwMpeg2Encode::ExecuteBuffers* pExecuteBuffers,
         VAEncSequenceParameterBufferMPEG2 & sps)
@@ -186,8 +218,19 @@ namespace
         sps.sequence_extension.bits.low_delay              = winSps.low_delay; // FIXME
         sps.new_gop_header = winPps.bNewGop;
         sps.gop_header.bits.time_code = (1 << 12); // bit12: marker_bit
+        if (sps.new_gop_header)
+        {
+            sps.gop_header.bits.time_code = winPps.time_code;
+        }
+
         sps.gop_header.bits.closed_gop = (winPps.GopOptFlag & MFX_GOP_CLOSED) ? 1 : 0;
-        sps.gop_header.bits.broken_link = (winPps.GopOptFlag & MFX_GOP_STRICT) ? 1 : 0;
+
+
+        if (winPps.picture_coding_type == CODING_TYPE_I)
+        {
+            sps.gop_header.bits.broken_link = (winPps.GopOptFlag & MFX_GOP_CLOSED) || (winPps.GopRefDist == 1);
+        }
+        
 
     } // void FillSps(...)
 
@@ -232,7 +275,15 @@ namespace
         pps.picture_coding_extension.bits.alternate_scan             = winPps.alternate_scan;
         pps.picture_coding_extension.bits.repeat_first_field         = winPps.repeat_first_field;
         pps.picture_coding_extension.bits.progressive_frame          = (winPps.FieldCodingFlag == 0) && (winPps.FieldFrameCodingFlag == 0) ? 1 : 0;
-        pps.picture_coding_extension.bits.composite_display_flag     = 0;
+        pps.picture_coding_extension.bits.composite_display_flag     = winPps.composite_display_flag;
+
+        pps.composite_display.bits.v_axis            = winPps.v_axis;        
+        pps.composite_display.bits.field_sequence    = winPps.field_sequence;
+        pps.composite_display.bits.sub_carrier       = winPps.sub_carrier;
+        pps.composite_display.bits.burst_amplitude   = winPps.burst_amplitude;
+        pps.composite_display.bits.sub_carrier_phase = winPps.sub_carrier_phase;
+        
+        pps.last_picture = winPps.bLastPicInStream;
 
         if (pps.picture_type == VAEncPictureTypeIntra)
         {
@@ -1135,27 +1186,36 @@ mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, 
 
 
         //TODO: external frame HDL??
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_PRIVATE, "vaBeginPicture");
+            vaSts = vaBeginPicture(m_vaDisplay,
+                m_vaContextEncode,
+               *(VASurfaceID*)pExecuteBuffers->m_pSurface);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        }
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_PRIVATE, "vaRenderPicture(buf)");
+            vaSts = vaRenderPicture(m_vaDisplay,
+                m_vaContextEncode,
+                &configBuffers[0],
+                buffersCount);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        }
 
-        vaSts = vaBeginPicture(m_vaDisplay,
-            m_vaContextEncode,
-            *(VASurfaceID*)pExecuteBuffers->m_pSurface);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-        vaSts = vaRenderPicture(m_vaDisplay,
-            m_vaContextEncode,
-            &configBuffers[0],
-            buffersCount);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-        vaSts = vaRenderPicture(m_vaDisplay,
-            m_vaContextEncode,
-            &m_sliceParamBufferId[0],
-            m_numSliceGroups);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-        vaSts = vaEndPicture(m_vaDisplay, m_vaContextEncode);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_PRIVATE, "vaRenderPicture(slice)");
+            vaSts = vaRenderPicture(m_vaDisplay,
+                m_vaContextEncode,
+                &m_sliceParamBufferId[0],
+                m_numSliceGroups);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        }
+        
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_PRIVATE, "vaEndPicture");
+            vaSts = vaEndPicture(m_vaDisplay, m_vaContextEncode);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        }
         
         //vaSts = vaSyncSurface(m_vaDisplay, *(VASurfaceID*)pExecuteBuffers->m_pSurface);
         //MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
