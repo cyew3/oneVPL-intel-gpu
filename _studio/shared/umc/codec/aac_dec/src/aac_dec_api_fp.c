@@ -1255,12 +1255,14 @@ AACStatus aacdecGetFrame(Ipp8u  *inPointer,
             state->m_ordered_samples[1] = state->m_curr_samples[0];
         } else {
             state->m_ordered_samples[1] = state->m_curr_samples[1];
-        }
+        } 
+      } else { 
 //        vm_debug_trace(VM_DEBUG_ALL, VM_STRING("Err PS: ch > 1 !\n"));
         state->com.m_flag_PS_support_lev = PS_DISABLE;
-      }
+        }
     }
 
+  
     for (i = 0, j = 0; i < cnt_fill_sbr_element; i++) {
       Ipp32s nCall = (state->sbrBlock[i].comState.id_aac == ID_CPE) ? 2 : 1;
       Ipp32s call = 0;
