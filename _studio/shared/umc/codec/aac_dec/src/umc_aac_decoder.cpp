@@ -530,7 +530,7 @@ Status AACDecoder::FrameConstruct(MediaData *in, Ipp32s *outFrameSize)
         inPointer = (Ipp8u *)in->GetDataPointer();
         GET_INIT_BITSTREAM(&BS, inPointer)
 
-            crc_ptr = BS.pCurrent_dword;
+        crc_ptr = BS.pCurrent_dword;
         crc_offset = BS.nBit_offset;
         GET_BITS_COUNT(&BS, decodedBits0)
 
@@ -563,7 +563,8 @@ Status AACDecoder::FrameConstruct(MediaData *in, Ipp32s *outFrameSize)
                 return UMC_ERR_INVALID_STREAM;
         }
 
-        if (m_adts_variable_header.aac_frame_length > DataSize) {
+        tmp_decodedBytes >>= 3;
+        if (m_adts_variable_header.aac_frame_length > DataSize || (DataSize - tmp_decodedBytes)<=6) {
             MemUnlock();
             return UMC_ERR_NOT_ENOUGH_DATA;
         }
