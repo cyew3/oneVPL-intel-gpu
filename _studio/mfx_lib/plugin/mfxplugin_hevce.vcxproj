@@ -450,6 +450,7 @@
     <ClCompile Include="src\mfx_hevc_enc_plugin.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ResourceCompile Include="libmfxsw_plugin_hevce.rc" />
     <ResourceCompile Include="watermark.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
