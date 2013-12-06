@@ -664,9 +664,9 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 //        m_mfxVideoParam.mfx.NumThread = 1;
     m_mfxVideoParam.mfx.NumThread = (mfxU16)vm_sys_info_get_cpu_num();
 
-#if defined (AS_HEVCE_PLUGIN)
+/*#if defined (AS_HEVCE_PLUGIN)
     m_mfxVideoParam.mfx.NumThread += 1;
-#endif 
+#endif*/ 
 
     // TargetUsage - nothing to do
 
