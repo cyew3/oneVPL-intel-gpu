@@ -19,17 +19,13 @@ File Name: mfx_hevc_dec_plugin.h
 #include <iostream>
 #include "mfxvideo.h"
 #include "mfxplugin++.h"
+#include "mfxvideo++int.h"
 
 #if defined( AS_HEVCE_PLUGIN )
 class MFXHEVCEncoderPlugin : public MFXEncoderPlugin
 {
     static const mfxPluginUID g_HEVCEncoderGuid;
-    static std::auto_ptr<MFXHEVCEncoderPlugin> g_singlePlg;
-    static std::auto_ptr<MFXPluginAdapter<MFXEncoderPlugin> > g_adapter;
 public:
-    MFXHEVCEncoderPlugin(bool CreateByDispatcher);
-    virtual ~MFXHEVCEncoderPlugin();
-
     virtual mfxStatus PluginInit(mfxCoreInterface *core);
     virtual mfxStatus PluginClose();
     virtual mfxStatus GetPluginParam(mfxPluginParam *par);
@@ -77,20 +73,26 @@ public:
         return new MFXHEVCEncoderPlugin(false);
     }
     static mfxStatus CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg) {
-
-        if (g_singlePlg.get()) {
-            return MFX_ERR_NOT_FOUND;
-        } 
-        //check that guid match 
-        g_singlePlg.reset(new MFXHEVCEncoderPlugin(true));
-
         if (memcmp(& guid , &g_HEVCEncoderGuid, sizeof(mfxPluginUID))) {
             return MFX_ERR_NOT_FOUND;
         }
+        MFXHEVCEncoderPlugin* tmp_pplg = 0;
+        try
+        {
+            tmp_pplg = new MFXHEVCEncoderPlugin(false);
+        }
+        catch(std::bad_alloc&)
+        {
+            return MFX_ERR_MEMORY_ALLOC;;
+        }
+        catch(MFX_CORE_CATCH_TYPE) 
+        { 
+            return MFX_ERR_UNKNOWN;; 
+        }
 
-        g_adapter.reset(new MFXPluginAdapter<MFXEncoderPlugin> (g_singlePlg.get()));
-        *mfxPlg = g_adapter->operator mfxPlugin();
-
+        tmp_pplg->m_adapter.reset(new MFXPluginAdapter<MFXEncoderPlugin> (tmp_pplg));
+        *mfxPlg = tmp_pplg->m_adapter->operator mfxPlugin();
+        tmp_pplg->m_createdByDispatcher = true;
         return MFX_ERR_NONE;
     }
     virtual mfxU32 GetPluginType()
@@ -103,12 +105,15 @@ public:
     }
 
 protected:
+    MFXHEVCEncoderPlugin(bool CreateByDispatcher);
+    virtual ~MFXHEVCEncoderPlugin();
 
     mfxCoreInterface*   m_pmfxCore;
 
     mfxSession          m_session;
     mfxPluginParam      m_PluginParam;
     bool                m_createdByDispatcher;
+    std::auto_ptr<MFXPluginAdapter<MFXEncoderPlugin> > m_adapter;
 };
 #endif //#if defined( AS_HEVCE_PLUGIN )
 

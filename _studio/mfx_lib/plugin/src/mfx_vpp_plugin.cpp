@@ -19,8 +19,8 @@ PluginModuleTemplate g_PluginModule = {
     NULL,
     NULL,
     NULL,
-    MFXVPP_Plugin::Create,
-    MFXVPP_Plugin::CreateByDispatcher
+    &MFXVPP_Plugin::Create,
+    &MFXVPP_Plugin::CreateByDispatcher
 };
 
 MSDK_PLUGIN_API(MFXVPPPlugin*) mfxCreateVPPPlugin() {
@@ -38,9 +38,6 @@ MSDK_PLUGIN_API(MFXPlugin*) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin) {
 }
 
 const mfxPluginUID MFXVPP_Plugin::g_VPP_PluginGuid = {0x18,0x40,0xbc,0xe0,0xee,0x64,0x4d,0x09,0x8e,0xd6,0x2f,0x91,0xae,0x4b,0x6b,0x61};
-std::auto_ptr<MFXVPP_Plugin> MFXVPP_Plugin::g_singlePlg;
-std::auto_ptr<MFXPluginAdapter<MFXVPPPlugin> > MFXVPP_Plugin::g_adapter;
-
 
 MFXVPP_Plugin::MFXVPP_Plugin(bool CreateByDispatcher)
 {
@@ -110,9 +107,9 @@ mfxStatus MFXVPP_Plugin::PluginClose()
         m_session = 0;
     }
     if (m_createdByDispatcher) {
-        g_singlePlg.reset(0);
-        g_adapter.reset(0);
+        delete this;
     }
+
     return mfxRes2;
 }
 

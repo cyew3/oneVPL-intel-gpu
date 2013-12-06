@@ -19,17 +19,13 @@ File Name: mfx_hevc_dec_plugin.h
 #include <iostream>
 #include "mfxvideo.h"
 #include "mfxplugin++.h"
+#include "mfxvideo++int.h"
 
 #if defined( AS_VPP_PLUGIN )
 class MFXVPP_Plugin : public MFXVPPPlugin
 {
-public:
     static const mfxPluginUID g_VPP_PluginGuid;
-    static std::auto_ptr<MFXVPP_Plugin> g_singlePlg;
-    static std::auto_ptr<MFXPluginAdapter<MFXVPPPlugin> > g_adapter;
-    MFXVPP_Plugin(bool CreateByDispatcher);
-    virtual ~MFXVPP_Plugin();
-
+public:
     virtual mfxStatus PluginInit(mfxCoreInterface *core);
     virtual mfxStatus PluginClose();
     virtual mfxStatus GetPluginParam(mfxPluginParam *par);
@@ -77,20 +73,25 @@ public:
         return new MFXVPP_Plugin(false);
     }
     static mfxStatus CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg) {
-
-        if (g_singlePlg.get()) {
-            return MFX_ERR_NOT_FOUND;
-        } 
-        //check that guid match 
-        g_singlePlg.reset(new MFXVPP_Plugin(true));
-
         if (memcmp(& guid , &g_VPP_PluginGuid, sizeof(mfxPluginUID))) {
             return MFX_ERR_NOT_FOUND;
         }
-
-        g_adapter.reset(new MFXPluginAdapter<MFXVPPPlugin> (g_singlePlg.get()));
-        *mfxPlg = g_adapter->operator mfxPlugin();
-
+        MFXVPP_Plugin* tmp_pplg = 0;
+        try
+        {
+            tmp_pplg = new MFXVPP_Plugin(false);
+        }
+        catch(std::bad_alloc&)
+        {
+            return MFX_ERR_MEMORY_ALLOC;;
+        }
+        catch(MFX_CORE_CATCH_TYPE) 
+        { 
+            return MFX_ERR_UNKNOWN;; 
+        }
+        tmp_pplg->m_adapter.reset(new MFXPluginAdapter<MFXVPPPlugin> (tmp_pplg));
+        *mfxPlg = tmp_pplg->m_adapter->operator mfxPlugin();
+        tmp_pplg->m_createdByDispatcher = true;
         return MFX_ERR_NONE;
     }
     virtual mfxU32 GetPluginType()
@@ -103,12 +104,15 @@ public:
     }
 
 protected:
+    MFXVPP_Plugin(bool CreateByDispatcher);
+    virtual ~MFXVPP_Plugin();
 
     mfxCoreInterface*   m_pmfxCore;
 
     mfxSession          m_session;
     mfxPluginParam      m_PluginParam;
     bool                m_createdByDispatcher;
+    std::auto_ptr<MFXPluginAdapter<MFXVPPPlugin> > m_adapter;
 };
 #endif //#if defined( AS_VPP_PLUGIN )
 

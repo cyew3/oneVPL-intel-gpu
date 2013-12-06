@@ -17,11 +17,11 @@ File Name: mfx_hevc_dec_plugin.cpp
 //defining module template for decoder plugin
 #include "mfx_plugin_module.h"
 PluginModuleTemplate g_PluginModule = {
-    MFXHEVCDecoderPlugin::Create,
+    &MFXHEVCDecoderPlugin::Create,
     NULL,
     NULL,
     NULL,
-    MFXHEVCDecoderPlugin::CreateByDispatcher
+    &MFXHEVCDecoderPlugin::CreateByDispatcher
 };
 
 MSDK_PLUGIN_API(MFXDecoderPlugin*) mfxCreateDecoderPlugin() {
@@ -39,8 +39,6 @@ MSDK_PLUGIN_API(MFXPlugin*) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin) {
 }
 
 const mfxPluginUID MFXHEVCDecoderPlugin::g_HEVCDecoderGuid = {0x15,0xdd,0x93,0x68,0x25,0xad,0x47,0x5e,0xa3,0x4e,0x35,0xf3,0xf5,0x42,0x17,0xa6};
-std::auto_ptr<MFXHEVCDecoderPlugin> MFXHEVCDecoderPlugin::g_singlePlg;
-std::auto_ptr<MFXPluginAdapter<MFXDecoderPlugin> > MFXHEVCDecoderPlugin::g_adapter;
 
 MFXHEVCDecoderPlugin::MFXHEVCDecoderPlugin(bool CreateByDispatcher)
 {
@@ -111,9 +109,9 @@ mfxStatus MFXHEVCDecoderPlugin::PluginClose()
         m_session = 0;
     }
     if (m_createdByDispatcher) {
-        g_singlePlg.reset(0);
-        g_adapter.reset(0);
+        delete this;
     }
+
     return mfxRes2;
 }
 

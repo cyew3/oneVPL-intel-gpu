@@ -19,16 +19,13 @@ File Name: mfx_hevc_dec_plugin.h
 #include <iostream>
 #include "mfxvideo.h"
 #include "mfxplugin++.h"
+#include "mfxvideo++int.h"
 
 #if defined( AS_HEVCD_PLUGIN )
 class MFXHEVCDecoderPlugin : public MFXDecoderPlugin
 {
     static const mfxPluginUID g_HEVCDecoderGuid;
-    static std::auto_ptr<MFXHEVCDecoderPlugin> g_singlePlg;
-    static std::auto_ptr<MFXPluginAdapter<MFXDecoderPlugin> > g_adapter;
 public:
-    MFXHEVCDecoderPlugin(bool CreateByDispatcher);
-    virtual ~MFXHEVCDecoderPlugin();
 
     virtual mfxStatus PluginInit(mfxCoreInterface *core); //Init plugin as a component (~MFXInit)
     virtual mfxStatus PluginClose();
@@ -85,20 +82,26 @@ public:
         return new MFXHEVCDecoderPlugin(false);
     }
     static mfxStatus CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg) {
-
-        if (g_singlePlg.get()) {
-            return MFX_ERR_NOT_FOUND;
-        } 
-        //check that guid match 
-        g_singlePlg.reset(new MFXHEVCDecoderPlugin(true));
-
         if (memcmp(& guid , &g_HEVCDecoderGuid, sizeof(mfxPluginUID))) {
             return MFX_ERR_NOT_FOUND;
         }
+        MFXHEVCDecoderPlugin* tmp_pplg = 0;
+        try
+        {
+            tmp_pplg = new MFXHEVCDecoderPlugin(false);
+        }
+        catch(std::bad_alloc&)
+        {
+            return MFX_ERR_MEMORY_ALLOC;;
+        }
+        catch(MFX_CORE_CATCH_TYPE) 
+        { 
+            return MFX_ERR_UNKNOWN;; 
+        }
 
-        g_adapter.reset(new MFXPluginAdapter<MFXDecoderPlugin> (g_singlePlg.get()));
-        *mfxPlg = g_adapter->operator mfxPlugin();
-
+        tmp_pplg->m_adapter.reset(new MFXPluginAdapter<MFXDecoderPlugin> (tmp_pplg));
+        *mfxPlg = (mfxPlugin)*tmp_pplg->m_adapter;
+        tmp_pplg->m_createdByDispatcher = true;
         return MFX_ERR_NONE;
     }
     virtual mfxU32 GetPluginType()
@@ -111,12 +114,15 @@ public:
     }
 
 protected:
+    MFXHEVCDecoderPlugin(bool CreateByDispatcher);
+    virtual ~MFXHEVCDecoderPlugin();
 
     mfxCoreInterface*   m_pmfxCore;
 
     mfxSession          m_session;
     mfxPluginParam      m_PluginParam;
     bool                m_createdByDispatcher;
+    std::auto_ptr<MFXPluginAdapter<MFXDecoderPlugin> > m_adapter;
 };
 #endif //#if defined( AS_HEVCD_PLUGIN )
 
