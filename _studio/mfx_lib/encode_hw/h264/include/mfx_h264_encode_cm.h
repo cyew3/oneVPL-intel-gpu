@@ -329,7 +329,20 @@ public:
     CmEvent* DownSample4XAsync(CmSurface2D* surfOrig, CmSurface2D* surf4X);
 #endif
 
-    int DestroyEvent( CmEvent*& e ){ if(m_queue) return m_queue->DestroyEvent(e); else return 0; } 
+    int DestroyEvent( CmEvent*& e ){
+        if(m_queue) { 
+            if (e) {
+                //e->WaitForTaskFinished();
+                CM_STATUS status = CM_STATUS_QUEUED;
+                while (status != CM_STATUS_FINISHED) {
+                    if (e->GetStatus(status) != CM_SUCCESS)
+                        throw CmRuntimeError();
+                }
+            }
+            return m_queue->DestroyEvent(e);
+        }
+        else return 0;
+    } 
 
 protected:
     CmKernel * SelectKernelPreMe(mfxU32 frameType);

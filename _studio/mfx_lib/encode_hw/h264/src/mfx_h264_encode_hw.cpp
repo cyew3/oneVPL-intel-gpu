@@ -626,10 +626,15 @@ void ImplementationAvc::DestroyDanglingCmResources()
     {
         for (DdiTaskIter i = m_lookaheadStarted.begin(), e = m_lookaheadStarted.end(); i != e; ++i)
         {
+            m_cmCtx->DestroyEvent(i->m_event);
+
+            ArrayDpbFrame & iniDpb = i->m_dpb[0];
+            for (mfxU32 j = 0; j < iniDpb.Size(); j++)
+                m_cmDevice->DestroySurface(iniDpb[j].m_cmRaw);
+
+            m_cmDevice->DestroySurface(i->m_cmRaw);
             m_cmDevice->DestroyVmeSurfaceG7_5(i->m_cmRefs);
             m_cmDevice->DestroyVmeSurfaceG7_5(i->m_cmRefsLa);
-            m_cmCtx->DestroyEvent(i->m_event);
-            m_cmDevice->DestroySurface(i->m_cmRaw);
         }
     }
 }
@@ -1072,7 +1077,7 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
             *i = DdiTask();
         }
 
-        Zero(m_stat);
+        Zero(m_stat);        
         m_lastTask = DdiTask();
 
         m_frameOrder                  = 0;

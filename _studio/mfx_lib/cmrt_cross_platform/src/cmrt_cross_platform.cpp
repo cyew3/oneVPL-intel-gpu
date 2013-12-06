@@ -116,6 +116,7 @@ typedef INT (* CreateCmDeviceDx11FuncType)(CmDx11::CmDevice *&, UINT &, ID3D11De
 typedef INT (* CreateCmDeviceLinuxFuncType)(CmLinux::CmDevice *&, UINT &, VADisplay);
 typedef INT (* DestroyCmDeviceDx9FuncType)(CmDx9::CmDevice *&);
 typedef INT (* DestroyCmDeviceDx11FuncType)(CmDx11::CmDevice *&);
+typedef INT (* DestroyCmDeviceVAAPIFuncType)(CmLinux::CmDevice *&);
 
 class CmDeviceImpl : public CmDevice
 {
@@ -131,6 +132,8 @@ public:
     };
 
     virtual ~CmDeviceImpl(){}
+
+    INT GetPlatform(){return m_platform;};
 
     INT GetDevice(AbstractDeviceHandle & pDevice)
     {
@@ -339,10 +342,18 @@ INT DestroyCmDevice(CmDevice *& pD)
 
     if (vm_so_func destroyFunc = vm_so_get_addr(device->m_dll, FUNC_NAME_DESTROY_CM_DEVICE))
     {
-        if (device->m_dx9)
+        switch (device->GetPlatform())
+        {
+        case DX9:
             res = ((DestroyCmDeviceDx9FuncType)destroyFunc)(device->m_dx9);
-        else if (device->m_dx11)
+            break;
+        case DX11:
             res = ((DestroyCmDeviceDx11FuncType)destroyFunc)(device->m_dx11);
+            break;
+        case VAAPI:
+            res = ((DestroyCmDeviceVAAPIFuncType)destroyFunc)(device->m_linux);
+            break;
+        }
     }
 
     vm_so_free(device->m_dll);
@@ -350,6 +361,7 @@ INT DestroyCmDevice(CmDevice *& pD)
     device->m_dll  = 0;
     device->m_dx9  = 0;
     device->m_dx11 = 0;
+    device->m_linux = 0;
 
     delete device;
     pD = 0;
