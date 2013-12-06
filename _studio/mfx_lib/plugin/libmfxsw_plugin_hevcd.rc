@@ -70,13 +70,13 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "CompanyName", "Intel Corporation"
-            VALUE "FileDescription", "Intel® Media SDK library"
+            VALUE "FileDescription", "Intel® Media SDK HEVC Software Decode Plug-in"
             VALUE "FileVersion", "3.11.5.20"
-            VALUE "InternalName", "libmfxsw"
-            VALUE "LegalCopyright", "Copyright© 2003-2011 Intel Corporation"
+            VALUE "InternalName", "mfxplugin_hevcd_sw"
+            VALUE "LegalCopyright", "Copyright© 2013 Intel Corporation"
             VALUE "LegalTrademarks", "Intel Corporation"
-            VALUE "ProductName", "Intel® Media SDK"
-            VALUE "ProductVersion", "0.0.0.32987"
+            VALUE "ProductName", "Intel® Media SDK HEVC Software Pack"
+            VALUE "ProductVersion", "1.8.1"
         END
     END
     BLOCK "VarFileInfo"
