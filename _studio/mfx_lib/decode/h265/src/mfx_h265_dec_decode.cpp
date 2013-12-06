@@ -898,6 +898,11 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
     if (sts != MFX_ERR_NONE)
         return sts;
 
+#ifdef MFX_MAX_DECODE_FRAMES
+    if (m_stat.NumFrame >= MFX_MAX_DECODE_FRAMES)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+#endif
+
     sts = MFX_ERR_UNDEFINED_BEHAVIOR;
 
 #ifdef MFX_VA_WIN
@@ -1134,7 +1139,7 @@ void VideoDECODEH265::FillOutputSurface(mfxFrameSurface1 **surf_out, mfxFrameSur
         storer->SetTimestamp(pFrame);
 
 #ifdef MFX_ENABLE_WATERMARK
-    m_watermark->Apply(surface_out->Data.Y, surface_out->Data.UV, surface_out->Data.Pitch, surface_out->Info.Width, surface_out->Info.Height);
+//    m_watermark->Apply(surface_out->Data.Y, surface_out->Data.UV, surface_out->Data.Pitch, surface_out->Info.Width, surface_out->Info.Height);
 #endif
 }
 
