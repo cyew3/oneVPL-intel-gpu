@@ -231,9 +231,7 @@ mfxStatus AudioENCODEAAC::QueryIOSize(AudioCORE *core, mfxAudioParam *par, mfxAu
     int upsample = 1;
     if(par->mfx.CodecProfile == MFX_PROFILE_AAC_HE) upsample = 2;
     request->SuggestedInputSize  = par->mfx.NumChannel * sizeof(Ipp16s)*1024* upsample;
-    
-    // +16 bytes workaround for encode crash somewhere inside umc
-    request->SuggestedOutputSize = ((768*par->mfx.NumChannel+9/* ADTS_HEADER */)*sizeof(Ipp8u)+3)&(~3) + 16;
+    request->SuggestedOutputSize = ((768*par->mfx.NumChannel+9/* ADTS_HEADER */)*sizeof(Ipp8u)+3)&(~3);
 
     return MFX_ERR_NONE;
 }
