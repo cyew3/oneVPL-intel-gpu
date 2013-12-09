@@ -18,8 +18,6 @@ public:
     void *mem;
     H265CUData *cu_data;
     Ipp8u *y;
-    Ipp8u *u;
-    Ipp8u *v;
     Ipp8u *uv;
     Ipp32s width;
     Ipp32s height;
@@ -48,7 +46,7 @@ public:
     H265Frame() {
         m_pPreviousFrame = m_pFutureFrame = NULL;
         mem = NULL;
-        y = u = v = uv = NULL;
+        y = uv = NULL;
         cu_data = NULL;
         m_PicCodType = 0;
         m_RefPicListResetCount = 0;
@@ -75,22 +73,16 @@ public:
         void *_mem = mem;
         H265CUData *_cu_data = cu_data;
         Ipp8u *_y = y;
-        Ipp8u *_u = u;
-        Ipp8u *_v = v;
         Ipp8u *_uv = uv;
 
         mem = frame->mem;
         cu_data = frame->cu_data;
         y = frame->y;
-        u = frame->u;
-        v = frame->v;
         uv = frame->uv;
 
         frame->mem = _mem;
         frame->cu_data = _cu_data;
         frame->y = _y;
-        frame->u = _u;
-        frame->v = _v;
         frame->uv = _uv;
 
         return MFX_ERR_NONE;

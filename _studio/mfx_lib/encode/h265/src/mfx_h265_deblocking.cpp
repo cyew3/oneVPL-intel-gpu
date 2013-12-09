@@ -59,7 +59,7 @@ void H265CU::DeblockOneCrossLuma(Ipp32s curPixelColumn,
     H265EdgeData *edge;
     Ipp32s i, start, end;
 
-    srcDstStride = pitch_rec_luma;
+    srcDstStride = pitch_rec;
     baseSrcDst = y_rec + curPixelRow * srcDstStride + curPixelColumn;
 
     start = 0;
@@ -126,61 +126,55 @@ void H265CU::DeblockOneCrossChroma(Ipp32s curPixelColumn,
     Ipp32s y = curPixelRow >> 3;
     PixType* baseSrcDst;
     Ipp32s srcDstStride;
-    Ipp32s chromaQpOffset;
     H265EdgeData *edge;
-    Ipp32s i, c, start, end;
+    Ipp32s i, start, end;
 
-    srcDstStride = pitch_rec_chroma;
-    baseSrcDst = u_rec + (curPixelRow >> 1) * srcDstStride + (curPixelColumn >> 1);
-    chromaQpOffset = cslice->slice_cb_qp_offset;
+    srcDstStride = pitch_rec;
+    baseSrcDst = uv_rec + (curPixelRow >> 1) * srcDstStride + (curPixelColumn);
 
-    for (c = 0; c < 2; c++)
+    start = 0;
+    end = 2;
+    if ((Ipp32s)ctb_pely + curPixelRow >= frameHeightInSamples - 16)
     {
-        start = 0;
-        end = 2;
-        if ((Ipp32s)ctb_pely + curPixelRow >= frameHeightInSamples - 16)
+        end = 3;
+    }
+
+    for (i = start; i < end; i++)
+    {
+        edge = &m_edge[y + i][x + 1][0];
+
+        if (edge->strength > 1)
         {
-            end = 3;
+            MFX_HEVC_PP::NAME(h265_FilterEdgeChroma_Interleaved_8u_I)(
+                edge,
+                baseSrcDst + 4 * (i - 1) * srcDstStride,
+                srcDstStride,
+                VERT_FILT,
+                GetChromaQP(edge->qp, 0, 8),
+                GetChromaQP(edge->qp, 0, 8));
         }
+    }
 
-        for (i = start; i < end; i++)
+    end = 2;
+    if ((Ipp32s)ctb_pelx + curPixelColumn >= frameWidthInSamples - 16)
+    {
+        end = 3;
+    }
+
+    for (i = 0; i < end; i++)
+    {
+        edge = &m_edge[y + 1][x + i][2];
+
+        if (edge->strength > 1)
         {
-            edge = &m_edge[y + i][x + 1][0];
-
-            if (edge->strength > 1)
-            {
-                MFX_HEVC_PP::NAME(h265_FilterEdgeChroma_Plane_8u_I)(
-                    edge,
-                    baseSrcDst + 4 * (i - 1) * srcDstStride,
-                    srcDstStride,
-                    VERT_FILT,
-                    GetChromaQP(edge->qp, 0, 8));
-            }
+            MFX_HEVC_PP::NAME(h265_FilterEdgeChroma_Interleaved_8u_I)(
+                edge,
+                baseSrcDst + 4 * 2 * (i - 1),
+                srcDstStride,
+                HOR_FILT,
+                GetChromaQP(edge->qp, 0, 8),
+                GetChromaQP(edge->qp, 0, 8));
         }
-
-        end = 2;
-        if ((Ipp32s)ctb_pelx + curPixelColumn >= frameWidthInSamples - 16)
-        {
-            end = 3;
-        }
-
-        for (i = 0; i < end; i++)
-        {
-            edge = &m_edge[y + 1][x + i][2];
-
-            if (edge->strength > 1)
-            {
-                MFX_HEVC_PP::NAME(h265_FilterEdgeChroma_Plane_8u_I)(
-                    edge,
-                    baseSrcDst + 4 * (i - 1),
-                    srcDstStride,
-                    HOR_FILT,
-                    GetChromaQP(edge->qp, 0, 8));
-            }
-        }
-
-        baseSrcDst = v_rec + (curPixelRow >> 1) * srcDstStride + (curPixelColumn >> 1);
-        chromaQpOffset = cslice->slice_cr_qp_offset;
     }
 }
 

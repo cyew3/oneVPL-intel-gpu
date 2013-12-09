@@ -308,13 +308,8 @@ void GetAvailablity(H265CU *pCU,
 }
 
 static
-void GetPredPels(H265VideoParam *par,
-                 PixType* src,
-                 PixType* PredPel,
-                 Ipp8u* neighborFlags,
-                 Ipp32s width,
-                 Ipp32s srcPitch,
-                 Ipp32s isLuma)
+void GetPredPelsLuma(H265VideoParam *par, PixType* src, PixType* PredPel,
+                     Ipp8u* neighborFlags, Ipp32s width, Ipp32s srcPitch)
 {
     PixType* tmpSrcPtr;
     PixType dcval;
@@ -323,16 +318,7 @@ void GetPredPels(H265VideoParam *par,
     Ipp32s numIntraNeighbor;
     Ipp32s i, j;
 
-    if (isLuma)
-    {
-        dcval = (1 << (BIT_DEPTH_LUMA - 1));
-    }
-    else
-    {
-        dcval = (1 << (BIT_DEPTH_CHROMA - 1));
-        minTUSize >>= 1;
-        numUnitsInCU = width >> (par->Log2MinTUSize - 1);
-    }
+    dcval = (1 << (BIT_DEPTH_LUMA - 1));
 
     numIntraNeighbor = 0;
 
@@ -494,9 +480,148 @@ void GetPredPels(H265VideoParam *par,
     }
 }
 
+static
+void GetPredPelsChromaNV12(H265VideoParam *par, PixType* src, PixType* PredPel,
+                           Ipp8u* neighborFlags, Ipp32s width, Ipp32s srcPitch)
+{
+    PixType* tmpSrcPtr;
+    PixType dcval = (1 << (BIT_DEPTH_CHROMA - 1));
+    Ipp32s minTUSize = (1 << par->Log2MinTUSize) >> 1;
+    Ipp32s numUnitsInCU = width >> (par->Log2MinTUSize - 1);
+    Ipp32s numIntraNeighbor;
+    Ipp32s i, j;
+    numIntraNeighbor = 0;
+
+    for (i = 0; i < 4*numUnitsInCU + 1; i++) {
+        if (neighborFlags[i])
+            numIntraNeighbor++;
+    }
+
+    if (numIntraNeighbor == 0) {
+        // Fill border with DC value
+        memset(PredPel, dcval, 4 * 2 * width + 2);
+
+    } else if (numIntraNeighbor == (4*numUnitsInCU + 1)) {
+        // Fill top-left border with rec. samples
+        // Fill top and top right border with rec. samples
+        ippsCopy_8u(src - srcPitch - 2, PredPel, 4 * width + 2);
+
+        // Fill left and below left border with rec. samples
+        tmpSrcPtr = src - 2;
+        for (i = 0; i < 2 * width; i++) {
+            PredPel[2 * 2 * width + 2 + 2 * i + 0] = tmpSrcPtr[0];
+            PredPel[2 * 2 * width + 2 + 2 * i + 1] = tmpSrcPtr[1];
+            tmpSrcPtr += srcPitch;
+        }
+
+    } else { // reference samples are partially available
+        Ipp8u  *pbNeighborFlags;
+        Ipp32s firstAvailableBlock;
+
+        // Fill top-left sample
+        pbNeighborFlags = neighborFlags + 2*numUnitsInCU;
+
+        if (*pbNeighborFlags) {
+            tmpSrcPtr = src - srcPitch - 2;
+            PredPel[0] = tmpSrcPtr[0];
+            PredPel[1] = tmpSrcPtr[1];
+        }
+
+        // Fill left & below-left samples
+        tmpSrcPtr = src - 2;
+
+        pbNeighborFlags = neighborFlags + 2*numUnitsInCU - 1;
+
+        for (j = 0; j < 2*numUnitsInCU; j++) {
+            if (*pbNeighborFlags) {
+                for (i = 0; i < minTUSize; i++) {
+                    PredPel[2 * 2 * width + 2 + j * 2 * minTUSize + 2 * i + 0] = tmpSrcPtr[0];
+                    PredPel[2 * 2 * width + 2 + j * 2 * minTUSize + 2 * i + 1] = tmpSrcPtr[1];
+                    tmpSrcPtr += srcPitch;
+                }
+            } else {
+                tmpSrcPtr += srcPitch * minTUSize;
+            }
+            pbNeighborFlags --;
+        }
+
+        // Fill above & above-right samples
+        tmpSrcPtr = src - srcPitch;
+        pbNeighborFlags = neighborFlags + 2*numUnitsInCU + 1;
+
+        for (j = 0; j < 2*numUnitsInCU; j++) {
+            if (*pbNeighborFlags) {
+                for (i = 0; i < minTUSize; i++) {
+                    PredPel[2 + j * 2 * minTUSize + 2 * i + 0] = tmpSrcPtr[2 * i + 0];
+                    PredPel[2 + j * 2 * minTUSize + 2 * i + 1] = tmpSrcPtr[2 * i + 1];
+                }
+            }
+            tmpSrcPtr += 2 * minTUSize;
+            pbNeighborFlags ++;
+        }
+
+        /* Search first available block */
+        firstAvailableBlock = 0;
+
+        for (i = 0; i < 4*numUnitsInCU + 1; i++) {
+            if (neighborFlags[i])
+                break;
+            firstAvailableBlock++;
+        }
+
+        /* Search first available sample */
+        PixType availableRef[2] = { 0, 0 };
+        if (firstAvailableBlock != 0) {
+            if (firstAvailableBlock < 2 * numUnitsInCU) { /* left & below-left */
+                availableRef[0] = PredPel[4 * 2 * width - firstAvailableBlock * 2 * minTUSize + 0];
+                availableRef[1] = PredPel[4 * 2 * width - firstAvailableBlock * 2 * minTUSize + 1];
+            } else if (firstAvailableBlock == 2 * numUnitsInCU) { /* top-left */
+                availableRef[0] = PredPel[0];
+                availableRef[1] = PredPel[1];
+            } else {
+                availableRef[0] = PredPel[(firstAvailableBlock - 2 * numUnitsInCU - 1) * 2 * minTUSize + 2 + 0];
+                availableRef[1] = PredPel[(firstAvailableBlock - 2 * numUnitsInCU - 1) * 2 * minTUSize + 2 + 1];
+            }
+        }
+
+        /* left & below-left samples */
+        for (j = 0; j < 2*numUnitsInCU; j++) {
+            if (!neighborFlags[j]) {
+                if (j != 0) {
+                    availableRef[0] = PredPel[4 * 2 * width + 2 - j * 2 * minTUSize + 0];
+                    availableRef[1] = PredPel[4 * 2 * width + 2 - j * 2 * minTUSize + 1];
+                }
+                for (i = 0; i < minTUSize; i++) {
+                    PredPel[4 * 2 * width + 2 - (j + 1) * 2 * minTUSize + 2 * i + 0] = availableRef[0];
+                    PredPel[4 * 2 * width + 2 - (j + 1) * 2 * minTUSize + 2 * i + 1] = availableRef[1];
+                }
+            }
+        }
+
+        /* top-left sample */
+        if (!neighborFlags[2 * numUnitsInCU]) {
+            PredPel[0] = PredPel[2 * 2 * width + 2 + 0];
+            PredPel[1] = PredPel[2 * 2 * width + 2 + 1];
+        }
+
+        /* above & above-right samples */
+        for (j = 0; j < 2 * numUnitsInCU; j++) {
+            if (!neighborFlags[j + 2 * numUnitsInCU + 1]) {
+                availableRef[0] = PredPel[j * 2 * minTUSize + 0];
+                availableRef[1] = PredPel[j * 2 * minTUSize + 1];
+                for (i = 0; i < minTUSize; i++) {
+                    PredPel[2 + j * 2 * minTUSize + 2 * i + 0] = availableRef[0];
+                    PredPel[2 + j * 2 * minTUSize + 2 * i + 1] = availableRef[1];
+                }
+            }
+        }
+
+    }
+}
+
 void H265CU::IntraPredTU(Ipp32s blockZScanIdx, Ipp32s width, Ipp32s pred_mode, Ipp8u is_luma)
 {
-    PixType PredPel[4*64+1];
+    PixType PredPel[4*2*64+1];
     Ipp32s maxDepth = par->Log2MaxCUSize - par->Log2MinTUSize;
     Ipp32s numMinTUInLCU = 1 << maxDepth;
     Ipp32s PURasterIdx = h265_scan_z2r[maxDepth][blockZScanIdx];
@@ -504,71 +629,56 @@ void H265CU::IntraPredTU(Ipp32s blockZScanIdx, Ipp32s width, Ipp32s pred_mode, I
     Ipp32s PUStartColumn = PURasterIdx & (numMinTUInLCU - 1);
     PixType *pRec;
 
-    for (Ipp32s c_idx = 0; c_idx < (is_luma ? 1 : 2); c_idx ++) {
-        Ipp32s pitch = is_luma ? pitch_rec_luma : pitch_rec_chroma;
+    Ipp32s pitch = pitch_rec;
 
-        if (is_luma)
+    if (is_luma)
+    {
+        bool isFilterNeeded = true;
+
+        if (pred_mode == INTRA_DC)
         {
-            bool isFilterNeeded = true;
-
-            if (pred_mode == INTRA_DC)
-            {
-                isFilterNeeded = false;
-            }
-            else
-            {
-                Ipp32s diff = MIN(abs(pred_mode - INTRA_HOR), abs(pred_mode - INTRA_VER));
-
-                if (diff <= h265_filteredModes[h265_log2table[width - 4] - 2])
-                {
-                    isFilterNeeded = false;
-                }
-            }
-
-            pRec = y_rec + ((PUStartRow * pitch_rec_luma + PUStartColumn) << par->Log2MinTUSize);
-
-            GetAvailablity(this, blockZScanIdx, width, par->cpps->constrained_intra_pred_flag,
-                inNeighborFlags, outNeighborFlags);
-            GetPredPels(par, pRec, PredPel, outNeighborFlags, width,
-                pitch_rec_luma, 1);
-
-            if (par->csps->strong_intra_smoothing_enabled_flag && isFilterNeeded)
-            {
-                Ipp32s threshold = 1 << (BIT_DEPTH_LUMA - 5);
-
-                Ipp32s topLeft = PredPel[0];
-                Ipp32s topRight = PredPel[2*width];
-                Ipp32s midHor = PredPel[width];
-
-                Ipp32s bottomLeft = PredPel[4*width];
-                Ipp32s midVer = PredPel[3*width];
-
-                bool bilinearLeft = abs(topLeft + topRight - 2*midHor) < threshold;
-                bool bilinearAbove = abs(topLeft + bottomLeft - 2*midVer) < threshold;
-
-                if (width == 32 && (bilinearLeft && bilinearAbove))
-                {
-                    h265_FilterPredictPels_Bilinear_8u(PredPel, width, topLeft, bottomLeft, topRight);
-                }
-                else
-                {
-                    h265_FilterPredictPels_8u(PredPel, width);
-                }
-            } else if (isFilterNeeded) {
-                h265_FilterPredictPels_8u(PredPel, width);
-            }
+            isFilterNeeded = false;
         }
         else
         {
-            if (c_idx == 0) {
-                GetAvailablity(this, blockZScanIdx, width << 1, par->cpps->constrained_intra_pred_flag,
-                    inNeighborFlags, outNeighborFlags);
-                pRec = u_rec + ((PUStartRow * pitch_rec_chroma + PUStartColumn) << (par->Log2MinTUSize - 1));
-            } else {
-                pRec = v_rec + ((PUStartRow * pitch_rec_chroma + PUStartColumn) << (par->Log2MinTUSize - 1));
+            Ipp32s diff = MIN(abs(pred_mode - INTRA_HOR), abs(pred_mode - INTRA_VER));
+
+            if (diff <= h265_filteredModes[h265_log2table[width - 4] - 2])
+            {
+                isFilterNeeded = false;
             }
-            GetPredPels(par, pRec, PredPel, outNeighborFlags, width,
-                pitch, 0);
+        }
+
+        pRec = y_rec + ((PUStartRow * pitch_rec + PUStartColumn) << par->Log2MinTUSize);
+
+        GetAvailablity(this, blockZScanIdx, width, par->cpps->constrained_intra_pred_flag,
+            inNeighborFlags, outNeighborFlags);
+        GetPredPelsLuma(par, pRec, PredPel, outNeighborFlags, width, pitch_rec);
+
+        if (par->csps->strong_intra_smoothing_enabled_flag && isFilterNeeded)
+        {
+            Ipp32s threshold = 1 << (BIT_DEPTH_LUMA - 5);
+
+            Ipp32s topLeft = PredPel[0];
+            Ipp32s topRight = PredPel[2*width];
+            Ipp32s midHor = PredPel[width];
+
+            Ipp32s bottomLeft = PredPel[4*width];
+            Ipp32s midVer = PredPel[3*width];
+
+            bool bilinearLeft = abs(topLeft + topRight - 2*midHor) < threshold;
+            bool bilinearAbove = abs(topLeft + bottomLeft - 2*midVer) < threshold;
+
+            if (width == 32 && (bilinearLeft && bilinearAbove))
+            {
+                h265_FilterPredictPels_Bilinear_8u(PredPel, width, topLeft, bottomLeft, topRight);
+            }
+            else
+            {
+                h265_FilterPredictPels_8u(PredPel, width);
+            }
+        } else if (isFilterNeeded) {
+            h265_FilterPredictPels_8u(PredPel, width);
         }
 
         switch(pred_mode)
@@ -587,6 +697,31 @@ void H265CU::IntraPredTU(Ipp32s blockZScanIdx, Ipp32s width, Ipp32s pred_mode, I
             break;
         default:
             MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_8u)(pred_mode, PredPel, pRec, pitch, width);
+        }
+    }
+    else
+    {
+        pRec = uv_rec + ((PUStartRow * pitch_rec + PUStartColumn * 2) << (par->Log2MinTUSize - 1));
+        GetAvailablity(this, blockZScanIdx, width << 1, par->cpps->constrained_intra_pred_flag,
+            inNeighborFlags, outNeighborFlags);
+        GetPredPelsChromaNV12(par, pRec, PredPel, outNeighborFlags, width, pitch);
+
+        switch(pred_mode)
+        {
+        case INTRA_PLANAR:
+            MFX_HEVC_PP::h265_PredictIntra_Planar_ChromaNV12_8u(PredPel, pRec, pitch, width);
+            break;
+        case INTRA_DC:
+            MFX_HEVC_PP::h265_PredictIntra_DC_ChromaNV12_8u(PredPel, pRec, pitch, width);
+            break;
+        case INTRA_VER:
+            MFX_HEVC_PP::h265_PredictIntra_Ver_ChromaNV12_8u(PredPel, pRec, pitch, width);
+            break;
+        case INTRA_HOR:
+            MFX_HEVC_PP::h265_PredictIntra_Hor_ChromaNV12_8u(PredPel, pRec, pitch, width);
+            break;
+        default:
+            MFX_HEVC_PP::h265_PredictIntra_Ang_ChromaNV12_8u(PredPel, pRec, pitch, width, pred_mode);
         }
     }
 }
@@ -645,7 +780,7 @@ void H265CU::IntraLumaModeDecision(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u dep
     CostType cost = 0;
 
     PixType *pSrc = y_src + ((PUStartRow * pitch_src + PUStartColumn) << par->Log2MinTUSize);
-    PixType *pRec = y_rec + ((PUStartRow * pitch_rec_luma + PUStartColumn) << par->Log2MinTUSize);
+    PixType *pRec = y_rec + ((PUStartRow * pitch_rec + PUStartColumn) << par->Log2MinTUSize);
 
     for (Ipp32s i = 0; i < num_cand; i++) intra_best_costs[i] = COST_MAX;
 
@@ -656,7 +791,7 @@ void H265CU::IntraLumaModeDecision(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u dep
     {
         pred_intra_all_width = width;
         GetAvailablity(this, abs_part_idx, width, par->cpps->constrained_intra_pred_flag, inNeighborFlags, outNeighborFlags);
-        GetPredPels(par, pRec, predPel, outNeighborFlags, width, pitch_rec_luma, 1);
+        GetPredPelsLuma(par, pRec, predPel, outNeighborFlags, width, pitch_rec);
 
         small_memcpy(predPelFilt, predPel, 4*width+1);
 
@@ -783,7 +918,7 @@ void H265CU::IntraLumaModeDecisionRDO(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u 
 {
     Ipp32s width = par->MaxCUSize >> (depth + tr_depth);
     Ipp32u num_parts = (par->NumPartInCU >> ((depth + tr_depth) << 1));
-    Ipp32s offset_luma_tu = GetLumaOffset(par, abs_part_idx, pitch_rec_luma);
+    Ipp32s offset_luma_tu = GetLumaOffset(par, abs_part_idx, pitch_rec);
     Ipp32s tuSplitIntra = (par->tuSplitIntra == 1 || par->tuSplitIntra == 3 && cslice->slice_type == I_SLICE);
     Ipp8u  part_size = (Ipp8u)(tr_depth == 1 ? PART_SIZE_NxN : PART_SIZE_2Nx2N);
     Ipp32s num_cand1 = par->num_cand_1[par->Log2MaxCUSize - (depth + tr_depth)];
@@ -836,7 +971,7 @@ void H265CU::IntraLumaModeDecisionRDO(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u 
             if (restoreContextAndRec) {
                 if (rd_opt_flag)
                     bsf->CtxSave(bestCtx, 0, NUM_CABAC_CONTEXT);
-                ippiCopy_8u_C1R(y_rec + offset_luma_tu, pitch_rec_luma, rec_luma_save_cu[depth+tr_depth], width, roi);
+                ippiCopy_8u_C1R(y_rec + offset_luma_tu, pitch_rec, rec_luma_save_cu[depth+tr_depth], width, roi);
             }
             small_memcpy(data_best + ((depth + tr_depth) << par->Log2NumPartInCU) + abs_part_idx,
                 data_temp + ((depth + tr_depth) << par->Log2NumPartInCU) + abs_part_idx,
@@ -848,7 +983,7 @@ void H265CU::IntraLumaModeDecisionRDO(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u 
     {
         if (rd_opt_flag)
             bsf->CtxRestore(bestCtx, 0, NUM_CABAC_CONTEXT);
-        ippiCopy_8u_C1R(rec_luma_save_cu[depth+tr_depth], width, y_rec + offset_luma_tu, pitch_rec_luma, roi);
+        ippiCopy_8u_C1R(rec_luma_save_cu[depth+tr_depth], width, y_rec + offset_luma_tu, pitch_rec, roi);
     }
 }
 

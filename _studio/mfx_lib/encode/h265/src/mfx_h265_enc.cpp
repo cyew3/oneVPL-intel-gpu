@@ -1613,7 +1613,7 @@ mfxStatus H265Encoder::DeblockThread(Ipp32s ithread) {
             Ipp8u curr_slice = m_slice_ids[ctb_addr];
 
             cu[ithread].InitCU(&m_videoParam, m_pReconstructFrame->cu_data + (ctb_addr << pars->Log2NumPartInCU), data_temp+ithread*data_temp_size, ctb_addr,
-                m_pReconstructFrame->y, m_pReconstructFrame->u, m_pReconstructFrame->v, m_pReconstructFrame->pitch_luma, m_pReconstructFrame->pitch_chroma,
+                m_pReconstructFrame->y, m_pReconstructFrame->uv, m_pReconstructFrame->pitch_luma,
                 m_pCurrentFrame->y, m_pCurrentFrame->uv, m_pCurrentFrame->pitch_luma, &bsf[ithread], m_slices + curr_slice, 0);
 
             cu[ithread].Deblock();
@@ -1631,7 +1631,7 @@ mfxStatus H265Encoder::ApplySAOThread(Ipp32s ithread)
     
     int numCTU = m_videoParam.PicHeightInCtbs * m_videoParam.PicWidthInCtbs;
 
-    Ipp8u* pRec[3] = {m_pReconstructFrame->y, m_pReconstructFrame->u, m_pReconstructFrame->v};
+    Ipp8u* pRec[2] = {m_pReconstructFrame->y, m_pReconstructFrame->uv};
     int pitch[3] = {m_pReconstructFrame->pitch_luma, m_pReconstructFrame->pitch_chroma, m_pReconstructFrame->pitch_chroma};
     int shift[3] = {0, 1, 1};
 
@@ -1869,7 +1869,7 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
             printf("CTB %d\n",ctb_addr);
 #endif
             cu[ithread].InitCU(pars, m_pReconstructFrame->cu_data + (ctb_addr << pars->Log2NumPartInCU), data_temp+ithread*data_temp_size, ctb_addr,
-                m_pReconstructFrame->y, m_pReconstructFrame->u, m_pReconstructFrame->v, m_pReconstructFrame->pitch_luma, m_pReconstructFrame->pitch_chroma,
+                m_pReconstructFrame->y, m_pReconstructFrame->uv, m_pReconstructFrame->pitch_luma,
                 m_pCurrentFrame->y, m_pCurrentFrame->uv, m_pCurrentFrame->pitch_luma, &bsf[ctb_row], m_slices + curr_slice, 1);
 
             cu[ithread].GetInitAvailablity();
@@ -2033,7 +2033,7 @@ mfxStatus H265Encoder::EncodeThreadByRow(Ipp32s ithread) {
             printf("CTB %d\n",ctb_addr);
 #endif
             cu[ithread].InitCU(pars, m_pReconstructFrame->cu_data + (ctb_addr << pars->Log2NumPartInCU), data_temp+ithread*data_temp_size, ctb_addr,
-                m_pReconstructFrame->y, m_pReconstructFrame->u, m_pReconstructFrame->v, m_pReconstructFrame->pitch_luma, m_pReconstructFrame->pitch_chroma,
+                m_pReconstructFrame->y, m_pReconstructFrame->uv, m_pReconstructFrame->pitch_luma,
                 m_pCurrentFrame->y, m_pCurrentFrame->uv, m_pCurrentFrame->pitch_luma, &bsf[ithread], m_slices + curr_slice, 1);
 
             cu[ithread].GetInitAvailablity();

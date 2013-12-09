@@ -50,13 +50,9 @@ mfxStatus H265Frame::Create(H265VideoParam *par)
 
     cu_data = align_pointer<H265CUData *> (mem, ALIGN_VALUE);
     y = align_pointer<Ipp8u *> (cu_data + numCtbs_parts, ALIGN_VALUE);
-    u = align_pointer<Ipp8u *> (y + plane_size, ALIGN_VALUE);
-    v = align_pointer<Ipp8u *> (u + plane_size / 4, ALIGN_VALUE);
-    uv = u;
+    uv = align_pointer<Ipp8u *> (y + plane_size, ALIGN_VALUE);;
 
     y += (pitch_luma + 1) * padding;
-    u += (pitch_chroma + 1) * padding >> 1;
-    v += (pitch_chroma + 1) * padding >> 1;
     uv += (pitch_luma * padding >> 1) + padding;
 
     return MFX_ERR_NONE;
@@ -139,11 +135,29 @@ static void doPaddingPlane(PixType *piTxt, Ipp32s Stride, Ipp32s Width, Ipp32s H
 void H265Frame::doPadding()
 {
     ippiExpandPlane_H264_8u_C1R(y, width, height, pitch_luma, padding, IPPVC_FRAME);
-    ippiExpandPlane_H264_8u_C1R(u, width>>1, height>>1, pitch_chroma, padding>>1, IPPVC_FRAME);
-    ippiExpandPlane_H264_8u_C1R(v, width>>1, height>>1, pitch_chroma, padding>>1, IPPVC_FRAME);
-/*    doPaddingPlane(y, pitch_luma, width, height, padding, padding);
-    doPaddingPlane(u, pitch_chroma, width>>1, height>>1, padding>>1, padding>>1);
-    doPaddingPlane(v, pitch_chroma, width>>1, height>>1, padding>>1, padding>>1);*/
+
+    Ipp32s width16 = width >> 1;
+    Ipp32s pitch16 = pitch_luma >> 1;
+    Ipp32s height_chroma = height >> 1;
+    Ipp32s padding_chroma = padding >> 1;
+
+    Ipp8u * src = uv;
+    Ipp8u * dst = src - pitch_luma;
+    for (Ipp32s y = 0; y < padding_chroma; y++, dst -= pitch_luma)
+        ippsCopy_8u(src, dst, width);
+
+    src = uv + (height_chroma - 1) * pitch_luma;
+    dst = src + pitch_luma;
+    for (Ipp32s y = 0; y < padding_chroma; y++, dst += pitch_luma)
+        ippsCopy_8u(src, dst, width);
+
+    Ipp16s * p16 = (Ipp16s *)uv - padding_chroma * pitch16;
+    for (Ipp32s y = 0; y < height_chroma + padding_chroma * 2; y++, p16 += pitch16)
+        ippsSet_16s(*p16, p16 - padding_chroma, padding_chroma);
+
+    p16 = (Ipp16s *)uv + width16 - 1 - padding_chroma * pitch16;
+    for (Ipp32s y = 0; y < height_chroma + padding_chroma * 2; y++, p16 += pitch16)
+        ippsSet_16s(*p16, p16 + 1, padding_chroma);
 }
 
 void H265Frame::Dump(const vm_char* fname, H265VideoParam *par, H265FrameList *dpb, Ipp32s frame_num)
@@ -186,15 +200,10 @@ void H265Frame::Dump(const vm_char* fname, H265VideoParam *par, H265FrameList *d
         vm_file_fwrite(p, 1, W, f);
         p += pitch_luma;
     }
-    p = u;
+    p = uv;
     for (i = 0; i < H >> 1; i++) {
-        vm_file_fwrite(p, 1, W >> 1, f);
-        p += pitch_chroma;
-    }
-    p = v;
-    for (i = 0; i < H >> 1; i++) {
-        vm_file_fwrite(p, 1, W >> 1, f);
-        p += pitch_chroma;
+        vm_file_fwrite(p, 1, W, f);
+        p += pitch_luma;
     }
     if (fbuf) {
         vm_file_fwrite(fbuf, 1, numlater*W*H*3/2, f);

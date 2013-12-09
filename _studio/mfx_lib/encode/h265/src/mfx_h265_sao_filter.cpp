@@ -2261,10 +2261,9 @@ void H265CU::EstimateCtuSao(
     orgYuv.Pitch = (Ipp16s)this->pitch_src;
 
     recYuv.Y = this->y_rec;
-    recYuv.U = this->u_rec;
-    recYuv.V = this->v_rec;
-    recYuv.Pitch = (Ipp16s)this->pitch_rec_luma;
-    recYuv.PitchHigh = (Ipp16s)this->pitch_rec_chroma;
+    recYuv.UV = this->uv_rec;
+    recYuv.Pitch = (Ipp16s)this->pitch_rec;
+    recYuv.PitchHigh = (Ipp16s)this->pitch_rec;
 
     bool    sliceEnabled[NUM_SAO_COMPONENTS] = {false, false, false};
     m_saoEncodeFilter.EstimateCtuSao( &orgYuv, &recYuv, sliceEnabled, saoParam);
@@ -2301,10 +2300,9 @@ void H265CU::GetStatisticsCtuSao_Predeblocked( const MFX_HEVC_PP::CTBBorders & b
     orgYuv.Pitch = (Ipp16s)this->pitch_src;
 
     recYuv.Y = this->y_rec;
-    recYuv.U = this->u_rec;
-    recYuv.V = this->v_rec;
-    recYuv.Pitch = (Ipp16s)this->pitch_rec_luma;
-    recYuv.PitchHigh = (Ipp16s)this->pitch_rec_chroma;
+    recYuv.UV = this->uv_rec;
+    recYuv.Pitch = (Ipp16s)this->pitch_rec;
+    recYuv.PitchHigh = (Ipp16s)this->pitch_rec;
 
     int compIdx = SAO_Y;
 

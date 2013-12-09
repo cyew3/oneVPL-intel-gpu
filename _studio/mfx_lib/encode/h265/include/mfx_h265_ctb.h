@@ -138,10 +138,8 @@ public:
     Ipp8u *uv_src;
     Ipp32s pitch_src;
     Ipp8u *y_rec;
-    Ipp8u *u_rec;
-    Ipp8u *v_rec;
-    Ipp32s pitch_rec_luma;
-    Ipp32s pitch_rec_chroma;
+    Ipp8u *uv_rec;
+    Ipp32s pitch_rec;
     H265CUData *data_save;
     H265CUData *data_best;
     H265CUData *data_temp;
@@ -149,8 +147,7 @@ public:
     PixType     rec_luma_save_cu[6][MAX_CU_SIZE*MAX_CU_SIZE];
     PixType     rec_luma_save_tu[6][MAX_CU_SIZE*MAX_CU_SIZE];
     Ipp16s pred_buf_y[2][MAX_CU_SIZE*MAX_CU_SIZE];
-    Ipp16s pred_buf_u[2][MAX_CU_SIZE*MAX_CU_SIZE/4];
-    Ipp16s pred_buf_v[2][MAX_CU_SIZE*MAX_CU_SIZE/4];
+    Ipp16s pred_buf_uv[2][MAX_CU_SIZE*MAX_CU_SIZE/2];
 
     // storing predictions for bidir
 #define INTERP_BUF_SZ 8 // must be power of 2
@@ -312,11 +309,8 @@ public:
     template <class H265Bs>
     void h265_code_intradir_luma_ang(H265Bs *bs, Ipp32u abs_part_idx, Ipp8u multiple);
 
-    void CopySaturate(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefPicList RefPicList, Ipp8u is_luma);
-    void AddAverage(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, Ipp8u is_luma);
-
     void PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefPicList RefPicList,
-                                  Ipp32s PartIdx, bool bi, Ipp8u is_luma);
+                      Ipp32s PartIdx, bool bi, Ipp8u is_luma, MFX_HEVC_PP::EnumAddAverageType eAddAverage = MFX_HEVC_PP::AVERAGE_NO);
 
     void InterPredCU(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u is_luma);
     void IntraPred(Ipp32u abs_part_idx, Ipp8u depth);
@@ -386,7 +380,7 @@ public:
     Ipp32s MVCost( H265MV MV[2], T_RefIdx ref_idx[2], MVPInfo pInfo[2], MVPInfo& mergeInfo) const;
 
     void InitCU(H265VideoParam *_par, H265CUData *_data, H265CUData *_data_temp, Ipp32s iCUAddr,
-        PixType *_y, PixType *_u, PixType *_v, Ipp32s _pitch_luma, Ipp32s _pitch_chroma,
+        PixType *_y, PixType *_uv, Ipp32s _pitch,
         PixType *_y_src, PixType *uv_src, Ipp32s _pitch_src, H265BsFake *_bsf, H265Slice *cslice, Ipp8u initialize_data_flag);
     void FillRandom(Ipp32u abs_part_idx, Ipp8u depth);
     void FillZero(Ipp32u abs_part_idx, Ipp8u depth);
