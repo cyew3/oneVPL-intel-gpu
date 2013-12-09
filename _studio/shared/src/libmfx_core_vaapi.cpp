@@ -103,7 +103,35 @@ const mfx_device_item listLegalDevIDs[] = {
     { 0x0f30, MFX_HW_VLV },   /* VLV mobile */
     { 0x0f31, MFX_HW_VLV },   /* VLV mobile */
     { 0x0157, MFX_HW_VLV },
-    { 0x0155, MFX_HW_VLV }
+    { 0x0155, MFX_HW_VLV },
+
+    /* BDW */
+    /*GT3: */
+    { 0x162D, MFX_HW_BDW},
+    { 0x162A, MFX_HW_BDW},
+    /*GT2: */
+    { 0x161D, MFX_HW_BDW},
+    { 0x161A, MFX_HW_BDW},
+    /* GT1: */
+    { 0x160D, MFX_HW_BDW},
+    { 0x160A, MFX_HW_BDW},
+    /* BDW-ULT */
+    /* (16x2 - ULT, 16x6 - ULT, 16xB - Iris, 16xE - ULX) */
+    /*GT3: */
+    { 0x162E, MFX_HW_BDW},
+    { 0x162B, MFX_HW_BDW},
+    { 0x1626, MFX_HW_BDW},
+    { 0x1622, MFX_HW_BDW},
+    /* GT2: */
+    { 0x161E, MFX_HW_BDW},
+    { 0x161B, MFX_HW_BDW},
+    { 0x1616, MFX_HW_BDW},
+    { 0x1612, MFX_HW_BDW},
+    /* GT1: */
+    { 0x160E, MFX_HW_BDW},
+    { 0x160B, MFX_HW_BDW},
+    { 0x1606, MFX_HW_BDW},
+    { 0x1602, MFX_HW_BDW}
 };
 
 /* END: IOCTLs definitions */
