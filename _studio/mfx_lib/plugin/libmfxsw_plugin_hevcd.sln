@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfxplugin_hevcd", "mfxplugin_hevcd.vcxproj", "{7D461E6A-B47C-4843-A06A-ECCBB0DEA729}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UMC", "UMC", "{03F908B1-B331-4B8C-9CCC-D88FAAC81551}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfxsw_plugin_hevcd", "libmfxsw_plugin_hevcd.vcxproj", "{D719372D-BA13-4730-AFF6-1994B26EFF6C}"
@@ -70,8 +72,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hevc_pp_atom", "..\optimiza
 	ProjectSection(ProjectDependencies) = postProject
 		{F0AFE44D-3A26-45F6-BC3F-6131F91DEC80} = {F0AFE44D-3A26-45F6-BC3F-6131F91DEC80}
 	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfxplugin_hevcd", "mfxplugin_hevcd.vcxproj", "{7D461E6A-B47C-4843-A06A-ECCBB0DEA729}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "watermark", "watermark.vcxproj", "{A404C552-193E-4A7B-B656-BA104D581869}"
 EndProject
