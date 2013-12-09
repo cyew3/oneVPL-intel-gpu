@@ -1467,7 +1467,7 @@ bool D3D9VideoCORE::IsCompatibleForOpaq()
 {
     if (!m_bUseExtManager)
     {
-        return (m_session->m_pScheduler->GetNumRef() == 1)?true:false;
+        return (m_session->m_pScheduler->GetNumRef() > 2)?false:true;
     }
     return true;
 }
