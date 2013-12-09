@@ -179,7 +179,7 @@ Ipp8s H265CU::get_ref_qp( Ipp32u uiCurrAbsIdxInLCU )
   return (((cULeft? cULeft[lPartIdx].qp: getLastCodedQP( uiCurrAbsIdxInLCU )) + (cUAbove? cUAbove[aPartIdx].qp: getLastCodedQP( uiCurrAbsIdxInLCU )) + 1) >> 1);
 }
 
-Ipp32u H265CU::get_coef_scan_idx(Ipp32u abs_part_idx, Ipp32u width, bool bIsLuma, bool bIsIntra)
+Ipp32u H265CU::get_coef_scan_idx(Ipp32u abs_part_idx, Ipp32u width, Ipp32s bIsLuma, Ipp32s bIsIntra)
 {
   Ipp32u uiCTXIdx;
   Ipp32u scan_idx;
@@ -2417,6 +2417,23 @@ static void tu_add_clip_transp(PixType *dst, PixType *src1, CoeffsType *src2,
 static void tu_diff(CoeffsType *residual, PixType *src, PixType *pred,
                      Ipp32s pitch_dst, Ipp32s pitch_src, Ipp32s pitch_pred, Ipp32s size)
 {
+    //Ipp32s step_dst = pitch_dst * sizeof(CoeffsType);
+    //if (size == 4) {
+    //    ippiSub4x4_8u16s_C1R(src, pitch_src, pred, pitch_pred, residual, step_dst);
+    //} else if (size == 8) {
+    //    ippiSub8x8_8u16s_C1R(src, pitch_src, pred, pitch_pred, residual, step_dst);
+    //} else if (size == 16) {
+    //    ippiSub16x16_8u16s_C1R(src, pitch_src, pred, pitch_pred, residual, step_dst);
+    //} else if (size == 32) {
+    //    for (Ipp32s y = 0; y < 32; y += 16) {
+    //        for (Ipp32s x = 0; x < 32; x += 16) {
+    //            ippiSub16x16_8u16s_C1R(src + x + y * pitch_src, pitch_src,
+    //                                   pred + x + y * pitch_pred, pitch_pred,
+    //                                   residual + x + y * pitch_dst, step_dst);
+    //        }
+    //    }
+    //}
+
     Ipp32s i, j;
     for (j = 0; j < size; j++) {
         for (i = 0; i < size; i++) {
@@ -2615,20 +2632,37 @@ void H265CU::EncAndRecLumaTU(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, I
         return;
     }
 
+    Ipp8u cbf = 0;
     if (!data[abs_part_idx].flags.skipped_flag) {
-        (is_pred_transposed)
-            ? tu_diff_transp(residuals_y + offset, src, pred, width, pitch_src, pitch_pred, width)
-            : tu_diff(residuals_y + offset, src, pred, width, pitch_src, pitch_pred, width);
+        if (is_pred_transposed)
+            tu_diff_transp(residuals_y + offset, src, pred, width, pitch_src, pitch_pred, width);
+        else
+            tu_diff(residuals_y + offset, src, pred, width, pitch_src, pitch_pred, width);
 
         TransformFwd(offset, width, 1, data[abs_part_idx].pred_mode == MODE_INTRA);
         QuantFwdTU(abs_part_idx, offset, width, 1);
 
-        QuantInvTU(abs_part_idx, offset, width, 1);
-        TransformInv(offset, width, 1, data[abs_part_idx].pred_mode == MODE_INTRA);
+        if (rd_opt_flag || nz) {
+            for (Ipp32s i = 0; i < width * width; i++) {
+                if (tr_coeff_y[i + offset]) {
+                    cbf = 1;
+                    if (nz) *nz = 1;
+                    break;
+                }
+            }
+        }
 
+        if (!rd_opt_flag || cbf)
+            QuantInvTU(abs_part_idx, offset, width, 1);
+
+        IppiSize roi = { width, width };
         (is_pred_transposed)
-            ? tu_add_clip_transp(rec, pred, residuals_y + offset, pitch_rec, pitch_pred, width, width)
-            : tu_add_clip(rec, pred, residuals_y + offset, pitch_rec, pitch_pred, width, width);
+            ? ippiTranspose_8u_C1R(pred, pitch_pred, rec, pitch_rec, roi)
+            : ippiCopy_8u_C1R(pred, pitch_pred, rec, pitch_rec, roi);
+
+        if (!rd_opt_flag || cbf)
+            TransformInv2(rec, pitch_rec, offset, width, 1, data[abs_part_idx].pred_mode == MODE_INTRA);
+
     } else {
         memset(tr_coeff_y + offset, 0, sizeof(CoeffsType) * width * width);
     }
@@ -2641,17 +2675,6 @@ void H265CU::EncAndRecLumaTU(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, I
     if (data[abs_part_idx].flags.skipped_flag) {
         if (nz) *nz = 0;
         return;
-    }
-
-    Ipp8u cbf = 0;
-    if (rd_opt_flag || nz) {
-        for (int i = 0; i < width * width; i++) {
-            if (tr_coeff_y[i + offset]) {
-                cbf = 1;
-                if (nz) *nz = 1;
-                break;
-            }
-        }
     }
 
     if (rd_opt_flag && cost) {

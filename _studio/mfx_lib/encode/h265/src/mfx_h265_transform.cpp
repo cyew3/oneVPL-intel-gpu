@@ -44,40 +44,45 @@ void HevcPakMfdVft::DoDirectCopyMxN(const VftIf &in_VftIf)
 
 void H265CU::TransformInv(Ipp32s offset, Ipp32s width, Ipp8u is_luma, Ipp8u is_intra)
 {
-//    Ipp8s uMBQP = par->QP;
-//    bool transform_bypass = m_VitState.ImageState.qpprime_y_zero_transform_bypass_flag && uMBQP == 0;
-
     for (Ipp32s c_idx = 0; c_idx < (is_luma ? 1 : 2); c_idx ++) {
         CoeffsType *residuals = is_luma ? residuals_y : (c_idx ? residuals_v : residuals_u);
         residuals += offset;
 
-/*    if (transform_bypass)
-    {
-        printf("Error!! FTQ Transform Bypass\n");
-        return;
-
-//        DoDirectCopyMxN(in_VitIf);
-    }
-    else */
-        if (is_luma && is_intra && width == 4)
-        {
+        if (is_luma && is_intra && width == 4) {
             MFX_HEVC_PP::NAME(h265_DST4x4Inv_16sT)(residuals, residuals, 4, 2);
-        }
-        else
-        {
+        } else {
             switch (width) {
             case 4:
-                MFX_HEVC_PP::NAME(h265_DCT4x4Inv_16sT)(residuals, residuals, 4, 2);
-                break;
+                MFX_HEVC_PP::NAME(h265_DCT4x4Inv_16sT)(residuals, residuals, 4, 2); break;
             case 8:
-                MFX_HEVC_PP::NAME(h265_DCT8x8Inv_16sT)(residuals, residuals, 8, 2);
-                break;
+                MFX_HEVC_PP::NAME(h265_DCT8x8Inv_16sT)(residuals, residuals, 8, 2); break;
             case 16:
-                MFX_HEVC_PP::NAME(h265_DCT16x16Inv_16sT)(residuals, residuals, 16, 2);
-                break;
+                MFX_HEVC_PP::NAME(h265_DCT16x16Inv_16sT)(residuals, residuals, 16, 2); break;
             case 32:
-                MFX_HEVC_PP::NAME(h265_DCT32x32Inv_16sT)(residuals, residuals, 32, 2);
-                break;
+                MFX_HEVC_PP::NAME(h265_DCT32x32Inv_16sT)(residuals, residuals, 32, 2); break;
+            }
+        }
+    }
+}
+
+void H265CU::TransformInv2(PixType * dst, Ipp32s pitch_dst, Ipp32s offset, Ipp32s width, Ipp8u is_luma, Ipp8u is_intra)
+{
+    for (Ipp32s c_idx = 0; c_idx < (is_luma ? 1 : 2); c_idx ++) {
+        CoeffsType *residuals = is_luma ? residuals_y : (c_idx ? residuals_v : residuals_u);
+        residuals += offset;
+
+        if (is_luma && is_intra && width == 4) {
+            MFX_HEVC_PP::NAME(h265_DST4x4Inv_16sT)(dst, residuals, pitch_dst, 1);
+        } else {
+            switch (width) {
+            case 4:
+                MFX_HEVC_PP::NAME(h265_DCT4x4Inv_16sT)(dst, residuals, pitch_dst, 1); break;
+            case 8:
+                MFX_HEVC_PP::NAME(h265_DCT8x8Inv_16sT)(dst, residuals, pitch_dst, 1); break;
+            case 16:
+                MFX_HEVC_PP::NAME(h265_DCT16x16Inv_16sT)(dst, residuals, pitch_dst, 1); break;
+            case 32:
+                MFX_HEVC_PP::NAME(h265_DCT32x32Inv_16sT)(dst, residuals, pitch_dst, 1); break;
             }
         }
     }

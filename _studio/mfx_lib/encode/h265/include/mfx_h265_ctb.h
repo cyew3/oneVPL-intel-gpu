@@ -282,7 +282,7 @@ public:
     Ipp32u        get_ctx_skip_flag                  (Ipp32u   abs_part_idx                                 );
     Ipp32u        getCtxInterDir                  ( Ipp32u   abs_part_idx                                 );
 
-    Ipp32u        get_coef_scan_idx(Ipp32u abs_part_idx, Ipp32u width, bool bIsLuma, bool bIsIpp32sra);
+    Ipp32u        get_coef_scan_idx(Ipp32u abs_part_idx, Ipp32u width, Ipp32s bIsLuma, Ipp32s bIsIntra);
 
     template <class H265Bs>
     void h265_code_coeff_NxN(H265Bs *bs, H265CU* pCU, CoeffsType* coeffs, Ipp32u abs_part_idx,
@@ -323,6 +323,7 @@ public:
     void IntraLumaModeDecisionRDO(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u depth, Ipp8u tr_depth, CABAC_CONTEXT_H265 * initCtx);
     Ipp8u GetTRSplitMode(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u tr_depth, Ipp8u part_size, Ipp8u is_luma, Ipp8u strict = 1);
     void TransformInv(Ipp32s offset, Ipp32s width, Ipp8u is_luma, Ipp8u is_intra);
+    void TransformInv2(PixType * dst, Ipp32s pitch_dst, Ipp32s offset, Ipp32s width, Ipp8u is_luma, Ipp8u is_intra);
     void TransformFwd(Ipp32s offset, Ipp32s width, Ipp8u is_luma, Ipp8u is_intra);
 
     void GetInitAvailablity();

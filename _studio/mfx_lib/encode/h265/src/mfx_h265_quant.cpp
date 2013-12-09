@@ -170,64 +170,34 @@ void H265CU::QuantFwdTU(
 
     VM_ASSERT(!par->csps->sps_scaling_list_data_present_flag);
 
-    for (Ipp32s c_idx = 0; c_idx < (is_luma ? 1 : 2); c_idx ++)
-    {
+    for (Ipp32s c_idx = 0; c_idx < (is_luma ? 1 : 2); c_idx ++) {
         CoeffsType *residuals = is_luma ? residuals_y : (c_idx ? residuals_v : residuals_u);
         CoeffsType *coeff = is_luma ? tr_coeff_y : (c_idx ? tr_coeff_v : tr_coeff_u);
         Ipp32u abs_sum = 0;
 
-        if(is_luma && IsRDOQ() )
-        {
-            h265_quant_fwd_rdo(
-                this,
-                residuals + offset,
-                coeff + offset,
-                log2TrSize,
-                BIT_DEPTH_LUMA,
-                cslice->slice_type == I_SLICE,
-                abs_sum,
-                TEXT_LUMA,
-                abs_part_idx,
-                QP,
-                bsf);
-
-
-        //}
+        if (is_luma && IsRDOQ()) {
+            h265_quant_fwd_rdo( this, residuals + offset, coeff + offset, log2TrSize,
+                                BIT_DEPTH_LUMA, cslice->slice_type == I_SLICE, abs_sum, TEXT_LUMA,
+                                abs_part_idx, QP, bsf );
         }
-        else
-        {
+        else {
             Ipp32s delta_u[32*32];
+            h265_quant_fwd_base( residuals + offset, coeff + offset, log2TrSize, BIT_DEPTH_LUMA,
+                                 cslice->slice_type == I_SLICE, QP, 
+                                 par->cpps->sign_data_hiding_enabled_flag ? delta_u : NULL,
+                                 abs_sum );
 
-            h265_quant_fwd_base(
-                residuals + offset,
-                coeff + offset,
-                log2TrSize,
-                BIT_DEPTH_LUMA,
-                cslice->slice_type == I_SLICE,
-                QP,
-
-                this->par->cpps->sign_data_hiding_enabled_flag ? delta_u : NULL,
-                abs_sum);
-
-            if(this->par->cpps->sign_data_hiding_enabled_flag && abs_sum >= 2)
-            {
-                Ipp32u scan_idx = this->get_coef_scan_idx(abs_part_idx, width, is_luma ? true: false, this->isIntra(abs_part_idx) );
+            if(this->par->cpps->sign_data_hiding_enabled_flag && abs_sum >= 2) {
+                Ipp32u scan_idx = get_coef_scan_idx( abs_part_idx, width, is_luma, isIntra(abs_part_idx) );
 
                 if (scan_idx == COEFF_SCAN_ZIGZAG)
-                {
                     scan_idx = COEFF_SCAN_DIAG;
-                }
 
                 Ipp32s height = width;
                 const Ipp16u *scan = h265_sig_last_scan[ scan_idx -1 ][ log2TrSize - 1 ];
 
-                 h265_sign_bit_hiding(
-                     coeff + offset,
-                     residuals + offset,
-                     scan,
-                     delta_u,
-                     width,
-                     height );
+                 h265_sign_bit_hiding( coeff + offset, residuals + offset, scan, delta_u,
+                                       width, height );
             }
         }
     }
