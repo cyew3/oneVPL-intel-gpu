@@ -130,7 +130,8 @@ void WriteAverageToPic(
 
 
 void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefPicList RefPicList,
-                          Ipp32s PartIdx, bool bi, Ipp8u is_luma, MFX_HEVC_PP::EnumAddAverageType eAddAverage)
+                          Ipp32s PartIdx, PixType *dst, Ipp32s dst_pitch, bool bi, Ipp8u is_luma,
+                          MFX_HEVC_PP::EnumAddAverageType eAddAverage)
 {
     EncoderRefPicListStruct *pList[2];
     Ipp32s maxDepth = par->Log2MaxCUSize - par->Log2MinTUSize;
@@ -183,8 +184,8 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefP
         in_dstBuf = pred_buf_y[ (eAddAverage == AVERAGE_FROM_BUF ? !RefPicList : RefPicList) ];
         in_dstBuf += ((PUStartRow * par->MaxCUSize + PUStartColumn) << par->Log2MinTUSize);
 
-        in_dstPicPitch = pitch_rec;
-        in_dstPic = y_rec + ((PUStartRow * pitch_rec + PUStartColumn) << par->Log2MinTUSize);
+        in_dstPicPitch = dst_pitch;
+        in_dstPic = dst + ((PUStartRow * dst_pitch + PUStartColumn) << par->Log2MinTUSize);
 
 
         bitDepth = BIT_DEPTH_LUMA;
@@ -298,10 +299,10 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefP
 
         in_dstBufPitch = par->MaxCUSize;
         in_dstBuf = pred_buf_uv[ (eAddAverage == AVERAGE_FROM_BUF ? !RefPicList : RefPicList) ];
-        in_dstBuf +=  + ((PUStartRow * par->MaxCUSize + PUStartColumn * 2) << par->Log2MinTUSize);
+        in_dstBuf += ((PUStartRow * par->MaxCUSize + PUStartColumn * 2) << par->Log2MinTUSize);
 
-        in_dstPic = uv_rec + ((PUStartRow * pitch_rec / 2 + PUStartColumn) << par->Log2MinTUSize);
-        in_dstPicPitch = pitch_rec;
+        in_dstPicPitch = dst_pitch;
+        in_dstPic = dst + ((PUStartRow * dst_pitch / 2 + PUStartColumn) << par->Log2MinTUSize);
 
         shift = 6;
         offset = 32;
@@ -384,7 +385,7 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefP
 }
 
 
-void H265CU::InterPredCU(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u is_luma)
+void H265CU::InterPredCU(Ipp32s abs_part_idx, Ipp8u depth, PixType *dst, Ipp32s dst_pitch, Ipp8u is_luma)
 {
     Ipp32s PartAddr;
     Ipp32s PartX, PartY, Width, Height;
@@ -402,7 +403,7 @@ void H265CU::InterPredCU(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u is_luma)
 
         if (CheckIdenticalMotion(PartAddr) || RefIdx[0] < 0 || RefIdx[1] < 0) {
             EnumRefPicList refPicList = RefIdx[0] >= 0 ? REF_PIC_LIST_0 : REF_PIC_LIST_1;
-            PredInterUni( PartAddr, Width, Height, refPicList, PartIdx, false, is_luma );
+            PredInterUni( PartAddr, Width, Height, refPicList, PartIdx, dst, dst_pitch, false, is_luma, AVERAGE_NO );
 
         } else {
             H265MV MV0 = data[PartAddr].mv[REF_PIC_LIST_0];
@@ -413,11 +414,11 @@ void H265CU::InterPredCU(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u is_luma)
             EnumRefPicList refPicList = mv_interp0 ? REF_PIC_LIST_0 : REF_PIC_LIST_1;
 
             if ( bOnlyOneIterp )
-                PredInterUni( PartAddr, Width, Height, refPicList, PartIdx, true, is_luma, MFX_HEVC_PP::AVERAGE_FROM_PIC );
+                PredInterUni( PartAddr, Width, Height, refPicList, PartIdx, dst, dst_pitch, true, is_luma, AVERAGE_FROM_PIC );
             else
             {
-                PredInterUni( PartAddr, Width, Height, REF_PIC_LIST_0, PartIdx, true, is_luma, MFX_HEVC_PP::AVERAGE_NO );
-                PredInterUni( PartAddr, Width, Height, REF_PIC_LIST_1, PartIdx, true, is_luma, MFX_HEVC_PP::AVERAGE_FROM_BUF );
+                PredInterUni( PartAddr, Width, Height, REF_PIC_LIST_0, PartIdx, dst, dst_pitch, true, is_luma, AVERAGE_NO );
+                PredInterUni( PartAddr, Width, Height, REF_PIC_LIST_1, PartIdx, dst, dst_pitch, true, is_luma, AVERAGE_FROM_BUF );
             }
 
                 /*Ipp32s w0[3], w1[3], o0[3], o1[3], logWD[3], round[3], bitDepth = g_BitDepth;

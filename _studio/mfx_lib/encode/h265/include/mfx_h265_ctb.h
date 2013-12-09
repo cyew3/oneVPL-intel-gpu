@@ -98,14 +98,17 @@ public:
     Ipp32u          ctb_pelx;           ///< CU position in a pixel (X)
     Ipp32u          ctb_pely;           ///< CU position in a pixel (Y)
     Ipp32u          num_partition;     ///< total number of minimum partitions in a CU
-    CoeffsType      tr_coeff_y[MAX_CU_SIZE*MAX_CU_SIZE];
-    CoeffsType      tr_coeff_u[MAX_CU_SIZE*MAX_CU_SIZE/4];
-    CoeffsType      tr_coeff_v[MAX_CU_SIZE*MAX_CU_SIZE/4];
-    __ALIGN32 CoeffsType      residuals_y[MAX_CU_SIZE*MAX_CU_SIZE];
-    __ALIGN32 CoeffsType      residuals_u[MAX_CU_SIZE*MAX_CU_SIZE/4];
-    __ALIGN32 CoeffsType      residuals_v[MAX_CU_SIZE*MAX_CU_SIZE/4];
-    __ALIGN32 PixType pred_intra_all[35*32*32];
-    __ALIGN32 PixType tu_src_transposed[32*32];
+    __ALIGN32 CoeffsType    tr_coeff_y[MAX_CU_SIZE * MAX_CU_SIZE];
+    __ALIGN32 CoeffsType    tr_coeff_u[MAX_CU_SIZE * MAX_CU_SIZE / 4];
+    __ALIGN32 CoeffsType    tr_coeff_v[MAX_CU_SIZE * MAX_CU_SIZE / 4];
+    __ALIGN32 CoeffsType    residuals_y[MAX_CU_SIZE * MAX_CU_SIZE];
+    __ALIGN32 CoeffsType    residuals_u[MAX_CU_SIZE * MAX_CU_SIZE / 4];
+    __ALIGN32 CoeffsType    residuals_v[MAX_CU_SIZE * MAX_CU_SIZE / 4];
+    __ALIGN32 PixType       pred_intra_all[35*32*32];
+    __ALIGN32 PixType       tu_src_transposed[32*32];
+    __ALIGN32 PixType       inter_pred[4][MAX_CU_SIZE * MAX_CU_SIZE];
+    __ALIGN32 PixType       inter_pred_best[4][MAX_CU_SIZE * MAX_CU_SIZE];
+    PixType                 (*inter_pred_ptr)[MAX_CU_SIZE * MAX_CU_SIZE];
 
     CostType intra_best_costs[35];
     Ipp8u    intra_best_modes[35];
@@ -310,9 +313,10 @@ public:
     void h265_code_intradir_luma_ang(H265Bs *bs, Ipp32u abs_part_idx, Ipp8u multiple);
 
     void PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefPicList RefPicList,
-                      Ipp32s PartIdx, bool bi, Ipp8u is_luma, MFX_HEVC_PP::EnumAddAverageType eAddAverage = MFX_HEVC_PP::AVERAGE_NO);
+                      Ipp32s PartIdx, PixType *dst, Ipp32s dst_pitch, bool bi, Ipp8u is_luma,
+                      MFX_HEVC_PP::EnumAddAverageType eAddAverage);
 
-    void InterPredCU(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u is_luma);
+    void InterPredCU(Ipp32s abs_part_idx, Ipp8u depth, PixType *dst, Ipp32s dst_pitch, Ipp8u is_luma);
     void IntraPred(Ipp32u abs_part_idx, Ipp8u depth);
     void IntraPredTU(Ipp32s abs_part_idx, Ipp32s width, Ipp32s pred_mode, Ipp8u is_luma);
     void IntraLumaModeDecision(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u depth, Ipp8u tr_depth);
@@ -326,7 +330,7 @@ public:
     void EncAndRecLuma(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u depth, Ipp8u *nz, CostType *cost);
     void EncAndRecChroma(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u depth, Ipp8u *nz, CostType *cost);
     void EncAndRecLumaTU(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, Ipp8u *nz, CostType *cost,
-        Ipp8u cost_pred_flag, IntraPredOpt pred_opt);
+                         Ipp8u cost_pred_flag, IntraPredOpt intra_pred_opt);
     void EncAndRecChromaTU(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, Ipp8u *nz, CostType *cost);
     void QuantInvTU(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, Ipp32s is_luma);
     void QuantFwdTU(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, Ipp32s is_luma);
