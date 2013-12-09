@@ -191,6 +191,7 @@ mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxE
     pars->tuSplitIntra = opts_hevc->TUSplitIntra;
     pars->cuSplit = opts_hevc->CUSplit;
     pars->intraAngModes = opts_hevc->IntraAngModes;
+    pars->fastPUDecision = (opts_hevc->FastPUDecision == MFX_CODINGOPTION_ON);
 
     for (Ipp32s i = 0; i <= 6; i++) {
         if (pars->num_cand_1[i] < 1)

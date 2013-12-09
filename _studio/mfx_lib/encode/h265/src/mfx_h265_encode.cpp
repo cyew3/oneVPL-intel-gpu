@@ -46,15 +46,15 @@
 
 #define CHECK_EXTBUF_SIZE(ebuf, errcounter) if ((ebuf).Header.BufferSz != sizeof(ebuf)) {(errcounter) = (errcounter) + 1;}
 
-mfxExtCodingOptionHEVC hevc_tu_tab[8] = {               // CUS CUD 2TUS 2TUD  AnalyzeChroma         SignBitHiding          RDOQuant               SAO                   thrCU,TU,CUInter    5numCand1  5numCand2 WPP                       GPB                   AMP                   CmIntraThreshold TUSplitIntra CUSplit IntraAngModes EnableCm              BPyramid
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 5,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, 0,               1,           2,      1,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF }, // tu default (==4)
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 6,  4, 5,2, 5,5,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_ON,    1, 1, 1,         8,8,4,4,4, 4,4,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_ON , 0,               1,           1,      1,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF }, // tu 1
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 5,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, 0,               1,           2,      1,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF }, // tu 2  (==4)
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 5,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, 0,               1,           2,      1,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF }, // tu 3  (==4)
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 5,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, 0,               1,           2,      1,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF }, // tu 4
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 5,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, 0,               1,           2,      1,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF }, // tu 5  (==4)
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 5,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, 0,               1,           2,      1,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF }, // tu 6  (==4)
-    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  2, 5,2, 2,2,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,    3, 3, 3,         4,4,2,2,2, 2,2,1,1,1, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, 0,               1,           2,      1,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF }  // tu 7
+mfxExtCodingOptionHEVC hevc_tu_tab[8] = {               // CUS CUD 2TUS 2TUD  AnalyzeChroma         SignBitHiding          RDOQuant               SAO                   thrCU,TU,CUInter    5numCand1  5numCand2 WPP                       GPB                   AMP                   CmIntraThreshold TUSplitIntra CUSplit IntraAngModes EnableCm              BPyramid              FastPUDecision
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 5,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, 0,               1,           2,      1,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF }, // tu default (==4)
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 6,  4, 5,2, 5,5,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_ON,    1, 1, 1,         8,8,4,4,4, 4,4,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_ON , 0,               1,           1,      1,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF }, // tu 1
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 5,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, 0,               1,           2,      1,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF }, // tu 2  (==4)
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 5,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, 0,               1,           2,      1,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF }, // tu 3  (==4)
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 5,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, 0,               1,           2,      1,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF }, // tu 4
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 5,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, 0,               1,           2,      1,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF }, // tu 5  (==4)
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 5,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, 0,               1,           2,      1,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF }, // tu 6  (==4)
+    {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  2, 5,2, 2,2,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,    3, 3, 3,         4,4,2,2,2, 2,2,1,1,1, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, 0,               1,           2,      1,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF }  // tu 7
 };
 
 Ipp8u hevc_tu_tab_GopRefDist [8] = {2, 4, 4, 2, 2, 2, 2, 1};
@@ -636,6 +636,8 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
             m_mfxHEVCOpts.IntraAngModes = opts_tu->IntraAngModes;
         if (m_mfxHEVCOpts.EnableCm == 0)
             m_mfxHEVCOpts.EnableCm = opts_tu->EnableCm;
+        if (m_mfxHEVCOpts.FastPUDecision == 0)
+            m_mfxHEVCOpts.FastPUDecision = opts_tu->FastPUDecision;
     }
 
     // uncomment here if sign bit hiding doesn't work properly
@@ -1402,6 +1404,7 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             opts_out->CUSplit = opts_in->CUSplit;
             opts_out->IntraAngModes = opts_in->IntraAngModes;
             opts_out->EnableCm = opts_in->EnableCm;
+            opts_out->FastPUDecision = opts_in->FastPUDecision;
 
             CHECK_OPTION(opts_in->AnalyzeChroma, opts_out->AnalyzeChroma, isInvalid);  /* tri-state option */
             CHECK_OPTION(opts_in->SignBitHiding, opts_out->SignBitHiding, isInvalid);  /* tri-state option */

@@ -229,6 +229,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(IntraAngModes,            OPT_UINT_16,    "0-default; 1-all; 2-all even + few odd"),
         HANDLE_HEVC_OPTION(EnableCm,                 OPT_TRI_STATE,  "on/off CM branch"),
         HANDLE_HEVC_OPTION(BPyramid,                 OPT_TRI_STATE,  "B-Pyramid"),
+        HANDLE_HEVC_OPTION(FastPUDecision,           OPT_TRI_STATE,  "on/off fast PU decision (fast means no TU split)"),
 
         // mfxExtCodingOption2
         HANDLE_EXT_OPTION2(IntRefType,             OPT_UINT_16,   ""),

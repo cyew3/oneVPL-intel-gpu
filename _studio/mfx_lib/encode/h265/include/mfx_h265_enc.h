@@ -54,11 +54,12 @@ struct H265VideoParam {
     Ipp8u num_cand_1[8];
     Ipp8u num_cand_2[8];
 
-    Ipp8u SBHFlag;  // Sign Bit Hiding
-    Ipp8u RDOQFlag; // RDO Quantization
-    Ipp8u SAOFlag;  // Sample Adaptive Offset
-    Ipp8u WPPFlag; // Wavefront
-    Ipp16u enableCmFlag;    //
+    Ipp8u  SBHFlag;  // Sign Bit Hiding
+    Ipp8u  RDOQFlag; // RDO Quantization
+    Ipp8u  SAOFlag;  // Sample Adaptive Offset
+    Ipp8u  WPPFlag; // Wavefront
+    Ipp8u  fastPUDecision;
+    Ipp8u  enableCmFlag;
     Ipp16u cmIntraThreshold;// 0-no theshold
     Ipp16u tuSplitIntra;    // 0-default; 1-always; 2-never; 3-for Intra frames only
     Ipp16u cuSplit;         // 0-default; 1-always; 2-check Skip cost first

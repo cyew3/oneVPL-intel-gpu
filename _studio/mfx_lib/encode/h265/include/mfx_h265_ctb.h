@@ -375,7 +375,7 @@ public:
 
     CostType ME_CU(Ipp32u abs_part_idx, Ipp8u depth, Ipp32s offset);
     void ME_PU(H265MEInfo* me_info);
-    CostType CU_cost(Ipp32u abs_part_idx, Ipp8u depth, const H265MEInfo* best_info, Ipp32s offset);
+    CostType CU_cost(Ipp32u abs_part_idx, Ipp8u depth, const H265MEInfo* best_info, Ipp32s offset, Ipp32s fastPUDecision);
     void TU_GetSplitInter(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u tr_idx, Ipp8u tr_idx_max, Ipp8u *nz, CostType *cost);
     void DetailsXY(H265MEInfo* me_info) const;
     void ME_Interpolate_old(H265MEInfo* me_info, H265MV* MV, PixType *in_pSrc, Ipp32s in_SrcPitch, Ipp16s *buf, Ipp32s buf_pitch) const;
