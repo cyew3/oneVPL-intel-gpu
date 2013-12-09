@@ -70,8 +70,12 @@
 
 
 #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN)
-//#define MFX_ENABLE_WATERMARK
-//#define MFX_MAX_DECODE_FRAMES 1000
+    #if defined(HEVCE_EVALUATION)
+        #define MFX_ENABLE_WATERMARK
+    #endif
+    #if defined(HEVCD_EVALUATION)
+        #define MFX_MAX_DECODE_FRAMES 1000
+    #endif
 #endif
 
 //#define MFX_ENABLE_C2CPP_DEBUG          // debug the C to C++ layer only.
