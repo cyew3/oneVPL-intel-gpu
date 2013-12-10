@@ -106,6 +106,8 @@ mfxStatus AudioENCODEAAC::Init(mfxAudioParam *par)
     }
 
     params.ns_mode = 1;
+    params.m_info.bitPerSample = par->mfx.BitPerSample;
+    params.m_info.stream_type = UMC::AudioStreamType::AAC_AUDIO;
 
     switch(par->mfx.CodecProfile)  
     {
