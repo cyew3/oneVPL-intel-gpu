@@ -184,6 +184,7 @@ bool MFX::MFXPluginFactory::RunVerification( const mfxPlugin & plg, const Plugin
     {
         case MFX_PLUGINTYPE_VIDEO_DECODE: 
         case MFX_PLUGINTYPE_VIDEO_ENCODE: 
+        case MFX_PLUGINTYPE_VIDEO_VPP: 
         {
             TRACE_PLUGIN_INFO("plugin type= %d\n", pluginParams.Type);
             if (plg.Video == 0) 
@@ -194,13 +195,7 @@ bool MFX::MFXPluginFactory::RunVerification( const mfxPlugin & plg, const Plugin
 
             if (!VerifyCodecCommon(*plg.Video))
                 return false;
-            
             break;
-        }
-        default: 
-        {
-            TRACE_PLUGIN_ERROR("unsupported plugin type: %d\n", pluginParams.Type);
-            return false;
         }
     }
 
@@ -210,9 +205,26 @@ bool MFX::MFXPluginFactory::RunVerification( const mfxPlugin & plg, const Plugin
             return VerifyDecoder(*plg.Video);
         case MFX_PLUGINTYPE_VIDEO_ENCODE: 
             return VerifyEncoder(*plg.Video);
+        case MFX_PLUGINTYPE_VIDEO_VPP: 
+            return VerifyVpp(*plg.Video);        
+        default: 
+        {
+            TRACE_PLUGIN_ERROR("unsupported plugin type: %d\n", pluginParams.Type);
+            return false;
+        }
+    }
+}
+
+bool MFX::MFXPluginFactory::VerifyVpp( const mfxVideoCodecPlugin &vpp ) 
+{
+    if (vpp.VPPFrameSubmit == 0)
+    {
+        TRACE_PLUGIN_ERROR("plg->Video->VPPFrameSubmit = 0\n", 0);
+        return false;
     }
 
     return true;
+
 }
 
 bool MFX::MFXPluginFactory::VerifyEncoder( const mfxVideoCodecPlugin &encoder )

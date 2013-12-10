@@ -152,11 +152,14 @@ MFX::MFXPluginsInHive::MFXPluginsInHive( int mfxStorageID, const msdk_disp_char 
         }
         TRACE_HIVE_INFO("    %8S : %d\n", TypeKeyName, descriptionRecord.Type);
 
-        if (!subKey.Query(CodecIDKeyName, descriptionRecord.CodecId)) 
+        if (subKey.Query(CodecIDKeyName, descriptionRecord.CodecId)) 
         {
-            continue;
+            TRACE_HIVE_INFO("    %8S : "MFXFOURCCTYPE()" \n", CodecIDKeyName, MFXU32TOFOURCC(descriptionRecord.CodecId));
         }
-        TRACE_HIVE_INFO("    %8S : "MFXFOURCCTYPE()" \n", CodecIDKeyName, MFXU32TOFOURCC(descriptionRecord.CodecId));
+        else
+        {
+                TRACE_HIVE_INFO("    %8S : \n", CodecIDKeyName, "NOT REGISTERED");
+        }
 
         if (!subKey.Query(GUIDKeyName, descriptionRecord.PluginUID)) 
         {
