@@ -395,6 +395,7 @@ mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pPara
     // Plug-in
     if ( pInParams->need_plugin ) 
     {
+#if defined(_WIN32) || defined(_WIN64)
         pProcessor->plugin = true;
         const vm_char *uid = pInParams->strPlgGuid;
         mfxU32 i   = 0;
@@ -402,11 +403,7 @@ mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pPara
         for(i = 0; i != 16; i++) 
         {
             hex = 0;
-#if defined(_WIN32) || defined(_WIN64)
             if (1 != _stscanf_s(uid + 2*i, L"%2x", &hex))
-#else
-            if (1 != swscanf((wchar_t *)(uid.c_str() + 2*i), L"%2x", &hex))
-#endif
             {
                 vm_string_printf(VM_STRING("Failed to parse plugin uid: %s"), uid);
                 return MFX_ERR_UNKNOWN;
@@ -418,7 +415,7 @@ mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pPara
             }
             pProcessor->mfxGuid.Data[i] = (mfxU8)hex;
         }
-
+#endif
     }
 
     return MFX_ERR_NONE;
