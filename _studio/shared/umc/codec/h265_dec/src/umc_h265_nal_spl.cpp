@@ -136,6 +136,8 @@ public:
 
     Ipp32s GetNALUnitInternal(UMC::MediaData * pSource, UMC::MediaData * pDst)
     {
+        static Ipp8u start_code_prefix[] = {0, 0, 1};
+
         if (m_code == -1)
             m_prev.clear();
 
@@ -169,7 +171,7 @@ public:
             m_prev.insert(m_prev.end(), (Ipp8u *)pSource->GetDataPointer(), source);
             pSource->MoveDataPointer((Ipp32s)(source - (Ipp8u *)pSource->GetDataPointer()));
 
-            pDst->SetBufferPointer(&(m_prev[0]), m_prev.size());
+            pDst->SetBufferPointer(&(m_prev[3]), m_prev.size());
             pDst->SetDataSize(m_prev.size());
             pDst->SetTime(m_pts);
             Ipp32s code = m_code;
@@ -215,13 +217,14 @@ public:
 
             VM_ASSERT(!m_prev.size());
 
-            source += startCodeSize1; //add zeroCounts
             size_t sz = source - (Ipp8u *)pSource->GetDataPointer();
             if (sz >  m_suggestedSize)
             {
                 sz = m_suggestedSize;
             }
 
+            if (!m_prev.size())
+                m_prev.insert(m_prev.end(), start_code_prefix, start_code_prefix + sizeof(start_code_prefix));
             m_prev.insert(m_prev.end(), (Ipp8u *)pSource->GetDataPointer(), (Ipp8u *)pSource->GetDataPointer() + sz);
             pSource->MoveDataPointer((Ipp32s)sz);
             return -1;
@@ -251,7 +254,7 @@ public:
 
         if (m_prev.size())
         {
-            pDst->SetBufferPointer(&(m_prev[0]), m_prev.size());
+            pDst->SetBufferPointer(&(m_prev[3]), m_prev.size());
             pDst->SetDataSize(m_prev.size());
             pDst->SetTime(m_pts);
             Ipp32s code = m_code;
