@@ -53,7 +53,7 @@ SUITE(DispatcherWithPlugins) {
 #define MAKE_HEX( x ) \
     std::setw(2) << std::setfill('0') << std::hex << (int)( x )
 
-    const char rootPluginPath[] = "Software\\Intel\\MediaSDK\\Dispatch\\Plugin";
+    const char rootPluginPath[] = "Software\\Intel\\MediaSDK\\Plugin";
     const char rootDispatchPath[] = "Software\\Intel\\MediaSDK\\Dispatch";
     const char swLibPrefix[] = "Mocked_LIB_";
 #ifdef DEBUG
