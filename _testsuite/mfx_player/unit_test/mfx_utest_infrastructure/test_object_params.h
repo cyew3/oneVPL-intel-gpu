@@ -187,7 +187,19 @@ class ParameterHolder5
     : public ParameterHolder4<TReturn, T0, T1, T2, T3>
 {
 public:
+    typedef typename mfxTypeTrait<T4>::store_type store_type4;
     T4 value4;
+
+    ParameterHolder5(return_type _ret_val = return_type()
+        , store_type0 _value0 = store_type0()
+        , store_type1 _value1 = store_type1()
+        , store_type2 _value2 = store_type2()
+        , store_type3 _value3 = store_type3()
+        , store_type4 _value4 = store_type4())
+        : ParameterHolder4(_ret_val, _value0, _value1, _value2, _value3)
+        , value4(_value4)
+
+    {}
 
     virtual  void assign(BaseHolder & params)
     {

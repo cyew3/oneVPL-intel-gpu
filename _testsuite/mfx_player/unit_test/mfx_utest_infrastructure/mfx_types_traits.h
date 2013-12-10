@@ -133,13 +133,44 @@ struct mfxAssign_t<A*, B*> {
 };
 
 template <class A, class B>
-struct mfxAssign_t<A*, B> {
-    void operator ()( A *& a, B b) const{
-        *a = b;
+struct mfxAssign_t<const A, B> {
+    void operator ()( const A &, B ) const{
     }
 };
 
 template <class A, class B>
-void mfxAssign(A a, B b) {
+struct mfxAssign_t<const A *, B*> {
+    void operator ()( const A* &, B* ) const{
+    }
+};
+
+template <>
+struct mfxAssign_t<void*, void*> {
+    void operator ()( void *& a, void* b) const{
+        a = b;
+    }
+};
+
+template <class A, class B>
+inline void mfxAssign(A a, B b) {
     mfxAssign_t<A,B>().operator()(a,b);
+}
+
+///
+template <class TReturn>
+inline TReturn mfxReturn(typename mfxTypeTrait<TReturn>::store_type & value) {
+    return value;
+}
+
+template <>
+inline void mfxReturn(typename mfxTypeTrait<void>::store_type & /*value*/ ) {
+}
+
+template <class T>
+inline T mfxReturn() {
+    return T();
+}
+
+template <>
+inline void mfxReturn() {
 }

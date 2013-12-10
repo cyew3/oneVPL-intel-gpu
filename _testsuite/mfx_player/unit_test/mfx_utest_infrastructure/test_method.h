@@ -62,25 +62,77 @@ File Name: .h
 
 #define DECLARE_MOCK_METHOD0(ret_type, method_name) \
     DECLARE_TEST_METHOD0(ret_type, method_name){\
-    TEST_METHOD_NAME(method_name).RegisterEvent(TEST_METHOD_TYPE(method_name)(ret_type()));\
+    TEST_METHOD_NAME(method_name).RegisterEvent(TEST_METHOD_TYPE(method_name)(mfxTypeTrait<ret_type>::store_type()));\
     TEST_METHOD_TYPE(method_name) ret_params;\
     if (!TEST_METHOD_NAME(method_name).GetReturn(ret_params)){\
-        return ret_type();\
+        return mfxReturn<ret_type>();\
     }\
+    return mfxReturn<ret_type>(ret_params.ret_val);\
+    }
+
+#define DECLARE_MOCK_METHOD1(ret_type, method_name, arg_type1) \
+    DECLARE_TEST_METHOD1(ret_type, method_name, arg_type1){\
+    TEST_METHOD_NAME(method_name).RegisterEvent(TEST_METHOD_TYPE(method_name)(mfxTypeTrait<ret_type>::store_type(), _0));\
+    TEST_METHOD_TYPE(method_name) ret_params;\
+    if (!TEST_METHOD_NAME(method_name).GetReturn(ret_params)){\
+    return mfxReturn<ret_type>();\
+    }\
+    mfxAssign(_0, ret_params.value0);\
     return ret_params.ret_val;\
     }
 
-
 #define DECLARE_MOCK_METHOD2(ret_type, method_name, arg_type1, arg_type2) \
     DECLARE_TEST_METHOD2(ret_type, method_name, arg_type1, arg_type2){\
-        TEST_METHOD_NAME(method_name).RegisterEvent(TEST_METHOD_TYPE(method_name)(ret_type(), _0, _1));\
+        TEST_METHOD_NAME(method_name).RegisterEvent(TEST_METHOD_TYPE(method_name)(mfxTypeTrait<ret_type>::store_type(), _0, _1));\
         TEST_METHOD_TYPE(method_name) ret_params;\
         if (!TEST_METHOD_NAME(method_name).GetReturn(ret_params)){\
-            return ret_type();\
+            return mfxReturn<ret_type>();\
         }\
         mfxAssign(_0, ret_params.value0);\
         mfxAssign(_1, ret_params.value1);\
         return ret_params.ret_val;\
+    }
+
+#define DECLARE_MOCK_METHOD3(ret_type, method_name, arg_type1, arg_type2, arg_type3) \
+    DECLARE_TEST_METHOD3(ret_type, method_name, arg_type1, arg_type2, arg_type3){\
+    TEST_METHOD_NAME(method_name).RegisterEvent(TEST_METHOD_TYPE(method_name)(mfxTypeTrait<ret_type>::store_type(), _0, _1, _2));\
+    TEST_METHOD_TYPE(method_name) ret_params;\
+    if (!TEST_METHOD_NAME(method_name).GetReturn(ret_params)){\
+        return mfxReturn<ret_type>();\
+    }\
+    mfxAssign(_0, ret_params.value0);\
+    mfxAssign(_1, ret_params.value1);\
+    mfxAssign(_2, ret_params.value2);\
+    return ret_params.ret_val;\
+    }
+
+#define DECLARE_MOCK_METHOD4(ret_type, method_name, arg_type1, arg_type2, arg_type3, arg_type4) \
+    DECLARE_TEST_METHOD4(ret_type, method_name, arg_type1, arg_type2, arg_type3, arg_type4){\
+    TEST_METHOD_NAME(method_name).RegisterEvent(TEST_METHOD_TYPE(method_name)(mfxTypeTrait<ret_type>::store_type(), _0, _1, _2, _3));\
+    TEST_METHOD_TYPE(method_name) ret_params;\
+    if (!TEST_METHOD_NAME(method_name).GetReturn(ret_params)){\
+        return mfxReturn<ret_type>();\
+    }\
+    mfxAssign(_0, ret_params.value0);\
+    mfxAssign(_1, ret_params.value1);\
+    mfxAssign(_2, ret_params.value2);\
+    mfxAssign(_3, ret_params.value3);\
+    return ret_params.ret_val;\
+    }
+
+#define DECLARE_MOCK_METHOD5(ret_type, method_name, arg_type1, arg_type2, arg_type3, arg_type4, arg_type5) \
+    DECLARE_TEST_METHOD5(ret_type, method_name, arg_type1, arg_type2, arg_type3, arg_type4, arg_type5){\
+    TEST_METHOD_NAME(method_name).RegisterEvent(TEST_METHOD_TYPE(method_name)(mfxTypeTrait<ret_type>::store_type(), _0, _1, _2, _3, _4));\
+    TEST_METHOD_TYPE(method_name) ret_params;\
+    if (!TEST_METHOD_NAME(method_name).GetReturn(ret_params)){\
+    return mfxReturn<ret_type>();\
+    }\
+    mfxAssign(_0, ret_params.value0);\
+    mfxAssign(_1, ret_params.value1);\
+    mfxAssign(_2, ret_params.value2);\
+    mfxAssign(_3, ret_params.value3);\
+    mfxAssign(_4, ret_params.value4);\
+    return ret_params.ret_val;\
     }
 
 #define DECL_POINTER(type) 
