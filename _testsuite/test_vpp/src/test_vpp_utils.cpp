@@ -374,10 +374,11 @@ mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams)
 
 /* ******************************************************************* */
 
-mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pParams, mfxIMPL impl)
+mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pParams, sInputParams* pInParams)
 {
     mfxStatus  sts = MFX_ERR_NONE;
     mfxVersion version = {MFX_VERSION_MINOR, MFX_VERSION_MAJOR};
+    mfxIMPL    impl    = pInParams->ImpLib;
 
     CHECK_POINTER(pProcessor, MFX_ERR_NULL_PTR);
     CHECK_POINTER(pParams,    MFX_ERR_NULL_PTR);
@@ -387,9 +388,38 @@ mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pPara
     //MFX session
     sts = pProcessor->mfxSession.Init(impl, &version);
     CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeFrameProcessor(pProcessor));
-
+    
     // VPP
     pProcessor->pmfxVPP = new MFXVideoVPP(pProcessor->mfxSession);
+
+    // Plug-in
+    if ( pInParams->need_plugin ) 
+    {
+        pProcessor->plugin = true;
+        const vm_char *uid = pInParams->strPlgGuid;
+        mfxU32 i   = 0;
+        mfxU32 hex = 0;
+        for(i = 0; i != 16; i++) 
+        {
+            hex = 0;
+#if defined(_WIN32) || defined(_WIN64)
+            if (1 != _stscanf_s(uid + 2*i, L"%2x", &hex))
+#else
+            if (1 != swscanf((wchar_t *)(uid.c_str() + 2*i), L"%2x", &hex))
+#endif
+            {
+                vm_string_printf(VM_STRING("Failed to parse plugin uid: %s"), uid);
+                return MFX_ERR_UNKNOWN;
+            }
+            if (hex == 0 && (uid + 2*i != _tcsstr(uid + 2*i, L"00")))
+            {
+                vm_string_printf(VM_STRING("Failed to parse plugin uid: %s"), uid);
+                return MFX_ERR_UNKNOWN;
+            }
+            pProcessor->mfxGuid.Data[i] = (mfxU8)hex;
+        }
+
+    }
 
     return MFX_ERR_NONE;
 }
@@ -512,6 +542,16 @@ mfxStatus InitFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pParams
     sts = pProcessor->pmfxVPP->Close(); 
     IGNORE_MFX_STS(sts, MFX_ERR_NOT_INITIALIZED);
     CHECK_RESULT(sts,   MFX_ERR_NONE, sts);
+
+    if ( pProcessor->plugin )
+    {
+        sts = MFXVideoUSER_Load(pProcessor->mfxSession, &(pProcessor->mfxGuid), 1);
+        if (MFX_ERR_NONE != sts)
+        {
+            vm_string_printf(VM_STRING("Failed to load plugin\n"));
+            return sts;
+        }
+    }
 
     // init VPP
     sts = pProcessor->pmfxVPP->Init(pParams);
@@ -791,7 +831,7 @@ mfxStatus InitResources(sAppResources* pResources, mfxVideoParam* pParams, sInpu
 
     CHECK_POINTER(pResources, MFX_ERR_NULL_PTR);
     CHECK_POINTER(pParams,    MFX_ERR_NULL_PTR);
-    sts = CreateFrameProcessor(pResources->pProcessor, pParams, pInParams->ImpLib);
+    sts = CreateFrameProcessor(pResources->pProcessor, pParams, pInParams);
     CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeResources(pResources));
 
     sts = InitMemoryAllocator(pResources->pProcessor, pResources->pAllocator, pParams, pInParams);
@@ -816,6 +856,11 @@ void WipeFrameProcessor(sFrameProcessor* pProcessor)
     CHECK_POINTER_NO_RET(pProcessor);
 
     SAFE_DELETE(pProcessor->pmfxVPP);
+
+    if ( pProcessor->plugin ) 
+    {
+        MFXVideoUSER_UnLoad(pProcessor->mfxSession, &(pProcessor->mfxGuid));
+    }
 
     pProcessor->mfxSession.Close();
 }

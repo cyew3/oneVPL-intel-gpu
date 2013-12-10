@@ -145,6 +145,9 @@ void vppDefaultInitParams( sInputParams* pParams )
     pParams->isOutYV12 = false;
     pParams->need_crc  = false;
 
+    // plug-in GUID
+    pParams->need_plugin = false;
+
     return;
 
 } // void vppDefaultInitParams( sInputParams* pParams )

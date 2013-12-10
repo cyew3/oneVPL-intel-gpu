@@ -48,6 +48,7 @@
 #include "mfxvideo++.h"
 #include "mfxmvc.h"
 #include "mfxsvc.h"
+#include "mfxplugin.h"
 
 #include "app_defs.h"
 #include "base_allocator.h"
@@ -150,6 +151,10 @@ struct sInputParams
     /* roi checking parameters */
     sROICheckParam roiCheckParam;
 
+    /*  plug-in GUID */
+    vm_char strPlgGuid[MAX_FILELEN];
+    bool    need_plugin;
+
     /* ********************** */
     /* input\output streams   */
     /* ********************** */
@@ -167,8 +172,10 @@ struct sFrameProcessor
 {
     MFXVideoSession     mfxSession;
     MFXVideoVPP*        pmfxVPP;
+    mfxPluginUID        mfxGuid;
+    bool                plugin;
 
-    sFrameProcessor( void ){ pmfxVPP = NULL; return;};
+    sFrameProcessor( void ){ pmfxVPP = NULL; plugin = false; return;};
 };
 
 struct sMemoryAllocator
