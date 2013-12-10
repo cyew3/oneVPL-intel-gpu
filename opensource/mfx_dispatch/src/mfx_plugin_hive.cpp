@@ -40,7 +40,7 @@ File Name: mfx_plugin_hive.h
 
 namespace 
 {
-    const wchar_t rootPluginPath[] = L"Software\\Intel\\MediaSDK\\Dispatch\\Plugin";
+    const wchar_t rootPluginPath[] = L"Software\\Intel\\MediaSDK\\Plugin";
     const wchar_t rootDispatchPath[] = L"Software\\Intel\\MediaSDK\\Dispatch";
     const wchar_t pluginSubkey[] = L"Plugin";
     const wchar_t TypeKeyName[] = L"Type";
@@ -74,7 +74,7 @@ namespace
 }
 
 
-MFX::MFXPluginsInHive::MFXPluginsInHive( int mfxStorageID, const msdk_disp_char *msdkLibSubKey, mfxVersion requiredAPIVersion )
+MFX::MFXPluginsInHive::MFXPluginsInHive( int mfxStorageID, const msdk_disp_char * msdkLibSubKey, mfxVersion requiredAPIVersion )
 {
     HKEY rootHKey;
     bool bRes;
