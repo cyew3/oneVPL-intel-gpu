@@ -200,11 +200,21 @@ void H265Frame::Dump(const vm_char* fname, H265VideoParam *par, H265FrameList *d
         vm_file_fwrite(p, 1, W, f);
         p += pitch_luma;
     }
-    p = uv;
-    for (i = 0; i < H >> 1; i++) {
-        vm_file_fwrite(p, 1, W, f);
-        p += pitch_luma;
+    // writing nv12 to yuv420
+    // maxlinesize = 4096
+    if (W <= 2048*2) { // else invalid dump
+        mfxU8 uvbuf[2048];
+        for (int part = 0; part <= 1; part++) {
+            p = uv + part;
+            for (i = 0; i < H >> 1; i++) {
+                for (int j = 0; j < W>>1; j++)
+                    uvbuf[j] = p[2*j];
+                vm_file_fwrite(uvbuf, 1, W>>1, f);
+                p += pitch_luma;
+            }
+        }
     }
+
     if (fbuf) {
         vm_file_fwrite(fbuf, 1, numlater*W*H*3/2, f);
         delete[] fbuf;

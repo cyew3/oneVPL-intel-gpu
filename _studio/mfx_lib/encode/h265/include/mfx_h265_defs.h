@@ -93,9 +93,9 @@ extern int DEBUG_CABAC_PRINT;
 #define     MAX_NUM_PARTITIONS 256
 
 #define AMVP_MAX_NUM_CANDS          2           ///< max number of final candidates
-#define MRG_MAX_NUM_CANDS           5
-#define AMVP_MAX_NUM_CANDS_MEM      3           ///< max number of candidates
-#define MRG_MAX_NUM_CANDS_SIGNALED         5   //<G091: value of maxNumMergeCand signaled in slice header
+#define MRG_MAX_NUM_CANDS           5           // from 2 to 5
+//#define AMVP_MAX_NUM_CANDS_MEM      3           ///< max number of candidates
+//#define MRG_MAX_NUM_CANDS_SIGNALED         5   //<G091: value of maxNumMergeCand signaled in slice header
 
 #define MLS_GRP_NUM                         64     ///< G644 : Max number of coefficient groups, max(16, 64)
 #define MLS_CG_SIZE                         4      ///< G644 : Coefficient group size of 4x4

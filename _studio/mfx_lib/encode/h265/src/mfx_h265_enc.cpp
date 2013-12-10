@@ -518,6 +518,7 @@ mfxStatus H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice)
     slice->slice_num = curr_slice;
     slice->m_pRefPicList = GetRefPicLists(curr_slice);
 
+    slice->five_minus_max_num_merge_cand = 5 - MRG_MAX_NUM_CANDS;
     slice->slice_qp_delta = m_videoParam.QP - m_pps.init_qp;
 
     if (m_pps.entropy_coding_sync_enabled_flag) {

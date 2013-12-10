@@ -3155,6 +3155,9 @@ void H265CU::GetInterMergeCandidates(Ipp32s topLeftCUBlockZScanIdx,
         }
     }
 
+    if (pInfo->numCand > MRG_MAX_NUM_CANDS)
+        pInfo->numCand = MRG_MAX_NUM_CANDS;
+
     /* temporal candidate */
     if (par->TMVPFlag)
     {
@@ -3245,7 +3248,7 @@ void H265CU::GetInterMergeCandidates(Ipp32s topLeftCUBlockZScanIdx,
         Ipp32s uiPriorityList1[12] = {1 , 0, 2, 0, 2, 1, 3, 0, 3, 1, 3, 2};
         Ipp32s limit = pInfo->numCand * (pInfo->numCand - 1);
 
-        for (i = 0; i < limit && pInfo->numCand != 5; i++)
+        for (i = 0; i < limit && pInfo->numCand != MRG_MAX_NUM_CANDS; i++)
         {
             Ipp32s l0idx = uiPriorityList0[i];
             Ipp32s l1idx = uiPriorityList1[i];
@@ -3291,7 +3294,7 @@ void H265CU::GetInterMergeCandidates(Ipp32s topLeftCUBlockZScanIdx,
             }
         }
 
-        while (pInfo->numCand < 5)
+        while (pInfo->numCand < MRG_MAX_NUM_CANDS)
         {
             r = (refCnt < numRefIdx) ? refCnt : 0;
             pInfo->mvCand[2*pInfo->numCand].mvx = 0;
