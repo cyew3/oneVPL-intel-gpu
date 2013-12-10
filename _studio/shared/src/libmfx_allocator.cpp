@@ -169,15 +169,8 @@ mfxStatus mfxDefaultAllocator::AllocFrames(mfxHDL pthis, mfxFrameAllocRequest *r
         nbytes=Pitch*Height2 + (Pitch>>1)*(Height2>>1) + (Pitch>>1)*(Height2>>1);
         break;
     case MFX_FOURCC_YUY2:
-        if ((request->Type & MFX_MEMTYPE_FROM_VPPIN) ||
-            (request->Type & MFX_MEMTYPE_FROM_VPPOUT) ||
-            (request->Type & MFX_MEMTYPE_FROM_DECODE) )
-        {
-            nbytes=Pitch*Height2 + (Pitch>>1)*(Height2) + (Pitch>>1)*(Height2);
-            break;
-        }
-        else
-            return MFX_ERR_UNSUPPORTED;
+        nbytes=Pitch*Height2 + (Pitch>>1)*(Height2) + (Pitch>>1)*(Height2);
+        break;
     case MFX_FOURCC_RGB3:
         if ((request->Type & MFX_MEMTYPE_FROM_VPPIN) ||
             (request->Type & MFX_MEMTYPE_FROM_VPPOUT) )
@@ -188,15 +181,8 @@ mfxStatus mfxDefaultAllocator::AllocFrames(mfxHDL pthis, mfxFrameAllocRequest *r
         else
             return MFX_ERR_UNSUPPORTED;
     case MFX_FOURCC_RGB4:
-        if ((request->Type & MFX_MEMTYPE_FROM_VPPIN) ||
-            (request->Type & MFX_MEMTYPE_FROM_VPPOUT) ||
-            (request->Type & MFX_MEMTYPE_FROM_DECODE))
-        {
-            nbytes = Pitch*Height2 + Pitch*Height2 + Pitch*Height2 + Pitch*Height2;
-            break;
-        }
-        else
-            return MFX_ERR_UNSUPPORTED;
+        nbytes = Pitch*Height2 + Pitch*Height2 + Pitch*Height2 + Pitch*Height2;
+        break;
     case MFX_FOURCC_IMC3:
         if ((request->Type & MFX_MEMTYPE_FROM_VPPIN) ||
             (request->Type & MFX_MEMTYPE_FROM_VPPOUT) ||
