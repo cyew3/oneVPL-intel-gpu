@@ -133,7 +133,7 @@ mfxStatus AudioDECODEMP3::Close(void)
 
     if (m_frame.Data)
     {
-        delete m_frame.Data;
+        delete[] m_frame.Data;
         m_frame.Data = NULL;
     }
     m_isInit = false;
