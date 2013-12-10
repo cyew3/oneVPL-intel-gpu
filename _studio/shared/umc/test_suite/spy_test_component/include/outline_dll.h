@@ -26,9 +26,9 @@ OutlineFactoryAbstract * GetOutlineFactory()
     HMODULE hModule;
 
 #ifdef _DEBUG
-    hModule = ::LoadLibrary(_T("outline_d.dll"));
+    hModule = ::LoadLibrary(_T("outline_xerces3_d.dll"));
 #else
-    hModule = ::LoadLibrary(_T("outline.dll"));
+    hModule = ::LoadLibrary(_T("outline_xerces3.dll"));
 #endif // _DEBUG
     
     if (!hModule)
