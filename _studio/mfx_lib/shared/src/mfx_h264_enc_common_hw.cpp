@@ -3330,7 +3330,7 @@ namespace
     }
 };
 
-bool IsHRDBasedBRCMEthod(mfxU16  RateControlMethod)
+bool IsHRDBasedBRCMethod(mfxU16  RateControlMethod)
 {
     return RateControlMethod != MFX_RATECONTROL_CQP && RateControlMethod != MFX_RATECONTROL_AVBR &&
         RateControlMethod != MFX_RATECONTROL_ICQ && RateControlMethod != MFX_RATECONTROL_VCM;
@@ -3713,7 +3713,8 @@ void MfxHwH264Encode::SetDefaults(
     if (par.calcParam.maxKbps == 0)
     {
         if (par.mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
-            par.mfx.RateControlMethod == MFX_RATECONTROL_WIDI_VBR)
+            par.mfx.RateControlMethod == MFX_RATECONTROL_WIDI_VBR ||
+            par.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
         {
             mfxU32 maxBps = par.calcParam.targetKbps * MAX_BITRATE_RATIO;
             if (extSps->vui.flags.nalHrdParametersPresent ||
@@ -3723,8 +3724,7 @@ void MfxHwH264Encode::SetDefaults(
             par.calcParam.maxKbps = mfxU32(IPP_MIN(maxBps / 1000, UINT_MAX));
             assert(par.calcParam.maxKbps >= par.calcParam.targetKbps);
         }
-        else if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
-            par.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
+        else if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
         {
             par.calcParam.maxKbps = par.calcParam.targetKbps;
         }
@@ -3761,7 +3761,7 @@ void MfxHwH264Encode::SetDefaults(
                 GetMaxBufferSize(par),                           // limit by spec
                 par.calcParam.maxKbps * DEFAULT_CPB_IN_SECONDS); // limit by common sense
 
-            par.calcParam.bufferSizeInKB = !IsHRDBasedBRCMEthod(par.mfx.RateControlMethod)
+            par.calcParam.bufferSizeInKB = !IsHRDBasedBRCMethod(par.mfx.RateControlMethod)
                     ? GetUncompressedSizeInKb(par)
                     : bufferSizeInBits / 8000;
         }
@@ -3773,12 +3773,12 @@ void MfxHwH264Encode::SetDefaults(
             GetMaxPerViewBufferSize(par),                           // limit by spec
             par.calcParam.mvcPerViewPar.maxKbps * DEFAULT_CPB_IN_SECONDS); // limit by common sense
 
-        par.calcParam.mvcPerViewPar.bufferSizeInKB = !IsHRDBasedBRCMEthod(par.mfx.RateControlMethod)
+        par.calcParam.mvcPerViewPar.bufferSizeInKB = !IsHRDBasedBRCMethod(par.mfx.RateControlMethod)
                 ? GetUncompressedSizeInKb(par)
                 : bufferSizeInBits / 8000;
     }
 
-    if (par.calcParam.initialDelayInKB == 0 && IsHRDBasedBRCMEthod(par.mfx.RateControlMethod))
+    if (par.calcParam.initialDelayInKB == 0 && IsHRDBasedBRCMethod(par.mfx.RateControlMethod))
     {
         par.calcParam.initialDelayInKB = par.calcParam.bufferSizeInKB / 2;
         par.calcParam.mvcPerViewPar.initialDelayInKB = par.calcParam.mvcPerViewPar.bufferSizeInKB / 2;
