@@ -932,7 +932,7 @@ mfxStatus MFXDecPipeline::CreateVPP()
     } else if (  vm_string_strlen(m_inParams.strVPPPluginGuid)  ) 
     {
          m_pVPP = m_pFactory->CreateVPP(
-            PipelineObjectDesc<IMFXVideoVPP>(m_components[eVPP].m_pSession->GetMFXSession(), m_inParams.strVPPPluginGuid, VPP_MFX_PLUGIN_GUID, NULL));
+            PipelineObjectDesc<IMFXVideoVPP>(m_components[eVPP].m_pSession->GetMFXSession(), m_inParams.strVPPPluginGuid, 1, VPP_MFX_PLUGIN_GUID, NULL));
     } else
     {
         m_pVPP = m_pFactory->CreateVPP(
