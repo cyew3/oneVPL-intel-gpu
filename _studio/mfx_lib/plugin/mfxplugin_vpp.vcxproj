@@ -240,6 +240,9 @@
   <ItemGroup>
     <ClCompile Include="src\mfx_vpp_plugin.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="libmfxsw_plugin_vpp.rc" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

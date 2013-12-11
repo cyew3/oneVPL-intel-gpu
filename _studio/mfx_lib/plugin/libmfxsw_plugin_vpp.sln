@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfxplugin_vpp", "mfxplugin_vpp.vcxproj", "{7D461E6A-B47C-4843-A06A-ECCBB0DEA729}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UMC", "UMC", "{03F908B1-B331-4B8C-9CCC-D88FAAC81551}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfxsw_plugin_vpp", "libmfxsw_plugin_vpp.vcxproj", "{D719372D-BA13-4730-AFF6-1994B26EFF6C}"
@@ -31,8 +33,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Intel.Mfx.Common.props = Intel.Mfx.Common.props
 		Intel.Mfx.StaticLib.props = Intel.Mfx.StaticLib.props
 	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfxplugin_vpp", "mfxplugin_vpp.vcxproj", "{7D461E6A-B47C-4843-A06A-ECCBB0DEA729}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vpp", "..\vpp\vpp.vcxproj", "{F642E5E0-3322-4BC7-9E25-76CA28DD97F7}"
 EndProject
