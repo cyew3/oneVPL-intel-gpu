@@ -71,10 +71,13 @@ namespace
     {
         MAX_PLUGIN_FILE_LINE = 4096
     };
+
+    #define alignStr() "%-14S"
 }
 
 
-MFX::MFXPluginsInHive::MFXPluginsInHive( int mfxStorageID, const msdk_disp_char * msdkLibSubKey, mfxVersion requiredAPIVersion )
+
+MFX::MFXPluginsInHive::MFXPluginsInHive( int mfxStorageID, const msdk_disp_char *msdkLibSubKey, mfxVersion currentAPIVersion )
 {
     HKEY rootHKey;
     bool bRes;
@@ -150,22 +153,22 @@ MFX::MFXPluginsInHive::MFXPluginsInHive( int mfxStorageID, const msdk_disp_char 
         {
             continue;
         }
-        TRACE_HIVE_INFO("    %8S : %d\n", TypeKeyName, descriptionRecord.Type);
+        TRACE_HIVE_INFO(alignStr()" : %d\n", TypeKeyName, descriptionRecord.Type);
 
         if (subKey.Query(CodecIDKeyName, descriptionRecord.CodecId)) 
         {
-            TRACE_HIVE_INFO("    %8S : "MFXFOURCCTYPE()" \n", CodecIDKeyName, MFXU32TOFOURCC(descriptionRecord.CodecId));
+            TRACE_HIVE_INFO(alignStr()" : "MFXFOURCCTYPE()" \n", CodecIDKeyName, MFXU32TOFOURCC(descriptionRecord.CodecId));
         }
         else
         {
-                TRACE_HIVE_INFO("    %8S : \n", CodecIDKeyName, "NOT REGISTERED");
+                TRACE_HIVE_INFO(alignStr()" : \n", CodecIDKeyName, "NOT REGISTERED");
         }
 
         if (!subKey.Query(GUIDKeyName, descriptionRecord.PluginUID)) 
         {
             continue;
         }
-        TRACE_HIVE_INFO("    %8S : "MFXGUIDTYPE()"\n", GUIDKeyName, MFXGUIDTOHEX(&descriptionRecord.PluginUID));
+        TRACE_HIVE_INFO(alignStr()" : "MFXGUIDTYPE()"\n", GUIDKeyName, MFXGUIDTOHEX(&descriptionRecord.PluginUID));
 
         mfxU32 nSize = sizeof(descriptionRecord.sPath)/sizeof(*descriptionRecord.sPath);
         if (!subKey.Query(PathKeyName, descriptionRecord.sPath, nSize)) 
@@ -173,13 +176,13 @@ MFX::MFXPluginsInHive::MFXPluginsInHive( int mfxStorageID, const msdk_disp_char 
             TRACE_HIVE_WRN("no value for : %S\n", PathKeyName);
             continue;
         }
-        TRACE_HIVE_INFO("    %8S : %S\n", PathKeyName, descriptionRecord.sPath);
+        TRACE_HIVE_INFO(alignStr()" : %S\n", PathKeyName, descriptionRecord.sPath);
 
         if (!subKey.Query(DefaultKeyName, descriptionRecord.Default)) 
         {
             continue;
         }
-        TRACE_HIVE_INFO("    %8S : %s\n", DefaultKeyName, descriptionRecord.Default ? "true" : "false");
+        TRACE_HIVE_INFO(alignStr()" : %s\n", DefaultKeyName, descriptionRecord.Default ? "true" : "false");
 
         mfxU32 version;
         if (!subKey.Query(PlgVerKeyName, version)) 
@@ -187,7 +190,7 @@ MFX::MFXPluginsInHive::MFXPluginsInHive( int mfxStorageID, const msdk_disp_char 
             continue;
         }
         descriptionRecord.PluginVersion = static_cast<mfxU16>(version);
-        TRACE_HIVE_INFO("    %8S : %d\n", PlgVerKeyName, descriptionRecord.PluginVersion);
+        TRACE_HIVE_INFO(alignStr()" : %d\n", PlgVerKeyName, descriptionRecord.PluginVersion);
 
         mfxU32 APIVersion;
         if (!subKey.Query(APIVerKeyName, APIVersion)) 
@@ -197,18 +200,18 @@ MFX::MFXPluginsInHive::MFXPluginsInHive( int mfxStorageID, const msdk_disp_char 
         descriptionRecord.APIVersion.Minor = static_cast<mfxU16> (APIVersion & 0x0ff);
         descriptionRecord.APIVersion.Major = static_cast<mfxU16> (APIVersion >> 8);
 
-        if (requiredAPIVersion.Version != descriptionRecord.APIVersion.Version) 
+        if (currentAPIVersion.Version < descriptionRecord.APIVersion.Version) 
         {
-            TRACE_HIVE_ERROR("    %8S : %d.%d, but current MediasSDK version : %d.%d\n"
+            TRACE_HIVE_ERROR(alignStr()" : %d.%d, but current MediasSDK version : %d.%d\n"
                 , APIVerKeyName
                 , descriptionRecord.APIVersion.Major
                 , descriptionRecord.APIVersion.Minor
-                , requiredAPIVersion.Major
-                , requiredAPIVersion.Minor);
+                , currentAPIVersion.Major
+                , currentAPIVersion.Minor);
             continue;
         }
 
-        TRACE_HIVE_INFO("    %8S : {%d.%d}\n", APIVerKeyName, descriptionRecord.APIVersion.Major, descriptionRecord.APIVersion.Minor);
+        TRACE_HIVE_INFO(alignStr()" : {%d.%d}\n", APIVerKeyName, descriptionRecord.APIVersion.Major, descriptionRecord.APIVersion.Minor);
 
         try 
         {
