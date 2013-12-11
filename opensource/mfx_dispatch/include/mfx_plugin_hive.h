@@ -81,22 +81,34 @@ namespace MFX {
         }
     };
 
-    //todo: refactor class to typedef
     typedef MFXVector<PluginDescriptionRecord> MFXPluginStorage;
 
+    class  MFXPluginStorageBase : public MFXPluginStorage 
+    {
+    protected:
+        mfxVersion mCurrentAPIVersion;
+    protected:
+        MFXPluginStorageBase(mfxVersion currentAPIVersion) 
+            : mCurrentAPIVersion(currentAPIVersion)
+        {
+        }
+        bool ConvertAPIVersion( mfxU32 APIVersion, PluginDescriptionRecord &descriptionRecord) const;
+    };
+
     //populated from registry
-    class MFXPluginsInHive : public MFXPluginStorage 
+    class MFXPluginsInHive : public MFXPluginStorageBase
     {
     public:
         MFXPluginsInHive(int mfxStorageID, const msdk_disp_char *msdkLibSubKey, mfxVersion currentAPIVersion);
     };
 
     //plugins are loaded from FS close to executable
-    class MFXPluginsInFS : public MFXPluginStorage 
+    class MFXPluginsInFS : public MFXPluginStorageBase
     {
-        bool m_bIsVersionParsed;
+        bool mIsVersionParsed;
+        bool mIsAPIVersionParsed;
     public:
-        MFXPluginsInFS(mfxVersion requiredAPIVersion);
+        MFXPluginsInFS(mfxVersion currentAPIVersion);
     private:
         bool ParseFile(FILE * f, PluginDescriptionRecord & des);
         bool ParseKVPair( msdk_disp_char *key, msdk_disp_char * value, PluginDescriptionRecord & des);

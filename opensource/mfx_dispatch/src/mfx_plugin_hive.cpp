@@ -75,7 +75,31 @@ namespace
     #define alignStr() "%-14S"
 }
 
+ bool MFX::MFXPluginStorageBase::ConvertAPIVersion( mfxU32 APIVersion, PluginDescriptionRecord &descriptionRecord)const
+ {
+     descriptionRecord.APIVersion.Minor = static_cast<mfxU16> (APIVersion & 0x0ff);
+     descriptionRecord.APIVersion.Major = static_cast<mfxU16> (APIVersion >> 8);
+
+     if (mCurrentAPIVersion.Version < descriptionRecord.APIVersion.Version ||
+         mCurrentAPIVersion.Major > descriptionRecord.APIVersion.Major) 
+     {
+         TRACE_HIVE_ERROR(alignStr()" : %d.%d, but current MediasSDK version : %d.%d\n"
+             , APIVerKeyName
+             , descriptionRecord.APIVersion.Major
+             , descriptionRecord.APIVersion.Minor
+             , mCurrentAPIVersion.Major
+             , mCurrentAPIVersion.Minor);
+         return false;
+     }
+
+     TRACE_HIVE_INFO(alignStr()" : {%d.%d}\n", APIVerKeyName, descriptionRecord.APIVersion.Major, descriptionRecord.APIVersion.Minor);
+     return true;
+
+}
+
+
 MFX::MFXPluginsInHive::MFXPluginsInHive( int mfxStorageID, const msdk_disp_char *msdkLibSubKey, mfxVersion currentAPIVersion )
+    : MFXPluginStorageBase(currentAPIVersion)
 {
     HKEY rootHKey;
     bool bRes;
@@ -203,22 +227,11 @@ MFX::MFXPluginsInHive::MFXPluginsInHive( int mfxStorageID, const msdk_disp_char 
         {
             continue;
         }
-        descriptionRecord.APIVersion.Minor = static_cast<mfxU16> (APIVersion & 0x0ff);
-        descriptionRecord.APIVersion.Major = static_cast<mfxU16> (APIVersion >> 8);
 
-        if (currentAPIVersion.Version < descriptionRecord.APIVersion.Version ||
-            currentAPIVersion.Major > descriptionRecord.APIVersion.Major) 
-        {
-            TRACE_HIVE_ERROR(alignStr()" : %d.%d, but current MediasSDK version : %d.%d\n"
-                , APIVerKeyName
-                , descriptionRecord.APIVersion.Major
-                , descriptionRecord.APIVersion.Minor
-                , currentAPIVersion.Major
-                , currentAPIVersion.Minor);
+        if (!ConvertAPIVersion(APIVersion, descriptionRecord)) {
             continue;
         }
 
-        TRACE_HIVE_INFO(alignStr()" : {%d.%d}\n", APIVerKeyName, descriptionRecord.APIVersion.Major, descriptionRecord.APIVersion.Minor);
 
         try 
         {
@@ -230,8 +243,10 @@ MFX::MFXPluginsInHive::MFXPluginsInHive( int mfxStorageID, const msdk_disp_char 
     }
 }
 
-MFX::MFXPluginsInFS::MFXPluginsInFS(mfxVersion requiredAPIVersion)
-    : m_bIsVersionParsed()
+MFX::MFXPluginsInFS::MFXPluginsInFS( mfxVersion currentAPIVersion ) 
+    : MFXPluginStorageBase(currentAPIVersion)
+    , mIsVersionParsed()
+    , mIsAPIVersionParsed()
 {
     WIN32_FIND_DATAW find_data;
     msdk_disp_char currentModuleName[MAX_PLUGIN_PATH];
@@ -273,7 +288,7 @@ MFX::MFXPluginsInFS::MFXPluginsInFS(mfxVersion requiredAPIVersion)
         }
         //converting dirname into guid
         PluginDescriptionRecord descriptionRecord;
-        descriptionRecord.APIVersion = requiredAPIVersion;
+        descriptionRecord.APIVersion = currentAPIVersion;
         descriptionRecord.onlyVersionRegistered = true;
 
         mfxU32 i = 0;
@@ -353,9 +368,15 @@ bool MFX::MFXPluginsInFS::ParseFile(FILE * f, PluginDescriptionRecord & descript
         }
     }
 
-    if (!m_bIsVersionParsed) 
+    if (!mIsVersionParsed) 
     {
         TRACE_HIVE_ERROR("%S : Mandatory  key %S not found\n", pluginCfgFileName, PlgVerKeyName);
+        return false;
+    }
+
+    if (!mIsAPIVersionParsed)
+    {
+        TRACE_HIVE_ERROR("%S : Mandatory  key %S not found\n", pluginCfgFileName, APIVerKeyName);
         return false;
     }
 
@@ -386,9 +407,27 @@ bool MFX::MFXPluginsInFS::ParseKVPair( msdk_disp_char * key, msdk_disp_char* val
         }
 
         TRACE_HIVE_INFO("%S: %S = %d \n", pluginCfgFileName, PlgVerKeyName, descriptionRecord.PluginVersion);
-        m_bIsVersionParsed = true;
+        mIsVersionParsed = true;
         return true;
     }
+
+    if (0 != wcsstr(key, APIVerKeyName))
+    {
+        mfxU32 APIversion;
+        if (0 == swscanf_s(value, L"%d", &APIversion)) 
+        {
+            return false;
+        }
+
+        if (!ConvertAPIVersion(APIversion, descriptionRecord)) {
+            return false;
+        }
+
+        TRACE_HIVE_INFO("%S: %S = %d.%d \n", pluginCfgFileName, APIVerKeyName, descriptionRecord.APIVersion.Major, descriptionRecord.APIVersion.Minor);
+        mIsAPIVersionParsed = true;
+        return true;
+    }
+
 
     if (0!=wcsstr(key, pluginFileName))
     {
