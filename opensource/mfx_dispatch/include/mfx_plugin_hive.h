@@ -94,6 +94,7 @@ namespace MFX {
     //plugins are loaded from FS close to executable
     class MFXPluginsInFS : public MFXPluginStorage 
     {
+        bool m_bIsVersionParsed;
     public:
         MFXPluginsInFS(mfxVersion requiredAPIVersion);
     private:

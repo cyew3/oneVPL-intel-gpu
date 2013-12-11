@@ -75,8 +75,6 @@ namespace
     #define alignStr() "%-14S"
 }
 
-
-
 MFX::MFXPluginsInHive::MFXPluginsInHive( int mfxStorageID, const msdk_disp_char *msdkLibSubKey, mfxVersion currentAPIVersion )
 {
     HKEY rootHKey;
@@ -190,7 +188,15 @@ MFX::MFXPluginsInHive::MFXPluginsInHive( int mfxStorageID, const msdk_disp_char 
             continue;
         }
         descriptionRecord.PluginVersion = static_cast<mfxU16>(version);
-        TRACE_HIVE_INFO(alignStr()" : %d\n", PlgVerKeyName, descriptionRecord.PluginVersion);
+        if (0 == version) 
+        {
+            TRACE_HIVE_ERROR(alignStr()" : %d, which is invalid\n", PlgVerKeyName, descriptionRecord.PluginVersion);
+            continue;
+        } 
+        else 
+        { 
+            TRACE_HIVE_INFO(alignStr()" : %d\n", PlgVerKeyName, descriptionRecord.PluginVersion);
+        }
 
         mfxU32 APIVersion;
         if (!subKey.Query(APIVerKeyName, APIVersion)) 
@@ -200,7 +206,8 @@ MFX::MFXPluginsInHive::MFXPluginsInHive( int mfxStorageID, const msdk_disp_char 
         descriptionRecord.APIVersion.Minor = static_cast<mfxU16> (APIVersion & 0x0ff);
         descriptionRecord.APIVersion.Major = static_cast<mfxU16> (APIVersion >> 8);
 
-        if (currentAPIVersion.Version < descriptionRecord.APIVersion.Version) 
+        if (currentAPIVersion.Version < descriptionRecord.APIVersion.Version ||
+            currentAPIVersion.Major > descriptionRecord.APIVersion.Major) 
         {
             TRACE_HIVE_ERROR(alignStr()" : %d.%d, but current MediasSDK version : %d.%d\n"
                 , APIVerKeyName
@@ -224,6 +231,7 @@ MFX::MFXPluginsInHive::MFXPluginsInHive( int mfxStorageID, const msdk_disp_char 
 }
 
 MFX::MFXPluginsInFS::MFXPluginsInFS(mfxVersion requiredAPIVersion)
+    : m_bIsVersionParsed()
 {
     WIN32_FIND_DATAW find_data;
     msdk_disp_char currentModuleName[MAX_PLUGIN_PATH];
@@ -345,8 +353,15 @@ bool MFX::MFXPluginsInFS::ParseFile(FILE * f, PluginDescriptionRecord & descript
         }
     }
 
+    if (!m_bIsVersionParsed) 
+    {
+        TRACE_HIVE_ERROR("%S : Mandatory  key %S not found\n", pluginCfgFileName, PlgVerKeyName);
+        return false;
+    }
+
     if (!wcslen(descriptionRecord.sPath)) 
     {
+        TRACE_HIVE_ERROR("%S : Mandatory  key %S not found\n", pluginCfgFileName, pluginFileName);
         return false;
     }
 
@@ -364,7 +379,14 @@ bool MFX::MFXPluginsInFS::ParseKVPair( msdk_disp_char * key, msdk_disp_char* val
         }
         descriptionRecord.PluginVersion = (mfxU16)version;
         
+        if (0 == descriptionRecord.PluginVersion) 
+        {
+            TRACE_HIVE_ERROR("%S: %S = %d,  which is invalid\n", pluginCfgFileName, PlgVerKeyName, descriptionRecord.PluginVersion);
+            return false;
+        }
+
         TRACE_HIVE_INFO("%S: %S = %d \n", pluginCfgFileName, PlgVerKeyName, descriptionRecord.PluginVersion);
+        m_bIsVersionParsed = true;
         return true;
     }
 
