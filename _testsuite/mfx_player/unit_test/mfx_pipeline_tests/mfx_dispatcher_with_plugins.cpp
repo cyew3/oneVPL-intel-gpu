@@ -255,12 +255,14 @@ SUITE(DispatcherWithPlugins) {
         HMODULE h;
         bool bWriteFileName;
         bool bWriteVersion;
+        bool bWriteApiVersion;
     public :
         WhenTestLoadingFileSystemPlugin() 
             : h() {
                 mfxPlg = mAdapter.operator mfxPlugin();
                 bWriteFileName = true;
                 bWriteVersion = true;
+                bWriteApiVersion = true;
         }
         void createPluginInFS(
             mfxPluginParam &pluginParams
@@ -310,6 +312,10 @@ SUITE(DispatcherWithPlugins) {
                         if (bWriteFileName) {
                             fprintf(plgFile, "FileName32 = \"%s%s\"\n\n\n\n", mockPluginDllName, dll_postfix.c_str());
                             fprintf(plgFile, "FileName64 = \"%s%s\"\n", mockPluginDllName, dll_postfix.c_str());
+                        }
+                        if (bWriteApiVersion) {
+                            mfxU32 APIVersion = pluginParams.APIVersion.Major*256 + pluginParams.APIVersion.Minor;
+                            fprintf(plgFile, "APIVersion = %d\n\n\n", APIVersion);
                         }
                     }
                     fclose(plgFile);
@@ -454,7 +460,29 @@ SUITE(DispatcherWithPlugins) {
 
     TEST_FIXTURE(WhenTestLoadingFileSystemPlugin, HIVE_build_failure_if_path_no_present) {
         bWriteFileName = false;
-        createPluginInFS(plgParams, true, true, true, "", "_plugin_\\/.dll");
+        createPluginInFS(plgParams, true, true, true, "", "_plugin.dll");
+
+        TEST_METHOD_TYPE(Create) createArgs;
+
+        createArgs.ret_val = MFX_ERR_NONE;
+        createArgs.value1  = &mfxPlg;
+        this->_Create.WillReturn(createArgs);
+
+        TEST_METHOD_TYPE(MockPlugin::GetPluginParam) getPluginParams;
+        getPluginParams.value0 = plgParams;
+        mockPlugin._GetPluginParam.WillReturn(getPluginParams);
+
+        mfxVersion verToRequest = g_MfxApiVersion;
+        verToRequest.Minor--;
+
+        MFXInit(MFX_IMPL_SOFTWARE, &verToRequest, &session);
+        CHECK(MFX_ERR_NONE != MFXVideoUSER_Load(session, &guid1, pluginVer));
+        MFXClose(session);
+    }
+
+    TEST_FIXTURE(WhenTestLoadingFileSystemPlugin, HIVE_build_failure_if_APIversion_not_present) {
+        bWriteApiVersion = false;
+        createPluginInFS(plgParams, true, true, true, "", "_plugin.dll");
 
         TEST_METHOD_TYPE(Create) createArgs;
 
@@ -476,7 +504,7 @@ SUITE(DispatcherWithPlugins) {
 
     TEST_FIXTURE(WhenTestLoadingFileSystemPlugin, HIVE_build_failure_if_version_not_present) {
         bWriteVersion= false;
-        createPluginInFS(plgParams, true, true, true, "", "_plugin_\\/.dll");
+        createPluginInFS(plgParams, true, true, true, "", "_plugin.dll");
 
         TEST_METHOD_TYPE(Create) createArgs;
 
@@ -499,7 +527,7 @@ SUITE(DispatcherWithPlugins) {
     TEST_FIXTURE(WhenTestLoadingFileSystemPlugin, HIVE_build_failure_if_version_is_zero) {
         bWriteVersion= false;
         plgParams.PluginVersion = 0;
-        createPluginInFS(plgParams, true, true, true, "", "_plugin_\\/.dll");
+        createPluginInFS(plgParams, true, true, true, "", "_plugin.dll");
 
         TEST_METHOD_TYPE(Create) createArgs;
 
