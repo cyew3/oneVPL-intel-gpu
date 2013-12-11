@@ -620,7 +620,7 @@ SUITE(DispatcherWithPlugins) {
         MFXClose(session);
     }
 
-    TEST_FIXTURE(WhenRegistryContainsNoPlugin, HIVE_build_error_if_loaded_plugin_API_version_is_lower_than_MFXInit_version) {
+    TEST_FIXTURE(WhenRegistryContainsNoPlugin, HIVE_build_sucess_if_minimum_API_version_set_in_plpugin_is_lower_than_MFXInit_version) {
 
         plgParams.APIVersion.Minor--;
         createKey(plgParams, rootPluginPath, "N2", mockPluginDllName, true);
@@ -636,7 +636,7 @@ SUITE(DispatcherWithPlugins) {
         mockPlugin._GetPluginParam.WillReturn(getPluginParams);
 
         MFXInit(MFX_IMPL_SOFTWARE, 0, &session);
-        CHECK(MFX_ERR_NONE != MFXVideoUSER_Load(session, &guid1, pluginVer));
+        CHECK_EQUAL(MFX_ERR_NONE, MFXVideoUSER_Load(session, &guid1, pluginVer));
         MFXClose(session);
     }
 
