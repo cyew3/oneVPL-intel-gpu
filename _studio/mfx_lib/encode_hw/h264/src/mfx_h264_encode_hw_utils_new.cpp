@@ -1364,7 +1364,8 @@ DdiTaskIter MfxHwH264Encode::FindFrameToStartEncode(
     DdiTaskIter           end)
 {
     if (/*video.mfx.RateControlMethod != MFX_RATECONTROL_LA &&*/
-        video.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+        video.mfx.RateControlMethod != MFX_RATECONTROL_CQP ||
+        video.AsyncDepth == 1)
         return begin;
 
     // in case of CQP optmization is applied
@@ -1852,8 +1853,13 @@ void AsyncRoutineEmulator::Init(MfxVideoParam const & video)
         m_stageGreediness[STG_START_LA    ] = video.mfx.EncodedOrder ? 1 : video.mfx.GopRefDist;
 #endif
         m_stageGreediness[STG_WAIT_LA     ] = 1;
-        m_stageGreediness[STG_START_ENCODE] = 1 + !!(video.mfx.GopRefDist > 1);
-        m_stageGreediness[STG_WAIT_ENCODE ] = video.AsyncDepth + !!(video.mfx.GopRefDist > 1);
+        m_stageGreediness[STG_START_ENCODE] = 1;
+        m_stageGreediness[STG_WAIT_ENCODE ] = 1;
+        if (video.AsyncDepth > 1)
+        { // for parallel ENC/PAK optimization
+            m_stageGreediness[STG_START_ENCODE] += !!(video.mfx.GopRefDist > 1);
+            m_stageGreediness[STG_WAIT_ENCODE ]  = video.AsyncDepth + !!(video.mfx.GopRefDist > 1);
+        }
         break;
     case MFX_RATECONTROL_LA:
     case MFX_RATECONTROL_LA_ICQ:
