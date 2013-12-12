@@ -209,7 +209,6 @@ H265DecoderFrame * H265DBPList::findDisplayableByDPBDelay(void)
     H265DecoderFrame *pOldest = NULL;
     Ipp32s  SmallestPicOrderCnt = 0x7fffffff;    // very large positive
     Ipp32s  LargestRefPicListResetCount = 0;
-    Ipp32s  uid = 0x7fffffff;
 
     Ipp32s count = 0;
     while (pCurr)
@@ -223,29 +222,39 @@ H265DecoderFrame * H265DBPList::findDisplayableByDPBDelay(void)
                 SmallestPicOrderCnt = pCurr->PicOrderCnt();
                 LargestRefPicListResetCount = pCurr->RefPicListResetCount();
             }
-            else if ((pCurr->PicOrderCnt() <= SmallestPicOrderCnt) &&
-                     (pCurr->RefPicListResetCount() == LargestRefPicListResetCount) && pCurr->m_UID < uid)
+            else if (pCurr->PicOrderCnt() <= SmallestPicOrderCnt && pCurr->RefPicListResetCount() == LargestRefPicListResetCount)
             {
                 pOldest = pCurr;
                 SmallestPicOrderCnt = pCurr->PicOrderCnt();
             }
 
-            if (!pOldest->IsFrameExist() && pCurr->IsFrameExist())
-            {
-                if (pCurr->PicOrderCnt() == SmallestPicOrderCnt &&
-                    pCurr->RefPicListResetCount() == LargestRefPicListResetCount)
-                    pOldest = pCurr;
-            }
-
-            //if (count == dbpSize + 1)
-              //  break;
             count++;
         }
 
         pCurr = pCurr->future();
     }
 
-    // may be OK if NULL
+    if (!pOldest)
+        return 0;
+
+    Ipp32s  uid = 0x7fffffff;
+    pCurr = m_pHead;
+    while (pCurr)
+    {
+        if ((pCurr->isDisplayable() || (!pCurr->IsDecoded() && pCurr->IsFullFrame())) && !pCurr->wasOutputted() && !pCurr->m_dpb_output_delay)
+        {
+            // corresponding frame
+            if (pCurr->RefPicListResetCount() == LargestRefPicListResetCount && pCurr->PicOrderCnt() == SmallestPicOrderCnt && pCurr->m_UID < uid)
+            {
+                pOldest = pCurr;
+                SmallestPicOrderCnt = pCurr->PicOrderCnt();
+                LargestRefPicListResetCount = pCurr->RefPicListResetCount();
+                uid = pCurr->m_UID;
+            }
+        }
+
+        pCurr = pCurr->future();
+    }
     return pOldest;
 }
 
@@ -274,31 +283,41 @@ H265DecoderFrame * H265DBPList::findOldestDisplayable(Ipp32s /*dbpSize*/ )
                 SmallestPicOrderCnt = pCurr->PicOrderCnt();
                 LargestRefPicListResetCount = pCurr->RefPicListResetCount();
             }
-            else if ((pCurr->PicOrderCnt() <= SmallestPicOrderCnt) &&
-                     (pCurr->RefPicListResetCount() == LargestRefPicListResetCount) && pCurr->m_UID < uid)
+            else if (pCurr->PicOrderCnt() <= SmallestPicOrderCnt && pCurr->RefPicListResetCount() == LargestRefPicListResetCount)
             {
                 pOldest = pCurr;
                 SmallestPicOrderCnt = pCurr->PicOrderCnt();
             }
 
-            if (!pOldest->IsFrameExist() && pCurr->IsFrameExist())
-            {
-                if (pCurr->PicOrderCnt() == SmallestPicOrderCnt &&
-                    pCurr->RefPicListResetCount() == LargestRefPicListResetCount)
-                    pOldest = pCurr;
-            }
-
-            //if (count == dbpSize + 1)
-              //  break;
             count++;
         }
 
         pCurr = pCurr->future();
     }
 
-    // may be OK if NULL
-    return pOldest;
+    if (!pOldest)
+        return 0;
 
+    pCurr = m_pHead;
+
+    while (pCurr)
+    {
+        if ((pCurr->isDisplayable() || (!pCurr->IsDecoded() && pCurr->IsFullFrame())) && !pCurr->wasOutputted())
+        {
+            // corresponding frame
+            if (pCurr->RefPicListResetCount() == LargestRefPicListResetCount && pCurr->PicOrderCnt() == SmallestPicOrderCnt && pCurr->m_UID < uid)
+            {
+                pOldest = pCurr;
+                SmallestPicOrderCnt = pCurr->PicOrderCnt();
+                LargestRefPicListResetCount = pCurr->RefPicListResetCount();
+                uid = pCurr->m_UID;
+            }
+        }
+
+        pCurr = pCurr->future();
+    }
+
+    return pOldest;
 }    // findOldestDisplayable
 
 H265DecoderFrame * H265DBPList::findFirstDisplayable()
