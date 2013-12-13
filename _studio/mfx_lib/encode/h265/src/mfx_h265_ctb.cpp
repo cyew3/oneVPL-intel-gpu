@@ -3155,8 +3155,8 @@ void H265CU::GetInterMergeCandidates(Ipp32s topLeftCUBlockZScanIdx,
         }
     }
 
-    if (pInfo->numCand > MRG_MAX_NUM_CANDS)
-        pInfo->numCand = MRG_MAX_NUM_CANDS;
+    if (pInfo->numCand > MRG_MAX_NUM_CANDS-1)
+        pInfo->numCand = MRG_MAX_NUM_CANDS-1;
 
     /* temporal candidate */
     if (par->TMVPFlag)
