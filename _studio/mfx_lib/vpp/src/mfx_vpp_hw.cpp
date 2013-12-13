@@ -2197,9 +2197,10 @@ mfxStatus ConfigureExecuteParams(
                 if(caps.uSimpleDI || caps.uAdvancedDI)
                 {
                     config.m_bMode30i60pEnable = true;
-                    executeParams.iDeinterlacingAlgorithm = MFX_DEINTERLACING_BOB;
+                    executeParams.iDeinterlacingAlgorithm = MFX_DEINTERLACING_ADVANCED;
                     config.m_surfCount[VPP_IN]  = IPP_MAX(2, config.m_surfCount[VPP_IN]);
                     config.m_surfCount[VPP_OUT] = IPP_MAX(2, config.m_surfCount[VPP_OUT]);
+                    executeParams.bFMDEnable = true;
                 }
                 else
                 {
