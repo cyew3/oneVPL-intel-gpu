@@ -161,7 +161,7 @@
 #define MFX_ENABLE_MP3_AUDIO_DECODE
 // linux support
 #if defined(LINUX32) || defined(LINUX64) || defined(__APPLE__)
-    #undef MFX_ENABLE_MP3_AUDIO_DECODE
+    //#undef MFX_ENABLE_MP3_AUDIO_DECODE
     // HW limitation
     #if defined (MFX_VA)
         /** @note

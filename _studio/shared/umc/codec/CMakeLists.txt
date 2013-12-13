@@ -2,6 +2,8 @@ list( APPEND adirs
   aac_common
   aac_dec
   aac_enc
+  mp3_common
+  mp3_dec
   )
 
 list( APPEND dirs
