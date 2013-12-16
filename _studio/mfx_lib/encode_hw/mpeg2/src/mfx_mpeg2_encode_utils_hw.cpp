@@ -1200,6 +1200,8 @@ namespace MPEG2EncoderHW
         memcpy_s(&m_VideoParamsEx.mfxVideoParams.mfx, sizeof(mfxInfoMFX), &par->mfx, sizeof(mfxInfoMFX));
         m_VideoParamsEx.mfxVideoParams.IOPattern = par->IOPattern;
         m_VideoParamsEx.mfxVideoParams.Protected = par->Protected;
+        m_VideoParamsEx.mfxVideoParams.AsyncDepth = par->AsyncDepth == 0 ? 2: par->AsyncDepth;
+
 
         if (m_VideoParamsEx.mfxVideoParams.mfx.BRCParamMultiplier == 0)
             m_VideoParamsEx.mfxVideoParams.mfx.BRCParamMultiplier = 1;
@@ -1409,7 +1411,6 @@ namespace MPEG2EncoderHW
         mfxI32 minFramesInWaitingList = 0;
         mfxI32 delayInWaitingList = 0;
 
-        m_VideoParamsEx.mfxVideoParams.AsyncDepth = m_VideoParamsEx.mfxVideoParams.AsyncDepth == 0 ? 2: m_VideoParamsEx.mfxVideoParams.AsyncDepth;
 
         if (par->mfx.EncodedOrder)
         {
