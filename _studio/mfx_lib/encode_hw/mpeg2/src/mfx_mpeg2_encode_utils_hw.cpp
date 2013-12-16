@@ -702,7 +702,7 @@ namespace MPEG2EncoderHW
             out->mfx        = in->mfx;
             out->IOPattern  = in->IOPattern;
             out->Protected  = in->Protected;
-            out->AsyncDepth = 0;
+            out->AsyncDepth = in->AsyncDepth;
 
             mfxStatus sts = CheckHwCaps(core, out);
             MFX_CHECK_STS(sts);
@@ -1409,11 +1409,13 @@ namespace MPEG2EncoderHW
         mfxI32 minFramesInWaitingList = 0;
         mfxI32 delayInWaitingList = 0;
 
+        m_VideoParamsEx.mfxVideoParams.AsyncDepth = m_VideoParamsEx.mfxVideoParams.AsyncDepth == 0 ? 2: m_VideoParamsEx.mfxVideoParams.AsyncDepth;
+
         if (par->mfx.EncodedOrder)
         {
-            maxFramesInWaitingList   = (m_VideoParamsEx.bAddEOS)? 3 : 2;
+            maxFramesInWaitingList   = m_VideoParamsEx.mfxVideoParams.AsyncDepth + ((m_VideoParamsEx.bAddEOS)? 1 : 0);
             minFramesInWaitingList   = (m_VideoParamsEx.bAddEOS)? 1 : 0;
-            delayInWaitingList       = minFramesInWaitingList + 1;
+            delayInWaitingList       = minFramesInWaitingList + m_VideoParamsEx.mfxVideoParams.AsyncDepth - 1;
         }
         else
         {
