@@ -326,6 +326,7 @@ DEF_STRUCT_TRACE(mfxExtBuffer){
         PRINT_BUF(MFX_EXTBUFF_VPP_COMPOSITE             , mfxExtVPPComposite            );
         PRINT_BUF(MFX_EXTBUFF_VPP_DEINTERLACING         , mfxExtVPPDeinterlacing        );
         PRINT_BUF(MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO     , mfxExtVPPVideoSignalInfo      );
+        PRINT_BUF(MFX_EXTBUFF_ENCODER_ROI               , mfxExtEncoderROI              );
 #endif
         PRINT_BUF(MFX_EXTBUFF_AVC_REFLIST_CTRL          , mfxExtAVCRefListCtrl          );
         default: break;
@@ -1056,6 +1057,29 @@ DEF_STRUCT_TRACE(mfxExtVPPVideoSignalInfo){
         << PUT_PAR(Out.NominalRange)
         << PUT_ARR(Out.reserved2, 6)
         << print_param.padding << '}';
+    return os;
+}
+
+DEF_STRUCT_TRACE(mfxExtEncoderROI){
+    os  << "{\n"
+        << PUT_4CC(Header.BufferId)
+        << PUT_PAR(Header.BufferSz)
+        << PUT_PAR(NumROI)
+        << PUT_ARR(reserved1, 11);
+
+    for(mfxU32 i = 0; i < p.NumROI; i++){
+        os  << print_param.padding << "  ROI[" << i << "] = {\n";
+        INC_PADDING();
+        os  << PUT_PAR(ROI[i].Left)
+            << PUT_PAR(ROI[i].Top)
+            << PUT_PAR(ROI[i].Right)
+            << PUT_PAR(ROI[i].Bottom)
+            << PUT_PAR(ROI[i].Priority)
+            << PUT_ARR(ROI[i].reserved2, 7)
+            << print_param.padding << "}\n";
+        DEC_PADDING();
+    }
+    os  << print_param.padding << '}';
     return os;
 }
 #endif
