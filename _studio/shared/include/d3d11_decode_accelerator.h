@@ -66,7 +66,7 @@ public:
     virtual UMC::Status ReleaseBuffer(Ipp32s type);
     virtual UMC::Status EndFrame(void * handle = 0);
 
-    virtual bool IsIntelCustomGUID() const {return true;};
+    virtual bool IsIntelCustomGUID() const;
 
     virtual UMC::Status DisplayFrame (Ipp32s index, UMC::VideoData *pOutputVideoData = NULL) {index; pOutputVideoData; return UMC::UMC_ERR_UNSUPPORTED;};
     void GetVideoDecoder(void **handle)

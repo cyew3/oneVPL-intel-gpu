@@ -923,12 +923,6 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLong, bool
 
         pBitstream->GetOrg((Ipp32u**)&rawDataPtr, &rawDataSize);
         GetSliceVABuffers(&pDXVASlice, headerSize, &pSliceData, rawDataSize + 3, 64);
-
-        *((char *)pSliceData + 0) = 0;
-        *((char *)pSliceData + 1) = 0;
-        *((char *)pSliceData + 2) = 1;
-
-        pSliceData = (char *)pSliceData + 3;
     }
 
     // copy slice data to slice data buffer

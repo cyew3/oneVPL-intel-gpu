@@ -1041,7 +1041,7 @@ UMC::Status TaskSupplier_H265::xDecodeSPS(H265Bitstream &bs)
     {
         view->SetDPBSize(&sps, m_level_idc);
         view->sps_max_dec_pic_buffering = sps.sps_max_dec_pic_buffering[HighestTid] ? sps.sps_max_dec_pic_buffering[HighestTid] : view->dpbSize;
-        view->sps_max_num_reorder_pics = sps.sps_max_num_reorder_pics[HighestTid];
+        view->sps_max_num_reorder_pics = IPP_MIN(sps.sps_max_num_reorder_pics[HighestTid], view->sps_max_dec_pic_buffering);
     }
 
     const H265SeqParamSet * old_sps = m_Headers.m_SeqParams.GetCurrentHeader();
@@ -2014,7 +2014,7 @@ UMC::Status TaskSupplier_H265::AddSlice(H265Slice * pSlice, bool )
                                     pSlice->GetSeqParam()->sps_max_dec_pic_buffering[pSlice->GetSliceHeader()->nuh_temporal_id] :
                                     view.dpbSize;
 
-    view.sps_max_num_reorder_pics = pSlice->GetSeqParam()->sps_max_num_reorder_pics[HighestTid];
+    view.sps_max_num_reorder_pics = IPP_MIN(pSlice->GetSeqParam()->sps_max_num_reorder_pics[HighestTid], view.sps_max_dec_pic_buffering);
 
     H265DecoderFrame * pFrame = view.pCurFrame;
 
