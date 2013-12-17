@@ -736,7 +736,8 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
             out->mfx.CodecId = in->mfx.CodecId;
 
         if (MFX_PROFILE_UNKNOWN == in->mfx.CodecProfile ||
-            MFX_PROFILE_HEVC_MAIN == in->mfx.CodecProfile)
+            MFX_PROFILE_HEVC_MAIN == in->mfx.CodecProfile ||
+            MFX_PROFILE_HEVC_MAINSP == in->mfx.CodecProfile)
             out->mfx.CodecProfile = in->mfx.CodecProfile;
         else
         {
