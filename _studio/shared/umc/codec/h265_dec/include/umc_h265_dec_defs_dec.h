@@ -491,6 +491,8 @@ public:
     void initFromDefaultScalingList(void);
     void calculateDequantCoef(void);
 
+    void destroy();
+
     Ipp16s *m_dequantCoef[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM][SCALING_LIST_REM_NUM];
 
 private:
@@ -500,8 +502,6 @@ private:
     }
     __inline void processScalingListDec(Ipp32s *coeff, Ipp16s *dequantcoeff, Ipp32s invQuantScales, Ipp32u height, Ipp32u width, Ipp32u ratio, Ipp32u sizuNum, Ipp32u dc);
     static int *getScalingListDefaultAddress (unsigned sizeId, unsigned listId);
-
-    void destroy();
 
     int      m_scalingListDC               [SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM];
     unsigned m_refMatrixId                 [SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM];
@@ -959,6 +959,8 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
         conf_win_right_offset = 0;
         conf_win_top_offset = 0;
         conf_win_bottom_offset = 0;
+
+        m_scalingList.destroy();
     }
 
     static int getWinUnitX (int /*chromaFormatIdc*/) { /*assert (chromaFormatIdc > 0 && chromaFormatIdc <= MAX_CHROMA_FORMAT_IDC);*/ return 1/*m_cropUnitX[chromaFormatIdc]*/; } // TODO
@@ -1040,7 +1042,6 @@ struct H265PicParamSetBase
     Ipp32u  pps_tc_offset;
 
     bool    pps_scaling_list_data_present_flag;
-    H265ScalingList m_scalingList;
 
     bool    lists_modification_present_flag;
     Ipp32u  log2_parallel_merge_level;
@@ -1060,8 +1061,6 @@ struct H265PicParamSetBase
     Ipp32u* m_CtbAddrTStoRS;
     Ipp32u* m_TileIdx;
 
-    std::vector<TileInfo> tilesInfo;
-
     void Reset()
     {
         H265PicParamSetBase pps = {0};
@@ -1072,6 +1071,9 @@ struct H265PicParamSetBase
 // Picture parameter set structure, corresponding to the H.264 bitstream definition.
 struct H265PicParamSet : public HeapObject, public H265PicParamSetBase
 {
+    H265ScalingList m_scalingList;
+    std::vector<TileInfo> tilesInfo;
+
     H265PicParamSet()
         : H265PicParamSetBase()
     {
@@ -1102,6 +1104,9 @@ struct H265PicParamSet : public HeapObject, public H265PicParamSetBase
         m_TileIdx = 0;
 
         H265PicParamSetBase::Reset();
+
+        tilesInfo.clear();
+        m_scalingList.destroy();
 
         pps_pic_parameter_set_id = MAX_NUM_PIC_PARAM_SETS_H265;
         pps_seq_parameter_set_id = MAX_NUM_SEQ_PARAM_SETS_H265;

@@ -51,8 +51,14 @@ void H265ScalingList::init()
 
 void H265ScalingList::destroy()
 {
+    if (!m_initialized)
+        return;
+
     for (Ipp32u sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
+    {
         delete [] m_dequantCoef[sizeId][0][0];
+        m_dequantCoef[sizeId][0][0] = 0;
+    }
 
     m_initialized = false;
 }
