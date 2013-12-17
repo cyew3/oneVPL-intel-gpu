@@ -2249,13 +2249,6 @@ mfxStatus ImplementationAvc::EncodeFrameCheckNormalWay(
         mfxU16 const MaxNumOfROI = 0;
         m_free.front().m_roi.Resize(MaxNumOfROI);
 
-        if (m_free.front().m_ctrl.SkipFrame != 0 && m_caps.SkipFrame == 0)
-        {
-            m_free.front().m_ctrl.SkipFrame = 0;
-            if (!status)
-                status = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-        }
-
         m_stat.NumCachedFrame++;
         m_incoming.splice(m_incoming.end(), m_free, m_free.begin());
     }

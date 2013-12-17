@@ -480,6 +480,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             {
                 m_components[eREN].m_SkippedFrames.push_back(atoi(item.c_str()));
             }
+            m_extCodingOptions2->SkipFrame = 1;
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-cabac"), VM_STRING("Turn on CABAC mode")))
         {

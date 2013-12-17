@@ -1497,6 +1497,17 @@ void MfxHwH264Encode::ConfigureTask(
     task.m_pid  = task.m_tidx + extTemp->BaseLayerPID;
 
     DecideOnRefPicFlag(video, task); // for temporal layers
+    
+    if (task.m_ctrl.SkipFrame != 0)
+    {
+        task.m_ctrl.SkipFrame = (extOpt2->SkipFrame) ? (1 + IsProtectionPavp(video.Protected)) : 0;
+
+        if (task.SkipFlag() != 0)
+        {
+            task.m_type.top &= ~MFX_FRAMETYPE_REF;
+            task.m_type.bot &= ~MFX_FRAMETYPE_REF;
+        }
+    }
 
     task.m_reference[ffid]  = !!(task.m_type[ffid] & MFX_FRAMETYPE_REF);
     task.m_reference[sfid]  = !!(task.m_type[sfid] & MFX_FRAMETYPE_REF);
@@ -1598,9 +1609,6 @@ void MfxHwH264Encode::ConfigureTask(
             task.m_aesCounter[sfid] = aesCounter;
         }
     }
-
-    if (task.m_ctrl.SkipFrame != 0)
-        task.m_ctrl.SkipFrame = 1 + IsProtectionPavp(video.Protected);
 }
 
 

@@ -2855,6 +2855,17 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             changed = true;
     }
 
+    if (extOpt2->SkipFrame)
+    {
+        if (   extOpt2->SkipFrame > 1
+            || hwCaps.SkipFrame == 0
+            || par.mfx.GopRefDist > 1)
+        {
+            extOpt2->SkipFrame = 0;
+            changed = true;
+        }
+    }
+
     return unsupported
         ? MFX_ERR_UNSUPPORTED
         : (changed || warning)
@@ -3942,8 +3953,8 @@ void MfxHwH264Encode::SetDefaults(
         extSps->qpprimeYZeroTransformBypassFlag = 0;
         extSps->seqScalingMatrixPresentFlag     = 0;
         extSps->log2MaxFrameNumMinus4           = 4;//GetDefaultLog2MaxFrameNumMinux4(par);
-        extSps->picOrderCntType                 = GetDefaultPicOrderCount(par);
-        extSps->log2MaxPicOrderCntLsbMinus4     = GetDefaultLog2MaxPicOrdCntMinus4(par);
+        extSps->picOrderCntType                 = extOpt2->SkipFrame ? 0  : GetDefaultPicOrderCount(par);
+        extSps->log2MaxPicOrderCntLsbMinus4     = extOpt2->SkipFrame ? ((mfxU8)CeilLog2(2 * par.mfx.GopPicSize) + 1 - 4) : GetDefaultLog2MaxPicOrdCntMinus4(par);
         extSps->deltaPicOrderAlwaysZeroFlag     = 1;
         extSps->maxNumRefFrames                 = mfxU8(par.mfx.NumRefFrame);
         extSps->gapsInFrameNumValueAllowedFlag  = par.calcParam.numTemporalLayer > 1
