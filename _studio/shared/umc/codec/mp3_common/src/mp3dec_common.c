@@ -244,7 +244,7 @@ MP3Status  mp3dec_GetSynch(MP3Dec_com *state)
         state->decodedBytes += state->MP3nSlots;
 
         // Fixes decoder fail with MP3_NOT_ENOUGH_DATA error when processing single frame of the stream:
-        state->m_bInit = 1;
+        state->m_bInit = 0;
 
         if (BS->nDataLen < (state->decodedBytes - start_db)/* + 
           ((!state->m_bInit || state->synchro_mode) ? 3 : 0)*/) {

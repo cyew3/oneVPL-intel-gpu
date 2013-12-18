@@ -64,9 +64,11 @@ mfxStatus ConvertStatusUmc2Mfx(UMC::Status umcStatus)
     case UMC::UMC_ERR_LOCK: return MFX_ERR_LOCK_MEMORY;
     case UMC::UMC_ERR_NOT_ENOUGH_BUFFER: return MFX_ERR_NOT_ENOUGH_BUFFER;
     case UMC::UMC_ERR_NOT_ENOUGH_DATA: return MFX_ERR_MORE_DATA;
+    case UMC::UMC_ERR_SYNC: return MFX_ERR_MORE_DATA; // need to skip bad frames
     default: return MFX_ERR_ABORTED; // need general error code here
     }
 }
+
 
 inline
 mfxF64 GetUmcTimeStamp(mfxU64 ts)
