@@ -243,7 +243,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION2(AdaptiveB,              OPT_TRI_STATE,   "Adaptive B frames on/off"),
         HANDLE_EXT_OPTION2(Trellis,                OPT_INT_16,      "bitfield: 0=default, 1=off, 2=on for I frames, 4=on for P frames, 8=on for B frames"),
         HANDLE_EXT_OPTION2(RepeatPPS,              OPT_TRI_STATE,  ""),
-        HANDLE_EXT_OPTION2(BRefType,               OPT_UINT_16,    ""),
+        HANDLE_EXT_OPTION2(BRefType,               OPT_UINT_16,    "control usage of B frames as reference in AVC encoder: 0 - undef, 1 - B ref off, 2 - B ref pyramid"),
         HANDLE_EXT_OPTION2(NumMbPerSlice,          OPT_UINT_16,    "number of MBs per slice"),
 
         // mfxExtCodingOptionDDI
