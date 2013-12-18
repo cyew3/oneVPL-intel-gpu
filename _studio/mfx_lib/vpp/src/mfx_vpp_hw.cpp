@@ -373,6 +373,8 @@ mfxStatus ResMngr::Init(
         m_surf[VPP_OUT].resize( config.m_surfCount[VPP_OUT] );
     }
 
+    m_bRefFrameEnable = config.m_bRefFrameEnable;
+
     if( (config.m_extConfig.mode & FRC_INTERPOLATION) ||
         (config.m_extConfig.mode & VARIANCE_REPORT) ||
         (config.m_extConfig.mode & COMPOSITE) )
@@ -533,7 +535,16 @@ mfxStatus ResMngr::DoMode30i60p(
                 m_bOutputReady = true;
                 *intSts = MFX_ERR_MORE_SURFACE;
                 m_outputIndexCountPerCycle = 2;
-                m_bkwdRefCount = 1;
+                if(true == m_bRefFrameEnable)
+                {
+                    // need one backward reference to enable motion adaptive ADI
+                    m_bkwdRefCount = 1;
+                }
+                else
+                {
+                    // no reference frame, use ADI with spatial info
+                    m_bkwdRefCount = 0;
+                }
             }
 
             mfxStatus sts = m_core->IncreaseReference( &(input->Data) );
@@ -1309,6 +1320,7 @@ VideoVPPHW::VideoVPPHW(IOMode mode, VideoCORE *core)
     m_ioMode = mode; 
     m_pCore = core;
 
+    m_config.m_bRefFrameEnable = false;
     m_config.m_bMode30i60pEnable = false;
     m_config.m_extConfig.mode  = FRC_DISABLED;
     m_config.m_bPassThroughEnable = false;
@@ -1596,6 +1608,7 @@ mfxStatus VideoVPPHW::Close()
 
     m_config.m_extConfig.mode  = FRC_DISABLED;
     m_config.m_bMode30i60pEnable  = false;
+    m_config.m_bRefFrameEnable = false;
     m_config.m_bPassThroughEnable = false;
     m_config.m_surfCount[VPP_IN]  = 1;
     m_config.m_surfCount[VPP_OUT] = 1;
@@ -2101,6 +2114,55 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
 
 } // mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
 
+//---------------------------------------------------------------------------------
+// Check DI mode set by user, if not set use advanced as default (if supported)
+// Returns: 0 - cannot set due to HW limitations or wrong range, 1 - BOB, 2 - ADI )
+//---------------------------------------------------------------------------------
+mfxI32 GetDeinterlaceMode( const mfxVideoParam& videoParam, const mfxVppCaps& caps )
+{
+    mfxI32 deinterlacingMode = 0;
+
+    // look for user defined deinterlacing mode
+    for (mfxU32 i = 0; i < videoParam.NumExtParam; i++)
+    {
+        if (videoParam.ExtParam[i] && videoParam.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_DEINTERLACING)
+        {
+            mfxExtVPPDeinterlacing* extDI = (mfxExtVPPDeinterlacing*) videoParam.ExtParam[i];
+            if (extDI->Mode != MFX_DEINTERLACING_ADVANCED && extDI->Mode != MFX_DEINTERLACING_BOB)
+            {
+                return 0;
+            }
+
+            deinterlacingMode = extDI->Mode;
+            break;
+        }
+    }
+
+    if (caps.uAdvancedDI)
+    {
+        if (0 == deinterlacingMode)
+        {
+            deinterlacingMode = MFX_DEINTERLACING_ADVANCED;
+        }
+    }
+    else if (caps.uSimpleDI)
+    {
+        if (MFX_DEINTERLACING_ADVANCED == deinterlacingMode)
+        {
+            deinterlacingMode = 0;
+        }
+        else
+        {
+            deinterlacingMode = MFX_DEINTERLACING_BOB;
+        }
+    }
+    else
+    {
+        deinterlacingMode = 0;
+    }
+
+    return deinterlacingMode;
+}
 
 //---------------------------------------------------------
 // Do internal configuration
@@ -2108,7 +2170,6 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
 mfxStatus ConfigureExecuteParams(
     mfxVideoParam & videoParam, // [IN]
     mfxVppCaps & caps,          // [IN]
-
     mfxExecuteParams & executeParams, // [OUT]
     Config & config)                  // [OUT]
 {
@@ -2144,48 +2205,10 @@ mfxStatus ConfigureExecuteParams(
 
             case MFX_EXTBUFF_VPP_DI:
             {
-                mfxI32 deinterlacingMode = 0;
-
-                // look for user defined deinterlacing mode
-                for (mfxU32 i = 0; i < videoParam.NumExtParam; i++)
+                // FIXME: add reference frame to use motion adaptive ADI
+                executeParams.iDeinterlacingAlgorithm = GetDeinterlaceMode( videoParam, caps );
+                if (0 == executeParams.iDeinterlacingAlgorithm)
                 {
-                    if (videoParam.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_DEINTERLACING)
-                    {
-                        mfxExtVPPDeinterlacing* extDI = (mfxExtVPPDeinterlacing*) videoParam.ExtParam[i];
-                        deinterlacingMode = extDI->Mode;
-
-                        if( extDI->Mode != MFX_DEINTERLACING_ADVANCED && extDI->Mode != MFX_DEINTERLACING_BOB )
-                        {
-                            return MFX_ERR_INVALID_VIDEO_PARAM;
-                        }
-                        break;
-                    }
-                }
-
-                if (caps.uAdvancedDI)
-                {
-                    if (0 == deinterlacingMode)
-                    {
-                        deinterlacingMode = MFX_DEINTERLACING_ADVANCED; // default
-                    }
-
-                    executeParams.iDeinterlacingAlgorithm = deinterlacingMode;
-                }
-                else if (caps.uSimpleDI)
-                {
-                    if(MFX_DEINTERLACING_ADVANCED != deinterlacingMode)
-                    {
-                        executeParams.iDeinterlacingAlgorithm = MFX_DEINTERLACING_BOB;
-                    }
-                    else
-                    {
-                        // cannot set MFX_DEINTERLACING_ADVANCED
-                        return MFX_ERR_INVALID_VIDEO_PARAM;
-                    }
-                }
-                else
-                {
-                    executeParams.iDeinterlacingAlgorithm = 0;
                     bIsFilterSkipped = true;
                 }
 
@@ -2194,13 +2217,24 @@ mfxStatus ConfigureExecuteParams(
 
             case MFX_EXTBUFF_VPP_DI_30i60p:
             {
-                if(caps.uSimpleDI || caps.uAdvancedDI)
+                executeParams.iDeinterlacingAlgorithm = GetDeinterlaceMode( videoParam, caps );
+
+                if(MFX_DEINTERLACING_ADVANCED == executeParams.iDeinterlacingAlgorithm)
                 {
+                    // use motion adaptive ADI with reference frame (quality)
                     config.m_bMode30i60pEnable = true;
-                    executeParams.iDeinterlacingAlgorithm = MFX_DEINTERLACING_ADVANCED;
+                    config.m_bRefFrameEnable = true;
                     config.m_surfCount[VPP_IN]  = IPP_MAX(2, config.m_surfCount[VPP_IN]);
                     config.m_surfCount[VPP_OUT] = IPP_MAX(2, config.m_surfCount[VPP_OUT]);
                     executeParams.bFMDEnable = true;
+                }
+                else if(MFX_DEINTERLACING_BOB == executeParams.iDeinterlacingAlgorithm)
+                {
+                    // use ADI with spatial info, no reference frame (speed)
+                    config.m_bMode30i60pEnable = true;
+                    config.m_bRefFrameEnable = false;
+                    config.m_surfCount[VPP_IN]  = IPP_MAX(1, config.m_surfCount[VPP_IN]);
+                    config.m_surfCount[VPP_OUT] = IPP_MAX(2, config.m_surfCount[VPP_OUT]);
                 }
                 else
                 {

@@ -241,6 +241,7 @@ namespace MfxHwVideoProcessing
     {
         bool   m_bMode30i60pEnable;
         bool   m_bPassThroughEnable;
+        bool   m_bRefFrameEnable;
 
         ExtendedConfig m_extConfig;
         mfxU16 m_IOPattern;
@@ -255,6 +256,7 @@ namespace MfxHwVideoProcessing
         ResMngr(void)
         {
             m_bOutputReady = false;
+            m_bRefFrameEnable = false;
             m_inputIndex  = 0;
             m_outputIndex = 0;
             m_bkwdRefCount = 0;
@@ -334,6 +336,7 @@ namespace MfxHwVideoProcessing
 
         //-------------------------------------------------
         bool  m_bOutputReady;
+        bool  m_bRefFrameEnable;
 
         // counters
         mfxU32 m_inputIndex;
