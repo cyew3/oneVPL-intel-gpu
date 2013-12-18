@@ -21,7 +21,8 @@ public:
     virtual mfxStatus Reset() = 0;
     virtual mfxStatus Compare(mfxFrameSurface1 * pIn1, mfxFrameSurface1 * pIn2) = 0;
     virtual mfxStatus GetLastCmpResult(mfxF64 pResult[3]) = 0;
-    virtual mfxStatus GetOveralResult(mfxF64 pResult[3]) = 0;
+    virtual mfxStatus GetOveralResult (mfxF64 pResult[3]) = 0;
+    virtual mfxStatus GetAverageResult(mfxF64 pResult[3]) = 0;
     virtual mfxStatus GetMaxResult(mfxF64 pResult[3]) = 0;
     virtual mfxStatus GetMinResult(mfxF64 pResult[3]) = 0;
     virtual vm_char*  GetMetricName() = 0;

@@ -59,6 +59,7 @@ public:
     virtual mfxStatus Compare(mfxFrameSurface1 * pIn1, mfxFrameSurface1 * pIn2);
     virtual mfxStatus GetLastCmpResult(double pResult[3]);
     virtual mfxStatus GetOveralResult(double pResult[3]);
+    virtual mfxStatus GetAverageResult(double pResult[3]);
     virtual mfxStatus GetMaxResult(mfxF64 pResult[3]);
     virtual mfxStatus GetMinResult(mfxF64 pResult[3]);
 
@@ -72,6 +73,9 @@ protected:
     mfxF64 m_fpsnrWST[3];
     mfxI64 m_nSize[3];
     mfxF64 m_fLastResults[3];
+    // Sum of frames PSNRs
+    mfxF64 m_fpsnrCumulative[3];
+    mfxI64 m_nFrame;
 };
 
 class MFXSSIMCalc : public IMFXSurfacesComparator
@@ -84,7 +88,8 @@ public:
     virtual mfxStatus Reset();
     virtual mfxStatus Compare(mfxFrameSurface1 * pIn1, mfxFrameSurface1 * pIn2);
     virtual mfxStatus GetLastCmpResult(double pResult[3]);
-    virtual mfxStatus GetOveralResult(double pResult[3]);
+    virtual mfxStatus GetOveralResult (double pResult[3]);
+    virtual mfxStatus GetAverageResult(double pResult[3]);
     virtual mfxStatus GetMaxResult(mfxF64 pResult[3]);
     virtual mfxStatus GetMinResult(mfxF64 pResult[3]);
     virtual vm_char*  GetMetricName();
@@ -119,7 +124,8 @@ public:
     virtual mfxStatus Reset();
     virtual mfxStatus Compare(mfxFrameSurface1 * pIn1, mfxFrameSurface1 * pIn2);
     virtual mfxStatus GetLastCmpResult(double pResult[3]);
-    virtual mfxStatus GetOveralResult(double pResult[3]);
+    virtual mfxStatus GetOveralResult (double pResult[3]);
+    virtual mfxStatus GetAverageResult(double pResult[3]); 
     virtual mfxStatus GetMaxResult(mfxF64 pResult[3]);
     virtual mfxStatus GetMinResult(mfxF64 pResult[3]);
     virtual vm_char*  GetMetricName();

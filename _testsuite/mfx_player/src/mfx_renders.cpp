@@ -696,8 +696,12 @@ MFXMetricComparatorRender::~MFXMetricComparatorRender()
         for (int j = 0; j < 3; j++){
             vm_string_printf(VM_STRING("<avg_metric=%c-%s%s> %.5f</avg_metric>\n"), planes[j], pMetricName, pMetricNumber, metricVal[j]);
         }
-        vm_string_fprintf(vm_stderr, VM_STRING(", %.3f\n"), metricVal[0]);
-        
+
+        m_pComparators[i].first->GetAverageResult(metricVal);
+        for (int j = 0; j < 3; j++){
+            vm_string_printf(VM_STRING("<avg_metric=%c-A%s%s> %.5f</avg_metric>\n"), planes[j], pMetricName, pMetricNumber, metricVal[j]);
+        }
+
         //printing to file if specified
         vm_file * fMetrics = NULL;
         tstring targetFile = m_bIsViewRender ? 

@@ -32,9 +32,12 @@ mfxStatus MFXPsnrCalc::Reset()
     MFX_ZERO_MEM(m_nSize);
     MFX_ZERO_MEM(m_fpsnrAV);
     MFX_ZERO_MEM(m_fLastResults);
+    MFX_ZERO_MEM(m_fpsnrCumulative);
 
     MFX_FOR(3, m_fpsnrWST[i] = -1);
     MFX_FOR(3, m_fpsnrBST[i] = -1);
+
+    m_nFrame = 0;
 
     return MFX_ERR_NONE;
 }
@@ -68,6 +71,13 @@ mfxStatus MFXPsnrCalc::GetLastCmpResult(double pResult[3])
 mfxStatus MFXPsnrCalc::GetOveralResult(double pResult[3])
 {
     MFX_FOR(3, pResult[i] = CalcPSNR(m_fpsnrAV[i], m_nSize[i]));
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MFXPsnrCalc::GetAverageResult(double pResult[3])
+{
+    MFX_FOR(3, pResult[i] = m_nFrame > 0 ? m_fpsnrCumulative[i]/m_nFrame : -1);
 
     return MFX_ERR_NONE;
 }
@@ -160,8 +170,11 @@ mfxStatus MFXPsnrCalc::Compare( mfxFrameSurface1 * pIn1
         m_nSize[i] += imageSize;
         m_fLastResults[i] = CalcPSNR(m_fLastResults[i], imageSize);
     }
+
+    m_nFrame++;
     TIME_PRINT(VM_STRING("CalcPSNR"));
     //PipelineTrace((VM_STRING("PSNR y=%.2lf u=%.2lf v=%.2lf\n"), m_fLastResults[0], m_fLastResults[1], m_fLastResults[2]));
+    MFX_FOR(3, m_fpsnrCumulative[i] += m_fLastResults[i]);
     MFX_FOR(3, if (m_fLastResults[i] > m_fpsnrWST[i]) m_fpsnrWST[i] = m_fLastResults[i]);
     MFX_FOR(3, if (m_fLastResults[i] < m_fpsnrBST[i] || m_fpsnrBST[i] == -1) m_fpsnrBST[i] = m_fLastResults[i]);
 
@@ -316,6 +329,13 @@ mfxStatus MFXSSIMCalc::GetLastCmpResult(double pResult[3])
 
     MFX_FOR(3, pResult[i] = m_fLastResults[i]);
     return MFX_ERR_NONE;
+}
+
+mfxStatus MFXSSIMCalc::GetAverageResult(double pResult[3])
+{
+    // There is no real calculation for SSIM
+    MFX_FOR(3, pResult[i] = -1);
+    return MFX_ERR_UNSUPPORTED;
 }
 
 mfxStatus MFXSSIMCalc::GetOveralResult(double pResult[3])
@@ -505,6 +525,13 @@ mfxStatus MFXYUVDump::GetLastCmpResult(double * /*pResult[3]*/)
 
 mfxStatus MFXYUVDump::GetOveralResult(double * /*pResult[3]*/)
 {
+    return MFX_ERR_UNSUPPORTED;
+}
+
+mfxStatus MFXYUVDump::GetAverageResult(double pResult[3])
+{
+     // There is no real calculation
+    MFX_FOR(3, pResult[i] = -1);
     return MFX_ERR_UNSUPPORTED;
 }
 
