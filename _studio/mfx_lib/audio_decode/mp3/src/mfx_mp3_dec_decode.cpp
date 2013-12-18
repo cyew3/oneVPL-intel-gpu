@@ -208,8 +208,8 @@ mfxStatus AudioDECODEMP3::FillAudioParamMP3(MP3Dec_com* res, mfxAudioParam *out)
     mfxStatus sts = MFX_ERR_NONE;
     out->mfx.BitPerSample = 16; // UMC MP3 decoder retunrs 16 bit per sample depth (see mp3dec_api_fp.cpp line 405)
     out->mfx.NumChannel = (mfxU16)(res->stereo); // to do check if it works correct on mono
-    out->mfx.Bitrate = (mfxU16)mp3_bitrate[res->header.id][res->header.layer - 1][res->header.bitRate];
-    out->mfx.SampleFrequency = (mfxU16)(mp3_frequency[res->header.id + res->mpg25][res->header.samplingFreq] + res->header.paddingBit);
+    out->mfx.Bitrate = (mfxU32)mp3_bitrate[res->header.id][res->header.layer - 1][res->header.bitRate];
+    out->mfx.SampleFrequency = (mfxU32)(mp3_frequency[res->header.id + res->mpg25][res->header.samplingFreq] + res->header.paddingBit);
 
     out->mfx.CodecId = MFX_CODEC_MP3;
     if(res->header.id == 1)
@@ -508,9 +508,9 @@ mfxStatus MFX_MP3_Utility::FillAudioParam( mfxAudioParam *in, mfxAudioParam *out
 mfxStatus MFX_MP3_Utility::FillAudioParamByUMC(UMC::MP3DecoderParams *in, mfxAudioParam *out)
 {
     out->mfx.BitPerSample = (mfxU16)in->m_info.bitPerSample;
-    out->mfx.Bitrate = (mfxU16)in->m_info.bitrate;
+    out->mfx.Bitrate = (mfxU32)in->m_info.bitrate;
     out->mfx.NumChannel = (mfxU16)in->m_info.channels;
-    out->mfx.SampleFrequency = (mfxU16)in->m_info.sample_frequency;
+    out->mfx.SampleFrequency = (mfxU32)in->m_info.sample_frequency;
     return MFX_ERR_NONE;
 }
 

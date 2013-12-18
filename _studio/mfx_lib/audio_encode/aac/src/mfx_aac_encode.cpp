@@ -383,9 +383,9 @@ mfxStatus MFX_AAC_Encoder_Utility::FillAudioParam( mfxAudioParam *in, mfxAudioPa
 mfxStatus MFX_AAC_Encoder_Utility::FillAudioParamByUMC(UMC::AACEncoderParams *in, mfxAudioParam *out)
 {
     out->mfx.BitPerSample = (mfxU16)in->m_info.bitPerSample;
-    out->mfx.Bitrate = (mfxU16)in->m_info.bitrate;
+    out->mfx.Bitrate = (mfxU32)in->m_info.bitrate;
     out->mfx.NumChannel = (mfxU16)in->m_info.channels;
-    out->mfx.SampleFrequency = (mfxU16)in->m_info.sample_frequency;
+    out->mfx.SampleFrequency = (mfxU32)in->m_info.sample_frequency;
     return MFX_ERR_NONE;
 }
 
