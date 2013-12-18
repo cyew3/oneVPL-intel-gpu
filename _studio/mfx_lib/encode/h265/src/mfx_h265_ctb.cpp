@@ -1490,6 +1490,10 @@ Ipp32s H265CU::MatchingMetricBipred_PU(PixType *pSrc, H265MEInfo* me_info, PixTy
             pred_buf_y[dir] = interp_buf[idx].pred_buf_y;
             interp_buf[idx].pY = pY[dir];
             interp_buf[idx].MV = MV[dir];
+
+            // Temporary clip MV here, just to avoid out-of-frame reading
+            clipMV(MV[dir]);
+
             ME_Interpolate_old(me_info, &MV[dir], pY[dir], pitch[dir], pred_buf_y[dir], MAX_CU_SIZE);
             interp_idx_last = (interp_idx_last+1)&(INTERP_BUF_SZ-1); // added to end
             if (interp_idx_first == interp_idx_last) // replaced oldest
