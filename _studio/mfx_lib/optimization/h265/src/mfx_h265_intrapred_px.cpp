@@ -955,7 +955,7 @@ namespace MFX_HEVC_PP
             {
                 h265_PredictIntra_Ang_8u_px_no_transp(mode, FiltPel, pels, width, width);
             }
-            pels += width * width;  // next buffer
+            pels += (width * width)*2;  // next buffer
         }
 
         // hor and ver modes require additional filtering
