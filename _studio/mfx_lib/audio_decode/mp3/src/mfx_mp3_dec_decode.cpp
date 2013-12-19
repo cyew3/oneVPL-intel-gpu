@@ -308,7 +308,7 @@ mfxStatus AudioDECODEMP3::MP3ECODERoutine(void *pState, void *pParam,
         //because in this case we must save encoded frame size + 3 bytes (syncword - 1) 
         if (0 != obj.mInData.GetDataSize() && obj.mInData.GetDataSize() != 3) {
             UMC::Status sts = obj.m_pMP3AudioDecoder.get()->GetFrame(&obj.mInData, &obj.mOutData);
-            MFX_CHECK_UMC_STS(sts);
+            mfxRes = ConvertStatusUmc2Mfx(sts);
             //TODO: disable WA for decoding first frame
             pTask->out->DataLength = (mfxU32) obj.mOutData.GetDataSize();
         }

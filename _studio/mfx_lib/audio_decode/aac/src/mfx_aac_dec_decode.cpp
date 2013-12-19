@@ -445,7 +445,7 @@ mfxStatus AudioDECODEAAC::AACDECODERoutine(void *pState, void *pParam,
         obj.mOutData.SetBufferPointer( static_cast<Ipp8u *>(pTask->out->Data), pTask->out->DataLength ? pTask->out->DataLength : pTask->out->MaxLength);
         if (0 != obj.mInData.GetDataSize()) {
             UMC::Status sts = obj.m_pAACAudioDecoder.get()->GetFrame(&obj.mInData, &obj.mOutData);
-            MFX_CHECK_UMC_STS(sts);
+            mfxRes = ConvertStatusUmc2Mfx(sts);
             //TODO: disable WA for decoding first frame
             if (!pTask->out->DataLength) {
                 pTask->out->DataLength = (mfxU32) obj.mOutData.GetDataSize();
