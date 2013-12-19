@@ -180,22 +180,6 @@ void H265Slice::SetSliceNumber(Ipp32s iSliceNumber)
 
 } // void H265Slice::SetSliceNumber(Ipp32s iSliceNumber)
 
-inline bool IsSubLayerNonReference(Ipp32s nal_unit_type)
-{
-    switch (nal_unit_type)
-    {
-    case NAL_UT_CODED_SLICE_RADL_N:
-    case NAL_UT_CODED_SLICE_RASL_N:
-    case NAL_UT_CODED_SLICE_STSA_N:
-    case NAL_UT_CODED_SLICE_TSA_N:
-    case NAL_UT_CODED_SLICE_TRAIL_N:
-    //also need to add RSV_VCL_N10, RSV_VCL_N12, or RSV_VCL_N14,
-        return true;
-    }
-
-    return false;
-}
-
 bool H265Slice::DecodeSliceHeader(PocDecoding * pocDecoding)
 {
     UMC::Status umcRes = UMC::UMC_OK;
@@ -304,8 +288,7 @@ bool H265Slice::DecodeSliceHeader(PocDecoding * pocDecoding)
                     setRPS(rps);
                 }
 
-                if (GetSliceHeader()->nuh_temporal_id == 0 && sliceHdr->nal_unit_type != NAL_UT_CODED_SLICE_RADL_R &&
-                    sliceHdr->nal_unit_type != NAL_UT_CODED_SLICE_RASL_R && !IsSubLayerNonReference(sliceHdr->nal_unit_type))
+                if (GetSliceHeader()->nuh_temporal_id == 0)
                 {
                     pocDecoding->prevPicOrderCntMsb = PicOrderCntMsb;
                     pocDecoding->prevPocPicOrderCntLsb = slice_pic_order_cnt_lsb;
