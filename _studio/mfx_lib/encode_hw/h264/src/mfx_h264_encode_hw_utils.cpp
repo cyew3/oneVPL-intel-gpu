@@ -5599,7 +5599,8 @@ void CabacPackerSimple::TerminateEncode()
 
     RenormE();
     PutBitC((m_codILow >> 9) & 1);
-    PutBits((((m_codILow >> 7) & 3) | 1), 2);
+    PutBit(m_codILow >> 8);
+    PutTrailingBits();
 
     m_BinCountsInNALunits ++;
 }

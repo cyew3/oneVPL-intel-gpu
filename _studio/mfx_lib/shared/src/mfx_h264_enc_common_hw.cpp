@@ -6808,13 +6808,13 @@ ENCODE_PACKEDHEADER_DATA const & HeaderPacker::PackSkippedSlice(
     
         mfxU8 ctx276 = 63; // ctx for end_of_slice_flag: MPS = 0, pStateIdx = 63 (non-adapting prob state)
     
-        for (mfxU32 uMB = 0; uMB < picSizeInMB; uMB ++)
+        for (mfxU32 uMB = 0; uMB < (picSizeInMB-1); uMB ++)
         {
             packer.EncodeBin(&cabacContexts[0], 1); // encode mb_skip_flag = 1 for every MB.
             packer.EncodeBin(&ctx276, 0); // encode end_of_slice_flag = 0 for every MB
         }
     
-        packer.EncodeBin(&ctx276, 1); // encode end_of_slice_flag = 1 for last MB
+        packer.EncodeBin(&cabacContexts[0], 1); // encode mb_skip_flag = 1 for every MB.
     
         packer.TerminateEncode();
     }
