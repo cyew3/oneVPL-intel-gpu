@@ -26,7 +26,7 @@ mfxStatus ReadPlaneData(mfxU16 w, mfxU16 h, mfxU8 *buf, mfxU8 *ptr, mfxU16 pitch
     return MFX_ERR_NONE;
 }
 
-mfxStatus LoadRawFrame(mfxFrameSurface1* pSurface, FILE* fSource, bool bSim)
+mfxStatus LoadRawFrame(mfxFrameSurface1* pSurface, FILE* fSource, bool /*bSim*/)
 {/*
     if(bSim) {
         // Simulate instantaneous access to 1000 "empty" frames. 
@@ -60,7 +60,7 @@ mfxStatus LoadRawFrame(mfxFrameSurface1* pSurface, FILE* fSource, bool bSim)
         for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)fread(ptr + i * pSurface->Data.Pitch, 1, w*4, fSource);
-            if (w*4 != nBytesRead)
+            if ((mfxU32) w*4 != nBytesRead)
                 return MFX_ERR_MORE_DATA;
         }
         return MFX_ERR_NONE;
@@ -137,7 +137,7 @@ mfxStatus LoadRawRGBFrame(mfxFrameSurface1* pSurface, FILE* fSource, bool bSim)
     for(mfxU16 i = 0; i < h; i++) 
     {
         nBytesRead = (mfxU32)fread(pSurface->Data.B + i * pSurface->Data.Pitch, 1, w*4, fSource);
-        if (w*4 != nBytesRead)
+        if ((mfxU32) w*4 != nBytesRead)
             return MFX_ERR_MORE_DATA;
     }
 
@@ -239,7 +239,7 @@ mfxStatus WriteRawFrame(mfxFrameSurface1 *pSurface, FILE* fSink)
     }
     else if (pInfo->FourCC == MFX_FOURCC_NV12)
     {
-        for (i = 0; i < pInfo->CropH/2; i++)
+        for (i = 0; i < (mfxU32) pInfo->CropH/2; i++)
         {
             sts = WriteSection(pData->UV, 1, pInfo->CropW, pInfo, pData, i, 0, fSink);
             if(MFX_ERR_NONE != sts)
