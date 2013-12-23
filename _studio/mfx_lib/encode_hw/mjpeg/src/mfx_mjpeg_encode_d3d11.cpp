@@ -125,7 +125,7 @@ mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
     {
         ENCODE_FORMAT_COUNT encodeFormatCount;
         encodeFormatCount.CompressedBufferInfoCount = 0;
-        encodeFormatCount.UncompressedFormatCount = 0;
+        encodeFormatCount.UncompressedFormatCount   = 0;
         
         //HRESULT hr = m_auxDevice->Execute(ENCODE_FORMAT_COUNT_ID, guid, encodeFormatCount);        
         D3D11_VIDEO_DECODER_EXTENSION decoderExtParam;
@@ -146,9 +146,9 @@ mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
 
         ENCODE_FORMATS encodeFormats;
         encodeFormats.CompressedBufferInfoSize = encodeFormatCount.CompressedBufferInfoCount * sizeof(ENCODE_COMP_BUFFER_INFO);
-        encodeFormats.UncompressedFormatSize = encodeFormatCount.UncompressedFormatCount * sizeof(D3DDDIFORMAT);
-        encodeFormats.pCompressedBufferInfo = &m_compBufInfo[0];
-        encodeFormats.pUncompressedFormats = &m_uncompBufInfo[0];
+        encodeFormats.UncompressedFormatSize   = encodeFormatCount.UncompressedFormatCount * sizeof(D3DDDIFORMAT);
+        encodeFormats.pCompressedBufferInfo    = &m_compBufInfo[0];
+        encodeFormats.pUncompressedFormats     = &m_uncompBufInfo[0];
 
         //D3D11_VIDEO_DECODER_EXTENSION decoderExtParam;
         decoderExtParam.Function = ENCODE_FORMATS_ID; 
@@ -351,16 +351,20 @@ mfxStatus D3D11Encoder::Execute(DdiTask &task, mfxHDL surface)
         }
         bufCnt++;
     }
-    
-    encodeCompBufferDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_HUFFTBLDATA);
-    encodeCompBufferDesc[bufCnt].DataSize = 0;
-    encodeCompBufferDesc[bufCnt].pCompBuffer = &pExecuteBuffers->m_dht_list[0];
-    for (i = 0; i < pExecuteBuffers->m_pps.NumCodingTable; i++)
-    {
-        encodeCompBufferDesc[bufCnt].DataSize += mfxU32(sizeof(pExecuteBuffers->m_dht_list[i]));
-    }
-    bufCnt++;
 
+    if(pExecuteBuffers->m_pps.NumCodingTable)
+    {
+        encodeCompBufferDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_HUFFTBLDATA);
+        encodeCompBufferDesc[bufCnt].DataSize = 0;
+        encodeCompBufferDesc[bufCnt].pCompBuffer = &pExecuteBuffers->m_dht_list[0];
+        for (i = 0; i < pExecuteBuffers->m_pps.NumCodingTable; i++)
+        {
+            encodeCompBufferDesc[bufCnt].DataSize += mfxU32(sizeof(pExecuteBuffers->m_dht_list[i]));
+        }
+        bufCnt++;
+    }
+
+    //single interleaved scans only are supported
     for (i = 0; i < pExecuteBuffers->m_pps.NumScan; i++)
     {
         encodeCompBufferDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_SLICEDATA);
@@ -407,6 +411,12 @@ mfxStatus D3D11Encoder::QueryStatus(DdiTask & task)
     // first check cache.
     const ENCODE_QUERY_STATUS_PARAMS* feedback = m_feedbackCached.Hit(task.m_statusReportNumber);
 
+#ifdef NEW_STATUS_REPORTING_DDI_0915
+    ENCODE_QUERY_STATUS_PARAMS_DESCR feedbackDescr;
+    feedbackDescr.SizeOfStatusParamStruct = sizeof(m_feedbackUpdate[0]);
+    feedbackDescr.StatusParamType = QUERY_STATUS_PARAM_FRAME;
+#endif // NEW_STATUS_REPORTING_DDI_0915
+
     // if task is not in cache then query its status
     if (feedback == 0 || feedback->bStatus != ENCODE_OK)
     {
@@ -415,8 +425,13 @@ mfxStatus D3D11Encoder::QueryStatus(DdiTask & task)
             D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
 
             decoderExtParams.Function              = ENCODE_QUERY_STATUS_ID;
+#ifdef NEW_STATUS_REPORTING_DDI_0915
+            decoderExtParams.pPrivateInputData     = &feedbackDescr;
+            decoderExtParams.PrivateInputDataSize  = sizeof(feedbackDescr);
+#else // NEW_STATUS_REPORTING_DDI_0915
             decoderExtParams.pPrivateInputData     = 0;
             decoderExtParams.PrivateInputDataSize  = 0;
+#endif // NEW_STATUS_REPORTING_DDI_0915
             decoderExtParams.pPrivateOutputData    = &m_feedbackUpdate[0];
             decoderExtParams.PrivateOutputDataSize = mfxU32(m_feedbackUpdate.size() * sizeof(m_feedbackUpdate[0]));
             decoderExtParams.ResourceCount         = 0;

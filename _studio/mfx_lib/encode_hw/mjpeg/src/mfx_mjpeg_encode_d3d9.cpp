@@ -259,21 +259,25 @@ mfxStatus D3D9Encoder::Execute(DdiTask &task, mfxHDL surface)
     MFX_CHECK_WITH_ASSERT(m_pAuxDevice, MFX_ERR_NOT_INITIALIZED);
     ExecuteBuffers *pExecuteBuffers = m_pDdiData;
 
-    const mfxU32 NumCompBuffer = 16;
-    ENCODE_COMPBUFFERDESC encodeCompBufferDesc[NumCompBuffer];
-    memset(&encodeCompBufferDesc, 0, sizeof(encodeCompBufferDesc));
+    mfxU32 compBufferCount = 2 + 
+        (pExecuteBuffers->m_pps.NumQuantTable ? 1 : 0) + 
+        (pExecuteBuffers->m_pps.NumCodingTable ? 1 : 0) + 
+        (pExecuteBuffers->m_pps.NumScan ? 1 : 0);
+    std::vector<ENCODE_COMPBUFFERDESC>  encodeCompBufferDesc;
+    encodeCompBufferDesc.resize(compBufferCount);
+    memset(&encodeCompBufferDesc[0], 0, sizeof(ENCODE_COMPBUFFERDESC) * compBufferCount);
 
     ENCODE_EXECUTE_PARAMS encodeExecuteParams;
-    memset(&encodeExecuteParams, 0, sizeof(encodeExecuteParams));
+    memset(&encodeExecuteParams, 0, sizeof(ENCODE_EXECUTE_PARAMS));
     encodeExecuteParams.NumCompBuffers = 0;
-    encodeExecuteParams.pCompressedBuffers = encodeCompBufferDesc;
+    encodeExecuteParams.pCompressedBuffers = &encodeCompBufferDesc[0];
 
     // FIXME: need this until production driver moves to DDI 0.87
-    encodeExecuteParams.pCipherCounter = 0;
-    encodeExecuteParams.PavpEncryptionMode.eCounterMode = 0;
+    encodeExecuteParams.pCipherCounter                     = 0;
+    encodeExecuteParams.PavpEncryptionMode.eCounterMode    = 0;
     encodeExecuteParams.PavpEncryptionMode.eEncryptionType = PAVP_ENCRYPTION_NONE;
 
-    UINT& bufCnt = encodeExecuteParams.NumCompBuffers;
+    UINT & bufCnt = encodeExecuteParams.NumCompBuffers;
 
     pExecuteBuffers->m_pps.StatusReportFeedbackNumber = task.m_statusReportNumber;
 
@@ -290,22 +294,31 @@ mfxStatus D3D9Encoder::Execute(DdiTask &task, mfxHDL surface)
 
     mfxU16 i = 0;
 
-    for (i = 0; i < pExecuteBuffers->m_pps.NumQuantTable; i++)
+    if(pExecuteBuffers->m_pps.NumQuantTable)
     {
         encodeCompBufferDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTEL_JPEGENCODE_QUANTDATA;
-        encodeCompBufferDesc[bufCnt].DataSize = mfxU32(sizeof(pExecuteBuffers->m_dqt_list[i]));
-        encodeCompBufferDesc[bufCnt].pCompBuffer = &pExecuteBuffers->m_dqt_list[i];
+        encodeCompBufferDesc[bufCnt].DataSize = 0;
+        encodeCompBufferDesc[bufCnt].pCompBuffer = &pExecuteBuffers->m_dqt_list[0];
+        for (i = 0; i < pExecuteBuffers->m_pps.NumQuantTable; i++)
+        {
+            encodeCompBufferDesc[bufCnt].DataSize += mfxU32(sizeof(pExecuteBuffers->m_dqt_list[i]));
+        }
         bufCnt++;
     }
 
-    for (i = 0; i < pExecuteBuffers->m_pps.NumCodingTable; i++)
+    if(pExecuteBuffers->m_pps.NumCodingTable)
     {
         encodeCompBufferDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTEL_JPEGENCODE_HUFFTBLDATA;
-        encodeCompBufferDesc[bufCnt].DataSize = mfxU32(sizeof(pExecuteBuffers->m_dht_list[i]));
-        encodeCompBufferDesc[bufCnt].pCompBuffer = &pExecuteBuffers->m_dht_list[i];
+        encodeCompBufferDesc[bufCnt].DataSize = 0;
+        encodeCompBufferDesc[bufCnt].pCompBuffer = &pExecuteBuffers->m_dht_list[0];
+        for (i = 0; i < pExecuteBuffers->m_pps.NumCodingTable; i++)
+        {
+            encodeCompBufferDesc[bufCnt].DataSize += mfxU32(sizeof(pExecuteBuffers->m_dht_list[i]));
+        }
         bufCnt++;
     }
 
+    //single interleaved scans only are supported
     for (i = 0; i < pExecuteBuffers->m_pps.NumScan; i++)
     {
         encodeCompBufferDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTEL_JPEGENCODE_SCANDATA;
@@ -314,13 +327,13 @@ mfxStatus D3D9Encoder::Execute(DdiTask &task, mfxHDL surface)
         bufCnt++;
     }
 
-    if (pExecuteBuffers->m_payload_data_present)
-    {
-        encodeCompBufferDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_PAYLOADDATA;
-        encodeCompBufferDesc[bufCnt].DataSize = mfxU32(pExecuteBuffers->m_payload.size);
-        encodeCompBufferDesc[bufCnt].pCompBuffer = (void*)pExecuteBuffers->m_payload.data;
-        bufCnt++;
-    }
+    //if (pExecuteBuffers->m_payload_data_present)
+    //{
+    //    encodeCompBufferDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_PAYLOADDATA;
+    //    encodeCompBufferDesc[bufCnt].DataSize = mfxU32(pExecuteBuffers->m_payload.size);
+    //    encodeCompBufferDesc[bufCnt].pCompBuffer = (void*)pExecuteBuffers->m_payload.data;
+    //    bufCnt++;
+    //}
 
     try
     {
@@ -353,6 +366,12 @@ mfxStatus D3D9Encoder::QueryStatus(DdiTask & task)
     // first check cache.
     const ENCODE_QUERY_STATUS_PARAMS* feedback = m_feedbackCached.Hit(task.m_statusReportNumber);
 
+#ifdef NEW_STATUS_REPORTING_DDI_0915
+    ENCODE_QUERY_STATUS_PARAMS_DESCR feedbackDescr;
+    feedbackDescr.SizeOfStatusParamStruct = sizeof(m_feedbackUpdate[0]);
+    feedbackDescr.StatusParamType = QUERY_STATUS_PARAM_FRAME;
+#endif // NEW_STATUS_REPORTING_DDI_0915
+
     // if task is not in cache then query its status
     if (feedback == 0 || feedback->bStatus != ENCODE_OK)
     {
@@ -360,8 +379,13 @@ mfxStatus D3D9Encoder::QueryStatus(DdiTask & task)
         {
             HRESULT hr = m_pAuxDevice->Execute(
                 ENCODE_QUERY_STATUS_ID,
+#ifdef NEW_STATUS_REPORTING_DDI_0915
+                (void *)&feedbackDescr,
+                sizeof(feedbackDescr),
+#else // NEW_STATUS_REPORTING_DDI_0915
                 (void *)0,
                 0,
+#endif // NEW_STATUS_REPORTING_DDI_0915
                 &m_feedbackUpdate[0],
                 (mfxU32)m_feedbackUpdate.size() * sizeof(m_feedbackUpdate[0]));
             MFX_CHECK(hr != D3DERR_WASSTILLDRAWING, MFX_WRN_DEVICE_BUSY);
