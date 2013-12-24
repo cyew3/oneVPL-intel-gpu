@@ -1572,7 +1572,12 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 
 
         // [6.1.5] Set Variance Param
-        VPE_VPREP_SET_VARIANCE_PARAM  varianceSetParam = {VPREP_VARIANCE_TYPE_1};
+        VPE_VPREP_SET_VARIANCE_PARAM  varianceSetParam = {VPREP_VARIANCE_TYPE_NONE};
+
+        if(pParams->bVarianceEnable)
+        {
+            varianceSetParam.Type = VPREP_VARIANCE_TYPE_1;
+        }
 
         iFunc.Function          = VPE_FN_VPREP_SET_VARIANCE_PARAM;
         iFunc.pSetVarianceParam = &varianceSetParam;
