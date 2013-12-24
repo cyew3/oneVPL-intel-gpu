@@ -175,7 +175,7 @@ namespace MFX_HEVC_PP
 
     //} // void h265_FilterEdgeLuma_8u_I(...)
 
-#if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
+#if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_AUTO) || defined(MFX_TARGET_OPTIMIZATION_ATOM)
 #if defined(MFX_TARGET_OPTIMIZATION_PX)
     Ipp32s h265_FilterEdgeLuma_8u_I(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir)
 #else
