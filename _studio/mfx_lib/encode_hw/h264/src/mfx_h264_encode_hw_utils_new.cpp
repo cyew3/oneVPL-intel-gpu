@@ -1447,17 +1447,17 @@ void MfxHwH264Encode::ConfigureTask(
     DdiTask const &       prevTask,
     MfxVideoParam const & video)
 {
-    mfxExtCodingOption const *      extOpt         = GetExtBuffer(video);
-    mfxExtCodingOption2 const *     extOpt2        = GetExtBuffer(video);
+    mfxExtCodingOption const &      extOpt         = GetExtBufferRef(video);
+    mfxExtCodingOption2 const &     extOpt2        = GetExtBufferRef(video);
     mfxExtCodingOption2 const *     extOpt2Runtime = GetExtBuffer(task.m_ctrl);
-    mfxExtCodingOptionDDI const *   extDdi         = GetExtBuffer(video);
-    mfxExtSpsHeader const *         extSps         = GetExtBuffer(video);
-    mfxExtAvcTemporalLayers const * extTemp        = GetExtBuffer(video);
-    mfxExtPAVPOption const *        extPavp        = GetExtBuffer(video);
-    mfxExtEncoderROI const *        extRoi         = GetExtBuffer(video);
+    mfxExtCodingOptionDDI const &   extDdi         = GetExtBufferRef(video);
+    mfxExtSpsHeader const &         extSps         = GetExtBufferRef(video);
+    mfxExtAvcTemporalLayers const & extTemp        = GetExtBufferRef(video);
+    mfxExtPAVPOption const &        extPavp        = GetExtBufferRef(video);
+    mfxExtEncoderROI const &        extRoi         = GetExtBufferRef(video);
     mfxExtEncoderROI const *        extRoiRuntime  = GetExtBuffer(task.m_ctrl);
 
-    mfxU32 const FRAME_NUM_MAX = 1 << (extSps->log2MaxFrameNumMinus4 + 4);
+    mfxU32 const FRAME_NUM_MAX = 1 << (extSps.log2MaxFrameNumMinus4 + 4);
     
     mfxU32 numReorderFrames = GetNumReorderFrames(video);
     mfxU32 prevsfid         = prevTask.m_fid[1];
@@ -1494,13 +1494,13 @@ void MfxHwH264Encode::ConfigureTask(
     else
         task.m_tidx = CalcTemporalLayerIndex(video, task.m_frameOrder - task.m_frameOrderIdrInDisplayOrder);
     task.m_tid  = video.calcParam.tid[task.m_tidx];
-    task.m_pid  = task.m_tidx + extTemp->BaseLayerPID;
+    task.m_pid  = task.m_tidx + extTemp.BaseLayerPID;
 
     DecideOnRefPicFlag(video, task); // for temporal layers
     
     if (task.m_ctrl.SkipFrame != 0)
     {
-        task.m_ctrl.SkipFrame = (extOpt2->SkipFrame) ? (1 + IsProtectionPavp(video.Protected)) : 0;
+        task.m_ctrl.SkipFrame = (extOpt2.SkipFrame) ? (1 + IsProtectionPavp(video.Protected)) : 0;
 
         if (task.SkipFlag() != 0)
         {
@@ -1519,20 +1519,20 @@ void MfxHwH264Encode::ConfigureTask(
     task.m_decRefPicMrkRep[ffid].original_bottom_field_flag = prevTask.m_fid[prevsfid];
     task.m_decRefPicMrkRep[ffid].dec_ref_pic_marking        = prevTask.m_decRefPicMrk[prevsfid];
 
-    task.m_subMbPartitionAllowed[0] = CheckSubMbPartition(extDdi, task.m_type[0]);
-    task.m_subMbPartitionAllowed[1] = CheckSubMbPartition(extDdi, task.m_type[1]);
+    task.m_subMbPartitionAllowed[0] = CheckSubMbPartition(&extDdi, task.m_type[0]);
+    task.m_subMbPartitionAllowed[1] = CheckSubMbPartition(&extDdi, task.m_type[1]);
 
-    task.m_insertAud[ffid] = IsOn(extOpt->AUDelimiter);
-    task.m_insertAud[sfid] = IsOn(extOpt->AUDelimiter);
+    task.m_insertAud[ffid] = IsOn(extOpt.AUDelimiter);
+    task.m_insertAud[sfid] = IsOn(extOpt.AUDelimiter);
     task.m_insertSps[ffid] = intraPicFlag;
     task.m_insertSps[sfid] = 0;
-    task.m_insertPps[ffid] = task.m_insertSps[ffid] || IsOn(extOpt2->RepeatPPS);
-    task.m_insertPps[sfid] = task.m_insertSps[sfid] || IsOn(extOpt2->RepeatPPS);
+    task.m_insertPps[ffid] = task.m_insertSps[ffid] || IsOn(extOpt2.RepeatPPS);
+    task.m_insertPps[sfid] = task.m_insertSps[sfid] || IsOn(extOpt2.RepeatPPS);
     task.m_nalRefIdc[ffid] = task.m_reference[ffid];
     task.m_nalRefIdc[sfid] = task.m_reference[sfid];
 
 // process roi
-    mfxExtEncoderROI const * pRoi = extRoi;
+    mfxExtEncoderROI const * pRoi = &extRoi;
     if (extRoiRuntime)
     {
         pRoi = extRoiRuntime;
@@ -1559,8 +1559,8 @@ void MfxHwH264Encode::ConfigureTask(
         }
     }
 
-    task.m_maxFrameSize = extOpt2Runtime ? extOpt2Runtime->MaxFrameSize : extOpt2->MaxFrameSize;
-    task.m_numMbPerSlice = extOpt2->NumMbPerSlice;
+    task.m_maxFrameSize = extOpt2Runtime ? extOpt2Runtime->MaxFrameSize : extOpt2.MaxFrameSize;
+    task.m_numMbPerSlice = extOpt2.NumMbPerSlice;
 
     if (video.calcParam.lyncMode)
     {
@@ -1600,12 +1600,12 @@ void MfxHwH264Encode::ConfigureTask(
     if (IsProtectionPavp(video.Protected))
     {
         mfxAES128CipherCounter aesCounter = prevTask.m_aesCounter[prevsfid];
-        Increment(aesCounter, *extPavp);
+        Increment(aesCounter, extPavp);
         task.m_aesCounter[ffid] = aesCounter;
 
         if (task.m_fieldPicFlag)
         {
-            Increment(aesCounter, *extPavp);
+            Increment(aesCounter, extPavp);
             task.m_aesCounter[sfid] = aesCounter;
         }
     }

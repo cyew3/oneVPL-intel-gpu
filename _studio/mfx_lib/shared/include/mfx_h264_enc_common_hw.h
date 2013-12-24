@@ -751,6 +751,37 @@ namespace MfxHwH264Encode
         return mfxExtBufferProxy(par.ExtParam, par.NumExtParam);
     }
 
+    //version with assert, special for KW
+    struct mfxExtBufferRefProxy{
+    public:
+        template <typename T> operator T&()
+        {
+            mfxExtBuffer * p = MfxHwH264Encode::GetExtBuffer(
+                m_extParam,
+                m_numExtParam,
+                ExtBufTypeToId<typename GetPointedType<T*>::Type>::id);
+            assert(p);
+            return *(reinterpret_cast<T*>(p));
+        }
+        
+        template <typename T> friend mfxExtBufferRefProxy GetExtBufferRef(const T & par);
+
+    protected:
+        mfxExtBufferRefProxy(mfxExtBuffer ** extParam, mfxU32 numExtParam)
+            : m_extParam(extParam)
+            , m_numExtParam(numExtParam)
+        {
+        }
+    private:
+        mfxExtBuffer ** m_extParam;
+        mfxU32          m_numExtParam;
+    };
+    
+    template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
+    {
+        return mfxExtBufferRefProxy(par.ExtParam, par.NumExtParam);
+    }
+
     mfxEncryptedData* GetEncryptedData(mfxBitstream & bs, mfxU32 fieldId);
 
     inline bool IsFieldCodingPossible(MfxVideoParam const & par)
