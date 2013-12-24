@@ -113,27 +113,27 @@ void H265DecYUVBufferPadded::allocate(const UMC::FrameData * frameData, const UM
 
     m_chroma_format = GetH265ColorFormat(info->GetColorFormat());
     m_lumaSize = info->GetPlaneInfo(0)->m_ippSize;
-    m_pitch_luma = (Ipp32s)m_frameData.GetPlaneMemoryInfo(0)->m_pitch / info->GetPlaneInfo(0)->m_iSampleSize; //this from h264
+    m_pitch_luma = (Ipp32s)m_frameData.GetPlaneMemoryInfo(0)->m_pitch;
 
-    m_pYPlane = (H265PlanePtrYCommon)m_frameData.GetPlaneMemoryInfo(0)->m_planePtr; //wtf H265 uses internal 14 bit depth
+    m_pYPlane = (H265PlanePtrYCommon)m_frameData.GetPlaneMemoryInfo(0)->m_planePtr;
 
     if (m_chroma_format > 0 || GetH265ColorFormat(frameData->GetInfo()->GetColorFormat()) > 0)
     {
         if (m_chroma_format == 0)
             info = frameData->GetInfo();
         m_chromaSize = info->GetPlaneInfo(1)->m_ippSize;
-        m_pitch_chroma = (Ipp32s)m_frameData.GetPlaneMemoryInfo(1)->m_pitch / info->GetPlaneInfo(1)->m_iSampleSize; //this from h264
+        m_pitch_chroma = (Ipp32s)m_frameData.GetPlaneMemoryInfo(1)->m_pitch;
 
         if (m_frameData.GetInfo()->GetColorFormat() == UMC::NV12)
         {
-            m_pUVPlane = (H265PlanePtrUVCommon)m_frameData.GetPlaneMemoryInfo(1)->m_planePtr; //wtf H265 uses internal 14 bit depth
+            m_pUVPlane = (H265PlanePtrUVCommon)m_frameData.GetPlaneMemoryInfo(1)->m_planePtr;
             m_pUPlane = 0;
             m_pVPlane = 0;
         }
         else
         {
-            m_pUPlane = (H265PlanePtrUVCommon)m_frameData.GetPlaneMemoryInfo(1)->m_planePtr;    //wtf H265 uses internal 14 bit depth
-            m_pVPlane = (H265PlanePtrUVCommon)m_frameData.GetPlaneMemoryInfo(2)->m_planePtr; //wtf H265 uses internal 14 bit depth
+            m_pUPlane = (H265PlanePtrUVCommon)m_frameData.GetPlaneMemoryInfo(1)->m_planePtr;
+            m_pVPlane = (H265PlanePtrUVCommon)m_frameData.GetPlaneMemoryInfo(2)->m_planePtr;
             m_pUVPlane = 0;
         }
     }

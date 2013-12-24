@@ -207,8 +207,7 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curP
     Ipp32s y = curPixelRow >> 3;
 
     Ipp32s srcDstStride = m_pCurrentFrame->pitch_luma();
-    H265PlaneYCommon* baseSrcDst = m_pCurrentFrame->GetLumaAddr(curLCU->CUAddr) +
-                 curPixelRow * srcDstStride + curPixelColumn;
+    H265PlaneYCommon* baseSrcDst = m_pCurrentFrame->GetLumaAddr(curLCU->CUAddr);
 
     H265EdgeData *ctb_start_edge = m_pCurrentFrame->m_CodingData->m_edge + m_pCurrentFrame->m_CodingData->m_edgesInFrameWidth * (curLCU->m_CUPelY >> 3) + (curLCU->m_CUPelX >> 3) * 4;
 
@@ -223,7 +222,7 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curP
 
         if (edge->strength > 0)
         {
-            MFX_HEVC_PP::NAME(h265_FilterEdgeLuma_8u_I)(edge, baseSrcDst + 4 * i * srcDstStride, srcDstStride, VERT_FILT);
+            m_reconstructor->FilterEdgeLuma(edge, baseSrcDst, srcDstStride, curPixelColumn, curPixelRow + 4 * i, VERT_FILT);
         }
 
         if (m_pSeqParamSet->log2_min_transform_block_size < 3)
@@ -283,7 +282,7 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curP
 
         if (edge->strength > 0)
         {
-            MFX_HEVC_PP::NAME(h265_FilterEdgeLuma_8u_I)(edge, baseSrcDst + 4 * (i - 1), srcDstStride, HOR_FILT);
+            m_reconstructor->FilterEdgeLuma(edge, baseSrcDst, srcDstStride, curPixelColumn + 4 * (i - 1), curPixelRow, HOR_FILT);
         }
 
         if (m_pSeqParamSet->log2_min_transform_block_size >= 3 && i == 1)

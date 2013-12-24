@@ -303,9 +303,6 @@ H265SegmentDecoder::H265SegmentDecoder(TaskBroker_H265 * pTaskBroker)
 
     m_pSlice = 0;
 
-    bit_depth_luma = 8;
-    bit_depth_chroma = 8;
-
     //h265 members from TDecCu:
     m_curCU = NULL;
     // prediction buffer
@@ -392,9 +389,7 @@ SegmentDecoderHPBase_H265 *CreateSD_H265(Ipp32s bit_depth_luma, Ipp32s bit_depth
 {
     if (bit_depth_chroma > 8 || bit_depth_luma > 8)
     {
-        VM_ASSERT(false);
-        return 0;
-    }
+        return CreateSegmentDecoderWrapper<Ipp16s, Ipp8u, Ipp8u>::CreateSoftSegmentDecoder();    }
     else
     {
         return CreateSegmentDecoderWrapper<Ipp16s, Ipp8u, Ipp8u>::CreateSoftSegmentDecoder();
@@ -520,7 +515,7 @@ void H265SegmentDecoder::parseSaoOffset(SAOLCUParam* psSaoLcuParam, Ipp32u compI
     {
         psSaoLcuParam->m_length = iTypeLength[psSaoLcuParam->m_typeIdx];
 
-        Ipp32s bitDepth = compIdx ? g_bitDepthC : g_bitDepthY;
+        Ipp32s bitDepth = compIdx ? m_pSeqParamSet->bit_depth_chroma : m_pSeqParamSet->bit_depth_luma;
         Ipp32s offsetTh = 1 << IPP_MIN(bitDepth - 5, 5);
 
         if (psSaoLcuParam->m_typeIdx == SAO_BO)
@@ -1984,7 +1979,8 @@ void H265SegmentDecoder::ParseCoeffNxNCABACOptimized(H265CodingUnit* pCU, H265Co
     const Ipp8u *sGCr = scanGCZr + (1<<(L2Width<<1))*(ScanIdx+2) - LastScanSet - 1;
 
     Ipp32u c_Log2TrSize = g_ConvertToBit[Size] + 2;
-    Ipp32u TransformShift = MAX_TR_DYNAMIC_RANGE - 8 - c_Log2TrSize;
+    Ipp32u bit_depth = IsLuma ? m_context->m_sps->bit_depth_luma : m_context->m_sps->bit_depth_chroma;
+    Ipp32u TransformShift = MAX_TR_DYNAMIC_RANGE - bit_depth - c_Log2TrSize;
     Ipp32s idx = plane;
     Ipp32s QPRem = m_context->m_ScaledQP[idx].m_QPRem;
     Ipp32s QPPer = m_context->m_ScaledQP[idx].m_QPPer;
@@ -2425,7 +2421,7 @@ void H265SegmentDecoder::ReconPCM(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u
     H265PlanePtrYCommon pPcmY = (H265PlanePtrYCommon)(pCU->m_TrCoeffY + LumaOffset);
     H265PlanePtrYCommon pPicReco = m_pCurrentFrame->GetLumaAddr(pCU->CUAddr, AbsPartIdx);
     Ipp32u PitchLuma = m_pCurrentFrame->pitch_luma();
-    Ipp32u PcmLeftShiftBit = g_bitDepthY - m_pSeqParamSet->pcm_sample_bit_depth_luma;
+    Ipp32u PcmLeftShiftBit = m_pSeqParamSet->bit_depth_luma - m_pSeqParamSet->pcm_sample_bit_depth_luma;
 
     for (Ipp32u Y = 0; Y < Size; Y++)
     {
@@ -2443,7 +2439,7 @@ void H265SegmentDecoder::ReconPCM(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u
     H265PlanePtrUVCommon pPcmCr = (H265PlanePtrUVCommon)(pCU->m_TrCoeffCr + ChromaOffset);
     pPicReco = m_pCurrentFrame->GetCbCrAddr(pCU->CUAddr, AbsPartIdx);
     Ipp32u PitchChroma = m_pCurrentFrame->pitch_chroma();
-    PcmLeftShiftBit = g_bitDepthC - m_pSeqParamSet->pcm_sample_bit_depth_chroma;
+    PcmLeftShiftBit = m_pSeqParamSet->bit_depth_chroma - m_pSeqParamSet->pcm_sample_bit_depth_chroma;
 
     for (Ipp32u Y = 0; Y < Size; Y++)
     {

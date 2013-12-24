@@ -133,9 +133,10 @@ namespace MFX_HEVC_PP
         Ipp32u isAnyNBR = (tpIf | lfIf | tlIf);
         Ipp32u isAllNBR = (tpIf & lfIf & (tlIf | 0xFFFFFFFE));
 
-        if (!(isAnyNBR)) {
+        if (!(isAnyNBR))
+        {
             // No neighbors available
-            memset(pPredPel, dc_value, TotalPixels);
+            std::fill(pPredPel, pPredPel + TotalPixels, dc_value);
         } else if (isAllNBR == avlMask) {
             // All neighbors available
             ippsCopy_16u(pSrc - srcPitch - 1, pPredPel, blkSize2 + 1);
@@ -194,7 +195,7 @@ namespace MFX_HEVC_PP
                 }
                 availableRef = *pPredPel;
             } else {
-                memset(pPredPel + 1, availableRef, blkSize2);
+                std::fill(pPredPel + 1, pPredPel + 1 + blkSize2, availableRef);
             }
             tIF = lfIf;
             // Fill left line with correct padding
@@ -234,7 +235,7 @@ namespace MFX_HEVC_PP
                     itIF >>= 1;
                 }
             } else {
-                memset(pPredPel + blkSize2 + 1, availableRef, blkSize2);
+                std::fill(pPredPel + blkSize2 + 1, pPredPel + blkSize2 + 1 + blkSize2, availableRef);
             }
         }
     }
@@ -257,7 +258,7 @@ namespace MFX_HEVC_PP
 
         if (!(isAnyNBR)) {
             // No neighbors available
-            memset(pPredPel, dc_value, TotalPixels);
+            std::fill(pPredPel, pPredPel + TotalPixels, dc_value);
         } else if (isAllNBR == avlMask) {
             // All neighbors available
             ippsCopy_16u(pSrc - srcPitch - 2, pPredPel, blkSize2 + 2);

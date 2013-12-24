@@ -20,8 +20,12 @@ namespace UMC_HEVC_DECODER
 UMC::Status FillVideoParam(const H265SeqParamSet * seq, mfxVideoParam *par, bool full)
 {
     par->mfx.CodecId = MFX_CODEC_HEVC;
-
     par->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+
+    if (seq->bit_depth_luma > 8 || seq->bit_depth_chroma > 8)
+    {
+        par->mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
+    }
 
     par->mfx.FrameInfo.Width = (mfxU16) (seq->pic_width_in_luma_samples);
     par->mfx.FrameInfo.Height = (mfxU16) (seq->pic_height_in_luma_samples);

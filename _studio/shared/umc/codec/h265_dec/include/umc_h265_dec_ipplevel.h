@@ -53,22 +53,38 @@ typedef struct H264InterpolationParams_8u
 
 } H264InterpolationParams_8u;
 
+typedef struct H264InterpolationParams_16u
+{
+    const Ipp16u *pSrc;                                          /* (const Ipp8u *) pointer to the source memory */
+    /*SIZE_T*/ size_t srcStep;                                             /* (SIZE_T) pitch of the source memory */
+    Ipp16u *pDst;                                                /* (Ipp8u *) pointer to the destination memory */
+    /*SIZE_T*/ size_t dstStep;                                             /* (SIZE_T) pitch of the destination memory */
 
-IPPFUN(IppStatus, ippiInterpolateLumaBlock_H265_8u, (IppVCInterpolateBlock_8u *interpolateInfo, Ipp8u *temporary_buffer));
+    Ipp32s hFraction;                                           /* (Ipp32s) horizontal fraction of interpolation */
+    Ipp32s vFraction;                                           /* (Ipp32s) vertical fraction of interpolation */
 
-IppStatus ippiInterpolateBoundaryLumaBlock_H264_8u(Ipp32s iOverlappingType, H264InterpolationParams_8u *pParams, Ipp8u *pTempBuf);
-IppStatus ippiReadDataBlockThroughBoundary_8u(Ipp32s iOverlappingType,
-                                              H264InterpolationParams_8u *pParams);
+    Ipp32s blockWidth;                                          /* (Ipp32s) width of destination block */
+    Ipp32s blockHeight;                                         /* (Ipp32s) height of destination block */
 
-IPPFUN(IppStatus, ippiInterpolateChromaBlock_H265_8u_P1R, (IppVCInterpolateBlock_8u *interpolateInfo, Ipp8u *temporary_buffer));
-IppStatus ippiReadDataBlockThroughBoundary_NV12_8u(Ipp32s iOverlappingType,
-                                              H264InterpolationParams_8u *pParams);
+    Ipp32s iType;                                               /* (Ipp32s) type of interpolation */
 
-IppStatus ippiInterpolateBoundaryChromaBlock_NV12_H264_8u(Ipp32s iOverlappingType, H264InterpolationParams_8u *pParams, Ipp8u *temporary_buffer);
+    Ipp32s xPos;                                                /* (Ipp32s) x coordinate of source data block */
+    Ipp32s yPos;                                                /* (Ipp32s) y coordinate of source data block */
+    Ipp32s dataWidth;                                           /* (Ipp32s) width of the used source data */
+    Ipp32s dataHeight;                                          /* (Ipp32s) height of the used source data */
 
-IPPFUN(IppStatus, ippiInterpolateChromaBlock_H264_8u, (IppVCInterpolateBlock_8u *interpolateInfo, Ipp8u *temporary_buffer));
+    IppiSize frameSize;                                         /* (IppiSize) frame size */
 
+    const Ipp16u *pSrcComplementary;                             /* (const Ipp8u *) pointer to the complementary source memory */
+    Ipp16u *pDstComplementary;                                   /* (Ipp8u *) pointer to the complementary destination memory */
 
+} H264InterpolationParams_16u;
+
+IPPFUN(IppStatus, ippiInterpolateLumaBlock_H265, (IppVCInterpolateBlock_8u *interpolateInfo, Ipp8u *temporary_buffer));
+IPPFUN(IppStatus, ippiInterpolateChromaBlock_H264, (IppVCInterpolateBlock_8u *interpolateInfo, Ipp8u *temporary_buffer));
+
+IPPFUN(IppStatus, ippiInterpolateLumaBlock_H265, (IppVCInterpolateBlock_8u *interpolateInfo, Ipp16u *temporary_buffer));
+IPPFUN(IppStatus, ippiInterpolateChromaBlock_H264, (IppVCInterpolateBlock_8u *interpolateInfo, Ipp16u *temporary_buffer));
 
 } /* namespace UMC_H265_DECODER */
 

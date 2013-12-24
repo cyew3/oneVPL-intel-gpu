@@ -92,7 +92,7 @@ namespace UMC_HEVC_DECODER
         Ipp32u width = pCU->GetWidth(AbsPartIdx) >> TrDepth;
 
         //===== get Predicted Pels =====
-        Ipp8u PredPel[4*64+1];
+        Ipp8u PredPel[(4*64+1) * 2];
 
         const Ipp32s FilteredModes[] = {10, 7, 1, 0, 10};
         const Ipp8u h265_log2table[] =
@@ -101,12 +101,8 @@ namespace UMC_HEVC_DECODER
             5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6
         };
 
-        h265_GetPredPelsLuma_8u(
-            pCU->m_Frame->GetLumaAddr(pCU->CUAddr, AbsPartIdx),
-            PredPel, 
-            width, 
-            pCU->m_Frame->pitch_luma(), 
-            tpIf, lfIf, tlIf);
+        m_reconstructor->GetPredPelsLuma(pCU->m_Frame->GetLumaAddr(pCU->CUAddr, AbsPartIdx),
+            PredPel, width, pCU->m_Frame->pitch_luma(), tpIf, lfIf, tlIf);
 
         bool isFilterNeeded = true;
         Ipp32u LumaPredMode = pCU->GetLumaIntra(AbsPartIdx);
@@ -125,58 +121,16 @@ namespace UMC_HEVC_DECODER
             }
         }   
 
-        if (m_pSeqParamSet->sps_strong_intra_smoothing_enabled_flag && isFilterNeeded)
+        if (isFilterNeeded)
         {
-            Ipp32s CUSize = pCU->GetWidth(AbsPartIdx) >> TrDepth;
-
-            Ipp32s blkSize = 32;
-            Ipp32s threshold = 1 << (g_bitDepthY - 5);        
-
-            Ipp32s topLeft = PredPel[0];
-            Ipp32s topRight = PredPel[2*width];
-            Ipp32s midHor = PredPel[width];
-
-            Ipp32s bottomLeft = PredPel[4*width];
-            Ipp32s midVer = PredPel[3*width];
-
-            bool bilinearLeft = abs(topLeft + topRight - 2*midHor) < threshold; 
-            bool bilinearAbove = abs(topLeft + bottomLeft - 2*midVer) < threshold;
-
-            if (CUSize >= blkSize && (bilinearLeft && bilinearAbove))
-            {
-                h265_FilterPredictPels_Bilinear_8u(PredPel, width, topLeft, bottomLeft, topRight);
-            }
-            else
-            {
-                h265_FilterPredictPels_8u(PredPel, width);
-            }
-        }
-        else if(isFilterNeeded)
-        {
-            h265_FilterPredictPels_8u(PredPel, width);
+            m_reconstructor->FilterPredictPels(m_context, pCU, PredPel, width, TrDepth, AbsPartIdx);
         }
 
         //===== get prediction signal =====    
         H265PlanePtrYCommon pRec = m_context->m_frame->GetLumaAddr(pCU->CUAddr, AbsPartIdx);
         Ipp32u pitch = m_context->m_frame->pitch_luma();
 
-        switch(LumaPredMode)
-        {
-        case INTRA_LUMA_PLANAR_IDX:
-            MFX_HEVC_PP::h265_PredictIntra_Planar_8u(PredPel, pRec, pitch, width);
-            break;
-        case INTRA_LUMA_DC_IDX:
-            MFX_HEVC_PP::h265_PredictIntra_DC_8u(PredPel, pRec, pitch, width, 1);
-            break;
-        case INTRA_LUMA_VER_IDX:
-            MFX_HEVC_PP::h265_PredictIntra_Ver_8u(PredPel, pRec, pitch, width, 8, 1);
-            break;
-        case INTRA_LUMA_HOR_IDX:
-            MFX_HEVC_PP::h265_PredictIntra_Hor_8u(PredPel, pRec, pitch, width, 8, 1);
-            break;
-        default:
-            MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_8u)(LumaPredMode, PredPel, pRec, pitch, width);
-        }    
+        m_reconstructor->PredictIntra(LumaPredMode, PredPel, pRec, pitch, width);
 
         //===== inverse transform =====
         if (!pCU->GetCbf(COMPONENT_LUMA, AbsPartIdx, TrDepth))

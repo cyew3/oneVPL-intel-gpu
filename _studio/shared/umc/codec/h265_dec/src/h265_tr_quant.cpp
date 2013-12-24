@@ -14,6 +14,7 @@
 
 #include "h265_tr_quant.h"
 #include "mfx_h265_optimization.h"
+#include "umc_h265_segment_decoder.h"
 
 namespace UMC_HEVC_DECODER
 {
@@ -28,6 +29,7 @@ H265TrQuant::H265TrQuant()
 {
     m_residualsBuffer = (H265CoeffsCommon*)ippMalloc(sizeof(H265CoeffsCommon) * MAX_CU_SIZE * MAX_CU_SIZE * 2);//aligned 64 bytes
     m_residualsBuffer1 = m_residualsBuffer + MAX_CU_SIZE * MAX_CU_SIZE;
+    m_context = 0;
 }
 
 H265TrQuant::~H265TrQuant()
@@ -46,28 +48,58 @@ H265TrQuant::~H265TrQuant()
 template <Ipp32s bitDepth, typename DstCoeffsType>
 void InverseTransform(H265CoeffsPtrCommon coeff, DstCoeffsType* dst, Ipp32s dstPitch, Ipp32s Size, Ipp32u Mode)
 {
-    if (Size == 4)
+    if (bitDepth == 8)
     {
-        if (Mode != REG_DCT)
+        if (Size == 4)
         {
-            MFX_HEVC_PP::NAME(h265_DST4x4Inv_16sT)(dst, coeff, dstPitch, sizeof(DstCoeffsType));
+            if (Mode != REG_DCT)
+            {
+                MFX_HEVC_PP::NAME(h265_DST4x4Inv_16sT)(dst, coeff, dstPitch, sizeof(DstCoeffsType));
+            }
+            else
+            {
+                MFX_HEVC_PP::NAME(h265_DCT4x4Inv_16sT)(dst, coeff, dstPitch, sizeof(DstCoeffsType));
+            }
         }
-        else
+        else if (Size == 8)
         {
-            MFX_HEVC_PP::NAME(h265_DCT4x4Inv_16sT)(dst, coeff, dstPitch, sizeof(DstCoeffsType));
+            MFX_HEVC_PP::NAME(h265_DCT8x8Inv_16sT)(dst, coeff, dstPitch, sizeof(DstCoeffsType));
+        }
+        else if (Size == 16)
+        {
+            MFX_HEVC_PP::NAME(h265_DCT16x16Inv_16sT)(dst, coeff, dstPitch, sizeof(DstCoeffsType));
+        }
+        else if (Size == 32)
+        {
+            MFX_HEVC_PP::NAME(h265_DCT32x32Inv_16sT)(dst, coeff, dstPitch, sizeof(DstCoeffsType));
         }
     }
-    else if (Size == 8)
+    else
     {
-        MFX_HEVC_PP::NAME(h265_DCT8x8Inv_16sT)(dst, coeff, dstPitch, sizeof(DstCoeffsType));
-    }
-    else if (Size == 16)
-    {
-        MFX_HEVC_PP::NAME(h265_DCT16x16Inv_16sT)(dst, coeff, dstPitch, sizeof(DstCoeffsType));
-    }
-    else if (Size == 32)
-    {
-        MFX_HEVC_PP::NAME(h265_DCT32x32Inv_16sT)(dst, coeff, dstPitch, sizeof(DstCoeffsType));
+        bool inplace = sizeof(DstCoeffsType) == 1;
+        if (Size == 4)
+        {
+            if (Mode != REG_DCT)
+            {
+                MFX_HEVC_PP::h265_DST4x4Inv_16sT_16u_px(dst, coeff, dstPitch, inplace, bitDepth);
+            }
+            else
+            {
+                MFX_HEVC_PP::h265_DCT4x4Inv_16sT_16u_px(dst, coeff, dstPitch, inplace, bitDepth);
+            }
+        }
+        else if (Size == 8)
+        {
+            MFX_HEVC_PP::h265_DCT8x8Inv_16sT_16u_px(dst, coeff, dstPitch, inplace, bitDepth);
+        }
+        else if (Size == 16)
+        {
+            MFX_HEVC_PP::h265_DCT16x16Inv_16sT_16u_px(dst, coeff, dstPitch, inplace, bitDepth);
+        }
+        else if (Size == 32)
+        {
+            MFX_HEVC_PP::h265_DCT32x32Inv_16sT_16u_px(dst, coeff, dstPitch, inplace, bitDepth);
+        }
     }
 }
 
@@ -76,6 +108,8 @@ void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, I
                                   Ipp32u Stride, H265CoeffsPtrCommon pCoeff, Ipp32u Size, 
                                   bool transformSkip)
 {
+    Ipp32s bitDepth = TxtType == TEXT_LUMA ? m_context->m_sps->bit_depth_luma : m_context->m_sps->bit_depth_chroma;
+
     if(transQuantBypass)
     {
         for (Ipp32u k = 0; k < Size; k++)
@@ -84,7 +118,8 @@ void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, I
             {
                 if (sizeof(DstCoeffsType) == 1)
                 {
-                    pResidual[k * Stride + j] = (DstCoeffsType)Clip3(0, 255, pResidual[k * Stride + j] + pCoeff[k * Size + j]);
+                    Ipp32s max_value = (1 << bitDepth) - 1;
+                    pResidual[k * Stride + j] = (DstCoeffsType)Clip3(0, max_value, pResidual[k * Stride + j] + pCoeff[k * Size + j]);
                 }
                 else
                 {
@@ -95,9 +130,7 @@ void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, I
         return;
     }
 
-    Ipp32s bitDepth = TxtType == TEXT_LUMA ? g_bitDepthY : g_bitDepthC;
-
-    if (bitDepth == 8 )
+    if (bitDepth == 8)
     {
         if (transformSkip)
             InvTransformSkip< 8 >(pCoeff, pResidual, Stride, Size);
@@ -107,7 +140,15 @@ void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, I
         }
     }
     else
-        VM_ASSERT( 0 ); // no 10-bit support yet
+    {
+        if (transformSkip)
+            InvTransformSkip< 10 >(pCoeff, pResidual, Stride, Size);
+        else
+        {
+            InverseTransform< 10 >(pCoeff, pResidual, Stride, Size, Mode);
+        }        
+    }
+
 }
 
 /* ----------------------------------------------------------------------------*/

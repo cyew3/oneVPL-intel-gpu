@@ -100,101 +100,58 @@ namespace UMC_HEVC_DECODER
 #endif
 #endif
 
-/* declare functions for handle boundary cases */
-void read_data_through_boundary_none_8u(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_left_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_right_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_left_right_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_top_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_top_left_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_top_right_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_top_left_right_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_bottom_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_bottom_left_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_bottom_right_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_bottom_left_right_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_top_bottom_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_top_bottom_left_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_top_bottom_right_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_top_bottom_left_right_8u_px(H264InterpolationParams_8u *pParams);
-
 #define read_data_through_boundary_table_8u read_data_through_boundary_table_8u_pxmx
 typedef void (*pH264Interpolation_8u) (H264InterpolationParams_8u *pParams);
+extern pH264Interpolation_8u read_data_through_boundary_table_8u_pxmx[16];
 
-pH264Interpolation_8u read_data_through_boundary_table_8u_pxmx[16] =
-{
-    &read_data_through_boundary_none_8u,
-    &read_data_through_boundary_left_8u_px,
-    &read_data_through_boundary_right_8u_px,
-    &read_data_through_boundary_left_right_8u_px,
-
-    &read_data_through_boundary_top_8u_px,
-    &read_data_through_boundary_top_left_8u_px,
-    &read_data_through_boundary_top_right_8u_px,
-    &read_data_through_boundary_top_left_right_8u_px,
-
-    &read_data_through_boundary_bottom_8u_px,
-    &read_data_through_boundary_bottom_left_8u_px,
-    &read_data_through_boundary_bottom_right_8u_px,
-    &read_data_through_boundary_bottom_left_right_8u_px,
-
-    &read_data_through_boundary_top_bottom_8u_px,
-    &read_data_through_boundary_top_bottom_left_8u_px,
-    &read_data_through_boundary_top_bottom_right_8u_px,
-    &read_data_through_boundary_top_bottom_left_right_8u_px
-};
-
-void read_data_through_boundary_none_nv12_8u(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_left_nv12_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_right_nv12_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_left_right_nv12_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_top_nv12_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_top_left_nv12_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_top_right_nv12_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_top_left_right_nv12_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_bottom_nv12_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_bottom_left_nv12_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_bottom_right_nv12_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_bottom_left_right_nv12_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_top_bottom_nv12_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_top_bottom_left_nv12_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_top_bottom_right_nv12_8u_px(H264InterpolationParams_8u *pParams);
-void read_data_through_boundary_top_bottom_left_right_nv12_8u_px(H264InterpolationParams_8u *pParams);
+#define read_data_through_boundary_table_16u read_data_through_boundary_table_16u_pxmx
+typedef void (*pH264Interpolation_16u) (H264InterpolationParams_16u *pParams);
+extern pH264Interpolation_16u read_data_through_boundary_table_16u_pxmx[16];
 
 #define read_data_through_boundary_table_nv12_8u read_data_through_boundary_table_nv12_8u_pxmx
+extern pH264Interpolation_8u read_data_through_boundary_table_nv12_8u_pxmx[16];
 
-pH264Interpolation_8u read_data_through_boundary_table_nv12_8u_pxmx[16] =
+#define read_data_through_boundary_table_nv12_16u read_data_through_boundary_table_nv12_16u_pxmx
+extern pH264Interpolation_16u read_data_through_boundary_table_nv12_16u_pxmx[16];
+
+template<typename PixType, typename InterpolationStruct>
+IppStatus ippiInterpolateBoundaryLumaBlock_H264(Ipp32s iOverlappingType, InterpolationStruct *pParams, PixType *temporary_buffer)
 {
-    &read_data_through_boundary_none_nv12_8u,
-    &read_data_through_boundary_left_nv12_8u_px,
-    &read_data_through_boundary_right_nv12_8u_px,
-    &read_data_through_boundary_left_right_nv12_8u_px,
+    PixType *pTmp = temporary_buffer;
+    Ipp32s tmpStep = 128; /* !!! pitch is fixed*/
 
-    &read_data_through_boundary_top_nv12_8u_px,
-    &read_data_through_boundary_top_left_nv12_8u_px,
-    &read_data_through_boundary_top_right_nv12_8u_px,
-    &read_data_through_boundary_top_left_right_nv12_8u_px,
+    /* read data into temporal buffer */
+    {
+        PixType *pDst = pParams->pDst;
+        /*SIZE_T*/size_t dstStep = pParams->dstStep;
 
-    &read_data_through_boundary_bottom_nv12_8u_px,
-    &read_data_through_boundary_bottom_left_nv12_8u_px,
-    &read_data_through_boundary_bottom_right_nv12_8u_px,
-    &read_data_through_boundary_bottom_left_right_nv12_8u_px,
+        pParams->pDst = pTmp;
+        pParams->dstStep = tmpStep;
 
-    &read_data_through_boundary_top_bottom_nv12_8u_px,
-    &read_data_through_boundary_top_bottom_left_nv12_8u_px,
-    &read_data_through_boundary_top_bottom_right_nv12_8u_px,
-    &read_data_through_boundary_top_bottom_left_right_nv12_8u_px
-};
+        if (sizeof(PixType) == 1)
+        {
+            read_data_through_boundary_table_8u[iOverlappingType]((H264InterpolationParams_8u*)pParams);
+        }
+        else
+        {
+            read_data_through_boundary_table_16u[iOverlappingType]((H264InterpolationParams_16u*)pParams);
+        }
 
-IPPFUN(IppStatus, ippiInterpolateLumaBlock_H265_8u, (IppVCInterpolateBlock_8u *interpolateInfo, Ipp8u *temporary_buffer))
+        pParams->pSrc = pTmp +
+                        ((pParams->iType & 0x0c) ? (1) : (0)) * 3 * tmpStep +
+                        ((pParams->iType & 0x03) ? (1) : (0)) * 3;
+        pParams->srcStep = tmpStep;
+        pParams->pDst = pDst;
+        pParams->dstStep = dstStep;
+    }
+
+    return ippStsNoErr;
+}
+
+template<typename PixType, typename InterpolationStruct, typename InterpolationStructInternal>
+IppStatus ippiInterpolateLumaBlock_H265Internal(InterpolationStruct *interpolateInfo, PixType *temporary_buffer)
 {
-    H264InterpolationParams_8u params;
-
-    /* check error(s) */
-    // IPP_BAD_PTR1_RET(interpolateInfo)
-    // IPP_BAD_PTR1_RET(interpolateInfo->pSrc[0]);
-    //IPP_BADARG_RET( ( interpolateInfo->sizeBlock.height & 3 ) |
-      //              ( interpolateInfo->sizeBlock.width & ~0x1c ),  ippStsSizeErr);
+    InterpolationStructInternal params;
 
     /* prepare pointers */
     params.pDst = interpolateInfo->pDst[0];
@@ -212,17 +169,6 @@ IPPFUN(IppStatus, ippiInterpolateLumaBlock_H265_8u, (IppVCInterpolateBlock_8u *i
         params.pSrc += interpolateInfo->pointBlockPos.y * params.srcStep +
                        interpolateInfo->pointBlockPos.x;
 
-//#if ((_IPP > _IPP_W7) || (_IPP32E > _IPP32E_M7) || (_IPPLRB>=_IPPLRB_B1))
-        /* call optimized function from the table */
-        // AL:
-        // !!! will real interpolation outside
-        //h264_interpolate_luma_type_table_8u[(params.blockWidth << 1) & 0x30](&params);
-        // 
-
-//#else /* ((_IPP >= _IPP_W7) || (_IPP32E >= _IPP32E_M7)) */
-//        /* call optimized function from the table */
-//        h264_interpolate_luma_type_table_8u[0](&params);
-//#endif /* ((_IPP >= _IPP_W7) || (_IPP32E >= _IPP32E_M7)) */
         return ippStsNoOperation;
     }
     /* prepare interpolation type and data dimensions */
@@ -290,8 +236,7 @@ IPPFUN(IppStatus, ippiInterpolateLumaBlock_H265_8u, (IppVCInterpolateBlock_8u *i
             params.frameSize.height = interpolateInfo->sizeFrame.height;
 
             /* there is something wrong, try to work through a temporal buffer */
-            IppStatus sts = ippiInterpolateBoundaryLumaBlock_H264_8u (iOverlappingType,
-                                                            &params, temporary_buffer);
+            IppStatus sts = ippiInterpolateBoundaryLumaBlock_H264<PixType, InterpolationStructInternal> (iOverlappingType, &params, temporary_buffer);
 
 
             interpolateInfo->pSrc[0] = params.pSrc;
@@ -299,83 +244,50 @@ IPPFUN(IppStatus, ippiInterpolateLumaBlock_H265_8u, (IppVCInterpolateBlock_8u *i
             return sts;
         }
     }
-
-    //return ippStsNoErr;
-    //return ippStsNoOperation;
 }
 
-
-#define PREPARE_TEMPORAL_BUFFER_8U(ptr, step, buf) \
-    /* align pointer */ \
-    ptr = ((Ipp8u *) buf) + ((32 - (((Ipp8u *) buf) - (Ipp8u *) 0)) & 31); \
-    /* set step */ \
-    step = (pParams->dataWidth + 15) & -16;
-
-
-IppStatus ippiInterpolateBoundaryLumaBlock_H264_8u(Ipp32s iOverlappingType,
-                                                   H264InterpolationParams_8u *pParams, Ipp8u *temporary_buffer)
+template<typename PixType, typename InterpolationStruct>
+IppStatus ippiInterpolateBoundaryChromaBlock_NV12_H264(Ipp32s iOverlappingType, InterpolationStruct *pParams, PixType *temporary_buffer)
 {
-    //Ipp8u bTmp[32 * 21 + 32];
-    Ipp8u *pTmp = temporary_buffer;
-    Ipp32s tmpStep = 128; /* !!! pitch is fixed*/
-
-    /* prepare temporal buffer */
-    //PREPARE_TEMPORAL_BUFFER_8U(pTmp, tmpStep, bTmp);
+    PixType *pTmp = temporary_buffer;
+    Ipp32s tmpStep = 128;
 
     /* read data into temporal buffer */
     {
-        Ipp8u *pDst = pParams->pDst;
-        /*SIZE_T*/size_t dstStep = pParams->dstStep;
+        PixType *pDst = pParams->pDst;
+        size_t dstStep = pParams->dstStep;
 
         pParams->pDst = pTmp;
         pParams->dstStep = tmpStep;
 
-        ippiReadDataBlockThroughBoundary_8u(iOverlappingType,
-                                            pParams);
-        //read_data_through_boundary_table_8u[iOverlappingType](pParams);
+        if (sizeof(PixType) == 1)
+        {
+            read_data_through_boundary_table_nv12_8u[iOverlappingType]((H264InterpolationParams_8u*)pParams);
+        }
+        else
+        {
+            read_data_through_boundary_table_nv12_16u[iOverlappingType]((H264InterpolationParams_16u*)pParams);
+        }
 
         pParams->pSrc = pTmp +
-                        ((pParams->iType & 0x0c) ? (1) : (0)) * 3 * tmpStep +
-                        ((pParams->iType & 0x03) ? (1) : (0)) * 3;
+                        ((pParams->iType & 0x02) ? (1) : (0)) * 1 * tmpStep +
+                        ((pParams->iType & 0x01) ? (1) : (0)) * 2;
         pParams->srcStep = tmpStep;
         pParams->pDst = pDst;
         pParams->dstStep = dstStep;
     }
 
-    /* call appropriate function */
-    //h264_interpolate_luma_type_table_8u[pParams->iType](pParams);
-
     return ippStsNoErr;
-} /* ippiInterpolateBoundaryLumaBlock_H264_8u() */
+}
 
-IppStatus ippiReadDataBlockThroughBoundary_8u(Ipp32s iOverlappingType,
-                                              H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct, typename InterpolationStructInternal>
+IppStatus ippiInterpolateChromaBlock_H264Internal(InterpolationStruct *interpolateInfo, PixType *temporary_buffer)
 {
-    /*  this is an internal function to read data,
-        which is overlapping with frame boundary.
-        Bits of iOverlappingType mean following:
-        zero bit means x position of left data boundary lie out of frame,
-        first bit means x position of right data boundary lie out of frame,
-        second bit means y position of top data boundary lie out of frame,
-        third bit means y position of bottom data boundary lie out of frame */
-
-    /* call appropriate function */
-    read_data_through_boundary_table_8u[iOverlappingType](pParams);
-
-    return ippStsNoErr;
-
-} /* IppStatus ippiReadDataBlockThroughBoundary_8u(Ipp32s iOverlappingType, */
-
-IPPFUN(IppStatus, ippiInterpolateChromaBlock_H264_8u, (IppVCInterpolateBlock_8u *interpolateInfo, Ipp8u *temporary_buffer))
-{
-    H264InterpolationParams_8u params;
+    InterpolationStructInternal params;
 
     /* check error(s) */
     IPP_BAD_PTR1_RET(interpolateInfo);
     IPP_BAD_PTR1_RET(interpolateInfo->pSrc[0]);
-                     /*interpolateInfo->pDst[0]);*/
-    //IPP_BADARG_RET( ( interpolateInfo->sizeBlock.height & 1 ) |
-      //              ( interpolateInfo->sizeBlock.width & ~0x0e ),  ippStsSizeErr);
 
     /* prepare pointers */
     params.pDst = interpolateInfo->pDst[0];
@@ -399,8 +311,6 @@ IPPFUN(IppStatus, ippiInterpolateChromaBlock_H264_8u, (IppVCInterpolateBlock_8u 
         params.pSrc = interpolateInfo->pSrc[0] + iRefOffset;
         params.pDst = interpolateInfo->pDst[0];
         params.pDstComplementary = interpolateInfo->pDst[1];
-        /* call optimized function from the table */
-        //h264_interpolate_chroma_type_table_nv12touv_8u[0](&params);
     }
     /* prepare interpolation type and data dimensions */
     else
@@ -474,7 +384,7 @@ IPPFUN(IppStatus, ippiInterpolateChromaBlock_H264_8u, (IppVCInterpolateBlock_8u 
             params.frameSize.height = interpolateInfo->sizeFrame.height;
 
             /* there is something wrong, try to work through a temporal buffer */
-            IppStatus sts =  ippiInterpolateBoundaryChromaBlock_NV12_H264_8u(iOverlappingType, &params, temporary_buffer);
+            IppStatus sts =  ippiInterpolateBoundaryChromaBlock_NV12_H264<PixType, InterpolationStructInternal>(iOverlappingType, &params, temporary_buffer);
             interpolateInfo->pSrc[0] = params.pSrc;
             interpolateInfo->srcStep = params.srcStep;
             return sts;
@@ -484,65 +394,15 @@ IPPFUN(IppStatus, ippiInterpolateChromaBlock_H264_8u, (IppVCInterpolateBlock_8u 
     return ippStsNoOperation;
 }
 
-IppStatus ippiInterpolateBoundaryChromaBlock_NV12_H264_8u(Ipp32s iOverlappingType,
-                                                     H264InterpolationParams_8u *pParams, Ipp8u *temporary_buffer)
-{
-    Ipp8u *pTmp = temporary_buffer;
-    Ipp32s tmpStep = 128;
-
-    /* prepare temporal buffer */
-    //PREPARE_TEMPORAL_BUFFER_NV12_8U(pTmp, tmpStep, bTmp);
-
-    /* read data into temporal buffer */
-    {
-        Ipp8u *pDst = pParams->pDst;
-        size_t dstStep = pParams->dstStep;
-
-        pParams->pDst = pTmp;
-        pParams->dstStep = tmpStep;
-
-        ippiReadDataBlockThroughBoundary_NV12_8u(iOverlappingType,pParams);
-
-        pParams->pSrc = pTmp +
-                        ((pParams->iType & 0x02) ? (1) : (0)) * 1 * tmpStep +
-                        ((pParams->iType & 0x01) ? (1) : (0)) * 2;
-        pParams->srcStep = tmpStep;
-        pParams->pDst = pDst;
-        pParams->dstStep = dstStep;
-    }
-
-    return ippStsNoErr;
-} /* ippiInterpolateBoundaryChromaBlock_H264_C2P2_8u() */
-
-IppStatus ippiReadDataBlockThroughBoundary_NV12_8u(Ipp32s iOverlappingType,
-                                              H264InterpolationParams_8u *pParams)
-{
-    /*  this is an internal function to read data,
-        which is overlapping with frame boundary.
-        Bits of iOverlappingType mean following:
-        zero bit means x position of left data boundary lie out of frame,
-        first bit means x position of right data boundary lie out of frame,
-        second bit means y position of top data boundary lie out of frame,
-        third bit means y position of bottom data boundary lie out of frame */
-
-    /* call appropriate function */
-    read_data_through_boundary_table_nv12_8u[iOverlappingType](pParams);
-
-    return ippStsNoErr;
-
-} /* IppStatus ippiReadDataBlockThroughBoundary_8u(Ipp32s iOverlappingType, */
-
-
-void read_data_through_boundary_none_8u(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_none(InterpolationStruct *pParams)
 {
     /* touch unreferenced parameter(s) */
     IPP_UNREFERENCED_PARAMETER(pParams);
+}
 
-    /* there is something wrong */
-
-} /* void read_data_through_boundary_none_8u(H264InterpolationParams_8u *) */
-
-void read_data_through_boundary_left_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_left_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
     if (-pParams->xPos >= pParams->dataWidth)
@@ -550,8 +410,8 @@ void read_data_through_boundary_left_8u_px(H264InterpolationParams_8u *pParams)
 
     /* preread data into temporal buffer */
     {
-        const Ipp8u *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep;
-        Ipp8u *pDst = pParams->pDst;
+        const PixType *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep;
+        PixType *pDst = pParams->pDst;
         Ipp32s i;
         Ipp32s iIndent;
 
@@ -560,16 +420,16 @@ void read_data_through_boundary_left_8u_px(H264InterpolationParams_8u *pParams)
         for (i = 0; i < pParams->dataHeight; i += 1)
         {
             memset(pDst, pSrc[0], iIndent);
-            MFX_INTERNAL_CPY(pDst + iIndent, pSrc, pParams->dataWidth - iIndent);
+            MFX_INTERNAL_CPY(pDst + iIndent, pSrc, (pParams->dataWidth - iIndent)*sizeof(PixType));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
         }
     }
+}
 
-} /* void read_data_through_boundary_left_8u_px(H264InterpolationParams_8u *pParams) */
-
-void read_data_through_boundary_right_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_right_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
     if (pParams->xPos >= pParams->frameSize.width)
@@ -577,8 +437,8 @@ void read_data_through_boundary_right_8u_px(H264InterpolationParams_8u *pParams)
 
     /* preread data into temporal buffer */
     {
-        const Ipp8u *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep + pParams->xPos;
-        Ipp8u *pDst = pParams->pDst;
+        const PixType *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep + pParams->xPos;
+        PixType *pDst = pParams->pDst;
         Ipp32s i;
         Ipp32s iIndent;
 
@@ -586,26 +446,27 @@ void read_data_through_boundary_right_8u_px(H264InterpolationParams_8u *pParams)
 
         for (i = 0; i < pParams->dataHeight; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, iIndent);
-            memset(pDst + iIndent, pSrc[iIndent - 1], pParams->dataWidth - iIndent);
+            MFX_INTERNAL_CPY(pDst, pSrc, iIndent*sizeof(PixType));
+            memset(pDst + iIndent, pSrc[iIndent - 1], (pParams->dataWidth - iIndent)*sizeof(PixType));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
         }
     }
 
-} /* void read_data_through_boundary_right_8u_px(H264InterpolationParams_8u *pParams) */
+}
 
-void read_data_through_boundary_left_right_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_left_right_px(InterpolationStruct *pParams)
 {
     if (0 > pParams->xPos)
-        read_data_through_boundary_left_8u_px(pParams);
+        read_data_through_boundary_left_px<PixType, InterpolationStruct>(pParams);
     else
-        read_data_through_boundary_right_8u_px(pParams);
+        read_data_through_boundary_right_px<PixType, InterpolationStruct>(pParams);
+}
 
-} /* void read_data_through_boundary_left_right_8u_px(H264InterpolationParams_8u *pParams) */
-
-void read_data_through_boundary_top_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_top_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
     if (-pParams->yPos >= pParams->dataHeight)
@@ -613,30 +474,31 @@ void read_data_through_boundary_top_8u_px(H264InterpolationParams_8u *pParams)
 
     /* preread data into temporal buffer */
     {
-        const Ipp8u *pSrc = pParams->pSrc + pParams->xPos;
-        Ipp8u *pDst = pParams->pDst;
+        const PixType *pSrc = pParams->pSrc + pParams->xPos;
+        PixType *pDst = pParams->pDst;
         Ipp32s i;
 
         /* clone upper row */
         for (i = pParams->yPos; i < 0; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, pParams->dataWidth);
+            MFX_INTERNAL_CPY(pDst, pSrc, pParams->dataWidth*sizeof(PixType));
 
             pDst += pParams->dstStep;
         }
         /* copy remain row(s) */
         for (i = 0; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, pParams->dataWidth);
+            MFX_INTERNAL_CPY(pDst, pSrc, pParams->dataWidth*sizeof(PixType));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
         }
     }
 
-} /* void read_data_through_boundary_top_8u_px(H264InterpolationParams_8u *pParams) */
+}
 
-void read_data_through_boundary_top_left_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_top_left_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
     if (-pParams->xPos >= pParams->dataWidth)
@@ -646,17 +508,17 @@ void read_data_through_boundary_top_left_8u_px(H264InterpolationParams_8u *pPara
 
     /* preread data into temporal buffer */
     {
-        const Ipp8u *pSrc = pParams->pSrc;
-        Ipp8u *pDst = pParams->pDst;
-        Ipp8u *pTmp = pParams->pDst;
+        const PixType *pSrc = pParams->pSrc;
+        PixType *pDst = pParams->pDst;
+        PixType *pTmp = pParams->pDst;
         Ipp32s i;
         Ipp32s iIndent;
 
         iIndent = -pParams->xPos;
 
         /* create upper row */
-        memset(pDst, pSrc[0], iIndent);
-        MFX_INTERNAL_CPY(pDst + iIndent, pSrc, pParams->dataWidth - iIndent);
+        memset(pDst, pSrc[0], iIndent*sizeof(PixType));
+        MFX_INTERNAL_CPY(pDst + iIndent, pSrc, (pParams->dataWidth - iIndent)*sizeof(PixType));
 
         pDst += pParams->dstStep;
         pSrc += pParams->srcStep;
@@ -664,7 +526,7 @@ void read_data_through_boundary_top_left_8u_px(H264InterpolationParams_8u *pPara
         /* clone upper row */
         for (i = pParams->yPos + 1; i <= 0; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pTmp, pParams->dataWidth);
+            MFX_INTERNAL_CPY(pDst, pTmp, pParams->dataWidth*sizeof(PixType));
 
             pDst += pParams->dstStep;
         }
@@ -672,17 +534,17 @@ void read_data_through_boundary_top_left_8u_px(H264InterpolationParams_8u *pPara
         /* create remain row(s) */
         for (i = 1; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            memset(pDst, pSrc[0], iIndent);
-            MFX_INTERNAL_CPY(pDst + iIndent, pSrc, pParams->dataWidth - iIndent);
+            memset(pDst, pSrc[0], iIndent*sizeof(PixType));
+            MFX_INTERNAL_CPY(pDst + iIndent, pSrc, (pParams->dataWidth - iIndent)*sizeof(PixType));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
         }
     }
+}
 
-} /* void read_data_through_boundary_top_left_8u_px(H264InterpolationParams_8u *pParams) */
-
-void read_data_through_boundary_top_right_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_top_right_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
     if (pParams->xPos >= pParams->frameSize.width)
@@ -692,17 +554,17 @@ void read_data_through_boundary_top_right_8u_px(H264InterpolationParams_8u *pPar
 
     /* preread data into temporal buffer */
     {
-        const Ipp8u *pSrc = pParams->pSrc + pParams->xPos;
-        Ipp8u *pDst = pParams->pDst;
-        Ipp8u *pTmp = pParams->pDst;
+        const PixType *pSrc = pParams->pSrc + pParams->xPos;
+        PixType *pDst = pParams->pDst;
+        PixType *pTmp = pParams->pDst;
         Ipp32s i;
         Ipp32s iIndent;
 
         iIndent = pParams->frameSize.width - pParams->xPos;
 
         /* create upper row */
-        MFX_INTERNAL_CPY(pDst, pSrc, iIndent);
-        memset(pDst + iIndent, pSrc[iIndent - 1], pParams->dataWidth - iIndent);
+        MFX_INTERNAL_CPY(pDst, pSrc, iIndent*sizeof(PixType));
+        memset(pDst + iIndent, pSrc[iIndent - 1], (pParams->dataWidth - iIndent)*sizeof(PixType));
 
         pDst += pParams->dstStep;
         pSrc += pParams->srcStep;
@@ -710,34 +572,33 @@ void read_data_through_boundary_top_right_8u_px(H264InterpolationParams_8u *pPar
         /* clone upper row */
         for (i = pParams->yPos + 1; i <= 0; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pTmp, pParams->dataWidth);
-
+            MFX_INTERNAL_CPY(pDst, pTmp, pParams->dataWidth*sizeof(PixType));
             pDst += pParams->dstStep;
         }
 
         /* create remain row(s) */
         for (i = 1; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, iIndent);
-            memset(pDst + iIndent, pSrc[iIndent - 1], pParams->dataWidth - iIndent);
+            MFX_INTERNAL_CPY(pDst, pSrc, iIndent*sizeof(PixType));
+            memset(pDst + iIndent, pSrc[iIndent - 1], (pParams->dataWidth - iIndent)*sizeof(PixType));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
         }
     }
+}
 
-} /* void read_data_through_boundary_top_right_8u_px(H264InterpolationParams_8u *pParams) */
-
-void read_data_through_boundary_top_left_right_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_top_left_right_px(InterpolationStruct *pParams)
 {
     if (0 > pParams->xPos)
-        read_data_through_boundary_top_left_8u_px(pParams);
+        read_data_through_boundary_top_left_px<PixType, InterpolationStruct>(pParams);
     else
-        read_data_through_boundary_top_right_8u_px(pParams);
+        read_data_through_boundary_top_right_px<PixType, InterpolationStruct>(pParams);
+}
 
-} /* void read_data_through_boundary_top_left_right_8u_px(H264InterpolationParams_8u *pParams) */
-
-void read_data_through_boundary_bottom_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_bottom_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
     if (pParams->yPos >= pParams->frameSize.height)
@@ -745,14 +606,14 @@ void read_data_through_boundary_bottom_8u_px(H264InterpolationParams_8u *pParams
 
     /* preread data into temporal buffer */
     {
-        const Ipp8u *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep + pParams->xPos;
-        Ipp8u *pDst = pParams->pDst;
+        const PixType *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep + pParams->xPos;
+        PixType *pDst = pParams->pDst;
         Ipp32s i;
 
         /* copy existing lines */
         for (i = pParams->yPos; i < pParams->frameSize.height; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, pParams->dataWidth);
+            MFX_INTERNAL_CPY(pDst, pSrc, pParams->dataWidth*sizeof(PixType));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
@@ -762,15 +623,14 @@ void read_data_through_boundary_bottom_8u_px(H264InterpolationParams_8u *pParams
         pSrc = pDst - pParams->dstStep;
         for (i = pParams->frameSize.height; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, pParams->dataWidth);
-
+            MFX_INTERNAL_CPY(pDst, pSrc, pParams->dataWidth*sizeof(PixType));
             pDst += pParams->dstStep;
         }
     }
+}
 
-} /* void read_data_through_boundary_bottom_8u_px(H264InterpolationParams_8u *pParams) */
-
-void read_data_through_boundary_bottom_left_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_bottom_left_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
     if (-pParams->xPos >= pParams->dataWidth)
@@ -780,8 +640,8 @@ void read_data_through_boundary_bottom_left_8u_px(H264InterpolationParams_8u *pP
 
     /* preread data into temporal buffer */
     {
-        const Ipp8u *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep;
-        Ipp8u *pDst = pParams->pDst;
+        const PixType *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep;
+        PixType *pDst = pParams->pDst;
         Ipp32s i;
         Ipp32s iIndent;
 
@@ -790,8 +650,8 @@ void read_data_through_boundary_bottom_left_8u_px(H264InterpolationParams_8u *pP
         /* create existing lines */
         for (i = pParams->yPos; i < pParams->frameSize.height; i += 1)
         {
-            memset(pDst, pSrc[0], iIndent);
-            MFX_INTERNAL_CPY(pDst + iIndent, pSrc, pParams->dataWidth - iIndent);
+            memset(pDst, pSrc[0], iIndent*sizeof(PixType));
+            MFX_INTERNAL_CPY(pDst + iIndent, pSrc, (pParams->dataWidth - iIndent)*sizeof(PixType));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
@@ -801,15 +661,14 @@ void read_data_through_boundary_bottom_left_8u_px(H264InterpolationParams_8u *pP
         pSrc = pDst - pParams->dstStep;
         for (i = pParams->frameSize.height; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, pParams->dataWidth);
-
+            MFX_INTERNAL_CPY(pDst, pSrc, pParams->dataWidth*sizeof(PixType));
             pDst += pParams->dstStep;
         }
     }
+}
 
-} /* void read_data_through_boundary_bottom_left_8u_px(H264InterpolationParams_8u *pParams) */
-
-void read_data_through_boundary_bottom_right_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_bottom_right_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
     if (pParams->xPos >= pParams->frameSize.width)
@@ -819,8 +678,8 @@ void read_data_through_boundary_bottom_right_8u_px(H264InterpolationParams_8u *p
 
     /* preread data into temporal buffer */
     {
-        const Ipp8u *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep + pParams->xPos;
-        Ipp8u *pDst = pParams->pDst;
+        const PixType *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep + pParams->xPos;
+        PixType *pDst = pParams->pDst;
         Ipp32s i;
         Ipp32s iIndent;
 
@@ -829,8 +688,8 @@ void read_data_through_boundary_bottom_right_8u_px(H264InterpolationParams_8u *p
         /* create existing lines */
         for (i = pParams->yPos; i < pParams->frameSize.height; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, iIndent);
-            memset(pDst + iIndent, pSrc[iIndent - 1], pParams->dataWidth - iIndent);
+            MFX_INTERNAL_CPY(pDst, pSrc, iIndent*sizeof(PixType));
+            memset(pDst + iIndent, pSrc[iIndent - 1], (pParams->dataWidth - iIndent)*sizeof(PixType));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
@@ -840,72 +699,72 @@ void read_data_through_boundary_bottom_right_8u_px(H264InterpolationParams_8u *p
         pSrc = pDst - pParams->dstStep;
         for (i = pParams->frameSize.height; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, pParams->dataWidth);
+            MFX_INTERNAL_CPY(pDst, pSrc, pParams->dataWidth*sizeof(PixType));
 
             pDst += pParams->dstStep;
         }
     }
+}
 
-} /* void read_data_through_boundary_bottom_right_8u_px(H264InterpolationParams_8u *pParams) */
-
-void read_data_through_boundary_bottom_left_right_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_bottom_left_right_px(InterpolationStruct *pParams)
 {
     if (0 > pParams->xPos)
-        read_data_through_boundary_bottom_left_8u_px(pParams);
+        read_data_through_boundary_bottom_left_px<PixType, InterpolationStruct>(pParams);
     else
-        read_data_through_boundary_bottom_right_8u_px(pParams);
+        read_data_through_boundary_bottom_right_px<PixType, InterpolationStruct>(pParams);
+}
 
-} /* void read_data_through_boundary_bottom_left_right_8u_px(H264InterpolationParams_8u *pParams) */
-
-void read_data_through_boundary_top_bottom_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_top_bottom_px(InterpolationStruct *pParams)
 {
     if (0 > pParams->yPos)
-        read_data_through_boundary_top_8u_px(pParams);
+        read_data_through_boundary_top_px<PixType, InterpolationStruct>(pParams);
     else
-        read_data_through_boundary_bottom_8u_px(pParams);
+        read_data_through_boundary_bottom_px<PixType, InterpolationStruct>(pParams);
+}
 
-} /* void read_data_through_boundary_top_top_bottom_8u_px(H264InterpolationParams_8u *pParams) */
-
-void read_data_through_boundary_top_bottom_left_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_top_bottom_left_px(InterpolationStruct *pParams)
 {
     if (0 > pParams->yPos)
-        read_data_through_boundary_top_left_8u_px(pParams);
+        read_data_through_boundary_top_left_px<PixType, InterpolationStruct>(pParams);
     else
-        read_data_through_boundary_bottom_left_8u_px(pParams);
+        read_data_through_boundary_bottom_left_px<PixType, InterpolationStruct>(pParams);
+}
 
-} /* void read_data_through_boundary_top_bottom_left_8u_px(H264InterpolationParams_8u *pParams) */
-
-void read_data_through_boundary_top_bottom_right_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_top_bottom_right_px(InterpolationStruct *pParams)
 {
     if (0 > pParams->yPos)
-        read_data_through_boundary_top_right_8u_px(pParams);
+        read_data_through_boundary_top_right_px<PixType, InterpolationStruct>(pParams);
     else
-        read_data_through_boundary_bottom_right_8u_px(pParams);
+        read_data_through_boundary_bottom_right_px<PixType, InterpolationStruct>(pParams);
+}
 
-} /* void read_data_through_boundary_top_bottom_right_8u_px(H264InterpolationParams_8u *pParams) */
-
-void read_data_through_boundary_top_bottom_left_right_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_top_bottom_left_right_px(InterpolationStruct *pParams)
 {
     if (0 > pParams->xPos)
     {
         if (0 > pParams->yPos)
-            read_data_through_boundary_top_left_8u_px(pParams);
+            read_data_through_boundary_top_left_px<PixType, InterpolationStruct>(pParams);
         else
-            read_data_through_boundary_bottom_left_8u_px(pParams);
+            read_data_through_boundary_bottom_left_px<PixType, InterpolationStruct>(pParams);
     }
     else
     {
         if (0 > pParams->yPos)
-            read_data_through_boundary_top_right_8u_px(pParams);
+            read_data_through_boundary_top_right_px<PixType, InterpolationStruct>(pParams);
         else
-            read_data_through_boundary_bottom_right_8u_px(pParams);
+            read_data_through_boundary_bottom_right_px<PixType, InterpolationStruct>(pParams);
     }
-
-} /* void read_data_through_boundary_top_bottom_left_right_8u_px(H264InterpolationParams_8u *pParams) */
+}
 
 /* Functions for NV12*/
 
-void memset_nv12_8u(Ipp8u *pDst, Ipp8u* nVal, Ipp32s nNum)
+template<typename PixType>
+void memset_nv12(PixType *pDst, const PixType* nVal, Ipp32s nNum)
 {
     Ipp32s i;
 
@@ -914,19 +773,17 @@ void memset_nv12_8u(Ipp8u *pDst, Ipp8u* nVal, Ipp32s nNum)
         pDst[2*i] = nVal[0];
         pDst[2*i + 1] = nVal[1];
     }
-
 }
 
-void read_data_through_boundary_none_nv12_8u(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_none_nv12(InterpolationStruct *pParams)
 {
     /* touch unreferenced parameter(s) */
     IPP_UNREFERENCED_PARAMETER(pParams);
+}
 
-    /* there is something wrong */
-
-} /* void read_data_through_boundary_none_nv12_8u(H264InterpolationParams_8u *) */
-
-void read_data_through_boundary_left_nv12_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_left_nv12_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
     if (-pParams->xPos >= pParams->dataWidth)
@@ -934,8 +791,8 @@ void read_data_through_boundary_left_nv12_8u_px(H264InterpolationParams_8u *pPar
 
     /* preread data into temporal buffer */
     {
-        const Ipp8u *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep;
-        Ipp8u *pDst = pParams->pDst;
+        const PixType *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep;
+        PixType *pDst = pParams->pDst;
         Ipp32s i;
         Ipp32s iIndent;
 
@@ -943,19 +800,17 @@ void read_data_through_boundary_left_nv12_8u_px(H264InterpolationParams_8u *pPar
 
         for (i = 0; i < pParams->dataHeight; i += 1)
         {
-            //memset(pDst, pSrc[0], iIndent);
-            //MFX_INTERNAL_CPY(pDst + iIndent, pSrc, pParams->dataWidth - iIndent);
-            memset_nv12_8u(pDst, (Ipp8u *) pSrc, iIndent);
-            MFX_INTERNAL_CPY(pDst + 2*iIndent, pSrc, 2*(pParams->dataWidth - iIndent));
+            memset_nv12<PixType>(pDst, pSrc, iIndent);
+            MFX_INTERNAL_CPY(pDst + 2*iIndent, pSrc, 2*(pParams->dataWidth - iIndent)*sizeof(PixType));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
         }
     }
+}
 
-} /* void read_data_through_boundary_left_nv12_8u_px(H264InterpolationParams_8u *pParams) */
-
-void read_data_through_boundary_right_nv12_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_right_nv12_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
     if (pParams->xPos >= pParams->frameSize.width)
@@ -963,8 +818,8 @@ void read_data_through_boundary_right_nv12_8u_px(H264InterpolationParams_8u *pPa
 
     /* preread data into temporal buffer */
     {
-        const Ipp8u *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep + 2*pParams->xPos;
-        Ipp8u *pDst = pParams->pDst;
+        const PixType *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep + 2*pParams->xPos;
+        PixType *pDst = pParams->pDst;
         Ipp32s i;
         Ipp32s iIndent;
 
@@ -972,28 +827,26 @@ void read_data_through_boundary_right_nv12_8u_px(H264InterpolationParams_8u *pPa
 
         for (i = 0; i < pParams->dataHeight; i += 1)
         {
-            //MFX_INTERNAL_CPY(pDst, pSrc, iIndent);
-            //own_memset(pDst + iIndent, pSrc[iIndent - 1], pParams->dataWidth - iIndent);
-            MFX_INTERNAL_CPY(pDst, pSrc, 2*iIndent);
-            memset_nv12_8u(pDst + 2*iIndent, (Ipp8u *)(&pSrc[2*iIndent - 2]), 2*(pParams->dataWidth - iIndent) );
+            MFX_INTERNAL_CPY(pDst, pSrc, 2*iIndent*sizeof(PixType));
+            memset_nv12<PixType>(pDst + 2*iIndent, &pSrc[2*iIndent - 2], 2*(pParams->dataWidth - iIndent));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
         }
     }
+}
 
-} /* void read_data_through_boundary_right_nv12_8u_px(H264InterpolationParams_8u *pParams) */
-
-void read_data_through_boundary_left_right_nv12_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_left_right_nv12_px(InterpolationStruct *pParams)
 {
     if (0 > pParams->xPos)
-        read_data_through_boundary_left_nv12_8u_px(pParams);
+        read_data_through_boundary_left_nv12_px<PixType, InterpolationStruct>(pParams);
     else
-        read_data_through_boundary_right_nv12_8u_px(pParams);
+        read_data_through_boundary_right_nv12_px<PixType, InterpolationStruct>(pParams);
+}
 
-} /* void read_data_through_boundary_left_right_nv12_8u_px(H264InterpolationParams_8u *pParams) */
-
-void read_data_through_boundary_top_nv12_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_top_nv12_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
     if (-pParams->yPos >= pParams->dataHeight)
@@ -1001,30 +854,29 @@ void read_data_through_boundary_top_nv12_8u_px(H264InterpolationParams_8u *pPara
 
     /* preread data into temporal buffer */
     {
-        const Ipp8u *pSrc = pParams->pSrc + 2*pParams->xPos;
-        Ipp8u *pDst = pParams->pDst;
+        const PixType *pSrc = pParams->pSrc + 2*pParams->xPos;
+        PixType *pDst = pParams->pDst;
         Ipp32s i;
 
         /* clone upper row */
         for (i = pParams->yPos; i < 0; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, 2*pParams->dataWidth);
-
+            MFX_INTERNAL_CPY(pDst, pSrc, 2*pParams->dataWidth*sizeof(PixType));
             pDst += pParams->dstStep;
         }
         /* copy remain row(s) */
         for (i = 0; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, 2*pParams->dataWidth);
+            MFX_INTERNAL_CPY(pDst, pSrc, 2*pParams->dataWidth*sizeof(PixType));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
         }
     }
+}
 
-} /* void read_data_through_boundary_top_nv12_8u_px(H264InterpolationParams_8u *pParams) */
-
-void read_data_through_boundary_top_left_nv12_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_top_left_nv12_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
     if (-pParams->xPos >= pParams->dataWidth)
@@ -1034,19 +886,17 @@ void read_data_through_boundary_top_left_nv12_8u_px(H264InterpolationParams_8u *
 
     /* preread data into temporal buffer */
     {
-        const Ipp8u *pSrc = pParams->pSrc;
-        Ipp8u *pDst = pParams->pDst;
-        Ipp8u *pTmp = pParams->pDst;
+        const PixType *pSrc = pParams->pSrc;
+        PixType *pDst = pParams->pDst;
+        PixType *pTmp = pParams->pDst;
         Ipp32s i;
         Ipp32s iIndent;
 
         iIndent = -pParams->xPos;
 
         /* create upper row */
-        //own_memset(pDst, pSrc[0], iIndent);
-        //MFX_INTERNAL_CPY(pDst + iIndent, pSrc, pParams->dataWidth - iIndent);
-        memset_nv12_8u(pDst, (Ipp8u*)pSrc, iIndent);
-        MFX_INTERNAL_CPY(pDst + 2*iIndent, pSrc, 2*(pParams->dataWidth - iIndent));
+        memset_nv12<PixType>(pDst, pSrc, iIndent);
+        MFX_INTERNAL_CPY(pDst + 2*iIndent, pSrc, 2*(pParams->dataWidth - iIndent)*sizeof(PixType));
 
         pDst += pParams->dstStep;
         pSrc += pParams->srcStep;
@@ -1054,27 +904,24 @@ void read_data_through_boundary_top_left_nv12_8u_px(H264InterpolationParams_8u *
         /* clone upper row */
         for (i = pParams->yPos + 1; i <= 0; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pTmp, 2*pParams->dataWidth);
-
+            MFX_INTERNAL_CPY(pDst, pTmp, 2*pParams->dataWidth*sizeof(PixType));
             pDst += pParams->dstStep;
         }
 
         /* create remain row(s) */
         for (i = 1; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            //own_memset(pDst, pSrc[0], iIndent);
-            //MFX_INTERNAL_CPY(pDst + iIndent, pSrc, pParams->dataWidth - iIndent);
-            memset_nv12_8u(pDst, (Ipp8u*)pSrc, iIndent);
-            MFX_INTERNAL_CPY(pDst + 2*iIndent, pSrc, 2*(pParams->dataWidth - iIndent));
+            memset_nv12<PixType>(pDst, pSrc, iIndent);
+            MFX_INTERNAL_CPY(pDst + 2*iIndent, pSrc, 2*(pParams->dataWidth - iIndent)*sizeof(PixType));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
         }
     }
+}
 
-} /* void read_data_through_boundary_top_left_nv12_8u_px(H264InterpolationParams_8u *pParams) */
-
-void read_data_through_boundary_top_right_nv12_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_top_right_nv12_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
     if (pParams->xPos >= pParams->frameSize.width)
@@ -1084,19 +931,17 @@ void read_data_through_boundary_top_right_nv12_8u_px(H264InterpolationParams_8u 
 
     /* preread data into temporal buffer */
     {
-        const Ipp8u *pSrc = pParams->pSrc + 2*pParams->xPos;
-        Ipp8u *pDst = pParams->pDst;
-        Ipp8u *pTmp = pParams->pDst;
+        const PixType *pSrc = pParams->pSrc + 2*pParams->xPos;
+        PixType *pDst = pParams->pDst;
+        PixType *pTmp = pParams->pDst;
         Ipp32s i;
         Ipp32s iIndent;
 
         iIndent = pParams->frameSize.width - pParams->xPos;
 
         /* create upper row */
-        //MFX_INTERNAL_CPY(pDst, pSrc, iIndent);
-        //own_memset(pDst + iIndent, pSrc[iIndent - 1], pParams->dataWidth - iIndent);
-        MFX_INTERNAL_CPY(pDst, pSrc, 2*iIndent);
-        memset_nv12_8u(pDst + 2*iIndent, (Ipp8u*)(&pSrc[2*iIndent - 2]), 2*(pParams->dataWidth - iIndent) );
+        MFX_INTERNAL_CPY(pDst, pSrc, 2*iIndent*sizeof(PixType));
+        memset_nv12<PixType>(pDst + 2*iIndent, &pSrc[2*iIndent - 2], 2*(pParams->dataWidth - iIndent));
 
         pDst += pParams->dstStep;
         pSrc += pParams->srcStep;
@@ -1104,36 +949,33 @@ void read_data_through_boundary_top_right_nv12_8u_px(H264InterpolationParams_8u 
         /* clone upper row */
         for (i = pParams->yPos + 1; i <= 0; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pTmp, 2*pParams->dataWidth);
-
+            MFX_INTERNAL_CPY(pDst, pTmp, 2*pParams->dataWidth*sizeof(PixType));
             pDst += pParams->dstStep;
         }
 
         /* create remain row(s) */
         for (i = 1; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            //MFX_INTERNAL_CPY(pDst, pSrc, iIndent);
-            //own_memset(pDst + iIndent, pSrc[iIndent - 1], pParams->dataWidth - iIndent);
-            MFX_INTERNAL_CPY(pDst, pSrc, 2*iIndent);
-            memset_nv12_8u(pDst + 2*iIndent, (Ipp8u*)(&pSrc[2*iIndent - 2]), 2*(pParams->dataWidth - iIndent) );
+            MFX_INTERNAL_CPY(pDst, pSrc, 2*iIndent*sizeof(PixType));
+            memset_nv12<PixType>(pDst + 2*iIndent, &pSrc[2*iIndent - 2], 2*(pParams->dataWidth - iIndent));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
         }
     }
+}
 
-} /* void read_data_through_boundary_top_right_nv12_8u_px(H264InterpolationParams_8u *pParams) */
-
-void read_data_through_boundary_top_left_right_nv12_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_top_left_right_nv12_px(InterpolationStruct *pParams)
 {
     if (0 > pParams->xPos)
-        read_data_through_boundary_top_left_nv12_8u_px(pParams);
+        read_data_through_boundary_top_left_nv12_px<PixType, InterpolationStruct>(pParams);
     else
-        read_data_through_boundary_top_right_nv12_8u_px(pParams);
+        read_data_through_boundary_top_right_nv12_px<PixType, InterpolationStruct>(pParams);
+}
 
-} /* void read_data_through_boundary_top_left_right_nv12_8u_px(H264InterpolationParams_8u *pParams) */
-
-void read_data_through_boundary_bottom_nv12_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_bottom_nv12_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
     if (pParams->yPos >= pParams->frameSize.height)
@@ -1141,15 +983,14 @@ void read_data_through_boundary_bottom_nv12_8u_px(H264InterpolationParams_8u *pP
 
     /* preread data into temporal buffer */
     {
-        const Ipp8u *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep + 2*pParams->xPos;
-        Ipp8u *pDst = pParams->pDst;
+        const PixType *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep + 2*pParams->xPos;
+        PixType *pDst = pParams->pDst;
         Ipp32s i;
 
         /* copy existing lines */
         for (i = pParams->yPos; i < pParams->frameSize.height; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, 2*pParams->dataWidth);
-
+            MFX_INTERNAL_CPY(pDst, pSrc, 2*pParams->dataWidth*sizeof(PixType));
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
         }
@@ -1158,15 +999,14 @@ void read_data_through_boundary_bottom_nv12_8u_px(H264InterpolationParams_8u *pP
         pSrc = pDst - pParams->dstStep;
         for (i = pParams->frameSize.height; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, 2*pParams->dataWidth);
-
+            MFX_INTERNAL_CPY(pDst, pSrc, 2*pParams->dataWidth*sizeof(PixType));
             pDst += pParams->dstStep;
         }
     }
+}
 
-} /* void read_data_through_boundary_bottom_nv12_8u_px(H264InterpolationParams_8u *pParams) */
-
-void read_data_through_boundary_bottom_left_nv12_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_bottom_left_nv12_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
     if (-pParams->xPos >= pParams->dataWidth)
@@ -1176,8 +1016,8 @@ void read_data_through_boundary_bottom_left_nv12_8u_px(H264InterpolationParams_8
 
     /* preread data into temporal buffer */
     {
-        const Ipp8u *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep;
-        Ipp8u *pDst = pParams->pDst;
+        const PixType *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep;
+        PixType *pDst = pParams->pDst;
         Ipp32s i;
         Ipp32s iIndent;
 
@@ -1186,10 +1026,8 @@ void read_data_through_boundary_bottom_left_nv12_8u_px(H264InterpolationParams_8
         /* create existing lines */
         for (i = pParams->yPos; i < pParams->frameSize.height; i += 1)
         {
-            //own_memset(pDst, pSrc[0], iIndent);
-            //MFX_INTERNAL_CPY(pDst + iIndent, pSrc, pParams->dataWidth - iIndent);
-            memset_nv12_8u(pDst, (Ipp8u*)pSrc, iIndent);
-            MFX_INTERNAL_CPY(pDst + 2*iIndent, pSrc, 2*(pParams->dataWidth - iIndent));
+            memset_nv12<PixType>(pDst, pSrc, iIndent);
+            MFX_INTERNAL_CPY(pDst + 2*iIndent, pSrc, 2*(pParams->dataWidth - iIndent)*sizeof(PixType));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
@@ -1199,15 +1037,14 @@ void read_data_through_boundary_bottom_left_nv12_8u_px(H264InterpolationParams_8
         pSrc = pDst - pParams->dstStep;
         for (i = pParams->frameSize.height; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, 2*pParams->dataWidth);
-
+            MFX_INTERNAL_CPY(pDst, pSrc, 2*pParams->dataWidth*sizeof(PixType));
             pDst += pParams->dstStep;
         }
     }
+}
 
-} /* void read_data_through_boundary_bottom_left_nv12_8u_px(H264InterpolationParams_8u *pParams) */
-
-void read_data_through_boundary_bottom_right_nv12_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_bottom_right_nv12_px(InterpolationStruct *pParams)
 {
     /* normalize data position */
     if (pParams->xPos >= pParams->frameSize.width)
@@ -1217,8 +1054,8 @@ void read_data_through_boundary_bottom_right_nv12_8u_px(H264InterpolationParams_
 
     /* preread data into temporal buffer */
     {
-        const Ipp8u *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep + 2*pParams->xPos;
-        Ipp8u *pDst = pParams->pDst;
+        const PixType *pSrc = pParams->pSrc + pParams->yPos * pParams->srcStep + 2*pParams->xPos;
+        PixType *pDst = pParams->pDst;
         Ipp32s i;
         Ipp32s iIndent;
 
@@ -1227,10 +1064,8 @@ void read_data_through_boundary_bottom_right_nv12_8u_px(H264InterpolationParams_
         /* create existing lines */
         for (i = pParams->yPos; i < pParams->frameSize.height; i += 1)
         {
-            //MFX_INTERNAL_CPY(pDst, pSrc, iIndent);
-            //own_memset(pDst + iIndent, pSrc[iIndent - 1], pParams->dataWidth - iIndent);
-            MFX_INTERNAL_CPY(pDst, pSrc, 2*iIndent);
-            memset_nv12_8u(pDst + 2*iIndent, (Ipp8u*)(&pSrc[2*iIndent - 2]), 2*(pParams->dataWidth - iIndent) );
+            MFX_INTERNAL_CPY(pDst, pSrc, 2*iIndent*sizeof(PixType));
+            memset_nv12<PixType>(pDst + 2*iIndent, &pSrc[2*iIndent - 2], 2*(pParams->dataWidth - iIndent));
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
@@ -1240,68 +1075,179 @@ void read_data_through_boundary_bottom_right_nv12_8u_px(H264InterpolationParams_
         pSrc = pDst - pParams->dstStep;
         for (i = pParams->frameSize.height; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            MFX_INTERNAL_CPY(pDst, pSrc, 2*pParams->dataWidth);
-
+            MFX_INTERNAL_CPY(pDst, pSrc, 2*pParams->dataWidth*sizeof(PixType));
             pDst += pParams->dstStep;
         }
     }
+}
 
-} /* void read_data_through_boundary_bottom_right_nv12_8u_px(H264InterpolationParams_8u *pParams) */
-
-void read_data_through_boundary_bottom_left_right_nv12_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_bottom_left_right_nv12_px(InterpolationStruct *pParams)
 {
     if (0 > pParams->xPos)
-        read_data_through_boundary_bottom_left_nv12_8u_px(pParams);
+        read_data_through_boundary_bottom_left_nv12_px<PixType, InterpolationStruct>(pParams);
     else
-        read_data_through_boundary_bottom_right_nv12_8u_px(pParams);
+        read_data_through_boundary_bottom_right_nv12_px<PixType, InterpolationStruct>(pParams);
+}
 
-} /* void read_data_through_boundary_bottom_left_right_nv12_8u_px(H264InterpolationParams_8u *pParams) */
-
-void read_data_through_boundary_top_bottom_nv12_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_top_bottom_nv12_px(InterpolationStruct *pParams)
 {
     if (0 > pParams->yPos)
-        read_data_through_boundary_top_nv12_8u_px(pParams);
+        read_data_through_boundary_top_nv12_px<PixType, InterpolationStruct>(pParams);
     else
-        read_data_through_boundary_bottom_nv12_8u_px(pParams);
+        read_data_through_boundary_bottom_nv12_px<PixType, InterpolationStruct>(pParams);
+}
 
-} /* void read_data_through_boundary_top_top_bottom_nv12_8u_px(H264InterpolationParams_8u *pParams) */
-
-void read_data_through_boundary_top_bottom_left_nv12_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_top_bottom_left_nv12_px(InterpolationStruct *pParams)
 {
     if (0 > pParams->yPos)
-        read_data_through_boundary_top_left_nv12_8u_px(pParams);
+        read_data_through_boundary_top_left_nv12_px<PixType, InterpolationStruct>(pParams);
     else
-        read_data_through_boundary_bottom_left_nv12_8u_px(pParams);
+        read_data_through_boundary_bottom_left_nv12_px<PixType, InterpolationStruct>(pParams);
+}
 
-} /* void read_data_through_boundary_top_bottom_left_nv12_8u_px(H264InterpolationParams_8u *pParams) */
-
-void read_data_through_boundary_top_bottom_right_nv12_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_top_bottom_right_nv12_px(InterpolationStruct *pParams)
 {
     if (0 > pParams->yPos)
-        read_data_through_boundary_top_right_nv12_8u_px(pParams);
+        read_data_through_boundary_top_right_nv12_px<PixType, InterpolationStruct>(pParams);
     else
-        read_data_through_boundary_bottom_right_nv12_8u_px(pParams);
-
+        read_data_through_boundary_bottom_right_nv12_px<PixType, InterpolationStruct>(pParams);
 } /* void read_data_through_boundary_top_bottom_right_nv12_8u_px(H264InterpolationParams_8u *pParams) */
 
-void read_data_through_boundary_top_bottom_left_right_nv12_8u_px(H264InterpolationParams_8u *pParams)
+template<typename PixType, typename InterpolationStruct>
+void read_data_through_boundary_top_bottom_left_right_nv12_px(InterpolationStruct *pParams)
 {
     if (0 > pParams->xPos)
     {
         if (0 > pParams->yPos)
-            read_data_through_boundary_top_left_nv12_8u_px(pParams);
+            read_data_through_boundary_top_left_nv12_px<PixType, InterpolationStruct>(pParams);
         else
-            read_data_through_boundary_bottom_left_nv12_8u_px(pParams);
+            read_data_through_boundary_bottom_left_nv12_px<PixType, InterpolationStruct>(pParams);
     }
     else
     {
         if (0 > pParams->yPos)
-            read_data_through_boundary_top_right_nv12_8u_px(pParams);
+            read_data_through_boundary_top_right_nv12_px<PixType, InterpolationStruct>(pParams);
         else
-            read_data_through_boundary_bottom_right_nv12_8u_px(pParams);
+            read_data_through_boundary_bottom_right_nv12_px<PixType, InterpolationStruct>(pParams);
     }
+}
 
-} /* void read_data_through_boundary_top_bottom_left_right_nv12_8u_px(H264InterpolationParams_8u *pParams) */
+/* declare functions for handle boundary cases */
+pH264Interpolation_8u read_data_through_boundary_table_8u_pxmx[16] =
+{
+    &read_data_through_boundary_none<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_left_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_right_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_left_right_px<Ipp8u, H264InterpolationParams_8u>,
+
+    &read_data_through_boundary_top_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_top_left_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_top_right_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_top_left_right_px<Ipp8u, H264InterpolationParams_8u>,
+
+    &read_data_through_boundary_bottom_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_bottom_left_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_bottom_right_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_bottom_left_right_px<Ipp8u, H264InterpolationParams_8u>,
+
+    &read_data_through_boundary_top_bottom_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_top_bottom_left_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_top_bottom_right_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_top_bottom_left_right_px<Ipp8u, H264InterpolationParams_8u>
+};
+
+pH264Interpolation_8u read_data_through_boundary_table_nv12_8u_pxmx[16] =
+{
+    &read_data_through_boundary_none_nv12<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_left_nv12_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_right_nv12_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_left_right_nv12_px<Ipp8u, H264InterpolationParams_8u>,
+
+    &read_data_through_boundary_top_nv12_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_top_left_nv12_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_top_right_nv12_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_top_left_right_nv12_px<Ipp8u, H264InterpolationParams_8u>,
+
+    &read_data_through_boundary_bottom_nv12_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_bottom_left_nv12_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_bottom_right_nv12_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_bottom_left_right_nv12_px<Ipp8u, H264InterpolationParams_8u>,
+
+    &read_data_through_boundary_top_bottom_nv12_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_top_bottom_left_nv12_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_top_bottom_right_nv12_px<Ipp8u, H264InterpolationParams_8u>,
+    &read_data_through_boundary_top_bottom_left_right_nv12_px<Ipp8u, H264InterpolationParams_8u>
+};
+
+pH264Interpolation_16u read_data_through_boundary_table_16u_pxmx[16] =
+{
+    &read_data_through_boundary_none<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_left_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_right_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_left_right_px<Ipp16u, H264InterpolationParams_16u>,
+
+    &read_data_through_boundary_top_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_top_left_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_top_right_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_top_left_right_px<Ipp16u, H264InterpolationParams_16u>,
+
+    &read_data_through_boundary_bottom_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_bottom_left_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_bottom_right_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_bottom_left_right_px<Ipp16u, H264InterpolationParams_16u>,
+
+    &read_data_through_boundary_top_bottom_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_top_bottom_left_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_top_bottom_right_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_top_bottom_left_right_px<Ipp16u, H264InterpolationParams_16u>
+};
+
+pH264Interpolation_16u read_data_through_boundary_table_nv12_16u_pxmx[16] =
+{
+    &read_data_through_boundary_none_nv12<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_left_nv12_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_right_nv12_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_left_right_nv12_px<Ipp16u, H264InterpolationParams_16u>,
+
+    &read_data_through_boundary_top_nv12_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_top_left_nv12_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_top_right_nv12_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_top_left_right_nv12_px<Ipp16u, H264InterpolationParams_16u>,
+
+    &read_data_through_boundary_bottom_nv12_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_bottom_left_nv12_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_bottom_right_nv12_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_bottom_left_right_nv12_px<Ipp16u, H264InterpolationParams_16u>,
+
+    &read_data_through_boundary_top_bottom_nv12_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_top_bottom_left_nv12_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_top_bottom_right_nv12_px<Ipp16u, H264InterpolationParams_16u>,
+    &read_data_through_boundary_top_bottom_left_right_nv12_px<Ipp16u, H264InterpolationParams_16u>
+};
+
+IppStatus ippiInterpolateLumaBlock_H265(IppVCInterpolateBlock_8u *interpolateInfo, Ipp8u *temporary_buffer)
+{
+    return ippiInterpolateLumaBlock_H265Internal<Ipp8u, IppVCInterpolateBlock_8u, H264InterpolationParams_8u>(interpolateInfo, temporary_buffer);
+}
+
+IppStatus ippiInterpolateChromaBlock_H264(IppVCInterpolateBlock_8u *interpolateInfo, Ipp8u *temporary_buffer)
+{
+    return ippiInterpolateChromaBlock_H264Internal<Ipp8u, IppVCInterpolateBlock_8u, H264InterpolationParams_8u>(interpolateInfo, temporary_buffer);
+}
+
+IppStatus ippiInterpolateLumaBlock_H265(IppVCInterpolateBlock_8u *interpolateInfo, Ipp16u *temporary_buffer)
+{
+    return ippiInterpolateLumaBlock_H265Internal<Ipp16u, IppVCInterpolateBlock_16u, H264InterpolationParams_16u>((IppVCInterpolateBlock_16u*)interpolateInfo, temporary_buffer);
+}
+
+IppStatus ippiInterpolateChromaBlock_H264(IppVCInterpolateBlock_8u *interpolateInfo, Ipp16u *temporary_buffer)
+{
+    return ippiInterpolateChromaBlock_H264Internal<Ipp16u, IppVCInterpolateBlock_16u, H264InterpolationParams_16u>((IppVCInterpolateBlock_16u*)interpolateInfo, temporary_buffer);
+}
 
 
 } /*namespace UMC_HEVC_DECODER*/

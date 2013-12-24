@@ -197,11 +197,16 @@ UMC::Status mfx_UMC_FrameAllocator::InitMfx(UMC::FrameAllocatorParams *,
     m_pCore = mfxCore;
     m_IsUseExternalFrames = isUseExternalFrames;
 
+    Ipp32s bit_depth = params->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 ? 10 : 8;
+
     UMC::ColorFormat color_format;
 
     switch (params->mfx.FrameInfo.FourCC)
     {
     case MFX_FOURCC_NV12:
+        color_format = UMC::NV12;
+        break;
+    case MFX_FOURCC_P010:
         color_format = UMC::NV12;
         break;
     case MFX_FOURCC_RGB4:
@@ -224,16 +229,16 @@ UMC::Status mfx_UMC_FrameAllocator::InitMfx(UMC::FrameAllocatorParams *,
 
     UMC::Status umcSts;
 
-    if(MFX_CODEC_JPEG != params->mfx.CodecId || MFX_ROTATION_0 == params->mfx.Rotation || MFX_ROTATION_180 == params->mfx.Rotation)
+    if (MFX_CODEC_JPEG != params->mfx.CodecId || MFX_ROTATION_0 == params->mfx.Rotation || MFX_ROTATION_180 == params->mfx.Rotation)
     {
-        umcSts = m_info.Init(params->mfx.FrameInfo.Width, params->mfx.FrameInfo.Height, color_format, 8);
+        umcSts = m_info.Init(params->mfx.FrameInfo.Width, params->mfx.FrameInfo.Height, color_format, bit_depth);
 
         m_surface.Info.Width = params->mfx.FrameInfo.Width;
         m_surface.Info.Height = params->mfx.FrameInfo.Height;
     }
     else
     {
-        umcSts = m_info.Init(params->mfx.FrameInfo.Height, params->mfx.FrameInfo.Width, color_format, 8);
+        umcSts = m_info.Init(params->mfx.FrameInfo.Height, params->mfx.FrameInfo.Width, color_format, bit_depth);
 
         m_surface.Info.Width = params->mfx.FrameInfo.Height;
         m_surface.Info.Height = params->mfx.FrameInfo.Width;
@@ -378,12 +383,6 @@ UMC::Status mfx_UMC_FrameAllocator::Alloc(UMC::FrameMemID *pNewMemID, const UMC:
         passed.height > allocated.height)
     {
         return UMC::UMC_ERR_UNSUPPORTED;
-    }
-
-    for (Ipp32u i = 0; i < info->GetNumPlanes(); i++)
-    {
-        if (info->GetPlaneBitDepth(i) != 8)
-            return UMC::UMC_ERR_UNSUPPORTED;
     }
 
     sts = m_pCore->IncreasePureReference(m_frameData[index].first.Data.Locked);
@@ -701,12 +700,13 @@ mfxI32 mfx_UMC_FrameAllocator::AddSurface(mfxFrameSurface1 *surface)
     case MFX_FOURCC_YV12:
     case MFX_FOURCC_YUY2:
     case MFX_FOURCC_RGB4:
+    case MFX_FOURCC_P010:
 #if defined (MFX_VA_WIN)
     case DXGI_FORMAT_AYUV:
 #endif
         break;
     default:
-        return UMC::UMC_ERR_UNSUPPORTED;
+        return -1;
     }
 
     if (m_IsUseExternalFrames && 

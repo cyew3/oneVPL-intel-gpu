@@ -71,8 +71,10 @@ void H265SegmentDecoderMultiThreaded::StartProcessingSegment(H265Task &Task)
         m_context = m_context_single_thread.get();
         m_context->Init(Task.m_pSlice);
     }
-    
+
     this->create((H265SeqParamSet*)m_pSeqParamSet);
+
+    m_TrQuant->m_context = m_context;
 
     m_Prediction->InitTempBuff(m_context);
 
@@ -410,12 +412,137 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(H265Task & )
 }
 
 
+template<bool bitDepth, typename H265PlaneType>
+class ReconstructorT : public ReconstructorBase
+{
+public:
+    virtual void PredictIntra(Ipp32s predMode, H265PlaneYCommon* PredPel, H265PlaneYCommon* pels, Ipp32s pitch, Ipp32s width);
+
+    virtual void GetPredPelsLuma(H265PlaneYCommon* pSrc, H265PlaneYCommon* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf);
+
+    virtual void FilterPredictPels(DecodingContext* sd, H265CodingUnit* pCU, H265PlaneYCommon* PredPel, Ipp32s width, Ipp32u TrDepth, Ipp32u AbsPartIdx);
+
+    virtual void FilterEdgeLuma(H265EdgeData *edge, H265PlaneYCommon *srcDst, Ipp32s srcDstStride, Ipp32s x, Ipp32s y, Ipp32s dir);
+};
+
+template<bool bitDepth, typename H265PlaneType>
+void ReconstructorT<bitDepth, H265PlaneType>::FilterPredictPels(DecodingContext* sd, H265CodingUnit* pCU, H265PlaneYCommon* pels, Ipp32s width, Ipp32u TrDepth, Ipp32u AbsPartIdx)
+{
+    H265PlaneType* PredPel = (H265PlaneType*)pels;
+
+    if (sd->m_sps->sps_strong_intra_smoothing_enabled_flag)
+    {
+        Ipp32s CUSize = pCU->GetWidth(AbsPartIdx) >> TrDepth;
+
+        Ipp32s blkSize = 32;
+        Ipp32s threshold = 1 << (sd->m_sps->bit_depth_luma - 5);
+
+        Ipp32s topLeft = PredPel[0];
+        Ipp32s topRight = PredPel[2*width];
+        Ipp32s midHor = PredPel[width];
+
+        Ipp32s bottomLeft = PredPel[4*width];
+        Ipp32s midVer = PredPel[3*width];
+
+        bool bilinearLeft = IPP_ABS(topLeft + topRight - 2*midHor) < threshold; 
+        bool bilinearAbove = IPP_ABS(topLeft + bottomLeft - 2*midVer) < threshold;
+
+        if (CUSize >= blkSize && (bilinearLeft && bilinearAbove))
+        {
+            h265_FilterPredictPels_Bilinear(PredPel, width, topLeft, bottomLeft, topRight);
+            return;
+        }
+    }
+  
+    h265_FilterPredictPels(PredPel, width);
+}
+
+template<bool bitDepth, typename H265PlaneType>
+void ReconstructorT<bitDepth, H265PlaneType>::FilterEdgeLuma(H265EdgeData *edge, H265PlaneYCommon *srcDst, Ipp32s srcDstStride, Ipp32s x, Ipp32s y, Ipp32s dir)
+{
+    if (bitDepth)
+    {
+        Ipp16u* srcDst_ = (Ipp16u*)srcDst;
+        h265_FilterEdgeLuma_16u_I_px(edge, srcDst_ + x + y*srcDstStride, srcDstStride, dir, 10);
+    }
+    else
+    {
+        MFX_HEVC_PP::NAME(h265_FilterEdgeLuma_8u_I)(edge, srcDst + x + y*srcDstStride, srcDstStride, dir);
+    }
+}
+
+template<bool bitDepth, typename H265PlaneType>
+void ReconstructorT<bitDepth, H265PlaneType>::PredictIntra(Ipp32s predMode, H265PlaneYCommon* PredPel, H265PlaneYCommon* pRec, Ipp32s pitch, Ipp32s width)
+{
+    if (bitDepth)
+    {
+        Ipp16u* pels = (Ipp16u*)PredPel;
+        Ipp16u* rec = (Ipp16u*)pRec;
+        switch(predMode)
+        {
+        case INTRA_LUMA_PLANAR_IDX:
+            MFX_HEVC_PP::h265_PredictIntra_Planar_16u(pels, rec, pitch, width);
+            break;
+        case INTRA_LUMA_DC_IDX:
+            MFX_HEVC_PP::h265_PredictIntra_DC_16u(pels, rec, pitch, width, 1);
+            break;
+        case INTRA_LUMA_VER_IDX:
+            MFX_HEVC_PP::h265_PredictIntra_Ver_16u(pels, rec, pitch, width, 10, 1);
+            break;
+        case INTRA_LUMA_HOR_IDX:
+            MFX_HEVC_PP::h265_PredictIntra_Hor_16u(pels, rec, pitch, width, 10, 1);
+            break;
+        default:
+            MFX_HEVC_PP::h265_PredictIntra_Ang_16u_px(predMode, pels, rec, pitch, width);
+        }
+    }
+    else
+    {
+        switch(predMode)
+        {
+        case INTRA_LUMA_PLANAR_IDX:
+            MFX_HEVC_PP::h265_PredictIntra_Planar_8u(PredPel, pRec, pitch, width);
+            break;
+        case INTRA_LUMA_DC_IDX:
+            MFX_HEVC_PP::h265_PredictIntra_DC_8u(PredPel, pRec, pitch, width, 1);
+            break;
+        case INTRA_LUMA_VER_IDX:
+            MFX_HEVC_PP::h265_PredictIntra_Ver_8u(PredPel, pRec, pitch, width, 8, 1);
+            break;
+        case INTRA_LUMA_HOR_IDX:
+            MFX_HEVC_PP::h265_PredictIntra_Hor_8u(PredPel, pRec, pitch, width, 8, 1);
+            break;
+        default:
+            MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_8u)(predMode, PredPel, pRec, pitch, width);
+        }
+    }
+}
+
+template<bool bitDepth, typename H265PlaneType>
+void ReconstructorT<bitDepth, H265PlaneType>::GetPredPelsLuma(H265PlaneYCommon* pSrc, H265PlaneYCommon* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf)
+{
+    H265PlaneType * src = (H265PlaneType *)pSrc;
+    H265PlaneType * pels = (H265PlaneType *)PredPel;
+
+    Ipp32u bit_depth = bitDepth ? 10 : 8;
+
+    h265_GetPredPelsLuma(src, pels, blkSize, srcPitch, tpIf, lfIf, tlIf, bit_depth);
+}
+
 SegmentDecoderHPBase_H265* H265SegmentDecoderMultiThreaded::CreateSegmentDecoder()
 {
-    return CreateSD_H265(
-        bit_depth_luma,
-        bit_depth_chroma);
+    if (m_pSeqParamSet->bit_depth_luma > 8 || m_pSeqParamSet->bit_depth_chroma > 8)
+    {
+        m_reconstructor.reset(new ReconstructorT<true, Ipp16u>);
+    }
+    else
+    {
+        m_reconstructor.reset(new ReconstructorT<false, Ipp8u>);
+    }
+
+    return CreateSD_H265(m_pSeqParamSet->bit_depth_luma, m_pSeqParamSet->bit_depth_chroma);
 }
+
 
 } // namespace UMC_HEVC_DECODER
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

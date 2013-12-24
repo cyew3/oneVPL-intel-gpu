@@ -289,6 +289,7 @@ public:
     void SAOProcess(H265DecoderFrame* pFrame, Ipp32s start, Ipp32s toProcess);
 protected:
     H265DecoderFrame*   m_Frame;
+    const H265SeqParamSet* m_sps;
 
     Ipp32s              m_OffsetEo[LUMA_GROUP_NUM];
     Ipp32s              m_OffsetEo2[LUMA_GROUP_NUM];

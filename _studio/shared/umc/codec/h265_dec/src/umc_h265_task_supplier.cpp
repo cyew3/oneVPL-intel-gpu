@@ -834,10 +834,19 @@ void TaskSupplier_H265::AfterErrorRestore()
     MVC_Extension::Reset();
     AU_Splitter_H265::Reset();
 
+    if (m_pLastSlice)
+    {
+        m_pLastSlice->Release();
+        m_ObjHeap.FreeObject(m_pLastSlice);
+        m_pLastSlice = 0;
+    }
+
     Skipping_H265::Reset();
     m_ObjHeap.Release();
     m_Heap.Reset();
     m_Headers.Reset(true);
+
+    m_WaitForIDR        = true;
 
     m_pLastDisplayed = 0;
 
@@ -1440,7 +1449,6 @@ H265DecoderFrame *TaskSupplier_H265::GetAnyFrameToDisplay(bool force)
 
 void TaskSupplier_H265::PreventDPBFullness()
 {
-    VM_ASSERT(false);
     AfterErrorRestore();
 }
 

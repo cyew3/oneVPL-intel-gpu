@@ -100,8 +100,8 @@ void H265SampleAdaptiveOffset::init(const H265SeqParamSet* sps)
 
     m_MaxCUSize  = sps->MaxCUSize;
 
-    Ipp32u uiPixelRangeY = 1 << g_bitDepthY;
-    Ipp32u uiBoRangeShiftY = g_bitDepthY - SAO_BO_BITS;
+    Ipp32u uiPixelRangeY = 1 << sps->bit_depth_luma;
+    Ipp32u uiBoRangeShiftY = sps->bit_depth_luma - SAO_BO_BITS;
 
     m_lumaTableBo = new H265PlaneYCommon[uiPixelRangeY];
     for (Ipp32u k2 = 0; k2 < uiPixelRangeY; k2++)
@@ -109,7 +109,7 @@ void H265SampleAdaptiveOffset::init(const H265SeqParamSet* sps)
         m_lumaTableBo[k2] = (H265PlaneYCommon)(1 + (k2>>uiBoRangeShiftY));
     }
 
-    Ipp32u uiMaxY  = (1 << g_bitDepthY) - 1;
+    Ipp32u uiMaxY  = (1 << sps->bit_depth_luma) - 1;
     Ipp32u uiMinY  = 0;
 
     Ipp32u iCRangeExt = uiMaxY>>1;
@@ -796,6 +796,8 @@ void H265SampleAdaptiveOffset::SAOProcess(H265DecoderFrame* pFrame, Ipp32s start
         return;
 
     m_Frame = pFrame;
+    H265Slice * slice = m_Frame->GetAU()->GetAnySlice();
+    m_sps = slice->GetSeqParam();
     processSaoUnits(startCU, toProcessCU);
 }
 
@@ -944,8 +946,8 @@ void H265SampleAdaptiveOffset::processSaoUnits(Ipp32s firstCU, Ipp32s toProcessC
     m_needPCMRestoration = (slice->GetSliceHeader()->m_SeqParamSet->pcm_enabled_flag && slice->GetSliceHeader()->m_SeqParamSet->pcm_loop_filter_disabled_flag) ||
         slice->GetSliceHeader()->m_PicParamSet->transquant_bypass_enabled_flag;
 
-    m_SaoBitIncreaseY = IPP_MAX(g_bitDepthY - 10, 0);
-    m_SaoBitIncreaseC = IPP_MAX(g_bitDepthC - 10, 0);
+    m_SaoBitIncreaseY = IPP_MAX((Ipp32s)slice->GetSeqParam()->bit_depth_luma - 10, 0);
+    m_SaoBitIncreaseC = IPP_MAX((Ipp32s)slice->GetSeqParam()->bit_depth_chroma - 10, 0);
     
     createNonDBFilterInfo();
 
@@ -1031,7 +1033,7 @@ void H265SampleAdaptiveOffset::SetOffsetsLuma(SAOLCUParam  &saoLCUParam, Ipp32s 
         }
 
         H265PlaneYCommon *ppLumaTable = m_lumaTableBo;
-        for (Ipp32s i = 0; i < (1 << g_bitDepthY); i++)
+        for (Ipp32s i = 0; i < (1 << m_sps->bit_depth_luma); i++)
         {
             m_OffsetBo[i] = m_ClipTable[i + offset[ppLumaTable[i]]];
         }
@@ -1072,7 +1074,7 @@ void H265SampleAdaptiveOffset::SetOffsetsChroma(SAOLCUParam &saoLCUParamCb, SAOL
         }
 
         H265PlaneYCommon *ppLumaTable = m_lumaTableBo;
-        for (Ipp32s i = 0; i < (1 << g_bitDepthC); i++)
+        for (Ipp32s i = 0; i < (1 << m_sps->bit_depth_chroma); i++)
         {
             m_OffsetBoChroma[i] = m_ClipTable[i + offsetCb[ppLumaTable[i]]];
             m_OffsetBo2Chroma[i] = m_ClipTable[i + offsetCr[ppLumaTable[i]]];
@@ -1187,7 +1189,7 @@ void H265SampleAdaptiveOffset::PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u
     }
     else
     {
-        PcmLeftShiftBit = g_bitDepthY - pcCU->m_SliceHeader->m_SeqParamSet->pcm_sample_bit_depth_luma;
+        PcmLeftShiftBit = m_sps->bit_depth_luma - pcCU->m_SliceHeader->m_SeqParamSet->pcm_sample_bit_depth_luma;
     }
 
     for(Y = 0; Y < Size; Y++)
@@ -1215,7 +1217,7 @@ void H265SampleAdaptiveOffset::PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u
     }
     else
     {
-        PcmLeftShiftBit = g_bitDepthC - pcCU->m_SliceHeader->m_SeqParamSet->pcm_sample_bit_depth_chroma;
+        PcmLeftShiftBit = m_sps->bit_depth_chroma - pcCU->m_SliceHeader->m_SeqParamSet->pcm_sample_bit_depth_chroma;
     }
 
     for(Y = 0; Y < Size; Y++)

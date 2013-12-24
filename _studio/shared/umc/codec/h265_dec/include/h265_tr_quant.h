@@ -24,6 +24,7 @@
 
 namespace UMC_HEVC_DECODER
 {
+class DecodingContext;
 
 // transform and quantization class
 class H265TrQuant
@@ -31,6 +32,8 @@ class H265TrQuant
 public:
     H265TrQuant();
     ~H265TrQuant();
+
+    DecodingContext * m_context;
 
     // transform & inverse transform functions
     template <typename DstCoeffsType>

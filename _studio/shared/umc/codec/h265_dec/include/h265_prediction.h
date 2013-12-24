@@ -45,23 +45,24 @@ protected:
     H265DecYUVBufferPadded m_YUVPred[2];    
 
     // motion compensation functions
-    template <EnumTextType c_plane_type, bool bi>
+    template <EnumTextType c_plane_type, bool bi, typename H265PlaneYCommon>
     void H265_FORCEINLINE PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicList RefPicList, H265DecYUVBufferPadded *YUVPred, MFX_HEVC_PP::EnumAddAverageType eAddAverage = MFX_HEVC_PP::AVERAGE_NO);
 
     bool CheckIdenticalMotion(H265CodingUnit* pCU, H265PUInfo &MVi);    
 
-     static void WriteAverageToPic(
-                     const H265PlaneYCommon * in_pSrc0,
+    template<typename PixType> static 
+         void WriteAverageToPic(
+                     const PixType * in_pSrc0,
                      Ipp32u in_Src0Pitch,      // in samples
-                     const H265PlaneYCommon * in_pSrc1,
+                     const PixType * in_pSrc1,
                      Ipp32u in_Src1Pitch,      // in samples
-                     H265PlaneYCommon* H265_RESTRICT in_pDst,
+                     PixType* H265_RESTRICT in_pDst,
                      Ipp32u in_DstPitch,       // in samples
                      Ipp32s width,
                      Ipp32s height );
 
-     template <int c_shift>
-     static void CopyExtendPU(const H265PlaneYCommon * in_pSrc,
+     template <int c_shift, typename PixType>
+     static void CopyExtendPU(const PixType * in_pSrc,
                      Ipp32u in_SrcPitch, // in samples
                      Ipp16s* H265_RESTRICT in_pDst,
                      Ipp32u in_DstPitch, // in samples

@@ -1628,8 +1628,8 @@ UMC::Status H265Bitstream::GetNALUnitType(NalUnitType &nal_unit_type, Ipp32u &nu
     // nal_unit_type
     nal_unit_type = (NalUnitType)GetBits(6);
     // reserved_zero_6bits
-    Ipp32u reserved_zero_6bits = GetBits(6);
-    VM_ASSERT(0 == reserved_zero_6bits);
+    Ipp32u nuh_layer_id = GetBits(6);
+    VM_ASSERT(0 == nuh_layer_id);
     // nuh_temporal_id
     nuh_temporal_id = GetBits(3) - 1;
 

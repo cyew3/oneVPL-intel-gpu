@@ -74,11 +74,6 @@ extern const Ipp8u g_IntraModeBitsAng[7];
 extern const Ipp8u g_AngModeMapping[4][34];
 extern const Ipp8u g_AngIntraModeOrder[NUM_INTRA_MODE];
 
-// Bit-depth ----------------------------------------------------------------------------------------------------------
-// ML: OPT: Replacing with compile time const
-const Ipp32s g_bitDepthY = 8;
-const Ipp32s g_bitDepthC = 8;
-
 /** clip x, such that 0 <= x <= #g_maxLumaVal */
 // ML: OPT: called in hot loops, compiler does not seem to always honor 'inline'
 // ML: OPT: TODO: Make sure compiler recognizes saturation idiom for vectorization

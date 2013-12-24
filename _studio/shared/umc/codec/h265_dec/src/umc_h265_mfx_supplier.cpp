@@ -283,7 +283,7 @@ UMC::Status MFXTaskSupplier_H265::DecodeHeaders(UMC::MediaDataEx *nalUnit)
 
     if (currSPS)
     {
-        if (currSPS->bit_depth_luma > 8 || currSPS->bit_depth_chroma > 8 || currSPS->chroma_format_idc > 1)
+        if (currSPS->chroma_format_idc > 1)
             throw h265_exception(UMC::UMC_ERR_UNSUPPORTED);
     }
 
@@ -1103,7 +1103,7 @@ bool MFX_CDECL MFX_Utility::CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType t
         return false;
 #endif
 
-    if (in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12)
+    if (in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 && in->mfx.FrameInfo.FourCC != MFX_FOURCC_P010)
         return false;
 
     // both zero or not zero

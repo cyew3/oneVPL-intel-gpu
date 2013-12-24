@@ -43,13 +43,25 @@ class H265Task;
 // Class to incapsulate functions, implementing common decoding functional.
 //
 
+class ReconstructorBase
+{
+public:
+
+    virtual void PredictIntra(Ipp32s predMode, H265PlaneYCommon* PredPel, H265PlaneYCommon* pRec, Ipp32s pitch, Ipp32s width) = 0;
+
+    virtual void GetPredPelsLuma(H265PlaneYCommon* pSrc, H265PlaneYCommon* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf) = 0;
+
+    virtual void FilterPredictPels(DecodingContext* sd, H265CodingUnit* pCU, H265PlaneYCommon* PredPel, Ipp32s width, Ipp32u TrDepth, Ipp32u AbsPartIdx) = 0;
+
+    virtual void FilterEdgeLuma(H265EdgeData *edge, H265PlaneYCommon *srcDst, Ipp32s srcDstStride, Ipp32s x, Ipp32s y, Ipp32s dir) = 0;
+
+protected:
+};
+
 struct Context
 {
     H265DecoderRefPicList::ReferenceInformation *m_pRefPicList[2];
     H265Bitstream *m_pBitStream;                                // (H265Bitstream *) pointer to bit stream object
-
-    Ipp32s bit_depth_luma;
-    Ipp32s bit_depth_chroma;
 
     // external data
     const H265PicParamSet *m_pPicParamSet;                      // (const H265PicParamSet *) pointer to current picture parameters sets
@@ -57,6 +69,9 @@ struct Context
     H265DecoderFrame *m_pCurrentFrame;                          // (H265DecoderFrame *) pointer to frame being decoded
     bool                m_bIsNeedWADeblocking;
     bool                m_hasTiles;
+
+
+    std::auto_ptr<ReconstructorBase>  m_reconstructor;
 };
 
 class DecodingContext : public HeapObject
