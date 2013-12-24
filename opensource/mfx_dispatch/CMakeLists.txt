@@ -23,6 +23,7 @@ list(APPEND sources
   ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_win_reg_key.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_dxva2_device.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_plugin_hive_linux.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_plugin_cfg_parser.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_load_plugin.cpp  
   )
 

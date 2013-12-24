@@ -92,12 +92,12 @@ namespace MFX
         mfxU32  mNrecords;
     public:
         MFXVector()
-            : mNrecords()
-            , mRecords()
+            : mRecords()
+            , mNrecords()
         {}
         MFXVector(const MFXVector & rhs)
-            : mNrecords()
-            , mRecords()
+            : mRecords()
+            , mNrecords()
         {
             insert(end(), rhs.begin(), rhs.end());
         }

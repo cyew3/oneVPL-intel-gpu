@@ -24,7 +24,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-File Name: mfx_plugin_hive.h
+File Name: mfx_plugin_hive.cpp
 
 \* ****************************************************************************** */
 
@@ -75,7 +75,7 @@ namespace
     #define alignStr() "%-14S"
 }
 
- bool MFX::MFXPluginStorageBase::ConvertAPIVersion( mfxU32 APIVersion, PluginDescriptionRecord &descriptionRecord)const
+ bool MFX::MFXPluginStorageBase::ConvertAPIVersion(mfxU32 APIVersion, PluginDescriptionRecord &descriptionRecord) const
  {
      descriptionRecord.APIVersion.Minor = static_cast<mfxU16> (APIVersion & 0x0ff);
      descriptionRecord.APIVersion.Major = static_cast<mfxU16> (APIVersion >> 8);
@@ -98,7 +98,7 @@ namespace
 }
 
 
-MFX::MFXPluginsInHive::MFXPluginsInHive( int mfxStorageID, const msdk_disp_char *msdkLibSubKey, mfxVersion currentAPIVersion )
+MFX::MFXPluginsInHive::MFXPluginsInHive(int mfxStorageID, const msdk_disp_char *msdkLibSubKey, mfxVersion currentAPIVersion)
     : MFXPluginStorageBase(currentAPIVersion)
 {
     HKEY rootHKey;
@@ -264,7 +264,7 @@ MFX::MFXPluginsInFS::MFXPluginsInFS( mfxVersion currentAPIVersion )
     mfxU32 executableDirLen = (mfxU32)(lastSlashPos - currentModuleName) + slashLen;
     if (executableDirLen + pluginDirNameLen + pluginCfgFileNameLen >= MAX_PLUGIN_PATH) 
     {
-        TRACE_HIVE_ERROR("MAX_PLUGIN_PATH which is %d, not enough lo locate plugin path\n", MAX_PLUGIN_PATH);
+        TRACE_HIVE_ERROR("MAX_PLUGIN_PATH which is %d, not enough to locate plugin path\n", MAX_PLUGIN_PATH);
         return;
     }
     msdk_disp_char_cpy_s(lastSlashPos + slashLen
@@ -297,12 +297,14 @@ MFX::MFXPluginsInFS::MFXPluginsInFS( mfxVersion currentAPIVersion )
             mfxU32 hexNum = 0;
             if (1 != swscanf_s(find_data.cFileName + charsPermfxU8 * i, L"%2x", &hexNum)) 
             {
-                TRACE_HIVE_INFO("folder name \"%S\" is not a valid GUID string\n", find_data.cFileName);
+                // it is ok to have non-plugin subdirs with length 32
+                //TRACE_HIVE_INFO("folder name \"%S\" is not a valid GUID string\n", find_data.cFileName);
                 break;
             }
             if (hexNum == 0 && find_data.cFileName + charsPermfxU8 * i != wcsstr(find_data.cFileName + 2*i, L"00"))
             {
-                TRACE_HIVE_INFO("folder name \"%S\" is not a valid GUID string\n", find_data.cFileName);
+                // it is ok to have non-plugin subdirs with length 32
+                //TRACE_HIVE_INFO("folder name \"%S\" is not a valid GUID string\n", find_data.cFileName);
                 break;
             }
             descriptionRecord.PluginUID.Data[i] = (mfxU8)hexNum;

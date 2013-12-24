@@ -119,7 +119,7 @@ mfxModuleHandle mfx_dll_load(const msdk_disp_char *pFileName)
         return NULL;
     }
     // load the module
-    hModule = dlopen(pFileName, RTLD_LAZY);
+    hModule = dlopen(pFileName, RTLD_LOCAL|RTLD_NOW);
 
     return hModule;
 } // mfxModuleHandle mfx_dll_load(const wchar_t *pFileName)
@@ -132,7 +132,7 @@ mfxFunctionPointer mfx_dll_get_addr(mfxModuleHandle handle, const char *pFunctio
     }
 
     mfxFunctionPointer addr = (mfxFunctionPointer) dlsym(handle, pFunctionName);
-    if (dlerror())
+    if (!addr)
     {
         return NULL;
     }
