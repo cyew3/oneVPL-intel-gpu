@@ -734,7 +734,8 @@ namespace MfxHwVideoProcessing
         {
         public:
             bool m_procAmpEnable;
-            //bool m_deinterlaceEnable;
+            bool m_simpleDIEnable;
+            bool m_advancedDIEnable;
             bool m_denoiseEnable;
             bool m_detailEnable;
 

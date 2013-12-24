@@ -326,6 +326,16 @@ mfxStatus D3D11VideoProcessor::Init(
 
         m_pVideoProcessor->GetRateConversionCaps(&rateConvCaps);
 
+        if (rateConvCaps.ProcessorCaps & D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_BOB)
+        {
+            m_caps.m_simpleDIEnable = true;
+        }
+
+        if (rateConvCaps.ProcessorCaps & (D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_MOTION_COMPENSATION | D3D11_VIDEO_PROCESSOR_PROCESSOR_CAPS_DEINTERLACE_ADAPTIVE))
+        {
+            m_caps.m_advancedDIEnable = true;
+        }
+
 #ifndef MSDK_BANNED
         char cStr[256];
 
@@ -348,7 +358,7 @@ mfxStatus D3D11VideoProcessor::Init(
     sts = QueryVPE_AndExtCaps();
     MFX_CHECK_STS(sts);
 
-    if(m_vpreCaps.bVariance)
+    if (m_vpreCaps.bVariance)
     {
         sts = QueryVarianceCaps(m_varianceCaps);
         MFX_CHECK_STS(sts);
@@ -1918,7 +1928,8 @@ mfxStatus D3D11VideoProcessor::Register(mfxHDLPair* pSurfaces, mfxU32 num, BOOL 
 mfxStatus D3D11VideoProcessor::QueryCapabilities(mfxVppCaps& caps)
 {
     caps.uDenoiseFilter = m_caps.m_denoiseEnable;
-    caps.uSimpleDI      = 1;//no special caps.field. supported always
+    caps.uSimpleDI      = m_caps.m_simpleDIEnable;
+    caps.uAdvancedDI    = m_caps.m_advancedDIEnable;
     caps.uDetailFilter  = m_caps.m_detailEnable;
     caps.uProcampFilter = m_caps.m_procAmpEnable;
 
