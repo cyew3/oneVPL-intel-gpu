@@ -87,7 +87,8 @@ enum {
     MFX_FOURCC_RGB3         = MFX_MAKEFOURCC('R','G','B','3'),   /* RGB24 */
     MFX_FOURCC_RGB4         = MFX_MAKEFOURCC('R','G','B','4'),   /* RGB32 */
     MFX_FOURCC_P8           = 41,         /*  D3DFMT_P8   */
-    MFX_FOURCC_P8_TEXTURE   = MFX_MAKEFOURCC('P','8','M','B') 
+    MFX_FOURCC_P8_TEXTURE   = MFX_MAKEFOURCC('P','8','M','B'),
+    MFX_FOURCC_P010         = MFX_MAKEFOURCC('P','0','1','0')
 };
 
 /* PicStruct */
