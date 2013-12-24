@@ -35,13 +35,13 @@ namespace MFX_HEVC_PP
         TEXT_CHROMA_V,
     };
 
-    __declspec(align(16)) static const short filtTabLumaSc[3][8] = {
+    ALIGN_DECL(16) static const short filtTabLumaSc[3][8] = {
         { -1, 4, -10, 58, 17,  -5, 1,  0 },
         { -1, 4, -11, 40, 40, -11, 4, -1 },
         {  0, 1,  -5, 17, 58, -10, 4, -1 },
     };
 
-    __declspec(align(16)) static const short filtTabChromaSc[7][4] = {
+    ALIGN_DECL(16) static const short filtTabChromaSc[7][4] = {
         {  -2,  58,  10, -2,  },
         {  -4,  54,  16, -2,  },
         {  -6,  46,  28, -4,  },
@@ -52,7 +52,7 @@ namespace MFX_HEVC_PP
     };
 
 #if defined(MFX_TARGET_OPTIMIZATION_AUTO)
-#define MAKE_NAME( func ) func ## _px
+    #define MAKE_NAME( func ) func ## _px
 #else
     #define MAKE_NAME( func ) func
 #endif

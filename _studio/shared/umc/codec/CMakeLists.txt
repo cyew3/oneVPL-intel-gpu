@@ -68,8 +68,44 @@ set( sources "" )
 foreach( dir ${dirs_impl} )
   file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
   list( APPEND sources ${srcs}) 
-endforeach() 
+endforeach()
 
 foreach( variant sw hw )
   make_library( umc_codecs_merged ${variant} static )
 endforeach( )
+
+
+# =============================================================================
+
+set( sources "" )
+#foreach( dir h265 )
+  file( GLOB_RECURSE srcs "color_space_converter/*.c" "color_space_converter/*.cpp" )
+  list( APPEND sources ${srcs}) 
+#endforeach()
+
+#foreach( variant sw hw )
+#  make_library( umc_csc ${variant} static )
+#endforeach( )
+
+make_library( umc_csc sw static )
+
+# =============================================================================
+
+set( sources "" )
+#foreach( dir h265 )
+  file( GLOB_RECURSE srcs "h265_dec/*.c" "h265_dec/*.cpp" )
+  list( APPEND sources ${srcs}) 
+#endforeach()
+
+ADD_DEFINITIONS(
+ -DAS_HEVCD_PLUGIN
+)
+
+#foreach( variant sw hw )
+#  make_library( umc_h265 ${variant} static )
+#endforeach( )
+
+make_library( umc_h265 sw static )
+
+
+

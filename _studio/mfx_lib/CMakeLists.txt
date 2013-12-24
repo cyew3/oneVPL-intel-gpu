@@ -92,6 +92,10 @@ endforeach()
 
 add_definitions(-DMFX_MAKENAME_ATOM)
 
+add_definitions(
+ -DAS_HEVCD_PLUGIN
+)
+
 make_library( mfx_optimization none static )
 
 # =============================================================================
@@ -226,6 +230,7 @@ foreach( variant sw hw )
 
   make_library( ${mfxlibname} ${variant} shared)
   make_library( mfx${variant}_static ${variant} static)
+  #message( STATUS "xxxxxxxxxxxxxxx __ARCH: "${__ARCH}, "mfxlibname: "${mfxlibname}, "variant: "${variant})
 endforeach()
 
 # =============================================================================
@@ -286,3 +291,105 @@ foreach( variant sw )
   make_library( ${mfxlibname} ${variant} shared)
   #make_library( mfxaudio${variant}_static ${variant} static)
 endforeach()
+
+###################################################################################################################
+# =============================================================================
+
+set( sources "" )
+set( sources.plus "" )
+
+foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
+  list( APPEND sources
+    ${prefix}/mfx_common_int.cpp
+    ${prefix}/mfx_common_decode_int.cpp
+    ${prefix}/libmfxsw.cpp
+    ${prefix}/libmfxsw_async.cpp
+    ${prefix}/libmfxsw_plugin.cpp
+    ${prefix}/libmfxsw_query.cpp
+    ${prefix}/libmfxsw_session.cpp
+    ${prefix}/libmfxsw_decode.cpp
+    ${prefix}/mfx_session.cpp
+    ${prefix}/mfx_user_plugin.cpp
+  )
+endforeach()
+
+foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/src )
+  list( APPEND sources
+    ${prefix}/fast_copy.cpp
+    ${prefix}/libmfx_allocator.cpp
+    ${prefix}/libmfx_allocator_vaapi.cpp
+    ${prefix}/libmfx_core.cpp
+    ${prefix}/libmfx_core_factory.cpp
+    ${prefix}/libmfx_core_vaapi.cpp
+    ${prefix}/mfx_umc_alloc_wrapper.cpp
+  )
+endforeach()
+
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/include )
+
+foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src )
+  list( APPEND sources
+    ${prefix}/mfx_scheduler_core.cpp
+    ${prefix}/mfx_scheduler_core_iunknown.cpp
+    ${prefix}/mfx_scheduler_core_task_management.cpp
+    ${prefix}/mfx_scheduler_core_ischeduler.cpp
+    ${prefix}/mfx_scheduler_core_task.cpp 
+    ${prefix}/mfx_scheduler_core_thread.cpp
+  )
+endforeach()
+
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/decode/h265/include )
+
+foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/decode/h265/src )
+  list( APPEND sources
+    ${prefix}/mfx_h265_dec_decode.cpp
+  )
+endforeach()
+
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/plugin/include )
+
+foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/plugin/src )
+  list( APPEND sources
+    ${prefix}/mfx_hevc_dec_plugin.cpp
+  )
+endforeach()
+
+set( USE_STRICT_NAME TRUE )
+set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/plugin/libmfxsw_plugin.map" )
+#set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/libmfx.map" )
+
+add_definitions(
+ -DAS_HEVCD_PLUGIN
+)
+
+#foreach( variant sw hw )
+foreach( variant sw )
+  if( __ARCH MATCHES intel64 )
+    set( plugin_name mfxplugin64_hevcd_${variant} )
+  else()
+    set( plugin_name mfxplugin32_hevcd_${variant} )
+  endif()
+  if( __CONFIG MATCHES debug )
+    set( plugin_name ${plugin_name}_d )
+  endif()
+
+  set( LIBS "" )
+  list( APPEND LIBS
+    umc_h265_sw
+    umc_csc_sw
+    mfx_optimization
+    umc_io_merged_${variant}
+    umc_core_merged 
+    ${ITT_LIBS}
+    ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
+    pthread
+    dl
+    )
+
+  make_library( ${plugin_name} ${variant} shared)
+#  make_library( mfx${variant}_static ${variant} static)
+  message( STATUS "CMAKE_CURRENT_SOURCE_DIR", ${CMAKE_CURRENT_SOURCE_DIR} )
+  message( STATUS "xxxxxxxxxxxxxxx __ARCH: "${__ARCH}, "plugin_name: "${plugin_name}, "variant: "${variant})
+endforeach()
+
+# =============================================================================

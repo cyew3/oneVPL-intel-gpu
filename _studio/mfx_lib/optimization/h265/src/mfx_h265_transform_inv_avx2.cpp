@@ -177,7 +177,7 @@ typedef unsigned long       uint32_t;
 #define load_unaligned(x) _mm_loadu_si128(x)
 #endif
 
-#define M256I_W8x2SHORT(x, w0, w1) static const  __declspec(align(32)) __m256i x = {\
+#define M256I_W8x2SHORT(x, w0, w1) static const  ALIGN_DECL(32) __m256i x = {\
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF), \
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF), \
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF), \
@@ -187,7 +187,7 @@ typedef unsigned long       uint32_t;
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF), \
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF)}
 
-#define M256I_2x8SHORT(x, w0,w1,w2,w3,w4,w5,w6,w7) static const  __declspec(align(32)) __m256i x = {\
+#define M256I_2x8SHORT(x, w0,w1,w2,w3,w4,w5,w6,w7) static const  ALIGN_DECL(32) __m256i x = {\
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF), \
     (char)((w2)&0xFF),(char)(((w2)>>8)&0xFF), (char)((w3)&0xFF),(char)(((w3)>>8)&0xFF), \
     (char)((w4)&0xFF),(char)(((w4)>>8)&0xFF), (char)((w5)&0xFF),(char)(((w5)>>8)&0xFF), \

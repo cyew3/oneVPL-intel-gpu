@@ -250,13 +250,17 @@ public:
 #if defined(_WIN32) || defined(_WIN64)
             if (1 != swscanf_s(uid.c_str() + 2*i, L"%2x", &hex))
 #else
-            if (1 != swscanf((wchar_t *)(uid.c_str() + 2*i), L"%2x", &hex))
+            if (1 != sscanf(uid.c_str() + 2*i, "%2x", &hex))
 #endif
             {
                 MFX_TRACE_ERR(VM_STRING("Failed to parse plugin uid: ") << uid.c_str());
                 return;
             }
+#if defined(_WIN32) || defined(_WIN64)
             if (hex == 0 && (const wchar_t *)uid.c_str() + 2*i != wcsstr((const wchar_t *)uid.c_str() + 2*i, L"00"))
+#else
+            if (hex == 0 && uid.c_str() + 2*i != strstr(uid.c_str() + 2*i, "00"))
+#endif
             {
                  MFX_TRACE_ERR(VM_STRING("Failed to parse plugin uid: ") << uid.c_str());
                 return;

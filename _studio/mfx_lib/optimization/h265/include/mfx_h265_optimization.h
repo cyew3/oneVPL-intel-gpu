@@ -548,7 +548,7 @@ namespace MFX_HEVC_PP
     /*                    MAKE_NAME                             */
     /* ******************************************************** */
 #if defined(MFX_TARGET_OPTIMIZATION_AUTO)
-    #define NAME(func) g_dispatcher. ## func
+    #define NAME(func) g_dispatcher.func
 #else
     #define NAME(func) func
 #endif
