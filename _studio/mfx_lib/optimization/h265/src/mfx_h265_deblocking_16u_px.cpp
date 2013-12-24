@@ -52,12 +52,7 @@ namespace MFX_HEVC_PP
         58, 60, 62, 64
     };
 
-#if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
-#if defined(MFX_TARGET_OPTIMIZATION_PX)
-    Ipp32s h265_FilterEdgeLuma_16u_I(H265EdgeData *edge, PixType *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32u bit_depth)
-#else
     Ipp32s h265_FilterEdgeLuma_16u_I_px(H265EdgeData *edge, PixType *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32u bit_depth)
-#endif
 
     {
         Ipp32s tcIdx, bIdx, tc, beta, sideThreshhold;
@@ -299,7 +294,6 @@ namespace MFX_HEVC_PP
         return strongFiltering;
 
     }
-#endif
 
 #if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 #if defined(MFX_TARGET_OPTIMIZATION_PX)

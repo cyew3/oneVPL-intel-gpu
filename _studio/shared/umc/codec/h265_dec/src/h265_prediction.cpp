@@ -79,8 +79,15 @@ void H265Prediction::InitTempBuff(DecodingContext* context)
 //---------------------------------------------------------
 void H265Prediction::MotionCompensation(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    typedef Ipp8u PixType;
+    if (m_context->m_sps->bit_depth_luma > 8 || m_context->m_sps->bit_depth_chroma > 8)
+        MotionCompensationInternal<Ipp16u>(pCU, AbsPartIdx, Depth);
+    else
+        MotionCompensationInternal<Ipp8u>(pCU, AbsPartIdx, Depth);
+}
 
+template<typename PixType>
+void H265Prediction::MotionCompensationInternal(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth)
+{
     bool weighted_prediction = pCU->m_SliceHeader->slice_type == P_SLICE ? m_context->m_pps->weighted_pred_flag :
         m_context->m_pps->weighted_bipred_flag;
 

@@ -575,12 +575,7 @@ namespace MFX_HEVC_PP
         }
     } // void h265_PredictIntra_Ang_8u_px_no_transp(...)
 
-#if defined(MFX_TARGET_OPTIMIZATION_PX)  || defined(MFX_TARGET_OPTIMIZATION_AUTO)
-#if defined(MFX_TARGET_OPTIMIZATION_PX)
-    void h265_PredictIntra_Ang_16u(
-#elif defined(MFX_TARGET_OPTIMIZATION_AUTO)
     void h265_PredictIntra_Ang_16u_px(
-#endif
         Ipp32s mode,
         PixType* PredPel,
         PixType* pels,
@@ -605,9 +600,6 @@ namespace MFX_HEVC_PP
         }
 
     } // void h265_PredictIntra_Ang_8u(...)
-
-#endif // #if defined(MFX_TARGET_OPTIMIZATION_PX)  || defined(MFX_TARGET_OPTIMIZATION_AUTO)
-
 
     void h265_PredictIntra_Planar_16u(
         PixType* PredPel,
@@ -872,7 +864,7 @@ namespace MFX_HEVC_PP
 
 #if defined(MFX_TARGET_OPTIMIZATION_PX)  || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 #if defined(MFX_TARGET_OPTIMIZATION_PX)
-    void h265_PredictIntra_Ang_All_16u(
+    void h265_PredictIntra_Ang_All_16u_px(
 #elif defined(MFX_TARGET_OPTIMIZATION_AUTO)
     void h265_PredictIntra_Ang_All_16u_px(
 #endif

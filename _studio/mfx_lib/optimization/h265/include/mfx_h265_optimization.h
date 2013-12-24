@@ -14,6 +14,7 @@
 #define __MFX_H265_OPTIMIZATION_H__
 
 #include "ipps.h"
+#include <type_traits>
 #include <immintrin.h>
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -507,63 +508,41 @@ namespace MFX_HEVC_PP
     void h265_GetPredPelsChromaNV12_8u(Ipp8u* pSrc, Ipp8u* pPredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf);
 
     /* interpolation, version from Jon/Ken */
-    void Interp_S8_NoAvg(
-        const unsigned char* pSrc, 
-        unsigned int srcPitch, 
-        short *pDst, 
-        unsigned int dstPitch, 
+    void Interp_NoAvg(
+        const unsigned char* pSrc, unsigned int srcPitch, 
+        short *pDst, unsigned int dstPitch, 
         int tab_index, 
-        int width, 
-        int height, 
-        int shift, 
-        short offset, 
-        int dir, 
-        int plane);
+        int width, int height, 
+        int shift, short offset, 
+        int dir, int plane);
 
-    void Interp_S16_NoAvg(
-        const short* pSrc, 
-        unsigned int srcPitch, 
-        short *pDst, 
-        unsigned int dstPitch, 
+    void Interp_NoAvg(
+        const short* pSrc, unsigned int srcPitch, 
+        short *pDst, unsigned int dstPitch, 
         int tab_index, 
-        int width, 
-        int height, 
-        int shift, 
-        short offset, 
-        int dir, 
-        int plane);
+        int width, int height, 
+        int shift, short offset, 
+        int dir, int plane);
 
-    void Interp_S8_WithAvg(
-        const unsigned char* pSrc, 
-        unsigned int srcPitch, 
-        unsigned char *pDst, 
-        unsigned int dstPitch, 
-        void *pvAvg, 
-        unsigned int avgPitch, 
+    void Interp_WithAvg(
+        const unsigned char* pSrc, unsigned int srcPitch, 
+        unsigned char *pDst, unsigned int dstPitch, 
+        void *pvAvg, unsigned int avgPitch, 
         int avgMode, 
         int tab_index, 
-        int width, 
-        int height, 
-        int shift, 
-        short offset, 
-        int dir, 
-        int plane);
+        int width, int height, 
+        int shift, short offset, 
+        int dir, int plane);
 
-    void Interp_S16_WithAvg(
-        const short* pSrc, 
-        unsigned int srcPitch, 
-        unsigned char *pDst, 
-        unsigned int dstPitch, 
-        void *pvAvg, 
-        unsigned int avgPitch, 
+    void Interp_WithAvg(
+        const short* pSrc, unsigned int srcPitch, 
+        unsigned char *pDst, unsigned int dstPitch, 
+        void *pvAvg, unsigned int avgPitch, 
         int avgMode, 
         int tab_index, 
-        int width, 
-        int height, 
-        int shift, 
-        short offset, 
-        int dir, 
-        int plane);
+        int width, int height, 
+        int shift, short offset, 
+        int dir, int plane);
 
     /* ******************************************************** */
     /*                    MAKE_NAME                             */
@@ -622,7 +601,7 @@ namespace MFX_HEVC_PP
         MFX_HEVC_PP::EnumInterpType interp_type,
         const t_src* in_pSrc,
         Ipp32u in_SrcPitch, // in samples
-        t_dst* H265_RESTRICT in_pDst,
+        t_dst* in_pDst,
         Ipp32u in_DstPitch, // in samples
         Ipp32u tab_index,
         Ipp32u width,
@@ -641,20 +620,14 @@ namespace MFX_HEVC_PP
 
 
 #if defined OPT_INTERP_PMUL
-    if (sizeof(t_src) == 1) {
-        if (sizeof(t_dst) == 1)
-            Interp_S8_WithAvg((unsigned char *)pSrc, in_SrcPitch, (unsigned char *)in_pDst, in_DstPitch, (void *)in_pSrc2, in_Src2Pitch, eAddAverage, tab_index, width, height, shift, (short)offset, interp_type, plane_type);
-        else
-            Interp_S8_NoAvg((unsigned char *)pSrc, in_SrcPitch, (short *)in_pDst, in_DstPitch, tab_index, width, height, shift, (short)offset, interp_type, plane_type);
-    }
 
-    /* only used for vertical filter */
-    if (sizeof(t_src) == 2) {
-        if (sizeof(t_dst) == 1)
-            Interp_S16_WithAvg((short *)pSrc, in_SrcPitch, (unsigned char *)in_pDst, in_DstPitch, (void *)in_pSrc2, in_Src2Pitch, eAddAverage, tab_index, width, height, shift, (short)offset, INTERP_VER, plane_type);
-        else
-            Interp_S16_NoAvg((short *)pSrc, in_SrcPitch, (short *)in_pDst, in_DstPitch, tab_index, width, height, shift, (short)offset, INTERP_VER, plane_type);
+    if (std::is_unsigned<t_dst>::value)
+    {
+        Interp_WithAvg(pSrc, in_SrcPitch, in_pDst, in_DstPitch, (void *)in_pSrc2, in_Src2Pitch, eAddAverage, tab_index, width, height, shift, (short)offset, interp_type, plane_type);
     }
+    else
+        Interp_NoAvg(pSrc, in_SrcPitch, (short *)in_pDst, in_DstPitch, tab_index, width, height, shift, (short)offset, interp_type, plane_type);
+
 #else
         typedef void (*t_disp_func)(
             t_dst* H265_RESTRICT pDst, 
@@ -802,6 +775,82 @@ namespace MFX_HEVC_PP
     void h265_FilterEdgeChroma_Interleaved_16u_I_px(H265EdgeData *edge, Ipp16u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQpCb, Ipp32s chromaQpCr, Ipp32u bit_depth);
     void h265_FilterEdgeChroma_Plane_16u_I_px(H265EdgeData *edge, Ipp16u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQp, Ipp32u bit_depth);
 
+    /* interpolation, version from Jon/Ken */
+    void Interp_NoAvg(
+        const Ipp16u* pSrc, unsigned int srcPitch, 
+        short *pDst,  unsigned int dstPitch, 
+        int tab_index, 
+        int width, int height, 
+        int shift, short offset, 
+        int dir, int plane);
+
+    void Interp_NoAvg(
+        const short* pSrc, 
+        unsigned int srcPitch, 
+        short *pDst, unsigned int dstPitch, 
+        int tab_index, 
+        int width, int height, 
+        int shift, short offset, 
+        int dir, int plane);
+
+    void Interp_WithAvg(
+        const Ipp16u* pSrc,  unsigned int srcPitch, 
+        Ipp16u *pDst,  unsigned int dstPitch, 
+        void *pvAvg,  unsigned int avgPitch, 
+        int avgMode, 
+        int tab_index, 
+        int width, int height, 
+        int shift,  short offset, 
+        int dir,  int plane);
+
+    void Interp_WithAvg(
+        const short* pSrc, unsigned int srcPitch, 
+        Ipp16u *pDst,unsigned int dstPitch, 
+        void *pvAvg, unsigned int avgPitch, 
+        int avgMode, 
+        int tab_index, 
+        int width, int height, 
+        int shift, short offset, 
+        int dir, int plane);
+
+    inline void Interp_WithAvg(
+        const short* , unsigned int , 
+        short *, unsigned int , 
+        void *, unsigned int , 
+        int , 
+        int , 
+        int , int , 
+        int , short , 
+        int , int )
+    {
+        // fake function
+    }
+
+    inline void Interp_WithAvg(
+        const Ipp8u* , unsigned int , 
+        short *, unsigned int , 
+        void *, unsigned int , 
+        int , 
+        int , 
+        int , int , 
+        int , short , 
+        int , int )
+    {
+        // fake function
+    }
+
+    inline void Interp_WithAvg(
+        const Ipp16u* , unsigned int , 
+        short *, unsigned int , 
+        void *, unsigned int , 
+        int , 
+        int , 
+        int , int , 
+        int , short , 
+        int , int )
+    {
+        // fake function
+    }
 } // namespace MFX_HEVC_PP
 
 #endif // __MFX_H265_OPTIMIZATION_H__

@@ -50,8 +50,8 @@ protected:
 
     bool CheckIdenticalMotion(H265CodingUnit* pCU, H265PUInfo &MVi);    
 
-    template<typename PixType> static 
-         void WriteAverageToPic(
+    template<typename PixType> 
+    static void WriteAverageToPic(
                      const PixType * in_pSrc0,
                      Ipp32u in_Src0Pitch,      // in samples
                      const PixType * in_pSrc1,
@@ -59,7 +59,7 @@ protected:
                      PixType* H265_RESTRICT in_pDst,
                      Ipp32u in_DstPitch,       // in samples
                      Ipp32s width,
-                     Ipp32s height );
+                     Ipp32s height);
 
      template <int c_shift, typename PixType>
      static void CopyExtendPU(const PixType * in_pSrc,
@@ -73,17 +73,16 @@ protected:
     void CopyWeightedBidi_S16U8(H265DecoderFrame* frame, H265DecYUVBufferPadded* src1, H265DecYUVBufferPadded* src2, Ipp32u CUAddr, Ipp32u PartIdx, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round);
     Ipp32s GetAddrOffset(Ipp32u PartUnitIdx, Ipp32u width);
 
+    template<typename PixType>
+    void MotionCompensationInternal(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
+
 public:
     H265Prediction();
     virtual ~H265Prediction();
 
     void InitTempBuff(DecodingContext* context);
 
-    // inter
     void MotionCompensation(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
-
-    //H265PlanePtrYCommon GetPredictorPtr(Ipp32u DirMode, Ipp32u WidthBits, H265PlanePtrYCommon pAdiBuf);
-    
 
     H265PlanePtrYCommon GetPredicBuf()
     {

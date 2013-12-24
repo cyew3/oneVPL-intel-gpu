@@ -15,7 +15,7 @@
 
 #include "mfx_h265_optimization.h"
 
-#if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
+#if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_SSSE3) || defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO) 
 
 #define Saturate(min_val, max_val, val) IPP_MAX((min_val), IPP_MIN((max_val), (val)))
 
@@ -137,50 +137,6 @@ namespace MFX_HEVC_PP
     {
         int i, j, k;
         short acc;
-        const short* coeffs8x = filtTabChromaSc[tab_index - 1];
-
-        for (i = 0; i < height; i++) {
-            for (j = 0; j < width; j++) {
-                acc = 0;
-                for (k = 0; k < 4; k++)
-                    acc += pSrc[j + k*srcPitch] * coeffs8x[k];
-                acc += offset;
-                acc >>= shift;
-                pDst[j] = (short)acc;
-            }
-            pSrc += srcPitch;
-            pDst += dstPitch;
-        }
-    }
-
-
-    void MAKE_NAME(h265_InterpLuma_s16_d16_V)    (const short* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index,
-        int width, int height, int shift, short offset)
-    {
-        int i, j, k;
-        int acc;
-        const short* coeffs16x = filtTabLumaSc[tab_index - 1];
-
-        for (i = 0; i < height; i++) {
-            for (j = 0; j < width; j++) {
-                acc = 0;
-                for (k = 0; k < 8; k++)
-                    acc += pSrc[j + k*srcPitch] * coeffs16x[k];
-                acc += offset;
-                acc >>= shift;
-                pDst[j] = (short)acc;
-            }
-            pSrc += srcPitch;
-            pDst += dstPitch;
-        }
-    }
-
-
-    void MAKE_NAME(h265_InterpChroma_s16_d16_V)  (const short* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index,
-        int width, int height, int shift, short offset)
-    {
-        int i, j, k;
-        int acc;
         const short* coeffs8x = filtTabChromaSc[tab_index - 1];
 
         for (i = 0; i < height; i++) {

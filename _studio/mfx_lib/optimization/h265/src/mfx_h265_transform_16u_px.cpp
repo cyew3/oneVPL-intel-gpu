@@ -13,7 +13,7 @@
 #include "mfx_h265_optimization.h"
 #include "mfx_h265_dispatcher.h"
 
-#if defined(MFX_TARGET_OPTIMIZATION_PX) || defined (MFX_TARGET_OPTIMIZATION_AUTO)
+#if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_SSSE3) || defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO) 
 
 #include "ippdefs.h"
 
@@ -450,11 +450,11 @@ void PartialButterflyInverse32x32(Ipp32s shift, H265CoeffsPtrCommon src, DstCoef
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 #undef MAKE_NAME
-#if defined(MFX_TARGET_OPTIMIZATION_AUTO)
+//#if defined(MFX_TARGET_OPTIMIZATION_AUTO)
 #define MAKE_NAME( func ) func ##_16u_px
-#else
+/*#else
 #define MAKE_NAME( func ) func ## _16u
-#endif
+#endif*/
 
     /* ************************************************** */
     /*              inverse transform                     */
