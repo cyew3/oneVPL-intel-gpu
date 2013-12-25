@@ -408,6 +408,8 @@ void H265CU::InterPredCU(Ipp32s abs_part_idx, Ipp8u depth, PixType *dst, Ipp32s 
         } else {
             H265MV MV0 = data[PartAddr].mv[REF_PIC_LIST_0];
             H265MV MV1 = data[PartAddr].mv[REF_PIC_LIST_1];
+            clipMV(MV0);
+            clipMV(MV1);
             Ipp32s mv_interp0 = (MV0.mvx | MV0.mvy) & (is_luma ? 3 : 7);
             Ipp32s mv_interp1 = (MV1.mvx | MV1.mvy) & (is_luma ? 3 : 7);
             bool bOnlyOneIterp = !( mv_interp0 && mv_interp1 );
