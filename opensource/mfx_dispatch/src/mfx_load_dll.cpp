@@ -46,6 +46,9 @@ wchar_t * const defaultDLLName[2] = {L"libmfxhw64.dll",
 const
 wchar_t * const defaultAudioDLLName[2] = {L"libmfxaudiosw64.dll",
                                      L"libmfxaudiosw64.dll"};
+
+const wchar_t  * const defaultRTName = {L"libmfxrt64.dll"};
+
 #elif defined(_WIN32)
 const
 wchar_t * const defaultDLLName[2] = {L"libmfxhw32.dll",
@@ -54,6 +57,9 @@ wchar_t * const defaultDLLName[2] = {L"libmfxhw32.dll",
 const
 wchar_t * const defaultAudioDLLName[2] = {L"libmfxaudiosw32.dll",
                                      L"libmfxaudiosw32.dll"};
+
+const wchar_t  * const defaultRTName = {L"libmfxrt32.dll"};
+
 #endif // (defined(_WIN64))
 
 #else // defined(_DEBUG)
@@ -65,13 +71,21 @@ msdk_disp_char * const defaultDLLName[2] = {L"libmfxhw64_d.dll",
 const
 msdk_disp_char * const defaultAudioDLLName[2] = {L"libmfxaudiosw64_d.dll",
                                             L"libmfxaudiosw64_d.dll"};
+
+const wchar_t  * const defaultRTName = {L"libmfxrt64_d.dll"};
+
 #elif defined(WIN32)
 const
 msdk_disp_char * const defaultDLLName[2] = {L"libmfxhw32_d.dll",
                                             L"libmfxsw32_d.dll"};
+
+
 const
 msdk_disp_char * const defaultAudioDLLName[2] = {L"libmfxaudiosw32_d.dll",
                                             L"libmfxaudiosw32_d.dll"};
+
+const wchar_t  * const defaultRTName = {L"libmfxrt32_d.dll"};
+
 
 #endif // (defined(_WIN64))
 
@@ -79,6 +93,23 @@ msdk_disp_char * const defaultAudioDLLName[2] = {L"libmfxaudiosw32_d.dll",
 
 namespace MFX
 {
+
+mfxStatus mfx_get_rt_dll_name(msdk_disp_char *pPath, size_t pathSize)
+{
+    if (!pPath)
+    {
+        return MFX_ERR_NULL_PTR;
+    }
+    
+    // there are only 2 implementation with default DLL names
+#if _MSC_VER >= 1400
+    return 0 == wcscpy_s(pPath, pathSize, defaultRTName)
+        ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
+#else    
+    wcscpy(pPath, defaultRTName);
+    return MFX_ERR_NONE;
+#endif
+} // mfxStatus mfx_get_default_dll_name(wchar_t *pPath, size_t pathSize, eMfxImplType implType)
 
 mfxStatus mfx_get_default_dll_name(msdk_disp_char *pPath, size_t pathSize, eMfxImplType implType)
 {

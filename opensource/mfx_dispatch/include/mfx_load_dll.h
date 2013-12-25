@@ -41,9 +41,11 @@ namespace MFX
     // declare DLL loading routines
     //
 
+    mfxStatus mfx_get_rt_dll_name(msdk_disp_char *pPath, size_t pathSize);
     mfxStatus mfx_get_default_dll_name(msdk_disp_char *pPath, size_t pathSize, eMfxImplType implType);
 
     mfxStatus mfx_get_default_audio_dll_name(msdk_disp_char *pPath, size_t pathSize, eMfxImplType implType);
+    
 
     mfxModuleHandle mfx_dll_load(const msdk_disp_char *file_name);
     //increments reference counter
