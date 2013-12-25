@@ -14,12 +14,6 @@
 #define __MFX_H265_OPTIMIZATION_H__
 
 #include "ipps.h"
-#include <type_traits>
-
-#if defined(_WIN32) || defined(_WIN64)
-//static_assert(0, "We should not use C++ 11 features, until whole team decided to switch!");
-#endif
-
 #include <immintrin.h>
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -537,7 +531,7 @@ namespace MFX_HEVC_PP
         int tab_index, 
         int width, int height, 
         int shift, short offset, 
-        int dir, int plane);
+        int dir, int plane, unsigned bit_depth);
 
     void Interp_WithAvg(
         const short* pSrc, unsigned int srcPitch, 
@@ -547,7 +541,7 @@ namespace MFX_HEVC_PP
         int tab_index, 
         int width, int height, 
         int shift, short offset, 
-        int dir, int plane);
+        int dir, int plane, unsigned bit_depth);
 
     /* ******************************************************** */
     /*                    MAKE_NAME                             */
@@ -601,6 +595,28 @@ namespace MFX_HEVC_PP
 #endif // #ifndef OPT_INTERP_PMUL
     //=================================================================================================    
 
+    template<typename T, bool value>
+    struct is_unsigned_base
+    {
+        static const bool value = value;
+    };
+
+    template<typename T>
+    struct is_unsigned
+    {
+        static const bool value = false;
+    };
+
+    template<>
+    struct is_unsigned<unsigned char> : is_unsigned_base<unsigned char, true>
+    {
+    };
+
+    template<>
+    struct is_unsigned<unsigned short> : is_unsigned_base<unsigned short, true>
+    {
+    };
+
     template < UMC_HEVC_DECODER::EnumTextType plane_type, typename t_src, typename t_dst >
     void H265_FORCEINLINE Interpolate(
         MFX_HEVC_PP::EnumInterpType interp_type,
@@ -613,6 +629,7 @@ namespace MFX_HEVC_PP
         Ipp32u height,
         Ipp32u shift,
         Ipp16s offset,
+        Ipp32u bit_depth,
         MFX_HEVC_PP::EnumAddAverageType eAddAverage = MFX_HEVC_PP::AVERAGE_NO,
         const void* in_pSrc2 = NULL,
         int    in_Src2Pitch = 0) // in samples
@@ -626,9 +643,9 @@ namespace MFX_HEVC_PP
 
 #if defined OPT_INTERP_PMUL
 
-    if (std::is_unsigned<t_dst>::value)
+    if (is_unsigned<t_dst>::value)
     {
-        Interp_WithAvg(pSrc, in_SrcPitch, in_pDst, in_DstPitch, (void *)in_pSrc2, in_Src2Pitch, eAddAverage, tab_index, width, height, shift, (short)offset, interp_type, plane_type);
+        Interp_WithAvg(pSrc, in_SrcPitch, in_pDst, in_DstPitch, (void *)in_pSrc2, in_Src2Pitch, eAddAverage, tab_index, width, height, shift, (short)offset, interp_type, plane_type, bit_depth);
     }
     else
         Interp_NoAvg(pSrc, in_SrcPitch, (short *)in_pDst, in_DstPitch, tab_index, width, height, shift, (short)offset, interp_type, plane_type);
@@ -806,7 +823,7 @@ namespace MFX_HEVC_PP
         int tab_index, 
         int width, int height, 
         int shift,  short offset, 
-        int dir,  int plane);
+        int dir,  int plane, unsigned bit_depth);
 
     void Interp_WithAvg(
         const short* pSrc, unsigned int srcPitch, 
@@ -816,7 +833,7 @@ namespace MFX_HEVC_PP
         int tab_index, 
         int width, int height, 
         int shift, short offset, 
-        int dir, int plane);
+        int dir, int plane, unsigned bit_depth);
 
     inline void Interp_WithAvg(
         const short* , unsigned int , 
@@ -826,7 +843,7 @@ namespace MFX_HEVC_PP
         int , 
         int , int , 
         int , short , 
-        int , int )
+        int , int , unsigned )
     {
         // fake function
     }
@@ -839,7 +856,7 @@ namespace MFX_HEVC_PP
         int , 
         int , int , 
         int , short , 
-        int , int )
+        int , int , unsigned )
     {
         // fake function
     }
@@ -852,10 +869,33 @@ namespace MFX_HEVC_PP
         int , 
         int , int , 
         int , short , 
-        int , int )
+        int , int , unsigned )
     {
         // fake function
     }
+
+    void h265_InterpLuma_s8_d16_H_px(const Ipp16u* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index,
+        int width, int height, int shift, short offset);
+
+    void h265_InterpLuma_s8_d16_V_px(const Ipp16u* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index,
+        int width, int height, int shift, short offset);
+
+    void h265_InterpChroma_s8_d16_V_px (const Ipp16u* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index,
+        int width, int height, int shift, short offset);
+
+    void h265_InterpChroma_s8_d16_H_px(const Ipp16u* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index,
+        int width, int height, int shift, short offset, int plane);
+
+    void h265_AverageModeN_px(short *pSrc, unsigned int srcPitch, Ipp16u *pDst, unsigned int dstPitch, int width, int height, unsigned bit_depth);
+
+    void h265_AverageModeP_px(short *pSrc, unsigned int srcPitch, Ipp16u *pAvg, unsigned int avgPitch, Ipp16u *pDst, unsigned int dstPitch, int width, int height, unsigned bit_depth);
+
+    void h265_AverageModeB_px(short *pSrc, unsigned int srcPitch, short *pAvg, unsigned int avgPitch, Ipp16u *pDst, unsigned int dstPitch, int width, int height, unsigned bit_depth);
+
+    void h265_CopyWeighted_S16U8_px(Ipp16s* pSrc, Ipp16s* pSrcUV, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStrideY, Ipp32u DstStrideY, Ipp32u SrcStrideC, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth);
+
+    void h265_CopyWeightedBidi_S16U8_px(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s* pSrc1, Ipp16s* pSrcUV1, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStride0Y, Ipp32u SrcStride1Y, Ipp32u DstStrideY, Ipp32u SrcStride0C, Ipp32u SrcStride1C, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth);
+
 } // namespace MFX_HEVC_PP
 
 #endif // __MFX_H265_OPTIMIZATION_H__

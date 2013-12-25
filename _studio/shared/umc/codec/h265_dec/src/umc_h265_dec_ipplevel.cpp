@@ -15,6 +15,7 @@
 #include "ippvc.h"
 #include "ipps.h"
 #include <memory.h>
+#include <algorithm>
 
 /*
 THIS FILE IS A TEMPORAL SOLUTION AND IT WILL BE REMOVED AS SOON AS THE NEW FUNCTIONS ARE ADDED
@@ -419,7 +420,7 @@ void read_data_through_boundary_left_px(InterpolationStruct *pParams)
 
         for (i = 0; i < pParams->dataHeight; i += 1)
         {
-            memset(pDst, pSrc[0], iIndent);
+            std::fill(pDst, pDst + iIndent, pSrc[0]);
             MFX_INTERNAL_CPY(pDst + iIndent, pSrc, (pParams->dataWidth - iIndent)*sizeof(PixType));
 
             pDst += pParams->dstStep;
@@ -447,7 +448,7 @@ void read_data_through_boundary_right_px(InterpolationStruct *pParams)
         for (i = 0; i < pParams->dataHeight; i += 1)
         {
             MFX_INTERNAL_CPY(pDst, pSrc, iIndent*sizeof(PixType));
-            memset(pDst + iIndent, pSrc[iIndent - 1], (pParams->dataWidth - iIndent)*sizeof(PixType));
+            std::fill(pDst + iIndent, pDst + iIndent + pParams->dataWidth - iIndent, pSrc[iIndent - 1]);
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
@@ -517,7 +518,7 @@ void read_data_through_boundary_top_left_px(InterpolationStruct *pParams)
         iIndent = -pParams->xPos;
 
         /* create upper row */
-        memset(pDst, pSrc[0], iIndent*sizeof(PixType));
+        std::fill(pDst, pDst + iIndent, pSrc[0]);
         MFX_INTERNAL_CPY(pDst + iIndent, pSrc, (pParams->dataWidth - iIndent)*sizeof(PixType));
 
         pDst += pParams->dstStep;
@@ -534,7 +535,7 @@ void read_data_through_boundary_top_left_px(InterpolationStruct *pParams)
         /* create remain row(s) */
         for (i = 1; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
-            memset(pDst, pSrc[0], iIndent*sizeof(PixType));
+            std::fill(pDst, pDst + iIndent, pSrc[0]);
             MFX_INTERNAL_CPY(pDst + iIndent, pSrc, (pParams->dataWidth - iIndent)*sizeof(PixType));
 
             pDst += pParams->dstStep;
@@ -564,7 +565,7 @@ void read_data_through_boundary_top_right_px(InterpolationStruct *pParams)
 
         /* create upper row */
         MFX_INTERNAL_CPY(pDst, pSrc, iIndent*sizeof(PixType));
-        memset(pDst + iIndent, pSrc[iIndent - 1], (pParams->dataWidth - iIndent)*sizeof(PixType));
+        std::fill(pDst + iIndent, pDst + iIndent + pParams->dataWidth - iIndent, pSrc[iIndent - 1]);
 
         pDst += pParams->dstStep;
         pSrc += pParams->srcStep;
@@ -580,7 +581,7 @@ void read_data_through_boundary_top_right_px(InterpolationStruct *pParams)
         for (i = 1; i < pParams->dataHeight + pParams->yPos; i += 1)
         {
             MFX_INTERNAL_CPY(pDst, pSrc, iIndent*sizeof(PixType));
-            memset(pDst + iIndent, pSrc[iIndent - 1], (pParams->dataWidth - iIndent)*sizeof(PixType));
+            std::fill(pDst + iIndent, pDst + iIndent + pParams->dataWidth - iIndent, pSrc[iIndent - 1]);
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;
@@ -650,7 +651,7 @@ void read_data_through_boundary_bottom_left_px(InterpolationStruct *pParams)
         /* create existing lines */
         for (i = pParams->yPos; i < pParams->frameSize.height; i += 1)
         {
-            memset(pDst, pSrc[0], iIndent*sizeof(PixType));
+            std::fill(pDst, pDst + iIndent, pSrc[0]);
             MFX_INTERNAL_CPY(pDst + iIndent, pSrc, (pParams->dataWidth - iIndent)*sizeof(PixType));
 
             pDst += pParams->dstStep;
@@ -689,7 +690,7 @@ void read_data_through_boundary_bottom_right_px(InterpolationStruct *pParams)
         for (i = pParams->yPos; i < pParams->frameSize.height; i += 1)
         {
             MFX_INTERNAL_CPY(pDst, pSrc, iIndent*sizeof(PixType));
-            memset(pDst + iIndent, pSrc[iIndent - 1], (pParams->dataWidth - iIndent)*sizeof(PixType));
+            std::fill(pDst + iIndent, pDst + iIndent + pParams->dataWidth - iIndent, pSrc[iIndent - 1]);
 
             pDst += pParams->dstStep;
             pSrc += pParams->srcStep;

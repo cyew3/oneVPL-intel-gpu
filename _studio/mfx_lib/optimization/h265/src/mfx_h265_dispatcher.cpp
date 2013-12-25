@@ -812,7 +812,7 @@ using namespace MFX_HEVC_PP;
         int shift, 
         short offset, 
         int dir, 
-        int plane)
+        int plane, unsigned )
     {
         /* pretty big stack buffer, probably want to pass this in (allocate on heap) */
         ALIGN_DECL(16) short tmpBuf[(64+8)*(64)];
@@ -855,7 +855,7 @@ using namespace MFX_HEVC_PP;
         int shift, 
         short offset, 
         int dir, 
-        int plane)
+        int plane, unsigned )
     {
         /* pretty big stack buffer, probably want to pass this in (allocate on heap) */
         ALIGN_DECL(16) short tmpBuf[(64+8)*(64)];
@@ -897,17 +897,17 @@ using namespace MFX_HEVC_PP;
     {
         VM_ASSERT( ( (plane == TEXT_LUMA) && ((width & 0x3) == 0) ) || ( (plane != TEXT_LUMA) && ((width & 0x1) == 0) ) );
 
-        /*if (plane == TEXT_LUMA) {
+        if (plane == TEXT_LUMA) {
             if (dir == INTERP_HOR)
-                NAME(h265_InterpLuma_s8_d16_H)(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset);
+                h265_InterpLuma_s8_d16_H_px(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset);
             else
-                NAME(h265_InterpLuma_s8_d16_V)(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset);
+                h265_InterpLuma_s8_d16_V_px(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset);
         } else {
             if (dir == INTERP_HOR)
-                NAME(h265_InterpChroma_s8_d16_H)(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset, plane);
+                h265_InterpChroma_s8_d16_H_px(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset, plane);
             else
-                NAME(h265_InterpChroma_s8_d16_V)(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset);
-        }*/
+                h265_InterpChroma_s8_d16_V_px(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset);
+        }
     }
 
     /* NOTE: average functions assume maximum block size of 64x64, including 7 extra output rows for H pass */
@@ -927,31 +927,32 @@ using namespace MFX_HEVC_PP;
         int shift, 
         short offset, 
         int dir, 
-        int plane)
+        int plane,
+        unsigned bit_depth)
     {
         /* pretty big stack buffer, probably want to pass this in (allocate on heap) */
         ALIGN_DECL(16) short tmpBuf[(64+8)*(64)];
 
         VM_ASSERT( ( (plane == TEXT_LUMA) && ((width & 0x3) == 0) ) || ( (plane != TEXT_LUMA) && ((width & 0x1) == 0) ) );
 
-        /*if (plane == TEXT_LUMA) {
+        if (plane == TEXT_LUMA) {
             if (dir == INTERP_HOR)
-                NAME(h265_InterpLuma_s8_d16_H)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+                h265_InterpLuma_s8_d16_H_px(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
             else
-                NAME(h265_InterpLuma_s8_d16_V)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+                h265_InterpLuma_s8_d16_V_px(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
         } else {
             if (dir == INTERP_HOR)
-                NAME(h265_InterpChroma_s8_d16_H)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset, plane);
+                h265_InterpChroma_s8_d16_H_px(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset, plane);
             else
-                NAME(h265_InterpChroma_s8_d16_V)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+                h265_InterpChroma_s8_d16_V_px(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
         }
 
         if (avgMode == AVERAGE_NO)
-            NAME(h265_AverageModeN)(tmpBuf, 64, pDst, dstPitch, width, height);
+            h265_AverageModeN_px(tmpBuf, 64, pDst, dstPitch, width, height, bit_depth);
         else if (avgMode == AVERAGE_FROM_PIC)
-            NAME(h265_AverageModeP)(tmpBuf, 64, (unsigned char *)pvAvg, avgPitch, pDst, dstPitch, width, height);
+            h265_AverageModeP_px(tmpBuf, 64, (Ipp16u *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
         else if (avgMode == AVERAGE_FROM_BUF)
-            NAME(h265_AverageModeB)(tmpBuf, 64, (short *)pvAvg, avgPitch, pDst, dstPitch, width, height);*/
+            h265_AverageModeB_px(tmpBuf, 64, (short *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
     }
 
 
@@ -970,7 +971,8 @@ using namespace MFX_HEVC_PP;
         int shift, 
         short offset, 
         int dir, 
-        int plane)
+        int plane,
+        unsigned bit_depth)
     {
         /* pretty big stack buffer, probably want to pass this in (allocate on heap) */
         ALIGN_DECL(16) short tmpBuf[(64+8)*(64)];
@@ -986,12 +988,12 @@ using namespace MFX_HEVC_PP;
         else
             NAME(h265_InterpChroma_s16_d16_V)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
 
-        /*if (avgMode == AVERAGE_NO)
-            NAME(h265_AverageModeN)(tmpBuf, 64, pDst, dstPitch, width, height);
+        if (avgMode == AVERAGE_NO)
+            h265_AverageModeN_px(tmpBuf, 64, pDst, dstPitch, width, height, bit_depth);
         else if (avgMode == AVERAGE_FROM_PIC)
-            NAME(h265_AverageModeP)(tmpBuf, 64, (unsigned char *)pvAvg, avgPitch, pDst, dstPitch, width, height);
+            h265_AverageModeP_px(tmpBuf, 64, (Ipp16u *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
         else if (avgMode == AVERAGE_FROM_BUF)
-            NAME(h265_AverageModeB)(tmpBuf, 64, (short *)pvAvg, avgPitch, pDst, dstPitch, width, height);*/
+            h265_AverageModeB_px(tmpBuf, 64, (short *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
     }
 
 //} // namespace MFX_HEVC_PP

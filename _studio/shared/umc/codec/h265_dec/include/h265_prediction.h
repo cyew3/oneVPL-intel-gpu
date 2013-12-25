@@ -61,16 +61,21 @@ protected:
                      Ipp32s width,
                      Ipp32s height);
 
-     template <int c_shift, typename PixType>
+     template <typename PixType>
      static void CopyExtendPU(const PixType * in_pSrc,
                      Ipp32u in_SrcPitch, // in samples
                      Ipp16s* H265_RESTRICT in_pDst,
                      Ipp32u in_DstPitch, // in samples
                      Ipp32s width,
-                     Ipp32s height);
+                     Ipp32s height,
+                     int c_shift);
 
-    void CopyWeighted_S16U8(H265DecoderFrame* frame, H265DecYUVBufferPadded* src, Ipp32u CUAddr, Ipp32u PartIdx, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round);
-    void CopyWeightedBidi_S16U8(H265DecoderFrame* frame, H265DecYUVBufferPadded* src1, H265DecYUVBufferPadded* src2, Ipp32u CUAddr, Ipp32u PartIdx, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round);
+    template<typename PixType>
+    void CopyWeighted(H265DecoderFrame* frame, H265DecYUVBufferPadded* src, Ipp32u CUAddr, Ipp32u PartIdx, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth);
+
+    template<typename PixType>
+    void CopyWeightedBidi(H265DecoderFrame* frame, H265DecYUVBufferPadded* src1, H265DecYUVBufferPadded* src2, Ipp32u CUAddr, Ipp32u PartIdx, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth);
+
     Ipp32s GetAddrOffset(Ipp32u PartUnitIdx, Ipp32u width);
 
     template<typename PixType>

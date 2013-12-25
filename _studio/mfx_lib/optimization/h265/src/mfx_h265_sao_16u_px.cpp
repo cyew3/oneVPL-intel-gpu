@@ -232,10 +232,10 @@ namespace MFX_HEVC_PP
         default: break;
         }
 
-    } // void h265_processSaoCuOrg_Luma_8u(...)
+    }
 
 
-    void MAKE_NAME(h265_ProcessSaoCu_Luma_8u)(SAOCU_PARAMETERS_LIST)
+    void MAKE_NAME(h265_ProcessSaoCu_Luma_16u)(SAOCU_PARAMETERS_LIST)
     {
         Ipp32s tmpUpBuff1[65];
         Ipp32s tmpUpBuff2[65];
@@ -523,7 +523,7 @@ namespace MFX_HEVC_PP
         default: break;
         }
 
-    } // void h265_ProcessSaoCu_Luma_8u(...)
+    }
 
     const int   g_skipLinesR[3] = {5, 3, 3};//YCbCr
     const int   g_skipLinesB[3] = {4, 2, 2};//YCbCr
@@ -532,7 +532,7 @@ namespace MFX_HEVC_PP
 #define PixType Ipp8u
 #endif
 
-    void MAKE_NAME(h265_GetCtuStatistics_8u)(SAOCU_ENCODE_PARAMETERS_LIST)
+    void MAKE_NAME(h265_GetCtuStatistics_16u)(SAOCU_ENCODE_PARAMETERS_LIST)
         //(
         //int compIdx,
         //const PixType* recBlk,

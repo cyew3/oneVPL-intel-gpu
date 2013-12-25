@@ -47,6 +47,7 @@
     <ClCompile Include="h265\src\mfx_h265_sao_px.cpp" />
     <ClCompile Include="h265\src\mfx_h265_transform_16u_px.cpp" />
     <ClCompile Include="h265\src\mfx_h265_transform_px.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_weighted_pred_16u_px.cpp" />
     <ClCompile Include="h265\src\mfx_h265_weighted_pred_px.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

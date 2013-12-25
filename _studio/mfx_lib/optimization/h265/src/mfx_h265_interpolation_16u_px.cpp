@@ -54,9 +54,9 @@ namespace MFX_HEVC_PP
 #undef MAKE_NAME
 
 #if defined(MFX_TARGET_OPTIMIZATION_AUTO)
-    #define MAKE_NAME( func ) func ## _16u_px
+    #define MAKE_NAME( func ) func ## _px
 #else
-    #define MAKE_NAME( func ) func
+    #define MAKE_NAME( func ) func ## _px
 #endif
 
     typedef Ipp16u PixType;
@@ -65,7 +65,7 @@ namespace MFX_HEVC_PP
         int width, int height, int shift, short offset)
     {
         int i, j, k;
-        short acc;
+        int acc;
         const short* coeffs16x = filtTabLumaSc[tab_index - 1];
 
         for (i = 0; i < height; i++) {
@@ -87,7 +87,7 @@ namespace MFX_HEVC_PP
         int width, int height, int shift, short offset, int plane)
     {
         int i, j, k, srcOff;
-        short acc;
+        int acc;
         const short* coeffs8x = filtTabChromaSc[tab_index - 1];
 
         if (plane == TEXT_CHROMA)
@@ -110,11 +110,11 @@ namespace MFX_HEVC_PP
     }
 
 
-    void MAKE_NAME(h265_InterpLuma_s8_d16_V)(const PixType* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, \
+    void MAKE_NAME(h265_InterpLuma_s8_d16_V)(const PixType* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index,
         int width, int height, int shift, short offset)
     {
         int i, j, k;
-        short acc;
+        int acc;
         const short* coeffs16x = filtTabLumaSc[tab_index - 1];
 
         for (i = 0; i < height; i++) {
@@ -136,7 +136,7 @@ namespace MFX_HEVC_PP
         int width, int height, int shift, short offset)
     {
         int i, j, k;
-        short acc;
+        int acc;
         const short* coeffs8x = filtTabChromaSc[tab_index - 1];
 
         for (i = 0; i < height; i++) {
@@ -158,20 +158,22 @@ namespace MFX_HEVC_PP
     /* mode: AVERAGE_NO, just clip/pack 16-bit output to 8-bit 
     * NOTE: could be optimized more, but is not used very often in practice
     */
-    void MAKE_NAME(h265_AverageModeN)(short *pSrc, unsigned int srcPitch, PixType *pDst, unsigned int dstPitch, int width, int height)
+    void MAKE_NAME(h265_AverageModeN)(short *pSrc, unsigned int srcPitch, PixType *pDst, unsigned int dstPitch, int width, int height, unsigned bit_depth)
     {
+        Ipp32s max_value = (1 << bit_depth) - 1;
         for( int y = 0; y < height; y++  )
         {
             for(int x = 0; x < width; x++)
             {
-                pDst[y*dstPitch + x] = (PixType)Saturate(0, 255, pSrc[y*srcPitch + x]);
+                pDst[y*dstPitch + x] = (PixType)Saturate(0, max_value, pSrc[y*srcPitch + x]);
             }
         }
     }
 
     /* mode: AVERAGE_FROM_PIC, load 8-bit pixels, extend to 16-bit, add to current output, clip/pack 16-bit to 8-bit */
-    void MAKE_NAME(h265_AverageModeP)(short *pSrc, unsigned int srcPitch, PixType *pAvg, unsigned int avgPitch, PixType *pDst, unsigned int dstPitch, int width, int height)
+    void MAKE_NAME(h265_AverageModeP)(short *pSrc, unsigned int srcPitch, PixType *pAvg, unsigned int avgPitch, PixType *pDst, unsigned int dstPitch, int width, int height, unsigned bit_depth)
     {
+        Ipp32s max_value = (1 << bit_depth) - 1;
         for( int y = 0; y < height; y++  )
         {
             for(int x = 0; x < width; x++)
@@ -183,20 +185,21 @@ namespace MFX_HEVC_PP
 
                 int sum_total = (add1 + add2 + add3) >> 7;
          
-                pDst[y*dstPitch + x] = (Ipp8u)Saturate(0, 255, sum_total);
+                pDst[y*dstPitch + x] = (Ipp8u)Saturate(0, max_value, sum_total);
             }
         }
     }
 
     /* mode: AVERAGE_FROM_BUF, load 16-bit pixels, add to current output, clip/pack 16-bit to 8-bit */
-    void MAKE_NAME(h265_AverageModeB)(short *pSrc, unsigned int srcPitch, short *pAvg, unsigned int avgPitch, PixType *pDst, unsigned int dstPitch, int width, int height)
+    void MAKE_NAME(h265_AverageModeB)(short *pSrc, unsigned int srcPitch, short *pAvg, unsigned int avgPitch, PixType *pDst, unsigned int dstPitch, int width, int height, unsigned bit_depth)
     {
+        Ipp32s max_value = (1 << bit_depth) - 1;
         for( int y = 0; y < height; y++  )
         {
             for(int x = 0; x < width; x++)
             {
-                Ipp8u dst_tmp = (Ipp8u)Saturate(0, 255, (pSrc[y*srcPitch + x] + (pAvg[y*avgPitch + x] + (1<<6))) >> 7);
-                pDst[y*dstPitch + x] = dst_tmp;//(Ipp8u)Saturate(0, 255, (pSrc[y*srcPitch + x] + (Ipp16s)pAvg[y*avgPitch + x] + 1) >> 7);
+                Ipp8u dst_tmp = (Ipp8u)Saturate(0, max_value, (pSrc[y*srcPitch + x] + (pAvg[y*avgPitch + x] + (1<<6))) >> 7);
+                pDst[y*dstPitch + x] = dst_tmp;
             }
         }
     }
