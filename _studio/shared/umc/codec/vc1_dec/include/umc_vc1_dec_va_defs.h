@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
 //
 //         VC1 VA EagleLake support
 */
@@ -22,8 +22,6 @@
 
 #ifdef UMC_VA_DXVA
 
-#define DXVA2_VC1PICTURE_PARAMS_EXT_BUFFER 21
-#define DXVA2_VC1BITPLANE_EXT_BUFFER       22
 
 typedef struct _DXVA_ExtPicInfo
 {

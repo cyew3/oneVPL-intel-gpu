@@ -69,6 +69,10 @@ File Name: libmfxsw_encode.cpp
 #endif
 #endif
 
+#if defined (MFX_RT)
+#pragma warning(disable:4065)
+#endif
+
 // declare static file section
 namespace
 {
@@ -81,6 +85,7 @@ VideoENCODE* CreateUnsupported(VideoCORE *, mfxStatus *res)
 
 } // namespace
 
+#if !defined (MFX_RT)
 VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSession session, mfxVideoParam *par)
 {
     VideoENCODE *pENCODE = (VideoENCODE *) 0;
@@ -192,6 +197,7 @@ VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
     return pENCODE;
 
 } // VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core)
+#endif
 
 mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
 {
@@ -477,6 +483,8 @@ mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
 
     try
     {
+
+#if !defined (MFX_RT)
         // check existence of component
         if (!session->m_pENCODE.get())
         {
@@ -485,9 +493,11 @@ mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
             session->m_pENCODE.reset(CreateENCODESpecificClass(par->mfx.CodecId, session->m_pCORE.get(), session, par));
             MFX_CHECK(session->m_pENCODE.get(), MFX_ERR_INVALID_VIDEO_PARAM);
         }
+#endif
 
         mfxRes = session->m_pENCODE->Init(par);
 
+#if !defined (MFX_RT)
         if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
         {
             session->m_bIsHWENCSupport = false;
@@ -495,6 +505,7 @@ mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
             MFX_CHECK(session->m_pENCODE.get(), MFX_ERR_NULL_PTR);
             mfxRes = session->m_pENCODE->Init(par);
         }
+#endif
 
         // SW fallback if EncodeGUID is absence
         if (MFX_PLATFORM_HARDWARE == session->m_currentPlatform &&

@@ -221,7 +221,7 @@
 #define MFX_BIT_IN_KB 8*1000
 #endif
 
-#if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN)
+#if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN) || defined (MFX_RT)
     #undef MFX_ENABLE_H265_VIDEO_DECODE
     #undef MFX_ENABLE_H265_VIDEO_ENCODE
     #undef MFX_ENABLE_H264_VIDEO_DECODE
@@ -255,6 +255,12 @@
 #endif
 #if defined(AS_HEVCE_PLUGIN)
     #define MFX_ENABLE_H265_VIDEO_ENCODE
+#endif
+
+#if defined (MFX_RT)
+#define MFX_ENABLE_VPP
+#define MFX_ENABLE_USER_DECODE
+#define MFX_ENABLE_USER_ENCODE
 #endif
 
 class MfxException

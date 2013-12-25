@@ -52,6 +52,11 @@ File Name: libmfxsw_decode.cpp
 #include "mfx_user_plugin.h"
 #endif
 
+#if defined (MFX_RT)
+#pragma warning(disable:4065)
+#endif
+
+#if !defined (MFX_RT)
 VideoDECODE *CreateDECODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSession session)
 {
     VideoDECODE *pDECODE = (VideoDECODE *) 0;
@@ -126,6 +131,7 @@ VideoDECODE *CreateDECODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
     return pDECODE;
 
 } // VideoDECODE *CreateDECODESpecificClass(mfxU32 CodecId, VideoCORE *core)
+#endif
 
 mfxStatus MFXVideoDECODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
 {
@@ -403,6 +409,8 @@ mfxStatus MFXVideoDECODE_Init(mfxSession session, mfxVideoParam *par)
 
     try
     {
+
+#if !defined (MFX_RT)
         // check existence of component
         if (!session->m_pDECODE.get())
         {
@@ -411,9 +419,11 @@ mfxStatus MFXVideoDECODE_Init(mfxSession session, mfxVideoParam *par)
             session->m_pDECODE.reset(CreateDECODESpecificClass(par->mfx.CodecId, session->m_pCORE.get(), session));
             MFX_CHECK(session->m_pDECODE.get(), MFX_ERR_INVALID_VIDEO_PARAM);
         }
+#endif
         
         mfxRes = session->m_pDECODE->Init(par);
 
+#if !defined (MFX_RT)
         if (MFX_CODEC_VP8 == par->mfx.CodecId)
         {
             if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
@@ -432,6 +442,8 @@ mfxStatus MFXVideoDECODE_Init(mfxSession session, mfxVideoParam *par)
                 mfxRes = MFX_WRN_PARTIAL_ACCELERATION;
             }
         }
+#endif
+
     }
     // handle error(s)
     catch(MFX_CORE_CATCH_TYPE)

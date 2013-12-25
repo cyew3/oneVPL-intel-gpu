@@ -27,6 +27,8 @@ using namespace UMC::VC1Common;
 
 //#define VC1_DEBUG_ON
 
+#define DXVA2_VC1PICTURE_PARAMS_EXT_BUFFER 21
+#define DXVA2_VC1BITPLANE_EXT_BUFFER       22
 
 
 

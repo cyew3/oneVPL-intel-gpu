@@ -23,6 +23,10 @@ File Name: d3d11_decode_accelerator.cpp
 #include "libmfx_core_d3d11.h"
 #include "mfx_umc_alloc_wrapper.h"
 
+
+#define DXVA2_VC1PICTURE_PARAMS_EXT_BUFFER 21
+#define DXVA2_VC1BITPLANE_EXT_BUFFER       22
+
 static const GUID DXVADDI_Intel_ModeVC1_D =
 { 0xe07ec519, 0xe651, 0x4cd6, { 0xac, 0x84, 0x13, 0x70, 0xcc, 0xee, 0xc8, 0x51 } };
 static const GUID DXVADDI_Intel_ModeVC1_D_Advanced = 

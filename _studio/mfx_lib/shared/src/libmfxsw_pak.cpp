@@ -32,6 +32,7 @@ File Name: libmfxsw_pak.cpp
 #include "mfx_h264_pak.h"
 #endif
 
+#if !defined (MFX_RT)
 VideoPAK *CreatePAKSpecificClass(mfxU32 codecId, mfxU32 codecProfile, VideoCORE *pCore)
 {
     VideoPAK *pPAK = (VideoPAK *) 0;
@@ -81,6 +82,7 @@ VideoPAK *CreatePAKSpecificClass(mfxU32 codecId, mfxU32 codecProfile, VideoCORE 
     return pPAK;
 
 } // VideoPAK *CreatePAKSpecificClass(mfxU32 codecId, mfxU32 codecProfile, VideoCORE *pCore)
+#endif
 
 mfxStatus MFXVideoPAK_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
 {

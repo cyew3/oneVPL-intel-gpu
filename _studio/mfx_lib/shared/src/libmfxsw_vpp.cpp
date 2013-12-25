@@ -30,6 +30,7 @@ File Name: libmfxsw_vpp.cpp
 #endif
 #endif
 
+#if !defined (MFX_RT)
 VideoVPP *CreateVPPSpecificClass(mfxU32 reserved, VideoCORE *core)
 {
     VideoVPP *pVPP = (VideoVPP *) 0;
@@ -50,6 +51,7 @@ VideoVPP *CreateVPPSpecificClass(mfxU32 reserved, VideoCORE *core)
     return pVPP;
 
 } // VideoVPP *CreateVPPSpecificClass(mfxU32 reserved)
+#endif
 
 mfxStatus MFXVideoVPP_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
 {
@@ -76,9 +78,13 @@ mfxStatus MFXVideoVPP_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
         else
         {
 #endif
+
+#if !defined (MFX_RT)
 #ifdef MFX_ENABLE_VPP
             mfxRes = VideoVPPMain::Query(session->m_pCORE.get(), in, out);
 #endif // MFX_ENABLE_VPP
+#endif
+
 #ifdef MFX_ENABLE_USER_VPP
         }
 #endif
@@ -114,9 +120,13 @@ mfxStatus MFXVideoVPP_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFra
         else
         {
 #endif
+
+#if !defined (MFX_RT)
 #ifdef MFX_ENABLE_VPP
             mfxRes = VideoVPPMain::QueryIOSurf(session->m_pCORE.get(), par, request/*, session->m_adapterNum*/);
 #endif // MFX_ENABLE_VPP
+#endif 
+
 #ifdef MFX_ENABLE_USER_VPP
         }
 #endif
@@ -148,6 +158,8 @@ mfxStatus MFXVideoVPP_Init(mfxSession session, mfxVideoParam *par)
         else
         {
 #endif
+
+#if !defined (MFX_RT)
 #ifdef MFX_ENABLE_VPP
             // close the existing video processor,
             // if it is initialized.
@@ -156,11 +168,13 @@ mfxStatus MFXVideoVPP_Init(mfxSession session, mfxVideoParam *par)
                 MFXVideoVPP_Close(session);
             }
 
+
             // create a new instance
             session->m_pVPP.reset(CreateVPPSpecificClass(0 ,session->m_pCORE.get()));
             MFX_CHECK(session->m_pVPP.get(), MFX_ERR_INVALID_VIDEO_PARAM);
             mfxRes = session->m_pVPP->Init(par);
 #endif // MFX_ENABLE_VPP
+#endif 
 #ifdef MFX_ENABLE_USER_VPP
         }
 #endif

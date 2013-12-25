@@ -75,7 +75,21 @@ mfxStatus MFXInit(mfxIMPL implParam, mfxVersion *ver, mfxSession *session)
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXInit");
     MFX_LTRACE_1(MFX_TRACE_LEVEL_API, "^ModuleHandle^libmfx=", "%p", g_hModule);
 
+#if defined (MFX_RT)
     // check error(s)
+    if ((MFX_IMPL_AUTO != impl) &&
+        (MFX_IMPL_AUTO_ANY != impl) &&
+        (MFX_IMPL_HARDWARE_ANY != impl) &&
+        (MFX_IMPL_HARDWARE != impl) &&
+        (MFX_IMPL_HARDWARE2 != impl) &&
+        (MFX_IMPL_HARDWARE3 != impl) &&
+        (MFX_IMPL_HARDWARE4 != impl) &&
+        (MFX_IMPL_SOFTWARE != impl)) 
+    {
+        return MFX_ERR_UNSUPPORTED;
+    }
+#else
+        // check error(s)
     if ((MFX_IMPL_AUTO != impl) &&
         (MFX_IMPL_AUTO_ANY != impl) &&
 #ifdef MFX_VA
@@ -90,6 +104,8 @@ mfxStatus MFXInit(mfxIMPL implParam, mfxVersion *ver, mfxSession *session)
     {
         return MFX_ERR_UNSUPPORTED;
     }
+#endif
+
 
     if (!(implInterface & MFX_IMPL_AUDIO) &&
         (0 != implInterface) &&
