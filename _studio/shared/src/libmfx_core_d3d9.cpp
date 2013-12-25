@@ -292,7 +292,9 @@ D3D9VideoCORE::~D3D9VideoCORE()
 void D3D9VideoCORE::Close()
 {
     m_pVA.reset();
+    #if defined (MFX_ENABLE_VPP)
     m_pVideoProcessing.reset();
+    #endif
     // Should be enabled after merge from SNB branch
     //if (m_pFastComposing.get())
     //    m_pFastComposing.get()->Release();
@@ -547,7 +549,7 @@ mfxStatus D3D9VideoCORE::CreateVA(mfxVideoParam * param, mfxFrameAllocRequest *r
 mfxStatus D3D9VideoCORE::CreateVideoProcessing(mfxVideoParam * param)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    
+    #if defined (MFX_ENABLE_VPP)
     m_pVideoProcessing.reset( MfxHwVideoProcessing::CreateVideoProcessing(this) );
     if (m_pVideoProcessing.get() == 0)
     {
@@ -555,7 +557,10 @@ mfxStatus D3D9VideoCORE::CreateVideoProcessing(mfxVideoParam * param)
     }
 
     sts = m_pVideoProcessing->CreateDevice(this, param, true);
-    
+    #else
+    param;
+    sts = MFX_ERR_UNSUPPORTED;
+    #endif
     return sts;
 }
 

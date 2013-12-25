@@ -92,11 +92,12 @@ public:
     mfxStatus              CreateVA(mfxVideoParam * param, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
     // to check HW capatbilities
     mfxStatus              IsGuidSupported(const GUID guid, mfxVideoParam *par, bool isEncoder = false);
-
+    #if defined (MFX_ENABLE_VPP)
     virtual void          GetVideoProcessing(mfxHDL* phdl) 
     {
         *phdl = m_pVideoProcessing.get();
     };
+    #endif
     mfxStatus              CreateVideoProcessing(mfxVideoParam * param);
 
     virtual eMFXVAType   GetVAType() const {return MFX_HW_D3D9; };
@@ -135,9 +136,9 @@ private:
     HANDLE                                     m_hDirectXHandle; // if m_pDirect3DDeviceManager was used
     std::auto_ptr<UMC::DXVA2Accelerator>       m_pVA;
     std::auto_ptr<UMC::ProtectedVA>            m_protectedVA;
-
+    #if defined (MFX_ENABLE_VPP)
     std::auto_ptr<MfxHwVideoProcessing::DriverVideoProcessing>       m_pVideoProcessing;
-
+    #endif
     IDirect3D9                          *m_pD3D;
     // Ordinal number of adapter to work
     const mfxU32                         m_adapterNum;

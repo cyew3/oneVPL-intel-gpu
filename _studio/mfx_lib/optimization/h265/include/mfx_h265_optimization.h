@@ -17,7 +17,7 @@
 #include <type_traits>
 
 #if defined(_WIN32) || defined(_WIN64)
-static_assert(0, "We should not use C++ 11 features, until whole team decided to switch!");
+//static_assert(0, "We should not use C++ 11 features, until whole team decided to switch!");
 #endif
 
 #include <immintrin.h>

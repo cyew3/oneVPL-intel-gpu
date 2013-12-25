@@ -20,7 +20,9 @@
 #include "ippi.h"
 #include "ippcc.h"
 #include "ipps.h"
-
+#if defined (MFX_VA_WIN)
+#include "dxgi.h"
+#endif
 #include "vm_file.h"
 
 #if defined (MFX_VA)

@@ -429,7 +429,7 @@ mfxStatus D3D11VideoCORE::CreateVA(mfxVideoParam *param, mfxFrameAllocRequest *r
 mfxStatus D3D11VideoCORE::CreateVideoProcessing(mfxVideoParam * param)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    
+    #if defined (MFX_ENABLE_VPP)
     m_pVideoProcessing.reset( MfxHwVideoProcessing::CreateVideoProcessing(this) );
     if (m_pVideoProcessing.get() == 0)
     {
@@ -437,7 +437,10 @@ mfxStatus D3D11VideoCORE::CreateVideoProcessing(mfxVideoParam * param)
     }
 
     sts = m_pVideoProcessing->CreateDevice(this, param, true);
-    
+    #else
+    param;
+    sts = MFX_ERR_UNSUPPORTED;
+    #endif
     return sts;
 }
 
@@ -1188,10 +1191,10 @@ mfxStatus D3D11VideoCORE::SetHandle(mfxHandleType type, mfxHDL handle)
 
         mfxStatus sts = CommonCORE::SetHandle(type, handle);
         MFX_CHECK_STS(sts);
-
+        #if defined (MFX_ENABLE_VPP)
         if(m_pD11Device)
             m_pVideoProcessing.reset();
-
+        #endif
         m_pD11Device = (ID3D11Device*)m_hdl;
         CComPtr<ID3D11DeviceContext> pImmediateContext;
         m_pD11Device->GetImmediateContext(&pImmediateContext);

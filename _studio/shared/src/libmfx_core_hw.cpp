@@ -91,7 +91,7 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType hwType)
                 if (param->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE)
                     profile |= VA_SHORT_SLICE_MODE;
 #else // or MS MVC GUID
-                mfxExtMVCSeqDesc * points = (mfxExtMVCSeqDesc *)GetExtBuffer(param->ExtParam, param->NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
+                mfxExtMVCSeqDesc * points = (mfxExtMVCSeqDesc *)GetExtendedBuffer(param->ExtParam, param->NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
 
                 if (profile_idc == MFX_PROFILE_AVC_MULTIVIEW_HIGH && points && points->NumView > 2)
                     profile |= VA_PROFILE_MVC_MV;

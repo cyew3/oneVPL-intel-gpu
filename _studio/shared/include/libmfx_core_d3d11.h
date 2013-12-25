@@ -23,9 +23,9 @@ File Name: libmfx_core_d3d11.h
 #include "libmfx_allocator_d3d11.h"
 
 #include <d3d11.h>
-
+#if defined (MFX_ENABLE_VPP)
 #include "d3d11_video_processor.h"
-
+#endif
 // disable the "conditional expression is constant" warning
 #pragma warning(disable: 4127)
 
@@ -94,11 +94,12 @@ public:
     virtual eMFXPlatform  GetPlatformType() {return  MFX_PLATFORM_HARDWARE;}
     
     virtual eMFXVAType   GetVAType() const {return MFX_HW_D3D11; };
-
+    #if defined (MFX_ENABLE_VPP)
     virtual void  GetVideoProcessing(mfxHDL* phdl) 
     {
         *phdl = m_pVideoProcessing.get();
     };
+    #endif
     mfxStatus  CreateVideoProcessing(mfxVideoParam * param);
 
     virtual void* QueryCoreInterface(const MFX_GUID &guid);
@@ -148,9 +149,9 @@ private:
     // and providing HW capabilities
     std::auto_ptr<MFXD3D11Accelerator>    m_pAccelerator;
     std::auto_ptr<UMC::ProtectedVA>       m_protectedVA;
-
+    #if defined (MFX_ENABLE_VPP)
     std::auto_ptr<MfxHwVideoProcessing::DriverVideoProcessing>       m_pVideoProcessing;
-
+    #endif
     eMFXHWType                           m_HWType;
     // Ordinal number of adapter to work
     const mfxU32                         m_adapterNum;
