@@ -322,8 +322,8 @@ namespace MFX_HEVC_PP
                 }
                 RefV = *pPredPel; RefU = *(pPredPel+1);
             } else {
-                Ipp16u *pDst16 = (Ipp16u*)pPredPel + 1;
-                Ipp16u  refVal = (RefU<<8)+RefV;
+                Ipp32u *pDst16 = (Ipp32u*)pPredPel + 1;
+                Ipp32u  refVal = (RefU<<16)+RefV;
                 for(j = 0; j < (Ipp32s)(blkSize2>>1); j++)
                     *pDst16++ = refVal;
             }
@@ -369,8 +369,8 @@ namespace MFX_HEVC_PP
                     itIF >>= 1;
                 }
             } else {
-                Ipp16u *pDst16 = (Ipp16u*)(pPredPel + blkSize2 + 2);
-                Ipp16u  refVal = (RefU<<8)+RefV;
+                Ipp32u *pDst16 = (Ipp32u*)(pPredPel + blkSize2 + 2);
+                Ipp32u  refVal = (RefU<<16)+RefV;
                 for(j = 0; j < (Ipp32s)(blkSize2>>1); j++)
                     *pDst16++ = refVal;
             }

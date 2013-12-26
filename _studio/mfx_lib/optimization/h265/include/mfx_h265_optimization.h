@@ -744,6 +744,11 @@ namespace MFX_HEVC_PP
         Ipp32s pitch,
         Ipp32s width);
 
+    void h265_PredictIntra_Planar_ChromaNV12_16u(Ipp16u* PredPel, Ipp16u* pDst, Ipp32s dstStride, Ipp32s blkSize);
+    void h265_PredictIntra_DC_ChromaNV12_16u(Ipp16u* PredPel, Ipp16u* pDst, Ipp32s dstStride, Ipp32s blkSize);
+    void h265_PredictIntra_Ang_ChromaNV12_16u(Ipp16u* PredPel, Ipp16u* pDst, Ipp32s dstStride, Ipp32s blkSize, Ipp32u dirMode);
+    void h265_PredictIntra_Hor_ChromaNV12_16u(Ipp16u* PredPel, Ipp16u* pDst, Ipp32s dstStride, Ipp32s blkSize);
+    void h265_PredictIntra_Ver_ChromaNV12_16u(Ipp16u* PredPel, Ipp16u* pDst, Ipp32s dstStride, Ipp32s blkSize);
 
     void h265_FilterPredictPels_16u(Ipp16u* PredPel, Ipp32s width);
     void h265_FilterPredictPels_Bilinear_16u(Ipp16u* pSrcDst, int width, int topLeft, int bottomLeft, int topRight);
@@ -769,7 +774,7 @@ namespace MFX_HEVC_PP
     }
 
     void h265_GetPredPelsLuma_16u(Ipp16u* pSrc, Ipp16u* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u bit_depth);
-    void h265_GetPredPelsChromaNV12_16u(Ipp16u* pSrc, Ipp16u* pPredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf);
+    void h265_GetPredPelsChromaNV12_16u(Ipp16u* pSrc, Ipp16u* pPredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u bit_depth);
 
     inline void h265_GetPredPelsLuma(Ipp16u* pSrc, Ipp16u* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u bit_depth)
     {
@@ -779,6 +784,16 @@ namespace MFX_HEVC_PP
     inline void h265_GetPredPelsLuma(Ipp8u* pSrc, Ipp8u* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u )
     {
         h265_GetPredPelsLuma_8u(pSrc, PredPel, blkSize, srcPitch, tpIf, lfIf, tlIf);
+    }
+
+    inline void h265_GetPredPelsChromaNV12(Ipp16u* pSrc, Ipp16u* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u bit_depth)
+    {
+        h265_GetPredPelsChromaNV12_16u(pSrc, PredPel, blkSize, srcPitch, tpIf, lfIf, tlIf, bit_depth);
+    }
+
+    inline void h265_GetPredPelsChromaNV12(Ipp8u* pSrc, Ipp8u* PredPel, Ipp32s blkSize, Ipp32s srcPitch, Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf, Ipp32u )
+    {
+        h265_GetPredPelsChromaNV12_8u(pSrc, PredPel, blkSize, srcPitch, tpIf, lfIf, tlIf);
     }
 
     void h265_PredictIntra_Ang_16u_px(Ipp32s mode,

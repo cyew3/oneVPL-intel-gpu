@@ -145,38 +145,46 @@ namespace UMC_HEVC_DECODER
 
     } // void H265SegmentDecoder::IntraRecLumaBlk(...)
 
+    template <typename PixType>
+    void SumOfResidAndPred(H265CoeffsPtrCommon p_ResiU, H265CoeffsPtrCommon p_ResiV, Ipp32u residualPitch, PixType *pRecIPred, Ipp32u RecIPredStride, Ipp32u Size,
+        bool chromaUPresent, bool chromaVPresent, Ipp32u bit_depth)
+    {
+        if (sizeof(PixType) == 1)
+            bit_depth = 8;
+
+        for (Ipp32u y = 0; y < Size; y++)
+        {
+            for (Ipp32u x = 0; x < Size; x++)
+            {
+                if (chromaUPresent)
+                    pRecIPred[2*x] = (PixType)ClipC(pRecIPred[2*x] + p_ResiU[x], bit_depth);
+                if (chromaVPresent)
+                    pRecIPred[2*x+1] = (PixType)ClipC(pRecIPred[2*x + 1] + p_ResiV[x], bit_depth);
+
+            }
+            p_ResiU     += residualPitch;
+            p_ResiV     += residualPitch;
+            pRecIPred += RecIPredStride;
+        }
+    }
+
     void H265SegmentDecoder::IntraRecChromaBlk(H265CodingUnit* pCU,
         Ipp32u TrDepth,
         Ipp32u AbsPartIdx,
         Ipp32u ChromaPredMode,
         Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf)
     {
-        Ipp8u PredPel[4*64+2];
-        h265_GetPredPelsChromaNV12_8u(pCU->m_Frame->GetCbCrAddr(pCU->CUAddr, AbsPartIdx), PredPel, pCU->GetWidth(AbsPartIdx) >> TrDepth, pCU->m_Frame->pitch_chroma(), tpIf, lfIf, tlIf);
+        Ipp8u PredPel[(4*64+2)*2];
+
+        m_reconstructor->GetPredPelsChromaNV12(pCU->m_Frame->GetCbCrAddr(pCU->CUAddr, AbsPartIdx),
+            PredPel, pCU->GetWidth(AbsPartIdx) >> TrDepth, pCU->m_Frame->pitch_chroma(), tpIf, lfIf, tlIf);
 
         //===== get prediction signal =====
         Ipp32u Size = pCU->GetWidth(AbsPartIdx) >> (TrDepth + 1);
         H265PlanePtrUVCommon pRecIPred = pCU->m_Frame->GetCbCrAddr(pCU->CUAddr, AbsPartIdx);
         Ipp32u RecIPredStride = pCU->m_Frame->pitch_chroma();
 
-        switch(ChromaPredMode)
-        {
-        case INTRA_LUMA_PLANAR_IDX:
-            h265_PredictIntra_Planar_ChromaNV12_8u(PredPel, pRecIPred, RecIPredStride, Size);
-            break;
-        case INTRA_LUMA_DC_IDX:
-            h265_PredictIntra_DC_ChromaNV12_8u(PredPel, pRecIPred, RecIPredStride, Size);
-            break;
-        case INTRA_LUMA_VER_IDX:
-            h265_PredictIntra_Ver_ChromaNV12_8u(PredPel, pRecIPred, RecIPredStride, Size);
-            break;
-        case INTRA_LUMA_HOR_IDX:
-            h265_PredictIntra_Hor_ChromaNV12_8u(PredPel, pRecIPred, RecIPredStride, Size);
-            break;
-        default:
-            h265_PredictIntra_Ang_ChromaNV12_8u(PredPel, pRecIPred, RecIPredStride, Size, ChromaPredMode);
-            break;
-        }
+        m_reconstructor->PredictIntraChroma(ChromaPredMode, PredPel, pRecIPred, RecIPredStride, Size);
 
         bool chromaUPresent = pCU->GetCbf(COMPONENT_CHROMA_U, AbsPartIdx, TrDepth) != 0;
         bool chromaVPresent = pCU->GetCbf(COMPONENT_CHROMA_V, AbsPartIdx, TrDepth) != 0;
@@ -290,20 +298,12 @@ namespace UMC_HEVC_DECODER
           {
             H265CoeffsPtrCommon p_ResiU = (H265CoeffsPtrCommon)m_ppcYUVResi->m_pUPlane;
             H265CoeffsPtrCommon p_ResiV = (H265CoeffsPtrCommon)m_ppcYUVResi->m_pVPlane;
-            for (Ipp32u y = 0; y < Size; y++)
-            {
-                for (Ipp32u x = 0; x < Size; x++)
-                {
-                    if (chromaUPresent)
-                        pRecIPred[2*x] = (H265PlaneUVCommon)ClipC(pRecIPred[2*x] + p_ResiU[x]);
-                    if (chromaVPresent)
-                        pRecIPred[2*x+1] = (H265PlaneUVCommon)ClipC(pRecIPred[2*x + 1] + p_ResiV[x]);
 
-                }
-                p_ResiU     += residualPitch;
-                p_ResiV     += residualPitch;
-                pRecIPred += RecIPredStride;
-            }
+            if (m_pSeqParamSet->bit_depth_chroma > 8 || m_pSeqParamSet->bit_depth_luma > 8)
+                SumOfResidAndPred<Ipp16u>(p_ResiU, p_ResiV, residualPitch, (Ipp16u*)pRecIPred, RecIPredStride, Size, chromaUPresent, chromaVPresent, m_pSeqParamSet->bit_depth_chroma);
+            else
+                SumOfResidAndPred<Ipp8u>(p_ResiU, p_ResiV, residualPitch, pRecIPred, RecIPredStride, Size, chromaUPresent, chromaVPresent, m_pSeqParamSet->bit_depth_chroma);
+                
         }
     }
 } // end namespace UMC_HEVC_DECODER
