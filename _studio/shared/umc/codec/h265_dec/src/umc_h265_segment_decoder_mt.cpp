@@ -427,6 +427,7 @@ public:
     virtual void FilterPredictPels(DecodingContext* sd, H265CodingUnit* pCU, H265PlaneYCommon* PredPel, Ipp32s width, Ipp32u TrDepth, Ipp32u AbsPartIdx);
 
     virtual void FilterEdgeLuma(H265EdgeData *edge, H265PlaneYCommon *srcDst, Ipp32s srcDstStride, Ipp32s x, Ipp32s y, Ipp32s dir);
+    virtual void FilterEdgeChroma(H265EdgeData *edge, H265PlaneYCommon *srcDst, Ipp32s srcDstStride, Ipp32s x, Ipp32s y, Ipp32s dir, Ipp32s chromaCbQpOffset, Ipp32s chromaCrQpOffset);
 };
 
 template<bool bitDepth, typename H265PlaneType>
@@ -472,6 +473,35 @@ void ReconstructorT<bitDepth, H265PlaneType>::FilterEdgeLuma(H265EdgeData *edge,
     else
     {
         MFX_HEVC_PP::NAME(h265_FilterEdgeLuma_8u_I)(edge, srcDst + x + y*srcDstStride, srcDstStride, dir);
+    }
+}
+
+#define   QpUV(iQpY)  ( ((iQpY) < 0) ? (iQpY) : (((iQpY) > 57) ? ((iQpY)-6) : g_ChromaScale[(iQpY)]) )
+
+template<bool bitDepth, typename H265PlaneType>
+void ReconstructorT<bitDepth, H265PlaneType>::FilterEdgeChroma(H265EdgeData *edge, H265PlaneYCommon *srcDst, Ipp32s srcDstStride, Ipp32s x, Ipp32s y, Ipp32s dir,
+                                                               Ipp32s chromaCbQpOffset, Ipp32s chromaCrQpOffset)
+{
+    if (bitDepth)
+    {
+        Ipp16u* srcDst_ = (Ipp16u*)srcDst;
+        h265_FilterEdgeChroma_Interleaved_16u_I_px(
+            edge, 
+            srcDst_ + 2*x + y*srcDstStride,
+            srcDstStride,
+            dir,
+            QpUV(edge->qp + chromaCbQpOffset),
+            QpUV(edge->qp + chromaCrQpOffset), 10);
+    }
+    else
+    {
+        MFX_HEVC_PP::NAME(h265_FilterEdgeChroma_Interleaved_8u_I)(
+            edge, 
+            srcDst + 2*x + y*srcDstStride,
+            srcDstStride,
+            dir,
+            QpUV(edge->qp + chromaCbQpOffset),
+            QpUV(edge->qp + chromaCrQpOffset));
     }
 }
 

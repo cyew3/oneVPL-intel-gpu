@@ -44,7 +44,10 @@ public:
 
     // ML: OPT: allows to propogate convert const shift
     template <int bitDepth, typename DstCoeffsType>
-    void InvTransformSkip(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, Ipp32u Stride, Ipp32u Size);
+    void InvTransformSkip(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, Ipp32u Stride, Ipp32u Size, bool inplace);
+
+    template <typename DstCoeffsType>
+    void InvTransformByPass(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, Ipp32u Stride, Ipp32u Size, Ipp32u bitDepth, bool inplace);
 
 private:
     H265CoeffsPtrCommon m_residualsBuffer;

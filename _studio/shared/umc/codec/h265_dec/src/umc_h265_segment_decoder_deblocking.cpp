@@ -300,8 +300,7 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU, Ipp32s cu
     H265EdgeData *edge;
 
     Ipp32s srcDstStride = m_pCurrentFrame->pitch_chroma();
-    H265PlaneUVCommon*baseSrcDst = m_pCurrentFrame->GetCbCrAddr(curLCU->CUAddr) +
-                 (curPixelRow >> 1) * srcDstStride + (curPixelColumn >> 1) * 2;
+    H265PlaneUVCommon*baseSrcDst = m_pCurrentFrame->GetCbCrAddr(curLCU->CUAddr);
 
     Ipp32s chromaCbQpOffset = m_pPicParamSet->pps_cb_qp_offset;
     Ipp32s chromaCrQpOffset = m_pPicParamSet->pps_cr_qp_offset;
@@ -320,13 +319,7 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU, Ipp32s cu
 
         if (edge->strength > 1)
         {
-            MFX_HEVC_PP::NAME(h265_FilterEdgeChroma_Interleaved_8u_I)(
-                edge, 
-                baseSrcDst + 4 * i * srcDstStride,
-                srcDstStride,
-                VERT_FILT,
-                QpUV(edge->qp + chromaCbQpOffset),
-                QpUV(edge->qp + chromaCrQpOffset));
+            m_reconstructor->FilterEdgeChroma(edge, baseSrcDst, srcDstStride, (curPixelColumn >> 1), (curPixelRow>>1) + 4 * i, VERT_FILT, chromaCbQpOffset, chromaCrQpOffset);
         }
     }
 
@@ -382,13 +375,7 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU, Ipp32s cu
 
         if (edge->strength > 1)
         {
-            MFX_HEVC_PP::NAME(h265_FilterEdgeChroma_Interleaved_8u_I)(
-                edge, 
-                baseSrcDst + 4 * (i - 1) * 2,
-                srcDstStride,
-                HOR_FILT,
-                QpUV(edge->qp + chromaCbQpOffset),
-                QpUV(edge->qp + chromaCrQpOffset));
+            m_reconstructor->FilterEdgeChroma(edge, baseSrcDst, srcDstStride, (curPixelColumn>>1) + 4 * (i - 1), (curPixelRow >> 1), HOR_FILT, chromaCbQpOffset, chromaCrQpOffset);
         }
     }
 }

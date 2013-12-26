@@ -104,36 +104,54 @@ void InverseTransform(H265CoeffsPtrCommon coeff, DstCoeffsType* dst, Ipp32s dstP
 }
 
 template <typename DstCoeffsType>
+void H265TrQuant::InvTransformByPass(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, Ipp32u Stride, Ipp32u Size, Ipp32u bitDepth, bool inplace)
+{
+    Ipp32s max_value = (1 << bitDepth) - 1;
+
+    for (Ipp32u k = 0; k < Size; k++)
+    {
+        // ML: OPT: TODO: verify vectorization
+        for (Ipp32u j = 0; j < Size; j++)
+        {
+            if (inplace)
+            {
+                pResidual[k * Stride + j] = (DstCoeffsType)Clip3(0, max_value, pResidual[k * Stride + j] + pCoeff[k * Size + j]);
+            }
+            else
+            {
+                pResidual[k * Stride + j] = (DstCoeffsType)pCoeff[k * Size + j];
+            }
+        }
+    }
+}
+
+template <typename DstCoeffsType>
 void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, Ipp32u Mode, DstCoeffsType* pResidual,
                                   Ipp32u Stride, H265CoeffsPtrCommon pCoeff, Ipp32u Size, 
                                   bool transformSkip)
 {
     Ipp32s bitDepth = TxtType == TEXT_LUMA ? m_context->m_sps->bit_depth_luma : m_context->m_sps->bit_depth_chroma;
 
+    bool inplace = sizeof(DstCoeffsType) == 1;
+
     if(transQuantBypass)
     {
-        for (Ipp32u k = 0; k < Size; k++)
-            // ML: OPT: TODO: verify vectorization
-            for (Ipp32u j = 0; j < Size; j++)
-            {
-                if (sizeof(DstCoeffsType) == 1)
-                {
-                    Ipp32s max_value = (1 << bitDepth) - 1;
-                    pResidual[k * Stride + j] = (DstCoeffsType)Clip3(0, max_value, pResidual[k * Stride + j] + pCoeff[k * Size + j]);
-                }
-                else
-                {
-                    pResidual[k * Stride + j] = (DstCoeffsType)pCoeff[k * Size + j];
-                }
-            }
-
+        if (bitDepth == 8)
+            InvTransformByPass(pCoeff, pResidual, Stride, Size, bitDepth, inplace);
+        else
+        {
+            if (inplace)
+                InvTransformByPass<Ipp16u>(pCoeff, (Ipp16u*)pResidual, Stride, Size, bitDepth, inplace);
+            else
+                InvTransformByPass(pCoeff, pResidual, Stride, Size, bitDepth, inplace);
+        }
         return;
     }
 
     if (bitDepth == 8)
     {
         if (transformSkip)
-            InvTransformSkip< 8 >(pCoeff, pResidual, Stride, Size);
+            InvTransformSkip< 8 >(pCoeff, pResidual, Stride, Size, inplace);
         else
         {
             InverseTransform< 8 >(pCoeff, pResidual, Stride, Size, Mode);
@@ -142,13 +160,15 @@ void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, I
     else
     {
         if (transformSkip)
-            InvTransformSkip< 10 >(pCoeff, pResidual, Stride, Size);
-        else
         {
-            InverseTransform< 10 >(pCoeff, pResidual, Stride, Size, Mode);
-        }        
+            if (inplace)
+                InvTransformSkip<10, Ipp16u>(pCoeff, (Ipp16u*)pResidual, Stride, Size, inplace);
+            else
+                InvTransformSkip<10>(pCoeff, pResidual, Stride, Size, inplace);
+        }
+        else
+            InverseTransform<10>(pCoeff, pResidual, Stride, Size, Mode);
     }
-
 }
 
 /* ----------------------------------------------------------------------------*/
@@ -297,7 +317,7 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
 
 // ML: OPT: Parameterized to allow const 'bitDepth' propogation
 template <int bitDepth, typename DstCoeffsType>
-void H265TrQuant::InvTransformSkip(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, Ipp32u Stride, Ipp32u Size)
+void H265TrQuant::InvTransformSkip(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, Ipp32u Stride, Ipp32u Size, bool inplace)
 {
     Ipp32u Log2TrSize = g_ConvertToBit[Size] + 2;
     Ipp32s shift = MAX_TR_DYNAMIC_RANGE - bitDepth - Log2TrSize;
@@ -314,7 +334,7 @@ void H265TrQuant::InvTransformSkip(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pR
             // ML: OPT: TODO: verify vectorization
             for (k = 0; k < Size; k ++)
             {
-                if (sizeof(DstCoeffsType) == 1)
+                if (inplace)
                 {
                     pResidual[j * Stride + k] =  (DstCoeffsType) ClipY(((pCoeff[j * Size + k] + offset) >> transformSkipShift) + pResidual[j * Stride + k], bitDepth);
                 }
@@ -333,7 +353,7 @@ void H265TrQuant::InvTransformSkip(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pR
         {
             for (k = 0; k < Size; k ++)
             {
-                if (sizeof(DstCoeffsType) == 1)
+                if (inplace)
                 {
                     pResidual[j * Stride + k] =  (DstCoeffsType)ClipY((pCoeff[j * Size + k] << transformSkipShift) + pResidual[j * Stride + k], bitDepth);
                 }
