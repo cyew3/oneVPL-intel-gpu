@@ -705,9 +705,6 @@
     <None Include="libmfx.def" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="libmfxsw_plugin_hevcd.rc" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\..\shared\mfx_trace\mfx_trace.vcxproj">
       <Project>{ff93e15e-6a4a-4cc5-8d13-892fbba5cc5f}</Project>
     </ProjectReference>
