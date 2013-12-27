@@ -346,7 +346,7 @@ namespace MFX_HEVC_PP
     }
 #endif
 
-#if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
+#if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_AUTO) || defined(MFX_TARGET_OPTIMIZATION_ATOM)
 #if defined(MFX_TARGET_OPTIMIZATION_PX)
    void h265_FilterEdgeChroma_Interleaved_16u_I(
         H265EdgeData *edge, 
