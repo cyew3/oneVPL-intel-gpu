@@ -41,6 +41,8 @@ const msdk_disp_char * defaultDLLName[2] = {"libmfxhw64.so",
                                             "libmfxsw64.so"};
 const msdk_disp_char * defaultAudioDLLName[2] = {"libmfxaudiosw64.so",
                                             "libmfxaudiosw64.so"};
+const msdk_disp_char * defaultRTName =  {L"libmfxrt64.so"};
+
 #elif defined(__APPLE__)
 #ifdef __i386__
 const msdk_disp_char * defaultDLLName[2] = {"libmfxhw32.dylib",
@@ -68,8 +70,7 @@ const msdk_disp_char * defaultDLLName[2] = {"libmfxhw64_d.so",
                                             "libmfxsw64_d.so"};
 const msdk_disp_char * defaultAudioDLLName[2] = {"libmfxaudiosw64_d.so",
                                             "libmfxaudiosw64_d.so"};
-
-const msdk_disp_char * defaultRTName =  {L"libmfxrt64.so"};
+const msdk_disp_char * defaultRTName =  {L"libmfxrt64_d.so"};
 
 #elif defined(__APPLE__)
 #ifdef __i386__
