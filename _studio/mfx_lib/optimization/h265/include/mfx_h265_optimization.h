@@ -595,10 +595,10 @@ namespace MFX_HEVC_PP
 #endif // #ifndef OPT_INTERP_PMUL
     //=================================================================================================    
 
-    template<typename T, bool value>
+    template<typename T, bool value1>
     struct is_unsigned_base
     {
-        static const bool value = value;
+        static const bool value = value1;
     };
 
     template<typename T>
