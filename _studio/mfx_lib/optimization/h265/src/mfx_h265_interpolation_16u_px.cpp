@@ -174,18 +174,19 @@ namespace MFX_HEVC_PP
     void MAKE_NAME(h265_AverageModeP)(short *pSrc, unsigned int srcPitch, PixType *pAvg, unsigned int avgPitch, PixType *pDst, unsigned int dstPitch, int width, int height, unsigned bit_depth)
     {
         Ipp32s max_value = (1 << bit_depth) - 1;
+        Ipp32s shift = 15 - bit_depth;
         for( int y = 0; y < height; y++  )
         {
             for(int x = 0; x < width; x++)
             {
                 int add1 = pSrc[y*srcPitch + x];
                 int add2 = (int)pAvg[y*avgPitch + x];
-                add2 <<= 6;
-                int add3 = 1 << 6;
+                add2 <<= shift - 1;
+                int add3 = 1 << (shift - 1);
 
-                int sum_total = (add1 + add2 + add3) >> 7;
+                int sum_total = (add1 + add2 + add3) >> shift;
          
-                pDst[y*dstPitch + x] = (Ipp8u)Saturate(0, max_value, sum_total);
+                pDst[y*dstPitch + x] = (PixType)Saturate(0, max_value, sum_total);
             }
         }
     }
@@ -194,11 +195,13 @@ namespace MFX_HEVC_PP
     void MAKE_NAME(h265_AverageModeB)(short *pSrc, unsigned int srcPitch, short *pAvg, unsigned int avgPitch, PixType *pDst, unsigned int dstPitch, int width, int height, unsigned bit_depth)
     {
         Ipp32s max_value = (1 << bit_depth) - 1;
+        Ipp32s shift = 15 - bit_depth;
+        Ipp32s offset = 1 << (shift - 1);
         for( int y = 0; y < height; y++  )
         {
             for(int x = 0; x < width; x++)
             {
-                Ipp8u dst_tmp = (Ipp8u)Saturate(0, max_value, (pSrc[y*srcPitch + x] + (pAvg[y*avgPitch + x] + (1<<6))) >> 7);
+                PixType dst_tmp = (PixType)Saturate(0, max_value, (pSrc[y*srcPitch + x] + (pAvg[y*avgPitch + x] + offset)) >> shift);
                 pDst[y*dstPitch + x] = dst_tmp;
             }
         }

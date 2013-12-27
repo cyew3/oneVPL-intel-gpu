@@ -347,7 +347,7 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
 
     Ipp32s tap = ( c_plane_type == TEXT_CHROMA ) ? 4 : 8;
     Ipp32s shift = c_bi ? bitDepth - 8 : 6;
-    Ipp16s offset = c_bi ? 0 : ((1 << shift) - 1);
+    Ipp16s offset = c_bi ? 0 : (1 << (shift - 1));
 
     const Ipp32s low_bits_mask = ( c_plane_type == TEXT_CHROMA ) ? 7 : 3;
     H265MotionVector MV = PUi.interinfo.m_mv[RefPicList];
@@ -375,7 +375,7 @@ void H265Prediction::PredInterUni(H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefP
             const PlaneType * pSrc = in_pSrc;
             for (Ipp32s j = 0; j < Height; j++)
             {
-                small_memcpy( pPicDst, pSrc, iPUWidth );
+                small_memcpy( pPicDst, pSrc, iPUWidth*sizeof(PlaneType) );
                 pSrc += in_SrcPitch;
                 pPicDst += PicDstStride;
             }

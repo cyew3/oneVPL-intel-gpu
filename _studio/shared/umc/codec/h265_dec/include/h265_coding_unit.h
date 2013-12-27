@@ -239,7 +239,7 @@ struct H265FrameHLDNeighborsInfo
             Ipp16u IsIPCM             : 1;  // 13
             Ipp16u IsTransquantBypass : 1;  // 14
             Ipp16u IsTrCbfY           : 1;  // 15
-            Ipp8u qp;
+            Ipp8s qp;
             Ipp8u TrStart;
         } members;
         Ipp32u data;

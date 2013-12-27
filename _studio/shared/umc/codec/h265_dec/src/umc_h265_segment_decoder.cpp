@@ -2574,7 +2574,7 @@ void H265SegmentDecoder::UpdateNeighborBuffers(H265CodingUnit* pCU, Ipp32u AbsPa
     info.members.IntraDir = pCU->GetLumaIntra(AbsPartIdx);
     info.members.IsTransquantBypass = isTranquantBypass;
     info.members.IsIPCM = isIPCM;
-    info.members.qp = (Ipp8u)m_context->GetQP();
+    info.members.qp = (Ipp8s)m_context->GetQP();
     VM_ASSERT(TrStart < 256);
     info.members.TrStart = Ipp8u(TrStart);
     info.members.IsTrCbfY = isTrCbfY;

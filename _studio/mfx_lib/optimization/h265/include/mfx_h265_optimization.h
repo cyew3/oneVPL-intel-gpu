@@ -118,7 +118,7 @@ namespace MFX_HEVC_PP
         Ipp8u isIntraQ  : 1;
         Ipp8u isTrCbfYQ : 1;
         Ipp8u reservedQ : 5;
-        Ipp8u qp;
+        Ipp8s qp;
 
         Ipp8u strength;
         Ipp8s tcOffset;
