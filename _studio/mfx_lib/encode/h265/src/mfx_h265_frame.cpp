@@ -165,8 +165,8 @@ void H265Frame::Dump(const vm_char* fname, H265VideoParam *par, H265FrameList *d
 
     vm_file *f;
     mfxU8* fbuf = NULL;
-    Ipp32s W = par->Width;
-    Ipp32s H = par->Height;
+    Ipp32s W = par->Width - par->CropLeft - par->CropRight;
+    Ipp32s H = par->Height - par->CropTop - par->CropBottom;
 
     if (!fname || !fname[0])
         return;
@@ -195,7 +195,7 @@ void H265Frame::Dump(const vm_char* fname, H265VideoParam *par, H265FrameList *d
         return;
 
     int i;
-    mfxU8 *p = y;
+    mfxU8 *p = y + par->CropLeft + par->CropTop * pitch_luma;
     for (i = 0; i < H; i++) {
         vm_file_fwrite(p, 1, W, f);
         p += pitch_luma;
@@ -205,7 +205,7 @@ void H265Frame::Dump(const vm_char* fname, H265VideoParam *par, H265FrameList *d
     if (W <= 2048*2) { // else invalid dump
         mfxU8 uvbuf[2048];
         for (int part = 0; part <= 1; part++) {
-            p = uv + part;
+            p = uv + part + par->CropLeft + (par->CropTop>>1) * pitch_chroma;
             for (i = 0; i < H >> 1; i++) {
                 for (int j = 0; j < W>>1; j++)
                     uvbuf[j] = p[2*j];
