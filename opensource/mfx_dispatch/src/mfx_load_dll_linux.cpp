@@ -68,6 +68,9 @@ const msdk_disp_char * defaultDLLName[2] = {"libmfxhw64_d.so",
                                             "libmfxsw64_d.so"};
 const msdk_disp_char * defaultAudioDLLName[2] = {"libmfxaudiosw64_d.so",
                                             "libmfxaudiosw64_d.so"};
+
+const msdk_disp_char * defaultRTName =  {L"libmfxrt64.so"};
+
 #elif defined(__APPLE__)
 #ifdef __i386__
 const msdk_disp_char * defaultDLLName[2] = {"libmfxhw32_d.dylib",
@@ -86,12 +89,25 @@ const msdk_disp_char * defaultDLLName[2] = {"libmfxhw32_d.so",
                                             "libmfxsw32_d.so"};
 const msdk_disp_char * defaultAudioDLLName[2] = {"libmfxaudiosw32_d.so",
                                             "libmfxaudiosw32_d.so"};
+
 #endif // (defined(WIN64))
 
 #endif // !defined(_DEBUG)
 
 namespace MFX
 {
+
+mfxStatus mfx_get_rt_dll_name(msdk_disp_char *pPath, size_t /*pathSize*/)
+{
+    if (!pPath)
+    {
+        return MFX_ERR_NULL_PTR;
+    }
+
+    strcpy(pPath, defaultRTName);
+
+    return MFX_ERR_NONE;
+}
 
 mfxStatus mfx_get_default_dll_name(msdk_disp_char *pPath, size_t /*pathSize*/, eMfxImplType implType)
 {
