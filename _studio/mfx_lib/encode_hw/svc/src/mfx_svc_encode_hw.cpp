@@ -899,9 +899,9 @@ mfxStatus ImplementationSvc::CopyRawSurface(
         mfxFrameData d3dSurf = { 0, };
         mfxFrameData sysSurf = task.m_yuv->Data;
 
-        FrameLocker lock1(m_core, d3dSurf, m_raw.mids[task.m_idx]);
-        MFX_CHECK(d3dSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
-
+        //FrameLocker lock1(m_core, d3dSurf, m_raw.mids[task.m_idx]);
+        //MFX_CHECK(d3dSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
+        d3dSurf.MemId = m_raw.mids[task.m_idx];
         FrameLocker lock2(m_core, sysSurf, true);
         MFX_CHECK(sysSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
 
@@ -918,8 +918,8 @@ mfxStatus ImplementationSvc::CopyRawSurface(
 
         sts = lock2.Unlock();
         MFX_CHECK_STS(sts);
-        sts = lock1.Unlock();
-        MFX_CHECK_STS(sts);
+        //sts = lock1.Unlock();
+        //MFX_CHECK_STS(sts);
     }
 
     return sts;

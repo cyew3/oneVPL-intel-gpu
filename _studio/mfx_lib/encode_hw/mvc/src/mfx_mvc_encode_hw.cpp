@@ -2926,9 +2926,9 @@ mfxStatus ImplementationMvc::CopyRawSurface(DdiTask const & task)
         mfxU32 numRawSurfPerView = CalcNumSurfRaw(m_video);
 
         mfxU32 encIdx = m_numEncs > 1 ? task.m_viewIdx : 0;
-        FrameLocker lock1(m_core, d3dSurf, m_raw[encIdx].mids[task.m_idx + m_numEncs > 1 ? 0 : task.m_viewIdx * numRawSurfPerView]);
-        MFX_CHECK(d3dSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
-
+        //FrameLocker lock1(m_core, d3dSurf, m_raw[encIdx].mids[task.m_idx + m_numEncs > 1 ? 0 : task.m_viewIdx * numRawSurfPerView]);
+        //MFX_CHECK(d3dSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
+        d3dSurf.MemId = m_raw[encIdx].mids[task.m_idx + m_numEncs > 1 ? 0 : task.m_viewIdx * numRawSurfPerView];
         FrameLocker lock2(m_core, sysSurf, true);
         MFX_CHECK(sysSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
 
@@ -2941,8 +2941,8 @@ mfxStatus ImplementationMvc::CopyRawSurface(DdiTask const & task)
         mfxStatus sts = lock2.Unlock();
         MFX_CHECK_STS(sts);
 
-        sts = lock1.Unlock();
-        MFX_CHECK_STS(sts);
+        //sts = lock1.Unlock();
+        //MFX_CHECK_STS(sts);
     }
 
     return MFX_ERR_NONE;

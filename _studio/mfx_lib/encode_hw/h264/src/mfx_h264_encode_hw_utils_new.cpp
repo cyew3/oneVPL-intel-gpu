@@ -1640,10 +1640,11 @@ mfxStatus MfxHwH264Encode::CopyRawSurfaceToVideoMemory(
         mfxFrameData d3dSurf = { 0 };
         mfxFrameData sysSurf = surface->Data;
 
-        FrameLocker lock1(&core, d3dSurf, task.m_midRaw);
+        //FrameLocker lock1(&core, d3dSurf, task.m_midRaw);
         FrameLocker lock2(&core, sysSurf, true);
+        d3dSurf.MemId = task.m_midRaw;
 
-        if (d3dSurf.Y == 0 || sysSurf.Y == 0)
+        if (sysSurf.Y == 0)
             return Error(MFX_ERR_LOCK_MEMORY);
 
         mfxStatus sts = MFX_ERR_NONE;
@@ -1658,9 +1659,9 @@ mfxStatus MfxHwH264Encode::CopyRawSurfaceToVideoMemory(
         if (sts != MFX_ERR_NONE)
             return Error(sts);
 
-        sts = lock1.Unlock();
-        if (sts != MFX_ERR_NONE)
-            return Error(sts);
+        //sts = lock1.Unlock();
+        //if (sts != MFX_ERR_NONE)
+        //    return Error(sts);
     }
 
     return MFX_ERR_NONE;

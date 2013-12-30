@@ -134,6 +134,9 @@
     <ClCompile Include="..\shared\src\libmfx_core_vdaapi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\shared\src\cm_mem_copy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\shared\include\auxiliary_device.h">
@@ -252,6 +255,9 @@
     </ClInclude>
     <ClInclude Include="scheduler\include\mfx_scheduler_core_thread.h">
       <Filter>scheduler</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\include\cm_mem_copy.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

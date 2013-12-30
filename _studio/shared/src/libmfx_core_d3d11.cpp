@@ -30,6 +30,8 @@ File Name: libmf_core_d3d.cpp
 #include "mfx_common_decode_int.h"
 #include "libmfx_core_hw.h"
 
+#include "cm_mem_copy.h"
+
 DEFINE_GUID(DXVADDI_Intel_Decode_PrivateData_Report, 
 0x49761bec, 0x4b63, 0x4349, 0xa5, 0xff, 0x87, 0xff, 0xdf, 0x8, 0x84, 0x66);
 
@@ -38,8 +40,19 @@ D3D11VideoCORE::D3D11VideoCORE(const mfxU32 adapterNum, const mfxU32 numThreadsA
     ,   m_bUseExtAllocForHWFrames(false)
     ,   m_adapterNum(adapterNum)
     ,   m_HWType(MFX_HW_UNKNOWN)
+    ,   m_bCmCopy(false)
+    ,   m_bCmCopyAllowed(true)
 {
 }
+
+D3D11VideoCORE::~D3D11VideoCORE()
+{
+    if (m_bCmCopy)
+    {
+        m_pCmCopy.get()->Release();
+        m_bCmCopy = false;
+    }
+};
 
 mfxStatus D3D11VideoCORE::InternalInit()
 {
@@ -281,6 +294,24 @@ mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
         sts = InitializeDevice();
         MFX_CHECK_STS(sts);
 
+        if (!m_bCmCopy && m_bCmCopyAllowed)
+        {
+            m_pCmCopy.reset(new CmCopyWrapper);
+            if (!m_pCmCopy.get()->GetCmDevice<ID3D11Device>(m_pD11Device)){
+                //!!!! WA: CM restricts multiple CmDevice creation from different device managers.
+                //if failed to create CM device, continue without CmCopy
+                m_bCmCopy = false;
+                m_bCmCopyAllowed = false;
+                m_pCmCopy.get()->Release();
+                m_pCmCopy.reset();
+                //return MFX_ERR_DEVICE_FAILED;
+            }else{
+                sts = m_pCmCopy.get()->Initialize();
+                MFX_CHECK_STS(sts);
+                m_bCmCopy = true;
+            }
+        }
+
         // use common core for sw surface allocation
         if (request->Type & MFX_MEMTYPE_SYSTEM_MEMORY)
             return CommonCORE::AllocFrames(request, response);
@@ -478,6 +509,25 @@ void* D3D11VideoCORE::QueryCoreInterface(const MFX_GUID &guid)
     {
         return (void*)&m_comptr;
     }
+    else if (MFXICORECM_GUID == guid)
+    {
+        CmDevice* pCmDevice = NULL;
+        if (!m_bCmCopy)
+        {
+            m_pCmCopy.reset(new CmCopyWrapper);
+            pCmDevice = m_pCmCopy.get()->GetCmDevice<ID3D11Device>(m_pD11Device);
+            if (!pCmDevice)
+                return NULL;
+            if (MFX_ERR_NONE != m_pCmCopy.get()->Initialize())
+                return NULL;
+            m_bCmCopy = true;
+        }
+        else
+        {
+             pCmDevice =  m_pCmCopy.get()->GetCmDevice<ID3D11Device>(m_pD11Device);
+        }
+        return (void*)pCmDevice;
+    }
     return NULL;
 }
 
@@ -641,6 +691,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMe
 
 mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
 {
+    mfxStatus sts = MFX_ERR_NONE;
     pDst; pSrc;
     
     // check that only memId or pointer are passed
@@ -670,147 +721,38 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
     mfxU32 dstPitch = pDst->Data.PitchLow + ((mfxU32)pDst->Data.PitchHigh << 16);
 
     FastCopy *pFastCopy = m_pFastCopy.get();
+    CmCopyWrapper *pCmCopy = m_pCmCopy.get();
 
     if (NULL != pSrc->Data.MemId && NULL != pDst->Data.MemId)
     {
-        ID3D11Texture2D * pSurfaceSrc = reinterpret_cast<ID3D11Texture2D *>(((mfxHDLPair*)pSrc->Data.MemId)->first);
-        ID3D11Texture2D * pSurfaceDst = reinterpret_cast<ID3D11Texture2D *>(((mfxHDLPair*)pDst->Data.MemId)->first);
+        if (m_bCmCopy == true  && pDst->Info.FourCC != MFX_FOURCC_YV12  && CM_SUPPORTED_COPY_SIZE(roi))
+        {
+            sts = pCmCopy->CopyVideoToVideoMemoryAPI(((mfxHDLPair*)pDst->Data.MemId)->first,((mfxHDLPair*)pSrc->Data.MemId)->first, roi);
+            MFX_CHECK_STS(sts);
+        }
+        else
+        {
+            ID3D11Texture2D * pSurfaceSrc = reinterpret_cast<ID3D11Texture2D *>(((mfxHDLPair*)pSrc->Data.MemId)->first);
+            ID3D11Texture2D * pSurfaceDst = reinterpret_cast<ID3D11Texture2D *>(((mfxHDLPair*)pDst->Data.MemId)->first);
 
         size_t indexSrc = (size_t)((mfxHDLPair*)pSrc->Data.MemId)->second;
         size_t indexDst = (size_t)((mfxHDLPair*)pDst->Data.MemId)->second;
 
-        m_pD11Context->CopySubresourceRegion(pSurfaceDst, (mfxU32)indexDst, 0, 0, 0, pSurfaceSrc, (mfxU32)indexSrc, NULL);
 
-        //should be init m_hDirectXHandle ???
-        /*
-        hRes = m_pDirect3DDeviceManager->LockDevice(m_hDirectXHandle, &m_pDirect3DDevice, true);
-        MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
+            m_pD11Context->CopySubresourceRegion(pSurfaceDst, (mfxU32)indexDst, 0, 0, 0, pSurfaceSrc, (mfxU32)indexSrc, NULL);
+        }
 
-        const tagRECT rect = {0, 0, roi.width, roi.height};
-
-        hRes = m_pDirect3DDevice->StretchRect((IDirect3DSurface9*) pSrc->Data.MemId, &rect, 
-                                              (IDirect3DSurface9*) pDst->Data.MemId, &rect, 
-                                               D3DTEXF_LINEAR);
-
-        MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
-
-        hRes = m_pDirect3DDeviceManager->UnlockDevice(m_hDirectXHandle, false);
-        MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
-
-        m_pDirect3DDevice->Release();
-        */
     }
     else if (NULL != pSrc->Data.MemId && NULL != pDst->Data.Y)
     {
-        /*
-        bFastCompositing = false; // disabled fast copy ddi because of slow performance
-        if (bFastCompositing)
+        mfxI64 verticalPitch = (mfxI64)(pDst->Data.UV - pDst->Data.Y);
+        verticalPitch = (verticalPitch % pDst->Data.Pitch)? 0 : verticalPitch / pDst->Data.Pitch;
+        if (m_bCmCopy == true && pDst->Info.FourCC != MFX_FOURCC_YV12 && CM_ALIGNED(pDst->Data.Y) && CM_ALIGNED(pDst->Data.UV) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pDst->Info.Height && verticalPitch <= 16384)
         {
-            // hardware fast copy
-
-            IDirect3DSurface9 *pSurface = (IDirect3DSurface9 *) pSrc->Data.MemId;
-
-            hRes  = pSurface->GetDesc(&sSurfDesc);
-
-            tagRECT rect = {0, 0, sSurfDesc.Width, sSurfDesc.Height};
-
-            if (NULL == m_pSystemMemorySurface)
-            {
-                    sts = GetD3DService((mfxU16) roi.width, (mfxU16) roi.height);
-                    MFX_CHECK_STS(sts);
-
-                    hRes = m_pDirectXVideoService->CreateSurface(sSurfDesc.Width, sSurfDesc.Height, 0,
-                                                                 (D3DFORMAT)pDst->Info.FourCC,
-                                                                 D3DPOOL_SYSTEMMEM, 0,
-                                                                 DXVA2_VideoSoftwareRenderTarget,
-                                                                 &m_pSystemMemorySurface,
-                                                                 NULL);
-
-                    MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
-            }
-
-            // copy from video to system surface
-            sts = m_pFastComposing.get()->FastCopy(m_pSystemMemorySurface, pSurface, &rect, &rect, FALSE);
+            sts = pCmCopy->CopyVideoToSystemMemoryAPI(pDst->Data.Y, pDst->Data.Pitch,(mfxU32)verticalPitch,((mfxHDLPair*)pSrc->Data.MemId)->first, 0, roi);
             MFX_CHECK_STS(sts);
-
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "CopyFromD3dPoolSysMem");
-            hRes |= m_pSystemMemorySurface->LockRect(&sLockRect, NULL, D3DLOCK_NOSYSLOCK | D3DLOCK_READONLY);
-            MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
-
-            Ipp32u dstPitch = pDst->Data.Pitch;
-            Ipp32u srcPitch = sSurfDesc.Width;
-
-            MFX_CHECK((pDst->Data.Y == 0) == (pDst->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
-            MFX_CHECK(dstPitch < 0x8000, MFX_ERR_UNDEFINED_BEHAVIOR);
-            MFX_CHECK(srcPitch < 0x8000, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-            switch (pDst->Info.FourCC)
-            {
-                case MFX_FOURCC_NV12:
-
-                    ippiCopy_8u_C1R((mfxU8 *)sLockRect.pBits, srcPitch, pDst->Data.Y, dstPitch, roi);
-                            
-                    roi.height >>= 1;
-
-                    ippiCopy_8u_C1R((mfxU8 *)sLockRect.pBits + sSurfDesc.Height * srcPitch, srcPitch, pDst->Data.UV, dstPitch, roi);
-
-                    break;
-
-                case MFX_FOURCC_YV12:
-
-                    ippiCopy_8u_C1R((mfxU8 *)sLockRect.pBits, srcPitch, pDst->Data.Y, dstPitch, roi);
-
-                    roi.width >>= 1;
-                    roi.height >>= 1;
-
-                    srcPitch >>= 1;
-                    dstPitch >>= 1;
-
-                    ippiCopy_8u_C1R((mfxU8 *)sLockRect.pBits + (sSurfDesc.Height * sLockRect.Pitch * 5) / 4, srcPitch, pDst->Data.V, dstPitch, roi);
-
-                    ippiCopy_8u_C1R((mfxU8 *)sLockRect.pBits + sSurfDesc.Height * sLockRect.Pitch, srcPitch, pDst->Data.U, dstPitch, roi);
-                    
-                    break;
-
-                case MFX_FOURCC_YUY2:
-                    
-                    roi.width *= 2;
-
-                    ippiCopy_8u_C1R((mfxU8 *)sLockRect.pBits, srcPitch, pDst->Data.Y, dstPitch, roi);
-
-                    break;
-
-                case MFX_FOURCC_RGB3:
-
-                    roi.width *= 3;
-
-                    ippiCopy_8u_C1R((mfxU8 *)sLockRect.pBits, srcPitch, pDst->Data.Y, dstPitch, roi);
-
-                    break;
-
-                case MFX_FOURCC_RGB4:
-
-                    roi.width *= 4;
-
-                    ippiCopy_8u_C1R((mfxU8 *)sLockRect.pBits, srcPitch, pDst->Data.Y, dstPitch, roi);
-
-                    break;
-
-                case MFX_FOURCC_P8:
-
-                    ippiCopy_8u_C1R((mfxU8 *)sLockRect.pBits, srcPitch, pDst->Data.Y, dstPitch, roi);
-
-                    break;
-
-                default:
-
-                    return MFX_ERR_UNSUPPORTED;
-            }
-
-            hRes = m_pSystemMemorySurface->UnlockRect();
-            MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
         }
-        else*/
+        else
         {
             ID3D11Texture2D * pSurface = reinterpret_cast<ID3D11Texture2D *>(((mfxHDLPair*)pSrc->Data.MemId)->first);
 
@@ -1045,6 +987,16 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
     {
         // source are placed in system memory, destination is in video memory
         // use common way to copy frames from system to video, most faster
+        mfxI64 verticalPitch = (mfxI64)(pSrc->Data.UV - pSrc->Data.Y);
+        verticalPitch = (verticalPitch % pSrc->Data.Pitch)? 0 : verticalPitch / pSrc->Data.Pitch;
+
+        if (m_bCmCopy == true && pDst->Info.FourCC != MFX_FOURCC_YV12 && CM_ALIGNED(pSrc->Data.Y) && CM_ALIGNED(pSrc->Data.UV) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pSrc->Info.Height && verticalPitch <= 16384)
+        {
+            sts = pCmCopy->CopySystemToVideoMemoryAPI(((mfxHDLPair*)pDst->Data.MemId)->first, 0, pSrc->Data.Y, pSrc->Data.Pitch,(mfxU32)verticalPitch, roi);
+            MFX_CHECK_STS(sts);
+        }
+        else
+        {
         ID3D11Texture2D * pSurface = reinterpret_cast<ID3D11Texture2D *>(((mfxHDLPair*)pDst->Data.MemId)->first);
 
         pSurface->GetDesc(&sSurfDesc);
@@ -1163,13 +1115,14 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
         m_pD11Context->CopySubresourceRegion(pSurface, (mfxU32)index, 0, 0, 0, pStaging, 0, NULL);
 
         SAFE_RELEASE(pStaging);
+        }
     }
     else
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
     
-    return MFX_ERR_NONE;
+    return sts;
 }
 
 mfxStatus D3D11VideoCORE::GetDX11Handle(mfxI32 index, mfxHDLPair* pair)

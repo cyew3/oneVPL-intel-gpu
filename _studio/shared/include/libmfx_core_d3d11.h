@@ -29,6 +29,8 @@ File Name: libmfx_core_d3d11.h
 // disable the "conditional expression is constant" warning
 #pragma warning(disable: 4127)
 
+class CmCopyWrapper;
+
 // DX11 support
 class D3D11VideoCORE : public CommonCORE
 {
@@ -70,9 +72,7 @@ class D3D11VideoCORE : public CommonCORE
     };
 public:
 
-    virtual ~D3D11VideoCORE()
-    {
-    };
+    virtual ~D3D11VideoCORE();
 
 
     virtual mfxStatus  CreateVA(mfxVideoParam * param, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
@@ -156,6 +156,9 @@ private:
     // Ordinal number of adapter to work
     const mfxU32                         m_adapterNum;
     ComPtrCore<ID3D11VideoDecoder>       m_comptr;
+    bool m_bCmCopy;
+    bool m_bCmCopyAllowed;
+    s_ptr<CmCopyWrapper, true> m_pCmCopy;
 };
 
 

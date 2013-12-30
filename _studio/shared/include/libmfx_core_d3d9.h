@@ -25,6 +25,8 @@ File Name: libmfx_core_d3d9.h
 // disable the "conditional expression is constant" warning
 #pragma warning(disable: 4127)
 
+class CmCopyWrapper;
+
 namespace UMC
 {
     class DXVA2Accelerator;
@@ -154,7 +156,10 @@ private:
     IDirect3DSurface9 *m_pSystemMemorySurface;
     AuxiliaryDevice                      *m_pEncodeAuxDevice;
 
+    bool m_bCmCopy;
+    bool m_bCmCopyAllowed;
 
+    s_ptr<CmCopyWrapper, true> m_pCmCopy;
 public: // FIXME
     std::auto_ptr<D3D9Adapter>            m_pAdapter;
 };

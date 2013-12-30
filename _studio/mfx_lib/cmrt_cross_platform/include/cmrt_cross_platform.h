@@ -153,6 +153,9 @@ typedef unsigned int VADisplay;
 #define CM_MAX_THREADSPACE_WIDTH        511
 #define CM_MAX_THREADSPACE_HEIGHT       511
 
+#define CM_DEVICE_CREATE_OPTION_DEFAULT                     0
+#define CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_DISABLE       1
+
 #define IVB_MAX_SLM_SIZE_PER_GROUP   16 // 64KB PER Group on Gen7
 
 #define COMPILER_RESERVED_SURFACE_NUM 5
@@ -1051,6 +1054,8 @@ public:
     CM_RT_API virtual INT EnqueueInitSurface2D( CmSurface2D* pSurface, const DWORD initValue, CmEvent* &pEvent ) = 0;
     CM_RT_API virtual INT EnqueueCopyGPUToGPU( CmSurface2D* pOutputSurface, CmSurface2D* pInputSurface, CmEvent* & pEvent ) = 0;
     CM_RT_API virtual INT EnqueueCopyCPUToCPU( unsigned char* pDstSysMem, unsigned char* pSrcSysMem, UINT size, CmEvent* & pEvent ) = 0;
+    CM_RT_API virtual INT EnqueueCopyCPUToGPUFullStride( CmSurface2D* pSurface, const unsigned char* pSysMem, const UINT stride, const UINT vstride, const UINT option, CmEvent* & pEvent ) = 0; 
+    CM_RT_API virtual INT EnqueueCopyGPUToCPUFullStride( CmSurface2D* pSurface, unsigned char* pSysMem, const UINT stride, const UINT vstride, const UINT option, CmEvent* & pEvent ) = 0;
 };
 
 class CmVmeState
@@ -1323,6 +1328,8 @@ EXTERN_C CM_RT_API INT CMRT_Enqueue(CmQueue* pQueue, CmTask* pTask, CmEvent** pE
 #ifndef __GNUC__
 INT CreateCmDevice(CmDevice* &pD, UINT& version, IDirect3DDeviceManager9 * pD3DDeviceMgr = NULL);
 INT CreateCmDevice(CmDevice* &pD, UINT& version, ID3D11Device * pD3D11Device = NULL);
+INT CreateCmDeviceEx(CmDevice* &pD, UINT& version, IDirect3DDeviceManager9 * pD3DDeviceMgr = NULL, UINT mode = CM_DEVICE_CREATE_OPTION_DEFAULT );
+INT CreateCmDeviceEx(CmDevice* &pD, UINT& version, ID3D11Device * pD3D11Device = NULL, UINT mode = CM_DEVICE_CREATE_OPTION_DEFAULT );
 INT CreateCmDeviceEmu(CmDevice* &pDevice, UINT& version, IDirect3DDeviceManager9 * pD3DDeviceMgr = NULL);
 INT CreateCmDeviceEmu(CmDevice* &pDevice, UINT& version, ID3D11Device * pD3D11Device = NULL);
 INT CreateCmDeviceSim(CmDevice* &pDevice, UINT& version, IDirect3DDeviceManager9 * pD3DDeviceMgr = NULL);
