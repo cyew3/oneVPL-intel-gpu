@@ -278,15 +278,37 @@ struct SAOLCUParam
     Ipp32s m_length;
 };
 
-class H265SampleAdaptiveOffset
+class H265SampleAdaptiveOffsetBase
 {
 public:
-    H265SampleAdaptiveOffset();
+    virtual ~H265SampleAdaptiveOffsetBase()
+    {
+    }
 
-    void init(const H265SeqParamSet* sps);
-    void destroy();
+    virtual bool isNeedReInit(const H265SeqParamSet* sps) = 0;
+    virtual void init(const H265SeqParamSet* sps) = 0;
+    virtual void destroy() = 0;
 
-    void SAOProcess(H265DecoderFrame* pFrame, Ipp32s start, Ipp32s toProcess);
+    virtual void SAOProcess(H265DecoderFrame* pFrame, Ipp32s startCU, Ipp32s toProcessCU) = 0;
+};
+
+template<typename PlaneType>
+class H265SampleAdaptiveOffsetTemplate : public H265SampleAdaptiveOffsetBase
+{
+public:
+    H265SampleAdaptiveOffsetTemplate();
+
+    virtual ~H265SampleAdaptiveOffsetTemplate()
+    {
+        destroy();
+    }
+
+    bool isNeedReInit(const H265SeqParamSet* sps);
+    virtual void init(const H265SeqParamSet* sps);
+    virtual void destroy();
+
+    virtual void SAOProcess(H265DecoderFrame* pFrame, Ipp32s startCU, Ipp32s toProcessCU);
+
 protected:
     H265DecoderFrame*   m_Frame;
     const H265SeqParamSet* m_sps;
@@ -295,16 +317,17 @@ protected:
     Ipp32s              m_OffsetEo2[LUMA_GROUP_NUM];
     Ipp32s              m_OffsetEoChroma[LUMA_GROUP_NUM];
     Ipp32s              m_OffsetEo2Chroma[LUMA_GROUP_NUM];
-    H265PlaneYCommon   *m_OffsetBo;
-    H265PlaneYCommon   *m_OffsetBo2;
-    H265PlaneUVCommon  *m_OffsetBoChroma;
-    H265PlaneUVCommon  *m_OffsetBo2Chroma;
-    H265PlaneYCommon   *m_ClipTable;
-    H265PlaneYCommon   *m_ClipTableBase;
-    H265PlaneYCommon   *m_lumaTableBo;
+    PlaneType       *m_OffsetBo;
+    PlaneType       *m_OffsetBo2;
+    PlaneType       *m_OffsetBoChroma;
+    PlaneType       *m_OffsetBo2Chroma;
+    PlaneType       *m_lumaTableBo;
 
-    H265PlaneYCommon   *m_TmpU[2];
-    H265PlaneYCommon   *m_TmpL[2];
+    PlaneType *m_ClipTable;
+    PlaneType *m_ClipTableBase;
+
+    PlaneType *m_TmpU[2];
+    PlaneType *m_TmpL[2];
 
     Ipp32u              m_PicWidth;
     Ipp32u              m_PicHeight;
@@ -320,15 +343,31 @@ protected:
     void SetOffsetsLuma(SAOLCUParam &saoLCUParam, Ipp32s typeIdx);
     void SetOffsetsChroma(SAOLCUParam &saoLCUParamCb, SAOLCUParam &saoLCUParamCr, Ipp32s typeIdx);
 
-    void processSaoCuOrgChroma(Ipp32s Addr, Ipp32s PartIdx, H265PlaneUVCommon *tmpL);
-    void processSaoCuChroma(Ipp32s addr, Ipp32s saoType, H265PlaneUVCommon *tmpL);
-
     void createNonDBFilterInfo();
     void PCMCURestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth);
     void PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth);
 
+    void processSaoCuOrgChroma(Ipp32s Addr, Ipp32s PartIdx, PlaneType *tmpL);
+    void processSaoCuChroma(Ipp32s addr, Ipp32s saoType, PlaneType *tmpL);
     void processSaoUnits(Ipp32s first, Ipp32s toProcess);
     void processSaoLine(SAOLCUParam* saoLCUParam, SAOLCUParam* saoLCUParamCb, SAOLCUParam* saoLCUParamCr, Ipp32s firstCU, Ipp32s lastCU);
+};
+
+class H265SampleAdaptiveOffset
+{
+public: 
+    H265SampleAdaptiveOffset();
+
+    virtual void init(const H265SeqParamSet* sps);
+    virtual void destroy();
+
+    void SAOProcess(H265DecoderFrame* pFrame, Ipp32s start, Ipp32s toProcess);
+
+protected:
+    H265SampleAdaptiveOffsetBase * m_base;
+
+    bool m_isInitialized;
+    bool m_is10bits;
 };
 
 inline

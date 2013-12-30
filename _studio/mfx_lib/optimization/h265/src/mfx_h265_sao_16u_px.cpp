@@ -39,14 +39,14 @@ namespace MFX_HEVC_PP
 
     typedef Ipp16u PixType;
 
-//#if defined(MFX_TARGET_OPTIMIZATION_AUTO)
-//    #define MAKE_NAME( func ) func ## _px
-//#else
-//    #define MAKE_NAME( func ) func
-//#endif
+#if defined(MFX_TARGET_OPTIMIZATION_AUTO)
+    #define MAKE_NAME( func ) func ## _px
+#else
+    #define MAKE_NAME( func ) func ## _px
+#endif
 
     void MAKE_NAME(h265_ProcessSaoCuOrg_Luma_16u)(PixType* pRec, Ipp32s stride, Ipp32s saoType, PixType* tmpL, PixType* tmpU, Ipp32u maxCUWidth, Ipp32u maxCUHeight, \
-            Ipp32s picWidth, Ipp32s picHeight, Ipp32s* pOffsetEo, Ipp8u* pOffsetBo, Ipp8u* pClipTable, Ipp32u CUPelX, Ipp32u CUPelY)
+            Ipp32s picWidth, Ipp32s picHeight, Ipp32s* pOffsetEo, Ipp16u* pOffsetBo, Ipp16u* pClipTable, Ipp32u CUPelX, Ipp32u CUPelY)
     {
         Ipp32s tmpUpBuff1[65];
         Ipp32s tmpUpBuff2[65];
@@ -235,7 +235,8 @@ namespace MFX_HEVC_PP
     }
 
 
-    void MAKE_NAME(h265_ProcessSaoCu_Luma_16u)(SAOCU_PARAMETERS_LIST)
+    void MAKE_NAME(h265_ProcessSaoCu_Luma_16u) (PixType* pRec, Ipp32s stride, Ipp32s saoType, PixType* tmpL, PixType* tmpU, Ipp32u maxCUWidth, Ipp32u maxCUHeight,
+    Ipp32s picWidth, Ipp32s picHeight, Ipp32s* pOffsetEo, Ipp16u* pOffsetBo, Ipp16u* pClipTable, Ipp32u CUPelX, Ipp32u CUPelY, CTBBorders pbBorderAvail)
     {
         Ipp32s tmpUpBuff1[65];
         Ipp32s tmpUpBuff2[65];
@@ -257,7 +258,7 @@ namespace MFX_HEVC_PP
         Ipp32s endX;
         Ipp32s endY;
         Ipp32s x, y;
-        Ipp8u*  startPtr;
+        PixType*  startPtr;
         Ipp32s startStride;
 
         picWidthTmp  = picWidth;
