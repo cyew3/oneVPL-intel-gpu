@@ -86,6 +86,7 @@ namespace
         {3, 3},  // MFX_IMPL_HARDWARE2    
         {4, 4},  // MFX_IMPL_HARDWARE3    
         {5, 5},  // MFX_IMPL_HARDWARE4
+        {2, 6},  // MFX_IMPL_RT, same as MFX_IMPL_HARDWARE_ANY 
         {7, 7}   // MFX_IMPL_AUDIO
     };
 
@@ -134,7 +135,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
     {
         return MFX_ERR_NULL_PTR;
     }
-    if (((MFX_IMPL_AUTO > implMethod) || (MFX_IMPL_HARDWARE4 < implMethod)) && !(impl & MFX_IMPL_AUDIO))
+    if (((MFX_IMPL_AUTO > implMethod) || (MFX_IMPL_RT < implMethod)) && !(impl & MFX_IMPL_AUDIO))
     {
         return MFX_ERR_UNSUPPORTED;
     }
@@ -243,7 +244,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
         do
         {
             implInterface = implInterfaceOrig;
-            if (impl & MFX_IMPL_RT)
+            if (impl == MFX_IMPL_RT)
             {
                 mfxRes = MFX::mfx_get_rt_dll_name(dllName,
                     sizeof(dllName) / sizeof(dllName[0]));
