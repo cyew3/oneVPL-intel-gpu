@@ -49,7 +49,7 @@ public:
     virtual ~Packer();
 
     virtual Status GetStatusReport(void * pStatusReport, size_t size) = 0;
-    virtual Status QueryTaskStatus(Ipp32s index, void * status) = 0;
+    virtual Status QueryTaskStatus(Ipp32s index, void * status, void * error) = 0;
 
     virtual void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice) = 0;
 
@@ -160,7 +160,7 @@ public:
     PackerVA(VideoAccelerator * va, TaskSupplier * supplier);
 
     virtual Status GetStatusReport(void * pStatusReport, size_t size);
-    virtual Status QueryTaskStatus(Ipp32s index, void * status);
+    virtual Status QueryTaskStatus(Ipp32s index, void * status, void * error);
 
     virtual void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice);
 

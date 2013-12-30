@@ -51,6 +51,8 @@ UMC::Status va_to_umc_res(VAStatus va_res)
         break;
     case VA_STATUS_ERROR_INVALID_PARAMETER:
         umcRes = UMC::UMC_ERR_INVALID_PARAMS;
+    case VA_STATUS_ERROR_DECODING_ERROR:
+        umcRes = UMC::UMC_ERR_INVALID_STREAM;
     default:
         umcRes = UMC::UMC_ERR_FAILED;
         break;
@@ -794,39 +796,71 @@ Ipp32s LinuxVideoAccelerator::GetIndex(void)
     return m_iIndex;
 }
 
-Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * status)
+Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * status, void * error)
 {
-    //TODO: need to add VASurfaceDecodeMBErrors support
+    if ((FrameBufIndex < 0) || (FrameBufIndex >= m_NumOfFrameBuffers))
+        return UMC_ERR_INVALID_PARAMS;
 
-    Status   umcRes = UMC_OK;
-    VAStatus va_res = VA_STATUS_SUCCESS;
+    VASurfaceStatus surface_status;
+    VAStatus va_status = vaQuerySurfaceStatus(m_dpy, m_surfaces[FrameBufIndex], &surface_status);
 
-    if ((UMC_OK == umcRes) && ((FrameBufIndex < 0) || (FrameBufIndex >= m_NumOfFrameBuffers)))
-        umcRes = UMC_ERR_INVALID_PARAMS;
-    if (UMC_OK == umcRes)
+#if defined(MFX_HANDLE_VA_DECODING_ERRORS)
+    if ((VA_STATUS_SUCCESS == va_status) && (VASurfaceReady == surface_status))
     {
-        va_res = vaQuerySurfaceStatus(m_dpy, m_surfaces[FrameBufIndex], (VASurfaceStatus*)status);
-        umcRes = va_to_umc_res(va_res);
         /*
-        STATUS STS = UMC_OK;
-        VASURFACESTATUS SURFSTS = VASURFACESKIPPED;
-        FOR (H264DECODERFRAMEINFO * AU = M_FIRSTAU; AU; AU = AU->GETNEXTAU())
-        {
-            STS = DXVA_SD->GETPACKER()->QUERYTASKSTATUS(AU->M_PFRAME->M_INDEX, &SURFSTS);
-            IF (STS != UMC_OK)
-                THROW H264_EXCEPTION(STS);
+         The code below works only if RC6 is disabled on HSW.
+         The only known way to disable RC6 is to change boot time parameters for i915 module.
 
-            IF (SURFSTS == VASURFACEREADY)
-            {
-                AU->SETSTATUS(H264DECODERFRAMEINFO::STATUS_COMPLETED);
-                COMPLETEFRAME(AU->M_PFRAME);
-                BREAK;
-            }
+         To disable "RC6" on Linux, please follow these steps:
+         Modify:
 
-            BREAK;
-        }
+            sudo gedit /etc/default/grub
+                GRUB_CMDLINE_LINUX_DEFAULT="quiet splash" => GRUB_CMDLINE_LINUX_DEFAULT="quiet splash i915.i915_enable_rc6=0"
+            sudo update-grub
+            sudo reboot
+
+        Check:
+            sudo cat /sys/module/i915/parameters/i915_enable_rc6*
         */
+        // handling decoding errors
+        VAStatus va_sts = vaSyncSurface(m_dpy, m_surfaces[FrameBufIndex]);
+        if (VA_STATUS_ERROR_DECODING_ERROR == va_sts)
+        {
+            // TODO: to reduce number of checks we can cache all used render targets
+            // during vaBeginPicture() call. For now check all render targets binded
+            // to context
+            /*for(int cnt = 0; cnt < m_NumOfFrameBuffers; ++cnt)
+            {
+                VASurfaceDecodeMBErrors* pVaDecErr = NULL;
+                va_sts = vaQuerySurfaceError(m_dpy, m_surfaces[cnt], VA_STATUS_ERROR_DECODING_ERROR, (void**)&pVaDecErr);
+
+                if ((VA_STATUS_SUCCESS == va_sts) && (NULL != pVaDecErr))
+                {
+                    for (int i = 0; pVaDecErr[i].status != -1; ++i)
+                    {
+                        if (VADecodeMBError == pVaDecErr[i].decode_error_type)
+                        {
+                            // TODO: Do we need to check exact error or VA_STATUS_ERROR_DECODING_ERROR
+                            // VA_STATUS_ERROR_DECODING_ERROR is all we need ???
+                        }
+                    }
+                }
+            }*/
+
+            if (NULL != error)
+            {
+                *(VAStatus*)error = VA_STATUS_ERROR_DECODING_ERROR;
+            }
+        }
     }
+#endif
+
+    if (NULL != status)
+    {
+        *(VASurfaceStatus*)status = surface_status; // done or not
+    }
+
+    Status umcRes = va_to_umc_res(va_status); // OK or not
     return umcRes;
 }
 

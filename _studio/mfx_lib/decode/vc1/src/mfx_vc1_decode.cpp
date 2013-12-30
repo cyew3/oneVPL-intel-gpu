@@ -3079,7 +3079,8 @@ mfxStatus MFXVideoDECODEVC1::GetStatusReport(mfxFrameSurface1 *surface_disp)
 
     if (pCurrDescriptor)
     {
-        sts = va->QueryTaskStatus(pCurrDescriptor->m_pContext->m_frmBuff.m_iCurrIndex, &surfSts);
+        VAStatus surfErr = VA_STATUS_SUCCESS;
+        sts = va->QueryTaskStatus(pCurrDescriptor->m_pContext->m_frmBuff.m_iCurrIndex, &surfSts, &surfErr);
         if (sts != UMC_OK)
             return MFX_ERR_DEVICE_FAILED;
 

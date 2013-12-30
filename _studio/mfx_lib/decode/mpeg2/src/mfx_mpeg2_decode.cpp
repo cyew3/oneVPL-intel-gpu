@@ -3656,9 +3656,10 @@ mfxStatus VideoDECODEMPEG2::GetStatusReport(mfxFrameSurface1 *displaySurface)
 
     UMC::Status sts = UMC::UMC_OK;
     VASurfaceStatus surfSts = VASurfaceSkipped;
+    VAStatus        surfErr = VA_STATUS_SUCCESS;
 
     int index = m_implUmc.pack_w.va_index;
-    sts = va->QueryTaskStatus(index, &surfSts);
+    sts = va->QueryTaskStatus(index, &surfSts, &surfErr);
     if (sts != UMC::UMC_OK)
         return MFX_ERR_DEVICE_FAILED;
 /*

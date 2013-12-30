@@ -2487,9 +2487,9 @@ void PackerVA::PackAU(const H264DecoderFrame *pFrame, Ipp32s isTop)
     }
 }
 
-Status PackerVA::QueryTaskStatus(Ipp32s index, void * status)
+Status PackerVA::QueryTaskStatus(Ipp32s index, void * status, void * error)
 {
-    return m_va->QueryTaskStatus(index, status);
+    return m_va->QueryTaskStatus(index, status, error);
 }
 
 #endif // UMC_VA_LINUX
