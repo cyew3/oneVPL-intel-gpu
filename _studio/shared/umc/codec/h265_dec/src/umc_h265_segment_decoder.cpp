@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -1986,7 +1986,8 @@ void H265SegmentDecoder::ParseCoeffNxNCABACOptimized(H265CodingUnit* pCU, H265Co
     Ipp32s QPPer = m_context->m_ScaledQP[idx].m_QPPer;
 
     Ipp32s Shift;
-    Ipp16s Add, Scale, *pDequantCoef;
+    Ipp32s Add, Scale;
+    Ipp16s *pDequantCoef;
     bool shift_right = true;
 
     if (scaling_list_enabled_flag)
@@ -2633,7 +2634,7 @@ void H265SegmentDecoder::UpdateNeighborDecodedQP(H265CodingUnit* pCU, Ipp32u Abs
 
     for (Ipp32s y = YInc; y < YInc + PartSize; y++)
         for (Ipp32s x = XInc; x < XInc + PartSize; x++)
-            m_context->m_CurrCTBFlags[m_context->m_CurrCTBStride * y + x].members.qp = (Ipp8u)qp;
+            m_context->m_CurrCTBFlags[m_context->m_CurrCTBStride * y + x].members.qp = (Ipp8s)qp;
 }
 
 void H265SegmentDecoder::UpdateRecNeighboursBuffersN(Ipp32s PartX, Ipp32s PartY, Ipp32s PartSize, bool IsIntra)
@@ -2814,7 +2815,7 @@ Ipp32s H265SegmentDecoder::getRefQP(H265CodingUnit *pCU, Ipp32s AbsPartIdx)
     Ipp32u AbsQpMinCUIdx = (AbsPartIdx >> shift) << shift;
     Ipp32s QPXInc = pCU->m_rasterToPelX[AbsQpMinCUIdx] >> m_pSeqParamSet->log2_min_transform_block_size;
     Ipp32s QPYInc = pCU->m_rasterToPelY[AbsQpMinCUIdx] >> m_pSeqParamSet->log2_min_transform_block_size;
-    Ipp8u qpL, qpA, lastValidQP = 0;
+    Ipp8s qpL, qpA, lastValidQP = 0;
 
     if (QPXInc == 0 || QPYInc == 0)
     {
