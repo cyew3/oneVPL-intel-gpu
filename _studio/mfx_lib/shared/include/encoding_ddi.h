@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008-2014 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __ENCODING_DDI_H__
@@ -140,7 +140,7 @@ typedef struct tagENCODE_QUERY_STATUS_PARAMS
     CHAR    QpY;
     CHAR    SuggestedQpYDelta;
     UCHAR   NumberPasses;
-    CHAR    reserved1;
+    UCHAR   AverageQP;
 #ifdef NEW_STATUS_REPORTING_DDI_0915
     union
     {

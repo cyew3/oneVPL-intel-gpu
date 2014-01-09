@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
 //
 //
 //          H264 encoder: support of DXVA D3D11 driver
@@ -670,7 +670,7 @@ mfxStatus D3D11Encoder::QueryStatus(
     {
     case ENCODE_OK:
         task.m_bsDataLength[fieldId] = feedback->bitstreamSize;
-        task.m_qpY[fieldId] = feedback->QpY;
+        task.m_qpY[fieldId] = feedback->AverageQP;
         m_feedbackCached.Remove(task.m_statusReportNumber[fieldId]);
         return MFX_ERR_NONE;
 
