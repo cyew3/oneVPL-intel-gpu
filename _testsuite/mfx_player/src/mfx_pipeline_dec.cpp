@@ -1280,9 +1280,10 @@ mfxStatus MFXDecPipeline::DecodeHeader()
     }
 
     ////special case when decoder initialized with rgb24/rgb32 fourcc
-    m_components[eDEC].m_params.mfx.FrameInfo.FourCC = dec_info.FourCC;
-    m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat = dec_info.ChromaFormat;
-
+    if ( m_components[eDEC].m_params.mfx.FrameInfo.FourCC != MFX_FOURCC_P010 ) {
+        m_components[eDEC].m_params.mfx.FrameInfo.FourCC = dec_info.FourCC;
+        m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat = dec_info.ChromaFormat;
+    }
     return MFX_ERR_NONE;
 }
 
