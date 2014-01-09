@@ -32,17 +32,18 @@ typedef struct {
 
 static CodeStringTable StringsOfFourcc[] =
 {
-    { MFX_CODEC_AVC,                 VM_STRING("AVC") },
-    { MFX_CODEC_MPEG2,               VM_STRING("MPEG2") },
-    { MFX_CODEC_VC1,                 VM_STRING("VC1") },
+    { MFX_CODEC_AVC,                 VM_STRING("AVC")  },
+    { MFX_CODEC_MPEG2,               VM_STRING("MPEG2")},
+    { MFX_CODEC_VC1,                 VM_STRING("VC1")  },
     { MFX_CODEC_JPEG,                VM_STRING("JPEG") },
     { MFX_FOURCC_NV12,               VM_STRING("NV12") },
     { MFX_FOURCC_YUY2,               VM_STRING("YUY2") },
     { MFX_FOURCC_YV12,               VM_STRING("YV12") },
     { MFX_FOURCC_RGB3,               VM_STRING("RGB3") },
     { MFX_FOURCC_RGB4,               VM_STRING("RGB4") },
-    { MFX_FOURCC_P8,                 VM_STRING("P8") },
+    { MFX_FOURCC_P8,                 VM_STRING("P8")   },
     { MFX_CODEC_HEVC,                VM_STRING("HEVC") },
+    { MFX_FOURCC_P010,               VM_STRING("P010") },
 };
 
 #define DEFINE_ERR_CODE(code)\
@@ -725,7 +726,7 @@ mfxF64 ConvertMFXTime2mfxF64(mfxU64 nTime)
 
 mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &info)
 {
-    static const char valid_pattern [] = "nv12( |:mono)|yv12( |:mono)|rgb24|rgb32|yuy2(:h|:v|:mono)|ayuv";
+    static const char valid_pattern [] = "nv12( |:mono)|yv12( |:mono)|rgb24|rgb32|yuy2(:h|:v|:mono)|ayuv|p010";
 
     //if external pattern changed parsing need to be updated
     MFX_CHECK(!std::string(MFX_FOURCC_PATTERN()).compare(valid_pattern));
@@ -793,6 +794,12 @@ mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &
             break;
         }
 #endif
+        case 11:
+        {
+            info.FourCC = MFX_FOURCC_P010;
+            info.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            break;
+        }
         default:
             return MFX_ERR_UNSUPPORTED;
     }

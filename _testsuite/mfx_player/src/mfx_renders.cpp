@@ -440,6 +440,23 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             }
             break;
         }
+        case MFX_FOURCC_P010:
+        {
+            m_Current.m_comp = VM_STRING('Y');
+            m_Current.m_pixX = 0;
+            for (i = 0; i < pInfo->CropH; i++)
+            {
+                m_Current.m_pixY = i;
+                WRITE(pData->Y + (pInfo->CropY * pitch + pInfo->CropX)+ i * pitch * 2, pInfo->CropW * 2);
+            }
+            m_Current.m_comp = VM_STRING('UV');
+            for (i = 0; i < pInfo->CropH / 2; i++)
+            {
+                m_Current.m_pixY = i;
+                WRITE(pData->UV + (pInfo->CropY * pitch / 2 + pInfo->CropX) + i * pitch * 2 , pInfo->CropW * 2);
+            }
+            break;
+        }
         case MFX_FOURCC_RGB4 :
         {
             m_Current.m_comp = VM_STRING('R');
