@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -321,7 +321,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     {
         if (m_platform != MFX_PLATFORM_SOFTWARE && !useInternal)
         {
-            mfxSts = m_core->AllocFrames(&request, &m_response);
+            mfxSts = m_core->AllocFrames(&request, &m_response, false);
         }
     }
 #endif
@@ -335,7 +335,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
         m_response_alien = m_response;
         m_FrameAllocator->SetExternalFramesResponse(&m_response_alien);
         request = request_internal;
-        mfxSts = m_core->AllocFrames(&request_internal, &m_response);
+        mfxSts = m_core->AllocFrames(&request_internal, &m_response, true);
         if (mfxSts < MFX_ERR_NONE)
             return mfxSts;
     }

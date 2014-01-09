@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2014 Intel Corporation. All Rights Reserved.
 
 File Name: libmf_core_d3d.cpp
 
@@ -264,7 +264,7 @@ mfxStatus D3D11VideoCORE::InternalCreateDevice()
 } // mfxStatus D3D11VideoCORE::CreateDevice()
 
 mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request, 
-                                      mfxFrameAllocResponse *response)
+                                      mfxFrameAllocResponse *response, bool isNeedCopy)
 {
     UMC::AutomaticUMCMutex guard(m_guard);
     try
@@ -294,7 +294,7 @@ mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
         sts = InitializeDevice();
         MFX_CHECK_STS(sts);
 
-        if (!m_bCmCopy && m_bCmCopyAllowed)
+        if (!m_bCmCopy && m_bCmCopyAllowed && isNeedCopy)
         {
             m_pCmCopy.reset(new CmCopyWrapper);
             if (!m_pCmCopy.get()->GetCmDevice<ID3D11Device>(m_pD11Device)){

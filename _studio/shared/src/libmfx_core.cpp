@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2014 Intel Corporation. All Rights Reserved.
 
 File Name: libmf_core.cpp
 
@@ -150,7 +150,7 @@ mfxStatus CommonCORE::AllocFrames(mfxFrameAllocRequest *request,
 }
 
 mfxStatus CommonCORE::AllocFrames(mfxFrameAllocRequest *request,
-                                  mfxFrameAllocResponse *response)
+                                  mfxFrameAllocResponse *response, bool isNeedCopy)
 {
     MFX::AutoTimer timer("CommonCORE::AllocFrames");
     UMC::AutomaticUMCMutex guard(m_guard);
@@ -167,9 +167,9 @@ mfxStatus CommonCORE::AllocFrames(mfxFrameAllocRequest *request,
             temp_request.Type -= MFX_MEMTYPE_OPAQUE_FRAME;
             temp_request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
         }
+        
 
-
-        if (!m_bFastCopy)
+        if (!m_bFastCopy && isNeedCopy)
         {
             // initialize sse41 fast copy
             m_pFastCopy.reset(new FastCopy());

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2014 Intel Corporation. All Rights Reserved.
 
 File Name: libmfx_core_d3d9.h
 
@@ -76,7 +76,7 @@ public:
 
     virtual mfxStatus     SetHandle(mfxHandleType type, mfxHDL handle);
     virtual mfxStatus     AllocFrames(mfxFrameAllocRequest *request, 
-                                      mfxFrameAllocResponse *response);
+                                      mfxFrameAllocResponse *response, bool isNeedCopy = true);
     virtual void          GetVA(mfxHDL* phdl, mfxU16 type) 
     {
         (type & MFX_MEMTYPE_FROM_DECODE)?(*phdl = m_pVA.get()):(*phdl = 0);
