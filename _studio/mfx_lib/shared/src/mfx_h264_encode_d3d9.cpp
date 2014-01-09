@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
 //
 //
 //          H264 encoder DXVA2
@@ -52,10 +52,7 @@ void MfxHwH264Encode::FillSpsBuffer(
     sps.GopRefDist                              = mfxU8(par.mfx.GopRefDist);
     sps.GopOptFlag                              = mfxU8(par.mfx.GopOptFlag);
     sps.TargetUsage                             = mfxU8(par.mfx.TargetUsage);
-    if (par.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
-        sps.RateControlMethod                       = 8; // VCM is different in MSDK (=10) API and DDI (=8) 
-    else
-        sps.RateControlMethod                       = mfxU8(par.mfx.RateControlMethod);
+    sps.RateControlMethod                       = mfxU8(par.mfx.RateControlMethod);
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
         sps.ICQQualityFactor = par.mfx.ICQQuality;
     sps.TargetBitRate                           = mfxU32(par.calcParam.targetKbps);
