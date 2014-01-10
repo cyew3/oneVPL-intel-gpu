@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -222,7 +222,7 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curP
 
         if (edge->strength > 0)
         {
-            m_reconstructor->FilterEdgeLuma(edge, baseSrcDst, srcDstStride, curPixelColumn, curPixelRow + 4 * i, VERT_FILT);
+            m_reconstructor->FilterEdgeLuma(edge, baseSrcDst, srcDstStride, curPixelColumn, curPixelRow + 4 * i, VERT_FILT, m_pSeqParamSet->bit_depth_luma);
         }
 
         if (m_pSeqParamSet->log2_min_transform_block_size < 3)
@@ -282,7 +282,7 @@ void H265SegmentDecoder::DeblockOneCrossLuma(H265CodingUnit* curLCU, Ipp32s curP
 
         if (edge->strength > 0)
         {
-            m_reconstructor->FilterEdgeLuma(edge, baseSrcDst, srcDstStride, curPixelColumn + 4 * (i - 1), curPixelRow, HOR_FILT);
+            m_reconstructor->FilterEdgeLuma(edge, baseSrcDst, srcDstStride, curPixelColumn + 4 * (i - 1), curPixelRow, HOR_FILT, m_pSeqParamSet->bit_depth_luma);
         }
 
         if (m_pSeqParamSet->log2_min_transform_block_size >= 3 && i == 1)
@@ -319,7 +319,7 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU, Ipp32s cu
 
         if (edge->strength > 1)
         {
-            m_reconstructor->FilterEdgeChroma(edge, baseSrcDst, srcDstStride, (curPixelColumn >> 1), (curPixelRow>>1) + 4 * i, VERT_FILT, chromaCbQpOffset, chromaCrQpOffset);
+            m_reconstructor->FilterEdgeChroma(edge, baseSrcDst, srcDstStride, (curPixelColumn >> 1), (curPixelRow>>1) + 4 * i, VERT_FILT, chromaCbQpOffset, chromaCrQpOffset, m_pSeqParamSet->bit_depth_chroma);
         }
     }
 
@@ -375,7 +375,7 @@ void H265SegmentDecoder::DeblockOneCrossChroma(H265CodingUnit* curLCU, Ipp32s cu
 
         if (edge->strength > 1)
         {
-            m_reconstructor->FilterEdgeChroma(edge, baseSrcDst, srcDstStride, (curPixelColumn>>1) + 4 * (i - 1), (curPixelRow >> 1), HOR_FILT, chromaCbQpOffset, chromaCrQpOffset);
+            m_reconstructor->FilterEdgeChroma(edge, baseSrcDst, srcDstStride, (curPixelColumn>>1) + 4 * (i - 1), (curPixelRow >> 1), HOR_FILT, chromaCbQpOffset, chromaCrQpOffset, m_pSeqParamSet->bit_depth_chroma);
         }
     }
 }

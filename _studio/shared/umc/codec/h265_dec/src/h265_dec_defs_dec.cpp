@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -139,6 +139,7 @@ H265SampleAdaptiveOffsetTemplate<PlaneType>::H265SampleAdaptiveOffsetTemplate()
     m_OffsetBoChroma = 0;
     m_OffsetBo2Chroma = 0;
     m_lumaTableBo = 0;
+    m_chromaTableBo = 0;
 
     m_TmpU[0] = 0;
     m_TmpU[1] = 0;
@@ -158,6 +159,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::destroy()
     delete [] m_OffsetBoChroma; m_OffsetBoChroma = 0;
     delete [] m_OffsetBo2Chroma; m_OffsetBo2Chroma = 0;
     delete[] m_lumaTableBo; m_lumaTableBo = 0;
+    delete[] m_chromaTableBo; m_chromaTableBo = 0;
     delete [] m_TmpU[0]; m_TmpU[0] = 0;
     delete [] m_TmpU[1]; m_TmpU[1] = 0;
     delete [] m_TmpL[0]; m_TmpL[0] = 0;
@@ -198,6 +200,15 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::init(const H265SeqParamSet* sp
     for (Ipp32u k2 = 0; k2 < uiPixelRangeY; k2++)
     {
         m_lumaTableBo[k2] = (PlaneType)(1 + (k2>>uiBoRangeShiftY));
+    }
+
+    uiPixelRangeY = 1 << sps->bit_depth_chroma;
+    uiBoRangeShiftY = sps->bit_depth_chroma - SAO_BO_BITS;
+
+    m_chromaTableBo = new PlaneType[uiPixelRangeY];
+    for (Ipp32u k2 = 0; k2 < uiPixelRangeY; k2++)
+    {
+        m_chromaTableBo[k2] = (PlaneType)(1 + (k2>>uiBoRangeShiftY));
     }
 
     Ipp32u uiMaxY  = (1 << sps->bit_depth_luma) - 1;
@@ -1087,7 +1098,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::SetOffsetsChroma(SAOLCUParam &
             offsetCr[(saoLCUParamCr.m_subTypeIdx + i) % SAO_MAX_BO_CLASSES + 1] = saoLCUParamCr.m_offset[i] << saoBitIncrease;
         }
 
-        PlaneType*ppLumaTable = m_lumaTableBo;
+        PlaneType*ppLumaTable = m_chromaTableBo;
         for (Ipp32s i = 0; i < (1 << m_sps->bit_depth_chroma); i++)
         {
             m_OffsetBoChroma[i] = (PlaneType)m_ClipTable[i + offsetCb[ppLumaTable[i]]];

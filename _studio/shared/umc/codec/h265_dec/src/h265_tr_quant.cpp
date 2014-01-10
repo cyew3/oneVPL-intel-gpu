@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -46,7 +46,7 @@ H265TrQuant::~H265TrQuant()
 */
 // ML: OPT: Parameterized to allow const 'shift' propogation
 template <Ipp32s bitDepth, typename DstCoeffsType>
-void InverseTransform(H265CoeffsPtrCommon coeff, DstCoeffsType* dst, Ipp32s dstPitch, Ipp32s Size, Ipp32u Mode)
+void InverseTransform(H265CoeffsPtrCommon coeff, DstCoeffsType* dst, Ipp32s dstPitch, Ipp32s Size, Ipp32u Mode, Ipp32u bit_depth)
 {
     if (bitDepth == 8)
     {
@@ -81,24 +81,24 @@ void InverseTransform(H265CoeffsPtrCommon coeff, DstCoeffsType* dst, Ipp32s dstP
         {
             if (Mode != REG_DCT)
             {
-                MFX_HEVC_PP::h265_DST4x4Inv_16sT_16u_px(dst, coeff, dstPitch, inplace, bitDepth);
+                MFX_HEVC_PP::h265_DST4x4Inv_16sT_16u_px(dst, coeff, dstPitch, inplace, bit_depth);
             }
             else
             {
-                MFX_HEVC_PP::h265_DCT4x4Inv_16sT_16u_px(dst, coeff, dstPitch, inplace, bitDepth);
+                MFX_HEVC_PP::h265_DCT4x4Inv_16sT_16u_px(dst, coeff, dstPitch, inplace, bit_depth);
             }
         }
         else if (Size == 8)
         {
-            MFX_HEVC_PP::h265_DCT8x8Inv_16sT_16u_px(dst, coeff, dstPitch, inplace, bitDepth);
+            MFX_HEVC_PP::h265_DCT8x8Inv_16sT_16u_px(dst, coeff, dstPitch, inplace, bit_depth);
         }
         else if (Size == 16)
         {
-            MFX_HEVC_PP::h265_DCT16x16Inv_16sT_16u_px(dst, coeff, dstPitch, inplace, bitDepth);
+            MFX_HEVC_PP::h265_DCT16x16Inv_16sT_16u_px(dst, coeff, dstPitch, inplace, bit_depth);
         }
         else if (Size == 32)
         {
-            MFX_HEVC_PP::h265_DCT32x32Inv_16sT_16u_px(dst, coeff, dstPitch, inplace, bitDepth);
+            MFX_HEVC_PP::h265_DCT32x32Inv_16sT_16u_px(dst, coeff, dstPitch, inplace, bit_depth);
         }
     }
 }
@@ -151,10 +151,10 @@ void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, I
     if (bitDepth == 8)
     {
         if (transformSkip)
-            InvTransformSkip< 8 >(pCoeff, pResidual, Stride, Size, inplace);
+            InvTransformSkip< 8 >(pCoeff, pResidual, Stride, Size, inplace, 8);
         else
         {
-            InverseTransform< 8 >(pCoeff, pResidual, Stride, Size, Mode);
+            InverseTransform< 8 >(pCoeff, pResidual, Stride, Size, Mode, 8);
         }
     }
     else
@@ -162,12 +162,12 @@ void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, I
         if (transformSkip)
         {
             if (inplace)
-                InvTransformSkip<10, Ipp16u>(pCoeff, (Ipp16u*)pResidual, Stride, Size, inplace);
+                InvTransformSkip<10, Ipp16u>(pCoeff, (Ipp16u*)pResidual, Stride, Size, inplace, bitDepth);
             else
-                InvTransformSkip<10>(pCoeff, pResidual, Stride, Size, inplace);
+                InvTransformSkip<10>(pCoeff, pResidual, Stride, Size, inplace, bitDepth);
         }
         else
-            InverseTransform<10>(pCoeff, pResidual, Stride, Size, Mode);
+            InverseTransform<10>(pCoeff, pResidual, Stride, Size, Mode, bitDepth);
     }
 }
 
@@ -317,10 +317,13 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
 
 // ML: OPT: Parameterized to allow const 'bitDepth' propogation
 template <int bitDepth, typename DstCoeffsType>
-void H265TrQuant::InvTransformSkip(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, Ipp32u Stride, Ipp32u Size, bool inplace)
+void H265TrQuant::InvTransformSkip(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pResidual, Ipp32u Stride, Ipp32u Size, bool inplace, Ipp32u bit_depth)
 {
+    if (bitDepth == 8)
+        bit_depth = 8;
+
     Ipp32u Log2TrSize = g_ConvertToBit[Size] + 2;
-    Ipp32s shift = MAX_TR_DYNAMIC_RANGE - bitDepth - Log2TrSize;
+    Ipp32s shift = MAX_TR_DYNAMIC_RANGE - bit_depth - Log2TrSize;
     Ipp32u transformSkipShift;
     Ipp32u j, k;
 
@@ -336,7 +339,7 @@ void H265TrQuant::InvTransformSkip(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pR
             {
                 if (inplace)
                 {
-                    pResidual[j * Stride + k] =  (DstCoeffsType) ClipY(((pCoeff[j * Size + k] + offset) >> transformSkipShift) + pResidual[j * Stride + k], bitDepth);
+                    pResidual[j * Stride + k] =  (DstCoeffsType) ClipY(((pCoeff[j * Size + k] + offset) >> transformSkipShift) + pResidual[j * Stride + k], bit_depth);
                 }
                 else
                 {
@@ -355,7 +358,7 @@ void H265TrQuant::InvTransformSkip(H265CoeffsPtrCommon pCoeff, DstCoeffsType* pR
             {
                 if (inplace)
                 {
-                    pResidual[j * Stride + k] =  (DstCoeffsType)ClipY((pCoeff[j * Size + k] << transformSkipShift) + pResidual[j * Stride + k], bitDepth);
+                    pResidual[j * Stride + k] =  (DstCoeffsType)ClipY((pCoeff[j * Size + k] << transformSkipShift) + pResidual[j * Stride + k], bit_depth);
                 }
                 else
                 {

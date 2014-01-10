@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -102,7 +102,7 @@ namespace UMC_HEVC_DECODER
         };
 
         m_reconstructor->GetPredPelsLuma(pCU->m_Frame->GetLumaAddr(pCU->CUAddr, AbsPartIdx),
-            PredPel, width, pCU->m_Frame->pitch_luma(), tpIf, lfIf, tlIf);
+            PredPel, width, pCU->m_Frame->pitch_luma(), tpIf, lfIf, tlIf, m_pSeqParamSet->bit_depth_luma);
 
         bool isFilterNeeded = true;
         Ipp32u LumaPredMode = pCU->GetLumaIntra(AbsPartIdx);
@@ -130,7 +130,7 @@ namespace UMC_HEVC_DECODER
         H265PlanePtrYCommon pRec = m_context->m_frame->GetLumaAddr(pCU->CUAddr, AbsPartIdx);
         Ipp32u pitch = m_context->m_frame->pitch_luma();
 
-        m_reconstructor->PredictIntra(LumaPredMode, PredPel, pRec, pitch, width);
+        m_reconstructor->PredictIntra(LumaPredMode, PredPel, pRec, pitch, width, m_pSeqParamSet->bit_depth_luma);
 
         //===== inverse transform =====
         if (!pCU->GetCbf(COMPONENT_LUMA, AbsPartIdx, TrDepth))
@@ -177,7 +177,7 @@ namespace UMC_HEVC_DECODER
         Ipp8u PredPel[(4*64+2)*2];
 
         m_reconstructor->GetPredPelsChromaNV12(pCU->m_Frame->GetCbCrAddr(pCU->CUAddr, AbsPartIdx),
-            PredPel, pCU->GetWidth(AbsPartIdx) >> TrDepth, pCU->m_Frame->pitch_chroma(), tpIf, lfIf, tlIf);
+            PredPel, pCU->GetWidth(AbsPartIdx) >> TrDepth, pCU->m_Frame->pitch_chroma(), tpIf, lfIf, tlIf, m_pSeqParamSet->bit_depth_chroma);
 
         //===== get prediction signal =====
         Ipp32u Size = pCU->GetWidth(AbsPartIdx) >> (TrDepth + 1);
