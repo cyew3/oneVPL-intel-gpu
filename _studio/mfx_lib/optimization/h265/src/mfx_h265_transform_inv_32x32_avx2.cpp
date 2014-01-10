@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -58,13 +58,32 @@ namespace MFX_HEVC_PP
     _mm_storeu_si128((__m128i *)&addr, _mm256_castsi256_si128(yy));
 
 
-#define M128I_4xDWORD(x, w0,w1,w2,w3) static const  __m128i x = {\
+#if defined(_WIN32) || defined(_WIN64)
+#define M128I_VAR(x, v) \
+    static const __m128i x = v
+#define M256I_VAR(x, v) \
+    static const __m256i x = v
+#else
+#define M128I_VAR(x, v) \
+    static ALIGN_DECL(16) const char array_##x[16] = v; \
+    static const __m128i* p_##x = (const __m128i*) array_##x; \
+    static const __m128i x = * p_##x
+
+#define M256I_VAR(x, v) \
+    static ALIGN_DECL(32) const char array_##x[32] = v; \
+    static const __m256i* p_##x = (const __m256i*) array_##x; \
+    static const __m256i x = * p_##x
+
+#endif
+
+
+#define M128I_4xDWORD_INIT(w0,w1,w2,w3) {\
     (char)((w0)&0xFF), (char)(((w0)>>8)&0xFF), (char)(((w0)>>16)&0xFF), (char)(((w0)>>24)&0xFF), \
     (char)((w1)&0xFF), (char)(((w1)>>8)&0xFF), (char)(((w1)>>16)&0xFF), (char)(((w1)>>24)&0xFF), \
     (char)((w2)&0xFF), (char)(((w2)>>8)&0xFF), (char)(((w2)>>16)&0xFF), (char)(((w2)>>24)&0xFF), \
     (char)((w3)&0xFF), (char)(((w3)>>8)&0xFF), (char)(((w3)>>16)&0xFF), (char)(((w3)>>24)&0xFF)}
 
-#define M256I_8xDWORD(x, w0,w1,w2,w3,w4,w5,w6,w7) static const  __m256i x = {\
+#define M256I_8xDWORD_INIT(w0,w1,w2,w3,w4,w5,w6,w7) {\
     (char)((w0)&0xFF), (char)(((w0)>>8)&0xFF), (char)(((w0)>>16)&0xFF), (char)(((w0)>>24)&0xFF), \
     (char)((w1)&0xFF), (char)(((w1)>>8)&0xFF), (char)(((w1)>>16)&0xFF), (char)(((w1)>>24)&0xFF), \
     (char)((w2)&0xFF), (char)(((w2)>>8)&0xFF), (char)(((w2)>>16)&0xFF), (char)(((w2)>>24)&0xFF), \
@@ -74,7 +93,7 @@ namespace MFX_HEVC_PP
     (char)((w6)&0xFF), (char)(((w6)>>8)&0xFF), (char)(((w6)>>16)&0xFF), (char)(((w6)>>24)&0xFF), \
     (char)((w7)&0xFF), (char)(((w7)>>8)&0xFF), (char)(((w7)>>16)&0xFF), (char)(((w7)>>24)&0xFF)}
 
-#define M256I_2x8W(x, w0,w1,w2,w3,w4,w5,w6,w7) static const __m256i x = {\
+#define M256I_2x8W_INIT(w0,w1,w2,w3,w4,w5,w6,w7) {\
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF), \
     (char)((w2)&0xFF),(char)(((w2)>>8)&0xFF), (char)((w3)&0xFF),(char)(((w3)>>8)&0xFF), \
     (char)((w4)&0xFF),(char)(((w4)>>8)&0xFF), (char)((w5)&0xFF),(char)(((w5)>>8)&0xFF), \
@@ -83,6 +102,13 @@ namespace MFX_HEVC_PP
     (char)((w2)&0xFF),(char)(((w2)>>8)&0xFF), (char)((w3)&0xFF),(char)(((w3)>>8)&0xFF), \
     (char)((w4)&0xFF),(char)(((w4)>>8)&0xFF), (char)((w5)&0xFF),(char)(((w5)>>8)&0xFF), \
     (char)((w6)&0xFF),(char)(((w6)>>8)&0xFF), (char)((w7)&0xFF),(char)(((w7)>>8)&0xFF)}
+
+#define M128I_4xDWORD(x, w0,w1,w2,w3) M128I_VAR(x, M128I_4xDWORD_INIT(w0,w1,w2,w3))
+
+#define M256I_8xDWORD(x, w0,w1,w2,w3,w4,w5,w6,w7) M256I_VAR(x, M256I_8xDWORD_INIT(w0,w1,w2,w3,w4,w5,w6,w7))
+
+#define M256I_2x8W(x, w0,w1,w2,w3,w4,w5,w6,w7) M256I_VAR(x, M256I_2x8W_INIT(w0,w1,w2,w3,w4,w5,w6,w7))
+
 
     M256I_8xDWORD(rounder_2048, 2048, 2048, 0, 0, 2048, 2048, 0, 0);
     M128I_4xDWORD(index0,  0,     8*32, 16*32, 24*32);
@@ -93,11 +119,33 @@ namespace MFX_HEVC_PP
     M128I_4xDWORD(index5,  9*32, 11*32, 13*32, 15*32);
     M128I_4xDWORD(index6, 17*32, 19*32, 21*32, 23*32);
     M128I_4xDWORD(index7, 25*32, 27*32, 29*32, 31*32);
+#if defined(_WIN32) || defined(_WIN64)
     static const  __m128i reord0 = {0,1,8,9,4,5,12,13,2,3,10,11,6,7,14,15};
     static const  __m256i reorder0 = {0,1,8,9,0,1,8,9, 4,5,12,13,4,5,12,13, 2,3,10,11,2,3,10,11, 6,7,14,15,6,7,14,15};
     static const  __m128i reord1 = {0,1,4,5,8,9,12,13,2,3,6,7,10,11,14,15};
     static const  __m128i reord2 = {0,1,4,5, 0,1,4,5, 2,3,6,7, 2,3,6,7};
     static const  __m128i reord3 = {8,9,12,13, 8,9,12,13, 10,11,14,15, 10,11,14,15};
+#else
+    static ALIGN_DECL(16) const char array_reord0[16] = {0,1,8,9,4,5,12,13,2,3,10,11,6,7,14,15};
+    static const __m128i* p_reord0 = (const __m128i*) array_reord0;
+    static const __m128i reord0 = * p_reord0;
+
+    static ALIGN_DECL(32) const char array_reorder0[32] = {0,1,8,9,0,1,8,9, 4,5,12,13,4,5,12,13, 2,3,10,11,2,3,10,11, 6,7,14,15,6,7,14,15};
+    static const __m256i* p_reorder0 = (const __m256i*) array_reorder0;
+    static const __m256i reorder0 = * p_reorder0;
+
+    static ALIGN_DECL(16) const char array_reord1[16] = {0,1,4,5,8,9,12,13,2,3,6,7,10,11,14,15};
+    static const __m128i* p_reord1 = (const __m128i*) array_reord1;
+    static const __m128i reord1 = * p_reord1;
+
+    static ALIGN_DECL(16) const char array_reord2[16] = {0,1,4,5, 0,1,4,5, 2,3,6,7, 2,3,6,7};
+    static const __m128i* p_reord2 = (const __m128i*) array_reord2;
+    static const __m128i reord2 = * p_reord2;
+
+    static ALIGN_DECL(16) const char array_reord3[16] = {8,9,12,13, 8,9,12,13, 10,11,14,15, 10,11,14,15};
+    static const __m128i* p_reord3 = (const __m128i*) array_reord3;
+    static const __m128i reord3 = * p_reord3;
+#endif
     M256I_8xDWORD(perm0, 0, 0, 1, 1, 2, 2, 3, 3);
     M256I_8xDWORD(perm1, 0, 0, 0, 0, 1, 1, 1, 1);
     M256I_8xDWORD(perm2, 2, 2, 2, 2, 3, 3, 3, 3);
@@ -164,8 +212,8 @@ namespace MFX_HEVC_PP
 
 void MAKE_NAME(h265_DCT32x32Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
 {
-        __m128i __declspec(align(32)) buffr[32*32];
-        signed short __declspec(align(32)) temp[32*32];
+        ALIGN_DECL(32) __m128i buffr[32*32];
+        ALIGN_DECL(32) signed short temp[32*32];
         __m128i sdata, sdata2, s7;
         //s0, s1, s2, s3, s4, s5, s6, s7, s8;
         __m256i ydata1, ydata2, ydata3, ydata4, ydata5, ydata6, ydata7, ydata8, y0, y1, y2, y3, y4, y5, y6, y7, y8, y9, ya;
@@ -225,7 +273,13 @@ void MAKE_NAME(h265_DCT32x32Inv_16sT)(void *destPtr, const short *H265_RESTRICT 
 #else
                 sdata  = _mm_lddqu_si128((const __m128i *)coeff); coeff += 8;
 #endif
+
+// GCC 4.7 bug workaround
+#if __GNUC__
+                ydata1 = _mm_broadcastsi128_si256(sdata);
+#else
                 ydata1 = _mm256_broadcastsi128_si256(sdata);
+#endif
                 ydata1 = _mm256_shuffle_epi8(ydata1, reorder0);
 
                 y1 = _mm256_madd_epi16(ydata1, koeff0000);

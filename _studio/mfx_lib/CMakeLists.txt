@@ -52,7 +52,7 @@ foreach( enc ${vencs} )
     )
 endforeach( )
 
-list( APPEND vdirs_optimization optimization/h265 )
+list( APPEND vdir_optimization optimization/h265 )
 
 list( APPEND vdirs scheduler )
 list( APPEND vdirs_impl vpp genx/h264_encode cmrt_cross_platform )
@@ -76,7 +76,7 @@ foreach( dir ${umc_dirs} )
   include_directories( ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/codec/${dir}/include )
 endforeach( )
 
-foreach( dir ${adirs} ${vdirs} ${vdirs_impl} ${vdirs_hw} ${vdirs_optimization} )
+foreach( dir ${adirs} ${vdirs} ${vdirs_impl} ${vdirs_hw} ${vdir_optimization} )
   include_directories( ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/${dir}/include )
 endforeach( )
 
@@ -85,18 +85,127 @@ endforeach( )
 set( sources "" )
 set( sources.plus "" )
 
-foreach( dir ${vdirs_optimization} )
-file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
-
-add_definitions(-DMFX_MAKENAME_ATOM)
-
-add_definitions(
- -DAS_HEVCD_PLUGIN
+list( APPEND sources 
+  ${vdir_optimization}/src/mfx_h265_deblocking_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_interpolation_atom.cpp
+  ${vdir_optimization}/src/mfx_h265_interp_tmpl_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_intrapred_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_quantization_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_sad_general_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_sad_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_sao_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_transform_fwd_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_transform_inv_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_weighted_pred_sse.cpp
 )
 
-make_library( mfx_optimization none static )
+make_library( hevc_pp_atom none static )
+append_property( hevc_pp_atom COMPILE_FLAGS "-DMFX_MAKENAME_ATOM -DAS_HEVCD_PLUGIN" )
+
+# =============================================================================
+
+set( sources "" )
+set( sources.plus "" )
+
+list( APPEND sources 
+  ${vdir_optimization}/src/mfx_h265_interpolation_avx2.cpp
+  ${vdir_optimization}/src/mfx_h265_interp_tmpl_avx2.cpp
+  ${vdir_optimization}/src/mfx_h265_quantization_avx2.cpp
+  ${vdir_optimization}/src/mfx_h265_reordering_avx2.cpp
+  ${vdir_optimization}/src/mfx_h265_sad_avx2.cpp
+  ${vdir_optimization}/src/mfx_h265_sad_general_avx2.cpp
+  ${vdir_optimization}/src/mfx_h265_transform_fwd_32x32_avx2_nablet.cpp
+  ${vdir_optimization}/src/mfx_h265_transform_fwd_avx2.cpp
+  ${vdir_optimization}/src/mfx_h265_transform_inv_32x32_avx2.cpp
+  ${vdir_optimization}/src/mfx_h265_transform_inv_avx2.cpp
+  ${vdir_optimization}/src/mfx_h265_weighted_pred_avx2.cpp
+)
+
+make_library( hevc_pp_avx2 none static )
+append_property( hevc_pp_avx2 COMPILE_FLAGS "-DMFX_MAKENAME_AVX2 -DAS_HEVCD_PLUGIN -mavx2")
+append_property( hevc_pp_avx2 LINK_FLAGS "-mavx2")
+
+# =============================================================================
+
+set( sources "" )
+set( sources.plus "" )
+
+list( APPEND sources 
+    ${vdir_optimization}/src/mfx_h265_deblocking_16u_px.cpp
+    ${vdir_optimization}/src/mfx_h265_deblocking_px.cpp
+    ${vdir_optimization}/src/mfx_h265_interpolation_16u_px.cpp
+    ${vdir_optimization}/src/mfx_h265_interpolation_px.cpp
+    ${vdir_optimization}/src/mfx_h265_intrapred_16u_px.cpp
+    ${vdir_optimization}/src/mfx_h265_intrapred_px.cpp
+    ${vdir_optimization}/src/mfx_h265_quantization_px.cpp
+    ${vdir_optimization}/src/mfx_h265_sad_ipp.cpp
+    ${vdir_optimization}/src/mfx_h265_sao_16u_px.cpp
+    ${vdir_optimization}/src/mfx_h265_sao_px.cpp
+    ${vdir_optimization}/src/mfx_h265_transform_16u_px.cpp
+    ${vdir_optimization}/src/mfx_h265_transform_px.cpp
+    ${vdir_optimization}/src/mfx_h265_weighted_pred_16u_px.cpp
+    ${vdir_optimization}/src/mfx_h265_weighted_pred_px.cpp
+)
+
+make_library( hevc_pp_px none static )
+append_property( hevc_pp_px COMPILE_FLAGS "-DMFX_MAKENAME_PX -DAS_HEVCD_PLUGIN" )
+
+# =============================================================================
+
+set( sources "" )
+set( sources.plus "" )
+
+list( APPEND sources 
+  ${vdir_optimization}/src/mfx_h265_deblocking_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_interpolation_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_interp_tmpl_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_intrapred_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_quantization_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_sad_general_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_sad_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_sao_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_transform_consts.cpp
+  ${vdir_optimization}/src/mfx_h265_transform_fwd_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_transform_inv_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_weighted_pred_sse.cpp
+)
+
+make_library( hevc_pp_sse4 none static )
+append_property( hevc_pp_sse4  COMPILE_FLAGS "-DMFX_MAKENAME_SSE4 -DAS_HEVCD_PLUGIN" )
+
+# =============================================================================
+
+set( sources "" )
+set( sources.plus "" )
+
+list( APPEND sources 
+  ${vdir_optimization}/src/mfx_h265_deblocking_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_interpolation_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_interp_tmpl_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_intrapred_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_sad_general_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_sad_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_sao_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_transform_fwd_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_transform_inv_sse.cpp
+  ${vdir_optimization}/src/mfx_h265_weighted_pred_sse.cpp
+)
+
+make_library( hevc_pp_ssse3 none static )
+append_property( hevc_pp_ssse3  COMPILE_FLAGS "-DMFX_MAKENAME_SSSE3 -DAS_HEVCD_PLUGIN -mavx2" )
+append_property( hevc_pp_ssse3  LINK_FLAGS "-mavx2" )
+
+# =============================================================================
+
+set( sources "" )
+set( sources.plus "" )
+
+list( APPEND sources 
+  ${vdir_optimization}/src/mfx_h265_dispatcher.cpp
+)
+
+make_library( hevc_pp_dispatcher none static )
+append_property( hevc_pp_dispatcher  COMPILE_FLAGS "-DAS_HEVCD_PLUGIN" )
 
 # =============================================================================
 
@@ -219,7 +328,6 @@ foreach( variant sw hw )
     mfx_vlib_merged_${variant}
     umc_codecs_merged_${variant}
     umc_codecs_merged
-    mfx_optimization
     umc_io_merged_${variant}
     umc_core_merged 
     ${ITT_LIBS}
@@ -356,11 +464,6 @@ endforeach()
 
 set( USE_STRICT_NAME TRUE )
 set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/plugin/libmfxsw_plugin.map" )
-#set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/libmfx.map" )
-
-add_definitions(
- -DAS_HEVCD_PLUGIN
-)
 
 #foreach( variant sw hw )
 foreach( variant sw )
@@ -377,7 +480,12 @@ foreach( variant sw )
   list( APPEND LIBS
     umc_h265_sw
     umc_csc_sw
-    mfx_optimization
+    hevc_pp_dispatcher
+    hevc_pp_atom
+    hevc_pp_avx2
+    hevc_pp_px
+    hevc_pp_sse4
+    hevc_pp_ssse3    
     umc_io_merged_${variant}
     umc_core_merged 
     ${ITT_LIBS}
@@ -387,6 +495,8 @@ foreach( variant sw )
     )
 
   make_library( ${plugin_name} ${variant} shared)
+  append_property( ${plugin_name} COMPILE_FLAGS "-DAS_HEVCD_PLUGIN" )  
+
 #  make_library( mfx${variant}_static ${variant} static)
 #  message( STATUS "CMAKE_CURRENT_SOURCE_DIR", ${CMAKE_CURRENT_SOURCE_DIR} )
 #  message( STATUS "xxxxxxxxxxxxxxx __ARCH: "${__ARCH}, "plugin_name: "${plugin_name}, "variant: "${variant})

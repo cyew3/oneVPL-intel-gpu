@@ -55,7 +55,7 @@
 //=========================================================
 // [1] choose only one arch
 
-#if defined(ANDROID) || defined(LINUX32) || defined(LINUX64)
+#if defined(ANDROID) //|| defined(LINUX32) || defined(LINUX64)
     #define MFX_TARGET_OPTIMIZATION_ATOM
 #else
     //#define MFX_TARGET_OPTIMIZATION_SSSE3

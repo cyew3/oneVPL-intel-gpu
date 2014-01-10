@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -61,38 +61,58 @@ typedef unsigned long       uint32_t;
 #define ALIGNED_SSE2 ALIGN_DECL(16)
 //#define FASTCALL     __fastcall
 
-#define M128I_WC(x, v) static const  __m128i x = {\
+
+#if defined(_WIN32) || defined(_WIN64)
+#define M128I_VAR(x, v) \
+    static const __m128i x = v
+#define M256I_VAR(x, v) \
+    static const __m256i x = v
+#else
+#define M128I_VAR(x, v) \
+    static ALIGN_DECL(16) const char array_##x[16] = v; \
+    static const __m128i* p_##x = (const __m128i*) array_##x; \
+    static const __m128i x = * p_##x
+
+#define M256I_VAR(x, v) \
+    static ALIGN_DECL(32) const char array_##x[32] = v; \
+    static const __m256i* p_##x = (const __m256i*) array_##x; \
+    static const __m256i x = * p_##x
+
+#endif
+
+
+#define M128I_WC_INIT(v) {\
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)((v)&0xFF), (char)(((v)>>8)&0xFF), \
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)((v)&0xFF), (char)(((v)>>8)&0xFF), \
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)((v)&0xFF), (char)(((v)>>8)&0xFF), \
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)((v)&0xFF), (char)(((v)>>8)&0xFF)}
 
-#define M128I_W2x4C(x, w0,w1) static const  __m128i x = {\
+#define M128I_W2x4C_INIT(w0,w1) {\
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF), \
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF), \
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF), \
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF)}
 
-#define M128I_W8C(x, w0,w1,w2,w3,w4,w5,w6,w7) static const  __m128i x = {\
+#define M128I_W8C_INIT(w0,w1,w2,w3,w4,w5,w6,w7) {\
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF), \
     (char)((w2)&0xFF),(char)(((w2)>>8)&0xFF), (char)((w3)&0xFF),(char)(((w3)>>8)&0xFF), \
     (char)((w4)&0xFF),(char)(((w4)>>8)&0xFF), (char)((w5)&0xFF),(char)(((w5)>>8)&0xFF), \
     (char)((w6)&0xFF),(char)(((w6)>>8)&0xFF), (char)((w7)&0xFF),(char)(((w7)>>8)&0xFF)}
 
-#define M128I_DC(x, v) static const  __m128i x = {\
+#define M128I_DC_INIT(v) {\
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)(((v)>>16)&0xFF), (char)(((v)>>24)&0xFF), \
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)(((v)>>16)&0xFF), (char)(((v)>>24)&0xFF), \
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)(((v)>>16)&0xFF), (char)(((v)>>24)&0xFF), \
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)(((v)>>16)&0xFF),(char)(((v)>>24)&0xFF)}
 
-#define M128I_D4C(x, w0,w1,w2,w3) static const  __m128i x = {\
+#define M128I_D4C_INIT(w0,w1,w2,w3) {\
     (char)((w0)&0xFF), (char)(((w0)>>8)&0xFF), (char)(((w0)>>16)&0xFF), (char)(((w0)>>24)&0xFF), \
     (char)((w1)&0xFF), (char)(((w1)>>8)&0xFF), (char)(((w1)>>16)&0xFF), (char)(((w1)>>24)&0xFF), \
     (char)((w2)&0xFF), (char)(((w2)>>8)&0xFF), (char)(((w2)>>16)&0xFF), (char)(((w2)>>24)&0xFF), \
     (char)((w3)&0xFF), (char)(((w3)>>8)&0xFF), (char)(((w3)>>16)&0xFF), (char)(((w3)>>24)&0xFF)}
 
 
-#define M256I_WC(x, v) static const  __declspec(align(32)) __m256i x = {\
+#define M256I_WC_INIT(v) {\
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)((v)&0xFF), (char)(((v)>>8)&0xFF), \
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)((v)&0xFF), (char)(((v)>>8)&0xFF), \
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)((v)&0xFF), (char)(((v)>>8)&0xFF), \
@@ -103,7 +123,7 @@ typedef unsigned long       uint32_t;
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)((v)&0xFF), (char)(((v)>>8)&0xFF)}
 
 
-#define M256I_W2x8C(x, w0,w1) static const  __declspec(align(32)) __m256i x = {\
+#define M256I_W2x8C_INIT(w0,w1) {\
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF), \
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF), \
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF), \
@@ -114,7 +134,7 @@ typedef unsigned long       uint32_t;
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF)}
 
 
-#define M256I_2xW2x4C(x, wl0, wl1,  wh0, wh1) static const  __declspec(align(32)) __m256i x = {\
+#define M256I_2xW2x4C_INIT(wl0, wl1,  wh0, wh1) {\
     (char)((wl0)&0xFF),(char)(((wl0)>>8)&0xFF), (char)((wl1)&0xFF),(char)(((wl1)>>8)&0xFF), \
     (char)((wl0)&0xFF),(char)(((wl0)>>8)&0xFF), (char)((wl1)&0xFF),(char)(((wl1)>>8)&0xFF), \
     (char)((wl0)&0xFF),(char)(((wl0)>>8)&0xFF), (char)((wl1)&0xFF),(char)(((wl1)>>8)&0xFF), \
@@ -126,7 +146,7 @@ typedef unsigned long       uint32_t;
 
 
 
-#define M256I_W8x2C(x, w0,w1,w2,w3,w4,w5,w6,w7) static const  __declspec(align(32)) __m256i x = {\
+#define M256I_W8x2C_INIT(w0,w1,w2,w3,w4,w5,w6,w7) {\
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF), \
     (char)((w2)&0xFF),(char)(((w2)>>8)&0xFF), (char)((w3)&0xFF),(char)(((w3)>>8)&0xFF), \
     (char)((w4)&0xFF),(char)(((w4)>>8)&0xFF), (char)((w5)&0xFF),(char)(((w5)>>8)&0xFF), \
@@ -136,7 +156,7 @@ typedef unsigned long       uint32_t;
     (char)((w4)&0xFF),(char)(((w4)>>8)&0xFF), (char)((w5)&0xFF),(char)(((w5)>>8)&0xFF), \
     (char)((w6)&0xFF),(char)(((w6)>>8)&0xFF), (char)((w7)&0xFF),(char)(((w7)>>8)&0xFF)}
 
-#define M256I_DC(x, v) static const  __declspec(align(32)) __m256i x = {\
+#define M256I_DC_INIT(v) {\
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)(((v)>>16)&0xFF), (char)(((v)>>24)&0xFF), \
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)(((v)>>16)&0xFF), (char)(((v)>>24)&0xFF), \
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)(((v)>>16)&0xFF), (char)(((v)>>24)&0xFF), \
@@ -146,7 +166,7 @@ typedef unsigned long       uint32_t;
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)(((v)>>16)&0xFF), (char)(((v)>>24)&0xFF), \
     (char)((v)&0xFF), (char)(((v)>>8)&0xFF), (char)(((v)>>16)&0xFF), (char)(((v)>>24)&0xFF)}
 
-#define M256I_D4x2C(x, w0,w1,w2,w3) static const  __declspec(align(32)) __m256i x = {\
+#define M256I_D4x2C_INIT(w0,w1,w2,w3) {\
     (char)((w0)&0xFF), (char)(((w0)>>8)&0xFF), (char)(((w0)>>16)&0xFF), (char)(((w0)>>24)&0xFF), \
     (char)((w1)&0xFF), (char)(((w1)>>8)&0xFF), (char)(((w1)>>16)&0xFF), (char)(((w1)>>24)&0xFF), \
     (char)((w2)&0xFF), (char)(((w2)>>8)&0xFF), (char)(((w2)>>16)&0xFF), (char)(((w2)>>24)&0xFF), \
@@ -156,6 +176,19 @@ typedef unsigned long       uint32_t;
     (char)((w2)&0xFF), (char)(((w2)>>8)&0xFF), (char)(((w2)>>16)&0xFF), (char)(((w2)>>24)&0xFF), \
     (char)((w3)&0xFF), (char)(((w3)>>8)&0xFF), (char)(((w3)>>16)&0xFF), (char)(((w3)>>24)&0xFF)}
 
+
+#define M128I_WC(x, v)                           M128I_VAR(x, M128I_WC_INIT(v))
+#define M128I_W2x4C(x, w0,w1)                    M128I_VAR(x, M128I_W2x4C_INIT(w0,w1))
+#define M128I_W8C(x, w0,w1,w2,w3,w4,w5,w6,w7)    M128I_VAR(x, M128I_W8C_INIT(w0,w1,w2,w3))
+#define M128I_DC(x, v)                           M128I_VAR(x, M128I_DC_INIT(w0,w1,w2,w3))
+#define M128I_D4C(x, w0,w1,w2,w3)                M128I_VAR(x, M128I_D4C_INIT(w0,w1,w2,w3))
+
+#define M256I_WC(x, v)                           M256I_VAR(x, M256I_WC_INIT(v))
+#define M256I_W2x8C(x, w0,w1)                    M256I_VAR(x, M256I_W2x8C_INIT(w0,w1))
+#define M256I_2xW2x4C(x, wl0, wl1,  wh0, wh1)    M256I_VAR(x, M256I_2xW2x4C_INIT(wl0, wl1,  wh0, wh1))
+#define M256I_W8x2C(x, w0,w1,w2,w3,w4,w5,w6,w7)  M256I_VAR(x, M256I_W8x2C_INIT(w0,w1,w2,w3,w4,w5,w6,w7))
+#define M256I_DC(x, v)                           M256I_VAR(x, M256I_DC_INIT(v))
+#define M256I_D4x2C(x, w0,w1,w2,w3)              M256I_VAR(x, M256I_D4x2C_INIT(w0,w1,w2,w3))
 
 
 #define _mm_movehl_epi64(A, B) _mm_castps_si128(_mm_movehl_ps(_mm_castsi128_ps(A), _mm_castsi128_ps(B)))
@@ -177,7 +210,7 @@ typedef unsigned long       uint32_t;
 #define load_unaligned(x) _mm_loadu_si128(x)
 #endif
 
-#define M256I_W8x2SHORT(x, w0, w1) static const  ALIGN_DECL(32) __m256i x = {\
+#define M256I_W8x2SHORT_INIT(w0, w1) {\
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF), \
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF), \
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF), \
@@ -187,7 +220,7 @@ typedef unsigned long       uint32_t;
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF), \
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF)}
 
-#define M256I_2x8SHORT(x, w0,w1,w2,w3,w4,w5,w6,w7) static const  ALIGN_DECL(32) __m256i x = {\
+#define M256I_2x8SHORT_INIT(w0,w1,w2,w3,w4,w5,w6,w7) {\
     (char)((w0)&0xFF),(char)(((w0)>>8)&0xFF), (char)((w1)&0xFF),(char)(((w1)>>8)&0xFF), \
     (char)((w2)&0xFF),(char)(((w2)>>8)&0xFF), (char)((w3)&0xFF),(char)(((w3)>>8)&0xFF), \
     (char)((w4)&0xFF),(char)(((w4)>>8)&0xFF), (char)((w5)&0xFF),(char)(((w5)>>8)&0xFF), \
@@ -197,6 +230,9 @@ typedef unsigned long       uint32_t;
     (char)((w4)&0xFF),(char)(((w4)>>8)&0xFF), (char)((w5)&0xFF),(char)(((w5)>>8)&0xFF), \
     (char)((w6)&0xFF),(char)(((w6)>>8)&0xFF), (char)((w7)&0xFF),(char)(((w7)>>8)&0xFF)}
 
+
+#define M256I_W8x2SHORT(x, w0, w1)                 M256I_VAR(x, M256I_W8x2SHORT_INIT(w0, w1))
+#define M256I_2x8SHORT(x, w0,w1,w2,w3,w4,w5,w6,w7) M256I_VAR(x, M256I_2x8SHORT_INIT(w0,w1,w2,w3,w4,w5,w6,w7))
 
 // Constants for 16x16
 M256I_W8x2SHORT( t_16_O0_13,  90,  87); // g_T16[ 1][0], g_T16[ 3][0]
@@ -246,8 +282,20 @@ M256I_W8x2SHORT( t_16_EEO0_4C,  83,  36); // g_T16[4][0], g_T16[12][0]
 M256I_W8x2SHORT( t_16_EEO1_4C,  36, -83); // g_T16[4][1], g_T16[12][1]
 M256I_DC( round1y, 1<<(SHIFT_INV_1ST-1));
 
+#if defined(_WIN32) || defined(_WIN64)
 static const  __m256i oddeven = {0,1, 4,5, 8,9, 12,13, 2,3, 6,7, 10,11, 14,15,  0,1, 4,5, 8,9, 12,13, 2,3, 6,7, 10,11, 14,15};
 static const  __m256i shuffev = {0,1, 8,9, 2,3, 10,11, 4,5, 12,13, 6,7, 14,15,  0,1, 8,9, 2,3, 10,11, 4,5, 12,13, 6,7, 14,15};
+
+#else
+static ALIGN_DECL(32) const char array_oddeven[32] = {0,1, 4,5, 8,9, 12,13, 2,3, 6,7, 10,11, 14,15,  0,1, 4,5, 8,9, 12,13, 2,3, 6,7, 10,11, 14,15};
+static const __m256i* p_oddeven = (const __m256i*) array_oddeven;
+static const __m256i oddeven = * p_oddeven;
+
+static ALIGN_DECL(32) const char array_shuffev[32] = {0,1, 8,9, 2,3, 10,11, 4,5, 12,13, 6,7, 14,15,  0,1, 8,9, 2,3, 10,11, 4,5, 12,13, 6,7, 14,15};
+static const __m256i* p_shuffev = (const __m256i*) array_shuffev;
+static const __m256i shuffev = * p_shuffev;
+#endif
+
 
 M256I_2x8SHORT( t_16_a0101_08,  64, 64,  64,-64,  64,-64,  64, 64);
 M256I_2x8SHORT( t_16_b0110_4C,  83, 36,  36,-83, -36, 83, -83,-36);
@@ -304,8 +352,14 @@ void MAKE_NAME(h265_DCT4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT co
 
    _mm256_zeroupper();
 
+// GCC 4.7 bug workaround
+#if __GNUC__
+   __m256i s01 = _mm_broadcastsi128_si256( _mm_unpacklo_epi16 (s0, s1)); // s13 s03 s12 s02 s11 s01 s10 s00
+   __m256i s23 = _mm_broadcastsi128_si256( _mm_unpacklo_epi16 (s2, s3)); // s23 s23 s22 s22 s31 s21 s30 s20
+#else
    __m256i s01 = _mm256_broadcastsi128_si256( _mm_unpacklo_epi16 (s0, s1)); // s13 s03 s12 s02 s11 s01 s10 s00
    __m256i s23 = _mm256_broadcastsi128_si256( _mm_unpacklo_epi16 (s2, s3)); // s23 s23 s22 s22 s31 s21 s30 s20
+#endif
 
    __m256i R02 = _mm256_add_epi32( _mm256_madd_epi16(s01, t_4dct_02_01), _mm256_madd_epi16(s23, t_4dct_02_23));
    __m256i R13 = _mm256_add_epi32( _mm256_madd_epi16(s01, t_4dct_13_01), _mm256_madd_epi16(s23, t_4dct_13_23));
@@ -333,8 +387,13 @@ void MAKE_NAME(h265_DCT4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT co
     if (destSize == 1) {
       __m128i tmp0;
       /* load 4 bytes from row 0 and row 1, expand to 16 bits, add temp values, clip/pack to 8 bytes */
-      //tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 0*destStride), 0);    /* load row 0 (bytes) */
+      //tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 0*destStride), 0);    /* load row 0 (bytes) */      
+// Workaround for GCC 4.7 bug
+#if __GNUC__
+      tmp0 = _mm_insert_epi32( _mm_setzero_si128(), *(int *)(destByte + 0*destStride), 0);      /* load row 0 (bytes) */ 
+#else
       tmp0 = _mm_insert_epi32( _mm_undefined_si128(), *(int *)(destByte + 0*destStride), 0);      /* load row 0 (bytes) */ 
+#endif
 
       tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 1*destStride), 1);    /* load row 1 (bytes) */
       tmp0 = _mm_cvtepu8_epi16(tmp0);                                        /* expand to 16 bytes */
@@ -396,8 +455,14 @@ void MAKE_NAME(h265_DCT4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT co
 
    _mm256_zeroupper();
 
+   // GCC 4.7 bug workaround
+#if __GNUC__
+   __m256i s01 = _mm_broadcastsi128_si256( _mm_unpacklo_epi16 (s0, s1)); // s13 s03 s12 s02 s11 s01 s10 s00
+   __m256i s23 = _mm_broadcastsi128_si256( _mm_unpacklo_epi16 (s2, s3)); // s23 s23 s22 s22 s31 s21 s30 s20
+#else
    __m256i s01 = _mm256_broadcastsi128_si256( _mm_unpacklo_epi16 (s0, s1)); // s13 s03 s12 s02 s11 s01 s10 s00
    __m256i s23 = _mm256_broadcastsi128_si256( _mm_unpacklo_epi16 (s2, s3)); // s23 s23 s22 s22 s31 s21 s30 s20
+#endif
 
    __m256i R02 = _mm256_add_epi32( _mm256_madd_epi16(s01, t_4dst_02_01), _mm256_madd_epi16(s23, t_4dst_02_23));
    __m256i R13 = _mm256_add_epi32( _mm256_madd_epi16(s01, t_4dst_13_01), _mm256_madd_epi16(s23, t_4dst_13_23));
@@ -426,7 +491,13 @@ void MAKE_NAME(h265_DCT4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT co
       __m128i tmp0;
       /* load 4 bytes from row 0 and row 1, expand to 16 bits, add temp values, clip/pack to 8 bytes */
       //tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 0*destStride), 0);    /* load row 0 (bytes) */
+
+// Workaround for GCC 4.7 bug
+#if __GNUC__
+      tmp0 = _mm_insert_epi32( _mm_setzero_si128(), *(int *)(destByte + 0*destStride), 0);      /* load row 0 (bytes) */ 
+#else
       tmp0 = _mm_insert_epi32( _mm_undefined_si128(), *(int *)(destByte + 0*destStride), 0);      /* load row 0 (bytes) */ 
+#endif
 
       tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 1*destStride), 1);    /* load row 1 (bytes) */
       tmp0 = _mm_cvtepu8_epi16(tmp0);                                        /* expand to 16 bytes */
@@ -459,7 +530,7 @@ void MAKE_NAME(h265_DCT4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT co
 
 void MAKE_NAME(h265_DCT8x8Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
 {
-   __declspec(align(32)) short tmp[8 * 8];
+   ALIGN_DECL(32) short tmp[8 * 8];
 
    unsigned char* __restrict destByte;
    short* __restrict destWord;
@@ -736,7 +807,7 @@ static H265_FORCEINLINE void DCTInverse16x16_h_2nd_avx2(const short * H265_RESTR
 
 void MAKE_NAME(h265_DCT16x16Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
 {
-   __declspec(align(32)) short tmp[16 * 16];
+   ALIGN_DECL(32) short tmp[16 * 16];
    short *__restrict p_tmp = tmp;
    __m256i y0, y13L, y57L, y9BL, yDFL, y26L, yAEL, y4CL, y08L;
 
