@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -112,7 +112,7 @@ namespace MFX_HEVC_PP
         Ipp8u isIntraP  : 1;
         Ipp8u isTrCbfYP : 1;
         Ipp8u reservedP : 5;
-        Ipp8u qpP;
+        Ipp8s qpP;
 
         Ipp8u deblockQ  : 1;
         Ipp8u isIntraQ  : 1;
