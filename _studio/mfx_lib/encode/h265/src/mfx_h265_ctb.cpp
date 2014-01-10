@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2012 - 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012 - 2014 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -4095,6 +4095,14 @@ CostType H265CU::CalcCostSkip(Ipp32u abs_part_idx, Ipp8u depth)
         PixType *pRec = y_rec + ((PUStartRow * pitch_rec + PUStartColumn) << par->Log2MinTUSize);
         PixType *pSrc = y_src + ((PUStartRow * pitch_src + PUStartColumn) << par->Log2MinTUSize);
         cost_best = tu_sse(pSrc, pRec, pitch_src, pitch_rec, size);
+        // add chroma with little weight
+        InterPredCU(abs_part_idx, depth, uv_rec, pitch_rec, 0);
+        pRec = uv_rec + ((PUStartRow * pitch_rec + PUStartColumn) << par->Log2MinTUSize);
+        pSrc = uv_src + ((PUStartRow * pitch_src + PUStartColumn) << par->Log2MinTUSize);
+        cost_best += tu_sse(pSrc, pRec, pitch_src, pitch_rec, size>>1)/4;
+        pRec += size>>1;
+        pSrc += size>>1;
+        cost_best += tu_sse(pSrc, pRec, pitch_src, pitch_rec, size>>1)/4;
     }
 
     if (cost_best < COST_MAX) {
