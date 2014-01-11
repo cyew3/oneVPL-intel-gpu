@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2012 - 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -49,17 +49,17 @@ void H265CU::TransformInv(Ipp32s offset, Ipp32s width, Ipp8u is_luma, Ipp8u is_i
         residuals += offset;
 
         if (is_luma && is_intra && width == 4) {
-            MFX_HEVC_PP::NAME(h265_DST4x4Inv_16sT)(residuals, residuals, 4, 2);
+            MFX_HEVC_PP::NAME(h265_DST4x4Inv_16sT)(residuals, residuals, 4, false, 8);
         } else {
             switch (width) {
             case 4:
-                MFX_HEVC_PP::NAME(h265_DCT4x4Inv_16sT)(residuals, residuals, 4, 2); break;
+                MFX_HEVC_PP::NAME(h265_DCT4x4Inv_16sT)(residuals, residuals, 4, false, 8); break;
             case 8:
-                MFX_HEVC_PP::NAME(h265_DCT8x8Inv_16sT)(residuals, residuals, 8, 2); break;
+                MFX_HEVC_PP::NAME(h265_DCT8x8Inv_16sT)(residuals, residuals, 8, false, 8); break;
             case 16:
-                MFX_HEVC_PP::NAME(h265_DCT16x16Inv_16sT)(residuals, residuals, 16, 2); break;
+                MFX_HEVC_PP::NAME(h265_DCT16x16Inv_16sT)(residuals, residuals, 16, false, 8); break;
             case 32:
-                MFX_HEVC_PP::NAME(h265_DCT32x32Inv_16sT)(residuals, residuals, 32, 2); break;
+                MFX_HEVC_PP::NAME(h265_DCT32x32Inv_16sT)(residuals, residuals, 32, false, 8); break;
             }
         }
     }
@@ -72,17 +72,17 @@ void H265CU::TransformInv2(PixType * dst, Ipp32s pitch_dst, Ipp32s offset, Ipp32
         residuals += offset;
 
         if (is_luma && is_intra && width == 4) {
-            MFX_HEVC_PP::NAME(h265_DST4x4Inv_16sT)(dst, residuals, pitch_dst, 1);
+            MFX_HEVC_PP::NAME(h265_DST4x4Inv_16sT)(dst, residuals, pitch_dst, true, 8);
         } else {
             switch (width) {
             case 4:
-                MFX_HEVC_PP::NAME(h265_DCT4x4Inv_16sT)(dst, residuals, pitch_dst, 1); break;
+                MFX_HEVC_PP::NAME(h265_DCT4x4Inv_16sT)(dst, residuals, pitch_dst, true, 8); break;
             case 8:
-                MFX_HEVC_PP::NAME(h265_DCT8x8Inv_16sT)(dst, residuals, pitch_dst, 1); break;
+                MFX_HEVC_PP::NAME(h265_DCT8x8Inv_16sT)(dst, residuals, pitch_dst, true, 8); break;
             case 16:
-                MFX_HEVC_PP::NAME(h265_DCT16x16Inv_16sT)(dst, residuals, pitch_dst, 1); break;
+                MFX_HEVC_PP::NAME(h265_DCT16x16Inv_16sT)(dst, residuals, pitch_dst, true, 8); break;
             case 32:
-                MFX_HEVC_PP::NAME(h265_DCT32x32Inv_16sT)(dst, residuals, pitch_dst, 1); break;
+                MFX_HEVC_PP::NAME(h265_DCT32x32Inv_16sT)(dst, residuals, pitch_dst, true, 8); break;
             }
         }
     }

@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -36,14 +36,14 @@ namespace MFX_HEVC_PP
 {
 
 #define SHIFT_INV_1ST          7 // Shift after first inverse transform stage
-#define SHIFT_INV_2ND         12 // Shift after second inverse transform stage
+#define SHIFT_INV_2ND_BASE     12   // Base shift after second inverse transform stage, offset later by (bitDepth - 8) for > 8-bit data
 #define REG_DCT               65535
 
 //    NOTE: In debug mode compiler attempts to load data with MOVNTDQA while data is
-//    only 8-byte aligned, but PMOVZX does not require 16-byte alignment. 
+//    only 8-byte aligned, but PMOVZX does not require 16-byte alignment.
 
 //---------------------------------------------------------
-// aya: should be move in common place (aka: mfx_h265_optimization_defs.h) 
+// aya: should be move in common place (aka: mfx_h265_optimization_defs.h)
 // but common include file mfx_h265_optimization.h should be free from platform specific defs
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -116,14 +116,14 @@ namespace MFX_HEVC_PP
 #undef coef_stride
 #define coef_stride 4
 
-    void MAKE_NAME(h265_DCT4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+    template <int bitDepth, typename DstCoeffsType, bool inplace>
+    static void h265_DCT4x4Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_RESTRICT coeff, int destStride)
     {
         __m128i s0, s1, s2, s3, s02L, s13L, O0L, O1L, E0L, E1L, H01L, H23L;
         __m128i R0, R1, R2, R3;
         __m128i xmm0, xmm1, xmm2, xmm3;
         __m128i tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
-        unsigned char* H265_RESTRICT destByte;
-        short* H265_RESTRICT destWord;
+        const int SHIFT_INV_2ND = (SHIFT_INV_2ND_BASE - (bitDepth - 8));
 
         M128I_W2x4C( t_4_O0_13,  83,  36); // g_T4[1][0], g_T4[3][0]
         M128I_W2x4C( t_4_O1_13,  36, -83); // g_T4[1][1], g_T4[3][1]
@@ -136,14 +136,6 @@ namespace MFX_HEVC_PP
         M128I_W8C(t_dct4_B,  64, 36,  -64,-83, -64, 83,  64,-36);
 
         M128I_DC (round2, 1<<(SHIFT_INV_2ND-1));
-
-        if (destSize == 1) {
-            destByte = (unsigned char *)destPtr;
-            destWord = 0;
-        } else {
-            destByte = 0;
-            destWord = (short *)destPtr;
-        }
 
         // Utilizing symmetry properties to the maximum to minimize the number of multiplications
         s1 = _mm_loadl_epi64((const __m128i *)(coeff + 1*coef_stride));
@@ -158,7 +150,7 @@ namespace MFX_HEVC_PP
         E0L = _mm_add_epi32( _mm_madd_epi16( s02L, t_4_E0_02), round1);
         E1L = _mm_add_epi32( _mm_madd_epi16( s02L, t_4_E1_02), round1);
 
-        // Combining even and odd terms at each hierarchy levels to calculate the final spatial domain vector 
+        // Combining even and odd terms at each hierarchy levels to calculate the final spatial domain vector
         R0 = _mm_srai_epi32(_mm_add_epi32(E0L, O0L), SHIFT_INV_1ST);
         R3 = _mm_srai_epi32(_mm_sub_epi32(E0L, O0L), SHIFT_INV_1ST);
         R1 = _mm_srai_epi32(_mm_add_epi32(E1L, O1L), SHIFT_INV_1ST);
@@ -179,8 +171,8 @@ namespace MFX_HEVC_PP
         xmm0 = _mm_add_epi32(_mm_madd_epi16(tmp0, t_dct4_A), _mm_madd_epi16(tmp1, t_dct4_B));
         xmm1 = _mm_add_epi32(_mm_madd_epi16(tmp2, t_dct4_A), _mm_madd_epi16(tmp3, t_dct4_B));
 
-        xmm0 = _mm_srai_epi32( _mm_add_epi32(xmm0, round2), SHIFT_INV_2ND); 
-        xmm1 = _mm_srai_epi32( _mm_add_epi32(xmm1, round2), SHIFT_INV_2ND); 
+        xmm0 = _mm_srai_epi32( _mm_add_epi32(xmm0, round2), SHIFT_INV_2ND);
+        xmm1 = _mm_srai_epi32( _mm_add_epi32(xmm1, round2), SHIFT_INV_2ND);
 
         xmm0 = _mm_packs_epi32(xmm0, xmm1);
 
@@ -197,41 +189,81 @@ namespace MFX_HEVC_PP
 
         xmm2 = _mm_packs_epi32(xmm2, xmm3);
 
-        if (destSize == 1) {
+        if (inplace && sizeof(DstCoeffsType) == 1) {
             /* load 4 bytes from row 0 and row 1, expand to 16 bits, add temp values, clip/pack to 8 bytes */
-            tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 0*destStride), 0);    /* load row 0 (bytes) */
-            tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 1*destStride), 1);    /* load row 1 (bytes) */
-            tmp0 = _mm_cvtepu8_epi16(tmp0);                                            /* expand to 16 bytes */
-            tmp0 = _mm_add_epi16(tmp0, xmm0);                                        /* add to dst */
-            tmp0 = _mm_packus_epi16(tmp0, tmp0);                                    /* pack to 8 bytes */
-            *(int *)(destByte + 0*destStride) = _mm_extract_epi32(tmp0, 0);            /* store row 0 (bytes) */
-            *(int *)(destByte + 1*destStride) = _mm_extract_epi32(tmp0, 1);            /* store row 1 (bytes) */
+            tmp0 = _mm_insert_epi32(tmp0, *(int *)(dst + 0*destStride), 0);    /* load row 0 (bytes) */
+            tmp0 = _mm_insert_epi32(tmp0, *(int *)(dst + 1*destStride), 1);    /* load row 1 (bytes) */
+            tmp0 = _mm_cvtepu8_epi16(tmp0);                                    /* expand to 16 bytes */
+            tmp0 = _mm_add_epi16(tmp0, xmm0);                                  /* add to dst */
+            tmp0 = _mm_packus_epi16(tmp0, tmp0);                               /* pack to 8 bytes */
+            *(int *)(dst + 0*destStride) = _mm_extract_epi32(tmp0, 0);         /* store row 0 (bytes) */
+            *(int *)(dst + 1*destStride) = _mm_extract_epi32(tmp0, 1);         /* store row 1 (bytes) */
 
             /* repeat for rows 2 and 3 */
-            tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 2*destStride), 0);    /* load row 0 (bytes) */
-            tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 3*destStride), 1);    /* load row 1 (bytes) */
-            tmp0 = _mm_cvtepu8_epi16(tmp0);                                            /* expand to 16 bytes */
-            tmp0 = _mm_add_epi16(tmp0, xmm2);                                        /* add to dst */
-            tmp0 = _mm_packus_epi16(tmp0, tmp0);                                    /* pack to 8 bytes */
-            *(int *)(destByte + 2*destStride) = _mm_extract_epi32(tmp0, 0);            /* store row 0 (bytes) */
-            *(int *)(destByte + 3*destStride) = _mm_extract_epi32(tmp0, 1);            /* store row 1 (bytes) */
+            tmp0 = _mm_insert_epi32(tmp0, *(int *)(dst + 2*destStride), 0);
+            tmp0 = _mm_insert_epi32(tmp0, *(int *)(dst + 3*destStride), 1);
+            tmp0 = _mm_cvtepu8_epi16(tmp0);
+            tmp0 = _mm_add_epi16(tmp0, xmm2);
+            tmp0 = _mm_packus_epi16(tmp0, tmp0);
+            *(int *)(dst + 2*destStride) = _mm_extract_epi32(tmp0, 0);
+            *(int *)(dst + 3*destStride) = _mm_extract_epi32(tmp0, 1);
+        } else if (inplace && sizeof(DstCoeffsType) == 2) {
+            /* load 4 words from each row, add temp values, clip to [0, 2^bitDepth) */
+            tmp0 = _mm_loadl_epi64((__m128i *)(dst + 0*destStride));
+            tmp1 = _mm_loadl_epi64((__m128i *)(dst + 1*destStride));
+            tmp2 = _mm_loadl_epi64((__m128i *)(dst + 2*destStride));
+            tmp3 = _mm_loadl_epi64((__m128i *)(dst + 3*destStride));
+
+            tmp0 = _mm_unpacklo_epi64(tmp0, tmp1);
+            tmp2 = _mm_unpacklo_epi64(tmp2, tmp3);
+
+            /* signed saturating add to 16-bit, then clip to bitDepth */
+            tmp0 = _mm_adds_epi16(tmp0, xmm0);
+            tmp2 = _mm_adds_epi16(tmp2, xmm2);
+
+            tmp4 = _mm_setzero_si128();
+            tmp5 = _mm_set1_epi16((1 << bitDepth) - 1);
+
+            tmp0 = _mm_max_epi16(tmp0, tmp4); tmp0 = _mm_min_epi16(tmp0, tmp5);
+            tmp2 = _mm_max_epi16(tmp2, tmp4); tmp2 = _mm_min_epi16(tmp2, tmp5);
+
+            _mm_storel_epi64((__m128i*)(dst + 0*destStride), tmp0);        /* store row 0 (words) */
+            _mm_storeh_epi64((__m128i*)(dst + 1*destStride), tmp0);        /* store row 1 (words) */
+            _mm_storel_epi64((__m128i*)(dst + 2*destStride), tmp2);        /* store row 2 (words) */
+            _mm_storeh_epi64((__m128i*)(dst + 3*destStride), tmp2);        /* store row 3 (words) */
         } else {
-            _mm_storel_epi64((__m128i*)(destWord + 0*destStride), xmm0);        /* store row 0 (words) */
-            _mm_storeh_epi64((__m128i*)(destWord + 1*destStride), xmm0);        /* store row 1 (words) */
-            _mm_storel_epi64((__m128i*)(destWord + 2*destStride), xmm2);        /* store row 2 (words) */
-            _mm_storeh_epi64((__m128i*)(destWord + 3*destStride), xmm2);        /* store row 3 (words) */
+            _mm_storel_epi64((__m128i*)(dst + 0*destStride), xmm0);        /* store row 0 (words) */
+            _mm_storeh_epi64((__m128i*)(dst + 1*destStride), xmm0);        /* store row 1 (words) */
+            _mm_storel_epi64((__m128i*)(dst + 2*destStride), xmm2);        /* store row 2 (words) */
+            _mm_storeh_epi64((__m128i*)(dst + 3*destStride), xmm2);        /* store row 3 (words) */
         }
     }
 
-    void MAKE_NAME(h265_DST4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+    void MAKE_NAME(h265_DCT4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth)
+    {
+        if (inplace) {
+            switch (bitDepth) {
+            case  8: h265_DCT4x4Inv_16sT_Kernel< 8, Ipp8u,  true >((Ipp8u *) destPtr, coeff, destStride); break;
+            case  9: h265_DCT4x4Inv_16sT_Kernel< 9, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+            case 10: h265_DCT4x4Inv_16sT_Kernel<10, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+            }
+        } else {
+            switch (bitDepth) {
+            case  8: h265_DCT4x4Inv_16sT_Kernel< 8, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+            case  9: h265_DCT4x4Inv_16sT_Kernel< 9, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+            case 10: h265_DCT4x4Inv_16sT_Kernel<10, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+            }
+        }
+    }
+
+    template <int bitDepth, typename DstCoeffsType, bool inplace>
+    static void h265_DST4x4Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_RESTRICT coeff, int destStride)
     {
         __m128i s0, s1, s2, s3, s01L, s23L, H01L, H23L;
         __m128i R0, R1, R2, R3;
         __m128i xmm0, xmm1, xmm2, xmm3;
         __m128i tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
-
-        unsigned char* H265_RESTRICT destByte;
-        short* H265_RESTRICT destWord;
+        const int SHIFT_INV_2ND = (SHIFT_INV_2ND_BASE - (bitDepth - 8));
 
         //    dst[i + 0*4] = (short)Clip3( -32768, 32767, ( 29*s0 + 74*s1 + 84*s2 + 55*s3 + rnd_factor ) >> SHIFT_INV_1ST );
         //    dst[i + 1*4] = (short)Clip3( -32768, 32767, ( 55*s0 + 74*s1 - 29*s2 - 84*s3 + rnd_factor ) >> SHIFT_INV_1ST );
@@ -252,14 +284,6 @@ namespace MFX_HEVC_PP
         M128I_W8C(t_dst4_B,  84, 55,  -29,-84, -74, 74,  55,-29);
 
         M128I_DC (round2, 1<<(SHIFT_INV_2ND-1));
-
-        if (destSize == 1) {
-            destByte = (unsigned char *)destPtr;
-            destWord = 0;
-        } else {
-            destByte = 0;
-            destWord = (short *)destPtr;
-        }
 
         s0 = _mm_loadl_epi64((const __m128i *)(coeff + 0*coef_stride));
         s1 = _mm_loadl_epi64((const __m128i *)(coeff + 1*coef_stride));
@@ -292,8 +316,8 @@ namespace MFX_HEVC_PP
         xmm0 = _mm_add_epi32(_mm_madd_epi16(tmp0, t_dst4_A), _mm_madd_epi16(tmp1, t_dst4_B));
         xmm1 = _mm_add_epi32(_mm_madd_epi16(tmp2, t_dst4_A), _mm_madd_epi16(tmp3, t_dst4_B));
 
-        xmm0 = _mm_srai_epi32( _mm_add_epi32(xmm0, round2), SHIFT_INV_2ND); 
-        xmm1 = _mm_srai_epi32( _mm_add_epi32(xmm1, round2), SHIFT_INV_2ND); 
+        xmm0 = _mm_srai_epi32( _mm_add_epi32(xmm0, round2), SHIFT_INV_2ND);
+        xmm1 = _mm_srai_epi32( _mm_add_epi32(xmm1, round2), SHIFT_INV_2ND);
 
         xmm0 = _mm_packs_epi32(xmm0, xmm1);
 
@@ -310,29 +334,70 @@ namespace MFX_HEVC_PP
 
         xmm2 = _mm_packs_epi32(xmm2, xmm3);
 
-        if (destSize == 1) {
+        if (inplace && sizeof(DstCoeffsType) == 1) {
             /* load 4 bytes from row 0 and row 1, expand to 16 bits, add temp values, clip/pack to 8 bytes */
-            tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 0*destStride), 0);    /* load row 0 (bytes) */
-            tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 1*destStride), 1);    /* load row 1 (bytes) */
-            tmp0 = _mm_cvtepu8_epi16(tmp0);                                            /* expand to 16 bytes */
-            tmp0 = _mm_add_epi16(tmp0, xmm0);                                        /* add to dst */
-            tmp0 = _mm_packus_epi16(tmp0, tmp0);                                    /* pack to 8 bytes */
-            *(int *)(destByte + 0*destStride) = _mm_extract_epi32(tmp0, 0);            /* store row 0 (bytes) */
-            *(int *)(destByte + 1*destStride) = _mm_extract_epi32(tmp0, 1);            /* store row 1 (bytes) */
+            tmp0 = _mm_insert_epi32(tmp0, *(int *)(dst + 0*destStride), 0);    /* load row 0 (bytes) */
+            tmp0 = _mm_insert_epi32(tmp0, *(int *)(dst + 1*destStride), 1);    /* load row 1 (bytes) */
+            tmp0 = _mm_cvtepu8_epi16(tmp0);                                    /* expand to 16 bytes */
+            tmp0 = _mm_add_epi16(tmp0, xmm0);                                  /* add to dst */
+            tmp0 = _mm_packus_epi16(tmp0, tmp0);                               /* pack to 8 bytes */
+            *(int *)(dst + 0*destStride) = _mm_extract_epi32(tmp0, 0);         /* store row 0 (bytes) */
+            *(int *)(dst + 1*destStride) = _mm_extract_epi32(tmp0, 1);         /* store row 1 (bytes) */
 
             /* repeat for rows 2 and 3 */
-            tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 2*destStride), 0);
-            tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 3*destStride), 1);
+            tmp0 = _mm_insert_epi32(tmp0, *(int *)(dst + 2*destStride), 0);
+            tmp0 = _mm_insert_epi32(tmp0, *(int *)(dst + 3*destStride), 1);
             tmp0 = _mm_cvtepu8_epi16(tmp0);
             tmp0 = _mm_add_epi16(tmp0, xmm2);
             tmp0 = _mm_packus_epi16(tmp0, tmp0);
-            *(int *)(destByte + 2*destStride) = _mm_extract_epi32(tmp0, 0);
-            *(int *)(destByte + 3*destStride) = _mm_extract_epi32(tmp0, 1);
+            *(int *)(dst + 2*destStride) = _mm_extract_epi32(tmp0, 0);
+            *(int *)(dst + 3*destStride) = _mm_extract_epi32(tmp0, 1);
+        } else if (inplace && sizeof(DstCoeffsType) == 2) {
+            /* load 4 words from each row, add temp values, clip to [0, 2^bitDepth) */
+            tmp0 = _mm_loadl_epi64((__m128i *)(dst + 0*destStride));
+            tmp1 = _mm_loadl_epi64((__m128i *)(dst + 1*destStride));
+            tmp2 = _mm_loadl_epi64((__m128i *)(dst + 2*destStride));
+            tmp3 = _mm_loadl_epi64((__m128i *)(dst + 3*destStride));
+
+            tmp0 = _mm_unpacklo_epi64(tmp0, tmp1);
+            tmp2 = _mm_unpacklo_epi64(tmp2, tmp3);
+
+            /* signed saturating add to 16-bit, then clip to bitDepth */
+            tmp0 = _mm_adds_epi16(tmp0, xmm0);
+            tmp2 = _mm_adds_epi16(tmp2, xmm2);
+
+            tmp4 = _mm_setzero_si128();
+            tmp5 = _mm_set1_epi16((1 << bitDepth) - 1);
+
+            tmp0 = _mm_max_epi16(tmp0, tmp4); tmp0 = _mm_min_epi16(tmp0, tmp5);
+            tmp2 = _mm_max_epi16(tmp2, tmp4); tmp2 = _mm_min_epi16(tmp2, tmp5);
+
+            _mm_storel_epi64((__m128i*)(dst + 0*destStride), tmp0);        /* store row 0 (words) */
+            _mm_storeh_epi64((__m128i*)(dst + 1*destStride), tmp0);        /* store row 1 (words) */
+            _mm_storel_epi64((__m128i*)(dst + 2*destStride), tmp2);        /* store row 2 (words) */
+            _mm_storeh_epi64((__m128i*)(dst + 3*destStride), tmp2);        /* store row 3 (words) */
         } else {
-            _mm_storel_epi64((__m128i*)(destWord + 0*destStride), xmm0);        /* store row 0 (words) */
-            _mm_storeh_epi64((__m128i*)(destWord + 1*destStride), xmm0);        /* store row 1 (words) */
-            _mm_storel_epi64((__m128i*)(destWord + 2*destStride), xmm2);        /* store row 2 (words) */
-            _mm_storeh_epi64((__m128i*)(destWord + 3*destStride), xmm2);        /* store row 3 (words) */
+            _mm_storel_epi64((__m128i*)(dst + 0*destStride), xmm0);        /* store row 0 (words) */
+            _mm_storeh_epi64((__m128i*)(dst + 1*destStride), xmm0);        /* store row 1 (words) */
+            _mm_storel_epi64((__m128i*)(dst + 2*destStride), xmm2);        /* store row 2 (words) */
+            _mm_storeh_epi64((__m128i*)(dst + 3*destStride), xmm2);        /* store row 3 (words) */
+        }
+    }
+
+    void MAKE_NAME(h265_DST4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth)
+    {
+        if (inplace) {
+            switch (bitDepth) {
+            case  8: h265_DST4x4Inv_16sT_Kernel< 8, Ipp8u,  true >((Ipp8u *) destPtr, coeff, destStride); break;
+            case  9: h265_DST4x4Inv_16sT_Kernel< 9, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+            case 10: h265_DST4x4Inv_16sT_Kernel<10, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+            }
+        } else {
+            switch (bitDepth) {
+            case  8: h265_DST4x4Inv_16sT_Kernel< 8, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+            case  9: h265_DST4x4Inv_16sT_Kernel< 9, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+            case 10: h265_DST4x4Inv_16sT_Kernel<10, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+            }
         }
     }
 
@@ -342,7 +407,8 @@ namespace MFX_HEVC_PP
 #undef coef_stride
 #define coef_stride 8
 
-    void MAKE_NAME(h265_DCT8x8Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+    template <int bitDepth, typename DstCoeffsType, bool inplace>
+    static void h265_DCT8x8Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_RESTRICT coeff, int destStride)
     {
         ALIGN_DECL(16) short tmp[8 * 8];
 
@@ -353,20 +419,10 @@ namespace MFX_HEVC_PP
         __m128i R07, R16, R25, R34;
         __m128i d10c10, d32c32, c3210, d3210;
         __m128i r4567, r3210, r7654, r76543210;
-
-        unsigned char* H265_RESTRICT destByte;
-        short* H265_RESTRICT destWord;
+        const int SHIFT_INV_2ND = (SHIFT_INV_2ND_BASE - (bitDepth - 8));
         int j;
 
         signed short *H265_RESTRICT p_tmp = tmp;
-
-        if (destSize == 1) {
-            destByte = (unsigned char *)destPtr;
-            destWord = 0;
-        } else {
-            destByte = 0;
-            destWord = (short *)destPtr;
-        }
 
         for (j = 0; j < 8; j += 4)
         {
@@ -474,33 +530,61 @@ namespace MFX_HEVC_PP
 
             r76543210 = _mm_packs_epi32( _mm_srai_epi32(r3210, SHIFT_INV_2ND), _mm_srai_epi32(r7654, SHIFT_INV_2ND));         //  r7 r6 r5 r4 r3 r2 r1 r0
 
-            if (destSize == 1) {
+            if (inplace && sizeof(DstCoeffsType) == 1) {
                 /* load dst[0-7], expand to 16 bits, add temp[0-7], clip/pack to 8 bytes */
-                s = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&destByte[0]));
+                s = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&dst[0]));
                 s = _mm_add_epi16(s, r76543210);
                 s = _mm_packus_epi16(s, s);
-                _mm_storel_epi64((__m128i *)&destByte[0], s);        /* store dst[0-7] (bytes) */
-                destByte += destStride;
+                _mm_storel_epi64((__m128i *)&dst[0], s);        /* store dst[0-7] (bytes) */
+                dst += destStride;
+            } else if (inplace && sizeof(DstCoeffsType) == 2) {
+                /* load 8 words from each row, add temp values, clip to [0, 2^bitDepth) */
+                s = _mm_loadu_si128((__m128i *)dst);
+                s = _mm_adds_epi16(s, r76543210);
+
+                s4 = _mm_setzero_si128();
+                s5 = _mm_set1_epi16((1 << bitDepth) - 1);
+                s  = _mm_max_epi16(s, s4);
+                s  = _mm_min_epi16(s, s5);
+
+                _mm_storeu_si128((__m128i *)dst, s);    /* store temp[0-7] (words) */
+                dst += destStride;
             } else {
-                _mm_storeu_si128((__m128i *)destWord, r76543210);    /* store temp[0-7] (words) */
-                destWord += destStride;
+                _mm_storeu_si128((__m128i *)dst, r76543210);    /* store temp[0-7] (words) */
+                dst += destStride;
             }
 
             p_tmp += 8;
         }
     }
 
+    void MAKE_NAME(h265_DCT8x8Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth)
+    {
+        if (inplace) {
+            switch (bitDepth) {
+            case  8: h265_DCT8x8Inv_16sT_Kernel< 8, Ipp8u,  true >((Ipp8u *) destPtr, coeff, destStride); break;
+            case  9: h265_DCT8x8Inv_16sT_Kernel< 9, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+            case 10: h265_DCT8x8Inv_16sT_Kernel<10, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+            }
+        } else {
+            switch (bitDepth) {
+            case  8: h265_DCT8x8Inv_16sT_Kernel< 8, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+            case  9: h265_DCT8x8Inv_16sT_Kernel< 9, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+            case 10: h265_DCT8x8Inv_16sT_Kernel<10, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+            }
+        }
+    }
 
 
 #undef coef_stride
 #define coef_stride 16
 
-    static H265_FORCEINLINE void IDCT_16x16_2ND_SSE4(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+    template <int bitDepth, typename DstCoeffsType, bool inplace>
+    static H265_FORCEINLINE void IDCT_16x16_2ND_SSE4(DstCoeffsType *dst, const short *H265_RESTRICT coeff, int destStride)
     {
         __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
-        unsigned char* H265_RESTRICT destByte;
-        short* H265_RESTRICT destWord;
         int i;
+        const int SHIFT_INV_2ND = (SHIFT_INV_2ND_BASE - (bitDepth - 8));
 
         M128I_W8C( t_16_a0101_08,  64, 64,  64,-64,  64,-64,  64, 64);
         M128I_W8C( t_16_b0110_4C,  83, 36,  36,-83, -36, 83, -83,-36);
@@ -516,14 +600,6 @@ namespace MFX_HEVC_PP
         M128I_W8C( t_16_f4567_67,  43, 70,   9,-80, -57, 87,  87,-90);
 
         M128I_DC ( round2, 1<<(SHIFT_INV_2ND-1));
-
-        if (destSize == 1) {
-            destByte = (unsigned char *)destPtr;
-            destWord = 0;
-        } else {
-            destByte = 0;
-            destWord = (short *)destPtr;
-        }
 
         for(i=0; i<16; ++i)
         {
@@ -611,31 +687,49 @@ namespace MFX_HEVC_PP
             xmm2 = _mm_srai_epi32( xmm2, SHIFT_INV_2ND);
             xmm3 = _mm_packs_epi32(xmm3, xmm2);
 
-            if (destSize == 1) {
+            if (inplace && sizeof(DstCoeffsType) == 1) {
                 /* load dst[0-7], expand to 16 bits, add temp[0-7], clip/pack to 8 bytes */
-                xmm1 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&destByte[0]));
+                xmm1 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&dst[0]));
                 xmm1 = _mm_add_epi16(xmm1, xmm5);
                 xmm1 = _mm_packus_epi16(xmm1, xmm1);
 
                 /* repeat for [8-15] */
-                xmm2 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&destByte[8]));
+                xmm2 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&dst[8]));
                 xmm2 = _mm_add_epi16(xmm2, xmm3);
                 xmm2 = _mm_packus_epi16(xmm2, xmm2);
 
                 xmm1 = _mm_unpacklo_epi64(xmm1, xmm2);
-                _mm_storeu_si128((__m128i *)&destByte[0], xmm1);    /* store dst[0-15] (bytes) */
-                destByte += destStride;
+                _mm_storeu_si128((__m128i *)&dst[0], xmm1);    /* store dst[0-15] (bytes) */
+                dst += destStride;
+            } else if (inplace && sizeof(DstCoeffsType) == 2) {
+                /* load 8 words at a time, add temp values, clip to [0, 2^bitDepth) */
+                xmm1 = _mm_loadu_si128((__m128i *)(&dst[0]));
+                xmm1 = _mm_adds_epi16(xmm1, xmm5);
+
+                xmm2 = _mm_loadu_si128((__m128i *)(&dst[8]));
+                xmm2 = _mm_adds_epi16(xmm2, xmm3);
+
+                xmm4 = _mm_setzero_si128();
+                xmm5 = _mm_set1_epi16((1 << bitDepth) - 1);
+                xmm1 = _mm_max_epi16(xmm1, xmm4); xmm1 = _mm_min_epi16(xmm1, xmm5);
+                xmm2 = _mm_max_epi16(xmm2, xmm4); xmm2 = _mm_min_epi16(xmm2, xmm5);
+
+                _mm_storeu_si128((__m128i *)(&dst[0]), xmm1);    /* store temp[0-7] (words) */
+                _mm_storeu_si128((__m128i *)(&dst[8]), xmm2);    /* store temp[0-7] (words) */
+                dst += destStride;
+
             } else {
-                _mm_storeu_si128((__m128i *)(destWord + 0), xmm5);    /* store temp[ 0- 7] (words) */
-                _mm_storeu_si128((__m128i *)(destWord + 8), xmm3);    /* store temp[ 8-15] (words) */
-                destWord += destStride;
+                _mm_storeu_si128((__m128i *)(dst + 0), xmm5);    /* store temp[ 0- 7] (words) */
+                _mm_storeu_si128((__m128i *)(dst + 8), xmm3);    /* store temp[ 8-15] (words) */
+                dst += destStride;
             }
 
             coeff += 16;
         }
     }
 
-    void MAKE_NAME(h265_DCT16x16Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+    template <int bitDepth, typename DstCoeffsType, bool inplace>
+    static void h265_DCT16x16Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_RESTRICT coeff, int destStride)
     {
         __m128i s0, s2, s4, s6, s8, s1, s3, s5, s7, s9, s11, s13, s15;
         __m128i O0L, O1L, O2L, O3L, O4L, O5L, O6L, O7L;
@@ -832,18 +926,29 @@ namespace MFX_HEVC_PP
             p_tmp += 4;
         }
 
-        IDCT_16x16_2ND_SSE4(destPtr, tmp, destStride, destSize);
+        IDCT_16x16_2ND_SSE4<bitDepth, DstCoeffsType, inplace>(dst, tmp, destStride);
     }
 
-#define UPDATE_070513
-
-#ifdef UPDATE_070513
-
-    //#define _USE_SHORTCUT_ 1
+    void MAKE_NAME(h265_DCT16x16Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth)
+    {
+        if (inplace) {
+            switch (bitDepth) {
+            case  8: h265_DCT16x16Inv_16sT_Kernel< 8, Ipp8u,  true >((Ipp8u *) destPtr, coeff, destStride); break;
+            case  9: h265_DCT16x16Inv_16sT_Kernel< 9, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+            case 10: h265_DCT16x16Inv_16sT_Kernel<10, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+            }
+        } else {
+            switch (bitDepth) {
+            case  8: h265_DCT16x16Inv_16sT_Kernel< 8, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+            case  9: h265_DCT16x16Inv_16sT_Kernel< 9, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+            case 10: h265_DCT16x16Inv_16sT_Kernel<10, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+            }
+        }
+    }
 
     // Load constants
     //#define _mm_load_const _mm_load_si128
-#define _mm_load_const _mm_lddqu_si128   
+#define _mm_load_const _mm_lddqu_si128
 
 #define _mm_movehl_epi64(A, B) _mm_castps_si128(_mm_movehl_ps(_mm_castsi128_ps(A), _mm_castsi128_ps(B)))
 #define _mm_loadh_epi64(A, p)  _mm_castpd_si128(_mm_loadh_pd(_mm_castsi128_pd(A), (double *)(p)))
@@ -851,9 +956,10 @@ namespace MFX_HEVC_PP
 
 #define src_stride 32  // strade for temp[]
 
-    // 9200 CPU clocks. 
+    // 9200 CPU clocks.
     // 43 * _mm_madd_epi16 = 344
-    void MAKE_NAME(h265_DCT32x32Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+    template <int bitDepth, typename DstCoeffsType, bool inplace>
+    static void h265_DCT32x32Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_RESTRICT coeff, int destStride)
     {
         int i;
         signed short * dest;
@@ -861,16 +967,7 @@ namespace MFX_HEVC_PP
         ALIGN_DECL(16) __m128i buff[32*32];
         ALIGN_DECL(16) short temp[32*32];
         __m128i s0, s1, s2, s3, s4, s5, s6, s7;
-        unsigned char* H265_RESTRICT destByte;
-        short* H265_RESTRICT destWord;
-
-        if (destSize == 1) {
-            destByte = (unsigned char *)destPtr;
-            destWord = 0;
-        } else {
-            destByte = 0;
-            destWord = (short *)destPtr;
-        }
+        const int SHIFT_INV_2ND = (SHIFT_INV_2ND_BASE - (bitDepth - 8));
 
         s1 = _mm_setzero_si128();
         s2 = _mm_setzero_si128();
@@ -884,7 +981,7 @@ namespace MFX_HEVC_PP
 #define rounder     rounder_64
 #define dest_stride 32
 
-            for (i=0; i<32; i++) 
+            for (i=0; i<32; i++)
             {
                 int num = 4 * repos[i];
 
@@ -897,11 +994,11 @@ namespace MFX_HEVC_PP
                 s1 = _mm_madd_epi16(s1, _mm_lddqu_si128((const __m128i *)koef0000));
                 s1 = _mm_add_epi32(s1,  _mm_lddqu_si128((const __m128i *)rounder));
 
-                s0 = _mm_shuffle_epi32(s1, 0x4E); 
+                s0 = _mm_shuffle_epi32(s1, 0x4E);
                 s1 = _mm_sub_epi32(s1, s0);
                 s0 = _mm_add_epi32(s0, s0);
                 s0 = _mm_add_epi32(s0, s1);
-                s1 = _mm_shuffle_epi32(s1, 1); 
+                s1 = _mm_shuffle_epi32(s1, 1);
                 s0 = _mm_unpacklo_epi64(s0, s1);
 
                 s2 = _mm_insert_epi16(s2, (int)coeff[ 4*src_stride], 0); // 0 0 0 0 0 0 0 a
@@ -909,14 +1006,14 @@ namespace MFX_HEVC_PP
                 s2 = _mm_insert_epi16(s2, (int)coeff[20*src_stride], 2); // 0 0 0 0 0 c b a
                 s2 = _mm_insert_epi16(s2, (int)coeff[28*src_stride], 3); // 0 0 0 0 d c b a
                 s4 = _mm_shuffle_epi32(s2, 0x00);                      // b a b a b a b a
-                s5 = _mm_shuffle_epi32(s2, 0x55);                      // d c d c d c d c 
+                s5 = _mm_shuffle_epi32(s2, 0x55);                      // d c d c d c d c
 
                 s4 = _mm_madd_epi16(s4, _mm_lddqu_si128((const __m128i *)koef0001));
                 s5 = _mm_madd_epi16(s5, _mm_lddqu_si128((const __m128i *)koef0002));
                 s4 = _mm_add_epi32(s4,  s5);
 
-                s1 = _mm_shuffle_epi32(s0, 0x1B); 
-                s7 = _mm_shuffle_epi32(s4, 0x1B); 
+                s1 = _mm_shuffle_epi32(s0, 0x1B);
+                s7 = _mm_shuffle_epi32(s4, 0x1B);
                 s0 = _mm_add_epi32(s0,  s4);
                 s1 = _mm_sub_epi32(s1,  s7);
 
@@ -929,33 +1026,33 @@ namespace MFX_HEVC_PP
                 s3 = _mm_insert_epi16(s3, (int)coeff[26*src_stride], 6);
                 s3 = _mm_insert_epi16(s3, (int)coeff[30*src_stride], 7);
 
-                s5 = _mm_shuffle_epi32(s3, 0); 
+                s5 = _mm_shuffle_epi32(s3, 0);
                 s4 = _mm_madd_epi16(s5, _mm_lddqu_si128((const __m128i *)koef0003));
                 s5 = _mm_madd_epi16(s5, _mm_lddqu_si128((const __m128i *)koef0004));
 
-                s6 = _mm_shuffle_epi32(s3, 0x55); 
+                s6 = _mm_shuffle_epi32(s3, 0x55);
                 s7 = _mm_madd_epi16(s6, _mm_lddqu_si128((const __m128i *)koef0005));
                 s4 = _mm_add_epi32(s4,  s7);
 
                 s6 = _mm_madd_epi16(s6, _mm_lddqu_si128((const __m128i *)koef0006));
                 s5 = _mm_add_epi32(s5,  s6);
 
-                s6 = _mm_shuffle_epi32(s3, 0xAA); 
+                s6 = _mm_shuffle_epi32(s3, 0xAA);
                 s7 = _mm_madd_epi16(s6, _mm_lddqu_si128((const __m128i *)koef0007));
                 s4 = _mm_add_epi32(s4,  s7);
                 s6 = _mm_madd_epi16(s6, _mm_lddqu_si128((const __m128i *)koef0008));
                 s5 = _mm_add_epi32(s5,  s6);
 
-                s6 = _mm_shuffle_epi32(s3, 0xFF); 
+                s6 = _mm_shuffle_epi32(s3, 0xFF);
                 s7 = _mm_madd_epi16(s6, _mm_lddqu_si128((const __m128i *)koef0009));
                 s4 = _mm_add_epi32(s4,  s7);
                 s6 = _mm_madd_epi16(s6, _mm_lddqu_si128((const __m128i *)koef0010));
                 s5 = _mm_add_epi32(s5,  s6);
 
-                s2 = _mm_shuffle_epi32(s0, 0x1B); 
-                s3 = _mm_shuffle_epi32(s1, 0x1B); 
-                s6 = _mm_shuffle_epi32(s4, 0x1B); 
-                s7 = _mm_shuffle_epi32(s5, 0x1B); 
+                s2 = _mm_shuffle_epi32(s0, 0x1B);
+                s3 = _mm_shuffle_epi32(s1, 0x1B);
+                s6 = _mm_shuffle_epi32(s4, 0x1B);
+                s7 = _mm_shuffle_epi32(s5, 0x1B);
 
                 s0 = _mm_add_epi32(s0,  s4);
                 s1 = _mm_add_epi32(s1,  s5);
@@ -971,22 +1068,22 @@ namespace MFX_HEVC_PP
                 s4 = _mm_insert_epi16(s4, (int)coeff[13*src_stride], 6);
                 s4 = _mm_insert_epi16(s4, (int)coeff[15*src_stride], 7);
 
-                s5 = _mm_shuffle_epi32(s4, 0); 
+                s5 = _mm_shuffle_epi32(s4, 0);
                 s6 = _mm_madd_epi16(s5, _mm_lddqu_si128((const __m128i *)koef00010));
-                s5 = _mm_shuffle_epi32(s4, 0x55); 
+                s5 = _mm_shuffle_epi32(s4, 0x55);
                 s7 = _mm_madd_epi16(s5, _mm_lddqu_si128((const __m128i *)koef02030));
                 s6 = _mm_add_epi32(s6,  s7);
 
-                s5 = _mm_shuffle_epi32(s4, 0xAA); 
+                s5 = _mm_shuffle_epi32(s4, 0xAA);
                 s7 = _mm_madd_epi16(s5, _mm_lddqu_si128((const __m128i *)koef04050));
                 s6 = _mm_add_epi32(s6,  s7);
-                s5 = _mm_shuffle_epi32(s4, 0xFF); 
+                s5 = _mm_shuffle_epi32(s4, 0xFF);
                 s7 = _mm_madd_epi16(s5, _mm_lddqu_si128((const __m128i *)koef06070));
                 s6 = _mm_add_epi32(s6,  s7);
 
                 s5 = _mm_insert_epi16(s5, (int)coeff[17*src_stride], 0);
                 s5 = _mm_insert_epi16(s5, (int)coeff[19*src_stride], 1);
-                s5 = _mm_shuffle_epi32(s5, 0); 
+                s5 = _mm_shuffle_epi32(s5, 0);
                 s7 = _mm_madd_epi16(s5, _mm_lddqu_si128((const __m128i *)koef08090));
                 s6 = _mm_add_epi32(s6,  s7);
 
@@ -1000,9 +1097,9 @@ namespace MFX_HEVC_PP
                 s6 = _mm_add_epi32(s6,  _mm_madd_epi16(_mm_shuffle_epi32(s5, 0x55), _mm_lddqu_si128((const __m128i *)koef10110)));
                 s6 = _mm_add_epi32(s6,  _mm_madd_epi16(_mm_shuffle_epi32(s5, 0xAA), _mm_lddqu_si128((const __m128i *)koef12130)));
                 s6 = _mm_add_epi32(s6,  _mm_madd_epi16(_mm_shuffle_epi32(s5, 0xFF), _mm_lddqu_si128((const __m128i *)koef14150)));
-                s7 = _mm_shuffle_epi32(s0, 0x1B); 
+                s7 = _mm_shuffle_epi32(s0, 0x1B);
                 s0 = _mm_add_epi32(s0,  s6);
-                s6 = _mm_shuffle_epi32(s6, 0x1B); 
+                s6 = _mm_shuffle_epi32(s6, 0x1B);
                 s7 = _mm_sub_epi32(s7,  s6);
 
                 s0 = _mm_srai_epi32(s0,  shift);            // (r03 r02 r01 r00) >>= shift
@@ -1202,8 +1299,6 @@ namespace MFX_HEVC_PP
 
         // Horizontal 1-D inverse transform
         {
-#define shift       12
-#define rounder     rounder_2048
 #undef  dest_stride
 #define dest_stride destStride
 
@@ -1216,55 +1311,61 @@ namespace MFX_HEVC_PP
                 s7 = _mm_load_si128((const __m128i *)(coeff)); coeff += 8;
                 s1 = _mm_unpacklo_epi32(s7, s7);
                 s1 = _mm_madd_epi16(s1, _mm_load_const((const __m128i *)koef0000));
-                s1 = _mm_add_epi32(s1,  _mm_load_const((const __m128i *)rounder));
+                if (SHIFT_INV_2ND == 12) {
+                    s1 = _mm_add_epi32(s1,  _mm_load_const((const __m128i *)rounder_2048));
+                } else if (SHIFT_INV_2ND == 11) {
+                    s1 = _mm_add_epi32(s1,  _mm_load_const((const __m128i *)rounder_1024));
+                } else if (SHIFT_INV_2ND == 10) {
+                    s1 = _mm_add_epi32(s1,  _mm_load_const((const __m128i *)rounder_512));
+                }
 
-                s0 = _mm_shuffle_epi32(s1, 0x4E); 
+                s0 = _mm_shuffle_epi32(s1, 0x4E);
                 s1 = _mm_sub_epi32(s1, s0);
                 s0 = _mm_add_epi32(s0, s0);
                 s0 = _mm_add_epi32(s0, s1);
-                s1 = _mm_shuffle_epi32(s1, 1); 
+                s1 = _mm_shuffle_epi32(s1, 1);
                 s0 = _mm_unpacklo_epi64(s0, s1);
 
-                s4 = _mm_shuffle_epi32(s7, 0xAA); 
-                s5 = _mm_shuffle_epi32(s7, 0xFF); 
+                s4 = _mm_shuffle_epi32(s7, 0xAA);
+                s5 = _mm_shuffle_epi32(s7, 0xFF);
 
                 s4 = _mm_madd_epi16(s4, _mm_load_const((const __m128i *)koef0001));
                 s5 = _mm_madd_epi16(s5, _mm_load_const((const __m128i *)koef0002));
                 s4 = _mm_add_epi32(s4,  s5);
 
-                s1 = _mm_shuffle_epi32(s0, 0x1B); 
-                s7 = _mm_shuffle_epi32(s4, 0x1B); 
+                s1 = _mm_shuffle_epi32(s0, 0x1B);
+                s7 = _mm_shuffle_epi32(s4, 0x1B);
                 s0 = _mm_add_epi32(s0,  s4);
                 s1 = _mm_sub_epi32(s1,  s7);
 
                 // load next 8 words
                 s3 = _mm_load_si128((const __m128i *)(coeff)); coeff += 8;
-                s5 = _mm_shuffle_epi32(s3, 0); 
+                s5 = _mm_shuffle_epi32(s3, 0);
                 s4 = _mm_madd_epi16(s5, _mm_load_const((const __m128i *)koef0003));
                 s5 = _mm_madd_epi16(s5, _mm_load_const((const __m128i *)koef0004));
 
-                s6 = _mm_shuffle_epi32(s3, 0x55); 
+                s6 = _mm_shuffle_epi32(s3, 0x55);
                 s7 = _mm_madd_epi16(s6, _mm_load_const((const __m128i *)koef0005));
                 s4 = _mm_add_epi32(s4,  s7);
                 s6 = _mm_madd_epi16(s6, _mm_load_const((const __m128i *)koef0006));
                 s5 = _mm_add_epi32(s5,  s6);
 
-                s6 = _mm_shuffle_epi32(s3, 0xAA); 
+                s6 = _mm_shuffle_epi32(s3, 0xAA);
                 s7 = _mm_madd_epi16(s6, _mm_load_const((const __m128i *)koef0007));
                 s4 = _mm_add_epi32(s4,  s7);
                 s6 = _mm_madd_epi16(s6, _mm_load_const((const __m128i *)koef0008));
                 s5 = _mm_add_epi32(s5,  s6);
 
-                s6 = _mm_shuffle_epi32(s3, 0xFF); 
+                s6 = _mm_shuffle_epi32(s3, 0xFF);
                 s7 = _mm_madd_epi16(s6, _mm_load_const((const __m128i *)koef0009));
                 s4 = _mm_add_epi32(s4,  s7);
                 s6 = _mm_madd_epi16(s6, _mm_load_const((const __m128i *)koef0010));
                 s5 = _mm_add_epi32(s5,  s6);
 
-                s2 = _mm_shuffle_epi32(s0, 0x1B); 
-                s3 = _mm_shuffle_epi32(s1, 0x1B); 
-                s6 = _mm_shuffle_epi32(s4, 0x1B); 
-                s7 = _mm_shuffle_epi32(s5, 0x1B); 
+                s2 = _mm_shuffle_epi32(s0, 0x1B);
+                s3 = _mm_shuffle_epi32(s1, 0x1B);
+                s6 = _mm_shuffle_epi32(s4, 0x1B);
+                s7 = _mm_shuffle_epi32(s5, 0x1B);
 
                 s0 = _mm_add_epi32(s0,  s4);
                 s1 = _mm_add_epi32(s1,  s5);
@@ -1323,13 +1424,13 @@ namespace MFX_HEVC_PP
                 s0_ = _mm_add_epi32(s0_, _mm_madd_epi16(s7, _mm_load_const((const __m128i *)koef14152)));
                 s1_ = _mm_add_epi32(s1_, _mm_madd_epi16(s7, _mm_load_const((const __m128i *)koef14153)));
 
-                s7 = _mm_shuffle_epi32(s0, 0x1B); 
+                s7 = _mm_shuffle_epi32(s0, 0x1B);
                 s0 = _mm_add_epi32(s0,  s6);
-                s6 = _mm_shuffle_epi32(s6, 0x1B); 
+                s6 = _mm_shuffle_epi32(s6, 0x1B);
                 s7 = _mm_sub_epi32(s7,  s6);
 
-                s0 = _mm_srai_epi32(s0,  shift);           // (r03 r02 r01 r00) >>= shift
-                s7 = _mm_srai_epi32(s7,  shift);           // (r31 r30 r29 r28) >>= shift
+                s0 = _mm_srai_epi32(s0,  SHIFT_INV_2ND);           // (r03 r02 r01 r00) >>= shift
+                s7 = _mm_srai_epi32(s7,  SHIFT_INV_2ND);           // (r31 r30 r29 r28) >>= shift
                 s0 = _mm_packs_epi32(s0, s7);              // clip(-32768, 32767)
 
                 s7 = _mm_shuffle_epi32(s1, 0x1B);
@@ -1337,62 +1438,93 @@ namespace MFX_HEVC_PP
                 s6 = _mm_shuffle_epi32(s6_, 0x1B);
                 s7 = _mm_sub_epi32(s7,  s6);
 
-                s1 = _mm_packs_epi32(_mm_srai_epi32(s1,  shift), _mm_srai_epi32(s7,  shift));
+                s1 = _mm_packs_epi32(_mm_srai_epi32(s1,  SHIFT_INV_2ND), _mm_srai_epi32(s7,  SHIFT_INV_2ND));
 
                 s6 = s0;
                 s0 = _mm_unpacklo_epi64(s0, s1);    /* temp[ 0- 7] (words) */
                 s1 = _mm_unpackhi_epi64(s1, s6);    /* temp[24-31] (words) */
 
-                if (destSize == 1) {
+                if (inplace && sizeof(DstCoeffsType) == 1) {
                     /* load dst[0-7], expand to 16 bits, add temp[0-7], clip/pack to 8 bytes */
-                    s6 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&destByte[0]));    
+                    s6 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&dst[0]));
                     s6 = _mm_add_epi16(s6, s0);
                     s6 = _mm_packus_epi16(s6, s6);
 
                     /* repeat for [24-31] */
-                    s7 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&destByte[24]));    
+                    s7 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&dst[24]));
                     s7 = _mm_add_epi16(s7, s1);
                     s7 = _mm_packus_epi16(s7, s7);
 
-                    _mm_storel_epi64((__m128i *)&destByte[ 0], s6);    /* store dst[ 0- 7] (bytes) */
-                    _mm_storel_epi64((__m128i *)&destByte[24], s7);    /* store dst[24-31] (bytes) */
+                    _mm_storel_epi64((__m128i *)&dst[ 0], s6);    /* store dst[ 0- 7] (bytes) */
+                    _mm_storel_epi64((__m128i *)&dst[24], s7);    /* store dst[24-31] (bytes) */
+                } else if (inplace && sizeof(DstCoeffsType) == 2) {
+                    /* load words [0-7] and [24-31], add temp values, clip to [0, 2^bitDepth) */
+                    s6 = _mm_loadu_si128((__m128i *)(&dst[0]));
+                    s6 = _mm_adds_epi16(s6, s0);
+
+                    s7 = _mm_loadu_si128((__m128i *)(&dst[24]));
+                    s7 = _mm_adds_epi16(s7, s1);
+
+                    s4 = _mm_setzero_si128();
+                    s5 = _mm_set1_epi16((1 << bitDepth) - 1);
+                    s6 = _mm_max_epi16(s6, s4); s6 = _mm_min_epi16(s6, s5);
+                    s7 = _mm_max_epi16(s7, s4); s7 = _mm_min_epi16(s7, s5);
+
+                    _mm_storeu_si128((__m128i *)&dst[ 0], s6);    /* store dst[ 0- 7] (bytes) */
+                    _mm_storeu_si128((__m128i *)&dst[24], s7);    /* store dst[24-31] (bytes) */
                 } else {
-                    _mm_storeu_si128((__m128i *)&destWord[ 0], s0);    /* store dst[ 0- 7] (words) */
-                    _mm_storeu_si128((__m128i *)&destWord[24], s1);    /* store dst[24-31] (words) */
+                    _mm_storeu_si128((__m128i *)&dst[ 0], s0);    /* store dst[ 0- 7] (words) */
+                    _mm_storeu_si128((__m128i *)&dst[24], s1);    /* store dst[24-31] (words) */
                 }
 
                 s6 = _mm_shuffle_epi32(s3, 0x1B);
                 s3 = _mm_add_epi32(s3,  s0_);
                 s0 = _mm_shuffle_epi32(s0_, 0x1B);
                 s6 = _mm_sub_epi32(s6,  s0);
-                s3 = _mm_packs_epi32(_mm_srai_epi32(s3,  shift), _mm_srai_epi32(s6,  shift));
+                s3 = _mm_packs_epi32(_mm_srai_epi32(s3,  SHIFT_INV_2ND), _mm_srai_epi32(s6,  SHIFT_INV_2ND));
 
                 s7 = _mm_shuffle_epi32(s2, 0x1B);
                 s2 = _mm_add_epi32(s2,  s1_);
                 s1 = _mm_shuffle_epi32(s1_, 0x1B);
                 s7 = _mm_sub_epi32(s7,  s1);
-                s2 = _mm_packs_epi32(_mm_srai_epi32(s2,  shift), _mm_srai_epi32(s7,  shift));
+                s2 = _mm_packs_epi32(_mm_srai_epi32(s2,  SHIFT_INV_2ND), _mm_srai_epi32(s7,  SHIFT_INV_2ND));
 
                 s6 = s3;
                 s3 = _mm_unpacklo_epi64(s3, s2);   /* temp[ 8-15] (words) */
                 s2 = _mm_unpackhi_epi64(s2, s6);   /* temp[16-23] (words) */
 
-                if (destSize == 1) {
+                if (inplace && sizeof(DstCoeffsType) == 1) {
                     /* load dst[8-15], expand to 16 bits, add temp[8-15], clip/pack to 8 bytes */
-                    s6 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&destByte[8]));
+                    s6 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&dst[8]));
                     s6 = _mm_add_epi16(s6, s3);
 
                     /* repeat for [24-31] */
-                    s7 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&destByte[16]));
+                    s7 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&dst[16]));
                     s7 = _mm_add_epi16(s7, s2);
 
                     s6 = _mm_packus_epi16(s6, s7);
-                    _mm_storeu_si128((__m128i *)&destByte[ 8], s6);    /* store dst[ 8-23] (bytes) */
-                    destByte += dest_stride;
+                    _mm_storeu_si128((__m128i *)&dst[ 8], s6);    /* store dst[ 8-23] (bytes) */
+                    dst += dest_stride;
+                } else if (inplace && sizeof(DstCoeffsType) == 2) {
+                    /* load words [8-15] and [16-23], add temp values, clip to [0, 2^bitDepth) */
+                    s6 = _mm_loadu_si128((__m128i *)(&dst[8]));
+                    s6 = _mm_adds_epi16(s6, s3);
+
+                    s7 = _mm_loadu_si128((__m128i *)(&dst[16]));
+                    s7 = _mm_adds_epi16(s7, s2);
+
+                    s4 = _mm_setzero_si128();
+                    s5 = _mm_set1_epi16((1 << bitDepth) - 1);
+                    s6 = _mm_max_epi16(s6, s4); s6 = _mm_min_epi16(s6, s5);
+                    s7 = _mm_max_epi16(s7, s4); s7 = _mm_min_epi16(s7, s5);
+
+                    _mm_storeu_si128((__m128i *)&dst[ 8], s6);    /* store dst[ 0- 7] (bytes) */
+                    _mm_storeu_si128((__m128i *)&dst[16], s7);    /* store dst[24-31] (bytes) */
+                    dst += dest_stride;
                 } else {
-                    _mm_storeu_si128((__m128i *)&destWord[ 8], s3);    /* store dst[ 8-15] (words) */
-                    _mm_storeu_si128((__m128i *)&destWord[16], s2);    /* store dst[16-23] (words) */
-                    destWord += dest_stride;
+                    _mm_storeu_si128((__m128i *)&dst[ 8], s3);    /* store dst[ 8-15] (words) */
+                    _mm_storeu_si128((__m128i *)&dst[16], s2);    /* store dst[16-23] (words) */
+                    dst += dest_stride;
                 }
             }
 #undef  shift
@@ -1401,533 +1533,23 @@ namespace MFX_HEVC_PP
         }
     }
 
-#else  /* UPDATE_070513 */
-
-    //#define _USE_SHORTCUT_ 1
-
-#define _mm_movehl_epi64(A, B) _mm_castps_si128(_mm_movehl_ps(_mm_castsi128_ps(A), _mm_castsi128_ps(B)))
-#define _mm_storeh_epi64(p, A) _mm_storeh_pd((double *)(p), _mm_castsi128_pd(A))
-
-    // 32-bits constants
-    signed int rounder_64[]   = {64, 64, 0, 0};
-    signed int rounder_2048[] = {2048, 2048, 0, 0};
-
-    // 16-bits constants
-    signed short koef0000[]  = {64, 64,  64,-64,  83, 36,  36,-83};
-    signed short koef0001[]  = {89, 75,  75,-18,  50,-89,  18,-50};
-    signed short koef0002[]  = {50, 18, -89,-50,  18, 75,  75,-89};
-    signed short koef0003[]  = {90, 87,  87, 57,  80,  9,  70,-43};
-    signed short koef0004[]  = {57,-80,  43,-90,  25,-70,   9,-25};
-    signed short koef0005[]  = {80, 70,   9,-43, -70,-87, -87,  9};
-    signed short koef0006[]  ={-25, 90,  57, 25,  90,-80,  43,-57};
-    signed short koef0007[]  = {57, 43, -80,-90, -25, 57,  90, 25};
-    signed short koef0008[]  = {-9,-87, -87, 70,  43,  9,  70,-80};
-    signed short koef0009[]  = {25,  9, -70,-25,  90, 43, -80,-57};
-    signed short koef0010[]  = {43, 70,   9,-80, -57, 87,  87,-90};
-    signed short koef00010[] = {90, 90,  90, 82,  88, 67,  85, 46};
-    signed short koef02030[] = {88, 85,  67, 46,  31,-13, -13,-67};
-    signed short koef04050[] = {82, 78,  22, -4, -54,-82, -90,-73};
-    signed short koef06070[] = {73, 67, -31,-54, -90,-78, -22, 38};
-    signed short koef08090[] = {61, 54, -73,-85, -46, -4,  82, 88};
-    signed short koef10110[] = {46, 38, -90,-88,  38, 73,  54, -4};
-    signed short koef12130[] = {31, 22, -78,-61,  90, 85, -61,-90};
-    signed short koef14150[] = {13,  4, -38,-13,  61, 22, -78,-31};
-    signed short koef00011[] = {82, 22,  78, -4,  73,-31,  67,-54};
-    signed short koef02031[] ={-54,-90, -82,-73, -90,-22, -78, 38};
-    signed short koef04051[] ={-61, 13,  13, 85,  78, 67,  85,-22};
-    signed short koef06071[] = {78, 85,  67,-22, -38,-90, -90,  4};
-    signed short koef08091[] = {31,-46, -88,-61, -13, 82,  90, 13};
-    signed short koef10111[] ={-90,-67,  31, 90,  61,-46, -88,-31};
-    signed short koef12131[] = { 4, 73,  54,-38, -88, -4,  82, 46};
-    signed short koef14151[] = {88, 38, -90,-46,  85, 54, -73,-61};
-    signed short koef00012[] = {61,-73,  54,-85,  46,-90,  38,-88};
-    signed short koef00013[] = {31,-78,  22,-61,  13,-38,   4,-13};
-    signed short koef02032[] ={-46, 82,  -4, 88,  38, 54,  73, -4};
-    signed short koef02033[] = {90,-61,  85,-90,  61,-78,  22,-31};
-    signed short koef04052[] = {31,-88, -46,-61, -90, 31, -67, 90};
-    signed short koef04053[] = { 4, 54,  73,-38,  88,-90,  38,-46};
-    signed short koef06072[] ={-13, 90,  82, 13,  61,-88, -46,-31};
-    signed short koef06073[] ={-88, 82,  -4, 46,  85,-73,  54,-61};
-    signed short koef08092[] = {-4,-90, -90, 38,  22, 67,  85,-78};
-    signed short koef08093[] ={-38,-22, -78, 90,  54,-31,  67,-73};
-    signed short koef10112[] = {22, 85,  67,-78, -85, 13,  13, 61};
-    signed short koef10113[] = {73,-90, -82, 54,   4, 22,  78,-82};
-    signed short koef12132[] ={-38,-78, -22, 90,  73,-82, -90, 54}; 
-    signed short koef12133[] = {67,-13, -13,-31, -46, 67,  85,-88};
-    signed short koef14152[] = {54, 67, -31,-73,   4, 78,  22,-82};
-    signed short koef14153[] ={-46, 85,  67,-88, -82, 90,  90,-90};
-
-#define src_stride 32  // strade for temp[]
-
-    void h265_DCT32x32Inv_16sT(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+    void MAKE_NAME(h265_DCT32x32Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth)
     {
-        int i;
-        ALIGN_DECL(16) short temp[32*32];
-        __m128i s0, s1, s2, s3, s4, s5, s6, s7;
-        unsigned char* H265_RESTRICT destByte;
-        short* H265_RESTRICT destWord;
-
-        if (destSize == 1) {
-            destByte = (unsigned char *)destPtr;
-            destWord = 0;
+        if (inplace) {
+            switch (bitDepth) {
+            case  8: h265_DCT32x32Inv_16sT_Kernel< 8, Ipp8u,  true >((Ipp8u *) destPtr, coeff, destStride); break;
+            case  9: h265_DCT32x32Inv_16sT_Kernel< 9, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+            case 10: h265_DCT32x32Inv_16sT_Kernel<10, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+            }
         } else {
-            destByte = 0;
-            destWord = (short *)destPtr;
-        }
-
-        s1 = _mm_setzero_si128();
-        s2 = _mm_setzero_si128();
-        s3 = _mm_setzero_si128();
-        s4 = _mm_setzero_si128();
-        s5 = _mm_setzero_si128();
-
-        // Vertical 1-D inverse transform
-        {
-#define shift       7
-#define rounder     rounder_64
-#define dest_stride 32
-
-            signed short * dest  = temp;
-
-            for (i=0; i<32; i++) 
-            {
-                s1 = _mm_insert_epi16(s1, (int)coeff[0*src_stride], 0);
-                s1 = _mm_insert_epi16(s1, (int)coeff[16*src_stride], 1);
-                s1 = _mm_insert_epi16(s1, (int)coeff[8*src_stride], 2);
-                s1 = _mm_insert_epi16(s1, (int)coeff[24*src_stride], 3);
-
-                s1 = _mm_unpacklo_epi32(s1, s1);
-                s1 = _mm_madd_epi16(s1, _mm_lddqu_si128((const __m128i *)koef0000));
-                s1 = _mm_add_epi32(s1,  _mm_lddqu_si128((const __m128i *)rounder));
-
-                s0 = _mm_shuffle_epi32(s1, 0x4E); 
-                s1 = _mm_sub_epi32(s1, s0);
-                s0 = _mm_add_epi32(s0, s0);
-                s0 = _mm_add_epi32(s0, s1);
-                s1 = _mm_shuffle_epi32(s1, 1); 
-                s0 = _mm_unpacklo_epi64(s0, s1);
-
-                s2 = _mm_insert_epi16(s2, (int)coeff[ 4*src_stride], 0);
-                s2 = _mm_insert_epi16(s2, (int)coeff[12*src_stride], 1);
-                s2 = _mm_insert_epi16(s2, (int)coeff[20*src_stride], 2);
-                s2 = _mm_insert_epi16(s2, (int)coeff[28*src_stride], 3);
-
-                s4 = _mm_shuffle_epi32(s2, 0x00); 
-                s5 = _mm_shuffle_epi32(s2, 0x55); 
-                s4 = _mm_madd_epi16(s4, _mm_lddqu_si128((const __m128i *)koef0001));
-                s5 = _mm_madd_epi16(s5, _mm_lddqu_si128((const __m128i *)koef0002));
-                s4 = _mm_add_epi32(s4,  s5);
-
-                s1 = _mm_shuffle_epi32(s0, 0x1B); 
-                s7 = _mm_shuffle_epi32(s4, 0x1B); 
-                s0 = _mm_add_epi32(s0,  s4);
-                s1 = _mm_sub_epi32(s1,  s7);
-
-                s3 = _mm_insert_epi16(s3, (int)coeff[2*src_stride], 0);
-                s3 = _mm_insert_epi16(s3, (int)coeff[6*src_stride], 1);
-                s3 = _mm_insert_epi16(s3, (int)coeff[10*src_stride], 2);
-                s3 = _mm_insert_epi16(s3, (int)coeff[14*src_stride], 3);
-                s3 = _mm_insert_epi16(s3, (int)coeff[18*src_stride], 4);
-                s3 = _mm_insert_epi16(s3, (int)coeff[22*src_stride], 5);
-                s3 = _mm_insert_epi16(s3, (int)coeff[26*src_stride], 6);
-                s3 = _mm_insert_epi16(s3, (int)coeff[30*src_stride], 7);
-
-                s5 = _mm_shuffle_epi32(s3, 0); 
-                s4 = _mm_madd_epi16(s5, _mm_lddqu_si128((const __m128i *)koef0003));
-                s5 = _mm_madd_epi16(s5, _mm_lddqu_si128((const __m128i *)koef0004));
-
-                s6 = _mm_shuffle_epi32(s3, 0x55); 
-                s7 = _mm_madd_epi16(s6, _mm_lddqu_si128((const __m128i *)koef0005));
-                s4 = _mm_add_epi32(s4,  s7);
-
-                s6 = _mm_madd_epi16(s6, _mm_lddqu_si128((const __m128i *)koef0006));
-                s5 = _mm_add_epi32(s5,  s6);
-
-                s6 = _mm_shuffle_epi32(s3, 0xAA); 
-                s7 = _mm_madd_epi16(s6, _mm_lddqu_si128((const __m128i *)koef0007));
-                s4 = _mm_add_epi32(s4,  s7);
-                s6 = _mm_madd_epi16(s6, _mm_lddqu_si128((const __m128i *)koef0008));
-                s5 = _mm_add_epi32(s5,  s6);
-
-                s6 = _mm_shuffle_epi32(s3, 0xFF); 
-                s7 = _mm_madd_epi16(s6, _mm_lddqu_si128((const __m128i *)koef0009));
-                s4 = _mm_add_epi32(s4,  s7);
-                s6 = _mm_madd_epi16(s6, _mm_lddqu_si128((const __m128i *)koef0010));
-                s5 = _mm_add_epi32(s5,  s6);
-
-                s2 = _mm_shuffle_epi32(s0, 0x1B); 
-                s3 = _mm_shuffle_epi32(s1, 0x1B); 
-                s6 = _mm_shuffle_epi32(s4, 0x1B); 
-                s7 = _mm_shuffle_epi32(s5, 0x1B); 
-
-                s0 = _mm_add_epi32(s0,  s4);
-                s1 = _mm_add_epi32(s1,  s5);
-                s2 = _mm_sub_epi32(s2,  s6);
-                s3 = _mm_sub_epi32(s3,  s7);
-
-                s4 = _mm_insert_epi16(s4, (int)coeff[1*src_stride], 0);
-                s4 = _mm_insert_epi16(s4, (int)coeff[3*src_stride], 1);
-                s4 = _mm_insert_epi16(s4, (int)coeff[5*src_stride], 2);
-                s4 = _mm_insert_epi16(s4, (int)coeff[7*src_stride], 3);
-                s4 = _mm_insert_epi16(s4, (int)coeff[9*src_stride], 4);
-                s4 = _mm_insert_epi16(s4, (int)coeff[11*src_stride], 5);
-                s4 = _mm_insert_epi16(s4, (int)coeff[13*src_stride], 6);
-                s4 = _mm_insert_epi16(s4, (int)coeff[15*src_stride], 7);
-
-                s5 = _mm_shuffle_epi32(s4, 0); 
-                s6 = _mm_madd_epi16(s5, _mm_lddqu_si128((const __m128i *)koef00010));
-                s5 = _mm_shuffle_epi32(s4, 0x55); 
-                s7 = _mm_madd_epi16(s5, _mm_lddqu_si128((const __m128i *)koef02030));
-                s6 = _mm_add_epi32(s6,  s7);
-
-                s5 = _mm_shuffle_epi32(s4, 0xAA); 
-                s7 = _mm_madd_epi16(s5, _mm_lddqu_si128((const __m128i *)koef04050));
-                s6 = _mm_add_epi32(s6,  s7);
-                s5 = _mm_shuffle_epi32(s4, 0xFF); 
-                s7 = _mm_madd_epi16(s5, _mm_lddqu_si128((const __m128i *)koef06070));
-                s6 = _mm_add_epi32(s6,  s7);
-
-                s5 = _mm_insert_epi16(s5, (int)coeff[17*src_stride], 0);
-                s5 = _mm_insert_epi16(s5, (int)coeff[19*src_stride], 1);
-                s5 = _mm_shuffle_epi32(s5, 0); 
-                s7 = _mm_madd_epi16(s5, _mm_lddqu_si128((const __m128i *)koef08090));
-                s6 = _mm_add_epi32(s6,  s7);
-
-                s5 = _mm_insert_epi16(s5, (int)coeff[21*src_stride], 2);
-                s5 = _mm_insert_epi16(s5, (int)coeff[23*src_stride], 3);
-                s5 = _mm_insert_epi16(s5, (int)coeff[25*src_stride], 4);
-                s5 = _mm_insert_epi16(s5, (int)coeff[27*src_stride], 5);
-                s5 = _mm_insert_epi16(s5, (int)coeff[29*src_stride], 6);
-                s5 = _mm_insert_epi16(s5, (int)coeff[31*src_stride], 7);
-
-                s6 = _mm_add_epi32(s6,  _mm_madd_epi16(_mm_shuffle_epi32(s5, 0x55), _mm_lddqu_si128((const __m128i *)koef10110)));
-                s6 = _mm_add_epi32(s6,  _mm_madd_epi16(_mm_shuffle_epi32(s5, 0xAA), _mm_lddqu_si128((const __m128i *)koef12130)));
-                s6 = _mm_add_epi32(s6,  _mm_madd_epi16(_mm_shuffle_epi32(s5, 0xFF), _mm_lddqu_si128((const __m128i *)koef14150)));
-                s7 = _mm_shuffle_epi32(s0, 0x1B); 
-                s0 = _mm_add_epi32(s0,  s6);
-                s6 = _mm_shuffle_epi32(s6, 0x1B); 
-                s7 = _mm_sub_epi32(s7,  s6);
-
-                s0 = _mm_srai_epi32(s0,  shift);           // (r03 r02 r01 r00) >>= shift
-                s7 = _mm_srai_epi32(s7,  shift);           // (r31 r30 r29 r28) >>= shift
-                s0 = _mm_packs_epi32(s0, s7);              // clip(-32768, 32767)
-                _mm_storel_epi64((__m128i *)&dest[0], s0); // Store r03 r02 r01 r00
-                _mm_storeh_epi64((__m128i *)&dest[28], s0); // Store r31 r30 r29 r28
-
-                s6 = _mm_madd_epi16(_mm_shuffle_epi32(s4, 0), _mm_lddqu_si128((const __m128i *)koef00011));
-                s6 = _mm_add_epi32(s6,  _mm_madd_epi16(_mm_shuffle_epi32(s4, 0x55), _mm_lddqu_si128((const __m128i *)koef02031)));
-                s6 = _mm_add_epi32(s6,  _mm_madd_epi16(_mm_shuffle_epi32(s4, 0xAA), _mm_lddqu_si128((const __m128i *)koef04051)));
-                s6 = _mm_add_epi32(s6,  _mm_madd_epi16(_mm_shuffle_epi32(s4, 0xFF), _mm_lddqu_si128((const __m128i *)koef06071)));
-                s6 = _mm_add_epi32(s6,  _mm_madd_epi16(_mm_shuffle_epi32(s5, 0x00), _mm_lddqu_si128((const __m128i *)koef08091)));
-                s6 = _mm_add_epi32(s6,  _mm_madd_epi16(_mm_shuffle_epi32(s5, 0x55), _mm_lddqu_si128((const __m128i *)koef10111)));
-                s6 = _mm_add_epi32(s6,  _mm_madd_epi16(_mm_shuffle_epi32(s5, 0xAA), _mm_lddqu_si128((const __m128i *)koef12131)));
-                s6 = _mm_add_epi32(s6,  _mm_madd_epi16(_mm_shuffle_epi32(s5, 0xFF), _mm_lddqu_si128((const __m128i *)koef14151)));
-
-                s7 = _mm_shuffle_epi32(s1, 0x1B);
-                s1 = _mm_add_epi32(s1,  s6);
-                s6 = _mm_shuffle_epi32(s6, 0x1B);
-                s7 = _mm_sub_epi32(s7,  s6);
-
-                s1 = _mm_packs_epi32(_mm_srai_epi32(s1,  shift), _mm_srai_epi32(s7,  shift));
-                _mm_storel_epi64((__m128i *)&dest[4], s1);
-                _mm_storeh_epi64((__m128i *)&dest[24], s1);
-
-                s1 = _mm_shuffle_epi32(s4, 0x00);
-                s0 = _mm_madd_epi16(s1, _mm_lddqu_si128((const __m128i *)koef00012));
-                s1 = _mm_madd_epi16(s1, _mm_lddqu_si128((const __m128i *)koef00013));
-
-                s7 = _mm_shuffle_epi32(s4, 0x55);
-                s0 = _mm_add_epi32(s0,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef02032)));
-                s1 = _mm_add_epi32(s1,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef02033)));
-
-                s7 = _mm_shuffle_epi32(s4, 0xAA);
-                s0 = _mm_add_epi32(s0,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef04052)));
-                s1 = _mm_add_epi32(s1,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef04053)));
-
-                s7 = _mm_shuffle_epi32(s4, 0xFF);
-                s0 = _mm_add_epi32(s0,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef06072)));
-                s1 = _mm_add_epi32(s1,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef06073)));
-
-                s7 = _mm_shuffle_epi32(s5, 0x00);
-                s0 = _mm_add_epi32(s0,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef08092)));
-                s1 = _mm_add_epi32(s1,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef08093)));
-
-                s7 = _mm_shuffle_epi32(s5, 0x55);
-                s0 = _mm_add_epi32(s0,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef10112)));
-                s1 = _mm_add_epi32(s1,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef10113)));
-
-                s7 = _mm_shuffle_epi32(s5, 0xAA);
-                s0 = _mm_add_epi32(s0,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef12132)));
-                s1 = _mm_add_epi32(s1,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef12133)));
-
-                s7 = _mm_shuffle_epi32(s5, 0xFF);
-                s0 = _mm_add_epi32(s0,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef14152)));
-                s1 = _mm_add_epi32(s1,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef14153)));
-
-                s6 = _mm_shuffle_epi32(s3, 0x1B);
-                s3 = _mm_add_epi32(s3,  s0);
-                s0 = _mm_shuffle_epi32(s0, 0x1B);
-                s6 = _mm_sub_epi32(s6,  s0);
-                s3 = _mm_packs_epi32(_mm_srai_epi32(s3,  shift), _mm_srai_epi32(s6,  shift));
-                _mm_storel_epi64((__m128i *)&dest[8], s3);
-                _mm_storeh_epi64((__m128i *)&dest[20], s3);
-
-                s7 = _mm_shuffle_epi32(s2, 0x1B);
-                s2 = _mm_add_epi32(s2,  s1);
-                s1 = _mm_shuffle_epi32(s1, 0x1B);
-                s7 = _mm_sub_epi32(s7,  s1);
-                s2 = _mm_packs_epi32(_mm_srai_epi32(s2,  shift), _mm_srai_epi32(s7,  shift));
-                _mm_storeu_si128((__m128i *)&dest[12], s2);
-
-                coeff++;
-                dest += dest_stride;
+            switch (bitDepth) {
+            case  8: h265_DCT32x32Inv_16sT_Kernel< 8, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+            case  9: h265_DCT32x32Inv_16sT_Kernel< 9, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+            case 10: h265_DCT32x32Inv_16sT_Kernel<10, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
             }
-#undef  shift
-#undef  rounder
-#undef  dest_stride
         }
+    }
 
-        // Horizontal 1-D inverse transform
-        {
-#define shift       12
-#define rounder     rounder_2048
-#define dest_stride destStride
-
-            coeff  = temp;
-
-            for (i=0; i<32; i++) {
-                s1 = _mm_insert_epi16(s1, (int)coeff[0*src_stride], 0);
-                s1 = _mm_insert_epi16(s1, (int)coeff[16*src_stride], 1);
-                s1 = _mm_insert_epi16(s1, (int)coeff[8*src_stride], 2);
-                s1 = _mm_insert_epi16(s1, (int)coeff[24*src_stride], 3);
-
-                s1 = _mm_unpacklo_epi32(s1, s1);
-                s1 = _mm_madd_epi16(s1, _mm_lddqu_si128((const __m128i *)koef0000));
-                s1 = _mm_add_epi32(s1,  _mm_lddqu_si128((const __m128i *)rounder));
-
-                s0 = _mm_shuffle_epi32(s1, 0x4E); 
-                s1 = _mm_sub_epi32(s1, s0);
-                s0 = _mm_add_epi32(s0, s0);
-                s0 = _mm_add_epi32(s0, s1);
-                s1 = _mm_shuffle_epi32(s1, 1); 
-                s0 = _mm_unpacklo_epi64(s0, s1);
-
-                s2 = _mm_insert_epi16(s2, (int)coeff[ 4*src_stride], 0);
-                s2 = _mm_insert_epi16(s2, (int)coeff[12*src_stride], 1);
-                s2 = _mm_insert_epi16(s2, (int)coeff[20*src_stride], 2);
-                s2 = _mm_insert_epi16(s2, (int)coeff[28*src_stride], 3);
-
-                s4 = _mm_shuffle_epi32(s2, 0x00); 
-                s5 = _mm_shuffle_epi32(s2, 0x55); 
-                s4 = _mm_madd_epi16(s4, _mm_lddqu_si128((const __m128i *)koef0001));
-                s5 = _mm_madd_epi16(s5, _mm_lddqu_si128((const __m128i *)koef0002));
-                s4 = _mm_add_epi32(s4,  s5);
-
-                s1 = _mm_shuffle_epi32(s0, 0x1B); 
-                s7 = _mm_shuffle_epi32(s4, 0x1B); 
-                s0 = _mm_add_epi32(s0,  s4);
-                s1 = _mm_sub_epi32(s1,  s7);
-
-                s3 = _mm_insert_epi16(s3, (int)coeff[2*src_stride], 0);
-                s3 = _mm_insert_epi16(s3, (int)coeff[6*src_stride], 1);
-                s3 = _mm_insert_epi16(s3, (int)coeff[10*src_stride], 2);
-                s3 = _mm_insert_epi16(s3, (int)coeff[14*src_stride], 3);
-                s3 = _mm_insert_epi16(s3, (int)coeff[18*src_stride], 4);
-                s3 = _mm_insert_epi16(s3, (int)coeff[22*src_stride], 5);
-                s3 = _mm_insert_epi16(s3, (int)coeff[26*src_stride], 6);
-                s3 = _mm_insert_epi16(s3, (int)coeff[30*src_stride], 7);
-
-                s5 = _mm_shuffle_epi32(s3, 0); 
-                s4 = _mm_madd_epi16(s5, _mm_lddqu_si128((const __m128i *)koef0003));
-                s5 = _mm_madd_epi16(s5, _mm_lddqu_si128((const __m128i *)koef0004));
-
-                s6 = _mm_shuffle_epi32(s3, 0x55); 
-                s7 = _mm_madd_epi16(s6, _mm_lddqu_si128((const __m128i *)koef0005));
-                s4 = _mm_add_epi32(s4,  s7);
-
-                s6 = _mm_madd_epi16(s6, _mm_lddqu_si128((const __m128i *)koef0006));
-                s5 = _mm_add_epi32(s5,  s6);
-
-                s6 = _mm_shuffle_epi32(s3, 0xAA); 
-                s7 = _mm_madd_epi16(s6, _mm_lddqu_si128((const __m128i *)koef0007));
-                s4 = _mm_add_epi32(s4,  s7);
-                s6 = _mm_madd_epi16(s6, _mm_lddqu_si128((const __m128i *)koef0008));
-                s5 = _mm_add_epi32(s5,  s6);
-
-                s6 = _mm_shuffle_epi32(s3, 0xFF); 
-                s7 = _mm_madd_epi16(s6, _mm_lddqu_si128((const __m128i *)koef0009));
-                s4 = _mm_add_epi32(s4,  s7);
-                s6 = _mm_madd_epi16(s6, _mm_lddqu_si128((const __m128i *)koef0010));
-                s5 = _mm_add_epi32(s5,  s6);
-
-                s2 = _mm_shuffle_epi32(s0, 0x1B); 
-                s3 = _mm_shuffle_epi32(s1, 0x1B); 
-                s6 = _mm_shuffle_epi32(s4, 0x1B); 
-                s7 = _mm_shuffle_epi32(s5, 0x1B); 
-
-                s0 = _mm_add_epi32(s0,  s4);
-                s1 = _mm_add_epi32(s1,  s5);
-                s2 = _mm_sub_epi32(s2,  s6);
-                s3 = _mm_sub_epi32(s3,  s7);
-
-                s4 = _mm_insert_epi16(s4, (int)coeff[1*src_stride], 0);
-                s4 = _mm_insert_epi16(s4, (int)coeff[3*src_stride], 1);
-                s4 = _mm_insert_epi16(s4, (int)coeff[5*src_stride], 2);
-                s4 = _mm_insert_epi16(s4, (int)coeff[7*src_stride], 3);
-                s4 = _mm_insert_epi16(s4, (int)coeff[9*src_stride], 4);
-                s4 = _mm_insert_epi16(s4, (int)coeff[11*src_stride], 5);
-                s4 = _mm_insert_epi16(s4, (int)coeff[13*src_stride], 6);
-                s4 = _mm_insert_epi16(s4, (int)coeff[15*src_stride], 7);
-
-                s5 = _mm_shuffle_epi32(s4, 0); 
-                s6 = _mm_madd_epi16(s5, _mm_lddqu_si128((const __m128i *)koef00010));
-                s5 = _mm_shuffle_epi32(s4, 0x55); 
-                s7 = _mm_madd_epi16(s5, _mm_lddqu_si128((const __m128i *)koef02030));
-                s6 = _mm_add_epi32(s6,  s7);
-
-                s5 = _mm_shuffle_epi32(s4, 0xAA); 
-                s7 = _mm_madd_epi16(s5, _mm_lddqu_si128((const __m128i *)koef04050));
-                s6 = _mm_add_epi32(s6,  s7);
-                s5 = _mm_shuffle_epi32(s4, 0xFF); 
-                s7 = _mm_madd_epi16(s5, _mm_lddqu_si128((const __m128i *)koef06070));
-                s6 = _mm_add_epi32(s6,  s7);
-
-                s5 = _mm_insert_epi16(s5, (int)coeff[17*src_stride], 0);
-                s5 = _mm_insert_epi16(s5, (int)coeff[19*src_stride], 1);
-                s5 = _mm_shuffle_epi32(s5, 0); 
-                s7 = _mm_madd_epi16(s5, _mm_lddqu_si128((const __m128i *)koef08090));
-                s6 = _mm_add_epi32(s6,  s7);
-
-                s5 = _mm_insert_epi16(s5, (int)coeff[21*src_stride], 2);
-                s5 = _mm_insert_epi16(s5, (int)coeff[23*src_stride], 3);
-                s5 = _mm_insert_epi16(s5, (int)coeff[25*src_stride], 4);
-                s5 = _mm_insert_epi16(s5, (int)coeff[27*src_stride], 5);
-                s5 = _mm_insert_epi16(s5, (int)coeff[29*src_stride], 6);
-                s5 = _mm_insert_epi16(s5, (int)coeff[31*src_stride], 7);
-
-                s6 = _mm_add_epi32(s6,  _mm_madd_epi16(_mm_shuffle_epi32(s5, 0x55), _mm_lddqu_si128((const __m128i *)koef10110)));
-                s6 = _mm_add_epi32(s6,  _mm_madd_epi16(_mm_shuffle_epi32(s5, 0xAA), _mm_lddqu_si128((const __m128i *)koef12130)));
-                s6 = _mm_add_epi32(s6,  _mm_madd_epi16(_mm_shuffle_epi32(s5, 0xFF), _mm_lddqu_si128((const __m128i *)koef14150)));
-                s7 = _mm_shuffle_epi32(s0, 0x1B); 
-                s0 = _mm_add_epi32(s0,  s6);
-                s6 = _mm_shuffle_epi32(s6, 0x1B); 
-                s7 = _mm_sub_epi32(s7,  s6);
-
-                s0 = _mm_srai_epi32(s0,  shift);           // (r03 r02 r01 r00) >>= shift
-                s7 = _mm_srai_epi32(s7,  shift);           // (r31 r30 r29 r28) >>= shift
-                s0 = _mm_packs_epi32(s0, s7);              // clip(-32768, 32767)
-
-                s6 = _mm_madd_epi16(_mm_shuffle_epi32(s4, 0), _mm_lddqu_si128((const __m128i *)koef00011));
-                s6 = _mm_add_epi32(s6,  _mm_madd_epi16(_mm_shuffle_epi32(s4, 0x55), _mm_lddqu_si128((const __m128i *)koef02031)));
-                s6 = _mm_add_epi32(s6,  _mm_madd_epi16(_mm_shuffle_epi32(s4, 0xAA), _mm_lddqu_si128((const __m128i *)koef04051)));
-                s6 = _mm_add_epi32(s6,  _mm_madd_epi16(_mm_shuffle_epi32(s4, 0xFF), _mm_lddqu_si128((const __m128i *)koef06071)));
-                s6 = _mm_add_epi32(s6,  _mm_madd_epi16(_mm_shuffle_epi32(s5, 0x00), _mm_lddqu_si128((const __m128i *)koef08091)));
-                s6 = _mm_add_epi32(s6,  _mm_madd_epi16(_mm_shuffle_epi32(s5, 0x55), _mm_lddqu_si128((const __m128i *)koef10111)));
-                s6 = _mm_add_epi32(s6,  _mm_madd_epi16(_mm_shuffle_epi32(s5, 0xAA), _mm_lddqu_si128((const __m128i *)koef12131)));
-                s6 = _mm_add_epi32(s6,  _mm_madd_epi16(_mm_shuffle_epi32(s5, 0xFF), _mm_lddqu_si128((const __m128i *)koef14151)));
-
-                s7 = _mm_shuffle_epi32(s1, 0x1B);
-                s1 = _mm_add_epi32(s1,  s6);
-                s6 = _mm_shuffle_epi32(s6, 0x1B);
-                s7 = _mm_sub_epi32(s7,  s6);
-
-                s1 = _mm_packs_epi32(_mm_srai_epi32(s1,  shift), _mm_srai_epi32(s7,  shift));
-
-                s6 = s0;
-                s0 = _mm_unpacklo_epi64(s0, s1);    /* temp[ 0- 7] (words) */
-                s1 = _mm_unpackhi_epi64(s1, s6);    /* temp[24-31] (words) */
-
-                if (destSize == 1) {
-                    /* load dst[0-7], expand to 16 bits, add temp[0-7], clip/pack to 8 bytes */
-                    s6 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&destByte[0]));    
-                    s6 = _mm_add_epi16(s6, s0);
-                    s6 = _mm_packus_epi16(s6, s6);
-
-                    /* repeat for [24-31] */
-                    s7 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&destByte[24]));    
-                    s7 = _mm_add_epi16(s7, s1);
-                    s7 = _mm_packus_epi16(s7, s7);
-
-                    _mm_storel_epi64((__m128i *)&destByte[ 0], s6);    /* store dst[ 0- 7] (bytes) */
-                    _mm_storel_epi64((__m128i *)&destByte[24], s7);    /* store dst[24-31] (bytes) */
-                } else {
-                    _mm_storeu_si128((__m128i *)&destWord[ 0], s0);    /* store dst[ 0- 7] (words) */
-                    _mm_storeu_si128((__m128i *)&destWord[24], s1);    /* store dst[24-31] (words) */
-                }
-
-                s1 = _mm_shuffle_epi32(s4, 0x00);
-                s0 = _mm_madd_epi16(s1, _mm_lddqu_si128((const __m128i *)koef00012));
-                s1 = _mm_madd_epi16(s1, _mm_lddqu_si128((const __m128i *)koef00013));
-
-                s7 = _mm_shuffle_epi32(s4, 0x55);
-                s0 = _mm_add_epi32(s0,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef02032)));
-                s1 = _mm_add_epi32(s1,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef02033)));
-
-                s7 = _mm_shuffle_epi32(s4, 0xAA);
-                s0 = _mm_add_epi32(s0,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef04052)));
-                s1 = _mm_add_epi32(s1,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef04053)));
-
-                s7 = _mm_shuffle_epi32(s4, 0xFF);
-                s0 = _mm_add_epi32(s0,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef06072)));
-                s1 = _mm_add_epi32(s1,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef06073)));
-
-                s7 = _mm_shuffle_epi32(s5, 0x00);
-                s0 = _mm_add_epi32(s0,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef08092)));
-                s1 = _mm_add_epi32(s1,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef08093)));
-
-                s7 = _mm_shuffle_epi32(s5, 0x55);
-                s0 = _mm_add_epi32(s0,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef10112)));
-                s1 = _mm_add_epi32(s1,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef10113)));
-
-                s7 = _mm_shuffle_epi32(s5, 0xAA);
-                s0 = _mm_add_epi32(s0,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef12132)));
-                s1 = _mm_add_epi32(s1,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef12133)));
-
-                s7 = _mm_shuffle_epi32(s5, 0xFF);
-                s0 = _mm_add_epi32(s0,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef14152)));
-                s1 = _mm_add_epi32(s1,  _mm_madd_epi16(s7, _mm_lddqu_si128((const __m128i *)koef14153)));
-
-                s6 = _mm_shuffle_epi32(s3, 0x1B);
-                s3 = _mm_add_epi32(s3,  s0);
-                s0 = _mm_shuffle_epi32(s0, 0x1B);
-                s6 = _mm_sub_epi32(s6,  s0);
-                s3 = _mm_packs_epi32(_mm_srai_epi32(s3,  shift), _mm_srai_epi32(s6,  shift));
-
-                s7 = _mm_shuffle_epi32(s2, 0x1B);
-                s2 = _mm_add_epi32(s2,  s1);
-                s1 = _mm_shuffle_epi32(s1, 0x1B);
-                s7 = _mm_sub_epi32(s7,  s1);
-                s2 = _mm_packs_epi32(_mm_srai_epi32(s2,  shift), _mm_srai_epi32(s7,  shift));
-
-                s6 = s3;
-                s3 = _mm_unpacklo_epi64(s3, s2);    /* temp[ 8-15] (words) */
-                s2 = _mm_unpackhi_epi64(s2, s6);    /* temp[16-23] (words) */
-
-                if (destSize == 1) {
-                    /* load dst[8-15], expand to 16 bits, add temp[8-15], clip/pack to 8 bytes */
-                    s6 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&destByte[8]));
-                    s6 = _mm_add_epi16(s6, s3);
-
-                    /* repeat for [24-31] */
-                    s7 = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&destByte[16]));
-                    s7 = _mm_add_epi16(s7, s2);
-
-                    s6 = _mm_packus_epi16(s6, s7);
-                    _mm_storeu_si128((__m128i *)&destByte[ 8], s6);    /* store dst[ 8-23] (bytes) */
-                    destByte += dest_stride;
-                } else {
-                    _mm_storeu_si128((__m128i *)&destWord[ 8], s3);    /* store dst[ 8-15] (words) */
-                    _mm_storeu_si128((__m128i *)&destWord[16], s2);    /* store dst[16-23] (words) */
-                    destWord += dest_stride;
-                }
-
-                coeff++;
-            }
-#undef  shift
-#undef  rounder
-#undef  dest_stride
-        }
-#endif    /* UPDATE_070513 */
     } // end namespace MFX_HEVC_PP
 
 #endif // #if defined(MFX_TARGET_OPTIMIZATION_AUTO) ...

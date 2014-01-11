@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -333,29 +333,29 @@ namespace MFX_HEVC_PP
     Ipp32s H265_FASTCALL h265_QuantFwd_SBH_16s_avx2(const Ipp16s* pSrc, Ipp16s* pDst, Ipp32s*  pDelta, int len, int scale, int offset, int shift);
 #endif
     // [transform.inv]
-    void h265_DST4x4Inv_16sT_px  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
-    void h265_DCT4x4Inv_16sT_px  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
-    void h265_DCT8x8Inv_16sT_px  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
-    void h265_DCT16x16Inv_16sT_px(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
-    void h265_DCT32x32Inv_16sT_px(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
+    void h265_DST4x4Inv_16sT_px  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
+    void h265_DCT4x4Inv_16sT_px  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
+    void h265_DCT8x8Inv_16sT_px  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
+    void h265_DCT16x16Inv_16sT_px(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
+    void h265_DCT32x32Inv_16sT_px(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
 
-    void h265_DST4x4Inv_16sT_sse  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
-    void h265_DCT4x4Inv_16sT_sse  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
-    void h265_DCT8x8Inv_16sT_sse  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
-    void h265_DCT16x16Inv_16sT_sse(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
-    void h265_DCT32x32Inv_16sT_sse(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
+    void h265_DST4x4Inv_16sT_sse  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
+    void h265_DCT4x4Inv_16sT_sse  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
+    void h265_DCT8x8Inv_16sT_sse  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
+    void h265_DCT16x16Inv_16sT_sse(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
+    void h265_DCT32x32Inv_16sT_sse(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
 
-    void h265_DST4x4Inv_16sT_ssse3  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
-    void h265_DCT4x4Inv_16sT_ssse3  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
-    void h265_DCT8x8Inv_16sT_ssse3  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
-    void h265_DCT16x16Inv_16sT_ssse3(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
-    void h265_DCT32x32Inv_16sT_ssse3(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
+    void h265_DST4x4Inv_16sT_ssse3  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
+    void h265_DCT4x4Inv_16sT_ssse3  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
+    void h265_DCT8x8Inv_16sT_ssse3  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
+    void h265_DCT16x16Inv_16sT_ssse3(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
+    void h265_DCT32x32Inv_16sT_ssse3(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
 
-    void h265_DST4x4Inv_16sT_avx2  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
-    void h265_DCT4x4Inv_16sT_avx2  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
-    void h265_DCT8x8Inv_16sT_avx2  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
-    void h265_DCT16x16Inv_16sT_avx2(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
-    void h265_DCT32x32Inv_16sT_avx2(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
+    void h265_DST4x4Inv_16sT_avx2  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
+    void h265_DCT4x4Inv_16sT_avx2  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
+    void h265_DCT8x8Inv_16sT_avx2  (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
+    void h265_DCT16x16Inv_16sT_avx2(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
+    void h265_DCT32x32Inv_16sT_avx2(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
 
     // [deblocking]
     Ipp32s h265_FilterEdgeLuma_8u_I_px(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir);

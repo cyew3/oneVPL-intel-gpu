@@ -34,7 +34,7 @@ H265TrQuant::H265TrQuant()
 
 H265TrQuant::~H265TrQuant()
 {
-    ippFree(m_residualsBuffer);    
+    ippFree(m_residualsBuffer);
 }
 
 
@@ -48,58 +48,29 @@ H265TrQuant::~H265TrQuant()
 template <Ipp32s bitDepth, typename DstCoeffsType>
 void InverseTransform(H265CoeffsPtrCommon coeff, DstCoeffsType* dst, Ipp32s dstPitch, Ipp32s Size, Ipp32u Mode, Ipp32u bit_depth)
 {
-    if (bitDepth == 8)
+    bool inplace = sizeof(DstCoeffsType) == 1;
+    if (Size == 4)
     {
-        if (Size == 4)
+        if (Mode != REG_DCT)
         {
-            if (Mode != REG_DCT)
-            {
-                MFX_HEVC_PP::NAME(h265_DST4x4Inv_16sT)(dst, coeff, dstPitch, sizeof(DstCoeffsType));
-            }
-            else
-            {
-                MFX_HEVC_PP::NAME(h265_DCT4x4Inv_16sT)(dst, coeff, dstPitch, sizeof(DstCoeffsType));
-            }
+            MFX_HEVC_PP::NAME(h265_DST4x4Inv_16sT)(dst, coeff, dstPitch, inplace, bit_depth);
         }
-        else if (Size == 8)
+        else
         {
-            MFX_HEVC_PP::NAME(h265_DCT8x8Inv_16sT)(dst, coeff, dstPitch, sizeof(DstCoeffsType));
-        }
-        else if (Size == 16)
-        {
-            MFX_HEVC_PP::NAME(h265_DCT16x16Inv_16sT)(dst, coeff, dstPitch, sizeof(DstCoeffsType));
-        }
-        else if (Size == 32)
-        {
-            MFX_HEVC_PP::NAME(h265_DCT32x32Inv_16sT)(dst, coeff, dstPitch, sizeof(DstCoeffsType));
+            MFX_HEVC_PP::NAME(h265_DCT4x4Inv_16sT)(dst, coeff, dstPitch, inplace, bit_depth);
         }
     }
-    else
+    else if (Size == 8)
     {
-        bool inplace = sizeof(DstCoeffsType) == 1;
-        if (Size == 4)
-        {
-            if (Mode != REG_DCT)
-            {
-                MFX_HEVC_PP::h265_DST4x4Inv_16sT_16u_px(dst, coeff, dstPitch, inplace, bit_depth);
-            }
-            else
-            {
-                MFX_HEVC_PP::h265_DCT4x4Inv_16sT_16u_px(dst, coeff, dstPitch, inplace, bit_depth);
-            }
-        }
-        else if (Size == 8)
-        {
-            MFX_HEVC_PP::h265_DCT8x8Inv_16sT_16u_px(dst, coeff, dstPitch, inplace, bit_depth);
-        }
-        else if (Size == 16)
-        {
-            MFX_HEVC_PP::h265_DCT16x16Inv_16sT_16u_px(dst, coeff, dstPitch, inplace, bit_depth);
-        }
-        else if (Size == 32)
-        {
-            MFX_HEVC_PP::h265_DCT32x32Inv_16sT_16u_px(dst, coeff, dstPitch, inplace, bit_depth);
-        }
+        MFX_HEVC_PP::NAME(h265_DCT8x8Inv_16sT)(dst, coeff, dstPitch, inplace, bit_depth);
+    }
+    else if (Size == 16)
+    {
+        MFX_HEVC_PP::NAME(h265_DCT16x16Inv_16sT)(dst, coeff, dstPitch, inplace, bit_depth);
+    }
+    else if (Size == 32)
+    {
+        MFX_HEVC_PP::NAME(h265_DCT32x32Inv_16sT)(dst, coeff, dstPitch, inplace, bit_depth);
     }
 }
 
@@ -127,7 +98,7 @@ void H265TrQuant::InvTransformByPass(H265CoeffsPtrCommon pCoeff, DstCoeffsType* 
 
 template <typename DstCoeffsType>
 void H265TrQuant::InvTransformNxN(bool transQuantBypass, EnumTextType TxtType, Ipp32u Mode, DstCoeffsType* pResidual,
-                                  Ipp32u Stride, H265CoeffsPtrCommon pCoeff, Ipp32u Size, 
+                                  Ipp32u Stride, H265CoeffsPtrCommon pCoeff, Ipp32u Size,
                                   bool transformSkip)
 {
     Ipp32s bitDepth = TxtType == TEXT_LUMA ? m_context->m_sps->bit_depth_luma : m_context->m_sps->bit_depth_chroma;
@@ -272,13 +243,13 @@ void H265TrQuant::InvRecurTransformNxN(H265CodingUnit* pCU, Ipp32u AbsPartIdx, I
                 InvTransformNxN(pCU->GetCUTransquantBypass(AbsPartIdx), TEXT_CHROMA_V, REG_DCT, residualsTempBuffer1, res_pitch, pCoeff, Size,
                     pCU->GetTransformSkip(COMPONENT_CHROMA_V, AbsPartIdx) != 0);
             }
-  
+
             {
             if (m_context->m_sps->bit_depth_chroma > 8 || m_context->m_sps->bit_depth_luma > 8)
                 SumOfResidAndPred<Ipp16u>(residualsTempBuffer, residualsTempBuffer1, res_pitch, (Ipp16u*)ptrChroma, DstStride, Size, chromaUPresent, chromaVPresent, m_context->m_sps->bit_depth_chroma);
             else
                 SumOfResidAndPred<Ipp8u>(residualsTempBuffer, residualsTempBuffer1, res_pitch, ptrChroma, DstStride, Size, chromaUPresent, chromaVPresent, m_context->m_sps->bit_depth_chroma);
-                
+
             }
 
             // ML: OPT: TODO: Vectorize this

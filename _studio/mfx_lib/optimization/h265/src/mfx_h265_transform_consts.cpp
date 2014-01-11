@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -139,8 +139,10 @@ ALIGNED_SSE2 signed int kfv_0306[] = {64,  83, -64,  83};
 ALIGNED_SSE2 signed int kfv_0307[] = {18,  75, -89,  75};
 
     // 32-bits constants
-    signed int rounder_64[]   = {64, 64, 0, 0};
-    signed int rounder_2048[] = {2048, 2048, 0, 0};
+    signed int rounder_64[]   = {64, 64, 0, 0, 64, 64, 0, 0};
+    signed int rounder_2048[] = {2048, 2048, 0, 0, 2048, 2048, 0, 0};
+    signed int rounder_1024[] = {1024, 1024, 0, 0, 1024, 1024, 0, 0};
+    signed int rounder_512[] = {512, 512, 0, 0, 512, 512, 0, 0};
 
     // 16-bits constants
     signed short koef0000[]  = {64, 64,  64,-64,  83, 36,  36,-83};

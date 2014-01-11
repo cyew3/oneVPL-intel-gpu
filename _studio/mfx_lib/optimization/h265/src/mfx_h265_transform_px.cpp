@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -121,8 +121,8 @@ typedef Ipp16s H265CoeffsCommon;
 typedef H265CoeffsCommon *H265CoeffsPtrCommon;
 
 // ML: OPT: Parameterized to allow const 'shift' propogation
-template <Ipp32s shift, typename DstCoeffsType>
-void FastInverseDst(H265CoeffsPtrCommon tmp, DstCoeffsType* block, Ipp32s dstStride)  // input tmp, output block
+template <typename DstCoeffsType, bool inplace>
+void FastInverseDst(Ipp32s shift, H265CoeffsPtrCommon tmp, DstCoeffsType* block, Ipp32s dstStride, Ipp32u bitDepth)  // input tmp, output block
 {
   Ipp32s i, c[4];
   Ipp32s rnd_factor = 1<<(shift-1);
@@ -141,12 +141,20 @@ void FastInverseDst(H265CoeffsPtrCommon tmp, DstCoeffsType* block, Ipp32s dstStr
     c[3] = 74* tmp[4+i];
 
 // ML: OPT: TODO: make sure compiler vectorizes and optimizes Clip3 as PACKS
-    if (sizeof(DstCoeffsType) == 1)
+    if (inplace && sizeof(DstCoeffsType) == 1)
     {
         block[dstStride*i+0] = (DstCoeffsType)Clip3(0, 255, (( 29 * c[0] + 55 * c[1]     + c[3]      + rnd_factor ) >> shift ) + block[dstStride*i+0]);
         block[dstStride*i+1] = (DstCoeffsType)Clip3(0, 255, (( 55 * c[2] - 29 * c[1]     + c[3]      + rnd_factor ) >> shift ) + block[dstStride*i+1]);
         block[dstStride*i+2] = (DstCoeffsType)Clip3(0, 255, (( 74 * (tmp[i] - tmp[8+i]  + tmp[12+i]) + rnd_factor ) >> shift ) + block[dstStride*i+2]);
         block[dstStride*i+3] = (DstCoeffsType)Clip3(0, 255, (( 55 * c[0] + 29 * c[2]     - c[3]      + rnd_factor ) >> shift ) + block[dstStride*i+3]);
+    }
+    else if (inplace && sizeof(DstCoeffsType) == 2)
+    {
+        Ipp32s max_value = (1 << bitDepth) - 1;
+        block[dstStride*i+0] = (DstCoeffsType)Clip3(0, max_value, (( 29 * c[0] + 55 * c[1]     + c[3]      + rnd_factor ) >> shift ) + block[dstStride*i+0]);
+        block[dstStride*i+1] = (DstCoeffsType)Clip3(0, max_value, (( 55 * c[2] - 29 * c[1]     + c[3]      + rnd_factor ) >> shift ) + block[dstStride*i+1]);
+        block[dstStride*i+2] = (DstCoeffsType)Clip3(0, max_value, (( 74 * (tmp[i] - tmp[8+i]  + tmp[12+i]) + rnd_factor ) >> shift ) + block[dstStride*i+2]);
+        block[dstStride*i+3] = (DstCoeffsType)Clip3(0, max_value, (( 55 * c[0] + 29 * c[2]     - c[3]      + rnd_factor ) >> shift ) + block[dstStride*i+3]);
     }
     else
     {
@@ -164,8 +172,8 @@ void FastInverseDst(H265CoeffsPtrCommon tmp, DstCoeffsType* block, Ipp32s dstStr
  *  \param shift specifies right shift after 1D transform
  */
 // ML: OPT: Parameterized to allow const 'shift' propogation
-template <Ipp32s shift, typename DstCoeffsType>
-void PartialButterflyInverse4x4(H265CoeffsPtrCommon src, DstCoeffsType*dst, Ipp32s dstStride)
+template <typename DstCoeffsType, bool inplace>
+void PartialButterflyInverse4x4(Ipp32s shift, H265CoeffsPtrCommon src, DstCoeffsType*dst, Ipp32s dstStride, Ipp32u bitDepth)
 {
   Ipp32s j;
   Ipp32s E[2],O[2];
@@ -185,12 +193,20 @@ void PartialButterflyInverse4x4(H265CoeffsPtrCommon src, DstCoeffsType*dst, Ipp3
     E[1] = g_T4[0][1]*src[0] + g_T4[2][1]*src[2*line];
 
     /* Combining even and odd terms at each hierarchy levels to calculate the final spatial domain vector */
-    if (sizeof(DstCoeffsType) == 1)
+    if (inplace && sizeof(DstCoeffsType) == 1)
     {
         dst[0] = (DstCoeffsType)Clip3(0, 255, ((E[0] + O[0] + add)>>shift ) + dst[0]);
         dst[1] = (DstCoeffsType)Clip3(0, 255, ((E[1] + O[1] + add)>>shift ) + dst[1]);
         dst[2] = (DstCoeffsType)Clip3(0, 255, ((E[1] - O[1] + add)>>shift ) + dst[2]);
         dst[3] = (DstCoeffsType)Clip3(0, 255, ((E[0] - O[0] + add)>>shift ) + dst[3]);
+    }
+    else if (inplace && sizeof(DstCoeffsType) == 2)
+    {
+        Ipp32s max_value = (1 << bitDepth) - 1;
+        dst[0] = (DstCoeffsType)Clip3(0, max_value, ((E[0] + O[0] + add)>>shift ) + dst[0]);
+        dst[1] = (DstCoeffsType)Clip3(0, max_value, ((E[1] + O[1] + add)>>shift ) + dst[1]);
+        dst[2] = (DstCoeffsType)Clip3(0, max_value, ((E[1] - O[1] + add)>>shift ) + dst[2]);
+        dst[3] = (DstCoeffsType)Clip3(0, max_value, ((E[0] - O[0] + add)>>shift ) + dst[3]);
     }
     else
     {
@@ -211,8 +227,8 @@ void PartialButterflyInverse4x4(H265CoeffsPtrCommon src, DstCoeffsType*dst, Ipp3
  *  \param shift specifies right shift after 1D transform
  */
 // ML: OPT: Parameterized to allow const 'shift' propogation
-template <Ipp32s shift, typename DstCoeffsType>
-void PartialButterflyInverse8x8(H265CoeffsPtrCommon src, DstCoeffsType* dst, Ipp32s dstStride)
+template <typename DstCoeffsType, bool inplace>
+void PartialButterflyInverse8x8(Ipp32s shift, H265CoeffsPtrCommon src, DstCoeffsType* dst, Ipp32s dstStride, Ipp32u bitDepth)
 {
     Ipp32s j;
     Ipp32s k;
@@ -250,10 +266,16 @@ void PartialButterflyInverse8x8(H265CoeffsPtrCommon src, DstCoeffsType* dst, Ipp
 //        #pragma unroll(4)
         for (k = 0; k < 4; k++)
         {
-            if (sizeof(DstCoeffsType) == 1)
+            if (inplace && sizeof(DstCoeffsType) == 1)
             {
                 dst[k]     = (DstCoeffsType) Clip3(0, 255, ((E[k]     + O[k]     + add) >> shift) + dst[k]);
                 dst[k + 4] = (DstCoeffsType) Clip3(0, 255, ((E[3 - k] - O[3 - k] + add) >> shift) + dst[k + 4]);
+            }
+            else if (inplace && sizeof(DstCoeffsType) == 2)
+            {
+                Ipp32s max_value = (1 << bitDepth) - 1;
+                dst[k]     = (DstCoeffsType) Clip3(0, max_value, ((E[k]     + O[k]     + add) >> shift) + dst[k]);
+                dst[k + 4] = (DstCoeffsType) Clip3(0, max_value, ((E[3 - k] - O[3 - k] + add) >> shift) + dst[k + 4]);
             }
             else
             {
@@ -272,8 +294,8 @@ void PartialButterflyInverse8x8(H265CoeffsPtrCommon src, DstCoeffsType* dst, Ipp
  *  \param shift specifies right shift after 1D transform
  */
 // ML: OPT: Parameterized to allow const 'shift' propogation
-template <Ipp32s shift, typename DstCoeffsType>
-void PartialButterflyInverse16x16(H265CoeffsPtrCommon src, DstCoeffsType* dst, Ipp32s dstStride)
+template <typename DstCoeffsType, bool inplace>
+void PartialButterflyInverse16x16(Ipp32s shift, H265CoeffsPtrCommon src, DstCoeffsType* dst, Ipp32s dstStride, Ipp32u bitDepth)
 {
     Ipp32s j;
     Ipp32s k;
@@ -328,10 +350,16 @@ void PartialButterflyInverse16x16(H265CoeffsPtrCommon src, DstCoeffsType* dst, I
 #endif
         for (k = 0; k < 8; k++)
         {
-            if (sizeof(DstCoeffsType) == 1)
+            if (inplace && sizeof(DstCoeffsType) == 1)
             {
                 dst[k]   = (DstCoeffsType) Clip3(0, 255, ((E[k]     + O[k]     + add) >> shift) + dst[k]);
                 dst[k+8] = (DstCoeffsType) Clip3(0, 255, ((E[7 - k] - O[7 - k] + add) >> shift) + dst[k+8]);
+            }
+            else if (inplace && sizeof(DstCoeffsType) == 2)
+            {
+                Ipp32s max_value = (1 << bitDepth) - 1;
+                dst[k]   = (DstCoeffsType) Clip3(0, max_value, ((E[k]     + O[k]     + add) >> shift) + dst[k]);
+                dst[k+8] = (DstCoeffsType) Clip3(0, max_value, ((E[7 - k] - O[7 - k] + add) >> shift) + dst[k+8]);
             }
             else
             {
@@ -350,8 +378,8 @@ void PartialButterflyInverse16x16(H265CoeffsPtrCommon src, DstCoeffsType* dst, I
  *  \param shift specifies right shift after 1D transform
  */
 // ML: OPT: Parameterized to allow const 'shift' propogation
-template <Ipp32s shift, typename DstCoeffsType>
-void PartialButterflyInverse32x32(H265CoeffsPtrCommon src, DstCoeffsType* dst, Ipp32s dstStride)
+template <typename DstCoeffsType, bool inplace>
+void PartialButterflyInverse32x32(Ipp32s shift, H265CoeffsPtrCommon src, DstCoeffsType* dst, Ipp32s dstStride, Ipp32u bitDepth)
 {
     Ipp32s j;
     Ipp32s k;
@@ -427,10 +455,16 @@ void PartialButterflyInverse32x32(H265CoeffsPtrCommon src, DstCoeffsType* dst, I
 #endif
         for (k = 0; k < 16; k++)
         {
-            if (sizeof(DstCoeffsType) == 1)
+            if (inplace && sizeof(DstCoeffsType) == 1)
             {
                 dst[k]      = (DstCoeffsType)Clip3(0, 255, ((E[k]      + O[k]      + add) >> shift) + dst[k]);
                 dst[k + 16] = (DstCoeffsType)Clip3(0, 255, ((E[15 - k] - O[15 - k] + add) >> shift) + dst[k + 16]);
+            }
+            else if (inplace && sizeof(DstCoeffsType) == 2)
+            {
+                Ipp32s max_value = (1 << bitDepth) - 1;
+                dst[k]      = (DstCoeffsType)Clip3(0, max_value, ((E[k]      + O[k]      + add) >> shift) + dst[k]);
+                dst[k + 16] = (DstCoeffsType)Clip3(0, max_value, ((E[15 - k] - O[15 - k] + add) >> shift) + dst[k + 16]);
             }
             else
             {
@@ -676,7 +710,7 @@ void PartialButterflyInverse32x32(H265CoeffsPtrCommon src, DstCoeffsType* dst, I
 #else
     #define MAKE_NAME( func ) func
 #endif
-    
+
     /* ************************************************** */
     /*              forward transform                     */
     /* ************************************************** */
@@ -688,7 +722,7 @@ void PartialButterflyInverse32x32(H265CoeffsPtrCommon src, DstCoeffsType* dst, I
         h265_transform_fast_forward_dst((Ipp16s*)src, tmp, bit_depth - 7);
         h265_transform_fast_forward_dst(tmp, dst, 8);
     }
-    
+
 
     void H265_FASTCALL MAKE_NAME(h265_DCT4x4Fwd_16s)( const short *H265_RESTRICT src, short *H265_RESTRICT dst )
     {
@@ -697,16 +731,16 @@ void PartialButterflyInverse32x32(H265CoeffsPtrCommon src, DstCoeffsType* dst, I
         h265_transform_partial_butterfly_fwd4((Ipp16s*)src, tmp, bit_depth - 7);
         h265_transform_partial_butterfly_fwd4(tmp, dst, 8);
     }
-    
+
 
     void H265_FASTCALL MAKE_NAME(h265_DCT8x8Fwd_16s)( const short *H265_RESTRICT src, short *H265_RESTRICT dst )
     {
         const int bit_depth = 8;
         CoeffsType tmp[8*8];
         h265_transform_partial_butterfly_fwd8((Ipp16s*)src, tmp, bit_depth - 6);
-        h265_transform_partial_butterfly_fwd8(tmp, dst, 9); 
+        h265_transform_partial_butterfly_fwd8(tmp, dst, 9);
     }
-    
+
 
     void H265_FASTCALL MAKE_NAME(h265_DCT16x16Fwd_16s)( const short *H265_RESTRICT src, short *H265_RESTRICT dst )
     {
@@ -715,8 +749,8 @@ void PartialButterflyInverse32x32(H265CoeffsPtrCommon src, DstCoeffsType* dst, I
         h265_transform_partial_butterfly_fwd16((Ipp16s*)src, tmp, bit_depth - 5);
         h265_transform_partial_butterfly_fwd16(tmp, dst, 10);
     }
-    
-    
+
+
     void H265_FASTCALL MAKE_NAME(h265_DCT32x32Fwd_16s)( const short *H265_RESTRICT src, short *H265_RESTRICT dst )
     {
         const int bit_depth = 8;
@@ -732,91 +766,111 @@ void PartialButterflyInverse32x32(H265CoeffsPtrCommon src, DstCoeffsType* dst, I
     #define SHIFT_INV_1ST          7 // Shift after first inverse transform stage
     #define SHIFT_INV_2ND         12 // Shift after second inverse transform stage
 
-    void MAKE_NAME(h265_DST4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+    void MAKE_NAME(h265_DST4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth)
     {
         Ipp16s tmp[4*4];
         const Ipp32s shift_1st = SHIFT_INV_1ST;
-        const Ipp32s shift_2nd = SHIFT_INV_2ND;
-        
-        FastInverseDst<shift_1st, Ipp16s>((Ipp16s*)coeff, tmp, 4 ); // Inverse DST by FAST Algorithm, coeff input, tmp output
-        if(1 == destSize)
+        const Ipp32s shift_2nd = SHIFT_INV_2ND - (bitDepth - 8);
+
+        FastInverseDst<Ipp16s, false>(shift_1st, (Ipp16s*)coeff, tmp, 4, bitDepth); // Inverse DST by FAST Algorithm, coeff input, tmp output
+        if (inplace && bitDepth == 8)
         {
-            FastInverseDst<shift_2nd, Ipp8u>(tmp, (Ipp8u*)destPtr, destStride ); // Inverse DST by FAST Algorithm, tmp input, coeff output
+            FastInverseDst<Ipp8u, true>(shift_2nd, tmp, (Ipp8u*)destPtr, destStride, bitDepth); // Inverse DST by FAST Algorithm, tmp input, coeff output
+        }
+        else if (inplace && bitDepth > 8)
+        {
+            FastInverseDst<Ipp16u, true>(shift_2nd, tmp, (Ipp16u*)destPtr, destStride, bitDepth); // Inverse DST by FAST Algorithm, tmp input, coeff output
         }
         else
         {
-            FastInverseDst<shift_2nd, Ipp16s >(tmp, (Ipp16s*)destPtr, destStride ); // Inverse DST by FAST Algorithm, tmp input, coeff output
+            FastInverseDst<Ipp16s, false>(shift_2nd, tmp, (Ipp16s*)destPtr, destStride, bitDepth); // Inverse DST by FAST Algorithm, tmp input, coeff output
         }
     }
 
 
-    void MAKE_NAME(h265_DCT4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+    void MAKE_NAME(h265_DCT4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth)
     {
-        Ipp16s tmp[4*4];    
+        Ipp16s tmp[4*4];
         const Ipp32s shift_1st = SHIFT_INV_1ST;
-        const Ipp32s shift_2nd = SHIFT_INV_2ND;
+        const Ipp32s shift_2nd = SHIFT_INV_2ND - (bitDepth - 8);
 
-        PartialButterflyInverse4x4<shift_1st, Ipp16s>((Ipp16s*)coeff, tmp, 4);
-        if(1 == destSize)
+        PartialButterflyInverse4x4<Ipp16s, false>(shift_1st, (Ipp16s*)coeff, tmp, 4, bitDepth);
+        if (inplace && bitDepth == 8)
         {
-            PartialButterflyInverse4x4<shift_2nd, Ipp8u>(tmp, (Ipp8u*)destPtr, destStride);
+            PartialButterflyInverse4x4<Ipp8u, true>(shift_2nd, tmp, (Ipp8u*)destPtr, destStride, bitDepth);
+        }
+        else if (inplace && bitDepth > 8)
+        {
+            PartialButterflyInverse4x4<Ipp16u, true>(shift_2nd, tmp, (Ipp16u*)destPtr, destStride, bitDepth);
         }
         else
         {
-            PartialButterflyInverse4x4<shift_2nd, Ipp16s>(tmp, (Ipp16s*)destPtr, destStride);
+            PartialButterflyInverse4x4<Ipp16s, false>(shift_2nd, tmp, (Ipp16s*)destPtr, destStride, bitDepth);
         }
     }
 
 
-    void MAKE_NAME(h265_DCT8x8Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+    void MAKE_NAME(h265_DCT8x8Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth)
     {
         Ipp16s tmp[8*8];
         const Ipp32s shift_1st = SHIFT_INV_1ST;
-        const Ipp32s shift_2nd = SHIFT_INV_2ND;
+        const Ipp32s shift_2nd = SHIFT_INV_2ND - (bitDepth - 8);
 
-        PartialButterflyInverse8x8<shift_1st, Ipp16s>((Ipp16s*)coeff, tmp, 8);
-        if(1 == destSize)
+        PartialButterflyInverse8x8<Ipp16s, false>(shift_1st, (Ipp16s*)coeff, tmp, 8, bitDepth);
+        if (inplace && bitDepth == 8)
         {
-            PartialButterflyInverse8x8<shift_2nd, Ipp8u>(tmp, (Ipp8u*)destPtr, destStride);
+            PartialButterflyInverse8x8<Ipp8u, true>(shift_2nd, tmp, (Ipp8u*)destPtr, destStride, bitDepth);
+        }
+        else if (inplace && bitDepth > 8)
+        {
+            PartialButterflyInverse8x8<Ipp16u, true>(shift_2nd, tmp, (Ipp16u*)destPtr, destStride, bitDepth);
         }
         else
         {
-            PartialButterflyInverse8x8<shift_2nd, Ipp16s>(tmp, (Ipp16s*)destPtr, destStride);
+            PartialButterflyInverse8x8<Ipp16s, false>(shift_2nd, tmp, (Ipp16s*)destPtr, destStride, bitDepth);
         }
     }
 
 
-    void MAKE_NAME(h265_DCT16x16Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+    void MAKE_NAME(h265_DCT16x16Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth)
     {
         Ipp16s tmp[16*16];
         const Ipp32s shift_1st = SHIFT_INV_1ST;
-        const Ipp32s shift_2nd = SHIFT_INV_2ND;
+        const Ipp32s shift_2nd = SHIFT_INV_2ND - (bitDepth - 8);
 
-        PartialButterflyInverse16x16<shift_1st, Ipp16s>((Ipp16s*)coeff, tmp, 16);
-        if(1 == destSize)
+        PartialButterflyInverse16x16<Ipp16s, false>(shift_1st, (Ipp16s*)coeff, tmp, 16, bitDepth);
+        if (inplace && bitDepth == 8)
         {
-            PartialButterflyInverse16x16<shift_2nd, Ipp8u>(tmp, (Ipp8u*)destPtr, destStride);
+            PartialButterflyInverse16x16<Ipp8u, true>(shift_2nd, tmp, (Ipp8u*)destPtr, destStride, bitDepth);
+        }
+        else if (inplace && bitDepth > 8)
+        {
+            PartialButterflyInverse16x16<Ipp16u, true>(shift_2nd, tmp, (Ipp16u*)destPtr, destStride, bitDepth);
         }
         else
         {
-            PartialButterflyInverse16x16<shift_2nd, Ipp16s>(tmp, (Ipp16s*)destPtr, destStride);
+            PartialButterflyInverse16x16<Ipp16s, false>(shift_2nd, tmp, (Ipp16s*)destPtr, destStride, bitDepth);
         }
     }
 
-    void MAKE_NAME(h265_DCT32x32Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+    void MAKE_NAME(h265_DCT32x32Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth)
     {
         Ipp16s tmp[32*32];
         const Ipp32s shift_1st = SHIFT_INV_1ST;
-        const Ipp32s shift_2nd = SHIFT_INV_2ND;
+        const Ipp32s shift_2nd = SHIFT_INV_2ND - (bitDepth - 8);
 
-        PartialButterflyInverse32x32<shift_1st, Ipp16s>((Ipp16s*)coeff, tmp, 32);
-        if(1 == destSize)
+        PartialButterflyInverse32x32<Ipp16s, false>(shift_1st, (Ipp16s*)coeff, tmp, 32, bitDepth);
+        if (inplace && bitDepth == 8)
         {
-            PartialButterflyInverse32x32<shift_2nd, Ipp8u>(tmp, (Ipp8u*)destPtr, destStride);
+            PartialButterflyInverse32x32<Ipp8u, true>(shift_2nd, tmp, (Ipp8u*)destPtr, destStride, bitDepth);
+        }
+        else if (inplace && bitDepth > 8)
+        {
+            PartialButterflyInverse32x32<Ipp16u, true>(shift_2nd, tmp, (Ipp16u*)destPtr, destStride, bitDepth);
         }
         else
         {
-            PartialButterflyInverse32x32<shift_2nd, Ipp16s>(tmp, (Ipp16s*)destPtr, destStride);
+            PartialButterflyInverse32x32<Ipp16s, false>(shift_2nd, tmp, (Ipp16s*)destPtr, destStride, bitDepth);
         }
     }
 

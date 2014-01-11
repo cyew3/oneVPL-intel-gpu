@@ -202,7 +202,7 @@ namespace MFX_HEVC_PP
     typedef  int (H265_FASTCALL *PTR_SAD_MxN_General_8u)(SAD_PARAMETERS_LIST_GENERAL);
 
     // [PTR.TransformInv]
-    typedef void (* PTR_TransformInv_16sT) (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize);
+    typedef void (* PTR_TransformInv_16sT) (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
 
     // [PTR.TransformFwd]
     typedef void (H265_FASTCALL *PTR_TransformFwd_16s)(const short *H265_RESTRICT src, short *H265_RESTRICT dst);
@@ -378,11 +378,11 @@ namespace MFX_HEVC_PP
 #endif
 
         // [Transform Inv]
-        HEVCPP_API( PTR_TransformInv_16sT, void, h265_DST4x4Inv_16sT, (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize) );
-        HEVCPP_API( PTR_TransformInv_16sT, void, h265_DCT4x4Inv_16sT, (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize) );
-        HEVCPP_API( PTR_TransformInv_16sT, void, h265_DCT8x8Inv_16sT, (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize) );
-        HEVCPP_API( PTR_TransformInv_16sT, void, h265_DCT16x16Inv_16sT, (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize) );
-        HEVCPP_API( PTR_TransformInv_16sT, void, h265_DCT32x32Inv_16sT, (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize) );
+        HEVCPP_API( PTR_TransformInv_16sT, void, h265_DST4x4Inv_16sT, (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth) );
+        HEVCPP_API( PTR_TransformInv_16sT, void, h265_DCT4x4Inv_16sT, (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth) );
+        HEVCPP_API( PTR_TransformInv_16sT, void, h265_DCT8x8Inv_16sT, (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth) );
+        HEVCPP_API( PTR_TransformInv_16sT, void, h265_DCT16x16Inv_16sT, (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth) );
+        HEVCPP_API( PTR_TransformInv_16sT, void, h265_DCT32x32Inv_16sT, (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth) );
 
         // [transform.forward]
         HEVCPP_API( PTR_TransformFwd_16s, void H265_FASTCALL, h265_DST4x4Fwd_16s, (const short *H265_RESTRICT src, short *H265_RESTRICT dst) );
@@ -801,12 +801,6 @@ namespace MFX_HEVC_PP
         Ipp16u* pels,
         Ipp32s pitch,
         Ipp32s width);
-
-    void h265_DST4x4Inv_16sT_16u_px (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
-    void h265_DCT4x4Inv_16sT_16u_px (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
-    void h265_DCT8x8Inv_16sT_16u_px (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
-    void h265_DCT16x16Inv_16sT_16u_px (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
-    void h265_DCT32x32Inv_16sT_16u_px (void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth);
 
     Ipp32s h265_FilterEdgeLuma_16u_I_px(H265EdgeData *edge, Ipp16u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32u bit_depth);
     void h265_FilterEdgeChroma_Interleaved_16u_I_px(H265EdgeData *edge, Ipp16u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQpCb, Ipp32s chromaQpCr, Ipp32u bit_depth);

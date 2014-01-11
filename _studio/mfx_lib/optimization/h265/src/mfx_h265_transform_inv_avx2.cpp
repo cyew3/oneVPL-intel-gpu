@@ -19,6 +19,9 @@
 #if defined (MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_AUTO) 
 #include <immintrin.h> // AVX, AVX2
 
+#define mm128(s)               _mm256_castsi256_si128(s)     /* cast xmm = low 128 of ymm */
+#define mm256(s)               _mm256_castsi128_si256(s)     /* cast ymm = [xmm | undefined] */
+
 // HEVC_PP is build by ICL only with special options /QaxSSE4.2,CORE_AVX2
 // so, MS options should be ignored
 #if defined (_MSC_VER)
@@ -35,7 +38,7 @@
 namespace MFX_HEVC_PP
 {
 #define SHIFT_INV_1ST          7 // Shift after first inverse transform stage
-#define SHIFT_INV_2ND         12 // Shift after second inverse transform stage
+#define SHIFT_INV_2ND_BASE     12   // Base shift after second inverse transform stage, offset later by (bitDepth - 8) for > 8-bit data
 #define REG_DCT                  65535
 
 #ifdef NDEBUG
@@ -309,7 +312,6 @@ M256I_2x8SHORT( t_16_f0123_45,  57, 43, -80,-90, -25, 57,  90, 25);
 M256I_2x8SHORT( t_16_f4567_45,  -9,-87, -87, 70,  43,  9,  70,-80);
 M256I_2x8SHORT( t_16_f0123_67,  25,  9, -70,-25,  90, 43, -80,-57);
 M256I_2x8SHORT( t_16_f4567_67,  43, 70,   9,-80, -57, 87,  87,-90);
-M256I_DC (round2y, 1<<(SHIFT_INV_2ND-1));
 
 #undef coef_stride
 #define coef_stride 4
@@ -322,8 +324,11 @@ M256I_DC (round2y, 1<<(SHIFT_INV_2ND-1));
 #endif
 
 
-void MAKE_NAME(h265_DCT4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+template <int bitDepth, typename DstCoeffsType, bool inplace>
+static void h265_DCT4x4Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_RESTRICT coeff, int destStride)
 {
+   const int SHIFT_INV_2ND = (SHIFT_INV_2ND_BASE - (bitDepth - 8));
+
    M256I_2xW2x4C(t_4dct_02_01,  64, 83,   64,-36);
    M256I_2xW2x4C(t_4dct_02_23,  64, 36,  -64, 83);
    M256I_2xW2x4C(t_4dct_13_01,  64, 36,   64,-83);
@@ -335,15 +340,6 @@ void MAKE_NAME(h265_DCT4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT co
    M256I_W8x2C(t_dct4_B_avx,  64, 36,  -64,-83, -64, 83,  64,-36);
 
    M256I_DC (round2_avx, 1<<(SHIFT_INV_2ND-1));
-
-   unsigned char* __restrict destByte;
-   short* __restrict destWord;
-
-   if (destSize == 1) {
-      destByte = (unsigned char *)destPtr;
-   } else {
-      destWord = (short *)destPtr;
-   }
 
    __m128i s0 = _mm_loadl_epi64((const __m128i *)(coeff + 0*coef_stride));
    __m128i s1 = _mm_loadl_epi64((const __m128i *)(coeff + 1*coef_stride));
@@ -384,49 +380,91 @@ void MAKE_NAME(h265_DCT4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT co
 
    __m256i xmm0123 = _mm256_packs_epi32(xmm02, xmm13);
 
-    if (destSize == 1) {
+    if (inplace && sizeof(DstCoeffsType) == 1) {
       __m128i tmp0;
       /* load 4 bytes from row 0 and row 1, expand to 16 bits, add temp values, clip/pack to 8 bytes */
-      //tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 0*destStride), 0);    /* load row 0 (bytes) */      
+      //tmp0 = _mm_insert_epi32(tmp0, *(int *)(dst + 0*destStride), 0);    /* load row 0 (bytes) */      
 // Workaround for GCC 4.7 bug
 #if __GNUC__
-      tmp0 = _mm_insert_epi32( _mm_setzero_si128(), *(int *)(destByte + 0*destStride), 0);      /* load row 0 (bytes) */ 
+      tmp0 = _mm_insert_epi32( _mm_setzero_si128(), *(int *)(dst + 0*destStride), 0);      /* load row 0 (bytes) */ 
 #else
-      tmp0 = _mm_insert_epi32( _mm_undefined_si128(), *(int *)(destByte + 0*destStride), 0);      /* load row 0 (bytes) */ 
+      tmp0 = _mm_insert_epi32( _mm_undefined_si128(), *(int *)(dst + 0*destStride), 0);      /* load row 0 (bytes) */ 
 #endif
 
-      tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 1*destStride), 1);    /* load row 1 (bytes) */
+      tmp0 = _mm_insert_epi32(tmp0, *(int *)(dst + 1*destStride), 1);    /* load row 1 (bytes) */
       tmp0 = _mm_cvtepu8_epi16(tmp0);                                        /* expand to 16 bytes */
       tmp0 = _mm_add_epi16(tmp0, _mm256_castsi256_si128(xmm0123));           /* add to dst */
       tmp0 = _mm_packus_epi16(tmp0, tmp0);                                   /* pack to 8 bytes */
-      *(int *)(destByte + 0*destStride) = _mm_extract_epi32(tmp0, 0);         /* store row 0 (bytes) */
-      *(int *)(destByte + 1*destStride) = _mm_extract_epi32(tmp0, 1);         /* store row 1 (bytes) */
+      *(int *)(dst + 0*destStride) = _mm_extract_epi32(tmp0, 0);         /* store row 0 (bytes) */
+      *(int *)(dst + 1*destStride) = _mm_extract_epi32(tmp0, 1);         /* store row 1 (bytes) */
 
       /* repeat for rows 2 and 3 */
-      tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 2*destStride), 0);    /* load row 0 (bytes) */      
+      tmp0 = _mm_insert_epi32(tmp0, *(int *)(dst + 2*destStride), 0);    /* load row 0 (bytes) */      
 
-      tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 3*destStride), 1);    /* load row 1 (bytes) */
+      tmp0 = _mm_insert_epi32(tmp0, *(int *)(dst + 3*destStride), 1);    /* load row 1 (bytes) */
       tmp0 = _mm_cvtepu8_epi16(tmp0);                                        /* expand to 16 bytes */
       tmp0 = _mm_add_epi16(tmp0, _mm256_extracti128_si256(xmm0123, 1));      /* add to dst */
       tmp0 = _mm_packus_epi16(tmp0, tmp0);                                   /* pack to 8 bytes */
-      *(int *)(destByte + 2*destStride) = _mm_extract_epi32(tmp0, 0);         /* store row 0 (bytes) */
-      *(int *)(destByte + 3*destStride) = _mm_extract_epi32(tmp0, 1);         /* store row 1 (bytes) */
+      *(int *)(dst + 2*destStride) = _mm_extract_epi32(tmp0, 0);         /* store row 0 (bytes) */
+      *(int *)(dst + 3*destStride) = _mm_extract_epi32(tmp0, 1);         /* store row 1 (bytes) */
+    } else if (inplace && sizeof(DstCoeffsType) == 2) {
+       __m256i tmp0, tmp1, tmp2, tmp3, tmp4, tmp5;
+
+       /* load 4 words from each row, add temp values, clip to [0, 2^bitDepth) */
+       tmp0 = mm256(_mm_loadl_epi64((__m128i *)(dst + 0*destStride)));
+       tmp1 = mm256(_mm_loadl_epi64((__m128i *)(dst + 1*destStride)));
+       tmp2 = mm256(_mm_loadl_epi64((__m128i *)(dst + 2*destStride)));
+       tmp3 = mm256(_mm_loadl_epi64((__m128i *)(dst + 3*destStride)));
+
+       tmp0 = _mm256_unpacklo_epi64(tmp0, tmp1);
+       tmp2 = _mm256_unpacklo_epi64(tmp2, tmp3);
+       tmp0 = _mm256_permute2x128_si256(tmp0, tmp2, 0x20);
+
+       /* signed saturating add to 16-bit, then clip to bitDepth */
+       tmp0 = _mm256_adds_epi16(tmp0, xmm0123);
+       tmp4 = _mm256_setzero_si256();
+       tmp5 = _mm256_set1_epi16((1 << bitDepth) - 1);
+       tmp0 = _mm256_max_epi16(tmp0, tmp4);
+       tmp0 = _mm256_min_epi16(tmp0, tmp5);
+
+      _mm_storel_epi64((__m128i*)(dst + 0*destStride), _mm256_castsi256_si128(tmp0));
+      _mm_storeh_epi64((__m128i*)(dst + 1*destStride), _mm256_castsi256_si128(tmp0));
+      _mm_storel_epi64((__m128i*)(dst + 2*destStride), _mm256_extracti128_si256(tmp0, 1));
+      _mm_storeh_epi64((__m128i*)(dst + 3*destStride), _mm256_extracti128_si256(tmp0, 1));
     } else {
-      _mm_storel_epi64((__m128i*)(destWord + 0*destStride), _mm256_castsi256_si128(xmm0123));
-      _mm_storeh_epi64((__m128i*)(destWord + 1*destStride), _mm256_castsi256_si128(xmm0123));
-      _mm_storel_epi64((__m128i*)(destWord + 2*destStride), _mm256_extracti128_si256(xmm0123, 1));
-      _mm_storeh_epi64((__m128i*)(destWord + 3*destStride), _mm256_extracti128_si256(xmm0123, 1));
+      _mm_storel_epi64((__m128i*)(dst + 0*destStride), _mm256_castsi256_si128(xmm0123));
+      _mm_storeh_epi64((__m128i*)(dst + 1*destStride), _mm256_castsi256_si128(xmm0123));
+      _mm_storel_epi64((__m128i*)(dst + 2*destStride), _mm256_extracti128_si256(xmm0123, 1));
+      _mm_storeh_epi64((__m128i*)(dst + 3*destStride), _mm256_extracti128_si256(xmm0123, 1));
     }
 }
 
+void MAKE_NAME(h265_DCT4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth)
+{
+    if (inplace) {
+        switch (bitDepth) {
+        case  8: h265_DCT4x4Inv_16sT_Kernel< 8, Ipp8u,  true >((Ipp8u *) destPtr, coeff, destStride); break;
+        case  9: h265_DCT4x4Inv_16sT_Kernel< 9, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+        case 10: h265_DCT4x4Inv_16sT_Kernel<10, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+        }
+    } else {
+        switch (bitDepth) {
+        case  8: h265_DCT4x4Inv_16sT_Kernel< 8, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+        case  9: h265_DCT4x4Inv_16sT_Kernel< 9, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+        case 10: h265_DCT4x4Inv_16sT_Kernel<10, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+        }
+    }
+}
 
-
- void MAKE_NAME(h265_DST4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+template <int bitDepth, typename DstCoeffsType, bool inplace>
+static void h265_DST4x4Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_RESTRICT coeff, int destStride)
 {
 //    dst[i + 0*4] = (short)Clip3( -32768, 32767, ( 29*s0 + 74*s1 + 84*s2 + 55*s3 + rnd_factor ) >> SHIFT_INV_1ST );
 //    dst[i + 1*4] = (short)Clip3( -32768, 32767, ( 55*s0 + 74*s1 - 29*s2 - 84*s3 + rnd_factor ) >> SHIFT_INV_1ST );
 //    dst[i + 2*4] = (short)Clip3( -32768, 32767, ( 74*s0 +  0*s1 - 74*s2 + 74*s3 + rnd_factor ) >> SHIFT_INV_1ST );
 //    dst[i + 3*4] = (short)Clip3( -32768, 32767, ( 84*s0 - 74*s1 + 55*s2 - 29*s3 + rnd_factor ) >> SHIFT_INV_1ST );
+
+   const int SHIFT_INV_2ND = (SHIFT_INV_2ND_BASE - (bitDepth - 8));
 
    M256I_2xW2x4C(t_4dst_02_01,  29, 74,   74,  0);
    M256I_2xW2x4C(t_4dst_02_23,  84, 55,  -74, 74);
@@ -438,15 +476,6 @@ void MAKE_NAME(h265_DCT4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT co
    M256I_W8x2C(t_dst4_A_avx,  29, 74,   55, 74,  74,  0,  84,-74);
    M256I_W8x2C(t_dst4_B_avx,  84, 55,  -29,-84, -74, 74,  55,-29);
    M256I_DC (round2_avx, 1<<(SHIFT_INV_2ND-1));
-
-   unsigned char* __restrict destByte;
-   short* __restrict destWord;
-
-   if (destSize == 1) {
-      destByte = (unsigned char *)destPtr;
-   } else {
-      destWord = (short *)destPtr;
-   }
 
    __m128i s0 = _mm_loadl_epi64((const __m128i *)(coeff + 0*coef_stride));
    __m128i s1 = _mm_loadl_epi64((const __m128i *)(coeff + 1*coef_stride));
@@ -487,59 +516,92 @@ void MAKE_NAME(h265_DCT4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT co
 
    __m256i xmm0123 = _mm256_packs_epi32(xmm02, xmm13);
 
-   if (destSize == 1) {
+    if (inplace && sizeof(DstCoeffsType) == 1) {
       __m128i tmp0;
       /* load 4 bytes from row 0 and row 1, expand to 16 bits, add temp values, clip/pack to 8 bytes */
-      //tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 0*destStride), 0);    /* load row 0 (bytes) */
+      //tmp0 = _mm_insert_epi32(tmp0, *(int *)(dst + 0*destStride), 0);    /* load row 0 (bytes) */
 
 // Workaround for GCC 4.7 bug
 #if __GNUC__
-      tmp0 = _mm_insert_epi32( _mm_setzero_si128(), *(int *)(destByte + 0*destStride), 0);      /* load row 0 (bytes) */ 
+      tmp0 = _mm_insert_epi32( _mm_setzero_si128(), *(int *)(dst + 0*destStride), 0);      /* load row 0 (bytes) */ 
 #else
-      tmp0 = _mm_insert_epi32( _mm_undefined_si128(), *(int *)(destByte + 0*destStride), 0);      /* load row 0 (bytes) */ 
+      tmp0 = _mm_insert_epi32( _mm_undefined_si128(), *(int *)(dst + 0*destStride), 0);      /* load row 0 (bytes) */ 
 #endif
 
-      tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 1*destStride), 1);    /* load row 1 (bytes) */
+      tmp0 = _mm_insert_epi32(tmp0, *(int *)(dst + 1*destStride), 1);    /* load row 1 (bytes) */
       tmp0 = _mm_cvtepu8_epi16(tmp0);                                        /* expand to 16 bytes */
       tmp0 = _mm_add_epi16(tmp0, _mm256_castsi256_si128(xmm0123));           /* add to dst */
       tmp0 = _mm_packus_epi16(tmp0, tmp0);                                   /* pack to 8 bytes */
-      *(int *)(destByte + 0*destStride) = _mm_extract_epi32(tmp0, 0);         /* store row 0 (bytes) */
-      *(int *)(destByte + 1*destStride) = _mm_extract_epi32(tmp0, 1);         /* store row 1 (bytes) */
+      *(int *)(dst + 0*destStride) = _mm_extract_epi32(tmp0, 0);         /* store row 0 (bytes) */
+      *(int *)(dst + 1*destStride) = _mm_extract_epi32(tmp0, 1);         /* store row 1 (bytes) */
 
       /* repeat for rows 2 and 3 */
-      tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 2*destStride), 0);    /* load row 0 (bytes) */    
+      tmp0 = _mm_insert_epi32(tmp0, *(int *)(dst + 2*destStride), 0);    /* load row 0 (bytes) */    
 
-      tmp0 = _mm_insert_epi32(tmp0, *(int *)(destByte + 3*destStride), 1);    /* load row 1 (bytes) */
+      tmp0 = _mm_insert_epi32(tmp0, *(int *)(dst + 3*destStride), 1);    /* load row 1 (bytes) */
       tmp0 = _mm_cvtepu8_epi16(tmp0);                                        /* expand to 16 bytes */
       tmp0 = _mm_add_epi16(tmp0, _mm256_extracti128_si256(xmm0123, 1));      /* add to dst */
       tmp0 = _mm_packus_epi16(tmp0, tmp0);                                   /* pack to 8 bytes */
-      *(int *)(destByte + 2*destStride) = _mm_extract_epi32(tmp0, 0);         /* store row 0 (bytes) */
-      *(int *)(destByte + 3*destStride) = _mm_extract_epi32(tmp0, 1);         /* store row 1 (bytes) */
-   } else {
-      _mm_storel_epi64( (__m128i*)(destWord + 0*destStride), _mm256_castsi256_si128(xmm0123));
-      _mm_storeh_epi64( (__m128i*)(destWord + 1*destStride), _mm256_castsi256_si128(xmm0123));
-      _mm_storel_epi64( (__m128i*)(destWord + 2*destStride), _mm256_extracti128_si256(xmm0123, 1));
-      _mm_storeh_epi64( (__m128i*)(destWord + 3*destStride), _mm256_extracti128_si256(xmm0123, 1));
-   }
+      *(int *)(dst + 2*destStride) = _mm_extract_epi32(tmp0, 0);         /* store row 0 (bytes) */
+      *(int *)(dst + 3*destStride) = _mm_extract_epi32(tmp0, 1);         /* store row 1 (bytes) */
+    } else if (inplace && sizeof(DstCoeffsType) == 2) {
+       __m256i tmp0, tmp1, tmp2, tmp3, tmp4, tmp5;
+
+       /* load 4 words from each row, add temp values, clip to [0, 2^bitDepth) */
+       tmp0 = mm256(_mm_loadl_epi64((__m128i *)(dst + 0*destStride)));
+       tmp1 = mm256(_mm_loadl_epi64((__m128i *)(dst + 1*destStride)));
+       tmp2 = mm256(_mm_loadl_epi64((__m128i *)(dst + 2*destStride)));
+       tmp3 = mm256(_mm_loadl_epi64((__m128i *)(dst + 3*destStride)));
+
+       tmp0 = _mm256_unpacklo_epi64(tmp0, tmp1);
+       tmp2 = _mm256_unpacklo_epi64(tmp2, tmp3);
+       tmp0 = _mm256_permute2x128_si256(tmp0, tmp2, 0x20);
+
+       /* signed saturating add to 16-bit, then clip to bitDepth */
+       tmp0 = _mm256_adds_epi16(tmp0, xmm0123);
+       tmp4 = _mm256_setzero_si256();
+       tmp5 = _mm256_set1_epi16((1 << bitDepth) - 1);
+       tmp0 = _mm256_max_epi16(tmp0, tmp4);
+       tmp0 = _mm256_min_epi16(tmp0, tmp5);
+
+      _mm_storel_epi64((__m128i*)(dst + 0*destStride), _mm256_castsi256_si128(tmp0));
+      _mm_storeh_epi64((__m128i*)(dst + 1*destStride), _mm256_castsi256_si128(tmp0));
+      _mm_storel_epi64((__m128i*)(dst + 2*destStride), _mm256_extracti128_si256(tmp0, 1));
+      _mm_storeh_epi64((__m128i*)(dst + 3*destStride), _mm256_extracti128_si256(tmp0, 1));
+    } else {
+      _mm_storel_epi64((__m128i*)(dst + 0*destStride), _mm256_castsi256_si128(xmm0123));
+      _mm_storeh_epi64((__m128i*)(dst + 1*destStride), _mm256_castsi256_si128(xmm0123));
+      _mm_storel_epi64((__m128i*)(dst + 2*destStride), _mm256_extracti128_si256(xmm0123, 1));
+      _mm_storeh_epi64((__m128i*)(dst + 3*destStride), _mm256_extracti128_si256(xmm0123, 1));
+    }
 }
 
+void MAKE_NAME(h265_DST4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth)
+{
+    if (inplace) {
+        switch (bitDepth) {
+        case  8: h265_DST4x4Inv_16sT_Kernel< 8, Ipp8u,  true >((Ipp8u *) destPtr, coeff, destStride); break;
+        case  9: h265_DST4x4Inv_16sT_Kernel< 9, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+        case 10: h265_DST4x4Inv_16sT_Kernel<10, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+        }
+    } else {
+        switch (bitDepth) {
+        case  8: h265_DST4x4Inv_16sT_Kernel< 8, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+        case  9: h265_DST4x4Inv_16sT_Kernel< 9, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+        case 10: h265_DST4x4Inv_16sT_Kernel<10, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+        }
+    }
+}
 
 #undef coef_stride
 #define coef_stride 8
 
 
-void MAKE_NAME(h265_DCT8x8Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+template <int bitDepth, typename DstCoeffsType, bool inplace>
+static void h265_DCT8x8Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_RESTRICT coeff, int destStride)
 {
+   const int SHIFT_INV_2ND = (SHIFT_INV_2ND_BASE - (bitDepth - 8));
    ALIGN_DECL(32) short tmp[8 * 8];
-
-   unsigned char* __restrict destByte;
-   short* __restrict destWord;
-
-   if (destSize == 1) {
-      destByte = (unsigned char *)destPtr;
-   } else {
-      destWord = (short *)destPtr;
-   }
 
    int16_t *__restrict p_tmp = tmp;
 
@@ -658,43 +720,72 @@ void MAKE_NAME(h265_DCT8x8Inv_16sT)(void *destPtr, const short *H265_RESTRICT co
 
       __m256i r76543210 = _mm256_packs_epi32(_mm256_srai_epi32(r3210, SHIFT_INV_2ND), _mm256_srai_epi32(r7654, SHIFT_INV_2ND));         //  r7 r6 r5 r4 r3 r2 r1 r0
 
-      if (destSize == 1) {
+      if (inplace && sizeof(DstCoeffsType) == 1) {
          /* load dst[0-7], expand to 16 bits, add temp[0-7], clip/pack to 8 bytes */
-         __m128i s = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&destByte[0]));
+         __m128i s = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&dst[0]));
          s = _mm_add_epi16(s, _mm256_castsi256_si128(r76543210));
          s = _mm_packus_epi16(s, s);
-         _mm_storel_epi64((__m128i *)&destByte[0], s);        /* store dst[0-7] (bytes) */
+         _mm_storel_epi64((__m128i *)&dst[0], s);        /* store dst[0-7] (bytes) */
 
-         s = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&destByte[destStride]));
+         s = _mm_cvtepu8_epi16(MM_LOAD_EPI64(&dst[destStride]));
          s = _mm_add_epi16(s, _mm256_extracti128_si256(r76543210, 1));
          s = _mm_packus_epi16(s, s);
-         _mm_storel_epi64((__m128i *)&destByte[destStride], s);        /* store dst[0-7] (bytes) */
+         _mm_storel_epi64((__m128i *)&dst[destStride], s);        /* store dst[0-7] (bytes) */
 
-         destByte += 2*destStride;
+         dst += 2*destStride;
+      } else if (inplace && sizeof(DstCoeffsType) == 2) {
+         __m256i tmp0, tmp1, tmp4, tmp5;
+
+         /* load 8 words from 2 rows, add temp values, clip to [0, 2^bitDepth) */
+         tmp0 = mm256(_mm_loadu_si128((__m128i *)(&dst[0])));
+         tmp1 = mm256(_mm_loadu_si128((__m128i *)(&dst[destStride])));
+         tmp0 = _mm256_permute2x128_si256(tmp0, tmp1, 0x20);
+
+         tmp0 = _mm256_adds_epi16(tmp0, r76543210);
+         tmp4 = _mm256_setzero_si256();
+         tmp5 = _mm256_set1_epi16((1 << bitDepth) - 1);
+         tmp0 = _mm256_max_epi16(tmp0, tmp4);
+         tmp0 = _mm256_min_epi16(tmp0, tmp5);
+
+         mm256_storel_epi128(dst,             tmp0);     //  r7 r6 r5 r4 r3 r2 r1 r0
+         mm256_storeh_epi128(dst + destStride, tmp0);     //  r7 r6 r5 r4 r3 r2 r1 r0
+         dst += 2*destStride;
       } else {
-         mm256_storel_epi128(destWord,             r76543210);     //  r7 r6 r5 r4 r3 r2 r1 r0
-         mm256_storeh_epi128(destWord + destStride, r76543210);     //  r7 r6 r5 r4 r3 r2 r1 r0
-         destWord += 2*destStride;
+         mm256_storel_epi128(dst,             r76543210);     //  r7 r6 r5 r4 r3 r2 r1 r0
+         mm256_storeh_epi128(dst + destStride, r76543210);     //  r7 r6 r5 r4 r3 r2 r1 r0
+         dst += 2*destStride;
       }
 
       p_tmp += 2*8;
    }
 }
 
+void MAKE_NAME(h265_DCT8x8Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth)
+{
+    if (inplace) {
+        switch (bitDepth) {
+        case  8: h265_DCT8x8Inv_16sT_Kernel< 8, Ipp8u,  true >((Ipp8u *) destPtr, coeff, destStride); break;
+        case  9: h265_DCT8x8Inv_16sT_Kernel< 9, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+        case 10: h265_DCT8x8Inv_16sT_Kernel<10, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+        }
+    } else {
+        switch (bitDepth) {
+        case  8: h265_DCT8x8Inv_16sT_Kernel< 8, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+        case  9: h265_DCT8x8Inv_16sT_Kernel< 9, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+        case 10: h265_DCT8x8Inv_16sT_Kernel<10, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+        }
+    }
+}
 
 #undef coef_stride
 #define coef_stride 16
 
-static H265_FORCEINLINE void DCTInverse16x16_h_2nd_avx2(const short * H265_RESTRICT coeff, void * H265_RESTRICT destPtr, int dstStride, int destSize)
+template <int bitDepth, typename DstCoeffsType, bool inplace>
+static H265_FORCEINLINE void DCTInverse16x16_h_2nd_avx2(DstCoeffsType *dst, const short *H265_RESTRICT coeff, int destStride)
 {
-   unsigned char* __restrict destByte;
-   short* __restrict destWord;
+   const int SHIFT_INV_2ND = (SHIFT_INV_2ND_BASE - (bitDepth - 8));
 
-   if (destSize == 1) {
-      destByte = (unsigned char *)destPtr;
-   } else {
-      destWord = (short *)destPtr;
-   }
+   M256I_DC (round2y, 1<<(SHIFT_INV_2ND-1));
 
    for(int i=0; i<16; i+=2)
    {
@@ -780,14 +871,28 @@ static H265_FORCEINLINE void DCTInverse16x16_h_2nd_avx2(const short * H265_RESTR
       xmm2 = _mm256_permute2x128_si256(xmm5, xmm3, 0x20); // low parts
       xmm5 = _mm256_permute2x128_si256(xmm5, xmm3, 0x31); // high parts
 
-      if (destSize == 1) {
-         SAVE_RESULT_16_BYTES(xmm0, xmm2, destByte[0]);
-         SAVE_RESULT_16_BYTES(xmm0, xmm5, destByte[dstStride]);
-         destByte += 2 * dstStride;
+      if (inplace && sizeof(DstCoeffsType) == 1) {
+         SAVE_RESULT_16_BYTES(xmm0, xmm2, dst[0]);
+         SAVE_RESULT_16_BYTES(xmm0, xmm5, dst[destStride]);
+         dst += 2 * destStride;
+      } else if (inplace && sizeof(DstCoeffsType) == 2) {
+         xmm0 = _mm256_loadu_si256((__m256i *)(&dst[0]));
+         xmm1 = _mm256_loadu_si256((__m256i *)(&dst[destStride]));
+
+         xmm0 = _mm256_adds_epi16(xmm0, xmm2);
+         xmm1 = _mm256_adds_epi16(xmm1, xmm5);
+         xmm4 = _mm256_setzero_si256();
+         xmm5 = _mm256_set1_epi16((1 << bitDepth) - 1);
+         xmm0 = _mm256_max_epi16(xmm0, xmm4); xmm0 = _mm256_min_epi16(xmm0, xmm5);
+         xmm1 = _mm256_max_epi16(xmm1, xmm4); xmm1 = _mm256_min_epi16(xmm1, xmm5);
+
+         _mm256_store_si256((__m256i *)&dst[0], xmm0);
+         _mm256_store_si256((__m256i *)&dst[destStride], xmm1);
+         dst += 2 * destStride;
       } else {
-         _mm256_store_si256((__m256i *)&destWord[0], xmm2);
-         _mm256_store_si256((__m256i *)&destWord[dstStride], xmm5);
-         destWord += 2 * dstStride;
+         _mm256_store_si256((__m256i *)&dst[0], xmm2);
+         _mm256_store_si256((__m256i *)&dst[destStride], xmm5);
+         dst += 2 * destStride;
       }
       coeff += 32;
    }
@@ -805,7 +910,8 @@ static H265_FORCEINLINE void DCTInverse16x16_h_2nd_avx2(const short * H265_RESTR
    *(__m128i *)(p_tmp + b*16) = _mm256_extracti128_si256(y, 1);
 
 
-void MAKE_NAME(h265_DCT16x16Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int destSize)
+template <int bitDepth, typename DstCoeffsType, bool inplace>
+static void h265_DCT16x16Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_RESTRICT coeff, int destStride)
 {
    ALIGN_DECL(32) short tmp[16 * 16];
    short *__restrict p_tmp = tmp;
@@ -916,7 +1022,24 @@ void MAKE_NAME(h265_DCT16x16Inv_16sT)(void *destPtr, const short *H265_RESTRICT 
       p_tmp += 8;
    }
 
-   DCTInverse16x16_h_2nd_avx2(tmp, destPtr, destStride, destSize);
+   DCTInverse16x16_h_2nd_avx2<bitDepth, DstCoeffsType, inplace>(dst, tmp, destStride);
+}
+
+void MAKE_NAME(h265_DCT16x16Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth)
+{
+    if (inplace) {
+        switch (bitDepth) {
+        case  8: h265_DCT16x16Inv_16sT_Kernel< 8, Ipp8u,  true >((Ipp8u *) destPtr, coeff, destStride); break;
+        case  9: h265_DCT16x16Inv_16sT_Kernel< 9, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+        case 10: h265_DCT16x16Inv_16sT_Kernel<10, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+        }
+    } else {
+        switch (bitDepth) {
+        case  8: h265_DCT16x16Inv_16sT_Kernel< 8, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+        case  9: h265_DCT16x16Inv_16sT_Kernel< 9, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+        case 10: h265_DCT16x16Inv_16sT_Kernel<10, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+        }
+    }
 }
 
 } // end namespace MFX_HEVC_PP

@@ -54,7 +54,10 @@
     <ClCompile Include="h265\src\mfx_h265_sad_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sao_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_transform_fwd_sse.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_transform_inv_sse.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_transform_inv_sse.cpp">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">/Qsfalign %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">/Qsfalign %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="h265\src\mfx_h265_weighted_pred_sse.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

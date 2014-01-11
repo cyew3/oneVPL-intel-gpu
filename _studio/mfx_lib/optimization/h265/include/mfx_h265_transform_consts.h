@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_H265_TRANSFORM_CONSTS_H__
@@ -136,6 +136,8 @@ extern ALIGNED_SSE2 signed int kfv_0307[];
 // 32-bits constants
 extern signed int rounder_64[];
 extern signed int rounder_2048[];
+extern signed int rounder_1024[];
+extern signed int rounder_512[];
 
 // 16-bits constants
 extern signed short koef0000[];
