@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -278,7 +278,11 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
     if (m_platform != m_core->GetPlatformType())
     {
         VM_ASSERT(m_platform == MFX_PLATFORM_SOFTWARE);
-        return MFX_WRN_PARTIAL_ACCELERATION;
+#ifdef MFX_VA
+            return MFX_ERR_UNSUPPORTED;
+#else
+            return  MFX_WRN_PARTIAL_ACCELERATION;
+#endif
     }
 
     if (isNeedChangeVideoParamWarning)
@@ -367,7 +371,11 @@ mfxStatus VideoDECODEH265::Reset(mfxVideoParam *par)
     if (m_platform != m_core->GetPlatformType())
     {
         VM_ASSERT(m_platform == MFX_PLATFORM_SOFTWARE);
-        return MFX_WRN_PARTIAL_ACCELERATION;
+#ifdef MFX_VA
+            return MFX_ERR_UNSUPPORTED;
+#else
+            return  MFX_WRN_PARTIAL_ACCELERATION;
+#endif
     }
 
     if (isNeedChangeVideoParamWarning)
@@ -654,7 +662,11 @@ mfxStatus VideoDECODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
     if (platform != core->GetPlatformType())
     {
         VM_ASSERT(platform == MFX_PLATFORM_SOFTWARE);
-        return MFX_WRN_PARTIAL_ACCELERATION;
+#ifdef MFX_VA
+            return MFX_ERR_UNSUPPORTED;
+#else
+            return MFX_WRN_PARTIAL_ACCELERATION;
+#endif
     }
 
     if (isNeedChangeVideoParamWarning)

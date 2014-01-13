@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -998,7 +998,11 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
         if (GetPlatform_H265(core, out) != core->GetPlatformType() && sts == MFX_ERR_NONE)
         {
             VM_ASSERT(GetPlatform_H265(core, out) == MFX_PLATFORM_SOFTWARE);
+#ifdef MFX_VA
+            sts = MFX_ERR_UNSUPPORTED;
+#else
             sts = MFX_WRN_PARTIAL_ACCELERATION;
+#endif
         }
     }
     else
