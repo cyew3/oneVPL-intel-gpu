@@ -3,7 +3,7 @@
  *     This software is supplied under the terms of a license agreement or
  *     nondisclosure agreement with Intel Corporation and may not be copied
  *     or disclosed except in accordance with the terms of that agreement.
- *          Copyright(c) 2006-2013 Intel Corporation. All Rights Reserved.
+ *          Copyright(c) 2006-2014 Intel Corporation. All Rights Reserved.
  *
  */
 
@@ -808,6 +808,7 @@ Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * statu
     if ((VA_STATUS_SUCCESS == va_status) && (VASurfaceReady == surface_status))
     {
         /*
+         TODO: Remove this comment after fix in driver
          The code below works only if RC6 is disabled on HSW.
          The only known way to disable RC6 is to change boot time parameters for i915 module.
 
@@ -822,14 +823,13 @@ Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * statu
         Check:
             sudo cat /sys/module/i915/parameters/i915_enable_rc6*
         */
-        // handling decoding errors
+        // handle decoding errors
         VAStatus va_sts = vaSyncSurface(m_dpy, m_surfaces[FrameBufIndex]);
         if (VA_STATUS_ERROR_DECODING_ERROR == va_sts)
         {
             // TODO: to reduce number of checks we can cache all used render targets
-            // during vaBeginPicture() call. For now check all render targets binded
-            // to context
-            /*for(int cnt = 0; cnt < m_NumOfFrameBuffers; ++cnt)
+            // during vaBeginPicture() call. For now check all render targets binded to context
+            for(int cnt = 0; cnt < m_NumOfFrameBuffers; ++cnt)
             {
                 VASurfaceDecodeMBErrors* pVaDecErr = NULL;
                 va_sts = vaQuerySurfaceError(m_dpy, m_surfaces[cnt], VA_STATUS_ERROR_DECODING_ERROR, (void**)&pVaDecErr);
@@ -840,16 +840,13 @@ Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * statu
                     {
                         if (VADecodeMBError == pVaDecErr[i].decode_error_type)
                         {
-                            // TODO: Do we need to check exact error or VA_STATUS_ERROR_DECODING_ERROR
-                            // VA_STATUS_ERROR_DECODING_ERROR is all we need ???
+                            if (NULL != error)
+                            {
+                                *(VAStatus*)error = VA_STATUS_ERROR_DECODING_ERROR;
+                            }
                         }
                     }
                 }
-            }*/
-
-            if (NULL != error)
-            {
-                *(VAStatus*)error = VA_STATUS_ERROR_DECODING_ERROR;
             }
         }
     }
