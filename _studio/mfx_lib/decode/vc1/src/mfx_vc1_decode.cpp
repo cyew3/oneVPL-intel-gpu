@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -761,7 +761,8 @@ mfxStatus MFXVideoDECODEVC1::Init(mfxVideoParam *par)
         }
         else
         {
-            MFXSts = m_pCore->AllocFrames(&request, &m_response);
+            bool isNeedCopy = ((MFX_IOPATTERN_OUT_SYSTEM_MEMORY & IOPattern) && (request.Type & MFX_MEMTYPE_INTERNAL_FRAME)) || ((MFX_IOPATTERN_OUT_VIDEO_MEMORY & IOPattern) && (m_isSWPlatform));
+            MFXSts = m_pCore->AllocFrames(&request, &m_response,isNeedCopy);
             MFX_CHECK_STS(MFXSts);
         }
 
