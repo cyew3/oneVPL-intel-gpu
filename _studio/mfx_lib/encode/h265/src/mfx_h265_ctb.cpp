@@ -4097,8 +4097,8 @@ CostType H265CU::CalcCostSkip(Ipp32u abs_part_idx, Ipp8u depth)
         cost_best = tu_sse(pSrc, pRec, pitch_src, pitch_rec, size);
         // add chroma with little weight
         InterPredCU(abs_part_idx, depth, uv_rec, pitch_rec, 0);
-        pRec = uv_rec + ((PUStartRow * pitch_rec + PUStartColumn) << par->Log2MinTUSize);
-        pSrc = uv_src + ((PUStartRow * pitch_src + PUStartColumn) << par->Log2MinTUSize);
+        pRec = uv_rec + (((PUStartRow>>1) * pitch_rec + PUStartColumn) << par->Log2MinTUSize);
+        pSrc = uv_src + (((PUStartRow>>1) * pitch_src + PUStartColumn) << par->Log2MinTUSize);
         cost_best += tu_sse(pSrc, pRec, pitch_src, pitch_rec, size>>1)/4;
         pRec += size>>1;
         pSrc += size>>1;
