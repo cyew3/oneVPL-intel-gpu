@@ -3,15 +3,17 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012 - 2014 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
-#include "mfx_h265_defs.h"
-#include "mfx_h265_sao_filter.h"
+#include "mfx_h265_quant.h"
+#include "mfx_h265_enc.h"
+
+namespace H265Enc {
 
 template <class H265Bs>
 static
@@ -1533,9 +1535,9 @@ void H265CU::xEncodeSAO(H265BsReal *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u
 template
 void H265CU::xEncodeSAO(H265BsFake *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mode, SaoCtuParam& blkParam, bool leftMergeAvail, bool aboveMergeAvail );
 
-template 
+template
 void h265_code_sao_ctb_offset_param(H265BsReal *bs, int compIdx, SaoOffsetParam& ctbParam, bool sliceEnabled);
-template 
+template
 void h265_code_sao_ctb_offset_param(H265BsFake *bs, int compIdx, SaoOffsetParam& ctbParam, bool sliceEnabled);
 
 template
@@ -1560,5 +1562,6 @@ void H265CU::xEncodeCU(H265BsReal *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u 
 template
 void H265CU::xEncodeCU(H265BsFake *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mode );
 
+} // namespace
+
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE
-/* EOF */

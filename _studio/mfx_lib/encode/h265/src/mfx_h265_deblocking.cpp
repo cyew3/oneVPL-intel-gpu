@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2013 - 2014 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -11,7 +11,10 @@
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #include "mfx_h265_defs.h"
-#include "mfx_h265_optimization.h"
+#include "mfx_h265_enc.h"
+//#include "mfx_h265_optimization.h"
+
+namespace H265Enc {
 
 #define VERT_FILT 0
 #define HOR_FILT  1
@@ -571,5 +574,7 @@ void H265CU::Deblock()
         }
     }
 }
+
+} // namespace
 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE

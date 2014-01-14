@@ -3,10 +3,8 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2013 - 2014 Intel Corporation. All Rights Reserved.
 //
-
-#include "mfx_common.h"
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
@@ -16,6 +14,8 @@
 #include "mfx_h265_defs.h"
 #include "mfx_h265_ctb.h"
 #include "mfx_h265_cabac.h"
+
+namespace H265Enc {
 
 #define NUM_SIG_CG_FLAG_CTX           2       ///< number of context models for MULTI_LEVEL_SIGNIFICANCE
 #define NUM_SIG_FLAG_CTX              42      ///< number of context models for sig flag
@@ -126,6 +126,8 @@ private:
     Ipp64f      m_lambda;
     CabacBits   m_cabacBits;
 };
+
+} // namespace
 
 #endif // __MFX_H265_QUANT_RDO_H__
 #endif // (MFX_ENABLE_H265_VIDEO_ENCODE)

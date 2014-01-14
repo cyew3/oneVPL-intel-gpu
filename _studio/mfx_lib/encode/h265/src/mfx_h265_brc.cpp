@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2013 - 2014 Intel Corporation. All Rights Reserved.
 //
 //
 //                     H.265 bitrate control
@@ -16,8 +16,10 @@
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
-#include "mfx_h265_defs.h"
+#include "mfx_h265_brc.h"
+#include "mfx_h265_tables.h"
 
+namespace H265Enc {
 
 mfxStatus H265BRC::Close()
 {
@@ -815,5 +817,7 @@ void  H265BRC::GetMinMaxFrameSize(mfxI32 *minFrameSizeInBits, mfxI32 *maxFrameSi
     if (maxFrameSizeInBits)
       *maxFrameSizeInBits = mHRD.maxFrameSize;
 }
+
+} // namespace
 
 #endif

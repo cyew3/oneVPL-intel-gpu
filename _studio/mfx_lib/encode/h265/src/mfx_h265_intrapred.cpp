@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2012 - 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012 - 2014 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -11,7 +11,11 @@
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #include "mfx_h265_defs.h"
+#include "mfx_h265_enc.h"
 #include "mfx_h265_optimization.h"
+#include "ippi.h"
+
+namespace H265Enc {
 
 static
 void IsAboveLeftAvailable(H265CU *pCU,
@@ -797,13 +801,13 @@ void H265CU::IntraLumaModeDecision(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u dep
 
         if (par->csps->strong_intra_smoothing_enabled_flag && width == 32)
         {
-            Ipp32s threshold = 1 << (BIT_DEPTH_LUMA - 5);        
+            Ipp32s threshold = 1 << (BIT_DEPTH_LUMA - 5);
             Ipp32s topLeft = predPel[0];
             Ipp32s topRight = predPel[2*width];
             Ipp32s midHor = predPel[width];
             Ipp32s bottomLeft = predPel[4*width];
             Ipp32s midVer = predPel[3*width];
-            bool bilinearLeft = abs(topLeft + topRight - 2*midHor) < threshold; 
+            bool bilinearLeft = abs(topLeft + topRight - 2*midHor) < threshold;
             bool bilinearAbove = abs(topLeft + bottomLeft - 2*midVer) < threshold;
 
             if (bilinearLeft && bilinearAbove)
@@ -1137,5 +1141,7 @@ void H265CU::GetInitAvailablity()
         }
     }
 }
+
+} // namespace
 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE

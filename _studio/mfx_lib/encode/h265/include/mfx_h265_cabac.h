@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012 - 2014 Intel Corporation. All Rights Reserved.
 //
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
@@ -11,6 +11,7 @@
 #ifndef __MFX_H265_CABAC_H__
 #define __MFX_H265_CABAC_H__
 
+namespace H265Enc {
 
 enum // Syntax element type for HEVC
 {
@@ -64,6 +65,8 @@ enum {
 #define NUM_ABS_FLAG_CTX_CHROMA        2      ///< number of context models for greater than 2 flag of chroma
 #define NUM_QT_CBF_CTX 5
 #define NUM_CTX_LAST_FLAG_XY 15
+
+} // namespace
 
 #endif // __MFX_H265_CABAC_H__
 

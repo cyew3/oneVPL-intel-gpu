@@ -3,21 +3,24 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2012 - 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012 - 2014 Intel Corporation. All Rights Reserved.
 //
-
-#include "mfx_common.h"
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #ifndef __MFX_H265_CTB_H__
 #define __MFX_H265_CTB_H__
 
+#include "mfx_h265_defs.h"
+#include "mfx_h265_set.h"
+#include "mfx_h265_bitstream.h"
 #include "mfx_h265_optimization.h"
-#include "mfx_h265_dispatcher.h"
 #include "mfx_h265_sao_filter.h"
+#include "mfx_h265_tables.h"
 
 using namespace MFX_HEVC_PP;
+
+namespace H265Enc {
 
 struct H265CUData
 {
@@ -336,7 +339,7 @@ public:
     void QuantInvTU(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, Ipp32s is_luma);
     void QuantFwdTU(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, Ipp32s is_luma);
 
-    void Deblock();    
+    void Deblock();
 
     void DeblockOneCrossLuma(Ipp32s curPixelColumn,
                              Ipp32s curPixelRow);
@@ -400,9 +403,9 @@ public:
 
 template <class H265Bs>
 void h265_code_sao_ctb_offset_param(
-    H265Bs *bs, 
-    int compIdx, 
-    SaoOffsetParam& ctbParam, 
+    H265Bs *bs,
+    int compIdx,
+    SaoOffsetParam& ctbParam,
     bool sliceEnabled);
 
 template <class H265Bs>
@@ -415,6 +418,11 @@ void h265_code_sao_ctb_param(
     bool onlyEstMergeInfo);
 
 Ipp32s GetLumaOffset(H265VideoParam *par, Ipp32s abs_part_idx, Ipp32s pitch);
+
+Ipp32s h265_tu_had(PixType *src, PixType *rec,
+                   Ipp32s pitch_src, Ipp32s pitch_rec, Ipp32s width, Ipp32s height);
+
+} // namespace
 
 #endif // __MFX_H265_CTB_H__
 

@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008 - 2014 Intel Corporation. All Rights Reserved.
 //
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
@@ -12,21 +12,17 @@
 #define __MFX_H265_ENCODE_H__
 
 #include "ippdefs.h"
-#include "ippi.h"
-#include "ippvc.h"
-#include "float.h"
-#include "math.h"
 
 #include "mfxdefs.h"
 #include "mfxvideo.h"
 #include "mfxvideo++int.h"
-#include "mfxsvc.h"
 #include "mfx_ext_buffers.h"
-//#include "umc_svc_brc.h"
 
 #include "mfx_umc_alloc_wrapper.h"
 
-class H265Encoder;
+namespace H265Enc {
+    class H265Encoder;
+}
 struct H265NALUnit;
 
 class mfxVideoH265InternalParam : public mfxVideoParam
@@ -100,7 +96,7 @@ protected:
     mfxVideoH265InternalParam            m_mfxVideoParam;
     mfxExtCodingOptionHEVC               m_mfxHEVCOpts;
     mfxExtDumpFiles                      m_mfxDumpFiles;
-    H265Encoder *m_enc;
+    H265Enc::H265Encoder *m_enc;
 
     mfxU32                 m_frameCountSync; // counter for sync. part
     mfxU32                 m_frameCount;     // counter for Async. part

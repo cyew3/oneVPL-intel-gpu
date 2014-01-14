@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
@@ -14,8 +14,10 @@
 #include "mfx_h265_defs.h"
 #include "mfx_h265_cabac_tables.h"
 
+namespace H265Enc {
+
 #define SIGNED_VLC_CODE(code) (2*ABS(code) - (code > 0))
-#define CABAC_CONTEXT_H265 Ipp8u
+typedef Ipp8u CABAC_CONTEXT_H265;
 
 struct H265NALUnit {
     Ipp8u nal_unit_type;
@@ -295,6 +297,12 @@ IppStatus ippiCABACInit_H265(
     Ipp8u*          pBitStream,
     Ipp32u          nBitStreamOffsetBits,
     Ipp32u          nBitStreamSize);
+
+void InitializeContextVariablesHEVC_CABAC(CABAC_CONTEXT_H265 *context_hevc, Ipp32s initializationType, Ipp32s SliceQPy);
+//Ipp32s h265_tu_had(PixType *src, PixType *rec,
+//                   Ipp32s pitch_src, Ipp32s pitch_rec, Ipp32s width, Ipp32s height);
+
+} // namespace
 
 #endif // __MFX_H265_BITSTREAM_H__
 

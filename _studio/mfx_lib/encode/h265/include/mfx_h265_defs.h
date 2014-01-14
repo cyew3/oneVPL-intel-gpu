@@ -3,10 +3,8 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2012 - 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012 - 2014 Intel Corporation. All Rights Reserved.
 //
-
-#include "mfx_common.h"
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
@@ -29,7 +27,12 @@
 #define __ALIGN8
 #endif
 
-#include "ipp.h"
+#include "mfxdefs.h"
+#include "ippdefs.h"
+#include "ipps.h"
+
+namespace H265Enc {
+
 #define H265_Malloc  ippMalloc
 #define H265_Free    ippFree
 
@@ -145,10 +148,10 @@ extern int DEBUG_CABAC_PRINT;
 #define MAX_UINT                    0xFFFFFFFFU ///< max. value of unsigned 32-bit integer
 
 
-#define CoeffsType Ipp16s
-#define PixType Ipp8u
+typedef Ipp16s CoeffsType;
+typedef Ipp8u PixType;
 typedef Ipp8s T_RefIdx;
-#define CostType Ipp64f
+typedef Ipp64f CostType;
 #define COST_MAX DBL_MAX
 
 
@@ -391,28 +394,15 @@ struct EncoderRefPicList
     EncoderRefPicListStruct m_RefPicListL1;
 };    // EncoderRefPicList
 
-#include "mfxdefs.h"
-#include "mfx_h265_tables.h"
-#include "mfx_h265_encode.h"
-#include "mfx_h265_bitstream.h"
-#include "mfx_h265_set.h"
-#include "mfx_h265_ctb.h"
-#include "mfx_h265_frame.h"
-#include "mfx_h265_cabac.h"
-#include "mfx_h265_cabac_tables.h"
-#include "mfx_h265_quant.h"
-#include "mfx_h265_brc.h"
-#include "mfx_h265_enc.h"
-
 inline Ipp32s H265_CeilLog2(Ipp32s a) {
     Ipp32s r = 0;
     while(a>(1<<r)) r++;
     return r;
 }
 
-void InitializeContextVariablesHEVC_CABAC(CABAC_CONTEXT_H265 *context_hevc, Ipp32s initializationType, Ipp32s SliceQPy);
-Ipp32s h265_tu_had(PixType *src, PixType *rec,
-                   Ipp32s pitch_src, Ipp32s pitch_rec, Ipp32s width, Ipp32s height);
+} // namespace
+
+//#include "mfx_h265_encode.h"
 
 #endif // __MFX_H265_DEFS_H__
 

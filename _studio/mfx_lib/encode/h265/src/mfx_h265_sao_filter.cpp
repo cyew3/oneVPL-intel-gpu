@@ -3,19 +3,18 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2013 - 2014 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
-#include "ipp.h"
-
-#include "mfx_h265_defs.h"
+#include "mfx_h265_sao_filter.h"
 #include "mfx_h265_ctb.h"
 
-#include "mfx_h265_sao_filter.h"
+
+namespace H265Enc {
 
 // ========================================================
 // UTILS
@@ -94,7 +93,7 @@ Ipp64s GetDistortion(
     int typeIdx,
     int typeAuxInfo,
     int* quantOffset,
-    SaoCtuStatistics& statData)
+    MFX_HEVC_PP::SaoCtuStatistics& statData)
 {
     Ipp64s dist=0;
     int shift = 0;
@@ -147,7 +146,7 @@ inline int EstimateIterOffset(
     Ipp64s diffSum,
 
     int shift,
-    
+
     Ipp64s& bestDist,
     Ipp64f& bestCost,
     int offsetTh )
@@ -199,7 +198,7 @@ inline int EstimateIterOffset(
 
 void GetQuantOffsets(
     int type_idx,
-    SaoCtuStatistics& statData,
+    MFX_HEVC_PP::SaoCtuStatistics& statData,
     int* quantOffsets,
     int& typeAuxInfo,
     Ipp64f lambda)
@@ -283,18 +282,18 @@ void GetQuantOffsets(
                 costBOClasses[classIdx]= lambda;
                 if( quantOffsets[classIdx] != 0 )
                 {
-                    quantOffsets[classIdx] = EstimateIterOffset( 
-                        type_idx, 
-                        classIdx, 
-                        lambda, 
-                        quantOffsets[classIdx], 
-                        statData.count[classIdx], 
-                        statData.diff[classIdx], 
+                    quantOffsets[classIdx] = EstimateIterOffset(
+                        type_idx,
+                        classIdx,
+                        lambda,
+                        quantOffsets[classIdx],
+                        statData.count[classIdx],
+                        statData.diff[classIdx],
 
                         shift,
 
-                        distBOClasses[classIdx], 
-                        costBOClasses[classIdx], 
+                        distBOClasses[classIdx],
+                        costBOClasses[classIdx],
                         offsetTh );
                 }
             }
@@ -365,7 +364,7 @@ void GetCtuStatistics_RBoundary_Internal(
     int edgeType;
     Ipp16s signLeft, signRight;//, signDown;
     Ipp64s *diff, *count;
-    
+
     //const int compIdx = SAO_Y;
     int skipLinesR = g_skipLinesR[compIdx];
     int skipLinesB = g_skipLinesB[compIdx];
@@ -381,7 +380,7 @@ void GetCtuStatistics_RBoundary_Internal(
 
     for(int typeIdx=0; typeIdx< NUM_SAO_BASE_TYPES; typeIdx++)
     {
-        SaoCtuStatistics& statsData= statsDataTypes[typeIdx];
+        MFX_HEVC_PP::SaoCtuStatistics& statsData= statsDataTypes[typeIdx];
         statsData.Reset();
 
         recLine = recBlk;
@@ -431,8 +430,8 @@ void GetCtuStatistics_RBoundary_Internal(
                 {
                     recLine += recStride;
                     orgLine += orgStride;
-                }                
-                
+                }
+
                 for (y=startY; y<endY; y++)
                 {
                     recLineBelow = recLine + recStride;
@@ -534,7 +533,7 @@ void GetCtuStatistics_RBoundary_Internal(
                 {
                     for (x=startX; x<endX; x++)
                     {
-                        int bandIdx= recLine[x] >> shiftBits; 
+                        int bandIdx= recLine[x] >> shiftBits;
                         diff [bandIdx] += (orgLine[x<<shift] - recLine[x]);
                         count[bandIdx]++;
                     }
@@ -579,7 +578,7 @@ void GetCtuStatistics_BottomBoundary_Internal(
     Ipp16s signLeft;
     Ipp16s signRight;//, signDown;
     Ipp64s *diff, *count;
-    
+
     //const int compIdx = SAO_Y;
     //int skipLinesR = g_skipLinesR[compIdx];
     int skipLinesB = g_skipLinesB[compIdx];
@@ -596,7 +595,7 @@ void GetCtuStatistics_BottomBoundary_Internal(
 
     for(int typeIdx=0; typeIdx< NUM_SAO_BASE_TYPES; typeIdx++)
     {
-        SaoCtuStatistics& statsData= statsDataTypes[typeIdx];
+        MFX_HEVC_PP::SaoCtuStatistics& statsData= statsDataTypes[typeIdx];
         statsData.Reset();
 
         recLine = recBlk;
@@ -645,7 +644,7 @@ void GetCtuStatistics_BottomBoundary_Internal(
 
                 startY = 0;
                 endY   = skipLinesB;
-                
+
                 {
                     //recLine += (height - skipLinesB)*recStride;
                     //orgLine += (height - skipLinesB)*orgStride;
@@ -653,11 +652,11 @@ void GetCtuStatistics_BottomBoundary_Internal(
 
                 //recLineAbove = recLine - recStride;
 //                Ipp16s *signUpLine = signLineBuf1;
-                /*for (x=startX; x< endX; x++) 
+                /*for (x=startX; x< endX; x++)
                 {
                     signUpLine[x] = getSign(recLine[x] - recLineAbove[x]);
                 }*/
-                
+
                 for (y=startY; y<endY-1; y++) // aya :: -1 due to real boundaries
                 {
                     recLineBelow = recLine + recStride;
@@ -665,8 +664,8 @@ void GetCtuStatistics_BottomBoundary_Internal(
 
                     for (x=startX; x<endX; x++)
                     {
-                        edgeType  = getSign(recLine[x] - recLineBelow[x]) + getSign(recLine[x] - recLineAbove[x]);                         
-                        
+                        edgeType  = getSign(recLine[x] - recLineBelow[x]) + getSign(recLine[x] - recLineAbove[x]);
+
                         diff [edgeType] += (orgLine[x<<shift] - recLine[x]);
                         count[edgeType] ++;
                     }
@@ -751,7 +750,7 @@ void GetCtuStatistics_BottomBoundary_Internal(
                 {
                     for (x=startX; x<endX; x++)
                     {
-                        int bandIdx= recLine[x] >> shiftBits; 
+                        int bandIdx= recLine[x] >> shiftBits;
                         diff [bandIdx] += (orgLine[x<<shift] - recLine[x]);
                         count[bandIdx]++;
                     }
@@ -790,7 +789,7 @@ void GetCtuStatistics_BottomBoundary_Internal(
 //    int edgeType;
 //    Ipp16s signLeft, signRight, signDown;
 //    Ipp64s *diff, *count;
-//    
+//
 //    int skipLinesR = g_skipLinesR[SAO_Cb];
 //    int skipLinesB = g_skipLinesB[SAO_Cb];
 //
@@ -852,18 +851,18 @@ void GetCtuStatistics_BottomBoundary_Internal(
 //
 //                recLineAbove = recLine - recStride;
 //                Ipp16s *signUpLine = signLineBuf1;
-//                for (x=0; x< endX; x++) 
+//                for (x=0; x< endX; x++)
 //                {
 //                    signUpLine[x] = getSign(recLine[x] - recLineAbove[x]);
 //                }
-//                
+//
 //                for (y=startY; y<endY; y++)
 //                {
 //                    recLineBelow = recLine + recStride;
 //
 //                    for (x=0; x<endX; x++)
 //                    {
-//                        signDown  = getSign(recLine[x] - recLineBelow[x]); 
+//                        signDown  = getSign(recLine[x] - recLineBelow[x]);
 //                        edgeType  = signDown + signUpLine[x];
 //                        signUpLine[x]= -signDown;
 //
@@ -921,7 +920,7 @@ void GetCtuStatistics_BottomBoundary_Internal(
 //                        diff [edgeType] += (orgLine[2*x] - recLine[x]);
 //                        count[edgeType] ++;
 //
-//                        signDownLine[x+1] = -signDown; 
+//                        signDownLine[x+1] = -signDown;
 //                    }
 //                    signDownLine[startX] = getSign(recLineBelow[startX] - recLine[startX-1]);
 //
@@ -981,7 +980,7 @@ void GetCtuStatistics_BottomBoundary_Internal(
 //                        diff [edgeType] += (orgLine[2*x] - recLine[x]);
 //                        count[edgeType] ++;
 //
-//                        signUpLine[x-1] = -signDown; 
+//                        signUpLine[x-1] = -signDown;
 //                    }
 //                    signUpLine[endX-1] = getSign(recLineBelow[endX-1] - recLine[endX]);
 //                    recLine  += recStride;
@@ -999,7 +998,7 @@ void GetCtuStatistics_BottomBoundary_Internal(
 //                {
 //                    for (x=0; x<endX; x++)
 //                    {
-//                        int bandIdx= recLine[x] >> shiftBits; 
+//                        int bandIdx= recLine[x] >> shiftBits;
 //                        diff [bandIdx] += (orgLine[2*x] - recLine[x]);
 //                        count[bandIdx]++;
 //                    }
@@ -1362,7 +1361,7 @@ void SaoOffsetParam::Reset()
     memset(offset, 0, sizeof(int)* MAX_NUM_SAO_CLASSES);
 }
 
-//const 
+//const
 SaoOffsetParam& SaoOffsetParam::operator= (const SaoOffsetParam& src)
 {
     mode_idx = src.mode_idx;
@@ -1444,9 +1443,9 @@ void SaoEncodeFilter::Init(int width, int height, int maxCUWidth, int maxDepth)
 
 
 void SaoEncodeFilter::EstimateCtuSao(
-    mfxFrameData* orgYuv, 
-    mfxFrameData* recYuv, 
-    bool* sliceEnabled, 
+    mfxFrameData* orgYuv,
+    mfxFrameData* recYuv,
+    bool* sliceEnabled,
     SaoCtuParam* saoParam)
 {
     GetCtuSaoStatistics(orgYuv, recYuv);
@@ -1549,7 +1548,7 @@ void SaoEncodeFilter::GetCtuSaoStatistics(mfxFrameData* orgYuv, mfxFrameData* re
                 shift,
 
                 m_borders,
-                
+
                 m_statData[compIdx]);
         }
     }
@@ -1636,8 +1635,8 @@ void SaoEncodeFilter::GetBestCtuSaoParam(
 
 
 int SaoEncodeFilter::getMergeList(
-    int ctu, 
-    SaoCtuParam* blkParams, 
+    int ctu,
+    SaoCtuParam* blkParams,
     std::vector<SaoCtuParam*>& mergeList)
 {
     int ctuX = ctu % m_numCTU_inWidth;
@@ -1700,10 +1699,10 @@ int SaoEncodeFilter::getMergeList(
 
 
 void SaoEncodeFilter::ModeDecision_Merge(
-    std::vector<SaoCtuParam*>& mergeList, 
-    bool* sliceEnabled, 
-    SaoCtuParam& modeParam, 
-    Ipp64f& modeNormCost, 
+    std::vector<SaoCtuParam*>& mergeList,
+    bool* sliceEnabled,
+    SaoCtuParam& modeParam,
+    Ipp64f& modeNormCost,
     int inCabacLabel)
 {
     int mergeListSize = (int)mergeList.size();
@@ -1808,16 +1807,16 @@ void SaoEncodeFilter::ModeDecision_Base(
             testOffset[compIdx].type_idx = type_idx;
 
             GetQuantOffsets(
-                type_idx, 
-                m_statData[compIdx][type_idx], 
-                testOffset[compIdx].offset, 
-                testOffset[compIdx].typeAuxInfo, 
+                type_idx,
+                m_statData[compIdx][type_idx],
+                testOffset[compIdx].offset,
+                testOffset[compIdx].typeAuxInfo,
                 m_labmda[compIdx]);
 
             dist[compIdx] = GetDistortion(
-                testOffset[compIdx].type_idx, 
-                testOffset[compIdx].typeAuxInfo, 
-                testOffset[compIdx].offset, 
+                testOffset[compIdx].type_idx,
+                testOffset[compIdx].typeAuxInfo,
+                testOffset[compIdx].offset,
                 m_statData[compIdx][type_idx]);
 
             m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_MID], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
@@ -1888,18 +1887,18 @@ void SaoEncodeFilter::ModeDecision_Base(
                 testOffset[compIdx].type_idx = type_idx;
 
                 GetQuantOffsets(
-                    type_idx, 
+                    type_idx,
                     m_statData[compIdx][type_idx],
-                    testOffset[compIdx].offset, 
-                    testOffset[compIdx].typeAuxInfo, 
+                    testOffset[compIdx].offset,
+                    testOffset[compIdx].typeAuxInfo,
                     m_labmda[compIdx]);
 
                 //InvertQuantOffsets(type_idx, testOffset[compIdx].typeAuxInfo, invQuantOffset, testOffset[compIdx].offset);
 
                 dist[compIdx]= GetDistortion(
-                    type_idx, 
-                    testOffset[compIdx].typeAuxInfo, 
-                    testOffset[compIdx].offset, 
+                    type_idx,
+                    testOffset[compIdx].typeAuxInfo,
+                    testOffset[compIdx].offset,
                     m_statData[compIdx][type_idx]);
             }
 
@@ -2231,9 +2230,9 @@ void SaoDecodeFilter::SetOffsetsLuma(SaoOffsetParam  &saoLCUParam, Ipp32s typeId
 //  CTU Caller
 // ========================================================
 
-void H265CU::EstimateCtuSao( 
-    H265BsFake *bs, 
-    SaoCtuParam* saoParam, 
+void H265CU::EstimateCtuSao(
+    H265BsFake *bs,
+    SaoCtuParam* saoParam,
     SaoCtuParam* saoParam_TotalFrame,
     const MFX_HEVC_PP::CTBBorders & borders,
     const Ipp8u* slice_ids)
@@ -2351,5 +2350,7 @@ void H265CU::GetStatisticsCtuSao_Predeblocked( const MFX_HEVC_PP::CTBBorders & b
     }
 
 } // void H265CU::GetStatisticsCtuSao_Predeblocked( void )
+
+} // namespace
+
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE
-/* EOF */

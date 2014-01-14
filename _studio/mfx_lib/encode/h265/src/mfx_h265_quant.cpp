@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2012 - 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012 - 2014 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -12,7 +12,10 @@
 
 #include "mfx_h265_defs.h"
 #include "mfx_h265_quant.h"
+#include "mfx_h265_enc.h"
 #include "mfx_h265_optimization.h"
+
+namespace H265Enc {
 
 static const Ipp32s ctxIndMap[16] =
 {
@@ -183,7 +186,7 @@ void H265CU::QuantFwdTU(
         else {
             Ipp32s delta_u[32*32];
             h265_quant_fwd_base( residuals + offset, coeff + offset, log2TrSize, BIT_DEPTH_LUMA,
-                                 cslice->slice_type == I_SLICE, QP, 
+                                 cslice->slice_type == I_SLICE, QP,
                                  par->cpps->sign_data_hiding_enabled_flag ? delta_u : NULL,
                                  abs_sum );
 
@@ -288,5 +291,7 @@ void h265_quant_fwd_base(
     }
 
 } // void h265_quant_fwd_base(...)
+
+} // namespace
 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE

@@ -3,13 +3,20 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2012 - 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012 - 2014 Intel Corporation. All Rights Reserved.
 //
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #ifndef __MFX_H265_ENC_H__
 #define __MFX_H265_ENC_H__
+
+#include "mfx_h265_defs.h"
+#include "mfx_h265_ctb.h"
+#include "mfx_h265_frame.h"
+#include "mfx_h265_encode.h"
+
+namespace H265Enc {
 
 #ifdef MFX_ENABLE_WATERMARK
 class Watermark;
@@ -131,6 +138,8 @@ struct H265ShortTermRefPicSet
     Ipp32s delta_poc[MAX_NUM_REF_FRAMES]; /* negative+positive */
     Ipp8u  used_by_curr_pic_flag[MAX_NUM_REF_FRAMES]; /* negative+positive */
 };
+
+class H265BRC;
 
 class H265Encoder {
 public:
@@ -262,6 +271,8 @@ private:
     Watermark *m_watermark;
 #endif
 };
+
+} // namespace
 
 #endif // __MFX_H265_ENC_H__
 

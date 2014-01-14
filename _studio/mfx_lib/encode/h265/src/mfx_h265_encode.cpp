@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008 - 2014 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -11,7 +11,6 @@
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #include "mfxdefs.h"
-#include "mfx_h265_encode.h"
 #include "mfx_common_int.h"
 #include "mfx_task.h"
 #include "mfx_brc_common.h"
@@ -24,9 +23,14 @@
 #include "mfx_ext_buffers.h"
 #include <new>
 
+#include "mfx_h265_encode.h"
+
 #include "mfx_h265_defs.h"
+#include "mfx_h265_enc.h"
 #include "umc_structures.h"
 #include "mfx_enc_common.h"
+
+using namespace H265Enc;
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -668,7 +672,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 
 /*#if defined (AS_HEVCE_PLUGIN)
     m_mfxVideoParam.mfx.NumThread += 1;
-#endif*/ 
+#endif*/
 
     // TargetUsage - nothing to do
 

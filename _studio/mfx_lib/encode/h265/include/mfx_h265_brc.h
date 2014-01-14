@@ -4,18 +4,21 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2013 - 2014 Intel Corporation. All Rights Reserved.
 //
 //
 //          Bitrate control
 //
 */
 
-
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #ifndef __MFX_H265_BRC_H__
 #define __MFX_H265_BRC_H__
+
+#include "mfx_h265_defs.h"
+
+namespace H265Enc {
 
 #define BRC_CLIP(val, minval, maxval) val = Saturate(minval, maxval, val)
 
@@ -160,6 +163,7 @@ protected:
 //    mfxI32 mScChLength;
 };
 
+} // namespace
 
 #endif // __MFX_H265_BRC_H__
 

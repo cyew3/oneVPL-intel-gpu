@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012 - 2014 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -11,10 +11,12 @@
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #include "mfx_h265_defs.h"
+#include "mfx_h265_enc.h"
 #include "mfx_h265_optimization.h"
 
 using namespace MFX_HEVC_PP;
 
+namespace H265Enc {
 
 bool H265CU::CheckIdenticalMotion(Ipp32u abs_part_idx)
 {
@@ -560,5 +562,6 @@ void H265CU::ME_Interpolate(H265MEInfo* me_info, H265MV* MV, PixType *src, Ipp32
     return;
 } // void H265CU::ME_Interpolate(...)
 
+} // namespace
+
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE
-/* EOF */

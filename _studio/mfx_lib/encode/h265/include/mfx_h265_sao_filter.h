@@ -3,10 +3,8 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2013 - 2014 Intel Corporation. All Rights Reserved.
 //
-
-#include "mfx_common.h"
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
@@ -14,10 +12,12 @@
 #define __MFX_H265_SAO_FILTER_H__
 
 #include "mfx_h265_defs.h"
-#include "mfx_h265_ctb.h"
-#include "mfx_h265_cabac.h"
-
+#include "mfx_h265_bitstream.h"
 #include "mfx_h265_optimization.h"
+
+#include <vector>
+
+namespace H265Enc {
 
 //#define MAX_SAO_TRUNCATED_BITDEPTH     (10)
 
@@ -121,7 +121,7 @@ enum SaoComponentIdx
 //    memset(count, 0, sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
 //  }
 //
-//  //const 
+//  //const
 //  SaoCtuStatistics& operator=(const SaoCtuStatistics& src)
 //  {
 //    small_memcpy(diff, src.diff, sizeof(Ipp64s)*MAX_NUM_SAO_CLASSES);
@@ -139,7 +139,7 @@ struct SaoOffsetParam
   ~SaoOffsetParam();
   void Reset();
 
-  //const 
+  //const
   SaoOffsetParam& operator= (const SaoOffsetParam& src);
 
   int mode_idx;     //ON, OFF, MERGE
@@ -156,7 +156,7 @@ struct SaoCtuParam
   ~SaoCtuParam();
   void Reset();
 
-  //const 
+  //const
   SaoCtuParam& operator= (const SaoCtuParam& src);
 
   SaoOffsetParam& operator[](int compIdx){ return m_offsetParam[compIdx];}
@@ -303,15 +303,17 @@ public:
     Ipp32u   m_PicWidth;
     Ipp32u   m_PicHeight;
     Ipp32u   m_MaxCUSize;
-    Ipp32u   m_SaoBitIncreaseY; 
+    Ipp32u   m_SaoBitIncreaseY;
     Ipp32u   m_SaoBitIncreaseC;
 
 private:
     SaoDecodeFilter(const SaoDecodeFilter& ){ /* do not create copies */ }
     SaoDecodeFilter& operator=(const SaoDecodeFilter&){ return *this;}
 
-
 };
+
+} // namespace
+
 #endif // __MFX_H265_SAO_FILTER_H__
+
 #endif // (MFX_ENABLE_H265_VIDEO_ENCODE)
-/* EOF */

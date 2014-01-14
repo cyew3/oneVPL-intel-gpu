@@ -3,16 +3,16 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012 - 2014 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
-#include "mfx_h265_defs.h"
+#include "mfx_h265_bitstream.h"
 
-#include <vector>
+namespace H265Enc {
 
 #ifdef DEBUG_CABAC
 int DEBUG_CABAC_PRINT = 0;
@@ -480,5 +480,7 @@ void H265BsReal::TerminateEncode_CABAC()
     m_base.m_pbs = m_base.m_pbsBase + streamBytes;
     m_base.m_bitOffset = bitoffset;
 }
+
+} // namespace
 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE

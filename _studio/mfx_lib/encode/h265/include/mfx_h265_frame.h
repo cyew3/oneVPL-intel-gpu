@@ -3,13 +3,18 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012 - 2014 Intel Corporation. All Rights Reserved.
 //
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #ifndef __MFX_H265_FRAME_H__
 #define __MFX_H265_FRAME_H__
+
+#include "mfx_h265_defs.h"
+#include "mfx_h265_ctb.h"
+
+namespace H265Enc {
 
 class H265FrameList;
 
@@ -240,6 +245,8 @@ public:
     H265Frame *findMostDistantShortTermRefs(Ipp32s POC);
     H265Frame *findMostDistantLongTermRefs(Ipp32s POC);
 };
+
+} // namespace
 
 #endif // __MFX_H265_FRAME_H__
 

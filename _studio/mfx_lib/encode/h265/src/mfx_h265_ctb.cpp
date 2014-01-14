@@ -12,8 +12,12 @@
 
 #include <limits.h> /* for INT_MAX on Linux/Android */
 
-#include "mfx_h265_defs.h"
-#include "mfx_h265_optimization.h"
+#include "mfx_h265_ctb.h"
+#include "mfx_h265_enc.h"
+#include "ippi.h"
+#include "ippvc.h"
+
+namespace H265Enc {
 
 #define NO_TRANSFORM_SPLIT_INTRAPRED_STAGE1 0
 
@@ -1206,7 +1210,7 @@ void H265CU::ModeDecision(Ipp32u abs_part_idx, Ipp32u offset, Ipp8u depth, CostT
                 cost_best = cost_inter;
 
                ippiCopy_8u_C1R(y_rec + offset_luma_cu, pitch_rec, rec_luma_save_cu[depth], width_cu, roiSize_cu);
- 
+
                 if (rd_opt_flag)
                     bsf->CtxSave(ctx_save[2], 0, NUM_CABAC_CONTEXT);
             } else {
@@ -4113,5 +4117,6 @@ CostType H265CU::CalcCostSkip(Ipp32u abs_part_idx, Ipp8u depth)
     return cost_best;
 }
 
+} // namespace
 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE
