@@ -22,6 +22,7 @@ if(NOT FFMPEG_INCLUDE MATCHES NOTFOUND)
 endif( )
 
 if(NOT DEFINED FFMPEG_FOUND)
-  message( STATUS "FFmpeg was not found. sample_spl_mux is skipped. Set/check INTELMEDIASDK_FFMPEG_ROOT environment variable." )
+  message( STATUS "FFmpeg was not found (optional). The following will not be built: sample_spl_mux." )
+  message( STATUS "  Set/check INTELMEDIASDK_FFMPEG_ROOT environment variable." )
 endif( )
 
