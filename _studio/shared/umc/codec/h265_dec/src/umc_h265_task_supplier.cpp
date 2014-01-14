@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -1415,7 +1415,6 @@ H265DecoderFrame *TaskSupplier_H265::GetAnyFrameToDisplay(bool force)
         DEBUG_PRINT1((VM_STRING("GetAnyFrameToDisplay DPB displayable %d, maximum %d, force = %d\n"), view.pDPB->countNumDisplayable(), view.maxDecFrameBuffering, force));
         if (view.pDPB->countNumDisplayable() > view.sps_max_num_reorder_pics || force)
         {
-            view.pDPB->countNumDisplayable();
             H265DecoderFrame *pTmp = view.pDPB->findOldestDisplayable(view.dpbSize);
 
             if (pTmp)

@@ -1692,7 +1692,7 @@ void H265Bitstream::parseShortTermRefPicSet(const H265SeqParamSet* sps, Referenc
 
         Ipp32u rIdx =  idx - 1 - delta_idx_minus1;
 
-        if (rIdx > idx - 1 || rIdx < 0)
+        if (rIdx > idx - 1)
             throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
         ReferencePictureSet*   rpsRef = const_cast<H265SeqParamSet *>(sps)->getRPSList()->getReferencePictureSet(rIdx);
