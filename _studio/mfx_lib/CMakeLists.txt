@@ -334,12 +334,111 @@ foreach( variant sw hw )
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
     pthread
     dl
-    )
+  )
 
   make_library( ${mfxlibname} ${variant} shared)
   make_library( mfx${variant}_static ${variant} static)
   #message( STATUS "xxxxxxxxxxxxxxx __ARCH: "${__ARCH}, "mfxlibname: "${mfxlibname}, "variant: "${variant})
 endforeach()
+
+# =============================================================================
+
+# libmfxrt reuse the same .map file as full library
+set( sources "" )
+set( sources.plus "" )
+
+# mfx_common_hw lib part
+foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
+  list( APPEND sources
+    ${prefix}/mfx_ddi_enc_dump.cpp
+    ${prefix}/mfx_h264_enc_common_hw.cpp
+    ${prefix}/mfx_h264_encode_vaapi.cpp
+    ${prefix}/mfx_h264_encode_factory.cpp
+    ${prefix}/mfx_mpeg2_enc_common_hw.cpp
+    ${prefix}/mfx_mpeg2_encode_vaapi.cpp
+    ${prefix}/mfx_mpeg2_encode_factory.cpp
+  )
+endforeach()
+
+# mfx_common lib part
+foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
+  list( APPEND sources
+    ${prefix}/mfx_brc_common.cpp
+    ${prefix}/mfx_common_decode_int.cpp
+    ${prefix}/mfx_common_int.cpp
+    ${prefix}/mfx_enc_common.cpp
+    ${prefix}/mfx_h264_enc_common.cpp
+    ${prefix}/mfx_mpeg2_dec_common.cpp
+    ${prefix}/mfx_vc1_dec_common.cpp
+    ${prefix}/mfx_vp8_enc_common.cpp
+  )
+endforeach()
+
+# mfxrt library itself
+foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/src )
+  list( APPEND sources
+    ${prefix}/auxiliary_device.cpp
+    ${prefix}/fast_compositing_ddi.cpp
+    ${prefix}/fast_copy.cpp
+    ${prefix}/libmfx_allocator.cpp
+    ${prefix}/libmfx_allocator_vaapi.cpp
+    ${prefix}/libmfx_core.cpp
+    ${prefix}/libmfx_core_vaapi.cpp
+    ${prefix}/libmfx_core_vdaapi.cpp    
+    ${prefix}/libmfx_core_factory.cpp
+    ${prefix}/libmfx_core_hw.cpp
+    ${prefix}/mfx_dxva2_device.cpp    
+    ${prefix}/mfx_search_dll.cpp
+    ${prefix}/mfx_timing.cpp
+    ${prefix}/mfx_umc_alloc_wrapper.cpp
+    ${prefix}/mfx_vpp_vaapi.cpp    
+  )
+endforeach()
+foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib )
+  list( APPEND sources
+    ${prefix}/shared/src/libmfxsw.cpp
+    ${prefix}/shared/src/libmfxsw_async.cpp
+    ${prefix}/shared/src/libmfxsw_decode.cpp
+    ${prefix}/shared/src/libmfxsw_enc.cpp
+    ${prefix}/shared/src/libmfxsw_encode.cpp
+    ${prefix}/shared/src/libmfxsw_plugin.cpp
+    ${prefix}/shared/src/libmfxsw_query.cpp
+    ${prefix}/shared/src/libmfxsw_session.cpp
+    ${prefix}/shared/src/libmfxsw_vpp.cpp
+    ${prefix}/shared/src/mfx_session.cpp
+    ${prefix}/shared/src/mfx_user_plugin.cpp    
+    ${prefix}/shared/src/mfx_check_hardware_support.cpp    
+    ${prefix}/scheduler/src/mfx_scheduler_core.cpp
+    ${prefix}/scheduler/src/mfx_scheduler_core_ischeduler.cpp
+    ${prefix}/scheduler/src/mfx_scheduler_core_iunknown.cpp
+    ${prefix}/scheduler/src/mfx_scheduler_core_task.cpp
+    ${prefix}/scheduler/src/mfx_scheduler_core_task_management.cpp
+    ${prefix}/scheduler/src/mfx_scheduler_core_thread.cpp
+    ${prefix}/vpp/src/mfx_vpp_factory.cpp
+  )
+endforeach()
+
+
+if( __ARCH MATCHES intel64 )
+  set( mfxrtlibname mfxrt${variant}64 )
+else()
+  set( mfxrtlibname mfxrt${variant}32 )
+endif()
+if( __CONFIG MATCHES debug )
+  set( mfxrtlibname ${mfxrtlibname}_d )
+endif()
+
+set( LIBS "" )
+list( APPEND LIBS
+  umc_io_merged_hw  
+  umc_core_merged 
+  ${ITT_LIBS}
+  ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
+  pthread
+  dl )
+
+make_library( ${mfxrtlibname} none shared)
+append_property( ${mfxrtlibname} COMPILE_FLAGS "-DMFX_VA -DMFX_VA_LINUX -DMFX_RT" )  
 
 # =============================================================================
  

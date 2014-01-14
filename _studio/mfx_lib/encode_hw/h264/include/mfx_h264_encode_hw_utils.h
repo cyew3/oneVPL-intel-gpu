@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -18,6 +18,8 @@
 
 #if defined(MFX_VA_WIN)
 #include "encoding_ddi.h"
+#else
+#include "mfx_h264_encode_struct_vaapi.h"
 #endif
 #include "umc_mutex.h"
 #include "umc_event.h"
