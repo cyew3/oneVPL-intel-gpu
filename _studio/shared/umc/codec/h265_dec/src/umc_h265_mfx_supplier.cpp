@@ -416,19 +416,7 @@ bool MFX_Utility::IsNeedPartialAcceleration_H265(mfxVideoParam * par, eMFXHWType
     if (!par)
         return false;
 
-    if (type == MFX_HW_LAKE || type == MFX_HW_SNB)
-    {
-        if (par->mfx.FrameInfo.Width > 1920 || par->mfx.FrameInfo.Height > 1088)
-            return true;
-    }
-    else
-    {
-        if (par->mfx.FrameInfo.Width > 4096 || par->mfx.FrameInfo.Height > 4096)
-            return true;
-    }
-
-    mfxExtMVCSeqDesc * points = (mfxExtMVCSeqDesc*)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
-    if (points && points->NumRefsTotal > 16 && type != MFX_HW_HSW)
+    if (par->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
         return true;
 
     return false;

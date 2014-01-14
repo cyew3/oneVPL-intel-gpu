@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -144,7 +144,7 @@ public:
     UMC::Status GetWPPTileInfo(H265SliceHeader *hdr,
                             const H265PicParamSet *pps,
                             const H265SeqParamSet *sps);
-    virtual void parseShortTermRefPicSet(const H265SeqParamSet* sps, ReferencePictureSet* pRPS, Ipp32s idx) = 0;
+    virtual void parseShortTermRefPicSet(const H265SeqParamSet* sps, ReferencePictureSet* pRPS, Ipp32u idx) = 0;
 
 protected:
 
@@ -242,7 +242,7 @@ public:
     void ResetBac_CABAC();
 
     //h265:
-    void parseShortTermRefPicSet(const H265SeqParamSet* sps, ReferencePictureSet* pRPS, Ipp32s idx);
+    void parseShortTermRefPicSet(const H265SeqParamSet* sps, ReferencePictureSet* pRPS, Ipp32u idx);
 
     Ipp8u  context_hevc[NUM_CTX];
     Ipp8u  wpp_saved_cabac_context[NUM_CTX];

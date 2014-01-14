@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -102,6 +102,12 @@ UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
     H265DecoderFrame *refPicListTemp0[MAX_NUM_REF_PICS + 1];
     H265DecoderFrame *refPicListTemp1[MAX_NUM_REF_PICS + 1];
     Ipp32s numPocTotalCurr = NumPocStCurr0 + NumPocStCurr1 + NumPocLtCurr;
+
+    if (!numPocTotalCurr) // this is error
+    {
+        m_pCurrentFrame->SetErrorFlagged(UMC::ERROR_FRAME_DPB);
+        return UMC::UMC_OK;
+    }
 
     Ipp32s cIdx = 0;
     for (Ipp32u i = 0; i < NumPocStCurr0; cIdx++, i++)

@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -1041,14 +1041,8 @@ void H265HeadersBitstream::xParsePredWeightTable(H265SliceHeader * sliceHdr)
 
 UMC::Status H265HeadersBitstream::GetSliceHeaderPart1(H265SliceHeader * sliceHdr)
 {
-    unsigned uiCode;
-
     sliceHdr->IdrPicFlag = (sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_IDR_W_RADL || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_IDR_N_LP) ? 1 : 0;
-
-    unsigned firstSliceSegmentInPic;
-    PARSE_FLAG( firstSliceSegmentInPic, "first_slice_in_pic_flag" );
-    
-    sliceHdr->first_slice_segment_in_pic_flag = firstSliceSegmentInPic;
+    sliceHdr->first_slice_segment_in_pic_flag = Get1Bit();
 
     if ( sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_IDR_W_RADL
       || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_IDR_N_LP
@@ -1057,9 +1051,10 @@ UMC::Status H265HeadersBitstream::GetSliceHeaderPart1(H265SliceHeader * sliceHdr
       || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_LP
       || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_CRA )
     {
-        PARSE_FLAG( uiCode, "no_output_of_prior_pics_flag" );  //ignored
+        sliceHdr->no_output_of_prior_pics_flag = Get1Bit();
     }
-    PARSE_UINT (    uiCode, "slice_pic_parameter_set_id" );  sliceHdr->slice_pic_parameter_set_id = (Ipp16u)uiCode;
+
+    sliceHdr->slice_pic_parameter_set_id = (Ipp16u)GetVLCElement(false);
     return UMC::UMC_OK;
 }
 
@@ -1068,11 +1063,11 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
     Ipp32u uiCode;
     Ipp32s iCode;
 
+    if (!pps || !sps)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
     H265SliceHeader * sliceHdr = pSlice->GetSliceHeader();
     sliceHdr->collocated_from_l0_flag = 1;
-
-    VM_ASSERT(pps!=0);
-    VM_ASSERT(sps!=0);
 
     if (pps->dependent_slice_segments_enabled_flag && !sliceHdr->first_slice_segment_in_pic_flag)
     {
@@ -1080,13 +1075,13 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
     }
     else
     {
-        sliceHdr->dependent_slice_segment_flag = false;
+        sliceHdr->dependent_slice_segment_flag = 0;
     }
 
-    int numCTUs = ((sps->pic_width_in_luma_samples + sps->MaxCUSize-1)/sps->MaxCUSize)*((sps->pic_height_in_luma_samples + sps->MaxCUSize-1)/sps->MaxCUSize);
-    int maxParts = (1<<(sps->MaxCUDepth<<1));
-    unsigned sliceSegmentAddress = 0;
-    int bitsSliceSegmentAddress = 0;
+    Ipp32s numCTUs = ((sps->pic_width_in_luma_samples + sps->MaxCUSize-1)/sps->MaxCUSize)*((sps->pic_height_in_luma_samples + sps->MaxCUSize-1)/sps->MaxCUSize);
+    Ipp32s maxParts = 1<<(sps->MaxCUDepth<<1);
+    Ipp32s bitsSliceSegmentAddress = 0;
+
     while(numCTUs>(1<<bitsSliceSegmentAddress))
     {
         bitsSliceSegmentAddress++;
@@ -1094,14 +1089,13 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
 
     if (!sliceHdr->first_slice_segment_in_pic_flag)
     {
-        PARSE_CODE( bitsSliceSegmentAddress, sliceSegmentAddress, "slice_segment_address" );
+        sliceHdr->slice_segment_address = GetBits(bitsSliceSegmentAddress);
     }
     //set uiCode to equal slice start address (or dependent slice start address)
-    int startCuAddress = maxParts*sliceSegmentAddress;
+    Ipp32s startCuAddress = maxParts*sliceHdr->slice_segment_address;
     sliceHdr->m_sliceSegmentCurStartCUAddr = startCuAddress;
     sliceHdr->m_sliceSegmentCurEndCUAddr = (numCTUs - 1) *maxParts;
     // DO NOT REMOVE THIS LINE !!!!!!!!!!!!!!!!!!!!!!!!!!
-    sliceHdr->slice_segment_address = sliceSegmentAddress;
 
     if (!sliceHdr->dependent_slice_segment_flag)
     {
@@ -1110,12 +1104,15 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
 
     if (!sliceHdr->dependent_slice_segment_flag)
     {
-        for (unsigned i = 0; i < pps->num_extra_slice_header_bits; i++)
+        for (Ipp32u i = 0; i < pps->num_extra_slice_header_bits; i++)
         {
-            PARSE_FLAG(uiCode, "slice_reserved_undetermined_flag[]"); // ignored
+            Get1Bit(); //slice_reserved_undetermined_flag
         }
 
         sliceHdr->slice_type = (SliceType)GetVLCElement(false);
+
+        if (sliceHdr->slice_type > I_SLICE || sliceHdr->slice_type < B_SLICE)
+            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
     }
 
     if(!sliceHdr->dependent_slice_segment_flag)
@@ -1129,7 +1126,8 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
             sliceHdr->pic_output_flag = 1;
         }
         // in the first version chroma_format_idc is equal to one, thus colour_plane_id will not be present
-        VM_ASSERT (sps->chroma_format_idc == 1 );
+        if (sps->chroma_format_idc != 1)
+            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
         // if( separate_colour_plane_flag  ==  1 )
         //   colour_plane_id                                      u(2)
 
@@ -1161,8 +1159,8 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
             }
             else // reference to ST ref pic set in PPS
             {
-                int numBits = 0;
-                while ((unsigned)(1 << numBits) < sps->getRPSList()->getNumberOfReferencePictureSets())
+                Ipp32s numBits = 0;
+                while ((Ipp32u)(1 << numBits) < sps->getRPSList()->getNumberOfReferencePictureSets())
                     numBits++;
 
                 Ipp32u short_term_ref_pic_set_idx = numBits > 0 ? GetBits(numBits) : 0;
@@ -1280,7 +1278,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
             }
             else
             {
-                PARSE_FLAG( uiCode, "ref_pic_list_modification_flag_l0" ); refPicListModification->ref_pic_list_modification_flag_l0 = uiCode ? 1 : 0;
+                refPicListModification->ref_pic_list_modification_flag_l0 = Get1Bit();
             }
 
             if(refPicListModification->ref_pic_list_modification_flag_l0)
@@ -1298,8 +1296,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
                     }
                     for (i = 0; i < pSlice->getNumRefIdx(REF_PIC_LIST_0); i ++)
                     {
-                        PARSE_CODE( length, uiCode, "list_entry_l0" );
-                        refPicListModification->list_entry_l0[i] = uiCode;
+                        refPicListModification->list_entry_l0[i] = GetBits(length);
                     }
                 }
                 else
@@ -1323,8 +1320,9 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
             }
             else
             {
-                PARSE_FLAG( uiCode, "ref_pic_list_modification_flag_l1" ); refPicListModification->ref_pic_list_modification_flag_l1 = uiCode ? 1 : 0;
+                refPicListModification->ref_pic_list_modification_flag_l1 = Get1Bit();
             }
+
             if(refPicListModification->ref_pic_list_modification_flag_l1)
             {
                 uiCode = 0;
@@ -1359,22 +1357,20 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
         }
         if (sliceHdr->slice_type == B_SLICE)
         {
-            PARSE_FLAG( uiCode, "mvd_l1_zero_flag" );       sliceHdr->mvd_l1_zero_flag = uiCode ? true : false;
+            sliceHdr->mvd_l1_zero_flag = Get1Bit();
         }
 
         sliceHdr->cabac_init_flag = false; // default
         if(pps->cabac_init_present_flag && sliceHdr->slice_type != I_SLICE)
         {
-            PARSE_FLAG(uiCode, "cabac_init_flag");
-            sliceHdr->cabac_init_flag = uiCode ? true : false;
+            sliceHdr->cabac_init_flag = Get1Bit();
         }
 
         if ( sliceHdr->slice_enable_temporal_mvp_flag )
         {
             if ( sliceHdr->slice_type == B_SLICE )
             {
-                PARSE_FLAG( uiCode, "collocated_from_l0_flag" );
-                sliceHdr->collocated_from_l0_flag = uiCode;
+                sliceHdr->collocated_from_l0_flag = Get1Bit();
             }
             else
             {
@@ -1406,21 +1402,19 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
         PARSE_INT( iCode, "slice_qp_delta" );
         sliceHdr->SliceQP = pps->init_qp + iCode;
 
-        VM_ASSERT( sliceHdr->SliceQP >= -sps->getQpBDOffsetY() );
-        VM_ASSERT( sliceHdr->SliceQP <=  51 );
+        if (sliceHdr->SliceQP < -sps->getQpBDOffsetY() || sliceHdr->SliceQP >  51)
+            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
         if (pps->pps_slice_chroma_qp_offsets_present_flag)
         {
-            PARSE_INT( iCode, "slice_cb_qp_offset" );
-            sliceHdr->slice_cb_qp_offset =  iCode;
+            sliceHdr->slice_cb_qp_offset =  GetVLCElement(true);
             if (sliceHdr->slice_cb_qp_offset < -12 || sliceHdr->slice_cb_qp_offset >  12)
                 throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
             if (pps->pps_cb_qp_offset + sliceHdr->slice_cb_qp_offset < -12 || pps->pps_cb_qp_offset + sliceHdr->slice_cb_qp_offset >  12)
                 throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
-            PARSE_INT( iCode, "slice_cr_qp_offset" );
-            sliceHdr->slice_cr_qp_offset = iCode;
+            sliceHdr->slice_cr_qp_offset = GetVLCElement(true);
             if (sliceHdr->slice_cr_qp_offset < -12 || sliceHdr->slice_cr_qp_offset >  12)
                 throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
@@ -1432,7 +1426,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
         {
             if (pps->deblocking_filter_override_enabled_flag)
             {
-                PARSE_FLAG ( uiCode, "deblocking_filter_override_flag" );        sliceHdr->deblocking_filter_override_flag = uiCode ? true : false;
+                sliceHdr->deblocking_filter_override_flag = Get1Bit();
             }
             else
             {
@@ -1440,7 +1434,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
             }
             if (sliceHdr->deblocking_filter_override_flag)
             {
-                PARSE_FLAG ( uiCode, "slice_disable_deblocking_filter_flag" );   sliceHdr->slice_deblocking_filter_disabled_flag = uiCode != 0;
+                sliceHdr->slice_deblocking_filter_disabled_flag = Get1Bit();
                 if(!sliceHdr->slice_deblocking_filter_disabled_flag)
                 {
                     PARSE_INT( iCode, "beta_offset_div2" );                       sliceHdr->slice_beta_offset =  iCode << 1;
@@ -1623,13 +1617,15 @@ H265Bitstream::~H265Bitstream()
 // ---------------------------------------------------------------------------
 UMC::Status H265Bitstream::GetNALUnitType(NalUnitType &nal_unit_type, Ipp32u &nuh_temporal_id)
 {
-    Ipp32u bit = Get1Bit();
-    VM_ASSERT(bit == 0); // forbidden_zero_bit
-    // nal_unit_type
+    Ipp32u forbidden_zero_bit = Get1Bit();
+    if (forbidden_zero_bit)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
     nal_unit_type = (NalUnitType)GetBits(6);
-    // reserved_zero_6bits
     Ipp32u nuh_layer_id = GetBits(6);
-    VM_ASSERT(0 == nuh_layer_id);
+    if (nuh_layer_id)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
     // nuh_temporal_id
     nuh_temporal_id = GetBits(3) - 1;
 
@@ -1673,107 +1669,102 @@ void H265Bitstream::SetDecodedBytes(size_t nBytes)
     m_bitOffset = 31 - ((Ipp32s) ((nBytes % sizeof(Ipp32u)) * 8));
 } // void H265Bitstream::SetDecodedBytes(size_t nBytes)
 
-void H265Bitstream::parseShortTermRefPicSet(const H265SeqParamSet* sps, ReferencePictureSet* rps, Ipp32s idx)
+void H265Bitstream::parseShortTermRefPicSet(const H265SeqParamSet* sps, ReferencePictureSet* rps, Ipp32u idx)
 {
-    unsigned code;
-    unsigned interRPSPred = 0;
-
     if (idx > 0)
     {
-        PARSE_FLAG(interRPSPred, "inter_ref_pic_set_prediction_flag");  
+        rps->inter_ref_pic_set_prediction_flag = Get1Bit();
     }
-    rps->inter_ref_pic_set_prediction_flag = (interRPSPred != 0);
+    else
+        rps->inter_ref_pic_set_prediction_flag = 0;
 
     if(rps->inter_ref_pic_set_prediction_flag)
     {
-        unsigned bit;
+        Ipp32u delta_idx_minus1 = 0;
 
-        if(idx == (signed)sps->getRPSList()->getNumberOfReferencePictureSets())
+        if(idx == sps->getRPSList()->getNumberOfReferencePictureSets())
         {
-            PARSE_UINT(code, "delta_idx_minus1" );
+            delta_idx_minus1 = (Ipp32u)GetVLCElement(false);
         }
-        else
-            code = 0;
 
-        VM_ASSERT(code <= (unsigned)idx - 1); // delta_idx_minus1 shall not be larger than idx-1, otherwise we will predict from a 
-                                // negative row position that does not exist. When idx equals 0 there is no legal 
-                                // value and interRPSPred must be zero. See J0185-r2
+        if (delta_idx_minus1 > idx - 1)
+            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
-        Ipp32s rIdx =  idx - 1 - code;
-    
+        Ipp32u rIdx =  idx - 1 - delta_idx_minus1;
+
         if (rIdx > idx - 1 || rIdx < 0)
             throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
         ReferencePictureSet*   rpsRef = const_cast<H265SeqParamSet *>(sps)->getRPSList()->getReferencePictureSet(rIdx);
         int k = 0, k0 = 0, k1 = 0;
-        PARSE_CODE(1, bit, "delta_rps_sign");
-        PARSE_UINT(code, "abs_delta_rps_minus1");
+        Ipp32u delta_rps_sign = Get1Bit();
+        Ipp32u abs_delta_rps_minus1 = (Ipp32u)GetVLCElement(false);
 
-        int deltaRPS = (1 - 2 * bit) * (code + 1);
+        int deltaRPS = (1 - 2 * delta_rps_sign) * (abs_delta_rps_minus1 + 1);
         Ipp32s num_pics = rpsRef->getNumberOfPictures();
         for(Ipp32s j = 0 ;j <= num_pics; j++)
         {
-          PARSE_CODE(1, bit, "used_by_curr_pic_flag" );
-          Ipp32s refIdc = bit;
-          if (refIdc == 0)
-          {
-            PARSE_CODE(1, bit, "use_delta_flag" );
-            refIdc = bit << 1;
-          }
-
-          if (refIdc == 1 || refIdc == 2)
-          {
-            int deltaPOC = deltaRPS + ((j < rpsRef->getNumberOfPictures())? rpsRef->getDeltaPOC(j) : 0);
-            rps->setDeltaPOC(k, deltaPOC);
-            rps->used_by_curr_pic_flag[k] = refIdc == 1;
-
-            if (deltaPOC < 0)
+            Ipp32u used_by_curr_pic_flag = Get1Bit();
+            Ipp32s refIdc = used_by_curr_pic_flag;
+            if (refIdc == 0)
             {
-              k0++;
+                Ipp32u use_delta_flag = Get1Bit();
+                refIdc = use_delta_flag << 1;
             }
-            else
+
+            if (refIdc == 1 || refIdc == 2)
             {
-              k1++;
+                int deltaPOC = deltaRPS + ((j < rpsRef->getNumberOfPictures())? rpsRef->getDeltaPOC(j) : 0);
+                rps->setDeltaPOC(k, deltaPOC);
+                rps->used_by_curr_pic_flag[k] = refIdc == 1;
+
+                if (deltaPOC < 0)
+                {
+                    k0++;
+                }
+                else
+                {
+                    k1++;
+                }
+                k++;
             }
-            k++;
-          }
         }
         rps->num_pics = k;
         rps->num_negative_pics = k0;
         rps->num_positive_pics = k1;
         rps->sortDeltaPOC();
-  }
-  else
-  {
-    PARSE_UINT(code, "num_negative_pics");           rps->num_negative_pics = code;
-    PARSE_UINT(code, "num_positive_pics");           rps->num_positive_pics = code;
-
-#if !RANDOM_ENC_TESTING
-    VM_ASSERT(rps->getNumberOfNegativePictures() <= sps->m_MaxDecFrameBuffering[sps->sps_max_sub_layers - 1] - 1);
-    VM_ASSERT(rps->getNumberOfPositivePictures() <= sps->m_MaxDecFrameBuffering[sps->sps_max_sub_layers - 1] - 1);
-#endif
-
-    int prev = 0;
-    int poc;
-    for(int j=0 ; j < rps->getNumberOfNegativePictures(); j++)
-    {
-      PARSE_UINT(code, "delta_poc_s0_minus1");
-      poc = prev-code-1;
-      prev = poc;
-      rps->setDeltaPOC(j,poc);
-      PARSE_FLAG(code, "used_by_curr_pic_s0_flag");  rps->used_by_curr_pic_flag[j] = (code != 0);
     }
-    prev = 0;
-    for(int j=rps->getNumberOfNegativePictures(); j < rps->getNumberOfNegativePictures()+rps->getNumberOfPositivePictures(); j++)
+    else
     {
-      PARSE_UINT(code, "delta_poc_s1_minus1");
-      poc = prev+code+1;
-      prev = poc;
-      rps->setDeltaPOC(j,poc);
-      PARSE_FLAG(code, "used_by_curr_pic_s1_flag");  rps->used_by_curr_pic_flag[j] = (code != 0);
+        rps->num_negative_pics = (Ipp32u)GetVLCElement(false);
+        rps->num_positive_pics = (Ipp32u)GetVLCElement(false);
+
+        if (((Ipp32u)rps->getNumberOfNegativePictures() > sps->sps_max_dec_pic_buffering[sps->sps_max_sub_layers - 1]) ||
+            ((Ipp32u)rps->getNumberOfPositivePictures() > sps->sps_max_dec_pic_buffering[sps->sps_max_sub_layers - 1]))
+            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+        Ipp32s prev = 0;
+        Ipp32s poc;
+        for(int j=0 ; j < rps->getNumberOfNegativePictures(); j++)
+        {
+            Ipp32u delta_poc_s0_minus1 = (Ipp32u)GetVLCElement(false);
+            poc = prev - delta_poc_s0_minus1 - 1;
+            prev = poc;
+            rps->setDeltaPOC(j,poc);
+            rps->used_by_curr_pic_flag[j] = Get1Bit();
+        }
+
+        prev = 0;
+        for(int j=rps->getNumberOfNegativePictures(); j < rps->getNumberOfNegativePictures()+rps->getNumberOfPositivePictures(); j++)
+        {
+            Ipp32u delta_poc_s1_minus1 = (Ipp32u)GetVLCElement(false);
+            poc = prev + delta_poc_s1_minus1 + 1;
+            prev = poc;
+            rps->setDeltaPOC(j,poc);
+            rps->used_by_curr_pic_flag[j] = Get1Bit();
+        }
+        rps->num_pics = rps->getNumberOfNegativePictures()+rps->getNumberOfPositivePictures();
     }
-    rps->num_pics = rps->getNumberOfNegativePictures()+rps->getNumberOfPositivePictures();
-  }
 }
 
 //hevc CABAC from HM50
