@@ -45,37 +45,37 @@ struct H265CUData
 public:
     Ipp8u depth;
     Ipp8u size;
-    Ipp8u part_size;
-    Ipp8u pred_mode;
-    Ipp8u tr_idx;
+    Ipp8u partSize;
+    Ipp8u predMode;
+    Ipp8u trIdx;
     Ipp8s qp;
     Ipp8u cbf[3];
-    Ipp8u intra_luma_dir;
-    Ipp8u intra_chroma_dir;
-    Ipp8u inter_dir;
-    Ipp8u merge_idx;
-    Ipp8s mvp_idx[2];
-    Ipp8s mvp_num[2];
+    Ipp8u intraLumaDir;
+    Ipp8u intraChromaDir;
+    Ipp8u interDir;
+    Ipp8u mergeIdx;
+    Ipp8s mvpIdx[2];
+    Ipp8s mvpNum[2];
     H265MV mv[2];
     H265MV mvd[2];
-    T_RefIdx ref_idx[2];
+    T_RefIdx refIdx[2];
 
-    Ipp8u transform_skip_flag[3];
+    Ipp8u transformSkipFlag[3];
     union {
         struct {
-            Ipp8u merge_flag : 1;
-            Ipp8u ipcm_flag : 1;
-            Ipp8u transquant_bypass_flag : 1;
-            Ipp8u skipped_flag : 1;
+            Ipp8u mergeFlag : 1;
+            Ipp8u ipcmFlag : 1;
+            Ipp8u transquantBypassFlag : 1;
+            Ipp8u skippedFlag : 1;
         } flags;
         Ipp8u _flags;
     };
 };
 
 struct H265CUPtr {
-    H265CUData *ctb_data_ptr;
-    Ipp32s ctb_addr;
-    Ipp32u abs_part_idx;
+    H265CUData *ctbData;
+    Ipp32s ctbAddr;
+    Ipp32u absPartIdx;
 };
 #define MAX_PU_IN_CTB (64/8*2 * 64/8*2)
 #define MAX_PU_CASES_IN_CTB (MAX_PU_IN_CTB*4/3+2)
@@ -92,7 +92,7 @@ struct H265MEInfo
     Ipp32s me_parts[4]; // used if split
     Ipp32s details[2]; // [vert/horz]
 
-    Ipp32u abs_part_idx;
+    Ipp32u absPartIdx;
     Ipp8u inter_dir;   // INTER_DIR_PRED_LX
     Ipp8u split_mode;
     Ipp8u depth;
@@ -100,11 +100,11 @@ struct H265MEInfo
     Ipp8u excluded;   // completely out of the frame
 };
 
-#define IS_INTRA(data, part_idx) ((data)[part_idx].pred_mode == MODE_INTRA)
+#define IS_INTRA(data, partIdx) ((data)[partIdx].predMode == MODE_INTRA)
 
-static inline Ipp8u isSkipped (H265CUData *data, Ipp32u part_idx)
+static inline Ipp8u isSkipped (H265CUData *data, Ipp32u partIdx)
 {
-    return data[part_idx].flags.skipped_flag;
+    return data[partIdx].flags.skippedFlag;
 }
 
 #define MAX_TOTAL_DEPTH (MAX_CU_DEPTH+4)
@@ -151,9 +151,9 @@ public:
     bool  *m_ColFrmRefIsLongTerm[2];
     H265EdgeData m_edge[9][9][4];
 
-    Ipp32u bak_abs_part_idxCU;
-    Ipp32u bak_abs_part_idx;
-    Ipp32u bak_chroma_offset;
+    Ipp32u bakAbsPartIdxCu;
+    Ipp32u bakAbsPartIdx;
+    Ipp32u bakChromaOffset;
 
     // aya - may be used late to speed up SAD calculation
     //__ALIGN32 Ipp8u m_src_aligned_block[MAX_CU_SIZE*MAX_CU_SIZE];
@@ -191,37 +191,37 @@ public:
     Ipp8u depth_min;
     SaoEncodeFilter m_saoEncodeFilter;
 
-    inline bool  isIntra(Ipp32u part_idx)
-    { return data[part_idx].pred_mode == MODE_INTRA; }
+    inline bool  isIntra(Ipp32u partIdx)
+    { return data[partIdx].predMode == MODE_INTRA; }
 
-    inline Ipp8u get_transform_skip(Ipp32u idx,EnumTextType type)
-    { return data[idx].transform_skip_flag[h265_type2idx[type]];}
+    inline Ipp8u getTransformSkip(Ipp32u idx,EnumTextType type)
+    { return data[idx].transformSkipFlag[h265_type2idx[type]];}
 
-    inline Ipp8u get_cbf(Ipp32u idx, EnumTextType type, Ipp32u tr_depth )
+    inline Ipp8u getCbf(Ipp32u idx, EnumTextType type, Ipp32u tr_depth )
     { return (Ipp8u)( ( data[idx].cbf[h265_type2idx[type]] >> tr_depth ) & 0x1 ); }
 
-    inline void set_cbf_zero(Ipp32u idx, EnumTextType type, Ipp32u tr_depth )
+    inline void setCbfZero(Ipp32u idx, EnumTextType type, Ipp32u tr_depth )
     {  data[idx].cbf[h265_type2idx[type]] &= ~(1 << tr_depth); }
 
-    inline void set_cbf_one(Ipp32u idx, EnumTextType type, Ipp32u tr_depth )
+    inline void setCbfOne(Ipp32u idx, EnumTextType type, Ipp32u tr_depth )
     {  data[idx].cbf[h265_type2idx[type]] |= (1 << tr_depth); }
 
-    inline Ipp8u get_qt_root_cbf(Ipp32u idx)
-    { return get_cbf( idx, TEXT_LUMA, 0 ) || get_cbf( idx, TEXT_CHROMA_U, 0 ) || get_cbf( idx, TEXT_CHROMA_V, 0 ); }
+    inline Ipp8u getQtRootCbf(Ipp32u idx)
+    { return getCbf( idx, TEXT_LUMA, 0 ) || getCbf( idx, TEXT_CHROMA_U, 0 ) || getCbf( idx, TEXT_CHROMA_V, 0 ); }
 
-    void getPULeft(H265CUPtr *pCU,
-        Ipp32u uiCurrPartUnitIdx,
-        bool bEnforceSliceRestriction=true,
-        bool bEnforceDependentSliceRestriction=true,
-        bool bEnforceTileRestriction=true );
+    void getPuLeft(H265CUPtr *cu,
+                   Ipp32u currPartUnitIdx,
+                   Ipp32s enforceSliceRestriction=true,
+                   Ipp32s enforceDependentSliceRestriction=true,
+                   Ipp32s enforceTileRestriction=true );
 
-    void getPUAbove(H265CUPtr *pCU,
-        Ipp32u uiCurrPartUnitIdx,
-        bool bEnforceSliceRestriction=true,
-        bool bEnforceDependentSliceRestriction=true,
-        bool MotionDataCompresssion = false,
-        bool planarAtLCUBoundary = false,
-        bool bEnforceTileRestriction=true );
+    void getPuAbove(H265CUPtr *cu,
+                    Ipp32u currPartUnitIdx,
+                    Ipp32s enforceSliceRestriction=true,
+                    Ipp32s enforceDependentSliceRestriction=true,
+                    Ipp32s motionDataCompresssion = false,
+                    Ipp32s planarAtLcuBoundary = false,
+                    Ipp32s enforceTileRestriction=true );
 
     bool GetColMVP(H265CUData* colLCU,
         Ipp32s blockZScanIdx,
@@ -286,24 +286,24 @@ public:
         Ipp32s size, Ipp8u partSize, Ipp8u pred_mode);
 
 
-    H265CUData*   getQpMinCuLeft              ( Ipp32u&  uiLPartUnitIdx , Ipp32u uiCurrAbsIdxInLCU, bool bEnforceSliceRestriction=true, bool bEnforceDependentSliceRestriction=true );
-    H265CUData*   getQpMinCuAbove             ( Ipp32u&  aPartUnitIdx , Ipp32u currAbsIdxInLCU, bool enforceSliceRestriction=true, bool enforceDependentSliceRestriction=true );
-    Ipp8s         get_ref_qp                    ( Ipp32u   uiCurrAbsIdxInLCU                       );
+    H265CUData*   getQpMinCuLeft(Ipp32u&  uiLPartUnitIdx, Ipp32u uiCurrAbsIdxInLCU, bool bEnforceSliceRestriction=true, bool bEnforceDependentSliceRestriction=true);
+    H265CUData*   getQpMinCuAbove(Ipp32u&  aPartUnitIdx, Ipp32u currAbsIdxInLCU, bool enforceSliceRestriction=true, bool enforceDependentSliceRestriction=true);
+    Ipp8s         getRefQp(Ipp32u   uiCurrAbsIdxInLCU);
 
-    Ipp32u        getIntraSizeIdx                 ( Ipp32u abs_part_idx                                       );
-    void          convert_trans_idx                 ( Ipp32u abs_part_idx, Ipp32u tr_idx, Ipp32u& rluma_tr_mode, Ipp32u& rchroma_tr_mode );
+    Ipp32u        getIntraSizeIdx(Ipp32u absPartIdx);
+    void          convertTransIdx(Ipp32u absPartIdx, Ipp32u tr_idx, Ipp32u& rluma_tr_mode, Ipp32u& rchroma_tr_mode);
 
-    void          get_allowed_chroma_dir             ( Ipp32u abs_part_idx, Ipp8u* mode_list );
-    Ipp32s        get_intradir_luma_pred        ( Ipp32u abs_part_idx, Ipp32s* intra_dir_pred, Ipp32s* piMode = NULL );
+    void          getAllowedChromaDir(Ipp32u absPartIdx, Ipp8u* mode_list);
+    Ipp32s        getIntradirLumaPred(Ipp32u absPartIdx, Ipp32s* intra_dir_pred, Ipp32s* piMode = NULL);
 
-    Ipp32u        get_ctx_split_flag                 (Ipp32u   abs_part_idx, Ipp32u depth                   );
-    Ipp32u        get_ctx_qt_cbf                     (Ipp32u   abs_part_idx, EnumTextType type, Ipp32u tr_depth );
+    Ipp32u        getCtxSplitFlag(Ipp32u absPartIdx, Ipp32u depth);
+    Ipp32u        getCtxQtCbf(Ipp32u absPartIdx, EnumTextType type, Ipp32u tr_depth);
 
-    Ipp32u         get_transform_idx                  (Ipp32u   abs_part_idx) { return (Ipp32u)data[abs_part_idx].tr_idx; }
-    Ipp32u        get_ctx_skip_flag                  (Ipp32u   abs_part_idx                                 );
-    Ipp32u        getCtxInterDir                  ( Ipp32u   abs_part_idx                                 );
+    Ipp32u        getTransformIdx(Ipp32u absPartIdx) { return (Ipp32u)data[absPartIdx].trIdx; }
+    Ipp32u        getCtxSkipFlag(Ipp32u absPartIdx);
+    Ipp32u        getCtxInterDir(Ipp32u absPartIdx);
 
-    Ipp32u        get_coef_scan_idx(Ipp32u abs_part_idx, Ipp32u width, Ipp32s bIsLuma, Ipp32s bIsIntra);
+    Ipp32u        getCoefScanIdx(Ipp32u absPartIdx, Ipp32u width, Ipp32s bIsLuma, Ipp32s bIsIntra);
 
     template <class H265Bs>
     void h265_code_coeff_NxN(H265Bs *bs, H265CU* pCU, CoeffsType* coeffs, Ipp32u abs_part_idx,
@@ -405,9 +405,9 @@ public:
     Ipp32s MatchingMetricBipred_PU(PixType *pSrc, H265MEInfo* me_info, PixType *y_fwd, Ipp32u pitch_fwd, PixType *y_bwd, Ipp32u pitch_bwd, H265MV MV[2]);
     Ipp32s MVCost( H265MV MV[2], T_RefIdx ref_idx[2], MVPInfo pInfo[2], MVPInfo& mergeInfo) const;
 
-    void InitCU(H265VideoParam *_par, H265CUData *_data, H265CUData *_data_temp, Ipp32s iCUAddr,
+    void InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTemp, Ipp32s cuAddr,
         PixType *_y, PixType *_uv, Ipp32s _pitch,
-        PixType *_y_src, PixType *uv_src, Ipp32s _pitch_src, H265BsFake *_bsf, H265Slice *cslice, Ipp8u initialize_data_flag);
+        PixType *_ySrc, PixType *uvSrc, Ipp32s _pitchSrc, H265BsFake *_bsf, H265Slice *cslice, Ipp32s initializeDataFlag);
     void FillRandom(Ipp32u abs_part_idx, Ipp8u depth);
     void FillZero(Ipp32u abs_part_idx, Ipp8u depth);
     void ModeDecision(Ipp32u abs_part_idx, Ipp32u offset, Ipp8u depth, CostType *cost);

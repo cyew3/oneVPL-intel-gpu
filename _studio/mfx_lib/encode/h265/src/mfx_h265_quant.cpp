@@ -191,7 +191,7 @@ void H265CU::QuantFwdTU(
                                  abs_sum );
 
             if(this->par->cpps->sign_data_hiding_enabled_flag && abs_sum >= 2) {
-                Ipp32u scan_idx = get_coef_scan_idx( abs_part_idx, width, is_luma, isIntra(abs_part_idx) );
+                Ipp32u scan_idx = getCoefScanIdx( abs_part_idx, width, is_luma, isIntra(abs_part_idx) );
 
                 if (scan_idx == COEFF_SCAN_ZIGZAG)
                     scan_idx = COEFF_SCAN_DIAG;

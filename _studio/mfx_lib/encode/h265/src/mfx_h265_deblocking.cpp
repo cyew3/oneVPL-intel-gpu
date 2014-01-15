@@ -198,7 +198,7 @@ void H265CU::GetEdgeStrength(H265CUPtr *pcCUQptr,
     Ipp32s maxDepth = log2LCUSize - log2MinTUSize;
     H265CUPtr CUPPtr;
     H265CUData *pcCUP, *pcCUQ;
-    pcCUQ = pcCUQptr->ctb_data_ptr;
+    pcCUQ = pcCUQptr->ctbData;
 
     edge->strength = 0;
 
@@ -210,11 +210,11 @@ void H265CU::GetEdgeStrength(H265CUPtr *pcCUQptr,
         {
             return;
         }
-        getPUAbove(&CUPPtr, uiPartQ, !crossSliceBoundaryFlag, false, false, false, !crossTileBoundaryFlag);
-        if (pcCUQ != data && CUPPtr.ctb_data_ptr) {
+        getPuAbove(&CUPPtr, uiPartQ, !crossSliceBoundaryFlag, false, false, false, !crossTileBoundaryFlag);
+        if (pcCUQ != data && CUPPtr.ctbData) {
             // pcCUQptr is left of cur CTB, adjust CUPPtr
-            CUPPtr.ctb_data_ptr -= ((size_t)1 << (size_t)(par->Log2NumPartInCU));
-            CUPPtr.ctb_addr --;
+            CUPPtr.ctbData -= ((size_t)1 << (size_t)(par->Log2NumPartInCU));
+            CUPPtr.ctbAddr --;
         }
     }
     else
@@ -223,21 +223,21 @@ void H265CU::GetEdgeStrength(H265CUPtr *pcCUQptr,
         {
             return;
         }
-        getPULeft(&CUPPtr, uiPartQ, !crossSliceBoundaryFlag, false, !crossTileBoundaryFlag);
-        if (pcCUQ != data && CUPPtr.ctb_data_ptr) {
+        getPuLeft(&CUPPtr, uiPartQ, !crossSliceBoundaryFlag, false, !crossTileBoundaryFlag);
+        if (pcCUQ != data && CUPPtr.ctbData) {
             // pcCUQptr is above of cur CTB, adjust CUPPtr
-            CUPPtr.ctb_data_ptr -= par->PicWidthInCtbs << par->Log2NumPartInCU;
-            CUPPtr.ctb_addr -= par->PicWidthInCtbs;
+            CUPPtr.ctbData -= par->PicWidthInCtbs << par->Log2NumPartInCU;
+            CUPPtr.ctbAddr -= par->PicWidthInCtbs;
         }
     }
 
-    if (CUPPtr.ctb_data_ptr == NULL)
+    if (CUPPtr.ctbData == NULL)
     {
         return;
     }
 
-    uiPartP = CUPPtr.abs_part_idx;
-    pcCUP = CUPPtr.ctb_data_ptr;
+    uiPartP = CUPPtr.absPartIdx;
+    pcCUP = CUPPtr.ctbData;
 
     edge->deblockP = 1;
     edge->deblockQ = 1;
@@ -266,23 +266,23 @@ void H265CU::GetEdgeStrength(H265CUPtr *pcCUQptr,
     }
 */
     edge->qp = (pcCUQ[uiPartQ].qp + pcCUP[uiPartP].qp + 1) >> 1;
-    Ipp32s depthp = pcCUP[uiPartP].depth + pcCUP[uiPartP].tr_idx;
-    Ipp32s depthq = pcCUQ[uiPartQ].depth + pcCUQ[uiPartQ].tr_idx;
+    Ipp32s depthp = pcCUP[uiPartP].depth + pcCUP[uiPartP].trIdx;
+    Ipp32s depthq = pcCUQ[uiPartQ].depth + pcCUQ[uiPartQ].trIdx;
 
     if ((pcCUQ != pcCUP) ||
         (pcCUP[uiPartP].depth != pcCUQ[uiPartQ].depth) ||
         (depthp != depthq) ||
         ((uiPartP ^ uiPartQ) >> ((par->MaxCUDepth - depthp) << 1)))
     {
-        if ((pcCUQ[uiPartQ].pred_mode == MODE_INTRA) ||
-            (pcCUP[uiPartP].pred_mode == MODE_INTRA))
+        if ((pcCUQ[uiPartQ].predMode == MODE_INTRA) ||
+            (pcCUP[uiPartP].predMode == MODE_INTRA))
         {
             edge->strength = 2;
             return;
         }
 
-        if (((pcCUQ[uiPartQ].cbf[0] >> pcCUQ[uiPartQ].tr_idx) != 0) ||
-            ((pcCUP[uiPartP].cbf[0] >> pcCUP[uiPartP].tr_idx) != 0))
+        if (((pcCUQ[uiPartQ].cbf[0] >> pcCUQ[uiPartQ].trIdx) != 0) ||
+            ((pcCUP[uiPartP].cbf[0] >> pcCUP[uiPartP].trIdx) != 0))
         {
             edge->strength = 1;
             return;
@@ -290,8 +290,8 @@ void H265CU::GetEdgeStrength(H265CUPtr *pcCUQptr,
     }
     else
     {
-        if ((pcCUQ[uiPartQ].pred_mode == MODE_INTRA) ||
-            (pcCUP[uiPartP].pred_mode == MODE_INTRA))
+        if ((pcCUQ[uiPartQ].predMode == MODE_INTRA) ||
+            (pcCUP[uiPartP].predMode == MODE_INTRA))
         {
             edge->strength = 0;
             return;
@@ -310,7 +310,7 @@ void H265CU::GetEdgeStrength(H265CUPtr *pcCUQptr,
         for (i = 0; i < 2; i++)
         {
             EnumRefPicList RefPicList = (i ? REF_PIC_LIST_1 : REF_PIC_LIST_0);
-            if (pcCUP[uiPartP].ref_idx[RefPicList] >= 0)
+            if (pcCUP[uiPartP].refIdx[RefPicList] >= 0)
             {
                 numRefsP++;
             }
@@ -321,7 +321,7 @@ void H265CU::GetEdgeStrength(H265CUPtr *pcCUQptr,
         for (i = 0; i < 2; i++)
         {
             EnumRefPicList RefPicList = (i ? REF_PIC_LIST_1 : REF_PIC_LIST_0);
-            if (pcCUQ[uiPartQ].ref_idx[RefPicList] >= 0)
+            if (pcCUQ[uiPartQ].refIdx[RefPicList] >= 0)
             {
                 numRefsQ++;
             }
@@ -336,15 +336,15 @@ void H265CU::GetEdgeStrength(H265CUPtr *pcCUQptr,
         if (numRefsQ == 2)
         {
             RefPOCQ0 = par->m_pRefPicList[par->m_slice_ids[ctb_addr]].
-                m_RefPicListL0.m_RefPicList[pcCUQ[uiPartQ].ref_idx[REF_PIC_LIST_0]]->m_PicOrderCnt;
+                m_RefPicListL0.m_RefPicList[pcCUQ[uiPartQ].refIdx[REF_PIC_LIST_0]]->m_PicOrderCnt;
             RefPOCQ1 = par->m_pRefPicList[par->m_slice_ids[ctb_addr]].
-                m_RefPicListL1.m_RefPicList[pcCUQ[uiPartQ].ref_idx[REF_PIC_LIST_1]]->m_PicOrderCnt;
+                m_RefPicListL1.m_RefPicList[pcCUQ[uiPartQ].refIdx[REF_PIC_LIST_1]]->m_PicOrderCnt;
             MVQ0 = pcCUQ[uiPartQ].mv[REF_PIC_LIST_0];
             MVQ1 = pcCUQ[uiPartQ].mv[REF_PIC_LIST_1];
-            RefPOCP0 = par->m_pRefPicList[par->m_slice_ids[CUPPtr.ctb_addr]].
-                m_RefPicListL0.m_RefPicList[pcCUP[uiPartP].ref_idx[REF_PIC_LIST_0]]->m_PicOrderCnt;
-            RefPOCP1 = par->m_pRefPicList[par->m_slice_ids[CUPPtr.ctb_addr]].
-                m_RefPicListL1.m_RefPicList[pcCUP[uiPartP].ref_idx[REF_PIC_LIST_1]]->m_PicOrderCnt;
+            RefPOCP0 = par->m_pRefPicList[par->m_slice_ids[CUPPtr.ctbAddr]].
+                m_RefPicListL0.m_RefPicList[pcCUP[uiPartP].refIdx[REF_PIC_LIST_0]]->m_PicOrderCnt;
+            RefPOCP1 = par->m_pRefPicList[par->m_slice_ids[CUPPtr.ctbAddr]].
+                m_RefPicListL1.m_RefPicList[pcCUP[uiPartP].refIdx[REF_PIC_LIST_1]]->m_PicOrderCnt;
             MVP0 = pcCUP[uiPartP].mv[REF_PIC_LIST_0];
             MVP1 = pcCUP[uiPartP].mv[REF_PIC_LIST_1];
 
@@ -381,23 +381,23 @@ void H265CU::GetEdgeStrength(H265CUPtr *pcCUQptr,
         }
         else
         {
-            if (pcCUQ[uiPartQ].ref_idx[REF_PIC_LIST_0] >= 0) {
+            if (pcCUQ[uiPartQ].refIdx[REF_PIC_LIST_0] >= 0) {
                 RefPOCQ0 = par->m_pRefPicList[par->m_slice_ids[ctb_addr]].
-                    m_RefPicListL0.m_RefPicList[pcCUQ[uiPartQ].ref_idx[REF_PIC_LIST_0]]->m_PicOrderCnt;
+                    m_RefPicListL0.m_RefPicList[pcCUQ[uiPartQ].refIdx[REF_PIC_LIST_0]]->m_PicOrderCnt;
                 MVQ0 = pcCUQ[uiPartQ].mv[REF_PIC_LIST_0];
             } else {
                 RefPOCQ0 = par->m_pRefPicList[par->m_slice_ids[ctb_addr]].
-                    m_RefPicListL1.m_RefPicList[pcCUQ[uiPartQ].ref_idx[REF_PIC_LIST_1]]->m_PicOrderCnt;
+                    m_RefPicListL1.m_RefPicList[pcCUQ[uiPartQ].refIdx[REF_PIC_LIST_1]]->m_PicOrderCnt;
                 MVQ0 = pcCUQ[uiPartQ].mv[REF_PIC_LIST_1];
             }
 
-            if (pcCUP[uiPartP].ref_idx[REF_PIC_LIST_0] >= 0) {
-                RefPOCP0 = par->m_pRefPicList[par->m_slice_ids[CUPPtr.ctb_addr]].
-                    m_RefPicListL0.m_RefPicList[pcCUP[uiPartP].ref_idx[REF_PIC_LIST_0]]->m_PicOrderCnt;
+            if (pcCUP[uiPartP].refIdx[REF_PIC_LIST_0] >= 0) {
+                RefPOCP0 = par->m_pRefPicList[par->m_slice_ids[CUPPtr.ctbAddr]].
+                    m_RefPicListL0.m_RefPicList[pcCUP[uiPartP].refIdx[REF_PIC_LIST_0]]->m_PicOrderCnt;
                 MVP0 = pcCUP[uiPartP].mv[REF_PIC_LIST_0];
             } else {
-                RefPOCP0 = par->m_pRefPicList[par->m_slice_ids[CUPPtr.ctb_addr]].
-                    m_RefPicListL1.m_RefPicList[pcCUP[uiPartP].ref_idx[REF_PIC_LIST_1]]->m_PicOrderCnt;
+                RefPOCP0 = par->m_pRefPicList[par->m_slice_ids[CUPPtr.ctbAddr]].
+                    m_RefPicListL1.m_RefPicList[pcCUP[uiPartP].refIdx[REF_PIC_LIST_1]]->m_PicOrderCnt;
                 MVP0 = pcCUP[uiPartP].mv[REF_PIC_LIST_1];
             }
 
@@ -439,12 +439,12 @@ void H265CU::SetEdges(Ipp32s width,
     betaOffset = cslice->slice_beta_offset_div2 << 1;
 
     H265CUPtr aboveLCU;
-    getPUAbove(&aboveLCU, 0, 0, false, false, false, 0);
+    getPuAbove(&aboveLCU, 0, 0, false, false, false, 0);
 
 // uncomment to hide false uninitialized memory read warning
 //    memset(&edge, 0, sizeof(edge));
 
-    if (aboveLCU.ctb_data_ptr)
+    if (aboveLCU.ctbData)
     {
         for (i = 0; i < width; i += 8)
         {
@@ -473,9 +473,9 @@ void H265CU::SetEdges(Ipp32s width,
     }
 
     H265CUPtr leftLCU;
-    getPULeft(&leftLCU, 0, 0, false, 0);
+    getPuLeft(&leftLCU, 0, 0, false, 0);
 
-    if (leftLCU.ctb_data_ptr)
+    if (leftLCU.ctbData)
     {
         for (j = 0; j < height; j += 8)
         {
@@ -501,9 +501,9 @@ void H265CU::SetEdges(Ipp32s width,
         }
     }
     H265CUPtr curLCU;
-    curLCU.ctb_data_ptr = data;
-    curLCU.ctb_addr = ctb_addr;
-    curLCU.abs_part_idx = 0;
+    curLCU.ctbData = data;
+    curLCU.ctbAddr = ctb_addr;
+    curLCU.absPartIdx = 0;
 
     for (j = 0; j < height; j += 8)
     {

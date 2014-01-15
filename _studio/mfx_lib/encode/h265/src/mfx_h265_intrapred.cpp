@@ -39,7 +39,7 @@ void IsAboveLeftAvailable(H265CU *pCU,
 
             if (ConstrainedIntraPredFlag)
             {
-                outNeighborFlags[0] = ((pCU->data[zScanIdx].pred_mode == MODE_INTRA) ? 1 : 0);
+                outNeighborFlags[0] = ((pCU->data[zScanIdx].predMode == MODE_INTRA) ? 1 : 0);
             }
             else
             {
@@ -98,7 +98,7 @@ void IsAboveAvailable(H265CU *pCU,
 
             if (ConstrainedIntraPredFlag)
             {
-                outNeighborFlags[i] = ((pCU->data[zScanIdx].pred_mode == MODE_INTRA) ? 1 : 0);
+                outNeighborFlags[i] = ((pCU->data[zScanIdx].predMode == MODE_INTRA) ? 1 : 0);
             }
             else
             {
@@ -163,7 +163,7 @@ void IsAboveRightAvailable(H265CU *pCU,
                     {
                         if (ConstrainedIntraPredFlag)
                         {
-                            outNeighborFlags[i] = ((pCU->data[zScanIdx].pred_mode == MODE_INTRA) ? 1 : 0);
+                            outNeighborFlags[i] = ((pCU->data[zScanIdx].predMode == MODE_INTRA) ? 1 : 0);
                         }
                         else
                         {
@@ -215,7 +215,7 @@ void IsLeftAvailable(H265CU *pCU,
 
             if (ConstrainedIntraPredFlag)
             {
-                outNeighborFlags[numMinTUInPU - 1 - i] = ((pCU->data[zScanIdx].pred_mode == MODE_INTRA) ? 1 : 0);
+                outNeighborFlags[numMinTUInPU - 1 - i] = ((pCU->data[zScanIdx].predMode == MODE_INTRA) ? 1 : 0);
             }
             else
             {
@@ -265,7 +265,7 @@ void IsBelowLeftAvailable(H265CU *pCU,
                 {
                     if (ConstrainedIntraPredFlag)
                     {
-                        outNeighborFlags[numMinTUInPU - 1 - i] = ((pCU->data[zScanIdx].pred_mode == MODE_INTRA) ? 1 : 0);
+                        outNeighborFlags[numMinTUInPU - 1 - i] = ((pCU->data[zScanIdx].predMode == MODE_INTRA) ? 1 : 0);
                     }
                     else
                     {
@@ -1019,20 +1019,20 @@ Ipp8u H265CU::GetTRSplitMode(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u tr_depth, I
 }
 
 void H265CU::IntraPred(Ipp32u abs_part_idx, Ipp8u depth) {
-    Ipp32s depth_max = data[abs_part_idx].depth + data[abs_part_idx].tr_idx;
+    Ipp32s depth_max = data[abs_part_idx].depth + data[abs_part_idx].trIdx;
     Ipp32u num_parts = ( par->NumPartInCU >> (depth<<1) )>>2;
     Ipp32u i;
 
-    if (depth == depth_max - 1 && (data[abs_part_idx].size >> data[abs_part_idx].tr_idx) == 4) {
+    if (depth == depth_max - 1 && (data[abs_part_idx].size >> data[abs_part_idx].trIdx) == 4) {
         for (i = 0; i < 4; i++) {
             Ipp32s abs_part_idx_tmp = abs_part_idx + num_parts * i;
-            IntraPredTU(abs_part_idx_tmp, data[abs_part_idx_tmp].size >> data[abs_part_idx_tmp].tr_idx,
-                data[abs_part_idx_tmp].intra_luma_dir, 1);
+            IntraPredTU(abs_part_idx_tmp, data[abs_part_idx_tmp].size >> data[abs_part_idx_tmp].trIdx,
+                data[abs_part_idx_tmp].intraLumaDir, 1);
         }
-        IntraPredTU(abs_part_idx, data[abs_part_idx].size >> data[abs_part_idx].tr_idx << 1, data[abs_part_idx].intra_chroma_dir, 0);
+        IntraPredTU(abs_part_idx, data[abs_part_idx].size >> data[abs_part_idx].trIdx << 1, data[abs_part_idx].intraChromaDir, 0);
     } else if (depth == depth_max) {
-        IntraPredTU(abs_part_idx, data[abs_part_idx].size >> data[abs_part_idx].tr_idx, data[abs_part_idx].intra_luma_dir, 1);
-        IntraPredTU(abs_part_idx, data[abs_part_idx].size >> data[abs_part_idx].tr_idx, data[abs_part_idx].intra_chroma_dir, 0);
+        IntraPredTU(abs_part_idx, data[abs_part_idx].size >> data[abs_part_idx].trIdx, data[abs_part_idx].intraLumaDir, 1);
+        IntraPredTU(abs_part_idx, data[abs_part_idx].size >> data[abs_part_idx].trIdx, data[abs_part_idx].intraChromaDir, 0);
     } else {
         for (i = 0; i < 4; i++) {
             IntraPred(abs_part_idx + num_parts * i, depth+1);
@@ -1066,7 +1066,7 @@ void H265CU::GetInitAvailablity()
 
             if (constrained_intra_flag)
             {
-                if (p_left[zScanIdx].pred_mode == MODE_INTRA)
+                if (p_left[zScanIdx].predMode == MODE_INTRA)
                 {
                     inNeighborFlags[i] = 1;
                 }
@@ -1086,7 +1086,7 @@ void H265CU::GetInitAvailablity()
 
         if (constrained_intra_flag)
         {
-            if (p_above_left[zScanIdx].pred_mode == MODE_INTRA)
+            if (p_above_left[zScanIdx].predMode == MODE_INTRA)
             {
                 inNeighborFlags[numMinTUInLCU] = 1;
             }
@@ -1107,7 +1107,7 @@ void H265CU::GetInitAvailablity()
 
             if (constrained_intra_flag)
             {
-                if (p_above[zScanIdx].pred_mode == MODE_INTRA)
+                if (p_above[zScanIdx].predMode == MODE_INTRA)
                 {
                     inNeighborFlags[numMinTUInLCU+1+i] = 1;
                 }
@@ -1129,7 +1129,7 @@ void H265CU::GetInitAvailablity()
 
             if (constrained_intra_flag)
             {
-                if (p_above_right[zScanIdx].pred_mode == MODE_INTRA)
+                if (p_above_right[zScanIdx].predMode == MODE_INTRA)
                 {
                     inNeighborFlags[2*numMinTUInLCU+1+i] = 1;
                 }

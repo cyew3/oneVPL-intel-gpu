@@ -24,8 +24,8 @@ bool H265CU::CheckIdenticalMotion(Ipp32u abs_part_idx)
     T_RefIdx ref_idx[2];
     pList[0] = &(cslice->m_pRefPicList[0].m_RefPicListL0);
     pList[1] = &(cslice->m_pRefPicList[0].m_RefPicListL1);
-    ref_idx[0] = data[abs_part_idx].ref_idx[0];
-    ref_idx[1] = data[abs_part_idx].ref_idx[1];
+    ref_idx[0] = data[abs_part_idx].refIdx[0];
+    ref_idx[1] = data[abs_part_idx].refIdx[1];
 // TODO optimize: check B_SLISE && !weighted on entrance, POC after mv matched
     if(cslice->slice_type == B_SLICE && !par->cpps->weighted_bipred_flag)
     {
@@ -144,7 +144,7 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefP
 
     pList[0] = &(cslice->m_pRefPicList[0].m_RefPicListL0);
     pList[1] = &(cslice->m_pRefPicList[0].m_RefPicListL1);
-    Ipp32s RefIdx = data[PartAddr].ref_idx[RefPicList];
+    Ipp32s RefIdx = data[PartAddr].refIdx[RefPicList];
     VM_ASSERT(RefIdx >= 0);
 
     H265MV MV = data[PartAddr].mv[RefPicList];
@@ -168,7 +168,7 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefP
         PixType *in_pSrc2 = 0;
         if ( eAddAverage == AVERAGE_FROM_PIC ) {
             EnumRefPicList RefPicList2 = (EnumRefPicList)!RefPicList;
-            Ipp32s RefIdx2 = data[PartAddr].ref_idx[RefPicList2];
+            Ipp32s RefIdx2 = data[PartAddr].refIdx[RefPicList2];
             H265Frame *PicYUVRef2 = pList[RefPicList2]->m_RefPicList[RefIdx2];
             in_SrcPitch2 = PicYUVRef2->pitch_luma;
             H265MV MV2 = data[PartAddr].mv[RefPicList2];
@@ -287,7 +287,7 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefP
         PixType *in_pSrc2 = 0;
         if ( eAddAverage == AVERAGE_FROM_PIC ) {
             EnumRefPicList RefPicList2 = (EnumRefPicList)!RefPicList;
-            Ipp32s RefIdx2 = data[PartAddr].ref_idx[RefPicList2];
+            Ipp32s RefIdx2 = data[PartAddr].refIdx[RefPicList2];
             H265Frame *PicYUVRef2 = pList[RefPicList2]->m_RefPicList[RefIdx2];
             in_SrcPitch2 = PicYUVRef2->pitch_luma;
             H265MV MV2 = data[PartAddr].mv[RefPicList2];
@@ -395,13 +395,13 @@ void H265CU::InterPredCU(Ipp32s abs_part_idx, Ipp8u depth, PixType *dst, Ipp32s 
 
     for (Ipp32s PartIdx = 0; PartIdx < getNumPartInter(abs_part_idx); PartIdx++)
     {
-        GetPartOffsetAndSize(PartIdx, data[abs_part_idx].part_size,
+        GetPartOffsetAndSize(PartIdx, data[abs_part_idx].partSize,
             data[abs_part_idx].size, PartX, PartY, Width, Height);
-        GetPartAddr(PartIdx, data[abs_part_idx].part_size, num_parts, PartAddr);
+        GetPartAddr(PartIdx, data[abs_part_idx].partSize, num_parts, PartAddr);
 
         PartAddr += abs_part_idx;
 
-        Ipp32s RefIdx[2] = { data[PartAddr].ref_idx[0], data[PartAddr].ref_idx[1] };
+        Ipp32s RefIdx[2] = { data[PartAddr].refIdx[0], data[PartAddr].refIdx[1] };
 
         if (CheckIdenticalMotion(PartAddr) || RefIdx[0] < 0 || RefIdx[1] < 0) {
             EnumRefPicList refPicList = RefIdx[0] >= 0 ? REF_PIC_LIST_0 : REF_PIC_LIST_1;

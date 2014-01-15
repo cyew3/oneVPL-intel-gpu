@@ -639,10 +639,10 @@ void RDOQuant::DoAlgorithm(
     Ipp64f cost_best   = 0.0f;
     Ipp32u ctx_cbf_inc = 0;
 
-    bool isRootCbf = (!m_pCU->isIntra(abs_part_idx) && m_pCU->get_transform_idx( abs_part_idx ) == 0);
+    bool isRootCbf = (!m_pCU->isIntra(abs_part_idx) && m_pCU->getTransformIdx( abs_part_idx ) == 0);
     if( !isRootCbf )
     {
-        ctx_cbf_inc = m_pCU->get_ctx_qt_cbf(abs_part_idx, type, m_pCU->get_transform_idx(abs_part_idx) );
+        ctx_cbf_inc = m_pCU->getCtxQtCbf(abs_part_idx, type, m_pCU->getTransformIdx(abs_part_idx) );
     }
 
     cost_best  = cost_zero_blk + GetCost_Cbf(0, ctx_cbf_inc, isRootCbf);

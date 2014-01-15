@@ -97,7 +97,7 @@ template <class H265Bs>
 static
 void h265_code_mvp_idx (H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx, EnumRefPicList ref_list )
 {
-    Ipp32s symbol = pCU->data[abs_part_idx].mvp_idx[ref_list];
+    Ipp32s symbol = pCU->data[abs_part_idx].mvpIdx[ref_list];
     Ipp32s num = AMVP_MAX_NUM_CANDS;
 
     h265_write_unary_max_symbol(bs, symbol, CTX(bs,MVP_IDX_HEVC), 1, num-1);
@@ -108,8 +108,8 @@ static
 void h265_code_part_size(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx, Ipp32s depth )
 {
     H265VideoParam *par = pCU->par;
-    Ipp8u size = pCU->data[abs_part_idx].part_size;
-    if (pCU->data[abs_part_idx].pred_mode == MODE_INTRA)
+    Ipp8u size = pCU->data[abs_part_idx].partSize;
+    if (pCU->data[abs_part_idx].predMode == MODE_INTRA)
     {
         if(depth == par->MaxCUDepth - par->AddCUDepth)
         {
@@ -183,15 +183,15 @@ template <class H265Bs>
 static
 void h265_code_pred_mode(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx )
 {
-    Ipp32s pred_mode = pCU->data[abs_part_idx].pred_mode;
-    bs->EncodeSingleBin_CABAC(CTX(bs,PRED_MODE_HEVC), pred_mode == MODE_INTER ? 0 : 1);
+    Ipp32s predMode = pCU->data[abs_part_idx].predMode;
+    bs->EncodeSingleBin_CABAC(CTX(bs,PRED_MODE_HEVC), predMode == MODE_INTER ? 0 : 1);
 }
 
 template <class H265Bs>
 static
 void h265_code_transquant_bypass_flag(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
 {
-    Ipp32u symbol = pCU->data[abs_part_idx].flags.transquant_bypass_flag;
+    Ipp32u symbol = pCU->data[abs_part_idx].flags.transquantBypassFlag;
     bs->EncodeSingleBin_CABAC(CTX(bs,CU_TRANSQUANT_BYPASS_FLAG_CTX),symbol);
 }
 
@@ -200,7 +200,7 @@ static
 void h265_code_skip_flag(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
 {
     Ipp32u symbol = isSkipped(pCU->data, abs_part_idx) ? 1 : 0;
-    Ipp32u ctx_skip = pCU->get_ctx_skip_flag(abs_part_idx);
+    Ipp32u ctx_skip = pCU->getCtxSkipFlag(abs_part_idx);
     bs->EncodeSingleBin_CABAC(CTX(bs,SKIP_FLAG_HEVC)+ctx_skip, symbol);
 }
 
@@ -208,7 +208,7 @@ template <class H265Bs>
 static
 void h265_code_merge_flag(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
 {
-    const Ipp32u symbol = pCU->data[abs_part_idx].flags.merge_flag ? 1 : 0;
+    const Ipp32u symbol = pCU->data[abs_part_idx].flags.mergeFlag ? 1 : 0;
     bs->EncodeSingleBin_CABAC(CTX(bs,MERGE_FLAG_HEVC),symbol);
 }
 
@@ -217,7 +217,7 @@ static
 void h265_code_merge_index(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
 {
     Ipp32u num_cand = MRG_MAX_NUM_CANDS;
-    Ipp32u unary_idx = pCU->data[abs_part_idx].merge_idx;
+    Ipp32u unary_idx = pCU->data[abs_part_idx].mergeIdx;
     num_cand = MRG_MAX_NUM_CANDS;
     if (num_cand > 1)
     {
@@ -248,7 +248,7 @@ void h265_code_split_flag(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx, Ipp32s d
     if (depth == par->MaxCUDepth - par->AddCUDepth)
         return;
 
-    Ipp32u ctx = pCU->get_ctx_split_flag(abs_part_idx, depth);
+    Ipp32u ctx = pCU->getCtxSplitFlag(abs_part_idx, depth);
     Ipp32u split_flag = (pCU->data[abs_part_idx].depth > depth) ? 1 : 0;
 
     VM_ASSERT(ctx < 3);
@@ -276,14 +276,14 @@ void H265CU::h265_code_intradir_luma_ang(H265Bs *bs, Ipp32u abs_part_idx, Ipp8u 
         {-1, -1, -1}
     };
     Ipp32s pred_num[4], pred_idx[4] = { -1,-1,-1,-1};
-    Ipp8u mode = pCU->data[abs_part_idx].part_size;
+    Ipp8u mode = pCU->data[abs_part_idx].partSize;
     Ipp32u part_num = multiple ? (mode==PART_SIZE_NxN ? 4 : 1) : 1;
     Ipp32u part_offset = (par->NumPartInCU >> (pCU->data[abs_part_idx].depth << 1)) >> 2;
 
     for (j=0; j<part_num; j++)
     {
-        dir[j] = pCU->data[abs_part_idx+part_offset*j].intra_luma_dir;
-        pred_num[j] = pCU->get_intradir_luma_pred(abs_part_idx+part_offset*j, predictors[j]);
+        dir[j] = pCU->data[abs_part_idx+part_offset*j].intraLumaDir;
+        pred_num[j] = pCU->getIntradirLumaPred(abs_part_idx+part_offset*j, predictors[j]);
         for(Ipp32s i = 0; i < pred_num[j]; i++)
         {
             if(dir[j] == predictors[j][i])
@@ -337,7 +337,7 @@ static
 void h265_code_intradir_chroma(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
 {
     Ipp8u i;
-    Ipp8u intra_dir_chroma = pCU->data[abs_part_idx].intra_chroma_dir;
+    Ipp8u intra_dir_chroma = pCU->data[abs_part_idx].intraChromaDir;
 /*
     if (tca == 1)
         printf("");
@@ -350,7 +350,7 @@ void h265_code_intradir_chroma(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
     else
     {
         Ipp8u allowed_chroma_dir[NUM_CHROMA_MODE];
-        pCU->get_allowed_chroma_dir(abs_part_idx, allowed_chroma_dir);
+        pCU->getAllowedChromaDir(abs_part_idx, allowed_chroma_dir);
 
         for (i = 0; i < NUM_CHROMA_MODE - 1; i++)
         {
@@ -370,10 +370,10 @@ template <class H265Bs>
 static
 void h265_code_interdir(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
 {
-    const Ipp32u inter_dir = pCU->data[abs_part_idx].inter_dir - 1;
+    const Ipp32u inter_dir = pCU->data[abs_part_idx].interDir - 1;
     const Ipp32u ctx      = pCU->data[abs_part_idx].depth;
 
-    if (pCU->data[abs_part_idx].part_size == PART_SIZE_2Nx2N || pCU->data[abs_part_idx].size != 8 )
+    if (pCU->data[abs_part_idx].partSize == PART_SIZE_2Nx2N || pCU->data[abs_part_idx].size != 8 )
     {
         bs->EncodeSingleBin_CABAC(CTX(bs,INTER_DIR_HEVC)+ctx,inter_dir == 2 ? 1 : 0);
     }
@@ -391,7 +391,7 @@ void h265_code_reffrm_idx(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx, EnumRefP
     Ipp32s j;
     H265ENC_UNREFERENCED_PARAMETER(abs_part_idx);
 
-    T_RefIdx ref_idx = pCU->data[abs_part_idx].ref_idx[ref_list];
+    T_RefIdx ref_idx = pCU->data[abs_part_idx].refIdx[ref_list];
     bs->EncodeSingleBin_CABAC(CTX(bs,REF_FRAME_IDX_HEVC),( ref_idx == 0 ? 0 : 1 ));
 
     j = 0;
@@ -427,7 +427,7 @@ template <class H265Bs>
 static
 void h265_code_mvd(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx, EnumRefPicList ref_list)
 {
-    if(pCU->cslice->mvd_l1_zero_flag && ref_list == REF_PIC_LIST_1 && pCU->data[abs_part_idx].inter_dir==3)
+    if(pCU->cslice->mvd_l1_zero_flag && ref_list == REF_PIC_LIST_1 && pCU->data[abs_part_idx].interDir==3)
     {
         return;
     }
@@ -478,7 +478,7 @@ template <class H265Bs>
 static
 void h265_code_delta_qp(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
 {
-    Ipp32s dqp  = pCU->data[abs_part_idx].qp - pCU->get_ref_qp( abs_part_idx );
+    Ipp32s dqp  = pCU->data[abs_part_idx].qp - pCU->getRefQp( abs_part_idx );
 
     Ipp32s qp_bd_offset_y = 0;
     dqp = (dqp + 78 + qp_bd_offset_y + (qp_bd_offset_y/2)) % (52 + qp_bd_offset_y) - 26 - (qp_bd_offset_y/2);
@@ -512,12 +512,12 @@ static
 void h265_code_transform_skip_flags(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx,
                              Ipp32s width, Ipp32s height, EnumTextType type)
 {
-    if (!pCU->data[abs_part_idx].flags.transquant_bypass_flag &&
+    if (!pCU->data[abs_part_idx].flags.transquantBypassFlag &&
 //        pCU->data->pred_mode[abs_part_idx] == MODE_INTRA &&
         width == 4 && height == 4)
     {
         bs->EncodeSingleBin_CABAC( CTX(bs,TRANSFORMSKIP_FLAG_HEVC) +
-            (type ? TEXT_CHROMA: TEXT_LUMA), pCU->get_transform_skip(abs_part_idx,type));
+            (type ? TEXT_CHROMA: TEXT_LUMA), pCU->getTransformSkip(abs_part_idx,type));
     }
 }
 
@@ -525,7 +525,7 @@ template <class H265Bs>
 static inline
 void h265_code_qt_root_cbf(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
 {
-    bs->EncodeSingleBin_CABAC(CTX(bs,QT_ROOT_CBF_HEVC), pCU->get_qt_root_cbf(abs_part_idx));
+    bs->EncodeSingleBin_CABAC(CTX(bs,QT_ROOT_CBF_HEVC), pCU->getQtRootCbf(abs_part_idx));
 }
 
 static Ipp32s h265_count_nonzero_coeffs(CoeffsType* coeff, Ipp32u size)
@@ -639,8 +639,8 @@ void H265CU::h265_code_coeff_NxN(H265Bs *bs, H265CU* pCU, CoeffsType* coeffs, Ip
     type = type == TEXT_LUMA ? TEXT_LUMA : ( type == TEXT_NONE ? TEXT_NONE : TEXT_CHROMA );
 
     const Ipp32u log2_block_size = h265_log2m2[width] + 2;
-    Ipp32u scan_idx = pCU->get_coef_scan_idx(abs_part_idx, width, type==TEXT_LUMA,
-        pCU->data[abs_part_idx].pred_mode == MODE_INTRA);
+    Ipp32u scan_idx = pCU->getCoefScanIdx(abs_part_idx, width, type==TEXT_LUMA,
+        pCU->data[abs_part_idx].predMode == MODE_INTRA);
     if (scan_idx == COEFF_SCAN_ZIGZAG)
     {
         scan_idx = COEFF_SCAN_DIAG;
@@ -650,7 +650,7 @@ void H265CU::h265_code_coeff_NxN(H265Bs *bs, H265CU* pCU, CoeffsType* coeffs, Ip
     const Ipp16u *scan = h265_sig_last_scan[scan_idx - 1][log2_block_size - 1];
 
     bool valid_flag;
-    if (pCU->data[abs_part_idx].flags.transquant_bypass_flag)
+    if (pCU->data[abs_part_idx].flags.transquantBypassFlag)
     {
         valid_flag = false;
     }
@@ -920,38 +920,38 @@ void H265CU::put_transform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_chroma,
                                 Ipp32u tr_idx, Ipp8u& code_dqp,
                                 Ipp8u split_flag_only )
 {
-    const Ipp32u subdiv = (Ipp8u)(data[abs_part_idx].tr_idx + data[abs_part_idx].depth) > depth;
+    const Ipp32u subdiv = (Ipp8u)(data[abs_part_idx].trIdx + data[abs_part_idx].depth) > depth;
     const Ipp32u Log2TrafoSize = h265_log2m2[par->MaxCUSize]+2 - depth;
-    Ipp32u cbfY = get_cbf( abs_part_idx, TEXT_LUMA    , tr_idx );
-    Ipp32u cbfU = get_cbf( abs_part_idx, TEXT_CHROMA_U, tr_idx );
-    Ipp32u cbfV = get_cbf( abs_part_idx, TEXT_CHROMA_V, tr_idx );
+    Ipp32u cbfY = getCbf( abs_part_idx, TEXT_LUMA    , tr_idx );
+    Ipp32u cbfU = getCbf( abs_part_idx, TEXT_CHROMA_U, tr_idx );
+    Ipp32u cbfV = getCbf( abs_part_idx, TEXT_CHROMA_V, tr_idx );
 
     if (tr_idx==0)
     {
-        bak_abs_part_idxCU = abs_part_idx;
+        bakAbsPartIdxCu = abs_part_idx;
     }
     if (Log2TrafoSize == 2)
     {
         Ipp32u part_num = par->NumPartInCU >> ( ( depth - 1 ) << 1 );
         if ((abs_part_idx % part_num) == 0)
         {
-            bak_abs_part_idx = abs_part_idx;
-            bak_chroma_offset = offset_chroma;
+            bakAbsPartIdx = abs_part_idx;
+            bakChromaOffset = offset_chroma;
         }
         else if ((abs_part_idx % part_num) == (part_num - 1))
         {
-            cbfU = get_cbf( bak_abs_part_idx, TEXT_CHROMA_U, tr_idx );
-            cbfV = get_cbf( bak_abs_part_idx, TEXT_CHROMA_V, tr_idx );
+            cbfU = getCbf( bakAbsPartIdx, TEXT_CHROMA_U, tr_idx );
+            cbfV = getCbf( bakAbsPartIdx, TEXT_CHROMA_V, tr_idx );
         }
     }
     {//CABAC
-        if( data[abs_part_idx].pred_mode == MODE_INTRA &&
-            data[abs_part_idx].part_size == PART_SIZE_NxN && depth == data[abs_part_idx].depth )
+        if( data[abs_part_idx].predMode == MODE_INTRA &&
+            data[abs_part_idx].partSize == PART_SIZE_NxN && depth == data[abs_part_idx].depth )
         {
             VM_ASSERT( subdiv );
         }
-        else if (data[abs_part_idx].pred_mode == MODE_INTER &&
-            (data[abs_part_idx].part_size != PART_SIZE_2Nx2N) &&
+        else if (data[abs_part_idx].predMode == MODE_INTER &&
+            (data[abs_part_idx].partSize != PART_SIZE_2Nx2N) &&
             depth == data[abs_part_idx].depth &&
             (par->QuadtreeTUMaxDepthInter == 1))
         {
@@ -991,25 +991,25 @@ void H265CU::put_transform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_chroma,
             const bool first_cbf_of_cu = tr_depth_cur == 0;
             if (first_cbf_of_cu || Log2TrafoSize > 2)
             {
-                if (first_cbf_of_cu || get_cbf( abs_part_idx, TEXT_CHROMA_U, tr_depth_cur - 1 ))
+                if (first_cbf_of_cu || getCbf( abs_part_idx, TEXT_CHROMA_U, tr_depth_cur - 1 ))
                 {
                     bs->EncodeSingleBin_CABAC(CTX(bs,QT_CBF_HEVC) +
                         NUM_QT_CBF_CTX +
-                        get_ctx_qt_cbf(abs_part_idx, TEXT_CHROMA_U, tr_depth_cur),
-                        get_cbf     ( abs_part_idx, TEXT_CHROMA_U, tr_depth_cur ));
+                        getCtxQtCbf(abs_part_idx, TEXT_CHROMA_U, tr_depth_cur),
+                        getCbf     ( abs_part_idx, TEXT_CHROMA_U, tr_depth_cur ));
                 }
-                if (first_cbf_of_cu || get_cbf( abs_part_idx, TEXT_CHROMA_V, tr_depth_cur - 1 ))
+                if (first_cbf_of_cu || getCbf( abs_part_idx, TEXT_CHROMA_V, tr_depth_cur - 1 ))
                 {
                     bs->EncodeSingleBin_CABAC(CTX(bs,QT_CBF_HEVC) +
                         NUM_QT_CBF_CTX +
-                        get_ctx_qt_cbf(abs_part_idx, TEXT_CHROMA_V, tr_depth_cur),
-                        get_cbf     ( abs_part_idx, TEXT_CHROMA_V, tr_depth_cur ));
+                        getCtxQtCbf(abs_part_idx, TEXT_CHROMA_V, tr_depth_cur),
+                        getCbf     ( abs_part_idx, TEXT_CHROMA_V, tr_depth_cur ));
                 }
             }
             else if(Log2TrafoSize == 2)
             {
-                VM_ASSERT( get_cbf( abs_part_idx, TEXT_CHROMA_U, tr_depth_cur ) == get_cbf( abs_part_idx, TEXT_CHROMA_U, tr_depth_cur - 1 ) );
-                VM_ASSERT( get_cbf( abs_part_idx, TEXT_CHROMA_V, tr_depth_cur ) == get_cbf( abs_part_idx, TEXT_CHROMA_V, tr_depth_cur - 1 ) );
+                VM_ASSERT( getCbf( abs_part_idx, TEXT_CHROMA_U, tr_depth_cur ) == get_cbf( abs_part_idx, TEXT_CHROMA_U, tr_depth_cur - 1 ) );
+                VM_ASSERT( getCbf( abs_part_idx, TEXT_CHROMA_V, tr_depth_cur ) == get_cbf( abs_part_idx, TEXT_CHROMA_V, tr_depth_cur - 1 ) );
             }
         }
 
@@ -1040,18 +1040,18 @@ void H265CU::put_transform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_chroma,
         else
         {
             Ipp32u luma_tr_mode, chroma_tr_mode;
-            convert_trans_idx( abs_part_idx, data[abs_part_idx].tr_idx, luma_tr_mode, chroma_tr_mode );
+            convertTransIdx( abs_part_idx, data[abs_part_idx].trIdx, luma_tr_mode, chroma_tr_mode );
 
-            if (data[abs_part_idx].pred_mode != MODE_INTRA && depth == data[abs_part_idx].depth &&
-                !get_cbf( abs_part_idx, TEXT_CHROMA_U, 0 ) && !get_cbf( abs_part_idx, TEXT_CHROMA_V, 0 ))
+            if (data[abs_part_idx].predMode != MODE_INTRA && depth == data[abs_part_idx].depth &&
+                !getCbf( abs_part_idx, TEXT_CHROMA_U, 0 ) && !getCbf( abs_part_idx, TEXT_CHROMA_V, 0 ))
             {
                 VM_ASSERT( get_cbf( abs_part_idx, TEXT_LUMA, 0 ) );
             }
             else
             {
                 bs->EncodeSingleBin_CABAC(CTX(bs,QT_CBF_HEVC) +
-                    get_ctx_qt_cbf(abs_part_idx, TEXT_LUMA, luma_tr_mode),
-                    get_cbf     ( abs_part_idx, TEXT_LUMA, luma_tr_mode ));
+                    getCtxQtCbf(abs_part_idx, TEXT_LUMA, luma_tr_mode),
+                    getCbf     ( abs_part_idx, TEXT_LUMA, luma_tr_mode ));
             }
 //    printf("CBFY: %d\n",cbfY);
 
@@ -1062,7 +1062,7 @@ void H265CU::put_transform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_chroma,
                 {
                     if (code_dqp)
                     {
-                        h265_code_delta_qp(bs, this, bak_abs_part_idxCU);
+                        h265_code_delta_qp(bs, this, bakAbsPartIdxCu);
                         code_dqp = 0;
                     }
                 }
@@ -1095,11 +1095,11 @@ void H265CU::put_transform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_chroma,
                     Ipp32s tr_height = height;
                     if (cbfU)
                     {
-                        h265_code_coeff_NxN(bs, this, (tr_coeff_u+bak_chroma_offset), bak_abs_part_idx, tr_width, tr_height, TEXT_CHROMA_U );
+                        h265_code_coeff_NxN(bs, this, (tr_coeff_u+bakChromaOffset), bakAbsPartIdx, tr_width, tr_height, TEXT_CHROMA_U );
                     }
                     if (cbfV)
                     {
-                        h265_code_coeff_NxN(bs, this, (tr_coeff_v+bak_chroma_offset), bak_abs_part_idx, tr_width, tr_height, TEXT_CHROMA_V );
+                        h265_code_coeff_NxN(bs, this, (tr_coeff_v+bakChromaOffset), bakAbsPartIdx, tr_width, tr_height, TEXT_CHROMA_V );
                     }
                 }
             }
@@ -1115,14 +1115,14 @@ void H265CU::encode_coeff(H265Bs* bs, Ipp32u abs_part_idx, Ipp32u depth, Ipp32u 
     Ipp32u chroma_offset = luma_offset>>2;
 
     Ipp32u luma_tr_mode, chroma_tr_mode;
-    luma_tr_mode = chroma_tr_mode = data[abs_part_idx].tr_idx;
+    luma_tr_mode = chroma_tr_mode = data[abs_part_idx].trIdx;
 
-    if (data[abs_part_idx].pred_mode == MODE_INTER)
+    if (data[abs_part_idx].predMode == MODE_INTER)
     {
-        if (!(data[abs_part_idx].flags.merge_flag && data[abs_part_idx].part_size == PART_SIZE_2Nx2N ))
+        if (!(data[abs_part_idx].flags.mergeFlag && data[abs_part_idx].partSize == PART_SIZE_2Nx2N ))
         {
             h265_code_qt_root_cbf(bs, this, abs_part_idx );
-            if (!get_qt_root_cbf( abs_part_idx ))
+            if (!getQtRootCbf( abs_part_idx ))
             {
                 return;
             }
@@ -1139,7 +1139,7 @@ template <class H265Bs>
 static
 void h265_encode_PU_inter(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
 {
-  Ipp8u part_size = pCU->data[abs_part_idx].part_size;
+  Ipp8u part_size = pCU->data[abs_part_idx].partSize;
   Ipp32u num_PU = (part_size == PART_SIZE_2Nx2N ? 1 : (part_size == PART_SIZE_NxN ? 4 : 2));
   Ipp32u depth = pCU->data[abs_part_idx].depth;
   Ipp32u offset = (h265_PU_offset[part_size] << ((pCU->par->MaxCUDepth - depth) << 1)) >> 4;
@@ -1148,7 +1148,7 @@ void h265_encode_PU_inter(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
   for (Ipp32u part_idx = 0; part_idx < num_PU; part_idx++)
   {
     h265_code_merge_flag(bs, pCU, sub_part_idx);
-    if (pCU->data[sub_part_idx].flags.merge_flag)
+    if (pCU->data[sub_part_idx].flags.mergeFlag)
     {
         h265_code_merge_index(bs, pCU, sub_part_idx);
     }
@@ -1160,7 +1160,7 @@ void h265_encode_PU_inter(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
         for (Ipp8u ref_list_idx = 0; ref_list_idx < 2; ref_list_idx++)
         {
             Ipp32s num_ref_idx = pCU->cslice->num_ref_idx[ref_list_idx];
-            if (num_ref_idx > 0 && (pCU->data[sub_part_idx].inter_dir & (1 << ref_list_idx))) {
+            if (num_ref_idx > 0 && (pCU->data[sub_part_idx].interDir & (1 << ref_list_idx))) {
                 if (num_ref_idx > 1) {
                     h265_code_reffrm_idx(bs, pCU, sub_part_idx, (EnumRefPicList)ref_list_idx);
                 }
@@ -1257,13 +1257,13 @@ void H265CU::xEncodeCU(H265Bs *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_m
 
     if(cslice->slice_type != I_SLICE)
     {
-        Ipp8u skipped_flag = data[abs_part_idx].pred_mode == MODE_INTER &&
-            data[abs_part_idx].part_size == PART_SIZE_2Nx2N && data[abs_part_idx].flags.merge_flag &&
-            !get_qt_root_cbf(abs_part_idx);
+        Ipp8u skipped_flag = data[abs_part_idx].predMode == MODE_INTER &&
+            data[abs_part_idx].partSize == PART_SIZE_2Nx2N && data[abs_part_idx].flags.mergeFlag &&
+            !getQtRootCbf(abs_part_idx);
         Ipp32u num_parts = ( par->NumPartInCU >> (depth<<1) );
 
         for (Ipp32u i = 0; i < num_parts; i++)
-            data[abs_part_idx + i].flags.skipped_flag = skipped_flag;
+            data[abs_part_idx + i].flags.skippedFlag = skipped_flag;
 
         h265_code_skip_flag(bs, pCU, abs_part_idx );
         if (skipped_flag)
@@ -1277,13 +1277,13 @@ void H265CU::xEncodeCU(H265Bs *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_m
 
     h265_code_part_size(bs, pCU, abs_part_idx, depth );
 
-    if (data[abs_part_idx].pred_mode == MODE_INTRA &&
-        data[abs_part_idx].part_size == PART_SIZE_2Nx2N )
+    if (data[abs_part_idx].predMode == MODE_INTRA &&
+        data[abs_part_idx].partSize == PART_SIZE_2Nx2N )
     {
         // IPCM fixme
     }
 
-    if (rd_mode == RD_CU_MODES && data[abs_part_idx].pred_mode == MODE_INTRA) return;
+    if (rd_mode == RD_CU_MODES && data[abs_part_idx].predMode == MODE_INTRA) return;
 
     // prediction Info ( Intra : direction mode, Inter : Mv, reference idx )
     h265_encode_pred_info(bs, pCU, abs_part_idx );
