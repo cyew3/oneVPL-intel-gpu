@@ -807,9 +807,7 @@ DEF_STRUCT_TRACE(mfxCoreParam){
 };
 
 DEF_STRUCT_TRACE(mfxPluginUID){
-    os  << "{\n"
-        << PUT_ARR(Data, 16)
-        << print_param.padding << '}';
+    os  << hexstr(p.Data, 16);
     return os;
 };
 #endif

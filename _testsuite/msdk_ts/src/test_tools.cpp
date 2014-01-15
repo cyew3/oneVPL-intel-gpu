@@ -571,28 +571,29 @@ msdk_ts_BLOCK(t_ParseHEVCAU){
 }
 
 msdk_ts_BLOCK(t_NewBsParser){
-    Bs32u& id = var_old<mfxU32>("parser_id");
+    Bs32u& id   = var_old<mfxU32>("parser_id");
+    Bs32u& mode = var_def<mfxU32>("parser_mode", 0);
     BS_parser* parser = NULL;
     char* f = NULL;
 
     switch(id){
     case MFX_CODEC_AVC: 
-        parser = &var_old_or_new<BS_H264_parser>("bs_parser");
+        parser = &var_new<BS_H264_parser>("bs_parser", new BS_H264_parser(mode));
         break;
     case MFX_CODEC_MPEG2: 
-        parser = &var_old_or_new<BS_MPEG2_parser>("bs_parser");
+        parser = &var_new<BS_MPEG2_parser>("bs_parser", new BS_MPEG2_parser(mode));
         break;
     case MFX_CODEC_VC1: 
-        parser = &var_old_or_new<BS_VC1_parser>("bs_parser");
+        parser = &var_new<BS_VC1_parser>("bs_parser");
         break;
     case MFX_CODEC_VP8: 
-        parser = &var_old_or_new<BS_VP8_parser>("bs_parser");
+        parser = &var_new<BS_VP8_parser>("bs_parser");
         break;
     case MFX_CODEC_HEVC: 
-        parser = &var_old_or_new<BS_HEVC_parser>("bs_parser");
+        parser = &var_new<BS_HEVC_parser>("bs_parser", new BS_HEVC_parser(mode));
         break;
     case MFX_CODEC_JPEG: 
-        parser = &var_old_or_new<BS_JPEG_parser>("bs_parser");
+        parser = &var_new<BS_JPEG_parser>("bs_parser");
         break;
     default: 
         RETERR(resFAIL, "Unknown parser_id: " << id);
