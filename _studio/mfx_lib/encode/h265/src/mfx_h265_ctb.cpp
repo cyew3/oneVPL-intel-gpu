@@ -1431,7 +1431,7 @@ Ipp32s H265CU::MVCost( H265MV MV[2], T_RefIdx curRefIdx[2], MVPInfo *pInfo, MVPI
             pInfo += 2 * curRefIdx[rlist];
             for (i=0; i<pInfo[rlist].numCand; i++) {
                 if(curRefIdx[rlist] == pInfo[rlist].refIdx[i]) {
-                    cost = lamb * (2+i)/2 +  lamb * MV[rlist].qdiff(pInfo[rlist].mvCand[i])*2;
+                    cost = lamb * (2+i)/2 +  lamb * qdiff(&MV[rlist], &pInfo[rlist].mvCand[i])*2;
                     if(i==0 || mincost > cost)
                         mincost = cost;
                 }
@@ -1998,8 +1998,8 @@ void H265CU::ME_PU(H265MEInfo* me_info)
     GetPUMVPredictorInfo(blockIdx, partAddr, me_info->split_mode, curPUidx, pInfo, mergeInfo);
     PixType *pSrc = y_src + me_info->posx + me_info->posy * pitch_src;
 
-    H265MV MV_cur(0, 0);
-    H265MV MV_pred(0, 0); // predicted MV, now use zero MV
+    H265MV MV_cur = {0, 0};
+    H265MV MV_pred = {0, 0}; // predicted MV, now use zero MV
     T_RefIdx curRefIdx[2] = {-1, -1};
     H265MV MV_best_ref[2][H265_MAXNUMREF];
     Ipp32s cost_best_ref[2][H265_MAXNUMREF];
@@ -2173,7 +2173,7 @@ void H265CU::ME_PU(H265MEInfo* me_info)
                 for (ME_pos = start; ME_pos < start+len; ME_pos++) {
                     MV[ME_dir].mvx = MV_cur.mvx + ME_Cpattern[ME_pos][0] * ME_step * 1;
                     MV[ME_dir].mvy = MV_cur.mvy + ME_Cpattern[ME_pos][1] * ME_step * 1;
-                    H265MV MVorig( MV[ME_dir].mvx, MV[ME_dir].mvy);
+                    H265MV MVorig = { MV[ME_dir].mvx, MV[ME_dir].mvy };
                     clipMV(MV[ME_dir]);
                     cost_temp = MatchingMetric_PU( pSrc, me_info, &MV[ME_dir], PicYUVRef) + //MV_pred.qdiff(MV, par->QP);
                         MVCost( MV, curRefIdx, pInfo, mergeInfo);
@@ -4116,6 +4116,32 @@ CostType H265CU::CalcCostSkip(Ipp32u abs_part_idx, Ipp8u depth)
 
     return cost_best;
 }
+
+// MV functions
+Ipp32s operator == (const H265MV &mv1, const H265MV &mv2)
+{ return mv1.mvx == mv2.mvx && mv1.mvy == mv2.mvy; }
+
+Ipp32s operator != (const H265MV &mv1, const H265MV &mv2)
+{ return !(mv1.mvx == mv2.mvx && mv1.mvy == mv2.mvy); }
+
+Ipp32s qdiff(const H265MV *mv1, const H265MV *mv2)
+{
+    H265MV mvdiff = {mv1->mvx - mv2->mvx, mv1->mvy - mv2->mvy};
+    return qcost(&mvdiff);
+}
+
+Ipp32s qcost(const H265MV *mv)
+{
+    Ipp32s dx = ABS(mv->mvx), dy = ABS(mv->mvy);
+    //return dx*dx + dy*dy;
+    //Ipp32s i;
+    //for(i=0; (dx>>i)!=0; i++);
+    //dx = i;
+    //for(i=0; (dy>>i)!=0; i++);
+    //dy = i;
+    return (dx + dy);
+}
+
 
 } // namespace
 

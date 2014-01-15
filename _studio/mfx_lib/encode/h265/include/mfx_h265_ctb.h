@@ -22,6 +22,24 @@ using namespace MFX_HEVC_PP;
 
 namespace H265Enc {
 
+typedef struct
+{
+    Ipp16s  mvx;
+    Ipp16s  mvy;
+} H265MV;
+
+typedef struct
+{
+    H265MV   mvCand[10];
+    T_RefIdx refIdx[10];
+    Ipp32s      numCand;
+} MVPInfo;
+
+Ipp32s operator == (const H265MV &mv1, const H265MV &mv2);
+Ipp32s operator != (const H265MV &mv1, const H265MV &mv2);
+Ipp32s qdiff(const H265MV *mv1, const H265MV *mv2);
+Ipp32s qcost(const H265MV *mv);
+
 struct H265CUData
 {
 public:

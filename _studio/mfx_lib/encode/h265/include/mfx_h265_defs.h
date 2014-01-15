@@ -158,52 +158,6 @@ typedef Ipp64f CostType;
 #define H265_MAXNUMREF  4
 #define PGOP_PIC_SIZE 4
 
-struct H265MV
-{
-    Ipp16s  mvx;
-    Ipp16s  mvy;
-
-    bool is_zero() const
-    { return ((mvx|mvy) == 0); }
-
-    Ipp32s operator == (const H265MV &mv) const
-    { return mvx == mv.mvx && mvy == mv.mvy; };
-
-    Ipp32s operator != (const H265MV &mv) const
-    { return !(*this == mv); };
-    H265MV() :
-        mvx(0),
-        mvy(0)
-    {
-    }    H265MV( Ipp16s iHor, Ipp16s iVer ) :
-        mvx(iHor),
-        mvy(iVer)
-    {
-    }
-    const H265MV scaleMv( Ipp32s iScale ) const
-    {
-        Ipp16s _mvx = (Ipp16s)Saturate( -32768, 32767, (iScale * mvx + 127 + (iScale * mvx < 0)) >> 8 );
-        Ipp16s _mvy = (Ipp16s)Saturate( -32768, 32767, (iScale * mvy + 127 + (iScale * mvy < 0)) >> 8 );
-        return H265MV( _mvx, _mvy );
-    }
-    Ipp32s qdiff(const H265MV &mv) const
-    {
-        return H265MV( mvx - mv.mvx, mvy - mv.mvy).qcost();
-    }
-    Ipp32s qcost() const
-    {
-        Ipp32s dx = ABS(mvx), dy = ABS(mvy);
-        //return dx*dx + dy*dy;
-        //Ipp32s i;
-        //for(i=0; (dx>>i)!=0; i++);
-        //dx = i;
-        //for(i=0; (dy>>i)!=0; i++);
-        //dy = i;
-        return (dx + dy);
-    }
-
-};//4bytes
-
 enum EnumSliceType {
     B_SLICE     = 0,
     P_SLICE     = 1,
@@ -373,13 +327,6 @@ enum NalUnitType
 struct H265VideoParam;
 class H265Encoder;
 class H265Frame;
-
-typedef struct
-{
-    H265MV   mvCand[10];
-    T_RefIdx refIdx[10];
-    Ipp32s      numCand;
-} MVPInfo;
 
 struct EncoderRefPicListStruct
 {
