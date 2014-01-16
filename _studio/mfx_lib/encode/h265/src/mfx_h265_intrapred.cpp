@@ -824,7 +824,7 @@ void H265CU::IntraLumaModeDecision(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u dep
         PixType *pred_ptr = pred_intra_all;
 
         MFX_HEVC_PP::h265_PredictIntra_Planar_8u(INTRA_HOR <= h265_filteredModes[h265_log2table[width - 4] - 2] ? predPel : predPelFilt, pred_ptr, width, width);
-        cost = h265_tu_had(pSrc, pred_ptr, pitch_src, width, width, width);
+        cost = tuHad(pSrc, pitch_src, pred_ptr, width, width, width);
         pred_ptr += width * width;
         data = data_save;
         FillSubPart(abs_part_idx, depth, tr_depth, part_size, INTRA_PLANAR, par->QP);
@@ -832,7 +832,7 @@ void H265CU::IntraLumaModeDecision(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u dep
         StoreFewBestModes(cost + intra_mode_bitcost[INTRA_PLANAR], INTRA_PLANAR, intra_best_costs, intra_best_modes, num_cand);
 
         MFX_HEVC_PP::h265_PredictIntra_DC_8u(predPel, pred_ptr, width, width, 1);
-        cost = h265_tu_had(pSrc, pred_ptr, pitch_src, width, width, width);
+        cost = tuHad(pSrc, pitch_src, pred_ptr, width, width, width);
         pred_ptr += width * width;
         FillSubPartIntraLumaDir(abs_part_idx, depth, tr_depth, INTRA_DC);
         intra_mode_bitcost[INTRA_DC] = GetIntraLumaBitCost(this, abs_part_idx);
@@ -845,8 +845,8 @@ void H265CU::IntraLumaModeDecision(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u dep
         Ipp8u step = (Ipp8u)par->intraAngModes;
         for (Ipp8u luma_dir = 2; luma_dir < 35; luma_dir += step) {
             cost = (luma_dir < 18)
-                ? h265_tu_had(tu_src_transposed, pred_ptr, width, width, width, width)
-                : h265_tu_had(pSrc, pred_ptr, pitch_src, width, width, width);
+                ? tuHad(tu_src_transposed, width, pred_ptr, width, width, width)
+                : tuHad(pSrc, pitch_src, pred_ptr, width, width, width);
             FillSubPartIntraLumaDir(abs_part_idx, depth, tr_depth, luma_dir);
             intra_mode_bitcost[luma_dir] = GetIntraLumaBitCost(this, abs_part_idx);
             StoreFewBestModes(cost + intra_mode_bitcost[luma_dir], luma_dir, intra_best_costs, intra_best_modes, num_cand);
@@ -897,8 +897,8 @@ void H265CU::IntraLumaModeDecision(Ipp32s abs_part_idx, Ipp32u offset, Ipp8u dep
 
                 MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_NoTranspose_8u)(luma_dir, pred_pels, pred_ptr, width, width);
                 cost = (luma_dir < 18)
-                    ? h265_tu_had(tu_src_transposed, pred_ptr, width, width, width, width)
-                    : h265_tu_had(pSrc, pred_ptr, pitch_src, width, width, width);
+                    ? tuHad(tu_src_transposed, width, pred_ptr, width, width, width)
+                    : tuHad(pSrc, pitch_src, pred_ptr, width, width, width);
 
                 FillSubPartIntraLumaDir(abs_part_idx, depth, tr_depth, luma_dir);
                 intra_mode_bitcost[luma_dir] = GetIntraLumaBitCost(this, abs_part_idx);

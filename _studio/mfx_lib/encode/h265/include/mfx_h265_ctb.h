@@ -94,7 +94,7 @@ struct H265MEInfo
 
     Ipp32u absPartIdx;
     Ipp8u inter_dir;   // INTER_DIR_PRED_LX
-    Ipp8u split_mode;
+    Ipp8u splitMode;
     Ipp8u depth;
     Ipp8u must_split; // part of CU is out of the frame
     Ipp8u excluded;   // completely out of the frame
@@ -176,7 +176,7 @@ public:
     // storing predictions for bidir
 #define INTERP_BUF_SZ 8 // must be power of 2
     struct interp_store {
-        __ALIGN32 Ipp16s pred_buf_y[MAX_CU_SIZE*MAX_CU_SIZE];
+        __ALIGN32 Ipp16s predBufY[MAX_CU_SIZE*MAX_CU_SIZE];
         PixType * pY;
         H265MV MV;
     } interp_buf[INTERP_BUF_SZ];
@@ -384,25 +384,25 @@ public:
         const Ipp8u* slice_ids);
 
     void GetStatisticsCtuSao_Predeblocked( const MFX_HEVC_PP::CTBBorders & borders );
-    void FillSubPart(Ipp32s abs_part_idx, Ipp8u depth_cu, Ipp8u tr_idx,
-        Ipp8u part_size, Ipp8u luma_dir, Ipp8u qp);
-    void FillSubPartIntraLumaDir(Ipp32s abs_part_idx, Ipp8u depth_cu, Ipp8u tr_depth, Ipp8u luma_dir);
-    void CopySubPartTo(H265CUData *data_copy, Ipp32s abs_part_idx, Ipp8u depth_cu, Ipp8u tr_depth);
-    void CalcCostLuma(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u depth,
-                          Ipp8u tr_depth, CostOpt cost_opt,
-                          Ipp8u part_size, Ipp8u luma_dir, CostType *cost);
-    CostType CalcCostSkip(Ipp32u abs_part_idx, Ipp8u depth);
+    void FillSubPart(Ipp32s absPartIdx, Ipp8u depthCu, Ipp8u trIdx,
+                     Ipp8u partSize, Ipp8u lumaDir, Ipp8u qp);
+    void FillSubPartIntraLumaDir(Ipp32s absPartIdx, Ipp8u depthCu, Ipp8u trDepth, Ipp8u lumaDir);
+    void CopySubPartTo(H265CUData *dataCopy, Ipp32s absPartIdx, Ipp8u depthCu, Ipp8u trDepth);
+    void CalcCostLuma(Ipp32u absPartIdx, Ipp32s offset, Ipp8u depth,
+                      Ipp8u trDepth, CostOpt costOpt,
+                      Ipp8u partSize, Ipp8u lumaDir, CostType *cost);
+    CostType CalcCostSkip(Ipp32u absPartIdx, Ipp8u depth);
 
-    CostType ME_CU(Ipp32u abs_part_idx, Ipp8u depth, Ipp32s offset);
-    void ME_PU(H265MEInfo* me_info);
-    CostType CU_cost(Ipp32u abs_part_idx, Ipp8u depth, const H265MEInfo* best_info, Ipp32s offset, Ipp32s fastPUDecision);
-    void TU_GetSplitInter(Ipp32u abs_part_idx, Ipp32s offset, Ipp8u tr_idx, Ipp8u tr_idx_max, Ipp8u *nz, CostType *cost);
+    CostType MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset);
+    void MePu(H265MEInfo* me_info);
+    CostType CuCost(Ipp32u absPartIdx, Ipp8u depth, const H265MEInfo* bestInfo, Ipp32s offset, Ipp32s fastPUDecision);
+    void TuGetSplitInter(Ipp32u absPartIdx, Ipp32s offset, Ipp8u trIdx, Ipp8u trIdxMax, Ipp8u *nz, CostType *cost);
     void DetailsXY(H265MEInfo* me_info) const;
     void ME_Interpolate_old(H265MEInfo* me_info, H265MV* MV, PixType *in_pSrc, Ipp32s in_SrcPitch, Ipp16s *buf, Ipp32s buf_pitch) const;
     void ME_Interpolate(H265MEInfo* me_info, H265MV* MV, PixType *in_pSrc, Ipp32s in_SrcPitch, Ipp8u *buf, Ipp32s buf_pitch) const;
     void ME_Interpolate_new_need_debug(H265MEInfo* me_info, H265MV* MV1, PixType *in_pSrc1, Ipp32s in_SrcPitch1, H265MV* MV2, PixType *in_pSrc2, Ipp32s in_SrcPitch2, Ipp8u *buf, Ipp32s buf_pitch) const;
     Ipp32s MatchingMetric_PU(PixType *pSrc, H265MEInfo* me_info, H265MV* MV, H265Frame *PicYUVRef) const;
-    Ipp32s MatchingMetricBipred_PU(PixType *pSrc, H265MEInfo* me_info, PixType *y_fwd, Ipp32u pitch_fwd, PixType *y_bwd, Ipp32u pitch_bwd, H265MV MV[2]);
+    Ipp32s MatchingMetricBipred_PU(PixType *pSrc, H265MEInfo* meInfo, PixType *yFwd, Ipp32u pitchFwd, PixType *yBwd, Ipp32u pitchBwd, H265MV fullMV[2]);
     Ipp32s MVCost( H265MV MV[2], T_RefIdx ref_idx[2], MVPInfo pInfo[2], MVPInfo& mergeInfo) const;
 
     void InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTemp, Ipp32s cuAddr,
@@ -437,8 +437,9 @@ void h265_code_sao_ctb_param(
 
 Ipp32s GetLumaOffset(H265VideoParam *par, Ipp32s abs_part_idx, Ipp32s pitch);
 
-Ipp32s h265_tu_had(PixType *src, PixType *rec,
-                   Ipp32s pitch_src, Ipp32s pitch_rec, Ipp32s width, Ipp32s height);
+Ipp32s tuHad(const PixType *src, Ipp32s pitch_src,
+             const PixType *rec, Ipp32s pitch_rec,
+             Ipp32s width, Ipp32s height);
 
 } // namespace
 
