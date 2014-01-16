@@ -1685,8 +1685,14 @@ mfxStatus MFXVideoENCODEH265::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
             mfxI32 dpb_output_delay = (m_enc->m_pCurrentFrame->m_PicCodType == MFX_FRAMETYPE_B) ? 0 : m_frameCountBuffered + (m_mfxVideoParam.mfx.GopRefDist > 1 ? 1 : 0);
             mfxF64 tcDuration90KHz = (mfxF64)m_mfxVideoParam.mfx.FrameInfo.FrameRateExtD / m_mfxVideoParam.mfx.FrameInfo.FrameRateExtN * 90000; // calculate tick duration
             bitstream->DecodeTimeStamp = mfxI64(bitstream->TimeStamp - tcDuration90KHz * dpb_output_delay); // calculate DTS from PTS
-        }
 
+            // Set FrameType
+            bs->FrameType = m_enc->m_pCurrentFrame->m_PicCodType;
+            if (m_enc->m_pCurrentFrame->m_bIsIDRPic)
+                bs->FrameType |= MFX_FRAMETYPE_IDR;
+            if (m_enc->m_pCurrentFrame->m_isShortTermRef || m_enc->m_pCurrentFrame->m_isLongTermRef)
+                bs->FrameType |= MFX_FRAMETYPE_REF;
+        }
     }
 
     if (mfxRes == MFX_ERR_MORE_DATA)
