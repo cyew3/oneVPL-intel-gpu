@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2013 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -257,7 +257,7 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
             H265DecoderFrameInfo * au = m_FirstAU;
             for (; au; au = au->GetNextAU())
             {
-                if (pStatusReport[i].current_picture.Index7bits == au->m_pFrame->m_index)
+                if (pStatusReport[i].current_picture.Index7Bits == au->m_pFrame->m_index)
                 {
                     switch (pStatusReport[i].bStatus)
                     {
@@ -287,9 +287,9 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
 
             if (!wasFound)
             {
-                if (std::find(m_reports.begin(), m_reports.end(), ReportItem(pStatusReport[i].current_picture.Index7bits, 0/*field*/, 0)) == m_reports.end())
+                if (std::find(m_reports.begin(), m_reports.end(), ReportItem(pStatusReport[i].current_picture.Index7Bits, 0/*field*/, 0)) == m_reports.end())
                 {
-                    m_reports.push_back(ReportItem(pStatusReport[i].current_picture.Index7bits, 0/*field*/, pStatusReport[i].bStatus));
+                    m_reports.push_back(ReportItem(pStatusReport[i].current_picture.Index7Bits, 0/*field*/, pStatusReport[i].bStatus));
                     wasCompleted = true;
                 }
             }

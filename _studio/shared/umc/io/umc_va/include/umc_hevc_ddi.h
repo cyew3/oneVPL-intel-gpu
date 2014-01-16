@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2006-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2006-2014 Intel Corporation. All Rights Reserved.
 */
 
 #ifndef __UMC_HEVC_DDI_H
@@ -15,6 +15,7 @@
 #define MK_HEVCVER(j, n)    (((j & 0x0000ffff) << 16) | (n & 0x0000ffff))
 #define HEVC_SPEC_VER       MK_HEVCVER(0, 85)
 
+#pragma pack(1)
 
 typedef struct _DXVA_Intel_PicEntry_HEVC
 {
@@ -32,17 +33,13 @@ typedef struct _DXVA_Intel_PicEntry_HEVC
 } DXVA_Intel_PicEntry_HEVC, *LPDXVA_Intel_PicEntry_HEVC;
 
 typedef struct _DXVA_Intel_Status_HEVC {
-  UINT                      StatusReportFeedbackNumber;
-  DXVA_Intel_PicEntry_HEVC        current_picture; /* flag is bot field flag */
-  UCHAR                     field_pic_flag;
-  UCHAR                     bDXVA_Func;
+  USHORT                    StatusReportFeedbackNumber;
+  DXVA_PicEntry_HEVC        current_picture; /* flag is bot field flag */
   UCHAR                     bBufType;
   UCHAR                     bStatus;
   UCHAR                     bReserved8Bits;
   USHORT                    wNumMbsAffected;
 } DXVA_Intel_Status_HEVC, *LPDXVA_Intel_Status_HEVC;
-
-
 
 #if HEVC_SPEC_VER == MK_HEVCVER(0, 83)
 
@@ -621,5 +618,6 @@ typedef struct _DXVA_Intel_Qmatrix_HEVC
 #endif
 } DXVA_Intel_Qmatrix_HEVC, *LPDXVA_Intel_Qmatrix_HEVC;
 
+#pragma pack()
 
 #endif __UMC_HEVC_DDI_H

@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -76,7 +76,7 @@ UMC::Status VATaskSupplier::Init(UMC::BaseCodecParams *pInit)
 
     if (m_va && !m_va->IsSimulate())
     {
-        ((TaskBrokerSingleThreadDXVA*)m_pTaskBroker)->DXVAStatusReportingMode(false);//m_va->m_HWPlatform != UMC::VA_HW_LAKE && m_va->m_HWPlatform != UMC::VA_HW_HSW);
+        ((TaskBrokerSingleThreadDXVA*)m_pTaskBroker)->DXVAStatusReportingMode(m_va->m_HWPlatform != UMC::VA_HW_LAKE);
         m_DPBSizeEx = 1;
     }
 
