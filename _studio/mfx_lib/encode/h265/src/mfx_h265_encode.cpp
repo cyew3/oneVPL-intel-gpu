@@ -1557,8 +1557,8 @@ mfxStatus MFXVideoENCODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, m
     mfxU16 nFrames = IPP_MIN(par->mfx.GopRefDist, H265_MAXREFDIST); // 1 for current and GopRefDist - 1 for reordering
 
     if( nFrames == 0 ){
-        nFrames = 1; // 1 for current
-        // to add if B-frames from target usage
+        // curr + number of B-frames from target usage
+        nFrames = hevc_tu_tab_GopRefDist[par->mfx.TargetUsage];
     }
     request->NumFrameMin = nFrames;
     request->NumFrameSuggested = IPP_MAX(nFrames,par->AsyncDepth);
