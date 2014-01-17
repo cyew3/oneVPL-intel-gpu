@@ -63,8 +63,8 @@ public:
         Ipp32s code)
     {
         register Ipp8u pStateIdx = *ctx;
-        m_base.m_bitOffset += h265_cabac_p_bits[pStateIdx ^ (code << 6)];
-        *ctx = h265_cabac_transTbl[code][pStateIdx];
+        m_base.m_bitOffset += tab_cabacPBits[pStateIdx ^ (code << 6)];
+        *ctx = tab_cabacTransTbl[code][pStateIdx];
     }
 
     inline void EncodeBinEP_CABAC(Ipp32u code)
@@ -92,10 +92,10 @@ public:
         small_memcpy(m_base.context_array + offset, ptr + offset, num*sizeof(CABAC_CONTEXT_H265));
     }
     inline void CtxSave(CABAC_CONTEXT_H265 *ptr, Ipp32s ctxCategory) {
-        CtxSave(ptr, h265_ctxIdxOffset[ctxCategory], h265_ctxIdxSize[ctxCategory]);
+        CtxSave(ptr, tab_ctxIdxOffset[ctxCategory], tab_ctxIdxSize[ctxCategory]);
     }
     inline void CtxRestore(CABAC_CONTEXT_H265 *ptr, Ipp32s ctxCategory) {
-        CtxRestore(ptr, h265_ctxIdxOffset[ctxCategory], h265_ctxIdxSize[ctxCategory]);
+        CtxRestore(ptr, tab_ctxIdxOffset[ctxCategory], tab_ctxIdxSize[ctxCategory]);
     }
 
     int isReal() { return 0; }
@@ -141,12 +141,12 @@ public:
 
     void CtxSaveWPP(CABAC_CONTEXT_H265 *context_array_wpp) {
         small_memcpy(context_array_wpp, m_base.context_array,
-            h265_ctxIdxOffset[END_OF_SLICE_FLAG_HEVC] * sizeof(CABAC_CONTEXT_H265));
+            tab_ctxIdxOffset[END_OF_SLICE_FLAG_HEVC] * sizeof(CABAC_CONTEXT_H265));
     }
     void CtxRestoreWPP(CABAC_CONTEXT_H265 *context_array_wpp) {
         small_memcpy(m_base.context_array, context_array_wpp,
-            h265_ctxIdxOffset[END_OF_SLICE_FLAG_HEVC] * sizeof(CABAC_CONTEXT_H265));
-        m_base.context_array[h265_ctxIdxOffset[END_OF_SLICE_FLAG_HEVC]] = 63;
+            tab_ctxIdxOffset[END_OF_SLICE_FLAG_HEVC] * sizeof(CABAC_CONTEXT_H265));
+        m_base.context_array[tab_ctxIdxOffset[END_OF_SLICE_FLAG_HEVC]] = 63;
     }
 };
 

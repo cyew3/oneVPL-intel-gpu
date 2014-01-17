@@ -99,7 +99,7 @@ RDOQuant::RDOQuant(H265CU* pCU, H265BsFake* bs)
 {
     m_pCU    = pCU;
     m_bs     = bs;
-    m_lambda = m_pCU->rd_lambda;
+    m_lambda = m_pCU->m_rdLambda;
 
     m_lambda *= 256;//to meet HM10 code
 
@@ -120,12 +120,10 @@ Ipp32s GetEntropyBits(
 {
     register Ipp8u pStateIdx = *ctx;
 
-    Ipp32s bits = h265_cabac_p_bits[pStateIdx ^ (code << 6)];
+    Ipp32s bits = tab_cabacPBits[pStateIdx ^ (code << 6)];
 
     //return (128 * bits);
     return (bits << 7);
-
-    //return h265_cabac_p_bits_AYA[ pStateIdx ^ (code << 6) ];
 }
 
 
@@ -639,10 +637,10 @@ void RDOQuant::DoAlgorithm(
     Ipp64f cost_best   = 0.0f;
     Ipp32u ctx_cbf_inc = 0;
 
-    bool isRootCbf = (!m_pCU->isIntra(abs_part_idx) && m_pCU->getTransformIdx( abs_part_idx ) == 0);
+    bool isRootCbf = (!m_pCU->IsIntra(abs_part_idx) && m_pCU->GetTransformIdx( abs_part_idx ) == 0);
     if( !isRootCbf )
     {
-        ctx_cbf_inc = m_pCU->getCtxQtCbf(abs_part_idx, type, m_pCU->getTransformIdx(abs_part_idx) );
+        ctx_cbf_inc = m_pCU->GetCtxQtCbf(abs_part_idx, type, m_pCU->GetTransformIdx(abs_part_idx) );
     }
 
     cost_best  = cost_zero_blk + GetCost_Cbf(0, ctx_cbf_inc, isRootCbf);

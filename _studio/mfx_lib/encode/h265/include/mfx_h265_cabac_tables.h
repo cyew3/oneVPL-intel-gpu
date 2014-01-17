@@ -15,13 +15,11 @@
 
 namespace H265Enc {
 
-extern const Ipp32s h265_cabac_p_bits[128];
-extern const Ipp8u h265_cabac_transTbl[2][128];
-extern const Ipp32u h265_ctxIdxSize[MAIN_SYNTAX_ELEMENT_NUMBER_HEVC];
-extern const Ipp32u h265_ctxIdxOffset[MAIN_SYNTAX_ELEMENT_NUMBER_HEVC];
-extern const Ipp8u h265_cabac_rangeTabLPS[128][4];
-
-extern const Ipp32s h265_cabac_p_bits_AYA[128];
+extern const Ipp32s tab_cabacPBits[128];
+extern const Ipp8u  tab_cabacTransTbl[2][128];
+extern const Ipp32u tab_ctxIdxSize[MAIN_SYNTAX_ELEMENT_NUMBER_HEVC];
+extern const Ipp32u tab_ctxIdxOffset[MAIN_SYNTAX_ELEMENT_NUMBER_HEVC];
+extern const Ipp8u  tab_cabacRangeTabLps[128][4];
 
 } // namespace
 

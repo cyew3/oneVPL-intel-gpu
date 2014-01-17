@@ -148,50 +148,50 @@ Ipp32s h265_quant_getSigCtxInc(Ipp32s pattern_sig_ctx,
 }
 
 
-void H265CU::QuantInvTU(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, Ipp32s is_luma)
+void H265CU::QuantInvTu(Ipp32u abs_part_idx, Ipp32s offset, Ipp32s width, Ipp32s is_luma)
 {
-    Ipp32s QP = is_luma ? par->QP : par->QPChroma;
+    Ipp32s QP = is_luma ? m_par->QP : m_par->QPChroma;
     Ipp32s log2TrSize = h265_log2table[width - 4];
 
-    VM_ASSERT(!par->csps->sps_scaling_list_data_present_flag);
+    VM_ASSERT(!m_par->csps->sps_scaling_list_data_present_flag);
 
     for (Ipp32s c_idx = 0; c_idx < (is_luma ? 1 : 2); c_idx ++) {
-        CoeffsType *residuals = is_luma ? residuals_y : (c_idx ? residuals_v : residuals_u);
-        CoeffsType *coeff = is_luma ? tr_coeff_y : (c_idx ? tr_coeff_v : tr_coeff_u);
+        CoeffsType *residuals = is_luma ? m_residualsY : (c_idx ? m_residualsV : m_residualsU);
+        CoeffsType *coeff = is_luma ? m_trCoeffY : (c_idx ? m_trCoeffV : m_trCoeffU);
         h265_quant_inv(coeff + offset, NULL, residuals + offset, log2TrSize, BIT_DEPTH_LUMA, QP);
     }
 }
 
-void H265CU::QuantFwdTU(
+void H265CU::QuantFwdTu(
     Ipp32u abs_part_idx,
     Ipp32s offset,
     Ipp32s width,
     Ipp32s is_luma)
 {
-    Ipp32s QP = is_luma ? par->QP : par->QPChroma;
+    Ipp32s QP = is_luma ? m_par->QP : m_par->QPChroma;
     Ipp32s log2TrSize = h265_log2table[width - 4];
 
-    VM_ASSERT(!par->csps->sps_scaling_list_data_present_flag);
+    VM_ASSERT(!m_par->csps->sps_scaling_list_data_present_flag);
 
     for (Ipp32s c_idx = 0; c_idx < (is_luma ? 1 : 2); c_idx ++) {
-        CoeffsType *residuals = is_luma ? residuals_y : (c_idx ? residuals_v : residuals_u);
-        CoeffsType *coeff = is_luma ? tr_coeff_y : (c_idx ? tr_coeff_v : tr_coeff_u);
+        CoeffsType *residuals = is_luma ? m_residualsY : (c_idx ? m_residualsV : m_residualsU);
+        CoeffsType *coeff = is_luma ? m_trCoeffY : (c_idx ? m_trCoeffV : m_trCoeffU);
         Ipp32u abs_sum = 0;
 
-        if (is_luma && IsRDOQ()) {
+        if (is_luma && m_isRdoq) {
             h265_quant_fwd_rdo( this, residuals + offset, coeff + offset, log2TrSize,
-                                BIT_DEPTH_LUMA, cslice->slice_type == I_SLICE, abs_sum, TEXT_LUMA,
-                                abs_part_idx, QP, bsf );
+                                BIT_DEPTH_LUMA, m_cslice->slice_type == I_SLICE, abs_sum, TEXT_LUMA,
+                                abs_part_idx, QP, m_bsf );
         }
         else {
             Ipp32s delta_u[32*32];
             h265_quant_fwd_base( residuals + offset, coeff + offset, log2TrSize, BIT_DEPTH_LUMA,
-                                 cslice->slice_type == I_SLICE, QP,
-                                 par->cpps->sign_data_hiding_enabled_flag ? delta_u : NULL,
+                                 m_cslice->slice_type == I_SLICE, QP,
+                                 m_par->cpps->sign_data_hiding_enabled_flag ? delta_u : NULL,
                                  abs_sum );
 
-            if(this->par->cpps->sign_data_hiding_enabled_flag && abs_sum >= 2) {
-                Ipp32u scan_idx = getCoefScanIdx( abs_part_idx, width, is_luma, isIntra(abs_part_idx) );
+            if(this->m_par->cpps->sign_data_hiding_enabled_flag && abs_sum >= 2) {
+                Ipp32u scan_idx = GetCoefScanIdx( abs_part_idx, width, is_luma, IsIntra(abs_part_idx) );
 
                 if (scan_idx == COEFF_SCAN_ZIGZAG)
                     scan_idx = COEFF_SCAN_DIAG;

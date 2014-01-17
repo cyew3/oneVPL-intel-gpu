@@ -247,7 +247,7 @@ Ipp8u initVal_for_transform_skip_flag[3][2] =
     { 139,  139},
 };
 
-const Ipp32u h265_ctxIdxSize[MAIN_SYNTAX_ELEMENT_NUMBER_HEVC] =
+const Ipp32u tab_ctxIdxSize[MAIN_SYNTAX_ELEMENT_NUMBER_HEVC] =
 {
     10,
     1,
@@ -280,7 +280,7 @@ const Ipp32u h265_ctxIdxSize[MAIN_SYNTAX_ELEMENT_NUMBER_HEVC] =
 };
 
 const
-Ipp32u h265_ctxIdxOffset[MAIN_SYNTAX_ELEMENT_NUMBER_HEVC] =
+Ipp32u tab_ctxIdxOffset[MAIN_SYNTAX_ELEMENT_NUMBER_HEVC] =
 {
     0,
     10,
@@ -330,194 +330,194 @@ void InitializeContextVariablesHEVC_CABAC(CABAC_CONTEXT_H265 *context_hevc, Ipp3
     SliceQPy = IPP_MAX(0, SliceQPy);
 
     //transquant_bypass_flag
-    for (l = 0; l < h265_ctxIdxSize[CU_TRANSQUANT_BYPASS_FLAG_CTX]; l++)
+    for (l = 0; l < tab_ctxIdxSize[CU_TRANSQUANT_BYPASS_FLAG_CTX]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[CU_TRANSQUANT_BYPASS_FLAG_CTX] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[CU_TRANSQUANT_BYPASS_FLAG_CTX] + l,
             initVal_for_transquant_bypass_flag[initializationType][l], SliceQPy);
     }
 
     //split_coding_unit_flag
-    for (l = 0; l < h265_ctxIdxSize[SPLIT_CODING_UNIT_FLAG_HEVC]; l++)
+    for (l = 0; l < tab_ctxIdxSize[SPLIT_CODING_UNIT_FLAG_HEVC]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[SPLIT_CODING_UNIT_FLAG_HEVC] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[SPLIT_CODING_UNIT_FLAG_HEVC] + l,
             initVal_for_split_coding_unit_flag[initializationType][l], SliceQPy);
     }
 
     //skip_flag
-    for (l = 0; l < h265_ctxIdxSize[SKIP_FLAG_HEVC]; l++)
+    for (l = 0; l < tab_ctxIdxSize[SKIP_FLAG_HEVC]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[SKIP_FLAG_HEVC] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[SKIP_FLAG_HEVC] + l,
             initVal_for_skip_flag[initializationType][l], SliceQPy);
     }
 
     //merge_flag
-    for (l = 0; l < h265_ctxIdxSize[MERGE_FLAG_HEVC]; l++)
+    for (l = 0; l < tab_ctxIdxSize[MERGE_FLAG_HEVC]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[MERGE_FLAG_HEVC] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[MERGE_FLAG_HEVC] + l,
             initVal_for_merge_flag[initializationType][l], SliceQPy);
     }
 
     //merge_idx
-    for (l = 0; l < h265_ctxIdxSize[MERGE_IDX_HEVC]; l++)
+    for (l = 0; l < tab_ctxIdxSize[MERGE_IDX_HEVC]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[MERGE_IDX_HEVC] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[MERGE_IDX_HEVC] + l,
             initVal_for_merge_idx[initializationType][l], SliceQPy);
     }
 
     //PU size
-    for (l = 0; l < h265_ctxIdxSize[PART_SIZE_HEVC]; l++)
+    for (l = 0; l < tab_ctxIdxSize[PART_SIZE_HEVC]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[PART_SIZE_HEVC] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[PART_SIZE_HEVC] + l,
             initVal_for_PU_size[initializationType][l], SliceQPy);
     }
 
     //AMP split position
-    for (l = 0; l < h265_ctxIdxSize[AMP_SPLIT_POSITION_HEVC]; l++)
+    for (l = 0; l < tab_ctxIdxSize[AMP_SPLIT_POSITION_HEVC]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[AMP_SPLIT_POSITION_HEVC] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[AMP_SPLIT_POSITION_HEVC] + l,
             initVal_for_amp_split_position[initializationType][l], SliceQPy);
     }
 
     //prediction mode
-    for (l = 0; l < h265_ctxIdxSize[PRED_MODE_HEVC]; l++)
+    for (l = 0; l < tab_ctxIdxSize[PRED_MODE_HEVC]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[PRED_MODE_HEVC] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[PRED_MODE_HEVC] + l,
             initVal_for_prediction_mode[initializationType][l], SliceQPy);
     }
 
     //intra direction of luma
-    for (l = 0; l < h265_ctxIdxSize[INTRA_LUMA_PRED_MODE_HEVC]; l++)
+    for (l = 0; l < tab_ctxIdxSize[INTRA_LUMA_PRED_MODE_HEVC]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[INTRA_LUMA_PRED_MODE_HEVC] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[INTRA_LUMA_PRED_MODE_HEVC] + l,
             initVal_for_intra_direction_luma[initializationType][l], SliceQPy);
     }
 
     //intra direction of chroma
-    for (l = 0; l < h265_ctxIdxSize[INTRA_CHROMA_PRED_MODE_HEVC]; l++)
+    for (l = 0; l < tab_ctxIdxSize[INTRA_CHROMA_PRED_MODE_HEVC]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[INTRA_CHROMA_PRED_MODE_HEVC] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[INTRA_CHROMA_PRED_MODE_HEVC] + l,
             initVal_for_intra_direction_chroma[initializationType][l], SliceQPy);
     }
 
     //temporal direction
-    for (l = 0; l < h265_ctxIdxSize[INTER_DIR_HEVC]; l++)
+    for (l = 0; l < tab_ctxIdxSize[INTER_DIR_HEVC]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[INTER_DIR_HEVC] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[INTER_DIR_HEVC] + l,
             initVal_for_temporal_direction[initializationType][l], SliceQPy);
     }
 
     //motion vector difference
-    for (l = 0; l < h265_ctxIdxSize[MVD_HEVC]; l++)
+    for (l = 0; l < tab_ctxIdxSize[MVD_HEVC]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[MVD_HEVC] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[MVD_HEVC] + l,
             initVal_for_mvd[initializationType][l], SliceQPy);
     }
 
     //reference frame index
-    for (l = 0; l < h265_ctxIdxSize[REF_FRAME_IDX_HEVC]; l++)
+    for (l = 0; l < tab_ctxIdxSize[REF_FRAME_IDX_HEVC]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[REF_FRAME_IDX_HEVC] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[REF_FRAME_IDX_HEVC] + l,
             initVal_for_ref_frame_idx[initializationType][l], SliceQPy);
     }
 
     //delta QP
-    for (l = 0; l < h265_ctxIdxSize[DQP_HEVC]; l++)
+    for (l = 0; l < tab_ctxIdxSize[DQP_HEVC]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[DQP_HEVC] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[DQP_HEVC] + l,
             initVal_for_dqp[initializationType][l], SliceQPy);
     }
 
     //INIT_QT_CBF
-    for (l = 0; l < h265_ctxIdxSize[QT_CBF_HEVC]; l++)
+    for (l = 0; l < tab_ctxIdxSize[QT_CBF_HEVC]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[QT_CBF_HEVC] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[QT_CBF_HEVC] + l,
             initVal_for_qt_cbf[initializationType][l], SliceQPy);
     }
 
     //INIT_QT_ROOT_CBF
-    for (l = 0; l < h265_ctxIdxSize[QT_ROOT_CBF_HEVC]; l++)
+    for (l = 0; l < tab_ctxIdxSize[QT_ROOT_CBF_HEVC]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[QT_ROOT_CBF_HEVC] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[QT_ROOT_CBF_HEVC] + l,
             initVal_for_qt_root_cbf[initializationType][l], SliceQPy);
     }
 
     //Last X
-    for (l = 0; l < h265_ctxIdxSize[LAST_X_HEVC]; l++)
+    for (l = 0; l < tab_ctxIdxSize[LAST_X_HEVC]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[LAST_X_HEVC] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[LAST_X_HEVC] + l,
             initVal_for_last[initializationType][l], SliceQPy);
     }
 
     //Last Y
-    for (l = 0; l < h265_ctxIdxSize[LAST_Y_HEVC]; l++)
+    for (l = 0; l < tab_ctxIdxSize[LAST_Y_HEVC]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[LAST_Y_HEVC] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[LAST_Y_HEVC] + l,
             initVal_for_last[initializationType][l], SliceQPy);
     }
 
     //Sig Coeff Group
-    for (l = 0; l < h265_ctxIdxSize[SIG_COEFF_GROUP_FLAG_HEVC]; l++)
+    for (l = 0; l < tab_ctxIdxSize[SIG_COEFF_GROUP_FLAG_HEVC]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[SIG_COEFF_GROUP_FLAG_HEVC] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[SIG_COEFF_GROUP_FLAG_HEVC] + l,
             initVal_for_sig_coeff_group[initializationType][l], SliceQPy);
     }
 
     //Sig SC Model Luma
-    for (l = 0; l < h265_ctxIdxSize[SIG_FLAG_HEVC]; l++)
+    for (l = 0; l < tab_ctxIdxSize[SIG_FLAG_HEVC]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[SIG_FLAG_HEVC] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[SIG_FLAG_HEVC] + l,
             initVal_for_sig_flag[initializationType][l], SliceQPy);
     }
 
     //One SC Model flag
-    for (l = 0; l < h265_ctxIdxSize[ONE_FLAG_HEVC]; l++)
+    for (l = 0; l < tab_ctxIdxSize[ONE_FLAG_HEVC]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[ONE_FLAG_HEVC] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[ONE_FLAG_HEVC] + l,
             initVal_for_one_flag[initializationType][l], SliceQPy);
     }
 
     //Abs SC Model flag
-    for (l = 0; l < h265_ctxIdxSize[ABS_FLAG_HEVC]; l++)
+    for (l = 0; l < tab_ctxIdxSize[ABS_FLAG_HEVC]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[ABS_FLAG_HEVC] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[ABS_FLAG_HEVC] + l,
             initVal_for_abs_flag[initializationType][l], SliceQPy);
     }
 
     //motion vector predictor index
-    for (l = 0; l < h265_ctxIdxSize[MVP_IDX_HEVC]; l++)
+    for (l = 0; l < tab_ctxIdxSize[MVP_IDX_HEVC]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[MVP_IDX_HEVC] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[MVP_IDX_HEVC] + l,
             initVal_for_mvp_idx[initializationType][l], SliceQPy);
     }
 
     //SAO merge flag
-    for (l = 0; l < h265_ctxIdxSize[SAO_MERGE_FLAG_HEVC]; l++)
+    for (l = 0; l < tab_ctxIdxSize[SAO_MERGE_FLAG_HEVC]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC] + l,
             initVal_for_sao_merge_flag[initializationType][l], SliceQPy);
     }
 
     //SAO type idx
-    for (l = 0; l < h265_ctxIdxSize[SAO_TYPE_IDX_HEVC]; l++)
+    for (l = 0; l < tab_ctxIdxSize[SAO_TYPE_IDX_HEVC]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[SAO_TYPE_IDX_HEVC] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[SAO_TYPE_IDX_HEVC] + l,
             initVal_for_sao_type_idx[initializationType][l], SliceQPy);
     }
 
     //Trans Subdiv Flag SC Model
-    for (l = 0; l < h265_ctxIdxSize[TRANS_SUBDIV_FLAG_HEVC]; l++)
+    for (l = 0; l < tab_ctxIdxSize[TRANS_SUBDIV_FLAG_HEVC]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[TRANS_SUBDIV_FLAG_HEVC] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[TRANS_SUBDIV_FLAG_HEVC] + l,
             initVal_for_trans_subdiv_flag[initializationType][l], SliceQPy);
     }
 
     //Transform skip flag
-    for (l = 0; l < h265_ctxIdxSize[TRANSFORMSKIP_FLAG_HEVC]; l++)
+    for (l = 0; l < tab_ctxIdxSize[TRANSFORMSKIP_FLAG_HEVC]; l++)
     {
-        InitializeContext(context_hevc + h265_ctxIdxOffset[TRANSFORMSKIP_FLAG_HEVC] + l,
+        InitializeContext(context_hevc + tab_ctxIdxOffset[TRANSFORMSKIP_FLAG_HEVC] + l,
             initVal_for_transform_skip_flag[initializationType][l], SliceQPy);
     }
-    context_hevc[h265_ctxIdxOffset[END_OF_SLICE_FLAG_HEVC]] = 63;
+    context_hevc[tab_ctxIdxOffset[END_OF_SLICE_FLAG_HEVC]] = 63;
 }
 
 } // namespace

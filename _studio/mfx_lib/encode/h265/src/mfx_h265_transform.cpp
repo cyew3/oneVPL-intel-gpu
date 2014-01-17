@@ -48,7 +48,7 @@ void HevcPakMfdVft::DoDirectCopyMxN(const VftIf &in_VftIf)
 void H265CU::TransformInv(Ipp32s offset, Ipp32s width, Ipp8u is_luma, Ipp8u is_intra)
 {
     for (Ipp32s c_idx = 0; c_idx < (is_luma ? 1 : 2); c_idx ++) {
-        CoeffsType *residuals = is_luma ? residuals_y : (c_idx ? residuals_v : residuals_u);
+        CoeffsType *residuals = is_luma ? m_residualsY : (c_idx ? m_residualsV : m_residualsU);
         residuals += offset;
 
         if (is_luma && is_intra && width == 4) {
@@ -71,7 +71,7 @@ void H265CU::TransformInv(Ipp32s offset, Ipp32s width, Ipp8u is_luma, Ipp8u is_i
 void H265CU::TransformInv2(PixType * dst, Ipp32s pitch_dst, Ipp32s offset, Ipp32s width, Ipp8u is_luma, Ipp8u is_intra)
 {
     for (Ipp32s c_idx = 0; c_idx < (is_luma ? 1 : 2); c_idx ++) {
-        CoeffsType *residuals = is_luma ? residuals_y : (c_idx ? residuals_v : residuals_u);
+        CoeffsType *residuals = is_luma ? m_residualsY : (c_idx ? m_residualsV : m_residualsU);
         residuals += offset;
 
         if (is_luma && is_intra && width == 4) {
@@ -106,7 +106,7 @@ void H265CU::TransformFwd(Ipp32s offset, Ipp32s width, Ipp8u is_luma, Ipp8u is_i
     }
     else */
     for (Ipp32s c_idx = 0; c_idx < (is_luma ? 1 : 2); c_idx ++) {
-        CoeffsType *residuals = is_luma ? residuals_y : (c_idx ? residuals_v : residuals_u);
+        CoeffsType *residuals = is_luma ? m_residualsY : (c_idx ? m_residualsV : m_residualsU);
 
         residuals += offset;
 

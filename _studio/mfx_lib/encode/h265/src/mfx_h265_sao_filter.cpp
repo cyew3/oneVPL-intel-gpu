@@ -1434,10 +1434,10 @@ void SaoEncodeFilter::Init(int width, int height, int maxCUWidth, int maxDepth)
     m_frameSize.width = width;
     m_frameSize.height= height;
 
-    m_maxCUSize = maxCUWidth;
+    m_maxCuSize = maxCUWidth;
 
-    m_numCTU_inWidth = (m_frameSize.width/m_maxCUSize)  + ((m_frameSize.width % m_maxCUSize)?1:0);
-    m_numCTU_inHeight= (m_frameSize.height/m_maxCUSize) + ((m_frameSize.height % m_maxCUSize)?1:0);
+    m_numCTU_inWidth = (m_frameSize.width/m_maxCuSize)  + ((m_frameSize.width % m_maxCuSize)?1:0);
+    m_numCTU_inHeight= (m_frameSize.height/m_maxCuSize) + ((m_frameSize.height % m_maxCuSize)?1:0);
 
 } // void SaoEncodeFilter::Init(...)
 
@@ -1474,8 +1474,8 @@ void SaoEncodeFilter::GetCtuSaoStatistics(mfxFrameData* orgYuv, mfxFrameData* re
     {
         int xPos   = m_ctb_pelx;//(ctu / m_numCTU_inWidth)*m_maxCUWidth;
         int yPos   = m_ctb_pely;//(ctu % m_numCTU_inWidth)*m_maxCUWidth;
-        int height = (yPos + m_maxCUSize > m_frameSize.height)?(m_frameSize.height- yPos):m_maxCUSize;
-        int width  = (xPos + m_maxCUSize  > m_frameSize.width )?(m_frameSize.width - xPos):m_maxCUSize;
+        int height = (yPos + m_maxCuSize > m_frameSize.height)?(m_frameSize.height- yPos):m_maxCuSize;
+        int width  = (xPos + m_maxCuSize  > m_frameSize.width )?(m_frameSize.width - xPos):m_maxCuSize;
 
         // sao::block boundary availability
         // ------------------------------------------------
@@ -1561,7 +1561,7 @@ void SaoEncodeFilter::GetBestCtuSaoParam(
     mfxFrameData* srcYuv,
     SaoCtuParam* codedParam)
 {
-    m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_CUR], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
+    m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_CUR], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
 
 //#if defined(SAO_MODE_MERGE_ENABLED)
     //get merge list
@@ -1623,11 +1623,11 @@ void SaoEncodeFilter::GetBestCtuSaoParam(
         {
             minCost = modeCost;
             *codedParam = modeParam;
-            m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_NEXT], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
+            m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_NEXT], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
         }
     } //mode
 
-    m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_NEXT], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
+    m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_NEXT], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
 
     //ReconstructCtuSaoParam(*codedParam, mergeList);
 
@@ -1741,10 +1741,10 @@ void SaoEncodeFilter::ModeDecision_Merge(
 
         }
 
-        m_bsf->CtxRestore(m_ctxSAO[inCabacLabel], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
+        m_bsf->CtxRestore(m_ctxSAO[inCabacLabel], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
         m_bsf->Reset();
 
-        h265_code_sao_ctb_param(m_bsf, testBlkParam, sliceEnabled, (mergeList[SAO_MERGE_LEFT]!= NULL), (mergeList[SAO_MERGE_ABOVE]!= NULL), false);
+        CodeSaoCtbParam(m_bsf, testBlkParam, sliceEnabled, (mergeList[SAO_MERGE_LEFT]!= NULL), (mergeList[SAO_MERGE_ABOVE]!= NULL), false);
 
         int rate = GetNumWrittenBits();
 
@@ -1754,11 +1754,11 @@ void SaoEncodeFilter::ModeDecision_Merge(
         {
             modeNormCost = cost;
             modeParam    = testBlkParam;
-            m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_TEMP], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
+            m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_TEMP], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
         }
     }
 
-    m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_TEMP], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
+    m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_TEMP], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
 
 } // void SaoEncodeFilter::ModeDecision_Merge(...)
 
@@ -1781,9 +1781,9 @@ void SaoEncodeFilter::ModeDecision_Base(
     //pre-encode merge flags
     modeParam[SAO_Y ].mode_idx = SAO_MODE_OFF;
 
-    m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_CUR], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
-    h265_code_sao_ctb_param(m_bsf, modeParam, sliceEnabled, (mergeList[SAO_MERGE_LEFT]!= NULL), (mergeList[SAO_MERGE_ABOVE]!= NULL), true);
-    m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_MID], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
+    m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_CUR], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
+    CodeSaoCtbParam(m_bsf, modeParam, sliceEnabled, (mergeList[SAO_MERGE_LEFT]!= NULL), (mergeList[SAO_MERGE_ABOVE]!= NULL), true);
+    m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_MID], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
 
     //------ luma ---
     compIdx = SAO_Y;
@@ -1791,13 +1791,13 @@ void SaoEncodeFilter::ModeDecision_Base(
     modeParam[compIdx].mode_idx = SAO_MODE_OFF;
 
     m_bsf->Reset();
-    h265_code_sao_ctb_offset_param(m_bsf, compIdx, modeParam[compIdx], sliceEnabled[compIdx]);
+    CodeSaoCtbOffsetParam(m_bsf, compIdx, modeParam[compIdx], sliceEnabled[compIdx]);
     minRate= GetNumWrittenBits();
 
     modeDist[compIdx] = 0;
     minCost= m_labmda[compIdx]*((Ipp64f)minRate);
 
-    m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_TEMP], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
+    m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_TEMP], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
 
     if(sliceEnabled[compIdx])
     {
@@ -1819,9 +1819,9 @@ void SaoEncodeFilter::ModeDecision_Base(
                 testOffset[compIdx].offset,
                 m_statData[compIdx][type_idx]);
 
-            m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_MID], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
+            m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_MID], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
             m_bsf->Reset();
-            h265_code_sao_ctb_offset_param(m_bsf, compIdx, testOffset[compIdx], sliceEnabled[compIdx]);
+            CodeSaoCtbOffsetParam(m_bsf, compIdx, testOffset[compIdx], sliceEnabled[compIdx]);
             rate = GetNumWrittenBits();
 
             cost = (Ipp64f)dist[compIdx] + m_labmda[compIdx]*((Ipp64f)rate);
@@ -1832,13 +1832,13 @@ void SaoEncodeFilter::ModeDecision_Base(
                 modeDist[compIdx] = dist[compIdx];
                 modeParam[compIdx]= testOffset[compIdx];
 
-                m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_TEMP], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
+                m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_TEMP], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
             }
         }
     }
 
-    m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_TEMP], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
-    m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_MID], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
+    m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_TEMP], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
+    m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_MID], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
 
     // aya - temporal solution
     bool isChromaEnabled = (NUM_USED_SAO_COMPONENTS > 1) ? true : false;
@@ -1858,12 +1858,12 @@ void SaoEncodeFilter::ModeDecision_Base(
         m_bsf->Reset();
 
         modeParam[SAO_Cb].mode_idx = SAO_MODE_OFF;
-        //m_pcRDGoOnSbacCoder->h265_code_sao_ctb_offset_param(SAO_Cb, modeParam[SAO_Cb], sliceEnabled[SAO_Cb]);
-        h265_code_sao_ctb_offset_param(m_bsf, SAO_Cb, modeParam[SAO_Cb], sliceEnabled[SAO_Cb]);
+        //m_pcRDGoOnSbacCoder->CodeSaoCtbOffsetParam(SAO_Cb, modeParam[SAO_Cb], sliceEnabled[SAO_Cb]);
+        CodeSaoCtbOffsetParam(m_bsf, SAO_Cb, modeParam[SAO_Cb], sliceEnabled[SAO_Cb]);
 
         modeParam[SAO_Cr].mode_idx = SAO_MODE_OFF;
-        //m_pcRDGoOnSbacCoder->h265_code_sao_ctb_offset_param(SAO_Cr, modeParam[SAO_Cr], sliceEnabled[SAO_Cr]);
-        h265_code_sao_ctb_offset_param(m_bsf, SAO_Cr, modeParam[SAO_Cr], sliceEnabled[SAO_Cr]);
+        //m_pcRDGoOnSbacCoder->CodeSaoCtbOffsetParam(SAO_Cr, modeParam[SAO_Cr], sliceEnabled[SAO_Cr]);
+        CodeSaoCtbOffsetParam(m_bsf, SAO_Cr, modeParam[SAO_Cr], sliceEnabled[SAO_Cr]);
 
         //minRate= m_pcRDGoOnSbacCoder->getNumberOfWrittenBits();
         minRate = GetNumWrittenBits();
@@ -1905,14 +1905,14 @@ void SaoEncodeFilter::ModeDecision_Base(
             //get rate
             /*m_pcRDGoOnSbacCoder->load(cabacCoderRDO[SAO_CABACSTATE_BLK_MID]);
             m_pcRDGoOnSbacCoder->resetBits();
-            m_pcRDGoOnSbacCoder->h265_code_sao_ctb_offset_param(SAO_Cb, testOffset[SAO_Cb], sliceEnabled[SAO_Cb]);
-            m_pcRDGoOnSbacCoder->h265_code_sao_ctb_offset_param(SAO_Cr, testOffset[SAO_Cr], sliceEnabled[SAO_Cr]);
+            m_pcRDGoOnSbacCoder->CodeSaoCtbOffsetParam(SAO_Cb, testOffset[SAO_Cb], sliceEnabled[SAO_Cb]);
+            m_pcRDGoOnSbacCoder->CodeSaoCtbOffsetParam(SAO_Cr, testOffset[SAO_Cr], sliceEnabled[SAO_Cr]);
             rate = m_pcRDGoOnSbacCoder->getNumberOfWrittenBits();*/
 
-            m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_MID], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
+            m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_MID], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
             m_bsf->Reset();
-            h265_code_sao_ctb_offset_param(m_bsf, SAO_Cb, testOffset[SAO_Cb], sliceEnabled[SAO_Cb]);
-            h265_code_sao_ctb_offset_param(m_bsf, SAO_Cr, testOffset[SAO_Cr], sliceEnabled[SAO_Cr]);
+            CodeSaoCtbOffsetParam(m_bsf, SAO_Cb, testOffset[SAO_Cb], sliceEnabled[SAO_Cb]);
+            CodeSaoCtbOffsetParam(m_bsf, SAO_Cr, testOffset[SAO_Cr], sliceEnabled[SAO_Cr]);
             rate = GetNumWrittenBits();
 
             cost = (Ipp64f)(dist[SAO_Cb]+ dist[SAO_Cr]) + chromaLambda*((Ipp64f)rate);
@@ -1936,9 +1936,9 @@ void SaoEncodeFilter::ModeDecision_Base(
         modeNormCost += (Ipp64f)(modeDist[SAO_Cb]+ modeDist[SAO_Cr])/chromaLambda;
     }
 
-    m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_CUR], h265_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
+    m_bsf->CtxRestore(m_ctxSAO[SAO_CABACSTATE_BLK_CUR], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
     m_bsf->Reset();
-    h265_code_sao_ctb_param(m_bsf, modeParam, sliceEnabled, (mergeList[SAO_MERGE_LEFT]!= NULL), (mergeList[SAO_MERGE_ABOVE]!= NULL), false);
+    CodeSaoCtbParam(m_bsf, modeParam, sliceEnabled, (mergeList[SAO_MERGE_LEFT]!= NULL), (mergeList[SAO_MERGE_ABOVE]!= NULL), false);
     modeNormCost += (Ipp64f)GetNumWrittenBits();
 
 } // void SaoEncodeFilter::ModeDecision_Base(...)
@@ -1983,11 +1983,11 @@ void SaoEncodeFilter::ApplyCtuSao(
     // wiull be fixed soon
     //-------------------------------------------------------
 
-    int yPos   = (m_ctb_addr / m_numCTU_inWidth)*m_maxCUSize;
-    int xPos   = (m_ctb_addr % m_numCTU_inWidth)*m_maxCUSize;
+    int yPos   = (m_ctb_addr / m_numCTU_inWidth)*m_maxCuSize;
+    int xPos   = (m_ctb_addr % m_numCTU_inWidth)*m_maxCuSize;
 
-    int height = (yPos + m_maxCUSize > m_frameSize.height)?(m_frameSize.height- yPos):m_maxCUSize;
-    int width  = (xPos + m_maxCUSize  > m_frameSize.width)?(m_frameSize.width - xPos):m_maxCUSize;
+    int height = (yPos + m_maxCuSize > m_frameSize.height)?(m_frameSize.height- yPos):m_maxCuSize;
+    int width  = (xPos + m_maxCuSize  > m_frameSize.width)?(m_frameSize.width - xPos):m_maxCuSize;
 
     for(int compIdx= 0; compIdx < 1; compIdx++)
     {
@@ -2127,7 +2127,7 @@ void SaoDecodeFilter::Init(int width, int height, int maxCUWidth, int maxDepth)
     m_PicWidth  = width;
     m_PicHeight = height;
 
-    m_MaxCUSize  = maxCUWidth;
+    m_maxCuSize  = maxCUWidth;
 
     Ipp32u uiPixelRangeY = 1 << g_bitDepthY;
     Ipp32u uiBoRangeShiftY = g_bitDepthY - SAO_BO_BITS;
@@ -2237,13 +2237,13 @@ void H265CU::EstimateCtuSao(
     const MFX_HEVC_PP::CTBBorders & borders,
     const Ipp8u* slice_ids)
 {
-    m_saoEncodeFilter.m_ctb_addr = this->ctb_addr;
-    m_saoEncodeFilter.m_ctb_pelx = this->ctb_pelx;
-    m_saoEncodeFilter.m_ctb_pely = this->ctb_pely;
+    m_saoEncodeFilter.m_ctb_addr = this->m_ctbAddr;
+    m_saoEncodeFilter.m_ctb_pelx = this->m_ctbPelX;
+    m_saoEncodeFilter.m_ctb_pely = this->m_ctbPelY;
 
     m_saoEncodeFilter.m_codedParams_TotalFrame = saoParam_TotalFrame;
     m_saoEncodeFilter.m_bsf = bs;
-    m_saoEncodeFilter.m_labmda[0] = this->rd_lambda*256;
+    m_saoEncodeFilter.m_labmda[0] = this->m_rdLambda*256;
     m_saoEncodeFilter.m_borders = borders;
 
     m_saoEncodeFilter.m_slice_ids = (Ipp8u*)slice_ids;
@@ -2255,26 +2255,26 @@ void H265CU::EstimateCtuSao(
     mfxFrameData orgYuv;
     mfxFrameData recYuv;
 
-    orgYuv.Y = this->y_src;
-    orgYuv.UV = this->uv_src;
-    orgYuv.Pitch = (Ipp16s)this->pitch_src;
+    orgYuv.Y = this->m_ySrc;
+    orgYuv.UV = this->m_uvSrc;
+    orgYuv.Pitch = (Ipp16s)this->m_pitchSrc;
 
-    recYuv.Y = this->y_rec;
-    recYuv.UV = this->uv_rec;
-    recYuv.Pitch = (Ipp16s)this->pitch_rec;
-    recYuv.PitchHigh = (Ipp16s)this->pitch_rec;
+    recYuv.Y = this->m_yRec;
+    recYuv.UV = this->m_uvRec;
+    recYuv.Pitch = (Ipp16s)this->m_pitchRec;
+    recYuv.PitchHigh = (Ipp16s)this->m_pitchRec;
 
     bool    sliceEnabled[NUM_SAO_COMPONENTS] = {false, false, false};
     m_saoEncodeFilter.EstimateCtuSao( &orgYuv, &recYuv, sliceEnabled, saoParam);
 
     // set slice param
-    if( !this->cslice->slice_sao_luma_flag )
+    if( !this->m_cslice->slice_sao_luma_flag )
     {
-        this->cslice->slice_sao_luma_flag = (Ipp8u)sliceEnabled[SAO_Y];
+        this->m_cslice->slice_sao_luma_flag = (Ipp8u)sliceEnabled[SAO_Y];
     }
-    if( !this->cslice->slice_sao_chroma_flag )
+    if( !this->m_cslice->slice_sao_chroma_flag )
     {
-        this->cslice->slice_sao_chroma_flag = (sliceEnabled[SAO_Cb] || sliceEnabled[SAO_Cr] ) ? 1 : 0;
+        this->m_cslice->slice_sao_chroma_flag = (sliceEnabled[SAO_Cb] || sliceEnabled[SAO_Cr] ) ? 1 : 0;
     }
 
     return;
@@ -2282,26 +2282,26 @@ void H265CU::EstimateCtuSao(
 } // void H265CU::EstimateCtuSao( void )
 
 
-void H265CU::GetStatisticsCtuSao_Predeblocked( const MFX_HEVC_PP::CTBBorders & borders )
+void H265CU::GetStatisticsCtuSaoPredeblocked( const MFX_HEVC_PP::CTBBorders & borders )
 {
-    int maxCUSixe = m_saoEncodeFilter.m_maxCUSize;
+    int maxCUSixe = m_saoEncodeFilter.m_maxCuSize;
     IppiSize frameSize = m_saoEncodeFilter.m_frameSize;
 
-    int height = ((int)this->ctb_pely + maxCUSixe > frameSize.height)?(frameSize.height- this->ctb_pely):maxCUSixe;
-    int width  = ((int)this->ctb_pelx + maxCUSixe  > frameSize.width )?(frameSize.width - this->ctb_pelx):maxCUSixe;
+    int height = ((int)this->m_ctbPelY + maxCUSixe > frameSize.height)?(frameSize.height- this->m_ctbPelY):maxCUSixe;
+    int width  = ((int)this->m_ctbPelX + maxCUSixe  > frameSize.width )?(frameSize.width - this->m_ctbPelX):maxCUSixe;
 
     // run
     mfxFrameData orgYuv;
     mfxFrameData recYuv;
 
-    orgYuv.Y = this->y_src;
-    orgYuv.UV = this->uv_src;
-    orgYuv.Pitch = (Ipp16s)this->pitch_src;
+    orgYuv.Y = this->m_ySrc;
+    orgYuv.UV = this->m_uvSrc;
+    orgYuv.Pitch = (Ipp16s)this->m_pitchSrc;
 
-    recYuv.Y = this->y_rec;
-    recYuv.UV = this->uv_rec;
-    recYuv.Pitch = (Ipp16s)this->pitch_rec;
-    recYuv.PitchHigh = (Ipp16s)this->pitch_rec;
+    recYuv.Y = this->m_yRec;
+    recYuv.UV = this->m_uvRec;
+    recYuv.Pitch = (Ipp16s)this->m_pitchRec;
+    recYuv.PitchHigh = (Ipp16s)this->m_pitchRec;
 
     int compIdx = SAO_Y;
 
@@ -2349,7 +2349,7 @@ void H265CU::GetStatisticsCtuSao_Predeblocked( const MFX_HEVC_PP::CTBBorders & b
         m_saoEncodeFilter.m_statData_predeblocked[SAO_Y][i] += statData_predeblocked_B[compIdx][i];
     }
 
-} // void H265CU::GetStatisticsCtuSao_Predeblocked( void )
+} // void H265CU::GetStatisticsCtuSaoPredeblocked( void )
 
 } // namespace
 

@@ -70,7 +70,7 @@ private:
 
     Ipp32u      GetCoefScanIdx(Ipp32u abs_part_idx, Ipp32u width, bool bIsLuma)
     {
-        Ipp32u scanIdx = m_pCU->getCoefScanIdx(abs_part_idx, width, bIsLuma, m_pCU->isIntra(abs_part_idx) );
+        Ipp32u scanIdx = m_pCU->GetCoefScanIdx(abs_part_idx, width, bIsLuma, m_pCU->IsIntra(abs_part_idx) );
 
         if (scanIdx == COEFF_SCAN_ZIGZAG)
         {

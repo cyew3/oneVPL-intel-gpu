@@ -22,19 +22,19 @@ bool H265CU::CheckIdenticalMotion(Ipp32u abs_part_idx)
 {
     EncoderRefPicListStruct *pList[2];
     T_RefIdx ref_idx[2];
-    pList[0] = &(cslice->m_pRefPicList[0].m_RefPicListL0);
-    pList[1] = &(cslice->m_pRefPicList[0].m_RefPicListL1);
-    ref_idx[0] = data[abs_part_idx].refIdx[0];
-    ref_idx[1] = data[abs_part_idx].refIdx[1];
+    pList[0] = &(m_cslice->m_pRefPicList[0].m_RefPicListL0);
+    pList[1] = &(m_cslice->m_pRefPicList[0].m_RefPicListL1);
+    ref_idx[0] = m_data[abs_part_idx].refIdx[0];
+    ref_idx[1] = m_data[abs_part_idx].refIdx[1];
 // TODO optimize: check B_SLISE && !weighted on entrance, POC after mv matched
-    if(cslice->slice_type == B_SLICE && !par->cpps->weighted_bipred_flag)
+    if(m_cslice->slice_type == B_SLICE && !m_par->cpps->weighted_bipred_flag)
     {
         if(ref_idx[0] >= 0 && ref_idx[1] >= 0)
         {
             Ipp32s RefPOCL0 = pList[0]->m_RefPicList[ref_idx[0]]->PicOrderCnt();
             Ipp32s RefPOCL1 = pList[1]->m_RefPicList[ref_idx[1]]->PicOrderCnt();
             if(RefPOCL0 == RefPOCL1 &&
-                data[abs_part_idx].mv[0] == data[abs_part_idx].mv[1])
+                m_data[abs_part_idx].mv[0] == m_data[abs_part_idx].mv[1])
             {
                 return true;
             }
@@ -43,15 +43,15 @@ bool H265CU::CheckIdenticalMotion(Ipp32u abs_part_idx)
     return false;
 }
 
-void H265CU::clipMV(H265MV& rcMv)
+void H265CU::ClipMV(H265MV& rcMv)
 {
     Ipp32s MvShift = 2;
     Ipp32s offset = 8;
-    Ipp32s HorMax = (par->Width + offset - ctb_pelx - 1) << MvShift;
-    Ipp32s HorMin = ( - (Ipp32s) par->MaxCUSize - offset - (Ipp32s) ctb_pelx + 1) << MvShift;
+    Ipp32s HorMax = (m_par->Width + offset - m_ctbPelX - 1) << MvShift;
+    Ipp32s HorMin = ( - (Ipp32s) m_par->MaxCUSize - offset - (Ipp32s) m_ctbPelX + 1) << MvShift;
 
-    Ipp32s VerMax = (par->Height + offset - ctb_pely - 1) << MvShift;
-    Ipp32s VerMin = ( - (Ipp32s) par->MaxCUSize - offset - (Ipp32s) ctb_pely + 1) << MvShift;
+    Ipp32s VerMax = (m_par->Height + offset - m_ctbPelY - 1) << MvShift;
+    Ipp32s VerMin = ( - (Ipp32s) m_par->MaxCUSize - offset - (Ipp32s) m_ctbPelY + 1) << MvShift;
 
     rcMv.mvx = (Ipp16s) IPP_MIN(HorMax, IPP_MAX(HorMin, rcMv.mvx));
     rcMv.mvy = (Ipp16s) IPP_MIN(VerMax, IPP_MAX(VerMin, rcMv.mvy));
@@ -136,19 +136,19 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefP
                           MFX_HEVC_PP::EnumAddAverageType eAddAverage)
 {
     EncoderRefPicListStruct *pList[2];
-    Ipp32s maxDepth = par->Log2MaxCUSize - par->Log2MinTUSize;
+    Ipp32s maxDepth = m_par->Log2MaxCUSize - m_par->Log2MinTUSize;
     Ipp32s numMinTUInLCU = 1 << maxDepth;
     Ipp32s PURasterIdx = h265_scan_z2r[maxDepth][PartAddr];
     Ipp32s PUStartRow = PURasterIdx >> maxDepth;
     Ipp32s PUStartColumn = PURasterIdx & (numMinTUInLCU - 1);
 
-    pList[0] = &(cslice->m_pRefPicList[0].m_RefPicListL0);
-    pList[1] = &(cslice->m_pRefPicList[0].m_RefPicListL1);
-    Ipp32s RefIdx = data[PartAddr].refIdx[RefPicList];
+    pList[0] = &(m_cslice->m_pRefPicList[0].m_RefPicListL0);
+    pList[1] = &(m_cslice->m_pRefPicList[0].m_RefPicListL1);
+    Ipp32s RefIdx = m_data[PartAddr].refIdx[RefPicList];
     VM_ASSERT(RefIdx >= 0);
 
-    H265MV MV = data[PartAddr].mv[RefPicList];
-    clipMV(MV);
+    H265MV MV = m_data[PartAddr].mv[RefPicList];
+    ClipMV(MV);
 
     H265Frame *PicYUVRef = pList[RefPicList]->m_RefPicList[RefIdx];
 
@@ -168,26 +168,26 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefP
         PixType *in_pSrc2 = 0;
         if ( eAddAverage == AVERAGE_FROM_PIC ) {
             EnumRefPicList RefPicList2 = (EnumRefPicList)!RefPicList;
-            Ipp32s RefIdx2 = data[PartAddr].refIdx[RefPicList2];
+            Ipp32s RefIdx2 = m_data[PartAddr].refIdx[RefPicList2];
             H265Frame *PicYUVRef2 = pList[RefPicList2]->m_RefPicList[RefIdx2];
             in_SrcPitch2 = PicYUVRef2->pitch_luma;
-            H265MV MV2 = data[PartAddr].mv[RefPicList2];
-            clipMV(MV2);
-            Ipp32s refOffset2 = ctb_pelx + (MV2.mvx >> 2) + (ctb_pely + (MV2.mvy >> 2)) * in_SrcPitch2;
-            in_pSrc2 = PicYUVRef2->y + ((PUStartRow * in_SrcPitch2 + PUStartColumn) << par->Log2MinTUSize) + refOffset2;
+            H265MV MV2 = m_data[PartAddr].mv[RefPicList2];
+            ClipMV(MV2);
+            Ipp32s refOffset2 = m_ctbPelX + (MV2.mvx >> 2) + (m_ctbPelY + (MV2.mvy >> 2)) * in_SrcPitch2;
+            in_pSrc2 = PicYUVRef2->y + ((PUStartRow * in_SrcPitch2 + PUStartColumn) << m_par->Log2MinTUSize) + refOffset2;
         }
 
         in_SrcPitch = PicYUVRef->pitch_luma;
-        refOffset = ctb_pelx + (MV.mvx >> 2) + (ctb_pely + (MV.mvy >> 2)) * in_SrcPitch;
+        refOffset = m_ctbPelX + (MV.mvx >> 2) + (m_ctbPelY + (MV.mvy >> 2)) * in_SrcPitch;
         in_pSrc = PicYUVRef->y +
-            ((PUStartRow * pitch_rec + PUStartColumn) << par->Log2MinTUSize) + refOffset;
+            ((PUStartRow * m_pitchRec + PUStartColumn) << m_par->Log2MinTUSize) + refOffset;
 
-        in_dstBufPitch = par->MaxCUSize;
-        in_dstBuf = pred_buf_y[ (eAddAverage == AVERAGE_FROM_BUF ? !RefPicList : RefPicList) ];
-        in_dstBuf += ((PUStartRow * par->MaxCUSize + PUStartColumn) << par->Log2MinTUSize);
+        in_dstBufPitch = m_par->MaxCUSize;
+        in_dstBuf = m_predBufY[ (eAddAverage == AVERAGE_FROM_BUF ? !RefPicList : RefPicList) ];
+        in_dstBuf += ((PUStartRow * m_par->MaxCUSize + PUStartColumn) << m_par->Log2MinTUSize);
 
         in_dstPicPitch = dst_pitch;
-        in_dstPic = dst + ((PUStartRow * dst_pitch + PUStartColumn) << par->Log2MinTUSize);
+        in_dstPic = dst + ((PUStartRow * dst_pitch + PUStartColumn) << m_par->Log2MinTUSize);
 
 
         bitDepth = BIT_DEPTH_LUMA;
@@ -287,24 +287,24 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefP
         PixType *in_pSrc2 = 0;
         if ( eAddAverage == AVERAGE_FROM_PIC ) {
             EnumRefPicList RefPicList2 = (EnumRefPicList)!RefPicList;
-            Ipp32s RefIdx2 = data[PartAddr].refIdx[RefPicList2];
+            Ipp32s RefIdx2 = m_data[PartAddr].refIdx[RefPicList2];
             H265Frame *PicYUVRef2 = pList[RefPicList2]->m_RefPicList[RefIdx2];
             in_SrcPitch2 = PicYUVRef2->pitch_luma;
-            H265MV MV2 = data[PartAddr].mv[RefPicList2];
-            clipMV(MV2);
-            Ipp32s refOffset2 = (ctb_pelx) + (MV2.mvx >> 3) * 2 + ((ctb_pely >> 1) + (MV2.mvy >> 3)) * in_SrcPitch2;
-            in_pSrc2 = PicYUVRef2->uv + ((PUStartRow * in_SrcPitch2 / 2 + PUStartColumn) << par->Log2MinTUSize) + refOffset2;
+            H265MV MV2 = m_data[PartAddr].mv[RefPicList2];
+            ClipMV(MV2);
+            Ipp32s refOffset2 = (m_ctbPelX) + (MV2.mvx >> 3) * 2 + ((m_ctbPelY >> 1) + (MV2.mvy >> 3)) * in_SrcPitch2;
+            in_pSrc2 = PicYUVRef2->uv + ((PUStartRow * in_SrcPitch2 / 2 + PUStartColumn) << m_par->Log2MinTUSize) + refOffset2;
         }
         in_SrcPitch = PicYUVRef->pitch_luma;
-        refOffset = (ctb_pelx) + (MV.mvx >> 3) * 2 + ((ctb_pely >> 1) + (MV.mvy >> 3)) * in_SrcPitch;
-        in_pSrc = PicYUVRef->uv + ((PUStartRow * in_SrcPitch / 2 + PUStartColumn) << par->Log2MinTUSize) + refOffset;
+        refOffset = (m_ctbPelX) + (MV.mvx >> 3) * 2 + ((m_ctbPelY >> 1) + (MV.mvy >> 3)) * in_SrcPitch;
+        in_pSrc = PicYUVRef->uv + ((PUStartRow * in_SrcPitch / 2 + PUStartColumn) << m_par->Log2MinTUSize) + refOffset;
 
-        in_dstBufPitch = par->MaxCUSize;
-        in_dstBuf = pred_buf_uv[ (eAddAverage == AVERAGE_FROM_BUF ? !RefPicList : RefPicList) ];
-        in_dstBuf += ((PUStartRow * par->MaxCUSize + PUStartColumn * 2) << par->Log2MinTUSize);
+        in_dstBufPitch = m_par->MaxCUSize;
+        in_dstBuf = m_predBufUv[ (eAddAverage == AVERAGE_FROM_BUF ? !RefPicList : RefPicList) ];
+        in_dstBuf += ((PUStartRow * m_par->MaxCUSize + PUStartColumn * 2) << m_par->Log2MinTUSize);
 
         in_dstPicPitch = dst_pitch;
-        in_dstPic = dst + ((PUStartRow * dst_pitch / 2 + PUStartColumn) << par->Log2MinTUSize);
+        in_dstPic = dst + ((PUStartRow * dst_pitch / 2 + PUStartColumn) << m_par->Log2MinTUSize);
 
         shift = 6;
         offset = 32;
@@ -387,31 +387,31 @@ void H265CU::PredInterUni(Ipp32u PartAddr, Ipp32s Width, Ipp32s Height, EnumRefP
 }
 
 
-void H265CU::InterPredCU(Ipp32s abs_part_idx, Ipp8u depth, PixType *dst, Ipp32s dst_pitch, Ipp8u is_luma)
+void H265CU::InterPredCu(Ipp32s abs_part_idx, Ipp8u depth, PixType *dst, Ipp32s dst_pitch, Ipp8u is_luma)
 {
     Ipp32s PartAddr;
     Ipp32s PartX, PartY, Width, Height;
-    Ipp32u num_parts = ( par->NumPartInCU >> (depth<<1) );
+    Ipp32u num_parts = ( m_par->NumPartInCU >> (depth<<1) );
 
-    for (Ipp32s PartIdx = 0; PartIdx < getNumPartInter(abs_part_idx); PartIdx++)
+    for (Ipp32s PartIdx = 0; PartIdx < GetNumPartInter(abs_part_idx); PartIdx++)
     {
-        GetPartOffsetAndSize(PartIdx, data[abs_part_idx].partSize,
-            data[abs_part_idx].size, PartX, PartY, Width, Height);
-        GetPartAddr(PartIdx, data[abs_part_idx].partSize, num_parts, PartAddr);
+        GetPartOffsetAndSize(PartIdx, m_data[abs_part_idx].partSize,
+            m_data[abs_part_idx].size, PartX, PartY, Width, Height);
+        GetPartAddr(PartIdx, m_data[abs_part_idx].partSize, num_parts, PartAddr);
 
         PartAddr += abs_part_idx;
 
-        Ipp32s RefIdx[2] = { data[PartAddr].refIdx[0], data[PartAddr].refIdx[1] };
+        Ipp32s RefIdx[2] = { m_data[PartAddr].refIdx[0], m_data[PartAddr].refIdx[1] };
 
         if (CheckIdenticalMotion(PartAddr) || RefIdx[0] < 0 || RefIdx[1] < 0) {
             EnumRefPicList refPicList = RefIdx[0] >= 0 ? REF_PIC_LIST_0 : REF_PIC_LIST_1;
             PredInterUni( PartAddr, Width, Height, refPicList, PartIdx, dst, dst_pitch, false, is_luma, AVERAGE_NO );
 
         } else {
-            H265MV MV0 = data[PartAddr].mv[REF_PIC_LIST_0];
-            H265MV MV1 = data[PartAddr].mv[REF_PIC_LIST_1];
-            clipMV(MV0);
-            clipMV(MV1);
+            H265MV MV0 = m_data[PartAddr].mv[REF_PIC_LIST_0];
+            H265MV MV1 = m_data[PartAddr].mv[REF_PIC_LIST_1];
+            ClipMV(MV0);
+            ClipMV(MV1);
             Ipp32s mv_interp0 = (MV0.mvx | MV0.mvy) & (is_luma ? 3 : 7);
             Ipp32s mv_interp1 = (MV1.mvx | MV1.mvy) & (is_luma ? 3 : 7);
             bool bOnlyOneIterp = !( mv_interp0 && mv_interp1 );
@@ -462,7 +462,7 @@ void H265CU::InterPredCU(Ipp32s abs_part_idx, Ipp8u depth, PixType *dst, Ipp32s 
 }
 
 
-void H265CU::ME_Interpolate_old(H265MEInfo* me_info, H265MV* MV, PixType *in_pSrc, Ipp32s in_SrcPitch, Ipp16s *buf, Ipp32s buf_pitch) const
+void H265CU::MeInterpolateOld(H265MEInfo* me_info, H265MV* MV, PixType *in_pSrc, Ipp32s in_SrcPitch, Ipp16s *buf, Ipp32s buf_pitch) const
 {
     Ipp32s width = me_info->width;
     Ipp32s height = me_info->height;
@@ -473,7 +473,7 @@ void H265CU::ME_Interpolate_old(H265MEInfo* me_info, H265MV* MV, PixType *in_pSr
     Ipp32s in_dx, in_dy;
     Ipp32s bitDepth, shift, offset, tap;
 
-    Ipp32s refOffset = ctb_pelx + me_info->posx + (MV->mvx >> 2) + (ctb_pely + me_info->posy + (MV->mvy >> 2)) * in_SrcPitch;
+    Ipp32s refOffset = m_ctbPelX + me_info->posx + (MV->mvx >> 2) + (m_ctbPelY + me_info->posy + (MV->mvy >> 2)) * in_SrcPitch;
     in_pSrc += refOffset;
 
     bitDepth = BIT_DEPTH_LUMA;
@@ -521,10 +521,10 @@ void H265CU::ME_Interpolate_old(H265MEInfo* me_info, H265MV* MV, PixType *in_pSr
     }
 
     return;
-} // void H265CU::ME_Interpolate(...)
+} // void H265CU::MeInterpolate(...)
 
 
-void H265CU::ME_Interpolate(H265MEInfo* me_info, H265MV* MV, PixType *src, Ipp32s srcPitch, Ipp8u *dst, Ipp32s dstPitch) const
+void H265CU::MeInterpolate(H265MEInfo* me_info, H265MV* MV, PixType *src, Ipp32s srcPitch, Ipp8u *dst, Ipp32s dstPitch) const
 {
     Ipp32s w = me_info->width;
     Ipp32s h = me_info->height;
@@ -532,7 +532,7 @@ void H265CU::ME_Interpolate(H265MEInfo* me_info, H265MV* MV, PixType *src, Ipp32
     Ipp32s dy = MV->mvy & 3;
     Ipp32s bitDepth = BIT_DEPTH_LUMA;
 
-    Ipp32s refOffset = ctb_pelx + me_info->posx + (MV->mvx >> 2) + (ctb_pely + me_info->posy + (MV->mvy >> 2)) * srcPitch;
+    Ipp32s refOffset = m_ctbPelX + me_info->posx + (MV->mvx >> 2) + (m_ctbPelY + me_info->posy + (MV->mvy >> 2)) * srcPitch;
     src += refOffset;
 
     if (dx == 0 && dy == 0)
@@ -560,7 +560,7 @@ void H265CU::ME_Interpolate(H265MEInfo* me_info, H265MV* MV, PixType *src, Ipp32
     }
 
     return;
-} // void H265CU::ME_Interpolate(...)
+} // void H265CU::MeInterpolate(...)
 
 } // namespace
 

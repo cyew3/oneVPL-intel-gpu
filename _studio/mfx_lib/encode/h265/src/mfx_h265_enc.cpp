@@ -1899,14 +1899,14 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
                     borders.m_left = (-1 == left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ left_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
                     borders.m_top  = (-1 == above_addr) ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ above_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
 
-                    cu[ithread].GetStatisticsCtuSao_Predeblocked( borders );
+                    cu[ithread].GetStatisticsCtuSaoPredeblocked( borders );
                 }
 #endif
                 cu[ithread].Deblock();
                 if(m_sps.sample_adaptive_offset_enabled_flag)
                 {
-                    Ipp32s left_addr = cu[ithread].left_addr;
-                    Ipp32s above_addr = cu[ithread].above_addr;
+                    Ipp32s left_addr = cu[ithread].m_leftAddr;
+                    Ipp32s above_addr = cu[ithread].m_aboveAddr;
 
                     MFX_HEVC_PP::CTBBorders borders = {0};
 
@@ -1929,14 +1929,14 @@ mfxStatus H265Encoder::EncodeThread(Ipp32s ithread) {
 
                     //if( cu[ithread].cslice->slice_sao_luma_flag )
                     {
-                        cu[ithread].xEncodeSAO(&bs[ctb_row], 0, 0, 0, m_saoParam[ctb_addr], leftMergeAvail, aboveMergeAvail);
+                        cu[ithread].EncodeSao(&bs[ctb_row], 0, 0, 0, m_saoParam[ctb_addr], leftMergeAvail, aboveMergeAvail);
                     }
 
                     cu[ithread].m_saoEncodeFilter.ReconstructCtuSaoParam(m_saoParam[ctb_addr]);
                 }
             }
 
-            cu[ithread].xEncodeCU(&bs[ctb_row], 0, 0, 0);
+            cu[ithread].EncodeCU(&bs[ctb_row], 0, 0, 0);
 
             if (m_pps.entropy_coding_sync_enabled_flag && ctb_col == 1) {
                 bs[ctb_row].CtxSaveWPP(m_context_array_wpp + NUM_CABAC_CONTEXT * ctb_row);
@@ -2063,14 +2063,14 @@ mfxStatus H265Encoder::EncodeThreadByRow(Ipp32s ithread) {
                     borders.m_left = (-1 == left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ left_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
                     borders.m_top  = (-1 == above_addr) ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ above_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
 
-                    cu[ithread].GetStatisticsCtuSao_Predeblocked( borders );
+                    cu[ithread].GetStatisticsCtuSaoPredeblocked( borders );
                 }
 #endif
                 cu[ithread].Deblock();
                 if(m_sps.sample_adaptive_offset_enabled_flag)
                 {
-                    Ipp32s left_addr  = cu[ithread].left_addr;
-                    Ipp32s above_addr = cu[ithread].above_addr;
+                    Ipp32s left_addr  = cu[ithread].m_leftAddr;
+                    Ipp32s above_addr = cu[ithread].m_aboveAddr;
                     MFX_HEVC_PP::CTBBorders borders = {0};
 
                     borders.m_left = (-1 == left_addr)  ? 0 : (m_slice_ids[ctb_addr] == m_slice_ids[ left_addr ]) ? 1 : m_pps.pps_loop_filter_across_slices_enabled_flag;
@@ -2092,14 +2092,14 @@ mfxStatus H265Encoder::EncodeThreadByRow(Ipp32s ithread) {
 
                     //if( cu[ithread].cslice->slice_sao_luma_flag )
                     {
-                        cu[ithread].xEncodeSAO(&bs[ithread], 0, 0, 0, m_saoParam[ctb_addr], leftMergeAvail, aboveMergeAvail);
+                        cu[ithread].EncodeSao(&bs[ithread], 0, 0, 0, m_saoParam[ctb_addr], leftMergeAvail, aboveMergeAvail);
                     }
 
                     cu[ithread].m_saoEncodeFilter.ReconstructCtuSaoParam(m_saoParam[ctb_addr]);
                 }
             }
 
-            cu[ithread].xEncodeCU(&bs[ithread], 0, 0, 0);
+            cu[ithread].EncodeCU(&bs[ithread], 0, 0, 0);
 
             if (m_pps.entropy_coding_sync_enabled_flag && ctb_col == 1) {
                 bs[ithread].CtxSaveWPP(m_context_array_wpp + NUM_CABAC_CONTEXT * ctb_row);

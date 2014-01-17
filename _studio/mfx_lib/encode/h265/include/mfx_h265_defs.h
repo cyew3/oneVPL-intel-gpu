@@ -74,9 +74,9 @@ static void H265_FORCEINLINE small_memcpy( void* dst, const void* src, int len )
 extern int DEBUG_CABAC_PRINT;
 #endif
 
-#define BIT_COST(bits_shifted) ((bits_shifted)*rd_lambda)
-#define BIT_COST_INTER(bits_shifted) ((bits_shifted)*rd_lambda_inter)
-#define BIT_COST_INTER_MV(bits_shifted) ((bits_shifted)*rd_lambda_inter_mv)
+#define BIT_COST(bits_shifted) ((bits_shifted)*m_rdLambda)
+#define BIT_COST_INTER(bits_shifted) ((bits_shifted)*m_rdLambdaInter)
+#define BIT_COST_INTER_MV(bits_shifted) ((bits_shifted)*m_rd_lambdaInterMv)
 #define BIT_COST_SHIFT 8
 #define NUM_CAND_MAX_1 36
 #define NUM_CAND_MAX_2 36

@@ -233,7 +233,7 @@ private:
 public:
     // per stream param
     IppiSize m_frameSize;
-    Ipp32s   m_maxCUSize;
+    Ipp32s   m_maxCuSize;
 
     Ipp32s   m_numCTU_inWidth;
     Ipp32s   m_numCTU_inHeight;
@@ -302,7 +302,7 @@ public:
 
     Ipp32u   m_PicWidth;
     Ipp32u   m_PicHeight;
-    Ipp32u   m_MaxCUSize;
+    Ipp32u   m_maxCuSize;
     Ipp32u   m_SaoBitIncreaseY;
     Ipp32u   m_SaoBitIncreaseC;
 

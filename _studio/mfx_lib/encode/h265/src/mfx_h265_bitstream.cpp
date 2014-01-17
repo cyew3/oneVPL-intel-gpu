@@ -260,7 +260,7 @@ IppStatus ippiCABACEncodeBin_H265 (
         Ipp32u stateIdx = *ctx;
         Ipp32u codIRange = pCabacState->lcodIRange;
         Ipp32u codIOffset = pCabacState->lcodIOffset;
-        Ipp32u codIRangeLPS = h265_cabac_rangeTabLPS[stateIdx][(codIRange >> 6) & 0x3];
+        Ipp32u codIRangeLPS = tab_cabacRangeTabLps[stateIdx][(codIRange >> 6) & 0x3];
 
 //        printf("range = %d\n",codIRange);
 
@@ -302,7 +302,7 @@ IppStatus ippiCABACEncodeBin_H265 (
                     if( pBitStream >= pCabacState->pBitStreamEnd )
                         return ippStsH264BufferFullErr;
                 }
-                *ctx = h265_cabac_transTbl[code][stateIdx];
+                *ctx = tab_cabacTransTbl[code][stateIdx];
 
                 pCabacState->lcodIRange = codIRange;
                 pCabacState->lcodIOffset = codIOffset & 0x3FF;

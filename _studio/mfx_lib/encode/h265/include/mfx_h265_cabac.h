@@ -52,19 +52,18 @@ enum {
     RD_CU_MODES = 2,
 };
 
-#define CTX(bs,a) ((bs)->m_base.context_array+h265_ctxIdxOffset[a])
-#define NUM_CTX_TU 152
+#define CTX(bs,a) ((bs)->m_base.context_array+tab_ctxIdxOffset[a])
 
-#define NUM_SIG_FLAG_CTX_LUMA         27
-
-#define NUM_ONE_FLAG_CTX              24      ///< number of context models for greater than 1 flag
-#define NUM_ONE_FLAG_CTX_LUMA         16      ///< number of context models for greater than 1 flag of luma
-#define NUM_ONE_FLAG_CTX_CHROMA        8      ///< number of context models for greater than 1 flag of chroma
-#define NUM_ABS_FLAG_CTX               6      ///< number of context models for greater than 2 flag
-#define NUM_ABS_FLAG_CTX_LUMA          4      ///< number of context models for greater than 2 flag of luma
-#define NUM_ABS_FLAG_CTX_CHROMA        2      ///< number of context models for greater than 2 flag of chroma
-#define NUM_QT_CBF_CTX 5
-#define NUM_CTX_LAST_FLAG_XY 15
+static const Ipp32s NUM_CTX_TU               = 152;
+static const Ipp32s NUM_SIG_FLAG_CTX_LUMA    =  27;
+static const Ipp32s NUM_ONE_FLAG_CTX         = 24;      ///< number of context models for greater than 1 flag
+static const Ipp32s NUM_ONE_FLAG_CTX_LUMA    = 16;      ///< number of context models for greater than 1 flag of luma
+static const Ipp32s NUM_ONE_FLAG_CTX_CHROMA  =  8;      ///< number of context models for greater than 1 flag of chroma
+static const Ipp32s NUM_ABS_FLAG_CTX         =  6;      ///< number of context models for greater than 2 flag
+static const Ipp32s NUM_ABS_FLAG_CTX_LUMA    =  4;      ///< number of context models for greater than 2 flag of luma
+static const Ipp32s NUM_ABS_FLAG_CTX_CHROMA  =  2;      ///< number of context models for greater than 2 flag of chroma
+static const Ipp32s NUM_QT_CBF_CTX           =  5;
+static const Ipp32s NUM_CTX_LAST_FLAG_XY     = 15;
 
 } // namespace
 
