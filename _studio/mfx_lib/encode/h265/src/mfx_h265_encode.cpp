@@ -1689,7 +1689,7 @@ mfxStatus MFXVideoENCODEH265::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
             bitstream->DecodeTimeStamp = mfxI64(bitstream->TimeStamp - tcDuration90KHz * dpb_output_delay); // calculate DTS from PTS
 
             // Set FrameType
-            bs->FrameType = m_enc->m_pCurrentFrame->m_PicCodType;
+            bs->FrameType = (mfxU16)m_enc->m_pCurrentFrame->m_PicCodType;
             if (m_enc->m_pCurrentFrame->m_bIsIDRPic)
                 bs->FrameType |= MFX_FRAMETYPE_IDR;
             if (m_enc->m_pCurrentFrame->m_isShortTermRef || m_enc->m_pCurrentFrame->m_isLongTermRef)
