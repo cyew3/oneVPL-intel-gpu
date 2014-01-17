@@ -903,7 +903,7 @@ msdk_ts_BLOCK(t_LoadDLLPlugin){
 
     vm_char* file_name = 0;
     vm_char* temp_fn = 0;
-    std::cout << "  Library to load (manual loading, without dispatcher): " << dll_name << std::endl;
+    std::cout << "  Library to load (linking explicitly without dispatcher): " << dll_name << std::endl;
 
     if(sizeof(char) == sizeof(vm_char))
         file_name = reinterpret_cast<vm_char*>( dll_name );
@@ -930,6 +930,11 @@ msdk_ts_BLOCK(t_LoadDLLPlugin){
     else if(MFX_PLUGINTYPE_VIDEO_ENCODE == type)
     {
         PluginLoader<MFXEncoderPlugin>& Loader = var_new<PluginLoader<MFXEncoderPlugin> >("plugin_loader", new PluginLoader<MFXEncoderPlugin>(file_name) );
+        pPlugin = Loader.plugin;
+    }
+    else if(MFX_PLUGINTYPE_VIDEO_VPP == type)
+    {
+        PluginLoader<MFXVPPPlugin>& Loader =    var_new<PluginLoader<MFXVPPPlugin> >     ("plugin_loader", new PluginLoader<MFXVPPPlugin>(file_name) );
         pPlugin = Loader.plugin;
     }
     else

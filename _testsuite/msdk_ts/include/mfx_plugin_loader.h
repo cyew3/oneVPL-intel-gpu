@@ -67,10 +67,12 @@ struct PluginModuleTemplate {
     typedef MFXDecoderPlugin* (*fncCreateDecoderPlugin)();
     typedef MFXEncoderPlugin* (*fncCreateEncoderPlugin)();
     typedef MFXGenericPlugin* (*fncCreateGenericPlugin)();
+    typedef MFXVPPPlugin*     (*fncCreateVPPPlugin)();
 
     fncCreateDecoderPlugin CreateDecoderPlugin;
     fncCreateEncoderPlugin CreateEncoderPlugin;
     fncCreateGenericPlugin CreateGenericPlugin;
+    fncCreateVPPPlugin     CreateVPPPlugin;
 };
 
 template<class T>
@@ -101,6 +103,18 @@ struct PluginCreateTrait<MFXEncoderPlugin>
         type=MFX_PLUGINTYPE_VIDEO_ENCODE
     };
     typedef PluginModuleTemplate::fncCreateEncoderPlugin TCreator;
+};
+
+template<>
+struct PluginCreateTrait<MFXVPPPlugin>
+{
+    static const char* Name(){
+        return "mfxCreateVPPPlugin";
+    }
+    enum PluginType {
+        type=MFX_PLUGINTYPE_VIDEO_VPP
+    };
+    typedef PluginModuleTemplate::fncCreateVPPPlugin TCreator;
 };
 
 template<>
