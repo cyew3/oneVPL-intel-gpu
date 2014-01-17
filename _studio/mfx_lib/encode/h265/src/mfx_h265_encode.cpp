@@ -34,8 +34,6 @@ using namespace H265Enc;
 
 //////////////////////////////////////////////////////////////////////////
 
-#define H265ENC_UNREFERENCED_PARAMETER(X) X=X
-
 #define CHECK_VERSION(ver)
 #define CHECK_CODEC_ID(id, myid)
 #define CHECK_FUNCTION_ID(id, myid)
@@ -50,6 +48,25 @@ using namespace H265Enc;
 
 #define CHECK_EXTBUF_SIZE(ebuf, errcounter) if ((ebuf).Header.BufferSz != sizeof(ebuf)) {(errcounter) = (errcounter) + 1;}
 
+#define H265_MAXREFDIST 8
+
+namespace H265Enc {
+
+typedef struct
+{
+    Ipp32s BufferSizeInKB;
+    Ipp32s InitialDelayInKB;
+    Ipp32s TargetKbps;
+    Ipp32s MaxKbps;
+} RcParams;
+
+struct H265EncodeTaskInputParams
+{
+    mfxEncodeCtrl *ctrl;
+    mfxFrameSurface1 *surface;
+    mfxBitstream *bs;
+};
+
 mfxExtCodingOptionHEVC hevc_tu_tab[8] = {               // CUS CUD 2TUS 2TUD  AnalyzeChroma         SignBitHiding          RDOQuant               SAO                   thrCU,TU,CUInter    5numCand1  5numCand2 WPP                       GPB                   AMP                   CmIntraThreshold TUSplitIntra CUSplit IntraAngModes EnableCm              BPyramid              FastPUDecision
     {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 5,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, 0,               1,           2,      1,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF }, // tu default (==4)
     {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 6,  4, 5,2, 5,5,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_ON,    1, 1, 1,         8,8,4,4,4, 4,4,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_ON , 0,               1,           1,      1,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF }, // tu 1
@@ -63,8 +80,6 @@ mfxExtCodingOptionHEVC hevc_tu_tab[8] = {               // CUS CUD 2TUS 2TUD  An
 
 Ipp8u hevc_tu_tab_GopRefDist [8] = {4, 8, 8, 4, 4, 3, 2, 1};
 Ipp8u hevc_tu_tab_NumRefFrame[8] = {3, 4, 4, 3, 3, 2, 1, 1};
-
-#define H265_MAXREFDIST 8
 
 static const struct _hevc_level_tab {
     // General limits
@@ -134,7 +149,7 @@ static mfxI32 Compute265Level(mfxVideoParam *parMFX)
 
 }
 
-static mfxI32 Check265Level(mfxI32 inleveltier, mfxVideoParam *parMFX)
+static mfxI32 Check265Level(mfxI32 inleveltier, const mfxVideoParam *parMFX)
 {
     mfxI32 level, tier;
     mfxI32 inlevel = inleveltier &~ MFX_TIER_HEVC_HIGH;
@@ -191,53 +206,45 @@ static mfxI32 Check265Level(mfxI32 inleveltier, mfxVideoParam *parMFX)
 
 }
 
-void mfxVideoH265InternalParam::SetCalcParams( mfxVideoParam *parMFX) {
+void SetCalcParams( RcParams* rc, const mfxVideoParam *parMFX )
+{
+    Ipp32s mult = IPP_MAX( parMFX->mfx.BRCParamMultiplier, 1);
 
-    mfxU16 mult = IPP_MAX( parMFX->mfx.BRCParamMultiplier, 1);
-
-    calcParam.TargetKbps = parMFX->mfx.TargetKbps * mult;
-    calcParam.MaxKbps = parMFX->mfx.MaxKbps * mult;
-    calcParam.BufferSizeInKB = parMFX->mfx.BufferSizeInKB * mult;
-    calcParam.InitialDelayInKB = parMFX->mfx.InitialDelayInKB * mult;
+    // not all fields are vlid for all rc modes
+    rc->BufferSizeInKB = parMFX->mfx.BufferSizeInKB * mult;
+    rc->TargetKbps = parMFX->mfx.TargetKbps * mult;
+    rc->MaxKbps = parMFX->mfx.MaxKbps * mult;
+    rc->InitialDelayInKB = parMFX->mfx.InitialDelayInKB * mult;
 }
-void mfxVideoH265InternalParam::GetCalcParams( mfxVideoParam *parMFX) {
 
-    mfxU32 maxVal = IPP_MAX( IPP_MAX( calcParam.TargetKbps, calcParam.MaxKbps), IPP_MAX( calcParam.BufferSizeInKB, calcParam.InitialDelayInKB));
-    mfxU16 mult = (mfxU16)((maxVal + 0xffff) / 0x10000);
+void GetCalcParams( mfxVideoParam *parMFX, const RcParams* rc, Ipp32s rcMode )
+{
+    Ipp32s maxVal = rc->BufferSizeInKB;
+    if (rcMode == MFX_RATECONTROL_AVBR)
+        maxVal = IPP_MAX(rc->TargetKbps, maxVal);
+    else if (rcMode != MFX_RATECONTROL_CQP)
+        maxVal = IPP_MAX( IPP_MAX( rc->InitialDelayInKB, rc->MaxKbps), maxVal);
 
-    if (mult) {
-        parMFX->mfx.BRCParamMultiplier = mult;
-        parMFX->mfx.TargetKbps = (mfxU16)(calcParam.TargetKbps / mult);
-        parMFX->mfx.MaxKbps = (mfxU16)(calcParam.MaxKbps / mult);
-        parMFX->mfx.BufferSizeInKB = (mfxU16)(calcParam.BufferSizeInKB / mult);
-        parMFX->mfx.InitialDelayInKB = (mfxU16)(calcParam.InitialDelayInKB / mult);
+    Ipp32s mult = (Ipp32u)(maxVal + 0xffff) >> 16;
+    if (mult == 0)
+        mult = 1;
+
+    parMFX->mfx.BRCParamMultiplier = (mfxU16)mult;
+    parMFX->mfx.BufferSizeInKB = (mfxU16)(rc->BufferSizeInKB / mult);
+    if (rcMode != MFX_RATECONTROL_CQP) {
+        parMFX->mfx.TargetKbps = (mfxU16)(rc->TargetKbps / mult);
+        if (rcMode != MFX_RATECONTROL_AVBR) {
+            parMFX->mfx.MaxKbps = (mfxU16)(rc->MaxKbps / mult);
+            parMFX->mfx.InitialDelayInKB = (mfxU16)(rc->InitialDelayInKB / mult);
+        }
     }
 }
 
-mfxVideoH265InternalParam::mfxVideoH265InternalParam()
-{
-    memset(this, 0, sizeof(*this));
-}
 
-mfxVideoH265InternalParam::mfxVideoH265InternalParam(mfxVideoParam const & par)
-{
-    mfxVideoParam & base = *this;
-    base = par;
-    SetCalcParams( &base);
-}
-
-mfxVideoH265InternalParam& mfxVideoH265InternalParam::operator=(mfxVideoParam const & par)
-{
-    mfxVideoParam & base = *this;
-    base = par;
-    SetCalcParams( &base);
-    return *this;
-}
-
-inline Ipp32u h265enc_ConvertBitrate(mfxU16 TargetKbps)
-{
-    return (TargetKbps * 1000);
-}
+//inline Ipp32u h265enc_ConvertBitrate(mfxU16 TargetKbps)
+//{
+//    return (TargetKbps * 1000);
+//}
 
 // check for known ExtBuffers, returns error code. or -1 if found unknown
 // zero mfxExtBuffer* are OK
@@ -264,6 +271,9 @@ mfxStatus CheckExtBuffers_H265enc(mfxExtBuffer** ebuffers, mfxU32 nbuffers)
     }
     return MFX_ERR_NONE;
 }
+
+} // namespace
+
 //////////////////////////////////////////////////////////////////////////
 
 MFXVideoENCODEH265::MFXVideoENCODEH265(VideoCORE *core, mfxStatus *stat)
@@ -296,7 +306,8 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
     H265ENC_UNREFERENCED_PARAMETER(pInternalParams);
     MFX_CHECK(bs->MaxLength > (bs->DataOffset + bs->DataLength),MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    if( bs->MaxLength - bs->DataOffset - bs->DataLength < m_mfxVideoParam.mfx.BufferSizeInKB)
+    Ipp32s brcMult = IPP_MAX(1, m_mfxVideoParam.mfx.BRCParamMultiplier);
+    if( (Ipp32s)(bs->MaxLength - bs->DataOffset - bs->DataLength) < m_mfxVideoParam.mfx.BufferSizeInKB * brcMult * 1000)
         return MFX_ERR_NOT_ENOUGH_BUFFER;
 
     if (surface)
@@ -363,8 +374,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
     mfxExtOpaqueSurfaceAlloc* opaqAllocReq = (mfxExtOpaqueSurfaceAlloc*)GetExtBuffer( par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION );
     mfxExtDumpFiles* opts_Dump = (mfxExtDumpFiles*)GetExtBuffer( par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_DUMP );
 
-    mfxVideoH265InternalParam inInt = *par_in;
-    mfxVideoH265InternalParam *par = &inInt;
+    const mfxVideoParam *par = par_in;
 
     mfxExtOpaqueSurfaceAlloc checked_opaqAllocReq;
     mfxExtBuffer *ptr_checked_ext[3] = {0};
@@ -732,7 +742,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 
     // what is still needed?
     //m_mfxVideoParam.mfx = par->mfx;
-    m_mfxVideoParam.SetCalcParams(&m_mfxVideoParam);
+    //m_mfxVideoParam.SetCalcParams(&m_mfxVideoParam);
     //m_mfxVideoParam.calcParam = par->calcParam;
     m_mfxVideoParam.IOPattern = par->IOPattern;
     m_mfxVideoParam.Protected = 0;
@@ -1076,10 +1086,8 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
         }
         // ignore all reserved
     } else { //Check options for correctness
-        mfxVideoH265InternalParam inInt = *par_in;
-        mfxVideoH265InternalParam outInt = *par_out;
-        mfxVideoH265InternalParam *in = &inInt;
-        mfxVideoH265InternalParam *out = &outInt;
+        const mfxVideoParam * const in = par_in;
+        mfxVideoParam * const out = par_out;
 
         if ( in->mfx.CodecId != MFX_CODEC_HEVC)
             return MFX_ERR_UNSUPPORTED;
@@ -1089,10 +1097,10 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
         st = CheckExtBuffers_H265enc( out->ExtParam, out->NumExtParam );
         MFX_CHECK_STS(st);
 
-        const mfxExtCodingOptionHEVC* opts_in  = (mfxExtCodingOptionHEVC*)GetExtBuffer(  in->ExtParam,  in->NumExtParam, MFX_EXTBUFF_HEVCENC );
-        mfxExtCodingOptionHEVC*       opts_out = (mfxExtCodingOptionHEVC*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_HEVCENC );
-        const mfxExtDumpFiles* optsDump_in = (mfxExtDumpFiles*)GetExtBuffer( in->ExtParam, in->NumExtParam, MFX_EXTBUFF_DUMP );
-        mfxExtDumpFiles* optsDump_out = (mfxExtDumpFiles*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_DUMP );
+        const mfxExtCodingOptionHEVC* opts_in = (mfxExtCodingOptionHEVC*)GetExtBuffer(  in->ExtParam,  in->NumExtParam, MFX_EXTBUFF_HEVCENC );
+        mfxExtCodingOptionHEVC*      opts_out = (mfxExtCodingOptionHEVC*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_HEVCENC );
+        const mfxExtDumpFiles*    optsDump_in = (mfxExtDumpFiles*)GetExtBuffer( in->ExtParam, in->NumExtParam, MFX_EXTBUFF_DUMP );
+        mfxExtDumpFiles*         optsDump_out = (mfxExtDumpFiles*)GetExtBuffer( out->ExtParam, out->NumExtParam, MFX_EXTBUFF_DUMP );
 
         if (opts_in           ) CHECK_EXTBUF_SIZE( *opts_in,            isInvalid)
         if (opts_out          ) CHECK_EXTBUF_SIZE( *opts_out,           isInvalid)
@@ -1308,34 +1316,33 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             isInvalid ++;
         } else out->mfx.RateControlMethod = in->mfx.RateControlMethod;
 
-        out->calcParam.BufferSizeInKB = in->calcParam.BufferSizeInKB;
+        RcParams rcParams;
+        SetCalcParams(&rcParams, in);
+
         if (out->mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
             out->mfx.RateControlMethod != MFX_RATECONTROL_AVBR) {
-            out->calcParam.TargetKbps = in->calcParam.TargetKbps;
-            out->calcParam.InitialDelayInKB = in->calcParam.InitialDelayInKB;
-            if (out->mfx.FrameInfo.Width && out->mfx.FrameInfo.Height && out->mfx.FrameInfo.FrameRateExtD && out->calcParam.TargetKbps) {
+            if (out->mfx.FrameInfo.Width && out->mfx.FrameInfo.Height && out->mfx.FrameInfo.FrameRateExtD && rcParams.TargetKbps) {
                 // last denominator 1000 gives about 0.75 Mbps for 1080p x 30
-                mfxU32 minBitRate = (mfxU32)((mfxF64)out->mfx.FrameInfo.Width * out->mfx.FrameInfo.Height * 12 // size of raw image (luma + chroma 420) in bits
+                Ipp32s minBitRate = (Ipp32s)((mfxF64)out->mfx.FrameInfo.Width * out->mfx.FrameInfo.Height * 12 // size of raw image (luma + chroma 420) in bits
                                              * out->mfx.FrameInfo.FrameRateExtN / out->mfx.FrameInfo.FrameRateExtD / 1000 / 1000);
-                if (minBitRate > out->calcParam.TargetKbps) {
-                    out->calcParam.TargetKbps = (mfxU32)minBitRate;
+                if (minBitRate > rcParams.TargetKbps) {
+                    rcParams.TargetKbps = minBitRate;
                     isCorrected ++;
                 }
-                mfxU32 AveFrameKB = out->calcParam.TargetKbps * out->mfx.FrameInfo.FrameRateExtD / out->mfx.FrameInfo.FrameRateExtN / 8;
-                if (out->calcParam.BufferSizeInKB != 0 && out->calcParam.BufferSizeInKB < 2 * AveFrameKB) {
-                    out->calcParam.BufferSizeInKB = (mfxU32)(2 * AveFrameKB);
+                Ipp32s AveFrameKB = rcParams.TargetKbps * out->mfx.FrameInfo.FrameRateExtD / out->mfx.FrameInfo.FrameRateExtN / 8;
+                if (rcParams.BufferSizeInKB != 0 && rcParams.BufferSizeInKB < 2 * AveFrameKB) {
+                    rcParams.BufferSizeInKB = 2 * AveFrameKB;
                     isCorrected ++;
                 }
-                if (out->calcParam.InitialDelayInKB != 0 && out->calcParam.InitialDelayInKB < AveFrameKB) {
-                    out->calcParam.InitialDelayInKB = (mfxU32)AveFrameKB;
+                if (rcParams.InitialDelayInKB != 0 && rcParams.InitialDelayInKB < AveFrameKB) {
+                    rcParams.InitialDelayInKB = AveFrameKB;
                     isCorrected ++;
                 }
             }
 
-            if (in->calcParam.MaxKbps != 0 && in->calcParam.MaxKbps < out->calcParam.TargetKbps) {
-                out->calcParam.MaxKbps = out->calcParam.TargetKbps;
-            } else
-                out->calcParam.MaxKbps = in->calcParam.MaxKbps;
+            if (rcParams.MaxKbps != 0 && rcParams.MaxKbps < rcParams.TargetKbps) {
+                rcParams.MaxKbps = rcParams.TargetKbps;
+            }
         }
         // check for correct QPs for const QP mode
         else if (out->mfx.RateControlMethod == MFX_RATECONTROL_CQP) {
@@ -1353,16 +1360,11 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
             } else out->mfx.QPB = in->mfx.QPB;
         }
         else {
-            out->calcParam.TargetKbps = in->calcParam.TargetKbps;
             out->mfx.Accuracy = in->mfx.Accuracy;
             out->mfx.Convergence = in->mfx.Convergence;
         }
 
-        *par_out = *out;
-        if (out->mfx.RateControlMethod != MFX_RATECONTROL_CQP)
-            out->GetCalcParams(par_out);
-
-
+        GetCalcParams(out, &rcParams, out->mfx.RateControlMethod);
 
         if (opts_in) {
             if ((opts_in->Log2MaxCUSize != 0 && opts_in->Log2MaxCUSize < 4) || opts_in->Log2MaxCUSize > 6) {

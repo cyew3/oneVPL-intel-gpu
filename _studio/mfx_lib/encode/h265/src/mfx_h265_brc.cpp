@@ -97,7 +97,7 @@ mfxI32 H265BRC::GetInitQP()
   return q;
 }
 
-mfxStatus H265BRC::SetParams(mfxVideoParam *params)
+mfxStatus H265BRC::SetParams(const mfxVideoParam *params)
 {
     if (!params)
         return MFX_ERR_NULL_PTR;
@@ -123,17 +123,10 @@ mfxStatus H265BRC::SetParams(mfxVideoParam *params)
     mParams.height = params->mfx.FrameInfo.Height;
     mParams.chromaFormat = params->mfx.FrameInfo.ChromaFormat;
 
-/*
-    mFramerate = (mfxF64)mParams.frameRateExtN / mParams.frameRateExtD;
-    mBitrate = params->mfx.TargetKbps * 1000;
-    if (!mBitrate)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
-*/
-
     return MFX_ERR_NONE;
 }
 
-mfxStatus H265BRC::Init(mfxVideoParam *params, mfxI32 enableRecode)
+mfxStatus H265BRC::Init(const mfxVideoParam *params, mfxI32 enableRecode)
 {
     mfxStatus status = MFX_ERR_NONE;
 

@@ -23,40 +23,6 @@
 namespace H265Enc {
     class H265Encoder;
 }
-struct H265NALUnit;
-
-class mfxVideoH265InternalParam : public mfxVideoParam
-{
-public:
-    mfxVideoH265InternalParam();
-    mfxVideoH265InternalParam(mfxVideoParam const &);
-
-    mfxVideoH265InternalParam & operator = (mfxVideoParam const &);
-
-    void SetCalcParams( mfxVideoParam *parMFX);
-
-    void GetCalcParams( mfxVideoParam *parMFX);
-
-    struct CalculableParam
-    {
-        mfxU32 BufferSizeInKB;
-        mfxU32 InitialDelayInKB;
-        mfxU32 TargetKbps;
-        mfxU32 MaxKbps;
-    } calcParam;
-};
-
-struct H265EncodeTaskInputParams
-{
-    mfxEncodeCtrl *ctrl;
-    mfxFrameSurface1 *surface;
-    mfxBitstream *bs;
-};
-enum ParallelRegion
-{
-    PARALLEL_REGION_MAIN,
-    PARALLEL_REGION_DEBLOCKING
-};
 
 class MFXVideoENCODEH265 : public VideoENCODE {
 public:
@@ -93,10 +59,10 @@ public:
 protected:
 // ------ mfx level
     VideoCORE *m_core;
-    mfxVideoH265InternalParam            m_mfxVideoParam;
-    mfxExtCodingOptionHEVC               m_mfxHEVCOpts;
-    mfxExtDumpFiles                      m_mfxDumpFiles;
-    H265Enc::H265Encoder *m_enc;
+    mfxVideoParam          m_mfxVideoParam;
+    mfxExtCodingOptionHEVC m_mfxHEVCOpts;
+    mfxExtDumpFiles        m_mfxDumpFiles;
+    H265Enc::H265Encoder  *m_enc;
 
     mfxU32                 m_frameCountSync; // counter for sync. part
     mfxU32                 m_frameCount;     // counter for Async. part

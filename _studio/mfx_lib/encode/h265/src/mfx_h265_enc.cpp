@@ -98,7 +98,7 @@ static mfxU32 ConvertSARtoIDC_H265enc(mfxU32 sarw, mfxU32 sarh)
 }
 
 
-mfxStatus H265Encoder::InitH265VideoParam(mfxVideoH265InternalParam *param, mfxExtCodingOptionHEVC *opts_hevc)
+mfxStatus H265Encoder::InitH265VideoParam(const mfxVideoParam *param, const mfxExtCodingOptionHEVC *opts_hevc)
 {
     H265VideoParam *pars = &m_videoParam;
     Ipp32u width = param->mfx.FrameInfo.Width;
@@ -690,7 +690,7 @@ void H265Encoder::InitShortTermRefPicSet()
     m_sps.num_short_term_ref_pic_sets = (Ipp8u)m_numShortTermRefPicSets;
 }
 
-mfxStatus H265Encoder::Init(mfxVideoH265InternalParam *param, mfxExtCodingOptionHEVC *opts_hevc) {
+mfxStatus H265Encoder::Init(const mfxVideoParam *param, const mfxExtCodingOptionHEVC *opts_hevc) {
 #ifdef MFX_ENABLE_WATERMARK
     m_watermark = Watermark::CreateFromResource();
     if (NULL == m_watermark)

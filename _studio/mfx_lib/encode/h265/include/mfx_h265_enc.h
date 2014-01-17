@@ -22,6 +22,12 @@ namespace H265Enc {
 class Watermark;
 #endif
 
+enum ParallelRegion
+{
+    PARALLEL_REGION_MAIN,
+    PARALLEL_REGION_DEBLOCKING
+};
+
 struct H265VideoParam {
 // preset
     Ipp32u SourceWidth;
@@ -240,10 +246,10 @@ public:
     mfxStatus SetSlice(H265Slice *slice, Ipp32u curr_slice);
 
     void InitShortTermRefPicSet();
-    mfxStatus Init(mfxVideoH265InternalParam *param, mfxExtCodingOptionHEVC *opts_hevc);
+    mfxStatus Init(const mfxVideoParam *param, const mfxExtCodingOptionHEVC *opts_hevc);
 
     void Close();
-    Ipp32u DetermineFrameType();
+    Ipp32u    DetermineFrameType();
     void      PrepareToEndSequence();
     mfxStatus EncodeFrame(mfxFrameSurface1 *surface, mfxBitstream *bs);
     mfxStatus DeblockThread(Ipp32s ithread);
@@ -265,7 +271,7 @@ public:
 
     //////////////////
 
-    mfxStatus InitH265VideoParam(mfxVideoH265InternalParam *param, mfxExtCodingOptionHEVC *opts_hevc);
+    mfxStatus InitH265VideoParam(const mfxVideoParam *param, const mfxExtCodingOptionHEVC *opts_hevc);
 private:
 #ifdef MFX_ENABLE_WATERMARK
     Watermark *m_watermark;

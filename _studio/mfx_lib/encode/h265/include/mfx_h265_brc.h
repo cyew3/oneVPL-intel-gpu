@@ -101,12 +101,12 @@ public:
     }
 
     // Initialize with specified parameter(s)
-    mfxStatus Init(mfxVideoParam *init, mfxI32 enableRecode = 1);
+    mfxStatus Init(const mfxVideoParam *init, mfxI32 enableRecode = 1);
 
     mfxStatus Close();
 
     mfxStatus Reset(mfxVideoParam *init, mfxI32 enableRecode = 1);
-    mfxStatus SetParams(mfxVideoParam *init);
+    mfxStatus SetParams(const mfxVideoParam *init);
     mfxStatus GetParams(mfxVideoParam *init);
 
     mfxBRCStatus PostPackFrame(mfxU16 picType, mfxI32 bitsEncodedFrame, mfxI32 overheadBits, mfxI32 recode = 0, mfxI32 poc = 0);
