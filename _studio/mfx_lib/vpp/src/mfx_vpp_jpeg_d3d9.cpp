@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -74,7 +74,7 @@ mfxStatus VideoVppJpegD3D9::Init(const mfxVideoParam *par)
         request.NumFrameSuggested = request.NumFrameMin;
         request.Type = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_VPPOUT | MFX_MEMTYPE_INTERNAL_FRAME;
 
-        sts = m_pCore->AllocFrames(&request, &m_response);
+        sts = m_pCore->AllocFrames(&request, &m_response, true);
         MFX_CHECK_STS(sts);
 
         m_surfaces.resize(m_response.NumFrameActual);

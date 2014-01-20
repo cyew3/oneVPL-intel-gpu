@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -3800,7 +3800,8 @@ void MfxFrameAllocResponse::DestroyBufferUp(CmDevice * device, void * p)
 
 mfxStatus MfxFrameAllocResponse::Alloc(
     VideoCORE *            core,
-    mfxFrameAllocRequest & req)
+    mfxFrameAllocRequest & req,
+    bool isCopyRequired)
 {
     if (m_core || m_cmDevice)
         return Error(MFX_ERR_MEMORY_ALLOC);
@@ -3817,7 +3818,7 @@ mfxStatus MfxFrameAllocResponse::Alloc(
 
         for (int i = 0; i < req.NumFrameMin; i++)
         {
-            mfxStatus sts = core->AllocFrames(&tmp, &m_responseQueue[i]);
+            mfxStatus sts = core->AllocFrames(&tmp, &m_responseQueue[i],isCopyRequired);
             MFX_CHECK_STS(sts);
             m_mids[i] = m_responseQueue[i].mids[0];
         }
@@ -3827,7 +3828,7 @@ mfxStatus MfxFrameAllocResponse::Alloc(
     }
     else
     {
-        mfxStatus sts = core->AllocFrames(&req, this);
+        mfxStatus sts = core->AllocFrames(&req, this,isCopyRequired);
         MFX_CHECK_STS(sts);
     }
 

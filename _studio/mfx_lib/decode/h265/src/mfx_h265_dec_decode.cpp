@@ -190,7 +190,7 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
     {
         if (m_platform != MFX_PLATFORM_SOFTWARE && !useInternal)
         {
-            mfxSts = m_core->AllocFrames(&request, &m_response);
+            mfxSts = m_core->AllocFrames(&request, &m_response, false);
         }
     }
 
@@ -203,7 +203,7 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
         m_response_alien = m_response;
         m_FrameAllocator->SetExternalFramesResponse(&m_response_alien);
         request = request_internal;
-        mfxSts = m_core->AllocFrames(&request_internal, &m_response);
+        mfxSts = m_core->AllocFrames(&request_internal, &m_response, true);
         if (mfxSts < MFX_ERR_NONE)
             return mfxSts;
     }

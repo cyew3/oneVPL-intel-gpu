@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -731,7 +731,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         request.Type        = MFX_MEMTYPE_D3D_INT;
         request.NumFrameMin = mfxU16(CalcNumSurfRaw(m_video));
 
-        sts = m_raw.Alloc(m_core, request);
+        sts = m_raw.Alloc(m_core, request, true);
         MFX_CHECK_STS(sts);
     }
     else if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
@@ -746,7 +746,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         {
             request.Type        = MFX_MEMTYPE_D3D_INT;
             request.NumFrameMin = extOpaq->In.NumSurface;
-            sts = m_raw.Alloc(m_core, request);
+            sts = m_raw.Alloc(m_core, request, true);
         }
     }
 
@@ -760,7 +760,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     request.Type        = m_video.Protected ? MFX_MEMTYPE_D3D_SERPENT_INT : MFX_MEMTYPE_D3D_INT;
     request.NumFrameMin = mfxU16(m_video.mfx.NumRefFrame +
         m_emulatorForSyncPart.GetStageGreediness(AsyncRoutineEmulator::STG_WAIT_ENCODE));
-    sts = m_rec.Alloc(m_core, request);
+    sts = m_rec.Alloc(m_core, request,false);
     MFX_CHECK_STS(sts);
 
     sts = m_ddi->Register(m_rec.NumFrameActual ? m_rec : m_raw, D3DDDIFMT_NV12);
@@ -782,7 +782,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     request.Info.Height = IPP_MAX(request.Info.Height, m_video.mfx.FrameInfo.Height * 3 / 2);
     m_maxBsSize = request.Info.Width * request.Info.Height;
 
-    sts = m_bit.Alloc(m_core, request);
+    sts = m_bit.Alloc(m_core, request,false);
     MFX_CHECK_STS(sts);
 
     if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA || m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)

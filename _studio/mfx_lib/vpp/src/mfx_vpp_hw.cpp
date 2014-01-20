@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -1457,7 +1457,7 @@ mfxStatus  VideoVPPHW::Init(
         request.Type        = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_VPPOUT | MFX_MEMTYPE_INTERNAL_FRAME;
         request.NumFrameMin = request.NumFrameSuggested = m_config.m_surfCount[VPP_OUT] ;
 
-        sts = m_internalVidSurf[VPP_OUT].Alloc(m_pCore, request);
+        sts = m_internalVidSurf[VPP_OUT].Alloc(m_pCore, request, true);
         MFX_CHECK_STS(sts);
 
         m_config.m_IOPattern |= MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
@@ -1473,7 +1473,7 @@ mfxStatus  VideoVPPHW::Init(
         request.Type        = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_VPPIN | MFX_MEMTYPE_INTERNAL_FRAME;
         request.NumFrameMin = request.NumFrameSuggested = m_config.m_surfCount[VPP_IN] ;
 
-        sts = m_internalVidSurf[VPP_IN].Alloc(m_pCore, request);
+        sts = m_internalVidSurf[VPP_IN].Alloc(m_pCore, request, true);
         MFX_CHECK_STS(sts);
 
          m_config.m_IOPattern |= MFX_IOPATTERN_IN_SYSTEM_MEMORY;
@@ -2814,7 +2814,7 @@ MfxFrameAllocResponse::~MfxFrameAllocResponse()
 
 mfxStatus MfxFrameAllocResponse::Alloc(
     VideoCORE *            core,
-    mfxFrameAllocRequest & req)
+    mfxFrameAllocRequest & req, bool isCopyReqiured)
 {
     req.NumFrameSuggested = req.NumFrameMin; // no need in 2 different NumFrames
 
@@ -2828,7 +2828,7 @@ mfxStatus MfxFrameAllocResponse::Alloc(
 
         for (int i = 0; i < req.NumFrameMin; i++)
         {
-            mfxStatus sts = core->AllocFrames(&tmp, &m_responseQueue[i]);
+            mfxStatus sts = core->AllocFrames(&tmp, &m_responseQueue[i],isCopyReqiured);
             MFX_CHECK_STS(sts);
             m_mids[i] = m_responseQueue[i].mids[0];
         }
@@ -2838,7 +2838,7 @@ mfxStatus MfxFrameAllocResponse::Alloc(
     }
     else
     {
-        mfxStatus sts = core->AllocFrames(&req, this);
+        mfxStatus sts = core->AllocFrames(&req, this, isCopyReqiured);
         MFX_CHECK_STS(sts);
     }
 
