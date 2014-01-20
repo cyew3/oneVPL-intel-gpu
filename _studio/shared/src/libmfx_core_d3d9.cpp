@@ -284,7 +284,7 @@ mfxStatus D3D9VideoCORE::InternalInit()
         OnDeblockingInWinRegistry(MFX_CODEC_AVC);
         OnDeblockingInWinRegistry(MFX_CODEC_VC1);
     }
-
+    if (m_HWType >= MFX_HW_BDW) m_bCmCopyAllowed = false;
     return MFX_ERR_NONE;
 }
 
