@@ -80,7 +80,7 @@ protected:
     bool    m_useAuxInput;
     mfxFrameSurface1 m_auxInput;
     mfxFrameAllocResponse m_response;
-    mfxFrameAllocResponse m_response_alien;
+    mfxFrameAllocResponse m_responseAlien;
 
 //  threading
     static mfxStatus TaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber);

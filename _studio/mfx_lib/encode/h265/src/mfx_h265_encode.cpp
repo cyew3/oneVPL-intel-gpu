@@ -34,10 +34,6 @@ using namespace H265Enc;
 
 //////////////////////////////////////////////////////////////////////////
 
-#define CHECK_VERSION(ver)
-#define CHECK_CODEC_ID(id, myid)
-#define CHECK_FUNCTION_ID(id, myid)
-
 #define CHECK_OPTION(input, output, corcnt) \
   if ( input != MFX_CODINGOPTION_OFF &&     \
       input != MFX_CODINGOPTION_ON  &&      \
@@ -48,9 +44,10 @@ using namespace H265Enc;
 
 #define CHECK_EXTBUF_SIZE(ebuf, errcounter) if ((ebuf).Header.BufferSz != sizeof(ebuf)) {(errcounter) = (errcounter) + 1;}
 
-#define H265_MAXREFDIST 8
 
 namespace H265Enc {
+
+static const mfxU16 H265_MAXREFDIST = 8;
 
 typedef struct
 {
@@ -60,14 +57,14 @@ typedef struct
     Ipp32s MaxKbps;
 } RcParams;
 
-struct H265EncodeTaskInputParams
+typedef struct
 {
     mfxEncodeCtrl *ctrl;
     mfxFrameSurface1 *surface;
     mfxBitstream *bs;
-};
+} H265EncodeTaskInputParams;
 
-mfxExtCodingOptionHEVC hevc_tu_tab[8] = {               // CUS CUD 2TUS 2TUD  AnalyzeChroma         SignBitHiding          RDOQuant               SAO                   thrCU,TU,CUInter    5numCand1  5numCand2 WPP                       GPB                   AMP                   CmIntraThreshold TUSplitIntra CUSplit IntraAngModes EnableCm              BPyramid              FastPUDecision
+mfxExtCodingOptionHEVC tab_tu[8] = {                    // CUS CUD 2TUS 2TUD  AnalyzeChroma         SignBitHiding          RDOQuant               SAO                   thrCU,TU,CUInter    5numCand1  5numCand2 WPP                       GPB                   AMP                   CmIntraThreshold TUSplitIntra CUSplit IntraAngModes EnableCm              BPyramid              FastPUDecision
     {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  3, 5,2, 3,3,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, 0,               1,           2,      1,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF }, // tu default (==4)
     {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 6,  4, 5,2, 5,5,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_ON,    1, 1, 1,         8,8,4,4,4, 4,4,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_ON , 0,               1,           1,      1,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF }, // tu 1
     {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 6,  3, 5,2, 5,5,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_ON,    2, 2, 2,         6,6,3,3,3, 3,3,2,2,2, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_ON , 0,               1,           2,      1,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_OFF }, // tu 2  (==4)
@@ -78,22 +75,22 @@ mfxExtCodingOptionHEVC hevc_tu_tab[8] = {               // CUS CUD 2TUS 2TUD  An
     {{MFX_EXTBUFF_HEVCENC, sizeof(mfxExtCodingOptionHEVC)}, 5,  2, 5,2, 2,2,  MFX_CODINGOPTION_ON,  MFX_CODINGOPTION_ON,   MFX_CODINGOPTION_OFF,  MFX_CODINGOPTION_ON,    3, 3, 3,         4,4,2,2,2, 2,2,1,1,1, MFX_CODINGOPTION_UNKNOWN, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, 0,               3,           2,      2,            MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_OFF }  // tu 7
 };
 
-Ipp8u hevc_tu_tab_GopRefDist [8] = {4, 8, 8, 4, 4, 3, 2, 1};
-Ipp8u hevc_tu_tab_NumRefFrame[8] = {3, 4, 4, 3, 3, 2, 1, 1};
+Ipp8u tab_tuGopRefDist [8] = {4, 8, 8, 4, 4, 3, 2, 1};
+Ipp8u tab_tuNumRefFrame[8] = {3, 4, 4, 3, 3, 2, 1, 1};
 
-static const struct _hevc_level_tab {
+static const struct tab_hevcLevel {
     // General limits
-    mfxI32 level_id;
-    mfxI32 MaxLumaPs;
-    mfxI32 MaxCPB[2]; // low/high tier, in 1000 bits
-    mfxI32 MaxSliceSegmentsPerPicture;
-    mfxI32 MaxTileRows;
-    mfxI32 MaxTileCols;
+    Ipp32s levelId;
+    Ipp32s maxLumaPs;
+    Ipp32s maxCPB[2]; // low/high tier, in 1000 bits
+    Ipp32s maxSliceSegmentsPerPicture;
+    Ipp32s maxTileRows;
+    Ipp32s maxTileCols;
     // Main profiles limits
-    mfxI64 MaxLumaSr;
-    mfxI32 MaxBR[2]; // low/high tier, in 1000 bits
-    mfxI32 MinCr;
-} hevc_level_tab[] = {
+    Ipp64s maxLumaSr;
+    Ipp32s maxBr[2]; // low/high tier, in 1000 bits
+    Ipp32s minCr;
+} tab_level[] = {
     {MFX_LEVEL_HEVC_1 ,    36864, {   350,      0},  16,  1,  1,     552960, {   128,      0}, 2},
     {MFX_LEVEL_HEVC_2 ,   122880, {  1500,      0},  16,  1,  1,    3686400, {  1500,      0}, 2},
     {MFX_LEVEL_HEVC_21,   245760, {  3000,      0},  20,  1,  1,    7372800, {  3000,      0}, 2},
@@ -109,115 +106,78 @@ static const struct _hevc_level_tab {
     {MFX_LEVEL_HEVC_62, 35651584, {240000, 800000}, 600, 22, 20, 4278190080, {240000, 800000}, 6}
 };
 
-static const int NUM_265_LEVELS = sizeof(hevc_level_tab) / sizeof(hevc_level_tab[0]);
+static const int    NUM_265_LEVELS = sizeof(tab_level) / sizeof(tab_level[0]);
 
 //////////////////////////////////////////////////////////////////////////
 
-static mfxI32 Compute265Level(mfxVideoParam *parMFX)
+static Ipp32s Check265Level(Ipp32s inLevelTier, const mfxVideoParam *parMfx)
 {
-    mfxI32 level, tier;
-
-    if (!parMFX) return MFX_LEVEL_UNKNOWN;
-    const mfxExtCodingOptionHEVC* opts  = (mfxExtCodingOptionHEVC*)GetExtBuffer(  parMFX->ExtParam,  parMFX->NumExtParam, MFX_EXTBUFF_HEVCENC );
-
-    for(level = 0; level < NUM_265_LEVELS; level++) {
-        mfxI32 LumaPs = parMFX->mfx.FrameInfo.Width * parMFX->mfx.FrameInfo.Height;
-        mfxI32 BR = parMFX->mfx.BRCParamMultiplier ? parMFX->mfx.BRCParamMultiplier * parMFX->mfx.TargetKbps : parMFX->mfx.TargetKbps;
-        mfxI64 LumaSr = parMFX->mfx.FrameInfo.FrameRateExtD ? (mfxI64)LumaPs * parMFX->mfx.FrameInfo.FrameRateExtN / parMFX->mfx.FrameInfo.FrameRateExtD : 0;
-        if (LumaPs > hevc_level_tab[level].MaxLumaPs)
-            continue;
-        if (parMFX->mfx.FrameInfo.Width * parMFX->mfx.FrameInfo.Width > 8 * hevc_level_tab[level].MaxLumaPs)
-            continue;
-        if (parMFX->mfx.FrameInfo.Height * parMFX->mfx.FrameInfo.Height > 8 * hevc_level_tab[level].MaxLumaPs)
-            continue;
-        if (parMFX->mfx.NumSlice > hevc_level_tab[level].MaxSliceSegmentsPerPicture)
-            continue;
-        if (parMFX->mfx.FrameInfo.FrameRateExtD && LumaSr > hevc_level_tab[level].MaxLumaSr)
-            continue;
-        if (BR > hevc_level_tab[level].MaxBR[1]) // try high tier
-            continue;
-        if (BR && LumaSr * 3 / 2 * 1000 / BR < hevc_level_tab[level].MinCr)
-            continue; // it hardly can change the case
-
-        if (opts && opts->Log2MaxCUSize > 0 && hevc_level_tab[level].level_id >= MFX_LEVEL_HEVC_5 && opts->Log2MaxCUSize < 5)
-            continue;
-
-        tier = (BR > hevc_level_tab[level].MaxBR[0]) ? MFX_TIER_HEVC_HIGH : MFX_TIER_HEVC_MAIN;
-        return hevc_level_tab[level].level_id | tier;
-    }
-    return MFX_LEVEL_UNKNOWN;
-
-}
-
-static mfxI32 Check265Level(mfxI32 inleveltier, const mfxVideoParam *parMFX)
-{
-    mfxI32 level, tier;
-    mfxI32 inlevel = inleveltier &~ MFX_TIER_HEVC_HIGH;
-    mfxI32 intier = inleveltier & MFX_TIER_HEVC_HIGH;
-    for(level = 0; level < NUM_265_LEVELS; level++)
-        if (hevc_level_tab[level].level_id == inlevel)
+    Ipp32s inLevel = inLevelTier &~ MFX_TIER_HEVC_HIGH;
+    Ipp32s inTier = inLevelTier & MFX_TIER_HEVC_HIGH;
+    Ipp32s level;
+    for (level = 0; level < NUM_265_LEVELS; level++)
+        if (tab_level[level].levelId == inLevel)
             break;
 
     if (level >= NUM_265_LEVELS) {
-        if (inleveltier != MFX_LEVEL_UNKNOWN)
+        if (inLevelTier != MFX_LEVEL_UNKNOWN)
             return MFX_LEVEL_UNKNOWN;
-        inleveltier = inlevel = MFX_LEVEL_UNKNOWN;
-        intier = 0;
+        inLevelTier = inLevel = MFX_LEVEL_UNKNOWN;
+        inTier = 0;
         level = 0;
     }
 
-    if (!parMFX) // just chaeck for valid level value
-        return inleveltier;
+    if (!parMfx) // just check for valid level value
+        return inLevelTier;
 
-    const mfxExtCodingOptionHEVC* opts  = (mfxExtCodingOptionHEVC*)GetExtBuffer(  parMFX->ExtParam,  parMFX->NumExtParam, MFX_EXTBUFF_HEVCENC );
+    const mfxExtCodingOptionHEVC* opts  = (mfxExtCodingOptionHEVC*)GetExtBuffer(  parMfx->ExtParam,  parMfx->NumExtParam, MFX_EXTBUFF_HEVCENC );
 
     for( ; level < NUM_265_LEVELS; level++) {
-        mfxI32 LumaPs = parMFX->mfx.FrameInfo.Width * parMFX->mfx.FrameInfo.Height;
-        mfxI32 BR = parMFX->mfx.BRCParamMultiplier ? parMFX->mfx.BRCParamMultiplier * parMFX->mfx.TargetKbps : parMFX->mfx.TargetKbps;
-        mfxI64 LumaSr = parMFX->mfx.FrameInfo.FrameRateExtD ? (mfxI64)LumaPs * parMFX->mfx.FrameInfo.FrameRateExtN / parMFX->mfx.FrameInfo.FrameRateExtD : 0;
-        if (LumaPs > hevc_level_tab[level].MaxLumaPs)
+        Ipp32s lumaPs = parMfx->mfx.FrameInfo.Width * parMfx->mfx.FrameInfo.Height;
+        Ipp32s bitrate = parMfx->mfx.BRCParamMultiplier ? parMfx->mfx.BRCParamMultiplier * parMfx->mfx.TargetKbps : parMfx->mfx.TargetKbps;
+        Ipp64s lumaSr = parMfx->mfx.FrameInfo.FrameRateExtD ? (Ipp64s)lumaPs * parMfx->mfx.FrameInfo.FrameRateExtN / parMfx->mfx.FrameInfo.FrameRateExtD : 0;
+        if (lumaPs > tab_level[level].maxLumaPs)
             continue;
-        if (parMFX->mfx.FrameInfo.Width * parMFX->mfx.FrameInfo.Width > 8 * hevc_level_tab[level].MaxLumaPs)
+        if (parMfx->mfx.FrameInfo.Width * parMfx->mfx.FrameInfo.Width > 8 * tab_level[level].maxLumaPs)
             continue;
-        if (parMFX->mfx.FrameInfo.Height * parMFX->mfx.FrameInfo.Height > 8 * hevc_level_tab[level].MaxLumaPs)
+        if (parMfx->mfx.FrameInfo.Height * parMfx->mfx.FrameInfo.Height > 8 * tab_level[level].maxLumaPs)
             continue;
-        if (parMFX->mfx.NumSlice > hevc_level_tab[level].MaxSliceSegmentsPerPicture)
+        if (parMfx->mfx.NumSlice > tab_level[level].maxSliceSegmentsPerPicture)
             continue;
-        if (parMFX->mfx.FrameInfo.FrameRateExtD && LumaSr > hevc_level_tab[level].MaxLumaSr)
+        if (parMfx->mfx.FrameInfo.FrameRateExtD && lumaSr > tab_level[level].maxLumaSr)
             continue;
-        if (BR > hevc_level_tab[level].MaxBR[1]) // try high tier
+        if (bitrate > tab_level[level].maxBr[1]) // try high tier
             continue;
-        if (BR && LumaSr * 3 / 2 * 1000 / BR < hevc_level_tab[level].MinCr)
+        if (bitrate && lumaSr * 3 / 2 * 1000 / bitrate < tab_level[level].minCr)
             continue; // it hardly can change the case
 
         // MaxDpbSIze not checked
 
-        if (opts && opts->Log2MaxCUSize > 0 && hevc_level_tab[level].level_id >= MFX_LEVEL_HEVC_5 && opts->Log2MaxCUSize < 5)
+        if (opts && opts->Log2MaxCUSize > 0 && tab_level[level].levelId >= MFX_LEVEL_HEVC_5 && opts->Log2MaxCUSize < 5)
             continue;
 
-        tier = (BR > hevc_level_tab[level].MaxBR[0]) ? MFX_TIER_HEVC_HIGH : MFX_TIER_HEVC_MAIN;
+        Ipp32s tier = (bitrate > tab_level[level].maxBr[0]) ? MFX_TIER_HEVC_HIGH : MFX_TIER_HEVC_MAIN;
 
-        if (inlevel == hevc_level_tab[level].level_id && tier <= intier)
-            return inleveltier;
-        if (inlevel <= hevc_level_tab[level].level_id)
-            return hevc_level_tab[level].level_id | tier;
+        if (inLevel == tab_level[level].levelId && tier <= inTier)
+            return inLevelTier;
+        if (inLevel <= tab_level[level].levelId)
+            return tab_level[level].levelId | tier;
     }
     return MFX_LEVEL_UNKNOWN;
-
 }
 
-void SetCalcParams( RcParams* rc, const mfxVideoParam *parMFX )
+void SetCalcParams( RcParams* rc, const mfxVideoParam *parMfx )
 {
-    Ipp32s mult = IPP_MAX( parMFX->mfx.BRCParamMultiplier, 1);
+    Ipp32s mult = IPP_MAX( parMfx->mfx.BRCParamMultiplier, 1);
 
     // not all fields are vlid for all rc modes
-    rc->BufferSizeInKB = parMFX->mfx.BufferSizeInKB * mult;
-    rc->TargetKbps = parMFX->mfx.TargetKbps * mult;
-    rc->MaxKbps = parMFX->mfx.MaxKbps * mult;
-    rc->InitialDelayInKB = parMFX->mfx.InitialDelayInKB * mult;
+    rc->BufferSizeInKB = parMfx->mfx.BufferSizeInKB * mult;
+    rc->TargetKbps = parMfx->mfx.TargetKbps * mult;
+    rc->MaxKbps = parMfx->mfx.MaxKbps * mult;
+    rc->InitialDelayInKB = parMfx->mfx.InitialDelayInKB * mult;
 }
 
-void GetCalcParams( mfxVideoParam *parMFX, const RcParams* rc, Ipp32s rcMode )
+void GetCalcParams( mfxVideoParam *parMfx, const RcParams* rc, Ipp32s rcMode )
 {
     Ipp32s maxVal = rc->BufferSizeInKB;
     if (rcMode == MFX_RATECONTROL_AVBR)
@@ -229,13 +189,13 @@ void GetCalcParams( mfxVideoParam *parMFX, const RcParams* rc, Ipp32s rcMode )
     if (mult == 0)
         mult = 1;
 
-    parMFX->mfx.BRCParamMultiplier = (mfxU16)mult;
-    parMFX->mfx.BufferSizeInKB = (mfxU16)(rc->BufferSizeInKB / mult);
+    parMfx->mfx.BRCParamMultiplier = (mfxU16)mult;
+    parMfx->mfx.BufferSizeInKB = (mfxU16)(rc->BufferSizeInKB / mult);
     if (rcMode != MFX_RATECONTROL_CQP) {
-        parMFX->mfx.TargetKbps = (mfxU16)(rc->TargetKbps / mult);
+        parMfx->mfx.TargetKbps = (mfxU16)(rc->TargetKbps / mult);
         if (rcMode != MFX_RATECONTROL_AVBR) {
-            parMFX->mfx.MaxKbps = (mfxU16)(rc->MaxKbps / mult);
-            parMFX->mfx.InitialDelayInKB = (mfxU16)(rc->InitialDelayInKB / mult);
+            parMfx->mfx.MaxKbps = (mfxU16)(rc->MaxKbps / mult);
+            parMfx->mfx.InitialDelayInKB = (mfxU16)(rc->InitialDelayInKB / mult);
         }
     }
 }
@@ -470,12 +430,12 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 
         // try to allocate opaque surfaces in video memory for another component in transcoding chain
         if (bOpaqVideoMem) {
-            memset(&m_response_alien, 0, sizeof(m_response_alien));
+            memset(&m_responseAlien, 0, sizeof(m_responseAlien));
             request.Type =  (mfxU16)opaqAllocReq->In.Type;
             request.NumFrameMin =request.NumFrameSuggested = (mfxU16)opaqAllocReq->In.NumSurface;
 
             sts = m_core->AllocFrames(&request,
-                                     &m_response_alien,
+                                     &m_responseAlien,
                                      opaqAllocReq->In.Surfaces,
                                      opaqAllocReq->In.NumSurface);
 
@@ -483,7 +443,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
                 MFX_ERR_UNSUPPORTED != sts) // unsupported means that current Core couldn;t allocate the surfaces
                 return sts;
 
-            if (m_response_alien.NumFrameActual < request.NumFrameMin)
+            if (m_responseAlien.NumFrameActual < request.NumFrameMin)
                 return MFX_ERR_MEMORY_ALLOC;
 
             if (sts != MFX_ERR_UNSUPPORTED)
@@ -524,7 +484,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 
 
 
-    mfxExtCodingOptionHEVC* opts_tu = &hevc_tu_tab[m_mfxVideoParam.mfx.TargetUsage];
+    mfxExtCodingOptionHEVC* opts_tu = &tab_tu[m_mfxVideoParam.mfx.TargetUsage];
 
     // check if size is aligned with CU depth
     int maxCUsize = m_mfxHEVCOpts.Log2MaxCUSize ? m_mfxHEVCOpts.Log2MaxCUSize : opts_tu->Log2MaxCUSize;
@@ -553,7 +513,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 
     // then fill not provided params with defaults or from targret usage
     if (!opts_hevc) {
-        m_mfxHEVCOpts = hevc_tu_tab[m_mfxVideoParam.mfx.TargetUsage];
+        m_mfxHEVCOpts = tab_tu[m_mfxVideoParam.mfx.TargetUsage];
         m_mfxHEVCOpts.QuadtreeTULog2MinSize = (mfxU16)minTUsize;
         m_mfxHEVCOpts.MaxCUDepth = (mfxU16)maxCUdepth;
         m_mfxHEVCOpts.Log2MaxCUSize = (mfxU16)maxCUsize;
@@ -688,7 +648,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
 
     // can depend on target usage
     if (!m_mfxVideoParam.mfx.GopRefDist) {
-        m_mfxVideoParam.mfx.GopRefDist = hevc_tu_tab_GopRefDist[m_mfxVideoParam.mfx.TargetUsage];
+        m_mfxVideoParam.mfx.GopRefDist = tab_tuGopRefDist[m_mfxVideoParam.mfx.TargetUsage];
     }
     if (!m_mfxVideoParam.mfx.GopPicSize) {
         m_mfxVideoParam.mfx.GopPicSize = 60 * (mfxU16) (( m_mfxVideoParam.mfx.FrameInfo.FrameRateExtN + m_mfxVideoParam.mfx.FrameInfo.FrameRateExtD - 1 ) / m_mfxVideoParam.mfx.FrameInfo.FrameRateExtD);
@@ -728,7 +688,7 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
         if (m_mfxVideoParam.mfx.TargetUsage == MFX_TARGETUSAGE_1 && m_mfxVideoParam.mfx.GopRefDist == 1) {
             m_mfxVideoParam.mfx.NumRefFrame = 4; // Low_Delay
         } else {
-            m_mfxVideoParam.mfx.NumRefFrame = hevc_tu_tab_NumRefFrame[m_mfxVideoParam.mfx.TargetUsage];
+            m_mfxVideoParam.mfx.NumRefFrame = tab_tuNumRefFrame[m_mfxVideoParam.mfx.TargetUsage];
         }
     }
 
@@ -806,8 +766,8 @@ mfxStatus MFXVideoENCODEH265::Close()
     }
 
     if (m_useVideoOpaq) {
-        m_core->FreeFrames(&m_response_alien);
-        m_response_alien.NumFrameActual = 0;
+        m_core->FreeFrames(&m_responseAlien);
+        m_responseAlien.NumFrameActual = 0;
         m_useVideoOpaq = false;
     }
 
@@ -998,8 +958,6 @@ mfxStatus MFXVideoENCODEH265::Query(VideoCORE *core, mfxVideoParam *par_in, mfxV
     mfxU32 isInvalid = 0;
     mfxStatus st;
     MFX_CHECK_NULL_PTR1(par_out)
-    CHECK_VERSION(par_in->Version);
-    CHECK_VERSION(par_out->Version);
 
     //First check for zero input
     if( par_in == NULL ){ //Set ones for filed that can be configured
@@ -1560,7 +1518,7 @@ mfxStatus MFXVideoENCODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, m
 
     if( nFrames == 0 ){
         // curr + number of B-frames from target usage
-        nFrames = hevc_tu_tab_GopRefDist[par->mfx.TargetUsage];
+        nFrames = tab_tuGopRefDist[par->mfx.TargetUsage];
     }
     request->NumFrameMin = nFrames;
     request->NumFrameSuggested = IPP_MAX(nFrames,par->AsyncDepth);
@@ -1568,7 +1526,7 @@ mfxStatus MFXVideoENCODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, m
 
     if (par->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY){
         request->Type = MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_DXVA2_DECODER_TARGET;
-    }else if(par->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY) {
+    } else if (par->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY) {
         request->Type = MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_OPAQUE_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY;
     } else {
         request->Type = MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY;

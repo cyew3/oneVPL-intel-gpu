@@ -1880,7 +1880,7 @@ CostType H265CU::CuCost(Ipp32u absPartIdx, Ipp8u depth, const H265MEInfo* bestIn
         Ipp32s part = (bestSplitMode != PART_SIZE_NxN) ? (partNxN ? 1 : 0) : partNxN;
         const H265MEInfo* mei = &bestInfo[part];
 
-        VM_ASSERT(mei->inter_dir >= 1 && mei->inter_dir <= 3);
+        VM_ASSERT(mei->interDir >= 1 && mei->interDir <= 3);
         m_data[i].predMode = MODE_INTER;
         m_data[i].depth = depth;
         m_data[i].size = (Ipp8u)(m_par->MaxCUSize>>depth);

@@ -1008,8 +1008,8 @@ void H265CU::PutTransform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_chroma,
             }
             else if(Log2TrafoSize == 2)
             {
-                VM_ASSERT( GetCbf( abs_part_idx, TEXT_CHROMA_U, tr_depth_cur ) == get_cbf( abs_part_idx, TEXT_CHROMA_U, tr_depth_cur - 1 ) );
-                VM_ASSERT( GetCbf( abs_part_idx, TEXT_CHROMA_V, tr_depth_cur ) == get_cbf( abs_part_idx, TEXT_CHROMA_V, tr_depth_cur - 1 ) );
+                VM_ASSERT( GetCbf( abs_part_idx, TEXT_CHROMA_U, tr_depth_cur ) == GetCbf( abs_part_idx, TEXT_CHROMA_U, tr_depth_cur - 1 ) );
+                VM_ASSERT( GetCbf( abs_part_idx, TEXT_CHROMA_V, tr_depth_cur ) == GetCbf( abs_part_idx, TEXT_CHROMA_V, tr_depth_cur - 1 ) );
             }
         }
 
@@ -1045,7 +1045,7 @@ void H265CU::PutTransform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_chroma,
             if (m_data[abs_part_idx].predMode != MODE_INTRA && depth == m_data[abs_part_idx].depth &&
                 !GetCbf( abs_part_idx, TEXT_CHROMA_U, 0 ) && !GetCbf( abs_part_idx, TEXT_CHROMA_V, 0 ))
             {
-                VM_ASSERT( get_cbf( abs_part_idx, TEXT_LUMA, 0 ) );
+                VM_ASSERT( GetCbf( abs_part_idx, TEXT_LUMA, 0 ) );
             }
             else
             {
