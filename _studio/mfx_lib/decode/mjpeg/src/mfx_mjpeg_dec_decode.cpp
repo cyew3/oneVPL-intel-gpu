@@ -267,7 +267,7 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
         m_FrameAllocator->SetExternalFramesResponse(&m_response_alien);
         request_internal.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
         request = request_internal;
-        mfxSts = m_core->AllocFrames(&request_internal, &m_response, true);
+        mfxSts = m_core->AllocFrames(&request_internal, &m_response, ((m_vPar.IOPattern&MFX_MEMTYPE_SYSTEM_MEMORY) != 0));
         if (mfxSts < MFX_ERR_NONE)
             return mfxSts;
     }
