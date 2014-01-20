@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -40,6 +40,7 @@ public:
         , m_SliceCount(0)
         , m_pHeap(heap)
         , m_pObjHeap(pObjHeap)
+        , m_sps(0)
     {
         Reset();
     }
@@ -54,6 +55,11 @@ public:
         if (!slice)
             throw h265_exception(UMC::UMC_ERR_FAILED);
         return slice;
+    }
+
+    const H265SeqParamSet *GetSeqParam() const
+    {
+        return m_sps;
     }
 
     void AddSlice(H265Slice * pSlice)
@@ -72,6 +78,12 @@ public:
         m_hasTiles = pSlice->GetPicParam()->getNumTiles() > 1;
 
         m_WA_diffrent_disable_deblocking = m_WA_diffrent_disable_deblocking || (sliceHeader.slice_deblocking_filter_disabled_flag != m_pSliceQueue[0]->GetSliceHeader()->slice_deblocking_filter_disabled_flag);
+
+        if (!m_sps)
+        {
+            m_sps = (H265SeqParamSet *)pSlice->GetSeqParam();
+            m_sps->IncrementReference();
+        }
     }
 
     Ipp32u GetSliceCount() const
@@ -132,6 +144,12 @@ public:
 
         m_Status = STATUS_NONE;
         m_prepared = 0;
+
+        if (m_sps)
+        {
+            m_sps->DecrementReference();
+            m_sps = 0;
+        }
     }
 
     void SetStatus(FillnessStatus status)
@@ -299,6 +317,7 @@ private:
 
     FillnessStatus m_Status;
 
+    H265SeqParamSet * m_sps;
     std::vector<H265Slice*> m_pSliceQueue;
 
     Ipp32s m_SliceCount;

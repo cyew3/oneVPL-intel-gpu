@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -332,7 +332,9 @@ protected:
 
     void ActivateHeaders(H265SeqParamSet *sps, H265PicParamSet *pps);
 
-    bool IsSkipForCRAorBLA(H265Slice *pSlice);
+    bool IsSkipForCRAorBLA(const H265Slice *pSlice);
+
+    void CheckCRAOrBLA(const H265Slice *pSlice);
 
     // Allocate a new frame and initialize it with slice parameters
     virtual H265DecoderFrame *AllocateNewFrame(const H265Slice *pSlice);
@@ -387,7 +389,8 @@ protected:
     // Keep track of which parameter set is in use.
     bool              m_WaitForIDR;
 
-    Ipp32s m_RA_POC, m_CRA_POC;
+    Ipp32s m_RA_POC;
+    Ipp8u  NoRaslOutputFlag;
     NalUnitType m_IRAPType;
 
     Ipp32u            m_DPBSizeEx;
