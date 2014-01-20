@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2013 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2014 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -244,7 +244,7 @@ mfxStatus DISPATCHER_EXPOSED_PREFIX(MFXInit)(mfxIMPL impl, mfxVersion *pVer, mfx
         do
         {
             implInterface = implInterfaceOrig;
-            if (impl == MFX_IMPL_RT)
+            if (implMethod == MFX_IMPL_RT)
             {
                 mfxRes = MFX::mfx_get_rt_dll_name(dllName,
                     sizeof(dllName) / sizeof(dllName[0]));
