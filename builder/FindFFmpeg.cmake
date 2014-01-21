@@ -1,28 +1,41 @@
-if (__ARCH MATCHES ia32)
-  set( FFmpeg_arch ${__ARCH})
-else( )
-  set( FFmpeg_arch em64t )
-endif( )
+##******************************************************************************
+##  Copyright(C) 2014 Intel Corporation. All Rights Reserved.
+##  
+##  The source code, information  and  material ("Material") contained herein is
+##  owned  by Intel Corporation or its suppliers or licensors, and title to such
+##  Material remains  with Intel Corporation  or its suppliers or licensors. The
+##  Material  contains proprietary information  of  Intel or  its  suppliers and
+##  licensors. The  Material is protected by worldwide copyright laws and treaty
+##  provisions. No  part  of  the  Material  may  be  used,  copied, reproduced,
+##  modified, published, uploaded, posted, transmitted, distributed or disclosed
+##  in any way  without Intel's  prior  express written  permission. No  license
+##  under  any patent, copyright  or  other intellectual property rights  in the
+##  Material  is  granted  to  or  conferred  upon  you,  either  expressly,  by
+##  implication, inducement,  estoppel or  otherwise.  Any  license  under  such
+##  intellectual  property  rights must  be express  and  approved  by  Intel in
+##  writing.
+##  
+##  *Third Party trademarks are the property of their respective owners.
+##  
+##  Unless otherwise  agreed  by Intel  in writing, you may not remove  or alter
+##  this  notice or  any other notice embedded  in Materials by Intel or Intel's
+##  suppliers or licensors in any way.
+##
+##******************************************************************************
+##  Content: Intel(R) Media SDK Samples projects creation and build
+##******************************************************************************
 
-set( FFmpeg_root $ENV{INTELMEDIASDK_FFMPEG_ROOT} )
+pkg_check_modules(PKG_LIBVAUTIL libavutil>=52.38.100)
+pkg_check_modules(PKG_LIBAVCODEC libavcodec>=55.18.102)
+pkg_check_modules(PKG_LIBAVFORMAT libavformat>=55.12.100)
 
-set( FFmpeg_root ${FFmpeg_root}/linux/${FFmpeg_arch} )
-
-find_path( FFMPEG_INCLUDE libavformat/avformat.h PATHS ${FFmpeg_root}/include )
-find_library( FFMPEG_LIBRARY libavformat.so PATHS ${FFmpeg_root}/lib )
-
-if(NOT FFMPEG_INCLUDE MATCHES NOTFOUND)
-  if(NOT FFMPEG_LIBRARY MATCHES NOTFOUND)
+if(NOT PKG_LIBVAUTIL MATCHES NOTFOUND AND
+   NOT PKG_LIBAVCODEC MATCHES NOTFOUND AND
+   NOT PKG_LIBAVFORMAT MATCHES NOTFOUND)
     set( FFMPEG_FOUND TRUE )
-    include_directories( ${FFmpeg_root}/include )
-
-    get_filename_component( FFMPEG_LIBRARY_PATH ${FFMPEG_LIBRARY} PATH )
-    link_directories( ${FFMPEG_LIBRARY_PATH} )
-  endif( )
+    message( STATUS "FFmpeg headers and libraries were found." )
 endif( )
 
 if(NOT DEFINED FFMPEG_FOUND)
-  message( STATUS "FFmpeg was not found (optional). The following will not be built: sample_spl_mux." )
-  message( STATUS "  Set/check INTELMEDIASDK_FFMPEG_ROOT environment variable." )
+  message( STATUS "FFmpeg headers and libraries were not found (optional). The following will not be built: sample_spl_mux." )
 endif( )
-
