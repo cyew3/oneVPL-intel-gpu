@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2014 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_hevc_dec_plugin.h
 
@@ -119,7 +119,7 @@ protected:
 #if defined(_WIN32) || defined(_WIN64)
 #define MSDK_PLUGIN_API(ret_type) extern "C" __declspec(dllexport)  ret_type __cdecl
 #else
-#define MSDK_PLUGIN_API(ret_type) extern "C"  ret_type  __cdecl
+#define MSDK_PLUGIN_API(ret_type) extern "C"  ret_type 
 #endif
 
 #endif  // __MFX_HEVC_VPP_PLUGIN_INCLUDED__

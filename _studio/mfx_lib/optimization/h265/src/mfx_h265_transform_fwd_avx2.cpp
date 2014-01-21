@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -31,7 +31,7 @@
 namespace MFX_HEVC_PP
 {
 
-#include <intrin.h>
+#include <immintrin.h> // AVX, AVX2
 
 /* utility macros from original Nablet code */
 #define mm128(s)               _mm256_castsi256_si128(s)     /* cast xmm = low 128 of ymm */

@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -35,7 +35,7 @@ namespace MFX_HEVC_PP
 //#include "definitions.h"
 
 // ========================================================
-#define ALIGNED_AVX  __declspec(align(32))
+#define ALIGNED_AVX  ALIGN_DECL(32)
 
     // to use intrinsics more easily
 #define _mm_movehl_epi64(A, B) _mm_castps_si128(_mm_movehl_ps(_mm_castsi128_ps(A), _mm_castsi128_ps(B)))
@@ -111,7 +111,13 @@ namespace MFX_HEVC_PP
     // koefs for horizontal 1-D transform
     M256I_D4x2C(rounder_4, 8, 8, 8, 8);
 
+#if defined(_WIN32) || defined(_WIN64)
     ALIGNED_AVX __m256i kefh_shuff = {14,15,12,13,10,11,8,9,6,7,4,5,2,3,0,1,  14,15,12,13,10,11,8,9,6,7,4,5,2,3,0,1};
+#else
+    static ALIGN_DECL(32) const char array_kefh_shuff[32] = {14,15,12,13,10,11,8,9,6,7,4,5,2,3,0,1,  14,15,12,13,10,11,8,9,6,7,4,5,2,3,0,1}; \
+    static const __m256i* p_kefh_shuff = (const __m256i*) array_kefh_shuff; \
+    ALIGNED_AVX __m256i kefh_shuff = * p_kefh_shuff;    
+#endif
 
     M256I_W8x2C(kefh_0000,  90, 90,  90, 82,  88, 67,  85, 46);
     M256I_W8x2C(kefh_0001,  82, 22,  78, -4,  73,-31,  67,-54);
@@ -412,9 +418,9 @@ namespace MFX_HEVC_PP
     //void FASTCALL fwd_32x32_dct_avx2(short *__restrict src, short *__restrict dest)
     void H265_FASTCALL MAKE_NAME(h265_DCT32x32Fwd_16s)(const short *H265_RESTRICT src, short *H265_RESTRICT dst)
     {
-        short __declspec(align(32)) temp[32*32];
+        short ALIGN_DECL(32) temp[32*32];
         // temporal buffer short[32*4]. Intermediate results will be stored here. Rotate 4x4 and moved to temp[]
-        __m128i __declspec(align(32)) buff[16*8];
+        __m128i ALIGN_DECL(32) buff[16*8];
         int num = 0;
         __m256i y0, y1, y2, y3, y4, y5, y6, y7;
         _mm256_zeroall();

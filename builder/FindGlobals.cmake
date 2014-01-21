@@ -84,8 +84,8 @@ else( )
 
   set(no_warnings "-Wno-unknown-pragmas -Wno-unused")
   
-  set(CMAKE_C_FLAGS "-fPIC")
-  set(CMAKE_CXX_FLAGS "-fPIC")
+  set(CMAKE_C_FLAGS "-pipe -fPIC")
+  set(CMAKE_CXX_FLAGS "-pipe -fPIC")
   set(CMAKE_C_FLAGS_DEBUG     "-O0 -Wall ${no_warnings} -g -D_DEBUG" CACHE STRING "" FORCE)
   set(CMAKE_C_FLAGS_RELEASE   "-O2 -D_FORTIFY_SOURCE=2 -fstack-protector -Wall ${no_warnings} -DNDEBUG"    CACHE STRING "" FORCE)
   set(CMAKE_CXX_FLAGS_DEBUG   "-O0 -Wall ${no_warnings} -g -D_DEBUG" CACHE STRING "" FORCE)

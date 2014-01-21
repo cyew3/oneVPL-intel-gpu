@@ -30,6 +30,7 @@
 #include "mfxdefs.h"
 #include "ippdefs.h"
 #include "ipps.h"
+#include <float.h>
 
 namespace H265Enc {
 

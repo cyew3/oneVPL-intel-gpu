@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
 //
 
 /* Compare SAD-functions: plain-C vs. intrinsics
@@ -1493,9 +1493,15 @@ int SAD_CALLING_CONVENTION SAD_48x64_general_avx2(SAD_PARAMETERS_LIST) //OK
         s2 = _mm256_sad_epu8( s2, load256_block_data2(blk2 + 16 + block_stride));
 
         {
+#ifndef __GNUC__
             __m256i tmp1 = _mm256_set_m128i( load128_unaligned( blk1), load128_unaligned( blk1 + lx1));
             __m256i tmp2 = _mm256_set_m128i( load128_block_data( blk2), load128_block_data( blk2 + block_stride));
             s1 = _mm256_add_epi32( s1, _mm256_sad_epu8( tmp1, tmp2));
+#else
+            __m256i tmp1 =  _mm256_insertf128_si256(_mm256_castsi128_si256(load128_unaligned(blk1)), load128_unaligned(blk1 + lx1), 0x1);
+            __m256i tmp2 =  _mm256_insertf128_si256(_mm256_castsi128_si256(load128_block_data(blk2)), load128_block_data(blk2 + block_stride), 0x1);
+            s1 = _mm256_add_epi32( s1, _mm256_sad_epu8( tmp1, tmp2));
+#endif
         }
 
         for(int i = 2; i < 64; i += 2)
@@ -1512,9 +1518,15 @@ int SAD_CALLING_CONVENTION SAD_48x64_general_avx2(SAD_PARAMETERS_LIST) //OK
                 s2 = _mm256_add_epi32( s2, tmp2);
             }
             {
+#ifndef __GNUC__
                 __m256i tmp1 = _mm256_set_m128i( load128_unaligned( blk1), load128_unaligned( blk1 + lx1));
                 __m256i tmp2 = _mm256_set_m128i( load128_block_data( blk2), load128_block_data( blk2 + block_stride));
                 s1 = _mm256_add_epi32( s1, _mm256_sad_epu8( tmp1, tmp2));
+#else
+                __m256i tmp1 =  _mm256_insertf128_si256(_mm256_castsi128_si256(load128_unaligned(blk1)), load128_unaligned(blk1 + lx1), 0x1);
+                __m256i tmp2 =  _mm256_insertf128_si256(_mm256_castsi128_si256(load128_block_data(blk2)), load128_block_data(blk2 + block_stride), 0x1);
+                s1 = _mm256_add_epi32( s1, _mm256_sad_epu8( tmp1, tmp2));
+#endif
             }
         }
 
@@ -1536,9 +1548,15 @@ int SAD_CALLING_CONVENTION SAD_48x64_general_avx2(SAD_PARAMETERS_LIST) //OK
         s2 = _mm256_sad_epu8( s2, load256_block_data2(blk2 + block_stride));
 
         {
+#ifndef __GNUC__
             __m256i tmp1 = _mm256_set_m128i( load128_unaligned( blk1 + 32), load128_unaligned( blk1 + 32 + lx1));
             __m256i tmp2 = _mm256_set_m128i( load128_block_data( blk2 + 32), load128_block_data( blk2 + 32 + block_stride));
             s1 = _mm256_add_epi32( s1, _mm256_sad_epu8( tmp1, tmp2));
+#else
+            __m256i tmp1 = _mm256_insertf128_si256(_mm256_castsi128_si256(load128_unaligned(blk1 + 32)), load128_unaligned(blk1 + 32 + lx1), 0x1);
+            __m256i tmp2 = _mm256_insertf128_si256(_mm256_castsi128_si256(load128_block_data(blk2 + 32)), load128_block_data(blk2 + 32 + block_stride), 0x1);
+            s1 = _mm256_add_epi32( s1, _mm256_sad_epu8( tmp1, tmp2));
+#endif
         }
 
         for(int i = 2; i < 64; i += 2)
@@ -1555,9 +1573,15 @@ int SAD_CALLING_CONVENTION SAD_48x64_general_avx2(SAD_PARAMETERS_LIST) //OK
                 s2 = _mm256_add_epi32( s2, tmp2);
             }
             {
+#ifndef __GNUC__
                 __m256i tmp1 = _mm256_set_m128i( load128_unaligned( blk1 + 32), load128_unaligned( blk1 + 32 + lx1));
                 __m256i tmp2 = _mm256_set_m128i( load128_block_data( blk2 + 32), load128_block_data( blk2 + 32 + block_stride));
                 s1 = _mm256_add_epi32( s1, _mm256_sad_epu8( tmp1, tmp2));
+#else
+                __m256i tmp1 = _mm256_insertf128_si256(_mm256_castsi128_si256(load128_unaligned(blk1 + 32)), load128_unaligned(blk1 + 32 + lx1), 0x1);
+                __m256i tmp2 = _mm256_insertf128_si256(_mm256_castsi128_si256(load128_block_data(blk2 + 32)), load128_block_data(blk2 + 32 + block_stride), 0x1);
+                s1 = _mm256_add_epi32( s1, _mm256_sad_epu8( tmp1, tmp2));
+#endif
             }
         }
 

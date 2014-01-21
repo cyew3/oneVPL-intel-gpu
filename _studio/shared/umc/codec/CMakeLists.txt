@@ -54,6 +54,7 @@ make_library( umc_acodecs_merged none static )
 
 # =============================================================================
 
+set( defs "-DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
 set( sources "" )
 foreach( dir ${dirs} )
   file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
@@ -61,9 +62,11 @@ foreach( dir ${dirs} )
 endforeach()
 
 make_library( umc_codecs_merged none static )
+set( defs "" )
 
 # =============================================================================
 
+set( defs "-DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
 set( sources "" )
 foreach( dir ${dirs_impl} )
   file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
@@ -73,6 +76,7 @@ endforeach()
 foreach( variant sw hw )
   make_library( umc_codecs_merged ${variant} static )
 endforeach( )
+set( defs "" )
 
 
 # =============================================================================
@@ -91,21 +95,18 @@ make_library( umc_csc sw static )
 
 # =============================================================================
 
+set( defs "-DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
 set( sources "" )
 #foreach( dir h265 )
   file( GLOB_RECURSE srcs "h265_dec/*.c" "h265_dec/*.cpp" )
   list( APPEND sources ${srcs}) 
 #endforeach()
 
-ADD_DEFINITIONS(
- -DAS_HEVCD_PLUGIN
-)
-
 #foreach( variant sw hw )
 #  make_library( umc_h265 ${variant} static )
 #endforeach( )
 
 make_library( umc_h265 sw static )
-
+set( defs "" )
 
 

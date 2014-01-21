@@ -498,6 +498,7 @@ void h265_code_delta_qp(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx)
     }
 }
 
+#if 0 // prevent build failures on Linux
 template <class H265Bs>
 static
 void h265_code_qt_cbf(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx, EnumTextType type, Ipp32u tr_depth)
@@ -506,7 +507,7 @@ void h265_code_qt_cbf(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx, EnumTextType
     Ipp32u uiCtx = pCU->get_ctx_qt_cbf(abs_part_idx, type, tr_depth);
     bs->EncodeSingleBin_CABAC(CTX(bs,QT_CBF_HEVC) + (type ? NUM_QT_CBF_CTX : 0) + uiCtx, uiCbf);
 }
-
+#endif
 template <class H265Bs>
 static
 void h265_code_transform_skip_flags(H265Bs *bs, H265CU* pCU, Ipp32u abs_part_idx,
@@ -866,7 +867,7 @@ void H265CU::CodeCoeffNxN(H265Bs *bs, H265CU* pCU, CoeffsType* coeffs, Ipp32u ab
     }
 }
 
-#if 0
+#if 0  // prevent build failures on Linux
 // NOTE: ALF_CU_FLAG_HEVC is not defined at the moment
 template <class H265Bs>
 static inline
@@ -874,7 +875,6 @@ void h265_code_alf_ctrl_flag(H265Bs *bs, Ipp32u code)
 {
     bs->EncodeSingleBin_CABAC(CTX(bs,ALF_CU_FLAG_HEVC), code);
 }
-#endif
 
 template <class H265Bs>
 void h265_encode_qp(H265Bs *bs, H265CU* pCU, Ipp32s qp_bd_offset_y, Ipp32u abs_part_idx, Ipp8u bRD)
@@ -912,7 +912,7 @@ void h265_encode_qp(H265Bs *bs, H265CU* pCU, Ipp32s qp_bd_offset_y, Ipp32u abs_p
         }
     }
 }
-
+#endif
 template <class H265Bs>
 void H265CU::PutTransform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_chroma,
                                 Ipp32u abs_part_idx, Ipp32u abs_tu_part_idx,

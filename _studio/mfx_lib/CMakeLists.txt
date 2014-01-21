@@ -25,11 +25,11 @@ endforeach( )
 # =============================================================================
 
 list( APPEND vdecs
-  h265 h264 mpeg2 vc1 mjpeg vp8
+  h264 mpeg2 vc1 mjpeg vp8
   )
 
 list( APPEND vencs
-  h265 h264 mpeg2 vc1 mjpeg mvc svc
+  h264 mpeg2 vc1 mjpeg mvc svc
   )
 
 foreach( dec ${vdecs} )
@@ -80,8 +80,29 @@ foreach( dir ${adirs} ${vdirs} ${vdirs_impl} ${vdirs_hw} ${vdir_optimization} )
   include_directories( ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/${dir}/include )
 endforeach( )
 
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/decode/h265/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/encode/h265/include )
+
+
+# =============================================================================
+set ( HEVCPP_LIBS "" )
 # =============================================================================
 
+set( defs "-DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
+set( sources "" )
+set( sources.plus "" )
+
+list( APPEND sources 
+  ${vdir_optimization}/src/mfx_h265_dispatcher.cpp
+)
+
+make_library( hevc_pp_dispatcher none static )
+set( defs "" )
+list( APPEND HEVCPP_LIBS hevc_pp_dispatcher )
+
+# =============================================================================
+
+set( defs "-DMFX_MAKENAME_ATOM -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
 set( sources "" )
 set( sources.plus "" )
 
@@ -100,10 +121,12 @@ list( APPEND sources
 )
 
 make_library( hevc_pp_atom none static )
-append_property( hevc_pp_atom COMPILE_FLAGS "-DMFX_MAKENAME_ATOM -DAS_HEVCD_PLUGIN" )
+set( defs "" )
+list( APPEND HEVCPP_LIBS hevc_pp_atom )
 
 # =============================================================================
 
+set( defs "-DMFX_MAKENAME_AVX2 -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
 set( sources "" )
 set( sources.plus "" )
 
@@ -122,11 +145,14 @@ list( APPEND sources
 )
 
 make_library( hevc_pp_avx2 none static )
-append_property( hevc_pp_avx2 COMPILE_FLAGS "-DMFX_MAKENAME_AVX2 -DAS_HEVCD_PLUGIN -mavx2")
-append_property( hevc_pp_avx2 LINK_FLAGS "-mavx2")
+append_property( hevc_pp_avx2 COMPILE_FLAGS "-mavx2 -march=core-avx2")
+append_property( hevc_pp_avx2 LINK_FLAGS "-mavx2 -march=core-avx2")
+set( defs "" )
+list( APPEND HEVCPP_LIBS hevc_pp_avx2 )
 
 # =============================================================================
 
+set( defs "-DMFX_MAKENAME_PX -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
 set( sources "" )
 set( sources.plus "" )
 
@@ -148,10 +174,12 @@ list( APPEND sources
 )
 
 make_library( hevc_pp_px none static )
-append_property( hevc_pp_px COMPILE_FLAGS "-DMFX_MAKENAME_PX -DAS_HEVCD_PLUGIN" )
+set( defs "" )
+list( APPEND HEVCPP_LIBS hevc_pp_px )
 
 # =============================================================================
 
+set( defs "-DMFX_MAKENAME_SSE4 -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
 set( sources "" )
 set( sources.plus "" )
 
@@ -171,10 +199,12 @@ list( APPEND sources
 )
 
 make_library( hevc_pp_sse4 none static )
-append_property( hevc_pp_sse4  COMPILE_FLAGS "-DMFX_MAKENAME_SSE4 -DAS_HEVCD_PLUGIN" )
+set( defs "" )
+list( APPEND HEVCPP_LIBS hevc_pp_sse4 )
 
 # =============================================================================
 
+set( defs "-DMFX_MAKENAME_SSSE3 -DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN" )
 set( sources "" )
 set( sources.plus "" )
 
@@ -192,20 +222,35 @@ list( APPEND sources
 )
 
 make_library( hevc_pp_ssse3 none static )
-append_property( hevc_pp_ssse3  COMPILE_FLAGS "-DMFX_MAKENAME_SSSE3 -DAS_HEVCD_PLUGIN -mavx2" )
-append_property( hevc_pp_ssse3  LINK_FLAGS "-mavx2" )
+append_property( hevc_pp_ssse3 COMPILE_FLAGS "-mssse3")
+append_property( hevc_pp_ssse3 LINK_FLAGS "-mssse3" )
+set( defs "" )
+list( APPEND HEVCPP_LIBS hevc_pp_ssse3 )
 
 # =============================================================================
 
+#set( sources "" )
+#set( sources.plus "" )
+#foreach( dir ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/decode/h265 )
+#  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
+#  list( APPEND sources ${srcs})
+#endforeach()
+
+
+#make_library( h265_dec none static )
+
+# =============================================================================
+
+set( defs "-DAS_HEVCE_PLUGIN" )
 set( sources "" )
 set( sources.plus "" )
+foreach( dir ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/encode/h265/src )
+  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
+  list( APPEND sources ${srcs})
+endforeach()
 
-list( APPEND sources 
-  ${vdir_optimization}/src/mfx_h265_dispatcher.cpp
-)
-
-make_library( hevc_pp_dispatcher none static )
-append_property( hevc_pp_dispatcher  COMPILE_FLAGS "-DAS_HEVCD_PLUGIN" )
+make_library( h265_enc none static )
+set( defs "" )
 
 # =============================================================================
 
@@ -501,6 +546,8 @@ endforeach()
 
 ###################################################################################################################
 # =============================================================================
+# Plugins section
+# =============================================================================
 
 set( sources "" )
 set( sources.plus "" )
@@ -545,8 +592,6 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src )
   )
 endforeach()
 
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/decode/h265/include )
-
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/decode/h265/src )
   list( APPEND sources
     ${prefix}/mfx_h265_dec_decode.cpp
@@ -555,14 +600,17 @@ endforeach()
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/plugin/include )
 
+set( sources.plus "" )
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/plugin/src )
-  list( APPEND sources
+  list( APPEND sources.plus
     ${prefix}/mfx_hevc_dec_plugin.cpp
   )
 endforeach()
 
 set( USE_STRICT_NAME TRUE )
 set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/plugin/libmfxsw_plugin.map" )
+
+set( defs "-DAS_HEVCD_PLUGIN" )
 
 #foreach( variant sw hw )
 foreach( variant sw )
@@ -579,12 +627,7 @@ foreach( variant sw )
   list( APPEND LIBS
     umc_h265_sw
     umc_csc_sw
-    hevc_pp_dispatcher
-    hevc_pp_atom
-    hevc_pp_avx2
-    hevc_pp_px
-    hevc_pp_sse4
-    hevc_pp_ssse3    
+    ${HEVCPP_LIBS}
     umc_io_merged_${variant}
     umc_core_merged 
     ${ITT_LIBS}
@@ -594,11 +637,59 @@ foreach( variant sw )
     )
 
   make_library( ${plugin_name} ${variant} shared)
-  append_property( ${plugin_name} COMPILE_FLAGS "-DAS_HEVCD_PLUGIN" )  
+#  append_property( ${plugin_name} COMPILE_FLAGS "-DAS_HEVCD_PLUGIN" )  
 
 #  make_library( mfx${variant}_static ${variant} static)
 #  message( STATUS "CMAKE_CURRENT_SOURCE_DIR", ${CMAKE_CURRENT_SOURCE_DIR} )
 #  message( STATUS "xxxxxxxxxxxxxxx __ARCH: "${__ARCH}, "plugin_name: "${plugin_name}, "variant: "${variant})
 endforeach()
+set( defs "" )
+
+foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
+  list( APPEND sources
+    ${prefix}/libmfxsw_encode.cpp
+    ${prefix}/mfx_enc_common.cpp
+  )
+endforeach()
+
+
+set( sources.plus "" )
+foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/plugin/src )
+  list( APPEND sources.plus
+    ${prefix}/mfx_hevc_enc_plugin.cpp
+  )
+endforeach()
+
+set( defs "-DAS_HEVCE_PLUGIN" )
+
+foreach( variant sw )
+  if( __ARCH MATCHES intel64 )
+    set( plugin_name mfxplugin64_hevce_${variant} )
+  else()
+    set( plugin_name mfxplugin32_hevce_${variant} )
+  endif()
+  if( __CONFIG MATCHES debug )
+    set( plugin_name ${plugin_name}_d )
+  endif()
+
+  set( LIBS "" )
+  list( APPEND LIBS
+    h265_enc
+    umc_h265_sw
+    umc_csc_sw
+    ${HEVCPP_LIBS}
+    umc_io_merged_${variant}
+    umc_core_merged 
+    ${ITT_LIBS}
+    ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
+    pthread
+    dl
+    )
+
+  make_library( ${plugin_name} ${variant} shared)
+  #append_property( ${plugin_name} COMPILE_FLAGS "-DAS_HEVCE_PLUGIN" )  
+endforeach()
+set( defs "" )
+
 
 # =============================================================================

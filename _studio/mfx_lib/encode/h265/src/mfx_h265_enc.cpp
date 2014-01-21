@@ -10,6 +10,7 @@
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
+#include <math.h>
 #include "mfx_h265_enc.h"
 #include "mfx_h265_brc.h"
 
