@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
 //
 //
 //          H264 encoder common
@@ -1184,6 +1184,9 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(mfxU32 id)
 {
     return
         id == MFX_EXTBUFF_AVC_REFLIST_CTRL   ||
+#if defined (ADVANCED_REF)
+        id == MFX_EXTBUFF_AVC_REFLISTS       ||
+#endif
         id == MFX_EXTBUFF_ENCODED_FRAME_INFO ||
         id == MFX_EXTBUFF_PICTURE_TIMING_SEI ||
         id == MFX_EXTBUFF_CODING_OPTION2     ||
@@ -4210,6 +4213,12 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
     mfxExtAVCRefListCtrl const * extRefListCtrl = GetExtBuffer(*ctrl);
     if (extRefListCtrl && video.calcParam.numTemporalLayer > 0 && video.calcParam.lyncMode == 0)
         checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+
+#if defined (ADVANCED_REF)
+    mfxExtAVCRefLists const * extRefLists = GetExtBuffer(*ctrl);
+    if (extRefLists && video.calcParam.numTemporalLayer > 0 && video.calcParam.lyncMode == 0)
+        checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+#endif
 
     // check timestamp from mfxExtPictureTimingSEI
     mfxExtPictureTimingSEI const * extPt   = GetExtBuffer(*ctrl);

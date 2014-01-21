@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 //
 //
 //          H264 encoder common
@@ -182,6 +182,9 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtEncoderCapability,    MFX_EXTBUFF_ENCODER_CAPABILITY       );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtAVCEncoderWiDiUsage,  MFX_EXTBUFF_ENCODER_WIDI_USAGE       );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtEncoderROI,           MFX_EXTBUFF_ENCODER_ROI              );
+#if defined (ADVANCED_REF)
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtAVCRefLists,          MFX_EXTBUFF_AVC_REFLISTS             );
+#endif
 #undef BIND_EXTBUF_TYPE_TO_ID
 
     template <class T> inline void InitExtBufHeader(T & extBuf)

@@ -4,12 +4,14 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
 #ifndef __MFX_EXT_BUFFERS_H__
 #define __MFX_EXT_BUFFERS_H__
+
+#define ADVANCED_REF
 
 #include "vm_strings.h"
 
@@ -193,5 +195,26 @@ typedef struct {
     mfxU16      FastPUDecision;     // tri-state
     mfxU16      reserved[26];
 } mfxExtCodingOptionHEVC;
+
+#if defined (ADVANCED_REF)
+
+#define MFX_EXTBUFF_AVC_REFLISTS MFX_MAKEFOURCC('R','L','T','S')
+
+typedef struct {
+    mfxExtBuffer    Header;
+    mfxU16          NumRefIdxL0Active;
+    mfxU16          NumRefIdxL1Active;
+    mfxU16          reserved[2];
+
+    struct mfxRefPic{
+        mfxU32      FrameOrder;
+        mfxU16      PicStruct;
+        mfxU16      reserved[5];
+    } RefPicList0[32], RefPicList1[32];
+
+}mfxExtAVCRefLists;
+
+#endif // ADVANCED_REF
+
 
 #endif // __MFX_EXT_BUFFERS_H__

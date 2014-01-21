@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -479,6 +479,49 @@ namespace
             refPicList.Resize(numActiveRef);
     }
 
+#if defined (ADVANCED_REF)
+
+    typedef struct {
+        mfxU32      FrameOrder;
+        mfxU16      PicStruct;
+        mfxU16      reserved[5];
+    } mfxRefPic;
+
+    void ReorderRefPicList(
+        ArrayU8x33 &                 refPicList,
+        ArrayDpbFrame const &        dpb,
+        mfxRefPic const *            reordRefList,
+        mfxU32                       numActiveRef)
+    {
+        mfxU8 * begin = refPicList.Begin();
+        mfxU8 * end   = refPicList.End();
+
+        mfxU32 numRefInReordList = 0;
+
+        for (mfxU32 i = 0; i < 32 && reordRefList[i].FrameOrder != 0xffffffff; i++)
+        {
+            mfxU8 * ref = FindByExtFrameTag(
+                begin,
+                end,
+                dpb,
+                reordRefList[i].FrameOrder,
+                reordRefList[i].PicStruct);
+
+            if (ref != end)
+                std::rotate(begin++, ref, ref + 1);
+
+            numRefInReordList ++;
+        }
+
+        if (numRefInReordList > numActiveRef)
+            numRefInReordList = numActiveRef;
+
+        refPicList.Resize((mfxU32)(end - refPicList.Begin()));
+        if (numRefInReordList > 0 && refPicList.Size() > numRefInReordList)
+            refPicList.Resize(numRefInReordList);
+    }
+#endif
+
 
     ArrayRefListMod CreateRefListMod(
         ArrayDpbFrame const & dpb,
@@ -626,23 +669,51 @@ namespace
             : extDdi->NumActiveRefBL0;
 
         mfxExtAVCRefListCtrl * ctrl = GetExtBuffer(task.m_ctrl);
+#if defined (ADVANCED_REF)
+        mfxExtAVCRefLists * advCtrl = GetExtBuffer(task.m_ctrl);
+#endif
         bool bCanApplyRefCtrl = video.calcParam.numTemporalLayer == 0 || video.mfx.GopRefDist == 1;
 
         // try to customize ref pic list using provided mfxExtAVCRefListCtrl
-        if (ctrl && bCanApplyRefCtrl)
+        if ((ctrl
+#if defined (ADVANCED_REF)
+            || advCtrl
+#endif
+            ) && bCanApplyRefCtrl)
         {
             ArrayU8x33 backupList0 = list0;
 
             if (task.m_type[fieldId] & MFX_FRAMETYPE_PB)
             {
-                mfxU32 numActiveRefL0Final = ctrl->NumRefIdxL0Active ? IPP_MIN(ctrl->NumRefIdxL0Active,numActiveRefL0) : numActiveRefL0;
-                ReorderRefPicList(list0, dpb, *ctrl, numActiveRefL0Final);
+#if defined (ADVANCED_REF)
+                if (advCtrl) // advanced ref list control has priority
+                {
+                    mfxU32 numActiveRefL0Final = advCtrl->NumRefIdxL0Active ? IPP_MIN(advCtrl->NumRefIdxL0Active,numActiveRefL0) : numActiveRefL0;
+                    ReorderRefPicList(list0, dpb, (mfxRefPic*)(&advCtrl->RefPicList0[0]), numActiveRefL0Final);
+                }
+                else
+#endif // ADVANDEC_REF
+
+                {
+                    mfxU32 numActiveRefL0Final = ctrl->NumRefIdxL0Active ? IPP_MIN(ctrl->NumRefIdxL0Active,numActiveRefL0) : numActiveRefL0;
+                    ReorderRefPicList(list0, dpb, *ctrl, numActiveRefL0Final);
+                }
             }
 
             if (task.m_type[fieldId] & MFX_FRAMETYPE_B)
             {
-                mfxU32 numActiveRefL1Final = ctrl->NumRefIdxL1Active ? IPP_MIN(ctrl->NumRefIdxL0Active,extDdi->NumActiveRefBL1) : extDdi->NumActiveRefBL1;
-                ReorderRefPicList(list1, dpb, *ctrl, numActiveRefL1Final);
+#if defined (ADVANCED_REF)
+                if (advCtrl) // advanced ref list control has priority
+                {
+                    mfxU32 numActiveRefL1Final = advCtrl->NumRefIdxL1Active ? IPP_MIN(advCtrl->NumRefIdxL1Active,extDdi->NumActiveRefBL1) : extDdi->NumActiveRefBL1;
+                    ReorderRefPicList(list1, dpb, (mfxRefPic*)(&advCtrl->RefPicList1[0]), numActiveRefL1Final);
+                }
+                else
+#endif // ADVANCED_REF
+                {
+                    mfxU32 numActiveRefL1Final = ctrl->NumRefIdxL1Active ? IPP_MIN(ctrl->NumRefIdxL1Active,extDdi->NumActiveRefBL1) : extDdi->NumActiveRefBL1;
+                    ReorderRefPicList(list1, dpb, *ctrl, numActiveRefL1Final);
+                }
             }
 
             if (video.calcParam.numTemporalLayer > 1)
@@ -666,7 +737,11 @@ namespace
         }
 
         // form modified ref pic list using internal MSDK logic
-        if (ctrl == 0 || bCanApplyRefCtrl == false)
+        if ((ctrl == 0
+#if defined (ADVANCED_REF)
+            && advCtrl == 0
+#endif
+            ) || bCanApplyRefCtrl == false)
         {
             // prepare ref list for P-field of I/P field pair
             // swap 1st and 2nd entries of L0 ref pic list to use I-field of I/P pair as reference for P-field
