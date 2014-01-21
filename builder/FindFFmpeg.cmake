@@ -29,9 +29,9 @@ pkg_check_modules(PKG_LIBVAUTIL libavutil>=52.38.100)
 pkg_check_modules(PKG_LIBAVCODEC libavcodec>=55.18.102)
 pkg_check_modules(PKG_LIBAVFORMAT libavformat>=55.12.100)
 
-if(NOT PKG_LIBVAUTIL MATCHES NOTFOUND AND
-   NOT PKG_LIBAVCODEC MATCHES NOTFOUND AND
-   NOT PKG_LIBAVFORMAT MATCHES NOTFOUND)
+if(PKG_LIBVAUTIL_FOUND AND
+   PKG_LIBAVCODEC_FOUND AND
+   PKG_LIBAVFORMAT_FOUND)
     set( FFMPEG_FOUND TRUE )
     message( STATUS "FFmpeg headers and libraries were found." )
 endif( )
