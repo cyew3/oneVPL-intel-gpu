@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 
 File Name: libmfxsw_vpp.cpp
 
@@ -387,7 +387,7 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
                 // fill dependencies
                 task.pSrc[0] = in;
                 task.pDst[0] = entryPoints[0].pParam;
-                task.pDst[1] = out;
+               
 
 #ifdef MFX_TRACE_ENABLE
                 task.nParentId = MFX_AUTO_TRACE_GETID();
@@ -403,9 +403,13 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
                 task.threadingPolicy = MFX_TASK_THREADING_DEDICATED_WAIT;
                 // fill dependencies
                 task.pSrc[0] = entryPoints[0].pParam;
-                task.pDst[0] = aux;
+                task.pDst[0] = out;
+                task.pDst[1] = aux;
                 if (MFX_ERR_MORE_DATA_RUN_TASK == mfxRes)
+                {
                     task.pDst[0] = NULL;
+                    task.pDst[1] = NULL;
+                }
 
 #ifdef MFX_TRACE_ENABLE
                 task.nParentId = MFX_AUTO_TRACE_GETID();
