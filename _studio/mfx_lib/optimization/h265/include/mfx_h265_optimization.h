@@ -260,14 +260,23 @@ namespace MFX_HEVC_PP
 #define INTERP_AVG_PIC_PARAMETERS_LIST  short *pSrc, unsigned int srcPitch, unsigned char *pAvg, unsigned int avgPitch, unsigned char *pDst, unsigned int dstPitch, int width, int height
 #define INTERP_AVG_BUF_PARAMETERS_LIST  short *pSrc, unsigned int srcPitch, short *pAvg, unsigned int avgPitch, unsigned char *pDst, unsigned int dstPitch, int width, int height
 
+#define INTERP_AVG_NONE_PARAMETERS_LIST_U16 short *pSrc, unsigned int srcPitch, Ipp16u *pDst, unsigned int dstPitch, int width, int height, unsigned bit_depth
+#define INTERP_AVG_PIC_PARAMETERS_LIST_U16  short *pSrc, unsigned int srcPitch, Ipp16u *pAvg, unsigned int avgPitch, Ipp16u *pDst, unsigned int dstPitch, int width, int height, unsigned bit_depth
+#define INTERP_AVG_BUF_PARAMETERS_LIST_U16  short *pSrc, unsigned int srcPitch, short *pAvg, unsigned int avgPitch, Ipp16u *pDst, unsigned int dstPitch, int width, int height, unsigned bit_depth
+
     typedef void (* PTR_Interp_s8_d16)(INTERP_S8_D16_PARAMETERS_LIST);
     typedef void (* PTR_Interp_s8_d16_Ext)(INTERP_S8_D16_PARAMETERS_LIST, int plane);
     typedef void (* PTR_Interp_s16_d16)(INTERP_S16_D16_PARAMETERS_LIST);
+    typedef void (* PTR_Interp_s16_d16_Ext)(INTERP_S16_D16_PARAMETERS_LIST, int plane);
 
     // average
     typedef void (* PTR_AverageModeN)(INTERP_AVG_NONE_PARAMETERS_LIST);
     typedef void (* PTR_AverageModeP)(INTERP_AVG_PIC_PARAMETERS_LIST);
     typedef void (* PTR_AverageModeB)(INTERP_AVG_BUF_PARAMETERS_LIST);
+
+    typedef void (* PTR_AverageModeN_U16)(INTERP_AVG_NONE_PARAMETERS_LIST_U16);
+    typedef void (* PTR_AverageModeP_U16)(INTERP_AVG_PIC_PARAMETERS_LIST_U16);
+    typedef void (* PTR_AverageModeB_U16)(INTERP_AVG_BUF_PARAMETERS_LIST_U16);
     //-----------------------------------------------------
 
     // [PTR.WeightedPred]
@@ -436,10 +445,16 @@ namespace MFX_HEVC_PP
         HEVCPP_API( PTR_Interp_s8_d16, void, h265_InterpChroma_s8_d16_V, ( INTERP_S8_D16_PARAMETERS_LIST));
         HEVCPP_API( PTR_Interp_s16_d16, void, h265_InterpLuma_s16_d16_V,   ( INTERP_S16_D16_PARAMETERS_LIST));
         HEVCPP_API( PTR_Interp_s16_d16, void, h265_InterpChroma_s16_d16_V, ( INTERP_S16_D16_PARAMETERS_LIST));
+        HEVCPP_API( PTR_Interp_s16_d16, void, h265_InterpLuma_s16_d16_H,   ( INTERP_S16_D16_PARAMETERS_LIST));
+        HEVCPP_API( PTR_Interp_s16_d16_Ext, void, h265_InterpChroma_s16_d16_H, ( INTERP_S16_D16_PARAMETERS_LIST, int plane));
 
         HEVCPP_API( PTR_AverageModeN, void, h265_AverageModeN, (INTERP_AVG_NONE_PARAMETERS_LIST));
         HEVCPP_API( PTR_AverageModeP, void, h265_AverageModeP, (INTERP_AVG_PIC_PARAMETERS_LIST));
         HEVCPP_API( PTR_AverageModeB, void, h265_AverageModeB, (INTERP_AVG_BUF_PARAMETERS_LIST));
+
+        HEVCPP_API( PTR_AverageModeN_U16, void, h265_AverageModeN_U16, (INTERP_AVG_NONE_PARAMETERS_LIST_U16));
+        HEVCPP_API( PTR_AverageModeP_U16, void, h265_AverageModeP_U16, (INTERP_AVG_PIC_PARAMETERS_LIST_U16));
+        HEVCPP_API( PTR_AverageModeB_U16, void, h265_AverageModeB_U16, (INTERP_AVG_BUF_PARAMETERS_LIST_U16));
 
         // [WeightedPred]
         HEVCPP_API( PTR_CopyWeighted_S16U8, void, h265_CopyWeighted_S16U8, (Ipp16s* pSrc, Ipp16s* pSrcUV, Ipp8u* pDst, Ipp8u* pDstUV, Ipp32u SrcStrideY, Ipp32u DstStrideY, Ipp32u SrcStrideC, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round) );
@@ -815,15 +830,6 @@ namespace MFX_HEVC_PP
         int shift, short offset, 
         int dir, int plane);
 
-    void Interp_NoAvg(
-        const short* pSrc, 
-        unsigned int srcPitch, 
-        short *pDst, unsigned int dstPitch, 
-        int tab_index, 
-        int width, int height, 
-        int shift, short offset, 
-        int dir, int plane);
-
     void Interp_WithAvg(
         const Ipp16u* pSrc,  unsigned int srcPitch, 
         Ipp16u *pDst,  unsigned int dstPitch, 
@@ -882,18 +888,6 @@ namespace MFX_HEVC_PP
     {
         // fake function
     }
-
-    void h265_InterpLuma_s8_d16_H_px(const Ipp16u* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index,
-        int width, int height, int shift, short offset);
-
-    void h265_InterpLuma_s8_d16_V_px(const Ipp16u* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index,
-        int width, int height, int shift, short offset);
-
-    void h265_InterpChroma_s8_d16_V_px (const Ipp16u* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index,
-        int width, int height, int shift, short offset);
-
-    void h265_InterpChroma_s8_d16_H_px(const Ipp16u* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index,
-        int width, int height, int shift, short offset, int plane);
 
     void h265_AverageModeN_px(short *pSrc, unsigned int srcPitch, Ipp16u *pDst, unsigned int dstPitch, int width, int height, unsigned bit_depth);
 

@@ -44,7 +44,7 @@ using namespace MFX_HEVC_PP;
         Ipp64u featuresMask;
         IppStatus sts = ippGetCpuFeatures( &featuresMask, cpuIdInfoRegs);
         if(ippStsNoErr != sts)    return sts;
-                
+
         if ( featuresMask & (Ipp64u)(ippCPUID_AVX2) ) // means AVX2 + BMI_I + BMI_II to prevent issues with BMI
         {
             SetTargetAVX2();
@@ -66,7 +66,7 @@ using namespace MFX_HEVC_PP;
         {
             SetTargetPX();
         }
-        
+
         g_dispatcher.isInited = true;
 
         return ippStsNoErr;
@@ -201,15 +201,8 @@ using namespace MFX_HEVC_PP;
         // for the Atom few _interpolation_ functions needs to be replaced (PSHUFB issue)
         g_dispatcher.h265_InterpLuma_s8_d16_H = &MFX_HEVC_PP::h265_InterpLuma_s8_d16_H_atom;
         g_dispatcher.h265_InterpChroma_s8_d16_H = &MFX_HEVC_PP::h265_InterpChroma_s8_d16_H_atom;
-
-        g_dispatcher.h265_InterpLuma_s8_d16_V = &MFX_HEVC_PP::h265_InterpLuma_s8_d16_V_atom;
-        g_dispatcher.h265_InterpChroma_s8_d16_V = &MFX_HEVC_PP::h265_InterpChroma_s8_d16_V_atom;
-        g_dispatcher.h265_InterpLuma_s16_d16_V = &MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_atom;
-        g_dispatcher.h265_InterpChroma_s16_d16_V = &MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_atom;
-
-        g_dispatcher.h265_AverageModeB = &MFX_HEVC_PP::h265_AverageModeB_atom;
-        g_dispatcher.h265_AverageModeP = &MFX_HEVC_PP::h265_AverageModeP_atom;
-        g_dispatcher.h265_AverageModeN = &MFX_HEVC_PP::h265_AverageModeN_atom;        
+        g_dispatcher.h265_InterpLuma_s16_d16_H = &MFX_HEVC_PP::h265_InterpLuma_s16_d16_H_atom;
+        g_dispatcher.h265_InterpChroma_s16_d16_H = &MFX_HEVC_PP::h265_InterpChroma_s16_d16_H_atom;
     } // void SetTargetSSE4_ATOM(void)
 
 
@@ -316,8 +309,12 @@ using namespace MFX_HEVC_PP;
         // average
         g_dispatcher.h265_AverageModeB = &MFX_HEVC_PP::h265_AverageModeB_sse;
         g_dispatcher.h265_AverageModeP = &MFX_HEVC_PP::h265_AverageModeP_sse;
-        g_dispatcher.h265_AverageModeN = &MFX_HEVC_PP::h265_AverageModeN_sse;        
+        g_dispatcher.h265_AverageModeN = &MFX_HEVC_PP::h265_AverageModeN_sse;
         
+        g_dispatcher.h265_AverageModeB_U16 = &MFX_HEVC_PP::h265_AverageModeB_U16_sse;
+        g_dispatcher.h265_AverageModeP_U16 = &MFX_HEVC_PP::h265_AverageModeP_U16_sse;
+        g_dispatcher.h265_AverageModeN_U16 = &MFX_HEVC_PP::h265_AverageModeN_U16_sse;
+
         // algo
         g_dispatcher.h265_InterpLuma_s8_d16_H = &MFX_HEVC_PP::h265_InterpLuma_s8_d16_H_sse;
         g_dispatcher.h265_InterpChroma_s8_d16_H = &MFX_HEVC_PP::h265_InterpChroma_s8_d16_H_sse;
@@ -325,6 +322,8 @@ using namespace MFX_HEVC_PP;
         g_dispatcher.h265_InterpChroma_s8_d16_V = &MFX_HEVC_PP::h265_InterpChroma_s8_d16_V_sse;
         g_dispatcher.h265_InterpLuma_s16_d16_V = &MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_sse;
         g_dispatcher.h265_InterpChroma_s16_d16_V = &MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_sse;
+        g_dispatcher.h265_InterpLuma_s16_d16_H = &MFX_HEVC_PP::h265_InterpLuma_s16_d16_H_sse;
+        g_dispatcher.h265_InterpChroma_s16_d16_H = &MFX_HEVC_PP::h265_InterpChroma_s16_d16_H_sse;
 
         // [INTRA prediction]
         g_dispatcher.h265_PredictIntra_Ang_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_8u_sse;
@@ -443,7 +442,11 @@ using namespace MFX_HEVC_PP;
         g_dispatcher.h265_AverageModeB = &MFX_HEVC_PP::h265_AverageModeB_ssse3;
         g_dispatcher.h265_AverageModeP = &MFX_HEVC_PP::h265_AverageModeP_ssse3;
         g_dispatcher.h265_AverageModeN = &MFX_HEVC_PP::h265_AverageModeN_ssse3;        
-        
+
+        g_dispatcher.h265_AverageModeB_U16 = &MFX_HEVC_PP::h265_AverageModeB_U16_ssse3;
+        g_dispatcher.h265_AverageModeP_U16 = &MFX_HEVC_PP::h265_AverageModeP_U16_ssse3;
+        g_dispatcher.h265_AverageModeN_U16 = &MFX_HEVC_PP::h265_AverageModeN_U16_ssse3;
+
         // algo
         g_dispatcher.h265_InterpLuma_s8_d16_H = &MFX_HEVC_PP::h265_InterpLuma_s8_d16_H_ssse3;
         g_dispatcher.h265_InterpChroma_s8_d16_H = &MFX_HEVC_PP::h265_InterpChroma_s8_d16_H_ssse3;
@@ -451,6 +454,8 @@ using namespace MFX_HEVC_PP;
         g_dispatcher.h265_InterpChroma_s8_d16_V = &MFX_HEVC_PP::h265_InterpChroma_s8_d16_V_ssse3;
         g_dispatcher.h265_InterpLuma_s16_d16_V = &MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_ssse3;
         g_dispatcher.h265_InterpChroma_s16_d16_V = &MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_ssse3;
+        g_dispatcher.h265_InterpLuma_s16_d16_H = &MFX_HEVC_PP::h265_InterpLuma_s16_d16_H_ssse3;
+        g_dispatcher.h265_InterpChroma_s16_d16_H = &MFX_HEVC_PP::h265_InterpChroma_s16_d16_H_ssse3;
 
         // [INTRA prediction]
         g_dispatcher.h265_PredictIntra_Ang_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_8u_ssse3;
@@ -570,6 +575,10 @@ using namespace MFX_HEVC_PP;
         g_dispatcher.h265_AverageModeP = &MFX_HEVC_PP::h265_AverageModeP_avx2;
         g_dispatcher.h265_AverageModeN = &MFX_HEVC_PP::h265_AverageModeN_avx2;        
         
+        g_dispatcher.h265_AverageModeB_U16 = &MFX_HEVC_PP::h265_AverageModeB_U16_avx2;
+        g_dispatcher.h265_AverageModeP_U16 = &MFX_HEVC_PP::h265_AverageModeP_U16_avx2;
+        g_dispatcher.h265_AverageModeN_U16 = &MFX_HEVC_PP::h265_AverageModeN_U16_avx2;
+
         // algo
         g_dispatcher.h265_InterpLuma_s8_d16_H = &MFX_HEVC_PP::h265_InterpLuma_s8_d16_H_avx2;
         g_dispatcher.h265_InterpChroma_s8_d16_H = &MFX_HEVC_PP::h265_InterpChroma_s8_d16_H_avx2;
@@ -577,6 +586,8 @@ using namespace MFX_HEVC_PP;
         g_dispatcher.h265_InterpChroma_s8_d16_V = &MFX_HEVC_PP::h265_InterpChroma_s8_d16_V_avx2;
         g_dispatcher.h265_InterpLuma_s16_d16_V = &MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_avx2;
         g_dispatcher.h265_InterpChroma_s16_d16_V = &MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_avx2;
+        g_dispatcher.h265_InterpLuma_s16_d16_H = &MFX_HEVC_PP::h265_InterpLuma_s16_d16_H_avx2;
+        g_dispatcher.h265_InterpChroma_s16_d16_H = &MFX_HEVC_PP::h265_InterpChroma_s16_d16_H_avx2;
 
         // [INTRA prediction]
         g_dispatcher.h265_PredictIntra_Ang_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_8u_sse;
@@ -696,6 +707,10 @@ using namespace MFX_HEVC_PP;
         g_dispatcher.h265_AverageModeP = &MFX_HEVC_PP::h265_AverageModeP_px;
         g_dispatcher.h265_AverageModeN = &MFX_HEVC_PP::h265_AverageModeN_px;
         
+        g_dispatcher.h265_AverageModeB_U16 = &MFX_HEVC_PP::h265_AverageModeB_U16_px;
+        g_dispatcher.h265_AverageModeP_U16 = &MFX_HEVC_PP::h265_AverageModeP_U16_px;
+        g_dispatcher.h265_AverageModeN_U16 = &MFX_HEVC_PP::h265_AverageModeN_U16_px;
+
         // algo
         g_dispatcher.h265_InterpLuma_s8_d16_H = &MFX_HEVC_PP::h265_InterpLuma_s8_d16_H_px;
         g_dispatcher.h265_InterpChroma_s8_d16_H = &MFX_HEVC_PP::h265_InterpChroma_s8_d16_H_px;
@@ -703,6 +718,8 @@ using namespace MFX_HEVC_PP;
         g_dispatcher.h265_InterpChroma_s8_d16_V = &MFX_HEVC_PP::h265_InterpChroma_s8_d16_V_px;
         g_dispatcher.h265_InterpLuma_s16_d16_V = &MFX_HEVC_PP::h265_InterpLuma_s16_d16_V_px;
         g_dispatcher.h265_InterpChroma_s16_d16_V = &MFX_HEVC_PP::h265_InterpChroma_s16_d16_V_px;
+        g_dispatcher.h265_InterpLuma_s16_d16_H = &MFX_HEVC_PP::h265_InterpLuma_s16_d16_H_px;
+        g_dispatcher.h265_InterpChroma_s16_d16_H = &MFX_HEVC_PP::h265_InterpChroma_s16_d16_H_px;
 
         // [INTRA prediction]
         g_dispatcher.h265_PredictIntra_Ang_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_8u_px;
@@ -899,14 +916,14 @@ using namespace MFX_HEVC_PP;
 
         if (plane == TEXT_LUMA) {
             if (dir == INTERP_HOR)
-                h265_InterpLuma_s8_d16_H_px(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset);
+                NAME(h265_InterpLuma_s16_d16_H)((const short *)pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset);
             else
-                h265_InterpLuma_s8_d16_V_px(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset);
+                NAME(h265_InterpLuma_s16_d16_V)((const short *)pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset);
         } else {
             if (dir == INTERP_HOR)
-                h265_InterpChroma_s8_d16_H_px(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset, plane);
+                NAME(h265_InterpChroma_s16_d16_H)((const short *)pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset, plane);
             else
-                h265_InterpChroma_s8_d16_V_px(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset);
+                NAME(h265_InterpChroma_s16_d16_V)((const short *)pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset);
         }
     }
 
@@ -937,22 +954,22 @@ using namespace MFX_HEVC_PP;
 
         if (plane == TEXT_LUMA) {
             if (dir == INTERP_HOR)
-                h265_InterpLuma_s8_d16_H_px(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+                NAME(h265_InterpLuma_s16_d16_H)((const short *)pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
             else
-                h265_InterpLuma_s8_d16_V_px(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+                NAME(h265_InterpLuma_s16_d16_V)((const short *)pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
         } else {
             if (dir == INTERP_HOR)
-                h265_InterpChroma_s8_d16_H_px(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset, plane);
+                NAME(h265_InterpChroma_s16_d16_H)((const short *)pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset, plane);
             else
-                h265_InterpChroma_s8_d16_V_px(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+                NAME(h265_InterpChroma_s16_d16_V)((const short *)pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
         }
 
         if (avgMode == AVERAGE_NO)
-            h265_AverageModeN_px(tmpBuf, 64, pDst, dstPitch, width, height, bit_depth);
+            NAME(h265_AverageModeN_U16)(tmpBuf, 64, pDst, dstPitch, width, height, bit_depth);
         else if (avgMode == AVERAGE_FROM_PIC)
-            h265_AverageModeP_px(tmpBuf, 64, (Ipp16u *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
+            NAME(h265_AverageModeP_U16)(tmpBuf, 64, (Ipp16u *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
         else if (avgMode == AVERAGE_FROM_BUF)
-            h265_AverageModeB_px(tmpBuf, 64, (short *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
+            NAME(h265_AverageModeB_U16)(tmpBuf, 64, (short *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
     }
 
 
@@ -989,11 +1006,11 @@ using namespace MFX_HEVC_PP;
             NAME(h265_InterpChroma_s16_d16_V)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
 
         if (avgMode == AVERAGE_NO)
-            h265_AverageModeN_px(tmpBuf, 64, pDst, dstPitch, width, height, bit_depth);
+            NAME(h265_AverageModeN_U16)(tmpBuf, 64, pDst, dstPitch, width, height, bit_depth);
         else if (avgMode == AVERAGE_FROM_PIC)
-            h265_AverageModeP_px(tmpBuf, 64, (Ipp16u *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
+            NAME(h265_AverageModeP_U16)(tmpBuf, 64, (Ipp16u *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
         else if (avgMode == AVERAGE_FROM_BUF)
-            h265_AverageModeB_px(tmpBuf, 64, (short *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
+            NAME(h265_AverageModeB_U16)(tmpBuf, 64, (short *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
     }
 
 //} // namespace MFX_HEVC_PP

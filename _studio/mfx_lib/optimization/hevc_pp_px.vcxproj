@@ -37,7 +37,6 @@
   <ItemGroup>
     <ClCompile Include="h265\src\mfx_h265_deblocking_16u_px.cpp" />
     <ClCompile Include="h265\src\mfx_h265_deblocking_px.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_interpolation_16u_px.cpp" />
     <ClCompile Include="h265\src\mfx_h265_interpolation_px.cpp" />
     <ClCompile Include="h265\src\mfx_h265_intrapred_16u_px.cpp" />
     <ClCompile Include="h265\src\mfx_h265_intrapred_px.cpp" />
@@ -45,7 +44,6 @@
     <ClCompile Include="h265\src\mfx_h265_sad_ipp.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sao_16u_px.cpp" />
     <ClCompile Include="h265\src\mfx_h265_sao_px.cpp" />
-    <ClCompile Include="h265\src\mfx_h265_transform_16u_px.cpp" />
     <ClCompile Include="h265\src\mfx_h265_transform_px.cpp" />
     <ClCompile Include="h265\src\mfx_h265_weighted_pred_16u_px.cpp" />
     <ClCompile Include="h265\src\mfx_h265_weighted_pred_px.cpp" />

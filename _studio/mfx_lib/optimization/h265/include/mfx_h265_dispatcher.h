@@ -516,6 +516,37 @@ namespace MFX_HEVC_PP
     void h265_AverageModeB_atom(INTERP_AVG_BUF_PARAMETERS_LIST);
     void h265_AverageModeB_avx2(INTERP_AVG_BUF_PARAMETERS_LIST);
 
+    /* additional filter kernels for bitDepth > 8 */
+    void h265_InterpLuma_s16_d16_H_px(INTERP_S16_D16_PARAMETERS_LIST);
+    void h265_InterpLuma_s16_d16_H_sse(INTERP_S16_D16_PARAMETERS_LIST);
+    void h265_InterpLuma_s16_d16_H_ssse3(INTERP_S16_D16_PARAMETERS_LIST);
+    void h265_InterpLuma_s16_d16_H_atom(INTERP_S16_D16_PARAMETERS_LIST);
+    void h265_InterpLuma_s16_d16_H_avx2(INTERP_S16_D16_PARAMETERS_LIST);
+    
+    void h265_InterpChroma_s16_d16_H_px(INTERP_S16_D16_PARAMETERS_LIST, int plane);
+    void h265_InterpChroma_s16_d16_H_sse(INTERP_S16_D16_PARAMETERS_LIST, int plane);
+    void h265_InterpChroma_s16_d16_H_ssse3(INTERP_S16_D16_PARAMETERS_LIST, int plane);
+    void h265_InterpChroma_s16_d16_H_atom(INTERP_S16_D16_PARAMETERS_LIST, int plane);
+    void h265_InterpChroma_s16_d16_H_avx2(INTERP_S16_D16_PARAMETERS_LIST, int plane);
+
+    void h265_AverageModeN_U16_px(INTERP_AVG_NONE_PARAMETERS_LIST_U16);
+    void h265_AverageModeN_U16_sse(INTERP_AVG_NONE_PARAMETERS_LIST_U16);
+    void h265_AverageModeN_U16_ssse3(INTERP_AVG_NONE_PARAMETERS_LIST_U16);
+    void h265_AverageModeN_U16_atom(INTERP_AVG_NONE_PARAMETERS_LIST_U16);
+    void h265_AverageModeN_U16_avx2(INTERP_AVG_NONE_PARAMETERS_LIST_U16);
+
+    void h265_AverageModeP_U16_px(INTERP_AVG_PIC_PARAMETERS_LIST_U16);
+    void h265_AverageModeP_U16_sse(INTERP_AVG_PIC_PARAMETERS_LIST_U16);
+    void h265_AverageModeP_U16_ssse3(INTERP_AVG_PIC_PARAMETERS_LIST_U16);
+    void h265_AverageModeP_U16_atom(INTERP_AVG_PIC_PARAMETERS_LIST_U16);
+    void h265_AverageModeP_U16_avx2(INTERP_AVG_PIC_PARAMETERS_LIST_U16);
+
+    void h265_AverageModeB_U16_px(INTERP_AVG_BUF_PARAMETERS_LIST_U16);
+    void h265_AverageModeB_U16_sse(INTERP_AVG_BUF_PARAMETERS_LIST_U16);
+    void h265_AverageModeB_U16_ssse3(INTERP_AVG_BUF_PARAMETERS_LIST_U16);
+    void h265_AverageModeB_U16_atom(INTERP_AVG_BUF_PARAMETERS_LIST_U16);
+    void h265_AverageModeB_U16_avx2(INTERP_AVG_BUF_PARAMETERS_LIST_U16);
+
     // WeightedPred
     void h265_CopyWeighted_S16U8_px(Ipp16s* pSrc, Ipp16s* pSrcUV, Ipp8u* pDst, Ipp8u* pDstUV, Ipp32u SrcStrideY, Ipp32u DstStrideY, Ipp32u SrcStrideC, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round);
     void h265_CopyWeighted_S16U8_sse(Ipp16s* pSrc, Ipp16s* pSrcUV, Ipp8u* pDst, Ipp8u* pDstUV, Ipp32u SrcStrideY, Ipp32u DstStrideY, Ipp32u SrcStrideC, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round);
