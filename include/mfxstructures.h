@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2007-2013 Intel Corporation.  All rights reserved.
+Copyright (C) 2007-2014 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -55,7 +55,12 @@ typedef struct {
 
 /* Frame Info */
 typedef struct {
-    mfxU32  reserved[6];
+    mfxU32  reserved[4];
+    mfxU16  reserved4;
+    mfxU16  BitDepthLuma;
+    mfxU16  BitDepthChroma;
+    mfxU16  Shift;
+
     mfxFrameId FrameId;
 
     mfxU32  FourCC;
@@ -155,6 +160,7 @@ typedef struct {
     /* color planes */
     union {
         mfxU8   *Y;
+        mfxU16  *Y16;
         mfxU8   *R;
     };
     union {
@@ -164,11 +170,13 @@ typedef struct {
         mfxU8   *CrCb;          /* for CrCb merged formats */
         mfxU8   *Cb;
         mfxU8   *U;
+        mfxU16  *U16;
         mfxU8   *G;
     };
     union {
         mfxU8   *Cr;
         mfxU8   *V;
+        mfxU16  *V16;
         mfxU8   *B;
     };
     mfxU8       *A;
