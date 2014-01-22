@@ -691,6 +691,9 @@ public:
     }
 
    ~H265VideoParamSet() {
+        delete[] m_hrdParameters;
+        delete[] hrd_layer_set_idx;
+        delete[] cprms_present_flag;
     }
 
     void createHrdParamBuffer()
@@ -712,13 +715,13 @@ public:
         vps_temporal_id_nesting_flag = false;
         vps_num_hrd_parameters = 0;
 
-        delete[] m_hrdParameters;
+        delete m_hrdParameters;
         m_hrdParameters = 0;
 
-        delete[] hrd_layer_set_idx;
+        delete hrd_layer_set_idx;
         hrd_layer_set_idx = 0;
 
-        delete[] cprms_present_flag;
+        delete cprms_present_flag;
         cprms_present_flag = 0;
 
         for (int i = 0; i < MAX_TEMPORAL_LAYER; i++)

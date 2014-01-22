@@ -332,9 +332,7 @@ protected:
 
     void ActivateHeaders(H265SeqParamSet *sps, H265PicParamSet *pps);
 
-    bool IsSkipForCRAorBLA(const H265Slice *pSlice);
-
-    void CheckCRAOrBLA(const H265Slice *pSlice);
+    bool IsSkipForCRAorBLA(H265Slice *pSlice);
 
     // Allocate a new frame and initialize it with slice parameters
     virtual H265DecoderFrame *AllocateNewFrame(const H265Slice *pSlice);
@@ -389,8 +387,7 @@ protected:
     // Keep track of which parameter set is in use.
     bool              m_WaitForIDR;
 
-    Ipp32s m_RA_POC;
-    Ipp8u  NoRaslOutputFlag;
+    Ipp32s m_RA_POC, m_CRA_POC;
     NalUnitType m_IRAPType;
 
     Ipp32u            m_DPBSizeEx;

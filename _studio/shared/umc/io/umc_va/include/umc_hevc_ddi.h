@@ -15,7 +15,6 @@
 #define MK_HEVCVER(j, n)    (((j & 0x0000ffff) << 16) | (n & 0x0000ffff))
 #define HEVC_SPEC_VER       MK_HEVCVER(0, 85)
 
-#pragma pack(1)
 
 typedef struct _DXVA_Intel_PicEntry_HEVC
 {
@@ -33,13 +32,17 @@ typedef struct _DXVA_Intel_PicEntry_HEVC
 } DXVA_Intel_PicEntry_HEVC, *LPDXVA_Intel_PicEntry_HEVC;
 
 typedef struct _DXVA_Intel_Status_HEVC {
-  USHORT                    StatusReportFeedbackNumber;
-  DXVA_PicEntry_HEVC        current_picture; /* flag is bot field flag */
+  UINT                      StatusReportFeedbackNumber;
+  DXVA_Intel_PicEntry_HEVC        current_picture; /* flag is bot field flag */
+  UCHAR                     field_pic_flag;
+  UCHAR                     bDXVA_Func;
   UCHAR                     bBufType;
   UCHAR                     bStatus;
   UCHAR                     bReserved8Bits;
   USHORT                    wNumMbsAffected;
 } DXVA_Intel_Status_HEVC, *LPDXVA_Intel_Status_HEVC;
+
+
 
 #if HEVC_SPEC_VER == MK_HEVCVER(0, 83)
 
@@ -618,6 +621,5 @@ typedef struct _DXVA_Intel_Qmatrix_HEVC
 #endif
 } DXVA_Intel_Qmatrix_HEVC, *LPDXVA_Intel_Qmatrix_HEVC;
 
-#pragma pack()
 
 #endif __UMC_HEVC_DDI_H

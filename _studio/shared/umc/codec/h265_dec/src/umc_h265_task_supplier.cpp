@@ -747,9 +747,9 @@ void TaskSupplier_H265::Close()
 
     m_WaitForIDR        = true;
 
-    m_RA_POC = 0;
+    m_RA_POC = INT_MAX;
     m_IRAPType = NAL_UT_INVALID;
-    NoRaslOutputFlag = 1;
+    m_CRA_POC = 0;
 
     m_isUseDelayDPBValues = true;
 
@@ -811,9 +811,9 @@ void TaskSupplier_H265::Reset()
 
     m_WaitForIDR        = true;
 
-    m_RA_POC = 0;
+    m_RA_POC = INT_MAX;
     m_IRAPType = NAL_UT_INVALID;
-    NoRaslOutputFlag = 1;
+    m_CRA_POC = 0;
 
     m_isUseDelayDPBValues = true;
     m_pLastDisplayed = 0;
@@ -847,7 +847,6 @@ void TaskSupplier_H265::AfterErrorRestore()
     m_Headers.Reset(true);
 
     m_WaitForIDR        = true;
-    NoRaslOutputFlag = 1;
 
     m_pLastDisplayed = 0;
 
@@ -1348,12 +1347,12 @@ bool TaskSupplier_H265::IsWantToShowFrame(bool force)
 {
     ViewItem_H265 &view = *GetView();
 
-    Ipp32u countDisplayable = view.pDPB->countNumDisplayable();
-    if (countDisplayable > view.sps_max_num_reorder_pics || force)
+    if ((view.pDPB->countNumDisplayable() > view.sps_max_num_reorder_pics) ||
+        force)
     {
-        H265DecoderFrame * pTmp = view.pDPB->findOldestDisplayable(view.dpbSize);
-        if (pTmp && countDisplayable >= pTmp->GetAU()->GetSeqParam()->sps_max_num_reorder_pics[0])
-            return 0;
+        H265DecoderFrame * pTmp;
+
+        pTmp = view.pDPB->findOldestDisplayable(view.dpbSize);
         return !!pTmp;
     }
 
@@ -1414,16 +1413,12 @@ H265DecoderFrame *TaskSupplier_H265::GetAnyFrameToDisplay(bool force)
     {
         // show oldest frame
         DEBUG_PRINT1((VM_STRING("GetAnyFrameToDisplay DPB displayable %d, maximum %d, force = %d\n"), view.pDPB->countNumDisplayable(), view.maxDecFrameBuffering, force));
-        Ipp32u countDisplayable = view.pDPB->countNumDisplayable();
-        if (countDisplayable > view.sps_max_num_reorder_pics || force)
+        if (view.pDPB->countNumDisplayable() > view.sps_max_num_reorder_pics || force)
         {
             H265DecoderFrame *pTmp = view.pDPB->findOldestDisplayable(view.dpbSize);
 
             if (pTmp)
             {
-                if (!force && countDisplayable <= pTmp->GetAU()->GetSeqParam()->sps_max_num_reorder_pics[0])
-                    return 0;
-
                 if (!pTmp->IsFrameExist())
                 {
                     pTmp->setWasOutputted();
@@ -1763,11 +1758,11 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource, UMC::MediaD
             case NAL_UT_EOS:
             case NAL_UT_EOB:
                 m_WaitForIDR = true;
+                m_RA_POC = INT_MAX;
+                m_IRAPType = NAL_UT_INVALID;
+                m_CRA_POC = 0;
                 AddSlice(0, !pSource);
                 GetView()->pDPB->IncreaseRefPicListResetCount(0);
-                m_RA_POC = 0;
-                m_IRAPType = NAL_UT_INVALID;
-                NoRaslOutputFlag = 1;
                 break;
 
             default:
@@ -1965,55 +1960,35 @@ void TaskSupplier_H265::ActivateHeaders(H265SeqParamSet *sps, H265PicParamSet *p
     }
 }
 
-void TaskSupplier_H265::CheckCRAOrBLA(const H265Slice *pSlice)
+bool TaskSupplier_H265::IsSkipForCRAorBLA(H265Slice *pSlice)
 {
-    if (pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_IDR_W_RADL
-        || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_IDR_N_LP
-        || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_CRA
-        || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_LP
-        || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_RADL
-        || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_BLA_N_LP)
+    if (m_RA_POC == INT_MAX)
     {
-        if (pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_LP
-            || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_RADL
-            || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_BLA_N_LP)
-            NoRaslOutputFlag = 1;
-
-        if (pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_IDR_W_RADL || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_IDR_N_LP)
-        {
-            NoRaslOutputFlag = 0;
-        }
-
-        if (pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_CRA && m_IRAPType != NAL_UT_INVALID)
-        {
-            NoRaslOutputFlag = 0;
-        }
-
-        if (NoRaslOutputFlag)
+        if (pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_CRA
+            || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_LP
+            || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_BLA_N_LP
+            || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_RADL)
         {
             m_RA_POC = pSlice->m_SliceHeader.slice_pic_order_cnt_lsb;
         }
-
-        m_IRAPType = pSlice->m_SliceHeader.nal_unit_type;
-        return;
-    }
-}
-
-bool TaskSupplier_H265::IsSkipForCRAorBLA(const H265Slice *pSlice)
-{
-    if (NoRaslOutputFlag)
-    {
-        if (pSlice->m_SliceHeader.slice_pic_order_cnt_lsb == m_RA_POC)
-            return false;
-
-        if (pSlice->m_SliceHeader.slice_pic_order_cnt_lsb < m_RA_POC &&
-            (pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_RASL_R || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_RASL_N))
+        else if (pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_IDR_W_RADL || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_IDR_N_LP)
         {
-            return true;
+            m_RA_POC = INT_MIN;
         }
+    }
+    else if (pSlice->m_SliceHeader.slice_pic_order_cnt_lsb < m_RA_POC &&
+        (pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_RASL_R || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_RASL_N))
+    {
+        return true;
+    }
 
-        if (pSlice->m_SliceHeader.nal_unit_type != NAL_UT_CODED_SLICE_RADL_R && pSlice->m_SliceHeader.nal_unit_type != NAL_UT_CODED_SLICE_RADL_N)
-            NoRaslOutputFlag = 0;
+    if ((m_IRAPType == NAL_UT_CODED_SLICE_BLA_N_LP
+        || m_IRAPType == NAL_UT_CODED_SLICE_BLA_W_LP
+        || m_IRAPType == NAL_UT_CODED_SLICE_BLA_W_RADL)
+        && pSlice->m_SliceHeader.slice_pic_order_cnt_lsb < m_CRA_POC
+        && (pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_RASL_R || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_RASL_N))
+    {
+        return true;
     }
 
     return false;
@@ -2099,6 +2074,20 @@ UMC::Status TaskSupplier_H265::AddSlice(H265Slice * pSlice, bool )
 
         if (NumShortTermRefs + NumLongTermRefs == 0)
             AddFakeReferenceFrame(pSlice);
+    }
+
+    if (!pSlice->GetSliceHeader()->dependent_slice_segment_flag)
+    {
+        if (pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_IDR_W_RADL
+            || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_IDR_N_LP
+            || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_CRA
+            || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_LP
+            || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_RADL
+            || pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_BLA_N_LP)
+        {
+            m_CRA_POC = pSlice->m_SliceHeader.slice_pic_order_cnt_lsb;
+            m_IRAPType = pSlice->m_SliceHeader.nal_unit_type;
+        }
     }
 
     // Set reference list
@@ -2326,9 +2315,7 @@ H265DecoderFrame * TaskSupplier_H265::AllocateNewFrame(const H265Slice *pSlice)
 
     DPBUpdate(pSlice);
 
-    CheckCRAOrBLA(pSlice);
-
-    if (pSlice->GetSliceHeader()->nal_unit_type == NAL_UT_CODED_SLICE_CRA && NoRaslOutputFlag)
+    /*if (pSlice->GetSliceHeader()->nal_unit_type == NAL_UT_CODED_SLICE_CRA && m_IRAPType == NAL_UT_INVALID)
     {
         for (H265DecoderFrame *pCurr = GetView()->pDPB->head(); pCurr; pCurr = pCurr->future())
         {
@@ -2341,7 +2328,7 @@ H265DecoderFrame * TaskSupplier_H265::AllocateNewFrame(const H265Slice *pSlice)
                 }
             }
         }
-    }
+    }*/
 
     pFrame = GetFreeFrame();
     if (NULL == pFrame)
