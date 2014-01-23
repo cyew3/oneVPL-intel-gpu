@@ -28,7 +28,7 @@ foreach( variant sw x11 drm )
   set( LIBS "" )
   if ( configured )  
     list( APPEND LIBS
-      mfx
+      dispatch_trace
       umc_core_merged
       bs_parser
       dl
@@ -108,7 +108,7 @@ foreach( variant sw x11 drm)
   set( LIBS "" )
   if ( configured )  
     list( APPEND LIBS
-      mfx
+      dispatch_trace
       umc_core_merged
       bs_parser
       dl
