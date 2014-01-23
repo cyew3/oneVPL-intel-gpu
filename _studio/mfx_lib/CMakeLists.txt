@@ -610,17 +610,18 @@ endforeach()
 set( USE_STRICT_NAME TRUE )
 set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/plugin/libmfxsw_plugin.map" )
 
-set( defs "-DAS_HEVCD_PLUGIN" )
-
 #foreach( variant sw hw )
 foreach( variant sw )
   if( __ARCH MATCHES intel64 )
-    set( plugin_name mfxplugin64_hevcd_${variant} )
+    set( plugin_name mfx_hevcd_${variant}64 )
+    set( eval_plugin_name mfx_eval_hevcd_${variant}64 )
   else()
-    set( plugin_name mfxplugin32_hevcd_${variant} )
+    set( plugin_name mfx_hevcd_${variant}32 )
+    set( eval_plugin_name mfx_eval_hevcd_${variant}32 )
   endif()
   if( __CONFIG MATCHES debug )
     set( plugin_name ${plugin_name}_d )
+    set( eval_plugin_name ${eval_plugin_name}_d )
   endif()
 
   set( LIBS "" )
@@ -635,8 +636,13 @@ foreach( variant sw )
     pthread
     dl
     )
-
+  
+  set( defs "-DAS_HEVCD_PLUGIN" )
   make_library( ${plugin_name} ${variant} shared)
+
+  set( defs "-DAS_HEVCD_PLUGIN -DHEVCD_EVALUATION" )
+  make_library( ${eval_plugin_name} ${variant} shared)
+
 #  append_property( ${plugin_name} COMPILE_FLAGS "-DAS_HEVCD_PLUGIN" )  
 
 #  make_library( mfx${variant}_static ${variant} static)
@@ -660,16 +666,17 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/plugin/src )
   )
 endforeach()
 
-set( defs "-DAS_HEVCE_PLUGIN" )
-
 foreach( variant sw )
   if( __ARCH MATCHES intel64 )
-    set( plugin_name mfxplugin64_hevce_${variant} )
+    set( plugin_name mfx_hevce_${variant}64 )
+    set( eval_plugin_name mfx_eval_hevce_${variant}64 )
   else()
-    set( plugin_name mfxplugin32_hevce_${variant} )
+    set( plugin_name mfx_hevce_${variant}32 )
+    set( eval_plugin_name mfx_eval_hevce_${variant}32 )
   endif()
   if( __CONFIG MATCHES debug )
     set( plugin_name ${plugin_name}_d )
+    set( eval_plugin_name ${eval_plugin_name}_d )
   endif()
 
   set( LIBS "" )
@@ -686,8 +693,12 @@ foreach( variant sw )
     dl
     )
 
+  set( defs "-DAS_HEVCE_PLUGIN" )
   make_library( ${plugin_name} ${variant} shared)
-  #append_property( ${plugin_name} COMPILE_FLAGS "-DAS_HEVCE_PLUGIN" )  
+
+#  set( defs "-DAS_HEVCE_PLUGIN -DHEVCE_EVALUATION" )
+#  make_library( ${eval_plugin_name} ${variant} shared)
+
 endforeach()
 set( defs "" )
 
