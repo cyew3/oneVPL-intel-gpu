@@ -684,9 +684,6 @@
       <Project>{57fe8dac-c7c4-4df4-9a36-2fee040dff38}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\shared\umc\codec\h265_dec\h265_dec.vcxproj">
-      <Project>{f0afe44d-3a26-45f6-bc3f-6131f91dec80}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\core\umc\base_classes.vcxproj">
       <Project>{31991d83-f6a2-49d9-bdc5-64e85d055a1c}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>

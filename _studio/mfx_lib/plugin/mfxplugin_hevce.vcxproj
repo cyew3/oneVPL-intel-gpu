@@ -294,7 +294,7 @@
       <IgnoreSpecificDefaultLibraries>svml_disp.lib;libirc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)2fca99749fdb49aeb121a5b63ef568f7\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Command>copy "$(SolutionDir)2fca99749fdb49aeb121a5b63ef568f7\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">
@@ -320,7 +320,7 @@
       <IgnoreSpecificDefaultLibraries>svml_disp.lib;libirc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)2fca99749fdb49aeb121a5b63ef568f7\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Command>copy "$(SolutionDir)2fca99749fdb49aeb121a5b63ef568f7\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|Win32'">
@@ -366,9 +366,10 @@
       <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
       <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)2fca99749fdb49aeb121a5b63ef568f7\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Command>copy "$(SolutionDir)2fca99749fdb49aeb121a5b63ef568f7\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">
@@ -392,7 +393,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)2fca99749fdb49aeb121a5b63ef568f7\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Command>copy "$(SolutionDir)2fca99749fdb49aeb121a5b63ef568f7\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|x64'">
@@ -431,7 +432,7 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -442,7 +443,7 @@
       <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)2fca99749fdb49aeb121a5b63ef568f7\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Command>copy "$(SolutionDir)2fca99749fdb49aeb121a5b63ef568f7\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>copy built plugin into its own folder</Message>
@@ -460,7 +461,7 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -471,7 +472,7 @@
       <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)2fca99749fdb49aeb121a5b63ef568f7\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Command>copy "$(SolutionDir)2fca99749fdb49aeb121a5b63ef568f7\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|Win32'">
@@ -486,7 +487,7 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -512,7 +513,7 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -522,7 +523,7 @@
       <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)2fca99749fdb49aeb121a5b63ef568f7\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Command>copy "$(SolutionDir)2fca99749fdb49aeb121a5b63ef568f7\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">
@@ -537,7 +538,7 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -547,7 +548,7 @@
       <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)2fca99749fdb49aeb121a5b63ef568f7\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Command>copy "$(SolutionDir)2fca99749fdb49aeb121a5b63ef568f7\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|x64'">
@@ -562,7 +563,7 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -585,9 +586,6 @@
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\codec\color_space_converter\color_space_converter.vcxproj">
       <Project>{57fe8dac-c7c4-4df4-9a36-2fee040dff38}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\shared\umc\codec\h265_dec\h265_dec.vcxproj">
-      <Project>{f0afe44d-3a26-45f6-bc3f-6131f91dec80}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\core\umc\base_classes.vcxproj">
       <Project>{31991d83-f6a2-49d9-bdc5-64e85d055a1c}</Project>
