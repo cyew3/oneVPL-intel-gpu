@@ -1996,10 +1996,10 @@ void H265CU::MePu(H265MEInfo* meInfo)
 
     meInfo->refIdx[0] = meInfo->refIdx[1] = -1;
     for (Ipp16s ME_dir = 0; ME_dir <= (m_cslice->slice_type == B_SLICE ? 1 : 0); ME_dir++) {
-        H265MV MV_last;
+        H265MV MV_last = {0, 0};
         for (T_RefIdx ref_idx = 0; ref_idx < m_cslice->num_ref_idx[ME_dir]; ref_idx++)
         {
-            H265MV MV_best;
+            H265MV MV_best = {0, 0};
             Ipp32s cost_temp;
             Ipp32s cost_best = INT_MAX;
 
