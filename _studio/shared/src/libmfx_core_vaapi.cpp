@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2014 Intel Corporation. All Rights Reserved.
 
 File Name: libmf_core_vaapi.cpp
 
@@ -66,6 +66,7 @@ const mfx_device_item listLegalDevIDs[] = {
     { 0x0402, MFX_HW_HSW },   /* GT1 desktop */
     { 0x0412, MFX_HW_HSW },   /* GT2 desktop */
     { 0x0422, MFX_HW_HSW },   /* GT2 desktop */
+    { 0x041e, MFX_HW_HSW },   /* Core i3-4130 */
     { 0x040a, MFX_HW_HSW },   /* GT1 server */
     { 0x041a, MFX_HW_HSW },   /* GT2 server */
     { 0x042a, MFX_HW_HSW },   /* GT2 server */
