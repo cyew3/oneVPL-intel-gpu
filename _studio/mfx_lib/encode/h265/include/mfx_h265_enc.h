@@ -16,11 +16,11 @@
 #include "mfx_h265_frame.h"
 #include "mfx_h265_encode.h"
 
-namespace H265Enc {
-
 #ifdef MFX_ENABLE_WATERMARK
 class Watermark;
 #endif
+
+namespace H265Enc {
 
 enum ParallelRegion
 {
