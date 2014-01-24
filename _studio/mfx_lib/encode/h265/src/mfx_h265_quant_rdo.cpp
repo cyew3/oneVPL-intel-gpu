@@ -643,8 +643,8 @@ void RDOQuant::DoAlgorithm(
         ctx_cbf_inc = m_pCU->GetCtxQtCbf(abs_part_idx, type, m_pCU->GetTransformIdx(abs_part_idx) );
     }
 
-    cost_best  = cost_zero_blk + GetCost_Cbf(0, ctx_cbf_inc, isRootCbf);
-    cost_base += GetCost_Cbf(1, ctx_cbf_inc, isRootCbf);
+    cost_best  = cost_zero_blk;// + GetCost_Cbf(0, ctx_cbf_inc, isRootCbf);
+//    cost_base += GetCost_Cbf(1, ctx_cbf_inc, isRootCbf);
 
     //-----------------------------------------------------
     //  SECOND PASS: determines lastXY in TU

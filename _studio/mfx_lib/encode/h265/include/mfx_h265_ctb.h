@@ -131,6 +131,8 @@ public:
     __ALIGN32 PixType       m_interPred[4][MAX_CU_SIZE * MAX_CU_SIZE];
     __ALIGN32 PixType       m_interPredBest[4][MAX_CU_SIZE * MAX_CU_SIZE];
     PixType                 (*m_interPredPtr)[MAX_CU_SIZE * MAX_CU_SIZE];
+    __ALIGN32 PixType       m_interRecBest[5][MAX_CU_SIZE*MAX_CU_SIZE];
+    Ipp32s                  m_interPredReady;
 
     CostType m_intraBestCosts[35];
     Ipp8u    m_intraBestModes[35];
@@ -329,7 +331,7 @@ public:
     void EncodeCU(H265Bs *bs, Ipp32u abs_part_idx, Ipp32s depth, Ipp8u rd_mode = 0 );
 
     template <class H265Bs>
-    void EncodeCoeff(H265Bs *bs, Ipp32u abs_part_idx, Ipp32u depth, Ipp32u width, Ipp32u height, Ipp8u &code_dqp, Ipp8u split_flag_only = 0 );
+    void EncodeCoeff(H265Bs *bs, Ipp32u abs_part_idx, Ipp32u depth, Ipp32u width, Ipp32u height, Ipp8u &code_dqp);
 
     template <class H265Bs>
     void CodeIntradirLumaAng(H265Bs *bs, Ipp32u abs_part_idx, Ipp8u multiple);
@@ -397,7 +399,7 @@ public:
     CostType MeCu(Ipp32u absPartIdx, Ipp8u depth, Ipp32s offset);
     void MePu(H265MEInfo* me_info);
     CostType CuCost(Ipp32u absPartIdx, Ipp8u depth, const H265MEInfo* bestInfo, Ipp32s offset, Ipp32s fastPuDecision);
-    void TuGetSplitInter(Ipp32u absPartIdx, Ipp32s offset, Ipp8u trIdx, Ipp8u trIdxMax, Ipp8u *nz, CostType *cost);
+    void TuGetSplitInter(Ipp32u absPartIdx, Ipp32s offset, Ipp8u trIdx, Ipp8u trIdxMax, Ipp8u *nz, CostType *cost, Ipp8u *cbf);
     void DetailsXY(H265MEInfo* me_info) const;
     void MeInterpolateOld(H265MEInfo* me_info, H265MV* MV, PixType *in_pSrc, Ipp32s in_SrcPitch, Ipp16s *buf, Ipp32s buf_pitch) const;
     void MeInterpolate(H265MEInfo* me_info, H265MV* MV, PixType *in_pSrc, Ipp32s in_SrcPitch, Ipp8u *buf, Ipp32s buf_pitch) const;
