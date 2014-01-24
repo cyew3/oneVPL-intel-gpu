@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -97,7 +97,7 @@ void H265ScalingList::initFromDefaultScalingList()
     {
         for (Ipp32u listId = 0; listId < g_scalingListNum[sizeId]; listId++)
         {
-            ::memcpy(getScalingListAddress(sizeId, listId),
+            MFX_INTERNAL_CPY(getScalingListAddress(sizeId, listId),
                 getScalingListDefaultAddress(sizeId, listId),
                 sizeof(Ipp32s) * IPP_MIN(MAX_MATRIX_COEF_NUM, (Ipp32s)g_scalingListSize[sizeId]));
             setScalingListDC(sizeId, listId, SCALING_LIST_DC);
@@ -152,8 +152,7 @@ int* H265ScalingList::getScalingListDefaultAddress(unsigned sizeId, unsigned lis
 
 void H265ScalingList::processRefMatrix(unsigned sizeId, unsigned listId , unsigned refListId)
 {
-  ::memcpy(
-      getScalingListAddress(sizeId, listId),
+  MFX_INTERNAL_CPY(getScalingListAddress(sizeId, listId),
       ((listId == refListId) ? getScalingListDefaultAddress(sizeId, refListId) : getScalingListAddress(sizeId, refListId)),
       sizeof(int)*IPP_MIN(MAX_MATRIX_COEF_NUM, (int)g_scalingListSize[sizeId]));
 }

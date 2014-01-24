@@ -1049,8 +1049,7 @@ void H265SegmentDecoder::DecodePartSizeCABAC(H265CodingUnit* pCU, Ipp32u AbsPart
     else
     {
         Ipp32u MaxNumBits = 2;
-        if (Depth == m_pSeqParamSet->MaxCUDepth - m_pSeqParamSet->AddCUDepth &&
-            !((m_pSeqParamSet->MaxCUSize >> Depth) == 8 && (m_pSeqParamSet->MaxCUSize >> Depth) == 8))
+        if (Depth == m_pSeqParamSet->MaxCUDepth - m_pSeqParamSet->AddCUDepth && !((m_pSeqParamSet->MaxCUSize >> Depth) == 8))
         {
             MaxNumBits++;
         }

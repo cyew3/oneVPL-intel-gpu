@@ -878,46 +878,46 @@ struct H265SeqParamSetBase
     // vui part
     Ipp8u   vui_parameters_present_flag;         // Zero indicates default VUI parameters
 
-    bool    aspect_ratio_info_present_flag;
+    Ipp8u   aspect_ratio_info_present_flag;
     Ipp32u  aspect_ratio_idc;
     Ipp32u  sar_width;
     Ipp32u  sar_height;
 
-    bool    overscan_info_present_flag;
-    bool    overscan_appropriate_flag;
+    Ipp8u   overscan_info_present_flag;
+    Ipp8u   overscan_appropriate_flag;
 
-    bool    video_signal_type_present_flag;
+    Ipp8u   video_signal_type_present_flag;
     Ipp32u  video_format;
-    bool    video_full_range_flag;
-    bool    colour_description_present_flag;
+    Ipp8u   video_full_range_flag;
+    Ipp8u   colour_description_present_flag;
     Ipp32u  colour_primaries;
     Ipp32u  transfer_characteristics;
     Ipp32u  matrix_coeffs;
 
-    bool    chroma_loc_info_present_flag;
+    Ipp8u   chroma_loc_info_present_flag;
     Ipp32u  chroma_sample_loc_type_top_field;
     Ipp32u  chroma_sample_loc_type_bottom_field;
 
-    bool    neutral_chroma_indication_flag;
-    bool    field_seq_flag;
-    bool    frame_field_info_present_flag;
+    Ipp8u   neutral_chroma_indication_flag;
+    Ipp8u   field_seq_flag;
+    Ipp8u   frame_field_info_present_flag;
 
-    bool    default_display_window_flag;
+    Ipp8u   default_display_window_flag;
     Ipp32u  def_disp_win_left_offset;
     Ipp32u  def_disp_win_right_offset;
     Ipp32u  def_disp_win_top_offset;
     Ipp32u  def_disp_win_bottom_offset;
 
-    bool            vui_timing_info_present_flag;
+    Ipp8u           vui_timing_info_present_flag;
     H265TimingInfo  m_timingInfo;
     
-    bool            vui_hrd_parameters_present_flag;
+    Ipp8u           vui_hrd_parameters_present_flag;
     H265HRD         m_hrdParameters;
 
-    bool    bitstream_restriction_flag;
-    bool    tiles_fixed_structure_flag;
-    bool    motion_vectors_over_pic_boundaries_flag;
-    bool    restricted_ref_pic_lists_flag;
+    Ipp8u   bitstream_restriction_flag;
+    Ipp8u   tiles_fixed_structure_flag;
+    Ipp8u   motion_vectors_over_pic_boundaries_flag;
+    Ipp8u   restricted_ref_pic_lists_flag;
     Ipp32u  min_spatial_segmentation_idc;
     Ipp32u  max_bytes_per_pic_denom;
     Ipp32u  max_bits_per_min_cu_denom;
@@ -1039,29 +1039,29 @@ struct H265PicParamSetBase
     Ipp32u  pps_pic_parameter_set_id;
     Ipp32u  pps_seq_parameter_set_id;
 
-    bool    dependent_slice_segments_enabled_flag;
-    bool    output_flag_present_flag;
+    Ipp8u   dependent_slice_segments_enabled_flag;
+    Ipp8u   output_flag_present_flag;
     Ipp32u  num_extra_slice_header_bits;
-    bool    sign_data_hiding_enabled_flag;
-    bool    cabac_init_present_flag;
+    Ipp8u   sign_data_hiding_enabled_flag;
+    Ipp8u   cabac_init_present_flag;
 
     Ipp32u  num_ref_idx_l0_default_active;
     Ipp32u  num_ref_idx_l1_default_active;
 
     Ipp8s   init_qp;                     // default QP for I,P,B slices
-    bool    constrained_intra_pred_flag;
-    bool    transform_skip_enabled_flag;
-    bool    cu_qp_delta_enabled_flag;
+    Ipp8u   constrained_intra_pred_flag;
+    Ipp8u   transform_skip_enabled_flag;
+    Ipp8u   cu_qp_delta_enabled_flag;
     Ipp32u  diff_cu_qp_delta_depth;
     Ipp32s  pps_cb_qp_offset;
     Ipp32s  pps_cr_qp_offset;
 
-    bool    pps_slice_chroma_qp_offsets_present_flag;
-    bool    weighted_pred_flag;              // Nonzero indicates weighted prediction applied to P and SP slices
-    bool    weighted_bipred_flag;            // 0: no weighted prediction in B slices,  1: explicit weighted prediction
-    bool    transquant_bypass_enabled_flag;
-    bool    tiles_enabled_flag;
-    bool    entropy_coding_sync_enabled_flag;  // presence of wavefronts flag
+    Ipp8u   pps_slice_chroma_qp_offsets_present_flag;
+    Ipp8u   weighted_pred_flag;              // Nonzero indicates weighted prediction applied to P and SP slices
+    Ipp8u   weighted_bipred_flag;            // 0: no weighted prediction in B slices,  1: explicit weighted prediction
+    Ipp8u   transquant_bypass_enabled_flag;
+    Ipp8u   tiles_enabled_flag;
+    Ipp8u   entropy_coding_sync_enabled_flag;  // presence of wavefronts flag
 
     // tiles info
     Ipp32u  num_tile_columns;
@@ -1069,21 +1069,21 @@ struct H265PicParamSetBase
     Ipp32u  uniform_spacing_flag;
     Ipp32u* column_width;
     Ipp32u* row_height;
-    bool    loop_filter_across_tiles_enabled_flag;
+    Ipp8u   loop_filter_across_tiles_enabled_flag;
 
-    bool    pps_loop_filter_across_slices_enabled_flag;
+    Ipp8u   pps_loop_filter_across_slices_enabled_flag;
 
-    bool    deblocking_filter_control_present_flag;
-    bool    deblocking_filter_override_enabled_flag;
-    bool    pps_deblocking_filter_disabled_flag;
+    Ipp8u   deblocking_filter_control_present_flag;
+    Ipp8u   deblocking_filter_override_enabled_flag;
+    Ipp8u   pps_deblocking_filter_disabled_flag;
     Ipp32u  pps_beta_offset;
     Ipp32u  pps_tc_offset;
 
-    bool    pps_scaling_list_data_present_flag;
+    Ipp8u   pps_scaling_list_data_present_flag;
 
-    bool    lists_modification_present_flag;
+    Ipp8u   lists_modification_present_flag;
     Ipp32u  log2_parallel_merge_level;
-    bool    slice_segment_header_extension_present_flag;
+    Ipp8u   slice_segment_header_extension_present_flag;
 
 
     ///////////////////////////////////////////////////////
@@ -1170,7 +1170,7 @@ struct H265PicParamSet : public HeapObject, public H265PicParamSetBase
 typedef struct {
   // Explicit weighted prediction parameters parsed in slice header,
   // or Implicit weighted prediction parameters (8 bits depth values).
-  bool        present_flag;
+  Ipp8u       present_flag;
   Ipp32u      log2_weight_denom;
   Ipp32s      weight;
   Ipp32s      offset;
