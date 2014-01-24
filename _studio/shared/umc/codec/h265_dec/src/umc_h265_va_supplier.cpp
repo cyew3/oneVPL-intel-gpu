@@ -76,7 +76,7 @@ UMC::Status VATaskSupplier::Init(UMC::BaseCodecParams *pInit)
 
     if (m_va && !m_va->IsSimulate())
     {
-        ((TaskBrokerSingleThreadDXVA*)m_pTaskBroker)->DXVAStatusReportingMode(false);//m_va->m_HWPlatform != UMC::VA_HW_LAKE && m_va->m_HWPlatform != UMC::VA_HW_HSW);
+        ((TaskBrokerSingleThreadDXVA*)m_pTaskBroker)->DXVAStatusReportingMode(false);//m_va->m_HWPlatform != UMC::VA_HW_LAKE);
         m_DPBSizeEx = 1;
     }
 
