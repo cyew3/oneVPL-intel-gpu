@@ -1406,15 +1406,15 @@ Ipp32s H265CU::MvCost( H265MV MV[2], T_RefIdx curRefIdx[2], MVPInfo *pInfo, MVPI
 {
     if (curRefIdx[0] == -1 || curRefIdx[1] == -1) {
         Ipp32s numRefLists = (m_cslice->slice_type == B_SLICE) ? 2 : 1;
-        CostType mincost = 0, cost;
-        CostType lamb = (CostType)(m_rdLambdaInterMv);
+        Ipp32s mincost = 0, minind = 0, minlist = 0;
+        CostType lamb = (CostType)(m_rdLambdaInterMv)/2;
 
         for (Ipp32s rlist = 0; rlist < numRefLists; rlist++) {
             if (curRefIdx[rlist] == -1)
                 continue;
             for (Ipp32s i=0; i<mergeInfo.numCand; i++)
                 if(curRefIdx[rlist] == mergeInfo.refIdx[2*i+rlist] && mergeInfo.mvCand[2*i+rlist] == MV[rlist])
-                    return (Ipp32s)(lamb * (2+i)/2);
+                    return (Ipp32s)(lamb * (2+i));
         }
         for (Ipp32s rlist = 0; rlist < numRefLists; rlist++) {
             if (curRefIdx[rlist] == -1)
@@ -1422,13 +1422,17 @@ Ipp32s H265CU::MvCost( H265MV MV[2], T_RefIdx curRefIdx[2], MVPInfo *pInfo, MVPI
             pInfo += 2 * curRefIdx[rlist];
             for (Ipp32s i=0; i<pInfo[rlist].numCand; i++) {
                 if(curRefIdx[rlist] == pInfo[rlist].refIdx[i]) {
-                    cost = lamb * (2+i)/2 +  lamb * qdiff(&MV[rlist], &pInfo[rlist].mvCand[i])*2;
-                    if(i==0 || mincost > cost)
+                    Ipp32s cost = (0+i) + qdist(&MV[rlist], &pInfo[rlist].mvCand[i])*4;
+                    if(i==0 || mincost > cost) {
+                        minlist = rlist;
                         mincost = cost;
+                        minind = i;
+                    }
+
                 }
             }
         }
-        return (Ipp32s)mincost;
+        return (Ipp32s)(lamb * ((2+minind) + qdiff(&MV[minlist], &pInfo[minlist].mvCand[minind])*4));
     } else {
         // B-pred
         T_RefIdx refidx[2][2] = {{curRefIdx[0], -1}, {-1, curRefIdx[1]}};
@@ -2957,21 +2961,14 @@ FUNCTION: IsDiffMER
 DESCRIPTION:
 \* ****************************************************************************** */
 
-static bool IsDiffMER(Ipp32s xN,
-                      Ipp32s yN,
-                      Ipp32s xP,
-                      Ipp32s yP,
-                      Ipp32s log2ParallelMergeLevel)
+inline Ipp32s IsDiffMER(Ipp32s xN, Ipp32s yN, Ipp32s xP, Ipp32s yP, Ipp32s log2ParallelMergeLevel)
 {
-    if ((xN >> log2ParallelMergeLevel) != (xP >> log2ParallelMergeLevel))
-    {
-        return true;
-    }
-    if ((yN >> log2ParallelMergeLevel) != (yP >> log2ParallelMergeLevel))
-    {
-        return true;
-    }
-    return false;
+    //if ((xN >> log2ParallelMergeLevel) != (xP >> log2ParallelMergeLevel))
+    //    return true;
+    //if ((yN >> log2ParallelMergeLevel) != (yP >> log2ParallelMergeLevel))
+    //    return true;
+    //return false;
+    return ( ((xN ^ xP) | (yN ^ yP)) >> log2ParallelMergeLevel );
 }
 
 /* ****************************************************************************** *\
@@ -3003,8 +3000,7 @@ void H265CU::GetInterMergeCandidates(Ipp32s topLeftCUBlockZScanIdx,
     Ipp32s xP, yP, nPSW, nPSH;
     Ipp32s i;
 
-    for (i = 0; i < 5; i++)
-    {
+    for (i = 0; i < 5; i++) {
         abCandIsInter[i] = false;
         isCandAvailable[i] = false;
     }
@@ -3060,31 +3056,19 @@ void H265CU::GetInterMergeCandidates(Ipp32s topLeftCUBlockZScanIdx,
 
     pInfo->numCand = 0;
 
-    for (i = 0; i < 5; i++)
-    {
-        if (pInfo->numCand < 4)
-        {
+    for (i = 0; i < 5; i++) {
+        if (pInfo->numCand < 4)  {
             candLCU[i] = GetNeighbour(candZScanIdx[i], candColumn[i], candRow[i], topLeftBlockZScanIdx, checkCurLCU[i]);
 
-            if (candLCU[i])
-            {
-                if (!IsDiffMER(canXP[i], canYP[i], xP, yP, m_par->cpps->log2_parallel_merge_level))
-                {
-                    candLCU[i] = NULL;
-                }
-            }
-
-            isCandInter[i] = true;
+            if (candLCU[i] && !IsDiffMER(canXP[i], canYP[i], xP, yP, m_par->cpps->log2_parallel_merge_level))
+                candLCU[i] = NULL;
 
             if ((candLCU[i] == NULL) || (candLCU[i][candZScanIdx[i]].predMode == MODE_INTRA))
-            {
                 isCandInter[i] = false;
-            }
+            else {
+                isCandInter[i] = true;
 
-            if (isCandInter[i])
-            {
                 bool getInfo = false;
-
                 /* getMergeCandInfo conditions */
                 switch (i)
                 {
@@ -3103,36 +3087,25 @@ void H265CU::GetInterMergeCandidates(Ipp32s topLeftCUBlockZScanIdx,
                                              (partMode == PART_SIZE_2NxnD))))
                     {
                         isCandAvailable[1] = true;
-                        if (!isCandAvailable[0] || !HasEqualMotion(candZScanIdx[0], candLCU[0],
-                                                               candZScanIdx[1], candLCU[1]))
-                        {
+                        if (!isCandAvailable[0] || !HasEqualMotion(candZScanIdx[0], candLCU[0], candZScanIdx[1], candLCU[1]))
                             getInfo = true;
-                        }
                     }
                     break;
                 case 2: /* above right */
                     isCandAvailable[2] = true;
-                    if (!isCandAvailable[1] || !HasEqualMotion(candZScanIdx[1], candLCU[1],
-                                                           candZScanIdx[2], candLCU[2]))
-                    {
+                    if (!isCandAvailable[1] || !HasEqualMotion(candZScanIdx[1], candLCU[1], candZScanIdx[2], candLCU[2]))
                         getInfo = true;
-                    }
                     break;
                 case 3: /* below left */
                     isCandAvailable[3] = true;
-                    if (!isCandAvailable[0] || !HasEqualMotion(candZScanIdx[0], candLCU[0],
-                                                           candZScanIdx[3], candLCU[3]))
-                    {
+                    if (!isCandAvailable[0] || !HasEqualMotion(candZScanIdx[0], candLCU[0], candZScanIdx[3], candLCU[3]))
                         getInfo = true;
-                    }
                     break;
                 case 4: /* above left */
                 default:
                     isCandAvailable[4] = true;
-                    if ((!isCandAvailable[0] || !HasEqualMotion(candZScanIdx[0], candLCU[0],
-                                                            candZScanIdx[4], candLCU[4])) &&
-                        (!isCandAvailable[1] || !HasEqualMotion(candZScanIdx[1], candLCU[1],
-                                                            candZScanIdx[4], candLCU[4])))
+                    if ((!isCandAvailable[0] || !HasEqualMotion(candZScanIdx[0], candLCU[0], candZScanIdx[4], candLCU[4])) &&
+                        (!isCandAvailable[1] || !HasEqualMotion(candZScanIdx[1], candLCU[1], candZScanIdx[4], candLCU[4])))
                     {
                         getInfo = true;
                     }
@@ -3140,11 +3113,7 @@ void H265CU::GetInterMergeCandidates(Ipp32s topLeftCUBlockZScanIdx,
                 }
 
                 if (getInfo)
-                {
-                    GetMergeCandInfo(pInfo, abCandIsInter, puhInterDirNeighbours,
-                                     candZScanIdx[i], candLCU[i]);
-
-                }
+                    GetMergeCandInfo(pInfo, abCandIsInter, puhInterDirNeighbours, candZScanIdx[i], candLCU[i]);
             }
         }
     }
@@ -3153,8 +3122,7 @@ void H265CU::GetInterMergeCandidates(Ipp32s topLeftCUBlockZScanIdx,
         pInfo->numCand = MRG_MAX_NUM_CANDS-1;
 
     /* temporal candidate */
-    if (m_par->TMVPFlag)
-    {
+    if (m_par->TMVPFlag) {
         Ipp32s frameWidthInSamples = m_par->Width;
         Ipp32s frameHeightInSamples = m_par->Height;
         Ipp32s bottomRightCandRow = topLeftRow + partHeight;
@@ -3162,7 +3130,6 @@ void H265CU::GetInterMergeCandidates(Ipp32s topLeftCUBlockZScanIdx,
         Ipp32s centerCandRow = topLeftRow + (partHeight >> 1);
         Ipp32s centerCandColumn = topLeftColumn + (partWidth >> 1);
         T_RefIdx refIdx = 0;
-        bool existMV = false;
         H265MV colCandMv;
 
         if ((((Ipp32s)m_ctbPelX + bottomRightCandColumn * minTUSize) >= frameWidthInSamples) ||
@@ -3171,13 +3138,11 @@ void H265CU::GetInterMergeCandidates(Ipp32s topLeftCUBlockZScanIdx,
         {
             candLCU[0] = NULL;
         }
-        else if (bottomRightCandColumn < numMinTUInLCU)
-        {
+        else if (bottomRightCandColumn < numMinTUInLCU) {
             candLCU[0] = m_colocatedLcu[0];
             candZScanIdx[0] = h265_scan_r2z[maxDepth][(bottomRightCandRow << maxDepth) + bottomRightCandColumn];
         }
-        else
-        {
+        else {
             candLCU[0] = m_colocatedLcu[1];
             candZScanIdx[0] = h265_scan_r2z[maxDepth][(bottomRightCandRow << maxDepth) + bottomRightCandColumn - numMinTUInLCU];
         }
@@ -3185,18 +3150,8 @@ void H265CU::GetInterMergeCandidates(Ipp32s topLeftCUBlockZScanIdx,
         candLCU[1] = m_colocatedLcu[0];
         candZScanIdx[1] = h265_scan_r2z[maxDepth][(centerCandRow << maxDepth) + centerCandColumn];
 
-        if ((candLCU[0] != NULL) &&
-            GetColMvp(candLCU[0], candZScanIdx[0], 0, refIdx, colCandMv))
-        {
-            existMV = true;
-        }
-
-        if (!existMV)
-        {
-            existMV = GetColMvp(candLCU[1], candZScanIdx[1], 0, refIdx, colCandMv);
-        }
-
-        if (existMV)
+        if ((candLCU[0] != NULL) && GetColMvp(candLCU[0], candZScanIdx[0], 0, refIdx, colCandMv) ||
+            GetColMvp(candLCU[1], candZScanIdx[1], 0, refIdx, colCandMv))
         {
             abCandIsInter[pInfo->numCand] = true;
 
@@ -3206,22 +3161,9 @@ void H265CU::GetInterMergeCandidates(Ipp32s topLeftCUBlockZScanIdx,
             pInfo->refIdx[2*pInfo->numCand] = refIdx;
             puhInterDirNeighbours[pInfo->numCand] = 1;
 
-            if (m_cslice->slice_type == B_SLICE)
-            {
-                existMV = false;
-
-                if ((candLCU[0] != NULL) &&
-                    GetColMvp(candLCU[0], candZScanIdx[0], 1, refIdx, colCandMv))
-                {
-                    existMV = true;
-                }
-
-                if (!existMV)
-                {
-                    existMV = GetColMvp(candLCU[1], candZScanIdx[1], 1, refIdx, colCandMv);
-                }
-
-                if (existMV)
+            if (m_cslice->slice_type == B_SLICE) {
+                if (candLCU[0] != NULL && GetColMvp(candLCU[0], candZScanIdx[0], 1, refIdx, colCandMv) ||
+                     GetColMvp(candLCU[1], candZScanIdx[1], 1, refIdx, colCandMv) )
                 {
                     pInfo->mvCand[2*pInfo->numCand+1].mvx = colCandMv.mvx;
                     pInfo->mvCand[2*pInfo->numCand+1].mvy = colCandMv.mvy;
@@ -3236,14 +3178,12 @@ void H265CU::GetInterMergeCandidates(Ipp32s topLeftCUBlockZScanIdx,
     }
 
     /* combined bi-predictive merging candidates */
-    if (m_cslice->slice_type == B_SLICE)
-    {
+    if (m_cslice->slice_type == B_SLICE) {
         Ipp32s uiPriorityList0[12] = {0 , 1, 0, 2, 1, 2, 0, 3, 1, 3, 2, 3};
         Ipp32s uiPriorityList1[12] = {1 , 0, 2, 0, 2, 1, 3, 0, 3, 1, 3, 2};
         Ipp32s limit = pInfo->numCand * (pInfo->numCand - 1);
 
-        for (i = 0; i < limit && pInfo->numCand != MRG_MAX_NUM_CANDS; i++)
-        {
+        for (i = 0; i < limit && pInfo->numCand != MRG_MAX_NUM_CANDS; i++) {
             Ipp32s l0idx = uiPriorityList0[i];
             Ipp32s l1idx = uiPriorityList1[i];
 
@@ -3267,9 +3207,7 @@ void H265CU::GetInterMergeCandidates(Ipp32s topLeftCUBlockZScanIdx,
                     abCandIsInter[pInfo->numCand] = false;
                 }
                 else
-                {
                     pInfo->numCand++;
-                }
             }
         }
     }
@@ -3281,15 +3219,10 @@ void H265CU::GetInterMergeCandidates(Ipp32s topLeftCUBlockZScanIdx,
         T_RefIdx refCnt = 0;
 
         if (m_cslice->slice_type == B_SLICE)
-        {
             if (m_cslice->num_ref_idx_l1_active < m_cslice->num_ref_idx_l0_active)
-            {
                 numRefIdx = m_cslice->num_ref_idx_l1_active;
-            }
-        }
 
-        while (pInfo->numCand < MRG_MAX_NUM_CANDS)
-        {
+        while (pInfo->numCand < MRG_MAX_NUM_CANDS) {
             r = (refCnt < numRefIdx) ? refCnt : 0;
             pInfo->mvCand[2*pInfo->numCand].mvx = 0;
             pInfo->mvCand[2*pInfo->numCand].mvy = 0;
@@ -4107,13 +4040,7 @@ Ipp32s operator == (const H265MV &mv1, const H265MV &mv2)
 Ipp32s operator != (const H265MV &mv1, const H265MV &mv2)
 { return !(mv1.mvx == mv2.mvx && mv1.mvy == mv2.mvy); }
 
-Ipp32s qdiff(const H265MV *mv1, const H265MV *mv2)
-{
-    H265MV mvdiff = {mv1->mvx - mv2->mvx, mv1->mvy - mv2->mvy};
-    return qcost(&mvdiff);
-}
-
-Ipp32s qcost(const H265MV *mv)
+inline Ipp32s qcost(const H265MV *mv)
 {
     Ipp32s dx = ABS(mv->mvx), dy = ABS(mv->mvy);
     //return dx*dx + dy*dy;
@@ -4122,6 +4049,19 @@ Ipp32s qcost(const H265MV *mv)
     //dx = i;
     //for(i=0; (dy>>i)!=0; i++);
     //dy = i;
+    return (dx + dy);
+}
+
+inline Ipp32s qdiff(const H265MV *mv1, const H265MV *mv2)
+{
+    H265MV mvdiff = {mv1->mvx - mv2->mvx, mv1->mvy - mv2->mvy};
+    return qcost(&mvdiff);
+}
+
+inline Ipp32s qdist(const H265MV *mv1, const H265MV *mv2)
+{
+    Ipp32s dx = ABS(mv1->mvx - mv2->mvx);
+    Ipp32s dy = ABS(mv1->mvy - mv2->mvy);
     return (dx + dy);
 }
 

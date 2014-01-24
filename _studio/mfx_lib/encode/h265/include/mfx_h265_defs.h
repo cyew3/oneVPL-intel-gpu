@@ -77,7 +77,7 @@ extern int DEBUG_CABAC_PRINT;
 
 #define BIT_COST(bits_shifted) ((bits_shifted)*m_rdLambda)
 #define BIT_COST_INTER(bits_shifted) ((bits_shifted)*m_rdLambdaInter)
-#define BIT_COST_INTER_MV(bits_shifted) ((bits_shifted)*m_rd_lambdaInterMv)
+#define BIT_COST_INTER_MV(bits_shifted) ((bits_shifted)*m_rdLambdaInterMv)
 #define BIT_COST_SHIFT 8
 #define NUM_CAND_MAX_1 36
 #define NUM_CAND_MAX_2 36

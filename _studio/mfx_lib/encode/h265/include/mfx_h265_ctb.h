@@ -39,6 +39,7 @@ Ipp32s operator == (const H265MV &mv1, const H265MV &mv2);
 Ipp32s operator != (const H265MV &mv1, const H265MV &mv2);
 Ipp32s qdiff(const H265MV *mv1, const H265MV *mv2);
 Ipp32s qcost(const H265MV *mv);
+Ipp32s qdist(const H265MV *mv1, const H265MV *mv2);
 
 struct H265CUData
 {
