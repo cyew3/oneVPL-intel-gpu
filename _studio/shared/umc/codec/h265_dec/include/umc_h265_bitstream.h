@@ -54,7 +54,9 @@ public:
 #endif
 
     // Read one VLC Ipp32s or Ipp32u value from bitstream
-    Ipp32s GetVLCElement(bool bIsSigned);
+    Ipp32u GetVLCElementU();
+
+    Ipp32s GetVLCElementS();
 
     // Reads one bit from the buffer.
     Ipp8u Get1Bit();

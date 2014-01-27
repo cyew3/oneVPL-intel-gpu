@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -129,7 +129,7 @@ Ipp32s H265Bitstream::pic_timing(const HeaderSet<H265SeqParamSet> & sps, Ipp32s 
 
         if (csps->m_hrdParameters.sub_pic_hrd_params_present_flag && csps->m_hrdParameters.sub_pic_cpb_params_in_pic_timing_sei_flag)
         {
-            Ipp32u num_decoding_units_minus1 = (Ipp32u)GetVLCElement(false);
+            Ipp32u num_decoding_units_minus1 = GetVLCElementU();
 
             if (num_decoding_units_minus1 > csps->WidthInCU * csps->HeightInCU)
                 throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
@@ -142,7 +142,7 @@ Ipp32s H265Bitstream::pic_timing(const HeaderSet<H265SeqParamSet> & sps, Ipp32s 
 
             for (Ipp32u i = 0; i <= num_decoding_units_minus1; i++)
             {
-                GetVLCElement(false); // num_nalus_in_du_minus1
+                GetVLCElementU(); // num_nalus_in_du_minus1
                 if (!du_common_cpb_removal_delay_flag && i < num_decoding_units_minus1)
                 {
                     GetBits(csps->m_hrdParameters.du_cpb_removal_delay_increment_length); // du_cpb_removal_delay_increment_minus1
@@ -160,7 +160,7 @@ Ipp32s H265Bitstream::recovery_point(const HeaderSet<H265SeqParamSet> & , Ipp32s
 {
     H265SEIPayLoad::SEIMessages::RecoveryPoint * recPoint = &(spl->SEI_messages.recovery_point);
 
-    recPoint->recovery_poc_cnt = (Ipp32s)GetVLCElement(true);
+    recPoint->recovery_poc_cnt = GetVLCElementS();
 
     recPoint->exact_match_flag = (Ipp8u)Get1Bit();
     recPoint->broken_link_flag = (Ipp8u)Get1Bit();

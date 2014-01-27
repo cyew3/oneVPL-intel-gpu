@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -520,18 +520,28 @@ Ipp32u H265BaseBitstream::GetBits(const Ipp32u nbits)
     return(w);
 }
 
-inline
-Ipp32s H265BaseBitstream::GetVLCElement(bool bIsSigned)
+inline Ipp32u H265BaseBitstream::GetVLCElementU()
 {
     Ipp32s sval = 0;
 
-    IppStatus ippRes = ippiDecodeExpGolombOne_H264_1u32s(&m_pbs, &m_bitOffset, &sval, bIsSigned);
+    IppStatus ippRes = ippiDecodeExpGolombOne_H264_1u32s(&m_pbs, &m_bitOffset, &sval, false);
+
+    if (ippStsNoErr > ippRes)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+    return (Ipp32u)sval;
+}
+
+inline Ipp32s H265BaseBitstream::GetVLCElementS()
+{
+    Ipp32s sval = 0;
+
+    IppStatus ippRes = ippiDecodeExpGolombOne_H264_1u32s(&m_pbs, &m_bitOffset, &sval, true);
 
     if (ippStsNoErr > ippRes)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
     return sval;
-
 }
 
 inline Ipp8u H265BaseBitstream::Get1Bit()
