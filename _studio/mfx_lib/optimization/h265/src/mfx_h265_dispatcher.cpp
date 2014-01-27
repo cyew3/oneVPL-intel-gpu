@@ -554,13 +554,7 @@ using namespace MFX_HEVC_PP;
 #endif
         //[transform.inv]==================================
         g_dispatcher. h265_DST4x4Inv_16sT = &MFX_HEVC_PP::h265_DST4x4Inv_16sT_avx2;
-        /* This is WA for LINUX gcc 4.7.3: Something  wrong with this function
-         * Issue will be investigated later */
-#ifndef LINUX64
-        g_dispatcher. h265_DCT4x4Inv_16sT = &MFX_HEVC_PP::h265_DCT4x4Inv_16sT_avx2; /* issue */
-#else
-        g_dispatcher. h265_DCT4x4Inv_16sT = &MFX_HEVC_PP::h265_DCT4x4Inv_16sT_ssse3;
-#endif
+        g_dispatcher. h265_DCT4x4Inv_16sT = &MFX_HEVC_PP::h265_DCT4x4Inv_16sT_avx2;
         g_dispatcher. h265_DCT8x8Inv_16sT = &MFX_HEVC_PP::h265_DCT8x8Inv_16sT_avx2;
         g_dispatcher. h265_DCT16x16Inv_16sT = &MFX_HEVC_PP::h265_DCT16x16Inv_16sT_avx2;
         g_dispatcher. h265_DCT32x32Inv_16sT = &MFX_HEVC_PP::h265_DCT32x32Inv_16sT_avx2;

@@ -187,7 +187,8 @@ static void t_InterpLuma_s8_d16_H_AVX2(const unsigned char* pSrc, unsigned int s
     do {
         for (col = 0; col < width; col += 16) {
             /* load 24 8-bit pixels, permute into ymm lanes as [0-7 | 8-15 | 8-15 | 16-23] */
-            ymm3 = _mm256_permute4x64_epi64(*(__m256i *)(pSrc + col), 0x94);
+            ymm3 = _mm256_loadu_si256((__m256i *)(pSrc + col));
+            ymm3 = _mm256_permute4x64_epi64(ymm3, 0x94);
 
             /* interleave pixels */
             ymm0 = _mm256_shuffle_epi8(ymm3, *(__m256i *)(shufTabPlane[0]));
@@ -335,7 +336,8 @@ static void t_InterpChroma_s8_d16_H_AVX2(const unsigned char* pSrc, unsigned int
     do {
         for (col = 0; col < width; col += 16) {
             /* load 24 8-bit pixels, permute into ymm lanes as [0-7 | 8-15 | 8-15 | 16-23] */
-            ymm1 = _mm256_permute4x64_epi64(*(__m256i *)(pSrc + col), 0x94);
+            ymm1 = _mm256_loadu_si256((__m256i *)(pSrc + col));
+            ymm1 = _mm256_permute4x64_epi64(ymm1, 0x94);
 
             /* interleave pixels */
             ymm0 = _mm256_shuffle_epi8(ymm1, *(__m256i *)(shufTab +  0));
@@ -798,12 +800,23 @@ static void t_InterpLuma_s8_d16_V_AVX2(const unsigned char* pSrc, unsigned int s
         pDst = pDstRef;
 
         /* start by loading 16 8-bit pixels from rows 0-6 */
-        ymm0 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 0*srcPitch), 0x10);
-        ymm4 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 1*srcPitch), 0x10);
-        ymm1 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 2*srcPitch), 0x10);
-        ymm5 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 3*srcPitch), 0x10);
-        ymm2 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 4*srcPitch), 0x10);
-        ymm6 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 5*srcPitch), 0x10);
+        ymm0 = _mm256_loadu_si256((__m256i*)(pSrc + 0*srcPitch) );
+        ymm0 = _mm256_permute4x64_epi64(ymm0, 0x10);
+
+        ymm4 = _mm256_loadu_si256((__m256i*)(pSrc + 1*srcPitch));
+        ymm4 = _mm256_permute4x64_epi64(ymm4, 0x10);
+
+        ymm1 = _mm256_loadu_si256((__m256i*)(pSrc + 2*srcPitch));
+        ymm1 = _mm256_permute4x64_epi64(ymm1, 0x10);
+
+        ymm5 = _mm256_loadu_si256((__m256i*)(pSrc + 3*srcPitch));
+        ymm5 = _mm256_permute4x64_epi64( ymm5, 0x10);
+
+        ymm2 = _mm256_loadu_si256((__m256i*)(pSrc + 4*srcPitch));
+        ymm2 = _mm256_permute4x64_epi64( ymm2, 0x10);
+
+        ymm6 = _mm256_loadu_si256((__m256i*)(pSrc + 5*srcPitch));
+        ymm6 = _mm256_permute4x64_epi64(ymm6, 0x10);
 
         ymm0 = _mm256_unpacklo_epi8(ymm0, ymm4);
         ymm1 = _mm256_unpacklo_epi8(ymm1, ymm5);
@@ -811,8 +824,10 @@ static void t_InterpLuma_s8_d16_V_AVX2(const unsigned char* pSrc, unsigned int s
 
         /* process even rows first (reduce row interleaving) */
         for (row = 0; row < height; row += 2) {
-            ymm3 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 6*srcPitch), 0x10);
-            ymm7 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 7*srcPitch), 0x10);
+            ymm3 = _mm256_loadu_si256((__m256i*)(pSrc + 6*srcPitch));
+            ymm3 = _mm256_permute4x64_epi64(ymm3, 0x10);
+            ymm7 = _mm256_loadu_si256((__m256i*)(pSrc + 7*srcPitch));
+            ymm7 = _mm256_permute4x64_epi64( ymm7, 0x10);
             ymm3 = _mm256_unpacklo_epi8(ymm3, ymm7);
     
             ymm4 = ymm1;
@@ -851,12 +866,23 @@ static void t_InterpLuma_s8_d16_V_AVX2(const unsigned char* pSrc, unsigned int s
         pDst = pDstRef + dstPitch;
 
         /* load 8 8-bit pixels from rows 0-5 */
-        ymm0 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 0*srcPitch), 0x10);
-        ymm4 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 1*srcPitch), 0x10);
-        ymm1 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 2*srcPitch), 0x10);
-        ymm5 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 3*srcPitch), 0x10);
-        ymm2 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 4*srcPitch), 0x10);
-        ymm6 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 5*srcPitch), 0x10);
+        ymm0 = _mm256_loadu_si256((__m256i*)(pSrc + 0*srcPitch) );
+        ymm0 = _mm256_permute4x64_epi64(ymm0, 0x10);
+
+        ymm4 = _mm256_loadu_si256((__m256i*)(pSrc + 1*srcPitch));
+        ymm4 = _mm256_permute4x64_epi64(ymm4, 0x10);
+
+        ymm1 = _mm256_loadu_si256((__m256i*)(pSrc + 2*srcPitch));
+        ymm1 = _mm256_permute4x64_epi64(ymm1, 0x10);
+
+        ymm5 = _mm256_loadu_si256((__m256i*)(pSrc + 3*srcPitch));
+        ymm5 = _mm256_permute4x64_epi64( ymm5, 0x10);
+
+        ymm2 = _mm256_loadu_si256((__m256i*)(pSrc + 4*srcPitch));
+        ymm2 = _mm256_permute4x64_epi64( ymm2, 0x10);
+
+        ymm6 = _mm256_loadu_si256((__m256i*)(pSrc + 5*srcPitch));
+        ymm6 = _mm256_permute4x64_epi64(ymm6, 0x10);
 
         ymm0 = _mm256_unpacklo_epi8(ymm0, ymm4);
         ymm1 = _mm256_unpacklo_epi8(ymm1, ymm5);
@@ -864,8 +890,11 @@ static void t_InterpLuma_s8_d16_V_AVX2(const unsigned char* pSrc, unsigned int s
 
         /* process odd rows */
         for (row = 1; row < height; row += 2) {
-            ymm3 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 6*srcPitch), 0x10);
-            ymm7 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 7*srcPitch), 0x10);
+            ymm3 = _mm256_loadu_si256((__m256i*)(pSrc + 6*srcPitch));
+            ymm3 = _mm256_permute4x64_epi64(ymm3, 0x10);
+            ymm7 = _mm256_loadu_si256((__m256i*)(pSrc + 7*srcPitch));
+            ymm7 = _mm256_permute4x64_epi64( ymm7, 0x10);
+
             ymm3 = _mm256_unpacklo_epi8(ymm3, ymm7);
     
             ymm4 = ymm1;
@@ -1092,17 +1121,25 @@ static void t_InterpChroma_s8_d16_V_AVX2(const unsigned char* pSrc, unsigned int
         pDst = pDstRef;
 
         /* start by loading 16 8-bit pixels from rows 0-2 */
-        ymm0 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 0*srcPitch), 0x10);
-        ymm4 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 1*srcPitch), 0x10);
-        ymm1 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 2*srcPitch), 0x10);
+        ymm0 = _mm256_loadu_si256((__m256i*)(pSrc + 0*srcPitch));
+        ymm0 = _mm256_permute4x64_epi64( ymm0, 0x10);
+
+        ymm4 = _mm256_loadu_si256((__m256i*)(pSrc + 1*srcPitch));
+        ymm4 = _mm256_permute4x64_epi64(ymm4, 0x10);
+
+        ymm1 = _mm256_loadu_si256((__m256i*)(pSrc + 2*srcPitch));
+        ymm1 = _mm256_permute4x64_epi64( ymm1, 0x10);
 
         ymm0 = _mm256_unpacklo_epi8(ymm0, ymm4);
         ymm4 = _mm256_unpacklo_epi8(ymm4, ymm1);
 
         /* enough registers to process two rows at a time (even and odd rows in parallel) */
         for (row = 0; row < height; row += 2) {
-            ymm5 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 3*srcPitch), 0x10);
-            ymm2 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 4*srcPitch), 0x10);
+            ymm5 = _mm256_loadu_si256((__m256i*)(pSrc + 3*srcPitch));
+            ymm5 = _mm256_permute4x64_epi64( ymm5, 0x10);
+
+            ymm2 = _mm256_loadu_si256((__m256i*)(pSrc + 4*srcPitch));
+            ymm2 = _mm256_permute4x64_epi64( ymm2, 0x10);
             ymm1 = _mm256_unpacklo_epi8(ymm1, ymm5);
             ymm5 = _mm256_unpacklo_epi8(ymm5, ymm2);
 
@@ -1295,12 +1332,23 @@ static void t_InterpLuma_s16_d16_V_AVX2(const short* pSrc, unsigned int srcPitch
         pDst = pDstRef;
 
         /* load 8 16-bit pixels from rows 0-6 */
-        ymm0 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 0*srcPitch), 0x10);
-        ymm4 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 1*srcPitch), 0x10);
-        ymm1 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 2*srcPitch), 0x10);
-        ymm5 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 3*srcPitch), 0x10);
-        ymm2 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 4*srcPitch), 0x10);
-        ymm6 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 5*srcPitch), 0x10);
+        ymm0 = _mm256_loadu_si256((__m256i*)(pSrc + 0*srcPitch));
+        ymm0 = _mm256_permute4x64_epi64( ymm0, 0x10);
+
+        ymm4 = _mm256_loadu_si256((__m256i*)(pSrc + 1*srcPitch));
+        ymm4 = _mm256_permute4x64_epi64(ymm4, 0x10);
+
+        ymm1 = _mm256_loadu_si256((__m256i*)(pSrc + 2*srcPitch) );
+        ymm1 = _mm256_permute4x64_epi64(ymm1, 0x10);
+
+        ymm5 = _mm256_loadu_si256((__m256i*)(pSrc + 3*srcPitch));
+        ymm5 = _mm256_permute4x64_epi64(ymm5, 0x10);
+
+        ymm2 = _mm256_loadu_si256((__m256i*)(pSrc + 4*srcPitch));
+        ymm2 = _mm256_permute4x64_epi64(ymm2, 0x10);
+
+        ymm6 = _mm256_loadu_si256((__m256i*)(pSrc + 5*srcPitch));
+        ymm6 = _mm256_permute4x64_epi64(ymm6, 0x10);
 
         ymm0 = _mm256_unpacklo_epi16(ymm0, ymm4);
         ymm1 = _mm256_unpacklo_epi16(ymm1, ymm5);
@@ -1308,8 +1356,12 @@ static void t_InterpLuma_s16_d16_V_AVX2(const short* pSrc, unsigned int srcPitch
 
         /* process even rows first (reduce row interleaving) */
         for (row = 0; row < height; row += 2) {
-            ymm3 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 6*srcPitch), 0x10);
-            ymm7 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 7*srcPitch), 0x10);
+            ymm3 = _mm256_loadu_si256((__m256i*)(pSrc + 6*srcPitch));
+            ymm3 = _mm256_permute4x64_epi64( ymm3, 0x10);
+
+            ymm7 = _mm256_loadu_si256((__m256i*)(pSrc + 7*srcPitch));
+            ymm7 = _mm256_permute4x64_epi64( ymm7, 0x10);
+
             ymm3 = _mm256_unpacklo_epi16(ymm3, ymm7);
 
             ymm4 = ymm1;
@@ -1347,12 +1399,23 @@ static void t_InterpLuma_s16_d16_V_AVX2(const short* pSrc, unsigned int srcPitch
         pDst = pDstRef + dstPitch;
 
         /* load 8 16-bit pixels from rows 0-6 */
-        ymm0 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 0*srcPitch), 0x10);
-        ymm4 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 1*srcPitch), 0x10);
-        ymm1 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 2*srcPitch), 0x10);
-        ymm5 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 3*srcPitch), 0x10);
-        ymm2 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 4*srcPitch), 0x10);
-        ymm6 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 5*srcPitch), 0x10);
+        ymm0 = _mm256_loadu_si256((__m256i*)(pSrc + 0*srcPitch));
+        ymm0 = _mm256_permute4x64_epi64(ymm0, 0x10);
+
+        ymm4 = _mm256_loadu_si256((__m256i*)(pSrc + 1*srcPitch));
+        ymm4 = _mm256_permute4x64_epi64(ymm4, 0x10);
+
+        ymm1 = _mm256_loadu_si256((__m256i*)(pSrc + 2*srcPitch));
+        ymm1 = _mm256_permute4x64_epi64(ymm1, 0x10);
+
+        ymm5 = _mm256_loadu_si256((__m256i*)(pSrc + 3*srcPitch));
+        ymm5 = _mm256_permute4x64_epi64(ymm5, 0x10);
+
+        ymm2 = _mm256_loadu_si256((__m256i*)(pSrc + 4*srcPitch));
+        ymm2 = _mm256_permute4x64_epi64(ymm2, 0x10);
+
+        ymm6 = _mm256_loadu_si256((__m256i*)(pSrc + 5*srcPitch));
+        ymm6 = _mm256_permute4x64_epi64(ymm6, 0x10);
 
         ymm0 = _mm256_unpacklo_epi16(ymm0, ymm4);
         ymm1 = _mm256_unpacklo_epi16(ymm1, ymm5);
@@ -1360,8 +1423,12 @@ static void t_InterpLuma_s16_d16_V_AVX2(const short* pSrc, unsigned int srcPitch
 
         /* process odd rows */
         for (row = 1; row < height; row += 2) {
-            ymm3 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 6*srcPitch), 0x10);
-            ymm7 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 7*srcPitch), 0x10);
+            ymm3 = _mm256_loadu_si256((__m256i*)(pSrc + 6*srcPitch));
+            ymm3 = _mm256_permute4x64_epi64(ymm3, 0x10);
+
+            ymm7 = _mm256_loadu_si256((__m256i*)(pSrc + 7*srcPitch));
+            ymm7 = _mm256_permute4x64_epi64(ymm7, 0x10);
+
             ymm3 = _mm256_unpacklo_epi16(ymm3, ymm7);
 
             ymm4 = ymm1;
@@ -1593,9 +1660,14 @@ static void t_InterpChroma_s16_d16_V_AVX2(const short* pSrc, unsigned int srcPit
         pDst = pDstRef;
 
         /* load 8 8-bit pixels from rows 0-2 */
-        ymm0 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 0*srcPitch), 0x10);
-        ymm4 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 1*srcPitch), 0x10);
-        ymm1 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 2*srcPitch), 0x10);
+        ymm0 = _mm256_loadu_si256((__m256i*)(pSrc + 0*srcPitch));
+        ymm0 = _mm256_permute4x64_epi64(ymm0, 0x10);
+
+        ymm4 = _mm256_loadu_si256((__m256i*)(pSrc + 1*srcPitch));
+        ymm4 = _mm256_permute4x64_epi64(ymm4, 0x10);
+
+        ymm1 = _mm256_loadu_si256((__m256i*)(pSrc + 2*srcPitch));
+        ymm1 = _mm256_permute4x64_epi64(ymm1, 0x10);
 
         ymm0 = _mm256_unpacklo_epi16(ymm0, ymm4);
         ymm4 = _mm256_unpacklo_epi16(ymm4, ymm1);
@@ -1603,8 +1675,12 @@ static void t_InterpChroma_s16_d16_V_AVX2(const short* pSrc, unsigned int srcPit
         /* enough registers to process two rows at a time (even and odd rows in parallel) */
         for (row = 0; row < height; row += 2) {
             /* load row 3 */
-            ymm5 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 3*srcPitch), 0x10);
-            ymm2 = _mm256_permute4x64_epi64(*(__m256i*)(pSrc + 4*srcPitch), 0x10);
+            ymm5 = _mm256_loadu_si256((__m256i*)(pSrc + 3*srcPitch));
+            ymm5 = _mm256_permute4x64_epi64(ymm5, 0x10);
+
+            ymm2 = _mm256_loadu_si256((__m256i*)(pSrc + 4*srcPitch));
+            ymm2 = _mm256_permute4x64_epi64(ymm2, 0x10);
+
             ymm1 = _mm256_unpacklo_epi16(ymm1, ymm5);
             ymm5 = _mm256_unpacklo_epi16(ymm5, ymm2);
 

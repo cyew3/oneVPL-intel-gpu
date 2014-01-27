@@ -271,7 +271,7 @@ static void h265_DCT32x32Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_R
 #endif
 
 // GCC 4.7 bug workaround
-#if __GNUC__
+#if ((__GNUC__== 4) && (__GNUC_MINOR__== 7))
                 ydata1 = _mm_broadcastsi128_si256(sdata);
 #else
                 ydata1 = _mm256_broadcastsi128_si256(sdata);
