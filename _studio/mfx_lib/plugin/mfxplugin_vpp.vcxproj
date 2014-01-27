@@ -124,7 +124,7 @@
       <IgnoreSpecificDefaultLibraries>svml_disp.lib;libirc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)1840bce0ee644d098ed62f91ae4b6b61\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Command>copy "$(SolutionDir)1840bce0ee644d098ed62f91ae4b6b61\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -144,9 +144,10 @@
       <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
       <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)1840bce0ee644d098ed62f91ae4b6b61\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Command>copy "$(SolutionDir)1840bce0ee644d098ed62f91ae4b6b61\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -161,7 +162,7 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -171,7 +172,7 @@
       <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)1840bce0ee644d098ed62f91ae4b6b61\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Command>copy "$(SolutionDir)1840bce0ee644d098ed62f91ae4b6b61\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -186,7 +187,7 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -195,7 +196,7 @@
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(OutDir)$(TargetName)*" "$(OutDir)..\" /y /i &amp; copy "$(SolutionDir)1840bce0ee644d098ed62f91ae4b6b61\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
+      <Command>copy "$(SolutionDir)1840bce0ee644d098ed62f91ae4b6b61\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
