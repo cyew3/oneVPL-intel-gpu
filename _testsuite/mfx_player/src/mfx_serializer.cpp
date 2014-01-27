@@ -167,6 +167,12 @@ void MFXStructureRef <mfxExtCodingOption2>::ConstructValues () const
     SERIALIZE_INT(RepeatPPS);
     SERIALIZE_INT(BRefType);
     SERIALIZE_INT(NumMbPerSlice);
+    SERIALIZE_INT(MinQPI);
+    SERIALIZE_INT(MaxQPI);
+    SERIALIZE_INT(MinQPP);
+    SERIALIZE_INT(MaxQPP);
+    SERIALIZE_INT(MinQPB);
+    SERIALIZE_INT(MaxQPB);
 }
 
 void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const

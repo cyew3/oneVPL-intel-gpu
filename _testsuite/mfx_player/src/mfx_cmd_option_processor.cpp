@@ -55,6 +55,7 @@ mfxU32 CmdOptionProcessor::Check( const vm_char *opt
                     break;
                 }
                 case OPT_INT_32:
+                case OPT_UINT_8:
                 case OPT_UINT_16:
                 case OPT_UINT_32:
                 case OPT_UINT_64:{

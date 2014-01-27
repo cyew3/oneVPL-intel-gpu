@@ -57,6 +57,7 @@ protected:
             mfxU32    *  pTargetUInt32;
             mfxU32    *  pTargetUInt64;
             mfxU16    *  pTargetUInt16;
+            mfxU8     *  pTargetUInt8;
             mfxI16    *  pTargetInt16;
             mfxF64    *  pTargetF64;
             bool      *  pTargetBool;

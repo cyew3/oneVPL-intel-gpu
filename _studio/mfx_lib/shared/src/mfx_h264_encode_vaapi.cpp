@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
 //
 //
 //          H264 encoder VAAPI
@@ -95,6 +95,8 @@ mfxStatus SetHRD(
 mfxStatus SetRateControl(
     MfxVideoParam const & par,
     mfxU32       mbbrc,
+    mfxU8        minQP,
+    mfxU8        maxQP,
     VADisplay    m_vaDisplay,
     VAContextID  m_vaContextEncode,
     VABufferID & rateParamBuf_id)
@@ -127,6 +129,9 @@ mfxStatus SetRateControl(
 
     rate_param->bits_per_second = par.calcParam.maxKbps * 1000;
     rate_param->window_size     = par.mfx.Convergence * 100;
+
+    rate_param->min_qp = minQP;
+    rate_param->max_qp = maxQP;
 
     if(par.calcParam.maxKbps)
         rate_param->target_percentage = (unsigned int)(100.0 * (mfxF64)par.calcParam.targetKbps / (mfxF64)par.calcParam.maxKbps);
@@ -557,6 +562,7 @@ VAAPIEncoder::VAAPIEncoder()
 , m_userMaxFrameSize(0)
 , m_curTrellisQuantization(0)
 , m_newTrellisQuantization(0)
+, m_mbbrc(0)
 {
 } // VAAPIEncoder::VAAPIEncoder(VideoCORE* core)
 
@@ -783,7 +789,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
         assert( extOpt2 );
         return (MFX_ERR_UNKNOWN);
     }
-    mfxU32  mbbrc = IsOn(extOpt2->MBBRC) ? 1 : IsOff(extOpt2->MBBRC) ? 2 : 0;
+    m_mbbrc = IsOn(extOpt2->MBBRC) ? 1 : IsOff(extOpt2->MBBRC) ? 2 : 0;
 
     if ((attrib[1].value & vaRCType) == 0)
         return MFX_ERR_DEVICE_FAILED;
@@ -832,7 +838,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
 
     FillSps(par, m_sps);
     SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId);
-    SetRateControl(par, mbbrc, m_vaDisplay, m_vaContextEncode, m_rateParamBufferId);
+    SetRateControl(par, m_mbbrc, 0, 0, m_vaDisplay, m_vaContextEncode, m_rateParamBufferId);
     SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateId);
     SetPrivateParams(par, m_vaDisplay, m_vaContextEncode, m_privateParamsId);
     FillConstPartOfPps(par, m_pps);
@@ -855,11 +861,11 @@ mfxStatus VAAPIEncoder::Reset(MfxVideoParam const & par)
         assert( extOpt2 );
         return (MFX_ERR_UNKNOWN);
     }
-    mfxU32  mbbrc = IsOn(extOpt2->MBBRC) ? 1 : IsOff(extOpt2->MBBRC) ? 2 : 0;
+    m_mbbrc = IsOn(extOpt2->MBBRC) ? 1 : IsOff(extOpt2->MBBRC) ? 2 : 0;
 
     FillSps(par, m_sps);
     SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId);
-    SetRateControl(par, mbbrc, m_vaDisplay, m_vaContextEncode, m_rateParamBufferId);
+    SetRateControl(par, m_mbbrc, 0, 0, m_vaDisplay, m_vaContextEncode, m_rateParamBufferId);
     SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateId);
     SetPrivateParams(par, m_vaDisplay, m_vaContextEncode, m_privateParamsId);
     FillConstPartOfPps(par, m_pps);
@@ -1269,7 +1275,10 @@ mfxStatus VAAPIEncoder::Execute(
     }
 
     configBuffers[buffersCount++] = m_hrdBufferId;
+
+    SetRateControl(m_videoParam, m_mbbrc, task.m_minQP, task.m_maxQP, m_vaDisplay, m_vaContextEncode, m_rateParamBufferId);
     configBuffers[buffersCount++] = m_rateParamBufferId;
+
     configBuffers[buffersCount++] = m_frameRateId;
 
 /*

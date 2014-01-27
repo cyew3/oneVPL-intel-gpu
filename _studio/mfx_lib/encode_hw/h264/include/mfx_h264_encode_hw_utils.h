@@ -871,6 +871,8 @@ namespace MfxHwH264Encode
             , m_fieldPicFlag(0)
             , m_fieldCounter(0)
             , m_timeStamp(0)
+            , m_minQP(0)
+            , m_maxQP(0)
         {
             Zero(m_ctrl);
             Zero(m_internalListCtrl);
@@ -1002,6 +1004,9 @@ namespace MfxHwH264Encode
         mfxU8   m_fid[2];               // progressive fid=[0,0]; tff fid=[0,1]; bff fid=[1,0]
         mfxU8   m_fieldCounter;
         mfxU64  m_timeStamp;
+
+        mfxU8   m_minQP;
+        mfxU8   m_maxQP;
     };
 
     typedef std::list<DdiTask>::iterator DdiTaskIter;

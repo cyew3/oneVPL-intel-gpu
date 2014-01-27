@@ -245,6 +245,12 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION2(RepeatPPS,              OPT_TRI_STATE,  ""),
         HANDLE_EXT_OPTION2(BRefType,               OPT_UINT_16,    "control usage of B frames as reference in AVC encoder: 0 - undef, 1 - B ref off, 2 - B ref pyramid"),
         HANDLE_EXT_OPTION2(NumMbPerSlice,          OPT_UINT_16,    "number of MBs per slice"),
+        HANDLE_EXT_OPTION2(MinQPI,                 OPT_UINT_8,     "min QP for I-frames, 0 = default"),
+        HANDLE_EXT_OPTION2(MaxQPI,                 OPT_UINT_8,     "max QP for I-frames, 0 = default"),
+        HANDLE_EXT_OPTION2(MinQPP,                 OPT_UINT_8,     "min QP for P-frames, 0 = default"),
+        HANDLE_EXT_OPTION2(MaxQPP,                 OPT_UINT_8,     "max QP for P-frames, 0 = default"),
+        HANDLE_EXT_OPTION2(MinQPB,                 OPT_UINT_8,     "min QP for B-frames, 0 = default"),
+        HANDLE_EXT_OPTION2(MaxQPB,                 OPT_UINT_8,     "max QP for B-frames, 0 = default"),
 
         // mfxExtCodingOptionDDI
         HANDLE_DDI_OPTION(IntraPredCostType,       OPT_UINT_16,    "1=SAD, 2=SSD, 4=SATD_HADAMARD, 8=SATD_HARR"),
@@ -957,6 +963,10 @@ int convert_type_nbits(mfxU8 nType)
         {
             return  16;
         }
+        case OPT_UINT_8:
+        {
+            return  8;
+        }
         case OPT_64F:
         {
             return 64;
@@ -1037,6 +1047,11 @@ mfxStatus MFXTranscodingPipeline::ProcessOption(vm_char **&argv, vm_char **argve
                         case OPT_UINT_16:
                         {
                             lexical_cast(argv[1], *pOption->pTargetUInt16);
+                            break;
+                        }
+                        case OPT_UINT_8:
+                        {
+                            lexical_cast(argv[1], *pOption->pTargetUInt8);
                             break;
                         }
                         case OPT_INT_16:

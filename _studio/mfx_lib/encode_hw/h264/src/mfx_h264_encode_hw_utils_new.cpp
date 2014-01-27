@@ -1684,6 +1684,22 @@ void MfxHwH264Encode::ConfigureTask(
             task.m_aesCounter[sfid] = aesCounter;
         }
     }
+
+    if (task.m_type[ffid] & MFX_FRAMETYPE_I)
+    {
+        task.m_minQP = extOpt2.MinQPI;
+        task.m_maxQP = extOpt2.MaxQPI;
+    }
+    else if (task.m_type[ffid] & MFX_FRAMETYPE_P)
+    {
+        task.m_minQP = extOpt2.MinQPP;
+        task.m_maxQP = extOpt2.MaxQPP;
+    }
+    else if (task.m_type[ffid] & MFX_FRAMETYPE_B)
+    {
+        task.m_minQP = extOpt2.MinQPB;
+        task.m_maxQP = extOpt2.MaxQPB;
+    }
 }
 
 
