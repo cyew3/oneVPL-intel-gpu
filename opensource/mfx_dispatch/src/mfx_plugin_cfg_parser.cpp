@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2013 Intel Corporation.  All rights reserved.
+Copyright (C) 2013-2014 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -29,6 +29,7 @@ File Name: mfx_plugin_cfg_parser.cpp
 \* ****************************************************************************** */
 
 #include "mfx_plugin_cfg_parser.h"
+#include "mfx_dispatcher_log.h"
 #include <stdlib.h>
 #include <ctype.h>
 
@@ -145,6 +146,7 @@ bool PluginConfigParser::AdvanceToNextPlugin()
     // advance one line from current section
     if (!fgets(line, MAX_PLUGIN_NAME, cfgFile))
         return false;
+    
     fpos_t lastReadLine = sectionStart;
     while (!foundSection && fgets(line, MAX_PLUGIN_NAME, cfgFile))
     {
@@ -156,7 +158,7 @@ bool PluginConfigParser::AdvanceToNextPlugin()
             end = FindCharOrComment(start + 1, ']');
             if (*end == ']') {
                 foundSection = true;
-                fsetpos(cfgFile, &lastReadLine);
+                sectionStart = lastReadLine;
             }
         }
         fgetpos(cfgFile, &lastReadLine);
@@ -359,8 +361,11 @@ bool PluginConfigParser::ParsePluginParams(PluginDescriptionRecord & dst, mfxU32
             }
         }
         // Store section start for next iteration
-        fgetpos(cfgFile, &sectionStart);
+        // fgetpos(cfgFile, &sectionStart);
     }
+
+    // restore previous position in file
+    fsetpos(cfgFile, &sectionStart);
 
     return !error && (parsedFields != 0);
 }
