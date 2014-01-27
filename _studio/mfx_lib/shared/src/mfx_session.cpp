@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_session.cpp
 
@@ -263,13 +263,24 @@ mfxStatus mfxDefLockFrame(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
 {
     MFX_CHECK_NULL_PTR1(pthis);
     VideoCORE *pCore = (VideoCORE*)pthis;
+
+    if (pCore->IsExternalFrameAllocator())
+    {
+        return pCore->LockExternalFrame(mid,ptr); 
+    }
+
     return pCore->LockFrame(mid,ptr); 
+
 
 } // mfxStatus mfxDefLockFrame(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
 mfxStatus mfxDefGetHDL(mfxHDL pthis, mfxMemId mid, mfxHDL *handle)
 {
     MFX_CHECK_NULL_PTR1(pthis);
     VideoCORE *pCore = (VideoCORE*)pthis;
+    if (pCore->IsExternalFrameAllocator())
+    {
+        return pCore->GetExternalFrameHDL(mid, handle);
+    }
     return pCore->GetFrameHDL(mid, handle);
 
 } // mfxStatus mfxDefGetHDL(mfxHDL pthis, mfxMemId mid, mfxHDL *handle)
@@ -277,6 +288,12 @@ mfxStatus mfxDefUnlockFrame(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr=0)
 {
     MFX_CHECK_NULL_PTR1(pthis);
     VideoCORE *pCore = (VideoCORE*)pthis;
+    
+    if (pCore->IsExternalFrameAllocator())
+    {
+        return pCore->UnlockExternalFrame(mid, ptr);
+    }
+    
     return pCore->UnlockFrame(mid, ptr); 
 
 } // mfxStatus mfxDefUnlockFrame(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr=0)
