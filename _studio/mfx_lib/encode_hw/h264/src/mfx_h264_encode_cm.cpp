@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
 //
 */
 #include "ipps.h"
@@ -871,7 +871,7 @@ CmEvent * CmContext::RunVme(
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "RunVme");
     qp = 26;
 
-    CmKernel * kernelPreMe = SelectKernelPreMe(task.m_type[0]);
+    CmKernel * kernelPreMe = SelectKernelPreMe(task.m_type[task.m_fid[0]]);
 
     SVCEncCURBEData curbeData;
     SetCurbeData(curbeData, task, qp);
@@ -1277,7 +1277,9 @@ void CmContext::SetCurbeData(
     mfxU32 transformFlag  = 0;//(extOpt->IntraPredBlockSize > 1);
     mfxU32 meMethod       = 6;
 
-    mfxU32 skipVal = (task.m_type[0] & MFX_FRAMETYPE_P) ? (Dist10[qpIdx]) : (Dist25[qpIdx]);
+    int ffid = task.m_fid[0];
+
+    mfxU32 skipVal = (task.m_type[ffid] & MFX_FRAMETYPE_P) ? (Dist10[qpIdx]) : (Dist25[qpIdx]);
     if (!blockBasedSkip)
         skipVal *= 3;
     else if (!transformFlag)
@@ -1294,7 +1296,8 @@ void CmContext::SetCurbeData(
     Zero(curbeData);
 
     //DW0
-    curbeData.SkipModeEn            = !(task.m_type[0] & MFX_FRAMETYPE_I);
+    //curbeData.SkipModeEn            = !(task.m_type[0] & MFX_FRAMETYPE_I);
+    curbeData.SkipModeEn            = !(task.m_type[1] & MFX_FRAMETYPE_I);
     curbeData.AdaptiveEn            = 1;
     curbeData.BiMixDis              = 0;
     curbeData.EarlyImeSuccessEn     = 0;
@@ -1302,7 +1305,7 @@ void CmContext::SetCurbeData(
     curbeData.EarlyImeStop          = 0;
     //DW1
     curbeData.MaxNumMVs             = (GetMaxMvsPer2Mb(m_video.mfx.CodecLevel) >> 1) & 0x3F;
-    curbeData.BiWeight              = ((task.m_type[0] & MFX_FRAMETYPE_B) && extDdi->WeightedBiPredIdc == 2) ? CalcBiWeight(task, 0, 0) : 32;
+    curbeData.BiWeight              = ((task.m_type[ffid] & MFX_FRAMETYPE_B) && extDdi->WeightedBiPredIdc == 2) ? CalcBiWeight(task, 0, 0) : 32;
     curbeData.UniMixDisable         = 0;
     //DW2
     curbeData.MaxNumSU              = 57;
@@ -1312,18 +1315,20 @@ void CmContext::SetCurbeData(
     curbeData.MbTypeRemap           = 0;
     curbeData.SrcAccess             = 0;
     curbeData.RefAccess             = 0;
-    curbeData.SearchCtrl            = (task.m_type[0] & MFX_FRAMETYPE_B) ? 7 : 0;
+    curbeData.SearchCtrl            = (task.m_type[ffid] & MFX_FRAMETYPE_B) ? 7 : 0;
     curbeData.DualSearchPathOption  = 0;
     curbeData.SubPelMode            = 3; // all modes
     curbeData.SkipType              = 0;//!!(task.m_type[0] & MFX_FRAMETYPE_B); //for B 0-16x16, 1-8x8
     curbeData.DisableFieldCacheAllocation = 0;
     curbeData.InterChromaMode       = 0;
-    curbeData.FTQSkipEnable         = !(task.m_type[0] & MFX_FRAMETYPE_I);
-    curbeData.BMEDisableFBR         = !!(task.m_type[0] & MFX_FRAMETYPE_P);
+    //curbeData.FTQSkipEnable         = !(task.m_type[0] & MFX_FRAMETYPE_I);
+    curbeData.FTQSkipEnable         = !(task.m_type[1] & MFX_FRAMETYPE_I);
+    //curbeData.BMEDisableFBR         = !!(task.m_type[0] & MFX_FRAMETYPE_P);
+    curbeData.BMEDisableFBR         = !!(task.m_type[1] & MFX_FRAMETYPE_P);
     curbeData.BlockBasedSkipEnabled = blockBasedSkip;
     curbeData.InterSAD              = interSad;
     curbeData.IntraSAD              = intraSad;
-    curbeData.SubMbPartMask         = (task.m_type[0] & MFX_FRAMETYPE_I) ? 0 : 0x7e; // only 16x16 for Inter
+    curbeData.SubMbPartMask         = (task.m_type[ffid] & MFX_FRAMETYPE_I) ? 0 : 0x7e; // only 16x16 for Inter
     //DW4
 /*
     curbeData.SliceMacroblockHeightMinusOne = m_video.mfx.FrameInfo.Height / 16 - 1;
@@ -1334,22 +1339,22 @@ void CmContext::SetCurbeData(
     curbeData.PictureHeightMinusOne = heightLa / 16 - 1;
     curbeData.PictureWidth          = widthLa / 16;
     //DW5
-    curbeData.RefWidth              = (task.m_type[0] & MFX_FRAMETYPE_B) ? 32 : 48;
-    curbeData.RefHeight             = (task.m_type[0] & MFX_FRAMETYPE_B) ? 32 : 40;
+    curbeData.RefWidth              = (task.m_type[ffid] & MFX_FRAMETYPE_B) ? 32 : 48;
+    curbeData.RefHeight             = (task.m_type[ffid] & MFX_FRAMETYPE_B) ? 32 : 40;
     //DW6
     curbeData.BatchBufferEndCommand = BATCHBUFFER_END;
     //DW7
     curbeData.IntraPartMask         = 2|4; //no4x4 and no8x8 //transformFlag ? 0 : 2/*no8x8*/;
-    curbeData.NonSkipZMvAdded       = !!(task.m_type[0] & MFX_FRAMETYPE_P);
-    curbeData.NonSkipModeAdded      = !!(task.m_type[0] & MFX_FRAMETYPE_P);
+    curbeData.NonSkipZMvAdded       = !!(task.m_type[ffid] & MFX_FRAMETYPE_P);
+    curbeData.NonSkipModeAdded      = !!(task.m_type[ffid] & MFX_FRAMETYPE_P);
     curbeData.IntraCornerSwap       = 0;
     curbeData.MVCostScaleFactor     = 0;
     curbeData.BilinearEnable        = 0;
     curbeData.SrcFieldPolarity      = 0;
     curbeData.WeightedSADHAAR       = 0;
     curbeData.AConlyHAAR            = 0;
-    curbeData.RefIDCostMode         = !(task.m_type[0] & MFX_FRAMETYPE_I);
-    curbeData.SkipCenterMask        = !!(task.m_type[0] & MFX_FRAMETYPE_P);
+    curbeData.RefIDCostMode         = !(task.m_type[ffid] & MFX_FRAMETYPE_I);
+    curbeData.SkipCenterMask        = !!(task.m_type[ffid] & MFX_FRAMETYPE_P);
     //DW8
     curbeData.ModeCost_0            = costs.ModeCost[LUTMODE_INTRA_NONPRED];
     curbeData.ModeCost_1            = costs.ModeCost[LUTMODE_INTRA_16x16];
@@ -1482,7 +1487,7 @@ void CmContext::SetCurbeData(
     curbeData.LargeMbSizeInWord               = 0xFF;
     //DW36
     curbeData.HMECombineOverlap               = 1;  //  0;  !sergo
-    curbeData.HMERefWindowsCombiningThreshold = (task.m_type[0] & MFX_FRAMETYPE_B) ? 8 : 16; //  0;  !sergo (should be =8 for B frames)
+    curbeData.HMERefWindowsCombiningThreshold = (task.m_type[ffid] & MFX_FRAMETYPE_B) ? 8 : 16; //  0;  !sergo (should be =8 for B frames)
     curbeData.CheckAllFractionalEnable        = 0;
     //DW37
     curbeData.CurLayerDQId                    = extDdi->LaScaleFactor;  // 0; !sergo use 8 bit as LaScaleFactor
@@ -1497,7 +1502,7 @@ void CmContext::SetCurbeData(
     curbeData.TcoeffLevelPredictionFlag       = 0;
     curbeData.UseHMEPredictor                 = 0;  //!!IsOn(extDdi->Hme);
     curbeData.SpatialResChangeFlag            = 0;
-    curbeData.isFwdFrameShortTermRef          = task.m_list0[0].Size() > 0 && !task.m_dpb[0][task.m_list0[0][0] & 127].m_longterm;
+    curbeData.isFwdFrameShortTermRef          = task.m_list0[ffid].Size() > 0 && !task.m_dpb[ffid][task.m_list0[ffid][0] & 127].m_longterm;
     //DW38
     curbeData.ScaledRefLayerLeftOffset        = 0;
     curbeData.ScaledRefLayerRightOffset       = 0;

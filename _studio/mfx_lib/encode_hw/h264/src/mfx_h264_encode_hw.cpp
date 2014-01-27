@@ -628,7 +628,8 @@ void ImplementationAvc::DestroyDanglingCmResources()
         {
             m_cmCtx->DestroyEvent(i->m_event);
 
-            ArrayDpbFrame & iniDpb = i->m_dpb[0];
+            int ffid = i->m_fid[0];
+            ArrayDpbFrame & iniDpb = i->m_dpb[ffid];
             for (mfxU32 j = 0; j < iniDpb.Size(); j++)
                 m_cmDevice->DestroySurface(iniDpb[j].m_cmRaw);
 
@@ -1529,8 +1530,8 @@ void ImplementationAvc::OnLookaheadQueried()
     m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_WAIT_LA;
 
     DdiTask & task = m_lookaheadStarted.front();
-
-    ArrayDpbFrame & iniDpb = task.m_dpb[0];
+    int fid = task.m_fid[0];
+    ArrayDpbFrame & iniDpb = task.m_dpb[fid];
     ArrayDpbFrame & finDpb = task.m_dpbPostEncoding;
     for (mfxU32 i = 0; i < iniDpb.Size(); i++)
     {
@@ -1584,7 +1585,8 @@ void ImplementationAvc::OnEncodingQueried(DdiTaskIter task)
     if (m_inputFrameType == MFX_IOPATTERN_IN_VIDEO_MEMORY)
         m_core->DecreaseReference(&task->m_yuv->Data);
 
-    ArrayDpbFrame const & iniDpb = task->m_dpb[task->m_fid[0]];
+    int ffid = task->m_fid[0];
+    ArrayDpbFrame const & iniDpb = task->m_dpb[ffid];
     ArrayDpbFrame const & finDpb = task->m_dpbPostEncoding;
     for (mfxU32 i = 0; i < iniDpb.Size(); i++)
         if (std::find_if(finDpb.Begin(), finDpb.End(), CompareByMidRec(iniDpb[i].m_midRec)) == finDpb.End())
@@ -1830,7 +1832,6 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_START_LA)
     {
         bool gopStrict = !!(m_video.mfx.GopOptFlag & MFX_GOP_STRICT);
-
         DdiTaskIter task = (m_video.mfx.EncodedOrder)
             ? m_reordering.begin()
             : ReorderFrame(m_lastTask.m_dpbPostEncoding,
@@ -1876,9 +1877,10 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
         if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA || m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
         {
-            ArrayDpbFrame const & dpb = task->m_dpb[0];
-            ArrayU8x33 const &    l0  = task->m_list0[0];
-            ArrayU8x33 const &    l1  = task->m_list1[0];
+            int ffid = task->m_fid[0];
+            ArrayDpbFrame const & dpb = task->m_dpb[ffid];
+            ArrayU8x33 const &    l0  = task->m_list0[ffid];
+            ArrayU8x33 const &    l1  = task->m_list1[ffid];
 
             DdiTask * fwd = 0;
             if (l0.Size() > 0)

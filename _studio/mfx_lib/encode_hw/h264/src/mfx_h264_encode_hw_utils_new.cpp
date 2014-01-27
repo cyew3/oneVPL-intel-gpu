@@ -1533,7 +1533,7 @@ void MfxHwH264Encode::ConfigureTask(
     mfxExtEncoderROI const *        extRoiRuntime  = GetExtBuffer(task.m_ctrl);
 
     mfxU32 const FRAME_NUM_MAX = 1 << (extSps.log2MaxFrameNumMinus4 + 4);
-    
+
     mfxU32 numReorderFrames = GetNumReorderFrames(video);
     mfxU32 prevsfid         = prevTask.m_fid[1];
     mfxU8  idrPicFlag       = !!(task.GetFrameType() & MFX_FRAMETYPE_IDR);

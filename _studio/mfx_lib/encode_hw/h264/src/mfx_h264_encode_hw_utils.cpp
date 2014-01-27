@@ -3770,7 +3770,10 @@ MfxFrameAllocResponse::~MfxFrameAllocResponse()
     {
         for (size_t i = 0; i < m_mids.size(); i++)
             if (m_mids[i])
+            {
                 m_cmDestroy(m_cmDevice, m_mids[i]);
+                m_mids[i] = 0;
+            }
 
         for (size_t i = 0; i < m_sysmems.size(); i++)
         {
