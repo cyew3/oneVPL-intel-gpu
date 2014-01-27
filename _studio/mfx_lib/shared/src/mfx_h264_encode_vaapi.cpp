@@ -350,6 +350,9 @@ void FillConstPartOfPps(
         assert( extPps != 0 );
         assert( extSps != 0 );
 
+        if (!extPps || !extSps)
+            return;
+
         pps.seq_parameter_set_id = extSps->seqParameterSetId;
         pps.pic_parameter_set_id = extPps->picParameterSetId;
 
@@ -523,7 +526,7 @@ void UpdateSlice(
         slice[i].luma_log2_weight_denom             = 0;
         slice[i].chroma_log2_weight_denom           = 0;
 
-        slice[i].cabac_init_idc                     = (mfxU8)extDdi->CabacInitIdcPlus1 - 1;
+        slice[i].cabac_init_idc                     = extDdi ? (mfxU8)extDdi->CabacInitIdcPlus1 - 1 : 0;
         slice[i].slice_qp_delta                     = mfxI8(task.m_cqpValue[fieldId] - pps.pic_init_qp);
 
         slice[i].disable_deblocking_filter_idc = 0;
@@ -583,6 +586,8 @@ void VAAPIEncoder::FillSps(
 {
         mfxExtSpsHeader const * extSps = GetExtBuffer(par);
         assert( extSps != 0 );
+        if (!extSps)
+            return;
 
         sps.picture_width_in_mbs  = par.mfx.FrameInfo.Width >> 4;
         sps.picture_height_in_mbs = par.mfx.FrameInfo.Height >> 4;
@@ -644,7 +649,7 @@ void VAAPIEncoder::FillSps(
  */
         mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(par);
         assert( extOpt2 != 0 );
-        m_newTrellisQuantization = extOpt2->Trellis;
+        m_newTrellisQuantization = extOpt2 ? extOpt2->Trellis : 0;
 
 } // void FillSps(...)
 
