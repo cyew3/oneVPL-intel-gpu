@@ -513,7 +513,13 @@ typedef struct {
     mfxU16      LookAheadDS;
     mfxU16      NumMbPerSlice;
     mfxU16      SkipFrame;
-    mfxU16      reserved2[9];
+    mfxU8       MinQPI;                 /* 1..51, 0 = default */
+    mfxU8       MaxQPI;                 /* 1..51, 0 = default */
+    mfxU8       MinQPP;                 /* 1..51, 0 = default */
+    mfxU8       MaxQPP;                 /* 1..51, 0 = default */
+    mfxU8       MinQPB;                 /* 1..51, 0 = default */
+    mfxU8       MaxQPB;
+    mfxU16      reserved2[6];
 } mfxExtCodingOption2;
 
 /* IntraPredBlockSize/InterPredBlockSize */
