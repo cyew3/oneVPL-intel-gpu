@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -2397,11 +2397,6 @@ Status TaskSupplier::Init(BaseCodecParams *pInit)
 
     Ipp32s nAllowedThreadNumber = init->numThreads;
     if(nAllowedThreadNumber < 0) nAllowedThreadNumber = 0;
-    if(nAllowedThreadNumber > 16) nAllowedThreadNumber = 16;
-#ifdef _DEBUG
-    if (!nAllowedThreadNumber)
-        nAllowedThreadNumber = 1;
-#endif // _DEBUG
 
     // calculate number of slice decoders.
     // It should be equal to CPU number
@@ -2519,11 +2514,6 @@ Status TaskSupplier::PreInit(BaseCodecParams *pInit)
 
     Ipp32s nAllowedThreadNumber = init->numThreads;
     if(nAllowedThreadNumber < 0) nAllowedThreadNumber = 0;
-    if(nAllowedThreadNumber > 8) nAllowedThreadNumber = 8;
-#ifdef _DEBUG
-    if (!nAllowedThreadNumber)
-        nAllowedThreadNumber = 1;
-#endif // _DEBUG
 
     // calculate number of slice decoders.
     // It should be equal to CPU number

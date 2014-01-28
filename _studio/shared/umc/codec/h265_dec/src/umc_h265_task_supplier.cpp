@@ -578,7 +578,6 @@ UMC::Status TaskSupplier_H265::Init(UMC::BaseCodecParams *pInit)
 
     Ipp32s nAllowedThreadNumber = init->numThreads;
     if(nAllowedThreadNumber < 0) nAllowedThreadNumber = 0;
-    if(nAllowedThreadNumber > 16) nAllowedThreadNumber = 16;
 
     // calculate number of slice decoders.
     // It should be equal to CPU number
@@ -671,11 +670,6 @@ UMC::Status TaskSupplier_H265::PreInit(UMC::BaseCodecParams *pInit)
 
     Ipp32s nAllowedThreadNumber = init->numThreads;
     if(nAllowedThreadNumber < 0) nAllowedThreadNumber = 0;
-    if(nAllowedThreadNumber > 8) nAllowedThreadNumber = 8;
-#ifdef _DEBUG
-    if (!nAllowedThreadNumber)
-        nAllowedThreadNumber = 1;
-#endif // _DEBUG
 
     // calculate number of slice decoders.
     // It should be equal to CPU number
