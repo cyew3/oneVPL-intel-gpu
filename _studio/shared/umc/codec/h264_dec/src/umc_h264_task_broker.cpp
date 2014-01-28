@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 */
 #include "umc_defs.h"
@@ -680,6 +680,28 @@ bool TaskBroker::GetPreparationTask(H264DecoderFrameInfo * info)
     }
     catch(...)
     {
+        Lock();
+
+        Ipp32s sliceCount = info->GetSliceCount();
+        for (Ipp32s i = 0; i < sliceCount; i++)
+        {
+            H264Slice * pSlice = info->GetSlice(i);
+            pSlice->m_bDecoded = true;
+            pSlice->m_bDeblocked = true;
+            pSlice->m_bInProcess = false;
+            pSlice->m_bDecVacant = 0;
+            pSlice->m_bRecVacant = 0;
+            pSlice->m_bDebVacant = 0;
+            pSlice->CompleteDecoding();
+        }
+
+        info->SetStatus(H264DecoderFrameInfo::STATUS_COMPLETED);
+
+        info->m_pFrame->SetErrorFlagged(ERROR_FRAME_MAJOR);
+
+        info->m_prepared = 2;
+        return false;
+
     }
 
     Lock();
@@ -2636,7 +2658,7 @@ void LocalResources::FreeCoeffBuffer(H264CoeffsBuffer *buffer)
     }
 }
 
-bool LocalResources::AllocateMBIntraTypes(Ipp32s iIndex, Ipp32s iMBNumber)
+void LocalResources::AllocateMBIntraTypes(Ipp32s iIndex, Ipp32s iMBNumber)
 {
     if ((0 == m_ppMBIntraTypes[iIndex]) ||
         (m_piMBIntraProp[iIndex].m_nSize < iMBNumber))
@@ -2655,12 +2677,10 @@ bool LocalResources::AllocateMBIntraTypes(Ipp32s iIndex, Ipp32s iMBNumber)
         if (UMC_OK != m_pMemoryAllocator->Alloc(&(m_piMBIntraProp[iIndex].m_mid),
                                                 nSize,
                                                 UMC_ALLOC_PERSISTENT))
-            return false;
+            throw h264_exception(UMC_ERR_ALLOC);
         m_piMBIntraProp[iIndex].m_nSize = (Ipp32s) iMBNumber;
         m_ppMBIntraTypes[iIndex] = (Ipp32u *) m_pMemoryAllocator->Lock(m_piMBIntraProp[iIndex].m_mid);
     }
-
-    return true;
 }
 
 H264DecoderLocalMacroblockDescriptor & LocalResources::GetMBInfo(Ipp32s number)
@@ -2670,7 +2690,8 @@ H264DecoderLocalMacroblockDescriptor & LocalResources::GetMBInfo(Ipp32s number)
 
 void LocalResources::AllocateMBInfo(Ipp32s number, Ipp32u iMBCount)
 {
-    m_pMBInfo[number].Allocate(iMBCount, m_pMemoryAllocator);
+    if (!m_pMBInfo[number].Allocate(iMBCount, m_pMemoryAllocator))
+        throw h264_exception(UMC_ERR_ALLOC);
 }
 
 IntraType * LocalResources::GetIntraTypes(Ipp32s number)
@@ -2683,10 +2704,8 @@ H264DecoderMBAddr * LocalResources::GetDefaultMBMapTable() const
     return next_mb_tables[0];
 }
 
-Status LocalResources::AllocateBuffers(Ipp32s mb_count)
+void LocalResources::AllocateBuffers(Ipp32s mb_count)
 {
-    Status      umcRes = UMC_OK;
-
     Ipp32s     next_mb_size = (Ipp32s)(mb_count*sizeof(H264DecoderMBAddr));
     Ipp32s     totalSize = (m_numberOfBuffers + 1)*next_mb_size + mb_count + 128; // 128 used for alignments
 
@@ -2698,7 +2717,7 @@ Status LocalResources::AllocateBuffers(Ipp32s mb_count)
         if (m_pMemoryAllocator->Alloc(&m_midParsedData,
                                       totalSize,
                                       UMC_ALLOC_PERSISTENT))
-            return UMC_ERR_ALLOC;
+            throw h264_exception(UMC_ERR_ALLOC);
 
         m_pParsedData = (Ipp8u *) m_pMemoryAllocator->Lock(m_midParsedData);
         ippsZero_8u(m_pParsedData, totalSize);
@@ -2706,7 +2725,7 @@ Status LocalResources::AllocateBuffers(Ipp32s mb_count)
         m_parsedDataLength = totalSize;
     }
     else
-        return UMC_OK;
+        return;
 
     size_t     offset = 0;
 
@@ -2731,8 +2750,6 @@ Status LocalResources::AllocateBuffers(Ipp32s mb_count)
         next_mb_tables[i] = align_pointer<H264DecoderMBAddr *> (m_pParsedData + offset);
         offset += next_mb_size;
     }
-
-    return umcRes;
 }
 
 void LocalResources::DeallocateBuffers()

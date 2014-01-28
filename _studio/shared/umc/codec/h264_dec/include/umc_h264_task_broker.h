@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -44,9 +44,9 @@ public:
     IntraType * GetIntraTypes(Ipp32s number);
 
     void AllocateMBInfo(Ipp32s number, Ipp32u iMBCount);
-    bool AllocateMBIntraTypes(Ipp32s iIndex, Ipp32s iMBNumber);
+    void AllocateMBIntraTypes(Ipp32s iIndex, Ipp32s iMBNumber);
 
-    Status AllocateBuffers(Ipp32s mb_count);
+    void AllocateBuffers(Ipp32s mb_count);
 
     bool LockFrameResource(H264DecoderFrame * frame);
     void UnlockFrameResource(H264DecoderFrame * frame);
