@@ -5,8 +5,11 @@ set( CMAKE_VERBOSE_MAKEFILE             TRUE )
 set( CMAKE_LIB_DIR ${CMAKE_BINARY_DIR}/__lib )
 
 if( ${CMAKE_SYSTEM_NAME} MATCHES Windows )
-  message( FATAL_ERROR "Windows is not currently supported!" )
+  add_definitions(-DMINGW_HAS_SECURE_API -DWIN32)
 
+  if(__ARCH MATCHES intel64)
+    add_definitions(-DWIN64)
+  endif( )
 else( )
   add_definitions(-DUNIX)
 

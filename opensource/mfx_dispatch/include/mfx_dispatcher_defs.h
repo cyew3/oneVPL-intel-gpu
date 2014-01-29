@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2013 Intel Corporation.  All rights reserved.
+Copyright (C) 2013-2014 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -38,6 +38,12 @@ typedef wchar_t  msdk_disp_char;
 #define msdk_disp_char char
 #define msdk_disp_char_cpy_s(to, to_size, from) strcpy(to, from)
 #endif
+
+#ifdef __GNUC__
+#define  sscanf_s  sscanf
+#define  swscanf_s swscanf
+#endif
+
 
 // declare library module's handle
 typedef void * mfxModuleHandle;

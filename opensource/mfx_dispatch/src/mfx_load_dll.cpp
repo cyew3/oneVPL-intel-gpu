@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2013 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2014 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -157,11 +157,19 @@ mfxModuleHandle mfx_dll_load(const msdk_disp_char *pFileName)
 
     // set the silent error mode
     DWORD prevErrorMode = 0;
+#if (_WIN32_WINNT >= 0x0600) && !(__GNUC__)
     SetThreadErrorMode(SEM_FAILCRITICALERRORS, &prevErrorMode);
+#else
+    prevErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
+#endif
     // load the library's module
     hModule = LoadLibraryW(pFileName);
     // set the previous error mode
+#if (_WIN32_WINNT >= 0x0600) && !(__GNUC__)
     SetThreadErrorMode(prevErrorMode, NULL);
+#else
+    SetErrorMode(prevErrorMode);
+#endif
 
     return hModule;
 
@@ -201,12 +209,19 @@ mfxModuleHandle mfx_get_dll_handle(const msdk_disp_char *pFileName)
 
     // set the silent error mode
     DWORD prevErrorMode = 0;
+#if (_WIN32_WINNT >= 0x0600) && !(__GNUC__)
     SetThreadErrorMode(SEM_FAILCRITICALERRORS, &prevErrorMode);
+#else
+    prevErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
+#endif
     // load the library's module
     GetModuleHandleExW(0, pFileName, (HMODULE*) &hModule);
     // set the previous error mode
+#if (_WIN32_WINNT >= 0x0600) && !(__GNUC__)
     SetThreadErrorMode(prevErrorMode, NULL);
-
+#else
+    SetErrorMode(prevErrorMode);
+#endif
     return hModule;
 }
 

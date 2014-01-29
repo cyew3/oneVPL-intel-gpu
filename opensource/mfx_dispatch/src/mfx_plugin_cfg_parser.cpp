@@ -28,6 +28,8 @@ File Name: mfx_plugin_cfg_parser.cpp
 
 \* ****************************************************************************** */
 
+#if !defined(_WIN32) && !defined(_WIN64)
+
 #include "mfx_plugin_cfg_parser.h"
 #include "mfx_dispatcher_log.h"
 #include <stdlib.h>
@@ -233,11 +235,15 @@ bool PluginConfigParser::ParseSingleParameter(const char * name, const char * va
     if (0 == strcmp(name, "GUID"))
     {
         mfxU32 p[16];
-        int err = sscanf(value, 
+        int res = sscanf(value, 
             "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
             p, p + 1, p + 2, p + 3, p + 4, p + 5, p + 6, p + 7, 
             p + 8, p + 9, p + 10, p + 11, p + 12, p + 13, p + 14, p + 15);
-        
+        if (res != 16)
+        {
+            return false;
+        }
+
         for (int i = 0; i < 16; i++)
             dst.PluginUID.Data[i] = (mfxU8)p[i];
 
@@ -371,3 +377,5 @@ bool PluginConfigParser::ParsePluginParams(PluginDescriptionRecord & dst, mfxU32
 }
 
 } // namespace MFX
+
+#endif // !defined(_WIN32) && !defined(_WIN64)

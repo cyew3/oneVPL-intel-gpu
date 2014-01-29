@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2013 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2014 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -66,20 +66,6 @@ public:
     bool QueryValueSize(const wchar_t *pValueName, DWORD type, LPDWORD pcbData);
     bool Query(const wchar_t *pValueName, DWORD type, LPBYTE pData, LPDWORD pcbData);
 
-    template<class T>
-    bool Query(const wchar_t *pValueName, T &data ) {
-        DWORD size = sizeof(data);
-        return Query(pValueName, RegKey<T>::type, (LPBYTE) &data, &size);
-    }
-
-    template<>
-    bool Query<bool>(const wchar_t *pValueName, bool &data ) {
-        mfxU32 value = 0;
-        bool bRes = Query(pValueName, value);
-        data = (1 == value);
-        return bRes;
-    }
-
     bool Query(const wchar_t *pValueName, wchar_t *pData, mfxU32 &nData) {
         DWORD dw = (DWORD)nData;
         if (!Query(pValueName, RegKey<wchar_t*>::type, (LPBYTE)pData, &dw)){
@@ -106,6 +92,22 @@ private:
     void operator=(const WinRegKey &);
 
 };
+
+
+template<class T>
+inline bool QueryKey(WinRegKey & key, const wchar_t *pValueName, T &data ) {
+    DWORD size = sizeof(data);
+    return key.Query(pValueName, RegKey<T>::type, (LPBYTE) &data, &size);
+}
+
+template<>
+inline bool QueryKey<bool>(WinRegKey & key, const wchar_t *pValueName, bool &data ) {
+    mfxU32 value = 0;
+    bool bRes = QueryKey(key, pValueName, value);
+    data = (1 == value);
+    return bRes;
+}
+
 
 } // namespace MFX
 

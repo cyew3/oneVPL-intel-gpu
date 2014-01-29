@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2013 Intel Corporation.  All rights reserved.
+Copyright (C) 2013-2014 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -171,13 +171,13 @@ MFX::MFXPluginsInHive::MFXPluginsInHive(int mfxStorageID, const msdk_disp_char *
 
         PluginDescriptionRecord descriptionRecord;
 
-        if (!subKey.Query(TypeKeyName, descriptionRecord.Type)) 
+        if (!QueryKey(subKey, TypeKeyName, descriptionRecord.Type)) 
         {
             continue;
         }
         TRACE_HIVE_INFO(alignStr()" : %d\n", TypeKeyName, descriptionRecord.Type);
 
-        if (subKey.Query(CodecIDKeyName, descriptionRecord.CodecId)) 
+        if (QueryKey(subKey, CodecIDKeyName, descriptionRecord.CodecId)) 
         {
             TRACE_HIVE_INFO(alignStr()" : "MFXFOURCCTYPE()" \n", CodecIDKeyName, MFXU32TOFOURCC(descriptionRecord.CodecId));
         }
@@ -186,7 +186,7 @@ MFX::MFXPluginsInHive::MFXPluginsInHive(int mfxStorageID, const msdk_disp_char *
                 TRACE_HIVE_INFO(alignStr()" : \n", CodecIDKeyName, "NOT REGISTERED");
         }
 
-        if (!subKey.Query(GUIDKeyName, descriptionRecord.PluginUID)) 
+        if (!QueryKey(subKey, GUIDKeyName, descriptionRecord.PluginUID)) 
         {
             continue;
         }
@@ -200,14 +200,14 @@ MFX::MFXPluginsInHive::MFXPluginsInHive(int mfxStorageID, const msdk_disp_char *
         }
         TRACE_HIVE_INFO(alignStr()" : %S\n", PathKeyName, descriptionRecord.sPath);
 
-        if (!subKey.Query(DefaultKeyName, descriptionRecord.Default)) 
+        if (!QueryKey(subKey, DefaultKeyName, descriptionRecord.Default)) 
         {
             continue;
         }
         TRACE_HIVE_INFO(alignStr()" : %s\n", DefaultKeyName, descriptionRecord.Default ? "true" : "false");
 
         mfxU32 version;
-        if (!subKey.Query(PlgVerKeyName, version)) 
+        if (!QueryKey(subKey, PlgVerKeyName, version)) 
         {
             continue;
         }
@@ -223,7 +223,7 @@ MFX::MFXPluginsInHive::MFXPluginsInHive(int mfxStorageID, const msdk_disp_char *
         }
 
         mfxU32 APIVersion;
-        if (!subKey.Query(APIVerKeyName, APIVersion)) 
+        if (!QueryKey(subKey, APIVerKeyName, APIVersion)) 
         {
             continue;
         }
