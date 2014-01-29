@@ -1451,6 +1451,25 @@ mfxStatus VAAPIEncoder::QueryStatus(
 
             task.m_bsDataLength[fieldId] = codedBufferSegment->size;
 
+            if (m_videoParam.Protected && IsSupported__VAHDCPEncryptionParameterBuffer() && codedBufferSegment->next)
+            {
+                VACodedBufferSegment *nextSegment = (VACodedBufferSegment*)codedBufferSegment->next;
+                VAHDCPEncryptionParameterBuffer *HDCPParam = NULL;
+                mfxAES128CipherCounter CipherCounter = {0, 0};
+
+                if (nextSegment->status & VA_CODED_BUF_STATUS_PRIVATE_DATA_HDCP &&
+                    NULL != nextSegment->buf)
+                {
+                    HDCPParam = (VAHDCPEncryptionParameterBuffer*)nextSegment->buf;
+                    mfxU64* Count = (mfxU64*)&HDCPParam->counter[0];
+                    mfxU64* IV = (mfxU64*)&HDCPParam->counter[2];
+                    CipherCounter.Count = *Count;
+                    CipherCounter.IV = *IV;
+                 }
+
+                task.m_aesCounter[0] = CipherCounter;
+            }
+
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc vaUnmapBuffer");
                 vaUnmapBuffer( m_vaDisplay, codedBuffer );

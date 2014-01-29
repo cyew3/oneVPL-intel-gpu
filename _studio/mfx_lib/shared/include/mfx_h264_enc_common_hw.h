@@ -32,6 +32,7 @@
 #endif
 
 #include "mfxpcp.h"
+#include "mfxhdcp.h"
 #include "mfxmvc.h"
 
 #include "umc_defs.h"
@@ -214,7 +215,7 @@ namespace MfxHwH264Encode
         Zero(extBuf);
         extBuf.Header.BufferId = ExtBufTypeToId<mfxExtAVCRefListCtrl>::id;
         extBuf.Header.BufferSz = sizeof(mfxExtAVCRefListCtrl);
-        
+
         for (mfxU32 i = 0; i < 32; i++)
             extBuf.PreferredRefList[i].FrameOrder = mfxU32(MFX_FRAMEORDER_UNKNOWN);
         for (mfxU32 i = 0; i < 16; i++)
@@ -232,6 +233,11 @@ namespace MfxHwH264Encode
         return
             opt == MFX_PROTECTION_PAVP ||
             opt == MFX_PROTECTION_GPUCP_PAVP;
+    }
+
+    inline bool IsProtectionHdcp(mfxU32 opt)
+    {
+        return opt == MFX_PROTECTION_HDCP;
     }
 
     inline bool IsOn(mfxU32 opt)

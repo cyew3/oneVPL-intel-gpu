@@ -1295,5 +1295,14 @@ bool IsSupported__VAEncMiscParameterPrivate(void)
 #endif
 }
 
+bool IsSupported__VAHDCPEncryptionParameterBuffer(void)
+{
+#if defined(ANDROID) && defined(VAAPI_DRIVER_VPG) 
+    return true;
+#else
+    return false;
+#endif
+}
+
 #endif 
 /* EOF */

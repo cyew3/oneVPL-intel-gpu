@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 
 File Name: libmfxsw_encode.cpp
 
@@ -204,11 +204,13 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     MFX_CHECK(out, MFX_ERR_NULL_PTR);
 
+#if !defined(ANDROID)
     if ((0 != in) && (MFX_HW_VAAPI == session->m_pCORE->GetVAType()))
     {
         // protected content not supported on Linux
         MFX_CHECK(0 == in->Protected, MFX_ERR_UNSUPPORTED);
     }
+#endif
 
     mfxStatus mfxRes;
     MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);

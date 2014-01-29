@@ -1577,7 +1577,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
     if (par.Protected != 0)
     {
-        if (!IsProtectionPavp(par.Protected))
+        if (!IsProtectionPavp(par.Protected) && !IsProtectionHdcp(par.Protected))
         {
             unsupported = true;
             par.Protected = 0;
