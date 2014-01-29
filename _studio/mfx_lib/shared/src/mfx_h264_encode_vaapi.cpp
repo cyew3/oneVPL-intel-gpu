@@ -718,8 +718,15 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     }
     else
     {
+#if defined(ANDROID)
+        // To replace by vaQueryConfigAttributes()
+        // when the driver starts to support VAConfigAttribMaxPictureWidth/Height
+        m_caps.MaxPicWidth  = 1920;
+        m_caps.MaxPicHeight = 1200;
+#else
         m_caps.MaxPicWidth  = 1920;
         m_caps.MaxPicHeight = 1088;
+#endif
         m_caps.SliceStructure = m_core->GetHWType() == MFX_HW_HSW ? 2 : 1; // 1 - SliceDividerSnb; 2 - SliceDividerHsw; 3 - SliceDividerBluRay; the other - SliceDividerOneSlice
         m_caps.NoInterlacedField = 1;
         m_caps.MaxNum_Reference = 1;
