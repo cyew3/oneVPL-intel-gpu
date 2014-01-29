@@ -1456,6 +1456,7 @@ mfxStatus VAAPIEncoder::QueryStatus(
                 VACodedBufferSegment *nextSegment = (VACodedBufferSegment*)codedBufferSegment->next;
                 VAHDCPEncryptionParameterBuffer *HDCPParam = NULL;
                 mfxAES128CipherCounter CipherCounter = {0, 0};
+                bool isProtected = false;
 
                 if (nextSegment->status & VA_CODED_BUF_STATUS_PRIVATE_DATA_HDCP &&
                     NULL != nextSegment->buf)
@@ -1465,9 +1466,12 @@ mfxStatus VAAPIEncoder::QueryStatus(
                     mfxU64* IV = (mfxU64*)&HDCPParam->counter[2];
                     CipherCounter.Count = *Count;
                     CipherCounter.IV = *IV;
+
+                    isProtected = HDCPParam->bEncrypted;
                  }
 
                 task.m_aesCounter[0] = CipherCounter;
+                task.m_notProtected = !isProtected;
             }
 
             {

@@ -847,6 +847,7 @@ namespace MfxHwH264Encode
             , m_bsDataLength(0, 0)
             , m_numLeadingFF(0, 0)
             , m_qpY(0, 0)
+            , m_notProtected(true)
             , m_nextLayerTask(0)
             , m_repack(0)
             , m_fractionalQP(0)
@@ -971,6 +972,7 @@ namespace MfxHwH264Encode
         char   m_FrameName[32];
 
         Pair<mfxAES128CipherCounter> m_aesCounter;
+        bool m_notProtected;             // Driver returns not protected data 
         DdiTask const * m_nextLayerTask; // set to 0 if no nextLayerResolutionChange
         mfxU32  m_repack;
         mfxI32  m_fractionalQP; //if m_fractionalQP > 0 set it value in QM matrices
