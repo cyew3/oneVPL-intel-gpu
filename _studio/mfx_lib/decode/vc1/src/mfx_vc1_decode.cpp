@@ -1995,12 +1995,7 @@ mfxStatus MFXVideoDECODEVC1::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfx
     par->mfx.CodecProfile = temp.mfx.CodecProfile;
     par->mfx.CodecLevel = temp.mfx.CodecLevel;
 
-/* No check for HW acceleration in DecodeHeader
-    if (!IsHWSupported(core, par))
-        MFXSts = core->GetSWFallbackPolicy();
-*/
     return MFXSts;
-
 }
 mfxStatus MFXVideoDECODEVC1::SetSkipMode(mfxSkipMode mode)
 {

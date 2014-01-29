@@ -777,6 +777,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
 
     // Configuration
     VAConfigAttrib attrib[2];
+    mfxU32 flag = VA_PROGRESSIVE;
 
     attrib[0].type = VAConfigAttribRTFormat;
     attrib[1].type = VAConfigAttribRateControl;
@@ -818,13 +819,16 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
     for(unsigned int i = 0; i < m_reconQueue.size(); i++)
         reconSurf.push_back(m_reconQueue[i].surface);
 
+    if (m_videoParam.Protected &&IsSupported__VAHDCPEncryptionParameterBuffer())
+        flag |= VA_HDCP_ENABLED;
+
     // Encoder create
     vaSts = vaCreateContext(
         m_vaDisplay,
         m_vaConfig,
         m_width,
         m_height,
-        VA_PROGRESSIVE,
+        flag,
         Begin(reconSurf),
         reconSurf.size(),
         &m_vaContextEncode);

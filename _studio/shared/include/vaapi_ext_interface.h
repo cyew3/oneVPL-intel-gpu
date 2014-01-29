@@ -20,6 +20,7 @@
 
 #define EXTERNAL_ENCRYPTED_SURFACE_FLAG   (1<<16)
 #define VA_CODED_BUF_STATUS_PRIVATE_DATA_HDCP (1<<8)
+#define VA_HDCP_ENABLED (1<<12)
 
 typedef struct _VAEncMiscParameterPrivate
 {
