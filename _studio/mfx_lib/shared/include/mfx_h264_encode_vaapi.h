@@ -42,6 +42,7 @@ namespace MfxHwH264Encode
         VASurfaceID surface;
         mfxU32 number;
         mfxU32 idxBs;
+        mfxU32 size; // valid only if Surface ID == VA_INVALID_SURFACE (skipped frames)
 
     } ExtVASurface;
 
@@ -151,6 +152,7 @@ namespace MfxHwH264Encode
         VABufferID m_quantizationId;  // VAEncMiscParameterQuantization
         VABufferID m_rirId;           // VAEncMiscParameterRIR
         VABufferID m_privateParamsId; // VAEncMiscParameterPrivate
+        VABufferID m_miscParameterSkipBufferId; // VAEncMiscParameterSkipFrame
         VABufferID m_ppsBufferId;
         std::vector<VABufferID> m_sliceBufferId;
 
@@ -162,6 +164,8 @@ namespace MfxHwH264Encode
         VABufferID m_packedPpsBufferId;
         VABufferID m_packedSeiHeaderBufferId;
         VABufferID m_packedSeiBufferId;
+        VABufferID m_packedSkippedSliceHeaderBufferId;
+        VABufferID m_packedSkippedSliceBufferId;
         std::vector<VABufferID> m_packeSliceHeaderBufferId;
         std::vector<VABufferID> m_packedSliceBufferId;
 
@@ -187,6 +191,12 @@ namespace MfxHwH264Encode
 
         UMC::Mutex m_guard;
         HeaderPacker m_headerPacker;
+
+        // SkipFlag
+        enum { NO_SKIP, NORMAL_MODE, PAVP_MODE};
+
+        mfxU8 m_numSkipFrames;
+        mfxU32 m_sizeSkipFrames;
 
     };
 
