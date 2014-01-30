@@ -282,6 +282,8 @@ namespace MFX_HEVC_PP
     // [PTR.WeightedPred]
     typedef void (* PTR_CopyWeighted_S16U8)(Ipp16s* pSrc, Ipp16s* pSrcUV, Ipp8u* pDst, Ipp8u* pDstUV, Ipp32u SrcStrideY, Ipp32u DstStrideY, Ipp32u SrcStrideC, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round);
     typedef void (* PTR_CopyWeightedBidi_S16U8)(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s* pSrc1, Ipp16s* pSrcUV1, Ipp8u* pDst, Ipp8u* pDstUV, Ipp32u SrcStride0Y, Ipp32u SrcStride1Y, Ipp32u DstStrideY, Ipp32u SrcStride0C, Ipp32u SrcStride1C, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round);
+    typedef void (* PTR_CopyWeighted_S16U16)(Ipp16s* pSrc, Ipp16s* pSrcUV, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStrideY, Ipp32u DstStrideY, Ipp32u SrcStrideC, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth);
+    typedef void (* PTR_CopyWeightedBidi_S16U16)(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s* pSrc1, Ipp16s* pSrcUV1, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStride0Y, Ipp32u SrcStride1Y, Ipp32u DstStrideY, Ipp32u SrcStride0C, Ipp32u SrcStride1C, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth);
 
     /* ******************************************************** */
     /*                    Interface Wrapper                     */
@@ -459,6 +461,8 @@ namespace MFX_HEVC_PP
         // [WeightedPred]
         HEVCPP_API( PTR_CopyWeighted_S16U8, void, h265_CopyWeighted_S16U8, (Ipp16s* pSrc, Ipp16s* pSrcUV, Ipp8u* pDst, Ipp8u* pDstUV, Ipp32u SrcStrideY, Ipp32u DstStrideY, Ipp32u SrcStrideC, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round) );
         HEVCPP_API( PTR_CopyWeightedBidi_S16U8, void, h265_CopyWeightedBidi_S16U8, (Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s* pSrc1, Ipp16s* pSrcUV1, Ipp8u* pDst, Ipp8u* pDstUV, Ipp32u SrcStride0Y, Ipp32u SrcStride1Y, Ipp32u DstStrideY, Ipp32u SrcStride0C, Ipp32u SrcStride1C, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round) );
+        HEVCPP_API( PTR_CopyWeighted_S16U16, void, h265_CopyWeighted_S16U16, (Ipp16s* pSrc, Ipp16s* pSrcUV, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStrideY, Ipp32u DstStrideY, Ipp32u SrcStrideC, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth) );
+        HEVCPP_API( PTR_CopyWeightedBidi_S16U16, void, h265_CopyWeightedBidi_S16U16, (Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s* pSrc1, Ipp16s* pSrcUV1, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStride0Y, Ipp32u SrcStride1Y, Ipp32u DstStrideY, Ipp32u SrcStride0C, Ipp32u SrcStride1C, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth) );
 
 #if defined(MFX_TARGET_OPTIMIZATION_AUTO)
         bool           isInited;
@@ -894,10 +898,6 @@ namespace MFX_HEVC_PP
     void h265_AverageModeP_px(short *pSrc, unsigned int srcPitch, Ipp16u *pAvg, unsigned int avgPitch, Ipp16u *pDst, unsigned int dstPitch, int width, int height, unsigned bit_depth);
 
     void h265_AverageModeB_px(short *pSrc, unsigned int srcPitch, short *pAvg, unsigned int avgPitch, Ipp16u *pDst, unsigned int dstPitch, int width, int height, unsigned bit_depth);
-
-    void h265_CopyWeighted_S16U8_px(Ipp16s* pSrc, Ipp16s* pSrcUV, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStrideY, Ipp32u DstStrideY, Ipp32u SrcStrideC, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth);
-
-    void h265_CopyWeightedBidi_S16U8_px(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp16s* pSrc1, Ipp16s* pSrcUV1, Ipp16u* pDst, Ipp16u* pDstUV, Ipp32u SrcStride0Y, Ipp32u SrcStride1Y, Ipp32u DstStrideY, Ipp32u SrcStride0C, Ipp32u SrcStride1C, Ipp32u DstStrideC, Ipp32u Width, Ipp32u Height, Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth);
 
     void h265_ProcessSaoCuOrg_Luma_16u_px (Ipp16u* pRec, Ipp32s stride, Ipp32s saoType, Ipp16u* tmpL, Ipp16u* tmpU, Ipp32u maxCUWidth, Ipp32u maxCUHeight,
             Ipp32s picWidth, Ipp32s picHeight, Ipp32s* pOffsetEo, Ipp16u* pOffsetBo, Ipp16u* pClipTable, Ipp32u CUPelX, Ipp32u CUPelY);

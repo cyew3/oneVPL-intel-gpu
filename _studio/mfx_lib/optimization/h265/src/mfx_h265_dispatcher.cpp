@@ -334,6 +334,8 @@ using namespace MFX_HEVC_PP;
         // [WeightedPred]
         g_dispatcher.h265_CopyWeighted_S16U8 = &MFX_HEVC_PP::h265_CopyWeighted_S16U8_sse;
         g_dispatcher.h265_CopyWeightedBidi_S16U8 = &MFX_HEVC_PP::h265_CopyWeightedBidi_S16U8_sse;
+        g_dispatcher.h265_CopyWeighted_S16U16 = &MFX_HEVC_PP::h265_CopyWeighted_S16U16_sse;
+        g_dispatcher.h265_CopyWeightedBidi_S16U16 = &MFX_HEVC_PP::h265_CopyWeightedBidi_S16U16_sse;
 
     } // void SetTargetSSE4(void)
 
@@ -464,8 +466,10 @@ using namespace MFX_HEVC_PP;
         g_dispatcher.h265_PredictIntra_Ang_All_Even_8u = &MFX_HEVC_PP::h265_PredictIntra_Ang_All_Even_8u_ssse3;
 
         // [WeightedPred]
-        g_dispatcher.h265_CopyWeighted_S16U8 = &MFX_HEVC_PP::h265_CopyWeighted_S16U8_sse;
-        g_dispatcher.h265_CopyWeightedBidi_S16U8 = &MFX_HEVC_PP::h265_CopyWeightedBidi_S16U8_sse;
+        g_dispatcher.h265_CopyWeighted_S16U8 = &MFX_HEVC_PP::h265_CopyWeighted_S16U8_ssse3;
+        g_dispatcher.h265_CopyWeightedBidi_S16U8 = &MFX_HEVC_PP::h265_CopyWeightedBidi_S16U8_ssse3;
+        g_dispatcher.h265_CopyWeighted_S16U16 = &MFX_HEVC_PP::h265_CopyWeighted_S16U16_ssse3;
+        g_dispatcher.h265_CopyWeightedBidi_S16U16 = &MFX_HEVC_PP::h265_CopyWeightedBidi_S16U16_ssse3;
 
     } // void SetTargetSSSE3(void)
 
@@ -598,6 +602,8 @@ using namespace MFX_HEVC_PP;
         // [WeightedPred]
         g_dispatcher.h265_CopyWeighted_S16U8 = &MFX_HEVC_PP::h265_CopyWeighted_S16U8_avx2;
         g_dispatcher.h265_CopyWeightedBidi_S16U8 = &MFX_HEVC_PP::h265_CopyWeightedBidi_S16U8_avx2;
+        g_dispatcher.h265_CopyWeighted_S16U16 = &MFX_HEVC_PP::h265_CopyWeighted_S16U16_avx2;
+        g_dispatcher.h265_CopyWeightedBidi_S16U16 = &MFX_HEVC_PP::h265_CopyWeightedBidi_S16U16_avx2;
 
     } // void SetTargetAVX2(void)
 
@@ -730,6 +736,8 @@ using namespace MFX_HEVC_PP;
         // [WeightedPred]
         g_dispatcher.h265_CopyWeighted_S16U8 = &MFX_HEVC_PP::h265_CopyWeighted_S16U8_px;
         g_dispatcher.h265_CopyWeightedBidi_S16U8 = &MFX_HEVC_PP::h265_CopyWeightedBidi_S16U8_px;
+        g_dispatcher.h265_CopyWeighted_S16U16 = &MFX_HEVC_PP::h265_CopyWeighted_S16U16_px;
+        g_dispatcher.h265_CopyWeightedBidi_S16U16 = &MFX_HEVC_PP::h265_CopyWeightedBidi_S16U16_px;
 
     } // void SetTargetPX(void)
 

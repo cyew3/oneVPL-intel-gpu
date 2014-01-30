@@ -531,7 +531,7 @@ void H265Prediction::CopyWeighted(H265DecoderFrame* frame, H265DecYUVBufferPadde
         Ipp16u* pDst = (Ipp16u*)frame->GetLumaAddr(CUAddr) + GetAddrOffset(PartIdx, DstStride);
         Ipp16u* pDstUV = (Ipp16u*)frame->GetCbCrAddr(CUAddr) + GetAddrOffset(PartIdx, DstStride >> 1);
 
-        h265_CopyWeighted_S16U8_px(pSrc, pSrcUV, pDst, pDstUV, src->pitch_luma(), frame->pitch_luma(), src->pitch_chroma(), frame->pitch_chroma(), Width, Height, w, o, logWD, round, bit_depth);
+        MFX_HEVC_PP::NAME(h265_CopyWeighted_S16U16)(pSrc, pSrcUV, pDst, pDstUV, src->pitch_luma(), frame->pitch_luma(), src->pitch_chroma(), frame->pitch_chroma(), Width, Height, w, o, logWD, round, bit_depth);
     }
 #endif
 }
@@ -561,7 +561,7 @@ void H265Prediction::CopyWeightedBidi(H265DecoderFrame* frame, H265DecYUVBufferP
         Ipp16u* pDst = (Ipp16u* )frame->GetLumaAddr(CUAddr) + GetAddrOffset(PartIdx, DstStride);
         Ipp16u* pDstUV = (Ipp16u* )frame->GetCbCrAddr(CUAddr) + GetAddrOffset(PartIdx, DstStride >> 1);
 
-        h265_CopyWeightedBidi_S16U8_px(pSrc0, pSrcUV0, pSrc1, pSrcUV1, pDst, pDstUV, src0->pitch_luma(), src1->pitch_luma(), frame->pitch_luma(), src0->pitch_chroma(), src1->pitch_chroma(), frame->pitch_chroma(), Width, Height, w0, w1, logWD, round, bit_depth);
+        MFX_HEVC_PP::NAME(h265_CopyWeightedBidi_S16U16)(pSrc0, pSrcUV0, pSrc1, pSrcUV1, pDst, pDstUV, src0->pitch_luma(), src1->pitch_luma(), frame->pitch_luma(), src0->pitch_chroma(), src1->pitch_chroma(), frame->pitch_chroma(), Width, Height, w0, w1, logWD, round, bit_depth);
     }
 #endif
 }
