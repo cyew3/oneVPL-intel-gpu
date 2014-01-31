@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -788,7 +788,7 @@ Status MP4Splitter::FillAudioInfo(T_trak_data *pTrak, Ipp32u nTrack)
   if (len) {
     MediaData *pDecSpecInfo = new MediaData(len);
     UMC_CHECK_PTR(pDecSpecInfo)
-    memcpy(pDecSpecInfo->GetDataPointer(), ptr, len);
+    memcpy_s(pDecSpecInfo->GetDataPointer(), len, ptr, len);
     pDecSpecInfo->SetDataSize(len);
     pDecSpecInfo->SetTime(0, 0);
     m_pInfo->m_ppTrackInfo[nTrack]->m_pDecSpecInfo = pDecSpecInfo;
@@ -894,7 +894,7 @@ Status MP4Splitter::FillVideoInfo(T_trak_data *pTrak, Ipp32u nTrack)
   if (len) {
     MediaData *pDecSpecInfo = new MediaData(len);
     UMC_CHECK_PTR(pDecSpecInfo)
-    memcpy(pDecSpecInfo->GetDataPointer(), ptr, len);
+    memcpy_s(pDecSpecInfo->GetDataPointer(), len, ptr, len);
     pDecSpecInfo->SetDataSize(len);
     pDecSpecInfo->SetTime(0, 0);
     m_pInfo->m_ppTrackInfo[nTrack]->m_pDecSpecInfo = pDecSpecInfo;

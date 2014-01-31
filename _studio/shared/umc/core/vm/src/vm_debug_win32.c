@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -467,7 +467,7 @@ void vm_trace_GUID_func(const UMC_GUID *pGUID, vm_char *descr)
     }
 
     vm_string_sprintf(guid,
-        VM_STRING("%s = %08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x"),
+        VM_STRING("%s = %08lx-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x"),
         descr,
         pGUID->Data1, pGUID->Data2, pGUID->Data3,
         pGUID->Data4_0, pGUID->Data4_1, pGUID->Data4_2, pGUID->Data4_3,

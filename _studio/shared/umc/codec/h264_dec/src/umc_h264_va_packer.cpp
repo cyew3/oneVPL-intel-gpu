@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -2067,8 +2067,6 @@ void PackerVA::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSli
     Ipp32s referenceCount = 0;
     Ipp32s j = 0;
 
-    bool isSkipFirst = true;
-
     Ipp32s viewCount = m_supplier->GetViewCount();
     
     for (Ipp32s i = 0; i < viewCount; i++)
@@ -2360,7 +2358,7 @@ Ipp32s PackerVA::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chop
     ReferenceFlags *pFields0 = pCurrentFrame->GetRefPicList(realSliceNum, 0)->m_Flags;
     ReferenceFlags *pFields1 = pCurrentFrame->GetRefPicList(realSliceNum, 1)->m_Flags;
 
-    Ipp32s i,j;
+    Ipp32s i;
     for(i = 0; i < 32; i++)
     {
         if (pRefPicList0[i] != NULL && i < pSliceHeader->num_ref_idx_l0_active)

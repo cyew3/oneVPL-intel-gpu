@@ -1841,7 +1841,7 @@ void SaoEncodeFilter::ModeDecision_Base(
     m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_MID], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
 
     // aya - temporal solution
-    bool isChromaEnabled = (NUM_USED_SAO_COMPONENTS > 1) ? true : false;
+    bool isChromaEnabled = (NUM_USED_SAO_COMPONENTS > 1); // ? true : false;
     Ipp64f chromaLambda = m_labmda[SAO_Cb];
 
     // ======================================================
