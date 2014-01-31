@@ -23,6 +23,7 @@ CLibVA* CreateLibVA(void)
 typedef unsigned int vaapiAndroidDisplay;
 
 #define VAAPI_ANDROID_DEFAULT_DISPLAY 0x18c34078
+#define VAAPI_ANDROID_PVR_DRIVER_NAME "libva_driver_name=pvr"
 
 AndroidLibVA::AndroidLibVA(void):
     m_display(NULL)
@@ -38,7 +39,11 @@ AndroidLibVA::AndroidLibVA(void):
 
     if (MFX_ERR_NONE == sts)
     {
+        #ifndef ANDROID_LOAD_PVR
         m_va_dpy = vaGetDisplay(m_display);
+        #else
+        m_va_dpy = vaGetDisplay((void*)VAAPI_ANDROID_PVR_DRIVER_NAME);
+        #endif
         if (!m_va_dpy)
         {
             free(m_display);

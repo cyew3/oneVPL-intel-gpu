@@ -445,7 +445,7 @@ mfxStatus MFXDecPipeline::BuildPipeline()
     }
     if (MFX_ERR_NONE == res)
     {
-        m_inParams.FrameInfo.Width = streamInfo.nWidth;
+        m_inParams.FrameInfo.Width  = streamInfo.nWidth;
         m_inParams.FrameInfo.Height = streamInfo.nHeight;
         m_components[eDEC].m_params.mfx.CodecId  = streamInfo.videoType;
         //m_inParams.InputCodecType  = streamInfo.videoType;
@@ -932,7 +932,7 @@ mfxStatus MFXDecPipeline::CreateVPP()
     {
         //no support any more for plugin as vpp
         return MFX_ERR_UNSUPPORTED;
-    } else if (  vm_string_strlen(m_inParams.strVPPPluginGuid)  ) 
+    } else if (  vm_string_strlen(m_inParams.strVPPPluginGuid)  )
     {
          m_pVPP = m_pFactory->CreateVPP(
             PipelineObjectDesc<IMFXVideoVPP>(m_components[eVPP].m_pSession->GetMFXSession(), m_inParams.strVPPPluginGuid, 1, VPP_MFX_PLUGIN_GUID, NULL));
@@ -1467,14 +1467,20 @@ mfxStatus MFXDecPipeline::CreateRender()
         }
     }
 
-    if ( MFX_FOURCC_P010 == m_inParams.outFrameInfo.FourCC ) {
+    if ( MFX_FOURCC_P010 == m_components[eDEC].m_params.mfx.FrameInfo.FourCC ){
+        m_components[eREN].m_params.mfx.FrameInfo.FourCC = m_components[eDEC].m_params.mfx.FrameInfo.FourCC;
+    }
+
+    if (   MFX_FOURCC_P010 == m_inParams.outFrameInfo.FourCC
+        || MFX_FOURCC_NV12 == m_inParams.outFrameInfo.FourCC
+        ) {
         m_components[eREN].m_params.mfx.FrameInfo.FourCC = m_inParams.outFrameInfo.FourCC;
     }
 
     switch (m_RenderType)
     {
-        case MFX_FW_RENDER :  
-            m_pRender = new MFXFileWriteRender(m_inParams.outFrameInfo, m_components[eREN].m_pSession, &sts); 
+        case MFX_FW_RENDER :
+            m_pRender = new MFXFileWriteRender(m_inParams.outFrameInfo, m_components[eREN].m_pSession, &sts);
             break;
         case MFX_BMP_RENDER: m_pRender = new MFXBMPRender(m_components[eREN].m_pSession, &sts); break;
 #if defined(_WIN32) || defined(_WIN64)
@@ -2789,9 +2795,9 @@ mfxStatus MFXDecPipeline::RunRender(mfxFrameSurface1* pSurface, mfxEncodeCtrl *p
 
     if(NULL != m_pRender)
     {
-         if ( m_components[eREN].m_SkippedFrames.size() > 0 ) 
+         if ( m_components[eREN].m_SkippedFrames.size() > 0 )
          {
-            if ( NULL == pControl) 
+            if ( NULL == pControl)
             {
                 pControl = new mfxEncodeCtrl;
                 memset(pControl, 0, sizeof(mfxEncodeCtrl));
@@ -2997,7 +3003,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
 
             vm_string_strcpy_s(m_inParams.strSrcFile, MFX_ARRAY_SIZE(m_inParams.strSrcFile), argv[0]);
         }
-        else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:(h264|mpeg2|vc1|mvc|jpeg|hevc|hevc10b)"), VM_STRING("input stream is raw(non container), pipeline works without demuxing"), OPT_UNDEFINED)))
+        else if (0!=(nPattern = m_OptProc.Check(argv[0], VM_STRING("-i:(h264|mpeg2|vc1|mvc|jpeg|hevc|hevc10b|vp8)"), VM_STRING("input stream is raw(non container), pipeline works without demuxing"), OPT_UNDEFINED)))
         {
             MFX_CHECK(1 + argv != argvEnd);
             argv++;
@@ -3027,6 +3033,9 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 case 7 :
                     m_inParams.InputCodecType = MFX_CODEC_HEVC;
                     m_inParams.FrameInfo.FourCC = MFX_FOURCC_P010;
+                    break;
+                case 8 :
+                    m_inParams.InputCodecType = MFX_CODEC_VP8;
                     break;
             }
         }

@@ -24,6 +24,8 @@ File Name: .h
     #include <psapi.h>
 #endif
 
+#include "mfxvp8.h"
+
 typedef struct {
     int code;
     vm_char *string;
@@ -44,6 +46,7 @@ static CodeStringTable StringsOfFourcc[] =
     { MFX_FOURCC_P8,                 VM_STRING("P8")   },
     { MFX_CODEC_HEVC,                VM_STRING("HEVC") },
     { MFX_FOURCC_P010,               VM_STRING("P010") },
+    { MFX_CODEC_VP8,                 VM_STRING("VP8")  },
 };
 
 #define DEFINE_ERR_CODE(code)\
@@ -89,14 +92,14 @@ static CodeStringTable StringsOfStatus[] =
 };
 
 static CodeStringTable StringsOfImpl[] = {
-    DEFINE_ERR_CODE(MFX_IMPL_AUTO),       
+    DEFINE_ERR_CODE(MFX_IMPL_AUTO),
     DEFINE_ERR_CODE(MFX_IMPL_SOFTWARE),
-    DEFINE_ERR_CODE(MFX_IMPL_HARDWARE),     
-    DEFINE_ERR_CODE(MFX_IMPL_AUTO_ANY),     
-    DEFINE_ERR_CODE(MFX_IMPL_HARDWARE_ANY), 
-    DEFINE_ERR_CODE(MFX_IMPL_HARDWARE2), 
-    DEFINE_ERR_CODE(MFX_IMPL_HARDWARE3), 
-    DEFINE_ERR_CODE(MFX_IMPL_HARDWARE4), 
+    DEFINE_ERR_CODE(MFX_IMPL_HARDWARE),
+    DEFINE_ERR_CODE(MFX_IMPL_AUTO_ANY),
+    DEFINE_ERR_CODE(MFX_IMPL_HARDWARE_ANY),
+    DEFINE_ERR_CODE(MFX_IMPL_HARDWARE2),
+    DEFINE_ERR_CODE(MFX_IMPL_HARDWARE3),
+    DEFINE_ERR_CODE(MFX_IMPL_HARDWARE4),
     DEFINE_ERR_CODE(MFX_IMPL_UNSUPPORTED)
 };
 
@@ -213,11 +216,11 @@ static mfxU32 g_bTraceFrames= true;
 static mfxU32 g_processedFrames = 0;
 static vm_char  g_AlignStr[] = VM_STRING("%-30s");
 
-static const vm_char * months[] = 
+static const vm_char * months[] =
 {
-    VM_STRING("Jan"), VM_STRING("Feb"), VM_STRING("Mar"), 
-    VM_STRING("Apr"), VM_STRING("May"), VM_STRING("Jun"), 
-    VM_STRING("Jul"), VM_STRING("Aug"), VM_STRING("Sep"), 
+    VM_STRING("Jan"), VM_STRING("Feb"), VM_STRING("Mar"),
+    VM_STRING("Apr"), VM_STRING("May"), VM_STRING("Jun"),
+    VM_STRING("Jul"), VM_STRING("Aug"), VM_STRING("Sep"),
     VM_STRING("Oct"), VM_STRING("Nov"), VM_STRING("Dec")
 };
 
@@ -261,7 +264,7 @@ void PipelineBuildTime( const vm_char *&platformName
         }
     }
     temp_time[2] = temp_time[5] = VM_STRING('\0');
-    
+
     hour   = vm_string_atoi(temp_time);
     minute = vm_string_atoi(temp_time + 3);
     sec    = vm_string_atoi(temp_time + 6);
@@ -295,7 +298,7 @@ void PipelineSetLastErr( mfxU32  err
     vm_char err_name[][10] = {VM_STRING("WARNING:"), VM_STRING("ERROR:")};
     vm_char *pErr = bwrn ? err_name[0] : err_name[1];
     mfxU32 &targetSink = bwrn ? g_WrnSink : g_ErrSink;
-    
+
     if (pFile != NULL && line !=0 && check != NULL)
     {
         if (TRACE_CONSOLE == (targetSink & TRACE_CONSOLE))
@@ -411,10 +414,10 @@ mfxU32 PipelineGetForceSink(mfxU32 original_sink)
 {
     if (TRACE_NONE == original_sink)
         return TRACE_NONE;
-    
-#if defined(_WIN32) || defined(_WIN64)    
+
+#if defined(_WIN32) || defined(_WIN64)
     DWORD nMode;
-    
+
     if (GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), &nMode))
     {
         //output console attached additional output not required
@@ -471,7 +474,7 @@ void PipelineTraceEncFrame(mfxU16 FrameType)
 }
 
 void PipelineTraceDecFrame( int nDecode)
-{   
+{
     if (g_bTraceFrames)
     {
         if (!nDecode)
@@ -656,31 +659,31 @@ void vPrintInfoEx(int nMode, const vm_char *name, const vm_char *value, va_list 
 #if defined(_WIN32) || defined(_WIN64)
     vm_char str [1024];
     _vstprintf_p(str, sizeof(str)/sizeof(str[0]), value, argptr);
-    
+
     vm_char outStr[20];
-    
+
     if (str[_tcslen(str) - 1] == 0xA)
     {
         _stprintf_s(outStr, VM_STRING("%s: %%s"), g_AlignStr);
-    
-    } else 
+
+    } else
     {
         _stprintf_s(outStr, VM_STRING("%s: %%s\n"), g_AlignStr);
     }
-    
+
     PipelineTraceEx2(nMode, outStr, name, str);
 #else
     vm_char str[1024] = {0}, outStr[20] = {0};
 
-    vm_string_vsprintf(str, value, argptr);    
+    vm_string_vsprintf(str, value, argptr);
     if (str[vm_string_strlen(str) - 1] == 0xA)
     {
         vm_string_sprintf(outStr, VM_STRING("%s : %%s"), g_AlignStr);
-    } else 
+    } else
     {
         vm_string_sprintf(outStr, VM_STRING("%s : %%s\n"), g_AlignStr);
     }
-    
+
     PipelineTraceEx2(nMode, outStr, name, str);
 #endif
 }
@@ -695,8 +698,8 @@ void DecreaseReference(mfxFrameData *ptr)
     vm_interlocked_dec16((volatile Ipp16u*)&ptr->Locked);
 }
 
-mfxU32 MFX_TIME_STAMP_FREQUENCY = 90000; 
-mfxU64 MFX_TIME_STAMP_INVALID   = (mfxU64)-1; 
+mfxU32 MFX_TIME_STAMP_FREQUENCY = 90000;
+mfxU64 MFX_TIME_STAMP_INVALID   = (mfxU64)-1;
 
 mfxU64 ConvertmfxF642MFXTime(mfxF64 fTime)
 {
@@ -734,12 +737,12 @@ mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &
     info.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
     switch(idx_in_pattern)
     {
-        case 1: 
+        case 1:
         {
             info.FourCC = MFX_FOURCC_NV12;
             break;
         }
-        case 2: 
+        case 2:
         {
             info.FourCC = MFX_FOURCC_NV12;
             info.ChromaFormat = MFX_CHROMAFORMAT_YUV400;
@@ -750,7 +753,7 @@ mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &
             info.FourCC = MFX_FOURCC_YV12;
             break;
         }
-        case 4: 
+        case 4:
         {
             info.FourCC = MFX_FOURCC_YV12;
             info.ChromaFormat = MFX_CHROMAFORMAT_YUV400;
@@ -767,7 +770,7 @@ mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &
             info.FourCC = MFX_FOURCC_RGB4;
             info.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
             break;
-        }                
+        }
         case 7:
         {
             info.FourCC = MFX_FOURCC_YUY2;
@@ -803,7 +806,7 @@ mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &
         default:
             return MFX_ERR_UNSUPPORTED;
     }
-    
+
     return MFX_ERR_NONE;
 }
 
@@ -851,7 +854,7 @@ void GetLoadedModulesList(std::list<tstring>&refModulesList)
     int      nModules;
     if (NULL == EnumProcessModules(hCurrent, NULL, 0, &cbNeeded))
         return;
-    
+
     nModules = cbNeeded / sizeof(HMODULE);
 
     pModules = new HMODULE[nModules];
@@ -864,7 +867,7 @@ void GetLoadedModulesList(std::list<tstring>&refModulesList)
         delete []pModules;
         return;
     }
-    
+
     for (int i = 0; i < nModules; i++)
     {
         tstring str;
@@ -926,14 +929,14 @@ void PrintDllInfo(const vm_char *msg, const vm_char *filename)
     if (1 == vm_file_getinfo(filename, &filelen, NULL))
     {
         PrintInfo(msg, VM_STRING("%s "), filename);
-                        
+
         vm_string_sprintf(msg2, VM_STRING("%s size"), msg);
         PrintInfo(msg2, VM_STRING("%I64d"), filelen);
     }
 #ifdef WIN32
     struct _stat64 fileStat;
     int err = _wstat64(filename, &fileStat);
-                                                    
+
     if (!err)
     {
         vm_string_sprintf(msg2, VM_STRING("%s mtime"), msg);
@@ -1016,7 +1019,7 @@ mfxU16 Convert_CmdPS_to_MFXPS( mfxI32 cmdPicStruct )
     {
         case PIPELINE_PICSTRUCT_PROGRESSIVE:
         {
-            mfxPS = MFX_PICSTRUCT_PROGRESSIVE;  
+            mfxPS = MFX_PICSTRUCT_PROGRESSIVE;
             break;
         }
 
@@ -1032,7 +1035,7 @@ mfxU16 Convert_CmdPS_to_MFXPS( mfxI32 cmdPicStruct )
         {
             mfxPS = MFX_PICSTRUCT_FIELD_BFF;
             break;
-        }    
+        }
 
         default:
         //case PIPELINE_PICSTRUCT_UNKNOWN:
@@ -1049,7 +1052,7 @@ mfxU16 Convert_CmdPS_to_MFXPS( mfxI32 cmdPicStruct )
 mfxI32 Convert_MFXPS_to_CmdPS( mfxU16 mfxPicStruct, mfxU16 extco )
 {
     mfxI16 pipelinePS;
-    
+
     switch (mfxPicStruct)
     {
         case MFX_PICSTRUCT_FIELD_TFF:
@@ -1084,7 +1087,7 @@ mfxI32 Convert_MFXPS_to_CmdPS( mfxU16 mfxPicStruct, mfxU16 extco )
             pipelinePS = PIPELINE_PICSTRUCT_NOT_SPECIFIED;
         break;
     }
-    
+
     return pipelinePS;
 }
 
@@ -1099,14 +1102,14 @@ mfxU16  Convert_CmdPS_to_ExtCO(mfxI32 cmdPicStruct)
         {
             extCO = MFX_CODINGOPTION_ON;
             break;
-        }    
+        }
 
         case PIPELINE_PICSTRUCT_FIELD_TFF2:
         case PIPELINE_PICSTRUCT_FIELD_BFF2:
         {
             extCO = MFX_CODINGOPTION_OFF;
             break;
-        }    
+        }
 
     default:
         //case PIPELINE_PICSTRUCT_UNKNOWN:
@@ -1144,7 +1147,7 @@ mfxStatus CheckStatusMultiSkip(mfxStatus status_to_check, ... )
 {
     va_list arg_ptr;
     va_start(arg_ptr, status_to_check);
-    
+
     int current;
     while ((current = va_arg(arg_ptr, int), current != MFX_USER_ERR_STATUS))
     {
@@ -1195,7 +1198,7 @@ mfxStatus BSUtil::MoveNBytesTail(mfxBitstream *pTo, mfxBitstream *pFrom, mfxU32 
     mfxU32 nCanCopy = (std::min)(pFrom->DataLength, nBytes);
     mfxU32 nCopied  = (std::min)(nAvail, nCanCopy);
 
-    //buffer not enough 
+    //buffer not enough
     if (0 == nAvail)
     {
         //soure is empty as well
@@ -1209,7 +1212,7 @@ mfxStatus BSUtil::MoveNBytesTail(mfxBitstream *pTo, mfxBitstream *pFrom, mfxU32 
     {
         if (nBytes > pFrom->DataLength)
             return MFX_ERR_MORE_DATA;
-        
+
         return MFX_ERR_NONE;
     }
 
@@ -1227,7 +1230,7 @@ mfxStatus BSUtil::MoveNBytesStrictTail(mfxBitstream *pTo, mfxBitstream *pFrom, m
 
     mfxU32 nCanCopy = (std::min)(pFrom->DataLength, nBytes);
 
-    //buffer not enough 
+    //buffer not enough
     if (WriteAvailTail(pTo) < nBytes)
     {
         return MFX_ERR_NOT_ENOUGH_BUFFER;
@@ -1274,7 +1277,7 @@ mfxStatus BSUtil::MoveNBytesStrict(mfxBitstream *pTo, mfxBitstream *pFrom, mfxU3
         //moving existed data to zero offset
         memmove(pTo->Data, pTo->Data + pTo->DataOffset, pTo->DataLength);
         pTo->DataOffset = 0;
-        
+
         sts = MoveNBytesStrictTail(pTo, pFrom, nBytes);
     }
 
@@ -1299,7 +1302,7 @@ size_t BSUtil::Reserve(mfxBitstream *pTo, size_t nRequiredSize)
     size_t avail_tail = pTo->MaxLength - (pTo->DataLength + pTo->DataOffset);
     if (avail_tail >= nRequiredSize)
         return avail_tail;
-    
+
     memmove(pTo->Data, pTo->Data + pTo->DataOffset, pTo->DataLength);
     pTo->DataOffset = 0;
 
