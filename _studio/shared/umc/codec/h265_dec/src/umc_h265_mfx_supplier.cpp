@@ -214,12 +214,17 @@ bool MFXTaskSupplier_H265::CheckDecoding(bool should_additional_check, H265Decod
 
         UMC::AutomaticUMCMutex guard(m_mGuard);
 
+        Ipp32u inDisplayStage = 0;
         Ipp32u count = 0;
         Ipp32u notDecoded = 0;
         for (H265DecoderFrame * pTmp = view.pDPB->head(); pTmp; pTmp = pTmp->future())
         {
             //if (!pTmp->GetRefCounter())
               //  return true;
+            if (pTmp->m_wasOutputted != 0 && pTmp->m_wasDisplayed == 0)
+            {
+                inDisplayStage++;
+            }
 
             if (!pTmp->m_isShortTermRef &&
                 !pTmp->m_isLongTermRef &&
@@ -233,6 +238,8 @@ bool MFXTaskSupplier_H265::CheckDecoding(bool should_additional_check, H265Decod
         }
 
         DEBUG_PRINT1((VM_STRING("output frame - %d, notDecoded - %u, count - %u\n"), outputFrame->m_PicOrderCnt, notDecoded, count));
+        if (inDisplayStage > 1)
+            return true;
 
         if (notDecoded > m_DPBSizeEx)
             return false;
