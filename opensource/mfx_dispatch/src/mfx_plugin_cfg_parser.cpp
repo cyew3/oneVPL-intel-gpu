@@ -221,16 +221,17 @@ bool PluginConfigParser::ParseSingleParameter(const char * name, const char * va
     }
     if (0 == strcmp(name, "CodecID"))
     {
-        if (strlen(value) == 4)
-        {
-            dst.CodecId = *(int*)value;
-            parsedFields |= PARSED_CODEC_ID;
-            return true;
-        }
-        else
-        {
+        const int fourccLen = 4;
+        if (strlen(value) == 0 || strlen(value) > fourccLen)
             return false;
-        }
+
+        dst.CodecId = MFX_MAKEFOURCC(' ',' ',' ',' ');
+        char *codecID = reinterpret_cast<char*>(&dst.CodecId);
+        for (int i = 0; i < strlen(value); i++)
+            codecID[i] = value[i];
+
+        parsedFields |= PARSED_CODEC_ID;
+        return true;
     }
     if (0 == strcmp(name, "GUID"))
     {
