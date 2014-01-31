@@ -3001,7 +3001,7 @@ void H265SegmentDecoder::getInterMergeCandidates(H265CodingUnit *pCU, Ipp32u Abs
     if (Count == m_pSliceHeader->max_num_merge_cand)
         return;
 
-    if (m_pSliceHeader->slice_enable_temporal_mvp_flag)
+    if (m_pSliceHeader->slice_temporal_mvp_enabled_flag)
     {
         Ipp32u bottomRightPartX = PartX + PartWidth;
         Ipp32u bottomRightPartY = PartY + PartHeight;
@@ -3225,7 +3225,7 @@ void H265SegmentDecoder::fillMVPCand(H265CodingUnit *pCU, Ipp32u AbsPartIdx, Ipp
         }
     }
 
-    if (m_pSliceHeader->slice_enable_temporal_mvp_flag)
+    if (m_pSliceHeader->slice_temporal_mvp_enabled_flag)
     {
         Ipp32u bottomRightPartX = PartX + PartWidth;
         Ipp32u bottomRightPartY = PartY + PartHeight;

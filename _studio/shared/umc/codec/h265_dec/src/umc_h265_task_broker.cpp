@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 */
 #include "umc_defs.h"
@@ -1435,9 +1435,9 @@ bool TaskBrokerTwoThread_H265::GetDecodingTask(H265DecoderFrameInfo * info, H265
         if (pSlice->m_processVacant[DEC_PROCESS_ID] != 1)
             continue;
 
-        if (is_need_check)
+        if (is_need_check && pSlice->GetSliceHeader()->slice_temporal_mvp_enabled_flag)
         {
-            if (pSlice->m_curMBToProcess[DEC_PROCESS_ID] + info->m_pFrame->getCD()->m_WidthInCU + 1 >= readyCount)
+            if (pSlice->m_curMBToProcess[DEC_PROCESS_ID] + info->m_pFrame->getCD()->m_WidthInCU >= readyCount)
                 break;
         }
 
@@ -1479,8 +1479,8 @@ bool TaskBrokerTwoThread_H265::GetReconstructTask(H265DecoderFrameInfo * info, H
         if (is_need_check)
         {
             Ipp32s cuSize = info->m_pFrame->getCD()->m_MaxCUWidth;
-            Ipp32s k = (( (pSlice->m_mvsDistortion + cuSize - 1) / cuSize) + 1); // +2 - (1 - for padding, 2 - current line)
-            k += refAU->IsNeedDeblocking() ? 1 : 0;
+            Ipp32s distortion = pSlice->m_mvsDistortion + (refAU->IsNeedDeblocking() ? 4 : 0) + 8;
+            Ipp32s k = ( (distortion + cuSize - 1) / cuSize) ; // +2 - (1 - for padding, 2 - current line)
             if (pSlice->m_curMBToProcess[REC_PROCESS_ID] + k*info->m_pFrame->getCD()->m_WidthInCU >= readyCount)
                 break;
         }

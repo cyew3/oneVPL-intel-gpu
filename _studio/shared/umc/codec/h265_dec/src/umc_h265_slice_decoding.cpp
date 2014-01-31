@@ -467,7 +467,7 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
 
     m_SliceHeader.mvd_l1_zero_flag = slice->mvd_l1_zero_flag;
     m_SliceHeader.slice_loop_filter_across_slices_enabled_flag  = slice->slice_loop_filter_across_slices_enabled_flag;
-    m_SliceHeader.slice_enable_temporal_mvp_flag                = slice->slice_enable_temporal_mvp_flag;
+    m_SliceHeader.slice_temporal_mvp_enabled_flag                = slice->slice_temporal_mvp_enabled_flag;
     m_SliceHeader.max_num_merge_cand               = slice->max_num_merge_cand;
 
     // Set the start of real slice, not slice segment

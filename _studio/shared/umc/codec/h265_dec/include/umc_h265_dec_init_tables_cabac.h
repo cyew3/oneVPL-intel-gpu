@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -18,8 +18,6 @@
 
 namespace UMC_HEVC_DECODER
 {
-#if 1
-
 const
 Ipp8u rangeTabLPSH265[128][4]=
 {
@@ -181,22 +179,6 @@ Ipp8u transIdxLPSH265[] =
     DECL(33), DECL(33), DECL(34), DECL(34), DECL(35), DECL(35), DECL(35), DECL(36),
     DECL(36), DECL(36), DECL(37), DECL(37), DECL(37), DECL(38), DECL(38), DECL(63)
 };
-
-#else
-
-extern const
-Ipp8u rangeTabLPSH265[128][4];
-
-extern const
-Ipp8u transIdxMPSH265[128];
-
-extern const
-Ipp8u transIdxLPSH265[128];
-
-extern const
-Ipp32u NumBitsToGetTableSmall[4];
-
-#endif
 
 } // namespace UMC_HEVC_DECODER
 

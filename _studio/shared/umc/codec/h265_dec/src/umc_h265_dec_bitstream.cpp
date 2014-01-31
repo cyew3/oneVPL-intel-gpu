@@ -1220,7 +1220,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
 
             if (sps->sps_temporal_mvp_enabled_flag)
             {
-                sliceHdr->slice_enable_temporal_mvp_flag = Get1Bit();
+                sliceHdr->slice_temporal_mvp_enabled_flag = Get1Bit();
             }
         }
 
@@ -1348,7 +1348,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
             sliceHdr->cabac_init_flag = Get1Bit();
         }
 
-        if ( sliceHdr->slice_enable_temporal_mvp_flag )
+        if (sliceHdr->slice_temporal_mvp_enabled_flag)
         {
             if ( sliceHdr->slice_type == B_SLICE )
             {

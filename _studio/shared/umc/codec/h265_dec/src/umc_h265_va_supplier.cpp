@@ -17,15 +17,11 @@
 #include "umc_h265_bitstream.h"
 #include "umc_h265_va_supplier.h"
 #include "umc_h265_frame_list.h"
-#include "umc_automatic_mutex.h"
-#include "umc_h265_nal_spl.h"
 
 #include "umc_h265_dec_defs_dec.h"
-#include "vm_sys_info.h"
 #include "umc_h265_segment_decoder_mt.h"
 
 #include "umc_h265_task_broker.h"
-#include "umc_video_processing.h"
 #include "umc_structures.h"
 
 #include "umc_h265_dec_debug.h"

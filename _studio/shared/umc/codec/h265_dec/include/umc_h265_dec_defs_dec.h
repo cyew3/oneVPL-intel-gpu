@@ -1199,7 +1199,7 @@ struct H265SliceHeader
     Ipp32s      slice_pic_order_cnt_lsb;                    // picture order count (mod MaxPicOrderCntLsb)
     Ipp8u       short_term_ref_pic_set_sps_flag;
 
-    Ipp8u       slice_enable_temporal_mvp_flag;
+    Ipp8u       slice_temporal_mvp_enabled_flag;
 
     Ipp8u       slice_sao_luma_flag;
     Ipp8u       slice_sao_chroma_flag;

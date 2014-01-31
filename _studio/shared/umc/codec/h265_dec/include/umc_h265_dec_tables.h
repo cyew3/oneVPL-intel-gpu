@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -20,7 +20,7 @@ namespace UMC_HEVC_DECODER
 {
 //////////////////////////////////////////////////////////
 // scan matrices
-#if 1
+
 const
 Ipp32s mp_scan4x4[2][16] =
 {
@@ -111,17 +111,7 @@ const Ipp32u bits_data[] =
     (((Ipp32u)0x01 << (31)) - 1),
     ((Ipp32u)0xFFFFFFFF),
 };
-#else // old
-extern const Ipp32s mp_scan4x4[2][16];
-extern const Ipp32s hp_scan8x8[2][64];
 
-extern const Ipp16u SAspectRatio[17][2];
-
-extern const Ipp32u SubWidthC[4];
-extern const Ipp32u SubHeightC[4];
-
-extern const Ipp32u bits_data[];
-#endif
 } // namespace UMC_HEVC_DECODER
 
 #endif //__UMC_H264_DEC_TABLES_H__

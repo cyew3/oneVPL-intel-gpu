@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2013 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -16,13 +16,9 @@
 
 #include "umc_h265_va_packer.h"
 
-#include "umc_h265_slice_decoding.h"
-#include "umc_h265_segment_decoder_templates.h"
-#include "umc_h265_frame_list.h"
-
-#include "umc_h265_slice_decoding.h"
+#ifdef UMC_VA
 #include "umc_h265_task_supplier.h"
-#include "umc_h265_frame_info.h"
+#endif
 
 #ifdef UMC_VA_DXVA
 #include "umc_mvc_ddi.h"
@@ -427,7 +423,7 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
 
     //pPicParam->CollocatedRefIdx.Index7bits          = (UCHAR)(pSlice->getSliceType() != I_SLICE ? pSlice->GetSliceHeader()->collocated_ref_idx : -1 );
     //pPicParam->PicShortFormatFlags.fields.deblocking_filter_control_present_flag     = pPicParamSet->getDeblockingFilterControlPresentFlag() ? 1 : 0 ;
-    //pPicParam->PicShortFormatFlags.fields.slice_temporal_mvp_enabled_flag            = pSlice->GetSliceHeader()->slice_enable_temporal_mvp_flag ? 1 : 0 ;
+    //pPicParam->PicShortFormatFlags.fields.slice_temporal_mvp_enabled_flag            = pSlice->GetSliceHeader()->slice_temporal_mvp_enabled_flag ? 1 : 0 ;
     //for(unsigned k=0;k < 32 && k < pSeqParamSet->getNumLongTermRefPicSPS();k++)
     //    pPicParam->lt_ref_pic_poc_lsb_sps[k] = (USHORT)pSeqParamSet->getLtRefPicPocLsbSps(k);
     //pPicParam->used_by_curr_pic_lt_sps_flags        = (UINT)0;
@@ -709,7 +705,7 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, bool isLong, bool isLastSli
         pDXVASlice->LongSliceFlags.fields.slice_sao_chroma_flag                         = (UINT)pSlice->GetSliceHeader()->slice_sao_chroma_flag;
         pDXVASlice->LongSliceFlags.fields.mvd_l1_zero_flag                              = (UINT)pSlice->GetSliceHeader()->mvd_l1_zero_flag;
         pDXVASlice->LongSliceFlags.fields.cabac_init_flag                               = (UINT)pSlice->GetSliceHeader()->cabac_init_flag;
-        pDXVASlice->LongSliceFlags.fields.slice_temporal_mvp_enabled_flag               = (UINT)pSlice->GetSliceHeader()->slice_enable_temporal_mvp_flag;
+        pDXVASlice->LongSliceFlags.fields.slice_temporal_mvp_enabled_flag               = (UINT)pSlice->GetSliceHeader()->slice_temporal_mvp_enabled_flag;
         pDXVASlice->LongSliceFlags.fields.slice_deblocking_filter_disabled_flag         = (UINT)pSlice->GetSliceHeader()->m_deblockingFilterDisable;
         pDXVASlice->LongSliceFlags.fields.collocated_from_l0_flag                       = (UINT)pSlice->GetSliceHeader()->collocated_from_l0_flag;
         pDXVASlice->LongSliceFlags.fields.slice_loop_filter_across_slices_enabled_flag  = (UINT)pPicParamSet->pps_loop_filter_across_slices_enabled_flag;
@@ -861,7 +857,7 @@ void PackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLong, bool
         pDXVASlice->LongSliceFlags.fields.slice_sao_chroma_flag                         = (UINT)pSlice->GetSliceHeader()->slice_sao_chroma_flag;
         pDXVASlice->LongSliceFlags.fields.mvd_l1_zero_flag                              = (UINT)pSlice->GetSliceHeader()->mvd_l1_zero_flag;
         pDXVASlice->LongSliceFlags.fields.cabac_init_flag                               = (UINT)pSlice->GetSliceHeader()->cabac_init_flag;
-        pDXVASlice->LongSliceFlags.fields.slice_temporal_mvp_enabled_flag               = (UINT)pSlice->GetSliceHeader()->slice_enable_temporal_mvp_flag;
+        pDXVASlice->LongSliceFlags.fields.slice_temporal_mvp_enabled_flag               = (UINT)pSlice->GetSliceHeader()->slice_temporal_mvp_enabled_flag;
         pDXVASlice->LongSliceFlags.fields.slice_deblocking_filter_disabled_flag         = (UINT)pSlice->GetSliceHeader()->slice_deblocking_filter_disabled_flag;
         pDXVASlice->LongSliceFlags.fields.collocated_from_l0_flag                       = (UINT)pSlice->GetSliceHeader()->collocated_from_l0_flag;
         pDXVASlice->LongSliceFlags.fields.slice_loop_filter_across_slices_enabled_flag  = (UINT)pSlice->GetSliceHeader()->slice_loop_filter_across_slices_enabled_flag;

@@ -2239,8 +2239,8 @@ bool TaskBrokerTwoThread::GetReconstructTask(H264DecoderFrameInfo * info, H264Ta
 
         if (is_need_check)
         {
-            Ipp32s k = (( (pSlice->m_MVsDistortion + 15) / 16) + 1); // +2 - (1 - for padding, 2 - current line)
-            k += refAU->IsNeedDeblocking() ? 1 : 0;
+            Ipp32s distortion = pSlice->m_MVsDistortion + (refAU->IsNeedDeblocking() ? 4 : 0);
+            Ipp32s k = ( (distortion + 15) / 16) + 1; // +2 - (1 - for padding, 2 - current line)
             if (pSlice->m_iCurMBToRec + (k + additionalLines)*pSlice->GetMBRowWidth() >= readyCount)
                 break;
         }

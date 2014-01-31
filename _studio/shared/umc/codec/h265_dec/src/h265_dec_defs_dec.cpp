@@ -18,7 +18,6 @@
 #include "umc_h265_frame_info.h"
 #include "umc_h265_slice_decoding.h"
 #include "assert.h"
-#include "math.h"
 #include "mfx_h265_optimization.h"
 
 namespace UMC_HEVC_DECODER
