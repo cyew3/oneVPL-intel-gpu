@@ -494,9 +494,6 @@
       <Project>{35ebe815-8982-4d93-a7d2-fb9f3cfe2e86}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\shared\umc\codec\h265_dec\h265_dec.vcxproj">
-      <Project>{f0afe44d-3a26-45f6-bc3f-6131f91dec80}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\jpeg_common\jpeg_common.vcxproj">
       <Project>{80b89175-8e4e-457a-9aa6-f5b2badfbe85}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
@@ -572,30 +569,9 @@
       <Project>{694cccd8-004b-4425-a9f6-9b60b6a85eba}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="encode\h265_enc.vcxproj">
-      <Project>{83f019ae-af39-49c6-b17c-5c4c3fca2055}</Project>
-    </ProjectReference>
     <ProjectReference Include="enc\enc.vcxproj">
       <Project>{700137f1-6d63-45ff-a381-a9e7ebe5e84c}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="optimization\hevc_pp_atom.vcxproj">
-      <Project>{77807a28-2170-4a4c-95e5-73cb0657aa47}</Project>
-    </ProjectReference>
-    <ProjectReference Include="optimization\hevc_pp_avx2.vcxproj">
-      <Project>{6ebb14f6-dca0-485a-89f7-fe803b75d0b9}</Project>
-    </ProjectReference>
-    <ProjectReference Include="optimization\hevc_pp_dispatch.vcxproj">
-      <Project>{c37d7375-76cd-400b-a030-4624b1012e08}</Project>
-    </ProjectReference>
-    <ProjectReference Include="optimization\hevc_pp_px.vcxproj">
-      <Project>{3b7a183a-c728-494f-a56e-6a993150d277}</Project>
-    </ProjectReference>
-    <ProjectReference Include="optimization\hevc_pp_sse4.vcxproj">
-      <Project>{a67aee55-e7e2-43da-9bdb-548ace4c595a}</Project>
-    </ProjectReference>
-    <ProjectReference Include="optimization\hevc_pp_ssse3.vcxproj">
-      <Project>{87cf2689-abe2-463f-ad5e-9e4ce4b8b5cd}</Project>
     </ProjectReference>
     <ProjectReference Include="pak\pak.vcxproj">
       <Project>{5ea7d17f-aae3-49c8-b1c6-de3c36d26559}</Project>
