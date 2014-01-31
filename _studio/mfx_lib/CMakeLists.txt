@@ -241,7 +241,6 @@ list( APPEND HEVCPP_LIBS hevc_pp_ssse3 )
 
 # =============================================================================
 
-set( defs "-DAS_HEVCE_PLUGIN" )
 set( sources "" )
 set( sources.plus "" )
 foreach( dir ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/encode/h265/src )
@@ -249,11 +248,15 @@ foreach( dir ${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/encode/h265/src )
   list( APPEND sources ${srcs})
 endforeach()
 
+set( defs "-DAS_HEVCE_PLUGIN" )
 make_library( h265_enc none static )
+
+set( defs "-DAS_HEVCE_PLUGIN -DHEVCE_EVALUATION" )
+make_library( eval_h265_enc none static )
+
 set( defs "" )
 
 # =============================================================================
-
 set( sources "" )
 set( sources.plus "" )
 foreach( dir ${adirs} )
@@ -663,6 +666,7 @@ set( sources.plus "" )
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/plugin/src )
   list( APPEND sources.plus
     ${prefix}/mfx_hevc_enc_plugin.cpp
+    ${prefix}/watermark.cpp
   )
 endforeach()
 
@@ -696,8 +700,22 @@ foreach( variant sw )
   set( defs "-DAS_HEVCE_PLUGIN" )
   make_library( ${plugin_name} ${variant} shared)
 
-#  set( defs "-DAS_HEVCE_PLUGIN -DHEVCE_EVALUATION" )
-#  make_library( ${eval_plugin_name} ${variant} shared)
+  set( LIBS "" )
+  list( APPEND LIBS
+    eval_h265_enc
+    umc_h265_sw
+    umc_csc_sw
+    ${HEVCPP_LIBS}
+    umc_io_merged_${variant}
+    umc_core_merged 
+    ${ITT_LIBS}
+    ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
+    pthread
+    dl
+    )
+
+  set( defs "-DAS_HEVCE_PLUGIN -DHEVCE_EVALUATION" )
+  make_library( ${eval_plugin_name} ${variant} shared)
 
 endforeach()
 set( defs "" )

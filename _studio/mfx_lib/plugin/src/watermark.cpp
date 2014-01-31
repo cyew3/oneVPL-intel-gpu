@@ -4,12 +4,18 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2014 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
 #include "watermark.h"
+
+#if defined(_WIN32) || defined(_WIN64)
 #include "watermark_resource.h"
+#else
+#include "watermark_base64.h"
+#endif
+
 #include "vm_debug.h"
 #include "ippcc.h"
 #include "ippi.h"
@@ -18,6 +24,7 @@ Copyright(c) 2013 Intel Corporation. All Rights Reserved.
 
 #define WATERMARK_PERCENTAGE 10
 
+#if defined(_WIN32) || defined(_WIN64)
 Watermark *Watermark::CreateFromResource(void)
 {
     // Get current library
@@ -124,6 +131,205 @@ Watermark *Watermark::CreateFromResource(void)
     obj->m_watermarkHeight = m_watermarkHeight;
     return obj;
 }
+#else  // Linux
+
+typedef struct __attribute__((packed))
+{
+    mfxU16  Type;          // signature - 'BM'
+    mfxU32  Size;          // file size in bytes
+    mfxU16  Reserved1;     // 0
+    mfxU16  Reserved2;     // 0
+    mfxU32  OffBits;       // offset to bitmap
+    mfxU32  StructSize;    // size of this struct (40)
+    mfxU32  Width;         // bmap width in pixels
+    mfxU32  Height;        // bmap height in pixels
+    mfxU16  Planes;        // num planes - always 1
+    mfxU16  BitCount;      // bits per pixel
+    mfxU32  Compression;   // compression flag
+    mfxU32  SizeImage;     // image size in bytes
+    mfxI32  XPelsPerMeter; // horz resolution
+    mfxI32  YPelsPerMeter; // vert resolution
+    mfxU32  ClrUsed;       // 0 -> color table size
+    mfxU32  ClrImportant;  // important color count
+}  BitmapHeader;
+
+#define BASE64STRING_BUF_SIZE(byteSize) (((byteSize + 2)/3)*4)
+
+#define BASE64BINARY_BUF_SIZE(strLength) ((strLength/4)*3)
+
+mfxStatus BASE64ToBinary(
+    const char *str, unsigned int strLength,
+    unsigned char *buf, unsigned int *bufSize)
+{
+    const unsigned char BASE64ToInt[256] = {
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255, 62,255,255,255, 63,
+        52, 53, 54, 55, 56, 57, 58, 59, 60, 61,255,255,255,  0,255,255,
+        255,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14,
+        15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,255,255,255,255,255,
+        255, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
+        41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255
+    };
+    int i;
+    int count4 = strLength/4;
+    unsigned char *out = buf;
+    const unsigned char *in = (const unsigned char *)str;
+    unsigned int resultSize;
+
+    resultSize = BASE64BINARY_BUF_SIZE(strLength);
+    if (strLength > 1 &&
+        '=' == str[strLength - 1])
+    {
+        resultSize -= 1;
+        if (strLength > 2 &&
+            '=' == str[strLength - 2])
+            resultSize -= 1;
+    }
+
+    if (NULL == buf)
+    {
+        *bufSize = resultSize;
+        return MFX_ERR_NONE;
+    }
+
+
+    if (resultSize > *bufSize)
+    {
+        mfxStatus ires = MFX_ERR_INVALID_HANDLE;
+//        ERROR_MSG( 1, ires, (( "BASE64ToBinary: resultSize > *bufSize): %d > %d, strLength=%d\n" ),
+//            resultSize, *bufSize, strLength ));
+        return ires;
+    }
+
+    count4--;
+    for (i = 0; i < count4; i++)
+    {
+        if (BASE64ToInt[in[0]] == 255 || BASE64ToInt[in[1]] == 255 ||
+            BASE64ToInt[in[2]] == 255 || BASE64ToInt[in[3]] == 255)
+        {
+            mfxStatus ires = MFX_ERR_INVALID_HANDLE;
+            //ERROR_MSG( 1, ires, (( "BASE64ToBinary: Restricted symbol found.\n" ) ));
+            return ires;
+        }
+        out[0] = (BASE64ToInt[in[0]] << 2) | (BASE64ToInt[in[1]] >> 4);
+        out[1] = (BASE64ToInt[in[1]] << 4) | (BASE64ToInt[in[2]] >> 2);
+        out[2] = (BASE64ToInt[in[2]] << 6) | BASE64ToInt[in[3]];
+        out += 3;
+        in += 4;
+    }
+
+    *bufSize = BASE64BINARY_BUF_SIZE(strLength);
+
+    if (BASE64ToInt[in[0]] == 255 || BASE64ToInt[in[1]] == 255 ||
+        BASE64ToInt[in[2]] == 255 || BASE64ToInt[in[3]] == 255)
+    {
+        mfxStatus  ires = MFX_ERR_INVALID_HANDLE;
+        // ERROR_MSG( 1, ires, (( "BASE64ToBinary: Restricted symbol found.\n" ) ));
+        return ires;
+    }
+
+    out[0] = (BASE64ToInt[in[0]] << 2) | (BASE64ToInt[in[1]] >> 4);
+    if (strLength > 1 &&
+        '=' == str[strLength - 1])
+    {
+        *bufSize -= 1;
+        if (strLength > 2 &&
+            '=' == str[strLength - 2])
+            *bufSize -= 1;
+        else
+            out[1] = (BASE64ToInt[in[1]] << 4) | (BASE64ToInt[in[2]] >> 2);
+    }
+    else
+    {
+        out[1] = (BASE64ToInt[in[1]] << 4) | (BASE64ToInt[in[2]] >> 2);
+        out[2] = (BASE64ToInt[in[2]] << 6) | BASE64ToInt[in[3]];
+    }
+
+    return MFX_ERR_NONE;
+}
+
+Watermark *Watermark::CreateFromResource(void)
+{
+    mfxU32 binSize = BASE64BINARY_BUF_SIZE(sizeof(g_coded_logo_bytes));
+    Ipp8u *rawImage = new Ipp8u[binSize];
+    VM_ASSERT(NULL != rawImage);
+    if (!rawImage)
+    {
+        return NULL;
+    }
+
+    mfxStatus status = BASE64ToBinary(g_coded_logo_bytes, sizeof(g_coded_logo_bytes), rawImage, &binSize);
+    VM_ASSERT(MFX_ERR_NONE == status);
+
+    BitmapHeader & header = (BitmapHeader &)*rawImage;
+
+    mfxU32 imageSize = binSize - sizeof(BitmapHeader);
+
+    Ipp8u *buffer = new Ipp8u[imageSize];
+    VM_ASSERT(NULL != buffer);
+    if (!buffer)
+    {
+        return NULL;
+    }
+
+    ippsCopy_8u(rawImage + header.OffBits, buffer, imageSize);
+
+    VM_ASSERT(MFX_ERR_NONE == status);
+    if (MFX_ERR_NONE != status)
+    {
+        delete[] buffer;
+        return NULL;
+    }
+    
+    mfxI32 watermarkWidth = header.Width;
+    mfxI32 watermarkHeight = header.Height;
+
+    delete [] rawImage;
+
+    // Turn image upside down
+    IppiSize roi = {watermarkWidth, watermarkHeight};
+    IppStatus ipp_status = ippiMirror_8u_C4IR(buffer, watermarkWidth * 4, roi, ippAxsHorizontal);
+    if (ippStsNoErr != ipp_status)
+    {
+        delete [] buffer;
+        return NULL;
+    }
+
+    // Set transparency
+    ipp_status = ippiSet_8u_C4CR(0x7f, buffer + 3, watermarkWidth * 4, roi);
+    if (ippStsNoErr != ipp_status)
+    {
+        delete [] buffer;
+        return NULL;
+    }
+
+    Watermark *obj = new Watermark;
+    if (NULL == obj)
+    {
+        delete [] buffer;
+        buffer = NULL;
+        return NULL;
+    }
+
+    obj->m_watermarkData = buffer;
+    obj->m_watermarkWidth = watermarkWidth;
+    obj->m_watermarkHeight = watermarkHeight;
+
+    return obj;
+}
+
+#endif
+
+
 
 void Watermark::Apply(mfxU8 *srcY, mfxU8 *srcUV, mfxI32 stride, mfxI32 width, mfxI32 height)
 {
@@ -166,7 +372,11 @@ void Watermark::Release(void)
 
     if (m_watermarkData)
     {
+#if defined(_WIN32) || defined(_WIN64)
         VirtualFree(m_watermarkData, 0, MEM_RELEASE);
+#else
+        delete [] m_watermarkData;
+#endif
         m_watermarkData = NULL;
     }
 }
