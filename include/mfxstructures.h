@@ -93,7 +93,8 @@ enum {
     MFX_FOURCC_RGB4         = MFX_MAKEFOURCC('R','G','B','4'),   /* RGB32 */
     MFX_FOURCC_P8           = 41,         /*  D3DFMT_P8   */
     MFX_FOURCC_P8_TEXTURE   = MFX_MAKEFOURCC('P','8','M','B'),
-    MFX_FOURCC_P010         = MFX_MAKEFOURCC('P','0','1','0')
+    MFX_FOURCC_P010         = MFX_MAKEFOURCC('P','0','1','0'),
+    MFX_FOURCC_BGR4         = MFX_MAKEFOURCC('B','G','R','4')    /* BGR32 */
 };
 
 /* PicStruct */
@@ -899,7 +900,15 @@ typedef struct mfxVPPCompInputStream {
         mfxU32  DstY;
         mfxU32  DstW;
         mfxU32  DstH;
-        mfxU16  reserved2[24];
+
+        mfxU16  LumaKeyEnable;
+        mfxU16  LumaKeyMin;
+        mfxU16  LumaKeyMax;
+
+        mfxU16  AlphaEnable;
+        mfxU16  Alpha;
+        
+        mfxU16  reserved2[19];
 } mfxVPPCompInputStream;     
 
 typedef struct {
