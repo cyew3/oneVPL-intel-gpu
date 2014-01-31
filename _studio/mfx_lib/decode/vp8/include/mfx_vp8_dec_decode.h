@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -85,7 +85,7 @@ class VideoDECODEVP8: public VideoDECODE
         virtual mfxStatus DecodeFrameCheck(mfxBitstream *pBs, mfxFrameSurface1 *pSurfaceWork, mfxFrameSurface1 **ppSurfaceOut, MFX_ENTRY_POINT *pEntryPoint);
         virtual mfxStatus DecodeFrame(mfxBitstream *pBs, mfxFrameSurface1 *pSurfaceWork, mfxFrameSurface1 *pSurfaceOut);
         virtual mfxStatus GetUserData(mfxU8 *pUserData, mfxU32 *pSize, mfxU64 *pTimeStamp);
-        virtual mfxStatus GetPayload(mfxSession session, mfxU64 *pTimeStamp, mfxPayload *pPayload);
+        virtual mfxStatus GetPayload(mfxU64 *pTimeStamp, mfxPayload *pPayload);
         virtual mfxStatus SetSkipMode(mfxSkipMode mode);
 
         mfxStatus RunThread(void *pParams, mfxU32 threadNumber);

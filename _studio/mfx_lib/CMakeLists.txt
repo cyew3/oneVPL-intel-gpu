@@ -552,11 +552,9 @@ endforeach()
 # Plugins section
 # =============================================================================
 
-set( sources "" )
-set( sources.plus "" )
-
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
-  list( APPEND sources
+
+  list( APPEND plugin_common_sources
     ${prefix}/mfx_common_int.cpp
     ${prefix}/mfx_common_decode_int.cpp
     ${prefix}/libmfxsw.cpp
@@ -567,11 +565,13 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
     ${prefix}/libmfxsw_decode.cpp
     ${prefix}/mfx_session.cpp
     ${prefix}/mfx_user_plugin.cpp
+    ${prefix}/mfx_enc_common.cpp
   )
+
 endforeach()
 
 foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/src )
-  list( APPEND sources
+  list( APPEND plugin_common_sources
     ${prefix}/fast_copy.cpp
     ${prefix}/libmfx_allocator.cpp
     ${prefix}/libmfx_allocator_vaapi.cpp
@@ -582,18 +582,25 @@ foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/src )
   )
 endforeach()
 
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/include )
-
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src )
-  list( APPEND sources
+  list( APPEND plugin_common_sources
     ${prefix}/mfx_scheduler_core.cpp
     ${prefix}/mfx_scheduler_core_iunknown.cpp
     ${prefix}/mfx_scheduler_core_task_management.cpp
     ${prefix}/mfx_scheduler_core_ischeduler.cpp
-    ${prefix}/mfx_scheduler_core_task.cpp 
+    ${prefix}/mfx_scheduler_core_task.cpp
     ${prefix}/mfx_scheduler_core_thread.cpp
   )
 endforeach()
+
+# HEVC
+
+set( sources "" )
+set( sources.plus "" )
+
+list( APPEND sources ${plugin_common_sources} )
+
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/include )
 
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/decode/h265/src )
   list( APPEND sources
@@ -612,6 +619,8 @@ endforeach()
 
 set( USE_STRICT_NAME TRUE )
 set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/plugin/libmfxsw_plugin.map" )
+
+# HEVC
 
 #foreach( variant sw hw )
 foreach( variant sw )
@@ -652,6 +661,7 @@ foreach( variant sw )
 #  message( STATUS "CMAKE_CURRENT_SOURCE_DIR", ${CMAKE_CURRENT_SOURCE_DIR} )
 #  message( STATUS "xxxxxxxxxxxxxxx __ARCH: "${__ARCH}, "plugin_name: "${plugin_name}, "variant: "${variant})
 endforeach()
+
 set( defs "" )
 
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
@@ -660,7 +670,6 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
     ${prefix}/mfx_enc_common.cpp
   )
 endforeach()
-
 
 set( sources.plus "" )
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/plugin/src )
@@ -690,7 +699,7 @@ foreach( variant sw )
     umc_csc_sw
     ${HEVCPP_LIBS}
     umc_io_merged_${variant}
-    umc_core_merged 
+    umc_core_merged
     ${ITT_LIBS}
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
     pthread
@@ -720,5 +729,97 @@ foreach( variant sw )
 endforeach()
 set( defs "" )
 
+# VP8
+
+if(${BUILD_VP8_PLUGIN} MATCHES true)
+
+set( sources "" )
+set( sources.plus "" )
+
+list( APPEND sources ${plugin_common_sources} )
+
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/include )
+include_directories( ${CMAKE_HOME_DIRECTORY}/thirdparty/vp8_libvpx )
+
+include_directories( ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/codec/vp8_dec/include )
+
+foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/codec/vp8_dec/src )
+  list( APPEND sources
+    ${prefix}/vp8_tables.cpp
+  )
+endforeach()
+
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/plugin/include )
+
+set( USE_STRICT_NAME TRUE )
+set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_HOME_DIRECTORY}/_studio/mfx_lib/plugin/libmfxsw_plugin.map" )
+
+set( sources.plus "" )
+foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/plugin/src )
+  list( APPEND sources.plus
+    ${prefix}/mfx_vp8_dec_plugin.cpp
+  )
+endforeach()
+
+foreach( variant sw hw )
+
+  if( __ARCH MATCHES intel64 )
+    set( plugin_name mfx_vp8d_${variant}64 )
+  else()
+    set( plugin_name mfx_vp8d_${variant}32 )
+  endif()
+  if( __CONFIG MATCHES debug )
+    set( plugin_name ${plugin_name}_d )
+  endif()
+
+  set( LIBS "" )
+
+  if(${variant} MATCHES hw)
+
+    list( APPEND LIBS va )
+
+    foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/decode/vp8/src )
+    list( APPEND sources
+      ${prefix}/mfx_vp8_dec_decode_hw.cpp
+      ${prefix}/mfx_vp8_dec_decode.cpp
+    )
+    endforeach()
+
+    foreach( prefix ${CMAKE_HOME_DIRECTORY}/_studio/shared/umc/io/umc_va/src )
+    list( APPEND sources
+      ${prefix}/umc_va_linux.cpp
+    )
+    endforeach()
+
+    set( defs "-DAS_VP8D_PLUGIN -DAS_VP8DHW_PLUGIN -DUMC_ENABLE_VP8_VIDEO_DECODER -DMFX_VA")
+
+  else()
+
+    foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/decode/vp8/src )
+    list( APPEND sources
+      ${prefix}/mfx_vp8_dec_decode.cpp
+    )
+    endforeach()
+
+    set( defs "-DAS_VP8D_PLUGIN -DUMC_ENABLE_VP8_VIDEO_DECODER")
+
+  endif()
+
+  list( APPEND LIBS
+    vpx
+    umc_csc_sw
+    umc_io_merged_${variant}
+    umc_core_merged
+    ${ITT_LIBS}
+    ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
+    pthread
+    dl
+    )
+
+  make_library( ${plugin_name} ${variant} shared)
+
+endforeach()
+
+endif()
 
 # =============================================================================

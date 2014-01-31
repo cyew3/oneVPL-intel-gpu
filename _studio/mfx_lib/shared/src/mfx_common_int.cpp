@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -229,6 +229,7 @@ mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type)
         case MFX_CODEC_MPEG2:
         case MFX_CODEC_VC1:
         case MFX_CODEC_JPEG:
+        case MFX_CODEC_VP8:
             break;
         default:
             return MFX_ERR_INVALID_VIDEO_PARAM;
