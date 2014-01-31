@@ -100,6 +100,35 @@ const mfx_device_item listLegalDevIDs[] = {
     { 0x0D06, MFX_HW_HSW },   /* CRW GT1 mobile */
     { 0x0D16, MFX_HW_HSW },   /* CRW GT2 mobile */
     { 0x0D26, MFX_HW_HSW },   /* CRW GT2 mobile */
+    /* this dev IDs added per HSD 5264859 request  */
+    { 0x040B, MFX_HW_HSW }, /*HASWELL_B_GT1 *//* Reserved */
+    { 0x041B, MFX_HW_HSW }, /*HASWELL_B_GT2*/
+    { 0x042B, MFX_HW_HSW }, /*HASWELL_B_GT3*/
+    { 0x040E, MFX_HW_HSW }, /*HASWELL_E_GT1*//* Reserved */
+    { 0x041E, MFX_HW_HSW }, /*HASWELL_E_GT2*/
+    { 0x042E, MFX_HW_HSW }, /*HASWELL_E_GT3*/
+
+    { 0x0C0B, MFX_HW_HSW }, /*HASWELL_SDV_B_GT1*/ /* Reserved */
+    { 0x0C1B, MFX_HW_HSW }, /*HASWELL_SDV_B_GT2*/
+    { 0x0C2B, MFX_HW_HSW }, /*HASWELL_SDV_B_GT3*/
+    { 0x0C0E, MFX_HW_HSW }, /*HASWELL_SDV_B_GT1*//* Reserved */
+    { 0x0C1E, MFX_HW_HSW }, /*HASWELL_SDV_B_GT2*/
+    { 0x0C2E, MFX_HW_HSW }, /*HASWELL_SDV_B_GT3*/
+
+    { 0x0A0B, MFX_HW_HSW }, /*HASWELL_ULT_B_GT1*/ /* Reserved */
+    { 0x0A1B, MFX_HW_HSW }, /*HASWELL_ULT_B_GT2*/
+    { 0x0A2B, MFX_HW_HSW }, /*HASWELL_ULT_B_GT3*/
+    { 0x0A0E, MFX_HW_HSW }, /*HASWELL_ULT_E_GT1*/ /* Reserved */
+    { 0x0A1E, MFX_HW_HSW }, /*HASWELL_ULT_E_GT2*/
+    { 0x0A2E, MFX_HW_HSW }, /*HASWELL_ULT_E_GT3*/
+
+    { 0x0D0B, MFX_HW_HSW }, /*HASWELL_CRW_B_GT1*/ /* Reserved */
+    { 0x0D1B, MFX_HW_HSW }, /*HASWELL_CRW_B_GT2*/
+    { 0x0D2B, MFX_HW_HSW }, /*HASWELL_CRW_B_GT3*/
+    { 0x0D0E, MFX_HW_HSW }, /*HASWELL_CRW_E_GT1*/ /* Reserved */
+    { 0x0D1E, MFX_HW_HSW }, /*HASWELL_CRW_E_GT2*/
+    { 0x0D2E, MFX_HW_HSW }, /*HASWELL_CRW_E_GT3*/
+
     /* VLV */
     { 0x0f30, MFX_HW_VLV },   /* VLV mobile */
     { 0x0f31, MFX_HW_VLV },   /* VLV mobile */
