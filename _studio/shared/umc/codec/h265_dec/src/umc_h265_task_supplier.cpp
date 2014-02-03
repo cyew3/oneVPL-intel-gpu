@@ -35,6 +35,27 @@
 
 namespace UMC_HEVC_DECODER
 {
+
+Ipp32u levelIndexArray[] = {
+    H265_LEVEL_1,
+    H265_LEVEL_2,
+    H265_LEVEL_21,
+
+    H265_LEVEL_3,
+    H265_LEVEL_31,
+
+    H265_LEVEL_4,
+    H265_LEVEL_41,
+
+    H265_LEVEL_5,
+    H265_LEVEL_51,
+    H265_LEVEL_52,
+
+    H265_LEVEL_6,
+    H265_LEVEL_61,
+    H265_LEVEL_62
+};
+
 /****************************************************************************************************/
 // DecReferencePictureMarking_H265
 /****************************************************************************************************/
@@ -1036,6 +1057,24 @@ UMC::Status TaskSupplier_H265::xDecodeSPS(H265Bitstream &bs)
     }
 
     HighestTid = sps.sps_max_sub_layers - 1;
+
+    if (!sps.getPTL()->GetGeneralPTL()->level_idc && sps.sps_max_dec_pic_buffering[HighestTid])
+    {
+        Ipp32u level_idc = levelIndexArray[0];
+        for (int i = 0; i < sizeof(levelIndexArray)/sizeof(levelIndexArray[0]); i++)
+        {
+            level_idc = levelIndexArray[i];
+            newDPBsize = (Ipp8u)CalculateDPBSize(level_idc,
+                                    sps.pic_width_in_luma_samples,
+                                    sps.pic_height_in_luma_samples);
+
+            if (newDPBsize >= sps.sps_max_dec_pic_buffering[HighestTid])
+                break;
+        }
+
+        sps.getPTL()->GetGeneralPTL()->level_idc = level_idc;
+    }
+
     sps.sps_max_dec_pic_buffering[0] = sps.sps_max_dec_pic_buffering[HighestTid] ? sps.sps_max_dec_pic_buffering[HighestTid] : newDPBsize;
 
     if (ViewItem_H265 *view = GetView())
@@ -2562,26 +2601,6 @@ bool TaskSupplier_H265::IsShouldSuspendDisplay()
 
 Ipp32u GetLevelIDCIndex(Ipp32u level_idc)
 {
-    Ipp32u levelIndexArray[] = {
-        H265_LEVEL_1,
-        H265_LEVEL_2,
-        H265_LEVEL_21,
-
-        H265_LEVEL_3,
-        H265_LEVEL_31,
-
-        H265_LEVEL_4,
-        H265_LEVEL_41,
-
-        H265_LEVEL_5,
-        H265_LEVEL_51,
-        H265_LEVEL_52,
-
-        H265_LEVEL_6,
-        H265_LEVEL_61,
-        H265_LEVEL_62
-    };
-
     for (Ipp32u i = 0; i < sizeof(levelIndexArray)/sizeof(levelIndexArray[0]); i++)
     {
         if (levelIndexArray[i] == level_idc)
