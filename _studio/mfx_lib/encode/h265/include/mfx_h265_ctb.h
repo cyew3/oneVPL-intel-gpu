@@ -131,6 +131,9 @@ public:
     __ALIGN32 PixType       m_interPred[4][MAX_CU_SIZE * MAX_CU_SIZE];
     __ALIGN32 PixType       m_interPredBest[4][MAX_CU_SIZE * MAX_CU_SIZE];
     PixType                 (*m_interPredPtr)[MAX_CU_SIZE * MAX_CU_SIZE];
+    __ALIGN32 CoeffsType       m_interResidualsY[4][MAX_CU_SIZE * MAX_CU_SIZE];
+    __ALIGN32 CoeffsType       m_interResidualsYBest[4][MAX_CU_SIZE * MAX_CU_SIZE];
+    CoeffsType                 (*m_interResidualsYPtr)[MAX_CU_SIZE * MAX_CU_SIZE];
     __ALIGN32 PixType       m_interRecBest[5][MAX_CU_SIZE*MAX_CU_SIZE];
     Ipp32s                  m_interPredReady;
 
