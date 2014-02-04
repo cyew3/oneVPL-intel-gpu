@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2013 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2014 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -221,29 +221,30 @@ mfxStatus MFXLibraryIterator::SelectDLLVersion(wchar_t *pPath
     do
     {
         WinRegKey subKey;
-        DWORD subKeyNameSize = sizeof(m_SubKeyName) / sizeof(*m_SubKeyName);
+        wchar_t subKeyName[MFX_MAX_VALUE_NAME];
+        DWORD subKeyNameSize = sizeof(subKeyName) / sizeof(subKeyName[0]);
 
         // query next value name
-        enumRes = m_baseRegKey.EnumKey(index, m_SubKeyName, &subKeyNameSize);
+        enumRes = m_baseRegKey.EnumKey(index, subKeyName, &subKeyNameSize);
         if (!enumRes)
         {
             DISPATCHER_LOG_WRN((("no more subkeys : RegEnumKeyExA()==0x%x\n"), GetLastError()))
         }
         else
         {
-            DISPATCHER_LOG_INFO((("found subkey: %S\n"), m_SubKeyName))
+            DISPATCHER_LOG_INFO((("found subkey: %S\n"), subKeyName))
 
             bool bRes;
 
             // open the sub key
-            bRes = subKey.Open(m_baseRegKey, m_SubKeyName, KEY_READ);
+            bRes = subKey.Open(m_baseRegKey, subKeyName, KEY_READ);
             if (!bRes)
             {
-                DISPATCHER_LOG_WRN((("error opening key %S :RegOpenKeyExA()==0x%x\n"), m_SubKeyName, GetLastError()));
+                DISPATCHER_LOG_WRN((("error opening key %S :RegOpenKeyExA()==0x%x\n"), subKeyName, GetLastError()));
             }
             else
             {
-                DISPATCHER_LOG_INFO((("opened key: %S\n"), m_SubKeyName));
+                DISPATCHER_LOG_INFO((("opened key: %S\n"), subKeyName));
 
                 mfxU32 vendorID = 0, deviceID = 0, merit = 0, version;
                 DWORD size;
@@ -383,11 +384,12 @@ mfxStatus MFXLibraryIterator::SelectDLLVersion(wchar_t *pPath
                         {
                             DISPATCHER_LOG_INFO((("loaded %S : %S\n"), pathKeyName, tmpPath));
                          
-                            // copy the library's path
 #if _MSC_VER >= 1400
                             wcscpy_s(libPath, sizeof(libPath) / sizeof(libPath[0]), tmpPath);
+                            wcscpy_s(m_SubKeyName, sizeof(m_SubKeyName) / sizeof(m_SubKeyName[0]), subKeyName);
 #else
                             wcscpy(libPath, tmpPath);
+                            wcscpy_s(m_SubKeyName, subKeyName);
 #endif
 
                             libMerit = merit;
