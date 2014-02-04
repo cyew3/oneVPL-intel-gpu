@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2014 Intel Corporation. All Rights Reserved.
 
 File Name: libmfx_allocator.cpp
 
@@ -154,7 +154,6 @@ mfxStatus mfxDefaultAllocator::AllocFrames(mfxHDL pthis, mfxFrameAllocRequest *r
             response->mids = &pSelf->m_frameHandles[0];
             return MFX_ERR_NONE;
         }
-
     }
 
     mfxU32 Pitch=ALIGN32(request->Info.Width);
@@ -166,6 +165,10 @@ mfxStatus mfxDefaultAllocator::AllocFrames(mfxHDL pthis, mfxFrameAllocRequest *r
         nbytes=Pitch*Height2 + (Pitch>>1)*(Height2>>1) + (Pitch>>1)*(Height2>>1);
         break;
     case MFX_FOURCC_NV12:
+        nbytes=Pitch*Height2 + (Pitch>>1)*(Height2>>1) + (Pitch>>1)*(Height2>>1);
+        break;
+    case MFX_FOURCC_P010:
+        Pitch=ALIGN32(request->Info.Width*2);
         nbytes=Pitch*Height2 + (Pitch>>1)*(Height2>>1) + (Pitch>>1)*(Height2>>1);
         break;
     case MFX_FOURCC_YUY2:
@@ -263,6 +266,13 @@ mfxStatus mfxDefaultAllocator::LockFrame(mfxHDL pthis, mfxHDL mid, mfxFrameData 
     case MFX_FOURCC_NV12:
         ptr->PitchHigh=0;
         ptr->PitchLow=(mfxU16)ALIGN32(fs->info.Width);
+        ptr->Y = sptr;
+        ptr->U = ptr->Y + ptr->Pitch*Height2;
+        ptr->V = ptr->U + 1;
+        break;
+    case MFX_FOURCC_P010:
+        ptr->PitchHigh=0;
+        ptr->PitchLow=(mfxU16)ALIGN32(fs->info.Width*2);
         ptr->Y = sptr;
         ptr->U = ptr->Y + ptr->Pitch*Height2;
         ptr->V = ptr->U + 1;

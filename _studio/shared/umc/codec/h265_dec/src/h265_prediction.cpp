@@ -302,6 +302,8 @@ static void PrepareInterpSrc( H265CodingUnit* pCU, H265PUInfo &PUi, EnumRefPicLi
         interpolateInfo.pointBlockPos.x >>= 1;
         interpolateInfo.sizeFrame.width >>= 1;
         interpolateInfo.sizeFrame.height >>= 1;
+        interpolateInfo.sizeBlock.width >>= 1;
+        interpolateInfo.sizeBlock.height >>= 1;
     }
 
     IppStatus sts = ( c_plane_type == TEXT_CHROMA ) ? 

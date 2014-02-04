@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -113,7 +113,7 @@ void H265DecYUVBufferPadded::allocate(const UMC::FrameData * frameData, const UM
 
     m_chroma_format = GetH265ColorFormat(info->GetColorFormat());
     m_lumaSize = info->GetPlaneInfo(0)->m_ippSize;
-    m_pitch_luma = (Ipp32s)m_frameData.GetPlaneMemoryInfo(0)->m_pitch;
+    m_pitch_luma = (Ipp32s)m_frameData.GetPlaneMemoryInfo(0)->m_pitch / info->GetPlaneSampleSize(0);
 
     m_pYPlane = (H265PlanePtrYCommon)m_frameData.GetPlaneMemoryInfo(0)->m_planePtr;
 
@@ -122,7 +122,7 @@ void H265DecYUVBufferPadded::allocate(const UMC::FrameData * frameData, const UM
         if (m_chroma_format == 0)
             info = frameData->GetInfo();
         m_chromaSize = info->GetPlaneInfo(1)->m_ippSize;
-        m_pitch_chroma = (Ipp32s)m_frameData.GetPlaneMemoryInfo(1)->m_pitch;
+        m_pitch_chroma = (Ipp32s)m_frameData.GetPlaneMemoryInfo(1)->m_pitch / info->GetPlaneSampleSize(1);
 
         if (m_frameData.GetInfo()->GetColorFormat() == UMC::NV12)
         {
