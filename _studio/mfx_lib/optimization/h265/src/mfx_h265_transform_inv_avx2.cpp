@@ -323,6 +323,10 @@ M256I_2x8SHORT( t_16_f4567_67,  43, 70,   9,-80, -57, 87,  87,-90);
     #define MAKE_NAME(func) func
 #endif
 
+#if ((__GNUC__== 4) && (__GNUC_MINOR__== 7))
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+#endif
 
 template <int bitDepth, typename DstCoeffsType, bool inplace>
 static void h265_DCT4x4Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_RESTRICT coeff, int destStride)
@@ -350,17 +354,12 @@ static void h265_DCT4x4Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_RES
 
 // GCC 4.7 bug workaround
 #if ((__GNUC__== 4) && (__GNUC_MINOR__== 7))
-   //__m256i s01 = _mm_broadcastsi128_si256(s0 ); // s13 s03 s12 s02 s11 s01 s10 s00
-   s0 = _mm_unpacklo_epi16 (s0, s1);
-   __m256i s01 = _mm_broadcastsi128_si256(s0 );
-   //__m256i s23 = _mm_broadcastsi128_si256( _mm_unpacklo_epi16 (s2, s3)); // s23 s23 s22 s22 s31 s21 s30 s20
-   s2 = _mm_unpacklo_epi16 (s2, s3);
-   __m256i s23 = _mm_broadcastsi128_si256( s2);
+   __m256i s01 = _mm_broadcastsi128_si256(_mm_unpacklo_epi16 (s0, s1) ); // s13 s03 s12 s02 s11 s01 s10 s00
+   __m256i s23 = _mm_broadcastsi128_si256( _mm_unpacklo_epi16 (s2, s3)); // s23 s23 s22 s22 s31 s21 s30 s20
 #else
    __m256i s01 = _mm256_broadcastsi128_si256( _mm_unpacklo_epi16 (s0, s1)); // s13 s03 s12 s02 s11 s01 s10 s00
    __m256i s23 = _mm256_broadcastsi128_si256( _mm_unpacklo_epi16 (s2, s3)); // s23 s23 s22 s22 s31 s21 s30 s20
 #endif
-
    __m256i R02 = _mm256_add_epi32( _mm256_madd_epi16(s01, t_4dct_02_01), _mm256_madd_epi16(s23, t_4dct_02_23));
    __m256i R13 = _mm256_add_epi32( _mm256_madd_epi16(s01, t_4dct_13_01), _mm256_madd_epi16(s23, t_4dct_13_23));
 
@@ -443,6 +442,10 @@ static void h265_DCT4x4Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_RES
     }
 }
 
+#if ((__GNUC__== 4) && (__GNUC_MINOR__== 7))
+#pragma GCC pop_options
+#endif
+
 void MAKE_NAME(h265_DCT4x4Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, bool inplace, Ipp32u bitDepth)
 {
     if (inplace) {
@@ -490,12 +493,9 @@ static void h265_DST4x4Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_RES
 
    // GCC 4.7 bug workaround
 #if ((__GNUC__== 4) && (__GNUC_MINOR__== 7))
-   //__m256i s01 = _mm_broadcastsi128_si256( _mm_unpacklo_epi16 (s0, s1)); // s13 s03 s12 s02 s11 s01 s10 s00
-   s0 = _mm_unpacklo_epi16 (s0, s1);
-   __m256i s01 = _mm_broadcastsi128_si256( s0);
-   //__m256i s23 = _mm_broadcastsi128_si256( _mm_unpacklo_epi16 (s2, s3)); // s23 s23 s22 s22 s31 s21 s30 s20
-   s2 = _mm_unpacklo_epi16 (s2, s3);
-   __m256i s23 = _mm_broadcastsi128_si256( s2);
+   __m256i s01 = _mm_broadcastsi128_si256( _mm_unpacklo_epi16 (s0, s1)); // s13 s03 s12 s02 s11 s01 s10 s00
+   __m256i s23 = _mm_broadcastsi128_si256( _mm_unpacklo_epi16 (s2, s3)); // s23 s23 s22 s22 s31 s21 s30 s20
+
 #else
    __m256i s01 = _mm256_broadcastsi128_si256( _mm_unpacklo_epi16 (s0, s1)); // s13 s03 s12 s02 s11 s01 s10 s00
    __m256i s23 = _mm256_broadcastsi128_si256( _mm_unpacklo_epi16 (s2, s3)); // s23 s23 s22 s22 s31 s21 s30 s20
