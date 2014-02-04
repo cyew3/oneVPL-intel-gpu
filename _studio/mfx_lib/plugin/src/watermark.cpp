@@ -133,7 +133,7 @@ Watermark *Watermark::CreateFromResource(void)
 }
 #else  // Linux
 
-typedef struct __attribute__((packed))
+struct __attribute__((packed)) BitmapHeader
 {
     mfxU16  Type;          // signature - 'BM'
     mfxU32  Size;          // file size in bytes
@@ -151,7 +151,7 @@ typedef struct __attribute__((packed))
     mfxI32  YPelsPerMeter; // vert resolution
     mfxU32  ClrUsed;       // 0 -> color table size
     mfxU32  ClrImportant;  // important color count
-}  BitmapHeader;
+};
 
 #define BASE64STRING_BUF_SIZE(byteSize) (((byteSize + 2)/3)*4)
 
@@ -278,6 +278,7 @@ Watermark *Watermark::CreateFromResource(void)
     VM_ASSERT(NULL != buffer);
     if (!buffer)
     {
+        delete[] rawImage;
         return NULL;
     }
 
@@ -286,6 +287,7 @@ Watermark *Watermark::CreateFromResource(void)
     VM_ASSERT(MFX_ERR_NONE == status);
     if (MFX_ERR_NONE != status)
     {
+        delete[] rawImage;
         delete[] buffer;
         return NULL;
     }
@@ -293,14 +295,14 @@ Watermark *Watermark::CreateFromResource(void)
     mfxI32 watermarkWidth = header.Width;
     mfxI32 watermarkHeight = header.Height;
 
-    delete [] rawImage;
+    delete[] rawImage;
 
     // Turn image upside down
     IppiSize roi = {watermarkWidth, watermarkHeight};
     IppStatus ipp_status = ippiMirror_8u_C4IR(buffer, watermarkWidth * 4, roi, ippAxsHorizontal);
     if (ippStsNoErr != ipp_status)
     {
-        delete [] buffer;
+        delete[] buffer;
         return NULL;
     }
 
@@ -308,14 +310,14 @@ Watermark *Watermark::CreateFromResource(void)
     ipp_status = ippiSet_8u_C4CR(0x7f, buffer + 3, watermarkWidth * 4, roi);
     if (ippStsNoErr != ipp_status)
     {
-        delete [] buffer;
+        delete[] buffer;
         return NULL;
     }
 
     Watermark *obj = new Watermark;
     if (NULL == obj)
     {
-        delete [] buffer;
+        delete[] buffer;
         buffer = NULL;
         return NULL;
     }

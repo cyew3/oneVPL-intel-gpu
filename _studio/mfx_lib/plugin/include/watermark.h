@@ -43,6 +43,10 @@ private:
 
     void InitBuffers(mfxI32 size);
     void ReleaseBuffers(void);
+
+    // noncopyable
+    Watermark(const Watermark &);
+    void operator=(const Watermark &);
 };
 
 #endif // MFX_ENABLE_WATERMARK
