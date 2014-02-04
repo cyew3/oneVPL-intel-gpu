@@ -82,7 +82,7 @@ void PutPerformanceToFile(sInputParams& Params, mfxF64 FPS)
 
 } // void PutPerformanceToFile(sInputVppParams& Params, mfxF64 FPS)
 
-const sOwnFrameInfo  defaultOwnFrameInfo = {352, 288, 0, 0, 352, 288, MFX_FOURCC_NV12, MFX_PICSTRUCT_PROGRESSIVE, 30.0};
+const sOwnFrameInfo  defaultOwnFrameInfo = {0, 352, 288, 0, 0, 352, 288, MFX_FOURCC_NV12, MFX_PICSTRUCT_PROGRESSIVE, 30.0};
 const sProcAmpParam  defaultProcAmpParam = { 0.0, 1.0, 1.0, 0.0, VPP_FILTER_DISABLED};
 const sDetailParam   defaultDetailParam  = { 1,  VPP_FILTER_DISABLED};
 const sDenoiseParam  defaultDenoiseParam = { 1,  VPP_FILTER_DISABLED};

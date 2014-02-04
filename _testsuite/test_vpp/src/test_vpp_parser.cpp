@@ -198,6 +198,10 @@ mfxU32 Str2FourCC( vm_char* strInput )
     {
         fourcc = MFX_FOURCC_YUV444;
     }
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("p010")) ) 
+    {
+        fourcc = MFX_FOURCC_P010;
+    }
 
     return fourcc;
 
@@ -686,6 +690,18 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
                     pParams->frameInfo[VPP_OUT].FourCC = MFX_FOURCC_NV12;
                     pParams->isOutYV12 = true;
                 }
+            }
+            else if(0 == vm_string_strcmp(strInput[i], VM_STRING("-dbitshift")))
+            {
+                VAL_CHECK(1 + i == nArgNum);
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfo[VPP_OUT].Shift);
+            }
+            else if(0 == vm_string_strcmp(strInput[i], VM_STRING("-sbitshift")))
+            {
+                VAL_CHECK(1 + i == nArgNum);
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfo[VPP_IN].Shift);
             }
             else if( 0 == vm_string_strcmp(strInput[i], VM_STRING("-iopattern")) )
             {

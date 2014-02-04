@@ -87,6 +87,10 @@ vm_char* FourCC2Str( mfxU32 FourCC )
         strFourCC = VM_STRING("YUV444");
         break;
 
+    case MFX_FOURCC_P010:
+        strFourCC = VM_STRING("P010");
+        break;
+
     }
 
     return strFourCC;
@@ -305,6 +309,7 @@ mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams)
     memset(pParams, 0, sizeof(mfxVideoParam));                                   
 
     /* input data */  
+    pParams->vpp.In.Shift           = pInParams->frameInfo[VPP_IN].Shift;
     pParams->vpp.In.FourCC          = pInParams->frameInfo[VPP_IN].FourCC;
     pParams->vpp.In.ChromaFormat    = MFX_CHROMAFORMAT_YUV420;  
 
@@ -327,6 +332,7 @@ mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams)
         &pParams->vpp.In.FrameRateExtD);
 
     /* output data */
+    pParams->vpp.Out.Shift           = pInParams->frameInfo[VPP_OUT].Shift;
     pParams->vpp.Out.FourCC          = pInParams->frameInfo[VPP_OUT].FourCC;      
     pParams->vpp.Out.ChromaFormat    = MFX_CHROMAFORMAT_YUV420;             
 
@@ -1173,6 +1179,26 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
         }
     }
+    else if( pInfo->FourCC == MFX_FOURCC_P010 )
+    {
+        ptr = pData->Y + pInfo->CropX * 2 + pInfo->CropY * pitch;
+
+        // read luminance plane
+        for(i = 0; i < h; i++) 
+        {
+            nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w * 2, m_fSrc);
+            IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w*2, MFX_ERR_MORE_DATA);
+        }
+
+        // load UV
+        h     >>= 1;
+        ptr = pData->UV + pInfo->CropX + (pInfo->CropY >> 1) * pitch;
+        for (i = 0; i < h; i++) 
+        {
+            nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w*2, m_fSrc);
+            IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w*2, MFX_ERR_MORE_DATA);
+        }
+    }
     else if (pInfo->FourCC == MFX_FOURCC_RGB3)
     {
         CHECK_POINTER(pData->R, MFX_ERR_NOT_INITIALIZED);
@@ -1696,6 +1722,26 @@ mfxStatus CRawVideoWriter::WriteFrame(
         {
             CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w, m_fDst), w, MFX_ERR_UNDEFINED_BEHAVIOR);
             if ( m_need_crc ) CRC32(ptr + i * pitch, w);
+        }
+    }
+    else if( pInfo->FourCC == MFX_FOURCC_P010 )
+    {
+        ptr   = pData->Y + (pInfo->CropX ) + (pInfo->CropY ) * pitch;
+
+        for (i = 0; i < h; i++)
+        {
+            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w * 2, m_fDst), w * 2, MFX_ERR_UNDEFINED_BEHAVIOR);
+            if ( m_need_crc ) CRC32(ptr + i * pitch, w * 2);
+        }
+
+        // write UV data
+        h     >>= 1;
+        ptr  = pData->UV + (pInfo->CropX ) + (pInfo->CropY >> 1) * pitch ;
+
+        for(i = 0; i < h; i++) 
+        {
+            CHECK_NOT_EQUAL( vm_file_fwrite(ptr+ i * pitch, 1, w*2, m_fDst), w*2, MFX_ERR_UNDEFINED_BEHAVIOR);
+            if ( m_need_crc ) CRC32(ptr + i * pitch, w * 2);
         }
     }
     else if( pInfo->FourCC == MFX_FOURCC_YUY2 )
