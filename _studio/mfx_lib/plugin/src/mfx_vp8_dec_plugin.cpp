@@ -16,6 +16,9 @@ File Name: mfx_VP8_dec_plugin.cpp
 
 //defining module template for decoder plugin
 #include "mfx_plugin_module.h"
+
+#include "plugin_version_linux.h"
+
 PluginModuleTemplate g_PluginModule = {
     &MFXVP8DecoderPlugin::Create,
     NULL,

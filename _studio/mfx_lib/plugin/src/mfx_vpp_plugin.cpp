@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2014 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_vpp_plugin.h
 
@@ -15,6 +15,9 @@ File Name: mfx_vpp_plugin.h
 #include "vm_sys_info.h"
 
 #include "mfx_plugin_module.h"
+
+#include "plugin_version_linux.h"
+
 PluginModuleTemplate g_PluginModule = {
     NULL,
     NULL,
