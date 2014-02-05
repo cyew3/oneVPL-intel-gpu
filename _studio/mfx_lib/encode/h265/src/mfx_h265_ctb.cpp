@@ -1444,6 +1444,31 @@ Ipp32s H265CU::MvCost( H265MV MV[2], T_RefIdx curRefIdx[2], MVPInfo *pInfo, MVPI
     }
 }
 
+Ipp32s H265CU::MvCost1Ref( H265MV MV[2], T_RefIdx curRefIdx[2], MVPInfo *pInfo, MVPInfo& mergeInfo, Ipp32s rlist) const
+{
+    Ipp32s mincost = 0, minind = 0, minlist = 0;
+    CostType lamb = (CostType)(m_rdLambdaInterMv)/2;
+
+    for (Ipp32s i=0; i<mergeInfo.numCand; i++)
+        if(curRefIdx[rlist] == mergeInfo.refIdx[2*i+rlist] && mergeInfo.mvCand[2*i+rlist] == MV[rlist])
+            return (Ipp32s)(lamb * (2+i));
+
+    pInfo += 2 * curRefIdx[rlist];
+    for (Ipp32s i=0; i<pInfo[rlist].numCand; i++) {
+        if(curRefIdx[rlist] == pInfo[rlist].refIdx[i]) {
+            Ipp32s cost = (0+i) + qdist(&MV[rlist], &pInfo[rlist].mvCand[i])*4;
+            if(i==0 || mincost > cost) {
+                minlist = rlist;
+                mincost = cost;
+                minind = i;
+            }
+
+        }
+    }
+
+    return (Ipp32s)(lamb * ((2+minind) + qdiff(&MV[minlist], &pInfo[minlist].mvCand[minind])*4));
+}
+
 // absPartIdx - for minimal TU
 Ipp32s H265CU::MatchingMetricPu(PixType *pSrc, H265MEInfo* me_info, H265MV* MV, H265Frame *PicYUVRef) const
 {
@@ -2205,7 +2230,7 @@ void H265CU::MePu(H265MEInfo* meInfo)
                     MV[ME_dir].mvy = MV_cur.mvy + ME_Cpattern[ME_pos][1] * ME_step * 1;
                     ClipMV(MV[ME_dir]);
                     cost_temp = MatchingMetricPu( pSrc, meInfo, &MV[ME_dir], PicYUVRef) + //MV_pred.qdiff(MV, m_par->QP);
-                        MvCost( MV, curRefIdx, pInfo, mergeInfo);
+                        MvCost1Ref( MV, curRefIdx, pInfo, mergeInfo, ME_dir);
                     if (cost_best > cost_temp) {
                         MV_best = MV[ME_dir];
                         cost_best = cost_temp;
@@ -2243,7 +2268,7 @@ void H265CU::MePu(H265MEInfo* meInfo)
                     H265MV MVorig = { MV[ME_dir].mvx, MV[ME_dir].mvy };
                     ClipMV(MV[ME_dir]);
                     cost_temp = MatchingMetricPu( pSrc, meInfo, &MV[ME_dir], PicYUVRef) + //MV_pred.qdiff(MV, m_par->QP);
-                        MvCost( MV, curRefIdx, pInfo, mergeInfo);
+                        MvCost1Ref( MV, curRefIdx, pInfo, mergeInfo, ME_dir);
                     if (cost_best > cost_temp) {
                         MV_best = MV[ME_dir];
                         cost_best = cost_temp;
