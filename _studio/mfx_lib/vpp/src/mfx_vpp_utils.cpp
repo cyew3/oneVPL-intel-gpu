@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008 - 2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008 - 2014 Intel Corporation. All Rights Reserved.
 //
 //
 //          utilities for (SW)VPP processing
@@ -64,7 +64,7 @@ const mfxU32 g_TABLE_CONFIG [] =
 };
 
 
-const mfxU32 g_TABLE_EXT_PARAM [] = 
+const mfxU32 g_TABLE_EXT_PARAM [] =
 {
     MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
     MFX_EXTBUFF_SVC_SEQ_DESC,
@@ -76,7 +76,7 @@ const mfxU32 g_TABLE_EXT_PARAM [] =
     // should be the same as g_TABLE_CONFIG
     MFX_EXTBUFF_VPP_DENOISE,
     MFX_EXTBUFF_VPP_PROCAMP,
-    MFX_EXTBUFF_VPP_DETAIL,    
+    MFX_EXTBUFF_VPP_DETAIL,
     MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION,
     MFX_EXTBUFF_VPP_IMAGE_STABILIZATION,
     MFX_EXTBUFF_VPP_COMPOSITE,
@@ -250,6 +250,8 @@ mfxStatus SurfaceCopy_ROI(mfxFrameSurface1* out, mfxFrameSurface1* in, bool bROI
 
     mfxU32  inOffset0 = 0, inOffset1  = 0;
     mfxU32  outOffset0= 0, outOffset1 = 0;
+    mfxU32  inPitch;
+    mfxU32  outPitch;
 
     if( MFX_FOURCC_RGB3 == in->Info.FourCC || MFX_FOURCC_RGB4 == in->Info.FourCC )
     {
@@ -314,15 +316,23 @@ mfxStatus SurfaceCopy_ROI(mfxFrameSurface1* out, mfxFrameSurface1* in, bool bROI
     VPP_GET_WIDTH(inInfo, roiSize.width);
     VPP_GET_HEIGHT(inInfo, roiSize.height);
 
-    sts = ippiCopy_8u_C1R(inData->Y+inOffset0, inData->Pitch,
-                          outData->Y+outOffset0, outData->Pitch, roiSize);
+    inPitch  = inData->Pitch;
+    outPitch = outData->Pitch;
+
+    if ( MFX_FOURCC_P010 == out->Info.FourCC )
+    {
+        roiSize.width <<= 1;
+    }
+
+    sts = ippiCopy_8u_C1R(inData->Y+inOffset0,   inPitch,
+                          outData->Y+outOffset0, outPitch, roiSize);
     VPP_CHECK_IPP_STS( sts );
 
-    if( MFX_FOURCC_NV12 == in->Info.FourCC )
+    if( MFX_FOURCC_NV12 == in->Info.FourCC || MFX_FOURCC_P010 == in->Info.FourCC )
     {
         roiSize.height >>= 1;
-        sts = ippiCopy_8u_C1R(inData->UV+inOffset1, inData->Pitch,
-                              outData->UV+outOffset1, outData->Pitch, roiSize);
+        sts = ippiCopy_8u_C1R(inData->UV+inOffset1,   inPitch,
+                              outData->UV+outOffset1, outPitch, roiSize);
         VPP_CHECK_IPP_STS( sts );
     }
     else
@@ -544,7 +554,7 @@ mfxStatus SetBackGroundColor(mfxFrameSurface1 *ptr)
             sts = ippiSet_8u_C1R(BLACK_CLR_RGB4, ptrBGRA, ptr->Data.Pitch, roiSize);
             VPP_CHECK_IPP_STS( sts );
         }
-        
+
         //------------------------------------
         //       ROI #2 of frame (BOTTOM)
         //------------------------------------
@@ -750,7 +760,7 @@ bool IsROIConstant(mfxFrameSurface1* pSrc1, mfxFrameSurface1* pSrc2, mfxFrameSur
 bool IsRoiDifferent(mfxFrameSurface1 *input, mfxFrameSurface1 *output)
 {
     if ((input->Info.Width == output->Info.Width && input->Info.Height == output->Info.Height) &&
-        (input->Info.CropW == output->Info.CropW && input->Info.CropH == output->Info.CropH) && 
+        (input->Info.CropW == output->Info.CropW && input->Info.CropH == output->Info.CropH) &&
         (input->Info.CropX == output->Info.CropX && input->Info.CropY == output->Info.CropY) &&
         (input->Info.PicStruct == output->Info.PicStruct)
         )
@@ -972,16 +982,16 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
     {
         newList[index] = MFX_EXTBUFF_VPP_PROCAMP;
         index++;
-    }    
+    }
 
     /* [VarianceRep] FILTER */
-    if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_VARIANCE_REPORT ) || 
+    if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_VARIANCE_REPORT ) ||
         IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION ) )
     {
         newList[index] = MFX_EXTBUFF_VPP_VARIANCE_REPORT;
         index++;
     }
-    
+
     if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION ) )
     {
         newList[index] = MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION;
@@ -1016,7 +1026,7 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
 
 
 void ReorderPipelineListForSpeed(
-    mfxVideoParam* videoParam, 
+    mfxVideoParam* videoParam,
     std::vector<mfxU32> & pipelineList)
 {
 // aya: disabled perf optimization since MSDK3.0 beta5
@@ -1033,7 +1043,7 @@ void ReorderPipelineListForSpeed(
             mfxU32 filterIndex = 0;
             mfxU32 filterIndexRS = GetFilterIndex(pList, len, MFX_EXTBUFF_VPP_RESIZE);
 
-            // RESIZE_DOWNSCALE must be first filter in pipeline 
+            // RESIZE_DOWNSCALE must be first filter in pipeline
             for( filterIndex = filterIndexRS; filterIndex > 0; filterIndex-- )
             {
                 VPP_SWAP(pList[filterIndex], pList[filterIndex-1]);
@@ -1062,7 +1072,7 @@ void ReorderPipelineListForSpeed(
 
         if( inFrameRate > outFrameRate )
         {
-            // FRC_DOWN must be first filter in pipeline 
+            // FRC_DOWN must be first filter in pipeline
             for( filterIndex = filterIndexFRC; filterIndex > 0; filterIndex-- )
             {
                 std::swap(pipelineList[filterIndex], pipelineList[filterIndex-1]);
@@ -1072,8 +1082,8 @@ void ReorderPipelineListForSpeed(
             {
                 std::swap(pipelineList[1], pipelineList[0]);
             }
-        }        
-    }    
+        }
+    }
 #endif
 
 } // void ReorderPipelineListForSpeed(mfxVideoParam* videoParam, std::vector<mfxU32> & pipelineList)
@@ -1105,17 +1115,29 @@ mfxStatus GetPipelineList(
     /* ************************************************************************** */
     if( (MFX_FOURCC_RGB4 != par->In.FourCC) || (MFX_FOURCC_RGB4 != par->Out.FourCC) )
     {
-        /* [RGB4 output format support] */
         if( MFX_FOURCC_RGB4 == par->Out.FourCC )
         {
+            /* [RGB4 output format support] */
             pipelineList.push_back(MFX_EXTBUFF_VPP_CSC_OUT_RGB4);
         }
 
-        /* [Color Space Conversion] FILTER */
-        if( MFX_FOURCC_NV12 != par->In.FourCC)
-        {
+
+        if (  ( MFX_FOURCC_P010 == par->In.FourCC && MFX_FOURCC_NV12 == par->Out.FourCC)
+           || ( MFX_FOURCC_NV12 == par->In.FourCC && MFX_FOURCC_P010 == par->Out.FourCC) ) {
+             /* Special case for p010<->nv12 conversions */
             pipelineList.push_back(MFX_EXTBUFF_VPP_CSC);
         }
+        else if (  ( MFX_FOURCC_P010 == par->In.FourCC && MFX_FOURCC_P010 == par->Out.FourCC)
+                && ( par->In.Shift && par->Out.Shift ) ) {
+             /* Yet another special case for p010<->P010 bit-shifted conversions */
+            pipelineList.push_back(MFX_EXTBUFF_VPP_CSC);
+        }
+        else if( MFX_FOURCC_NV12 != par->In.FourCC && MFX_FOURCC_P010 != par->In.FourCC)
+        {
+            /* [Color Space Conversion] FILTER */
+            pipelineList.push_back(MFX_EXTBUFF_VPP_CSC);
+        }
+
     }
     else if (!bExtended)
     {
@@ -1164,7 +1186,7 @@ mfxStatus GetPipelineList(
             pipelineList.push_back(MFX_EXTBUFF_VPP_DI);
         }
     }
-        
+
     /* ********************************************************************** */
     /* 2. optional filters, enabled by default, disabled by DO_NOT_USE        */
     /* ********************************************************************** */
@@ -1188,11 +1210,11 @@ mfxStatus GetPipelineList(
     /* must be used AFTER [Deinterlace] FILTER !!! due to SW performance specific */
     if( !IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_DI_30i60p ) && !IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_ITC ) )
     {
-        if( IsFilterFound( pExtList, extCount, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION ) ||  
+        if( IsFilterFound( pExtList, extCount, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION ) ||
             ( par->In.FrameRateExtN * par->Out.FrameRateExtD != par->Out.FrameRateExtN * par->In.FrameRateExtD ) )
         {
             pipelineList.push_back(MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION);
-        }        
+        }
     }
 
     mfxU32 searchCount = sizeof(g_TABLE_DO_USE) / sizeof(*g_TABLE_DO_USE);
@@ -1220,12 +1242,12 @@ mfxStatus GetPipelineList(
     if( IsFilterFound( &configList[0], configCount, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION ) && !IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION) )
     {
         if( !IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_DI_30i60p ) && !IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_ITC ) )
-        {            
+        {
             pipelineList.push_back( MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION );
         }
     }
 
-    
+
     searchCount = sizeof(g_TABLE_CONFIG) / sizeof(*g_TABLE_CONFIG);
     fCount      = configCount;
     for(fIdx = 0; fIdx < fCount; fIdx++)
@@ -1327,6 +1349,7 @@ mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request)
     {
         case MFX_FOURCC_NV12:
         case MFX_FOURCC_RGB4:
+        case MFX_FOURCC_P010:
             break;
         case MFX_FOURCC_IMC3:
         case MFX_FOURCC_YV12:
@@ -1336,7 +1359,7 @@ mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request)
         case MFX_FOURCC_YUV422H:
         case MFX_FOURCC_YUV422V:
         case MFX_FOURCC_YUV444:
-            if (VPP_OUT == request) 
+            if (VPP_OUT == request)
                 return MFX_ERR_INVALID_VIDEO_PARAM;
             break;
 
@@ -1540,7 +1563,7 @@ bool CheckFilterList(mfxU32* pList, mfxU32 count, bool bDoUseTable)
         {
             bResOK = false; //invalid ID
         }
-        else if( fIdx == count - 1 ) 
+        else if( fIdx == count - 1 )
         {
             continue;
         }
@@ -1555,8 +1578,8 @@ bool CheckFilterList(mfxU32* pList, mfxU32 count, bool bDoUseTable)
 } // bool CheckFilterList(mfxU32* pList, mfxU32 count, bool bDoUseTable)
 
 
-bool GetExtParamList( 
-    mfxVideoParam* par, 
+bool GetExtParamList(
+    mfxVideoParam* par,
     mfxU32* pList,
     mfxU32* pLen)
 {
@@ -1624,7 +1647,7 @@ void GetConfigurableFilterList( mfxVideoParam* par, mfxU32* pList, mfxU32* pLen 
 bool IsConfigurable( mfxU32 filterId )
 {
     mfxU32 searchCount = sizeof(g_TABLE_CONFIG) / sizeof( *g_TABLE_CONFIG );
-    
+
     return IsFilterFound(g_TABLE_CONFIG, searchCount, filterId) ? true : false;
 
 } // void GetConfigurableFilterList( mfxU32 filterId )
@@ -1677,8 +1700,8 @@ mfxStatus CheckTransferMatrix( mfxU16 transferMatrix )
     transferMatrix;
     //switch( transferMatrix )
     //{
-    //    case MFX_TRANSFERMATRIX_BT601:     
-    //    case MFX_TRANSFERMATRIX_BT709:     
+    //    case MFX_TRANSFERMATRIX_BT601:
+    //    case MFX_TRANSFERMATRIX_BT709:
     //    case MFX_TRANSFERMATRIX_XVYCC_BT601:
     //    case MFX_TRASNFERMATRIX_XVYCC_BT709:
     //    {
@@ -1716,17 +1739,17 @@ mfxGamutMode GetGamutMode( mfxU16 srcTransferMatrix, mfxU16 dstTransferMatrix )
     {
         mode = GAMUT_PASSIVE_MODE;
     }
-    //else if( MFX_TRANSFERMATRIX_XVYCC_BT601 == srcTransferMatrix && 
+    //else if( MFX_TRANSFERMATRIX_XVYCC_BT601 == srcTransferMatrix &&
     //         MFX_TRANSFERMATRIX_BT601 == dstTransferMatrix )
     //{
     //    mode   = GAMUT_COMPRESS_ADVANCED_MODE;
-    //    //m_bBT601 = true; 
+    //    //m_bBT601 = true;
     //}
-    //else if( MFX_TRASNFERMATRIX_XVYCC_BT709 == srcTransferMatrix && 
+    //else if( MFX_TRASNFERMATRIX_XVYCC_BT709 == srcTransferMatrix &&
     //         MFX_TRANSFERMATRIX_BT709 == dstTransferMatrix )
     //{
     //    mode   = GAMUT_COMPRESS_ADVANCED_MODE;
-    //    //m_bBT601 = false; 
+    //    //m_bBT601 = false;
     //}
     //else
     //{
@@ -1856,7 +1879,7 @@ mfxStatus CheckIOPattern_AndSetIOMemTypes(mfxU16 IOPattern, mfxU16* pInMemType, 
     else if (IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
     {
         *pOutMemType = MFX_MEMTYPE_FROM_VPPOUT|MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET;
-    } 
+    }
     else if(IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
     {
         *pOutMemType = MFX_MEMTYPE_FROM_VPPOUT|MFX_MEMTYPE_OPAQUE_FRAME|nativeMemType;
@@ -1871,7 +1894,7 @@ mfxStatus CheckIOPattern_AndSetIOMemTypes(mfxU16 IOPattern, mfxU16* pInMemType, 
 } // mfxStatus CheckIOPattern_AndSetIOMemTypes(mfxU16 IOPattern,mfxU16* pInMemType, mfxU16* pOutMemType, bool bSWLib)
 
 
-mfxU16 EstimatePicStruct( 
+mfxU16 EstimatePicStruct(
     mfxU32* pVariance,
     mfxU16 width,
     mfxU16 height)
@@ -1930,9 +1953,9 @@ mfxU16 EstimatePicStruct(
                 resPicStruct = MFX_PICSTRUCT_FIELD_BFF;
             }
         }
-        else 
+        else
         {
-            /*printf("\n picstruct = PROGRESSIVE (%f %i %i) \n", 
+            /*printf("\n picstruct = PROGRESSIVE (%f %i %i) \n",
                 result,
                 varMin,
                 varMax); fflush(stderr);*/
@@ -1961,7 +1984,7 @@ mfxStatus CheckExtParam(VideoCORE * core, mfxExtBuffer** ppExtParam, mfxU16 coun
     }
 
     bool bError = false;
-  
+
     // [1] ExtParam
     mfxVideoParam tmpParam;
     tmpParam.ExtParam   = ppExtParam;
@@ -2006,7 +2029,7 @@ mfxStatus CheckExtParam(VideoCORE * core, mfxExtBuffer** ppExtParam, mfxU16 coun
             sts = MFX_ERR_NONE;
         }
         MFX_CHECK_STS(sts); // for double check only
-    } 
+    }
     //-----------------------------------------------------
 
     // [3] Do NOT USE
@@ -2055,8 +2078,8 @@ mfxStatus CheckExtParam(VideoCORE * core, mfxExtBuffer** ppExtParam, mfxU16 coun
 } // mfxStatus CheckExtParam(mfxExtBuffer** ppExtParam, mfxU32 count)
 
 
-void SignalPlatformCapabilities( 
-    const mfxVideoParam & param, 
+void SignalPlatformCapabilities(
+    const mfxVideoParam & param,
     const std::vector<mfxU32> & supportedList)
 {
     // fill output DOUSE list
@@ -2089,12 +2112,12 @@ void SignalPlatformCapabilities(
 // there are some special cases which couldn't be resolve by using capsList and pipelineList only
 // ex: FRC_Interpolation, RGB4 for HW etc
 mfxStatus CheckLimitationsSW(
-    const mfxVideoParam & param, 
-    const std::vector<mfxU32> & supportedDoUseList, 
+    const mfxVideoParam & param,
+    const std::vector<mfxU32> & supportedDoUseList,
     bool bCorrectionEnable)
-{    
+{
     mfxU32  len   = (mfxU32)supportedDoUseList.size();
-    mfxU32* pList = (len > 0) ? (mfxU32*)&supportedDoUseList[0] : NULL;    
+    mfxU32* pList = (len > 0) ? (mfxU32*)&supportedDoUseList[0] : NULL;
 
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -2102,7 +2125,7 @@ mfxStatus CheckLimitationsSW(
         MFX_FOURCC_RGB4 == param.vpp.In.FourCC)
     {
         // [1] RGB4->RGB4 - resize only to provide the best quality. make decision from MSDK 1.3
-        if(len > 0) 
+        if(len > 0)
         {
             sts = MFX_WRN_FILTER_SKIPPED;
             if(bCorrectionEnable)
@@ -2128,13 +2151,13 @@ mfxStatus CheckLimitationsSW(
 
 
 mfxStatus CheckLimitationsHW(
-    const mfxVideoParam & param, 
+    const mfxVideoParam & param,
     const std::vector<mfxU32> & supportedDoUseList,
     const MfxHwVideoProcessing::mfxVppCaps & caps,
     bool bCorrectionEnable)
 {
     mfxU32  len   = (mfxU32)supportedDoUseList.size();
-    mfxU32* pList = (len > 0) ? (mfxU32*)&supportedDoUseList[0] : NULL;    
+    mfxU32* pList = (len > 0) ? (mfxU32*)&supportedDoUseList[0] : NULL;
 
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -2143,7 +2166,7 @@ mfxStatus CheckLimitationsHW(
     // [1] in case of input RGB4,  only resize/FRC is supported
     if( param.vpp.In.FourCC == MFX_FOURCC_RGB4)
     {
-        if(len > 0) 
+        if(len > 0)
         {
             if( !IsFilterFound(pList, len, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION) )
             {
@@ -2154,7 +2177,7 @@ mfxStatus CheckLimitationsHW(
                     SignalPlatformCapabilities(param, tmpZeroDoUseList);
                 }
             }
-            else 
+            else
             {
                 if( MFX_FRCALGM_FRAME_INTERPOLATION == GetMFXFrcMode(param) )
                 {
@@ -2167,7 +2190,7 @@ mfxStatus CheckLimitationsHW(
 
                 if(bCorrectionEnable)
                 {
-                    std::vector <mfxU32> tmpDoUseList1(1); 
+                    std::vector <mfxU32> tmpDoUseList1(1);
                     tmpDoUseList1[0] = MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION;
                     SignalPlatformCapabilities(param, tmpDoUseList1);
                 }
@@ -2186,7 +2209,7 @@ mfxStatus CheckLimitationsHW(
                 SignalPlatformCapabilities(param, supportedDoUseList);
             }
         }
-        else if( !IsFrcInterpolationEnable(param, caps) ) 
+        else if( !IsFrcInterpolationEnable(param, caps) )
         {
             sts =  MFX_WRN_FILTER_SKIPPED;
             if(bCorrectionEnable)
@@ -2226,15 +2249,15 @@ bool CheckDoUseCompatibility( mfxU32 filterName )
     mfxU32 douseCount = sizeof(g_TABLE_DO_USE) / sizeof( *g_TABLE_DO_USE );
 
     bResult = IsFilterFound(g_TABLE_DO_USE, douseCount, filterName);
-     
+
     return bResult;
 
 } // bool CheckDoUseCompatibility( mfxU32 filterName )
 
 
 mfxStatus GetCrossList(
-    const std::vector<mfxU32> & pipelineList, 
-    const std::vector<mfxU32> & capsList, 
+    const std::vector<mfxU32> & pipelineList,
+    const std::vector<mfxU32> & capsList,
     std::vector<mfxU32> & doUseList,
     std::vector<mfxU32> & dontUseList )
 {

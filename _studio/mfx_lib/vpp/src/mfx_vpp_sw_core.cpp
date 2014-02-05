@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008 - 2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008 - 2014 Intel Corporation. All Rights Reserved.
 //
 //
 //          Common Video Pre\Post Processing
@@ -325,7 +325,7 @@ mfxStatus VideoVPPSW::Init(mfxVideoParam *par)
     VPP_INIT_SUCCESSFUL;
 
     /* here, Reset == SetParam */
-    mfxStatus stsReset = sts = Reset( par );    
+    mfxStatus stsReset = sts = Reset( par );
     if(MFX_WRN_FILTER_SKIPPED ==sts || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts)
     {
         sts = MFX_ERR_NONE;
@@ -363,7 +363,7 @@ mfxStatus VideoVPPSW::Init(mfxVideoParam *par)
 
     bool bCorrectionEnable = false;
     sts = CheckPlatformLimitations(m_core, *par, bCorrectionEnable);
-    
+
     return (MFX_ERR_NONE == sts) ? stsReset : sts;
 
 } // mfxStatus VideoVPPSW::Init(mfxVideoParam *par)
@@ -709,8 +709,8 @@ mfxStatus VideoVPPSW::VppFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out,
 
 mfxStatus VideoVPPSW::QueryIOSurf(VideoCORE* core, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
-    mfxStatus mfxSts;    
-    core; 
+    mfxStatus mfxSts;
+    core;
 
     MFX_CHECK_NULL_PTR2(par, request);
 
@@ -786,8 +786,8 @@ mfxStatus VideoVPPSW::QueryIOSurf(VideoCORE* core, mfxVideoParam *par, mfxFrameA
             request[VPP_OUT].NumFrameSuggested += (vppAsyncDepth - 1);
 
             // min
-            request[VPP_IN].NumFrameMin  += (vppAsyncDepth - 1); 
-            request[VPP_OUT].NumFrameMin += (vppAsyncDepth - 1); 
+            request[VPP_IN].NumFrameMin  += (vppAsyncDepth - 1);
+            request[VPP_OUT].NumFrameMin += (vppAsyncDepth - 1);
         }
 
         mfxSts = CheckIOPattern_AndSetIOMemTypes(par->IOPattern, &(request[VPP_IN].Type), &(request[VPP_OUT].Type), bSWLib);
@@ -949,8 +949,8 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
         memset(&out->mfx, 0, sizeof(mfxInfoMFX));
         memset(&out->vpp, 0, sizeof(mfxInfoVPP));
 
-        // We have to set FourCC and FrameRate below to 
-        // pass requirements of CheckPlatformLimitation for frame interpolation 
+        // We have to set FourCC and FrameRate below to
+        // pass requirements of CheckPlatformLimitation for frame interpolation
 
         /* vppIn */
         out->vpp.In.FourCC       = 1;
@@ -1112,7 +1112,7 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
                         }
                         else
                         {
-                            ippsCopy_8u( (Ipp8u*)in->ExtParam[i], (Ipp8u*)out->ExtParam[i], (int)GetConfigSize(in->ExtParam[i]->BufferId) ); 
+                            ippsCopy_8u( (Ipp8u*)in->ExtParam[i], (Ipp8u*)out->ExtParam[i], (int)GetConfigSize(in->ExtParam[i]->BufferId) );
 
                             mfxStatus extSts = ExtendedQuery(core, in->ExtParam[i]->BufferId, out->ExtParam[i]);
                             if( MFX_ERR_NONE != extSts )
@@ -1217,7 +1217,7 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
                                 mfxSts = MFX_ERR_UNDEFINED_BEHAVIOR;
                                 continue; // stop working with ExtParam[i]
                             }
-                            
+
                             if( NULL == extDoUseOut->AlgList || NULL == extDoUseIn->AlgList )
                             {
                                 mfxSts = MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -1571,6 +1571,11 @@ mfxStatus VideoVPPSW::Reset(mfxVideoParam *par)
             case MFX_EXTBUFF_VPP_CSC:
                 {
                     filtParam.vpp.Out.FourCC = MFX_FOURCC_NV12;
+                    if ( MFX_FOURCC_P010 == par->vpp.Out.FourCC )
+                    {
+                        filtParam.vpp.Out.FourCC = par->vpp.Out.FourCC;
+                        filtParam.vpp.Out.Shift = par->vpp.Out.Shift;
+                    }
                     break;
                 }
             case MFX_EXTBUFF_VPP_CSC_OUT_RGB4:
@@ -1668,21 +1673,21 @@ void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<m
 
     if(caps.uVariance)
     {
-        list.push_back(MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION);        
+        list.push_back(MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION);
     }
 
 } // void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<mfxU32> list)
 
 
 mfxStatus VideoVPPSW::CheckPlatformLimitations(
-    VideoCORE* core, 
-    mfxVideoParam & param, 
+    VideoCORE* core,
+    mfxVideoParam & param,
     bool bCorrectionEnable)
 {
     std::vector<mfxU32> capsList;
     //{
         MfxHwVideoProcessing::mfxVppCaps caps;
-        QueryCaps(core, caps);        
+        QueryCaps(core, caps);
         ConvertCaps2ListDoUse(caps, capsList);
     //}
 

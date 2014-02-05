@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2010 - 2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2010 - 2014 Intel Corporation. All Rights Reserved.
 //
 //
 //          SW Video Pre\Post Processing: internal implementation
@@ -394,6 +394,11 @@ mfxStatus VideoVPPSW::CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out)
                 /* COLOR SPACE_ CONVERSION specific */
                 outFrameInfo.FourCC = MFX_FOURCC_NV12;
 
+                if ( Out->FourCC == MFX_FOURCC_P010)
+                {
+                    outFrameInfo.FourCC = Out->FourCC;
+                    outFrameInfo.Shift  = Out->Shift;
+                }
                 VPP_INIT_FILTER( filterIndex, MFXVideoVPPColorSpaceConversion );
 
                 break;

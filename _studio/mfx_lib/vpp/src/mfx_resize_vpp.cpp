@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008 - 2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008 - 2014 Intel Corporation. All Rights Reserved.
 //
 //
 //          Resize for Video Pre\Post Processing
@@ -28,6 +28,8 @@
 IppStatus rs_YV12( mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxU8* pWorkBuf, mfxU16 picStruct );
 
 IppStatus rs_NV12_v2( mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxU8* pWorkBuf, mfxU16 picStruct );
+
+IppStatus rs_P010( mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxU8* pWorkBuf, mfxU16 picStruct );
 
 IppStatus owniResizeGetBufSize_UpEstimation( IppiSize srcSize, IppiSize dstSize, int *pBufferSize );
 
@@ -86,7 +88,8 @@ mfxStatus MFXVideoVPPResize::Reset(mfxVideoParam *par)
   // But m_errPrtctState contains correct info.
 
   // simple checking wo analysis
-  if(m_errPrtctState.In.FourCC != par->vpp.In.FourCC || m_errPrtctState.Out.FourCC != par->vpp.Out.FourCC)
+  if( ( m_errPrtctState.In.FourCC != par->vpp.In.FourCC || m_errPrtctState.Out.FourCC != par->vpp.Out.FourCC )
+     && m_errPrtctState.In.FourCC != MFX_FOURCC_P010 )
   {
       return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
   }
@@ -169,6 +172,11 @@ mfxStatus MFXVideoVPPResize::RunFrameVPP(mfxFrameSurface1 *in,
 
       break;
 
+    case MFX_FOURCC_P010:
+      ippSts = rs_P010(in, out, m_pWorkBuf, pParam->inPicStruct);
+
+      break;
+
     case MFX_FOURCC_YV12:
       ippSts = rs_YV12(in, out, m_pWorkBuf, pParam->inPicStruct);
 
@@ -235,7 +243,8 @@ mfxStatus MFXVideoVPPResize::Init(mfxFrameInfo* In, mfxFrameInfo* Out)
   {
     case MFX_FOURCC_NV12:
     case MFX_FOURCC_YV12:
-    case MFX_FOURCC_RGB4: 
+    case MFX_FOURCC_RGB4:
+    case MFX_FOURCC_P010:
       VPP_INIT_SUCCESSFUL;
       break;
 
@@ -289,12 +298,20 @@ mfxStatus MFXVideoVPPResize::GetBufferSize( mfxU32* pBufferSize )
 
       ippSts = ippiResizeGetBufSize( srcRect, dstRect, channelCount, IPPI_INTER_LANCZOS, &bufSizeLanczos );
   }
-  else //NV12
+  else if(MFX_FOURCC_NV12 == m_errPrtctState.In.FourCC)
   {
       //ignore sts. super_sampling not valid in case upscale. sts == ippStsSizeErr, bufSize=0
       ippSts = ippiResizeYUV420GetBufSize(srcSize, dstSize, IPPI_INTER_SUPER, &bufSizeSuper);
 
       ippSts = ippiResizeYUV420GetBufSize(srcSize, dstSize, IPPI_INTER_LANCZOS, &bufSizeLanczos);
+  }
+  else if (MFX_FOURCC_P010 == m_errPrtctState.In.FourCC)
+  {
+        ippSts = ippiResizeGetBufSize( srcRect, dstRect, 1, IPPI_INTER_SUPER, &bufSizeSuper );
+        ippSts = ippiResizeGetBufSize( srcRect, dstRect, 1, IPPI_INTER_LANCZOS, &bufSizeLanczos );
+        /* Expect that x2 bytes needed. Potential bug. */
+        bufSizeSuper   <<= 1;
+        bufSizeLanczos <<= 1;
   }
 
   VPP_CHECK_IPP_STS( ippSts );
@@ -717,6 +734,136 @@ IppStatus rs_NV12_v2( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkB
     return sts;
 }
 
+/* ************************************************************************* */
+/* P010 not optimized resize  */
+IppStatus rs_P010( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf, mfxU16 picStruct )
+{
+    IppStatus sts     = ippStsNotSupportedModeErr;
+    IppiSize  srcSize = {0,  0};
+    IppiSize  dstSize = {0, 0};
+
+    IppiRect  srcRect = {0,0,0,0};
+    IppiRect  dstRect = {0,0,0,0};
+    IppiSize  roi     = {0, 0};
+
+    mfxU16 cropX = 0, cropY = 0;
+
+    mfxFrameData* inData = &in->Data;
+    mfxFrameInfo* inInfo = &in->Info;
+    mfxFrameData* outData= &out->Data;
+    mfxFrameInfo* outInfo= &out->Info;
+
+    /* [IN] */
+    VPP_GET_CROPX(inInfo, cropX);
+    VPP_GET_CROPY(inInfo, cropY);
+
+    /* [OUT] */
+    VPP_GET_CROPX(outInfo, cropX);
+    VPP_GET_CROPY(outInfo, cropY);
+
+
+    /* common part */
+    VPP_GET_WIDTH(inInfo,  srcSize.width);
+    VPP_GET_HEIGHT(inInfo, srcSize.height);
+
+    VPP_GET_WIDTH(outInfo,  dstSize.width);
+    VPP_GET_HEIGHT(outInfo, dstSize.height);
+
+    VPP_GET_WIDTH(inInfo,  srcRect.width);
+    VPP_GET_HEIGHT(inInfo, srcRect.height);
+
+    VPP_GET_WIDTH(outInfo,  dstRect.width);
+    VPP_GET_HEIGHT(outInfo, dstRect.height);
+
+    // tune part - disabled. reason - BufferSize is critical for
+    mfxF64 xFactor, yFactor;
+    mfxI32 interpolation;
+
+    xFactor = (mfxF64)dstSize.width  / (mfxF64)srcSize.width;
+    yFactor = (mfxF64)dstSize.height / (mfxF64)srcSize.height;
+
+    if( xFactor < 1.0 && yFactor < 1.0 )
+    {
+        interpolation = IPPI_INTER_SUPER;
+    }
+    else
+    {
+        interpolation = IPPI_INTER_LANCZOS;
+    }
+
+    if( MFX_PICSTRUCT_PROGRESSIVE & picStruct)
+    {
+        /* Resize Y */
+        sts = ippiResizeSqrPixel_16u_C1R((const Ipp16u *) inData->Y, srcSize,  inData->Pitch, srcRect,
+                                               (Ipp16u *)outData->Y, outData->Pitch, dstRect,
+                                              xFactor, yFactor, 0.0, 0.0, interpolation, pWorkBuf);
+        if( ippStsNoErr != sts ) return sts;
+
+        /* Temporary NV12->YV12 conversion. At the moment IPP has no
+         * function to resize interleaved UV 10bit.
+         * Need to remove as soon as IPP has such support
+         */
+        roi.width  = 2;
+        roi.height = ( srcSize.height / 2 ) * (srcSize.width / 2);
+        sts = ippiCopy_8u_C1R(inData->UV,     4, pWorkBuf, roi.width, roi);
+        if( ippStsNoErr != sts ) return sts;
+
+        sts = ippiCopy_8u_C1R(inData->UV + 2, 4, pWorkBuf + (srcSize.height / 2 ) * srcSize.width, roi.width, roi);
+        if( ippStsNoErr != sts ) return sts;
+
+        roi.width  = 2;
+        roi.height = ( srcSize.height / 2 ) * (srcSize.width);
+        sts = ippiCopy_8u_C1R(pWorkBuf, 2, inData->UV, roi.width, roi);
+        if( ippStsNoErr != sts ) return sts;
+
+        srcRect.height = srcSize.height >>= 1;
+        dstRect.height = dstSize.height >>= 1;
+
+        srcRect.width = srcSize.width >>= 1;
+        dstRect.width = dstSize.width >>= 1;
+
+        /* Resize U */
+        sts = ippiResizeSqrPixel_16u_C1R((const Ipp16u *) inData ->UV, srcSize, inData->Pitch / 2, srcRect,
+                                               (Ipp16u *) outData->UV, dstSize.width * 2, dstRect,
+                                              xFactor, yFactor, 0.0, 0.0, interpolation, pWorkBuf);
+        if( ippStsNoErr != sts ) return sts;
+
+        /* Resize V */
+        sts = ippiResizeSqrPixel_16u_C1R((const Ipp16u *)(&inData->UV[srcSize.height * inData->Pitch / 2 ]), srcSize, inData->Pitch / 2, srcRect,
+                                         (Ipp16u *)(&outData->UV[dstSize.height * outData->Pitch / 2 ]), dstSize.width * 2, dstRect,
+                                              xFactor, yFactor, 0.0, 0.0, interpolation, pWorkBuf);
+        if( ippStsNoErr != sts ) return sts;
+
+        /* Convert back to NV12 layout
+         */
+
+        srcRect.height = srcSize.height <<= 1;
+        dstRect.height = dstSize.height <<= 1;
+
+        srcRect.width = srcSize.width <<= 1;
+        dstRect.width = dstSize.width <<= 1;
+
+        roi.width  = 2;
+        roi.height = ( dstSize.height / 2 ) * (dstSize.width / 2);
+        sts = ippiCopy_8u_C1R(outData->UV, roi.width, pWorkBuf, 4, roi);
+        if( ippStsNoErr != sts ) return sts;
+        sts = ippiCopy_8u_C1R(outData->UV + (dstSize.height / 2 ) * dstSize.width, roi.width, pWorkBuf + 2, 4, roi);
+        if( ippStsNoErr != sts ) return sts;
+
+        roi.width  = 2;
+        roi.height = ( dstSize.height / 2 ) * (dstSize.width);
+        sts = ippiCopy_8u_C1R(pWorkBuf, 2, outData->UV, roi.width, roi);
+        if( ippStsNoErr != sts ) return sts;
+    }
+    else //interlaced video
+    {
+        /* Not supported... yet */
+        return ippStsErr;
+    }
+
+    return sts;
+}
+
 IppStatus rs_RGB32( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf, mfxU16 picStruct )
 {
   picStruct;
@@ -731,7 +878,7 @@ IppStatus rs_RGB32( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf
   mfxU16 cropX = 0, cropY = 0;
 
   mfxU32 inOffset0  = 0;
-  mfxU32 outOffset0 = 0;  
+  mfxU32 outOffset0 = 0;
 
   /* [IN] */
   mfxFrameData* inData = &in->Data;
@@ -740,7 +887,7 @@ IppStatus rs_RGB32( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf
   IPP_CHECK_NULL_PTR1(inData->R);
   IPP_CHECK_NULL_PTR1(inData->G);
   IPP_CHECK_NULL_PTR1(inData->B);
-  // alpha channel is ignore due to d3d issue  
+  // alpha channel is ignore due to d3d issue
 
   VPP_GET_CROPX(inInfo, cropX);
   VPP_GET_CROPY(inInfo, cropY);
@@ -775,24 +922,24 @@ IppStatus rs_RGB32( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf
   mfxI32 interpolation;
   xFactor = (mfxF64)dstSize.width  / (mfxF64)srcSize.width;
   yFactor = (mfxF64)dstSize.height / (mfxF64)srcSize.height;
-    
+
   if( xFactor < 1.0 && yFactor < 1.0 )
   {
       interpolation = IPPI_INTER_SUPER;
-  } 
-  else 
+  }
+  else
   {
       interpolation = IPPI_INTER_LANCZOS;
   }
 
   //if( MFX_PICSTRUCT_PROGRESSIVE & picStruct)
   {
-      srcRect.x = 0; 
+      srcRect.x = 0;
       srcRect.y = 0;
       srcRect.height = srcSize.height;
       srcRect.width  = srcSize.width;
 
-      dstRect.x = 0; 
+      dstRect.x = 0;
       dstRect.y = 0;
       dstRect.height = dstSize.height;
       dstRect.width  = dstSize.width;
@@ -800,20 +947,20 @@ IppStatus rs_RGB32( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf
       xShift = 0.0, yShift = 0.0;
 
       sts = ippiResizeSqrPixel_8u_C4R(
-          pSrc[0], srcSize, pSrcStep[0], srcRect, 
-          pDst[0], pDstStep[0], dstRect, 
-          xFactor, yFactor, xShift, yShift, interpolation, pWorkBuf);   
+          pSrc[0], srcSize, pSrcStep[0], srcRect,
+          pDst[0], pDstStep[0], dstRect,
+          xFactor, yFactor, xShift, yShift, interpolation, pWorkBuf);
 
       sts = ippStsNoErr;
-  } 
-  //else //interlaced video 
-  //{ 
+  }
+  //else //interlaced video
+  //{
   //  IppiSize  srcSizeIntr = {0, 0};
   //  IppiSize  dstSizeIntr = {0, 0};
   //  mfxI32    srcStepIntr = 0;
   //  mfxI32    dstStepIntr = 0;
 
-  //  srcRect.x = 0; 
+  //  srcRect.x = 0;
   //  srcRect.y = 0;
   //  srcRect.height = srcSize.height >> 1;
   //  srcRect.width  = srcSize.width;
@@ -823,7 +970,7 @@ IppStatus rs_RGB32( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf
 
   //  srcStepIntr = pSrcStep[0] << 1;
 
-  //  dstRect.x = 0; 
+  //  dstRect.x = 0;
   //  dstRect.y = 0;
   //  dstRect.height = dstSize.height >> 1;
   //  dstRect.width  = dstSize.width;
@@ -834,16 +981,16 @@ IppStatus rs_RGB32( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf
   //  dstStepIntr = pDstStep[0] << 1;
 
   //  /* top field */
-  //  sts = ippiResizeSqrPixel_8u_C4R(pSrc[0], srcSizeIntr, srcStepIntr, srcRect, 
-  //                                  pDst[0], dstStepIntr, dstRect, 
+  //  sts = ippiResizeSqrPixel_8u_C4R(pSrc[0], srcSizeIntr, srcStepIntr, srcRect,
+  //                                  pDst[0], dstStepIntr, dstRect,
   //                                  xFactor, yFactor, xShift, yShift, interpolation, pWorkBuf);
 
   //  if( ippStsNoErr != sts ) return sts;
 
   //  /* bottom field */
-  //  sts = ippiResizeSqrPixel_8u_C1R(pSrc[0]+pSrcStep[0], srcSizeIntr, srcStepIntr, srcRect, 
-  //                                  pDst[0]+pDstStep[0], dstStepIntr, dstRect, 
-  //                                  xFactor, yFactor, xShift, yShift, interpolation, pWorkBuf);    
+  //  sts = ippiResizeSqrPixel_8u_C1R(pSrc[0]+pSrcStep[0], srcSizeIntr, srcStepIntr, srcRect,
+  //                                  pDst[0]+pDstStep[0], dstStepIntr, dstRect,
+  //                                  xFactor, yFactor, xShift, yShift, interpolation, pWorkBuf);
   //}
 
   return sts;
