@@ -1282,9 +1282,6 @@ mfxStatus VideoDECODEH265::GetPayload( mfxU64 *ts, mfxPayload *payload )
 
 H265DecoderFrame * VideoDECODEH265::GetFrameToDisplay_H265(UMC::VideoData * dst, bool force)
 {
-    if (!m_pH265VideoDecoder->IsShouldSuspendDisplay() && !force && m_platform == MFX_PLATFORM_SOFTWARE)
-        return 0;
-
     H265DecoderFrame * pFrame = 0;
     do
     {
