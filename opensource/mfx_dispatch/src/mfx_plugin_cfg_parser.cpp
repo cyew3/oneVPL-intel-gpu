@@ -35,6 +35,8 @@ File Name: mfx_plugin_cfg_parser.cpp
 #include <stdlib.h>
 #include <ctype.h>
 
+const int guidLen = 16;
+
 // In-place strip trailing whitespace chars
 static char* Strip(char* s)
 {
@@ -86,6 +88,21 @@ enum
 namespace MFX
 {
 
+bool parseGUID(const char* src, mfxU8* guid)
+{
+    mfxU32 p[guidLen];
+    int res = sscanf(src, 
+        "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
+        p, p + 1, p + 2, p + 3, p + 4, p + 5, p + 6, p + 7, 
+        p + 8, p + 9, p + 10, p + 11, p + 12, p + 13, p + 14, p + 15);
+    if (res != guidLen)
+        return false;
+
+    for (int i = 0; i < guidLen; i++)
+        guid[i] = (mfxU8)p[i];
+    return true;
+}
+
 PluginConfigParser::PluginConfigParser(const char * name)
 {
     cfgFile = fopen(name, "rt");
@@ -111,23 +128,21 @@ bool PluginConfigParser::GetCurrentPluginName(char * pluginName, int nChars)
     char * start;
     char * end;
 
-    while (!foundSection && fgets(line, MAX_PLUGIN_NAME, cfgFile))
+    if (fgets(line, MAX_PLUGIN_NAME, cfgFile))
     {
         start = SkipWhitespace(Strip(line));
-
         if (*start == '[')
         {
-            // A "[section]" line            
+            // A "[section]" line
             end = FindCharOrComment(start + 1, ']');
             if (*end == ']') {
                 *end = '\0';
                 strncpy0(pluginName, start + 1, nChars);
                 foundSection = true;
-                fsetpos(cfgFile, &sectionStart);
             }
         }
-        fgetpos(cfgFile, &sectionStart);
     }
+    fsetpos(cfgFile, &sectionStart);
 
     return foundSection;
 }
@@ -211,7 +226,7 @@ int PluginConfigParser::GetPluginCount()
 }
 
 
-bool PluginConfigParser::ParseSingleParameter(const char * name, const char * value, PluginDescriptionRecord & dst, mfxU32 & parsedFields)
+bool PluginConfigParser::ParseSingleParameter(const char * name, char * value, PluginDescriptionRecord & dst, mfxU32 & parsedFields)
 {
     if (0 == strcmp(name, "Type"))
     {
@@ -235,43 +250,33 @@ bool PluginConfigParser::ParseSingleParameter(const char * name, const char * va
     }
     if (0 == strcmp(name, "GUID"))
     {
-        mfxU32 p[16];
-        int res = sscanf(value, 
-            "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
-            p, p + 1, p + 2, p + 3, p + 4, p + 5, p + 6, p + 7, 
-            p + 8, p + 9, p + 10, p + 11, p + 12, p + 13, p + 14, p + 15);
-        if (res != 16)
-        {
+        if (!parseGUID(value, dst.PluginUID.Data))
             return false;
-        }
-
-        for (int i = 0; i < 16; i++)
-            dst.PluginUID.Data[i] = (mfxU8)p[i];
 
         parsedFields |= PARSED_UID;
         return true;
     }
-    if (0 == strcmp(name, "Path"))
-    {
-        strncpy0(dst.sPath, value, MAX_PLUGIN_PATH);
-        parsedFields |= PARSED_PATH;
-        return true;
-    }
-#ifdef LINUX64
-    if (0 == strcmp(name, "FileName64"))
-    {
-        strncpy0(dst.sPath, value, MAX_PLUGIN_PATH);
-        parsedFields |= PARSED_PATH;
-        return true;
-    }
+    if (0 == strcmp(name, "Path") ||
+#ifdef LINUX64        
+        0 == strcmp(name, "FileName64"))
 #else
-    if (0 == strcmp(name, "FileName32"))
+        0 == strcmp(name, "FileName32"))
+#endif
     {
-        strncpy0(dst.sPath, value, MAX_PLUGIN_PATH);
+        // strip quotes
+        const int lastCharIndex = strlen(value) - 1;
+        if (value[0] == '"' && value[lastCharIndex] == '"')
+        {
+            value[lastCharIndex] = '\0';
+            value = value + 1;
+        }
+        if (strlen(dst.sPath) + strlen("/") + strlen(value) >= MAX_PLUGIN_PATH)
+            return false;
+        strcpy(dst.sPath + strlen(dst.sPath), "/");
+        strcpy(dst.sPath + strlen(dst.sPath), value);
         parsedFields |= PARSED_PATH;
         return true;
     }
-#endif
     if (0 == strcmp(name, "Default"))
     {
         dst.Default = (0 != atoi(value));
@@ -300,8 +305,6 @@ bool PluginConfigParser::ParsePluginParams(PluginDescriptionRecord & dst, mfxU32
 {
     if (!cfgFile)
         return false;
-
-    parsedFields = 0;
 
     char line[MAX_PLUGIN_NAME];
 

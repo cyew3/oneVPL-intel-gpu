@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2013 Intel Corporation.  All rights reserved.
+Copyright (C) 2013-2014 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -84,9 +84,10 @@ namespace MFX
         FILE * cfgFile;
         fpos_t sectionStart;
 
-        bool ParseSingleParameter(const char * name, const char * value, PluginDescriptionRecord & dst, mfxU32 & parsedFields);
-    };    
+        bool ParseSingleParameter(const char * name, char * value, PluginDescriptionRecord & dst, mfxU32 & parsedFields);
+    };
 
+    bool parseGUID(const char* src, mfxU8* guid);
 }
 
 #endif // __MFX_PLUGIN_CFG_PARSER_H

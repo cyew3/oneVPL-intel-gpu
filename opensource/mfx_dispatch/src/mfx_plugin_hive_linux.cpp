@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2013 Intel Corporation.  All rights reserved.
+Copyright (C) 2013-2014 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -108,7 +108,7 @@ static bool CheckPluginRecord(PluginDescriptionRecord & descriptionRecord, mfxU3
         TRACE_HIVE_INFO(alignStr()" : \n", CodecIDKeyName, "NOT REGISTERED");
     }
 
-    if (isFieldMissed(foundFields, requiredFields, PluginConfigParser::PARSED_CODEC_ID)) 
+    if (isFieldMissed(foundFields, requiredFields, PluginConfigParser::PARSED_UID)) 
     {
         return false;
     }
@@ -136,7 +136,7 @@ static bool CheckPluginRecord(PluginDescriptionRecord & descriptionRecord, mfxU3
 
     if (isFieldMissed(foundFields, requiredFields, PluginConfigParser::PARSED_API_VERSION)) 
     {
-        TRACE_HIVE_ERROR(alignStr()" : %d, which is invalid\n", APIVerKeyName, descriptionRecord.PluginVersion);
+        TRACE_HIVE_ERROR(alignStr()" : %d.%d, which is invalid\n", APIVerKeyName, descriptionRecord.APIVersion.Major, descriptionRecord.APIVersion.Minor);
         return false;
     }
     TRACE_HIVE_INFO(alignStr()" : %d.%d\n", APIVerKeyName, descriptionRecord.APIVersion.Major, descriptionRecord.APIVersion.Minor);
@@ -146,9 +146,6 @@ static bool CheckPluginRecord(PluginDescriptionRecord & descriptionRecord, mfxU3
 
 bool MFXPluginStorageBase::ConvertAPIVersion(mfxU32 APIVersion, PluginDescriptionRecord &descriptionRecord) const
 {
-    descriptionRecord.APIVersion.Minor = static_cast<mfxU16> (APIVersion & 0x0ff);
-    descriptionRecord.APIVersion.Major = static_cast<mfxU16> (APIVersion >> 8);
-
     if (mCurrentAPIVersion.Version < descriptionRecord.APIVersion.Version ||
         mCurrentAPIVersion.Major > descriptionRecord.APIVersion.Major) 
     {
@@ -160,10 +157,7 @@ bool MFXPluginStorageBase::ConvertAPIVersion(mfxU32 APIVersion, PluginDescriptio
             , mCurrentAPIVersion.Minor);
         return false;
     }
-
-    TRACE_HIVE_INFO(alignStr()" : {%d.%d}\n", APIVerKeyName, descriptionRecord.APIVersion.Major, descriptionRecord.APIVersion.Minor);
     return true;
-
 }
 
 MFXPluginsInHive::MFXPluginsInHive(int, const msdk_disp_char* msdkLibSubKey, mfxVersion currentAPIVersion)
@@ -216,6 +210,8 @@ MFXPluginsInHive::MFXPluginsInHive(int, const msdk_disp_char* msdkLibSubKey, mfx
 
             if (CheckPluginRecord(descriptionRecord, foundFields, reqs))
             {
+                if (!ConvertAPIVersion(0, descriptionRecord))
+                    continue;
                 (*this)[index] = descriptionRecord;
             }
             else
@@ -283,8 +279,25 @@ MFXPluginsInFS::MFXPluginsInFS(mfxVersion currentAPIVersion)
     {
         for (int i = 0; i < n; i++)
         {
+            PluginDescriptionRecord descriptionRecord;
+            descriptionRecord.onlyVersionRegistered = true;
             char cfgName[MAX_PLUGIN_PATH];
             snprintf(cfgName, sizeof(cfgName), "%s/%s/%s", selfName, namelist[i]->d_name, pluginCfgFileName);
+            if ( strlen(selfName) + strlen("/") + strlen(namelist[i]->d_name) >= MAX_PLUGIN_PATH)
+            {
+                TRACE_HIVE_ERROR("buffer of MAX_PLUGIN_PATH characters which is %d, not enough to store plugin directory path: %s/%s\n",
+                    MAX_PLUGIN_PATH, selfName, namelist[i]->d_name);
+            }
+
+            strcpy(descriptionRecord.sPath, selfName);
+            strcpy(descriptionRecord.sPath + strlen(descriptionRecord.sPath), "/");
+            strcpy(descriptionRecord.sPath + strlen(descriptionRecord.sPath), namelist[i]->d_name);
+
+            if (!parseGUID(namelist[i]->d_name, descriptionRecord.PluginUID.Data))
+            {
+                TRACE_HIVE_ERROR("directory name %s is not valid guid\n", namelist[i]->d_name);
+                continue;
+            }
             free(namelist[i]);
                       
             PluginConfigParser parser(cfgName);
@@ -301,16 +314,16 @@ MFXPluginsInFS::MFXPluginsInFS(mfxVersion currentAPIVersion)
                 continue;
             }
 
-            PluginDescriptionRecord descriptionRecord;
+
             try 
             {
                 char pluginName[MAX_PLUGIN_NAME];
                 bool nameRes = parser.GetCurrentPluginName(pluginName);
 
-                mfxU32 foundFields = 0;
+                mfxU32 foundFields = PluginConfigParser::PARSED_UID;
 
                 bool infoRes = parser.ParsePluginParams(descriptionRecord, foundFields);
-                if (!nameRes || !infoRes)
+                if (!infoRes)
                 {
                     TRACE_HIVE_WRN("unable to parse plugin information in %s\n", cfgName);
                     continue;
@@ -319,10 +332,13 @@ MFXPluginsInFS::MFXPluginsInFS(mfxVersion currentAPIVersion)
 
                 mfxU32 reqs =  PluginConfigParser::PARSED_VERSION
                              | PluginConfigParser::PARSED_API_VERSION
-                             | PluginConfigParser::PARSED_PATH;
+                             | PluginConfigParser::PARSED_PATH
+                             | PluginConfigParser::PARSED_UID;
 
                 if (CheckPluginRecord(descriptionRecord, foundFields, reqs))
                 {
+                    if (!ConvertAPIVersion(0, descriptionRecord))
+                        continue;
                     push_back(descriptionRecord);
                 }
             }
