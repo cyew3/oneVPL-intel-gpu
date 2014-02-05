@@ -159,6 +159,8 @@ typedef Ipp64f CostType;
 #define H265_MAXNUMREF  4
 #define PGOP_PIC_SIZE 4
 
+const Ipp8u OPT_LAMBDA_PYRAMID = 0;
+
 enum EnumSliceType {
     B_SLICE     = 0,
     P_SLICE     = 1,

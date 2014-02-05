@@ -438,6 +438,8 @@ mfxStatus H265Encoder::SetPPS()
     return MFX_ERR_NONE;
 }
 
+static Ipp32f tab_rdLambdaBPyramid[4] = {0.442, 0.3536, 0.3536, 0.68};
+
 mfxStatus H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice)
 {
     memset(slice, 0, sizeof(H265Slice));
@@ -531,19 +533,33 @@ mfxStatus H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice)
     slice->rd_opt_flag = 1;
     slice->rd_lambda = 1;
     if (slice->rd_opt_flag) {
-        slice->rd_lambda = pow(2.0, (m_videoParam.QP - 12) * (1.0/3.0)) * (1.0 /  256.0);
+        slice->rd_lambda = pow(2.0, (m_videoParam.QP - 12) * (1.0/3.0)) * (1.0 / 256.0);
         switch (slice->slice_type) {
         case P_SLICE:
-            if (m_videoParam.PGopPicSize == 1 || slice->pgop_idx)
-                slice->rd_lambda *= 0.4624;
-            else
-                slice->rd_lambda *= 0.578;
-            if (slice->pgop_idx)
-                slice->rd_lambda *= MAX(2,MIN(4,(m_videoParam.QP - 12)/6));
+            if (m_videoParam.BPyramid && OPT_LAMBDA_PYRAMID) {
+                Ipp8u layer = m_BpyramidRefLayers[m_pCurrentFrame->m_PicOrderCnt % m_videoParam.GopRefDist];
+                slice->rd_lambda *= tab_rdLambdaBPyramid[layer];
+                if (layer > 0)
+                    slice->rd_lambda *= MAX(2,MIN(4,(m_videoParam.QP - 12)/6.0));
+            } else {
+                if (m_videoParam.PGopPicSize == 1 || slice->pgop_idx)
+                    slice->rd_lambda *= 0.4624;
+                else
+                    slice->rd_lambda *= 0.578;
+                if (slice->pgop_idx)
+                    slice->rd_lambda *= MAX(2,MIN(4,(m_videoParam.QP - 12)/6));
+            }
             break;
         case B_SLICE:
-            slice->rd_lambda *= 0.4624;
-            slice->rd_lambda *= MAX(2,MIN(4,(m_videoParam.QP - 12)/6));
+            if (m_videoParam.BPyramid && OPT_LAMBDA_PYRAMID) {
+                Ipp8u layer = m_BpyramidRefLayers[m_pCurrentFrame->m_PicOrderCnt % m_videoParam.GopRefDist];
+                slice->rd_lambda *= tab_rdLambdaBPyramid[layer];
+                if (layer > 0)
+                    slice->rd_lambda *= MAX(2,MIN(4,(m_videoParam.QP - 12)/6.0));
+            } else {
+                slice->rd_lambda *= 0.4624;
+                slice->rd_lambda *= MAX(2,MIN(4,(m_videoParam.QP - 12)/6));
+            }
             break;
         case I_SLICE:
         default:
