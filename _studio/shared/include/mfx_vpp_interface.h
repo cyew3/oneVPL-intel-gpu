@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -84,6 +84,11 @@ namespace MfxHwVideoProcessing
         mfxU32 DstY;
         mfxU32 DstW;
         mfxU32 DstH;
+        mfxU16 LumaKeyEnable;
+        mfxU16 LumaKeyMin;
+        mfxU16 LumaKeyMax;
+        mfxU16 AlphaEnable;
+        mfxU16 Alpha;
     };
 
 
@@ -169,6 +174,7 @@ namespace MfxHwVideoProcessing
 
         bool           bComposite;
         std::vector<DstRect> dstRects;
+        mfxU32         iBackgroundColor;
 
         mfxU32         statusReportID;
 

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -51,6 +51,7 @@ VAAPIVideoProcessing::VAAPIVideoProcessing():
 , m_denoiseFilterID(VA_INVALID_ID)
 , m_deintFilterID(VA_INVALID_ID)
 , m_numFilterBufs(0)
+, m_primarySurface4Composition(NULL)
 {
 
     for(int i = 0; i < VAProcFilterCount; i++)
@@ -106,6 +107,12 @@ mfxStatus VAAPIVideoProcessing::DestroyDevice(void)
 
 mfxStatus VAAPIVideoProcessing::Close(void)
 {
+    if (m_primarySurface4Composition != NULL)
+    {
+        vaDestroySurfaces(m_vaDisplay,m_primarySurface4Composition,1);
+        free(m_primarySurface4Composition);
+        m_primarySurface4Composition = NULL;
+    }
     if( m_vaContextVPP )
     {
         vaDestroyContext( m_vaDisplay, m_vaContextVPP );
@@ -283,7 +290,6 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
 
 } // mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
 
-
 mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "VPP Execute");
@@ -294,6 +300,14 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     MFX_CHECK_NULL_PTR1( pParams->targetSurface.hdl.first );
     MFX_CHECK_NULL_PTR1( pParams->pRefSurfaces );
     MFX_CHECK_NULL_PTR1( pParams->pRefSurfaces[0].hdl.first );
+
+    /* There is a special case for composition */
+    mfxStatus mfxSts = MFX_ERR_NONE;
+    if (pParams->bComposite)
+    {
+        mfxSts = Execute_Composition(pParams);
+        return mfxSts;
+    }
 
     if (VA_INVALID_ID == m_deintFilterID)
     {
@@ -622,6 +636,352 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
 
     return MFX_ERR_NONE;
 } // mfxStatus VAAPIVideoProcessing::Execute(FASTCOMP_BLT_PARAMS *pVideoCompositingBlt)
+
+mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
+{
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "VPP Execute");
+
+    VAStatus vaSts = VA_STATUS_SUCCESS;
+    VASurfaceAttrib attrib;
+    std::vector<VABlendState> blend_state;
+
+    MFX_CHECK_NULL_PTR1( pParams );
+    MFX_CHECK_NULL_PTR1( pParams->targetSurface.hdl.first );
+    MFX_CHECK_NULL_PTR1( pParams->pRefSurfaces );
+    MFX_CHECK_NULL_PTR1( pParams->pRefSurfaces[0].hdl.first );
+
+    if (m_primarySurface4Composition == NULL)
+    {
+        mfxDrvSurface* pRefSurf = &(pParams->pRefSurfaces[0]);
+        mfxFrameInfo *inInfo = &(pRefSurf->frameInfo);
+
+        m_primarySurface4Composition = (VASurfaceID*)calloc(1,sizeof(VASurfaceID));
+
+        attrib.type = VASurfaceAttribPixelFormat;
+        attrib.value.type = VAGenericValueTypeInteger;
+        if (inInfo->FourCC == MFX_FOURCC_NV12)
+        {
+            attrib.value.value.i = VA_FOURCC_NV12;
+        }
+        else if (inInfo->FourCC == MFX_FOURCC_RGB4)
+        {
+            attrib.value.value.i = VA_FOURCC_ARGB;
+        }
+        attrib.flags = VA_SURFACE_ATTRIB_SETTABLE;
+
+        /* NB! Second parameter is always VA_RT_FORMAT_YUV420 even for RGB surfaces!!! */
+        vaSts = vaCreateSurfaces(m_vaDisplay, VA_RT_FORMAT_YUV420, inInfo->Width, inInfo->Height,
+                m_primarySurface4Composition, 1, &attrib, 1);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    }
+
+    /* pParams->refCount is total number of processing surfaces:
+     * in case of composition this is primary + sub streams*/
+
+    // mfxU32 SampleCount = pParams->refCount;
+    // WA:
+    mfxU32 SampleCount = 1;
+    mfxU32 refIdx = 0;
+
+    //m_pipelineParam.resize(SampleCount);
+    //m_pipelineParam.clear();
+    m_pipelineParam.resize(pParams->refCount + 1);
+    //m_pipelineParamID.resize(SampleCount);
+    //m_pipelineParamID.clear();
+    m_pipelineParamID.resize(pParams->refCount + 1, VA_INVALID_ID);
+    blend_state.resize(pParams->refCount + 1);
+
+    std::vector<VARectangle> input_region;
+    input_region.resize(pParams->refCount + 1);
+    std::vector<VARectangle> output_region;
+    output_region.resize(pParams->refCount + 1);
+    VASurfaceID *outputSurface = (VASurfaceID*)(pParams->targetSurface.hdl.first);
+
+    for( refIdx = 0; refIdx < SampleCount; refIdx++ )
+    {
+        mfxDrvSurface* pRefSurf = &(pParams->pRefSurfaces[refIdx]);
+
+        //VASurfaceID* srf = (VASurfaceID*)(pRefSurf->hdl.first);
+        //m_pipelineParam[refIdx].surface = *srf;
+        m_pipelineParam[refIdx].surface = *m_primarySurface4Composition;
+        //VASurfaceID *outputSurface = (VASurfaceID*)(pParams->targetSurface.hdl.first);
+        //m_pipelineParam[refIdx].surface = *outputSurface;
+
+        // source cropping
+        mfxFrameInfo *inInfo = &(pRefSurf->frameInfo);
+        mfxFrameInfo *outInfo = &(pParams->targetSurface.frameInfo);
+        input_region[refIdx].y   = 0;
+        input_region[refIdx].x   = 0;
+        input_region[refIdx].height = outInfo->CropH;
+        input_region[refIdx].width  = outInfo->CropW;
+        m_pipelineParam[refIdx].surface_region = &input_region[refIdx];
+
+        // destination cropping
+        //mfxFrameInfo *outInfo = &(pParams->targetSurface.frameInfo);
+        output_region[refIdx].y  = 0; //outInfo->CropY;
+        output_region[refIdx].x   = 0; //outInfo->CropX;
+        output_region[refIdx].height= outInfo->CropH;
+        output_region[refIdx].width  = outInfo->CropW;
+        m_pipelineParam[refIdx].output_region = &output_region[refIdx];
+
+        //m_pipelineParam[refIdx].output_background_color = pParams->iBackgroundColor;
+        m_pipelineParam[refIdx].output_background_color = 0xff000000;
+
+        mfxU32  refFourcc = pRefSurf->frameInfo.FourCC;
+        switch (refFourcc)
+        {
+        case MFX_FOURCC_RGB4:
+            m_pipelineParam[refIdx].surface_color_standard = VAProcColorStandardNone;
+            break;
+        case MFX_FOURCC_NV12:  //VA_FOURCC_NV12:
+        default:
+            m_pipelineParam[refIdx].surface_color_standard = VAProcColorStandardBT601;
+            break;
+        }
+
+        /* Global alpha and luma key can not be enabled together*/
+        if (pParams->dstRects[refIdx].AlphaEnable !=0)
+        {
+            blend_state[refIdx].flags = VA_BLEND_GLOBAL_ALPHA;
+            blend_state[refIdx].global_alpha = ((float)pParams->dstRects[refIdx].Alpha) /256;
+        }
+        else if (pParams->dstRects[refIdx].LumaKeyEnable !=0)
+        {
+            blend_state[refIdx].flags = VA_BLEND_LUMA_KEY;
+            blend_state[refIdx].min_luma = pParams->dstRects[refIdx].LumaKeyMin;
+            blend_state[refIdx].max_luma = pParams->dstRects[refIdx].LumaKeyMax;
+        }
+
+        mfxU32  targetFourcc = pParams->targetSurface.frameInfo.FourCC;
+        switch (targetFourcc)
+        {
+        case MFX_FOURCC_RGB4:
+            m_pipelineParam[refIdx].output_color_standard = VAProcColorStandardNone;
+            break;
+        case MFX_FOURCC_NV12:
+        default:
+            m_pipelineParam[refIdx].output_color_standard = VAProcColorStandardBT601;
+            break;
+        }
+
+        //m_pipelineParam[refIdx].pipeline_flags = ?? //VA_PROC_PIPELINE_FAST or VA_PROC_PIPELINE_SUBPICTURES
+
+        switch (pRefSurf->frameInfo.PicStruct)
+        {
+            case MFX_PICSTRUCT_PROGRESSIVE:
+                m_pipelineParam[refIdx].filter_flags = VA_FRAME_PICTURE;
+                break;
+            case MFX_PICSTRUCT_FIELD_TFF:
+                m_pipelineParam[refIdx].filter_flags = VA_TOP_FIELD;
+                break;
+            case MFX_PICSTRUCT_FIELD_BFF:
+                m_pipelineParam[refIdx].filter_flags = VA_BOTTOM_FIELD;
+                break;
+        }
+
+        m_pipelineParam[refIdx].filters  = m_filterBufs;
+        m_pipelineParam[refIdx].num_filters  = m_numFilterBufs;
+        /* Special case for composition:
+         * as primary surface processed as sub-stream
+         * pipeline and filter properties should be *_FAST */
+        if (pParams->bComposite)
+        {
+            m_pipelineParam[refIdx].num_filters  = 0;
+            m_pipelineParam[refIdx].pipeline_flags |= VA_PROC_PIPELINE_FAST;
+            m_pipelineParam[refIdx].filter_flags    |= VA_FILTER_SCALING_FAST;
+
+            if ((pParams->dstRects[refIdx].AlphaEnable != 0) ||
+                    (pParams->dstRects[refIdx].LumaKeyEnable != 0) )
+            {
+                m_pipelineParam[refIdx].blend_state = &blend_state[refIdx];
+            }
+        }
+
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                            m_vaContextVPP,
+                            VAProcPipelineParameterBufferType,
+                            sizeof(VAProcPipelineParameterBuffer),
+                            1,
+                            &m_pipelineParam[refIdx],
+                            &m_pipelineParamID[refIdx]);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+    }
+
+    //VASurfaceID *outputSurface = (VASurfaceID*)(pParams->targetSurface.hdl.first);
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaBeginPicture");
+        vaSts = vaBeginPicture(m_vaDisplay,
+                            m_vaContextVPP,
+                            *outputSurface);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+    }
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaRenderPicture");
+        for( refIdx = 0; refIdx < SampleCount; refIdx++ )
+        {
+            vaSts = vaRenderPicture(m_vaDisplay, m_vaContextVPP, &m_pipelineParamID[refIdx], 1);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        }
+    }
+
+    /* Final End Picture call... if there is no composition case ! */
+    if (!pParams->bComposite)
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaEndPicture");
+        vaSts = vaEndPicture(m_vaDisplay, m_vaContextVPP);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+    }
+    else /* Special case for Composition */
+    {
+        unsigned int uBeginPictureCounter = 0;
+        std::vector<VAProcPipelineParameterBuffer> m_pipelineParamComp;
+        std::vector<VABufferID> m_pipelineParamCompID;
+        /* for new buffers for Begin Picture*/
+        m_pipelineParamComp.resize(pParams->fwdRefCount/7);
+        m_pipelineParamCompID.resize(pParams->fwdRefCount/7);
+
+        /* pParams->fwdRefCount actually is number of sub stream*/
+        for( refIdx = 1; refIdx <= (pParams->fwdRefCount+1); refIdx++ )
+        {
+            /*for frames 8, 15, 22, 29,... */
+            if ((refIdx != 1) && ((refIdx %7) == 1) )
+            {
+                //m_pipelineParam[refIdx].output_background_color = pParams->iBackgroundColor;
+                m_pipelineParam[refIdx].output_background_color = 0xff000000;
+                vaSts = vaBeginPicture(m_vaDisplay,
+                                    m_vaContextVPP,
+                                    *outputSurface);
+                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+                /*to copy initial properties of primary surface... */
+                m_pipelineParamComp[uBeginPictureCounter] = m_pipelineParam[0];
+                /* ... and to In-place output*/
+                m_pipelineParamComp[uBeginPictureCounter].surface = *outputSurface;
+                //m_pipelineParam[0].surface = *outputSurface;
+
+                vaSts = vaCreateBuffer(m_vaDisplay,
+                                    m_vaContextVPP,
+                                    VAProcPipelineParameterBufferType,
+                                    sizeof(VAProcPipelineParameterBuffer),
+                                    1,
+                                    &m_pipelineParamComp[uBeginPictureCounter],
+                                    &m_pipelineParamCompID[uBeginPictureCounter]);
+                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaBeginPicture");
+                vaSts = vaRenderPicture(m_vaDisplay, m_vaContextVPP, &m_pipelineParamCompID[uBeginPictureCounter], 1);
+                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+            }
+
+            m_pipelineParam[refIdx] = m_pipelineParam[0];
+            mfxDrvSurface* pRefSurf = &(pParams->pRefSurfaces[refIdx-1]);
+
+            VASurfaceID* srf = (VASurfaceID*)(pRefSurf->hdl.first);
+            m_pipelineParam[refIdx].surface = *srf;
+
+            /* to process input parameters of sub stream:
+             * crop info and original size*/
+            mfxFrameInfo *inInfo = &(pRefSurf->frameInfo);
+            input_region[refIdx].y   = inInfo->CropY;
+            input_region[refIdx].x   = inInfo->CropX;
+            input_region[refIdx].height = inInfo->CropH;
+            input_region[refIdx].width  = inInfo->CropW;
+            m_pipelineParam[refIdx].surface_region = &input_region[refIdx];
+
+            /* to process output parameters of sub stream:
+             *  position and destination size */
+            output_region[refIdx].y  = pParams->dstRects[refIdx-1].DstY;
+            output_region[refIdx].x   = pParams->dstRects[refIdx-1].DstX;
+            output_region[refIdx].height= pParams->dstRects[refIdx-1].DstH;
+            output_region[refIdx].width  = pParams->dstRects[refIdx-1].DstW;
+            m_pipelineParam[refIdx].output_region = &output_region[refIdx];
+
+            /* Global alpha and luma key can not be enabled together*/
+            if (pParams->dstRects[refIdx -1 ].AlphaEnable !=0)
+            {
+                blend_state[refIdx].flags = VA_BLEND_GLOBAL_ALPHA;
+                blend_state[refIdx].global_alpha = ((float)pParams->dstRects[refIdx-1].Alpha) /256;
+            }
+            else if (pParams->dstRects[refIdx].LumaKeyEnable !=0)
+            {
+                blend_state[refIdx].flags = VA_BLEND_LUMA_KEY;
+                blend_state[refIdx].min_luma = pParams->dstRects[refIdx-1].LumaKeyMin;
+                blend_state[refIdx].max_luma = pParams->dstRects[refIdx-1].LumaKeyMax;
+            }
+            if ((pParams->dstRects[refIdx-1].AlphaEnable != 0) ||
+                    (pParams->dstRects[refIdx-1].LumaKeyEnable != 0) )
+            {
+                m_pipelineParam[refIdx].blend_state = &blend_state[refIdx];
+            }
+
+
+            //m_pipelineParam[refIdx].pipeline_flags = ?? //VA_PROC_PIPELINE_FAST or VA_PROC_PIPELINE_SUBPICTURES
+            m_pipelineParam[refIdx].pipeline_flags  |= VA_PROC_PIPELINE_FAST;
+            m_pipelineParam[refIdx].filter_flags    |= VA_FILTER_SCALING_FAST;
+
+            m_pipelineParam[refIdx].filters  = m_filterBufs;
+            m_pipelineParam[refIdx].num_filters  = 0;
+
+            vaSts = vaCreateBuffer(m_vaDisplay,
+                                m_vaContextVPP,
+                                VAProcPipelineParameterBufferType,
+                                sizeof(VAProcPipelineParameterBuffer),
+                                1,
+                                &m_pipelineParam[refIdx],
+                                &m_pipelineParamID[refIdx]);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaRenderPicture");
+            vaSts = vaRenderPicture(m_vaDisplay, m_vaContextVPP, &m_pipelineParamID[refIdx], 1);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+            /*for frames 7, 14, 21, ...
+             * or for the last frame*/
+            if ( ((refIdx % 7) ==0) || ((pParams->fwdRefCount+1) == refIdx) )
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaEndPicture");
+                vaSts = vaEndPicture(m_vaDisplay, m_vaContextVPP);
+                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+            }
+
+        } /* for( refIdx = 1; refIdx <= (pParams->fwdRefCount); refIdx++ )*/
+
+        for( refIdx = 0; refIdx < uBeginPictureCounter; refIdx++ )
+        {
+            if ( m_pipelineParamID[refIdx] != VA_INVALID_ID)
+            {
+                vaSts = vaDestroyBuffer(m_vaDisplay, m_pipelineParamCompID[refIdx]);
+                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+                m_pipelineParamCompID[refIdx] = VA_INVALID_ID;
+            }
+        }
+    } /* if (!pParams->bComposite) */
+
+    for( refIdx = 0; refIdx < m_pipelineParamID.size(); refIdx++ )
+    {
+        if ( m_pipelineParamID[refIdx] != VA_INVALID_ID)
+        {
+            vaSts = vaDestroyBuffer(m_vaDisplay, m_pipelineParamID[refIdx]);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+            m_pipelineParamID[refIdx] = VA_INVALID_ID;
+        }
+    }
+
+    // (3) info needed for sync operation
+    //-------------------------------------------------------
+    {
+        UMC::AutomaticUMCMutex guard(m_guard);
+
+        ExtVASurface currentFeedback; // {surface & number_of_task}
+        currentFeedback.surface = *outputSurface;
+        currentFeedback.number = pParams->statusReportID;
+        m_feedbackCache.push_back(currentFeedback);
+    }
+
+    return MFX_ERR_NONE;
+} // mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
+
+
 
 mfxStatus VAAPIVideoProcessing::QueryTaskStatus(mfxU32 taskIndex)
 {

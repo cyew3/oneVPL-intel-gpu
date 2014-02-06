@@ -1582,11 +1582,44 @@ mfxStatus VideoVPPHW::QueryIOSurf(
 
 mfxStatus VideoVPPHW::Reset(mfxVideoParam *par)
 {
-    //mfxStatus sts = MFX_ERR_NONE;
+    mfxStatus sts = MFX_ERR_NONE;
 
-    m_params = *par;
+    m_params = *par;// PARAMS!!!
 
-    m_taskMngr.Close();// all resource free here
+    /* Device should be already exist !!!
+     * As it is Reset call, it should be true.
+     *
+     * If you call Reset() before Init() call, there is no ddi device.
+     * But it is ok, as no resource to free
+     * and this case is not influence on composition
+    */
+    mfxVppCaps caps = {0};
+
+    if (m_ddi.get() != NULL)
+    {
+        sts = m_ddi->QueryCapabilities( caps );
+        MFX_CHECK_STS(sts);
+
+        if (par->vpp.In.Width > caps.uMaxWidth  || par->vpp.In.Height  > caps.uMaxHeight ||
+            par->vpp.Out.Width > caps.uMaxWidth || par->vpp.Out.Height > caps.uMaxHeight)
+        {
+            return MFX_WRN_PARTIAL_ACCELERATION;
+        }
+
+        m_config.m_IOPattern = 0;
+        sts = ConfigureExecuteParams(
+            m_params,
+            caps,
+            m_executeParams,
+            m_config);
+    }
+
+    /* This is question: Should we free resource here or not?... */
+    /* For Dynamic composition we should not to do it !!! */
+    if (false == m_executeParams.bComposite)
+    {
+        m_taskMngr.Close();// all resource free here
+    }
 
     m_taskMngr.Init(
         m_pCore,
@@ -2487,6 +2520,11 @@ mfxStatus ConfigureExecuteParams(
                     {
                         mfxExtVPPComposite* extComp = (mfxExtVPPComposite*) videoParam.ExtParam[i];
                         StreamCount = extComp->NumInputStream;
+                        if (executeParams.dstRects.size() != StreamCount)
+                        {
+                            executeParams.dstRects.clear();
+                            executeParams.dstRects.resize(StreamCount);
+                        }
                         for (mfxU32 cnt = 0; cnt < StreamCount; ++cnt)
                         {
                             DstRect rec = {0};
@@ -2494,9 +2532,34 @@ mfxStatus ConfigureExecuteParams(
                             rec.DstY = extComp->InputStream[cnt].DstY;
                             rec.DstW = extComp->InputStream[cnt].DstW;
                             rec.DstH = extComp->InputStream[cnt].DstH;
-                            executeParams.dstRects.push_back( rec );
+                            if (extComp->InputStream[cnt].AlphaEnable != 0)
+                            {
+                                rec.AlphaEnable = extComp->InputStream[cnt].AlphaEnable;
+                                rec.Alpha = extComp->InputStream[cnt].Alpha;
+                            }
+                            if (extComp->InputStream[cnt].LumaKeyEnable !=0)
+                            {
+                                rec.LumaKeyEnable = extComp->InputStream[cnt].LumaKeyEnable;
+                                rec.LumaKeyMin = extComp->InputStream[cnt].LumaKeyMin;
+                                rec.LumaKeyMax = extComp->InputStream[cnt].LumaKeyMax;
+                            }
+                            executeParams.dstRects[cnt]= rec ;
                         }
-                        break;
+                        /* And now lets calculate background color
+                         * due to driver specific it is in ARGB format only*/
+                        mfxI32 uC = extComp->Y - 16;
+                        mfxI32 uD = extComp->U - 128;
+                        mfxI32 uE = extComp->V - 128;
+                        mfxI32 uR = ( 298 * uC           + 409 * uE + 128) >> 8;
+                        mfxI32 uG = ( 298 * uC - 100 * uD - 208 * uE + 128) >> 8;
+                        mfxI32 uB = ( 298 * uC + 516 * uD           + 128) >> 8;
+                        uR = VPP_RANGE_CLIP(uR, 0, 255);
+                        uG = VPP_RANGE_CLIP(uG, 0, 255);
+                        uB = VPP_RANGE_CLIP(uB, 0, 255);
+                        executeParams.iBackgroundColor = (0xff << 24) |
+                                                         (uR << 16) |
+                                                         (uG << 8) |
+                                                         (uB << 0) ;
                     }
                 }
 
