@@ -447,13 +447,13 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             for (i = 0; i < pInfo->CropH; i++)
             {
                 m_Current.m_pixY = i;
-                WRITE(pData->Y + (pInfo->CropY * pitch + pInfo->CropX)+ i * pitch * 2, pInfo->CropW * 2);
+                WRITE(pData->Y + (pInfo->CropY * pitch + pInfo->CropX)+ i * pitch, pInfo->CropW * 2);
             }
             m_Current.m_comp = VM_STRING('UV');
             for (i = 0; i < pInfo->CropH / 2; i++)
             {
                 m_Current.m_pixY = i;
-                WRITE(pData->UV + (pInfo->CropY * pitch / 2 + pInfo->CropX) + i * pitch * 2 , pInfo->CropW * 2);
+                WRITE(pData->UV + (pInfo->CropY * pitch / 2 + pInfo->CropX) + i * pitch, pInfo->CropW * 2);
             }
             break;
         }

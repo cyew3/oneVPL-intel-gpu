@@ -96,7 +96,7 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->U = ptr->Y + Width2 * Height2 * 2;
         ptr->V = ptr->U + 2;
         ptr->PitchHigh = 0;
-        ptr->PitchLow = Width2;
+        ptr->PitchLow = Width2 * 2;
         break;
     case MFX_FOURCC_NV12:
         ptr->U = ptr->Y + Width2 * Height2;
