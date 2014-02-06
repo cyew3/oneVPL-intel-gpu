@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -206,9 +206,13 @@ static IppStatus mp2_HuffmanTableInitAlloc(Ipp32s *tbl, Ipp32s bits_table0, mp2_
   bad_value = (Ipp16s)((bad_value << 8) | VLC_BAD);
 
   table0 = ippsMalloc_16s(1 << bits_table0);
+  if (NULL == table0)
+      return ippStsNoMemErr;
   ippsSet_16s(bad_value, table0, 1 << bits_table0);
   if (bits_table1) {
     table1 = ippsMalloc_16s(1 << bits_table1);
+    if (NULL == table1)
+        return ippStsNoMemErr;
     ippsSet_16s(bad_value, table1, 1 << bits_table1);
   }
   for (i = 0; i < n; i++) {
