@@ -920,7 +920,10 @@ DEF_STRUCT_TRACE(mfxExtAVCEncodedFrameInfo){
         << PUT_PAR(FrameOrder)
         << PUT_PAR(PicStruct)
         << PUT_PAR(LongTermIdx)
-        << PUT_ARR(reserved, 8)
+        << PUT_PAR(MAD)
+        << PUT_PAR(BRCPanicMode)
+        << PUT_PAR(QP)
+        << PUT_ARR(reserved, 4)
         << PUT_LXP_INFO(p, UsedRefListL0)
         << PUT_LXP_INFO(p, UsedRefListL1)
         << print_param.padding << '}';

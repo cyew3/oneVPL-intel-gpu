@@ -17,7 +17,7 @@
 #define CHECK_STS(res, expected)\
     if((res) != (expected)){\
         std::cout << #res << " = " << (res) << "\n" << #expected << " = " << (expected) << "\n";\
-        CHECK(false, "Returned status is wrong!\n");\
+        CHECK(false, __FUNCTION__ << ": Returned status " << (res) <<" is wrong! Expected " << (expected) << "\n");\
     }
 #define MAX(x,y) ((x)>(y) ? (x) : (y))
 #define MIN(x,y) ((x)<(y) ? (x) : (y))
