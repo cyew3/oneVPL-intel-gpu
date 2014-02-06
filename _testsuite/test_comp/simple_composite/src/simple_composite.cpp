@@ -3,11 +3,12 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2005-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2005-2014 Intel Corporation. All Rights Reserved.
 //
 
 #define ENABLE_OUTPUT    // Disabling this flag removes all YUV file writing
 #define ENABLE_INPUT     // Disabling this flag removes all YUV file reading. Replaced by pre-initialized surface data. Workload runs for 1000 frames
+//#define TEST_VPP_COMP_RESET
 #if defined(_WIN32) || defined(_WIN64)
   #define ENABLE_BENCHMARK
 #else
@@ -15,6 +16,7 @@
 #define fopen_s(FH,FNAME,FMODE) *(FH) = fopen((FNAME),(FMODE));
 #endif
 
+#define FRAME_NUM_50 50
 
 
 #include <string>
@@ -35,6 +37,7 @@
 #include <cctype>
 #include <locale>
 #include <stdexcept>
+
 
 #if ! defined(_WIN32) && ! defined(_WIN64)
   #include <fcntl.h>
@@ -107,6 +110,10 @@ struct ProgramArguments
     ColorFormat scc;
     // dest color format
     ColorFormat dcc;
+    //  width  of dst video
+    mfxU32 dW;
+    // height of dst video
+    mfxU32 dH;
 };
 
 bool from_string(const std::string& str, ColorFormat &obj)
@@ -175,6 +182,10 @@ ProgramArguments ParseInputString(const vector<string> &args)
         throw std::runtime_error("-scc value invalid");
     if (!ParseValueWithDefault(args, "-dcc", pa.dcc, kNV12))
         throw std::runtime_error("-dcc value invalid");
+    if (!ParseValue(args, "-dW", pa.dW))
+        pa.dW = 0;
+    if (!ParseValue(args, "-dH", pa.dH))
+        pa.dH = 0;
 
     return pa;
 }
@@ -234,14 +245,13 @@ int main(int argc, char *argv[])
      * total number streams for vpp composition is 64 now!
      * This is means 1 primary and 63 sub-streams */
 
-    mfxFrameInfo streams[MAX_INPUT_STREAMS -1] = {};
+    mfxFrameInfo streams[MAX_INPUT_STREAMS] = {};
 
     mfxFrameInfo pr_stream;
 
     auto args = ConvertInputString(argc, argv);
     ProgramArguments pa;
-    map<string, string> primaryparams;
-    map<string, string> subparams[MAX_INPUT_STREAMS -1];
+    map<string, string> streamParams[MAX_INPUT_STREAMS];
 
 
     try {
@@ -254,6 +264,8 @@ int main(int argc, char *argv[])
     int i = 0;
     int StreamCount = 0;
     unsigned int framesToProcess = 0;
+    /* We needs this variables for memory VPP Init() and memory allocation */
+    mfxU32 maxWidth = 0, maxHeight = 0;
 
     // Read parameterd from par file
     try {
@@ -267,38 +279,9 @@ int main(int argc, char *argv[])
             getline(iss, value, '=');
             trim(key);
             trim(value);
-            if ( key.compare("primarystream") == 0 ){
-                primaryparams = ParsePar(par, value);
-                if (pa.scc == kNV12)
-                {
-                    pr_stream.FourCC         = MFX_FOURCC_NV12;
-                    pr_stream.ChromaFormat   = MFX_CHROMAFORMAT_YUV420;
-                }
-                else if (pa.scc == kYV12)
-                {
-                    pr_stream.FourCC         = MFX_FOURCC_NV12;
-                    pr_stream.ChromaFormat   = MFX_CHROMAFORMAT_YUV420;
-                }
-                else
-                {
-                    pr_stream.FourCC         = MFX_FOURCC_RGB4;
-                }
-                pr_stream.CropX          = (mfxU16) atoi(primaryparams["cropx"].c_str());
-                pr_stream.CropY          = (mfxU16) atoi(primaryparams["cropy"].c_str());
-                pr_stream.CropW          = (mfxU16) atoi(primaryparams["cropw"].c_str());
-                pr_stream.CropH          = (mfxU16) atoi(primaryparams["croph"].c_str());
-                framesToProcess = atoi(primaryparams["frames"].c_str());
-                pr_stream.PicStruct      = MFX_PICSTRUCT_PROGRESSIVE;
-                pr_stream.FrameRateExtN  = 30;
-                pr_stream.FrameRateExtD  = 1;
-                // width must be a multiple of 16
-                // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture
-                pr_stream.Width  = (mfxU16) MSDK_ALIGN16(atoi(primaryparams["width"].c_str()));
-                pr_stream.Height = (MFX_PICSTRUCT_PROGRESSIVE == pr_stream.PicStruct)?
-                                     (mfxU16) MSDK_ALIGN16(atoi(primaryparams["height"].c_str())) : (mfxU16) MSDK_ALIGN32(atoi(primaryparams["height"].c_str()));
-            } else if ( key.compare("stream") == 0 ){
+            if ( key.compare("stream") == 0 ){
                 map<string, string> params = ParsePar(par, value);
-                subparams[StreamCount] = params;
+                streamParams[StreamCount] = params;
                 if (pa.scc == kNV12)
                 {
                     streams[StreamCount].FourCC         = MFX_FOURCC_NV12;
@@ -313,6 +296,10 @@ int main(int argc, char *argv[])
                 {
                     streams[StreamCount].FourCC         = MFX_FOURCC_RGB4;
                 }
+
+                if (StreamCount == 0)
+                    framesToProcess = atoi(params["frames"].c_str());
+
                 streams[StreamCount].CropX          = (mfxU16) atoi(params["cropx"].c_str());
                 streams[StreamCount].CropY          = (mfxU16) atoi(params["cropy"].c_str());
                 streams[StreamCount].CropW          = (mfxU16) atoi(params["cropw"].c_str());
@@ -324,10 +311,16 @@ int main(int argc, char *argv[])
                 // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture
                 streams[StreamCount].Width  = (mfxU16) MSDK_ALIGN16(atoi(params["width"].c_str()));
                 streams[StreamCount].Height = (MFX_PICSTRUCT_PROGRESSIVE == streams[StreamCount].PicStruct)?
-                                     (mfxU16) MSDK_ALIGN16(atoi(params["height"].c_str())) : (mfxU16) MSDK_ALIGN32(atoi(params["height"].c_str()));
+                                     (mfxU16) MSDK_ALIGN16(atoi(params["height"].c_str())) :
+                                     (mfxU16) MSDK_ALIGN32(atoi(params["height"].c_str()));
+                /* Update maximal Width & Height */
+                if (maxWidth < streams[StreamCount].Width)
+                    maxWidth = streams[StreamCount].Width;
+                if (maxHeight < streams[StreamCount].Height)
+                    maxHeight = streams[StreamCount].Height;
 
                 ++StreamCount;
-                if ( StreamCount > (MAX_INPUT_STREAMS - 1) )
+                if ( StreamCount > MAX_INPUT_STREAMS )
                 {
                     throw std::runtime_error("Maximum number of input streams exceeded.");
                 }
@@ -340,14 +333,11 @@ int main(int argc, char *argv[])
     }
 
     FILE* fSource[MAX_INPUT_STREAMS];
-    cout << "Open file " << primaryparams["stream"] << endl;
-    fopen_s(&fSource[0], primaryparams["stream"].c_str(), "rb");
-    MSDK_CHECK_POINTER(fSource[0], MFX_ERR_NULL_PTR);
-    for (int cnt = 0; cnt < StreamCount; ++cnt)
+    for (int cnt = 0; cnt < StreamCount; cnt++)
     {
-        cout << "Open file " << subparams[cnt]["stream"] << endl;
-        fopen_s(&fSource[cnt+1], subparams[cnt]["stream"].c_str(), "rb");
-        MSDK_CHECK_POINTER(fSource[cnt+1], MFX_ERR_NULL_PTR);
+        cout << "Open file " << streamParams[cnt]["stream"] << endl;
+        fopen_s(&fSource[cnt], streamParams[cnt]["stream"].c_str(), "rb");
+        MSDK_CHECK_POINTER(fSource[cnt], MFX_ERR_NULL_PTR);
     }
 
     // Create output NV12 file
@@ -430,17 +420,19 @@ int main(int argc, char *argv[])
         VPPParams.vpp.In.FourCC         = MFX_FOURCC_RGB4;
     }
 
-    VPPParams.vpp.In.CropX          = (mfxU16) atoi(primaryparams["cropx"].c_str());
-    VPPParams.vpp.In.CropY          = (mfxU16) atoi(primaryparams["cropy"].c_str());
-    VPPParams.vpp.In.CropW          = (mfxU16) atoi(primaryparams["cropw"].c_str());
-    VPPParams.vpp.In.CropH          = (mfxU16) atoi(primaryparams["croph"].c_str());
+    VPPParams.vpp.In.CropX          = 0;
+    VPPParams.vpp.In.CropY          = 0;
+    /* Does not do source cropping... */
+    VPPParams.vpp.In.CropW          = (mfxU16) maxWidth;
+    VPPParams.vpp.In.CropH          = (mfxU16) maxHeight;
     VPPParams.vpp.In.PicStruct      = MFX_PICSTRUCT_PROGRESSIVE;
     VPPParams.vpp.In.FrameRateExtN  = 30;
     VPPParams.vpp.In.FrameRateExtD  = 1;
     // width must be a multiple of 16
     // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture
-    VPPParams.vpp.In.Width  = (mfxU16) atoi(primaryparams["width"].c_str());;
-    VPPParams.vpp.In.Height = (mfxU16) atoi(primaryparams["height"].c_str());;
+    // Resolution of surface
+    VPPParams.vpp.In.Width  = maxWidth;
+    VPPParams.vpp.In.Height = maxHeight;
 
     // Output data
 
@@ -453,18 +445,35 @@ int main(int argc, char *argv[])
     {
         VPPParams.vpp.Out.FourCC         = MFX_FOURCC_RGB4;
     }
-    VPPParams.vpp.Out.CropX         = (mfxU16) atoi(primaryparams["cropx"].c_str());
-    VPPParams.vpp.Out.CropY         = (mfxU16) atoi(primaryparams["cropy"].c_str());
-    VPPParams.vpp.Out.CropW         = (mfxU16) atoi(primaryparams["cropw"].c_str());;
-    VPPParams.vpp.Out.CropH         = (mfxU16) atoi(primaryparams["croph"].c_str());;
+    VPPParams.vpp.Out.CropX         = 0;
+    VPPParams.vpp.Out.CropY         = 0;
+    VPPParams.vpp.Out.CropW         = maxWidth;
+    VPPParams.vpp.Out.CropH         = maxHeight;
     VPPParams.vpp.Out.PicStruct     = MFX_PICSTRUCT_PROGRESSIVE;
     VPPParams.vpp.Out.FrameRateExtN = 30;
     VPPParams.vpp.Out.FrameRateExtD = 1;
     // width must be a multiple of 16
     // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture
-    VPPParams.vpp.Out.Width  = (mfxU16) MSDK_ALIGN16(atoi(primaryparams["width"].c_str()));
-    VPPParams.vpp.Out.Height = (MFX_PICSTRUCT_PROGRESSIVE == VPPParams.vpp.Out.PicStruct)?
-                                    (mfxU16) MSDK_ALIGN16(atoi(primaryparams["height"].c_str())) : (mfxU16) MSDK_ALIGN32(atoi(primaryparams["height"].c_str()));
+    if (pa.dW != 0)
+    {
+        VPPParams.vpp.Out.Width = pa.dW;
+    }
+    else
+    {
+        cout << "Warning: Destination Width is not specified!"  << endl;
+        cout << "Destination Width will be set to maximal width :" << maxWidth << endl;
+        VPPParams.vpp.Out.Width  = pa.dW = maxWidth;
+    }
+    if (pa.dH != 0)
+    {
+        VPPParams.vpp.Out.Height = pa.dH;
+    }
+    else
+    {
+        cout << "Warning: Destination Height is not specified!"  << endl;
+        cout << "Destination Height will be set to maximal height :" << maxHeight << endl;
+        VPPParams.vpp.Out.Height = pa.dH = maxHeight;
+    }
 
     VPPParams.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
     VPPParams.AsyncDepth = 1;
@@ -476,24 +485,25 @@ int main(int argc, char *argv[])
     mfxExtVPPComposite comp;
     comp.Header.BufferId = MFX_EXTBUFF_VPP_COMPOSITE;
     comp.Header.BufferSz = sizeof(mfxExtVPPComposite);
-    comp.NumInputStream = (mfxU16) StreamCount + 1;
+    comp.NumInputStream = (mfxU16) StreamCount;
     comp.InputStream = (mfxVPPCompInputStream *)malloc( sizeof(mfxVPPCompInputStream)* comp.NumInputStream);
 
-    // primary stream
-    comp.InputStream[0].DstX = atoi(primaryparams["dstx"].c_str());
-    comp.InputStream[0].DstY = atoi(primaryparams["dsty"].c_str());
-    comp.InputStream[0].DstW = atoi(primaryparams["dstw"].c_str());
-    comp.InputStream[0].DstH = atoi(primaryparams["dsth"].c_str());
-
-    // sub streams
-    for (i = 1; i <= StreamCount; ++i)
+    // stream params
+    for (i = 0; i < StreamCount; ++i)
     {
-        comp.InputStream[i].DstX = atoi(subparams[i-1]["dstx"].c_str());
-        comp.InputStream[i].DstY = atoi(subparams[i-1]["dsty"].c_str());
-        comp.InputStream[i].DstW = atoi(subparams[i-1]["dstw"].c_str());
-        comp.InputStream[i].DstH = atoi(subparams[i-1]["dsth"].c_str());
+        comp.InputStream[i].DstX = atoi(streamParams[i]["dstx"].c_str());
+        comp.InputStream[i].DstY = atoi(streamParams[i]["dsty"].c_str());
+        comp.InputStream[i].DstW = atoi(streamParams[i]["dstw"].c_str());
+        comp.InputStream[i].DstH = atoi(streamParams[i]["dsth"].c_str());
+        comp.InputStream[i].AlphaEnable = 0;
+        comp.InputStream[i].LumaKeyEnable = 0;
         cout << "Set " << i << "->" << comp.InputStream[i].DstX << ":" << comp.InputStream[i].DstY << ":" << comp.InputStream[i].DstW  << ":" << comp.InputStream[i].DstH << ":" << endl;
     }
+
+#ifdef TEST_VPP_COMP_RESET
+    comp.InputStream[1].AlphaEnable = 1;
+    comp.InputStream[1].Alpha = 128;
+#endif
 
     mfxExtBuffer* ExtBuffer[1];
     ExtBuffer[0] = (mfxExtBuffer*)&comp;
@@ -518,7 +528,7 @@ int main(int argc, char *argv[])
     // - Width and height of buffer must be aligned, a multiple of 32
     // - Frame surface array keeps pointers all surface planes and general frame info
 
-    if (nVPPSurfNumIn != StreamCount + 1 )
+    if (nVPPSurfNumIn != StreamCount )
         sts = MFX_ERR_UNSUPPORTED;
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -537,14 +547,8 @@ int main(int argc, char *argv[])
         mfxU16 width; //= (mfxU16)MSDK_ALIGN32(atoi(subparams[i]["w"].c_str()));
         mfxU16 height;// = (mfxU16)MSDK_ALIGN32(atoi(subparams[i]["h"].c_str()));
 
-        if ( i == 0 ) {
-            width = (mfxU16)MSDK_ALIGN32(atoi(primaryparams["width"].c_str()));
-            height = (mfxU16)MSDK_ALIGN32(atoi(primaryparams["height"].c_str()));
-        }
-        else {
-            width = (mfxU16)MSDK_ALIGN32(atoi(subparams[i-1]["width"].c_str()));
-            height = (mfxU16)MSDK_ALIGN32(atoi(subparams[i-1]["height"].c_str()));
-        }
+        width = (mfxU16)MSDK_ALIGN32(atoi(streamParams[i]["width"].c_str()));
+        height = (mfxU16)MSDK_ALIGN32(atoi(streamParams[i]["height"].c_str()));
         mfxU32 surfaceSize = width * height * bitsPerPixel / 8;
 
         surfaceBuffersIn[i] = new mfxU8[surfaceSize];
@@ -553,13 +557,8 @@ int main(int argc, char *argv[])
         pVPPSurfacesIn[i] = new mfxFrameSurface1;
         MSDK_CHECK_POINTER(pVPPSurfacesIn[i], MFX_ERR_MEMORY_ALLOC);
         memset(pVPPSurfacesIn[i], 0, sizeof(mfxFrameSurface1));
+        memcpy(&(pVPPSurfacesIn[i]->Info), &streams[i], sizeof(mfxFrameInfo));
 
-        if ( i == 0 )
-        {
-            memcpy(&(pVPPSurfacesIn[i]->Info), &pr_stream, sizeof(mfxFrameInfo));
-        } else {
-            memcpy(&(pVPPSurfacesIn[i]->Info), &streams[i-1], sizeof(mfxFrameInfo));
-        }
         pVPPSurfacesIn[i]->Data.Y = surfaceBuffersIn[i];
         if (pa.scc == kNV12)
         {
@@ -667,7 +666,7 @@ int main(int argc, char *argv[])
 
             sts = LoadRawFrame(pVPPSurfacesIn[nSurfIdxIn], fSource[nSource++]); // Load frame from file into surface
             MSDK_BREAK_ON_ERROR(sts);
-            if (nSource > (mfxU32)StreamCount)
+            if (nSource >= (mfxU32)StreamCount)
                 nSource = 0;
         }
 
@@ -702,8 +701,15 @@ int main(int argc, char *argv[])
 
         printf("Frame number: %d\r", nFrame);
 
+#ifdef TEST_VPP_COMP_RESET
+        //if (nFrame >= framesToProcess)
+        if (nFrame >= FRAME_NUM_50)
+            break;
+#else
         if (nFrame >= framesToProcess)
             break;
+#endif /*TEST_VPP_COMP_RESET*/
+
 #endif
     }
 
@@ -751,6 +757,124 @@ int main(int argc, char *argv[])
     printf("\nExecution time: %3.2fs (%3.2ffps)\n", duration, nFrame/duration);
 #endif
 
+
+#ifdef TEST_VPP_COMP_RESET
+    /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
+    /**/
+    comp.NumInputStream = 2;
+
+    StreamCount = 2;
+    comp.InputStream[0].DstX = 200;
+    comp.InputStream[0].DstY = 200;
+    comp.InputStream[1].DstX = 0;
+    sts = mfxVPP.Reset(&VPPParams);
+    memset(&VPPRequest, 0, sizeof(mfxFrameAllocRequest)*2);
+    sts = mfxVPP.QueryIOSurf(&VPPParams, VPPRequest);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    nVPPSurfNumIn = VPPRequest[0].NumFrameSuggested;
+    nVPPSurfNumOut = VPPRequest[1].NumFrameSuggested;
+
+    if (nVPPSurfNumIn != StreamCount )
+        sts = MFX_ERR_UNSUPPORTED;
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    /*---------------------------------------------------------------------------------------------*/
+    //
+    // Stage 1: Main processing loop
+    //
+    while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts || bMultipleOut )
+    {
+        if (!bMultipleOut)
+        {
+            nSurfIdxIn = GetFreeSurfaceIndex(pVPPSurfacesIn, nVPPSurfNumIn); // Find free input frame surface
+            if (MFX_ERR_NOT_FOUND == nSurfIdxIn)
+                return MFX_ERR_MEMORY_ALLOC;
+
+            sts = LoadRawFrame(pVPPSurfacesIn[nSurfIdxIn], fSource[nSource++]); // Load frame from file into surface
+
+                MSDK_BREAK_ON_ERROR(sts);
+            if (nSource >= (mfxU32)StreamCount)
+                nSource = 0;
+        }
+
+        bMultipleOut = false;
+
+        nSurfIdxOut = GetFreeSurfaceIndex(pVPPSurfacesOut, nVPPSurfNumOut); // Find free output frame surface
+        if (MFX_ERR_NOT_FOUND == nSurfIdxOut)
+            return MFX_ERR_MEMORY_ALLOC;
+
+        // Process a frame asychronously (returns immediately)
+        sts = mfxVPP.RunFrameVPPAsync(pVPPSurfacesIn[nSurfIdxIn], pVPPSurfacesOut[nSurfIdxOut], NULL, &syncp);
+        if (MFX_ERR_MORE_DATA == sts)
+            continue;
+
+        //MFX_ERR_MORE_SURFACE means output is ready but need more surface
+        //because VPP produce multiple out. example: Frame Rate Conversion 30->60
+        if (MFX_ERR_MORE_SURFACE == sts)
+        {
+            sts = MFX_ERR_NONE;
+            bMultipleOut = true;
+        }
+
+        MSDK_BREAK_ON_ERROR(sts);
+
+        sts = mfxSession.SyncOperation(syncp, 60000); // Synchronize. Wait until frame processing is ready
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+        ++nFrame;
+#ifdef ENABLE_OUTPUT
+        sts = WriteRawFrame(pVPPSurfacesOut[nSurfIdxOut], fSink);
+        MSDK_BREAK_ON_ERROR(sts);
+
+        printf("Frame number: %d\r", nFrame);
+
+        if (nFrame >= framesToProcess)
+        //if (nFrame >= FRAME_NUM_50)
+            break;
+#endif
+    }
+
+    // MFX_ERR_MORE_DATA means that the input file has ended, need to go to buffering loop, exit in case of other errors
+    MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    //
+    // Stage 2: Retrieve the buffered VPP frames
+    //
+    while (MFX_ERR_NONE <= sts)
+    {
+        nSurfIdxOut = GetFreeSurfaceIndex(pVPPSurfacesOut, nVPPSurfNumOut); // Find free frame surface
+        if (MFX_ERR_NOT_FOUND == nSurfIdxOut)
+            return MFX_ERR_MEMORY_ALLOC;
+
+        // Process a frame asychronously (returns immediately)
+        sts = mfxVPP.RunFrameVPPAsync(NULL, pVPPSurfacesOut[nSurfIdxOut], NULL, &syncp);
+        MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_SURFACE);
+        MSDK_BREAK_ON_ERROR(sts);
+
+        sts = mfxSession.SyncOperation(syncp, 60000); // Synchronize. Wait until frame processing is ready
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+        ++nFrame;
+#ifdef ENABLE_OUTPUT
+        sts = WriteRawFrame(pVPPSurfacesOut[nSurfIdxOut], fSink);
+        MSDK_BREAK_ON_ERROR(sts);
+
+        printf("Frame number: %d\r", nFrame);
+#endif
+    }
+
+    printf("\n");
+    printf("Frames processed %d\n", nFrame);
+
+
+    // MFX_ERR_MORE_DATA indicates that there are no more buffered frames, exit in case of other errors
+    MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    /*---------------------------------------------------------------------------------------------*/
+#endif TEST_VPP_COMP_RESET
     // ===================================================================
     // Clean up resources
     //  - It is recommended to close Media SDK components first, before releasing allocated surfaces, since
