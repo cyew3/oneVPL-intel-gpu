@@ -21,7 +21,7 @@ File Name: plugin_version_linux.h
 #define MFX_PLUGIN_FILE_VERSION "0.0.0.0"
 #endif
 #ifndef MFX_PLUGIN_PRODUCT_NAME
-#define MFX_PLUGIN_PRODUCT_NAME "Intel Media SDK Plugin"
+#define MFX_PLUGIN_PRODUCT_NAME "Intel(R) Media SDK Plugin"
 #endif
 #ifndef MFX_PLUGIN_PRODUCT_VERSION
 #define MFX_PLUGIN_PRODUCT_VERSION "0.0.000.0000"

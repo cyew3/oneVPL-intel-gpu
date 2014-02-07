@@ -552,11 +552,11 @@ endforeach()
 # Plugins section
 # =============================================================================
 
-set (HEVC_PRODUCT_NAME "Intel Media SDK HEVC Software Pack")
-set (sw_HEVC_DECODER_DESCRIPTION "Intel Media SDK HEVC Software Decode Plug-in")
-set (hw_HEVC_DECODER_DESCRIPTION "Intel Media SDK HEVC Hardware Decode Plug-in")
-set (sw_HEVC_ENCODER_DESCRIPTION "Intel Media SDK HEVC Software Encode Plug-in")
-set (hw_HEVC_ENCODER_DESCRIPTION "Intel Media SDK HEVC Hardware Encode Plug-in")
+set (HEVC_PRODUCT_NAME "Intel(R) Media SDK HEVC Software Pack")
+set (sw_HEVC_DECODER_DESCRIPTION "Intel(R) Media SDK HEVC Software Decode Plug-in")
+set (hw_HEVC_DECODER_DESCRIPTION "Intel(R) Media SDK HEVC Hardware Decode Plug-in")
+set (sw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media SDK HEVC Software Encode Plug-in")
+set (hw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media SDK HEVC Hardware Encode Plug-in")
 
   if( NOT DEFINED ENV{MFX_HEVC_VERSION} )
     set( hevc_version 0.0.000.0000 )
