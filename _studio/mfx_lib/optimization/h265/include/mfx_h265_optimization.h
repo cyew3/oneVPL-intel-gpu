@@ -216,6 +216,10 @@ namespace MFX_HEVC_PP
     typedef void (* PTR_FilterEdgeChromaInterleaved_8u_I)(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQpCb, Ipp32s chromaQpCr);
     typedef void (* PTR_FilterEdgeChromaPlane_8u_I)(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQp);
 
+    typedef Ipp32s (* PTR_FilterEdgeLuma_16u_I)(H265EdgeData *edge, Ipp16u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32u bit_depth);
+    typedef void (* PTR_FilterEdgeChromaInterleaved_16u_I)(H265EdgeData *edge, Ipp16u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQpCb, Ipp32s chromaQpCr, Ipp32u bit_depth);
+    typedef void (* PTR_FilterEdgeChromaPlane_16u_I)(H265EdgeData *edge, Ipp16u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQp, Ipp32u bit_depth);
+
     // [PTR.SAO]
     #define SAOCU_ORG_PARAMETERS_LIST Ipp8u* pRec, Ipp32s stride, Ipp32s saoType, Ipp8u* tmpL, Ipp8u* tmpU, Ipp32u maxCUWidth, Ipp32u maxCUHeight, \
             Ipp32s picWidth, Ipp32s picHeight, Ipp32s* pOffsetEo, Ipp8u* pOffsetBo, Ipp8u* pClipTable, Ipp32u CUPelX, Ipp32u CUPelY 
@@ -410,6 +414,10 @@ namespace MFX_HEVC_PP
         HEVCPP_API( PTR_FilterEdgeLuma_8u_I, Ipp32s, h265_FilterEdgeLuma_8u_I, (H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir) );
         HEVCPP_API( PTR_FilterEdgeChromaInterleaved_8u_I, void, h265_FilterEdgeChroma_Interleaved_8u_I, (H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQpCb, Ipp32s chromaQpCr) );
         HEVCPP_API( PTR_FilterEdgeChromaPlane_8u_I, void, h265_FilterEdgeChroma_Plane_8u_I, (H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQp) );
+
+        HEVCPP_API( PTR_FilterEdgeLuma_16u_I, Ipp32s, h265_FilterEdgeLuma_16u_I, (H265EdgeData *edge, Ipp16u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32u bit_depth) );
+        HEVCPP_API( PTR_FilterEdgeChromaInterleaved_16u_I, void, h265_FilterEdgeChroma_Interleaved_16u_I, (H265EdgeData *edge, Ipp16u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQpCb, Ipp32s chromaQpCr, Ipp32u bit_depth) );
+        HEVCPP_API( PTR_FilterEdgeChromaPlane_16u_I, void, h265_FilterEdgeChroma_Plane_16u_I, (H265EdgeData *edge, Ipp16u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQp, Ipp32u bit_depth) );
 
         // [SAO]
         HEVCPP_API( PTR_ProcessSaoCuOrg_Luma_8u, void, h265_ProcessSaoCuOrg_Luma_8u, (SAOCU_ORG_PARAMETERS_LIST));
@@ -820,10 +828,6 @@ namespace MFX_HEVC_PP
         Ipp16u* pels,
         Ipp32s pitch,
         Ipp32s width);
-
-    Ipp32s h265_FilterEdgeLuma_16u_I_px(H265EdgeData *edge, Ipp16u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32u bit_depth);
-    void h265_FilterEdgeChroma_Interleaved_16u_I_px(H265EdgeData *edge, Ipp16u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQpCb, Ipp32s chromaQpCr, Ipp32u bit_depth);
-    void h265_FilterEdgeChroma_Plane_16u_I_px(H265EdgeData *edge, Ipp16u *srcDst, Ipp32s srcDstStride, Ipp32s dir, Ipp32s chromaQp, Ipp32u bit_depth);
 
     /* interpolation, version from Jon/Ken */
     void Interp_NoAvg(

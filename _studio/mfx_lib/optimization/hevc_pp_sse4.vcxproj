@@ -39,7 +39,10 @@
     <ClInclude Include="h265\include\mfx_h265_transform_consts.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="h265\src\mfx_h265_deblocking_sse.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_deblocking_sse.cpp">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">/Qsfalign %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">/Qsfalign %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="h265\src\mfx_h265_interpolation_sse.cpp" />
     <ClCompile Include="h265\src\mfx_h265_interp_tmpl_sse.cpp">
       <AssemblerOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AssemblyCode</AssemblerOutput>

@@ -468,7 +468,7 @@ void ReconstructorT<bitDepth, H265PlaneType>::FilterEdgeLuma(H265EdgeData *edge,
     if (bitDepth)
     {
         Ipp16u* srcDst_ = (Ipp16u*)srcDst;
-        h265_FilterEdgeLuma_16u_I_px(edge, srcDst_ + x + y*srcDstStride, srcDstStride, dir, bit_depth);
+        MFX_HEVC_PP::NAME(h265_FilterEdgeLuma_16u_I)(edge, srcDst_ + x + y*srcDstStride, srcDstStride, dir, bit_depth);
     }
     else
     {
@@ -485,7 +485,7 @@ void ReconstructorT<bitDepth, H265PlaneType>::FilterEdgeChroma(H265EdgeData *edg
     if (bitDepth)
     {
         Ipp16u* srcDst_ = (Ipp16u*)srcDst;
-        h265_FilterEdgeChroma_Interleaved_16u_I_px(
+        MFX_HEVC_PP::NAME(h265_FilterEdgeChroma_Interleaved_16u_I)(
             edge, 
             srcDst_ + 2*x + y*srcDstStride,
             srcDstStride,
