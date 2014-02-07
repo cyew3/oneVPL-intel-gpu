@@ -58,6 +58,17 @@ static void mp2_HuffmanTableFree(mp2_VLCTable *vlc) {
     }
 }
 
+static IppStatus mp2_HuffmanTableInitAlloc_HandleError(Ipp32s *buffer, Ipp16s *table0, Ipp16s *table1)
+{
+  if (buffer)
+    delete[] buffer;
+  if (table0)
+    ippsFree(table0);
+  if (table1)
+    ippsFree(table1);
+  return ippStsErr;
+}
+
 static IppStatus mp2_HuffmanTableInitAlloc(Ipp32s *tbl, Ipp32s bits_table0, mp2_VLCTable *vlc)
 {
   Ipp32s *ptbl;
@@ -207,13 +218,13 @@ static IppStatus mp2_HuffmanTableInitAlloc(Ipp32s *tbl, Ipp32s bits_table0, mp2_
 
   table0 = ippsMalloc_16s(1 << bits_table0);
   if (NULL == table0)
-    goto mp2_HuffmanTableInitAlloc_err_exit;
+    return mp2_HuffmanTableInitAlloc_HandleError(buffer, table0, table1);
 
   ippsSet_16s(bad_value, table0, 1 << bits_table0);
   if (bits_table1) {
     table1 = ippsMalloc_16s(1 << bits_table1);
     if (NULL == table1)
-      goto mp2_HuffmanTableInitAlloc_err_exit;
+      return mp2_HuffmanTableInitAlloc_HandleError(buffer, table0, table1);
 
     ippsSet_16s(bad_value, table1, 1 << bits_table1);
   }
@@ -237,7 +248,7 @@ static IppStatus mp2_HuffmanTableInitAlloc(Ipp32s *tbl, Ipp32s bits_table0, mp2_
 
   if (bits_table1) { // fill VLC_NEXTTABLE
     if (prefix_code1 == -1)
-      goto mp2_HuffmanTableInitAlloc_err_exit;
+      return mp2_HuffmanTableInitAlloc_HandleError(buffer, table0, table1);
 
     bad_value = (Ipp16s)((bad_value &~ 255) | VLC_NEXTTABLE);
     for (j = 0; j < (1 << ((bits_table0 - (max_bits - bits_table1)))); j++) {
@@ -253,14 +264,6 @@ static IppStatus mp2_HuffmanTableInitAlloc(Ipp32s *tbl, Ipp32s bits_table0, mp2_
 
   if (buffer) delete[] buffer;
   return ippStsNoErr;
-mp2_HuffmanTableInitAlloc_err_exit:
-  if (buffer)
-    delete[] buffer;
-  if (table0)
-    ippsFree(table0);
-  if (table1)
-    ippsFree(table1);
-  return ippStsErr;
 }
 
 #ifdef UMC_VA_DXVA
