@@ -505,7 +505,7 @@ UMC::FrameMemID VideoDECODEVP8_HW::GetMemIdToUnlock()
         return -1;
     }
 
-    UMC::FrameMemID memId;
+    UMC::FrameMemID memId = -1;
     sFrameInfo info;    
 
     // get previous frame
@@ -523,6 +523,8 @@ UMC::FrameMemID VideoDECODEVP8_HW::GetMemIdToUnlock()
             break;
         }
     }
+
+    if(memId == -1) return -1;
 
     std::map<FrameData *, bool>::iterator it;
 
