@@ -593,390 +593,391 @@ void H265CU::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTe
 
     m_interPredReady = false;
 }
-    //int myseed = 12345;
 
-static double rand_val = 1.239847855923875843957;
-
-static unsigned int myrand()
-{
-    rand_val *= 1.204839573950674;
-    if (rand_val > 1024) rand_val /= 1024;
-    return ((Ipp32s *)&rand_val)[0];
-}
-
-
-static void genCBF(Ipp8u *cbfy, Ipp8u *cbfu, Ipp8u *cbfv, Ipp8u size, Ipp8u len, Ipp8u depth, Ipp8u max_depth) {
-    if (depth > max_depth)
-        return;
-
-    Ipp8u y = cbfy[0], u = cbfu[0], v = cbfv[0];
-
-    if (depth == 0 || size > 4) {
-        if (depth == 0 || ((u >> (depth - 1)) & 1))
-            u |= ((myrand() & 1) << depth);
-        else if (depth > 0 && size == 4)
-            u |= (((u >> (depth - 1)) & 1) << depth);
-
-        if (depth == 0 || ((v >> (depth - 1)) & 1))
-            v |= ((myrand() & 1) << depth);
-        else if (depth > 0 && size == 4)
-            v |= (((v >> (depth - 1)) & 1) << depth);
-    } else {
-            u |= (((u >> (depth - 1)) & 1) << depth);
-            v |= (((v >> (depth - 1)) & 1) << depth);
-    }
-    if (depth > 0 || ((u >> depth) & 1) || ((v >> depth) & 1))
-        y |= ((myrand() & 1) << depth);
-    else
-        y |= (1 << depth);
-
-    memset(cbfy, y, len);
-    memset(cbfu, u, len);
-    memset(cbfv, v, len);
-
-    for (Ipp32u i = 0; i < 4; i++)
-        genCBF(cbfy + len/4 * i,cbfu + len/4 * i,cbfv + len/4 * i,
-        size >> 1, len/4, depth + 1, max_depth);
-}
-
-void H265CU::FillRandom(Ipp32u absPartIdx, Ipp8u depth)
-{
-    Ipp32u num_parts = ( m_par->NumPartInCU >> (depth<<1) );
-    Ipp32u i;
-  Ipp32u lpel_x   = m_ctbPelX +
-      ((h265_scan_z2r[m_par->MaxCUDepth][absPartIdx] & (m_par->NumMinTUInMaxCU - 1)) << m_par->QuadtreeTULog2MinSize);
-  Ipp32u rpel_x   = lpel_x + (m_par->MaxCUSize>>depth)  - 1;
-  Ipp32u tpel_y   = m_ctbPelY +
-      ((h265_scan_z2r[m_par->MaxCUDepth][absPartIdx] >> m_par->MaxCUDepth) << m_par->QuadtreeTULog2MinSize);
-  Ipp32u bpel_y   = tpel_y + (m_par->MaxCUSize>>depth) - 1;
-/*
-  if (depth == 0) {
-      for (i = 0; i < MAX_CU_SIZE * MAX_CU_SIZE; i++)
-          m_trCoeffY[i] = (Ipp16s)((myrand() & 31) - 16);
-      for (i = 0; i < MAX_CU_SIZE * MAX_CU_SIZE/4; i++) {
-          m_trCoeffU[i] = (Ipp16s)((myrand() & 31) - 16);
-          m_trCoeffV[i] = (Ipp16s)((myrand() & 31) - 16);
-      }
-  }
-*/
-    if ((depth < m_par->MaxCUDepth - m_par->AddCUDepth) &&
-        (((myrand() & 1) && (m_par->Log2MaxCUSize - depth > m_par->QuadtreeTULog2MinSize)) ||
-        rpel_x >= m_par->Width  || bpel_y >= m_par->Height ||
-        m_par->Log2MaxCUSize - depth -
-            (m_cslice->slice_type == I_SLICE ? m_par->QuadtreeTUMaxDepthIntra :
-            MIN(m_par->QuadtreeTUMaxDepthIntra, m_par->QuadtreeTUMaxDepthInter)) > m_par->QuadtreeTULog2MaxSize)) {
-        // split
-        for (i = 0; i < 4; i++)
-            FillRandom(absPartIdx + (num_parts >> 2) * i, depth+1);
-    } else {
-        Ipp8u pred_mode = MODE_INTRA;
-        if ( m_cslice->slice_type != I_SLICE && (myrand() & 15)) {
-            pred_mode = MODE_INTER;
-        }
-        Ipp8u size = (Ipp8u)(m_par->MaxCUSize >> depth);
-        Ipp32u MaxDepth = pred_mode == MODE_INTRA ? m_par->QuadtreeTUMaxDepthIntra : m_par->QuadtreeTUMaxDepthInter;
-        Ipp8u part_size;
-
-        if (pred_mode == MODE_INTRA) {
-            part_size = (Ipp8u)
-                (depth == m_par->MaxCUDepth - m_par->AddCUDepth &&
-                depth + 1 <= m_par->MaxCUDepth &&
-                ((m_par->Log2MaxCUSize - depth - MaxDepth == m_par->QuadtreeTULog2MaxSize) ||
-                (myrand() & 1)) ? PART_SIZE_NxN : PART_SIZE_2Nx2N);
-        } else {
-            if (depth == m_par->MaxCUDepth - m_par->AddCUDepth) {
-                if (size == 8) {
-                    part_size = (Ipp8u)(myrand() % 3);
-                } else {
-                    part_size = (Ipp8u)(myrand() % 4);
-                }
-            } else {
-                if (m_par->csps->amp_enabled_flag) {
-                    part_size = (Ipp8u)(myrand() % 7);
-                    if (part_size == 3) part_size = 7;
-                } else {
-                    part_size = (Ipp8u)(myrand() % 3);
-                }
-            }
-        }
-        Ipp8u intra_split = ((pred_mode == MODE_INTRA && (part_size == PART_SIZE_NxN)) ? 1 : 0);
-        Ipp8u inter_split = ((MaxDepth == 1) && (pred_mode == MODE_INTER) && (part_size != PART_SIZE_2Nx2N) ) ? 1 : 0;
-
-        Ipp8u tr_depth = intra_split + inter_split;
-        while ((m_par->MaxCUSize >> (depth + tr_depth)) > 32) tr_depth++;
-        while (tr_depth < (MaxDepth - 1 + intra_split + inter_split) &&
-            (m_par->MaxCUSize >> (depth + tr_depth)) > 4 &&
-            (m_par->Log2MaxCUSize - depth - tr_depth > m_par->QuadtreeTULog2MinSize) &&
-            ((myrand() & 1) ||
-                (m_par->Log2MaxCUSize - depth - tr_depth > m_par->QuadtreeTULog2MaxSize))) tr_depth++;
-
-        for (i = 0; i < num_parts; i++) {
-            m_data[absPartIdx + i].cbf[0] = 0;
-            m_data[absPartIdx + i].cbf[1] = 0;
-            m_data[absPartIdx + i].cbf[2] = 0;
-        }
-
-        if (tr_depth > m_par->QuadtreeTUMaxDepthIntra) {
-            printf("FillRandom err 1\n"); exit(1);
-        }
-        if (depth + tr_depth > m_par->MaxCUDepth) {
-            printf("FillRandom err 2\n"); exit(1);
-        }
-        if (m_par->Log2MaxCUSize - (depth + tr_depth) < m_par->QuadtreeTULog2MinSize) {
-            printf("FillRandom err 3\n"); exit(1);
-        }
-        if (m_par->Log2MaxCUSize - (depth + tr_depth) > m_par->QuadtreeTULog2MaxSize) {
-            printf("FillRandom err 4\n"); exit(1);
-        }
-        if (pred_mode == MODE_INTRA) {
-            Ipp8u luma_dir = (m_left && m_above) ? (Ipp8u) (myrand() % 35) : INTRA_DC;
-            for (i = absPartIdx; i < absPartIdx + num_parts; i++) {
-                m_data[i].predMode = pred_mode;
-                m_data[i].depth = depth;
-                m_data[i].size = size;
-                m_data[i].partSize = part_size;
-                m_data[i].intraLumaDir = luma_dir;
-                m_data[i].intraChromaDir = INTRA_DM_CHROMA;
-                m_data[i].qp = m_par->QP;
-                m_data[i].trIdx = tr_depth;
-                m_data[i].interDir = 0;
-            }
-        } else {
-            Ipp16s mvmax = (Ipp16s)(10 + myrand()%100);
-            Ipp16s mvx0 = (Ipp16s)((myrand() % (mvmax*2+1)) - mvmax);
-            Ipp16s mvy0 = (Ipp16s)((myrand() % (mvmax*2+1)) - mvmax);
-            Ipp16s mvx1 = (Ipp16s)((myrand() % (mvmax*2+1)) - mvmax);
-            Ipp16s mvy1 = (Ipp16s)((myrand() % (mvmax*2+1)) - mvmax);
-            T_RefIdx ref_idx0 = (T_RefIdx)(myrand() % m_cslice->num_ref_idx_l0_active);
-            Ipp8u inter_dir;
-            if (m_cslice->slice_type == B_SLICE && part_size != PART_SIZE_2Nx2N && size == 8) {
-                inter_dir = (Ipp8u)(1 + myrand()%2);
-            } else if (m_cslice->slice_type == B_SLICE) {
-                inter_dir = (Ipp8u)(1 + myrand()%3);
-            } else {
-                inter_dir = 1;
-            }
-            T_RefIdx ref_idx1 = (T_RefIdx)((inter_dir & INTER_DIR_PRED_L1) ? (myrand() % m_cslice->num_ref_idx_l1_active) : -1);
-            for (i = absPartIdx; i < absPartIdx + num_parts; i++) {
-                m_data[i].predMode = pred_mode;
-                m_data[i].depth = depth;
-                m_data[i].size = size;
-                m_data[i].partSize = part_size;
-                m_data[i].intraLumaDir = 0;//luma_dir;
-                m_data[i].qp = m_par->QP;
-                m_data[i].trIdx = tr_depth;
-                m_data[i].interDir = inter_dir;
-                m_data[i].refIdx[0] = -1;
-                m_data[i].refIdx[1] = -1;
-                m_data[i].mv[0].mvx = 0;
-                m_data[i].mv[0].mvy = 0;
-                m_data[i].mv[1].mvx = 0;
-                m_data[i].mv[1].mvy = 0;
-                if (inter_dir & INTER_DIR_PRED_L0) {
-                    m_data[i].refIdx[0] = ref_idx0;
-                    m_data[i].mv[0].mvx = mvx0;
-                    m_data[i].mv[0].mvy = mvy0;
-                }
-                if (inter_dir & INTER_DIR_PRED_L1) {
-                    m_data[i].refIdx[1] = ref_idx1;
-                    m_data[i].mv[1].mvx = mvx1;
-                    m_data[i].mv[1].mvy = mvy1;
-                }
-                m_data[i].flags.mergeFlag = 0;
-                m_data[i].mvd[0].mvx = m_data[i].mvd[0].mvy =
-                    m_data[i].mvd[1].mvx = m_data[i].mvd[1].mvy = 0;
-                m_data[i].mvpIdx[0] = m_data[i].mvpIdx[1] = 0;
-                m_data[i].mvpNum[0] = m_data[i].mvpNum[1] = 0;
-            }
-            for (Ipp32s i = 0; i < GetNumPartInter(absPartIdx); i++)
-            {
-                Ipp32s PartAddr;
-                Ipp32s PartX, PartY, Width, Height;
-                GetPartOffsetAndSize(i, m_data[absPartIdx].partSize,
-                    m_data[absPartIdx].size, PartX, PartY, Width, Height);
-                GetPartAddr(i, m_data[absPartIdx].partSize, num_parts, PartAddr);
-
-                GetPuMvInfo(absPartIdx, PartAddr, m_data[absPartIdx].partSize, i);
-            }
-
-            if ((num_parts < 4 && part_size != PART_SIZE_2Nx2N) ||
-                (num_parts < 16 && part_size > 3)) {
-                printf("FillRandom err 5\n"); exit(1);
-            }
-        }
-    }
-}
-
-void H265CU::FillZero(Ipp32u absPartIdx, Ipp8u depth)
-{
-    Ipp32u num_parts = ( m_par->NumPartInCU >> (depth<<1) );
-    Ipp32u i;
-    Ipp32u lpel_x   = m_ctbPelX +
-        ((h265_scan_z2r[m_par->MaxCUDepth][absPartIdx] & (m_par->NumMinTUInMaxCU - 1)) << m_par->QuadtreeTULog2MinSize);
-    Ipp32u rpel_x   = lpel_x + (m_par->MaxCUSize>>depth)  - 1;
-    Ipp32u tpel_y   = m_ctbPelY +
-        ((h265_scan_z2r[m_par->MaxCUDepth][absPartIdx] >> m_par->MaxCUDepth) << m_par->QuadtreeTULog2MinSize);
-    Ipp32u bpel_y   = tpel_y + (m_par->MaxCUSize>>depth) - 1;
-/*
-  if (depth == 0) {
-      for (i = 0; i < MAX_CU_SIZE * MAX_CU_SIZE; i++)
-          m_trCoeffY[i] = (Ipp16s)((myrand() & 31) - 16);
-      for (i = 0; i < MAX_CU_SIZE * MAX_CU_SIZE/4; i++) {
-          m_trCoeffU[i] = (Ipp16s)((myrand() & 31) - 16);
-          m_trCoeffV[i] = (Ipp16s)((myrand() & 31) - 16);
-      }
-  }
-*/
-    if ((depth < m_par->MaxCUDepth - m_par->AddCUDepth) &&
-        (((/*myrand() & 1*/0) && (m_par->Log2MaxCUSize - depth > m_par->QuadtreeTULog2MinSize)) ||
-        rpel_x >= m_par->Width  || bpel_y >= m_par->Height ||
-        m_par->Log2MaxCUSize - depth -
-            (m_cslice->slice_type == I_SLICE ? m_par->QuadtreeTUMaxDepthIntra :
-            MIN(m_par->QuadtreeTUMaxDepthIntra, m_par->QuadtreeTUMaxDepthInter)) > m_par->QuadtreeTULog2MaxSize)) {
-        // split
-        for (i = 0; i < 4; i++)
-            FillZero(absPartIdx + (num_parts >> 2) * i, depth+1);
-    } else {
-        Ipp8u pred_mode = MODE_INTRA;
-        if ( m_cslice->slice_type != I_SLICE && (myrand() & 15)) {
-            pred_mode = MODE_INTER;
-        }
-        Ipp8u size = (Ipp8u)(m_par->MaxCUSize >> depth);
-        Ipp32u MaxDepth = pred_mode == MODE_INTRA ? m_par->QuadtreeTUMaxDepthIntra : m_par->QuadtreeTUMaxDepthInter;
-        Ipp8u part_size;
-        /*
-        if (pred_mode == MODE_INTRA) {
-            part_size = (Ipp8u)
-                (depth == m_par->MaxCUDepth - m_par->AddCUDepth &&
-                depth + 1 <= m_par->MaxCUDepth &&
-                ((m_par->Log2MaxCUSize - depth - MaxDepth == m_par->QuadtreeTULog2MaxSize) ||
-                (myrand() & 1)) ? PART_SIZE_NxN : PART_SIZE_2Nx2N);
-        } else {
-            if (depth == m_par->MaxCUDepth - m_par->AddCUDepth) {
-                if (size == 8) {
-                    part_size = (Ipp8u)(myrand() % 3);
-                } else {
-                    part_size = (Ipp8u)(myrand() % 4);
-                }
-            } else {
-                if (m_par->csps->amp_enabled_flag) {
-                    part_size = (Ipp8u)(myrand() % 7);
-                    if (part_size == 3) part_size = 7;
-                } else {
-                    part_size = (Ipp8u)(myrand() % 3);
-                }
-            }
-        }*/
-        part_size = PART_SIZE_2Nx2N;
-
-        Ipp8u intra_split = ((pred_mode == MODE_INTRA && (part_size == PART_SIZE_NxN)) ? 1 : 0);
-        Ipp8u inter_split = ((MaxDepth == 1) && (pred_mode == MODE_INTER) && (part_size != PART_SIZE_2Nx2N) ) ? 1 : 0;
-
-        Ipp8u tr_depth = intra_split + inter_split;
-        while ((m_par->MaxCUSize >> (depth + tr_depth)) > 32) tr_depth++;
-        while (tr_depth < (MaxDepth - 1 + intra_split + inter_split) &&
-            (m_par->MaxCUSize >> (depth + tr_depth)) > 4 &&
-            (m_par->Log2MaxCUSize - depth - tr_depth > m_par->QuadtreeTULog2MinSize) &&
-            ((0/*myrand() & 1*/) ||
-                (m_par->Log2MaxCUSize - depth - tr_depth > m_par->QuadtreeTULog2MaxSize))) tr_depth++;
-
-        for (i = 0; i < num_parts; i++) {
-            m_data[absPartIdx + i].cbf[0] = 0;
-            m_data[absPartIdx + i].cbf[1] = 0;
-            m_data[absPartIdx + i].cbf[2] = 0;
-        }
-
-        if (tr_depth > m_par->QuadtreeTUMaxDepthIntra) {
-            printf("FillZero err 1\n"); exit(1);
-        }
-        if (depth + tr_depth > m_par->MaxCUDepth) {
-            printf("FillZero err 2\n"); exit(1);
-        }
-        if (m_par->Log2MaxCUSize - (depth + tr_depth) < m_par->QuadtreeTULog2MinSize) {
-            printf("FillZero err 3\n"); exit(1);
-        }
-        if (m_par->Log2MaxCUSize - (depth + tr_depth) > m_par->QuadtreeTULog2MaxSize) {
-            printf("FillZero err 4\n"); exit(1);
-        }
-        if (pred_mode == MODE_INTRA) {
-            Ipp8u luma_dir =/* (p_left && p_above) ? (Ipp8u) (myrand() % 35) : */INTRA_DC;
-            for (i = absPartIdx; i < absPartIdx + num_parts; i++) {
-                m_data[i].predMode = pred_mode;
-                m_data[i].depth = depth;
-                m_data[i].size = size;
-                m_data[i].partSize = part_size;
-                m_data[i].intraLumaDir = luma_dir;
-                m_data[i].intraChromaDir = INTRA_DM_CHROMA;
-                m_data[i].qp = m_par->QP;
-                m_data[i].trIdx = tr_depth;
-                m_data[i].interDir = 0;
-            }
-        } else {
-/*            Ipp16s mvmax = (Ipp16s)(10 + myrand()%100);
-            Ipp16s mvx0 = (Ipp16s)((myrand() % (mvmax*2+1)) - mvmax);
-            Ipp16s mvy0 = (Ipp16s)((myrand() % (mvmax*2+1)) - mvmax);
-            Ipp16s mvx1 = (Ipp16s)((myrand() % (mvmax*2+1)) - mvmax);
-            Ipp16s mvy1 = (Ipp16s)((myrand() % (mvmax*2+1)) - mvmax);*/
-            T_RefIdx ref_idx0 = 0;//(T_RefIdx)(myrand() % m_cslice->num_ref_idx_l0_active);
-            Ipp8u inter_dir;
-/*            if (m_cslice->slice_type == B_SLICE && part_size != PART_SIZE_2Nx2N && size == 8) {
-                inter_dir = (Ipp8u)(1 + myrand()%2);
-            } else if (m_cslice->slice_type == B_SLICE) {
-                inter_dir = (Ipp8u)(1 + myrand()%3);
-            } else*/ {
-                inter_dir = 1;
-            }
-            T_RefIdx ref_idx1 = (T_RefIdx)((inter_dir & INTER_DIR_PRED_L1) ? (myrand() % m_cslice->num_ref_idx_l1_active) : -1);
-            for (i = absPartIdx; i < absPartIdx + num_parts; i++) {
-                m_data[i].predMode = pred_mode;
-                m_data[i].depth = depth;
-                m_data[i].size = size;
-                m_data[i].partSize = part_size;
-                m_data[i].intraLumaDir = 0;//luma_dir;
-                m_data[i].qp = m_par->QP;
-                m_data[i].trIdx = tr_depth;
-                m_data[i].interDir = inter_dir;
-                m_data[i].refIdx[0] = -1;
-                m_data[i].refIdx[1] = -1;
-                m_data[i].mv[0].mvx = 0;
-                m_data[i].mv[0].mvy = 0;
-                m_data[i].mv[1].mvx = 0;
-                m_data[i].mv[1].mvy = 0;
-                if (inter_dir & INTER_DIR_PRED_L0) {
-                    m_data[i].refIdx[0] = ref_idx0;
+////// random generation code, for development purposes
+//
+//static double rand_val = 1.239847855923875843957;
+//
+//static unsigned int myrand()
+//{
+//    rand_val *= 1.204839573950674;
+//    if (rand_val > 1024) rand_val /= 1024;
+//    return ((Ipp32s *)&rand_val)[0];
+//}
+//
+//
+//static void genCBF(Ipp8u *cbfy, Ipp8u *cbfu, Ipp8u *cbfv, Ipp8u size, Ipp8u len, Ipp8u depth, Ipp8u max_depth) {
+//    if (depth > max_depth)
+//        return;
+//
+//    Ipp8u y = cbfy[0], u = cbfu[0], v = cbfv[0];
+//
+//    if (depth == 0 || size > 4) {
+//        if (depth == 0 || ((u >> (depth - 1)) & 1))
+//            u |= ((myrand() & 1) << depth);
+//        else if (depth > 0 && size == 4)
+//            u |= (((u >> (depth - 1)) & 1) << depth);
+//
+//        if (depth == 0 || ((v >> (depth - 1)) & 1))
+//            v |= ((myrand() & 1) << depth);
+//        else if (depth > 0 && size == 4)
+//            v |= (((v >> (depth - 1)) & 1) << depth);
+//    } else {
+//            u |= (((u >> (depth - 1)) & 1) << depth);
+//            v |= (((v >> (depth - 1)) & 1) << depth);
+//    }
+//    if (depth > 0 || ((u >> depth) & 1) || ((v >> depth) & 1))
+//        y |= ((myrand() & 1) << depth);
+//    else
+//        y |= (1 << depth);
+//
+//    memset(cbfy, y, len);
+//    memset(cbfu, u, len);
+//    memset(cbfv, v, len);
+//
+//    for (Ipp32u i = 0; i < 4; i++)
+//        genCBF(cbfy + len/4 * i,cbfu + len/4 * i,cbfv + len/4 * i,
+//        size >> 1, len/4, depth + 1, max_depth);
+//}
+//
+//void H265CU::FillRandom(Ipp32u absPartIdx, Ipp8u depth)
+//{
+//    Ipp32u num_parts = ( m_par->NumPartInCU >> (depth<<1) );
+//    Ipp32u i;
+//  Ipp32u lpel_x   = m_ctbPelX +
+//      ((h265_scan_z2r[m_par->MaxCUDepth][absPartIdx] & (m_par->NumMinTUInMaxCU - 1)) << m_par->QuadtreeTULog2MinSize);
+//  Ipp32u rpel_x   = lpel_x + (m_par->MaxCUSize>>depth)  - 1;
+//  Ipp32u tpel_y   = m_ctbPelY +
+//      ((h265_scan_z2r[m_par->MaxCUDepth][absPartIdx] >> m_par->MaxCUDepth) << m_par->QuadtreeTULog2MinSize);
+//  Ipp32u bpel_y   = tpel_y + (m_par->MaxCUSize>>depth) - 1;
+///*
+//  if (depth == 0) {
+//      for (i = 0; i < MAX_CU_SIZE * MAX_CU_SIZE; i++)
+//          m_trCoeffY[i] = (Ipp16s)((myrand() & 31) - 16);
+//      for (i = 0; i < MAX_CU_SIZE * MAX_CU_SIZE/4; i++) {
+//          m_trCoeffU[i] = (Ipp16s)((myrand() & 31) - 16);
+//          m_trCoeffV[i] = (Ipp16s)((myrand() & 31) - 16);
+//      }
+//  }
+//*/
+//    if ((depth < m_par->MaxCUDepth - m_par->AddCUDepth) &&
+//        (((myrand() & 1) && (m_par->Log2MaxCUSize - depth > m_par->QuadtreeTULog2MinSize)) ||
+//        rpel_x >= m_par->Width  || bpel_y >= m_par->Height ||
+//        m_par->Log2MaxCUSize - depth -
+//            (m_cslice->slice_type == I_SLICE ? m_par->QuadtreeTUMaxDepthIntra :
+//            MIN(m_par->QuadtreeTUMaxDepthIntra, m_par->QuadtreeTUMaxDepthInter)) > m_par->QuadtreeTULog2MaxSize)) {
+//        // split
+//        for (i = 0; i < 4; i++)
+//            FillRandom(absPartIdx + (num_parts >> 2) * i, depth+1);
+//    } else {
+//        Ipp8u pred_mode = MODE_INTRA;
+//        if ( m_cslice->slice_type != I_SLICE && (myrand() & 15)) {
+//            pred_mode = MODE_INTER;
+//        }
+//        Ipp8u size = (Ipp8u)(m_par->MaxCUSize >> depth);
+//        Ipp32u MaxDepth = pred_mode == MODE_INTRA ? m_par->QuadtreeTUMaxDepthIntra : m_par->QuadtreeTUMaxDepthInter;
+//        Ipp8u part_size;
+//
+//        if (pred_mode == MODE_INTRA) {
+//            part_size = (Ipp8u)
+//                (depth == m_par->MaxCUDepth - m_par->AddCUDepth &&
+//                depth + 1 <= m_par->MaxCUDepth &&
+//                ((m_par->Log2MaxCUSize - depth - MaxDepth == m_par->QuadtreeTULog2MaxSize) ||
+//                (myrand() & 1)) ? PART_SIZE_NxN : PART_SIZE_2Nx2N);
+//        } else {
+//            if (depth == m_par->MaxCUDepth - m_par->AddCUDepth) {
+//                if (size == 8) {
+//                    part_size = (Ipp8u)(myrand() % 3);
+//                } else {
+//                    part_size = (Ipp8u)(myrand() % 4);
+//                }
+//            } else {
+//                if (m_par->csps->amp_enabled_flag) {
+//                    part_size = (Ipp8u)(myrand() % 7);
+//                    if (part_size == 3) part_size = 7;
+//                } else {
+//                    part_size = (Ipp8u)(myrand() % 3);
+//                }
+//            }
+//        }
+//        Ipp8u intra_split = ((pred_mode == MODE_INTRA && (part_size == PART_SIZE_NxN)) ? 1 : 0);
+//        Ipp8u inter_split = ((MaxDepth == 1) && (pred_mode == MODE_INTER) && (part_size != PART_SIZE_2Nx2N) ) ? 1 : 0;
+//
+//        Ipp8u tr_depth = intra_split + inter_split;
+//        while ((m_par->MaxCUSize >> (depth + tr_depth)) > 32) tr_depth++;
+//        while (tr_depth < (MaxDepth - 1 + intra_split + inter_split) &&
+//            (m_par->MaxCUSize >> (depth + tr_depth)) > 4 &&
+//            (m_par->Log2MaxCUSize - depth - tr_depth > m_par->QuadtreeTULog2MinSize) &&
+//            ((myrand() & 1) ||
+//                (m_par->Log2MaxCUSize - depth - tr_depth > m_par->QuadtreeTULog2MaxSize))) tr_depth++;
+//
+//        for (i = 0; i < num_parts; i++) {
+//            m_data[absPartIdx + i].cbf[0] = 0;
+//            m_data[absPartIdx + i].cbf[1] = 0;
+//            m_data[absPartIdx + i].cbf[2] = 0;
+//        }
+//
+//        if (tr_depth > m_par->QuadtreeTUMaxDepthIntra) {
+//            printf("FillRandom err 1\n"); exit(1);
+//        }
+//        if (depth + tr_depth > m_par->MaxCUDepth) {
+//            printf("FillRandom err 2\n"); exit(1);
+//        }
+//        if (m_par->Log2MaxCUSize - (depth + tr_depth) < m_par->QuadtreeTULog2MinSize) {
+//            printf("FillRandom err 3\n"); exit(1);
+//        }
+//        if (m_par->Log2MaxCUSize - (depth + tr_depth) > m_par->QuadtreeTULog2MaxSize) {
+//            printf("FillRandom err 4\n"); exit(1);
+//        }
+//        if (pred_mode == MODE_INTRA) {
+//            Ipp8u luma_dir = (m_left && m_above) ? (Ipp8u) (myrand() % 35) : INTRA_DC;
+//            for (i = absPartIdx; i < absPartIdx + num_parts; i++) {
+//                m_data[i].predMode = pred_mode;
+//                m_data[i].depth = depth;
+//                m_data[i].size = size;
+//                m_data[i].partSize = part_size;
+//                m_data[i].intraLumaDir = luma_dir;
+//                m_data[i].intraChromaDir = INTRA_DM_CHROMA;
+//                m_data[i].qp = m_par->QP;
+//                m_data[i].trIdx = tr_depth;
+//                m_data[i].interDir = 0;
+//            }
+//        } else {
+//            Ipp16s mvmax = (Ipp16s)(10 + myrand()%100);
+//            Ipp16s mvx0 = (Ipp16s)((myrand() % (mvmax*2+1)) - mvmax);
+//            Ipp16s mvy0 = (Ipp16s)((myrand() % (mvmax*2+1)) - mvmax);
+//            Ipp16s mvx1 = (Ipp16s)((myrand() % (mvmax*2+1)) - mvmax);
+//            Ipp16s mvy1 = (Ipp16s)((myrand() % (mvmax*2+1)) - mvmax);
+//            T_RefIdx ref_idx0 = (T_RefIdx)(myrand() % m_cslice->num_ref_idx_l0_active);
+//            Ipp8u inter_dir;
+//            if (m_cslice->slice_type == B_SLICE && part_size != PART_SIZE_2Nx2N && size == 8) {
+//                inter_dir = (Ipp8u)(1 + myrand()%2);
+//            } else if (m_cslice->slice_type == B_SLICE) {
+//                inter_dir = (Ipp8u)(1 + myrand()%3);
+//            } else {
+//                inter_dir = 1;
+//            }
+//            T_RefIdx ref_idx1 = (T_RefIdx)((inter_dir & INTER_DIR_PRED_L1) ? (myrand() % m_cslice->num_ref_idx_l1_active) : -1);
+//            for (i = absPartIdx; i < absPartIdx + num_parts; i++) {
+//                m_data[i].predMode = pred_mode;
+//                m_data[i].depth = depth;
+//                m_data[i].size = size;
+//                m_data[i].partSize = part_size;
+//                m_data[i].intraLumaDir = 0;//luma_dir;
+//                m_data[i].qp = m_par->QP;
+//                m_data[i].trIdx = tr_depth;
+//                m_data[i].interDir = inter_dir;
+//                m_data[i].refIdx[0] = -1;
+//                m_data[i].refIdx[1] = -1;
+//                m_data[i].mv[0].mvx = 0;
+//                m_data[i].mv[0].mvy = 0;
+//                m_data[i].mv[1].mvx = 0;
+//                m_data[i].mv[1].mvy = 0;
+//                if (inter_dir & INTER_DIR_PRED_L0) {
+//                    m_data[i].refIdx[0] = ref_idx0;
 //                    m_data[i].mv[0].mvx = mvx0;
 //                    m_data[i].mv[0].mvy = mvy0;
-                }
-                if (inter_dir & INTER_DIR_PRED_L1) {
-                    m_data[i].refIdx[1] = ref_idx1;
+//                }
+//                if (inter_dir & INTER_DIR_PRED_L1) {
+//                    m_data[i].refIdx[1] = ref_idx1;
 //                    m_data[i].mv[1].mvx = mvx1;
 //                    m_data[i].mv[1].mvy = mvy1;
-                }
-                m_data[i]._flags = 0;
-                m_data[i].flags.mergeFlag = 0;
-                m_data[i].mvd[0].mvx = m_data[i].mvd[0].mvy =
-                    m_data[i].mvd[1].mvx = m_data[i].mvd[1].mvy = 0;
-                m_data[i].mvpIdx[0] = m_data[i].mvpIdx[1] = 0;
-                m_data[i].mvpNum[0] = m_data[i].mvpNum[1] = 0;
-            }
-            for (Ipp32s i = 0; i < GetNumPartInter(absPartIdx); i++)
-            {
-                Ipp32s PartAddr;
-                Ipp32s PartX, PartY, Width, Height;
-                GetPartOffsetAndSize(i, m_data[absPartIdx].partSize,
-                    m_data[absPartIdx].size, PartX, PartY, Width, Height);
-                GetPartAddr(i, m_data[absPartIdx].partSize, num_parts, PartAddr);
-
-                GetPuMvInfo(absPartIdx, PartAddr, m_data[absPartIdx].partSize, i);
-            }
-
-            if ((num_parts < 4 && part_size != PART_SIZE_2Nx2N) ||
-                (num_parts < 16 && part_size > 3)) {
-                printf("FillZero err 5\n"); exit(1);
-            }
-        }
-    }
-}
+//                }
+//                m_data[i].flags.mergeFlag = 0;
+//                m_data[i].mvd[0].mvx = m_data[i].mvd[0].mvy =
+//                    m_data[i].mvd[1].mvx = m_data[i].mvd[1].mvy = 0;
+//                m_data[i].mvpIdx[0] = m_data[i].mvpIdx[1] = 0;
+//                m_data[i].mvpNum[0] = m_data[i].mvpNum[1] = 0;
+//            }
+//            for (Ipp32s i = 0; i < GetNumPartInter(absPartIdx); i++)
+//            {
+//                Ipp32s PartAddr;
+//                Ipp32s PartX, PartY, Width, Height;
+//                GetPartOffsetAndSize(i, m_data[absPartIdx].partSize,
+//                    m_data[absPartIdx].size, PartX, PartY, Width, Height);
+//                GetPartAddr(i, m_data[absPartIdx].partSize, num_parts, PartAddr);
+//
+//                GetPuMvInfo(absPartIdx, PartAddr, m_data[absPartIdx].partSize, i);
+//            }
+//
+//            if ((num_parts < 4 && part_size != PART_SIZE_2Nx2N) ||
+//                (num_parts < 16 && part_size > 3)) {
+//                printf("FillRandom err 5\n"); exit(1);
+//            }
+//        }
+//    }
+//}
+//
+//void H265CU::FillZero(Ipp32u absPartIdx, Ipp8u depth)
+//{
+//    Ipp32u num_parts = ( m_par->NumPartInCU >> (depth<<1) );
+//    Ipp32u i;
+//    Ipp32u lpel_x   = m_ctbPelX +
+//        ((h265_scan_z2r[m_par->MaxCUDepth][absPartIdx] & (m_par->NumMinTUInMaxCU - 1)) << m_par->QuadtreeTULog2MinSize);
+//    Ipp32u rpel_x   = lpel_x + (m_par->MaxCUSize>>depth)  - 1;
+//    Ipp32u tpel_y   = m_ctbPelY +
+//        ((h265_scan_z2r[m_par->MaxCUDepth][absPartIdx] >> m_par->MaxCUDepth) << m_par->QuadtreeTULog2MinSize);
+//    Ipp32u bpel_y   = tpel_y + (m_par->MaxCUSize>>depth) - 1;
+///*
+//  if (depth == 0) {
+//      for (i = 0; i < MAX_CU_SIZE * MAX_CU_SIZE; i++)
+//          m_trCoeffY[i] = (Ipp16s)((myrand() & 31) - 16);
+//      for (i = 0; i < MAX_CU_SIZE * MAX_CU_SIZE/4; i++) {
+//          m_trCoeffU[i] = (Ipp16s)((myrand() & 31) - 16);
+//          m_trCoeffV[i] = (Ipp16s)((myrand() & 31) - 16);
+//      }
+//  }
+//*/
+//    if ((depth < m_par->MaxCUDepth - m_par->AddCUDepth) &&
+//        (((/*myrand() & 1*/0) && (m_par->Log2MaxCUSize - depth > m_par->QuadtreeTULog2MinSize)) ||
+//        rpel_x >= m_par->Width  || bpel_y >= m_par->Height ||
+//        m_par->Log2MaxCUSize - depth -
+//            (m_cslice->slice_type == I_SLICE ? m_par->QuadtreeTUMaxDepthIntra :
+//            MIN(m_par->QuadtreeTUMaxDepthIntra, m_par->QuadtreeTUMaxDepthInter)) > m_par->QuadtreeTULog2MaxSize)) {
+//        // split
+//        for (i = 0; i < 4; i++)
+//            FillZero(absPartIdx + (num_parts >> 2) * i, depth+1);
+//    } else {
+//        Ipp8u pred_mode = MODE_INTRA;
+//        if ( m_cslice->slice_type != I_SLICE && (myrand() & 15)) {
+//            pred_mode = MODE_INTER;
+//        }
+//        Ipp8u size = (Ipp8u)(m_par->MaxCUSize >> depth);
+//        Ipp32u MaxDepth = pred_mode == MODE_INTRA ? m_par->QuadtreeTUMaxDepthIntra : m_par->QuadtreeTUMaxDepthInter;
+//        Ipp8u part_size;
+//        /*
+//        if (pred_mode == MODE_INTRA) {
+//            part_size = (Ipp8u)
+//                (depth == m_par->MaxCUDepth - m_par->AddCUDepth &&
+//                depth + 1 <= m_par->MaxCUDepth &&
+//                ((m_par->Log2MaxCUSize - depth - MaxDepth == m_par->QuadtreeTULog2MaxSize) ||
+//                (myrand() & 1)) ? PART_SIZE_NxN : PART_SIZE_2Nx2N);
+//        } else {
+//            if (depth == m_par->MaxCUDepth - m_par->AddCUDepth) {
+//                if (size == 8) {
+//                    part_size = (Ipp8u)(myrand() % 3);
+//                } else {
+//                    part_size = (Ipp8u)(myrand() % 4);
+//                }
+//            } else {
+//                if (m_par->csps->amp_enabled_flag) {
+//                    part_size = (Ipp8u)(myrand() % 7);
+//                    if (part_size == 3) part_size = 7;
+//                } else {
+//                    part_size = (Ipp8u)(myrand() % 3);
+//                }
+//            }
+//        }*/
+//        part_size = PART_SIZE_2Nx2N;
+//
+//        Ipp8u intra_split = ((pred_mode == MODE_INTRA && (part_size == PART_SIZE_NxN)) ? 1 : 0);
+//        Ipp8u inter_split = ((MaxDepth == 1) && (pred_mode == MODE_INTER) && (part_size != PART_SIZE_2Nx2N) ) ? 1 : 0;
+//
+//        Ipp8u tr_depth = intra_split + inter_split;
+//        while ((m_par->MaxCUSize >> (depth + tr_depth)) > 32) tr_depth++;
+//        while (tr_depth < (MaxDepth - 1 + intra_split + inter_split) &&
+//            (m_par->MaxCUSize >> (depth + tr_depth)) > 4 &&
+//            (m_par->Log2MaxCUSize - depth - tr_depth > m_par->QuadtreeTULog2MinSize) &&
+//            ((0/*myrand() & 1*/) ||
+//                (m_par->Log2MaxCUSize - depth - tr_depth > m_par->QuadtreeTULog2MaxSize))) tr_depth++;
+//
+//        for (i = 0; i < num_parts; i++) {
+//            m_data[absPartIdx + i].cbf[0] = 0;
+//            m_data[absPartIdx + i].cbf[1] = 0;
+//            m_data[absPartIdx + i].cbf[2] = 0;
+//        }
+//
+//        if (tr_depth > m_par->QuadtreeTUMaxDepthIntra) {
+//            printf("FillZero err 1\n"); exit(1);
+//        }
+//        if (depth + tr_depth > m_par->MaxCUDepth) {
+//            printf("FillZero err 2\n"); exit(1);
+//        }
+//        if (m_par->Log2MaxCUSize - (depth + tr_depth) < m_par->QuadtreeTULog2MinSize) {
+//            printf("FillZero err 3\n"); exit(1);
+//        }
+//        if (m_par->Log2MaxCUSize - (depth + tr_depth) > m_par->QuadtreeTULog2MaxSize) {
+//            printf("FillZero err 4\n"); exit(1);
+//        }
+//        if (pred_mode == MODE_INTRA) {
+//            Ipp8u luma_dir =/* (p_left && p_above) ? (Ipp8u) (myrand() % 35) : */INTRA_DC;
+//            for (i = absPartIdx; i < absPartIdx + num_parts; i++) {
+//                m_data[i].predMode = pred_mode;
+//                m_data[i].depth = depth;
+//                m_data[i].size = size;
+//                m_data[i].partSize = part_size;
+//                m_data[i].intraLumaDir = luma_dir;
+//                m_data[i].intraChromaDir = INTRA_DM_CHROMA;
+//                m_data[i].qp = m_par->QP;
+//                m_data[i].trIdx = tr_depth;
+//                m_data[i].interDir = 0;
+//            }
+//        } else {
+///*            Ipp16s mvmax = (Ipp16s)(10 + myrand()%100);
+//            Ipp16s mvx0 = (Ipp16s)((myrand() % (mvmax*2+1)) - mvmax);
+//            Ipp16s mvy0 = (Ipp16s)((myrand() % (mvmax*2+1)) - mvmax);
+//            Ipp16s mvx1 = (Ipp16s)((myrand() % (mvmax*2+1)) - mvmax);
+//            Ipp16s mvy1 = (Ipp16s)((myrand() % (mvmax*2+1)) - mvmax);*/
+//            T_RefIdx ref_idx0 = 0;//(T_RefIdx)(myrand() % m_cslice->num_ref_idx_l0_active);
+//            Ipp8u inter_dir;
+///*            if (m_cslice->slice_type == B_SLICE && part_size != PART_SIZE_2Nx2N && size == 8) {
+//                inter_dir = (Ipp8u)(1 + myrand()%2);
+//            } else if (m_cslice->slice_type == B_SLICE) {
+//                inter_dir = (Ipp8u)(1 + myrand()%3);
+//            } else*/ {
+//                inter_dir = 1;
+//            }
+//            T_RefIdx ref_idx1 = (T_RefIdx)((inter_dir & INTER_DIR_PRED_L1) ? (myrand() % m_cslice->num_ref_idx_l1_active) : -1);
+//            for (i = absPartIdx; i < absPartIdx + num_parts; i++) {
+//                m_data[i].predMode = pred_mode;
+//                m_data[i].depth = depth;
+//                m_data[i].size = size;
+//                m_data[i].partSize = part_size;
+//                m_data[i].intraLumaDir = 0;//luma_dir;
+//                m_data[i].qp = m_par->QP;
+//                m_data[i].trIdx = tr_depth;
+//                m_data[i].interDir = inter_dir;
+//                m_data[i].refIdx[0] = -1;
+//                m_data[i].refIdx[1] = -1;
+//                m_data[i].mv[0].mvx = 0;
+//                m_data[i].mv[0].mvy = 0;
+//                m_data[i].mv[1].mvx = 0;
+//                m_data[i].mv[1].mvy = 0;
+//                if (inter_dir & INTER_DIR_PRED_L0) {
+//                    m_data[i].refIdx[0] = ref_idx0;
+////                    m_data[i].mv[0].mvx = mvx0;
+////                    m_data[i].mv[0].mvy = mvy0;
+//                }
+//                if (inter_dir & INTER_DIR_PRED_L1) {
+//                    m_data[i].refIdx[1] = ref_idx1;
+////                    m_data[i].mv[1].mvx = mvx1;
+////                    m_data[i].mv[1].mvy = mvy1;
+//                }
+//                m_data[i]._flags = 0;
+//                m_data[i].flags.mergeFlag = 0;
+//                m_data[i].mvd[0].mvx = m_data[i].mvd[0].mvy =
+//                    m_data[i].mvd[1].mvx = m_data[i].mvd[1].mvy = 0;
+//                m_data[i].mvpIdx[0] = m_data[i].mvpIdx[1] = 0;
+//                m_data[i].mvpNum[0] = m_data[i].mvpNum[1] = 0;
+//            }
+//            for (Ipp32s i = 0; i < GetNumPartInter(absPartIdx); i++)
+//            {
+//                Ipp32s PartAddr;
+//                Ipp32s PartX, PartY, Width, Height;
+//                GetPartOffsetAndSize(i, m_data[absPartIdx].partSize,
+//                    m_data[absPartIdx].size, PartX, PartY, Width, Height);
+//                GetPartAddr(i, m_data[absPartIdx].partSize, num_parts, PartAddr);
+//
+//                GetPuMvInfo(absPartIdx, PartAddr, m_data[absPartIdx].partSize, i);
+//            }
+//
+//            if ((num_parts < 4 && part_size != PART_SIZE_2Nx2N) ||
+//                (num_parts < 16 && part_size > 3)) {
+//                printf("FillZero err 5\n"); exit(1);
+//            }
+//        }
+//    }
+//}
 
 void H265CU::FillSubPart(Ipp32s absPartIdx, Ipp8u depthCu, Ipp8u trDepth,
                          Ipp8u partSize, Ipp8u lumaDir, Ipp8u qp)

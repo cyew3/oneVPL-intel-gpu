@@ -415,12 +415,14 @@ public:
     void InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTemp, Ipp32s cuAddr,
         PixType *_y, PixType *_uv, Ipp32s _pitch,
         PixType *_ySrc, PixType *uvSrc, Ipp32s _pitchSrc, H265BsFake *_bsf, H265Slice *cslice, Ipp32s initializeDataFlag);
-    void FillRandom(Ipp32u abs_part_idx, Ipp8u depth);
-    void FillZero(Ipp32u abs_part_idx, Ipp8u depth);
+
     void ModeDecision(Ipp32u abs_part_idx, Ipp32u offset, Ipp8u depth, CostType *cost);
 
     private:
     Ipp32s m_isRdoq;
+////// random generation code, for development purposes
+//    void FillRandom(Ipp32u abs_part_idx, Ipp8u depth);
+//    void FillZero(Ipp32u abs_part_idx, Ipp8u depth);
 };
 
 template <class H265Bs>
