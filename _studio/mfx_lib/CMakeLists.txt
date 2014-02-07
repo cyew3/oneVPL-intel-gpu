@@ -558,6 +558,26 @@ set (hw_HEVC_DECODER_DESCRIPTION "Intel Media SDK HEVC Hardware Decode Plug-in")
 set (sw_HEVC_ENCODER_DESCRIPTION "Intel Media SDK HEVC Software Encode Plug-in")
 set (hw_HEVC_ENCODER_DESCRIPTION "Intel Media SDK HEVC Hardware Encode Plug-in")
 
+  if( NOT DEFINED ENV{MFX_HEVC_VERSION} )
+    set( hevc_version 0.0.000.0000 )
+  else( )
+    set( hevc_version $ENV{MFX_HEVC_VERSION} )
+  endif( )
+
+  if( Linux OR Darwin )
+    execute_process(
+      COMMAND echo
+      COMMAND cut -f 1 -d.
+      COMMAND date "+.%-y.%-m.%-d"
+      OUTPUT_VARIABLE cur_date
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      )
+    string( SUBSTRING ${hevc_version} 0 1 ver )
+
+    set(hevc_version_defs  "-DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}\"\\\" -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${hevc_version}\"\\\"")
+  endif( )
+
+
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
 
   list( APPEND plugin_common_sources
@@ -657,10 +677,10 @@ foreach( variant sw )
     dl
     )
   
-  set( defs "-DAS_HEVCD_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\"" )
+  set( defs "-DAS_HEVCD_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs}" )
   make_library( ${plugin_name} ${variant} shared)
 
-  set( defs "-DAS_HEVCD_PLUGIN -DHEVCD_EVALUATION -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\"" )
+  set( defs "-DAS_HEVCD_PLUGIN -DHEVCD_EVALUATION -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs}" )
   make_library( ${eval_plugin_name} ${variant} shared)
 
 #  append_property( ${plugin_name} COMPILE_FLAGS "-DAS_HEVCD_PLUGIN" )  
@@ -716,7 +736,7 @@ foreach( variant sw )
     dl
     )
 
-  set( defs "-DAS_HEVCE_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\"" )
+  set( defs "-DAS_HEVCE_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs}" )
   make_library( ${plugin_name} ${variant} shared)
 
   set( LIBS "" )
@@ -733,7 +753,7 @@ foreach( variant sw )
     dl
     )
 
-  set( defs "-DAS_HEVCE_PLUGIN -DHEVCE_EVALUATION -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\"" )
+  set( defs "-DAS_HEVCE_PLUGIN -DHEVCE_EVALUATION -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs}" )
   make_library( ${eval_plugin_name} ${variant} shared)
 
 endforeach()
