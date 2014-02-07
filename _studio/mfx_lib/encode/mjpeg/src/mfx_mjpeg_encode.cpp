@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008-2014 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -112,6 +112,7 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
     Ipp32u  fieldOffset = 0;
     Ipp32u  numPieces   = 0;
     Ipp32u  mcuWidth, mcuHeight, numxMCU, numyMCU;
+    UMC::Status sts = UMC::UMC_OK;
 
     UMC::MJPEGEncoderParams params;
     m_pMJPEGVideoEncoder->GetInfo(&params);
@@ -188,7 +189,13 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
 
                 cvt->Init(alignedWidth, alignedHeight, UMC::YUV422);
                 cvt->SetImageSize(width, height);
-                cvt->Alloc();
+                sts = cvt->Alloc();
+                if(sts != UMC::UMC_OK)
+                {
+                    delete p;
+                    delete cvt;
+                    return MFX_ERR_MEMORY_ALLOC;
+                }
 
                 if(MFX_CHROMAFORMAT_YUV422H == surface->Info.ChromaFormat)
                 {
@@ -211,16 +218,9 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
                     Ipp8u* dst[3] = {(Ipp8u*)cvt->GetPlanePointer(0), 
                                      (Ipp8u*)cvt->GetPlanePointer(1), 
                                      (Ipp8u*)cvt->GetPlanePointer(2)};
-                    if (!dst) 
-                    {
-                        delete p;
-                        delete cvt;
-                        return MFX_ERR_NULL_PTR;
-                    }
                     Ipp32u dstPitch[3] = {(Ipp32u)cvt->GetPlanePitch(0), 
                                           (Ipp32u)cvt->GetPlanePitch(1), 
                                           (Ipp32u)cvt->GetPlanePitch(2)};
-
                     for(Ipp32u i=0; i<height; i++)
                         for(Ipp32u j=0; j<width/2; j++)
                         {
@@ -261,7 +261,13 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
 
                 cvt->Init(alignedWidth, alignedHeight, UMC::YUV420);
                 cvt->SetImageSize(width, height);
-                cvt->Alloc();
+                sts = cvt->Alloc();
+                if(sts != UMC::UMC_OK)
+                {
+                    delete p;
+                    delete cvt;
+                    return MFX_ERR_MEMORY_ALLOC;
+                }
 
                 UMC::VideoProcessing proc;
                 proc.GetFrame(pDataIn, cvt);
@@ -275,7 +281,13 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
 
                 cvt->Init(alignedWidth, alignedHeight, UMC::RGB32);
                 cvt->SetImageSize(width, height);
-                cvt->Alloc();
+                sts = cvt->Alloc();
+                if(sts != UMC::UMC_OK)
+                {
+                    delete p;
+                    delete cvt;
+                    return MFX_ERR_MEMORY_ALLOC;
+                }
 
                 UMC::VideoProcessing proc;
                 proc.GetFrame(pDataIn, cvt);
@@ -311,7 +323,7 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
 
                 cvt->Init(alignedWidth, alignedHeight, UMC::GRAY);
                 cvt->SetImageSize(width, height);
-                UMC::Status sts = cvt->Alloc();
+                sts = cvt->Alloc();
                 if(sts != UMC::UMC_OK)
                 {
                     delete p;
@@ -322,12 +334,6 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
                 Ipp8u* src = surface->Data.Y;
                 Ipp32u srcPitch = pitch;
                 Ipp8u* dst = (Ipp8u*)cvt->GetPlanePointer(0);
-                if (!dst) 
-                {
-                    delete p;
-                    delete cvt;
-                    return MFX_ERR_NULL_PTR;
-                }
                 Ipp32u dstPitch = (Ipp32u)cvt->GetPlanePitch(0);
 
                 for(Ipp32u i=0; i<height; i++)
@@ -351,7 +357,13 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* surface, mfxFrameInfo* fr
 
                 cvt->Init(alignedWidth, alignedHeight, UMC::GRAY);
                 cvt->SetImageSize(width, height);
-                cvt->Alloc();
+                sts = cvt->Alloc();
+                if(sts != UMC::UMC_OK)
+                {
+                    delete p;
+                    delete cvt;
+                    return MFX_ERR_MEMORY_ALLOC;
+                }
 
                 UMC::VideoProcessing proc;
                 proc.GetFrame(pDataIn, cvt);
