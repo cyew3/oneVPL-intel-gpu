@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2002-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2002-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -29,7 +29,7 @@
 Ipp32s MPEG2VideoEncoderBase::ME_FUNC(ME_PARAMS)
 {
   Ipp32s       step_hor, step_ver, step_min;
-  Ipp32s       BestMAD, MAD = INT_MAX;
+  Ipp32s       BestMAD = INT_MAX, MAD = INT_MAX;
   Ipp32s       X, Y, XN, YN, XMIN = 0, YMIN = 0;
   Ipp32s       min_point;
   const Ipp8u* ref_data;
@@ -60,6 +60,8 @@ Ipp32s MPEG2VideoEncoderBase::ME_FUNC(ME_PARAMS)
     if (th->me_matrix_buff) MP2_FREE(th->me_matrix_buff);
     th->me_matrix_size = me_matrix_w*me_matrix_h;
     th->me_matrix_buff = MP2_ALLOC(Ipp8u, th->me_matrix_size);
+    if (NULL == th->me_matrix_buff)
+      goto end_me;
     ippsZero_8u(th->me_matrix_buff, th->me_matrix_size);
     th->me_matrix_id = 0;
   }
