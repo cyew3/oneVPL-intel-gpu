@@ -13,7 +13,7 @@
 
 #include "mfx_common.h"
 
-#if defined(MFX_ENABLE_VP8_VIDEO_DECODE) && defined(MFX_VA)
+#if defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW) && defined(MFX_VA)
 //#define __FAKE_VP8_HW
 
 #include "mfx_common_int.h"
@@ -29,6 +29,7 @@
 #include "mfx_vp8_dec_decode.h"
 
 #include <map>
+
 
 class MFX_VP8_BoolDecoder
 {
@@ -129,6 +130,11 @@ public:
             z |= (decode_bit(prob) << bit);
         }
         return z;
+    }
+
+    Ipp8u * input()
+    {
+        return &m_input[m_pos];
     }
 
     Ipp32u pos() const

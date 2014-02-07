@@ -23,10 +23,16 @@
 
 #include "vm_sys_info.h"
 
+#ifndef MFX_VA_WIN
+
 #include <va/va.h>
 #include <va/va_dec_vp8.h>
 
+#endif
+
 #include <iostream>
+#include <sstream>
+#include <fstream>
 
 #define VP8_START_CODE_FOUND(ptr) ((ptr)[0] == 0x9d && (ptr)[1] == 0x01 && (ptr)[2] == 0x2a)
 
@@ -142,7 +148,7 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
 
     UMC::Status umcSts = UMC::UMC_OK;
     umcSts = m_p_frame_allocator->InitMfx(0, m_p_core, p_video_param, &request, &m_response, false, false);
-    
+
     if (UMC::UMC_OK != umcSts)
     {
         return MFX_ERR_MEMORY_ALLOC;
@@ -335,7 +341,7 @@ mfxStatus VideoDECODEVP8_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_vid
 
     mfxVideoParam p_params;
     memcpy(&p_params, p_video_param, sizeof(mfxVideoParam));
-    
+
     if (!(p_params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && !(p_params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -498,23 +504,22 @@ void VideoDECODEVP8_HW::CalculateTimeSteps(mfxFrameSurface1 *p_surface)
 
 UMC::FrameMemID VideoDECODEVP8_HW::GetMemIdToUnlock()
 {
+
     size_t size = m_frames.size();
-    
+
     if (1 == size)
     {
         return -1;
     }
 
     UMC::FrameMemID memId = -1;
-    sFrameInfo info;    
-
-    // get previous frame
-//    info = m_frames.at(size - 2);
+    sFrameInfo info;
 
     std::vector<sFrameInfo>::iterator i;
 
     for(i = m_frames.begin();i != m_frames.end() && (i + 1) != m_frames.end();i++)
     {
+
         if(i->currIndex != gold_indx && i->currIndex != altref_indx)
         {
             info = *i;
@@ -534,7 +539,7 @@ UMC::FrameMemID VideoDECODEVP8_HW::GetMemIdToUnlock()
         if ((*it).second == true && info.frmData == (*it).first)
         {
             (*it).second = false;
-            
+
             break;
         }
     }
@@ -622,7 +627,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
         {
             m_p_curr_frame = (*it).first;
             (*it).second = true;
-            
+
             break;
         }
     }
@@ -678,7 +683,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
         if (0 != (m_refresh_info.refreshRefFrame & 1))
             altref_indx = curr_indx;
     }
-    
+
     m_frames.push_back(info);
 
     m_p_frame_allocator->IncreaseReference(mem_id);
@@ -688,13 +693,16 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
     if (UMC_OK == m_p_video_accelerator->BeginFrame(mem_id))
     {
         m_p_video_accelerator->Execute();
+
         m_p_video_accelerator->EndFrame();
+
     }
 
     *pp_surface_out = m_p_frame_allocator->GetSurface(m_p_curr_frame->GetFrameMID(), p_surface_work, &m_video_params);
     m_p_frame_allocator->PrepareToOutput(*pp_surface_out, m_p_curr_frame->GetFrameMID(), &m_on_init_video_params, false);
 
     mem_id = GetMemIdToUnlock();
+
     if (-1 != mem_id)
     {
         m_p_frame_allocator.get()->DecreaseReference(mem_id);
@@ -735,7 +743,7 @@ mfxStatus VideoDECODEVP8_HW::AllocateFrame()
 
         m_surface_list.insert(std::pair<FrameData *, bool>(&m_frame_data[i], false));
     }
-    
+
     FrameMemID frmMID;
     m_p_frame_allocator->Alloc(&frmMID, &info, 0);
     m_last_frame_data.Init(&info, frmMID, m_p_frame_allocator.get());
@@ -1010,7 +1018,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
     int height      = 0;
 
     data_in = (Ipp8u*)in->Data;
-    
+
     if(!data_in)
         return MFX_ERR_NULL_PTR;
 
@@ -1023,7 +1031,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
     m_frame_info.version = version;
     m_frame_info.showFrame = (data_in[0] >> 4) & 0x01; // 1 bits
 
-    switch (version) 
+    switch (version)
     {
         case 1:
         case 2:
@@ -1054,7 +1062,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
     if (m_frame_info.frameType == I_PICTURE)  // if VP8_KEY_FRAME
     {
         if (first_partition_size > in->DataLength - 10)
-            return MFX_ERR_MORE_DATA; 
+            return MFX_ERR_MORE_DATA;
 
         if (!(VP8_START_CODE_FOUND(data_in))) // (0x9D && 0x01 && 0x2A)
             return MFX_ERR_UNKNOWN;
@@ -1075,7 +1083,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
             m_frame_info.frameWidth  = (Ipp16s)width;
             m_frame_info.frameHeight = (Ipp16s)height;
 
-            // alloc frames 
+            // alloc frames
             mfxStatus sts = AllocateFrame();
             MFX_CHECK_STS(sts);
 
@@ -1112,7 +1120,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
 
         // restore default MV contexts
         memcpy(m_frameProbs.mvContexts, vp8_default_mv_contexts, sizeof(vp8_default_mv_contexts));
-        
+
     }
 
     m_boolDecoder[VP8_FIRST_PARTITION].init(data_in, (Ipp32s) (data_in_end - data_in));
@@ -1315,10 +1323,9 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
         //m_frame_info.goldProb = 0;
     }
 
-
     int frame_data_offset = m_boolDecoder[VP8_FIRST_PARTITION].pos() +
-            ((m_frame_info.frameType == I_PICTURE) ? 10 : 3);
-    m_frame_info.entropyDecSize = frame_data_offset*8 - 16 - m_boolDecoder[VP8_FIRST_PARTITION].bitcount();
+        ((m_frame_info.frameType == I_PICTURE) ? 10 : 3);
+    m_frame_info.entropyDecSize = frame_data_offset * 8 - 16 - m_boolDecoder[VP8_FIRST_PARTITION].bitcount();
 
     //set to zero Mb coeffs
     for (mfxU32 i = 0; i < m_frame_info.mbPerCol; i++)
@@ -1328,6 +1335,27 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
             UMC_SET_ZERO(m_pMbInfo[i*m_frame_info.mbStep + j].coeffs);
         }
     }
+
+    #ifdef MFX_VA_WIN
+
+    unsigned char P0EntropyCount = m_boolDecoder[VP8_FIRST_PARTITION].bitcount();
+    UINT offset_counter = ((P0EntropyCount & 0x18) >> 3) + (((P0EntropyCount & 0x07) != 0) ? 1 : 0);
+
+    // + Working DDI .40
+
+    m_frame_info.firstPartitionSize += offset_counter;
+
+    if (m_frame_info.frameType == I_PICTURE)
+    {
+        m_frame_info.firstPartitionSize = m_frame_info.firstPartitionSize - (m_boolDecoder[VP8_FIRST_PARTITION].input() - ((Ipp8u*)in->Data) - 10) + 2;
+        m_frame_info.entropyDecSize = m_frame_info.entropyDecSize / 8 - 10;
+    }
+    else
+    {
+        m_frame_info.firstPartitionSize = m_frame_info.firstPartitionSize - (m_boolDecoder[VP8_FIRST_PARTITION].input() - ((Ipp8u*)in->Data) - 3) + 2;
+        m_frame_info.entropyDecSize = m_frame_info.entropyDecSize / 8 - 3;
+    }
+    #endif
 
     return MFX_ERR_NONE;
 }
@@ -1436,78 +1464,58 @@ mfxStatus VideoDECODEVP8_HW::SetSkipMode(mfxSkipMode /*mode*/)
 
 mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 {
-    mfxStatus sts = MFX_ERR_NONE;
+
+    UMCVACompBuffer* compBufPic;
+    VP8_DECODE_PICTURE_PARAMETERS *picParams = (VP8_DECODE_PICTURE_PARAMETERS*)m_p_video_accelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_PICTURE_PARAMETERS, &compBufPic);
+    memset(picParams, 0, sizeof(VP8_DECODE_PICTURE_PARAMETERS));
+
+    picParams->wFrameWidthInMbsMinus1 = (USHORT)((m_frame_info.frameSize.width / 16) - 1);
+    picParams->wFrameHeightInMbsMinus1 = (USHORT)((m_frame_info.frameSize.height / 16) - 1);
 
     sFrameInfo info = m_frames.back();
 
-    /////////////////////////////////////////////////////////////////////////////////////////
-    UMCVACompBuffer* compBufPic;
-    VAPictureParameterBufferVP8 *picParams
-        = (VAPictureParameterBufferVP8*)m_pVideoAccelerator->GetCompBuffer(VAPictureParameterBufferType, &compBufPic);
+    picParams->CurrPicIndex = (UCHAR)info.currIndex;
 
-    //frame width in pixels
-    picParams->frame_width = m_frameInfo.frameSize.width;
-    //frame height in pixels
-    picParams->frame_height = m_frameInfo.frameSize.heigh;
+    char cStr[256];
 
-    //specifies the "last" reference frame
-    picParams->last_ref_frame = 0xffffffff;
-
-    //specifies the "golden" reference frame
-    picParams->golden_ref_frame = 0xffffffff;
-
-    //specifies the "alternate" referrence frame
-    picParams->alt_ref_frame = 0xffffffff;
-
-    // specifies the out-of-loop deblocked frame, not used currently
-    picParams->out_of_loop_frame = 0xffffffff;
-
-    picParams->pic_fields = 0;
-
-    if (I_PICTURE == m_frameInfo.frameType)
+    if (I_PICTURE == m_frame_info.frameType)
     {
-        //same as key_frame in bitstream syntax
-        picParams->pic_fields.bits.key_frame = 1;
+        picParams->key_frame = 1;
+
+        picParams->LastRefPicIndex = (UCHAR)0xff;
+        picParams->GoldenRefPicIndex = (UCHAR)0xff;
+        picParams->AltRefPicIndex = (UCHAR)0xff;
+        picParams->DeblockedPicIndex = (UCHAR)0xff;
+
+        sprintf(cStr, "key: cpi %d\n", picParams->CurrPicIndex);
     }
     else // inter frame
     {
-        picParams->pic_fields.bits.key_frame = 0;
+        picParams->key_frame = 0;
 
-        picParams->last_ref_frame    =  info.currIndex - 1;
-        picParams->golden_ref_frame  =  info.goldIndex;
-        picParams->alt_ref_frame     =  info.altrefIndex;
-        picParams->out_of_loop_frame =  0xffffffff;
+        picParams->LastRefPicIndex = lastrefIndex;//(UCHAR)info.currIndex - 1;
+        picParams->GoldenRefPicIndex = (UCHAR)info.goldIndex;
+        picParams->AltRefPicIndex = (UCHAR)info.altrefIndex;
+        picParams->DeblockedPicIndex = (UCHAR)0xff;
+
+        sprintf(cStr, "inter: cpi %d | lf %d | gf %d | altf %d\n", picParams->CurrPicIndex,
+            picParams->LastRefPicIndex,
+            picParams->GoldenRefPicIndex,
+            picParams->AltRefPicIndex);
     }
 
-    //same as version in bitstream syntax
-    picParams->pic_fields.bits.version = m_frame_info.version;
+    lastrefIndex = info.currIndex;
 
-    //same as segmentation_enabled in bitstream syntax
-    picParams->pic_fields.bits.segmentation_enabled = m_frameInfo.segmentationEnabled;
+    curr_indx += 1;
 
-    //same as update_mb_segmentation_map in bitstream syntax
-    picParams->pic_fields.bits.update_mb_segmentation_map = m_frameInfo.updateSegmentMap
+    OutputDebugStringA(cStr);
 
-    //same as update_segment_feature_data in bitstream syntax
-    picParams->pic_fields.bits.update_segment_feature_data = m_frameInfo.updateSegmentData;
+    picParams->version = m_frame_info.version;
+    picParams->segmentation_enabled = m_frame_info.segmentationEnabled;
+    picParams->update_mb_segmentation_map = m_frame_info.updateSegmentMap;
+    picParams->update_segment_feature_data = m_frame_info.updateSegmentData;
 
-    //same as filter_type in bitstream syntax
-    picParams->pic_fields.bits.filter_type = m_frameInfo.loopFilterType;
-
-    //same as sharpness_level in bitstream syntax
-    picParams->pic_fields.bits.sharpness_level = m_frameInfo.sharpnessLevel;
-
-    //same as loop_filter_adj_enable in bitstream syntax
-    picParams->pic_fields.bits.loop_filter_adj_enable = m_frame_info.mbLoopFilterAdjust;
-
-    //same as mode_ref_lf_delta_update in bitstream syntax
-    picParams->pic_fields.bits.mode_ref_lf_delta_update =  m_frame_info.modeRefLoopFilterDeltaUpdate;
-
-    //same as sign_bias_golden in bitstream syntax
-    picParams->pic_fields.bits.sign_bias_golden = 0;
-
-    //same as sign_bias_alternate in bitstream syntax
-    picParams->pic_fields.bits.sign_bias_alternate = 0;
+    picParams->filter_type = m_frame_info.loopFilterType;
 
     if (I_PICTURE != m_frame_info.frameType)
     {
@@ -1515,34 +1523,32 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
         picParams->sign_bias_alternate = m_refresh_info.refFrameBiasTable[3];
     }
 
-    //same as mb_no_coeff_skip in bitstream syntax
-    picParams->pic_fields.bits.mb_no_coeff_skip = m_frame_info.mbSkipEnabled;
+    picParams->mb_no_coeff_skip = m_frame_info.mbSkipEnabled;
+    picParams->loop_filter_adj_enable = m_frame_info.mbLoopFilterAdjust;
+    picParams->mode_ref_lf_delta_update = m_frame_info.modeRefLoopFilterDeltaUpdate;
 
-    //see section 11.1 for mb_skip_coeff
-    picParams->pic_fields.bits.mb_skip_coeff = 0; //?
-
-    //flag to indicate that loop filter should be disabled
-    picParams->pic_fields.bits.loop_filter_disable = = 0;
-
-    if (0 == m_frame_info.loopFilterLevel || (2 == m_frame_info.version || 3 == m_frame_info.version))
+    for (Ipp32u i = 0; i < VP8_NUM_OF_REF_FRAMES; i += 1)
     {
-        picParams->LoopFilterDisable = 1;
+        picParams->ref_lf_delta[i] = m_frame_info.refLoopFilterDeltas[i];
     }
 
-    // probabilities of the segment_id decoding tree and same as
-    // mb_segment_tree_probs in the spec.
-    picParams->pic_fields.b_segment_tree_probs[0] = m_frameInfo.segmentTreeProbabilities[0];
-    picParams->pic_fields.b_segment_tree_probs[1] = m_frameInfo.segmentTreeProbabilities[1];
-    picParams->pic_fields.b_segment_tree_probs[2] = m_frameInfo.segmentTreeProbabilities[2];
+    for (Ipp32u i = 0; i < VP8_NUM_OF_MODE_LF_DELTAS; i += 1)
+    {
+        picParams->mode_lf_delta[i] = m_frame_info.modeLoopFilterDeltas[i];
+    }
 
-    //Post-adjustment loop filter levels for the 4 segments
+    // partition 0 is always MB header this partition always exists. there is no need for a flag to indicate this.
+    // if CodedCoeffTokenPartition == 0, it means Partition #1 also exists. That is, there is a total of 2 partitions.
+    // if CodedCoeffTokenPartition == 1, it means Partition #1-2 also exists. That is, there is a total of 3 partitions.
+    // if CodedCoeffTokenPartition == 2, it means Partition #1-4 also exists. That is, there is a total of 5 partitions.
+    // if CodedCoeffTokenPartition == 3, it means Partition #1-8 also exists. That is, there is a total of 9 partitions.
+
+    picParams->CodedCoeffTokenPartition = m_frame_info.numPartitions - 1; // or m_frame_info.numTokenPartitions
+
     // TO DO
-    if (0 == m_frameInfo.segmentationEnabled)
+    if (0 == m_frame_info.segmentationEnabled)
     {
         picParams->loop_filter_level[0] = m_frame_info.loopFilterLevel;
-        picParams->loop_filter_level[1] = 0;
-        picParams->loop_filter_level[2] = 0;
-        picParams->loop_filter_level[3] = 0;
     }
     else
     {
@@ -1552,34 +1558,22 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
         picParams->loop_filter_level[3] = m_frame_info.loopFilterLevel;
     }
 
-    //loop filter deltas for reference frame based MB level adjustment
-    picParams->loop_filter_deltas_ref_frame[0] = m_frameInfo.refLoopFilterDeltas[0];
-    picParams->loop_filter_deltas_ref_frame[1] = m_frameInfo.refLoopFilterDeltas[1];
-    picParams->loop_filter_deltas_ref_frame[2] = m_frameInfo.refLoopFilterDeltas[2];
-    picParams->loop_filter_deltas_ref_frame[3] = m_frameInfo.refLoopFilterDeltas[3];
+    picParams->LoopFilterDisable = 0;
+    if (0 == m_frame_info.loopFilterLevel || (2 == m_frame_info.version || 3 == m_frame_info.version))
+    {
+        picParams->LoopFilterDisable = 1;
+    }
 
-    //loop filter deltas for coding mode based MB level adjustment
-    picParams->loop_filter_deltas_mode[0] = m_frameInfo.modeLoopFilterDeltas[0];
-    picParams->loop_filter_deltas_mode[1] = m_frameInfo.modeLoopFilterDeltas[1];
-    picParams->loop_filter_deltas_mode[2] = m_frameInfo.modeLoopFilterDeltas[2];
-    picParams->loop_filter_deltas_mode[3] = m_frameInfo.modeLoopFilterDeltas[3];
+    picParams->sharpness_level = m_frame_info.sharpnessLevel;
 
-    //same as prob_skip_false in bitstream syntax
-    picParams->prob_skip_false = m_frameInfo.skipFalseProb;
+    picParams->mb_segment_tree_probs[0] = m_frame_info.segmentTreeProbabilities[0];
+    picParams->mb_segment_tree_probs[1] = m_frame_info.segmentTreeProbabilities[1];
+    picParams->mb_segment_tree_probs[2] = m_frame_info.segmentTreeProbabilities[2];
 
-    //same as prob_intra in bitstream syntax
-    picParams->prob_intra = m_frameInfo.intraProb;
-
-    //same as prob_last in bitstream syntax
+    picParams->prob_skip_false = m_frame_info.skipFalseProb;
+    picParams->prob_intra = m_frame_info.intraProb;
     picParams->prob_last = m_frame_info.lastProb;
-
-    //same as prob_gf in bitstream syntax
-    picParams->prob_gf = m_frameInfo.goldProb;
-
-    //list of 4 probabilities of the luma intra prediction mode decoding
-    //tree and same as y_mode_probs in frame header
-    //list of 3 probabilities of the chroma intra prediction mode decoding
-    //tree and same as uv_mode_probs in frame header
+    picParams->prob_golden = m_frame_info.goldProb;
 
     const mfxU8 *prob_y_table;
     const mfxU8 *prob_uv_table;
@@ -1605,99 +1599,100 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
         picParams->uv_mode_probs[i] = prob_uv_table[i];
     }
 
-    //updated mv decoding probabilities and same as mv_probs in frame header
     for (Ipp32u i = 0; i < VP8_NUM_MV_PROBS; i += 1)
     {
-        picParams->mv_probs[0][i] = m_frameProbs.mvContexts[0][i];
-        picParams->mv_probs[1][i] = m_frameProbs.mvContexts[1][i];
+        picParams->mv_update_prob[0][i] = m_frameProbs.mvContexts[0][i];
+        picParams->mv_update_prob[1][i] = m_frameProbs.mvContexts[1][i];
     }
 
-    picParams->bool_coder_ctx = 0;
+    memset(picParams->PartitionSize, 0, sizeof(Ipp32u)* 9);
 
-    compBufPic->SetDataSize(sizeof(VAPictureParameterBufferVP8));
+    picParams->PartitionSize[0] = m_frame_info.firstPartitionSize;
+//  picParams->PartitionSize[0] = m_frame_info.partitionSize[0];
 
-    //////////////////////////////////////////////////////////////////
+    for (Ipp32s i = 1; i < m_frame_info.numPartitions + 1; i += 1)
+    {
+        picParams->PartitionSize[i] = m_frame_info.partitionSize[i - 1];
+    }
+
+    picParams->FirstMbBitOffset = m_frame_info.entropyDecSize;
+    picParams->P0EntropyCount = (UCHAR)m_boolDecoder[0].bitcount();
+    picParams->P0EntropyRange = (UINT)m_boolDecoder[0].range();
+    picParams->P0EntropyValue = (UCHAR)(m_boolDecoder[0].value() >> 24);
+
+    UCHAR P0EntropyCount = picParams->P0EntropyCount;
+
+    picParams->P0EntropyCount = 8 - (picParams->P0EntropyCount & 0x07);
+
+/*  {
+        static int i = 0;
+        std::stringstream ss;
+        ss << "c:/temp/mfx" << i;
+        std::ofstream ofs(ss.str(), std::ofstream::binary);
+        i++;
+        ofs.write((char*)picParams, sizeof(VP8_DECODE_PICTURE_PARAMETERS));
+    }*/
+
+    compBufPic->SetDataSize(sizeof(VP8_DECODE_PICTURE_PARAMETERS));
+
+    ////////////////////////////////////////////////////////////////
+
     UMCVACompBuffer* compBufQm;
-    VAIQMatrixBufferVP8 *qmTable = (VAIQMatrixBufferVP8*)m_pVideoAccelerator->GetCompBuffer(VAQMatrixBufferType), &compBufQm);
+    VP8_DECODE_QM_TABLE *qmTable = (VP8_DECODE_QM_TABLE*)m_p_video_accelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_INVERSE_QUANTIZATION_MATRIX, &compBufQm);
 
-    if (0 == m_frameInfo.segmentationEnabled)
+    if (0 == m_frame_info.segmentationEnabled)
     {
         // when segmentation is disabled, use the first entry 0 for the quantization values
-        qmTable->quantization_index[0][0] = (unsigned char)m_quantInfo.ydcQ[0];
-        qmTable->quantization_index[0][1] = (unsigned char)m_quantInfo.yacQ[0];
-        qmTable->quantization_index[0][2] = (unsigned char)m_quantInfo.uvdcQ[0];
-        qmTable->quantization_index[0][3] = (unsigned char)m_quantInfo.uvacQ[0];
-        qmTable->quantization_index[0][4] = (unsigned char)m_quantInfo.y2dcQ[0];
-        qmTable->quantization_index[0][5] = (unsigned char)m_quantInfo.y2acQ[0];
+        qmTable->Qvalue[0][0] = (USHORT)m_quantInfo.ydcQ[0];
+        qmTable->Qvalue[0][1] = (USHORT)m_quantInfo.yacQ[0];
+        qmTable->Qvalue[0][2] = (USHORT)m_quantInfo.uvdcQ[0];
+        qmTable->Qvalue[0][3] = (USHORT)m_quantInfo.uvacQ[0];
+        qmTable->Qvalue[0][4] = (USHORT)m_quantInfo.y2dcQ[0];
+        qmTable->Qvalue[0][5] = (USHORT)m_quantInfo.y2acQ[0];
     }
     else
     {
         for (Ipp32u i = 0; i < 4; i += 1)
         {
-            qmTable->quantization_index[i][0] = (unsigned char)m_quantInfo.ydcQ[i];
-            qmTable->quantization_index[i][1] = (unsigned char)m_quantInfo.yacQ[i];
-            qmTable->quantization_index[i][2] = (unsigned char)m_quantInfo.uvdcQ[i];
-            qmTable->quantization_index[i][3] = (unsigned char)m_quantInfo.uvacQ[i];
-            qmTable->quantization_index[i][4] = (unsigned char)m_quantInfo.y2dcQ[i];
-            qmTable->quantization_index[i][5] = (unsigned char)m_quantInfo.y2acQ[i];
+            qmTable->Qvalue[i][0] = (USHORT)m_quantInfo.ydcQ[i];
+            qmTable->Qvalue[i][1] = (USHORT)m_quantInfo.yacQ[i];
+            qmTable->Qvalue[i][2] = (USHORT)m_quantInfo.uvdcQ[i];
+            qmTable->Qvalue[i][3] = (USHORT)m_quantInfo.uvacQ[i];
+            qmTable->Qvalue[i][4] = (USHORT)m_quantInfo.y2dcQ[i];
+            qmTable->Qvalue[i][5] = (USHORT)m_quantInfo.y2acQ[i];
         }
     }
 
-    compBufQm->SetDataSize(sizeof(VAIQMatrixBufferVP8));
+    compBufQm->SetDataSize(sizeof(VP8_DECODE_QM_TABLE));
 
-    //////////////////////////////////////////////////////////////////
-    //UMCVACompBuffer* compBufCp;
-    VAProbabilityDataBufferVP8 *coeffProbs = (VAProbabilityDataBufferVP8*)m_pVideoAccelerator->GetCompBuffer(VAProbabilityBufferType, &compBufCp);
-
-    ////[4][8][3][11]
-    memcpy(coeffProbs, m_frameProbs.coeff_probs, sizeof(Ipp8u) * 4 * 8 * 3 * 11);
-
-    compBufCp->SetDataSize(sizeof(Ipp8u) * 4 * 8 * 3 * 11);
-
-    //////////////////////////////////////////////////////////////////
     UMCVACompBuffer* compBufBs;
-    Ipp8u *bistreamData = (Ipp8u *)m_pVideoAccelerator->GetCompBuffer(VAImageBufferType, &compBufBs);
-
-    Ipp8u *pBuffer = (Ipp8u*) p_bistream->Data;
+    Ipp8u *bistreamData = (Ipp8u *)m_p_video_accelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_BITSTREAM_DATA, &compBufBs);
+    Ipp8u *pBuffer = (Ipp8u*)p_bistream->Data;
     Ipp32s size = p_bistream->DataLength;
     Ipp32u offset = 0;
 
     if (I_PICTURE == m_frame_info.frameType)
+    {
         offset = 10;
+    }
     else
+    {
         offset = 3;
+    }
 
     memcpy(bistreamData, pBuffer + offset, size - offset);
     compBufBs->SetDataSize((Ipp32s)size - offset);
 
-    //////////////////////////////////////////////////////////////////
-    UMCVACompBuffer* compBufSlice;
-    VASliceParameterBufferVP8 *sliceParams
-        = (VASliceParameterBufferVP8*)m_pVideoAccelerator->GetCompBuffer(VASliceParameterBufferType, &compBufSlice);
+    UMCVACompBuffer* compBufCp;
+    Ipp8u(*coeffProbs)[8][3][11] = (Ipp8u(*)[8][3][11])m_p_video_accelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_VP8_COEFFICIENT_PROBABILITIES, &compBufCp);
 
-    // number of bytes in the slice data buffer for the partitions
-    sliceParams->slice_data_size = (Ipp32s)size - offset;//?
+    // [4][8][3][11]
+    memcpy(coeffProbs, m_frameProbs.coeff_probs, sizeof(Ipp8u)* 4 * 8 * 3 * 11);
 
-    //offset to the first byte of partition data
-     sliceParams->slice_data_offset = 0; //?
+    compBufCp->SetDataSize(sizeof(Ipp8u)* 4 * 8 * 3 * 11);
 
-     //see VA_SLICE_DATA_FLAG_XXX definitions
-     sliceParams->slice_data_flag = VA_SLICE_DATA_FLAG_ALL;
+    return MFX_ERR_NONE;
 
-     //offset to the first bit of MB from the first byte of partition data
-     sliceParams->macroblock_offset = m_frame_info.entropyDecSize;
-
-    // Partitions
-    sliceParams->num_of_partitions = m_frameInfo.numPartitions;
-
-    for (Ipp32s i = 0; i < m_frameInfo.numPartitions; i += 1)
-    {
-        sliceParams->partition_size[i] = m_frameInfo.partitionSize[i];
-    }
-
-    compBufSlice->SetDataSize(sizeof(VASliceParameterBufferVP8));
-
-    return sts;
 } // Status VP8VideoDecoderHardware::PackHeaders(MediaData* src)
 
 #else
@@ -2036,12 +2031,12 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 //////////////////////////////////////////////////////////////////////////////
 // MFX_VP8_BoolDecoder
 
-const int MFX_VP8_BoolDecoder::range_normalization_shift[64] = 
+const int MFX_VP8_BoolDecoder::range_normalization_shift[64] =
 {
   7, 6, 5, 5, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 3,
-  2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 
-  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+  2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
 };
 
-#endif 
+#endif
