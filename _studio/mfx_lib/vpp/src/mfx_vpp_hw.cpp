@@ -1586,39 +1586,43 @@ mfxStatus VideoVPPHW::Reset(mfxVideoParam *par)
 
     m_params = *par;// PARAMS!!!
 
-    /* Device should be already exist !!!
-     * As it is Reset call, it should be true.
-     *
-     * If you call Reset() before Init() call, there is no ddi device.
-     * But it is ok, as no resource to free
-     * and this case is not influence on composition
-    */
-    mfxVppCaps caps = {0};
-
-    if (m_ddi.get() != NULL)
-    {
-        sts = m_ddi->QueryCapabilities( caps );
-        MFX_CHECK_STS(sts);
-
-        if (par->vpp.In.Width > caps.uMaxWidth  || par->vpp.In.Height  > caps.uMaxHeight ||
-            par->vpp.Out.Width > caps.uMaxWidth || par->vpp.Out.Height > caps.uMaxHeight)
-        {
-            return MFX_WRN_PARTIAL_ACCELERATION;
-        }
-
-        m_config.m_IOPattern = 0;
-        sts = ConfigureExecuteParams(
-            m_params,
-            caps,
-            m_executeParams,
-            m_config);
-    }
-
     /* This is question: Should we free resource here or not?... */
     /* For Dynamic composition we should not to do it !!! */
     if (false == m_executeParams.bComposite)
     {
         m_taskMngr.Close();// all resource free here
+    }
+    else
+    {
+        /* Device should be already exist !!!
+         * As it is Reset call, it should be true.
+         *
+         * If you call Reset() before Init() call, there is no ddi device.
+         * But it is ok, as no resource to free
+         * and this case is not influence on composition
+        */
+
+        mfxVppCaps caps = {0};
+
+        if (m_ddi.get() != NULL)
+        {
+            sts = m_ddi->QueryCapabilities( caps );
+            MFX_CHECK_STS(sts);
+
+            if (par->vpp.In.Width > caps.uMaxWidth  || par->vpp.In.Height  > caps.uMaxHeight ||
+                par->vpp.Out.Width > caps.uMaxWidth || par->vpp.Out.Height > caps.uMaxHeight)
+            {
+                return MFX_WRN_PARTIAL_ACCELERATION;
+            }
+
+            m_config.m_IOPattern = 0;
+            sts = ConfigureExecuteParams(
+                m_params,
+                caps,
+                m_executeParams,
+                m_config);
+        }
+
     }
 
     m_taskMngr.Init(
