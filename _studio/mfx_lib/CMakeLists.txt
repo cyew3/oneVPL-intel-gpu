@@ -157,7 +157,6 @@ set( sources "" )
 set( sources.plus "" )
 
 list( APPEND sources 
-    ${vdir_optimization}/src/mfx_h265_deblocking_16u_px.cpp
     ${vdir_optimization}/src/mfx_h265_deblocking_px.cpp
     ${vdir_optimization}/src/mfx_h265_interpolation_16u_px.cpp
     ${vdir_optimization}/src/mfx_h265_interpolation_px.cpp
