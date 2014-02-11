@@ -43,7 +43,7 @@ bool H265CU::CheckIdenticalMotion(Ipp32u abs_part_idx)
     return false;
 }
 
-void H265CU::ClipMV(H265MV& rcMv)
+void H265CU::ClipMV(H265MV& rcMv) const
 {
     Ipp32s MvShift = 2;
     Ipp32s offset = 8;
@@ -524,7 +524,8 @@ void H265CU::MeInterpolateOld(H265MEInfo* me_info, H265MV* MV, PixType *in_pSrc,
 } // void H265CU::MeInterpolate(...)
 
 
-void H265CU::MeInterpolate(H265MEInfo* me_info, H265MV* MV, PixType *src, Ipp32s srcPitch, Ipp8u *dst, Ipp32s dstPitch) const
+void H265CU::MeInterpolate(const H265MEInfo* me_info, H265MV* MV, PixType *src, Ipp32s srcPitch,
+                           Ipp8u *dst, Ipp32s dstPitch) const
 {
     Ipp32s w = me_info->width;
     Ipp32s h = me_info->height;
