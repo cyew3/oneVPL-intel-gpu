@@ -242,6 +242,7 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(IntraNumCand2_6);
     SERIALIZE_INT(WPP);
     SERIALIZE_INT(FastPUDecision);
+    SERIALIZE_INT(HadamardMe); 
 }
 
 void MFXStructureRef <mfxFrameInfo>::ConstructValues () const

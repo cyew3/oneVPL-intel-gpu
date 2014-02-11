@@ -77,6 +77,7 @@ struct H265VideoParam {
     Ipp16u tuSplitIntra;    // 0-default; 1-always; 2-never; 3-for Intra frames only
     Ipp16u cuSplit;         // 0-default; 1-always; 2-check Skip cost first
     Ipp16u intraAngModes;   // 0-default; 1-all; 2-all even + few odd
+    Ipp16u hadamardMe;      // 0-default 1-never; 2-subpel; 3-always
     Ipp32u num_threads;
     Ipp32u num_thread_structs;
     Ipp8u threading_by_rows;

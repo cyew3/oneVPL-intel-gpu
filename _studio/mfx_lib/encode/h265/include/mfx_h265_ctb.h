@@ -406,9 +406,9 @@ public:
     void DetailsXY(H265MEInfo* me_info) const;
     void MeInterpolateOld(H265MEInfo* me_info, H265MV* MV, PixType *in_pSrc, Ipp32s in_SrcPitch, Ipp16s *buf, Ipp32s buf_pitch) const;
     void MeInterpolate(H265MEInfo* me_info, H265MV* MV, PixType *in_pSrc, Ipp32s in_SrcPitch, Ipp8u *buf, Ipp32s buf_pitch) const;
-    void MeInterpolateNewNeedDebug(H265MEInfo* me_info, H265MV* MV1, PixType *in_pSrc1, Ipp32s in_SrcPitch1, H265MV* MV2, PixType *in_pSrc2, Ipp32s in_SrcPitch2, Ipp8u *buf, Ipp32s buf_pitch) const;
-    Ipp32s MatchingMetricPu(PixType *pSrc, H265MEInfo* me_info, H265MV* MV, H265Frame *PicYUVRef) const;
-    Ipp32s MatchingMetricBipredPu(PixType *pSrc, H265MEInfo* meInfo, PixType *yFwd, Ipp32u pitchFwd, PixType *yBwd, Ipp32u pitchBwd, H265MV fullMV[2]);
+    Ipp32s MatchingMetricPu(PixType *src, H265MEInfo* meInfo, H265MV* mv, H265Frame *refPic, Ipp32s useHadamard) const;
+    Ipp32s MatchingMetricBipredPu(PixType *src, H265MEInfo* meInfo, PixType *fwd, Ipp32u pitchFwd,
+                                  PixType *bwd, Ipp32u pitchBwd, H265MV fullMV[2], Ipp32s useHadamard);
     Ipp32s MvCost( H265MV MV[2], T_RefIdx ref_idx[2], MVPInfo pInfo[2], MVPInfo& mergeInfo) const;
     inline Ipp32s MvCost1Ref( H265MV MV[2], T_RefIdx ref_idx[2], MVPInfo pInfo[2], MVPInfo& mergeInfo, Ipp32s rlist) const;
 

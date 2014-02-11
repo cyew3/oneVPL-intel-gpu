@@ -193,7 +193,8 @@ typedef struct {
     mfxU16      EnableCm;           // tri-state
     mfxU16      BPyramid;           // tri-state
     mfxU16      FastPUDecision;     // tri-state
-    mfxU16      reserved[26];
+    mfxU16      HadamardMe;         // 0-default 0-never; 1-subpel; 2-always
+    mfxU16      reserved[25];
 } mfxExtCodingOptionHEVC;
 
 #if defined (ADVANCED_REF)

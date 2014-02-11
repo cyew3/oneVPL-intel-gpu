@@ -1476,49 +1476,79 @@ Ipp32s H265CU::MvCost1Ref( H265MV MV[2], T_RefIdx curRefIdx[2], MVPInfo *pInfo, 
 }
 
 // absPartIdx - for minimal TU
-Ipp32s H265CU::MatchingMetricPu(PixType *pSrc, H265MEInfo* me_info, H265MV* MV, H265Frame *PicYUVRef) const
+Ipp32s H265CU::MatchingMetricPu(PixType *src, H265MEInfo* meInfo, H265MV* mv, H265Frame *refPic, Ipp32s useHadamard) const
 {
-    Ipp32s cost = 0;
-    Ipp32s refOffset = m_ctbPelX + me_info->posx + (MV->mvx >> 2) + (m_ctbPelY + me_info->posy + (MV->mvy >> 2)) * PicYUVRef->pitch_luma;
-    PixType *pRec = PicYUVRef->y + refOffset;
-    Ipp32s recPitch = PicYUVRef->pitch_luma;
-    ALIGN_DECL(32) PixType pred_buf_y[MAX_CU_SIZE*MAX_CU_SIZE];
+    Ipp32s refOffset = m_ctbPelX + meInfo->posx + (mv->mvx >> 2) + (m_ctbPelY + meInfo->posy + (mv->mvy >> 2)) * refPic->pitch_luma;
+    PixType *rec = refPic->y + refOffset;
+    Ipp32s pitchRec = refPic->pitch_luma;
+    ALIGN_DECL(32) PixType predBuf[MAX_CU_SIZE*MAX_CU_SIZE];
 
-    if ((MV->mvx | MV->mvy) & 3)
+    if ((mv->mvx | mv->mvy) & 3)
     {
-        MeInterpolate(me_info, MV, PicYUVRef->y, PicYUVRef->pitch_luma, pred_buf_y, MAX_CU_SIZE);
-        pRec = pred_buf_y;
-        recPitch = MAX_CU_SIZE;
-
-        cost = MFX_HEVC_PP::h265_SAD_MxN_special_8u(pSrc, pRec, m_pitchSrc, me_info->width, me_info->height);
+        MeInterpolate(meInfo, mv, refPic->y, refPic->pitch_luma, predBuf, MAX_CU_SIZE);
+        rec = predBuf;
+        pitchRec = MAX_CU_SIZE;
+        
+        return (useHadamard)
+            ? tuHad(src, m_pitchSrc, rec, MAX_CU_SIZE, meInfo->width, meInfo->height)
+            : MFX_HEVC_PP::h265_SAD_MxN_special_8u(src, rec, m_pitchSrc, meInfo->width, meInfo->height);
     }
     else
     {
-        cost = MFX_HEVC_PP::h265_SAD_MxN_general_8u(pRec, recPitch, pSrc, m_pitchSrc, me_info->width, me_info->height);
-        //Ipp8u* pSrcAligned = (Ipp8u*)m_src_aligned_block + me_info->posx + me_info->posy * MAX_CU_SIZE;
-        //cost = MFX_HEVC_PP::h265_SAD_MxN_special_8u(pRec, pSrcAligned, recPitch, me_info->width, me_info->height);
+        return (useHadamard)
+            ? tuHad(src, m_pitchSrc, rec, pitchRec, meInfo->width, meInfo->height)
+            : MFX_HEVC_PP::h265_SAD_MxN_general_8u(rec, pitchRec, src, m_pitchSrc, meInfo->width, meInfo->height);
     }
-
-    return cost;
 }
 
-Ipp32s H265CU::MatchingMetricBipredPu(PixType *pSrc, H265MEInfo* meInfo, PixType *yFwd, Ipp32u pitchFwd, PixType *yBwd, Ipp32u pitchBwd, H265MV fullMV[2])
+void WriteAverageToPic(
+    const Ipp16s *src0,
+    Ipp32u        pitchSrc0,      // in samples
+    const Ipp16s *src1,
+    Ipp32u        pitchSrc1,      // in samples
+    Ipp8u * H265_RESTRICT dst,
+    Ipp32u        pitchDst,       // in samples
+    Ipp32s        width,
+    Ipp32s        height)
 {
-    Ipp32s width = meInfo->width;
-    Ipp32s height = meInfo->height;
-    H265MV MV[2] = {fullMV[0], fullMV[1]};
+#ifdef __INTEL_COMPILER
+    #pragma ivdep
+#endif // __INTEL_COMPILER
+    for (int j = 0; j < height; j++)
+    {
+#ifdef __INTEL_COMPILER
+        #pragma ivdep
+        #pragma vector always
+#endif // __INTEL_COMPILER
+        for (int i = 0; i < width; i++) {
+            Ipp16s val = ((src0[i] + src1[i] + 1) >> 1);
+            dst[i] = (Ipp8u)Saturate(0, 255, val);
+        }
 
-    Ipp16s* predBufY[2];
-    PixType *pY[2] = {yFwd, yBwd};
-    Ipp32u pitch[2] = {pitchFwd, pitchBwd};
+        src0 += pitchSrc0;
+        src1 += pitchSrc1;
+        dst  += pitchDst;
+    }
+}
 
-    for(Ipp8u dir=0; dir<2; dir++) {
+
+
+Ipp32s H265CU::MatchingMetricBipredPu(PixType *src, H265MEInfo *meInfo, PixType *fwd, Ipp32u pitchFwd,
+                                      PixType *bwd, Ipp32u pitchBwd, H265MV fullMV[2], Ipp32s useHadamard)
+{
+    H265MV MV[2] = { fullMV[0], fullMV[1] };
+
+    Ipp16s *predBufY[2];
+    PixType *pY[2] = { fwd, bwd };
+    Ipp32u pitch[2] = { pitchFwd, pitchBwd };
+
+    for (Ipp8u dir = 0; dir < 2; dir++) {
 
         ClipMV(MV[dir]); // store clipped mv in buffer
 
         Ipp8u idx;
-        for (idx = m_interpIdxFirst; idx !=m_interpIdxLast; idx = (idx+1)&(INTERP_BUF_SZ-1)) {
-            if(pY[dir] == m_interpBuf[idx].pY && MV[dir] == m_interpBuf[idx].mv) {
+        for (idx = m_interpIdxFirst; idx !=m_interpIdxLast; idx = (idx + 1) & (INTERP_BUF_SZ - 1)) {
+            if (pY[dir] == m_interpBuf[idx].pY && MV[dir] == m_interpBuf[idx].mv) {
                 predBufY[dir] = m_interpBuf[idx].predBufY;
                 break;
             }
@@ -1530,24 +1560,18 @@ Ipp32s H265CU::MatchingMetricBipredPu(PixType *pSrc, H265MEInfo* meInfo, PixType
             m_interpBuf[idx].mv = MV[dir];
 
             MeInterpolateOld(meInfo, &MV[dir], pY[dir], pitch[dir], predBufY[dir], MAX_CU_SIZE);
-            m_interpIdxLast = (m_interpIdxLast+1)&(INTERP_BUF_SZ-1); // added to end
+            m_interpIdxLast = (m_interpIdxLast + 1) & (INTERP_BUF_SZ - 1); // added to end
             if (m_interpIdxFirst == m_interpIdxLast) // replaced oldest
-                m_interpIdxFirst = (m_interpIdxFirst+1)&(INTERP_BUF_SZ-1);
+                m_interpIdxFirst = (m_interpIdxFirst + 1) & (INTERP_BUF_SZ - 1);
         }
     }
 
-    Ipp32s cost = 0;
-    for (Ipp32s y=0; y<height; y++) {
-        for (Ipp32s x=0; x<width; x++) {
-            Ipp32s var = predBufY[0][x + y*MAX_CU_SIZE] + predBufY[1][x + y*MAX_CU_SIZE] - 2*pSrc[x + y*m_pitchSrc]; // ok for estimation
-            //Ipp32s var = ((predBufY[0][x + y*MAX_CU_SIZE] + predBufY[1][x + y*MAX_CU_SIZE] + 1) >> 1) - pSrc[x + y*m_pitchSrc]; // precise
-            cost += abs(var);
-            //cost += (var*var >> 2);
-        }
-    }
-    cost = (cost + 1) >> 1;
+    ALIGN_DECL(32) PixType biPredBuf[MAX_CU_SIZE * MAX_CU_SIZE];
+    WriteAverageToPic(predBufY[0], MAX_CU_SIZE, predBufY[1], MAX_CU_SIZE, biPredBuf, MAX_CU_SIZE, meInfo->width, meInfo->height);
 
-    return cost;
+    return (useHadamard)
+        ? tuHad(src, m_pitchSrc, biPredBuf, MAX_CU_SIZE, meInfo->width, meInfo->height)
+        : MFX_HEVC_PP::h265_SAD_MxN_special_8u(src, biPredBuf, m_pitchSrc, meInfo->width, meInfo->height);
 }
 
 static Ipp32s SamePrediction(const H265MEInfo* a, const H265MEInfo* b)
@@ -2194,8 +2218,11 @@ void H265CU::MePu(H265MEInfo* meInfo)
                 }
             }
 
+            // use satd for all candidates even if satd is for subpel only
+            Ipp32s useHadamard = (m_par->hadamardMe >= 2);
+
             for (i=0; i<num_tried; i++) {
-                cost_temp = MatchingMetricPu( pSrc, meInfo, &MVtried[i], PicYUVRef) + i; // approx MvCost
+                cost_temp = MatchingMetricPu(pSrc, meInfo, &MVtried[i], PicYUVRef, useHadamard) + i; // approx MvCost
                 if (cost_best > cost_temp) {
                     MV_best = MVtried[i];
                     cost_best = cost_temp;
@@ -2204,7 +2231,11 @@ void H265CU::MePu(H265MEInfo* meInfo)
             cost_best = INT_MAX; // to be properly updated
             MV_cur.mvx = (MV_best.mvx + 1) & ~3;
             MV_cur.mvy = (MV_best.mvy + 1) & ~3;
-            cost_best = MatchingMetricPu( pSrc, meInfo, &MV_cur, PicYUVRef);
+
+            // use satd for int-pel stage only if it is requested
+            useHadamard = (m_par->hadamardMe == 3);
+
+            cost_best = MatchingMetricPu( pSrc, meInfo, &MV_cur, PicYUVRef, useHadamard);
             MV_best = MV_cur;
             Ipp16s ME_step_best = 4;
 
@@ -2212,31 +2243,14 @@ void H265CU::MePu(H265MEInfo* meInfo)
             ME_step = MAX(ME_step, 16*4); // enable ClipMV below if step > MaxCUSize
             Ipp16s ME_step_max = ME_step;
 
-            //         // trying fullsearch
-            //         Ipp32s x, y;
-            //         for(y = -16; y < 16; y++)
-            //             for(x = -16; x < 16; x++) {
-            //                 MV[ME_dir].mvx = x * 8;
-            //                 MV[ME_dir].mvy = y * 8;
-            //                 ClipMV(MV[ME_dir]);
-            //                 cost_temp = MatchingMetricPu( pSrc, meInfo, &MV[ME_dir], PicYUVRef) + //MV_pred.qdiff(MV, m_par->QP);
-            //                     MvCost( MV, curRefIdx, pInfo, mergeInfo);
-            //                 if (cost_best[ME_dir] > cost_temp) {
-            //                     MV_best[ME_dir] = MV[ME_dir];
-            //                     cost_best[ME_dir] = cost_temp;
-            //                 }
-            //             }
-            //         ME_step = 4;
-
-{
             // expanding search
             for (ME_step = ME_step_best; ME_step <= ME_step_max; ME_step *= 2) {
                 for (Ipp16s ME_pos = 1; ME_pos < 9; ME_pos++) {
                     MV[ME_dir].mvx = MV_cur.mvx + ME_Cpattern[ME_pos][0] * ME_step * 1;
                     MV[ME_dir].mvy = MV_cur.mvy + ME_Cpattern[ME_pos][1] * ME_step * 1;
                     ClipMV(MV[ME_dir]);
-                    cost_temp = MatchingMetricPu( pSrc, meInfo, &MV[ME_dir], PicYUVRef) + //MV_pred.qdiff(MV, m_par->QP);
-                        MvCost1Ref( MV, curRefIdx, pInfo, mergeInfo, ME_dir);
+                    cost_temp = MatchingMetricPu(pSrc, meInfo, &MV[ME_dir], PicYUVRef, useHadamard) +
+                        MvCost1Ref(MV, curRefIdx, pInfo, mergeInfo, ME_dir);
                     if (cost_best > cost_temp) {
                         MV_best = MV[ME_dir];
                         cost_best = cost_temp;
@@ -2247,7 +2261,6 @@ void H265CU::MePu(H265MEInfo* meInfo)
             ME_step = ME_step_best;
             MV_cur = MV_best;
             // then logarithm from best
-}
 
             // for Cpattern
             Ipp8u start = 0, len = 1;
@@ -2255,26 +2268,14 @@ void H265CU::MePu(H265MEInfo* meInfo)
             do {
                 Ipp32s refine = 1;
                 Ipp32s best_pos = 0;
-                //for (ME_pos = 0; ME_pos < ME_pattern_sz; ME_pos++) {
-                //    MV[ME_dir].mvx = MV_cur.mvx + ME_pattern[ME_pos][0] * ME_step * 1;
-                //    MV[ME_dir].mvy = MV_cur.mvy + ME_pattern[ME_pos][1] * ME_step * 1;
-                //    ////ClipMV(MV[ME_dir]);
-                //    cost_temp = MatchingMetricPu( pSrc, meInfo, &MV[ME_dir], PicYUVRef) + //MV_pred.qdiff(MV, m_par->QP);
-                //        MvCost( MV, curRefIdx, pInfo, mergeInfo);
-                //    if (cost_best[ME_dir] > cost_temp) {
-                //        MV_best[ME_dir] = MV[ME_dir];
-                //        cost_best[ME_dir] = cost_temp;
-                //        refine = 0;
-                //    }
-                //}
 
                 for (Ipp16s ME_pos = start; ME_pos < start+len; ME_pos++) {
                     MV[ME_dir].mvx = MV_cur.mvx + ME_Cpattern[ME_pos][0] * ME_step * 1;
                     MV[ME_dir].mvy = MV_cur.mvy + ME_Cpattern[ME_pos][1] * ME_step * 1;
                     H265MV MVorig = { MV[ME_dir].mvx, MV[ME_dir].mvy };
                     ClipMV(MV[ME_dir]);
-                    cost_temp = MatchingMetricPu( pSrc, meInfo, &MV[ME_dir], PicYUVRef) + //MV_pred.qdiff(MV, m_par->QP);
-                        MvCost1Ref( MV, curRefIdx, pInfo, mergeInfo, ME_dir);
+                    cost_temp = MatchingMetricPu(pSrc, meInfo, &MV[ME_dir], PicYUVRef, useHadamard) +
+                        MvCost1Ref(MV, curRefIdx, pInfo, mergeInfo, ME_dir);
                     if (cost_best > cost_temp) {
                         MV_best = MV[ME_dir];
                         cost_best = cost_temp;
@@ -2284,20 +2285,33 @@ void H265CU::MePu(H265MEInfo* meInfo)
                             best_pos = 0;
                     }
                 }
+
+                if (refine) {
+                    if (ME_step == 4 && m_par->hadamardMe == 2) {
+                        // before going subpel re-calculate last intpel cost using SATD
+                        useHadamard = 1;
+                        cost_best = MatchingMetricPu(pSrc, meInfo, &MV_best, PicYUVRef, useHadamard) +
+                            MvCost1Ref(MV, curRefIdx, pInfo, mergeInfo, ME_dir);
+                    }
+                    ME_step >>= 1;
+                }
+                else {
+                    MV_cur = MV_best;
+                    if (ME_step < 4) {
+                        ME_step >>= 1;
+                        best_pos = 0;
+                    }
+                }
+
                 start = Cpattern_tab[best_pos].start;
                 len   = Cpattern_tab[best_pos].len;
-
-                if(!refine)
-                    MV_cur = MV_best;
-                else
-                    ME_step >>= 1;
-                //ME_step = (ME_step * 181) >> 8;
 
             } while (ME_step);
             cost_best_ref[ME_dir][ref_idx] = cost_best;
             MV_best_ref[ME_dir][ref_idx] = MV_best;
             MV_last = MV_best;
         }
+
         Ipp32s cost_best_allref = INT_MAX;
         for (T_RefIdx ref_idx = 0; ref_idx < m_cslice->num_ref_idx[ME_dir]; ref_idx++) {
             if (cost_best_allref > cost_best_ref[ME_dir][ref_idx]) {
@@ -2308,16 +2322,18 @@ void H265CU::MePu(H265MEInfo* meInfo)
             }
         }
     }
-
+    
     if (m_cslice->slice_type == B_SLICE && (meInfo->width + meInfo->height != 12)) {
         // bidirectional
         H265Frame *PicYUVRefF = pList[0]->m_RefPicList[meInfo->refIdx[0]];
         H265Frame *PicYUVRefB = pList[1]->m_RefPicList[meInfo->refIdx[1]];
-//        T_RefIdx curRefIdx[2] = {0, 0};
         if(PicYUVRefF && PicYUVRefB) {
+            // use satd for bidir refine because it is always sub-pel
+            Ipp32s useHadamard = (m_par->hadamardMe >= 2);
             m_interpIdxFirst = m_interpIdxLast = 0; // for MatchingMetricBipredPu optimization
-            meInfo->costBiDir = MatchingMetricBipredPu(pSrc, meInfo, PicYUVRefF->y, PicYUVRefF->pitch_luma, PicYUVRefB->y, PicYUVRefB->pitch_luma, meInfo->MV) +
-                MvCost( meInfo->MV, meInfo->refIdx, pInfo, mergeInfo);
+            meInfo->costBiDir = MatchingMetricBipredPu(pSrc, meInfo, PicYUVRefF->y, PicYUVRefF->pitch_luma,
+                                       PicYUVRefB->y, PicYUVRefB->pitch_luma, meInfo->MV, useHadamard);
+            meInfo->costBiDir += MvCost(meInfo->MV, meInfo->refIdx, pInfo, mergeInfo);
 
             // refine Bidir
             if (IPP_MIN(meInfo->costOneDir[0], meInfo->costOneDir[1]) * 9 > 8 * meInfo->costBiDir) {
@@ -2337,8 +2353,10 @@ void H265CU::MePu(H265MEInfo* meInfo)
                         else
                             MV2_tmp[i>>2].mvy += (i&1)?1:-1;
 
-                        Ipp32s cost_temp = MatchingMetricBipredPu(pSrc, meInfo, PicYUVRefF->y, PicYUVRefF->pitch_luma, PicYUVRefB->y, PicYUVRefB->pitch_luma, MV2_tmp) +
-                            MvCost( MV2_tmp, meInfo->refIdx, pInfo, mergeInfo);
+                        Ipp32s cost_temp = MatchingMetricBipredPu(pSrc, meInfo, PicYUVRefF->y, PicYUVRefF->pitch_luma,
+                                                                  PicYUVRefB->y, PicYUVRefB->pitch_luma, MV2_tmp, useHadamard);
+                        cost_temp += MvCost(MV2_tmp, meInfo->refIdx, pInfo, mergeInfo);
+
                         if (cost_temp < cost2_best) {
                             MV2_best[0] = MV2_tmp[0]; MV2_best[1] = MV2_tmp[1];
                             cost2_best = cost_temp;
@@ -2570,43 +2588,30 @@ static Ipp32s tuSse(const PixType *src, Ipp32s pitchSrc,
 Ipp32s tuHad(const PixType *src, Ipp32s pitchSrc, const PixType *rec, Ipp32s pitchRec,
              Ipp32s width, Ipp32s height)
 {
-  Ipp32u s = 0;
+    Ipp32u satdTotal = 0;
+    Ipp32s satd = 0;
 
-  Ipp32s satd = 0;
-  if (!((width | height) & 7))
-  {
-      for (Ipp32s j = 0; j < height; j += 8)
-      {
-          for (Ipp32s i = 0; i < width; i += 8)
-          {
-              //s += calc_had8x8(&src[i], &rec[i], m_pitchSrc, m_pitchRec);
-              ippiSAT8x8D_8u32s_C1R(&src[i], pitchSrc, &rec[i], pitchRec, &satd);
-              s += ((satd + 2) >> 2);
-          }
-          src += pitchSrc * 8;
-          rec += pitchRec * 8;
-      }
-  }
-  else if (!((width | height) & 3))
-  {
-      for (Ipp32s j = 0; j < height; j += 4)
-      {
-          for (Ipp32s i = 0; i < width; i += 4)
-          {
-              //s += calc_had4x4(&src[i], &rec[i], m_pitchSrc, m_pitchRec);
-              ippiSATD4x4_8u32s_C1R(&src[i], pitchSrc, &rec[i], pitchRec, &satd);
-              s += ((satd+1) >> 1);
-          }
-          src += pitchSrc * 4;
-          rec += pitchRec * 4;
-      }
-  }
-  else
-  {
-      VM_ASSERT(0);
-  }
+    if (!((width | height) & 7)) {
+        for (Ipp32s j = 0; j < height; j += 8, src += pitchSrc * 8, rec += pitchRec * 8) {
+            for (Ipp32s i = 0; i < width; i += 8) {
+                ippiSAT8x8D_8u32s_C1R(src + i, pitchSrc, rec + i, pitchRec, &satd);
+                satdTotal += (satd + 2) >> 2;
+            }
+        }
+    }
+    else if (!((width | height) & 3)) {
+        for (Ipp32s j = 0; j < height; j += 4, src += pitchSrc * 4, rec += pitchRec * 4) {
+            for (Ipp32s i = 0; i < width; i += 4) {
+                ippiSATD4x4_8u32s_C1R(src + i, pitchSrc, rec + i, pitchRec, &satd);
+                satdTotal += (satd + 1) >> 1;
+            }
+        }
+    }
+    else {
+        VM_ASSERT(0);
+    }
 
-  return s;
+    return satdTotal;
 }
 
 static void tuDiffNv12(CoeffsType *residual, Ipp32s pitchDst,  const PixType *src, Ipp32s pitchSrc,
@@ -4072,13 +4077,13 @@ CostType H265CU::CalcCostSkip(Ipp32u absPartIdx, Ipp8u depth)
                 H265Frame *PicYUVRefF = m_cslice->GetRefFrame(REF_PIC_LIST_0, ref_idx[0]);
                 H265Frame *PicYUVRefB = m_cslice->GetRefFrame(REF_PIC_LIST_1, ref_idx[1]);
                 if (PicYUVRefF && PicYUVRefB)
-                    cost_temp = MatchingMetricBipredPu(pSrc, &me_info, PicYUVRefF->y, PicYUVRefF->pitch_luma, PicYUVRefB->y, PicYUVRefB->pitch_luma, mv);
+                    cost_temp = MatchingMetricBipredPu(pSrc, &me_info, PicYUVRefF->y, PicYUVRefF->pitch_luma, PicYUVRefB->y, PicYUVRefB->pitch_luma, mv, 0);
                 else
                     cost_temp = COST_MAX;
             } else {
                 EnumRefPicList dir = inter_dir == INTER_DIR_PRED_L0 ? REF_PIC_LIST_0 : REF_PIC_LIST_1;
                 H265Frame *PicYUVRef = m_cslice->GetRefFrame(dir, ref_idx[dir]);
-                cost_temp = MatchingMetricPu(pSrc, &me_info, mv+dir, PicYUVRef); // approx MvCost
+                cost_temp = MatchingMetricPu(pSrc, &me_info, mv+dir, PicYUVRef, 0); // approx MvCost
             }
 
             if (cost_best > cost_temp) {
