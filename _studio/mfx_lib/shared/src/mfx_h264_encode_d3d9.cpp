@@ -2670,7 +2670,7 @@ mfxStatus D3D9SvcEncoder::Execute(
     }
     catch (...)
     {
-        printf("exception caught\n"); fflush(stdout);
+        fflush(stdout);
         return MFX_ERR_DEVICE_FAILED;
     }
 
