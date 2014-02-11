@@ -455,7 +455,7 @@
     <ClCompile>
       <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\cmrt_cross_platform\include;..\..\shared\umc\io\umc_va\include;$(MfxIppIncludeDir);$(MEDIASDK_ROOT)/CMRT/runtime/include;..\optimization\h265\include;..\..\shared\umc\codec\h265_dec\include;..\shared\include;..\scheduler\include;..\..\..\include;..\..\shared\include;..\brc\vc1\include;..\brc\h264\include;..\brc\mpeg2\include;..\decode\vc1\include;..\dec\mpeg2\include;..\dec\vc1\include;..\dec\h264\include;..\bsd\mpeg2\include;..\bsd\vc1\include;..\bsd\h264\include;..\decode\mpeg2\include;..\decode\vp8\include;..\decode\mjpeg\include;..\decode\h265\include;..\decode\h264\include;..\enc\mpeg2\include;..\enc\h264\include;..\enc\vc1\include;..\encode\mpeg2\include;..\encode\vc1\include;..\encode\h264\include;..\encode\vp8\include;..\pak\vc1\include;..\pak\mpeg2\include;..\pak\h264\include;..\..\shared\umc\core\umc\include;..\..\shared\umc\core\vm\include;..\..\shared\umc\codec\me\include;..\..\shared\umc\codec\vc1_common\include;..\..\shared\umc\codec\vc1_enc\include;..\..\shared\umc\codec\color_space_converter\include;..\..\shared\umc\codec\mpeg2_enc\include;..\..\shared\umc\codec\vp8_dec\include;..\..\shared\umc\codec\vc1_dec\include;..\..\shared\umc\codec\mpeg2_dec\include;..\..\shared\umc\io\media_buffers\include;..\..\shared\umc\codec\h264_enc\include;..\..\shared\umc\codec\scene_analyzer\include;..\..\shared\umc\core\vm_plus\include;..\..\shared\umc\codec\vc1_spl\include;..\vpp\include;..\..\shared\umc\codec\brc\include;..\encode\mjpeg\include;..\..\shared\umc\codec\jpeg_enc\include;..\encode\h265\include;..\..\..\_studio\mfx_lib\plugin\include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MFX_D3D11_ENABLED;MFX_VA;MFX_VA_WIN;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;%(PreprocessorDefinitions);AS_VP8D_PLUGIN</PreprocessorDefinitions>
+      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;%(PreprocessorDefinitions);AS_VP8D_PLUGIN</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
@@ -750,27 +750,6 @@
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\io\umc_io\umc_io.vcxproj">
       <Project>{8ba23c0c-d2d7-4a5a-b8f9-ba5ca19cbab7}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\shared\umc\io\umc_va\umc_va_elk.vcxproj">
-      <Project>{0e971ee7-4430-47d9-92cd-9822bc664642}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\optimization\hevc_pp_atom.vcxproj">
-      <Project>{77807a28-2170-4a4c-95e5-73cb0657aa47}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\optimization\hevc_pp_avx2.vcxproj">
-      <Project>{6ebb14f6-dca0-485a-89f7-fe803b75d0b9}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\optimization\hevc_pp_dispatch.vcxproj">
-      <Project>{c37d7375-76cd-400b-a030-4624b1012e08}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\optimization\hevc_pp_px.vcxproj">
-      <Project>{3b7a183a-c728-494f-a56e-6a993150d277}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\optimization\hevc_pp_sse4.vcxproj">
-      <Project>{a67aee55-e7e2-43da-9bdb-548ace4c595a}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\optimization\hevc_pp_ssse3.vcxproj">
-      <Project>{87cf2689-abe2-463f-ad5e-9e4ce4b8b5cd}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
