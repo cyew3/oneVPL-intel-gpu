@@ -245,6 +245,20 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(HadamardMe); 
 }
 
+void MFXStructureRef <mfxExtCodingOptionVP8Param>::ConstructValues() const
+{
+    SERIALIZE_INT(VP8Version);
+    SERIALIZE_INT(LoopFilterType);
+    SERIALIZE_INT(SharpnessLevel);
+    SERIALIZE_INT(NumPartitions);
+
+    SERIALIZE_POD_ARRAY(LoopFilterLevel, 4);
+    SERIALIZE_POD_ARRAY(RefTypeLFDelta, 4);
+    SERIALIZE_POD_ARRAY(MBTypeLFDelta, 4);
+    SERIALIZE_POD_ARRAY(SegmentQPDelta, 4);
+    SERIALIZE_POD_ARRAY(CTQPDelta, 5);
+}
+
 void MFXStructureRef <mfxFrameInfo>::ConstructValues () const
 {
     SERIALIZE_INT(FrameId.TemporalId);
@@ -688,6 +702,10 @@ void MFXStructureRef <mfxExtBuffer>:: ConstructValues () const {
         }
         case MFX_EXTBUFF_HEVCENC :{
             SerializeStruct(VM_STRING("HEVC."), *(mfxExtCodingOptionHEVC*)m_pStruct);
+            break;
+        }
+        case MFX_EXTBUFF_VP8_PARAM :{
+            SerializeStruct(VM_STRING("VP8PAR."), *(mfxExtCodingOptionVP8Param*)m_pStruct);
             break;
         }
         case MFX_EXTBUFF_MVC_SEQ_DESC : {

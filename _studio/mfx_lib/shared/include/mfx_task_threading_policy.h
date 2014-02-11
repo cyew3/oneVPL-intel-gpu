@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2010-2012 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2010-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -46,8 +46,11 @@ enum mfxTaskThreadingPolicy
     // The total number of threads is limited.
     MFX_TASK_THREADING_SHARED = MFX_TASK_SHARED,
 
-    // Tasks of these type is 'waiting' tasks
+    // Tasks of this type are 'waiting' tasks
     MFX_TASK_THREADING_DEDICATED_WAIT = MFX_TASK_WAIT | MFX_TASK_DEDICATED | MFX_TASK_INTRA,
+
+    // Tasks of this type can't be executed by thread #0.
+    MFX_TASK_THREADING_WAIT = MFX_TASK_WAIT | MFX_TASK_INTRA,
 
 #ifdef MFX_VA
     MFX_TASK_THREADING_DEFAULT = MFX_TASK_THREADING_DEDICATED

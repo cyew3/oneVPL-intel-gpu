@@ -13,14 +13,15 @@
 
 #include "mfx_common.h"
  
-#if defined (MFX_ENABLE_VP8_VIDEO_ENCODE)
+#if defined (MFX_ENABLE_VP8_VIDEO_ENCODE_HW)
  
-#ifndef __MFX_VP8_ENC_COMMON__H
-#define __MFX_VP8_ENC_COMMON__H
+#ifndef __MFX_VP8_ENC_COMMON_HW__H
+#define __MFX_VP8_ENC_COMMON_HW__H
  
 #include "mfxvp8.h"
+#include "mfx_ext_buffers.h"
 
-namespace VP8_encoder
+namespace MFX_VP8ENC
 {
     mfxU16 GetDefaultAsyncDepth();
 
@@ -41,6 +42,6 @@ namespace VP8_encoder
 
     mfxStatus CheckExtendedBuffers (mfxVideoParam* par);
 
-}
+} // namespace MFX_VP8ENC
 #endif 
 #endif 

@@ -4,26 +4,25 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
 #include "mfx_common.h"
 
-#if defined(MFX_ENABLE_VP8_VIDEO_ENCODE) && defined(MFX_VA)
+#if defined(MFX_ENABLE_VP8_VIDEO_ENCODE_HW) && defined(MFX_VA)
 
 #include "mfx_session.h"
 #include "mfx_task.h"
 #include "mfx_ext_buffers.h"
 
 #include "mfx_vp8_encode_hw.h"
+#include "mfx_vp8_enc_common_hw.h"
 #include "mfx_vp8_encode_hybrid_hw.h"
-#include "mfx_vp8_enc_common.h"
 
 #define DDI_HYBRID_PAK_IMPL
 //#define DDI_ENCODE_IMPL
-#define C_MODEL_IMPL
-
+//#define C_MODEL_IMPL
 
 VideoENCODE * CreateMFXHWVideoENCODEVP8(
     VideoCORE * core,
@@ -44,7 +43,7 @@ mfxStatus MFXHWVideoENCODEVP8::Init(mfxVideoParam * par)
     impl.reset((VideoENCODE *) new  MFX_VP8ENC::CmodelImpl(m_core));
 #else
     ENCODE_CAPS_VP8             caps = {0};
-    sts = MFX_VP8ENC::QueryHwCaps(m_core->GetVAType(), m_core->GetAdapterNumber(), caps);
+    sts = MFX_VP8ENC::QueryHwCaps(m_core, caps);
     MFX_CHECK_STS(sts);
 #ifdef DDI_ENCODE_IMPL
     if (impl.get() == 0 && caps.EncodeFunc)
@@ -53,12 +52,14 @@ mfxStatus MFXHWVideoENCODEVP8::Init(mfxVideoParam * par)
     }
 #endif
 #ifdef DDI_HYBRID_PAK_IMPL
+#if !defined (VP8_HYBRID_DUMP_READ)
     if (impl.get() == 0 && caps.HybridPakFunc)
+#endif
     {
         impl.reset((VideoENCODE *) new  MFX_VP8ENC::HybridPakDDIImpl(m_core));
     }
-#endif    
-#endif
+#endif // DDI_HYBRID_PAK_IMPL
+#endif // !C_MODEL_IMPL
     MFX_CHECK(impl.get() != 0, MFX_WRN_PARTIAL_ACCELERATION); 
 
     sts = impl->Init(par);
@@ -70,16 +71,15 @@ mfxStatus MFXHWVideoENCODEVP8::Init(mfxVideoParam * par)
     return sts;
 }
 
-
 mfxStatus MFXHWVideoENCODEVP8::Query(
     VideoCORE *     core,
     mfxVideoParam * in,
     mfxVideoParam * out)
 { 
     MFX_CHECK_NULL_PTR2(core, out);
-
-    return   (in == 0) ? VP8_encoder::SetSupportedParameters(out):
-        VP8_encoder::CheckParameters(in,out);   
+    
+    return   (in == 0) ? MFX_VP8ENC::SetSupportedParameters(out):
+        MFX_VP8ENC::CheckParameters(in,out);
 }
 
 
@@ -95,12 +95,12 @@ mfxStatus MFXHWVideoENCODEVP8::QueryIOSurf(
 
     request->Type = mfxU16((par->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)? MFX_VP8ENC::MFX_MEMTYPE_SYS_EXT:MFX_VP8ENC::MFX_MEMTYPE_D3D_EXT) ;
 
-    request->NumFrameMin =  (par->AsyncDepth ? par->AsyncDepth: VP8_encoder::GetDefaultAsyncDepth())  + 1;
+    request->NumFrameMin =  (par->AsyncDepth ? par->AsyncDepth: MFX_VP8ENC::GetDefaultAsyncDepth())  + 1;
     request->NumFrameSuggested = request->NumFrameMin;
 
     request->Info = par->mfx.FrameInfo;
     return MFX_ERR_NONE;
-} 
+}
 
 #endif 
 

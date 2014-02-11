@@ -4,741 +4,304 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 //
 //          VP8 encoder part
 //
 */
-
 #include "mfx_common.h"
 
-#if defined(MFX_ENABLE_VP8_VIDEO_ENCODE) 
+#if defined(MFX_ENABLE_VP8_VIDEO_ENCODE_HW) 
 #include "mfx_vp8_encode_hybrid_hw.h"
-#include "mfx_vp8_enc_common.h"
+#include "mfx_vp8_enc_common_hw.h"
 #include "mfx_task.h"
-
-
-#ifdef WIN64
-    #ifdef _DEBUG
-        #define DLL_FILENAME    _T("CmodelVp8enc64_d.dll")
-    #else
-        #define DLL_FILENAME    _T("CmodelVp8enc64.dll")
-    #endif //_DEBUG
-#else
-#ifdef  WIN32
-    #ifdef _DEBUG
-        #define DLL_FILENAME    _T("CmodelVp8enc32_d.dll")
-    #else
-        #define DLL_FILENAME    _T("CmodelVp8enc32.dll")
-    #endif //_DEBUG
-#else
-     #define DLL_FILENAME    _T("CmodelVp8enc.dll")
-#endif //WIN64
-#endif //WIN32
-
-
-int (MFX_CDECL *pCMODEL_VP8_ENCODER_Create)(CMODEL_VP8_ENCODER::Implementation *& pImpl);
-
-int (MFX_CDECL *pCMODEL_VP8_ENCODER_Delete)(CMODEL_VP8_ENCODER::Implementation *& pImpl);
-
-
-int (MFX_CDECL *pCMODEL_VP8_ENCODER_Init)( CMODEL_VP8_ENCODER::Implementation *pImpl,
-                                        CMODEL_VP8_ENCODER::SeqParams *pParams, 
-                                        CMODEL_VP8_ENCODER::eMode mode,
-                                        CMODEL_VP8_ENCODER::MbCodeVp8** ppMBData);
-
-int(MFX_CDECL *pCMODEL_VP8_ENCODER_SetNextFrame)(CMODEL_VP8_ENCODER::Implementation *pImpl,
-                                                CMODEL_VP8_ENCODER::Frames *pFrames, 
-                                                CMODEL_VP8_ENCODER::PicParam *pFrameParams,
-                                                int    FrameNumber);  
-
-int (MFX_CDECL *pCMODEL_VP8_ENCODER_RunENC)(CMODEL_VP8_ENCODER::Implementation *pImpl,
-                                            CMODEL_VP8_ENCODER::MbCodeVp8* pOutMBData);
-
-int (MFX_CDECL *pCMODEL_VP8_ENCODER_RunPAK)(CMODEL_VP8_ENCODER::Implementation *pImpl,
-                                            CMODEL_VP8_ENCODER::MbCodeVp8* pInOutMBData, 
-                                            CMODEL_VP8_ENCODER::Frames *pRecFrames );
-
-int (MFX_CDECL *pCMODEL_VP8_ENCODER_RunBSP)(CMODEL_VP8_ENCODER::Implementation *pImpl,
-                                            CMODEL_VP8_ENCODER::MbCodeVp8* pInMBData,                                             
-                                            bool   bSeqHeader,
-                                            unsigned char *pBitstream, 
-                                            unsigned int &len, 
-                                            unsigned int maxLen); 
-
-int (MFX_CDECL *pCMODEL_VP8_ENCODER_FinishFrame)(CMODEL_VP8_ENCODER::Implementation *pImpl);
-
-#define LOAD_FUNC(FUNC)                                         \
-    *(FARPROC*)&p##FUNC = GetProcAddress(m_pDLL, #FUNC);        \
+#include "vm_time.h"
 
 namespace MFX_VP8ENC
 {
-    //---------------------------------------------------------
-    // service class: CModel
-    //---------------------------------------------------------
-
-    mfxStatus CModel::InitCModelSeqParams(const mfxVideoParam &video, CMODEL_VP8_ENCODER::SeqParams &dst)
+    int CheckMBData(sMBData* pData)
     {
-        mfxExtCodingOptionVP8 *pOpt= GetExtBuffer(video);
+        bool Y2block = true;
+        int nError = 0;
 
-        dst.Width  = video.mfx.FrameInfo.CropW!=0 ? video.mfx.FrameInfo.CropW: video.mfx.FrameInfo.Width;
-        dst.Height = video.mfx.FrameInfo.CropH!=0 ? video.mfx.FrameInfo.CropH: video.mfx.FrameInfo.Height;
-        dst.FRateN = video.mfx.FrameInfo.FrameRateExtN;
-        dst.FRateD = video.mfx.FrameInfo.FrameRateExtD;
-
-        MFX_CHECK (video.mfx.RateControlMethod == MFX_RATECONTROL_CQP, MFX_ERR_UNSUPPORTED);
-        MFX_CHECK (pOpt->TokenPartitions < 2, MFX_ERR_UNSUPPORTED);
-
-        dst.QPI =  video.mfx.QPI;
-        dst.QPP =  video.mfx.QPP;
-        dst.bEnableSeg = pOpt->EnableMultipleSegments?1:0;
-
-        return MFX_ERR_NONE;
-    }
-    mfxStatus CModel::InitFrameParams(  const sFrameParams &srcParams, 
-                                        CMODEL_VP8_ENCODER::PicParam &dstParams)
-    {
-        dstParams.bIntra    = srcParams.bIntra;
-        dstParams.bGold     = srcParams.bGold;
-        dstParams.bAltRef   = srcParams.bAltRef;
-
-        return MFX_ERR_NONE;
-    }
-    mfxStatus CModel::CopyMBData(std::vector<sMBData> & pSrc, CMODEL_VP8_ENCODER::MbCodeVp8 *pDst)
-    {
-        MFX_CHECK(sizeof(sMBData) == sizeof(CMODEL_VP8_ENCODER::MbCodeVp8),MFX_ERR_UNDEFINED_BEHAVIOR);
-
-        std::vector<sMBData>::iterator src = pSrc.begin();
-        for ( ;src!= pSrc.end(); src++)
+        nError += !(pData->mb_ref_frame_sel<=3);
+        if (pData->mb_ref_frame_sel == 0)
         {
-            MFX_INTERNAL_CPY(pDst++,&(src[0]), sizeof(sMBData));
-        }
-        return MFX_ERR_NONE;
-    }
-    mfxStatus CModel::CopyMBData( CMODEL_VP8_ENCODER::MbCodeVp8 *pSrc, std::vector<sMBData> & pDst)
-    {
-        MFX_CHECK(sizeof(sMBData) == sizeof(CMODEL_VP8_ENCODER::MbCodeVp8),MFX_ERR_UNDEFINED_BEHAVIOR)
-        std::vector<sMBData>::iterator dst = pDst.begin();
-        for ( ;dst!= pDst.end(); dst++)
-        {
-            MFX_INTERNAL_CPY(&(dst[0]),pSrc++, sizeof(sMBData));
-        }
-        return MFX_ERR_NONE;
-    }
-    mfxStatus CModel::InitDLL()
-    {
-        MFX_CHECK(m_pDLL == 0, MFX_ERR_UNDEFINED_BEHAVIOR);
-        HMODULE m_pDLL = LoadLibrary(DLL_FILENAME);
-        if (m_pDLL == 0)
-        {
-            _tprintf(_T("\n\nVP8 encoder error: %s can't be loaded\n\n"), DLL_FILENAME);  
-            return MFX_ERR_INVALID_HANDLE;
-        }
-        LOAD_FUNC(CMODEL_VP8_ENCODER_Create);
-        LOAD_FUNC(CMODEL_VP8_ENCODER_Delete);
-        LOAD_FUNC(CMODEL_VP8_ENCODER_Init);
-        LOAD_FUNC(CMODEL_VP8_ENCODER_SetNextFrame);
-        LOAD_FUNC(CMODEL_VP8_ENCODER_RunENC);
-        LOAD_FUNC(CMODEL_VP8_ENCODER_RunPAK);
-        LOAD_FUNC(CMODEL_VP8_ENCODER_RunBSP);
-        LOAD_FUNC(CMODEL_VP8_ENCODER_FinishFrame);
-
-        MFX_CHECK_NULL_PTR3(pCMODEL_VP8_ENCODER_Create,pCMODEL_VP8_ENCODER_Delete, pCMODEL_VP8_ENCODER_Init);
-        MFX_CHECK_NULL_PTR3(pCMODEL_VP8_ENCODER_SetNextFrame,pCMODEL_VP8_ENCODER_RunENC, pCMODEL_VP8_ENCODER_RunPAK);
-        MFX_CHECK_NULL_PTR2(pCMODEL_VP8_ENCODER_RunBSP,pCMODEL_VP8_ENCODER_FinishFrame);
-
-        return MFX_ERR_NONE;
-    }
-    mfxStatus CModel::FreeDLL()
-    {
-        if (m_pDLL)
-        {
-            FreeLibrary(m_pDLL);
-            m_pDLL = 0;
-        }
-        return MFX_ERR_NONE;
-    }
-    mfxStatus CModel::Init(const mfxVideoParam &video,CMODEL_VP8_ENCODER::eMode mode, VideoCORE  *pCore)
-    {
-        mfxStatus  sts = MFX_ERR_NONE;
-        CMODEL_VP8_ENCODER::SeqParams   CmodelParams= {0};
-
-        MFX_CHECK(m_pDLL == 0,MFX_ERR_UNDEFINED_BEHAVIOR);
-        MFX_CHECK(m_pImpl == 0,MFX_ERR_UNDEFINED_BEHAVIOR); 
-
-        m_pCore = pCore;
-
-        sts = InitDLL();
-        MFX_CHECK_STS(sts);
-
-        sts =(mfxStatus)pCMODEL_VP8_ENCODER_Create (m_pImpl);
-        MFX_CHECK_STS(sts);
-
-        sts = InitCModelSeqParams(video, CmodelParams);
-        MFX_CHECK_STS(sts);
-
-        sts =(mfxStatus)pCMODEL_VP8_ENCODER_Init(m_pImpl,&CmodelParams,mode,&m_pMBData);
-        MFX_CHECK_STS(sts);
-
-        m_frameNum = 0;
-
-        return sts;    
-    }
-    mfxStatus CModel::Close()
-    {
-        mfxStatus  sts = MFX_ERR_NONE;
-
-        if (pCMODEL_VP8_ENCODER_Delete)
-        {
-            sts = (mfxStatus)pCMODEL_VP8_ENCODER_Delete(m_pImpl); 
-            MFX_CHECK_STS(sts);
-        }
-
-        sts = FreeDLL();
-        MFX_CHECK_STS(sts);
-
-        pCMODEL_VP8_ENCODER_Create = 0;
-        pCMODEL_VP8_ENCODER_Delete = 0;
-        pCMODEL_VP8_ENCODER_Init  = 0;
-        pCMODEL_VP8_ENCODER_SetNextFrame = 0;
-        pCMODEL_VP8_ENCODER_RunENC = 0;
-        pCMODEL_VP8_ENCODER_RunPAK = 0;
-        pCMODEL_VP8_ENCODER_RunBSP = 0;
-        pCMODEL_VP8_ENCODER_FinishFrame = 0;
-
-        m_frameNum = 0;
-
-        return sts;
-    }
-
-    mfxStatus CModel::SetNextFrame(mfxFrameSurface1 * pSurface, bool bExternal, const sFrameParams &frameParams, mfxU32 frameNum)
-    {
-        mfxStatus  sts = MFX_ERR_NONE;
-        CMODEL_VP8_ENCODER::Frames      frames = {0};
-        CMODEL_VP8_ENCODER::PicParam    CmodelFrameParams = {0};
-        mfxFrameSurface1 src={0};
-
-        sts = InitFrameParams(frameParams,CmodelFrameParams);
-        MFX_CHECK_STS(sts);
-
-        m_frameNum = frameNum;
-
-        src.Data = pSurface->Data;
-        src.Info = pSurface->Info;
-
-        FrameLocker lockSrc(m_pCore, src.Data, bExternal);
-        
-        frames.pFrame[0] = src.Data.Y;
-        frames.pFrame[1] = src.Data.U;
-        frames.pFrame[2] = src.Data.V;
-
-        frames.frameStep[0] = src.Data.Pitch;
-        frames.frameStep[1] = src.Data.Pitch;
-        frames.frameStep[2] = src.Data.Pitch;
-
-        sts = (mfxStatus)pCMODEL_VP8_ENCODER_SetNextFrame( m_pImpl, &frames, &CmodelFrameParams,m_frameNum);
-        MFX_CHECK_STS(sts);
-
-        return sts;
-    }
-    mfxStatus CModel::RunEnc(std::vector<sMBData> & pMBData)
-    {
-        mfxStatus  sts = MFX_ERR_NONE;
-
-        MFX_CHECK_NULL_PTR1(m_pMBData);
-
-        sts = (mfxStatus)pCMODEL_VP8_ENCODER_RunENC( m_pImpl,m_pMBData);
-        MFX_CHECK_STS(sts);
-
-        sts = CopyMBData(m_pMBData, pMBData);
-        MFX_CHECK_STS(sts);
-
-        return sts;   
-    }
-    mfxStatus CModel::RunPak(std::vector<sMBData> & pMBData, mfxFrameSurface1 *pRecSurface)
-    {
-        mfxStatus  sts = MFX_ERR_NONE;
-
-        CMODEL_VP8_ENCODER::Frames  frames = {0};
-        mfxFrameSurface1 dst={0};
-
-        MFX_CHECK_NULL_PTR1(m_pMBData);
-        
-        sts = CopyMBData(pMBData,m_pMBData);
-        MFX_CHECK_STS(sts);
-
-        dst.Data = pRecSurface->Data;
-        dst.Info = pRecSurface->Info;
-
-        FrameLocker lockDst(m_pCore, dst.Data, false);
-        
-        frames.pFrame[0] = dst.Data.Y;
-        frames.pFrame[1] = dst.Data.U;
-        frames.pFrame[2] = dst.Data.V;
-
-        frames.frameStep[0] = dst.Data.Pitch;
-        frames.frameStep[1] = dst.Data.Pitch;
-        frames.frameStep[2] = dst.Data.Pitch;
-
-        sts = (mfxStatus)pCMODEL_VP8_ENCODER_RunPAK( m_pImpl,m_pMBData,&frames);
-        MFX_CHECK_STS(sts);
-        
-        sts = CopyMBData(m_pMBData, pMBData);
-        MFX_CHECK_STS(sts);
-
-        return sts;   
-    }
-    mfxStatus CModel::RunBSP(std::vector<sMBData> & pMBData, bool bAddSeqHeader ,mfxBitstream *pBitstream)
-    {
-        mfxStatus  sts = MFX_ERR_NONE;
-
-        MFX_CHECK_NULL_PTR1(m_pMBData);
-        
-        sts = CopyMBData(pMBData,m_pMBData);
-        MFX_CHECK_STS(sts);
-
-        sts = (mfxStatus)pCMODEL_VP8_ENCODER_RunBSP( m_pImpl,m_pMBData, bAddSeqHeader,
-                                                     pBitstream->Data,pBitstream->DataLength,pBitstream->MaxLength);
-        MFX_CHECK_STS(sts); 
-        
-
-        return sts;   
-    }
-
-    mfxStatus CModel::FinishFrame()
-    {
-        mfxStatus  sts = MFX_ERR_NONE;
-
-        sts = (mfxStatus)pCMODEL_VP8_ENCODER_FinishFrame(m_pImpl);
-        MFX_CHECK_STS(sts);  
-
-        return sts;
-    }
-
-    //---------------------------------------------------------
-    // Implementation via CModel
-    //---------------------------------------------------------
-
-    mfxStatus CmodelImpl::Init(mfxVideoParam * par)
-    {
-        
-        mfxStatus sts  = MFX_ERR_NONE;
-        mfxStatus sts1 = MFX_ERR_NONE; // to save warnings ater parameters checking
-        m_video = *par;
-        {  
-            mfxExtCodingOptionVP8*       pExtOpt    = GetExtBuffer(m_video);        
-            mfxExtOpaqueSurfaceAlloc*    pExtOpaque = GetExtBuffer(m_video);
-      
-            MFX_CHECK(CheckFrameSize(par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height),MFX_ERR_INVALID_VIDEO_PARAM);
-
-            sts1 = VP8_encoder::CheckParametersAndSetDefault(par,&m_video, pExtOpt, pExtOpaque, m_core->IsExternalFrameAllocator(),false);
-            MFX_CHECK(sts1 >=0, sts1);   
-        }
-
-        sts = m_taskManager.Init(m_core,&m_video,false);
-        MFX_CHECK_STS(sts);        
-
-        sts = m_CModel.Init(m_video,CMODEL_VP8_ENCODER::ENC,m_core);
-        MFX_CHECK_STS(sts);
-
-        return sts1;
-    }
- 
-    mfxStatus CmodelImpl::Reset(mfxVideoParam * par)
-    {
-        mfxStatus sts  = MFX_ERR_NONE;
-        mfxStatus sts1 = MFX_ERR_NONE;
-
-        MFX_CHECK_NULL_PTR1(par);
-        MFX_CHECK(par->IOPattern == m_video.IOPattern, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-
-        m_video     = *par;
-
-        {
-            mfxExtCodingOptionVP8*       pExtOpt = GetExtBuffer(m_video);        
-            mfxExtOpaqueSurfaceAlloc*    pExtOpaque = GetExtBuffer(m_video);
-
-            sts1 = VP8_encoder::CheckParametersAndSetDefault(par,&m_video, pExtOpt, pExtOpaque,m_core->IsExternalFrameAllocator(),true);
-            MFX_CHECK(sts1>=0, sts1);
-        }
-        sts = m_taskManager.Reset(&m_video);
-        MFX_CHECK_STS(sts);
-
-        sts = m_CModel.Close();(m_video,CMODEL_VP8_ENCODER::ENC,m_core);
-        MFX_CHECK_STS(sts);
-
-        sts = m_CModel.Init(m_video,CMODEL_VP8_ENCODER::ENC,m_core);
-        MFX_CHECK_STS(sts);
-  
-        return sts1;
-    } 
-
-    mfxStatus CmodelImpl::GetVideoParam(mfxVideoParam * par)
-    {
-        MFX_CHECK_NULL_PTR1(par);
-        return MFX_VP8ENC::GetVideoParam(par,&m_video);
-    } 
-        
-
-     mfxStatus CmodelImpl::EncodeFrameCheck( mfxEncodeCtrl *ctrl,
-                                            mfxFrameSurface1 *surface,
-                                            mfxBitstream *bs,
-                                            mfxFrameSurface1 ** /*reordered_surface*/,
-                                            mfxEncodeInternalParams * /*pInternalParams*/,
-                                            MFX_ENTRY_POINT *pEntryPoint)
-
-
-    {
-        Task* pTask = 0;
-        mfxStatus sts  = MFX_ERR_NONE;
-
-        mfxStatus checkSts = CheckEncodeFrameParam(
-            m_video,
-            ctrl,
-            surface,
-            bs,
-            m_core->IsExternalFrameAllocator());
-
-        MFX_CHECK(checkSts >= MFX_ERR_NONE, checkSts);
-
-        sts = m_taskManager.InitTask(surface,bs,pTask);
-        MFX_CHECK_STS(sts);        
-
-        pEntryPoint->pState               = this;
-        pEntryPoint->pCompleteProc        = 0;
-        pEntryPoint->pGetSubTaskProc      = 0;
-        pEntryPoint->pCompleteSubTaskProc = 0;
-        pEntryPoint->requiredNumThreads   = 1;
-        pEntryPoint->pRoutineName         = "Encode Frame";
-        
-        pEntryPoint->pRoutine            = TaskRoutine;
-        pEntryPoint->pParam              = pTask;       
-
-        return checkSts;
-    } 
-    mfxStatus CmodelImpl::TaskRoutine(  void * state,
-                                         void * param,
-                                         mfxU32 /*threadNumber*/,
-                                         mfxU32 /*callNumber*/)
-     {
-         CmodelImpl &    impl = *(CmodelImpl *) state;
-         Task *          task =  (Task *)param;
-
-         mfxStatus sts = impl.EncodeFrame(task);
-         MFX_CHECK_STS(sts);
-
-         return MFX_TASK_DONE;
-     } 
-
-     mfxStatus CmodelImpl::EncodeFrame(Task *pTaskInput)
-     { 
-        TaskHybrid          *pTask = (TaskHybrid*)pTaskInput;
-        mfxStatus           sts = MFX_ERR_NONE;
-        sFrameParams        frameParams={0};
-        mfxFrameSurface1    *pSurface=0;
-        bool                bExternalSurface = true;
-
-        sts = SetFramesParams(&m_video,pTask->m_frameOrder, &frameParams);
-        MFX_CHECK_STS(sts);
-
-        sts = m_taskManager.SubmitTask(pTask,&frameParams);
-        MFX_CHECK_STS(sts);
-
-        sts = pTask->GetInputSurface(pSurface, bExternalSurface);
-        MFX_CHECK_STS(sts);
-
-        sts = m_CModel.SetNextFrame(pSurface, bExternalSurface, pTask->m_sFrameParams,pTask->m_frameOrder);
-        MFX_CHECK_STS(sts);
-
-        sts = m_CModel.RunEnc(pTask->m_MBData);
-        MFX_CHECK_STS(sts);
-
-        sts = m_CModel.RunPak(pTask->m_MBData, pTask->m_pRecFrame->pSurface);
-        MFX_CHECK_STS(sts);
-
-        sts = m_CModel.RunBSP(pTask->m_MBData,pTask->m_frameOrder==0, pTask->m_pBitsteam);
-        MFX_CHECK_STS(sts);
-        
-        sts = pTask->CompleteTask();
-        MFX_CHECK_STS(sts);
-
-        sts = m_CModel.FinishFrame();
-        MFX_CHECK_STS(sts);
-
-        return sts;
-     } 
-
-#ifdef HYBRID_ENCODE
-    //---------------------------------------------------------
-    // service class: TaskManagerHybridEncode
-    //---------------------------------------------------------
-
-    mfxStatus TaskManagerHybridEncode::Init(VideoCORE* pCore, mfxVideoParam *par, mfxFrameInfo* pDDIMBInfo, mfxU32 numDDIMBFrames)
-    {
-        mfxStatus     sts      = MFX_ERR_NONE;
-        mfxU32        numTasks = CalcNumTasks(m_video);
-
-
-        MFX_CHECK(!m_pCore, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-        m_pCore   = pCore;
-        m_video   = *par;
-
-        m_frameNum = 0;
-
-        m_bHWInput = isVideoSurfInput(m_video); 
-
-        m_pPrevSubmittedTaskEnc = 0;
-        m_pPrevSubmittedTaskPak = 0;
-
-        m_RawFrames.Init(); 
-
-        sts = m_LocalRawFrames.Init(m_pCore, &m_video.mfx.FrameInfo, 
-            CalcNumSurfRawLocal(m_video, !m_bHWInput, m_bHWInput), 
-            !m_bHWInput);
-        MFX_CHECK_STS(sts);
-
-        sts = m_ReconFramesEnc.Init(m_pCore, &m_video.mfx.FrameInfo, CalcNumSurfRecon(m_video), true);
-        MFX_CHECK_STS(sts);
-
-        sts = m_ReconFramesPak.Init(m_pCore, &m_video.mfx.FrameInfo, CalcNumSurfRecon(m_video), false);
-        MFX_CHECK_STS(sts);
-
-        sts = m_MBDataDDI.Init(m_pCore, pDDIMBInfo, (numDDIMBFrames < numTasks ? numTasks: numDDIMBFrames) , true);
-        MFX_CHECK_STS(sts);
-
-        {
-
-            m_TasksEnc.resize(numTasks);
-            m_TasksPak.resize(numTasks);
-
-            for (mfxU32 i = 0; i < numTasks; i++)
+            nError += !(pData->intra_y_mode_partition_type <= 4); 
+            nError += !(pData->intra_uv_mode <= 3);
+            if (pData->intra_y_mode_partition_type == 4)
             {
-                sts = m_TasksEnc[i].Init(m_pCore,&m_video);
-                MFX_CHECK_STS(sts);
+                nError += !(pData->intra_b_mode_sub_mv_mode_0 <= 9);
+                nError += !(pData->intra_b_mode_sub_mv_mode_1 <= 9);
+                nError += !(pData->intra_b_mode_sub_mv_mode_2 <= 9);
+                nError += !(pData->intra_b_mode_sub_mv_mode_3 <= 9);
+                nError += !(pData->intra_b_mode_sub_mv_mode_4 <= 9);
+                nError += !(pData->intra_b_mode_sub_mv_mode_5 <= 9);
+                nError += !(pData->intra_b_mode_sub_mv_mode_6 <= 9);
+                nError += !(pData->intra_b_mode_sub_mv_mode_7 <= 9);
+                nError += !(pData->intra_b_mode_sub_mv_mode_8 <= 9);
+                nError += !(pData->intra_b_mode_sub_mv_mode_9 <= 9);
+                nError += !(pData->intra_b_mode_sub_mv_mode_10 <= 9);
+                nError += !(pData->intra_b_mode_sub_mv_mode_11 <= 9);
+                nError += !(pData->intra_b_mode_sub_mv_mode_12 <= 9);
+                nError += !(pData->intra_b_mode_sub_mv_mode_13 <= 9);
+                nError += !(pData->intra_b_mode_sub_mv_mode_14 <= 9);
+                nError += !(pData->intra_b_mode_sub_mv_mode_15 <= 9);
+                Y2block = false;
+            }
+        }
+        else
+        {
+            nError += !(pData->mv_mode <= 4);
+            if (pData->mv_mode == 3) //new
+            {
+                nError += !(pData->MV[15].x <= 1023 && pData->MV[15].x >=-1023);
+                nError += !(pData->MV[15].y <= 1023 && pData->MV[15].y >=-1023);
+            }
+            else if (pData->mv_mode == 4) //split
+            {
+                Y2block = false;
+                nError += !(pData->intra_y_mode_partition_type <=5 && pData->intra_y_mode_partition_type>0);
+                nError += !(pData->intra_b_mode_sub_mv_mode_0 <= 4);
+                nError += !(pData->intra_b_mode_sub_mv_mode_1 <= 4);
+                nError += !(pData->intra_b_mode_sub_mv_mode_2 <= 4);
+                nError += !(pData->intra_b_mode_sub_mv_mode_3 <= 4);
+                nError += !(pData->intra_b_mode_sub_mv_mode_4 <= 4);
+                nError += !(pData->intra_b_mode_sub_mv_mode_5 <= 4);
+                nError += !(pData->intra_b_mode_sub_mv_mode_6 <= 4);
+                nError += !(pData->intra_b_mode_sub_mv_mode_7 <= 4);
+                nError += !(pData->intra_b_mode_sub_mv_mode_8 <= 4);
+                nError += !(pData->intra_b_mode_sub_mv_mode_9 <= 4);
+                nError += !(pData->intra_b_mode_sub_mv_mode_10 <= 4);
+                nError += !(pData->intra_b_mode_sub_mv_mode_11 <= 4);
+                nError += !(pData->intra_b_mode_sub_mv_mode_12 <= 4);
+                nError += !(pData->intra_b_mode_sub_mv_mode_13 <= 4);
+                nError += !(pData->intra_b_mode_sub_mv_mode_14 <= 4);
+                nError += !(pData->intra_b_mode_sub_mv_mode_15 <= 4);
 
-                sts = m_TasksPak[i].Init(m_pCore,&m_video);
-                MFX_CHECK_STS(sts);
+                for (int i = 0; i<16; i++)
+                {
+                    nError += !(pData->MV[i].x <= 1023 && pData->MV[i].x >=-1023);
+                    nError += !(pData->MV[i].y <= 1023 && pData->MV[i].y >=-1023);
+                }
+            }  
+        }
+        if (Y2block)
+        {
+            // need to fix driver issue;
+            pData->Y1block_0[0] = pData->Y1block_1[0] = pData->Y1block_2[0] = pData->Y1block_3[0] = 
+                pData->Y1block_4[0] = pData->Y1block_5[0] = pData->Y1block_6[0] = pData->Y1block_7[0] = 
+                pData->Y1block_8[0] = pData->Y1block_9[0] = pData->Y1block_10[0] = pData->Y1block_11[0] =
+                pData->Y1block_12[0] = pData->Y1block_13[0] = pData->Y1block_14[0] = pData->Y1block_15[0] = 0;        
+        }    
+        return nError;    
+    }
+    void printMBData(sMBData* pData)
+    {
+        bool bYblock = true;
+        static const char MBModes[5][20]      = {"intra", "ref to last", "ref to golden", "ref to alt" , "unknown"};
+        static const char IntraModes[6][20]   = {"DC_Pred", "V_Pred", "H_Pred", "TM_Pred","Block_Pred", "unknown"};
+        static const char IntraBlocks[11][20] = {"DC", "VE", "HE", "TM", "LD", "RD", "VR", "VL", "HD", "HU", "unknown"};
+        static const char InterMV[6][20]       ={"NEARESTMV", "NEARMV", "ZEROMV","NEWMV","SPLITMV","unknown"}; 
+        static const char SplitModes [6][20]   ={"16x16","16x8","8x16","8x8","4x4","unknown"};
+        static const char Split4x4Modes[5][20]   ={"LEFT","ABOVE","ZERO","NEW","unknown"};
+        static const char blocks[25][20]         = {"Y2","Y1(0)","Y1(1)","Y1(2)","Y1(3)","Y1(4)",
+            "Y1(5)","Y1(6)","Y1(7)","Y1(8)","Y1(9)",
+            "Y1(10)","Y1(11)","Y1(12)","Y1(13)","Y1(14)","Y1(15)"
+            "U(0)","U(1)","U(2)","U(3)",
+            "V(0)","V(1)","V(2)","V(3)"};
+
+        mfxI16* pBlock[25] = {   pData->Y2block,
+            pData->Y1block_0,pData->Y1block_1,pData->Y1block_2,pData->Y1block_3,
+            pData->Y1block_4,pData->Y1block_5,pData->Y1block_6,pData->Y1block_7,
+            pData->Y1block_8,pData->Y1block_9,pData->Y1block_10,pData->Y1block_11,
+            pData->Y1block_12,pData->Y1block_13,pData->Y1block_14,pData->Y1block_15,
+            pData->Ublock_0,pData->Ublock_1,pData->Ublock_2,pData->Ublock_3,
+            pData->Vblock_0,pData->Vblock_1,pData->Vblock_2,pData->Vblock_3};
+
+        int sub [16]  = { pData->intra_b_mode_sub_mv_mode_0, pData->intra_b_mode_sub_mv_mode_1,pData->intra_b_mode_sub_mv_mode_2,pData->intra_b_mode_sub_mv_mode_3,
+            pData->intra_b_mode_sub_mv_mode_4, pData->intra_b_mode_sub_mv_mode_5,pData->intra_b_mode_sub_mv_mode_6,pData->intra_b_mode_sub_mv_mode_7,
+            pData->intra_b_mode_sub_mv_mode_8, pData->intra_b_mode_sub_mv_mode_9,pData->intra_b_mode_sub_mv_mode_10,pData->intra_b_mode_sub_mv_mode_11,
+            pData->intra_b_mode_sub_mv_mode_12, pData->intra_b_mode_sub_mv_mode_13,pData->intra_b_mode_sub_mv_mode_14,pData->intra_b_mode_sub_mv_mode_15};
+
+        printf("MB %d, %d: type: %s, ", pData->mbx, pData->mby, MBModes[pData->mb_ref_frame_sel < 5 ? pData->mb_ref_frame_sel : 4]);       
+
+        if (pData->mb_ref_frame_sel == 0)
+        {
+            printf (" luma: %s, chroma: %s\n",   IntraModes[pData->intra_y_mode_partition_type < 6 ? pData->intra_y_mode_partition_type: 5],
+                IntraModes[pData->intra_uv_mode < 5 ? pData->intra_uv_mode: 5]);
+            if (pData->intra_y_mode_partition_type == 4)
+            {
+                bYblock = false;
+                printf(" luma block types:\n");
+                for(int j =0; j<16; j++)
+                {
+                    printf(" %s", IntraBlocks[sub[j] < 11 ? sub[j] : 10]);
+                    if (j%4 == 3) printf("\n");                
+                }
+            }
+        }
+        else
+        {
+            printf(" MV mode %s\n", InterMV[pData->mv_mode <6? pData->mv_mode: 5]);
+            if (pData->mv_mode == 3) 
+            {   
+                printf(" MV (%d, %d) \n", pData->MV[15].x, pData->MV[15].y);            
+            }
+            else if (pData->mv_mode == 4)
+            {
+                bYblock = false;
+                printf(" Split Mode %s:\n", SplitModes[pData->intra_y_mode_partition_type < 6 ? pData->intra_y_mode_partition_type : 5]);
+                for(int j =0; j<16; j++)
+                {
+                    if (sub[j]==3)
+                    {
+                        printf(" (%d,%d)", pData->MV[j].x, pData->MV[j].y);
+                    }
+                    else
+                    {
+                        printf(" %s,", Split4x4Modes[sub[j] < 5 ? sub[j] : 4]);
+                    }
+                    if (j%4 == 3) printf("\n");                
+                }
 
             }
         }
-        return sts;          
-    }
-    mfxStatus TaskManagerHybridEncode::Reset(mfxVideoParam *par)
-    {
-        mfxStatus sts = MFX_ERR_NONE;
-        MFX_CHECK(m_pCore!=0, MFX_ERR_NOT_INITIALIZED);  
-
-        m_video     = *par;
-        m_frameNum  = 0;
-
-        MFX_CHECK(m_ReconFramesEnc.Height() >= m_video.mfx.FrameInfo.Height,MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-        MFX_CHECK(m_ReconFramesEnc.Width()  >= m_video.mfx.FrameInfo.Width,MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-
-        MFX_CHECK(mfxU16(CalcNumSurfRawLocal(m_video,!isVideoSurfInput(m_video),isVideoSurfInput(m_video))) <= m_LocalRawFrames.Num(),MFX_ERR_INCOMPATIBLE_VIDEO_PARAM); 
-        MFX_CHECK(mfxU16(CalcNumSurfRecon(m_video)) <= m_ReconFramesEnc.Num(),MFX_ERR_INCOMPATIBLE_VIDEO_PARAM); 
-
-        m_pPrevSubmittedTaskEnc = 0;
-        m_pPrevSubmittedTaskPak = 0;
-
-        sts = FreeTasks(m_TasksEnc);
-        MFX_CHECK_STS(sts);
-
-        sts = FreeTasks(m_TasksPak);
-        MFX_CHECK_STS(sts);
-
-        return MFX_ERR_NONE;
-
-    }
-    mfxStatus TaskManagerHybridEncode::InitTaskEnc(mfxFrameSurface1* pSurface, mfxBitstream* pBitstream, TaskHybridDDI* & pOutTask)
-    {
-        mfxStatus sts = MFX_ERR_NONE;
-        TaskHybridDDI* pTask = GetFreeTask(m_TasksEnc);
-        sFrameEx* pRawFrame = 0;
-
-        MFX_CHECK(m_pCore!=0, MFX_ERR_NOT_INITIALIZED);
-        MFX_CHECK(pTask!=0,MFX_WRN_DEVICE_BUSY);
-
-        sts = m_RawFrames.GetFrame(pSurface, pRawFrame);
-        MFX_CHECK_STS(sts);              
-
-        sts = pTask->InitTask(pRawFrame,pBitstream,m_frameNum);
-        MFX_CHECK_STS(sts);
-
-        pOutTask = pTask;
-        m_frameNum ++;
-        return sts;
-    }
-    mfxStatus TaskManagerHybridEncode::SubmitTaskEnc(TaskHybridDDI*  pTask, sFrameParams *pParams)
-    {
-        sFrameEx* pRecFrame = 0;
-        sFrameEx* pDDIMBFrame = 0;
-        sFrameEx* pRawLocalFrame = 0;
-        mfxStatus sts = MFX_ERR_NONE;
-
-        MFX_CHECK(m_pCore!=0, MFX_ERR_NOT_INITIALIZED);
-
-        pRecFrame = m_ReconFramesEnc.GetFreeFrame();
-        MFX_CHECK(pRecFrame!=0,MFX_WRN_DEVICE_BUSY);
-
-        pDDIMBFrame = m_MBDataDDI.GetFreeFrame();
-        MFX_CHECK(pDDIMBFrame!=0,MFX_WRN_DEVICE_BUSY);
-
-        if (!m_bHWInput)
+        for (int i = bYblock ? 0 : 1;  i<25; i++)
         {
-            pRawLocalFrame = m_LocalRawFrames.GetFreeFrame();
-            MFX_CHECK(pRawLocalFrame!= 0,MFX_WRN_DEVICE_BUSY);
-        }            
-
-        sts = pTask->SubmitTask(pRecFrame,m_pPrevSubmittedTaskEnc,pParams, pRawLocalFrame,pDDIMBFrame);
-        MFX_CHECK_STS(sts);
-
-        return sts;          
+            printf("Block %s coeff:\n", blocks[i]);
+            for (int j = 0; j < 16; j++)
+            {
+                printf("%5d,", pBlock[i][j]);
+            }
+            printf("\n");
+        }
     }
 
-    mfxStatus TaskManagerHybridEncode::InitAndSubmitTaskPak(TaskHybridDDI* pTaskEnc, TaskHybrid * &pOutTaskPak)
-    {
-        mfxStatus sts = MFX_ERR_NONE;
-        sFrameEx* pRecFrame = 0;
-        sFrameEx* pRawLocalFrame = 0;
-
-        TaskHybrid* pTask = GetFreeTask(m_TasksPak);
-
-        MFX_CHECK(m_pCore!=0, MFX_ERR_NOT_INITIALIZED);
-        MFX_CHECK(pTask!=0,MFX_WRN_DEVICE_BUSY);
-        MFX_CHECK(pTaskEnc->isReady(),MFX_WRN_DEVICE_BUSY);
-
-        sts = pTask->InitTask(pTaskEnc->m_pRawFrame,pTaskEnc->m_pBitsteam, pTaskEnc->m_frameOrder);
-        MFX_CHECK_STS(sts);
-
-        pRecFrame = m_ReconFramesPak.GetFreeFrame();
-        MFX_CHECK(pRecFrame!=0,MFX_WRN_DEVICE_BUSY);
-
-        if (m_bHWInput)
-        {
-            pRawLocalFrame = m_LocalRawFrames.GetFreeFrame();
-            MFX_CHECK(pRawLocalFrame!= 0,MFX_WRN_DEVICE_BUSY);
-        }            
-
-        sts = pTask->SubmitTask(pRecFrame,m_pPrevSubmittedTaskPak,&pTaskEnc->m_sFrameParams, pRawLocalFrame);
-        MFX_CHECK_STS(sts);
-
-        pTask->m_MBData = pTaskEnc->m_MBData;
-
-        pOutTaskPak = pTask;
-        return sts;
-    }
-    mfxStatus TaskManagerHybridEncode::CompleteTasks(TaskHybridDDI* pTaskEnc, TaskHybrid * pTaskPak)
-    {
-        mfxStatus sts = MFX_ERR_NONE;
-
-        /*Copy reference frames*/
-        {
-            FrameLocker lockSrc(m_pCore, pTaskEnc->m_pRecFrame->pSurface->Data, false);
-            FrameLocker lockDst(m_pCore, pTaskPak->m_pRecFrame->pSurface->Data, false); 
-
-            sts = m_pCore->DoFastCopy(pTaskPak->m_pRecFrame->pSurface, pTaskEnc->m_pRecFrame->pSurface);
-            MFX_CHECK_STS(sts);
-        }  
-        sts = m_pPrevSubmittedTaskEnc->FreeTask();
-        MFX_CHECK_STS(sts);
-
-        m_pPrevSubmittedTaskEnc = pTaskEnc;
-
-        sts = m_pPrevSubmittedTaskPak->FreeTask();
-        MFX_CHECK_STS(sts);
-
-        m_pPrevSubmittedTaskPak = pTaskPak;
-
-        return sts;
-    }
-#endif
-
-    //---------------------------------------------------------
-    // Implementation via HybridPakDDIImpl
-    //---------------------------------------------------------
-    mfxStatus CopyMBData (TaskHybridDDI *pTask, VideoCORE * pCore)
-    {
-        FrameLocker lockSrc(pCore, pTask->m_pMBFrameDDI->pSurface->Data, false);
-        
-        // coping from MBFrameDDI into pTask->m_MBData (mapping from DDI MBdata into MediaSDK (C model))
-        // not implemented now
-
-        return MFX_ERR_UNSUPPORTED;    
-    }
     mfxStatus HybridPakDDIImpl::Init(mfxVideoParam * par)
     {
-        
+
         mfxStatus sts  = MFX_ERR_NONE;
-        mfxStatus sts1 = MFX_ERR_NONE; // to save warnings after parameters checking
+        mfxStatus sts1 = MFX_ERR_NONE; // to save warnings ater parameters checking
+
+#if defined (VP8_HYBRID_DUMP_WRITE)
+        m_bse_dump = fopen("dump_file","wb");
+#elif defined (VP8_HYBRID_DUMP_READ)
+        m_bse_dump = fopen("dump_file_vidyo1_QP_30","rb");
+#endif
+
+#if defined (VP8_HYBRID_DUMP_BS_INFO)
+        m_bs_info = fopen("bs_info","w");
+#endif
+
+#if defined (VP8_HYBRID_TIMING)
+        m_timings = fopen("timings.txt","a");
+        m_timingsPerFrame = fopen("timingsPerFrame.txt", "a");
+#endif
+
         m_video = *par;
-        {  
+        {
             mfxExtCodingOptionVP8*       pExtOpt    = GetExtBuffer(m_video);        
             mfxExtOpaqueSurfaceAlloc*    pExtOpaque = GetExtBuffer(m_video);
-      
+
             MFX_CHECK(CheckFrameSize(par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height),MFX_ERR_INVALID_VIDEO_PARAM);
 
-            sts1 = VP8_encoder::CheckParametersAndSetDefault(par,&m_video, pExtOpt, pExtOpaque, m_core->IsExternalFrameAllocator(),false);
-            MFX_CHECK(sts1 >= 0, sts1);   
+            sts1 = MFX_VP8ENC::CheckParametersAndSetDefault(par,&m_video, pExtOpt, pExtOpaque, m_core->IsExternalFrameAllocator(),false);
+            MFX_CHECK(sts1 >=0, sts1);
         }
-
-        m_ddi.reset(CreatePlatformVp8Encoder(m_core));
+        m_ddi.reset(CreatePlatformVp8Encoder( m_core));
         MFX_CHECK(m_ddi.get() != 0, MFX_WRN_PARTIAL_ACCELERATION);
-   
+
         sts = m_ddi->CreateAuxilliaryDevice(m_core,DXVA2_Intel_Encode_VP8, 
-                                            m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.Height);
+            m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.Height);
         MFX_CHECK(sts == MFX_ERR_NONE, MFX_WRN_PARTIAL_ACCELERATION);
 
         ENCODE_CAPS_VP8 caps = {0};
         sts = m_ddi->QueryEncodeCaps(caps);
-        MFX_CHECK(sts == MFX_ERR_NONE, MFX_WRN_PARTIAL_ACCELERATION);
+        if (sts != MFX_ERR_NONE)
+            return MFX_WRN_PARTIAL_ACCELERATION;
 
         sts = CheckVideoParam(m_video, caps);
-        MFX_CHECK_STS(sts);
+        MFX_CHECK(sts>=0,sts);
 
+#if !defined (VP8_HYBRID_DUMP_READ)
         sts = m_ddi->CreateAccelerationService(m_video);
         MFX_CHECK_STS(sts);
+#endif
 
-        mfxFrameAllocRequest reqMB      = { 0 };
-        mfxFrameAllocRequest reqMV      = { 0 };
-        mfxFrameAllocRequest reqDist    = { 0 };
+        mfxFrameAllocRequest reqMB     = { 0 };
+        mfxFrameAllocRequest reqDist   = { 0 };
+        mfxFrameAllocRequest reqSegMap = { 0 };
 
-        sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_MBDATA, reqMB);
-        MFX_CHECK_STS(sts);
-        sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_MOTIONVECTORBUFFER, reqMV);
-        MFX_CHECK_STS(sts);
-        sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_DISTORTIONDATA, reqDist);
-        MFX_CHECK_STS(sts);
-
-
-        sts = m_taskManager.Init(m_core,&m_video,
-                                 &reqMB.Info,&reqMV.Info,&reqDist.Info,reqMB.NumFrameSuggested);
+        // on Linux we should allocate recon surfaces first, and then create encoding context and use it for allocation of other buffers
+        // initialize task manager, including allocation of recon surfaces chain
+        sts = m_taskManager.Init(m_core,&m_video,m_ddi->GetReconSurfFourCC());
         MFX_CHECK_STS(sts);
 
+        // encoding device/context is created inside this Register() call
         sts = m_ddi->Register(m_taskManager.GetRecFramesForReg(), D3DDDIFMT_NV12);
         MFX_CHECK_STS(sts);
 
+        sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_MBDATA, reqMB, m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.Height);
+        MFX_CHECK_STS(sts);
+        sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_DISTORTIONDATA, reqDist, m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.Height);
+        if (sts == MFX_ERR_NONE)
+            reqDist.NumFrameMin = reqDist.NumFrameSuggested = (mfxU16)CalcNumSurfRecon(m_video);
+        sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_SEGMENTMAP, reqSegMap, m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.Height);
+        if (sts == MFX_ERR_NONE)
+            reqSegMap.NumFrameMin = reqSegMap.NumFrameSuggested = (mfxU16)CalcNumSurfRecon(m_video);
+
+#if defined (VP8_HYBRID_DUMP_WRITE_STRUCTS) // dump of MB data to file
+        fwrite(&(reqMB.Info), 1, sizeof(mfxFrameInfo), m_bse_dump);
+#elif defined (VP8_HYBRID_DUMP_READ) // read of MB data from file
+        fread(&reqMB.Info, 1, sizeof(reqMB.Info), m_bse_dump);
+#endif
+
+        sts = m_taskManager.AllocInternalResources(m_core,reqMB,reqDist,reqSegMap);
+        MFX_CHECK_STS(sts);
+
+        // [SE] Hack/WA for Windows hybrid VP8 HSW driver
+#if defined (MFX_VA_WIN)
+        memcpy(&(m_ddi->hackResponse), &(m_taskManager.m_MBDataDDI_hw.m_response), sizeof(mfxFrameAllocRequest));
+#endif
+
         sts = m_ddi->Register(m_taskManager.GetMBFramesForReg(), D3DDDIFMT_INTELENCODE_MBDATA);
         MFX_CHECK_STS(sts);
+        if (reqDist.NumFrameMin)
+        {
+            sts = m_ddi->Register(m_taskManager.GetDistFramesForReg(), D3DDDIFMT_INTELENCODE_DISTORTIONDATA);
+            MFX_CHECK_STS(sts);
+        }
+        if (reqSegMap.NumFrameMin)
+        {
+            sts = m_ddi->Register(m_taskManager.GetSegMapFramesForReg(), D3DDDIFMT_INTELENCODE_SEGMENTMAP);
+            MFX_CHECK_STS(sts);
+        }
 
-        sts = m_ddi->Register(m_taskManager.GetMVFramesForReg(), D3DDDIFMT_MOTIONVECTORBUFFER);
+        sts = m_BSE.Init(m_video);
         MFX_CHECK_STS(sts);
 
-        sts = m_ddi->Register(m_taskManager.GetDistFramesForReg(), D3DDDIFMT_INTELENCODE_DISTORTIONDATA);
-        MFX_CHECK_STS(sts);
-
-        sts = m_CModel.Init(m_video,CMODEL_VP8_ENCODER::BSP,m_core);
-        MFX_CHECK_STS(sts);
+#if defined (VP8_HYBRID_TIMING)
+        memset(&m_I,0,sizeof(m_I));
+        memset(&m_P,0,sizeof(m_I));
+        cpuFreq = 3500;
+        //TICK(cpuFreq)
+        //Sleep(1000);
+        //TOCK(cpuFreq);
+        //cpuFreq = cpuFreq / 1000000;
+#endif // VP8_HYBRID_TIMING
 
         return sts1;
     }
- 
+
     mfxStatus HybridPakDDIImpl::Reset(mfxVideoParam * par)
     {
         mfxStatus sts  = MFX_ERR_NONE;
         mfxStatus sts1 = MFX_ERR_NONE;
 
+        //printf("HybridPakDDIImpl::Reset\n");
+
         MFX_CHECK_NULL_PTR1(par);
         MFX_CHECK(par->IOPattern == m_video.IOPattern, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
@@ -748,21 +311,15 @@ namespace MFX_VP8ENC
             mfxExtCodingOptionVP8*       pExtOpt = GetExtBuffer(m_video);        
             mfxExtOpaqueSurfaceAlloc*    pExtOpaque = GetExtBuffer(m_video);
 
-            sts1 = VP8_encoder::CheckParametersAndSetDefault(par,&m_video, pExtOpt, pExtOpaque,m_core->IsExternalFrameAllocator(),true);
+            sts1 = MFX_VP8ENC::CheckParametersAndSetDefault(par,&m_video, pExtOpt, pExtOpaque,m_core->IsExternalFrameAllocator(),true);
             MFX_CHECK(sts1>=0, sts1);
         }
         sts = m_taskManager.Reset(&m_video);
         MFX_CHECK_STS(sts);
 
-        sts = m_CModel.Close();
-        MFX_CHECK_STS(sts);
-
-        sts = m_CModel.Init(m_video,CMODEL_VP8_ENCODER::BSP,m_core);
-        MFX_CHECK_STS(sts);
-
         sts = m_ddi->Reset(*par);
         MFX_CHECK_STS(sts);
-  
+
         return sts1;
     } 
 
@@ -771,14 +328,15 @@ namespace MFX_VP8ENC
         MFX_CHECK_NULL_PTR1(par);
         return MFX_VP8ENC::GetVideoParam(par,&m_video);
     } 
-        
 
-     mfxStatus HybridPakDDIImpl::EncodeFrameCheck( mfxEncodeCtrl *ctrl,
-                                            mfxFrameSurface1 *surface,
-                                            mfxBitstream *bs,
-                                            mfxFrameSurface1 ** /*reordered_surface*/,
-                                            mfxEncodeInternalParams * /*pInternalParams*/,
-                                            MFX_ENTRY_POINT *pEntryPoint)
+
+    mfxStatus HybridPakDDIImpl::EncodeFrameCheck( mfxEncodeCtrl *ctrl,
+        mfxFrameSurface1 *surface,
+        mfxBitstream *bs,
+        mfxFrameSurface1 ** /*reordered_surface*/,
+        mfxEncodeInternalParams * /*pInternalParams*/,
+        MFX_ENTRY_POINT pEntryPoints[],
+        mfxU32 &numEntryPoints)
 
 
     {
@@ -794,45 +352,77 @@ namespace MFX_VP8ENC
 
         MFX_CHECK(checkSts >= MFX_ERR_NONE, checkSts);
 
-        sts = m_taskManager.InitTask(surface,bs,pTask);
-        MFX_CHECK_STS(sts);        
+        {
+            UMC::AutomaticUMCMutex guard(m_taskMutex);
+            sts = m_taskManager.InitTask(surface,bs,pTask);
+            MFX_CHECK_STS(sts);
+        }
 
-        pEntryPoint->pState               = this;
-        pEntryPoint->pCompleteProc        = 0;
-        pEntryPoint->pGetSubTaskProc      = 0;
-        pEntryPoint->pCompleteSubTaskProc = 0;
-        pEntryPoint->requiredNumThreads   = 1;
-        pEntryPoint->pRoutineName         = "Encode Frame";
-        
-        pEntryPoint->pRoutine            = TaskRoutine;
-        pEntryPoint->pParam              = pTask;       
+        pEntryPoints[0].pState               = pEntryPoints[1].pState               = this;
+        pEntryPoints[0].pCompleteProc        = pEntryPoints[1].pCompleteProc        = 0;
+        pEntryPoints[0].pGetSubTaskProc      = pEntryPoints[1].pGetSubTaskProc      = 0;
+        pEntryPoints[0].pCompleteSubTaskProc = pEntryPoints[1].pCompleteSubTaskProc = 0;
+        pEntryPoints[0].requiredNumThreads   = pEntryPoints[1].requiredNumThreads   = 1;
+        pEntryPoints[0].pParam               = pEntryPoints[1].pParam               = pTask;
+
+        pEntryPoints[0].pRoutineName        = "Submit Frame";
+        pEntryPoints[0].pRoutine            = TaskRoutineSubmit;
+        pEntryPoints[1].pRoutineName        = "Query Frame";
+        pEntryPoints[1].pRoutine            = TaskRoutineQuery;
+
+        numEntryPoints = 2;
 
         return checkSts;
-    } 
-    mfxStatus HybridPakDDIImpl::TaskRoutine(  void * state,
-                                         void * param,
-                                         mfxU32 /*threadNumber*/,
-                                         mfxU32 /*callNumber*/)
-     {
+    }
+
+    mfxStatus HybridPakDDIImpl::TaskRoutineSubmit(  void * state,
+        void * param,
+        mfxU32 /*threadNumber*/,
+        mfxU32 /*callNumber*/)
+    {
         HybridPakDDIImpl &    impl = *(HybridPakDDIImpl *) state;
         Task *          task =  (Task *)param;
 
-         mfxStatus sts = impl.EncodeFrame(task);
-         MFX_CHECK_STS(sts);
+        mfxStatus sts = impl.SubmitFrame(task);
+        MFX_CHECK_STS(sts);
 
-         return MFX_TASK_DONE;
-     } 
+        return MFX_TASK_DONE;
+    }
 
-     mfxStatus HybridPakDDIImpl::EncodeFrame(Task *pTaskInput)
-     { 
+    mfxStatus HybridPakDDIImpl::TaskRoutineQuery(  void * state,
+        void * param,
+        mfxU32 /*threadNumber*/,
+        mfxU32 /*callNumber*/)
+    {
+        HybridPakDDIImpl &    impl = *(HybridPakDDIImpl *) state;
+        Task *          task =  (Task *)param;
+
+        mfxStatus sts = impl.QueryFrame(task);
+        MFX_CHECK_STS(sts);
+
+        return MFX_TASK_DONE;
+    }
+
+    mfxStatus HybridPakDDIImpl::SubmitFrame(Task *pTaskInput)
+    { 
         TaskHybridDDI       *pTask = (TaskHybridDDI*)pTaskInput;
         mfxStatus           sts = MFX_ERR_NONE;
         sFrameParams        frameParams={0};
         mfxFrameSurface1    *pSurface=0;
         bool                bExternalSurface = true;
 
-       
-        mfxHDLPair surfacePair = {0}; // D3D11        
+#if defined (VP8_HYBRID_TIMING)
+        mfxU8 frmTimingIdx = pTask->m_frameOrder % 2;
+
+        m_bsp[frmTimingIdx]            = 0;
+        m_fullFrame[frmTimingIdx]      = 0;
+        m_ddi->submit[frmTimingIdx]  = 0;
+        m_ddi->hwAsync[frmTimingIdx] = 0;
+
+        TICK(m_fullFrame[frmTimingIdx])
+#endif // VP8_HYBRID_TIMING
+
+        mfxHDLPair surfacePair = {0}; // D3D11
         mfxHDL     surfaceHDL = 0;// others
         mfxHDL *pSurfaceHdl = (mfxHDL *)&surfaceHDL;
 
@@ -842,13 +432,13 @@ namespace MFX_VP8ENC
         sts = SetFramesParams(&m_video,pTask->m_frameOrder, &frameParams);
         MFX_CHECK_STS(sts);
 
-        sts = m_taskManager.SubmitTask(pTask,&frameParams);
-        MFX_CHECK_STS(sts);
+        {
+            UMC::AutomaticUMCMutex guard(m_taskMutex);
+            sts = m_taskManager.SubmitTask(pTask,&frameParams);
+            MFX_CHECK_STS(sts);
+        }
 
         sts = pTask->GetInputSurface(pSurface, bExternalSurface);
-        MFX_CHECK_STS(sts);
-
-        sts = m_CModel.SetNextFrame(pSurface, bExternalSurface, pTask->m_sFrameParams,pTask->m_frameOrder);
         MFX_CHECK_STS(sts);
 
         sts = bExternalSurface ?
@@ -856,6 +446,7 @@ namespace MFX_VP8ENC
             m_core->GetFrameHDL(pSurface->Data.MemId, pSurfaceHdl);
         MFX_CHECK_STS(sts);
 
+#if !defined (VP8_HYBRID_DUMP_READ)
        if (MFX_HW_D3D11 == m_core->GetVAType())
         {
             MFX_CHECK(surfacePair.first != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -871,23 +462,133 @@ namespace MFX_VP8ENC
             MFX_CHECK(surfaceHDL != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
             sts = m_ddi->Execute(*pTask,  surfaceHDL);
         }
-        MFX_CHECK_STS(sts); 
+        MFX_CHECK_STS(sts);
+#endif
+        return sts;
+    }
 
-        sts = CopyMBData ((TaskHybridDDI *)pTask, m_core);
+    mfxStatus HybridPakDDIImpl::QueryFrame(Task *pTaskInput)
+    { 
+        TaskHybridDDI       *pTask = (TaskHybridDDI*)pTaskInput;
+        mfxStatus           sts = MFX_ERR_NONE;
+
+#if defined (VP8_HYBRID_TIMING)
+        mfxU8 frmTimingIdx = pTask->m_frameOrder % 2;
+#endif // VP8_HYBRID_TIMING
+
+        MBDATA_LAYOUT layout={0};
+#if !defined (VP8_HYBRID_DUMP_READ)
+        while ((sts = m_ddi->QueryStatus(*pTask) )== MFX_WRN_DEVICE_BUSY)
+        {
+            vm_time_sleep(0);
+        }
+        MFX_CHECK_STS(sts);
+#if defined (VP8_HYBRID_TIMING)
+        TOCK(m_ddi->hwAsync[frmTimingIdx])
+#endif // VP8_HYBRID_TIMING
+
+        MFX_CHECK_STS(m_ddi->QueryMBLayout(layout));
+#endif
+
+#if defined (VP8_HYBRID_TIMING)
+        TICK(m_bsp[frmTimingIdx])
+#endif // VP8_HYBRID_TIMING
+
+#if defined (VP8_HYBRID_DUMP_WRITE) // dump of MB data to file
+#if defined (VP8_HYBRID_DUMP_WRITE_STRUCTS)
+        fwrite(&layout, 1, sizeof(layout), m_bse_dump);
+#endif
+        m_bse_dump_size = pTask->ddi_frames.m_pMB_hw->pSurface->Info.Width * pTask->ddi_frames.m_pMB_hw->pSurface->Info.Height;
+        fwrite(&m_bse_dump_size, sizeof(m_bse_dump_size), 1, m_bse_dump);
+#elif defined (VP8_HYBRID_DUMP_READ)
+        fread(&layout, 1, sizeof(layout), m_bse_dump);
+        fread(&m_bse_dump_size, sizeof(m_bse_dump_size), 1, m_bse_dump);
+#endif
+
+        sts = m_BSE.SetNextFrame(0, 0, pTask->m_sFrameParams,pTask->m_frameOrder);
         MFX_CHECK_STS(sts);
 
-        sts = m_CModel.RunBSP(pTask->m_MBData,pTask->m_frameOrder==0, pTask->m_pBitsteam);
-        MFX_CHECK_STS(sts);
-        
+        //m_BSE.GetModeProbs(pTask->modeCosts);
+
+        m_BSE.RunBSP(pTask->m_frameOrder==0, pTask->m_pBitsteam, (TaskHybridDDI *)pTask, layout, m_core
+#if defined (VP8_HYBRID_DUMP_READ) || defined (VP8_HYBRID_DUMP_WRITE)
+            , m_bse_dump
+            , m_bse_dump_size
+#endif
+            );
+
+        pTask->m_pBitsteam->TimeStamp = pTask->m_timeStamp;
+        pTask->m_pBitsteam->FrameType = mfxU16(pTask->m_sFrameParams.bIntra ? MFX_FRAMETYPE_I : MFX_FRAMETYPE_P);
+
+#if defined (VP8_HYBRID_DUMP_BS_INFO)
+        fprintf(m_bs_info, "%u,%lu\n", pTask->m_sFrameParams.bIntra, pTask->m_pBitsteam->DataLength);
+#endif
+
         sts = pTask->CompleteTask();
+
+#if defined (VP8_HYBRID_TIMING)
+        TOCK(m_bsp[frmTimingIdx])
+        TOCK(m_fullFrame[frmTimingIdx])
+        if (pTask->m_frameOrder == 0)
+        {
+            if (m_timings)
+            {
+                fprintf(m_timings, "\n ,full frame, submit, hw async, bsp\n");
+                fprintf(m_timings, "1st I frame,");
+                FPRINT(cpuFreq, m_fullFrame[frmTimingIdx], m_timings)
+                FPRINT(cpuFreq, m_ddi->submit[frmTimingIdx], m_timings)
+                FPRINT(cpuFreq, m_ddi->hwAsync[frmTimingIdx], m_timings)
+                FPRINT(cpuFreq, m_bsp[frmTimingIdx], m_timings)
+            }
+            if (m_timingsPerFrame)
+            {
+                fprintf(m_timingsPerFrame, "\n ,full frame, submit, hw async, bsp\n");
+                fprintf(m_timingsPerFrame, "I %d (%d),", pTask->m_frameOrder, m_I.numFrames);
+            }
+        }
+        else
+        {
+            if (pTask->m_sFrameParams.bIntra)
+            {
+                // Intra
+                ACCUM(cpuFreq, m_fullFrame[frmTimingIdx], m_I.fullFrameMcs)
+                ACCUM(cpuFreq, m_ddi->submit[frmTimingIdx], m_I.submitFrameMcs)
+                ACCUM(cpuFreq, m_ddi->hwAsync[frmTimingIdx], m_I.hwAsyncMcs)
+                ACCUM(cpuFreq, m_bsp[frmTimingIdx], m_I.bspMcs)
+                if (m_timingsPerFrame)
+                    fprintf(m_timingsPerFrame, "I %d (%d),", pTask->m_frameOrder, m_I.numFrames);
+                m_I.numFrames ++;
+            }
+            else
+            {
+                ACCUM(cpuFreq, m_fullFrame[frmTimingIdx], m_P.fullFrameMcs)
+                ACCUM(cpuFreq, m_ddi->submit[frmTimingIdx], m_P.submitFrameMcs)
+                ACCUM(cpuFreq, m_ddi->hwAsync[frmTimingIdx], m_P.hwAsyncMcs)
+                ACCUM(cpuFreq, m_bsp[frmTimingIdx], m_P.bspMcs)
+                if (m_timingsPerFrame)
+                    fprintf(m_timingsPerFrame, "P %d (%d),", pTask->m_frameOrder, m_P.numFrames); 
+                m_P.numFrames ++;
+            }
+        }
+        if (m_timingsPerFrame)
+        {
+            FPRINT(cpuFreq, m_fullFrame[frmTimingIdx], m_timingsPerFrame)
+            FPRINT(cpuFreq, m_ddi->submit[frmTimingIdx], m_timingsPerFrame)
+            FPRINT(cpuFreq, m_ddi->hwAsync[frmTimingIdx], m_timingsPerFrame)
+            FPRINT(cpuFreq, m_bsp[frmTimingIdx], m_timingsPerFrame)
+        fprintf(m_timingsPerFrame, "\n");
+        }
+#endif // VP8_HYBRID_TIMING
+
         MFX_CHECK_STS(sts);
 
-        sts = m_CModel.FinishFrame();
-        MFX_CHECK_STS(sts);
+        {
+            UMC::AutomaticUMCMutex guard(m_taskMutex);
+            pTask->FreeTask();
+        }
 
         return sts;
-     } 
-
+    }
 }
 
 #endif // #if defined(MFX_ENABLE_VP8_VIDEO_ENCODE)

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -29,6 +29,8 @@
 mfxSchedulerCore::mfxSchedulerCore(void) :
 #if defined(_MSC_VER)
     m_timeWaitPeriod(1000000)
+#elif defined(LINUX32) && defined(SYHCHRONIZATION_BY_VA_SYNC_SURFACE)
+    m_timeWaitPeriod(0)
 #else // !defined(_MSC_VER)
     m_timeWaitPeriod(vm_time_get_frequency() / 1000)
 #endif // defined(_MSC_VER)
@@ -66,8 +68,13 @@ mfxSchedulerCore::mfxSchedulerCore(void) :
 
     m_hwEventCounter = 0;
 
-    m_timer_hw_event = MFX_THREAD_TIME_TO_WAIT; 
-    m_zero_thread_wait = 1; 
+    m_timer_hw_event = MFX_THREAD_TIME_TO_WAIT;
+
+#if defined(LINUX32) && defined(SYHCHRONIZATION_BY_VA_SYNC_SURFACE)
+    m_zero_thread_wait = MFX_THREAD_TIME_TO_WAIT;
+#else
+    m_zero_thread_wait = 1;
+#endif
 
 #if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)
@@ -273,9 +280,48 @@ void mfxSchedulerCore::WakeUpThreads(const mfxU32 curThreadNum,
             m_pTaskAdded[i].Set();
         }
     }
-
 } // void mfxSchedulerCore::WakeUpThreads(const mfxU32 curThreadNum,
 
+void mfxSchedulerCore::WakeUpNumThreads(mfxU32 numThreadsToWakeUp,
+                                        const mfxU32 curThreadNum)
+{
+#if defined(SYHCHRONIZATION_BY_VA_SYNC_SURFACE)
+    if (false == m_bQuit)
+    {
+        mfxU32 i;
+        // wake up the dedicated thread if there are 'dedicated' tasks
+        if (curThreadNum && m_numHwTasks)
+        {
+            m_pTaskAdded[0].Set();
+        }
+
+        if (numThreadsToWakeUp && m_numSwTasks)
+        {
+            for (i = 1; 0 < numThreadsToWakeUp && i < m_param.numberOfThreads; i++)
+            {
+                if (i != curThreadNum)
+                {
+                    m_pTaskAdded[i].Set();
+                    numThreadsToWakeUp--;
+                }
+            }
+        }
+    }
+    // the scheduler is going to be deleted, wake up all threads
+    else
+    {
+        mfxU32 i;
+
+        for (i = 0; i < m_param.numberOfThreads; i += 1)
+        {
+            m_pTaskAdded[i].Set();
+        }
+    }
+#else
+    numThreadsToWakeUp;
+    WakeUpThreads(curThreadNum);
+#endif
+} // void mfxSchedulerCore::WakeUpNumThreads(mfxU32 numThreadsToWakeUp,
 
 void mfxSchedulerCore::Wait(const mfxU32 curThreadNum)
 {

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2010-2013 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2010-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -293,6 +293,15 @@ mfxStatus mfxSchedulerCore::WrapUpTask(MFX_CALL_INFO &callInfo,
     {
         return MFX_ERR_NOT_FOUND;
     }
+#if defined(SYHCHRONIZATION_BY_VA_SYNC_SURFACE)
+        // or the dedicated thread tries to get a non-dedicated 'wait' task
+    if ((0 == threadNum) &&
+        !(MFX_TASK_DEDICATED & occupancyInfo.threadingPolicy) &&
+        (MFX_TASK_WAIT & occupancyInfo.threadingPolicy))
+    {
+        return MFX_ERR_NOT_FOUND;
+    }
+#endif
     callInfo.threadNum = GetFreeThreadNumber(occupancyInfo, pTask);
         // or there is no proper thread number
     if (MFX_INVALID_THREAD_NUMBER == callInfo.threadNum)
@@ -418,6 +427,7 @@ void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
                                          const mfxU32 threadNum)
 {
     bool wakeUpThreads = false;
+    mfxU32 requiredNumThreads;
     bool taskReleased = false;
     mfxU32 nTraceTaskId = 0;
 
@@ -642,13 +652,14 @@ void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
         }
 #endif // defined(MFX_SCHEDULER_LOG)
 
+        requiredNumThreads = GetNumResolvedSwTasks();
     }
     // leave the protected code section
 
     // wake up additional threads for this task and tasks dependent
     if (wakeUpThreads)
     {
-        WakeUpThreads(threadNum);
+        WakeUpNumThreads(requiredNumThreads, threadNum);
     }
 
     // wake up external threads waiting for a free task object
@@ -677,4 +688,31 @@ void mfxSchedulerCore::ResolveDependencyTable(MFX_SCHEDULER_TASK *pTask)
             m_pDependencyTable[idx].mfxRes = pTask->curStatus;
         }
     }
+}
+
+mfxU32 mfxSchedulerCore::GetNumResolvedSwTasks(void) const
+{
+    mfxU32 numResolvedTasks = 0;
+
+    mfxU32 priority;
+    for (priority = 0; priority < MFX_PRIORITY_NUMBER; priority += 1)
+    {
+        MFX_SCHEDULER_TASK *pTask = m_pTasks[priority][MFX_TYPE_SOFTWARE];
+
+        // run over the tasks with particular priority
+        while (pTask)
+        {
+            // if a task has not been done yet
+            if ((MFX_TASK_NEED_CONTINUE == pTask->curStatus) &&
+            // and dependencies are resolved
+                (true == pTask->IsDependenciesResolved()))
+            {
+                numResolvedTasks++;
+            }
+
+            pTask = pTask->pNext;
+        }
+    }
+
+    return numResolvedTasks;
 }

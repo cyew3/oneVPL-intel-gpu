@@ -52,6 +52,11 @@ File Name: libmfxsw_encode.cpp
 #include "mfx_vp8_encode.h"
 #endif
 
+#if defined (MFX_ENABLE_VP8_VIDEO_ENCODE_HW) && defined (MFX_VA)
+#include "mfx_vp8_encode_hw.h"
+#endif
+
+
 #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
 #if defined(MFX_VA_WIN)
 #include "mfx_mjpeg_encode_hw.h"
@@ -156,6 +161,15 @@ VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
 #if defined(MFX_ENABLE_VP8_VIDEO_ENCODE)
     case MFX_CODEC_VP8:
         pENCODE = new MFXVideoENCODEVP8(core, &mfxRes);  /*SW encoder only in this branch*/
+        break;
+#endif
+
+#if defined(MFX_VA) && defined(MFX_ENABLE_VP8_VIDEO_ENCODE_HW)
+    case MFX_CODEC_VP8:
+        if (session->m_bIsHWENCSupport)
+        {
+            pENCODE = new MFXHWVideoENCODEVP8(core, &mfxRes);
+        }
         break;
 #endif
 
@@ -293,6 +307,18 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
             break;
 #endif // MFX_ENABLE_VP8_VIDEO_ENCODE
 
+#if defined(MFX_VA) && defined(MFX_ENABLE_VP8_VIDEO_ENCODE_HW)
+        case MFX_CODEC_VP8:
+            mfxRes = MFXHWVideoENCODEVP8::Query(session->m_pCORE.get(), in, out);
+
+            if (MFX_WRN_PARTIAL_ACCELERATION != mfxRes)
+            {
+                bIsHWENCSupport = true;
+            }
+
+            break;
+#endif
+
 #if defined(MFX_ENABLE_MJPEG_VIDEO_ENCODE)
         case MFX_CODEC_JPEG:
 #if defined(MFX_VA_WIN)
@@ -423,6 +449,16 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
             mfxRes = MFXVideoENCODEVP8::QueryIOSurf(par, request);
             break;
 #endif // MFX_ENABLE_VP8_VIDEO_ENCODE
+
+#if defined(MFX_VA) && defined(MFX_ENABLE_VP8_VIDEO_ENCODE_HW)
+        case MFX_CODEC_VP8:
+            mfxRes = MFXHWVideoENCODEVP8::QueryIOSurf(session->m_pCORE.get(), par, request);
+            if (MFX_WRN_PARTIAL_ACCELERATION != mfxRes)
+            {
+                bIsHWENCSupport = true;
+            }
+            break;
+#endif
 
 
 #if defined(MFX_ENABLE_MJPEG_VIDEO_ENCODE)
@@ -743,7 +779,12 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
                 task.pOwner = session->m_pENCODE.get();
                 task.entryPoint = entryPoints[1];
                 task.priority = session->m_priority;
-                task.threadingPolicy = MFX_TASK_THREADING_DEDICATED_WAIT;
+#if defined(SYHCHRONIZATION_BY_VA_SYNC_SURFACE)
+                if (MFX_HW_VAAPI == session->m_pCORE->GetVAType())
+                    task.threadingPolicy = MFX_TASK_THREADING_WAIT;
+                else
+#endif
+                    task.threadingPolicy = MFX_TASK_THREADING_DEDICATED_WAIT;
                 // fill dependencies
                 task.pSrc[0] = entryPoints[0].pParam;
                 task.pDst[0] = bs;

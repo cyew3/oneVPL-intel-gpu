@@ -136,6 +136,7 @@
     <ClCompile Include="src\mfx_mpeg2_encode_d3d11.cpp" />
     <ClCompile Include="src\mfx_mpeg2_encode_d3d9.cpp" />
     <ClCompile Include="src\mfx_mpeg2_encode_factory.cpp" />
+    <ClCompile Include="src\mfx_vp8_enc_common_hw.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\encoder_ddi.hpp" />
@@ -149,6 +150,7 @@
     <ClInclude Include="include\mfx_mpeg2_encode_d3d11.h" />
     <ClInclude Include="include\mfx_mpeg2_encode_d3d9.h" />
     <ClInclude Include="include\mfx_mpeg2_encode_interface.h" />
+    <ClInclude Include="include\mfx_vp8_enc_common_hw.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

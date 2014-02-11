@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -59,6 +59,7 @@ protected:
             mfxU16    *  pTargetUInt16;
             mfxU8     *  pTargetUInt8;
             mfxI16    *  pTargetInt16;
+            mfxI8     *  pTargetInt8;
             mfxF64    *  pTargetF64;
             bool      *  pTargetBool;
         };
@@ -81,6 +82,8 @@ protected:
     MFXExtBufferPtr<mfxExtDumpFiles>   m_extDumpFiles;
     MFXExtBufferPtr<mfxExtVideoSignalInfo> m_extVideoSignalInfo;
     MFXExtBufferPtr<mfxExtCodingOptionHEVC>  m_extCodingOptionsHEVC;
+    MFXExtBufferPtr<mfxExtCodingOptionVP8Param>  m_extCodingOptionsVP8Param;
+    MFXExtBufferPtr<mfxExtEncoderROI>  m_extEncoderRoi;
 
     //lync support
     MFXExtBufferPtr<mfxExtCodingOptionSPSPPS> m_extCodingOptionsSPSPPS;

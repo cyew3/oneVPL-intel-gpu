@@ -23,6 +23,8 @@
 #include <string>
 #include <stdexcept> /* for std exceptions on Linux/Android */
 
+//#define SYHCHRONIZATION_BY_VA_SYNC_SURFACE
+
 #if defined(_WIN32) || defined(_WIN64)
     #include <windows.h>
 #else
@@ -131,6 +133,7 @@
 // vp8
 //#ifndef MFX_VA
 //#define MFX_ENABLE_VP8_VIDEO_ENCODE
+#define MFX_ENABLE_VP8_VIDEO_ENCODE_HW
 #define MFX_ENABLE_VP8_VIDEO_PAK
 //#endif
 //#define MFX_ENABLE_VP8_VIDEO_DECODE
@@ -242,6 +245,7 @@
     #undef MFX_ENABLE_IMAGE_STABILIZATION_VPP
     #undef MFX_ENABLE_VPP
     #undef MFX_ENABLE_H264_VIDEO_ENCODE_HW
+    #undef MFX_ENABLE_VP8_VIDEO_ENCODE_HW
     #undef MFX_ENABLE_MPEG2_VIDEO_ENCODE_HW
     #undef MFX_ENABLE_MVC_VIDEO_ENCODE_HW
     #undef MFX_ENABLE_USER_DECODE

@@ -4,31 +4,97 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_VP8_VIDEO_ENCODE) && defined(MFX_VA)
+#if defined(MFX_ENABLE_VP8_VIDEO_ENCODE_HW) && defined(MFX_VA)
 
 #ifndef _MFX_VP8_ENCODE_UTILS_HW_H_
 #define _MFX_VP8_ENCODE_UTILS_HW_H_
+
+//#define VP8_HYBRID_CPUPAK
+//#define VP8_HYBRID_DUMP_BS_INFO
+//#define VP8_HYBRID_DUMP_WRITE
+//#define VP8_HYBRID_DUMP_READ
+#if defined (VP8_HYBRID_DUMP_WRITE)
+//#define VP8_HYBRID_DUMP_WRITE_STRUCTS
+#endif
+//#define VP8_HYBRID_TIMING
+
+#include "umc_mutex.h"
+
+#define LOG_TO_FILE_INT(str, arg) { \
+    FILE * outputfile = fopen("hang_log.txt", "a"); \
+    fprintf(outputfile, str, arg); \
+    fclose(outputfile); \
+    }
+
+#define LOG_TO_FILE(str) { \
+    FILE * outputfile = fopen("hang_log.txt", "a"); \
+    fprintf(outputfile, str); \
+    fclose(outputfile); \
+    }
+
+#define OPEN_LOG_FILE { \
+    FILE * outputfile = fopen("hang_log.txt", "w"); \
+    fclose(outputfile); \
+    }
+
+#if defined(_WIN32) || defined(_WIN64)
+  #define VPX_FORCEINLINE __forceinline
+  #define VPX_NONLINE __declspec(noinline)
+  #define VPX_FASTCALL __fastcall
+  #define ALIGN_DECL(X) __declspec(align(X))
+#else
+  #define VPX_FORCEINLINE __attribute__((always_inline)) inline
+  #define VPX_NONLINE __attribute__((noinline))
+  #define VPX_FASTCALL
+  #define ALIGN_DECL(X) __attribute__ ((aligned(X)))
+#endif
+
+
+#if defined (VP8_HYBRID_TIMING)
+#if defined (MFX_VA_WIN)
+#include <intrin.h>     // for __rdtsc()
+#elif defined (MFX_VA_LINUX)
+static unsigned long long __rdtsc(void)
+{
+    unsigned hi, lo;
+    __asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
+    return ( (unsigned long long)lo)|( ((unsigned long long)hi)<<32 );
+}
+#endif
+
+// timing code
+#define TICK(ts)  { ts = __rdtsc(); } 
+#define TOCK(ts) { ts = (__rdtsc() - ts);}
+//#define PRINT(N,ts) { printf(#ts " time =%4.0f mcs\n ", ts / (double)(N)); fflush(0); }
+#define PRINT(N,ts) { printf(" %4.0f,", ts / (double)(N)); fflush(0); }
+#define FPRINT(N,ts,file) { fprintf(file, "%4.0f,", ts / (double)(N));}
+#define ACCUM(N,ts,ts_accum) { ts_accum += (ts / (double)(N));}
+#endif // VP8_HYBRID_TIMING
 
 #include <vector>
 #include <memory>
 
 #include "mfxstructures.h"
 #include "mfx_enc_common.h"
+#include "mfx_ext_buffers.h"
 
 namespace MFX_VP8ENC
 {
 
-    struct sFrameParams
+    typedef struct _sFrameParams
     {
-        bool    bIntra;
-        bool    bGold;
-        bool    bAltRef;
-    };
+        mfxU8    bIntra;
+        mfxU8    bGold;
+        mfxU8    bAltRef;
+        mfxU8    LFType;    //Loop filter type [0, 1]
+        mfxU8    LFLevel;   //Loop filter level [0,63]
+        mfxU8    Sharpness; //[0,7]
+    } sFrameParams;
 
     enum eTaskStatus
     {
@@ -64,13 +130,18 @@ namespace MFX_VP8ENC
 
     inline mfxStatus LockSurface(sFrameEx*  pFrame, VideoCORE* pCore)
     {
+        //printf("LockSurface: ");
+        //if (pFrame) printf("%d\n",pFrame->idInPool); else printf("\n");
         return (pFrame) ? pCore->IncreaseReference(&pFrame->pSurface->Data) : MFX_ERR_NONE; 
     }
     inline mfxStatus FreeSurface(sFrameEx* &pFrame, VideoCORE* pCore)
     {        
         mfxStatus sts = MFX_ERR_NONE;
-        if (pFrame)
+        //printf("FreeSurface\n");
+        //if (pFrame) printf("%d\n",pFrame->idInPool); else printf("\n");
+        if (pFrame && pFrame->pSurface)
         {
+            //printf("DecreaseReference\n");
             sts = pCore->DecreaseReference(&pFrame->pSurface->Data);
             pFrame = 0;
         }
@@ -78,6 +149,7 @@ namespace MFX_VP8ENC
     }
     inline bool isFreeSurface (sFrameEx* pFrame)
     {
+        //printf("isFreeSurface %d (%d)\n", pFrame->pSurface->Data.Locked, pFrame->idInPool);
         return (pFrame->pSurface->Data.Locked == 0);
     }
     
@@ -99,6 +171,7 @@ namespace MFX_VP8ENC
 
     inline mfxU32 CalcNumSurfRecon(mfxVideoParam const & video)
     {
+        //printf(" CalcNumSurfRecon %d (%d)\n", 3 + CalcNumTasks(video), CalcNumTasks(video));
         return 3 + CalcNumTasks(video);
     }
     inline mfxU32 CalcNumMB(mfxVideoParam const & video)
@@ -132,10 +205,28 @@ namespace MFX_VP8ENC
 
 
     /*------------------------ Utils------------------------------------------------------------------------*/
+    
+#define MFX_CHECK_WITH_ASSERT(EXPR, ERR) { assert(EXPR); MFX_CHECK(EXPR, ERR); }
+#define STATIC_ASSERT(ASSERTION, MESSAGE) char MESSAGE[(ASSERTION) ? 1 : -1]; MESSAGE    
 
     template<class T> inline void Zero(T & obj)                { memset(&obj, 0, sizeof(obj)); }
     template<class T> inline void Zero(std::vector<T> & vec)   { memset(&vec[0], 0, sizeof(T) * vec.size()); }
     template<class T> inline void Zero(T * first, size_t cnt)  { memset(first, 0, sizeof(T) * cnt); }
+    template<class T> inline bool Equal(T const & lhs, T const & rhs) { return memcmp(&lhs, &rhs, sizeof(T)) == 0; }
+    template<class T, class U> inline void Copy(T & dst, U const & src)
+    {
+        STATIC_ASSERT(sizeof(T) == sizeof(U), copy_objects_of_different_size);
+        memcpy(&dst, &src, sizeof(dst));
+    }
+    template<class T> inline T & RemoveConst(T const & t) { return const_cast<T &>(t); }
+    template<class T> inline T * RemoveConst(T const * t) { return const_cast<T *>(t); }
+    template<class T, size_t N> inline T * Begin(T(& t)[N]) { return t; }
+    template<class T, size_t N> inline T * End(T(& t)[N]) { return t + N; }
+    template<class T, size_t N> inline size_t SizeOf(T(&)[N]) { return N; }
+    template<class T> inline T const * Begin(std::vector<T> const & t) { return &*t.begin(); }
+    template<class T> inline T const * End(std::vector<T> const & t) { return &*t.begin() + t.size(); }
+    template<class T> inline T * Begin(std::vector<T> & t) { return &*t.begin(); }
+    template<class T> inline T * End(std::vector<T> & t) { return &*t.begin() + t.size(); }
 
     /* copied from H.264 */
     //-----------------------------------------------------
@@ -146,6 +237,8 @@ namespace MFX_VP8ENC
 #define BIND_EXTBUF_TYPE_TO_ID(TYPE, ID) template<> struct ExtBufTypeToId<TYPE> { enum { id = ID }; }
     BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOptionVP8,  MFX_EXTBUFF_VP8_EX_CODING_OPT            );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtOpaqueSurfaceAlloc,MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOptionVP8Param,MFX_EXTBUFF_VP8_PARAM);
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtEncoderROI,MFX_EXTBUFF_ENCODER_ROI);
 #undef BIND_EXTBUF_TYPE_TO_ID
 
     template <class T> inline void InitExtBufHeader(T & extBuf)
@@ -153,6 +246,41 @@ namespace MFX_VP8ENC
         Zero(extBuf);
         extBuf.Header.BufferId = ExtBufTypeToId<T>::id;
         extBuf.Header.BufferSz = sizeof(T);
+    }
+
+    template <> inline void InitExtBufHeader<mfxExtCodingOptionVP8Param>(mfxExtCodingOptionVP8Param & extBuf)
+    {
+        Zero(extBuf);
+        extBuf.Header.BufferId = ExtBufTypeToId<mfxExtCodingOptionVP8Param>::id;
+        extBuf.Header.BufferSz = sizeof(mfxExtCodingOptionVP8Param);
+
+        // align with hardcoded parameters that were used before
+        extBuf.NumPartitions = 1;
+        for (mfxU8 i = 0; i < 4; i ++)
+            extBuf.LoopFilterLevel[i] = 10;
+    }
+
+    // temporal application of nonzero defaults to test ROI for VP8
+    // TODO: remove this when testing os finished
+    template <> inline void InitExtBufHeader<mfxExtEncoderROI>(mfxExtEncoderROI & extBuf)
+    {
+        Zero(extBuf);
+        extBuf.Header.BufferId = ExtBufTypeToId<mfxExtEncoderROI>::id;
+        extBuf.Header.BufferSz = sizeof(mfxExtEncoderROI);
+
+        // no default ROI
+        /*extBuf.NumROI = 2;
+        extBuf.ROI[0].Left     = 16;
+        extBuf.ROI[0].Right    = 128;
+        extBuf.ROI[0].Top      = 16;
+        extBuf.ROI[0].Bottom   = 128;
+        extBuf.ROI[0].Priority = 0;
+
+        extBuf.ROI[1].Left     = 64;
+        extBuf.ROI[1].Right    = 256;
+        extBuf.ROI[1].Top      = 64;
+        extBuf.ROI[1].Bottom   = 256;
+        extBuf.ROI[1].Priority = 0;*/
     }
 
     template <class T> struct GetPointedType {};
@@ -296,9 +424,11 @@ namespace MFX_VP8ENC
 
 
     private:
-        mfxExtBuffer *              m_extParam[2];
+        mfxExtBuffer *              m_extParam[4];
         mfxExtCodingOptionVP8       m_extOpt;        
-        mfxExtOpaqueSurfaceAlloc    m_extOpaque; 
+        mfxExtOpaqueSurfaceAlloc    m_extOpaque;
+        mfxExtCodingOptionVP8Param  m_extVP8Params;
+        mfxExtEncoderROI            m_extROI;
     };
     
 
@@ -315,13 +445,18 @@ namespace MFX_VP8ENC
 
     class InternalFrames
     {
-    protected:    
+    // [SE] WA for Windows hybrid VP8 HSW driver
+#if defined (MFX_VA_WIN)
+    public:
+#elif defined (MFX_VA_LINUX)
+    protected:
+#endif
         std::vector<sFrameEx>           m_frames;
         MfxFrameAllocResponse           m_response;
         std::vector<mfxFrameSurface1>   m_surfaces;
     public:
         InternalFrames() {}
-        mfxStatus Init(VideoCORE *pCore, mfxFrameInfo *pFrameInfo, mfxU32 nFrames, bool bHW);
+        mfxStatus Init(VideoCORE *pCore, mfxFrameAllocRequest *pAllocReq, bool bHW);
         sFrameEx * GetFreeFrame();
         mfxStatus  GetFrame(mfxU32 numFrame, sFrameEx * &Frame);
 
@@ -346,7 +481,7 @@ namespace MFX_VP8ENC
 
         eTaskStatus          m_status;
         sFrameEx            *m_pRawFrame;
-        sFrameEx            *m_pRawLocalFrame;        
+        sFrameEx            *m_pRawLocalFrame;
         mfxBitstream        *m_pBitsteam;
         VideoCORE           *m_pCore;
 
@@ -355,6 +490,7 @@ namespace MFX_VP8ENC
         sFrameEx            *m_pRecRefFrames[3];
         bool                 m_bOpaqInput;
         mfxU32              m_frameOrder;
+        mfxU64              m_timeStamp;
 
 
     protected:
@@ -392,7 +528,7 @@ namespace MFX_VP8ENC
                               mfxBitstream *pBitsteam,
                               mfxU32        frameOrder);
           virtual
-          mfxStatus SubmitTask (sFrameEx*  pRecFrame, Task* pPrevTask, sFrameParams* pParams, sFrameEx* pRawLocalFrame);
+          mfxStatus SubmitTask (sFrameEx*  pRecFrame, sFrameEx ** dpb, sFrameParams* pParams, sFrameEx* pRawLocalFrame);
  
           inline mfxStatus CompleteTask ()
           {
@@ -406,6 +542,7 @@ namespace MFX_VP8ENC
 
           virtual 
           mfxStatus FreeTask();
+          mfxStatus FreeDPBSurfaces();
 
           inline bool isFreeTask()
           {
@@ -418,7 +555,7 @@ namespace MFX_VP8ENC
     template <class TTask>
     inline TTask* GetFreeTask(std::vector<TTask> & tasks)
     {
-        std::vector<TTask>::iterator task = tasks.begin();
+        typename std::vector<TTask>::iterator task = tasks.begin();
         for (;task != tasks.end(); task ++)
         {
             if (task->isFreeTask())
@@ -432,7 +569,7 @@ namespace MFX_VP8ENC
     inline mfxStatus FreeTasks(std::vector<TTask> & tasks)
     {
         mfxStatus sts = MFX_ERR_NONE;
-        std::vector<TTask>::iterator task = tasks.begin();
+        typename std::vector<TTask>::iterator task = tasks.begin();
         for (;task != tasks.end(); task ++)
         {
             if (!task->isFreeTask())
@@ -461,7 +598,8 @@ namespace MFX_VP8ENC
         InternalFrames  m_ReconFrames;
 
         std::vector<TTask>  m_Tasks;
-        Task*               m_pPrevSubmittedTask;
+        sFrameEx*           m_dpb[3];
+
         mfxU32              m_frameNum;
 
 
@@ -470,16 +608,17 @@ namespace MFX_VP8ENC
           m_bHWFrames(false),
           m_bHWInput(false),
           m_pCore(0),
-          m_pPrevSubmittedTask(0),
           m_frameNum(0)
-          {}
+        {
+            memset(m_dpb, 0, sizeof(m_dpb));
+        }
 
           ~TaskManager()
           {
             FreeTasks(m_Tasks);
           }
 
-          mfxStatus Init(VideoCORE* pCore, mfxVideoParam *par, bool bHWImpl)
+          mfxStatus Init(VideoCORE* pCore, mfxVideoParam *par, bool bHWImpl, mfxU32 reconFourCC)
           {
               mfxStatus sts = MFX_ERR_NONE;
 
@@ -487,20 +626,28 @@ namespace MFX_VP8ENC
 
               m_pCore   = pCore;
               m_video   = *par;
-              m_bHWFrames = bHWImpl;              
-              m_bHWInput = isVideoSurfInput(m_video);              
-              m_pPrevSubmittedTask = 0;
+              m_bHWFrames = bHWImpl;
+              m_bHWInput = isVideoSurfInput(m_video);
+
+              memset(m_dpb, 0, sizeof(m_dpb));
+
               m_frameNum = 0;
 
-              m_RawFrames.Init(); 
+              m_RawFrames.Init();
 
-              sts = m_LocalRawFrames.Init(m_pCore, &m_video.mfx.FrameInfo, 
-                  CalcNumSurfRawLocal(m_video, bHWImpl, m_bHWInput), 
-                  m_bHWFrames);
+              mfxFrameAllocRequest request     = { 0 };
+              request.Info = m_video.mfx.FrameInfo;
+              request.NumFrameMin = request.NumFrameSuggested = (mfxU16)CalcNumSurfRawLocal(m_video, bHWImpl, m_bHWInput);
+
+              sts = m_LocalRawFrames.Init(m_pCore, &request, m_bHWFrames);
               MFX_CHECK_STS(sts);
 
-              sts = m_ReconFrames.Init(m_pCore, &m_video.mfx.FrameInfo, CalcNumSurfRecon(m_video), m_bHWFrames);
+              request.NumFrameMin = request.NumFrameSuggested = (mfxU16)CalcNumSurfRecon(m_video);
+              request.Info.FourCC = reconFourCC;
+
+              sts = m_ReconFrames.Init(m_pCore, &request, m_bHWFrames);
               MFX_CHECK_STS(sts);
+              //printf("m_ReconFrames.Init: %d\n", m_ReconFrames.Num());
 
               {
                   mfxU32 numTasks = CalcNumTasks(m_video);
@@ -512,6 +659,7 @@ namespace MFX_VP8ENC
                       MFX_CHECK_STS(sts);
                   }
               }
+              //printf("m_ReconFrames.Init - 2: %d\n", m_ReconFrames.Num());
               return sts;          
           }
           mfxStatus Reset(mfxVideoParam *par)
@@ -528,7 +676,8 @@ namespace MFX_VP8ENC
               MFX_CHECK(mfxU16(CalcNumSurfRawLocal(m_video,m_bHWFrames,isVideoSurfInput(m_video))) <= m_LocalRawFrames.Num(),MFX_ERR_INCOMPATIBLE_VIDEO_PARAM); 
               MFX_CHECK(mfxU16(CalcNumSurfRecon(m_video)) <= m_ReconFrames.Num(),MFX_ERR_INCOMPATIBLE_VIDEO_PARAM); 
 
-              m_pPrevSubmittedTask = 0;
+              memset(m_dpb, 0, sizeof(m_dpb));
+
               sts = FreeTasks(m_Tasks);
 
               MFX_CHECK_STS(sts);              
@@ -540,14 +689,21 @@ namespace MFX_VP8ENC
               Task*     pTask = GetFreeTask(m_Tasks);
               sFrameEx* pRawFrame = 0;
 
+              //printf("Init frame\n");
+
               MFX_CHECK(m_pCore!=0, MFX_ERR_NOT_INITIALIZED);
               MFX_CHECK(pTask!=0,MFX_WRN_DEVICE_BUSY);
 
               sts = m_RawFrames.GetFrame(pSurface, pRawFrame);
-              MFX_CHECK_STS(sts);              
+              MFX_CHECK_STS(sts);  
+
+              //printf("Init frame - 1\n");
 
               sts = pTask->InitTask(pRawFrame,pBitstream, m_frameNum);
+              pTask->m_timeStamp =pSurface->Data.TimeStamp;
               MFX_CHECK_STS(sts);
+
+              //printf("Init frame - End\n");
 
               pOutTask = pTask;
 
@@ -557,6 +713,7 @@ namespace MFX_VP8ENC
           }
           mfxStatus SubmitTask(Task*  pTask, sFrameParams *pParams)
           {
+#if 0 // this implementation isn't used for hybrid - disable it's code (start)
               sFrameEx* pRecFrame = 0;
               sFrameEx* pRawLocalFrame = 0;
               mfxStatus sts = MFX_ERR_NONE;
@@ -572,18 +729,12 @@ namespace MFX_VP8ENC
                   MFX_CHECK(pRawLocalFrame!= 0,MFX_WRN_DEVICE_BUSY);
               }            
 
-              sts = pTask->SubmitTask(pRecFrame,m_pPrevSubmittedTask,pParams, pRawLocalFrame);
+              sts = pTask->SubmitTask(pRecFrame,m_dpb,pParams, pRawLocalFrame);
               MFX_CHECK_STS(sts);
 
-              if (m_pPrevSubmittedTask)
-              {
-                sts = m_pPrevSubmittedTask->FreeTask();
-                MFX_CHECK_STS(sts);
-              }
-
-              m_pPrevSubmittedTask = pTask;
-
-              return sts;          
+              return sts;
+#endif // this implementation isn't used for hybrid - disable it's code (end)
+              return MFX_ERR_NONE;
           }         
 
     }; 

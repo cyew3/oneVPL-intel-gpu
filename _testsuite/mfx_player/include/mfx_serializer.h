@@ -532,6 +532,26 @@ protected:
     virtual void ConstructValues () const;
 };
 
+
+template<>
+class MFXStructureRef <mfxExtCodingOptionVP8Param>
+    : public MFXStructureBase<mfxExtCodingOptionVP8Param>
+{
+public:
+    MFXStructureRef(mfxExtBuffer & refStruct, int flags = 0)
+        : MFXStructureBase<mfxExtCodingOptionVP8Param>((mfxExtCodingOptionVP8Param &)refStruct, flags)
+    {
+    }
+
+    MFXStructureRef(mfxExtCodingOptionVP8Param & refStruct, int flags = 0)
+        :MFXStructureBase<mfxExtCodingOptionVP8Param>(refStruct, flags)
+    {
+    }
+
+protected:
+    virtual void ConstructValues () const;
+};
+
 template<>
 class MFXStructureRef <mfxFrameInfo>
     : public MFXStructureBase<mfxFrameInfo>

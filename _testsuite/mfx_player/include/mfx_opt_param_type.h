@@ -19,6 +19,7 @@ enum OptParamType
     OPT_INT_32,
     OPT_INT_16,
     OPT_UINT_8,
+    OPT_INT_8,
     OPT_UINT_16,
     OPT_UINT_32,
     OPT_UINT_64,

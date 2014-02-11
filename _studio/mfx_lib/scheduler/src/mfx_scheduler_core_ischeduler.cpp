@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2010-2013 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2010-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -622,6 +622,7 @@ mfxStatus mfxSchedulerCore::AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoi
     MFX_LTRACE_1(MFX_TRACE_LEVEL_SCHED, "^Enqueue^", "%d", task.nTaskId);
 #endif
     Ipp32u numThreads;
+    mfxU32 requiredNumThreads;
 
 #if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)
@@ -790,11 +791,12 @@ mfxStatus mfxSchedulerCore::AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoi
         // increment the number of available tasks
         (MFX_TASK_DEDICATED & task.threadingPolicy) ? (m_numHwTasks += 1) : (m_numSwTasks += 1);
 
+        requiredNumThreads = GetNumResolvedSwTasks();
         // leave the protected section
     }
 
-    // if there are some waiting threads, then wake them up
-    WakeUpThreads();
+    // if there are tasks for waiting threads, then wake up these threads
+    WakeUpNumThreads(requiredNumThreads, (mfxU32)MFX_INVALID_THREAD_ID);
 
     return MFX_ERR_NONE;
 

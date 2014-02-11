@@ -127,8 +127,7 @@ typedef enum tagENCODE_FUNC
     ENCODE_ENC        = 0x0001,
     ENCODE_PAK        = 0x0002,
     ENCODE_ENC_PAK    = 0x0004,
-    ENCODE_EFE        = 0x0008,   // reserved for now
-    ENCODE_HybridPAK  = 0x0010,    // new for VP8
+    ENCODE_HybridPAK  = 0x0008,
     ENCODE_WIDI       = 0x8000
 } ENCODE_FUNC;
 
@@ -1598,7 +1597,6 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_VP8
     USHORT wFrameHeightScale:    2;
 
     USHORT GopPicSize; 
-    UCHAR  GopRefDist; 
    
     UCHAR TargetUsage; 
     UCHAR RateControlMethod; 
@@ -1665,29 +1663,29 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_VP8
 
             UINT mb_no_coeff_skip         : 1; 
             UINT forced_lf_adjustment     : 1;
-            UINT                          : 6; 
+            UINT ref_frame_ctrl           : 3;
+            UINT                          : 3; 
         }; 
     }; 
-    
+
     CHAR    loop_filter_level[4]; 
     CHAR    ref_lf_delta[4]; 
     CHAR    mode_lf_delta[4]; 
     UCHAR   sharpness_level;
     USHORT  RefFrameCost[4];
+    UINT    StatusReportFeedbackNumber;
+    UCHAR   ClampQindexHigh;
+    UCHAR   ClampQindexLow;
+
      
 } ENCODE_SET_PICTURE_PARAMETERS_VP8;
 
 
-typedef struct tagENCODE_SET_Qmatrix_VP8 
-{ 
-    USHORT Qvalue[4][6]; 
-} ENCODE_SET_Qmatrix_VP8;
-
-
-typedef struct tagENCODE_MB_CODE_VP8 
-{ 
-    UINT MBdata[218]; 
-} ENCODE_MB_DATA_VP8;
+typedef struct tagENCODE_SET_QUANT_DATA_VP8
+{
+    UCHAR    QIndex[4];
+    CHAR     QIndexDelta[5];
+}ENCODE_SET_QUANT_DATA_VP8;
 
 #endif /* defined(_WIN32) || defined(_WIN64) */
 #endif /* _ENCODER_DDI_HPP_ */

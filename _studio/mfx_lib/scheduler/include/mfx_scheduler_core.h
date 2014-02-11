@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -23,6 +23,8 @@
 #include <umc_semaphore.h>
 #include <umc_event.h>
 #include <umc_array.h>
+
+#include "mfx_common.h"
 
 // set the following define to let the scheduler write log file
 // with all its activities.
@@ -232,6 +234,11 @@ protected:
     // Wake up all internal threads, except the pointed one
     void WakeUpThreads(const mfxU32 curThreadNum = (mfxU32) MFX_INVALID_THREAD_ID,
                        const eWakeUpReason reason = MFX_SCHEDULER_NEW_TASK);
+
+    // Wake up the dedicated thread plus a number of non-dedicated threads, except the pointed one
+    void WakeUpNumThreads(mfxU32 numThreadsToWakeUp,
+                          const mfxU32 curThreadNum = (mfxU32) MFX_INVALID_THREAD_ID);
+
     // Wait until the scheduler got more work
     void Wait(const mfxU32 curThreadNum);
 
@@ -279,6 +286,10 @@ protected:
     mfxStatus WrapUpTask(MFX_CALL_INFO &callInfo,
                          MFX_SCHEDULER_TASK *pTask,
                          const mfxU32 threadNum);
+
+    // Get a number of non-dedicated tasks which don't have unresolved dependencies
+    mfxU32 GetNumResolvedSwTasks(void) const;
+    
     //
     // End of thread-unsafe functions declarations.
     //

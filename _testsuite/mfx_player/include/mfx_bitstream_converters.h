@@ -16,6 +16,7 @@
 #include <algorithm>
 #include "mfx_shared_ptr.h"
 #include "mfx_ibitstream_converter.h"
+#include <immintrin.h>
 
 class BitstreamConverterFactory
     : public IBitstreamConverterFactory
@@ -249,22 +250,52 @@ public:
         // load U
         for (i = 0; i < h; i++) 
         {
-            MFX_CHECK_WITH_ERR(w == BSUtil::MoveNBytes(&m_chroma_line.front(), bs, w), MFX_ERR_MORE_DATA);
+            MFX_CHECK_WITH_ERR(w == BSUtil::MoveNBytes(m_chroma_line.data(), bs, w), MFX_ERR_MORE_DATA);
 
-            for (j=0; j<w; j++)
+            const mfxU8* p_chroma = m_chroma_line.data(); // MSVC generates additional load for vector<>'s operator [] in the loop 
+            mfxU8* p_dest = ptr + i*pitch;
+
+            // skipping to have p_dest aligned
+            for (j = 0; ((mfxU64)p_dest & 0xf) && (j < w); ++j, p_dest += 2 )
+                *p_dest = p_chroma[ j ];
+
+            for (; (j + 8) <= w; j += 8, p_dest += 16)
             {
-                ptr[i * pitch + j * 2] = m_chroma_line[j];
+                __m128i chromau8 = _mm_move_epi64( *(const __m128i*)(p_chroma + j) );
+                chromau8 = _mm_unpacklo_epi8( chromau8, _mm_setzero_si128() );
+                _mm_store_si128( (__m128i*)p_dest, chromau8 );
             }
+
+            for (; j < w; ++j, p_dest += 2)
+                *p_dest = p_chroma[j];
         }
+
         // load V
         for (i = 0; i < h; i++) 
         {
-            MFX_CHECK_WITH_ERR(w == BSUtil::MoveNBytes(&m_chroma_line.front(), bs, w), MFX_ERR_MORE_DATA);
+            MFX_CHECK_WITH_ERR(w == BSUtil::MoveNBytes(m_chroma_line.data(), bs, w), MFX_ERR_MORE_DATA);
 
-            for (j = 0; j < w; j++)
+            const mfxU8* p_chroma = m_chroma_line.data();
+            mfxU8* p_dest = ptr + i*pitch;
+            j = 0;
+#if 0 // ML: OPT: TODO: The below code results in a unexplained slowdown on HSW 
+      //          there are some problems with the load from p_dest, need to check simulation
+            // skipping to have p_dest aligned
+            for (; ((mfxU32)p_dest & 0xf) && (j < w); ++j, p_dest += 2 )
+                *(p_dest + 1) = p_chroma[ j ];
+
+            for (; (j + 8) <= w; j += 8, p_dest += 16)
             {
-                ptr[i * pitch + j * 2 + 1] = m_chroma_line[j];
+                __m128i chromav8 = _mm_move_epi64( *(const __m128i*)(p_chroma + j) );
+                chromav8 = _mm_unpacklo_epi8( _mm_setzero_si128(), chromav8 );
+
+                __m128i chromau8 = _mm_load_si128( (const __m128i*)p_dest );
+                __m128i chromauv8 = _mm_or_si128( chromau8, chromav8 );
+                _mm_store_si128( (__m128i*)p_dest, chromauv8 );
             }
+#endif
+            for (; j < w; ++j, p_dest += 2)
+                *(p_dest + 1) = p_chroma[j];
         }
         return MFX_ERR_NONE;
     }

@@ -4,12 +4,12 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2012-2014 Intel Corporation. All Rights Reserved.
 //
 */
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_VP8_VIDEO_ENCODE) && defined(MFX_VA)
+#if defined(MFX_ENABLE_VP8_VIDEO_ENCODE_HW) && defined(MFX_VA)
 
 
 #ifndef _MFX_VP8_ENCODE_HW_H_
@@ -56,14 +56,9 @@ public:
             ? m_impl->GetVideoParam(par)
             : MFX_ERR_NOT_INITIALIZED;
     }
+    virtual mfxStatus GetFrameParam(mfxFrameParam *) {return MFX_ERR_UNSUPPORTED;}
 
-    virtual mfxStatus GetFrameParam(mfxFrameParam *par)
-    {
-        return m_impl.get()
-            ? m_impl->GetFrameParam(par)
-            : MFX_ERR_NOT_INITIALIZED;
-    }
-
+    
     virtual mfxStatus GetEncodeStat(mfxEncodeStat *stat)
     {
         return m_impl.get()
