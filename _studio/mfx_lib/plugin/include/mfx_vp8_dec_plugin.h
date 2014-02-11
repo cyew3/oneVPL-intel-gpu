@@ -21,7 +21,7 @@ File Name: mfx_VP8_dec_plugin.h
 #include "mfxplugin++.h"
 #include "mfxvideo++int.h"
 
-#if defined( AS_VP8D_PLUGIN )
+#if defined( AS_VP8D_PLUGIN ) || defined( AS_VP8DHW_PLUGIN )
 class MFXVP8DecoderPlugin : public MFXDecoderPlugin
 {
     static const mfxPluginUID g_VP8DecoderGuid;
