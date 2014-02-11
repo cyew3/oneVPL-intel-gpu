@@ -10,7 +10,7 @@
 
 #include "mfx_common.h"
 
-#if defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW) && (defined(MFX_VA_WIN) || defined(MFX_VA))
+#if defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW) && (defined(MFX_VA_WIN) || defined(MFX_VA))            
 
 #include "mfx_session.h"
 #include "mfx_common_decode_int.h"
@@ -599,6 +599,16 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
     mfxU8 *pTemp = p_bs->Data + p_bs->DataOffset;
     frame_type = (pTemp[0] & 1) ? P_PICTURE : I_PICTURE; // 1 bits
     show_frame = (pTemp[0] >> 4) & 0x1;
+
+    if (0 == p_surface_work->Info.CropW)
+    {
+        p_surface_work->Info.CropW = m_on_init_video_params.mfx.FrameInfo.Width;
+    }
+
+    if (0 == p_surface_work->Info.CropH)
+    {
+        p_surface_work->Info.CropH = m_on_init_video_params.mfx.FrameInfo.Height;
+    }
 
     if (I_PICTURE == frame_type)
     {
