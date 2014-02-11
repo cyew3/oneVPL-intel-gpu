@@ -194,7 +194,7 @@ public:
     Ipp64f m_rdLambdaInter;
     Ipp64f m_rdLambdaInterMv;
     H265Slice *m_cslice;
-    Ipp8u m_depthMin;
+    Ipp8u m_depthMin;          // for Cu-tree branch to know if there is not SPLIT_MUST cu at lower depth
     SaoEncodeFilter m_saoEncodeFilter;
 
     inline bool  IsIntra(Ipp32u partIdx)

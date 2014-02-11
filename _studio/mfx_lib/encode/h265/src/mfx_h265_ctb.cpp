@@ -1056,7 +1056,7 @@ void H265CU::ModeDecision(Ipp32u absPartIdx, Ipp32u offset, Ipp8u depth, CostTyp
 
     if (splitMode != SPLIT_MUST) {
         if (m_depthMin == MAX_TOTAL_DEPTH)
-            m_depthMin = depth;
+            m_depthMin = depth; // lowest depth for branch where not SPLIT_MUST
 
         m_data = m_dataTemp + (depth << m_par->Log2NumPartInCU);
 
@@ -1234,9 +1234,14 @@ void H265CU::ModeDecision(Ipp32u absPartIdx, Ipp32u offset, Ipp8u depth, CostTyp
         // restore ctx
         if (m_rdOptFlag)
             m_bsf->CtxRestore(ctxSave[0], 0, NUM_CABAC_CONTEXT);
+
         // split
         CostType costSplit = 0;
         for (Ipp32s i = 0; i < 4; i++) {
+
+            if (splitMode == SPLIT_MUST)
+                m_depthMin = MAX_TOTAL_DEPTH; // to be computed in sub-CU
+
             CostType costTemp;
             ModeDecision(absPartIdx + (numParts >> 2) * i, offset + subsize * i, depth+1, &costTemp);
             costSplit += costTemp;
@@ -2180,7 +2185,7 @@ void H265CU::MePu(H265MEInfo* meInfo)
                 if(curRefIdx[ME_dir] == topdata[meInfo->absPartIdx].refIdx[ME_dir] &&
                     topdata[meInfo->absPartIdx].predMode == MODE_INTER ) { // TODO also check same ref
                         MVtried[num_tried++] = topdata[meInfo->absPartIdx].mv[ME_dir];
-                        ClipMV( MVtried[num_tried-1]);
+                        //ClipMV( MVtried[num_tried-1]); // no need - from the same CU
                         for(j=0; j<num_tried-1; j++)
                             if (MVtried[j] ==  MVtried[num_tried-1]) {
                                 num_tried --;
