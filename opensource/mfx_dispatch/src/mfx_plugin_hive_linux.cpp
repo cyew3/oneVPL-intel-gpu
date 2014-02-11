@@ -319,6 +319,10 @@ MFXPluginsInFS::MFXPluginsInFS(mfxVersion currentAPIVersion)
             {
                 char pluginName[MAX_PLUGIN_NAME];
                 bool nameRes = parser.GetCurrentPluginName(pluginName);
+                if (!nameRes)
+                {
+                    TRACE_HIVE_WRN("unable to parse plugin name from %s\n", cfgName);
+                }
 
                 mfxU32 foundFields = PluginConfigParser::PARSED_UID;
 
