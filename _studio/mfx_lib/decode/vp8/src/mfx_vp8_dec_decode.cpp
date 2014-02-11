@@ -123,6 +123,17 @@ void VideoDECODEVP8::SetOutputParams(mfxFrameSurface1 *p_surface_work)
 
     p_surface->Info.CropX = m_on_init_video_params.mfx.FrameInfo.CropX;
     p_surface->Info.CropY = m_on_init_video_params.mfx.FrameInfo.CropY;
+
+    if (0 == p_surface->Info.CropW)
+    {
+        p_surface->Info.CropW = m_on_init_video_params.mfx.FrameInfo.Width;
+    }
+
+    if (0 == p_surface->Info.CropH)
+    {
+        p_surface->Info.CropH = m_on_init_video_params.mfx.FrameInfo.Height;
+    }
+
     p_surface->Info.PicStruct = m_on_init_video_params.mfx.FrameInfo.PicStruct;
 
     p_surface->Info.AspectRatioH = 1;
