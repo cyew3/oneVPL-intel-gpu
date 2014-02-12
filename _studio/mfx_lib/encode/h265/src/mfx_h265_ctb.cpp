@@ -2179,16 +2179,16 @@ void H265CU::MeSubpel(H265MV mvIntpel, Ipp32s costIntpel, const H265MEInfo *meIn
 
     while (meStep) {
         Ipp32s bestPos = 0;
-        for (Ipp16s mePos = startPos; mePos < 9; mePos++) {
+        for (Ipp32s mePos = startPos; mePos < 9; mePos++) {
             H265MV mv = {
-                mvCenter.mvx + tab_mePattern[mePos][0] * meStep,
-                mvCenter.mvy + tab_mePattern[mePos][1] * meStep
+                mvCenter.mvx + tab_mePattern[mePos][0] * (Ipp16s)meStep,
+                mvCenter.mvy + tab_mePattern[mePos][1] * (Ipp16s)meStep
             };
             //H265MV mvBeforeClip = mv;
             if (ClipMV(mv))
                 continue;
             Ipp32s cost = MatchingMetricPu(src, meInfo, &mv, ref, useHadamard) +
-                MvCost1Ref(&mv, refIdx, predInfo, mergeInfo, meDir);
+                MvCost1Ref(&mv, (Ipp8s)refIdx, predInfo, mergeInfo, meDir);
             if (costBest > cost) {
                 mvBest = mv;
                 costBest = cost;
@@ -2238,7 +2238,7 @@ void H265CU::MePu(H265MEInfo *meInfo)
     Ipp32s costBestRef[2][H265_MAXNUMREF];
 
     meInfo->refIdx[0] = meInfo->refIdx[1] = -1;
-    for (Ipp16s meDir = 0; meDir <= (m_cslice->slice_type == B_SLICE); meDir++) {
+    for (Ipp16s meDir = 0; meDir <= ((m_cslice->slice_type == B_SLICE)?1:0); meDir++) {
         H265MV mvLast = {0, 0};
         for (Ipp8s refIdx = 0; refIdx < m_cslice->num_ref_idx[meDir]; refIdx++) {
             H265Frame *ref = refList[meDir]->m_RefPicList[refIdx];
@@ -2388,7 +2388,7 @@ void H265CU::MePu(H265MEInfo *meInfo)
                 Ipp32s cost2_best = meInfo->costBiDir;
 
                 do {
-                    Ipp32s i, count;
+                    Ipp32s count;
                     H265MV MV2_cur[2], MV2_tmp[2];
                     changed = false;
                     MV2_cur[0] = MV2_best[0]; MV2_cur[1] = MV2_best[1];

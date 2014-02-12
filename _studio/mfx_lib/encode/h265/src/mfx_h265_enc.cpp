@@ -439,7 +439,7 @@ mfxStatus H265Encoder::SetPPS()
     return MFX_ERR_NONE;
 }
 
-static Ipp32f tab_rdLambdaBPyramid[4] = {0.442, 0.3536, 0.3536, 0.68};
+static Ipp32f tab_rdLambdaBPyramid[4] = {0.442f, 0.3536f, 0.3536f, 0.68f};
 
 mfxStatus H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice)
 {

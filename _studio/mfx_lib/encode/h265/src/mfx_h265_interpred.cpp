@@ -48,17 +48,17 @@ Ipp32s H265CU::ClipMV(H265MV& rcMv) const
     Ipp32s change = 0;
     if (rcMv.mvx < HorMin) {
         change = 1;
-        rcMv.mvx = HorMin;
+        rcMv.mvx = (Ipp16s)HorMin;
     } else if (rcMv.mvx > HorMax) {
         change = 1;
-        rcMv.mvx = HorMax;
+        rcMv.mvx = (Ipp16s)HorMax;
     }
     if (rcMv.mvy < VerMin) {
         change = 1;
-        rcMv.mvy = VerMin;
+        rcMv.mvy = (Ipp16s)VerMin;
     } else if (rcMv.mvy > VerMax) {
         change = 1;
-        rcMv.mvy = VerMax;
+        rcMv.mvy = (Ipp16s)VerMax;
     }
 
     return change;
