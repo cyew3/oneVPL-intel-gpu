@@ -195,6 +195,11 @@ public:
     Ipp64f m_rdLambdaInterMv;
     H265Slice *m_cslice;
     Ipp8u m_depthMin;          // for Cu-tree branch to know if there is not SPLIT_MUST cu at lower depth
+    Ipp32s HorMax;             // MV common limits in CU
+    Ipp32s HorMin;
+    Ipp32s VerMax;
+    Ipp32s VerMin;
+
     SaoEncodeFilter m_saoEncodeFilter;
 
     inline bool  IsIntra(Ipp32u partIdx)
@@ -257,7 +262,7 @@ public:
 
     bool CheckIdenticalMotion(Ipp32u absPartIdx);
 
-    void ClipMV(H265MV &rcMv) const;
+    Ipp32s ClipMV(H265MV &rcMv) const; // returns 1 if changed, otherwise 0
 
     Ipp32u GetSCuAddr();
 

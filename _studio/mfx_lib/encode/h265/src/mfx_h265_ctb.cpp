@@ -515,6 +515,15 @@ void H265CU::InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTe
 
     m_ySrc = _ySrc + m_ctbPelX + m_ctbPelY * m_pitchSrc;
 
+    // limits to clip MV allover the CU
+    const Ipp32s MvShift = 2;
+    const Ipp32s offset = 8;
+    HorMax = (m_par->Width + offset - m_ctbPelX - 1) << MvShift;
+    HorMin = ( - (Ipp32s) m_par->MaxCUSize - offset - (Ipp32s) m_ctbPelX + 1) << MvShift;
+    VerMax = (m_par->Height + offset - m_ctbPelY - 1) << MvShift;
+    VerMin = ( - (Ipp32s) m_par->MaxCUSize - offset - (Ipp32s) m_ctbPelY + 1) << MvShift;
+
+
     // aya: may be used to provide performance gain for SAD calculation
     /*{
     IppiSize blkSize = {m_par->MaxCUSize, m_par->MaxCUSize};
@@ -2174,16 +2183,17 @@ void H265CU::MeSubpel(H265MV mvIntpel, Ipp32s costIntpel, const H265MEInfo *meIn
                 mvCenter.mvx + tab_mePattern[mePos][0] * meStep,
                 mvCenter.mvy + tab_mePattern[mePos][1] * meStep
             };
-            H265MV mvBeforeClip = mv;
-            ClipMV(mv);
+            //H265MV mvBeforeClip = mv;
+            if (ClipMV(mv))
+                continue;
             Ipp32s cost = MatchingMetricPu(src, meInfo, &mv, ref, useHadamard) +
                 MvCost1Ref(&mv, refIdx, predInfo, mergeInfo, meDir);
             if (costBest > cost) {
                 mvBest = mv;
                 costBest = cost;
                 bestPos = mePos;
-                if (mv != mvBeforeClip)
-                    bestPos = 0;
+                //if (mv != mvBeforeClip)
+                //    bestPos = 0;
             }
         }
 
@@ -2288,7 +2298,8 @@ void H265CU::MePu(H265MEInfo *meInfo)
                         mvCenter.mvx + tab_mePattern[mePos][0] * meStep,
                         mvCenter.mvy + tab_mePattern[mePos][1] * meStep
                     };
-                    ClipMV(mv);
+                    if (ClipMV(mv))
+                        continue;
                     Ipp32s cost = MatchingMetricPu(src, meInfo, &mv, ref, useHadamard) +
                         MvCost1Ref(&mv, refIdx, predInfo, &mergeInfo, meDir);
                     if (costBest > cost) {
@@ -2314,8 +2325,9 @@ void H265CU::MePu(H265MEInfo *meInfo)
                         mvCenter.mvx + tab_mePattern[mePos][0] * meStep,
                         mvCenter.mvy + tab_mePattern[mePos][1] * meStep
                     };
-                    H265MV mvBeforeClip = mv;
-                    ClipMV(mv);
+                    //H265MV mvBeforeClip = mv;
+                    if (ClipMV(mv))
+                        continue;
                     Ipp32s cost = MatchingMetricPu(src, meInfo, &mv, ref, useHadamard) +
                         MvCost1Ref(&mv, refIdx, predInfo, &mergeInfo, meDir);
                     if (costBest > cost) {
@@ -2323,8 +2335,8 @@ void H265CU::MePu(H265MEInfo *meInfo)
                         costBest = cost;
                         refine = 0;
                         bestPos = mePos;
-                        if (mv != mvBeforeClip)
-                            bestPos = 0;
+                        //if (mv != mvBeforeClip)
+                        //    bestPos = 0;
                     }
                 }
 

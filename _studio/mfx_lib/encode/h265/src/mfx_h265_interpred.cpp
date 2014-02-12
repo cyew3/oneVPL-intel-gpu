@@ -43,18 +43,25 @@ bool H265CU::CheckIdenticalMotion(Ipp32u abs_part_idx)
     return false;
 }
 
-void H265CU::ClipMV(H265MV& rcMv) const
+Ipp32s H265CU::ClipMV(H265MV& rcMv) const
 {
-    Ipp32s MvShift = 2;
-    Ipp32s offset = 8;
-    Ipp32s HorMax = (m_par->Width + offset - m_ctbPelX - 1) << MvShift;
-    Ipp32s HorMin = ( - (Ipp32s) m_par->MaxCUSize - offset - (Ipp32s) m_ctbPelX + 1) << MvShift;
+    Ipp32s change = 0;
+    if (rcMv.mvx < HorMin) {
+        change = 1;
+        rcMv.mvx = HorMin;
+    } else if (rcMv.mvx > HorMax) {
+        change = 1;
+        rcMv.mvx = HorMax;
+    }
+    if (rcMv.mvy < VerMin) {
+        change = 1;
+        rcMv.mvy = VerMin;
+    } else if (rcMv.mvy > VerMax) {
+        change = 1;
+        rcMv.mvy = VerMax;
+    }
 
-    Ipp32s VerMax = (m_par->Height + offset - m_ctbPelY - 1) << MvShift;
-    Ipp32s VerMin = ( - (Ipp32s) m_par->MaxCUSize - offset - (Ipp32s) m_ctbPelY + 1) << MvShift;
-
-    rcMv.mvx = (Ipp16s) IPP_MIN(HorMax, IPP_MAX(HorMin, rcMv.mvx));
-    rcMv.mvy = (Ipp16s) IPP_MIN(VerMax, IPP_MAX(VerMin, rcMv.mvy));
+    return change;
 }
 
 const Ipp16s g_lumaInterpolateFilter[4][8] =
