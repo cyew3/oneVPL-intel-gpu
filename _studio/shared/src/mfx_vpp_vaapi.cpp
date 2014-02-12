@@ -385,6 +385,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     // WA:
     mfxU32 SampleCount = 1;
     mfxU32 refIdx = 0;
+    mfxU32 refCount = (mfxU32) pParams->fwdRefCount;
 
     //m_pipelineParam.resize(SampleCount);
     //m_pipelineParam.clear();
@@ -518,7 +519,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         m_pipelineParamCompID.resize(pParams->fwdRefCount/7);
 
         /* pParams->fwdRefCount actually is number of sub stream*/
-        for( refIdx = 1; refIdx <= (pParams->fwdRefCount); refIdx++ )
+        for( refIdx = 1; refIdx <= refCount; refIdx++ )
         {
             /*for frames 8, 15, 22, 29,... */
             if ((refIdx != 1) && ((refIdx %7) == 1) )
@@ -593,7 +594,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
 
             /*for frames 7, 14, 21, ...
              * or for the last frame*/
-            if ( ((refIdx % 7) ==0) || ((pParams->fwdRefCount) == refIdx) )
+            if ( ((refIdx % 7) ==0) || (refCount == refIdx) )
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaEndPicture");
                 vaSts = vaEndPicture(m_vaDisplay, m_vaContextVPP);
@@ -656,6 +657,9 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
         mfxFrameInfo *inInfo = &(pRefSurf->frameInfo);
 
         m_primarySurface4Composition = (VASurfaceID*)calloc(1,sizeof(VASurfaceID));
+        /* KW fix, but it is true, required to check, is memory allocated o not  */
+        if (m_primarySurface4Composition == NULL)
+            return MFX_ERR_MEMORY_ALLOC;
 
         attrib.type = VASurfaceAttribPixelFormat;
         attrib.value.type = VAGenericValueTypeInteger;
@@ -683,6 +687,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
     // WA:
     mfxU32 SampleCount = 1;
     mfxU32 refIdx = 0;
+    mfxU32 refCount = (mfxU32) pParams->fwdRefCount;
 
     //m_pipelineParam.resize(SampleCount);
     //m_pipelineParam.clear();
@@ -709,7 +714,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
         //m_pipelineParam[refIdx].surface = *outputSurface;
 
         // source cropping
-        mfxFrameInfo *inInfo = &(pRefSurf->frameInfo);
+        //mfxFrameInfo *inInfo = &(pRefSurf->frameInfo);
         mfxFrameInfo *outInfo = &(pParams->targetSurface.frameInfo);
         input_region[refIdx].y   = 0;
         input_region[refIdx].x   = 0;
@@ -725,8 +730,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
         output_region[refIdx].width  = outInfo->CropW;
         m_pipelineParam[refIdx].output_region = &output_region[refIdx];
 
-        //m_pipelineParam[refIdx].output_background_color = pParams->iBackgroundColor;
-        m_pipelineParam[refIdx].output_background_color = 0xff000000;
+        m_pipelineParam[refIdx].output_background_color = pParams->iBackgroundColor;
 
         mfxU32  refFourcc = pRefSurf->frameInfo.FourCC;
         switch (refFourcc)
@@ -842,13 +846,12 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
         m_pipelineParamCompID.resize(pParams->fwdRefCount/7);
 
         /* pParams->fwdRefCount actually is number of sub stream*/
-        for( refIdx = 1; refIdx <= (pParams->fwdRefCount+1); refIdx++ )
+        for( refIdx = 1; refIdx <= (refCount + 1); refIdx++ )
         {
             /*for frames 8, 15, 22, 29,... */
             if ((refIdx != 1) && ((refIdx %7) == 1) )
             {
-                //m_pipelineParam[refIdx].output_background_color = pParams->iBackgroundColor;
-                m_pipelineParam[refIdx].output_background_color = 0xff000000;
+                m_pipelineParam[refIdx].output_background_color = pParams->iBackgroundColor;
                 vaSts = vaBeginPicture(m_vaDisplay,
                                     m_vaContextVPP,
                                     *outputSurface);
@@ -937,7 +940,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
 
             /*for frames 7, 14, 21, ...
              * or for the last frame*/
-            if ( ((refIdx % 7) ==0) || ((pParams->fwdRefCount+1) == refIdx) )
+            if ( ((refIdx % 7) ==0) || ((refCount + 1) == refIdx) )
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaEndPicture");
                 vaSts = vaEndPicture(m_vaDisplay, m_vaContextVPP);
