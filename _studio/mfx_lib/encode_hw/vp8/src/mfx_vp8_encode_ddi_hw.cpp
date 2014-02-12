@@ -8,13 +8,12 @@
 //
 */
 
-#include "libmfx_core_vaapi.h"
 #include "mfx_vp8_encode_utils_hybrid_hw.h"
+#if defined (MFX_ENABLE_VP8_VIDEO_ENCODE_HW) 
+#include "libmfx_core_vaapi.h"
 #include "libmfx_core_interface.h"
 #include "libmfx_core_factory.h"
 #include "assert.h"
-
-#if defined (MFX_ENABLE_VP8_VIDEO_ENCODE_HW) 
 
 namespace MFX_VP8ENC
 {    

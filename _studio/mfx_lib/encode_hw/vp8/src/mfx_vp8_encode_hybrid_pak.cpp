@@ -9,6 +9,7 @@
 */
 
 #include "mfx_common.h"
+#if defined(MFX_ENABLE_VP8_VIDEO_ENCODE_HW)
 #include "mfx_vp8_encode_hybrid_bse.h"
 #include "mfx_vp8_encode_utils_hw.h"
 
@@ -2906,3 +2907,4 @@ namespace MFX_VP8ENC
     }
 }
 #endif
+#endif // MFX_ENABLE_VP8_VIDEO_ENCODE_HW
