@@ -11,6 +11,7 @@
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #include <limits.h> /* for INT_MAX on Linux/Android */
+#include <algorithm>
 
 #include "mfx_h265_ctb.h"
 #include "mfx_h265_enc.h"
@@ -2256,7 +2257,7 @@ void H265CU::MePu(H265MEInfo *meInfo)
             // Choose start point using predictors
             H265MV mvPred[7 + 1 + H265_MAXNUMREF + 2];
             Ipp32s numMvPred = GetMvPredictors(mvPred, meInfo, predInfo, &mergeInfo, mvLast, meDir, refIdx);
-            VM_ASSERT(numMvPred <= sizeof(mvPred) / sizeof(mvPred[0]));
+            VM_ASSERT((size_t)numMvPred <= sizeof(mvPred) / sizeof(mvPred[0]));
 
             // use satd for all candidates even if satd is for subpel only
             Ipp32s useHadamard = (m_par->hadamardMe >= 2);
