@@ -209,6 +209,7 @@ mfxStatus MFXLibraryIterator::SelectDLLVersion(wchar_t *pPath
                                              , size_t pathSize
                                              , eMfxImplType *pImplType, mfxVersion minVersion)
 {
+    UNREFERENCED_PARAMETER(minVersion);
     wchar_t libPath[MFX_MAX_DLL_PATH];
     DWORD libIndex = 0;
     DWORD libMerit = 0;
@@ -246,53 +247,23 @@ mfxStatus MFXLibraryIterator::SelectDLLVersion(wchar_t *pPath
             {
                 DISPATCHER_LOG_INFO((("opened key: %S\n"), subKeyName));
 
-                mfxU32 vendorID = 0, deviceID = 0, merit = 0, version;
+                mfxU32 vendorID = 0, deviceID = 0, merit = 0;
                 DWORD size;
 
-                // query version value
-                size = sizeof(version);
-                bRes = subKey.Query(apiVersionName, REG_DWORD, (LPBYTE) &version, &size);
-                if (!bRes)
-                {
-                    DISPATCHER_LOG_WRN((("querying %S : RegQueryValueExA()==0x%x\n"), apiVersionName, GetLastError()));
-                }
-                else
-                {
-                    mfxVersion libVersion;
-
-                    // there is complex conversion for registry stored version to
-                    // the mfxVersion structure
-                    libVersion.Minor = (mfxU16) (version & 0x0ff);
-                    libVersion.Major = (mfxU16) (version >> 8);
-
-                    if ((libVersion.Major != minVersion.Major) ||
-                        (libVersion.Minor < minVersion.Minor))
+                // query vendor and device IDs
+                size = sizeof(vendorID);
+                bRes = subKey.Query(vendorIDKeyName, REG_DWORD, (LPBYTE) &vendorID, &size);
+                DISPATCHER_LOG_OPERATION({
+                    if (bRes)
                     {
-                        // there is a version conflict
-                        bRes = false;
-                        DISPATCHER_LOG_WRN((("version conflict: loaded : %u.%u required = %u.%u\n"), libVersion.Major, libVersion.Minor, minVersion.Major, minVersion.Minor));
+                        DISPATCHER_LOG_INFO((("loaded %S : 0x%x\n"), vendorIDKeyName, vendorID));
                     }
                     else
                     {
-                        DISPATCHER_LOG_INFO((("loaded %S : %u.%u \n"), apiVersionName, libVersion.Major, libVersion.Minor));
+                        DISPATCHER_LOG_WRN((("querying %S : RegQueryValueExA()==0x%x\n"), vendorIDKeyName, GetLastError()));
                     }
-                }
-                // query vendor and device IDs
-                if (bRes)
-                {
-                    size = sizeof(vendorID);
-                    bRes = subKey.Query(vendorIDKeyName, REG_DWORD, (LPBYTE) &vendorID, &size);
-                    DISPATCHER_LOG_OPERATION({
-                        if (bRes)
-                        {
-                            DISPATCHER_LOG_INFO((("loaded %S : 0x%x\n"), vendorIDKeyName, vendorID));
-                        }
-                        else
-                        {
-                            DISPATCHER_LOG_WRN((("querying %S : RegQueryValueExA()==0x%x\n"), vendorIDKeyName, GetLastError()));
-                        }
-                    })
-                }
+                })
+
                 if (bRes)
                 {
                     size = sizeof(deviceID);
