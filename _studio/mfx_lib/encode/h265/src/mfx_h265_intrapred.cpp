@@ -1009,7 +1009,7 @@ Ipp8u H265CU::GetTrSplitMode(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u tr_depth, I
                     ((h265_scan_z2r[m_par->MaxCUDepth][abs_part_idx] >> m_par->MaxCUDepth) << m_par->QuadtreeTULog2MinSize);
 
                 if ((strict && m_par->Log2MaxCUSize - depth - tr_depth > m_par->QuadtreeTULog2MaxSize) ||
-                    lpel_x + width >= m_par->Width || tpel_y + width >= m_par->Height) {
+                    lpel_x + width > m_par->Width || tpel_y + width > m_par->Height) {
                     split_mode = SPLIT_MUST;
                 } else {
                     split_mode = SPLIT_TRY;

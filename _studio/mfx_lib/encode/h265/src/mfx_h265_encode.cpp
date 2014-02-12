@@ -694,6 +694,12 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam* par_in)
         }
     }
 
+    // ALL INTRA
+    if (m_mfxVideoParam.mfx.GopPicSize == 1) {
+        m_mfxVideoParam.mfx.GopRefDist = 1;
+        m_mfxVideoParam.mfx.NumRefFrame = 1;
+    }
+
     m_mfxVideoParam.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
     mfxI32 complevel = Check265Level(m_mfxVideoParam.mfx.CodecLevel, &m_mfxVideoParam);
     if (complevel != m_mfxVideoParam.mfx.CodecLevel) {
