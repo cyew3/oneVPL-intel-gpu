@@ -1987,17 +1987,18 @@ CostType H265CU::CuCost(Ipp32u absPartIdx, Ipp8u depth, const H265MEInfo* bestIn
 
     Ipp8u tr_depth_min, tr_depth_max;
     Ipp8u tr_depth = (m_par->QuadtreeTUMaxDepthInter == 1) && (bestSplitMode != PART_SIZE_2Nx2N);
+    Ipp32u tuLog2MinSize = GetQuadtreeTuLog2MinSizeInCu(absPartIdx, m_par->MaxCUSize>>depth, bestSplitMode, MODE_INTER);
     while ((m_par->MaxCUSize >> (depth + tr_depth)) > 32) tr_depth++;
     while (tr_depth < (m_par->QuadtreeTUMaxDepthInter - 1 + (m_par->QuadtreeTUMaxDepthInter == 1)) &&
         (m_par->MaxCUSize >> (depth + tr_depth)) > 4 &&
-        (m_par->Log2MaxCUSize - depth - tr_depth > m_par->QuadtreeTULog2MinSize) &&
+        (m_par->Log2MaxCUSize - depth - tr_depth > tuLog2MinSize) &&
         (0 || // biggest TU
         (m_par->Log2MaxCUSize - depth - tr_depth > m_par->QuadtreeTULog2MaxSize)))
         tr_depth++;
     tr_depth_min = tr_depth;
     while (tr_depth < (m_par->QuadtreeTUMaxDepthInter - 1 + (m_par->QuadtreeTUMaxDepthInter == 1)) &&
         (m_par->MaxCUSize >> (depth + tr_depth)) > 4 &&
-        (m_par->Log2MaxCUSize - depth - tr_depth > m_par->QuadtreeTULog2MinSize) &&
+        (m_par->Log2MaxCUSize - depth - tr_depth > tuLog2MinSize) &&
         (1 || // smallest TU
         (m_par->Log2MaxCUSize - depth - tr_depth > m_par->QuadtreeTULog2MaxSize)))
         tr_depth++;
