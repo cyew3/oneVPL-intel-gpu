@@ -1429,13 +1429,13 @@ Ipp32s H265CU::MvCost( H265MV MV[2], T_RefIdx curRefIdx[2], MVPInfo *pInfo, MVPI
         Ipp32s mincost = 0, minind = 0, minlist = 0;
         CostType lamb = (CostType)(m_rdLambdaInterMv)/2;
 
-        for (Ipp32s rlist = 0; rlist < numRefLists; rlist++) {
-            if (curRefIdx[rlist] == -1)
-                continue;
-            for (Ipp32s i=0; i<mergeInfo->numCand; i++)
-                if(curRefIdx[rlist] == mergeInfo->refIdx[2*i+rlist] && mergeInfo->mvCand[2*i+rlist] == MV[rlist])
-                    return (Ipp32s)(lamb * (2+i));
-        }
+        //for (Ipp32s rlist = 0; rlist < numRefLists; rlist++) {
+        //    if (curRefIdx[rlist] == -1)
+        //        continue;
+        //    for (Ipp32s i=0; i<mergeInfo->numCand; i++)
+        //        if(curRefIdx[rlist] == mergeInfo->refIdx[2*i+rlist] && mergeInfo->mvCand[2*i+rlist] == MV[rlist])
+        //            return (Ipp32s)(lamb * (2+i));
+        //}
         for (Ipp32s rlist = 0; rlist < numRefLists; rlist++) {
             if (curRefIdx[rlist] == -1)
                 continue;
@@ -1461,14 +1461,14 @@ Ipp32s H265CU::MvCost( H265MV MV[2], T_RefIdx curRefIdx[2], MVPInfo *pInfo, MVPI
 }
 
 Ipp32s H265CU::MvCost1Ref(H265MV *mv, Ipp8s refIdx, const MVPInfo *predInfo,
-                          const MVPInfo *mergeInfo, Ipp32s rlist) const
+                          const MVPInfo * /*mergeInfo*/, Ipp32s rlist) const
 {
     Ipp32s mincost = 0, minind = 0;
     CostType lamb = (CostType)(m_rdLambdaInterMv) / 2;
 
-    for (Ipp32s i=0; i<mergeInfo->numCand; i++)
-        if(refIdx == mergeInfo->refIdx[2 * i + rlist] && mergeInfo->mvCand[2 * i + rlist] == *mv)
-            return (Ipp32s)(lamb * (2 + i));
+    //for (Ipp32s i=0; i<mergeInfo->numCand; i++)
+    //    if(refIdx == mergeInfo->refIdx[2 * i + rlist] && mergeInfo->mvCand[2 * i + rlist] == *mv)
+    //        return (Ipp32s)(lamb * (2 + i));
 
     predInfo += 2 * refIdx;
     for (Ipp32s i=0; i < predInfo[rlist].numCand; i++) {
