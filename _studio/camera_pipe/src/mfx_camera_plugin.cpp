@@ -40,7 +40,7 @@ MSDK_PLUGIN_API(MFXPlugin*) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin) {
     return (MFXPlugin*) g_PluginModule.CreatePlugin(uid, plugin);
 }
 
-const mfxPluginUID MFXCamera_Plugin::g_Camera_PluginGuid = {0xab, 0xcd, 0xef, 0x01, 0xab, 0xcd, 0xef, 0x01, 0xab, 0xcd, 0xef, 0x01, 0xab, 0xcd, 0xef, 0x01};
+const mfxPluginUID MFXCamera_Plugin::g_Camera_PluginGuid = {0x54, 0x54, 0x26, 0x16, 0x24, 0x33, 0x41, 0xe6, 0x93, 0xae, 0x89, 0x99, 0x42, 0xce, 0x73, 0x55};
 std::auto_ptr<MFXCamera_Plugin> MFXCamera_Plugin::g_singlePlg;
 std::auto_ptr<MFXPluginAdapter<MFXVPPPlugin> > MFXCamera_Plugin::g_adapter;
 
@@ -105,7 +105,6 @@ mfxStatus MFXCamera_Plugin::PluginInit(mfxCoreInterface *core)
     if (MFX_ERR_NONE != mfxRes)
         return mfxRes;
 
-    //uncomment when the light core is ready (?) kta
     mfxRes = MFXInternalPseudoJoinSession((mfxSession) m_pmfxCore->pthis, m_session);
 
     return mfxRes;
@@ -171,26 +170,17 @@ mfxStatus MFXCamera_Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest
 
 mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
 {
-    printf("Camera frame video init \n");
-   
     mfxStatus mfxRes;
 
     m_mfxVideoParam = *par;
     m_core = m_session->m_pCORE.get();
 
-#if 0
-    m_FrameWidth64   = ((m_mfxVideoParam.vpp.In.Width - 64 + 31) & 0xFFFFFFE0); // 2 bytes each for In, 4 bytes for Out, so 32 is good enough for 64 ??? 
-    m_PaddedFrameWidth  = m_mfxVideoParam.vpp.In.Width - 64 + 16;
-    m_PaddedFrameHeight = m_mfxVideoParam.vpp.In.Height - 16 + 16;
-    m_InputBitDepth = m_mfxVideoParam.vpp.In.BitDepthLuma;
-#else
-    m_FrameWidth64   = ((m_mfxVideoParam.vpp.In.CropW + 31) & 0xFFFFFFE0); // 2 bytes each for In, 4 bytes for Out, so 32 is good enough for 64 ??? 
+    m_FrameWidth64   = ((m_mfxVideoParam.vpp.In.CropW + 31) & 0xFFFFFFE0); // 2 bytes each for In, 4 bytes for Out, so 32 is good enough for 64 ???
     m_PaddedFrameWidth  = m_mfxVideoParam.vpp.In.CropW + 16;
     m_PaddedFrameHeight = m_mfxVideoParam.vpp.In.CropH + 16;
     m_InputBitDepth = m_mfxVideoParam.vpp.In.BitDepthLuma;
-#endif
 
-    // get Caps and algo params from the ExtBuffers (?) or QueryCaps???
+        // get Caps and algo params from the ExtBuffers (?) or QueryCaps???
     m_Caps.bDemosaic = 1;
     m_Caps.bForwardGammaCorrection = 1;
     m_Caps.bColorConversionMaxtrix = 1;
@@ -218,8 +208,6 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
     m_cmDevice.Reset(CreateCmDevicePtr(m_core));
     m_cmCtx.reset(new CmContext(m_mfxVideoParam, m_cmDevice, &cam_pipeline));
 
-    //AllocateExternalSurfaces(); ???
-
     mfxRes = AllocateInternalSurfaces();
 
     return mfxRes;
@@ -227,7 +215,6 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
 
  mfxStatus MFXCamera_Plugin::CameraRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
 {
-    printf("Camera Routine \n");
     mfxStatus sts;
 
     threadNumber; callNumber;
@@ -237,7 +224,7 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
 
     sts = impl.CameraAsyncRoutine(asyncParams);
 
-  
+
     return sts;
 }
 
@@ -261,7 +248,6 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
 mfxStatus MFXCamera_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFrameSurface1 *surface_out, mfxExtVppAuxData *aux, mfxThreadTask *mfxthreadtask)
 {
     mfxStatus mfxRes;
-    printf("Camera frame submit\n");
 
     if (!surface_in)
         return MFX_ERR_NULL_PTR;

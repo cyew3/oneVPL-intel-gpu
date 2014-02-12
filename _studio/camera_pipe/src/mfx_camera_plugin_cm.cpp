@@ -391,7 +391,7 @@ CmSurface2D * CreateSurface(CmDevice * device, ID3D11Texture2D * d3dSurface)
     int result = CM_SUCCESS;
     CmSurface2D * cmSurface = 0;
     if (device && d3dSurface && (result = device->CreateSurface2D(d3dSurface, cmSurface)) != CM_SUCCESS)
-        throw CmRuntimeError(); 
+        throw CmRuntimeError();
     return cmSurface;
 }
 
@@ -458,9 +458,9 @@ CmSurface2DUP * CreateSurface(CmDevice * device, mfxU32 width, mfxU32 height, mf
 CmBufferUP *AllocCmBufferUp(CmDevice * device, mfxU32 width,  mfxU32 height)
 {
     void *psysmem = CM_ALIGNED_MALLOC(width * height, 0x1000); // need to remember psysmem to free at the end??? PASS pMem here???
-                                                                 
+
                                                                 // CreateBufferUP(mfxSurface1)   CreateCmSurface(mfxSurface1) ???? - ask somebody!!!???
-    return CreateBuffer(device, width * height, psysmem); 
+    return CreateBuffer(device, width * height, psysmem);
 }
 
 
@@ -555,7 +555,7 @@ void CmContext::CreateTask(CmTask *&task)
     if ((result = m_device->CreateTask(task)) != CM_SUCCESS)
         throw CmRuntimeError();
 }
-    
+
 
 void CmContext::CreateCameraTasks()
 {
@@ -657,8 +657,8 @@ void CmContext::CreateTask_RestoreGreen(SurfaceIndex inSurfIndex, CmSurface2D *g
 
         CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, i)->SetThreadCount(m_widthInMb * m_heightInMb);
 
-        SetKernelArg(CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, i), 
-                     inSurfIndex, GetIndex(goodPixCntSurf), GetIndex(bigPixCntSurf), 
+        SetKernelArg(CAM_PIPE_KERNEL_ARRAY(kernel_restore_green, i),
+                     inSurfIndex, GetIndex(goodPixCntSurf), GetIndex(bigPixCntSurf),
                      GetIndex(greenHorSurf), GetIndex(greenVerSurf), GetIndex(greenAvgSurf), GetIndex(avgFlagSurf), xbase, ybase, MaxIntensity);
 
         result = CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_RestoreGreen, task_bufId), i)->Reset();
@@ -684,9 +684,9 @@ void CmContext::CreateTask_RestoreGreen(SurfaceIndex inSurfIndex, CmSurface2D *g
 
 
 void CmContext::CreateTask_RestoreBlueRed(SurfaceIndex inSurfIndex,
-                                           CmSurface2D *greenHorSurf, CmSurface2D *greenVerSurf, CmSurface2D *greenAvgSurf, 
-                                           CmSurface2D *blueHorSurf, CmSurface2D *blueVerSurf, CmSurface2D *blueAvgSurf, 
-                                           CmSurface2D *redHorSurf, CmSurface2D *redVerSurf, CmSurface2D *redAvgSurf, 
+                                           CmSurface2D *greenHorSurf, CmSurface2D *greenVerSurf, CmSurface2D *greenAvgSurf,
+                                           CmSurface2D *blueHorSurf, CmSurface2D *blueVerSurf, CmSurface2D *blueAvgSurf,
+                                           CmSurface2D *redHorSurf, CmSurface2D *redVerSurf, CmSurface2D *redAvgSurf,
                                            CmSurface2D *avgFlagSurf, mfxU32 bitDepth, mfxU32 task_bufId)
 {
     int result;
@@ -701,10 +701,10 @@ void CmContext::CreateTask_RestoreBlueRed(SurfaceIndex inSurfIndex,
 
         CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i)->SetThreadCount(m_widthInMb * m_heightInMb);
 
-        SetKernelArg(CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i), 
-                     inSurfIndex, 
-                     GetIndex(greenHorSurf), GetIndex(greenVerSurf), GetIndex(greenAvgSurf), 
-                     GetIndex(blueHorSurf), GetIndex(blueVerSurf), GetIndex(blueAvgSurf), 
+        SetKernelArg(CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i),
+                     inSurfIndex,
+                     GetIndex(greenHorSurf), GetIndex(greenVerSurf), GetIndex(greenAvgSurf),
+                     GetIndex(blueHorSurf), GetIndex(blueVerSurf), GetIndex(blueAvgSurf),
                      GetIndex(redHorSurf),  GetIndex(redVerSurf), GetIndex(redAvgSurf));
         SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i), GetIndex(avgFlagSurf), 10);
         SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_restore_blue_red, i), xbase, 11);
@@ -750,10 +750,10 @@ void CmContext::CreateTask_SAD(CmSurface2D *redHorSurf, CmSurface2D *greenHorSur
 
         CAM_PIPE_KERNEL_ARRAY(kernel_sad, i)->SetThreadCount(m_widthInMb * m_heightInMb);
 
-        SetKernelArg(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i), 
-                     GetIndex(redHorSurf), GetIndex(greenHorSurf),  GetIndex(blueHorSurf), 
+        SetKernelArg(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i),
+                     GetIndex(redHorSurf), GetIndex(greenHorSurf),  GetIndex(blueHorSurf),
                      GetIndex(redVerSurf), GetIndex(greenVerSurf),  GetIndex(blueVerSurf),
-                     xbase, ybase, 
+                     xbase, ybase,
                      GetIndex(redOutSurf), GetIndex(greenOutSurf));
         SetKernelArgLast(CAM_PIPE_KERNEL_ARRAY(kernel_sad, i), GetIndex(blueOutSurf), 10);
 
@@ -765,7 +765,7 @@ void CmContext::CreateTask_SAD(CmSurface2D *redHorSurf, CmSurface2D *greenHorSur
         if (result != CM_SUCCESS)
             throw CmRuntimeError();
 
-        
+
     //CmEvent *e = EnqueueTask(CAM_PIPE_KERNEL_ARRAY(CAM_PIPE_TASK_ARRAY(task_SAD, task_bufId), i));
     //e->WaitForTaskFinished();
     //int res = greenHorSurf->ReadSurface(pMem, e);
@@ -787,7 +787,7 @@ void CmContext::CreateTask_DecideAverage(CmSurface2D *redAvgSurf, CmSurface2D *g
 {
     int result;
     kernel_decide_average->SetThreadCount(m_widthInMb * m_heightInMb);
-    SetKernelArg(kernel_decide_average, GetIndex(redAvgSurf), GetIndex(greenAvgSurf), GetIndex(blueAvgSurf), GetIndex(avgFlagSurf), GetIndex(redOutSurf), GetIndex(greenOutSurf), GetIndex(blueOutSurf)); 
+    SetKernelArg(kernel_decide_average, GetIndex(redAvgSurf), GetIndex(greenAvgSurf), GetIndex(blueAvgSurf), GetIndex(avgFlagSurf), GetIndex(redOutSurf), GetIndex(greenOutSurf), GetIndex(blueOutSurf));
 
     result = CAM_PIPE_TASK_ARRAY(task_DecideAvg, task_bufId)->Reset();
     if (result != CM_SUCCESS)
@@ -809,7 +809,7 @@ void CmContext::CreateTask_DecideAverage(CmSurface2D *redAvgSurf, CmSurface2D *g
     //res = blueOutSurf->ReadSurface(pMem, e);
     //if (res != CM_SUCCESS)
     //    res |= 0;
-   
+
     //CM_ALIGNED_FREE((void*)pMem);
 
 }
@@ -830,7 +830,7 @@ void CmContext::CreateTask_ForwardGamma(CmSurface2D *correctSurf, CmSurface2D *p
     int framewidth_in_bytes = m_video.vpp.In.CropW * sizeof(int);
 
 //         mfxU8 *pMem = (mfxU8*)CM_ALIGNED_MALLOC(4112*2176*8, 0x1000);
-    
+
     //int size = 4096*8 * 2176;
     //void *psysmem = CM_ALIGNED_MALLOC(size, 0x1000); // need to remember psysmem to free at the end??? PASS pMem here???
     //CmBufferUP *tmpBuf = CreateBuffer(m_device, size, psysmem);
@@ -839,7 +839,7 @@ void CmContext::CreateTask_ForwardGamma(CmSurface2D *correctSurf, CmSurface2D *p
     //CmSurface2D *gS = CreateSurface(m_device, 8192, 2176, CM_SURFACE_FORMAT_A8);
     //CmSurface2D *bS = CreateSurface(m_device, 8192, 2176, CM_SURFACE_FORMAT_A8);
 
-    //SurfaceIndex *outIdx; 
+    //SurfaceIndex *outIdx;
     //tmpBuf->GetIndex(outIdx);
 
 
@@ -930,7 +930,7 @@ CmEvent *CmContext::EnqueueTasks(mfxU32 task_bufId)
 
 
     CmThreadGroupSpace* pTGS = NULL;
-    if (CAM_PIPE_TASK_ARRAY(task_FwGamma, task_bufId)) 
+    if (CAM_PIPE_TASK_ARRAY(task_FwGamma, task_bufId))
     {
         int result;
         if ((result = m_device->CreateThreadGroupSpace(1, m_gamma_threads_per_group, 1, m_gamma_groups_vert, pTGS)) != CM_SUCCESS)

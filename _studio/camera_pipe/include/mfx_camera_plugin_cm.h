@@ -257,7 +257,7 @@ public:
 
 
     int DestroyEvent( CmEvent*& e ){
-        if(m_queue) { 
+        if(m_queue) {
             if (e) {
                 //e->WaitForTaskFinished();
                 CM_STATUS status = CM_STATUS_QUEUED;
@@ -269,7 +269,7 @@ public:
             return m_queue->DestroyEvent(e);
         }
         else return 0;
-    } 
+    }
 
     void CreateThreadSpace(mfxU32 frameWidth, mfxU32 frameHeight);
 
@@ -280,9 +280,9 @@ public:
     void CreateTask_GoodPixelCheck(SurfaceIndex inSurfIndex, CmSurface2D *goodPixCntSurf, CmSurface2D *bigPixCntSurf, mfxU32 bitDepth, mfxU32 task_bufId = 0);
     void CreateTask_RestoreGreen(SurfaceIndex inSurfIndex, CmSurface2D *goodPixCntSurf, CmSurface2D *bigPixCntSurf, CmSurface2D *greenHorSurf, CmSurface2D *greenVerSurf, CmSurface2D *greenAvgSurf, CmSurface2D *avgFlagSurf, mfxU32 bitDepth, mfxU32 task_bufId = 0);
     void CreateTask_RestoreBlueRed(SurfaceIndex inSurfIndex,
-                                   CmSurface2D *greenHorSurf, CmSurface2D *greenVerSurf, CmSurface2D *greenAvgSurf, 
-                                   CmSurface2D *blueHorSurf, CmSurface2D *blueVerSurf, CmSurface2D *blueAvgSurf, 
-                                   CmSurface2D *redHorSurf, CmSurface2D *redVerSurf, CmSurface2D *redAvgSurf, 
+                                   CmSurface2D *greenHorSurf, CmSurface2D *greenVerSurf, CmSurface2D *greenAvgSurf,
+                                   CmSurface2D *blueHorSurf, CmSurface2D *blueVerSurf, CmSurface2D *blueAvgSurf,
+                                   CmSurface2D *redHorSurf, CmSurface2D *redVerSurf, CmSurface2D *redAvgSurf,
                                    CmSurface2D *avgFlagSurf, mfxU32 bitDepth, mfxU32 task_bufId = 0);
     void CreateTask_SAD(CmSurface2D *redHorSurf, CmSurface2D *greenHorSurf, CmSurface2D *blueHorSurf, CmSurface2D *redVerSurf, CmSurface2D *greenVerSurf, CmSurface2D *blueVerSurf, CmSurface2D *redOutSurf, CmSurface2D *greenOutSurf, CmSurface2D *blueOutSurf, mfxU32 task_bufId = 0);
     void CreateTask_DecideAverage(CmSurface2D *redAvgSurf, CmSurface2D *greenAvgSurf, CmSurface2D *blueAvgSurf, CmSurface2D *avgFlagSurf, CmSurface2D *redOutSurf, CmSurface2D *greenOutSurf, CmSurface2D *blueOutSurf, mfxU32 task_bufId = 0);
@@ -347,13 +347,13 @@ private:
     CmKernel*   kernel_3x3ccm;
 
     CmKernel*   kernel_argb8;
-    
+
 #if !ENABLE_SLM_GAMMA
     CmKernel*   kernel_PrepLUT;
 #endif
     CmKernel*   kernel_FwGamma;
-    
-   
+
+
     CmKernel*   kernel_fecsc;
 
     //CmBuf       m_nullBuf;

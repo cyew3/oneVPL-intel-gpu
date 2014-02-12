@@ -84,8 +84,8 @@ public:
 
         if (g_singlePlg.get()) {
             return MFX_ERR_NOT_FOUND;
-        } 
-        //check that guid match 
+        }
+        //check that guid match
         g_singlePlg.reset(new MFXCamera_Plugin(true));
 
         if (memcmp(& guid , &g_Camera_PluginGuid, sizeof(mfxPluginUID))) {
