@@ -261,7 +261,8 @@ public:
 
             for (; (j + 8) <= w; j += 8, p_dest += 16)
             {
-                __m128i chromau8 = _mm_move_epi64( *(const __m128i*)(p_chroma + j) );
+                __m128i chromau8 = _mm_loadu_si128( (__m128i*)(p_chroma + j) );
+                chromau8 = _mm_move_epi64( chromau8 );
                 chromau8 = _mm_unpacklo_epi8( chromau8, _mm_setzero_si128() );
                 _mm_store_si128( (__m128i*)p_dest, chromau8 );
             }
