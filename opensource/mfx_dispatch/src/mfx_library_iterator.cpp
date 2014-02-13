@@ -210,7 +210,7 @@ mfxStatus MFXLibraryIterator::SelectDLLVersion(wchar_t *pPath
                                              , eMfxImplType *pImplType, mfxVersion minVersion)
 {
     UNREFERENCED_PARAMETER(minVersion);
-    wchar_t libPath[MFX_MAX_DLL_PATH];
+    wchar_t libPath[MFX_MAX_DLL_PATH] = L"";
     DWORD libIndex = 0;
     DWORD libMerit = 0;
     DWORD index;
