@@ -125,6 +125,7 @@ mfxStatus GetImplementationType(const mfxU32 adapterNum, mfxIMPL *pImplInterface
 MFXLibraryIterator::MFXLibraryIterator(void)
 {
     m_implType = MFX_LIB_PSEUDO;
+    m_implInterface = MFX_IMPL_UNSUPPORTED;
 
     m_vendorID = 0;
     m_deviceID = 0;
@@ -145,6 +146,7 @@ MFXLibraryIterator::~MFXLibraryIterator(void)
 void MFXLibraryIterator::Release(void)
 {
     m_implType = MFX_LIB_PSEUDO;
+    m_implInterface = MFX_IMPL_UNSUPPORTED;
 
     m_vendorID = 0;
     m_deviceID = 0;
